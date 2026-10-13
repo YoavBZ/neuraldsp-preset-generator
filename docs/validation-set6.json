@@ -1,5 +1,5 @@
 {
- "schema": "validation-set6-2",
+ "schema": "validation-set6-3",
  "declared": "2026-10-12",
  "amendments": [
   {
@@ -9,9 +9,111 @@
    "calibration": "docs/validation-set6-di-calibration.json",
    "script": "research/set6_di_role_calibration.py",
    "committed_before_application": true
+  },
+  {
+   "number": 2,
+   "date": "2026-10-13",
+   "summary": "DIs labelled by ear (docs/set6-di-labelling-plan.md). The first round (74 questions) failed its hidden-check rule (1 of 6). A validation round, declared before it was built, passed: 10 of 10 confident answers right, no letter on any of 4 decoys. So the first round's confident labels count for groups that read crunch or high-gain (set 3's classifier, amp against labelled DI, whole tracks): 6 groups from 4 songs. Each gives one part (DI = the labelled track, reference = the scorer's same-take partner); set 5's exclusions apply. Clean DIs are still not established.",
+   "labelling": {
+    "plan": "docs/set6-di-labelling-plan.md",
+    "builder": "learn/build_di_labelling.py",
+    "first_round": {
+     "key_sha256": "78e1fabc49d2b040b0e95eb6020f1b127ab1bb6b396d268c99a0e2b3519da6a5",
+     "page_sha256": "f0317cae48a182d2e1228d73d8335d5d34357cee0758350b06fab47870a42884",
+     "hashes_committed_in": "docs/set6-di-labelling-key.sha256",
+     "answers": "listening/di-labelling/answers-2026-10-13.txt",
+     "answers_sha256": "c818bf21b07d4d25eeca092c19390b2739c39423040cb7584847992995f5ba91",
+     "questions": 74,
+     "hidden_checks": 6,
+     "hidden_checks_right": 1,
+     "hidden_checks_answered": 1,
+     "confident_answers": 8,
+     "medleydb_confident_labels": 7,
+     "verdict": "unusable by the declared rule (at least 5 of 6 hidden checks right)"
+    },
+    "validation_round": {
+     "key_sha256": "21d47a65161eae9afa0c605d364260c930cef523b6bc184d36fd0a74768536c2",
+     "page_sha256": "cb9a4426243f66ae2182d1e0b645396381de9fd31807635e3f31f3282603c321",
+     "hashes_committed_in": "docs/set6-di-labelling-validation-key.sha256",
+     "answers": "listening/di-labelling/validation-answers-2026-10-13.txt",
+     "answers_sha256": "9e8c99e70c78371ee5424706b7f15dbe505a59051a10468c0efa20520e4de8fe",
+     "questions": 14,
+     "known_di": {
+      "crunch": 6,
+      "high-gain": 4
+     },
+     "decoys": 4,
+     "rule": "at least 8 confident answers (a letter), at least 90% of them right; a letter on a decoy counts as wrong; if it passes, confident first-round labels count for groups whose gain class is crunch or high-gain; clean labels stay unused",
+     "declared_before_build": true
+    },
+    "validation_result": {
+     "path": "~/ndsp-presets/listening/di-labelling/validation-result.json",
+     "sha256": "8aba254590a41c48ce391484e3cb7f9557b50ffe954cf9d101db6d635ed8bfe8"
+    },
+    "counted_groups": [
+     {
+      "question": 29,
+      "song": "PurlingHiss_Lolita",
+      "di": "PurlingHiss_Lolita_RAW_03_06.wav",
+      "reference": "PurlingHiss_Lolita_RAW_03_05.wav",
+      "gain_class": "high-gain",
+      "slug": "medleydb-purlinghiss-lolita-raw-03-06-labelled",
+      "status": "kept"
+     },
+     {
+      "question": 49,
+      "song": "BigTroubles_Phantom",
+      "di": "BigTroubles_Phantom_RAW_05_01.wav",
+      "reference": "BigTroubles_Phantom_RAW_05_02.wav",
+      "gain_class": "high-gain",
+      "slug": "medleydb-bigtroubles-phantom-raw-05-01-labelled",
+      "status": "kept"
+     },
+     {
+      "question": 51,
+      "song": "PortStWillow_StayEven",
+      "di": "PortStWillow_StayEven_RAW_06_01.wav",
+      "reference": "PortStWillow_StayEven_RAW_06_02.wav",
+      "gain_class": "crunch",
+      "slug": "medleydb-portstwillow-stayeven-raw-06-01-labelled",
+      "status": "kept"
+     },
+     {
+      "question": 53,
+      "song": "BigTroubles_Phantom",
+      "di": "BigTroubles_Phantom_RAW_03_08.wav",
+      "reference": "BigTroubles_Phantom_RAW_03_09.wav",
+      "gain_class": "high-gain",
+      "slug": "medleydb-bigtroubles-phantom-raw-03-08-labelled",
+      "status": "excluded"
+     },
+     {
+      "question": 61,
+      "song": "LittleTybee_TheAlchemist",
+      "di": "LittleTybee_TheAlchemist_RAW_08_02.wav",
+      "reference": "LittleTybee_TheAlchemist_RAW_08_03.wav",
+      "gain_class": "crunch",
+      "slug": "medleydb-littletybee-thealchemist-raw-08-02-labelled",
+      "status": "kept"
+     },
+     {
+      "question": 64,
+      "song": "PortStWillow_StayEven",
+      "di": "PortStWillow_StayEven_RAW_05_01.wav",
+      "reference": "PortStWillow_StayEven_RAW_05_02.wav",
+      "gain_class": "crunch",
+      "slug": "medleydb-portstwillow-stayeven-raw-05-01-labelled",
+      "status": "kept"
+     }
+    ],
+    "not_counted": "AlexanderRoss_GoodbyeBolero RAW_02_02 (question 68): reads clean"
+   },
+   "parts_rule": "one part per counted group; slug <song>-<DI>-labelled, so the first declaration's crops keep their slugs and stay superseded",
+   "committed_before_application": false,
+   "plan_committed_before_labelling": true
   }
  ],
- "use": "unusable for DI-based tests (amendment 1); a song-only use (released mixes, no DI) needs its own declaration and crop rule",
+ "use": "DI parts from ear-labelled DIs only (amendment 2): crunch in scope, high-gain report-only; no clean DI established (amendment 1: no automatic DI-role rule); a song-only use (released mixes, no DI) needs its own declaration and crop rule",
  "precedent": "docs/validation-set5.md (rules, crop rule 2, judge lag, scope); the inventory came first, as set 5's did; MedleyDB names no DI, so a DI-role rule is added",
  "inventory": {
   "path": "~/ndsp-presets/references/datasets-medleydb/inventory.json",
@@ -27,7 +129,8 @@
  "rules": {
   "same_take": "waveform test (>= 80% of 20-s windows in step, median peak-to-sidelobe >= 2.0), as sets 3-5; every pair of electric-guitar raw tracks of a song tested",
   "di_role": {
-   "status": "no DI-role rule established (amendment 1); no set-6 DI part",
+   "status": "no automatic DI-role rule (amendment 1); DIs labelled by ear, counted only for crunch and high-gain groups after the validation round passed (amendment 2)",
+   "labelled": "docs/set6-di-labelling-plan.md; reference = the labelled DI's same-take partner with the smallest lag, then the higher peak-to-sidelobe ratio",
    "first_declared": {
     "fixed": "2026-10-12, after the pairing statistics of 4 songs (AlexanderRoss_GoodbyeBolero, BigTroubles_Phantom, MusicDelta_Rock, Snowmine_Curfews) were seen; before any crop",
     "orientation": "the earlier track of a same-take pair is the DI candidate; the later track its amp track",
@@ -104,8 +207,18 @@
   "Torres",
   "Trevor and the Soundwaves"
  ],
- "band_strata": {},
- "in_scope_bands_by_class": {},
+ "band_strata": {
+  "Big Troubles": "high-gain",
+  "Little Tybee": "crunch",
+  "Port St Willow": "crunch",
+  "Purling Hiss": "high-gain"
+ },
+ "in_scope_bands_by_class": {
+  "crunch": [
+   "Little Tybee",
+   "Port St Willow"
+  ]
+ },
  "licences": {
   "medleydb": "MedleyDB (Bittner et al., ISMIR 2014; MedleyDB 2.0, 2016): audio on Zenodo, restricted access granted to the user for non-commercial research (records 1649325 and 1715175). Licence: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 (LICENSE-V1.txt in the dataset root). Non-commercial research only; not republished; no audio in git."
  },
@@ -872,26 +985,6 @@
   },
   {
    "session": "medleydb/PortStWillow_StayEven",
-   "track": "PortStWillow_StayEven_RAW_05_01.wav",
-   "reason": "electric-guitar raw track that is neither an established DI nor its amp track"
-  },
-  {
-   "session": "medleydb/PortStWillow_StayEven",
-   "track": "PortStWillow_StayEven_RAW_05_02.wav",
-   "reason": "electric-guitar raw track that is neither an established DI nor its amp track"
-  },
-  {
-   "session": "medleydb/PortStWillow_StayEven",
-   "track": "PortStWillow_StayEven_RAW_06_01.wav",
-   "reason": "electric-guitar raw track that is neither an established DI nor its amp track"
-  },
-  {
-   "session": "medleydb/PortStWillow_StayEven",
-   "track": "PortStWillow_StayEven_RAW_06_02.wav",
-   "reason": "electric-guitar raw track that is neither an established DI nor its amp track"
-  },
-  {
-   "session": "medleydb/PortStWillow_StayEven",
    "track": "PortStWillow_StayEven_RAW_07_01.wav",
    "reason": "electric-guitar raw track that is neither an established DI nor its amp track"
   },
@@ -1363,21 +1456,6 @@
   {
    "session": "medleydb/LittleTybee_TheAlchemist",
    "track": "LittleTybee_TheAlchemist_RAW_08_01.wav",
-   "reason": "electric-guitar raw track that is neither an established DI nor its amp track"
-  },
-  {
-   "session": "medleydb/LittleTybee_TheAlchemist",
-   "track": "LittleTybee_TheAlchemist_RAW_08_02.wav",
-   "reason": "electric-guitar raw track that is neither an established DI nor its amp track"
-  },
-  {
-   "session": "medleydb/LittleTybee_TheAlchemist",
-   "track": "LittleTybee_TheAlchemist_RAW_08_03.wav",
-   "reason": "electric-guitar raw track that is neither an established DI nor its amp track"
-  },
-  {
-   "session": "medleydb/LittleTybee_TheAlchemist",
-   "track": "LittleTybee_TheAlchemist_RAW_08_04.wav",
    "reason": "electric-guitar raw track that is neither an established DI nor its amp track"
   },
   {
@@ -2430,7 +2508,8 @@
    "gain_class_di_to_amp": "clean",
    "reasons": [
     "no acoustic path between the tracks (lag 1 samples): DI and microphone cannot be told apart"
-   ]
+   ],
+   "labelled_part": "medleydb-portstwillow-stayeven-raw-05-01-labelled"
   },
   {
    "session_key": "medleydb/PortStWillow_StayEven",
@@ -2443,7 +2522,8 @@
    "gain_class_di_to_amp": "crunch",
    "reasons": [
     "reads crunch, but the earlier track's 1-s crest is only -1.25 dB above the later's (< 3): not shown to be a DI"
-   ]
+   ],
+   "labelled_part": "medleydb-portstwillow-stayeven-raw-06-01-labelled"
   },
   {
    "session_key": "medleydb/PortStWillow_StayEven",
@@ -3093,7 +3173,8 @@
    "gain_class_di_to_amp": "crunch",
    "reasons": [
     "reads crunch, but the earlier track's 1-s crest is only 1.59 dB above the later's (< 3): not shown to be a DI"
-   ]
+   ],
+   "labelled_part": "medleydb-littletybee-thealchemist-raw-08-02-labelled"
   },
   {
    "session_key": "medleydb/LittleTybee_TheAlchemist",
@@ -5000,24 +5081,48 @@
  ],
  "counts": {
   "songs": 73,
-  "declared_parts": 7,
-  "excluded": 7,
-  "kept": 0,
-  "in_scope": 0,
-  "report_only": 0,
-  "by_band": {},
-  "by_gain_class": {},
-  "by_band_gain_class": {},
-  "by_gain_class_crop": {},
-  "onset_check": {},
+  "declared_parts": 13,
+  "excluded": 8,
+  "kept": 5,
+  "in_scope": 3,
+  "report_only": 2,
+  "by_band": {
+   "Big Troubles": 1,
+   "Little Tybee": 1,
+   "Port St Willow": 2,
+   "Purling Hiss": 1
+  },
+  "by_gain_class": {
+   "crunch": 3,
+   "high-gain": 2
+  },
+  "by_band_gain_class": {
+   "Big Troubles/high-gain": 1,
+   "Little Tybee/crunch": 1,
+   "Port St Willow/crunch": 2,
+   "Purling Hiss/high-gain": 1
+  },
+  "by_gain_class_crop": {
+   "clean": 2,
+   "crunch": 1,
+   "high-gain": 2
+  },
+  "onset_check": {
+   "agrees": 4,
+   "unclear": 1
+  },
   "sessions_by_status": {
-   "DI candidates under the first DI-role rule; none established (amendment 1)": 6,
-   "no pair establishes a DI": 34,
+   "DI candidates under the first DI-role rule; none established (amendment 1)": 4,
+   "labelled DI (amendment 2)": 4,
+   "no pair establishes a DI": 32,
    "no same-take pair": 16,
    "one electric-guitar raw track: no pair to test": 17
   },
   "role_failures": 232,
-  "separator_trained_on": 35
+  "separator_trained_on": 35,
+  "labelled_parts": 6,
+  "kept_separator_trained_on": 3,
+  "kept_stem_test_usable": 2
  },
  "sessions": [
   {
@@ -5124,6 +5229,7 @@
     {
      "part": "RAW_05_02",
      "di": "audio/V1/AimeeNorwich_Flying/AimeeNorwich_Flying_RAW/AimeeNorwich_Flying_RAW_05_02.wav",
+     "di_role_source": "first DI-role rule (not established, amendment 1)",
      "di_clip_runs": 0,
      "clipped": false
     }
@@ -5326,7 +5432,7 @@
    "has_bleed": "no",
    "mix": "BigTroubles_Phantom_MIX.wav",
    "mix_on_disk": true,
-   "status": "DI candidates under the first DI-role rule; none established (amendment 1)",
+   "status": "labelled DI (amendment 2)",
    "eg_raw_tracks": 21,
    "split": "held_out",
    "fold": null,
@@ -5337,17 +5443,35 @@
     "musdb18_validation": false,
     "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
    },
-   "kept_parts": 0,
+   "kept_parts": 1,
    "dis": [
     {
      "part": "RAW_03_08",
      "di": "audio/V1/BigTroubles_Phantom/BigTroubles_Phantom_RAW/BigTroubles_Phantom_RAW_03_08.wav",
+     "di_role_source": "first DI-role rule (not established, amendment 1)",
      "di_clip_runs": 0,
      "clipped": false
     },
     {
      "part": "RAW_05_01",
      "di": "audio/V1/BigTroubles_Phantom/BigTroubles_Phantom_RAW/BigTroubles_Phantom_RAW_05_01.wav",
+     "di_role_source": "first DI-role rule (not established, amendment 1)",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "RAW_05_01",
+     "di": "audio/V1/BigTroubles_Phantom/BigTroubles_Phantom_RAW/BigTroubles_Phantom_RAW_05_01.wav",
+     "di_role_source": "labelled by ear (amendment 2)",
+     "slug": "medleydb-bigtroubles-phantom-raw-05-01-labelled",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "RAW_03_08",
+     "di": "audio/V1/BigTroubles_Phantom/BigTroubles_Phantom_RAW/BigTroubles_Phantom_RAW_03_08.wav",
+     "di_role_source": "labelled by ear (amendment 2)",
+     "slug": "medleydb-bigtroubles-phantom-raw-03-08-labelled",
      "di_clip_runs": 0,
      "clipped": false
     }
@@ -6405,7 +6529,7 @@
    "has_bleed": "no",
    "mix": "PortStWillow_StayEven_MIX.wav",
    "mix_on_disk": true,
-   "status": "no pair establishes a DI",
+   "status": "labelled DI (amendment 2)",
    "eg_raw_tracks": 9,
    "split": "held_out",
    "fold": null,
@@ -6416,8 +6540,25 @@
     "musdb18_validation": false,
     "note": "HTDemucs (learn/, the repo's separator) was trained on MUSDB18-HQ's train subset; a stem-based test excludes or reports this song"
    },
-   "kept_parts": 0,
-   "dis": []
+   "kept_parts": 2,
+   "dis": [
+    {
+     "part": "RAW_06_01",
+     "di": "audio/V1/PortStWillow_StayEven/PortStWillow_StayEven_RAW/PortStWillow_StayEven_RAW_06_01.wav",
+     "di_role_source": "labelled by ear (amendment 2)",
+     "slug": "medleydb-portstwillow-stayeven-raw-06-01-labelled",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "RAW_05_01",
+     "di": "audio/V1/PortStWillow_StayEven/PortStWillow_StayEven_RAW/PortStWillow_StayEven_RAW_05_01.wav",
+     "di_role_source": "labelled by ear (amendment 2)",
+     "slug": "medleydb-portstwillow-stayeven-raw-05-01-labelled",
+     "di_clip_runs": 0,
+     "clipped": false
+    }
+   ]
   },
   {
    "key": "medleydb/PurlingHiss_Lolita",
@@ -6441,16 +6582,25 @@
    "has_bleed": "yes",
    "mix": "PurlingHiss_Lolita_MIX.wav",
    "mix_on_disk": true,
-   "status": "DI candidates under the first DI-role rule; none established (amendment 1)",
+   "status": "labelled DI (amendment 2)",
    "eg_raw_tracks": 9,
    "split": "held_out",
    "fold": null,
    "separator_trained_on": null,
-   "kept_parts": 0,
+   "kept_parts": 1,
    "dis": [
     {
      "part": "RAW_03_06",
      "di": "audio/V1/PurlingHiss_Lolita/PurlingHiss_Lolita_RAW/PurlingHiss_Lolita_RAW_03_06.wav",
+     "di_role_source": "first DI-role rule (not established, amendment 1)",
+     "di_clip_runs": 0,
+     "clipped": false
+    },
+    {
+     "part": "RAW_03_06",
+     "di": "audio/V1/PurlingHiss_Lolita/PurlingHiss_Lolita_RAW/PurlingHiss_Lolita_RAW_03_06.wav",
+     "di_role_source": "labelled by ear (amendment 2)",
+     "slug": "medleydb-purlinghiss-lolita-raw-03-06-labelled",
      "di_clip_runs": 0,
      "clipped": false
     }
@@ -6566,6 +6716,7 @@
     {
      "part": "RAW_01_04",
      "di": "audio/V1/StevenClark_Bounty/StevenClark_Bounty_RAW/StevenClark_Bounty_RAW_01_04.wav",
+     "di_role_source": "first DI-role rule (not established, amendment 1)",
      "di_clip_runs": 0,
      "clipped": false
     }
@@ -6828,6 +6979,7 @@
     {
      "part": "RAW_04_01",
      "di": "audio/V2/DahkaBand_SoldierMan/DahkaBand_SoldierMan_RAW/DahkaBand_SoldierMan_RAW_04_01.wav",
+     "di_role_source": "first DI-role rule (not established, amendment 1)",
      "di_clip_runs": 0,
      "clipped": false
     }
@@ -6863,6 +7015,7 @@
     {
      "part": "RAW_09_02",
      "di": "audio/V2/DeadMilkmen_PrisonersCinema/DeadMilkmen_PrisonersCinema_RAW/DeadMilkmen_PrisonersCinema_RAW_09_02.wav",
+     "di_role_source": "first DI-role rule (not established, amendment 1)",
      "di_clip_runs": 0,
      "clipped": false
     }
@@ -6944,13 +7097,22 @@
    "has_bleed": "no",
    "mix": "LittleTybee_TheAlchemist_MIX.wav",
    "mix_on_disk": true,
-   "status": "no pair establishes a DI",
+   "status": "labelled DI (amendment 2)",
    "eg_raw_tracks": 10,
    "split": "held_out",
    "fold": null,
    "separator_trained_on": null,
-   "kept_parts": 0,
-   "dis": []
+   "kept_parts": 1,
+   "dis": [
+    {
+     "part": "RAW_08_02",
+     "di": "audio/V2/LittleTybee_TheAlchemist/LittleTybee_TheAlchemist_RAW/LittleTybee_TheAlchemist_RAW_08_02.wav",
+     "di_role_source": "labelled by ear (amendment 2)",
+     "slug": "medleydb-littletybee-thealchemist-raw-08-02-labelled",
+     "di_clip_runs": 0,
+     "clipped": false
+    }
+   ]
   },
   {
    "key": "medleydb/MidnightBlue_HuntingSeason",
@@ -7429,7 +7591,412 @@
    "dis": []
   }
  ],
- "parts": [],
+ "parts": [
+  {
+   "slug": "medleydb-bigtroubles-phantom-raw-05-01-labelled",
+   "band": "Big Troubles",
+   "song": "BigTroubles_Phantom",
+   "part": "RAW_05_01",
+   "tone": "RAW_05_01",
+   "split": "held_out",
+   "fold": null,
+   "scope": "report_only",
+   "session_key": "medleydb/BigTroubles_Phantom",
+   "source": "medleydb",
+   "medleydb_version_dir": "V1",
+   "origin": "Weathervane Music",
+   "has_bleed": "no",
+   "separator_trained_on": true,
+   "stem_test": "report-only in a stem-based test: the song is in MUSDB18's train subset, on which the separator (HTDemucs) was trained",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": -0.049,
+   "nonlinear_to_linear_db": 2.35,
+   "lag_samples": 67,
+   "judge_lag_samples": 15,
+   "lag_samples_native": 62,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "BigTroubles_Phantom_RAW_05_02.wav",
+   "alternates": [
+    "BigTroubles_Phantom_RAW_05_04.wav"
+   ],
+   "di": "BigTroubles_Phantom_RAW_05_01.wav",
+   "di_inferred": false,
+   "di_label": "distorted electric guitar",
+   "reference_label": "distorted electric guitar",
+   "di_role": {
+    "source": "labelled by ear (amendment 2)",
+    "question": 49,
+    "answer": "A",
+    "di_crest1s_db": 19.03,
+    "amp_crest1s_db": 10.96,
+    "crest1s_drop_db": 8.1,
+    "hf_advantage_db": -6.38
+   },
+   "waveform": {
+    "windows": 13,
+    "passing_windows": 13,
+    "median_peak_to_sidelobe": 6.79,
+    "precise_fraction": 1.0,
+    "polarity_agreement": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/BigTroubles_Phantom.json",
+    "pairs_sha256": "8072e777c45d338f626cf1a1cf66d4ffa67d3f2909c97aec8ee735b99c86ae6c",
+    "label": "validation-result.json: first_round.labels[question=49]"
+   },
+   "onset_check": {
+    "result": "unclear",
+    "onset_lag_samples": 452,
+    "runner_up": 0.995
+   },
+   "marks": [],
+   "inventory_flags": [],
+   "licence": "medleydb",
+   "crop": {
+    "excerpt_start_s": 14.5,
+    "di_activity": 1.0,
+    "mix_absent": false,
+    "di_sha256": "aa6266359ca6b69d8fb254ffa698accc0d29809ea40571fb9d3c638fdb375a41",
+    "reference_sha256": "493c09e103e8db07554ac212297057b20328d5332f73f428bd4fd1c5ac9314fe",
+    "mix_sha256": "5688c2ebc7493f659825f023043f07e4ee08c5605c421e51147c92a287845af6",
+    "record_sha256": "c17d30d9ef5271090a3df65bfe7df02b97b5928111c086f3215293b93fb0a910"
+   }
+  },
+  {
+   "slug": "medleydb-littletybee-thealchemist-raw-08-02-labelled",
+   "band": "Little Tybee",
+   "song": "LittleTybee_TheAlchemist",
+   "part": "RAW_08_02",
+   "tone": "RAW_08_02",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "medleydb/LittleTybee_TheAlchemist",
+   "source": "medleydb",
+   "medleydb_version_dir": "V2",
+   "origin": "Weathervane Music",
+   "has_bleed": "no",
+   "separator_trained_on": false,
+   "stem_test": "usable",
+   "gain_class": "crunch",
+   "gain_class_crop": "crunch",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.192,
+   "nonlinear_to_linear_db": 0.52,
+   "lag_samples": 230,
+   "judge_lag_samples": 178,
+   "lag_samples_native": 211,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "LittleTybee_TheAlchemist_RAW_08_03.wav",
+   "alternates": [
+    "LittleTybee_TheAlchemist_RAW_08_04.wav"
+   ],
+   "di": "LittleTybee_TheAlchemist_RAW_08_02.wav",
+   "di_inferred": false,
+   "di_label": "clean electric guitar",
+   "reference_label": "clean electric guitar",
+   "di_role": {
+    "source": "labelled by ear (amendment 2)",
+    "question": 61,
+    "answer": "C",
+    "di_crest1s_db": 11.03,
+    "amp_crest1s_db": 11.05,
+    "crest1s_drop_db": 1.59,
+    "hf_advantage_db": 7.72
+   },
+   "waveform": {
+    "windows": 4,
+    "passing_windows": 4,
+    "median_peak_to_sidelobe": 5.123,
+    "precise_fraction": 1.0,
+    "polarity_agreement": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/LittleTybee_TheAlchemist.json",
+    "pairs_sha256": "0f7f6d80c603937524d6dd8c5191c23ba1f47d5ceb89cfc649377ac83c856fac",
+    "label": "validation-result.json: first_round.labels[question=61]"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 220,
+    "runner_up": 0.747
+   },
+   "marks": [
+    "polarity_inverted"
+   ],
+   "inventory_flags": [
+    "amp polarity inverted relative to the DI"
+   ],
+   "licence": "medleydb",
+   "crop": {
+    "excerpt_start_s": 116.0,
+    "di_activity": 0.9573,
+    "mix_absent": false,
+    "di_sha256": "1349c183d5a8c4164d667162630390b2ed9540710db2b7ecfe1f5be354254c42",
+    "reference_sha256": "627a0f1ce7c095bbc771b84bf0512ac900fe06640eb4382154f7a114858bf68d",
+    "mix_sha256": "f0f636ccb7d587b55f31b9f3b1a0748bf53bace5a232e52a4392330479d8629d",
+    "record_sha256": "36dc02159e83c2c0b6effe8d00f19da92d3e04d8b61f7e66399bebd251bbf624"
+   }
+  },
+  {
+   "slug": "medleydb-portstwillow-stayeven-raw-05-01-labelled",
+   "band": "Port St Willow",
+   "song": "PortStWillow_StayEven",
+   "part": "RAW_05_01",
+   "tone": "RAW_05_01",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "medleydb/PortStWillow_StayEven",
+   "source": "medleydb",
+   "medleydb_version_dir": "V1",
+   "origin": "Weathervane Music",
+   "has_bleed": "no",
+   "separator_trained_on": true,
+   "stem_test": "report-only in a stem-based test: the song is in MUSDB18's train subset, on which the separator (HTDemucs) was trained",
+   "gain_class": "crunch",
+   "gain_class_crop": "clean",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "level slope near a class boundary",
+    "non-linear share within 2 dB of the clean boundary"
+   ],
+   "clean_vs_driven": "uncertain",
+   "level_slope": 0.45,
+   "nonlinear_to_linear_db": -5.15,
+   "lag_samples": -1,
+   "judge_lag_samples": -53,
+   "lag_samples_native": -1,
+   "native_rate": 44100,
+   "polarity": 1,
+   "pairing_test": "waveform",
+   "reference": "PortStWillow_StayEven_RAW_05_02.wav",
+   "alternates": [],
+   "di": "PortStWillow_StayEven_RAW_05_01.wav",
+   "di_inferred": false,
+   "di_label": "clean electric guitar",
+   "reference_label": "distorted electric guitar",
+   "di_role": {
+    "source": "labelled by ear (amendment 2)",
+    "question": 64,
+    "answer": "B",
+    "di_crest1s_db": 12.15,
+    "amp_crest1s_db": 10.13,
+    "crest1s_drop_db": 2.02,
+    "hf_advantage_db": -8.61
+   },
+   "waveform": {
+    "windows": 23,
+    "passing_windows": 23,
+    "median_peak_to_sidelobe": 4.496,
+    "precise_fraction": 1.0,
+    "polarity_agreement": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/PortStWillow_StayEven.json",
+    "pairs_sha256": "65862e65ae534b326ebbc40c2423dd15ad80009ad5678430b3164735d04e3820",
+    "label": "validation-result.json: first_round.labels[question=64]"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": -4,
+    "runner_up": 0.21
+   },
+   "marks": [
+    "amp_earlier_than_di"
+   ],
+   "inventory_flags": [
+    "amp track earlier than the DI"
+   ],
+   "licence": "medleydb",
+   "crop": {
+    "excerpt_start_s": 291.5,
+    "di_activity": 1.0,
+    "mix_absent": false,
+    "di_sha256": "f81b47e21c0adc469c763c84d9a2d6c103adc69f1715c184e2dcf3affe46b844",
+    "reference_sha256": "1757256092e38de54291f76fe020438dd4d3f3f1e0bd7d006cc71d772aeecc73",
+    "mix_sha256": "bab48bbf864f95c1fefff258c6d90709ff0a67011bca109423bd83f046f37a17",
+    "record_sha256": "64c09364c1815b99a079e4b365e71fd9ea0e39f194c9d7269aafa269647d9008"
+   }
+  },
+  {
+   "slug": "medleydb-portstwillow-stayeven-raw-06-01-labelled",
+   "band": "Port St Willow",
+   "song": "PortStWillow_StayEven",
+   "part": "RAW_06_01",
+   "tone": "RAW_06_01",
+   "split": "held_out",
+   "fold": null,
+   "scope": "in_scope",
+   "session_key": "medleydb/PortStWillow_StayEven",
+   "source": "medleydb",
+   "medleydb_version_dir": "V1",
+   "origin": "Weathervane Music",
+   "has_bleed": "no",
+   "separator_trained_on": true,
+   "stem_test": "report-only in a stem-based test: the song is in MUSDB18's train subset, on which the separator (HTDemucs) was trained",
+   "gain_class": "crunch",
+   "gain_class_crop": "clean",
+   "gain_confidence": "low",
+   "gain_confidence_reasons": [
+    "high non-linear share with little compression: effects, bleed or noise rather than gain",
+    "uncompressed but mostly non-linear: effects, bleed or noise"
+   ],
+   "clean_vs_driven": "uncertain",
+   "level_slope": 0.817,
+   "nonlinear_to_linear_db": 8.09,
+   "lag_samples": -3,
+   "judge_lag_samples": -55,
+   "lag_samples_native": -3,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "envelope+waveform",
+   "reference": "PortStWillow_StayEven_RAW_06_02.wav",
+   "alternates": [],
+   "di": "PortStWillow_StayEven_RAW_06_01.wav",
+   "di_inferred": false,
+   "di_label": "clean electric guitar",
+   "reference_label": "clean electric guitar",
+   "di_role": {
+    "source": "labelled by ear (amendment 2)",
+    "question": 51,
+    "answer": "A",
+    "di_crest1s_db": 11.56,
+    "amp_crest1s_db": 10.29,
+    "crest1s_drop_db": 1.25,
+    "hf_advantage_db": -5.68
+   },
+   "waveform": {
+    "windows": 18,
+    "passing_windows": 18,
+    "median_peak_to_sidelobe": 4.41,
+    "precise_fraction": 1.0,
+    "polarity_agreement": 0.222
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/PortStWillow_StayEven.json",
+    "pairs_sha256": "65862e65ae534b326ebbc40c2423dd15ad80009ad5678430b3164735d04e3820",
+    "label": "validation-result.json: first_round.labels[question=51]"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": -4,
+    "runner_up": 0.302
+   },
+   "marks": [
+    "effects_or_bleed",
+    "amp_earlier_than_di",
+    "polarity_inverted",
+    "polarity_uncertain"
+   ],
+   "inventory_flags": [
+    "amp polarity inverted relative to the DI",
+    "polarity uncertain: 22% of windows agree",
+    "amp track earlier than the DI",
+    "effects_or_bleed"
+   ],
+   "licence": "medleydb",
+   "crop": {
+    "excerpt_start_s": 101.0,
+    "di_activity": 1.0,
+    "mix_absent": false,
+    "di_sha256": "29cc26c44434edc6a9e0e3512e043b25d2a19486a5c549e8ac1663922cce98e4",
+    "reference_sha256": "6b9cbf3b993e89d761143f996fa86cd204c67fec86721f9d9d8a622ec5c50a78",
+    "mix_sha256": "b95ce24c12daaefb5f899d81ac6830e1aadbd6d2250fe1fa69c461380f5f66c7",
+    "record_sha256": "8e6cc7d5c873bfca95fff41d8ee3751142a6033ea328556b4c5016a4eeef966d"
+   }
+  },
+  {
+   "slug": "medleydb-purlinghiss-lolita-raw-03-06-labelled",
+   "band": "Purling Hiss",
+   "song": "PurlingHiss_Lolita",
+   "part": "RAW_03_06",
+   "tone": "RAW_03_06",
+   "split": "held_out",
+   "fold": null,
+   "scope": "report_only",
+   "session_key": "medleydb/PurlingHiss_Lolita",
+   "source": "medleydb",
+   "medleydb_version_dir": "V1",
+   "origin": "Weathervane Music",
+   "has_bleed": "yes",
+   "separator_trained_on": false,
+   "stem_test": "usable",
+   "gain_class": "high-gain",
+   "gain_class_crop": "high-gain",
+   "gain_confidence": "normal",
+   "gain_confidence_reasons": [],
+   "clean_vs_driven": "driven",
+   "level_slope": 0.022,
+   "nonlinear_to_linear_db": 6.1,
+   "lag_samples": 32,
+   "judge_lag_samples": -20,
+   "lag_samples_native": 29,
+   "native_rate": 44100,
+   "polarity": -1,
+   "pairing_test": "waveform",
+   "reference": "PurlingHiss_Lolita_RAW_03_05.wav",
+   "alternates": [],
+   "di": "PurlingHiss_Lolita_RAW_03_06.wav",
+   "di_inferred": false,
+   "di_label": "clean electric guitar",
+   "reference_label": "distorted electric guitar",
+   "di_role": {
+    "source": "labelled by ear (amendment 2)",
+    "question": 29,
+    "answer": "B",
+    "di_crest1s_db": 15.98,
+    "amp_crest1s_db": 12.16,
+    "crest1s_drop_db": 3.85,
+    "hf_advantage_db": -21.33
+   },
+   "waveform": {
+    "windows": 24,
+    "passing_windows": 24,
+    "median_peak_to_sidelobe": 3.209,
+    "precise_fraction": 1.0,
+    "polarity_agreement": 1.0
+   },
+   "evidence": {
+    "pairs": "_tools/pairs/PurlingHiss_Lolita.json",
+    "pairs_sha256": "3f89dd9c08ba74af34b8d4b61629ff0377eddd48af240f2f09b1db06c2db661f",
+    "label": "validation-result.json: first_round.labels[question=29]"
+   },
+   "onset_check": {
+    "result": "agrees",
+    "onset_lag_samples": 76,
+    "runner_up": 0.463
+   },
+   "marks": [
+    "polarity_inverted",
+    "has_bleed"
+   ],
+   "inventory_flags": [
+    "amp polarity inverted relative to the DI",
+    "song tagged has_bleed by MedleyDB"
+   ],
+   "licence": "medleydb",
+   "crop": {
+    "excerpt_start_s": 203.5,
+    "di_activity": 1.0,
+    "mix_absent": false,
+    "di_sha256": "6c7c258964b1ed3dfd6efcb4347e3eec606b4ed4ec3adc9aca98a7eeed03430a",
+    "reference_sha256": "67ce806a03e40a13ca3e3a2cec80279402123acfd78dde2ff1a51569fbfea161",
+    "mix_sha256": "cb34f944412bedd5c39be41d949d56dd52f3966c4c9eeb87fd9e75abfb7ca9d4",
+    "record_sha256": "718e9b23159407e13869415fc296c2914265041f1cbfbca088d257afa66389a3"
+   }
+  }
+ ],
  "excluded": [
   {
    "session_key": "medleydb/AimeeNorwich_Flying",
@@ -7443,7 +8010,7 @@
    "di_label": "clean electric guitar",
    "reference_label": "clean electric guitar",
    "reasons": [
-    "DI role not established: no DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md); set 6 is unusable for DI-based tests"
+    "DI role not established: no automatic DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md)"
    ]
   },
   {
@@ -7455,11 +8022,30 @@
    "slug": "medleydb-bigtroubles-phantom-raw-03-08",
    "crop_record_sha256": "cae941795b7d067e8261e902d8a0ddceb6ee9bbd474998f8a3fb339e4a6d8410",
    "crop_status": "superseded (amendment 1): held out, not a part",
+   "superseded_by": "medleydb-bigtroubles-phantom-raw-03-08-labelled",
    "di_label": "clean electric guitar",
    "reference_label": "clean electric guitar",
    "reasons": [
     "two lag clusters",
-    "DI role not established: no DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md); set 6 is unusable for DI-based tests"
+    "DI role not established: no automatic DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md)"
+   ]
+  },
+  {
+   "session_key": "medleydb/BigTroubles_Phantom",
+   "band": "Big Troubles",
+   "song": "BigTroubles_Phantom",
+   "source": "medleydb",
+   "part": "RAW_03_08",
+   "slug": "medleydb-bigtroubles-phantom-raw-03-08-labelled",
+   "crop_record_sha256": "45a3cc12f6fe5c6b631761f73abc41731b36125da41ae8698470fec9de84206b",
+   "di_role_source": "labelled by ear (amendment 2)",
+   "di": "BigTroubles_Phantom_RAW_03_08.wav",
+   "reference": "BigTroubles_Phantom_RAW_03_09.wav",
+   "gain_class": "high-gain",
+   "di_label": "clean electric guitar",
+   "reference_label": "clean electric guitar",
+   "reasons": [
+    "two lag clusters"
    ]
   },
   {
@@ -7471,10 +8057,11 @@
    "slug": "medleydb-bigtroubles-phantom-raw-05-01",
    "crop_record_sha256": "27aef86a1fcf42f9cba56876457d944ac237bd7c6fbb6454d13b1cfdb5828989",
    "crop_status": "superseded (amendment 1): held out, not a part",
+   "superseded_by": "medleydb-bigtroubles-phantom-raw-05-01-labelled",
    "di_label": "distorted electric guitar",
    "reference_label": "distorted electric guitar",
    "reasons": [
-    "DI role not established: no DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md); set 6 is unusable for DI-based tests"
+    "DI role not established: no automatic DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md)"
    ]
   },
   {
@@ -7489,7 +8076,7 @@
    "di_label": "clean electric guitar",
    "reference_label": "clean electric guitar",
    "reasons": [
-    "DI role not established: no DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md); set 6 is unusable for DI-based tests"
+    "DI role not established: no automatic DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md)"
    ]
   },
   {
@@ -7505,7 +8092,7 @@
    "reference_label": "distorted electric guitar",
    "reasons": [
     "two lag clusters",
-    "DI role not established: no DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md); set 6 is unusable for DI-based tests"
+    "DI role not established: no automatic DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md)"
    ]
   },
   {
@@ -7517,10 +8104,11 @@
    "slug": "medleydb-purlinghiss-lolita-raw-03-06",
    "crop_record_sha256": "61cf50a6bc918cb3db0d0b93d3b98057f8a7d46b9419285318a51ddd02d28956",
    "crop_status": "superseded (amendment 1): held out, not a part",
+   "superseded_by": "medleydb-purlinghiss-lolita-raw-03-06-labelled",
    "di_label": "clean electric guitar",
    "reference_label": "distorted electric guitar",
    "reasons": [
-    "DI role not established: no DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md); set 6 is unusable for DI-based tests"
+    "DI role not established: no automatic DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md)"
    ]
   },
   {
@@ -7535,7 +8123,7 @@
    "di_label": "electric bass",
    "reference_label": "electric bass",
    "reasons": [
-    "DI role not established: no DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md); set 6 is unusable for DI-based tests",
+    "DI role not established: no automatic DI-role rule met its development calibration bar (amendment 1, docs/validation-set6.md)",
     "MedleyDB labels the track 'electric bass', not guitar"
    ]
   }

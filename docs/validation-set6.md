@@ -4,25 +4,139 @@ Declared 2026-10-12, under set 5's rules ([validation-set5.md](validation-set5.m
 one addition. MedleyDB names no DI, so a declared **DI-role rule** says which track of a
 same-take pair is the DI.
 
-**Status after amendment 1 (2026-10-13): set 6 is unusable for DI-based tests.**
+**Status after amendment 2 (2026-10-13): set 6 holds 5 DI parts, from DIs labelled by ear.**
 
-- **It holds no DI part.** No DI-role rule kept most real DIs with at most 10% false
-  accepts on development data (amendment 1, below).
-- **All 7 parts of the first declaration are excluded.** Their crops stay on disk, held
-  out and superseded.
+- **3 crunch parts are in scope,** from 2 bands: Little Tybee (1) and Port St Willow (2).
+  2 high-gain parts are report-only: Big Troubles and Purling Hiss.
+- **For a stem-based test, only Little Tybee is in scope.** Port St Willow and Big Troubles
+  are in MUSDB18's train subset, which the separator was trained on, so they are
+  report-only there.
+- **No clean DI is established.** No automatic DI-role rule held up (amendment 1), and the
+  ear-labelling was validated on crunch and high-gain only.
+- **The first declaration's 7 parts stay excluded.** Their crops stay on disk, held out and
+  superseded.
 - **Steven Clark – Bounty** is excluded on a second ground too: MedleyDB labels both its
   tracks "electric bass".
-- **At most a song-only use** (the released mixes, with no DI) can be declared later. It
-  needs its own crop rule.
-- **35 of the 73 songs are in MUSDB18's train subset** (section "MUSDB18 overlap"). HTDemucs
-  was trained on that subset, so a stem-based test must exclude or report those songs.
+- **35 of the 73 songs are in MUSDB18's train subset** (section "MUSDB18 overlap").
 
-The sections after the amendment describe the first declaration. Where they speak of kept
-parts, those parts are now excluded.
+Amendment 2 comes first below, then amendment 1. The sections after them describe the first
+declaration. Where they speak of kept parts, those parts are now excluded.
 
 **Every band is held out, and the set is unused.** Nothing may train, tune or choose on
 it, and nobody may listen to it, until a confirmation is declared in a committed file.
 That use is then added to `held_out_uses`, which is empty.
+
+## Amendment 2 (2026-10-13): DIs labelled by ear
+
+The user labelled MedleyDB's DIs by ear, under a plan declared before any page was built
+([set6-di-labelling-plan.md](set6-di-labelling-plan.md)). This amendment applies that plan's
+outcome. It changes no rule of set 5's: same take, exclusions, crop rule 2, lag, scope.
+
+**The labelling, in two rounds.**
+
+1. **First round:** 74 questions, one per same-take group of electric-guitar raw tracks, plus
+   6 hidden checks with a known DI. Clips were 6 s, at one loudness, in shuffled order.
+   - The key (`78e1fabc…`) and page (`f0317cae…`) hashes were committed before the page was
+     sent (`set6-di-labelling-key.sha256`).
+   - The user answered only when sure: 8 letters, the rest "none". Answers:
+     `answers-2026-10-13.txt` (SHA-256 `c818bf21…`).
+   - Only 1 of the 6 hidden checks was answered (right). The declared rule needed 5 of 6, so
+     **the round alone was not usable.**
+2. **Validation round,** declared before it was built: 14 development questions, 10 with a
+   known DI (6 crunch, 4 high-gain) and 4 decoys with no DI.
+   - Key `21d47a65…` and page `cb9a4426…`, committed before the page was sent
+     (`set6-di-labelling-validation-key.sha256`). Answers SHA-256 `9e8c99e7…`.
+   - **The rule:** at least 8 confident answers, at least 90% of them right, and a letter on a
+     decoy counts as wrong. If it passes, the first round's confident labels count, but only
+     for groups that read crunch or high-gain.
+   - **Result: it passed.** 10 confident answers, 10 right, and "none" on all 4 decoys.
+
+The scored result is `~/ndsp-presets/listening/di-labelling/validation-result.json`
+(SHA-256 `8aba2545…`), written by `learn/build_di_labelling.py score-validation`.
+
+**What counts.** The scorer took each first-round label and:
+
+- chose the reference: the labelled DI's same-take partner with the smallest lag, then the
+  higher peak-to-sidelobe ratio (the plan's rule; MedleyDB names no amp or microphone);
+- classed the pair with set 3's classifier (amp against labelled DI, whole tracks), as for
+  sets 4 and 5.
+
+7 MedleyDB labels were confident. **6 groups from 4 songs count.** Alexander Ross – Goodbye
+Bolero (question 68) reads clean, so it is left out.
+
+**The parts.** Each counted group is one part. The DI is the labelled track, and the
+reference is the scorer's partner.
+
+- The lag, polarity and same-take evidence are the stored pair's (`_tools/pairs/<song>.json`).
+  The build checks that they give the scorer's reference and lag.
+- `lag_samples` is that lag at 48 kHz, and `judge_lag_samples = lag_samples − 52`, as sets 4
+  and 5.
+- The gain class is the scorer's. The build re-runs set 3's classifier on the stored measures
+  and checks that it agrees.
+- Set 5's exclusions apply unchanged.
+- The band is MedleyDB's artist.
+- Slugs end in `-labelled`, so the first declaration's crops keep their names.
+
+| part (song, DI → reference) | class (session / crop) | scope | lag (48 kHz) | judge lag | polarity | windows | MUSDB18 | notes |
+|---|---|---|---|---|---|---|---|---|
+| Little Tybee – The Alchemist, RAW_08_02 → 08_03 | crunch / crunch | in | 230 | 178 | −1 | 4 | no | alternate 08_04; amp 4.8 ms later |
+| Port St Willow – Stay Even, RAW_06_01 → 06_02 | crunch (low) / clean | in | −3 | −55 | −1, uncertain | 18 | train | amp track earlier; `effects_or_bleed` |
+| Port St Willow – Stay Even, RAW_05_01 → 05_02 | crunch (low) / clean | in | −1 | −53 | +1 | 23 | train | amp track earlier; near the clean boundary |
+| Big Troubles – Phantom, RAW_05_01 → 05_02 | high-gain / high-gain | report-only | 67 | 15 | +1 | 13 | train | alternate 05_04; onset unclear |
+| Purling Hiss – Lolita, RAW_03_06 → 03_05 | high-gain / high-gain | report-only | 32 | −20 | −1 | 24 | no | `has_bleed` |
+
+**Excluded (1):** Big Troubles – Phantom, RAW_03_08 → 03_09 (high-gain), for two lag clusters.
+Only 60% of its windows are within 0.25 ms, and polarity agrees on only 60%. This is set 5's
+standing rule, and the first declaration excluded the same pair for the same reason. Its crop
+was cut, as set 5 cut crops for its excluded parts.
+
+**The crops.** These were cut by crop rule 2 (the 10 s where the DI plays most) into
+`~/ndsp-presets/references/validation-crops-set6/<slug>/`. Each crop has:
+
+- `di.wav`, `reference.wav` and `mix.wav` (the same 10 s of the song's released mix), all
+  48 kHz mono float32;
+- a record marked `di_role_source: "labelled"`.
+
+Crop starts: Little Tybee 116.0 s (the DI plays in 96% of it), Port St Willow 101.0 s and
+291.5 s, Big Troubles 14.5 s, Purling Hiss 203.5 s, and the excluded Big Troubles part
+113.0 s. The other crops have the DI playing throughout. Three parts have the same DI and
+reference as a first-declaration part (Big Troubles ×2, Purling Hiss). Their new crops hold
+the same samples as the superseded ones; only the WAV header differs. The superseded entries
+point to their replacement (`superseded_by`).
+
+**Disclosures and caveats.**
+
+- **Port St Willow's two parts are one band,** from one song. Weighted by band (set 3's
+  amendment 4), they count as one. The song is in MUSDB18's train subset, so both parts are
+  report-only for a stem-based test (`stem_test` in the JSON; `set6.parts(stem_test=True)`).
+- **Port St Willow is the weakest evidence on the crunch side.**
+  - Both parts read crunch with low confidence, and their crops read clean.
+  - RAW_05_01 is within 2 dB of the clean boundary.
+  - RAW_06_01 carries `effects_or_bleed`, and its polarity is uncertain (22% of windows agree).
+  - In both, the amp track is 1–3 samples *earlier* than the labelled DI, so no acoustic path
+    shows. Set 5 had two such parts (`amp_earlier_than_di`).
+  - The first DI-role rule took RAW_06_02 as the DI (the earlier track). The user labelled
+    the other one.
+- **Little Tybee is the only in-scope part for a stem-based test.** Its waveform test passes
+  on only 4 windows (the minimum is 3). MedleyDB labels both of its tracks "clean electric
+  guitar".
+- **Big Troubles' DI** (RAW_05_01) is labelled "distorted electric guitar" by MedleyDB.
+- **A new descriptive mark,** `polarity_uncertain`: polarity agrees on fewer than 80% of the
+  waveform windows.
+- **What the building agent saw:**
+  - the labelling result (labels, gain measures and classes) and the stored pair statistics;
+  - the crop records: start, DI activity, onset cross-check, crop gain class and loudness;
+  - an equality check of the old and new crop samples.
+- **Not done:** nothing was rendered, judged or measured against a preset, nothing was
+  separated, and nothing was listened to. The user heard only the labelling clips, to name a
+  track's role.
+- **The applying code** came after the result was seen, as in amendment 1. The rules it
+  applies were all declared before: the plan, set 5's rules, and the scorer's reference and
+  class.
+
+**Every band stays held out and unused.** `held_out_uses` is empty.
+
+**Next, per the plan:** recompute the deciding test's power with set 5 plus set 6.
 
 ## Amendment 1 (2026-10-13): the DI-role rule, calibrated on development data
 
@@ -155,7 +269,7 @@ Amendment 1 excludes all of them.
   or the crunch side** ([set5-test-plan.md](set5-test-plan.md)). That test's plan should
   say so before any power calculation.
 
-`docs/validation-set6.json` (schema `validation-set6-2`) is the machine-readable
+`docs/validation-set6.json` (schema `validation-set6-3`) is the machine-readable
 declaration. It holds:
 
 - the inventory's SHA-256;
@@ -165,10 +279,12 @@ declaration. It holds:
   crop's hash;
 - every same-take pair that did not establish a DI, with reasons.
 
-`research/validation_set6.py declare` rebuilds the JSON from the inventory
-(`~/ndsp-presets/references/datasets-medleydb/inventory.json`), the crop records
-(`~/ndsp-presets/references/validation-crops-set6/<slug>/record.json`), and the MUSDB18
-lists (`datasets-medleydb/_tools/musdb18/`).
+`research/validation_set6.py declare` rebuilds the JSON from:
+
+- the inventory (`~/ndsp-presets/references/datasets-medleydb/inventory.json`);
+- the crop records (`~/ndsp-presets/references/validation-crops-set6/<slug>/record.json`);
+- the MUSDB18 lists (`datasets-medleydb/_tools/musdb18/`);
+- the DI-labelling result and the stored pair evidence (amendment 2).
 `research/validation_set6.py crops` cut the crops.
 
 The pairing and inventory scripts are in `tmp/set6/` on the main checkout (`pair.py`,
@@ -459,7 +575,8 @@ Resampling 44.1 → 48 kHz is as in sets 3–5. Gain thresholds were not recalib
   - `is_held_out` and `refuse` cover every MedleyDB band, session key and crop slug;
   - they also cover any path under `~/ndsp-presets/references/datasets-medleydb/` or
     `validation-crops-set6/`, listed or not;
-  - `parts(scope=...)` selects in-scope or report-only parts.
+  - `parts(scope=...)` selects in-scope or report-only parts;
+  - `parts(stem_test=True)` drops parts of songs in MUSDB18's train subset.
 - **`learn.set3`:**
   - `is_held_out` returns True for set-6 material;
   - `fold_for_band` raises on a set-6 band;
