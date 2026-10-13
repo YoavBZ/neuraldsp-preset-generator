@@ -194,6 +194,63 @@ random 2. The user can check that the
 judge's gain is audible. Built under `~/ndsp-presets/listening/knob-ceiling/`; the product
 session attaches it.
 
+## Amendment 1 (2026-10-14): the control failed; the search is a lower bound
+
+Made after the controls and **before the main run**: no recording has been searched.
+
+**The positive control failed as declared, under six versions of the search** (logs and
+results under `~/ndsp-presets/learn/knob-ceiling/control-*`):
+
+| version | held distance / start (4 cells) | mic recovered | passes |
+|---|---|---|---|
+| v1: coordinate search, mics in sweep 1 and once more | 0.12, 0.22, 0.25, 0.27 | 1 of 4 | no |
+| v2: mics after the knobs move, at every step size (200 / 300 renders) | 0.12–0.25 | 1 of 4 | no |
+| v3: v2 plus mic restarts with a quick re-tune (200 / 300) | 0.17–0.34 | 4 of 4 (200), 3 of 4 (300) | no |
+| v4: v3, restarts from the start's own knobs (200 / 300) | 0.19–0.53 | 0–1 of 4 | no |
+| v5: v3 plus Hooke–Jeeves pattern moves (200), **adopted** | 0.19, 0.25, 0.34, 0.45 | 4 of 4 | no |
+
+The knobs were recovered within 0.1 on 1–4 of 5 settings per cell. More renders (300) didn't
+help.
+
+**The diagnosis.** Each setting moved alone through the exact target shows a smooth, V-shaped
+distance falling to 0 (`tmp/kc_landscape.py`, SW50R, Drag Me Down): the judge isn't rugged.
+But the settings trade off (input gain, volume, treble, mic, cab position), so the exact
+target is a sharp-bottomed valley across the knobs. A search that moves a few settings at a
+time stalls at about 20–35% of the start distance, with the wrong settings compensating. A
+mic sweep that tests every mic and re-tunes the key knobs (v3) found the mics. A random-
+direction search was no better in a simulation.
+
+**A realistic calibration (added).** A real recording is never matched exactly. So the
+"recording" became the moved preset played with the part's own DI (not re-equalised), while
+the search renders the measure DI, as in the main run. The known target settings are then an
+achievable, non-zero distance. With the adopted search (v5, 200 renders), its held-half
+distance against the target settings' own:
+
+| cell | search vs target settings (log ratio) | share of the gap closed |
+|---|---|---|
+| Drag Me Down, PR12 | −0.015 (better) | 102% |
+| Drag Me Down, SW50R | +0.239 | 89% |
+| Prodigal, PR12 | +0.075 | 65% |
+| Prodigal, SW50R | +0.115 | 70% |
+| **mean** | **+0.104** | |
+
+**What changes:**
+- **The search:** `knob_search` as in v5 (coordinate search; mics after the knobs move, at
+  every step size; Hooke–Jeeves pattern moves; mic restarts with a quick re-tune of the three
+  most useful knobs). The budgets stay 200 / 150 / 100.
+- **Every searched number is a lower bound on what the settings can reach.** The calibration
+  says the search falls short of a known reachable setting by about 0.1 in log ratio on
+  average (0 to 0.24).
+- **The readings of (b) and (d):**
+  - **"A lot by the judge"** (band-weighted ≤ −0.10, most bands negative) stands: the true
+    gain is at least that. It still needs the listening check to count as real.
+  - **"Little"** (both means ≥ −0.04) **no longer says the menu is near the ceiling.** It is
+    read as "the search found little; with its shortfall, the settings may still reach up to
+    about 0.1 more: undecided". The old reading can't be restored by this test.
+  - **In between:** as before, reported as a lower bound.
+- **The repeat check** stays: v5's exact control re-measured the repeat floor at about 1e-4,
+  far below the 0.005 stop rule.
+
 ## Optional, report-only
 
 **The judge-exploitation check:** if (b) reads "a lot", each part's held half is also rendered
