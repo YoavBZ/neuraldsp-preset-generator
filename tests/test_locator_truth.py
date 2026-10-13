@@ -1,8 +1,10 @@
 import itertools
 
-import numpy as np
+import pytest
 
-from learn import locator_truth as T
+np = pytest.importorskip("numpy")
+
+from learn import locator_truth as T  # noqa: E402
 
 
 def _brute(hit, k, gap):
