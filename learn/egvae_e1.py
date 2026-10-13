@@ -15,16 +15,19 @@ DAC stays frozen at both ends; nothing STFT-based is in training.
 through `learn/egvae_e1_codec.py`, called here as a subprocess.)
 
 **Data** (`learn/egvae_e1_data.py`): every C′ clip's recording and target codes, (9, 517)
-each per 6-s clip. Training clips are folds ≠ 2 (38,709), validation fold 2 (10,097). Each clip
-gives one 3-s crop, at the crop start C′'s `make_clip` drew for it (stored in samples at 48 kHz;
-`crop_frame`): 258 frames at 44,100 / 512 = 86.13 frames/s. Validation crops are C′'s centred
-ones (frame 129). Training refuses to start until all shards are encoded (`--partial` is for
-smoke tests only).
+each per 6-s clip. Training clips are folds ≠ 2 (38,709), validation fold 2 (10,097). Crops are
+3 s: 258 frames at 44,100 / 512 = 86.13 frames/s. Training crops are fresh each step: for every
+example in every batch a crop start drawn uniformly from frames 0–259 (the numpy sampling rng,
+after the batch's clip draw; `random_crops`). Validation crops are fixed at C′'s centred one
+(frame 129; `crop_frame` of the stored start). Training refuses to start until all shards are
+encoded (`--partial` is for smoke tests only). ("E1 after code review" in the plan replaced the
+first declaration's one fixed crop per training clip.)
 
 **The mapper** (`build_model`, 18.7 M parameters):
 - one 1024 × 384 embedding per input codebook, summed (scaled by 1/√9);
 - a convolutional front end: two residual blocks of two kernel-5 convolutions with GELU;
-- 6 pre-norm Transformer encoder blocks (d 384, 6 heads, feed-forward 1536, dropout 0.1),
+- 6 pre-norm Transformer encoder blocks (d 384, 6 heads, feed-forward 1536, residual dropout
+  0.1, attention dropout 0 so that the MPS check covers the training graph),
   bidirectional, with rotary (relative) positions and no absolute positions, so a 258-frame
   window at inference is what training saw, at any offset;
 - a final LayerNorm and 4 softmax heads of 1024 classes.
@@ -41,9 +44,11 @@ cross-entropy on all 10,097 validation crops (eval mode), per-codebook accuracy,
 0.002 nats. **Early stop:** 5 evaluations in a row (5,000 steps) without such an improvement,
 or 40,000 steps. `best.pt` is the network evaluated. Before the first step, and again after
 200 steps with the trained weights, `mps_check` compares MPS with the CPU on one real batch at
-crop length (dropout off): logits within 1e-4 relative, loss within 1e-5 relative, and every
+crop length and the training batch size (32 × 258, residual dropout off; attention dropout is
+0 in training too): logits within 1e-4 relative, loss within 1e-5 relative, and every
 parameter's gradient with cosine > 0.999 and relative norm difference < 1e-3; otherwise it
-aborts.
+aborts. `last.pt` and `best.pt` are written atomically; resume restores the numpy, torch CPU and
+(when available) MPS rng states.
 
 **Rebuild** (`rebuild`, `rebuild_many`): 48 → 44.1 kHz (`resample_poly` 147/160); DAC encode
 at −16 LUFS (the data encoder's path); the mapper over overlapping 258-frame windows (hop 129)
@@ -56,7 +61,9 @@ whose log-probabilities are crossfaded linearly (`stitch`), argmax per frame and
    E1 maps the stored codes of the whole 6-s clip and decodes; C′ (models-cprime, seed 0)
    rebuilds the whole 6-s clip with `direc.rebuild`. Both are cut to the centred crop, set with
    the target to −22.9 LUFS, and scored with E0's mel distance (DAC's multi-scale log-mel,
-   `egvae_e0_dac.py mel`) against the average-balance target. Passes if E1's mean ≤ C′'s mean.
+   `egvae_e0_dac.py mel`) against the average-balance target. Passes if E1's mean (at
+   `best.pt`) ≤ C′'s mean. Also reported, not gated: E1 at `last.pt` (its final weights, as C′
+   is), since `best.pt` is selected on fold-2 validation, which contains these 96 clips.
 2. `precheck2`: E1 rebuilds the 18 development parts' recordings; coherence with the true DI
    as `residual_eval.coherence` (aligned within ±50 ms of the judge lag plus latency, which is
    reported as the misalignment). Passes if the median 80 Hz–1 kHz coherence ≥ 0.472 (C′'s).
@@ -94,13 +101,14 @@ RESULT = PLUGIN_ROOT / "docs/egvae-e1-result.json"
 SR48, SR44, HOP = 48000, 44100, 512
 FRAMES = 517                       # frames per 6-s clip (264,600 samples, padded to 517 × 512)
 CROP_FRAMES = 258                  # C′'s 3-s crop: 132,300 samples at 44.1 kHz / 512
+VAL_FRAME = 129                    # C′'s centred validation crop (72,000 samples at 48 kHz)
 N_IN, N_OUT, K = 9, 4, 1024
 FOLD = 2
 CPRIME0 = DIREC / "models-cprime/fold2.pt"
 COHERENCE_BAR = 0.472              # C′'s median 80 Hz–1 kHz coherence (residual/coherence.json)
 SET5_BAND_MEAN, SET5_HI90 = -0.015, 0.03
 
-CFG = dict(d=384, layers=6, heads=6, ff=1536, conv_kernel=5, dropout=0.1,
+CFG = dict(d=384, layers=6, heads=6, ff=1536, conv_kernel=5, dropout=0.1, attn_dropout=0.0,
            batch=32, lr=3e-4, lr_end=3e-5, warmup=1000, weight_decay=0.01, betas=(0.9, 0.98),
            max_steps=40000, eval_every=1000, patience=5, min_delta=0.002, clip=1.0, seed=0,
            codebook_weights=(1.0, 1.0, 1.0, 1.0), window=CROP_FRAMES, window_hop=CROP_FRAMES // 2)
@@ -113,6 +121,16 @@ def crop_frame(start48):
     the 512 hop, rounded, kept inside the clip."""
     f = int(round(start48 * SR44 / SR48 / HOP))
     return min(max(f, 0), FRAMES - CROP_FRAMES)
+
+
+def random_crops(X, Y, ix, rng):
+    """Batch ix of full-clip codes, X (n, 9, 517) and Y (n, 4, 517), each example cropped to
+    258 frames at its own start drawn uniformly from 0..FRAMES − CROP_FRAMES (0–259)."""
+    import numpy as np
+
+    starts = rng.integers(0, FRAMES - CROP_FRAMES + 1, len(ix))
+    t = (starts[:, None] + np.arange(CROP_FRAMES))[:, None, :]
+    return np.take_along_axis(X[ix], t, 2), np.take_along_axis(Y[ix], t, 2)
 
 
 def window_starts(n, win, hop):
@@ -187,7 +205,7 @@ def build_model(cfg=CFG):
             B, T, _ = h.shape
             q, k, v = self.qkv(self.n1(h)).view(B, T, 3, H, d // H).permute(2, 0, 3, 1, 4)
             a = F.scaled_dot_product_attention(_rope(q), _rope(k), v,
-                                               dropout_p=cfg["dropout"] if self.training else 0.0)
+                                               dropout_p=cfg.get("attn_dropout", 0.0) if self.training else 0.0)
             h = h + self.drop(self.proj(a.transpose(1, 2).reshape(B, T, d)))
             return h + self.drop(self.ff(self.n2(h)))
 
@@ -238,8 +256,10 @@ def load_net(path, device="cpu"):
 # --- data ----------------------------------------------------------------------------------
 
 def load_data(partial=False):
-    """(Xtr, Ytr, Xva, Yva, gva): int16 crops, X (n, 9, 258) and Y (n, 4, 258), from the shards
-    in index order; gva the validation clips' global row indices."""
+    """(Xtr, Ytr, Xva, Yva, gva) from the shards in index order, int16: training clips whole,
+    X (n, 9, 517) and Y (n, 4, 517), for fresh crops each step (`random_crops`); validation
+    clips at their fixed centred crop (frame 129), X (n, 9, 258) and Y (n, 4, 258); gva the
+    validation clips' global row indices."""
     import numpy as np
 
     idx = json.loads((CODES / "index.json").read_text())
@@ -247,19 +267,24 @@ def load_data(partial=False):
     have = [k for k in range(idx["shards"]) if (CODES / f"codes/shard-{k:05d}.npz").exists()]
     if len(have) < idx["shards"] and not partial:
         raise SystemExit(f"only {len(have)}/{idx['shards']} shards encoded; wait for the encoder")
-    X, Y, train, g_all = [], [], [], []
+    Xtr, Ytr, Xva, Yva, gva = [], [], [], [], []
     for k in have:
         z = np.load(CODES / f"codes/shard-{k:05d}.npz")
         part = rows[k * idx["shard_size"]:(k + 1) * idx["shard_size"]]
         assert [e["g"] for e in part] == z["g"].tolist(), f"shard {k} out of order"
+        zx, zy, cs = z["x"], z["y"], z["crop_start"]
+        assert zx.shape[-1] == FRAMES and zy.shape[-1] == FRAMES
         for i, e in enumerate(part):
-            f = crop_frame(int(z["crop_start"][i]))
-            X.append(z["x"][i, :, f:f + CROP_FRAMES])
-            Y.append(z["y"][i, :N_OUT, f:f + CROP_FRAMES])
-            train.append(e["train"])
-            g_all.append(e["g"])
-    X, Y, train, g_all = np.stack(X), np.stack(Y), np.array(train), np.array(g_all)
-    return X[train], Y[train], X[~train], Y[~train], g_all[~train]
+            if e["train"]:
+                Xtr.append(zx[i].copy())
+                Ytr.append(zy[i, :N_OUT].copy())
+            else:
+                f = crop_frame(int(cs[i]))
+                assert f == VAL_FRAME, f"validation crop at frame {f}"
+                Xva.append(zx[i, :, f:f + CROP_FRAMES].copy())
+                Yva.append(zy[i, :N_OUT, f:f + CROP_FRAMES].copy())
+                gva.append(e["g"])
+    return np.stack(Xtr), np.stack(Ytr), np.stack(Xva), np.stack(Yva), np.array(gva)
 
 
 def unigram_ce(Ytr, Yva):
@@ -356,6 +381,23 @@ def validate(net, Xva, Yva, dev, batch=64):
     return tot / n, (per / n).tolist(), (acc / n).tolist()
 
 
+def _save(obj, path):
+    """torch.save to a temporary file, then os.replace: a crash never leaves a torn checkpoint."""
+    import torch
+
+    tmp = path.with_name(path.name + ".tmp")
+    torch.save(obj, tmp)
+    os.replace(tmp, path)
+
+
+def _mps_rng(dev):
+    import torch
+
+    if dev.type == "mps" and hasattr(torch, "mps") and hasattr(torch.mps, "get_rng_state"):
+        return torch.mps.get_rng_state()
+    return None
+
+
 def train(out=RUN / "model", partial=False, device=None, cfg=CFG, max_steps=None):
     import numpy as np
     import torch
@@ -389,17 +431,22 @@ def train(out=RUN / "model", partial=False, device=None, cfg=CFG, max_steps=None
         opt.load_state_dict(st["opt"])
         rng.bit_generator.state = st["rng"]
         torch.set_rng_state(st["torch_rng"])
+        if st.get("mps_rng") is not None and dev.type == "mps":
+            torch.mps.set_rng_state(st["mps_rng"])
         step, best, bad_evals, skipped = st["step"], st["best"], st["bad_evals"], st["skipped"]
         note(event="resumed", step=step, best=best)
 
-    def batch(ix):
-        return (torch.from_numpy(Xtr[ix].astype(np.int64)).to(dev),
-                torch.from_numpy(Ytr[ix].astype(np.int64)).to(dev))
+    def batch(ix, r):
+        x, y = random_crops(Xtr, Ytr, ix, r)
+        return (torch.from_numpy(x.astype(np.int64)).to(dev),
+                torch.from_numpy(y.astype(np.int64)).to(dev))
 
     def check(tag):
+        """At the training batch size and crop length; its own rng, so training's is untouched."""
         if dev.type != "mps":
             return
-        cx, cy = batch(np.arange(8))
+        r = np.random.default_rng(12345)
+        cx, cy = batch(r.choice(len(Xtr), cfg["batch"], replace=False), r)
         cpu_state = {k: v.detach().cpu() for k, v in net.state_dict().items()}
         r = mps_check(cpu_state, cx.cpu(), cy.cpu(), cfg)
         (out / f"mps-check-{tag}.json").write_text(json.dumps(r, indent=1))
@@ -414,7 +461,7 @@ def train(out=RUN / "model", partial=False, device=None, cfg=CFG, max_steps=None
     while step < max_steps:
         for g in opt.param_groups:
             g["lr"] = _lr(step, cfg)
-        x, y = batch(rng.choice(len(Xtr), cfg["batch"], replace=False))
+        x, y = batch(rng.choice(len(Xtr), cfg["batch"], replace=False), rng)
         loss, _ = ce_loss(net(x), y)
         opt.zero_grad()
         loss.backward()
@@ -437,7 +484,7 @@ def train(out=RUN / "model", partial=False, device=None, cfg=CFG, max_steps=None
             improved = vl < best - cfg["min_delta"]
             if improved:
                 best, bad_evals = vl, 0
-                torch.save({"model": net.state_dict(), "cfg": cfg, "step": step, "val": vl}, out / "best.pt")
+                _save({"model": net.state_dict(), "cfg": cfg, "step": step, "val": vl}, out / "best.pt")
             else:
                 bad_evals += 1
             el = time.time() - t0
@@ -445,9 +492,9 @@ def train(out=RUN / "model", partial=False, device=None, cfg=CFG, max_steps=None
                  val_per_codebook=[round(v, 4) for v in per], val_acc=[round(v, 4) for v in acc],
                  lr=_lr(step, cfg), best=round(best, 4), bad_evals=bad_evals, skipped=skipped,
                  s_per_step=round(el / max(1, step - s0), 4))
-            torch.save({"model": net.state_dict(), "opt": opt.state_dict(), "rng": rng.bit_generator.state,
-                        "torch_rng": torch.get_rng_state(), "step": step, "best": best,
-                        "bad_evals": bad_evals, "skipped": skipped, "cfg": cfg}, out / "last.pt")
+            _save({"model": net.state_dict(), "opt": opt.state_dict(), "rng": rng.bit_generator.state,
+                   "torch_rng": torch.get_rng_state(), "mps_rng": _mps_rng(dev), "step": step,
+                   "best": best, "bad_evals": bad_evals, "skipped": skipped, "cfg": cfg}, out / "last.pt")
             if bad_evals >= cfg["patience"]:
                 note(event="early_stop", step=step, best=best)
                 break
@@ -553,8 +600,8 @@ def rebuild(net, x, work=None):
 EVAL = RUN / "eval"
 
 
-def _net():
-    return load_net(RUN / "model/best.pt", "cpu")
+def _net(which="best"):
+    return load_net(RUN / f"model/{which}.pt", "cpu")
 
 
 def cprime_vidx():
@@ -568,7 +615,8 @@ def cprime_vidx():
 
 
 def precheck1():
-    """Decoded mel on C′'s 96 validation clips: E1 against C′ seed 0, same crop, level and mel."""
+    """Decoded mel on C′'s 96 validation clips: E1 against C′ seed 0, same crop, level and mel.
+    E1 at `best.pt` (gated) and at `last.pt` (its final weights, as C′'s are; reported only)."""
     import numpy as np
     import torch
 
@@ -583,9 +631,9 @@ def precheck1():
     S = {name: np.load(DIREC / cache / "di_spectrum.npy", mmap_mode="r") for name, cache, _ in ED.SOURCES}
     pairs = {name: DIREC / p for name, _, p in ED.SOURCES if p}
     avg = D.fold_average(DIREC / "cache", FOLD)
-    net, cp = _net(), D.load_model(CPRIME0).eval()
+    nets, cp = {"e1": _net("best"), "e1_last": _net("last")}, D.load_model(CPRIME0).eval()
     a0 = (D.CLIP - D.CROP) // 2
-    preds, clips = {}, {}
+    preds, clips = {k: {} for k in nets}, {}
     for g in vidx:
         e = by_g[g]
         z = np.load(CODES / f"codes/shard-{e['shard']:05d}.npz")
@@ -597,15 +645,17 @@ def precheck1():
         x, y, a = D.make_clip(x16, y16, S[e["source"]][e["row"]], avg, np.random.default_rng(e["seed"]), False, None)
         assert a == a0 and int(z["crop_start"][e["slot"]]) == a0
         clips[g] = (x, y)
-        preds[f"v{g:06d}"] = map_codes(net, z["x"][e["slot"]])
-    dec = decode_many(preds, EVAL / "precheck1/codec", {k: D.CLIP for k in preds})
+        for k, net in nets.items():
+            preds[k][f"v{g:06d}"] = map_codes(net, z["x"][e["slot"]])
+    dec = {k: decode_many(preds[k], EVAL / "precheck1" / f"codec-{k}", {n: D.CLIP for n in preds[k]})
+           for k in nets}
     res = {}
-    for kind in ("e1", "cp"):
+    for kind in ("e1", "e1_last", "cp"):
         for g, (x, y) in clips.items():
             d = EVAL / "precheck1" / kind / f"v{g:06d}"
             d.mkdir(parents=True, exist_ok=True)
-            if kind == "e1":
-                est = dec[f"v{g:06d}"]
+            if kind in dec:
+                est = dec[kind][f"v{g:06d}"]
             else:
                 est = D.rebuild(cp, x, device=torch.device("cpu")).astype(np.float64)
             np.save(d / "di.npy", to_lufs(est[a0:a0 + D.CROP]).astype(np.float32))
@@ -614,7 +664,9 @@ def precheck1():
                         str(EVAL / "precheck1" / kind)], check=True)
         mel = json.loads((EVAL / "precheck1" / kind / "mel.json").read_text())
         res[kind] = {"mean": statistics.fmean(mel.values()), "median": statistics.median(mel.values()), "n": len(mel)}
-    res["pass"] = res["e1"]["mean"] <= res["cp"]["mean"]
+    res["pass"] = res["e1"]["mean"] <= res["cp"]["mean"]               # gated on best.pt, as declared
+    res["pass_at_last"] = res["e1_last"]["mean"] <= res["cp"]["mean"]  # final weights; reported only
+    res["checkpoints"] = {"e1": "best.pt", "e1_last": "last.pt"}
     (EVAL / "precheck1.json").write_text(json.dumps(res, indent=1))
     print(json.dumps(res, indent=1))
     return res

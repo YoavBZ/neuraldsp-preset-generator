@@ -28,6 +28,28 @@ def test_crop_frame():
     assert E.CROP_FRAMES == int(3 * 44100 / 512)
 
 
+def test_random_crops():
+    """Each example gets its own start in 0..259, the same for recording and target, and every
+    start is reachable."""
+    n = 6
+    X = np.broadcast_to(np.arange(E.FRAMES, dtype=np.int16), (n, 9, E.FRAMES)).copy()
+    Y = X[:, :4].copy() + 1
+    X[:, :, :] += np.arange(n, dtype=np.int16)[:, None, None] * 1000
+    rng = np.random.default_rng(0)
+    seen = set()
+    for _ in range(400):
+        ix = rng.choice(n, 4, replace=False)
+        x, y = E.random_crops(X, Y, ix, rng)
+        assert x.shape == (4, 9, E.CROP_FRAMES) and y.shape == (4, 4, E.CROP_FRAMES)
+        for j, i in enumerate(ix):
+            s0 = int(x[j, 0, 0]) - 1000 * int(i)
+            assert 0 <= s0 <= E.FRAMES - E.CROP_FRAMES
+            np.testing.assert_array_equal(x[j, 3], np.arange(s0, s0 + E.CROP_FRAMES) + 1000 * int(i))
+            np.testing.assert_array_equal(y[j, 2], np.arange(s0, s0 + E.CROP_FRAMES) + 1)
+            seen.add(s0)
+    assert min(seen) == 0 and max(seen) == E.FRAMES - E.CROP_FRAMES and len(seen) > 200
+
+
 def test_window_starts_cover():
     for n in (100, 258, 259, 517, 861, 1000):
         s = E.window_starts(n, 258, 129)
@@ -115,6 +137,40 @@ def test_mps_check_passes_on_identical_devices():
     x, y = torch.randint(0, 1024, (2, 9, 258)), torch.randint(0, 1024, (2, 4, 258))
     r = E.mps_check(state, x, y, cfg, devices=("cpu", "cpu"))
     assert r["ok"] and r["logits_rel"] == 0 and r["worst_cos"] > 0.99999
+
+
+def test_attention_dropout_off():
+    assert E.CFG["attn_dropout"] == 0.0 and E.CFG["dropout"] == 0.1
+
+
+def test_train_resume_is_identical(tmp_path=None):
+    """Tiny CPU run on synthetic codes: 4 steps straight equal 2 steps, a resume, and 2 more
+    (weights, optimiser-driven, rng states restored); checkpoints written atomically."""
+    import tempfile
+
+    torch = _torch()
+    tmp = pathlib.Path(tmp_path or tempfile.mkdtemp())
+    r = np.random.default_rng(1)
+    data = (r.integers(0, 1024, (10, 9, E.FRAMES)).astype(np.int16),
+            r.integers(0, 1024, (10, 4, E.FRAMES)).astype(np.int16),
+            r.integers(0, 1024, (3, 9, E.CROP_FRAMES)).astype(np.int16),
+            r.integers(0, 1024, (3, 4, E.CROP_FRAMES)).astype(np.int16), np.arange(3))
+    cfg = {**E.CFG, "layers": 1, "d": 32, "heads": 2, "ff": 64, "batch": 4, "warmup": 2,
+           "max_steps": 4, "eval_every": 2, "patience": 99}
+    old = E.load_data
+    E.load_data = lambda partial=False: data
+    try:
+        E.train(out=tmp / "a", device="cpu", cfg=cfg)
+        E.train(out=tmp / "b", device="cpu", cfg=cfg, max_steps=2)
+        (tmp / "b/DONE").unlink()
+        E.train(out=tmp / "b", device="cpu", cfg=cfg)
+    finally:
+        E.load_data = old
+    a, b = (torch.load(tmp / k / "last.pt", weights_only=False) for k in ("a", "b"))
+    assert a["step"] == b["step"] == 4
+    for k in a["model"]:
+        assert torch.equal(a["model"][k], b["model"][k]), k
+    assert not list(tmp.glob("*/*.tmp"))
 
 
 def test_map_codes_shapes():

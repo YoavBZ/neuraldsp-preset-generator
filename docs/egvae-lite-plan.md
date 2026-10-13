@@ -341,3 +341,39 @@ declaration; in short:
   That is the ceiling for pre-check 1.
 - With C′'s and the oracle's stored picks fed through `report`, it reproduces C′ seed 0 at
   −0.099 and the oracle at −0.131 against the fixed preset.
+
+### E1 after code review (2026-10-13, before training; replaces the text above where they differ)
+
+An independent code review found no calculation error and asked for these changes before the
+first training step. All are in `learn/egvae_e1.py`; nothing has been trained.
+
+- **MPS check at the real size.** `mps_check` now runs on a batch of 32 real training crops of
+  258 frames (the training batch), not 8. Its batch comes from its own rng, so training's draws
+  are unchanged. It still runs before the first step and after 200 steps.
+- **Attention dropout is 0.** The residual dropout stays at 0.1. The check runs with dropout
+  off, so with attention dropout at 0 it now covers the graph that trains: the residual dropout
+  is elementwise and takes no separate kernel path.
+- **Fresh random crop each step.** For every example in every batch, the crop start is drawn
+  uniformly from frames 0–259 (the numpy sampling rng, after that batch's clip draw), so all
+  517 stored frames are used. This replaces one fixed crop per training clip, and is closer to
+  C′, which drew a fresh crop each step. The augmentation stays fixed per clip (it is baked into
+  the encoded audio). Validation stays at the fixed centred crop, frame 129.
+- **A selection asymmetry, disclosed.** E1's `best.pt` and its early stop are chosen on fold-2
+  validation cross-entropy; C′ is its final weights, with no selection. Fold 2 holds 7,079 clips
+  from Zeno and Eat The Feeder, bands of 6 of the 18 test parts, and 30 SW50R/AC20 windows of
+  `EatTheFeeder_TodaysTheDay_Full/43_ElecGtr10DI.wav`, the DI file of the test part
+  `cambridge-Today's_The_Day-ElecGtr10`. Pre-check 1's 96 clips are part of that set. No test
+  recording is seen, and picking one checkpoint by cross-entropy should matter very little, but
+  it favours E1 slightly. So `precheck1` now reports E1 at `best.pt` (gated, as declared) and at
+  `last.pt`, its final weights, which is the like-for-like comparison with C′ (reported only).
+- **Minor.** Resume also restores the MPS rng state (`torch.mps.get_rng_state` when present).
+  `last.pt` and `best.pt` are written to a temporary file and then renamed, so a crash cannot
+  leave a torn checkpoint. A tiny CPU test checks that 4 steps straight give the same weights
+  as 2 steps, a resume and 2 more (`tests/test_egvae_e1.py`). The "E1 data" claim that 3 CPU
+  `fit` steps gave identical weights before and after the `make_clip` refactor was a one-off
+  check at the time, not a kept test; `tests/test_direc_make.py` covers the pairs themselves.
+- **Budget.** `min_delta` 0.002 on a summed cross-entropy of 20–27 nats is a loose plateau
+  test, so expect the run to go most of the 40,000 steps.
+- **Run order.** `~/ndsp-presets/learn/direc/egvae-e1/run_e1.sh` waits for the encoder to finish,
+  then runs `bench mps 20`, `train`, `precheck1`, `precheck2`, and, only if both pre-checks
+  pass, `render` (3 processes), `score` and `report`. Its state is in `E1_STATUS` in that folder.
