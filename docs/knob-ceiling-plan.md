@@ -1,0 +1,221 @@
+# Knob ceiling: how much closer do searched knobs get than the best menu preset? Plan (development)
+
+Declared 2026-10-13, before any search result. Revised the same day after an independent
+review (`tmp/knob-ceiling-plan-review.md`, local), before the main run; all seven required
+changes are made below. Development data only, the true DI, no model,
+no training. Code: `learn/knob_ceiling.py`; tests: `tests/test_knob_ceiling.py`.
+
+## Why
+
+Every "a perfect DI gains only about 12–17%" figure so far comes from **ranking the menu**:
+111 dry presets on the three Morgan amps (`P.menus`: 108 factory presets and the 3
+templates). No knob was ever moved. So
+the headroom of continuous settings (what a model that predicts settings, rather than picking
+a preset, could reach) is unmeasured. This test measures it, with the true DI, so it is a
+ceiling: no song-to-DI loss.
+
+## Data
+
+- **The parts:** `learn/songs_check.parts()`, gain class clean or crunch: **25 parts, 15
+  bands** (20 clean, 5 crunch), all development (sets 1–2 development and set-3 development
+  parts). Asserted in code (`check_parts`: the counts, and each part's development source).
+No held-out audio is read.
+- **The DI:** the measure DI ("measfix"): the true DI re-equalised to the average guitar
+  (`learn/direc/cache/average-fold2.npy`) at −22.9 LUFS, as `confirm_run.build_di("measfix")`.
+- **The judge:** `aligned_distance` with the flat options (`R.JUDGE_OPTIONS["flat"]`, the
+  default), at the part's judge lag, halves A (1.0–5.5 s) and B (5.5–10 s). The judge
+  removes level, so output levels are not searched.
+- **Refusals:** the judge refuses a half it can't score (silence). A render refused on the
+  search half counts as infinitely far. A direction is skipped if the start S or the menu
+  oracle M is refused on either half; a cell with both directions skipped is dropped and
+  counted. (`telefunken-Honey-GTR` has half B refused for every menu preset, so its three
+  cells are expected to drop.) A comparison with a refused side drops that direction for it.
+
+## Conditions, per cell (part × amp, 75 cells)
+
+- **S:** the product's starting preset for the part's class (skills/generate step 4), dry:
+  - clean: Royally Ambient (PR12), Pedal Platform Clean (SW50R), Low-Watt Americana (AC20);
+  - crunch: Modern Metal (Pick Hard) (PR12), Hair Metal (SW50R), AC20 Mid-Gain Drive (AC20).
+- **M:** the menu oracle: the amp's best dry factory preset on the search half.
+- **K_M:** a knob search starting from M, 200 renders.
+- **K_S:** a knob search starting from S, 150 renders (the product-realistic case).
+- **EQ:** a second search from K_M's best over the amp's EQ, 100 renders.
+
+**Cross-half:** each search sees only one half (the search half); its result is scored on
+the other half (the held half). Both directions are run (A→B and B→A), and a cell's number is
+the mean of the two. The search-half numbers are reported beside, labelled **in-sample
+(optimistic)**. M is also picked on the search half.
+
+The menu is re-rendered fresh for every cell (the amp's 31–45 presets), not reused from
+stored renders.
+
+## The search space
+
+Stored units; continuous settings are searched on a 0–1 scale over the range below.
+
+**K (both K_M and K_S):**
+
+| setting | range | kind |
+|---|---|---|
+| `parameters/inputGain` | −24 to +24 dB | continuous |
+| PR12: `pr12Volume`, `pr12Treble`, `pr12Bass` | 0–1 | continuous |
+| SW50R: `sw50rVolume`, `sw50rLevel`, `sw50rTreble`, `sw50rMid`, `sw50rBass` | 0–1 | continuous |
+| SW50R: `sw50rBright`, `sw50rTrebleBoost`, `sw50rInputMode` | on/off | switch |
+| AC20: `ac20Volume`, `ac20Cut`, `ac20Power` | 0–1 | continuous |
+| AC20: `ac20Bright`, `ac20BassTreble` | on/off | switch |
+| `cabParameters/leftMicType`, `rightMicType` | the 10 internal mics (custom IR never) | categorical |
+| `left/rightCabPosition`, `left/rightCabDistance` | 0–1 | continuous |
+| `rightCabMicLevel` | −40 to +6 dB (the balance of the two mics; the left stays) | continuous |
+| `rightCabActive` | on/off | switch |
+
+**EQ stage:** the amp's 9-band EQ, `{amp}EQBand1–9` (−12 to +12 dB), `{amp}EQHpf` (20–500 Hz,
+log scale) and `{amp}EQLpf` (1–20 kHz, log scale), with the EQ switched on. An EQ that was off
+is first set flat (bands 0, HPF 20 Hz, LPF 20 kHz) before switching on.
+
+**The left mic is left out** when the start has the left cab off (4 menu presets do): the
+search can't turn it on, so its settings can't change the sound.
+
+**Kept from the starting preset (not searched):** the pedals (compressor and the two drives:
+on/off and knobs), the room mics, pan, phase, and the selected amp. **Off, as in the menu:**
+reverb, delay, tremolo, doubler, gate, the spring reverb, transpose. **Not searched because
+the judge removes level:** `outputGain`, the left mic level.
+
+The pedals are a stated limit: a pedal-on/off search is a possible second pass, not part of
+this plan. The PR12 crunch start runs two pedals (a boost into a second drive), which the
+search can't turn off; this is noted beside the crunch numbers.
+
+## The optimiser
+
+A **coordinate search with shrinking steps** (`coord_search`), deterministic for its seed
+(20261013; the EQ stage uses 20261014):
+- A sweep visits the settings in a seeded random order.
+- Per setting it tries: a continuous setting ± the step (on the 0–1 scale, clipped), a switch
+  flipped, a mic type every other mic (in the first sweep, and once more in the first sweep
+  with a step below 1/8).
+- The best improving candidate is kept. A sweep without improvement halves the step. The step
+  starts at 0.25 and stops below 1/64, or at the budget.
+- A setting already tried is never re-rendered (cached by its settings).
+
+Each evaluation is one render and both halves scored; the search uses only its half. The
+renders run on **6 reused plugin processes** (`process_policy="reuse"`), sharded by cell
+(part × amp), with numpy limited to one thread per process.
+
+**The budget:** per cell, the amp's menu once (111 renders per part over the three amps),
+then per direction 200 + 150 + 100. In total about 25 × 111 + 75 × 2 × 450 ≈ **70,300
+renders**, at about 1.5 s each (render plus scoring) without contention. On 6 processes on an
+8-core machine: **about 6–9 hours.**
+
+**Stored:** per cell, every menu distance, every evaluation of every search (both halves),
+each search's incumbent curve, the best settings and the best render (FLAC) per search and direction, under
+`~/ndsp-presets/learn/knob-ceiling/cells/<part>/<amp>/`.
+
+## Controls (before the main run)
+
+1. **Repeat floor (measured 2026-10-13 on one part):** a repeat render of the same settings is
+   identical after the first 0.5 s (the knob-change ramp), so the judge's distance is
+   identical. The render noise floor is 0. The control re-checks this on every control cell,
+   including after another preset in between.
+   - **Checked on every cell of the main run, free:** K_M's first render repeats M, and K_S's
+     repeats S, both already rendered in the menu. The deviation is stored. **If any exceeds
+     0.005 in log ratio, the run stops** (the shard raises) and the floor is re-examined.
+2. **Positive control:** 2 parts (the first development clean and crunch parts from sets 1–2,
+   by name) × PR12 and SW50R = 4 cells.
+   - The "recording" is the starting preset S with five settings moved, off the search's
+     step grid: volume +0.17, treble −0.21, bass (PR12) or mid (SW50R) +0.13, input gain
+     +5.3 dB and the left cab position +0.31 (each reflected inwards if it would leave its
+     range), and the left mic changed (mic index + 4). It is rendered through the part's DI.
+     Its lag is 0.
+   - The search (K, 200 renders, half A) starts from S unmoved.
+   - **It passes** if, on all 4 cells, the held-half (B) distance falls to at most 0.3 × the
+     start's, and on at least 3 of 4 cells, at least 3 of the 5 settings land within 0.1 of
+     their targets (on the 0–1 scale) and the mic is exactly recovered. (Other settings can
+     compensate, so an exact recovery of every setting isn't required.)
+   - A first version of the control, with offsets on the step grid (−0.25 is exactly the first
+     step), was stopped after one cell on the review's advice (its log is kept as
+     `control-v0-ongrid.log`). It isn't counted.
+   - **If it fails,** the optimiser or the budget is wrong. It is fixed and the control re-run
+     before the main run, and the change is recorded here.
+   - The control's convergence curve may **lower** the budgets (never raise them) before the
+     main run, if it shows no gain after a render count. Any change is recorded here first.
+3. **The extremes check:** every best setting that the search moved to the end of its range is
+   flagged. The share of K_M cells with such a flag is reported. The judge is known to like
+   spectral extremes (ground-truth audit item D-H3), so the listening check below favours
+   flagged cells as well.
+
+The control reads no recording: only the parts' DIs and renders.
+
+## Statistics
+
+As `learn/confirm_run.stats`: per cell, the log ratio of distances on the held half (mean of
+the two directions). Reported:
+- the part-weighted mean, with a band-clustered 90% t-interval (bands − 1 df);
+- the band-weighted mean, the bands negative, and leave-one-band-out;
+- for clean + crunch, clean alone, and crunch alone. Crunch has 5 bands: descriptive only.
+
+**The headline numbers:**
+- **(a) M vs S:** the menu's headroom over the product's start (reproduces the old figure);
+- **(b) K_M vs M:** what the knobs add beyond the menu;
+- **(c) K_S vs S** and **K_S vs M:** what a search from the product's start reaches;
+- **(d) EQ vs K_M** and **EQ vs M:** what the EQ adds on top.
+
+Also, all declared now:
+- the in-sample versions;
+- **the convergence:** K_M's incumbent against M on the held half after 25, 50, 100, 150 and
+  200 renders (so the EQ stage's extra 100 renders can be compared with K_M's own late gain);
+- the share of K_M searches with a setting at a limit;
+- **per amp;**
+- **the best amp per part:** in each direction, M's amp is chosen by M's search-half
+  distance, and K_M's amp by K_M's; the held-half log ratio, averaged over the directions. So
+  knobs rescuing a badly suited amp don't inflate the per-amp means;
+- the skipped directions and dropped cells, and the largest repeat deviation.
+
+## The reading (declared; descriptive, not a gate)
+
+On (b), cross-half, clean + crunch:
+- **Knobs add little:** the band-weighted and part-weighted means are both at −0.04 or above
+  (the judge's near-tie range). The menu is near the ceiling, and the old reading stands.
+- **Knobs add a lot by the judge:** the band-weighted mean is at −0.10 or below, with most
+  bands negative. The headroom counts as real, and predicting settings (not ranking a menu)
+  as worth pursuing, only if the listening check agrees.
+- **In between:** reported as such.
+
+(d) is read the same way, separately: an EQ gain could be the judge's spectral weakness as
+much as real tone, so it needs the listening check before it counts.
+
+## Listening
+
+Cells: the 4 with the largest cross-half K_M gain, at least one flagged at a limit (if any),
+and **2 drawn at random** (seed 20261013, among the cells not already chosen), so the page
+shows typical cells as well as the best. An unlabelled A/B page: the recording, the M render
+and the K_M render (and the EQ render, where it adds), through the true DI, **on the held
+half**: the settings searched on half A are played on half B, and the reverse. The cell's
+direction is the one with the larger held-half gain for the top 4, and direction A→B for the
+random 2. The user can check that the
+judge's gain is audible. Built under `~/ndsp-presets/listening/knob-ceiling/`; the product
+session attaches it.
+
+## Optional, report-only
+
+**The judge-exploitation check:** if (b) reads "a lot", each part's held half is also rendered
+with other parts' best K_M settings (same amp). If those beat M almost as often, the gain is
+the judge liking certain settings, not matching this recording. Declared now; its own budget
+is stated before it runs.
+
+## Order
+
+1. This plan, then an independent review. The positive control may run during the review (it
+   reads no recording).
+2. The control result, reviewed.
+3. Message the product session, then the main run (6 processes, `setopt no_bg_nice`).
+4. The report, an independent audit of it, then the listening page.
+
+## Stated limits
+
+- **The judge is the measure.** A search that optimises the judge directly can exploit its
+  weaknesses. The held half limits overfitting to the notes, not to the judge. The listening
+  check is the guard.
+- **A local search** from two starts: the true ceiling can only be higher.
+- **The pedals aren't searched.**
+- **The true DI** (re-equalised): a song-only product has to rebuild or guess it. This is a
+  ceiling, not a product number.
+- **25 parts, 15 bands, crunch 5 bands.**
