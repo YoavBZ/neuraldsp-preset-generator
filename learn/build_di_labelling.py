@@ -719,7 +719,9 @@ VAL_SEED = 20261014
 VAL_MIN_CONFIDENT, VAL_MIN_SHARE = 8, 0.90
 DRIVEN = ("crunch", "high-gain")
 VAL_INTRO = "Answer only when you're sure; otherwise choose none."
+HF_BAND, HF_COH_MAX = (3000.0, 6000.0), 0.3   # an amp track must differ from its DI above 3 kHz
 VAL_PAGE_HTML = (PAGE_HTML
+                 .replace("two to five clips", "two clips")
                  .replace("\n{questions}\n", f"\n<p><b>{VAL_INTRO}</b></p>\n{{questions}}\n")
                  .replace('"DI labelling: "', '"DI validation: "')
                  .replace('"dilabel-{build}"', '"dilabel-validation-{build}"'))
@@ -764,6 +766,65 @@ def decoy_candidates() -> list:
     return out
 
 
+def hf_coherence(di_path, amp_path, lag, pol) -> float | None:
+    """Mean magnitude-squared coherence DI -> amp over HF_BAND, on the WHOLE tracks: frames
+    where both play (within 40 dB of their loudest), amp shifted back by the waveform lag and
+    polarity-corrected; set 6 calibration's cue (`oriented_cues`), in this band."""
+    import numpy as np
+
+    x, sr = _mono(di_path)
+    y, sr_y = _mono(amp_path)
+    if sr != sr_y:
+        die(f"{amp_path}: sample rate differs from its DI")
+    if lag > 0:
+        y = y[lag:]
+    elif lag < 0:
+        y = np.concatenate([np.zeros(-lag), y])
+    y = (pol or 1) * y
+    n = min(len(x), len(y))
+    x, y = x[:n], y[:n]
+    F = 4096 if sr < 60000 else 8192
+    H = F // 2
+    nf = (n - F) // H + 1
+    idx = np.arange(F)[None, :] + H * np.arange(nf)[:, None]
+    rx = 20 * np.log10(np.sqrt(np.mean(x[idx] ** 2, axis=1)) + 1e-12)
+    ry = 20 * np.log10(np.sqrt(np.mean(y[idx] ** 2, axis=1)) + 1e-12)
+    act = np.flatnonzero((rx >= rx.max() - 40) & (ry >= ry.max() - 40))
+    if len(act) < 20:
+        return None
+    w = np.hanning(F)
+    Sxx = Syy = 0.0
+    Sxy = 0j
+    for chunk in np.array_split(act, max(1, len(act) // 500)):
+        X = np.fft.rfft(x[idx[chunk]] * w, axis=1)
+        Y = np.fft.rfft(y[idx[chunk]] * w, axis=1)
+        Sxx = Sxx + (np.abs(X) ** 2).sum(0)
+        Syy = Syy + (np.abs(Y) ** 2).sum(0)
+        Sxy = Sxy + (Y * np.conj(X)).sum(0)
+    f = np.fft.rfftfreq(F, 1 / sr)
+    m = (f >= HF_BAND[0]) & (f < HF_BAND[1])
+    return float(np.mean(np.abs(Sxy[m]) ** 2 / (Sxx[m] * Syy[m] + 1e-30)))
+
+
+def _amps_differ(g) -> dict | None:
+    """The guard on a known-DI question: every amp track's coherence with the DI over
+    HF_BAND (whole tracks) is below HF_COH_MAX. {amp: coherence}, or None if one fails."""
+    s = next(s for s in json.loads(DEV_PAIRS.read_text())["sessions"] if s["key"] == g["song"])
+    out = {}
+    for amp in g["tracks"]:
+        if amp == g["di"]:
+            continue
+        p = next(p for p in s["pairs"] if p["same_take"] and {p["a"], p["b"]} == {g["di"], amp})
+        lag = p["waveform"]["median_lag_samples"]           # positive: b later than a
+        lag = lag if p["a"] == g["di"] else -lag            # positive: amp later than the DI
+        c = hf_coherence(g["tracks"][g["di"]]["path"], g["tracks"][amp]["path"], lag,
+                         p["waveform"].get("polarity"))
+        out[amp] = None if c is None else round(c, 4)
+        if c is None or c >= HF_COH_MAX:
+            return None
+    return out
+
+
 def _window_ok(g, cache):
     k = (g["song"], g["part"])
     if k not in cache:
@@ -777,9 +838,10 @@ def _window_ok(g, cache):
     return cache[k]
 
 
-def _pick(pool, n, rng, round1_bands, round1_parts, forbidden, taken, cache, log):
-    """n groups from pool: a new band first, then a second part of a band this pick already
-    took, then a first-round band; never a forbidden band or a first-round part."""
+def _pick(pool, n, rng, round1_bands, round1_parts, forbidden, taken, cache, log, guard=None):
+    """n groups from pool: a new band first, then another part of a band this pick already
+    took (the band with the fewest parts first), then a first-round band; never a forbidden
+    band or a first-round part."""
     pool = [g for g in pool if (g["song"], g["part"]) not in round1_parts and g["band"] not in forbidden]
     rng.shuffle(pool)
     pool.sort(key=lambda g: -len(g["tracks"]))           # stable: shuffled within size
@@ -787,18 +849,38 @@ def _pick(pool, n, rng, round1_bands, round1_parts, forbidden, taken, cache, log
     passes = (lambda g: g["band"] not in round1_bands and g["band"] not in taken,
               lambda g: g["band"] not in round1_bands and g["band"] in own,
               lambda g: g["band"] in round1_bands and g["band"] not in taken | own)
+    rejected = set()
     for i, ok in enumerate(passes):
-        for g in pool:
-            if len(chosen) == n:
+        while len(chosen) < n:
+            per_band = {}
+            for c in chosen:
+                per_band[c["band"]] = per_band.get(c["band"], 0) + 1
+            done = {(c["song"], c["part"]) for c in chosen} | rejected
+            # the band with the fewest parts drawn so far first, then the shuffled order
+            elig = sorted((k, g) for k, g in enumerate(pool)
+                          if (g["song"], g["part"]) not in done and ok(g)
+                          and not (i == 0 and g["band"] in own))
+            elig.sort(key=lambda kg: per_band.get(kg[1]["band"], 0))
+            if not elig:
                 break
-            if (g["song"], g["part"]) in {(c["song"], c["part"]) for c in chosen} or not ok(g) \
-                    or (i == 0 and g["band"] in own):
-                continue
+            g = elig[0][1]
             w = _window_ok(g, cache)
             if w is None:
                 log.append(f"skipped {g['song']} {g['part']}: no window with every track playing")
+                rejected.add((g["song"], g["part"]))
                 continue
-            chosen.append({**g, "window": w, "pick_pass": i + 1})
+            extra = {}
+            if guard is not None:
+                gk = ("guard", g["song"], g["part"])
+                if gk not in cache:
+                    cache[gk] = guard(g)
+                if cache[gk] is None:
+                    log.append(f"skipped {g['song']} {g['part']}: an amp track is coherent with the DI "
+                               f"above 3 kHz (>= {HF_COH_MAX}): no speaker")
+                    rejected.add((g["song"], g["part"]))
+                    continue
+                extra = {"hf_coherence_3_6k": cache[gk]}
+            chosen.append({**g, "window": w, "pick_pass": i + 1, **extra})
             own.add(g["band"])
     if len(chosen) < n:
         die(f"only {len(chosen)} of {n} groups could be drawn")
@@ -819,7 +901,8 @@ def validation_groups(round1) -> tuple[list, list]:
     questions = []
     for cls, n in VAL_QUOTA.items():
         pool = [c for c in cands if c["gain_class"] == cls]
-        questions += _pick(pool, n, rng, round1_bands, round1_parts, decoy_bands, taken, cache, log)
+        questions += _pick(pool, n, rng, round1_bands, round1_parts, decoy_bands, taken, cache, log,
+                           guard=_amps_differ)
     for line in log:
         print(line)
     return questions, decoys
@@ -844,7 +927,9 @@ def build_validation(args):
     for g in groups:
         print(f"  {g['kind']:8} {g.get('gain_class') or '/'.join(g['gain_classes']):18} {g['band']:24} "
               f"{g['part']:10} {len(g['tracks'])} tracks, window {g['window']['all_active_fraction']:.2f}, "
-              f"pass {g['pick_pass']}")
+              f"pass {g['pick_pass']}" + (f", 3-6 kHz coherence {g['hf_coherence_3_6k']}" if g.get('hf_coherence_3_6k') else ""))
+    if any(len(g["tracks"]) != 2 for g in groups):
+        die("the validation page's intro says every question has two clips")
     if args.dry_run:
         return
     seed = secrets.randbits(64)
@@ -865,7 +950,8 @@ def build_validation(args):
                "tracks": g["tracks"], "window": g["window"], "clip_s": CLIP_S,
                "pick_pass": g["pick_pass"]}
         if g["kind"] == "control":
-            row.update({"gain_class": g["gain_class"], "answer": letters[names.index(g["di"])]})
+            row.update({"gain_class": g["gain_class"], "answer": letters[names.index(g["di"])],
+                        "hf_coherence_3_6k": g["hf_coherence_3_6k"]})
         else:
             row.update({"gain_classes": g["gain_classes"], "answer": "none"})
         rows.append(row)
@@ -904,6 +990,8 @@ def build_validation(args):
            "level": {"target_lufs": round(target, 3), "peak_ceiling_dbtp": L.PEAK_CEILING_DBTP,
                      "fade_s": L.FADE_S},
            "intro": VAL_INTRO, "question_text": QUESTION,
+           "amp_guard": {"band_hz": list(HF_BAND), "coherence_below": HF_COH_MAX,
+                         "on": "whole tracks, frames where both play, lag- and polarity-aligned"},
            "page_sha256": hashlib.sha256(page.encode()).hexdigest(), "build_id": build_id,
            "provenance": provenance(), "questions": rows}
     text = json.dumps(key, indent=1) + "\n"

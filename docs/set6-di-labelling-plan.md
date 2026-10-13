@@ -101,7 +101,7 @@ fact; instead, the user's confident calls get their own check.
 
 ## Amendment: the validation page as built (2026-10-13, before it is sent)
 
-Built by `learn/build_di_labelling.py build-validation`. Key `34c30b32…` and page `98f498b9…`
+Built by `learn/build_di_labelling.py build-validation`. Key `21d47a65…` and page `cb9a4426…`
 are committed in `set6-di-labelling-validation-key.sha256`.
 
 - **14 questions:** 10 with a known DI (6 crunch, 4 high-gain) and 4 decoys.
@@ -113,10 +113,11 @@ are committed in `set6-di-labelling-validation-key.sha256`.
 - **The draw** uses a fixed seed. Decoys are drawn first, then questions by class.
   - Each draw takes a new band first, then a second part of a band it already took.
   - None of the first round's checks or bands is used. Question and decoy bands do not
-    overlap. Only one band appears twice (two crunch parts).
-- **Clips** are built as in round 1, at −22.1 LUFS.
+    overlap. Two bands appear twice (MR1003 and Szymon Skiba, two crunch parts each).
+- **Clips** are built as in round 1, at −22.4 LUFS.
 - **Scoring the first round, if the validation passes:** the amp reference is the DI's
   same-take partner with the smallest lag, then the higher peak-to-sidelobe ratio (set 6's
   rule 4). MedleyDB names no amp or microphone, so set 5's name order cannot apply. The
   class is set 3's classifier on whole tracks, as sets 4 and 5. The result goes to
   `listening/di-labelling/validation-result.json`.
+- **Rebuilt before sending, after review:** Starnes And Shah ElecGtr5 was replaced by Szymon Skiba ElecGtr3 (crunch). Its "amp" track had no speaker in it: flat against the DI, with 0.89 coherence at 3–6 kHz. A guard now requires every amp track's DI → amp coherence over 3–6 kHz to be below 0.3, on the whole tracks (frames where both play, aligned for lag and polarity). Further parts of a band are drawn starting with the band that has the fewest so far. The intro now says "two clips". The first build (key `34c30b32…`) was never sent.
