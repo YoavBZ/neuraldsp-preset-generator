@@ -583,3 +583,34 @@ Resampling 44.1 → 48 kHz is as in sets 3–5. Gain thresholds were not recalib
   - `training_dis` refuses any set-6 file.
 - **Tests:** `tests/test_set6.py`. The crop and rebuild tests are skipped on a machine
   without the data.
+
+### Amendment 2: caveats added after review (2026-10-13; parts, scope and rules unchanged)
+
+Review: `tmp/set6b-review.md`, local. No pre-declared rule excludes any part, so all five stay
+as declared. These caveats are disclosed.
+
+- **Port St Willow, both parts.** The user's DI label is probably right.
+  - The labelled DI has the higher crest and is the darker track, which is the orientation the
+    calibrated driven rule gives.
+  - MedleyDB labels 05_02 "distorted" and 05_01 "clean".
+  - Its 0.2–2 kHz coherence (0.17, 0.47) is within the development range for crunch DI → amp
+    pairs; close-mic pairs read 0.97 or above.
+  - Its high-frequency roll-off (−14, −17 dB) matches DI → amp; DI–DI pairs read about 0 dB.
+  - **But the reference is probably an electrical drive path,** not a mic'd amp: a pedal,
+    line-out, load box with cab sim, or amp sim. The amp track leads the DI by 1–3 samples. On
+    development, only 5 of 177 real DI → amp pairs are within 2 samples.
+  - **It lies outside what the validation round covered:**
+    - lag (controls +6 to +50 samples);
+    - 3–6 kHz coherence (0.13 and 0.16, against controls at 0.041 or less; both under the 0.3
+      guard);
+    - non-linearity (05: −5.15 dB, against controls at −3.4 dB or more).
+  - **RAW_06_01's "crunch" may be effects rather than drive:** the session reads 0.13 linear
+    against 0.89 on the crop, the classifier flags effects, bleed or noise, and polarity agrees
+    on only 22% of windows.
+  - **Weight:** weighted by band, Port St Willow is half of set 6's in-scope crunch evidence.
+  - **A sensitivity is required:** any test using set 6 declares, in advance, a reading with and
+    without Port St Willow.
+- **Little Tybee:** a lag of 211 samples (4.4 ms at 48 kHz) is plausible: about 1.5 m of air or
+  a reamp round trip. Its two amp tracks are one cab, two mics. The stored polarity is
+  unreliable for this pair: −1 to 08_03 and +1 to 08_04, while 08_03 and 08_04 are +1 to each
+  other.
