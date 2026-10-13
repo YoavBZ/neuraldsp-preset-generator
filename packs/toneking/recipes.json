@@ -1228,7 +1228,7 @@
     "chorus": {
       "subtle-width": {
         "title": "Subtle chorus width",
-        "use_when": "clean rhythm needs gentle movement without obvious modulation",
+        "use_when": "research documents a subtle chorus or width on a clean rhythm part",
         "parameters": [
           {
             "module": "",
@@ -1626,7 +1626,7 @@
       },
       "ambient": {
         "title": "Ambient wash",
-        "use_when": "sparse clean parts can support a long, prominent tail",
+        "use_when": "research documents a long, prominent reverb tail on a sparse clean part",
         "parameters": [
           {
             "module": "",

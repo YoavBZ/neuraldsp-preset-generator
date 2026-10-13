@@ -71,6 +71,10 @@ drive it enough. Match loudness last with `outputGain`, and use
 
 ## Intent → which recipes to stack
 
+**Effect columns are what to use if research documents that effect on the part;
+otherwise leave the layer off** (`dry/toneking` turns it off; generate step 2). No effect
+has been shown to bring a preset closer.
+
 | Intent | Suggested stack |
 |---|---|
 | Balanced clean rhythm | `amp/rhythm-clean` + `compressor/gentle-glue` + `cab/balanced-57-ribbon` + `reverb/compact-room` + `output/unity` |

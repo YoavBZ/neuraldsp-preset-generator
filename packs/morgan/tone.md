@@ -68,11 +68,15 @@ tube reverb. 50W.
 
 A preset is layers. Pick one recipe per layer, then adapt.
 
+**Effect columns are what to use if research documents that effect on the part;
+otherwise leave the layer off** (the dry recipe turns it off; generate step 2). No effect
+has been shown to bring a preset closer.
+
 | Intent | amp | compressor | drive | eq | delay | reverb | output |
 |---|---|---|---|---|---|---|---|
 | Clean rhythm | `pr12-clean` | `subtle-clean-sustain` | `off` | `warm-clean-rhythm` | `off` | `spring-ambience` | `clean-rhythm` |
-| Edge of breakup | `pr12-saggy-breakup` or `ac20-jangle` | `subtle-clean-sustain` | `drive1/solo-boost` | `natural-flat` | `off` | `off` (`small-room` if documented) | `edge-of-breakup` |
-| Classic-rock crunch | `ac20-classic-rock-crunch` | `off` | `drive1/classic-rock-crunch-push` | `natural-flat` | `off` | `off` (`small-room` if documented) | `crunch-rhythm` |
+| Edge of breakup | `pr12-saggy-breakup` or `ac20-jangle` | `subtle-clean-sustain` | `drive1/solo-boost` | `natural-flat` | `off` | `small-room` | `edge-of-breakup` |
+| Classic-rock crunch | `ac20-classic-rock-crunch` | `off` | `drive1/classic-rock-crunch-push` | `natural-flat` | `off` | `small-room` | `crunch-rhythm` |
 | Singing lead | `sw50r-singing-lead` | `lead-smoothing` | `drive1/singing-lead-push` | `lead-focus` | `classic-lead` | `large-lead` | `lead` |
 | Blues lead | `sw50r-singing-lead` or `pr12-saggy-breakup` | `lead-smoothing` | `drive2/thicker-blues-lead` | `lead-focus` | `classic-lead` | `spring-ambience` | `lead` |
 | Wide stereo lead | `sw50r-singing-lead` | `lead-smoothing` | `drive1/solo-boost` | `lead-focus` | `big-stereo-lead` | `large-lead` | `big-stereo-lead` |

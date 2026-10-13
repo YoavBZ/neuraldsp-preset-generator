@@ -1124,7 +1124,7 @@
     "delay": {
       "subtle-slapback": {
         "title": "Subtle slapback",
-        "use_when": "rockabilly, country, or just depth on a dry rhythm part",
+        "use_when": "research documents a slapback on the part (rockabilly, country records that use one)",
         "parameters": [
           {
             "module": "delay",
@@ -1179,7 +1179,7 @@
       },
       "classic-lead": {
         "title": "Classic quarter-note lead delay",
-        "use_when": "the Hotel California / classic-rock lead delay",
+        "use_when": "research documents a classic-rock lead delay on the part",
         "note": "delayTime carries a note division - fill in bpm and it resolves to ms. No sync selector needed.",
         "parameters": [
           {
@@ -1352,7 +1352,7 @@
       },
       "spring-ambience": {
         "title": "Classic spring-ish ambience",
-        "use_when": "vintage clean rhythm",
+        "use_when": "research documents spring reverb on a vintage clean rhythm part",
         "parameters": [
           {
             "module": "reverb",
