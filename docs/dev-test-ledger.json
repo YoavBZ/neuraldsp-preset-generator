@@ -87,6 +87,50 @@
     "cambridge-colour-me-red-elecgtr01"
    ],
    "entered": "2026-10-14 (retrospectively, at the ledger's creation)"
+  },
+  {
+   "test_id": "cprime-folds",
+   "plan": "docs/cprime-folds-plan.md",
+   "entered": "2026-10-14, before training",
+   "parts": "none evaluated in this step; training uses the K3 sets 1-2 development pair caches, leaving out one fold's bands",
+   "bands": {
+    "fold0_left_out": [
+     "Adam Buckley",
+     "Atlantis Bound",
+     "Swatkins",
+     "The Travelling Band"
+    ],
+    "fold1_left_out": [
+     "Ale Lak",
+     "Dom McLennon",
+     "Doom Flamingo"
+    ],
+    "fold3_left_out": [
+     "Bernard Purdie Tribute All-Stars",
+     "Eggy",
+     "Starnes And Shah"
+    ]
+   },
+   "gate": "check 2: mean 1-3 kHz coherence (stem-rebuilt vs true DI) on set 3's 5 clean/crunch stem parts; a new fold fails below 0.1126 (fold-2 seeds 0.1360/0.1326/0.1343, minus max(range, 0.02)); one-sided; failure stops arms A and C",
+   "outcome": null,
+   "expected_counts": {
+    "fold0": [
+     34792,
+     14014,
+     27
+    ],
+    "fold1": [
+     38188,
+     10618,
+     29
+    ],
+    "fold3": [
+     38204,
+     10602,
+     33
+    ],
+    "note": "train/val/bleed; Guitar-TECHS P1 is the only band outside K3 and trains every fold"
+   }
   }
  ]
 }
