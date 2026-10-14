@@ -73,7 +73,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 
 ## Next, in order
 
-0. **Song-to-preset model** ([plan](di-recovery-plan.md); the Codex continuation is
+0. **Song-to-preset model** ([current plan](research/ml-plan-2026-10.md); the earlier
+   [plan](di-recovery-plan.md); the Codex continuation is
    reviewed in [codex-continuation-review.md](codex-continuation-review.md)).
 
    **The direction since 2026-10-14: generate settings, don't rank presets.**
@@ -88,8 +89,20 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
        were chosen on 7 of 7.
      - Both are lower bounds: the search falls short.
    - **So everything below, which ranked the menu, measured the menu's limit, not the
-     plugin's.** The next step is predicting or searching settings from a song alone. A cloud
-     research round on that is pending (`tmp/preset-generation-research-prompt.md`, local).
+     plugin's.** The next step is predicting or searching settings from a song alone. The cloud
+     research round on that is in, checked against the repo and turned into one short
+     [ML plan](research/ml-plan-2026-10.md). The user's decisions are in its section 3
+     (2026-10-14); no step is declared yet. Its section 4 is the work order:
+     - C′ for every fold, so rebuilt DIs are leak-free;
+     - one declared comparison on knob ceiling's cells, against its search from today's start:
+       a rebuilt-DI search, a direct stem-to-settings model trained on renders, and the model's
+       guess refined by a short search;
+     - a second knob ceiling for pedals, time effects and Tone King;
+     - a label table with unfiltered stems for every clean and crunch development part;
+     - an optimiser comparison, after the comparison's readout.
+
+     The user approved the comparison, a 200k render limit with knob ceiling counted, and
+     re-using the set-3 development parts (2026-10-14).
    - **Render order:** reused Morgan renders carried the previous render at hiss level until
      `isolate` (#186 for match). The [audit](render-order-audit.md) found no decision
      overturned. Set 5's C′-over-C is fragile: inconclusive if the at-risk parts are dropped,
@@ -153,7 +166,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
        - **The first five sessions (13 parts) are spent** by the confirmation.
        - **The four Internet Archive sessions (22 parts) are unused.**
    - **Rethink (2026-10-10):** no more chooser or judge tweaks on the 33 development
-     parts until the listening check is in.
+     parts until the listening check is in. *(Lifted 2026-10-14 for the ML plan's steps,
+     with a development ledger: ML plan decision 4.)*
      - Rebuilding the DI's fine detail has failed every way tried: longer training, more
        guitars, architecture repairs and a waveform loss.
      - The development data is over-used.
@@ -472,4 +486,5 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-12 | DI path: Tone King renders pre-rolled (D-M1), no tremolo from a recording (D-M7), no low EQ from a mix (D-M8 start), screen and `--enumerate` texts (D-M17, D-M18); the rest parked | [roadmap-history.md](roadmap-history.md), step 5; #168–#171 |
 | 2026-10-13 | The starting presets are heard as closer than what they replaced, and the clean start over the crunch start on clean parts (in-sample, one listener); step 4 says so | `starting-preset-listening-results.md` |
 | 2026-10-14 | Clean first when the class is a guess: not adopted (exploratory; costs crunch parts) | `generate-routing-recheck-results.md`, follow-up |
+| 2026-10-14 | ML plan decisions: train C′ for every fold; 200k render limit with knob ceiling counted; approve the three-way comparison; lift the "33" rule with a development ledger; Five-guitar and Optuna yes, GOAT not now; held-out results the render bug touched kept with a note (not re-rendered), no reserve; optimiser comparison after the readout | [ML plan](research/ml-plan-2026-10.md), section 3 |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |
