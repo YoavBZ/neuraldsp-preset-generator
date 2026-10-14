@@ -1,7 +1,8 @@
 # docs
 
 Start with **[ROADMAP.md](ROADMAP.md)**: where the product is, what comes next, and the
-decisions so far. It is the one living plan. Everything else here is a record: what
+decisions so far. It is the one living plan; the product steps' history is in
+[roadmap-history.md](roadmap-history.md). Everything else here is a record: what
 was declared, what was measured, and the research behind it.
 
 ## How this folder is kept
