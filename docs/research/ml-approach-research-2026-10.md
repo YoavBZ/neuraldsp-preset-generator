@@ -1,5 +1,10 @@
 # ML approach research, October 2026
 
+> **Note, 2026-10-14:** this report was checked against the repository, the papers and the
+> arithmetic. Several of its facts and its first experiment are corrected or superseded by
+> [the checked plan](ml-plan-2026-10.md); its appendix lists each correction. Read the plan
+> first. The text below is unchanged.
+
 No method has yet been shown to beat today's starting presets on held-out songs. The approach most likely to work is a **shortlist system built around a set-valued preset ranker**, and the project has never tried that ranker in the right conditions. The ranker reads the separated guitar stem and scores every preset in a dry menu. It is trained on plugin renders that have been **mixed into real backing tracks, mastered, and passed back through the same separator the product uses**, and its labels allow several presets, and several amps, to be right at once. Web research sets the tone class (clean or crunch), the ranker narrows the menu to 2–3 options, and the user's ear makes the final pick. The current rebuilt-DI chooser stays on as the measured baseline, and as the way to play candidates on the song's own notes.
 
 This bet is chosen for two reasons. First, the three levers that recent work shows closing a render-to-real gap are exactly the ones the project's failed encoder and translator lacked. Those levers are training on the test condition (14.5% → 81.7% top-1 on synthetic instrument mixtures), training on pairs with different notes, and wide tone and player variety (22.8 → 79.0 F1 on unseen guitar tones). Second, the published alternatives fail on the brief's own terms: ST-ITO's authors say it "does not work well" for guitar tone matching, and its AFx-Rep embedding tracks true quality at a Spearman correlation of only 0.36–0.44, even on easier data.
