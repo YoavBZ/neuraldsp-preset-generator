@@ -306,6 +306,33 @@ budget of 150 wasn't calibrated separately. The budgets stay. **The calibration'
 DI's equalisation, much smaller than a real recording's. The readings
 are as in amendment 1: every searched number is a lower bound.
 
+## Amendment 3 (2026-10-14): a pre-roll before every render
+
+Made after the main run's repeat check stopped a shard, **before any result was read**.
+
+**What happened.** On `cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1` (PR12), K_M's first
+render (the menu oracle again) scored 0.0297 (log) away from its menu render on half A, past
+the 0.005 stop rule. The shard stopped; the other five were stopped too.
+
+**The cause.** In that part the guitar is nearly silent from 1.0 to about 3.8 s, so half A is
+mostly the amp's own hiss (about −69 dB). The previous render's dying tail and noise state
+were still at that level for 2–3 s into the next render, and the judge read them as tone: the
+same preset scored 3.42 after one setting and up to 3.92 after another, while half B didn't
+move. (The 2026-10-13 repeat measurement was on a part that plays from the start.)
+
+**The fix.** Every render, menu and search alike, now plays **6 s of silence first**, which
+is cut off (`Renderer.render`, `PREROLL_S`). The same preset rendered after five different
+settings then varies by at most 1.2e-4 (log) on half A and 2e-5 on half B (3 s left 0.0046).
+Renders are 60% longer, so the run takes about 9–11 hours.
+
+**Consequences:**
+- The cells rendered without the pre-roll are set aside (`cells-noprerol/`, not used).
+- The realistic control is re-run with the pre-roll, beside the main run, and its numbers
+  replace amendment 2's if they differ.
+- **The earlier menu pipelines rendered without a pre-roll**, in a fixed order after a
+  warm-up. Their half-A scores on parts that start quietly may carry the same order effect.
+  That is outside this plan; it is noted for an audit.
+
 ## Optional, report-only
 
 **The judge-exploitation check:** if (b) reads "a lot", each part's held half is also rendered

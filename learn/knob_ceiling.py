@@ -364,6 +364,9 @@ def measure_di(part):
     return to_lufs(eq_to(di, avg - (own - own.mean())))
 
 
+PREROLL_S = 6.0
+
+
 class Renderer:
     """A reused plugin process; `render(di, select, edits)` with edits {(module, key): stored}."""
 
@@ -386,11 +389,16 @@ class Renderer:
                       for n, (sel, ed) in m.items()} for amp, m in P.menus(self.pack, self.r).items()}
 
     def render(self, di32, select, edits):
+        """One render, after PREROLL_S of silence that is then cut off, so that the previous
+        render's tail and noise state have died away (plan, amendment 3)."""
         import numpy as np
 
         self.count += 1
         edits = [[m, k, v] for (m, k), v in edits.items()]
-        return np.asarray(self.r.render(di32, {"select": select, "edits": edits}).audio, np.float64)
+        pre = int(PREROLL_S * P.SR)
+        x = np.concatenate([np.zeros(pre, np.float32), di32])
+        y = np.asarray(self.r.render(x, {"select": select, "edits": edits}).audio, np.float64)
+        return y[pre:pre + len(di32)]
 
     def close(self):
         self.r.close()
