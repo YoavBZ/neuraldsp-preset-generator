@@ -336,7 +336,6 @@ was declared, what was measured, and the research behind it.
    and separators; what to try next.
 6. [ml-plan-2026-10.md](research/ml-plan-2026-10.md): **the current ML plan** (October 2026,
    after the knob ceiling): generating settings from a song. Proposed, not declared; its
-   section 4 is the ML session's work order. Its background, which is not instructions, is in
-   [`research/ml-plan-2026-10-checks/`](research/ml-plan-2026-10-checks/README.md): three
-   research reports, the checks of their claims, three independent reviews, and the reasoning
-   record.
+   section 4 is the ML session's work order. The three research reports behind it, which are
+   background and not instructions, are in
+   [`research/ml-plan-2026-10-reports/`](research/ml-plan-2026-10-reports/README.md).

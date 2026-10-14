@@ -2,8 +2,8 @@
 
 > **Note, 2026-10-14:** this report was checked against the repository, the papers and the
 > arithmetic. Several of its facts and its first experiment are corrected or superseded by
-> [the checked plan](../ml-plan-2026-10.md); [`plan-history.md`](plan-history.md), Appendix A, lists each correction. Read the plan
-> first. The text below is unchanged. (This file was `docs/research/ml-approach-research-2026-10.md`.)
+> [the checked plan](../ml-plan-2026-10.md); the full list of corrections is in the earlier
+> commits of PR #191. Read the plan first. The text below is unchanged.
 
 No method has yet been shown to beat today's starting presets on held-out songs. The approach most likely to work is a **shortlist system built around a set-valued preset ranker**, and the project has never tried that ranker in the right conditions. The ranker reads the separated guitar stem and scores every preset in a dry menu. It is trained on plugin renders that have been **mixed into real backing tracks, mastered, and passed back through the same separator the product uses**, and its labels allow several presets, and several amps, to be right at once. Web research sets the tone class (clean or crunch), the ranker narrows the menu to 2–3 options, and the user's ear makes the final pick. The current rebuilt-DI chooser stays on as the measured baseline, and as the way to play candidates on the song's own notes.
 
