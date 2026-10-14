@@ -334,3 +334,12 @@ was declared, what was measured, and the research behind it.
    `research/round-4/`. Its §5 lists the experiments the roadmap draws on.
 5. [round-5-guitar-models.md](research/round-5-guitar-models.md): guitar-specific networks, tools
    and separators; what to try next.
+6. [ml-approach-research-2026-10.md](research/ml-approach-research-2026-10.md): approaches from a
+   song to a preset, ranked (October 2026). Superseded in parts by the plan below, which lists
+   each correction.
+7. [ml-plan-2026-10.md](research/ml-plan-2026-10.md): the checked ML plan after the knob
+   ceiling. It merges three research reports, each claim checked against the repo, the papers and
+   the arithmetic (`research/ml-plan-2026-10-checks/`, with two independent reviews). Proposed, not
+   declared. Its first section is the ML session's work order: C′ for every fold, then one declared
+   comparison of rebuilt-DI search, a direct stem-to-settings model and the two combined, all
+   against knob ceiling's search.

@@ -88,8 +88,18 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
        were chosen on 7 of 7.
      - Both are lower bounds: the search falls short.
    - **So everything below, which ranked the menu, measured the menu's limit, not the
-     plugin's.** The next step is predicting or searching settings from a song alone. A cloud
-     research round on that is pending (`tmp/preset-generation-research-prompt.md`, local).
+     plugin's.** The next step is predicting or searching settings from a song alone. The cloud
+     research round on that is in, checked against the repo and folded into one
+     [ML plan](research/ml-plan-2026-10.md). It is proposed, not declared, and its first section
+     is the work order:
+     - C′ for every fold, so rebuilt DIs are leak-free;
+     - one declared comparison on knob ceiling's cells, against its search from today's start:
+       a rebuilt-DI search, a direct stem-to-settings model trained on renders, and the model's
+       prediction refined by a short search;
+     - a second knob ceiling for pedals, time effects and Tone King.
+
+     The plan awaits the user's decisions 10–13 (render flag, C′ leak, search in `generate`,
+     approval).
    - **Render order:** reused Morgan renders carried the previous render at hiss level until
      `isolate` (#186 for match). The [audit](render-order-audit.md) found no decision
      overturned. Set 5's C′-over-C is fragile: inconclusive if the at-risk parts are dropped,
