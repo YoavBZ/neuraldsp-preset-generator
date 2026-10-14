@@ -263,7 +263,16 @@ def stage1(shard):
         rr.close()
 
 
+PER_EFFECT = 24        # amendment 1: each effect searched on its own (4 effects + the dry render ≈ 100)
+
+
 def stage2(shard):
+    """Amendment 1: each time effect is switched on (at its declared "on" values) and its knobs
+    searched on their own, PER_EFFECT renders each; the cell's result is the best of dry and
+    each effect's best, on the search half. Wet only if it beats dry by WET_MARGIN."""
+    import numpy as np
+
+    ps = K.parts()
     rr = K.Renderer()
     try:
         menu = rr.menu()
@@ -274,24 +283,50 @@ def stage2(shard):
                 continue
             if not disk_ok():
                 raise SystemExit("free disk below the 31 GB guard")
-            start = stage2_start(_load_settings(s1), amp)
+            part = ps[slug]
+            di = K.measure_di(part)
+            ref = CR.mono(part["crop"] / "reference.wav")
+            di32 = di.astype(np.float32)
+            select = next(iter(menu[amp].values()))[0]
             canon = make_canon_effects(amp)
-            x, res, (rr_, di32, select, ref, di, part) = search_cell(
-                rr, menu, slug, amp, search, held, start, stage2_space(amp), BUDGET2, SEED2, canon,
-                settings_fn=lambda y: plugin_settings(y, amp))
+            dry = stage2_start(_load_settings(s1), amp)
+            rr.render(di32, select, plugin_settings(dry, amp))                    # warm-up
+            d_dry = K.judge(ref, rr.render(di32, select, plugin_settings(dry, amp)), di, part["judge_lag"])
             s1res = json.loads((OUT / "stage1" / slug / f"{search}.json").read_text())
-            res["repeat"] = abs(math.log(res["start_search"] / s1res["search"]))
-            if res["repeat"] > REPEAT_TOL:
-                raise RuntimeError(f"repeat moved {res['repeat']:.4f} on {slug} {amp} {search}")
-            res["wet"] = math.log(res["search"] / res["start_search"]) <= -WET_MARGIN
-            res.update(slug=slug, amp=amp, search_half=search, held_half=held, band=part["band"],
-                       gain_class=part["gain_class"],
-                       effects_on=[n for n, (sw, _, _) in EFFECTS.items() if not _off(x, *sw)]
-                       + (["spring"] if amp in SPRING and not _off(x, "spring", SPRING_SWITCH) else []))
+            repeat = abs(math.log(d_dry[search] / s1res["search"]))
+            if repeat > REPEAT_TOL:
+                raise RuntimeError(f"repeat moved {repeat:.4f} on {slug} {amp} {search}")
+            effects = {n: (sw, dims) for n, (sw, _, dims) in EFFECTS.items()}
+            if amp in SPRING:
+                effects["spring"] = (("spring", SPRING_SWITCH), SPRING[amp][1])
+            per, best = {}, ("dry", dry, d_dry)
+            for i, (name, (sw, dims)) in enumerate(effects.items()):
+                start = canon({**dry, sw: "true"})
+                evals = []
+
+                def f(x):
+                    r = K.judge(ref, rr.render(di32, select, plugin_settings(x, amp)), di, part["judge_lag"])
+                    evals.append(r)
+                    return r[search]
+
+                x, _, _, _ = K.knob_search(dims, start, f, PER_EFFECT, SEED2 + i, canon=canon)
+                inc = min(evals, key=lambda r: r[search])
+                per[name] = {"search": inc[search], "held": inc[held], "renders": len(evals),
+                             "evals": [(r["A"], r["B"]) for r in evals]}
+                if inc[search] < best[2][search]:
+                    best = (name, x, inc)
+            wet = best[0] != "dry" and math.log(best[2][search] / d_dry[search]) <= -WET_MARGIN
+            chosen = best if wet else ("dry", dry, d_dry)
+            res = {"search": chosen[2][search], "held": chosen[2][held], "start_search": d_dry[search],
+                   "start_held": d_dry[held], "repeat": repeat, "wet": wet, "best_effect": best[0],
+                   "effects_on": [chosen[0]] if wet else [], "per_effect": per,
+                   "slug": slug, "amp": amp, "search_half": search, "held_half": held,
+                   "band": part["band"], "gain_class": part["gain_class"]}
             d.mkdir(parents=True, exist_ok=True)
-            (d / f"{search}-settings.json").write_text(json.dumps(_settings_json(plugin_settings(x, amp)), indent=0))
+            (d / f"{search}-settings.json").write_text(json.dumps(_settings_json(plugin_settings(chosen[1], amp)), indent=0))
             K._atomic(d / f"{search}.json", res)
-            print(slug, amp, search, "wet" if res["wet"] else "dry", res["effects_on"], rr.count, flush=True)
+            print(slug, amp, search, "wet" if wet else "dry", best[0],
+                  round(math.log(best[2][search] / d_dry[search]), 4), rr.count, flush=True)
     finally:
         rr.close()
 
@@ -373,7 +408,8 @@ def _per_part(rows):
 
 
 def _stats(parts, keep=("clean", "crunch")):
-    return CR.stats([(b, v) for b, c, v in parts if c in keep])
+    rows = [(b, v) for b, c, v in parts if c in keep]
+    return CR.stats(rows) if len({b for b, _ in rows}) >= 2 else {"n": len(rows), "note": "too few bands"}
 
 
 def report():
@@ -391,7 +427,10 @@ def report():
     for group, keep in (("clean+crunch", ("clean", "crunch")), ("clean", ("clean",)), ("crunch", ("crunch",))):
         g = {}
         for name, fn in comps1.items():
-            g[name] = _stats(_per_part([(r["slug"], r["band"], r["gain_class"], fn(r)) for r in s1]), keep)
+            vals = [(r["slug"], r["band"], r["gain_class"], fn(r)) for r in s1]
+            fin = [v for v in vals if math.isfinite(v[3])]
+            g[name] = _stats(_per_part(fin), keep)
+            g[name]["cells_dropped_nonfinite"] = len(vals) - len(fin)
         if s2:
             g["stage2_vs_stage1 (judge)"] = _stats(_per_part(
                 [(r["slug"], r["band"], r["gain_class"], lr(r["held"] / r["start_held"])) for r in s2]), keep)
@@ -411,6 +450,8 @@ def report():
     print(json.dumps({k: v for k, v in out.items() if not isinstance(v, dict) or k in ("pedals_on", "effects_on")}, indent=1))
     for group in ("clean+crunch", "clean", "crunch"):
         for name, s in out.get(group, {}).items():
+            if "mean" not in s:
+                continue
             print(f"{group:13s} {name:36s} mean {s['mean']:+.3f} band-w {s['band_weighted_mean']:+.3f} "
                   f"90% [{s['lo90']:+.3f}, {s['hi90']:+.3f}] bands− {s['bands_negative']}/{s['bands']}")
 

@@ -170,3 +170,21 @@ amendment adds about 4.8–7.2k.
 - **Stage 1's gain is incremental over knob ceiling's EQ stage,** and judge-only.
 - **The judge barely hears time effects,** so stage 2 rests on one listener.
 - **Tempo-locked delay and tremolo phase are out of reach** of this search.
+
+## Amendment 1 (2026-10-15): stage 2 searches each effect on its own
+
+Made after stage 2's first 7 cells. Those cells showed only a search-coverage defect, not a
+reading, and they are discarded (`stage2-v0-discarded/`).
+
+- **The defect:** with every effect off at the start, `canon` makes an off effect's knobs free
+  no-ops, so the only real moves were the 4 on/off switches. Switching an effect on at its
+  declared value scored slightly worse than dry everywhere. So no effect's knobs (e.g. a lower
+  mix) were ever explored, and each search ended after 4–5 renders.
+- **The fix:** each effect (reverb, delay, tremolo, and the spring where the amp has one) is
+  switched on alone, at its declared "on" values, and its knobs are searched by `knob_search`,
+  24 renders each (seed 20261015 + the effect's index).
+  - **The cell's result:** the best of dry and each effect's best, on the search half.
+  - **Wet** only if it beats dry by 0.005 (log), as before.
+  - Effects aren't combined. This is stated as a limit.
+- **The budget:** 1 + 24 × 4 = 97 renders per direction (73 on AC20), about 4.3k in all.
+- **Unchanged:** the listening page and its reading.
