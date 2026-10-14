@@ -795,9 +795,112 @@ def report():
                       f"90% [{s['lo90']:+.3f}, {s['hi90']:+.3f}] bands− {s['bands_negative']}/{s['bands']}")
 
 
+# ---------------------------------------------------------------- cross-part check (amendment 4)
+
+def _settings(path):
+    return {tuple(k.rsplit("/", 1)): v for k, v in json.loads(path.read_text()).items()}
+
+
+def cross(shard):
+    """Every other part's best K_M and EQ settings (same amp, same direction) rendered through
+    this part's measure DI and scored on both halves."""
+    import numpy as np
+
+    ps = parts()
+    check_parts(ps)
+    done = {(c["slug"], c["amp"]): c for c in
+            (json.loads(p.read_text()) for p in sorted((OUT / "cells").glob("*/*/result.json")))}
+    rr = Renderer()
+    try:
+        menu = rr.menu()
+        todo = [(s, a) for s, a in cells() if (s, a) in done
+                and any("skipped" not in done[(s, a)]["runs"][d] for d, _ in DIRECTIONS)]
+        cache = {}
+        for slug, amp in todo[shard[0]::shard[1]]:
+            out_path = OUT / "cross" / slug / f"{amp}.json"
+            if out_path.exists():
+                continue
+            part = ps[slug]
+            if slug not in cache:
+                cache.clear()
+                cache[slug] = (measure_di(part), CR.mono(part["crop"] / "reference.wav"))
+            di, ref = cache[slug]
+            di32 = di.astype(np.float32)
+            select = next(iter(menu[amp].values()))[0]
+            rr.render(di32, select, next(iter(menu[amp].values()))[1])      # warm-up
+            res = {}
+            for search, held in DIRECTIONS:
+                if "skipped" in done[(slug, amp)]["runs"][search]:
+                    continue
+                for tag in ("K_M", "EQ"):
+                    for other, oamp in todo:
+                        if oamp != amp or other == slug:
+                            continue
+                        f = OUT / "cells" / other / amp / f"{tag}-{search}.json"
+                        if not f.exists():
+                            continue
+                        d = judge(ref, rr.render(di32, select, _settings(f)), di, part["judge_lag"])
+                        res.setdefault(search, {}).setdefault(tag, {})[other] = d
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            _atomic(out_path, res)
+            print(slug, amp, rr.count, flush=True)
+    finally:
+        rr.close()
+
+
+def cross_rows(cell, cr):
+    """Per cell: part-specific (own vs median of others) and generic (median of others vs M)
+    held-half log ratios, averaged over the usable directions, for K_M and the EQ stage."""
+    out = {}
+    for search, held in DIRECTIONS:
+        run = cell["runs"][search]
+        if "skipped" in run or search not in cr:
+            continue
+        M_h = cell["menu"][run["M"]][held]
+        for tag, name in (("K_M", "KM"), ("EQ", "EQ")):
+            others = [v[held] for v in cr[search].get(tag, {}).values() if finite(v[held]) and v[held] > 0]
+            own = run[tag]["held"]
+            if not others or not finite(own, M_h):
+                continue
+            med = statistics.median(others)
+            out.setdefault(f"{name}_part_specific", []).append(log_ratio(own, med))
+            out.setdefault(f"{name}_generic", []).append(log_ratio(med, M_h))
+    return {k: statistics.fmean(v) for k, v in out.items()}
+
+
+def cross_report():
+    rows = []
+    for p in sorted((OUT / "cross").glob("*/*.json")):
+        slug, amp = p.parent.name, p.stem
+        cell = json.loads((OUT / "cells" / slug / amp / "result.json").read_text())
+        r = cross_rows(cell, json.loads(p.read_text()))
+        if r:
+            rows.append((cell, r))
+    out = {"cells": len(rows)}
+    for group, keep in (("clean+crunch", IN_SCOPE), ("clean", ("clean",)), ("crunch", ("crunch",))):
+        sel = [(c, r) for c, r in rows if c["gain_class"] in keep]
+        if not sel:
+            continue
+        g = {k: CR.stats([(c["band"], r[k]) for c, r in sel if k in r]) for k in sel[0][1]}
+        ps_, gen = g["KM_part_specific"], g["KM_generic"]
+        g["reading"] = {
+            "part_specific": ps_["band_weighted_mean"] <= -0.04 and ps_["bands_negative"] > ps_["bands"] / 2,
+            "mostly_generic": ps_["band_weighted_mean"] > -0.04 and gen["band_weighted_mean"] <= -0.10}
+        out[group] = g
+    _atomic(OUT / "cross-result.json", out)
+    for group, g in out.items():
+        if not isinstance(g, dict):
+            continue
+        print(group, g["reading"])
+        for k, s in g.items():
+            if isinstance(s, dict) and "mean" in s:
+                print(f"  {k:20s} mean {s['mean']:+.3f} band-w {s['band_weighted_mean']:+.3f} "
+                      f"90% [{s['lo90']:+.3f}, {s['hi90']:+.3f}] bands− {s['bands_negative']}/{s['bands']}")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("step", choices=("control", "run", "report"))
+    ap.add_argument("step", choices=("control", "run", "report", "cross", "cross-report"))
     ap.add_argument("--shard", default="0/1")
     ap.add_argument("--cats", default="restart", choices=("once", "levels", "restart"))
     ap.add_argument("--budget", type=int)
@@ -810,6 +913,11 @@ def main(argv=None):
     elif a.step == "run":
         i, n = map(int, a.shard.split("/"))
         run((i, n), a.only)
+    elif a.step == "cross":
+        i, n = map(int, a.shard.split("/"))
+        cross((i, n))
+    elif a.step == "cross-report":
+        cross_report()
     else:
         report()
 

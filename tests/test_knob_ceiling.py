@@ -248,3 +248,14 @@ def test_knob_search_without_mics_gives_the_rest_to_the_final_stage():
     x0 = K.eq_start({}, "pr12")
     _, _, _, stages = K.knob_search(dims, x0, lambda x: abs(float(x[("pr12EQ", "pr12EQBand3")]) - 4), 100, 0)
     assert set(stages) == {"main", "final"}
+
+
+def test_cross_rows_separates_part_specific_from_generic():
+    cell = {"menu": {"M": {"A": 4.0, "B": 4.0}},
+            "runs": {"A": {"M": "M", "K_M": {"held": 2.0}, "EQ": {"held": 2.0}},
+                     "B": {"M": "M", "K_M": {"held": 2.0}, "EQ": {"held": 2.0}}}}
+    others = {"x": {"A": 3.0, "B": 3.0}, "y": {"A": 3.0, "B": 3.0}, "z": {"A": 9.0, "B": 9.0}}
+    cr = {"A": {"K_M": others, "EQ": others}, "B": {"K_M": others, "EQ": others}}
+    r = K.cross_rows(cell, cr)
+    assert r["KM_part_specific"] == pytest.approx(math.log(2 / 3))
+    assert r["KM_generic"] == pytest.approx(math.log(3 / 4))
