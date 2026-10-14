@@ -110,3 +110,17 @@ def predates_preroll(recorded, current) -> bool:
     return bool(keys) and all(recorded[k] == current[k] for k in keys
                               if k in ("renderer_id", "plugin_version", "renderer_build",
                                        "sample_rate", "block_size", "quality_mode"))
+
+
+def predates_isolate(recorded, current) -> bool:
+    """Whether two render identities differ only in Morgan's per-render isolation
+    (`isolate=auto` recorded, `isolate=true` now: match runs from before 0.7.110)."""
+    recorded, current = dict(recorded or {}), dict(current or {})
+    before = str(recorded.get("quality_mode") or "")
+    now = str(current.get("quality_mode") or "")
+    if "isolate=auto" not in before or "isolate=true" not in now:
+        return False
+    recorded["quality_mode"] = before.replace("isolate=auto", "isolate=true")
+    keys = ("renderer_id", "plugin_version", "renderer_build", "sample_rate",
+            "block_size", "quality_mode")
+    return all(recorded.get(k) == current.get(k) for k in keys if k in recorded)

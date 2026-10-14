@@ -390,8 +390,12 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    results were reported: D-H2, D-M5. Parked:
    - **Tone King re-scoring (rest of D-M1):** the research benchmark's Tone King
      scoring renders still have no pre-roll; that is the ML session's.
-   - **Morgan's reused-instance history (D-M13):** the renderer's warm-up is shared
-     with research renders; coordinate with the ML session first.
+   - **Morgan's reused-instance history (D-M13):** addressed in the product match path
+     for the carry-over of the previous render: Morgan renders now isolate each state
+     write, which removed it on one PR12 part (knob-ceiling plan, amendment 3). AC20,
+     the tremolo and the rack reverb still need `--process-policy fresh`; the 0.25 s
+     fade-in isolation adds is unmeasured on the match loss. The shared renderer's
+     default is unchanged; the ML session audits its own pipelines.
    - **Search controls:** `--enumerate` (D-M17) and the screen's false premise
      (D-M18): their help and report texts are corrected by #171. Parked: screening
      each enumerated variant's own active controls, and a midpoint probe.

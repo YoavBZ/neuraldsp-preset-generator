@@ -295,8 +295,12 @@ def main() -> None:
         metadata = renderer.metadata()
         recorded = summary.get("renderer") or {}
         if not same_renderer(recorded, metadata.as_dict()):
-            from match.preroll import predates_preroll
+            from match.preroll import predates_isolate, predates_preroll
 
+            if predates_isolate(recorded, metadata.as_dict()):
+                die("the completed run was scored before Morgan renders started "
+                    "isolating each state write; the plugin did not change. Rerun the "
+                    "match before collecting a listening verdict")
             if predates_preroll(recorded, metadata.as_dict()):
                 die("the completed run was scored before Tone King renders started "
                     "with a silent pre-roll (its renders' openings were muted); "
