@@ -346,6 +346,55 @@ cost per render. Without it the spread was 0.138.
   warm-up. Their half-A scores on parts that start quietly may carry the same order effect.
   That is outside this plan; it is noted for an audit.
 
+## Amendment 4 (2026-10-14): the cross-part check and the listening details
+
+Made after the main result and its audit (`tmp/knob-ceiling-results-audit.md`, local), **before
+either check below is run.**
+
+**Why.** Knobs read "a lot by the judge" (K_M vs M −0.205, 14/14 bands). The audit found the
+found settings share a direction across parts (less drive, less bass, darker; input gain at the
+−20 dB floor in 47 of 144 K_M runs; EQ edge bands at ±12 dB), while still differing about twice
+as much across parts as between one part's two halves. A shared direction could be the judge's
+preference, or a real, consistent mismatch between the measure DI and the recordings (which would
+still be a useful product default). This check separates the generic from the part-specific gain.
+
+**The cross-part check** (`learn/knob_ceiling.py cross`, development only):
+- For each cell (part × amp, Honey excluded) and each direction, every *other* part's best K_M
+  settings and best EQ settings from the same amp and direction are rendered through this part's
+  measure DI and scored on this part's held half. That is about 2 × 3,300 renders, with
+  `isolate`.
+- Per cell, from the held-half distances:
+  - **part-specific gain** = own K_M vs the median of the other parts' K_M settings (log ratio);
+  - **generic gain** = the median of the other parts' K_M settings vs M;
+  - the same two for the EQ stage.
+- The statistics are as in the main report: per cell, the mean of the two directions; band- and
+  part-weighted; 90% band-clustered t.
+- **The readings** (descriptive):
+  - **Part-specific:** the band-weighted part-specific gain at −0.04 or below, with most bands
+    negative. The knobs found something about this recording, not just a generic move.
+  - **Mostly generic:** the part-specific gain above −0.04, while the generic gain is at −0.10
+    or below. Then the gain is a shared move: a better default start, or a judge preference.
+    The listening check decides which.
+  - Both can hold at once.
+
+**The listening page, made definite:**
+- **The cells** are the audit's: the top 4 by cross-half K_M gain, plus 2 drawn with
+  `random.Random(20261013).sample(sorted(remaining cells), 2)`. That gives:
+  - magilla SW50R (B→A);
+  - magilla AC20 (B→A);
+  - Bloomlight AC20 (A→B);
+  - Fragments SW50R (A→B);
+  - Long Way Home SW50R (A→B);
+  - colour-me-red AC20 (A→B).
+- **One more cell** whose EQ sits at ±12 dB on an edge band, to hear the judge's spectral
+  weakness: the cell with the largest EQ-vs-K_M gain among those, if not already chosen.
+- **Per cell, the held half only:** the recording, M (re-rendered with `isolate`) and K_M, plus
+  the EQ render where EQ vs K_M ≤ −0.04 on that direction. All clips are loudness-matched.
+- **Blind and unlabelled, in random order** (seed 20261013). The user answers "which is closest
+  to the record?" per cell.
+- **The reading:** K_M (or EQ) chosen over M on most cells means the judge's gain is audible.
+  Listening is descriptive here: 6–7 cells can't be a significance test.
+
 ## Optional, report-only
 
 **The judge-exploitation check:** if (b) reads "a lot", each part's held half is also rendered
