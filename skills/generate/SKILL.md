@@ -341,8 +341,8 @@ Tone King recipes use its verified sync-note selectors. See
     point" and "the crunch starting point".
   - **Make them dry first** with `--recipe dry/toneking`, and **keep the baseline's
     channel, amp settings, drives, compressor, EQ and cab** unless research documents a different value for this part: skip
-    step 3's amp, drive1, drive2, compressor, eq and cab layers, and set a documented
-    value in the spec instead.
+    step 3's amp, drive1, drive2, compressor, eq and cab layers otherwise, and set a
+    documented value in the spec instead.
     Above all, don't apply an `amp/*` recipe: every one sets the channel and the amp's
     controls, which undoes what was measured (on Squishy Lead it removes the crunch).
   - **If the file is missing,** say so and ask for one of the user's own Tone King
