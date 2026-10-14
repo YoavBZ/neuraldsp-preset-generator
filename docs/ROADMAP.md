@@ -349,7 +349,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
   presets heard by ear ([listening](starting-preset-listening-results.md)); fixes from
   two real end-to-end runs (no default effects, don't guess the part's window, research
   the part, not the song, disclose pedal stand-ins), and two more runs where the second
-  start caught a wrong guess (the old "another end-to-end run" item); the DI-path
+  start caught a wrong guess ([end-to-end runs](e2e-runs-2026-10-13.md); the old
+  "another end-to-end run" item); the DI-path
   defects D-M1 (product side), D-M7, D-M8's start and D-M13 (the carried-over render),
   and D-M17/D-M18's texts; `generate` framed as building the whole preset.
 - **Next, once the knob-ceiling result is in:** if setting controls gets meaningfully
