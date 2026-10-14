@@ -392,9 +392,15 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
   "another end-to-end run" item); the DI-path
   defects D-M1 (product side), D-M7, D-M8's start and D-M13 (the carried-over render),
   and D-M17/D-M18's texts; `generate` framed as building the whole preset.
-- **Next, once the knob-ceiling result is in:** if setting controls gets meaningfully
-  closer than the starting presets, plan how `generate` sets more controls from the
-  song (the user's goal). *The two render checks are done (2026-10-14, one development
+- **Setting controls has real headroom** ([knob ceiling](knob-ceiling-results.md),
+  2026-10-14): with the take's true DI, on development, a knob search got about 22%
+  closer than `generate`'s starting preset (−0.253) and 19% closer than the best
+  factory preset (−0.205, every band), the settings were specific to the part, and one
+  listener chose them on 7 of 7 blind trials. Lower bounds, true DI, one take.
+- **Next: `generate` sets more controls from the song,** once the ML session's plan
+  step 3 shows how to get such settings without a DI (its decision 5 puts the
+  `generate` change after that readout). Until then `generate` sets what research
+  documents. *The two render checks are done (2026-10-14, one development
   part, PR12):* fresh-process renders with isolation repeat exactly (maximum difference
   0.0); the isolation fade-in (the same for every candidate) moved the match loss by
   about 0.003 weighted, mostly its dynamics term (0.012: attack and loudness range;
