@@ -339,3 +339,8 @@ was declared, what was measured, and the research behind it.
    section 4 is the ML session's work order. The three research reports behind it, which are
    background and not instructions, are in
    [`research/ml-plan-2026-10-reports/`](research/ml-plan-2026-10-reports/README.md).
+7. [guitar-separation-2026-10.md](research/guitar-separation-2026-10.md): which open separator
+   gives the best electric-guitar stem on Apple silicon (October 2026, for ML plan step 3).
+   Keep htdemucs_6s: the best published model (BS-RoFormer SW) has no known weights licence,
+   and the 2026-10-08 test's challenger gained only about +0.5 dB paired. Proposes a re-scoring
+   test with a paired, band-clustered bar and spectral guards. Research, not a declared plan.
