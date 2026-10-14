@@ -1194,8 +1194,13 @@ def _paired_reference(args, reference_samples, probe_samples, metadata, document
         die("--paired-provenance was rendered with a different plugin pack")
     recorded_renderer = document.get("renderer") or {}
     if not same_renderer(recorded_renderer, metadata.as_dict()):
-        from match.preroll import predates_preroll
+        from match.preroll import predates_isolate, predates_preroll
 
+        if predates_isolate(recorded_renderer, metadata.as_dict()):
+            die("--paired-provenance was rendered before Morgan renders started "
+                "isolating each state write (a reused process carried the previous "
+                "render into the next); the plugin did not change. Render the paired "
+                "reference again")
         if predates_preroll(recorded_renderer, metadata.as_dict()):
             die("--paired-provenance was rendered before Tone King renders started "
                 "with a silent pre-roll (its opening was muted); render the paired "
@@ -1221,7 +1226,17 @@ def _renderer(name: str, pack_id: str = "morgan", process_policy: str = "reuse")
     if name == "swift":
         from match.renderer_au import AudioUnitError, AudioUnitRenderer
 
-        renderer = AudioUnitRenderer(pack_id, process_policy=process_policy)
+        # A reused Morgan process carries the previous render for 2-3 s at the amp's
+        # hiss level (its reset does not clear everything), which moved the judge on
+        # quiet-starting parts (3.42 against 3.92 for one preset). Cycling the render
+        # resources around each state write removes it at no measurable cost (the ML
+        # session's knob-ceiling plan, amendment 3; audit D-M13). Isolation fades each
+        # render in over its first 0.25 s; measured on one PR12 part at the template's
+        # default settings, it moved this path's unpaired-v3 loss by 0.0002 (timbre) and
+        # 0.012 (dynamics; about 0.003 weighted). Tone King decides its own isolation
+        # on its first render.
+        renderer = AudioUnitRenderer(pack_id, process_policy=process_policy,
+                                     isolate=True if pack_id == "morgan" else None)
         try:
             # Instantiating here rather than at the first render: the plugin is
             # the one thing that can be missing, unlicensed or a different
