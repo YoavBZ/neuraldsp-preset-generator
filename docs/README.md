@@ -344,3 +344,9 @@ was declared, what was measured, and the research behind it.
    Keep htdemucs_6s: the best published model (BS-RoFormer SW) has no known weights licence,
    and the 2026-10-08 test's challenger gained only about +0.5 dB paired. Proposes a re-scoring
    test with a paired, band-clustered bar and spectral guards. Research, not a declared plan.
+8. [di-riffs-and-part-classifier-2026-10.md](research/di-riffs-and-part-classifier-2026-10.md):
+   shippable clean electric-guitar DI riffs by style and register, and open tools to tell chords
+   from single notes and a part's register (October 2026, for the product session's listening
+   page). Cut new riffs from Guitar-TECHS (CC BY 4.0, about 295 DI minutes); power chords and
+   riffs are the one uncovered cell. Basic Pitch (Apache-2.0) is the recommended engine; its
+   thresholds are untested. Research, not a declared plan.
