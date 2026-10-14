@@ -335,7 +335,7 @@ was declared, what was measured, and the research behind it.
 5. [round-5-guitar-models.md](research/round-5-guitar-models.md): guitar-specific networks, tools
    and separators; what to try next.
 6. [ml-plan-2026-10.md](research/ml-plan-2026-10.md): **the current ML plan** (October 2026,
-   after the knob ceiling): generating settings from a song. Proposed, not declared; its
+   after the knob ceiling): generating settings from a song. The user's decisions are made; its
    section 4 is the ML session's work order. The three research reports behind it, which are
    background and not instructions, are in
    [`research/ml-plan-2026-10-reports/`](research/ml-plan-2026-10-reports/README.md).
