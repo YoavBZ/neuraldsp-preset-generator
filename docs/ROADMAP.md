@@ -357,8 +357,10 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
   closer than the starting presets, plan how `generate` sets more controls from the
   song (the user's goal). *The two render checks are done (2026-10-14, one development
   part, PR12):* fresh-process renders with isolation repeat exactly (maximum difference
-  0.0); the isolation fade-in moved the match loss's timbre term by 0.0003 and its
-  dynamics term by 0.012 (attack and loudness range), the same for every candidate.
+  0.0); the isolation fade-in (the same for every candidate) moved the match loss by
+  about 0.003 weighted, mostly its dynamics term (0.012: attack and loudness range;
+  timbre 0.0002), at the template's default settings. Its effect on a ranking is not
+  measured: the shift is a distance to an unfaded target, so it can differ by candidate.
 - **Parked, with reasons:**
   - **Riffs in the part's style and register** for the listening page: needs new CC-BY
     recordings (a download).
