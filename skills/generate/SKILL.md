@@ -16,8 +16,18 @@ allowed-tools: Read, Glob, Grep, Bash, WebSearch, WebFetch
 
 # Generate a preset
 
-Turn a description of a tone into a loadable preset. Read
-[preset-spec.md](../../reference/preset-spec.md) before writing anything — it
+Turn a description of a tone into a loadable preset. **The job is the whole preset:**
+the amp and channel, every amp knob and switch, input gain, drive pedals, cab and mics,
+EQ, and the effects the song needs. A factory starting preset (step 4) is where the
+controls begin, not the answer: there may be no factory preset close to the song.
+Set each control from what research documents for the part, and say which you set and
+why. Today the evidence keeps most of the start's tone controls unless research names
+them: research edits on top of the start were not shown to help or hurt
+([routing check, part 2](../../docs/generate-routing-results.md)), and settings
+calculated from a recording without a DI ended further away. How far setting more
+controls can get is being measured.
+
+Read [preset-spec.md](../../reference/preset-spec.md) before writing anything — it
 covers the value convention, the spec format, and the scripts.
 
 ## 1. Understand the ask
@@ -189,7 +199,7 @@ note divisions to milliseconds with `${CLAUDE_PLUGIN_ROOT}/packs/timing.py`;
 Tone King recipes use its verified sync-note selectors. See
 [selectors-and-timing.md](../../reference/selectors-and-timing.md).
 
-## 4. Pick a template
+## 4. Pick a starting point
 
 - For Morgan, the fallback template is `${CLAUDE_PLUGIN_ROOT}/samples/Example_Clean_PR12.xml`
   — IR-free, portable, and shipped with the repo.

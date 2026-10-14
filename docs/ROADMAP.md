@@ -7,10 +7,15 @@ lives in the linked documents. Last updated 2026-10-12.
 
 - **Input is a song.** The user gives a song (and a time where the guitar plays), never
   a DI of the performance.
+- **The goal (user, 2026-10-14):** from a song and its research, generate the most
+  accurate preset by setting every control the song needs. Choosing the closest
+  factory preset is not the purpose; factory presets are starting points.
 - **`generate`** researches the song, sorts the part into clean, crunch or heavier
   (Tone King: clean or crunch only), starts from that class's dry factory preset, and
-  applies research edits (mostly effects; amp, drive, EQ and cab kept unless research
-  contradicts them):
+  sets the controls research documents (today mostly effects; amp, drive, EQ and cab
+  kept unless research names them, since edits on top of the start were not shown to
+  help; the knob-ceiling test is the first to measure how far setting controls can
+  get):
   - **Morgan clean:** Royally Ambient (PR12), Pedal Platform Clean (SW50R), Low-Watt
     Americana (AC20), about 12% closer than the template on held-out clean parts
     ([results](clean-baseline-results.md)).
