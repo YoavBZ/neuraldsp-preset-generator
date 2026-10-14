@@ -320,16 +320,29 @@ were still at that level for 2–3 s into the next render, and the judge read th
 same preset scored 3.42 after one setting and up to 3.92 after another, while half B didn't
 move. (The 2026-10-13 repeat measurement was on a part that plays from the start.)
 
-**The fix.** Every render, menu and search alike, now plays **6 s of silence first**, which
-is cut off (`Renderer.render`, `PREROLL_S`). The same preset rendered after five different
-settings then varies by at most 1.2e-4 (log) on half A and 2e-5 on half B (3 s left 0.0046).
-Renders are 60% longer, so the run takes about 9–11 hours.
+**The root cause.** The render server already calls the plugin's `reset` before every render
+(`scripts/au_render_server.swift`). Morgan's `reset` clears its delay and reverb tails but not
+some other internal state, so the previous render stays audible at the amp's hiss level.
+Freeing and rebuilding the plugin's render resources around each state write (the renderer's
+existing `isolate` option) clears it.
+
+**The fix.** Every render uses `isolate`. The same preset rendered after five different
+settings then varies by at most 5e-5 (log) on half A and 2e-5 on half B, at no measurable
+cost per render. Without it the spread was 0.138.
+
+- **A first fix, now replaced:** 6 s of silence before every render, cut off. It left 1.2e-4
+  (3 s left 0.0046) and made renders 60% longer. It ran for about 1.5 hours.
+- **The two agree.** Rendered both ways, the same presets match to within 2e-4 from 0.25 s on.
+  `isolate` fades in over the first 0.25 s, which the judge (from 1.0 s) never sees. The
+  menus of two of the 20 cells finished with the silence fix, re-scored with `isolate`,
+  differ by at most 1.4e-4 (log; 160 scores). So those 20 cells are kept, and every other
+  cell uses `isolate`.
 
 **Consequences:**
-- The cells rendered without the pre-roll are set aside (`cells-noprerol/`, not used).
-- The realistic control is re-run with the pre-roll, beside the main run, and its numbers
-  replace amendment 2's if they differ.
-- **The earlier menu pipelines rendered without a pre-roll**, in a fixed order after a
+- The cells rendered with neither fix are set aside (`cells-noprerol/`, not used).
+- The realistic control, re-run with the silence fix, matched amendment 2's numbers to four
+  digits (its two parts play from the start), so they stand.
+- **The earlier menu pipelines rendered without either fix**, in a fixed order after a
   warm-up. Their half-A scores on parts that start quietly may carry the same order effect.
   That is outside this plan; it is noted for an audit.
 

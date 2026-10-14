@@ -364,7 +364,7 @@ def measure_di(part):
     return to_lufs(eq_to(di, avg - (own - own.mean())))
 
 
-PREROLL_S = 6.0
+PREROLL_S = 0.0            # amendment 3: replaced by `isolate`; kept for the cells rendered with 6 s
 
 
 class Renderer:
@@ -380,7 +380,11 @@ class Renderer:
                         "edits": [{"module": m, "key": k, "value": v} for m, k, v in settings["edits"]]}
 
         self.pack = load_pack("morgan")
-        self.r = _R("morgan", process_policy="reuse")
+        # `isolate`: render resources are freed and rebuilt around every state write. Morgan's
+        # `reset` (which the server calls before every render) leaves some state from the
+        # previous render audible for 2-3 s, at the amp's hiss level (plan, amendment 3);
+        # rebuilding clears it, at no measurable cost.
+        self.r = _R("morgan", process_policy="reuse", isolate=True)
         self.count = 0
 
     def menu(self):
@@ -389,8 +393,7 @@ class Renderer:
                       for n, (sel, ed) in m.items()} for amp, m in P.menus(self.pack, self.r).items()}
 
     def render(self, di32, select, edits):
-        """One render, after PREROLL_S of silence that is then cut off, so that the previous
-        render's tail and noise state have died away (plan, amendment 3)."""
+        """One render; with PREROLL_S > 0, after that much silence, cut off (plan, amendment 3)."""
         import numpy as np
 
         self.count += 1
