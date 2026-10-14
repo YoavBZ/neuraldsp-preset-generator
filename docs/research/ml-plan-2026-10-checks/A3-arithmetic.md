@@ -84,3 +84,25 @@ With band SD 0.101, the standard error of a band mean is 0.101/√k. With a flat
 | 11 | 0.675 | 0.899 |
 
 A "futile" rule of P(|θ| < 0.03) > 0.8 can never fire. P(|θ| < 0.05) > 0.8 is reachable only near a zero mean, with 8 or more bands. The plan uses the 0.05 version.
+
+## Added with Amendment 1: budget arithmetic
+
+All figures in thousands of new renders. Knob ceiling is 70.275k.
+
+**Steps:**
+- **A5:** 12 cells × (1 + 2 + 2 seeded arms) × 300 + 6 × 200 = 18.0 + 1.2 = **19.2**.
+- **B3:** 25 × 3 × 2 × 150 = 22.5; control 12 × 150 = 1.8; true-DI scoring ~0.15; C′ menu pick 25 × 111 = 2.775. Total **27.2**.
+- **Main line:** 3.1 + 0.15 + 7.6 + 19.2 + 27.2 = **57.25**. With the K_S re-run (+22.5): 79.75.
+- **F1 with generation:** 39 × 2 × 150 + 4.3 = 16.0; 39 × 2 × 500 + 4.3 = 43.3.
+
+**Paths:**
+
+| Path | Without knob ceiling | With knob ceiling |
+|---|---|---|
+| 5a: + D1 20 + E1 1 + F1 16.0–43.3 | 94.25–121.55 | 164.5–191.8 |
+| 5a with the K_S re-run | — | up to 214.1 |
+| 5b, DI route: + diagnostic 7.5 + B2 23.3 + D3 10 + B3 again 27.2, then 5a | 162.25–189.55 | 232.5–259.8 |
+| 5b, learned route: + 7.5 + C1 12 + C2 33 + B3 again 27.2, then 5a | 173.95–201.25 | 244.2–271.5 |
+
+- With the K_S re-run, 5a stays under 200k with knob ceiling only if F1 ≤ 28.95k, i.e. ≤ ~316 renders per song per direction (39 parts × 2 directions).
+- The passing path saves B2 + C1 = 35.3k, up to B2 + C1 + C2 + D3 = 78.3k, against A5 + B3 = 46.4k.
