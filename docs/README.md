@@ -243,6 +243,14 @@ was declared, what was measured, and the research behind it.
   gradient bug (every DI network trained on a corrupted spectral gradient) is fixed. The
   corrected network picks better, marginally and on crunch only (a second seed is
   running). A residual pass-through network is futile.
+- [knob-ceiling-plan.md](knob-ceiling-plan.md) → [results](knob-ceiling-results.md): the first
+  measurement of *generating* settings rather than ranking the menu. By the judge, on
+  development and with the true DI, a knob search beats the best menu preset by about 19%
+  (14/14 bands), plus 8% from the EQ. The gain is part-specific, and a blind check (one
+  listener) chose the search on 7 of 7 trials. Lower bounds.
+- [render-order-audit.md](render-order-audit.md): reused Morgan renders carried the previous
+  render at hiss level until `isolate`. No decision overturned; set 5's C′-over-C is fragile
+  (inconclusive if the at-risk parts are dropped).
 - [audit-2026-10-11.md](audit-2026-10-11.md): an adversarial audit of the ML negatives.
   No calculation errors; the sound translator and the DI-network route are undecided,
   not failed; the 3 kHz cut hurts on clean and is off there.
