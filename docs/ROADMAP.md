@@ -347,26 +347,33 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
   ([routing](generate-routing-results.md), [re-check](generate-routing-recheck-results.md));
   a second starting point when the part isn't clean or the class is a guess; the starting
   presets heard by ear ([listening](starting-preset-listening-results.md)); fixes from
-  three real end-to-end runs (no default effects, don't guess the part's window, research
-  the part, not the song); the DI-path defects D-M1, D-M7, D-M8 and D-M13 (the latter
-  for the carried-over render); `generate` framed as building the whole preset.
+  two real end-to-end runs (no default effects, don't guess the part's window, research
+  the part, not the song, disclose pedal stand-ins), and two more runs where the second
+  start caught a wrong guess (the old "another end-to-end run" item); the DI-path
+  defects D-M1 (product side), D-M7, D-M8's start and D-M13 (the carried-over render),
+  and D-M17/D-M18's texts; `generate` framed as building the whole preset.
 - **Next, once the knob-ceiling result is in:** if setting controls gets meaningfully
   closer than the starting presets, plan how `generate` sets more controls from the
   song (the user's goal); two render checks first (isolated renders repeat exactly; the
   isolation fade-in's effect on the match loss).
 - **Parked, with reasons:**
-  - **Riffs in the part's register** and **the song's own part on the listening page:**
-    the rebuilt DI is not good enough by ear yet; needs a download.
-  - **The part locator:** untestable on development data (ML, `part-locator-results.md`);
-    `generate` asks for a time instead.
-  - **Clean first when the class is a guess:** checked on the re-check runs (agents
-    called 31 of 34 parts a guess): it would make the first preset worse overall
-    (+0.044, 90% −0.034 to +0.118), helping clean parts a little and costing crunch
-    parts about 0.26. Not adopted.
+  - **Riffs in the part's style and register** for the listening page: needs new CC-BY
+    recordings (a download).
+  - **The song's own part on the listening page:** the rebuilt DI is not good enough by
+    ear yet.
+  - **The part locator:** underpowered on development data (7 targets in 6 bands against
+    a floor of 15 in 10; [results](part-locator-results.md)); `generate` asks for a time
+    instead.
+  - **Clean first when the class is a guess:** exploratory, in-sample and post hoc on the
+    re-check runs (31 of 34 parts called a guess; [follow-up](generate-routing-recheck-results.md)).
+    Overall undecided (+0.044, 90% −0.034 to +0.118), but it clearly costs crunch parts
+    (+0.19, 0.08 to 0.30) for a small, undecided gain on clean ones (−0.05, −0.10 to
+    +0.01). Not adopted.
   - **DI-path leftovers:** screening each enumerated variant, a midpoint probe, the
     tremolo rate step, `paired_di` tremolo, and the search objective (ML).
   - **Earlier research steps** (a DI-free distance, the derived-DI route, the judge's
-    coverage): ML's area; see the history file.
+    coverage): done or ML's; see the history file. Any search scored by the judge needs
+    a positive control first.
 
 ## Parked
 
@@ -434,4 +441,5 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-12 | The new routing rule is kept: it routes better than the old skill on the same parts (in-sample) | `generate-routing-recheck-results.md` |
 | 2026-10-12 | DI path: Tone King renders pre-rolled (D-M1), no tremolo from a recording (D-M7), no low EQ from a mix (D-M8 start), screen and `--enumerate` texts (D-M17, D-M18); the rest parked | [roadmap-history.md](roadmap-history.md), step 5; #168–#171 |
 | 2026-10-13 | The starting presets are heard as closer than what they replaced, and the clean start over the crunch start on clean parts (in-sample, one listener); step 4 says so | `starting-preset-listening-results.md` |
+| 2026-10-14 | Clean first when the class is a guess: not adopted (exploratory; costs crunch parts) | `generate-routing-recheck-results.md`, follow-up |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |
