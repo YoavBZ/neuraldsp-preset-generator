@@ -76,9 +76,11 @@ You don't have to use the slash commands — just describing what you want
 ## The three skills
 
 - **`generate`** — describe a song, artist, or sound; the skill researches how
-  the tone was recorded, measures supplied audio when present, maps both to the
-  plugin's amps and effects, writes a preset, and puts it where the plugin will
-  find it.
+  the tone was recorded, measures supplied audio when present, and builds the whole
+  preset: amp and channel, amp knobs, input gain, pedals, cab and mics, EQ and the
+  effects the song needs. It starts from a factory preset, not to pick the closest
+  one but as the place the controls begin, then sets what research documents, and
+  puts the result where the plugin will find it.
   - **Where a Morgan preset starts.** From a factory preset the plugin installs (or
     the shipped template if that preset isn't installed), picked by how much gain the
     part has: clean, crunch, or driven for a heavier part. It is made dry first (the
