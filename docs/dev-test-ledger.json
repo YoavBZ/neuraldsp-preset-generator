@@ -131,6 +131,55 @@
     ],
     "note": "train/val/bleed; Guitar-TECHS P1 is the only band outside K3 and trains every fold"
    }
+  },
+  {
+   "test_id": "knob-ceiling-2",
+   "plan": "docs/knob-ceiling-2-plan.md",
+   "entered": "2026-10-14, before any render",
+   "parts": [
+    "cambridge-Drag_Me_Down-ElecGtr4",
+    "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1",
+    "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+    "cambridge-Passing_Ships-ElecGtr6",
+    "cambridge-Prodigal-ElecGtr5",
+    "cambridge-Quicksand-ElecGtr1",
+    "cambridge-Signs-ElecGtr2",
+    "cambridge-Today's_The_Day-ElecGtr10",
+    "cambridge-colour-me-red-elecgtr01",
+    "cambridge-femme-elecgtr3",
+    "cambridge-get-out-of-bed-elecgtr1",
+    "cambridge-just-don-t-talk-elecgtr3",
+    "cambridge-magilla-elecgtr1dt",
+    "telefunken-Blind_Spots-GTR",
+    "telefunken-Bloomlight-GTR",
+    "telefunken-Farthest_Step-GTR",
+    "telefunken-First_Offering-GTR_1",
+    "telefunken-First_Offering-GTR_2",
+    "telefunken-Fragments-GTR",
+    "telefunken-Gym_Hours-GTR_1",
+    "telefunken-Long_Way_Home-GTR",
+    "telefunken-Russian_Cream-GTR_2",
+    "telefunken-Sculptor's_Request-GTR_1",
+    "telefunken-Sculptor's_Request-GTR_2"
+   ],
+   "bands": [
+    "Adam Buckley",
+    "Atlantis Bound",
+    "Diesel13",
+    "Dom McLennon",
+    "Doom Flamingo",
+    "Eat The Feeder",
+    "Eggy",
+    "Magician's Nephew",
+    "Starnes And Shah",
+    "The Travelling Band",
+    "Timo And The Timezone",
+    "Turbosauro",
+    "Wall Of Death",
+    "Zeno"
+   ],
+   "gate": "descriptive (knob ceiling's rules): stage 1 (e) vs knob ceiling's EQ stage and (f) vs M, judge-only; 'a lot' band-weighted <= -0.10 with most bands better, 'little' >= -0.04 (undecided). Stage 2: wet only if >= 0.005 better on the search half; blind listening decides: wet on >= 7/8 trials = judge-searched effects help; 5-6/8 undecided; <= 4 don't",
+   "outcome": null
   }
  ]
 }
