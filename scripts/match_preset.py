@@ -1221,7 +1221,14 @@ def _renderer(name: str, pack_id: str = "morgan", process_policy: str = "reuse")
     if name == "swift":
         from match.renderer_au import AudioUnitError, AudioUnitRenderer
 
-        renderer = AudioUnitRenderer(pack_id, process_policy=process_policy)
+        # A reused Morgan process carries the previous render for 2-3 s at the amp's
+        # hiss level (its reset does not clear everything), which moved the judge on
+        # quiet-starting parts (3.42 against 3.92 for one preset). Cycling the render
+        # resources around each state write removes it at no measurable cost (the ML
+        # session's knob-ceiling plan, amendment 3; audit D-M13). Tone King decides
+        # its own isolation on its first render.
+        renderer = AudioUnitRenderer(pack_id, process_policy=process_policy,
+                                     isolate=True if pack_id == "morgan" else None)
         try:
             # Instantiating here rather than at the first render: the plugin is
             # the one thing that can be missing, unlicensed or a different

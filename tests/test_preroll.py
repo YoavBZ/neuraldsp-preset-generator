@@ -108,13 +108,18 @@ def test_only_tone_king_match_renders_are_prerolled(monkeypatch):
     from match import renderer_au
 
     class Fake(MutedAtStart):
-        def __init__(self, pack_id, process_policy="reuse"):
+        def __init__(self, pack_id, process_policy="reuse", isolate=None):
             super().__init__()
             self.pack_id = pack_id
+            self.isolate = isolate
 
     monkeypatch.setattr(renderer_au, "AudioUnitRenderer", Fake)
     assert isinstance(match_preset._renderer("swift", "toneking"), PrerolledRenderer)
-    assert isinstance(match_preset._renderer("swift", "morgan"), Fake)
+    morgan = match_preset._renderer("swift", "morgan")
+    assert isinstance(morgan, Fake)
+    # A reused Morgan process isolates every render (D-M13); Tone King decides itself.
+    assert morgan.isolate is True
+    assert match_preset._renderer("swift", "toneking").inner.isolate is None
     assert not isinstance(match_preset._renderer("synthetic", "toneking"),
                           PrerolledRenderer)
 
