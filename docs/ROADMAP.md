@@ -76,7 +76,29 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 0. **Song-to-preset model** ([plan](di-recovery-plan.md); the Codex continuation is
    reviewed in [codex-continuation-review.md](codex-continuation-review.md)).
 
-   **Where it stands:**
+   **The direction since 2026-10-14: generate settings, don't rank presets.**
+   - **The goal (the user's):** set every control so the preset sounds as close as possible to
+     the song. Choosing the nearest factory preset is not the goal.
+   - **The knob ceiling ([results](knob-ceiling-results.md)):** by the judge, with the true DI on
+     development, a search over the amp knobs, input gain and mics beats the best of the 111
+     menu presets by −0.205 cross-half (about 19%, 14/14 bands). The EQ adds −0.079 more.
+     - The gain is part-specific, not a generic judge preference: another part's settings are
+       +0.229 worse than the menu.
+     - In a blind check (one listener, a second sitting of 7 trials), the searched settings
+       were chosen on 7 of 7.
+     - Both are lower bounds: the search falls short.
+   - **So everything below, which ranked the menu, measured the menu's limit, not the
+     plugin's.** The next step is predicting or searching settings from a song alone. A cloud
+     research round on that is pending (`tmp/preset-generation-research-prompt.md`, local).
+   - **Render order:** reused Morgan renders carried the previous render at hiss level until
+     `isolate` (#186 for match). The [audit](render-order-audit.md) found no decision
+     overturned. Set 5's C′-over-C is fragile: inconclusive if the at-risk parts are dropped,
+     passing when they are scored on half B.
+
+   **Where it stood before 2026-10-14 (the menu-ranking work; some sub-steps below remain
+   open):**
+
+   **What the menu-ranking route showed:**
    - Rebuilding the DI with a network, then letting the judge pick a menu preset, beats
      the clean default and the training-free stand-in. On clean PR12 it is 8.5% (not
      passed, [results](di-recovery-results.md)). On heavier tones it is large
@@ -296,11 +318,14 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       - **On fresh bands the corrected network (C′) picks better than the old one:** −0.124
         band-weighted (−0.059 by part), 5 of 5 bands, passing by 0.003.
       - **It is a crunch effect, carried by two small bands,** and fragile to leaving one out.
+      - **Render-order audit (2026-10-14):** dropping two at-risk cells makes this
+        inconclusive; it still passes with them scored on half B
+        ([audit](render-order-audit.md)).
       - **C′ replaces C as the research network.**
       - **Product question (report only):** C′ only matches `generate`'s crunch start
         (−0.023). It goes to the combined set-5 + MedleyDB stem test.
       - **A song-level class predictor from the rebuilt DI** failed its positive control
-        twice and is closed ([results](class-predictor-results.md), on
+        twice and is closed (its results doc is on the unmerged branch
         `ml/class-predictor`).
    8i. **Set 6 (MedleyDB): 5 parts from DIs labelled by ear**
       ([validation-set6.md](validation-set6.md)). *Declared 2026-10-12, amended twice on
@@ -355,8 +380,12 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
   and D-M17/D-M18's texts; `generate` framed as building the whole preset.
 - **Next, once the knob-ceiling result is in:** if setting controls gets meaningfully
   closer than the starting presets, plan how `generate` sets more controls from the
-  song (the user's goal); two render checks first (isolated renders repeat exactly; the
-  isolation fade-in's effect on the match loss).
+  song (the user's goal). *The two render checks are done (2026-10-14, one development
+  part, PR12):* fresh-process renders with isolation repeat exactly (maximum difference
+  0.0); the isolation fade-in (the same for every candidate) moved the match loss by
+  about 0.003 weighted, mostly its dynamics term (0.012: attack and loudness range;
+  timbre 0.0002), at the template's default settings. Its effect on a ranking is not
+  measured: the shift is a distance to an unfaded target, so it can differ by candidate.
 - **Parked, with reasons:**
   - **Riffs in the part's style and register** for the listening page: needs new CC-BY
     recordings (a download).
