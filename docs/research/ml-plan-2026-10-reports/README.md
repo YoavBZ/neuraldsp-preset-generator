@@ -12,4 +12,4 @@ proposed first experiments were corrected. Where a report differs from the plan,
 | [`report-c.md`](report-c.md) | Report C, written for the updated goal (generate the whole preset) |
 
 The claim checks, reviews and the plan's longer drafts are not kept here. They are in the
-earlier commits of PR #191.
+commits of PR #191, on its GitHub page.

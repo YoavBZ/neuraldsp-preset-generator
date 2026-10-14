@@ -166,7 +166,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
        - **The first five sessions (13 parts) are spent** by the confirmation.
        - **The four Internet Archive sessions (22 parts) are unused.**
    - **Rethink (2026-10-10):** no more chooser or judge tweaks on the 33 development
-     parts until the listening check is in.
+     parts until the listening check is in. *(Lifted 2026-10-14 for the ML plan's steps,
+     with a development ledger: ML plan decision 4.)*
      - Rebuilding the DI's fine detail has failed every way tried: longer training, more
        guitars, architecture repairs and a waveform loss.
      - The development data is over-used.
@@ -485,5 +486,5 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-12 | DI path: Tone King renders pre-rolled (D-M1), no tremolo from a recording (D-M7), no low EQ from a mix (D-M8 start), screen and `--enumerate` texts (D-M17, D-M18); the rest parked | [roadmap-history.md](roadmap-history.md), step 5; #168–#171 |
 | 2026-10-13 | The starting presets are heard as closer than what they replaced, and the clean start over the crunch start on clean parts (in-sample, one listener); step 4 says so | `starting-preset-listening-results.md` |
 | 2026-10-14 | Clean first when the class is a guess: not adopted (exploratory; costs crunch parts) | `generate-routing-recheck-results.md`, follow-up |
-| 2026-10-14 | ML plan decisions: train C′ for every fold; 200k render limit with knob ceiling counted; approve the three-way comparison; lift the "33" rule with a development ledger; Five-guitar and Optuna yes, GOAT not now; exposed held-out results reported as exposed, no reserve; optimiser comparison after the readout | [ML plan](research/ml-plan-2026-10.md), section 3 |
+| 2026-10-14 | ML plan decisions: train C′ for every fold; 200k render limit with knob ceiling counted; approve the three-way comparison; lift the "33" rule with a development ledger; Five-guitar and Optuna yes, GOAT not now; held-out results the render bug touched kept with a note (not re-rendered), no reserve; optimiser comparison after the readout | [ML plan](research/ml-plan-2026-10.md), section 3 |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |
