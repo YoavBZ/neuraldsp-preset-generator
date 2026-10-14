@@ -72,3 +72,15 @@ The usable disk is about **35 GB**: 65 GB free minus the 30 GB floor the project
 
 - 65,536 samples is 1.486 s at 44.1 kHz and 1.365 s at 48 kHz. That is the MPS `torch.stft` gradient limit.
 - DAC 44 kHz: hop 512, so 86.13 latent frames/s, 1,024-d, 9 codebooks. Verified in B2.
+
+## Added after the review: can F1's "futile" outcome be reached?
+
+With band SD 0.101, the standard error of a band mean is 0.101/√k. With a flat prior and a posterior mean of exactly 0, the most that P(|θ| < c) can reach is:
+
+| Bands | c = 0.03 | c = 0.05 |
+|---|---|---|
+| 8 | 0.599 | 0.839 |
+| 9 | 0.627 | 0.862 |
+| 11 | 0.675 | 0.899 |
+
+A "futile" rule of P(|θ| < 0.03) > 0.8 can never fire. P(|θ| < 0.05) > 0.8 is reachable only near a zero mean, with 8 or more bands. The plan uses the 0.05 version.
