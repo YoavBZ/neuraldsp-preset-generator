@@ -112,6 +112,7 @@ def test_only_tone_king_match_renders_are_prerolled(monkeypatch):
             super().__init__()
             self.pack_id = pack_id
             self.isolate = isolate
+            self.process_policy = process_policy
 
     monkeypatch.setattr(renderer_au, "AudioUnitRenderer", Fake)
     assert isinstance(match_preset._renderer("swift", "toneking"), PrerolledRenderer)
@@ -120,8 +121,23 @@ def test_only_tone_king_match_renders_are_prerolled(monkeypatch):
     # A reused Morgan process isolates every render (D-M13); Tone King decides itself.
     assert morgan.isolate is True
     assert match_preset._renderer("swift", "toneking").inner.isolate is None
+    assert match_preset._renderer("swift", "morgan", process_policy="fresh").process_policy == "fresh"
     assert not isinstance(match_preset._renderer("synthetic", "toneking"),
                           PrerolledRenderer)
+
+
+def test_morgan_isolation_is_in_the_render_identity_and_old_runs_are_named():
+    from match.preroll import predates_isolate
+    from match.renderer_au import AudioUnitRenderer
+
+    assert "isolate=true" in AudioUnitRenderer("morgan", isolate=True)._quality_identity()
+    old = {"renderer_id": "swift", "plugin_version": "3.0", "renderer_build": "b",
+           "sample_rate": 48000, "block_size": 512,
+           "quality_mode": "standard;amplitude=1;settle_ms=0;warmup_s=0;isolate=auto;process=reuse"}
+    new = dict(old, quality_mode=old["quality_mode"].replace("isolate=auto", "isolate=true"))
+    assert predates_isolate(old, new)
+    assert not predates_isolate(new, new)
+    assert not predates_isolate(dict(old, plugin_version="2.9"), new)
 
 
 def test_tone_kings_measured_eq_basis_still_loads_through_the_wrapper():
