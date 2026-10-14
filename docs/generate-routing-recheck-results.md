@@ -72,3 +72,23 @@ path was partly exercised that way. The new skill's text tells an agent that a r
 study exists; that is part of the change, not a leak. The run sessions had two
 connectors and a messaging socket available, none used; they should be off next time. One run per arm per input.
 Development parts.
+
+## Follow-up, 2026-10-14: clean first when the class is a guess
+
+Exploratory, in-sample and post hoc, on the same new-skill runs. A run counts as a guess
+when its `result.json` reasons or outputs say "guess", "undocumented" or "not documented"
+(31 of 34 clean and crunch parts). The variant makes clean the primary preset for every
+guessed route that is not clean (crunch and heavier routes alike), scored with part 1's
+leave-band-out clean-against-not-clean regret, band-weighted, 90% band bootstrap:
+
+| reading | regret or difference | 90% interval |
+|---|---|---|
+| primary as routed | 0.059 | 0.017 to 0.111 |
+| clean first when guessed | 0.103 | 0.043 to 0.166 |
+| difference, all parts | +0.044 | −0.034 to +0.118 |
+| difference, crunch parts | +0.19 | 0.08 to 0.30 |
+| difference, clean parts | −0.05 | −0.10 to +0.01 |
+
+Overall undecided; it clearly costs crunch parts for a small, undecided gain on clean
+ones. Not adopted: both starts are written anyway, so the order changes only which the
+user tries first.

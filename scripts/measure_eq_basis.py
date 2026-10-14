@@ -150,7 +150,10 @@ def main() -> None:
     di = _excitation(args.seconds, args.level)
     started = time.time()
     try:
-        renderer = AudioUnitRenderer(args.pack)
+        # Measured as the match path renders, or the basis's identity will not match
+        # it: Morgan isolates each state write there (match_preset._renderer).
+        renderer = AudioUnitRenderer(args.pack,
+                                     isolate=True if args.pack == "morgan" else None)
     except AudioUnitError as e:
         die(str(e))
 
