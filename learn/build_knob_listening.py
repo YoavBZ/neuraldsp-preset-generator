@@ -192,13 +192,15 @@ def build(args):
                 eq_gain = math.log(run["EQ"]["held"] / run["K_M"]["held"])
                 if eq_gain <= EQ_ADDS:
                     options["EQ"] = sf.read(str(d / f"EQ-{search}.flac"))[0]
-                # K_M's position rotates over the trials (A, B, C, A, ...), so no letter is the
-                # usual answer; the others fill the remaining positions in seeded order.
-                others = [x for x in options if x != "K_M"]
+                # The menu oracle M (the option the searched ones are compared with) takes the
+                # least-used letter so far, so it is spread over A, B and C; the searched options
+                # fill the rest in seeded order. (Sitting 1 balanced K_M alone, which left M on
+                # A in 1 of 7 trials.)
+                others = [x for x in options if x != "M"]
                 rng.shuffle(others)
-                pos = min(range(len(options)), key=lambda i: (used[i], i))
+                pos = min(range(len(options)), key=lambda i: (used[i], -i))
                 used[pos] += 1
-                names = others[:pos] + ["K_M"] + others[pos:]
+                names = others[:pos] + ["M"] + others[pos:]
                 letters = "ABC"[:len(names)]
                 ref = fade(level(clip(CR.mono(part["crop"] / "reference.wav"), held)))
                 rows = [f'<div class="row"><b>Record</b><audio controls preload="none" src="{aac(ref, tmp)}">'

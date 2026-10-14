@@ -390,11 +390,16 @@ still be a useful product default). This check separates the generic from the pa
   weakness: the cell with the largest EQ-vs-K_M gain among those, if not already chosen.
 - **Per cell, the held half only:** the recording, M (re-rendered with `isolate`) and K_M, plus
   the EQ render where EQ vs K_M ≤ −0.04 on that direction. All clips are loudness-matched.
-- **Blind and unlabelled.** The trial order is seeded (20261013). K_M's letter is always the
-  least used so far (ties to the earlier letter), with the other options in seeded order. A plain seeded shuffle had
-  put K_M on A in 6 of 7 trials, a pattern a listener could learn; this was changed before the
-  page was sent. The user answers "which is closest
-  to the record?" per cell.
+- **Blind and unlabelled.** The trial order is seeded (20261013).
+  - **Sitting 1 (answered):** K_M's letter was balanced, but the EQ option, when present, kept
+    the first letter. So M sat on A in only 1 of 7 trials. The listener answered A on 6 of 7,
+    and picked K_M or EQ every time (M 0 of 7). With M almost never first, a preference for the
+    searched options can't be told from a preference for the first option. Sitting 1 is
+    reported, but as confounded by position. Its page, key and answers are kept in
+    `sitting1/`.
+  - **Sitting 2:** M takes the least-used letter so far (ties to the later letter), so it is
+    spread over A, B and C. The searched options fill the other letters in seeded order. The
+    reading uses sitting 2.
 - **The reading:** K_M (or EQ) chosen over M on most cells means the judge's gain is audible.
   Listening is descriptive here: 6–7 cells can't be a significance test.
 
