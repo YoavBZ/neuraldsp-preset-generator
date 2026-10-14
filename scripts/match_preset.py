@@ -1231,9 +1231,9 @@ def _renderer(name: str, pack_id: str = "morgan", process_policy: str = "reuse")
         # quiet-starting parts (3.42 against 3.92 for one preset). Cycling the render
         # resources around each state write removes it at no measurable cost (the ML
         # session's knob-ceiling plan, amendment 3; audit D-M13). Isolation fades each
-        # render in over its first 0.25 s, the same for every candidate; its effect on
-        # this path's own loss is not yet measured. Tone King decides its own
-        # isolation on its first render.
+        # render in over its first 0.25 s, the same for every candidate; measured on one
+        # PR12 part, it moved this path's loss by 0.0003 (timbre) and 0.012
+        # (dynamics). Tone King decides its own isolation on its first render.
         renderer = AudioUnitRenderer(pack_id, process_policy=process_policy,
                                      isolate=True if pack_id == "morgan" else None)
         try:

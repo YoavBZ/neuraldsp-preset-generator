@@ -355,8 +355,10 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
   and D-M17/D-M18's texts; `generate` framed as building the whole preset.
 - **Next, once the knob-ceiling result is in:** if setting controls gets meaningfully
   closer than the starting presets, plan how `generate` sets more controls from the
-  song (the user's goal); two render checks first (isolated renders repeat exactly; the
-  isolation fade-in's effect on the match loss).
+  song (the user's goal). *The two render checks are done (2026-10-14, one development
+  part, PR12):* fresh-process renders with isolation repeat exactly (maximum difference
+  0.0); the isolation fade-in moved the match loss's timbre term by 0.0003 and its
+  dynamics term by 0.012 (attack and loudness range), the same for every candidate.
 - **Parked, with reasons:**
   - **Riffs in the part's style and register** for the listening page: needs new CC-BY
     recordings (a download).
