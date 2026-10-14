@@ -394,12 +394,16 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
   and D-M17/D-M18's texts; `generate` framed as building the whole preset.
 - **Setting controls has real headroom** ([knob ceiling](knob-ceiling-results.md),
   2026-10-14): with the take's true DI, on development, a knob search got about 22%
-  closer than `generate`'s starting preset (−0.253) and 19% closer than the best
-  factory preset (−0.205, every band), the settings were specific to the part, and one
-  listener chose them on 7 of 7 blind trials. Lower bounds, true DI, one take.
-- **Next: `generate` sets more controls from the song,** once the ML session's plan
-  step 3 shows how to get such settings without a DI (its decision 5 puts the
-  `generate` change after that readout). Until then `generate` sets what research
+  closer by the judge than `generate`'s starting preset (−0.253) and 19% closer than
+  the best factory preset (−0.205, every band). The settings were specific to the part
+  (which cannot rule out the search fitting the judge on each recording; listening
+  guards against that), and in a second blind sitting one listener preferred a searched
+  setting over the best factory preset on 7 of 7 trials, chosen mostly where the gains
+  were largest. Lower bounds, true DI, one take.
+- **Next: `generate` sets more controls from the song,** if and once the ML session's
+  plan step 3 shows a way to get such settings without a DI
+  ([plan](research/ml-plan-2026-10.md), decision 5 puts the `generate` change after
+  that readout). Until then `generate` sets what research
   documents. *The two render checks are done (2026-10-14, one development
   part, PR12):* fresh-process renders with isolation repeat exactly (maximum difference
   0.0); the isolation fade-in (the same for every candidate) moved the match loss by
