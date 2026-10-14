@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-12.
+lives in the linked documents. Last updated 2026-10-14.
 
 ## Where the product is
 
@@ -13,9 +13,9 @@ lives in the linked documents. Last updated 2026-10-12.
 - **`generate`** researches the song, sorts the part into clean, crunch or heavier
   (Tone King: clean or crunch only), starts from that class's dry factory preset, and
   sets the controls research documents (today mostly effects; amp, drive, EQ and cab
-  kept unless research names them, since edits on top of the start were not shown to
-  help; the knob-ceiling test is the first to measure how far setting controls can
-  get):
+  kept unless research documents a different value for the part, since edits on top
+  of the start were not shown to help; the ML session's knob-ceiling test, in progress
+  on its branch, is the first to measure how far setting controls can get):
   - **Morgan clean:** Royally Ambient (PR12), Pedal Platform Clean (SW50R), Low-Watt
     Americana (AC20), about 12% closer than the template on held-out clean parts
     ([results](clean-baseline-results.md)).
@@ -30,9 +30,9 @@ lives in the linked documents. Last updated 2026-10-12.
   - Before the starting presets, on 25 mostly clean recordings: a researched preset was
     not shown to beat the template, and a researched four not shown to beat four random
     factory presets; the judge picking from four landed about 18% closer than the
-    template ([results](song-only-shortlist-results.md)). Whether that holds over the
-    new starting presets, how often the class is right, and whether the research edits
-    help are not measured (step 6).
+    template ([results](song-only-shortlist-results.md)). Over the new starting
+    presets, the class costs most and the research edits are undecided (step 6,
+    [routing check](generate-routing-results.md)).
 - **The listening page** (`scripts/audition.py`) is offered, not built by default: four
   presets through CC-BY riffs, with a one-file phone version. Whether a real ear
   picks better with it was tested once and came out inconclusive

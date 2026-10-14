@@ -1,6 +1,6 @@
 ---
 name: generate
-description: Create a Neural DSP amp-sim preset for a specific guitar tone — from a song, an artist, a part, or a description of the sound. Researches how the tone was actually recorded, maps it to the plugin's amps and effects, and writes a loadable preset file.
+description: Create a Neural DSP amp-sim preset for a specific guitar tone — from a song, an artist, a part, or a description of the sound. Researches how the tone was actually recorded, sets the plugin's amp, pedals, EQ, cab and effects to match it, and writes a loadable preset file.
 when_to_use: >-
   Use whenever someone asks for a guitar tone, preset or patch to be built, or
   describes a sound they want to get — even without naming a plugin or a file.
@@ -20,12 +20,12 @@ Turn a description of a tone into a loadable preset. **The job is the whole pres
 the amp and channel, every amp knob and switch, input gain, drive pedals, cab and mics,
 EQ, and the effects the song needs. A factory starting preset (step 4) is where the
 controls begin, not the answer: there may be no factory preset close to the song.
-Set each control from what research documents for the part, and say which you set and
-why. Today the evidence keeps most of the start's tone controls unless research names
-them: research edits on top of the start were not shown to help or hurt
-([routing check, part 2](../../docs/generate-routing-results.md)), and settings
-calculated from a recording without a DI ended further away. How far setting more
-controls can get is being measured.
+Set each control from what research documents for the part, and say which you set,
+why, and which you kept from the start. Today the evidence keeps the start's tone
+controls unless research documents a different value for this part: research edits on top of the start were not shown to help
+(undecided, leaning slightly worse; neutral where the start was the one the edits were
+written for; [routing check, part 2](../../docs/generate-routing-results.md)). How far
+setting more controls can get is being measured (the ML session's knob-ceiling test).
 
 Read [preset-spec.md](../../reference/preset-spec.md) before writing anything — it
 covers the value convention, the spec format, and the scripts.
@@ -186,7 +186,8 @@ it resolves `{amp}` and note divisions for you. Then put **what the song needs**
 in a `--spec`, which is applied last and overrides the recipes.
 
 Handing back an unmodified stack is a failure — it's a renamed factory preset.
-(The dry clean and driven baselines of step 4 are the exception: they are measured starting points.)
+A dry step-4 baseline handed back unchanged is acceptable only when research documents
+nothing for this part, and the report must say so.
 The research in step 2 is what should move the values.
 
 Select the amp or channel through the pack's `amp/*` recipe. Morgan uses
@@ -234,7 +235,7 @@ Tone King recipes use its verified sync-note selectors. See
     5 (pooled with the crunch block 17 of 21, p 0.004; no block decided alone;
     in-sample, one listener; [starting-preset-listening-results.md](../../docs/starting-preset-listening-results.md)).
   - **Make it dry first** with the amp's dry recipe, `--recipe dry/<amp>` (below). Keep
-    its compressor, amp, pedals, EQ and cab.
+    its compressor, amp, pedals, EQ and cab unless research documents a different value for this part.
   - **When the research turns an effect back on, set its parameters explicitly.** The
     factory leftovers are extreme. Royally Ambient has a 16-s reverb, heavy delay
     feedback, and a PR12 dwell of 79%: set `pr12Dwell` too if its spring comes back.
@@ -260,7 +261,7 @@ Tone King recipes use its verified sync-note selectors. See
     you report. By ear, the listener preferred them to the driven presets on 7 of 8
     development crunch parts (in-sample, one listener; [starting-preset-listening-results.md](../../docs/starting-preset-listening-results.md)).
   - **Make them dry the same way,** with `--recipe dry/<amp>`, and keep their amp,
-    pedals, EQ and cab.
+    pedals, EQ and cab unless research documents a different value for this part.
   - **When research documents an amp-only drive** (a cranked amp, no pedals) and the
     crunch start uses drive pedals (PR12's does; AC20's is amp-only), say that its
     pedals stand in for the cranked amp; the clean start beside it (step 6) is the other
@@ -288,10 +289,10 @@ Tone King recipes use its verified sync-note selectors. See
     installed presets are not (Wall Of Doom is transposed down 5 semitones).
 
     Then turn effects back on only where the research calls for them.
-  - **Keep the baseline's amp, drive, pedals, EQ and cab.** Skip step 3's amp, drive,
-    eq and cab recipe layers unless the research contradicts the baseline, and don't
-    re-select the amp. A dry baseline chosen this way is the measured starting point,
-    not the "renamed factory preset" failure step 3 warns about.
+  - **Keep the baseline's amp, drive, pedals, EQ and cab** unless research documents a different value for this part. Skip
+    step 3's amp, drive, eq and cab recipe layers otherwise, and don't re-select the amp.
+    Set a documented value in the spec instead. A dry baseline is a measured starting
+    point; handed back unchanged, it is acceptable only when nothing documents the part.
   - **If the file is missing** (an older or trimmed install), say so and use the
     clean template, made dry with `--recipe dry/pr12`.
 - **The dry recipe,** for every baseline in this step: `dry/pr12`, `dry/sw50r` or
@@ -339,8 +340,9 @@ Tone King recipes use its verified sync-note selectors. See
     overdrive pushing it, the compressor off. Present them as "the clean starting
     point" and "the crunch starting point".
   - **Make them dry first** with `--recipe dry/toneking`, and **keep the baseline's
-    channel, amp settings, drives, compressor, EQ and cab**: skip step 3's amp, drive1,
-    drive2, compressor, eq and cab layers unless the research contradicts the baseline.
+    channel, amp settings, drives, compressor, EQ and cab** unless research documents a different value for this part: skip
+    step 3's amp, drive1, drive2, compressor, eq and cab layers, and set a documented
+    value in the spec instead.
     Above all, don't apply an `amp/*` recipe: every one sets the channel and the amp's
     controls, which undoes what was measured (on Squishy Lead it removes the crunch).
   - **If the file is missing,** say so and ask for one of the user's own Tone King
@@ -448,11 +450,13 @@ step most often wrong from a song, and a wrong class costs far more than any edi
 ([generate-routing-results.md](../../docs/generate-routing-results.md)).
 
 Then report:
-- which **template** you cloned and which **amp or channel** you selected
+- which **starting preset** you began from and which **amp or channel** you selected
+- which **controls you set** from research, with the source for each, and which you
+  kept from the start (or that nothing documented the part, so none moved)
 - the **class** you chose (clean, crunch or heavier), what documents it for this part,
   or that it is a guess, and the second starting point you installed
 - what **research** the tone is based on, with links, and that the result is a
-  starting point: on 25 mostly clean recordings, a researched preset was not shown to
+  first draft: on 25 mostly clean recordings, a researched preset was not shown to
   land closer than the shipped template, and a researched list of four was not shown
   to beat four random factory presets ([the measurement](../../docs/song-only-shortlist-results.md))
 - anything you set **outside a declared range**, and why
