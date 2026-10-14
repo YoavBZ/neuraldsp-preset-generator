@@ -8,8 +8,8 @@ def test_window_pads_both_sides_inside_the_session():
 
 
 def test_window_shifts_rather_than_shrinks_at_the_edges():
-    assert window(1000, 50, 150, 100) == (0, 250)
-    assert window(1000, 850, 950, 100) == (750, 1000)
+    assert window(1000, 50, 150, 100) == (0, 300)
+    assert window(1000, 850, 950, 100) == (700, 1000)
 
 
 def test_window_is_the_whole_session_when_it_is_short():
