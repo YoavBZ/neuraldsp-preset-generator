@@ -370,8 +370,10 @@ was declared, what was measured, and the research behind it.
    coherence. Four local experiments, ranked by value, cheapest test first. Research, not a
    declared plan.
 10. [di-rebuild-fine-structure-2026-10.md](research/di-rebuild-fine-structure-2026-10.md):
-    designing experiment 4, a successor to C′ that rebuilds a guitar DI's sub-10-ms detail
-    (October 2026, after the rank-margin ladder). Keep the waveform U-Net and change its training
-    target: short-window spectral, phase-derivative and peakiness terms, then a balanced
-    adversarial loss; a DAC-latent route only if its zero-training ceiling check passes. Fold 3
+    designing experiment 4, a successor to C′ that rebuilds a guitar DI's fine structure under
+    about 5–10 ms (October 2026, after the rank-margin ladder). Keep the waveform U-Net and change
+    its training objective (loss): short-window spectral, phase-derivative and peakiness terms,
+    then a balanced adversarial loss. A zero-render capacity check comes first; if C′'s output
+    stage can't draw the detail, a zero-initialised full-rate head is tried before the loss route
+    is called failed. A DAC-latent route only if its zero-training ceiling check passes. Fold 3
     first, gated on the known-target control. Research, not a declared plan.
