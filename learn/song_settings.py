@@ -89,9 +89,18 @@ def cprime(fold):
     return MODELS / ("models-cprime/fold2.pt" if fold == 2 else f"models-cprime-f{fold}/fold{fold}.pt")
 
 
+def net_ready(path):
+    """A network may be used only when final: it exists and its folder has the runner's DONE
+    marker (not a mid-training checkpoint). C′ fold 2 (`models-cprime/fold2.pt`) predates the
+    marker and is the one exception. Every `models-fs-*` network (experiment 4) needs DONE."""
+    path = pathlib.Path(path)
+    legacy = path == MODELS / "models-cprime/fold2.pt"
+    return path.exists() and (legacy or (path.parent / "DONE").exists())
+
+
 def cprime_ready(fold):
     """The fold's final network exists (not a mid-training checkpoint: the runner touches DONE)."""
-    return cprime(fold).exists() and (fold == 2 or (cprime(fold).parent / "DONE").exists())
+    return net_ready(cprime(fold))
 
 
 def rebuild_all():
