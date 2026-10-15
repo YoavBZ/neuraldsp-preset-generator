@@ -354,6 +354,26 @@
    "weights": "Mega-53 v1 (ZFTurbo/Music-Source-Separation-Training v1.0.21, commit ea7eb9c, ckpt sha256 c62820893bbf86d4e734f966bd142d9157cfc8bb8e79e9d8f9ea553f3ff3519f), user-approved 2026-10-15",
    "gate": "Descriptive screen, not a gate (the margin agrees with search success on 14 of 18 only). Cells: 5 parts x PR12, SW50R; informative = d_S - d_T >= 0.1 (full window, measure DI, clean fake). Primary m_full. A row (mega53, blend) earns the merged report's full switching test only if m_sep > 0 on more informative cells than htdemucs_6s, AND no informative cell flips from m_sep > 0 (htdemucs_6s) to m_sep <= 0, AND its mean real-song 1-3 kHz coherence (check-2 measure, the part's fold C') >= htdemucs_6s's - 0.02. Coherence alone never advances a row; m_both is reported, not gating. Reading on htdemucs_6s, independent of the screen: m_sep <= 0 on <= 1 informative cell -> separation isn't what breaks the objective; on >= ceil(n/3) -> co-equal problem, re-test promoted; else partial. n < 4 informative, or an htdemucs_6s lag-check failure on an informative cell -> undecided. Fragility (m_A, m_B, other mask, leave-one-part-out with n' rescaling) reported beside each verdict.",
    "outcome": null
+  },
+  {
+   "test_id": "di-fine-structure",
+   "plan": "docs/di-fine-structure-plan.md",
+   "entered": "2026-10-15, before any experiment-4 compute",
+   "repeat_use": "third development use of song-settings' 12 known-target control cells (first: step 3's control and its audit; second: rank-margin-ladder); later still for colour-me-red and just-don't-talk (also cprime-folds check 2, reused here as 1d's breakage guard on their set-3 stems, separator-upgrade, separator-screen). Touched by 0a gap spectra, 0b D0/idempotence/swap, 0c DAC, step 2 (fold 3; fold 1 on its branch) and step 4, all under this use. Nothing fitted on them; arms chosen on fold 3's 4 cells (7 of 9 with the fold-1 branch).",
+   "parts": [
+    "cambridge-Today's_The_Day-ElecGtr10",
+    "cambridge-Prodigal-ElecGtr5",
+    "cambridge-just-don-t-talk-elecgtr3",
+    "telefunken-Blind_Spots-GTR",
+    "cambridge-Passing_Ships-ElecGtr6",
+    "cambridge-colour-me-red-elecgtr01"
+   ],
+   "bands": "Diesel13, Doom Flamingo, Eat The Feeder, Starnes And Shah, The Travelling Band, Timo And The Timezone (song_settings.control_cells); step 5 draws 6 of Adam Buckley, Atlantis Bound, Dom McLennon, Eggy, Magician's Nephew, Turbosauro, Wall Of Death, Zeno (random.Random(20261019)), entered as an amendment before its renders",
+   "training": "fine-tunes of C' per K3 fold from models-cprime(-f{f}) into models-fs-<arm>-f{f}; fold 3 first; cprime-folds' fold-leak rules and preflight counts; leak asserted against each network's actual training pool; seed 0; 5,150 steps, 200-step warm-up to 1e-4, cosine to 2e-5. Arms 1z (L_C' only, noise control), 1a, 1b, 1c, 1e (contingent). Loss weights by 0d's share rule, calibrated once on fold 3; 50-batch means and final weights recorded here before step 1a",
+   "gate": "Full known-target control only (margin reported, never gating). Step 4 passes if >= 6 of 9 informative cells close >= 50% of the gap, or the informative-cell mean shortfall <= measure-DI run's + 0.03 = -0.0315 (one-sided); the 5 non-fold-3 cells reported apart. Step 2 (fold 3, 4 cells, stricter than the readout's <6-cell mode): go if >= 3 of 4 close >= 50% or mean shortfall <= -0.013; stop if <= 2 of 4 and mean > +0.171; else undecided. At most 3 arms rendered (1a, 1b, better of 1c/1e by 1d's 1-ms crest). If any arm reads go or undecided, 1z is rendered at lag 0; if 1z meets go, gains are attributed to fine-tuning; an arm beats 1z only with more cells closed or a mean shortfall >= 0.03 lower; tie-break 1z, 1a, 1b, 1e, 1c. Any go wins; only undecided arms (no go) take the fold-1 branch (user's yes; per-arm fold-1 fine-tunes): 7 cells, go if >= 5 of 7 or mean <= -0.048, stop if <= 4 of 7 and mean > +0.202, else undecided and ask. Step 5: the control's own rule with amendment 2 on a fresh 12-cell draw, band-weighted with leave-one-band-out; row 1 there -> undecided, ask the user; only a pass re-runs arm A. 1d hard stops are breakage guards only (val ratio > C' + 0.02, check 2 < 0.1126, 3-8 kHz > C' + 2 dB); crest and gap reported and used only to rank. 0c opens E1' (for experiment 4 only) if DAC-9 keeps m > 0 on 4 of 4 fold-3 cells, fold-3 mean m >= 0.75 x the true DI's (0c's own scoring), 1-ms crest within 1 dB.",
+   "renders": "budgeted max ~11.1k (0b 108, 0c 48, step 2 <= 1.85k, 1z ~0.61k, step 4 <= 1.8k, step 5 ~3.7k, hedge S reservation ~3.0k, its own plan); DI track ~12.2k; running total ~143.2k of 200k (131k still an estimate). User's yes needed for the fold-1 branch, a fourth arm, a hedge control beyond the reservation, E1' renders, second seeds, and anything past 200k",
+   "tally": [],
+   "outcome": null
   }
  ]
 }
