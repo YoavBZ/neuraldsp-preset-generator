@@ -398,3 +398,30 @@ Made after code review, before any arm-B prediction or score existed.
     difference is 0.005–0.03 (the control audit), and those numbers are labelled so.
   - **"At least 2 crunch bands"** picks bands, not parts, as the plan words it. It gave 3 crunch
     parts.
+
+## The readout code and its readings (2026-10-15, before any arm-B prediction or score)
+
+The readout is `learn/song_readout.py` (`report`, 39 tests). It reproduces the recorded known-target
+control outcome from the stored files. Where the plan was ambiguous, it reads it like this:
+
+1. **Positive control unit:** each (target, direction). The 0.1 floor applies per unit, and
+   "closer than the median" is strict. Every fold must pass.
+2. **Amendment 2's mean shortfall:** taken over the informative cells, which reproduces +0.320
+   against −0.062.
+3. **"Within 0.03":** one-sided, so a rebuilt run that is better also passes.
+4. **Thresholds:**
+   - "At least 2/3" and "60%" are inclusive.
+   - "More than" is strict.
+   - A band mean of exactly 0 isn't "better".
+5. **Band-weighted decisions:** a t-interval on band means. The part-weighted `confirm_run.stats`
+   figures are reported beside it.
+6. **A refused held half:** the direction is dropped for every arm and comparator, and the drop
+   is listed. A silent render from one arm therefore drops that direction for all arms. Such
+   drops are reported per arm.
+7. **"40% of K_S's gain":** both band-weighted, on the arm's own units.
+8. **"Against the shuffled mean":** the geometric mean of the three shuffled distances.
+9. **The data-limit check** applies to any arm-B failure. Half-bank scores go in
+   `armB/scores-half/`, in the same form as `armB/scores/`.
+10. **An undecided arm** doesn't count as passing.
+11. **Sources:** S and K_S come from knob ceiling's stored results; the menu pick from the label
+   table (the flat judge).
