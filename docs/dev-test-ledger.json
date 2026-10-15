@@ -268,7 +268,7 @@
     "Zeno"
    ],
    "gate": "none: a data-building step (menus scored flat and v3, stems without the SNR filter); checks only (repeat within 1e-3 log; vs stored within 0.005 except quiet halves)",
-   "outcome": null
+   "outcome": "done 2026-10-15: 59 menus (6.5k renders) and 59 stems; repeat max 6.2e-5; vs stored songs-check within 0.0045 except It_Was_My_Fault_For_Waiting-ElecGtr1 (0.178, quiet half) and Gym_Hours-GTR_1 (0.0099, one preset)"
   },
   {
    "test_id": "song-settings",
