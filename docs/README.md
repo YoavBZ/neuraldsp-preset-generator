@@ -352,6 +352,7 @@ was declared, what was measured, and the research behind it.
    recommended engine; its thresholds are untested. Research, not a declared plan.
 9. [di-recovery-2026-10.md](research/di-recovery-2026-10.md): how to get a guitar DI back from a
    song well enough to steer the knob search (October 2026, for ML plan step 3's arm A). The
-   rebuild alone breaks the search, so repair its dynamics before swapping separators; judge
-   rebuilds by whether the target ranks above the start, not by coherence. A ranked plan of four
-   local experiments, cheapest first. Research, not a declared plan.
+   rebuild alone breaks the search; the evidence points to its dynamics, so test that before
+   swapping separators, and judge rebuilds by whether the target ranks above the start, not by
+   coherence. Four local experiments, ranked by value, cheapest test first. Research, not a
+   declared plan.
