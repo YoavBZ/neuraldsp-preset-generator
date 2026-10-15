@@ -386,3 +386,15 @@ Made after code review, before any arm-B prediction or score existed.
   (`models/discarded-1pct-val/`), and training restarts for all folds.
 - **Also from the review:** `bank_index` now asserts every bank example has features and a
   label.
+- **Other review findings, recorded:**
+  - **Arm B's positive control:** its P1/P2 windows are unused starts, but a 10.25-s window on a
+    5-s hop shares about half its DI audio with neighbouring bank windows. The labels are drawn
+    independently, so the effect is small, but "held apart" means the window, not the audio.
+    This is stated as a limit.
+  - **Skip-if-exists outputs** don't record what they were built from:
+    - Every rerun after an upstream change deletes the affected outputs first.
+    - The arm-B scores are produced only after the final models exist.
+  - **Arm A's descriptive scores and the C′ menu pick** used the old judge lag (−52). The
+    difference is 0.005–0.03 (the control audit), and those numbers are labelled so.
+  - **"At least 2 crunch bands"** picks bands, not parts, as the plan words it. It gave 3 crunch
+    parts.
