@@ -10,7 +10,7 @@ at a preset and describe a change in plain English.
 > **You need your own copy of the plugin.** No Neural DSP code, audio, impulse
 > responses, or factory presets are included here — see [NOTICE.md](NOTICE.md).
 > The repo ships one example preset that this project generated
-> (`samples/Example_Clean_PR12.xml`) and two CC BY 4.0 guitar riffs for the
+> (`samples/Example_Clean_PR12.xml`) and six CC BY 4.0 guitar riffs for the
 > audition page (`samples/riffs/`); everything else you'd want as a template comes
 > from your own library.
 
@@ -179,7 +179,7 @@ match/           — turn a measured sound into preset parameters: the Renderer
                    Building the space, writing a spec and reading the store need
                    no dependencies; rendering, fitting and searching need the
                    analysis extra
-samples/         — the bundled example preset, and riffs/ (two CC BY 4.0 guitar DI
+samples/         — the bundled example preset, and riffs/ (six CC BY 4.0 guitar DI
                    riffs the audition page plays presets through; see NOTICE.md)
 tests/           — round-trip, mutation, translation, cab, pack-contract,
                    record-encoding, audit, recipe, path, CLI and
@@ -482,7 +482,7 @@ licensed plugin and is never run by CI.
 Passes on a bare clone against the bundled example preset: the IR-stripping
 check synthesises the preset it needs rather than requiring one of yours. The
 audio tests skip without the `analysis` extra and synthesise every signal they
-measure; the only committed audio is the two audition riffs in `samples/riffs/`. CI runs both installs, and one test
+measure; the only committed audio is the six audition riffs in `samples/riffs/`. CI runs both installs, and one test
 asserts that the preset tools still import and run with numpy made unavailable.
 
 ```bash

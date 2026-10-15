@@ -7,9 +7,10 @@ renders on one local page beside the song.
         --preset B.xml --note "SW50R, clean and bright" \\
         [--riff chords] [--di YOUR-DI.wav] [--open]
 
-Without `--riff` or `--di` it plays the presets through every riff that ships in
-`samples/riffs/` (a strummed chord progression and a single-note line, CC BY 4.0, see
-`riffs.json`).
+Without `--riff` or `--di` it plays the presets through the two default riffs that ship
+in `samples/riffs/` (a strummed chord progression and a single-note line, both low on
+the neck, CC BY 4.0, see `riffs.json`). `--riff` picks others by name: `chords-mid`,
+`chords-high`, `line-mid` and `line-high` play the same styles higher on the neck.
 
     python scripts/audition.py --add DIR --preset C2.xml --note "C, darker" [--open]
 
@@ -390,6 +391,17 @@ def shipped_riffs() -> dict:
     return out
 
 
+def default_riffs() -> list:
+    """The riffs a page plays when none is named: those `riffs.json` marks default
+    (every riff, for a record without the flag)."""
+    index = RIFFS / "riffs.json"
+    if not index.exists():
+        return []
+    entries = json.loads(index.read_text())["riffs"]
+    marked = [name for name, entry in entries.items() if entry.get("default")]
+    return sorted(marked or entries)
+
+
 def build_parser():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -398,7 +410,8 @@ def build_parser():
     ap.add_argument("--seconds", type=float, default=12.0, help="how much of the song (default 12)")
     ap.add_argument("--riff", action="append", choices=_riff_names(),
                     help="a shipped riff to play the presets through; repeat for more "
-                         "(default: every shipped riff, unless --di is given)")
+                         "(default: the two default riffs, chords and line, unless --di "
+                         "is given)")
     ap.add_argument("--di", type=pathlib.Path, action="append",
                     help="a guitar DI of your own to play the presets through; repeatable")
     ap.add_argument("--out-dir", type=pathlib.Path, help="a new folder for the audition")
@@ -440,7 +453,7 @@ def main():
         if args.song is None or args.start is None or args.out_dir is None:
             die("a new audition needs --song, --start and --out-dir")
         riffs = shipped_riffs()
-        chosen = args.riff or ([] if args.di else sorted(riffs))
+        chosen = args.riff or ([] if args.di else default_riffs())
         sources = [(name, riffs[name], name) for name in chosen]
         for path in args.di or []:
             path = path.expanduser().resolve()
