@@ -339,3 +339,20 @@ was declared, what was measured, and the research behind it.
    section 4 is the ML session's work order. The three research reports behind it, which are
    background and not instructions, are in
    [`research/ml-plan-2026-10-reports/`](research/ml-plan-2026-10-reports/README.md).
+7. [guitar-separation-2026-10.md](research/guitar-separation-2026-10.md): which open separator
+   gives the best electric-guitar stem on Apple silicon (October 2026, for ML plan step 3).
+   Keep htdemucs_6s: the best published model (BS-RoFormer SW) has no known weights licence,
+   and the 2026-10-08 test's challenger gained only about +0.5 dB paired. Proposes a re-scoring
+   test with a paired, band-clustered bar and spectral guards. Research, not a declared plan.
+8. [di-riffs-and-part-classifier-2026-10.md](research/di-riffs-and-part-classifier-2026-10.md):
+   shippable clean electric-guitar DI riffs by style and register, and open tools to tell chords
+   from single notes and a part's register (October 2026, for the product session's listening
+   page). Cut new riffs from Guitar-TECHS (CC BY 4.0, about 295 DI minutes); power chords and
+   riffs above open position are the one uncovered gap. Basic Pitch (Apache-2.0) is the
+   recommended engine; its thresholds are untested. Research, not a declared plan.
+9. [di-recovery-2026-10.md](research/di-recovery-2026-10.md): how to get a guitar DI back from a
+   song well enough to steer the knob search (October 2026, for ML plan step 3's arm A). The
+   rebuild alone breaks the search; the evidence points to its dynamics, so test that before
+   swapping separators, and judge rebuilds by whether the target ranks above the start, not by
+   coherence. Four local experiments, ranked by value, cheapest test first. Research, not a
+   declared plan.

@@ -392,17 +392,31 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
   "another end-to-end run" item); the DI-path
   defects D-M1 (product side), D-M7, D-M8's start and D-M13 (the carried-over render),
   and D-M17/D-M18's texts; `generate` framed as building the whole preset.
-- **Next, once the knob-ceiling result is in:** if setting controls gets meaningfully
-  closer than the starting presets, plan how `generate` sets more controls from the
-  song (the user's goal). *The two render checks are done (2026-10-14, one development
+- **Setting controls has real headroom** ([knob ceiling](knob-ceiling-results.md),
+  2026-10-14): with the take's true DI, on development, a knob search got about 22%
+  closer by the judge than `generate`'s starting preset (−0.253) and 19% closer than
+  the best factory preset (−0.205, every band). The settings were specific to the part
+  (which cannot rule out the search fitting the judge on each recording; listening
+  guards against that), and in a second blind sitting one listener preferred a searched
+  setting over the best factory preset on 7 of 7 trials, chosen mostly where the gains
+  were largest. Lower bounds, true DI, one take.
+- **Next: `generate` sets more controls from the song,** if and once the ML session's
+  plan step 3 shows a way to get such settings without a DI
+  ([plan](research/ml-plan-2026-10.md), decision 5 puts the `generate` change after
+  that readout). Until then `generate` sets what research
+  documents. *The two render checks are done (2026-10-14, one development
   part, PR12):* fresh-process renders with isolation repeat exactly (maximum difference
   0.0); the isolation fade-in (the same for every candidate) moved the match loss by
   about 0.003 weighted, mostly its dynamics term (0.012: attack and loudness range;
   timbre 0.0002), at the template's default settings. Its effect on a ranking is not
   measured: the shift is a distance to an unfaded target, so it can differ by candidate.
 - **Parked, with reasons:**
-  - **Riffs in the part's style and register** for the listening page: needs new CC-BY
-    recordings (a download).
+  - **Riffs in the part's style and register:** *built 2026-10-15 (listening check
+    pending)* for chords and single
+    lines in three registers, from Guitar-TECHS already on disk ([plan](riff-library-plan.md));
+    `generate` picks at most two by the part. Still missing: power chords and arpeggios (no
+    shippable source), and automatic chord and register detection (no open tool proven on
+    stems; Basic Pitch would need a pip install and an ear-labelled check).
   - **The song's own part on the listening page:** the rebuilt DI is not good enough by
     ear yet.
   - **The part locator:** underpowered on development data (7 targets in 6 bands against
