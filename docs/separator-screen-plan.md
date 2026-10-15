@@ -406,3 +406,11 @@ stay ≥ 31 GB.
   and demucs-venv). It runs in the msst-venv, before the identity check.
 - **The DI gain** is `di_gain`, the gain `direc_check.to_lufs` applies to the crop's `di.wav`
   (tested equal).
+
+## Environment notes (2026-10-15, before any compute)
+
+- **beartype:** the repo's pin, 0.14.1, fails on Python 3.14, so msst-venv uses 0.23.1.
+- **lzma:** this pyenv Python has no `_lzma`, and librosa's `pooch` imports `lzma` on import.
+  `separator_screen` installs an inert `lzma` stand-in, which nothing here uses to decompress.
+- **The pruning test** (a tiny BS-RoFormer, pruned against the full model) passes in
+  msst-venv.

@@ -315,6 +315,33 @@ def swap_used_mb():
         return None
 
 
+def lzma_stub():
+    """The pyenv Python here lacks _lzma; librosa's pooch imports lzma at import time but the
+    separator never decompresses anything. Install an empty stand-in so the import succeeds."""
+    import types
+    try:
+        import lzma  # noqa: F401
+    except ModuleNotFoundError:
+        m = types.ModuleType("lzma")
+
+        def _missing(*a, **k):
+            raise RuntimeError("lzma is not available in this Python build")
+
+        class _LZMAFile:                    # has the file interface joblib checks for; unusable
+            def __init__(self, *a, **k):
+                _missing()
+            read = write = seek = tell = close = _missing
+
+        m.LZMAFile = _LZMAFile
+        m.open = m.compress = m.decompress = _missing
+        m.FORMAT_AUTO, m.FORMAT_XZ, m.FORMAT_ALONE, m.FORMAT_RAW = 0, 1, 2, 3
+        m.LZMAError = RuntimeError
+        sys.modules["lzma"] = m
+
+
+
+lzma_stub()                                 # before anything imports librosa or joblib
+
 class MsstSeparator:
     """Mega-53's electric-guitar head on the CPU (the msst-venv)."""
 
@@ -327,6 +354,7 @@ class MsstSeparator:
         self.root = pathlib.Path(root or msst_root())
         self.prov = verify_msst(self.root)
         sys.path.insert(0, str(self.root / "repo"))
+        lzma_stub()
         from ml_collections import ConfigDict
         from models.bs_roformer.bs_roformer import BSRoformer
 

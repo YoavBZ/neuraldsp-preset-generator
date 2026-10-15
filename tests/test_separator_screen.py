@@ -100,6 +100,7 @@ def test_pruned_tiny_bsroformer_matches_the_full_model():
     import torch
 
     sys.path.insert(0, str(SS.msst_root() / "repo"))
+    SS.lzma_stub()
     from models.bs_roformer.bs_roformer import BSRoformer
 
     torch.manual_seed(0)
