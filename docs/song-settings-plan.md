@@ -332,3 +332,32 @@ flat, compressed envelopes (pitch-class similarity 0.90–0.99, onsets 0.76–0.
 Rule, declared before the readout: the readout is reported as declared, and again with this
 part's cells scored on half B left out. If the two disagree on an arm's pass, the arm is
 undecided, not passed.
+
+## Recorded outcome (2026-10-15): arm A's known-target control fails
+
+Recorded before any arm-A or arm-B score was read.
+
+- **Informative cells:** 9 of 12 (d_S − d_target ≥ 0.1), so the original rows apply, with
+  two-thirds of the informative cells.
+  - **Row 1:** the measure-DI run closes ≥ 50% of the gap on 9 of 9, so the set-up is right.
+  - **Row 2:** the rebuilt run closes ≥ 50% on 3 of 9. Its mean shortfall is +0.320 against the
+    measure-DI run's −0.062, not within 0.03.
+  - **Row 3 applies:** arms A and C count as failed.
+- **Independent audit:** no pipeline bug.
+  - Folds and networks, level, length and the re-EQ sign are all right.
+  - Through C′'s rebuild, the search objective ranks the target settings worse than S on 7 of 12
+    cells. An oracle EQ to the measure DI's spectrum doesn't fix the ranking. So no search
+    budget would recover the target.
+  - **The likely cause is dynamics:** the rebuilt DI is compressed, with crest factor 3–5 dB lower
+    on 10 of 12 cells and frame-envelope correlation 0.09–0.84. Through a nonlinear amp, that
+    points the search to different gain and amp settings.
+  - C′ performs as in validation: rebuilt-vs-raw coherence is about 0.28 here, against 0.13 on
+    stems. It just isn't accurate enough to steer a knob search.
+- **A judging-lag note:** C′'s rebuild is aligned to the input DI, not to the recording, so its
+  correct judge lag is 0, not −52 (`learn/rebuilt_judge.py` `LATENCY`). Re-scoring at lag 0
+  moves distances by only 0.005–0.03, so it doesn't change this outcome. It is fixed before any
+  later use.
+- **What follows:**
+  - Arm C isn't run, which saves about 7k renders.
+  - Arm A's scores are still reported at the readout, descriptively.
+  - Arm B, which doesn't use C′, continues as declared.
