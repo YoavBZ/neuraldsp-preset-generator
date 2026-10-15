@@ -95,3 +95,56 @@ def test_a_changed_shipped_riff_is_refused_not_skipped(tmp_path, monkeypatch):
     monkeypatch.setattr(A, "RIFFS", riffs)
     with pytest.raises(SystemExit):
         A.shipped_riffs()
+
+
+def test_every_riff_declares_its_style_register_and_default():
+    """Six riffs: chords and single lines in three registers (riff-library-plan.md);
+    only the first two play by default, so a page never renders six unasked."""
+    record = json.loads((ROOT / "samples" / "riffs" / "riffs.json").read_text())
+    riffs = record["riffs"]
+    assert {(e["style"], e["register"]) for e in riffs.values()} == {
+        (s, r) for s in ("chords", "line") for r in ("low", "mid", "high")}
+    assert sorted(n for n, e in riffs.items() if e["default"]) == ["chords", "line"]
+    assert A.default_riffs() == ["chords", "line"]
+    # The first two riffs are the ones that always shipped, unchanged.
+    assert riffs["chords"]["sha256"].startswith("a4a2f36d")
+    assert riffs["line"]["sha256"].startswith("f0102680")
+
+
+def test_register_is_the_median_pitch_of_the_cut_with_contiguous_edges():
+    assert B.register_of([40, 45, 59])[0] == "low"
+    assert B.register_of([60, 62, 64])[0] == "mid"
+    assert B.register_of([66, 69, 71])[0] == "mid"          # median A4 is still mid
+    assert B.register_of([70, 74, 77])[0] == "high"
+    assert B.register_of([70, 74, 40])[0] == "high"          # one stray low note
+    assert B.note_name(69) == "A4" and B.note_name(60) == "C4"
+
+
+def test_a_voicing_up_the_neck_is_found_near_the_named_time():
+    data = _midi([(0, 400, 55), (10, 400, 59), (20, 400, 62),            # G low, t=0
+                  (4800, 5200, 67), (4810, 5200, 71), (4820, 5200, 74)])  # G high, t=10
+    groups = B.strums(B.midi_notes(data))
+    assert B.find_chord(groups, "maj", 7) == 0.0
+    assert B.find_chord(groups, "maj", 7, near=9.5) == 10.0
+
+
+def test_each_riffs_recorded_median_sits_in_its_register_and_levels_match():
+    record = json.loads((ROOT / "samples" / "riffs" / "riffs.json").read_text())
+    for name, entry in record["riffs"].items():
+        assert B.register_of([entry["median_pitch"]])[0] == entry["register"], name
+    np = pytest.importorskip("numpy")
+    pyloudnorm = pytest.importorskip("pyloudnorm")
+    sf = pytest.importorskip("soundfile")
+    for name, entry in record["riffs"].items():
+        audio, rate = sf.read(str(ROOT / "samples" / "riffs" / entry["file"]))
+        loud = pyloudnorm.Meter(rate).integrated_loudness(np.asarray(audio))
+        assert abs(loud - record["loudness_lufs"]) < 0.1, (name, loud)
+
+
+def test_every_cut_names_its_riff_once_per_piece():
+    record = json.loads((ROOT / "samples" / "riffs" / "riffs.json").read_text())
+    counts = {}
+    for cut in record["cuts"]:
+        counts[cut["riff"]] = counts.get(cut["riff"], 0) + 1
+    assert counts == {"chords": 4, "chords-mid": 4, "chords-high": 4,
+                      "line": 1, "line-mid": 1, "line-high": 1}

@@ -15,7 +15,7 @@ for their own copy.
 - **No third-party presets.** Presets from other authors are git-ignored — they
   routinely embed absolute IR paths from their creator's machine and reference
   commercial IR packs.
-- **Two guitar riffs are included** in `samples/riffs/`, for hearing presets on the
+- **Six guitar riffs are included** in `samples/riffs/`, for hearing presets on the
   audition page. They are not MIT-licensed. They come from *Guitar-TECHS: An Electric
   Guitar Dataset Covering Techniques, Musical Excerpts, Chords and Scales Using a
   Diverse Array of Hardware*, by Hegel Emmanuel Pedroza Villalobos, Termeh Taheri,
