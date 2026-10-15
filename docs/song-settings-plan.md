@@ -357,7 +357,17 @@ Recorded before any arm-A or arm-B score was read.
   correct judge lag is 0, not −52 (`learn/rebuilt_judge.py` `LATENCY`). Re-scoring at lag 0
   moves distances by only 0.005–0.03, so it doesn't change this outcome. It is fixed before any
   later use.
-- **What follows:**
+- **What this means:** the route isn't dropped. With the true DI the same search works (9 of
+  9), so arm A fails because of the current DI rebuild, and that is the thing to fix. In this
+  control the record was a clean render, so the rebuild alone already fails. On real songs,
+  separation adds a second error. Both are now a research and experiment track (2026-10-15, the
+  user):
+  1. better stem separation (UVR's model zoo, RoFormer guitar models and others);
+  2. a better rebuild that keeps dynamics and transients.
+
+  They are compared with a measure that predicts search success: the target ranks above S
+  through the rebuild. Arm A is re-run once a rebuild passes this control.
+- **What follows for this step:**
   - Arm C isn't run, which saves about 7k renders.
   - Arm A's scores are still reported at the readout, descriptively.
   - Arm B, which doesn't use C′, continues as declared.
