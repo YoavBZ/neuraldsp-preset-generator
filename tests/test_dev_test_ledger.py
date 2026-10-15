@@ -23,3 +23,9 @@ def test_cprime_folds_verdict_is_one_sided():
     seeds = [0.1360, 0.1326, 0.1343]
     assert verdict(0.20, seeds) and verdict(0.1130, seeds)
     assert not verdict(0.1120, seeds)
+
+
+def test_label_table_parts_are_the_declared_59():
+    doc = json.loads((LEDGER.parent / "label-table-parts.json").read_text())
+    assert doc["classed"] == 76 and doc["clean_or_crunch"] == 59 == len(doc["parts"])
+    assert all(v["gain_class"] in ("clean", "crunch") for v in doc["parts"].values())

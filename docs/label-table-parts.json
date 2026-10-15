@@ -1,0 +1,557 @@
+{
+ "rule": "docs/label-table-plan.md",
+ "classed": 76,
+ "clean_or_crunch": 59,
+ "classes_all": {
+  "cambridge-Drag_Me_Down-ElecGtr3": "clean",
+  "cambridge-Drag_Me_Down-ElecGtr4": "clean",
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": "clean",
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": "clean",
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": "clean",
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr4": "clean",
+  "cambridge-Nosso_Mundo_Deixou_De_Existir-ElecGtr03": "crunch",
+  "cambridge-Passing_Ships-ElecGtr2": "clean",
+  "cambridge-Passing_Ships-ElecGtr3": "clean",
+  "cambridge-Passing_Ships-ElecGtr4": "clean",
+  "cambridge-Passing_Ships-ElecGtr6": "clean",
+  "cambridge-Prodigal-ElecGtr1": "clean",
+  "cambridge-Prodigal-ElecGtr2": "clean",
+  "cambridge-Prodigal-ElecGtr3": "clean",
+  "cambridge-Prodigal-ElecGtr4": "crunch",
+  "cambridge-Prodigal-ElecGtr5": "crunch",
+  "cambridge-Quicksand-ElecGtr1": "clean",
+  "cambridge-Quicksand-ElecGtr2": "clean",
+  "cambridge-Signs-ElecGtr2": "clean",
+  "cambridge-Signs-ElecGtr3": "crunch",
+  "cambridge-Signs-ElecGtr6": "clean",
+  "cambridge-Today's_The_Day-ElecGtr07": "crunch",
+  "cambridge-Today's_The_Day-ElecGtr10": "crunch",
+  "cambridge-burial-of-silence-elecgtr3": "high-gain",
+  "cambridge-burial-of-silence-elecgtr4": "high-gain",
+  "cambridge-colour-me-red-elecgtr01": "crunch",
+  "cambridge-colour-me-red-elecgtr02": "clean",
+  "cambridge-colour-me-red-elecgtr03": "clean",
+  "cambridge-femme-elecgtr3": "crunch",
+  "cambridge-femme-elecgtr4": "high-gain",
+  "cambridge-femme-elecgtr5": "crunch",
+  "cambridge-get-out-of-bed-elecgtr1": "crunch",
+  "cambridge-get-out-of-bed-elecgtr2": "crunch",
+  "cambridge-get-out-of-bed-elecgtr7": "high-gain",
+  "cambridge-ill-fate-elecgtr1": "high-gain",
+  "cambridge-ill-fate-elecgtr2": "high-gain",
+  "cambridge-ill-fate-elecgtr3": "high-gain",
+  "cambridge-just-don-t-talk-elecgtr3": "clean",
+  "cambridge-let-s-dance-elecgtr3": "crunch",
+  "cambridge-let-s-dance-elecgtr4": "crunch",
+  "cambridge-magilla-elecgtr1": "clean",
+  "cambridge-magilla-elecgtr1dt": "clean",
+  "cambridge-magilla-elecgtr2": "high-gain",
+  "cambridge-magilla-elecgtr2dt": "high-gain",
+  "cambridge-the-well-elecgtr01": "high-gain",
+  "cambridge-the-well-elecgtr02": "high-gain",
+  "cambridge-the-well-elecgtr03": "high-gain",
+  "cambridge-the-well-elecgtr04": "high-gain",
+  "cambridge-wickerman-elecgtr1": "crunch",
+  "cambridge-wickerman-elecgtr2": "crunch",
+  "cambridge-wickerman-elecgtr3": "crunch",
+  "cambridge-wickerman-elecgtr4": "high-gain",
+  "cambridge-wickerman-elecgtr7": "crunch",
+  "cambridge-wickerman-elecgtr9": "high-gain",
+  "telefunken-Blind_Spots-GTR": "clean",
+  "telefunken-Bloomlight-GTR": "clean",
+  "telefunken-Farthest_Step-GTR": "clean",
+  "telefunken-First_Offering-GTR_1": "clean",
+  "telefunken-First_Offering-GTR_2": "clean",
+  "telefunken-Fragments-GTR": "clean",
+  "telefunken-Gym_Hours-GTR_1": "clean",
+  "telefunken-Gym_Hours-GTR_2": "clean",
+  "telefunken-Hikikomori_-_Love_Does-GTR": "clean",
+  "telefunken-Honey-GTR": "clean",
+  "telefunken-Long_Way_Home-GTR": "clean",
+  "telefunken-Lost_Alive-GTR": "clean",
+  "telefunken-Measurements-GTR": "clean",
+  "telefunken-Russian_Cream-GTR_1": "clean",
+  "telefunken-Russian_Cream-GTR_2": "clean",
+  "telefunken-Sculptor's_Request-GTR_1": "clean",
+  "telefunken-Sculptor's_Request-GTR_2": "clean",
+  "telefunken-She's_Gone-GTR": "clean",
+  "telefunken-Strangest_Places-GTR": "clean",
+  "telefunken-Until_I_Get_Back-GTR": "clean",
+  "telefunken-less-than-nothing-gtr-1": "high-gain",
+  "telefunken-split-brow-gtr-1": "high-gain"
+ },
+ "parts": {
+  "cambridge-Drag_Me_Down-ElecGtr3": {
+   "set": 12,
+   "band": "Adam Buckley",
+   "gain_class": "clean",
+   "judge_lag": 914,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Drag_Me_Down-ElecGtr3",
+   "fold": 0
+  },
+  "cambridge-Drag_Me_Down-ElecGtr4": {
+   "set": 12,
+   "band": "Adam Buckley",
+   "gain_class": "clean",
+   "judge_lag": 914,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Drag_Me_Down-ElecGtr4",
+   "fold": 0
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+   "set": 12,
+   "band": "Atlantis Bound",
+   "gain_class": "clean",
+   "judge_lag": -43,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1",
+   "fold": 0
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+   "set": 12,
+   "band": "Atlantis Bound",
+   "gain_class": "clean",
+   "judge_lag": -43,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+   "fold": 0
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+   "set": 12,
+   "band": "Atlantis Bound",
+   "gain_class": "clean",
+   "judge_lag": 72,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
+   "fold": 0
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr4": {
+   "set": 12,
+   "band": "Atlantis Bound",
+   "gain_class": "clean",
+   "judge_lag": 72,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-It_Was_My_Fault_For_Waiting-ElecGtr4",
+   "fold": 0
+  },
+  "cambridge-Nosso_Mundo_Deixou_De_Existir-ElecGtr03": {
+   "set": 12,
+   "band": "Ale Lak",
+   "gain_class": "crunch",
+   "judge_lag": -27,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Nosso_Mundo_Deixou_De_Existir-ElecGtr03",
+   "fold": 1
+  },
+  "cambridge-Passing_Ships-ElecGtr2": {
+   "set": 12,
+   "band": "The Travelling Band",
+   "gain_class": "clean",
+   "judge_lag": -46,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Passing_Ships-ElecGtr2",
+   "fold": 0
+  },
+  "cambridge-Passing_Ships-ElecGtr3": {
+   "set": 12,
+   "band": "The Travelling Band",
+   "gain_class": "clean",
+   "judge_lag": -66,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Passing_Ships-ElecGtr3",
+   "fold": 0
+  },
+  "cambridge-Passing_Ships-ElecGtr4": {
+   "set": 12,
+   "band": "The Travelling Band",
+   "gain_class": "clean",
+   "judge_lag": -34,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Passing_Ships-ElecGtr4",
+   "fold": 0
+  },
+  "cambridge-Passing_Ships-ElecGtr6": {
+   "set": 12,
+   "band": "The Travelling Band",
+   "gain_class": "clean",
+   "judge_lag": -38,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Passing_Ships-ElecGtr6",
+   "fold": 0
+  },
+  "cambridge-Prodigal-ElecGtr1": {
+   "set": 12,
+   "band": "Starnes And Shah",
+   "gain_class": "clean",
+   "judge_lag": 24,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Prodigal-ElecGtr1",
+   "fold": 3
+  },
+  "cambridge-Prodigal-ElecGtr2": {
+   "set": 12,
+   "band": "Starnes And Shah",
+   "gain_class": "clean",
+   "judge_lag": -17,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Prodigal-ElecGtr2",
+   "fold": 3
+  },
+  "cambridge-Prodigal-ElecGtr3": {
+   "set": 12,
+   "band": "Starnes And Shah",
+   "gain_class": "clean",
+   "judge_lag": -46,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Prodigal-ElecGtr3",
+   "fold": 3
+  },
+  "cambridge-Prodigal-ElecGtr4": {
+   "set": 12,
+   "band": "Starnes And Shah",
+   "gain_class": "crunch",
+   "judge_lag": 31,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Prodigal-ElecGtr4",
+   "fold": 3
+  },
+  "cambridge-Prodigal-ElecGtr5": {
+   "set": 12,
+   "band": "Starnes And Shah",
+   "gain_class": "crunch",
+   "judge_lag": -51,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Prodigal-ElecGtr5",
+   "fold": 3
+  },
+  "cambridge-Quicksand-ElecGtr1": {
+   "set": 12,
+   "band": "The Travelling Band",
+   "gain_class": "clean",
+   "judge_lag": -33,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Quicksand-ElecGtr1",
+   "fold": 0
+  },
+  "cambridge-Quicksand-ElecGtr2": {
+   "set": 12,
+   "band": "The Travelling Band",
+   "gain_class": "clean",
+   "judge_lag": -33,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Quicksand-ElecGtr2",
+   "fold": 0
+  },
+  "cambridge-Signs-ElecGtr2": {
+   "set": 12,
+   "band": "Zeno",
+   "gain_class": "clean",
+   "judge_lag": -26,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Signs-ElecGtr2",
+   "fold": 2
+  },
+  "cambridge-Signs-ElecGtr3": {
+   "set": 12,
+   "band": "Zeno",
+   "gain_class": "crunch",
+   "judge_lag": 20,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Signs-ElecGtr3",
+   "fold": 2
+  },
+  "cambridge-Signs-ElecGtr6": {
+   "set": 12,
+   "band": "Zeno",
+   "gain_class": "clean",
+   "judge_lag": -18,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Signs-ElecGtr6",
+   "fold": 2
+  },
+  "cambridge-Today's_The_Day-ElecGtr07": {
+   "set": 12,
+   "band": "Eat The Feeder",
+   "gain_class": "crunch",
+   "judge_lag": -129,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Today's_The_Day-ElecGtr07",
+   "fold": 2
+  },
+  "cambridge-Today's_The_Day-ElecGtr10": {
+   "set": 12,
+   "band": "Eat The Feeder",
+   "gain_class": "crunch",
+   "judge_lag": 620,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/cambridge-Today's_The_Day-ElecGtr10",
+   "fold": 2
+  },
+  "cambridge-colour-me-red-elecgtr01": {
+   "set": 3,
+   "band": "Diesel13",
+   "gain_class": "crunch",
+   "judge_lag": -12,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops-set3/cambridge-colour-me-red-elecgtr01",
+   "fold": null
+  },
+  "cambridge-colour-me-red-elecgtr02": {
+   "set": 3,
+   "band": "Diesel13",
+   "gain_class": "clean",
+   "judge_lag": -8,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops-set3/cambridge-colour-me-red-elecgtr02",
+   "fold": null
+  },
+  "cambridge-colour-me-red-elecgtr03": {
+   "set": 3,
+   "band": "Diesel13",
+   "gain_class": "clean",
+   "judge_lag": -8,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops-set3/cambridge-colour-me-red-elecgtr03",
+   "fold": null
+  },
+  "cambridge-femme-elecgtr3": {
+   "set": 3,
+   "band": "Wall Of Death",
+   "gain_class": "crunch",
+   "judge_lag": 521,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops-set3/cambridge-femme-elecgtr3",
+   "fold": null
+  },
+  "cambridge-femme-elecgtr5": {
+   "set": 3,
+   "band": "Wall Of Death",
+   "gain_class": "crunch",
+   "judge_lag": 34,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops-set3/cambridge-femme-elecgtr5",
+   "fold": null
+  },
+  "cambridge-get-out-of-bed-elecgtr1": {
+   "set": 3,
+   "band": "Magician's Nephew",
+   "gain_class": "crunch",
+   "judge_lag": -5,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops-set3/cambridge-get-out-of-bed-elecgtr1",
+   "fold": null
+  },
+  "cambridge-get-out-of-bed-elecgtr2": {
+   "set": 3,
+   "band": "Magician's Nephew",
+   "gain_class": "crunch",
+   "judge_lag": -5,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops-set3/cambridge-get-out-of-bed-elecgtr2",
+   "fold": null
+  },
+  "cambridge-just-don-t-talk-elecgtr3": {
+   "set": 3,
+   "band": "Timo And The Timezone",
+   "gain_class": "clean",
+   "judge_lag": -36,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops-set3/cambridge-just-don-t-talk-elecgtr3",
+   "fold": null
+  },
+  "cambridge-let-s-dance-elecgtr3": {
+   "set": 3,
+   "band": "Szymon Skiba",
+   "gain_class": "crunch",
+   "judge_lag": -43,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops-set3/cambridge-let-s-dance-elecgtr3",
+   "fold": null
+  },
+  "cambridge-let-s-dance-elecgtr4": {
+   "set": 3,
+   "band": "Szymon Skiba",
+   "gain_class": "crunch",
+   "judge_lag": -43,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops-set3/cambridge-let-s-dance-elecgtr4",
+   "fold": null
+  },
+  "cambridge-magilla-elecgtr1": {
+   "set": 3,
+   "band": "Turbosauro",
+   "gain_class": "clean",
+   "judge_lag": -44,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops-set3/cambridge-magilla-elecgtr1",
+   "fold": null
+  },
+  "cambridge-magilla-elecgtr1dt": {
+   "set": 3,
+   "band": "Turbosauro",
+   "gain_class": "clean",
+   "judge_lag": -44,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops-set3/cambridge-magilla-elecgtr1dt",
+   "fold": null
+  },
+  "cambridge-wickerman-elecgtr1": {
+   "set": 3,
+   "band": "Eat The Feeder",
+   "gain_class": "crunch",
+   "judge_lag": -17,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops-set3/cambridge-wickerman-elecgtr1",
+   "fold": null
+  },
+  "cambridge-wickerman-elecgtr2": {
+   "set": 3,
+   "band": "Eat The Feeder",
+   "gain_class": "crunch",
+   "judge_lag": -17,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops-set3/cambridge-wickerman-elecgtr2",
+   "fold": null
+  },
+  "cambridge-wickerman-elecgtr3": {
+   "set": 3,
+   "band": "Eat The Feeder",
+   "gain_class": "crunch",
+   "judge_lag": -17,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops-set3/cambridge-wickerman-elecgtr3",
+   "fold": null
+  },
+  "cambridge-wickerman-elecgtr7": {
+   "set": 3,
+   "band": "Eat The Feeder",
+   "gain_class": "crunch",
+   "judge_lag": 329,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops-set3/cambridge-wickerman-elecgtr7",
+   "fold": null
+  },
+  "telefunken-Blind_Spots-GTR": {
+   "set": 12,
+   "band": "Doom Flamingo",
+   "gain_class": "clean",
+   "judge_lag": -25,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Blind_Spots-GTR",
+   "fold": 1
+  },
+  "telefunken-Bloomlight-GTR": {
+   "set": 12,
+   "band": "Eggy",
+   "gain_class": "clean",
+   "judge_lag": -33,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Bloomlight-GTR",
+   "fold": 3
+  },
+  "telefunken-Farthest_Step-GTR": {
+   "set": 12,
+   "band": "Eggy",
+   "gain_class": "clean",
+   "judge_lag": -33,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Farthest_Step-GTR",
+   "fold": 3
+  },
+  "telefunken-First_Offering-GTR_1": {
+   "set": 12,
+   "band": "Dom McLennon",
+   "gain_class": "clean",
+   "judge_lag": -22,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-First_Offering-GTR_1",
+   "fold": 1
+  },
+  "telefunken-First_Offering-GTR_2": {
+   "set": 12,
+   "band": "Dom McLennon",
+   "gain_class": "clean",
+   "judge_lag": -30,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-First_Offering-GTR_2",
+   "fold": 1
+  },
+  "telefunken-Fragments-GTR": {
+   "set": 12,
+   "band": "Eggy",
+   "gain_class": "clean",
+   "judge_lag": -33,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Fragments-GTR",
+   "fold": 3
+  },
+  "telefunken-Gym_Hours-GTR_1": {
+   "set": 12,
+   "band": "Dom McLennon",
+   "gain_class": "clean",
+   "judge_lag": -25,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Gym_Hours-GTR_1",
+   "fold": 1
+  },
+  "telefunken-Gym_Hours-GTR_2": {
+   "set": 12,
+   "band": "Dom McLennon",
+   "gain_class": "clean",
+   "judge_lag": -28,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Gym_Hours-GTR_2",
+   "fold": 1
+  },
+  "telefunken-Hikikomori_-_Love_Does-GTR": {
+   "set": 12,
+   "band": "John Morgan Kimock",
+   "gain_class": "clean",
+   "judge_lag": -32,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Hikikomori_-_Love_Does-GTR",
+   "fold": 2
+  },
+  "telefunken-Honey-GTR": {
+   "set": 12,
+   "band": "Swatkins",
+   "gain_class": "clean",
+   "judge_lag": -12,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Honey-GTR",
+   "fold": 0
+  },
+  "telefunken-Long_Way_Home-GTR": {
+   "set": 12,
+   "band": "Doom Flamingo",
+   "gain_class": "clean",
+   "judge_lag": -25,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Long_Way_Home-GTR",
+   "fold": 1
+  },
+  "telefunken-Lost_Alive-GTR": {
+   "set": 12,
+   "band": "Swatkins",
+   "gain_class": "clean",
+   "judge_lag": -16,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Lost_Alive-GTR",
+   "fold": 0
+  },
+  "telefunken-Measurements-GTR": {
+   "set": 12,
+   "band": "Doom Flamingo",
+   "gain_class": "clean",
+   "judge_lag": -25,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Measurements-GTR",
+   "fold": 1
+  },
+  "telefunken-Russian_Cream-GTR_1": {
+   "set": 12,
+   "band": "Dom McLennon",
+   "gain_class": "clean",
+   "judge_lag": -23,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Russian_Cream-GTR_1",
+   "fold": 1
+  },
+  "telefunken-Russian_Cream-GTR_2": {
+   "set": 12,
+   "band": "Dom McLennon",
+   "gain_class": "clean",
+   "judge_lag": -30,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Russian_Cream-GTR_2",
+   "fold": 1
+  },
+  "telefunken-Sculptor's_Request-GTR_1": {
+   "set": 12,
+   "band": "Dom McLennon",
+   "gain_class": "clean",
+   "judge_lag": -23,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Sculptor's_Request-GTR_1",
+   "fold": 1
+  },
+  "telefunken-Sculptor's_Request-GTR_2": {
+   "set": 12,
+   "band": "Dom McLennon",
+   "gain_class": "clean",
+   "judge_lag": -29,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Sculptor's_Request-GTR_2",
+   "fold": 1
+  },
+  "telefunken-She's_Gone-GTR": {
+   "set": 12,
+   "band": "Bernard Purdie Tribute All-Stars",
+   "gain_class": "clean",
+   "judge_lag": -30,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-She's_Gone-GTR",
+   "fold": 3
+  },
+  "telefunken-Strangest_Places-GTR": {
+   "set": 12,
+   "band": "Doom Flamingo",
+   "gain_class": "clean",
+   "judge_lag": -15,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Strangest_Places-GTR",
+   "fold": 1
+  },
+  "telefunken-Until_I_Get_Back-GTR": {
+   "set": 12,
+   "band": "Swatkins",
+   "gain_class": "clean",
+   "judge_lag": -12,
+   "crop": "/Users/yoavbz/ndsp-presets/references/validation-crops/telefunken-Until_I_Get_Back-GTR",
+   "fold": 0
+  }
+ }
+}
