@@ -3,6 +3,9 @@
     .venv/bin/python -m learn.label_table parts               # writes docs/label-table-parts.json
     .venv/bin/python -m learn.label_table render --shard 0/3
     .venv/bin/python -m learn.label_table stems-todo           # crop folders still needing a stem
+    DEVICE=cpu ~/ndsp-presets/tools/demucs-venv/bin/python -m learn.separate $(... stems-todo) \
+        --out ~/ndsp-presets/learn/label-table/stems           # the missing stems, on the CPU
+    .venv/bin/python -m learn.label_table index                # ~/ndsp-presets/learn/label-table/parts.json
     .venv/bin/python -m learn.label_table check
 """
 
@@ -139,6 +142,16 @@ def render(shard):
         rr.close()
 
 
+def index():
+    """The plan's index: band, class, set, fold, judge lag and stem path for every part."""
+    out = {s: {**p, "stem": str(stem_path(s)) if stem_path(s) else None,
+               "menu": (OUT / s / "menu.json").exists()} for s, p in parts().items()}
+    OUT.mkdir(parents=True, exist_ok=True)
+    K._atomic(OUT / "parts.json", out)
+    print(len(out), "parts;", sum(v["stem"] is not None for v in out.values()), "with stems;",
+          sum(v["menu"] for v in out.values()), "with menus")
+
+
 def stems_todo():
     for slug, p in sorted(parts().items()):
         if stem_path(slug) is None:
@@ -164,8 +177,11 @@ def check():
             for n in names:
                 sel, ed = menu["pr12"][n]
                 d = judge2(ref, rr.render(di.astype(np.float32), sel, ed), di, part["judge_lag"])
-                out["repeat"][f"{slug}|{n}"] = max(abs(math.log(d["flat"][h] / stored["pr12"][n]["flat"][h]))
-                                                  for h in "AB" if math.isfinite(d["flat"][h]))
+                devs = [abs(math.log(d["flat"][h] / stored["pr12"][n]["flat"][h])) for h in "AB"
+                        if math.isfinite(d["flat"][h]) and d["flat"][h] > 0
+                        and math.isfinite(stored["pr12"][n]["flat"][h]) and stored["pr12"][n]["flat"][h] > 0]
+                if devs:
+                    out["repeat"][f"{slug}|{n}"] = max(devs)
     finally:
         rr.close()
     from learn import songs_check as SC
@@ -193,11 +209,12 @@ def check():
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("step", choices=("parts", "render", "stems-todo", "check"))
+    ap.add_argument("step", choices=("parts", "render", "stems-todo", "index", "check"))
     ap.add_argument("--shard", default="0/1")
     a = ap.parse_args(argv)
     i, n = map(int, a.shard.split("/"))
-    {"parts": build_parts, "render": lambda: render((i, n)), "stems-todo": stems_todo, "check": check}[a.step]()
+    {"parts": build_parts, "render": lambda: render((i, n)), "stems-todo": stems_todo, "index": index,
+     "check": check}[a.step]()
 
 
 if __name__ == "__main__":
