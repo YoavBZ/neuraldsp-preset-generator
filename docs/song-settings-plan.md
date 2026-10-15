@@ -320,3 +320,15 @@ clearly closer than the start.
   2. the rebuilt run's mean shortfall within 0.03 of the measure-DI run's, or at or below 0:
      the control passes;
   3. otherwise: the rebuilt DI fails even on known targets.
+
+## Amendment 3 (2026-10-15): Gym Hours GTR 1's second half has another guitar in it
+
+A listening trial flagged telefunken-Gym_Hours-GTR_1. An audit (before any step-3 score was read)
+found the record is the right track (bit-identical to "GTR 1 Amp M80"; the DI to "GTR 1 DI"), but
+GTR 2 bleeds into its mic: about 13–17 dB down in half A, and 3–6 dB down from 7 s, i.e. in half B.
+No other part is mismatched; five parts with a low DI–record envelope correlation are explained by
+flat, compressed envelopes (pitch-class similarity 0.90–0.99, onsets 0.76–0.98).
+
+Rule, declared before the readout: the readout is reported as declared, and again with this
+part's cells scored on half B left out. If the two disagree on an arm's pass, the arm is
+undecided, not passed.
