@@ -319,6 +319,24 @@
    "folds": "docs/song-settings-folds.json",
    "gate": "per arm, held half, band-weighted vs S on the per-part unit: (1) <= -0.03 and >= 40% of K_S's band-weighted gain; (2) better than S in >= 60% of bands; (3) neither clean nor crunch worse than S by > 0.05; (4) arm A not worse than the C' menu pick by > 0.01; (5) arm B: positive control and shuffled-input control pass. Arm A known-target control rows as declared. Readout per the ML plan's step 6",
    "outcome": null
+  },
+  {
+   "test_id": "rank-margin-ladder",
+   "plan": "docs/rank-margin-ladder-plan.md",
+   "entered": "2026-10-15, before any rank-margin compute",
+   "repeat_use": "second development use of song-settings' 12 known-target control cells (first: step 3's control and its audit, docs/audits/song-settings-control-2026-10-15/)",
+   "parts": [
+    "cambridge-Today's_The_Day-ElecGtr10",
+    "cambridge-Prodigal-ElecGtr5",
+    "cambridge-just-don-t-talk-elecgtr3",
+    "telefunken-Blind_Spots-GTR",
+    "cambridge-Passing_Ships-ElecGtr6",
+    "cambridge-colour-me-red-elecgtr01"
+   ],
+   "bands": "Diesel13, Doom Flamingo, Eat The Feeder, Starnes And Shah, The Travelling Band, Timo And The Timezone (song_settings.control_cells)",
+   "audio_only": "bleed source cambridge-get-out-of-bed-elecgtr1 (Magician's Nephew, set 3, development), drawn by random.Random(20261017)",
+   "gate": "Step A (provisional; m_A, mask v, lags 0 and -52 must agree): >= 15 of 18 informative searches agree with gap closed >= 50%, AND within the C' run m_A > 0 on >= 2 of 3 successes and m_A <= 0 on >= 4 of 6 failures -> provisional gate; 13-14 or the C' row fails -> screen only; <= 12 -> not adopted. Final only if the pre-registered per-cell predictions for experiment 3's control re-runs agree on >= two-thirds of informative searches. Step B (primary m_full, measure-DI mask for D1/D2; inversions counted on informative cells with base m > 0; halves, other mask and leave-one-band-out reported as fragility): placebo smear inverts > 1 -> D1 undecided. D1: crest -3 dB inverts >= half (rounded up) of reached cells with >= 5 reached, and the C'-spectrum rung inverts <= 1 -> dynamics confirmed; crest holds and C'-spectrum >= 2 -> dynamics and tilt; crest fails and C'-spectrum >= half -> tilt, not dynamics; else neither. D2: a transplant (5 ms, 10 ms, or oracle-EQ + 10 ms) restores if m > 0 on >= two-thirds of the base set and on more cells than C'. D3: a proxy is adopted if band-weighted within-cell Spearman rho >= 0.6, the paired band-clustered bootstrap lower 90% bound of (rho - coherence's rho) > 0, and it beats coherence in >= 5 of 6 bands; confirmation on other development cells is binding before any use as a loss.",
+   "outcome": null
   }
  ]
 }
