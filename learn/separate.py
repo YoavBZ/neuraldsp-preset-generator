@@ -90,7 +90,9 @@ class GuitarSeparator:
         from demucs.api import Separator
 
         torch.set_num_threads(2)
-        self.device = "mps" if torch.backends.mps.is_available() else "cpu"
+        import os
+
+        self.device = os.environ.get("DEVICE") or ("mps" if torch.backends.mps.is_available() else "cpu")
         self.sep = Separator(model=MODEL, device=self.device, shifts=SHIFTS, overlap=OVERLAP, split=True,
                              segment=None, progress=False)
 

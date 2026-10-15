@@ -248,6 +248,19 @@ was declared, what was measured, and the research behind it.
   development and with the true DI, a knob search beats the best menu preset by about 19%
   (14/14 bands), plus 8% from the EQ. The gain is part-specific, and a blind check (one
   listener) chose the search on 7 of 7 trials. Lower bounds.
+- [cprime-folds-plan.md](cprime-folds-plan.md) → [results](cprime-folds-results.md) (ML plan
+  step 1): C′ for folds 0, 1 and 3. All three pass the network check (audited).
+- [knob-ceiling-2-plan.md](knob-ceiling-2-plan.md) → [results](knob-ceiling-2-results.md) (step
+  2): pedals add a little, consistently; time effects are kept only when they clearly help;
+  an effect left off on a dry record is correct.
+- [label-table-plan.md](label-table-plan.md) → [results](label-table-results.md) (step 4):
+  menus and stems for 59 clean and crunch development parts.
+- [song-settings-plan.md](song-settings-plan.md) (step 3, in progress): arm A failed its
+  known-target control because the current DI rebuild isn't accurate enough (audit artefacts
+  in [audits/song-settings-control-2026-10-15](audits/song-settings-control-2026-10-15/README.md)).
+  Arm B is training.
+- [rank-margin-ladder-plan.md](rank-margin-ladder-plan.md): what damage to a DI flips the
+  search's ranking, and a two-render gate for rebuild quality (DI-recovery experiment 2).
 - [render-order-audit.md](render-order-audit.md): reused Morgan renders carried the previous
   render at hiss level until `isolate`. No decision overturned; set 5's C′-over-C is fragile
   (inconclusive if the at-risk parts are dropped).

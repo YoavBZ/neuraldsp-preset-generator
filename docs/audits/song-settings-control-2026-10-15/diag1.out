@@ -1,0 +1,72 @@
+cambridge-Today's_The_Day-ElecGtr10 pr12 fold 2 len raw/fake/reb 480000 480000 480000 lufs fake/reb/meas -11.4 -22.9 -22.9
+   reb~raw lag 3 pk 0.042
+   reb~fake lag -54 pk 0.073
+   raw~fake lag 0 pk -0.061
+   meas~raw lag 0 pk 0.939
+   coh1-3k reb/raw 0.219 meas/raw 1.0 corr 0.669 tilt raw/meas/reb -18.4 -27.6 -27.2
+cambridge-Today's_The_Day-ElecGtr10 sw50r fold 2 len raw/fake/reb 480000 480000 480000 lufs fake/reb/meas -11.3 -22.9 -22.9
+   reb~raw lag 3 pk 0.044
+   reb~fake lag -53 pk 0.077
+   raw~fake lag 0 pk -0.095
+   meas~raw lag 0 pk 0.939
+   coh1-3k reb/raw 0.232 meas/raw 1.0 corr 0.643 tilt raw/meas/reb -18.4 -27.6 -26.3
+cambridge-Prodigal-ElecGtr5 pr12 fold 3 len raw/fake/reb 480000 480000 480000 lufs fake/reb/meas -11.2 -22.9 -22.9
+   reb~raw lag 0 pk -0.129
+   reb~fake lag -57 pk 0.043
+   raw~fake lag 0 pk -0.04
+   meas~raw lag 0 pk 0.839
+   coh1-3k reb/raw 0.069 meas/raw 0.996 corr 0.725 tilt raw/meas/reb -15.6 -29.7 -28.1
+cambridge-Prodigal-ElecGtr5 sw50r fold 3 len raw/fake/reb 480000 480000 480000 lufs fake/reb/meas -12.2 -22.9 -22.9
+   reb~raw lag 0 pk -0.119
+   reb~fake lag -55 pk 0.049
+   raw~fake lag -58 pk 0.029
+   meas~raw lag 0 pk 0.839
+   coh1-3k reb/raw 0.082 meas/raw 0.996 corr 0.726 tilt raw/meas/reb -15.6 -29.7 -28.4
+cambridge-just-don-t-talk-elecgtr3 pr12 fold 3 len raw/fake/reb 480000 480000 480000 lufs fake/reb/meas -13.5 -22.9 -22.9
+   reb~raw lag 1 pk 0.046
+   reb~fake lag -52 pk 0.072
+   raw~fake lag -56 pk 0.073
+   meas~raw lag 0 pk 0.989
+   coh1-3k reb/raw 0.4 meas/raw 0.998 corr 0.703 tilt raw/meas/reb -31.2 -29.8 -31.6
+cambridge-just-don-t-talk-elecgtr3 sw50r fold 3 len raw/fake/reb 480000 480000 480000 lufs fake/reb/meas -9.2 -22.9 -22.9
+   reb~raw lag 0 pk 0.038
+   reb~fake lag -52 pk 0.076
+   raw~fake lag 0 pk 0.065
+   meas~raw lag 0 pk 0.989
+   coh1-3k reb/raw 0.287 meas/raw 0.998 corr 0.59 tilt raw/meas/reb -31.2 -29.8 -31.5
+telefunken-Blind_Spots-GTR pr12 fold 1 len raw/fake/reb 480000 480000 480000 lufs fake/reb/meas -12.7 -22.9 -22.9
+   reb~raw lag -1 pk 0.065
+   reb~fake lag -53 pk 0.069
+   raw~fake lag -56 pk 0.151
+   meas~raw lag 0 pk 0.994
+   coh1-3k reb/raw 0.568 meas/raw 0.999 corr 0.633 tilt raw/meas/reb -16.8 -25.4 -29.5
+telefunken-Blind_Spots-GTR sw50r fold 1 len raw/fake/reb 480000 480000 480000 lufs fake/reb/meas -7.2 -22.9 -22.9
+   reb~raw lag 1 pk 0.051
+   reb~fake lag -53 pk 0.065
+   raw~fake lag -56 pk 0.102
+   meas~raw lag 0 pk 0.994
+   coh1-3k reb/raw 0.361 meas/raw 0.999 corr 0.689 tilt raw/meas/reb -16.8 -25.4 -30.0
+cambridge-Passing_Ships-ElecGtr6 pr12 fold 0 len raw/fake/reb 480000 480000 480000 lufs fake/reb/meas -12.3 -22.9 -22.9
+   reb~raw lag -1 pk 0.128
+   reb~fake lag -1 pk 0.054
+   raw~fake lag -56 pk 0.139
+   meas~raw lag 0 pk 0.954
+   coh1-3k reb/raw 0.481 meas/raw 1.0 corr 0.629 tilt raw/meas/reb -23.9 -25.3 -33.3
+cambridge-Passing_Ships-ElecGtr6 sw50r fold 0 len raw/fake/reb 480000 480000 480000 lufs fake/reb/meas -7.1 -22.9 -22.9
+   reb~raw lag -1 pk 0.127
+   reb~fake lag -55 pk 0.049
+   raw~fake lag -56 pk 0.085
+   meas~raw lag 0 pk 0.954
+   coh1-3k reb/raw 0.348 meas/raw 1.0 corr 0.713 tilt raw/meas/reb -23.9 -25.3 -32.6
+cambridge-colour-me-red-elecgtr01 pr12 fold 1 len raw/fake/reb 480000 480000 480000 lufs fake/reb/meas -11.1 -22.9 -22.9
+   reb~raw lag 1 pk 0.081
+   reb~fake lag -54 pk 0.057
+   raw~fake lag -59 pk 0.032
+   meas~raw lag 0 pk 0.928
+   coh1-3k reb/raw 0.136 meas/raw 0.999 corr 0.585 tilt raw/meas/reb -28.6 -26.7 -27.7
+cambridge-colour-me-red-elecgtr01 sw50r fold 1 len raw/fake/reb 480000 480000 480000 lufs fake/reb/meas -11.8 -22.9 -22.9
+   reb~raw lag 1 pk 0.075
+   reb~fake lag -53 pk 0.064
+   raw~fake lag -58 pk 0.03
+   meas~raw lag 0 pk 0.928
+   coh1-3k reb/raw 0.171 meas/raw 0.999 corr 0.644 tilt raw/meas/reb -28.6 -26.7 -28.7
