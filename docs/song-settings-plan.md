@@ -294,3 +294,29 @@ The bank renders were to wait for step 1's caches to be deleted. That rule only 
 space. The bank is about 5 GB, free space is about 43 GB, and `song_bank.render` stops below the
 31 GB guard. So the renders start while step 1 trains, using the idle CPU. Nothing about the bank
 or its use changes. Separation, features and training still follow the declared order.
+
+## Amendment 2 (2026-10-15): arm A's known-target control, when the target isn't reachable
+
+Made after the first control cell (Today's The Day, PR12) and before any other control result,
+and before any arm-A or arm-B result was read.
+
+**The problem.** The "recording" is the moved preset played with the part's raw DI (−22.9 LUFS),
+while every search renders the measure DI (equalised to the average guitar). On that cell, the
+target settings rendered through the measure DI were *further* from the recording than S was
+(4.204 against 4.022 on half B), so "gap closed", (d_S − d_found) / (d_S − d_target), divides by
+a negative number. Both searches landed closer than the target: shortfall −0.090 (measure-DI run)
+and −0.119 (rebuilt run). The likely cause is that the equalisation changes the drive on crunch
+parts. Knob ceiling's mismatch control never met this, because there the target was always
+clearly closer than the start.
+
+**The rule, as amended:**
+- **A control cell is informative** only if d_S − d_target ≥ 0.1 on the held half (the same
+  floor as arm B's positive control). Uninformative cells are reported, not scored.
+- **If at least 6 cells are informative,** the original rows apply, with "8 of 12" read as
+  "at least two-thirds of the informative cells".
+- **If fewer than 6 are informative,** the rows are read on the mean shortfall over all 12 cells,
+  log(d_found / d_target), which needs no gap:
+  1. the measure-DI run's mean shortfall above +0.10: the set-up is wrong;
+  2. the rebuilt run's mean shortfall within 0.03 of the measure-DI run's, or at or below 0:
+     the control passes;
+  3. otherwise: the rebuilt DI fails even on known targets.
