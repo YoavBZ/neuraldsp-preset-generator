@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-14.
+lives in the linked documents. Last updated 2026-10-15.
 
 ## Where the product is
 
@@ -44,9 +44,10 @@ lives in the linked documents. Last updated 2026-10-14.
   by ear (product steps; history in [roadmap-history.md](roadmap-history.md), step 5).
 - **`edit`** changes a preset from a plain-English ask.
 - **Predicting a preset from the song** is active research, not yet in the product
-  (step 0): a network rebuilds the guitar's DI from the recording and the judge picks a
-  menu preset through it. Confirmed against the old starting points (the clean
-  template, and the driven preset on crunch), mostly on clean parts
+  (step 0). Since 2026-10-14 the aim is to generate settings, not rank presets: see step 0
+  for where it stands. The earlier route had a network rebuild the guitar's DI from the
+  recording, then let the judge pick a menu preset through it. Confirmed against the old
+  starting points (the clean template, and the driven preset on crunch), mostly on clean parts
   ([results](set4-confirmation-results.md)). Against the current starting presets it is
   undecided on clean and crunch, both under-powered ([audit](audit-2026-10-11.md)).
 - **The judge** ([measuring-closeness.md](measuring-closeness.md)) is how closeness is
@@ -89,20 +90,93 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
        were chosen on 7 of 7.
      - Both are lower bounds: the search falls short.
    - **So everything below, which ranked the menu, measured the menu's limit, not the
-     plugin's.** The next step is predicting or searching settings from a song alone. The cloud
-     research round on that is in, checked against the repo and turned into one short
-     [ML plan](research/ml-plan-2026-10.md). The user's decisions are in its section 3
-     (2026-10-14); no step is declared yet. Its section 4 is the work order:
-     - C′ for every fold, so rebuilt DIs are leak-free;
-     - one declared comparison on knob ceiling's cells, against its search from today's start:
-       a rebuilt-DI search, a direct stem-to-settings model trained on renders, and the model's
-       guess refined by a short search;
-     - a second knob ceiling for pedals, time effects and Tone King;
-     - a label table with unfiltered stems for every clean and crunch development part;
-     - an optimiser comparison, after the comparison's readout.
+     plugin's.** The work since then follows the [ML plan](research/ml-plan-2026-10.md),
+     approved by the user on 2026-10-14. It has a 200k render limit, with knob ceiling counted.
 
-     The user approved the comparison, a 200k render limit with knob ceiling counted, and
-     re-using the set-3 development parts (2026-10-14).
+   **Where the ML plan stands (2026-10-15):**
+   - **Step 1, C′ for every fold** ([results](cprime-folds-results.md)): done. The three new
+     networks pass their check (0.125–0.136 against a 0.113 floor), with an independent audit.
+   - **Step 2, knob ceiling 2** ([results](knob-ceiling-2-results.md)): done on Morgan; Tone King
+     is deferred and needs an amendment.
+     - Pedals add a little but consistently: −0.023, with 23 of 24 parts better. That reads
+       "little", so undecided. The ablation puts about half of it on the pedals, mostly on
+       crunch. Some of the rest may simply be more search.
+     - Wider input gain adds nothing.
+     - Time effects stay in the search, kept only when they clearly help. In blind listening, the
+       version with effects was chosen on all 3 clips where the judge saw a clear gain.
+     - An effect left off is the right answer when the record is dry, so it isn't a failure.
+     - The keep margin let near-ties through. A higher margin is declared before its next use.
+   - **Step 4, the label table** ([results](label-table-results.md)): done. It has menus and
+     stems for 59 clean and crunch development parts.
+   - **Step 3, the song-settings comparison** ([plan](song-settings-plan.md)): in progress.
+     - **Arm A (search through the rebuilt DI)** failed its known-target control, after an
+       audit that found no bug. With the true DI, the search closes at least half the gap on 9
+       of 9 informative cells; through C′'s rebuild, on 3 of 9. Through the rebuild, the target
+       even ranks below the start on 7 of 12 cells.
+     - Arm A's scores are still shown at the readout, descriptively.
+     - The rebuild's judging lag (0, not −52) is fixed before any later use.
+     - **The rebuild is the bottleneck, not the route** (the user's direction). The control's
+       "recording" was a clean render, so this is the rebuild's error alone. The likely cause is
+       lost dynamics: the rebuild's crest factor (peak-to-average level) is 3–5 dB low. This is
+       untested. On real songs, separation adds a second error, also not yet tested.
+     - **Arm C** isn't run.
+     - **Arm B** (a direct settings model trained on 10k renders) is training per fold, then
+       half-data runs. Next come its positive control, then scoring and controls.
+   - **What arm B's readout decides** (ML plan, step 6):
+     - **If B passes and leads,** the rebuilt DI isn't needed for the product route. The bank
+       grows by about 20k renders, then step 7.
+     - **If B fails,** no arm has passed. The DI track carries on, and the user is asked about
+       next steps.
+     - **If B fails but the half-bank check shows a data limit,** it reads "undecided
+       (data-limited)". The user is then asked about GOAT data again.
+   - **The DI-recovery track** ([research](research/di-recovery-2026-10.md); experiments numbered
+     as there). It continues whatever arm B shows, unless the user decides otherwise.
+     1. **A separator screen:** Mega-53, a crossover blend and htdemucs_6s on the 5 set-3 check
+        parts, about 150 renders. It needs its own plan and ledger entry. It measures the rank
+        margin through the true DI. If that is often negative, even a perfect rebuild can't
+        steer through a stem, and separation becomes a problem as big as the rebuild.
+     2. **The degradation ladder** ([plan](rank-margin-ladder-plan.md), reviewed, about 0.9k
+        renders): damage the true DI in controlled ways to find what flips the ranking. It
+        also validates a two-render "rank margin" as the rebuild-quality gate in place of
+        coherence.
+     3. **A fitted dynamics-and-tilt correction of C′,** then re-run the control (about 3.6k
+        renders per arm, up to 3 arms). The code and fitting need no renders, so they can be
+        prepared while 1 and 2 run. Only the choice of arms waits for 2.
+     4. **A dynamics-aware C′ retrain,** only if 3 fails: about 26 h on the GPU for four folds,
+        one fold first as a pre-check.
+
+     1 and 2 run side by side. Arm A is re-run once a rebuild passes the control.
+   - **Renders against the 200k limit:**
+     - about 131k by the end of step 3;
+     - the declared bound with the ladder is 139k, which still counts arm C's 7.2k;
+     - the DI track adds up to about 12k more.
+
+     The ML plan warns that the branches after the readout can reach 200k, so the user is asked
+     before passing it.
+   - **Open user decisions:**
+     - GOAT, if arm B is data-limited;
+     - anything past 200k renders;
+     - Tone King for step 2;
+     - whether the DI track continues if arm B leads.
+   - **Then:** step 5 (optimiser comparison) after step 3's readout, step 6, and finally step 7,
+     the pooled held-out test.
+   - **Running in parallel (one Mac: the MPS GPU, 8 CPU cores, 32 GB):**
+     - **GPU:** arm B's training (four folds, then four half-data runs), then any C′ retrain.
+       Only one GPU job at a time: training holds about 11–18 GB, and two jobs slow each other.
+     - **Plugin renders (CPU):**
+       1. the ladder, during arm B's training;
+       2. then arm B's positive control, scoring and controls (about 1–2k; they need its trained
+          models);
+       3. then the correction's control re-runs.
+       The work is grouped by amp, with `isolate`.
+     - **Separation (CPU):** the Mega-53 screen takes about 1.7 min on 4 cores per 30-s
+       context, about 20 min for the screen. It runs when the renderer is idle or down to 3
+       processes, because 8 cores are otherwise oversubscribed. A CPU job beside C′'s training
+       once slowed it by 8%. Peak memory is measured once.
+     - **CPU, no renders:** coding and fitting experiment 3's correction.
+     - **Elsewhere:** the cloud researcher takes literature questions (e.g. dynamics-restoring
+       losses for a retrain), and the task executor monitors and downloads. Plans are reviewed
+       by an independent agent before compute.
    - **Render order:** reused Morgan renders carried the previous render at hiss level until
      `isolate` (#186 for match). The [audit](render-order-audit.md) found no decision
      overturned. Set 5's C′-over-C is fragile: inconclusive if the at-risk parts are dropped,
@@ -403,7 +477,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 - **Next: `generate` sets more controls from the song,** if and once the ML session's
   plan step 3 shows a way to get such settings without a DI
   ([plan](research/ml-plan-2026-10.md), decision 5 puts the `generate` change after
-  that readout). Until then `generate` sets what research
+  that readout). As of 2026-10-15 that rests on arm B, or on a rebuild that passes arm A's
+  control. Until then `generate` sets what research
   documents. *The two render checks are done (2026-10-14, one development
   part, PR12):* fresh-process renders with isolation repeat exactly (maximum difference
   0.0); the isolation fade-in (the same for every candidate) moved the match loss by
@@ -501,4 +576,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-13 | The starting presets are heard as closer than what they replaced, and the clean start over the crunch start on clean parts (in-sample, one listener); step 4 says so | `starting-preset-listening-results.md` |
 | 2026-10-14 | Clean first when the class is a guess: not adopted (exploratory; costs crunch parts) | `generate-routing-recheck-results.md`, follow-up |
 | 2026-10-14 | ML plan decisions: train C′ for every fold; 200k render limit with knob ceiling counted; approve the three-way comparison; lift the "33" rule with a development ledger; Five-guitar and Optuna yes, GOAT not now; held-out results the render bug touched kept with a note (not re-rendered), no reserve; optimiser comparison after the readout | [ML plan](research/ml-plan-2026-10.md), section 3 |
+| 2026-10-15 | Arms A and C count as failed (arm A's control), but the route is kept: the DI rebuild is the bottleneck, and a DI-recovery track opens | `song-settings-plan.md`, recorded outcome; [DI recovery](research/di-recovery-2026-10.md) |
+| 2026-10-15 | Time effects are kept only when the gain is clear; "off" on a dry record counts as correct; the listener's picks are trusted despite the letter layout | `knob-ceiling-2-results.md` |
+| 2026-10-15 | Mega-53 weights re-downloaded for the separator screen (MIT repo, release v1.0.21; no separate weights licence, as accepted for the 2026-10-08 test) | `~/ndsp-presets/tools/msst/provenance.json` |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |

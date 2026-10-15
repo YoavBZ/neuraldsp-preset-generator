@@ -3,7 +3,7 @@
 Declared 2026-10-15, before any compute. **Review:** reviewed 2026-10-15
 (`tmp/rank-margin-ladder-plan-review.md`, local): approved with changes, all folded in. It is
 experiment 2 of the DI-recovery report
-([`research/di-recovery-2026-10.md`](https://github.com/YoavBZ/neuraldsp-preset-generator/blob/claude/new-session-22s984/docs/research/di-recovery-2026-10.md),
+([`research/di-recovery-2026-10.md`](research/di-recovery-2026-10.md),
 "The ladder that tells the project what to fix" and "Rank margin, not coherence"). Development
 data only, on step 3's known-target control cells. No held-out data is read (not Guitar-TECHS
 P3, not sets 5 or 6). No training.
