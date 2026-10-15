@@ -287,3 +287,10 @@ about 6–7 h, plus about 7 h of CPU separation and 4 × 1–3 h of training.
   the leader.
 - **The output space excludes pedals, EQ and effects** (step 2 found them small or undecided), so
   a "complete preset" here is S's pedals, EQ and effects plus the arm's knobs.
+
+## Amendment 1 (2026-10-15): arm B's bank renders start now
+
+The bank renders were to wait for step 1's caches to be deleted. That rule only protected disk
+space. The bank is about 5 GB, free space is about 43 GB, and `song_bank.render` stops below the
+31 GB guard. So the renders start while step 1 trains, using the idle CPU. Nothing about the bank
+or its use changes. Separation, features and training still follow the declared order.

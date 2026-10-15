@@ -168,11 +168,177 @@ def levels():
     print(json.dumps(doc["summary"], indent=1))
 
 
+# --- the bank: drawing and rendering ------------------------------------------------------------
+
+N_BANK = 10000
+SEED_BANK = 20261017
+JITTER_SIGMA = 0.1
+KEEP_MIC_P = 0.7
+
+
+def backings():
+    """(band, fold, path) of every classed development crop's instrumental backing."""
+    fold_of = folds()
+    out = []
+    for slug, p in json.loads((PLUGIN_ROOT / "docs/label-table-parts.json").read_text())["parts"].items():
+        crop = pathlib.Path(p["crop"])
+        f = crop / "backing_instrumental.wav"
+        f = f if f.exists() else crop / "backing.wav"
+        if f.exists():
+            out.append((p["band"], fold_of[p["band"]], str(f)))
+    return out
+
+
+def ks_optima():
+    """fold -> [(amp, gain_class, settings path)] of knob ceiling's K_S bests."""
+    from learn import knob_ceiling as K
+
+    fold_of = folds()
+    out = {}
+    for p in sorted((K.OUT / "cells").glob("*/*/result.json")):
+        c = json.loads(p.read_text())
+        for search, _ in K.DIRECTIONS:
+            f = p.parent / f"K_S-{search}.json"
+            if "skipped" not in c["runs"][search] and f.exists():
+                out.setdefault(fold_of[c["band"]], []).append((c["amp"], c["gain_class"], str(f)))
+    return out
+
+
+def draw():
+    """The bank's examples, each with ONE fold: its DI window, backing, second guitar and jitter
+    centre all come from that fold (a P1/P2 DI takes the example's drawn fold for the rest)."""
+    import random
+
+    rng = random.Random(SEED_BANK)
+    win = json.loads((OUT / "windows.json").read_text())
+    by_fold = {f: [w for w in win if str(w["fold"]) == str(f)] for f in range(4)}
+    shared = [w for w in win if w["fold"] == "all"]
+    back = backings()
+    opt = ks_optima()
+    from learn import knob_ceiling as K
+    ex = []
+    for i in range(N_BANK):
+        fold = rng.randrange(4)
+        w = rng.choice(by_fold[fold]) if rng.random() < 0.5 else rng.choice(shared)
+        amp = rng.choice(K.AMPS)
+        cls = rng.choice(("clean", "crunch"))
+        mode = "broad" if i % 2 == 0 else "jitter"
+        centre = None
+        if mode == "jitter":
+            cands = [o for o in opt.get(fold, []) if o[0] == amp and o[1] == cls]
+            centre = rng.choice(cands)[2] if cands and rng.random() < 0.5 else "S"
+        b = [x for x in back if x[1] == fold]
+        ex.append({"i": i, "fold": fold, "window": w, "amp": amp, "class": cls, "mode": mode,
+                   "centre": centre, "backing": rng.choice(b)[2] if b else None,
+                   "second_guitar": rng.random() < 0.3, "mastered": rng.random() < 0.5,
+                   "aac": rng.random() < 0.5, "separated": rng.random() < 0.5,
+                   "seed": rng.randrange(2 ** 31)})
+    (OUT / "examples.json").write_text(json.dumps(ex))
+    from collections import Counter
+    print(len(ex), dict(Counter(e["fold"] for e in ex)), dict(Counter(e["mode"] for e in ex)))
+
+
+def settings_for(e, menu):
+    """(select, settings, label) for an example: S for the amp and class, with the space's settings
+    drawn broad (uniform) or jittered (σ 0.1 around S or a same-fold K_S optimum)."""
+    import random
+
+    from learn import knob_ceiling as K
+
+    rng = random.Random(e["seed"])
+    sel, S = menu[e["amp"]][K.START[e["class"]][e["amp"]]]
+    centre = dict(S)
+    if e["mode"] == "jitter" and e["centre"] not in (None, "S"):
+        centre.update({tuple(k.rsplit("/", 1)): v for k, v in json.loads(pathlib.Path(e["centre"]).read_text()).items()})
+    x, label = dict(S), {}
+    for d in K.space(e["amp"], S):
+        k = (d.module, d.key)
+        if d.kind in ("cont", "log"):
+            u = rng.random() if e["mode"] == "broad" else min(1.0, max(0.0, d.to_unit(centre.get(k, d.lo))
+                                                                          + rng.gauss(0, JITTER_SIGMA)))
+            x[k] = K.fmt(d.from_unit(u))
+            label[d.name] = u
+        else:
+            if e["mode"] == "broad" or rng.random() > KEEP_MIC_P:
+                v = rng.choice(d.values)
+            else:
+                v = centre.get(k, d.values[0])
+            x[k] = v
+            label[d.name] = v
+    return sel, x, label
+
+
+def load_window(w):
+    import numpy as np
+    import soundfile as sf
+    from scipy.signal import resample_poly
+
+    info = sf.info(w["path"])
+    n = int((WIN_S + TRIM_S) * info.samplerate)
+    st = int(w["start"] * info.samplerate / SR)
+    x, sr = sf.read(w["path"], start=st, frames=n, dtype="float32", always_2d=True)
+    x = x.mean(axis=1)
+    if sr != SR:
+        g = np.gcd(SR, sr)
+        x = resample_poly(x, SR // g, sr // g).astype(np.float32)
+    return x
+
+
+def measure(x):
+    """The measure-DI treatment on an array: the average-guitar balance, then −22.9 LUFS."""
+    import numpy as np
+
+    from learn import confirm_run as CR
+    from learn.di_robustness import smoothed_spectrum
+    from learn.direc_check import eq_to, to_lufs
+
+    avg = np.load(CR.AVERAGE)
+    own = smoothed_spectrum(x.astype(np.float64))
+    return to_lufs(eq_to(x.astype(np.float64), avg - (own - own.mean())))
+
+
+def render(shard):
+    import numpy as np
+    import soundfile as sf
+
+    from learn import knob_ceiling as K
+    from learn import knob_ceiling2 as K2
+
+    ex = json.loads((OUT / "examples.json").read_text())
+    rr = K.Renderer()
+    try:
+        menu = rr.menu()
+        d = OUT / "renders"
+        d.mkdir(parents=True, exist_ok=True)
+        for e in ex[shard[0]::shard[1]]:
+            f = d / f"{e['i']:05d}.flac"
+            if f.exists():
+                continue
+            if e["i"] % 50 == 0 and not K2.disk_ok():
+                raise SystemExit("free disk below the 31 GB guard")
+            sel, x, label = settings_for(e, menu)
+            di = measure(load_window(e["window"])).astype(np.float32)
+            y = np.asarray(rr.render(di, sel, x), np.float64)
+            if y.ndim == 2:
+                y = y.mean(axis=1)
+            y = y[int(TRIM_S * SR):int((TRIM_S + WIN_S) * SR)]
+            peak = max(np.abs(y).max(), 1e-12)
+            sf.write(str(f), (y / peak * 0.99).astype(np.float32), SR, subtype="PCM_16")
+            (d / f"{e['i']:05d}.json").write_text(json.dumps({"label": label, "peak": peak,
+                                                              "settings": {f"{m}/{k}": v for (m, k), v in x.items()}}))
+            if e["i"] % 100 == 0:
+                print(e["i"], rr.count, flush=True)
+    finally:
+        rr.close()
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("step", choices=("windows", "levels"))
+    ap.add_argument("step", choices=("windows", "levels", "draw", "render"))
+    ap.add_argument("--shard", default="0/1")
     a = ap.parse_args(argv)
-    {"windows": windows, "levels": levels}[a.step]()
+    i, n = map(int, a.shard.split("/"))
+    {"windows": windows, "levels": levels, "draw": draw, "render": lambda: render((i, n))}[a.step]()
 
 
 if __name__ == "__main__":
