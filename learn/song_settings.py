@@ -204,14 +204,131 @@ def menu_pick(shard):
         rr.close()
 
 
+# --- arm A's known-target control ---------------------------------------------------------------
+
+def control_cells():
+    """12 cells: 6 bands by `random.Random(20261016)` from the 14 (at least 2 crunch), one part
+    each (the same generator), × PR12 and SW50R."""
+    import random
+
+    ps = {s: p for s, p in K.parts().items() if s != "telefunken-Honey-GTR"}
+    bands = sorted({p["band"] for p in ps.values()})
+    crunch = sorted({p["band"] for p in ps.values() if p["gain_class"] == "crunch"})
+    rng = random.Random(20261016)
+    pick = rng.sample(crunch, 2)
+    pick += rng.sample(sorted(set(bands) - set(pick)), 4)
+    parts = [rng.choice(sorted(s for s, p in ps.items() if p["band"] == b)) for b in pick]
+    return [(s, a) for s in parts for a in ("pr12", "sw50r")]
+
+
+def control_render():
+    """The "recording" per control cell: S with knob ceiling's five realistic-control moves and a
+    mic change, through the part's raw DI; plus the target settings through the measure DI."""
+    import numpy as np
+
+    from learn.direc_check import to_lufs
+
+    ps = K.parts()
+    rr = K.Renderer()
+    d = OUT / "armA-control"
+    d.mkdir(parents=True, exist_ok=True)
+    try:
+        menu = rr.menu()
+        for slug, amp in control_cells():
+            part = ps[slug]
+            sel, S = menu[amp][K.START[part["gain_class"]][amp]]
+            dims = K.space(amp, S)
+            target = K.perturbed(dims, S, {**K.PERTURB[amp], **K.PERTURB_ALL})
+            mic = ("cabParameters", K.CONTROL_MIC[amp])
+            target[mic] = str((int(S[mic]) + 4) % 10)
+            raw = to_lufs(CR.mono(part["crop"] / "di.wav")).astype(np.float32)
+            rr.render(raw, sel, S)
+            fake = np.asarray(rr.render(raw, sel, target), np.float64)
+            fake = fake.mean(axis=1) if fake.ndim == 2 else fake
+            np.save(d / f"{slug}-{amp}-fake.npy", fake)
+            (d / f"{slug}-{amp}-target.json").write_text(json.dumps({f"{m}/{k}": v for (m, k), v in target.items()}))
+            print(slug, amp, flush=True)
+    finally:
+        rr.close()
+
+
+def control_rebuild():
+    """C′ (the part's fold) rebuilds each fake recording, re-equalised to fold 2 (torch)."""
+    import numpy as np
+    import torch
+
+    from learn import direc as D
+    from learn.direc_check import eq_to, to_lufs
+
+    fo = folds()
+    ps = K.parts()
+    avg = {f: np.load(MODELS / "cache" / f"average-fold{f}.npy") for f in range(4)}
+    d = OUT / "armA-control"
+    for slug, amp in control_cells():
+        f = fo[ps[slug]["band"]]
+        net = D.load_model(cprime(f)).eval()
+        fake = np.load(d / f"{slug}-{amp}-fake.npy")
+        x = D.rebuild(net, fake.astype(np.float32), device=torch.device("cpu")).astype(np.float64)
+        np.save(d / f"{slug}-{amp}-rebuilt.npy", to_lufs(eq_to(x, avg[2] - avg[f])))
+        print(slug, amp, "fold", f, flush=True)
+
+
+def control_search(shard):
+    """Two searches per cell, 150 renders, from S on half A: one scored with the measure DI
+    (`judge` against the fake, lag 0), one with the rebuilt DI (`rebuilt_distance`). Each best,
+    the target settings and S are judged through the measure DI on half B."""
+    import numpy as np
+
+    ps = K.parts()
+    d = OUT / "armA-control"
+    rr = K.Renderer()
+    try:
+        menu = rr.menu()
+        for slug, amp in control_cells()[shard[0]::shard[1]]:
+            f = d / f"{slug}-{amp}-result.json"
+            if f.exists():
+                continue
+            part = ps[slug]
+            sel, S = menu[amp][K.START[part["gain_class"]][amp]]
+            fake = np.load(d / f"{slug}-{amp}-fake.npy")
+            rebuilt = np.load(d / f"{slug}-{amp}-rebuilt.npy")
+            di = K.measure_di(part)
+            di32, r32 = di.astype(np.float32), rebuilt.astype(np.float32)
+            target = {tuple(k.rsplit("/", 1)): v for k, v in json.loads((d / f"{slug}-{amp}-target.json").read_text()).items()}
+
+            def held(x):
+                return K.judge(fake, rr.render(di32, sel, x), di, 0)
+
+            out = {"target": held(target), "S": held(S)}
+            counter = {"fallback": 0}
+            x1, _, _, _ = K.knob_search(K.space(amp, S), S, lambda x: K.judge(fake, rr.render(di32, sel, x), di, 0)["A"],
+                                         BUDGET_A, SEED_A)
+            out["measure_run"] = held(x1)
+            x2, _, _, _ = K.knob_search(K.space(amp, S), S,
+                                         lambda x: rebuilt_objective(fake, rr.render(r32, sel, x), rebuilt, "A", counter),
+                                         BUDGET_A, SEED_A)
+            out["rebuilt_run"] = held(x2)
+            out["fallback"] = counter["fallback"]
+            for run in ("measure_run", "rebuilt_run"):
+                st, tg, fd = out["S"]["B"], out["target"]["B"], out[run]["B"]
+                out[run]["gap_closed_B"] = (st - fd) / (st - tg) if st != tg else None
+                out[run]["shortfall_B"] = math.log(fd / tg)
+            K._atomic(f, out)
+            print(slug, amp, {r: round(out[r]["gap_closed_B"] or 0, 3) for r in ("measure_run", "rebuilt_run")}, flush=True)
+    finally:
+        rr.close()
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("step", choices=("ks-convergence", "rebuild", "arm-a", "menu-pick"))
+    ap.add_argument("step", choices=("ks-convergence", "rebuild", "arm-a", "menu-pick", "control-render",
+                                     "control-rebuild", "control-search"))
     ap.add_argument("--shard", default="0/1")
     a = ap.parse_args(argv)
     i, n = map(int, a.shard.split("/"))
     {"ks-convergence": ks_convergence, "rebuild": rebuild_all, "arm-a": lambda: arm_a((i, n)),
-     "menu-pick": lambda: menu_pick((i, n))}[a.step]()
+     "menu-pick": lambda: menu_pick((i, n)), "control-render": control_render,
+     "control-rebuild": control_rebuild, "control-search": lambda: control_search((i, n))}[a.step]()
 
 
 if __name__ == "__main__":
