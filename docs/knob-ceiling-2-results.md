@@ -90,6 +90,10 @@ wet is closer.)
     picks; the user accepts them.
   - The builder's letter rule (least-used letter first) caused the alternation. Later pages draw
     each trial's letter at random.
+- **Off is a correct answer.** Many records have no time effect (most references here are dry
+  stems), so there an effect can't bring the sound closer, and leaving it off is right. A dry
+  result is never read as a failure of the search or of a model; only an effect that is on
+  without a clear gain, or off where the record clearly has one, counts as an error.
 - **Decision:** effects stay in the search and are kept only when they clearly help. The keep
   margin of 0.005 (search half, log) lets near-ties through; trials 3 and 8 passed it by a
   hair. A higher margin is to be declared before its next use. Later listening pages (random
