@@ -371,3 +371,18 @@ Recorded before any arm-A or arm-B score was read.
   - Arm C isn't run, which saves about 7k renders.
   - Arm A's scores are still reported at the readout, descriptively.
   - Arm B, which doesn't use C′, continues as declared.
+
+## Amendment 4 (2026-10-15): arm B's validation split
+
+Made after code review, before any arm-B prediction or score existed.
+
+- **The defect:** the code took 10% of the development bands, rounded down to one band. So
+  fold 0's run validated on 81 examples from a single band, about 1% of the data. Early
+  stopping and the saved model were chosen on noise.
+- **The fix:** whole bands are added (seeded shuffle) until they hold at least 10% of the
+  fold's examples. Guitar-TECHS P1/P2 stay out of validation, as before. This gives 756–917
+  validation examples from 2–5 bands per fold.
+- **The rerun:** the first fold-0 model and the partial fold-1 run are discarded
+  (`models/discarded-1pct-val/`), and training restarts for all folds.
+- **Also from the review:** `bank_index` now asserts every bank example has features and a
+  label.

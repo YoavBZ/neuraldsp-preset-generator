@@ -121,6 +121,9 @@ def build(args):
     for word in {r["slug"] for r, _ in picks} | {"pr12", "sw50r", "ac20", "factory", "reverb", "delay"}:
         assert word.lower() not in text, word
     (OUT / "private").mkdir(parents=True, exist_ok=True)
+    old = OUT / "private" / "key.json"
+    if old.exists():                       # keep earlier sittings' keys
+        old.rename(old.with_name(f"key-{int(old.stat().st_mtime)}.json"))
     (OUT / "private" / "key.json").write_text(json.dumps(key, indent=1))
     out = OUT / "effects-listening.html"
     out.write_text(page)

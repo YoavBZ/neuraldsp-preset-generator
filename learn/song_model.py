@@ -32,6 +32,7 @@ K_MIX = 4
 AMPS = list(K.AMPS)
 CLASSES = ["clean", "crunch"]
 EPOCHS, BATCH, LR, PATIENCE, SEED = 40, 64, 1e-3, 5, 20261018
+VAL_SHARE = 0.10
 
 
 def layout():
@@ -137,6 +138,7 @@ def bank_index():
         if f.exists() and lab.exists():
             out.append((e["i"], e["fold"], e["window"]["band"], e["amp"], e["class"],
                         json.loads(lab.read_text())["label"]))
+    assert len(out) == len(ex), f"{len(ex) - len(out)} bank examples lack features or a label"
     return out
 
 
@@ -167,7 +169,12 @@ def train(fold, half_data=False):
         idx = idx[:len(idx) // 2]
     dev_bands = sorted({r[2] for r in idx if not r[2].startswith("Guitar-TECHS")})
     rng.shuffle(dev_bands)
-    val_bands = set(dev_bands[:max(1, len(dev_bands) // 10)])
+    val_bands = set()                       # whole bands, until they hold >= 10% of the examples
+    per_band = {b: sum(r[2] == b for r in idx) for b in dev_bands}
+    for b in dev_bands:
+        if sum(per_band[v] for v in val_bands) >= VAL_SHARE * len(idx):
+            break
+        val_bands.add(b)
     tr = [r for r in idx if r[2] not in val_bands]
     va = [r for r in idx if r[2] in val_bands]
     assert not any(r[1] == fold for r in tr + va)
