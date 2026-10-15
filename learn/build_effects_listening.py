@@ -10,7 +10,9 @@ Among the cells whose stage-2 result is wet:
 - 2 more that turned on a reverb or a delay, if not already chosen (the largest gains).
 
 Per trial, the held half: the record, then dry (stage 1) and wet (stage 2), unlabelled, with the
-wet option on the least-used letter so far.
+wet option's letter drawn at random per trial (seeded). The first sitting (2026-10-15) used the
+least-used letter instead, which alternated A/B with the trial number and so confounded a
+listener's position preference with the effect; see docs/knob-ceiling-2-results.md.
 """
 
 from __future__ import annotations
@@ -78,6 +80,7 @@ def build(args):
     ps = K.parts()
     rr = K.Renderer()
     key, sections, used = {"seed": SEED, "trials": {}}, [], [0, 0]
+    letter_rng = random.Random(SEED + 1)
     try:
         menu = rr.menu()
         with tempfile.TemporaryDirectory() as tmp:
@@ -90,7 +93,7 @@ def build(args):
                 wet = _settings(K2.OUT / "stage2" / slug / f"{search}-settings.json")
                 rr.render(di32, select, dry)                                 # warm-up
                 options = {"dry": rr.render(di32, select, dry), "wet": rr.render(di32, select, wet)}
-                pos = min(range(2), key=lambda i: (used[i], i))
+                pos = letter_rng.randrange(2)
                 used[pos] += 1
                 names = ["dry"]
                 names.insert(pos, "wet")

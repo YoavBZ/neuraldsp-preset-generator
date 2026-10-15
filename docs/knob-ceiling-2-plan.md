@@ -173,7 +173,7 @@ amendment adds about 4.8–7.2k.
 
 ## Amendment 1 (2026-10-15): stage 2 searches each effect on its own
 
-Made after stage 2's first 7 cells. Those cells showed only a search-coverage defect, not a
+Made after stage 2's first cells (8 are kept in `stage2-v0-discarded/`). Those cells showed only a search-coverage defect, not a
 reading, and they are discarded (`stage2-v0-discarded/`).
 
 - **The defect:** with every effect off at the start, `canon` makes an off effect's knobs free
