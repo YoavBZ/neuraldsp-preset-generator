@@ -1,21 +1,71 @@
 {
- "schema": "riffs-1",
+ "schema": "riffs-2",
  "attribution": "Guitar-TECHS: An Electric Guitar Dataset Covering Techniques, Musical Excerpts, Chords and Scales Using a Diverse Array of Hardware, by Hegel Emmanuel Pedroza Villalobos, Termeh Taheri, Wallace Abreu, Ryan Corey and Iran R. Roman (Zenodo record 14963133, https://zenodo.org/records/14963133; ICASSP 2025, doi:10.1109/ICASSP49660.2025.10887996). Licensed CC BY 4.0, https://creativecommons.org/licenses/by/4.0/. Changes: excerpts of the part-P1 direct-input recordings cut, joined, faded and level-adjusted.",
  "loudness_lufs": -23.7,
+ "register_edges": {
+  "low_below": "C4",
+  "high_above": "A4"
+ },
  "riffs": {
   "chords": {
    "file": "chords.flac",
    "sha256": "a4a2f36d0762f015cd0b22e719295b62a3a76a3dfbf51a07d2688e3981e696a0",
    "what": "a G-D-Em-C chord progression",
    "seconds": 10.0,
-   "gain_db": 9.25
+   "gain_db": 9.25,
+   "style": "chords",
+   "register": "low",
+   "default": true
+  },
+  "chords-mid": {
+   "file": "chords-mid.flac",
+   "sha256": "a28fff51148eb68181d2a77ea22fff1a9f677cd9a9cf548f8111b68416ab249e",
+   "what": "a G-D-Em-C chord progression, mid-neck voicings",
+   "seconds": 10.0,
+   "gain_db": 9.56,
+   "style": "chords",
+   "register": "mid",
+   "default": false
+  },
+  "chords-high": {
+   "file": "chords-high.flac",
+   "sha256": "29e03e216661dd9186e2852266fd9766056aa0b65c8673a5b133b843a1df9517",
+   "what": "a G-D-Em-C chord progression on the top three strings, frets 10-13",
+   "seconds": 10.0,
+   "gain_db": 7.08,
+   "style": "chords",
+   "register": "high",
+   "default": false
   },
   "line": {
    "file": "line.flac",
    "sha256": "f010268002249e198e2eedc6d74b67b64ddc01548ccfecbcc6f2f88c63cf0e8a",
    "what": "a single-note scale line in A",
    "seconds": 9.945,
-   "gain_db": 9.04
+   "gain_db": 9.04,
+   "style": "line",
+   "register": "low",
+   "default": true
+  },
+  "line-mid": {
+   "file": "line-mid.flac",
+   "sha256": "5bca695a5319c1c4fb487f34fde25ec4a489b27756b5669ec4dbef663f4879bf",
+   "what": "a single-note scale line in A, a mid-neck position",
+   "seconds": 9.985,
+   "gain_db": 5.09,
+   "style": "line",
+   "register": "mid",
+   "default": false
+  },
+  "line-high": {
+   "file": "line-high.flac",
+   "sha256": "2c504673a547932aa9e3b8df97bafd4cecdf1f7af2ffb96b7d906f04973dc599",
+   "what": "a single-note scale line in E, the top positions",
+   "seconds": 9.995,
+   "gain_db": 6.36,
+   "style": "line",
+   "register": "high",
+   "default": false
   }
  },
  "cuts": [
@@ -48,6 +98,76 @@
    "file": "directinput_A.wav",
    "start_s": 0.0,
    "seconds": 9.945
+  },
+  {
+   "riff": "chords-mid",
+   "chord": "G",
+   "file": "directinput_Set2_maj.wav",
+   "start_s": 148.0075,
+   "seconds": 2.5
+  },
+  {
+   "riff": "chords-mid",
+   "chord": "D",
+   "file": "directinput_Set2_maj.wav",
+   "start_s": 55.8532,
+   "seconds": 2.5
+  },
+  {
+   "riff": "chords-mid",
+   "chord": "Em",
+   "file": "directinput_Set2_min.wav",
+   "start_s": 43.9875,
+   "seconds": 2.5
+  },
+  {
+   "riff": "chords-mid",
+   "chord": "C",
+   "file": "directinput_Set2_maj.wav",
+   "start_s": 119.9232,
+   "seconds": 2.5
+  },
+  {
+   "riff": "chords-high",
+   "chord": "G",
+   "file": "directinput_Set1_maj.wav",
+   "start_s": 35.9709,
+   "seconds": 2.5
+  },
+  {
+   "riff": "chords-high",
+   "chord": "D",
+   "file": "directinput_Set1_maj.wav",
+   "start_s": 139.976,
+   "seconds": 2.5
+  },
+  {
+   "riff": "chords-high",
+   "chord": "Em",
+   "file": "directinput_Set1_min.wav",
+   "start_s": 148.02,
+   "seconds": 2.5
+  },
+  {
+   "riff": "chords-high",
+   "chord": "C",
+   "file": "directinput_Set1_maj.wav",
+   "start_s": 95.9892,
+   "seconds": 2.5
+  },
+  {
+   "riff": "line-mid",
+   "line": "A",
+   "file": "directinput_A.wav",
+   "start_s": 64.98,
+   "seconds": 9.985
+  },
+  {
+   "riff": "line-high",
+   "line": "E",
+   "file": "directinput_E.wav",
+   "start_s": 143.42,
+   "seconds": 9.995
   }
  ],
  "sources": {
@@ -55,6 +175,17 @@
   "midi_Set4_maj.mid": "ed8742b1a5a1bd69bdbb02f8c4a938813a0f151ed6fbe56a9ef884e205f368f9",
   "directinput_Set4_min.wav": "6000b89dfbf280468f2f0e6f331bc9d3bd4b900d762e026f201d7284123bc63b",
   "midi_Set4_min.mid": "5f5409fa465feb5aa32a8d26212e2e74cf6871f8c70026e97919d48483eacef0",
-  "directinput_A.wav": "1d33f99eae917f16fb4146dd16f578a74c79201e636f0a9f3e673b9caa984b2d"
+  "directinput_A.wav": "1d33f99eae917f16fb4146dd16f578a74c79201e636f0a9f3e673b9caa984b2d",
+  "directinput_Set2_maj.wav": "1708255669616d2c270ee86a57f4917647be907e344e21a8f003229e4aefd688",
+  "midi_Set2_maj.mid": "218afa91db705570577c6c36712b03a3a8b0249763bb9ee99e880094d53ec021",
+  "directinput_Set2_min.wav": "771998f9940dcec2b0ac5ddcf1ff7ab7affe6d6f7c966336db7d6de78e373078",
+  "midi_Set2_min.mid": "ebf58e61eb71a1d60d78fc5e98a2625add71d172e8994ae1202df78306f1f737",
+  "directinput_Set1_maj.wav": "620e76125b9623d8256e504962f36e534a0e483ae0f602c63ec0d9e66a98ab9b",
+  "midi_Set1_maj.mid": "d1e93e069570124d09f59c5d2c3474a8d8f7bcd7b83e43cb28ddd66bcf4bdc5b",
+  "directinput_Set1_min.wav": "464077182dd6020b098a6d751448498ffce1219263022d03f5ca1e21178bd7df",
+  "midi_Set1_min.mid": "28579f1420151f5147955266afbdd53c89c83171d2710c3a3cb54c6e38ef618e",
+  "midi_A.mid": "46e560051a5aa0ef7dddfc4a75350c0d8afb3a05734726cb7afb2f59b9c83847",
+  "directinput_E.wav": "1c71ed960ec6452e4c6c170b2ac0d28b6071eef9d39063e5436b709b7801f58a",
+  "midi_E.mid": "0ecdd459fa6986956893bb05dec93ed8a7e586207c11257632fbd312df7ad72b"
  }
 }

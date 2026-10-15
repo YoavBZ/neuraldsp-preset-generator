@@ -371,8 +371,8 @@ preset: tell the user rather than calling the result portable.
 When the user gave a song (a file, and where in it the guitar plays), **ask once**
 whether they want to hear the preset beside three alternatives before choosing. Say in
 a line what that is: a local page, ready in a few minutes, that plays four presets
-through two short guitar riffs under the song excerpt, so they can pick one or ask for
-a change. If they say no, or gave no song, go on to step 6 with the step 5 preset.
+through one or two short guitar riffs under the song excerpt, so they can pick one or
+ask for a change. If they say no, or gave no song, go on to step 6 with the step 5 preset.
 
 Why it is worth offering, and why it is not the default: choosing the best of four by
 measurement landed about 18% closer than the template on 25 recordings
@@ -390,13 +390,23 @@ If they say yes:
    one of the four. Make the chosen amp's dry baseline from step 4 one of the four (clean,
    crunch or driven, by the part), made dry with `--recipe dry/<amp>`
    (`dry/toneking` on Tone King).
-2. **Render them beside the song.** The page plays every preset through two shipped
-   guitar riffs (strummed chords and a single-note line), at one loudness, under the
-   song excerpt:
+2. **Render them beside the song.** The page plays every preset through shipped
+   guitar riffs, at one loudness, under the song excerpt. **Pick at most two riffs by
+   the part** (with `--riff`, repeatable; [riff library](../../docs/riff-library-plan.md)):
+   - a rhythm or chord part: `chords` (low on the neck), plus `chords-mid` or
+     `chords-high` only if research places the part there;
+   - a lead, solo or melody: `line-mid`, plus `line-high` (or `line`, low) only if
+     research places it there;
+   - unknown, or a mixed part (arpeggios, double-stops, power-chord riffs): no
+     `--riff`, which plays the two defaults, `chords` and `line`.
+
+   A listener could not judge a single-note part through strummed chords, and a high
+   lead heard through a low riff favoured the wrong preset; this is why the riff
+   follows the part.
 
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/scripts/audition.py" --song SONG.mp3 \
-  --start START_SECONDS --out-dir AUDITION_DIR \
+  --start START_SECONDS --out-dir AUDITION_DIR --riff line-mid \
   --preset A.xml --note "what A is" --preset B.xml --note "what B is"
 ```
 
