@@ -350,3 +350,8 @@ was declared, what was measured, and the research behind it.
    page). Cut new riffs from Guitar-TECHS (CC BY 4.0, about 295 DI minutes); power chords and
    riffs above open position are the one uncovered gap. Basic Pitch (Apache-2.0) is the
    recommended engine; its thresholds are untested. Research, not a declared plan.
+9. [di-recovery-2026-10.md](research/di-recovery-2026-10.md): how to get a guitar DI back from a
+   song well enough to steer the knob search (October 2026, for ML plan step 3's arm A). The
+   rebuild alone breaks the search, so repair its dynamics before swapping separators; judge
+   rebuilds by whether the target ranks above the start, not by coherence. A ranked plan of four
+   local experiments, cheapest first. Research, not a declared plan.
