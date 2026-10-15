@@ -107,6 +107,8 @@ def rebuild_all():
         if slug == "telefunken-Honey-GTR":
             continue
         f = fo[ps[slug]["band"]]
+        if not cprime(f).exists() or (OUT / "rebuilt" / f"{slug}.npy").exists():
+            continue                                    # its fold's C′ isn't trained yet, or done
         if f not in nets:
             nets[f] = D.load_model(cprime(f)).eval()
         x = D.rebuild(nets[f], stem(slug).astype(np.float32), device=torch.device("cpu")).astype(np.float64)
@@ -136,7 +138,7 @@ def arm_a(shard):
         cur = None
         for slug, amp, search, held in cells()[shard[0]::shard[1]]:
             d = OUT / "armA" / slug / amp
-            if (d / f"{search}.json").exists():
+            if (d / f"{search}.json").exists() or not (OUT / "rebuilt" / f"{slug}.npy").exists():
                 continue
             part = ps[slug]
             if cur != slug:
@@ -182,7 +184,7 @@ def menu_pick(shard):
         menu = rr.menu()
         for slug in sorted(s for s in ps if s != "telefunken-Honey-GTR")[shard[0]::shard[1]]:
             d = OUT / "menupick" / slug
-            if (d / "result.json").exists():
+            if (d / "result.json").exists() or not (OUT / "rebuilt" / f"{slug}.npy").exists():
                 continue
             rebuilt = np.load(OUT / "rebuilt" / f"{slug}.npy")
             stem_x = stem(slug)
