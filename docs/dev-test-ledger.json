@@ -269,6 +269,56 @@
    ],
    "gate": "none: a data-building step (menus scored flat and v3, stems without the SNR filter); checks only (repeat within 1e-3 log; vs stored within 0.005 except quiet halves)",
    "outcome": null
+  },
+  {
+   "test_id": "song-settings",
+   "plan": "docs/song-settings-plan.md",
+   "entered": "2026-10-15, before any step-3 compute",
+   "parts": [
+    "cambridge-Drag_Me_Down-ElecGtr4",
+    "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1",
+    "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+    "cambridge-Passing_Ships-ElecGtr6",
+    "cambridge-Prodigal-ElecGtr5",
+    "cambridge-Quicksand-ElecGtr1",
+    "cambridge-Signs-ElecGtr2",
+    "cambridge-Today's_The_Day-ElecGtr10",
+    "cambridge-colour-me-red-elecgtr01",
+    "cambridge-femme-elecgtr3",
+    "cambridge-get-out-of-bed-elecgtr1",
+    "cambridge-just-don-t-talk-elecgtr3",
+    "cambridge-magilla-elecgtr1dt",
+    "telefunken-Blind_Spots-GTR",
+    "telefunken-Bloomlight-GTR",
+    "telefunken-Farthest_Step-GTR",
+    "telefunken-First_Offering-GTR_1",
+    "telefunken-First_Offering-GTR_2",
+    "telefunken-Fragments-GTR",
+    "telefunken-Gym_Hours-GTR_1",
+    "telefunken-Long_Way_Home-GTR",
+    "telefunken-Russian_Cream-GTR_2",
+    "telefunken-Sculptor's_Request-GTR_1",
+    "telefunken-Sculptor's_Request-GTR_2"
+   ],
+   "bands": [
+    "Adam Buckley",
+    "Atlantis Bound",
+    "Diesel13",
+    "Dom McLennon",
+    "Doom Flamingo",
+    "Eat The Feeder",
+    "Eggy",
+    "Magician's Nephew",
+    "Starnes And Shah",
+    "The Travelling Band",
+    "Timo And The Timezone",
+    "Turbosauro",
+    "Wall Of Death",
+    "Zeno"
+   ],
+   "folds": "docs/song-settings-folds.json",
+   "gate": "per arm, held half, band-weighted vs S on the per-part unit: (1) <= -0.03 and >= 40% of K_S's band-weighted gain; (2) better than S in >= 60% of bands; (3) neither clean nor crunch worse than S by > 0.05; (4) arm A not worse than the C' menu pick by > 0.01; (5) arm B: positive control and shuffled-input control pass. Arm A known-target control rows as declared. Readout per the ML plan's step 6",
+   "outcome": null
   }
  ]
 }

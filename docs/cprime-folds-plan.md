@@ -91,8 +91,9 @@ is pinned to a fixed checkout and commit, recorded in its log.
    note below):
    - **The measure:** the mean, over set 3's 5 usable clean and crunch stem parts, of the
      1–3 kHz coherence between the stem-rebuilt DI and the true DI (`learn/cprime_folds.py
-     check`). No fold's network trained on any set-3 band, so the same 5 parts are leak-free for
-     all four folds: a paired comparison.
+     check`). None of these 5 parts' bands is in any fold's training data (set 3's Eat The
+     Feeder parts are K3 fold 2, but none of them is among the 5), so the same 5 parts are
+     leak-free for all four folds: a paired comparison.
    - **The reference, measured before any new fold exists:** fold 2's three seeds score 0.1360,
      0.1326 and 0.1343.
    - **The rule (one-sided):** a new fold fails if it is below the seeds' minimum by more than
