@@ -78,6 +78,9 @@ wet is closer.)
   - "Always B" alone predicts every pick except trial 7. That includes the whole pattern of
     wet on the top-gain trials (2, 4, 8) and dry on trials 1, 3 and 5.
   - Only trial 7 (wet as A, picked) speaks against a position preference.
+  - The listener replayed every clip several times, especially close pairs, so a recency
+    effect is unlikely, and the picks may well be real. But with this layout the two readings
+    give the same answers, so the data can't tell them apart.
   - The builder's letter rule (least-used letter first) caused the alternation. The next page
     draws each trial's letter at random.
 - **The rule itself asked the wrong question,** which the user pointed out (2026-10-15). It
