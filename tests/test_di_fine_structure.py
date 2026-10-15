@@ -282,3 +282,15 @@ def test_control_search_writes_only_to_the_arm_folder(tmp_path, monkeypatch):
     assert res["renders"] == 6 and res["measure_run"]["B"] == 1.0
     after = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in ctrl.iterdir()}
     assert before == after
+
+
+def test_frame_split_accepts_stereo_renders():
+    import numpy as np
+
+    from learn import di_fine_structure as F
+
+    rng = np.random.default_rng(0)
+    fake = rng.standard_normal(48000) * 0.1
+    y = np.stack([np.concatenate([np.zeros(F.LATENCY), fake])] * 2, axis=1)
+    mono = F.frame_split(fake, y.mean(axis=1), fake)
+    assert F.frame_split(fake, y, fake) == mono

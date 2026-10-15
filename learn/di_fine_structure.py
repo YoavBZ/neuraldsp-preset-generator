@@ -621,13 +621,16 @@ def frame_split(fake, y, onset_from, frame=480, n=1024):
 
     def spec(x):
         x = np.asarray(x, np.float64)
+        if x.ndim == 2:                                     # renders are stereo: fold to mono
+            x = x.mean(axis=1)
         k = (len(x) - n) // frame + 1
         idx = np.arange(n)[None] + frame * np.arange(k)[:, None]
         return np.abs(np.fft.rfft(x[idx] * np.hanning(n), axis=1)) ** 2
 
     f = np.fft.rfftfreq(n, 1 / SR)
     band = (f >= 80) & (f < 8000)
-    yy = np.asarray(y, np.float64)[LATENCY:]
+    yy = np.asarray(y, np.float64)
+    yy = (yy.mean(axis=1) if yy.ndim == 2 else yy)[LATENCY:]
     m = min(len(fake), len(yy))
     F, Y = spec(fake[:m]), spec(yy[:m])
     err = np.abs(10 * np.log10(Y[:, band] + 1e-12) - 10 * np.log10(F[:, band] + 1e-12)).mean(1)
