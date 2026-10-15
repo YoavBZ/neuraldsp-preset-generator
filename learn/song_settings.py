@@ -268,6 +268,8 @@ def control_rebuild():
     d = OUT / "armA-control"
     for slug, amp in control_cells():
         f = fo[ps[slug]["band"]]
+        if not cprime(f).exists() or (d / f"{slug}-{amp}-rebuilt.npy").exists():
+            continue
         net = D.load_model(cprime(f)).eval()
         fake = np.load(d / f"{slug}-{amp}-fake.npy")
         x = D.rebuild(net, fake.astype(np.float32), device=torch.device("cpu")).astype(np.float64)
@@ -288,7 +290,7 @@ def control_search(shard):
         menu = rr.menu()
         for slug, amp in control_cells()[shard[0]::shard[1]]:
             f = d / f"{slug}-{amp}-result.json"
-            if f.exists():
+            if f.exists() or not (d / f"{slug}-{amp}-rebuilt.npy").exists():
                 continue
             part = ps[slug]
             sel, S = menu[amp][K.START[part["gain_class"]][amp]]
