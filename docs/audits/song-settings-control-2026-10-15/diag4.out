@@ -1,0 +1,12 @@
+cambridge-Today's_The_Day-El pr12 env corr 0.271 env rms dB diff 5.24 crest meas/reb 16.8 11.6 rms dBFS meas/reb -22.7 -22.6
+cambridge-Today's_The_Day-El sw50r env corr 0.159 env rms dB diff 5.55 crest meas/reb 16.8 11.2 rms dBFS meas/reb -22.7 -22.6
+cambridge-Prodigal-ElecGtr5 pr12 env corr 0.259 env rms dB diff 6.6 crest meas/reb 13.9 10.0 rms dBFS meas/reb -22.6 -22.6
+cambridge-Prodigal-ElecGtr5 sw50r env corr 0.38 env rms dB diff 5.56 crest meas/reb 13.9 9.8 rms dBFS meas/reb -22.6 -22.4
+cambridge-just-don-t-talk-el pr12 env corr 0.647 env rms dB diff 6.19 crest meas/reb 13.9 13.6 rms dBFS meas/reb -22.4 -22.0
+cambridge-just-don-t-talk-el sw50r env corr 0.798 env rms dB diff 4.83 crest meas/reb 13.9 13.8 rms dBFS meas/reb -22.4 -22.4
+telefunken-Blind_Spots-GTR pr12 env corr 0.841 env rms dB diff 4.72 crest meas/reb 14.7 11.0 rms dBFS meas/reb -22.5 -22.4
+telefunken-Blind_Spots-GTR sw50r env corr 0.808 env rms dB diff 5.14 crest meas/reb 14.7 10.9 rms dBFS meas/reb -22.5 -22.3
+cambridge-Passing_Ships-Elec pr12 env corr 0.209 env rms dB diff 3.52 crest meas/reb 8.9 11.1 rms dBFS meas/reb -22.4 -22.1
+cambridge-Passing_Ships-Elec sw50r env corr 0.131 env rms dB diff 3.26 crest meas/reb 8.9 10.8 rms dBFS meas/reb -22.4 -22.2
+cambridge-colour-me-red-elec pr12 env corr 0.089 env rms dB diff 5.76 crest meas/reb 15.9 11.1 rms dBFS meas/reb -23.1 -22.4
+cambridge-colour-me-red-elec sw50r env corr 0.254 env rms dB diff 5.19 crest meas/reb 15.9 10.7 rms dBFS meas/reb -23.1 -22.4

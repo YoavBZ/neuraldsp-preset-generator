@@ -133,7 +133,7 @@ def key(settings):
 
 
 def coord_search(dims, x0, f, budget, seed, step0=0.25, min_step=1 / 64, cats="once", gains=None,
-                 pattern=True):
+                 pattern=True, canon=None):
     """Coordinate search with shrinking steps, deterministic for a seed.
 
     `x0`: {(module, key): stored string}, the whole preset; only `dims` move. `f(x)` returns
@@ -146,12 +146,16 @@ def coord_search(dims, x0, f, budget, seed, step0=0.25, min_step=1 / 64, cats="o
     best improving candidate is kept. A sweep with no improvement halves the step.
     Returns (best x, best value, trace), trace = [(evaluations so far, best value)].
     `gains`, if given, collects each dim's total improvement. With `pattern`, a sweep that
-    improved is followed by Hooke–Jeeves pattern moves (below).
+    improved is followed by Hooke–Jeeves pattern moves (below). `canon`, if given, maps a
+    setting to its canonical form before it is cached or evaluated (e.g. an off pedal's knobs
+    to fixed values), so a move that changes nothing audible costs nothing and can't win.
     """
     rng = random.Random(seed)
     cache = {}
 
     def ev(x):
+        if canon is not None:
+            x = canon(x)
         k = key(x)
         if k not in cache:
             if len(cache) >= budget:
@@ -243,7 +247,7 @@ def coord_search(dims, x0, f, budget, seed, step0=0.25, min_step=1 / 64, cats="o
 SHARES = {"main": 0.35, "alts": 0.35, "restarts": 0.2}    # the rest is the final stage
 
 
-def knob_search(dims, x0, f, budget, seed, shares=SHARES, n_alt=2, n_key=3):
+def knob_search(dims, x0, f, budget, seed, shares=SHARES, n_alt=2, n_key=3, canon=None):
     """The declared optimiser (plan, amendment 2): `coord_search` with mic restarts, each
     stage on a fixed share of the budget.
 
@@ -264,6 +268,8 @@ def knob_search(dims, x0, f, budget, seed, shares=SHARES, n_alt=2, n_key=3):
     state = {"limit": 0, "best": math.inf}
 
     def g(x):
+        if canon is not None:
+            x = canon(x)
         k = key(x)
         if k in cache:
             return cache[k]
@@ -283,7 +289,7 @@ def knob_search(dims, x0, f, budget, seed, shares=SHARES, n_alt=2, n_key=3):
     gains = {}
     n0 = len(cache)
     state["limit"] = max(1, round(budget * shares["main"]))
-    x, best, _ = coord_search(dims, x0, g, big, seed, cats="levels", gains=gains)
+    x, best, _ = coord_search(dims, x0, g, big, seed, cats="levels", gains=gains, canon=canon)
     mark("main", n0)
     if best is None:
         return x, None, hist, stages
@@ -299,7 +305,7 @@ def knob_search(dims, x0, f, budget, seed, shares=SHARES, n_alt=2, n_key=3):
             y = dict(x)
             y[(d.module, d.key)] = v
             state["limit"] = min(stage_end, len(cache) + each)
-            qx, qv, _ = coord_search(key_dims, y, g, big, seed + 5, step0=0.25, min_step=0.125)
+            qx, qv, _ = coord_search(key_dims, y, g, big, seed + 5, step0=0.25, min_step=0.125, canon=canon)
             if qv is None:
                 continue
             alts.append((qv, d.name, v, qx))
@@ -312,18 +318,18 @@ def knob_search(dims, x0, f, budget, seed, shares=SHARES, n_alt=2, n_key=3):
         per = max(1, (stage_end - len(cache)) // n_alt)
         for i, (_, _, _, y) in enumerate(sorted(alts, key=lambda a: (a[0], a[1], a[2]))[:n_alt]):
             state["limit"] = min(stage_end, len(cache) + per)
-            bx, bv, _ = coord_search(others, y, g, big, seed + 10 + i, step0=0.125)
+            bx, bv, _ = coord_search(others, y, g, big, seed + 10 + i, step0=0.125, canon=canon)
             if bv is not None and bv < best:
                 best, x = bv, bx
         mark("restarts", n0)
     n0 = len(cache)
     state["limit"] = budget
     if len(cache) < budget:
-        bx, bv, _ = coord_search(dims, x, g, big, seed + 99, step0=0.125, cats="levels")
+        bx, bv, _ = coord_search(dims, x, g, big, seed + 99, step0=0.125, cats="levels", canon=canon)
         if bv is not None and bv < best:
             best, x = bv, bx
     mark("final", n0)
-    return x, best, hist, stages
+    return (canon(x) if canon is not None else x), best, hist, stages
 
 
 def at_limit(dims, x, x0):
