@@ -310,7 +310,10 @@ def render(shard):
         menu = rr.menu()
         d = OUT / "renders"
         d.mkdir(parents=True, exist_ok=True)
-        for e in ex[shard[0]::shard[1]]:
+        # grouped by amp and start, so a reused process rarely switches amps (a switch costs a
+        # model reload)
+        mine = sorted(ex[shard[0]::shard[1]], key=lambda e: (e["amp"], e["class"], e["i"]))
+        for e in mine:
             f = d / f"{e['i']:05d}.flac"
             if f.exists():
                 continue
