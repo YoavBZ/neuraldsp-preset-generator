@@ -741,7 +741,7 @@ def idem_rebuild():
         r1 = load_render(root() / "step0" / "d0" / tag / "cprime-T.flac")
         net = D.load_model(SS.cprime(f)).eval()
         x2 = D.rebuild(net, r1.astype(np.float32), device=torch.device("cpu")).astype(np.float64)
-        x2 = np.concatenate([x2[LATENCY:], np.zeros(LATENCY)])
+        # C′ already removes the plugin's latency: its rebuild lines up with the DI (no shift)
         x2 = to_lufs(eq_to(x2, avg[2] - avg[f]))
         xh = np.load(control_dir() / f"{tag}-rebuilt.npy")
         np.save(out / f"{tag}-x2.npy", x2)
