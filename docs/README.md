@@ -348,5 +348,5 @@ was declared, what was measured, and the research behind it.
    shippable clean electric-guitar DI riffs by style and register, and open tools to tell chords
    from single notes and a part's register (October 2026, for the product session's listening
    page). Cut new riffs from Guitar-TECHS (CC BY 4.0, about 295 DI minutes); power chords and
-   riffs above open position are the one uncovered gap. Basic Pitch (Apache-2.0) is the recommended engine; its
-   thresholds are untested. Research, not a declared plan.
+   riffs above open position are the one uncovered gap. Basic Pitch (Apache-2.0) is the
+   recommended engine; its thresholds are untested. Research, not a declared plan.
