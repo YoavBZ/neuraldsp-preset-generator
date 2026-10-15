@@ -337,6 +337,23 @@
    "audio_only": "bleed source cambridge-get-out-of-bed-elecgtr1 (Magician's Nephew, set 3, development), drawn by random.Random(20261017)",
    "gate": "Step A (provisional; m_A, mask v, lags 0 and -52 must agree): >= 15 of 18 informative searches agree with gap closed >= 50%, AND within the C' run m_A > 0 on >= 2 of 3 successes and m_A <= 0 on >= 4 of 6 failures -> provisional gate; 13-14 or the C' row fails -> screen only; <= 12 -> not adopted. Final only if the pre-registered per-cell predictions for experiment 3's control re-runs agree on >= two-thirds of informative searches. Step B (primary m_full, measure-DI mask for D1/D2; inversions counted on informative cells with base m > 0; halves, other mask and leave-one-band-out reported as fragility): placebo smear inverts > 1 -> D1 undecided. D1: crest -3 dB inverts >= half (rounded up) of reached cells with >= 5 reached, and the C'-spectrum rung inverts <= 1 -> dynamics confirmed; crest holds and C'-spectrum >= 2 -> dynamics and tilt; crest fails and C'-spectrum >= half -> tilt, not dynamics; else neither. D2: a transplant (5 ms, 10 ms, or oracle-EQ + 10 ms) restores if m > 0 on >= two-thirds of the base set and on more cells than C'. D3: a proxy is adopted if band-weighted within-cell Spearman rho >= 0.6, the paired band-clustered bootstrap lower 90% bound of (rho - coherence's rho) > 0, and it beats coherence in >= 5 of 6 bands; confirmation on other development cells is binding before any use as a loss.",
    "outcome": "done 2026-10-15 (840 renders + 81 audit): step A 14/18 -> screen only (C' run 5/9, rho 0). D1 neither (crest-3 1/7, C'-spectrum 1/9, placebo 0/9). D2 'restores' by count (transplant 8/9 vs C' 5/9) but recovers ~6% of C' margin loss (0.053->0.064 vs 0.244); oracle EQ alone passes the same count; read as no substantive restore. D3 none adopted. C' error is fine structure (<10 ms). Experiment 3 not run; experiment 4 redesigned for fine structure."
+  },
+  {
+   "test_id": "separator-screen",
+   "plan": "docs/separator-screen-plan.md",
+   "entered": "2026-10-15, before any compute",
+   "repeat_use": "repeat development use of set 3's 5 clean and crunch check parts (before: separator-upgrade 2026-10-08, step 3's parts, cprime-folds check 2, and for colour-me-red and just-don't-talk the song-settings control and the rank-margin ladder; get-out-of-bed was the ladder's bleed source)",
+   "parts": [
+    "cambridge-colour-me-red-elecgtr01",
+    "cambridge-femme-elecgtr3",
+    "cambridge-get-out-of-bed-elecgtr1",
+    "cambridge-just-don-t-talk-elecgtr3",
+    "cambridge-magilla-elecgtr1dt"
+   ],
+   "bands": "Diesel13, Magician's Nephew, Timo And The Timezone, Turbosauro, Wall Of Death (set 3, all multi-guitar)",
+   "weights": "Mega-53 v1 (ZFTurbo/Music-Source-Separation-Training v1.0.21, commit ea7eb9c, ckpt sha256 c62820893bbf86d4e734f966bd142d9157cfc8bb8e79e9d8f9ea553f3ff3519f), user-approved 2026-10-15",
+   "gate": "Descriptive screen, not a gate (the margin agrees with search success on 14 of 18 only). Cells: 5 parts x PR12, SW50R; informative = d_S - d_T >= 0.1 (full window, measure DI, clean fake). Primary m_full. A row (mega53, blend) earns the merged report's full switching test only if m_sep > 0 on more informative cells than htdemucs_6s, AND no informative cell flips from m_sep > 0 (htdemucs_6s) to m_sep <= 0, AND its mean real-song 1-3 kHz coherence (check-2 measure, the part's fold C') >= htdemucs_6s's - 0.02. Coherence alone never advances a row; m_both is reported, not gating. Reading on htdemucs_6s, independent of the screen: m_sep <= 0 on <= 1 informative cell -> separation isn't what breaks the objective; on >= ceil(n/3) -> co-equal problem, re-test promoted; else partial. n < 4 informative, or an htdemucs_6s lag-check failure on an informative cell -> undecided. Fragility (m_A, m_B, other mask, leave-one-part-out with n' rescaling) reported beside each verdict.",
+   "outcome": null
   }
  ]
 }
