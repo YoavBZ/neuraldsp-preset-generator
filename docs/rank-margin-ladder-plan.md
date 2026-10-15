@@ -378,3 +378,19 @@ each. No MPS.
 - the bleed draw returns `cambridge-get-out-of-bed-elecgtr1`;
 - the leak assertion refuses another fold's C′;
 - the render counter stops at its cap.
+
+## Implementation notes (2026-10-15, before any compute)
+
+- **Crest −5:** rendered at its achieved value, and only where crest −3 was reached. The plan
+  also drops Passing Ships from every crest rung, so where the two said different things, this
+  follows the drop.
+- **Phase-scramble lag check:** ±3 samples below 1 kHz, as declared. Band-limited GCC reads 1–2
+  samples even on aligned test signals.
+- **No `predict` CLI yet:** only `predictions()`. Experiment 3's code adds the command.
+- **Render cap:** each of the 4 shards stops if renders on disk plus 3 would pass 1,200, so the
+  run can stop up to 9 renders short of the cap.
+- **Leak check:** C is assumed trained with `cache-set3` as well, which is the conservative
+  reading.
+- **Coherence:** reimplemented to match `residual_eval._coherence` (1–3 kHz, `nperseg` 4096).
+- **C′ + oracle EQ:** uses diag3's one-pass construction, so its repeat check against
+  `diag3.json` holds.
