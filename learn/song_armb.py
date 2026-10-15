@@ -191,6 +191,31 @@ def bank_median(fold, amp, cls, S):
     return out
 
 
+def predict_half():
+    """The data-limit check's predictions: every step-3 cell from each fold's half-bank model
+    (search half only, arm B's own prediction; no controls). Written to predictions-half.json."""
+    import numpy as np
+
+    from learn import song_model as M
+    from learn import song_settings as SS
+
+    fo = SS.folds()
+    ps = K.parts()
+    rr_menu = json.loads((OUT / "menu-S.json").read_text())
+    nets = {f: M.load_net(f, half=True) for f in range(4)}
+    ev = B.OUT.parent / "eval-features"
+    out = {"control": {}, "cells": {}}
+    for slug, amp, search, held in SS.cells():
+        part = ps[slug]
+        cls = part["gain_class"]
+        S = _settings(rr_menu[amp][cls]["settings"])
+        dz = np.load(ev / f"{slug}.npz")
+        x, diag = M.predict_settings(nets[fo[part["band"]]], dz[f"feat{search}"], dz[f"lufs{search}"], amp, cls, S)
+        out["cells"][f"{slug}|{amp}|{search}"] = {"B": {"settings": _settings_json(x), "diag": diag}}
+    K._atomic(OUT / "predictions-half.json", out)
+    print(len(out["cells"]), "cells (half bank)")
+
+
 def predict():
     """Arm B's predictions (torch interpreter): the control targets, then every step-3 cell from
     the search half of the stem and mix, plus the shuffled-input, amp-track and constant
@@ -277,19 +302,19 @@ def amp_features():
 
 # --- scoring ----------------------------------------------------------------------------------
 
-def score(shard):
+def score(shard, half=False):
     """Every prediction rendered through the measure DI and judged: the control targets against the
     clean planted render's held... both halves; step 3's cells on both halves of the reference."""
     import numpy as np
     import soundfile as sf
 
-    pred = json.loads((OUT / "predictions.json").read_text())
+    pred = json.loads((OUT / ("predictions-half.json" if half else "predictions.json")).read_text())
     menu = json.loads((OUT / "menu-S.json").read_text())
     ps = K.parts()
     targets = {str(t["i"]): t for t in json.loads((OUT / "control-targets.json").read_text())}
     jobs = [("control", k) for k in sorted(pred["control"])] + [("cell", k) for k in sorted(pred["cells"])]
     rr = K.Renderer()
-    d = OUT / "scores"
+    d = OUT / ("scores-half" if half else "scores")
     d.mkdir(parents=True, exist_ok=True)
     try:
         for kind, key in jobs[shard[0]::shard[1]]:
@@ -329,12 +354,14 @@ def score(shard):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("step", choices=("control-draw", "control-render", "control-features", "menu-s", "amp-features",
-                                     "predict", "score"))
+                                     "predict", "predict-half", "score"))
     ap.add_argument("--shard", default="0/1")
+    ap.add_argument("--half", action="store_true", help="score the half-bank predictions into scores-half/")
     a = ap.parse_args(argv)
     i, n = map(int, a.shard.split("/"))
     {"control-draw": control_draw, "control-render": control_render, "control-features": control_features,
-     "menu-s": menu_S, "amp-features": amp_features, "predict": predict, "score": lambda: score((i, n))}[a.step]()
+     "menu-s": menu_S, "amp-features": amp_features, "predict": predict, "predict-half": predict_half,
+     "score": lambda: score((i, n), a.half)}[a.step]()
 
 
 if __name__ == "__main__":
