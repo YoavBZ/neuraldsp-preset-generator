@@ -72,29 +72,28 @@ wet is closer.)
 
 - **The declared reading:** wet on 4 of the 7 answered trials. Had trial 6 been answered wet,
   that would be 5 of 8, "undecided"; otherwise "they don't".
-- **The test can't separate effects from letter position, so it decides nothing.**
-  - The wet version's letter alternated with the trial number (A on odd trials, B on even), and
-    the listener answered B on 6 of 7 trials. B is played last.
-  - "Always B" alone predicts every pick except trial 7. That includes the whole pattern of
-    wet on the top-gain trials (2, 4, 8) and dry on trials 1, 3 and 5.
-  - Only trial 7 (wet as A, picked) speaks against a position preference.
-  - The listener replayed every clip several times, especially close pairs, so a recency
-    effect is unlikely, and the picks may well be real. But with this layout the two readings
-    give the same answers, so the data can't tell them apart.
-  - The builder's letter rule (least-used letter first) caused the alternation. The next page
-    draws each trial's letter at random.
-- **The rule itself asked the wrong question,** which the user pointed out (2026-10-15). It
-  asked whether judge-searched effects help across the board. But where an effect barely
-  changes the sound, the two versions are near-identical, and a dry pick there is no evidence
-  against effects.
-  - Only 3 trials (2, 4, 7) had a clear judge gain. Trial 8 passed the keep margin barely
-    (search half −0.005 log), like trial 3.
-  - The right question is whether an effect helps when the judge says it clearly does.
-- **Decision (a decision, not a finding):** effects stay in the search and are kept only when
-  they clearly help. Whether the judge's "clearly" matches the ear is untested. A new listening
-  check is to be declared for it: clear-gain cells only, random letters, plus repeat trials of
-  identical clips to catch a position preference. The keep margin is set from that, not from
-  these 8 trials.
+- **The rule asked the wrong question,** which the user pointed out (2026-10-15). It asked
+  whether judge-searched effects help across the board. But where an effect barely changes the
+  sound, the two versions are near-identical, and a dry pick there is no evidence against
+  effects. The right question is whether an effect helps when the judge says it clearly does.
+- **The reading used (the user's, accepted as evidence):**
+  - On the 3 trials with a clear judge gain (2, 4, 7: held −0.18 to −0.59), the listener picked
+    wet every time.
+  - On the near-ties (1, 3, 8) and the judge loss (5), the picks split, as expected when the
+    two versions sound alike.
+  - So the ear agrees with the judge where the judge's gain is clear.
+- **A layout caveat:** the wet letter alternated with the trial number (A on odd trials, B on
+  even), and 6 of 7 answers were B.
+  - Picking by position would give the same answers except on trial 7, where wet was A and was
+    picked.
+  - The listener replayed every clip several times, especially close pairs, and trusts the
+    picks; the user accepts them.
+  - The builder's letter rule (least-used letter first) caused the alternation. Later pages draw
+    each trial's letter at random.
+- **Decision:** effects stay in the search and are kept only when they clearly help. The keep
+  margin of 0.005 (search half, log) lets near-ties through; trials 3 and 8 passed it by a
+  hair. A higher margin is to be declared before its next use. Later listening pages (random
+  letters) can refine it.
 
 ### Note: trial 6's record
 

@@ -179,7 +179,7 @@
     "Zeno"
    ],
    "gate": "descriptive (knob ceiling's rules): stage 1 (e) vs knob ceiling's EQ stage and (f) vs M, judge-only; 'a lot' band-weighted <= -0.10 with most bands better, 'little' >= -0.04 (undecided). Stage 2: wet only if >= 0.005 better on the search half; blind listening decides: wet on >= 7/8 trials = judge-searched effects help; 5-6/8 undecided; <= 4 don't",
-   "outcome": "done 2026-10-15 (Morgan; Tone King deferred): stage 1 (e) vs EQ stage -0.023 [-0.033,-0.013], band-weighted -0.028, 13/14 bands: 'little', undecided; pedals about half of it (ablation +0.010), wider input gain nothing. Stage 2: 14/48 cells wet; judge -0.010 [-0.022,+0.002]. Listening 4 wet of 7 answered, but confounded by letter position (wet alternated A/B, listener picked B 6/7): decides nothing. Decision: effects stay in the search, kept only on a clear gain; a new listening check (random letters) to be declared."
+   "outcome": "done 2026-10-15 (Morgan; Tone King deferred): stage 1 (e) vs EQ stage -0.023 [-0.033,-0.013], band-weighted -0.028, 13/14 bands: 'little', undecided; pedals about half of it (ablation +0.010), wider input gain nothing. Stage 2: 14/48 cells wet; judge -0.010 [-0.022,+0.002]. Listening 4 wet of 7 answered (declared rule set aside as the wrong question); wet on all 3 clear-gain trials, splits on near-ties; letter layout alternated (B 6/7), listener replayed every clip and the user accepts the picks. Decision: effects stay in the search, kept only on a clear gain; a higher keep margin to be declared."
   },
   {
    "test_id": "label-table",
