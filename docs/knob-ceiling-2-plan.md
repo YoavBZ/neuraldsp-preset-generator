@@ -188,3 +188,12 @@ reading, and they are discarded (`stage2-v0-discarded/`).
   - Effects aren't combined. This is stated as a limit.
 - **The budget:** 1 + 24 × 4 = 97 renders per direction (73 on AC20), about 4.3k in all.
 - **Unchanged:** the listening page and its reading.
+
+## Amendment (2026-10-15): no 03:00–04:15 pause
+
+The "nothing runs 03:00–04:15" rule (ML plan section 5) has no reason behind it. It began as a
+one-night request from the ML session on 2026-10-10, to keep the product session's renders clear
+of an evaluation. The product session then carried it into its plans, and the ML plan copied it
+from there. No backup or system job uses that window. The user asked for the pause to be dropped
+if it wasn't required, so the watchdog is stopped, and from now on jobs run through the night.
+Fold 0 was paused once (2026-10-15, 03:00–04:15), with no effect on the recipe.
