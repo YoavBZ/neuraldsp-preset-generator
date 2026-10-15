@@ -319,16 +319,63 @@ def control_search(shard):
         rr.close()
 
 
+# --- arm C: arm B's prediction, then a short arm-A search ---------------------------------------
+
+BUDGET_C = 50
+
+
+def arm_c(shard):
+    """`knob_search` from arm B's prediction (the cell's search half), 50 renders, with arm A's
+    objective; the best judged through the measure DI on both halves."""
+    import numpy as np
+
+    pred = json.loads((OUT / "armB" / "predictions.json").read_text())["cells"]
+    ps = K.parts()
+    rr = K.Renderer()
+    try:
+        menu = rr.menu()
+        cur = None
+        for slug, amp, search, held in cells()[shard[0]::shard[1]]:
+            d = OUT / "armC" / slug / amp
+            if (d / f"{search}.json").exists():
+                continue
+            part = ps[slug]
+            if cur != slug:
+                rebuilt = np.load(OUT / "rebuilt" / f"{slug}.npy")
+                stem_x = stem(slug)
+                di = K.measure_di(part)
+                ref = CR.mono(part["crop"] / "reference.wav")
+                cur = slug
+            sel, S = menu[amp][K.START[part["gain_class"]][amp]]
+            start = {tuple(k.rsplit("/", 1)): v for k, v in pred[f"{slug}|{amp}|{search}"]["B"]["settings"].items()}
+            r32 = rebuilt.astype(np.float32)
+            counter = {"fallback": 0}
+            rr.render(r32, sel, start)
+            x, best, _, stages = K.knob_search(K.space(amp, S), start,
+                                                lambda x: rebuilt_objective(stem_x, rr.render(r32, sel, x), rebuilt,
+                                                                            search, counter), BUDGET_C, SEED_A)
+            j = K.judge(ref, rr.render(di.astype(np.float32), sel, x), di, part["judge_lag"])
+            d.mkdir(parents=True, exist_ok=True)
+            (d / f"{search}-settings.json").write_text(json.dumps({f"{m}/{k}": v for (m, k), v in x.items()}))
+            K._atomic(d / f"{search}.json", {"slug": slug, "amp": amp, "search_half": search, "held_half": held,
+                                              "objective_best": best, "fallback": counter["fallback"], "judge": j,
+                                              "stages": stages})
+            print(slug, amp, search, round(j[held], 4), rr.count, flush=True)
+    finally:
+        rr.close()
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("step", choices=("ks-convergence", "rebuild", "arm-a", "menu-pick", "control-render",
-                                     "control-rebuild", "control-search"))
+                                     "control-rebuild", "control-search", "arm-c"))
     ap.add_argument("--shard", default="0/1")
     a = ap.parse_args(argv)
     i, n = map(int, a.shard.split("/"))
     {"ks-convergence": ks_convergence, "rebuild": rebuild_all, "arm-a": lambda: arm_a((i, n)),
      "menu-pick": lambda: menu_pick((i, n)), "control-render": control_render,
-     "control-rebuild": control_rebuild, "control-search": lambda: control_search((i, n))}[a.step]()
+     "control-rebuild": control_rebuild, "control-search": lambda: control_search((i, n)),
+     "arm-c": lambda: arm_c((i, n))}[a.step]()
 
 
 if __name__ == "__main__":
