@@ -126,3 +126,25 @@ def test_a_voicing_up_the_neck_is_found_near_the_named_time():
     groups = B.strums(B.midi_notes(data))
     assert B.find_chord(groups, "maj", 7) == 0.0
     assert B.find_chord(groups, "maj", 7, near=9.5) == 10.0
+
+
+def test_each_riffs_recorded_median_sits_in_its_register_and_levels_match():
+    record = json.loads((ROOT / "samples" / "riffs" / "riffs.json").read_text())
+    for name, entry in record["riffs"].items():
+        assert B.register_of([entry["median_pitch"]])[0] == entry["register"], name
+    np = pytest.importorskip("numpy")
+    pyloudnorm = pytest.importorskip("pyloudnorm")
+    sf = pytest.importorskip("soundfile")
+    for name, entry in record["riffs"].items():
+        audio, rate = sf.read(str(ROOT / "samples" / "riffs" / entry["file"]))
+        loud = pyloudnorm.Meter(rate).integrated_loudness(np.asarray(audio))
+        assert abs(loud - record["loudness_lufs"]) < 0.1, (name, loud)
+
+
+def test_every_cut_names_its_riff_once_per_piece():
+    record = json.loads((ROOT / "samples" / "riffs" / "riffs.json").read_text())
+    counts = {}
+    for cut in record["cuts"]:
+        counts[cut["riff"]] = counts.get(cut["riff"], 0) + 1
+    assert counts == {"chords": 4, "chords-mid": 4, "chords-high": 4,
+                      "line": 1, "line-mid": 1, "line-high": 1}

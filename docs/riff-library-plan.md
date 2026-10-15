@@ -81,6 +81,16 @@ guitar stems (the research's finding). That stays parked behind a cheap local ch
   the ML session's go (given 2026-10-15) and outside 03:00–04:15, for the user to hear
   each riff is clean and in its register.
 
+## As built (2026-10-15)
+
+- `line-high` is the E scale from 143.5 s (median D5): no 10-s window of the A scale
+  reached high (the best, from about 145 s, would run past the file). A scan of every
+  key's MIDI chose it.
+- `chords-high` measures A#4, one semitone above the edge: two short tracked notes in
+  the Em strum (C#4, D4) pull the median down; in the audio they sit about 30 dB below
+  the chord tones (transcription artefacts), and without them it is B4.
+- Each riff's median pitch and note range are recorded in `riffs.json` and tested.
+
 ## Limits
 
 One player per style, one guitar (P1's bridge pickup on an Ibanez PF-300, which leans dark). The riffs are not the song's part; this only reduces two

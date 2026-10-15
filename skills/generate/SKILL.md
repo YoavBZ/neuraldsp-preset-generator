@@ -410,7 +410,8 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/audition.py" --song SONG.mp3 \
   --preset A.xml --note "what A is" --preset B.xml --note "what B is"
 ```
 
-   Use a folder under the data root for `AUDITION_DIR` (`auditions/<song>`), and add
+   (`--riff line-mid` in this example is for a lead part; pick the riffs by the part as
+   above.) Use a folder under the data root for `AUDITION_DIR` (`auditions/<song>`), and add
    `--open` to open the page. To listen on a phone, give the user the path to
    `phone.html` in that folder (macOS): the same page with the audio inside, as one
    file. Open it in Safari or Chrome, not a file preview. Rendering takes about 10 seconds a preset per riff, so

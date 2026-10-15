@@ -24,7 +24,7 @@ Part P3 is validation material and is never used here.
   `riffs.json` is kept as it is.
 
 All are set to -23.7 LUFS, the median loudness of the development sets' DIs, so they
-drive an amp as a typical recorded DI does (the P1 recordings sit 7-9 dB lower).
+drive an amp as a typical recorded DI does (the P1 recordings sit 5-10 dB lower).
 Written as 24-bit FLAC with `riffs.json`, which records every source file's SHA-256,
 where each piece was cut, the gain, and the attribution the licence requires.
 """
@@ -47,9 +47,7 @@ from _cli import die, guarded
 RATE = 48000
 TARGET_LUFS = -23.7
 CHORD_S, LEAD_IN_S, FADE_S = 2.5, 0.02, 0.04
-VOICING = "Set4"
 PROGRESSION = (("maj", 7, "G"), ("maj", 2, "D"), ("min", 4, "Em"), ("maj", 0, "C"))
-LINE = ("P1_scales", "A", 0.0, 9.8, 10.0)
 FADE_IN_S, ATTACK_SEARCH_S = 0.003, 0.08
 ATTRIBUTION = ("Guitar-TECHS: An Electric Guitar Dataset Covering Techniques, Musical "
                "Excerpts, Chords and Scales Using a Diverse Array of Hardware, by Hegel "
@@ -259,7 +257,7 @@ def main():
     record = {"schema": "riffs-2", "attribution": ATTRIBUTION, "loudness_lufs": TARGET_LUFS,
               "register_edges": {"low_below": note_name(REGISTER_EDGES[0]),
                                  "high_above": note_name(REGISTER_EDGES[1])},
-              "riffs": {}, "cuts": list(old.get("cuts", [])),
+              "riffs": {}, "cuts": [],
               "sources": dict(old.get("sources", {}))}
 
     def keep(name) -> bool:
@@ -268,7 +266,7 @@ def main():
         path = out / entry["file"] if entry else None
         return bool(entry and path.exists() and _sha(path) == entry["sha256"])
 
-    built, problems = {}, []
+    built, problems, measured = {}, [], {}
     for name, spec in CHORD_RIFFS.items():
         pieces, cuts, pitches = [], [], []
         for quality, root, chord in PROGRESSION:
@@ -295,6 +293,7 @@ def main():
             cuts.append({"riff": name, "chord": chord, "file": audio_path.name,
                          "start_s": round(first / RATE, 4), "seconds": CHORD_S})
         register, median = register_of(pitches)
+        measured[name] = (median, min(pitches), max(pitches))
         print(f"  {name}: median {note_name(round(median))} ({median}), {register}"
               f" (declared {spec['register']})")
         if register != spec["register"]:
@@ -308,6 +307,7 @@ def main():
         notes = midi_notes(midi_path.read_bytes())
         pitches = notes_between(notes, spec["start"], spec["start"] + LINE_SECONDS)
         register, median = register_of(pitches)
+        measured[name] = (median, min(pitches), max(pitches))
         print(f"{name}: {line_path.name} {spec['start']}-{spec['start'] + LINE_SECONDS} s, "
               f"{note_name(min(pitches))}-{note_name(max(pitches))}, median "
               f"{note_name(round(median))} ({median}), {register} (declared {spec['register']})")
@@ -334,9 +334,16 @@ def main():
 
     for name, spec in {**CHORD_RIFFS, **LINE_RIFFS}.items():
         style = "chords" if name in CHORD_RIFFS else "line"
-        meta = {"style": style, "register": spec["register"], "default": spec["default"]}
+        median, lowest, highest = measured[name]
+        meta = {"style": style, "register": spec["register"], "default": spec["default"],
+                "median_pitch": median, "notes": f"{note_name(lowest)}-{note_name(highest)}"}
         if keep(name):
             record["riffs"][name] = {**old["riffs"][name], **meta}
+            # The first records' cuts carry no riff name: chord pieces are `chords`'.
+            record["cuts"] += [{"riff": c.get("riff") or ("chords" if "chord" in c else "line"),
+                                **{k: v for k, v in c.items() if k != "riff"}}
+                               for c in old.get("cuts", [])
+                               if (c.get("riff") or ("chords" if "chord" in c else "line")) == name]
             continue
         audio, cuts = built[name]
         gain = TARGET_LUFS - meter.integrated_loudness(audio)

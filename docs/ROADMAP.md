@@ -411,7 +411,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
   timbre 0.0002), at the template's default settings. Its effect on a ranking is not
   measured: the shift is a distance to an unfaded target, so it can differ by candidate.
 - **Parked, with reasons:**
-  - **Riffs in the part's style and register:** *done 2026-10-15* for chords and single
+  - **Riffs in the part's style and register:** *built 2026-10-15 (listening check
+    pending)* for chords and single
     lines in three registers, from Guitar-TECHS already on disk ([plan](riff-library-plan.md));
     `generate` picks at most two by the part. Still missing: power chords and arpeggios (no
     shippable source), and automatic chord and register detection (no open tool proven on

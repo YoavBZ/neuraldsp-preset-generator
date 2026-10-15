@@ -15,7 +15,9 @@
    "gain_db": 9.25,
    "style": "chords",
    "register": "low",
-   "default": true
+   "default": true,
+   "median_pitch": 50,
+   "notes": "G2-C4"
   },
   "chords-mid": {
    "file": "chords-mid.flac",
@@ -25,7 +27,9 @@
    "gain_db": 9.56,
    "style": "chords",
    "register": "mid",
-   "default": false
+   "default": false,
+   "median_pitch": 64,
+   "notes": "F#3-B4"
   },
   "chords-high": {
    "file": "chords-high.flac",
@@ -35,7 +39,9 @@
    "gain_db": 7.08,
    "style": "chords",
    "register": "high",
-   "default": false
+   "default": false,
+   "median_pitch": 70.0,
+   "notes": "C#4-E5"
   },
   "line": {
    "file": "line.flac",
@@ -45,7 +51,9 @@
    "gain_db": 9.04,
    "style": "line",
    "register": "low",
-   "default": true
+   "default": true,
+   "median_pitch": 58.0,
+   "notes": "F#2-A4"
   },
   "line-mid": {
    "file": "line-mid.flac",
@@ -55,7 +63,9 @@
    "gain_db": 5.09,
    "style": "line",
    "register": "mid",
-   "default": false
+   "default": false,
+   "median_pitch": 66,
+   "notes": "F#3-D5"
   },
   "line-high": {
    "file": "line-high.flac",
@@ -65,39 +75,39 @@
    "gain_db": 6.36,
    "style": "line",
    "register": "high",
-   "default": false
+   "default": false,
+   "median_pitch": 74.0,
+   "notes": "F4-A5"
   }
  },
  "cuts": [
   {
+   "riff": "chords",
    "chord": "G",
    "file": "directinput_Set4_maj.wav",
    "start_s": 67.9473,
    "seconds": 2.5
   },
   {
+   "riff": "chords",
    "chord": "D",
    "file": "directinput_Set4_maj.wav",
    "start_s": 115.9662,
    "seconds": 2.5
   },
   {
+   "riff": "chords",
    "chord": "Em",
    "file": "directinput_Set4_min.wav",
    "start_s": 56.0099,
    "seconds": 2.5
   },
   {
+   "riff": "chords",
    "chord": "C",
    "file": "directinput_Set4_maj.wav",
    "start_s": 87.913,
    "seconds": 2.5
-  },
-  {
-   "line": "A",
-   "file": "directinput_A.wav",
-   "start_s": 0.0,
-   "seconds": 9.945
   },
   {
    "riff": "chords-mid",
@@ -154,6 +164,13 @@
    "file": "directinput_Set1_maj.wav",
    "start_s": 95.9892,
    "seconds": 2.5
+  },
+  {
+   "riff": "line",
+   "line": "A",
+   "file": "directinput_A.wav",
+   "start_s": 0.0,
+   "seconds": 9.945
   },
   {
    "riff": "line-mid",
