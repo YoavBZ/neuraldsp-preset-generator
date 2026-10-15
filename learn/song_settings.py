@@ -89,6 +89,11 @@ def cprime(fold):
     return MODELS / ("models-cprime/fold2.pt" if fold == 2 else f"models-cprime-f{fold}/fold{fold}.pt")
 
 
+def cprime_ready(fold):
+    """The fold's final network exists (not a mid-training checkpoint: the runner touches DONE)."""
+    return cprime(fold).exists() and (fold == 2 or (cprime(fold).parent / "DONE").exists())
+
+
 def rebuild_all():
     """Each part's stem rebuilt by its fold's C′, re-equalised by (fold 2's average − fold f's),
     at −22.9 LUFS, saved to rebuilt/<part>.npy (the torch interpreter)."""
@@ -107,7 +112,7 @@ def rebuild_all():
         if slug == "telefunken-Honey-GTR":
             continue
         f = fo[ps[slug]["band"]]
-        if not cprime(f).exists() or (OUT / "rebuilt" / f"{slug}.npy").exists():
+        if not cprime_ready(f) or (OUT / "rebuilt" / f"{slug}.npy").exists():
             continue                                    # its fold's C′ isn't trained yet, or done
         if f not in nets:
             nets[f] = D.load_model(cprime(f)).eval()
@@ -268,7 +273,7 @@ def control_rebuild():
     d = OUT / "armA-control"
     for slug, amp in control_cells():
         f = fo[ps[slug]["band"]]
-        if not cprime(f).exists() or (d / f"{slug}-{amp}-rebuilt.npy").exists():
+        if not cprime_ready(f) or (d / f"{slug}-{amp}-rebuilt.npy").exists():
             continue
         net = D.load_model(cprime(f)).eval()
         fake = np.load(d / f"{slug}-{amp}-fake.npy")

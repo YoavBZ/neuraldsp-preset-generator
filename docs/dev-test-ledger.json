@@ -112,7 +112,7 @@
     ]
    },
    "gate": "check 2: mean 1-3 kHz coherence (stem-rebuilt vs true DI) on set 3's 5 clean/crunch stem parts; a new fold fails below 0.1126 (fold-2 seeds 0.1360/0.1326/0.1343, minus max(range, 0.02)); one-sided; failure stops arms A and C",
-   "outcome": null,
+   "outcome": "done 2026-10-15: all three folds pass. Check 2 (mean 1-3 kHz coherence, fail < 0.1126): fold 0 0.1253, fold 1 0.1356, fold 3 0.1287 (fold 2 seeds 0.1360/0.1326/0.1343). Sanity: no NaN, no recoveries; val/input-as-DI 0.565, 0.545, 0.519 (limit 0.65).",
    "expected_counts": {
     "fold0": [
      34792,
