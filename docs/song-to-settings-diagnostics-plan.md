@@ -429,3 +429,18 @@ beside training. Add about 15 min of separation and about an hour for step 1.0.
 - **The judge's taste for extremes** applies to every distance here; no listening is planned,
   because no preset is chosen.
 - **Development data only.**
+
+## Implementation notes (2026-10-16, before any compute)
+
+- **Per-target seeds:** `random.Random(20261020)` fixes the window order. Each target's own draws
+  use a SeedSequence over (20261020, fold, index in fold), so a top-up shifts no existing target.
+- **Step 1.3's sample seed:** 20261024, declared when step 1.3 is offered.
+- **Two guards the operator runs by hand:**
+  - experiment 4's slowdown, read from its log;
+  - the 3-process cap, applied as `--shard` ≤ 3 per step.
+- **The target's held distance is 0 by definition:** the repeat render supplies d_T.
+- **A top-up suggests `ceil(shortfall / 2)` targets.**
+- **Step 1.0 runs one example at a time.**
+- **The Jacobian** uses the judge's log-mel at FFT 2048.
+- **`models` runs twice:** a second run after `report` gives the audible-setting figures, read
+  from `flat.json`.
