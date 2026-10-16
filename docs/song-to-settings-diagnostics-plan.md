@@ -454,3 +454,6 @@ kept as declared, but as guides to the next experiment, not as verdicts on arm B
 - Every reading reports its effect size with a 90% band-clustered interval beside its threshold.
 - A reading that misses its threshold but shows a gain is reported as a gain of that size.
 - Step 1.3 still needs its own yes.
+- **Implementation fix (2026-10-16, before any render):** sensitivity windows may share a target's
+  track, but they never overlap a target window. Excluding whole target tracks left too few
+  windows, and the draw stopped. The drawn targets and windows are in the ledger.

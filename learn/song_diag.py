@@ -1198,12 +1198,12 @@ def step_draw(top_up=None):
     ks_opt = B.ks_optima()
     path = OUT / "targets.json"
     old = json.loads(path.read_text()) if path.exists() else []
-    if old and not top_up:
+    if old and not top_up and (OUT / "sens.json").exists():
         raise SystemExit("targets.json exists; only --top-up may add to it")
     targets = list(old)
     for f in range(4):
         have = [t for t in old if t["fold"] == f]
-        n = (top_up or {}).get(f, 0) if old else N_PER_FOLD
+        n = (top_up or {}).get(f, 0) if old else N_PER_FOLD      # targets kept; sens drawn below if missing
         if not n:
             continue
         ws = pick_windows([w for w in order[f] if not any(overlaps(w, t["window"]) for t in have)], n,
@@ -1219,10 +1219,13 @@ def step_draw(top_up=None):
     assert_fold_clean(targets, json.loads((B.OUT / "examples.json").read_text()))
     OUT.mkdir(parents=True, exist_ok=True)
     K._atomic(path, targets)
-    if not old:
+    if not (OUT / "sens.json").exists():
         rng = random.Random(SEED_SENS)
-        taken_tracks = {t["window"]["path"] for t in targets}
-        pool = sorted((w for f in range(4) for w in by_fold[f] if w["path"] not in taken_tracks),
+        # Sensitivity windows may share a target's track but never overlap a target window
+        # (amended 2026-10-16: excluding whole target tracks left too few windows).
+        target_ws = [t["window"] for t in targets]
+        pool = sorted((w for f in range(4) for w in by_fold[f]
+                       if not any(overlaps(w, u) for u in target_ws)),
                       key=lambda w: (w["path"], w["start"]))
         rng.shuffle(pool)
         sens, used = [], []
