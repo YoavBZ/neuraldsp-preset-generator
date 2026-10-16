@@ -3,7 +3,7 @@
 Plan: [bleed-listening-plan.md](bleed-listening-plan.md). One sitting by the user, scored with
 `learn.build_bleed_listening score`. Answers: `1Both-no 2N-no 3N-no 4Both-no 5Both-no 6N-no`.
 
-| Trial | Kind | Part, half | Bleed removed | Leaking | Damage |
+| Trial | Kind | Part, half | Bleed removed | Leaking | Damage (not read) |
 |---|---|---|---|---|---|
 | 1 | high | Sculptor's Request GTR_1, B | −12.9 dB | both | no |
 | 2 | low | Drag Me Down ElecGtr4, A | −36.1 dB | neither | no |
@@ -16,8 +16,9 @@ Plan: [bleed-listening-plan.md](bleed-listening-plan.md). One sitting by the use
 
 - **The bleed is audible** on all 3 high parts, and inaudible on both controls. The repeat
   matches its control. This confirms the audit's split of which parts carry bleed.
-- **The cleaning is harmless but not enough.** Removing about 10–13 dB of modelled bleed left
-  it audible every time, and never damaged the guitar.
+- **The cleaning is not enough.** Removing about 10–13 dB of modelled bleed left it audible
+  every time. Whether it damages the guitar is not read from this sitting: the damage question
+  had no known reference (plan amendment 1), so it is re-asked in check 2.
 - **So the high-bleed parts are not isolated guitar records,** even after this cleaning. Results
   that matter should keep reporting the no-high-bleed row beside the all-parts row (the audit
   found arm A's results hold without them: −0.094 against −0.083). Experiment 1c's report

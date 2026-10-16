@@ -66,3 +66,19 @@ The answer line reads like `1A-no 2N-no 3B-little 4Both-lot`.
 
 Build: `.venv/bin/python -m learn.build_bleed_listening build`. Score:
 `.venv/bin/python -m learn.build_bleed_listening score --answers "1A-no 2N-no ..."`.
+
+## Amendment 1 (2026-10-16, after check 1's sitting): damage against a labelled original
+
+The user noted that check 1's damage question had no known reference, so the original's drive
+could be heard as damage, or damage as drive. Check 1's leak answers stand; its damage answers
+are not read. Check 2 (`learn/build_bleed_damage.py`, page `listening/bleed-2/`) re-asks damage:
+- the same 5 parts and halves, the same cleaning, zero renders;
+- each trial plays **Original** (labelled), then X and Y: one is the original again (a hidden
+  reference), the other the cleaned track; the cleaned letter balanced over the 5 trials
+  (seed 20261018);
+- one null trial (Gym Hours, half B) with X and Y both original, placed with the same seed, not
+  first and not next to Gym Hours;
+- per trial: which one differs from the Original (X, Y or neither), and how much (little or lot).
+
+Reading (descriptive): on the high and low trials, how often the cleaned clip is named, the
+hidden original is named, or neither, with the amounts; the null trial as a note on false alarms.
