@@ -31,12 +31,14 @@ def lowpass(di, hz=LOWPASS_HZ, sample_rate=48000):
     return to_lufs(np.fft.irfft(np.fft.rfft(di) / np.sqrt(1 + (f / hz) ** 8), len(di)))
 
 
-def rebuilt_distance(recording, render, di, *, start_s, end_s, bands="recording", **judge):
+def rebuilt_distance(recording, render, di, *, start_s, end_s, bands="recording", lag=-LATENCY, **judge):
     """(AlignedDistance, used_proxy) for `render` (a preset through the rebuilt `di`);
-    `judge` passes further options (e.g. `weighting`) to the judge."""
+    `judge` passes further options (e.g. `weighting`) to the judge. `lag` defaults to −52, for a
+    rebuild aligned with its recording; a rebuild of a known-target control fake is aligned to
+    the input DI and is judged at `lag=0` (song-settings-plan.md, recorded outcome)."""
     from analysis.aligned import aligned_distance
 
-    kw = dict(lag=-LATENCY, render_latency=LATENCY, start_s=start_s, end_s=end_s, bands=bands,
+    kw = dict(lag=lag, render_latency=LATENCY, start_s=start_s, end_s=end_s, bands=bands,
               **judge)
     d = aligned_distance(recording, render, di, **kw)
     if d.distance is None and any(s in (d.reason or "") for s in _ACTIVITY):

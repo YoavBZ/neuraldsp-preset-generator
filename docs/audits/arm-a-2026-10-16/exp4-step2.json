@@ -1,0 +1,90 @@
+{
+ "cells": [
+  "cambridge-Prodigal-ElecGtr5|pr12",
+  "cambridge-Prodigal-ElecGtr5|sw50r",
+  "cambridge-just-don-t-talk-elecgtr3|pr12",
+  "cambridge-just-don-t-talk-elecgtr3|sw50r"
+ ],
+ "readings": {
+  "1a": {
+   "reading": "undecided",
+   "arm": {
+    "closed": 1,
+    "mean_shortfall": 0.1635228596712912,
+    "n": 4,
+    "finite": 4
+   },
+   "measure_run": {
+    "closed": 4,
+    "mean_shortfall": -0.04294378673062475,
+    "n": 4,
+    "finite": 4
+   },
+   "cprime": {
+    "closed": 2,
+    "mean_shortfall": 0.20093827182650648,
+    "n": 4,
+    "finite": 4
+   },
+   "need_closed": 3,
+   "go_shortfall": -0.012943786730624754,
+   "stop_shortfall": 0.17093827182650648
+  },
+  "1b": {
+   "reading": "stop",
+   "arm": {
+    "closed": 1,
+    "mean_shortfall": 0.19662358927500118,
+    "n": 4,
+    "finite": 4
+   },
+   "measure_run": {
+    "closed": 4,
+    "mean_shortfall": -0.04294378673062475,
+    "n": 4,
+    "finite": 4
+   },
+   "cprime": {
+    "closed": 2,
+    "mean_shortfall": 0.20093827182650648,
+    "n": 4,
+    "finite": 4
+   },
+   "need_closed": 3,
+   "go_shortfall": -0.012943786730624754,
+   "stop_shortfall": 0.17093827182650648
+  }
+ },
+ "1z": {
+  "reading": "stop",
+  "arm": {
+   "closed": 2,
+   "mean_shortfall": 0.1912262314011723,
+   "n": 4,
+   "finite": 4
+  },
+  "measure_run": {
+   "closed": 4,
+   "mean_shortfall": -0.04294378673062475,
+   "n": 4,
+   "finite": 4
+  },
+  "cprime": {
+   "closed": 2,
+   "mean_shortfall": 0.20093827182650648,
+   "n": 4,
+   "finite": 4
+  },
+  "need_closed": 3,
+  "go_shortfall": -0.012943786730624754,
+  "stop_shortfall": 0.17093827182650648
+ },
+ "choice": {
+  "outcome": "fold-1 branch",
+  "winner": null,
+  "undecided": [
+   "1a"
+  ],
+  "note": "only the undecided arms take it; it needs the user's yes"
+ }
+}
