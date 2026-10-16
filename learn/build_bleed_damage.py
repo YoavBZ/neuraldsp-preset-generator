@@ -2,13 +2,15 @@
 amendment 1). Development only; descriptive.
 
     .venv/bin/python -m learn.build_bleed_damage build
-    .venv/bin/python -m learn.build_bleed_damage score --answers "1X-little 2N 3Y-lot ..."
+    .venv/bin/python -m learn.build_bleed_damage score --answers "1X-little-tone 2N 3Y-lot-bg ..."
 
 Check 1 asked about damage with no known reference, so a listener could take the original's
 drive for damage (or the reverse). Here each trial plays the amp track labelled "Original", then
 X and Y: one is the original again (a hidden reference) and one is the cleaned track, in a seeded
 order. One null trial has X and Y both original. The listener names which one differs from the
-Original (X, Y or N for neither) and how much (little or lot).
+Original (X, Y or N for neither), how much (little or lot), and what differs (the guitar's tone,
+the background/leakage, both, or unsure). A cleaned pick is read as damage only with 'tone' or
+'both'. Each encoded clip carries a random-length mp4 `free` box, so sizes and bytes say nothing.
 
 Same five parts and halves as check 1, the same cleaning (`build_bleed_listening.bleed_estimate`),
 zero plugin renders. The key is written under `private/`, never in the page.
@@ -17,10 +19,13 @@ zero plugin renders. The key is written under `private/`, never in the page.
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
+import os
 import random
 import re
+import struct
 import sys
 import tempfile
 
@@ -59,24 +64,28 @@ def draw(seed=SEED, high=B1.HIGH, low_halves=None):
             return trials
 
 
-ANSWER_RE = re.compile(r"(\d+)(?:(n|neither)(?:-no)?|(x|y)-(little|lot|alot|a-lot)|(\?))", re.I)
+WHAT = ("tone", "bg", "both", "unsure")
+ANSWER_RE = re.compile(r"(\d+)(?:(n|neither)(?:-no)?|(x|y)-(little|lot|alot|a-lot|\?)(?:-(tone|bg|both|unsure|\?))?|(\?))",
+                       re.I)
 
 
 def parse_answers(text):
-    """'1X-little 2N 3Y-lot 4?' -> {'1': ('X', 'little'), '2': ('N', None), '3': ('Y', 'lot'),
-    '4': (None, None)}."""
+    """'1X-little-tone 2N 3Y-lot-bg 4? 5X-?-?' -> {'1': ('X', 'little', 'tone'), '2': ('N', None, None),
+    '3': ('Y', 'lot', 'bg'), '4': (None, None, None), '5': ('X', None, None)}."""
     out = {}
     for tok in text.replace("a lot", "lot").split():
         m = ANSWER_RE.fullmatch(tok.strip())
         if not m:
-            raise SystemExit(f"cannot read answer {tok!r} (expected like 1X-little, 2N, 3Y-lot)")
+            raise SystemExit(f"cannot read answer {tok!r} (expected like 1X-little-tone, 2N, 3Y-lot-bg)")
         if m.group(2):
-            out[m.group(1)] = ("N", None)
+            out[m.group(1)] = ("N", None, None)
         elif m.group(3):
             amt = m.group(4).lower()
-            out[m.group(1)] = (m.group(3).upper(), "lot" if amt in ("alot", "a-lot") else amt)
+            amt = None if amt == "?" else ("lot" if amt in ("alot", "a-lot") else amt)
+            what = (m.group(5) or "?").lower()
+            out[m.group(1)] = (m.group(3).upper(), amt, None if what == "?" else what)
         else:
-            out[m.group(1)] = (None, None)
+            out[m.group(1)] = (None, None, None)
     return out
 
 
@@ -95,16 +104,18 @@ def role(trial, pick):
 def score_key(key, answers):
     rows = []
     for n, t in sorted(key["trials"].items(), key=lambda x: int(x[0])):
-        pick, amt = answers.get(n, (None, None))
+        pick, amt, what = answers.get(n, (None, None, None))
+        names = role(t, pick)
         rows.append({"trial": int(n), "kind": t["kind"], "slug": t["slug"], "held": t["held"],
                      "bleed_removed_db": t.get("bleed_removed_db"), "pick": pick,
-                     "names": role(t, pick), "amount": amt})
+                     "names": names, "amount": amt, "what": what,
+                     "damage": names == "cleaned" and what in ("tone", "both")})
     counts = {}
     for kind in ("high", "low", NULL):
         c = {}
         for r in rows:
             if r["kind"] == kind:
-                k = (r["names"] or "unanswered") + (f"-{r['amount']}" if r["amount"] else "")
+                k = "-".join(x for x in (r["names"] or "unanswered", r["amount"], r["what"]) if x)
                 c[k] = c.get(k, 0) + 1
         counts[kind] = c
     return {"trials": rows, **counts}
@@ -112,18 +123,19 @@ def score_key(key, answers):
 
 # --- the page --------------------------------------------------------------------------------------
 
-PAGE = B1.PAGE.split("<h1>")[0] + """<h1>Does the guitar sound changed?</h1>
+PAGE = B1.PAGE.split("<h1>")[0].replace("Leak listening check", "Guitar change check") + """<h1>Does the guitar sound changed?</h1>
 <p class="muted">{count} trials. Each plays the same 4.5 seconds of a guitar track three times, at the
 same loudness. <b>Original</b> is the track as recorded, drive and all. One of X and Y is that same
 original; the other may have had leakage from other instruments taken out. Some trials may have X and
 Y both the original. Headphones help; guess if unsure.</p>
 <p class="muted">For each trial: <b>which one sounds different from the Original's guitar</b> (X, Y
-or neither), and <b>how much</b> (a little or a lot). Ignore the leakage itself; listen to the
-guitar's tone (duller, thinner, hollow, warbly, artifacts).</p>
+or neither), <b>how much</b> (a little or a lot), and <b>what</b> differs: the guitar's tone (duller,
+thinner, hollow, warbly, artifacts), the background (leakage from other instruments), both, or
+unsure.</p>
 {trials}
 <h2>Your answers</h2>
 <p class="muted">Copy this line and send it back, for example <code>1X-little</code>,
-<code>2N</code> or <code>3Y-lot</code>. A ? marks a trial not yet answered.</p>
+<code>1X-little-tone</code>, <code>2N</code> or <code>3Y-lot-bg</code>. A ? marks a trial not yet answered.</p>
 <div id="line">—</div>
 <script>
 const key = "bleed-damage-{build}";
@@ -135,7 +147,7 @@ function show() {{
   document.getElementById("line").textContent = n.map(t => {{
     const r = a[t] || {{}};
     if (r.which === "N") return t + "N";
-    return t + (r.which || "?") + (r.which ? "-" + (r.amt || "?") : "");
+    return t + (r.which || "?") + (r.which ? "-" + (r.amt || "?") + "-" + (r.what || "?") : "");
   }}).join(" ");
 }}
 document.querySelectorAll(".pick button").forEach(b => b.onclick = () => {{
@@ -157,11 +169,25 @@ def section(n, clips):
                     for v, lab in (("X", "X"), ("Y", "Y"), ("N", "Neither")))
     amt = "".join(f'<button type="button" data-value="{v}">{lab}</button>'
                   for v, lab in (("little", "A little"), ("lot", "A lot")))
+    what = "".join(f'<button type="button" data-value="{v}">{lab}</button>'
+                   for v, lab in (("tone", "Guitar tone"), ("bg", "Background"), ("both", "Both"),
+                                  ("unsure", "Unsure")))
     return (f'<section><h2>Trial {n}</h2>{rows}'
             f'<div class="q">Which sounds different from the Original?</div>'
             f'<div class="pick" data-trial="{n}" data-q="which">{which}</div>'
             f'<div class="q">How much? (skip if neither)</div>'
-            f'<div class="pick" data-trial="{n}" data-q="amt">{amt}</div></section>')
+            f'<div class="pick" data-trial="{n}" data-q="amt">{amt}</div>'
+            f'<div class="q">What differs? (skip if neither)</div>'
+            f'<div class="pick" data-trial="{n}" data-q="what">{what}</div></section>')
+
+
+def pad(src, rng=None):
+    """Append a random-length (64–4,095 byte) mp4 `free` box to a base64 data URI, so encoded
+    sizes and bytes say nothing about which clips share samples. Players skip `free` boxes."""
+    head, b64 = src.split(",", 1)
+    n = (rng or random.SystemRandom()).randrange(64, 4096)
+    blob = base64.b64decode(b64) + struct.pack(">I4s", 8 + n, b"free") + os.urandom(n)
+    return head + "," + base64.b64encode(blob).decode()
 
 
 def _out():
@@ -199,7 +225,7 @@ def build(args):
                 cache[slug, held] = (orig - bl, B1._db(float(np.sum(bl ** 2)) / float(np.sum(orig ** 2))))
             cleaned, removed = cache[slug, held]
             clips = {"original": orig, "cleaned": cleaned}
-            enc = lambda x: BK.aac(BK.fade(BK.level(np.asarray(x, np.float64))), tmp)
+            enc = lambda x: pad(BK.aac(BK.fade(BK.level(np.asarray(x, np.float64))), tmp))
             srcs = [("Original", enc(orig))] + [(L, enc(clips[name])) for L, name in t["letters"].items()]
             sections.append(section(n, srcs).replace("<b>Original</b>", '<b style="width:5em">Original</b>'))
             key["trials"][str(n)] = {"kind": t["kind"], "slug": slug, "held": held,
@@ -210,6 +236,9 @@ def build(args):
     for w in {t["slug"] for t in trials} | {"telefunken", "cambridge", "gym", "offering", "sculptor",
                                             "drag me", "farthest", "gtr_", "elecgtr", "null", "cleaned\""}:
         assert w.lower() not in text, w
+    uris = re.findall(r'src="(data:[^"]+)"', page)
+    assert len(uris) == 3 * len(sections) and len(set(uris)) == len(uris), "duplicate clip bytes"
+    assert len({len(u) for u in uris}) > len(uris) // 2, "clip sizes too uniform"
     (out_dir / "private").mkdir(parents=True, exist_ok=True)
     (out_dir / "private" / "key.json").write_text(json.dumps(key, indent=1))
     page_path = out_dir / "bleed-damage.html"
@@ -223,7 +252,8 @@ def score(args):
     rep = score_key(key, parse_answers(args.answers))
     for r in rep["trials"]:
         print(f"{r['trial']} {r['kind']:5s} {r['slug']} held {r['held']} removed {r['bleed_removed_db']} dB: "
-              f"picked {r['pick']} -> {r['names']} {r['amount'] or ''}")
+              f"picked {r['pick']} -> {r['names']} {r['amount'] or ''} {r['what'] or ''}"
+              f"{' (damage)' if r['damage'] else ''}")
     for k in ("high", "low", NULL):
         print(f"{k}:", rep[k])
     rep["answers"] = args.answers

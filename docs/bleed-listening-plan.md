@@ -34,8 +34,8 @@ record. Its model (`bleed4.py`) predicts the bleed from the other session tracks
   - Both are level-matched to −20 LUFS, with 20 ms fades.
 - **The cleaned clip's letter** is drawn with `random.Random(20261017)`, balanced over the 5
   non-repeat trials (A on 2 or 3, which by a coin; the positions shuffled).
-- **The builder checks** that its held-out gain reproduces the audit's `bleed_db` per half. It
-  records the dB of bleed subtracted (energy of the estimate relative to the original) in the key.
+- **The builder records** its held-out gain beside the audit's `bleed_db` per half (it does not
+  assert they match; the audit of check 1 found they do on every half). It also records the dB of bleed subtracted (energy of the estimate relative to the original) in the key.
 
 ## Questions
 
@@ -82,3 +82,20 @@ are not read. Check 2 (`learn/build_bleed_damage.py`, page `listening/bleed-2/`)
 
 Reading (descriptive): on the high and low trials, how often the cleaned clip is named, the
 hidden original is named, or neither, with the amounts; the null trial as a note on false alarms.
+
+### Amendment 1a (2026-10-16, review of amendment 1, before check 2's sitting)
+
+An independent review approved amendment 1 with three required changes, all made:
+1. **Damage versus less leakage.** On the high trials the cleaned clip really does differ (less
+   bleed), so naming it alone cannot mean damage. A third question asks what differs: the
+   guitar's tone, the background, both, or unsure. A cleaned pick is read as damage only with
+   "tone" or "both". The low trials subtract −30 to −36 dB of the track, so they are near-nulls
+   that test little; they are kept as a false-alarm check.
+2. **Answer parsing** accepts every line the page can emit (`1X-?-?`, `1X-little-?`).
+3. **Blinding in the page source.** The hidden original was byte-identical to "Original". Each
+   clip now carries a random-length mp4 `free` box, and the builder asserts no two clips share
+   bytes.
+
+Caveats declared: level matching to −20 LUFS raises the cleaned guitar by up to about 0.7 dB
+(Gym Hours), which could be heard as "different"; the null trial reuses trial 3's passage. The
+answer line reads like `1X-little-tone 2N 3Y-lot-bg`.

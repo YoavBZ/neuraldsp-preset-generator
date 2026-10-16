@@ -15,13 +15,16 @@ Plan: [bleed-listening-plan.md](bleed-listening-plan.md). One sitting by the use
 ## Reading
 
 - **The bleed is audible** on all 3 high parts, and inaudible on both controls. The repeat
-  matches its control. This confirms the audit's split of which parts carry bleed.
-- **The cleaning is not enough.** Removing about 10–13 dB of modelled bleed left it audible
-  every time. Whether it damages the guitar is not read from this sitting: the damage question
+  matches its control (a weak consistency check: it was drawn from a low control, so "neither"
+  on both is an easy match). This agrees with the audit's split of which parts carry bleed.
+- **This cleaning left audible leakage on all 3 high parts.** It subtracts a linear bleed
+  estimate at about −10 to −13 dB of the track, below 12 kHz only (nothing above, so cymbal and
+  drum-air bleed stays). Whether it *reduced* the leakage was not asked. Whether it damages the guitar is not read from this sitting: the damage question
   had no known reference (plan amendment 1), so it is re-asked in check 2.
 - **So the high-bleed parts are not isolated guitar records,** even after this cleaning. Results
   that matter should keep reporting the no-high-bleed row beside the all-parts row (the audit
-  found arm A's results hold without them: −0.094 against −0.083). Experiment 1c's report
+  found arm A's results hold without the high-bleed halves: −0.085 against −0.083 for the shrunk
+  3-C′ recipe, and −0.082 against −0.078 for plain arm A). Experiment 1c's report
   carries these rows.
 - **Not adopted:** the model-based cleaning as a step. A stronger route (a real separator on
   the amp track, or dropping high-bleed parts from training records) is open.
