@@ -91,7 +91,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      - Both are lower bounds: the search falls short.
    - **So everything below, which ranked the menu, measured the menu's limit, not the
      plugin's.** The work since then follows the [ML plan](research/ml-plan-2026-10.md),
-     approved by the user on 2026-10-14. It has a 200k render limit, with knob ceiling counted.
+     approved by the user on 2026-10-14. Since 2026-10-16 it has no fixed render limit: each step
+     stops rendering by a declared, evidence-based stopping rule (decision 2).
 
    **Where the ML plan stands (2026-10-16):**
    - **Done:**
@@ -140,13 +141,14 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      - [Fine-structure retrain](di-fine-structure-results.md): fixes gap fill and treble, but no
        steering gain shown.
      - The DAC codec route is open.
-   - **Renders:** about 147k actual of the 200k limit; arm B's plan takes it to about 165k. The
-     user is asked before passing 200k.
+   - **Renders:** about 147k used so far. No fixed limit (2026-10-16): each step plan declares
+     when to stop rendering from its own evidence (a flattened search curve, a learning curve that
+     stops improving, an interval narrow enough to answer the question), and reports what it
+     used.
    - **Open user decisions:**
      - arm B's optional extras (a reseeded B1, B2a, B0 best-of-8);
      - arm C's start from B (offered only if B1 or B2 wins);
-     - Tone King for step 2;
-     - anything past 200k renders.
+     - Tone King for step 2.
    - **Then:** step 5 (optimiser comparison), step 6, and finally step 7, the pooled held-out
      test.
    - **Running in parallel (one Mac: the MPS GPU, 8 CPU cores, 32 GB):**
@@ -571,4 +573,5 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-16 | No arbitrary pass/fail bars: report effect sizes with intervals, choose the best estimate, learn from any improvement (A, B, C) | memory and plans from this date |
 | 2026-10-16 | Arm A's current best: a 52-render rebuilt-DI search shrunk halfway to S (−0.083 [−0.135, −0.032]) | [arm A levers](arm-a-levers-results.md) |
 | 2026-10-16 | Arm B: diagnostics done; sound-space retraining (B1, B2) approved, scored on step 3's songs too | [diagnostics](song-to-settings-diagnostics-results.md), [plan](song-to-settings-soundspace-plan.md) |
+| 2026-10-16 | ML plan decision 2 revised: no fixed render limit; each step stops rendering by a declared, evidence-based stopping rule (search curve flattened, learning curve no longer improving, interval narrow enough) and reports renders used | [ML plan](research/ml-plan-2026-10.md), section 3 |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |
