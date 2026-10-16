@@ -377,3 +377,10 @@ was declared, what was measured, and the research behind it.
     stage can't draw the detail, a zero-initialised full-rate head is tried before the loss route
     is called failed. A DAC-latent route only if its zero-training ceiling check passes. Fold 3
     first, gated on the known-target control. Research, not a declared plan.
+11. [song-to-settings-rethink-2026-10.md](research/song-to-settings-rethink-2026-10.md): why
+    step 3's arm B (a direct song-to-settings model) failed and what to try instead (October
+    2026). "Many settings sound alike" fits the literature but can't explain the failure alone,
+    because arm B also failed its positive control on renders. Score its existing samples in
+    sound space first (best-of-K against random and jittered baselines, a direct sound-alike
+    test), then an isolated-DI retrain, then one branch chosen by those results. Research, not a
+    declared plan.
