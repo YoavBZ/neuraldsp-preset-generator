@@ -263,6 +263,10 @@ was declared, what was measured, and the research behind it.
   current best is a 52-render search shrunk halfway to S (−0.083 [−0.135, −0.032]). The rebuild
   has no usable local ranking near S. Artefacts are in
   [audits/arm-a-2026-10-16](audits/arm-a-2026-10-16/README.md).
+- [local-objective-plan.md](local-objective-plan.md): step 0 and experiment 1 of the
+  local-objective research. It separates the four differences between the rebuilt and true
+  objectives on a 14-band local set with saved audio (about 7.1k renders). Declared 2026-10-16;
+  not yet run.
 - [song-to-settings-diagnostics-plan.md](song-to-settings-diagnostics-plan.md) →
   [results](song-to-settings-diagnostics-results.md): arm B has signal on renders but hedges
   toward mid-range on records.

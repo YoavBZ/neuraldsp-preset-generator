@@ -1699,6 +1699,46 @@
    "gate": "None: descriptive. Eligible: held-half |log(d_armA/d_S)| >= 0.03 (favours audible differences; judge sign reported per trial). Quotas PR12 3, SW50R 3, AC20 2; one catch trial (A = B = S) used only to describe consistency, never to discard answers. Reading: arm A's share of trials answered A or B with an exact binomial 90% interval ('same' reported separately, and the share with 'same' as not-arm-A); agreement with the judge's sign; per amp",
    "renders": "26 (8 x warm-up, S, arm A; catch: warm-up, S), one CPU process, knob_ceiling.Renderer (isolate=True)",
    "outcome": null
+  },
+  {
+   "test_id": "local-objective",
+   "plan": "docs/local-objective-plan.md",
+   "entered": "2026-10-16, before any render; not yet independently reviewed; renders only on the user's yes",
+   "repeat_use": "Further post-hoc, unblinded development use of step 3's 24 scored parts / 142 directions (uses so far: knob ceiling, knob ceiling 2, label table, step 3, arm A levers, the soundspace plan, the K_S ceiling extension, the arm A listening test), and about the fifth use of fold 3's 5 parts (step 3, experiment 4, the levers' experiments 2 and 2b, now this). Re-renders settings drawn from the stored K_S and arm A searches (replayed with zero renders) plus S's +-1/8 neighbourhood; the held halves were read by earlier steps, so every figure is a development reading, not a fresh estimate. Step 0's diagnostics re-read 2b's stored local files and the stored searches. A fix that is to ship is scored on a fresh draw of parts outside the 24 first",
+   "parts": [
+    "cambridge-Drag_Me_Down-ElecGtr4",
+    "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1",
+    "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+    "cambridge-Passing_Ships-ElecGtr6",
+    "cambridge-Prodigal-ElecGtr5",
+    "cambridge-Quicksand-ElecGtr1",
+    "cambridge-Signs-ElecGtr2",
+    "cambridge-Today's_The_Day-ElecGtr10",
+    "cambridge-colour-me-red-elecgtr01",
+    "cambridge-femme-elecgtr3",
+    "cambridge-get-out-of-bed-elecgtr1",
+    "cambridge-just-don-t-talk-elecgtr3",
+    "cambridge-magilla-elecgtr1dt",
+    "telefunken-Blind_Spots-GTR",
+    "telefunken-Bloomlight-GTR",
+    "telefunken-Farthest_Step-GTR",
+    "telefunken-First_Offering-GTR_1",
+    "telefunken-First_Offering-GTR_2",
+    "telefunken-Fragments-GTR",
+    "telefunken-Gym_Hours-GTR_1",
+    "telefunken-Long_Way_Home-GTR",
+    "telefunken-Russian_Cream-GTR_2",
+    "telefunken-Sculptor's_Request-GTR_1",
+    "telefunken-Sculptor's_Request-GTR_2"
+   ],
+   "bands": "step 3's 14 bands (Honey excluded: the judge refuses its half B); step 0a: cambridge-just-don-t-talk-elecgtr3 only; step 0b's 2b rows and the DAC-9 add-on: fold 3's 5 parts in 3 bands",
+   "audio_only": "none beyond the listed parts' crops (reference.wav, di.wav -> measure DI), their stored stems and C' rebuilds (song-settings/rebuilt/<part>.npy)",
+   "seeds": "Sigma: K_S draw random.Random('20261032|<part>|<amp>'), arm A draw random.Random('20261033|<part>|<amp>'); Sigma hashes to ee91f710947dbb5c (computed with zero renders 2026-10-16; `sigma` refuses any other). Nothing else random (sorted cells, shards i::3, fixed render order)",
+   "gate": "None (the user's rule of 2026-10-16): effect sizes with 90% band-clustered intervals (t, bands - 1 df) over part means. Primary: same-half local Spearman (pairwise-finite) of each scoring configuration (DI {C', measure} x reference {stem, reference.wav} x lag {-52, judge_lag, 0} x mask {own DI, record}) against the true d (measure/reference/judge_lag/own), the C' corner as headline, others cell-paired against it. Co-primary: reliable-pair accuracy (pairs whose true order agrees on both halves). Ceiling: the true d's cross-half Spearman; every configuration also cross-half against it. Decision-relevant contrast: measure/stem/judge_lag/own. Decomposition: one change at a time from the current objective and from the truth, main effects and DI x reference. Secondary: per-knob 3-way neighbourhood agreement and regret (input gain first), neighbourhood pick regret, partial Spearman given input gain, concordance by pair class, refusals-ranked-worst Spearman, fallbacks. Part-weighted, LOBO, per amp and class descriptive; crunch descriptive",
+   "stopping": "Step 0a: fixed (5 renders; 5 more on the SW50R only if not exact). Experiment 1: a fixed set, declared: every one of the 72 cells is needed for 14-band power (MDE 0.71 sigma_d at 14 bands vs 2.30 at 3), and a measurement has no curve to flatten; only breakage stops it (true-d corner beyond 0.005 log against K_S's stored values, disk guard 31 GB, swap guard, live S differing from the stored copy). DAC-9 add-on: fixed, same reason",
+   "renders": "Step 0a: 5 (10 with the follow-up). Experiment 1: 2 x 3,456 + 144 warm-ups = 7,056, about 1.4 h at 3 processes (about 5k/h), then about 1.2 h CPU scoring on 3 workers. Optional DAC-9 add-on (fold 3, on the user's yes): 15 x 48 + 15 = 735. Renders used are reported per DI from the cell records. knob_ceiling.Renderer (isolate=True); <= 3 render processes machine-wide. Disk: 16-bit FLAC, measured 0.48 MB mean / 0.68 MB max per render, so 3.4-4.8 GB (+0.35-0.5 GB DAC); guard 31 GB free",
+   "limits": "14 bands, 24 parts (19 clean); Sigma mixes K_S points (where the true search goes), arm A points (where the rebuild goes) and S's neighbourhood (the only design-balanced part); one separator and one net (C'); lag levels are literal values; the truth is the judge, not listening; refusals score inf (pairwise drops them, ranked-worst reported); step 0a on one cell; step 0b's 2b rows are 3 bands, descriptive",
+   "outcome": null
   }
  ]
 }
