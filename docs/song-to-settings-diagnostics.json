@@ -1,0 +1,41 @@
+{
+ "setup": {
+  "preflight_repeat_ok": true,
+  "target_repeat_ok": true,
+  "targets_dropped_repeat": [
+   "11",
+   "47",
+   "64",
+   "66"
+  ],
+  "folds_short": {},
+  "parity_ok": true,
+  "passes": true
+ },
+ "trigger_row": 7,
+ "trigger": "both views fail, between: experiment 2 read on its own",
+ "collapse_flag": true,
+ "flat": {
+  "pr12": [
+   "cabParameters/rightCabDistance",
+   "cabParameters/rightCabMicLevel",
+   "cabParameters/rightCabPosition"
+  ],
+  "sw50r": [
+   "cabParameters/rightCabDistance",
+   "cabParameters/rightCabPosition"
+  ],
+  "ac20": []
+ },
+ "status": {
+  "R1:1a": "fail",
+  "R2:1a": "fail",
+  "R2k4:1a": "fail",
+  "R1:1b": "fail",
+  "R2:1b": "fail",
+  "R2k4:1b": "fail"
+ },
+ "R3": false,
+ "landscape": "between",
+ "label_sampling_flag": false
+}
