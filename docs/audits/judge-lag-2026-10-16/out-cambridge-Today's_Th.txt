@@ -1,0 +1,61 @@
+== cambridge-Today's_The_Day-ElecGtr10  stored judge_lag=620 (+52=672)
+  ref~rawDI      bl   top: [(695, 0.466), (670, 0.398), (310, 0.235)]
+  ref~rawDI      phat top: [(694, 0.031), (669, 0.023), (851, 0.008)]
+  ref~measDI     bl   top: [(695, 0.391), (670, 0.333), (310, 0.187)]
+  ref~measDI     phat top: [(694, 0.031), (669, 0.023), (851, 0.008)]
+  measDI~rawDI   bl   top: [(0, 0.843), (-546, 0.347), (546, 0.347)]
+  measDI~rawDI   phat top: [(0, 0.08), (-42, 0.011), (42, 0.011)]
+  ref~render[ac20]       bl top: [(625, 0.402), (262, 0.221), (600, 0.199)]
+  render~measDI[ac20]    bl top: [(71, 0.412), (46, 0.264), (433, 0.187)]
+  ref~render[pr12]       bl top: [(626, 0.434), (601, 0.315), (263, 0.245)]
+  render~measDI[pr12]    bl top: [(69, 0.468), (44, 0.218), (432, 0.217)]
+  ref~render[sw50r]      bl top: [(626, 0.422), (601, 0.296), (263, 0.242)]
+  render~measDI[sw50r]   bl top: [(70, 0.459), (45, 0.233), (432, 0.217)]
+cambridge-Today's_The_Day-ElecGtr10    ac20  K_S-A stored A=4.4958 B=4.7289 | gcc=625
+     stored         lag=  620  A=4.4958  B=4.7289
+     gcc            lag=  625  A=4.4964  B=4.7286
+     stored-25      lag=  595  A=4.4947  B=4.7311
+     stored+25      lag=  645  A=4.4989  B=4.7290
+     stored-100     lag=  520  A=4.5001  B=4.7454
+     stored+100     lag=  720  A=4.5184  B=4.7418
+     reviewer(-54)  lag=  -54  A=4.7729  B=5.1302
+cambridge-Today's_The_Day-ElecGtr10    ac20  K_M-A stored A=4.2885 B=4.3957 | gcc=623
+     stored         lag=  620  A=4.2885  B=4.3957
+     gcc            lag=  623  A=4.2891  B=4.3959
+     stored-25      lag=  595  A=4.2861  B=4.3957
+     stored+25      lag=  645  A=4.2932  B=4.3975
+     stored-100     lag=  520  A=4.2913  B=4.4129
+     stored+100     lag=  720  A=4.3171  B=4.4198
+     reviewer(-54)  lag=  -54  A=4.5992  B=4.8605
+cambridge-Today's_The_Day-ElecGtr10    pr12  K_S-A stored A=4.0008 B=3.9497 | gcc=626
+     stored         lag=  620  A=4.0008  B=3.9497
+     gcc            lag=  626  A=4.0020  B=3.9497
+     stored-25      lag=  595  A=3.9973  B=3.9511
+     stored+25      lag=  645  A=4.0055  B=3.9525
+     stored-100     lag=  520  A=4.0031  B=3.9685
+     stored+100     lag=  720  A=4.0321  B=3.9728
+     reviewer(-54)  lag=  -54  A=4.4116  B=4.4802
+cambridge-Today's_The_Day-ElecGtr10    pr12  K_M-A stored A=3.8872 B=3.9481 | gcc=627
+     stored         lag=  620  A=3.8872  B=3.9481
+     gcc            lag=  627  A=3.8897  B=3.9493
+     stored-25      lag=  595  A=3.8810  B=3.9451
+     stored+25      lag=  645  A=3.8960  B=3.9537
+     stored-100     lag=  520  A=3.8754  B=3.9500
+     stored+100     lag=  720  A=3.9331  B=3.9862
+     reviewer(-54)  lag=  -54  A=4.1462  B=4.3830
+cambridge-Today's_The_Day-ElecGtr10    sw50r K_S-A stored A=4.2618 B=4.2804 | gcc=626
+     stored         lag=  620  A=4.2618  B=4.2804
+     gcc            lag=  626  A=4.2634  B=4.2813
+     stored-25      lag=  595  A=4.2588  B=4.2769
+     stored+25      lag=  645  A=4.2679  B=4.2887
+     stored-100     lag=  520  A=4.2576  B=4.2805
+     stored+100     lag=  720  A=4.2990  B=4.3253
+     reviewer(-54)  lag=  -54  A=4.6038  B=4.7286
+cambridge-Today's_The_Day-ElecGtr10    sw50r K_M-A stored A=3.9723 B=4.0706 | gcc=610
+     stored         lag=  620  A=3.9723  B=4.0706
+     gcc            lag=  610  A=3.9705  B=4.0685
+     stored-25      lag=  595  A=3.9676  B=4.0661
+     stored+25      lag=  645  A=3.9804  B=4.0756
+     stored-100     lag=  520  A=3.9659  B=4.0707
+     stored+100     lag=  720  A=4.0115  B=4.1009
+     reviewer(-54)  lag=  -54  A=4.2689  B=4.4928

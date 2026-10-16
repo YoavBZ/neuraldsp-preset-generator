@@ -1,0 +1,61 @@
+== cambridge-Drag_Me_Down-ElecGtr4  stored judge_lag=914 (+52=966)
+  ref~rawDI      bl   top: [(968, 0.535), (678, 0.522), (1551, 0.519)]
+  ref~rawDI      phat top: [(968, 0.038), (992, 0.018), (926, 0.011)]
+  ref~measDI     bl   top: [(968, 0.507), (678, 0.491), (1551, 0.488)]
+  ref~measDI     phat top: [(968, 0.038), (992, 0.018), (926, 0.011)]
+  measDI~rawDI   bl   top: [(0, 0.906), (-871, 0.588), (871, 0.588)]
+  measDI~rawDI   phat top: [(0, 0.077), (-42, 0.011), (42, 0.011)]
+  ref~render[ac20]       bl top: [(913, 0.54), (606, 0.494), (2076, 0.492)]
+  render~measDI[ac20]    bl top: [(54, 0.653), (925, 0.481), (1218, 0.442)]
+  ref~render[pr12]       bl top: [(900, 0.548), (28, 0.502), (609, 0.5)]
+  render~measDI[pr12]    bl top: [(51, 0.676), (922, 0.479), (-821, 0.469)]
+  ref~render[sw50r]      bl top: [(916, 0.574), (609, 0.523), (2079, 0.5)]
+  render~measDI[sw50r]   bl top: [(70, 0.579), (1215, 0.433), (922, 0.423)]
+cambridge-Drag_Me_Down-ElecGtr4        ac20  K_S-A stored A=2.9670 B=2.9530 | gcc=913
+     stored         lag=  914  A=2.9670  B=2.9530
+     gcc            lag=  913  A=2.9670  B=2.9530
+     stored-25      lag=  889  A=2.9680  B=2.9524
+     stored+25      lag=  939  A=2.9696  B=2.9567
+     stored-100     lag=  814  A=2.9905  B=2.9705
+     stored+100     lag= 1014  A=2.9982  B=2.9867
+     reviewer(-54)  lag=  -54  A=3.4870  B=3.4533
+cambridge-Drag_Me_Down-ElecGtr4        ac20  K_M-A stored A=2.9509 B=2.9471 | gcc=914
+     stored         lag=  914  A=2.9509  B=2.9471
+     gcc            lag=  914  A=2.9509  B=2.9471
+     stored-25      lag=  889  A=2.9519  B=2.9468
+     stored+25      lag=  939  A=2.9534  B=2.9505
+     stored-100     lag=  814  A=2.9743  B=2.9663
+     stored+100     lag= 1014  A=2.9819  B=2.9800
+     reviewer(-54)  lag=  -54  A=3.4581  B=3.4415
+cambridge-Drag_Me_Down-ElecGtr4        pr12  K_S-A stored A=3.2148 B=3.2159 | gcc=900
+     stored         lag=  914  A=3.2148  B=3.2159
+     gcc            lag=  900  A=3.2172  B=3.2172
+     stored-25      lag=  889  A=3.2193  B=3.2185
+     stored+25      lag=  939  A=3.2122  B=3.2151
+     stored-100     lag=  814  A=3.2401  B=3.2337
+     stored+100     lag= 1014  A=3.2150  B=3.2232
+     reviewer(-54)  lag=  -54  A=3.6105  B=3.5750
+cambridge-Drag_Me_Down-ElecGtr4        pr12  K_M-A stored A=3.1141 B=3.1254 | gcc=901
+     stored         lag=  914  A=3.1141  B=3.1254
+     gcc            lag=  901  A=3.1158  B=3.1265
+     stored-25      lag=  889  A=3.1176  B=3.1279
+     stored+25      lag=  939  A=3.1123  B=3.1244
+     stored-100     lag=  814  A=3.1361  B=3.1432
+     stored+100     lag= 1014  A=3.1162  B=3.1331
+     reviewer(-54)  lag=  -54  A=3.4884  B=3.4816
+cambridge-Drag_Me_Down-ElecGtr4        sw50r K_S-A stored A=3.1073 B=3.0572 | gcc=916
+     stored         lag=  914  A=3.1073  B=3.0572
+     gcc            lag=  916  A=3.1072  B=3.0572
+     stored-25      lag=  889  A=3.1098  B=3.0570
+     stored+25      lag=  939  A=3.1077  B=3.0597
+     stored-100     lag=  814  A=3.1316  B=3.0728
+     stored+100     lag= 1014  A=3.1274  B=3.0839
+     reviewer(-54)  lag=  -54  A=3.5790  B=3.5112
+cambridge-Drag_Me_Down-ElecGtr4        sw50r K_M-A stored A=3.0398 B=2.9622 | gcc=916
+     stored         lag=  914  A=3.0398  B=2.9622
+     gcc            lag=  916  A=3.0395  B=2.9621
+     stored-25      lag=  889  A=3.0442  B=2.9647
+     stored+25      lag=  939  A=3.0372  B=2.9618
+     stored-100     lag=  814  A=3.0703  B=2.9835
+     stored+100     lag= 1014  A=3.0449  B=2.9750
+     reviewer(-54)  lag=  -54  A=3.5323  B=3.4200

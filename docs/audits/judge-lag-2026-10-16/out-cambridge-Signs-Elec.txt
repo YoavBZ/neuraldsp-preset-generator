@@ -1,0 +1,61 @@
+== cambridge-Signs-ElecGtr2  stored judge_lag=-26 (+52=26)
+  ref~rawDI      bl   top: [(83, 0.842), (107, 0.733), (58, 0.718)]
+  ref~rawDI      phat top: [(50, 0.029), (78, 0.013), (-39, 0.011)]
+  ref~measDI     bl   top: [(83, 0.816), (107, 0.717), (58, 0.702)]
+  ref~measDI     phat top: [(50, 0.029), (78, 0.013), (-39, 0.01)]
+  measDI~rawDI   bl   top: [(0, 0.973), (24, 0.79), (-25, 0.778)]
+  measDI~rawDI   phat top: [(0, 0.079), (42, 0.011), (-42, 0.01)]
+  ref~render[ac20]       bl top: [(-31, 0.768), (-56, 0.608), (-7, 0.55)]
+  render~measDI[ac20]    bl top: [(113, 0.799), (137, 0.665), (88, 0.644)]
+  ref~render[pr12]       bl top: [(-119, 0.705), (-144, 0.627), (9, 0.605)]
+  render~measDI[pr12]    bl top: [(204, 0.739), (82, 0.732), (228, 0.642)]
+  ref~render[sw50r]      bl top: [(-113, 0.757), (-89, 0.627), (-138, 0.62)]
+  render~measDI[sw50r]   bl top: [(198, 0.805), (222, 0.664), (173, 0.654)]
+cambridge-Signs-ElecGtr2               ac20  K_S-A stored A=3.1047 B=4.1996 | gcc=-31
+     stored         lag=  -26  A=3.1047  B=4.1996
+     gcc            lag=  -31  A=3.1052  B=4.1998
+     stored-25      lag=  -51  A=3.1086  B=4.2016
+     stored+25      lag=   -1  A=3.1047  B=4.1996
+     stored-100     lag= -126  A=3.1380  B=4.2192
+     stored+100     lag=   74  A=3.1277  B=4.2148
+     reviewer(-54)  lag=  -54  A=3.1092  B=4.2019
+cambridge-Signs-ElecGtr2               ac20  K_M-A stored A=3.1439 B=4.2765 | gcc=-30
+     stored         lag=  -26  A=3.1439  B=4.2765
+     gcc            lag=  -30  A=3.1443  B=4.2767
+     stored-25      lag=  -51  A=3.1484  B=4.2787
+     stored+25      lag=   -1  A=3.1431  B=4.2762
+     stored-100     lag= -126  A=3.1802  B=4.2978
+     stored+100     lag=   74  A=3.1651  B=4.2897
+     reviewer(-54)  lag=  -54  A=3.1493  B=4.2791
+cambridge-Signs-ElecGtr2               pr12  K_S-A stored A=3.1087 B=3.6893 | gcc=-119
+     stored         lag=  -26  A=3.1087  B=3.6893
+     gcc            lag= -119  A=3.1671  B=3.7475
+     stored-25      lag=  -51  A=3.1197  B=3.7021
+     stored+25      lag=   -1  A=3.1009  B=3.6789
+     stored-100     lag= -126  A=3.1730  B=3.7529
+     stored+100     lag=   74  A=3.0970  B=3.6672
+     reviewer(-54)  lag=  -54  A=3.1213  B=3.7038
+cambridge-Signs-ElecGtr2               pr12  K_M-A stored A=3.1619 B=3.7621 | gcc=-16
+     stored         lag=  -26  A=3.1619  B=3.7621
+     gcc            lag=  -16  A=3.1587  B=3.7586
+     stored-25      lag=  -51  A=3.1722  B=3.7727
+     stored+25      lag=   -1  A=3.1550  B=3.7536
+     stored-100     lag= -126  A=3.2171  B=3.8142
+     stored+100     lag=   74  A=3.1590  B=3.7441
+     reviewer(-54)  lag=  -54  A=3.1736  B=3.7739
+cambridge-Signs-ElecGtr2               sw50r K_S-A stored A=3.2042 B=3.8539 | gcc=-113
+     stored         lag=  -26  A=3.2042  B=3.8539
+     gcc            lag= -113  A=3.2422  B=3.8865
+     stored-25      lag=  -51  A=3.2112  B=3.8606
+     stored+25      lag=   -1  A=3.2006  B=3.8492
+     stored-100     lag= -126  A=3.2514  B=3.8928
+     stored+100     lag=   74  A=3.2072  B=3.8514
+     reviewer(-54)  lag=  -54  A=3.2121  B=3.8617
+cambridge-Signs-ElecGtr2               sw50r K_M-A stored A=3.0521 B=3.8956 | gcc=-23
+     stored         lag=  -26  A=3.0521  B=3.8956
+     gcc            lag=  -23  A=3.0527  B=3.8956
+     stored-25      lag=  -51  A=3.0497  B=3.8962
+     stored+25      lag=   -1  A=3.0582  B=3.8964
+     stored-100     lag= -126  A=3.0678  B=3.9080
+     stored+100     lag=   74  A=3.0913  B=3.9108
+     reviewer(-54)  lag=  -54  A=3.0497  B=3.8963
