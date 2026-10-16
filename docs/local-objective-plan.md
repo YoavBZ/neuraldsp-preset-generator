@@ -16,6 +16,8 @@ required changes, all folded in as [amendment 1](#amendment-1-2026-10-16-before-
 any render. Where the amendment and the sections below differ, the amendment governs. Nothing
 renders before the user's yes. Experiment 1 has run ([results](local-objective-results.md)).
 [Amendment 2](#amendment-2-2026-10-16-before-any-1b-render) adds experiment 1b, the matched cell.
+[Amendment 3](#amendment-3-2026-10-16-before-any-1c-separation-or-render) adds experiment 1c, a real
+separator (Mega-53) in 1b's matched design. It is a draft, not yet reviewed.
 
 ## Why
 
@@ -593,3 +595,169 @@ A quick review approved 1b with four changes, all made in code and tested:
    float render and stored with the cell; scoring compares the FLAC score with it (|log| per half),
    and `report-1b` gives the count, the largest and the number beyond 0.005.
 
+
+## Amendment 3 (2026-10-16, before any 1c separation or render)
+
+Experiment 1c: a real separator in 1b's matched design. Declared after 1b's audited readout
+([results](local-objective-results.md), experiment 1b), before any separation or render. Same rules:
+no pass/fail bars, a declared stopping rule, renders reported. **Status: a draft; it needs a review
+and the user's yes before anything runs.**
+
+**Why.**
+- 1b showed that a perfect separator (the amp track) feeding both C′'s rebuild and the reference
+  lifts the cross-half local Spearman from 0.289 to 0.541: **+0.252 [0.139, 0.365]**.
+- 1c asks how much of that gain a real, better separator recovers.
+- **The separator:** Mega-53's `electric-guitar` head, already on disk (`~/ndsp-presets/tools/msst/`,
+  approved by the user on 2026-10-15; MIT repo, no separate weights licence).
+  - On the 2026-10-08 test it gained +0.5 to +0.6 dB paired SNR over htdemucs_6s, almost all of it
+    on single-guitar parts. 18 of the 24 parts here are multi-guitar.
+  - In the separator screen, its real-song coherence was higher on all 5 parts. Through C′ (m_both),
+    the two separators could not be told apart on 10 cells.
+
+**What runs.**
+
+1. **Separation** (`$MSST_PY -m learn.local_objective_1c separate`; CPU only, alone, zero renders).
+   - **The input is exactly what step 3's htdemucs stem got:**
+     `<stems>/_work/contexts/<part>/mix_instrumental.wav`, for set 3 (`learn/set3/stems`, 5 parts)
+     and sets 1–2 (`learn/poc/stems`, 19 parts).
+     - That is about 30 s: the crop − 10 s to the crop + 10 s, shifted inside the session.
+     - The crop's 10 s are cut at `crop_offset_in_context`.
+     - A set-3 context not rebuilt exactly would fall back to the 10-s crop, as
+       `_work/separate_demucs.py` did. None of the 24 does, and a test checks it.
+   - **The separator:** `separator_screen.MsstSeparator`, as in the screen.
+     - It checks the provenance hashes and commit ea7eb9c.
+     - It is pruned to the one head, because the screen's identity check was exact.
+     - CPU, 4 threads, `PYTORCH_ENABLE_MPS_FALLBACK=0`.
+     - 48 → 44.1 kHz, `demix`, the `electric-guitar` stem, channel mean, back to 48 kHz.
+   - **Checks per part.** If any part fails, `separate` stops and records why
+     (`sep/mega53/check.json`), and `rebuild` refuses to start:
+     - the input's crop slice equals the crop file (under 1e-6, the stem builders' check);
+     - the crop is 480,000 samples;
+     - **its timing:** GCC(Mega-53 crop, the htdemucs stem) is within ±3 samples.
+   - **Logged (descriptive):**
+     - both stems' gain-fitted SNR against `reference.wav`;
+     - Mega-53's level above 6 kHz relative to htdemucs;
+     - on the screen's 5 parts, the largest difference from the screen's Mega-53 stems.
+   - **The memory gate.** Mega-53 loads only when all of these hold:
+     - no render process from the cap's list is running, and no render server;
+     - no MPS training job (`-m learn.<module> train|fit`) and no other separation is running;
+     - at least **18 GB** is available (free + inactive + speculative pages). The screen peaked at
+       17.1 GB with the full and pruned models both loaded; the pruned head alone peaked at 7.2 GB.
+   - It waits for the gate (or exits with `--no-wait`). If anything that blocks it starts between
+     parts, it stops; the run resumes per part. The screen's swap guard (256 MB) stays.
+   - In turn, `render` now waits while any separation runs.
+2. **The rebuild** (`$TORCH_PY -m learn.local_objective_1c rebuild --sep mega53`; CPU, zero renders).
+   - It is exactly 1b's: the fold's final C′ (DONE marker), the leak assertion, re-EQ'd by fold 2's
+     average − fold f's, at −22.9 LUFS. 1b's `rebuild-ref` now calls the same function.
+   - **Amendment 2a's checks:** within 3 samples of C′'s stem rebuild (GCC), and at −22.9 LUFS
+     within 0.05. `render --di cprime_mega53` refuses to start until all 24 pass
+     (`rebuilt-mega53/check.json`).
+   - Logged: GCC against the Mega-53 crop, against `reference.wav` and against C′'s stem rebuild.
+3. **Renders:** the frozen Σ (hash `ee91f710947dbb5c`) through the rebuild. That is 72 × 48 + 72
+   warm-ups = **3,528 renders**, as 1b. Its guards are 1b's:
+   - S against the cell's warm-up at S, within 0.005 (log);
+   - S's float score stored for the FLAC check;
+   - the shared `STOP.json`, the disk guard (all shards counted at the start), the swap guard and
+     the 3-process cap.
+4. **Scoring** (CPU, from the 16-bit FLACs): `score --di cprime_mega53,cprime@mega53`.
+   - **mega53-matched (the declared configuration):** C′'s rebuild of the Mega-53 crop, scored
+     against that crop at C′'s native lag (−52). It uses its own mask and the C′ fallback (the crop,
+     moved into DI time, as amendment 1).
+   - **Three diagnostics:**
+     - **gcc lag:** −52 − GCC(rebuild, the Mega-53 crop);
+     - **rebuild only:** the same renders scored against the htdemucs stem;
+     - **reference only,** with zero renders (`cprime@mega53`): experiment 1's C′ FLACs rescored
+       against the Mega-53 crop.
+   - The truth, today's objective and 1b's matched cell are the stored scores of experiments 1 and
+     1b.
+
+**Report (`report --sep mega53`, zero renders).** It covers all of Σ, its three subsets (S's
+neighbourhood, the K_S points, the arm A points) and all of Σ without the arm A points, and it is
+given per band. It reports:
+- **mega53-matched:** the cross-half local Spearman, reliable-pair accuracy and same-half, with the
+  ceiling beside them;
+- **mega53 − current,** cell-paired (cross-half and reliable-pair accuracy). This is the primary
+  contrast;
+- **the share of 1b's separator gain recovered:** (mega53 − current) / (1b − current).
+  - It is band-weighted, on the cells with both, with **Fieller's 90% interval** (t, bands − 1 df).
+    That is the ratio's analogue of the band-clustered interval.
+  - The interval is unbounded where 1b's own gain is undecided (as near S: +0.085 [−0.03, +0.20]).
+  - The leave-one-band-out range is given beside it;
+- mega53 − 1b;
+- **the decomposition:** reference only − current, rebuild only − current, and mega53 − reference
+  only;
+- per band: mega53, current, 1b, the ceiling and both differences;
+- the stems' SNRs, the gcc-lag diagnostic, the renders used against the 3,528 expected, and FLAC
+  against float.
+
+**Reading (estimates only, declared now),** on mega53 − current, cross-half, all of Σ:
+- **above** (the 90% interval is above 0): Mega-53 recovers part of the separator's share, and the
+  share with its interval says how much. **The product path is to switch the separator,** after a
+  fresh-draw check on parts outside the 24. That decision also weighs its cost: about 81–102 s per
+  30-s context on the CPU, against htdemucs's 15 s.
+- **near zero** (the interval contains 0, and its top recovers less than a quarter of 1b's gain,
+  about 0.063): Mega-53 isn't better for this purpose.
+- **below** (the interval is under 0): it is worse for this purpose.
+- **undecided** otherwise. That is the likely reading for a small effect: 1b's interval half-width
+  was 0.11.
+- As 2a: there is no reading unless the set is complete, with **72 cells and exactly 3,528
+  renders**.
+- The subsets are descriptive. The arm A subset carries the winner's curse, so "without arm A" is
+  the robustness row.
+
+**Stopping rule: a fixed set, declared.**
+- 1c is a measurement paired cell by cell with experiments 1 and 1b. Every cell is needed for the
+  14-band interval.
+- **Running fold 3 or set 3 first was considered and rejected.** Fold 3 has 3 bands, where the
+  minimum detectable effect is 2.30 σ_d, against 0.71 σ_d on 14. So a first look at it could only
+  read "undecided".
+- There is no data-dependent stopping and no extension. Only breakage stops it.
+
+**The blend (optional add-on, on the user's yes after the Mega-53 readout).**
+- `blend` (zero renders) builds LP(Mega-53) + (htdemucs − LP(htdemucs)). It uses the screen's
+  filter: a 4th-order Butterworth at 6 kHz, zero-phase.
+- **A deviation from the screen:** step 3's htdemucs stem exists only as its 10-s crop.
+  - So its high band is filtered on the crop; Mega-53's low band is filtered on its 30-s stem
+    before the cut.
+  - The edge effects stay within a few milliseconds of the crop's ends, inside the 0.25-s isolate
+    fade.
+- As in the screen, a part whose relative lag is not 0 gets no blend.
+  - `rebuild --sep blend` refuses unless all 24 have one. The screen stopped magilla on a ±1-sample
+    lag, so this may block the add-on.
+- Then 3,528 more renders (`render --di cprime_blend`), scored and reported the same way
+  (`score --di cprime_blend,cprime@blend`, `report --sep blend`).
+
+**Disk.**
+- FLACs: about 1.7–2.5 GB.
+- Stems: 24 × (30 s + 10 s) of float32, about 0.2 GB.
+- Rebuilds: about 0.1 GB.
+- Free space when this amendment was written: 58 GB, against the 31 GB guard.
+
+**Scheduling and run order.**
+1. `separate`, alone, behind the memory gate. The screen measured 80.6–81.4 s per 30-s context
+   (pruned, 4 threads), so about **35 minutes** for 24 parts, with the model load.
+2. `rebuild` (CPU, minutes), after `separate` exits.
+3. `render --di cprime_mega53 --shard i/3`, under the 3-process cap: about **0.7 h** at 5k per hour.
+4. `score --di cprime_mega53,cprime@mega53 --workers 3`, after the renders.
+   - That is 6 judge calls per new render and 2 per rescored C′ render, about 35 CPU-minutes.
+   - So about **0.2–0.3 h** on 3 workers.
+5. `report --sep mega53`, then the readout in `docs/local-objective-results.md`.
+
+| Step | Renders | Hours |
+|---|---|---|
+| 1c separation | 0 | about 0.6 h (CPU, alone) |
+| 1c rebuild | 0 | minutes (CPU) |
+| 1c renders | 3,528 | about 0.7 h at 3 processes |
+| 1c scoring and report | 0 | about 0.2–0.3 h (CPU) |
+| Blend add-on (optional, the user's yes) | 3,528 | about 0.7 h, then about 0.2 h scoring |
+
+**Ledger and limits.**
+- The `local-objective` entry gains `amendment_3`, entered before any 1c separation or render.
+- It is a further unblinded use of the same 24 parts and of experiment 1's Σ, read after
+  experiments 1 and 1b: a development reading, not a fresh estimate.
+- **The limits:**
+  - one real separator and one net (C′, each part's own fold);
+  - **like step 3's stems, it separates the instrumental context** (the record's vocal tracks
+    removed). A product would get the full mix;
+  - the truth is the judge, not listening.
+- Any switch of separator is scored on a fresh draw of parts outside the 24 before it ships.

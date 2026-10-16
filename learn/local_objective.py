@@ -20,6 +20,10 @@ Development only; estimates with 90% band-clustered intervals, no pass/fail bars
     .venv/bin/python -m learn.local_objective report-1b
     # the DAC add-on's extension to the other 57 cells, if the fold-3 reading is undecided (the user's yes):
     dac-prep --all-folds; the DAC round trip; render --di dac9 --all-folds --shard i/3; score --di dac9
+    # experiment 1c, a real separator in 1b's design (amendment 3): separate, rebuild and report are in
+    # learn/local_objective_1c.py; the renders and scores are here:
+    OMP_NUM_THREADS=1 .venv/bin/python -m learn.local_objective render --di cprime_mega53 --shard i/3
+    OMP_NUM_THREADS=1 .venv/bin/python -m learn.local_objective score --di cprime_mega53,cprime@mega53 --workers 3
 
 Σ (experiment 1's settings): per (part, amp) cell, S, its ±1/8 coordinate neighbourhood (switches
 flipped), a seeded draw from both K_S directions' replayed trajectories up to 40, and 8 seeded
@@ -81,12 +85,22 @@ CURRENT = ("cprime", "stem", "native", "own")       # the rebuilt objective arm 
 TRUE = ("measure", "reference", "native", "own")    # the judge through the measure DI (true d)
 DECISIVE = ("measure", "stem", "native", "own")     # the best any DI fix could do with a song's reference
 CHECK_TOL = 0.005                # |log| between a corner and its stored value (knob_ceiling.REPEAT_TOL)
-REBUILT = ("cprime", "cprime_ref")   # DIs judged with rebuilt_distance's fallback (the record as the mask)
+# Amendment 3 (experiment 1c): a real separator feeds both C′'s rebuild and the reference, in 1b's
+# matched design. Each separator's stem crop is a reference ("mega53", "blend"); C′ rebuilt from it
+# is the DI "cprime_<separator>" (`learn/local_objective_1c.py` separates, blends and rebuilds).
+SEPARATORS = ("mega53", "blend")
+SEP_DI = {s: f"cprime_{s}" for s in SEPARATORS}
+REBUILT = ("cprime", "cprime_ref", *SEP_DI.values())   # DIs judged with rebuilt_distance's fallback
 # Amendment 2 (experiment 1b): the matched cell. Each part's fold C′ rebuilds reference.wav (the
 # amp track) instead of the stem, re-EQ'd and levelled as `song_settings.rebuild_all` does, and is
 # scored against reference.wav: the ceiling for any separator with today's C′.
 MATCHED_DI = "cprime_ref"
-REBUILD_SOURCE = {"cprime": "stem", "cprime_ref": "reference"}
+REBUILD_SOURCE = {"cprime": "stem", "cprime_ref": "reference", **{d: s for s, d in SEP_DI.items()}}
+REBUILD_DIR = {"cprime_ref": "rebuilt-ref", **{d: f"rebuilt-{s}" for s, d in SEP_DI.items()}}
+NO_STORED = (MATCHED_DI, "dac9", *SEP_DI.values())   # no stored values: S's repeat is the render check
+# 1c's rescoring of experiment 1's C′ renders against a separator's stem (zero renders): a score
+# "view" name -> (the DI whose renders it reads, its configurations).
+VIEWS = {f"cprime@{s}": ("cprime", (("cprime", s, "native", "own"),)) for s in SEPARATORS}
 MATCHED = ("cprime_ref", "reference", "native", "own")
 MATCHED_GCC = ("cprime_ref", "reference", "gcc", "own")      # diagnostic
 SUBSETS = {"all": ("S", "nbr", "ks", "armA"), "neighbourhood": ("S", "nbr"), "ks": ("ks",), "armA": ("armA",)}
@@ -102,6 +116,9 @@ CAP = 3                          # render processes machine-wide, this one inclu
 RENDERS = (r"-m learn\.song_relabel (render-new|probe)\b", r"-m learn\.ks_extend run\b",
            r"-m learn\.local_objective (render|pregain)\b",
            r"-m learn\.song_soundspace (score-targets|score-songs|c-start)\b")
+# Separations that need the machine to themselves (amendment 3): no render starts beside one.
+SEPARATIONS = (r"-m learn\.local_objective_1c separate\b", r"-m learn\.separator_screen (separate|identity)\b",
+               r"-m learn\.separate\b")
 DISK_GUARD_GB = 31.0             # the ML plan's 30 GB rule, as the other steps apply it
 MB_PER_RENDER = 0.7              # measured: 48 step-0b 10-s 16-bit FLACs, mean 0.48 MB, max 0.68 MB
 PEAK_TO = 0.99
@@ -239,12 +256,22 @@ def configs(di):
     for a rebuild the GCC-aligned lag (4 more)."""
     if di == MATCHED_DI:                                               # amendment 2: two only
         return [MATCHED, MATCHED_GCC]
+    if di in SEP_DI.values():                                          # amendment 3: matched, gcc, rebuild-only
+        s = REBUILD_SOURCE[di]
+        return [(di, s, "native", "own"), (di, s, "gcc", "own"), (di, "stem", "native", "own")]
+    if di in VIEWS:
+        return list(VIEWS[di][1])
     lags = LAGS + (REBUILT_LAGS if di in REBUILT else ())
     return [(di, r, g, m) for r in REFS for g in lags for m in MASKS]
 
 
 def cname(c):
     return "|".join(c)
+
+
+def render_di(d):
+    """The DI whose renders a score name reads: itself, or a view's DI (amendment 3)."""
+    return VIEWS[d][0] if d in VIEWS else d
 
 
 def lag_value(level, di, judge_lag, gcc=None, obj_lag=L.OBJ_LAG):
@@ -297,22 +324,24 @@ def score_render(y, di_name, signals, judge_lag, aligned, gcc=None, halves=K.R.H
       and DAC-9 have no fallback, as `knob_ceiling.judge` has none (the true d).
     - "record" mask, and the fallback: the recording in use, moved into DI time by lag + 52
       (amendment 1; identical to `rebuilt_distance`'s at lag −52).
+    A score view (amendment 3) is scored as its render DI, on the view's configurations.
     A refusal scores inf. -> ({config name: {"A": d, "B": d}}, {config name: fallbacks})."""
     from learn.rebuilt_judge import _ACTIVITY
 
+    base = render_di(di_name)
     out, fb = {}, {}
     for c in configs(di_name):
         if only is not None and c not in only:
             continue
         _, ref, lag, mask = c
         rec, n = signals[ref], 0
-        lg = lag_value(lag, di_name, judge_lag, gcc)
+        lg = lag_value(lag, base, judge_lag, gcc)
         rec_mask = None
         row = {}
         for h, (a, b) in halves.items():
             if mask == "own":
                 d, why = aligned(rec, y, signals["di"], lg, a, b)
-                if d is None and di_name in REBUILT and any(w in (why or "") for w in _ACTIVITY):
+                if d is None and base in REBUILT and any(w in (why or "") for w in _ACTIVITY):
                     rec_mask = in_di_time(rec, lg) if rec_mask is None else rec_mask
                     d, _ = aligned(rec, y, rec_mask, lg, a, b)
                     n += 1
@@ -702,6 +731,17 @@ def cmd_rebuild_ref():
     reference.wav and against C′'s stem rebuild. Before any render (amendment 2a), every part's
     matched rebuild must sit within 3 samples of C′'s stem rebuild (GCC) and at −22.9 LUFS within
     0.05; otherwise the command stops, and `render --di cprime_ref` refuses to start."""
+    from learn import confirm_run as CR
+
+    rebuild_from(MATCHED_DI, lambda slug, part: CR.mono(part["crop"] / "reference.wav"))
+
+
+def rebuild_from(di, source):
+    """C′'s rebuild of `source(slug, part)` (a 10-s crop on the recording's timeline) for every
+    part, into `REBUILD_DIR[di]`, exactly as `cmd_rebuild_ref` (amendment 2) rebuilt reference.wav:
+    the fold's final C′ (DONE marker), experiment 4's leak assertion, re-EQ'd by fold 2's average −
+    fold f's, −22.9 LUFS. Logs GCC against the source, reference.wav and C′'s stem rebuild; the
+    amendment 2a checks (3 samples, 0.05 LU) gate `render --di <di>` through `check.json`."""
     import numpy as np
     import torch
 
@@ -714,7 +754,7 @@ def cmd_rebuild_ref():
 
     ps, fo = K.parts(), SS.folds()
     avg = {f: np.load(SS.MODELS / "cache" / f"average-fold{f}.npy") for f in range(4)}
-    d = OUT / "rebuilt-ref"
+    d = OUT / REBUILD_DIR[di]
     d.mkdir(parents=True, exist_ok=True)
     log_path = d / "rebuild-log.json"
     log = json.loads(log_path.read_text()) if log_path.exists() else {}
@@ -732,28 +772,35 @@ def cmd_rebuild_ref():
             continue
         if f not in nets:
             nets[f] = D.load_model(path).eval()
-        ref = CR.mono(ps[slug]["crop"] / "reference.wav")
-        x = D.rebuild(nets[f], ref.astype(np.float32), device=torch.device("cpu")).astype(np.float64)
+        src = np.asarray(source(slug, ps[slug]))
+        x = D.rebuild(nets[f], src.astype(np.float32), device=torch.device("cpu")).astype(np.float64)
         y = to_lufs(eq_to(x, avg[2] - avg[f]))
         np.save(out, y)
         stem_rb = np.load(SS.OUT / "rebuilt" / f"{slug}.npy")
         n = min(len(y), len(stem_rb))
         g = int(RM.gcc_lag(y[:n], stem_rb[:n]))
-        log[slug] = {"fold": f, "network": str(path), "gcc_vs_reference": gcc_level(y, ref),
-                     "gcc_vs_stem_rebuild": g, "lufs": lufs(y), "problems": rebuild_ref_problems(g, lufs(y))}
+        ref = CR.mono(ps[slug]["crop"] / "reference.wav")
+        log[slug] = {"fold": f, "network": str(path), "source": REBUILD_SOURCE[di], "gcc_vs_source": gcc_level(y, src),
+                     "gcc_vs_reference": gcc_level(y, ref), "gcc_vs_stem_rebuild": g, "lufs": lufs(y),
+                     "problems": rebuild_ref_problems(g, lufs(y))}
         K._atomic(log_path, log)
         print(slug, "fold", f, log[slug], flush=True)
     bad = {s_: v["problems"] for s_, v in log.items() if v.get("problems")}
     missing = [s_ for s_ in ps if s_ not in EXCLUDED and s_ not in log]
     K._atomic(d / "check.json", {"ok": not bad and not missing, "problems": bad, "missing": missing})
     if bad or missing:
-        raise SystemExit(f"matched rebuilds fail the pre-render checks: {bad or missing}")
-    print("matched rebuilds: all 24 within 3 samples of C′'s stem rebuild and at -22.9 ± 0.05 LUFS")
+        raise SystemExit(f"{di} rebuilds fail the pre-render checks: {bad or missing}")
+    print(f"{di} rebuilds: all 24 within 3 samples of C′'s stem rebuild and at -22.9 ± 0.05 LUFS")
+
+
+def rebuilds_ok(di):
+    """A rebuilt DI's pre-render checks passed on all 24 parts (amendments 2a and 3)."""
+    p = OUT / REBUILD_DIR[di] / "check.json"
+    return p.exists() and json.loads(p.read_text()).get("ok") is True
 
 
 def matched_rebuilds_ok():
-    p = OUT / "rebuilt-ref" / "check.json"
-    return p.exists() and json.loads(p.read_text()).get("ok") is True
+    return rebuilds_ok(MATCHED_DI)
 
 
 def complete_1b(cells, renders, expected=EXPECTED_1B):
@@ -969,11 +1016,25 @@ def others_rendering(ps, own=()):
     return [p for p, c in ps if p not in own and is_render_process(c)]
 
 
+def is_separation(cmd):
+    from learn import ks_extend as X
+
+    return X._is_python(cmd) and any(re.search(p, cmd) for p in SEPARATIONS)
+
+
+def separating(ps, own=()):
+    """Separations running (amendment 3: a render waits while one runs)."""
+    return [p for p, c in ps if p not in own and is_separation(c)]
+
+
 def _wait_cap(cap=CAP):
     from learn import ks_extend as X
 
     own = {os.getpid(), os.getppid()}
-    while len(others_rendering(X._ps(), own)) >= cap:
+    while True:
+        ps = X._ps()
+        if len(others_rendering(ps, own)) < cap and not separating(ps, own):
+            return
         time.sleep(60)
 
 
@@ -1086,8 +1147,14 @@ def load_sigma():
     return d, sig
 
 
+def sep_crop_path(sep, slug):
+    """A separator's 10-s stem crop (amendment 3; `local_objective_1c separate` / `blend`)."""
+    return OUT / "sep" / sep / "crop" / f"{slug}.npy"
+
+
 def part_signals(slug, di_name):
-    """The render input and the scoring signals for a part."""
+    """The render input and the scoring signals for a part (a score view's: its render DI's, plus
+    the separated references its configurations use)."""
     import numpy as np
 
     from learn import confirm_run as CR
@@ -1095,18 +1162,21 @@ def part_signals(slug, di_name):
     from learn.direc_check import to_lufs
 
     part = K.parts()[slug]
-    meas = K.measure_di(part)
-    if di_name == "measure":
-        di = meas
-    elif di_name == "cprime":
+    base = render_di(di_name)
+    if base == "measure":
+        di = K.measure_di(part)
+    elif base == "cprime":
         di = np.load(SS.OUT / "rebuilt" / f"{slug}.npy")
-    elif di_name == "dac9":
+    elif base == "dac9":
         di = to_lufs(np.load(OUT / "dac" / "out" / f"{slug}-q9.npy"))
-    elif di_name == MATCHED_DI:
-        di = np.load(OUT / "rebuilt-ref" / f"{slug}.npy")
+    elif base in REBUILD_DIR:
+        di = np.load(OUT / REBUILD_DIR[base] / f"{slug}.npy")
     else:
         raise ValueError(di_name)
-    return {"di": di, "stem": SS.stem(slug), "reference": CR.mono(part["crop"] / "reference.wav")}, part
+    sig = {"di": di, "stem": SS.stem(slug), "reference": CR.mono(part["crop"] / "reference.wav")}
+    for s in sorted({c[1] for c in configs(di_name)} & set(SEPARATORS)):
+        sig[s] = np.load(sep_crop_path(s, slug)).astype(np.float64)
+    return sig, part
 
 
 def _render_paths(di, slug, amp):
@@ -1178,11 +1248,11 @@ def native_config(di):
 def render_checks(p, di, y, sig_s, judge_lag, aligned, warm=None):
     """The corner checks on one float render, as it lands (amendment 1): the true d (measure DI)
     against K_S's stored values; the current objective (C′) against arm A's stored search-half
-    value and 2b's. A DI with no stored values (1b's matched rebuild, DAC-9: amendment 2) checks
-    its S render against the cell's warm-up at S, a repeat, on its own objective.
-    -> [(what, half, deviation)]."""
+    value and 2b's. A DI with no stored values (1b's matched rebuild, DAC-9: amendment 2; 1c's
+    separator rebuilds: amendment 3) checks its S render against the cell's warm-up at S, a
+    repeat, on its own objective. -> [(what, half, deviation)]."""
     out = []
-    if di in (MATCHED_DI, "dac9") and p.get("source") == "S" and warm is not None:
+    if di in NO_STORED and p.get("source") == "S" and warm is not None:
         c = native_config(di)
         a, _ = score_render(y, di, sig_s, judge_lag, aligned, only={c})
         b, _ = score_render(warm, di, sig_s, judge_lag, aligned, only={c})
@@ -1217,6 +1287,11 @@ def cmd_render(shard, di_name="cprime,measure", after=(), folds=None, accept_gua
     dis = [d for d in di_name.split(",") if d]
     if MATCHED_DI in dis and not matched_rebuilds_ok():
         raise SystemExit("rebuild-ref's pre-render checks have not passed (amendment 2a)")
+    for d in dis:
+        if d in VIEWS:
+            raise SystemExit(f"{d} is a score view of existing renders, not a DI to render")
+        if d in SEP_DI.values() and not rebuilds_ok(d):
+            raise SystemExit(f"{d}: local_objective_1c's pre-render checks have not passed (amendment 3)")
     mine = _cells_for(sig, folds)
     left = sum(len(sig[c]) + 1 for c in mine for d in dis if not _done(d, *c))       # all shards
     if not accept_guard_stop and not disk_ok(disk_free_gb(), left):
@@ -1294,11 +1369,12 @@ def _score_cell(args):
     d, slug, amp, root = args
     global OUT
     OUT = pathlib.Path(root)
+    base = render_di(d)                                                 # a view reads its DI's renders
     sig_s, part = part_signals(slug, d)
-    folder, rec_path = _render_paths(d, slug, amp)
+    folder, rec_path = _render_paths(base, slug, amp)
     rec = json.loads(rec_path.read_text())
     aligned = judge_fns()
-    gcc = gcc_level(sig_s["di"], sig_s[REBUILD_SOURCE[d]]) if d in REBUILT else None
+    gcc = gcc_level(sig_s["di"], sig_s[REBUILD_SOURCE[base]]) if base in REBUILT else None
     scores, fb = [], {}
     for i, sc in enumerate(rec["scales"]):
         s, f = score_render(load_flac(folder / f"{i:02d}.flac", sc), d, sig_s, part["judge_lag"], aligned, gcc)
@@ -1308,7 +1384,8 @@ def _score_cell(args):
     out = OUT / "scores" / d / slug / f"{amp}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     K._atomic(out, {"scores": scores, "fallback": fb, "sigma": rec["sigma"], "gcc_rebuild_vs_stem": gcc,
-                    "gcc_source": REBUILD_SOURCE.get(d), "flac_vs_float_S": flac_vs_float(rec, scores)})
+                    "gcc_source": REBUILD_SOURCE.get(base), "render_di": base,
+                    "flac_vs_float_S": None if d in VIEWS else flac_vs_float(rec, scores)})
     return d, slug, amp
 
 
@@ -1327,7 +1404,7 @@ def cmd_score(di_name="cprime,measure", workers=3):
 
     meta, sig = load_sigma()
     todo = [(d, s, a, str(OUT)) for d in di_name.split(",") for (s, a) in sorted(sig)
-            if _done(d, s, a) and not (OUT / "scores" / d / s / f"{a}.json").exists()]
+            if _done(render_di(d), s, a) and not (OUT / "scores" / d / s / f"{a}.json").exists()]
     with ProcessPoolExecutor(workers) as ex:
         for d, s, a in ex.map(_score_cell, todo):
             print("scored", d, s, a, flush=True)

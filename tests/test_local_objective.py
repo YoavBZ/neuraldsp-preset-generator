@@ -619,7 +619,8 @@ def test_stored_cell_sigma_replays_exactly():
 
 def test_matched_configs_and_lags():
     assert M.configs(M.MATCHED_DI) == [M.MATCHED, M.MATCHED_GCC]
-    assert M.MATCHED_DI in M.REBUILT and M.REBUILD_SOURCE == {"cprime": "stem", "cprime_ref": "reference"}
+    assert M.MATCHED_DI in M.REBUILT and M.REBUILD_SOURCE["cprime"] == "stem"
+    assert M.REBUILD_SOURCE["cprime_ref"] == "reference" and M.REBUILD_DIR["cprime_ref"] == "rebuilt-ref"
     assert M.lag_value("native", M.MATCHED_DI, 914) == -52             # C′'s native lag, not judge_lag
     assert M.lag_value("gcc", M.MATCHED_DI, 914, gcc=-53) == 1
     assert M.native_config(M.MATCHED_DI) == M.MATCHED and M.native_config("cprime") == M.CURRENT
