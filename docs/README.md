@@ -384,3 +384,9 @@ was declared, what was measured, and the research behind it.
     sound space first (best-of-K against random and jittered baselines, a direct sound-alike
     test), then an isolated-DI retrain, then one branch chosen by those results. Research, not a
     declared plan.
+12. [local-objective-2026-10.md](research/local-objective-2026-10.md): how to make the song-only
+    objective rank settings correctly near the starting preset, after the arm A levers results
+    (October 2026). The local comparison mixes four differences (DI, stem vs reference, lag,
+    mask), so separate them first; level into the drive is the leading, untested mechanism.
+    Effect-size experiments: zero-render checks, a 14-band local set with audio kept, DI level
+    and drive calibration, and leave-one-band-out corrections. Research, not a declared plan.
