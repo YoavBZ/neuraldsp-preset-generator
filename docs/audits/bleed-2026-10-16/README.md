@@ -34,3 +34,28 @@ amp track, per judge half.
 
 Files: `bleed4.py`, `aggregate.py`, `synth.py`, `bleed-table.json`, `crosscheck*.json` and the
 Prodigal noise check.
+
+## Robustness of the key results to bleed (zero renders)
+
+Each result was recomputed:
+- (a) with all units;
+- (b) without high-bleed held halves;
+- (c) without moderate or high ones;
+- (d) on Cambridge only.
+
+The scripts are `r123.py` and `r4.py`, with outputs in `r123.json`. Subset (a) reproduces every
+headline exactly.
+
+| Result | (a) | (b) | (c) | (d) |
+|---|---|---|---|---|
+| K_S against S | −0.269 | −0.269 | −0.267 | −0.274 |
+| Arm A against S | −0.078 [−0.157, +0.002] | −0.082 | **−0.097 [−0.184, −0.011]** | −0.091 |
+| 3-C′ shrunk halfway against S | −0.083 | −0.085 | −0.094 | −0.098 |
+| B2 − B0 on songs (paired) | −0.068 | −0.065 | −0.070 | −0.065 |
+| Local objective: matched − current | +0.252 | +0.227 | +0.253 | +0.273 |
+
+- **Every key result holds.** Nothing moves more than about 0.03 against it.
+- **Bleed diluted arm A's gain a little:** without bleed it grows by about 25%, and its interval
+  excludes zero.
+- **On records with neither bleed nor a weak DI model:** arm A −0.128 and K_S −0.315, from 9 parts
+  and 7 bands, so with wide intervals.
