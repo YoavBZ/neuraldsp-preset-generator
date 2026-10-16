@@ -613,3 +613,112 @@ def test_stored_cell_sigma_replays_exactly():
     assert len(pts) == 48 and pts[0]["source"] == "S"
     # S's stored true d is K_S's first render, a repeat of the stored menu render (within 0.005)
     assert all(M.deviation(pts[0]["true_stored"][h], c["menu"][c["start"]][h]) < M.CHECK_TOL for h in "AB")
+
+
+# --- experiment 1b, the matched cell (amendment 2) ----------------------------------------------------
+
+def test_matched_configs_and_lags():
+    assert M.configs(M.MATCHED_DI) == [M.MATCHED, M.MATCHED_GCC]
+    assert M.MATCHED_DI in M.REBUILT and M.REBUILD_SOURCE == {"cprime": "stem", "cprime_ref": "reference"}
+    assert M.lag_value("native", M.MATCHED_DI, 914) == -52             # C′'s native lag, not judge_lag
+    assert M.lag_value("gcc", M.MATCHED_DI, 914, gcc=-53) == 1
+    assert M.native_config(M.MATCHED_DI) == M.MATCHED and M.native_config("cprime") == M.CURRENT
+    assert M.native_config("dac9") == ("dac9", "reference", "native", "own")
+
+
+def test_matched_score_render_uses_the_reference_and_fallback():
+    log = []
+    aligned = fake_judge(log)
+    sig = {"di": "silent", "stem": "stem", "reference": "ref"}
+    out, fb = M.score_render("y", M.MATCHED_DI, sig, 914, aligned, gcc=0)
+    assert set(out) == {M.cname(M.MATCHED), M.cname(M.MATCHED_GCC)}
+    assert fb[M.cname(M.MATCHED)] == 2                                 # an activity refusal falls back
+    assert {e[0] for e in log} == {"ref"} and {e[2] for e in log} == {-52}
+
+
+def test_render_checks_repeat_of_S(monkeypatch):
+    calls = []
+
+    def fake_score(y, di, sig, jl, aligned, gcc=None, only=None):
+        calls.append((y, tuple(only)))
+        return {M.cname(next(iter(only))): {"A": y, "B": y}}, {}
+    monkeypatch.setattr(M, "score_render", fake_score)
+    s = {"source": "S", "true_stored": None, "obj_stored": None}
+    out = M.render_checks(s, M.MATCHED_DI, 2.0, None, -36, None, warm=2.02)
+    assert [(w, h) for w, h, _ in out] == [("repeat_S", "A"), ("repeat_S", "B")]
+    assert out[0][2] == pytest.approx(math.log(2.02 / 2.0)) and calls[0][1] == (M.MATCHED,)
+    assert M.render_checks({**s, "source": "nbr"}, M.MATCHED_DI, 2.0, None, -36, None, warm=2.0) == []
+    assert M.render_checks(s, "cprime", 2.0, None, -36, None, warm=3.0) == []   # C′ has stored corners instead
+
+
+def test_subset_measures():
+    pts = [{"source": s} for s in ("S", "nbr", "nbr", "nbr", "ks", "ks", "ks", "armA", "armA", "armA")]
+    true = {h: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] for h in "AB"}
+    obj = {h: [1, 2, 3, 4, 7, 6, 5, 8, 9, 10] for h in "AB"}           # K_S points inverted
+    nb = M.subset_measures(pts, obj, true, M.SUBSETS["neighbourhood"])
+    ks = M.subset_measures(pts, obj, true, M.SUBSETS["ks"])
+    al = M.subset_measures(pts, obj, true, M.SUBSETS["all"])
+    assert nb["n"] == 4 and nb["cross_half"] == pytest.approx(1.0) and nb["reliable_accuracy"] == pytest.approx(1.0)
+    assert ks["n"] == 3 and ks["cross_half"] == pytest.approx(-1.0) and ks["ceiling"] == pytest.approx(1.0)
+    assert al["n"] == 10 and 0 < al["cross_half"] < 1
+
+
+def test_reading_1b():
+    assert M.reading_1b({"band_weighted_mean": 0.2, "lo90": 0.05, "hi90": 0.35}, 0.29, 0.86)["reading"] == "above"
+    near = M.reading_1b({"band_weighted_mean": 0.01, "lo90": -0.05, "hi90": 0.1}, 0.29, 0.86)
+    assert near["reading"] == "near" and near["gap"] == pytest.approx(0.57)
+    assert near["gap_closed"] == pytest.approx(0.01 / 0.57)
+    assert M.reading_1b({"band_weighted_mean": 0.1, "lo90": -0.05, "hi90": 0.25}, 0.29, 0.86)["reading"] == "undecided"
+    assert M.reading_1b({"band_weighted_mean": -0.2, "lo90": -0.3, "hi90": -0.1}, 0.29, 0.86)["reading"] == "below"
+    assert M.reading_1b({"band_weighted_mean": None, "lo90": None, "hi90": None}, 0.29, 0.86)["reading"] == "undecided"
+
+
+def test_matched_expected_renders():
+    pts = M.cell_sigma("p", AMP, DIMS, S, [toy_paths(1, 40)], [toy_paths(2, 10, ("A",))])
+    sj = M.sigma_json({(f"p{i}", AMP): pts for i in range(72)})
+    assert M.expected_renders(sj, dis=(M.MATCHED_DI,)) == 72 * 48 + 72 == 3528
+
+
+def test_rebuild_ref_problems():
+    assert M.rebuild_ref_problems(0, -22.9) == []
+    assert M.rebuild_ref_problems(-3, -22.86) == []
+    assert len(M.rebuild_ref_problems(-53, -22.9)) == 1 and "GCC" in M.rebuild_ref_problems(4, -22.9)[0]
+    assert len(M.rebuild_ref_problems(0, -22.8)) == 1 and "loudness" in M.rebuild_ref_problems(0, -22.8)[0]
+    assert len(M.rebuild_ref_problems(None, float("nan"))) == 2
+
+
+def test_lufs_of_a_levelled_signal():
+    import numpy as np
+
+    pytest.importorskip("pyloudnorm")
+    from learn.direc_check import to_lufs
+
+    x = to_lufs(np.random.default_rng(3).standard_normal(48000 * 4) * 0.05)
+    assert M.lufs(x) == pytest.approx(-22.9, abs=1e-6)
+
+
+def test_complete_1b():
+    assert M.complete_1b(72, 3528) is None
+    assert "71 cells" in M.complete_1b(71, 3479) and M.complete_1b(72, 3529) is not None
+
+
+def test_flac_vs_float():
+    rec = {"S_float": {"index": 0, "scores": {M.cname(M.MATCHED): {"A": 2.0, "B": 3.0}}}}
+    scores = [{M.cname(M.MATCHED): {"A": 2.0, "B": 3.03}, M.cname(M.MATCHED_GCC): {"A": 1, "B": 1}}]
+    d = M.flac_vs_float(rec, scores)
+    assert d[M.cname(M.MATCHED)]["A"] == 0 and d[M.cname(M.MATCHED)]["B"] == pytest.approx(math.log(1.01))
+    assert M.flac_vs_float({}, scores) is None
+
+
+def test_render_refuses_matched_without_passed_rebuild_checks(tmp_path, monkeypatch):
+    import json
+
+    monkeypatch.setattr(M, "OUT", tmp_path)
+    monkeypatch.setattr(M, "load_sigma", lambda: ({"hash": M.SIGMA_HASH}, {}))
+    with pytest.raises(SystemExit, match="pre-render checks"):
+        M.cmd_render((0, 3), di_name=M.MATCHED_DI)
+    (tmp_path / "rebuilt-ref").mkdir()
+    (tmp_path / "rebuilt-ref" / "check.json").write_text(json.dumps({"ok": False}))
+    assert not M.matched_rebuilds_ok()
+    (tmp_path / "rebuilt-ref" / "check.json").write_text(json.dumps({"ok": True}))
+    assert M.matched_rebuilds_ok()

@@ -13,7 +13,12 @@ Development only; estimates with 90% band-clustered intervals, no pass/fail bars
     ~/ndsp-presets/tools/dac-venv/bin/python learn/dac_roundtrip.py --inp <OUT>/dac/in --out <OUT>/dac/out
     OMP_NUM_THREADS=1 .venv/bin/python -m learn.local_objective render --di dac9 --shard 0/3
     OMP_NUM_THREADS=1 .venv/bin/python -m learn.local_objective score --di dac9 --workers 3
-    # its extension to the other 57 cells, if the fold-3 reading is undecided (the user's yes):
+    # experiment 1b, the matched cell (amendment 2):
+    ~/ndsp-presets/tools/demucs-venv/bin/python -m learn.local_objective rebuild-ref   # CPU, zero renders
+    OMP_NUM_THREADS=1 .venv/bin/python -m learn.local_objective render --di cprime_ref --shard i/3
+    OMP_NUM_THREADS=1 .venv/bin/python -m learn.local_objective score --di cprime_ref --workers 3
+    .venv/bin/python -m learn.local_objective report-1b
+    # the DAC add-on's extension to the other 57 cells, if the fold-3 reading is undecided (the user's yes):
     dac-prep --all-folds; the DAC round trip; render --di dac9 --all-folds --shard i/3; score --di dac9
 
 Σ (experiment 1's settings): per (part, amp) cell, S, its ±1/8 coordinate neighbourhood (switches
@@ -76,7 +81,20 @@ CURRENT = ("cprime", "stem", "native", "own")       # the rebuilt objective arm 
 TRUE = ("measure", "reference", "native", "own")    # the judge through the measure DI (true d)
 DECISIVE = ("measure", "stem", "native", "own")     # the best any DI fix could do with a song's reference
 CHECK_TOL = 0.005                # |log| between a corner and its stored value (knob_ceiling.REPEAT_TOL)
-REBUILT = ("cprime",)            # DIs judged with rebuilt_distance's fallback (the record as the mask)
+REBUILT = ("cprime", "cprime_ref")   # DIs judged with rebuilt_distance's fallback (the record as the mask)
+# Amendment 2 (experiment 1b): the matched cell. Each part's fold C′ rebuilds reference.wav (the
+# amp track) instead of the stem, re-EQ'd and levelled as `song_settings.rebuild_all` does, and is
+# scored against reference.wav: the ceiling for any separator with today's C′.
+MATCHED_DI = "cprime_ref"
+REBUILD_SOURCE = {"cprime": "stem", "cprime_ref": "reference"}
+MATCHED = ("cprime_ref", "reference", "native", "own")
+MATCHED_GCC = ("cprime_ref", "reference", "gcc", "own")      # diagnostic
+SUBSETS = {"all": ("S", "nbr", "ks", "armA"), "neighbourhood": ("S", "nbr"), "ks": ("ks",), "armA": ("armA",)}
+NEAR_GAP_SHARE = 0.25            # 1b's reading: "near" if the interval's top closes under this share of the gap
+REBUILD_LAG_TOL = 3              # samples: |GCC(matched rebuild, C′'s stem rebuild)| at most this (amendment 2a)
+REBUILD_LUFS = -22.9
+REBUILD_LUFS_TOL = 0.05          # LU
+EXPECTED_1B = {"cells": 72, "renders": 3528}
 LARGE_OFFSET = 100               # samples: |judge_lag + 52| beyond this marks a large-offset part (3 of 24)
 
 # --- machine ----------------------------------------------------------------------------------------
@@ -219,6 +237,8 @@ def arm_a_path(amp, S, curve, budget=L.BUDGET, seed=L.SEED):
 def configs(di):
     """The scoring configurations for renders through `di`: reference × lag × mask (12), plus
     for a rebuild the GCC-aligned lag (4 more)."""
+    if di == MATCHED_DI:                                               # amendment 2: two only
+        return [MATCHED, MATCHED_GCC]
     lags = LAGS + (REBUILT_LAGS if di in REBUILT else ())
     return [(di, r, g, m) for r in REFS for g in lags for m in MASKS]
 
@@ -238,7 +258,8 @@ def lag_value(level, di, judge_lag, gcc=None, obj_lag=L.OBJ_LAG):
 
 
 def gcc_level(rebuilt, stem):
-    """GCC(rebuild, stem): samples the rebuild lags the stem (`rank_margin.gcc_lag`)."""
+    """GCC(rebuild, its source): samples the rebuild lags the signal it was rebuilt from (the stem
+    for C′, reference.wav for 1b's matched rebuild; `rank_margin.gcc_lag`)."""
     from learn import rank_margin as RM
 
     n = min(len(rebuilt), len(stem))
@@ -621,6 +642,194 @@ def main_effects(per_cell, measure="cross_half"):
     return out
 
 
+# --- experiment 1b (amendment 2): the matched cell ----------------------------------------------------
+
+def subset_measures(points, obj, true, sources):
+    """Cross-half and same-half Spearman, reliable-pair accuracy and the ceiling on the points whose
+    source is in `sources` (amendment 2's subsets: S's neighbourhood, K_S, arm A)."""
+    idx = [i for i, p in enumerate(points) if p["source"] in sources]
+    o = {h: [obj[h][i] for i in idx] for h in HALVES}
+    t = {h: [true[h][i] for i in idx] for h in HALVES}
+    return {"cross_half": cross_half(o, t), "same_half": same_half(o, t),
+            "reliable_accuracy": reliable_accuracy(o, t), "ceiling": ceiling(t), "n": len(idx)}
+
+
+def reading_1b(diff, current, ceiling_, share=NEAR_GAP_SHARE):
+    """Amendment 2's reading of matched − current (cross-half, band-weighted; estimates only):
+    'above' if the 90% interval is above 0 (next: a better real separator feeding both the rebuild
+    and the reference); 'below' if under 0; 'near' if it contains 0 and its top closes less than
+    `share` of the gap from today's objective to the ceiling (the rebuild limits even with a
+    perfect stem); otherwise 'undecided'. Also the share of the gap the estimate closes."""
+    lo, hi, m = diff.get("lo90"), diff.get("hi90"), diff.get("band_weighted_mean")
+    gap = None if current is None or ceiling_ is None else ceiling_ - current
+    closed = m / gap if m is not None and gap else None
+    if lo is None or hi is None:
+        r = "undecided"
+    elif lo > 0:
+        r = "above"
+    elif hi < 0:
+        r = "below"
+    elif gap and hi < share * gap:
+        r = "near"
+    else:
+        r = "undecided"
+    return {"reading": r, "gap": gap, "gap_closed": closed}
+
+
+def lufs(x):
+    import numpy as np
+    import pyloudnorm
+
+    return float(pyloudnorm.Meter(K.P.SR).integrated_loudness(np.asarray(x, np.float64)))
+
+
+def rebuild_ref_problems(gcc_vs_stem_rebuild, loudness, lag_tol=REBUILD_LAG_TOL, target=REBUILD_LUFS,
+                         tol=REBUILD_LUFS_TOL):
+    """Amendment 2a: a matched rebuild is used only if it sits within `lag_tol` samples of C′'s stem
+    rebuild (GCC) and at −22.9 LUFS within `tol`. -> the problems (empty: usable)."""
+    out = []
+    if gcc_vs_stem_rebuild is None or abs(gcc_vs_stem_rebuild) > lag_tol:
+        out.append(f"GCC against C′'s stem rebuild is {gcc_vs_stem_rebuild} samples (limit ±{lag_tol})")
+    if loudness is None or not math.isfinite(loudness) or abs(loudness - target) > tol:
+        out.append(f"loudness {loudness} LUFS (target {target} ± {tol})")
+    return out
+
+
+def cmd_rebuild_ref():
+    """Amendment 2 (the torch interpreter, CPU): each part's fold C′ rebuilds reference.wav as
+    `song_settings.rebuild_all` rebuilds the stem (re-EQ'd by fold 2's average − fold f's, at −22.9
+    LUFS), with experiment 4's leak assertion per part; logs the network, and GCC against
+    reference.wav and against C′'s stem rebuild. Before any render (amendment 2a), every part's
+    matched rebuild must sit within 3 samples of C′'s stem rebuild (GCC) and at −22.9 LUFS within
+    0.05; otherwise the command stops, and `render --di cprime_ref` refuses to start."""
+    import numpy as np
+    import torch
+
+    from learn import confirm_run as CR
+    from learn import di_fine_structure as DF
+    from learn import direc as D
+    from learn import rank_margin as RM
+    from learn import song_settings as SS
+    from learn.direc_check import eq_to, to_lufs
+
+    ps, fo = K.parts(), SS.folds()
+    avg = {f: np.load(SS.MODELS / "cache" / f"average-fold{f}.npy") for f in range(4)}
+    d = OUT / "rebuilt-ref"
+    d.mkdir(parents=True, exist_ok=True)
+    log_path = d / "rebuild-log.json"
+    log = json.loads(log_path.read_text()) if log_path.exists() else {}
+    nets = {}
+    for slug in sorted(s for s in ps if s not in EXCLUDED):
+        f = fo[ps[slug]["band"]]
+        path = SS.cprime(f)
+        if not SS.net_ready(path):
+            raise SystemExit(f"{path} is not final (no DONE marker)")
+        cfg = json.loads((path.parent / "config.json").read_text()) if (path.parent / "config.json").exists() else {}
+        caches = [pathlib.Path(c) for c in cfg.get("caches", [DF.MODELS / c for c in DF.CACHES])]
+        DF.assert_no_leak(ps[slug]["band"], cfg.get("fold", f), f, DF.train_pool_bands(f, caches))
+        out = d / f"{slug}.npy"
+        if out.exists() and slug in log:
+            continue
+        if f not in nets:
+            nets[f] = D.load_model(path).eval()
+        ref = CR.mono(ps[slug]["crop"] / "reference.wav")
+        x = D.rebuild(nets[f], ref.astype(np.float32), device=torch.device("cpu")).astype(np.float64)
+        y = to_lufs(eq_to(x, avg[2] - avg[f]))
+        np.save(out, y)
+        stem_rb = np.load(SS.OUT / "rebuilt" / f"{slug}.npy")
+        n = min(len(y), len(stem_rb))
+        g = int(RM.gcc_lag(y[:n], stem_rb[:n]))
+        log[slug] = {"fold": f, "network": str(path), "gcc_vs_reference": gcc_level(y, ref),
+                     "gcc_vs_stem_rebuild": g, "lufs": lufs(y), "problems": rebuild_ref_problems(g, lufs(y))}
+        K._atomic(log_path, log)
+        print(slug, "fold", f, log[slug], flush=True)
+    bad = {s_: v["problems"] for s_, v in log.items() if v.get("problems")}
+    missing = [s_ for s_ in ps if s_ not in EXCLUDED and s_ not in log]
+    K._atomic(d / "check.json", {"ok": not bad and not missing, "problems": bad, "missing": missing})
+    if bad or missing:
+        raise SystemExit(f"matched rebuilds fail the pre-render checks: {bad or missing}")
+    print("matched rebuilds: all 24 within 3 samples of C′'s stem rebuild and at -22.9 ± 0.05 LUFS")
+
+
+def matched_rebuilds_ok():
+    p = OUT / "rebuilt-ref" / "check.json"
+    return p.exists() and json.loads(p.read_text()).get("ok") is True
+
+
+def complete_1b(cells, renders, expected=EXPECTED_1B):
+    """Amendment 2a: a 1b reading only on the complete set (72 cells, 3,528 renders). -> None, or why not."""
+    if cells != expected["cells"] or renders != expected["renders"]:
+        return f"{cells} cells and {renders} renders, not {expected['cells']} and {expected['renders']}"
+    return None
+
+
+def cmd_report_1b():
+    """Amendment 2, zero renders: the matched cell against the truth (experiment 1's measure-DI
+    scores), paired with today's objective, on all of Σ and its subsets, per band, with the reading."""
+    meta, sig = load_sigma()
+    ps = K.parts()
+    cfgs = {"matched": MATCHED, "matched_gcc": MATCHED_GCC, "current": CURRENT,
+            "cprime_reference": ("cprime", "reference", "native", "own")}
+    per = {}
+    for c, pts in sorted(sig.items()):
+        files = {d: OUT / "scores" / d / c[0] / f"{c[1]}.json" for d in ("measure", "cprime", MATCHED_DI)}
+        if not all(f.exists() for f in files.values()):
+            continue
+        sc = {d: json.loads(f.read_text())["scores"] for d, f in files.items()}
+        true = _vals(sc["measure"], TRUE)
+        per[c] = {name: {sub: subset_measures(pts, _vals(sc[cfg[0]], cfg), true, srcs) for sub, srcs in SUBSETS.items()}
+                  for name, cfg in cfgs.items()}
+
+    def rows(name, sub, key):
+        return {c: (c[0], ps[c[0]]["band"], ps[c[0]]["gain_class"], v[name][sub][key]) for c, v in per.items()}
+
+    rep = {"sigma": meta["hash"], "cells": len(per), "subsets": {}}
+    for sub in SUBSETS:
+        r = {"ceiling": agg(rows("current", sub, "ceiling"))}
+        for name in cfgs:
+            r[name] = {k: agg(rows(name, sub, k)) for k in ("cross_half", "reliable_accuracy", "same_half")}
+        r["matched_minus_current"] = {k: agg(paired(rows("matched", sub, k), rows("current", sub, k)))
+                                      for k in ("cross_half", "reliable_accuracy")}
+        r["matched_minus_cprime_reference"] = {k: agg(paired(rows("matched", sub, k), rows("cprime_reference", sub, k)))
+                                               for k in ("cross_half", "reliable_accuracy")}
+        r["reading_figures"] = reading_1b(r["matched_minus_current"]["cross_half"],
+                                          r["current"]["cross_half"]["band_weighted_mean"], r["ceiling"]["band_weighted_mean"])
+        rep["subsets"][sub] = r
+    bands = {}
+    for c, v in per.items():
+        b = ps[c[0]]["band"]
+        bands.setdefault(b, {}).setdefault(c[0], []).append(
+            (v["matched"]["all"]["cross_half"], v["current"]["all"]["cross_half"], v["current"]["all"]["ceiling"]))
+    rep["per_band_cross_half"] = {
+        b: {k: _mean(_mean(t[j] for t in vals) for vals in parts.values())
+            for j, k in enumerate(("matched", "current", "ceiling"))} for b, parts in sorted(bands.items())}
+    for b, v in rep["per_band_cross_half"].items():
+        v["matched_minus_current"] = None if v["matched"] is None or v["current"] is None else v["matched"] - v["current"]
+    renders = 0
+    for p in (OUT / "renders" / MATCHED_DI).glob("*/*.json"):
+        renders += json.loads(p.read_text())["renders"]
+    rep["renders_used"] = renders
+    rep["renders_expected"] = expected_renders(meta["cells"], dis=(MATCHED_DI,))
+    devs = []
+    for c in per:
+        f = OUT / "scores" / MATCHED_DI / c[0] / f"{c[1]}.json"
+        fv = json.loads(f.read_text()).get("flac_vs_float_S") or {}
+        devs += [v for hv in fv.values() for v in hv.values()]
+    rep["flac_vs_float_S"] = {"n": len(devs), "max": max(devs, default=None),
+                              "over_tol": sum(v > CHECK_TOL for v in devs)}
+    why = complete_1b(len(per), renders)
+    for sub, r in rep["subsets"].items():
+        r["reading"] = r["reading_figures"]["reading"] if why is None else f"refused: {why}"
+    K._atomic(OUT / "report-1b.json", rep)
+    a = rep["subsets"]["all"]
+    f = lambda s: f"{s['band_weighted_mean']:+.3f} [{s['lo90']:+.3f}, {s['hi90']:+.3f}]" if s.get("lo90") is not None else str(s.get("band_weighted_mean"))  # noqa: E731
+    print("matched cross-half:", f(a["matched"]["cross_half"]), "current:", f(a["current"]["cross_half"]),
+          "ceiling:", f(a["ceiling"]))
+    print("matched - current:", f(a["matched_minus_current"]["cross_half"]), "reading:", a["reading"],
+          a["reading_figures"])
+    print("renders used:", renders, "expected:", rep["renders_expected"])
+
+
 # --- step 0: input gain as a pre-gain -----------------------------------------------------------------
 
 def pregain_plan(S, eps=PREGAIN_DB, dims=None):
@@ -893,6 +1102,8 @@ def part_signals(slug, di_name):
         di = np.load(SS.OUT / "rebuilt" / f"{slug}.npy")
     elif di_name == "dac9":
         di = to_lufs(np.load(OUT / "dac" / "out" / f"{slug}-q9.npy"))
+    elif di_name == MATCHED_DI:
+        di = np.load(OUT / "rebuilt-ref" / f"{slug}.npy")
     else:
         raise ValueError(di_name)
     return {"di": di, "stem": SS.stem(slug), "reference": CR.mono(part["crop"] / "reference.wav")}, part
@@ -958,11 +1169,24 @@ def breakage(rec_path, rec, why):
     raise SystemExit(f"{why}: every shard stops; investigate, then delete {stop_path()}")
 
 
-def render_checks(p, di, y, sig_s, judge_lag, aligned):
+def native_config(di):
+    """The DI's own objective: its source reference (the stem for C′, reference.wav otherwise) at
+    its native lag with its own mask."""
+    return (di, REBUILD_SOURCE.get(di, "reference"), "native", "own")
+
+
+def render_checks(p, di, y, sig_s, judge_lag, aligned, warm=None):
     """The corner checks on one float render, as it lands (amendment 1): the true d (measure DI)
     against K_S's stored values; the current objective (C′) against arm A's stored search-half
-    value and 2b's. -> [(what, half, deviation)]."""
+    value and 2b's. A DI with no stored values (1b's matched rebuild, DAC-9: amendment 2) checks
+    its S render against the cell's warm-up at S, a repeat, on its own objective.
+    -> [(what, half, deviation)]."""
     out = []
+    if di in (MATCHED_DI, "dac9") and p.get("source") == "S" and warm is not None:
+        c = native_config(di)
+        a, _ = score_render(y, di, sig_s, judge_lag, aligned, only={c})
+        b, _ = score_render(warm, di, sig_s, judge_lag, aligned, only={c})
+        out += [("repeat_S", h, deviation(a[cname(c)][h], b[cname(c)][h])) for h in HALVES]
     if di == "measure" and p.get("true_stored"):
         s, _ = score_render(y, di, sig_s, judge_lag, aligned, only={TRUE})
         out += [("true_vs_KS", h, deviation(s[cname(TRUE)][h], v)) for h, v in p["true_stored"].items()]
@@ -991,6 +1215,8 @@ def cmd_render(shard, di_name="cprime,measure", after=(), folds=None, accept_gua
     meta, sig = load_sigma()
     check_stop()
     dis = [d for d in di_name.split(",") if d]
+    if MATCHED_DI in dis and not matched_rebuilds_ok():
+        raise SystemExit("rebuild-ref's pre-render checks have not passed (amendment 2a)")
     mine = _cells_for(sig, folds)
     left = sum(len(sig[c]) + 1 for c in mine for d in dis if not _done(d, *c))       # all shards
     if not accept_guard_stop and not disk_ok(disk_free_gb(), left):
@@ -1035,13 +1261,17 @@ def cmd_render(shard, di_name="cprime,measure", after=(), folds=None, accept_gua
                 rec = {"slug": slug, "amp": amp, "di": d, "sigma": meta["hash"], "status": "running",
                        "renders": prev.get("renders", 0), "warm_ups": prev.get("warm_ups", 0) + 1}
                 rec_path.parent.mkdir(parents=True, exist_ok=True)
-                rr.render(di32, sel, S)                                         # warm-up, counted
+                warm = rr.render(di32, sel, S)                                  # warm-up, counted
                 scales, checks = [], []
                 for i, p in enumerate(sig[(slug, amp)]):
                     y = rr.render(di32, sel, p["x"])
                     rec["renders"] = prev.get("renders", 0) + rr.count - n0
                     scales.append(save_flac(folder / f"{i:02d}.flac", y))
-                    for what, h, dev in render_checks(p, d, y, sig_s, part["judge_lag"], aligned):
+                    if p.get("source") == "S":                                 # amendment 2a: FLAC vs float
+                        sf, _ = score_render(y, d, sig_s, part["judge_lag"], aligned, only={native_config(d)},
+                                             gcc=None)
+                        rec["S_float"] = {"index": i, "scores": sf}
+                    for what, h, dev in render_checks(p, d, y, sig_s, part["judge_lag"], aligned, warm):
                         checks.append([i, what, h, dev])
                         if dev > CHECK_TOL:
                             breakage(rec_path, {**rec, "checks_float": checks},
@@ -1068,7 +1298,7 @@ def _score_cell(args):
     folder, rec_path = _render_paths(d, slug, amp)
     rec = json.loads(rec_path.read_text())
     aligned = judge_fns()
-    gcc = gcc_level(sig_s["di"], sig_s["stem"]) if d in REBUILT else None
+    gcc = gcc_level(sig_s["di"], sig_s[REBUILD_SOURCE[d]]) if d in REBUILT else None
     scores, fb = [], {}
     for i, sc in enumerate(rec["scales"]):
         s, f = score_render(load_flac(folder / f"{i:02d}.flac", sc), d, sig_s, part["judge_lag"], aligned, gcc)
@@ -1077,8 +1307,19 @@ def _score_cell(args):
             fb[k] = fb.get(k, 0) + v
     out = OUT / "scores" / d / slug / f"{amp}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
-    K._atomic(out, {"scores": scores, "fallback": fb, "sigma": rec["sigma"], "gcc_rebuild_vs_stem": gcc})
+    K._atomic(out, {"scores": scores, "fallback": fb, "sigma": rec["sigma"], "gcc_rebuild_vs_stem": gcc,
+                    "gcc_source": REBUILD_SOURCE.get(d), "flac_vs_float_S": flac_vs_float(rec, scores)})
     return d, slug, amp
+
+
+def flac_vs_float(rec, scores):
+    """Amendment 2a: S's score from its FLAC against the float score stored at render time, per
+    configuration and half (|log|); None when the render record has no float score."""
+    sf = rec.get("S_float")
+    if not sf:
+        return None
+    flac = scores[sf["index"]]
+    return {c: {h: deviation(flac[c][h], v) for h, v in hv.items()} for c, hv in sf["scores"].items()}
 
 
 def cmd_score(di_name="cprime,measure", workers=3):
@@ -1146,7 +1387,7 @@ def cmd_report():
             if (d, c) not in loaded:
                 continue
             sc = loaded[(d, c)]["scores"]
-            if loaded[(d, c)].get("gcc_rebuild_vs_stem") is not None:
+            if loaded[(d, c)].get("gcc_rebuild_vs_stem") is not None and d == "cprime":
                 gccs[slug] = loaded[(d, c)]["gcc_rebuild_vs_stem"]
             checks += [(c, d, *x) for x in corner_checks(pts, sc, d)]
             for cfg in configs(d):
@@ -1516,7 +1757,8 @@ def cmd_dac_prep(all_folds=False):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("cmd", choices=("align", "diag", "pregain", "sigma", "render", "score", "report", "dac-prep"))
+    ap.add_argument("cmd", choices=("align", "diag", "pregain", "sigma", "render", "score", "report", "dac-prep",
+                                    "rebuild-ref", "report-1b"))
     ap.add_argument("--shard", default="0/1")
     ap.add_argument("--di", default="cprime,measure")
     ap.add_argument("--workers", type=int, default=3)
@@ -1531,7 +1773,8 @@ def main(argv=None):
     folds = (3,) if a.di == "dac9" and not a.all_folds else None
     {"align": cmd_align, "diag": cmd_diag, "pregain": lambda: cmd_pregain(tuple(a.cell.split("|")) if a.cell else PREGAIN_CELL),
      "sigma": lambda: cmd_sigma(a.out), "render": lambda: cmd_render(sh, a.di, a.after, folds, a.accept_guard_stop),
-     "score": lambda: cmd_score(a.di, a.workers), "report": cmd_report, "dac-prep": lambda: cmd_dac_prep(a.all_folds)}[a.cmd]()
+     "score": lambda: cmd_score(a.di, a.workers), "report": cmd_report, "dac-prep": lambda: cmd_dac_prep(a.all_folds),
+     "rebuild-ref": cmd_rebuild_ref, "report-1b": cmd_report_1b}[a.cmd]()
 
 
 if __name__ == "__main__":

@@ -14,7 +14,8 @@ The user's rules apply:
 **Status:** reviewed 2026-10-16 (`tmp/local-objective-plan-review.md`, local): approved with 10
 required changes, all folded in as [amendment 1](#amendment-1-2026-10-16-before-any-render), before
 any render. Where the amendment and the sections below differ, the amendment governs. Nothing
-renders before the user's yes.
+renders before the user's yes. Experiment 1 has run ([results](local-objective-results.md)).
+[Amendment 2](#amendment-2-2026-10-16-before-any-1b-render) adds experiment 1b, the matched cell.
 
 ## Why
 
@@ -490,4 +491,105 @@ each knob's chance beside its agreement.
   workers.
 - Renders are unchanged: 5 (or 10) for step 0a, 7,056 for experiment 1, 735 for the DAC add-on,
   and 2,793 more only if its extension rule fires and the user says yes.
+
+## Amendment 2 (2026-10-16, before any 1b render)
+
+Experiment 1b, the matched cell that experiment 1's audit asked for
+([results](local-objective-results.md), "What it decides"). Declared after experiment 1's readout
+and before any 1b render. Same rules: no pass/fail bars, a declared stopping rule, renders reported.
+
+**Why.** Experiment 1 found that the rebuild's error and the stem's partly cancel: today's
+objective (C′ rebuilt from the stem, scored against the stem) is 0.289, C′ scored against the amp
+track is 0.409, and the ceiling is 0.864 (cross-half local Spearman). The missing cell is C′
+rebuilt from the amp track *and* scored against it: what today's C′ would give with a perfect
+separator. **It is the ceiling for any separator with today's C′.**
+
+**What runs.**
+- **The rebuild (zero renders, CPU, the torch interpreter):** `rebuild-ref` rebuilds each part's
+  `reference.wav` (the amp track) with its own fold's C′, exactly as `song_settings.rebuild_all`
+  rebuilds the stem: the same network (DONE marker required), re-EQ'd by fold 2's average − fold
+  f's, at −22.9 LUFS. Experiment 4's leak assertion runs per part. The log records the network and
+  the GCC lag against `reference.wav` and against C′'s stem rebuild. 24 arrays of about 4 MB.
+- **Renders:** the same frozen Σ (hash `ee91f710947dbb5c`) through the matched rebuild: 72 × 48 =
+  3,456 renders plus 72 warm-ups, **3,528**. About 0.7 h at 5k/h on 3 processes.
+- **Scoring (CPU, from the 16-bit FLACs):** against `reference.wav` with the rebuild's own mask
+  and the C′ fallback (the record, moved into DI time, as amendment 1):
+  - **matched:** C′'s native lag, −52 (the declared configuration);
+  - **matched, gcc lag:** −52 − GCC(matched rebuild, `reference.wav`). Diagnostic only.
+  - 4 judge calls per render: about 0.3 CPU-s, a few minutes on 3 workers.
+- **The truth** is experiment 1's measure-DI scores on the same Σ (no new truth renders). Today's
+  objective and C′ / reference are experiment 1's C′ scores.
+
+**Report (`report-1b`, zero renders), on all of Σ and on its three subsets** (S and its ±1/8
+neighbourhood; the K_S points; the arm A points):
+- **matched:** the cross-half local Spearman and reliable-pair accuracy (and same-half, for
+  comparability), band-weighted with 90% band-clustered intervals, with the ceiling beside them;
+- **the simple effect against today's objective (C′ / stem), cell-paired:** matched − current,
+  cross-half and reliable-pair accuracy;
+- matched − C′ / reference, paired (what rebuilding from the amp track adds once the amp track is
+  the reference);
+- **per band:** matched, current, their difference and the ceiling (cross-half);
+- the gcc-lag diagnostic, and the renders used against the 3,528 expected.
+
+**Reading (estimates only, declared now)**, on matched − current, cross-half, all of Σ:
+- **above** (the 90% interval is above 0): today's C′ ranks clearly better with a perfect stem.
+  The next step tests a better real separator feeding both the rebuild and the reference.
+- **near** (the interval contains 0, and its top closes less than a quarter of the gap from today's
+  objective to the ceiling, about 0.14 on experiment 1's figures): the rebuild limits even with a
+  perfect stem.
+- **undecided** (otherwise) or **below**: reported as such; the next step is the user's choice.
+- The share of the gap the estimate closes is reported beside it. The subsets are descriptive; the
+  arm A subset carries the winner's curse noted in experiment 1.
+
+**Stopping rule: a fixed set, declared.** 1b is a measurement paired cell by cell with experiment
+1's Σ; every one of the 72 cells is needed for the 14-band interval, as in experiment 1. No
+data-dependent stopping and no extension. Only breakage stops it.
+
+**Guards (as amendment 1):**
+- **Render-time check:** the matched rebuild has no stored values, so each cell's render of S is
+  checked against the cell's warm-up at S (a repeat) on the matched objective, within 0.005 (log)
+  on both halves. A failure records the cell `check_failed` and writes the shared `STOP.json`, which
+  every shard checks before each cell.
+- **Disk:** about 1.7–2.5 GB of FLACs (0.48–0.7 MB each). The start check counts all shards'
+  remaining renders against the 31 GB guard (66.9 GB free when this amendment was written); the
+  per-cell guard still applies.
+- **The cap:** at most 3 render processes machine-wide, enforced only by this job (amendment 1,
+  change 7); swap guard; `setopt no_bg_nice`, `OMP_NUM_THREADS=1`; `--after PID` to queue.
+
+**Run order:**
+1. `~/ndsp-presets/tools/demucs-venv/bin/python -m learn.local_objective rebuild-ref` (torch 2.14,
+   the interpreter that built the stem rebuilds; CPU, zero renders), which must pass its checks;
+2. `render --di cprime_ref --shard i/3` (3,528 renders);
+3. `score --di cprime_ref --workers 3`;
+4. `report-1b`, then the readout in `docs/local-objective-results.md`.
+
+| Step | Renders | Hours |
+|---|---|---|
+| 1b rebuild | 0 | minutes (CPU) |
+| 1b renders | 3,528 | about 0.7 h at 3 processes |
+| 1b scoring and report | 0 | minutes (CPU) |
+
+**Ledger and limits.** The `local-objective` entry gains `amendment_2`, entered before any 1b
+render. It is a further unblinded use of the same 24 parts and of experiment 1's Σ, read after
+experiment 1's results: a development reading, not a fresh estimate. The amp track is not
+available for a released song, so 1b is a ceiling, not a product figure. One net (C′, each part's
+own fold) and one rebuild recipe; the separator it stands in for would also change the reference.
+
+### Amendment 2a: review changes (2026-10-16, before any 1b render)
+
+A quick review approved 1b with four changes, all made in code and tested:
+1. **Pre-render checks on the matched rebuilds.** `rebuild-ref` asserts, per part, that the matched
+   rebuild sits within **3 samples** of C′'s stem rebuild (GCC) and at **−22.9 LUFS within 0.05**.
+   If any part fails, or is missing, it stops and records why (`rebuilt-ref/check.json`), and
+   `render --di cprime_ref` refuses to start until all 24 pass.
+2. **No reading on an incomplete set.** `report-1b` gives its figures, but refuses a reading unless
+   it has all **72 cells and exactly 3,528 renders**. A resumed cell that re-renders its warm-up
+   therefore blocks the reading until it is explained.
+3. **The reading rule is strict.** With 90% interval half-widths of about 0.16–0.35 (experiment 1),
+   an interval that contains 0 almost always reaches above a quarter of the gap (about 0.14). So an
+   estimate near 0 reads **"undecided"**, not "near"; "near" needs a narrow interval. "Above" still
+   needs the whole interval above 0.
+4. **FLAC against float.** Each cell's render of S is scored on the DI's own objective from the
+   float render and stored with the cell; scoring compares the FLAC score with it (|log| per half),
+   and `report-1b` gives the count, the largest and the number beyond 0.005.
 
