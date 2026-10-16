@@ -1638,6 +1638,9 @@
       },
       "weights.json": {
        "sha256": "2b4adfb03cb8600d9f41d661e90acee87b00fd4ccc1dbdded5a226055fb68100"
+      },
+      "bank2": {
+       "bank2/examples.json": "2ddef05d248a395879a0aee8c4c0b59d3dd62580c51d0cb767bbf0205eb5aba5"
       }
      }
     }
