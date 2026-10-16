@@ -1645,7 +1645,8 @@
      }
     }
    ],
-   "outcome": null
+   "outcome": null,
+   "amendment_2": "2026-10-16, during relabel renders and B1 training, before any reading: no fixed render limit (user, ML plan #203); caps become expected sizes/guards; growth beyond 1,000 relabelled / 2,500 record-like only if B2 > B1 on E1 broad units and half-new-example B2 clearly trails full B2; renders actually used are reported."
   }
  ]
 }

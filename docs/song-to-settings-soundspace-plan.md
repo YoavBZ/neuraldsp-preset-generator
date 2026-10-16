@@ -622,3 +622,25 @@ before any render, training or score.
    position. That follows from the switch logic; it was not measured.
 6. **Batch order** is seeded by `numpy.random.default_rng([seed, epoch])`, with the arm's seed (B0
    used `default_rng(epoch)`). B1′ is the arm `B1r` in the code.
+
+## Amendment 2 (2026-10-16): no fixed render limit; stopping is evidence-based
+
+The user confirmed on 2026-10-16 that the 200k limit is replaced by evidence-based stopping (ML plan
+decision 2, #203). This amendment was made while the relabel renders and B1's training ran, before
+any reading.
+
+- **The running-total lines above are records only,** no longer limits. Every result reports the
+  renders it actually used.
+- **The caps in the budget table become expected sizes and efficiency guards.** A step that
+  reaches its cap stops and reports. It continues only under its stopping rule below.
+- **The stopping rules:**
+  - **Training:** each arm stops early on its own validation loss (patience as declared). No arm
+    is trained longer than that.
+  - **Growing the relabelled set** beyond 1,000 examples, or the record-like examples beyond
+    2,500, happens only if B2 beats B1 on E1's broad units, and a B2 trained on half the new
+    examples is clearly behind the full B2 (held-out learning curve still rising). Otherwise the
+    bank stops here.
+  - **Evaluation:** E1 and E3 keep their declared units. A further evaluation is added only if
+    its interval would answer a question these leave undecided.
+- **"Ask before passing 200k" is dropped.** The optional items and C-start still need their own
+  yes, as declared.
