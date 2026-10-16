@@ -153,17 +153,23 @@ def test_available_gb():
 
 def test_separation_blockers():
     py = "/x/.venv/bin/python"
-    ps = [(10, f"{py} -m learn.local_objective_1c separate"), (11, "vim notes")]
-    assert C.separation_blockers(ps, own={10}, avail_gb=20.0) == []
-    assert "memory" in C.separation_blockers(ps, own={10}, avail_gb=12.0)[0]
+    ps = [(10, f"{py} -m learn.local_objective_1c separate"), (11, "vim notes"),
+          (12, f"{py} -m learn.ks_extend run --shard 0/3"), (15, "/a/au_render_server --x")]
+    assert C.separation_blockers(ps, own={10}, avail_gb=12.0) == []     # amendment 3a: renders don't block
+    assert "memory" in C.separation_blockers(ps, own={10}, avail_gb=10.0)[0]
     assert C.separation_blockers(ps, own={10}, avail_gb=None)
-    busy = ps + [(12, f"{py} -m learn.ks_extend run --shard 0/3"),
-                 (13, "/t/demucs-venv/bin/python -u -m learn.song_soundspace train --arm B2 --fold 3"),
+    busy = ps + [(13, "/t/demucs-venv/bin/python -u -m learn.song_soundspace train --arm B2 --fold 3"),
                  (14, f"{py} -m learn.separator_screen separate --row mega53")]
-    why = C.separation_blockers(busy, own={10}, avail_gb=20.0, server=True)
-    assert len(why) == 4 and "[12]" in why[0] and "server" in why[1] and "[13]" in why[2] and "[14]" in why[3]
+    why = C.separation_blockers(busy, own={10}, avail_gb=20.0)
+    assert len(why) == 2 and "[13]" in why[0] and "[14]" in why[1]
     assert not C.is_training(f"{py} -m learn.song_soundspace score-targets")
     assert C.is_training(f"{py} -m learn.direc fit --fold 1")
+
+
+def test_memory_gate_is_keyed_on_pruning():
+    assert C.MEM_GATE_GB == C.mem_gate_gb(True) == 11.0 and C.mem_gate_gb(False) == 18.0
+    assert C.prune_decision({"identical": True, "max_abs_diff": 0.0})
+    assert not C.prune_decision({"identical": False}) and not C.prune_decision(None)
 
 
 def test_sep_problems():
@@ -249,6 +255,83 @@ def test_reading_1c():
 
 # --- the report on fakes ---------------------------------------------------------------------------------
 
+def test_blend_lag_rule():
+    assert C.blend_problems(0) == [] and C.blend_problems(1) == [] and C.blend_problems(-1) == []
+    assert "±1" in C.blend_problems(2)[0] and C.blend_problems(None)
+
+
+def test_edge_bound_is_confined_to_the_crop_ends():
+    import numpy as np
+
+    x = np.random.default_rng(5).standard_normal(48000 * 3)
+    e = C.edge_bound(x, 48000, n=48000)
+    assert e["max_db"] < 0 and 0 < e["extent_ms"] < 20                 # a few ms at the ends, not the middle
+    assert C.edge_bound(x, 48000, n=48000, floor_db=0.0)["extent_ms"] == 0
+
+
+def test_fieller_reports_shape_and_df():
+    f = C.fieller([0.1, 0.05, 0.2, 0.12], [0.25, 0.2, 0.3, 0.22])
+    assert f["shape"] == "interval" and f["df"] == 3
+    rng = random.Random(4)
+    g = C.fieller([rng.gauss(0.1, 0.1) for _ in range(14)], [rng.gauss(0.0, 0.3) for _ in range(14)])
+    assert g["shape"] in ("two rays", "whole line") and g["df"] == 13
+
+
+BT = {"cam": {"source": "cambridge", "halves": {"A": {"flag": "low"}, "B": {"flag": "low"}}},
+      "tel": {"source": "telefunken", "halves": {"A": {"flag": "high"}, "B": {"flag": "low"}}},
+      "mod": {"source": "telefunken", "halves": {"A": {"flag": "low"}, "B": {"flag": "moderate"}}}}
+
+
+def test_kept_directions():
+    H = ("A", "B")
+    assert C.kept_directions("all", "tel", "x", BT) == H
+    assert C.kept_directions("no_high", "tel", "x", BT) == () and C.kept_directions("no_high", "mod", "x", BT) == H
+    assert C.kept_directions("no_high_dir", "tel", "x", BT) == ("A",)     # direction B is judged on half A
+    assert C.kept_directions("no_moderate_or_high", "mod", "x", BT) == ()
+    assert C.kept_directions("no_moderate_or_high_dir", "mod", "x", BT) == ("B",)
+    assert C.kept_directions("cambridge_only", "cam", "x", BT) == H and C.kept_directions("cambridge_only", "tel", "x", BT) == ()
+    assert C.kept_directions("telefunken_only", "mod", "x", BT) == H
+    assert C.kept_directions("without_musdb_train", "cam", "Wall Of Death", BT) == ()
+    assert C.kept_directions("without_musdb_train", "cam", "Diesel13", BT) == H
+    assert C.kept_directions("no_high", "unknown", "x", BT) == ()
+
+
+def test_row_report_pairs_numerator_and_denominator_on_the_same_cells():
+    ps = {"cam": {"band": "b1", "gain_class": "clean"}, "tel": {"band": "b2", "gain_class": "clean"},
+          "mod": {"band": "b3", "gain_class": "clean"}}
+    dv = {("cam", "pr12"): {"sep": {"A": 0.5, "B": 0.5}, "current": {"A": 0.3, "B": 0.3}, "matched_1b": {"A": 0.7, "B": 0.7}},
+          ("tel", "pr12"): {"sep": {"A": 0.9, "B": 0.1}, "current": {"A": 0.1, "B": 0.1}, "matched_1b": {"A": 0.2, "B": 0.2}},
+          ("mod", "pr12"): {"current": {"A": 0.0, "B": 0.0}, "matched_1b": {"A": 0.4, "B": 0.4}}}
+    ceil = {c: 0.9 for c in dv}
+    r = C.row_report(dv, ceil, ps, BT, "no_high_dir")
+    assert r["sep_minus_current"]["cells"] == 2                       # tel keeps direction A only: 0.9 − 0.1
+    assert r["sep_minus_current"]["band_weighted_mean"] == pytest.approx((0.2 + 0.8) / 2)
+    assert r["matched_1b_minus_current"]["cells"] == 3                 # its own row, on its cells
+    assert r["share_of_1b_gain"]["bands"] == 2                         # the share: only cells with both
+    assert r["share_of_1b_gain"]["ratio"] is None                     # under 3 bands: no Fieller
+    c = C.row_report(dv, ceil, ps, BT, "no_high")
+    assert c["current"]["cells"] == 2 and c["share_of_1b_gain"]["bands"] == 1
+
+
+def test_stored_1b_rows_reproduce_the_bleed_audit():
+    """The audited 1b figures (bleed README, r4): matched − current +0.252 on all of Σ, +0.227 without
+    high bleed, +0.253 without moderate or high, +0.273 on Cambridge only (cell rule)."""
+    try:
+        meta, sig = M.load_sigma()
+    except SystemExit:
+        pytest.skip("Σ is not on this machine")
+    cfgs = {"current": M.CURRENT, "matched_1b": M.MATCHED}
+    src = {"current": "cprime", "matched_1b": M.MATCHED_DI}
+    dv, ceil = C.cell_directions(sig, cfgs, src, tuple(cfgs))
+    if len(dv) != 72:
+        pytest.skip("experiment 1 and 1b scores are not all here")
+    ps, bt = K.parts(), C.load_bleed_table()
+    want = {"all": (0.252, 14), **{k: (v, n) for (k, v), n in zip(C.BLEED_1B.items(), (14, 12, 11))}}
+    for row, (v, bands) in want.items():
+        r = C.row_report(dv, ceil, ps, bt, row, names=("current", "matched_1b"))["matched_1b_minus_current"]
+        assert round(r["band_weighted_mean"], 3) == pytest.approx(v) and r["bands"] == bands, row
+
+
 def test_report_on_fake_scores(tmp_path, monkeypatch):
     """A perfect separator (its objective is the truth) reads above today's objective; the reading
     is refused on an incomplete set; the share and the decomposition are present."""
@@ -282,6 +365,9 @@ def test_report_on_fake_scores(tmp_path, monkeypatch):
             r.write_text(json.dumps({"renders": len(srcs) + 1}))
     monkeypatch.setattr(M, "load_sigma", lambda: ({"hash": M.SIGMA_HASH, "cells": cells}, sig))
     monkeypatch.setattr(K, "parts", lambda: ps)
+    monkeypatch.setattr(C, "load_bleed_table", lambda: {
+        f"p{i}": {"source": "cambridge" if i < 5 else "telefunken",
+                  "halves": {"A": {"flag": "high" if i == 7 else "low"}, "B": {"flag": "low"}}} for i in range(8)})
     C.cmd_report("mega53")
     rep = json.loads((tmp_path / "report-1c-mega53.json").read_text())
     a = rep["subsets"]["all"]
@@ -294,6 +380,12 @@ def test_report_on_fake_scores(tmp_path, monkeypatch):
     assert a["reference_only_minus_current"]["cross_half"]["cells"] == 16
     assert rep["flac_vs_float_S"] == {"n": 32, "max": 2e-6, "over_tol": 0}
     assert len(rep["per_band_cross_half"]) == 6
+    rows = rep["bleed_and_leak_rows"]
+    assert set(rows) == set(C.ROWS) and rows["no_high"]["sep_minus_current"]["cells"] == 14
+    assert rows["cambridge_only"]["current"]["cells"] == 10 and rows["telefunken_only"]["current"]["cells"] == 6
+    assert rows["all"]["sep_minus_current"]["band_weighted_mean"] == pytest.approx(
+        a["sep_minus_current"]["cross_half"]["band_weighted_mean"])
+    assert "interaction" in a and rep["scope"].startswith("on the instrumental context")
 
 
 # --- the stored contexts (zero separations) --------------------------------------------------------------

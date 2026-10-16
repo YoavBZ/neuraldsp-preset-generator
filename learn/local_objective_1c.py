@@ -3,7 +3,7 @@ design. Mega-53's electric-guitar head separates the same 30-s context step 3's 
 from; C′ (each part's fold) rebuilds its crop; Σ renders through that rebuild and is scored against
 the same crop. Development only; estimates with 90% band-clustered intervals, no pass/fail bars.
 
-    $MSST_PY -m learn.local_objective_1c separate [--no-wait]   # CPU, alone: the memory gate
+    $MSST_PY -m learn.local_objective_1c separate [--no-wait]   # CPU; memory gate, may run beside renders
     .venv/bin/python -m learn.local_objective_1c blend         # optional add-on, zero renders
     $TORCH_PY -m learn.local_objective_1c rebuild --sep mega53  # CPU, zero renders; the 2a checks
     OMP_NUM_THREADS=1 .venv/bin/python -m learn.local_objective render --di cprime_mega53 --shard i/3
@@ -45,11 +45,30 @@ from learn import local_objective as LO  # noqa: E402
 SR = 48000
 CROP = 480_000
 LAG_TOL = 3                      # samples: |GCC(Mega-53 crop, htdemucs crop)| (the plan's timing check)
+BLEND_LAG_TOL = 1                # amendment 3a: the blend's |relative lag|, no shift (beyond: refused)
+EDGE_FLOOR_DB = -100.0           # the edge bound's extent: where crop- and full-filtering differ by more
 LINEUP_TOL = 1e-6                # the stem builders' line-up tolerance (context slice against the crop file)
-MEM_GATE_GB = 18.0               # available memory before Mega-53 loads (17.1 GB measured peak, screen)
+# Amendment 3a: the gate is keyed on what loads. The pruned head peaked at 7.13–7.18 GB RSS in the
+# screen (+ about 50%); 18 GB is for the full model (the identity check's 17.1 GB peak).
+MEM_GATE_PRUNED_GB = 11.0
+MEM_GATE_FULL_GB = 18.0
+MEM_GATE_GB = MEM_GATE_PRUNED_GB
 POLL_S = 60
 TRAINING = (r"-m learn\.\S+\s+(train|fit)\b",)    # MPS training jobs (song_soundspace, direc, train, ...)
 SUBSETS_1C = {**LO.SUBSETS, "without_armA": ("S", "nbr", "ks")}
+# Amendment 3a: bleed and leak rows, on all of Σ, each with the share's numerator and denominator on
+# the same cells. Bleed flags per part and half come from the bleed audit; "cell" drops a cell if
+# either half is flagged (r4's rule, the bleed README's table), "dir" drops a direction (objective on
+# half h, truth on the other) whose truth half is flagged (beside it).
+BLEED_TABLE = PLUGIN_ROOT / "docs/audits/bleed-2026-10-16/bleed-table.json"
+ROWS = {"all": ("all", None),
+        "no_high": ("cell", {"high"}), "no_high_dir": ("dir", {"high"}),
+        "no_moderate_or_high": ("cell", {"moderate", "high"}), "no_moderate_or_high_dir": ("dir", {"moderate", "high"}),
+        "cambridge_only": ("source", "cambridge"),         # where 1b really is a perfect-separator cell
+        "telefunken_only": ("source", "telefunken"),       # 3 bands: descriptive at most
+        "without_musdb_train": ("bands_out", None)}        # htdemucs_6s trained on these bands' songs
+CLEANEST_ROW = "cambridge_only"
+BLEED_1B = {"no_high": 0.227, "no_moderate_or_high": 0.253, "cambridge_only": 0.273}   # audited 1b rows
 DECLARED = "all"                 # the reading is on all of Σ; the subsets are descriptive
 
 
@@ -114,15 +133,24 @@ def is_training(cmd):
     return X._is_python(cmd) and any(re.search(p, cmd) for p in TRAINING)
 
 
-def separation_blockers(ps, own, avail_gb, min_gb=MEM_GATE_GB, server=False):
-    """Why Mega-53 may not run now (empty: it may): a render process (the cap's list) or a render
-    server, an MPS training job, another separation, or less available memory than the gate."""
+def mem_gate_gb(pruned):
+    """Amendment 3a: about 11 GB for the pruned head, 18 GB for the full model."""
+    return MEM_GATE_PRUNED_GB if pruned else MEM_GATE_FULL_GB
+
+
+def prune_decision(identity):
+    """Prune to the electric-guitar head only if the screen's identity check found it identical to
+    the full model. identity: the parsed `identity.json`, or None."""
+    return bool(identity) and identity.get("identical") is True
+
+
+def separation_blockers(ps, own, avail_gb, min_gb=MEM_GATE_GB):
+    """Why Mega-53 may not run now (empty: it may): an MPS training job, another separation, or
+    less available memory than the gate. Renders are not blockers (amendment 3a): CPU torch at 4
+    fixed threads is deterministic and offline renders are load-independent, so Mega-53 may run
+    beside ks_extend; the swap-growth guard stays the backstop."""
     out_ = []
     rest = [(p, c) for p, c in ps if p not in own]
-    if LO.others_rendering(rest):
-        out_.append(f"render processes {LO.others_rendering(rest)}")
-    if server:
-        out_.append("a render server (au_render_server) is running")
     tr = [p for p, c in rest if is_training(c)]
     if tr:
         out_.append(f"training processes {tr}")
@@ -138,9 +166,7 @@ def _blockers(min_gb):
     from learn import ks_extend as X
 
     vm = subprocess.run(["vm_stat"], capture_output=True, text=True).stdout
-    server = subprocess.run(["pgrep", "-f", "au_render_server"], capture_output=True).returncode == 0
-    return separation_blockers(X._ps(), {os.getpid(), os.getppid()}, available_gb(vm) if vm else None,
-                               min_gb, server)
+    return separation_blockers(X._ps(), {os.getpid(), os.getppid()}, available_gb(vm) if vm else None, min_gb)
 
 
 def wait_idle(no_wait=False, min_gb=MEM_GATE_GB):
@@ -192,10 +218,11 @@ def sep_ok(sep):
 
 # --- commands ------------------------------------------------------------------------------------------
 
-def cmd_separate(no_wait=False, min_gb=MEM_GATE_GB):
+def cmd_separate(no_wait=False, min_gb=None):
     """Mega-53 (pruned to its electric-guitar head when the screen's identity check passed) on each
-    part's context, CPU only, alone: it waits for the memory gate before loading, and stops
-    (resumable) if anything that blocks it starts between parts. Per part: the line-up check, the
+    part's context, CPU only. Pruning is decided first, then it waits for the memory gate (11 GB
+    pruned, 18 GB full; amendment 3a) and for no training job or other separation; it may run
+    beside renders. It stops (resumable) if a training job or separation starts between parts. Per part: the line-up check, the
     30-s stem and its crop, GCC against the htdemucs stem (±3 samples), and SNRs against
     reference.wav (descriptive)."""
     import numpy as np
@@ -213,9 +240,11 @@ def cmd_separate(no_wait=False, min_gb=MEM_GATE_GB):
     log = json.loads(log_path.read_text()) if log_path.exists() else {}
     todo = [s for s in ps if not (s in log and LO.sep_crop_path("mega53", s).exists())]
     if todo:
-        wait_idle(no_wait, min_gb)
-        ident = SCR.out_dir() / "identity.json"
-        prune = ident.exists() and json.loads(ident.read_text()).get("identical") is True
+        ident = SCR.out_dir() / "identity.json"                       # amendment 3a: prune first
+        prune = prune_decision(json.loads(ident.read_text()) if ident.exists() else None)
+        gate = mem_gate_gb(prune) if min_gb is None else min_gb
+        print("pruned" if prune else "full model", "memory gate", gate, "GB", flush=True)
+        wait_idle(no_wait, gate)
         sep = SCR.MsstSeparator(prune=prune)
         for slug in todo:
             b = _blockers(0.0)                                           # memory is ours now
@@ -249,18 +278,48 @@ def cmd_separate(no_wait=False, min_gb=MEM_GATE_GB):
             K._atomic(log_path, log)
             print(slug, {k: row[k] for k in ("gcc_vs_htdemucs", "snr_db_vs_reference", "wall_s", "problems")},
                   flush=True)
-        K._atomic(d / "run.json", {**sep.info(), "pruned_by_identity": prune})
+        K._atomic(d / "run.json", {**sep.info(), "pruned_by_identity": prune, "memory_gate_gb": gate})
     bad, missing = write_check(d, log, ps)
     if bad or missing:
         raise SystemExit(f"Mega-53 stems fail the checks: {bad or missing}")
     print("Mega-53: all 24 crops within ±3 samples of the htdemucs stems; line-ups exact")
 
 
+def blend_problems(rel, tol=BLEND_LAG_TOL):
+    """Amendment 3a: a blend needs |relative lag| <= 1 sample (no shift: both stems sit on the mix's
+    timeline, and a ±1 GCC reading is most likely estimator jitter)."""
+    return [] if rel is not None and abs(rel) <= tol else [f"relative lag {rel} (the blend allows ±{tol}, no shift)"]
+
+
+def edge_bound(full, off, n=CROP, floor_db=EDGE_FLOOR_DB):
+    """What filtering the high band on the crop instead of on the full stem changes: HP(x[crop])
+    against HP(x)[crop] (HP = x − LP, `separator_screen.lowpass`). -> the largest difference in dB
+    relative to the crop's peak, and how far from either end of the crop it exceeds `floor_db`
+    (ms). The end transient sits inside half B, which ends at the crop's end (amendment 3a)."""
+    import numpy as np
+
+    from learn import separator_screen as SCR
+
+    x = np.asarray(full, np.float64)
+    c = x[off:off + n]
+    a = (x - SCR.lowpass(x))[off:off + n]
+    b = c - SCR.lowpass(c)
+    d = np.abs(a - b)
+    peak = float(np.max(np.abs(c))) or 1.0
+    mx = float(d.max())
+    over = np.nonzero(d > peak * 10 ** (floor_db / 20))[0]
+    head, tail = over[over < n // 2], over[over >= n // 2]
+    ext = max(int(head.max()) + 1 if len(head) else 0, n - int(tail.min()) if len(tail) else 0)
+    return {"max_db": 20 * math.log10(mx / peak) if mx > 0 else -math.inf, "extent_ms": ext / SR * 1000}
+
+
 def cmd_blend():
     """The optional crossover (zero renders): LP(Mega-53) + (htdemucs − LP(htdemucs)) at 6 kHz
     (`separator_screen.blend`'s filter). Mega-53's low band is filtered on its 30-s stem before the
     crop is cut; step 3's htdemucs stem exists only as the 10-s crop, so its high band is taken on
-    the crop. As the screen: a part whose relative lag is not 0 gets no blend."""
+    the crop. The crop's end is half B's end, so that transient is inside the judged audio: each part
+    logs the edge bound (`edge_bound`) on its Mega-53 stem as a proxy, and exactly on htdemucs where
+    the screen kept a 30-s htdemucs stem. Amendment 3a: |relative lag| <= 1, no shift, else no blend."""
     import numpy as np
 
     from learn import confirm_run as CR
@@ -279,8 +338,12 @@ def cmd_blend():
         mega30 = np.load(sep_dir("mega53") / "full" / f"{slug}.npy").astype(np.float64)
         hd = CR.mono(part["stem"]).astype(np.float64)
         rel = int(RM.gcc_lag(mega30[off:off + CROP], hd))
-        row = {"relative_lag": rel, "problems": [] if rel == 0 else [f"relative lag {rel} (the blend needs 0)"]}
-        if rel == 0:
+        row = {"relative_lag": rel, "problems": blend_problems(rel),
+               "edge_bound_mega53_proxy": edge_bound(mega30, off)}
+        hd30 = SCR.out_dir() / "stems" / "htdemucs" / f"{slug}-real.npy"
+        if hd30.exists():
+            row["edge_bound_htdemucs"] = edge_bound(np.load(hd30).astype(np.float64), off)
+        if not row["problems"]:
             b = SCR.lowpass(mega30)[off:off + CROP] + (hd - SCR.lowpass(hd))
             np.save(LO.sep_crop_path("blend", slug), b.astype(np.float32))
         log[slug] = row
@@ -320,7 +383,8 @@ def fieller(a, d, level=0.90):
 
     n = len(a)
     if n < 3 or len(d) != n:
-        return {"ratio": None, "lo90": None, "hi90": None, "bounded": False, "bands": n}
+        return {"ratio": None, "lo90": None, "hi90": None, "bounded": False, "shape": None, "bands": n,
+                "df": max(n - 1, 0)}
     ma, md = statistics.fmean(a), statistics.fmean(d)
     saa = statistics.variance(a) / n
     sdd = statistics.variance(d) / n
@@ -330,9 +394,13 @@ def fieller(a, d, level=0.90):
     r = ma / md if md else None
     disc = B * B - A * C
     if A <= 0 or disc < 0:
-        return {"ratio": r, "lo90": None, "hi90": None, "bounded": False, "bands": n}
+        # A < 0 with disc > 0 is a two-ray set (the ratio is outside a finite gap); otherwise the
+        # whole line. Both are reported as unbounded (amendment 3a).
+        shape = "two rays" if A < 0 and disc > 0 else "whole line"
+        return {"ratio": r, "lo90": None, "hi90": None, "bounded": False, "shape": shape, "bands": n, "df": n - 1}
     s = math.sqrt(disc)
-    return {"ratio": r, "lo90": (B - s) / A, "hi90": (B + s) / A, "bounded": True, "bands": n}
+    return {"ratio": r, "lo90": (B - s) / A, "hi90": (B + s) / A, "bounded": True, "shape": "interval",
+            "bands": n, "df": n - 1}
 
 
 def share(num_rows, den_rows, level=0.90):
@@ -355,8 +423,9 @@ def share(num_rows, den_rows, level=0.90):
 
 def reading_1c(diff, gain_1b, near=LO.NEAR_GAP_SHARE):
     """Amendment 3's reading of sep − current (cross-half, band-weighted, all of Σ; estimates
-    only): 'above' if the 90% interval is above 0 (the separator recovers part of the separator's
-    share: the product path is to switch, after a fresh-draw check); 'below' if under 0; 'near
+    only, on the instrumental context): 'above' if the 90% interval is above 0 (the separator
+    recovers part of the separator's share: the product path is to switch, after a fresh-draw check
+    run on full mixes with vocals for both separators); 'below' if under 0; 'near
     zero' if it contains 0 and its top recovers under a quarter of 1b's gain (this separator isn't
     better for this purpose); otherwise 'undecided'."""
     lo, hi = diff.get("lo90"), diff.get("hi90")
@@ -369,6 +438,61 @@ def reading_1c(diff, gain_1b, near=LO.NEAR_GAP_SHARE):
     if gain_1b is not None and gain_1b > 0 and hi < near * gain_1b:
         return "near zero"
     return "undecided"
+
+
+def kept_directions(row, slug, band, bt):
+    """The directions (objective half) a row keeps for a cell. bt: the bleed table."""
+    from learn import song_readout as R
+
+    kind, arg = ROWS[row]
+    if kind == "all":
+        return LO.HALVES
+    if kind == "source":
+        return LO.HALVES if slug in bt and bt[slug]["source"] == arg else ()
+    if kind == "bands_out":
+        return () if band in R.MUSDB_TRAIN_BANDS else LO.HALVES
+    if slug not in bt:
+        return ()
+    flag = {h: bt[slug]["halves"][h]["flag"] for h in LO.HALVES}
+    if kind == "cell":
+        return () if any(f in arg for f in flag.values()) else LO.HALVES
+    return tuple(h for h in LO.HALVES if flag[LO.other(h)] not in arg)
+
+
+def directions(obj, true):
+    """Cross-half Spearman per direction: objective on half h against the truth on the other."""
+    return {h: LO.rho(obj[h], true[LO.other(h)]) for h in LO.HALVES}
+
+
+def row_rows(dirvals, ps, bt, row, name):
+    """{cell: (slug, band, cls, mean over the row's kept directions)}; cells with none are left out."""
+    out_ = {}
+    for c, v in dirvals.items():
+        if name not in v:
+            continue
+        p = ps[c[0]]
+        keep = kept_directions(row, c[0], p["band"], bt)
+        if keep:
+            out_[c] = (c[0], p["band"], p["gain_class"], LO._mean(v[name][h] for h in keep))
+    return out_
+
+
+def row_report(dirvals, ceil, ps, bt, row, names=("sep", "current", "matched_1b")):
+    """One bleed or leak row: each name's cross-half, the differences, the ceiling, and the share
+    (sep − current) / (1b − current) on the same cells, with Fieller on this row's bands."""
+    rr = {n: row_rows(dirvals, ps, bt, row, n) for n in names}
+    out_ = {n: LO.agg(v) for n, v in rr.items()}
+    cells = set(rr["current"])
+    out_["ceiling"] = LO.agg({c: (c[0], ps[c[0]]["band"], ps[c[0]]["gain_class"], ceil[c]) for c in cells if c in ceil})
+    for a in names:
+        if a != "current":
+            out_[f"{a}_minus_current"] = LO.agg(LO.paired(rr[a], rr["current"]))
+    if "sep" in rr and "matched_1b" in rr:
+        num, den = LO.paired(rr["sep"], rr["current"]), LO.paired(rr["matched_1b"], rr["current"])
+        both = set(num) & set(den)
+        out_["share_of_1b_gain"] = share({c: num[c] for c in both}, {c: den[c] for c in both})
+        out_["sep_minus_matched_1b"] = LO.agg(LO.paired(rr["sep"], rr["matched_1b"]))
+    return out_
 
 
 def report_configs(sep):
@@ -387,6 +511,26 @@ DIFFS = {"sep_minus_current": ("sep", "current"), "matched_1b_minus_current": ("
          "reference_only_minus_current": ("reference_only", "current"),
          "rebuild_only_minus_current": ("rebuild_only", "current"),
          "sep_minus_reference_only": ("sep", "reference_only")}
+SCOPE = "on the instrumental context (the record's vocal tracks removed, as step 3's stems)"
+
+
+def load_bleed_table(path=BLEED_TABLE):
+    return json.loads(pathlib.Path(path).read_text())
+
+
+def cell_directions(sig, cfgs, src, required):
+    """Per cell (all of Σ): each named configuration's cross-half Spearman per direction, and the
+    ceiling; a cell needs the measure DI's scores and every `required` name's. -> (dirvals, ceil)."""
+    dirvals, ceil = {}, {}
+    for c in sorted(sig):
+        files = {d: out() / "scores" / d / c[0] / f"{c[1]}.json" for d in {"measure", *src.values()}}
+        if not files["measure"].exists() or not all(files[src[n]].exists() for n in required):
+            continue
+        sc = {d: json.loads(f.read_text())["scores"] for d, f in files.items() if f.exists()}
+        true = LO._vals(sc["measure"], LO.TRUE)
+        ceil[c] = LO.ceiling(true)
+        dirvals[c] = {n: directions(LO._vals(sc[src[n]], cfg), true) for n, cfg in cfgs.items() if src[n] in sc}
+    return dirvals, ceil
 
 
 def cmd_report(sep="mega53"):
@@ -418,10 +562,18 @@ def cmd_report(sep="mega53"):
             r[name] = {k: LO.agg(rows(name, sub, k)) for k in ("cross_half", "reliable_accuracy", "same_half")}
         for dn, (a, b) in DIFFS.items():
             r[dn] = {k: LO.agg(LO.paired(rows(a, sub, k), rows(b, sub, k))) for k in ("cross_half", "reliable_accuracy")}
+        r["interaction"] = {k: LO.agg(LO.paired(LO.paired(rows("sep", sub, k), rows("reference_only", sub, k)),
+                                                LO.paired(rows("rebuild_only", sub, k), rows("current", sub, k))))
+                            for k in ("cross_half", "reliable_accuracy")}     # sep − ref only − rebuild only + current
         r["share_of_1b_gain"] = {k: share(LO.paired(rows("sep", sub, k), rows("current", sub, k)),
                                           LO.paired(rows("matched_1b", sub, k), rows("current", sub, k)))
                                  for k in ("cross_half", "reliable_accuracy")}
         rep["subsets"][sub] = r
+    bt = load_bleed_table()
+    dirvals, ceil = cell_directions(sig, cfgs, src, REQUIRED)
+    rep["bleed_and_leak_rows"] = {row: row_report(dirvals, ceil, ps, bt, row) for row in ROWS}
+    rep["cleanest_row"] = CLEANEST_ROW
+    rep["scope"] = SCOPE
     bands = {}
     for c, v in per.items():
         bands.setdefault(ps[c[0]]["band"], {}).setdefault(c[0], []).append(
@@ -465,7 +617,10 @@ def cmd_report(sep="mega53"):
     print(f"{sep} matched cross-half:", f(a["sep"]["cross_half"]), "current:", f(a["current"]["cross_half"]),
           "1b:", f(a["matched_1b"]["cross_half"]), "ceiling:", f(a["ceiling"]))
     print(f"{sep} - current:", f(a["sep_minus_current"]["cross_half"]), "reading:", a["reading"])
-    print("share of 1b's gain:", sh)
+    print("share of 1b's gain:", sh, SCOPE)
+    for row, rr in rep["bleed_and_leak_rows"].items():
+        print(f"  {row}: {sep} - current", f(rr["sep_minus_current"]), "1b - current", f(rr["matched_1b_minus_current"]),
+              "share", rr["share_of_1b_gain"])
     print("renders used:", renders, "expected:", rep["renders_expected"])
 
 
@@ -474,7 +629,8 @@ def main(argv=None):
     ap.add_argument("cmd", choices=("separate", "blend", "rebuild", "report"))
     ap.add_argument("--sep", default="mega53", choices=LO.SEPARATORS)
     ap.add_argument("--no-wait", action="store_true", help="separate: exit instead of waiting for the gate")
-    ap.add_argument("--min-free-gb", type=float, default=MEM_GATE_GB, help="separate: the memory gate")
+    ap.add_argument("--min-free-gb", type=float, default=None,
+                    help="separate: override the memory gate (default 11 GB pruned, 18 GB full)")
     a = ap.parse_args(argv)
     {"separate": lambda: cmd_separate(a.no_wait, a.min_free_gb), "blend": cmd_blend,
      "rebuild": lambda: cmd_rebuild(a.sep), "report": lambda: cmd_report(a.sep)}[a.cmd]()

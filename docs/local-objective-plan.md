@@ -17,7 +17,8 @@ any render. Where the amendment and the sections below differ, the amendment gov
 renders before the user's yes. Experiment 1 has run ([results](local-objective-results.md)).
 [Amendment 2](#amendment-2-2026-10-16-before-any-1b-render) adds experiment 1b, the matched cell.
 [Amendment 3](#amendment-3-2026-10-16-before-any-1c-separation-or-render) adds experiment 1c, a real
-separator (Mega-53) in 1b's matched design. It is a draft, not yet reviewed.
+separator (Mega-53) in 1b's matched design, with the review's six changes as
+[amendment 3a](#amendment-3a-2026-10-16-before-any-1c-separation).
 
 ## Why
 
@@ -600,8 +601,10 @@ A quick review approved 1b with four changes, all made in code and tested:
 
 Experiment 1c: a real separator in 1b's matched design. Declared after 1b's audited readout
 ([results](local-objective-results.md), experiment 1b), before any separation or render. Same rules:
-no pass/fail bars, a declared stopping rule, renders reported. **Status: a draft; it needs a review
-and the user's yes before anything runs.**
+no pass/fail bars, a declared stopping rule, renders reported. **Status:** reviewed 2026-10-16
+(`tmp/local-objective-1c-review.md`, local): approved with 6 required changes, all made as
+amendment 3a below, which governs where the two differ. The user said yes to running 1c on
+2026-10-16, after amendment 3a.
 
 **Why.**
 - 1b showed that a perfect separator (the amp track) feeding both C′'s rebuild and the reference
@@ -761,3 +764,110 @@ given per band. It reports:
     removed). A product would get the full mix;
   - the truth is the judge, not listening.
 - Any switch of separator is scored on a fresh draw of parts outside the 24 before it ships.
+
+### Amendment 3a (2026-10-16, before any 1c separation)
+
+The independent review (`tmp/local-objective-1c-review.md`, local) approved 1c with six required
+changes. All six are made in code and tested; nothing has been separated or rendered.
+
+**1. Bleed and leak rows** (`report --sep`, `bleed_and_leak_rows`).
+- **Every row is on all of Σ.** In each row, the share's numerator (mega53 − current) and its
+  denominator (1b − current) sit on the same cells, with Fieller on that row's bands.
+- **The bleed flags** come from the bleed audit (`docs/audits/bleed-2026-10-16/bleed-table.json`).
+  - The **cell rule** (r4's, the bleed README's table) drops a cell if either half is flagged.
+  - The **direction rule** is reported beside it. It drops a direction (objective on one half,
+    truth on the other) whose truth half is flagged.
+- **The rows,** with 1b's matched − current on each, recomputed from the stored scores:
+
+  | Row | Bands (df) | 1b − current |
+  |---|---|---|
+  | (a) all of Σ: **the declared reading** | 14 (13) | +0.252 [0.139, 0.365] |
+  | (b) no high bleed (cell rule) | 14 (13) | +0.227 [0.127, 0.326] |
+  | (c) no moderate or high bleed (cell rule) | 12 (11) | +0.253 [0.145, 0.360] |
+  | (d) Cambridge only | 11 (10) | +0.273 [0.162, 0.385] |
+  | Telefunken only (descriptive at most) | 3 (2) | +0.174 [−0.49, +0.83] |
+  | Without the MUSDB18-train bands (Atlantis Bound, Wall Of Death) | 12 (11) | +0.265 [0.135, 0.396] |
+
+  - The direction rule's rows are beside them: (b) +0.227 on 14 bands; (c) +0.232 on 13.
+  - A test checks that (a)–(d) reproduce the audited +0.252, +0.227, +0.253 and +0.273, with their
+    band counts.
+- **(d), Cambridge only, is the row where the share reads cleanest.** There 1b really is a
+  perfect-separator cell.
+- **The reading stays on (a).** The 0.063 "near zero" bar applies to (a) only; the other rows are
+  descriptive.
+- **Fieller's interval is on that row's bands − 1 df** (13, 11 or 10, as above).
+  - When the denominator's own interval contains 0, the set is unbounded. With A < 0 and a positive
+    discriminant it is two rays (the ratio lies outside a finite gap); otherwise it is the whole
+    line.
+  - Both are reported as "unbounded", and the shape is named.
+- **Also reported:** the decomposition's interaction, mega53 − reference only − rebuild only +
+  current. Experiment 1 found that the stem's errors cancel rather than add. So "rebuild only" (C′
+  of Mega-53, scored against htdemucs) breaks that cancellation, and it may read negative even if
+  Mega-53 helps.
+
+**2. What the share means.**
+- **On the bleed parts, 1b is not a separator ceiling, so the share can exceed 1.**
+  - In the Telefunken live rooms, the drum and cymbal bleed in `reference.wav` comes from separate
+    sources in the mix.
+  - A separator can assign that bleed to the drums, so its stem can be cleaner than the amp track,
+    which can't shed it.
+  - So the share is not capped at 1, and a value above 1 is not an error. 1b's matched cell is 0.60
+    on Cambridge but 0.32 on Telefunken (3 bands, confounded with the session).
+- **The truth's reference carries the same bleed.** That can't be fixed here; it is a limit.
+- **Separator training data.**
+  - htdemucs_6s trained on MUSDB18's train split, which holds Atlantis Bound (2 parts) and Wall Of
+    Death (femme). So today's objective is optimistic on those 2 of the 14 bands; the row without
+    them is the check.
+  - Mega-53's training data is not stated. A leak in it can't be ruled out.
+
+**3. The memory gate and scheduling.**
+- **The gate is keyed on what loads.** Pruning is decided first, from the screen's
+  `identity.json`. The gate is then:
+  - **about 11 GB** for the pruned head (the screen's pruned runs peaked at 7.13–7.18 GB RSS, plus
+    about 50%);
+  - **18 GB** only for the full model, if `identity.json` is missing or not identical.
+- **Renders no longer block `separate`.** It may run beside ks_extend:
+  - CPU torch at a fixed 4 threads is deterministic (the screen's pruned/full identity was 0.0);
+  - offline renders are load-independent, and ks_extend checks its own repeats.
+- **Kept:** the training-job, other-separation and memory blockers, and the 256 MB swap-growth
+  guard, which is the real backstop.
+- `render` still waits while a separation runs.
+- **The schedule:**
+  1. separate now, beside ks_extend;
+  2. rebuild (minutes);
+  3. queue the renders with `--after` on ks_extend's shard PIDs, since ks_extend holds all 3 slots
+     of the cap.
+- **The hours:**
+  - separation: about 35 minutes alone, or about **40–50 minutes beside ks_extend** (3 render
+    servers + 4 threads on 8 cores);
+  - renders: 0.7 h, then 0.2–0.3 h of scoring.
+  - **Wall time is dominated by queuing behind ks_extend** (2–4 batches, possibly hours).
+
+**4. The blend's lag rule (declared now, before any blend).**
+- The rule is now |relative lag| ≤ 1 sample, with no shift; the lags are reported. Beyond ±1, a part
+  gets no blend, and `rebuild --sep blend` refuses.
+- Both stems sit on the mix's timeline by construction, so a ±1 GCC reading is most likely
+  estimator jitter. Shifting by a jittery estimate could create an offset that wasn't there.
+- A real 1-sample offset would cost a dip of −0.28, −0.69 and −0.64 dB at 5, 6 and 7 kHz on the
+  shared component (the review's measurement). That is small next to Mega-53's own 8–13 kHz loss.
+
+**5. The blend's edges (corrected wording).**
+- The judge's halves are 1.0–5.5 s and 5.5–10.0 s.
+  - The start transient of filtering htdemucs's high band on the crop is outside both halves.
+  - **The end transient is inside half B,** because the crop ends at 10.0 s. Amendment 3's "inside
+    the 0.25-s isolate fade" was wrong.
+- **It is negligible.** The review measured it on a 30-s htdemucs stem (femme), filtering on the
+  crop against filtering on the full stem and then cutting:
+  - the largest difference is −56 dB relative to the peak, at the very edge;
+  - it is under −113 dB beyond 0.5 ms, and exactly 0 beyond 5 ms.
+- **`blend` now logs this bound per part** (zero renders): the largest difference in dB relative to
+  the crop's peak, and how far from the crop's ends it exceeds −100 dB.
+  - It is measured on the part's Mega-53 30-s stem as a proxy.
+  - On the screen's 5 parts, it is measured exactly on their 30-s htdemucs stems.
+
+**6. Scope.**
+- **The headline and the reading are "on the instrumental context":** both separators see the
+  record with its vocal tracks removed, as step 3's stems did. The report carries this as `scope`.
+- **Any separator switch's fresh-draw check runs on full mixes, with vocals, for both separators.**
+  Sets 1–2 contexts also keep `mix.wav`, so a later with-vocals check is possible on 19 of these
+  parts.
