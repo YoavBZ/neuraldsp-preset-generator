@@ -318,7 +318,7 @@
    ],
    "folds": "docs/song-settings-folds.json",
    "gate": "per arm, held half, band-weighted vs S on the per-part unit: (1) <= -0.03 and >= 40% of K_S's band-weighted gain; (2) better than S in >= 60% of bands; (3) neither clean nor crunch worse than S by > 0.05; (4) arm A not worse than the C' menu pick by > 0.01; (5) arm B: positive control and shuffled-input control pass. Arm A known-target control rows as declared. Readout per the ML plan's step 6",
-   "outcome": null
+   "outcome": "done 2026-10-16 (audited): no arm passed. K_S -0.269 (14/14). Arm A failed by its known-target control (3/9 vs 9/9 true DI); descriptive -0.078 [-0.157,+0.002] vs S, -0.062 [-0.112,-0.012] vs C' menu pick. Arm B failed: positive control 0/4 folds; vs S +0.035 [-0.038,+0.108], 6/14; = constant; shuffled passes; not data-limited (+0.017). Audit: pipeline correct, model weak; control rendered via raw DI (fix makes it fail harder; no re-run used). Arm C not run."
   },
   {
    "test_id": "rank-margin-ladder",
