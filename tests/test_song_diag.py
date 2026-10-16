@@ -488,7 +488,10 @@ def test_setup_check():
     reps = {i: (0.0, 0.0) for i in range(100)}
     reps.update({i: (0.01, 0.0) for i in range(5)})
     assert D.setup_check([0.0], reps, {f: 40 for f in range(4)}, True)["passes"]          # 95% exactly
-    reps[5] = (INF, 0.0)
+    reps[5] = (INF, 0.0)                     # a refused half is a non-finite unit, not a repeat failure
+    r = D.setup_check([0.0], reps, {f: 40 for f in range(4)}, True)
+    assert r["passes"] and len(r["targets_dropped_repeat"]) == 5
+    reps[6] = (0.01, 0.0)
     r = D.setup_check([0.0], reps, {f: 40 for f in range(4)}, True)
     assert not r["passes"] and len(r["targets_dropped_repeat"]) == 6
     assert not D.setup_check([0.002], {0: (0, 0)}, {0: 40}, True)["passes"]

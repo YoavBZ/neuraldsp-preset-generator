@@ -420,7 +420,7 @@ def pit_truncated(pi, mu, sigma, u):
         lo, hi = _phi((0 - m) / s), _phi((1 - m) / s)
         num += p * (_phi((u - m) / s) - lo)
         den += p * (hi - lo)
-    return min(1.0, max(0.0, num / den)) if den > 0 else math.nan
+    return float(min(1.0, max(0.0, num / den))) if den > 0 else math.nan
 
 
 def pit_summary(values, bins=10):
@@ -746,7 +746,10 @@ def label_sampling_flag(units_by_fold):
 def setup_check(preflight_repeats, target_repeats, informative_by_fold, parity_ok):
     """target_repeats: {target: (dA, dB)} of the repeat against the target."""
     pre_ok = bool(preflight_repeats) and all(finite(x) and x <= REPEAT_TOL + EPS for x in preflight_repeats)
-    good = [t for t, v in target_repeats.items() if all(finite(x) and x <= REPEAT_TOL + EPS for x in v)]
+    # a refused half (inf on target and every candidate) is a non-finite unit, dropped later by
+    # informative(); only a finite repeat above the tolerance fails the check (audit 2026-10-16)
+    good = [t for t, v in target_repeats.items() if all((not finite(x)) or x <= REPEAT_TOL + EPS for x in v)
+            and any(finite(x) for x in v)]
     rep_ok = bool(target_repeats) and at_least_share(len(good), len(target_repeats), 95, 100)
     short = {f: n for f, n in informative_by_fold.items() if n < MIN_INFORMATIVE}
     return {"preflight_repeat_ok": pre_ok, "target_repeat_ok": rep_ok,
