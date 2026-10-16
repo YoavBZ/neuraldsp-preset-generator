@@ -108,53 +108,41 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      - The keep margin let near-ties through. A higher margin is declared before its next use.
    - **Step 4, the label table** ([results](label-table-results.md)): done. It has menus and
      stems for 59 clean and crunch development parts.
-   - **Step 3, the song-settings comparison** ([plan](song-settings-plan.md)): in progress.
-     - **Arm A (search through the rebuilt DI)** failed its known-target control, after an
-       audit that found no bug. With the true DI, the search closes at least half the gap on 9
-       of 9 informative cells; through C′'s rebuild, on 3 of 9. Through the rebuild, the target
-       even ranks below the start on 7 of 12 cells.
-     - Arm A's scores are still shown at the readout, descriptively.
-     - The rebuild's judging lag (0, not −52) is fixed before any later use.
-     - **The rebuild is the bottleneck, not the route** (the user's direction). The control's
-       "recording" was a clean render, so this is the rebuild's error alone. The likely cause is
-       lost dynamics: the rebuild's crest factor (peak-to-average level) is 3–5 dB low. This is
-       untested. On real songs, separation adds a second error, also not yet tested.
+   - **Step 3, the song-settings comparison** ([results](song-settings-results.md)): done and
+     audited. **No arm passed.**
+     - The true-DI search (K_S) gets −0.269 against the starting preset.
+     - **Arm A** (search through the rebuilt DI) failed its known-target control. Descriptively
+       it gets −0.078 against the start, and −0.062 against the rebuilt-DI menu pick (11 of 14
+       bands).
+     - **Arm B** (a settings model trained on renders) failed: its positive control fails, and on
+       songs it is +0.035, no better than a song-blind constant. The audit found the pipeline
+       correct and the model weak: knob error barely beats the median.
      - **Arm C** isn't run.
-     - **Arm B** (a direct settings model trained on 10k renders) is training per fold, then
-       half-data runs. Next come its positive control, then scoring and controls.
-   - **What arm B's readout decides** (ML plan, step 6):
-     - **If B passes and leads,** the rebuilt DI isn't needed for the product route. The bank
-       grows by about 20k renders, then step 7.
-     - **If B fails,** no arm has passed. The DI track carries on, and the user is asked about
-       next steps.
-     - **If B fails but the half-bank check shows a data limit,** it reads "undecided
-       (data-limited)". The user is then asked about GOAT data again.
-   - **The DI-recovery track** ([research](research/di-recovery-2026-10.md); experiments numbered
-     as there). It continues whatever arm B shows, unless the user decides otherwise.
-     1. **A separator screen:** Mega-53, a crossover blend and htdemucs_6s on the 5 set-3 check
-        parts, about 150 renders. It needs its own plan and ledger entry. It measures the rank
-        margin through the true DI. If that is often negative, even a perfect rebuild can't
-        steer through a stem, and separation becomes a problem as big as the rebuild.
-     2. **The degradation ladder** ([plan](rank-margin-ladder-plan.md), reviewed, about 0.9k
-        renders): damage the true DI in controlled ways to find what flips the ranking. It
-        also validates a two-render "rank margin" as the rebuild-quality gate in place of
-        coherence.
-     3. **A fitted dynamics-and-tilt correction of C′,** then re-run the control (about 3.6k
-        renders per arm, up to 3 arms). The code and fitting need no renders, so they can be
-        prepared while 1 and 2 run. Only the choice of arms waits for 2.
-     4. **A dynamics-aware C′ retrain,** only if 3 fails: about 26 h on the GPU for four folds,
-        one fold first as a pre-check.
+     - **Next, the user's call:** continue the DI-recovery track, and rethink arm B (sound-space
+       loss, or a proposer for a search) after a research round.
+   - **The DI-recovery track** ([research](research/di-recovery-2026-10.md), with the
+     [fine-structure follow-up](research/di-rebuild-fine-structure-2026-10.md); experiments are
+     numbered as there):
+     1. **The separator screen** ([results](separator-screen-results.md)), done. Separation halves
+        the margin but rarely flips it, and Mega-53 isn't shown to be better.
+     2. **The degradation ladder** ([results](rank-margin-ladder-results.md)), done. C′'s error is
+        fine structure under 10 ms, and the rank margin is only a screen.
+     3. **A fitted dynamics-and-tilt correction:** dropped by the ladder.
+     4. **A fine-structure C′ retrain** ([plan](di-fine-structure-plan.md)), running on fold 3 first.
+        Its step 0 is done:
+        - the capacity check shows C′'s output can represent fine structure, so the full-rate head
+          isn't added;
+        - the DAC codec route stays open.
 
-     1 and 2 run side by side. Arm A is re-run once a rebuild passes the control.
+        The arms (1z, 1a, 1b) are training, then their known-target control. Arm A is re-run once
+        a rebuild passes the control.
    - **Renders against the 200k limit:**
-     - about 131k by the end of step 3;
-     - the declared bound with the ladder is 139k, which still counts arm C's 7.2k;
-     - the DI track adds up to about 12k more.
+     - about 133k actual, through step 3, the ladder and the screen;
+     - experiment 4 adds up to about 11k.
 
-     The ML plan warns that the branches after the readout can reach 200k, so the user is asked
-     before passing it.
+     The user is asked before passing 200k.
    - **Open user decisions:**
-     - GOAT, if arm B is data-limited;
+     - what follows step 3 (no arm passed): the DI track, and an arm-B rethink;
      - anything past 200k renders;
      - Tone King for step 2;
      - whether the DI track continues if arm B leads.
