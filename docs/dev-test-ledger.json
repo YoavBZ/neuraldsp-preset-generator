@@ -1647,6 +1647,45 @@
    ],
    "outcome": null,
    "amendment_2": "2026-10-16, during relabel renders and B1 training, before any reading: no fixed render limit (user, ML plan #203); caps become expected sizes/guards; growth beyond 1,000 relabelled / 2,500 record-like only if B2 > B1 on E1 broad units and half-new-example B2 clearly trails full B2; renders actually used are reported."
+  },
+  {
+   "test_id": "ks-ceiling-extend",
+   "plan": "docs/ks-ceiling-extend-plan.md",
+   "entered": "2026-10-16, before any render",
+   "repeat_use": "Repeat development use of knob ceiling's 24 scored parts / 144 K_S directions (their uses so far: knob ceiling, knob ceiling 2, label table, step 3, arm A levers, the soundspace plan). Continues the stored K_S searches from their stored finals on the same halves; the held halves were read by earlier steps, so the result is a development reference, not a fresh estimate. Zero-render checks re-read knob ceiling 2's stored stage-1 and stage-2 evaluations (48 cells each)",
+   "parts": [
+    "cambridge-Drag_Me_Down-ElecGtr4",
+    "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1",
+    "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+    "cambridge-Passing_Ships-ElecGtr6",
+    "cambridge-Prodigal-ElecGtr5",
+    "cambridge-Quicksand-ElecGtr1",
+    "cambridge-Signs-ElecGtr2",
+    "cambridge-Today's_The_Day-ElecGtr10",
+    "cambridge-colour-me-red-elecgtr01",
+    "cambridge-femme-elecgtr3",
+    "cambridge-get-out-of-bed-elecgtr1",
+    "cambridge-just-don-t-talk-elecgtr3",
+    "cambridge-magilla-elecgtr1dt",
+    "telefunken-Blind_Spots-GTR",
+    "telefunken-Bloomlight-GTR",
+    "telefunken-Farthest_Step-GTR",
+    "telefunken-First_Offering-GTR_1",
+    "telefunken-First_Offering-GTR_2",
+    "telefunken-Fragments-GTR",
+    "telefunken-Gym_Hours-GTR_1",
+    "telefunken-Long_Way_Home-GTR",
+    "telefunken-Russian_Cream-GTR_2",
+    "telefunken-Sculptor's_Request-GTR_1",
+    "telefunken-Sculptor's_Request-GTR_2"
+   ],
+   "bands": "knob ceiling's 14 scored bands (Honey excluded: the judge refuses its half B)",
+   "audio_only": "none beyond the listed parts' crops and measure DIs",
+   "seeds": "round r of the continuation: 20261013 + r (round 1: 20261014, the stored K_S seed + 1); batch design random.Random(20261016), per class on the sorted parts (amendment 1)",
+   "gate": "None (the user's rule of 2026-10-16). Stopping, per direction, search half only (a deliberate departure from decision 2's 'held-half' wording): flat when the best search-half objective improved by < 0.005 log over the last 150 renders (checked every 50, from 150 extra renders); guard 600 extra renders; 'exhausted' if a round renders nothing. Measured: held-half log ratio against S at 150, 200, ..., 750 total renders and at the stop, and the final against the stored K_S (paired), per part then band-weighted with 90% band-clustered intervals; clean/crunch, bands better and leave-one-band-out; step 3's 142-direction view beside. Renders used reported (total, distribution, stops by reason, guard hits). Amendment 1: directions run in seeded batches until h <= 0.01 (search half), see amendment_1; the estimate is per part, stored 150 over all directions plus the run directions' gain",
+   "renders": "no fixed limit; amendment 1: 2-4 batches expected, 48-96 directions at 150-600 extra renders each (about 7,200-57,600) plus one warm-up per direction; all 6 batches would be 21,600-86,400; CPU <= 3 render processes machine-wide (checked before each direction), queued behind arm B's relabel renders; knob_ceiling.Renderer (isolate=True)",
+   "outcome": null,
+   "amendment_1": "2026-10-16, before any render, from the independent review (tmp/ks-ceiling-extend-plan-review.md, approved with 6 required changes, all applied). (1) Seeded batches: per class (19 clean, 5 crunch) sorted parts shuffled with random.Random(20261016), offsets o = 0..5 cycling; batch b runs per part combination c = (o + b) mod 6, amp AMPS[c % 3], search half 'AB'[c % 2]; 6 batches of 24 cover the 144 once. Per-direction rule unchanged inside a batch. After each complete batch from k = 2: h = 1.645 sqrt(s2/k (1 - k/6) sum_band 1/n_band / B^2), s2 the pooled within-part variance of the search-half extension gain log(final search / stored search); stop adding batches when h <= 0.01 (search half only; not a band-clustered width target, not 'sign and size settled'). Estimate per part: mean log(K_S@150 held / S held) over all its directions + mean held extension gain over its run directions, band-weighted with 90% band-clustered intervals, h beside; step 3's 142-direction view beside. 3 processes split each batch i::3 with a barrier; warm-ups counted. (2) A run direction with a refused incumbent held half at any reported point is dropped from every point; count reported. (3) A failed repeat marks the direction repeat_failed and moves on; a replay mismatch stops the run. (4) Resume checks the saved rule, seed and round; --after must be non-empty unless --no-wait and waits only on python learn.song_relabel pids; the 3-process cap is checked before each direction. (5) Reported by stop reason; 'converged by the declared rule' only for flat stops; guard hits and share on the headline. (6) Named 'K_S plus iterated 150-evaluation rounds'; the search-half rule is a deliberate departure from decision 2's 'held-half' wording; expected renders 2-4 batches, about 7,200-57,600"
   }
  ]
 }
