@@ -295,6 +295,6 @@ def test_frame_split_accepts_stereo_renders():
 
     rng = np.random.default_rng(0)
     fake = rng.standard_normal(48000) * 0.1
-    y = np.stack([np.concatenate([np.zeros(F.LATENCY), fake])] * 2, axis=1)
+    y = np.stack([fake] * 2, axis=1)                    # renders and the fake share timing
     mono = F.frame_split(fake, y.mean(axis=1), fake)
     assert F.frame_split(fake, y, fake) == mono

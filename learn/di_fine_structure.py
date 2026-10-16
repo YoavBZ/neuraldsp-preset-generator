@@ -205,7 +205,7 @@ def choose(readings, z=None):
             note = "1z meets the go row: gains are put down to fine-tuning"
         ahead = [a for a in goers if beats_1z(readings[a]["arm"], z["arm"])]
         if not ahead:
-            return {"outcome": "go", "winner": "1z", "undecided": [],
+            return {"outcome": "go" if z["reading"] == "go" else z["reading"], "winner": "1z", "undecided": [],
                     "note": (note + "; " if note else "") + "no arm beats 1z: the terms are not shown"}
         goers = ahead
     rank = sorted(goers, key=lambda a: (-readings[a]["arm"]["closed"], readings[a]["arm"]["mean_shortfall"],
@@ -630,7 +630,7 @@ def frame_split(fake, y, onset_from, frame=480, n=1024):
     f = np.fft.rfftfreq(n, 1 / SR)
     band = (f >= 80) & (f < 8000)
     yy = np.asarray(y, np.float64)
-    yy = (yy.mean(axis=1) if yy.ndim == 2 else yy)[LATENCY:]
+    yy = yy.mean(axis=1) if yy.ndim == 2 else yy   # the fake is itself a render: same latency, no shift
     m = min(len(fake), len(yy))
     F, Y = spec(fake[:m]), spec(yy[:m])
     err = np.abs(10 * np.log10(Y[:, band] + 1e-12) - 10 * np.log10(F[:, band] + 1e-12)).mean(1)

@@ -805,7 +805,7 @@ def _stem_ok(name, row, lags):
     v = lags.get(name, {})
     if row == "blend":
         return v.get("blend") == "ok" and v.get("lag_ok_blend", True) and v.get("lag_ok_mega53", True)
-    return v.get(f"lag_ok_{row}", True) and (out_dir() / "stems" / row / f"{name}.npy").exists()
+    return v.get(f"lag_ok_{row}", False) and (out_dir() / "stems" / row / f"{name}.npy").exists()
 
 
 def step_rebuild():
@@ -964,7 +964,7 @@ def step_report():
     dist = {c: {"S": v["m_sep"]["clean"]["measure"]["full"]["S"]["d"],
                 "T": v["m_sep"]["clean"]["measure"]["full"]["T"]["d"]} for c, v in sc.items()}
     inf = informative_from(dist)
-    hd_fail = any(not lags.get(c.replace("|", "-"), {}).get("lag_ok_htdemucs", True) for c in inf)
+    hd_fail = any(not lags.get(c.replace("|", "-"), {}).get("lag_ok_htdemucs", False) for c in inf)
 
     def msep(w="full", mask="measure", solo=False):
         sfx = "-solo" if solo else ""
