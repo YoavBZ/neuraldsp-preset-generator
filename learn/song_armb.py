@@ -202,7 +202,13 @@ def predict_half():
     fo = SS.folds()
     ps = K.parts()
     rr_menu = json.loads((OUT / "menu-S.json").read_text())
+    for f in range(4):                                # only finished half-bank runs (log.json at the end)
+        if not (M.OUT / f"fold{f}-half" / "log.json").exists():
+            raise SystemExit(f"fold {f}'s half-bank training hasn't finished")
     nets = {f: M.load_net(f, half=True) for f in range(4)}
+    (OUT / "scores-half").mkdir(parents=True, exist_ok=True)
+    for old in (OUT / "scores-half").glob("*.json"):   # new predictions: old half-bank scores are stale
+        old.unlink()
     ev = B.OUT.parent / "eval-features"
     out = {"control": {}, "cells": {}}
     for slug, amp, search, held in SS.cells():

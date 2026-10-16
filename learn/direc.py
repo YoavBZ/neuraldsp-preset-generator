@@ -673,6 +673,8 @@ class Balancer:
     def combine(self, grads):
         norms = {k: float(g.norm()) for k, g in grads.items()}
         for k, n in norms.items():
+            if not math.isfinite(n):                 # a non-finite step must not poison the EMA
+                continue
             self.ema[k] = n if k not in self.ema else self.decay * self.ema[k] + (1 - self.decay) * n
         ref = self.ema.get("recon", 1.0)
         return sum(self.shares[k] * ref * g / (self.ema[k] + 1e-12) for k, g in grads.items())
@@ -857,6 +859,8 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
     # Experiment 4 (all off by default; nothing below this line runs for C′'s recipe).
     if warmup and not steps:
         raise ValueError("--warmup needs --steps")
+    if adv and not steps:
+        raise ValueError("--adv needs --steps")
     if terms or warmup or adv or fullrate_head or overfit or log_fine or calibrate or eval_only or mark_done:
         (out / ("config-eval.json" if eval_only else "config-calibrate.json" if calibrate else "config.json")).write_text(
             json.dumps({"fold": fold, "seed": seed, "batch": batch, "steps": steps, "lr": lr, "lr_end": lr_end,
@@ -945,7 +949,7 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
                 g.mul_(5.0 / total)
         opt.step()
         if adv:
-            d_lr = adv["lr"] if lr_end is None else (
+            d_lr = adv["lr"] if lr_end is None else (                     # --adv requires --steps
                 lr_end + 0.5 * (adv["lr"] - lr_end) * (1 + math.cos(math.pi * min(1.0, step / steps))))
             _disc_step(discs, dopt, p.detach(), y, adv.get("micro", 1), d_lr)
         step += 1
