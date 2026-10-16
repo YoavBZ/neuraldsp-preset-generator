@@ -444,3 +444,13 @@ beside training. Add about 15 min of separation and about an hour for step 1.0.
 - **The Jacobian** uses the judge's log-mel at FFT 2048.
 - **`models` runs twice:** a second run after `report` gives the audible-setting figures, read
   from `flat.json`.
+
+## Amendment 1 (2026-10-16, before any compute): readings are descriptive
+
+The user approved arm B's diagnostics on 2026-10-16. The same day the user set a project rule:
+no arbitrary pass/fail bars, and learn from any improvement. So R1–R4′ and the trigger table are
+kept as declared, but as guides to the next experiment, not as verdicts on arm B.
+
+- Every reading reports its effect size with a 90% band-clustered interval beside its threshold.
+- A reading that misses its threshold but shows a gain is reported as a gain of that size.
+- Step 1.3 still needs its own yes.
