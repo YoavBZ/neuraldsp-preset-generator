@@ -58,3 +58,37 @@ true search's paths. On those points this experiment's fold 3 is −0.04, and on
     3.5k renders. That is the ceiling for any separator with today's C′.
   - If it is high, test a better separator feeding both the rebuild and the reference.
   - If it stays near 0.3–0.4, the rebuild limits even with a perfect stem.
+
+## Experiment 1b: the matched cell (C′ rebuilt from the amp track, scored against it)
+
+3,528 renders; audited independently. Every figure was recomputed, the 24 rebuilds were re-run
+within 2e-7, and the S-repeat and FLAC-against-float checks were all within 4e-5.
+
+| | Cross-half local Spearman |
+|---|---|
+| Today's objective (C′ / stem) | 0.289 [0.081, 0.497] |
+| **Matched (C′ from the amp track / the amp track)** | **0.541 [0.375, 0.707]** |
+| Ceiling (true DI / amp track) | 0.864 |
+
+- **Matched − today's objective: +0.252 [0.139, 0.365],** reading "above". That closes about 44% of
+  the gap.
+  - Leaving out each band in turn: +0.22 to +0.28.
+  - 11 of 14 bands and 20 of 24 parts are positive.
+  - Reliable-pair accuracy: +0.128 [0.074, 0.182].
+- **It is robust:**
+  - without arm A's points (winner's curse): +0.205 [0.075, 0.335];
+  - without the two strongest bands: +0.188 [0.089, 0.287];
+  - every amp and class is above 0.
+
+  The robust share of the gap is about 38–44%.
+- **The two cautions:**
+  - **Right around S the gain is undecided:** +0.085 [−0.03, +0.20], about 24% of the gap. That is
+    where a local search starts.
+  - **More than half the gap remains with a perfect stem** (0.54 against 0.86). That part is the
+    rebuild's own limit.
+- **Where the gain comes from:** about half from scoring against a clean guitar, and half from
+  rebuilding from one.
+
+**What it decides:** a better separator, feeding both the rebuild and the reference, is a real lever
+for arm A's fine ranking: up to about 40% of the gap with today's C′. Next is a real separator
+(Mega-53, already on disk) in the same matched design. Then comes the rebuild's own share.
