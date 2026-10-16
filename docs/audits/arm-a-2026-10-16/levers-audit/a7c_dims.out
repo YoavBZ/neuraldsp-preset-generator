@@ -1,0 +1,17 @@
+ac20Cut                n= 8 mean rho(dim,true) -0.20 mean rho(dim,obj) -0.32  sign agrees where |rho_true|>0.3: 4/5
+ac20Power              n= 4 mean rho(dim,true) -0.09 mean rho(dim,obj) -0.21  sign agrees where |rho_true|>0.3: 1/1
+ac20Volume             n= 4 mean rho(dim,true) -0.05 mean rho(dim,obj) -0.05  sign agrees where |rho_true|>0.3: 0/0
+inputGain              n=24 mean rho(dim,true) +0.17 mean rho(dim,obj) -0.09  sign agrees where |rho_true|>0.3: 3/13
+leftCabDistance        n=28 mean rho(dim,true) -0.08 mean rho(dim,obj) -0.11  sign agrees where |rho_true|>0.3: 7/12
+leftCabPosition        n=28 mean rho(dim,true) -0.16 mean rho(dim,obj) +0.17  sign agrees where |rho_true|>0.3: 7/18
+pr12Bass               n= 8 mean rho(dim,true) +0.26 mean rho(dim,obj) -0.01  sign agrees where |rho_true|>0.3: 2/5
+pr12Treble             n= 6 mean rho(dim,true) -0.08 mean rho(dim,obj) +0.31  sign agrees where |rho_true|>0.3: 3/4
+pr12Volume             n= 6 mean rho(dim,true) +0.38 mean rho(dim,obj) -0.01  sign agrees where |rho_true|>0.3: 4/5
+rightCabDistance       n=24 mean rho(dim,true) -0.04 mean rho(dim,obj) -0.08  sign agrees where |rho_true|>0.3: 1/5
+rightCabMicLevel       n=16 mean rho(dim,true) +0.14 mean rho(dim,obj) -0.06  sign agrees where |rho_true|>0.3: 4/6
+rightCabPosition       n=22 mean rho(dim,true) -0.09 mean rho(dim,obj) -0.03  sign agrees where |rho_true|>0.3: 2/7
+sw50rBass              n= 6 mean rho(dim,true) +0.14 mean rho(dim,obj) -0.10  sign agrees where |rho_true|>0.3: 0/3
+sw50rLevel             n= 4 mean rho(dim,true) +0.38 mean rho(dim,obj) -0.21  sign agrees where |rho_true|>0.3: 0/3
+sw50rMid               n= 4 mean rho(dim,true) +0.54 mean rho(dim,obj) -0.39  sign agrees where |rho_true|>0.3: 0/4
+sw50rTreble            n= 4 mean rho(dim,true) +0.04 mean rho(dim,obj) -0.06  sign agrees where |rho_true|>0.3: 2/4
+sw50rVolume            n=10 mean rho(dim,true) +0.13 mean rho(dim,obj) +0.08  sign agrees where |rho_true|>0.3: 2/6
