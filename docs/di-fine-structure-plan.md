@@ -563,3 +563,33 @@ behaviour stays bit-identical.
   stalls at C′'s solution, in its own amendment.
 - **The phase-scramble rung was read while drafting** (the report is not blinded). It only orders
   the arms.
+
+## Amendment 1 (2026-10-16): the brightness guard measures distance from the true DI
+
+Made after step 1d's evaluation-only metrics on fold 3's 96 validation crops, and before any
+step-2 render or control result.
+
+- **The defect:** `hf_3_8k_db` is the 3–8 kHz level error against the true DI, not a level. C′ is
+  7.4 dB too dark (−7.39). The guard as written stops an arm whose error is more than 2 dB above
+  C′'s, so it stopped 1a (−4.73) and 1b (−4.77) for being 2.6 dB **closer** to the true DI. The
+  guard was declared against breakage, meaning hiss or over-brightness relative to the record. It
+  wasn't meant against an improvement.
+- **The guard, as amended:** an arm is stopped if it is more than 2 dB brighter than the brighter
+  of C′ and the true DI: arm > max(C′, 0) + 2. When C′ is at or above the true DI, this is the
+  original rule. There is no darker-side stop, as before. Reviewed independently, with the
+  first draft (|arm| > |C′| + 2) corrected because it would let an arm 9 dB too bright through.
+- **The original rule's outcome is kept:** 1a and 1b stopped, in `screen-f3-original.json`. The
+  re-screen is written to `screen-f3.json`.
+- **The effect:** 1a and 1b pass, and the other two guards (validation ratio, check 2) were already
+  passing. No other rule changes.
+- **Evaluation-only figures,** reported, not gating:
+
+  | | Gap level | 3–8 kHz error | 10-ms crest error |
+  |---|---|---|---|
+  | C′ | −4.0 | −7.4 | −0.25 |
+  | 1z | −4.1 | −6.8 | −0.27 |
+  | 1a | −15.5 | −4.7 | −0.08 |
+  | 1b | −14.5 | −4.8 | −0.12 |
+
+  So 1a and 1b cut the gap fill by about 11 dB and close much of the treble deficit. 1z, C′'s own
+  loss fine-tuned, does neither.

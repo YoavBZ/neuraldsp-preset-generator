@@ -267,7 +267,7 @@ def screen_verdict(arm_eval, cprime_eval, check2):
     a, c = arm_eval["fine"], cprime_eval["fine"]
     stops = {"val_ratio": arm_eval["ratio"] > cprime_eval["ratio"] + VAL_MARGIN + EPS,
              "check2": check2 is None or check2 < CHECK2_FLOOR - EPS,
-             "hf_3_8k": a["hf_3_8k_db"] - c["hf_3_8k_db"] > HF_MARGIN_DB + EPS}
+             "hf_3_8k": a["hf_3_8k_db"] > max(c["hf_3_8k_db"], 0.0) + HF_MARGIN_DB + EPS}   # amendment 1
     report = {k: a[k] for k in a if k.endswith("_err") or k in ("gap_db", "quiet_db", "snr_db", "hf_3_8k_db")}
     return {"passes": not any(stops.values()), "stops": stops, "ratio": arm_eval["ratio"],
             "cprime_ratio": cprime_eval["ratio"], "check2": check2, "report": report}

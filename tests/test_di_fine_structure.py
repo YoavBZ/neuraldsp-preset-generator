@@ -121,6 +121,10 @@ def test_screen_stops_on_breakage_only():
     assert F.screen_verdict(_eval(0.5391), c, 0.13)["stops"]["val_ratio"]
     assert F.screen_verdict(_eval(0.5), c, 0.1125)["stops"]["check2"]
     assert F.screen_verdict(_eval(0.5, hf=2.01), c, 0.13)["stops"]["hf_3_8k"]
+    dark = _eval(0.519, hf=-7.4)                         # amendment 1: closer to the true DI passes
+    assert not F.screen_verdict(_eval(0.5, hf=-4.7), dark, 0.13)["stops"]["hf_3_8k"]
+    assert F.screen_verdict(_eval(0.5, hf=2.01), dark, 0.13)["stops"]["hf_3_8k"]   # too bright vs the record
+    assert not F.screen_verdict(_eval(0.5, hf=-9.5), dark, 0.13)["stops"]["hf_3_8k"]  # no darker-side stop
 
 
 def test_parent_of_1c_and_render_cap():
