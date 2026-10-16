@@ -255,12 +255,28 @@ was declared, what was measured, and the research behind it.
   an effect left off on a dry record is correct.
 - [label-table-plan.md](label-table-plan.md) → [results](label-table-results.md) (step 4):
   menus and stems for 59 clean and crunch development parts.
-- [song-settings-plan.md](song-settings-plan.md) (step 3, in progress): arm A failed its
-  known-target control because the current DI rebuild isn't accurate enough (audit artefacts
-  in [audits/song-settings-control-2026-10-15](audits/song-settings-control-2026-10-15/README.md)).
-  Arm B is training.
-- [rank-margin-ladder-plan.md](rank-margin-ladder-plan.md): what damage to a DI flips the
-  search's ranking, and a two-render gate for rebuild quality (DI-recovery experiment 2).
+- [song-settings-plan.md](song-settings-plan.md) → [results](song-settings-results.md) (step 3):
+  against the starting preset, the true-DI search gets −0.269, arm A (rebuilt-DI search)
+  −0.078, and arm B (a settings model) +0.035. Audited; the audit artefacts are in
+  [audits/song-settings-control-2026-10-15](audits/song-settings-control-2026-10-15/README.md).
+- [arm-a-levers-plan.md](arm-a-levers-plan.md) → [results](arm-a-levers-results.md): arm A's
+  current best is a 52-render search shrunk halfway to S (−0.083 [−0.135, −0.032]). The rebuild
+  has no usable local ranking near S. Artefacts are in
+  [audits/arm-a-2026-10-16](audits/arm-a-2026-10-16/README.md).
+- [song-to-settings-diagnostics-plan.md](song-to-settings-diagnostics-plan.md) →
+  [results](song-to-settings-diagnostics-results.md): arm B has signal on renders but hedges
+  toward mid-range on records.
+  [song-to-settings-soundspace-plan.md](song-to-settings-soundspace-plan.md) is its sound-space
+  retraining, approved 2026-10-16.
+- DI-recovery track:
+  - [separator-screen-plan.md](separator-screen-plan.md) → [results](separator-screen-results.md):
+    separation halves the margin but rarely flips it;
+  - [rank-margin-ladder-plan.md](rank-margin-ladder-plan.md) →
+    [results](rank-margin-ladder-results.md): C′'s error is fine structure, and the margin is
+    only a screen;
+  - [di-fine-structure-plan.md](di-fine-structure-plan.md) →
+    [results so far](di-fine-structure-results.md): fixes gap fill and treble, but no steering
+    gain shown.
 - [render-order-audit.md](render-order-audit.md): reused Morgan renders carried the previous
   render at hiss level until `isolate`. No decision overturned; set 5's C′-over-C is fragile
   (inconclusive if the at-risk parts are dropped).

@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-15.
+lives in the linked documents. Last updated 2026-10-16.
 
 ## Where the product is
 
@@ -93,60 +93,62 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      plugin's.** The work since then follows the [ML plan](research/ml-plan-2026-10.md),
      approved by the user on 2026-10-14. It has a 200k render limit, with knob ceiling counted.
 
-   **Where the ML plan stands (2026-10-15):**
-   - **Step 1, C′ for every fold** ([results](cprime-folds-results.md)): done. The three new
-     networks pass their check (0.125–0.136 against a 0.113 floor), with an independent audit.
-   - **Step 2, knob ceiling 2** ([results](knob-ceiling-2-results.md)): done on Morgan; Tone King
-     is deferred and needs an amendment.
-     - Pedals add a little but consistently: −0.023, with 23 of 24 parts better. That reads
-       "little", so undecided. The ablation puts about half of it on the pedals, mostly on
-       crunch. Some of the rest may simply be more search.
-     - Wider input gain adds nothing.
-     - Time effects stay in the search, kept only when they clearly help. In blind listening, the
-       version with effects was chosen on all 3 clips where the judge saw a clear gain.
-     - An effect left off is the right answer when the record is dry, so it isn't a failure.
-     - The keep margin let near-ties through. A higher margin is declared before its next use.
-   - **Step 4, the label table** ([results](label-table-results.md)): done. It has menus and
-     stems for 59 clean and crunch development parts.
-   - **Step 3, the song-settings comparison** ([results](song-settings-results.md)): done and
-     audited. **No arm passed.**
-     - The true-DI search (K_S) gets −0.269 against the starting preset.
-     - **Arm A** (search through the rebuilt DI) failed its known-target control. Descriptively
-       it gets −0.078 against the start, and −0.062 against the rebuilt-DI menu pick (11 of 14
-       bands).
-     - **Arm B** (a settings model trained on renders) failed: its positive control fails, and on
-       songs it is +0.035, no better than a song-blind constant. The audit found the pipeline
-       correct and the model weak: knob error barely beats the median.
-     - **Arm C** isn't run.
-     - **Next, the user's call:** continue the DI-recovery track, and rethink arm B (sound-space
-       loss, or a proposer for a search) after a research round.
-   - **The DI-recovery track** ([research](research/di-recovery-2026-10.md), with the
-     [fine-structure follow-up](research/di-rebuild-fine-structure-2026-10.md); experiments are
-     numbered as there):
-     1. **The separator screen** ([results](separator-screen-results.md)), done. Separation halves
-        the margin but rarely flips it, and Mega-53 isn't shown to be better.
-     2. **The degradation ladder** ([results](rank-margin-ladder-results.md)), done. C′'s error is
-        fine structure under 10 ms, and the rank margin is only a screen.
-     3. **A fitted dynamics-and-tilt correction:** dropped by the ladder.
-     4. **A fine-structure C′ retrain** ([plan](di-fine-structure-plan.md)), running on fold 3 first.
-        Its step 0 is done:
-        - the capacity check shows C′'s output can represent fine structure, so the full-rate head
-          isn't added;
-        - the DAC codec route stays open.
+   **Where the ML plan stands (2026-10-16):**
+   - **Done:**
+     - step 1, C′ for every fold ([results](cprime-folds-results.md));
+     - step 2, knob ceiling 2 on Morgan ([results](knob-ceiling-2-results.md)): pedals add a
+       little, and time effects are kept only when they clearly help;
+     - step 4, the label table ([results](label-table-results.md)).
+   - **How results are read (the user's rule, 2026-10-16):**
+     - no arbitrary pass/fail bars;
+     - every comparison is an effect size with a 90% band-clustered interval;
+     - the best estimate is chosen, with the cheaper option on a tie;
+     - controls explain a result, they don't veto it.
+   - **Step 3, the song-settings comparison** ([results](song-settings-results.md)), against the
+     starting preset S:
+     - the true-DI search (K_S, the ceiling): −0.269, 14/14 bands;
+     - arm A (search through C′'s rebuilt DI): −0.078;
+     - arm B (a settings model): +0.035;
+     - arm C: not run.
+   - **Arm A, improved** ([levers](arm-a-levers-results.md); adopted by the user on 2026-10-16 as
+     the current best):
+     - **The recipe:** the rebuilt-DI search stopped after its 52-render main stage, its moves
+       shrunk halfway to S, falling back to S if a render is silent.
+     - **The result:** −0.083 [−0.135, −0.032], 12/14 bands, about 7% expected after selection.
+       That is about a third of the ceiling, at a third of the renders.
+     - **What limits it:** the rebuild ranks coarse moves well (menu fidelity about 0.78) but has
+       no usable ranking near S (local fidelity about −0.12, the same for every net). Better fine
+       structure ([experiment 4](di-fine-structure-results.md)) didn't change that.
+     - **Next:** a locally accurate objective. A research round is under review; its first step
+       is to isolate what changes the local ranking.
+     - These are development estimates; a fresh draw comes before shipping.
+   - **Arm B, rethought** ([diagnostics](song-to-settings-diagnostics-results.md)):
+     - **On render targets it carries real signal:** −0.16 to −0.39 against S.
+     - **On records it hedges toward mid-range** (one wide mode per knob), while record optima often
+       sit at range limits. It is weakest on input gain and switches.
+     - **Next, approved 2026-10-16, including scoring on step 3's songs:** sound-space training
+       ([plan](song-to-settings-soundspace-plan.md)):
+       - B1: a censored head, sensitivity weights and record-like examples;
+       - B2: the bank relabelled into sets that sound alike, plus record-like renders.
 
-        The arms (1z, 1a, 1b) are training, then their known-target control. Arm A is re-run once
-        a rebuild passes the control.
-   - **Renders against the 200k limit:**
-     - about 133k actual, through step 3, the ladder and the screen;
-     - experiment 4 adds up to about 11k.
-
-     The user is asked before passing 200k.
+       About 18k renders and 13 h of MPS.
+   - **The DI-recovery track:** its findings feed arm A.
+     - [Separator screen](separator-screen-results.md): separation halves the margin but rarely
+       flips it, and Mega-53 isn't shown better.
+     - [Ladder](rank-margin-ladder-results.md): C′'s error is fine structure; the rank margin is
+       only a screen.
+     - [Fine-structure retrain](di-fine-structure-results.md): fixes gap fill and treble, but no
+       steering gain shown.
+     - The DAC codec route is open.
+   - **Renders:** about 147k actual of the 200k limit; arm B's plan takes it to about 165k. The
+     user is asked before passing 200k.
    - **Open user decisions:**
-     - what follows step 3 (no arm passed): the DI track, and an arm-B rethink;
-     - anything past 200k renders;
+     - arm B's optional extras (a reseeded B1, B2a, B0 best-of-8);
+     - arm C's start from B (offered only if B1 or B2 wins);
      - Tone King for step 2;
-   - **Then:** step 5 (optimiser comparison) after step 3's readout, step 6, and finally step 7,
-     the pooled held-out test.
+     - anything past 200k renders.
+   - **Then:** step 5 (optimiser comparison), step 6, and finally step 7, the pooled held-out
+     test.
    - **Running in parallel (one Mac: the MPS GPU, 8 CPU cores, 32 GB):**
      - **GPU:** arm B's training (four folds, then four half-data runs), then any C′ retrain.
        Only one GPU job at a time: training holds about 11–18 GB, and two jobs slow each other.
@@ -566,4 +568,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-15 | Arms A and C count as failed (arm A's control), but the route is kept: the DI rebuild is the bottleneck, and a DI-recovery track opens | `song-settings-plan.md`, recorded outcome; [DI recovery](research/di-recovery-2026-10.md) |
 | 2026-10-15 | Time effects are kept only when the gain is clear; "off" on a dry record counts as correct; the listener's picks are trusted despite the letter layout | `knob-ceiling-2-results.md` |
 | 2026-10-15 | Mega-53 weights re-downloaded for the separator screen (MIT repo, release v1.0.21; no separate weights licence, as accepted for the 2026-10-08 test) | `~/ndsp-presets/tools/msst/provenance.json` |
+| 2026-10-16 | No arbitrary pass/fail bars: report effect sizes with intervals, choose the best estimate, learn from any improvement (A, B, C) | memory and plans from this date |
+| 2026-10-16 | Arm A's current best: a 52-render rebuilt-DI search shrunk halfway to S (−0.083 [−0.135, −0.032]) | [arm A levers](arm-a-levers-results.md) |
+| 2026-10-16 | Arm B: diagnostics done; sound-space retraining (B1, B2) approved, scored on step 3's songs too | [diagnostics](song-to-settings-diagnostics-results.md), [plan](song-to-settings-soundspace-plan.md) |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |
