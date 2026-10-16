@@ -1474,7 +1474,9 @@ def step_sensitivity(shard):
                     deltas[name] = statistics.fmean(jd.values()) if all(finite(v) for v in jd.values()) else None
                     dim = next(dd for dd in K.space(s["amp"], base) if dd.name == name)
                     if dim.kind in ("cont", "log"):
-                        cols.append(((_logmel(trim(y), 2048, SR)[0] - mb) / SENS_STEP).ravel())
+                        step_signed = float(dim.to_unit(x[(dim.module, dim.key)])
+                                            - dim.to_unit(base[(dim.module, dim.key)])) or SENS_STEP
+                        cols.append(((_logmel(trim(y), 2048, SR)[0] - mb) / step_signed).ravel())   # signed move
                         names.append(name)
                 J = np.stack(cols, axis=1) if cols else np.zeros((1, 0))
                 out[bname] = {"delta": deltas, "gram_settings": names, "gram": (J.T @ J).tolist()}

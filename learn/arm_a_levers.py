@@ -408,9 +408,16 @@ def fold_of(slug):
     return SS.folds()[K.parts()[slug]["band"]]
 
 
+STEP_DIRS = {"exp2b": ["local"], "3a": ["early/W"], "3b": ["early/W"], "early": ["early/C'", "early/lever-*"]}
+
+
 def spent(step):
-    """Renders already recorded under a step's outputs."""
-    return sum(json.loads(p.read_text()).get("renders", 0) for p in (OUT / step).rglob("*.json")
+    """Renders already recorded under a step's outputs (review 2026-10-16: some steps write
+    under other folders than their name)."""
+    roots = []
+    for d in STEP_DIRS.get(step, [step]):
+        roots += list(OUT.glob(d)) if "*" in d else [OUT / d]
+    return sum(json.loads(p.read_text()).get("renders", 0) for r in roots for p in r.rglob("*.json")
                if not p.name.startswith("report"))
 
 
@@ -482,7 +489,8 @@ def cmd_replay():
                 if any(x.get(k) != st.get(k) for k in set(x) | set(st)):
                     bad.append((slug, amp, f"K_S-{search}", ["final settings"]))
                 traj += [({f"{a}/{b}": v for (a, b), v in s.items()}, d) for s, d in t]
-            _save(OUT / "replay" / "ks" / slug / f"{amp}.json", {"trajectory": traj, "renders": 0})
+            if not any(b[0] == slug and b[1] == amp for b in bad):   # never save a failed replay
+                _save(OUT / "replay" / "ks" / slug / f"{amp}.json", {"trajectory": traj, "renders": 0})
     print("replay mismatches:", bad or "none")
     if bad:
         raise SystemExit(1)
