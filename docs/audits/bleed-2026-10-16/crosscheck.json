@@ -1,0 +1,1471 @@
+{
+ "definitions": {
+  "half_keys": "Every {'A','B'} key is the HELD half: the half the true-DI judge (or, for lo_*, the true-DI truth ranking) is scored on. A = 1.0-5.5 s, B = 5.5-10 s of the crop. The search / objective read the OTHER half. 'part' = the repo's own per-part unit (mean over all amps and both directions). 'n' / 'n_amps' = how many amps went into each half mean (3 unless a direction was dropped).",
+  "arm_a_gain": "ML plan step 3 (song-settings), arm A = 150-render knob search through C' rebuilt DI, scored by the judge (true measure DI) on the held half: log(d_armA / d_S), d = judge distance to the record, S = the product's starting preset. NEGATIVE = closer to record = better. Per half = mean over amps of the directions held on that half; 'part' = song_readout.part_rows (mean over amps x directions). Source: ~/ndsp-presets/learn/song-settings/armA/<slug>/<amp>/<search>.json ['judge'][held] and knob-ceiling/cells/<slug>/<amp>/result.json menu[start][held] for S; units via learn/song_readout.gather + drop_refused (= arm_a_levers.gathered_units). Reproduces report.json band-weighted -0.0777 exactly.",
+  "arm_a_adopted_3Cprime_shrink05_gain": "Extra: arm A's current best adopted 2026-10-16 (arm-a-levers exp 3: search stopped after its 52-render main stage, moves shrunk halfway to S): log(d / d_S) on the held half, same sign. Source: ~/ndsp-presets/learn/song-settings/levers/early/lever-shrink-0.5/<slug>/<amp>/<search>.json, units/drop as arm_a_levers.cmd_report_3. Reproduces doc -0.083 (band-weighted -0.0834).",
+  "ks_gain": "K_S = knob_ceiling search from S with the true measure DI, 150 renders per direction (the step-3 ceiling): log(d_K_S / d_S) on the held half. NEGATIVE = better. Source: ~/ndsp-presets/learn/knob-ceiling/cells/<slug>/<amp>/result.json runs[search]['K_S']['held'] vs menu[start][held]; same units as arm_a_gain. Reproduces step-3 report K_S -0.2689. (knob-ceiling-results.md's '(c) -0.253' is the same search on its own 72-cell set, part-weighted; the step-3 figure is what is used here.)",
+  "ks_extend_gain_partial": "Extra, PARTIAL: ks-ceiling-extend (K_S continued to a flat stop) is still running (~21 of 144 directions done, at most 1 amp per part-half). log(final.held / S_held) per done direction, keyed by held half. Do not use as a per-part figure. Source: ~/ndsp-presets/learn/ks-ceiling-extend/cells/<slug>/<amp>/<search>.json.",
+  "lo_matched_minus_current": "Local objective experiment 1b: per cell (part x amp), Spearman over Sigma (all 4 point sources: S, neighbourhood, K_S paths, arm A paths) between an objective's distances on one half and the TRUE judge (measure DI vs reference.wav) on the other half (learn/local_objective.rho / cross_half). matched = C' rebuilt from the amp track scored vs the amp track (cprime_ref, reference, native lag, own mask); current = C' rebuilt from the htdemucs stem scored vs the stem (cprime, stem, native, own). Value = matched - current. POSITIVE = matched ranks nearby settings better = better. 'part' = mean over amps of (cross_half_matched - cross_half_current), exactly what report-1b's agg(paired(...)) part-means (reproduces band-weighted +0.252, part-weighted +0.299, 20/24 parts positive). Per half 'A'/'B' = mean over amps of the single cross-half term whose TRUTH is on that half (objective read on the other half): rho(obj_other, true_held)_matched - same_current; 'part' ~= mean of A and B. 'matched'/'current' sub-dicts give the two Spearmans themselves. Not stored per part in report-1b.json (it stores only aggregates and per-band); recomputed here from ~/ndsp-presets/learn/local-objective/scores/{measure,cprime,cprime_ref}/<slug>/<amp>.json with sigma.json, using LO.load_sigma, LO._vals, LO.rho, LO.cross_half (asserted equal to LO.subset_measures). Zero renders."
+ },
+ "missing": {
+  "telefunken-Honey-GTR": "excluded from all three by the project (judge refuses its half B); all fields null"
+ },
+ "dropped_step3_directions": [
+  [
+   "telefunken-Gym_Hours-GTR_1",
+   "pr12",
+   "A",
+   [
+    "A"
+   ]
+  ],
+  [
+   "telefunken-Sculptor's_Request-GTR_1",
+   "pr12",
+   "B",
+   [
+    "A"
+   ]
+  ]
+ ],
+ "reproduction_checks": {
+  "arm_a_band_weighted": -0.07767,
+  "arm_a_report_json": -0.07767,
+  "ks_band_weighted": -0.268933,
+  "ks_report_json": -0.268933,
+  "adopted_band_weighted": -0.083417,
+  "adopted_doc": -0.083,
+  "lo_band_weighted": 0.25198,
+  "lo_part_weighted": 0.299035,
+  "lo_report_1b_band_weighted": 0.25198,
+  "lo_report_1b_part_weighted": 0.299035,
+  "lo_cells": 72,
+  "step3_directions_used": 142,
+  "step3_dropped": [
+   [
+    "telefunken-Gym_Hours-GTR_1",
+    "pr12",
+    "A",
+    [
+     "A"
+    ]
+   ],
+   [
+    "telefunken-Sculptor's_Request-GTR_1",
+    "pr12",
+    "B",
+    [
+     "A"
+    ]
+   ]
+  ],
+  "early_3Cprime_band_weighted": -0.084935
+ },
+ "parts": {
+  "cambridge-Drag_Me_Down-ElecGtr4": {
+   "band": "Adam Buckley",
+   "gain_class": "clean",
+   "arm_a_gain": {
+    "A": 0.096001,
+    "B": 0.186335,
+    "part": 0.141168,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": 0.02106,
+    "B": -0.045793,
+    "part": -0.012367,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.230334,
+    "B": -0.250677,
+    "part": -0.240505,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": null,
+    "B": -0.289571,
+    "n": {
+     "A": 0,
+     "B": 1
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": 0.420808,
+    "B": 0.546229,
+    "part": 0.483519,
+    "matched": {
+     "A": -0.16145,
+     "B": -0.070324,
+     "part": -0.115887
+    },
+    "current": {
+     "A": -0.582259,
+     "B": -0.616553,
+     "part": -0.599406
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+   "band": "Atlantis Bound",
+   "gain_class": "clean",
+   "arm_a_gain": {
+    "A": -0.093952,
+    "B": 0.127144,
+    "part": 0.016596,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": -0.100682,
+    "B": 0.169073,
+    "part": 0.034195,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.184263,
+    "B": -0.106013,
+    "part": -0.145138,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": null,
+    "B": -0.205734,
+    "n": {
+     "A": 0,
+     "B": 1
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": 0.078711,
+    "B": 0.02007,
+    "part": 0.04939,
+    "matched": {
+     "A": 0.767372,
+     "B": -0.654617,
+     "part": 0.056378
+    },
+    "current": {
+     "A": 0.688661,
+     "B": -0.674686,
+     "part": 0.006987
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+   "band": "Atlantis Bound",
+   "gain_class": "clean",
+   "arm_a_gain": {
+    "A": -0.04013,
+    "B": -0.072138,
+    "part": -0.056134,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": -0.049011,
+    "B": -0.066325,
+    "part": -0.057668,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.182249,
+    "B": -0.20154,
+    "part": -0.191894,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": -0.18039,
+    "B": null,
+    "n": {
+     "A": 1,
+     "B": 0
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": 0.023158,
+    "B": 0.047004,
+    "part": 0.035081,
+    "matched": {
+     "A": 0.708894,
+     "B": 0.77305,
+     "part": 0.740972
+    },
+    "current": {
+     "A": 0.685736,
+     "B": 0.726046,
+     "part": 0.705891
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "cambridge-Passing_Ships-ElecGtr6": {
+   "band": "The Travelling Band",
+   "gain_class": "clean",
+   "arm_a_gain": {
+    "A": 0.01194,
+    "B": 0.03808,
+    "part": 0.02501,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": 0.026209,
+    "B": -0.008376,
+    "part": 0.008916,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.275205,
+    "B": -0.295602,
+    "part": -0.285404,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": -0.586373,
+    "B": null,
+    "n": {
+     "A": 1,
+     "B": 0
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": 0.347699,
+    "B": 0.060826,
+    "part": 0.204263,
+    "matched": {
+     "A": -0.243197,
+     "B": -0.54306,
+     "part": -0.393129
+    },
+    "current": {
+     "A": -0.590896,
+     "B": -0.603886,
+     "part": -0.597391
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "cambridge-Prodigal-ElecGtr5": {
+   "band": "Starnes And Shah",
+   "gain_class": "crunch",
+   "arm_a_gain": {
+    "A": -0.129766,
+    "B": -0.141885,
+    "part": -0.135825,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": -0.083676,
+    "B": -0.06432,
+    "part": -0.073998,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.361358,
+    "B": -0.394235,
+    "part": -0.377796,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": null,
+   "lo_matched_minus_current": {
+    "A": 0.216363,
+    "B": 0.329601,
+    "part": 0.272982,
+    "matched": {
+     "A": 0.946353,
+     "B": 0.912005,
+     "part": 0.929179
+    },
+    "current": {
+     "A": 0.729991,
+     "B": 0.582404,
+     "part": 0.656197
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "cambridge-Quicksand-ElecGtr1": {
+   "band": "The Travelling Band",
+   "gain_class": "clean",
+   "arm_a_gain": {
+    "A": 0.115798,
+    "B": 0.062858,
+    "part": 0.089328,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": 0.024053,
+    "B": 0.065078,
+    "part": 0.044565,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.230939,
+    "B": -0.225445,
+    "part": -0.228192,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": null,
+    "B": -0.361739,
+    "n": {
+     "A": 0,
+     "B": 1
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": 1.08126,
+    "B": 1.089159,
+    "part": 1.085209,
+    "matched": {
+     "A": 0.810437,
+     "B": 0.894877,
+     "part": 0.852657
+    },
+    "current": {
+     "A": -0.270823,
+     "B": -0.194281,
+     "part": -0.232552
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "cambridge-Signs-ElecGtr2": {
+   "band": "Zeno",
+   "gain_class": "clean",
+   "arm_a_gain": {
+    "A": -0.028679,
+    "B": -0.000683,
+    "part": -0.014681,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": 0.006575,
+    "B": 0.016959,
+    "part": 0.011767,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": 0.030811,
+    "B": -0.053308,
+    "part": -0.011249,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": null,
+    "B": -0.013743,
+    "n": {
+     "A": 0,
+     "B": 1
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": -0.028152,
+    "B": 0.76925,
+    "part": 0.370549,
+    "matched": {
+     "A": 0.342488,
+     "B": 0.305435,
+     "part": 0.323961
+    },
+    "current": {
+     "A": 0.37064,
+     "B": -0.463815,
+     "part": -0.046588
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "cambridge-Today's_The_Day-ElecGtr10": {
+   "band": "Eat The Feeder",
+   "gain_class": "crunch",
+   "arm_a_gain": {
+    "A": -0.179073,
+    "B": -0.183341,
+    "part": -0.181207,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": -0.153601,
+    "B": -0.156494,
+    "part": -0.155048,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.307072,
+    "B": -0.309079,
+    "part": -0.308075,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": null,
+    "B": -0.290577,
+    "n": {
+     "A": 0,
+     "B": 1
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": 0.333406,
+    "B": 0.397923,
+    "part": 0.365664,
+    "matched": {
+     "A": 0.963851,
+     "B": 0.953358,
+     "part": 0.958605
+    },
+    "current": {
+     "A": 0.630446,
+     "B": 0.555435,
+     "part": 0.59294
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "cambridge-colour-me-red-elecgtr01": {
+   "band": "Diesel13",
+   "gain_class": "crunch",
+   "arm_a_gain": {
+    "A": -0.447462,
+    "B": -0.020412,
+    "part": -0.233937,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": -0.348156,
+    "B": -0.253462,
+    "part": -0.300809,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.557485,
+    "B": -0.245698,
+    "part": -0.401591,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": null,
+    "B": 0.019816,
+    "n": {
+     "A": 0,
+     "B": 1
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": -0.00503,
+    "B": 0.001665,
+    "part": -0.001682,
+    "matched": {
+     "A": 0.898427,
+     "B": 0.442274,
+     "part": 0.670351
+    },
+    "current": {
+     "A": 0.903457,
+     "B": 0.440609,
+     "part": 0.672033
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "cambridge-femme-elecgtr3": {
+   "band": "Wall Of Death",
+   "gain_class": "crunch",
+   "arm_a_gain": {
+    "A": 0.096608,
+    "B": 0.210751,
+    "part": 0.153679,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": -0.1045,
+    "B": -0.016276,
+    "part": -0.060388,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.139488,
+    "B": -0.08572,
+    "part": -0.112604,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": null,
+   "lo_matched_minus_current": {
+    "A": 0.141989,
+    "B": 0.460667,
+    "part": 0.301328,
+    "matched": {
+     "A": 0.603524,
+     "B": 0.765813,
+     "part": 0.684669
+    },
+    "current": {
+     "A": 0.461536,
+     "B": 0.305145,
+     "part": 0.383341
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "cambridge-get-out-of-bed-elecgtr1": {
+   "band": "Magician's Nephew",
+   "gain_class": "crunch",
+   "arm_a_gain": {
+    "A": -0.080101,
+    "B": -0.180541,
+    "part": -0.130321,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": -0.122921,
+    "B": -0.104209,
+    "part": -0.113565,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.220166,
+    "B": -0.218119,
+    "part": -0.219143,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": -0.301314,
+    "B": null,
+    "n": {
+     "A": 1,
+     "B": 0
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": 0.200427,
+    "B": 0.106853,
+    "part": 0.15364,
+    "matched": {
+     "A": 0.844912,
+     "B": 0.913121,
+     "part": 0.879017
+    },
+    "current": {
+     "A": 0.644485,
+     "B": 0.806267,
+     "part": 0.725376
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "cambridge-just-don-t-talk-elecgtr3": {
+   "band": "Timo And The Timezone",
+   "gain_class": "clean",
+   "arm_a_gain": {
+    "A": -0.067923,
+    "B": -0.184511,
+    "part": -0.126217,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": -0.04459,
+    "B": -0.073702,
+    "part": -0.059146,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.215694,
+    "B": -0.418349,
+    "part": -0.317022,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": -0.329231,
+    "B": null,
+    "n": {
+     "A": 1,
+     "B": 0
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": 0.452207,
+    "B": 0.255146,
+    "part": 0.353676,
+    "matched": {
+     "A": 0.832064,
+     "B": 0.733851,
+     "part": 0.782957
+    },
+    "current": {
+     "A": 0.379857,
+     "B": 0.478705,
+     "part": 0.429281
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "cambridge-magilla-elecgtr1dt": {
+   "band": "Turbosauro",
+   "gain_class": "clean",
+   "arm_a_gain": {
+    "A": -0.516348,
+    "B": -0.497822,
+    "part": -0.507085,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": -0.370452,
+    "B": -0.28651,
+    "part": -0.328481,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.684792,
+    "B": -0.523977,
+    "part": -0.604384,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": null,
+    "B": -0.622747,
+    "n": {
+     "A": 0,
+     "B": 1
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": -0.036292,
+    "B": 0.075297,
+    "part": 0.019502,
+    "matched": {
+     "A": 0.853928,
+     "B": 0.89666,
+     "part": 0.875294
+    },
+    "current": {
+     "A": 0.89022,
+     "B": 0.821364,
+     "part": 0.855792
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "telefunken-Blind_Spots-GTR": {
+   "band": "Doom Flamingo",
+   "gain_class": "clean",
+   "arm_a_gain": {
+    "A": -0.05809,
+    "B": 0.023018,
+    "part": -0.017536,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": -0.05125,
+    "B": -0.020227,
+    "part": -0.035739,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.087877,
+    "B": -0.089552,
+    "part": -0.088714,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": null,
+    "B": -0.152373,
+    "n": {
+     "A": 0,
+     "B": 1
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": 0.048704,
+    "B": -0.044984,
+    "part": 0.00186,
+    "matched": {
+     "A": 0.707358,
+     "B": 0.443895,
+     "part": 0.575627
+    },
+    "current": {
+     "A": 0.658654,
+     "B": 0.488879,
+     "part": 0.573766
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "telefunken-Bloomlight-GTR": {
+   "band": "Eggy",
+   "gain_class": "clean",
+   "arm_a_gain": {
+    "A": 0.130831,
+    "B": 0.223511,
+    "part": 0.177171,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": 0.036076,
+    "B": 0.039502,
+    "part": 0.037789,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.539508,
+    "B": -0.597538,
+    "part": -0.568523,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": -0.43053,
+    "B": null,
+    "n": {
+     "A": 1,
+     "B": 0
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": -0.149537,
+    "B": -0.015371,
+    "part": -0.082454,
+    "matched": {
+     "A": -0.646837,
+     "B": -0.781279,
+     "part": -0.714058
+    },
+    "current": {
+     "A": -0.4973,
+     "B": -0.765909,
+     "part": -0.631604
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "telefunken-Farthest_Step-GTR": {
+   "band": "Eggy",
+   "gain_class": "clean",
+   "arm_a_gain": {
+    "A": -0.151761,
+    "B": -0.196356,
+    "part": -0.174058,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": -0.058719,
+    "B": -0.130509,
+    "part": -0.094614,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.391882,
+    "B": -0.399012,
+    "part": -0.395447,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": -0.491679,
+    "B": null,
+    "n": {
+     "A": 1,
+     "B": 0
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": -0.112627,
+    "B": 0.165552,
+    "part": 0.026463,
+    "matched": {
+     "A": 0.059427,
+     "B": 0.325369,
+     "part": 0.192398
+    },
+    "current": {
+     "A": 0.172054,
+     "B": 0.159817,
+     "part": 0.165936
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "telefunken-First_Offering-GTR_1": {
+   "band": "Dom McLennon",
+   "gain_class": "clean",
+   "arm_a_gain": {
+    "A": 0.232973,
+    "B": 0.167184,
+    "part": 0.200078,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": 0.172168,
+    "B": 0.090737,
+    "part": 0.131453,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.193745,
+    "B": -0.309207,
+    "part": -0.251476,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": -0.190862,
+    "B": null,
+    "n": {
+     "A": 1,
+     "B": 0
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": 1.836797,
+    "B": 1.743523,
+    "part": 1.79016,
+    "matched": {
+     "A": 0.950463,
+     "B": 0.978977,
+     "part": 0.96472
+    },
+    "current": {
+     "A": -0.886334,
+     "B": -0.764546,
+     "part": -0.82544
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "telefunken-First_Offering-GTR_2": {
+   "band": "Dom McLennon",
+   "gain_class": "clean",
+   "arm_a_gain": {
+    "A": -0.055078,
+    "B": 0.046644,
+    "part": -0.004217,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": -0.021956,
+    "B": 0.062837,
+    "part": 0.020441,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.086692,
+    "B": -0.08836,
+    "part": -0.087526,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": null,
+    "B": -0.087671,
+    "n": {
+     "A": 0,
+     "B": 1
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": -0.369232,
+    "B": 0.715088,
+    "part": 0.172928,
+    "matched": {
+     "A": 0.11834,
+     "B": 0.481494,
+     "part": 0.299917
+    },
+    "current": {
+     "A": 0.487572,
+     "B": -0.233595,
+     "part": 0.126989
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "telefunken-Fragments-GTR": {
+   "band": "Eggy",
+   "gain_class": "clean",
+   "arm_a_gain": {
+    "A": -0.207371,
+    "B": -0.245085,
+    "part": -0.226228,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": -0.076926,
+    "B": -0.103005,
+    "part": -0.089965,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.351003,
+    "B": -0.348122,
+    "part": -0.349562,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": -0.334623,
+    "B": null,
+    "n": {
+     "A": 1,
+     "B": 0
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": -0.158347,
+    "B": -0.113239,
+    "part": -0.135793,
+    "matched": {
+     "A": 0.414721,
+     "B": 0.407177,
+     "part": 0.410949
+    },
+    "current": {
+     "A": 0.573068,
+     "B": 0.520417,
+     "part": 0.546742
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "telefunken-Gym_Hours-GTR_1": {
+   "band": "Dom McLennon",
+   "gain_class": "clean",
+   "arm_a_gain": {
+    "A": 0.118138,
+    "B": 0.030144,
+    "part": 0.082941,
+    "n": {
+     "A": 3,
+     "B": 2
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": 0.031417,
+    "B": 0.014798,
+    "part": 0.024769,
+    "n": {
+     "A": 3,
+     "B": 2
+    }
+   },
+   "ks_gain": {
+    "A": 0.034927,
+    "B": 0.040839,
+    "part": 0.037292,
+    "n": {
+     "A": 3,
+     "B": 2
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": null,
+    "B": 0.043785,
+    "n": {
+     "A": 0,
+     "B": 1
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": 1.096282,
+    "B": 0.356602,
+    "part": 0.726442,
+    "matched": {
+     "A": 0.87634,
+     "B": 0.190767,
+     "part": 0.533554
+    },
+    "current": {
+     "A": -0.219942,
+     "B": -0.165835,
+     "part": -0.192888
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "telefunken-Honey-GTR": {
+   "band": "Swatkins",
+   "gain_class": "clean",
+   "arm_a_gain": null,
+   "arm_a_adopted_3Cprime_shrink05_gain": null,
+   "ks_gain": null,
+   "ks_extend_gain_partial": null,
+   "lo_matched_minus_current": null
+  },
+  "telefunken-Long_Way_Home-GTR": {
+   "band": "Doom Flamingo",
+   "gain_class": "clean",
+   "arm_a_gain": {
+    "A": -0.086869,
+    "B": 0.061598,
+    "part": -0.012635,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": -0.091909,
+    "B": 0.028398,
+    "part": -0.031755,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.177226,
+    "B": -0.177566,
+    "part": -0.177396,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": null,
+    "B": -0.166347,
+    "n": {
+     "A": 0,
+     "B": 1
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": -0.016989,
+    "B": -0.149233,
+    "part": -0.083111,
+    "matched": {
+     "A": 0.420827,
+     "B": -0.01778,
+     "part": 0.201524
+    },
+    "current": {
+     "A": 0.437816,
+     "B": 0.131454,
+     "part": 0.284635
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "telefunken-Russian_Cream-GTR_2": {
+   "band": "Dom McLennon",
+   "gain_class": "clean",
+   "arm_a_gain": {
+    "A": -0.114278,
+    "B": -0.101628,
+    "part": -0.107953,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": -0.058696,
+    "B": -0.062137,
+    "part": -0.060416,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.280896,
+    "B": -0.289728,
+    "part": -0.285312,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": null,
+   "lo_matched_minus_current": {
+    "A": -0.131006,
+    "B": 0.301967,
+    "part": 0.085481,
+    "matched": {
+     "A": 0.208462,
+     "B": 0.365148,
+     "part": 0.286805
+    },
+    "current": {
+     "A": 0.339468,
+     "B": 0.063181,
+     "part": 0.201325
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "telefunken-Sculptor's_Request-GTR_1": {
+   "band": "Dom McLennon",
+   "gain_class": "clean",
+   "arm_a_gain": {
+    "A": -0.057829,
+    "B": -0.12514,
+    "part": -0.098216,
+    "n": {
+     "A": 2,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": -0.141194,
+    "B": -0.09054,
+    "part": -0.110802,
+    "n": {
+     "A": 2,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.171782,
+    "B": -0.160251,
+    "part": -0.164863,
+    "n": {
+     "A": 2,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": -0.16563,
+    "B": null,
+    "n": {
+     "A": 1,
+     "B": 0
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": 1.187918,
+    "B": -0.106984,
+    "part": 0.540467,
+    "matched": {
+     "A": 0.926835,
+     "B": 0.65754,
+     "part": 0.792187
+    },
+    "current": {
+     "A": -0.261084,
+     "B": 0.764524,
+     "part": 0.25172
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  },
+  "telefunken-Sculptor's_Request-GTR_2": {
+   "band": "Dom McLennon",
+   "gain_class": "clean",
+   "arm_a_gain": {
+    "A": -0.111332,
+    "B": -0.044707,
+    "part": -0.07802,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "arm_a_adopted_3Cprime_shrink05_gain": {
+    "A": -0.072941,
+    "B": -0.035555,
+    "part": -0.054248,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_gain": {
+    "A": -0.299181,
+    "B": -0.314739,
+    "part": -0.30696,
+    "n": {
+     "A": 3,
+     "B": 3
+    }
+   },
+   "ks_extend_gain_partial": {
+    "A": -0.397659,
+    "B": null,
+    "n": {
+     "A": 1,
+     "B": 0
+    }
+   },
+   "lo_matched_minus_current": {
+    "A": 0.207266,
+    "B": 0.67528,
+    "part": 0.441273,
+    "matched": {
+     "A": 0.693224,
+     "B": 0.820999,
+     "part": 0.757112
+    },
+    "current": {
+     "A": 0.485958,
+     "B": 0.145719,
+     "part": 0.315838
+    },
+    "n_amps": {
+     "A": 3,
+     "B": 3,
+     "part": 3
+    }
+   }
+  }
+ },
+ "script": "/private/tmp/claude-501/-Users-yoavbz-projects-neuraldsp-preset-generator/67cfc004-f421-4d92-9cce-0e70317476ec/scratchpad/bleed/crosscheck.py (read-only; run with the main .venv python from the worktree)"
+}
