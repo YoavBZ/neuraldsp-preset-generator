@@ -304,3 +304,15 @@ def test_log_rows_and_caps():
     u = [{"slug": "p", "band": "b", "amp": "pr12", "search": "A", "d": {"S": 2.0, "A": 1.0}}]
     assert L.log_rows(u, "A")[("p", "pr12", "A")][2] == pytest.approx(math.log(0.5))
     assert sum(L.CAPS.values()) == 20_550
+
+
+def test_settings_reads_nested_replay_files(tmp_path):
+    import json
+
+    from learn import arm_a_levers as L
+
+    f = tmp_path / "x.json"
+    f.write_text(json.dumps({"settings": {"amp/gain": "0.5"}, "main_best": 1.0}))
+    assert L._settings(f) == {("amp", "gain"): "0.5"}
+    f.write_text(json.dumps({"amp/gain": "0.5"}))
+    assert L._settings(f) == {("amp", "gain"): "0.5"}

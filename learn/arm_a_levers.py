@@ -370,7 +370,9 @@ def effects(units, cand, ref):
 # --- data access (no renders) ----------------------------------------------------------------------
 
 def _settings(path):
-    return {tuple(k.rsplit("/", 1)): v for k, v in json.loads(pathlib.Path(path).read_text()).items()}
+    d = json.loads(pathlib.Path(path).read_text())
+    d = d.get("settings", d) if isinstance(d.get("settings"), dict) else d   # replay files nest them
+    return {tuple(k.rsplit("/", 1)): v for k, v in d.items()}
 
 
 def menu_S():
