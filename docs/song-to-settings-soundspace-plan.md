@@ -644,3 +644,19 @@ any reading.
     its interval would answer a question these leave undecided.
 - **"Ask before passing 200k" is dropped.** The optional items and C-start still need their own
   yes, as declared.
+
+## Amendment 3 (2026-10-16): the parity check skips second-guitar examples
+
+Made after the features step stopped on its own guard, before any feature of a new example was
+computed and before any reading.
+
+- **What failed:** parity failed on bank example 10, which has a second guitar.
+- **Why:** the bank's stored features were built while bank renders were still landing. A
+  second-guitar example drew its second render from the renders that existed then, so today's
+  recomputation can pick a different one.
+- **The check now:** it uses examples without a second guitar (bank 0, 6 and 12). Those reproduce
+  to 0.0 dB.
+- **Limits:**
+  - The stored bank features stay as they are; they were trained on as stored.
+  - A new example's second guitar is drawn from the renders present when its features are built.
+    That is deterministic for this run.
