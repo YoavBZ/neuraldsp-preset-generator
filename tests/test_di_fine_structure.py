@@ -226,7 +226,7 @@ def test_tally_counts_renders(tmp_path, monkeypatch):
 def test_control_search_writes_only_to_the_arm_folder(tmp_path, monkeypatch):
     """A full pass of the runner with the renderer and judge faked: the stored control's files
     are byte-identical afterwards, and the result lands in the arm's folder."""
-    import numpy as np
+    np = pytest.importorskip("numpy")
 
     from learn import knob_ceiling as K
     from learn import rank_margin as RM
@@ -289,7 +289,7 @@ def test_control_search_writes_only_to_the_arm_folder(tmp_path, monkeypatch):
 
 
 def test_frame_split_accepts_stereo_renders():
-    import numpy as np
+    np = pytest.importorskip("numpy")
 
     from learn import di_fine_structure as F
 
