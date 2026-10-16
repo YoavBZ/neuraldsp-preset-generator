@@ -610,7 +610,7 @@
     },
     "repeat_draws": "appended here at run time, before any render"
    },
-   "outcome": null
+   "outcome": "done 2026-10-16 (audited): shrink-0.5 -0.082 [-0.136,-0.028]; S-mics -0.040; blends ~-0.01. Rebuilds tie on menu fidelity (0.75-0.80) and all fail locally near S (local fidelity ~-0.12). 3-C' (52-render main stage) -0.085 [-0.164,-0.006], = A; 3-C'+shrink-0.5 -0.083 [-0.135,-0.032], 12/14 bands, lower downside. Corrected expectation ~-0.07. Fold 0-2 1a fine-tunes stopped (not needed)."
   }
  ]
 }
