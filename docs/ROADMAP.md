@@ -145,7 +145,6 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      - what follows step 3 (no arm passed): the DI track, and an arm-B rethink;
      - anything past 200k renders;
      - Tone King for step 2;
-     - whether the DI track continues if arm B leads.
    - **Then:** step 5 (optimiser comparison) after step 3's readout, step 6, and finally step 7,
      the pooled held-out test.
    - **Running in parallel (one Mac: the MPS GPU, 8 CPU cores, 32 GB):**
