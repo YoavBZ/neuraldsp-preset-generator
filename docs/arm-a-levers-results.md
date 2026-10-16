@@ -9,6 +9,19 @@ All figures are held-half log ratios against S (the starting preset), band-weigh
 band-clustered intervals; negative means closer to the record. The data is 142 directions, 24
 parts and 14 bands.
 
+## What the declared rule chose, and what was added
+
+- **Experiment 1:** the frozen rule (best estimate, with ties going to the cheapest) chose
+  **A**. Shrink-0.75 had the best mean, but A, shrink-0.5 and shrink-0.25 were tied with it, and
+  A comes first in the cost order.
+- **Experiment 3:** the rule chose **3-C′**, A stopped after its main stage.
+- **What lies outside the declared rule:**
+  - Applying shrink-0.5 to 3-C′ was a **descriptive extra.** The plan applies a lever to 3-C′
+    only if experiment 1 chose one, and it didn't. It cost 144 renders.
+  - On 2026-10-16 **the user adopted 3-C′ shrunk halfway as arm A's current best.** That was a
+    judgement call: same mean, narrower downside, zero extra renders in use. It isn't the output
+    of the declared rule.
+
 ## Experiment 1: what to do with arm A's settings
 
 | Variant | Against S |

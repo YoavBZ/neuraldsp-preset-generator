@@ -310,9 +310,8 @@ def interval(rows, wider=False):
     lo, hi = s["lo90"], s["hi90"]
     if wider:
         _, plo, phi = part_interval(rows)
-        if plo is not None:
-            lo = plo if lo is None else min(lo, plo)
-            hi = phi if hi is None else max(hi, phi)
+        if plo is not None and (lo is None or (phi - plo) > (hi - lo)):   # the wider one, not the union
+            lo, hi = plo, phi
     return s["band_weighted_mean"], lo, hi
 
 
@@ -442,6 +441,14 @@ def _shard(xs, shard):
     return xs[shard[0]::shard[1]]
 
 
+def _shard_cells(cells, shard):
+    """Cells sharded by (part, amp), so both directions share one process and one warm-up
+    (review 2026-10-16: sharding by direction doubled the warm-ups and raced on shared files)."""
+    groups = sorted({(c[0], c[1]) for c in cells})
+    mine = set(_shard(groups, shard))
+    return [c for c in cells if (c[0], c[1]) in mine]
+
+
 # --- commands ----------------------------------------------------------------------------------------
 
 def cmd_replay():
@@ -532,7 +539,7 @@ def cmd_judge_variants(shard):
     if not (OUT / "exp1" / "repeat.json").exists():
         raise SystemExit("run repeat-check first")
     ps = K.parts()
-    todo = [c for c in _shard(sorted(SS.cells()), shard)
+    todo = [c for c in _shard_cells(sorted(SS.cells()), shard)
             if not (OUT / "exp1" / c[0] / c[1] / f"{c[2]}.json").exists()]
     check_cap("exp1", len(todo) * 7)
     rr, guard = K.Renderer(), SwapGuard()
@@ -544,14 +551,16 @@ def cmd_judge_variants(shard):
             part = ps[slug]
             di, di32, ref = _part_audio(part)
             sel, S = menu[amp][K.START[part["gain_class"]][amp]]
+            n_warm = rr.count
             if (slug, amp) not in warm:
                 rr.render(di32, sel, S)
                 warm.add((slug, amp))
+            n_warm = rr.count - n_warm                                   # recorded with the direction
             _, A = stored_a(slug, amp, search)
             _, A2 = stored_a(slug, amp, held)
             P = predictions(slug, amp, search)
             vs = variants(K.space(amp, S), S, A, A2, P["B"], P["constant"])
-            n0, res = rr.count, {}
+            n0, res = rr.count - n_warm, {}
             cfile = OUT / "exp1" / slug / amp / "C-blend.json"           # the same in both directions
             for name, x in vs.items():
                 if name == "C-blend" and cfile.exists() and json.loads(cfile.read_text())["key"] == K.key(x):
@@ -575,7 +584,7 @@ def cmd_judge_early(shard, lever_name=None):
 
     ps = K.parts()
     tag = "C'" if lever_name is None else f"lever-{lever_name}"
-    todo = [c for c in _shard(sorted(SS.cells()), shard)
+    todo = [c for c in _shard_cells(sorted(SS.cells()), shard)
             if not (OUT / "early" / tag / c[0] / c[1] / f"{c[2]}.json").exists()]
     check_cap("early", len(todo) + 72)
     rr, guard = K.Renderer(), SwapGuard()

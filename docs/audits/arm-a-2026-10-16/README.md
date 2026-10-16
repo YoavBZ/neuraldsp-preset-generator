@@ -17,14 +17,21 @@ sessions can cite them.
 - `a7c_dims.out`: the same split per knob.
 - `r1_out.json`: the audit's 25 re-renders.
 
-**Actual renders for the levers:** 5,746 in all.
+**Actual renders for the levers:** about 5,890 in all, corrected by a code review.
 
 | Step | Renders |
 |---|---|
-| Experiment 1 | 970 |
+| Experiment 1 (warm-ups not recorded in the files, about 144) | about 1,114 |
 | Experiment 2 | 1,740 |
 | 2b (local) | 2,460 |
 | Judging early stopping (3-C′) and the descriptive shrink-0.5 lever | 576 |
 
 The repeat check added 18 renders and the audit 25. 3a's live search (3-W) and 3b did not run,
 because experiment 2 chose C′.
+
+**Two hard caps were exceeded,** because each shard checked its own cap:
+- experiment 1: about 1,114 against 1,100;
+- the 3-C′ judges: 576 against 450.
+
+This was disclosed on 2026-10-16. The code now counts warm-ups and keeps both directions of a
+part and amp in one shard.

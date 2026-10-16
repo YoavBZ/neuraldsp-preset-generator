@@ -610,7 +610,7 @@
     },
     "repeat_draws": "appended here at run time, before any render"
    },
-   "outcome": "done 2026-10-16 (audited): shrink-0.5 -0.082 [-0.136,-0.028]; S-mics -0.040; blends ~-0.01. Rebuilds tie on menu fidelity (0.75-0.80) and all fail locally near S (local fidelity ~-0.12). 3-C' (52-render main stage) -0.085 [-0.164,-0.006], = A; 3-C'+shrink-0.5 -0.083 [-0.135,-0.032], 12/14 bands, lower downside. Corrected expectation ~-0.07. Fold 0-2 1a fine-tunes stopped (not needed)."
+   "outcome": "done 2026-10-16 (audited): declared choice: exp1 A (tie with shrinks; shrink-0.75 best mean), exp3 3-C'. shrink-0.5 -0.082 [-0.136,-0.028]; S-mics -0.040; blends ~-0.01. Rebuilds tie on menu fidelity (0.75-0.80) and all fail locally near S (local fidelity ~-0.12). 3-C' (52-render main stage) -0.085 [-0.164,-0.006], = A; 3-C'+shrink-0.5 -0.083 [-0.135,-0.032], 12/14 bands, lower downside. Corrected expectation ~-0.07. Fold 0-2 1a fine-tunes stopped (not needed). 3-C'+shrink-0.5 was a descriptive extra outside the declared trigger; the user adopted it as current best (judgement). Caps exceeded: exp1 ~1,114/1,100, 3-C' judges 576/450 (per-shard cap checks). Repeat draws are in levers/exp1/repeat.json."
   },
   {
    "test_id": "song-settings-soundspace",
