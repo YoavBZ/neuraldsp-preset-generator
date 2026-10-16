@@ -60,6 +60,12 @@ CAPS = {"exp1": 1_100, "exp2": 1_800, "exp2b": 2_500, "early": 450, "3a": 6_400,
 
 # --- variants (experiment 1) --------------------------------------------------------------------
 
+
+def _save(path, obj):
+    """K._atomic, creating the folder first."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    K._atomic(path, obj)
+
 def _k(d):
     return (d.module, d.key)
 
@@ -451,7 +457,7 @@ def cmd_replay():
         if m:
             bad.append((slug, amp, search, m))
             continue
-        K._atomic(OUT / "replay" / "armA" / slug / amp / f"{search}-main.json",
+        _save(OUT / "replay" / "armA" / slug / amp / f"{search}-main.json",
                   {"settings": {f"{a}/{b}": v for (a, b), v in rep["main_x"].items()}, "main_best": rep["main_best"],
                    "main_renders": rep["main_renders"], "renders": 0})
     for slug in sorted(s for s in ps if s != "telefunken-Honey-GTR" and fold_of(s) == 3):
@@ -467,7 +473,7 @@ def cmd_replay():
                 if any(x.get(k) != st.get(k) for k in set(x) | set(st)):
                     bad.append((slug, amp, f"K_S-{search}", ["final settings"]))
                 traj += [({f"{a}/{b}": v for (a, b), v in s.items()}, d) for s, d in t]
-            K._atomic(OUT / "replay" / "ks" / slug / f"{amp}.json", {"trajectory": traj, "renders": 0})
+            _save(OUT / "replay" / "ks" / slug / f"{amp}.json", {"trajectory": traj, "renders": 0})
     print("replay mismatches:", bad or "none")
     if bad:
         raise SystemExit(1)
@@ -510,7 +516,7 @@ def cmd_repeat_check():
         res["renders"] = rr.count
     finally:
         rr.close()
-    K._atomic(out, res)
+    _save(out, res)
     worst = max(res["dev"].values())
     print("repeat check, worst |log|:", round(worst, 6))
     if worst > REPEAT_TOL:
@@ -551,8 +557,8 @@ def cmd_judge_variants(shard):
                     continue
                 res[name] = K.judge(ref, rr.render(di32, sel, x), di, part["judge_lag"])
                 if name == "C-blend":
-                    K._atomic(cfile, {"key": K.key(x), "judge": res[name], "renders": 0})
-            K._atomic(OUT / "exp1" / slug / amp / f"{search}.json",
+                    _save(cfile, {"key": K.key(x), "judge": res[name], "renders": 0})
+            _save(OUT / "exp1" / slug / amp / f"{search}.json",
                       {"judge": res, "held": held, "renders": rr.count - n0,
                        "settings": {n: {f"{a}/{b}": v for (a, b), v in x.items()} for n, x in vs.items()}})
             print(slug, amp, search, {n: round(v[held], 3) for n, v in res.items()}, rr.count, flush=True)
@@ -587,7 +593,7 @@ def cmd_judge_early(shard, lever_name=None):
                 rr.render(di32, sel, S)
                 warm.add((slug, amp))
             j = K.judge(ref, rr.render(di32, sel, x), di, part["judge_lag"])
-            K._atomic(OUT / "early" / tag / slug / amp / f"{search}.json",
+            _save(OUT / "early" / tag / slug / amp / f"{search}.json",
                       {"judge": j, "held": held, "renders": rr.count - n0,
                        "settings": {f"{a}/{b}": v for (a, b), v in x.items()}})
             print(tag, slug, amp, search, round(j[held], 4), flush=True)
@@ -617,7 +623,7 @@ def cmd_report_1():
            "vs_S": {c: effects(units, c, "S") for c in (*EXP1_ORDER[1:], *REPORTED_ONLY, "A_other_insample")},
            "vs_A": {c: effects(units, c, "A") for c in (*EXP1_ORDER, *REPORTED_ONLY) if c != "A"},
            "choice": choose({c: log_rows(units, c) for c in EXP1_ORDER}, EXP1_ORDER)}
-    K._atomic(OUT / "exp1" / "report.json", rep)
+    _save(OUT / "exp1" / "report.json", rep)
     ch = rep["choice"]
     for c in EXP1_ORDER[1:]:
         s = rep["vs_S"][c]["all"]
@@ -680,7 +686,7 @@ def cmd_rebuild(folds, nets):
                 np.save(out, y)
                 lag = int(RM.gcc_lag(y, _rebuilt("C'", slug)))
                 log[f"{net}|{slug}"] = {"fold": f, "network": str(path), "gcc_lag_vs_cprime": lag}
-                K._atomic(log_path, log)
+                _save(log_path, log)
                 print(net, slug, "fold", f, "lag vs C'", lag, flush=True)
 
 
@@ -729,7 +735,7 @@ def cmd_screen(folds, nets, shard):
                     s = _score(stem_x, rr.render(cr.astype(np.float32), *menu[amp][name]), cr, OBJ_LAG, {"fallback": 0})
                     dev[f"{amp}|{name}"] = max(abs(math.log(s[h] / stored[amp]["scores"][name][h])) for h in "AB"
                                                if finite_pos(s[h]) and finite_pos(stored[amp]["scores"][name][h]))
-                K._atomic(rp, {"dev": dev, "renders": rr.count - n0})
+                _save(rp, {"dev": dev, "renders": rr.count - n0})
                 if max(dev.values()) > REPEAT_TOL:
                     raise SystemExit(f"C' repeat moved beyond 0.005 on {slug}: stop and investigate")
             for net in todo:
@@ -748,7 +754,7 @@ def cmd_screen(folds, nets, shard):
                         if delta:
                             scores[name]["own"] = _score(stem_x, y, rb, objective_lag(delta), counter)
                     res[amp] = {"scores": scores, "fallback": counter["fallback"]}
-                K._atomic(OUT / "exp2" / net / f"{slug}.json", {"delta": delta, "menu": res, "renders": rr.count - n0})
+                _save(OUT / "exp2" / net / f"{slug}.json", {"delta": delta, "menu": res, "renders": rr.count - n0})
                 print(net, slug, rr.count, flush=True)
     finally:
         rr.close()
@@ -803,7 +809,7 @@ def cmd_report_2(folds=(3,)):
                                   for c, r in rows.items()}}
     for c in rep["fidelity_vs_C'"]:
         rep["fidelity_vs_C'"][c]["expected_A_gain_descriptive"] = -0.26 * rep["fidelity_vs_C'"][c]["mean"]
-    K._atomic(OUT / "exp2" / "report.json", rep)
+    _save(OUT / "exp2" / "report.json", rep)
     for c in rows:
         print(f"{c:3s} fidelity {ch['means'][c]:+.3f}  pick vs S {rep['pick_vs_S'][c]['mean']:+.3f}")
     print("best", ch["best"], "ties", ch["tied_with_best"], "chosen", ch["chosen"],
@@ -846,7 +852,7 @@ def cmd_local(shard):
                 rr.render(r32, sel, draws[(slug, amp)][0][0])
                 for x, d in draws[(slug, amp)]:
                     res.append({"obj": _score(stem_x, rr.render(r32, sel, x), rb, lag, counter), "true": d})
-                K._atomic(out, {"points": res, "fallback": counter["fallback"], "renders": rr.count - n0})
+                _save(out, {"points": res, "fallback": counter["fallback"], "renders": rr.count - n0})
                 print(net, slug, amp, rr.count, flush=True)
     finally:
         rr.close()
@@ -878,7 +884,7 @@ def cmd_report_2b():
                 rows[(slug, amp)] = (slug, ps[slug]["band"], statistics.fmean(fs))
         vals[c] = rows
     ch = choose(vals, order, lower=False, wider=True)
-    K._atomic(OUT / "exp2b" / "report.json", {"choice": ch})
+    _save(OUT / "exp2b" / "report.json", {"choice": ch})
     print("local fidelity:", {c: round(v, 3) for c, v in ch["means"].items()}, "chosen", ch["chosen"])
 
 
@@ -926,7 +932,7 @@ def cmd_early_search(folds, shard):
 
             x, best, n_eval = main_stage(K.space(amp, S), S, f)
             j = K.judge(ref, rr.render(di32, sel, x), di, part["judge_lag"])
-            K._atomic(OUT / "early" / "W" / slug / amp / f"{search}.json",
+            _save(OUT / "early" / "W" / slug / amp / f"{search}.json",
                       {"objective": cand, "objective_best": best, "evaluations": n_eval, "judge": j, "held": held,
                        "fallback": counter["fallback"], "renders": rr.count - n0,
                        "settings": {f"{a}/{b}": v for (a, b), v in x.items()}})
@@ -958,7 +964,7 @@ def cmd_report_3():
             allw, _ = drop(w, ("3-C'", "3-W"))
             rep["3b"] = {"vs_S": effects(allw, "3-W", "S"), "vs_3-C'": effects(allw, "3-W", "3-C'"),
                          "choice": choose({c: log_rows(allw, c) for c in EXP3_ORDER}, EXP3_ORDER)}
-    K._atomic(OUT / "early" / "report.json", rep)
+    _save(OUT / "early" / "report.json", rep)
     c = rep["3-C'"]
     s = c["vs_S"]["all"]
     print(f"3-C' vs S {s['band_weighted_mean']:+.3f} [{s['lo90']:+.3f}, {s['hi90']:+.3f}]; chosen {c['choice']['chosen']}")
