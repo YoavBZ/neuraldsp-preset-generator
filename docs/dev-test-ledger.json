@@ -1698,7 +1698,7 @@
    "seeds": "draw random.Random(20261026) (shuffle of the sorted eligible directions, then the catch trial's position); arm A's letter random.Random(20261027), balanced (A on exactly 4 of 8 test trials, positions shuffled; a per-trial coin with this seed gave 7/8 on A and was replaced before any render or answer)",
    "gate": "None: descriptive. Eligible: held-half |log(d_armA/d_S)| >= 0.03 (favours audible differences; judge sign reported per trial). Quotas PR12 3, SW50R 3, AC20 2; one catch trial (A = B = S) used only to describe consistency, never to discard answers. Reading: arm A's share of trials answered A or B with an exact binomial 90% interval ('same' reported separately, and the share with 'same' as not-arm-A); agreement with the judge's sign; per amp",
    "renders": "26 (8 x warm-up, S, arm A; catch: warm-up, S), one CPU process, knob_ceiling.Renderer (isolate=True)",
-   "outcome": null
+   "outcome": "done 2026-10-16 (user): where a difference was heard arm A chosen 4/4 (90% [0.47,1.00]); 3 'same' (1 leaking record); trial 8 unanswered (both versions distorted/noisy); catch correct; judge sign agreement 3/4."
   },
   {
    "test_id": "local-objective",
