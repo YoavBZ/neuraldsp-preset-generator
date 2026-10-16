@@ -1763,6 +1763,150 @@
    "gate": "None: descriptive. 3 high trials (audit candidates, named halves), 2 low controls (whole halves), 1 repeat of a control with A = B = original used only to describe consistency, never to discard answers. Per trial: which clip leaks (A, B, Both, N) and damage (no, little, lot). Reading: counts per kind; the repeat beside its control",
    "renders": "0 (no plugin renders; one CPU process)",
    "outcome": "pending"
+  },
+  {
+   "test_id": "cprime-sep",
+   "plan": "docs/cprime-sep-plan.md",
+   "entered": "2026-10-16 23:58, before any separator-robust training (C′'s own evaluation rows were computed at 23:56 as the baseline, zero renders)",
+   "repeat_use": "Further development use of step 3's 24 parts (after step 3, arm A levers and local-objective experiments 1 and 1b); a development reading, not a fresh estimate",
+   "library_parts": [
+    "cambridge-Drag_Me_Down-ElecGtr4",
+    "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1",
+    "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+    "cambridge-Passing_Ships-ElecGtr6",
+    "cambridge-Prodigal-ElecGtr5",
+    "cambridge-Quicksand-ElecGtr1",
+    "cambridge-Signs-ElecGtr2",
+    "cambridge-Today's_The_Day-ElecGtr10",
+    "telefunken-Blind_Spots-GTR",
+    "telefunken-Bloomlight-GTR",
+    "telefunken-Farthest_Step-GTR",
+    "telefunken-First_Offering-GTR_1",
+    "telefunken-First_Offering-GTR_2",
+    "telefunken-Fragments-GTR",
+    "telefunken-Gym_Hours-GTR_1",
+    "telefunken-Honey-GTR",
+    "telefunken-Long_Way_Home-GTR",
+    "telefunken-Russian_Cream-GTR_2",
+    "telefunken-Sculptor's_Request-GTR_1",
+    "telefunken-Sculptor's_Request-GTR_2"
+   ],
+   "library_bands": [
+    "Adam Buckley",
+    "Atlantis Bound",
+    "Dom McLennon",
+    "Doom Flamingo",
+    "Eat The Feeder",
+    "Eggy",
+    "Starnes And Shah",
+    "Swatkins",
+    "The Travelling Band",
+    "Zeno"
+   ],
+   "library": "sets 1-2 usable stems only (htdemucs_6s and bs_roformer_sw, mix and instrumental; 80 entries); set 3 stems never used; ~/ndsp-presets/learn/direc-sep/lib.{npz,json}",
+   "per_fold": {
+    "fold0": {
+     "train_bands": [
+      "Dom McLennon",
+      "Doom Flamingo",
+      "Eggy",
+      "Starnes And Shah"
+     ],
+     "validation_bands": [
+      "Eat The Feeder",
+      "Zeno"
+     ]
+    },
+    "fold1": {
+     "train_bands": [
+      "Atlantis Bound",
+      "Eat The Feeder",
+      "Eggy",
+      "Swatkins",
+      "The Travelling Band",
+      "Zeno"
+     ],
+     "validation_bands": [
+      "Adam Buckley",
+      "Starnes And Shah"
+     ]
+    },
+    "fold2": {
+     "train_bands": [
+      "Adam Buckley",
+      "Atlantis Bound",
+      "Dom McLennon",
+      "Doom Flamingo",
+      "Eggy",
+      "The Travelling Band"
+     ],
+     "validation_bands": [
+      "Starnes And Shah",
+      "Swatkins"
+     ]
+    },
+    "fold3": {
+     "train_bands": [
+      "Adam Buckley",
+      "Atlantis Bound",
+      "Dom McLennon",
+      "Doom Flamingo",
+      "Eat The Feeder",
+      "The Travelling Band"
+     ],
+     "validation_bands": [
+      "Swatkins",
+      "Zeno"
+     ]
+    }
+   },
+   "training": "fine-tune of each fold's final C′ on the PR12 pair cache only (SW50R/AC20 caches deleted; disk guard), seed 0, batch 12, 200-step warm-up to 1e-4, cosine to 2e-5 over at most 5,150 steps; separator augmentation p=0.75, ±3 dB; stop when the held-out-band separator validation has not improved 0.2% for 1,500 steps (min 1,500); keep the best such checkpoint. Control arm: same with p=0",
+   "evaluation_parts": [
+    "cambridge-Drag_Me_Down-ElecGtr4",
+    "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1",
+    "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+    "cambridge-Passing_Ships-ElecGtr6",
+    "cambridge-Prodigal-ElecGtr5",
+    "cambridge-Quicksand-ElecGtr1",
+    "cambridge-Signs-ElecGtr2",
+    "cambridge-Today's_The_Day-ElecGtr10",
+    "cambridge-colour-me-red-elecgtr01",
+    "cambridge-femme-elecgtr3",
+    "cambridge-get-out-of-bed-elecgtr1",
+    "cambridge-just-don-t-talk-elecgtr3",
+    "cambridge-magilla-elecgtr1dt",
+    "telefunken-Blind_Spots-GTR",
+    "telefunken-Bloomlight-GTR",
+    "telefunken-Farthest_Step-GTR",
+    "telefunken-First_Offering-GTR_1",
+    "telefunken-First_Offering-GTR_2",
+    "telefunken-Fragments-GTR",
+    "telefunken-Gym_Hours-GTR_1",
+    "telefunken-Long_Way_Home-GTR",
+    "telefunken-Russian_Cream-GTR_2",
+    "telefunken-Sculptor's_Request-GTR_1",
+    "telefunken-Sculptor's_Request-GTR_2"
+   ],
+   "evaluation_bands": [
+    "Adam Buckley",
+    "Atlantis Bound",
+    "Diesel13",
+    "Dom McLennon",
+    "Doom Flamingo",
+    "Eat The Feeder",
+    "Eggy",
+    "Magician's Nephew",
+    "Starnes And Shah",
+    "The Travelling Band",
+    "Timo And The Timezone",
+    "Turbosauro",
+    "Wall Of Death",
+    "Zeno"
+   ],
+   "gate": "None: descriptive (the user's rule, 2026-10-16). Primary: separator-robust − C′ in 1-3 kHz coherence with the true DI from the htdemucs stem, band-weighted, 90% band-clustered interval; also per band, BS-Roformer, the amp track, no-high-bleed, share of C′'s amp-track − stem gap, control. Decides only whether to run the 3,528-render matched-design test",
+   "renders": "0 (MPS training and evaluation only; no separation)",
+   "held_out": "none touched (no Guitar-TECHS P3; all parts split=development, asserted)",
+   "outcome": "pending"
   }
  ]
 }
