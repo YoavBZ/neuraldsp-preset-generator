@@ -582,3 +582,43 @@ $TORCH_PY      -m learn.song_soundspace propose-songs --user-approved       # E3
 - **No feature-level change:** the 96-band log-mel with time pooling stays. If input gain is not
   carried by the features, weighting can't create it. If B1 and B2 both tie B0, the front end is
   the remaining suspect.
+
+## Amendment 1 (2026-10-16, before any compute)
+
+Written while the code was being implemented (`learn/song_relabel.py`, `learn/song_soundspace.py`),
+before any render, training or score.
+
+**The risk in the set loss.**
+- As declared, the responsibilities are γ_m ∝ w̃_m · exp(ℓ_m), with ℓ_m the member's weighted
+  joint log-likelihood, not normalised.
+- The members' weights differ by a few nats (e⁻¹ for a member closing 75% of the gap, e⁻² for half).
+  Members' log-likelihoods, summed over 10–20 terms, differ by tens of nats.
+- So γ is close to 1 / 0, and it goes to whichever member the model already prefers, whatever its
+  rendered closeness. The sound-space weights would barely matter.
+
+**The fix.**
+- γ_m ∝ w̃_m · exp(ℓ_m / D_m), where D_m is the member's number of active (unmasked) terms:
+  continuous settings, switches and mics. The model's log-likelihood is tempered per dimension, so
+  rendered closeness and the model's preference weigh on a similar scale.
+- The gradient is unchanged: the responsibility-weighted loss Σ_m sg(γ_m) · L(θ_m), with a
+  stop-gradient on γ.
+- With one member it is still B1's loss exactly.
+- **Tests:**
+  - with equal weights and a model preferring one member by 30 nats over 10 terms, γ follows the
+    tempered ratio (e³), not 1 / 0;
+  - the toy fit (two members, one component) still lands on a member, not the midpoint.
+
+**Declared choices** (implementation readings of the plan, fixed here):
+1. **S is not a set member.** S is the scale (d_S), not a probe of the equal-sound set. Members are
+   the label and the other finite probes.
+2. **The refusal rule applies to every candidate:** a non-finite or non-positive held half scores
+   as S for B0 and the constant too, not only the new arms. It is counted per arm.
+3. **The feature parity check runs on 3 stored bank examples** (no separation, no AAC), comparing
+   the new code path with the bank's stored features. New examples have no stored reference
+   features.
+4. **The loss runs on the CPU.** The network runs on MPS; its head outputs move to the CPU for the
+   loss, because `torch.special.log_ndtr`'s MPS support isn't confirmed. The cost is small.
+5. **The right mic is masked with the right cab off,** like the right cab's level, distance and
+   position. That follows from the switch logic; it was not measured.
+6. **Batch order** is seeded by `numpy.random.default_rng([seed, epoch])`, with the arm's seed (B0
+   used `default_rng(epoch)`). B1′ is the arm `B1r` in the code.
