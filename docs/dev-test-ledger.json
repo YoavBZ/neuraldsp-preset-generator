@@ -527,6 +527,90 @@
     "ac20:GTR DI_TDP-1.wav@2160000",
     "ac20:14_ElecGtr1c_DI.wav@6000000"
    ]
+  },
+  {
+   "test_id": "arm-a-levers",
+   "plan": "docs/arm-a-levers-plan.md",
+   "entered": "2026-10-16, after review (tmp/arm-a-levers-plan-review.md: approved with 10 changes, all folded in) and before any render; runs on the user's yes",
+   "repeat_use": "Post-hoc and unblinded: song-settings' 24 parts / 142 used directions, whose scores the learning analysis has read. Experiment 1 and 3-C' re-judge stored or replayed settings on all of them; experiments 2, 2b and 3a reuse the 5 fold-3 parts (third or fourth use: arm A, arm A's control on 2 of them, experiment 4 step 2 on 2 of them); 3b reuses all parts. Estimates are exploratory and need a fresh draw before shipping",
+   "parts": [
+    "cambridge-Drag_Me_Down-ElecGtr4",
+    "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1",
+    "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2",
+    "cambridge-Passing_Ships-ElecGtr6",
+    "cambridge-Prodigal-ElecGtr5",
+    "cambridge-Quicksand-ElecGtr1",
+    "cambridge-Signs-ElecGtr2",
+    "cambridge-Today's_The_Day-ElecGtr10",
+    "cambridge-colour-me-red-elecgtr01",
+    "cambridge-femme-elecgtr3",
+    "cambridge-get-out-of-bed-elecgtr1",
+    "cambridge-just-don-t-talk-elecgtr3",
+    "cambridge-magilla-elecgtr1dt",
+    "telefunken-Blind_Spots-GTR",
+    "telefunken-Bloomlight-GTR",
+    "telefunken-Farthest_Step-GTR",
+    "telefunken-First_Offering-GTR_1",
+    "telefunken-First_Offering-GTR_2",
+    "telefunken-Fragments-GTR",
+    "telefunken-Gym_Hours-GTR_1",
+    "telefunken-Long_Way_Home-GTR",
+    "telefunken-Russian_Cream-GTR_2",
+    "telefunken-Sculptor's_Request-GTR_1",
+    "telefunken-Sculptor's_Request-GTR_2"
+   ],
+   "bands": "the 14 song-settings bands; fold 3: Eggy, Starnes And Shah, Timo And The Timezone",
+   "folds": "docs/song-settings-folds.json; fold-3 nets models-cprime-f3, models-fs-{1z,1a,1b}-f3 (DONE markers), di_fine_structure.assert_no_leak asserted per net x part; 3b's nets per fold with the same assertion",
+   "audio_only": "none: no audio outside the listed parts' stems, crops and measure DIs is used",
+   "sensitivity_windows": [],
+   "seeds": "searches 20261013 (arm A's and K_S's); repeat-check draws random.Random(20261024) (experiment 2's C' repeat: random.Random('20261024|<part>')); experiment 2b draws random.Random(20261025); 3b fine-tunes seed 0 (experiment 4's)",
+   "gate": "None (the user's rule of 2026-10-16). Measured: held-half true-DI log ratio against S and against stored full A, per part (mean over amps and directions), band-weighted with 90% band-clustered intervals; part-weighted, leave-one-band-out, per amp and per class reported, descriptive. Experiment 2: rank fidelity (menu Spearman, search half; non-finite presets dropped pairwise; an ensemble member at inf makes the preset inf), menu pick held log ratio, pick regret. Only the band-weighted pooled mean decides. Decision: best estimate; a candidate whose paired 90% interval with the best contains 0 is a tie (fold-3 steps: the wider of the band (2 df) and part (4 df) intervals); among the best and its ties the first in the frozen cost order is chosen. Exp 1 order: S, C-blend, B-blend, C' menu pick, A, S-mics, shrink-0.5, shrink-0.25, shrink-0.75 (dirs-avg reported, not eligible). Exp 2 order: C', 1z, 1a, 1b, E4={C',1z,1a,1b}; deciding lag -52 - (GCC lag vs C'). 2b only if exp 2 leaves a tie, deciding among the tied set by local fidelity. Exp 3: 3-C' (zero-render replay of the stored main stage) vs S and full A on 142 directions; 3a: S, 3-C', full A, 3-W on fold 3; 3b only if 3a chooses 3-W; E4 in 3b needs the user's yes. Experiment 4's step-2 readings are descriptive here; its gate is not amended",
+   "renders": "hard caps: exp 1 1,100; exp 2 1,800; 2b 2,500; 3-C' judges 450; 3a 6,400; 3b 8,300 (k = 1); total 20,550. Running total ~152-154.5k declared before this entry; with this plan at most ~175k of 200k. CPU <= 3 render processes machine-wide (all sessions), swap guard, knob_ceiling.Renderer (isolate=True, process reuse); MPS only for 3b's fine-tunes, queued behind experiment 4",
+   "tally": {
+    "directions": "song_settings.cells() (144) minus the readout's 2 dropped: telefunken-Gym_Hours-GTR_1|pr12|search A; telefunken-Sculptor's_Request-GTR_1|pr12|search B",
+    "fold3_parts": [
+     "cambridge-Prodigal-ElecGtr5",
+     "cambridge-just-don-t-talk-elecgtr3",
+     "telefunken-Bloomlight-GTR",
+     "telefunken-Farthest_Step-GTR",
+     "telefunken-Fragments-GTR"
+    ],
+    "nets": [
+     "models-cprime-f3/fold3.pt",
+     "models-fs-1z-f3/fold3.pt",
+     "models-fs-1a-f3/fold3.pt",
+     "models-fs-1b-f3/fold3.pt"
+    ],
+    "candidates": {
+     "experiment_1": [
+      "S",
+      "C-blend",
+      "B-blend",
+      "menu_pick",
+      "A",
+      "S-mics",
+      "shrink-0.5",
+      "shrink-0.25",
+      "shrink-0.75",
+      "dirs-avg (reported only)"
+     ],
+     "experiment_2": [
+      "C'",
+      "1z",
+      "1a",
+      "1b",
+      "E4"
+     ],
+     "experiment_3": [
+      "S",
+      "3-C'",
+      "A",
+      "3-W (fold 3; all parts only in 3b)"
+     ]
+    },
+    "repeat_draws": "appended here at run time, before any render"
+   },
+   "outcome": null
   }
  ]
 }
