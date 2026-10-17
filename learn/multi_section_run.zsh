@@ -20,7 +20,11 @@ log "start pid $$, commit $(git rev-parse --short HEAD), branch $(git branch --s
 
 wait_clear() {   # the rebuild-tone run's renders and scoring go first
   local said=0
-  while ! $PY -m learn.multi_section clear; do
+  local rc
+  while true; do
+    $PY -m learn.multi_section clear; rc=$?
+    (( rc == 0 )) && break
+    (( rc == 10 )) || { log "CLEAR CHECK FAILED (exit $rc)"; exit 1 }
     (( said )) || log "waiting: rebuild-tone renders, scoring or CPU torch steps, or other renders at the cap"
     said=1
     sleep 120

@@ -497,7 +497,7 @@ def _ps():
 
 # Amendment 2: the cap must hold even against runners whose RENDERS list lacks this module (other
 # checkouts). Any python running a learn module with a render-like or separation command counts.
-FOREIGN = (r"-m learn\.(?!multi_section\b)[a-z_0-9]+ (run|render|render-new|search|probe|pregain|choose-rot|"
+FOREIGN = (r"-m learn\.(?!multi_section\b)[a-z_0-9]+ (run|render|render-new|search|probe|pregain|choose-rot|control|cross|"
            r"score-targets|score-songs|c-start|separate|identity)\b", r"-m learn\.separate\b")
 MINE = r"-m learn\.multi_section run\b"
 CAP = 3
@@ -881,7 +881,7 @@ def main(argv=None):
     elif args.cmd == "decide":
         print("DECISION", "STOP" if decide(args.batch) else "CONTINUE", flush=True)
     elif args.cmd == "clear":
-        sys.exit(0 if clear() else 1)
+        sys.exit(0 if clear() else 10)      # 10: not clear (any other code is a failure)
     elif args.cmd == "batches":
         bs, ps, _ = plan_batches()
         for i, b in enumerate(bs):

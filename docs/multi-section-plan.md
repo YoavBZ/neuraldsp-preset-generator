@@ -267,3 +267,7 @@ So the cap is made to hold on this step's side, whatever other checkouts' runner
 - So a runner that doesn't know this step can start up to its own cap; these workers leave within one
   render (about 2 s).
 
+
+Re-reviewed: **approved**. From its optional notes: `clear` exits 10 for "not clear", so a crash
+(any other code) stops the runner instead of waiting forever; `control` and `cross` (old
+knob-ceiling commands that render) count as foreign renders.
