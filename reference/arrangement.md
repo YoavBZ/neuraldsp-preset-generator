@@ -9,24 +9,36 @@ against it. The file is a prior, never ground truth: one average preset for a wh
 is hurt exactly when guitars or sounds change, and web sources about that are often
 wrong or incomplete.
 
-Where it goes: `research/<artist>-<title>/arrangement.json` under the data root.
-`scripts/arrangement.py path ARTIST TITLE` prints the path; `scripts/arrangement.py
-check FILE` reports what is wrong with a file, or a one-line summary.
+Where it goes: `research/<artist>-<title>/arrangement.json` under the data root. Print
+the path, write the file there, then check it (it lists every problem, or prints a
+one-line summary):
+
+```bash
+python "${CLAUDE_PLUGIN_ROOT}/scripts/arrangement.py" path "ARTIST" "TITLE"
+python "${CLAUDE_PLUGIN_ROOT}/scripts/arrangement.py" check ARRANGEMENT.json
+```
+
+In a clone or worktree, pass the data root before the subcommand
+(`arrangement.py --data-dir ~/ndsp-presets path ...`), or the path lands in the checkout.
 
 ## Rules
 
 - **Every item carries a `confidence`**:
   - `documented`: a source states it, and the item cites that source;
   - `corroborated`: two or more independent sources state it, and the item cites them;
-  - `inferred`: your reasoning, which no source states;
+  - `inferred`: your reasoning, which no source states outright (cite what it rests on,
+    if anything);
   - `unknown`: kept so the gap is visible.
 
   Never upgrade an inference by phrasing it as fact.
 - **Sections are names plus order.** Sources name sections ("the second verse", "the
-  outro solo") far more often than they give seconds. Fill `start_s`/`end_s` only from
-  the user or from a source timestamped against the same recording, and say which in
-  `time_basis`. Otherwise leave them null. Number repeated sections (`chorus 1`,
-  `chorus 2`).
+  outro solo") far more often than they give seconds. Give seconds (`start_s`/`end_s`,
+  a change's `at_s`) only from the user or from a source timestamped against the same
+  recording, and say which in `time_basis`; otherwise leave them null with
+  `time_basis: "unknown"`. Never estimate seconds: the ML side would read them as
+  timing. Number repeated sections (`chorus 1`, `chorus 2`).
+- **Every key is present.** Use null (or an empty list) for what is unknown or absent;
+  only `guitars` must name at least one guitar.
 - **Name the recording.** Live takes, remasters and album edits differ in arrangement
   and length; `song.recording` says which one the research describes.
 - **Doubled parts.** Set `doubled` to `true` when a part is double-tracked (two takes
@@ -43,8 +55,8 @@ check FILE` reports what is wrong with a file, or a one-line summary.
 | `schema` | `"arrangement-1"` |
 | `song` | `artist`, `title`, `recording` (which version), `duration_s` (or null) |
 | `guitars[]` | `id`, `player` (or null), `instrument` (e.g. "12-string electric", "electric", "acoustic"), `rig` (`guitar`, `amp`, `effects`: list), `role` (rhythm, lead, fills, arpeggio, ...), `pan` (`L`, `R`, `C` or null), `doubled` (true, false, null), `tuning`, `capo`, `confidence`, `sources` |
-| `sections[]` | `name`, `order`, `start_s`, `end_s`, `time_basis` (`user`, `source timestamp`, `estimated from song structure`, `unknown`), `guitars` (guitar id to what it plays there and how it sounds), `confidence`, `sources` |
-| `changes[]` | `guitar`, `at_section` (a section name, or null), `at_s` (or null), `what` (e.g. "drive pedal on"), `confidence`, `sources` |
+| `sections[]` | `name`, `order`, `start_s`, `end_s`, `time_basis` (`user`, `source timestamp`, `unknown`), `guitars` (guitar id to what it plays there and how it sounds), `confidence`, `sources` |
+| `changes[]` | `guitar`, `at_section` (a section name, or null), `at_s` (or null), `time_basis` (as for sections), `what` (e.g. "drive pedal on"), `confidence`, `sources` |
 | `sources[]` | `id`, `url`, `kind` (`rig rundown`, `interview`, `lesson`, `tab`, `forum`, `article`, `liner notes`, `video`, `other`), `note` |
 | `gaps[]` | sentences: what was looked for and not found |
 
@@ -79,12 +91,13 @@ A made-up song, to show the shape. Every claim in a real file needs a real sourc
      "confidence": "documented", "sources": ["s2"]}
   ],
   "changes": [
-    {"guitar": "g2", "at_section": "solo", "at_s": null, "what": "overdrive on",
+    {"guitar": "g2", "at_section": "solo", "at_s": null, "time_basis": "unknown",
+     "what": "overdrive on",
      "confidence": "documented", "sources": ["s2"]}
   ],
   "sources": [
     {"id": "s1", "url": "https://example.com/rig-rundown", "kind": "rig rundown",
-     "note": "names both players' guitars and amps"},
+     "note": "names the first player's guitar and amp, and both players' roles"},
     {"id": "s2", "url": "https://example.com/lesson", "kind": "lesson",
      "note": "transcribes the intro and the solo"}
   ],

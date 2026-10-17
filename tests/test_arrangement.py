@@ -52,6 +52,18 @@ def _broken(edit) -> list:
     (lambda d: d["song"].pop("recording"), "song.recording"),
     (lambda d: d["sources"][0].update(kind="blog"), "kind must be one of"),
     (lambda d: d.update(schema="arrangement-0"), "schema is"),
+    (lambda d: d["sections"][0].update(end_s=9.0), "time_basis is unknown"),
+    (lambda d: d["sections"][0].update(time_basis="estimated from song structure"),
+     "time_basis must be one of"),
+    (lambda d: d["changes"][0].update(at_s=-1.0, time_basis="user"), "non-negative"),
+    (lambda d: d["sections"][0].update(start_s=float("nan"), end_s=5.0, time_basis="user"),
+     "start_s must be a non-negative number"),
+    (lambda d: d["guitars"][0].pop("doubled"), "lacks doubled"),
+    (lambda d: d.pop("changes"), "lacks changes"),
+    (lambda d: d["guitars"][0].update(doubled=1), "doubled must be true, false or null"),
+    (lambda d: d["sections"][1]["guitars"].update(g1=5), "must say what it plays"),
+    (lambda d: d["sections"][2].update(name="Intro"), "used twice"),
+    (lambda d: d["sources"][0].update(url="https://"), "web address"),
 ])
 def test_each_mistake_is_named(edit, expected):
     found = _broken(edit)
@@ -82,3 +94,23 @@ def test_check_fails_with_every_problem_listed(tmp_path):
     assert result.returncode != 0
     assert "cites no source" in result.stderr and "share an order" in result.stderr
     assert "Traceback" not in result.stderr
+
+
+@pytest.mark.parametrize("edit", [
+    lambda d: d.update(changes=None),
+    lambda d: d.update(changes=5),
+    lambda d: d.update(changes="abc", sections={}, sources="x", guitars=None),
+    lambda d: d["changes"][0].update(guitar=["g1"], at_section=["solo"]),
+    lambda d: d["guitars"][0].update(sources=[["s1"]], rig=None),
+    lambda d: d["sections"].append("chorus 2"),
+])
+def test_malformed_input_is_reported_not_crashed_on(edit):
+    assert _broken(edit)
+
+
+def test_names_without_latin_letters_never_share_a_file():
+    a = A.slug("椎名林檎", "丸の内サディスティック")
+    b = A.slug("Мумий Тролль", "Утекай")
+    assert a.startswith("song-") and b.startswith("song-") and a != b
+    assert A.slug("Sigur Rós", "Hoppípolla") == "sigur-ros-hoppipolla"
+    assert A.slug("Beyoncé", "Halo") == A.slug("Beyonce", "Halo")
