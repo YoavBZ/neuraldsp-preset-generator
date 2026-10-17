@@ -506,9 +506,10 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
   timbre 0.0002), at the template's default settings. Its effect on a ranking is not
   measured: the shift is a distance to an unfaded target, so it can differ by candidate.
 - **Parked, with reasons:**
-  - **Riffs in the part's style and register:** *built 2026-10-15 (listening check
-    pending)* for chords and single
-    lines in three registers, from Guitar-TECHS already on disk ([plan](riff-library-plan.md));
+  - **Riffs in the part's style and register:** *built 2026-10-15; registers and the rebuilt
+    chords checked by ear 2026-10-17* for chords and single lines in three registers ([plan](riff-library-plan.md)).
+    The low and mid chords were rebuilt from EGFxSet's single Strat notes after the
+    Guitar-TECHS strums proved to carry clicks and fret buzz; registers were confirmed;
     `generate` picks at most two by the part. Still missing: power chords and arpeggios (no
     shippable source), and automatic chord and register detection (no open tool proven on
     stems; Basic Pitch would need a pip install and an ear-labelled check).
@@ -607,4 +608,5 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-16 | Local objective: DI-only work against the htdemucs stem (and the DAC-9 add-on) dropped; improve the separator and the rebuild together | [results](local-objective-results.md) |
 | 2026-10-17 | Bleed cleaning not adopted; high-bleed parts stay flagged and results report the no-high-bleed row beside all parts | [bleed listening](bleed-listening-results.md) |
 | 2026-10-17 | The true-DI search to a stop (−0.293) replaces −0.269 as the ceiling reference; step 3's readings stand | [K_S extension](ks-ceiling-extend-results.md) |
+| 2026-10-17 | `chords` and `chords-mid` rebuilt from EGFxSet single notes (retuned, denoised above 3 kHz, down-up strum, even chords); Guitar-TECHS strums dropped for clicks and fret buzz | [riff plan](riff-library-plan.md), "Rebuilt" |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |

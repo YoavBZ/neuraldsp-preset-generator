@@ -16,7 +16,15 @@ for their own copy.
   routinely embed absolute IR paths from their creator's machine and reference
   commercial IR packs.
 - **Six guitar riffs are included** in `samples/riffs/`, for hearing presets on the
-  audition page. They are not MIT-licensed. They come from *Guitar-TECHS: An Electric
+  audition page. They are not MIT-licensed. `chords` and `chords-mid` come from
+  *EGFxSet: Electric guitar tones processed through real effects of distortion,
+  modulation, delay and reverb*, by Hegel Pedroza, Gerardo Meza and Iran R. Roman
+  (Zenodo record 7044411, https://zenodo.org/records/7044411,
+  doi:10.5281/zenodo.7044411), licensed CC BY 4.0
+  (https://creativecommons.org/licenses/by/4.0/). Changes: single notes of its Clean
+  set (middle pickup) were retuned by up to 15 cents, denoised above 3 kHz, faded,
+  assembled into strummed chords and level-adjusted. The other four come from
+  *Guitar-TECHS: An Electric
   Guitar Dataset Covering Techniques, Musical Excerpts, Chords and Scales Using a
   Diverse Array of Hardware*, by Hegel Emmanuel Pedroza Villalobos, Termeh Taheri,
   Wallace Abreu, Ryan Corey and Iran R. Roman (Zenodo record 14963133,
@@ -24,7 +32,8 @@ for their own copy.
   doi:10.1109/ICASSP49660.2025.10887996), licensed CC BY 4.0
   (https://creativecommons.org/licenses/by/4.0/). Changes: excerpts of its part-P1
   direct-input recordings were cut, joined, faded and level-adjusted by
-  `research/build_riffs.py`; `samples/riffs/riffs.json` records the sources.
+  `research/build_riffs.py`, which made all six; `samples/riffs/riffs.json` records
+  the sources.
 - **One example preset is included**: `samples/Example_Clean_PR12.xml`, generated
   by this project. Because the writer is template-based (it clones a preset and
   mutates values rather than synthesizing bytes from scratch), that file
