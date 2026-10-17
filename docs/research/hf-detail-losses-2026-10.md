@@ -12,19 +12,19 @@ No open-source method recovers short-time high-frequency (HF) detail in a way kn
 
 Diffusion and flow models are excluded as too costly. No licence-clean guitar de-amping checkpoint exists. Literature GAN fine-tunes run 30k–100k steps, against the repo's 2–5k. This is research to inform a plan; the project's rules still require a declared plan and an independent review before any run.
 
-*Tag: **[I]** marks this report's own inference. Everything else is cited to a primary source or to the repo's committed docs and code. Repo links are relative to `reports/`.*
+*Tag: **[I]** marks this report's own inference. Everything else is cited to a primary source or to the repo's committed docs and code. Repo links are relative to this file.*
 
 ## Ranking follows short-time treble magnitude, which is what vocoder losses target
 
 ### What the repo has already established
 
-C′ is a 9.8M-parameter Demucs-v2-style waveform U-Net with these properties ([`learn/direc.py`](../learn/direc.py), [di-rebuild-fine-structure-2026-10.md](../docs/research/di-rebuild-fine-structure-2026-10.md)):
+C′ is a 9.8M-parameter Demucs-v2-style waveform U-Net with these properties ([`learn/direc.py`](../../learn/direc.py), [di-rebuild-fine-structure-2026-10.md](di-rebuild-fine-structure-2026-10.md)):
 
 - It runs at 48 kHz mono on 3-s crops, and it trains with `100·L1 + MR-STFT` at FFT 256–4096.
 - Its 48 kHz waveform comes from **one 8-tap, stride-4 transposed convolution** from 12 kHz features, so it has no full-rate path.
 - Its shortest loss window is 5.3 ms, and nothing in the loss is weighted toward 2–8 kHz.
 
-The rebuild-gap study measured C′'s ranking fidelity at **0.541 against a 0.864 ceiling** when it rebuilds from the amp track itself (a perfect stem) ([rebuild-gap-plan.md](../docs/rebuild-gap-plan.md)). Its probes locate the loss ([rebuild-gap-results.md](../docs/rebuild-gap-results.md)):
+The rebuild-gap study measured C′'s ranking fidelity at **0.541 against a 0.864 ceiling** when it rebuilds from the amp track itself (a perfect stem) ([rebuild-gap-plan.md](../rebuild-gap-plan.md)). Its probes locate the loss ([rebuild-gap-results.md](../rebuild-gap-results.md)):
 
 | Probe (what it restores) | Estimate | Share of the gap |
 |---|---|---|
@@ -35,7 +35,7 @@ The rebuild-gap study measured C′'s ranking fidelity at **0.541 against a 0.86
 | `dep_eq`: long-term EQ to the average curve | +0.133 [−0.009, +0.276] | 0.46 |
 | `rank`: proxy-ranking fine-tune, against C′ | +0.075 [−0.031, +0.182] | about a quarter |
 
-The study's reading is that the costly error is **"a structured, signal-dependent magnitude error at time scales between 21-ms frames and the long-term spectrum"**. An unstructured error of the same frame-level size costs little. The two long-term fixes do not touch the short-time part: `rank` slightly *raised* the offset-removed 2–8 kHz short-time error, from 8.87 to 8.97 dB ([rebuild-gap-results.md](../docs/rebuild-gap-results.md)). Two caveats limit the `noise` probe. It keeps the true waveform underneath, and it has a much better long-term spectrum (LSD 1.3 dB against 3.3). So it shows that random HF error at the rebuild's level is tolerable *on top of the true signal*. It does not show that any texture with the right band levels will do. Set-3 is the counterweight: boosting incoherent treble by 3–7 dB hurt high-gain and crunch picks ([set3-gap-split-results.md](../docs/set3-gap-split-results.md)).
+The study's reading is that the costly error is **"a structured, signal-dependent magnitude error at time scales between 21-ms frames and the long-term spectrum"**. An unstructured error of the same frame-level size costs little. The two long-term fixes do not touch the short-time part: `rank` slightly *raised* the offset-removed 2–8 kHz short-time error, from 8.87 to 8.97 dB ([rebuild-gap-results.md](../rebuild-gap-results.md)). Two caveats limit the `noise` probe. It keeps the true waveform underneath, and it has a much better long-term spectrum (LSD 1.3 dB against 3.3). So it shows that random HF error at the rebuild's level is tolerable *on top of the true signal*. It does not show that any texture with the right band levels will do. Set-3 is the counterweight: boosting incoherent treble by 3–7 dB hurt high-gain and crunch picks ([set3-gap-split-results.md](../set3-gap-split-results.md)).
 
 ### What the literature says about HF texture versus envelope
 
@@ -50,7 +50,7 @@ The restoration literature points the same way:
 
 The consensus is that the reconstruction loss fixes the envelope and the adversarial loss fixes texture. No paper measures HF transients directly, and none splits envelope error from fine-structure error.
 
-Three things temper that consensus here. First, **every one of those wins is perceptual**, and the repo has already seen HF metrics improve without ranking following. Arms 1a and 1b cut the 3–8 kHz deficit from −7.4 to −4.7 dB and gap fill by about 11 dB, "with no breakage". They still did not steer the search better than C′ ([di-fine-structure-results.md](../docs/di-fine-structure-results.md)). Second, on broadband mix restoration the GAN entries lost: the **ICASSP 2026 MSR challenge's top two teams used L1 + MR-STFT only**, and the three GAN teams ranked 3rd–5th ([MSR challenge](https://arxiv.org/html/2601.04343v1)). Third, HiFi-GAN's own authors report that fine-tuning raised mel error while raising perceived quality ([HiFi-GAN](https://arxiv.org/pdf/2010.05646)). A GAN can therefore move a magnitude metric the wrong way. [I] The upshot is that a GAN is a plausible next lever for the structured short-time error, but whether it helps ranking is an open question that only rendered ranking can answer.
+Three things temper that consensus here. First, **every one of those wins is perceptual**, and the repo has already seen HF metrics improve without ranking following. Arms 1a and 1b cut the 3–8 kHz deficit from −7.4 to −4.7 dB and gap fill by about 11 dB, "with no breakage". They still did not steer the search better than C′ ([di-fine-structure-results.md](../di-fine-structure-results.md)). Second, on broadband mix restoration the GAN entries lost: the **ICASSP 2026 MSR challenge's top two teams used L1 + MR-STFT only**, and the three GAN teams ranked 3rd–5th ([MSR challenge](https://arxiv.org/html/2601.04343v1)). Third, HiFi-GAN's own authors report that fine-tuning raised mel error while raising perceived quality ([HiFi-GAN](https://arxiv.org/pdf/2010.05646)). A GAN can therefore move a magnitude metric the wrong way. [I] The upshot is that a GAN is a plausible next lever for the structured short-time error, but whether it helps ranking is an open question that only rendered ranking can answer.
 
 ## Vocoders share one loss template; they differ in window length and discriminator
 
@@ -148,7 +148,7 @@ Sources: [ST-ITO](https://raw.githubusercontent.com/csteinmetz1/st-ito/main/LICE
 
 **Excluded data:** GOAT (CC BY-NC, gated) and IDMT-SMT (CC BY-NC-ND).
 
-**ToneTwist AFx.** The amp-inversion notes could not find "ToneTwist AFx" and called the reference unresolved. The repo's docs resolve it. It is a real dry/wet dataset of real analog amps, from Comunità, at [github.com/mcomunita/tonetwist-afx-dataset](https://github.com/mcomunita/tonetwist-afx-dataset). The repo is MIT, and the audio is on Zenodo under **CC BY-NC 4.0** (records 10901426, 10794425 and 10892012). The project has used it only to calibrate gain classes, and the ML plan bars it as open data ([validation-set3.md](../docs/validation-set3.md), [round-4-audio-ml.md](../docs/research/round-4-audio-ml.md), [native-guitar-development-data-2026-10-09.md](../docs/research/native-guitar-development-data-2026-10-09.md), [ml-plan-2026-10.md](../docs/research/ml-plan-2026-10.md)). It is a dataset, not an inversion method. Under the open-only rule it can serve at most as local, NC-flagged test material.
+**ToneTwist AFx.** The amp-inversion notes could not find "ToneTwist AFx" and called the reference unresolved. The repo's docs resolve it. It is a real dry/wet dataset of real analog amps, from Comunità, at [github.com/mcomunita/tonetwist-afx-dataset](https://github.com/mcomunita/tonetwist-afx-dataset). The repo is MIT, and the audio is on Zenodo under **CC BY-NC 4.0** (records 10901426, 10794425 and 10892012). The project has used it only to calibrate gain classes, and the ML plan bars it as open data ([validation-set3.md](../validation-set3.md), [round-4-audio-ml.md](round-4-audio-ml.md), [native-guitar-development-data-2026-10-09.md](native-guitar-development-data-2026-10-09.md), [ml-plan-2026-10.md](ml-plan-2026-10.md)). It is a dataset, not an inversion method. Under the open-only rule it can serve at most as local, NC-flagged test material.
 
 ### Corrections to the earlier DI-recovery report
 
@@ -165,13 +165,13 @@ The later fine-structure report (`docs/research/di-rebuild-fine-structure-2026-1
 
 ## An MPS-safe discriminator must drop phase, complex numbers and long crops
 
-The vocoder notes recommend one DAC/Vocos multi-band **complex** MRD, about 1.41M parameters. On CPU it measured about 1.6 s per pass, against 4.0 s for MPD and 8.2 s for MSD ([vocoder measurements via BigVGAN/Vocos classes](https://github.com/NVIDIA/BigVGAN/blob/main/discriminators.py)). That design collides with three faults the repo has measured on MPS ([residual-di-plan.md](../docs/residual-di-plan.md), [`learn/direc.py`](../learn/direc.py)):
+The vocoder notes recommend one DAC/Vocos multi-band **complex** MRD, about 1.41M parameters. On CPU it measured about 1.6 s per pass, against 4.0 s for MPD and 8.2 s for MSD ([vocoder measurements via BigVGAN/Vocos classes](https://github.com/NVIDIA/BigVGAN/blob/main/discriminators.py)). That design collides with three faults the repo has measured on MPS ([residual-di-plan.md](../residual-di-plan.md), [`learn/direc.py`](../../learn/direc.py)):
 
 - `torch.stft`'s gradient is 34–100% wrong for signals longer than 65,536 samples, and C′'s crops are 144,000 samples.
 - Complex `abs` has a NaN gradient near zero, and gradients through complex STFT output went non-finite.
 - Matmul on unfolded overlapping frames is wrong even in the forward pass. `clip_grad_norm_` also returns NaN on MPS.
 
-Arm 1c, a full MPD+MSD at C′'s batch of 12 × 144,000 samples, "was stopped twice for memory and then stalled at 0% CPU" ([di-fine-structure-results.md](../docs/di-fine-structure-results.md)). By rough arithmetic, its discriminators cost about 46× C′'s forward pass per audio sample. [I]
+Arm 1c, a full MPD+MSD at C′'s batch of 12 × 144,000 samples, "was stopped twice for memory and then stalled at 0% CPU" ([di-fine-structure-results.md](../di-fine-structure-results.md)). By rough arithmetic, its discriminators cost about 46× C′'s forward pass per audio sample. [I]
 
 The variant below fits both the evidence and the machine. **It is an untested inference.** No published system uses exactly this design, and none of it has been run on MPS.
 
@@ -180,7 +180,7 @@ The variant below fits both the evidence and the machine. **It is an untested in
 | Discriminator input | **Log-magnitude** spectrogram. Magnitude via the repo's `_magnitude` helper (`sqrt(re² + im² + ε)`), never complex `abs` | `phase` probe ≈ 0; avoids the NaN gradient. UnivNet's MRSD was magnitude-only and still cured HF over-smoothing ([UnivNet](https://arxiv.org/abs/2106.07889)) |
 | Bands | Separate heads for **2–4, 4–8 and 8–12 kHz** only (Nyquist fractions 0.083–0.5 at 48 kHz) | Matches `high`. DAC: sub-bands give "a stronger gradient signal" ([DAC](https://arxiv.org/abs/2306.06546)). [I] An 8–12 kHz head watches for fizz |
 | Resolutions | Windows 512, 1024 and 2048, hop win/4 | DAC/Vocos MRD sizes; spans the 5–40 ms band the plan targets |
-| Where the STFT runs | On the **CPU**, as the existing loss does, with the magnitudes moved to MPS for the conv layers. Fallback: a fixed real cos/sin DFT as a strided conv1d over non-overlapping, copied frames, gradient-checked | Status quo is correct; both MPS alternatives are unverified ([project notes](../docs/research/di-rebuild-fine-structure-2026-10.md)) |
+| Where the STFT runs | On the **CPU**, as the existing loss does, with the magnitudes moved to MPS for the conv layers. Fallback: a fixed real cos/sin DFT as a strided conv1d over non-overlapping, copied frames, gradient-checked | Status quo is correct; both MPS alternatives are unverified ([project notes](di-rebuild-fine-structure-2026-10.md)) |
 | Crops fed to the discriminator | Random **0.5–1 s sub-crops** (24k–48k samples), possibly half the batch | Below the 65,536-sample bug threshold. Near HiFi-GAN's 8,192 and Vocos's 16,384. Cuts discriminator audio about 4–7× [I] |
 | Architecture | DAC-style per-band Conv2d stack: 32 channels, (3, 9) kernels, frequency stride 2, `parametrizations.weight_norm` | About 0.3–1.4M parameters. Avoid UnivNet's no-stride layout, which was slow despite its size |
 | Optional | Remove each bin's crop-mean log-magnitude before the discriminator | So it cannot reward an EQ that `dep_eq` already carries [I] |
@@ -188,7 +188,7 @@ The variant below fits both the evidence and the machine. **It is an untested in
 | Loss weights | Keep reconstruction dominant: **recon ≈ 45 (ln, scale-averaged) or 15 (log10, summed over 7 scales) : FM 2 : adv 1**. C′'s `mrstft` is a scale-averaged ln term at weight 1, so the equivalent is FM ≈ 0.04 and adv ≈ 0.02 against it. MSR's 1 : 0.01 : 0.001 is the conservative end. Better: the EnCodec balancer, or MSG's least-squares equalisation over the first 1k steps | Offset removal shrinks the new loss, so fixed constants will drift ([EnCodec balancer](https://github.com/facebookresearch/encodec/blob/main/encodec/balancer.py), [MSG](https://arxiv.org/pdf/2208.12387)) |
 | Optimiser | AdamW, betas (0.8, 0.99). Discriminator lr ≤ the generator's (PWG uses half). Clip the discriminator gradient norm at 10 and the generator's at 1e3, **by hand**. Optionally update the discriminator with p = 2/3 | DAC, PWG and EnCodec; `clip_grad_norm_` is NaN on MPS |
 | Warm-up | Start from the C′ checkpoint. Train the discriminator alone for about 500–2k steps with the generator frozen | 1c's plan used 500; community Vocos fine-tunes do the same ([PR #37](https://github.com/kadirnar/drifting-tts/pull/37)) |
-| Precision and checks | fp32 only. CPU-against-MPS gradient cosine ≥ 0.99 at the crop length, before training and after 200 steps | Project rule ([di-fine-structure-plan.md](../docs/di-fine-structure-plan.md)) |
+| Precision and checks | fp32 only. CPU-against-MPS gradient cosine ≥ 0.99 at the crop length, before training and after 200 steps | Project rule ([di-fine-structure-plan.md](../di-fine-structure-plan.md)) |
 
 **Fine-tune length is the hidden cost.** Literature adversarial fine-tunes from a regression-trained generator run much longer than the repo's 2–5k steps:
 
@@ -199,16 +199,16 @@ The variant below fits both the evidence and the machine. **It is an untested in
 
 Sources: [HiFi-GAN](https://arxiv.org/pdf/2010.05646), [FINALLY](https://arxiv.org/html/2410.05920v2), [MSR U-Former](https://arxiv.org/html/2505.21827v1), [Distortion Recovery](https://arxiv.org/html/2407.16639v1).
 
-The repo's fine-tunes are 1,750–5,150 steps. Stage T ran at about 1.1–1.4 s per step ([rebuild-gap-plan.md](../docs/rebuild-gap-plan.md)). [I] A 5k-step GAN arm risks reading as "no effect" simply because it is undertrained. A GAN plan should declare a learning-curve stopping rule, for example the treble error and the hiss guards logged every 1k steps up to 15–20k steps, rather than a fixed 5k. Assuming a 1.5–2× step-time overhead, which is unmeasured, that is roughly 6–20 h of MPS per fold-arm.
+The repo's fine-tunes are 1,750–5,150 steps. Stage T ran at about 1.1–1.4 s per step ([rebuild-gap-plan.md](../rebuild-gap-plan.md)). [I] A 5k-step GAN arm risks reading as "no effect" simply because it is undertrained. A GAN plan should declare a learning-curve stopping rule, for example the treble error and the hiss guards logged every 1k steps up to 15–20k steps, rather than a fixed 5k. Assuming a 1.5–2× step-time overhead, which is unmeasured, that is roughly 6–20 h of MPS per fold-arm.
 
 ## Five options, ranked by expected ranking gain per Mac-hour
 
-The expected gains are judgements anchored to the probe ceilings: `mag` +0.313, `high` +0.241, `dep_eq` +0.133, `rank` +0.075. No option has published evidence on ranking. Every arm is still judged by TR's design: the arm, a matched-step control, C′, and `rank` beside it, about 2.4k renders ([rebuild-gap-results.md](../docs/rebuild-gap-results.md)).
+The expected gains are judgements anchored to the probe ceilings: `mag` +0.313, `high` +0.241, `dep_eq` +0.133, `rank` +0.075. No option has published evidence on ranking. Every arm is still judged by TR's design: the arm, a matched-step control, C′, and `rank` beside it, about 2.4k renders ([rebuild-gap-results.md](../rebuild-gap-results.md)).
 
 | Rank | Option | Expected gain | Effort | MPS risk | Licence |
 |---|---|---|---|---|---|
 | 1 | **Planned fine-tune**: offset-removed log-magnitude L1 on linear bins 2–8 kHz, windows 256–2048 (5–43 ms), hop n/4, energy-gated like the metric (frames within 40 dB of the loudest frame, bins within 60 dB of each frame's loudest bin) or with a 1e-5-style floor. Optionally add DAC-style 64–128 windows | The only option aimed squarely at the residual `high` prices. **Moderate and uncertain**: 1a's short windows moved HF metrics but not steering, and the vocoder literature says regression alone leaves some over-smoothing | **Low.** Existing CPU-STFT path. Computing only the 2–8 kHz bins is about 25% of each DFT [I]. About 1–2 h MPS per fold-arm at 2.5–5k steps | **Low**, given the gradient check | Own code; auraloss Apache-2.0 for an optional A-weighting pre-filter ([Wright & Välimäki](https://ar5iv.arxiv.org/html/1911.08922)) |
-| 2 | **Output relative to a signal the net already has.** (a) A bounded per-bin, per-frame log-gain (e.g. tanh-limited to ±12 dB) on the STFT of **C′'s own output**, resynthesised with C′'s phase, zero-initialised so it starts exactly at C′. (b) The same on the *input* STFT, reusing input phase | (a) Its ceiling is the **`mag` probe, the whole gap** (21-ms magnitude, rebuild phase), and it removes the waveform-synthesis burden from the treble fix. (b) De-limiter/AudioSR precedent, but R showed input pass-through keeps the amp's distortion and brightness ([di-rebuild-fine-structure-2026-10.md](../docs/research/di-rebuild-fine-structure-2026-10.md)). **Prefer (a)** [I] | **Medium.** A small head; STFT and iSTFT inside the forward pass; trained with option 1's loss | **Medium.** STFT/iSTFT and their gradients on the CPU. The iSTFT gradient on MPS is unchecked | Own code |
+| 2 | **Output relative to a signal the net already has.** (a) A bounded per-bin, per-frame log-gain (e.g. tanh-limited to ±12 dB) on the STFT of **C′'s own output**, resynthesised with C′'s phase, zero-initialised so it starts exactly at C′. (b) The same on the *input* STFT, reusing input phase | (a) Its ceiling is the **`mag` probe, the whole gap** (21-ms magnitude, rebuild phase), and it removes the waveform-synthesis burden from the treble fix. (b) De-limiter/AudioSR precedent, but R showed input pass-through keeps the amp's distortion and brightness ([di-rebuild-fine-structure-2026-10.md](di-rebuild-fine-structure-2026-10.md)). **Prefer (a)** [I] | **Medium.** A small head; STFT and iSTFT inside the forward pass; trained with option 1's loss | **Medium.** STFT/iSTFT and their gradients on the CPU. The iSTFT gradient on MPS is unchecked | Own code |
 | 3 | **Fix the upsampler**: interpolation + conv, or BigVGAN's Kaiser-sinc anti-aliased Snake, in the last decoder stages; optionally a light full-rate head | **Low to moderate.** It targets tonal and imaging artefacts that Pons et al. show in Demucs, but the 0e overfit reached about 21 dB SNR, so capacity is not the limit. Snake evidence is mixed (DAC gain, Vocos decline) | **Medium-high.** Changes the architecture, so it likely needs retraining: about 6.5 h per fold | **Low-medium.** Elementwise ops and 12-tap filters, but conv and ConvTranspose results have differed from CPU on MPS before ([forum](https://discuss.pytorch.org/t/issue-with-convtranspose1d-on-mps/158164)) | BigVGAN MIT ([act.py](https://github.com/NVIDIA/BigVGAN/blob/main/alias_free_activation/torch/act.py)) |
 | 4 | **Magnitude-only, 2–12 kHz multi-band discriminator + feature matching** (the previous section; untested) | **Unknown for ranking.** It is the literature's main cure for over-smoothed HF in listening (UnivNet, DAC, EnCodec, AERO, EG-VAE). Counter-evidence: MSR's L1-only winners, 1a, and the fizz risk through driven amps | **Medium-high.** New code, gradient checks, a discriminator warm-up, and likely 10–20k steps | **Medium-high.** 1c stalled; untested design | Own code modelled on DAC/Vocos (MIT) |
 | 5 | **PANN early-layer feature loss** at small weight beside L1/STFT | **Low.** Speech-only evidence (PERL +0.16 PESQ). Its 32 kHz log-mel front end sees little fine treble structure | **Medium.** One large frozen network forward and backward per step | **Medium.** Its spectrogram front end falls under the same CPU-STFT rule [I] | PANN licence not verified in these notes; check before use |
@@ -222,7 +222,7 @@ The expected gains are judgements anchored to the probe ceilings: `mag` +0.313, 
 - **Phase-derivative terms**, after the `phase` probe.
 - **Non-open weights**: Apollo (CC BY-SA), RemFX weights (NC), audiocraft weights (CC-BY-NC), LOUDAR (trained on NC GOAT) and DeepAFx-ST (Adobe Research License).
 
-Every arm should pass the same **zero-render HF screen** on held-out training-fold bands before any render. It uses only existing repo metrics ([`fine_metrics` in direc.py](../learn/direc.py), [rebuild-gap-results.md](../docs/rebuild-gap-results.md), [di-fine-structure-plan.md](../docs/di-fine-structure-plan.md)):
+Every arm should pass the same **zero-render HF screen** on held-out training-fold bands before any render. It uses only existing repo metrics ([`fine_metrics` in direc.py](../../learn/direc.py), [rebuild-gap-results.md](../rebuild-gap-results.md), [di-fine-structure-plan.md](../di-fine-structure-plan.md)):
 
 | Metric | C′ baseline | Reads as hiss or artefact when |
 |---|---|---|
@@ -232,7 +232,7 @@ Every arm should pass the same **zero-render HF screen** on held-out training-fo
 | Coherence, 3–8 kHz | 0.01 | Uninformative for magnitude arms. A GAN can match magnitudes at zero coherence, so read it only beside the treble error |
 | Crest error at 1–2.5 ms; LSD 2–8 kHz | Logged per probe | Crest growth means smeared, "phasey" attacks. An LSD rise means an envelope regression |
 
-A spectrogram check for horizontal tonal lines near multiples of 12 kHz (C′'s last stride) would catch Pons-style upsampler artefacts. [I] No repo metric measures musical noise or phasiness directly. Ranking barely reacts to phase, so only a declared listening check would catch phasiness that ranking ignores. The listening runner exists, but its tests compare presets, not rebuilt DIs ([declared-listening-runner.md](../docs/declared-listening-runner.md)).
+A spectrogram check for horizontal tonal lines near multiples of 12 kHz (C′'s last stride) would catch Pons-style upsampler artefacts. [I] No repo metric measures musical noise or phasiness directly. Ranking barely reacts to phase, so only a declared listening check would catch phasiness that ranking ignores. The listening runner exists, but its tests compare presets, not rebuilt DIs ([declared-listening-runner.md](../declared-listening-runner.md)).
 
 ## Conclusion
 
