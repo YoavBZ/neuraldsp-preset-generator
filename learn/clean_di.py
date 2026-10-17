@@ -1732,7 +1732,8 @@ LISTEN2 = HOME / "listening/di-clean-2"
 LISTEN2_SEED = 20261018
 N_REFUTED, N_ANCHOR = 8, 2
 N_PER_UNIT = 2                   # clips from a multi-DI unit (Guitar-TECHS P1's chord files: one recording setup)
-KEPT_TAGS_OK = BENIGN_TAGS | {"slight_hiss", "hum_kept_by_fundamental"}
+PAGE2_TAGS_OK = BENIGN_TAGS | {"slight_hiss", "rest_hiss"}   # rest_hiss describes the track's rests, not the section
+KEPT_TAGS_OK = PAGE2_TAGS_OK | {"hum_kept_by_fundamental"}
 
 
 def hum_unit(di):
@@ -1777,7 +1778,7 @@ def draw_hum(rows_v1, rows, page1_dis=(), seed=LISTEN2_SEED):
         n = N_PER_UNIT if sum(1 for d in {r["di"] for r in kept} if hum_unit(d) == u) > 1 else 1
         clips += [{**t, "unit": u} for t in take([r for r in kept if hum_unit(r["di"]) == u], n, "kept", fixed=True)]
     refuted = [r for r in rows if r["clean"] and r["measures"].get("hum_rel_db_refuted") is not None
-               and r["measures"]["hum_rel_db_refuted"] >= HUM_FLAG_DB and not (set(r["tags"]) - BENIGN_TAGS - {"slight_hiss"})]
+               and r["measures"]["hum_rel_db_refuted"] >= HUM_FLAG_DB and not (set(r["tags"]) - PAGE2_TAGS_OK)]
     clips += take(refuted, N_REFUTED, "refuted")
     hummy = [r for r in rows if r["flags"] == ["hum"] and r["measures"]["hum_rel_db"] >= HUM_FLAG_DB + 10
              and not ({"hum_unconfirmed_on_rests", "hum_kept_by_fundamental"} & set(r["tags"]))]
@@ -1886,6 +1887,12 @@ def cmd_listen_hum(args):
     page1 = json.loads((LISTEN / "private" / "key.json").read_text())
     p1_dis = {t["di"] for part in ("part1", "part2") for t in page1.get(part, {}).values()}
     clips = draw_hum(v1["sections"], man["sections"], p1_dis)
+    was = {(r["di"], r["start_s"]) for r in v1["sections"] if r["clean"]}
+    moved = {hum_unit(r["di"]) for r in man["sections"] if r["flags"] == ["hum"]
+             and "hum_kept_by_fundamental" in r["tags"] and (r["di"], r["start_s"]) in was}
+    drawn = {t["unit"] for t in clips if t["kind"] == "kept"}
+    print("kept units drawn", len(drawn), "of", len(moved), sorted(moved - drawn))
+    assert drawn == moved, "a kept unit has no eligible section"
     key = {"plan": "docs/clean-di-library-plan.md (amendment 3)", "seed": LISTEN2_SEED,
            "manifest_sha256": hashlib.sha256((OUT / "manifest.json").read_bytes()).hexdigest(), "clips": {}}
     s1 = []

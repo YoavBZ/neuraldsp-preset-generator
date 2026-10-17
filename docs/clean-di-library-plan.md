@@ -657,7 +657,9 @@ re-measured, and the non-hum measures reproduce):
 page 1: padded AAC data URIs, a seeded order (seed 20261018), no names (asserted), whole 10-s
 sections levelled to −20 LUFS, and one clip per DI.
 - **Kept (9):** one section the rule moves (clean before, flagged for hum alone now) per unit, with
-  no tag beyond the benign ones and `slight_hiss`.
+  no tag beyond the benign ones, `slight_hiss` and the track-level `rest_hiss`. (At the first
+  build, before anyone heard it, `rest_hiss` had been left out, which dropped Guitar-TECHS P1 and
+  "Blind Spots"; the page was rebuilt with it allowed, for kept and refuted clips alike.)
   - The units are the 7 DIs outside Guitar-TECHS, plus Guitar-TECHS P1's 7 chord files as one unit
     (one recording setup, near-identical hum).
   - That unit gets 2 clips, from 2 different files.
