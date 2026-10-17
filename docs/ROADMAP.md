@@ -50,6 +50,8 @@ lives in the linked documents. Last updated 2026-10-17.
   starting points (the clean template, and the driven preset on crunch), mostly on clean parts
   ([results](set4-confirmation-results.md)). Against the current starting presets it is
   undecided on clean and crunch, both under-powered ([audit](audit-2026-10-11.md)).
+  Arm A, the current candidate, is not yet shown better than the starting preset on fresh full mixes
+  (−0.028 [−0.064, +0.008]; [results](arm-a-mega53-results.md)).
 - **The judge** ([measuring-closeness.md](measuring-closeness.md)) is how closeness is
   measured. It needs the DI of the same take, and listening validated it only for clear
   differences between clean-to-crunch PR12 renders
@@ -94,6 +96,16 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      approved by the user on 2026-10-14. Since 2026-10-16 it has no fixed render limit: each step
      stops rendering by a declared, evidence-based stopping rule (decision 2).
 
+   **Status (2026-10-17): not ready to claim for shipping.**
+   - **Arm A on fresh full mixes reads −0.028 [−0.064, +0.008] against S**, against −0.083 on the
+     reused development parts it was chosen on ([results](arm-a-mega53-results.md)). It is not
+     yet shown better than the starting preset on fresh full mixes.
+   - **The rebuild is the main measured bottleneck** ([results](rebuild-gap-results.md);
+     development, perfect stem). With a perfect stem the loss is a structured short-time magnitude error, mostly above 2 kHz; phase and
+     rotation are minor.
+   - **Fresh full mixes are now the only yardstick for progress.** The reused development parts
+     are for exploration only.
+
    **Where the ML plan stands (2026-10-17):**
    - **Done:**
      - step 1, C′ for every fold ([results](cprime-folds-results.md));
@@ -134,7 +146,11 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      - **Without bleed** it is a little stronger: −0.094 for the recipe without moderate or high
        bleed ([bleed audit](audits/bleed-2026-10-16/README.md)).
      - **What limits it:** ranking nearby settings around S (below).
-     - Development estimates; a fresh draw comes before shipping.
+     - **On fresh full mixes it reads only −0.028 [−0.064, +0.008]**, 9/12 bands
+       ([results](arm-a-mega53-results.md)). Candidate reasons, none settled: selection and reuse
+       optimism (new-song parts read +0.018, post hoc, 4 bands), much poorer stems (median SNR 0.43 dB against 2.13),
+       and bleed (about a third of the drop). The shrink looks more useful there (unshrunk
+       −0.006).
    - **The local objective** ([results](local-objective-results.md)): how well the song-only
      objective ranks nearby settings (cross-half local Spearman; the true DI against the amp track
      gives 0.864, today's objective 0.289).
@@ -147,7 +163,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      - **1c, a real separator (Mega-53) feeding both,** on the instrumental context: 0.398,
        +0.109 [+0.058, +0.160], about 43% [26%, 70%] of 1b's gain. Right around S no gain is
        detected (−0.002 [−0.049, +0.045]), so it doesn't by itself show a song-level gain. Mega-53
-       takes about 5–6× htdemucs's CPU time.
+       takes about 6× htdemucs's wall-clock time (measured in the song test).
      - **1d, the separator-robust C′ in the rebuild** (htdemucs stem and Mega-53): no gain.
        Against today's objective −0.127 [−0.256, +0.003]; against 1c's Mega-53 cell −0.051
        [−0.166, +0.065]. Keep C′. Its small envelope gain didn't predict ranking, so judge
@@ -174,23 +190,53 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      ([screen](separator-screen-results.md)); C′'s error is fine structure
      ([ladder](rank-margin-ladder-results.md)); better fine structure didn't steer better
      ([experiment 4](di-fine-structure-results.md)).
-   - **Next: arm A's song-level test with Mega-53** ([plan](arm-a-mega53-plan.md), reviewed;
-     code in `learn/arm_a_mega53.py`). The user said go on 2026-10-17; it launches right after
-     this merge. About 30k renders, about 5 h. Stage D on step 3's 24 parts, stage F on fresh
-     full mixes with vocals (the check a separator switch needs, at 5–6× htdemucs's CPU time).
-   - **After that: a rebuild-gap study on the GPU** (being planned). More than half of the local
-     ranking gap remains even with a perfect stem (1b 0.541 against the ceiling's 0.864), and
-     that is the rebuild's own limit.
-   - **Renders:** about 201k used so far. Since the 2026-10-16 update: arm B's retrain about
+   - **Separation: Mega-53 against htdemucs** ([results](arm-a-mega53-results.md)). On fresh full
+     mixes Mega-53 leans better, a tie: −0.017 [−0.039, +0.004], 8/4 bands, at about 6× the
+     wall-clock time. On the development parts −0.008 [−0.024, +0.009]. **htdemucs stays the
+     default.** A perfect stem gains little on the instrumental development stems (−0.026), but
+     separation may matter more on low-SNR full mixes (not measured there): on the 6 development parts below 1 dB SNR a
+     perfect stem gains −0.091 (post hoc), and 19 of the 21 fresh full-mix stems are below 1 dB.
+   - **The rebuild gap** ([results](rebuild-gap-results.md), with a perfect stem, development):
+     - **Magnitude, not phase:** the true short-time magnitude recovers the whole gap (+0.313),
+       the true phase nothing (−0.031). The treble above 2 kHz carries most of it (+0.241, about
+       0.8 of the gap). A constant phase rotation costs about 4%; rotation fixes are
+       deprioritised.
+     - **The costly error is structured**, at time scales between 21-ms frames and the long-term
+       spectrum. A fixed long-term EQ (`dep_eq`) leans better, +0.133 [−0.009, +0.276], about
+       half the gap at most.
+     - **The ranking-trained rebuild (`rank`) leans better:** +0.075 [−0.031, +0.182] against C′,
+       +0.104 [−0.005, +0.214] against its control. Post hoc, it looks like a learned long-term EQ: it
+       follows `dep_eq` part by part and does not reduce the short-time treble error.
+   - **Next, in order** (decided 2026-10-17):
+     1. **A rebuild change aimed at the short-time magnitude above 2 kHz** (a proposal; plan and
+        review first), with each bin's long-term offset removed. `dep_eq` (its average curve
+        rebuilt without the test parts; today's includes 17 of the 24) or `rank` carries the
+        long-term part. A zero-render check on held-out bands first (does it lower the short-time
+        treble error?), then judged on rendered ranking with TR's design (the arm, a matched-step
+        control, C′, `rank` beside it). Curves, targets and checkpoint selection kept off the test
+        parts. The cheap second-seed check of `rank` and `ctl` (about 4 h of MPS, 2,352 renders)
+        runs alongside.
+     2. **Fresh full mixes are the only yardstick for progress;** reused parts are for exploration.
+        The 21 stage-F parts are now used once, so the decision test should use unseen parts
+        where it can (item 3).
+     3. **More fresh development material.** Request sent to the cloud researcher on 2026-10-17.
+        With only 21 usable fresh parts, effects much below about 0.03 read as ties.
+     4. **Decision point: one fresh-song test of arm A with the improved rebuild** (and Mega-53 if
+        it still leans better). If arm A clearly beats S on fresh full mixes (read as that test's
+        plan declares), build the product around it. If not, revive arm B (song to settings directly) with these lessons, or a hybrid.
+   - **Kept:** bleed handling (no cleaning; the no-high-bleed row beside all parts), arm B paused
+     until the decision point, metal out of scope.
+   - **Renders:** about 250k used so far. Since the 2026-10-16 update: arm B's retrain about
      14.8k, the local objective 7,061 + 3,528 (1b) + 3,528 (1c) + 7,200 (1d), the ceiling
-     extension 17,550 plus 72 warm-ups, the listening page 26. No fixed limit (2026-10-16): each step plan
+     extension 17,550 plus 72 warm-ups, the listening page 26, arm A with Mega-53 30,102 and the
+     rebuild-gap study 18,981. No fixed limit (2026-10-16): each step plan
      declares when to stop rendering from its own evidence (a flattened search curve, a learning
      curve that stops improving, an interval narrow enough to answer the question), and reports
      what it used.
    - **Open user decisions:**
-     - reopening arm B (its shuffled-input control first);
+     - reopening arm B (its shuffled-input control first), at the decision point above;
      - Tone King for step 2.
-   - **Then:** step 5 (optimiser comparison), step 6, and finally step 7, the pooled held-out
+   - **Then, after the decision point:** step 5 (optimiser comparison), step 6, and finally step 7, the pooled held-out
      test.
    - **How the Mac is shared (the MPS GPU, 8 CPU cores, 32 GB):** one GPU job at a time; at most 3
      render processes machine-wide, with `isolate`, grouped by amp; separation only when the
@@ -494,11 +540,12 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
   setting over the best factory preset on 7 of 7 trials, chosen mostly where the gains
   were largest. Lower bounds, true DI, one take.
 - **Next: `generate` sets more controls from the song,** if and once the ML session's
-  plan step 3 shows a way to get such settings without a DI
-  ([plan](research/ml-plan-2026-10.md), decision 5 puts the `generate` change after
-  that readout). As of 2026-10-17 the candidate is arm A's current best (−0.083 against S on
-  development; one listener chose it 4 of 4 where a difference was heard); arm B is paused. A fresh
-  draw comes first. Until then `generate` sets what research
+  decision point (step 0) shows a way to get such settings without a DI
+  ([plan](research/ml-plan-2026-10.md), decision 5 put the `generate` change after
+  step 3's readout). As of 2026-10-17 the candidate is arm A's current best (−0.083 against S on
+  development; one listener chose it 4 of 4 where a difference was heard), but on fresh full mixes
+  it reads only −0.028 [−0.064, +0.008]: not ready to ship. Arm B is paused until the ML
+  decision point (step 0). Until then `generate` sets what research
   documents. *The two render checks are done (2026-10-14, one development
   part, PR12):* fresh-process renders with isolation repeat exactly (maximum difference
   0.0); the isolation fade-in (the same for every candidate) moved the match loss by
@@ -608,5 +655,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-16 | Local objective: DI-only work against the htdemucs stem (and the DAC-9 add-on) dropped; improve the separator and the rebuild together | [results](local-objective-results.md) |
 | 2026-10-17 | Bleed cleaning not adopted; high-bleed parts stay flagged and results report the no-high-bleed row beside all parts | [bleed listening](bleed-listening-results.md) |
 | 2026-10-17 | The true-DI search to a stop (−0.293) replaces −0.269 as the ceiling reference; step 3's readings stand | [K_S extension](ks-ceiling-extend-results.md) |
+| 2026-10-17 | htdemucs stays the separator: Mega-53 leans better on fresh full mixes, a tie (−0.017 [−0.039, +0.004]) | [arm A with Mega-53](arm-a-mega53-results.md) |
+| 2026-10-17 | Arm A not ready to claim: −0.028 [−0.064, +0.008] against S on fresh full mixes. Fresh full mixes are the only yardstick for progress; next a rebuild change on short-time treble magnitude, then one fresh-song decision test of arm A (else arm B or a hybrid) | [arm A with Mega-53](arm-a-mega53-results.md), [rebuild gap](rebuild-gap-results.md) |
 | 2026-10-17 | `chords` and `chords-mid` rebuilt from EGFxSet single notes (retuned, denoised above 3 kHz, down-up strum, even chords); Guitar-TECHS strums dropped for clicks and fret buzz | [riff plan](riff-library-plan.md), "Rebuilt" |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |
