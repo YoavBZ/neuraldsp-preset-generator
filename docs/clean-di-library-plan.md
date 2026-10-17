@@ -703,6 +703,8 @@ left out.
   measures reproduce. It keeps the screen as it stood in `screen-v1/`.
 - `manifest` then writes version 2. Version 1 is kept as `manifest-v1.json`, and v2 names it and
   its sha256.
+  - The schema name stays `clean-di-manifest-1`; readers tell the versions apart by `version`
+    (absent means 1).
 - Each section's `measures.hum_rel_db_refuted` records the refuted lines' level (not a screen).
 - `hum-fix` runs again on the amended screen, as above.
 - Until the second page is answered, the version 2 manifest is the one to train from.

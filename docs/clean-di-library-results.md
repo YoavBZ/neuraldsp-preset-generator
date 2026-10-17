@@ -1,9 +1,10 @@
 # A clean DI library: part A results (2026-10-18)
 
 These are the results of part A of the [plan](clean-di-library-plan.md), run under amendments 1
-and 2, with the hum screen amended by amendment 3 (2026-10-18, below) before the manifest was used. Development data only, zero renders. These are descriptive screen counts with declared
-thresholds, not pass/fail bars. The blind listening check is built and waits for the user. The
-screens may still move by the declared amendment rule, so treat every count below as provisional.
+and 2, with the hum screen amended by amendment 3 (2026-10-18, below) before the manifest was
+used. Development data only, zero renders. These are descriptive screen counts with declared
+thresholds, not pass/fail bars. Two blind listening pages are built and wait for the user. The
+screens may still move by their declared rules, so treat every count below as provisional.
 
 - **Code:** `learn/clean_di.py`.
 - **Data:** in `~/ndsp-presets/learn/clean-di/`:
@@ -276,6 +277,8 @@ reproduced.
     "Bloomlight".
   - **4 anchors:** 2 hum-only sections of rest-confirmed DIs, both Guitar-TECHS P2, and 2 clean
     sections of DIs with no line.
+    - Caveat: both hum anchors are Guitar-TECHS P2 chord exercises, like the kept P1 clips, so
+      they calibrate one recording setup's hum more than hum in general.
   - **2 repeats:** one kept, one refuted.
 - **The answer:** one line copied from the page, page 1's format. For example: `1ok 2hum 3hiss+hum …`.
 - **Scoring:** `python -m learn.clean_di listen-hum score --answers "<line>"`.

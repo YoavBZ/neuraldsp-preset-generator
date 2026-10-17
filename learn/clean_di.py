@@ -410,8 +410,8 @@ def mains_line_hz(x, mains, nfft=F0_NFFT, search=F0_SEARCH_HZ, q=HUM_QUANTILE):
 def fundamental_overrides(ks, line_hz, mains, tol=F0_TOL_HZ):
     """Amendment 3: the rest check may not refute a DI's lines when the mains fundamental itself is
     one of them (k = 1 passes the track's own line test) and that line sits at the mains frequency
-    (within `tol` Hz). No note of an in-scope tuning lies within 2% of 50 or 60 Hz, so a steady line
-    there is mains hum, whatever the rest frames show."""
+    (within `tol` Hz). In any tuning near A = 440 Hz no equal-tempered note lies within 2% of 50 or
+    60 Hz, so a steady line there is mains hum, whatever the rest frames show."""
     return 1 in ks and line_hz is not None and abs(line_hz - mains) <= tol
 
 
@@ -1187,7 +1187,9 @@ HUM_FIELDS = ("hum_harmonics", "hum_rest_check", "mains_line_hz", "mains_line_pr
 def cmd_hum_amend(args):
     """Amendment 3 on the stored screen: re-measure the DIs whose hum lines the rest check refuted
     (only their hum can change), assert every other measure reproduces, and rewrite their hum fields;
-    the screen as it stood is kept in screen-v1/. Every screen file is stamped hum_amendment = 3."""
+    the screen as it stood is kept in screen-v1/. Every screen file is stamped hum_amendment = 3.
+    Re-running it reads screen-v1/ again, so it is idempotent; after a fresh `screen` run (already
+    under amendment 3), delete screen-v1/ rather than re-running this, or v1 rows come back."""
     import shutil
 
     sdir, keep = OUT / "screen", OUT / "screen-v1"
