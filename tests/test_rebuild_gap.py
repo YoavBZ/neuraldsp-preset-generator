@@ -4,12 +4,14 @@ queue gates. No renders."""
 
 import math
 
-import numpy as np
 import pytest
 
-from learn import knob_ceiling as K
-from learn import local_objective as LO
-from learn import rebuild_gap as G
+np = pytest.importorskip("numpy")
+pytest.importorskip("scipy")
+
+from learn import knob_ceiling as K  # noqa: E402
+from learn import local_objective as LO  # noqa: E402
+from learn import rebuild_gap as G  # noqa: E402
 
 SR = 48000
 PARTS = [f"p{i:02d}" for i in range(24)]

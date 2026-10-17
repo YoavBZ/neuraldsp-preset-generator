@@ -209,12 +209,13 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
        follows `dep_eq` part by part and does not reduce the short-time treble error.
    - **Next, in order** (decided 2026-10-17):
      1. **A rebuild change aimed at the short-time magnitude above 2 kHz** (a proposal; plan and
-        review first), with each bin's
-        long-term offset removed; `dep_eq` or `rank` carries the long-term part. A zero-render
-        check on held-out bands first (does it lower the short-time treble error?), then judged on
-        rendered ranking with TR's design (the arm, a matched-step control, C′, `rank` beside it).
-        Curves, targets and checkpoint selection kept off the test parts. The cheap second-seed
-        check of `rank` and `ctl` (about 4 h of MPS, 2,352 renders) runs alongside.
+        review first), with each bin's long-term offset removed. `dep_eq` (its average curve
+        rebuilt without the test parts; today's includes 17 of the 24) or `rank` carries the
+        long-term part. A zero-render check on held-out bands first (does it lower the short-time
+        treble error?), then judged on rendered ranking with TR's design (the arm, a matched-step
+        control, C′, `rank` beside it). Curves, targets and checkpoint selection kept off the test
+        parts. The cheap second-seed check of `rank` and `ctl` (about 4 h of MPS, 2,352 renders)
+        runs alongside.
      2. **Fresh full mixes are the only yardstick for progress;** reused parts are for exploration.
         The 21 stage-F parts are now used once, so the decision test should use unseen parts
         where it can (item 3).

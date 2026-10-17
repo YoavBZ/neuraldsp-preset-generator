@@ -3,10 +3,11 @@ the proxy local set, stage T's terms and rules. Needs torch (the demucs-venv int
 otherwise."""
 
 import math
+import pathlib
 
-import numpy as np
 import pytest
 
+np = pytest.importorskip("numpy")
 torch = pytest.importorskip("torch")
 
 from learn import rebuild_gap_train as T  # noqa: E402
@@ -108,6 +109,8 @@ def test_schedule_and_rules():
     assert T.should_stop(T.MAX_STEPS, T.MAX_STEPS - 1)
 
 
+@pytest.mark.skipif(not (pathlib.Path.home() / "ndsp-presets/runs/kill/pr12-clean/index.json").exists(),
+                    reason="needs the PR12 kill-test panel index under ~/ndsp-presets")
 def test_validation_bands_are_training_fold_bands():
     from learn import train as TR
 
