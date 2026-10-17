@@ -229,7 +229,7 @@ The independent review approved with 6 required changes; all are made, and this 
 2. **Renders counted across resumes:** each part's cache file now records warm-ups too, and a part's
    renders are its cache lines (every render, the S repeat and the warm-ups), not the last session's.
 3. **The cap outside this worktree:** the `local_objective.RENDERS` line is committed with the code and
-   landed on main on its own before launch, so a runner started from main (after a pull) counts these
+   proposed for main on its own (PR #209; superseded as the launch condition by amendment 2), so a runner started from main (after a pull) counts these
    workers too. The worktree's branch isn't switched (the rebuild-tone run uses it).
 4. **A floor for the regrets.** A regret mixes real differences between sections with the search's
    own path (two searches of one section rarely land on the same settings). **A fifth search,
@@ -252,4 +252,18 @@ statistics' basis).
 
 **Expected renders, revised:** about 1,120 per part: about 22.4k for batch 0 and 33.6k for both; about
 5.5 h for batch 0 and 8.5 h for both at 2 processes, plus the rebuild-tone run's turns.
+
+## Amendment 2 (2026-10-17, before any step-2 render)
+
+PR #209 (the `RENDERS` line on main) could not be merged from this session; it waits for the user.
+So the cap is made to hold on this step's side, whatever other checkouts' runners count:
+- **Before every render,** a worker steps aside (exits, code 3, resuming later from its cache) when
+  any separation runs, or when foreign render processes and this step's workers together exceed 3.
+  A foreign render process is any python running a `learn` module with a render-like command (`run`,
+  `render`, `search`, `probe`, `pregain`, `choose-rot`, `score-targets`, `score-songs`, `c-start`) or
+  a separation; training (`train`, `fit`) and scoring don't count, as before.
+- **The runner starts workers only when** nothing it yields to runs and two workers fit under the cap
+  (`learn.multi_section clear`), polling every 2 min.
+- So a runner that doesn't know this step can start up to its own cap; these workers leave within one
+  render (about 2 s).
 

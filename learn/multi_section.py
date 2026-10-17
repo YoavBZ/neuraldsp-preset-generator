@@ -495,6 +495,14 @@ def _ps():
     return X._ps()
 
 
+# Amendment 2: the cap must hold even against runners whose RENDERS list lacks this module (other
+# checkouts). Any python running a learn module with a render-like or separation command counts.
+FOREIGN = (r"-m learn\.(?!multi_section\b)[a-z_0-9]+ (run|render|render-new|search|probe|pregain|choose-rot|"
+           r"score-targets|score-songs|c-start|separate|identity)\b", r"-m learn\.separate\b")
+MINE = r"-m learn\.multi_section run\b"
+CAP = 3
+
+
 def must_yield(ps=None):
     import re
 
@@ -502,6 +510,28 @@ def must_yield(ps=None):
 
     ps = _ps() if ps is None else ps
     return [p for p, c in ps if X._is_python(c) and any(re.search(r, c) for r in YIELD_TO)]
+
+
+def over_cap(ps=None, cap=CAP):
+    """Foreign render or separation processes, if they and this step's workers exceed the cap
+    (a separation counts as the whole machine)."""
+    import re
+
+    from learn import ks_extend as X
+
+    ps = _ps() if ps is None else ps
+    py = [(p, c) for p, c in ps if X._is_python(c)]
+    foreign = [p for p, c in py if any(re.search(r, c) for r in FOREIGN)]
+    mine = [p for p, c in py if re.search(MINE, c)]
+    seps = [p for p, c in py if re.search(r"-m learn\.\S+ (separate|identity)\b|-m learn\.separate\b", c)]
+    return foreign if (seps or len(foreign) + len(mine) > cap) else []
+
+
+def clear(ps=None):
+    """The runner's test before starting workers: nothing to yield to, and room for 2 workers."""
+    ps = _ps() if ps is None else ps
+    return not must_yield(ps) and not over_cap([*ps, (-1, "python -m learn.multi_section run"),
+                                                (-2, "python -m learn.multi_section run")])
 
 
 class Yield(Exception):
@@ -559,7 +589,8 @@ def run_part(rr, menu, slug, part, sec):
         if (k, s) in cache:
             counts["cached"] += 1
             return section_score(cache[(k, s)])
-        if must_yield():
+        ps = _ps()
+        if must_yield(ps) or over_cap(ps):
             raise Yield()
         if not warm["done"]:
             rr.render(dis[s].astype(np.float32), select, s_edits)
@@ -838,6 +869,7 @@ def main(argv=None):
     a = sub.add_parser("decide")
     a.add_argument("--batch", type=int, required=True)
     sub.add_parser("batches")
+    sub.add_parser("clear")
     args = ap.parse_args(argv)
     if args.cmd == "sections":
         sections(args.only, not args.no_snr)
@@ -848,6 +880,8 @@ def main(argv=None):
         print(json.dumps({k: v for k, v in report().items() if k != "per_part"}, indent=1, default=str))
     elif args.cmd == "decide":
         print("DECISION", "STOP" if decide(args.batch) else "CONTINUE", flush=True)
+    elif args.cmd == "clear":
+        sys.exit(0 if clear() else 1)
     elif args.cmd == "batches":
         bs, ps, _ = plan_batches()
         for i, b in enumerate(bs):

@@ -316,3 +316,17 @@ def test_report_and_decide(tmp_path, monkeypatch):
         slug = f"cambridge-{band}"
         (tmp_path / "parts" / slug / "result.json").write_text(json.dumps(_fake_result(slug, band, sh)))
     assert M.decide(0) is False and M.decide(1) is True           # wide: continue, unless the pool is spent
+
+
+def test_cap_holds_against_runners_that_do_not_count_us():
+    me = "/x/.venv/bin/python -u -m learn.multi_section run --worker 0/2 --batch 0"
+    other = "/x/.venv/bin/python -u -m learn.multi_section run --worker 1/2 --batch 0"
+    ks = "/x/.venv/bin/python -u -m learn.ks_extend run --shard 0/3"
+    train = "/x/demucs-venv/bin/python -u -m learn.rebuild_tone_train train --fold 0 --arm stm --seed 0"
+    assert M.over_cap([(1, me), (2, other), (3, train)]) == []
+    assert M.over_cap([(1, me), (2, other), (3, ks)]) == []                    # 3 in all
+    assert M.over_cap([(1, me), (2, other), (3, ks), (4, ks)]) == [3, 4]       # 4: step aside
+    assert M.over_cap([(1, me), (5, "/x/python -m learn.separate --part a")]) == [5]
+    assert not M.over_cap([(1, me), (6, "/x/.venv/bin/python -m learn.multi_section sections")])
+    assert M.clear([(3, ks)]) and not M.clear([(3, ks), (4, ks)])
+    assert not M.clear([(7, "/x/.venv/bin/python -u -m learn.rebuild_tone render --stage tr1 --shard 0/3")])

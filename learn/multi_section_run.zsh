@@ -20,8 +20,8 @@ log "start pid $$, commit $(git rev-parse --short HEAD), branch $(git branch --s
 
 wait_clear() {   # the rebuild-tone run's renders and scoring go first
   local said=0
-  while pgrep -f -- "-m learn\.rebuild_tone (render|score)|-m learn\.rebuild_tone_train (gate|rebuild)" > /dev/null; do
-    (( said )) || log "waiting: rebuild-tone renders, scoring or CPU torch steps running"
+  while ! $PY -m learn.multi_section clear; do
+    (( said )) || log "waiting: rebuild-tone renders, scoring or CPU torch steps, or other renders at the cap"
     said=1
     sleep 120
   done
