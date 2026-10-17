@@ -1,6 +1,6 @@
 {
- "schema": "riffs-2",
- "attribution": "Guitar-TECHS: An Electric Guitar Dataset Covering Techniques, Musical Excerpts, Chords and Scales Using a Diverse Array of Hardware, by Hegel Emmanuel Pedroza Villalobos, Termeh Taheri, Wallace Abreu, Ryan Corey and Iran R. Roman (Zenodo record 14963133, https://zenodo.org/records/14963133; ICASSP 2025, doi:10.1109/ICASSP49660.2025.10887996). Licensed CC BY 4.0, https://creativecommons.org/licenses/by/4.0/. Changes: excerpts of the part-P1 direct-input recordings cut, joined, faded and level-adjusted.",
+ "schema": "riffs-3",
+ "attribution": "chords-high and the line riffs: Guitar-TECHS: An Electric Guitar Dataset Covering Techniques, Musical Excerpts, Chords and Scales Using a Diverse Array of Hardware, by Hegel Emmanuel Pedroza Villalobos, Termeh Taheri, Wallace Abreu, Ryan Corey and Iran R. Roman (Zenodo record 14963133, https://zenodo.org/records/14963133; ICASSP 2025, doi:10.1109/ICASSP49660.2025.10887996). Licensed CC BY 4.0, https://creativecommons.org/licenses/by/4.0/. Changes: excerpts of the part-P1 direct-input recordings cut, joined, faded and level-adjusted. chords and chords-mid: EGFxSet: Electric guitar tones processed through real effects of distortion, modulation, delay and reverb, by Hegel Pedroza, Gerardo Meza and Iran R. Roman (Zenodo record 7044411, https://zenodo.org/records/7044411, doi:10.5281/zenodo.7044411). Licensed CC BY 4.0, https://creativecommons.org/licenses/by/4.0/. Changes: single notes of the Clean set (middle pickup) retuned by up to 15 cents, denoised above 3 kHz, faded, assembled into strummed chords and level-adjusted.",
  "loudness_lufs": -23.7,
  "register_edges": {
   "low_below": "C4",
@@ -9,27 +9,31 @@
  "riffs": {
   "chords": {
    "file": "chords.flac",
-   "sha256": "a4a2f36d0762f015cd0b22e719295b62a3a76a3dfbf51a07d2688e3981e696a0",
-   "what": "a G-D-Em-C chord progression",
+   "sha256": "e51ba2a4b921558c4a0f70b2a1f10c4610af960a926567eac5ba6c5f1fd09f56",
+   "what": "a G-D-Em-C progression in open chords, strummed down and up",
    "seconds": 10.0,
-   "gain_db": 9.25,
+   "gain_db": 6.19,
    "style": "chords",
    "register": "low",
    "default": true,
-   "median_pitch": 50,
-   "notes": "G2-C4"
+   "median_pitch": 55,
+   "notes": "E2-G4",
+   "source": "egfxset",
+   "method": "egfxset-notes-1"
   },
   "chords-mid": {
    "file": "chords-mid.flac",
-   "sha256": "a28fff51148eb68181d2a77ea22fff1a9f677cd9a9cf548f8111b68416ab249e",
-   "what": "a G-D-Em-C chord progression, mid-neck voicings",
+   "sha256": "0f896fb621fa09ad4f1a8d29ab0d8b39e8e4b733ce990cc3307189308731ee42",
+   "what": "a G-D-Em-C progression on the top four strings, frets 5-10, strummed down and up",
    "seconds": 10.0,
-   "gain_db": 9.56,
+   "gain_db": 5.97,
    "style": "chords",
    "register": "mid",
    "default": false,
-   "median_pitch": 64,
-   "notes": "F#3-B4"
+   "median_pitch": 65.0,
+   "notes": "G3-C5",
+   "source": "egfxset",
+   "method": "egfxset-notes-1"
   },
   "chords-high": {
    "file": "chords-high.flac",
@@ -41,7 +45,8 @@
    "register": "high",
    "default": false,
    "median_pitch": 70.0,
-   "notes": "C#4-E5"
+   "notes": "C#4-E5",
+   "source": "guitar-techs"
   },
   "line": {
    "file": "line.flac",
@@ -53,7 +58,8 @@
    "register": "low",
    "default": true,
    "median_pitch": 58.0,
-   "notes": "F#2-A4"
+   "notes": "F#2-A4",
+   "source": "guitar-techs"
   },
   "line-mid": {
    "file": "line-mid.flac",
@@ -65,7 +71,8 @@
    "register": "mid",
    "default": false,
    "median_pitch": 66,
-   "notes": "F#3-D5"
+   "notes": "F#3-D5",
+   "source": "guitar-techs"
   },
   "line-high": {
    "file": "line-high.flac",
@@ -77,64 +84,171 @@
    "register": "high",
    "default": false,
    "median_pitch": 74.0,
-   "notes": "F4-A5"
+   "notes": "F4-A5",
+   "source": "guitar-techs"
   }
  },
  "cuts": [
   {
    "riff": "chords",
    "chord": "G",
-   "file": "directinput_Set4_maj.wav",
-   "start_s": 67.9473,
+   "source": "egfxset",
+   "pickup": "Middle",
+   "notes": [
+    "6-3",
+    "5-2",
+    "4-0",
+    "3-0",
+    "2-0",
+    "1-3"
+   ],
+   "retuned_cents": [
+    -6.3,
+    -8.2,
+    -9.7,
+    1.8,
+    -0.6,
+    -3.7
+   ],
    "seconds": 2.5
   },
   {
    "riff": "chords",
    "chord": "D",
-   "file": "directinput_Set4_maj.wav",
-   "start_s": 115.9662,
+   "source": "egfxset",
+   "pickup": "Middle",
+   "notes": [
+    "4-0",
+    "3-2",
+    "2-3",
+    "1-2"
+   ],
+   "retuned_cents": [
+    -9.7,
+    -8.0,
+    -3.7,
+    -5.5
+   ],
    "seconds": 2.5
   },
   {
    "riff": "chords",
    "chord": "Em",
-   "file": "directinput_Set4_min.wav",
-   "start_s": 56.0099,
+   "source": "egfxset",
+   "pickup": "Middle",
+   "notes": [
+    "6-0",
+    "5-2",
+    "4-2",
+    "3-0",
+    "2-0",
+    "1-0"
+   ],
+   "retuned_cents": [
+    -0.4,
+    -8.2,
+    -14.5,
+    1.8,
+    -0.6,
+    -0.5
+   ],
    "seconds": 2.5
   },
   {
    "riff": "chords",
    "chord": "C",
-   "file": "directinput_Set4_maj.wav",
-   "start_s": 87.913,
+   "source": "egfxset",
+   "pickup": "Middle",
+   "notes": [
+    "5-3",
+    "4-2",
+    "3-0",
+    "2-1",
+    "1-0"
+   ],
+   "retuned_cents": [
+    -10.1,
+    -14.5,
+    1.8,
+    -5.8,
+    -0.5
+   ],
    "seconds": 2.5
   },
   {
    "riff": "chords-mid",
    "chord": "G",
-   "file": "directinput_Set2_maj.wav",
-   "start_s": 148.0075,
+   "source": "egfxset",
+   "pickup": "Middle",
+   "notes": [
+    "4-5",
+    "3-7",
+    "2-8",
+    "1-7"
+   ],
+   "retuned_cents": [
+    -13.0,
+    -4.5,
+    -2.3,
+    -3.1
+   ],
    "seconds": 2.5
   },
   {
    "riff": "chords-mid",
    "chord": "D",
-   "file": "directinput_Set2_maj.wav",
-   "start_s": 55.8532,
+   "source": "egfxset",
+   "pickup": "Middle",
+   "notes": [
+    "4-7",
+    "3-7",
+    "2-7",
+    "1-5"
+   ],
+   "retuned_cents": [
+    -9.6,
+    -4.5,
+    -1.3,
+    -3.4
+   ],
    "seconds": 2.5
   },
   {
    "riff": "chords-mid",
    "chord": "Em",
-   "file": "directinput_Set2_min.wav",
-   "start_s": 43.9875,
+   "source": "egfxset",
+   "pickup": "Middle",
+   "notes": [
+    "4-9",
+    "3-9",
+    "2-8",
+    "1-7"
+   ],
+   "retuned_cents": [
+    -10.7,
+    -3.2,
+    -2.3,
+    -3.1
+   ],
    "seconds": 2.5
   },
   {
    "riff": "chords-mid",
    "chord": "C",
-   "file": "directinput_Set2_maj.wav",
-   "start_s": 119.9232,
+   "source": "egfxset",
+   "pickup": "Middle",
+   "notes": [
+    "4-10",
+    "3-9",
+    "2-8",
+    "1-8"
+   ],
+   "retuned_cents": [
+    -5.6,
+    -3.2,
+    -2.3,
+    -7.3
+   ],
    "seconds": 2.5
   },
   {
@@ -188,21 +302,38 @@
   }
  ],
  "sources": {
-  "directinput_Set4_maj.wav": "0d7390deaa5cc1f5c549228076637d38adb982fea94be42ae2846632d7771f39",
-  "midi_Set4_maj.mid": "ed8742b1a5a1bd69bdbb02f8c4a938813a0f151ed6fbe56a9ef884e205f368f9",
-  "directinput_Set4_min.wav": "6000b89dfbf280468f2f0e6f331bc9d3bd4b900d762e026f201d7284123bc63b",
-  "midi_Set4_min.mid": "5f5409fa465feb5aa32a8d26212e2e74cf6871f8c70026e97919d48483eacef0",
   "directinput_A.wav": "1d33f99eae917f16fb4146dd16f578a74c79201e636f0a9f3e673b9caa984b2d",
-  "directinput_Set2_maj.wav": "1708255669616d2c270ee86a57f4917647be907e344e21a8f003229e4aefd688",
-  "midi_Set2_maj.mid": "218afa91db705570577c6c36712b03a3a8b0249763bb9ee99e880094d53ec021",
-  "directinput_Set2_min.wav": "771998f9940dcec2b0ac5ddcf1ff7ab7affe6d6f7c966336db7d6de78e373078",
-  "midi_Set2_min.mid": "ebf58e61eb71a1d60d78fc5e98a2625add71d172e8994ae1202df78306f1f737",
-  "directinput_Set1_maj.wav": "620e76125b9623d8256e504962f36e534a0e483ae0f602c63ec0d9e66a98ab9b",
-  "midi_Set1_maj.mid": "d1e93e069570124d09f59c5d2c3474a8d8f7bcd7b83e43cb28ddd66bcf4bdc5b",
-  "directinput_Set1_min.wav": "464077182dd6020b098a6d751448498ffce1219263022d03f5ca1e21178bd7df",
-  "midi_Set1_min.mid": "28579f1420151f5147955266afbdd53c89c83171d2710c3a3cb54c6e38ef618e",
-  "midi_A.mid": "46e560051a5aa0ef7dddfc4a75350c0d8afb3a05734726cb7afb2f59b9c83847",
   "directinput_E.wav": "1c71ed960ec6452e4c6c170b2ac0d28b6071eef9d39063e5436b709b7801f58a",
-  "midi_E.mid": "0ecdd459fa6986956893bb05dec93ed8a7e586207c11257632fbd312df7ad72b"
+  "directinput_Set1_maj.wav": "620e76125b9623d8256e504962f36e534a0e483ae0f602c63ec0d9e66a98ab9b",
+  "directinput_Set1_min.wav": "464077182dd6020b098a6d751448498ffce1219263022d03f5ca1e21178bd7df",
+  "egfxset/Clean/Middle/1-0.wav": "e1ec67ea6be7598e55f05c9674aa6195260a0760745aef6be9816a4d6a8252ab",
+  "egfxset/Clean/Middle/1-2.wav": "f2a3b65d3d1b31c626d8a11e72337d8b9d4a5cdf9b1711668588d69d33d5f083",
+  "egfxset/Clean/Middle/1-3.wav": "8cd436e8baf237264bd1763f2c8e7cb9ac2e7f7d4079c3fa489e1720380c0b82",
+  "egfxset/Clean/Middle/1-5.wav": "0b13457e0a96c6193d7bd75aedb239b6f3df0e56e7f30340c835c839e0c41714",
+  "egfxset/Clean/Middle/1-7.wav": "d0cac2e32ca75129daa608e9e2ef7b42c7779807495eb4ea58b3f57274b95b01",
+  "egfxset/Clean/Middle/1-8.wav": "f34285d8745da0b510a1e77cda8d420ca5a87f1f541e2bf7b0e80c17ff038d98",
+  "egfxset/Clean/Middle/2-0.wav": "54045b40f016f2c75ab287bdbd5b160ac12f62454e9f4174695e11b04f0c9402",
+  "egfxset/Clean/Middle/2-1.wav": "0fcfea6def69c1dea7cd002fb637ce2a4552dc86017eb44c08a401511a53e34d",
+  "egfxset/Clean/Middle/2-3.wav": "d10a64a1ba33fe8d9786acd7e47bd54d898e969a68a6d872563319692917a59c",
+  "egfxset/Clean/Middle/2-7.wav": "0fd3090439fd18b75e4951f15c2b4c6619e322a00e9b48550dd4c923583c828b",
+  "egfxset/Clean/Middle/2-8.wav": "8071b89e0c830da3dedef2f37b97c194519b4b356359adf8ee7cc189fbf35a3c",
+  "egfxset/Clean/Middle/3-0.wav": "5b3570772317432eeb1dbcfbec89a7a86e3a5a2a21c1dd72bc19169265b4869e",
+  "egfxset/Clean/Middle/3-2.wav": "8438cba2e90901e71429671c7e51f191920234630621c64aba39efa5bd3452e3",
+  "egfxset/Clean/Middle/3-7.wav": "7e846fad6b93b350125d39e6acf15e42b0d086c17b7f927aea9905b49a671219",
+  "egfxset/Clean/Middle/3-9.wav": "3d819af4288740b643bea5ea542e8ddf927647f0ad4d6b2ebc8019fc46b7566a",
+  "egfxset/Clean/Middle/4-0.wav": "2d7d7a6433de98b4a7ac51cda1f330894297b66f5385260f9b29153aae6bc9ad",
+  "egfxset/Clean/Middle/4-10.wav": "e4180a799ba8554a973ad60c3eb5afdfb823e5945f28c31716d3e790d9b9dd55",
+  "egfxset/Clean/Middle/4-2.wav": "37efda0f88beee388a11eda49e22b8bfcd535e8552d85525fa5fcf08c6041b23",
+  "egfxset/Clean/Middle/4-5.wav": "46eb80237ee2885e1e74b8be7a8e4dccc65f2b6b7040455897c9be4de2ea895f",
+  "egfxset/Clean/Middle/4-7.wav": "ee4d1c8ede28a8ef761e7d327ee112be3dd12588d9102a2a2f270d7b057ad1ff",
+  "egfxset/Clean/Middle/4-9.wav": "37f5bf4ced22a70cd31127e7bab5a699a2af10a06cb887fa3191cc00d137ca54",
+  "egfxset/Clean/Middle/5-2.wav": "14cc65b9b07fe5d219fb3f0987616fc835142b08c51b7e6eab66c155b31565d3",
+  "egfxset/Clean/Middle/5-3.wav": "5cd83d154b25b29b65a39f8c3e5e0f8c572afbcb8e5311d5d7ec5614ad771389",
+  "egfxset/Clean/Middle/6-0.wav": "dc7a741b502ef16788a07a56372950b5172fe8adae9812c3ba1189dcb39c1e17",
+  "egfxset/Clean/Middle/6-3.wav": "c2d9a4e784c8b35847fa018801d03da666235231db315e82e234b4716eacd3c2",
+  "midi_A.mid": "46e560051a5aa0ef7dddfc4a75350c0d8afb3a05734726cb7afb2f59b9c83847",
+  "midi_E.mid": "0ecdd459fa6986956893bb05dec93ed8a7e586207c11257632fbd312df7ad72b",
+  "midi_Set1_maj.mid": "d1e93e069570124d09f59c5d2c3474a8d8f7bcd7b83e43cb28ddd66bcf4bdc5b",
+  "midi_Set1_min.mid": "28579f1420151f5147955266afbdd53c89c83171d2710c3a3cb54c6e38ef618e"
  }
 }

@@ -106,9 +106,13 @@ def test_every_riff_declares_its_style_register_and_default():
         (s, r) for s in ("chords", "line") for r in ("low", "mid", "high")}
     assert sorted(n for n, e in riffs.items() if e["default"]) == ["chords", "line"]
     assert A.default_riffs() == ["chords", "line"]
-    # The first two riffs are the ones that always shipped, unchanged.
-    assert riffs["chords"]["sha256"].startswith("a4a2f36d")
+    # The low and mid chords are assembled from EGFxSet notes (rebuilt 2026-10-17);
+    # the rest are the Guitar-TECHS cuts heard and kept, unchanged.
+    assert {n for n, e in riffs.items() if e["source"] == "egfxset"} == {"chords", "chords-mid"}
+    assert all(riffs[n]["method"] == B.NOTE_METHOD for n in ("chords", "chords-mid"))
+    assert riffs["chords-high"]["sha256"].startswith("29e03e21")
     assert riffs["line"]["sha256"].startswith("f0102680")
+    assert "EGFxSet" in record["attribution"] and "Guitar-TECHS" in record["attribution"]
 
 
 def test_register_is_the_median_pitch_of_the_cut_with_contiguous_edges():
@@ -148,3 +152,59 @@ def test_every_cut_names_its_riff_once_per_piece():
         counts[cut["riff"]] = counts.get(cut["riff"], 0) + 1
     assert counts == {"chords": 4, "chords-mid": 4, "chords-high": 4,
                       "line": 1, "line-mid": 1, "line-high": 1}
+
+
+def test_each_note_riff_records_its_notes_and_the_retuning():
+    record = json.loads((ROOT / "samples" / "riffs" / "riffs.json").read_text())
+    for name, spec in B.NOTE_RIFFS.items():
+        cuts = [c for c in record["cuts"] if c["riff"] == name]
+        assert [c["chord"] for c in cuts] == list(spec["voicings"])
+        for cut in cuts:
+            assert cut["notes"] == [f"{s}-{f}" for s, f in spec["voicings"][cut["chord"]]]
+            assert len(cut["retuned_cents"]) == len(cut["notes"])
+            assert all(abs(c) <= 20 for c in cut["retuned_cents"])
+            for note in cut["notes"]:
+                assert f"egfxset/Clean/{cut['pickup']}/{note}.wav" in record["sources"]
+    pitches = [B.OPEN_STRINGS[s] + f for v in B.NOTE_RIFFS["chords"]["voicings"].values()
+               for s, f in v]
+    assert B.register_of(pitches) == ("low", 55)
+
+
+def test_a_detuned_note_is_measured_in_cents():
+    np = pytest.importorskip("numpy")
+    rate = 48000
+    t = np.arange(3 * rate) / rate
+    f = 82.41 * 2 ** (10 / 1200)                       # E2, 10 cents sharp
+    tone = sum(np.sin(2 * np.pi * h * f * t) / h for h in (1, 2, 3))
+    assert abs(B.detune_cents(tone, rate, 40) - 10) < 0.5
+
+
+def test_a_strum_goes_down_then_up_and_ends_muted():
+    np = pytest.importorskip("numpy")
+    pyloudnorm = pytest.importorskip("pyloudnorm")
+    rate = 48000
+    notes = [np.ones(3 * rate) * 0.1 for _ in range(4)]
+    chord = B.strummed(notes, rate, pyloudnorm.Meter(rate))
+    assert len(chord) == round(B.CHORD_S * rate)
+    level = np.abs(chord)
+    first = int(np.argmax(level > 0))
+    assert first == round(B.LEAD_IN_S * rate)                 # the low string, 20 ms in
+    down = [round((B.LEAD_IN_S + k * B.DOWN_GAP_S) * rate) for k in range(4)]
+    assert level[down[1] - 1] < level[down[1] + 1]           # the strings enter one by one
+    up = round(B.UP_AT_S * rate)                              # the high string is re-plucked first
+    assert level[up - 2] < level[up - round(B.REPLUCK_S * rate)]
+    assert level[-1] == 0.0 and level[-round(B.RELEASE_S * rate) - 1] > 0.0
+    assert round(B.UP_GAP_S * rate) == 863                    # the approved build's spacing
+
+
+def test_a_prepared_note_is_retuned_and_its_lows_untouched():
+    pytest.importorskip("noisereduce")
+    np = pytest.importorskip("numpy")
+    rate = 48000
+    t = np.arange(4 * rate) / rate
+    f = 110 * 2 ** (12 / 1200)                         # A2, 12 cents sharp
+    tone = np.exp(-t) * sum(np.sin(2 * np.pi * h * f * t) / h for h in (1, 2, 3))
+    note, cents = B.prepared_note(tone, rate, 45)
+    assert abs(cents - 12) < 0.5
+    assert abs(B.detune_cents(note, rate, 45)) < 0.5
+    assert note[0] == 0.0
