@@ -788,7 +788,7 @@ def r2_list(contrasts, families, ratio):
 
 
 def tr2_due(rank_vs_cprime, ratio):
-    return extends(rank_vs_cprime, ratio)
+    return bool(extends(rank_vs_cprime, ratio))
 
 
 # --- data access -----------------------------------------------------------------------------------------

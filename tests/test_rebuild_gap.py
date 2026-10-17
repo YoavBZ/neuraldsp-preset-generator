@@ -328,3 +328,12 @@ def test_within_part_assoc_band_weighted():
             table.append({"slug": slug, "band": band, "m": float(i), "fidelity": float(i) * 0.1})
     out = G.within_part_assoc(table, "m")
     assert out["bands"] == 3 and abs(out["band_weighted_mean"] - 1.0) < 1e-9
+
+
+def test_tr2_due_is_plain_bool():
+    import json
+    from learn import rebuild_gap as G
+    row = {"band_weighted_mean": 0.01, "lo90": -0.001, "hi90": 0.02, "bands": 14}
+    v = G.tr2_due(row, 0.95)
+    assert type(v) is bool
+    json.dumps({"tr2_due": v})
