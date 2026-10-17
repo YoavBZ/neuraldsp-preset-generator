@@ -41,8 +41,8 @@ screens may still move by the declared amendment rule, so treat every count belo
   | Bleed | 155 | 10 | 104 |
   | Dropout | 30 | 9 | 21 |
 
-- **The hum fix is not adopted.** All 105 hum-flagged DIs fail its collateral condition, and 104
-  of them also fail the residual-hum condition. So hum-flagged sections stay out. The listening
+- **The hum fix is not adopted.** After amendment 3, all 119 hum-flagged DIs fail its collateral
+  condition, and 118 of them also fail the residual-hum condition (105 and 104 before). So hum-flagged sections stay out. The listening
   page therefore has no hum-removal part.
 - **Amendment 3 closes the audit's hum caveat.**
   - The audit's finding: the rest-frame check refuted the lines of 50 DIs, and on 10 of them the
@@ -65,8 +65,9 @@ screens may still move by the declared amendment rule, so treat every count belo
 
 The inventory has 122 Cambridge DIs, 28 Telefunken and 87 Guitar-TECHS; 6 have no activity
 section.
-- Before amendment 3, Guitar-TECHS had 195 clean sections (103 non-overlapping). All came from the 7
-  P1 chord files whose hum amendment 3 keeps.
+- Before amendment 3, Guitar-TECHS had 195 clean sections (103 non-overlapping).
+  - 193 of them (102 non-overlapping) came from the 7 P1 chord files whose hum amendment 3 keeps.
+  - 2 (1) came from P2, and these stay clean.
 - Cambridge had 542 (Drag Me Down and Timo lose none; Prodigal and Wickerman ElecGtr7 lose 24).
 - Telefunken had 309.
 
@@ -139,6 +140,14 @@ section.
 
 ## The hum fix (measured; not adopted)
 
+This section's table is the first run (`hum-fix-v1.json`, 105 flagged DIs).
+- The run after amendment 3 (`hum-fix.json`, 119 DIs) reads, at the 10th percentile, median and
+  90th percentile:
+  - collateral 0.53, 0.61 and 1.07 dB;
+  - hum before the fix −44.9, −35.5 and −25.6 dB;
+  - hum after the fix −46.5, −39.0 and −28.4 dB.
+- The verdict is the same.
+
 On 20 hum-free control DIs (seeded), each flagged DI's notch set was compared with what the same
 set does to pink noise (amendment 2).
 
@@ -186,8 +195,12 @@ repaired.**
   - post-amp audibility, since the clips are raw DIs;
   - amendment 3's hum rule, which the second page below tests. Page 1 was drawn from manifest
     v1 and is scored against its own key.
-  - Page 1 holds clips from DIs that amendment 3 changes: Dom McLennon @85 s (clean in v1, now
-    hum-flagged), Eggy "Fragments" @40 s and Renesans "Less Than Nothing" @125 s (twice).
+  - Page 1 holds clips from DIs that amendment 3 touches:
+    - Dom McLennon "Gym Hours" @85 s is still clean (−57.6 dB, `slight_hum`). It overlaps by 5 s
+      page 2's kept clip @90 s, which is now flagged.
+    - Eggy "Fragments" @40 s and Wickerman ElecGtr5 @35 s (already clipping-flagged) would be
+      flagged by their refuted lines.
+    - Renesans "Less Than Nothing" @125 s (twice) would not: its refuted lines read −70 dB.
 
 ## Amendment 3: the hum rule (applied; the second page waits for the user)
 
@@ -245,7 +258,7 @@ reproduced.
 **The hum fix, re-measured** (`hum-fix.json`; the earlier run is `hum-fix-v1.json`).
 - The 20 controls were redrawn with the same seed, from DIs with no line at all, kept or refuted.
 - All 119 flagged DIs fail the collateral condition. The median largest band excess is 0.61 dB,
-  and the 10th–90th percentiles are 0.52–1.07 dB.
+  and the 10th–90th percentiles are 0.53–1.07 dB.
 - 118 of them also stay over the flag after the fix.
 - **Still not adopted:** hum-flagged sections stay out.
 
@@ -315,3 +328,19 @@ Changes:
   plan's 8.
 - Elsewhere: README 242 → 237 DIs, the roadmap row's date order, the tests skip without
   numpy/scipy (the bare CI job), and a comment on the page's distinct-bytes assert.
+
+Amendment 3 was audited on 2026-10-18 by a fresh independent agent.
+- Every amendment-3 and version-2 count was recomputed from the stored screens, manifests, page key
+  and `hum-fix.json`, and matches.
+- `manifest_rows` reproduces v2 from `screen/` and v1 from `screen-v1/`.
+- Only the 50 refuted DIs' hum fields differ between the two screens.
+- The page key and HTML check out: 23 clips, no names, no overlap with page 1's refuted or anchor
+  DIs.
+
+Corrections it made:
+- the page-1 overlap note: Dom McLennon @85 s is still clean, Wickerman ElecGtr5 was added, and
+  Renesans would not flag;
+- Guitar-TECHS before amendment 3 was 193 clean sections from P1 and 2 from P2;
+- the hum fix's headline now gives the second run's 119 and 118, and its table is labelled as the
+  first run;
+- the collateral's 10th percentile is 0.53 dB.

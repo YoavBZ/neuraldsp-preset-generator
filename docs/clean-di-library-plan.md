@@ -691,9 +691,10 @@ left out.
   does not count twice.
 - **Anchors and repeats** are reported as a calibration caveat and move nothing.
 - **Page 1 already holds clips from affected DIs:**
-  - Dom McLennon @85 s, clean in version 1 and hum-flagged now;
-  - Eggy "Fragments" @40 s, which the refuted lines would flag;
-  - Renesans "Less Than Nothing" @125 s, twice.
+  - Dom McLennon "Gym Hours" @85 s: still clean, and 5 s of it overlap page 2's kept clip @90 s;
+  - Eggy "Fragments" @40 s and Wickerman ElecGtr5 @35 s (already clipping-flagged): their refuted
+    lines would flag them;
+  - Renesans "Less Than Nothing" @125 s, twice: its refuted lines read −70 dB.
 
   Page 1 is scored against its own key, which records the version 1 values.
 
