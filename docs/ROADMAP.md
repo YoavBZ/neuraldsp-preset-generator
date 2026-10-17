@@ -221,6 +221,13 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
         where it can (item 3).
      3. **More fresh development material.** Request sent to the cloud researcher on 2026-10-17.
         With only 21 usable fresh parts, effects much below about 0.03 read as ties.
+     3b. **Many sections per track, not one crop** (the user's idea, 2026-10-17;
+        [plan](multi-section-plan.md), reviewed). Cutting each development track into every 10-s
+        section where the guitar plays gives about 13× the audio of one crop (507 sections, 38
+        parts). Running first, with the true DI: does a search on one section carry to the track's
+        other sections, and does fitting three at once carry better? Then multi-section arm A,
+        grouping sections into sounds (the user's caution about several guitars and mid-song
+        changes), and song research as a prior.
      4. **Decision point: one fresh-song test of arm A with the improved rebuild** (and Mega-53 if
         it still leans better). If arm A clearly beats S on fresh full mixes (read as that test's
         plan declares), build the product around it. If not, revive arm B (song to settings directly) with these lessons, or a hybrid.
