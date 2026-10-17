@@ -87,9 +87,9 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/fingerprint.py" REFERENCE.wav \
   --regime mix --text
 ```
 
-`mix` is a song; use `separated_stem` or `isolated_stem` for a stem (classified
-below). Always pass `--regime`: the default, `probe`, skips the check that the
-window holds a guitar.
+`mix` is a song; use `separated_stem` or `isolated_stem` for a stem (classified below).
+Always pass `--regime`: the default, `probe`, skips the check that the window holds a
+guitar.
 
 Any common audio file works — mp3 included, no conversion step needed.
 
@@ -105,16 +105,16 @@ and build from research: in `generate` it only describes and sanity-checks. A fi
 noisy; it is a clean description of the wrong instrument. Two things to look at
 every time:
 
-- an `activity tie` excerpt policy, a clamped or ignored `--excerpt-start`,
-  or a "does not look like a guitar" caveat — each means **look at the window
-  before trusting it**, and re-measure with `--excerpt-start SECONDS`
-- a centroid below 200 Hz together with a −6 dB extent below 450 Hz is not a dark
-  tone, it is a different instrument
+- an `activity tie` excerpt policy, a clamped or ignored `--excerpt-start`, or a "does not
+  look like a guitar" caveat — each means **look at the window before trusting it**, and
+  re-measure with `--excerpt-start SECONDS`
+- a centroid below 200 Hz together with a −6 dB extent below 450 Hz is not a dark tone, it
+  is a different instrument
 
-[reading-a-reference.md](../../reference/reading-a-reference.md) covers this,
-what each regime's confidence is worth, and — importantly for a `mix` or a
-`separated_stem` — **which bands of the measurement to believe and which are
-artifacts**. Read it before reading anything into a measurement.
+[reading-a-reference.md](../../reference/reading-a-reference.md) covers this, what each
+regime's confidence is worth, and — importantly for a `mix` or a `separated_stem` — **which
+bands of the measurement to believe and which are artifacts**. Read it before reading
+anything into a measurement.
 
 Classify the reference conservatively: `isolated_stem` only for an original
 multitrack stem, `separated_stem` for source-separated guitar, and `mix` for a
@@ -128,28 +128,29 @@ research and the pack's `tone.md`, and use the measurement to describe and
 sanity-check them. Follow the [match skill](../match/SKILL.md) only when the user
 also has a DI of the performance.
 
-Use WebSearch and WebFetch to find how it was actually recorded and choose the
-topology. Good sources:
-Premier Guitar rig rundowns, artist interviews, Guitar World tone breakdowns,
+Use WebSearch and WebFetch to find how it was actually recorded and choose the topology.
+Good sources: Premier Guitar rig rundowns, artist interviews, Guitar World tone breakdowns,
 well-cited forum threads, video lesson notes.
 
-**Research the part, not the song.** A source about the band, the genre, the album or
-the whole mix (a mix review praising "crunchy guitars") does not describe the guitar
-the user means; when a song has several guitars, find which player and which part.
-State a rig fact only when a source states it, with the link, and mark everything else
-as your inference. When the sources are thin, say so in the report rather than filling
-the gap with genre.
+**Research the part, not the song.** A source about the band, the genre, the album or the
+whole mix (a mix review praising "crunchy guitars") does not describe the guitar the user
+means; when a song has several guitars, find which player and which part. State a rig fact
+only when a source states it, with the link, and mark everything else as your inference.
+When the sources are thin, say so in the report rather than filling the gap with genre.
 
-Capture: the **amp character** (Vox / Marshall / Fender-ish? clean, edge, or
-driven?), the **effects** (delay, reverb, modulation, drive pedals), and the
-part's **place in the mix**. Keep the source links — you'll cite them.
+Capture: the **amp character** (Vox / Marshall / Fender-ish? clean, edge, or driven?), the
+**effects** (delay, reverb, modulation, drive pedals), and the part's **place in the mix**.
+Keep the source links — you'll cite them. For a real song, also write its **arrangement
+prior** ([format, rules, check](../../reference/arrangement.md)): every guitar, the sections
+each plays and known sound changes (a pedal in the chorus, a solo tone), with sources and
+confidence; say in the report where you wrote it.
 
-**Effects stay off unless documented.** The starting presets are made dry. Turn a
-reverb, delay or modulation back on only when research documents it on this part (a
-named effect, or one a lesson or rundown describes); "a little space" is not a default.
-No effect has been shown to bring a preset closer, by ear or by measurement. Say which
-effects you added and the source for each; when you added none, say the preset is dry
-and that a light room can be added with the edit skill.
+**Effects stay off unless documented.** The starting presets are made dry. Turn a reverb,
+delay or modulation back on only when research documents it on this part (a named effect,
+or one a lesson or rundown describes); "a little space" is not a default. No effect has
+been shown to bring a preset closer, by ear or by measurement. Say which effects you added
+and the source for each; when you added none, say the preset is dry and that a light room
+can be added with the edit skill.
 
 If research turns up nothing solid, say so and design from the description
 instead. Don't invent a rig rundown.
@@ -161,10 +162,9 @@ Read `${CLAUDE_PLUGIN_ROOT}/packs/<id>/tone.md` — it has the amps and their ch
 `${CLAUDE_PLUGIN_ROOT}/packs/<id>/manifest.json` for what each parameter is, its unit, and its legal
 range.
 
-**Also read the learned notes**, if there are any. `show.py` reports their path
-as `learned_notes` — that's where past runs recorded what actually worked, and it
-beats generic guidance. It lives under the data root, so it survives plugin
-updates.
+**Also read the learned notes**, if there are any. `show.py` reports their path as
+`learned_notes` — that's where past runs recorded what actually worked, and it beats
+generic guidance. It lives under the data root, so it survives plugin updates.
 
 `learned_notes.exists: false` is ambiguous on its own: it means either "no run
 has recorded anything yet" or "the data root resolved somewhere that is not where
@@ -493,7 +493,7 @@ anything written there would be lost. Append to the same path you *read* in
 step 3 — if you passed `--data-dir` to find the notes, pass it here too, or the
 entry lands somewhere the next run will not look.
 
-Worth recording beyond the values: a window you had to choose by hand and why
-the automatic one was wrong, and any measured band you decided **not** to act on
-because the regime made it untrustworthy. Both are the kind of thing the next run
-would otherwise rediscover the hard way.
+Worth recording beyond the values: a window you had to choose by hand and why the
+automatic one was wrong, and any measured band you decided **not** to act on because the
+regime made it untrustworthy. Both are the kind of thing the next run would otherwise
+rediscover the hard way.

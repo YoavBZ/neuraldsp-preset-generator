@@ -408,6 +408,15 @@ class Sandbox:
             fx.write_wav(song, fx.plucks(seconds=14.0, gap=0.5, seed=7))
         return song
 
+    def arrangement(self) -> pathlib.Path:
+        """The format reference's own example, so the documented check runs on it."""
+        path = self.path / "arrangement.json"
+        if not path.exists():
+            text = (ROOT / "reference" / "arrangement.md").read_text()
+            example = [block for lang, block in FENCE.findall(text) if lang == "json"][0]
+            path.write_text(example)
+        return path
+
     def run_dir(self) -> pathlib.Path:
         return self.path / "match-run"
 
@@ -666,6 +675,8 @@ def materialise(command: str, sandbox: Sandbox) -> list:
         text = text.replace("CANDIDATE_RENDER.wav", str(reference))
         text = text.replace("START_SECONDS", "0")
         text = text.replace("DURATION_SECONDS", "1")
+    if "scripts/arrangement.py" in text:
+        text = text.replace("ARRANGEMENT.json", str(sandbox.arrangement()))
     if "scripts/audition.py" in text:
         text = text.replace("SONG.mp3", str(sandbox.song()))
         text = text.replace("START_SECONDS", "0")
