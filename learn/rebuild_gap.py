@@ -42,6 +42,7 @@ sys.path.insert(0, str(PLUGIN_ROOT / "research"))
 from learn import arm_a_levers as L  # noqa: E402
 from learn import knob_ceiling as K  # noqa: E402
 from learn import local_objective as LO  # noqa: E402
+from learn import song_readout as SRD  # noqa: E402
 
 OUT = K.HOME / "learn/rebuild-gap"
 SR = 48000
@@ -998,7 +999,7 @@ def within_part_assoc(table, metric, fid="fidelity", min_n=3):
             rho = spearmanr(*zip(*v)).correlation
             if rho is not None and math.isfinite(rho):
                 rows.append((band, float(rho)))
-    return K.R.bw_stats(rows)
+    return SRD.bw_stats(rows)
 
 
 def cmd_metrics():
@@ -1043,8 +1044,8 @@ def cmd_metrics():
         across[m] = float(spearmanr(*zip(*pts)).correlation) if len(pts) > 3 else None
     far = [r for r in m1b if r["abs_phi_deg"] >= 90]
     near = [r for r in m1b if r["abs_phi_deg"] < 90]
-    pol_split = {"rotated_90_or_more": {"parts": len(far), "fidelity": _brief(K.R.bw_stats([(r["band"], r["fidelity"]) for r in far]))},
-                 "under_90": {"parts": len(near), "fidelity": _brief(K.R.bw_stats([(r["band"], r["fidelity"]) for r in near]))},
+    pol_split = {"rotated_90_or_more": {"parts": len(far), "fidelity": _brief(SRD.bw_stats([(r["band"], r["fidelity"]) for r in far]))},
+                 "under_90": {"parts": len(near), "fidelity": _brief(SRD.bw_stats([(r["band"], r["fidelity"]) for r in near]))},
                  "by_class": {c: {"rotated_90_or_more": sum(1 for r in far if r["class"] == c),
                                   "under_90": sum(1 for r in near if r["class"] == c)} for c in ("clean", "crunch")}}
     rep = {"table": table, "within_part": within, "across_parts_vs_1b_gap": across, "rotation_split": pol_split}

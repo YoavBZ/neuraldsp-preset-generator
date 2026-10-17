@@ -318,3 +318,13 @@ def test_render_count_sees_every_render_job():
           (5, "zsh -c python -m learn.rebuild_gap render")]
     assert G.render_count(ps) == 3
     assert any("rebuild_gap" in p for p in LO.RENDERS)                # other jobs' caps count ours
+
+
+def test_within_part_assoc_band_weighted():
+    from learn import rebuild_gap as G
+    table = []
+    for slug, band in (("a", "b1"), ("b", "b2"), ("c", "b3")):
+        for i in range(5):
+            table.append({"slug": slug, "band": band, "m": float(i), "fidelity": float(i) * 0.1})
+    out = G.within_part_assoc(table, "m")
+    assert out["bands"] == 3 and abs(out["band_weighted_mean"] - 1.0) < 1e-9
