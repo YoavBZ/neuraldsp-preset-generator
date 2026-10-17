@@ -445,3 +445,11 @@ was declared, what was measured, and the research behind it.
     other sources are renders, single notes or unverified. Ranked routes: rule on the held-out sets, a local scan of the Cambridge sessions this
     search could not reach, Weathervane, wider scope, or recording new material. Research, not a
     declared plan.
+14. [hf-detail-losses-2026-10.md](research/hf-detail-losses-2026-10.md): how to recover C′'s
+    short-time treble magnitude detail, the error the rebuild-gap study found (October 2026).
+    Vocoder and codec recipes (HiFi-GAN, BigVGAN, Vocos, DAC, EnCodec) restore treble texture with
+    a small spectrogram discriminator, but their wins are listening wins, not ranking wins; phase
+    is worthless for ranking, so the period discriminator is misaimed. Ranked: the planned
+    offset-removed 2–8 kHz loss, a bounded per-bin log-gain on C′'s output, the upsampler, an
+    MPS-safe magnitude-only discriminator, a PANN feature loss. Corrects the DI recovery report.
+    Research, not a declared plan.
