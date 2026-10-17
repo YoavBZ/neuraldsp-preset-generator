@@ -449,7 +449,7 @@ was declared, what was measured, and the research behind it.
     short-time treble magnitude detail, the error the rebuild-gap study found (October 2026).
     Vocoder and codec recipes (HiFi-GAN, BigVGAN, Vocos, DAC, EnCodec) restore treble texture with
     a small spectrogram discriminator, but their wins are listening wins, not ranking wins; phase
-    is worthless for ranking, so the period discriminator is misaimed. Ranked: the planned
+    is worthless for ranking, so the period discriminator is likely misaimed. Ranked: the planned
     offset-removed 2–8 kHz loss, a bounded per-bin log-gain on C′'s output, the upsampler, an
     MPS-safe magnitude-only discriminator, a PANN feature loss. Corrects the DI recovery report.
     Research, not a declared plan.
