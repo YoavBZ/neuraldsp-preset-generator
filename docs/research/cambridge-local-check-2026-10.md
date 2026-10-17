@@ -5,13 +5,14 @@
 declared plan. No multitrack archive was downloaded.*
 
 Route 2 asked for the track lists of the Cambridge-MT sessions the cloud researcher could not
-reach. This check got the lists for **11 of the 15** sessions it named. **None of the 11 has an
-electric-guitar DI**, so none gives a DI+amp pair. A wider pass over the same mirror found
-**0 new DI+amp candidates** and **2 DI-only sessions** that the repo has never used: Perpetual
-Escape "Stop And Rise" and Dunning Kruger "Sascha". Neither is a clean fresh pick. Stop And Rise
-is a progressive heavy rock session of unknown gain, and Sascha is a new song from a band already
-spent in set 3. Four named sessions and everything added to the site since about mid-2025 are
-still unchecked.
+reach. This check got the lists for **11 of the 15** in-scope sessions it named. **None of the
+11 has an electric-guitar DI**, so none gives a DI+amp pair. A wider pass over the same mirror
+found **0 new DI+amp candidates** and **2 DI-only sessions** that no development or validation
+set has used: Perpetual Escape "Stop And Rise" and Dunning Kruger "Sascha". Neither is a clean
+fresh pick. Stop And Rise is a progressive heavy rock session of unknown gain, never seen by the
+project. Sascha is a new song from a band already spent in set 3, and set 3 already downloaded it
+and set its lone DI aside as unpaired. Four named sessions and everything added to the site since
+about April 2025 are still unchecked.
 
 ## How the lists were read
 
@@ -23,8 +24,9 @@ worked without it:
 - **The Hugging Face re-host** `kwatcharasupat/mixing-secrets-rawstems` at revision
   `b482eb2e31aa15ff10489b3b23871a1e7a109198`, the same one set 5 used. It keeps the original
   Cambridge file names (for example `16_ElecGtr1.flac`) under stem folders. Its file listing
-  came from the Hugging Face API, with no audio fetched. It holds 492 Cambridge sessions plus
-  MUSDB18-HQ, and every session in it is also in the June-2025 scraper list
+  came from the Hugging Face API, with no audio fetched. It holds 483 Cambridge sessions (its
+  `dev/` folder), plus a `test/` folder of short mixture clips and MUSDB18-HQ. Every session in
+  it is also in the scraper list committed on 2025-04-15
   ([scraper CSV](https://github.com/sai-soum/cambridge-mt_scrapper/blob/HEAD/data/multitrack_website/metadata_with_fine_genre.csv)),
   so it adds nothing newer than that list.
 - **The publisher's direct archive host** `mtkdata.cambridgemusictechnology.co.uk`, which is not
@@ -35,6 +37,10 @@ Track counts in the re-host match the site's "Full" counts for 10 of the 11 sess
 10 files against the site's 11, so one track is missing from the mirror.
 
 ## The 15 sessions with no indexed track list
+
+The earlier report named 14 sessions with no indexed track list and, separately, three rock
+sessions its scan missed. Of those three, Perpetual Escape "Into My Dreams" is included here;
+Daimon B "Collide" and "Crying Rivers" are left out because the site files them as nu metal.
 
 | Session | Genre (site) | Guitar tracks found | Guitar DI? | Size |
 |---|---|---|---|---|
@@ -57,8 +63,8 @@ Track counts in the re-host match the site's "Full" counts for 10 of the 11 sess
 Sizes are the re-host's FLAC totals. The publisher's WAV ZIPs are larger. The four unreached
 sessions are not in the re-host, and their archives are only on the challenged host. Escarràs
 (55 tracks) is the only one of them likely to hold several electric guitars. Masé Jara has 10
-tracks and FriendZ 16, so a DI+amp pair there is unlikely. Into My Dreams is filed under "Progressive Heavy Rock", like the band's four other sessions on
-the site. Of those, "Duty & Memories", "Roots Of Mankind" and "Sin Six" have miked guitars with no
+tracks and FriendZ 16, so a DI+amp pair there is unlikely. Into My Dreams is filed under "Progressive Heavy Rock", like the band's four other sessions on the
+site. Of those, "Duty & Memories", "Roots Of Mankind" and "Sin Six" have miked guitars with no
 DI, and "Stop And Rise" has DIs with no amp tracks (see below).
 
 The two Mikaela Davis sessions are the nearest miss: two microphones on each guitar amp, but no
@@ -76,8 +82,8 @@ metal. Six more sessions turned up that the repo does not mention by song:
 
 | Session | Genre (site) | Guitar tracks | Kind | ZIP | In scope? |
 |---|---|---|---|---|---|
-| Perpetual Escape – Stop And Rise | Progressive Heavy Rock | `ElecGtr01DI`–`ElecGtr09DI`, each with a `…DIDT` double except `04`; `ElecGtr12DI`, `ElecGtr13DI`; `ElecGtr10`, `ElecGtr11` have no DI; `SlideGtr`, 2 acoustic | **DI-only** (13 DIs, 19 files) | 657 MB, [direct](https://mtkdata.cambridgemusictechnology.co.uk/MTK017/PerpetualEscape_StopAndRise_Full.zip) | unknown gain; the band's genre suggests heavy |
-| Dunning Kruger – Sascha | Indie Rock | `Gtr1`–`Gtr7`, `Gtr8DI` | **DI-only** (1 DI, no `Gtr8` amp track; its length matches no other guitar) | 579 MB, [direct](https://mtkdata.cambridgemusictechnology.co.uk/MTK005/DunningKruger_Sascha_Full.zip) | likely clean (band stratum is clean); band already spent |
+| Perpetual Escape – Stop And Rise | Progressive Heavy Rock | `ElecGtr01DI`–`ElecGtr09DI`, each with a `…DIDT` double except `04`; `ElecGtr12DI`, `ElecGtr13DI`; `ElecGtr10`, `ElecGtr11` have no DI; `SlideGtr`, 2 acoustic | **DI-only** (11 DI parts in 19 DI files; 13 electric parts in all) | 657 MB, [direct](https://mtkdata.cambridgemusictechnology.co.uk/MTK017/PerpetualEscape_StopAndRise_Full.zip) | unknown gain; the band's genre suggests heavy |
+| Dunning Kruger – Sascha | Indie Rock | `Gtr1`–`Gtr7`, `Gtr8DI` | **DI-only** (1 DI, no `Gtr8` amp track; its length matches no other guitar) | 579 MB, [direct](https://mtkdata.cambridgemusictechnology.co.uk/MTK005/DunningKruger_Sascha_Full.zip) | likely clean (band stratum is clean); band already spent; set 3 downloaded it (WAVs on disk) |
 | SkalyVan – Agony / All To End | Metalcore | `ElecGtr1DI`–`ElecGtr5DI` (Agony adds `ElecGtr1DTDI`) | DI-only | challenged host | no (metal) |
 | SkalyVan – A Picture Of S\*\*t | Metalcore | `ElecGtr2DI` + `ElecGtr2DIDT`; `ElecGtr1`, `ElecGtr3`–`7` | DI-only for part 2 | challenged host | no (metal) |
 | Szymon Skiba – Some Trashy Thrash, I Guess | Metal Instrumental | `ElecGtrDI1`–`ElecGtrDI4` | DI-only | challenged host | no (metal) |
@@ -85,28 +91,35 @@ metal. Six more sessions turned up that the repo does not mention by song:
 The two direct-link file lists above were read from the publisher's archives. The others come
 from the re-host.
 
-**Stop And Rise** is the larger find. It has 13 played guitar parts as DIs, plus doubles, and no
-amp tracks for them, so it can only be a known-target test: re-amp the DIs through our own
-plugins and match the result. The site files it under "Progressive Heavy Rock", the same label
-set 3 used when it put the band's other sessions on its heavy-genre "not obtained" list. Its gain
-is unknown until someone listens, and some parts may be clean or crunch. It has never been used
-in the repo.
+**Stop And Rise** is the larger find. It has 11 guitar parts as DIs, 8 of them with a DI double,
+and no amp tracks for them. The two amp-only parts (`ElecGtr10`, `ElecGtr11`) match no DI in
+length. That rests on names and lengths only; no waveform test was run. So it can only be a
+known-target test: re-amp the DIs through our own plugins and match the result. The site files it
+under "Progressive Heavy Rock". Set 3 put three of the band's other sessions ("Duty & Memories",
+"Into My Dreams", "Sin Six") on its heavy-genre "not obtained" list under that label. Its gain is
+unknown until someone listens, and some parts may be clean or crunch. The project has never
+downloaded it, and the repo never names it.
 
 **Sascha** is a third song from Dunning Kruger, whose "EnDance" and "Japan Song" are set 3
 held-out and marked spent ("excluded from further tuning, training, or confirmation",
 `docs/set3-heldout-use-ledger.json`). Whether a new song from a spent band counts as fresh is the
-ML session's call. It gives one DI-only part at most.
+ML session's call. It gives one DI-only part at most. It is not new to the project either: set 3
+downloaded and probed it, and its local catalogue (`~/ndsp-presets/references/datasets-set3/`,
+whose hash `docs/validation-set3.json` pins) lists `Gtr8DI` as "DI with no amp or microphone
+track of that guitar". The WAVs are already on disk, so using it as a known-target test costs no
+download.
 
 ## What this changes
 
 - **New DI+amp candidates: 0.** The route-2 hope of "a few" fresh pairs is not met for the 11
   sessions that could be read.
-- **New DI-only candidates: 2** (Stop And Rise, Sascha), both with caveats. These join the
+- **New DI-only candidates: 2,** both with caveats: Stop And Rise (never seen, gain unknown) and
+  Sascha (already on disk from set 3, one part, spent band). These join the
   earlier report's DI-only route 3 (Strobe "Maya", The Apprehended, MekaPhil, The Timezone
   "GOTGF").
 - **Still unchecked:** Escarràs "No Limits", FriendZWorldMusic "Triba/Bao Kuku", Masé Jara
   "Petit Abisme", Perpetual Escape "Into My Dreams", and every session added since about
-  mid-2025. Reaching them needs someone to pass the Cloudflare check in a browser by hand. After
+  April 2025. Reaching them needs someone to pass the Cloudflare check in a browser by hand. After
   that, the session pages give the ZIP links, and the ZIP central directories give the track
   names without a full download. Escarràs is the one worth that effort first.
 

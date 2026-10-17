@@ -448,7 +448,9 @@ was declared, what was measured, and the research behind it.
 14. [cambridge-local-check-2026-10.md](research/cambridge-local-check-2026-10.md): route 2 of
     the fresh-multitracks report, run from this Mac (October 2026). The site still blocks scripts,
     but a Hugging Face re-host and the publisher's direct archives gave track lists for 11 of the
-    15 unreached sessions: none has an electric-guitar DI, so 0 new DI+amp pairs. Two never-used
-    DI-only sessions turned up (Perpetual Escape "Stop And Rise", Dunning Kruger "Sascha"), both
-    with caveats. Four sessions and everything added since mid-2025 remain unchecked. Research, not
+    15 unreached sessions: none has an electric-guitar DI, so 0 new DI+amp pairs. Two DI-only
+    sessions no set has used turned up, both with caveats: Perpetual Escape "Stop And Rise"
+    (never seen, gain unknown) and Dunning Kruger "Sascha" (set 3 downloaded it and set its one
+    DI aside as unpaired). Four sessions and everything added since about April 2025 remain
+    unchecked. Research, not
     a declared plan.
