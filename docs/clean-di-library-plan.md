@@ -569,3 +569,100 @@ From the re-review's suggestions:
 - the scorer moves the tag level with the flag (`proposals[...]["tag"]`);
 - the key records that part 2's null trial reuses one hum trial's section, so it is played 4 times;
 - the results report that `partial` is the usual bleed status, and how many tracks were read.
+
+## Amendment 3 (2026-10-18): the rest check may not refute a mains fundamental, before the manifest is used
+
+The results' audit found that the rest-frame check (amendment 1, item 8) refuted the hum lines of 50
+DIs, and that on 10 of them the lines look like real hum. Their rest frames are mostly note tails or
+gated silence, where hum cannot show. Nothing has drawn on `manifest.json` yet.
+
+**Why the rest check exists.** A persistent line at k·f0 can be a held note's partial, so lines must
+also show where the guitar rests. That reason does not reach the mains fundamental itself: no note of
+an in-scope tuning (standard, half-step down, drop D; lowest D2, 73.4 Hz) is at 50 or 60 Hz, and the
+nearest equal-tempered notes (G1 49.0, G♯1 51.9, A♯1 58.3, B1 61.7 Hz) are 2% or more away. A
+steady line at the mains frequency is mains hum, whatever the rest frames show.
+
+**The rule.** A DI whose lines the rest check refutes keeps them (`hum_rest_check:
+kept_fundamental`) when both hold:
+1. **The fundamental is one of its lines:** k = 1 passes the track's own line test (≥ 10 dB above
+   its neighbours in the 10th-percentile spectrum, as for every other line).
+2. **That line is at the mains:** in a 10th-percentile spectrum of 65,536-point frames (0.73-Hz
+   bins, interpolated), the peak within 3 Hz of the mains is within **0.3 Hz** of it.
+   - The grid is held within ±0.2 Hz in normal operation (UK; tighter in North America). 0.1 Hz
+     more allows for the estimate.
+   - On the 76 rest-confirmed DIs with a fundamental line, this reads within 0.24 Hz on 75 of them
+     (one reads 1.43 Hz off).
+
+Kept lines are screened by level exactly as confirmed ones are (flag ≥ −55 dB, tag ≥ −70 dB re
+playing). Flagged sections are tagged `hum_kept_by_fundamental`. Nothing else changes: the other 32
+refuted DIs stay refuted, and confirmed or unconfirmed DIs are untouched.
+
+**Not chosen, and why:**
+- **Lowering the rest threshold** below 10 dB: the 10 suspects' rests read 6.6–9.8 dB, so any new
+  value would be fitted to them. The rest check's weakness is what the rests contain, not its level.
+- **An odd-harmonic test:** mains hum is often, not always, odd-dominated (a ground loop is not), and
+  the refuted DIs that are plainly guitar partials (Eggy, Today's The Day) are odd-dominated too.
+- **Dropping the rest check:** it is needed. With it gone, Heather Jane's two ElecGtr1 DIs lose
+  every section, and Eggy's two most of theirs, to "hum" read at up to −18 dB re playing: guitar
+  partials at k·60 Hz.
+
+**How it moves the DIs** (projected on the stored screen before review; every refuted DI was
+re-measured, and the non-hum measures reproduce):
+- **18 DIs are kept:** the 10 suspects (7 Guitar-TECHS P1 chord files, Prodigal ElecGtr1 and 3,
+  Wickerman ElecGtr7), Drag Me Down's 3 DIs, Timo's ElecGtr3, and 4 Telefunken DIs (Dom McLennon,
+  Doom Flamingo "Blind Spots" and "Long Way Home", Swatkins).
+- **14 of them change.** Drag Me Down and Timo have no section over the flag.
+- **Clean sections:** 1,703 → 1,424. **Non-overlapping:** 954 → 808 (159.0 → 134.7 min).
+  - The 10 suspects: 134 → 8.
+  - The 4 Telefunken DIs: 41 → 21.
+  - Training_ok: 875 → 729. Known-answer: unchanged (69).
+- **Hum-flagged:** 2,707 → 3,047 sections, 105 → 119 DIs.
+- **Guitar-TECHS** keeps 1 clean section (P2), down from 103.
+- **The 32 still refuted:**
+  - If their refuted lines were screened by level, they would lose a further 195 non-overlapping
+    sections.
+  - Most of this is Eggy (2 DIs), Today's The Day (4), Heather Jane ElecGtr1 (2) and Burial Of
+    Silence, whose "hum" reads up to −18 dB re playing.
+  - That is the rest check's job. The listening page tests where it alone decides.
+- **Sensitivity:**
+  - Any frequency tolerance from 0.2 to 2.4 Hz keeps the same 18 DIs. The next DI with a
+    fundamental line, Wickerman ElecGtr4, peaks at 47.5 Hz.
+  - Reading condition 1 on the 65,536-point spectrum instead would add Guitar-TECHS P2's two chord
+    files, Doom Flamingo "Measurements" and Diesel 13 ElecGtr2: 4 more non-overlapping sections
+    lost.
+
+**The second blind listening page** (`python -m learn.clean_di listen-hum build`), written to
+`~/ndsp-presets/listening/di-clean-2/di-hum.html`, with the key in `private/key.json`. Built like
+page 1: padded AAC data URIs, a seeded order (seed 20261018), no names (asserted), whole 10-s
+sections levelled to −20 LUFS, and one clip per DI.
+- **Kept (14):** for every DI the rule changes, one section it moves (clean before, flagged for hum
+  alone now).
+- **Refuted (8):** 8 DIs, seeded, among those the rest check still refutes. One clean section each,
+  drawn from the sections their refuted lines would flag (≥ −55 dB), where the rest check alone
+  decides.
+- **Anchors (2 + 2):** hum-only sections of rest-confirmed DIs at least 10 dB over the flag, and
+  clean sections of DIs with no hum line.
+- **Repeats (2):** one kept clip and one refuted clip.
+- Refuted and anchor DIs on page 1 are left out.
+
+**The answer:** one line copied from the page, page 1's format (`1ok 2hum 3hiss+hum …`).
+
+**The rule, declared** (`score_hum()`, unit-tested). Answers are trusted, and unanswered clips are
+left out.
+- **Kept:** the amendment is withdrawn when at least 2 kept clips, and more than half of those
+  answered, are heard without hum. Otherwise it stands.
+- **Refuted:** at least 2 refuted clips heard with hum suspend the rest check's refutation for every
+  DI. Their lines are then restored and screened by level (the 195 sections above), until a further
+  amendment designs a better test.
+- **Both at once:** nothing changes, and the conflict is reported.
+- **The hum flag level:** `amend()` (amendment 1, item 11) over the kept and hum-anchor clips'
+  measured values, pooled with page 1's hum clips once page 1 is scored.
+- **Anchors and repeats** are reported as a calibration caveat and move nothing.
+
+**Applied as:**
+- `python -m learn.clean_di hum-amend` re-measures the refuted DIs and asserts that the other
+  measures reproduce. It keeps the screen as it stood in `screen-v1/`.
+- `manifest` then writes version 2. Version 1 is kept as `manifest-v1.json`, and v2 names it and
+  its sha256.
+- Each section's `measures.hum_rel_db_refuted` records the refuted lines' level (not a screen).
+- Until the second page is answered, the version 2 manifest is the one to train from.
