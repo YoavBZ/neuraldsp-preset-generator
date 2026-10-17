@@ -127,7 +127,8 @@ LARGE_OFFSET = 100               # samples: |judge_lag + 52| beyond this marks a
 CAP = 3                          # render processes machine-wide, this one included
 RENDERS = (r"-m learn\.song_relabel (render-new|probe)\b", r"-m learn\.ks_extend run\b",
            r"-m learn\.local_objective (render|pregain)\b",
-           r"-m learn\.song_soundspace (score-targets|score-songs|c-start)\b")
+           r"-m learn\.song_soundspace (score-targets|score-songs|c-start)\b",
+           r"-m learn\.rebuild_gap (render|choose-rot)\b")              # docs/rebuild-gap-plan.md
 # Separations that need the machine to themselves (amendment 3): no render starts beside one.
 SEPARATIONS = (r"-m learn\.local_objective_1c separate\b", r"-m learn\.separator_screen (separate|identity)\b",
                r"-m learn\.separate\b")
