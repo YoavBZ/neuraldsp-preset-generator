@@ -17,7 +17,7 @@ The naming is consistent enough to trust the scan (`ElecGtr<k>` or `ElecGtr<k>Mi
 
 Checks against the repo:
 
-- **Already used:** Chris Coltraine is set 1 ("Heather Jane" is development; "That's How I Got To Memphis" is held out and used in five declared tests, per `held_out_uses` in `docs/validation-datasets.json`). Hazael's two songs are set 5.
+- **Already used:** Chris Coltraine is set 1 ("Heather Jane" is development; "That's How I Got To Memphis" is held out and used in four declared tests, per `held_out_uses` in `docs/validation-datasets.json`). Hazael's two songs are set 5.
 - **Not fresh after all:** the two remaining "unused" finds are also in the repo, with zero usable parts between them (see above).
 - **Never used, but excluded twice over:** Umphrey's McGee "Crucial Taunt". It is a Telefunken session, and its "DI" is a Palmer PDI-09 speaker-sim line-out placed after the amp, not a clean DI ([MS500 CSV](https://github.com/felixCheungcheung/mixing_secrets_v2/blob/main/mixing_secret_dataset_annotation_with_comment.csv)).
 
@@ -31,11 +31,11 @@ The academic "Mixing Secrets" dataset tells the same story. Gururani & Lerch's Y
 
 Several of these are also MUSDB18 songs. **Fresh pairs from that table: 0.**
 
-Metal is the one large never-used pool. About **9 sessions with about 70 pairs** (Peppermark ×2, Serapis ×2, V.M.GY "Equilibrium"/"Purgatory", Daimon B, Inhumanity Vortex, Arcadian Alone) are available only if heavy styles come into scope.
+Metal is the one large never-used pool. About **9 sessions with about 70 pairs** (Peppermark ×2, Serapis ×2, V.M.GY "Equilibrium"/"Purgatory" (new songs, but V.M.GY is already a set-3 held-out band), Daimon B, Inhumanity Vortex, Arcadian Alone) are available only if heavy styles come into scope.
 
 ## Earlier validation sets hold 73 named pairs, mostly locked as held-out
 
-The rock/pop scan treated sessions in sets 3–5 as used. Those **16 sessions (about 73 named pairs)** form a separate tier: they appear in earlier validation sets but not in the label table. A grep of `docs/label-table-parts.json` and `docs/dev-test-ledger.json` finds **none of them in either file**. So none has been a development test. Their status comes from the held-out rules instead, and whether any counts as "fresh" is **the ML session's call** under the ML plan. That plan says "the held-out sets stay untouched until step 7", and step 7 spends set 4's unused parts, set 5 and set 6 (repo `docs/research/ml-plan-2026-10.md`).
+The rock/pop scan treated sessions in sets 3–5 as used. Those **16 sessions (about 73 named pairs; 15 sessions and about 71 pairs without the Telefunken-sourced "57 Chevy")** form a separate tier: they appear in earlier validation sets but not in the label table. A grep of `docs/label-table-parts.json` and `docs/dev-test-ledger.json` finds **none of them in either file**. So none has been a development test. Their status comes from the held-out rules instead, and whether any counts as "fresh" is **the ML session's call** under the ML plan. That plan says "the held-out sets stay untouched until step 7", and step 7 spends set 4's unused parts, set 5 and set 6 (repo `docs/research/ml-plan-2026-10.md`).
 
 | Session (repo set) | Named pairs | Kept in-scope parts (project's same-take + crop rules) | Status in repo | Size / route |
 |---|---|---|---|---|
@@ -47,16 +47,16 @@ The rock/pop scan treated sessions in sets 3–5 as used. Those **16 sessions (a
 | Jeff Hirata – Sunshine (5) | 8 | **0, all 8 failed the same-take test** | held out | RawStems re-host |
 | Nova-One Studio – Four Graham (5) | 5 | 0 in scope (4 high-gain) | held out | ≈303 MB |
 | Sonnet & Alcohol – Back To The Nineties (4) | 2 | 2 clean | held out, unused; heavy bleed ("Only DI.wav are clean") | 460 MB via Wayback |
-| Lead Inc – The Inner Circle (4) | 3 | 2 crunch (+1 high-gain) | held out, unused | ≈1,377 MB |
-| The Laminar Flow – Headspace (4) | 11 | 1 crunch (+2 high-gain; 8 cut by window rule) | held out, unused | 1,278 MB via Wayback |
+| Lead Inc – The Inner Circle (4) | 3 | 2 crunch (+1 high-gain) | **spent** by the set-4 confirmation test (one of set 4's first five sessions) | ≈1,377 MB |
+| The Laminar Flow – Headspace (4) | 11 | 1 crunch (+2 high-gain; 7 cut by the window rule, 1 failed the waveform test) | held out, unused | 1,278 MB via Wayback |
 | The Bright Star Alliance – Error 404 (4) | 7 | 1 crunch (+6 high-gain) | held out, unused | ≈663 MB via Wayback |
 | Silona – Learning How To Fly (3) | 6 | 3 clean | **spent**: "excluded from further tuning, training, or confirmation" | 1,407 MB [direct](https://mtkdata.cambridgemusictechnology.co.uk/MTK021/Silona_LearningHowToFly_Full.zip) |
 | Dunning Kruger – EnDance / Japan Song (3) | 2 + 1 | 1 + 0 clean | **spent** (same ledger) | 381 / 447 MB [direct](https://mtkdata.cambridgemusictechnology.co.uk/MTK005/DunningKruger_EnDance_Full.zip) |
-| Rebecca Haviland – 57 Chevy (1, Telefunken route) | 2 | 2 | held out, used in five declared tests | Telefunken S3 |
+| Rebecca Haviland – 57 Chevy (1, Telefunken route) | 2 | 2 | **excluded** (Telefunken source); held out, used in four declared tests | Telefunken S3 |
 
-Sources: kept counts are from repo `docs/validation-set4.md` and `docs/validation-set5.md`; the spent status is from `docs/set3-heldout-use-ledger.json`; pair names are from the [archive central directories](https://mtkdata.cambridgemusictechnology.co.uk/MTK012/RonnieJones_WhyDontYouStay_Full.zip). Two more sets are not in the table. Set 5 also holds **BKS "Too Much" and "Bulldozer"** (9 in-scope parts), but both are MUSDB18 songs. Chris Coltraine "Heather Jane" (set 1 development) has **5 named pairs**. It is in neither the label table nor the ledger, but it was already used in the recordings benchmark (repo `docs/tone-matching-plan.md`), so it would be a repeat use, and its band's other song is held out.
+Sources: kept counts are from repo `docs/validation-set3.md` (Silona, Dunning Kruger), `docs/validation-set4.md` and `docs/validation-set5.md`; the spent status is from `docs/set3-heldout-use-ledger.json`; pair names are from the [archive central directories](https://mtkdata.cambridgemusictechnology.co.uk/MTK012/RonnieJones_WhyDontYouStay_Full.zip). Two more sets are not in the table. Set 5 also holds **BKS "Too Much" and "Bulldozer"** (9 in-scope parts), but both are MUSDB18 songs. Chris Coltraine "Heather Jane" (set 1 development) has **5 named pairs, of which 2 pass the same-take test** (ElecGtr1 and its double, one tone). It is in neither the label table nor the ledger, but it was already used in the recordings benchmark (repo `docs/tone-matching-plan.md`), so it would be a repeat use, and its band's other song is held out.
 
-The arithmetic is plain. The ML plan's step-7 pool is **39 parts in 11 bands** (set 4 unused 10, set 5 26, set 6 3). Adding all of it to today's 21 parts gives about **60 parts, under 3×**, and leaves no final held-out test. The set-5 figure of 26 includes BKS's MUSDB18 songs. Without them, set 5 gives **17 parts in 5 bands**. Set 4's Last Legacy and Umbriferous crunch parts come from metal-genre sessions.
+The arithmetic is plain. The ML plan's step-7 pool is **39 parts in 11 bands** (set 4 unused 10, set 5 26, set 6 3). Adding all of it to today's 21 parts gives about **60 parts, under 3×**, and leaves no final held-out test. The set-5 figure of 26 includes BKS's MUSDB18 songs. Without them, set 5 gives **17 parts in 5 bands**. Set 4's 10 unused parts are Umbriferous's 6 crunch parts (a metal-genre session, so it is left out of the table above), Sonnet & Alcohol's 2, and one each from The Laminar Flow and The Bright Star Alliance. Lead Inc and Last Legacy were spent by the set-4 confirmation test. (The ML plan counts the pool as 11 bands; `docs/validation-set5.md` gives set 5 six bands, which would make 12.)
 
 ## Other public sources add little, and none is a real song test
 
@@ -76,7 +76,7 @@ The purpose-built datasets are renders or single notes, so they can serve as **k
 |---|---|---|---|
 | EGDB-NDSP | EGDB DI performances rendered through Neural DSP presets in 3 gain groups (e.g. Asato Vintage Clean, Tone King; Plini Crunch, Henson Pink) | CC BY 4.0; open on [Zenodo 19789500](https://zenodo.org/records/19789500), one 135.4 GB FLAC archive shared with EGDB-PG | Known-preset recovery on real played DI, no mix ([project page](https://ss12f32v.github.io/Guitar-Transcription-with-Amplifier/)) |
 | EGDB-PG | Same DI through BiasFX2, 256 presets: 96 low-gain, 64 crunch, 96 high-gain; 514 h | CC BY 4.0, same archive ([arXiv](https://arxiv.org/html/2504.07406v1)) | Gain-class labels for clean/crunch training |
-| GOAT | 5.9 h DI covers rendered through ~7,000 NAM profiles + Nolly IRs | Research use, by request ([arXiv](https://arxiv.org/html/2509.22655v1)); the ML plan says "not now" | Training bank, no real amp |
+| GOAT | 5.9 h DI covers rendered through ~7,000 NAM profiles + Nolly IRs | Research use, by request ([arXiv](https://arxiv.org/html/2509.22655v1)); the ML plan records it as CC BY-NC and says "not now" | Training bank, no real amp |
 | ToneTwist AFx | Dry/wet through real analog amps (Blues Jr, Engl Retro Tube 50, Mesa) | MIT on [GitHub](https://github.com/mcomunita/tonetwist-afx-dataset); the repo records the Zenodo data as CC BY-NC 4.0 and has used it for gain calibration | Real-amp capture checks, test material only |
 | EGFxSet | Strat single notes through 12 hardware pedals | CC BY 4.0, 5.8 GB ([Zenodo](https://zenodo.org/records/7044411)) | Pedal checks only |
 
@@ -88,7 +88,7 @@ Every route is small. The list runs from cheapest per usable part to most expens
 
 | # | Route | Likely usable in-scope parts | Effort | Catch |
 |---|---|---|---|---|
-| 1 | Decide whether sets 4–6 (and Heather Jane) count as fresh | up to 39 (17 from set 5 without BKS) + Heather Jane ≤5 | none: crops already on disk | Uses up the step-7 held-out; Heather Jane is a repeat use |
+| 1 | Decide whether sets 4–6 (and Heather Jane) count as fresh | up to 39 (17 from set 5 without BKS) + Heather Jane 2 (one tone) | none: crops already on disk | Uses up the step-7 held-out; Heather Jane is a repeat use |
 | 2 | Local session lists the Cambridge sessions this container could not reach | unknown; likely a few | about 1–2 h in a real browser | Cambridge readme terms; same-take test will reject some |
 | 3 | DI-only fresh Cambridge sessions re-amped through the project's own plugins | Strobe "Maya" 4, The Apprehended 3, MekaPhil (4 songs), The Timezone "GOTGF" 4 | low | Known-target test, not a real amp; none is in the repo, but "The Timezone" may be the label table's Timo And The Timezone (unchecked) |
 | 4 | EGDB-NDSP as a known-preset test | many clean/crunch renders | 135 GB download | No song or mix context |
@@ -114,6 +114,6 @@ Two warnings apply to any pairs that turn up. First, run the project's waveform 
 
 ## Conclusion
 
-The bottleneck is no longer finding sources. The public supply of real, same-take, non-metal guitar DI+amp parts has been nearly used up by this project's own sets 1–6. After honest exclusions, about **0 parts** are confirmed fresh. A local scan of the unchecked Cambridge sessions might add a handful, and Weathervane is a gamble of unknown size. The true trade-off is internal: the only quick way to triple the test is to spend the 39-part held-out reserve, and then the final test is lost.
+The bottleneck is no longer finding sources. The public supply of real, same-take, non-metal guitar DI+amp parts has been nearly used up by this project's own sets 1–6. After honest exclusions, about **0 parts** are confirmed fresh. A local scan of the unchecked Cambridge sessions might add a handful, and Weathervane is a gamble of unknown size. The true trade-off is internal: the only quick way to grow the test is to spend the 39-part held-out reserve, which still gives only about 60 parts (under 3×) and loses the final test.
 
 If 3–5× really matters, the dependable path is to record it. New DI+amp takes from many players, on clean, edge-of-breakup and crunch amps, mixed into simple backing tracks, would give fresh bands under a clean licence. Purpose-built renders such as EGDB-NDSP can support that work as known-target checks, but they cannot stand in for real songs.
