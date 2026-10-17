@@ -177,8 +177,9 @@ def cmd_identity(src):
 def cmd_rebuild(src):
     """4a's identity check first; then the fold's separator-robust network (pinned) rebuilds `src`
     (the htdemucs stem, or 1c's Mega-53 crop) exactly as 1b and 1c rebuilt theirs
-    (`LO.rebuild_from`), with 4a's network and leak assertions. `check.json` gates the renders and
-    is ok only if the identity check passed too."""
+    (`LO.rebuild_from`), with 4a's network and leak assertions. Amendment 4b: the level check is
+    against the paired comparator's stored C′ rebuild of the same source, within 0.05 LU. `check.json`
+    gates the renders and is ok only if the identity check passed too."""
     if src == "mega53" and not C.sep_ok("mega53"):
         raise SystemExit("mega53: 1c's separation checks have not passed")
     if not cmd_identity(src):
@@ -186,7 +187,8 @@ def cmd_rebuild(src):
         d.mkdir(parents=True, exist_ok=True)
         K._atomic(d / "check.json", {"ok": False, "problems": "identity check failed (identity.json)"})
         raise SystemExit(f"{src}: C′ through the generalised rebuild doesn't reproduce the stored rebuild")
-    LO.rebuild_from(LO.SEPNET_DI[src], _source(src), net=net_path, extra_leak=assert_sepnet_ok)
+    LO.rebuild_from(LO.SEPNET_DI[src], _source(src), net=net_path, extra_leak=assert_sepnet_ok,
+                    level_ref=lambda slug: LO.lufs(stored_rebuild(src, slug)))
 
 
 def complete(cells, renders, expected=EXPECTED):

@@ -246,3 +246,10 @@ def test_real_networks_match_their_pins_and_are_leak_free():
             continue
         f = fo[part["band"]]
         D.assert_sepnet_ok(part["band"], paths[f], f, lib)
+
+
+def test_level_check_against_the_comparator():
+    """Amendment 4b: magilla's 1d stem rebuild (−23.020) sits 0.002 LU from C′'s (−23.018)."""
+    assert M.rebuild_ref_problems(0, -23.020, target=-23.018) == []
+    assert M.rebuild_ref_problems(0, -23.020) != []                    # 2a's absolute target would stop it
+    assert M.rebuild_ref_problems(0, -22.80, target=-22.9) != []

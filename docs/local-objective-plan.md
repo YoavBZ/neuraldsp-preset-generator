@@ -1063,3 +1063,41 @@ tested (`tests/test_local_objective_1d.py`); the identity check (zero renders) h
 
 **Renders now:** 7,056 + 144 = **7,200**. Hours unchanged (about 1 h of renders, 0.3–0.45 h of
 scoring).
+
+### Amendment 4b (2026-10-17, after a guard stop, before any 1d render)
+
+**What happened.** The first launch (09:17, commit `a1b7a02`) stopped at the `csep_stem` rebuild's
+pre-render check, as declared: one part, `cambridge-magilla-elecgtr1dt` (fold 2), came out at
+**−23.020 LUFS**, outside −22.9 ± 0.05. The other 23 parts passed (GCC 0 against C′'s stem rebuild
+on all 24). Zero renders.
+
+**Why, measured.** It is not the new network.
+- The recipe sets the level with one gain step (`to_lufs`). BS.1770's integrated loudness has an
+  absolute gate, so it is not exactly linear in gain when many blocks sit near it; magilla is such
+  a part.
+- **C′'s own stem rebuild of magilla** (step 3's `song_settings/rebuilt/`, used by step 3 and by
+  experiment 1's renders) **is at −23.018 LUFS.** The new network's is at −23.020: 0.002 LU apart.
+- 2a's −22.9 check gated only the matched rebuilds (1b's and 1c's, all at −22.9), so step 3's
+  stored C′ stem rebuilds were never checked against it. That is a fact, not a problem to fix:
+  nothing is re-rendered for it.
+- The 4a identity check passed on magilla because it compares arrays (C′ through the generalised
+  rebuild against the stored file), not levels.
+
+**The change (declared before any 1d render).**
+- **For the 1d rebuilds, 2a's level check is against the paired comparator,** not the absolute
+  −22.9: each rebuild must sit within 0.05 LU of the stored C′ rebuild of the same source and part
+  (step 3's for the stem, 1c's `rebuilt-mega53/` for Mega-53). The comparator's loudness is logged
+  per part (`level_target`).
+  - For Mega-53 every comparator is at −22.9, so the rule is today's.
+  - For the stem, magilla passes (0.002 LU) and stays exactly as the recipe made it, level-matched
+    to the C′ rebuild its renders are paired with.
+- The recipe itself is unchanged (one `to_lufs` step); the identity check runs the exact stored
+  recipe.
+- **Stale outputs:** `rebuilt-csep-stem/` (the stopped run's rebuilds and log) and the two
+  `identity-csep-*` folders are deleted before the relaunch, so the identity check and the new
+  rule run fresh, not as a resume.
+- Reviewed before any render (an earlier version of this amendment, a second gain step towards
+  −22.9, was rejected by the reviewer: it would have put magilla 0.12 dB away from its comparator).
+- Re-reviewed 2026-10-17: approved, no required changes. Footnote: the `identity-csep-*/check.json`
+  files still apply the absolute −22.9 target and list magilla; they are not a gate (`identity.json`
+  is). The comparator-relative rule is declared for 1d only.

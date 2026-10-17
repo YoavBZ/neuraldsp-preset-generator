@@ -752,7 +752,7 @@ def cmd_rebuild_ref():
     rebuild_from(MATCHED_DI, lambda slug, part: CR.mono(part["crop"] / "reference.wav"))
 
 
-def rebuild_from(di, source, net=None, extra_leak=None, out_dir=None, gate=True):
+def rebuild_from(di, source, net=None, extra_leak=None, out_dir=None, gate=True, level_ref=None):
     """C′'s rebuild of `source(slug, part)` (a 10-s crop on the recording's timeline) for every
     part, into `REBUILD_DIR[di]`, exactly as `cmd_rebuild_ref` (amendment 2) rebuilt reference.wav:
     the fold's final C′ (DONE marker), experiment 4's leak assertion, re-EQ'd by fold 2's average −
@@ -760,7 +760,9 @@ def rebuild_from(di, source, net=None, extra_leak=None, out_dir=None, gate=True)
     amendment 2a checks (3 samples, 0.05 LU) gate `render --di <di>` through `check.json`.
     Amendment 4: `net(fold)` swaps the network (default C′); `extra_leak(band, path, fold)` adds a
     leak assertion per part (the separator-robust networks' pools and residual library); `out_dir`
-    writes elsewhere (4a's identity check); `gate=False` returns the problems instead of exiting."""
+    writes elsewhere (4a's identity check); `gate=False` returns the problems instead of exiting.
+    Amendment 4b: `level_ref(slug)` replaces the −22.9 LUFS target of 2a's level check with the
+    loudness of the paired comparator's stored rebuild (the recipe itself is unchanged)."""
     import numpy as np
     import torch
 
@@ -801,9 +803,12 @@ def rebuild_from(di, source, net=None, extra_leak=None, out_dir=None, gate=True)
         n = min(len(y), len(stem_rb))
         g = int(RM.gcc_lag(y[:n], stem_rb[:n]))
         ref = CR.mono(ps[slug]["crop"] / "reference.wav")
+        target = level_ref(slug) if level_ref else REBUILD_LUFS
         log[slug] = {"fold": f, "network": str(path), "source": REBUILD_SOURCE[di], "gcc_vs_source": gcc_level(y, src),
                      "gcc_vs_reference": gcc_level(y, ref), "gcc_vs_stem_rebuild": g, "lufs": lufs(y),
-                     "problems": rebuild_ref_problems(g, lufs(y))}
+                     "problems": rebuild_ref_problems(g, lufs(y), target=target)}
+        if level_ref:
+            log[slug]["level_target"] = target
         if net:
             log[slug]["network_sha256"] = file_sha256(path)
         K._atomic(log_path, log)
