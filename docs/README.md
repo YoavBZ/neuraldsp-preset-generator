@@ -275,8 +275,15 @@ was declared, what was measured, and the research behind it.
   reference closes about 44% of the gap. 1c: on the instrumental context, Mega-53 recovers about 43% of 1b's gain. 1d: the
   separator-robust C′ in the rebuild gives no gain (−0.127 [−0.256, +0.003] on the htdemucs stem,
   −0.051 [−0.166, +0.065] on Mega-53); C′ stays.
-- [arm-a-mega53-plan.md](arm-a-mega53-plan.md): arm A's song-level test with Mega-53 in the loop
-  (development parts, then fresh full mixes with vocals); reviewed, about 30k renders.
+- [arm-a-mega53-plan.md](arm-a-mega53-plan.md) → [results](arm-a-mega53-results.md): arm A with
+  Mega-53 against htdemucs. On fresh full mixes Mega-53 leans better, a tie (−0.017 [−0.039,
+  +0.004]), so htdemucs stays. Arm A's recipe on fresh full mixes reads −0.028 [−0.064, +0.008]
+  against S (−0.083 on the reused development parts). 30,102 renders.
+- [rebuild-gap-plan.md](rebuild-gap-plan.md) → [results](rebuild-gap-results.md): where C′'s
+  rebuild loses ranking with a perfect stem. A structured short-time magnitude error, mostly above
+  2 kHz; phase and rotation are minor. A fixed EQ (`dep_eq`, +0.133 [−0.009, +0.276]) and a
+  ranking-trained rebuild (`rank`, +0.075 [−0.031, +0.182] against C′) lean better; `rank` seems to act as a
+  learned long-term EQ (post hoc), and neither reduces the short-time treble error. 18,981 renders.
 - [cprime-sep-plan.md](cprime-sep-plan.md) → [results](cprime-sep-results.md): C′ fine-tuned on
   separator residuals; a small envelope gain, inside the noise on stems and as large on the amp
   track (zero renders).
