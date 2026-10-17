@@ -569,3 +569,11 @@ From the re-review's suggestions:
 - the scorer moves the tag level with the flag (`proposals[...]["tag"]`);
 - the key records that part 2's null trial reuses one hum trial's section, so it is played 4 times;
 - the results report that `partial` is the usual bleed status, and how many tracks were read.
+
+## Amendment 3 (2026-10-18): part B1 declared
+
+Part B's amendment for its pilot is [known-answer-b1-plan.md](known-answer-b1-plan.md): B1's
+items, sections, truth presets and seeds, with review items 13–16. It also declares one deviation
+from "Song construction": Bourbon and Collide With Me have fewer than 4 clean sections (their
+Telefunken DIs are hum-flagged), so B1 uses their hum- or hiss-only sections and reports them as
+their own row. The known answer stays exact, since the truth is rendered from the same DI.

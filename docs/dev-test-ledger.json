@@ -2093,6 +2093,34 @@
    "gate": "None: descriptive screens with declared thresholds (plan, 'Screens', amendment 1); the blind listening check stratifies hum and hiss clips around their tag and flag levels and moves a threshold only by amend()'s declared rule (two agreeing clips); clean does not mean bleed-free unless bleed_status is 'measured'. Hum notch adopted per DI only under amendments 1-2's three conditions (collateral judged against the same notch set's effect on pink noise)",
    "renders": "0 for part A; part B is a separate test with its own ledger entry when its amendment is declared (B1 about 22k renders, after the overnight runs)",
    "outcome": "part A screened 2026-10-18 (0 renders; docs/clean-di-library-results.md): 237 DIs, 5,571 activity sections, 1,703 clean (31%), 954 non-overlapping = 159 min (training_ok 875 = 146 min; known-answer 69); flags hum 2,707 (105 DIs; Guitar-TECHS mostly hum), hiss 1,525, clipping 168, bleed 155, dropout 30; hum notch not adopted (all 105 DIs fail its collateral condition, 104 also its residual-hum condition); listening page built (30 clips), answers pending; audit caveat: the rest check refuted the hum lines of 50 DIs, 10 of which look like real hum (mains fundamental 27-48 dB prominent), giving 134 of the 954 sections (all of Guitar-TECHS's); a hum-screen amendment is due before the manifest is used"
+  },
+  {
+   "test_id": "known-answer-b1",
+   "plan": "docs/known-answer-b1-plan.md",
+   "entered": "2026-10-18, with the plan (part B's amendment of docs/clean-di-library-plan.md), before any render; after a zero-render leakage measurement on the three development songs (named in the plan)",
+   "repeat_use": "Development DIs read as DIs, rendered through known presets: Rebecca Haviland's Bourbon and Collide With Me and Chris Coltraine's Heather Jane (set 1 development songs whose bands have held-out songs; their real amp tracks are replaced by renders and never scored) and The Apprehended's 'Still Flyin'' (never used). All 12 DIs are known_answer in the clean-DI inventory and refused for training",
+   "parts": "4 songs; primary DIs Heather Jane ElecGtr1, Bourbon GTR 2, Collide With Me GTR 1, Still Flyin' ElecGtr03; second DIs ElecGtr1DT, GTR 1, GTR 2, ElecGtr04; 4 sections per song (seed 20261050)",
+   "bands": "3 clusters: Chris Coltraine, Rebecca Haviland (2 songs), The Apprehended",
+   "held_out": "none touched: the held-out songs of Rebecca Haviland and Chris Coltraine are never read; C' fold 2 never trained on any of the three bands (asserted)",
+   "audio_only": "the songs' session tracks build the backings (less guitar DIs, the rendered DIs' own tracks and leaking tracks); real amp tracks only set levels and the leakage check",
+   "gate": "None: descriptive estimates with 90% band-clustered intervals (2 degrees of freedom); its between-band SD sizes B2 by the declared formula",
+   "renders": "about 17.4k (menu scans, truths, S, arm A 34 section searches, arm O 16), about 2.7 h on 3 shards; htdemucs about 15 min",
+   "outcome": null
+  },
+  {
+   "test_id": "pretrain-set-c",
+   "plan": "docs/pretrain-set-plan.md",
+   "entered": "2026-10-18, with the plan, before any render; after a zero-render probe on 600 stored arm-B bank renders (feature bytes, the power-sum mixing error, the gain-class shares)",
+   "repeat_use": "Development DIs read as DIs: part A's non-overlapping clean sections that may train, less the hum-audit superset (11 DIs) and stage F's 21 DIs (reserved); session backings from the same multitracks",
+   "parts": "the clean-DI pool after the hum-screen amendment (740 sections before it, less 112 reserved); rendered through drawn Morgan settings (PR12, SW50R, AC20)",
+   "bands": "the pool's bands; val = whole bands (seed 20261041, at least 8, at least 15% of sections), never trained on by this plan's models",
+   "held_out": "none touched: manifest rows re-checked against the inventory (library, training_ok), set3.is_held_out and sets 4-6; no known-answer DI, no Guitar-TECHS P3",
+   "audio_only": "DI sections and their session backings",
+   "split": "reserve (stage F's DIs), val (whole bands), train; every example carries its song-settings fold",
+   "gate": "None: the size is set by the declared learning-curve rule (extend while the last doubling's 90% band-clustered interval of the held-out knob error lies below 0)",
+   "stopping": "pilot 40k train + 3k val; at most one unattended extension to 80k; further doublings need a new launch",
+   "renders": "pilot about 43k (about 7 h on 3 shards) plus 30 re-render checks; extension about 40k",
+   "outcome": null
   }
  ]
 }
