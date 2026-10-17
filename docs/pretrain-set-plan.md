@@ -322,3 +322,11 @@ All are made here and in the code; this amendment governs where the body differs
   40k over all of them, to tell DI diversity from settings count (reported, not deciding);
 - the model's trunk is 256 wide (half of arm B's 512), and each epoch draws one half (A or B) per
   example, seeded; a full-width check at the final size is left for the fine-tuning plan.
+
+**Smoke run before launch (2026-10-18, scratch output, not results):** `pool` on the pre-amendment
+manifest (gate bypassed in the smoke only), `backings` for 3 sections (one Telefunken DI dropped its
+room mic and the other guitar's amp as leaking), 3 renders (about 1.8–2.1 s each per process with
+features and class measures, so about 5–6k an hour on 3 shards), `recheck` (re-render SNR 90 dB
+against the stored 16-bit FLAC, every mel cell identical), `report` (power-sum error on the audit
+example: median 0.38 dB, 90th percentile 1.8 dB) and a two-epoch CPU `curve` and `decide`. Bytes:
+58 KB per train example, 174 KB per val example, 186 KB plus a 433-KB FLAC per audit example.

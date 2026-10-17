@@ -238,3 +238,16 @@ s, crossfade); Bourbon 85, 105, 65, 235 s (switch 225 s, rests); Collide With Me
 rows, and are labelled so; item 4's Heather Jane row names its second guitar as a double of the
 same part; the report gives each backing's guitar-to-backing ratio at unity beside the −7.9 dB
 distribution.
+
+**Smoke run before launch (2026-10-18, scratch output, not results):** Heather Jane's `truth` with
+the menu cut to 10 presets per amp (53 renders, 190 s), `mix`, one htdemucs context (17 s), the C′
+rebuilds (under 1 s each) and one search group (ac20, item 1, s1: 115 renders in 141 s on one
+process, about 2.9k renders an hour). It showed:
+- **The judge has a floor:** the truth re-rendered through the judge's own path reads 0.20–0.28
+  against S's 3.0–4.8, the same as the whole-track truth's slice (identical to 4 decimals). So
+  log(d_A / d_S) is bounded below near −2.8, not unbounded; the self-distance check (under 0.1 of
+  S) passes with room.
+- **The convention floor is large:** the truth rendered on the per-section measure DI reads
+  1.5–3.2 against the record (δ −1.2 to +0.9 LU), about 40–90% of S's distance. The DI level and
+  EQ convention alone moves the judge that much, which is why B1 keeps one DI level per track; the
+  row is reported.
