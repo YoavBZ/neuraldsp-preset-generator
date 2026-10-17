@@ -10,8 +10,10 @@ stopping, renders and hours declared, and licence-clean open-source tools only.
 - **Ledger:** `pretrain-set-c` in [`dev-test-ledger.json`](dev-test-ledger.json).
 - **Data:** `~/ndsp-presets/learn/pretrain-set/`.
 
-**Status:** declared; review pending. Nothing renders before the overnight runs end, B1 has run,
-and the hum-screen amendment's manifest exists (below).
+**Status:** declared, then reviewed 2026-10-18 by an independent agent: approved with 12 required
+changes, all made as [amendment 1](#amendment-1-2026-10-18-review-changes-before-any-render), which
+governs where the two differ. Nothing renders before the overnight runs end, B1 has run, and the
+hum-screen amendment's manifest exists (below).
 
 ## Why
 
@@ -40,11 +42,13 @@ From part A's manifest (`~/ndsp-presets/learn/clean-di/manifest.json`), read thr
   (`assert_training_ok`'s rule, re-implemented here and tested for parity with
   `learn/clean_di.py`), and it passes `set3.is_held_out` and `set4/5/6.covers`;
 - **the hum-audit exclusion (asserted in code and tested):** the 10 DIs the part-A audit found
-  probably hummy are left out until a dated amendment says otherwise. The results name them by
-  kind, not path, and their count of 134 sections does not match any one reading of the manifest,
-  so the code leaves out the superset: all 8 Guitar-TECHS DIs with a clean section (the 7 P1 chord
-  files and one P2 chord file; 103 sections), Prodigal ElecGtr1 and ElecGtr3, and Wickerman
-  ElecGtr7 (32 sections). That is 11 DIs, 135 sections.
+  probably hummy (7 Guitar-TECHS P1 chord files with 102 sections, Prodigal ElecGtr1 and ElecGtr3,
+  and Wickerman ElecGtr7: 134 sections) are left out until a dated amendment says otherwise. The
+  code leaves out a superset of 11 DIs, 135 sections: also the one Guitar-TECHS P2 chord file with a
+  clean section (1 section), since the results' "all 103 of Guitar-TECHS's" counts it.
+- **Guitar-TECHS is left out by source** (`EXCLUDE_SOURCES`), declared here: every Guitar-TECHS
+  clean section is in the superset today, and its exercises are not songs. A hum amendment that
+  clears Guitar-TECHS sections does not bring them in without a further amendment.
 - **Never:** part B's known-answer DIs (refused by the inventory rule), any held-out path, set 4–6,
   Guitar-TECHS P3.
 
@@ -62,8 +66,10 @@ hum-screen amendment lands.
 
 ### The split (by DI and band, declared)
 
-- **`reserve`:** the sections of stage F's 21 DIs (used once, by arm A's fresh test): 112 today.
-  Rendered never in this plan, so a later fresh test can still use them unseen.
+- **`reserve`:** the sections of stage F's 21 DIs (used once, by arm A's fresh test): 102 today
+  (11 DIs; Wickerman ElecGtr7 is also in the hum superset). Rendered never in this plan. The reserve
+  is by DI: other DIs of the same sessions still train; the `stage_f_session` tag lets later work
+  drop them.
 - **`val`:** whole bands, never trained on by this plan's models. Seeded (`random.Random(20261041)`)
   over the pool's bands that have a session backing, leaving out the three largest (Eat The Feeder,
   Eggy, Dom McLennon); bands are added in seeded order until the val bands hold at least 15% of
@@ -255,3 +261,64 @@ reserve), the draw (deterministic per index, modes and shares, clamping, mics an
 quantiser round trip, the power-sum mixer against a numeric sum, the backing track rule (own
 tracks, DIs, vocals, leakage drops), the ratio draw, the band-clustered interval and the decision
 rule, the disk guard, and the render-cap pattern.
+
+## Amendment 1 (2026-10-18): review changes, before any render
+
+The independent review approved the plan with required changes 9–20 (its numbering; 1–8 are B1's).
+All are made here and in the code; this amendment governs where the body differs.
+
+9. **The gate is a positive marker.** `pool` runs only when the manifest carries the hum-screen
+   amendment: part A's amendment 3 as `learn/clean_di.py` writes it (manifest `version` 2 or later
+   with 3 in `amendments`), a top-level `hum_amendment` field, or a marker file
+   `~/ndsp-presets/learn/clean-di/HUM_AMENDMENT.json` whose `manifest_sha256` equals the manifest's.
+   The pre-amendment sha is still refused. A manifest rebuilt for another reason does not pass.
+10. **The hum superset and the Guitar-TECHS exclusion** are stated as above ("The pool").
+11. **Counts, on the current manifest with this amendment's split:** pool 740 before item 18;
+    Timo And The Timezone out: 2; reserve 102 (11 DIs); val 97; train 539. The amended manifest's
+    counts are those `pool` prints, reported in the results.
+12. **Val bands:** whole bands of 5 to 20 non-reserve sections (small bands, so there are many),
+    with a session backing, in seeded order until at least 8 bands and 15% of the sections, or the
+    candidates run out. On the current manifest that gives 9 bands and 97 sections (15%): Adam
+    Buckley, Cnoc An Tursa, Dark Ride, John Morgan Kimock, Magician's Nephew, Swatkins, The Travelling
+    Band, Wall Of Death and Zeno; by the DIs' gain class 42 clean, 5 crunch, 6 high-gain and 44
+    unclassed. Train keeps 539. The val mix is reported, and E by DI gain class.
+13. **Seed noise enters the decision.** Three seeds at 20k, 40k and 80k (two at 5k and 10k):
+    20261042, 20261043, 20261044. EXTEND needs the seed-averaged Δ interval below 0 **and** each
+    seed's own Δ (seed k at n against seed k at 2n) to have its interval below 0.
+14. **Undecided is not flat.** `decide` prints `DECISION EXTEND` or `DECISION STOP`, and on STOP a
+    reading line: `READING flat` when its lower bound lies above half the previous doubling's point gain (the interval rules out a gain half as
+    large as the last one), else `READING undecided`. Only EXTEND runs the extension unattended; an
+    undecided stop is put to the user with the numbers.
+15. **The scope threshold is frozen** after the pilot's renders (`scope-threshold.json`, written
+    once by `curve` and reused by every later size), and applied to val as to train. E is reported
+    with and without the tagged examples.
+16. **Departures from arm B's recipe, declared:** no mastering (compressor, limiter, AAC) and no
+    second guitar in the training mixes. Half the val examples are mastered with arm B's compressor
+    and limiter (`song_aug.compress`; no AAC), seeded, so E is reported mastered and not; the second
+    guitar's absence is a stated gap. Fine-tuning on arm B's bank covers both.
+17. **C′: a decision for the user, and an exact recipe.** The pilot stores no audio for C′ beyond
+    the audit sample. Offered to the user (not run unattended): keep every 8th train render's FLAC
+    (about 5k renders, about 2 GB) for a C′ pilot. Every example's recipe records what re-rendering
+    needs: the plugin's version as the renderer reports it, the sha256 of the measure treatment's
+    average curve (`confirm_run.AVERAGE`), `isolate=True`, the 52-sample latency (left in), 48 kHz,
+    and the 0.25-s lead-in. If `recheck` is not bit-identical, its SNR and max |Δ| are reported and a
+    C′ plan decides whether re-rendered pairs are usable (C′ trains on spectral losses, so a
+    sub-LSB difference would not matter; a larger one would be named).
+18. **Timo And The Timezone is out** of the pool (2 sections), since The Timezone "GOTGF" is a part
+    B2 candidate and its band would then become known-answer.
+19. **Licences:** each example carries its DI's licence (Cambridge-MT: educational use only;
+    Telefunken: home-studio and educational use only, no commercial use). A model trained on this
+    set is for research; whether one may ship in the plugin is the user's decision.
+20. **DI playing style is in scope.** About 17% of the pool comes from DIs whose original part was
+    labelled high-gain. The scope rule is about the tone: the playing is rendered only through
+    clean-to-crunch settings, so those sections stay. E is reported by the DI's gain class.
+
+**Also, from the review's suggestions:**
+- the guitar-to-backing ratio is drawn band-weighted (a band uniformly, then one of its values),
+  so the Telefunken sessions do not dominate;
+- val is also scored on power-sum mixes built from its stored guitar and backing mels, which
+  measures the train/val mixing gap directly (zero renders);
+- one curve axis without renders: 40k examples over the first half of the train sections, beside
+  40k over all of them, to tell DI diversity from settings count (reported, not deciding);
+- the model's trunk is 256 wide (half of arm B's 512), and each epoch draws one half (A or B) per
+  example, seeded; a full-width check at the final size is left for the fine-tuning plan.

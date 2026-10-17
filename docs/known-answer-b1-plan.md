@@ -10,7 +10,11 @@ Development data only; estimates with intervals, no pass/fail bars.
 - **Ledger:** `known-answer-b1` in [`dev-test-ledger.json`](dev-test-ledger.json).
 - **Data:** `~/ndsp-presets/learn/known-answer/b1/`.
 
-**Status:** declared; review pending. Renders start only after the overnight runs end.
+**Status:** declared, then reviewed 2026-10-18 by an independent agent: approved with 8 required
+changes, all made as [amendment 1](#amendment-1-2026-10-18-review-changes-before-any-render), which
+governs where the two differ. Renders start only after the overnight runs end.
+
+"B1" here is part B's pilot of known-answer songs, not arm B's sound-space retrain of the same name.
 
 ## The question (unchanged)
 
@@ -180,3 +184,57 @@ Unit-tested with fakes: the primary-DI rule, the section eligibility and draw, t
 the backing track rules (DIs, own tracks, vocals, other guitars, leakage), the truth draw (classes,
 offsets, the edge rule, redraws), the level matching, the unit list and render counts, the
 sharding, the weighting and the B2 sizing.
+
+## Amendment 1 (2026-10-18): review changes, before any render
+
+The independent review approved with 8 required changes; all are made here and in the code.
+A zero-render `plan` run (DIs, sections, switch points, leakage) had been made to check the code; it
+is re-run after this amendment. Its sections: Heather Jane s1–s4 at 215, 235, 15, 205 s (switch 125
+s, crossfade); Bourbon 85, 105, 65, 235 s (switch 225 s, rests); Collide With Me 185, 195, 85, 155 s
+(switch 130 s, crossfade); The Apprehended 5, 15, 25, 245 s (switch 130 s, rests).
+
+1. **A second deviation, declared:** part B's "Song construction" uses clean sections only once the
+   listening check has been read. B1 runs before it is read. The report lists each scored section's
+   part-A flags, so the listening amendment can be applied to B1's rows afterwards.
+2. **Repeat use, named.** Bourbon, Collide With Me and Heather Jane are in the song-settings folds
+   (`docs/song-settings-folds.json`) as set-1 "bands", and their records were among the development
+   material arm A's recipe was chosen on (the shrink, the 52-render stop, the fallback). Their rows
+   are repeat use. **The Apprehended, the only fresh song, is reported as its own row.**
+3. **The DI-level convention.** Arm A's judge and search use a per-crop measure DI at −22.9 LUFS;
+   B1 levels the whole track once (`di_w`) and judges on its unlevelled slices, which keeps the
+   answer exact but adds a per-section level offset δ = LUFS(slice) + 22.9 that stage F never had.
+   - δ is reported per section;
+   - **a convention-floor row:** per scored section, the truth preset rendered on the per-section
+     measure DI (`song_bank.measure` of the slice), judged against the record (1 render per
+     section, 16 in all): what the convention alone costs;
+   - the input-gain knob error is read with δ beside it.
+4. **A self-distance check through the judge's own path.** Per scored section, the truth rendered
+   on the judge's DI exactly as candidates are, judged against the record, must be under a tenth of
+   S's distance (on the truth's amp, both halves); otherwise `truth` stops with the numbers. This is
+   an integrity check on exactness, not a result bar.
+5. **The average-guitar EQ is a best case.** `di_w` carries the measure treatment's EQ toward the
+   average guitar, so the truth is rendered from a DI already in arm A's spectral convention: the
+   timbre confound of real records is absent. Added to the in-family caveat.
+6. **The class check uses the scope line, not the classifier's high-gain label** (part C measured
+   that crunch S itself reads "high-gain" often).
+   - **The pools,** from the menu scan on s1: *clean* = the classifier's clean; *crunch* = crunch or
+     high-gain whose level slope is not below the crunch S's own slope on that section (not more
+     compressed than the product's crunch start).
+   - **The checks:** a clean truth must read clean; a crunch truth must be in the crunch pool's
+     definition; an edge truth must be clean, or in the crunch definition.
+   - **An empty pool** on the drawn amp: the role's amp is redrawn among the others (seeded); empty on
+     all three, `truth` stops.
+   - **Redraws:** up to 20 jitters per preset, then a new preset from the pool, up to 5 presets;
+     then `truth` stops. Every draw is logged and the counts reported.
+7. **Disk:** contexts (34 × 30 s), stems, oracles, rebuilds and the 12 whole-track truths come to
+   under 1 GB. `truth` and every search shard check the 31-GB guard every amp group and stop
+   cleanly below it.
+8. **B2's size:** n = (t₉₀,ₙ₋₁ · max(U, 0.069) / 0.03)², solved by iterating n (t with n − 1 degrees
+   of freedom), where U is the between-band SD's 90% upper bound from χ² with 2 degrees of freedom,
+   about 4.4 times the point SD. So any point SD above about 0.016 asks for more songs than the pool
+   holds: in practice B2 is capped by the pool, which the B2 amendment states.
+
+**Also, from the review's suggestions:** class is fixed per song, so per-class rows are per-song
+rows, and are labelled so; item 4's Heather Jane row names its second guitar as a double of the
+same part; the report gives each backing's guitar-to-backing ratio at unity beside the −7.9 dB
+distribution.

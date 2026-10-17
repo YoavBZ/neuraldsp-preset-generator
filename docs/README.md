@@ -291,6 +291,14 @@ was declared, what was measured, and the research behind it.
   screened library of the development DIs (237 DIs; hum, hiss, clipping, dropouts, bleed, DC and
   near-silence per 10-s section; zero renders), a blind listening check of the screens, and part
   B, known-answer test songs rendered through chosen presets (declared; renders later).
+- [known-answer-b1-plan.md](known-answer-b1-plan.md): part B's pilot B1, four known-answer songs
+  (Heather Jane, Bourbon, Collide With Me, Still Flyin') rendered through drawn presets and mixed
+  back, arm A's recipe scored against the exact truth (about 17.4k renders; queued after the
+  overnight runs).
+- [pretrain-set-plan.md](pretrain-set-plan.md): part C, a labelled pre-training render set from the
+  clean DI sections (Morgan, clean to crunch, record-like mixes built at training time), sized by a
+  learning-curve pilot (40k, one extension to 80k if the curve still improves; queued after B1 and
+  the hum-screen amendment).
 - [bleed-listening-plan.md](bleed-listening-plan.md) → [results](bleed-listening-results.md), with
   the [bleed audit](audits/bleed-2026-10-16/README.md): bleed only in the Telefunken live-room
   sessions, audible on the high parts; the cleaning isn't adopted, and every key result holds
