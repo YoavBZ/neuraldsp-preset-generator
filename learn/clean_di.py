@@ -1109,6 +1109,7 @@ def cmd_manifest(args):
 # --- the hum fix's measured effect ------------------------------------------------------------------
 
 FIX_CONTROLS = 20
+FIX_CONTROL_S = 20.0             # each control DI: 20 s from its first passing section
 
 
 def fix_adopted(collateral_band_db, residual_rel, listener_damage=None):
@@ -1145,18 +1146,28 @@ def cmd_hum_fix(args):
     rng = random.Random(FIX_SEED)
     controls = rng.sample(sorted(clean), min(FIX_CONTROLS, len(clean)))
     ctrl = {}
-    for p in controls:
+    for p in controls:                          # 20 s from each control's first passing section
         x, sr = load_native(p)
         y = resample(x, sr, SR)
+        s0 = int(next(r["start_s"] for r in screens[p]["rows"] if r["passes_activity"]) * SR)
+        y = y[s0:s0 + int(FIX_CONTROL_S * SR)]
         ctrl[p] = (y, playing(frame_db(y, 4096, 2048)))
+    cache = {}
     allk = list(range(1, HUM_MAX_K + 1))
     res = {"seed": FIX_SEED, "controls": [by_path[p]["id"] for p in controls], "dis": []}
     for p in sorted(flagged):
         t = screens[p]["track"]
         f0, ks = t["hum_f0"], t["hum_harmonics"]
-        ref = noise_reference(f0, ks)
-        col = [(excess_collateral(band_changes(y, f0, ks, play), ref), fix_effect(y, f0, ks, play)[1])
-               for y, play in ctrl.values()]
+        ck = (round(f0, 2), tuple(ks))           # DIs sharing a notch set share its collateral
+        if ck not in cache:
+            ref = noise_reference(f0, ks)
+            col = []
+            for y, play in ctrl.values():
+                z = notch(y, f0, ks)
+                ch = np.abs(third_octave_db(z, play, lo=FIX_BAND_LO) - third_octave_db(y, play, lo=FIX_BAND_LO))
+                col.append((excess_collateral(ch, ref), db(np.mean((y - z) ** 2)) - db(np.mean(y ** 2))))
+            cache[ck] = (ref, col)
+        ref, col = cache[ck]
         x, sr = load_native(p)
         y = resample(x, sr, SR)
         fixed = notch(y, f0, ks)
@@ -1538,7 +1549,10 @@ def cmd_listen(args):
         raise SystemExit(f"{LISTEN / 'private' / 'key.json'} exists; pass --force to rebuild")
     man = json.loads((OUT / "manifest.json").read_text())
     screens = _screens()
-    part1, part2 = draw(man["sections"])
+    fx = OUT / "hum-fix.json"
+    # part 2 only asks the ear about a fix whose measured conditions hold (amendment 1, item 8)
+    n_hum = 0 if fx.exists() and json.loads(fx.read_text()).get("adopted") is False else N_HUM_AB
+    part1, part2 = draw(man["sections"], n_hum=n_hum)
     key = {"plan": "docs/clean-di-library-plan.md", "seed": LISTEN_SEED,
            "note": "part 2's null trial reuses one hum trial's section (played four times in all)",
            "manifest_sha256": hashlib.sha256((OUT / "manifest.json").read_bytes()).hexdigest(),

@@ -20,7 +20,7 @@ renders and hours declared, and licence-clean open-source tools only. Code:
 changes for part A and 4 more for part B's amendment. All are made as
 [amendment 1](#amendment-1-2026-10-17-review-changes-before-the-full-screen) below, which governs
 where the two differ (the inventory counts, guards, split, hum, clipping, bleed and listening
-design are restated there). The full screen ran after the amendment.
+design are restated there). The full screen ran after amendments 1–2 ([results](clean-di-library-results.md)); the listening answers are pending.
 
 ## Why
 
