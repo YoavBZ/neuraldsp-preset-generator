@@ -289,7 +289,8 @@ was declared, what was measured, and the research behind it.
   track (zero renders).
 - [clean-di-library-plan.md](clean-di-library-plan.md) → [results](clean-di-library-results.md): a
   screened library of the development DIs (237 DIs; hum, hiss, clipping, dropouts, bleed, DC and
-  near-silence per 10-s section; zero renders), a blind listening check of the screens, and part
+  near-silence per 10-s section; zero renders; 134.7 clean minutes after amendment 3's hum rule),
+  two blind listening checks of the screens, and part
   B, known-answer test songs rendered through chosen presets (declared; renders later).
 - [bleed-listening-plan.md](bleed-listening-plan.md) → [results](bleed-listening-results.md), with
   the [bleed audit](audits/bleed-2026-10-16/README.md): bleed only in the Telefunken live-room

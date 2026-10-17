@@ -380,3 +380,99 @@ def test_page_template_formats():
                          part2_block=C.PART2.format(trials=C.section2(1, [("A", "data:x"), ("B", "data:y")])),
                          build="abc")
     assert 'data-trial="1"' in page and "H1" in page and pathlib.Path  # noqa: B015
+
+
+# --- amendment 3: the mains fundamental is never refuted by the rest check ----------------------------
+
+def test_mains_line_hz_reads_hum_and_not_a_nearby_note():
+    x = guitarish(30.0) + hum_series(30.0, 59.97, 3e-3)
+    hz, prom = C.mains_line_hz(x, 60.0)
+    assert abs(hz - 59.97) < 0.05 and prom >= C.LINE_PROM_DB
+    assert C.fundamental_overrides([1, 3, 5], hz, 60.0)
+    t = np.arange(30 * SR) / SR                     # a steady B1 (61.74 Hz): near 60 Hz, not at it
+    note = guitarish(30.0) + 3e-3 * np.sin(2 * np.pi * 61.74 * t)
+    hz, _ = C.mains_line_hz(note, 60.0)
+    assert abs(hz - 61.74) < 0.1
+    assert not C.fundamental_overrides([1, 3, 5], hz, 60.0)
+    assert not C.fundamental_overrides([3, 5], 60.0, 60.0)        # the fundamental must be a line
+    assert not C.fundamental_overrides([1, 3], None, 60.0)
+
+
+def test_measure_di_keeps_a_mains_fundamental_the_rests_cannot_show():
+    # Hum present throughout but buried in the rests by gated silence (exact zeros there), so the
+    # rest check has nothing to read and says "no"; amendment 3 keeps the lines.
+    g = guitarish(40.0)
+    hum = hum_series(40.0, 60.0, 3e-3, (1, 3, 5, 7))
+    x = g + hum
+    rest = np.zeros(3 * SR)                                     # 7% of frames: under the 10th percentile
+    rest += 1e-7 * RNG.standard_normal(len(rest))                # a gate's residual floor, no hum
+    y = np.concatenate([x, rest])
+    track, rows = C.measure_di(y, SR, 60.0)
+    assert track["hum_rest_check"] == "kept_fundamental" and 1 in track["hum_harmonics"]
+    assert track["hum_harmonics_refuted"] == [] and track["hum_amendment"] == C.HUM_AMENDMENT
+    assert any(r.get("hum_rel_db") is not None for r in rows if r["passes_activity"])
+
+
+def _rows3(n=20):
+    v1, v2 = [], []
+    ids = [f"d{i}" for i in range(n)] + [f"guitar-techs/P1-downloads/P1_chords/c{j}.wav" for j in range(3)]
+    for i, di in enumerate(ids):
+        kind = "kept" if di.startswith("guitar-techs") else ("kept", "refuted", "hum", "quiet")[i % 4]
+        for start in (0.0, 5.0):
+            base = {"di": di, "path": f"/p{i}.wav", "start_s": start, "source": "cambridge"}
+            m = {"hum_rel_db": None, "hum_rel_db_refuted": None}
+            flags, tags = [], []
+            if kind == "kept":
+                m["hum_rel_db"] = -45.0
+                flags, tags = ["hum"], ["hum_kept_by_fundamental"]
+            elif kind == "refuted":
+                m["hum_rel_db_refuted"] = -50.0
+            elif kind == "hum":
+                m["hum_rel_db"] = -30.0
+                flags = ["hum"]
+            v2.append({**base, "flags": flags, "tags": tags, "clean": not flags, "measures": m})
+            v1.append({**base, "flags": ["hum"] if kind == "hum" else [], "tags": [], "clean": kind != "hum",
+                       "measures": {"hum_rel_db": -30.0 if kind == "hum" else None}})
+    return v1, v2
+
+
+def test_draw_hum_strata_and_repeats():
+    v1, v2 = _rows3()
+    clips = C.draw_hum(v1, v2, page1_dis={"d1"})
+    kinds = [t["kind"] for t in clips]
+    kept = [t for t in clips if t["kind"] == "kept"]
+    assert len(kept) == 5 + C.N_PER_UNIT                          # 5 single-DI units, Guitar-TECHS P1 as one
+    assert sum(t["unit"] == "guitar-techs-P1" for t in kept) == C.N_PER_UNIT
+    assert kinds.count("refuted") == 4 and "d1" not in {t["di"] for t in clips if t["kind"] == "refuted"}
+    assert kinds.count("anchor_hum") == kinds.count("anchor_clean") == C.N_ANCHOR
+    assert kinds.count(C.REPEAT) == 2
+    singles = [t for t in clips if t["kind"] != C.REPEAT]
+    assert len({t["di"] for t in singles}) == len(singles)
+    for i, t in enumerate(clips):
+        if t["kind"] == C.REPEAT:
+            j = next(j for j, u in enumerate(clips) if u["kind"] != C.REPEAT and C._same(u, t))
+            assert i > 0 and abs(i - j) > 1
+    assert clips == C.draw_hum(v1, v2, page1_dis={"d1"})
+
+
+def test_score_hum_rule():
+    def key(spec):
+        return {"clips": {str(i): {"di": f"d{i}", "start_s": 0.0, "kind": k, "unit": u, "value": None,
+                                   "value_refuted": None} for i, (k, u) in enumerate(spec, 1)}}
+    k = key([("kept", "g"), ("kept", "g"), ("kept", "a"), ("kept", "b"), ("refuted", None), ("refuted", None),
+             ("refuted", None), ("refuted", None), ("anchor_clean", None), ("anchor_clean", None)])
+    rep = C.score_hum(k, C.parse_answers("1hum 2hum 3hum 4ok 5ok 6ok 7ok 8ok 9ok 10ok"))
+    assert rep["decision"] == "amendment 3 stands" and rep["kept"]["units_reverted"] == ["b"]
+    rep = C.score_hum(k, C.parse_answers("1ok 2ok 3ok 4hum 5ok 6ok 7ok 8ok 9ok 10ok"))
+    assert rep["decision"] == "amendment 3 withdrawn" and rep["kept"]["units_reverted"] == ["a", "g"]
+    rep = C.score_hum(k, C.parse_answers("1ok 2hum 3hum 4hum 5ok 6ok 7ok 8ok 9ok 10ok"))
+    assert rep["kept"]["units_reverted"] == []                   # 1 of 2 in unit g: not more than half
+    rep = C.score_hum(k, C.parse_answers("1hum 2hum 3hum 4hum 5hum 6hum 7ok 8ok 9ok 10ok"))
+    assert rep["decision"] == "amendment 3 stands; rest refutation suspended"
+    assert rep["refuted"]["restored_dis"] == ["d5", "d6"]
+    rep = C.score_hum(k, C.parse_answers("1hum 2hum 3hum 4hum 5hum 6hum 7ok 8ok 9hum 10hum"))
+    assert not rep["suspend"]                                    # no more than the clean anchors
+    rep = C.score_hum(k, C.parse_answers("1hum 2hum 3hum 4hum 5hum 6ok 7ok 8ok 9ok 10ok"))
+    assert not rep["suspend"] and rep["refuted"]["restored_dis"] == ["d5"]
+    rep = C.score_hum(k, C.parse_answers("1ok 2ok 3ok 4hum 5hum 6hum 7ok 8ok 9ok 10ok"))
+    assert rep["decision"].startswith("conflict") and not rep["withdraw"] and not rep["suspend"]
