@@ -449,3 +449,19 @@ was declared, what was measured, and the research behind it.
     other sources are renders, single notes or unverified. Ranked routes: rule on the held-out sets, a local scan of the Cambridge sessions this
     search could not reach, Weathervane, wider scope, or recording new material. Research, not a
     declared plan.
+14. [cambridge-local-check-2026-10.md](research/cambridge-local-check-2026-10.md): route 2 of
+    the fresh-multitracks report, run from this Mac (October 2026). The site still blocks scripts,
+    but a Hugging Face re-host and the publisher's direct archives gave track lists for 11 of the
+    15 unreached sessions: none has an electric-guitar DI, so 0 new DI+amp pairs. Two DI-only
+    sessions no set has used turned up, both with caveats: Perpetual Escape "Stop And Rise"
+    (never seen, gain unknown) and Dunning Kruger "Sascha" (set 3 downloaded it and set its one
+    DI aside as unpaired). Four sessions and everything added since about April 2025 remain
+    unchecked. Research, not a declared plan.
+15. [hf-detail-losses-2026-10.md](research/hf-detail-losses-2026-10.md): how to recover C′'s
+    short-time treble magnitude detail, the error the rebuild-gap study found (October 2026).
+    Vocoder and codec recipes (HiFi-GAN, BigVGAN, Vocos, DAC, EnCodec) restore treble texture with
+    a small spectrogram discriminator, but their wins are listening wins, not ranking wins; phase
+    is worthless for ranking, so the period discriminator is likely misaimed. Ranked: the planned
+    offset-removed 2–8 kHz loss, a bounded per-bin log-gain on C′'s output, the upsampler, an
+    MPS-safe magnitude-only discriminator, a PANN feature loss. Corrects the DI recovery report.
+    Research, not a declared plan.
