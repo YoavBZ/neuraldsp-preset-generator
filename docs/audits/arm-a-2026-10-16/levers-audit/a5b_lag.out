@@ -1,0 +1,25 @@
+(x, ref, below_hz=None, maxlag=2000)
+cambridge-Drag_Me_Down-ElecGtr4    f0 judge_lag 914  gcc(rebuild,stem) -52  gcc(di,ref) 0  len stem/ref 480000/480000
+cambridge-It_Was_My_Fault_For_Wait f0 judge_lag -43  gcc(rebuild,stem) -54  gcc(di,ref) 0  len stem/ref 480000/480000
+cambridge-It_Was_My_Fault_For_Wait f0 judge_lag -43  gcc(rebuild,stem) 0  gcc(di,ref) -29  len stem/ref 480000/480000
+cambridge-Passing_Ships-ElecGtr6   f0 judge_lag -38  gcc(rebuild,stem) -53  gcc(di,ref) -22  len stem/ref 480000/480000
+cambridge-Prodigal-ElecGtr5        f3 judge_lag -51  gcc(rebuild,stem) -55  gcc(di,ref) 0  len stem/ref 480000/480000
+cambridge-Quicksand-ElecGtr1       f0 judge_lag -33  gcc(rebuild,stem) -53  gcc(di,ref) 0  len stem/ref 480000/480000
+cambridge-Signs-ElecGtr2           f2 judge_lag -26  gcc(rebuild,stem) -53  gcc(di,ref) 0  len stem/ref 480000/480000
+cambridge-Today's_The_Day-ElecGtr1 f2 judge_lag 620  gcc(rebuild,stem) 0  gcc(di,ref) -675  len stem/ref 480000/480000
+cambridge-colour-me-red-elecgtr01  f1 judge_lag -12  gcc(rebuild,stem) -54  gcc(di,ref) 0  len stem/ref 480000/480000
+cambridge-femme-elecgtr3           f0 judge_lag 521  gcc(rebuild,stem) 0  gcc(di,ref) 0  len stem/ref 480000/480000
+cambridge-get-out-of-bed-elecgtr1  f1 judge_lag -5  gcc(rebuild,stem) 0  gcc(di,ref) -48  len stem/ref 480000/480000
+cambridge-just-don-t-talk-elecgtr3 f3 judge_lag -36  gcc(rebuild,stem) -53  gcc(di,ref) -23  len stem/ref 480000/480000
+cambridge-magilla-elecgtr1dt       f2 judge_lag -44  gcc(rebuild,stem) 0  gcc(di,ref) -8  len stem/ref 480000/480000
+telefunken-Blind_Spots-GTR         f1 judge_lag -25  gcc(rebuild,stem) -53  gcc(di,ref) -40  len stem/ref 480000/480000
+telefunken-Bloomlight-GTR          f3 judge_lag -33  gcc(rebuild,stem) 0  gcc(di,ref) 0  len stem/ref 480000/480000
+telefunken-Farthest_Step-GTR       f3 judge_lag -33  gcc(rebuild,stem) 0  gcc(di,ref) -32  len stem/ref 480000/480000
+telefunken-First_Offering-GTR_1    f1 judge_lag -22  gcc(rebuild,stem) 0  gcc(di,ref) 0  len stem/ref 480000/480000
+telefunken-First_Offering-GTR_2    f1 judge_lag -30  gcc(rebuild,stem) 0  gcc(di,ref) -29  len stem/ref 480000/480000
+telefunken-Fragments-GTR           f3 judge_lag -33  gcc(rebuild,stem) 0  gcc(di,ref) 0  len stem/ref 480000/480000
+telefunken-Gym_Hours-GTR_1         f1 judge_lag -25  gcc(rebuild,stem) 0  gcc(di,ref) 0  len stem/ref 480000/480000
+telefunken-Long_Way_Home-GTR       f1 judge_lag -25  gcc(rebuild,stem) -54  gcc(di,ref) -41  len stem/ref 480000/480000
+telefunken-Russian_Cream-GTR_2     f1 judge_lag -30  gcc(rebuild,stem) -52  gcc(di,ref) -28  len stem/ref 480000/480000
+telefunken-Sculptor's_Request-GTR_ f1 judge_lag -23  gcc(rebuild,stem) -53  gcc(di,ref) 0  len stem/ref 480000/480000
+telefunken-Sculptor's_Request-GTR_ f1 judge_lag -29  gcc(rebuild,stem) 0  gcc(di,ref) -29  len stem/ref 480000/480000

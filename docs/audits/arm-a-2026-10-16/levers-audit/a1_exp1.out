@@ -1,0 +1,19 @@
+cells 144 units 144
+non-finite per direction: {('telefunken-Gym_Hours-GTR_1', 'pr12', 'A'): ['A', 'S-mics', "3-C'"], ("telefunken-Sculptor's_Request-GTR_1", 'pr12', 'B'): ['A', 'S-mics']}
+kept 142
+A                vs S -0.0777 [-0.1570, +0.0016] (bands 14, parts 24, dirs 142)
+shrink-0.25      vs S -0.0533 [-0.0885, -0.0182] (bands 14, parts 24, dirs 142)
+shrink-0.5       vs S -0.0820 [-0.1359, -0.0281] (bands 14, parts 24, dirs 142)
+shrink-0.75      vs S -0.0874 [-0.1573, -0.0174] (bands 14, parts 24, dirs 142)
+S-mics           vs S -0.0400 [-0.1156, +0.0356] (bands 14, parts 24, dirs 142)
+B-blend          vs S -0.0121 [-0.0428, +0.0185] (bands 14, parts 24, dirs 142)
+C-blend          vs S -0.0113 [-0.0387, +0.0161] (bands 14, parts 24, dirs 142)
+3-C'             vs S -0.0849 [-0.1641, -0.0058] (bands 14, parts 24, dirs 142)
+3-C'+shrink-0.5  vs S -0.0834 [-0.1351, -0.0317] (bands 14, parts 24, dirs 142)
+shrink-0.75      vs A -0.0097 [-0.0246, +0.0052] (bands 14, parts 24, dirs 142)
+shrink-0.5       vs A -0.0043 [-0.0390, +0.0304] (bands 14, parts 24, dirs 142)
+shrink-0.25      vs A +0.0244 [-0.0278, +0.0765] (bands 14, parts 24, dirs 142)
+S-mics           vs A +0.0377 [+0.0208, +0.0546] (bands 14, parts 24, dirs 142)
+3-C'             vs A -0.0073 [-0.0309, +0.0164] (bands 14, parts 24, dirs 142)
+3-C'+shrink-0.5  vs A -0.0057 [-0.0507, +0.0392] (bands 14, parts 24, dirs 142)
+3-C'+s0.5 vs 3-C' +0.0015 [-0.0352, +0.0382] (bands 14, parts 24, dirs 142)

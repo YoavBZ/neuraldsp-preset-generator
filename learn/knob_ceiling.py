@@ -247,7 +247,7 @@ def coord_search(dims, x0, f, budget, seed, step0=0.25, min_step=1 / 64, cats="o
 SHARES = {"main": 0.35, "alts": 0.35, "restarts": 0.2}    # the rest is the final stage
 
 
-def knob_search(dims, x0, f, budget, seed, shares=SHARES, n_alt=2, n_key=3, canon=None):
+def knob_search(dims, x0, f, budget, seed, shares=SHARES, n_alt=2, n_key=3, canon=None, gains=None):
     """The declared optimiser (plan, amendment 2): `coord_search` with mic restarts, each
     stage on a fixed share of the budget.
 
@@ -263,7 +263,9 @@ def knob_search(dims, x0, f, budget, seed, shares=SHARES, n_alt=2, n_key=3, cano
     4. **final** (the rest): the full search again from the best so far.
     A stage with nothing to do (no mics: the EQ) passes its share on. Returns (best x, best
     value, trace, stages); every distinct setting is rendered once in all; `stages` records
-    each stage's renders and best value."""
+    each stage's renders and best value. `gains`, if given, is the per-dim improvement so far
+    (updated in place by the main stage): a continued search ranks its key dims over the whole
+    run, not its own main stage alone (`learn/ks_extend.py`)."""
     cache, hist, stages = {}, [], {}
     state = {"limit": 0, "best": math.inf}
 
@@ -286,7 +288,7 @@ def knob_search(dims, x0, f, budget, seed, shares=SHARES, n_alt=2, n_key=3, cano
     big = 10 ** 9
     cats = [d for d in dims if d.kind == "cat"]
     others = [d for d in dims if d.kind != "cat"]
-    gains = {}
+    gains = {} if gains is None else gains
     n0 = len(cache)
     state["limit"] = max(1, round(budget * shares["main"]))
     x, best, _ = coord_search(dims, x0, g, big, seed, cats="levels", gains=gains, canon=canon)

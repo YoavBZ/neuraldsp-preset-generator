@@ -1,0 +1,21 @@
+C' local fidelity -0.0448 [-0.4591, +0.3695] (bands 3, parts 5, dirs 15)
+1z local fidelity -0.0449 [-0.4672, +0.3775] (bands 3, parts 5, dirs 15)
+1a local fidelity -0.0358 [-0.5756, +0.5040] (bands 3, parts 5, dirs 15)
+1b local fidelity -0.0140 [-0.5656, +0.5376] (bands 3, parts 5, dirs 15)
+E4 local fidelity -0.0284 [-0.5016, +0.4449] (bands 3, parts 5, dirs 15)
+cell, n, rho(trueA,trueB), rho(objA,objB), sd log true, sd log obj, C' local fid
+cambridge-Prodigal-ElecGtr5-ac 40 0.45 0.97 0.085 0.113 -0.07
+cambridge-Prodigal-ElecGtr5-pr 40 1.0 1.0 0.065 0.115 -0.54
+cambridge-Prodigal-ElecGtr5-sw 40 0.99 0.94 nan nan -0.33
+cambridge-just-don-t-talk-elec 40 0.94 0.98 nan nan 0.03
+cambridge-just-don-t-talk-elec 40 0.66 0.91 nan nan 0.39
+cambridge-just-don-t-talk-elec 40 0.84 0.82 nan nan -0.39
+telefunken-Bloomlight-GTR-ac20 40 0.98 0.99 0.208 0.142 0.19
+telefunken-Bloomlight-GTR-pr12 40 0.97 0.99 nan nan 0.33
+telefunken-Bloomlight-GTR-sw50 40 0.97 0.96 nan nan -0.08
+telefunken-Farthest_Step-GTR-a 40 0.97 0.97 0.115 0.112 0.55
+telefunken-Farthest_Step-GTR-p 40 0.89 0.97 0.092 0.08 -0.42
+telefunken-Farthest_Step-GTR-s 40 0.99 0.95 0.094 0.08 -0.1
+telefunken-Fragments-GTR-ac20 40 0.76 0.95 0.121 0.081 0.37
+telefunken-Fragments-GTR-pr12 40 0.85 0.94 nan nan 0.13
+telefunken-Fragments-GTR-sw50r 40 0.92 0.97 0.145 0.062 0.54

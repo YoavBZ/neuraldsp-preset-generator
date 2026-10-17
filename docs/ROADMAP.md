@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-16.
+lives in the linked documents. Last updated 2026-10-17.
 
 ## Where the product is
 
@@ -14,8 +14,8 @@ lives in the linked documents. Last updated 2026-10-16.
   (Tone King: clean or crunch only), starts from that class's dry factory preset, and
   sets the controls research documents (today mostly effects; amp, drive, EQ and cab
   kept unless research documents a different value for the part, since edits on top
-  of the start were not shown to help; the ML session's knob-ceiling test, in progress
-  on its branch, is the first to measure how far setting controls can get):
+  of the start were not shown to help; with the true DI, the ML session's search over the
+  controls reaches −0.293 against S, step 0):
   - **Morgan clean:** Royally Ambient (PR12), Pedal Platform Clean (SW50R), Low-Watt
     Americana (AC20), about 12% closer than the template on held-out clean parts
     ([results](clean-baseline-results.md)).
@@ -94,80 +94,108 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      approved by the user on 2026-10-14. Since 2026-10-16 it has no fixed render limit: each step
      stops rendering by a declared, evidence-based stopping rule (decision 2).
 
-   **Where the ML plan stands (2026-10-16):**
+   **Where the ML plan stands (2026-10-17):**
    - **Done:**
      - step 1, C′ for every fold ([results](cprime-folds-results.md));
      - step 2, knob ceiling 2 on Morgan ([results](knob-ceiling-2-results.md)): pedals add a
        little, and time effects are kept only when they clearly help;
      - step 4, the label table ([results](label-table-results.md)).
-   - **How results are read (the user's rule, 2026-10-16):**
-     - no arbitrary pass/fail bars;
-     - every comparison is an effect size with a 90% band-clustered interval;
+   - **How results are read (the user's rules):**
+     - no arbitrary pass/fail bars: every comparison is an effect size with a 90% band-clustered
+       interval, and any improvement is built on;
      - the best estimate is chosen, with the cheaper option on a tie;
-     - controls explain a result, they don't veto it.
+     - controls explain a result, they don't veto it;
+     - a weak component (the separator, the rebuild) is a research target, not a reason to drop
+       the route;
+     - the listener's answers are trusted; layout confounds are caveats;
+     - an effect left off is a correct answer on a dry record.
+   - **The true-DI ceiling, searched to a stop** ([results](ks-ceiling-extend-results.md)):
+     **−0.293 [−0.378, −0.207]** against S, 13/14 bands. It replaces step 3's −0.269 (K_S at 150
+     renders) as the reference. The longer search added −0.024 [−0.042, −0.006], mostly in its
+     first 150 extra renders and mostly on two clean bands. Still a lower bound.
    - **Step 3, the song-settings comparison** ([results](song-settings-results.md)), against the
      starting preset S:
-     - the true-DI search (K_S, the ceiling): −0.269, 14/14 bands;
-     - arm A (search through C′'s rebuilt DI): −0.078;
+     - the true-DI search (K_S): −0.269 at 150 renders, −0.293 at the stop;
+     - arm A (search through C′'s rebuilt DI): −0.078, 27% of the ceiling;
      - arm B (a settings model): +0.035;
      - arm C: not run.
-   - **Arm A, improved** ([levers](arm-a-levers-results.md); adopted by the user on 2026-10-16 as
-     the current best):
+   - **Arm A's current best** ([levers](arm-a-levers-results.md); adopted by the user on
+     2026-10-16):
      - **The recipe:** the rebuilt-DI search stopped after its 52-render main stage, its moves
        shrunk halfway to S, falling back to S if a render is silent.
-     - **The result:** −0.083 [−0.135, −0.032], 12/14 bands, about 7% expected after selection.
-       That is about a third of the ceiling, at a third of the renders.
-     - **What limits it:** the rebuild ranks coarse moves well (menu fidelity about 0.78) but has
-       no usable ranking near S (local fidelity about −0.12, the same for every net). Better fine
-       structure ([experiment 4](di-fine-structure-results.md)) didn't change that.
-     - **Next:** a locally accurate objective. A research round is under review; its first step
-       is to isolate what changes the local ranking.
-     - These are development estimates; a fresh draw comes before shipping.
-   - **Arm B, rethought** ([diagnostics](song-to-settings-diagnostics-results.md)):
-     - **On render targets it carries real signal:** −0.16 to −0.39 against S.
-     - **On records it hedges toward mid-range** (one wide mode per knob), while record optima often
-       sit at range limits. It is weakest on input gain and switches.
-     - **Next, approved 2026-10-16, including scoring on step 3's songs:** sound-space training
-       ([plan](song-to-settings-soundspace-plan.md)):
-       - B1: a censored head, sensitivity weights and record-like examples;
-       - B2: the bank relabelled into sets that sound alike, plus record-like renders.
-
-       About 18k renders and 13 h of MPS.
-   - **The DI-recovery track:** its findings feed arm A.
-     - [Separator screen](separator-screen-results.md): separation halves the margin but rarely
-       flips it, and Mega-53 isn't shown better.
-     - [Ladder](rank-margin-ladder-results.md): C′'s error is fine structure; the rank margin is
-       only a screen.
-     - [Fine-structure retrain](di-fine-structure-results.md): fixes gap fill and treble, but no
-       steering gain shown.
-     - The DAC codec route is open.
-   - **Renders:** about 147k used so far. No fixed limit (2026-10-16): each step plan declares
-     when to stop rendering from its own evidence (a flattened search curve, a learning curve that
-     stops improving, an interval narrow enough to answer the question), and reports what it
-     used.
+     - **The result:** −0.083 [−0.135, −0.032], 12/14 bands, 28% of the ceiling; about −0.07
+       expected after picking among variants.
+     - **How it was chosen:** the declared rule chose the unshrunk 52-render search (−0.085).
+       Shrinking halfway was a descriptive extra; the user adopted it as a judgement call (same
+       mean, narrower downside), not as the rule's output.
+     - **Heard** ([listening](arm-a-listening-results.md), one listener): where a difference was
+       heard, arm A was chosen 4 of 4; the smaller changes weren't heard. The first listening
+       support for song-only generated settings.
+     - **Without bleed** it is a little stronger: −0.094 for the recipe without moderate or high
+       bleed ([bleed audit](audits/bleed-2026-10-16/README.md)).
+     - **What limits it:** ranking nearby settings around S (below).
+     - Development estimates; a fresh draw comes before shipping.
+   - **The local objective** ([results](local-objective-results.md)): how well the song-only
+     objective ranks nearby settings (cross-half local Spearman; the true DI against the amp track
+     gives 0.864, today's objective 0.289).
+     - **Experiment 1:** a perfect DI alone (+0.062) or the amp track alone (+0.120) is undecided;
+       the two errors partly cancel. Lag and mask are closed. DI-only work against the htdemucs
+       stem, including the DAC-9 add-on, is dropped.
+     - **1b, a perfect separator** (the amp track feeding the rebuild and the reference): 0.541,
+       +0.252 [0.139, 0.365], about 44% of the gap. More than half the gap remains, which is the
+       rebuild's own limit. Right around S it is undecided (+0.085).
+     - **1c, a real separator (Mega-53) feeding both,** on the instrumental context: 0.398,
+       +0.109 [+0.058, +0.160], about 43% [26%, 70%] of 1b's gain. Right around S no gain is
+       detected (−0.002 [−0.049, +0.045]), so it doesn't by itself show a song-level gain. Mega-53
+       takes about 5–6× htdemucs's CPU time.
+     - **1d, the separator-robust C′ in the rebuild** (htdemucs stem and Mega-53): no gain.
+       Against today's objective −0.127 [−0.256, +0.003]; against 1c's Mega-53 cell −0.051
+       [−0.166, +0.065]. Keep C′. Its small envelope gain didn't predict ranking, so judge
+       rebuild changes on rendered ranking. No arm X in the Mega-53 song test.
+   - **Separator-robust C′** ([results](cprime-sep-results.md), zero renders): C′ fine-tuned on
+     separator residuals rebuilds the true DI slightly better from the htdemucs stem, inside the
+     noise (envelope error −0.24 dB [−0.66, +0.17]; 1–3 kHz coherence +0.003). It gains about as
+     much from the amp track, so it can't be credited to stem robustness. Rendered in 1d, it
+     ranked no better (above).
+   - **Bleed in the amp tracks** ([audit](audits/bleed-2026-10-16/README.md),
+     [listening](bleed-listening-results.md)): only the Telefunken live-room sessions carry bleed;
+     4 of the 25 knob-ceiling parts read high, and the listener heard it on all 3 high parts tried.
+     The model-based cleaning left audible leakage and was heard as changing the guitar's tone a
+     little, so it isn't adopted; a stronger route (a real separator on the amp track, or dropping
+     high-bleed parts from training records) stays open. Every key result holds without bleed; results keep the
+     no-high-bleed row beside the all-parts row. Listening trial 8's noise (Prodigal) is DI hum
+     lifted by the measure-DI EQ, not bleed.
+   - **Arm B is paused** ([diagnostics](song-to-settings-diagnostics-results.md),
+     [sound-space retrain](song-to-settings-soundspace-results.md)): B2 beats the old arm B on
+     songs (−0.068 [−0.111, −0.024]) but isn't shown to beat S (−0.033 [−0.100, +0.035]), and input
+     gain didn't improve. Arm C isn't run. If arm B is reopened, B2's shuffled-input control comes
+     first (about 290 renders).
+   - **Earlier DI-recovery findings:** separation halves the rank margin but rarely flips it
+     ([screen](separator-screen-results.md)); C′'s error is fine structure
+     ([ladder](rank-margin-ladder-results.md)); better fine structure didn't steer better
+     ([experiment 4](di-fine-structure-results.md)).
+   - **Next: arm A's song-level test with Mega-53** ([plan](arm-a-mega53-plan.md), reviewed;
+     code in `learn/arm_a_mega53.py`). The user said go on 2026-10-17; it launches right after
+     this merge. About 30k renders, about 5 h. Stage D on step 3's 24 parts, stage F on fresh
+     full mixes with vocals (the check a separator switch needs, at 5–6× htdemucs's CPU time).
+   - **After that: a rebuild-gap study on the GPU** (being planned). More than half of the local
+     ranking gap remains even with a perfect stem (1b 0.541 against the ceiling's 0.864), and
+     that is the rebuild's own limit.
+   - **Renders:** about 201k used so far. Since the 2026-10-16 update: arm B's retrain about
+     14.8k, the local objective 7,061 + 3,528 (1b) + 3,528 (1c) + 7,200 (1d), the ceiling
+     extension 17,550 plus 72 warm-ups, the listening page 26. No fixed limit (2026-10-16): each step plan
+     declares when to stop rendering from its own evidence (a flattened search curve, a learning
+     curve that stops improving, an interval narrow enough to answer the question), and reports
+     what it used.
    - **Open user decisions:**
-     - arm B's optional extras (a reseeded B1, B2a, B0 best-of-8);
-     - arm C's start from B (offered only if B1 or B2 wins);
+     - reopening arm B (its shuffled-input control first);
      - Tone King for step 2.
    - **Then:** step 5 (optimiser comparison), step 6, and finally step 7, the pooled held-out
      test.
-   - **Running in parallel (one Mac: the MPS GPU, 8 CPU cores, 32 GB):**
-     - **GPU:** arm B's training (four folds, then four half-data runs), then any C′ retrain.
-       Only one GPU job at a time: training holds about 11–18 GB, and two jobs slow each other.
-     - **Plugin renders (CPU):**
-       1. the ladder, during arm B's training;
-       2. then arm B's positive control, scoring and controls (about 1–2k; they need its trained
-          models);
-       3. then the correction's control re-runs.
-       The work is grouped by amp, with `isolate`.
-     - **Separation (CPU):** the Mega-53 screen takes about 1.7 min on 4 cores per 30-s
-       context, about 20 min for the screen. It runs when the renderer is idle or down to 3
-       processes, because 8 cores are otherwise oversubscribed. A CPU job beside C′'s training
-       once slowed it by 8%. Peak memory is measured once.
-     - **CPU, no renders:** coding and fitting experiment 3's correction.
-     - **Elsewhere:** the cloud researcher takes literature questions (e.g. dynamics-restoring
-       losses for a retrain), and the task executor monitors and downloads. Plans are reviewed
-       by an independent agent before compute.
+   - **How the Mac is shared (the MPS GPU, 8 CPU cores, 32 GB):** one GPU job at a time; at most 3
+     render processes machine-wide, with `isolate`, grouped by amp; separation only when the
+     renderer is idle or light. Plans are reviewed by an independent agent before compute; the
+     cloud researcher takes literature questions and the task executor monitors and downloads.
    - **Render order:** reused Morgan renders carried the previous render at hiss level until
      `isolate` (#186 for match). The [audit](render-order-audit.md) found no decision
      overturned. Set 5's C′-over-C is fragile: inconclusive if the at-risk parts are dropped,
@@ -468,8 +496,9 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 - **Next: `generate` sets more controls from the song,** if and once the ML session's
   plan step 3 shows a way to get such settings without a DI
   ([plan](research/ml-plan-2026-10.md), decision 5 puts the `generate` change after
-  that readout). As of 2026-10-15 that rests on arm B, or on a rebuild that passes arm A's
-  control. Until then `generate` sets what research
+  that readout). As of 2026-10-17 the candidate is arm A's current best (−0.083 against S on
+  development; one listener chose it 4 of 4 where a difference was heard); arm B is paused. A fresh
+  draw comes first. Until then `generate` sets what research
   documents. *The two render checks are done (2026-10-14, one development
   part, PR12):* fresh-process renders with isolation repeat exactly (maximum difference
   0.0); the isolation fade-in (the same for every candidate) moved the match loss by
@@ -571,7 +600,11 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-15 | Time effects are kept only when the gain is clear; "off" on a dry record counts as correct; the listener's picks are trusted despite the letter layout | `knob-ceiling-2-results.md` |
 | 2026-10-15 | Mega-53 weights re-downloaded for the separator screen (MIT repo, release v1.0.21; no separate weights licence, as accepted for the 2026-10-08 test) | `~/ndsp-presets/tools/msst/provenance.json` |
 | 2026-10-16 | No arbitrary pass/fail bars: report effect sizes with intervals, choose the best estimate, learn from any improvement (A, B, C) | memory and plans from this date |
-| 2026-10-16 | Arm A's current best: a 52-render rebuilt-DI search shrunk halfway to S (−0.083 [−0.135, −0.032]) | [arm A levers](arm-a-levers-results.md) |
+| 2026-10-16 | Arm A's current best: a 52-render rebuilt-DI search shrunk halfway to S (−0.083 [−0.135, −0.032]); the shrink is the user's judgement call, the declared rule chose the unshrunk search | [arm A levers](arm-a-levers-results.md) |
 | 2026-10-16 | Arm B: diagnostics done; sound-space retraining (B1, B2) approved, scored on step 3's songs too | [diagnostics](song-to-settings-diagnostics-results.md), [plan](song-to-settings-soundspace-plan.md) |
 | 2026-10-16 | ML plan decision 2 revised: no fixed render limit; each step stops rendering by a declared, evidence-based stopping rule (search curve flattened, learning curve no longer improving, interval narrow enough) and reports renders used | [ML plan](research/ml-plan-2026-10.md), section 3 |
+| 2026-10-16 | Arm B paused: the sound-space retrain beats the old arm B on songs but isn't shown to beat S; arm C not run | [sound-space results](song-to-settings-soundspace-results.md) |
+| 2026-10-16 | Local objective: DI-only work against the htdemucs stem (and the DAC-9 add-on) dropped; improve the separator and the rebuild together | [results](local-objective-results.md) |
+| 2026-10-17 | Bleed cleaning not adopted; high-bleed parts stay flagged and results report the no-high-bleed row beside all parts | [bleed listening](bleed-listening-results.md) |
+| 2026-10-17 | The true-DI search to a stop (−0.293) replaces −0.269 as the ceiling reference; step 3's readings stand | [K_S extension](ks-ceiling-extend-results.md) |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |

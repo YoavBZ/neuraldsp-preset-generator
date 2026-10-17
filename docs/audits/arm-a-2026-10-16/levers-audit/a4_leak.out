@@ -1,0 +1,10 @@
+fold-3 parts [('cambridge-Prodigal-ElecGtr5', 'Starnes And Shah'), ('cambridge-just-don-t-talk-elecgtr3', 'Timo And The Timezone'), ('telefunken-Bloomlight-GTR', 'Eggy'), ('telefunken-Farthest_Step-GTR', 'Eggy'), ('telefunken-Fragments-GTR', 'Eggy')]
+k3 fold of these bands: {'Starnes And Shah': 3, 'Timo And The Timezone': None, 'Eggy': 3}
+cambridge-Prodigal-ElecGtr5 band in pool: False | similar names in caches: ['Starnes And Shah']
+cambridge-just-don-t-talk-elecgtr3 band in pool: False | similar names in caches: []
+telefunken-Bloomlight-GTR band in pool: False | similar names in caches: ['Eggy']
+telefunken-Farthest_Step-GTR band in pool: False | similar names in caches: ['Eggy']
+telefunken-Fragments-GTR band in pool: False | similar names in caches: ['Eggy']
+pool size 11 all cache bands 14
+/Users/yoavbz/ndsp-presets/learn/direc/models-cprime-f3/DONE
+/Users/yoavbz/ndsp-presets/learn/direc/models-cprime-f3/fold3.pt

@@ -241,8 +241,8 @@ was declared, what was measured, and the research behind it.
   marked. For a stem test, only Little Tybee is in scope.
 - [residual-di-plan.md](residual-di-plan.md) → [results](residual-di-results.md): the MPS
   gradient bug (every DI network trained on a corrupted spectral gradient) is fixed. The
-  corrected network picks better, marginally and on crunch only (a second seed is
-  running). A residual pass-through network is futile.
+  corrected network picks better, marginally and on crunch only (the second seed
+  didn't confirm it: under-powered). A residual pass-through network is futile.
 - [knob-ceiling-plan.md](knob-ceiling-plan.md) → [results](knob-ceiling-results.md): the first
   measurement of *generating* settings rather than ranking the menu. By the judge, on
   development and with the true DI, a knob search beats the best menu preset by about 19%
@@ -260,14 +260,36 @@ was declared, what was measured, and the research behind it.
   −0.078, and arm B (a settings model) +0.035. Audited; the audit artefacts are in
   [audits/song-settings-control-2026-10-15](audits/song-settings-control-2026-10-15/README.md).
 - [arm-a-levers-plan.md](arm-a-levers-plan.md) → [results](arm-a-levers-results.md): arm A's
-  current best is a 52-render search shrunk halfway to S (−0.083 [−0.135, −0.032]). The rebuild
-  has no usable local ranking near S. Artefacts are in
+  current best is a 52-render search shrunk halfway to S (−0.083 [−0.135, −0.032]); the declared
+  rule chose the unshrunk search, and the shrink is the user's judgement call. The rebuild has no
+  usable local ranking near S. Artefacts are in
   [audits/arm-a-2026-10-16](audits/arm-a-2026-10-16/README.md).
+- [arm-a-listening-plan.md](arm-a-listening-plan.md) → [results](arm-a-listening-results.md): one
+  listener chose arm A's current best over S on 4 of 4 trials where a difference was heard.
+- [ks-ceiling-extend-plan.md](ks-ceiling-extend-plan.md) → [results](ks-ceiling-extend-results.md):
+  the true-DI search continued to a stop reaches −0.293 [−0.378, −0.207] against S (from −0.269),
+  with 17,550 extra renders; arm A's share becomes 27%.
+- [local-objective-plan.md](local-objective-plan.md) → [results](local-objective-results.md):
+  what makes the song-only objective rank nearby settings. Experiment 1: the DI and stem errors
+  partly cancel, single fixes undecided. 1b: a perfect separator feeding the rebuild and the
+  reference closes about 44% of the gap. 1c: on the instrumental context, Mega-53 recovers about 43% of 1b's gain. 1d: the
+  separator-robust C′ in the rebuild gives no gain (−0.127 [−0.256, +0.003] on the htdemucs stem,
+  −0.051 [−0.166, +0.065] on Mega-53); C′ stays.
+- [arm-a-mega53-plan.md](arm-a-mega53-plan.md): arm A's song-level test with Mega-53 in the loop
+  (development parts, then fresh full mixes with vocals); reviewed, about 30k renders.
+- [cprime-sep-plan.md](cprime-sep-plan.md) → [results](cprime-sep-results.md): C′ fine-tuned on
+  separator residuals; a small envelope gain, inside the noise on stems and as large on the amp
+  track (zero renders).
+- [bleed-listening-plan.md](bleed-listening-plan.md) → [results](bleed-listening-results.md), with
+  the [bleed audit](audits/bleed-2026-10-16/README.md): bleed only in the Telefunken live-room
+  sessions, audible on the high parts; the cleaning isn't adopted, and every key result holds
+  without bleed.
 - [song-to-settings-diagnostics-plan.md](song-to-settings-diagnostics-plan.md) →
   [results](song-to-settings-diagnostics-results.md): arm B has signal on renders but hedges
   toward mid-range on records.
-  [song-to-settings-soundspace-plan.md](song-to-settings-soundspace-plan.md) is its sound-space
-  retraining, approved 2026-10-16.
+  [song-to-settings-soundspace-plan.md](song-to-settings-soundspace-plan.md) →
+  [results](song-to-settings-soundspace-results.md): the sound-space retrain (B2) beats the old
+  arm B on songs but isn't shown to beat S; arm B is paused.
 - DI-recovery track:
   - [separator-screen-plan.md](separator-screen-plan.md) → [results](separator-screen-results.md):
     separation halves the margin but rarely flips it;

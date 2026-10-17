@@ -1,0 +1,7 @@
+== telefunken-Honey-GTR  stored judge_lag=-12 (+52=40)
+  ref~rawDI      bl   top: [(27, 0.781), (100, 0.769), (194, 0.68)]
+  ref~rawDI      phat top: [(32, 0.055), (64, 0.022), (97, 0.019)]
+  ref~measDI     bl   top: [(29, 0.564), (98, 0.518), (194, 0.365)]
+  ref~measDI     phat top: [(32, 0.055), (64, 0.022), (97, 0.019)]
+  measDI~rawDI   bl   top: [(0, 0.816), (-1309, 0.378), (1309, 0.378)]
+  measDI~rawDI   phat top: [(0, 0.08), (42, 0.011), (-42, 0.011)]
