@@ -453,3 +453,11 @@ was declared, what was measured, and the research behind it.
     (never seen, gain unknown) and Dunning Kruger "Sascha" (set 3 downloaded it and set its one
     DI aside as unpaired). Four sessions and everything added since about April 2025 remain
     unchecked. Research, not a declared plan.
+15. [hf-detail-losses-2026-10.md](research/hf-detail-losses-2026-10.md): how to recover C′'s
+    short-time treble magnitude detail, the error the rebuild-gap study found (October 2026).
+    Vocoder and codec recipes (HiFi-GAN, BigVGAN, Vocos, DAC, EnCodec) restore treble texture with
+    a small spectrogram discriminator, but their wins are listening wins, not ranking wins; phase
+    is worthless for ranking, so the period discriminator is likely misaimed. Ranked: the planned
+    offset-removed 2–8 kHz loss, a bounded per-bin log-gain on C′'s output, the upsampler, an
+    MPS-safe magnitude-only discriminator, a PANN feature loss. Corrects the DI recovery report.
+    Research, not a declared plan.
