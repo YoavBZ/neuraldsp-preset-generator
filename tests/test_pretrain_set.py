@@ -256,3 +256,23 @@ def test_disk_guard_and_shards():
     assert ids[-1] == M.VAL_BASE + 3
     parts = [M.shard_ids(ids, (k, 3)) for k in range(3)]
     assert sorted(sum(parts, [])) == sorted(ids)
+
+
+def test_read_rows_cuts_a_torn_last_line(tmp_path):
+    f = tmp_path / "shard-0.jsonl"
+    f.write_text('{"i": 1}\n{"i": 2}\n{"i": 3, "x"')
+    assert [r["i"] for r in M.read_rows(f)] == [1, 2]
+    assert f.read_text().endswith('"x"')
+    assert [r["i"] for r in M.read_rows(f, repair=True)] == [1, 2]
+    assert f.read_text() == '{"i": 1}\n{"i": 2}\n'
+    with open(f, "a") as fh:
+        fh.write('{"i": 4}\n')
+    assert [r["i"] for r in M.read_rows(f)] == [1, 2, 4]
+    f.write_text('{"i": 1}\nbroken\n{"i": 2}\n')
+    with pytest.raises(Exception):
+        M.read_rows(f)
+
+
+def test_quiet_backing_gain_is_capped():
+    gb, gl, ga = M.mix_gains_db(-20.0, -70.0, -8.0, 3.0, -12.0)
+    assert gb <= 40.0 + 8.0

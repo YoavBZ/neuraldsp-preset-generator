@@ -243,11 +243,20 @@ distribution.
 the menu cut to 10 presets per amp (53 renders, 190 s), `mix`, one htdemucs context (17 s), the C′
 rebuilds (under 1 s each) and one search group (ac20, item 1, s1: 115 renders in 141 s on one
 process, about 2.9k renders an hour). It showed:
-- **The judge has a floor:** the truth re-rendered through the judge's own path reads 0.20–0.28
-  against S's 3.0–4.8, the same as the whole-track truth's slice (identical to 4 decimals). So
-  log(d_A / d_S) is bounded below near −2.8, not unbounded; the self-distance check (under 0.1 of
-  S) passes with room.
-- **The convention floor is large:** the truth rendered on the per-section measure DI reads
-  1.5–3.2 against the record (δ −1.2 to +0.9 LU), about 40–90% of S's distance. The DI level and
+- **The judge's lag (a bug the PR review caught):** the smoke judged the record at lag 52, read as
+  a judge floor of 0.20–0.28. The record is a raw render like every candidate, so the lag between
+  them is 0: at lag 0 the record judged against itself reads exactly 0. The code now judges at
+  lag 0 (`RECORD_LAG`), so log(d_A / d_S) is unbounded below as d_A approaches 0; a distance under
+  0.01 is floored at 0.01 and such exact recoveries are counted in the report. The self-distance
+  check then reads about 0.
+- **The convention floor is large:** the truth rendered on the per-section measure DI read
+  1.5–3.2 against the record at lag 52 (δ −1.2 to +0.9 LU), about 40–90% of S's distance; the lag-0
+  figures come with the run. The DI level and
   EQ convention alone moves the judge that much, which is why B1 keeps one DI level per track; the
   row is reported.
+
+**PR review fixes (2026-10-18), before any render:** the judge lag above; the second guitar's menu
+scan and class check now use the second DI's most active 10-s window (`best_window`; at least 80%
+playing, asserted), since The Apprehended's second DI is silent at the primary's s1; the record and
+candidates are rendered from the section's slice without a lead-in (they match each other); `truth`
+checks the disk guard once per song.

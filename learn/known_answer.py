@@ -91,6 +91,8 @@ LEVEL_KNOBS = {"pr12": ("pr12Amp/pr12Volume",), "sw50r": ("sw50rAmp/sw50rVolume"
                "ac20": ("ac20Amp/ac20Volume", "ac20Amp/ac20Power")}
 PER_SECTION_ARM = 3 * (1 + 2 * 55)    # warm-up + 2 directions × (52 search + probe + 2 judges), per amp
 PER_SECTION_S = 3 * 2                 # S's warm-up and judge per amp
+RECORD_LAG = 0                        # the record is a raw render, as every candidate: no lag between them
+D_FLOOR = 0.01                        # judge distances under this (an exact recovery) are floored, and counted
 
 
 def _save(path, obj):
@@ -148,6 +150,20 @@ def rests_at(play, b_s, hop_s, margin_s=REST_MARGIN_S):
     lo = int(math.floor((b_s - margin_s) / hop_s))
     hi = int(math.ceil((b_s + margin_s) / hop_s))
     return not any(play[max(0, lo):max(0, hi + 1)])
+
+
+def best_window(play, hop_s, sec_s=SEC_S, grid_s=GRID_S):
+    """(start, playing share) of the grid window where the DI plays most (first on ties)."""
+    w = int(round(sec_s / hop_s))
+    best = (0.0, -1.0)
+    k = 0
+    while k * grid_s + sec_s <= len(play) * hop_s + 1e-9:
+        a = int(round(k * grid_s / hop_s))
+        share = sum(1 for v in play[a:a + w] if v) / w
+        if share > best[1]:
+            best = (k * grid_s, share)
+        k += 1
+    return best
 
 
 def switch_point(starts, n_s, play, hop_s):
@@ -566,7 +582,11 @@ def cmd_truth(_args):
             n0 = rr.count
             dw = {"primary": di_w(sp["primary_path"]), "second": di_w(sp["second_path"])}
             s1 = sp["sections"]["s1"]
-            d_of = {"primary": dw["primary"][sec_slice(s1)], "second": dw["second"][sec_slice(s1)]}
+            q_start, q_share = best_window(play_mask(dw["second"]), 0.1)
+            if q_share < 0.8:
+                raise SystemExit(f"{song}: the second DI plays in at most {q_share:.0%} of any 10-s window")
+            st["q_window"] = {"start_s": q_start, "play_share": q_share}
+            d_of = {"primary": dw["primary"][sec_slice(s1)], "second": dw["second"][sec_slice(q_start)]}
             for role in ("P1", "P2", "Q"):
                 if role in st["draws"]:
                     continue
@@ -646,8 +666,8 @@ def cmd_truth(_args):
                 y_self = mono(rr.render(d_.astype(np.float32), dr["select"], tx))
                 sel_s, S = menu[dr["amp"]][K.START[s_class(dr["class"])][dr["amp"]]]
                 menu_S[lab] = (sel_s, S)
-                j_self = K.judge(rec, y_self, d_, LATENCY)
-                j_S = K.judge(rec, mono(rr.render(d_.astype(np.float32), sel_s, S)), d_, LATENCY)
+                j_self = K.judge(rec, y_self, d_, RECORD_LAG)
+                j_S = K.judge(rec, mono(rr.render(d_.astype(np.float32), sel_s, S)), d_, RECORD_LAG)
                 chk["self"], chk["S_truth_amp"] = j_self, j_S
                 bad = [h for h in ("A", "B") if not (j_self[h] < SELF_MAX * j_S[h])]
                 if bad:
@@ -656,12 +676,12 @@ def cmd_truth(_args):
                                      f"{SELF_MAX} of S's {j_S} (halves {bad}): exactness is broken")
                 # item 3: the convention floor (the truth on the per-section measure DI)
                 dm = B.measure(d_)
-                chk["convention_floor"] = K.judge(rec, mono(rr.render(dm.astype(np.float32), dr["select"], tx)), dm, LATENCY)
+                chk["convention_floor"] = K.judge(rec, mono(rr.render(dm.astype(np.float32), dr["select"], tx)), dm, RECORD_LAG)
                 # the whole-track truth's slice against the record
                 whole, _ = sf.read(str(tdir / f"{song}-{role}.flac"), dtype="float64")
                 whole = whole / 0.99 * st["peaks"][role]
                 ws = np.concatenate([np.zeros(LATENCY), whole])[sec_slice(start)]       # back to raw latency
-                chk["whole_vs_record"] = K.judge(rec, ws, d_, LATENCY)
+                chk["whole_vs_record"] = K.judge(rec, ws, d_, RECORD_LAG)
                 _save(tdir / "truth.json", state)
             st["renders"] = st.get("renders", 0) + rr.count - n0
             st["done"] = True
@@ -921,7 +941,7 @@ def cmd_search(args):
                 n0 = rr.count
                 rr.render(di32, sel, S)
                 y = mono(rr.render(di32, sel, S))
-                _save(sp_, {"judge": K.judge(rec, y, di, LATENCY), "renders": rr.count - n0,
+                _save(sp_, {"judge": K.judge(rec, y, di, RECORD_LAG), "renders": rr.count - n0,
                             "settings": LO.sdict(S), "class_S": s_class(cls)})
             for (s_, it, l_, arm) in us:
                 if s_ != song or l_ != lab:
@@ -950,8 +970,8 @@ def cmd_search(args):
                         return AM.peak_dbfs(y), v
 
                     res = AM.recipe(K.space(amp, S), S, f, probe)
-                    j_shrunk = K.judge(rec, mono(rr.render(di32, sel, res["shrunk_x"])), di, LATENCY)
-                    j_best = K.judge(rec, mono(rr.render(di32, sel, res["best_x"])), di, LATENCY)
+                    j_shrunk = K.judge(rec, mono(rr.render(di32, sel, res["shrunk_x"])), di, RECORD_LAG)
+                    j_best = K.judge(rec, mono(rr.render(di32, sel, res["best_x"])), di, RECORD_LAG)
                     _save(p, {"song": song, "item": it, "label": lab, "arm": arm, "amp": amp, "search": search,
                               "held": held, "truth_role": role, "objective_curve": curve, "fallback": res["fallback"],
                               "output": "S" if res["fallback"] else "shrunk", "judge_shrunk": j_shrunk,
@@ -971,9 +991,9 @@ def unit_log(r, s_judge):
     h = r["held"]
     ds = s_judge[h]
     da = ds if r["output"] == "S" else r["judge_shrunk"][h]
-    if not (ds and da and ds > 0 and da > 0 and math.isfinite(ds) and math.isfinite(da)):
+    if ds is None or da is None or not (math.isfinite(ds) and math.isfinite(da)):
         return None
-    return math.log(da / ds)
+    return math.log(max(da, D_FLOOR) / max(ds, D_FLOOR))
 
 
 def knob_errors(out_settings, truth_settings, s_settings, dims):
@@ -1059,6 +1079,8 @@ def cmd_report(_args):
     rep["checks"] = {s: tr[s].get("checks") for s in tr}
     rep["section_flags"] = {s: plan["songs"][s]["section_flags"] for s in plan["songs"]}
     rep["fallbacks"] = sum(1 for xs in rows.values() for x in xs if x["fallback"])
+    rep["floored_exact"] = sum(1 for p in (OUT / "results").glob("*/[AO]-*.json")
+                               if (lambda r: r["output"] != "S" and r["judge_shrunk"][r["held"]] < D_FLOOR)(json.loads(p.read_text())))
     rep["mix"] = _load(OUT / "mix" / "log.json")
     _save(OUT / "report.json", rep)
     print(json.dumps({k: rep[k] for k in ("renders", "A_vs_S", "O_vs_S", "A_minus_O", "b2")}, indent=1))

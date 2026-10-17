@@ -318,8 +318,9 @@ All are made here and in the code; this amendment governs where the body differs
   so the Telefunken sessions do not dominate;
 - val is also scored on power-sum mixes built from its stored guitar and backing mels, which
   measures the train/val mixing gap directly (zero renders);
-- one curve axis without renders: 40k examples over the first half of the train sections, beside
-  40k over all of them, to tell DI diversity from settings count (reported, not deciding);
+- one curve axis without renders: about 20k examples over half the train sections (the first half
+  of the section ids, so grouped by band and DI, not random; one seed), beside 20k over all of them,
+  to tell DI diversity from settings count (reported, not deciding);
 - the model's trunk is 256 wide (half of arm B's 512), and each epoch draws one half (A or B) per
   example, seeded; a full-width check at the final size is left for the fine-tuning plan.
 
@@ -330,3 +331,16 @@ features and class measures, so about 5–6k an hour on 3 shards), `recheck` (re
 against the stored 16-bit FLAC, every mel cell identical), `report` (power-sum error on the audit
 example: median 0.38 dB, 90th percentile 1.8 dB) and a two-epoch CPU `curve` and `decide`. Bytes:
 58 KB per train example, 174 KB per val example, 186 KB plus a 433-KB FLAC per audit example.
+
+**PR review fixes (2026-10-18), before any render:**
+- a training epoch that skips more than 5% of its steps on non-finite gradients aborts the run; it
+  is retried once, then `curve` fails (`CURVE FAILED`) instead of feeding a barely trained model to
+  the decision; skipped steps are logged per epoch;
+- each run's weights are kept (`curve-models/`), and `evaluate` also stores per example the switch
+  error, the mic agreement and E with the clean stem; the per-amp, per-base, per-class, mastered and
+  DI-gain-class rows are derived from the per-example errors and the rows;
+- a torn last line in a shard's rows (a kill mid-write) is cut on resume;
+- the report reads the frozen scope threshold; a near-silent backing is not lifted more than 40 dB.
+
+**On the amended manifest** (now in place: version 2, amendments 1–3), `pool` gives 718 sections:
+train 520, val 96 (the same 9 bands), reserve 102.

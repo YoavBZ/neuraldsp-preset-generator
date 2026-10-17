@@ -179,3 +179,13 @@ def test_knob_errors():
     dims = [_Dim("p", "g", "cont", 0, 10), _Dim("a", "sw", "switch", values=("false", "true"))]
     e = M.knob_errors({"p/g": "5"}, {"p/g": "8", "a/sw": "true"}, {"p/g": "2"}, dims)
     assert set(e) == {"p/g"} and math.isclose(e["p/g"][0], 0.3) and math.isclose(e["p/g"][1], 0.6)
+
+
+def test_best_window_and_floor():
+    play = [False] * 100 + [True] * 100 + [False] * 50
+    start, share = M.best_window(play, 0.1)
+    assert start == 10.0 and share == 1.0
+    assert M.best_window([False] * 200, 0.1)[1] == 0.0
+    r = {"held": "A", "output": "shrunk", "judge_shrunk": {"A": 0.0}}
+    assert math.isclose(M.unit_log(r, {"A": 1.0}), math.log(M.D_FLOOR))
+    assert M.RECORD_LAG == 0

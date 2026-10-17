@@ -118,7 +118,7 @@ T90 = {1: 6.314, 2: 2.920, 3: 2.353, 4: 2.132, 5: 2.015, 6: 1.943, 7: 1.895, 8: 
 def _save(path, obj):
     path = pathlib.Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp = path.with_suffix(path.suffix + f".{os.getpid()}.tmp")
     tmp.write_text(json.dumps(obj, indent=1))
     tmp.replace(path)
 
@@ -362,6 +362,7 @@ def mix_gains_db(lg, lb, ratio_db, leak_db, target_lufs):
     """dB gains (backing in the mix, backing in the stem, overall) so that the guitar sits
     `ratio_db` above the backing in the mix and `leak_db` above it in the stem, and the mix reads
     `target_lufs` by the power sum of the stored loudness values."""
+    lb = max(lb, lg - 40.0)                        # a near-silent backing is not lifted more than 40 dB over its read
     gb = lg - ratio_db - lb
     gl = lg - leak_db - lb
     mix = db_sum(lg, lb + gb)
@@ -661,9 +662,8 @@ def cmd_render(args):
     rows_path.parent.mkdir(parents=True, exist_ok=True)
     done = set()
     if rows_path.exists():
-        for line in rows_path.read_text().splitlines():
-            if line.strip():
-                done.add(json.loads(line)["i"])
+        for r in read_rows(rows_path, repair=True):
+            done.add(r["i"])
     todo = []
     for i in ids:
         if i in done:
@@ -755,13 +755,32 @@ def cmd_render(args):
     print(f"SHARD DONE {args.shard[0]}/{args.shard[1]}", flush=True)
 
 
+def read_rows(path, repair=False):
+    """The rows of one shard's JSONL. A torn last line (a shard killed mid-write) is skipped, and with
+    `repair` cut from the file so the next append starts on a fresh line."""
+    text = pathlib.Path(path).read_text() if pathlib.Path(path).exists() else ""
+    lines = text.split("\n")
+    out, good = [], 0
+    for k, line in enumerate(lines):
+        if not line.strip():
+            continue
+        try:
+            out.append(json.loads(line))
+            good = sum(len(x) + 1 for x in lines[:k + 1])
+        except json.JSONDecodeError:
+            if k < len(lines) - 1 and any(x.strip() for x in lines[k + 1:]):
+                raise
+    if repair and good != len(text):
+        with open(path, "r+") as fh:
+            fh.truncate(min(good, len(text)))
+    return out
+
+
 def all_rows():
     out = {}
     for f in sorted((OUT / "rows").glob("shard-*.jsonl")):
-        for line in f.read_text().splitlines():
-            if line.strip():
-                r = json.loads(line)
-                out[r["i"]] = r
+        for r in read_rows(f):
+            out[r["i"]] = r
     return out
 
 
@@ -962,7 +981,7 @@ class CurveData:
         return x, c, y
 
 
-def val_tensors(rows, powersum=False):
+def val_tensors(rows, powersum=False, clean_stem=False):
     """Val examples' features, both halves (2 rows per example): the true stem and mix, or
     (`powersum`) the same composition rebuilt from the stored guitar and backing mels (unmastered
     examples only)."""
@@ -985,6 +1004,8 @@ def val_tensors(rows, powersum=False):
                 st, mx = powersum_db(g, b, gl, ga), powersum_db(g, b, gb, ga)
             else:
                 st, mx = dequant(d[f"s{h}"]), dequant(d[f"m{h}"])
+                if clean_stem:                    # the guitar alone (stem = guitar × k, no leak), the true mix
+                    st = dequant(d[f"g{h}"]) + r["mix"]["gains_db"][2]
             X.append(SM.norm_feat(np.stack([st, mx])))
             C.append(SM.cond_vec(r["amp"], r["base"], [r["mix"][f"lufs_s{h}"], r["mix"][f"lufs_m{h}"]]))
             Y.append(SM.encode(r["label"]))
@@ -993,13 +1014,14 @@ def val_tensors(rows, powersum=False):
 
 
 def evaluate(net, val, dev):
-    """{example: mean over its halves of the single answer's continuous error}, and the B0 loss."""
+    """Per example (mean over its halves): the single answer's continuous error, switch error and
+    mic agreement; and the B0 loss."""
     import torch
 
     from learn import song_model as SM
 
     Xv, Cv, Yv, who = val
-    errs, nll = [], []
+    errs, sws, mics, nll = [], [], [], []
     with torch.no_grad():
         for j in range(0, len(Xv), 256):
             x = torch.tensor(Xv[j:j + 256], device=dev)
@@ -1007,11 +1029,26 @@ def evaluate(net, val, dev):
             y = [torch.tensor(z[j:j + 256], device=dev) for z in Yv]
             out = net(x, c)
             errs += top_error(out[0], out[1], y[0], y[1]).cpu().tolist()
+            sw = ((out[3] > 0).float() != y[2]).float() * y[3]
+            sws += (sw.sum(-1) / y[3].sum(-1).clamp(min=1)).cpu().tolist()
+            hit = torch.stack([(out[4][m].argmax(-1) == y[4][:, m]).float() * y[5][:, m] for m in range(len(out[4]))], -1)
+            mics += (hit.sum(-1) / y[5].sum(-1).clamp(min=1)).cpu().tolist()
             nll.append(float(SM.loss_fn(out, *y)))
-    per = {}
-    for i, e in zip(who, errs):
-        per.setdefault(i, []).append(e)
-    return {str(i): sum(v) / len(v) for i, v in per.items()}, sum(nll) / max(1, len(nll))
+
+    def per(vals):
+        d = {}
+        for i, e in zip(who, vals):
+            d.setdefault(str(i), []).append(e)
+        return {i: sum(v) / len(v) for i, v in d.items()}
+
+    return per(errs), sum(nll) / max(1, len(nll)), {"switch_error": per(sws), "mic_agreement": per(mics)}
+
+
+class StepsSkipped(Exception):
+    pass
+
+
+MAX_SKIP_SHARE = 0.05                          # an epoch skipping more non-finite steps than this aborts the run
 
 
 def train_one(data, train_ix, es_ix, vals, seed, dev, log):
@@ -1029,19 +1066,22 @@ def train_one(data, train_ix, es_ix, vals, seed, dev, log):
         net.train()
         t0 = time.time()
         order = rng.permutation(train_ix)
-        tl = []
+        tl, skipped, steps = [], 0, 0
         for j in range(0, len(order), BATCH):
             x, c, y = data.batch(order[j:j + BATCH], epoch, dev)
             loss = SM.loss_fn(net(x, c), *y)
             opt.zero_grad()
             loss.backward()
             g = torch.nn.utils.clip_grad_norm_(net.parameters(), 1e9)
-            if torch.isfinite(g):
+            steps += 1
+            if torch.isfinite(g) and torch.isfinite(loss):
                 for q in net.parameters():
                     if q.grad is not None:
                         q.grad.mul_(min(1.0, 5.0 / (float(g) + 1e-9)))
                 opt.step()
-            tl.append(float(loss))
+                tl.append(float(loss))
+            else:
+                skipped += 1
         net.eval()
         with torch.no_grad():
             el = []
@@ -1051,18 +1091,22 @@ def train_one(data, train_ix, es_ix, vals, seed, dev, log):
         v = sum(el) / max(1, len(el))
         dt = max(time.time() - t0, 1e-9)
         log.append({"epoch": epoch, "train": sum(tl) / max(1, len(tl)), "early_stop": v, "seconds": round(dt, 1),
-                    "samples_per_s": round(len(order) / dt, 1)})
+                    "samples_per_s": round(len(order) / dt, 1), "skipped_steps": skipped, "steps": steps})
         print(log[-1], flush=True)
-        if v < best - 1e-4:
+        if skipped > MAX_SKIP_SHARE * max(1, steps):
+            raise StepsSkipped(f"epoch {epoch}: {skipped} of {steps} steps non-finite")
+        if math.isfinite(v) and v < best - 1e-4:
             best, bad = v, 0
             state = {k: t.detach().cpu().clone() for k, t in net.state_dict().items()}
         else:
             bad += 1
             if bad >= PATIENCE:
                 break
+    if state is None:
+        raise StepsSkipped("no finite early-stopping loss in any epoch")
     net.load_state_dict(state)
     net.eval()
-    return {name: evaluate(net, val, dev) for name, val in vals.items()}
+    return {name: evaluate(net, val, dev) for name, val in vals.items()}, state
 
 
 def curve_runs(n_final):
@@ -1105,7 +1149,8 @@ def cmd_curve(args):
     va = [rows[i] for i in sorted(rows) if i >= VAL_BASE]
     lv = json.loads((B.OUT / "levels.json").read_text())
     data = CurveData(tr_all, ratio_values(), lv["summary"]["eval_mix_lufs_median"])
-    vals = {"true": val_tensors(va), "powersum": val_tensors(va, powersum=True)}
+    vals = {"true": val_tensors(va), "powersum": val_tensors(va, powersum=True),
+            "clean_stem": val_tensors(va, clean_stem=True)}
     p = pool()
     tr_secs = sorted(s["id"] for s in p["sections"] if s["split"] == "train" and not s["early_stop"])
     half = set(tr_secs[:len(tr_secs) // 2])
@@ -1122,12 +1167,25 @@ def cmd_curve(args):
         es = np.array([j for j in ix if tr_all[j]["early_stop"]])
         if not len(es) or not len(tr):
             raise SystemExit(f"{key}: {len(tr)} training and {len(es)} early-stopping examples")
-        log = []
         t0 = time.time()
-        out = train_one(data, tr, es, vals, seed, dev, log)
+        for attempt in (1, 2):
+            log = []
+            try:
+                out, state = train_one(data, tr, es, vals, seed, dev, log)
+                break
+            except StepsSkipped as e:
+                print(f"{key}: attempt {attempt} aborted: {e}", flush=True)
+                if dev.type == "mps":
+                    torch.mps.empty_cache()
+                if attempt == 2:
+                    raise SystemExit(f"CURVE FAILED {key}: {e}")
+        (OUT / "curve-models").mkdir(parents=True, exist_ok=True)
+        torch.save(state, OUT / "curve-models" / f"{key}.pt")
         res["runs"][key] = {"label": label, "n": n, "seed": seed, "half_sections": halfsec, "train": len(tr),
                             "early_stop": len(es), "val_nll": out["true"][1], "per_example": out["true"][0],
-                            "per_example_powersum": out["powersum"][0], "log": log,
+                            "per_example_powersum": out["powersum"][0], "per_example_clean_stem": out["clean_stem"][0],
+                            "switch_error": out["true"][2]["switch_error"], "mic_agreement": out["true"][2]["mic_agreement"],
+                            "attempts": attempt, "log": log,
                             "minutes": round((time.time() - t0) / 60, 1), "device": str(dev)}
         _save(OUT / "curve.json", res)
         print("curve", key, "train", len(tr), "minutes", res["runs"][key]["minutes"], flush=True)
@@ -1218,7 +1276,7 @@ def cmd_report(_args):
     from collections import Counter
 
     rows = list(all_rows().values())
-    thr = beyond_threshold(rows)
+    thr = _load(OUT / "scope-threshold.json") or beyond_threshold(rows)
     rep = {"examples": len(rows), "train": sum(r["split"] == "train" for r in rows),
            "val": sum(r["split"] == "val" for r in rows), "audit": sum(bool(r.get("audit")) for r in rows),
            "class_by_mode": {f"{k[0]}|{k[1]}": v for k, v in Counter((r["mode"], r["gain"]["class"]) for r in rows).items()},
