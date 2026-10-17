@@ -415,9 +415,9 @@ def test_measure_di_keeps_a_mains_fundamental_the_rests_cannot_show():
 
 def _rows3(n=20):
     v1, v2 = [], []
-    for i in range(n):
-        di = f"d{i}"
-        kind = ("kept", "refuted", "hum", "quiet")[i % 4]
+    ids = [f"d{i}" for i in range(n)] + [f"guitar-techs/P1-downloads/P1_chords/c{j}.wav" for j in range(3)]
+    for i, di in enumerate(ids):
+        kind = "kept" if di.startswith("guitar-techs") else ("kept", "refuted", "hum", "quiet")[i % 4]
         for start in (0.0, 5.0):
             base = {"di": di, "path": f"/p{i}.wav", "start_s": start, "source": "cambridge"}
             m = {"hum_rel_db": None, "hum_rel_db_refuted": None}
@@ -440,7 +440,9 @@ def test_draw_hum_strata_and_repeats():
     v1, v2 = _rows3()
     clips = C.draw_hum(v1, v2, page1_dis={"d1"})
     kinds = [t["kind"] for t in clips]
-    assert kinds.count("kept") == 5                              # every kept DI, one section each
+    kept = [t for t in clips if t["kind"] == "kept"]
+    assert len(kept) == 5 + C.N_PER_UNIT                          # 5 single-DI units, Guitar-TECHS P1 as one
+    assert sum(t["unit"] == "guitar-techs-P1" for t in kept) == C.N_PER_UNIT
     assert kinds.count("refuted") == 4 and "d1" not in {t["di"] for t in clips if t["kind"] == "refuted"}
     assert kinds.count("anchor_hum") == kinds.count("anchor_clean") == C.N_ANCHOR
     assert kinds.count(C.REPEAT) == 2
@@ -454,18 +456,23 @@ def test_draw_hum_strata_and_repeats():
 
 
 def test_score_hum_rule():
-    def key(kinds):
-        return {"clips": {str(i): {"di": f"d{i}", "start_s": 0.0, "kind": k, "value": -45.0 if k == "kept" else None,
-                                   "value_refuted": None} for i, k in enumerate(kinds, 1)}}
-    k = key(["kept", "kept", "kept", "refuted", "refuted"])
-    rep = C.score_hum(k, C.parse_answers("1hum 2hum 3ok 4ok 5ok"))
-    assert rep["decision"] == "amendment 3 stands" and rep["hum_flag"]["reason"] == "stays"
-    rep = C.score_hum(k, C.parse_answers("1ok 2ok 3hum 4ok 5ok"))
-    assert rep["decision"] == "amendment 3 withdrawn" and rep["withdraw"]
-    assert rep["hum_flag"]["reason"] == "raised"                   # two clean clips over the flag
-    rep = C.score_hum(k, C.parse_answers("1hum 2hum 3hum 4hum 5hum+hiss"))
+    def key(spec):
+        return {"clips": {str(i): {"di": f"d{i}", "start_s": 0.0, "kind": k, "unit": u, "value": None,
+                                   "value_refuted": None} for i, (k, u) in enumerate(spec, 1)}}
+    k = key([("kept", "g"), ("kept", "g"), ("kept", "a"), ("kept", "b"), ("refuted", None), ("refuted", None),
+             ("refuted", None), ("refuted", None), ("anchor_clean", None), ("anchor_clean", None)])
+    rep = C.score_hum(k, C.parse_answers("1hum 2hum 3hum 4ok 5ok 6ok 7ok 8ok 9ok 10ok"))
+    assert rep["decision"] == "amendment 3 stands" and rep["kept"]["units_reverted"] == ["b"]
+    rep = C.score_hum(k, C.parse_answers("1ok 2ok 3ok 4hum 5ok 6ok 7ok 8ok 9ok 10ok"))
+    assert rep["decision"] == "amendment 3 withdrawn" and rep["kept"]["units_reverted"] == ["a", "g"]
+    rep = C.score_hum(k, C.parse_answers("1ok 2hum 3hum 4hum 5ok 6ok 7ok 8ok 9ok 10ok"))
+    assert rep["kept"]["units_reverted"] == []                   # 1 of 2 in unit g: not more than half
+    rep = C.score_hum(k, C.parse_answers("1hum 2hum 3hum 4hum 5hum 6hum 7ok 8ok 9ok 10ok"))
     assert rep["decision"] == "amendment 3 stands; rest refutation suspended"
-    rep = C.score_hum(k, C.parse_answers("1ok 2ok 3? 4hum 5hum"))
-    assert rep["decision"].startswith("conflict")
-    rep = C.score_hum(k, C.parse_answers("1ok 2hum 3? 4? 5?"))      # 1 of 2 answered: no majority, under 2
-    assert rep["decision"] == "amendment 3 stands"
+    assert rep["refuted"]["restored_dis"] == ["d5", "d6"]
+    rep = C.score_hum(k, C.parse_answers("1hum 2hum 3hum 4hum 5hum 6hum 7ok 8ok 9hum 10hum"))
+    assert not rep["suspend"]                                    # no more than the clean anchors
+    rep = C.score_hum(k, C.parse_answers("1hum 2hum 3hum 4hum 5hum 6ok 7ok 8ok 9ok 10ok"))
+    assert not rep["suspend"] and rep["refuted"]["restored_dis"] == ["d5"]
+    rep = C.score_hum(k, C.parse_answers("1ok 2ok 3ok 4hum 5hum 6hum 7ok 8ok 9ok 10ok"))
+    assert rep["decision"].startswith("conflict") and not rep["withdraw"] and not rep["suspend"]

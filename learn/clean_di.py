@@ -1192,15 +1192,18 @@ def cmd_hum_amend(args):
 
     sdir, keep = OUT / "screen", OUT / "screen-v1"
     if not keep.exists():
+        if any(json.loads(p.read_text())["track"].get("hum_amendment") == HUM_AMENDMENT for p in sdir.glob("*.json")):
+            raise SystemExit("the screen already carries amendment 3 and screen-v1/ is absent: nothing to amend")
         shutil.copytree(sdir, keep)
     changed = []
     for p in sorted(sdir.glob("*.json")):
         d = json.loads(p.read_text())
         old = json.loads((keep / p.name).read_text())
         t = d["track"]
-        if old["track"]["hum_rest_check"] == "no":
+        if old["track"]["hum_rest_check"] in ("no", "kept_fundamental"):
             x, sr = load_native(d["path"])
             track, rows = measure_di(x, sr, t["mains"])
+            assert track["hum_rest_check"] in ("no", "kept_fundamental"), (d["id"], track["hum_rest_check"])
             for k in ("seconds", "play_db", "hiss_rel_db", "rest_frames_16384", "clip_runs", "dropouts"):
                 assert track[k] == old["track"][k], (d["id"], k, track[k], old["track"][k])
             assert len(rows) == len(old["rows"])
@@ -1256,7 +1259,7 @@ def cmd_hum_fix(args):
         rows = [x for x in d["rows"] if x["passes_activity"]]
         if any("hum" in section_flags(x, t)[0] for x in rows):
             flagged.append(p)
-        elif not t["hum_harmonics"] and rows:
+        elif not t["hum_harmonics"] and not t.get("hum_harmonics_refuted") and rows:   # no line at all (amendment 3)
             clean.append(p)
     rng = random.Random(FIX_SEED)
     controls = rng.sample(sorted(clean), min(FIX_CONTROLS, len(clean)))
@@ -1305,9 +1308,14 @@ def cmd_hum_fix(args):
               "hum before/after (max)", max(before) if before else None, max(after) if after else None, flush=True)
     res["measured_ok_dis"] = [d["id"] for d in res["dis"] if d["measured_ok"]]
     res["adopted"] = False if not res["measured_ok_dis"] else None
+    res["hum_amendment"] = HUM_AMENDMENT
     res["adoption_note"] = ("adoption waits on the listening check for the DIs whose measures pass; the rest stay out"
                             if res["measured_ok_dis"] else "no flagged DI passes the measured conditions: "
                             "hum-flagged sections stay out")
+    old = OUT / "hum-fix.json"
+    if old.exists() and json.loads(old.read_text()).get("hum_amendment") != HUM_AMENDMENT \
+            and not (OUT / "hum-fix-v1.json").exists():
+        (OUT / "hum-fix-v1.json").write_bytes(old.read_bytes())   # the run before amendment 3, kept
     _atomic(OUT / "hum-fix.json", res)
     print(len(res["measured_ok_dis"]), "of", len(res["dis"]), "flagged DIs pass the measured conditions")
 
@@ -1723,11 +1731,19 @@ def cmd_listen(args):
 LISTEN2 = HOME / "listening/di-clean-2"
 LISTEN2_SEED = 20261018
 N_REFUTED, N_ANCHOR = 8, 2
+N_PER_UNIT = 2                   # clips from a multi-DI unit (Guitar-TECHS P1's chord files: one recording setup)
+KEPT_TAGS_OK = BENIGN_TAGS | {"slight_hiss", "hum_kept_by_fundamental"}
+
+
+def hum_unit(di):
+    """The unit a kept DI votes as: Guitar-TECHS P1's near-identical chord files are one unit."""
+    return "guitar-techs-P1" if di.startswith("guitar-techs/P1-") else di
 
 
 def draw_hum(rows_v1, rows, page1_dis=(), seed=LISTEN2_SEED):
-    """Amendment 3's page. 'kept': for every DI whose lines amendment 3 keeps, one section it moves
-    (clean before, flagged for hum alone now). 'refuted': N_REFUTED DIs whose lines the rest check
+    """Amendment 3's page. 'kept': for every unit (`hum_unit`) whose lines amendment 3 keeps, one
+    section it moves (clean before, flagged for hum alone now); N_PER_UNIT sections, from different
+    DIs, for a multi-DI unit. 'refuted': N_REFUTED DIs whose lines the rest check
     still refutes, one clean section each among those the refuted lines would flag (where the rest
     check alone decides). Anchors: N_ANCHOR hum-only sections of rest-confirmed DIs at least 10 dB
     over the flag, and N_ANCHOR clean sections of DIs with no hum line. Then one repeat each of a
@@ -1755,8 +1771,11 @@ def draw_hum(rows_v1, rows, page1_dis=(), seed=LISTEN2_SEED):
         return out
 
     kept = [r for r in rows if r["flags"] == ["hum"] and "hum_kept_by_fundamental" in r["tags"]
-            and (r["di"], r["start_s"]) in was_clean]
-    clips = take(kept, 10 ** 6, "kept", fixed=True)
+            and (r["di"], r["start_s"]) in was_clean and not (set(r["tags"]) - KEPT_TAGS_OK)]
+    clips = []
+    for u in sorted({hum_unit(r["di"]) for r in kept}):
+        n = N_PER_UNIT if sum(1 for d in {r["di"] for r in kept} if hum_unit(d) == u) > 1 else 1
+        clips += [{**t, "unit": u} for t in take([r for r in kept if hum_unit(r["di"]) == u], n, "kept", fixed=True)]
     refuted = [r for r in rows if r["clean"] and r["measures"].get("hum_rel_db_refuted") is not None
                and r["measures"]["hum_rel_db_refuted"] >= HUM_FLAG_DB and not (set(r["tags"]) - BENIGN_TAGS - {"slight_hiss"})]
     clips += take(refuted, N_REFUTED, "refuted")
@@ -1778,40 +1797,49 @@ def draw_hum(rows_v1, rows, page1_dis=(), seed=LISTEN2_SEED):
                 j = next(j for j, u in enumerate(clips) if u["kind"] != REPEAT and _same(u, t))
                 ok &= i > 0 and abs(i - j) > 1
         if ok:
-            break
-    return clips
+            return clips
+    raise RuntimeError("no order keeps every repeat apart from its source")
 
 
-def score_hum(key, answers, page1_hum=()):
+def score_hum(key, answers):
     """Amendment 3's declared rule on the second page's answers (trusted; unanswered left out).
-    - kept: the rule is withdrawn when at least 2 kept clips, and more than half of those answered,
-      are heard without hum; otherwise it stands.
-    - refuted: at least 2 refuted clips heard with hum suspend the rest check's refutation for every
-      DI (their lines restored and screened by level) until a further amendment designs a better
-      test.
-    - both at once: nothing changes and the conflict is reported.
-    - the hum flag level: amend() over the kept and hum-anchor clips' measured values, pooled with
-      page 1's hum clips `page1_hum` [(value, heard hum)] when page 1 is scored.
-    - anchors and repeats are reported (a calibration caveat), and move nothing."""
+    - kept, per unit (`hum_unit`): a unit more than half of whose answered clips are heard without
+      hum reverts (its lines refuted again, as before amendment 3). When at least 2 units, and more
+      than half of the answered units, revert, the amendment is withdrawn for every DI.
+    - refuted, per DI: a DI whose clip is heard with hum has its lines restored (kept and screened
+      by level). When at least half of the answered refuted clips, and a larger share than of the
+      answered clean anchors, are heard with hum, the rest check's refutation is suspended for every
+      DI until a further amendment designs a better test.
+    - withdrawal and suspension at once: neither applies, and the conflict is reported (the per-unit
+      and per-DI changes still apply).
+    - this page does not move the hum flag level (page 1's strata test it); anchors and repeats are
+      reported as a calibration caveat and move nothing."""
     p1, _ = answers
     rows = []
     for n, t in sorted(key["clips"].items(), key=lambda x: int(x[0])):
         heard = p1.get(n)
         rows.append({"trial": int(n), **t, "heard": sorted(heard) if heard else None,
                      "hum": None if not heard else "hum" in heard})
+
     def sel(kind):
         return [r for r in rows if r["kind"] == kind and r["hum"] is not None]
-    kept, ref = sel("kept"), sel("refuted")
-    no_hum = sum(not r["hum"] for r in kept)
-    withdraw = no_hum >= 2 and no_hum > len(kept) / 2
-    suspend = sum(r["hum"] for r in ref) >= 2
+
+    units = {}
+    for r in sel("kept"):
+        units.setdefault(r.get("unit", r["di"]), []).append(r["hum"])
+    reverted = sorted(u for u, h in units.items() if sum(not x for x in h) > len(h) / 2)
+    withdraw = len(reverted) >= 2 and len(reverted) > len(units) / 2
+    ref = sel("refuted")
+    restored = sorted(r["di"] for r in ref if r["hum"])
+    share = len(restored) / len(ref) if ref else 0.0
+    anc = sel("anchor_clean")
+    anc_share = sum(r["hum"] for r in anc) / len(anc) if anc else 0.0
+    suspend = bool(ref) and share >= 0.5 and share > anc_share
     if withdraw and suspend:
-        decision = "conflict: nothing changes"
+        decision, withdraw, suspend = "conflict: neither withdrawal nor suspension applies", False, False
     else:
         decision = ("amendment 3 withdrawn" if withdraw else "amendment 3 stands") + (
             "; rest refutation suspended" if suspend else "")
-    lvl = [(r["value"], r["hum"]) for r in kept + sel("anchor_hum") if r["value"] is not None] + list(page1_hum)
-    new, why = amend(lvl, HUM_FLAG_DB)
     reps = []
     for r in rows:
         if r["kind"] == REPEAT:
@@ -1819,11 +1847,10 @@ def score_hum(key, answers, page1_hum=()):
             reps.append({"repeat": r["trial"], "source": src["trial"], "repeat_heard": r["heard"],
                          "source_heard": src["heard"]})
     return {"clips": rows, "decision": decision, "withdraw": withdraw, "suspend": suspend,
-            "kept": {"answered": len(kept), "heard_hum": len(kept) - no_hum},
-            "refuted": {"answered": len(ref), "heard_hum": sum(r["hum"] for r in ref)},
+            "kept": {"units_answered": len(units), "units_reverted": reverted},
+            "refuted": {"answered": len(ref), "heard_hum": len(restored), "restored_dis": restored,
+                        "clean_anchor_hum_share": anc_share},
             "anchors": {k: [r["heard"] for r in rows if r["kind"] == k] for k in ("anchor_hum", "anchor_clean")},
-            "hum_flag": {"flag": new, "reason": why, "tag": round(HUM_TAG_DB + (new - HUM_FLAG_DB), 2),
-                         "pooled_page1": len(page1_hum)},
             "repeats": reps}
 
 
@@ -1839,16 +1866,11 @@ def cmd_listen_hum(args):
     kfile = LISTEN2 / "private" / "key.json"
     if args.step == "score":
         key = json.loads(kfile.read_text())
-        page1 = []
-        s1 = LISTEN / "private" / "score.json"
-        if s1.exists():
-            page1 = [(r["value"], "hum" in r["heard"]) for r in json.loads(s1.read_text())["part1"]
-                     if r["kind"] == "screen" and r["screen"] == "hum" and r["heard"] and r["value"] is not None]
-        rep = score_hum(key, parse_answers(args.answers), page1)
+        rep = score_hum(key, parse_answers(args.answers))
         for r in rep["clips"]:
-            print(f"{r['trial']:2d} {r['kind']:12s} {r['value']} {r['value_refuted']} {r['di'][:55]} "
+            print(f"{r['trial']:2d} {r['kind']:12s} {r.get('unit', '')[:16]:16s} {r['value']} {r['value_refuted']} {r['di'][:55]} "
                   f"@{r['start_s']:.0f}s -> {r['heard']}")
-        for k in ("decision", "kept", "refuted", "anchors", "hum_flag", "repeats"):
+        for k in ("decision", "kept", "refuted", "anchors", "repeats"):
             print(k, json.dumps(rep[k]))
         rep["answers"] = args.answers
         (LISTEN2 / "private" / "score.json").write_text(json.dumps(rep, indent=1))
@@ -1858,6 +1880,8 @@ def cmd_listen_hum(args):
     man = json.loads((OUT / "manifest.json").read_text())
     if man.get("version", 1) < MANIFEST_VERSION:
         raise SystemExit("the manifest predates amendment 3: run `hum-amend` and `manifest` first")
+    if not man.get("previous"):
+        raise SystemExit("no version 1 manifest to compare with (manifest-v1.json)")
     v1 = json.loads((OUT / man["previous"]["file"]).read_text())
     page1 = json.loads((LISTEN / "private" / "key.json").read_text())
     p1_dis = {t["di"] for part in ("part1", "part2") for t in page1.get(part, {}).values()}
