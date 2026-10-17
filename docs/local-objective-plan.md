@@ -871,3 +871,195 @@ changes. All six are made in code and tested; nothing has been separated or rend
 - **Any separator switch's fresh-draw check runs on full mixes, with vocals, for both separators.**
   Sets 1–2 contexts also keep `mix.wav`, so a later with-vocals check is possible on 19 of these
   parts.
+
+## Amendment 4 (2026-10-17, before any 1d rebuild or render)
+
+Experiment 1d: the separator-robust rebuild in 1b's matched design. It is "the decision test,
+queued" of the [separator-robust C′ plan](cprime-sep-plan.md), declared here after that plan's
+zero-render readout ([results](cprime-sep-results.md)) and after 1c's report
+(`report-1c-mega53.json`), before any 1d rebuild or render. Same rules: no pass/fail bars, a
+declared stopping rule, renders reported. Development data only. **Status:** reviewed 2026-10-17
+by an independent reviewer: approved with 4 required changes, all made as
+[amendment 4a](#amendment-4a-2026-10-17-before-any-1d-render) below, which governs where the two
+differ. Code: `learn/local_objective_1d.py` (rebuild, identity, report) and the 1d DIs in
+`learn/local_objective.py`; tests `tests/test_local_objective_1d.py`.
+
+**Why.**
+- 1b: a perfect separator (the amp track) feeding C′'s rebuild and the reference lifts the
+  cross-half local Spearman from today's **0.289** to **0.541** (+0.252 [0.139, 0.365]).
+- 1c: Mega-53 feeding both gives **0.398**, +0.109 [+0.058, +0.160] over today's objective. Its
+  decomposition puts nearly all of that in the *reference*: C′ of the htdemucs stem scored against
+  the Mega-53 crop is 0.385, while C′ of the Mega-53 crop scored against the htdemucs stem is 0.262.
+- The separator-robust networks (`~/ndsp-presets/learn/direc-sep/models-sep-f{f}/fold{f}.pt`)
+  are C′ fine-tuned with real separator residuals and colouration. On the 24 parts, without
+  renders, they rebuild the true DI slightly better: LSD −0.24 dB [−0.66, +0.17] from the htdemucs
+  stem, −0.26 [−0.51, −0.02] from the amp track. Coherence and LSD are proxies; better fine
+  structure didn't steer better before (experiment 4). Only renders say whether the rebuild ranks
+  nearby settings better.
+
+**Two cells, both on the frozen Σ (hash `ee91f710947dbb5c`), 72 × 48 + 72 warm-ups = 3,528 renders
+each:**
+- **(i) `csep_stem`:** each part's htdemucs stem (step 3's `instrumental_guitar.wav`, the product's
+  input today), rebuilt by its own fold's separator-robust network, scored against the same stem at
+  C′'s native lag (−52), with its own mask and the C′ fallback (the stem, moved into DI time). It is
+  today's objective with only the network changed: the plan's decision test.
+- **(ii) `csep_mega53`:** each part's Mega-53 crop from 1c (`sep/mega53/crop/<part>.npy`, the
+  separation that passed 1c's checks; nothing is re-separated), rebuilt by the same network, scored
+  against the Mega-53 crop at −52 with its own mask and the fallback. It is 1c's cell with only the
+  network changed: the stacked route (better separator and separator-robust rebuild).
+
+**The rebuild** (`$TORCH_PY -m learn.local_objective_1d rebuild --src stem|mega53`; CPU, zero
+renders). Exactly 1b's and 1c's (`rebuild_from`, shared), with the network swapped:
+- the part's fold's separator-robust network (DONE marker required);
+- **two leak assertions per part:** experiment 4's (the part's band is not in the network's
+  training pool) and the library's (the part's band is not among the network's residual-library
+  entries, training or validation, read from its `config.json`), as `direc_sep.evaluate` does;
+- re-EQ'd by fold 2's average − fold f's, at −22.9 LUFS;
+- **amendment 2a's checks:** within 3 samples of C′'s stem rebuild (GCC) and at −22.9 LUFS within
+  0.05. `render --di csep_stem` / `csep_mega53` refuses to start until all 24 pass
+  (`rebuilt-csep-<src>/check.json`).
+- Logged: the network, GCC against the source, against `reference.wav` and against C′'s stem
+  rebuild.
+
+**Renders:** 7,056 in all, through 1b's guards: S against the cell's warm-up at S within 0.005
+(log); S's float score stored for the FLAC check; the shared `STOP.json`; the disk guard (all
+shards counted at the start); the swap guard; the 3-process cap; `isolate=True` (the renderer's
+default); `OMP_NUM_THREADS=1`, `setopt no_bg_nice`, `nohup`. Each shard renders a cell through
+both DIs before the next cell.
+
+**Scoring** (CPU, from the 16-bit FLACs): `score --di csep_stem,csep_mega53`.
+- **Declared:** `csep_stem|stem|native|own` and `csep_mega53|mega53|native|own`.
+- **Diagnostics:** each at the gcc lag (−52 − GCC(rebuild, its source)); `csep_mega53` scored
+  against the htdemucs stem (rebuild only, as 1c); `csep_stem` scored against the Mega-53 crop
+  (the new rebuild of today's stem with 1c's better reference; zero extra renders).
+- The truth, today's objective, 1b's matched cell and 1c's mega53 cell are the stored scores of
+  experiments 1, 1b and 1c.
+
+**The contrasts** (`report`, zero renders): cross-half local Spearman, cell-paired, band-weighted
+over 14 bands, 90% band-clustered t interval (13 df), the leave-one-band-out range, and
+reliable-pair accuracy beside it.
+- **Primary (two, declared now, both reported whatever they show):**
+  - **P1, the network on today's stem:** `csep_stem` − today's objective (0.289);
+  - **P2, the network on Mega-53:** `csep_mega53` − 1c's mega53 cell (0.398).
+- **Also:**
+  - `csep_mega53` − today's objective (the stacked route against today), and its share of 1b's
+    gain with Fieller's interval, as 1c;
+  - `csep_stem`'s share of 1b's gain, and each cell − 1b;
+  - **the interaction:** P2 − P1 (does the network's gain depend on the separator);
+  - the diagnostics above, each paired with its C′ counterpart (1c's rebuild-only and
+    reference-only cells);
+  - on all of Σ, its three subsets and all of Σ without the arm A points; per band; with the
+    ceiling beside;
+  - **bleed and leak rows, as amendment 3a,** for P1, P2 and the stacked route: (a) all of Σ
+    (the declared row), (b) no high bleed, (c) no moderate or high bleed (cell rule, direction rule
+    beside), (d) Cambridge only, Telefunken only (3 bands, descriptive) and without the MUSDB18-train
+    bands;
+  - renders used against the 7,056 expected, the rebuild checks and FLAC against float.
+- **Completeness (as 2a):** figures for a cell are given only with all 72 cells and exactly 3,528
+  renders through it; otherwise the report says what is missing.
+
+**Reading (estimates only).** No bars. Each primary is its estimate and interval, with its share
+of the relevant gap (P1: of 1b's +0.252; P2: of 1b − 1c, +0.143). What they would mean:
+- **P1 above 0:** the separator-robust network improves today's objective by itself; the product
+  path would be to adopt it, after a fresh draw.
+- **P2 above 0:** it adds on top of the better separator, so the two stack.
+- **Either with an interval containing 0:** reported as an estimate; a positive estimate is built
+  on (a larger library, more separators), not dropped.
+- **Below 0:** the envelope gain doesn't carry into local ranking, or costs it.
+- **Two primaries:** both are reported; neither is promoted after seeing the data. With two 90%
+  intervals, one excluding 0 by chance alone is about 19% likely, so a single-primary result is
+  read with that in mind.
+
+**What can't be read from it.**
+- The networks' library holds htdemucs_6s and BS-Roformer residuals only. Cell (ii) is a transfer
+  to an unseen separator.
+- The library holds other folds' evaluation parts' stems (development use); no part's own band is
+  in its network's library.
+- Without a renders-level control (a PR12-only fine-tune), a gain can't be attributed to the
+  augmentation rather than the fine-tune; the zero-render control kept C′ itself on every fold.
+
+**Stopping rule: a fixed set, declared.** 1d is a measurement paired cell by cell with experiments
+1, 1b and 1c; the 14-band interval needs every cell (on fold 3 alone, 3 bands, the minimum
+detectable effect is 2.30 σ_d against 0.71 σ_d on 14). No interim look, no extension. Only
+breakage stops it.
+
+**Disk.** About 3.4–4.9 GB of FLACs (0.48–0.7 MB each); rebuilds about 0.2 GB. 54 GB free when
+this amendment was written, against the 31 GB guard.
+
+**Run order and hours** (unattended, chained in `learn/local_objective_1d_run.zsh`):
+
+| Step | Renders | Hours |
+|---|---|---|
+| 1d rebuilds, both sources | 0 | minutes (CPU) |
+| 1d renders, 3 shards | 7,056 | about 1.0 h (1c's 3,528 took 30 minutes) |
+| 1d scoring | 0 | about 0.4 h (CPU, 3 workers) |
+| 1d report | 0 | minutes |
+
+**Ledger and limits.** The `local-objective` entry gains `amendment_4`, entered before any 1d
+rebuild or render. It is a further unblinded use of the same 24 parts and Σ, read after experiments
+1, 1b and 1c and after the separator-robust zero-render readout: a development reading, not a fresh
+estimate. One seed per fold; the instrumental context (as 1c); the truth is the judge, not
+listening. Any adoption is scored on a fresh draw of parts outside the 24 first.
+
+### Amendment 4a (2026-10-17, before any 1d render)
+
+The independent review approved 1d with four required changes. All four are made in code and
+tested (`tests/test_local_objective_1d.py`); the identity check (zero renders) has run.
+
+**1. The leak assertion covers every pool the network learned from** (`assert_sepnet_ok`).
+- As first written, `rebuild_from` read the training pool from the network's `config.json`, which
+  lists only the PR12 cache the fine-tune used. The parent C′'s SW50R and AC20 pools would have gone
+  unchecked.
+- Now the part's band must be in none of: the parent C′'s pool (all three caches, as 1b/1c check
+  C′), the fine-tune's own caches, and the residual library's entries (training and validation).
+- Also asserted: the config's fold is the part's fold, and it resumed from that fold's C′.
+- A test runs the real check on all 24 parts and the four real networks: it passes.
+
+**2. Only the network changes: an identity check** (`identity --src stem|mega53`, zero renders).
+- C′ through the generalised `rebuild_from` must reproduce the stored C′ rebuild of the same
+  source (step 3's `song_settings/rebuilt/` for the stem, 1c's `rebuilt-mega53/` for Mega-53)
+  within 1e-6 (largest absolute difference).
+- **Run 2026-10-17:** all 24 parts pass on both sources; the largest difference is 1.8e-7 (stem)
+  and 1.7e-7 (Mega-53), CPU thread-order rounding.
+- `rebuild` runs it first and writes `identity.json`; `check.json`, which gates the renders, is ok
+  only if it passed.
+
+**3. The networks are pinned** (sha256, asserted at rebuild time and logged per part):
+
+| Fold | `models-sep-f{f}/fold{f}.pt` (= `fold{f}-best.pt`) |
+|---|---|
+| 0 | `d5f76975753bd314ff04c981404e355aaf21e74de3b9f03eb19e6770cb5006a3` |
+| 1 | `2b8a4fb51931af846271a57bafe0ae7ce9ced587adf216e6ae4c01fe24ba20d4` |
+| 2 | `d4e8e43204b6c457bc730c85621e16c936918964d9bd746a2734c25c3b43e328` |
+| 3 | `ab4760d5d5567680be6c3c19e5574174c1edc5919a10cc83ee442f31ce4d9e0f` |
+
+**4. The renderer against the stored comparators.**
+- The primaries compare new renders with experiment 1's and 1c's stored ones, while the S check
+  compares renders within 1d only.
+- **Zero renders:** the plugin (Morgan Amps Suite 1.1.1) binary is dated 2025-05-08, before
+  experiment 1; it hasn't changed since. Its version was not recorded in the render records.
+- **Renders:** once per cell, before its first 1d render, C′'s stem rebuild renders at S (a warm-up,
+  then S) and is scored on today's objective against experiment 1's stored score at S, within
+  0.005 (log) on both halves. Beyond it, the cell is recorded `check_failed` and every shard stops.
+  That is **144 renders** (2 × 72), counted apart from each cell's 3,528, and reported.
+
+**Also taken from the review's suggestions:**
+- **Multiplicity, corrected:** 19% is the chance that either of two *independent* two-sided 90%
+  intervals excludes 0. For "either above 0" it is about 10%, and P1 and P2 share the network and
+  Σ, so they are positively correlated and the real figure is lower. The interaction and the
+  stacked route are **not** primaries.
+- **P2's share** is read on row (a), all of Σ. Its denominator, 1b − 1c, is +0.143 [+0.047,
+  +0.239] (14 bands, from 1c's report).
+- **Limits added:** Mega-53's training data is unstated (amendment 3a), so cell (ii) inherits that
+  possible leak. Cell (ii) was added after seeing 1c's result; it is declared before any 1d render,
+  and disclosed here.
+
+**Not taken:**
+- **An optional `csep_ref` cell** (the network rebuilding the amp track, scored against it; 3,528
+  renders). It would tell "stem robustness" from "a generally better rebuild" at the render level.
+  The decision doesn't need it; it waits for the user's yes, like 1c's blend.
+- Per-part CPU-against-MPS rebuild measures. The identity check covers the recipe; the pre-filter
+  was a zero-render readout only.
+
+**Renders now:** 7,056 + 144 = **7,200**. Hours unchanged (about 1 h of renders, 0.3–0.45 h of
+scoring).

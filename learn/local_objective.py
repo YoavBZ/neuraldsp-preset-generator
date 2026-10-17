@@ -24,6 +24,10 @@ Development only; estimates with 90% band-clustered intervals, no pass/fail bars
     # learn/local_objective_1c.py; the renders and scores are here:
     OMP_NUM_THREADS=1 .venv/bin/python -m learn.local_objective render --di cprime_mega53 --shard i/3
     OMP_NUM_THREADS=1 .venv/bin/python -m learn.local_objective score --di cprime_mega53,cprime@mega53 --workers 3
+    # experiment 1d, the separator-robust rebuild in 1b's design (amendment 4): rebuild and report in
+    # learn/local_objective_1d.py; the renders and scores are here:
+    OMP_NUM_THREADS=1 .venv/bin/python -m learn.local_objective render --di csep_stem,csep_mega53 --shard i/3
+    OMP_NUM_THREADS=1 .venv/bin/python -m learn.local_objective score --di csep_stem,csep_mega53 --workers 3
 
 Σ (experiment 1's settings): per (part, amp) cell, S, its ±1/8 coordinate neighbourhood (switches
 flipped), a seeded draw from both K_S directions' replayed trajectories up to 40, and 8 seeded
@@ -90,14 +94,22 @@ CHECK_TOL = 0.005                # |log| between a corner and its stored value (
 # is the DI "cprime_<separator>" (`learn/local_objective_1c.py` separates, blends and rebuilds).
 SEPARATORS = ("mega53", "blend")
 SEP_DI = {s: f"cprime_{s}" for s in SEPARATORS}
-REBUILT = ("cprime", "cprime_ref", *SEP_DI.values())   # DIs judged with rebuilt_distance's fallback
+# Amendment 4 (experiment 1d): the separator-robust networks (docs/cprime-sep-plan.md) rebuild step
+# 3's htdemucs stem ("csep_stem") and 1c's Mega-53 crop ("csep_mega53"), each scored against its
+# own source (`learn/local_objective_1d.py` rebuilds and reports).
+SEPNET_SOURCES = ("stem", "mega53")
+SEPNET_DI = {s: f"csep_{s}" for s in SEPNET_SOURCES}
+SEPNET_PATTERN = "learn/direc-sep/models-sep-f{f}/fold{f}.pt"      # under K.HOME
+REBUILT = ("cprime", "cprime_ref", *SEP_DI.values(), *SEPNET_DI.values())   # judged with rebuilt_distance's fallback
 # Amendment 2 (experiment 1b): the matched cell. Each part's fold C′ rebuilds reference.wav (the
 # amp track) instead of the stem, re-EQ'd and levelled as `song_settings.rebuild_all` does, and is
 # scored against reference.wav: the ceiling for any separator with today's C′.
 MATCHED_DI = "cprime_ref"
-REBUILD_SOURCE = {"cprime": "stem", "cprime_ref": "reference", **{d: s for s, d in SEP_DI.items()}}
-REBUILD_DIR = {"cprime_ref": "rebuilt-ref", **{d: f"rebuilt-{s}" for s, d in SEP_DI.items()}}
-NO_STORED = (MATCHED_DI, "dac9", *SEP_DI.values())   # no stored values: S's repeat is the render check
+REBUILD_SOURCE = {"cprime": "stem", "cprime_ref": "reference", **{d: s for s, d in SEP_DI.items()},
+                  **{d: s for s, d in SEPNET_DI.items()}}
+REBUILD_DIR = {"cprime_ref": "rebuilt-ref", **{d: f"rebuilt-{s}" for s, d in SEP_DI.items()},
+               **{d: f"rebuilt-csep-{s}" for s, d in SEPNET_DI.items()}}
+NO_STORED = (MATCHED_DI, "dac9", *SEP_DI.values(), *SEPNET_DI.values())   # S's repeat is the render check
 # 1c's rescoring of experiment 1's C′ renders against a separator's stem (zero renders): a score
 # "view" name -> (the DI whose renders it reads, its configurations).
 VIEWS = {f"cprime@{s}": ("cprime", (("cprime", s, "native", "own"),)) for s in SEPARATORS}
@@ -259,6 +271,10 @@ def configs(di):
     if di in SEP_DI.values():                                          # amendment 3: matched, gcc, rebuild-only
         s = REBUILD_SOURCE[di]
         return [(di, s, "native", "own"), (di, s, "gcc", "own"), (di, "stem", "native", "own")]
+    if di in SEPNET_DI.values():                                       # amendment 4: matched, gcc, other source
+        s = REBUILD_SOURCE[di]
+        other_ = "mega53" if s == "stem" else "stem"
+        return [(di, s, "native", "own"), (di, s, "gcc", "own"), (di, other_, "native", "own")]
     if di in VIEWS:
         return list(VIEWS[di][1])
     lags = LAGS + (REBUILT_LAGS if di in REBUILT else ())
@@ -736,12 +752,15 @@ def cmd_rebuild_ref():
     rebuild_from(MATCHED_DI, lambda slug, part: CR.mono(part["crop"] / "reference.wav"))
 
 
-def rebuild_from(di, source):
+def rebuild_from(di, source, net=None, extra_leak=None, out_dir=None, gate=True):
     """C′'s rebuild of `source(slug, part)` (a 10-s crop on the recording's timeline) for every
     part, into `REBUILD_DIR[di]`, exactly as `cmd_rebuild_ref` (amendment 2) rebuilt reference.wav:
     the fold's final C′ (DONE marker), experiment 4's leak assertion, re-EQ'd by fold 2's average −
     fold f's, −22.9 LUFS. Logs GCC against the source, reference.wav and C′'s stem rebuild; the
-    amendment 2a checks (3 samples, 0.05 LU) gate `render --di <di>` through `check.json`."""
+    amendment 2a checks (3 samples, 0.05 LU) gate `render --di <di>` through `check.json`.
+    Amendment 4: `net(fold)` swaps the network (default C′); `extra_leak(band, path, fold)` adds a
+    leak assertion per part (the separator-robust networks' pools and residual library); `out_dir`
+    writes elsewhere (4a's identity check); `gate=False` returns the problems instead of exiting."""
     import numpy as np
     import torch
 
@@ -754,19 +773,21 @@ def rebuild_from(di, source):
 
     ps, fo = K.parts(), SS.folds()
     avg = {f: np.load(SS.MODELS / "cache" / f"average-fold{f}.npy") for f in range(4)}
-    d = OUT / REBUILD_DIR[di]
+    d = pathlib.Path(out_dir) if out_dir else OUT / REBUILD_DIR[di]
     d.mkdir(parents=True, exist_ok=True)
     log_path = d / "rebuild-log.json"
     log = json.loads(log_path.read_text()) if log_path.exists() else {}
     nets = {}
     for slug in sorted(s for s in ps if s not in EXCLUDED):
         f = fo[ps[slug]["band"]]
-        path = SS.cprime(f)
+        path = pathlib.Path(net(f)) if net else SS.cprime(f)
         if not SS.net_ready(path):
             raise SystemExit(f"{path} is not final (no DONE marker)")
         cfg = json.loads((path.parent / "config.json").read_text()) if (path.parent / "config.json").exists() else {}
         caches = [pathlib.Path(c) for c in cfg.get("caches", [DF.MODELS / c for c in DF.CACHES])]
         DF.assert_no_leak(ps[slug]["band"], cfg.get("fold", f), f, DF.train_pool_bands(f, caches))
+        if extra_leak:
+            extra_leak(ps[slug]["band"], path, f)
         out = d / f"{slug}.npy"
         if out.exists() and slug in log:
             continue
@@ -783,14 +804,26 @@ def rebuild_from(di, source):
         log[slug] = {"fold": f, "network": str(path), "source": REBUILD_SOURCE[di], "gcc_vs_source": gcc_level(y, src),
                      "gcc_vs_reference": gcc_level(y, ref), "gcc_vs_stem_rebuild": g, "lufs": lufs(y),
                      "problems": rebuild_ref_problems(g, lufs(y))}
+        if net:
+            log[slug]["network_sha256"] = file_sha256(path)
         K._atomic(log_path, log)
         print(slug, "fold", f, log[slug], flush=True)
     bad = {s_: v["problems"] for s_, v in log.items() if v.get("problems")}
     missing = [s_ for s_ in ps if s_ not in EXCLUDED and s_ not in log]
     K._atomic(d / "check.json", {"ok": not bad and not missing, "problems": bad, "missing": missing})
+    if not gate:
+        return bad, missing
     if bad or missing:
         raise SystemExit(f"{di} rebuilds fail the pre-render checks: {bad or missing}")
     print(f"{di} rebuilds: all 24 within 3 samples of C′'s stem rebuild and at -22.9 ± 0.05 LUFS")
+
+
+def file_sha256(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 def rebuilds_ok(di):
@@ -1292,6 +1325,8 @@ def cmd_render(shard, di_name="cprime,measure", after=(), folds=None, accept_gua
             raise SystemExit(f"{d} is a score view of existing renders, not a DI to render")
         if d in SEP_DI.values() and not rebuilds_ok(d):
             raise SystemExit(f"{d}: local_objective_1c's pre-render checks have not passed (amendment 3)")
+        if d in SEPNET_DI.values() and not rebuilds_ok(d):
+            raise SystemExit(f"{d}: local_objective_1d's pre-render checks have not passed (amendment 4)")
     mine = _cells_for(sig, folds)
     left = sum(len(sig[c]) + 1 for c in mine for d in dis if not _done(d, *c))       # all shards
     if not accept_guard_stop and not disk_ok(disk_free_gb(), left):
@@ -1331,10 +1366,19 @@ def cmd_render(shard, di_name="cprime,measure", after=(), folds=None, accept_gua
                 sel, S = menu[amp][K.START[part["gain_class"]][amp]]
                 if K.key(S) != K.key(ms[amp][part["gain_class"]][1]):
                     raise SystemExit(f"{amp} {part['gain_class']}: the live S differs from arm B's stored copy")
+                comp = None
+                if d in SEPNET_DI.values() and d == next(x for x in dis if x in SEPNET_DI.values()):
+                    comp = prev.get("comparator") or comparator_check(rr, sel, slug, amp, sig[(slug, amp)], aligned)
+                    if comp["max_dev"] > CHECK_TOL:
+                        breakage(rec_path, {"slug": slug, "amp": amp, "di": d, "sigma": meta["hash"],
+                                            "renders": prev.get("renders", 0), "comparator": comp},
+                                 f"{slug} {amp}: C′ at S moved {comp['max_dev']:.4f} from experiment 1's stored score")
                 di32 = sig_s["di"].astype(np.float32)
                 n0 = rr.count
                 rec = {"slug": slug, "amp": amp, "di": d, "sigma": meta["hash"], "status": "running",
                        "renders": prev.get("renders", 0), "warm_ups": prev.get("warm_ups", 0) + 1}
+                if comp is not None:
+                    rec["comparator"] = comp
                 rec_path.parent.mkdir(parents=True, exist_ok=True)
                 warm = rr.render(di32, sel, S)                                  # warm-up, counted
                 scales, checks = [], []
@@ -1361,6 +1405,24 @@ def cmd_render(shard, di_name="cprime,measure", after=(), folds=None, accept_gua
     finally:
         if rr is not None:
             rr.close()
+
+
+def comparator_check(rr, sel, slug, amp, points, aligned):
+    """Amendment 4a: one render of C′'s stem rebuild at S per cell, scored on today's objective
+    and compared with experiment 1's stored score at S (|log| per half): the renderer still
+    matches the stored comparators. Its two renders (a warm-up and S) are counted apart from the
+    cell's 3,528."""
+    import numpy as np
+
+    i = next(j for j, q in enumerate(points) if q.get("source") == "S")
+    sig_c, part = part_signals(slug, "cprime")
+    x32 = sig_c["di"].astype(np.float32)
+    rr.render(x32, sel, points[i]["x"])                                   # its own warm-up, as experiment 1
+    y = rr.render(x32, sel, points[i]["x"])
+    s, _ = score_render(y, "cprime", sig_c, part["judge_lag"], aligned, only={CURRENT})
+    stored = json.loads((OUT / "scores" / "cprime" / slug / f"{amp}.json").read_text())["scores"][i][cname(CURRENT)]
+    devs = {h: deviation(s[cname(CURRENT)][h], stored[h]) for h in HALVES}
+    return {"index": i, "renders": 2, "devs": devs, "max_dev": max(devs.values())}
 
 
 def _score_cell(args):
