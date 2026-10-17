@@ -242,7 +242,12 @@ reproduced.
   - Any tolerance from 0.20 to 2.4 Hz keeps the same 18 DIs.
   - Reading the fundamental's line test on the finer spectrum would cost 4 more sections.
 
-**The hum fix, re-measured** (`hum-fix.json`; the earlier run is `hum-fix-v1.json`): HUMFIX_RESULT
+**The hum fix, re-measured** (`hum-fix.json`; the earlier run is `hum-fix-v1.json`).
+- The 20 controls were redrawn with the same seed, from DIs with no line at all, kept or refuted.
+- All 119 flagged DIs fail the collateral condition. The median largest band excess is 0.61 dB,
+  and the 10th–90th percentiles are 0.52–1.07 dB.
+- 118 of them also stay over the flag after the fix.
+- **Still not adopted:** hum-flagged sections stay out.
 
 ### The second blind page (built; waiting for the user)
 
