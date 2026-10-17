@@ -572,6 +572,13 @@ def test_render_process_patterns():
     assert M.is_render_process(f"{py} -m learn.song_soundspace score-targets --arm B1 --shard 0/3")
     assert not M.is_render_process(f"{py} -m learn.song_soundspace train --arm B1 --fold 2")
     assert not M.is_render_process("zsh -c 'python -m learn.local_objective render'")
+    # the rebuild-tone and multi-section runners' render commands, as their zsh scripts launch them
+    assert M.is_render_process(f"{py} -u -m learn.rebuild_tone render --stage tr1 --arms arm_stm --shard 0/3")
+    assert M.is_render_process(f"{py} -u -m learn.multi_section run --worker 0/2 --batch 0")
+    for other in ("rebuild_tone score --workers 3", "rebuild_tone report", "rebuild_tone gate-report",
+                  "rebuild_tone_train train --fold 0 --arm a --seed 0", "multi_section report",
+                  "multi_section decide --batch 0", "multi_section batches", "multi_section clear"):
+        assert not M.is_render_process(f"{py} -u -m learn.{other}")
     assert M.others_rendering([(1, f"{py} -m learn.local_objective render"), (2, "vim")], own={3}) == [1]
 
 
