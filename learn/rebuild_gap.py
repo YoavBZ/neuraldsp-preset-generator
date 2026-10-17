@@ -1124,6 +1124,7 @@ def cmd_choose_rot(shard):
     ms = L.menu_S()
     aligned = LO.judge_fns()
     todo = L._shard(r1_cells(), shard)
+    (OUT / "rotation").mkdir(parents=True, exist_ok=True)
     rr = None
     try:
         for slug, amp in todo:
