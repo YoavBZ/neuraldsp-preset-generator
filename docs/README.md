@@ -440,7 +440,7 @@ was declared, what was measured, and the research behind it.
     and drive calibration, and leave-one-band-out corrections. Research, not a declared plan.
 13. [fresh-di-amp-multitracks-2026-10.md](research/fresh-di-amp-multitracks-2026-10.md): where to
     find more fresh songs with a guitar DI and the amp track of the same take (October 2026). After
-    checking the repo, no public source checked adds fresh non-metal clean-to-crunch pairs: the
+    checking the repo, no source checked adds fresh non-metal clean-to-crunch pairs: the
     project's sets 1–5 and label table have already used Cambridge-MT's, set 6 is MedleyDB, and the
     other sources are renders, single notes or unverified. Ranked routes: rule on the held-out sets, a local scan of the Cambridge sessions this
     search could not reach, Weathervane, wider scope, or recording new material. Research, not a
