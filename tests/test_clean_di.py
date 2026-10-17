@@ -4,10 +4,12 @@ import importlib.util
 import os
 import pathlib
 
-import numpy as np
 import pytest
 
-from learn import clean_di as C
+np = pytest.importorskip("numpy")
+pytest.importorskip("scipy")
+
+from learn import clean_di as C  # noqa: E402
 
 SR = C.SR
 RNG = np.random.default_rng(7)

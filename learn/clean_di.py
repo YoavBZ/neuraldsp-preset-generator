@@ -1592,6 +1592,9 @@ def cmd_listen(args):
     for w in words:
         assert w not in text, w
     uris = re.findall(r'src="(data:[^"]+)"', page)
+    # Distinct only because of BD.pad's random `free` box: a repeat's AAC stream is byte-identical
+    # to its source's before the padding, and encoded sizes still follow the content (a hissy clip
+    # encodes larger, an edit to silence smaller). It blinds the ear, not a byte inspection.
     assert len(uris) == len(set(uris)), "duplicate clip bytes"
     (LISTEN / "private").mkdir(parents=True, exist_ok=True)
     (LISTEN / "private" / "key.json").write_text(json.dumps(key, indent=1))
