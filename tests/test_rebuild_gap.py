@@ -337,3 +337,30 @@ def test_tr2_due_is_plain_bool():
     v = G.tr2_due(row, 0.95)
     assert type(v) is bool
     json.dumps({"tr2_due": v})
+
+
+def test_renders_used_counts_warm_ups_once_and_splits_stages(tmp_path, monkeypatch):
+    import json
+    monkeypatch.setattr(G, "OUT", tmp_path)
+
+    def put(rel, obj):
+        p = tmp_path / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(obj))
+
+    # A cell's `renders` already includes its warm-up (49 = 48 settings + 1); a resumed cell has
+    # two warm-ups and 50 renders. `warm_ups` must not be added again.
+    put("renders/mag/p00/PR12.json", {"probe": "mag", "renders": 49, "warm_ups": 1})
+    put("renders/mag/p01/AC20.json", {"probe": "mag", "renders": 50, "warm_ups": 2})
+    put("renders/dep_rot/p02/SW50R.json", {"probe": "dep_rot", "renders": 0, "warm_ups": 0,
+                                           "status": "same_as_reb"})
+    put("renders/arm_rank/p00/PR12.json", {"probe": "arm_rank", "renders": 49, "warm_ups": 1})
+    put("comparator/probe/p00-PR12.json", {})
+    put("comparator/probe/p01-AC20.json", {})
+    put("comparator/arm/p00-PR12.json", {})
+    put("rotation/p00.json", {"renders": 9})
+    u = G.renders_used()
+    assert u["by_probe"] == {"mag": 99, "dep_rot": 0, "arm_rank": 49}
+    assert u["comparator"] == 6 and u["rotation_choice"] == 9
+    assert u["by_stage"] == {"r": 99 + 4 + 9, "tr": 49 + 2}
+    assert u["total"] == 99 + 49 + 6 + 9

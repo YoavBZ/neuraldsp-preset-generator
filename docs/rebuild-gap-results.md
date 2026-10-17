@@ -569,6 +569,8 @@ Folds hold 6, 10, 3 and 5 of the 24 parts.
   2,352, plus the comparator's 48. **TR2: none** ([below](#tr1--tr2-the-stopping-rule)).
 - **`report-tr.json` says 19,362.** That is R1's overcounted 16,914 plus TR's 2,448. In TR's
   count each arm cell's warm-up is counted twice (48 extra), the same `renders_used` fault as in R1.
+- **Fixed after the study:** `renders_used` now counts each warm-up once and reports R and TR
+  separately (`by_stage`), with a test. The stored reports keep the old figures.
 - **The study, net:** R1 16,581 + TR1 2,400 = **18,981 renders.** With the 27 lost in R1's crashed
   rotation choice, the machine rendered 19,008. The plan expected about 19–24k.
 - **Guards, all within tolerance:**

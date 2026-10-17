@@ -1540,15 +1540,22 @@ def probe_where(names, cells):
 
 
 def renders_used():
-    tot, by = 0, {}
+    """Renders on disk, by probe and by stage. A cell record's `renders` already counts its warm-ups
+    (the counter starts before the warm-up render, and a resumed cell adds to it), so `warm_ups` is
+    not added again. Stage R is the probes, their comparator and the rotation choice; stage TR is the
+    arms and their comparator. `total` is both."""
+    by, stage = {}, {"r": 0, "tr": 0}
     for p in (OUT / "renders").glob("*/*/*.json"):
         r = json.loads(p.read_text())
-        n = r.get("renders", 0) + r.get("warm_ups", 0)
+        n = r.get("renders", 0)
         by[r["probe"]] = by.get(r["probe"], 0) + n
-        tot += n
-    comp = 2 * len(list((OUT / "comparator").glob("*/*.json")))
+        stage["tr" if is_arm(r["probe"]) else "r"] += n
+    comp = {k: 2 * len(list((OUT / "comparator" / k).glob("*.json"))) for k in ("probe", "arm")}
     rot = sum(json.loads(p.read_text()).get("renders", 0) for p in (OUT / "rotation").glob("*.json"))
-    return {"by_probe": by, "comparator": comp, "rotation_choice": rot, "total": tot + comp + rot}
+    stage["r"] += comp["probe"] + rot
+    stage["tr"] += comp["arm"]
+    return {"by_probe": by, "comparator": comp["probe"] + comp["arm"], "rotation_choice": rot,
+            "by_stage": stage, "total": stage["r"] + stage["tr"]}
 
 
 def main(argv=None):
