@@ -1,9 +1,8 @@
-# The rebuild gap: results (stages A and R, 2026-10-17)
+# The rebuild gap: results (stages A, R and TR, 2026-10-17)
 
 Run under the [plan](rebuild-gap-plan.md); its amendment 1 governs. Development data only: step 3's
-24 parts, Σ `ee91f710947dbb5c`. Outputs are in `~/ndsp-presets/learn/rebuild-gap/`. Stage T has
-finished training. Its rendered test (TR) is running and is reported [below](#stage-tr-pending)
-when it ends.
+24 parts, Σ `ee91f710947dbb5c`. Outputs are in `~/ndsp-presets/learn/rebuild-gap/`. All
+declared stages have run: A, B0, R1 (R2 not due), T, B1 and TR1 (TR2 not due).
 - **Audited 2026-10-17 by an independent agent (stages A and R).**
   - It recomputed every figure from the stored scores with its own code. Every figure matched
     except the chance figure for `dep_rot`.
@@ -21,13 +20,31 @@ when it ends.
     - part-weighted, per-amp and per-class figures for every probe;
     - the where section and A2's separator contrasts hedged;
     - the proxy's view of `high` corrected.
+- **(stage TR) audited 2026-10-17 by an independent agent; changes:** it recomputed every TR
+  figure from the stored scores, training logs and records with its own code, and all matched; it
+  confirmed the leak rules, the control's design, the TR2 decision (projected lower bound −0.025)
+  and the net renders (TR 2,400; the study 18,981).
+  - fold 2's noisy-validation example corrected (0.14 between consecutive checks, 0.21 across two);
+  - the list of the largest per-part gains corrected (Passing Ships and Farthest Step added;
+    Fragments is outside the 7);
+  - "unchanged" short-time treble error and coherence corrected to slightly worse (18 of 24; 1–3
+    kHz coherence 0.39 → 0.33);
+  - "the lean belongs to the loss" softened to "points to the loss", with `rank` − `ctl`'s
+    interval and the checkpoint-selection asymmetry stated;
+  - the plan's declared build-ons (more seeds, a learned surrogate, the product cell) added to the
+    next step, with a second seed as the cheapest check;
+  - also taken: `rank`'s gain set at a little over half of `dep_eq`'s; the −0.53 Spearman marked as
+    partly built in; the partial correlation (+0.75) and `ctl`'s (−0.23) added; the ad hoc
+    metric's frame and bin floors stated; the validation-band parts named; near S worded as "no
+    contrast decided"; `ctl`'s LSD rise noted.
 - **Reading these figures:** they are post-hoc development estimates. Fidelity is the cross-half
   local Spearman against the amp track (1 means perfect local ranking).
   - Every figure is band-weighted, with a 90% band-clustered t interval (bands − 1 df: 13 for
     stage R and A1 on all bands), the leave-one-band-out (LOBO) range, and the count of bands above
     and below 0.
-- **Multiplicity:** 14 probes, 11 family contrasts and about 52 knob-family contrasts share the
-  parts and Σ. Read the families, not single intervals.
+- **Multiplicity:** 14 probes, 11 family contrasts, about 52 knob-family contrasts and stage TR's
+  two primaries (with their control and 12 near-S contrasts) share the parts and Σ. Read the
+  families, not single intervals.
 
 ## Headline
 
@@ -53,7 +70,31 @@ The main figures:
     ([what it is](#dep_eq-exactly)).
 - **No probe extended to R2.** `dep_eq` missed the rule by 0.0015 ([below](#r1--r2-the-stopping-rule)).
 
+**Stage TR: a C′ fine-tuned with a proxy-ranking loss (`rank`) leans better on rendered ranking,
+undecided** ([below](#stage-tr-the-ranking-trained-rebuild-judged-on-rendered-ranking-tr1-24-cells-14-bands)):
+- **`rank` − C′: +0.075 [−0.031, +0.182],** 7 of 14 bands above 0, LOBO +0.039 to +0.099,
+  part-weighted +0.137 [+0.025, +0.249]. About a quarter of the gap (0.26 [−0.23, 0.51]).
+- **`rank` − its matched-step control: +0.104 [−0.005, +0.214],** 9 of 14 bands, part-weighted
+  +0.162 [+0.045, +0.278], reliable-pair accuracy +0.050 [+0.005, +0.095]. The control itself
+  leans slightly below C′ (−0.029 [−0.063, +0.005]). So, on these undecided estimates, the lean
+  points to the loss rather than to more fine-tuning (`rank` − `ctl`'s interval still reaches
+  −0.005, and only `rank`'s checkpoint was chosen on the proxy).
+- **The gain is uneven:** it sits mostly on the 7 parts C′ ranks worst (median part +0.015).
+- **It looks like a learned long-term EQ** (post hoc): `rank` lowered the rebuild's long-term
+  spectral distance, its gain follows `dep_eq`'s part by part, and it left the short-time
+  magnitude error above 2 kHz slightly higher (on 18 of 24 parts) and lowered coherence. That
+  error is what R points to, and neither fix reduces it.
+- **The proxy read the arm as slightly worse on the 24 parts** (B1), while rendered ranking read it
+  as better. TR2 was not due.
+- **Proposed next** ([below](#the-next-step-these-imply-a-proposal-not-yet-planned-or-reviewed)):
+  a rebuild change aimed at the short-time treble magnitude, judged on rendered ranking, built
+  without the test parts, and checked on fresh full mixes.
+
 ## Renders used
+
+**The study: 18,981 renders** (R1 16,581 and TR1 2,400; R2 and TR2 none), against about 19–24k
+expected. With the 27 lost in R1's crashed rotation choice, the machine rendered 19,008. TR's
+count is [with its stage](#renders-used-and-guards).
 
 **R1: 16,581 renders, against at most 16,728 declared.** A crashed first attempt at the rotation
 choice also rendered 27 that were lost ([failures](#operational-failures-and-fixes)), so the
@@ -64,8 +105,8 @@ machine rendered 16,608.
 - `dep_rot`'s rotation choice: 216 (24 × 9). The comparator: 48.
 - **`report-r1.json` says 16,914.** That is wrong: `renders_used` adds each cell's warm-up a second
   time. The warm-up is already in the record's `renders` (49 per cell).
-  - `renders_used` also sums all of `renders/` and `comparator/`, so TR's report will include R1
-    and the same overcount.
+  - `renders_used` also sums all of `renders/` and `comparator/`, so TR's report does include R1
+    and the same overcount ([TR's count](#renders-used-and-guards)).
 - Stages A, A2 and B0 rendered nothing.
 
 **Guards, all within tolerance:**
@@ -451,29 +492,284 @@ here, is built by the same rule from the raw DI: `knob_ceiling.measure_di` is `e
 - This follows the declared rule exactly. **`dep_eq` is the closest undecided lead.** The plan
   already requires that any fix to ship be scored on a fresh draw of parts outside the 24 first.
 
-## What it decides
+## Stage TR: the ranking-trained rebuild, judged on rendered ranking (TR1, 24 cells, 14 bands)
 
-- **The rebuild's training target is its short-time magnitude,** above all above 2 kHz, through
-  the whole note. Sustain carries more only because it covers 76% of the samples.
+**The arms.** `rank` is each fold's C′ fine-tuned with C′'s loss plus the two proxy terms
+(ranking and output match). `ctl` is the same run with both weights at 0, on the same data
+stream, stopped at `rank`'s best step. **C′** is 1b's stored rebuild (`cprime_ref`). Each arm
+rebuilt every part's `reference.wav` with its part's fold network and was scored as 1b's matched
+cell: `reference.wav`, −52, own mask with the record fallback, paired cell by cell with C′.
+Folds hold 6, 10, 3 and 5 of the 24 parts.
+
+### Stage T: the fine-tunes (zero renders, MPS)
+
+- **Weights by the declared share rule** (50 batches at step 0): λ_rank 2.54–3.01 and λ_match
+  0.55–0.59 across folds, against C′'s loss of 5.06–5.61.
+- **The training pool** is the PR12 cache's rows outside fold f and outside the two validation
+  bands: 10,467–12,593 rows. Validation is 2,715–2,788 rows; bleed 22–29 clips.
+- **Selection** is proxy fidelity on 96 fixed crops of the two held-out training-fold bands, every
+  250 steps:
+
+| Fold | Validation bands | Step 0 (C′) | `rank` best step | `rank` best proxy | `rank` stopped at | `ctl` at that step | Validation recon at the kept step: `rank` / `ctl` (step 0) |
+|---|---|---|---|---|---|---|---|
+| 0 | Eat The Feeder, Zeno | 0.537 | 500 | 0.668 | 2,000 | 0.478 | 39.1 / 38.6 (38.3) |
+| 1 | Adam Buckley, Starnes And Shah | 0.434 | 1,000 | 0.628 | 2,500 | 0.436 | 40.1 / 38.4 (37.7) |
+| 2 | Starnes And Shah, Swatkins | 0.354 | 1,000 | 0.669 | 2,500 | 0.398 | 36.9 / 35.3 (35.5) |
+| 3 | Swatkins, Zeno | 0.421 | 250 | 0.600 | 1,750 | 0.351 | 43.4 / 43.1 (42.6) |
+
+- **Every fold stopped early**, 1,500 steps after its best, at 1,750–2,500 of the 4,000 steps
+  allowed. No fold kept step 0, so every arm is a fine-tune. No step was skipped and none needed a
+  recovery.
+- **4.0 h of MPS** (`rank` 3.3 h, `ctl` 0.7 h), at the low end of the 4–6 h expected.
+- **The validation curves are noisy.** Within a fold the proxy moves by up to 0.14 between
+  consecutive checks (fold 2: 0.526 at step 750, 0.669 at 1,000) and by 0.21 across two (0.458 at
+  step 500); fold 1 runs 0.419–0.628. The
+  kept checkpoint is the best of 7–10 such checks, so its gain over step 0 (+0.13 to +0.31) is
+  optimistic.
+- **The control's proxy at the matched step** fell on folds 0 and 3, stayed flat on fold 1 and
+  rose 0.04 on fold 2. More of C′'s own loss does not raise proxy fidelity.
+- **`rank` trades a little reconstruction:** its validation recon (100 · L1 + multi-resolution
+  STFT) sits 0.3–1.7 above `ctl`'s at the kept step.
+- **Leak rules, as declared.** Checkpoints were selected only on held-out training-fold bands,
+  never on the 24 parts' amp tracks or renders. Each fold's validation bands are other folds'
+  bands, so the network that rebuilds a part never trained or selected on that part's band. The
+  rebuild-time leak assertion and 2a's checks (lag 0 against C′'s stem rebuild, −22.9 LUFS) passed
+  on all 48 rebuilds (`arms/check.json`). No Guitar-TECHS P3 row is in the cache (asserted).
+  - As with C′'s own training pool, the validation bands' cache rows can include PR12 renders of
+    the DI recordings of 24-set parts from other folds (the stage-A audit found the cache holds
+    recordings of 17 of the 24). The validation bands are the bands of 4 of the 24 parts: Signs
+    (Zeno, validation in folds 0 and 3), Today's The Day (Eat The Feeder, fold 0), Drag Me Down
+    (Adam Buckley, fold 1) and Prodigal (Starnes And Shah, folds 1 and 2). The cache's `meta.json` has no part field, so whether those
+    recordings are among the validation rows can't be confirmed. They are never the recording of a
+    part that the network rebuilds.
+
+### B1: the proxy on the 24 parts (zero renders)
+
+- **Mean proxy fidelity of the amp-track rebuilds:** C′ 0.471, `ctl` 0.438, `rank` 0.425.
+  - **The validation gain did not carry to the real amp tracks, as the proxy sees them.**
+    `rank` − C′ is −0.046 on the proxy, with 12 of 24 parts up.
+  - Per part it swings widely: down from 0.77 to 0.11 and from 0.71 to 0.08 on two parts, up from
+    0.18 to 0.57 and from 0.24 to 0.58 on two others.
+- **Against the rendered result** (per part, the arms' differences, computed for this write-up):
+
+  | Contrast | Proxy, mean | Rendered, part mean | Spearman across parts | Same sign |
+  |---|---|---|---|---|
+  | `rank` − C′ | −0.046 | +0.137 | +0.47 | 17 of 24 |
+  | `rank` − `ctl` | −0.013 | +0.162 | +0.49 | 17 of 24 |
+  | `ctl` − C′ | −0.033 | −0.025 | +0.30 | 14 of 24 |
+
+  - **The proxy picks out moderately well which parts the change helps, but its average is
+    wrong:** it reads the change as a small loss, and rendered ranking reads a gain.
+  - This matches B0, where the proxy missed `dep_eq`'s gain. See
+    [what `rank` changed](#what-rank-changed-in-the-rebuild) for why that may be the same miss.
+
+### Renders used and guards
+
+- **TR1: 2,400 renders, as declared:** 2 arms × 24 cells × 49 (48 settings and a warm-up) =
+  2,352, plus the comparator's 48. **TR2: none** ([below](#tr1--tr2-the-stopping-rule)).
+- **`report-tr.json` says 19,362.** That is R1's overcounted 16,914 plus TR's 2,448. In TR's
+  count each arm cell's warm-up is counted twice (48 extra), the same `renders_used` fault as in R1.
+- **The study, net:** R1 16,581 + TR1 2,400 = **18,981 renders.** With the 27 lost in R1's crashed
+  rotation choice, the machine rendered 19,008. The plan expected about 19–24k.
+- **Guards, all within tolerance:**
+  - comparator (C′'s 1b rebuild at S, warm-up and S, against 1b's stored score at S): largest
+    1.3e-4 over 24 cells; tolerance 0.005;
+  - each cell's S against its warm-up: largest 5.9e-7;
+  - FLAC against float at S: largest 1.5e-5.
+- Rendered and scored 19:53–20:13. The first report crashed at its last step and was rerun at
+  20:20 on the same scores ([failures](#operational-failures-and-fixes)).
+
+### The primaries
+
+**On the same 24 cells:** the truth 0.850 [0.732, 0.967], C′ 0.561 [0.407, 0.715], `ctl` 0.532
+[0.375, 0.689] and **`rank` 0.636 [0.526, 0.747]**.
+
+| Contrast | Estimate | LOBO | Bands +/− | Part-weighted | Reliable-pair accuracy Δ |
+|---|---|---|---|---|---|
+| **`rank` − C′** (does the change help?) | **+0.075 [−0.031, +0.182]** | +0.039 to +0.099 | 7/7 | +0.137 [+0.025, +0.249] | +0.037 [−0.005, +0.080], 9/5 |
+| **`rank` − `ctl`** (is it the loss?) | **+0.104 [−0.005, +0.214]** | +0.063 to +0.126 | 9/5 | +0.162 [+0.045, +0.278] | +0.050 [+0.005, +0.095], 10/4 |
+| `ctl` − C′ (more fine-tuning alone) | −0.029 [−0.063, +0.005] | −0.036 to −0.013 | 6/8 | −0.025 [−0.048, −0.001] | −0.012 [−0.029, +0.004], 6/7 |
+| *truth − `rank`* | +0.213 [+0.088, +0.339] | +0.178 to +0.243 | 12/2 | +0.217 [+0.094, +0.340] | +0.192 [+0.135, +0.248] |
+
+- **Share of the gap** (truth − C′ +0.289 on these cells): `rank` closes 0.26 [−0.23, 0.51];
+  `ctl` −0.10 [−0.38, 0.02].
+- **Per amp and class** (descriptive; per amp is 8 parts, crunch is 5):
+
+  | Contrast | AC20 | PR12 | SW50R | Clean | Crunch |
+  |---|---|---|---|---|---|
+  | `rank` − C′ | +0.055 | +0.290 | +0.065 | +0.133 | −0.028 |
+  | `rank` − `ctl` | +0.068 | +0.305 | +0.121 | +0.152 | +0.018 |
+  | `ctl` − C′ | −0.013 | −0.015 | −0.057 | −0.019 | −0.046 |
+  | *gap: truth − C′* | +0.347 | +0.612 | +0.081 | +0.419 | +0.055 |
+
+  As in stage R, the gain sits where the gap is: PR12 and the clean parts.
+- **Per fold** (part means; descriptive, 3–10 parts each): `rank` − C′ +0.06, +0.15, −0.01 and
+  +0.29 on folds 0–3; `rank` − `ctl` +0.11, +0.15, −0.00 and +0.35; `ctl` − C′ −0.05, +0.01,
+  −0.01 and −0.06. Fold 2 (3 parts, where C′ already ranks 0.39–0.97 and the truth sits below C′
+  on one part) shows nothing either way.
+- **Near S** (A1's knob families, 3-way agreement on S's ±1/8 neighbourhood): no family's
+  contrast is decided. `rank` − C′ runs from −0.018 to +0.026, each interval containing 0 (input
+  gain's is ±0.16 wide). Against `ctl`, amp tone is +0.058 [+0.015, +0.101], one interval among 12.
+  An inference, as with `dep_eq`: the gain on all of Σ comes from pairs farther from S.
+
+### Where the gain sits (post hoc, descriptive)
+
+- **It is uneven across parts.** `rank` beats C′ on 13 of 24 parts, and the median part gains
+  +0.015.
+- **Most of it is on the parts C′ ranks worst.** On the 7 parts where C′'s fidelity is under 0.35
+  (a cut chosen after looking; on 4 of them C′'s ranking is near 0 or inverted), `rank` − C′ is
+  +0.465 on average, with 6 of 7 up. On the other 17 it is +0.002, with 7 up. Across all 24, the
+  gain's Spearman with C′'s fidelity is −0.53, but that is partly built in: the gain contains C′,
+  and shuffling `rank`'s values across parts gives about −0.77 on average. The split with `ctl`
+  beside it (next bullet) is the better evidence.
+  - The largest: Bloomlight −0.82 → +0.29, Long Way Home −0.28 → +0.69, First Offering (GTR 2)
+    0.00 → 0.44, Passing Ships (ElecGtr6) −0.26 → +0.07, Farthest Step 0.31 → 0.61. Outside the 7,
+    the largest is Fragments 0.72 → 0.97.
+  - The largest losses: Just Don't Talk 0.81 → 0.58, Sculptor's Request (GTR 1) 0.72 → 0.54.
+  - **`ctl` does not do this on the same 7 parts** (−0.019), so it is not an effect of any further
+    fine-tuning. But `rank` moves the rebuild further than `ctl` does, and a part at the floor can
+    only rise. So part of the pattern may be any larger change moving extreme parts toward the
+    middle. These data can't separate the two.
+
+### What `rank` changed in the rebuild
+
+Computed for this write-up (zero renders; each rebuild against the measure DI, aligned as in stage
+R, medians over the 24 parts):
+
+| Rebuild | LSD, 80 Hz–8 kHz (dB) | Coherence 3–8 kHz | Coherence 1–3 kHz | Short-time magnitude error above 2 kHz (dB) |
+|---|---|---|---|---|
+| C′ | 3.30 | 0.012 | 0.39 | 8.87 |
+| `ctl` | 3.60 | 0.013 | 0.41 | 8.79 |
+| `rank` | **2.52** (lower on 18 of 24) | 0.010 | 0.33 | 8.97 (higher on 18 of 24) |
+
+- The last column is a metric added for this write-up, not a declared one: the mean |ΔdB| of
+  the STFT magnitudes (1,024-sample frames, hop 256) over 2–8 kHz, on frames within 40 dB of the
+  true DI's loudest and bins within 60 dB of each frame's loudest true bin, after removing each
+  bin's long-term offset. That removal takes out any fixed EQ.
+- **`rank` moved the rebuild's long-term spectrum toward the true DI's.** It slightly raised the
+  short-time magnitude error above 2 kHz (median +0.23 dB, 18 of 24) and lowered coherence (1–3
+  kHz 0.39 → 0.33, lower on 21 of 24; 3–8 kHz lower on 20 of 24).
+- `ctl` went the other way on the long-term spectrum (LSD 3.30 → 3.60, higher on 22 of 24), while
+  its fidelity fell only 0.029.
+- **Per part, `rank`'s rendered gain follows `dep_eq`'s** (R1, the same cells): Spearman +0.82,
+  and +0.75 with C′'s fidelity partialled out. `ctl`'s gain correlates −0.23 with `dep_eq`'s. It
+  follows `high`'s at +0.75, its own LSD drop at −0.46, and not its change in short-time treble
+  error (−0.12). `rank` − `dep_eq` is −0.058 [−0.131, +0.016].
+- **Reading, hedged:** the proxy-ranking loss seems to have moved the rebuild mostly as `dep_eq`
+  does, toward the right long-term spectral balance. Both are post hoc, and both gains sit on the
+  parts where C′ ranks worst, so the correlation is partly shared difficulty.
+  - That fits the proxy's construction: its tone stack and cab are fixed long-term filters and its
+    distance is a frame-averaged log-mel, so a long-term balance error is what it sees most
+    readily. It still did not reward this change on the 24 parts (B1).
+
+### Reading
+
+- **Both primaries are undecided, and both lean positive.** Neither band-weighted interval
+  excludes 0. By the plan's rules that is not a failure, and the lean is built on.
+- **What the lean is worth:**
+  - every leave-one-band-out value is positive for both (`rank` − C′ +0.039 to +0.099; `rank` −
+    `ctl` +0.063 to +0.126);
+  - part-weighted, both intervals exclude 0;
+  - `rank` − `ctl`'s reliable-pair accuracy excludes 0 (+0.050 [+0.005, +0.095]);
+  - **against that,** `rank` − C′ splits the bands 7 and 7, the median part gains +0.015, and the
+    gain rests mostly on 7 parts where C′ ranks badly.
+  - The size: about a quarter of the rebuild gap (0.26, with an interval reaching −0.23). `rank`
+    stays +0.213 below the truth.
+- **The declared reading** ("a positive `rank` − C′ is built on … positive against C′ but not
+  against `ctl` points to the extra fine-tuning"): `rank` leans positive against both, and `ctl`
+  leans slightly below C′ (part-weighted −0.025 [−0.048, −0.001]). **So, on these undecided
+  estimates, the lean points to the loss rather than to more fine-tuning** (`rank` − `ctl`'s
+  interval still reaches −0.005, and only `rank`'s checkpoint was chosen on the proxy: it is the
+  best of its own noisy checks, while `ctl` is not selected). Fine-tuning on C′'s loss alone, if
+  anything, costs a little.
+- **How it relates to stage R.** R found that what costs ranking is a structured short-time
+  magnitude error, mostly above 2 kHz, of which a fixed long-term EQ (`dep_eq`) removes at most
+  about half. TR's change looks like a learned version of the long-term part:
+  - its gain is a little over half of `dep_eq`'s (+0.075 against +0.133; `rank` − `dep_eq`
+    −0.058 [−0.131, +0.016]);
+  - it follows `dep_eq` part by part;
+  - it lowered the LSD and slightly worsened the short-time treble error and the coherence.
+  - **The structured short-time error above 2 kHz is the part that neither `dep_eq` nor `rank`
+    reduces,** and on R's evidence it is most of what remains. A proxy that reads frame-averaged
+    log-mel through fixed filters is a weak lever on it. B0 already showed the proxy underrates
+    `high`'s gain at about 58%.
+- **Multiplicity:** two primaries, the control contrast, their part-weighted and reliable-pair
+  rows, per-fold rows and 12 near-S contrasts share the 24 cells and Σ, after experiments 1–1d and
+  stage R. One seed per fold, and fold 2 has 3 parts. These are development estimates.
+
+### TR1 → TR2: the stopping rule
+
+- **The declared rule is on `rank` − C′:** positive, its interval containing 0, and the interval
+  narrowed by the stored ratio (0.948, the same six contrasts as R1) excluding 0.
+- The half-width is 0.106; narrowed, it is 0.101, above the estimate's 0.075. The projected
+  lower bound is −0.025, so **TR2 was not due**, and TR stopped at TR1. The runner logged `TR2 not
+  due`.
+- `rank` − `ctl` would have met the narrowing test, by 0.0006 (projected lower bound +0.0006), but
+  the rule was declared on `rank` − C′ only.
+- The product cell (the arms rebuilding the htdemucs stem) was not run. The plan ties it to a
+  positive TR reading and the user's yes.
+
+## What it decides (stages A, R and TR together)
+
+- **Where the rebuild loses ranking, with a perfect stem: its short-time magnitude,** above all
+  above 2 kHz, through the whole note (A, R).
+  - Not its phase: the true phase under the rebuild's magnitude recovers nothing.
+  - Not one knob: every knob family loses about equally (A1).
+  - Sustain carries more than attacks only because it covers 76% of the samples.
+- **The error that costs is structured and signal-dependent,** at time scales between 21-ms frames
+  and the long-term spectrum. It is not the error's frame-level size (`noise`).
+  - **A long-term spectral fix gets part of the way, by two routes:**
+    - the fixed EQ `dep_eq`, +0.133 [−0.009, +0.276] (R);
+    - the proxy-ranking fine-tune `rank`, +0.075 [−0.031, +0.182] against C′ and +0.104 [−0.005,
+      +0.214] against its control (TR).
+  - Both are undecided and lean positive. Both close roughly a quarter to a half of the gap, and
+    both help mostly the parts C′ ranks worst.
+  - **`rank` seems to work mostly as `dep_eq` does** (post hoc): it lowers the long-term spectral
+    distance, its gain follows `dep_eq`'s part by part (+0.82), and it slightly worsens the
+    short-time treble error and coherence.
+  - **The structured short-time error above 2 kHz is not reduced by either,** and on R's evidence it is
+    most of what remains.
+- **The proxy-ranking loss is a lean worth building on, but the proxy is not the lever for what
+  remains.**
+  - On these undecided estimates its lean points to the loss rather than to more fine-tuning:
+    `ctl` leans slightly below C′. (`rank` − `ctl`'s interval still reaches −0.005, and only
+    `rank`'s checkpoint was chosen on the proxy.)
+  - But the proxy read the arm as worse on the 24 parts (B1) while rendered ranking read it as
+    better. The proxy also underrated `high`'s gain and missed `dep_eq`'s (B0).
 - **Rotation fixes are deprioritised:** rotation augmentation, a rotation-invariant objective and
-  `dep_rot`.
-  - The rotation's cost is decided but small, about 4% of the gap.
-  - Removing it gains nothing measurable.
-- **What costs is a structured, signal-dependent magnitude error,** not the error's frame-level
-  size.
-  - A fixed long-term EQ removes at most about half of it.
-  - A loss that only matches band levels frame by frame may not be enough. A loss on the
-    short-time magnitude structure, especially in the treble, or one judged on ranking, is the
-    lead.
-- **`dep_eq` is a near-free product candidate,** leaning positive and undecided.
-  - Its next step is a fresh-draw test, with an average curve built without the test parts'
-    recordings.
-  - Read it with its caveats:
-    - its gain is concentrated on PR12 and clean parts;
-    - it leans worse near S on gain staging;
-    - part of its gain is agreement with the yardstick's own normalisation.
-- **The proxy bank tracks the probes' order** (within part +0.62). But it underrates `high`'s gain
-  and misses `dep_eq`'s. Read stage T in that light.
+  `dep_rot`. The rotation's cost is decided but small, about 4% of the gap, and removing it gains
+  nothing measurable.
+- **`dep_eq` stays a near-free product candidate,** leaning positive and undecided. Read it with
+  its caveats: its gain is concentrated on PR12 and clean parts, it leans worse near S on gain
+  staging, part of its gain is agreement with the yardstick's own normalisation, and its curve
+  includes 17 of the 24 parts' recordings.
+
+### The next step these imply (a proposal, not yet planned or reviewed)
+
+**A rebuild change aimed at the short-time magnitude structure above 2 kHz, beyond the long-term
+spectrum.** For example, a C′ fine-tune with a loss on short-time log-magnitude at a few
+resolutions (about 5–40 ms), weighted above 2 kHz, with each bin's long-term offset removed so
+that it cannot be met by one more EQ. `dep_eq`'s normalisation (or `rank`) would carry the
+long-term part beside it. How it would be judged:
+- **Measure first, zero renders:** on held-out training-fold bands, check that the change lowers
+  the short-time treble error (the metric [above](#what-rank-changed-in-the-rebuild) or a declared
+  version of it) where `rank` and `dep_eq` did not. Only then render.
+- **Judged on rendered ranking,** with TR's design: the arm, a matched-step control, C′, paired
+  cells, and the `rank` arm beside it for comparison. No proxy decides it.
+- **Built without the test parts:** the average curve and any spectral targets made without the
+  test parts' recordings (`dep_eq`'s current curve includes 17 of the 24), and checkpoints
+  selected off them, as in stage T.
+- **Checked where the product works: fresh parts outside the 24, on full mixes.** Stage R's
+  findings come from the 24 parts and a perfect stem. Arm A's recipe on fresh full mixes reads
+  only H − S −0.028 [−0.064, +0.008] ([Mega-53 results](arm-a-mega53-results.md)), against
+  −0.083 on its development parts. A rebuild gain on the amp track may shrink after separation and
+  vocals, so the fresh full-mix song-level reading is the one that counts.
+- **The plan's declared build-ons for a positive `rank` − C′** (more seeds, a learned surrogate,
+  the product cell) come before or beside this. With one seed per fold and noisy proxy selection,
+  a second seed of `rank` and `ctl` (about 4 h of MPS and 2,352 renders) is the cheapest check
+  that the lean is not one seed's or one checkpoint's draw.
+- Whether `rank` and `dep_eq` add is untested. If they pull the same lever, as TR suggests, they
+  may not.
 
 ## Operational failures and fixes
 
@@ -492,11 +788,11 @@ here, is built by the same rule from the raw DI: `knob_ceiling.measure_di` is `e
    - The rotation was chosen at 17:19, the R1 renders were done at 19:29, and the report ran at
      19:53.
    - No probe render had started before the crash, and none was rendered twice.
-
-## Stage TR (pending)
-
-> **Placeholder.** Stage T (the proxy-ranking fine-tune, `rank` and its matched-step `ctl`, 4
-> folds) finished at 18:01. Its rendered test, TR1 (2,352 renders and the 48-render comparator), is
-> running. It, B1 and the TR1 → TR2 decision will be written here when the report lands (about
-> 22:00). Nothing in this section is a result yet. Its render total must be taken net of R1 and of
-> the double-counted warm-ups ([renders used](#renders-used)).
+3. **The TR report crashed as it wrote its file** (20:13, `logs/report-tr-failed1.log`).
+   - `tr2_due` returned a numpy bool (the rule's comparison is on numpy floats), which `json`
+     can't write. Everything before the write had been computed.
+   - Fixed in 8e69204 (`tr2_due` returns a plain bool, with a test). The report was rerun by hand
+     at 20:20 on the same scores (`logs/report-tr.log`), and the TR2 check run after it logged
+     `TR2 not due`.
+   - Nothing was re-rendered or rescored. The R1 report never reached this line, since its rule
+     returns a list of names.
