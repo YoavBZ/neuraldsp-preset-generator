@@ -272,8 +272,11 @@ was declared, what was measured, and the research behind it.
 - [local-objective-plan.md](local-objective-plan.md) → [results](local-objective-results.md):
   what makes the song-only objective rank nearby settings. Experiment 1: the DI and stem errors
   partly cancel, single fixes undecided. 1b: a perfect separator feeding the rebuild and the
-  reference closes about 44% of the gap. 1c: on the instrumental context, Mega-53 recovers about 43% of 1b's gain. Experiment 1d
-  (amendments 4–4b, the separator-robust C′) is running.
+  reference closes about 44% of the gap. 1c: on the instrumental context, Mega-53 recovers about 43% of 1b's gain. 1d: the
+  separator-robust C′ in the rebuild gives no gain (−0.127 [−0.256, +0.003] on the htdemucs stem,
+  −0.051 [−0.166, +0.065] on Mega-53); C′ stays.
+- [arm-a-mega53-plan.md](arm-a-mega53-plan.md): arm A's song-level test with Mega-53 in the loop
+  (development parts, then fresh full mixes with vocals); reviewed, about 30k renders.
 - [cprime-sep-plan.md](cprime-sep-plan.md) → [results](cprime-sep-results.md): C′ fine-tuned on
   separator residuals; a small envelope gain, inside the noise on stems and as large on the amp
   track (zero renders).

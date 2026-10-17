@@ -148,10 +148,15 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
        +0.109 [+0.058, +0.160], about 43% [26%, 70%] of 1b's gain. Right around S no gain is
        detected (−0.002 [−0.049, +0.045]), so it doesn't by itself show a song-level gain. Mega-53
        takes about 5–6× htdemucs's CPU time.
+     - **1d, the separator-robust C′ in the rebuild** (htdemucs stem and Mega-53): no gain.
+       Against today's objective −0.127 [−0.256, +0.003]; against 1c's Mega-53 cell −0.051
+       [−0.166, +0.065]. Keep C′. Its small envelope gain didn't predict ranking, so judge
+       rebuild changes on rendered ranking. No arm X in the Mega-53 song test.
    - **Separator-robust C′** ([results](cprime-sep-results.md), zero renders): C′ fine-tuned on
      separator residuals rebuilds the true DI slightly better from the htdemucs stem, inside the
      noise (envelope error −0.24 dB [−0.66, +0.17]; 1–3 kHz coherence +0.003). It gains about as
-     much from the amp track, so it can't be credited to stem robustness. A pre-filter for experiment 1d.
+     much from the amp track, so it can't be credited to stem robustness. Rendered in 1d, it
+     ranked no better (above).
    - **Bleed in the amp tracks** ([audit](audits/bleed-2026-10-16/README.md),
      [listening](bleed-listening-results.md)): only the Telefunken live-room sessions carry bleed;
      4 of the 25 knob-ceiling parts read high, and the listener heard it on all 3 high parts tried.
@@ -169,23 +174,21 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      ([screen](separator-screen-results.md)); C′'s error is fine structure
      ([ladder](rank-margin-ladder-results.md)); better fine structure didn't steer better
      ([experiment 4](di-fine-structure-results.md)).
-   - **Running now:** experiment 1d ([amendments 4–4b](local-objective-plan.md)), the
-     separator-robust C′ in 1b's matched design, on the htdemucs stem and on Mega-53's; 7,200
-     renders, results about 11:00 on 2026-10-17.
-   - **Next (not yet planned):** after 1d's readout, arm A's song-level test with Mega-53 in the
-     loop (with the separator-robust C′ if 1d supports it). Then the rebuild's own share: more than
-     half the local-ranking gap remains even with a perfect stem (1b). Switching the product's
-     separator would also need a fresh-draw check on parts outside step 3's 24 (full mixes with
-     vocals), at about 5–6× htdemucs's CPU time.
-   - **Renders:** about 194k used so far, about 201k once 1d finishes. Since the 2026-10-16
-     update: arm B's retrain about 14.8k, the local objective 7,061 + 3,528 (1b) + 3,528 (1c), the
-     ceiling extension 17,550 plus 72 warm-ups, the listening page 26. No fixed limit (2026-10-16): each step plan
+   - **Next: arm A's song-level test with Mega-53** ([plan](arm-a-mega53-plan.md), reviewed;
+     code in `learn/arm_a_mega53.py`). The user said go on 2026-10-17; it launches right after
+     this merge. About 30k renders, about 5 h. Stage D on step 3's 24 parts, stage F on fresh
+     full mixes with vocals (the check a separator switch needs, at 5–6× htdemucs's CPU time).
+   - **After that: a rebuild-gap study on the GPU** (being planned). More than half of the local
+     ranking gap remains even with a perfect stem (1b 0.541 against the ceiling's 0.864), and
+     that is the rebuild's own limit.
+   - **Renders:** about 201k used so far. Since the 2026-10-16 update: arm B's retrain about
+     14.8k, the local objective 7,061 + 3,528 (1b) + 3,528 (1c) + 7,200 (1d), the ceiling
+     extension 17,550 plus 72 warm-ups, the listening page 26. No fixed limit (2026-10-16): each step plan
      declares when to stop rendering from its own evidence (a flattened search curve, a learning
      curve that stops improving, an interval narrow enough to answer the question), and reports
      what it used.
    - **Open user decisions:**
      - reopening arm B (its shuffled-input control first);
-     - 1d's optional amp-track cell (`csep_ref`, 3,528 renders);
      - Tone King for step 2.
    - **Then:** step 5 (optimiser comparison), step 6, and finally step 7, the pooled held-out
      test.
