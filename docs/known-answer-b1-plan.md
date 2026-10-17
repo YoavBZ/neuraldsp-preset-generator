@@ -1,6 +1,6 @@
 # Known-answer test songs, pilot B1: plan (part B's amendment)
 
-Declared 2026-10-18, before any of its renders. This is the amendment that
+Declared 2026-10-18, before any of its renders. This is the amendment (amendment 4 there) that
 [clean-di-library-plan.md](clean-di-library-plan.md) part B asks for before any B render ("B1's
 exact items, presets and seeds"), with that plan's review items 13–16 built in. Part B's question,
 estimands, recipe and power argument stand as declared there; this document fixes what B1 runs.

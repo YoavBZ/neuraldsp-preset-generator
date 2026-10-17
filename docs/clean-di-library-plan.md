@@ -570,7 +570,7 @@ From the re-review's suggestions:
 - the key records that part 2's null trial reuses one hum trial's section, so it is played 4 times;
 - the results report that `partial` is the usual bleed status, and how many tracks were read.
 
-## Amendment 3 (2026-10-18): part B1 declared
+## Amendment 4 (2026-10-18): part B1 declared
 
 Part B's amendment for its pilot is [known-answer-b1-plan.md](known-answer-b1-plan.md): B1's
 items, sections, truth presets and seeds, with review items 13–16. It also declares one deviation

@@ -2097,7 +2097,7 @@
   {
    "test_id": "known-answer-b1",
    "plan": "docs/known-answer-b1-plan.md",
-   "entered": "2026-10-18, with the plan (part B's amendment of docs/clean-di-library-plan.md), before any render; after a zero-render leakage measurement on the three development songs (named in the plan); reviewed the same day by an independent agent: approve with 8 required changes, made as the plan's amendment 1 before any render",
+   "entered": "2026-10-18, with the plan (part B's amendment, amendment 4 of docs/clean-di-library-plan.md), before any render; after a zero-render leakage measurement on the three development songs (named in the plan); reviewed the same day by an independent agent: approve with 8 required changes, made as the plan's amendment 1 before any render",
    "repeat_use": "Development DIs read as DIs, rendered through known presets: Rebecca Haviland's Bourbon and Collide With Me and Chris Coltraine's Heather Jane (set 1 development songs whose bands have held-out songs; their real amp tracks are replaced by renders and never scored) and The Apprehended's 'Still Flyin'' (never used). All 12 DIs are known_answer in the clean-DI inventory and refused for training. Repeat use: Bourbon, Collide With Me and Heather Jane are in the song-settings folds and their records were among the development material arm A's recipe was chosen on; The Apprehended, the only fresh song, is reported as its own row. Runs before part A's listening check is read (declared deviation) and uses hum/hiss-only sections for Bourbon and Collide With Me (declared deviation)",
    "parts": "4 songs; primary DIs Heather Jane ElecGtr1, Bourbon GTR 2, Collide With Me GTR 1, Still Flyin' ElecGtr03; second DIs ElecGtr1DT, GTR 1, GTR 2, ElecGtr04; 4 sections per song (seed 20261050)",
    "bands": "3 clusters: Chris Coltraine, Rebecca Haviland (2 songs), The Apprehended",
@@ -2113,7 +2113,7 @@
    "entered": "2026-10-18, with the plan, before any render; after a zero-render probe on 600 stored arm-B bank renders (feature bytes, the power-sum mixing error, the gain-class shares); reviewed the same day by an independent agent: approve with 12 required changes, made as the plan's amendment 1 before any render",
    "repeat_use": "Development DIs read as DIs: part A's non-overlapping clean sections that may train, less the hum-audit superset (11 DIs) and stage F's 21 DIs (reserved); session backings from the same multitracks",
    "parts": "the clean-DI pool after the hum-screen amendment (740 sections before it), less stage F's DIs (reserve, 102 sections) and Timo And The Timezone (2); rendered through drawn Morgan settings (PR12, SW50R, AC20)",
-   "bands": "the pool's bands; val = whole bands with at least 5 sections each (seed 20261041, at least 8 bands, at least 15% of sections), never trained on by this plan's models",
+   "bands": "the pool's bands; val = whole bands of 5 to 20 non-reserve sections with a session backing (seed 20261041; at least 8 bands and 15% of sections, or the candidates run out; 9 bands, 97 sections on the pre-amendment manifest), never trained on by this plan's models",
    "held_out": "none touched: manifest rows re-checked against the inventory (library, training_ok), set3.is_held_out and sets 4-6; no known-answer DI, no Guitar-TECHS P3",
    "audio_only": "DI sections and their session backings",
    "split": "reserve (stage F's DIs), val (whole bands), train; every example carries its song-settings fold",
