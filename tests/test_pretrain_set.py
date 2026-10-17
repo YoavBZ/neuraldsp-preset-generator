@@ -268,6 +268,8 @@ def test_read_rows_cuts_a_torn_last_line(tmp_path):
     with open(f, "a") as fh:
         fh.write('{"i": 4}\n')
     assert [r["i"] for r in M.read_rows(f)] == [1, 2, 4]
+    f.write_text('{"i": 1}\n{"i": 2}')
+    assert [r["i"] for r in M.read_rows(f, repair=True)] == [1, 2] and f.read_text() == '{"i": 1}\n{"i": 2}\n'
     f.write_text('{"i": 1}\nbroken\n{"i": 2}\n')
     with pytest.raises(Exception):
         M.read_rows(f)

@@ -344,3 +344,8 @@ example: median 0.38 dB, 90th percentile 1.8 dB) and a two-epoch CPU `curve` and
 
 **On the amended manifest** (now in place: version 2, amendments 1–3), `pool` gives 718 sections:
 train 520, val 96 (the same 9 bands), reserve 102.
+- From the PR re-review's notes: rows are read in linear time, and a complete last row missing its
+  newline gets one; the training-time loudness uses the same near-silent-backing cap as the gains;
+  the clean-stem score is conditioned on the leaky stem's loudness (named in the report).
+- **The runner also waits for PR #214** (the hum amendment) to be merged into main before part C
+  starts, as the main session asked; the manifest gate stays, so a later re-version swaps in.

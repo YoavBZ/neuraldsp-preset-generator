@@ -95,7 +95,14 @@ wait_amended() {
   local said=0 rc
   while true; do
     $PY -m learn.pretrain_set gate > $L/c-gate.log 2>&1; rc=$?
-    (( rc == 0 )) && { log "manifest amended: $(tail -1 $L/c-gate.log)"; return 0 }
+    if (( rc == 0 )); then
+      # the amendment's PR (#214) must be merged into main before part C renders (main session, 2026-10-18)
+      if [[ $(gh pr view 214 --repo YoavBZ/neuraldsp-preset-generator --json state -q .state 2>/dev/null) == MERGED ]]; then
+        log "manifest amended: $(tail -1 $L/c-gate.log); PR #214 merged"; return 0
+      fi
+      (( said )) || log "waiting: PR #214 (the hum amendment) to be merged"
+      said=1; sleep 600; continue
+    fi
     (( rc == 10 )) || { log "C GATE CHECK FAILED (exit $rc; see c-gate.log)"; return 1 }
     (( said )) || log "waiting: the hum-screen amendment's manifest ($(tail -1 $L/c-gate.log))"
     said=1

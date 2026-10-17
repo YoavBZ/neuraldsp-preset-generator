@@ -760,19 +760,24 @@ def read_rows(path, repair=False):
     `repair` cut from the file so the next append starts on a fresh line."""
     text = pathlib.Path(path).read_text() if pathlib.Path(path).exists() else ""
     lines = text.split("\n")
-    out, good = [], 0
+    out, good, pos = [], 0, 0
     for k, line in enumerate(lines):
+        pos += len(line) + 1
         if not line.strip():
             continue
         try:
             out.append(json.loads(line))
-            good = sum(len(x) + 1 for x in lines[:k + 1])
+            good = pos
         except json.JSONDecodeError:
             if k < len(lines) - 1 and any(x.strip() for x in lines[k + 1:]):
                 raise
-    if repair and good != len(text):
+    if repair and text and good != len(text):
         with open(path, "r+") as fh:
-            fh.truncate(min(good, len(text)))
+            if good > len(text):                   # a complete last row without its newline
+                fh.seek(0, 2)
+                fh.write("\n")
+            else:
+                fh.truncate(good)
     return out
 
 
@@ -953,8 +958,9 @@ class CurveData:
         gb, gl, ga = mix_gains_db(r["lufs"], meta[f"lufs_{kind}"], ratio, leak, target)
         h = int(random.Random(seed_int(SEED, "half", r["i"], epoch)).random() < 0.5)
         hh = "AB"[h]
-        ls = db_sum(r[f"lufs_{hh}"], meta[f"lufs_{kind}{hh}"] + gl) + ga
-        lm = db_sum(r[f"lufs_{hh}"], meta[f"lufs_{kind}{hh}"] + gb) + ga
+        lbh = max(meta[f"lufs_{kind}{hh}"], r[f"lufs_{hh}"] - 40.0)     # the same cap as mix_gains_db
+        ls = db_sum(r[f"lufs_{hh}"], lbh + gl) + ga
+        lm = db_sum(r[f"lufs_{hh}"], lbh + gb) + ga
         return h, 0 if v else 1, gb, gl, ga, ls, lm
 
     def batch(self, idx, epoch, dev):
