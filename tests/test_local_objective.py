@@ -580,6 +580,17 @@ def test_render_process_patterns():
                   "multi_section decide --batch 0", "multi_section batches", "multi_section clear"):
         assert not M.is_render_process(f"{py} -u -m learn.{other}")
     assert M.others_rendering([(1, f"{py} -m learn.local_objective render"), (2, "vim")], own={3}) == [1]
+    # the self-rendered dataset runner (docs/known-answer-b1-plan.md, docs/pretrain-set-plan.md)
+    assert M.is_render_process(f"{py} -u -m learn.known_answer truth")
+    assert M.is_render_process(f"{py} -u -m learn.known_answer search --shard 2/3")
+    assert M.is_render_process(f"{py} -u -m learn.pretrain_set render --shard 0/3 --n 40000")
+    assert M.is_render_process(f"{py} -u -m learn.pretrain_set recheck")
+    for other in ("known_answer plan", "known_answer mix", "known_answer rebuild", "known_answer report",
+                  "known_answer separate", "pretrain_set pool", "pretrain_set backings", "pretrain_set curve --n 40000",
+                  "pretrain_set decide --n 40000", "pretrain_set report"):
+        assert not M.is_render_process(f"{py} -u -m learn.{other}")
+    assert M.is_separation(f"{py} -u -m learn.known_answer separate")
+    assert not M.is_separation(f"{py} -u -m learn.known_answer search --shard 0/3")
 
 
 def test_flac_roundtrip(tmp_path):
