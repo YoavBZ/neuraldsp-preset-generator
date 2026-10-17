@@ -531,6 +531,12 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
   "another end-to-end run" item); the DI-path
   defects D-M1 (product side), D-M7, D-M8's start and D-M13 (the carried-over render),
   and D-M17/D-M18's texts; `generate` framed as building the whole preset.
+- **Done, 2026-10-17: the arrangement prior.** For a real song, `generate`'s research
+  also writes every guitar, the sections each plays, and known sound changes, each with
+  sources and a confidence ([format](../reference/arrangement.md),
+  `scripts/arrangement.py`). It was the user's idea, and it feeds the ML session's
+  planned per-section fitting: one average preset is hurt where guitars or sounds
+  change. That session aligns the section names to the audio and checks every claim.
 - **Setting controls has real headroom** ([knob ceiling](knob-ceiling-results.md),
   2026-10-14): with the take's true DI, on development, a knob search got about 22%
   closer by the judge than `generate`'s starting preset (−0.253) and 19% closer than

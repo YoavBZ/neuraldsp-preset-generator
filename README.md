@@ -151,7 +151,9 @@ scripts/         — the plugin's own tools. show.py (inspect), apply_spec.py
                    audition.py + build_di_library.py (hear a shortlist through a
                    guitar riff beside the song), probe.py and probe_state.py
                    (discover selectors), bootstrap_pack.py (support a new
-                   plugin), build_observed.py (optional taste anchors).
+                   plugin), build_observed.py (optional taste anchors),
+                   arrangement.py (where a song's arrangement prior goes, and
+                   checking one).
                    Maintainer tools: audit_manifest.py (re-check every declared
                    fact against the plugin), measure_eq_basis.py and
                    measure_drive_curve.py (measure a pack's controls),
