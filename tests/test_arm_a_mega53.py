@@ -35,6 +35,8 @@ def test_pool_is_the_amendments_21_parts_in_12_bands():
     assert M.N_DIRS["F"] == len(slugs) * 3 * 2 and M.N_GROUPS["F"] == len(slugs) * 3
 
 
+@pytest.mark.skipif(not (K.HOME / "learn/set3/stems/manifest.json").exists(),
+                    reason="needs the Mac's stored stem manifests (step 3's parts)")
 def test_pool_has_no_step3_part():
     step3 = set(M.d_parts())
     assert len(step3) == 24
