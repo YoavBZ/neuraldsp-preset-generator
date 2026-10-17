@@ -90,6 +90,14 @@ def test_proxy_fidelity_of_the_truth_is_one():
     assert T.proxy_fidelity(noisy, t, np.random.default_rng(0), draws=3) < 1.0
 
 
+def test_proxy_fidelity_many_matches_single():
+    t = _sig(SR, 3).numpy()
+    noisy = t + np.random.default_rng(1).standard_normal(len(t)) * 0.05
+    many = T.proxy_fidelity_many({"t": t, "noisy": noisy}, t, np.random.default_rng(0), draws=3)
+    assert many["t"] == pytest.approx(1.0)
+    assert many["noisy"] == pytest.approx(T.proxy_fidelity(noisy, t, np.random.default_rng(0), draws=3))
+
+
 def test_schedule_and_rules():
     assert T.schedule(0) == pytest.approx(T.LR / T.WARMUP)
     assert T.schedule(T.WARMUP) == pytest.approx(T.LR)

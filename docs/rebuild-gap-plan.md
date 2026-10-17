@@ -341,7 +341,7 @@ parts' amp-track rebuilds (as B0), and the validation curves. Descriptive.
 | T's phase check | 0 | minutes (CPU) | now |
 | A1, A3 | 0 | minutes (CPU) | after the review |
 | A2 rescoring | 0 | about 0.5 CPU-h, 1 worker | after the review |
-| B0 | 0 | about 0.5 CPU-h (torch, 2 threads) | after A2 |
+| B0 | 0 | about 1–1.2 h (torch, 2 threads; measured 8.3 s per draw for 18 variants at 1 thread) | after A2 |
 | T (8 fine-tunes) | 0 | about 4–6 h MPS (at most about 10) | after Mega-53's lane A |
 | B1 | 0 | minutes | after T |
 | R1 | at most 16,728 | about 3.4 h + 0.3 h scoring | after the Mega-53 runner ends |
@@ -439,4 +439,6 @@ sequencing beside lane A is stated. Other changes made while implementing, befor
   the samples (dense parts), so `onset` was not a transient probe; now 10–26%;
 - B0 uses the same draws for every variant of a part (paired), not a draw per variant;
 - A2 first checks that rescoring 1b's renders reproduces its stored scores (1e-9);
-- the proxy distance removes the level in the judge's order (before flooring), found by a test.
+- the proxy distance removes the level in the judge's order (before flooring), found by a test;
+- B0 computes the true DI's proxy distances once per draw for all of a part's variants (identical
+  results, about half the compute; B0's hours above are measured, not the first draft's 0.3 h).

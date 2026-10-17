@@ -259,6 +259,30 @@ def proxy_fidelity(x, t, rng, draws, k=None):
     return float(np.mean(out)) if out else None
 
 
+def proxy_fidelity_many(xs, t, rng, draws):
+    """`proxy_fidelity` for several DIs {name: array} against one true DI on the same draws, the
+    true DI's distances computed once per draw. -> {name: mean Spearman or None}."""
+    import numpy as np
+    import torch
+    from scipy.stats import spearmanr
+
+    ts = norm_rms(torch.tensor(np.asarray(t, np.float32))[None])
+    xn = {k: norm_rms(torch.tensor(np.asarray(v, np.float32))[None]) for k, v in xs.items()}
+    out = {k: [] for k in xs}
+    with torch.no_grad():
+        for _ in range(draws):
+            s, c = local_set(rng)
+            th = torch.tensor(c, dtype=torch.float32)
+            ref = logmel(proxy(ts, torch.tensor(s[None], dtype=torch.float32))).expand(len(c), -1, -1)
+            dt = distance(logmel(proxy(ts.expand(len(c), -1), th)), ref).numpy()
+            for k, x in xn.items():
+                dx = distance(logmel(proxy(x.expand(len(c), -1), th)), ref).numpy()
+                r = spearmanr(dx, dt).correlation
+                if r is not None and math.isfinite(r):
+                    out[k].append(float(r))
+    return {k: (float(np.mean(v)) if v else None) for k, v in out.items()}
+
+
 # --- B0 / B1: the proxy check on the 24 parts (zero renders) --------------------------------------------
 
 def cmd_b0(variants=None, out_name="b0.json"):
@@ -277,6 +301,7 @@ def cmd_b0(variants=None, out_name="b0.json"):
     for slug in sorted(s for s in ps if s not in LO.EXCLUDED):
         t = K.measure_di(ps[slug])
         row = res.get(slug, {})
+        xs = {}
         for v in names:
             if v in row:
                 continue
@@ -289,9 +314,10 @@ def cmd_b0(variants=None, out_name="b0.json"):
                 if not p.exists():
                     continue
                 x = np.load(p)
-            n = min(len(x), len(t))
-            rng = np.random.default_rng(seed_int(f"rebuild-gap|b0|{slug}"))
-            row[v] = proxy_fidelity(x[:n], t[:n], rng, B0_DRAWS)
+            xs[v] = x
+        n = min([len(t)] + [len(x) for x in xs.values()])
+        rng = np.random.default_rng(seed_int(f"rebuild-gap|b0|{slug}"))
+        row.update(proxy_fidelity_many({k: x[:n] for k, x in xs.items()}, t[:n], rng, B0_DRAWS) if xs else {})
         res[slug] = row
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix(".tmp")
