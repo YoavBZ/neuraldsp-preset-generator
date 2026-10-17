@@ -1,32 +1,45 @@
 #!/usr/bin/env python3
 """Build the guitar riffs the audition page plays presets through (`samples/riffs/`).
 
-    python research/build_riffs.py --source ~/ndsp-presets/references/datasets/guitar-techs/P1-downloads
+    python research/build_riffs.py --source ~/ndsp-presets/references/datasets/guitar-techs/P1-downloads \
+        --notes ~/ndsp-presets/references/datasets/egfxset/Clean
 
-The riffs are cut from the direct-input recordings of Guitar-TECHS, part P1 (Zenodo
-record 14963133, CC BY 4.0): one player's dry guitar, so any preset can play them.
-Part P3 is validation material and is never used here.
+Dry guitar only, so any preset can play them, from two CC BY 4.0 datasets:
 
-- **chords** (10 s): a G–D–Em–C progression, 2.5 s of each chord, in the `Set4`
-  voicings, low on the neck, so the riff has body (fundamentals near 100 Hz). Each chord is found by its triad in
-  the recordings' own MIDI transcription (an exact match preferred), then its pick
-  attack is found in the audio, since the transcription lags it, and the piece is cut
-  20 ms before the attack, with a 3 ms fade in and a 40 ms fade out.
+- **chords** and **chords-mid** (10 s each, 2026-10-17): a G–D–Em–C progression, 2.5 s
+  of each chord, assembled from EGFxSet's single clean notes (Zenodo 7044411; a
+  Stratocaster, middle pickup, every string and fret recorded on its own). `chords`
+  plays open chords, `chords-mid` four-string voicings at frets 5-10. Each note is
+  retuned to equal temperament (by resampling: the separate recordings disagree by up
+  to 15 cents, and octaves that far apart beat and rumble through a driven amp),
+  denoised above 3 kHz only (noisereduce, non-stationary), and given a 2 ms fade in.
+  A chord is a downstroke (strings 25 ms apart, low to high) and, 1.25 s later, an
+  upstroke 3 dB softer (18 ms apart, high to low; each re-plucked string stops), muted
+  over its last 150 ms; every chord is set to the same loudness, as an even strummer
+  plays them. They replace Guitar-TECHS cuts whose strums carried clicks and fret buzz
+  a clean amp exposed (riff-library-plan.md, "Rebuilt").
+- **chords-high** (10 s): the same progression cut from Guitar-TECHS part P1 (Zenodo
+  record 14963133), whose `Set1` voicings on the top three strings, frets 10-13, sound
+  clean. Each chord is found by its triad in the recordings' own MIDI transcription
+  (an exact match preferred, or the strum nearest a named time), then its pick attack
+  is found in the audio, since the transcription lags it, and the piece is cut 20 ms
+  before the attack, with a 3 ms fade in and a 40 ms fade out. Part P3 is validation
+  material and is never used here.
 - **line** (about 10 s): the A scale run (`P1_scales`, `A`) from its start to the
   quietest moment between 9.8 and 10 s, with the same fades: a single-note line.
-- **chords-mid**, **chords-high**, **line-mid**, **line-high** (2026-10-15,
-  `docs/riff-library-plan.md`): the same styles higher on the neck. Chords use the
-  `Set2` and `Set1` voicings at the strums the plan names; lines a 10-s window of a
-  scale's middle or top positions. Each riff's register is the median MIDI pitch of
-  every note in its cut (low below C4, mid C4-A4, high above A4); `--plan-only` prints
-  the strums, notes and medians, and the build refuses a riff outside its register.
-  The first two riffs are never re-encoded: a riff whose file still matches
-  `riffs.json` is kept as it is.
+- **line-mid**, **line-high** (2026-10-15, `docs/riff-library-plan.md`): a 10-s window
+  of a P1 scale's middle or top positions.
+
+Each riff's register is the median MIDI pitch of every note in it (low below C4, mid
+C4-A4, high above A4); `--plan-only` prints the strums, notes and medians, and the
+build refuses a riff outside its register. A riff whose file still matches
+`riffs.json`, built the way it is planned now, is kept as it is, never re-encoded.
 
 All are set to -23.7 LUFS, the median loudness of the development sets' DIs, so they
 drive an amp as a typical recorded DI does (the P1 recordings sit 5-10 dB lower).
 Written as 24-bit FLAC with `riffs.json`, which records every source file's SHA-256,
-where each piece was cut, the gain, and the attribution the licence requires.
+where each piece was cut (or which notes, and how far each was retuned), the gain, and
+the attribution each licence requires.
 """
 
 from __future__ import annotations
@@ -49,13 +62,20 @@ TARGET_LUFS = -23.7
 CHORD_S, LEAD_IN_S, FADE_S = 2.5, 0.02, 0.04
 PROGRESSION = (("maj", 7, "G"), ("maj", 2, "D"), ("min", 4, "Em"), ("maj", 0, "C"))
 FADE_IN_S, ATTACK_SEARCH_S = 0.003, 0.08
-ATTRIBUTION = ("Guitar-TECHS: An Electric Guitar Dataset Covering Techniques, Musical "
+ATTRIBUTION = ("chords-high and the line riffs: Guitar-TECHS: An Electric Guitar Dataset Covering Techniques, Musical "
                "Excerpts, Chords and Scales Using a Diverse Array of Hardware, by Hegel "
                "Emmanuel Pedroza Villalobos, Termeh Taheri, Wallace Abreu, Ryan Corey and "
                "Iran R. Roman (Zenodo record 14963133, https://zenodo.org/records/14963133; "
                "ICASSP 2025, doi:10.1109/ICASSP49660.2025.10887996). Licensed CC BY 4.0, "
                "https://creativecommons.org/licenses/by/4.0/. Changes: excerpts of the "
-               "part-P1 direct-input recordings cut, joined, faded and level-adjusted.")
+               "part-P1 direct-input recordings cut, joined, faded and level-adjusted. "
+               "chords and chords-mid: EGFxSet: Electric guitar tones processed through "
+               "real effects of distortion, modulation, delay and reverb, by Hegel Pedroza, "
+               "Gerardo Meza and Iran R. Roman (Zenodo record 7044411, "
+               "https://zenodo.org/records/7044411, doi:10.5281/zenodo.7044411). Licensed "
+               "CC BY 4.0, https://creativecommons.org/licenses/by/4.0/. Changes: single "
+               "notes of the Clean set (middle pickup) retuned by up to 15 cents, denoised "
+               "above 3 kHz, faded, assembled into strummed chords and level-adjusted.")
 
 
 def _varlen(data: bytes, i: int):
@@ -189,18 +209,101 @@ def faded(piece, rate: int):
     return piece
 
 
+def detune_cents(audio, rate: int, midi: int) -> float:
+    """How far a single note sits from equal temperament, in cents: the strongest of its
+    first four partials within 60 cents of where they belong, 0.3-2.3 s in."""
+    import numpy as np
+
+    target = 440 * 2 ** ((midi - 69) / 12)
+    piece = audio[round(0.3 * rate):round(0.3 * rate) + 2 * rate]
+    spectrum = np.abs(np.fft.rfft(piece * np.hanning(len(piece)), 1 << 22))
+    freqs = np.fft.rfftfreq(1 << 22, 1 / rate)
+    best = (0.0, target)
+    for h in (1, 2, 3, 4):
+        band = (freqs > h * target * 2 ** (-60 / 1200)) & (freqs < h * target * 2 ** (60 / 1200))
+        i = int(np.argmax(spectrum * band))
+        if spectrum[i] > best[0]:
+            best = (spectrum[i], freqs[i] / h)
+    return 1200 * np.log2(best[1] / target)
+
+
+def prepared_note(audio, rate: int, midi: int):
+    """(note, cents): one EGFxSet note retuned to equal temperament by resampling, its
+    content above DENOISE_ABOVE_HZ denoised (below it untouched), faded in over 2 ms and
+    set to a common level by its first 0.3 s."""
+    import noisereduce
+    import numpy as np
+    import scipy.signal as ss
+
+    cents = detune_cents(audio, rate, midi)
+    audio = ss.resample(audio, round(len(audio) * 2 ** (cents / 1200)))
+    low = ss.sosfiltfilt(ss.butter(4, DENOISE_ABOVE_HZ, "lp", fs=rate, output="sos"), audio)
+    audio = low + noisereduce.reduce_noise(y=audio - low, sr=rate, stationary=False,
+                                           prop_decrease=0.9, time_constant_s=2.0)
+    fade = round(NOTE_FADE_S * rate)
+    audio[:fade] *= np.linspace(0.0, 1.0, fade)
+    return audio / np.sqrt(np.mean(audio[:round(0.3 * rate)] ** 2)), cents
+
+
+def strummed(notes, rate: int, meter):
+    """CHORD_S of one chord from its prepared notes (low string first): a downstroke, an
+    upstroke UP_AT_S later that re-plucks every string, and a mute at the end, set to
+    CHORD_LUFS."""
+    import numpy as np
+
+    length = round(CHORD_S * rate)
+    chord = np.zeros(length)
+    for k, note in enumerate(notes):
+        down = round((LEAD_IN_S + k * DOWN_GAP_S) * rate)
+        up = round((UP_AT_S + (len(notes) - 1 - k) * UP_GAP_S) * rate)
+        ring = note[:up - down].copy()
+        stop = round(REPLUCK_S * rate)
+        ring[-stop:] *= np.linspace(1.0, 0.0, stop)
+        chord[down:up] += ring
+        chord[up:] += note[:length - up] * 10 ** (UP_DB / 20)
+    release = round(RELEASE_S * rate)
+    chord[-release:] *= np.linspace(1.0, 0.0, release) ** 2
+    return chord * 10 ** ((CHORD_LUFS - meter.integrated_loudness(chord)) / 20)
+
+
 def _sha(path) -> str:
     return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
 
 
-# The riffs (riff-library-plan.md). `chords` and `line` are the two first shipped ones:
-# kept as they are, never re-encoded.
+# The riffs (riff-library-plan.md). Strummed chords assembled from EGFxSet's single
+# notes, (string, fret) per chord, string 1 the high E, strummed low to high.
+NOTE_RIFFS = {
+    "chords": dict(register="low", default=True,
+                   what="a G-D-Em-C progression in open chords, strummed down and up",
+                   voicings={"G": ((6, 3), (5, 2), (4, 0), (3, 0), (2, 0), (1, 3)),
+                             "D": ((4, 0), (3, 2), (2, 3), (1, 2)),
+                             "Em": ((6, 0), (5, 2), (4, 2), (3, 0), (2, 0), (1, 0)),
+                             "C": ((5, 3), (4, 2), (3, 0), (2, 1), (1, 0))}),
+    "chords-mid": dict(register="mid", default=False,
+                       what="a G-D-Em-C progression on the top four strings, frets 5-10, "
+                            "strummed down and up",
+                       voicings={"G": ((4, 5), (3, 7), (2, 8), (1, 7)),
+                                 "D": ((4, 7), (3, 7), (2, 7), (1, 5)),
+                                 "Em": ((4, 9), (3, 9), (2, 8), (1, 7)),
+                                 "C": ((4, 10), (3, 9), (2, 8), (1, 8))}),
+}
+NOTE_PICKUP = "Middle"                      # the quietest of EGFxSet's five positions
+OPEN_STRINGS = {1: 64, 2: 59, 3: 55, 4: 50, 5: 45, 6: 40}
+# UP_GAP_S is 863 samples at 48 kHz, as in the version heard and approved on 2026-10-17.
+DOWN_GAP_S, UP_GAP_S, UP_AT_S, UP_DB = 0.025, 0.01798, 1.25, -3.0
+RELEASE_S, REPLUCK_S, NOTE_FADE_S, CHORD_LUFS = 0.15, 0.01, 0.002, -30.0
+DENOISE_ABOVE_HZ = 3000
+
+
+def note_method() -> str:
+    """The note riffs' build, recorded per riff: the method's name and a fingerprint of
+    every voicing and setting above, so changing any of them rebuilds the riff instead
+    of keeping a file riffs.json no longer describes."""
+    settings = [NOTE_RIFFS, NOTE_PICKUP, DOWN_GAP_S, UP_GAP_S, UP_AT_S, UP_DB, RELEASE_S,
+                REPLUCK_S, NOTE_FADE_S, CHORD_LUFS, DENOISE_ABOVE_HZ, CHORD_S, LEAD_IN_S]
+    digest = hashlib.sha256(json.dumps(settings, sort_keys=True).encode()).hexdigest()
+    return f"egfxset-notes-1+{digest[:12]}"
 CHORD_RIFFS = {
-    "chords": dict(voicing="Set4", register="low", near={}, default=True,
-                   what="a G-D-Em-C chord progression, low on the neck"),
-    "chords-mid": dict(voicing="Set2", register="mid", default=False,
-                       near={"G": 148.1, "D": 55.9, "Em": 44.0, "C": 120.0},
-                       what="a G-D-Em-C chord progression, mid-neck voicings"),
     "chords-high": dict(voicing="Set1", register="high", default=False,
                         near={"G": 36.0, "D": 140.0, "Em": 148.1, "C": 96.0},
                         what="a G-D-Em-C chord progression on the top three strings, "
@@ -236,6 +339,9 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--source", type=pathlib.Path, required=True,
                     help="the folder holding the unpacked P1_chords and P1_scales")
+    ap.add_argument("--notes", type=pathlib.Path,
+                    help="EGFxSet's unpacked Clean folder (needed to rebuild chords or "
+                         "chords-mid)")
     ap.add_argument("--out-dir", type=pathlib.Path, default=PLUGIN_ROOT / "samples" / "riffs")
     ap.add_argument("--plan-only", action="store_true",
                     help="print each riff's chosen strums or window, notes and register "
@@ -254,19 +360,59 @@ def main():
     meter = pyloudnorm.Meter(RATE)
     index = out / "riffs.json"
     old = json.loads(index.read_text()) if index.exists() else {}
-    record = {"schema": "riffs-2", "attribution": ATTRIBUTION, "loudness_lufs": TARGET_LUFS,
+    record = {"schema": "riffs-3", "attribution": ATTRIBUTION, "loudness_lufs": TARGET_LUFS,
               "register_edges": {"low_below": note_name(REGISTER_EDGES[0]),
                                  "high_above": note_name(REGISTER_EDGES[1])},
               "riffs": {}, "cuts": [],
               "sources": dict(old.get("sources", {}))}
 
     def keep(name) -> bool:
-        """An already shipped riff whose file still matches its record is left alone."""
+        """An already shipped riff whose file still matches its record, built the way it
+        is planned now, is left alone."""
         entry = old.get("riffs", {}).get(name)
         path = out / entry["file"] if entry else None
-        return bool(entry and path.exists() and _sha(path) == entry["sha256"])
+        method = note_method() if name in NOTE_RIFFS else None
+        return bool(entry and path.exists() and _sha(path) == entry["sha256"]
+                    and entry.get("method") == method)
 
     built, problems, measured = {}, [], {}
+    for name, spec in NOTE_RIFFS.items():
+        pitches = [OPEN_STRINGS[s] + f for chord in spec["voicings"].values() for s, f in chord]
+        register, median = register_of(pitches)
+        measured[name] = (median, min(pitches), max(pitches))
+        for chord, strings in spec["voicings"].items():
+            print(f"{name} {chord}: " + " ".join(
+                f"{s}-{f} {note_name(OPEN_STRINGS[s] + f)}" for s, f in strings))
+        print(f"  {name}: median {note_name(round(median))} ({median}), {register}"
+              f" (declared {spec['register']})")
+        if register != spec["register"]:
+            problems.append(f"{name} measures {register}, declared {spec['register']}")
+        if args.plan_only or keep(name):
+            continue
+        if args.notes is None:
+            die(f"rebuilding {name} needs --notes, EGFxSet's Clean folder")
+        try:
+            import noisereduce  # noqa: F401
+        except ImportError:
+            die("rebuilding the note riffs needs noisereduce: "
+                "pip install 'neuraldsp-preset-generator[riffs]'")
+        pieces, cuts = [], []
+        for chord, strings in spec["voicings"].items():
+            notes, cents = [], []
+            for s, f in strings:
+                path = args.notes.expanduser() / NOTE_PICKUP / f"{s}-{f}.wav"
+                audio, rate = sf.read(str(path))
+                if rate != RATE or audio.ndim != 1:
+                    die(f"{path} is not 48 kHz mono")
+                note, off = prepared_note(audio, RATE, OPEN_STRINGS[s] + f)
+                notes.append(note)
+                cents.append(round(off, 1))
+                record["sources"][f"egfxset/Clean/{NOTE_PICKUP}/{path.name}"] = _sha(path)
+            pieces.append(strummed(notes, RATE, meter))
+            cuts.append({"riff": name, "chord": chord, "source": "egfxset",
+                         "pickup": NOTE_PICKUP, "notes": [f"{s}-{f}" for s, f in strings],
+                         "retuned_cents": [-c for c in cents], "seconds": CHORD_S})
+        built[name] = (np.concatenate(pieces), cuts)
     for name, spec in CHORD_RIFFS.items():
         pieces, cuts, pitches = [], [], []
         for quality, root, chord in PROGRESSION:
@@ -332,11 +478,13 @@ def main():
     if args.plan_only:
         return
 
-    for name, spec in {**CHORD_RIFFS, **LINE_RIFFS}.items():
-        style = "chords" if name in CHORD_RIFFS else "line"
+    for name, spec in {**NOTE_RIFFS, **CHORD_RIFFS, **LINE_RIFFS}.items():
+        style = "line" if name in LINE_RIFFS else "chords"
         median, lowest, highest = measured[name]
         meta = {"style": style, "register": spec["register"], "default": spec["default"],
-                "median_pitch": median, "notes": f"{note_name(lowest)}-{note_name(highest)}"}
+                "median_pitch": median, "notes": f"{note_name(lowest)}-{note_name(highest)}",
+                "source": "egfxset" if name in NOTE_RIFFS else "guitar-techs",
+                **({"method": note_method()} if name in NOTE_RIFFS else {})}
         if keep(name):
             record["riffs"][name] = {**old["riffs"][name], **meta}
             # The first records' cuts carry no riff name: chord pieces are `chords`'.
@@ -356,6 +504,16 @@ def main():
         record["riffs"][name] = {"file": path.name, "sha256": _sha(path), "what": spec["what"],
                                  "seconds": round(len(audio) / RATE, 3),
                                  "gain_db": round(float(gain), 2), **meta}
+    # Only the sources the riffs now use: a cut's audio, its MIDI, or an EGFxSet note.
+    used = set()
+    for cut in record["cuts"]:
+        if "file" in cut:
+            used |= {cut["file"], cut["file"].replace("directinput_", "midi_").replace(".wav", ".mid")}
+            if "line" in cut:
+                used.add(f"midi_{cut['line']}.mid")
+        else:
+            used |= {f"egfxset/Clean/{cut['pickup']}/{n}.wav" for n in cut["notes"]}
+    record["sources"] = {k: v for k, v in sorted(record["sources"].items()) if k in used}
     index.write_text(json.dumps(record, indent=1) + "\n")
     print(json.dumps(record["riffs"], indent=1))
 

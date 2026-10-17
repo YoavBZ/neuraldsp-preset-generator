@@ -552,9 +552,10 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
   timbre 0.0002), at the template's default settings. Its effect on a ranking is not
   measured: the shift is a distance to an unfaded target, so it can differ by candidate.
 - **Parked, with reasons:**
-  - **Riffs in the part's style and register:** *built 2026-10-15 (listening check
-    pending)* for chords and single
-    lines in three registers, from Guitar-TECHS already on disk ([plan](riff-library-plan.md));
+  - **Riffs in the part's style and register:** *built 2026-10-15; registers and the rebuilt
+    chords checked by ear 2026-10-17* for chords and single lines in three registers ([plan](riff-library-plan.md)).
+    The low and mid chords were rebuilt from EGFxSet's single Strat notes after the
+    Guitar-TECHS strums proved to carry clicks and fret buzz; registers were confirmed;
     `generate` picks at most two by the part. Still missing: power chords and arpeggios (no
     shippable source), and automatic chord and register detection (no open tool proven on
     stems; Basic Pitch would need a pip install and an ear-labelled check).
@@ -655,4 +656,5 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-17 | The true-DI search to a stop (−0.293) replaces −0.269 as the ceiling reference; step 3's readings stand | [K_S extension](ks-ceiling-extend-results.md) |
 | 2026-10-17 | htdemucs stays the separator: Mega-53 leans better on fresh full mixes, a tie (−0.017 [−0.039, +0.004]) | [arm A with Mega-53](arm-a-mega53-results.md) |
 | 2026-10-17 | Arm A not ready to claim: −0.028 [−0.064, +0.008] against S on fresh full mixes. Fresh full mixes are the only yardstick for progress; next a rebuild change on short-time treble magnitude, then one fresh-song decision test of arm A (else arm B or a hybrid) | [arm A with Mega-53](arm-a-mega53-results.md), [rebuild gap](rebuild-gap-results.md) |
+| 2026-10-17 | `chords` and `chords-mid` rebuilt from EGFxSet single notes (retuned, denoised above 3 kHz, down-up strum, even chords); Guitar-TECHS strums dropped for clicks and fret buzz | [riff plan](riff-library-plan.md), "Rebuilt" |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |

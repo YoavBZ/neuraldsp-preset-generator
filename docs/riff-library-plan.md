@@ -29,8 +29,8 @@ come from), cut, faded and levelled as `research/build_riffs.py` does now (-23.7
 
 | name | style | register | made of (from the MIDI; the builder confirms) |
 |---|---|---|---|
-| `chords` (existing) | strummed chords | low | G–D–Em–C, `Set4` voicings (median about D3) |
-| `chords-mid` | strummed chords | mid | the same progression in `Set2` voicings (median about E4; `Set3` measures low); D is the exact `Set2` strum at 55.9 s (the non-exact mid D strums carry an A#) |
+| `chords` (existing) | strummed chords | low | G–D–Em–C, `Set4` voicings (median about D3); rebuilt 2026-10-17 from EGFxSet open chords (median G3), see "Rebuilt" |
+| `chords-mid` | strummed chords | mid | the same progression in `Set2` voicings (median about E4; `Set3` measures low); D is the exact `Set2` strum at 55.9 s (the non-exact mid D strums carry an A#); rebuilt 2026-10-17 from EGFxSet four-string voicings at frets 5-10 (median F4) |
 | `chords-high` | strummed chords | high | the same progression on the top three strings (`Set1`, frets 10–13; medians about B4–C5) |
 | `line` (existing) | single-note line | low | the A scale from its start (median A3) |
 | `line-mid` | single-note line | mid | a mid position of a scale (e.g. A, about 65–75 s) |
@@ -91,7 +91,49 @@ guitar stems (the research's finding). That stays parked behind a cheap local ch
   the chord tones (transcription artefacts), and without them it is B4.
 - Each riff's median pitch and note range are recorded in `riffs.json` and tested.
 
+## Checked by ear (2026-10-17)
+
+The check page (6 riffs through an edge-of-breakup and a crunch preset) confirmed every
+register. The lines and `chords-high` sounded clean; `chords` and `chords-mid` did not:
+clicks and low crackle through the edge-of-breakup preset, hidden by the crunch.
+
+## Rebuilt (2026-10-17)
+
+What the noises were, each found by measurement and confirmed or ruled out by ear:
+
+- **Clicks** in two `chords-mid` strums (G, D): broadband impulses in P1's recordings.
+  Swapping in other P1 strums removed them.
+- **Crackle** left in both riffs: fret buzz in P1's low voicings, periodic with the
+  note pitch (absent from the `Set1` top-string voicings, which is why `chords-high` is
+  clean). P1 also carries a 60 Hz mains spike train, but after the amp it sits about
+  30 dB under the decay, so it was not the cause. P2's takes buzz less but carry about
+  20 dB more hiss; by ear neither player was good enough.
+- So both riffs are now assembled from **EGFxSet**'s Clean set (Zenodo 7044411, CC BY
+  4.0): a Stratocaster, every string and fret recorded on its own, middle pickup (the
+  quietest of its five). Low: open G, D, Em, C. Mid: four-string voicings at frets 5-10.
+  Each step below answered something heard on a check page:
+  - strings 25 ms apart (12 ms sounded too fast for a strum);
+  - noisereduce, non-stationary, above 3 kHz only (hiss under crunch; the decays lose
+    16-19 dB of hiss, the attack about 1 dB of top, the level nothing; stationary mode
+    took 9 dB off the low notes);
+  - a down-up strum per chord (the upstroke 1.25 s in, 3 dB softer) and a 150 ms mute
+    before the next (a crunch amp crackles as a chord rings down to near silence);
+  - every note retuned to equal temperament (the separate recordings disagree by up to
+    15 cents; the octaves in both Em voicings beat, heard as "shaky" and a rumble
+    under drive);
+  - every chord equally loud (the open Em, six strings with four open, broke up the
+    edge-of-breakup preset first).
+- Heard and accepted on 2026-10-17 through both presets. On the build machine the build
+  reproduces the approved audio sample for sample (noisereduce and scipy versions can
+  change that elsewhere; a riff matching its record is never re-encoded) (`chords-mid` with even chords was not re-heard; its
+  chords were within 0.4 dB of each other already). The Hotel California "clean start"
+  preset used for the checks is really edge of breakup, which is where the remaining
+  low-Em breakup came from.
+
 ## Limits
 
-One player per style, one guitar (P1's bridge pickup on an Ibanez PF-300, which leans dark). The riffs are not the song's part; this only reduces two
+`chords-high` and the lines are one player and one guitar (P1's bridge pickup on an
+Ibanez PF-300, which leans dark); `chords` and `chords-mid` are one Strat, assembled
+note by note, so the strings do not interact as in a played chord. Under a crunch preset
+some hiss is still audible. The riffs are not the song's part; this only reduces two
 known mismatches.

@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neuraldsp-preset-generator"
-version = "0.7.113"
+version = "0.7.114"
 description = "Generate, match, and edit Neural DSP amp-sim preset files."
 requires-python = ">=3.10"
 license = "MIT"
@@ -33,6 +33,9 @@ match = ["neuraldsp-preset-generator[analysis]"]
 # Hosting the plugin in-process, for research/spike_pedalboard.py. Local and
 # macOS-only, like every other plugin-dependent check — never used by CI.
 host = ["pedalboard>=0.9"]
+# Rebuilding the audition riffs, research/build_riffs.py only: denoising the EGFxSet
+# notes `chords` and `chords-mid` are made from. The shipped riffs need nothing.
+riffs = ["neuraldsp-preset-generator[analysis]", "noisereduce>=3.0"]
 
 # Without this, a flat layout makes setuptools refuse to build: it sees skills/,
 # reference/, samples/ and docs/ as candidate packages. Only these are code.
