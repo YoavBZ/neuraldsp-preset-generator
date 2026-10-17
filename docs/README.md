@@ -452,5 +452,4 @@ was declared, what was measured, and the research behind it.
     sessions no set has used turned up, both with caveats: Perpetual Escape "Stop And Rise"
     (never seen, gain unknown) and Dunning Kruger "Sascha" (set 3 downloaded it and set its one
     DI aside as unpaired). Four sessions and everything added since about April 2025 remain
-    unchecked. Research, not
-    a declared plan.
+    unchecked. Research, not a declared plan.
