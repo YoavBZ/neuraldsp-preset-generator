@@ -62,10 +62,9 @@ reference? Asked twice:
     matched configuration was chosen on these parts' local fidelity, which may flatter Mega-53;
   - they are instrumental contexts, not what a product receives.
 
-*(Superseded by amendment 1, item 1: the usable pool is 21 parts in 12 bands.)*
-
 **The fresh draw is stage F: the 35 classed clean or crunch development parts outside step 3's 24**
 (label table, [`label-table-parts.json`](label-table-parts.json)), in 17 bands.
+*(Stage F only, superseded by amendment 1, item 1: the usable pool is 21 parts in 12 bands.)*
 - **What makes them fresh for this question:** no arm A search, no levers variant, no
   local-objective experiment and no separator experiment has scored them. Arm A's recipe and the
   Mega-53 configuration were chosen without them.
@@ -352,8 +351,8 @@ finite value), as arm A did.
 | **Total** | **39,510** (hard caps 40,800) | **about 6.3 h from 11:00** |
 | Arm X, if added | +19,537 (caps +20,300) | +3 h |
 
-- **Renders so far:** about 147k before 1c and 1d (7,056 + 7,200); this plan adds about 40k, or 60k
-  with X. There is no fixed limit (decision 2).
+- **Renders so far:** about 201k once 1d finished ([ROADMAP](ROADMAP.md), 2026-10-17); this plan
+  adds about 30k (amendment 1), or about 45k with X (1d gave no arm X). There is no fixed limit (decision 2).
 - **Disk:** about 1.5 GB at most (35 contexts and 2–3 stems of 30 s float32 ≈ 0.6 GB; rebuilds
   ≈ 0.4 GB; final-output FLACs ≈ 0.5 GB). 58 GB free when this plan was written, against the 31 GB
   guard, which every shard checks.
