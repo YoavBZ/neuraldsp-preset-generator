@@ -431,3 +431,10 @@ was declared, what was measured, and the research behind it.
     committed per-knob split shows the rebuild wanting more input gain than the record, but some
     tone knobs are inverted too. Effect-size experiments: zero-render checks, a 14-band local set with audio kept, DI level
     and drive calibration, and leave-one-band-out corrections. Research, not a declared plan.
+13. [fresh-di-amp-multitracks-2026-10.md](research/fresh-di-amp-multitracks-2026-10.md): where to
+    find more fresh songs with a guitar DI and the amp track of the same take (October 2026). After
+    checking the repo, no public source adds fresh non-metal clean-to-crunch pairs: the project's sets
+    1–6 have already used Cambridge-MT's, and the other sources are renders, single notes or
+    unverified. Ranked routes: rule on the held-out sets, a local scan of the Cambridge sessions this
+    search could not reach, Weathervane, wider scope, or recording new material. Research, not a
+    declared plan.
