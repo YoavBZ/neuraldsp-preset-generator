@@ -293,7 +293,16 @@ OPEN_STRINGS = {1: 64, 2: 59, 3: 55, 4: 50, 5: 45, 6: 40}
 DOWN_GAP_S, UP_GAP_S, UP_AT_S, UP_DB = 0.025, 0.01798, 1.25, -3.0
 RELEASE_S, REPLUCK_S, NOTE_FADE_S, CHORD_LUFS = 0.15, 0.01, 0.002, -30.0
 DENOISE_ABOVE_HZ = 3000
-NOTE_METHOD = "egfxset-notes-1"             # recorded per riff: a change rebuilds it
+
+
+def note_method() -> str:
+    """The note riffs' build, recorded per riff: the method's name and a fingerprint of
+    every voicing and setting above, so changing any of them rebuilds the riff instead
+    of keeping a file riffs.json no longer describes."""
+    settings = [NOTE_RIFFS, NOTE_PICKUP, DOWN_GAP_S, UP_GAP_S, UP_AT_S, UP_DB, RELEASE_S,
+                REPLUCK_S, NOTE_FADE_S, CHORD_LUFS, DENOISE_ABOVE_HZ, CHORD_S, LEAD_IN_S]
+    digest = hashlib.sha256(json.dumps(settings, sort_keys=True).encode()).hexdigest()
+    return f"egfxset-notes-1+{digest[:12]}"
 CHORD_RIFFS = {
     "chords-high": dict(voicing="Set1", register="high", default=False,
                         near={"G": 36.0, "D": 140.0, "Em": 148.1, "C": 96.0},
@@ -362,7 +371,7 @@ def main():
         is planned now, is left alone."""
         entry = old.get("riffs", {}).get(name)
         path = out / entry["file"] if entry else None
-        method = NOTE_METHOD if name in NOTE_RIFFS else None
+        method = note_method() if name in NOTE_RIFFS else None
         return bool(entry and path.exists() and _sha(path) == entry["sha256"]
                     and entry.get("method") == method)
 
@@ -475,7 +484,7 @@ def main():
         meta = {"style": style, "register": spec["register"], "default": spec["default"],
                 "median_pitch": median, "notes": f"{note_name(lowest)}-{note_name(highest)}",
                 "source": "egfxset" if name in NOTE_RIFFS else "guitar-techs",
-                **({"method": NOTE_METHOD} if name in NOTE_RIFFS else {})}
+                **({"method": note_method()} if name in NOTE_RIFFS else {})}
         if keep(name):
             record["riffs"][name] = {**old["riffs"][name], **meta}
             # The first records' cuts carry no riff name: chord pieces are `chords`'.

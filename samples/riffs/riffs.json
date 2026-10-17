@@ -19,7 +19,7 @@
    "median_pitch": 55,
    "notes": "E2-G4",
    "source": "egfxset",
-   "method": "egfxset-notes-1"
+   "method": "egfxset-notes-1+f81ff32a359f"
   },
   "chords-mid": {
    "file": "chords-mid.flac",
@@ -33,7 +33,7 @@
    "median_pitch": 65.0,
    "notes": "G3-C5",
    "source": "egfxset",
-   "method": "egfxset-notes-1"
+   "method": "egfxset-notes-1+f81ff32a359f"
   },
   "chords-high": {
    "file": "chords-high.flac",

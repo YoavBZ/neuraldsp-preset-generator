@@ -477,8 +477,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
   timbre 0.0002), at the template's default settings. Its effect on a ranking is not
   measured: the shift is a distance to an unfaded target, so it can differ by candidate.
 - **Parked, with reasons:**
-  - **Riffs in the part's style and register:** *built 2026-10-15, checked by ear
-    2026-10-17* for chords and single lines in three registers ([plan](riff-library-plan.md)).
+  - **Riffs in the part's style and register:** *built 2026-10-15; registers and the rebuilt
+    chords checked by ear 2026-10-17* for chords and single lines in three registers ([plan](riff-library-plan.md)).
     The low and mid chords were rebuilt from EGFxSet's single Strat notes after the
     Guitar-TECHS strums proved to carry clicks and fret buzz; registers were confirmed;
     `generate` picks at most two by the part. Still missing: power chords and arpeggios (no
@@ -571,9 +571,9 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-15 | Arms A and C count as failed (arm A's control), but the route is kept: the DI rebuild is the bottleneck, and a DI-recovery track opens | `song-settings-plan.md`, recorded outcome; [DI recovery](research/di-recovery-2026-10.md) |
 | 2026-10-15 | Time effects are kept only when the gain is clear; "off" on a dry record counts as correct; the listener's picks are trusted despite the letter layout | `knob-ceiling-2-results.md` |
 | 2026-10-15 | Mega-53 weights re-downloaded for the separator screen (MIT repo, release v1.0.21; no separate weights licence, as accepted for the 2026-10-08 test) | `~/ndsp-presets/tools/msst/provenance.json` |
-| 2026-10-17 | `chords` and `chords-mid` rebuilt from EGFxSet single notes (retuned, denoised above 3 kHz, down-up strum, even chords); Guitar-TECHS strums dropped for clicks and fret buzz | [riff plan](riff-library-plan.md), "Rebuilt" |
 | 2026-10-16 | No arbitrary pass/fail bars: report effect sizes with intervals, choose the best estimate, learn from any improvement (A, B, C) | memory and plans from this date |
 | 2026-10-16 | Arm A's current best: a 52-render rebuilt-DI search shrunk halfway to S (−0.083 [−0.135, −0.032]) | [arm A levers](arm-a-levers-results.md) |
 | 2026-10-16 | Arm B: diagnostics done; sound-space retraining (B1, B2) approved, scored on step 3's songs too | [diagnostics](song-to-settings-diagnostics-results.md), [plan](song-to-settings-soundspace-plan.md) |
 | 2026-10-16 | ML plan decision 2 revised: no fixed render limit; each step stops rendering by a declared, evidence-based stopping rule (search curve flattened, learning curve no longer improving, interval narrow enough) and reports renders used | [ML plan](research/ml-plan-2026-10.md), section 3 |
+| 2026-10-17 | `chords` and `chords-mid` rebuilt from EGFxSet single notes (retuned, denoised above 3 kHz, down-up strum, even chords); Guitar-TECHS strums dropped for clicks and fret buzz | [riff plan](riff-library-plan.md), "Rebuilt" |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |

@@ -29,8 +29,8 @@ come from), cut, faded and levelled as `research/build_riffs.py` does now (-23.7
 
 | name | style | register | made of (from the MIDI; the builder confirms) |
 |---|---|---|---|
-| `chords` (existing) | strummed chords | low | G–D–Em–C, `Set4` voicings (median about D3) |
-| `chords-mid` | strummed chords | mid | the same progression in `Set2` voicings (median about E4; `Set3` measures low); D is the exact `Set2` strum at 55.9 s (the non-exact mid D strums carry an A#) |
+| `chords` (existing) | strummed chords | low | G–D–Em–C, `Set4` voicings (median about D3); rebuilt 2026-10-17 from EGFxSet open chords (median G3), see "Rebuilt" |
+| `chords-mid` | strummed chords | mid | the same progression in `Set2` voicings (median about E4; `Set3` measures low); D is the exact `Set2` strum at 55.9 s (the non-exact mid D strums carry an A#); rebuilt 2026-10-17 from EGFxSet four-string voicings at frets 5-10 (median F4) |
 | `chords-high` | strummed chords | high | the same progression on the top three strings (`Set1`, frets 10–13; medians about B4–C5) |
 | `line` (existing) | single-note line | low | the A scale from its start (median A3) |
 | `line-mid` | single-note line | mid | a mid position of a scale (e.g. A, about 65–75 s) |
@@ -123,8 +123,9 @@ What the noises were, each found by measurement and confirmed or ruled out by ea
     under drive);
   - every chord equally loud (the open Em, six strings with four open, broke up the
     edge-of-breakup preset first).
-- Heard and accepted on 2026-10-17 through both presets. The build reproduces the
-  approved audio sample for sample (`chords-mid` with even chords was not re-heard; its
+- Heard and accepted on 2026-10-17 through both presets. On the build machine the build
+  reproduces the approved audio sample for sample (noisereduce and scipy versions can
+  change that elsewhere; a riff matching its record is never re-encoded) (`chords-mid` with even chords was not re-heard; its
   chords were within 0.4 dB of each other already). The Hotel California "clean start"
   preset used for the checks is really edge of breakup, which is where the remaining
   low-Em breakup came from.

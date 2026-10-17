@@ -109,7 +109,7 @@ def test_every_riff_declares_its_style_register_and_default():
     # The low and mid chords are assembled from EGFxSet notes (rebuilt 2026-10-17);
     # the rest are the Guitar-TECHS cuts heard and kept, unchanged.
     assert {n for n, e in riffs.items() if e["source"] == "egfxset"} == {"chords", "chords-mid"}
-    assert all(riffs[n]["method"] == B.NOTE_METHOD for n in ("chords", "chords-mid"))
+    assert all(riffs[n]["method"] == B.note_method() for n in ("chords", "chords-mid"))
     assert riffs["chords-high"]["sha256"].startswith("29e03e21")
     assert riffs["line"]["sha256"].startswith("f0102680")
     assert "EGFxSet" in record["attribution"] and "Guitar-TECHS" in record["attribution"]
@@ -162,7 +162,7 @@ def test_each_note_riff_records_its_notes_and_the_retuning():
         for cut in cuts:
             assert cut["notes"] == [f"{s}-{f}" for s, f in spec["voicings"][cut["chord"]]]
             assert len(cut["retuned_cents"]) == len(cut["notes"])
-            assert all(abs(c) <= 20 for c in cut["retuned_cents"])
+            assert all(abs(c) <= 15 for c in cut["retuned_cents"])
             for note in cut["notes"]:
                 assert f"egfxset/Clean/{cut['pickup']}/{note}.wav" in record["sources"]
     pitches = [B.OPEN_STRINGS[s] + f for v in B.NOTE_RIFFS["chords"]["voicings"].values()
