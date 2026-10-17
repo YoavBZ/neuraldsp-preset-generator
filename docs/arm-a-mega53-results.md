@@ -313,7 +313,7 @@ little). So:
   (with the freshness gradient), poorer stems in the fresh pool and bleed in the truth are all
   candidates; none is settled. This is the
   figure to carry forward for product-like inputs until a larger fresh draw sharpens it.
-- **The rebuild-gap study** (running now) targets where the data says the gap is.
+- **The rebuild-gap study** ([results](rebuild-gap-results.md)) has since run; it targets where the data says the gap is.
 
 Audited 2026-10-17 by an independent agent, which recomputed every figure from the raw
 per-direction records with its own scripts (all match; its units equal the report's exactly;
