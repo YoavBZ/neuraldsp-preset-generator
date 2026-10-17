@@ -287,6 +287,10 @@ was declared, what was measured, and the research behind it.
 - [cprime-sep-plan.md](cprime-sep-plan.md) → [results](cprime-sep-results.md): C′ fine-tuned on
   separator residuals; a small envelope gain, inside the noise on stems and as large on the amp
   track (zero renders).
+- [clean-di-library-plan.md](clean-di-library-plan.md) → [results](clean-di-library-results.md): a
+  screened library of the development DIs (237 DIs; hum, hiss, clipping, dropouts, bleed, DC and
+  near-silence per 10-s section; zero renders), a blind listening check of the screens, and part
+  B, known-answer test songs rendered through chosen presets (declared; renders later).
 - [bleed-listening-plan.md](bleed-listening-plan.md) → [results](bleed-listening-results.md), with
   the [bleed audit](audits/bleed-2026-10-16/README.md): bleed only in the Telefunken live-room
   sessions, audible on the high parts; the cleaning isn't adopted, and every key result holds
