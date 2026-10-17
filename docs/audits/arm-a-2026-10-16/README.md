@@ -11,11 +11,19 @@ sessions can cite them.
 - `exp4-screen-f3-original.json` and `exp4-screen-f3.json`: step 1d's screen, before and after
   amendment 1.
 - `exp4-step2.json`: step 2's control readings for 1a, 1b and 1z.
+- `exp4-step0c-dac-cells.json`: step 0c per cell (added 2026-10-16 for
+  [local-objective-plan.md](../../local-objective-plan.md)): the margin m through the true DI, C′,
+  DAC-4 and DAC-9; the quiet-frame level; the 1/5/10-ms crest; and the resample-only control.
+  Built with zero renders by `exp4_step0c_dac_cells.py` from
+  `~/ndsp-presets/learn/di-fine-structure/step0/`.
 
 **`levers-audit/`:** the independent audit's scripts.
 - `a7b_local.out`: experiment 2b's local fidelity per part, amp and direction.
 - `a7c_dims.out`: the same split per knob.
 - `r1_out.json`: the audit's 25 re-renders.
+- `a1_exp1.out` … `a8_curse.out`: every other script's output, re-run on 2026-10-16 from the Mac's
+  stored files with zero renders (the scripts read `~/ndsp-presets/`, so they can't be re-run from
+  git). `a7_local.out` ranks refusals as the worst; `a7b_local.out`'s first block drops them.
 
 **Actual renders for the levers:** about 5,890 in all, corrected by a code review.
 

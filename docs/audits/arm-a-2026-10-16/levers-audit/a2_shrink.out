@@ -1,0 +1,6 @@
+checks 1152
+issues {}
+max unit err {'shrink-0.25': 4.999999999866223e-07, 'shrink-0.5': 6.52173912984999e-07, 'shrink-0.75': 1.0869565217896948e-06, 'S-mics': 1.1102230246251565e-16, 'dirs-avg': 1.0869565216786725e-06, 'B-blend': 1.0869565216786725e-06, 'C-blend': 5.000000000143778e-07, '3C+shrink-0.5': 5.000000000143778e-07}
+missing keys in S or A {}
+dims moved {'shrink-0.25': 1095, 'shrink-0.5': 1095, 'shrink-0.75': 1095, 'S-mics': 1095, 'dirs-avg': 1095, 'B-blend': 1392, 'C-blend': 1008, '3C+shrink-0.5': 936}
+A changes a mic on 143 /144; a switch on 79

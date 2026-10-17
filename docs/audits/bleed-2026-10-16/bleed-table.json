@@ -1,0 +1,4356 @@
+{
+ "cambridge-Drag_Me_Down-ElecGtr3": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 19.46,
+  "excluded_proxy_mics": [
+   "03_KickSample",
+   "07_SnareSample2",
+   "09_HiHatSample",
+   "21_BassSynth",
+   "36_Synth1",
+   "37_Synth2",
+   "38_Synth3",
+   "39_Synth4",
+   "43_LeadVox1"
+  ],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "silent": true,
+    "bleed_db": -99,
+    "flag": "silent"
+   },
+   "B": {
+    "guitar_share_linear": 0.9051,
+    "guitar_share_nl": 0.973,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00132,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -8e-05,
+    "unexplained_frac": 0.0283,
+    "unexplained_db": -15.5,
+    "top": [
+     [
+      "02_Kick2",
+      -49.9,
+      503
+     ],
+     [
+      "24_AcousticGtr3",
+      -55.6,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-Drag_Me_Down-ElecGtr4": {
+  "set": "knob-ceiling",
+  "source": "cambridge",
+  "di_lag_ms": 19.46,
+  "excluded_proxy_mics": [
+   "01_Kick1",
+   "02_Kick2",
+   "21_BassSynth",
+   "23_AcousticGtr2",
+   "24_AcousticGtr3",
+   "36_Synth1",
+   "37_Synth2",
+   "43_LeadVox1",
+   "50_BackingVox3"
+  ],
+  "amp_zero_where_di_silent_frac": 0.9946547884187082,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9108,
+    "guitar_share_nl": 0.9739,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.0003,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00016,
+    "unexplained_frac": 0.0264,
+    "unexplained_db": -15.8,
+    "top": [
+     [
+      "16_Overheads",
+      -53.6,
+      0
+     ],
+     [
+      "14_Tom3",
+      -58.3,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.9242,
+    "guitar_share_nl": 0.9763,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00029,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -9e-05,
+    "unexplained_frac": 0.024,
+    "unexplained_db": -16.2,
+    "top": [
+     [
+      "45_LeadVox2",
+      -52.6,
+      0
+     ],
+     [
+      "20_BassFuzz",
+      -55.2,
+      -1
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+  "set": "knob-ceiling",
+  "source": "cambridge",
+  "di_lag_ms": 0.62,
+  "excluded_proxy_mics": [
+   "05_HiHat",
+   "41_BackingVox3",
+   "42_BackingVox4",
+   "43_BackingVox5",
+   "44_BackingVox6"
+  ],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.5334,
+    "guitar_share_nl": 0.5636,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00032,
+    "bleed_db_penalty_corrected": -23.7,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.0046,
+    "unexplained_frac": 0.4367,
+    "unexplained_db": -3.6,
+    "top": [
+     [
+      "17_ElecGtr2MicDI",
+      -31.0,
+      0
+     ],
+     [
+      "40_BackingVox2DT",
+      -32.8,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.5766,
+    "guitar_share_nl": 0.6127,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.0032,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00089,
+    "unexplained_frac": 0.3905,
+    "unexplained_db": -4.1,
+    "top": [
+     [
+      "30_Piano",
+      -43.4,
+      0
+     ],
+     [
+      "23_ElecGtr4DI",
+      -43.9,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2": {
+  "set": "knob-ceiling",
+  "source": "cambridge",
+  "di_lag_ms": 0.62,
+  "excluded_proxy_mics": [
+   "31_SFX1",
+   "32_SFX2",
+   "33_SFX3",
+   "34_SFX4"
+  ],
+  "amp_zero_where_di_silent_frac": 0.9962349397590361,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.5915,
+    "guitar_share_nl": 0.6444,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00402,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00269,
+    "unexplained_frac": 0.3596,
+    "unexplained_db": -4.4,
+    "top": [
+     [
+      "10_DrumsRoomStereo",
+      -46.2,
+      0
+     ],
+     [
+      "07_Tom2",
+      -50.2,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.6007,
+    "guitar_share_nl": 0.6458,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00178,
+    "bleed_db_penalty_corrected": -44.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00182,
+    "unexplained_frac": 0.356,
+    "unexplained_db": -4.5,
+    "top": [
+     [
+      "14_ElecGtr1DI",
+      -40.2,
+      0
+     ],
+     [
+      "35_LeadVox",
+      -46.6,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 3.17,
+  "excluded_proxy_mics": [
+   "05_HiHat",
+   "41_BackingVox3",
+   "42_BackingVox4",
+   "43_BackingVox5",
+   "44_BackingVox6"
+  ],
+  "amp_zero_where_di_silent_frac": 0.9642487046632124,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9059,
+    "guitar_share_nl": 0.9553,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00122,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00041,
+    "unexplained_frac": 0.0459,
+    "unexplained_db": -13.4,
+    "top": [
+     [
+      "08_Overheads",
+      -48.5,
+      0
+     ],
+     [
+      "10_DrumsRoomStereo",
+      -50.6,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.9215,
+    "guitar_share_nl": 0.9664,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00205,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00012,
+    "unexplained_frac": 0.0357,
+    "unexplained_db": -14.5,
+    "top": [
+     [
+      "30_Piano",
+      -49.5,
+      0
+     ],
+     [
+      "35_LeadVox",
+      -50.3,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr4": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 2.88,
+  "excluded_proxy_mics": [
+   "05_HiHat",
+   "41_BackingVox3",
+   "42_BackingVox4",
+   "43_BackingVox5",
+   "44_BackingVox6"
+  ],
+  "amp_zero_where_di_silent_frac": 0.9788461538461538,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9392,
+    "guitar_share_nl": 0.9805,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00046,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00013,
+    "unexplained_frac": 0.02,
+    "unexplained_db": -17.0,
+    "top": [
+     [
+      "10_DrumsRoomStereo",
+      -48.7,
+      0
+     ],
+     [
+      "37_Backing1Vox",
+      -52.8,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "silent": true,
+    "bleed_db": -99,
+    "flag": "silent"
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-Nosso_Mundo_Deixou_De_Existir-ElecGtr03": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 0.71,
+  "excluded_proxy_mics": [
+   "01_Kick"
+  ],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "silent": true,
+    "bleed_db": -99,
+    "flag": "silent"
+   },
+   "B": {
+    "guitar_share_linear": 0.4553,
+    "guitar_share_nl": 0.6482,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00044,
+    "bleed_db_penalty_corrected": -36.2,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00068,
+    "unexplained_frac": 0.3522,
+    "unexplained_db": -4.5,
+    "top": [
+     [
+      "09_ElecGtr01DI",
+      -43.8,
+      0
+     ],
+     [
+      "04_Toms",
+      -52.6,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-Passing_Ships-ElecGtr2": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 0.54,
+  "excluded_proxy_mics": [
+   "01_KickMic1",
+   "02_KickMic2",
+   "03_KickSub",
+   "04_SnareUp",
+   "05_SnareDown",
+   "06_HiHat",
+   "07_Ride",
+   "08_Overheads",
+   "09_DrumsRoom",
+   "10_Tom1",
+   "11_Tom2",
+   "12_Tom3",
+   "13_CymbalsOD",
+   "26_ElecGtr5",
+   "30_AcousticGtr",
+   "33_Cello2Mic1",
+   "34_Cello2Mic2",
+   "39_Synth2",
+   "42_BackingVox1",
+   "43_BackingVox2",
+   "44_BackingVox3",
+   "45_BackingVox4",
+   "46_BackingVox5",
+   "47_BackingVox6",
+   "48_BackingVox7",
+   "49_BackingVox8",
+   "50_BackingVox9"
+  ],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9914,
+    "guitar_share_nl": 0.9916,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00013,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": 0.0,
+    "unexplained_frac": 0.0085,
+    "unexplained_db": -20.7,
+    "top": [
+     [
+      "35_PianoMic1",
+      -46.9,
+      0
+     ],
+     [
+      "31_Cello1Mic1",
+      -52.4,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.9706,
+    "guitar_share_nl": 0.9708,
+    "bleed_db": -90.0,
+    "bleed_frac": -1e-05,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": 0.0,
+    "unexplained_frac": 0.0292,
+    "unexplained_db": -15.3,
+    "top": [
+     [
+      "35_PianoMic1",
+      -45.0,
+      0
+     ],
+     [
+      "32_Cello1Mic2",
+      -50.0,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-Passing_Ships-ElecGtr3": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 0.54,
+  "excluded_proxy_mics": [
+   "10_Tom1",
+   "11_Tom2",
+   "12_Tom3",
+   "13_CymbalsOD",
+   "44_BackingVox3",
+   "45_BackingVox4",
+   "46_BackingVox5",
+   "47_BackingVox6",
+   "48_BackingVox7",
+   "49_BackingVox8",
+   "50_BackingVox9"
+  ],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "silent": true,
+    "bleed_db": -99,
+    "flag": "silent"
+   },
+   "B": {
+    "guitar_share_linear": 0.9471,
+    "guitar_share_nl": 0.964,
+    "bleed_db": -42.2,
+    "bleed_frac": 6e-05,
+    "bleed_db_penalty_corrected": -37.7,
+    "bleed_full_db": -42.2,
+    "null_gain_mean": -0.00011,
+    "unexplained_frac": 0.0359,
+    "unexplained_db": -14.4,
+    "top": [
+     [
+      "30_AcousticGtr",
+      -36.2,
+      0
+     ],
+     [
+      "39_Synth2",
+      -39.9,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-Passing_Ships-ElecGtr4": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 0.54,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 0.9968847352024922,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9975,
+    "guitar_share_nl": 0.9977,
+    "bleed_db": -37.2,
+    "bleed_frac": 0.00019,
+    "bleed_db_penalty_corrected": -36.8,
+    "bleed_full_db": -37.2,
+    "null_gain_mean": -2e-05,
+    "unexplained_frac": 0.0022,
+    "unexplained_db": -26.6,
+    "top": [
+     [
+      "30_AcousticGtr",
+      -37.0,
+      -21
+     ],
+     [
+      "35_PianoMic1",
+      -50.8,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.996,
+    "guitar_share_nl": 0.9962,
+    "bleed_db": -43.0,
+    "bleed_frac": 5e-05,
+    "bleed_db_penalty_corrected": -42.2,
+    "bleed_full_db": -43.0,
+    "null_gain_mean": -1e-05,
+    "unexplained_frac": 0.0037,
+    "unexplained_db": -24.3,
+    "top": [
+     [
+      "30_AcousticGtr",
+      -38.4,
+      -21
+     ],
+     [
+      "40_LeadVox",
+      -54.9,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-Passing_Ships-ElecGtr6": {
+  "set": "knob-ceiling",
+  "source": "cambridge",
+  "di_lag_ms": 0.46,
+  "excluded_proxy_mics": [
+   "15_ElecGtr1Mic1",
+   "16_ElecGtr1Mic2",
+   "38_Synth1",
+   "42_BackingVox1",
+   "43_BackingVox2",
+   "48_BackingVox7",
+   "49_BackingVox8"
+  ],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9122,
+    "guitar_share_nl": 0.9176,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00041,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00018,
+    "unexplained_frac": 0.0828,
+    "unexplained_db": -10.8,
+    "top": [
+     [
+      "41_LeadVoxRoom",
+      -42.7,
+      0
+     ],
+     [
+      "05_SnareDown",
+      -44.8,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.9001,
+    "guitar_share_nl": 0.9089,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00057,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00015,
+    "unexplained_frac": 0.0916,
+    "unexplained_db": -10.4,
+    "top": [
+     [
+      "08_Overheads",
+      -48.8,
+      0
+     ],
+     [
+      "01_KickMic1",
+      -52.1,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-Prodigal-ElecGtr1": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 0.75,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 0.99581589958159,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "silent": true,
+    "bleed_db": -99,
+    "flag": "silent"
+   },
+   "B": {
+    "guitar_share_linear": 0.949,
+    "guitar_share_nl": 0.9525,
+    "bleed_db": -90.0,
+    "bleed_frac": -9e-05,
+    "bleed_db_penalty_corrected": -31.2,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00085,
+    "unexplained_frac": 0.0476,
+    "unexplained_db": -13.2,
+    "top": [
+     [
+      "15_LeadVox",
+      -42.9,
+      0
+     ],
+     [
+      "19_BackingVox4",
+      -49.3,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-Prodigal-ElecGtr2": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 0.83,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 0.9776035834266518,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9284,
+    "guitar_share_nl": 0.9632,
+    "bleed_db": -90.0,
+    "bleed_frac": -3.10032,
+    "bleed_db_penalty_corrected": null,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.23018,
+    "unexplained_frac": 3.1371,
+    "unexplained_db": 5.0,
+    "top": [
+     [
+      "10_ElecGtr3DI",
+      -90.0,
+      0
+     ],
+     [
+      "12_ElecGtr4DI",
+      -90.0,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "bleed model generalises badly in this half (negative held-out gain)"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.9946,
+    "guitar_share_nl": 0.9905,
+    "bleed_db": -90.0,
+    "bleed_frac": 0.0,
+    "bleed_db_penalty_corrected": -45.2,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -3e-05,
+    "unexplained_frac": 0.0095,
+    "unexplained_db": -20.2,
+    "top": [
+     [
+      "15_LeadVox",
+      -50.6,
+      0
+     ],
+     [
+      "18_BackingVox3",
+      -64.8,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-Prodigal-ElecGtr3": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 0.0,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 0.8631134969325154,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.7615,
+    "guitar_share_nl": 0.8271,
+    "bleed_db": -90.0,
+    "bleed_frac": -612.7222,
+    "bleed_db_penalty_corrected": null,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -777.68914,
+    "unexplained_frac": 612.8951,
+    "unexplained_db": 27.9,
+    "top": [
+     [
+      "12_ElecGtr4DI",
+      -90.0,
+      0
+     ],
+     [
+      "19_BackingVox4",
+      -90.0,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "bleed model generalises badly in this half (negative held-out gain)"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.9234,
+    "guitar_share_nl": 0.9416,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00018,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -1e-05,
+    "unexplained_frac": 0.0586,
+    "unexplained_db": -12.3,
+    "top": [
+     [
+      "17_BackingVox2",
+      -42.1,
+      0
+     ],
+     [
+      "01_Kick",
+      -48.7,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-Prodigal-ElecGtr4": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 1.12,
+  "excluded_proxy_mics": [
+   "19_BackingVox4"
+  ],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "silent": true,
+    "bleed_db": -99,
+    "flag": "silent"
+   },
+   "B": {
+    "guitar_share_linear": -3.861,
+    "guitar_share_nl": -4.4354,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00023,
+    "bleed_db_penalty_corrected": -26.8,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00232,
+    "unexplained_frac": 5.4356,
+    "unexplained_db": 7.4,
+    "top": [
+     [
+      "10_ElecGtr3DI",
+      -38.5,
+      0
+     ],
+     [
+      "04_Bass",
+      -43.3,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-Prodigal-ElecGtr5": {
+  "set": "knob-ceiling",
+  "source": "cambridge",
+  "di_lag_ms": 0.0,
+  "excluded_proxy_mics": [
+   "19_BackingVox4"
+  ],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.6725,
+    "guitar_share_nl": 0.7047,
+    "bleed_db": -90.0,
+    "bleed_frac": -1e-05,
+    "bleed_db_penalty_corrected": null,
+    "bleed_full_db": -37.4,
+    "null_gain_mean": 0.0002,
+    "unexplained_frac": 0.2952,
+    "unexplained_db": -5.3,
+    "top": [
+     [
+      "10_ElecGtr3DI",
+      -30.1,
+      0
+     ],
+     [
+      "18_BackingVox3",
+      -35.3,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.688,
+    "guitar_share_nl": 0.7343,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00028,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00023,
+    "unexplained_frac": 0.266,
+    "unexplained_db": -5.8,
+    "top": [
+     [
+      "06_ElecGtr1DI",
+      -32.4,
+      0
+     ],
+     [
+      "02_Snare",
+      -41.6,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-Quicksand-ElecGtr1": {
+  "set": "knob-ceiling",
+  "source": "cambridge",
+  "di_lag_ms": 0.5,
+  "excluded_proxy_mics": [
+   "32_IntroClose1",
+   "33_IntroClose2",
+   "34_IntroFar1",
+   "35_IntroFar2"
+  ],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.7155,
+    "guitar_share_nl": 0.8734,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00218,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00089,
+    "unexplained_frac": 0.1288,
+    "unexplained_db": -8.9,
+    "top": [
+     [
+      "12_Tambourine",
+      -38.1,
+      -125
+     ],
+     [
+      "28_LeadVoxFX",
+      -42.9,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.7434,
+    "guitar_share_nl": 0.8768,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00145,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00069,
+    "unexplained_frac": 0.1247,
+    "unexplained_db": -9.0,
+    "top": [
+     [
+      "12_Tambourine",
+      -38.6,
+      -125
+     ],
+     [
+      "09_Tom2",
+      -48.1,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-Quicksand-ElecGtr2": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 0.67,
+  "excluded_proxy_mics": [
+   "32_IntroClose1",
+   "33_IntroClose2",
+   "34_IntroFar1",
+   "35_IntroFar2"
+  ],
+  "amp_zero_where_di_silent_frac": 0.8158795345653662,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.7799,
+    "guitar_share_nl": 0.9028,
+    "bleed_db": -21.3,
+    "bleed_frac": 0.00734,
+    "bleed_db_penalty_corrected": -21.2,
+    "bleed_full_db": -21.3,
+    "null_gain_mean": -0.00023,
+    "unexplained_frac": 0.0899,
+    "unexplained_db": -10.5,
+    "top": [
+     [
+      "24_HammondLeslieHi",
+      -23.9,
+      -1198
+     ],
+     [
+      "23_HammondLeslieLo",
+      -24.7,
+      -1193
+     ]
+    ],
+    "flag": "moderate",
+    "notes": [],
+    "clear_bleed_spans_s": [
+     [
+      3.99,
+      4.16
+     ]
+    ]
+   },
+   "B": {
+    "guitar_share_linear": 0.8115,
+    "guitar_share_nl": 0.9207,
+    "bleed_db": -23.0,
+    "bleed_frac": 0.00502,
+    "bleed_db_penalty_corrected": -22.8,
+    "bleed_full_db": -23.0,
+    "null_gain_mean": -0.00027,
+    "unexplained_frac": 0.0743,
+    "unexplained_db": -11.3,
+    "top": [
+     [
+      "23_HammondLeslieLo",
+      -25.7,
+      -1193
+     ],
+     [
+      "24_HammondLeslieHi",
+      -25.9,
+      -1198
+     ]
+    ],
+    "flag": "moderate",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "moderate",
+  "flagged_halves": [
+   "A",
+   "B"
+  ]
+ },
+ "cambridge-Signs-ElecGtr2": {
+  "set": "knob-ceiling",
+  "source": "cambridge",
+  "di_lag_ms": 0.83,
+  "excluded_proxy_mics": [
+   "09_HatSample",
+   "12_Clap3",
+   "21_BassSynth"
+  ],
+  "amp_zero_where_di_silent_frac": 0.9781553398058253,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.876,
+    "guitar_share_nl": 0.9274,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00093,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00039,
+    "unexplained_frac": 0.0735,
+    "unexplained_db": -11.3,
+    "top": [
+     [
+      "17_Shaker",
+      -45.7,
+      0
+     ],
+     [
+      "41_Piano",
+      -49.6,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.8718,
+    "guitar_share_nl": 0.9141,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.0004,
+    "bleed_db_penalty_corrected": -42.2,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00046,
+    "unexplained_frac": 0.0863,
+    "unexplained_db": -10.6,
+    "top": [
+     [
+      "14_Clap5",
+      -41.2,
+      0
+     ],
+     [
+      "17_Shaker",
+      -45.1,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-Signs-ElecGtr3": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 0.75,
+  "excluded_proxy_mics": [
+   "06_SnareSample",
+   "09_HatSample",
+   "21_BassSynth"
+  ],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.6986,
+    "guitar_share_nl": 0.7476,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00296,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00206,
+    "unexplained_frac": 0.2554,
+    "unexplained_db": -5.9,
+    "top": [
+     [
+      "02_KickSub",
+      -53.1,
+      0
+     ],
+     [
+      "16_Clap7",
+      -62.9,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.6971,
+    "guitar_share_nl": 0.7479,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00304,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00157,
+    "unexplained_frac": 0.2551,
+    "unexplained_db": -5.9,
+    "top": [
+     [
+      "03_KickSample",
+      -42.7,
+      0
+     ],
+     [
+      "08_FloorTom",
+      -60.0,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-Signs-ElecGtr6": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 0.83,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9946,
+    "guitar_share_nl": 0.9976,
+    "bleed_db": -90.0,
+    "bleed_frac": -3e-05,
+    "bleed_db_penalty_corrected": -50.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -4e-05,
+    "unexplained_frac": 0.0024,
+    "unexplained_db": -26.1,
+    "top": [
+     [
+      "07_OverheadsOH Stereo MK",
+      -63.0,
+      0
+     ],
+     [
+      "31_ElecGtr5DI",
+      -67.0,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "silent": true,
+    "bleed_db": -99,
+    "flag": "silent"
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-Today's_The_Day-ElecGtr07": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": -1.08,
+  "excluded_proxy_mics": [
+   "20_BackingVox1",
+   "21_BackingVox2",
+   "22_BackingVox3"
+  ],
+  "amp_zero_where_di_silent_frac": 0.8219278881530537,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.1999,
+    "guitar_share_nl": 0.5302,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00152,
+    "bleed_db_penalty_corrected": -33.2,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.002,
+    "unexplained_frac": 0.4713,
+    "unexplained_db": -3.3,
+    "top": [
+     [
+      "04_SnareUpMic2",
+      -42.7,
+      0
+     ],
+     [
+      "03_SnareUpMic1",
+      -43.3,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.1655,
+    "guitar_share_nl": 0.5159,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00261,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00197,
+    "unexplained_frac": 0.4867,
+    "unexplained_db": -3.1,
+    "top": [
+     [
+      "10_Ride",
+      -42.4,
+      0
+     ],
+     [
+      "07_Tom1",
+      -50.2,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-Today's_The_Day-ElecGtr10": {
+  "set": "knob-ceiling",
+  "source": "cambridge",
+  "di_lag_ms": 14.08,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 0.9965964688364178,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.3105,
+    "guitar_share_nl": 0.6799,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.0009,
+    "bleed_db_penalty_corrected": -38.2,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00105,
+    "unexplained_frac": 0.3209,
+    "unexplained_db": -4.9,
+    "top": [
+     [
+      "29_ElecGtr03DI",
+      -42.5,
+      0
+     ],
+     [
+      "36_ElecGtr06DI",
+      -45.6,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.2796,
+    "guitar_share_nl": 0.6178,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00138,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00092,
+    "unexplained_frac": 0.3836,
+    "unexplained_db": -4.2,
+    "top": [
+     [
+      "36_ElecGtr06DI",
+      -43.4,
+      0
+     ],
+     [
+      "18_LeadVox",
+      -48.9,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-colour-me-red-elecgtr01": {
+  "set": "knob-ceiling",
+  "source": "cambridge",
+  "di_lag_ms": 0.79,
+  "excluded_proxy_mics": [
+   "28_Banjo",
+   "32_BackingVox01a",
+   "33_BackingVox01b",
+   "34_BackingVox01c",
+   "35_BackingVox01d",
+   "36_BackingVox02a",
+   "37_BackingVox02b",
+   "38_BackingVox02c",
+   "39_BackingVox02d",
+   "40_BackingVox03a",
+   "41_BackingVox03b",
+   "42_BackingVox03c",
+   "43_BackingVox03d",
+   "44_BackingVox04a",
+   "45_BackingVox04b",
+   "46_BackingVox04c",
+   "47_BackingVox04d",
+   "48_BackingVox05a",
+   "49_BackingVox05b",
+   "50_BackingVox05c",
+   "51_BackingVox05d",
+   "52_BackingVox06a",
+   "53_BackingVox06b",
+   "54_BackingVox06c",
+   "55_BackingVox06d"
+  ],
+  "amp_zero_where_di_silent_frac": 0.8537859007832899,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.699,
+    "guitar_share_nl": 0.8951,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00132,
+    "bleed_db_penalty_corrected": -33.7,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00175,
+    "unexplained_frac": 0.1062,
+    "unexplained_db": -9.7,
+    "top": [
+     [
+      "25_AcousticGtr02",
+      -40.2,
+      0
+     ],
+     [
+      "26_AcousticGtr03",
+      -43.7,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.533,
+    "guitar_share_nl": 0.8382,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.01116,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.0016,
+    "unexplained_frac": 0.173,
+    "unexplained_db": -7.6,
+    "top": [
+     [
+      "31_LeadVox",
+      -46.9,
+      0
+     ],
+     [
+      "06_Tom2",
+      -47.8,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "bleed model generalises badly in this half (negative held-out gain)"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-colour-me-red-elecgtr02": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 0.88,
+  "excluded_proxy_mics": [
+   "05_Tom1Sample",
+   "07_Tom2Sample",
+   "10_CymbalOD_Overheads",
+   "11_CymbalOD_DrumsRoom",
+   "26_AcousticGtr03",
+   "27_AcousticGtr03DT",
+   "44_BackingVox04a",
+   "45_BackingVox04b",
+   "46_BackingVox04c",
+   "47_BackingVox04d",
+   "48_BackingVox05a",
+   "49_BackingVox05b",
+   "50_BackingVox05c",
+   "51_BackingVox05d",
+   "52_BackingVox06a",
+   "53_BackingVox06b",
+   "54_BackingVox06c",
+   "55_BackingVox06d"
+  ],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.914,
+    "guitar_share_nl": 0.9418,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00038,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00013,
+    "unexplained_frac": 0.0585,
+    "unexplained_db": -12.3,
+    "top": [
+     [
+      "16_ElecGtr01DI",
+      -43.2,
+      0
+     ],
+     [
+      "39_BackingVox02d",
+      -51.0,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.7539,
+    "guitar_share_nl": 0.8707,
+    "bleed_db": -36.0,
+    "bleed_frac": 0.00025,
+    "bleed_db_penalty_corrected": -34.6,
+    "bleed_full_db": -36.0,
+    "null_gain_mean": -0.0001,
+    "unexplained_frac": 0.129,
+    "unexplained_db": -8.9,
+    "top": [
+     [
+      "24_AcousticGtr01DI",
+      -38.4,
+      0
+     ],
+     [
+      "35_BackingVox01d",
+      -38.5,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-colour-me-red-elecgtr03": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 0.88,
+  "excluded_proxy_mics": [
+   "05_Tom1Sample",
+   "07_Tom2Sample",
+   "10_CymbalOD_Overheads",
+   "11_CymbalOD_DrumsRoom",
+   "26_AcousticGtr03",
+   "27_AcousticGtr03DT",
+   "28_Banjo",
+   "32_BackingVox01a",
+   "33_BackingVox01b",
+   "34_BackingVox01c",
+   "35_BackingVox01d",
+   "36_BackingVox02a",
+   "37_BackingVox02b",
+   "38_BackingVox02c",
+   "39_BackingVox02d",
+   "40_BackingVox03a",
+   "41_BackingVox03b",
+   "42_BackingVox03c",
+   "43_BackingVox03d",
+   "44_BackingVox04a",
+   "45_BackingVox04b",
+   "46_BackingVox04c",
+   "47_BackingVox04d",
+   "48_BackingVox05a",
+   "49_BackingVox05b",
+   "50_BackingVox05c",
+   "51_BackingVox05d",
+   "52_BackingVox06a",
+   "53_BackingVox06b",
+   "54_BackingVox06c",
+   "55_BackingVox06d"
+  ],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.7932,
+    "guitar_share_nl": 0.9354,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00145,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00018,
+    "unexplained_frac": 0.066,
+    "unexplained_db": -11.8,
+    "top": [
+     [
+      "24_AcousticGtr01DI",
+      -48.0,
+      0
+     ],
+     [
+      "25_AcousticGtr02",
+      -49.3,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.8288,
+    "guitar_share_nl": 0.9289,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00049,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -7e-05,
+    "unexplained_frac": 0.0716,
+    "unexplained_db": -11.4,
+    "top": [
+     [
+      "16_ElecGtr01DI",
+      -38.2,
+      0
+     ],
+     [
+      "22_ElecGtr04DI",
+      -90.0,
+      null
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-femme-elecgtr3": {
+  "set": "knob-ceiling",
+  "source": "cambridge",
+  "di_lag_ms": 12.12,
+  "excluded_proxy_mics": [
+   "05_HiHat"
+  ],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -123.1,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.632,
+    "guitar_share_nl": 0.6927,
+    "bleed_db": -90.0,
+    "bleed_frac": -6e-05,
+    "bleed_db_penalty_corrected": -40.5,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00015,
+    "unexplained_frac": 0.3074,
+    "unexplained_db": -5.1,
+    "top": [
+     [
+      "11_BassDI",
+      -40.6,
+      0
+     ],
+     [
+      "19_ElecGtr4DI",
+      -42.7,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.5806,
+    "guitar_share_nl": 0.663,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00012,
+    "bleed_db_penalty_corrected": -35.9,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00038,
+    "unexplained_frac": 0.3371,
+    "unexplained_db": -4.7,
+    "top": [
+     [
+      "06_Tom1",
+      -41.5,
+      0
+     ],
+     [
+      "07_Tom2",
+      -44.7,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-femme-elecgtr5": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 1.96,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 0.9441081517352704,
+  "amp_level_where_di_silent_db": -118.4,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.3259,
+    "guitar_share_nl": 0.4605,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00031,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00026,
+    "unexplained_frac": 0.5398,
+    "unexplained_db": -2.7,
+    "top": [
+     [
+      "15_ElecGtr2DI",
+      -45.7,
+      0
+     ],
+     [
+      "01_Kick1",
+      -45.9,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.2424,
+    "guitar_share_nl": 0.3514,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00051,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -7e-05,
+    "unexplained_frac": 0.6491,
+    "unexplained_db": -1.9,
+    "top": [
+     [
+      "01_Kick1",
+      -43.7,
+      0
+     ],
+     [
+      "15_ElecGtr2DI",
+      -44.9,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-get-out-of-bed-elecgtr1": {
+  "set": "knob-ceiling",
+  "source": "cambridge",
+  "di_lag_ms": 1.0,
+  "excluded_proxy_mics": [
+   "17_ElecGtr3Mic2"
+  ],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.5679,
+    "guitar_share_nl": 0.7516,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.01231,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00192,
+    "unexplained_frac": 0.2607,
+    "unexplained_db": -5.8,
+    "top": [
+     [
+      "15_ElecGtr2DI",
+      -33.1,
+      0
+     ],
+     [
+      "25_Hammond",
+      -38.3,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed",
+     "bleed model generalises badly in this half (negative held-out gain)"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.5571,
+    "guitar_share_nl": 0.7398,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00423,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00093,
+    "unexplained_frac": 0.2644,
+    "unexplained_db": -5.8,
+    "top": [
+     [
+      "05_Tom1",
+      -44.2,
+      0
+     ],
+     [
+      "18_ElecGtr4",
+      -44.7,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-get-out-of-bed-elecgtr2": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 1.0,
+  "excluded_proxy_mics": [
+   "16_ElecGtr3Mic1",
+   "17_ElecGtr3Mic2",
+   "25_Hammond"
+  ],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.5696,
+    "guitar_share_nl": 0.7371,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00118,
+    "bleed_db_penalty_corrected": -28.0,
+    "bleed_full_db": -24.1,
+    "null_gain_mean": -0.00276,
+    "unexplained_frac": 0.2641,
+    "unexplained_db": -5.8,
+    "top": [
+     [
+      "13_ElecGtr1DI",
+      -36.2,
+      0
+     ],
+     [
+      "10_Tambourine",
+      -40.8,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.5473,
+    "guitar_share_nl": 0.73,
+    "bleed_db": -38.0,
+    "bleed_frac": 0.00016,
+    "bleed_db_penalty_corrected": -28.1,
+    "bleed_full_db": -22.6,
+    "null_gain_mean": -0.00138,
+    "unexplained_frac": 0.2699,
+    "unexplained_db": -5.7,
+    "top": [
+     [
+      "13_ElecGtr1DI",
+      -33.5,
+      0
+     ],
+     [
+      "11_BassDI",
+      -36.7,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-just-don-t-talk-elecgtr3": {
+  "set": "knob-ceiling",
+  "source": "cambridge",
+  "di_lag_ms": 0.46,
+  "excluded_proxy_mics": [
+   "03_Bongos",
+   "06_Ride1",
+   "07_Ride2",
+   "08_Shaker",
+   "12_ElecGtr2",
+   "17_LeadVoxDTAdLib",
+   "18_Speech",
+   "19_Whisper",
+   "23_BackingVox4",
+   "24_BackingVox5",
+   "25_BackingVox6",
+   "26_BackingVox7",
+   "27_BackingVox8"
+  ],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.8927,
+    "guitar_share_nl": 0.866,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00034,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -9e-05,
+    "unexplained_frac": 0.1343,
+    "unexplained_db": -8.7,
+    "top": [
+     [
+      "22_BackingVox3",
+      -41.5,
+      -67
+     ],
+     [
+      "20_BackingVox1",
+      -41.1,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.6432,
+    "guitar_share_nl": 0.493,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00457,
+    "bleed_db_penalty_corrected": null,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": 2e-05,
+    "unexplained_frac": 0.5116,
+    "unexplained_db": -2.9,
+    "top": [
+     [
+      "09_Bass1",
+      -36.6,
+      0
+     ],
+     [
+      "22_BackingVox3",
+      -39.9,
+      -67
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-let-s-dance-elecgtr3": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 0.29,
+  "excluded_proxy_mics": [
+   "01_Kick",
+   "02_SnareUp",
+   "03_SnareDown",
+   "04_HiHat",
+   "11_DrumsRoom"
+  ],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.3283,
+    "guitar_share_nl": 0.5802,
+    "bleed_db": -30.1,
+    "bleed_frac": 0.00098,
+    "bleed_db_penalty_corrected": -27.0,
+    "bleed_full_db": -29.0,
+    "null_gain_mean": -0.00102,
+    "unexplained_frac": 0.4188,
+    "unexplained_db": -3.8,
+    "top": [
+     [
+      "20_ElecGtr4DI",
+      -29.6,
+      0
+     ],
+     [
+      "16_ElecGtr1DI",
+      -48.1,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.2879,
+    "guitar_share_nl": 0.5813,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00039,
+    "bleed_db_penalty_corrected": -24.8,
+    "bleed_full_db": -41.0,
+    "null_gain_mean": -0.00367,
+    "unexplained_frac": 0.4191,
+    "unexplained_db": -3.8,
+    "top": [
+     [
+      "20_ElecGtr4DI",
+      -39.4,
+      0
+     ],
+     [
+      "08_Tom4",
+      -49.6,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-let-s-dance-elecgtr4": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 0.29,
+  "excluded_proxy_mics": [
+   "12_ReverseCymbal"
+  ],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.3546,
+    "guitar_share_nl": 0.5918,
+    "bleed_db": -47.0,
+    "bleed_frac": 2e-05,
+    "bleed_db_penalty_corrected": -25.9,
+    "bleed_full_db": -47.0,
+    "null_gain_mean": -0.00256,
+    "unexplained_frac": 0.4082,
+    "unexplained_db": -3.9,
+    "top": [
+     [
+      "18_ElecGtr3DI",
+      -36.6,
+      0
+     ],
+     [
+      "03_SnareDown",
+      -39.0,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.2343,
+    "guitar_share_nl": 0.5242,
+    "bleed_db": -33.0,
+    "bleed_frac": 0.0005,
+    "bleed_db_penalty_corrected": -26.1,
+    "bleed_full_db": -33.0,
+    "null_gain_mean": -0.00198,
+    "unexplained_frac": 0.4753,
+    "unexplained_db": -3.2,
+    "top": [
+     [
+      "18_ElecGtr3DI",
+      -32.5,
+      0
+     ],
+     [
+      "13_BassDI",
+      -36.7,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-magilla-elecgtr1": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 0.17,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -114.8,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.8972,
+    "guitar_share_nl": 0.9957,
+    "bleed_db": -90.0,
+    "bleed_frac": -1e-05,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -1e-05,
+    "unexplained_frac": 0.0043,
+    "unexplained_db": -23.6,
+    "top": [
+     [
+      "04_HiHat",
+      -55.7,
+      0
+     ],
+     [
+      "18_ElecGtr2DTDI",
+      -78.2,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.8337,
+    "guitar_share_nl": 0.9762,
+    "bleed_db": -90.0,
+    "bleed_frac": -1e-05,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -1e-05,
+    "unexplained_frac": 0.0238,
+    "unexplained_db": -16.2,
+    "top": [
+     [
+      "14_ElecGtr1DTDI",
+      -49.0,
+      0
+     ],
+     [
+      "20_ElecGtr3DI",
+      -61.6,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-magilla-elecgtr1dt": {
+  "set": "knob-ceiling",
+  "source": "cambridge",
+  "di_lag_ms": 0.17,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 1.0,
+  "amp_level_where_di_silent_db": -112.9,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9807,
+    "guitar_share_nl": 0.9785,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00087,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.0002,
+    "unexplained_frac": 0.0224,
+    "unexplained_db": -16.5,
+    "top": [
+     [
+      "06_DrumsRoom",
+      -53.6,
+      0
+     ],
+     [
+      "04_HiHat",
+      -64.4,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.9768,
+    "guitar_share_nl": 0.9789,
+    "bleed_db": -44.0,
+    "bleed_frac": 4e-05,
+    "bleed_db_penalty_corrected": -42.2,
+    "bleed_full_db": -44.0,
+    "null_gain_mean": -2e-05,
+    "unexplained_frac": 0.0211,
+    "unexplained_db": -16.8,
+    "top": [
+     [
+      "12_ElecGtr1DI",
+      -40.9,
+      0
+     ],
+     [
+      "09_Tom3",
+      -51.6,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-wickerman-elecgtr1": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 0.83,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 0.6904761904761905,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.4236,
+    "guitar_share_nl": 0.5665,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.01284,
+    "bleed_db_penalty_corrected": null,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00798,
+    "unexplained_frac": 0.4464,
+    "unexplained_db": -3.5,
+    "top": [
+     [
+      "43_Vox1DT",
+      -39.3,
+      0
+     ],
+     [
+      "16_DrumsSquash",
+      -45.2,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed",
+     "bleed model generalises badly in this half (negative held-out gain)"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.3955,
+    "guitar_share_nl": 0.5564,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.01912,
+    "bleed_db_penalty_corrected": null,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00685,
+    "unexplained_frac": 0.4627,
+    "unexplained_db": -3.3,
+    "top": [
+     [
+      "42_Vox1",
+      -47.7,
+      0
+     ],
+     [
+      "51_Vox6",
+      -48.6,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed",
+     "bleed model generalises badly in this half (negative held-out gain)"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-wickerman-elecgtr2": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 0.79,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 0.8787878787878788,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.3896,
+    "guitar_share_nl": 0.5869,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00986,
+    "bleed_db_penalty_corrected": null,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00644,
+    "unexplained_frac": 0.4229,
+    "unexplained_db": -3.7,
+    "top": [
+     [
+      "50_Vox5",
+      -50.5,
+      0
+     ],
+     [
+      "47_Vox4",
+      -51.8,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.3924,
+    "guitar_share_nl": 0.5879,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00951,
+    "bleed_db_penalty_corrected": null,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00584,
+    "unexplained_frac": 0.4216,
+    "unexplained_db": -3.8,
+    "top": [
+     [
+      "06_SnareDown",
+      -40.7,
+      0
+     ],
+     [
+      "48_Vox4DT1",
+      -49.7,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-wickerman-elecgtr3": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 0.83,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 0.7307692307692307,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.3856,
+    "guitar_share_nl": 0.5832,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00939,
+    "bleed_db_penalty_corrected": null,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.01088,
+    "unexplained_frac": 0.4262,
+    "unexplained_db": -3.7,
+    "top": [
+     [
+      "47_Vox4",
+      -49.6,
+      0
+     ],
+     [
+      "49_Vox4DT2",
+      -54.7,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.292,
+    "guitar_share_nl": 0.5584,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00691,
+    "bleed_db_penalty_corrected": null,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00804,
+    "unexplained_frac": 0.4485,
+    "unexplained_db": -3.5,
+    "top": [
+     [
+      "32_ElecGtr5DI",
+      -42.8,
+      0
+     ],
+     [
+      "48_Vox4DT1",
+      -53.7,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "cambridge-wickerman-elecgtr7": {
+  "set": "label-table-only",
+  "source": "cambridge",
+  "di_lag_ms": 7.92,
+  "excluded_proxy_mics": [
+   "51_Vox6"
+  ],
+  "amp_zero_where_di_silent_frac": 0.672209026128266,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.6403,
+    "guitar_share_nl": 0.7127,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00591,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.00093,
+    "unexplained_frac": 0.2932,
+    "unexplained_db": -5.3,
+    "top": [
+     [
+      "32_ElecGtr5DI",
+      -36.6,
+      -1
+     ],
+     [
+      "01_KickMic1",
+      -45.8,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.64,
+    "guitar_share_nl": 0.7057,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.00474,
+    "bleed_db_penalty_corrected": -90.0,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.0016,
+    "unexplained_frac": 0.299,
+    "unexplained_db": -5.2,
+    "top": [
+     [
+      "34_ElecGtr6DI",
+      -35.8,
+      0
+     ],
+     [
+      "32_ElecGtr5DI",
+      -42.6,
+      -1
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "telefunken-Blind_Spots-GTR": {
+  "set": "knob-ceiling",
+  "source": "telefunken",
+  "di_lag_ms": 0.83,
+  "excluded_proxy_mics": [
+   "Rooms_251E"
+  ],
+  "amp_zero_where_di_silent_frac": 0.0,
+  "amp_level_where_di_silent_db": -46.9,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.588,
+    "guitar_share_nl": 0.5827,
+    "bleed_db": -33.2,
+    "bleed_frac": 0.00048,
+    "bleed_db_penalty_corrected": -27.6,
+    "bleed_full_db": -8.7,
+    "null_gain_mean": -0.00127,
+    "unexplained_frac": 0.4168,
+    "unexplained_db": -3.8,
+    "top": [
+     [
+      "Lead Vox_M80",
+      -25.8,
+      -312
+     ],
+     [
+      "Side Snare_M80",
+      -26.8,
+      177
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed",
+     "ambient/proxy mics explain more (full set); could be bleed or the guitar's own room sound"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.6192,
+    "guitar_share_nl": 0.6163,
+    "bleed_db": -20.2,
+    "bleed_frac": 0.00964,
+    "bleed_db_penalty_corrected": -19.6,
+    "bleed_full_db": -10.5,
+    "null_gain_mean": -0.00139,
+    "unexplained_frac": 0.374,
+    "unexplained_db": -4.3,
+    "top": [
+     [
+      "Lead Vox_M80",
+      -22.5,
+      -312
+     ],
+     [
+      "Snare Bottom_M81",
+      -26.4,
+      178
+     ]
+    ],
+    "flag": "moderate",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed",
+     "ambient/proxy mics explain more (full set); could be bleed or the guitar's own room sound"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "moderate",
+  "flagged_halves": [
+   "B"
+  ]
+ },
+ "telefunken-Bloomlight-GTR": {
+  "set": "knob-ceiling",
+  "source": "telefunken",
+  "di_lag_ms": 0.67,
+  "excluded_proxy_mics": [
+   "Key Yamaha.04_02"
+  ],
+  "amp_zero_where_di_silent_frac": 0.8662790697674418,
+  "amp_level_where_di_silent_db": -300.0,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9906,
+    "guitar_share_nl": 0.9918,
+    "bleed_db": -27.0,
+    "bleed_frac": 0.00198,
+    "bleed_db_penalty_corrected": -26.9,
+    "bleed_full_db": -27.0,
+    "null_gain_mean": -6e-05,
+    "unexplained_frac": 0.0062,
+    "unexplained_db": -22.1,
+    "top": [
+     [
+      "DRUM Hats.04_02",
+      -31.8,
+      0
+     ],
+     [
+      "VOX GTR.04_02",
+      -33.8,
+      -133
+     ]
+    ],
+    "flag": "moderate",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.9882,
+    "guitar_share_nl": 0.9899,
+    "bleed_db": -27.8,
+    "bleed_frac": 0.00166,
+    "bleed_db_penalty_corrected": -27.6,
+    "bleed_full_db": -27.8,
+    "null_gain_mean": -6e-05,
+    "unexplained_frac": 0.0085,
+    "unexplained_db": -20.7,
+    "top": [
+     [
+      "DRUM Hats.04_02",
+      -31.9,
+      0
+     ],
+     [
+      "VOX KEYS 1.04_02",
+      -36.1,
+      -162
+     ]
+    ],
+    "flag": "moderate",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "moderate",
+  "flagged_halves": [
+   "A",
+   "B"
+  ]
+ },
+ "telefunken-Farthest_Step-GTR": {
+  "set": "knob-ceiling",
+  "source": "telefunken",
+  "di_lag_ms": 0.67,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 0.34805194805194806,
+  "amp_level_where_di_silent_db": -89.5,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9943,
+    "guitar_share_nl": 0.9948,
+    "bleed_db": -31.5,
+    "bleed_frac": 0.00071,
+    "bleed_db_penalty_corrected": -31.3,
+    "bleed_full_db": -31.5,
+    "null_gain_mean": -3e-05,
+    "unexplained_frac": 0.0045,
+    "unexplained_db": -23.5,
+    "top": [
+     [
+      "DRUM Snare Bottom.04_01",
+      -36.0,
+      0
+     ],
+     [
+      "DRUM Kick Out.04_01",
+      -37.9,
+      -124
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.9937,
+    "guitar_share_nl": 0.9944,
+    "bleed_db": -31.4,
+    "bleed_frac": 0.00073,
+    "bleed_db_penalty_corrected": -31.2,
+    "bleed_full_db": -31.4,
+    "null_gain_mean": -3e-05,
+    "unexplained_frac": 0.0049,
+    "unexplained_db": -23.1,
+    "top": [
+     [
+      "DRUM Kick Out.04_01",
+      -36.1,
+      -124
+     ],
+     [
+      "DRUM Snare Bottom.04_01",
+      -36.8,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "telefunken-First_Offering-GTR_1": {
+  "set": "knob-ceiling",
+  "source": "telefunken",
+  "di_lag_ms": 0.67,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 0.0,
+  "amp_level_where_di_silent_db": -84.7,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.8889,
+    "guitar_share_nl": 0.8992,
+    "bleed_db": -13.8,
+    "bleed_frac": 0.04213,
+    "bleed_db_penalty_corrected": -13.7,
+    "bleed_full_db": -13.8,
+    "null_gain_mean": -0.00023,
+    "unexplained_frac": 0.0587,
+    "unexplained_db": -12.3,
+    "top": [
+     [
+      "DRUM OH TF11",
+      -17.3,
+      190
+     ],
+     [
+      "GTR 2 DI TDP-1",
+      -21.1,
+      133
+     ]
+    ],
+    "flag": "high",
+    "notes": [],
+    "clear_bleed_spans_s": [
+     [
+      2.41,
+      2.58
+     ],
+     [
+      5.14,
+      5.4
+     ]
+    ]
+   },
+   "B": {
+    "guitar_share_linear": 0.9014,
+    "guitar_share_nl": 0.9137,
+    "bleed_db": -14.7,
+    "bleed_frac": 0.03418,
+    "bleed_db_penalty_corrected": -14.7,
+    "bleed_full_db": -14.7,
+    "null_gain_mean": -9e-05,
+    "unexplained_frac": 0.0522,
+    "unexplained_db": -12.8,
+    "top": [
+     [
+      "DRUM OH TF11",
+      -18.4,
+      190
+     ],
+     [
+      "DRUM Rooms 251",
+      -22.0,
+      -36
+     ]
+    ],
+    "flag": "high",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "high",
+  "flagged_halves": [
+   "A",
+   "B"
+  ]
+ },
+ "telefunken-First_Offering-GTR_2": {
+  "set": "knob-ceiling",
+  "source": "telefunken",
+  "di_lag_ms": 0.58,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 0.0,
+  "amp_level_where_di_silent_db": -62.3,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9904,
+    "guitar_share_nl": 0.9911,
+    "bleed_db": -25.8,
+    "bleed_frac": 0.00263,
+    "bleed_db_penalty_corrected": null,
+    "bleed_full_db": -25.8,
+    "null_gain_mean": 2e-05,
+    "unexplained_frac": 0.0062,
+    "unexplained_db": -22.1,
+    "top": [
+     [
+      "GTR 1 DI TDP-1",
+      -30.3,
+      0
+     ],
+     [
+      "DRUM OH TF11",
+      -31.2,
+      134
+     ]
+    ],
+    "flag": "moderate",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.9891,
+    "guitar_share_nl": 0.9897,
+    "bleed_db": -24.5,
+    "bleed_frac": 0.00357,
+    "bleed_db_penalty_corrected": -24.4,
+    "bleed_full_db": -24.5,
+    "null_gain_mean": -3e-05,
+    "unexplained_frac": 0.0068,
+    "unexplained_db": -21.7,
+    "top": [
+     [
+      "DRUM OH TF11",
+      -28.5,
+      134
+     ],
+     [
+      "GTR 1 DI TDP-1",
+      -30.1,
+      0
+     ]
+    ],
+    "flag": "moderate",
+    "notes": [],
+    "clear_bleed_spans_s": [
+     [
+      5.57,
+      6.04
+     ],
+     [
+      6.08,
+      6.29
+     ],
+     [
+      8.69,
+      8.89
+     ]
+    ]
+   }
+  },
+  "flag": "moderate",
+  "flagged_halves": [
+   "A",
+   "B"
+  ]
+ },
+ "telefunken-Fragments-GTR": {
+  "set": "knob-ceiling",
+  "source": "telefunken",
+  "di_lag_ms": 0.67,
+  "excluded_proxy_mics": [
+   "Bloomlight_RR Master_100623_01",
+   "VOX GTR_01"
+  ],
+  "amp_zero_where_di_silent_frac": 0.1534090909090909,
+  "amp_level_where_di_silent_db": -83.3,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9558,
+    "guitar_share_nl": 0.9774,
+    "bleed_db": -29.4,
+    "bleed_frac": 0.00115,
+    "bleed_db_penalty_corrected": -29.1,
+    "bleed_full_db": -25.0,
+    "null_gain_mean": -7e-05,
+    "unexplained_frac": 0.0214,
+    "unexplained_db": -16.7,
+    "top": [
+     [
+      "DRUM Snare Bottom_01",
+      -34.2,
+      0
+     ],
+     [
+      "VOX KEYS 1_01",
+      -37.8,
+      -184
+     ]
+    ],
+    "flag": "moderate",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.9825,
+    "guitar_share_nl": 0.9871,
+    "bleed_db": -30.6,
+    "bleed_frac": 0.00088,
+    "bleed_db_penalty_corrected": -30.3,
+    "bleed_full_db": -26.9,
+    "null_gain_mean": -6e-05,
+    "unexplained_frac": 0.012,
+    "unexplained_db": -19.2,
+    "top": [
+     [
+      "DRUM Snare Bottom_01",
+      -35.6,
+      0
+     ],
+     [
+      "DRUM Kick Out_01",
+      -38.7,
+      -124
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "moderate",
+  "flagged_halves": [
+   "A"
+  ]
+ },
+ "telefunken-Gym_Hours-GTR_1": {
+  "set": "knob-ceiling",
+  "source": "telefunken",
+  "di_lag_ms": 0.62,
+  "excluded_proxy_mics": [
+   "Chamber TF39",
+   "DRUM Rooms 251.2"
+  ],
+  "amp_zero_where_di_silent_frac": 0.0,
+  "amp_level_where_di_silent_db": -35.8,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9056,
+    "guitar_share_nl": 0.9065,
+    "bleed_db": -13.8,
+    "bleed_frac": 0.04124,
+    "bleed_db_penalty_corrected": -13.8,
+    "bleed_full_db": -13.8,
+    "null_gain_mean": -0.00032,
+    "unexplained_frac": 0.0522,
+    "unexplained_db": -12.8,
+    "top": [
+     [
+      "GTR 2 DI TDP-1",
+      -15.7,
+      128
+     ],
+     [
+      "DRUM OH TF11.2",
+      -21.7,
+      114
+     ]
+    ],
+    "flag": "high",
+    "notes": [],
+    "clear_bleed_spans_s": [
+     [
+      4.08,
+      4.8
+     ],
+     [
+      5.23,
+      5.4
+     ]
+    ]
+   },
+   "B": {
+    "guitar_share_linear": 0.8073,
+    "guitar_share_nl": 0.8065,
+    "bleed_db": -8.4,
+    "bleed_frac": 0.14378,
+    "bleed_db_penalty_corrected": -8.4,
+    "bleed_full_db": -8.3,
+    "null_gain_mean": -0.00062,
+    "unexplained_frac": 0.0497,
+    "unexplained_db": -13.0,
+    "top": [
+     [
+      "GTR 2 DI TDP-1",
+      -8.7,
+      128
+     ],
+     [
+      "Sax TF47",
+      -24.7,
+      0
+     ]
+    ],
+    "flag": "high",
+    "notes": [],
+    "clear_bleed_spans_s": [
+     [
+      6.68,
+      7.49
+     ],
+     [
+      8.09,
+      9.02
+     ],
+     [
+      9.16,
+      9.88
+     ]
+    ]
+   }
+  },
+  "flag": "high",
+  "flagged_halves": [
+   "A",
+   "B"
+  ]
+ },
+ "telefunken-Gym_Hours-GTR_2": {
+  "set": "label-table-only",
+  "source": "telefunken",
+  "di_lag_ms": 0.58,
+  "excluded_proxy_mics": [
+   "DRUM Rooms 251.2"
+  ],
+  "amp_zero_where_di_silent_frac": 0.0,
+  "amp_level_where_di_silent_db": -58.9,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9919,
+    "guitar_share_nl": 0.9892,
+    "bleed_db": -30.4,
+    "bleed_frac": 0.00091,
+    "bleed_db_penalty_corrected": -30.3,
+    "bleed_full_db": -27.5,
+    "null_gain_mean": -3e-05,
+    "unexplained_frac": 0.0099,
+    "unexplained_db": -20.0,
+    "top": [
+     [
+      "GTR 1 DI TDP-1",
+      -33.6,
+      0
+     ],
+     [
+      "DRUM OH TF11.2",
+      -38.1,
+      60
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.9901,
+    "guitar_share_nl": 0.9902,
+    "bleed_db": -32.2,
+    "bleed_frac": 0.0006,
+    "bleed_db_penalty_corrected": -31.9,
+    "bleed_full_db": -28.8,
+    "null_gain_mean": -5e-05,
+    "unexplained_frac": 0.0092,
+    "unexplained_db": -20.3,
+    "top": [
+     [
+      "DRUM OH TF11.2",
+      -35.1,
+      60
+     ],
+     [
+      "Chamber TF39",
+      -38.7,
+      -995
+     ]
+    ],
+    "flag": "low",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "telefunken-Hikikomori_-_Love_Does-GTR": {
+  "set": "label-table-only",
+  "source": "telefunken",
+  "di_lag_ms": 0.54,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 0.0,
+  "amp_level_where_di_silent_db": -31.7,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.0127,
+    "guitar_share_nl": 0.0128,
+    "bleed_db": -8.4,
+    "bleed_frac": 0.14474,
+    "bleed_db_penalty_corrected": null,
+    "bleed_full_db": -8.4,
+    "null_gain_mean": -0.54533,
+    "unexplained_frac": 0.8425,
+    "unexplained_db": -0.7,
+    "top": [
+     [
+      "GTR KEYS AMP_TF51",
+      -8.8,
+      -38
+     ],
+     [
+      "Rooms_TF47",
+      -14.4,
+      -135
+     ]
+    ],
+    "flag": "high",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": [
+     [
+      1.86,
+      2.28
+     ],
+     [
+      2.29,
+      2.49
+     ],
+     [
+      2.63,
+      2.88
+     ],
+     [
+      3.65,
+      3.82
+     ],
+     [
+      4.21,
+      4.37
+     ]
+    ]
+   },
+   "B": {
+    "guitar_share_linear": 0.2434,
+    "guitar_share_nl": 0.2441,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.60846,
+    "bleed_db_penalty_corrected": null,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -4.84224,
+    "unexplained_frac": 1.3643,
+    "unexplained_db": 1.3,
+    "top": [
+     [
+      "Mono OH_TF51",
+      -4.2,
+      0
+     ],
+     [
+      "Hats_M60",
+      -14.2,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed",
+     "bleed model generalises badly in this half (negative held-out gain)"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "high",
+  "flagged_halves": [
+   "A"
+  ]
+ },
+ "telefunken-Honey-GTR": {
+  "set": "knob-ceiling",
+  "source": "telefunken",
+  "di_lag_ms": 0.92,
+  "excluded_proxy_mics": [
+   "VOX Backing M80"
+  ],
+  "amp_zero_where_di_silent_frac": 0.16685979142526072,
+  "amp_level_where_di_silent_db": -29.1,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9858,
+    "guitar_share_nl": 0.9867,
+    "bleed_db": -23.3,
+    "bleed_frac": 0.00466,
+    "bleed_db_penalty_corrected": -23.3,
+    "bleed_full_db": -22.8,
+    "null_gain_mean": -2e-05,
+    "unexplained_frac": 0.0086,
+    "unexplained_db": -20.6,
+    "top": [
+     [
+      "Leslie Top TF11 Stereo Set",
+      -30.4,
+      -551
+     ],
+     [
+      "Leslie Bottom TF7 FET prototype",
+      -30.1,
+      -639
+     ]
+    ],
+    "flag": "moderate",
+    "notes": [],
+    "clear_bleed_spans_s": [
+     [
+      2.33,
+      2.49
+     ]
+    ]
+   },
+   "B": {
+    "guitar_share_linear": 0.9539,
+    "guitar_share_nl": 0.9797,
+    "bleed_db": -90.0,
+    "bleed_frac": -0.08287,
+    "bleed_db_penalty_corrected": null,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -0.66894,
+    "unexplained_frac": 0.1032,
+    "unexplained_db": -9.9,
+    "top": [
+     [
+      "DRUM Snare Top M80-SH",
+      -39.5,
+      0
+     ],
+     [
+      "DRUM Snare 2 Top M80",
+      -45.7,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "bleed model generalises badly in this half (negative held-out gain)"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "moderate",
+  "flagged_halves": [
+   "A"
+  ]
+ },
+ "telefunken-Long_Way_Home-GTR": {
+  "set": "knob-ceiling",
+  "source": "telefunken",
+  "di_lag_ms": 0.83,
+  "excluded_proxy_mics": [
+   "Rooms_251E"
+  ],
+  "amp_zero_where_di_silent_frac": 0.0,
+  "amp_level_where_di_silent_db": -49.4,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.5978,
+    "guitar_share_nl": 0.5935,
+    "bleed_db": -19.9,
+    "bleed_frac": 0.01021,
+    "bleed_db_penalty_corrected": -19.4,
+    "bleed_full_db": -8.4,
+    "null_gain_mean": -0.0014,
+    "unexplained_frac": 0.3963,
+    "unexplained_db": -4.0,
+    "top": [
+     [
+      "OH_TF51",
+      -24.9,
+      109
+     ],
+     [
+      "Hats_M60",
+      -25.2,
+      179
+     ]
+    ],
+    "flag": "high",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed",
+     "ambient/proxy mics explain more (full set); could be bleed or the guitar's own room sound"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.6068,
+    "guitar_share_nl": 0.6021,
+    "bleed_db": -16.9,
+    "bleed_frac": 0.02029,
+    "bleed_db_penalty_corrected": -16.8,
+    "bleed_full_db": -8.0,
+    "null_gain_mean": -0.00068,
+    "unexplained_frac": 0.3776,
+    "unexplained_db": -4.2,
+    "top": [
+     [
+      "OH_TF51",
+      -24.7,
+      109
+     ],
+     [
+      "Hats_M60",
+      -24.3,
+      179
+     ]
+    ],
+    "flag": "high",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed",
+     "ambient/proxy mics explain more (full set); could be bleed or the guitar's own room sound"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "high",
+  "flagged_halves": [
+   "A",
+   "B"
+  ]
+ },
+ "telefunken-Lost_Alive-GTR": {
+  "set": "label-table-only",
+  "source": "telefunken",
+  "di_lag_ms": 0.92,
+  "excluded_proxy_mics": [
+   "Leslie Top TF11 Stereo Set_02",
+   "VOX Backing M80_02"
+  ],
+  "amp_zero_where_di_silent_frac": 0.07944732297063903,
+  "amp_level_where_di_silent_db": -23.1,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9519,
+    "guitar_share_nl": 0.9539,
+    "bleed_db": -16.8,
+    "bleed_frac": 0.02085,
+    "bleed_db_penalty_corrected": -16.8,
+    "bleed_full_db": -16.3,
+    "null_gain_mean": -0.00017,
+    "unexplained_frac": 0.0252,
+    "unexplained_db": -16.0,
+    "top": [
+     [
+      "DRUM Hats ELA M 260 hypercardioid_02",
+      -20.8,
+      404
+     ],
+     [
+      "DRUM Mono OH U48_02",
+      -24.9,
+      0
+     ]
+    ],
+    "flag": "high",
+    "notes": [],
+    "clear_bleed_spans_s": [
+     [
+      3.05,
+      3.35
+     ],
+     [
+      3.65,
+      3.94
+     ],
+     [
+      4.21,
+      4.41
+     ],
+     [
+      4.8,
+      5.1
+     ],
+     [
+      5.36,
+      5.52
+     ]
+    ]
+   },
+   "B": {
+    "guitar_share_linear": 0.0,
+    "guitar_share_nl": 0.0,
+    "bleed_db": -2.0,
+    "bleed_frac": 0.63443,
+    "bleed_db_penalty_corrected": -1.9,
+    "bleed_full_db": -1.6,
+    "null_gain_mean": -0.00456,
+    "unexplained_frac": 0.3656,
+    "unexplained_db": -4.4,
+    "top": [
+     [
+      "DRUM Hats ELA M 260 hypercardioid_02",
+      -6.5,
+      404
+     ],
+     [
+      "DRUM Snare Top M80-SH_02",
+      -10.3,
+      507
+     ]
+    ],
+    "flag": "high",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": [
+     [
+      5.49,
+      5.82
+     ],
+     [
+      6.51,
+      6.67
+     ],
+     [
+      7.11,
+      7.36
+     ],
+     [
+      7.66,
+      7.87
+     ],
+     [
+      8.26,
+      8.51
+     ],
+     [
+      8.86,
+      9.15
+     ],
+     [
+      9.28,
+      9.45
+     ],
+     [
+      9.75,
+      10.0
+     ]
+    ]
+   }
+  },
+  "flag": "high",
+  "flagged_halves": [
+   "A",
+   "B"
+  ]
+ },
+ "telefunken-Measurements-GTR": {
+  "set": "label-table-only",
+  "source": "telefunken",
+  "di_lag_ms": 0.83,
+  "excluded_proxy_mics": [
+   "Rooms_251E"
+  ],
+  "amp_zero_where_di_silent_frac": 0.0,
+  "amp_level_where_di_silent_db": -42.8,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.5911,
+    "guitar_share_nl": 0.5842,
+    "bleed_db": -35.5,
+    "bleed_frac": 0.00028,
+    "bleed_db_penalty_corrected": -28.0,
+    "bleed_full_db": -9.2,
+    "null_gain_mean": -0.00131,
+    "unexplained_frac": 0.4155,
+    "unexplained_db": -3.8,
+    "top": [
+     [
+      "Kick Out_TF17",
+      -26.7,
+      150
+     ],
+     [
+      "Hats_M60",
+      -33.0,
+      168
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed",
+     "ambient/proxy mics explain more (full set); could be bleed or the guitar's own room sound"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.015,
+    "guitar_share_nl": 0.0113,
+    "bleed_db": -90.0,
+    "bleed_frac": -39.65619,
+    "bleed_db_penalty_corrected": null,
+    "bleed_full_db": -90.0,
+    "null_gain_mean": -108.92674,
+    "unexplained_frac": 40.6449,
+    "unexplained_db": 16.1,
+    "top": [
+     [
+      "Kick In_M82",
+      -20.8,
+      91
+     ],
+     [
+      "Korg_TDP-2",
+      -22.9,
+      0
+     ]
+    ],
+    "flag": "low",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed",
+     "bleed model generalises badly in this half (negative held-out gain)"
+    ],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "low",
+  "flagged_halves": []
+ },
+ "telefunken-Russian_Cream-GTR_1": {
+  "set": "label-table-only",
+  "source": "telefunken",
+  "di_lag_ms": 0.62,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 0.0,
+  "amp_level_where_di_silent_db": -39.4,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.6358,
+    "guitar_share_nl": 0.6497,
+    "bleed_db": -8.9,
+    "bleed_frac": 0.12788,
+    "bleed_db_penalty_corrected": -8.9,
+    "bleed_full_db": -8.9,
+    "null_gain_mean": -0.00134,
+    "unexplained_frac": 0.2224,
+    "unexplained_db": -6.5,
+    "top": [
+     [
+      "GTR 2 DI TDP-1.1",
+      -12.9,
+      121
+     ],
+     [
+      "DRUM Kick In M82.1",
+      -14.9,
+      115
+     ]
+    ],
+    "flag": "high",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": [
+     [
+      0.96,
+      1.26
+     ],
+     [
+      1.47,
+      1.64
+     ],
+     [
+      2.2,
+      2.49
+     ],
+     [
+      2.54,
+      2.79
+     ],
+     [
+      2.92,
+      3.13
+     ],
+     [
+      3.31,
+      3.56
+     ],
+     [
+      3.61,
+      3.9
+     ],
+     [
+      4.55,
+      4.71
+     ],
+     [
+      4.84,
+      5.52
+     ]
+    ]
+   },
+   "B": {
+    "guitar_share_linear": 0.7213,
+    "guitar_share_nl": 0.7372,
+    "bleed_db": -8.3,
+    "bleed_frac": 0.14957,
+    "bleed_db_penalty_corrected": -8.2,
+    "bleed_full_db": -8.3,
+    "null_gain_mean": -0.00056,
+    "unexplained_frac": 0.1132,
+    "unexplained_db": -9.5,
+    "top": [
+     [
+      "GTR 2 DI TDP-1.1",
+      -11.9,
+      121
+     ],
+     [
+      "DRUM Kick In M82.1",
+      -14.2,
+      115
+     ]
+    ],
+    "flag": "high",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": [
+     [
+      5.49,
+      5.91
+     ],
+     [
+      5.91,
+      7.1
+     ],
+     [
+      7.15,
+      7.44
+     ],
+     [
+      7.58,
+      7.83
+     ],
+     [
+      8.09,
+      8.25
+     ],
+     [
+      8.43,
+      8.59
+     ],
+     [
+      8.77,
+      9.02
+     ],
+     [
+      9.58,
+      10.0
+     ]
+    ]
+   }
+  },
+  "flag": "high",
+  "flagged_halves": [
+   "A",
+   "B"
+  ]
+ },
+ "telefunken-Russian_Cream-GTR_2": {
+  "set": "knob-ceiling",
+  "source": "telefunken",
+  "di_lag_ms": 0.58,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 0.0,
+  "amp_level_where_di_silent_db": -81.8,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9825,
+    "guitar_share_nl": 0.9846,
+    "bleed_db": -25.2,
+    "bleed_frac": 0.00303,
+    "bleed_db_penalty_corrected": -25.2,
+    "bleed_full_db": -25.2,
+    "null_gain_mean": -2e-05,
+    "unexplained_frac": 0.0124,
+    "unexplained_db": -19.1,
+    "top": [
+     [
+      "DRUM Rooms 251.3",
+      -30.6,
+      -107
+     ],
+     [
+      "DRUM Kick In M82.1",
+      -32.0,
+      157
+     ]
+    ],
+    "flag": "moderate",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.99,
+    "guitar_share_nl": 0.9915,
+    "bleed_db": -26.3,
+    "bleed_frac": 0.00233,
+    "bleed_db_penalty_corrected": -26.3,
+    "bleed_full_db": -26.3,
+    "null_gain_mean": -2e-05,
+    "unexplained_frac": 0.0062,
+    "unexplained_db": -22.1,
+    "top": [
+     [
+      "DRUM Snare Bottom M81",
+      -31.6,
+      280
+     ],
+     [
+      "DRUM Rooms 251.3",
+      -35.3,
+      -107
+     ]
+    ],
+    "flag": "moderate",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "moderate",
+  "flagged_halves": [
+   "A",
+   "B"
+  ]
+ },
+ "telefunken-Sculptor's_Request-GTR_1": {
+  "set": "knob-ceiling",
+  "source": "telefunken",
+  "di_lag_ms": 0.62,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 0.0,
+  "amp_level_where_di_silent_db": -70.2,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.8551,
+    "guitar_share_nl": 0.8633,
+    "bleed_db": -10.9,
+    "bleed_frac": 0.08161,
+    "bleed_db_penalty_corrected": -10.9,
+    "bleed_full_db": -10.9,
+    "null_gain_mean": -0.00033,
+    "unexplained_frac": 0.0551,
+    "unexplained_db": -12.6,
+    "top": [
+     [
+      "DRUM Rooms 251.1",
+      -13.8,
+      -11
+     ],
+     [
+      "DRUM Kick In M82",
+      -17.4,
+      129
+     ]
+    ],
+    "flag": "high",
+    "notes": [],
+    "clear_bleed_spans_s": [
+     [
+      1.35,
+      1.55
+     ],
+     [
+      2.2,
+      2.37
+     ],
+     [
+      2.8,
+      3.09
+     ],
+     [
+      4.84,
+      5.01
+     ]
+    ]
+   },
+   "B": {
+    "guitar_share_linear": 0.8821,
+    "guitar_share_nl": 0.8921,
+    "bleed_db": -12.6,
+    "bleed_frac": 0.05433,
+    "bleed_db_penalty_corrected": -12.6,
+    "bleed_full_db": -12.6,
+    "null_gain_mean": -0.00042,
+    "unexplained_frac": 0.0536,
+    "unexplained_db": -12.7,
+    "top": [
+     [
+      "DRUM Rooms 251.1",
+      -15.4,
+      -11
+     ],
+     [
+      "DRUM Snare Bottom M81",
+      -19.8,
+      224
+     ]
+    ],
+    "flag": "high",
+    "notes": [],
+    "clear_bleed_spans_s": [
+     [
+      6.59,
+      6.76
+     ],
+     [
+      6.76,
+      7.02
+     ],
+     [
+      7.15,
+      7.32
+     ],
+     [
+      7.7,
+      7.87
+     ],
+     [
+      8.05,
+      8.21
+     ]
+    ]
+   }
+  },
+  "flag": "high",
+  "flagged_halves": [
+   "A",
+   "B"
+  ]
+ },
+ "telefunken-Sculptor's_Request-GTR_2": {
+  "set": "knob-ceiling",
+  "source": "telefunken",
+  "di_lag_ms": 0.58,
+  "excluded_proxy_mics": [
+   "Chamber TF39",
+   "DRUM Rooms 251.1"
+  ],
+  "amp_zero_where_di_silent_frac": 0.0,
+  "amp_level_where_di_silent_db": -73.3,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9829,
+    "guitar_share_nl": 0.9845,
+    "bleed_db": -28.6,
+    "bleed_frac": 0.00137,
+    "bleed_db_penalty_corrected": -28.4,
+    "bleed_full_db": -21.8,
+    "null_gain_mean": -8e-05,
+    "unexplained_frac": 0.0141,
+    "unexplained_db": -18.5,
+    "top": [
+     [
+      "GTR 1 DI TDP-1",
+      -30.1,
+      0
+     ],
+     [
+      "DRUM Snare Top M80",
+      -40.6,
+      228
+     ]
+    ],
+    "flag": "moderate",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.9841,
+    "guitar_share_nl": 0.9872,
+    "bleed_db": -28.7,
+    "bleed_frac": 0.00136,
+    "bleed_db_penalty_corrected": -28.4,
+    "bleed_full_db": -22.8,
+    "null_gain_mean": -7e-05,
+    "unexplained_frac": 0.0114,
+    "unexplained_db": -19.4,
+    "top": [
+     [
+      "GTR 1 DI TDP-1",
+      -30.3,
+      0
+     ],
+     [
+      "DRUM Snare Top M80",
+      -39.6,
+      228
+     ]
+    ],
+    "flag": "moderate",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "moderate",
+  "flagged_halves": [
+   "A",
+   "B"
+  ]
+ },
+ "telefunken-She's_Gone-GTR": {
+  "set": "label-table-only",
+  "source": "telefunken",
+  "di_lag_ms": 0.62,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 0.0,
+  "amp_level_where_di_silent_db": -24.6,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9699,
+    "guitar_share_nl": 0.9701,
+    "bleed_db": -17.4,
+    "bleed_frac": 0.01833,
+    "bleed_db_penalty_corrected": -17.3,
+    "bleed_full_db": -17.4,
+    "null_gain_mean": -0.00012,
+    "unexplained_frac": 0.0115,
+    "unexplained_db": -19.4,
+    "top": [
+     [
+      "Bass DI TDA-1",
+      -22.0,
+      0
+     ],
+     [
+      "Keys 2 TDP-2",
+      -24.9,
+      261
+     ]
+    ],
+    "flag": "high",
+    "notes": [],
+    "clear_bleed_spans_s": [
+     [
+      0.96,
+      1.9
+     ],
+     [
+      1.99,
+      3.48
+     ]
+    ]
+   },
+   "B": {
+    "guitar_share_linear": 0.9757,
+    "guitar_share_nl": 0.976,
+    "bleed_db": -19.3,
+    "bleed_frac": 0.01175,
+    "bleed_db_penalty_corrected": -19.2,
+    "bleed_full_db": -19.3,
+    "null_gain_mean": -0.00017,
+    "unexplained_frac": 0.0123,
+    "unexplained_db": -19.1,
+    "top": [
+     [
+      "Bass DI TDA-1",
+      -25.7,
+      0
+     ],
+     [
+      "Keys 1 TDP-2",
+      -26.1,
+      409
+     ]
+    ],
+    "flag": "high",
+    "notes": [],
+    "clear_bleed_spans_s": [
+     [
+      8.73,
+      9.06
+     ],
+     [
+      9.07,
+      10.0
+     ]
+    ]
+   }
+  },
+  "flag": "high",
+  "flagged_halves": [
+   "A",
+   "B"
+  ]
+ },
+ "telefunken-Strangest_Places-GTR": {
+  "set": "label-table-only",
+  "source": "telefunken",
+  "di_lag_ms": 0.88,
+  "excluded_proxy_mics": [],
+  "amp_zero_where_di_silent_frac": 0.0,
+  "amp_level_where_di_silent_db": -42.9,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.774,
+    "guitar_share_nl": 0.7721,
+    "bleed_db": -12.8,
+    "bleed_frac": 0.05244,
+    "bleed_db_penalty_corrected": -12.7,
+    "bleed_full_db": -12.8,
+    "null_gain_mean": -0.0009,
+    "unexplained_frac": 0.1755,
+    "unexplained_db": -7.6,
+    "top": [
+     [
+      "Rooms_251E",
+      -18.1,
+      -263
+     ],
+     [
+      "Kick In_M82",
+      -18.9,
+      233
+     ]
+    ],
+    "flag": "high",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": []
+   },
+   "B": {
+    "guitar_share_linear": 0.899,
+    "guitar_share_nl": 0.8965,
+    "bleed_db": -18.4,
+    "bleed_frac": 0.01458,
+    "bleed_db_penalty_corrected": -18.2,
+    "bleed_full_db": -18.4,
+    "null_gain_mean": -0.0004,
+    "unexplained_frac": 0.0889,
+    "unexplained_db": -10.5,
+    "top": [
+     [
+      "OH_TF51",
+      -22.5,
+      81
+     ],
+     [
+      "Kick In_M82",
+      -24.4,
+      233
+     ]
+    ],
+    "flag": "high",
+    "notes": [],
+    "clear_bleed_spans_s": []
+   }
+  },
+  "flag": "high",
+  "flagged_halves": [
+   "A",
+   "B"
+  ]
+ },
+ "telefunken-Until_I_Get_Back-GTR": {
+  "set": "label-table-only",
+  "source": "telefunken",
+  "di_lag_ms": 0.92,
+  "excluded_proxy_mics": [
+   "DRUM Snare Bottom M81",
+   "DRUM Snare Top M80-SH",
+   "VOX Backing M80"
+  ],
+  "amp_zero_where_di_silent_frac": 0.0033444816053511705,
+  "amp_level_where_di_silent_db": -32.4,
+  "halves": {
+   "A": {
+    "guitar_share_linear": 0.9537,
+    "guitar_share_nl": 0.9562,
+    "bleed_db": -17.6,
+    "bleed_frac": 0.01721,
+    "bleed_db_penalty_corrected": -17.6,
+    "bleed_full_db": -17.1,
+    "null_gain_mean": -0.00015,
+    "unexplained_frac": 0.0266,
+    "unexplained_db": -15.8,
+    "top": [
+     [
+      "DRUM Ride ELA M 260 Hypercardioid",
+      -21.8,
+      280
+     ],
+     [
+      "DRUM Rack Tom M81-SH",
+      -23.4,
+      407
+     ]
+    ],
+    "flag": "high",
+    "notes": [],
+    "clear_bleed_spans_s": [
+     [
+      1.73,
+      1.94
+     ],
+     [
+      3.01,
+      3.18
+     ],
+     [
+      3.18,
+      3.35
+     ],
+     [
+      4.5,
+      4.84
+     ],
+     [
+      4.84,
+      5.01
+     ]
+    ]
+   },
+   "B": {
+    "guitar_share_linear": 0.0001,
+    "guitar_share_nl": 0.0,
+    "bleed_db": -2.2,
+    "bleed_frac": 0.60932,
+    "bleed_db_penalty_corrected": -2.1,
+    "bleed_full_db": -1.8,
+    "null_gain_mean": -0.004,
+    "unexplained_frac": 0.3906,
+    "unexplained_db": -4.1,
+    "top": [
+     [
+      "DRUM Ride ELA M 260 Hypercardioid",
+      -4.7,
+      280
+     ],
+     [
+      "DRUM Mono OH U48",
+      -11.3,
+      0
+     ]
+    ],
+    "flag": "high",
+    "notes": [
+     "weak DI model: residual is mostly unexplained, not bleed"
+    ],
+    "clear_bleed_spans_s": [
+     [
+      5.66,
+      5.82
+     ],
+     [
+      6.04,
+      6.21
+     ],
+     [
+      6.21,
+      6.42
+     ],
+     [
+      7.15,
+      7.32
+     ],
+     [
+      7.53,
+      7.7
+     ],
+     [
+      7.7,
+      7.87
+     ],
+     [
+      9.03,
+      9.36
+     ]
+    ]
+   }
+  },
+  "flag": "high",
+  "flagged_halves": [
+   "A",
+   "B"
+  ]
+ }
+}

@@ -730,7 +730,7 @@ def _disc_step(discs, dopt, fake, real, micro, lr):
 def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, lr=3e-4, lr_end=None,
         extra=None, norm=False, open_bottom=False, loss_kind="default", residual=False, linear_only=False,
         steps=None, fir_lr_scale=0.1, terms=None, warmup=0, adv=None, fullrate_head=False, overfit=0,
-        log_fine=False, calibrate=0, eval_only=False, mark_done=False):
+        log_fine=False, calibrate=0, eval_only=False, mark_done=False, sep=None, patience=0, min_steps=0):
     """`steps` (residual-di-plan.md): stop after this many optimiser steps instead of
     `minutes`, with any cosine decay by step, so a slower model gets the same updates.
 
@@ -748,7 +748,17 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
       training batches, written to `calibrate.json` (step 0d);
     - `eval_only`: no training; validation and fine metrics of `resume` on the 96 validation
       crops, written to `eval.json` (step 1d);
-    - `mark_done`: touch `DONE` in `out` when training ends."""
+    - `mark_done`: touch `DONE` in `out` when training ends.
+
+    Separator-robust C′ (docs/cprime-sep-plan.md); off (None / 0) leaves everything above
+    unchanged and consumes no extra randomness:
+    - `sep` {"train": [entry], "val": [entry], "p": float, "jitter_db": float}: with probability
+      `p` a training input gets a real separator's colouration and residual (`sep_apply`) in
+      place of the backing bleed; entries come from `learn.direc_sep.load_lib`. The validation
+      also scores the 96 crops with the `val` entries, fixed per crop by a separate generator;
+    - `patience` N: stop once that separator validation has not improved by 0.2% for N steps
+      (and at least `min_steps` have run); the best weights are saved as `fold{f}.pt`, the
+      last as `fold{f}-last.pt`."""
     import numpy as np
     import torch
 
@@ -777,6 +787,13 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
     fold_of, band_of = TR.k3_folds()
     f = np.array([fold_of.get(m["band"], -1) for m in meta])
     tr, va = np.where(f != fold)[0], np.where(f == fold)[0]
+    # cprime-sep (review change 1): the separator validation scores rows of the library's
+    # held-out training-fold bands, never fold f's; those bands leave training (rows and bleed).
+    sep_vbands = {e["band"] for e in sep["val"]} if sep is not None and sep.get("val") else set()
+    if sep_vbands:
+        held = np.array([m["band"] in sep_vbands for m in meta])
+        tr, sva = tr[~held[tr]], np.where(held)[0]
+        assert len(sva) and not (f[sva] == fold).any()
     avg = fold_average(cache, fold)
     freqs = np.fft.rfftfreq(SPEC_N, 1 / SR)
     cfreq = np.fft.rfftfreq(CLIP, 1 / SR)
@@ -784,7 +801,7 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
     import soundfile as sf
     bleed = []
     for part, b in band_of.items():
-        if fold_of[b] != fold and (CROPS / part / "backing_instrumental.wav").exists():
+        if fold_of[b] != fold and b not in sep_vbands and (CROPS / part / "backing_instrumental.wav").exists():
             y, _ = sf.read(str(CROPS / part / "backing_instrumental.wav"), dtype="float32", always_2d=True)
             bleed.append(y.mean(1))
     print(f"fold {fold}: train {len(tr)} val {len(va)} bleed {len(bleed)}", flush=True)
@@ -792,9 +809,15 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
     def eq_curve(gain_bins):
         return np.interp(cfreq, freqs, gain_bins)
 
-    def make(idx, train):
+    sep_groups = {}
+    if sep is not None:
+        for e in sep["train"]:
+            sep_groups.setdefault(e["band"], []).append(e)
+    sep_bands = sorted(sep_groups)
+
+    def make(idx, train, specs=None):
         xs, ys = [], []
-        for i in idx:
+        for n_i, i in enumerate(idx):
             x = X[i].astype(np.float32) / 32767
             y = Y[i].astype(np.float32) / 32767
             own = S[i] - S[i].mean()
@@ -807,7 +830,12 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
                 fc, gb = rng.uniform(np.log2(200), np.log2(6000)), rng.uniform(-4, 4)
                 bell = gb * np.exp(-0.5 * ((np.log2(np.maximum(cfreq, 20)) - fc) / 0.5) ** 2)
                 x = np.fft.irfft(np.fft.rfft(x) * 10 ** ((tilt + bell) / 20), CLIP).astype(np.float32)
-                if rng.random() < 0.5 and bleed:
+                if sep is not None and rng.random() < sep["p"]:
+                    grp = sep_groups[sep_bands[rng.integers(len(sep_bands))]]
+                    e = grp[rng.integers(len(grp))]
+                    off = int(rng.integers(0, len(e["r"]) - CLIP + 1))
+                    x = sep_apply(x, e, off, rng.uniform(-sep["jitter_db"], sep["jitter_db"]), cfreq)
+                elif rng.random() < 0.5 and bleed:
                     b = bleed[rng.integers(len(bleed))]
                     s = rng.integers(0, max(1, len(b) - CLIP))
                     seg = np.zeros(CLIP, np.float32)
@@ -817,6 +845,9 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
                     x = x + rng.standard_normal(CLIP).astype(np.float32) * x.std() * 10 ** (-rng.uniform(45, 75) / 20)
                 a = rng.integers(0, CLIP - CROP)
             else:
+                if specs is not None:
+                    e, off = specs[n_i]
+                    x = sep_apply(x, e, off, 0.0, cfreq)
                 a = (CLIP - CROP) // 2
             x, y = x[a:a + CROP], y[a:a + CROP]
             xs.append(x / (x.std() + 1e-9) * 0.1)
@@ -856,17 +887,56 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
     t0, step, skipped, streak, recoveries = time.time(), 0, 0, 0, 0
     window = []
     vidx = rng.choice(va, min(96, len(va)), replace=False)
+    vspecs = None
+    if sep_vbands:
+        vr = np.random.default_rng(seed + 1_000_003)       # separate: the main stream is untouched
+        svidx = vr.choice(sva, min(96, len(sva)), replace=False)
+        by_band = {}
+        for e in sep["val"]:
+            by_band.setdefault(e["band"], []).append(e)
+        vspecs = []
+        for i in svidx:                                    # an entry from the crop's own band
+            grp = by_band[meta[i]["band"]]
+            e = grp[int(vr.integers(len(grp)))]
+            vspecs.append((e, int(vr.integers(0, len(e["r"]) - CLIP + 1))))
+        print(f"fold {fold}: separator validation on {len(svidx)} crops of {sorted(sep_vbands)} "
+              f"({len(sva)} rows, out of training); train now {len(tr)}", flush=True)
+    best_sep, best_step, stop = math.inf, 0, False
+
+    def sep_validate():
+        net.eval()
+        with torch.no_grad():
+            sl, sbase = 0.0, 0.0
+            for s in range(0, len(svidx), batch):
+                vx, vy = make(svidx[s:s + batch], False, vspecs[s:s + batch])
+                vp = net(vx)
+                sl += float(100 * (vp - vy).abs().mean() + mrstft(vp.squeeze(1), vy.squeeze(1)))
+                sbase += float(100 * (vx - vy).abs().mean() + mrstft(vx.squeeze(1), vy.squeeze(1)))
+        net.train()
+        return sl, sbase
+
+    if vspecs is not None and not (eval_only or calibrate):
+        sl, sbase = sep_validate()                         # step 0: the starting network
+        best_sep = sl
+        torch.save(net.state_dict(), out / f"fold{fold}-best.pt")
+        print(f"fold {fold} step 0 sepval {sl:.3f} (input-as-DI {sbase:.3f})", flush=True)
     # Experiment 4 (all off by default; nothing below this line runs for C′'s recipe).
     if warmup and not steps:
         raise ValueError("--warmup needs --steps")
     if adv and not steps:
         raise ValueError("--adv needs --steps")
-    if terms or warmup or adv or fullrate_head or overfit or log_fine or calibrate or eval_only or mark_done:
+    if terms or warmup or adv or fullrate_head or overfit or log_fine or calibrate or eval_only or mark_done \
+            or sep is not None:
         (out / ("config-eval.json" if eval_only else "config-calibrate.json" if calibrate else "config.json")).write_text(
             json.dumps({"fold": fold, "seed": seed, "batch": batch, "steps": steps, "lr": lr, "lr_end": lr_end,
                         "warmup": warmup, "terms": terms, "adv": adv, "fullrate_head": fullrate_head,
                         "overfit": overfit, "resume": str(resume) if resume else None,
-                        "caches": [str(c) for c in caches]}, indent=1))
+                        "caches": [str(c) for c in caches],
+                        **({"sep": {"p": sep["p"], "jitter_db": sep["jitter_db"],
+                                    "train": [e["id"] for e in sep["train"]],
+                                    "val": [e["id"] for e in sep.get("val") or []]},
+                            "patience": patience, "min_steps": min_steps} if sep is not None else {})},
+                       indent=1))
     if eval_only:
         _evaluate(net, make, vidx, batch, out / "eval.json", fold, resume)
         return
@@ -881,7 +951,7 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
         discs = build_discriminators().to(dev)
         dopt = torch.optim.AdamW(discs.parameters(), lr=adv["lr"], betas=(0.8, 0.99), weight_decay=1e-5)
         balancer = Balancer(adv["shares"], adv.get("decay", 0.999))
-    while (step < steps) if steps else (time.time() - t0 < minutes * 60):
+    while ((step < steps) if steps else (time.time() - t0 < minutes * 60)) and not stop:
         if warmup and step < warmup:
             for g in opt.param_groups:
                 g["lr"] = lr * (step + 1) / warmup * g.get("scale", 1.0)
@@ -974,8 +1044,24 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
             if log_fine:
                 print(f"fold {fold} step {step} fine " + json.dumps(_round(fine_metrics(
                     np.concatenate(fine_p), np.concatenate(fine_y)))), flush=True)
+            if vspecs is not None:
+                sl, sbase = sep_validate()
+                if sl < best_sep * (1 - 0.002):
+                    best_sep, best_step = sl, step
+                    torch.save(net.state_dict(), out / f"fold{fold}-best.pt")
+                print(f"fold {fold} step {step} sepval {sl:.3f} (input-as-DI {sbase:.3f}) best {best_sep:.3f} "
+                      f"at {best_step}", flush=True)
+                if patience and step >= min_steps and step - best_step >= patience:
+                    stop = True
+                    print(f"fold {fold} stopped at step {step}: no 0.2% gain since step {best_step}", flush=True)
             torch.save(net.state_dict(), out / f"fold{fold}.pt")
     torch.save(net.state_dict(), out / f"fold{fold}.pt")
+    if vspecs is not None and (out / f"fold{fold}-best.pt").exists():
+        import shutil
+
+        shutil.copyfile(out / f"fold{fold}.pt", out / f"fold{fold}-last.pt")
+        shutil.copyfile(out / f"fold{fold}-best.pt", out / f"fold{fold}.pt")
+        print(f"fold {fold} final = best separator validation {best_sep:.3f} at step {best_step}", flush=True)
     if overfit:
         (out / "overfit.json").write_text(json.dumps(
             {"crops": [int(i) for i in ov_idx], "start": ov_start, "end": _fine_on(net, make, ov_idx, batch)}, indent=1))
@@ -987,6 +1073,22 @@ def fit(cache, fold, out, minutes, seed, batch=12, log_every=200, resume=None, l
         mag = 20 * np.log10(np.abs(np.fft.rfft(w, 8192)) + 1e-12)
         print(f"FIR peak tap {int(np.argmax(np.abs(w))) - FIR_TAPS // 2:+d}, magnitude dB at "
               f"100 Hz/1 kHz/5 kHz: {mag[17]:.1f}/{mag[171]:.1f}/{mag[853]:.1f}", flush=True)
+
+
+def sep_apply(x, e, off, jitter_db, cfreq):
+    """A clip as a real separator would hand it over (docs/cprime-sep-plan.md): the entry's
+    smoothed colouration |G| (dB on `e["freqs"]`, zero-phase), plus its residual (the stem minus
+    G applied to the amp track) from sample `off`, at the entry's residual-to-guitar ratio
+    (whole-clip RMS, so quiet stretches of the residual stay quiet), moved by `jitter_db`."""
+    import numpy as np
+
+    g = np.interp(cfreq, e["freqs"], e["gdb"])
+    xc = np.fft.irfft(np.fft.rfft(x) * 10 ** (g / 20), len(x)).astype(np.float32)
+    r = np.zeros(len(x), np.float32)
+    seg = e["r"][off:off + len(x)]
+    r[:len(seg)] = seg
+    k = xc.std() * e["rsr"] / (e["r_rms"] + 1e-12) * 10 ** (jitter_db / 20)
+    return (xc + r * k).astype(np.float32)
 
 
 def _round(d, k=4):
@@ -1133,6 +1235,11 @@ def main():
     f.add_argument("--eval-only", action="store_true", help="step 1d: evaluate --resume, no training")
     f.add_argument("--mark-done", action="store_true", help="touch DONE in --out when training ends")
     f.add_argument("--batch", type=int, default=12)
+    f.add_argument("--sep-lib", type=pathlib.Path, help="cprime-sep: residual library (learn.direc_sep lib)")
+    f.add_argument("--sep-p", type=float, default=0.75, help="cprime-sep: share of inputs given a separator residual")
+    f.add_argument("--sep-jitter-db", type=float, default=3.0)
+    f.add_argument("--patience", type=int, default=0, help="cprime-sep: steps without a 0.2%% separator-val gain")
+    f.add_argument("--min-steps", type=int, default=0)
     args = ap.parse_args()
     if args.cmd == "cache-pairs":
         build_pair_cache(args.pairs.expanduser(), args.cache.expanduser())
@@ -1147,7 +1254,17 @@ def main():
             batch=args.batch, terms=parse_terms(args.terms), warmup=args.warmup,
             adv=_adv_config(args) if args.adv else None, fullrate_head=args.fullrate_head,
             overfit=args.overfit, log_fine=args.log_fine, calibrate=args.calibrate,
-            eval_only=args.eval_only, mark_done=args.mark_done)
+            eval_only=args.eval_only, mark_done=args.mark_done,
+            sep=_sep_config(args), patience=args.patience, min_steps=args.min_steps)
+
+
+def _sep_config(args):
+    if not args.sep_lib:
+        return None
+    from learn import direc_sep
+
+    tr, va = direc_sep.load_lib(args.sep_lib.expanduser(), args.fold)
+    return {"train": tr, "val": va, "p": args.sep_p, "jitter_db": args.sep_jitter_db}
 
 
 def _adv_config(args):

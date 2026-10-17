@@ -1,0 +1,1022 @@
+{
+ "a all": {
+  "1 K_S vs S": {
+   "mean": -0.2689326477869723,
+   "lo90": -0.341514826293431,
+   "hi90": -0.19635046928051358,
+   "bands": 14,
+   "parts": 24,
+   "units": 142,
+   "bands_better": 14,
+   "txt": "-0.269 [-0.342, -0.196] parts 24 bands 14 units 142 better-bands 14/14"
+  },
+  "2 A vs S": {
+   "mean": -0.07767012538549564,
+   "lo90": -0.15695385958438252,
+   "hi90": 0.0016136088133912457,
+   "bands": 14,
+   "parts": 24,
+   "units": 142,
+   "bands_better": 11,
+   "txt": "-0.078 [-0.157, +0.002] parts 24 bands 14 units 142 better-bands 11/14"
+  },
+  "2 3-C'shrink0.5 vs S": {
+   "mean": -0.08341724149145202,
+   "lo90": -0.13514319864106694,
+   "hi90": -0.03169128434183711,
+   "bands": 14,
+   "parts": 24,
+   "units": 142,
+   "bands_better": 12,
+   "txt": "-0.083 [-0.135, -0.032] parts 24 bands 14 units 142 better-bands 12/14"
+  },
+  "2 3-C'shrink0.5 vs A": {
+   "mean": -0.005747116105956395,
+   "lo90": -0.05071183507777887,
+   "hi90": 0.039217602865866084,
+   "bands": 14,
+   "parts": 24,
+   "units": 142,
+   "bands_better": 6,
+   "txt": "-0.006 [-0.051, +0.039] parts 24 bands 14 units 142 better-bands 6/14"
+  },
+  "2 K_S vs A": {
+   "mean": -0.19126252240147665,
+   "lo90": -0.24352845449270846,
+   "hi90": -0.13899659031024483,
+   "bands": 14,
+   "parts": 24,
+   "units": 142,
+   "bands_better": 13,
+   "txt": "-0.191 [-0.244, -0.139] parts 24 bands 14 units 142 better-bands 13/14"
+  },
+  "3 B0 vs S": {
+   "mean": 0.03478358286048786,
+   "lo90": -0.03807733283954683,
+   "hi90": 0.10764449856052255,
+   "bands": 14,
+   "parts": 24,
+   "units": 142,
+   "bands_better": 6,
+   "txt": "+0.035 [-0.038, +0.108] parts 24 bands 14 units 142 better-bands 6/14"
+  },
+  "3 B1 vs S": {
+   "mean": 0.010392407247773136,
+   "lo90": -0.06630935384470722,
+   "hi90": 0.0870941683402535,
+   "bands": 14,
+   "parts": 24,
+   "units": 142,
+   "bands_better": 8,
+   "txt": "+0.010 [-0.066, +0.087] parts 24 bands 14 units 142 better-bands 8/14"
+  },
+  "3 B2 vs S": {
+   "mean": -0.03276666408383014,
+   "lo90": -0.10003786413557157,
+   "hi90": 0.034504535967911296,
+   "bands": 14,
+   "parts": 24,
+   "units": 142,
+   "bands_better": 9,
+   "txt": "-0.033 [-0.100, +0.035] parts 24 bands 14 units 142 better-bands 9/14"
+  },
+  "3 B1 vs B0": {
+   "mean": -0.02439117561271473,
+   "lo90": -0.06769063434676885,
+   "hi90": 0.018908283121339384,
+   "bands": 14,
+   "parts": 24,
+   "units": 142,
+   "bands_better": 8,
+   "txt": "-0.024 [-0.068, +0.019] parts 24 bands 14 units 142 better-bands 8/14"
+  },
+  "3 B2 vs B0": {
+   "mean": -0.06755024694431801,
+   "lo90": -0.11066418524323045,
+   "hi90": -0.024436308645405566,
+   "bands": 14,
+   "parts": 24,
+   "units": 142,
+   "bands_better": 10,
+   "txt": "-0.068 [-0.111, -0.024] parts 24 bands 14 units 142 better-bands 10/14"
+  }
+ },
+ "b no high": {
+  "1 K_S vs S": {
+   "mean": -0.2693458112378954,
+   "lo90": -0.3427844000386092,
+   "hi90": -0.19590722243718164,
+   "bands": 14,
+   "parts": 20,
+   "units": 120,
+   "bands_better": 14,
+   "txt": "-0.269 [-0.343, -0.196] parts 20 bands 14 units 120 better-bands 14/14"
+  },
+  "2 A vs S": {
+   "mean": -0.08230934503311134,
+   "lo90": -0.1609063075566322,
+   "hi90": -0.0037123825095904672,
+   "bands": 14,
+   "parts": 20,
+   "units": 120,
+   "bands_better": 11,
+   "txt": "-0.082 [-0.161, -0.004] parts 20 bands 14 units 120 better-bands 11/14"
+  },
+  "2 3-C'shrink0.5 vs S": {
+   "mean": -0.08522192487225995,
+   "lo90": -0.1364117354421206,
+   "hi90": -0.034032114302399316,
+   "bands": 14,
+   "parts": 20,
+   "units": 120,
+   "bands_better": 12,
+   "txt": "-0.085 [-0.136, -0.034] parts 20 bands 14 units 120 better-bands 12/14"
+  },
+  "2 3-C'shrink0.5 vs A": {
+   "mean": -0.002912579839148607,
+   "lo90": -0.048125264450424615,
+   "hi90": 0.042300104772127395,
+   "bands": 14,
+   "parts": 20,
+   "units": 120,
+   "bands_better": 5,
+   "txt": "-0.003 [-0.048, +0.042] parts 20 bands 14 units 120 better-bands 5/14"
+  },
+  "2 K_S vs A": {
+   "mean": -0.1870364662047841,
+   "lo90": -0.2408199843435856,
+   "hi90": -0.1332529480659826,
+   "bands": 14,
+   "parts": 20,
+   "units": 120,
+   "bands_better": 13,
+   "txt": "-0.187 [-0.241, -0.133] parts 20 bands 14 units 120 better-bands 13/14"
+  },
+  "3 B0 vs S": {
+   "mean": 0.033222130846267864,
+   "lo90": -0.03964345374737965,
+   "hi90": 0.10608771543991538,
+   "bands": 14,
+   "parts": 20,
+   "units": 120,
+   "bands_better": 6,
+   "txt": "+0.033 [-0.040, +0.106] parts 20 bands 14 units 120 better-bands 6/14"
+  },
+  "3 B1 vs S": {
+   "mean": 0.010575339577664596,
+   "lo90": -0.06986815416482221,
+   "hi90": 0.09101883332015141,
+   "bands": 14,
+   "parts": 20,
+   "units": 120,
+   "bands_better": 8,
+   "txt": "+0.011 [-0.070, +0.091] parts 20 bands 14 units 120 better-bands 8/14"
+  },
+  "3 B2 vs S": {
+   "mean": -0.03163418325188968,
+   "lo90": -0.10037494887107337,
+   "hi90": 0.03710658236729401,
+   "bands": 14,
+   "parts": 20,
+   "units": 120,
+   "bands_better": 8,
+   "txt": "-0.032 [-0.100, +0.037] parts 20 bands 14 units 120 better-bands 8/14"
+  },
+  "3 B1 vs B0": {
+   "mean": -0.022646791268603274,
+   "lo90": -0.06869292289374376,
+   "hi90": 0.023399340356537218,
+   "bands": 14,
+   "parts": 20,
+   "units": 120,
+   "bands_better": 8,
+   "txt": "-0.023 [-0.069, +0.023] parts 20 bands 14 units 120 better-bands 8/14"
+  },
+  "3 B2 vs B0": {
+   "mean": -0.06485631409815755,
+   "lo90": -0.1077727487004349,
+   "hi90": -0.021939879495880193,
+   "bands": 14,
+   "parts": 20,
+   "units": 120,
+   "bands_better": 10,
+   "txt": "-0.065 [-0.108, -0.022] parts 20 bands 14 units 120 better-bands 10/14"
+  }
+ },
+ "c no mod/high": {
+  "1 K_S vs S": {
+   "mean": -0.26748805607103454,
+   "lo90": -0.34479681326053235,
+   "hi90": -0.19017929888153676,
+   "bands": 13,
+   "parts": 16,
+   "units": 90,
+   "bands_better": 13,
+   "txt": "-0.267 [-0.345, -0.190] parts 16 bands 13 units 90 better-bands 13/13"
+  },
+  "2 A vs S": {
+   "mean": -0.09728374011386785,
+   "lo90": -0.18381781468070785,
+   "hi90": -0.010749665547027873,
+   "bands": 13,
+   "parts": 16,
+   "units": 90,
+   "bands_better": 10,
+   "txt": "-0.097 [-0.184, -0.011] parts 16 bands 13 units 90 better-bands 10/13"
+  },
+  "2 3-C'shrink0.5 vs S": {
+   "mean": -0.09439154262176791,
+   "lo90": -0.148850794454454,
+   "hi90": -0.03993229078908181,
+   "bands": 13,
+   "parts": 16,
+   "units": 90,
+   "bands_better": 11,
+   "txt": "-0.094 [-0.149, -0.040] parts 16 bands 13 units 90 better-bands 11/13"
+  },
+  "2 3-C'shrink0.5 vs A": {
+   "mean": 0.0028921974920999593,
+   "lo90": -0.048350062602847535,
+   "hi90": 0.05413445758704745,
+   "bands": 13,
+   "parts": 16,
+   "units": 90,
+   "bands_better": 4,
+   "txt": "+0.003 [-0.048, +0.054] parts 16 bands 13 units 90 better-bands 4/13"
+  },
+  "2 K_S vs A": {
+   "mean": -0.17020431595716665,
+   "lo90": -0.2244305327732233,
+   "hi90": -0.11597809914110999,
+   "bands": 13,
+   "parts": 16,
+   "units": 90,
+   "bands_better": 12,
+   "txt": "-0.170 [-0.224, -0.116] parts 16 bands 13 units 90 better-bands 12/13"
+  },
+  "3 B0 vs S": {
+   "mean": 0.04442502086659867,
+   "lo90": -0.033249257656619895,
+   "hi90": 0.12209929938981723,
+   "bands": 13,
+   "parts": 16,
+   "units": 90,
+   "bands_better": 4,
+   "txt": "+0.044 [-0.033, +0.122] parts 16 bands 13 units 90 better-bands 4/13"
+  },
+  "3 B1 vs S": {
+   "mean": 0.019196539667787206,
+   "lo90": -0.06459737292188067,
+   "hi90": 0.10299045225745507,
+   "bands": 13,
+   "parts": 16,
+   "units": 90,
+   "bands_better": 7,
+   "txt": "+0.019 [-0.065, +0.103] parts 16 bands 13 units 90 better-bands 7/13"
+  },
+  "3 B2 vs S": {
+   "mean": -0.025109646139963804,
+   "lo90": -0.09746110406162205,
+   "hi90": 0.04724181178169444,
+   "bands": 13,
+   "parts": 16,
+   "units": 90,
+   "bands_better": 7,
+   "txt": "-0.025 [-0.097, +0.047] parts 16 bands 13 units 90 better-bands 7/13"
+  },
+  "3 B1 vs B0": {
+   "mean": -0.02522848119881146,
+   "lo90": -0.07369201284714451,
+   "hi90": 0.02323505044952159,
+   "bands": 13,
+   "parts": 16,
+   "units": 90,
+   "bands_better": 7,
+   "txt": "-0.025 [-0.074, +0.023] parts 16 bands 13 units 90 better-bands 7/13"
+  },
+  "3 B2 vs B0": {
+   "mean": -0.06953466700656248,
+   "lo90": -0.11587470983815285,
+   "hi90": -0.02319462417497211,
+   "bands": 13,
+   "parts": 16,
+   "units": 90,
+   "bands_better": 10,
+   "txt": "-0.070 [-0.116, -0.023] parts 16 bands 13 units 90 better-bands 10/13"
+  }
+ },
+ "d Cambridge": {
+  "1 K_S vs S": {
+   "mean": -0.27433486207873,
+   "lo90": -0.3607161406708793,
+   "hi90": -0.18795358348658064,
+   "bands": 11,
+   "parts": 13,
+   "units": 78,
+   "bands_better": 11,
+   "txt": "-0.274 [-0.361, -0.188] parts 13 bands 11 units 78 better-bands 11/11"
+  },
+  "2 A vs S": {
+   "mean": -0.09063877871080969,
+   "lo90": -0.19332884125086436,
+   "hi90": 0.012051283829244988,
+   "bands": 11,
+   "parts": 13,
+   "units": 78,
+   "bands_better": 8,
+   "txt": "-0.091 [-0.193, +0.012] parts 13 bands 11 units 78 better-bands 8/11"
+  },
+  "2 3-C'shrink0.5 vs S": {
+   "mean": -0.09791185210744638,
+   "lo90": -0.16340568612113904,
+   "hi90": -0.032418018093753734,
+   "bands": 11,
+   "parts": 13,
+   "units": 78,
+   "bands_better": 9,
+   "txt": "-0.098 [-0.163, -0.032] parts 13 bands 11 units 78 better-bands 9/11"
+  },
+  "2 3-C'shrink0.5 vs A": {
+   "mean": -0.0072730733966367,
+   "lo90": -0.06617187421312481,
+   "hi90": 0.051625727419851414,
+   "bands": 11,
+   "parts": 13,
+   "units": 78,
+   "bands_better": 4,
+   "txt": "-0.007 [-0.066, +0.052] parts 13 bands 11 units 78 better-bands 4/11"
+  },
+  "2 K_S vs A": {
+   "mean": -0.18369608336792032,
+   "lo90": -0.24421052891748668,
+   "hi90": -0.12318163781835395,
+   "bands": 11,
+   "parts": 13,
+   "units": 78,
+   "bands_better": 10,
+   "txt": "-0.184 [-0.244, -0.123] parts 13 bands 11 units 78 better-bands 10/11"
+  },
+  "3 B0 vs S": {
+   "mean": 0.043974622488471865,
+   "lo90": -0.0500634151429144,
+   "hi90": 0.13801266011985813,
+   "bands": 11,
+   "parts": 13,
+   "units": 78,
+   "bands_better": 4,
+   "txt": "+0.044 [-0.050, +0.138] parts 13 bands 11 units 78 better-bands 4/11"
+  },
+  "3 B1 vs S": {
+   "mean": 0.016932842277782238,
+   "lo90": -0.08179170130843741,
+   "hi90": 0.1156573858640019,
+   "bands": 11,
+   "parts": 13,
+   "units": 78,
+   "bands_better": 6,
+   "txt": "+0.017 [-0.082, +0.116] parts 13 bands 11 units 78 better-bands 6/11"
+  },
+  "3 B2 vs S": {
+   "mean": -0.021071802034352643,
+   "lo90": -0.10576651595826292,
+   "hi90": 0.06362291188955763,
+   "bands": 11,
+   "parts": 13,
+   "units": 78,
+   "bands_better": 6,
+   "txt": "-0.021 [-0.106, +0.064] parts 13 bands 11 units 78 better-bands 6/11"
+  },
+  "3 B1 vs B0": {
+   "mean": -0.027041780210689627,
+   "lo90": -0.08177099931995606,
+   "hi90": 0.027687438898576805,
+   "bands": 11,
+   "parts": 13,
+   "units": 78,
+   "bands_better": 6,
+   "txt": "-0.027 [-0.082, +0.028] parts 13 bands 11 units 78 better-bands 6/11"
+  },
+  "3 B2 vs B0": {
+   "mean": -0.06504642452282451,
+   "lo90": -0.11727634353252897,
+   "hi90": -0.01281650551312006,
+   "bands": 11,
+   "parts": 13,
+   "units": 78,
+   "bands_better": 8,
+   "txt": "-0.065 [-0.117, -0.013] parts 13 bands 11 units 78 better-bands 8/11"
+  }
+ },
+ "x Telefunken all": {
+  "1 K_S vs S": {
+   "mean": -0.24912452871719407,
+   "lo90": -0.5270741359141872,
+   "hi90": 0.028825078479799066,
+   "bands": 3,
+   "parts": 11,
+   "units": 64,
+   "bands_better": 3,
+   "txt": "-0.249 [-0.527, +0.029] parts 11 bands 3 units 64 better-bands 3/3"
+  },
+  "2 A vs S": {
+   "mean": -0.030118396526010796,
+   "lo90": -0.09582554790070055,
+   "hi90": 0.03558875484867896,
+   "bands": 3,
+   "parts": 11,
+   "units": 64,
+   "bands_better": 3,
+   "txt": "-0.030 [-0.096, +0.036] parts 11 bands 3 units 64 better-bands 3/3"
+  },
+  "2 3-C'shrink0.5 vs S": {
+   "mean": -0.030270335899472738,
+   "lo90": -0.06503117059132647,
+   "hi90": 0.004490498792381,
+   "bands": 3,
+   "parts": 11,
+   "units": 64,
+   "bands_better": 3,
+   "txt": "-0.030 [-0.065, +0.004] parts 11 bands 3 units 64 better-bands 3/3"
+  },
+  "2 3-C'shrink0.5 vs A": {
+   "mean": -0.00015193937346194304,
+   "lo90": -0.03873938755221667,
+   "hi90": 0.03843550880529278,
+   "bands": 3,
+   "parts": 11,
+   "units": 64,
+   "bands_better": 2,
+   "txt": "-0.000 [-0.039, +0.038] parts 11 bands 3 units 64 better-bands 2/3"
+  },
+  "2 K_S vs A": {
+   "mean": -0.21900613219118328,
+   "lo90": -0.4354435174200229,
+   "hi90": -0.00256874696234366,
+   "bands": 3,
+   "parts": 11,
+   "units": 64,
+   "bands_better": 3,
+   "txt": "-0.219 [-0.435, -0.003] parts 11 bands 3 units 64 better-bands 3/3"
+  },
+  "3 B0 vs S": {
+   "mean": 0.0010831042245465418,
+   "lo90": -0.10299060315382705,
+   "hi90": 0.10515681160292012,
+   "bands": 3,
+   "parts": 11,
+   "units": 64,
+   "bands_better": 2,
+   "txt": "+0.001 [-0.103, +0.105] parts 11 bands 3 units 64 better-bands 2/3"
+  },
+  "3 B1 vs S": {
+   "mean": -0.013589187862260236,
+   "lo90": -0.1487137997820087,
+   "hi90": 0.12153542405748821,
+   "bands": 3,
+   "parts": 11,
+   "units": 64,
+   "bands_better": 2,
+   "txt": "-0.014 [-0.149, +0.122] parts 11 bands 3 units 64 better-bands 2/3"
+  },
+  "3 B2 vs S": {
+   "mean": -0.07564782493191428,
+   "lo90": -0.22358313478415764,
+   "hi90": 0.07228748492032906,
+   "bands": 3,
+   "parts": 11,
+   "units": 64,
+   "bands_better": 3,
+   "txt": "-0.076 [-0.224, +0.072] parts 11 bands 3 units 64 better-bands 3/3"
+  },
+  "3 B1 vs B0": {
+   "mean": -0.014672292086806775,
+   "lo90": -0.12223549834503006,
+   "hi90": 0.09289091417141651,
+   "bands": 3,
+   "parts": 11,
+   "units": 64,
+   "bands_better": 2,
+   "txt": "-0.015 [-0.122, +0.093] parts 11 bands 3 units 64 better-bands 2/3"
+  },
+  "3 B2 vs B0": {
+   "mean": -0.07673092915646083,
+   "lo90": -0.22846558651251758,
+   "hi90": 0.0750037281995959,
+   "bands": 3,
+   "parts": 11,
+   "units": 64,
+   "bands_better": 2,
+   "txt": "-0.077 [-0.228, +0.075] parts 11 bands 3 units 64 better-bands 2/3"
+  }
+ },
+ "x Telefunken low halves": {
+  "1 K_S vs S": {
+   "mean": -0.22983062302870944,
+   "lo90": -1.1260922452684863,
+   "hi90": 0.6664309992110673,
+   "bands": 2,
+   "parts": 3,
+   "units": 12,
+   "bands_better": 2,
+   "txt": "-0.230 [-1.126, +0.666] parts 3 bands 2 units 12 better-bands 2/2"
+  },
+  "2 A vs S": {
+   "mean": -0.13383102783068784,
+   "lo90": -0.612038260600074,
+   "hi90": 0.3443762049386983,
+   "bands": 2,
+   "parts": 3,
+   "units": 12,
+   "bands_better": 2,
+   "txt": "-0.134 [-0.612, +0.344] parts 3 bands 2 units 12 better-bands 2/2"
+  },
+  "2 3-C'shrink0.5 vs S": {
+   "mean": -0.07502984045053626,
+   "lo90": -0.22516875392423974,
+   "hi90": 0.07510907302316722,
+   "bands": 2,
+   "parts": 3,
+   "units": 12,
+   "bands_better": 2,
+   "txt": "-0.075 [-0.225, +0.075] parts 3 bands 2 units 12 better-bands 2/2"
+  },
+  "2 3-C'shrink0.5 vs A": {
+   "mean": 0.05880118738015158,
+   "lo90": -0.269267131915531,
+   "hi90": 0.3868695066758341,
+   "bands": 2,
+   "parts": 3,
+   "units": 12,
+   "bands_better": 0,
+   "txt": "+0.059 [-0.269, +0.387] parts 3 bands 2 units 12 better-bands 0/2"
+  },
+  "2 K_S vs A": {
+   "mean": -0.09599959519802158,
+   "lo90": -0.5140539846684122,
+   "hi90": 0.32205479427236905,
+   "bands": 2,
+   "parts": 3,
+   "units": 12,
+   "bands_better": 2,
+   "txt": "-0.096 [-0.514, +0.322] parts 3 bands 2 units 12 better-bands 2/2"
+  },
+  "3 B0 vs S": {
+   "mean": 0.046902211946296124,
+   "lo90": -0.010197676498148081,
+   "hi90": 0.10400210039074033,
+   "bands": 2,
+   "parts": 3,
+   "units": 12,
+   "bands_better": 0,
+   "txt": "+0.047 [-0.010, +0.104] parts 3 bands 2 units 12 better-bands 0/2"
+  },
+  "3 B1 vs S": {
+   "mean": 0.03164687531281454,
+   "lo90": -0.5687963366007446,
+   "hi90": 0.6320900872263736,
+   "bands": 2,
+   "parts": 3,
+   "units": 12,
+   "bands_better": 1,
+   "txt": "+0.032 [-0.569, +0.632] parts 3 bands 2 units 12 better-bands 1/2"
+  },
+  "3 B2 vs S": {
+   "mean": -0.047317788720825205,
+   "lo90": -0.6069725022797237,
+   "hi90": 0.5123369248380731,
+   "bands": 2,
+   "parts": 3,
+   "units": 12,
+   "bands_better": 1,
+   "txt": "-0.047 [-0.607, +0.512] parts 3 bands 2 units 12 better-bands 1/2"
+  },
+  "3 B1 vs B0": {
+   "mean": -0.01525533663348156,
+   "lo90": -0.5585986601025964,
+   "hi90": 0.5280879868356333,
+   "bands": 2,
+   "parts": 3,
+   "units": 12,
+   "bands_better": 1,
+   "txt": "-0.015 [-0.559, +0.528] parts 3 bands 2 units 12 better-bands 1/2"
+  },
+  "3 B2 vs B0": {
+   "mean": -0.09422000066712133,
+   "lo90": -0.5967748257815756,
+   "hi90": 0.40833482444733293,
+   "bands": 2,
+   "parts": 3,
+   "units": 12,
+   "bands_better": 2,
+   "txt": "-0.094 [-0.597, +0.408] parts 3 bands 2 units 12 better-bands 2/2"
+  }
+ },
+ "x Telefunken mod/high halves": {
+  "1 K_S vs S": {
+   "mean": -0.2565704071235692,
+   "lo90": -0.5554363954442639,
+   "hi90": 0.04229558119712551,
+   "bands": 3,
+   "parts": 10,
+   "units": 52,
+   "bands_better": 3,
+   "txt": "-0.257 [-0.555, +0.042] parts 10 bands 3 units 52 better-bands 3/3"
+  },
+  "2 A vs S": {
+   "mean": -0.003602072907453221,
+   "lo90": -0.021156048041029517,
+   "hi90": 0.013951902226123074,
+   "bands": 3,
+   "parts": 10,
+   "units": 52,
+   "bands_better": 2,
+   "txt": "-0.004 [-0.021, +0.014] parts 10 bands 3 units 52 better-bands 2/3"
+  },
+  "2 3-C'shrink0.5 vs S": {
+   "mean": -0.01789782096647023,
+   "lo90": -0.033146483385512564,
+   "hi90": -0.002649158547427895,
+   "bands": 3,
+   "parts": 10,
+   "units": 52,
+   "bands_better": 3,
+   "txt": "-0.018 [-0.033, -0.003] parts 10 bands 3 units 52 better-bands 3/3"
+  },
+  "2 3-C'shrink0.5 vs A": {
+   "mean": -0.014295748059017004,
+   "lo90": -0.039060501952771595,
+   "hi90": 0.010469005834737588,
+   "bands": 3,
+   "parts": 10,
+   "units": 52,
+   "bands_better": 3,
+   "txt": "-0.014 [-0.039, +0.010] parts 10 bands 3 units 52 better-bands 3/3"
+  },
+  "2 K_S vs A": {
+   "mean": -0.252968334216116,
+   "lo90": -0.5345655263706306,
+   "hi90": 0.0286288579383987,
+   "bands": 3,
+   "parts": 10,
+   "units": 52,
+   "bands_better": 3,
+   "txt": "-0.253 [-0.535, +0.029] parts 10 bands 3 units 52 better-bands 3/3"
+  },
+  "3 B0 vs S": {
+   "mean": -0.019265256312412937,
+   "lo90": -0.1460435467924185,
+   "hi90": 0.10751303416759261,
+   "bands": 3,
+   "parts": 10,
+   "units": 52,
+   "bands_better": 2,
+   "txt": "-0.019 [-0.146, +0.108] parts 10 bands 3 units 52 better-bands 2/3"
+  },
+  "3 B1 vs S": {
+   "mean": 0.0006082287316263377,
+   "lo90": -0.13080190603445296,
+   "hi90": 0.13201836349770563,
+   "bands": 3,
+   "parts": 10,
+   "units": 52,
+   "bands_better": 2,
+   "txt": "+0.001 [-0.131, +0.132] parts 10 bands 3 units 52 better-bands 2/3"
+  },
+  "3 B2 vs S": {
+   "mean": -0.09111145947447984,
+   "lo90": -0.2970467368263579,
+   "hi90": 0.11482381787739825,
+   "bands": 3,
+   "parts": 10,
+   "units": 52,
+   "bands_better": 3,
+   "txt": "-0.091 [-0.297, +0.115] parts 10 bands 3 units 52 better-bands 3/3"
+  },
+  "3 B1 vs B0": {
+   "mean": 0.01987348504403928,
+   "lo90": -0.01728833026297633,
+   "hi90": 0.05703530035105489,
+   "bands": 3,
+   "parts": 10,
+   "units": 52,
+   "bands_better": 0,
+   "txt": "+0.020 [-0.017, +0.057] parts 10 bands 3 units 52 better-bands 0/3"
+  },
+  "3 B2 vs B0": {
+   "mean": -0.07184620316206691,
+   "lo90": -0.21969666869971455,
+   "hi90": 0.07600426237558072,
+   "bands": 3,
+   "parts": 10,
+   "units": 52,
+   "bands_better": 2,
+   "txt": "-0.072 [-0.220, +0.076] parts 10 bands 3 units 52 better-bands 2/3"
+  }
+ },
+ "x Cambridge strong DI": {
+  "1 K_S vs S": {
+   "mean": -0.30525822840416456,
+   "lo90": -0.46641082421200797,
+   "hi90": -0.14410563259632117,
+   "bands": 6,
+   "parts": 7,
+   "units": 42,
+   "bands_better": 6,
+   "txt": "-0.305 [-0.466, -0.144] parts 7 bands 6 units 42 better-bands 6/6"
+  },
+  "2 A vs S": {
+   "mean": -0.11393058798975413,
+   "lo90": -0.30626787192701754,
+   "hi90": 0.0784066959475093,
+   "bands": 6,
+   "parts": 7,
+   "units": 42,
+   "bands_better": 4,
+   "txt": "-0.114 [-0.306, +0.078] parts 7 bands 6 units 42 better-bands 4/6"
+  },
+  "2 3-C'shrink0.5 vs S": {
+   "mean": -0.11038251271173842,
+   "lo90": -0.24291943957630696,
+   "hi90": 0.022154414152830135,
+   "bands": 6,
+   "parts": 7,
+   "units": 42,
+   "bands_better": 4,
+   "txt": "-0.110 [-0.243, +0.022] parts 7 bands 6 units 42 better-bands 4/6"
+  },
+  "2 3-C'shrink0.5 vs A": {
+   "mean": 0.0035480752780157002,
+   "lo90": -0.09096059130490555,
+   "hi90": 0.09805674186093696,
+   "bands": 6,
+   "parts": 7,
+   "units": 42,
+   "bands_better": 3,
+   "txt": "+0.004 [-0.091, +0.098] parts 7 bands 6 units 42 better-bands 3/6"
+  },
+  "2 K_S vs A": {
+   "mean": -0.19132764041441044,
+   "lo90": -0.30685241462691837,
+   "hi90": -0.07580286620190252,
+   "bands": 6,
+   "parts": 7,
+   "units": 42,
+   "bands_better": 5,
+   "txt": "-0.191 [-0.307, -0.076] parts 7 bands 6 units 42 better-bands 5/6"
+  },
+  "3 B0 vs S": {
+   "mean": -0.005191685613045403,
+   "lo90": -0.14101718355166581,
+   "hi90": 0.13063381232557503,
+   "bands": 6,
+   "parts": 7,
+   "units": 42,
+   "bands_better": 3,
+   "txt": "-0.005 [-0.141, +0.131] parts 7 bands 6 units 42 better-bands 3/6"
+  },
+  "3 B1 vs S": {
+   "mean": 0.0025611351920439944,
+   "lo90": -0.16194847632581927,
+   "hi90": 0.16707074670990724,
+   "bands": 6,
+   "parts": 7,
+   "units": 42,
+   "bands_better": 3,
+   "txt": "+0.003 [-0.162, +0.167] parts 7 bands 6 units 42 better-bands 3/6"
+  },
+  "3 B2 vs S": {
+   "mean": -0.04707899317144617,
+   "lo90": -0.19262484331894938,
+   "hi90": 0.09846685697605703,
+   "bands": 6,
+   "parts": 7,
+   "units": 42,
+   "bands_better": 3,
+   "txt": "-0.047 [-0.193, +0.098] parts 7 bands 6 units 42 better-bands 3/6"
+  },
+  "3 B1 vs B0": {
+   "mean": 0.007752820805089396,
+   "lo90": -0.0506611374559751,
+   "hi90": 0.0661667790661539,
+   "bands": 6,
+   "parts": 7,
+   "units": 42,
+   "bands_better": 3,
+   "txt": "+0.008 [-0.051, +0.066] parts 7 bands 6 units 42 better-bands 3/6"
+  },
+  "3 B2 vs B0": {
+   "mean": -0.04188730755840076,
+   "lo90": -0.10231081730837799,
+   "hi90": 0.018536202191576458,
+   "bands": 6,
+   "parts": 7,
+   "units": 42,
+   "bands_better": 4,
+   "txt": "-0.042 [-0.102, +0.019] parts 7 bands 6 units 42 better-bands 4/6"
+  }
+ },
+ "x Cambridge weak DI": {
+  "1 K_S vs S": {
+   "mean": -0.23722682248820845,
+   "lo90": -0.3387509719446619,
+   "hi90": -0.13570267303175498,
+   "bands": 5,
+   "parts": 6,
+   "units": 36,
+   "bands_better": 5,
+   "txt": "-0.237 [-0.339, -0.136] parts 6 bands 5 units 36 better-bands 5/5"
+  },
+  "2 A vs S": {
+   "mean": -0.06268860757607636,
+   "lo90": -0.1911550825221244,
+   "hi90": 0.06577786736997168,
+   "bands": 5,
+   "parts": 6,
+   "units": 36,
+   "bands_better": 4,
+   "txt": "-0.063 [-0.191, +0.066] parts 6 bands 5 units 36 better-bands 4/5"
+  },
+  "2 3-C'shrink0.5 vs S": {
+   "mean": -0.08294705938229593,
+   "lo90": -0.1347204742748082,
+   "hi90": -0.03117364448978365,
+   "bands": 5,
+   "parts": 6,
+   "units": 36,
+   "bands_better": 5,
+   "txt": "-0.083 [-0.135, -0.031] parts 6 bands 5 units 36 better-bands 5/5"
+  },
+  "2 3-C'shrink0.5 vs A": {
+   "mean": -0.02025845180621958,
+   "lo90": -0.12537500332362675,
+   "hi90": 0.08485809971118757,
+   "bands": 5,
+   "parts": 6,
+   "units": 36,
+   "bands_better": 1,
+   "txt": "-0.020 [-0.125, +0.085] parts 6 bands 5 units 36 better-bands 1/5"
+  },
+  "2 K_S vs A": {
+   "mean": -0.17453821491213212,
+   "lo90": -0.2472233566815772,
+   "hi90": -0.10185307314268705,
+   "bands": 5,
+   "parts": 6,
+   "units": 36,
+   "bands_better": 5,
+   "txt": "-0.175 [-0.247, -0.102] parts 6 bands 5 units 36 better-bands 5/5"
+  },
+  "3 B0 vs S": {
+   "mean": 0.10297419221029258,
+   "lo90": -0.06750845328801333,
+   "hi90": 0.2734568377085985,
+   "bands": 5,
+   "parts": 6,
+   "units": 36,
+   "bands_better": 1,
+   "txt": "+0.103 [-0.068, +0.273] parts 6 bands 5 units 36 better-bands 1/5"
+  },
+  "3 B1 vs S": {
+   "mean": 0.03417889078066813,
+   "lo90": -0.1334694161070423,
+   "hi90": 0.20182719766837856,
+   "bands": 5,
+   "parts": 6,
+   "units": 36,
+   "bands_better": 3,
+   "txt": "+0.034 [-0.133, +0.202] parts 6 bands 5 units 36 better-bands 3/5"
+  },
+  "3 B2 vs S": {
+   "mean": 0.010136827330159592,
+   "lo90": -0.12019924014490772,
+   "hi90": 0.1404728948052269,
+   "bands": 5,
+   "parts": 6,
+   "units": 36,
+   "bands_better": 3,
+   "txt": "+0.010 [-0.120, +0.140] parts 6 bands 5 units 36 better-bands 3/5"
+  },
+  "3 B1 vs B0": {
+   "mean": -0.06879530142962445,
+   "lo90": -0.18468912716244204,
+   "hi90": 0.04709852430319314,
+   "bands": 5,
+   "parts": 6,
+   "units": 36,
+   "bands_better": 3,
+   "txt": "-0.069 [-0.185, +0.047] parts 6 bands 5 units 36 better-bands 3/5"
+  },
+  "3 B2 vs B0": {
+   "mean": -0.09283736488013299,
+   "lo90": -0.20693811962182668,
+   "hi90": 0.02126338986156069,
+   "bands": 5,
+   "parts": 6,
+   "units": 36,
+   "bands_better": 4,
+   "txt": "-0.093 [-0.207, +0.021] parts 6 bands 5 units 36 better-bands 4/5"
+  }
+ },
+ "x all, no mod/high, no weak DI": {
+  "1 K_S vs S": {
+   "mean": -0.314761984125215,
+   "lo90": -0.44739513943426523,
+   "hi90": -0.18212882881616477,
+   "bands": 7,
+   "parts": 9,
+   "units": 51,
+   "bands_better": 7,
+   "txt": "-0.315 [-0.447, -0.182] parts 9 bands 7 units 51 better-bands 7/7"
+  },
+  "2 A vs S": {
+   "mean": -0.12759359152721958,
+   "lo90": -0.28658308141082345,
+   "hi90": 0.031395898356384316,
+   "bands": 7,
+   "parts": 9,
+   "units": 51,
+   "bands_better": 5,
+   "txt": "-0.128 [-0.287, +0.031] parts 9 bands 7 units 51 better-bands 5/7"
+  },
+  "2 3-C'shrink0.5 vs S": {
+   "mean": -0.10872922635749047,
+   "lo90": -0.21679607548581753,
+   "hi90": -0.0006623772291633884,
+   "bands": 7,
+   "parts": 9,
+   "units": 51,
+   "bands_better": 5,
+   "txt": "-0.109 [-0.217, -0.001] parts 9 bands 7 units 51 better-bands 5/7"
+  },
+  "2 3-C'shrink0.5 vs A": {
+   "mean": 0.018864365169729114,
+   "lo90": -0.06371131100278991,
+   "hi90": 0.10144004134224814,
+   "bands": 7,
+   "parts": 9,
+   "units": 51,
+   "bands_better": 3,
+   "txt": "+0.019 [-0.064, +0.101] parts 9 bands 7 units 51 better-bands 3/7"
+  },
+  "2 K_S vs A": {
+   "mean": -0.18716839259799542,
+   "lo90": -0.28166863212546045,
+   "hi90": -0.09266815307053038,
+   "bands": 7,
+   "parts": 9,
+   "units": 51,
+   "bands_better": 6,
+   "txt": "-0.187 [-0.282, -0.093] parts 9 bands 7 units 51 better-bands 6/7"
+  },
+  "3 B0 vs S": {
+   "mean": 0.0009583377705938492,
+   "lo90": -0.11038416869248957,
+   "hi90": 0.11230084423367728,
+   "bands": 7,
+   "parts": 9,
+   "units": 51,
+   "bands_better": 3,
+   "txt": "+0.001 [-0.110, +0.112] parts 9 bands 7 units 51 better-bands 3/7"
+  },
+  "3 B1 vs S": {
+   "mean": -0.006869596514359655,
+   "lo90": -0.1421933530932232,
+   "hi90": 0.12845416006450391,
+   "bands": 7,
+   "parts": 9,
+   "units": 51,
+   "bands_better": 4,
+   "txt": "-0.007 [-0.142, +0.128] parts 9 bands 7 units 51 better-bands 4/7"
+  },
+  "3 B2 vs S": {
+   "mean": -0.059776049475931015,
+   "lo90": -0.18093628191805855,
+   "hi90": 0.06138418296619651,
+   "bands": 7,
+   "parts": 9,
+   "units": 51,
+   "bands_better": 4,
+   "txt": "-0.060 [-0.181, +0.061] parts 9 bands 7 units 51 better-bands 4/7"
+  },
+  "3 B1 vs B0": {
+   "mean": -0.007827934284953502,
+   "lo90": -0.06424755892943178,
+   "hi90": 0.04859169035952478,
+   "bands": 7,
+   "parts": 9,
+   "units": 51,
+   "bands_better": 4,
+   "txt": "-0.008 [-0.064, +0.049] parts 9 bands 7 units 51 better-bands 4/7"
+  },
+  "3 B2 vs B0": {
+   "mean": -0.060734387246524864,
+   "lo90": -0.12210552795701107,
+   "hi90": 0.0006367534639613454,
+   "bands": 7,
+   "parts": 9,
+   "units": 51,
+   "bands_better": 5,
+   "txt": "-0.061 [-0.122, +0.001] parts 9 bands 7 units 51 better-bands 5/7"
+  }
+ }
+}

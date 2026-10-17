@@ -318,8 +318,8 @@ def test_half_set_keeps_the_point_label_without_a_scale():
 def test_repeat_check_drops_silent_halves_and_fails_only_on_finite_misses():
     ok = RL.repeat_check([(1, {"A": 1e-7, "B": INF}), (2, {"A": 5e-4, "B": 0.0})])
     assert ok["ok"] and ok["silent_halves"] == [(1, "B")] and ok["checked_halves"] == 3
-    bad = RL.repeat_check([(1, {"A": 2e-3, "B": 0.0})])
-    assert not bad["ok"] and bad["failures"] == [(1, "A", 2e-3)]
+    bad = RL.repeat_check([(1, {"A": 6e-3, "B": 0.0})])              # amendment 4: tol 0.005
+    assert not bad["ok"] and bad["failures"] == [(1, "A", 6e-3)]
     assert not RL.repeat_check([(1, {"A": INF, "B": INF})])["ok"]          # nothing checked
 
 

@@ -1,0 +1,15 @@
+C' fidelity +0.7764 [+0.6439, +0.9088] (bands 3, parts 5, dirs 30) part-CI (0.778, np.float64(0.672), np.float64(0.885))
+1z fidelity +0.7951 [+0.6742, +0.9161] (bands 3, parts 5, dirs 30) part-CI (0.801, np.float64(0.712), np.float64(0.891))
+1a fidelity +0.7545 [+0.6667, +0.8423] (bands 3, parts 5, dirs 30) part-CI (0.769, np.float64(0.681), np.float64(0.857))
+1b fidelity +0.7858 [+0.7053, +0.8664] (bands 3, parts 5, dirs 30) part-CI (0.798, np.float64(0.719), np.float64(0.878))
+E4 fidelity +0.7923 [+0.7057, +0.8788] (bands 3, parts 5, dirs 30) part-CI (0.798, np.float64(0.716), np.float64(0.88))
+1z - C' +0.0188 [-0.0023, +0.0398] (bands 3, parts 5, dirs 30) part-CI (0.023, np.float64(-0.011), np.float64(0.057)) LOBO [0.013, 0.018, 0.026]
+1a - C' -0.0219 [-0.0990, +0.0552] (bands 3, parts 5, dirs 30) part-CI (-0.009, np.float64(-0.081), np.float64(0.063)) LOBO [-0.038, -0.032, 0.004]
+1b - C' +0.0095 [-0.0676, +0.0865] (bands 3, parts 5, dirs 30) part-CI (0.02, np.float64(-0.062), np.float64(0.102)) LOBO [-0.004, -0.003, 0.036]
+E4 - C' +0.0159 [-0.0341, +0.0658] (bands 3, parts 5, dirs 30) part-CI (0.02, np.float64(-0.026), np.float64(0.065)) LOBO [0.011, 0.004, 0.032]
+presets per fidelity: min 31 max 45 menu sizes {'pr12': 35, 'sw50r': 45, 'ac20': 31}
+1z fallbacks 0
+1a fallbacks 0
+1b fallbacks 0
+C' fallbacks 0
+repeat {'telefunken-Fragments': 2e-05, 'cambridge-Prodigal-E': 1e-05, 'telefunken-Bloomligh': 0.0, 'cambridge-just-don-t': 3e-05, 'telefunken-Farthest_': 1e-05}

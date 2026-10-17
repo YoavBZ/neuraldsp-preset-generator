@@ -55,7 +55,7 @@ PROBE_SIGMA = 0.15
 TAU = 0.25
 DS_FLOOR = 0.1
 REPEAT_EVERY = 50                       # 1 in 50 relabel examples: 20 label re-renders
-REPEAT_TOL = 1e-3
+REPEAT_TOL = 0.005                      # amendment 4: the project-wide repeat tolerance
 WEIGHT_CLIP = (0.25, 4.0)
 CAPS = {"new": 2550, "relabel": 9050}
 DISK_GUARD_GB = 31.0
@@ -635,8 +635,10 @@ def step_probe(shard):
 
 
 def _parity_examples(ex, n=3):
-    """Bank examples whose features are deterministic without the separator or AAC."""
-    return [e for e in ex if not e["separated"] and not e["aac"]][:n]
+    """Bank examples whose features are deterministic without the separator or AAC, and without a
+    second guitar: the stored bank features were built while renders were still landing, so a
+    second-guitar draw depended on which renders existed then (found 2026-10-16, amendment 3)."""
+    return [e for e in ex if not e["separated"] and not e["aac"] and not e["second_guitar"]][:n]
 
 
 def step_features():

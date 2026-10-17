@@ -1,0 +1,18 @@
+def gcc_lag(x, ref, below_hz=None, maxlag=2000):
+    """Samples x lags ref (GCC-PHAT, as `diag1.py`), band-limited below `below_hz` if given."""
+    import numpy as np
+
+    n = 1 << int(np.ceil(np.log2(len(x) + len(ref))))
+    X = np.fft.rfft(x, n) * np.conj(np.fft.rfft(ref, n))
+    X /= np.abs(X) + 1e-12
+    if below_hz is not None:
+        X[np.fft.rfftfreq(n, 1 / SR) >= below_hz] = 0
+    c = np.fft.irfft(X, n)
+    c = np.concatenate([c[-maxlag:], c[:maxlag + 1]])
+    return int(np.argmax(np.abs(c)) - maxlag)
+
+cambridge-Prodigal-Ele C'vsStem -55 1z 0 0.996 1a 0 0.994 1b 0 0.995
+cambridge-just-don-t-t C'vsStem -53 1z 0 0.994 1a 0 0.989 1b 0 0.992
+telefunken-Bloomlight- C'vsStem 0 1z 0 0.995 1a 0 0.99 1b 0 0.99
+telefunken-Farthest_St C'vsStem 0 1z 0 0.986 1a 0 0.978 1b 0 0.98
+telefunken-Fragments-G C'vsStem 0 1z 0 0.99 1a 0 0.986 1b 0 0.987

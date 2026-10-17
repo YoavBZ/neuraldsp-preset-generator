@@ -1,0 +1,42 @@
+3-C'             - A           -0.0073 [-0.0309, +0.0164] (bands 14, parts 24, dirs 142)  part -0.001 [-0.016,+0.015]  bands -/+ 7/7  LOBO [-0.012,+0.003]
+shrink-0.5       - A           -0.0043 [-0.0390, +0.0304] (bands 14, parts 24, dirs 142)  part -0.009 [-0.033,+0.015]  bands -/+ 6/8  LOBO [-0.015,+0.007]
+shrink-0.75      - A           -0.0097 [-0.0246, +0.0052] (bands 14, parts 24, dirs 142)  part -0.012 [-0.022,-0.001]  bands -/+ 9/5  LOBO [-0.014,-0.005]
+3-C'+shrink-0.5  - S           -0.0834 [-0.1351, -0.0317] (bands 14, parts 24, dirs 142)  part -0.055 [-0.091,-0.020]  bands -/+ 12/2  LOBO [-0.092,-0.065]
+3-C'+shrink-0.5  - 3-C'        +0.0015 [-0.0352, +0.0382] (bands 14, parts 24, dirs 142)  part -0.004 [-0.028,+0.020]  bands -/+ 5/9  LOBO [-0.007,+0.015]
+3-C'+shrink-0.5  - A           -0.0057 [-0.0507, +0.0392] (bands 14, parts 24, dirs 142)  part -0.004 [-0.035,+0.026]  bands -/+ 6/8  LOBO [-0.020,+0.010]
+3-C'+shrink-0.5  - shrink-0.5  -0.0014 [-0.0139, +0.0111] (bands 14, parts 24, dirs 142)  part +0.004 [-0.005,+0.014]  bands -/+ 5/9  LOBO [-0.005,+0.003]
+3-C'             - S           -0.0849 [-0.1641, -0.0058] (bands 14, parts 24, dirs 142)  part -0.051 [-0.105,+0.002]  bands -/+ 9/5  LOBO [-0.103,-0.057]
+A                - S           -0.0777 [-0.1570, +0.0016] (bands 14, parts 24, dirs 142)  part -0.051 [-0.106,+0.005]  bands -/+ 11/3  LOBO [-0.095,-0.045]
+shrink-0.5       - S           -0.0820 [-0.1359, -0.0281] (bands 14, parts 24, dirs 142)  part -0.059 [-0.096,-0.023]  bands -/+ 12/2  LOBO [-0.090,-0.060]
+shrink-0.75      - S           -0.0874 [-0.1573, -0.0174] (bands 14, parts 24, dirs 142)  part -0.062 [-0.111,-0.014]  bands -/+ 11/3  LOBO [-0.102,-0.058]
+
+== per direction (search half) vs S
+C-blend          search A/held B -0.015 [-0.044,+0.014]   search B/held A -0.007 [-0.035,+0.020]
+B-blend          search A/held B -0.009 [-0.034,+0.017]   search B/held A -0.016 [-0.053,+0.022]
+menu_pick        search A/held B -0.011 [-0.073,+0.051]   search B/held A -0.021 [-0.071,+0.030]
+3-C'             search A/held B -0.067 [-0.144,+0.011]   search B/held A -0.103 [-0.190,-0.017]
+A                search A/held B -0.055 [-0.140,+0.030]   search B/held A -0.100 [-0.186,-0.015]
+S-mics           search A/held B -0.019 [-0.102,+0.064]   search B/held A -0.060 [-0.141,+0.020]
+shrink-0.5       search A/held B -0.064 [-0.111,-0.016]   search B/held A -0.101 [-0.164,-0.038]
+shrink-0.25      search A/held B -0.046 [-0.078,-0.014]   search B/held A -0.061 [-0.102,-0.020]
+shrink-0.75      search A/held B -0.062 [-0.131,+0.008]   search B/held A -0.113 [-0.192,-0.035]
+3-C'+shrink-0.5  search A/held B -0.069 [-0.117,-0.021]   search B/held A -0.098 [-0.156,-0.040]
+
+== cross-fitted choice: pick the best mean on one direction, score it on the other
+chosen on search-A: 3-C'+shrink-0.5 (-0.069); on search-B: -0.098 [-0.156,-0.040]
+chosen on search-B: shrink-0.75 (-0.113); on search-A: -0.062 [-0.131,+0.008]
+
+== leave-one-band-out choice: best on 13 bands, scored on the 14th
+picks {"3-C'": 2, 'shrink-0.75': 11, "3-C'+shrink-0.5": 1}
+held-out band mean of the chosen -0.072 [-0.133,-0.010]
+  (fixed A: -0.078)
+  (fixed 3-C': -0.085)
+  (fixed shrink-0.5: -0.082)
+  (fixed 3-C'+shrink-0.5: -0.083)
+
+== band bootstrap: how often each candidate has the lowest band-weighted mean (2000 draws)
+{"3-C'+shrink-0.5": 0.335, 'shrink-0.75': 0.287, "3-C'": 0.266, 'A': 0.084, 'shrink-0.5': 0.025, 'C-blend': 0.003, 'menu_pick': 0.001}
+
+== refused directions scored as the worst (the 2 dropped: A, S-mics, 3-C' silent at volume 0)
+refused = log 2 {'A': '-0.075 [-0.155,+0.005]', "3-C'": '-0.083 [-0.163,-0.004]', 'shrink-0.5': '-0.082 [-0.136,-0.028]', "3-C'+shrink-0.5": '-0.083 [-0.135,-0.032]', 'shrink-0.75': '-0.087 [-0.157,-0.017]', 'S-mics': '-0.037 [-0.114,+0.039]'}
+refused = that candidate's worst observed {'A': '-0.076 [-0.156,+0.004]', "3-C'": '-0.084 [-0.163,-0.005]', 'shrink-0.5': '-0.082 [-0.136,-0.028]', "3-C'+shrink-0.5": '-0.083 [-0.135,-0.032]', 'shrink-0.75': '-0.087 [-0.157,-0.017]', 'S-mics': '-0.038 [-0.114,+0.038]'}

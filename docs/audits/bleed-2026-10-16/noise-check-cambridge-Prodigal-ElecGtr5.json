@@ -1,0 +1,128 @@
+{
+ "di": {
+  "peak_dbfs": -15.79,
+  "rms_dbfs": -32.0,
+  "crest_db": 16.2,
+  "frac_at_peak": 2.0833333333333334e-06,
+  "flat_top_runs_ge3": 0,
+  "quiet_frame_db_p5": -52.6,
+  "active_frame_db_p90": -27.8,
+  "quiet_to_active_db": -24.8,
+  "mains_peak_over_neighbours_db": {
+   "50": 3.2,
+   "60": 4.8,
+   "100": 7.7,
+   "120": -1.4,
+   "150": 6.0,
+   "180": 1.4
+  }
+ },
+ "amp_track": {
+  "peak_dbfs": -17.32,
+  "rms_dbfs": -29.7,
+  "crest_db": 12.4,
+  "frac_at_peak": 2.0833333333333334e-06,
+  "flat_top_runs_ge3": 0,
+  "quiet_frame_db_p5": -36.5,
+  "active_frame_db_p90": -27.3,
+  "quiet_to_active_db": -9.2,
+  "mains_peak_over_neighbours_db": {
+   "50": 4.1,
+   "60": 7.2,
+   "100": 6.7,
+   "120": 2.7,
+   "150": 10.2,
+   "180": 3.2
+  }
+ },
+ "measure_di": {
+  "peak_dbfs": -3.87,
+  "rms_dbfs": -22.6,
+  "crest_db": 18.7,
+  "frac_at_peak": 2.0833333333333334e-06,
+  "flat_top_runs_ge3": 0,
+  "quiet_frame_db_p5": -33.6,
+  "active_frame_db_p90": -18.8,
+  "quiet_to_active_db": -14.9,
+  "mains_peak_over_neighbours_db": {
+   "50": 2.7,
+   "60": 7.2,
+   "100": 5.1,
+   "120": -3.8,
+   "150": 15.1,
+   "180": 4.7
+  }
+ },
+ "di_A": {
+  "peak_dbfs": -15.95,
+  "rms_dbfs": -32.6,
+  "crest_db": 16.7,
+  "frac_at_peak": 4.6296296296296296e-06,
+  "flat_top_runs_ge3": 0,
+  "quiet_frame_db_p5": -52.2,
+  "active_frame_db_p90": -28.1,
+  "quiet_to_active_db": -24.1,
+  "mains_peak_over_neighbours_db": {
+   "50": 1.5,
+   "60": -1.7,
+   "100": 2.6,
+   "120": -0.3,
+   "150": 0.8,
+   "180": -3.4
+  }
+ },
+ "di_B": {
+  "peak_dbfs": -15.79,
+  "rms_dbfs": -31.3,
+  "crest_db": 15.5,
+  "frac_at_peak": 4.6296296296296296e-06,
+  "flat_top_runs_ge3": 0,
+  "quiet_frame_db_p5": -56.0,
+  "active_frame_db_p90": -27.1,
+  "quiet_to_active_db": -28.9,
+  "mains_peak_over_neighbours_db": {
+   "50": 5.1,
+   "60": 10.7,
+   "100": 1.4,
+   "120": 6.8,
+   "150": 1.6,
+   "180": 5.9
+  }
+ },
+ "pr12_S_render": {
+  "peak_dbfs": -3.07,
+  "rms_dbfs": -12.9,
+  "crest_db": 9.8,
+  "frac_at_peak": 2.0833333333333334e-06,
+  "flat_top_runs_ge3": 0,
+  "quiet_frame_db_p5": -14.3,
+  "active_frame_db_p90": -11.9,
+  "quiet_to_active_db": -2.4,
+  "mains_peak_over_neighbours_db": {
+   "50": -2.0,
+   "60": 4.3,
+   "100": 6.5,
+   "120": 3.4,
+   "150": 8.6,
+   "180": 5.8
+  }
+ },
+ "pr12_last_armA_render": {
+  "peak_dbfs": -50.14,
+  "rms_dbfs": -60.8,
+  "crest_db": 10.6,
+  "frac_at_peak": 4.166666666666667e-06,
+  "flat_top_runs_ge3": 0,
+  "quiet_frame_db_p5": -64.2,
+  "active_frame_db_p90": -59.5,
+  "quiet_to_active_db": -4.7,
+  "mains_peak_over_neighbours_db": {
+   "50": -0.0,
+   "60": 0.2,
+   "100": 1.7,
+   "120": 9.7,
+   "150": 9.8,
+   "180": 5.8
+  }
+ }
+}
