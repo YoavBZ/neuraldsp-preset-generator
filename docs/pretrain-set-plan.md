@@ -352,16 +352,17 @@ train 520, val 96 (the same 9 bands), reserve 102.
 
 ## Amendment 2 (2026-10-18): a bounded render server, primed re-checks and a masked first second, before the curve
 
-Declared while the 40k pilot's renders run (about 8,700 of 14,334 per shard at 17:40), before its
-curve step. It changes no example already rendered, and no render recipe.
+Declared after the 40k pilot's disk guard stopped shard 1 at 8,800 of 14,333 renders (the other
+shards near the same count), before the curve step. It changes no example already rendered, and no
+render recipe.
 
 **Why.** Each render server holds every decoded DI in memory (`excitationCache` in
 `scripts/au_render_server.swift`). Part C renders a new section on almost every render, so each
 server grew by about 1.7 MB per render at first: 3.1 GB of RSS after about 1,860 renders. The
 growth saturates because the pool has about 600 distinct sections (5.1 GB per server at about
-8,700 renders), but a job over more distinct DIs would not stop there. Part C is left to run on
-its old code: no shard is stopped or signalled. If it stops on its disk guard (exit 4), its tail
-resumes from `rows/shard-i.jsonl` on the bounded server (item 3).
+8,700 renders), but a job over more distinct DIs would not stop there. Part C ran on its old
+code and no shard was stopped or signalled. After its disk guard (exit 4), the tail resumes from
+`rows/shard-i.jsonl` on the bounded server (item 3).
 
 0. **A learn-only bounded server.** `learn/au_render_server_bounded.swift` is the shipped server
    plus a least-recently-used bound of 4 decoded DIs (the same bound as the DI files on disk,
@@ -391,10 +392,25 @@ resumes from `rows/shard-i.jsonl` on the bounded server (item 3).
    quiet-start section. **No per-example priming render is added:** that would change the
    rendering method part-way through the pilot.
 3. **If the tail resumes, rows from before and after the switch come from bit-identical
-   renders.** Checked before any row is rendered on the bounded server: two 11-render sequences (8 distinct sections with random amps, then the first two again after eviction, then an immediate repeat), each through the shipped server, the bounded server and the shipped server again (a control), every one a fresh process under the 3-render cap; exact array equality; and server RSS over 50 distinct sections on both. VERIFY_RESULT The tail does not resume until this check shows exact equality. This is equivalence of the two servers, not of a resumed run with an
-   uninterrupted one: a resume restarts each shard's process, so its first render carries the
-   process-start transient, which only item 2's mask covers (as for any resume). `recipe.json`
-   records no renderer build, so a resumed shard passes its check unchanged.
+   renders.** Checked on 2026-10-18 before any row was rendered on the bounded server (scratch
+   check, 290 renders under the 3-render cap):
+   - **Bit identity.** Two 11-render sequences, each 8 distinct sections with their own example's
+     amp and settings (both sequences change amp), then the first two again after the bounded
+     cache had evicted them, then an immediate repeat. Each sequence ran through the shipped
+     server, the bounded server and the shipped server again (a control), every one a fresh
+     process through `knob_ceiling`'s renderer (so its DI files were deleted and rewritten too).
+     All 22 bounded renders equal the shipped ones exactly (max |Δ| 0), as do all 22 controls.
+   - **Memory.** Over 50 distinct sections the shipped server grew from 105 to 253 MB (3.0 MB
+     per render over the last 30) and the bounded one from 105 to 172 MB (1.15 MB per render).
+     The rest is growth per render, not per DI, in both servers: rendering one section 40 times
+     grows the bounded server by 1.09 MB per render, and cycling 6 sections grows the shipped
+     server (all cache hits) by 1.09 MB per render. This amendment does not change it. On part C
+     it is smaller than that late in a run (each server held 5.1 GB at about 8,700 renders).
+
+   This is equivalence of the two servers, not of a resumed run with an uninterrupted one: a
+   resume restarts each shard's process, so its first render carries the process-start
+   transient, which only item 2's mask covers (as for any resume). `recipe.json` records no
+   renderer build, so a resumed shard passes its check unchanged.
 4. **Item 2 reaches the curve only through the code the curve runs.** The runner
    (`learn/selfrender_run.zsh`) runs each step from its own checkout. If part C finishes on that
    checkout's old code, the curve step must run from a checkout that has this amendment; a curve
