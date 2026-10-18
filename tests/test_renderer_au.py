@@ -707,3 +707,53 @@ def np_ones():
         "numpy", reason="render-decision tests need the optional analysis extra")
 
     return np.ones((512, 2), dtype=np.float32)
+
+
+# --- workdirs left by killed processes ---------------------------------------
+
+
+def test_a_workdir_whose_owner_died_is_swept_and_no_other(tmp_path):
+    import os
+    import subprocess
+    import sys
+
+    from match import renderer_au as R
+
+    dead = subprocess.Popen([sys.executable, "-c", "pass"])
+    dead.wait()
+    dirs = {}
+    for name, owner in [("dead", str(dead.pid)), ("mine", str(os.getpid())),
+                        ("parent", str(os.getppid())), ("garbled", "not a pid"),
+                        ("unowned", None)]:
+        path = tmp_path / f"{R.WORKDIR_PREFIX}{name}"
+        path.mkdir()
+        (path / "di-0.wav").write_bytes(b"x")
+        if owner is not None:
+            (path / R.OWNER_FILE).write_text(owner)
+        dirs[name] = path
+    other = tmp_path / "unrelated"
+    other.mkdir()
+    (other / R.OWNER_FILE).write_text(str(dead.pid))
+
+    assert R.sweep_orphaned_workdirs(tmp_path) == [dirs["dead"]]
+    assert not dirs["dead"].exists()
+    assert all(dirs[n].exists() for n in ("mine", "parent", "garbled", "unowned"))
+    assert other.exists()
+
+
+def test_a_renderers_own_workdir_names_its_owner_and_close_removes_it(tmp_path, monkeypatch):
+    import os
+    import tempfile
+
+    from match import renderer_au as R
+
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    made = renderer()
+    workdir = made._workdir
+    assert workdir.parent == tmp_path
+    assert (workdir / R.OWNER_FILE).read_text() == str(os.getpid())
+    made.close()
+    assert not workdir.exists()
+    given = renderer(workdir=tmp_path / "given")
+    assert not (tmp_path / "given" / R.OWNER_FILE).exists()      # never the caller's dir
+    given.close()

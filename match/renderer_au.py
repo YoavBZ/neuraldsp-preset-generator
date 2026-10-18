@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import pathlib
 import selectors
 import shutil
@@ -75,6 +76,44 @@ class AudioUnitError(RenderError):
     back" handles a dead server too, and a distinct type so a caller that wants to
     tell a failed render from a failed *host* can.
     """
+
+
+WORKDIR_PREFIX = "au-render-"
+OWNER_FILE = "owner.pid"
+
+
+def _alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def sweep_orphaned_workdirs(parent: Optional[pathlib.Path] = None) -> list:
+    """Remove render workdirs whose owning process has died, and return them.
+
+    A renderer removes its workdir in close(), but a process that is killed never
+    gets there, and each distinct DI it rendered stays on disk (a long run left
+    0.9 GB behind). Each workdir records its owner's process id; one whose owner is
+    gone is this module's own scratch, safe to remove. A workdir without the record
+    (made before it existed, or by something else) is never touched, and neither is
+    one whose owner still runs.
+    """
+    parent = pathlib.Path(parent or tempfile.gettempdir())
+    removed = []
+    for path in parent.glob(f"{WORKDIR_PREFIX}*"):
+        owner = path / OWNER_FILE
+        try:
+            pid = int(owner.read_text().strip())
+        except (OSError, ValueError):
+            continue
+        if pid != os.getpid() and not _alive(pid):
+            shutil.rmtree(path, ignore_errors=True)
+            removed.append(path)
+    return removed
 
 
 class AudioUnitRenderer(Renderer):
@@ -159,8 +198,12 @@ class AudioUnitRenderer(Renderer):
         self.reply_timeout_s = float(reply_timeout_s)
         self._binary = pathlib.Path(binary) if binary else None
         self._owns_workdir = workdir is None
+        if self._owns_workdir:
+            sweep_orphaned_workdirs()
         self._workdir = pathlib.Path(workdir) if workdir else pathlib.Path(
-            tempfile.mkdtemp(prefix="au-render-"))
+            tempfile.mkdtemp(prefix=WORKDIR_PREFIX))
+        if self._owns_workdir:
+            (self._workdir / OWNER_FILE).write_text(str(os.getpid()))
         self._process: Optional[subprocess.Popen] = None
         self._log = None
         self._plugin_version: Optional[str] = None
