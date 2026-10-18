@@ -304,8 +304,8 @@ oracle):**
   ⅓-octave edges around 2 and 8 kHz, and the frames and bins outside the doses' mask all changed
   together between `dose100` and `full100`.
 - **About a quarter stays** even with full-band true magnitude (truth − `full100` +0.041 [+0.021,
-  +0.061]; part-weighted, its interval includes 0), so some
-  of the gap is in what C′'s phase, or the resynthesis, can't carry.
+  +0.061]; part-weighted, its interval includes 0), so some of the gap is in what C′'s phase, or
+  the resynthesis, can't carry.
 - **Not shown:** that a network can learn this field from C′'s output alone. The oracle gives the
   ceiling, not the reach.
 

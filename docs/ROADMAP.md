@@ -200,7 +200,10 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    - **The rebuild gap** ([results](rebuild-gap-results.md), with a perfect stem, development):
      - **Magnitude, not phase:** the true short-time magnitude recovers the whole gap (+0.313),
        the true phase nothing (−0.031). The treble above 2 kHz carries most of it (+0.241, about
-       0.8 of the gap). A constant phase rotation costs about 4%; rotation fixes are
+       0.8 of the gap); qualified by the [dose probe](dose-probe-results.md): `high` also restored
+       phase, the band above 8 kHz and much of the long-term balance; on top of the leak-free EQ the
+       2–8 kHz short-time magnitude on E_st's mask gives about a quarter of the remainder, the full
+       band about three quarters. A constant phase rotation costs about 4%; rotation fixes are
        deprioritised.
      - **The costly error is structured**, at time scales between 21-ms frames and the long-term
        spectrum. A fixed long-term EQ (`dep_eq`) leans better, +0.133 [−0.009, +0.276], about
@@ -222,7 +225,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
        network learned to lower is not the one that costs ranking. "Too little of the right
        error" stays open but weakly supported: `stm` cut it by 8%, while the stage-R probes that
        recovered most of the gap cut it by 39–98% (with much of the long-term balance), but their gains
-       are not ordered by the cut. No probe yet isolates the short-time component.
+       are not ordered by the cut. No probe yet isolates the short-time component (the dose probe
+       since did; below).
    - **Next, in order** (proposed 2026-10-18; plan and review first):
      1. **A short-time oracle dose probe** (renders only, about 1.2k per dose): on top of the
         leak-free EQ, restore 25/50/100% of the true offset-removed short-time magnitude, keeping
@@ -748,4 +752,4 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-18 | The short-time treble loss (`stm`) lowered its error (−0.63 dB on the amp tracks) with no measurable ranking gain (+0.012 [−0.023, +0.047]); the long-term levers (leak-free EQ +0.132, `rank` second seed +0.099) lean positive, undecided; next an oracle dose probe of the short-time component before a per-bin log-gain head | [rebuild tone](rebuild-tone-results.md) |
 | 2026-10-18 | Self-rendered sets declared and reviewed: B1, four known-answer songs (about 17.4k renders), then part C, a pre-training render set sized by a learning curve (40k pilot, one extension if it still improves); queued to run after the overnight runs, part C after the hum-screen amendment | [B1 plan](known-answer-b1-plan.md), [part C plan](pretrain-set-plan.md) |
 | 2026-10-18 | Known-answer pilot B1: the exact-record pipeline works; arm A against S +0.001 [−0.523, +0.524] over 3 bands, undecided (Heather Jane +0.36, the other three −0.17 to −0.20); B2 proposed at the pool's cap, up to 4 fresh DI-only songs (about 14k renders) | [B1 results](known-answer-b1-results.md) |
-| 2026-10-18 | Oracle dose probe: on top of the leak-free EQ, the full-band true short-time magnitude (C′'s phase, one resynthesis) recovers 0.74 [0.50, 0.86] of the remainder (+0.116 [+0.045, +0.187]); 2–8 kHz on E_st's mask only 0.25 (+0.039), below it; control undecided. Option 2 (per-bin log-gain head) only as a full-band field, ceiling `full100`, with a full-band gate metric instead of E_st | [dose probe](dose-probe-results.md) |
+| 2026-10-18 | Oracle dose probe (hedged): on top of the leak-free EQ, the full-band true short-time magnitude (C′'s phase, one resynthesis) recovers 0.74 [0.50, 0.86] of the remainder (+0.116 [+0.045, +0.187]); 2–8 kHz on E_st's mask only 0.25 (+0.039), below it; control undecided. Option 2 (per-bin log-gain head) only as a full-band field, ceiling `full100`, with a full-band gate metric instead of E_st | [dose probe](dose-probe-results.md) |
