@@ -540,6 +540,7 @@ def cmd_render(shard, probe, stage="r1"):
                     if worst > G.CHECK_TOL:
                         breakage(rec_path, {**rec, "checks_float": checks},
                                  f"{probe} {slug} {amp}: the S FLAC scores {worst:.4f} from its float render")
+            score_path.parent.mkdir(parents=True, exist_ok=True)
             K._atomic(score_path, {"scores": scores, "sigma": meta["hash"], "flac_vs_float_S": rec["S"]["flac_vs_float"]})
             rec.update(renders=prev.get("renders", 0) + rr.count - n1, comparator_renders=n1 - n0,
                        checks_float=checks, status="done")
