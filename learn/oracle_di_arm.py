@@ -162,6 +162,8 @@ def cmd_report():
     rep.update(renders_used=spent(), renders_expected=expected_renders(), cap=CAP,
                time=time.strftime("%Y-%m-%d %H:%M:%S"))
     A._save(OUT / "report.json", rep)
+    if rep["complete"]:
+        print(f"INCOMPLETE ({rep['complete']}): the figures below are partial")
     print(f"{rep['directions']} directions; complete: {rep['complete'] or 'yes'}; renders {rep['renders_used']} "
           f"(expected {rep['renders_expected']})")
     for name, c in rep["contrasts"].items():
