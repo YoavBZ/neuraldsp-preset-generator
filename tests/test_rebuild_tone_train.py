@@ -2,9 +2,9 @@
 declared metric E_st, the selection rule, the seeds and the gate's crops. Needs torch (the
 demucs-venv interpreter); skipped otherwise."""
 
-import numpy as np
 import pytest
 
+np = pytest.importorskip("numpy")
 torch = pytest.importorskip("torch")
 
 from learn import rebuild_tone_train as RT  # noqa: E402
