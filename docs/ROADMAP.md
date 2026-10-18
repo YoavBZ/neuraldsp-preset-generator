@@ -102,8 +102,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      yet shown better than the starting preset on fresh full mixes.
    - **The rebuild is the main measured bottleneck** ([results](rebuild-gap-results.md);
      development, perfect stem). With a perfect stem the loss is a structured short-time magnitude error, mostly above 2 kHz; phase and
-     rotation are minor. A loss aimed at the short-time treble lowered that error but not the
-     ranking; long-term balance fixes lean better, undecided ([results](rebuild-tone-results.md)).
+     rotation are minor. A loss aimed at the short-time treble lowered that error with no
+     measurable ranking gain; long-term balance fixes lean better, undecided ([results](rebuild-tone-results.md)).
    - **Fresh full mixes are now the only yardstick for progress.** The reused development parts
      are for exploration only.
 
@@ -220,8 +220,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
        `dep_eq`. What remains after the EQ is decided: truth − `cprime_eq` +0.157 [+0.083, +0.230].
      - **Reconciled with stage R (post hoc):** the main reading is the plan's: the error this
        network learned to lower is not the one that costs ranking. "Too little of the right
-       error" stays open but weakly supported: `stm` cut it by 8%, the stage-R probes that
-       recovered most of the gap by 39–98% (with much of the long-term balance), but their gains
+       error" stays open but weakly supported: `stm` cut it by 8%, while the stage-R probes that
+       recovered most of the gap cut it by 39–98% (with much of the long-term balance), but their gains
        are not ordered by the cut. No probe yet isolates the short-time component.
    - **Next, in order** (proposed 2026-10-18; plan and review first):
      1. **A short-time oracle dose probe** (renders only, about 1.2k per dose): on top of the
@@ -698,5 +698,5 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-17 | `chords` and `chords-mid` rebuilt from EGFxSet single notes (retuned, denoised above 3 kHz, down-up strum, even chords); Guitar-TECHS strums dropped for clicks and fret buzz | [riff plan](riff-library-plan.md), "Rebuilt" |
 | 2026-10-18 | A screened DI library: 134.7 clean minutes from 237 development DIs after the hum rule's amendment 3 (159 before; the rest check may no longer refute a mains fundamental, which keeps 18 DIs' hum, Guitar-TECHS almost all hum: one P2 section stays clean); hum notch not adopted; two blind listening pages pending; known-answer test songs (part B) declared, B1 about 22k renders after the overnight runs | [clean DI library](clean-di-library-results.md) |
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |
-| 2026-10-18 | The short-time treble loss (`stm`) lowered its error (−0.63 dB on the amp tracks) but not rendered ranking (+0.012 [−0.023, +0.047]); the long-term levers (leak-free EQ +0.132, `rank` second seed +0.099) lean positive, undecided; next an oracle dose probe of the short-time component before a per-bin log-gain head | [rebuild tone](rebuild-tone-results.md) |
+| 2026-10-18 | The short-time treble loss (`stm`) lowered its error (−0.63 dB on the amp tracks) with no measurable ranking gain (+0.012 [−0.023, +0.047]); the long-term levers (leak-free EQ +0.132, `rank` second seed +0.099) lean positive, undecided; next an oracle dose probe of the short-time component before a per-bin log-gain head | [rebuild tone](rebuild-tone-results.md) |
 | 2026-10-18 | Self-rendered sets declared and reviewed: B1, four known-answer songs (about 17.4k renders), then part C, a pre-training render set sized by a learning curve (40k pilot, one extension if it still improves); queued to run after the overnight runs, part C after the hum-screen amendment | [B1 plan](known-answer-b1-plan.md), [part C plan](pretrain-set-plan.md) |

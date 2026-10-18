@@ -20,7 +20,7 @@ CPU lane 0; renders 8280)` at 2026-10-18 10:46.
   - `stm` − `ctl_stm` split corrected (about half from each side band-weighted);
   - the second seed's E_st rise restricted to the gate (on the amp tracks it is not repeated);
   - the part-weighted intervals' lack of band clustering, and the parts carrying them, stated;
-  - `cprime_eq` described as reproducing R's `dep_eq`, not replicating it, with amendment 5's
+  - `cprime_eq` described as reproducing R's `dep_eq`, not replicating it, with amendment 1 item 5's
     caveat in the headline;
   - the controls' lean worded as slightly negative on three runs (two seeds), each interval
     containing 0;

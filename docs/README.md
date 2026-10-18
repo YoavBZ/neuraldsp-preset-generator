@@ -286,8 +286,8 @@ was declared, what was measured, and the research behind it.
   learned long-term EQ (post hoc), and neither reduces the short-time treble error. 18,981 renders.
 - [rebuild-tone-plan.md](rebuild-tone-plan.md) → [results](rebuild-tone-results.md): a C′
   fine-tune with an offset-removed 2–8 kHz short-time magnitude loss (`stm`), a leak-free long-term
-  EQ and a second seed of `rank`. `stm` lowered its target error on every part but not rendered
-  ranking (+0.012 [−0.023, +0.047]; on top of the EQ −0.012); the leak-free EQ (+0.132 [−0.030,
+  EQ and a second seed of `rank`. `stm` lowered its target error on every part, with no measurable gain in
+  rendered ranking (+0.012 [−0.023, +0.047]; on top of the EQ −0.012); the leak-free EQ (+0.132 [−0.030,
   +0.294]) and `rank`'s second seed (+0.099 [−0.036, +0.233]) lean positive, undecided. Next
   proposed: an oracle dose probe of the short-time component. 8,280 renders. Audited.
 - [multi-section-plan.md](multi-section-plan.md) → [results](multi-section-results.md): every
