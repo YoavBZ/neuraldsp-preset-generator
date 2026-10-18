@@ -295,6 +295,11 @@ was declared, what was measured, and the research behind it.
   magnitude (one resynthesis, or Griffin–Lim) and a time-shifted control, with the long-term
   balance held. Does the short-time magnitude carry the remaining half of the gap, and which E_st
   cut matters? Reviewed; 7,152 renders planned.
+- [audits/dose-stop-2026-10-18.md](audits/dose-stop-2026-10-18.md) → [audits/start-transient-2026-10-18.md](audits/start-transient-2026-10-18.md):
+  why the dose probe stopped (a render after a change of plugin state starts louder for about 4 s),
+  then eleven render scripts checked for it. No audited merged decision changes (arm B and
+  DI-recovery scripts not yet audited); part C is exposed but
+  probably harmless. Rule: a discarded priming render after any process start, amp or DI change.
 - [multi-section-plan.md](multi-section-plan.md) → [results](multi-section-results.md): every
   10-s section where the guitar plays, not one crop. Step 1 (zero renders): 507 sections on 38
   development parts, about 13× the audio of one crop each. Step 2 (true DI, 19 parts, 10 bands):
