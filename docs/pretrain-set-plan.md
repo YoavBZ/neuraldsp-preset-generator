@@ -349,3 +349,80 @@ train 520, val 96 (the same 9 bands), reserve 102.
   the clean-stem score is conditioned on the leaky stem's loudness (named in the report).
 - **The runner also waits for PR #214** (the hum amendment) to be merged into main before part C
   starts, as the main session asked; the manifest gate stays, so a later re-version swaps in.
+
+## Amendment 2 (2026-10-18): a bounded render server, primed re-checks and a masked first second, before the curve
+
+Declared after the 40k pilot's disk guard stopped shard 1 at 8,800 of 14,333 renders (the other
+shards near the same count), before the curve step. It changes no example already rendered, and no
+render recipe.
+
+**Why.** Each render server holds every decoded DI in memory (`excitationCache` in
+`scripts/au_render_server.swift`), about 1.85 MB per distinct DI (item 3). Part C's servers held
+3.1 GB of RSS each after about 1,860 renders and 5.1 GB after about 8,700. The DI cache explains
+only about 1.1 GB of that (about 600 distinct sections); most of the rest is a separate growth of
+about 1.1 MB per render that both servers show and this amendment does not change (item 3). Part
+C ran on its old code and no shard was stopped or signalled. After its disk guard (exit 4), the tail resumes from
+`rows/shard-i.jsonl` on the bounded server (item 3).
+
+0. **A learn-only bounded server.** `learn/au_render_server_bounded.swift` is the shipped server
+   plus a least-recently-used bound of 4 decoded DIs (the same bound as the DI files on disk,
+   `knob_ceiling.DI_FILES_KEPT`). `knob_ceiling.Renderer` builds it with `scripts/_swift.py` into a
+   directory it owns and removes, and passes it to `AudioUnitRenderer` as `binary=`. The shipped
+   server and `match/renderer_au.py` are unchanged, so the renderer build that Tone King's
+   measurements record is unchanged. A test keeps the copy identical to the shipped server outside
+   its two marked blocks. Every learn script that renders through `knob_ceiling.Renderer` now runs
+   it.
+1. **`recheck` primes every re-render.** Each of its 30 re-renders is preceded by one discarded
+   render at the same DI and settings (`primed_render`), as the
+   [start-transient audit](audits/start-transient-2026-10-18.md) asks. The same rule holds for any
+   later re-render of part C examples. Priming clears the transient from the re-render only: the
+   stored render was not primed, so its first seconds can still carry the previous example's
+   state. `recheck` therefore also reports max |Δ|, SNR past 4 s of the stored window
+   (`RECHECK_LATE_S`, where the audit's transient is below 0.005) and the share of identical half-B
+   mel cells. Those late figures are the recipe check; the full-window figures include the stored
+   side's transient. The late Δ is not expected to be 0: the stored audio is 16-bit FLAC, and the
+   audit saw 8.7e-4 left 5 s after a same-amp DI change.
+2. **Training masks the first second of half A, for every example.** The mel frames whose window
+   starts in half A's first second (100 of 446 frames, `MASK_A_FRAMES`) are set to 0 in the
+   normalised input (−60 dB), stem and mix alike, in training batches, early stopping and every
+   val readout (true, power-sum and clean-stem). Half B is never masked; stored features are
+   unchanged. This covers the largest part of the start transient after a process start
+   (including this resume), an amp change or a DI change: about one quantisation step on the
+   quietest sections (the audit's cheap remedy). Half A's first second is 1.25–2.25 s of render
+   time; the audit's excess runs to about 4 s, so a residual of roughly +2–4% (under one 0.5-dB
+   step) remains in 2.25–4 s on those sections, unmasked. `curve` records the mask in
+   `curve.json` and refuses to add runs to a file whose runs were trained without it. **Not masked, stated:** the row scalars
+   computed from the whole render or half (the half LUFS conditioning, whole-render LUFS, the gain
+   class and the scope threshold), estimated in the audit to move by 0.1–0.2 dB at worst on a
+   quiet-start section. **No per-example priming render is added:** that would change the
+   rendering method part-way through the pilot.
+3. **If the tail resumes, rows from before and after the switch come from bit-identical
+   renders.** Checked on 2026-10-18 before any row was rendered on the bounded server (scratch
+   check, 290 renders under the 3-render cap):
+   - **Bit identity.** Two 11-render sequences, each 8 distinct sections with their own example's
+     amp and settings (both sequences change amp), then the first two again after the bounded
+     cache had evicted them, then an immediate repeat. Each sequence ran through the shipped
+     server, the bounded server and the shipped server again (a control), every one a fresh
+     process through `knob_ceiling`'s renderer (so its DI files were deleted and rewritten too).
+     All 22 bounded renders equal the shipped ones exactly (max |Δ| 0), as do all 22 controls.
+   - **Memory.** Over 50 distinct sections the shipped server grew from 105 to 253 MB (3.0 MB
+     per render over the last 30) and the bounded one from 105 to 172 MB (1.15 MB per render).
+     The rest is growth per render, not per DI, in both servers: rendering one section 40 times
+     grows the bounded server by 1.09 MB per render, and cycling 6 sections grows the shipped
+     server (all cache hits) by 1.09 MB per render. This amendment does not change it. Averaged
+     over part C's first 8,700 renders, total growth was about 0.6 MB per render including the
+     cache (5.1 GB per server), so the per-render rate falls later in a run.
+   - **The tail's expected cost.** About 5,500 renders per shard on fresh processes: at most about
+     6 GB per server at the early per-render rate, likely about half that. On disk, the DI files
+     are capped at 4 per renderer since #224, so the tail adds about 1–1.5 GB of examples in all;
+     the disk guard (31.0 GB free) stops it again unless free space is well above that when it
+     resumes.
+
+   This is equivalence of the two servers, not of a resumed run with an uninterrupted one: a
+   resume restarts each shard's process, so its first render carries the process-start
+   transient, which only item 2's mask covers (as for any resume). `recipe.json` records no
+   renderer build, so a resumed shard passes its check unchanged.
+4. **Item 2 reaches the curve only through the code the curve runs.** The runner
+   (`learn/selfrender_run.zsh`) runs each step from its own checkout. If part C finishes on that
+   checkout's old code, the curve step must run from a checkout that has this amendment; a curve
+   run without the mask is not part C's declared readout.

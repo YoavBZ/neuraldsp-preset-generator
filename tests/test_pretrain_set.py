@@ -278,3 +278,73 @@ def test_read_rows_cuts_a_torn_last_line(tmp_path):
 def test_quiet_backing_gain_is_capped():
     gb, gl, ga = M.mix_gains_db(-20.0, -70.0, -8.0, 3.0, -12.0)
     assert gb <= 40.0 + 8.0
+
+
+# --- amendment 2: priming re-renders and masking half A's first second ------------------------------
+
+def test_mask_covers_the_frames_that_start_in_half_a_first_second():
+    from learn import song_aug as A
+
+    assert M.MEL_HOP == A.HOP
+    assert M.MASK_A_FRAMES == 100                              # frames starting at 0, 10, ..., 990 ms
+    assert (M.MASK_A_FRAMES - 1) * A.HOP < M.MASK_A_S * M.SR <= M.MASK_A_FRAMES * A.HOP
+
+
+def test_mask_zeroes_only_half_a_rows_and_only_the_first_second():
+    np = pytest.importorskip("numpy")
+    x = np.ones((3, 2, 96, 446), np.float32)
+    M.mask_half_a(x, np.array([True, False, True]))
+    assert not x[[0, 2], :, :, :M.MASK_A_FRAMES].any()
+    assert (x[[0, 2], :, :, M.MASK_A_FRAMES:] == 1).all() and (x[1] == 1).all()
+
+
+def test_training_batches_mask_half_a_on_the_device_tensor():
+    torch = pytest.importorskip("torch")
+    x = torch.ones(4, 2, 96, 446)
+    h = torch.tensor([0, 1, 0, 1])
+    M.mask_half_a(x, h == 0)
+    assert x[[0, 2], ..., :M.MASK_A_FRAMES].abs().sum() == 0
+    assert (x[[1, 3]] == 1).all() and (x[[0, 2], ..., M.MASK_A_FRAMES:] == 1).all()
+
+
+def test_every_val_readout_masks_half_a_and_never_half_b(tmp_path, monkeypatch):
+    np = pytest.importorskip("numpy")
+    from learn import song_model as SM
+
+    q = np.full((96, 446), 200, np.uint8)                   # -12 dB: a non-zero normalised input
+    np.savez(tmp_path / "ex.npz", **{f"{k}{h}": q for k in "gsm" for h in "AB"})
+    np.savez(tmp_path / "bk.npz", **{f"{k}{h}": q for k in "vn" for h in "AB"})
+    monkeypatch.setattr(M, "example_path", lambda i: tmp_path / "ex.npz")
+    monkeypatch.setattr(M, "backing_path", lambda sid: tmp_path / "bk.npz")
+    row = {"i": 1, "section": "s", "amp": SM.AMPS[0], "base": SM.CLASSES[0], "label": {},
+           "mix": {"vocals": False, "mastered": False, "gains_db": [0.0, -6.0, 0.0],
+                   "lufs_sA": -20.0, "lufs_sB": -20.0, "lufs_mA": -18.0, "lufs_mB": -18.0}}
+    for kw in ({}, {"powersum": True}, {"clean_stem": True}):
+        X = M.val_tensors([row], **kw)[0]
+        assert X.shape[0] == 2                                # halves A then B
+        assert not X[0, :, :, :M.MASK_A_FRAMES].any(), kw
+        assert X[0, :, :, M.MASK_A_FRAMES:].all() and X[1].all(), kw
+
+
+def test_curve_refuses_to_mix_masked_and_unmasked_runs():
+    M.check_curve_mask({"runs": {}})
+    M.check_curve_mask({"runs": {"a-1": {}}, "mask_a_frames": M.MASK_A_FRAMES})
+    with pytest.raises(SystemExit):
+        M.check_curve_mask({"runs": {"a-1": {}}})               # pre-amendment runs: unmasked
+    with pytest.raises(SystemExit):
+        M.check_curve_mask({"runs": {}, "mask_a_frames": 7})
+
+
+def test_a_recheck_render_is_primed_at_the_same_di_and_settings():
+    np = pytest.importorskip("numpy")
+    calls = []
+
+    class Fake:
+        def render(self, di, sel, x):
+            calls.append((di, sel, x))
+            return np.full(4, float(len(calls)))
+
+    di, sel, x = np.zeros(8, np.float32), 2, {("m", "k"): "0.5"}
+    y = M.primed_render(Fake(), di, sel, x)
+    assert len(calls) == 2 and all(c[0] is di and c[1] == sel and c[2] is x for c in calls)
+    assert (y == 2.0).all()                                   # the second render is the one kept

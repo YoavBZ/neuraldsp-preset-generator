@@ -250,7 +250,10 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
           arm B and DI-recovery scripts are not yet audited. Part C is
           exposed (no priming render) but probably below one 0.5-dB step on nearly all examples, so
           it keeps rendering; its direct check (60 renders) waits for a 4th process. New rule: one
-          discarded priming render after any process start, amp change or DI change.
+          discarded priming render after any process start, amp change or DI change. Part C's
+          [amendment 2](pretrain-set-plan.md#amendment-2-2026-10-18-a-bounded-render-server-primed-re-checks-and-a-masked-first-second-before-the-curve)
+          primes `recheck`, masks half A's first second in training and val, and moves learn's
+          renders to a bounded-memory copy of the render server (renders unchanged).
      2. **Fresh full mixes are the only yardstick for progress;** reused parts are for exploration.
         The 21 stage-F parts are now used once, so the decision test should use unseen parts
         where it can (item 3).

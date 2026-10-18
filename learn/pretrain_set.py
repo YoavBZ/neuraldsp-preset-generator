@@ -94,6 +94,14 @@ N_VAL = 3_000
 Q_LO_DB = -112.0
 Q_STEP_DB = 0.5
 HALVES = {"A": (1.0, 5.5), "B": (5.5, 10.0)}
+# Amendment 2, item 2: the model never sees half A's first second. Part C has no priming render,
+# and a render's first ~4 s can carry the previous plugin state's transient
+# (docs/audits/start-transient-2026-10-18.md). The mel frames whose window starts in that second
+# are set to 0 in the normalised input (-60 dB), stem and mix alike, in training, early stopping
+# and every val readout. Stored features are unchanged.
+MASK_A_S = 1.0
+MEL_HOP = 480                                 # song_aug.HOP
+MASK_A_FRAMES = -(-int(MASK_A_S * SR) // MEL_HOP)
 STEM_LEAK_DB = (0.0, 6.0)                     # guitar-to-leak of the stand-in stem
 MIX_LUFS_SPREAD = 3.0
 
@@ -344,6 +352,13 @@ def dequant(q):
 
 def half_slices(sr=SR):
     return {h: slice(int(a * sr), int(b * sr)) for h, (a, b) in HALVES.items()}
+
+
+def mask_half_a(x, is_a):
+    """Zero the first MASK_A_FRAMES frames (last axis) of the inputs where `is_a`; `x` is a
+    normalised [N, 2, mels, frames] array or tensor, changed in place and returned."""
+    x[is_a, ..., :MASK_A_FRAMES] = 0
+    return x
 
 
 def halves_mel(y):
@@ -806,8 +821,24 @@ def is_beyond(row, thr):
     return s is not None and row["amp"] in thr and s < thr[row["amp"]]
 
 
+RECHECK_LATE_S = 4.0                          # the start transient is below 0.005 by 3.5-4 s (audit)
+
+
+def primed_render(rr, di, sel, x):
+    """A re-render preceded by one discarded render at the same DI and settings (amendment 2,
+    item 1): the plugin's first render after a process start, amp change or DI change starts
+    louder for about 4 s (docs/audits/start-transient-2026-10-18.md). Priming removes it from the
+    re-render only: the stored render was not primed, so `cmd_recheck` also reports the comparison
+    past RECHECK_LATE_S and on half B."""
+    import numpy as np
+
+    rr.render(di, sel, x)
+    return np.asarray(rr.render(di, sel, x), np.float64)
+
+
 def cmd_recheck(args):
-    """Re-render 30 seeded audit examples and compare with the stored audio."""
+    """Re-render 30 seeded audit examples, each primed (`primed_render`), and compare with the
+    stored audio."""
     import numpy as np
     import soundfile as sf
 
@@ -832,7 +863,7 @@ def cmd_recheck(args):
             sel, x, label, _ = settings_for(rng, amp, mode, base, menu, K.START, K.space, K.fmt)
             assert {f"{m}/{k}": v for (m, k), v in x.items()} == r["settings"], i
             di = B.measure(section_audio(s["path"], s["start_s"])).astype(np.float32)
-            y = np.asarray(rr.render(di, sel, x), np.float64)
+            y = primed_render(rr, di, sel, x)
             y = (y.mean(axis=1) if y.ndim == 2 else y)[int(TRIM_S * SR):int((TRIM_S + SEC_S) * SR)]
             st, _ = sf.read(str(example_path(i).with_suffix(".flac")), dtype="float64")
             st = st / 0.99 * r["peak"]
@@ -840,7 +871,14 @@ def cmd_recheck(args):
             snr = 10 * math.log10(float(np.sum(st ** 2)) / max(float(np.sum(d ** 2)), 1e-30))
             g = np.load(example_path(i))
             same = float(np.mean(np.concatenate([(halves_mel(y)[h] == g[f"g{h}"]).ravel() for h in "AB"])))
-            out.append({"i": i, "max_abs": float(np.max(np.abs(d))), "snr_db": snr, "mel_cells_identical": same})
+            # The stored render was not primed, so its first seconds can carry the previous plugin
+            # state's transient; past RECHECK_LATE_S (and in half B) the comparison is of the recipe.
+            late = slice(int(RECHECK_LATE_S * SR), None)
+            snr_late = 10 * math.log10(float(np.sum(st[late] ** 2)) / max(float(np.sum(d[late] ** 2)), 1e-30))
+            same_b = float(np.mean(halves_mel(y)["B"] == g["gB"]))
+            out.append({"i": i, "max_abs": float(np.max(np.abs(d))), "snr_db": snr, "mel_cells_identical": same,
+                        "max_abs_late": float(np.max(np.abs(d[late]))), "snr_db_late": snr_late,
+                        "mel_cells_identical_b": same_b})
             print(out[-1], flush=True)
     finally:
         rr.close()
@@ -980,7 +1018,7 @@ class CurveData:
         pg, pb = 10 ** (g / 10), 10 ** (b / 10)
         mix = 10 * torch.log10(pg + pb * 10 ** (k[:, 0] / 10)) + k[:, 2]
         stem = 10 * torch.log10(pg + pb * 10 ** (k[:, 1] / 10)) + k[:, 2]
-        x = (torch.stack([stem, mix], 1) + 60.0) / 30.0
+        x = mask_half_a((torch.stack([stem, mix], 1) + 60.0) / 30.0, torch.tensor(h == 0, device=dev))
         c = torch.tensor(np.stack([SM.cond_vec(self.amp[j], self.base[j], [P[n][5], P[n][6]])
                                    for n, j in enumerate(idx)]), device=dev)
         y = [torch.tensor(z[idx], device=dev) for z in self.Y]
@@ -1012,7 +1050,7 @@ def val_tensors(rows, powersum=False, clean_stem=False):
                 st, mx = dequant(d[f"s{h}"]), dequant(d[f"m{h}"])
                 if clean_stem:                    # the guitar alone (stem = guitar × k, no leak), the true mix
                     st = dequant(d[f"g{h}"]) + r["mix"]["gains_db"][2]
-            X.append(SM.norm_feat(np.stack([st, mx])))
+            X.append(mask_half_a(SM.norm_feat(np.stack([st, mx]))[None], [h == "A"])[0])
             C.append(SM.cond_vec(r["amp"], r["base"], [r["mix"][f"lufs_s{h}"], r["mix"][f"lufs_m{h}"]]))
             Y.append(SM.encode(r["label"]))
             who.append(r["i"])
@@ -1142,6 +1180,15 @@ def frozen_threshold(rows):
     return t
 
 
+def check_curve_mask(res):
+    """Refuse to add runs to a curve.json whose runs were trained with another half-A mask (runs from
+    before amendment 2 carry no mask field and count as unmasked)."""
+    have = res.get("mask_a_frames", 0 if res.get("runs") else MASK_A_FRAMES)
+    if have != MASK_A_FRAMES:
+        raise SystemExit(f"curve.json holds runs trained with a half-A mask of {have} frames, not "
+                         f"{MASK_A_FRAMES} (amendment 2); move it aside before running the curve")
+
+
 def cmd_curve(args):
     """Train the half-width model on nested prefixes and read the val bands (one GPU job)."""
     import numpy as np
@@ -1162,6 +1209,8 @@ def cmd_curve(args):
     half = set(tr_secs[:len(tr_secs) // 2])
     dev = torch.device("mps" if torch.backends.mps.is_available() and os.environ.get("CURVE_DEVICE") != "cpu" else "cpu")
     res = _load(OUT / "curve.json") or {"runs": {}}
+    check_curve_mask(res)
+    res["mask_a_frames"] = MASK_A_FRAMES
     res["scope_threshold"] = thr
     for label, n, seed, halfsec in curve_runs(args.n):
         key = f"{label}-{seed}"
