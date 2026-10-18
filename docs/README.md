@@ -310,10 +310,12 @@ was declared, what was measured, and the research behind it.
   near-silence per 10-s section; zero renders; 134.7 clean minutes after amendment 3's hum rule),
   two blind listening checks of the screens, and part
   B, known-answer test songs rendered through chosen presets (declared; renders later).
-- [known-answer-b1-plan.md](known-answer-b1-plan.md): part B's pilot B1, four known-answer songs
-  (Heather Jane, Bourbon, Collide With Me, Still Flyin') rendered through drawn presets and mixed
-  back, arm A's recipe scored against the exact truth (about 17.4k renders; queued after the
-  overnight runs).
+- [known-answer-b1-plan.md](known-answer-b1-plan.md) → [results](known-answer-b1-results.md): part
+  B's pilot B1, four known-answer songs (Heather Jane, Bourbon, Collide With Me, Still Flyin')
+  rendered through drawn presets and mixed back, arm A's recipe scored against the exact truth. The
+  pipeline is exact; arm A against S +0.001 [−0.523, +0.524] over 3 bands, undecided, the spread
+  driven by Heather Jane; B2 proposed at the pool's cap (up to 4 fresh songs). 17,290 renders.
+  Audited.
 - [pretrain-set-plan.md](pretrain-set-plan.md): part C, a labelled pre-training render set from the
   clean DI sections (Morgan, clean to crunch, record-like mixes built at training time), sized by a
   learning-curve pilot (40k, one extension to 80k if the curve still improves; queued after B1 and

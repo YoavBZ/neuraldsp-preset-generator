@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-17.
+lives in the linked documents. Last updated 2026-10-18.
 
 ## Where the product is
 
@@ -242,6 +242,17 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
         where it can (item 3).
      3. **More fresh development material.** Request sent to the cloud researcher on 2026-10-17.
         With only 21 usable fresh parts, effects much below about 0.03 read as ties.
+        - **Known-answer songs, pilot B1** ([results](known-answer-b1-results.md), audited; 17,290
+          renders): four songs rendered through drawn presets and mixed back, so the record is exact.
+          The pipeline works (the truth reads ≤ 0.001 against itself). Arm A against S reads +0.001
+          [−0.523, +0.524] over 3 bands: undecided, and 3 bands can show almost nothing. The spread
+          is one band: Heather Jane +0.36, where S starts near the truth; the other three songs
+          −0.17 to −0.20, the fresh one (The Apprehended) −0.17. With the isolated truth as the stem
+          (arm O) −0.134 [−0.323, +0.056]. The knobs are not shown closer than S's (+0.038).
+        - **Next: B2**, proposed at the pool's cap (the declared rule asks for 5,654 songs): up to 4
+          fresh DI-only songs (Strobe "Maya", MekaPhil, The Timezone "GOTGF", Perpetual Escape
+          "Stop And Rise", after scope and held-out checks and downloads), about 14k renders and
+          2.6 h, for about ±0.23 over 7 bands at B1's spread. Its amendment and review come first.
      3b. **Many sections per track, not one crop** (the user's idea, 2026-10-17;
         [plan](multi-section-plan.md) → [results](multi-section-results.md), audited). Every 10-s
         section where the guitar plays gives about 13× the audio of one crop (507 sections, 38
@@ -266,7 +277,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    - **Renders:** about 250k used so far. Since the 2026-10-16 update: arm B's retrain about
      14.8k, the local objective 7,061 + 3,528 (1b) + 3,528 (1c) + 7,200 (1d), the ceiling
      extension 17,550 plus 72 warm-ups, the listening page 26, arm A with Mega-53 30,102, the
-     rebuild-gap study 18,981, multi-section step 2 21,647 and the rebuild-tone step 8,280 (after the 250k). No fixed limit (2026-10-16): each step plan
+     rebuild-gap study 18,981, multi-section step 2 21,647, the rebuild-tone step 8,280 and known-answer B1 17,290 (after the 250k). No fixed limit (2026-10-16): each step plan
      declares when to stop rendering from its own evidence (a flattened search curve, a learning
      curve that stops improving, an interval narrow enough to answer the question), and reports
      what it used.
@@ -705,3 +716,4 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | earlier | Closed: response atlas, warm-start regressor, noise and synthetic probes | [tone-matching-plan.md](tone-matching-plan.md) |
 | 2026-10-18 | The short-time treble loss (`stm`) lowered its error (−0.63 dB on the amp tracks) with no measurable ranking gain (+0.012 [−0.023, +0.047]); the long-term levers (leak-free EQ +0.132, `rank` second seed +0.099) lean positive, undecided; next an oracle dose probe of the short-time component before a per-bin log-gain head | [rebuild tone](rebuild-tone-results.md) |
 | 2026-10-18 | Self-rendered sets declared and reviewed: B1, four known-answer songs (about 17.4k renders), then part C, a pre-training render set sized by a learning curve (40k pilot, one extension if it still improves); queued to run after the overnight runs, part C after the hum-screen amendment | [B1 plan](known-answer-b1-plan.md), [part C plan](pretrain-set-plan.md) |
+| 2026-10-18 | Known-answer pilot B1: the exact-record pipeline works; arm A against S +0.001 [−0.523, +0.524] over 3 bands, undecided (Heather Jane +0.36, the other three −0.17 to −0.20); B2 proposed at the pool's cap, up to 4 fresh DI-only songs (about 14k renders) | [B1 results](known-answer-b1-results.md) |
