@@ -346,9 +346,12 @@ and judge are H's. Code `learn/oracle_di_arm.py`; data `~/ndsp-presets/learn/arm
 | H − S (stored, for reference) | −0.028 [−0.064, +0.008] | −0.047 [−0.095, +0.001] | +0.018 [−0.032, +0.069] |
 | XO unshrunk − XO | +0.047 [−0.003, +0.097] | +0.041 [−0.023, +0.105] | +0.024 [−0.029, +0.077] |
 
-- **Bands:** 5 of 12 lean negative on each primary. Leaving one band out gives −0.008 to +0.060
-  (XO − S) and +0.009 to +0.077 (XO − H). Part-weighted: +0.023 [−0.077, +0.124] and +0.040
-  [−0.052, +0.132]. No fallbacks; no activity fallbacks.
+- **Bands:** 5 of 12 lean negative on each primary. Leaving one band out gives −0.014 to +0.050
+  (XO − S) and +0.013 to +0.063 (XO − H) on the band-weighted mean. The shared machinery's
+  part-pooled version, as in the tables above, gives −0.008 to +0.060 and +0.009 to +0.077.
+  Part-weighted: +0.023 and +0.040. Their intervals are [−0.077, +0.124] and [−0.052, +0.132]
+  band-clustered, or [−0.058, +0.105] and [−0.033, +0.113] treating the 21 parts as independent.
+  No fallbacks; no activity fallbacks.
 - **Share of the true-DI ceiling gap:** XO − S is −0.04 of K_S's −0.293 (that is, none). H's is
   +0.10. The −0.293 comes from other parts, a target with no other instruments in it and a longer
   search, so it is only a scale.
@@ -366,4 +369,5 @@ and judge are H's. Code `learn/oracle_di_arm.py`; data `~/ndsp-presets/learn/arm
   better.
 - **Renders:** 6,994 counted (63 priming renders, plus 1 more after a pause-and-resume; 126 × 55),
   plus up to 54 uncounted from the direction in flight at the pause. At most 7,048, against a
-  declared 6,993 and a cap of 7,100. One process beside part C's two, about 3 h.
+  declared 6,993 and a cap of 7,100. Audited: an independent recomputation from the stored records
+  matches both primaries, H − S and the render count. One process beside part C's two, about 3 h.
