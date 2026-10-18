@@ -306,6 +306,7 @@ def test_a_di_in_use_is_never_the_one_evicted(tmp_path):
 def test_close_removes_the_work_directory_it_made():
     import numpy as np
 
+    pytest.importorskip("soundfile")
     made = K.renderer_class()("morgan", process_policy="reuse", isolate=True)
     made._ensure_server = lambda: None
     made._di_file(np.zeros(2048, dtype=np.float32))
