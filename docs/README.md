@@ -294,7 +294,11 @@ was declared, what was measured, and the research behind it.
   25/50/100% of the true offset-removed short-time magnitude in 2–8 kHz, the full-band true
   magnitude (one resynthesis, or Griffin–Lim) and a time-shifted control, with the long-term
   balance held. Does the short-time magnitude carry the remaining half of the gap, and which E_st
-  cut matters? Reviewed; 7,152 renders planned.
+  cut matters? → [results](dose-probe-results.md): the full-band field (one resynthesis, C′'s
+  phase) recovers 0.74 [0.50, 0.86] of what the EQ leaves (+0.116 [+0.045, +0.187]); 2–8 kHz on
+  E_st's mask only 0.25 (+0.039), below it; Griffin–Lim adds nothing; dose shape and control
+  undecided. Option 2 only as a full-band head, ceiling `full100`, gated on a full-band error.
+  7,448 renders. Audited.
 - [audits/dose-stop-2026-10-18.md](audits/dose-stop-2026-10-18.md) → [audits/start-transient-2026-10-18.md](audits/start-transient-2026-10-18.md):
   why the dose probe stopped (a render after a change of plugin state starts louder for about 4 s),
   then eleven render scripts checked for it. No audited merged decision changes (arm B and

@@ -27,6 +27,9 @@ them and governs where anything differs).
 adds a priming render before every warm-up and a Σ-order repeat check on the cell that stopped,
 corrects the render count, and governs where anything above differs.
 
+**Done 2026-10-18:** R1 complete, R2 not due, 7,448 renders; [results](dose-probe-results.md)
+(audited).
+
 ## Why
 
 - **What is left after the long-term fix is real:** truth − `cprime_eq` +0.157 [+0.083, +0.230]
