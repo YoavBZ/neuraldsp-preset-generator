@@ -748,10 +748,11 @@ def renders_used():
     return {"by_probe": by, "comparator": comp, "unrecorded": unrec, "total": tot + comp + unrec}
 
 
-def cmd_clear(probe, slug, amp):
+def cmd_clear(probe, slug, amp, unrecorded=None, why=None):
     """Amendment 2, item 3: clear one cell's `check_failed` record after its investigation. The record
     moves to `cleared/` (its renders still count) and STOP.json is deleted; the cell then renders from
-    scratch. Refuses any record that is not `check_failed`."""
+    scratch. Refuses any record that is not `check_failed`, and a STOP.json that names another cell.
+    With `unrecorded`, also records renders made but never saved (`unrecorded.json`, with `why`)."""
     rec_path = _paths(probe, slug, amp)[0]
     rec = json.loads(rec_path.read_text()) if rec_path.exists() else {}
     if rec.get("status") != "check_failed":
@@ -759,6 +760,16 @@ def cmd_clear(probe, slug, amp):
     dest = OUT / "cleared" / rec_path.relative_to(OUT)
     if dest.exists():
         raise SystemExit(f"{dest} exists: this cell was cleared before")
+    stop = OUT / "STOP.json"
+    if stop.exists():
+        st = json.loads(stop.read_text())
+        if (st.get("probe"), st.get("slug"), st.get("amp")) != (probe, slug, amp):
+            raise SystemExit(f"STOP.json names another cell ({st.get('probe')} {st.get('slug')} {st.get('amp')})")
+    u = OUT / "unrecorded.json"
+    if unrecorded is not None:
+        if u.exists():
+            raise SystemExit(f"{u} exists: {u.read_text()}")
+        K._atomic(u, {"renders": int(unrecorded), "why": why or ""})
     dest.parent.mkdir(parents=True, exist_ok=True)
     K._atomic(dest, {**rec, "cleared": time.strftime("%Y-%m-%d %H:%M:%S")})
     rec_path.unlink()
@@ -824,6 +835,8 @@ def main(argv=None):
     c = sub.add_parser("clear")
     c.add_argument("--probe", required=True)
     c.add_argument("--cell", nargs=2, required=True, metavar=("SLUG", "AMP"))
+    c.add_argument("--unrecorded", type=int, help="renders made but never saved (unrecorded.json)")
+    c.add_argument("--why", help="the reason, with --unrecorded")
     a = ap.parse_args(argv)
     if a.cmd == "build":
         cmd_build()
@@ -832,7 +845,7 @@ def main(argv=None):
     elif a.cmd == "report":
         cmd_report()
     elif a.cmd == "clear":
-        cmd_clear(a.probe, *a.cell)
+        cmd_clear(a.probe, *a.cell, unrecorded=a.unrecorded, why=a.why)
     elif a.cmd == "extend":
         ext = json.loads((OUT / "report.json").read_text())["extend"]
         print(" ".join(([ANCHOR_R2] if ext and a.with_anchor else []) + ext))

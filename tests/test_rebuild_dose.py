@@ -467,18 +467,26 @@ def test_clear_moves_only_the_named_record_and_the_count_keeps_it(monkeypatch, t
         p.write_text(json.dumps(r))
     (out / "comparator").mkdir()
     (out / "comparator" / "a-pr12.json").write_text(json.dumps({"renders": 4}))
-    (out / "unrecorded.json").write_text(json.dumps({"renders": 33, "why": "first launch"}))
-    (out / "STOP.json").write_text("{}")
+    (out / "STOP.json").write_text(json.dumps({"probe": "dose100", "slug": "a", "amp": "pr12"}))
     before = RD.renders_used()["total"]
-    assert before == 40 + 7 + 49 + 4 + 33
+    assert before == 40 + 7 + 49 + 4
     with pytest.raises(SystemExit, match="no check_failed record"):
         RD.cmd_clear("dose100", "c", "sw50r")
-    RD.cmd_clear("dose100", "a", "pr12")
+    with pytest.raises(SystemExit, match="names another cell"):
+        RD.cmd_clear("dose100", "b", "ac20")
+    RD.cmd_clear("dose100", "a", "pr12", unrecorded=33, why="first launch")
+    assert json.loads((out / "unrecorded.json").read_text()) == {"renders": 33, "why": "first launch"}
     assert not RD._paths("dose100", "a", "pr12")[0].exists()
     assert json.loads(RD._paths("dose100", "b", "ac20")[0].read_text())["status"] == "check_failed"
     assert json.loads(RD._paths("dose100", "c", "sw50r")[0].read_text())["status"] == "done"
     assert json.loads((out / "cleared/renders/dose100/a/pr12.json").read_text())["renders"] == 40
     assert not (out / "STOP.json").exists()
-    assert RD.renders_used()["total"] == before
+    assert RD.renders_used()["total"] == before + 33
     with pytest.raises(SystemExit):
         RD.cmd_clear("dose100", "a", "pr12")                       # nothing left to clear there
+    p = RD._paths("dose100", "a", "pr12")[0]
+    p.write_text(json.dumps(recs[("a", "pr12")]))                  # the same cell failing again
+    with pytest.raises(SystemExit, match="cleared before"):
+        RD.cmd_clear("dose100", "a", "pr12")
+    with pytest.raises(SystemExit, match="unrecorded.json exists"):
+        RD.cmd_clear("dose100", "b", "ac20", unrecorded=1)

@@ -446,8 +446,9 @@ before any further render of this step.
      defensible, and this one is fixed now, before any render.
    - **Cost:** 10 renders.
 3. **Clearing the stop.** STOP.json and this cell's `check_failed` record are cleared by
-   `-m learn.rebuild_dose clear --probe dose100 --cell cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1 pr12`
-   after this amendment is merged, and only for this cell. The command moves the record to
+   `-m learn.rebuild_dose clear --probe dose100 --cell cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1 pr12
+   --unrecorded 33 --why "…"` after this amendment is merged, and only for this cell. The same call
+   writes `unrecorded.json` (item 4). It refuses a STOP.json that names another cell. The command moves the record to
    `cleared/renders/dose100/<slug>/pr12.json` under the step's folder and deletes STOP.json;
    `renders_used` counts every record under `cleared/` as well, so its renders still count. The cell's `dose100` is then
    re-rendered from scratch under items 1–2. Its comparator file stays: both comparators passed
@@ -487,5 +488,7 @@ this: a first render moved the scored halves by at most 2.8e-5 on every part but
 total (about 7,448, since 149 spent renders are redone), where cleared records live and that they
 count, the audit's 70 renders reported beside the count, and the tests. Its notes taken: the 33 in a
 data file rather than a code constant, what follows if the repeat check fires, and the argument for
-keeping the completed cells. Re-reviewed: **approved**, no further changes.
+keeping the completed cells. Re-reviewed: **approved**, no further changes. The PR review (fresh agent) approved
+with one fix, made: nothing wrote `unrecorded.json`, so `clear` now writes it; from its notes,
+`clear` refuses a STOP.json that names another cell.
 
