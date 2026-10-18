@@ -10,6 +10,7 @@ it renders (both masks), so no probe audio and only the S FLACs are stored.
     .venv/bin/python -m learn.rebuild_dose slots                     # free render slots (the runner's count)
     OMP_NUM_THREADS=1 .venv/bin/python -m learn.rebuild_tone render-dose --probe dose100 --shard i/3
     .venv/bin/python -m learn.rebuild_dose report                    # contrasts, readings, the R2 list
+    .venv/bin/python -m learn.rebuild_dose clear --probe P --cell SLUG AMP   # amendment 2: clear a stop
 
 The render entry is `learn.rebuild_tone render-dose`, so every job's `local_objective.RENDERS`
 (whose `-m learn.rebuild_tone render` pattern predates this step) counts these processes.
@@ -55,6 +56,11 @@ CAP = 3
 YIELD = 75                                    # a render process's exit code when the machine is full
 NEAR_SHARE = 0.25                             # "near 0": within a quarter of the remainder (declared)
 SHAPE_BAND = 0.15                             # the dose shape: S50 within r50 ± 0.15 is proportional
+# Amendment 2: the Σ-order repeat check, on the cell that stopped, with dose100 only: these Σ indices
+# are rendered a second time right after their scored render
+REPEAT_CELL = ("cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1", "pr12")
+REPEAT_PROBE = "dose100"
+REPEAT_IDX = tuple(range(1, 48, 5))           # 1, 6, …, 46
 
 
 # --- the probes (pure) ---------------------------------------------------------------------------------
@@ -514,16 +520,32 @@ def cmd_render(shard, probe, stage="r1"):
             di32 = y_di.astype(np.float32)
             s_sig = {"di": y_di, "anchor": x, "reference": ref}
             K._atomic(rec_path, rec)
+
+            def counted():                       # the record holds every render made so far
+                rec["renders"] = prev.get("renders", 0) + rr.count - n1
+                K._atomic(rec_path, rec)
+
+            rr.render(di32, sel, S)              # amendment 2: the priming render (not scored, not stored)
+            counted()
             warm = rr.render(di32, sel, S)
-            rec["renders"] = prev.get("renders", 0) + rr.count - n1
-            scores, checks = [], []
+            counted()
+            scores, checks, repeats = [], [], []
             for i, p in enumerate(sig[(slug, amp)]):
                 y = rr.render(di32, sel, p["x"])
-                rec["renders"] = prev.get("renders", 0) + rr.count - n1
-                if i % 12 == 0:
-                    K._atomic(rec_path, rec)
+                counted()
                 sc = score_render(y, probe, s_sig, aligned)
                 scores.append(sc)
+                if (slug, amp) == REPEAT_CELL and probe == REPEAT_PROBE and i in REPEAT_IDX:
+                    y2 = rr.render(di32, sel, p["x"])
+                    counted()
+                    s2 = score_render(y2, probe, s_sig, aligned)
+                    for h in G.HALVES:
+                        dev = LO.deviation(sc["decl"][h], s2["decl"][h])
+                        repeats.append([i, h, dev])
+                        rec["sigma_repeats"] = repeats
+                        if dev > G.CHECK_TOL:
+                            breakage(rec_path, {**rec, "checks_float": checks},
+                                     f"{probe} {slug} {amp}: Σ point {i} moved {dev:.4f} on its repeat, half {h}")
                 if p.get("source") == "S":
                     w = score_render(warm, probe, s_sig, aligned)
                     for h in G.HALVES:
@@ -713,13 +735,46 @@ def extension(r1, ratio):
 
 
 def renders_used():
+    """Every render of this step: the cells' records (cleared ones too, amendment 2), the comparators,
+    and renders made but never recorded (`unrecorded.json`: the first launch's 33)."""
     tot, by = 0, {}
-    for p in (OUT / "renders").glob("*/*/*.json"):
+    for p in [*(OUT / "renders").glob("*/*/*.json"), *(OUT / "cleared" / "renders").glob("*/*/*.json")]:
         r = json.loads(p.read_text())
         by[r["probe"]] = by.get(r["probe"], 0) + r.get("renders", 0)
         tot += r.get("renders", 0)
     comp = sum(json.loads(p.read_text()).get("renders", 0) for p in (OUT / "comparator").glob("*.json"))
-    return {"by_probe": by, "comparator": comp, "total": tot + comp}
+    u = OUT / "unrecorded.json"
+    unrec = json.loads(u.read_text())["renders"] if u.exists() else 0
+    return {"by_probe": by, "comparator": comp, "unrecorded": unrec, "total": tot + comp + unrec}
+
+
+def cmd_clear(probe, slug, amp, unrecorded=None, why=None):
+    """Amendment 2, item 3: clear one cell's `check_failed` record after its investigation. The record
+    moves to `cleared/` (its renders still count) and STOP.json is deleted; the cell then renders from
+    scratch. Refuses any record that is not `check_failed`, and a STOP.json that names another cell.
+    With `unrecorded`, also records renders made but never saved (`unrecorded.json`, with `why`)."""
+    rec_path = _paths(probe, slug, amp)[0]
+    rec = json.loads(rec_path.read_text()) if rec_path.exists() else {}
+    if rec.get("status") != "check_failed":
+        raise SystemExit(f"{probe} {slug} {amp}: no check_failed record to clear")
+    dest = OUT / "cleared" / rec_path.relative_to(OUT)
+    if dest.exists():
+        raise SystemExit(f"{dest} exists: this cell was cleared before")
+    stop = OUT / "STOP.json"
+    if stop.exists():
+        st = json.loads(stop.read_text())
+        if (st.get("probe"), st.get("slug"), st.get("amp")) != (probe, slug, amp):
+            raise SystemExit(f"STOP.json names another cell ({st.get('probe')} {st.get('slug')} {st.get('amp')})")
+    u = OUT / "unrecorded.json"
+    if unrecorded is not None:
+        if u.exists():
+            raise SystemExit(f"{u} exists: {u.read_text()}")
+        K._atomic(u, {"renders": int(unrecorded), "why": why or ""})
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    K._atomic(dest, {**rec, "cleared": time.strftime("%Y-%m-%d %H:%M:%S")})
+    rec_path.unlink()
+    (OUT / "STOP.json").unlink(missing_ok=True)
+    print(f"cleared {probe} {slug} {amp} -> {dest}", flush=True)
 
 
 def cmd_report():
@@ -777,6 +832,11 @@ def main(argv=None):
     sub.add_parser("report")
     e = sub.add_parser("extend")
     e.add_argument("--with-anchor", action="store_true")
+    c = sub.add_parser("clear")
+    c.add_argument("--probe", required=True)
+    c.add_argument("--cell", nargs=2, required=True, metavar=("SLUG", "AMP"))
+    c.add_argument("--unrecorded", type=int, help="renders made but never saved (unrecorded.json)")
+    c.add_argument("--why", help="the reason, with --unrecorded")
     a = ap.parse_args(argv)
     if a.cmd == "build":
         cmd_build()
@@ -784,6 +844,8 @@ def main(argv=None):
         cmd_slots()
     elif a.cmd == "report":
         cmd_report()
+    elif a.cmd == "clear":
+        cmd_clear(a.probe, *a.cell, unrecorded=a.unrecorded, why=a.why)
     elif a.cmd == "extend":
         ext = json.loads((OUT / "report.json").read_text())["extend"]
         print(" ".join(([ANCHOR_R2] if ext and a.with_anchor else []) + ext))

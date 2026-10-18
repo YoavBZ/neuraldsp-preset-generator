@@ -314,56 +314,179 @@ def test_dose_shape_undecided_when_the_two_doses_disagree(monkeypatch):
     assert out["shape"] == "undecided" and not out["non_monotone"] and out["gate_cut"] == 0.29
 
 
-def test_render_writes_a_cells_scores_into_a_fresh_folder(monkeypatch, tmp_path):
-    """Regression (PR #218): the first cell of a probe wrote scores/<probe>/<part>/<amp>.json before
-    that folder existed (FileNotFoundError). Every write of cmd_render goes to a fresh tree here."""
+class _Renderer:
+    """A fake renderer: logs every render's settings; its output is the settings' value (`VALUE`),
+    or `drift` for the call numbers in `DRIFT` (1-based)."""
+    VALUE, DRIFT = {}, {}
+
+    def __init__(self):
+        self.count, self.calls = 0, []
+        self.r = type("R", (), {"isolate": True})()
+        _Renderer.last = self
+
+    def menu(self):
+        return {"pr12": {"x": ("sel", "S")}}
+
+    def render(self, di, sel, x):
+        self.count += 1
+        self.calls.append(x)
+        return np.full(8, self.DRIFT.get(self.count, self.VALUE.get(x, 1.0)))
+
+    def close(self):
+        pass
+
+
+def _render_env(monkeypatch, tmp_path, cell=("s", "pr12"), sigma=None, probes=("dose100",)):
+    """cmd_render on a fresh tree with every outside dependency faked; scores are the render's value."""
     from learn import arm_a_levers as L
     from learn import confirm_run as CR
     from learn import knob_ceiling as K
 
-    class Renderer:
-        def __init__(self):
-            self.count = 0
-            self.r = type("R", (), {"isolate": True})()
-
-        def menu(self):
-            return {"pr12": {"x": ("sel", "S")}}
-
-        def render(self, di, sel, x):
-            self.count += 1
-            return np.zeros(8)
-
-        def close(self):
-            pass
-
-    flat = {"decl": {h: 1.0 for h in G.HALVES}}
+    slug, amp = cell
+    sigma = sigma or [{"x": "S", "source": "S"}, {"x": "p1"}]
+    _Renderer.VALUE, _Renderer.DRIFT = {}, {}
     monkeypatch.setattr(RD, "OUT", tmp_path / "rebuild-dose")
     monkeypatch.setattr(LO, "stop_path", lambda: tmp_path / "no-stop.json")
     monkeypatch.setattr(RD, "build_ok", lambda: True)
-    monkeypatch.setattr(RD, "build_record", lambda: {"parts": {"s": {"hash": {"dose100": "h"}}}})
-    monkeypatch.setattr(LO, "load_sigma", lambda: ({"hash": "sig"}, {("s", "pr12"): [{"x": "S", "source": "S"},
-                                                                                     {"x": "p1"}]}))
-    monkeypatch.setattr(RD, "stage_cells", lambda stage: [("s", "pr12")])
-    monkeypatch.setattr(L, "menu_S", lambda: {"pr12": {"clean": (None, "S")}})
+    monkeypatch.setattr(RD, "build_record", lambda: {"parts": {slug: {"hash": {p: "h" for p in probes}}}})
+    monkeypatch.setattr(LO, "load_sigma", lambda: ({"hash": "sig"}, {(slug, amp): sigma}))
+    monkeypatch.setattr(RD, "stage_cells", lambda stage: [(slug, amp)])
+    monkeypatch.setattr(L, "menu_S", lambda: {amp: {"clean": (None, "S")}})
     monkeypatch.setattr(L, "SwapGuard", lambda: type("G", (), {"check": lambda self: None})())
     monkeypatch.setattr(LO, "judge_fns", lambda: None)
     monkeypatch.setattr(G, "_own", lambda: ())
     monkeypatch.setattr(G, "_ps", lambda: [])
     monkeypatch.setattr(RD, "busy", lambda *a, **k: False)
-    monkeypatch.setattr(K, "parts", lambda: {"s": {"gain_class": "clean", "crop": tmp_path}})
+    monkeypatch.setattr(K, "parts", lambda: {slug: {"gain_class": "clean", "crop": tmp_path}})
     monkeypatch.setattr(LO, "disk_free_gb", lambda: 1e6)
-    monkeypatch.setattr(K, "Renderer", Renderer)
-    monkeypatch.setattr(K, "START", {"clean": {"pr12": "x"}})
+    monkeypatch.setattr(_Renderer, "menu", lambda self: {amp: {"x": ("sel", "S")}})
+    monkeypatch.setattr(K, "Renderer", _Renderer)
+    monkeypatch.setattr(K, "START", {"clean": {amp: "x"}})
     monkeypatch.setattr(K, "key", lambda s: s)
     monkeypatch.setattr(RD, "probe_for", lambda *a: (np.zeros(8), np.zeros(8)))
     monkeypatch.setattr(CR, "mono", lambda p: np.zeros(8))
     monkeypatch.setattr(RD, "comparators", lambda *a: {"max_dev": 0.0})
-    monkeypatch.setattr(RD, "score_render", lambda *a: flat)
+    monkeypatch.setattr(RD, "score_render", lambda y, *a: {"decl": {h: float(y[0]) for h in G.HALVES}})
     monkeypatch.setattr(LO, "save_flac", lambda path, y: 1.0)
-    monkeypatch.setattr(LO, "load_flac", lambda path, scale: np.zeros(8))
-    monkeypatch.setattr(LO, "deviation", lambda a, b: 0.0)
+    monkeypatch.setattr(LO, "load_flac", lambda path, scale: np.ones(8))
+    monkeypatch.setattr(LO, "deviation", lambda a, b: abs(math.log(a / b)))
+
+
+def test_render_writes_a_cells_scores_into_a_fresh_folder(monkeypatch, tmp_path):
+    """Regression (PR #218): the first cell of a probe wrote scores/<probe>/<part>/<amp>.json before
+    that folder existed (FileNotFoundError). Every write of cmd_render goes to a fresh tree here."""
+    _render_env(monkeypatch, tmp_path)
     assert not (tmp_path / "rebuild-dose").exists()
     RD.cmd_render((0, 1), "dose100", "r1")
     rec_path, score_path, _ = RD._paths("dose100", "s", "pr12")
     assert json.loads(rec_path.read_text())["status"] == "done"
     assert len(json.loads(score_path.read_text())["scores"]) == 2
+
+
+@pytest.mark.parametrize("probe,stage,prev", [("dose100", "r1", None),
+                                              ("dose100", "r1", {"status": "running", "renders": 10, "warm_ups": 1}),
+                                              (RD.ANCHOR_R2, "r2", None)])
+def test_a_priming_render_precedes_every_warm_up_and_is_counted(monkeypatch, tmp_path, probe, stage, prev):
+    """Amendment 2, item 1: before every (cell, probe) warm-up, one render at S with the probe's DI,
+    counted, not scored; on a fresh cell, a resumed one and R2's anchor_eq. The warm-up and S checks
+    are unchanged."""
+    _render_env(monkeypatch, tmp_path, probes=(probe,))
+    rec_path, score_path, _ = RD._paths(probe, "s", "pr12")
+    if prev:
+        rec_path.parent.mkdir(parents=True)
+        rec_path.write_text(json.dumps(prev))
+    RD.cmd_render((0, 1), probe, stage)
+    assert _Renderer.last.calls == ["S", "S", "S", "p1"]          # priming, warm-up, then Σ (S first)
+    rec = json.loads(rec_path.read_text())
+    assert rec["renders"] == (prev or {}).get("renders", 0) + 4
+    assert rec["warm_ups"] == (prev or {}).get("warm_ups", 0) + 1
+    assert len(json.loads(score_path.read_text())["scores"]) == 2  # the priming render is not scored
+    assert "sigma_repeats" not in rec
+
+
+def test_the_s_check_still_stops_when_the_warm_up_differs(monkeypatch, tmp_path):
+    """The priming render does not hide a warm-up that still differs from S (tolerance unchanged)."""
+    _render_env(monkeypatch, tmp_path)
+    _Renderer.DRIFT = {2: 1.0 + 2 * G.CHECK_TOL}                   # the warm-up (call 2) is off
+    with pytest.raises(SystemExit, match="S moved"):
+        RD.cmd_render((0, 1), "dose100", "r1")
+    assert json.loads(RD._paths("dose100", "s", "pr12")[0].read_text())["status"] == "check_failed"
+    assert (RD.OUT / "STOP.json").exists()
+
+
+def _sigma48():
+    return [{"x": "S", "source": "S"}] + [{"x": f"p{i}"} for i in range(1, 48)]
+
+
+def test_the_repeat_check_renders_its_indices_on_the_stopped_cell_only(monkeypatch, tmp_path):
+    """Amendment 2, item 2: on It_Was_My_Fault ElecGtr1 pr12 with dose100, Σ indices 1, 6, …, 46 are
+    each rendered again right after their scored render; the first render is the scored one."""
+    _render_env(monkeypatch, tmp_path, cell=RD.REPEAT_CELL, sigma=_sigma48())
+    RD.cmd_render((0, 1), "dose100", "r1")
+    calls = _Renderer.last.calls
+    want = ["S", "S"]
+    for i, p in enumerate(_sigma48()):
+        want += [p["x"]] * (2 if i in RD.REPEAT_IDX else 1)
+    assert RD.REPEAT_IDX == (1, 6, 11, 16, 21, 26, 31, 36, 41, 46)
+    assert calls == want and len(calls) == 2 + 48 + 10
+    rec = json.loads(RD._paths("dose100", *RD.REPEAT_CELL)[0].read_text())
+    assert rec["renders"] == 60 and rec["status"] == "done"
+    assert sorted({r[0] for r in rec["sigma_repeats"]}) == list(RD.REPEAT_IDX)
+    assert len(json.loads(RD._paths("dose100", *RD.REPEAT_CELL)[1].read_text())["scores"]) == 48
+
+
+@pytest.mark.parametrize("cell,probe", [(("s", "pr12"), "dose100"), (RD.REPEAT_CELL, "shift100")])
+def test_no_repeats_elsewhere(monkeypatch, tmp_path, cell, probe):
+    _render_env(monkeypatch, tmp_path, cell=cell, sigma=_sigma48(), probes=(probe,))
+    RD.cmd_render((0, 1), probe, "r1")
+    assert len(_Renderer.last.calls) == 2 + 48
+
+
+def test_the_repeat_check_stops_above_the_tolerance(monkeypatch, tmp_path):
+    _render_env(monkeypatch, tmp_path, cell=RD.REPEAT_CELL, sigma=_sigma48())
+    # calls: 1 priming, 2 warm-up, 3 S, 4 index 1, 5 index 1 again: the repeat drifts
+    _Renderer.DRIFT = {5: 1.0 + 2 * G.CHECK_TOL}
+    with pytest.raises(SystemExit, match="Σ point 1 moved"):
+        RD.cmd_render((0, 1), "dose100", "r1")
+    rec = json.loads(RD._paths("dose100", *RD.REPEAT_CELL)[0].read_text())
+    assert rec["status"] == "check_failed" and rec["renders"] == 5
+    assert (RD.OUT / "STOP.json").exists()
+
+
+def test_clear_moves_only_the_named_record_and_the_count_keeps_it(monkeypatch, tmp_path):
+    """Amendment 2, items 3 and 4: `clear` moves the named check_failed record to cleared/ and deletes
+    STOP.json; renders_used counts cleared records and unrecorded.json."""
+    out = tmp_path / "rebuild-dose"
+    monkeypatch.setattr(RD, "OUT", out)
+    recs = {("a", "pr12"): {"probe": "dose100", "status": "check_failed", "renders": 40},
+            ("b", "ac20"): {"probe": "dose100", "status": "check_failed", "renders": 7},
+            ("c", "sw50r"): {"probe": "dose100", "status": "done", "renders": 49}}
+    for (slug, amp), r in recs.items():
+        p = RD._paths("dose100", slug, amp)[0]
+        p.parent.mkdir(parents=True)
+        p.write_text(json.dumps(r))
+    (out / "comparator").mkdir()
+    (out / "comparator" / "a-pr12.json").write_text(json.dumps({"renders": 4}))
+    (out / "STOP.json").write_text(json.dumps({"probe": "dose100", "slug": "a", "amp": "pr12"}))
+    before = RD.renders_used()["total"]
+    assert before == 40 + 7 + 49 + 4
+    with pytest.raises(SystemExit, match="no check_failed record"):
+        RD.cmd_clear("dose100", "c", "sw50r")
+    with pytest.raises(SystemExit, match="names another cell"):
+        RD.cmd_clear("dose100", "b", "ac20")
+    RD.cmd_clear("dose100", "a", "pr12", unrecorded=33, why="first launch")
+    assert json.loads((out / "unrecorded.json").read_text()) == {"renders": 33, "why": "first launch"}
+    assert not RD._paths("dose100", "a", "pr12")[0].exists()
+    assert json.loads(RD._paths("dose100", "b", "ac20")[0].read_text())["status"] == "check_failed"
+    assert json.loads(RD._paths("dose100", "c", "sw50r")[0].read_text())["status"] == "done"
+    assert json.loads((out / "cleared/renders/dose100/a/pr12.json").read_text())["renders"] == 40
+    assert not (out / "STOP.json").exists()
+    assert RD.renders_used()["total"] == before + 33
+    with pytest.raises(SystemExit):
+        RD.cmd_clear("dose100", "a", "pr12")                       # nothing left to clear there
+    p = RD._paths("dose100", "a", "pr12")[0]
+    p.write_text(json.dumps(recs[("a", "pr12")]))                  # the same cell failing again
+    with pytest.raises(SystemExit, match="cleared before"):
+        RD.cmd_clear("dose100", "a", "pr12")
+    with pytest.raises(SystemExit, match="unrecorded.json exists"):
+        RD.cmd_clear("dose100", "b", "ac20", unrecorded=1)
