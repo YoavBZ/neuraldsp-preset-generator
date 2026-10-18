@@ -329,3 +329,45 @@ the CPU ratio is stated as wall-clock (about 12.7× in thread-seconds); the shri
 longer implies a test; leave-one-band-out columns were added; and several smaller wording fixes
 (the Zeno row's purpose, the full-mix SNR, the stage-D gap behind the 8%, a post-hoc SNR-gain
 correlation).
+
+## Amendment 2: the oracle-DI arm on stage F (2026-10-18)
+
+**Question:** in the product setting (a separated full-mix stem, no DI), does a *perfect* rebuild
+help arm A much? XO is stage F's H with one change: the search renders through the part's true
+measure DI instead of C′'s rebuild of the htdemucs stem. It still scores against that stem, at the
+judge's lag (the stems sit on `reference.wav` within ±1 sample). The seed, recipe, shrink, fallback
+and judge are H's. Code `learn/oracle_di_arm.py`; data `~/ndsp-presets/learn/arm-a-mega53/F-oracle/`
+(`report.json`).
+
+| Contrast | All (declared), 12 bands | No high bleed (direction rule), 10 bands | F-song, new songs only (descriptive), 4 bands |
+|---|---|---|---|
+| **XO − S** | **+0.012 [−0.088, +0.112]** | +0.011 [−0.108, +0.129] | −0.027 [−0.162, +0.109] |
+| **XO − H** | **+0.040 [−0.043, +0.123]** | +0.057 [−0.042, +0.157] | −0.045 [−0.149, +0.059] |
+| H − S (stored, for reference) | −0.028 [−0.064, +0.008] | −0.047 [−0.095, +0.001] | +0.018 [−0.032, +0.069] |
+| XO unshrunk − XO | +0.047 [−0.003, +0.097] | +0.041 [−0.023, +0.105] | +0.024 [−0.029, +0.077] |
+
+- **Bands:** 5 of 12 lean negative on each primary. Leaving one band out gives −0.014 to +0.050
+  (XO − S) and +0.013 to +0.063 (XO − H) on the band-weighted mean. The shared machinery's
+  part-pooled version, as in the tables above, gives −0.008 to +0.060 and +0.009 to +0.077.
+  Part-weighted: +0.023 and +0.040. Their intervals are [−0.077, +0.124] and [−0.052, +0.132]
+  band-clustered, or [−0.058, +0.105] and [−0.033, +0.113] treating the 21 parts as independent.
+  No fallbacks; no activity fallbacks.
+- **Share of the true-DI ceiling gap:** XO − S is −0.04 of K_S's −0.293 (that is, none). H's is
+  +0.10. The −0.293 comes from other parts, a target with no other instruments in it and a longer
+  search, so it is only a scale.
+- **Why a perfect DI doesn't help here.** The objective is the problem. Measured against the
+  full-mix stem, S rendered through the true DI scores a median 6.40 on the search half; through
+  C′'s rebuild it scores 4.10. The rebuild comes from the stem, so it carries the stem's leftover
+  mix, and the objective rewards that. Through the true DI the search chases what is left of the
+  mix in the stem (median SNR 0.43 dB), not the guitar. Per class, XO − H is +0.086 on clean and
+  −0.024 on crunch.
+- **Reading, hedged.** Both intervals contain 0 and are wide (band SD about 0.15). A perfect
+  rebuild gives arm A no measurable gain in the product setting. Point estimates lean worse than H
+  (+0.040) and than S (+0.012); only the F-song row, on 4 bands, leans the other way. What limits
+  arm A on full mixes is the stem objective, not the rebuild. Better rebuilds aren't worth building
+  for arm A until the objective (separation quality, or an objective that tolerates bleed) gets
+  better.
+- **Renders:** 6,994 counted (63 priming renders, plus 1 more after a pause-and-resume; 126 × 55),
+  plus up to 54 uncounted from the direction in flight at the pause. At most 7,048, against a
+  declared 6,993 and a cap of 7,100. Audited: an independent recomputation from the stored records
+  matches both primaries, H − S and the render count. One process beside part C's two, about 3 h.
