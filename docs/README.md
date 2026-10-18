@@ -284,6 +284,12 @@ was declared, what was measured, and the research behind it.
   2 kHz; phase and rotation are minor. A fixed EQ (`dep_eq`, +0.133 [−0.009, +0.276]) and a
   ranking-trained rebuild (`rank`, +0.075 [−0.031, +0.182] against C′) lean better; `rank` seems to act as a
   learned long-term EQ (post hoc), and neither reduces the short-time treble error. 18,981 renders.
+- [rebuild-tone-plan.md](rebuild-tone-plan.md) → [results](rebuild-tone-results.md): a C′
+  fine-tune with an offset-removed 2–8 kHz short-time magnitude loss (`stm`), a leak-free long-term
+  EQ and a second seed of `rank`. `stm` lowered its target error on every part but not rendered
+  ranking (+0.012 [−0.023, +0.047]; on top of the EQ −0.012); the leak-free EQ (+0.132 [−0.030,
+  +0.294]) and `rank`'s second seed (+0.099 [−0.036, +0.233]) lean positive, undecided. Next
+  proposed: an oracle dose probe of the short-time component. 8,280 renders. Audited.
 - [multi-section-plan.md](multi-section-plan.md) → [results](multi-section-results.md): every
   10-s section where the guitar plays, not one crop. Step 1 (zero renders): 507 sections on 38
   development parts, about 13× the audio of one crop each. Step 2 (true DI, 19 parts, 10 bands):
