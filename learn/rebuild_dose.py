@@ -411,7 +411,10 @@ def score_render(y, name, sig, aligned):
 
 
 def stored_anchor(slug, amp, i):
-    return json.loads((TONE / "scores" / ANCHOR / slug / f"{amp}.json").read_text())["scores"][i]["decl"]
+    """The rebuild-tone step's stored anchor score at index i, or None where the anchor was never
+    rendered (the R2 cells)."""
+    p = TONE / "scores" / ANCHOR / slug / f"{amp}.json"
+    return json.loads(p.read_text())["scores"][i]["decl"] if p.exists() else None
 
 
 def comparators(rr, sel, slug, amp, points, aligned, x, ref):
@@ -420,12 +423,14 @@ def comparators(rr, sel, slug, amp, points, aligned, x, ref):
     with bound():
         c1 = G.comparator(rr, sel, slug, amp, points, aligned, arm=True)
     i = c1["index"]
+    st = stored_anchor(slug, amp, i)
+    if st is None:                                   # an R2 cell: anchor_eq's own S checks cover it
+        return {"index": i, "renders": 2, "cprime_1b": c1, "anchor": None, "max_dev": c1["max_dev"]}
     x32 = x.astype("float32")
     rr.render(x32, sel, points[i]["x"])
     y = rr.render(x32, sel, points[i]["x"])
     with bound():
         s = G.score_one(y, ANCHOR, {"di": x, "reference": ref}, None, aligned)["decl"]
-    st = stored_anchor(slug, amp, i)
     devs = {h: LO.deviation(s[h], st[h]) for h in G.HALVES}
     return {"index": i, "renders": 4, "cprime_1b": c1, "anchor": {"devs": devs, "max_dev": max(devs.values())},
             "max_dev": max(c1["max_dev"], max(devs.values()))}
@@ -510,9 +515,13 @@ def cmd_render(shard, probe, stage="r1"):
             s_sig = {"di": y_di, "anchor": x, "reference": ref}
             K._atomic(rec_path, rec)
             warm = rr.render(di32, sel, S)
+            rec["renders"] = prev.get("renders", 0) + rr.count - n1
             scores, checks = [], []
             for i, p in enumerate(sig[(slug, amp)]):
                 y = rr.render(di32, sel, p["x"])
+                rec["renders"] = prev.get("renders", 0) + rr.count - n1
+                if i % 12 == 0:
+                    K._atomic(rec_path, rec)
                 sc = score_render(y, probe, s_sig, aligned)
                 scores.append(sc)
                 if p.get("source") == "S":
@@ -655,7 +664,7 @@ def dose_shape(r1, rows, cells, med):
     for d in DOSES:
         c = r1.get(f"{d}-{ANCHOR}")
         gains[d] = c.get("band_weighted_mean") if c else None
-        if d != "dose100" and d in rows:
+        if d != "dose100" and d in rows and c:                 # only complete (unrefused) doses
             dd = LO.paired({k: v for k, v in rows[d].items() if k in cells}, {k: v for k, v in rows[ANCHOR].items() if k in cells})
             out[f"S_{d}"] = C.share(dd, d100)
     out["gains"] = gains
@@ -664,7 +673,32 @@ def dose_shape(r1, rows, cells, med):
     s25 = (out.get("S_dose25") or {}).get("ratio")
     out["shape_50"] = shape(s50, out["r"].get("dose50")) if out["read"] else None
     out["shape_25"] = shape(s25, out["r"].get("dose25")) if out["read"] else None
+    out["shape"] = (out["shape_50"] if out["shape_50"] == out["shape_25"] else "undecided") if out["read"] else None
+    nm = r1.get("dose100-dose50")
+    out["non_monotone"] = bool(gains.get("dose50") is not None and gains.get("dose100") is not None
+                               and gains["dose50"] > gains["dose100"])
+    out["dose100_minus_dose50"] = classify(nm, 0, "upper") if nm else None
     out["gate_cut"] = gate_cut(gains, out["cuts"]) if out["read"] else None
+    return out
+
+
+def gain_vs_cut(rows, cells, rec):
+    """Descriptive (plan, secondaries): per probe, the Spearman over parts of its gain against the
+    anchor (part means over cells) and its realised E_st cut on that part (build.json)."""
+    from scipy.stats import spearmanr
+
+    out = {}
+    for p in PROBES:
+        if p not in rows or ANCHOR not in rows:
+            continue
+        d = LO.paired({k: v for k, v in rows[p].items() if k in cells}, {k: v for k, v in rows[ANCHOR].items() if k in cells})
+        by = {}
+        for (slug, _), (_, _, _, v) in d.items():
+            by.setdefault(slug, []).append(v)
+        pairs = [(sum(v) / len(v), rec["parts"][s]["probes"][p]["cut"]) for s, v in by.items() if s in rec["parts"]]
+        if len(pairs) >= 3:
+            r = spearmanr([a for a, _ in pairs], [b for _, b in pairs]).correlation
+            out[p] = {"spearman": None if r != r else float(r), "parts": len(pairs)}
     return out
 
 
@@ -698,7 +732,12 @@ def cmd_report():
     for config in ("decl", "xmask"):
         rows = rows_for(every, config)
         blk = {"r1": {}, "all72": {}, "fidelity": {}}
+        blk["refused"] = {}
         for a, b in (*PRIMARY, *SECONDARY):
+            if not (TN.complete(rows, a, r1) and TN.complete(rows, b, r1)):
+                blk["refused"][f"{a}-{b}"] = (f"{sum(c in rows.get(a, {}) for c in r1)} and "
+                                              f"{sum(c in rows.get(b, {}) for c in r1)} of {len(r1)} cells scored")
+                continue
             c = contrast(rows, a, b, set(r1), nh)
             if c:
                 blk["r1"][f"{a}-{b}"] = c
@@ -711,7 +750,8 @@ def cmd_report():
         q = NEAR_SHARE * rem if rem else None
         blk["remainder"] = rem
         blk["readings"] = readings(blk["r1"], q) if q else None
-        blk["dose_shape"] = dose_shape(blk["r1"], rows, set(r1), med) if "dose100" in rows else None
+        blk["dose_shape"] = dose_shape(blk["r1"], rows, set(r1), med) if f"dose100-{ANCHOR}" in blk["r1"] else None
+        blk["gain_vs_cut"] = gain_vs_cut(rows, set(r1), build_record())
         out[config] = blk
     out["narrowing"] = G.narrowing_ratio()
     out["extend"] = extension(out["decl"]["r1"], out["narrowing"]["ratio"])
@@ -720,6 +760,8 @@ def cmd_report():
     for k, v in out["decl"]["r1"].items():
         print(f"{k}: {v['band_weighted_mean']:+.3f} [{v['lo90']:+.3f}, {v['hi90']:+.3f}] "
               f"bands {v['bands_positive']}/{v['bands_negative']}", flush=True)
+    if out["decl"]["refused"]:
+        print("refused (incomplete):", json.dumps(out["decl"]["refused"]), flush=True)
     print("readings:", json.dumps(out["decl"]["readings"]), flush=True)
     print("extend:", ",".join(out["extend"]) or "none", flush=True)
     print("REPORT DONE", flush=True)
@@ -731,10 +773,6 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("build")
     sub.add_parser("slots")
-    r = sub.add_parser("render")
-    r.add_argument("--probe", required=True)
-    r.add_argument("--shard", default="0/1")
-    r.add_argument("--stage", default="r1", choices=("r1", "r2"))
     sub.add_parser("report")
     e = sub.add_parser("extend")
     e.add_argument("--with-anchor", action="store_true")
@@ -743,9 +781,6 @@ def main(argv=None):
         cmd_build()
     elif a.cmd == "slots":
         cmd_slots()
-    elif a.cmd == "render":
-        i, n = a.shard.split("/")
-        cmd_render((int(i), int(n)), a.probe, a.stage)
     elif a.cmd == "report":
         cmd_report()
     elif a.cmd == "extend":

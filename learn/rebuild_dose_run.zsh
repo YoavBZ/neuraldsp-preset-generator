@@ -9,7 +9,7 @@
 setopt no_bg_nice
 REPO=${0:A:h:h}
 cd $REPO
-PY=$REPO/.venv/bin/python
+PY=${PY:-$REPO/.venv/bin/python}      # a worktree has no .venv: launch with PY=<main checkout>/.venv/bin/python
 O=~/ndsp-presets/learn/rebuild-dose
 L=$O/logs
 mkdir -p $L
@@ -21,15 +21,27 @@ PROBES=(dose100 shift100 full_gl full100 dose50 dose25)
 YIELD=75
 
 mem() { memory_pressure | awk -F': ' '/free percentage/{gsub("%","",$2); print $2}' }
-free_slot() { $PY -m learn.rebuild_dose slots 2>/dev/null | grep -q "free yes" }
+free_slot() {   # 0: a slot is free; 1: full; 2: the count itself failed (logged)
+  local out
+  out=$($PY -m learn.rebuild_dose slots 2>&1) || { echo "$out" | tail -1; return 2 }
+  echo "$out" | tail -1
+  [[ $out == *"free yes"* ]]
+}
 
 lane() {   # stage shard probes...: each probe on this shard until its RENDER DONE line
   local stage=$1 i=$2; shift 2
-  local probe rc f
+  local probe rc f s n=0 fails=0
   for probe in "$@"; do
     f=$L/render-$stage-$probe-$i.log
     while true; do
-      if ! free_slot; then sleep $(( 90 + RANDOM % 31 )); continue; fi
+      s=$(free_slot); rc=$?
+      if (( rc != 0 )); then
+        (( rc == 2 )) && { (( fails += 1 )); log "lane $stage $i: the slot count failed ($s)" }
+        (( fails >= 10 )) && { log "lane $stage $i: $probe FAILED (the slot count failed 10 times)"; return 1 }
+        (( n++ % 20 == 0 )) && log "lane $stage $i: $probe waiting for a render slot ($s)"
+        sleep $(( 90 + RANDOM % 31 )); continue
+      fi
+      fails=0
       $PY -u -m learn.rebuild_tone render-dose --stage $stage --probe $probe --shard $i/3 > $f 2>&1 &
       local pid=$!
       log "lane $stage $i: $probe started pid $pid (memory free $(mem)%)"
@@ -60,7 +72,7 @@ stage_render() {   # stage probes...: three lanes, staggered; 0 only if all thre
   return $ok
 }
 
-renders() { $PY -c "import json,pathlib; print(json.loads(pathlib.Path('$O/report.json').read_text())['renders']['total'])" 2>/dev/null }
+renders() { $PY -c "from learn import rebuild_dose as RD; print(RD.renders_used()['total'])" 2>/dev/null }
 
 # --- build (zero renders) -------------------------------------------------------------------------------
 if $PY -u -m learn.rebuild_dose build > $L/build.log 2>&1 && grep -qxF "BUILD DONE" $L/build.log; then

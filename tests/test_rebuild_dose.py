@@ -267,3 +267,47 @@ def test_readings_labels():
     assert r["2_consistency"]["full_gl-full100"] == "near 0"
     assert r["3_region"]["dose100-full100"] == "undecided"             # lower end −0.05
     assert r["5_control"] == {"shift100_vs_anchor": "near 0", "dose100-shift100": "above"}
+
+
+def test_anchor_comparator_only_where_a_stored_score_exists(monkeypatch, tmp_path):
+    class RR:
+        def __init__(self):
+            self.n = 0
+
+        def render(self, x, sel, edits):
+            self.n += 1
+            return np.ones(10)
+
+    c1 = {"index": 3, "renders": 2, "devs": {"A": 0.0, "B": 0.0}, "max_dev": 0.001}
+    monkeypatch.setattr(G, "comparator", lambda *a, **k: c1)
+    monkeypatch.setattr(RD, "TONE", tmp_path)                      # no stored anchor scores: an R2 cell
+    rr = RR()
+    out = RD.comparators(rr, None, "s", "pr12", [{"x": {}}] * 4, None, np.ones(10), np.ones(10))
+    assert out["anchor"] is None and out["renders"] == 2 and rr.n == 0 and out["max_dev"] == 0.001
+    d = tmp_path / "scores" / RD.ANCHOR / "s"
+    d.mkdir(parents=True)
+    (d / "pr12.json").write_text('{"scores": [0, 1, 2, {"decl": {"A": 1.0, "B": 1.0}}]}')
+    monkeypatch.setattr(G, "score_one", lambda *a, **k: {"decl": {"A": 1.0, "B": 1.01}})
+    out = RD.comparators(rr, None, "s", "pr12", [{"x": {}}] * 4, None, np.ones(10), np.ones(10))
+    assert rr.n == 2 and out["renders"] == 4 and out["max_dev"] == pytest.approx(math.log(1.01))
+
+
+def test_the_module_has_no_render_command_of_its_own():
+    with pytest.raises(SystemExit):
+        RD.main(["render", "--probe", "dose100"])                 # only `rebuild_tone render-dose`, which every job counts
+
+
+def test_dose_shape_undecided_when_the_two_doses_disagree(monkeypatch):
+    monkeypatch.setattr(RD, "shape", lambda s, r, band=0.15: {0.5: "proportional", 0.25: "concave"}.get(s))
+    from learn import local_objective_1c as C
+
+    monkeypatch.setattr(C, "share", lambda a, b: {"ratio": 0.5 if len(a) == 2 else 0.25})
+    rows = {"dose100": {1: ("a", "x", "c", 1.0)}, RD.ANCHOR: {1: ("a", "x", "c", 0.0)},
+            "dose50": {1: ("a", "x", "c", 0.5), 2: ("b", "y", "c", 0.5)}, "dose25": {1: ("a", "x", "c", 0.2)}}
+    rows[RD.ANCHOR][2] = ("b", "y", "c", 0.0)
+    r1 = {f"dose100-{RD.ANCHOR}": _c(0.2, 0.05), f"dose50-{RD.ANCHOR}": _c(0.1, 0.05),
+          f"dose25-{RD.ANCHOR}": _c(0.05, 0.05), "dose100-dose50": _c(0.1, 0.05)}
+    med = {"dose25": {"cut": 0.15}, "dose50": {"cut": 0.29}, "dose100": {"cut": 0.47}}
+    out = RD.dose_shape(r1, rows, {1, 2}, med)
+    assert out["read"] and out["shape_50"] == "proportional" and out["shape_25"] == "concave"
+    assert out["shape"] == "undecided" and not out["non_monotone"] and out["gate_cut"] == 0.29

@@ -172,9 +172,10 @@ percentile, maximum, the ±12 dB-bounded `dose100`'s E_st) are logged per part (
   float at S; the comparators; the probe's hash; stop files (this step's and `local_objective`'s;
   a breakage writes this step's and stops every shard); the swap guard; the disk guard (31 GB,
   checked per (cell, probe)); `OMP_NUM_THREADS=1`.
-- **Order:** probe by probe, all 24 cells each, so a stop leaves whole probes: `dose100`,
-  `shift100` (the control can void readings 1–4, so it comes second), `full_gl`, `full100`,
-  `dose50`, `dose25`.
+- **Order:** probe by probe on each lane: `dose100`, `shift100` (the control can void readings 1–4,
+  so it comes second), `full_gl`, `full100`, `dose50`, `dose25`. The three lanes move through the
+  list independently (a yield pauses one lane), so a stop can leave a probe or two part-rendered;
+  the report refuses any contrast whose two sides are not scored on all 24 cells, and says so.
 
 ### Sharing the machine (at most 3 render processes)
 
@@ -232,7 +233,7 @@ realised cuts (about 15%, 29%, 47%).
 **Declared secondaries:** `dose100` − `full100` (band and mask), `full_gl` − `full100` (one
 resynthesis against a consistent one), `dose100` − `dose50`, `dose50` − `dose25`, `shift100` −
 `cprime_eq`, `dose100` − `shift100`; every probe − C′ and truth − probe; the fixed-mask diagnostic
-of each primary; per-part gain against the realised cut (descriptive, Spearman).
+of each primary; per-part gain against the realised cut (descriptive, Spearman, in `report.json`).
 
 ## Readings (declared now, before any render)
 
@@ -310,7 +311,8 @@ other 48 cells if its contrast against `cprime_eq` is positive, its R1 interval 
 interval narrowed by the ratio would exclude 0; in the priority order `dose100`, `full100`,
 `full_gl`, `dose50`, `dose25` (the control extends with `dose100` if `dose100` extends). The first
 extension also renders the anchor `cprime_eq` on those cells (it was never rendered there) and the
-comparators: 2,352 + 2,352 + 192 for one probe. A decided contrast doesn't extend; nothing extends
+C′'s comparator (the anchor has no stored score there; `anchor_eq`'s own S checks cover it): 2,352
++ 2,352 + 96 for one probe. A decided contrast doesn't extend; nothing extends
 past the 72 cells. Scored as it renders, R2 stores about 0.1 GB, so the disk is not expected to
 limit it; the disk guard still applies per (cell, probe).
 
@@ -321,9 +323,9 @@ limit it; the disk guard still applies per (cell, probe).
 | Build and checks | 0 | about 5 min CPU | at launch |
 | R1 (6 probes + comparators) | 7,152 | about 2 h at 3 processes (scoring in the render processes) | in free render slots (above) |
 | Report | 0 | minutes | after R1 |
-| R2 (by the rule) | 0–16,656 (expected 0–4,896) | 0–5 h | after the report, in free slots |
+| R2 (by the rule) | 0–16,560 (expected 0–4,800) | 0–5 h | after the report, in free slots |
 
-- **Renders: 7,152 at R1** (6 × 1,176 + 96); at most 16,656 more at R2 (every probe, the control
+- **Renders: 7,152 at R1** (6 × 1,176 + 96); at most 16,560 more at R2 (every probe, the control
   and the anchor on the other 48 cells, with the comparators); expected 7,152 to about 12k.
 - **Disk:** 38.4 GB free at planning; part C needs about 3.3 GB. This step stores about 0.1 GB at R1
   (144 S FLACs, about 70 MB, and the score files) and no probe audio. Part C's own disk rules (its
@@ -378,6 +380,15 @@ alignment's sign, the counts and the deadlock argument) with 5 required changes,
    the point estimate, and cover the missing outcomes (a probe below the anchor, `full100` above
    `full_gl`, `dose100` above `full100`, the control in between).
 5. **The control renders second,** right after `dose100`.
+
+**The PR review** (fresh agent, changes required, all made before merge and before any render):
+R2's anchor comparator would have crashed on cells with no stored anchor score (it now runs C′'s
+comparator only there, 96 renders, and the R2 count above is corrected); `learn.rebuild_dose` no
+longer has its own `render` command (only `rebuild_tone render-dose`, which every job counts);
+the report refuses contrasts on incomplete probes; the per-part gain-against-cut Spearman is in
+the report; and from its notes, render counts are saved during each cell, the runner logs waits
+and a failing slot count, the shape is "undecided" where S25 and S50 disagree, and the lanes'
+independent order is stated.
 
 **The re-review** (approve, no required changes) left three notes, all taken: sibling lanes yield
 only to lower PIDs; the doses' mask is described as E_st's restricted to where C′ is present; the
