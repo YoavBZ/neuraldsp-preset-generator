@@ -289,7 +289,7 @@ was declared, what was measured, and the research behind it.
   development parts, about 13× the audio of one crop each. Step 2 (true DI, 19 parts, 10 bands):
   fitting three sections at once carries a little better to held-out sections than fitting one
   (−0.018 [−0.030, −0.005]) at more renders; at equal renders not shown; one section keeps about
-  0.87 of its gain elsewhere in the track; the tone curve tracks where sections disagree on
+  0.87 of its gain elsewhere in the track; the tone curve tracks where sections disagree, most on
   Cambridge. 21,647 renders. Audited.
 - [cprime-sep-plan.md](cprime-sep-plan.md) → [results](cprime-sep-results.md): C′ fine-tuned on
   separator residuals; a small envelope gain, inside the noise on stems and as large on the amp

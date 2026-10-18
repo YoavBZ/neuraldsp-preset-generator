@@ -231,8 +231,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
           conservative bound is +0.024 [+0.005, +0.044]);
         - one section's search keeps about 0.87 of its gain on held sections; regrets are near the
           seed floor, with a few parts (magilla, Farthest Step, Blind Spots) standing out;
-        - the tone curve tracks where sections disagree on Cambridge (Spearman +0.59), not on the
-          Telefunken live-room parts (+0.05).
+        - the tone curve tracks where sections disagree, most on Cambridge (Spearman +0.59); on
+          the Telefunken live-room parts only within a part (+0.34; pooled +0.06).
         Next (step 3): several held-out sections as arm A's scoring unit; the multi-section
         objective provisional until a matched-budget control; then grouping sections into sounds
         (the user's caution about several guitars and mid-song changes), and song research as a

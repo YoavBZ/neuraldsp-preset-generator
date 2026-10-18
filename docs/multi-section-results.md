@@ -19,7 +19,7 @@ Outputs are in `~/ndsp-presets/learn/multi-section/`: `sections/` (step 1), `par
   - Fragments' exclusion given its direction: leaving it out is conservative for P, but it is the
     batch's worst transfer failure, so "transfers worse than S are rare" and "one section gets
     most of the way" are qualified;
-  - the tone-curve association attributed to Cambridge (Telefunken about none, +0.05);
+  - the tone-curve association attributed mostly to Cambridge, with a Telefunken row;
   - the seed floor described as measured with another seed, which may overstate the path noise in
     the same-seed regrets, with the settings distances between searches added (a declared output
     that was missing) and the floor on the matched 19 parts;
@@ -30,6 +30,9 @@ Outputs are in `~/ndsp-presets/learn/multi-section/`: `sections/` (step 1), `par
   - Also taken from its suggestions: the 7/3 band split called what it is; the measure DI's use of
     the held sections' DI audio stated; the part lost from the gap split named; the multi search's
     shared render cache noted.
+- **PR review (independent agent, 2026-10-18):** the Telefunken row was computed with Fragments
+  dropped whole, not under the shipped rule; restated as 32 pairs, +0.06 pooled and +0.34 within
+  part, and the reading changed (within a part the curve still tracks the regrets there).
 - **Reading these figures:** they are post-hoc development estimates on heavily used parts, with the
   **true DI** and the real amp track. Every figure is band-weighted, with a 90% band-clustered t
   interval (bands − 1 df: 9 for batch 0's 10 bands), the leave-one-band-out (LOBO) range, and the
@@ -61,9 +64,9 @@ held-out sections than a search on one section: P = −0.018 [−0.030, −0.005
   of transfers land worse than S (pooled 8 of 114, 7.0%). The one part left out, Fragments GTR, is
   the batch's worst transfer: one single search's settings are refused on another searched
   section and on two held ones.
-- **The zero-render tone curve tracks where sections disagree on Cambridge:** Spearman +0.59
-  pooled, +0.62 within part (descriptive). On the Telefunken parts there is about none (+0.05).
-  All parts: +0.42 pooled, +0.46 within part.
+- **The zero-render tone curve tracks where sections disagree, most on Cambridge:** Spearman
+  +0.59 pooled, +0.62 within part (descriptive). On the Telefunken parts it is weak pooled (+0.06)
+  and +0.34 within part. All parts: +0.42 pooled, +0.46 within part.
 
 ## Step 1: the material (zero renders)
 
@@ -217,7 +220,7 @@ these are not independent and carry no interval.
 |---|---|---|---|
 | all | 59 (1 left out) | +0.42 | +0.46 (20 parts) |
 | Cambridge only | 27 | +0.59 | +0.62 (9 parts) |
-| Telefunken only (post hoc) | 30 | +0.05 | |
+| Telefunken only (post hoc) | 32 | +0.06 | +0.34 (11 parts) |
 
 - **The within-part Spearman was NaN in the run's `report.json`** (and `report.log`). The cause
   was a refused score, not too few points or constant values: Fragments GTR's single2 settings
@@ -226,15 +229,18 @@ these are not independent and carry no interval.
   infinite regret was also ranked as the largest in the pooled Spearman (+0.39 in the run's
   report), which amendment 1, item 6 forbids (no readout figure may touch a refused score).
 - **The fix** (`learn/multi_section.py`, `tone_pairs` and `spearman`, with a test): a pair whose
-  regret is not finite is left out (counted as `pairs_left_out`), and the Spearman returns None
+  regret is not finite is left out (counted in `pairs_left_out`, which also counts any pair
+  without a tone curve; here there are none), and the Spearman returns None
   for any non-finite input instead of NaN. The report was re-run (zero renders); only
   `tone_vs_regret` changed. The run's original is kept as `report-batch0-as-run.json`. Dropping
   Fragments entirely instead gives +0.41 pooled and +0.46 within part.
 - **Reading:** on Cambridge (no bleed), sections whose tone curves differ more also disagree more
-  on settings, within a part as well as across parts. On the Telefunken live-room parts the curve
-  says about nothing, plausibly because bleed moves the curve there. The curve is worth carrying
-  into step 3's grouping as a zero-render candidate signal on clean recordings, with the caveat
-  that on a song it must come from the rebuilt DI.
+  on settings, within a part as well as across parts. On the Telefunken live-room parts the
+  pooled association is weak (+0.06), plausibly because bleed inflates the curve distances on
+  some of those parts (step 1), which mixes scales across parts. Within a part it still tracks the regrets, about half as strongly
+  as on Cambridge (+0.34). The curve is worth carrying into step 3's grouping as a zero-render
+  candidate signal, compared within a part, with the caveat that on a song it must come from the
+  rebuilt DI.
 
 ## The rows
 
@@ -289,8 +295,8 @@ These hold for the **true DI** on development parts. The product never has it.
   of its gain on most tracks, though on one part of 20 its settings were refused elsewhere in the
   same track, so the product's check on other sections is worth keeping. None of this has been
   shown on a song with a separated stem and a rebuilt DI. The tone curve's agreement with the
-  regrets on Cambridge supports detecting sound changes cheaply on clean recordings; it is a
-  candidate signal only.
+  regrets (most on Cambridge, weaker within Telefunken parts) supports detecting sound changes
+  cheaply; it is a candidate signal only.
 
 ## Limits
 
