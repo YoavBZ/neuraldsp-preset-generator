@@ -238,11 +238,11 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
           before it (zero renders): one resynthesis with C′'s phase caps the E_st cut at about
           half (47% in 2–8 kHz, 52% full band; Griffin–Lim 69%), and a ±12 dB bound costs little.
         - **Stopped 2026-10-18 on its S-vs-warm-up check** (It_Was_My_Fault ElecGtr1, pr12, 0.0171;
-          [audit](audits/dose-stop-2026-10-18.md)). The first render after a process start or an
-          amp change is up to 24% louder for about 4 s, and this part's quiet opening (−34.5 dB)
-          exposes it. The cause is the plugin and the loop order, not the probe's audio; stored
-          scores are unaffected. Before any re-run: an amendment adds a priming render at S
-          after a process start or an amp change.
+          [audit](audits/dose-stop-2026-10-18.md)). A render after a change of plugin state is not clean at its
+          start: on this pr12 cell the process's first render is up to 24% louder for about 4 s,
+          and the part's quiet opening (−34.5 dB) exposes it. The cause is the plugin and the
+          loop order, not the probe's audio, and stored scores are unaffected. Before any re-run,
+          an amendment adds a priming render at S before every warm-up (+144 renders).
      2. **Fresh full mixes are the only yardstick for progress;** reused parts are for exploration.
         The 21 stage-F parts are now used once, so the decision test should use unseen parts
         where it can (item 3).
