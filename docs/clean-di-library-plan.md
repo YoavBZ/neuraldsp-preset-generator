@@ -724,3 +724,12 @@ The review's small code points were fixed too:
 - the page refuses a manifest with no version 1;
 - the draw raises if no order separates the repeats;
 - kept clips carry no other tag.
+
+## Amendment 4 (2026-10-18): part B1 declared
+
+Part B's amendment for its pilot is [known-answer-b1-plan.md](known-answer-b1-plan.md): B1's
+items, sections, truth presets and seeds, with review items 13–16. It also declares one deviation
+from "Song construction": Bourbon and Collide With Me have fewer than 4 clean sections (their
+Telefunken DIs are hum-flagged), so B1 uses their hum- or hiss-only sections and reports them as
+their own row. The known answer stays exact, since the truth is rendered from the same DI. A second
+deviation: B1 runs before the listening check is read (its report lists each section's flags).

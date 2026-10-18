@@ -284,6 +284,13 @@ was declared, what was measured, and the research behind it.
   2 kHz; phase and rotation are minor. A fixed EQ (`dep_eq`, +0.133 [−0.009, +0.276]) and a
   ranking-trained rebuild (`rank`, +0.075 [−0.031, +0.182] against C′) lean better; `rank` seems to act as a
   learned long-term EQ (post hoc), and neither reduces the short-time treble error. 18,981 renders.
+- [multi-section-plan.md](multi-section-plan.md) → [results](multi-section-results.md): every
+  10-s section where the guitar plays, not one crop. Step 1 (zero renders): 507 sections on 38
+  development parts, about 13× the audio of one crop each. Step 2 (true DI, 19 parts, 10 bands):
+  fitting three sections at once carries a little better to held-out sections than fitting one
+  (−0.018 [−0.030, −0.005]) at more renders; at equal renders not shown; one section keeps about
+  0.87 of its gain elsewhere in the track; the tone curve tracks where sections disagree, most on
+  Cambridge. 21,647 renders. Audited.
 - [cprime-sep-plan.md](cprime-sep-plan.md) → [results](cprime-sep-results.md): C′ fine-tuned on
   separator residuals; a small envelope gain, inside the noise on stems and as large on the amp
   track (zero renders).
@@ -292,6 +299,14 @@ was declared, what was measured, and the research behind it.
   near-silence per 10-s section; zero renders; 134.7 clean minutes after amendment 3's hum rule),
   two blind listening checks of the screens, and part
   B, known-answer test songs rendered through chosen presets (declared; renders later).
+- [known-answer-b1-plan.md](known-answer-b1-plan.md): part B's pilot B1, four known-answer songs
+  (Heather Jane, Bourbon, Collide With Me, Still Flyin') rendered through drawn presets and mixed
+  back, arm A's recipe scored against the exact truth (about 17.4k renders; queued after the
+  overnight runs).
+- [pretrain-set-plan.md](pretrain-set-plan.md): part C, a labelled pre-training render set from the
+  clean DI sections (Morgan, clean to crunch, record-like mixes built at training time), sized by a
+  learning-curve pilot (40k, one extension to 80k if the curve still improves; queued after B1 and
+  the hum-screen amendment).
 - [bleed-listening-plan.md](bleed-listening-plan.md) → [results](bleed-listening-results.md), with
   the [bleed audit](audits/bleed-2026-10-16/README.md): bleed only in the Telefunken live-room
   sessions, audible on the high parts; the cleaning isn't adopted, and every key result holds
