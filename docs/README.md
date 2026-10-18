@@ -284,6 +284,13 @@ was declared, what was measured, and the research behind it.
   2 kHz; phase and rotation are minor. A fixed EQ (`dep_eq`, +0.133 [−0.009, +0.276]) and a
   ranking-trained rebuild (`rank`, +0.075 [−0.031, +0.182] against C′) lean better; `rank` seems to act as a
   learned long-term EQ (post hoc), and neither reduces the short-time treble error. 18,981 renders.
+- [multi-section-plan.md](multi-section-plan.md) → [results](multi-section-results.md): every
+  10-s section where the guitar plays, not one crop. Step 1 (zero renders): 507 sections on 38
+  development parts, about 13× the audio of one crop each. Step 2 (true DI, 19 parts, 10 bands):
+  fitting three sections at once carries a little better to held-out sections than fitting one
+  (−0.018 [−0.030, −0.005]) at more renders; at equal renders not shown; one section keeps about
+  0.87 of its gain elsewhere in the track; the tone curve tracks where sections disagree on
+  Cambridge. 21,647 renders. Audited.
 - [cprime-sep-plan.md](cprime-sep-plan.md) → [results](cprime-sep-results.md): C′ fine-tuned on
   separator residuals; a small envelope gain, inside the noise on stems and as large on the amp
   track (zero renders).
