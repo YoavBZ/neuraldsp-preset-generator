@@ -2,6 +2,7 @@
 timeline, the gain field and the long-term hold, the probes' checks and hashes, the yield rule, the
 render pattern other jobs count, the declared readings and the extension rule. No renders."""
 
+import json
 import math
 import pathlib
 import re
@@ -311,3 +312,58 @@ def test_dose_shape_undecided_when_the_two_doses_disagree(monkeypatch):
     out = RD.dose_shape(r1, rows, {1, 2}, med)
     assert out["read"] and out["shape_50"] == "proportional" and out["shape_25"] == "concave"
     assert out["shape"] == "undecided" and not out["non_monotone"] and out["gate_cut"] == 0.29
+
+
+def test_render_writes_a_cells_scores_into_a_fresh_folder(monkeypatch, tmp_path):
+    """Regression (PR #218): the first cell of a probe wrote scores/<probe>/<part>/<amp>.json before
+    that folder existed (FileNotFoundError). Every write of cmd_render goes to a fresh tree here."""
+    from learn import arm_a_levers as L
+    from learn import confirm_run as CR
+    from learn import knob_ceiling as K
+
+    class Renderer:
+        def __init__(self):
+            self.count = 0
+            self.r = type("R", (), {"isolate": True})()
+
+        def menu(self):
+            return {"pr12": {"x": ("sel", "S")}}
+
+        def render(self, di, sel, x):
+            self.count += 1
+            return np.zeros(8)
+
+        def close(self):
+            pass
+
+    flat = {"decl": {h: 1.0 for h in G.HALVES}}
+    monkeypatch.setattr(RD, "OUT", tmp_path / "rebuild-dose")
+    monkeypatch.setattr(LO, "stop_path", lambda: tmp_path / "no-stop.json")
+    monkeypatch.setattr(RD, "build_ok", lambda: True)
+    monkeypatch.setattr(RD, "build_record", lambda: {"parts": {"s": {"hash": {"dose100": "h"}}}})
+    monkeypatch.setattr(LO, "load_sigma", lambda: ({"hash": "sig"}, {("s", "pr12"): [{"x": "S", "source": "S"},
+                                                                                     {"x": "p1"}]}))
+    monkeypatch.setattr(RD, "stage_cells", lambda stage: [("s", "pr12")])
+    monkeypatch.setattr(L, "menu_S", lambda: {"pr12": {"clean": (None, "S")}})
+    monkeypatch.setattr(L, "SwapGuard", lambda: type("G", (), {"check": lambda self: None})())
+    monkeypatch.setattr(LO, "judge_fns", lambda: None)
+    monkeypatch.setattr(G, "_own", lambda: ())
+    monkeypatch.setattr(G, "_ps", lambda: [])
+    monkeypatch.setattr(RD, "busy", lambda *a, **k: False)
+    monkeypatch.setattr(K, "parts", lambda: {"s": {"gain_class": "clean", "crop": tmp_path}})
+    monkeypatch.setattr(LO, "disk_free_gb", lambda: 1e6)
+    monkeypatch.setattr(K, "Renderer", Renderer)
+    monkeypatch.setattr(K, "START", {"clean": {"pr12": "x"}})
+    monkeypatch.setattr(K, "key", lambda s: s)
+    monkeypatch.setattr(RD, "probe_for", lambda *a: (np.zeros(8), np.zeros(8)))
+    monkeypatch.setattr(CR, "mono", lambda p: np.zeros(8))
+    monkeypatch.setattr(RD, "comparators", lambda *a: {"max_dev": 0.0})
+    monkeypatch.setattr(RD, "score_render", lambda *a: flat)
+    monkeypatch.setattr(LO, "save_flac", lambda path, y: 1.0)
+    monkeypatch.setattr(LO, "load_flac", lambda path, scale: np.zeros(8))
+    monkeypatch.setattr(LO, "deviation", lambda a, b: 0.0)
+    assert not (tmp_path / "rebuild-dose").exists()
+    RD.cmd_render((0, 1), "dose100", "r1")
+    rec_path, score_path, _ = RD._paths("dose100", "s", "pr12")
+    assert json.loads(rec_path.read_text())["status"] == "done"
+    assert len(json.loads(score_path.read_text())["scores"]) == 2
