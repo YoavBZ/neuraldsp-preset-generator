@@ -2298,6 +2298,47 @@
    "held_out": "none touched (development parts only)",
    "limits": "24 parts (19 clean), one amp per part; one construction per probe (Hann 1,024, E_st's mask, C' phase); three dose points; the measure DI keeps average-fold2's normalisation; the truth is the judge",
    "outcome": "done 2026-10-18 (R1 complete on all 24 cells; R2 not due, no probe extended; 7,448 renders = 1,319 dose100 incl. the 40 of the cleared stopped cell + 5 x 1,200 + 96 comparator + 33 unrecorded; the stop audit's 70 reported beside it, 7,518; four launches: missing folder (#218), the declared S-vs-warm-up stop (amendment 2, #222), the 31 GB disk guard, the resume on 5fe3c5d with the bounded render server, comparators passing on every cell; Sigma-order repeat check max 2.0e-7; audited; docs/dose-probe-results.md). Remainder truth - cprime_eq +0.157 [+0.083,+0.230]. Primaries vs cprime_eq: full_gl +0.123 [+0.051,+0.194] (share 0.78 [0.59,0.87]), full100 +0.116 [+0.045,+0.187] (0.74 [0.50,0.86]), dose100 +0.039 [+0.002,+0.077] (0.25 [0.01,0.59]), dose50 +0.018 [-0.006,+0.042], dose25 +0.013 [-0.001,+0.028]. Secondaries: dose100 - full100 -0.076 [-0.150,-0.002] (below), full_gl - full100 +0.007 [-0.003,+0.017] (near 0), shift100 - cprime_eq -0.000 [-0.099,+0.098] and dose100 - shift100 +0.040 [-0.074,+0.153] (control undecided). Fixed-mask rows unchanged. Dose shape undecided (S50 0.46 convex by 0.004, S25 0.34 proportional); gate cut 47%. Reading (hedged; oracle, control undecided and none for the full band): most of the remainder is full-band short-time magnitude; one resynthesis with C' phase carries it; 2-8 kHz on E_st's mask carries about a quarter. Next proposed: option 2 only as a full-band per-bin log-gain head (ceiling full100), gated on a full-band short-time error, after a zero-render metric check and optionally a localising probe (full100 below 1.6 kHz, a full-band shifted control)."
+  },
+  {
+   "test_id": "arm-a-mega53-oracle-di",
+   "plan": "docs/arm-a-mega53-plan.md",
+   "entered": "2026-10-18, amendment 2, after stage F's results were read and before any render for this arm",
+   "repeat_use": "Stage F's 21 parts / 126 directions, already scored by arms S, H and M (arm-a-mega53); this adds one arm, nothing else is re-read or re-chosen",
+   "parts": {
+    "stage_F": [
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
+     "cambridge-Passing_Ships-ElecGtr2",
+     "cambridge-Passing_Ships-ElecGtr4",
+     "cambridge-Quicksand-ElecGtr2",
+     "cambridge-Signs-ElecGtr3",
+     "cambridge-Today's_The_Day-ElecGtr07",
+     "cambridge-colour-me-red-elecgtr02",
+     "cambridge-colour-me-red-elecgtr03",
+     "cambridge-femme-elecgtr5",
+     "cambridge-get-out-of-bed-elecgtr2",
+     "cambridge-let-s-dance-elecgtr3",
+     "cambridge-let-s-dance-elecgtr4",
+     "cambridge-magilla-elecgtr1",
+     "cambridge-wickerman-elecgtr1",
+     "cambridge-wickerman-elecgtr2",
+     "cambridge-wickerman-elecgtr3",
+     "cambridge-wickerman-elecgtr7",
+     "telefunken-Gym_Hours-GTR_2",
+     "telefunken-Russian_Cream-GTR_1",
+     "telefunken-She's_Gone-GTR",
+     "telefunken-Strangest_Places-GTR"
+    ]
+   },
+   "bands": "stage F's 12 bands (as arm-a-mega53)",
+   "audio_only": "stage F's htdemucs full-mix crops (search reference), the crops' di.wav -> measure DI (search and judge DI), reference.wav (judge)",
+   "training": "none",
+   "seeds": "main_stage seed 20261013 (as H)",
+   "gate": "None (the user's rule): XO - S and XO - H, band-weighted, 90% band-clustered t intervals (11 df), rows all (declared), no high bleed (direction rule), F-song (descriptive); XO's share of the K_S true-DI gap (-0.293, a different setting), descriptive",
+   "stopping": "fixed set, no extension; stops on the arm-a-mega53 stop files, the cap 7,100, the 31 GB disk guard and the swap guard",
+   "renders": "6,993 = 63 priming + 126 x 55; one render process beside part C's two",
+   "held_out": "none newly touched (stage F's parts were already used by arm-a-mega53)",
+   "limits": "one stem (htdemucs, full mix), one recipe; the ceiling reference is from other parts and a cleaner target",
+   "outcome": "pending"
   }
  ]
 }

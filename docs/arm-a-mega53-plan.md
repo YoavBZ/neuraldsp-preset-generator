@@ -543,3 +543,43 @@ Disk: under 1 GB now. 56 GB free at this amendment, against the 31 GB guard.
    shards 0/3 and 1/3; shard 2/3 starts when lane A exits;
 4. stage F, 3 shards, after stage D;
 5. reports, `docs/arm-a-mega53-results.md`, an independent audit.
+
+## Amendment 2 (2026-10-18): the oracle-DI arm on stage F
+
+Declared before any render for it, after the stage-F results were read. Code
+`learn/oracle_di_arm.py`, tests `tests/test_oracle_di_arm.py`; ledger `arm-a-mega53-oracle-di`.
+
+**Question.** In the product setting (a separated full-mix stem, no DI), would a *perfect* rebuild
+help arm A much? Stage F stored H at −0.028 [−0.064, +0.008] against S.
+
+**One arm, X_oracle (`XO`).** Identical to stage F's H in every respect except the DI the search
+renders through: the part's **true measure DI** (`knob_ceiling.measure_di`, the judge's own DI)
+instead of C′'s rebuild of the stem. Unchanged: the 52-render `main_stage` (seed 20261013), shrink
+0.5, the fallback to S (silent or refused probe, the probe rendered through the search's DI), the
+htdemucs full-mix stem as the search's reference (what a product has), `rebuilt_distance` with its
+activity fallback on the search half, and the judge (held half, true DI against `reference.wav`).
+
+**The objective's lag (declared).** H scores at −52 because a C′ rebuild sits aligned with its stem.
+The true DI is not aligned with the stem: it sits where the judge finds it against the amp track,
+`part["judge_lag"]` (−129 to +329 samples on these parts). The htdemucs crop is aligned with
+`reference.wav` (GCC-PHAT, all 21 parts within ±1 sample, measured with zero renders). So XO scores
+at `lag = part["judge_lag"]`, the judge's and K_S's (`knob_ceiling.judge`) convention for a true DI.
+This gives the true DI its fair best case; scoring at −52 would misalign it by the part's lag.
+
+**Contrasts (paired by direction, band-weighted, 90% band-clustered t intervals, 11 df; the
+existing `contrast` machinery, so read on the directions where S, H, M and XO all score):**
+- **XO − S** and **XO − H** (both primary, both reported whatever they show);
+- rows: all (declared), no high bleed (direction rule), F-song new songs only (descriptive);
+- **XO's share of the true-DI ceiling gap:** (XO − S) / (−0.293), and H's for comparison. −0.293 is
+  K_S's true-DI search to a stop on stage D's development parts, scored against the amp track
+  itself, so it is a different setting (other parts, an instrumental-free target, more renders):
+  a reference scale, not a matched ceiling. Descriptive, no interval.
+
+**Reading, declared (no pass/fail bars).** The effect sizes are the result. If XO − H is clearly
+negative, a better rebuild is worth building for arm A on full mixes; if it is near 0, the stem
+objective (not the rebuild) limits arm A in the product setting.
+
+**Renders.** Fixed set, no extension: 63 part-amps × 1 discarded priming render (true DI at S, the
+start-transient rule: one per process start or amp change; the DI never changes within a group) +
+126 × 55 (52 search, 1 probe, 2 judges) = **6,993** (cap 7,100). One render process (part C holds
+2 of the 3 slots), about 3 h. Outputs under `~/ndsp-presets/learn/arm-a-mega53/F-oracle/`.
