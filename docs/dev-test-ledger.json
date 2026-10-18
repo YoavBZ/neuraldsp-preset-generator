@@ -2338,7 +2338,7 @@
    "renders": "6,993 = 63 priming + 126 x 55; one render process beside part C's two",
    "held_out": "none newly touched (stage F's parts were already used by arm-a-mega53)",
    "limits": "one stem (htdemucs, full mix), one recipe; the ceiling reference is from other parts and a cleaner target",
-   "outcome": "pending"
+   "outcome": "done 2026-10-18 (126/126 directions; 6,994 renders counted + up to 54 uncounted from one pause; no fallbacks). XO - S +0.012 [-0.088,+0.112], XO - H +0.040 [-0.043,+0.123] (12 bands); no high bleed +0.011 / +0.057; F-song -0.027 / -0.045 (4 bands, descriptive); share of the K_S gap -0.04 (H +0.10). Reading (hedged): a perfect rebuild gives arm A no measurable gain against a full-mix stem objective; the stem objective, not the rebuild, limits arm A on full mixes. docs/arm-a-mega53-results.md, amendment 2."
   }
  ]
 }
