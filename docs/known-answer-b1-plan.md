@@ -14,6 +14,8 @@ Development data only; estimates with intervals, no pass/fail bars.
 changes, all made as [amendment 1](#amendment-1-2026-10-18-review-changes-before-any-render), which
 governs where the two differ. Renders start only after the overnight runs end.
 
+**Results (2026-10-18):** [known-answer-b1-results.md](known-answer-b1-results.md).
+
 "B1" here is part B's pilot of known-answer songs, not arm B's sound-space retrain of the same name.
 
 ## The question (unchanged)
