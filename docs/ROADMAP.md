@@ -221,6 +221,22 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
         where it can (item 3).
      3. **More fresh development material.** Request sent to the cloud researcher on 2026-10-17.
         With only 21 usable fresh parts, effects much below about 0.03 read as ties.
+     3b. **Many sections per track, not one crop** (the user's idea, 2026-10-17;
+        [plan](multi-section-plan.md) → [results](multi-section-results.md), audited). Every 10-s
+        section where the guitar plays gives about 13× the audio of one crop (507 sections, 38
+        parts). Step 2 (true DI, development, batch 0: 19 parts, 10 bands; 21,647 renders):
+        - a search fitting three sections at once lands a little closer on held-out sections than
+          a one-section search, P = −0.018 [−0.030, −0.005] (7/3 bands), about 6% of the search's
+          gain over S, at about twice to three times the renders; at equal renders not shown (the
+          conservative bound is +0.024 [+0.005, +0.044]);
+        - one section's search keeps about 0.87 of its gain on held sections; regrets are near the
+          seed floor, with a few parts (magilla, Farthest Step, Blind Spots) standing out;
+        - the tone curve tracks where sections disagree, most on Cambridge (Spearman +0.59); on
+          the Telefunken live-room parts only within a part (+0.34; pooled +0.06).
+        Next (step 3): several held-out sections as arm A's scoring unit; the multi-section
+        objective provisional until a matched-budget control; then grouping sections into sounds
+        (the user's caution about several guitars and mid-song changes), and song research as a
+        prior.
      4. **Decision point: one fresh-song test of arm A with the improved rebuild** (and Mega-53 if
         it still leans better). If arm A clearly beats S on fresh full mixes (read as that test's
         plan declares), build the product around it. If not, revive arm B (song to settings directly) with these lessons, or a hybrid.
@@ -228,8 +244,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      until the decision point, metal out of scope.
    - **Renders:** about 250k used so far. Since the 2026-10-16 update: arm B's retrain about
      14.8k, the local objective 7,061 + 3,528 (1b) + 3,528 (1c) + 7,200 (1d), the ceiling
-     extension 17,550 plus 72 warm-ups, the listening page 26, arm A with Mega-53 30,102 and the
-     rebuild-gap study 18,981. No fixed limit (2026-10-16): each step plan
+     extension 17,550 plus 72 warm-ups, the listening page 26, arm A with Mega-53 30,102, the
+     rebuild-gap study 18,981 and multi-section step 2 21,647 (after the 250k). No fixed limit (2026-10-16): each step plan
      declares when to stop rendering from its own evidence (a flattened search curve, a learning
      curve that stops improving, an interval narrow enough to answer the question), and reports
      what it used.
