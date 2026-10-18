@@ -245,6 +245,12 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
           [amendment 2](dose-probe-plan.md#amendment-2-2026-10-18-after-the-stop-before-any-re-run)
           adds a priming render at S before every warm-up and a Σ-order repeat check on the stopped
           cell (reviewed; about 7,448 renders at R1 in all, 528 spent before the re-run).
+        - **Other pipelines audited 2026-10-18** (code reading, zero renders;
+          [audit](audits/start-transient-2026-10-18.md)): no audited merged decision changes; the
+          arm B and DI-recovery scripts are not yet audited. Part C is
+          exposed (no priming render) but probably below one 0.5-dB step on nearly all examples, so
+          it keeps rendering; its direct check (60 renders) waits for a 4th process. New rule: one
+          discarded priming render after any process start, amp change or DI change.
      2. **Fresh full mixes are the only yardstick for progress;** reused parts are for exploration.
         The 21 stage-F parts are now used once, so the decision test should use unseen parts
         where it can (item 3).
