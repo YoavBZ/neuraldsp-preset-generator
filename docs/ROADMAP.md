@@ -232,6 +232,11 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
         gated on reaching that cut. If not, the declared alternatives (a learned Morgan surrogate,
         ranking in the plugin's own terms). The leak-free EQ (near-free) and `rank` are the
         long-term candidates to carry into the decision test.
+        - **Planned and reviewed 2026-10-18** ([plan](dose-probe-plan.md)): 3 doses in 2–8 kHz,
+          the full-band field with one resynthesis (option 2's direct ceiling) and with
+          Griffin–Lim, and a time-shifted control; 7,152 renders, scored as they render. Measured
+          before it (zero renders): one resynthesis with C′'s phase caps the E_st cut at about
+          half (47% in 2–8 kHz, 52% full band; Griffin–Lim 69%), and a ±12 dB bound costs little.
      2. **Fresh full mixes are the only yardstick for progress;** reused parts are for exploration.
         The 21 stage-F parts are now used once, so the decision test should use unseen parts
         where it can (item 3).

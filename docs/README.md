@@ -290,6 +290,11 @@ was declared, what was measured, and the research behind it.
   rendered ranking (+0.012 [−0.023, +0.047]; on top of the EQ −0.012); the leak-free EQ (+0.132 [−0.030,
   +0.294]) and `rank`'s second seed (+0.099 [−0.036, +0.233]) lean positive, undecided. Next
   proposed: an oracle dose probe of the short-time component. 8,280 renders. Audited.
+- [dose-probe-plan.md](dose-probe-plan.md): an oracle dose probe on top of the leak-free EQ:
+  25/50/100% of the true offset-removed short-time magnitude in 2–8 kHz, the full-band true
+  magnitude (one resynthesis, or Griffin–Lim) and a time-shifted control, with the long-term
+  balance held. Does the short-time magnitude carry the remaining half of the gap, and which E_st
+  cut matters? Reviewed; 7,152 renders planned.
 - [multi-section-plan.md](multi-section-plan.md) → [results](multi-section-results.md): every
   10-s section where the guitar plays, not one crop. Step 1 (zero renders): 507 sections on 38
   development parts, about 13× the audio of one crop each. Step 2 (true DI, 19 parts, 10 bands):

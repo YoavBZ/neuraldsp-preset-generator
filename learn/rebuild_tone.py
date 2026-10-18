@@ -11,6 +11,7 @@ pass/fail bars. The renders, scores and cells are the rebuild-gap study's stage 
     OMP_NUM_THREADS=1 .venv/bin/python -m learn.rebuild_tone render --stage tr1 --arms arm_stm,arm_ctl_stm --shard i/3
     OMP_NUM_THREADS=1 .venv/bin/python -m learn.rebuild_tone score --workers 3
     .venv/bin/python -m learn.rebuild_tone report                       # the contrasts + the extension list
+    OMP_NUM_THREADS=1 .venv/bin/python -m learn.rebuild_tone render-dose --probe dose100 --shard i/3   # docs/dose-probe-plan.md
 
 The torch side (the loss, the fine-tunes, the gate's measurements, the rebuilds) is
 `learn/rebuild_tone_train.py`.
@@ -516,6 +517,10 @@ def main(argv=None):
     s = sub.add_parser("score")
     s.add_argument("--workers", type=int, default=3)
     sub.add_parser("report")
+    d = sub.add_parser("render-dose")                # docs/dose-probe-plan.md (`learn/rebuild_dose.py`)
+    d.add_argument("--probe", required=True)
+    d.add_argument("--shard", default="0/1")
+    d.add_argument("--stage", default="r1", choices=("r1", "r2"))
     sub.add_parser("arms-check")
     j = sub.add_parser("j2-arms")
     j.add_argument("--group", required=True)
@@ -535,6 +540,11 @@ def main(argv=None):
         cmd_score(a.workers)
     elif a.cmd == "report":
         cmd_report()
+    elif a.cmd == "render-dose":
+        from learn import rebuild_dose as RD
+
+        i, n = a.shard.split("/")
+        RD.cmd_render((int(i), int(n)), a.probe, a.stage)
     elif a.cmd == "arms-check":
         write_arms_check()
     elif a.cmd == "j2-arms":
