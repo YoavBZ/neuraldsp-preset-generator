@@ -30,7 +30,7 @@ def test_bounded_server_is_the_shipped_server_plus_the_marked_cache_blocks():
 def test_bounded_cache_keeps_a_handful_and_touches_every_render():
     bounded = K.BOUNDED_SERVER_SOURCE.read_text()
     kept = int(re.search(r"let EXCITATION_CACHE_KEPT = (\d+)", bounded).group(1))
-    assert 1 <= kept <= 8
+    assert kept == K.DI_FILES_KEPT                            # the same bound as the DI files on disk
     # the touch follows the cache fill, so the DI being rendered is the most recent and never evicted
     assert bounded.index("excitationCache[cacheKey] = channels") < bounded.index("touchExcitation(cacheKey)")
     assert bounded.index("touchExcitation(cacheKey)") < bounded.index("let source = channels!")

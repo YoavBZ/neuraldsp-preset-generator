@@ -396,8 +396,9 @@ def keep_recent_dis(files, current, keep=DI_FILES_KEPT):
 
 
 # The render server learn runs: a copy of `scripts/au_render_server.swift` whose decoded-DI cache
-# keeps the 4 most recently used DIs instead of all of them (~1.85 MB of RAM per distinct DI held;
-# part C's servers reached 5.1 GB each over its ~600 sections). Learn-owned for the same reason as
+# keeps the 4 most recently used DIs instead of all of them (~1.85 MB of RAM per distinct DI held).
+# It does not touch a separate ~1.1 MB-per-render growth both servers show (pretrain-set plan,
+# amendment 2, item 3). Learn-owned for the same reason as
 # DI_FILES_KEPT: the shipped server's bytes are part of the renderer build Tone King's
 # measurements record. Renders are bit-identical to the shipped server's (pretrain-set plan,
 # amendment 2).

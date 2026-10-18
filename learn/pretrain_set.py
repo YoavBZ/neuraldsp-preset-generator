@@ -1180,6 +1180,15 @@ def frozen_threshold(rows):
     return t
 
 
+def check_curve_mask(res):
+    """Refuse to add runs to a curve.json whose runs were trained with another half-A mask (runs from
+    before amendment 2 carry no mask field and count as unmasked)."""
+    have = res.get("mask_a_frames", 0 if res.get("runs") else MASK_A_FRAMES)
+    if have != MASK_A_FRAMES:
+        raise SystemExit(f"curve.json holds runs trained with a half-A mask of {have} frames, not "
+                         f"{MASK_A_FRAMES} (amendment 2); move it aside before running the curve")
+
+
 def cmd_curve(args):
     """Train the half-width model on nested prefixes and read the val bands (one GPU job)."""
     import numpy as np
@@ -1200,6 +1209,8 @@ def cmd_curve(args):
     half = set(tr_secs[:len(tr_secs) // 2])
     dev = torch.device("mps" if torch.backends.mps.is_available() and os.environ.get("CURVE_DEVICE") != "cpu" else "cpu")
     res = _load(OUT / "curve.json") or {"runs": {}}
+    check_curve_mask(res)
+    res["mask_a_frames"] = MASK_A_FRAMES
     res["scope_threshold"] = thr
     for label, n, seed, halfsec in curve_runs(args.n):
         key = f"{label}-{seed}"

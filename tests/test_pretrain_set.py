@@ -326,6 +326,15 @@ def test_every_val_readout_masks_half_a_and_never_half_b(tmp_path, monkeypatch):
         assert X[0, :, :, M.MASK_A_FRAMES:].all() and X[1].all(), kw
 
 
+def test_curve_refuses_to_mix_masked_and_unmasked_runs():
+    M.check_curve_mask({"runs": {}})
+    M.check_curve_mask({"runs": {"a-1": {}}, "mask_a_frames": M.MASK_A_FRAMES})
+    with pytest.raises(SystemExit):
+        M.check_curve_mask({"runs": {"a-1": {}}})               # pre-amendment runs: unmasked
+    with pytest.raises(SystemExit):
+        M.check_curve_mask({"runs": {}, "mask_a_frames": 7})
+
+
 def test_a_recheck_render_is_primed_at_the_same_di_and_settings():
     np = pytest.importorskip("numpy")
     calls = []
