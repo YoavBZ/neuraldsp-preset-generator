@@ -22,9 +22,9 @@ the class's starting preset S? Arm O runs the same recipe with the isolated trut
 about arm A.** Arm A against S on the primary items reads **+0.001 [−0.523, +0.524]** (log d_A/d_S;
 3 bands). That is undecided: the interval runs from 41% closer to 69% farther, about 14 times wider
 than stage F's (±0.036). One song drives the
-spread: on Heather Jane, arm A lands 1.4× farther from the truth than S (+0.36), while on the other
+spread: on Heather Jane, arm A lands 1.4× farther from the truth than S over all amps (+0.36), while on the other
 three songs it lands 16–18% closer (−0.17 to −0.20).
-- **The plumbing:** the record is exact. The truth rendered through the judge's path reads ≤ 0.001
+- **The plumbing:** the record is exact. The truth rendered through the judge's path reads ≤ 0.0011
   against it (S: 1.7–7.2), and the whole-track truth's slice ≤ 0.001. There were no fallbacks to S
   and no floored exact recoveries.
 - **Arm O (the isolated truth as the stem):** −0.134 [−0.323, +0.056] against S. A − O, the
@@ -32,11 +32,12 @@ three songs it lands 16–18% closer (−0.17 to −0.20).
 - **Knob error:** arm A's knobs are not shown closer to the truth than S's; they lean further,
   +0.038 [−0.046, +0.122] on the identifiable knobs (unit scale). Against a random setting (a post-hoc
   baseline), both lean closer, undecided: A −0.085 [−0.232, +0.062], S −0.123 [−0.247, +0.001].
-- **The amp:** on the true DI, arm A's lowest-distance amp is the truth's amp on only 6 of 68
+- **The amp** (not declared; units share sections, so not independent): on the true DI, arm A's
+  lowest-distance amp is the truth's amp on only 6 of 68
   (item, section, direction) units, against 1/3 by chance. Arm A's own search objective picks it
   on 29 of 68.
 - **B2:** the declared formula asks for 5,654 songs. As the plan predicted, the pool caps B2. The
-  proposal is the four fresh DI-only candidates (about 14k renders, about 2.6 h), which would take
+  proposal is the four fresh DI-only candidates (about 14k renders, about 2.5 h), which would take
   the interval from ±0.52 to about ±0.23 at B1's spread.
 
 ## What was run
@@ -137,7 +138,7 @@ Class is fixed per song, so these are also the per-class rows (P1's class):
   - This is post hoc and partly mechanical: d_S sits in both terms, so noise in d_S alone makes the
     two correlate. It is a hypothesis for B2, not a finding.
 - **Leaving one band out** (a sensitivity reading, post hoc): without Chris Coltraine the primary
-  reads −0.178 [−0.217, −0.140] (2 bands). Without either other band it reads about +0.09
+  reads −0.178 [−0.217, −0.140] (2 bands, 1 df). Without either other band it reads about +0.09
   [−1.6, +1.8]. The sign of B1's mean depends on one band.
 - **The fresh song** (The Apprehended) reads −0.172, but only −0.032 on the truth's amp. Most of
   its gain is on the two amps the truth is not on.
@@ -294,7 +295,7 @@ rebuild-gap step's. Search rate: about 6.5k renders an hour on 3 shards.
     truth;
   - **arm A is not shown to recover the preset's knobs better than S** (it leans further); both lean
     closer than chance, undecided. By the judge's distance its best amp is rarely the truth's
-    (6/68). Its own objective picks the truth's amp on 29/68, mostly in one band (descriptive);
+    (6/68; not declared, descriptive). Its own objective picks the truth's amp on 29/68, mostly in one band (descriptive);
   - **with a perfect stem (arm O) the recipe leans closer than S** (−0.134). The separator's share
     leans against arm A (+0.112). Neither is decided;
   - **the switch and two-guitar items** give the per-side and per-item spread multi-section
@@ -331,9 +332,9 @@ caps B2.
   - count warm-ups once;
   - declare the amp readout and the S-distance dependence (Heather Jane's pattern) as B2 rows.
 - **Cost per song** (without item 2): arm A 6 sections × 333 = 1,998, arm O 4 × 333 = 1,332, S 24,
-  truth about 135, about **3.5k renders**. For 4 songs that is **about 14k renders**, about 2.2 h of
-  search on 3 shards at B1's rate, plus about 20 min of truth and about 7 min of htdemucs, so about
-  2.6 h. With item 2 kept it is about 16.6k renders. Downloads come first, one at a time, with
+  truth about 135, about **3.5k renders**. For 4 songs that is **about 14k renders**, about 2.1 h of
+  search (13.3k renders) on 3 shards at B1's rate, plus about 20 min of truth and about 7 min of htdemucs, so about
+  2.5 h. With item 2 kept it is about 16.6k renders. Downloads come first, one at a time, with
   31 GB of disk kept free.
 
 **Audited 2026-10-18 by an independent agent** (approve with required changes; every number was

@@ -244,7 +244,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
         With only 21 usable fresh parts, effects much below about 0.03 read as ties.
         - **Known-answer songs, pilot B1** ([results](known-answer-b1-results.md), audited; 17,290
           renders): four songs rendered through drawn presets and mixed back, so the record is exact.
-          The pipeline works (the truth reads ≤ 0.001 against itself). Arm A against S reads +0.001
+          The pipeline works (the truth reads ≤ 0.0011 against itself). Arm A against S reads +0.001
           [−0.523, +0.524] over 3 bands: undecided, and 3 bands can show almost nothing. The spread
           is one band: Heather Jane +0.36, where S starts near the truth; the other three songs
           −0.17 to −0.20, the fresh one (The Apprehended) −0.17. With the isolated truth as the stem
@@ -252,7 +252,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
         - **Next: B2**, proposed at the pool's cap (the declared rule asks for 5,654 songs): up to 4
           fresh DI-only songs (Strobe "Maya", MekaPhil, The Timezone "GOTGF", Perpetual Escape
           "Stop And Rise", after scope and held-out checks and downloads), about 14k renders and
-          2.6 h, for about ±0.23 over 7 bands at B1's spread. Its amendment and review come first.
+          2.5 h, for about ±0.23 over 7 bands at B1's spread. Its amendment and review come first.
      3b. **Many sections per track, not one crop** (the user's idea, 2026-10-17;
         [plan](multi-section-plan.md) → [results](multi-section-results.md), audited). Every 10-s
         section where the guitar plays gives about 13× the audio of one crop (507 sections, 38
