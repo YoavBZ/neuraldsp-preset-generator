@@ -15,8 +15,10 @@ import json
 import math
 import pathlib
 import random
+import shutil
 import statistics
 import sys
+import tempfile
 from dataclasses import dataclass
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -393,6 +395,30 @@ def keep_recent_dis(files, current, keep=DI_FILES_KEPT):
         stale.unlink(missing_ok=True)
 
 
+# The render server learn runs: a copy of `scripts/au_render_server.swift` whose decoded-DI cache
+# keeps the 4 most recently used DIs instead of all of them (~1.7 MB of RAM per distinct DI; part C
+# would have grown each server by ~24 GB over its 14.3k renders). Learn-owned for the same reason as
+# DI_FILES_KEPT: the shipped server's bytes are part of the renderer build Tone King's
+# measurements record. Renders are bit-identical to the shipped server's (pretrain-set plan,
+# amendment 2).
+BOUNDED_SERVER_SOURCE = pathlib.Path(__file__).resolve().parent / "au_render_server_bounded.swift"
+
+
+def build_bounded_server(directory):
+    """Compile the bounded server into `directory` the way `AudioUnitRenderer._compile` builds the
+    shipped one (`scripts/_swift.compile_swift`, with its shared build cache) -> the binary."""
+    if str(PLUGIN_ROOT / "scripts") not in sys.path:
+        sys.path.insert(0, str(PLUGIN_ROOT / "scripts"))
+    from _swift import compile_swift
+    from match.renderer_au import AudioUnitError
+
+    output = pathlib.Path(directory) / BOUNDED_SERVER_SOURCE.stem
+    built, error = compile_swift(BOUNDED_SERVER_SOURCE, output)
+    if built is None or built.returncode != 0:
+        raise AudioUnitError(f"could not build {BOUNDED_SERVER_SOURCE.name}:\n{error}")
+    return output
+
+
 def renderer_class():
     """Morgan's `AudioUnitRenderer` with the select/edits state command and bounded DI files."""
     from match.renderer_au import AudioUnitRenderer
@@ -421,7 +447,14 @@ class Renderer:
         # `reset` (which the server calls before every render) leaves some state from the
         # previous render audible for 2-3 s, at the amp's hiss level (plan, amendment 3);
         # rebuilding clears it, at no measurable cost.
-        self.r = renderer_class()("morgan", process_policy="reuse", isolate=True)
+        # The bounded server (above), built into a directory this object owns and removes.
+        self._bin_dir = pathlib.Path(tempfile.mkdtemp(prefix="au-bounded-"))
+        try:
+            binary = build_bounded_server(self._bin_dir)
+            self.r = renderer_class()("morgan", process_policy="reuse", isolate=True, binary=binary)
+        except BaseException:
+            shutil.rmtree(self._bin_dir, ignore_errors=True)
+            raise
         self.count = 0
 
     def menu(self):
@@ -441,7 +474,10 @@ class Renderer:
         return y[pre:pre + len(di32)]
 
     def close(self):
-        self.r.close()
+        try:
+            self.r.close()
+        finally:
+            shutil.rmtree(self._bin_dir, ignore_errors=True)
 
 
 def judge(ref, y, di, lag):
