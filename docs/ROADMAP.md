@@ -242,7 +242,9 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
           start: on this pr12 cell the process's first render is up to 24% louder for about 4 s,
           and the part's quiet opening (−34.5 dB) exposes it. The cause is the plugin and the
           loop order, not the probe's audio, and stored scores are unaffected. Before any re-run,
-          an amendment adds a priming render at S before every warm-up (+144 renders).
+          [amendment 2](dose-probe-plan.md#amendment-2-2026-10-18-after-the-stop-before-any-re-run)
+          adds a priming render at S before every warm-up and a Σ-order repeat check on the stopped
+          cell (reviewed; about 7,448 renders at R1 in all, 528 spent before the re-run).
      2. **Fresh full mixes are the only yardstick for progress;** reused parts are for exploration.
         The 21 stage-F parts are now used once, so the decision test should use unseen parts
         where it can (item 3).

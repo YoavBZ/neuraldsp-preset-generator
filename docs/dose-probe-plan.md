@@ -22,6 +22,11 @@ The user's rules apply:
 re-reviewed: **approved** (the sections below are revised; [amendment 1](#amendment-1-2026-10-18-review-before-any-render) lists
 them and governs where anything differs).
 
+**Stopped 2026-10-18** on its S-against-warm-up check after 528 renders
+([audit](audits/dose-stop-2026-10-18.md)). [Amendment 2](#amendment-2-2026-10-18-after-the-stop-before-any-re-run)
+adds a priming render before every warm-up and a Σ-order repeat check on the cell that stopped,
+corrects the render count, and governs where anything above differs.
+
 ## Why
 
 - **What is left after the long-term fix is real:** truth − `cprime_eq` +0.157 [+0.083, +0.230]
@@ -400,3 +405,87 @@ matches before launching a render process; `full100` is called the ceiling of a 
 field (a trained head might pre-compensate some smoothing); reading 1's "near 0" closes option 2
 and a stronger `stm`, not the rebuild as a target; the float32 cast is noted; memory pressure is
 logged.
+
+## Amendment 2 (2026-10-18, after the stop, before any re-run)
+
+The run stopped on its declared check: `dose100` on It_Was_My_Fault ElecGtr1, pr12, S moved 0.0171
+from its warm-up on half A (tolerance 0.005). The [audit](audits/dose-stop-2026-10-18.md) found the
+cause in the plugin, not in the probe: a render that follows a change of plugin state (a new
+process, another amp, sometimes another preset or DI on the same amp) is not clean at its start.
+On this cell the process's first render is about 24% louder at its start and the excess fades over
+about 4 s. This part's quiet opening (its 1–3 s level is −34.5 dB against 1–10 s; the next quietest
+part is −2.1 dB) lets that excess move half A's score. The loop order (probes outer, cells inner,
+the comparators once per cell) puts every later probe's warm-up right after a process start or
+another cell's renders, so every remaining probe would stop here again. This amendment is declared
+before any further render of this step.
+
+1. **A priming render before every warm-up.** Before every (cell, probe) warm-up (after the
+   comparators where they run), one render at S with that probe's DI. It is unconditional: every
+   cell, every probe, both stages (R2's `anchor_eq` too), and resumed cells. An amp-change rule
+   would miss the same-amp cases in the audit. It is counted in the cell's `renders`. It is not
+   scored, not stored and not checked. The warm-up then follows a render of the same settings and
+   DI, which the audit's repeats show to be bit-identical to S.
+   - **The tolerance (0.005) and the S-against-warm-up check are unchanged.** By design the check
+     no longer sees the first-render effect. That is intended: warm-ups are not scored, and the
+     effect is documented in the audit.
+   - **Cost:** one render per (cell, probe): 1,200 per probe at R1 (137 more on the re-run, since
+     the 7 completed cells are not rendered again), at most 336 more at R2.
+2. **A Σ-order repeat check on the cell that stopped** (the audit's optional check, to bound its
+   residual risk: a Σ render carrying a little of the previous Σ setting, on a quiet-opening part).
+   On It_Was_My_Fault ElecGtr1, pr12, with `dose100`, 10 Σ points (indices 1, 6, …, 46) are each
+   rendered a second time right after their scored render, in Σ order. The first render is the one
+   scored, as on every other cell. The second render is scored only to compare. The two differ only
+   in what preceded them: the previous Σ point, or the same point.
+   - The deviations (`LO.deviation`, 1b's matched score, both halves) are stored in the cell's
+     record (`sigma_repeats`), and the write-up reports their maximum.
+   - Any deviation above 0.005 is a breakage (STOP.json, every shard stops), as for the other
+     checks: a Σ score that depends on the previous setting by more than the tolerance would make
+     this cell's scores unusable. Its Σ scores are then void, and the cell is not rendered again
+     before another amendment.
+   - Every 5th index samples typical transitions rather than the largest ones; either is
+     defensible, and this one is fixed now, before any render.
+   - **Cost:** 10 renders.
+3. **Clearing the stop.** STOP.json and this cell's `check_failed` record are cleared by
+   `-m learn.rebuild_dose clear --probe dose100 --cell cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1 pr12`
+   after this amendment is merged, and only for this cell. The command moves the record to
+   `cleared/renders/dose100/<slug>/pr12.json` under the step's folder and deletes STOP.json;
+   `renders_used` counts every record under `cleared/` as well, so its renders still count. The cell's `dose100` is then
+   re-rendered from scratch under items 1–2. Its comparator file stays: both comparators passed
+   at 13:19, within 3.4e-6. The first launch's `S.flac` is overwritten.
+4. **The render count, corrected.** A cell's record was saved every 12 renders, and the first
+   launch failed on writing its score files (the missing folder, fixed in #218) before the final
+   save. So each of its three lanes recorded 38 of the 49 renders it made after its comparators.
+   - **The first launch rendered 159, not 126:** 3 lanes × (4 comparator renders + the warm-up +
+     48).
+   - **The second launch rendered 369:** Drag_Me_Down ElecGtr4 ac20 resumed (warm-up + 48 = 49),
+     six new cells (53 each, 318), and this cell's warm-up and S (2).
+   - **The run.log line "renders 495"** is the cumulative stored count after the second launch,
+     which carried the first launch's 33 unrecorded renders. The true cumulative count is **528**.
+   - The audit's 70 renders are not in this step's count (none were stored under its folder), but
+     the write-up reports them beside it: 528 + 70 spent because of the stop.
+   - **In the code:** a record is now saved after every render. The 33 are recorded with their
+     reason in `unrecorded.json` in the step's folder, which `renders_used` adds, and cleared
+     records still count.
+5. **Renders, revised.** As designed, R1 is 7,296 (6 × 1,200 + 96) plus the repeat check's 10.
+   But 149 of the 528 spent are rendered again: the first launch's 49 on each of its three cells
+   (this one is re-rendered; Drag_Me_Down ac20 was, and ElecGtr2 ac20 resumes, its comparators already stored),
+   and this cell's 2 in the second launch. So **R1 is expected at about 7,448**: 528 spent and
+   6,920 to go (15 comparators × 4, 17 `dose100` cells × 50, the 10 repeats, and 5 probes ×
+   1,200). R2 at most 16,896 more.
+6. **Tests** (the audit's item 3): a priming render precedes every warm-up, on a fresh, a resumed
+   and an R2 `anchor_eq` cell, and is counted; the repeat check renders the declared indices on
+   this cell only and stops above 0.005; `clear` touches only the named cell, keeps its count and
+   deletes STOP.json; `renders_used` includes cleared records and `unrecorded.json`.
+
+Unchanged: the probes, their hashes, the cells, Σ, the comparators, the guards, the order, the
+measures, the readings and the R1 → R2 rule. The seven completed `dose100` cells are kept: the
+priming render changes only what comes before the warm-up, and their S checks passed (0 to 2.3e-7),
+so their Σ renders followed the same state and sequence a re-run would. The audit's replay supports
+this: a first render moved the scored halves by at most 2.8e-5 on every part but this one.
+
+**Review** (independent agent, before any re-run): changes required, all made: the expected R1
+total (about 7,448, since 149 spent renders are redone), where cleared records live and that they
+count, the audit's 70 renders reported beside the count, and the tests. Its notes taken: the 33 in a
+data file rather than a code constant, what follows if the repeat check fires, and the argument for
+keeping the completed cells. Re-reviewed: **approved**, no further changes.
+
