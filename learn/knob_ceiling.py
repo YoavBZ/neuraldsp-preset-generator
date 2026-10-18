@@ -374,25 +374,54 @@ def measure_di(part):
 
 PREROLL_S = 0.0            # amendment 3: replaced by `isolate`; kept for the cells rendered with 6 s
 
+# DI files a renderer keeps in its work directory. `AudioUnitRenderer` writes each distinct DI
+# once (~2 MB for a 10 s section) and keeps it until close; a render set that walks thousands of
+# distinct DIs (`learn/pretrain_set.py`) grew each server's directory by ~750 MB in 15 minutes.
+# The bound lives here, not in `match/renderer_au.py`, because any edit there changes the
+# renderer build that Tone King's calibrations record (tests/test_calibration_schema.py).
+DI_FILES_KEPT = 4
+
+
+def keep_recent_dis(files, current, keep=DI_FILES_KEPT):
+    """Mark `current` most recently used in the renderer's {digest: path} map, then delete the
+    least recently used files beyond `keep`. An evicted DI that comes back is written again by
+    `AudioUnitRenderer._di_file` with the same bytes under the same name."""
+    digest = next(d for d, p in files.items() if p == current)
+    files[digest] = files.pop(digest)
+    while len(files) > keep:
+        stale = files.pop(next(iter(files)))
+        stale.unlink(missing_ok=True)
+
+
+def renderer_class():
+    """Morgan's `AudioUnitRenderer` with the select/edits state command and bounded DI files."""
+    from match.renderer_au import AudioUnitRenderer
+
+    class _R(AudioUnitRenderer):
+        def _state_command(self, settings):
+            return {"selectAmp": settings["select"],
+                    "edits": [{"module": m, "key": k, "value": v} for m, k, v in settings["edits"]]}
+
+        def _di_file(self, di):
+            path = super()._di_file(di)
+            keep_recent_dis(self._di_files, path)
+            return path
+
+    return _R
+
 
 class Renderer:
     """A reused plugin process; `render(di, select, edits)` with edits {(module, key): stored}."""
 
     def __init__(self):
-        from match.renderer_au import AudioUnitRenderer
         from packs.loader import load_pack
-
-        class _R(AudioUnitRenderer):
-            def _state_command(self, settings):
-                return {"selectAmp": settings["select"],
-                        "edits": [{"module": m, "key": k, "value": v} for m, k, v in settings["edits"]]}
 
         self.pack = load_pack("morgan")
         # `isolate`: render resources are freed and rebuilt around every state write. Morgan's
         # `reset` (which the server calls before every render) leaves some state from the
         # previous render audible for 2-3 s, at the amp's hiss level (plan, amendment 3);
         # rebuilding clears it, at no measurable cost.
-        self.r = _R("morgan", process_policy="reuse", isolate=True)
+        self.r = renderer_class()("morgan", process_policy="reuse", isolate=True)
         self.count = 0
 
     def menu(self):

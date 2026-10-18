@@ -259,3 +259,57 @@ def test_cross_rows_separates_part_specific_from_generic():
     r = K.cross_rows(cell, cr)
     assert r["KM_part_specific"] == pytest.approx(math.log(2 / 3))
     assert r["KM_generic"] == pytest.approx(math.log(3 / 4))
+
+
+def _bounded_renderer(workdir):
+    """The learn-side Morgan renderer, never started: only its DI write path runs."""
+    pytest.importorskip("soundfile")
+    made = K.renderer_class()("morgan", process_policy="reuse", isolate=True, workdir=workdir)
+    made._ensure_server = lambda: None
+    return made
+
+
+def test_distinct_dis_do_not_accumulate_on_disk(tmp_path):
+    """A render set over thousands of distinct DIs (part C) keeps a bounded few files; a DI
+    that returns after eviction is written again with the same bytes and the same samples."""
+    import numpy as np
+    import soundfile as sf
+
+    made = _bounded_renderer(tmp_path)
+    first = np.linspace(-0.5, 0.5, 4096, dtype=np.float32)
+    path = made._di_file(first)
+    written = path.read_bytes()
+    for n in range(K.DI_FILES_KEPT * 5):
+        assert made._di_file(np.full(4096, n / 100.0, dtype=np.float32)).exists()
+        assert len(list(tmp_path.glob("di-*.wav"))) <= K.DI_FILES_KEPT
+        assert len(made._di_files) <= K.DI_FILES_KEPT
+    assert not path.exists()
+    again = made._di_file(first)
+    assert again == path and again.read_bytes() == written
+    assert np.array_equal(sf.read(str(again), dtype="float32", always_2d=True)[0][:, 0], first)
+
+
+def test_a_di_in_use_is_never_the_one_evicted(tmp_path):
+    """A search that keeps returning to its DI between a few others never rewrites it."""
+    import numpy as np
+
+    made = _bounded_renderer(tmp_path)
+    di = np.zeros(2048, dtype=np.float32)
+    path = made._di_file(di)
+    stamp = path.stat().st_mtime_ns
+    for n in range(K.DI_FILES_KEPT * 3):
+        made._di_file(np.full(2048, (n + 1) / 100.0, dtype=np.float32))
+        assert made._di_file(di) == path
+    assert path.stat().st_mtime_ns == stamp
+
+
+def test_close_removes_the_work_directory_it_made():
+    import numpy as np
+
+    made = K.renderer_class()("morgan", process_policy="reuse", isolate=True)
+    made._ensure_server = lambda: None
+    made._di_file(np.zeros(2048, dtype=np.float32))
+    workdir = made._workdir
+    assert workdir.name.startswith("au-render-") and any(workdir.iterdir())
+    made.close()
+    assert not workdir.exists()
