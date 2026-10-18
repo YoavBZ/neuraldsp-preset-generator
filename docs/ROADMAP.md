@@ -243,6 +243,12 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
           and the part's quiet opening (−34.5 dB) exposes it. The cause is the plugin and the
           loop order, not the probe's audio, and stored scores are unaffected. Before any re-run,
           an amendment adds a priming render at S before every warm-up (+144 renders).
+        - **Other pipelines audited 2026-10-18** (code reading, zero renders;
+          [audit](audits/start-transient-2026-10-18.md)): no audited merged decision changes; the
+          arm B and DI-recovery scripts are not yet audited. Part C is
+          exposed (no priming render) but probably below one 0.5-dB step on nearly all examples, so
+          it keeps rendering; its direct check (60 renders) waits for a 4th process. New rule: one
+          discarded priming render after any process start, amp change or DI change.
      2. **Fresh full mixes are the only yardstick for progress;** reused parts are for exploration.
         The 21 stage-F parts are now used once, so the decision test should use unseen parts
         where it can (item 3).
