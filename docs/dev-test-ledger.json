@@ -2178,7 +2178,7 @@
    "gate": "None: the size is set by the declared learning-curve rule (extend while the last doubling's 90% band-clustered interval of the held-out knob error lies below 0, seed-averaged and for each of 3 seeds; a stop is read 'flat' only when the interval rules out half the previous doubling's gain, else 'undecided')",
    "stopping": "pilot 40k train + 3k val; at most one unattended extension to 80k; further doublings need a new launch",
    "renders": "pilot about 43k (about 7 h on 3 shards) plus 30 re-render checks; extension about 40k",
-   "outcome": null
+   "outcome": "done 2026-10-19 (43,000 renders = 40,000 train + 3,000 val, plus 60 for the recheck; 3.68 GB; docs/pretrain-set-results.md, audited). E on true val mixes (9 bands): 5k 0.1934, 10k 0.1872, 20k 0.1802, 40k 0.1814; delta 20k->40k +0.0012 [-0.0020,+0.0045] (10k->20k -0.0069 [-0.0092,-0.0047]): DECISION STOP, READING flat, no extension. Post hoc, not deciding: the clean stem (-0.0063 [-0.0092,-0.0035]) and power-sum mixes (-0.0085 [-0.0111,-0.0059]) still improve 20k->40k; cause of the true-mix gap not separated. In-domain validation on rendered mixes of held-out bands, not real-song accuracy. Half-A mask on every curve run (commit 5fe3c5d); recheck late SNR median 85.9 dB (min 61.9)."
   },
   {
    "test_id": "multi-section",

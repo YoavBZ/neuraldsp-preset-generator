@@ -325,10 +325,12 @@ was declared, what was measured, and the research behind it.
   pipeline is exact; arm A against S +0.001 [−0.523, +0.524] over 3 bands, undecided, the spread
   driven by Heather Jane; B2 proposed at the pool's cap (up to 4 fresh songs). 17,290 renders.
   Audited.
-- [pretrain-set-plan.md](pretrain-set-plan.md): part C, a labelled pre-training render set from the
-  clean DI sections (Morgan, clean to crunch, record-like mixes built at training time), sized by a
-  learning-curve pilot (40k, one extension to 80k if the curve still improves; queued after B1 and
-  the hum-screen amendment).
+- [pretrain-set-plan.md](pretrain-set-plan.md) → [results](pretrain-set-results.md): part C, a
+  labelled pre-training render set from the clean DI sections (Morgan, clean to crunch, record-like
+  mixes built at training time), sized by a learning-curve pilot. On true mixes of held-out bands
+  the knob error flattened between 20k and 40k (Δ +0.0012 [−0.0020, +0.0045]): STOP, no
+  extension; the guitar alone and training-style mixes still improve. In-domain, not real-song.
+  43,060 renders, 3.68 GB. Audited.
 - [bleed-listening-plan.md](bleed-listening-plan.md) → [results](bleed-listening-results.md), with
   the [bleed audit](audits/bleed-2026-10-16/README.md): bleed only in the Telefunken live-room
   sessions, audible on the high parts; the cleaning isn't adopted, and every key result holds
