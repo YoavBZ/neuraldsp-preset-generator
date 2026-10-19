@@ -63,7 +63,8 @@ shard goes on. Disk guard 31 GB.
 - **6 trials:** the 5 parts in a seeded order, then a repeat of one of trials 1–4 with a new letter
   order, for consistency. Seed `random.Random(20261020)` (trial order, letter order per trial, the
   repeat). Each trial plays the held half (4.5 s): **Record** (`reference.wav`), then A–D (S, H, D,
-  C in that trial's random order).
+  C in that trial's random order). Renders are folded to mono, as the judge folds them, like the mono
+  record.
 - Every clip of a trial is level-matched to one loudness with the Record: −20 LUFS, or lower for
   the whole trial if a clip would otherwise peak above 0.9 (the builder asserts a spread under
   0.1 LU). 20 ms fades, AAC data

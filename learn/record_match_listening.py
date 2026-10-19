@@ -241,6 +241,14 @@ def common_gains(lufs, peaks, target=TARGET_LUFS, peak=PEAK):
     return t, [10 ** ((t - l) / 20) for l in lufs]
 
 
+def as_mono(y):
+    """A render folded to mono, as the judge folds it (`analysis.aligned`), like the mono record."""
+    import numpy as np
+
+    y = np.asarray(y, np.float64)
+    return y.mean(axis=1) if y.ndim == 2 else y
+
+
 def trim(y, s=0.25, sr=48000):
     y = y.copy()
     y[:int(s * sr)] = 0.0
@@ -450,7 +458,7 @@ def build(args):
             a, b = R.HALVES[p["held"]]
             ref = CR.mono(A.f_part(p["slug"])["crop"] / "reference.wav")[int(a * A.SR):int(b * A.SR)]
             audio = np.load(PRIVATE / "renders" / f"{p['slug']}.npz")
-            raw = {"Record": np.asarray(ref, np.float64), **{arm: np.asarray(audio[arm], np.float64) for arm in ARMS}}
+            raw = {"Record": np.asarray(ref, np.float64), **{arm: as_mono(audio[arm]) for arm in ARMS}}
             names = list(raw)
             target, gains = common_gains([LO.lufs(raw[k]) for k in names], [float(np.abs(raw[k]).max()) for k in names])
             lev = {k: raw[k] * g for k, g in zip(names, gains)}
