@@ -2541,7 +2541,8 @@
    "renders": "judged: 111 (1d) + 321 (step 4) = 432; training-style (not judged): about 23k re-renders of part C examples",
    "held_out": "none touched",
    "limits": "D_existing trained on 6 stage F bands' sessions (gate rows also on the unseen bands); MUSDB18 songs tagged (Ill Fate, The Long Wait in training; Bannockburn out of V_sep readouts; It Was My Fault, Femme, Signs on stage F reported apart); drawn labels; pilot power 5 bands (4 df); step 4 detects about 0.05-0.13",
-   "outcome": "pending"
+   "results": "docs/direct-model-stems-gate1-results.md",
+   "outcome": "gate 1 done 2026-10-20 (zero renders; 349 separations; 1d not run): GATE1 STEM, all five checks. Stage F d(a',b) - null +0.104 [+0.090,+0.120] (unseen +0.106), d(a,b) - null +0.114 [+0.103,+0.128]; audit E (iii) Mega-53 - (i) training stem +0.104 [+0.088,+0.120] (0.167 -> 0.270). Reliance (V_dev): stem zeroed +0.099, mix zeroed +0.043, stem share 0.70; post hoc: behind a clean guitar the mix is worth +0.011 [+0.005,+0.016], behind Mega-53/htdemucs stems (audit) +0.001/+0.005, both intervals reach 0. Recommendation (user's decision): a stem-only model, mix-only as a comparison at most. Audited, confirmed with corrections (applied). Pilot and build not started"
   }
  ]
 }

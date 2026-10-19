@@ -142,6 +142,9 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       zero-render checks of the stem mismatch on the existing model first, then a 5k pilot (real
       Mega-53 stems, a mix-only model, the old recipe), then one stage F test, D − S primary. The
       full build waits on the user freeing disk (34 GB free at start).
+      *Gate 1 done 2026-10-20 ([results](direct-model-stems-gate1-results.md)):* the stem matters
+      (GATE1 STEM); the mix adds little behind a clean or separated stem, so the next model should
+      read the separated target stem alone (a pilot-arm change for the user to approve).
    3. **Two zero-render checks.** *Done 2026-10-19 ([results](shrink-snr-judge-v3-results.md)):*
       the best shrink does not measurably depend on stem SNR (a rule by SNR gains −0.003 [−0.013,
       +0.007] on held-out bands; nothing on realistic stems), and judge v3 agrees with the ear a
@@ -341,3 +344,4 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-19 | Our development "full mixes" are unity sums of raw tracks and no session has a mix; real-mix previews (Cambridge Full Preview MP3s, Unmastered Mix WAVs) to be downloaded by the user | [stereo and mix check](stereo-and-mix-check-results.md) |
 | 2026-10-19 | The direct model's tie with S is not a verdict on the approach (user): it was trained on perfect stems and tested on htdemucs stems. Two active routes, arm A and the direct model, with better separation as the shared lever; next a Mega-53 fine-tune on our multitracks, then the direct model on realistic stems | [direct-existing results](direct-existing-results.md), step 0 |
 | 2026-10-19 | Zero-render checks: the best shrink does not measurably depend on stem SNR (held-out −0.003 [−0.013, +0.007]), so shrink 0.5 stays on separated stems; judge v3 agrees with the ear less than the default judge (Spearman 0.64 against 0.80, 5 parts), so the default judge stays | [checks](shrink-snr-judge-v3-results.md) |
+| 2026-10-20 | Direct model gate 1 (zero renders): stem quality moves D_existing's answers far beyond the leak-draw null (+0.104 [+0.090, +0.120]) and Mega-53's stem costs +0.104 of E against the training stem (0.167 → 0.270), so GATE1 STEM: the separator route continues. The model leans on the stem (share 0.70); behind a clean or real separated stem the mix adds little or nothing (post hoc), so a stem-only model is recommended (user's decision) | [gate 1 results](direct-model-stems-gate1-results.md) |
