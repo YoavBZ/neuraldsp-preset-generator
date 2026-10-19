@@ -49,7 +49,7 @@ PARITY_N = 20                         # audit examples in the parity check
 PARITY_CELL_SHARE = 0.99              # share of mel cells within one 0.5-dB step
 PARITY_LUFS_TOL = 0.01                # LU
 RAW_LUFS = -22.9
-PER_GROUP = 3 + 8                     # measure: priming, S, D x2; raw: priming, S, H x2, XO x2, D x2
+PER_GROUP = 4 + 8                     # measure: priming, S, D x2; raw: priming, S, H x2, XO x2, D x2
 PER_KA_SECTION = 6                    # raw: priming, S, truth; measure: priming, S, truth
 CAP = 900
 ARMS_RAW = ("S", "H", "XO", "D")
@@ -360,6 +360,8 @@ def cmd_render(args):
             gp = OUT / "groups" / f"{slug}|{amp}.json"
             if (_load(gp) or {}).get("status") == "done":
                 continue
+            if (OUT / "STOP.json").exists():
+                raise SystemExit("STOP.json present")
             if not LO.disk_ok(LO.disk_free_gb(), 1):
                 _stop("free disk below the guard")
             if spent() + PER_GROUP > CAP:
@@ -570,7 +572,7 @@ def cmd_report(_args):
         print(f"  {k:6s}", "  ".join(f"{r}: {fmt(v[r])}" for r in ROWS))
     for k, v in rep["test2"].items():
         print(f"  {k:6s} measure {fmt(v['measure'])}  raw {fmt(v['raw'])}  raw-measure {fmt(v['raw_minus_measure'])}"
-              f"  band SD {v['band_sd_d']:.3f} -> {v['band_sd_d_raw']:.3f}")
+              f"  band SD {v['band_sd_d']} -> {v['band_sd_d_raw']}")
     print("  medians", rep["medians"])
     if rep["known_answer"]:
         print("  known answer", json.dumps(rep["known_answer"], indent=1))

@@ -66,7 +66,7 @@ def test_features_mask_half_a_and_apply_one_gain():
 
 
 def test_counts_and_shards():
-    assert DE.expected_renders() == 63 * 11 + 16 * 6 == 789 <= DE.CAP
+    assert DE.expected_renders() == 63 * 12 + 16 * 6 == 852 <= DE.CAP
     xs = [(i, "a") for i in range(7)]
     parts = [DE.shard(xs, (k, 3)) for k in range(3)]
     assert sorted(sum(parts, [])) == sorted(xs) and all(parts)

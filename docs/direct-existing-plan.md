@@ -35,7 +35,8 @@ the judge's DI convention squeezes every result.
   band-weighted, 90% band-clustered t interval over 12 bands (`arm_a_levers.effects`). Beside it:
   D − H, D − XO; rows no high bleed (direction rule), F-song, and **unseen by part C** (the 6
   stage F bands with no part C training section: Bernard Purdie Tribute All-Stars, Magician's
-  Nephew, The Travelling Band, Turbosauro, Wall Of Death, Zeno); per amp and class. A refused
+  Nephew, The Travelling Band, Turbosauro, Wall Of Death, Zeno; four of them are part C val bands,
+  which only its readouts used: early stopping ran on train sections); per amp and class. A refused
   answer scores as S.
 - **The confound, stated before the result.** Part C trained on other DIs of stage F's own
   sessions (6 of the 12 bands), whose backings hold the stage F part's real amp track. That is why
@@ -78,9 +79,18 @@ under every candidate, all contrasts shrink.
 
 | What | Renders |
 |---|---|
-| Stage F: 63 groups × (measure: priming, S, D × 2; raw: priming, S, H × 2, XO × 2, D × 2) | 693 |
+| Stage F: 63 groups × (measure: priming, S, D × 2; raw: priming, S, H × 2, XO × 2, D × 2) | 756 |
 | Known-answer: 16 sections × 2 DIs × (priming, S, truth) | 96 |
-| **All** | **789** (cap 900) |
+| **All** | **852** (cap 900) |
 
 3 shards (the machine is idle), about 10 minutes; one reviewer, one auditor. The running total
 before this test is about 301k renders.
+
+## Review
+
+Reviewed 2026-10-19 by one independent agent (plan and code together): approve with one required
+change, made: each stage F group renders 12 times, not 11 (852 in all, not 789). Also taken: every
+shard re-checks the stop file before each group, the report prints with fewer than two bands, and
+the unseen row names its val bands. Every listed requirement (stored, hashed inputs; the pooled
+top-component ensemble; input parity; the 1e-3 repeat check; priming; arm A's judge and pairing)
+was checked as met.

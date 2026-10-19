@@ -2382,7 +2382,7 @@
    "seeds": "none drawn",
    "gate": "None (the user's rule): primary D_existing - S on stage F, band-weighted, 90% band-clustered t (11 df); beside it D - H, D - XO, rows no high bleed, F-song, unseen by part C (6 bands). Test 2 descriptive: each contrast under the raw-DI judge against the measure-DI judge (paired change with interval, band SDs); known-answer truth/S under both judges",
    "stopping": "fixed set; stops on the repeat check (S's measure judge vs stored, 1e-3), input or model hash change, cap 900, 31 GB disk guard",
-   "renders": "789 = stage F 63 x 11 + known-answer 16 x 6; knob_ceiling.Renderer (isolate=True), 3 shards",
+   "renders": "852 = stage F 63 x 12 + known-answer 16 x 6; knob_ceiling.Renderer (isolate=True), 3 shards",
    "held_out": "none touched",
    "limits": "part C trained on other DIs of 6 stage F bands' sessions (the all-bands row is confounded; the unseen-by-part-C row is not); one stem (htdemucs); raw DI level set to -22.9 LUFS",
    "outcome": "pending"
