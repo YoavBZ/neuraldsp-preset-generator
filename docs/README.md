@@ -335,6 +335,10 @@ was declared, what was measured, and the research behind it.
   existing 40k models scored on stage F without training (D − S +0.033 [−0.053, +0.119], a tie
   leaning worse), and the judge re-run through the raw DI (rebuilt-DI contrasts unchanged; on the
   known-answer songs the measure DI caps the exact truth at 0.55 of S). 852 renders. Audited.
+- [record-match-listening-plan.md](record-match-listening-plan.md) → [results](record-match-listening-results.md):
+  a blind check of the judge by ear on 5 guitar-exposed parts: the ear broadly agrees with the
+  judge's order (Spearman mean 0.8), the ceiling C is heard closest in 4/5, H beats S in 4/5, D
+  third. 775 renders. Audited.
 - [bleed-listening-plan.md](bleed-listening-plan.md) → [results](bleed-listening-results.md), with
   the [bleed audit](audits/bleed-2026-10-16/README.md): bleed only in the Telefunken live-room
   sessions, audible on the high parts; the cleaning isn't adopted, and every key result holds
