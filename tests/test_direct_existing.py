@@ -2,10 +2,13 @@
 
 import math
 
-import numpy as np
 import pytest
 
-from learn import direct_existing as DE
+np = pytest.importorskip("numpy")
+pytest.importorskip("scipy")
+pytest.importorskip("pyloudnorm")
+
+from learn import direct_existing as DE  # noqa: E402
 
 
 def _out(logpi, mu, sw, cats):
