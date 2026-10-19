@@ -583,3 +583,77 @@ objective (not the rebuild) limits arm A in the product setting.
 start-transient rule: one per process start or amp change; the DI never changes within a group) +
 126 × 55 (52 search, 1 probe, 2 judges) = **6,993** (cap 7,100). One render process (part C holds
 2 of the 3 slots), about 3 h. Outputs under `~/ndsp-presets/learn/arm-a-mega53/F-oracle/`.
+
+## Amendment 3 (2026-10-19): perfect separation on stage F
+
+Declared before any render for it, after amendment 2's and the record-match check's results were
+read. Code `learn/perfect_sep_arm.py`, tests `tests/test_perfect_sep_arm.py`; ledger
+`arm-a-mega53-perfect-sep`.
+
+**Question.** How much would *perfect* separation be worth to arm A on fresh full mixes? A product
+uses the separated stem twice: as the search's target and as the input C′ rebuilds a DI from.
+Amendment 2 made the DI perfect and kept the stem target (XO): no gain. This makes the stem perfect
+(the amp track may itself carry a little bleed; such parts are flagged in the bleed rows).
+
+**One arm, Y_target (`YT`).** Stage F's H with two changes, both the part's true amp track
+(`reference.wav`) in place of the htdemucs full-mix stem:
+- the search's reference is the amp track;
+- the search renders through C′'s rebuild of the amp track (`rebuild_parts`, stage F's rebuild
+  recipe, as experiment 1b rebuilt `reference.wav` on stage D), into `F/rebuilt/ref/`.
+Unchanged: the 52-render `main_stage` (seed 20261013), shrink 0.5, the fallback to S (the probe
+through YT's own rebuild), `rebuilt_distance` with its activity fallback on the search half, and
+the judge (held half, true DI against `reference.wav`).
+
+**Alignment and lag (declared).** The search scores at `part["judge_lag"]`, amendment 2's
+convention. C′'s rebuild sits aligned with its source, where `rebuilt_distance`'s own aligned value
+is −52, so YT's objective is offset by (judge_lag + 52) samples. Zero-render check (`check`): each
+stored S render (its kept FLAC) re-judged at the judge lag reproduces the stored judge within
+1.4e-5; re-judged at −52 it moves a half's distance by a median 0.0006 in log (max 0.046), and
+by more than 0.01 only on wickerman elecgtr7 (judge lag +329: 0.027 to 0.046) and It Was My
+Fault ElecGtr3 on PR12 (0.011). This is a stand-in: it shifts the judge (true-DI renders and mask),
+not YT's objective, and the rebuilds' own GCC on their sources reads 0 or about −52 by part, so the
+real offset per part is approximate. So the search also scores its first evaluation (S through
+the rebuild) at −52 as well, with no extra render (`s_lag_check` in each record; reported as the
+median and largest shift), and a descriptive row drops wickerman elecgtr7 (6 of 126 directions).
+The offset barely matters except, a little, on one part, and any bias there runs against YT.
+
+**Rebuild checks (zero renders, passed).** 1b's gates: −22.9 ± 0.05 LUFS (colour-me-red
+elecgtr03 read −22.83 after the recipe's single gain pass, because quiet blocks cross the meter's
+absolute gate; the gain step is repeated until within tolerance, once here), and GCC within ±3
+samples of H's stem rebuild (20 of 21 at 0). She's Gone reads 1024 against its bleed-heavy stem
+rebuild, a spurious peak; it passes through the chain instead (its rebuild sits −54 on
+`reference.wav`, H's −53 on the stem, the stem 0 on `reference.wav`). The GCC of a rebuild on its
+own source reads 0 or about −52 by part, as in 1b and 1c, and is a diagnostic.
+
+**Extra cell (`ZT`), run: the review judged it needed.** The true DI with the true amp-track
+target and arm A's recipe (52 renders, shrink 0.5, judge lag, exactly right for a true DI), so the
+2×2 {DI: C′'s rebuild of the target, true DI} × {target: stem, true amp track} is complete on
+stage F (H, XO, YT, ZT). The rebuilt DI differs between the two target columns (the product's
+coupling), so this is not a one-factor DI contrast. Without ZT the only ceilings come from other
+settings, and if YT − H's interval contains 0 the reading can't be split: ZT − YT is the rebuild's
+cost on a clean source, ZT − XO what a clean target is worth given a perfect DI, and ZT − S what
+the 52-render recipe reaches with perfect inputs.
+
+**Contrasts (paired by direction, band-weighted, 90% band-clustered t intervals, 11 df; read on the
+directions where S, H, M, XO and the new arms all score).** Primary, all reported whatever they
+show: **YT − S**, **YT − H**, **YT − XO**. With ZT: ZT − S, ZT − YT, ZT − XO. Rows: all
+(declared), no high bleed (direction rule), F-song (descriptive), without wickerman elecgtr7
+(descriptive, the lag check). Every contrast reads one fixed set (ZT included once it has run). **Shares of the ceiling gap**,
+(arm − S) / (ceiling − S), for H, XO and YT: against ZT when it runs (Fieller 90%), and as scales
+only against K_S's −0.293 (stage D's parts, a different setting) and the record-match ceiling's
+−0.45 (5 parts, one direction each, a 150-render search; context only). If ZT − S is near 0 the
+Fieller interval is unbounded; it is then reported as unbounded and not read.
+
+**Reading, declared (no pass/fail bars).** YT − H is what perfect separation is worth to arm A as
+built (one recipe, one rebuild network family, C′). If it is clearly negative, better separation
+is worth pursuing for arm A. If its interval is near 0 and narrow, the rebuild and the search limit
+arm A even on a clean target (ZT − YT says how much is the rebuild). If it contains 0 but also
+allows a meaningful gain, it is undecided (underpowered), not "no value"; it is reported
+band-weighted with leave-one-band-out either way.
+
+**Renders.** Fixed set, no extension, per arm: 63 part-amps × 1 discarded priming render (the
+arm's search DI at S, after each process start and each amp or DI change between arms) + 126 × 55
+= **6,993** (cap 7,100 each); YT and ZT together **13,986**. The search-then-judge DI switch inside
+a direction is H's, unchanged. Three render processes (`--arms YT,ZT`), sharded by (part, amp),
+started one after another (the render gate is read at start). Disk guard 31 GB. Outputs under
+`~/ndsp-presets/learn/arm-a-mega53/F-perfect-sep/`.
