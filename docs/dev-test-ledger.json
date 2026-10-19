@@ -2542,6 +2542,21 @@
    "held_out": "none touched",
    "limits": "D_existing trained on 6 stage F bands' sessions (gate rows also on the unseen bands); MUSDB18 songs tagged (Ill Fate, The Long Wait in training; Bannockburn out of V_sep readouts; It Was My Fault, Femme, Signs on stage F reported apart); drawn labels; pilot power 5 bands (4 df); step 4 detects about 0.05-0.13",
    "outcome": "pending"
+  },
+  {
+   "test_id": "mix-previews",
+   "plan": "docs/mix-previews-results.md",
+   "results": "docs/mix-previews-results.md",
+   "entered": "2026-10-19, with the results; no separate plan (descriptive, method set by the task and stated in the results' method sections)",
+   "parts": "the 17 stage F parts in the 11 songs with a released mix (9 bands); alignment also checks the label table's other 13 crops in those songs",
+   "bands": "9 of stage F's 12",
+   "audio_only": "Cambridge 'Full Preview' MP3s (10 songs), the Mix Rescue remix of Signs, 5 unmastered WAVs; the session tracks; stage F's stored contexts and Mega-53 stems; reference.wav, mix.wav",
+   "renders": "0; separations: 23 Mega-53 runs (17 mastered, 6 unmastered) on aligned 30-s preview contexts",
+   "gate": "None: descriptive. Same-take check and crop coverage per song; stem SNR against the raw track (as aligned, lag-matched, after a held-out FIR) and LSD between raw track, unity stem and real-mix stem, band-weighted with 90% band bootstrap",
+   "seeds": "band bootstrap random.Random(20261019), 4,000 draws",
+   "repeat_use": "A further use of stage F's parts (after S/H/M, XO, direct-existing, record-match listening, arm-a-mega53-perfect-sep, stereo-and-mix-check); separation measures only, no arm scores read or chosen on",
+   "held_out": "none touched",
+   "outcome": "done 2026-10-19 (zero renders, 23 separations; audited, confirmed with corrections; docs/mix-previews-results.md)"
   }
  ]
 }
