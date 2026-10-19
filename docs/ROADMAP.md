@@ -138,7 +138,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    3. **Two zero-render checks.** *Done 2026-10-19 ([results](shrink-snr-judge-v3-results.md)):*
       the best shrink does not measurably depend on stem SNR (a rule by SNR gains −0.003 [−0.013,
       +0.007] on held-out bands; nothing on realistic stems), and judge v3 agrees with the ear a
-      little less than the default judge (Spearman 0.64 against 0.80).
+      little less than the default judge (Spearman 0.64 against 0.80; one pair worse in four of
+      five trials, sign test p 0.125, so weak).
    4. **Real-mix previews:** once the user has downloaded them, test on real mixed songs.
    5. **Then a fresh-song decision test** of the two routes on unseen parts (the 21 stage-F parts
       are reused). If one clearly beats S there, build the product around it.

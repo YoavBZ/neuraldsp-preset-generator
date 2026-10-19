@@ -18,7 +18,7 @@ is one of the options). It is fitted on all other bands and applied to the held-
 band out, 16 bands pooled across stages). SNR is the gain-fitted SNR of the search's target stem
 against the amp track; the amp track itself counts as perfect. The arms: stage F's H (htdemucs, full
 mix, median 0.43 dB), M (Mega-53, 0.70 dB), YT (perfect target) and ZT (perfect target, true DI);
-stage D's H (htdemucs, instrumental, 2.15 dB), M (Mega-53, 3.97 dB) and T (perfect). That is 930
+stage D's H (htdemucs, instrumental, 2.15 dB median per direction; 2.13 per part), M (Mega-53, 3.97 dB) and T (perfect). That is 930
 directions. Code `learn/shrink_vs_snr.py`; data `~/ndsp-presets/learn/shrink-vs-snr/report.json`.
 
 | Held-out gain against the recipe (f = 0.5) | Estimate [90%], bands | Bands better / worse |
@@ -32,17 +32,24 @@ directions. Code `learn/shrink_vs_snr.py`; data `~/ndsp-presets/learn/shrink-vs-
 
 Per arm, the all-arms rule's held-out gain: ZT −0.047 [−0.070, −0.025], YT −0.010, D's T −0.003,
 F's H 0.000, F's M +0.006, D's M +0.007, D's H +0.011. Every fold's rule had the same shape: keep the
-halfway shrink below a threshold and go unshrunk above it. Most folds put the threshold between 2.6
-and 7 dB, inside the realistic range; one put it at "perfect stems only".
+halfway shrink below a threshold and go unshrunk above it. 13 of 16 folds put the threshold at
+5.2 dB, one at 2.6 dB, one at 7.0 dB, and one at "perfect stems only". At 5.2 dB, 14 of stage D's 48
+realistic stem-arms go unshrunk.
+
+The five-level fit on experiment 1 (stage D's search A) went the other way: every fold's rule had the
+reverse shape (unshrunk below about 2.3 dB, f = 0.5 above), and its best in-sample constant was 0.75,
+not 0.5. Opposite shapes on two data sets further support "no stable SNR dependence".
 
 **Reading.**
 - **The best shrink does not measurably depend on stem SNR among the stems we have.** On realistic
-  stems the rule gains nothing (−0.001), and the halfway shrink stays the best fixed choice on both
-  stages (on stage F unshrunk costs +0.022 for H and +0.035 for M; S costs more).
+  stems the rule gains nothing (−0.001), and no stored level clearly beats the halfway shrink; on
+  stage F unshrunk costs +0.022 (H) and +0.035 (M), on stage D they tie.
 - **The only clear dependence is with a perfect target and the true DI** (ZT, −0.047), which is the
   shrink cost amendment 3 already reported. With a perfect target through the rebuilt DI (YT) it is
   a tie (−0.010). So the shrink's cost tracks how good the search objective is as a whole
-  (target and DI), not stem SNR alone, and the rule's pooled −0.003 comes almost entirely from ZT.
+  (target and DI), not stem SNR alone, and the rule's pooled −0.003
+  comes from the perfect-target arms (ZT −0.047, YT −0.010), partly offset by small costs where
+  realistic stems sit above the threshold (D's H +0.011, D's M +0.007, F's M +0.006).
 - **A rule fitted with XO in the pool hurts** (+0.013): XO prefers S on low-SNR stems, which pushes
   the rule towards f = 0 where H and M need 0.5. This is the instability to expect when a rule is
   fitted across arms whose objectives differ for reasons SNR doesn't see.
@@ -83,14 +90,22 @@ were re-scored with judge v3 (`JUDGE_V3`: fixed bands, symmetric floor; [spec](j
   still agrees positively on every trial, but it moves the closest pick away from the ear's twice
   (S first on Signs, H first on get-out-of-bed). The repeat (trial 6) goes the other way: v3 fits
   it better (0.8 against 0.4), because the ear's own order changed.
-- **This leans against adopting v3, but weakly.** Five parts, one listener, four items a trial: a
-  difference of 4 pairs in 30 is within what one or two trials can swing. C was searched with the
-  default judge, which favours it here; without C (S, H and D only) the default still leads (12 of
-  15 pairs against 10).
+- **This leans against adopting v3, but weakly.** Five parts, one listener, four items a trial: v3 is
+  one pair worse in four of trials 1–5 and level in the fifth (sign test p 0.125). C was searched
+  with the default judge, which favours it here; without C (S, H and D only) the default still
+  leads (12 of 15 pairs against 10). H and C were both searched with the default judge, so the
+  S/H/D comparison is not neutral either. By mean rank, v3 puts S and H level (2.8 each), while the
+  ear (H 2.4, S 3.6) and the default judge (H 3.0, S 3.4) both put H ahead.
 - **What a fair test would cost:** a sitting built on pairs where the two judges disagree, which
   v3's adoption was always waiting for. That needs new clips (renders), not stored ones.
 
 ## Audit
 
-One brief independent audit re-ran both scripts from the stored records and checked the figures
-above against their reports. *(Findings are added below when it is done.)*
+Audited 2026-10-19 by an independent agent, which re-ran both scripts from the stored records and
+checked the figures above against their reports; no numeric errors. Changes: "the halfway shrink
+stays the best fixed choice on both stages" became "no stored level clearly beats the halfway
+shrink" (stage D ties); the pooled −0.003 is attributed to both perfect-target arms, offset by
+small costs on realistic stems, not to ZT alone; the fold thresholds are given exactly; the
+reverse-shaped rule and 0.75 best constant on experiment 1 were added; in (b) "4 pairs in 30" became
+the per-trial sign test, with the caveat that H and C were both searched with the default judge and
+the mean ranks of S and H; stage D's H SNR is labelled a per-direction median (2.13 per part).
