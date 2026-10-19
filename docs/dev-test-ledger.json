@@ -2385,7 +2385,8 @@
    "renders": "852 = stage F 63 x 12 + known-answer 16 x 6; knob_ceiling.Renderer (isolate=True), 3 shards",
    "held_out": "none touched",
    "limits": "part C trained on other DIs of 6 stage F bands' sessions (the all-bands row is confounded; the unseen-by-part-C row is not); one stem (htdemucs); raw DI level set to -22.9 LUFS",
-   "outcome": "pending"
+   "outcome": "done 2026-10-19 (852 renders, 3 shards; S repeat exact on 63/63; audited; docs/direct-existing-results.md). Test 1: D_existing - S +0.033 [-0.053,+0.119] (12 bands, 5 better), unseen by part C +0.010 [-0.143,+0.162] (6), D - H +0.061 [-0.011,+0.133]; crunch +0.137 [-0.004,+0.278]. Test 2 (raw DI, 123 directions): paired change raw - measure D - S +0.018 [-0.036,+0.071], H - S +0.003 [-0.016,+0.022], XO - S -0.063 [-0.103,-0.022]; band SDs about unchanged. Known-answer: truth/S median 0.00005 raw vs 0.55 measure (log -5.78 vs -0.52 [-0.96,-0.08]). Reading: the existing model ties S leaning worse; the measure DI caps exact answers on known-answer songs but does not squeeze stage F's rebuilt-DI contrasts.",
+   "results": "docs/direct-existing-results.md"
   }
  ]
 }

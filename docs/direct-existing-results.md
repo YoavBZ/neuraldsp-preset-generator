@@ -15,7 +15,7 @@ only; band-weighted estimates with 90% band-clustered t intervals, no pass/fail 
 - **The raw-DI judge does not widen stage F's contrasts in general.** H − S is unchanged (paired
   change +0.003 [−0.016, +0.022]); D − S moves +0.018 [−0.036, +0.071]. Only the oracle arm XO,
   the one arm whose search heard the part's true DI, gains under the raw judge (XO − S −0.063
-  [−0.103, −0.022]). Band SDs barely move (0.07–0.22 under both judges).
+  [−0.103, −0.022]; the D − XO and XO − H changes are the same effect). Band SDs barely move (0.07–0.22 under both judges).
 - **On the known-answer songs the measure DI does cap the truth.** Through the raw DI (the
   truth's own) the true preset reads a median 0.0001 against S's 3.6; through the measure DI it
   reads 2.26 against S's 4.34, a median 0.55 of S's distance (log truth − S −0.52 [−0.96, −0.08],
@@ -33,10 +33,11 @@ only; band-weighted estimates with 90% band-clustered t intervals, no pass/fail 
 - **Bands:** D − S is better on 5 of 12. Leaving one band out runs from +0.009 to +0.059.
 - **Per amp:** AC20 +0.086, PR12 −0.007, SW50R +0.019 (all intervals contain 0). **Per class:**
   clean −0.042 [−0.147, +0.063] (7 bands), crunch +0.137 [−0.004, +0.278] (5 bands). Crunch is
-  where it loses.
+  where it leans worse (its interval just reaches 0).
 - **The confound** (stated in the plan before the run): part C trained on other DIs of 6 of these
   bands' sessions, whose backings hold the test part's amp track. That should flatter D, yet the
-  all-bands row is no better than the clean row. The leak did not help visibly.
+  all-bands row is no better than the unseen row. The leak did not help visibly, though with
+  intervals about 0.3 wide a sizeable benefit is not ruled out.
 - **The model's inputs were in range:** the parity check matched stored features (worst 99.998%
   of mel cells within one 0.5-dB step, LUFS within 2e-6); the inference gains ran −7.1 to +6.6 dB,
   and the mix and stem LUFS fell inside part C's val range. The seeds disagree by a median 0.062 in
@@ -93,12 +94,15 @@ contrasts move by at most 0.005 from the 126-direction figures.
 ## What it implies
 
 - **The existing direct model is not a shortcut:** fresh full mixes read a tie with S leaning
-  worse (+0.033), and worse than arm A's recipe (+0.061), clean bands included. This is the model
+  worse (+0.033), and leans worse than arm A's recipe (+0.061 [−0.011, +0.133]), on the bands
+  unseen by part C as well (+0.051 [−0.075, +0.177]). This is the model
   the draft direct-model plan expected to be confounded and set aside; it does not argue for or
   against D, which changes the data (band-clean) and the training mixes (realism).
-- **Changing the judge's DI is not a lever for stage F's tests.** The suspicion that the yardstick
+- **Changing the judge's DI barely moves stage F's comparisons of rebuilt-DI arms.** The suspicion that the yardstick
   caps every result holds on the known-answer songs (an exact truth reads only about half of S),
-  not on stage F, where contrasts and spreads are the same under both DIs. For known-answer tests,
+  not on stage F, where the contrasts and spreads of the arms that search through a rebuilt DI or
+  predict (H, D) are the same under both DIs; the arm that used the part's own DI (XO) reads better
+  under the raw DI. For known-answer tests,
   judging through the truth's own DI (as B1's arms already are) is the uncapped reading; any arm
   that searches through the measure DI carries the cap into its answer.
 
@@ -108,3 +112,9 @@ contrasts move by at most 0.005 from the 126-direction figures.
   group; the three model hashes matched at render time.
 - Priming before every DI or amp change; the S repeat check exact on 63/63 groups; no STOP.
 - Render processes started: 3 (PIDs 38737, 38758, 38775), all exited normally.
+
+Audited 2026-10-19 by an independent agent, which recomputed every contrast, interval, band SD,
+median, the known-answer figures and the render count from the raw group records with its own
+script (all match); changes: crunch "leans worse" (its interval reaches 0); D − H "leans worse";
+"clean bands" renamed the unseen bands; the stage F reading limited to the rebuilt-DI and predicted
+arms, with XO's raw-DI gain named as one effect; the leak reading hedged.
