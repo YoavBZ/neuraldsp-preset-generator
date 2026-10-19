@@ -539,7 +539,7 @@ was declared, what was measured, and the research behind it.
     extract one target guitar from a mix with several guitars (October 2026). No open, ungated
     model separates lead from rhythm or one electric guitar from another; open separators select
     by class. Ranked: keep the target's side of Mega-53's stereo stem (arrangement `pan` or the
-    user's ear), a level-difference mask, centre/wide models, per-song solo-region adaptation,
-    then fine-tuning on synthetic multi-guitar mixes. Flags the licence tension and proposes a
-    zero-render stage-F pan screen. Corrects the October separation report. Research, not a
-    declared plan.
+    user's ear), a level-difference mask, centre/wide models, Mega-53's electric/acoustic heads
+    when the other guitar is acoustic, per-song solo-region adaptation, then fine-tuning on
+    synthetic multi-guitar mixes. Flags the licence tension and proposes a zero-render stage-F pan
+    screen. Corrects the October separation report. Research, not a declared plan.
