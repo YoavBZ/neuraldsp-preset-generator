@@ -1,7 +1,8 @@
 # docs
 
 Start with **[ROADMAP.md](ROADMAP.md)**: where the product is, what comes next, and the
-decisions so far. It is the one living plan; the product steps' history is in
+decisions so far. It is the one living plan; what it superseded (the product steps' history,
+and the song-to-preset model's as it stood on 2026-10-19) is in
 [roadmap-history.md](roadmap-history.md). Everything else here is a record: what
 was declared, what was measured, and the research behind it.
 
@@ -277,16 +278,89 @@ was declared, what was measured, and the research behind it.
   −0.051 [−0.166, +0.065] on Mega-53); C′ stays.
 - [arm-a-mega53-plan.md](arm-a-mega53-plan.md) → [results](arm-a-mega53-results.md): arm A with
   Mega-53 against htdemucs. On fresh full mixes Mega-53 leans better, a tie (−0.017 [−0.039,
-  +0.004]), so htdemucs stays. Arm A's recipe on fresh full mixes reads −0.028 [−0.064, +0.008]
+  +0.004]), so htdemucs stayed then (Mega-53 is the ML default since 2026-10-19). Arm A's recipe on fresh full mixes reads −0.028 [−0.064, +0.008]
   against S (−0.083 on the reused development parts). 30,102 renders.
+  Amendment 2: a perfect DI alone gains nothing (+0.040 against H). Amendment 3: perfect separation
+  (the amp track as target and rebuild source) gains −0.066 [−0.090, −0.042] over H, and the true DI
+  on top a further −0.080 (ZT − S −0.174); 13,986 renders.
+- [stereo-and-mix-check-plan.md](stereo-and-mix-check-plan.md) → [results](stereo-and-mix-check-results.md):
+  Mega-53 becomes the ML default. Stereo: centred targets lose nothing to the mono fold, and on a
+  panned model the target's own channel gains +1.6 dB while a blind estimate gains +0.3. Our mixes
+  are unity sums, so the in-song guitar is the raw track; no session ships a master. Zero renders.
+- [separation-finetune-plan.md](separation-finetune-plan.md): how to improve target-guitar
+  separation. Zero-render ceilings first (the class ceiling and free test-time fixes), then an
+  oracle class arm in arm A (about 7k renders) decides between fine-tuning Mega-53's class head
+  and a conditioned one-guitar separator; MPS training needs the loss off the device. Planned.
 - [rebuild-gap-plan.md](rebuild-gap-plan.md) → [results](rebuild-gap-results.md): where C′'s
   rebuild loses ranking with a perfect stem. A structured short-time magnitude error, mostly above
   2 kHz; phase and rotation are minor. A fixed EQ (`dep_eq`, +0.133 [−0.009, +0.276]) and a
   ranking-trained rebuild (`rank`, +0.075 [−0.031, +0.182] against C′) lean better; `rank` seems to act as a
   learned long-term EQ (post hoc), and neither reduces the short-time treble error. 18,981 renders.
+- [rebuild-tone-plan.md](rebuild-tone-plan.md) → [results](rebuild-tone-results.md): a C′
+  fine-tune with an offset-removed 2–8 kHz short-time magnitude loss (`stm`), a leak-free long-term
+  EQ and a second seed of `rank`. `stm` lowered its target error on every part, with no measurable gain in
+  rendered ranking (+0.012 [−0.023, +0.047]; on top of the EQ −0.012); the leak-free EQ (+0.132 [−0.030,
+  +0.294]) and `rank`'s second seed (+0.099 [−0.036, +0.233]) lean positive, undecided. Next
+  proposed: an oracle dose probe of the short-time component. 8,280 renders. Audited.
+- [dose-probe-plan.md](dose-probe-plan.md): an oracle dose probe on top of the leak-free EQ:
+  25/50/100% of the true offset-removed short-time magnitude in 2–8 kHz, the full-band true
+  magnitude (one resynthesis, or Griffin–Lim) and a time-shifted control, with the long-term
+  balance held. Does the short-time magnitude carry the remaining half of the gap, and which E_st
+  cut matters? → [results](dose-probe-results.md): the full-band field (one resynthesis, C′'s
+  phase) recovers 0.74 [0.50, 0.86] of what the EQ leaves (+0.116 [+0.045, +0.187]); 2–8 kHz on
+  E_st's mask only 0.25 (+0.039), below it; Griffin–Lim adds nothing; dose shape and control
+  undecided. Option 2 only as a full-band head, ceiling `full100`, gated on a full-band error.
+  7,448 renders. Audited.
+- [audits/dose-stop-2026-10-18.md](audits/dose-stop-2026-10-18.md) → [audits/start-transient-2026-10-18.md](audits/start-transient-2026-10-18.md):
+  why the dose probe stopped (a render after a change of plugin state starts louder for about 4 s),
+  then eleven render scripts checked for it. No audited merged decision changes (arm B and
+  DI-recovery scripts not yet audited); part C is exposed but
+  probably harmless. Rule: a discarded priming render after any process start, amp or DI change.
+- [multi-section-plan.md](multi-section-plan.md) → [results](multi-section-results.md): every
+  10-s section where the guitar plays, not one crop. Step 1 (zero renders): 507 sections on 38
+  development parts, about 13× the audio of one crop each. Step 2 (true DI, 19 parts, 10 bands):
+  fitting three sections at once carries a little better to held-out sections than fitting one
+  (−0.018 [−0.030, −0.005]) at more renders; at equal renders not shown; one section keeps about
+  0.87 of its gain elsewhere in the track; the tone curve tracks where sections disagree, most on
+  Cambridge. 21,647 renders. Audited.
 - [cprime-sep-plan.md](cprime-sep-plan.md) → [results](cprime-sep-results.md): C′ fine-tuned on
   separator residuals; a small envelope gain, inside the noise on stems and as large on the amp
   track (zero renders).
+- [clean-di-library-plan.md](clean-di-library-plan.md) → [results](clean-di-library-results.md): a
+  screened library of the development DIs (237 DIs; hum, hiss, clipping, dropouts, bleed, DC and
+  near-silence per 10-s section; zero renders; 134.7 clean minutes after amendment 3's hum rule),
+  two blind listening checks of the screens, and part
+  B, known-answer test songs rendered through chosen presets (declared; renders later).
+- [known-answer-b1-plan.md](known-answer-b1-plan.md) → [results](known-answer-b1-results.md): part
+  B's pilot B1, four known-answer songs (Heather Jane, Bourbon, Collide With Me, Still Flyin')
+  rendered through drawn presets and mixed back, arm A's recipe scored against the exact truth. The
+  pipeline is exact; arm A against S +0.001 [−0.523, +0.524] over 3 bands, undecided, the spread
+  driven by Heather Jane; B2 proposed at the pool's cap (up to 4 fresh songs). 17,290 renders.
+  Audited.
+- [pretrain-set-plan.md](pretrain-set-plan.md) → [results](pretrain-set-results.md): part C, a
+  labelled pre-training render set from the clean DI sections (Morgan, clean to crunch, record-like
+  mixes built at training time), sized by a learning-curve pilot. On true mixes of held-out bands
+  the knob error flattened between 20k and 40k (Δ +0.0012 [−0.0020, +0.0045]): STOP, no
+  extension; the guitar alone and training-style mixes still improve. In-domain, not real-song.
+  43,060 renders, 3.68 GB. Audited.
+- [direct-existing-plan.md](direct-existing-plan.md) → [results](direct-existing-results.md): part C's
+  existing 40k models scored on stage F without training (D − S +0.033 [−0.053, +0.119], a tie
+  leaning worse), and the judge re-run through the raw DI (rebuilt-DI contrasts unchanged; on the
+  known-answer songs the measure DI caps the exact truth at 0.55 of S). 852 renders. Audited.
+- [direct-model-stems-plan.md](direct-model-stems-plan.md): the direct model with realistic stems
+  (declared, reviewed). Cheap checks on D_existing first (does the stem's quality move its answers;
+  what the mismatch costs; 111 descriptive renders), then a 5k pilot of real Mega-53 stems against a
+  mix-only model and the old recipe, then one test on stage F (D − S primary, about 321 renders).
+  The full build needs the user to free disk (34 GB free at start).
+- [record-match-listening-plan.md](record-match-listening-plan.md) → [results](record-match-listening-results.md):
+  a blind check of the judge by ear on 5 guitar-exposed parts: the ear broadly agrees with the
+  judge's order (Spearman mean 0.8), the ceiling C is heard closest in 4/5, H beats S in 4/5, D
+  third. 775 renders. Audited.
+- [shrink-snr-judge-v3-results.md](shrink-snr-judge-v3-results.md): two zero-render checks from
+  stored data. The best shrink does not measurably depend on stem SNR (a rule by SNR gains −0.003
+  [−0.013, +0.007] on held-out bands, nothing on realistic stems; the clear shrink cost is with the
+  true DI and a perfect target). Judge v3, re-scored on the record-match clips, agrees with the ear
+  a little less than the default judge (Spearman 0.64 against 0.80). Audited.
 - [bleed-listening-plan.md](bleed-listening-plan.md) → [results](bleed-listening-results.md), with
   the [bleed audit](audits/bleed-2026-10-16/README.md): bleed only in the Telefunken live-room
   sessions, audible on the high parts; the cleaning isn't adopted, and every key result holds

@@ -15,6 +15,8 @@ estimates with 90% band-clustered intervals, no pass/fail bars.
     .venv/bin/python -m learn.arm_a_mega53 report --stage D             # and --stage F
 
 TORCH_PY is ~/ndsp-presets/tools/demucs-venv/bin/python, MSST_PY ~/ndsp-presets/tools/msst-venv/bin/python.
+Without `--sep`, separate and rebuild use the default separator (Mega-53, `learn.separate`); the
+stored stage D/F results name their separator per arm (H htdemucs, M Mega-53).
 Outputs go to ~/ndsp-presets/learn/arm-a-mega53/. `learn/arm_a_mega53_run.zsh` chains the plan's
 launch order unattended.
 
@@ -95,6 +97,8 @@ SEP_MAX_RENDERS = 2                              # a separation starts only with
 POLL_S = 60
 RENDERS = (*LO.RENDERS,
            r"-m learn\.arm_a_mega53 search\b",
+           r"-m learn\.oracle_di_arm search\b",
+           r"-m learn\.perfect_sep_arm search\b",
            r"-m learn\.arm_a_levers (repeat-check|judge-variants|judge-early|screen|local|early-search)\b",
            r"-m learn\.knob_ceiling (run|control|cross)\b",
            r"-m learn\.label_table (render|check)\b",
@@ -136,6 +140,13 @@ STORED_S = {"M": ("cprime_mega53", "cprime_mega53|mega53|native|own"),
             "X:mega53": ("csep_mega53", "csep_mega53|mega53|native|own"),
             "X:stem": ("csep_stem", "csep_stem|stem|native|own")}
 SEP_SOURCE = {"htdemucs": "stem", "mega53": "mega53"}         # stage F's separators -> 1d's source names
+
+
+def default_sep():
+    """The default separator for arm A (`learn.separate.DEFAULT_SEPARATOR`: Mega-53)."""
+    from learn import separate as SEP
+
+    return SEP.DEFAULT_SEPARATOR
 X_P1, X_P2 = "P1_sepnet_stem_minus_current", "P2_sepnet_mega53_minus_mega53"
 
 
@@ -782,14 +793,9 @@ def cmd_separate(sep):
             prune, gate = None, C.MEM_GATE_PRUNED_GB
         print(sep, "memory gate", gate, "GB", flush=True)
         wait_separation_gate(gate)
-        if sep == "mega53":
-            model = SCR.MsstSeparator(prune=prune)
-        else:
-            from learn.separate import GuitarSeparator
+        from learn import separate as SEP
 
-            model = GuitarSeparator()
-            if model.device != "cpu":
-                raise SystemExit(f"htdemucs runs on {model.device}, not the CPU")
+        model = SEP.guitar_separator(sep, prune=prune)
         guard = L.SwapGuard()
         for slug in todo:
             wait_separation_gate(gate, memory=False)                 # memory is ours now
@@ -1165,26 +1171,35 @@ def _warm(rr, stage, arm, slug, amp, x32, sel, S, warmed):
     warmed.add((arm, slug, amp))
 
 
-def run_direction(rr, ctx, stage, arm, slug, amp, search, held, xd):
+def run_direction(rr, ctx, stage, arm, slug, amp, search, held, xd, *, stem=None, rb=None, lag=OBJ_LAG, path=None,
+                  s_lags=()):
     """The recipe on one direction through one arm's rebuild; the shrunk setting and the unshrunk
     best judged through the measure DI on both halves. The kept FLAC is the shrunk setting's render
-    even when the output fell back to S (stage F keeps S's own render per part and amp)."""
+    even when the output fell back to S (stage F keeps S's own render per part and amp).
+    stem, rb, lag, path: amendment 2's oracle arm overrides the reference, the search DI, the
+    objective's lag and the record's path (defaults: the arm's own). s_lags: amendment 3, the first
+    evaluation (S) is also scored at these lags (no renders), stored as `s_lag_check`."""
     import numpy as np
 
-    path = result_path(stage, arm, slug, amp, search)
+    path = result_path(stage, arm, slug, amp, search) if path is None else path
     part, sel, S, di, di32, ref_wav = ctx["part"], ctx["sel"], ctx["S"], ctx["di"], ctx["di32"], ctx["ref"]
-    stem = arm_reference(stage, arm, slug, part, xd)
-    rb = np.load(rebuilt_path(stage, arm, slug, xd))
+    stem = arm_reference(stage, arm, slug, part, xd) if stem is None else stem
+    rb = np.load(rebuilt_path(stage, arm, slug, xd)) if rb is None else rb
     rb32 = rb.astype(np.float32)
     dims = K.space(amp, S)
     n0, counter, curve = rr.count, {"activity_fallback": 0}, []
-    rec = {"stage": stage, "arm": arm, "slug": slug, "amp": amp, "search": search, "held": held, "status": "running"}
+    rec = {"stage": stage, "arm": arm, "slug": slug, "amp": amp, "search": search, "held": held, "lag": lag,
+           "status": "running"}
     s_key = arm if arm in ("M", "T") else (f"X:{xd['source']}" if arm == "X" else None)
 
     def f(x):
-        v, proxy = objective(stem, rr.render(rb32, sel, x), rb, search)
+        y = rr.render(rb32, sel, x)
+        v, proxy = objective(stem, y, rb, search, lag)
         counter["activity_fallback"] += int(proxy)
         curve.append(v)
+        if len(curve) == 1 and s_lags:
+            rec["s_lag_check"] = {"lag": lag, "value": v,
+                                  "at": {str(g): objective(stem, y, rb, search, g)[0] for g in s_lags}}
         if len(curve) == 1 and stage == "D" and s_key:                    # the first evaluation is S
             stored = stored_s_objective(s_key, slug, amp, search)
             dev = LO.deviation(v, stored)
@@ -1197,7 +1212,7 @@ def run_direction(rr, ctx, stage, arm, slug, amp, search, held, xd):
 
     def probe(x):
         y = rr.render(rb32, sel, x)
-        v, proxy = objective(stem, y, rb, search)
+        v, proxy = objective(stem, y, rb, search, lag)
         return peak_dbfs(y), v
 
     if K.key(dict(S)) != K.key(ctx["S_stored"]):
@@ -1632,7 +1647,8 @@ def cmd_report(stage):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=("decide-x", "check-inputs", "contexts", "separate", "rebuild", "search", "report"))
-    ap.add_argument("--sep", choices=("htdemucs", "mega53", "x"))
+    ap.add_argument("--sep", choices=("htdemucs", "mega53", "x"),
+                    help="separate/rebuild: the separator (default: learn.separate.DEFAULT_SEPARATOR, Mega-53)")
     ap.add_argument("--stage", choices=STAGES)
     ap.add_argument("--shard", default="0/1")
     ap.add_argument("--identity-only", action="store_true",
@@ -1640,7 +1656,7 @@ def main(argv=None):
     a = ap.parse_args(argv)
     sh = tuple(int(x) for x in a.shard.split("/"))
     if a.cmd in ("separate", "rebuild") and a.sep is None:
-        ap.error(f"{a.cmd} needs --sep")
+        a.sep = default_sep()
     if a.cmd == "separate" and a.sep == "x":
         ap.error("separate takes htdemucs or mega53")
     if a.cmd in ("search", "report") and a.stage is None:

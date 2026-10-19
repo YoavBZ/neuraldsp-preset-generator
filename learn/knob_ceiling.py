@@ -15,8 +15,10 @@ import json
 import math
 import pathlib
 import random
+import shutil
 import statistics
 import sys
+import tempfile
 from dataclasses import dataclass
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -374,25 +376,86 @@ def measure_di(part):
 
 PREROLL_S = 0.0            # amendment 3: replaced by `isolate`; kept for the cells rendered with 6 s
 
+# DI files a renderer keeps in its work directory. `AudioUnitRenderer` writes each distinct DI
+# once (~2 MB for a 10 s section) and keeps it until close; a render set that walks thousands of
+# distinct DIs (`learn/pretrain_set.py`) grew each server's directory by ~750 MB in 15 minutes.
+# The bound lives here, not in `match/renderer_au.py`, because any edit there changes the
+# renderer build that Tone King's calibrations record (tests/test_calibration_schema.py).
+DI_FILES_KEPT = 4
+
+
+def keep_recent_dis(files, current, keep=DI_FILES_KEPT):
+    """Mark `current` most recently used in the renderer's {digest: path} map, then delete the
+    least recently used files beyond `keep`. An evicted DI that comes back is written again by
+    `AudioUnitRenderer._di_file` with the same bytes under the same name."""
+    digest = next(d for d, p in files.items() if p == current)
+    files[digest] = files.pop(digest)
+    while len(files) > keep:
+        stale = files.pop(next(iter(files)))
+        stale.unlink(missing_ok=True)
+
+
+# The render server learn runs: a copy of `scripts/au_render_server.swift` whose decoded-DI cache
+# keeps the 4 most recently used DIs instead of all of them (~1.85 MB of RAM per distinct DI held).
+# It does not touch a separate ~1.1 MB-per-render growth both servers show (pretrain-set plan,
+# amendment 2, item 3). Learn-owned for the same reason as
+# DI_FILES_KEPT: the shipped server's bytes are part of the renderer build Tone King's
+# measurements record. Renders are bit-identical to the shipped server's (pretrain-set plan,
+# amendment 2).
+BOUNDED_SERVER_SOURCE = pathlib.Path(__file__).resolve().parent / "au_render_server_bounded.swift"
+
+
+def build_bounded_server(directory):
+    """Compile the bounded server into `directory` the way `AudioUnitRenderer._compile` builds the
+    shipped one (`scripts/_swift.compile_swift`, with its shared build cache) -> the binary."""
+    if str(PLUGIN_ROOT / "scripts") not in sys.path:
+        sys.path.insert(0, str(PLUGIN_ROOT / "scripts"))
+    from _swift import compile_swift
+    from match.renderer_au import AudioUnitError
+
+    output = pathlib.Path(directory) / BOUNDED_SERVER_SOURCE.stem
+    built, error = compile_swift(BOUNDED_SERVER_SOURCE, output)
+    if built is None or built.returncode != 0:
+        raise AudioUnitError(f"could not build {BOUNDED_SERVER_SOURCE.name}:\n{error}")
+    return output
+
+
+def renderer_class():
+    """Morgan's `AudioUnitRenderer` with the select/edits state command and bounded DI files."""
+    from match.renderer_au import AudioUnitRenderer
+
+    class _R(AudioUnitRenderer):
+        def _state_command(self, settings):
+            return {"selectAmp": settings["select"],
+                    "edits": [{"module": m, "key": k, "value": v} for m, k, v in settings["edits"]]}
+
+        def _di_file(self, di):
+            path = super()._di_file(di)
+            keep_recent_dis(self._di_files, path)
+            return path
+
+    return _R
+
 
 class Renderer:
     """A reused plugin process; `render(di, select, edits)` with edits {(module, key): stored}."""
 
     def __init__(self):
-        from match.renderer_au import AudioUnitRenderer
         from packs.loader import load_pack
-
-        class _R(AudioUnitRenderer):
-            def _state_command(self, settings):
-                return {"selectAmp": settings["select"],
-                        "edits": [{"module": m, "key": k, "value": v} for m, k, v in settings["edits"]]}
 
         self.pack = load_pack("morgan")
         # `isolate`: render resources are freed and rebuilt around every state write. Morgan's
         # `reset` (which the server calls before every render) leaves some state from the
         # previous render audible for 2-3 s, at the amp's hiss level (plan, amendment 3);
         # rebuilding clears it, at no measurable cost.
-        self.r = _R("morgan", process_policy="reuse", isolate=True)
+        # The bounded server (above), built into a directory this object owns and removes.
+        self._bin_dir = pathlib.Path(tempfile.mkdtemp(prefix="au-bounded-"))
+        try:
+            binary = build_bounded_server(self._bin_dir)
+            self.r = renderer_class()("morgan", process_policy="reuse", isolate=True, binary=binary)
+        except BaseException:
+            shutil.rmtree(self._bin_dir, ignore_errors=True)
+            raise
         self.count = 0
 
     def menu(self):
@@ -412,7 +475,10 @@ class Renderer:
         return y[pre:pre + len(di32)]
 
     def close(self):
-        self.r.close()
+        try:
+            self.r.close()
+        finally:
+            shutil.rmtree(self._bin_dir, ignore_errors=True)
 
 
 def judge(ref, y, di, lag):
