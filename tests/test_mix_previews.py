@@ -1,9 +1,11 @@
-import numpy as np
+"""learn/mix_previews.py: the pure parts (docs/mix-previews-results.md)."""
+
 import pytest
 
+np = pytest.importorskip("numpy")
 pytest.importorskip("scipy")
 
-from learn import mix_previews as M
+from learn import mix_previews as M  # noqa: E402
 
 
 def test_ncc_lag_finds_envelope_position():
