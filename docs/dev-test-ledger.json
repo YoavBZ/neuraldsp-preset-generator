@@ -2406,6 +2406,20 @@
    "gate": "None: descriptive. Listener ranks S, H, D, C (blind) against the record; reading: mean rank per arm, C/H/D above S counts, per-trial Spearman with the judge's held-half ranks (mean, count > 0), closeness answers, one repeat trial for consistency",
    "renders": "about 780: per part 1 priming + 150 (C's search) + 4 (S, H, D, C); knob_ceiling.Renderer (isolate=True), at most 3 processes",
    "held_out": "none touched"
+  },
+  {
+   "test_id": "stereo-and-mix-check",
+   "plan": "docs/stereo-and-mix-check-plan.md",
+   "results": "docs/stereo-and-mix-check-results.md",
+   "entered": "2026-10-19, with the plan, before any separation (the zero-cost inventory ran while drafting); one independent review (go with changes, applied)",
+   "parts": "stage F's 21 parts, 12 bands",
+   "bands": "stage F's 12",
+   "audio_only": "stage F's stored contexts and stems, the session tracks (stereo kept), reference.wav, mix.wav, backing.wav",
+   "renders": "0; separations: per part R stereo, P stereo, P mono with Mega-53 and htdemucs (126), plus one identity check each",
+   "gate": "None: descriptive. SNR gain over mono per channel mode, band-weighted with 90% band bootstrap; mix-vs-raw LSD, crest and brightness differences",
+   "seeds": "band bootstrap random.Random(20261019), 4,000 draws",
+   "repeat_use": "Sixth use of stage F's parts (after S/H/M, XO, direct-existing, record-match listening); separation measures only, no arm scores read or chosen on",
+   "held_out": "none touched"
   }
  ]
 }

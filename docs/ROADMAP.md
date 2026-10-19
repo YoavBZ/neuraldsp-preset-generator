@@ -193,10 +193,16 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      ([experiment 4](di-fine-structure-results.md)).
    - **Separation: Mega-53 against htdemucs** ([results](arm-a-mega53-results.md)). On fresh full
      mixes Mega-53 leans better, a tie: −0.017 [−0.039, +0.004], 8/4 bands, at about 6× the
-     wall-clock time. On the development parts −0.008 [−0.024, +0.009]. **htdemucs stays the
-     default.** A perfect stem gains little on the instrumental development stems (−0.026), but
+     wall-clock time. On the development parts −0.008 [−0.024, +0.009]. htdemucs stayed the
+     default then. A perfect stem gains little on the instrumental development stems (−0.026), but
      separation may matter more on low-SNR full mixes (not measured there): on the 6 development parts below 1 dB SNR a
      perfect stem gains −0.091 (post hoc), and 19 of the 21 fresh full-mix stems are below 1 dB.
+     **Since 2026-10-19 Mega-53 is the ML default** (the user heard it as much better on the
+     separation samples; htdemucs stays selectable; [stereo and mix check](stereo-and-mix-check-results.md)).
+     Stereo: with the target centred, as in all our summed mixes, the mono fold loses nothing. On
+     a panned model, the target's own channel gains +1.6 dB (Mega-53), but a blind pan estimate
+     from the stem gains only +0.3. No session ships a master, so our in-song guitar is the raw
+     track; the gap to real mixed songs is unmeasured.
    - **The rebuild gap** ([results](rebuild-gap-results.md), with a perfect stem, development):
      - **Magnitude, not phase:** the true short-time magnitude recovers the whole gap (+0.313),
        the true phase nothing (−0.031). The treble above 2 kHz carries most of it (+0.241, about

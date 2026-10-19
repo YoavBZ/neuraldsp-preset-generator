@@ -279,6 +279,10 @@ was declared, what was measured, and the research behind it.
   Mega-53 against htdemucs. On fresh full mixes Mega-53 leans better, a tie (−0.017 [−0.039,
   +0.004]), so htdemucs stays. Arm A's recipe on fresh full mixes reads −0.028 [−0.064, +0.008]
   against S (−0.083 on the reused development parts). 30,102 renders.
+- [stereo-and-mix-check-plan.md](stereo-and-mix-check-plan.md) → [results](stereo-and-mix-check-results.md):
+  Mega-53 becomes the ML default. Stereo: centred targets lose nothing to the mono fold, and on a
+  panned model the target's own channel gains +1.6 dB while a blind estimate gains +0.3. Our mixes
+  are unity sums, so the in-song guitar is the raw track; no session ships a master. Zero renders.
 - [rebuild-gap-plan.md](rebuild-gap-plan.md) → [results](rebuild-gap-results.md): where C′'s
   rebuild loses ranking with a perfect stem. A structured short-time magnitude error, mostly above
   2 kHz; phase and rotation are minor. A fixed EQ (`dep_eq`, +0.133 [−0.009, +0.276]) and a

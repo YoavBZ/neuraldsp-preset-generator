@@ -104,3 +104,41 @@ def test_ka_summary_floors_and_weights_by_band():
     assert s["raw"]["log_truth_minus_S"]["band_weighted_mean"] == pytest.approx(math.log(0.01 / 4))
     assert s["measure"]["truth_over_S_median"] == pytest.approx(0.5)
     assert s["stored_vs_fresh_measure_truth_max_dev"] == 0
+
+
+# --- the separator (Mega-53 by default, 2026-10-19) ------------------------------------------------
+
+def test_stored_htdemucs_run_keeps_its_folder_and_mega53_gets_its_own():
+    assert DE.out_dir("htdemucs") == DE.OUT
+    assert DE.out_dir("mega53") == DE.OUT / "sep-mega53"
+    with pytest.raises(ValueError):
+        DE.out_dir("demucs")
+
+
+def test_the_commands_default_to_mega53_and_take_htdemucs(monkeypatch):
+    seen = []
+    for name in ("cmd_parity", "cmd_predict", "cmd_render", "cmd_report"):
+        monkeypatch.setattr(DE, name, lambda a, n=name: seen.append((n, a.sep)))
+    DE.main(["predict"])
+    DE.main(["report", "--sep", "htdemucs"])
+    DE.main(["render", "--shard", "1/3"])
+    assert seen == [("cmd_predict", "mega53"), ("cmd_report", "htdemucs"), ("cmd_render", "mega53")]
+
+
+def test_f_inputs_reads_the_default_separators_crop(monkeypatch, tmp_path):
+    from learn import arm_a_mega53 as A
+
+    asked = []
+
+    def sep_crop(sep, slug):
+        asked.append(sep)
+        raise FileNotFoundError
+
+    monkeypatch.setattr(A, "sep_crop", sep_crop)
+    monkeypatch.setattr(A, "fdir", lambda *p: tmp_path.joinpath(*p))
+    (tmp_path / "contexts").mkdir()
+    (tmp_path / "contexts" / "log.json").write_text('{"s": {"offset": 0}}')
+    for sep in (None, "htdemucs"):
+        with pytest.raises(FileNotFoundError):
+            DE.f_inputs("s", sep)
+    assert asked == ["mega53", "htdemucs"]
