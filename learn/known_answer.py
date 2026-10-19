@@ -817,6 +817,9 @@ def contexts(plan):
     return [(s, it, lab) for s in plan["songs"] for it in items_for(s) for lab in ITEMS[it][1]]
 
 
+KA_SEPARATOR = "htdemucs"
+
+
 def cmd_separate(_args):
     import os
 
@@ -835,11 +838,11 @@ def cmd_separate(_args):
         return
     os.environ["DEVICE"] = "cpu"
     AM.wait_separation_gate(C.MEM_GATE_PRUNED_GB)
-    from learn.separate import GuitarSeparator
+    from learn import separate as SEP
 
-    model = GuitarSeparator()
-    if model.device != "cpu":
-        raise SystemExit(f"htdemucs runs on {model.device}, not the CPU")
+    # B1's declared separator, pinned (its stored `sep/` stems are htdemucs); the ML default,
+    # SEP.DEFAULT_SEPARATOR (Mega-53), is for new steps.
+    model = SEP.guitar_separator(KA_SEPARATOR)
     for song, it, lab in todo:
         AM.wait_separation_gate(C.MEM_GATE_PRUNED_GB, memory=False)
         x = np.load(OUT / "mix" / f"{song}-{it}-{lab}-context.npy")

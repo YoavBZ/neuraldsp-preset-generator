@@ -3,15 +3,24 @@
 band-clustered intervals, no pass/fail bars.
 
     .venv/bin/python -m learn.direct_existing parity                  # zero renders: the inference path against stored features
-    $TORCH_PY -m learn.direct_existing predict                        # zero renders: D_existing's settings for the 126 directions
-    OMP_NUM_THREADS=1 .venv/bin/python -m learn.direct_existing render --shard i/3
-    .venv/bin/python -m learn.direct_existing report
+    $TORCH_PY -m learn.direct_existing predict [--sep S]              # zero renders: D_existing's settings for the 126 directions
+    OMP_NUM_THREADS=1 .venv/bin/python -m learn.direct_existing render --shard i/3 [--sep S]
+    .venv/bin/python -m learn.direct_existing report [--sep S]
 
 TORCH_PY is ~/ndsp-presets/tools/demucs-venv/bin/python. Outputs go to
 ~/ndsp-presets/learn/direct-existing/.
 
+The stem the model reads comes from `--sep`, by default `learn.separate.DEFAULT_SEPARATOR`
+(Mega-53, stage F's stored Mega-53 crop). The stored run (2026-10-19) read the htdemucs stem: its
+files stay where they are and `--sep htdemucs` reads and reproduces them; any other separator
+writes under `direct-existing/sep-<name>/` (`out_dir`). The parity check is separator-free.
+Caveat: D_existing was trained on htdemucs stems (part C's inputs), so a Mega-53 run feeds it a
+stem unlike its training; a `sep-mega53` result is not by itself a reading on the separator. A
+Mega-53 `render` re-renders S, H, XO and the known-answer sections in its own folder (up to
+another `CAP`). `render` refuses predictions made with another separator.
+
 Test 1: D_existing (part C's three 40k curve models, ensembled) predicts settings from each stage F
-direction's search half (the stored full-mix crop and its stored htdemucs stem, hash-checked), as
+direction's search half (the stored full-mix crop and its stored separator stem, hash-checked), as
 part C's val inputs were built; each prediction is rendered once through the part's measure DI and
 judged on the held half, paired with the stored S, H and XO.
 
@@ -55,6 +64,7 @@ CAP = 900
 ARMS_RAW = ("S", "H", "XO", "D")
 CONTRASTS = (("D", "S"), ("D", "H"), ("D", "XO"), ("H", "S"), ("XO", "S"), ("XO", "H"))
 ROWS = ("all", "no_high_dir", "f_song", "unseen_by_part_c")
+SEPARATOR_CHOICES = ("mega53", "htdemucs")      # learn.separate.SEPARATORS (that module is not imported here)
 
 
 def _save(path, obj):
@@ -175,9 +185,18 @@ def inference_gain_db(mix, target):
 
 # --- stage F's inputs --------------------------------------------------------------------------------
 
-def f_inputs(slug):
-    """(mix crop, htdemucs stem crop, hashes): the stored context's crop slice (asserted equal to the
-    crop folder's mix.wav) and the stored stem crop."""
+def out_dir(sep):
+    """Where a separator's predictions, groups and report live: the stored htdemucs run at `OUT`
+    itself, any other separator under `OUT/sep-<name>`."""
+    from learn import separate as SEP
+
+    SEP.check_separator(sep)
+    return OUT if sep == "htdemucs" else OUT / f"sep-{sep}"
+
+
+def f_inputs(slug, sep=None):
+    """(mix crop, stem crop, hashes): the stored context's crop slice (asserted equal to the crop
+    folder's mix.wav) and the separator's stored stem crop (default: Mega-53)."""
     import numpy as np
     import soundfile as sf
 
@@ -185,7 +204,9 @@ def f_inputs(slug):
 
     log = json.loads(A.fdir("contexts", "log.json").read_text())[slug]
     ctx_p = A.fdir("contexts", f"{slug}.npy")
-    stem_p = A.sep_crop("htdemucs", slug)
+    from learn import separate as SEP
+
+    stem_p = A.sep_crop(SEP.check_separator(sep or SEP.DEFAULT_SEPARATOR), slug)
     ctx = np.load(ctx_p)
     mix = mono(ctx)[log["offset"]:log["offset"] + A.CROP]
     crop, _ = sf.read(str(A.f_part(slug)["crop"] / "mix.wav"), dtype="float64")
@@ -267,7 +288,7 @@ def cmd_parity(_args):
         raise SystemExit(1)
 
 
-def cmd_predict(_args):
+def cmd_predict(args):
     """Zero renders: the ensemble's settings for stage F's 126 directions."""
     import numpy as np
     import torch
@@ -294,7 +315,7 @@ def cmd_predict(_args):
     for slug, amp, search, held in A.stage_dirs("F"):
         part = A.f_part(slug)
         if slug not in inputs:
-            mix, stem, hashes = f_inputs(slug)
+            mix, stem, hashes = f_inputs(slug, args.sep)
             inputs[slug] = {"mix": mix, "stem": stem, "hashes": hashes, "gain_db": inference_gain_db(mix, target)}
         it = inputs[slug]
         x, lu = features(it["mix"], it["stem"], search, it["gain_db"])
@@ -309,22 +330,22 @@ def cmd_predict(_args):
         xs = settings_from(amp, S, cont, sw, mics, K.space, K.fmt, (SM.CONT, SM.SW, SM.CAT, SM.MICS))
         preds[f"{slug}|{amp}|{search}"] = {"settings": LO.sdict(xs), "diag": diag, "cond_lufs": lu,
                                           "gain_db": it["gain_db"], "held": held}
-    rec = {"models": mhash, "target_mix_lufs": target, "inputs": {s: v["hashes"] for s, v in inputs.items()},
+    rec = {"separator": args.sep, "models": mhash, "target_mix_lufs": target, "inputs": {s: v["hashes"] for s, v in inputs.items()},
            "unseen_by_part_c": unseen_bands(pool["sections"]), "predictions": preds,
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
-    _save(OUT / "predictions.json", rec)
+    _save(out_dir(args.sep) / "predictions.json", rec)
     sp = [p["diag"]["seed_spread"] for p in preds.values()]
-    print(f"predict: {len(preds)} directions; seed spread median {float(np.median(sp)):.4f}; "
+    print(f"predict ({args.sep}): {len(preds)} directions; seed spread median {float(np.median(sp)):.4f}; "
           f"unseen bands {rec['unseen_by_part_c']}")
 
 
-def _stop(why):
-    _save(OUT / "STOP.json", {"why": why, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+def _stop(why, root=OUT):
+    _save(root / "STOP.json", {"why": why, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     raise SystemExit(why)
 
 
-def spent():
-    return sum(int((_load(p) or {}).get("renders", 0)) for p in (OUT / "groups").rglob("*.json")) if OUT.exists() else 0
+def spent(root=OUT):
+    return sum(int((_load(p) or {}).get("renders", 0)) for p in (root / "groups").rglob("*.json")) if root.exists() else 0
 
 
 def cmd_render(args):
@@ -340,15 +361,18 @@ def cmd_render(args):
     from learn import song_bank as B
     from learn.direc_check import to_lufs
 
-    if (OUT / "STOP.json").exists():
+    od = out_dir(args.sep)
+    if (od / "STOP.json").exists():
         raise SystemExit("STOP.json present")
-    pred = _load(OUT / "predictions.json")
+    pred = _load(od / "predictions.json")
     if not pred or len(pred["predictions"]) != A.N_DIRS["F"]:
         raise SystemExit("run `predict` first")
+    if pred.get("separator", "htdemucs") != args.sep:
+        raise SystemExit(f"predictions were made with {pred.get('separator')}, not {args.sep}")
     for p in model_paths():
         if sha256(p) != pred["models"][p.name]:
             raise SystemExit(f"{p.name} changed since predict")
-    if spent() >= CAP:
+    if spent(od) >= CAP:
         raise SystemExit("cap reached")
     groups = shard(A.groups(A.stage_dirs("F")), args.shard)
     LO._wait_cap()
@@ -357,21 +381,21 @@ def cmd_render(args):
     try:
         menu = rr.menu()
         for slug, amp in groups:
-            gp = OUT / "groups" / f"{slug}|{amp}.json"
+            gp = od / "groups" / f"{slug}|{amp}.json"
             if (_load(gp) or {}).get("status") == "done":
                 continue
-            if (OUT / "STOP.json").exists():
+            if (od / "STOP.json").exists():
                 raise SystemExit("STOP.json present")
             if not LO.disk_ok(LO.disk_free_gb(), 1):
-                _stop("free disk below the guard")
-            if spent() + PER_GROUP > CAP:
-                _stop(f"cap {CAP}")
-            _, _, hashes = f_inputs(slug)
+                _stop("free disk below the guard", od)
+            if spent(od) + PER_GROUP > CAP:
+                _stop(f"cap {CAP}", od)
+            _, _, hashes = f_inputs(slug, args.sep)
             if hashes != pred["inputs"][slug]:
-                _stop(f"{slug}: inputs changed since predict")
+                _stop(f"{slug}: inputs changed since predict", od)
             ctx = A.group_ctx(menu, ms, "F", slug, amp)
             if K.key(dict(ctx["S"])) != K.key(ctx["S_stored"]):
-                _stop(f"{amp}: the live S differs from the stored copy")
+                _stop(f"{amp}: the live S differs from the stored copy", od)
             part, sel, S, ref, lag = ctx["part"], ctx["sel"], ctx["S"], ctx["ref"], ctx["part"]["judge_lag"]
             n0 = rr.count
             rec = {"slug": slug, "amp": amp, "measure": {}, "raw": {}, "status": "running"}
@@ -385,7 +409,7 @@ def cmd_render(args):
             rec["repeat_dev"] = dev
             if dev > REPEAT_TOL:
                 _save(gp, {**rec, "renders": rr.count - n0, "status": "stopped"})
-                _stop(f"{slug} {amp}: S's measure-DI judge moved {dev:.5f} from the stored")
+                _stop(f"{slug} {amp}: S's measure-DI judge moved {dev:.5f} from the stored", od)
             for sh, _ in K.DIRECTIONS:
                 rec["measure"][f"D|{sh}"] = K.judge(ref, rr.render(dm32, sel, d[sh]), dm, lag)
             # the raw DI at −22.9 LUFS: priming, S, H, XO, D
@@ -406,7 +430,7 @@ def cmd_render(args):
         if args.shard[0] == 0:
             tr = json.loads((KA / "truth" / "truth.json").read_text())
             for song, lab in ka_sections():
-                kp = OUT / "groups" / "ka" / f"{song}-{lab}.json"
+                kp = od / "groups" / "ka" / f"{song}-{lab}.json"
                 if (_load(kp) or {}).get("status") == "done":
                     continue
                 dr = tr[song]["draws"][KAM.truth_of(song, lab)]
@@ -430,7 +454,7 @@ def cmd_render(args):
                 print("KA", song, lab, amp, {k: round(out[k]["truth"]["A"], 4) for k in ("raw", "measure")}, flush=True)
     finally:
         rr.close()
-    print(f"RENDER DONE {args.shard[0]}/{args.shard[1]}; renders this process {rr.count}; spent {spent()}", flush=True)
+    print(f"RENDER DONE {args.shard[0]}/{args.shard[1]}; renders this process {rr.count}; spent {spent(od)}", flush=True)
 
 
 # --- the report --------------------------------------------------------------------------------------
@@ -541,16 +565,17 @@ def fmt(s):
             + f" ({s['bands']} bands, {s.get('bands_negative', '?')} better)")
 
 
-def cmd_report(_args):
+def cmd_report(args):
     from learn import local_objective_1c as C
 
-    pred = _load(OUT / "predictions.json")
-    units = build_units()
+    od = out_dir(args.sep)
+    pred = _load(od / "predictions.json")
+    units = build_units(od / "groups")
     done = [u for u in units if "D" in u["d"]]
     bt = C.load_bleed_table()
     unseen = set(pred["unseen_by_part_c"])
-    rep = {"directions": len(units), "done": len(done), "renders": spent(), "expected": expected_renders(),
-           "repeat_dev_max": max((_load(p) or {}).get("repeat_dev", 0) for p in (OUT / "groups").glob("*.json")),
+    rep = {"directions": len(units), "done": len(done), "renders": spent(od), "expected": expected_renders(),
+           "repeat_dev_max": max((_load(p) or {}).get("repeat_dev", 0) for p in (od / "groups").glob("*.json")),
            "test1": {}, "test2": {}, "medians": {}}
     for a, b in CONTRASTS:
         rep["test1"][f"{a}-{b}"] = {r: (contrast([u for u in done if row_filter(r, bt, unseen)(u)], a, b) or {}).get("all")
@@ -562,10 +587,10 @@ def cmd_report(_args):
         rep["medians"][key] = {a: median([u[key].get(a) for u in done]) for a in ARMS_RAW}
     rep["per_amp_D_minus_S"] = (contrast(done, "D", "S") or {}).get("per_amp")
     rep["per_class_D_minus_S"] = (contrast(done, "D", "S") or {}).get("per_class")
-    ka = [r for r in (_load(p) for p in sorted((OUT / "groups" / "ka").glob("*.json"))) if r and r.get("status") == "done"]
+    ka = [r for r in (_load(p) for p in sorted((od / "groups" / "ka").glob("*.json"))) if r and r.get("status") == "done"]
     rep["known_answer"] = ka_summary(ka) if ka else None
     rep["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
-    _save(OUT / "report.json", rep)
+    _save(od / "report.json", rep)
     print(f"{rep['done']}/{rep['directions']} directions; renders {rep['renders']} (expected {rep['expected']}); "
           f"repeat max {rep['repeat_dev_max']:.2e}")
     for k, v in rep["test1"].items():
@@ -582,7 +607,13 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=("parity", "predict", "render", "report"))
     ap.add_argument("--shard", type=lambda s: tuple(int(x) for x in s.split("/")), default=(0, 1))
+    ap.add_argument("--sep", choices=SEPARATOR_CHOICES, default=None,
+                    help="the stem's separator (default: learn.separate.DEFAULT_SEPARATOR, Mega-53; the stored run is htdemucs)")
     a = ap.parse_args(argv)
+    if a.sep is None:
+        from learn import separate as SEP
+
+        a.sep = SEP.DEFAULT_SEPARATOR
     {"parity": cmd_parity, "predict": cmd_predict, "render": cmd_render, "report": cmd_report}[a.cmd](a)
 
 

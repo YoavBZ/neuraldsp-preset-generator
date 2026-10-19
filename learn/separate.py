@@ -1,4 +1,11 @@
-"""htdemucs_6s guitar stems for validation crops (ML plan 2026-10, step 0).
+"""Guitar separators for the ML steps, and htdemucs_6s guitar stems for validation crops (ML plan
+2026-10, step 0).
+
+**The default separator is Mega-53** (`DEFAULT_SEPARATOR`; the user's listening of the separation
+samples, 2026-10-19, `docs/stereo-and-mix-check-results.md`): BS-Roformer Mega-53's pruned
+electric-guitar head (`separator_screen.MsstSeparator`, the msst-venv). htdemucs_6s stays
+selectable (`guitar_separator("htdemucs")`, the demucs-venv); every stored result keeps the
+separator it was run with.
 
 Recovered from the songs check's scripts (`~/ndsp-presets/learn/poc/stems/_work/
 build_contexts.py` and `separate_demucs.py`), with the settings unchanged:
@@ -37,6 +44,33 @@ DATA = HOME / "references/datasets"
 SR = 48000
 PAD_S = 10
 MODEL, OVERLAP, SHIFTS = "htdemucs_6s", 0.25, 0
+SEPARATORS = ("mega53", "htdemucs")
+DEFAULT_SEPARATOR = "mega53"
+
+
+def check_separator(name):
+    """`name` if it is a known separator, else ValueError."""
+    if name not in SEPARATORS:
+        raise ValueError(f"unknown separator {name!r} (one of {SEPARATORS})")
+    return name
+
+
+def guitar_separator(name=DEFAULT_SEPARATOR, prune=True):
+    """A CPU guitar separator, called on mono 48-kHz audio and returning the stem at 48 kHz, the same
+    length. "mega53": Mega-53's electric-guitar head (`prune` its other heads, as stored; run in
+    the msst-venv); "htdemucs": `GuitarSeparator` on the CPU (the demucs-venv)."""
+    import os
+
+    check_separator(name)
+    if name == "mega53":
+        from learn import separator_screen as SCR
+
+        return SCR.MsstSeparator(prune=prune)
+    os.environ["DEVICE"] = "cpu"
+    sep = GuitarSeparator()
+    if sep.device != "cpu":
+        raise SystemExit(f"htdemucs runs on {sep.device}, not the CPU")
+    return sep
 
 
 def window(n, a, b, pad):

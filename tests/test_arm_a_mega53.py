@@ -581,3 +581,17 @@ def test_stored_s_objectives_exist_for_every_stage_d_cell():
             for h in ("A", "B"):
                 assert math.isfinite(M.stored_s_objective("M", slug, amp, h))
                 assert math.isfinite(M.stored_s_objective("T", slug, amp, h))
+
+
+# --- the default separator (Mega-53, 2026-10-19) ---------------------------------------------------
+
+def test_arm_a_defaults_to_mega53_and_its_arm(monkeypatch):
+    assert M.default_sep() == "mega53"
+    seen = []
+    monkeypatch.setattr(M, "cmd_separate", lambda sep: seen.append(("separate", sep)))
+    monkeypatch.setattr(M, "cmd_rebuild", lambda sep: seen.append(("rebuild", sep)))
+    M.main(["separate"])
+    M.main(["rebuild"])
+    M.main(["separate", "--sep", "htdemucs"])
+    M.main(["rebuild", "--sep", "x"])
+    assert seen == [("separate", "mega53"), ("rebuild", "mega53"), ("separate", "htdemucs"), ("rebuild", "x")]
