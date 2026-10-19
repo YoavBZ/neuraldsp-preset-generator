@@ -2339,6 +2339,53 @@
    "held_out": "none newly touched (stage F's parts were already used by arm-a-mega53)",
    "limits": "one stem (htdemucs, full mix), one recipe; the ceiling reference is from other parts and a cleaner target",
    "outcome": "done 2026-10-18 (126/126 directions; 6,994 renders counted + up to 54 uncounted from one pause; no fallbacks). XO - S +0.012 [-0.088,+0.112], XO - H +0.040 [-0.043,+0.123] (12 bands); no high bleed +0.011 / +0.057; F-song -0.027 / -0.045 (4 bands, descriptive); share of the K_S gap -0.04 (H +0.10). Reading (hedged): a perfect rebuild gives arm A no measurable gain against a full-mix stem objective; the stem objective, not the rebuild, limits arm A on full mixes. docs/arm-a-mega53-results.md, amendment 2."
+  },
+  {
+   "test_id": "direct-existing",
+   "plan": "docs/direct-existing-plan.md",
+   "entered": "2026-10-19, with the plan, before any render (the zero-render parity check and predictions ran while drafting); one independent review of plan and code",
+   "repeat_use": "Fourth set of arms on stage F's 21 parts / 126 directions (after S, H, M and XO); the known-answer songs' third use. Nothing is chosen on them",
+   "parts": {
+    "stage_F": [
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
+     "cambridge-Passing_Ships-ElecGtr2",
+     "cambridge-Passing_Ships-ElecGtr4",
+     "cambridge-Quicksand-ElecGtr2",
+     "cambridge-Signs-ElecGtr3",
+     "cambridge-Today's_The_Day-ElecGtr07",
+     "cambridge-colour-me-red-elecgtr02",
+     "cambridge-colour-me-red-elecgtr03",
+     "cambridge-femme-elecgtr5",
+     "cambridge-get-out-of-bed-elecgtr2",
+     "cambridge-let-s-dance-elecgtr3",
+     "cambridge-let-s-dance-elecgtr4",
+     "cambridge-magilla-elecgtr1",
+     "cambridge-wickerman-elecgtr1",
+     "cambridge-wickerman-elecgtr2",
+     "cambridge-wickerman-elecgtr3",
+     "cambridge-wickerman-elecgtr7",
+     "telefunken-Gym_Hours-GTR_2",
+     "telefunken-Russian_Cream-GTR_1",
+     "telefunken-She's_Gone-GTR",
+     "telefunken-Strangest_Places-GTR"
+    ],
+    "known_answer": [
+     "heather-jane",
+     "bourbon",
+     "collide",
+     "apprehended"
+    ]
+   },
+   "bands": "stage F's 12 bands (as arm-a-mega53); known-answer: Chris Coltraine, Rebecca Haviland, The Apprehended",
+   "audio_only": "stage F's stored full-mix contexts and htdemucs crops (model input), di.wav (measure and raw DI), reference.wav (judge); B1's stored truth DIs and records",
+   "training": "none (part C's three 40k curve models, as stored)",
+   "seeds": "none drawn",
+   "gate": "None (the user's rule): primary D_existing - S on stage F, band-weighted, 90% band-clustered t (11 df); beside it D - H, D - XO, rows no high bleed, F-song, unseen by part C (6 bands). Test 2 descriptive: each contrast under the raw-DI judge against the measure-DI judge (paired change with interval, band SDs); known-answer truth/S under both judges",
+   "stopping": "fixed set; stops on the repeat check (S's measure judge vs stored, 1e-3), input or model hash change, cap 900, 31 GB disk guard",
+   "renders": "789 = stage F 63 x 11 + known-answer 16 x 6; knob_ceiling.Renderer (isolate=True), 3 shards",
+   "held_out": "none touched",
+   "limits": "part C trained on other DIs of 6 stage F bands' sessions (the all-bands row is confounded; the unseen-by-part-C row is not); one stem (htdemucs); raw DI level set to -22.9 LUFS",
+   "outcome": "pending"
   }
  ]
 }
