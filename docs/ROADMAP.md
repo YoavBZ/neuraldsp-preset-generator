@@ -138,7 +138,10 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       (a user decision: data, disk, a product question). Steps after the first need about 2 GB
       of disk freed.
    2. **Train the direct model on realistic separated stems,** and check how much it relies on the
-      stem against the mix (plan being written).
+      stem against the mix ([plan](direct-model-stems-plan.md), declared and reviewed 2026-10-19):
+      zero-render checks of the stem mismatch on the existing model first, then a 5k pilot (real
+      Mega-53 stems, a mix-only model, the old recipe), then one stage F test, D − S primary. The
+      full build waits on the user freeing disk (34 GB free at start).
    3. **Two zero-render checks.** *Done 2026-10-19 ([results](shrink-snr-judge-v3-results.md)):*
       the best shrink does not measurably depend on stem SNR (a rule by SNR gains −0.003 [−0.013,
       +0.007] on held-out bands; nothing on realistic stems), and judge v3 agrees with the ear a
