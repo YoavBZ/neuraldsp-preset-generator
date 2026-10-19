@@ -1,7 +1,8 @@
 # docs
 
 Start with **[ROADMAP.md](ROADMAP.md)**: where the product is, what comes next, and the
-decisions so far. It is the one living plan; the product steps' history is in
+decisions so far. It is the one living plan; what it superseded (the product steps' history,
+and the song-to-preset model's as it stood on 2026-10-19) is in
 [roadmap-history.md](roadmap-history.md). Everything else here is a record: what
 was declared, what was measured, and the research behind it.
 
@@ -277,7 +278,7 @@ was declared, what was measured, and the research behind it.
   −0.051 [−0.166, +0.065] on Mega-53); C′ stays.
 - [arm-a-mega53-plan.md](arm-a-mega53-plan.md) → [results](arm-a-mega53-results.md): arm A with
   Mega-53 against htdemucs. On fresh full mixes Mega-53 leans better, a tie (−0.017 [−0.039,
-  +0.004]), so htdemucs stays. Arm A's recipe on fresh full mixes reads −0.028 [−0.064, +0.008]
+  +0.004]), so htdemucs stayed then (Mega-53 is the ML default since 2026-10-19). Arm A's recipe on fresh full mixes reads −0.028 [−0.064, +0.008]
   against S (−0.083 on the reused development parts). 30,102 renders.
   Amendment 2: a perfect DI alone gains nothing (+0.040 against H). Amendment 3: perfect separation
   (the amp track as target and rebuild source) gains −0.066 [−0.090, −0.042] over H, and the true DI
@@ -346,6 +347,11 @@ was declared, what was measured, and the research behind it.
   a blind check of the judge by ear on 5 guitar-exposed parts: the ear broadly agrees with the
   judge's order (Spearman mean 0.8), the ceiling C is heard closest in 4/5, H beats S in 4/5, D
   third. 775 renders. Audited.
+- [shrink-snr-judge-v3-results.md](shrink-snr-judge-v3-results.md): two zero-render checks from
+  stored data. The best shrink does not measurably depend on stem SNR (a rule by SNR gains −0.003
+  [−0.013, +0.007] on held-out bands, nothing on realistic stems; the clear shrink cost is with the
+  true DI and a perfect target). Judge v3, re-scored on the record-match clips, agrees with the ear
+  a little less than the default judge (Spearman 0.64 against 0.80). Audited.
 - [bleed-listening-plan.md](bleed-listening-plan.md) → [results](bleed-listening-results.md), with
   the [bleed audit](audits/bleed-2026-10-16/README.md): bleed only in the Telefunken live-room
   sessions, audible on the high parts; the cleaning isn't adopted, and every key result holds
