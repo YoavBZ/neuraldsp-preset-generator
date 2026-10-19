@@ -122,8 +122,10 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      open-source weights are allowed (the user, 2026-10-19).
    - **Our mixes are not real mixes** ([stereo and mix check](stereo-and-mix-check-results.md)).
      The development "full mixes" are the raw tracks summed at unity, and no session has a mix or
-     master, so the gap to real mixed songs is unmeasured. The Cambridge site has Full Preview MP3s
-     and Unmastered Mix WAVs; the user will download them. Stereo: with the target centred, as in
+     master. [Released mixes](mix-previews-results.md) of 10 songs and a remix of Signs (same
+     takes) measure that gap: Mega-53 on the real mix loses 0.62 dB SNR against the raw track on 17
+     stage F parts, half of it from per-track lag (polarity flips cost nothing in a gain-fitted
+     SNR). In SNR, mastering adds little. Scores on real songs need to be lag-invariant. Stereo: with the target centred, as in
      all our sums, the mono fold loses nothing.
 
    **The direction: two active routes, arm A and the direct model, with better separation as the

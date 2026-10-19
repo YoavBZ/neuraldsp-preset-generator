@@ -2543,6 +2543,21 @@
    "limits": "D_existing trained on 6 stage F bands' sessions (gate rows also on the unseen bands); MUSDB18 songs tagged (Ill Fate, The Long Wait in training; Bannockburn out of V_sep readouts; It Was My Fault, Femme, Signs on stage F reported apart); drawn labels; pilot power 5 bands (4 df); step 4 detects about 0.05-0.13",
    "results": "docs/direct-model-stems-gate1-results.md",
    "outcome": "gate 1 done 2026-10-20 (zero renders; 349 separations; 1d not run): GATE1 STEM, all five checks. Stage F d(a',b) - null +0.104 [+0.090,+0.120] (unseen +0.106), d(a,b) - null +0.114 [+0.103,+0.128]; audit E (iii) Mega-53 - (i) training stem +0.104 [+0.088,+0.120] (0.167 -> 0.270). Reliance (V_dev): stem zeroed +0.099, mix zeroed +0.043, stem share 0.70; post hoc: behind a clean guitar the mix is worth +0.011 [+0.005,+0.016], behind Mega-53/htdemucs stems (audit) +0.001/+0.005, both intervals reach 0. Recommendation (user's decision): a stem-only model, mix-only as a comparison at most. Audited, confirmed with corrections (applied). Pilot and build not started"
+  },
+  {
+   "test_id": "mix-previews",
+   "plan": "docs/mix-previews-results.md",
+   "results": "docs/mix-previews-results.md",
+   "entered": "2026-10-19, with the results; no separate plan (descriptive, method set by the task and stated in the results' method sections)",
+   "parts": "the 17 stage F parts in the 11 songs with a released mix (9 bands); alignment also checks the label table's other 13 crops in those songs",
+   "bands": "9 of stage F's 12",
+   "audio_only": "Cambridge 'Full Preview' MP3s (10 songs), the Mix Rescue remix of Signs, 5 unmastered WAVs; the session tracks; stage F's stored contexts and Mega-53 stems; reference.wav, mix.wav",
+   "renders": "0; separations: 23 Mega-53 runs (17 mastered, 6 unmastered) on aligned 30-s preview contexts",
+   "gate": "None: descriptive. Same-take check and crop coverage per song; stem SNR against the raw track (as aligned, lag-matched, after a held-out FIR) and LSD between raw track, unity stem and real-mix stem, band-weighted with 90% band bootstrap",
+   "seeds": "band bootstrap random.Random(20261019), 4,000 draws",
+   "repeat_use": "A further use of stage F's parts (after S/H/M, XO, direct-existing, record-match listening, arm-a-mega53-perfect-sep, stereo-and-mix-check); separation measures only, no arm scores read or chosen on",
+   "held_out": "none touched",
+   "outcome": "done 2026-10-19 (zero renders, 23 separations; audited, confirmed with corrections; docs/mix-previews-results.md)"
   }
  ]
 }
