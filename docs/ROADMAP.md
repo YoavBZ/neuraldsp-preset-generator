@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-18.
+lives in the linked documents. Last updated 2026-10-19.
 
 ## Where the product is
 
@@ -307,12 +307,19 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      4. **Decision point: one fresh-song test of arm A with the improved rebuild** (and Mega-53 if
         it still leans better). If arm A clearly beats S on fresh full mixes (read as that test's
         plan declares), build the product around it. If not, revive arm B (song to settings directly) with these lessons, or a hybrid.
+        **Pending user decision (2026-10-19):** the audited oracle-DI arm found a perfect DI gives
+        arm A no measurable gain on fresh full mixes, so direct prediction (arm B, pre-trained on
+        part C's set) is proposed as the main route. Part C's set is done
+        ([results](pretrain-set-results.md), audited): on true val mixes the learning curve
+        flattened between 20k and 40k (Δ +0.0012 [−0.0020, +0.0045]; STOP, no extension), while
+        the guitar alone and training-style mixes still improve. Next on that route: a real-song
+        test of a model trained on this set.
    - **Kept:** bleed handling (no cleaning; the no-high-bleed row beside all parts), arm B paused
      until the decision point, metal out of scope.
    - **Renders:** about 250k used so far. Since the 2026-10-16 update: arm B's retrain about
      14.8k, the local objective 7,061 + 3,528 (1b) + 3,528 (1c) + 7,200 (1d), the ceiling
      extension 17,550 plus 72 warm-ups, the listening page 26, arm A with Mega-53 30,102, the
-     rebuild-gap study 18,981, multi-section step 2 21,647, the rebuild-tone step 8,280 and known-answer B1 17,290 (after the 250k). No fixed limit (2026-10-16): each step plan
+     rebuild-gap study 18,981, multi-section step 2 21,647, the rebuild-tone step 8,280, known-answer B1 17,290 and part C 43,060 (after the 250k). No fixed limit (2026-10-16): each step plan
      declares when to stop rendering from its own evidence (a flattened search curve, a learning
      curve that stops improving, an interval narrow enough to answer the question), and reports
      what it used.
@@ -754,3 +761,4 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-18 | Known-answer pilot B1: the exact-record pipeline works; arm A against S +0.001 [−0.523, +0.524] over 3 bands, undecided (Heather Jane +0.36, the other three −0.17 to −0.20); B2 proposed at the pool's cap, up to 4 fresh DI-only songs (about 14k renders) | [B1 results](known-answer-b1-results.md) |
 | 2026-10-18 | Oracle dose probe (hedged): on top of the leak-free EQ, the full-band true short-time magnitude (C′'s phase, one resynthesis) recovers 0.74 [0.50, 0.86] of the remainder (+0.116 [+0.045, +0.187]); 2–8 kHz on E_st's mask only 0.25 (+0.039), below it; control undecided. Option 2 (per-bin log-gain head) only as a full-band field, ceiling `full100`, with a full-band gate metric instead of E_st | [dose probe](dose-probe-results.md) |
 | 2026-10-18 | Oracle-DI arm on stage F (hedged): arm A searching through the true DI against the htdemucs full-mix stem reads +0.012 [−0.088, +0.112] vs S and +0.040 [−0.043, +0.123] vs H, so a perfect rebuild gives no measurable gain in the product setting; the stem objective, not the rebuild, limits arm A on full mixes | [arm A Mega-53, amendment 2](arm-a-mega53-results.md#amendment-2-the-oracle-di-arm-on-stage-f-2026-10-18) |
+| 2026-10-19 | Part C, the pre-training render set: 43k renders; on true mixes of held-out bands the knob error flattened between 20k and 40k (Δ +0.0012 [−0.0020, +0.0045]), STOP, no extension; the guitar alone and training-style mixes still improve (post hoc). In-domain, not real-song; next a real-song test of a model trained on it; direct prediction proposed as the main route (user's decision) | [part C results](pretrain-set-results.md) |
