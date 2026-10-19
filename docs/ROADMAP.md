@@ -202,7 +202,10 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      Stereo: with the target centred, as in all our summed mixes, the mono fold loses nothing. On
      a panned model, the target's own channel gains +1.6 dB (Mega-53), but a blind pan estimate
      from the stem gains only +0.3. No session ships a master, so our in-song guitar is the raw
-     track; the gap to real mixed songs is unmeasured.
+     track. [Released mixes](mix-previews-results.md) of 10 songs and a remix of Signs
+     (same takes) measure that gap: Mega-53 on the real mix loses 0.62 dB SNR against the raw track on 17 stage F parts, half of
+     it from per-track lag (polarity flips cost nothing in a gain-fitted SNR). In SNR, mastering
+     adds little. Scores on real songs need to be lag-invariant.
    - **The rebuild gap** ([results](rebuild-gap-results.md), with a perfect stem, development):
      - **Magnitude, not phase:** the true short-time magnitude recovers the whole gap (+0.313),
        the true phase nothing (−0.031). The treble above 2 kHz carries most of it (+0.241, about
