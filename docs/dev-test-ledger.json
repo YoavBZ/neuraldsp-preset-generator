@@ -2405,7 +2405,9 @@
    "seeds": "held-half ties random.Random(20261019); page order, letters and repeat random.Random(20261020); C's search knob_ceiling.SEED 20261013",
    "gate": "None: descriptive. Listener ranks S, H, D, C (blind) against the record; reading: mean rank per arm, C/H/D above S counts, per-trial Spearman with the judge's held-half ranks (mean, count > 0), closeness answers, one repeat trial for consistency",
    "renders": "about 780: per part 1 priming + 150 (C's search) + 4 (S, H, D, C); knob_ceiling.Renderer (isolate=True), at most 3 processes",
-   "held_out": "none touched"
+   "held_out": "none touched",
+   "outcome": "done 2026-10-19 (775 renders, 3 shards; plumbing checks max 0.00012; one blind sitting; audited; docs/record-match-listening-results.md). Mean rank of 5: C 1.2, H 2.4, D 2.8, S 3.6; above S C 5/5, H 4/5, D 4/5; ear vs judge Spearman mean 0.8, > 0 in 5/5 (S, H, D alone mean 0.6, one reversal); C closest in 4/5; closeness very 3, some 2, not 0; repeat rho 0.8, same top. Reading (descriptive): the ear broadly orders presets as the judge does; C (10-64% below S by the judge) is heard closest even where the gap is small; H beats S by ear on these high-SNR parts",
+   "results": "docs/record-match-listening-results.md"
   }
  ]
 }
