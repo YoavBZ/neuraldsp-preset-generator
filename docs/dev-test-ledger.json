@@ -2339,6 +2339,50 @@
    "held_out": "none newly touched (stage F's parts were already used by arm-a-mega53)",
    "limits": "one stem (htdemucs, full mix), one recipe; the ceiling reference is from other parts and a cleaner target",
    "outcome": "done 2026-10-18 (126/126 directions; 6,994 renders counted + up to 54 uncounted from one pause; no fallbacks). XO - S +0.012 [-0.088,+0.112], XO - H +0.040 [-0.043,+0.123] (12 bands); no high bleed +0.011 / +0.057; F-song -0.027 / -0.045 (4 bands, descriptive); share of the K_S gap -0.04 (H +0.10). Reading (hedged): a perfect rebuild gives arm A no measurable gain against a full-mix stem objective; the stem objective, not the rebuild, limits arm A on full mixes. docs/arm-a-mega53-results.md, amendment 2."
+  },
+  {
+   "test_id": "direct-model",
+   "plan": "docs/direct-model-plan.md",
+   "entered": "2026-10-19, with the plan, before any compute for it (after the user's decision to pause arm A and make direct prediction the main route); after a zero-render count of part C's stored rows (band-clean subset 21,311 examples, 277 sections, 9 bands) and of arm B's bank contamination (58% of examples back onto a stage F song); reviewed by an independent agent before the PR",
+   "repeat_use": "Stage F's 21 parts / 126 directions: third set of arms (after H and M, and the oracle XO); nothing about D is chosen on stage F (recipe fixed by the plan, augmentation chosen on the R pool with stage F and known-answer songs excluded; the test-input check chooses nothing). Known-answer B1's 4 songs / 144 primary directions: second set of arms (after A and O). The R pool reuses multi-section step 1's sections of label-table parts (unlabelled audio only)",
+   "parts": {
+    "stage_F": [
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
+     "cambridge-Passing_Ships-ElecGtr2",
+     "cambridge-Passing_Ships-ElecGtr4",
+     "cambridge-Quicksand-ElecGtr2",
+     "cambridge-Signs-ElecGtr3",
+     "cambridge-Today's_The_Day-ElecGtr07",
+     "cambridge-colour-me-red-elecgtr02",
+     "cambridge-colour-me-red-elecgtr03",
+     "cambridge-femme-elecgtr5",
+     "cambridge-get-out-of-bed-elecgtr2",
+     "cambridge-let-s-dance-elecgtr3",
+     "cambridge-let-s-dance-elecgtr4",
+     "cambridge-magilla-elecgtr1",
+     "cambridge-wickerman-elecgtr1",
+     "cambridge-wickerman-elecgtr2",
+     "cambridge-wickerman-elecgtr3",
+     "cambridge-wickerman-elecgtr7",
+     "telefunken-Gym_Hours-GTR_2",
+     "telefunken-Russian_Cream-GTR_1",
+     "telefunken-She's_Gone-GTR",
+     "telefunken-Strangest_Places-GTR"
+    ],
+    "known_answer": "B1's 4 songs (Heather Jane, Bourbon, Collide With Me, Still Flyin'), primary items 1, 3, 4",
+    "r_pool": "multi-section step 1's passing sections of the 38 label-table parts outside stage F, less parts whose song is a stage F or known-answer song and parts with high bleed; up to 6 sections per part (random.Random(20261061))",
+    "training": "part C's stored train examples outside stage F's 12 bands and the known-answer bands: 21,311 examples, 277 sections, 9 bands"
+   },
+   "bands": "decision: stage F's 12 bands (11 df); known-answer: 3 bands (descriptive); R pool: its own bands, leave-one-band-out; training: Eggy, Renesans, Death Of A Romantic, Ale Lak, Rebuild The Evil, Hollow Ground, Storm Of Particles, Starnes And Shah, The Long Wait",
+   "held_out": "none touched: training rows asserted outside stage F's bands and DIs, known-answer DIs and bands, Guitar-TECHS P3, sets 4-6 and held-out sessions; listening songs supplied by the user and checked against every inventory and validation catalogue",
+   "audio_only": "R pool: full mixes at unity with vocals, amp tracks, backings, htdemucs stems (unlabelled); stage F and known-answer search halves (mix and stored htdemucs stem) as model inputs; judged against reference.wav (stage F) and the truth record (known-answer) as before",
+   "training": "D0 (part C's composition) and D (with the chosen realism augmentation), part C's half-width network and recipe, at most 40 epochs, patience 4, seeds 20261042-44; augmentation draws SeedSequence([20261060, i, epoch]); the answer is the 3-seed ensemble",
+   "seeds": "R pool 20261061; band bootstrap 20261062; repeat-check draw 20261063; listening amps 20261064, letters 20261065",
+   "gate": "None (the user's rule). One primary: D - S on stage F, all 126 directions, band-weighted, 90% band-clustered t interval (11 df). Interval below 0: build the product on D; otherwise stop and revisit with the user. Early stops before it: the gap measurement (no measurable gap, or no measurable closure: GAP STOP) and the model readout (D not below a constant predictor in-domain: MODEL STOP). Everything else descriptive (D - H, D0, the part C curve models on the known-answer songs, rows, listening)",
+   "stopping": "fixed sets; caps; repeat checks (stored S within 0.005 log) before the renders; the 31 GB disk guard",
+   "renders": "about 815 (cap 860): stage F 63 priming + 126 x (D, D0); known-answer 48 priming + 144 x (D, D0, curve models); 20 repeat-check renders; listening 26. D alone about 381",
+   "limits": "drawn labels (not record-like); stem stand-in fitted on a small R pool; mastering approximated in the mel domain and never checked against released songs except by the listening check; the amp is given; stage F reused; power detects about 0.05-0.11",
+   "outcome": "pending"
   }
  ]
 }

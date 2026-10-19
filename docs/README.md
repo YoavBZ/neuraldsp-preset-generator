@@ -331,6 +331,12 @@ was declared, what was measured, and the research behind it.
   the knob error flattened between 20k and 40k (Δ +0.0012 [−0.0020, +0.0045]): STOP, no
   extension; the guitar alone and training-style mixes still improve. In-domain, not real-song.
   43,060 renders, 3.68 GB. Audited.
+- [direct-model-plan.md](direct-model-plan.md): direct prediction (song to settings) as the main
+  route after arm A's pause (the user's decision, 2026-10-19). D: part C's network trained
+  band-clean on part C's stored examples, with mel-domain realism (cross term, a separator stand-in,
+  mastering) chosen by a zero-render gap measurement on real development mixes; one decision test
+  on stage F's 126 directions against S (and the known-answer songs, descriptive), and a blind
+  listening check on fresh songs. Declared.
 - [bleed-listening-plan.md](bleed-listening-plan.md) → [results](bleed-listening-results.md), with
   the [bleed audit](audits/bleed-2026-10-16/README.md): bleed only in the Telefunken live-room
   sessions, audible on the high parts; the cleaning isn't adopted, and every key result holds

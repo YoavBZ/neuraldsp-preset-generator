@@ -50,8 +50,9 @@ lives in the linked documents. Last updated 2026-10-19.
   starting points (the clean template, and the driven preset on crunch), mostly on clean parts
   ([results](set4-confirmation-results.md)). Against the current starting presets it is
   undecided on clean and crunch, both under-powered ([audit](audit-2026-10-11.md)).
-  Arm A, the current candidate, is not yet shown better than the starting preset on fresh full mixes
-  (−0.028 [−0.064, +0.008]; [results](arm-a-mega53-results.md)).
+  Arm A is not shown better than the starting preset on fresh full mixes (−0.028 [−0.064, +0.008];
+  [results](arm-a-mega53-results.md)) and is paused. **Since 2026-10-19 (the user's decision) the
+  main route is direct prediction, song to settings** ([plan](direct-model-plan.md)).
 - **The judge** ([measuring-closeness.md](measuring-closeness.md)) is how closeness is
   measured. It needs the DI of the same take, and listening validated it only for clear
   differences between clean-to-crunch PR12 renders
@@ -95,6 +96,20 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      plugin's.** The work since then follows the [ML plan](research/ml-plan-2026-10.md),
      approved by the user on 2026-10-14. Since 2026-10-16 it has no fixed render limit: each step
      stops rendering by a declared, evidence-based stopping rule (decision 2).
+
+   **Decision (2026-10-19, the user's): arm A is paused; direct prediction (song to settings) is
+   the main route.**
+   - **Why:** the audited oracle test showed that even a perfect DI doesn't help arm A on fresh full
+     mixes (+0.012 [−0.088, +0.112] against S): the separated-stem target is mostly leftover mix
+     (median SNR 0.43 dB). Part C showed the direct model stops improving with more data on true
+     mixes while it still improves on the guitar alone and on training-style mixes, so its limit is
+     how realistic the training mixes are, not their number.
+   - **Next** ([plan](direct-model-plan.md), reviewed): D, part C's network trained band-clean on
+     part C's stored examples (21k, no new training renders) with mel-domain realism augmentations
+     chosen by a measured gap (zero renders; it can stop the plan before any training of D); then
+     one decision test on stage F's 126 directions (and the known-answer songs, descriptive), about
+     815 renders with controls. Interval of D − S below 0: build the product on it; otherwise stop
+     and revisit with the user. About one day.
 
    **Status (2026-10-17): not ready to claim for shipping.**
    - **Arm A on fresh full mixes reads −0.028 [−0.064, +0.008] against S**, against −0.083 on the
@@ -182,11 +197,11 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      high-bleed parts from training records) stays open. Every key result holds without bleed; results keep the
      no-high-bleed row beside the all-parts row. Listening trial 8's noise (Prodigal) is DI hum
      lifted by the measure-DI EQ, not bleed.
-   - **Arm B is paused** ([diagnostics](song-to-settings-diagnostics-results.md),
+   - **Arm B was paused** ([diagnostics](song-to-settings-diagnostics-results.md),
      [sound-space retrain](song-to-settings-soundspace-results.md)): B2 beats the old arm B on
      songs (−0.068 [−0.111, −0.024]) but isn't shown to beat S (−0.033 [−0.100, +0.035]), and input
-     gain didn't improve. Arm C isn't run. If arm B is reopened, B2's shuffled-input control comes
-     first (about 290 renders).
+     gain didn't improve. Arm C isn't run. *Superseded 2026-10-19:* direct prediction is the main
+     route, as D ([plan](direct-model-plan.md)); B2's shuffled-input control is not run.
    - **Earlier DI-recovery findings:** separation halves the rank margin but rarely flips it
      ([screen](separator-screen-results.md)); C′'s error is fine structure
      ([ladder](rank-margin-ladder-results.md)); better fine structure didn't steer better
@@ -307,15 +322,15 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      4. **Decision point: one fresh-song test of arm A with the improved rebuild** (and Mega-53 if
         it still leans better). If arm A clearly beats S on fresh full mixes (read as that test's
         plan declares), build the product around it. If not, revive arm B (song to settings directly) with these lessons, or a hybrid.
-        **Pending user decision (2026-10-19):** the audited oracle-DI arm found a perfect DI gives
-        arm A no measurable gain on fresh full mixes, so direct prediction (arm B, pre-trained on
-        part C's set) is proposed as the main route. Part C's set is done
+        **Decided 2026-10-19 (the user):** the audited oracle-DI arm found a perfect DI gives
+        arm A no measurable gain on fresh full mixes, so arm A is paused and direct prediction is the
+        main route ([plan](direct-model-plan.md)). Part C's set is done
         ([results](pretrain-set-results.md), audited): on true val mixes the learning curve
         flattened between 20k and 40k (Δ +0.0012 [−0.0020, +0.0045]; STOP, no extension), while
-        the guitar alone and training-style mixes still improve. Next on that route: a real-song
-        test of a model trained on this set.
-   - **Kept:** bleed handling (no cleaning; the no-high-bleed row beside all parts), arm B paused
-     until the decision point, metal out of scope.
+        the guitar alone and training-style mixes still improve. Next on that route: the
+        [direct-model plan](direct-model-plan.md), a real-song test of a model trained on this set.
+   - **Kept:** bleed handling (no cleaning; the no-high-bleed row beside all parts), metal out of
+     scope. Arm A paused (2026-10-19).
    - **Renders:** about 250k used so far. Since the 2026-10-16 update: arm B's retrain about
      14.8k, the local objective 7,061 + 3,528 (1b) + 3,528 (1c) + 7,200 (1d), the ceiling
      extension 17,550 plus 72 warm-ups, the listening page 26, arm A with Mega-53 30,102, the
@@ -324,7 +339,6 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      curve that stops improving, an interval narrow enough to answer the question), and reports
      what it used.
    - **Open user decisions:**
-     - reopening arm B (its shuffled-input control first), at the decision point above;
      - Tone King for step 2.
    - **Then, after the decision point:** step 5 (optimiser comparison), step 6, and finally step 7, the pooled held-out
      test.
@@ -640,9 +654,9 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
   ([plan](research/ml-plan-2026-10.md), decision 5 put the `generate` change after
   step 3's readout). As of 2026-10-17 the candidate is arm A's current best (−0.083 against S on
   development; one listener chose it 4 of 4 where a difference was heard), but on fresh full mixes
-  it reads only −0.028 [−0.064, +0.008]: not ready to ship. Arm B is paused until the ML
-  decision point (step 0). Until then `generate` sets what research
-  documents. *The two render checks are done (2026-10-14, one development
+  it reads only −0.028 [−0.064, +0.008]: not ready to ship. Since 2026-10-19 arm A is paused and
+  the candidate is a direct song-to-settings model ([plan](direct-model-plan.md)). Until it is shown
+  better than S, `generate` sets what research documents. *The two render checks are done (2026-10-14, one development
   part, PR12):* fresh-process renders with isolation repeat exactly (maximum difference
   0.0); the isolation fade-in (the same for every candidate) moved the match loss by
   about 0.003 weighted, mostly its dynamics term (0.012: attack and loudness range;
@@ -762,3 +776,4 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-18 | Oracle dose probe (hedged): on top of the leak-free EQ, the full-band true short-time magnitude (C′'s phase, one resynthesis) recovers 0.74 [0.50, 0.86] of the remainder (+0.116 [+0.045, +0.187]); 2–8 kHz on E_st's mask only 0.25 (+0.039), below it; control undecided. Option 2 (per-bin log-gain head) only as a full-band field, ceiling `full100`, with a full-band gate metric instead of E_st | [dose probe](dose-probe-results.md) |
 | 2026-10-18 | Oracle-DI arm on stage F (hedged): arm A searching through the true DI against the htdemucs full-mix stem reads +0.012 [−0.088, +0.112] vs S and +0.040 [−0.043, +0.123] vs H, so a perfect rebuild gives no measurable gain in the product setting; the stem objective, not the rebuild, limits arm A on full mixes | [arm A Mega-53, amendment 2](arm-a-mega53-results.md#amendment-2-the-oracle-di-arm-on-stage-f-2026-10-18) |
 | 2026-10-19 | Part C, the pre-training render set: 43k renders; on true mixes of held-out bands the knob error flattened between 20k and 40k (Δ +0.0012 [−0.0020, +0.0045]), STOP, no extension; the guitar alone and training-style mixes still improve (post hoc). In-domain, not real-song; next a real-song test of a model trained on it; direct prediction proposed as the main route (user's decision) | [part C results](pretrain-set-results.md) |
+| 2026-10-19 | Arm A paused; direct prediction (song to settings) is the main route (the user's decision). Next: D, part C's network trained band-clean on part C's stored examples with mel-domain realism chosen by a zero-render gap measurement, then one decision test on stage F (D − S interval below 0: build the product on it; otherwise stop and revisit) | [direct-model plan](direct-model-plan.md), [oracle-DI arm](arm-a-mega53-results.md#amendment-2-the-oracle-di-arm-on-stage-f-2026-10-18), [part C](pretrain-set-results.md) |
