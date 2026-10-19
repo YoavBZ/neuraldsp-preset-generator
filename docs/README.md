@@ -1,7 +1,8 @@
 # docs
 
 Start with **[ROADMAP.md](ROADMAP.md)**: where the product is, what comes next, and the
-decisions so far. It is the one living plan; the product steps' history is in
+decisions so far. It is the one living plan; what it superseded (the product steps' history,
+and the song-to-preset model's as it stood on 2026-10-19) is in
 [roadmap-history.md](roadmap-history.md). Everything else here is a record: what
 was declared, what was measured, and the research behind it.
 
@@ -277,7 +278,7 @@ was declared, what was measured, and the research behind it.
   −0.051 [−0.166, +0.065] on Mega-53); C′ stays.
 - [arm-a-mega53-plan.md](arm-a-mega53-plan.md) → [results](arm-a-mega53-results.md): arm A with
   Mega-53 against htdemucs. On fresh full mixes Mega-53 leans better, a tie (−0.017 [−0.039,
-  +0.004]), so htdemucs stays. Arm A's recipe on fresh full mixes reads −0.028 [−0.064, +0.008]
+  +0.004]), so htdemucs stayed then (Mega-53 is the ML default since 2026-10-19). Arm A's recipe on fresh full mixes reads −0.028 [−0.064, +0.008]
   against S (−0.083 on the reused development parts). 30,102 renders.
   Amendment 2: a perfect DI alone gains nothing (+0.040 against H). Amendment 3: perfect separation
   (the amp track as target and rebuild source) gains −0.066 [−0.090, −0.042] over H, and the true DI
@@ -289,8 +290,12 @@ was declared, what was measured, and the research behind it.
 - [mix-previews-results.md](mix-previews-results.md): the released mixes of 10 songs and
   Sound On Sound's remix of Signs use the same takes as our multitracks (Signs is "partial" from
   repeated sections, not edits). All 17 stage F crops there are covered. Mega-53 on the real mix
-  loses 0.62 dB SNR against the raw track (0.31 with a per-stem lag; single tracks are shifted, and some
-  flipped, in the real mix). In SNR, mastering adds little. Zero renders.
+  loses 0.62 dB SNR against the raw track (0.31 with a per-stem lag; single tracks are shifted, and
+  some flipped, in the real mix). In SNR, mastering adds little. Zero renders.
+- [separation-finetune-plan.md](separation-finetune-plan.md): how to improve target-guitar
+  separation. Zero-render ceilings first (the class ceiling and free test-time fixes), then an
+  oracle class arm in arm A (about 7k renders) decides between fine-tuning Mega-53's class head
+  and a conditioned one-guitar separator; MPS training needs the loss off the device. Planned.
 - [rebuild-gap-plan.md](rebuild-gap-plan.md) → [results](rebuild-gap-results.md): where C′'s
   rebuild loses ranking with a perfect stem. A structured short-time magnitude error, mostly above
   2 kHz; phase and rotation are minor. A fixed EQ (`dep_eq`, +0.133 [−0.009, +0.276]) and a
@@ -347,10 +352,20 @@ was declared, what was measured, and the research behind it.
   existing 40k models scored on stage F without training (D − S +0.033 [−0.053, +0.119], a tie
   leaning worse), and the judge re-run through the raw DI (rebuilt-DI contrasts unchanged; on the
   known-answer songs the measure DI caps the exact truth at 0.55 of S). 852 renders. Audited.
+- [direct-model-stems-plan.md](direct-model-stems-plan.md): the direct model with realistic stems
+  (declared, reviewed). Cheap checks on D_existing first (does the stem's quality move its answers;
+  what the mismatch costs; 111 descriptive renders), then a 5k pilot of real Mega-53 stems against a
+  mix-only model and the old recipe, then one test on stage F (D − S primary, about 321 renders).
+  The full build needs the user to free disk (34 GB free at start).
 - [record-match-listening-plan.md](record-match-listening-plan.md) → [results](record-match-listening-results.md):
   a blind check of the judge by ear on 5 guitar-exposed parts: the ear broadly agrees with the
   judge's order (Spearman mean 0.8), the ceiling C is heard closest in 4/5, H beats S in 4/5, D
   third. 775 renders. Audited.
+- [shrink-snr-judge-v3-results.md](shrink-snr-judge-v3-results.md): two zero-render checks from
+  stored data. The best shrink does not measurably depend on stem SNR (a rule by SNR gains −0.003
+  [−0.013, +0.007] on held-out bands, nothing on realistic stems; the clear shrink cost is with the
+  true DI and a perfect target). Judge v3, re-scored on the record-match clips, agrees with the ear
+  a little less than the default judge (Spearman 0.64 against 0.80). Audited.
 - [bleed-listening-plan.md](bleed-listening-plan.md) → [results](bleed-listening-results.md), with
   the [bleed audit](audits/bleed-2026-10-16/README.md): bleed only in the Telefunken live-room
   sessions, audible on the high parts; the cleaning isn't adopted, and every key result holds
