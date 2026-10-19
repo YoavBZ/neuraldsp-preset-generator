@@ -41,7 +41,7 @@ lives in the linked documents. Last updated 2026-10-19.
   song-only search has been shown to get closer
   ([re-check: void](no-di-rule-under-the-judge-results.md)). With the same take's DI it
   searches; its known defects are fixed or parked, and its search objective is untested
-  by ear (product steps; history in [roadmap-history.md](roadmap-history.md), step 5).
+  by ear (product steps; history in [roadmap-history.md](roadmap-history.md#product-steps-16-as-they-stood-on-2026-10-14), step 5).
 - **`edit`** changes a preset from a plain-English ask.
 - **Predicting a preset from the song** is active research, not yet in the product
   (step 0). Since 2026-10-14 the aim is to generate settings, not rank presets. Two routes are
@@ -155,11 +155,18 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    - an effect left off is a correct answer on a dry record.
 
    **Kept:** bleed handling (no cleaning; the no-high-bleed row beside all parts), metal out of
-   scope, arm B (the older settings model) paused. **Open user decision:** Tone King for step 2.
+   scope, arm B (the older settings model) paused. **Parked until after Next steps 1–2:** known-answer B2
+   (proposed, up to 4 fresh songs, about 14k renders), multi-section step 3 (held-out sections as arm
+   A's scoring unit), and the dose probe's zero-render follow-ups (all in the
+   [history](roadmap-history.md#step-0-the-song-to-preset-model-as-it-stood-on-2026-10-19)).
+   **Open user decisions:** reopening arm B (its shuffled-input control first), at the decision
+   test; Tone King for the ML plan's step 2 (knob ceiling 2; done on Morgan).
    **After the decision test:** the ML plan's step 5 (optimiser comparison), step 6, and step 7,
    the pooled held-out test.
 
-   **Renders:** about 317k so far, no fixed limit (2026-10-16): each step's plan declares when to
+   **Renders:** about 370k so far (250k to 2026-10-17, then multi-section 21.6k, rebuild-tone
+   8.3k, B1 17.3k, dose probe 7.4k, part C 43.1k, oracle-DI 7.0k, perfect separation 14.0k,
+   direct-existing 0.9k, record-match 0.8k), no fixed limit (2026-10-16): each step's plan declares when to
    stop rendering from its own evidence and reports what it used.
 
    **How the Mac is shared (the MPS GPU, 8 CPU cores, 32 GB):** one GPU job at a time; at most 3
@@ -294,7 +301,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-12 | A mix's top-end roll-off is a reason to check, not to darken (one song, mixed evidence) | `reference/reading-a-reference.md`, #167 |
 | 2026-10-12 | `generate` installs a second starting point when the part is not clean (measured), and routes by the part's documented sound, not the song's genre (a rule, not yet re-checked) | `generate-routing-results.md` |
 | 2026-10-12 | The new routing rule is kept: it routes better than the old skill on the same parts (in-sample) | `generate-routing-recheck-results.md` |
-| 2026-10-12 | DI path: Tone King renders pre-rolled (D-M1), no tremolo from a recording (D-M7), no low EQ from a mix (D-M8 start), screen and `--enumerate` texts (D-M17, D-M18); the rest parked | [roadmap-history.md](roadmap-history.md), step 5; #168–#171 |
+| 2026-10-12 | DI path: Tone King renders pre-rolled (D-M1), no tremolo from a recording (D-M7), no low EQ from a mix (D-M8 start), screen and `--enumerate` texts (D-M17, D-M18); the rest parked | [roadmap-history.md](roadmap-history.md#product-steps-16-as-they-stood-on-2026-10-14), step 5; #168–#171 |
 | 2026-10-13 | The starting presets are heard as closer than what they replaced, and the clean start over the crunch start on clean parts (in-sample, one listener); step 4 says so | `starting-preset-listening-results.md` |
 | 2026-10-14 | Clean first when the class is a guess: not adopted (exploratory; costs crunch parts) | `generate-routing-recheck-results.md`, follow-up |
 | 2026-10-14 | ML plan decisions: train C′ for every fold; 200k render limit with knob ceiling counted; approve the three-way comparison; lift the "33" rule with a development ledger; Five-guitar and Optuna yes, GOAT not now; held-out results the render bug touched kept with a note (not re-rendered), no reserve; optimiser comparison after the readout | [ML plan](research/ml-plan-2026-10.md), section 3 |
