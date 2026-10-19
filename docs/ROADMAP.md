@@ -320,12 +320,19 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
         flattened between 20k and 40k (Δ +0.0012 [−0.0020, +0.0045]; STOP, no extension), while
         the guitar alone and training-style mixes still improve. Next on that route: a real-song
         test of a model trained on this set.
+        **Perfect separation, measured (2026-10-19,
+        [amendment 3](arm-a-mega53-results.md#amendment-3-perfect-separation-on-stage-f-2026-10-19)):**
+        with the amp track as both target and rebuild source, arm A gains −0.066 [−0.090, −0.042]
+        over H (−0.094 against S, 11/12 bands), and the true DI on top a further −0.080 (−0.174
+        against S). The stem target, not the DI, is what limited arm A; better separation is worth
+        up to about 0.07 to arm A, and a better rebuild about as much again once the target is
+        clean. 13,986 renders.
    - **Kept:** bleed handling (no cleaning; the no-high-bleed row beside all parts), arm B paused
      until the decision point, metal out of scope.
    - **Renders:** about 250k used so far. Since the 2026-10-16 update: arm B's retrain about
      14.8k, the local objective 7,061 + 3,528 (1b) + 3,528 (1c) + 7,200 (1d), the ceiling
      extension 17,550 plus 72 warm-ups, the listening page 26, arm A with Mega-53 30,102, the
-     rebuild-gap study 18,981, multi-section step 2 21,647, the rebuild-tone step 8,280, known-answer B1 17,290 and part C 43,060 (after the 250k). No fixed limit (2026-10-16): each step plan
+     rebuild-gap study 18,981, multi-section step 2 21,647, the rebuild-tone step 8,280, known-answer B1 17,290, part C 43,060 and perfect separation 13,986 (after the 250k). No fixed limit (2026-10-16): each step plan
      declares when to stop rendering from its own evidence (a flattened search curve, a learning
      curve that stops improving, an interval narrow enough to answer the question), and reports
      what it used.

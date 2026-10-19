@@ -371,3 +371,92 @@ and judge are H's. Code `learn/oracle_di_arm.py`; data `~/ndsp-presets/learn/arm
   plus up to 54 uncounted from the direction in flight at the pause. At most 7,048, against a
   declared 6,993 and a cap of 7,100. Audited: an independent recomputation from the stored records
   matches both primaries, H − S and the render count. One process beside part C's two, about 3 h.
+
+## Amendment 3: perfect separation on stage F (2026-10-19)
+
+**Question:** how much would *perfect* separation be worth to arm A on fresh full mixes? **YT**
+(Y_target) is stage F's H with the true amp track (`reference.wav`) in both places a product uses
+the stem: the search's target, and the input C′ rebuilds the search DI from. **ZT**, the extra
+cell (one independent review judged it needed), renders through the true DI against the amp
+track, so the 2×2 {DI: C′'s rebuild of the target, true DI} × {target: stem, amp track} is
+complete: H, XO (amendment 2), YT, ZT. The seed, recipe (52 renders, shrink 0.5, fallback to S)
+and judge are H's; the search scores at the judge lag. Code `learn/perfect_sep_arm.py`; data
+`~/ndsp-presets/learn/arm-a-mega53/F-perfect-sep/` (`report.json`).
+
+All figures: held-half log ratios, paired by direction, band-weighted, 90% band-clustered t
+intervals (12 bands, 11 df), on one fixed set of 126 directions where S, H, M, XO, YT and ZT all
+score. No direction dropped, no fallback, no activity fallback.
+
+| Contrast | All (declared) | Bands better / worse | Leave one band out | Part-weighted | No high bleed (10 bands) | F-song (4 bands) |
+|---|---|---|---|---|---|---|
+| **YT − S** | **−0.094 [−0.131, −0.057]** | 12 / 0 | −0.100 to −0.076 | −0.097 [−0.121, −0.074] | −0.106 [−0.150, −0.061] | −0.062 [−0.096, −0.028] |
+| **YT − H** | **−0.066 [−0.090, −0.042]** | 11 / 1 | −0.072 to −0.056 | −0.081 [−0.108, −0.054] | −0.059 [−0.092, −0.027] | −0.080 [−0.112, −0.049] |
+| **YT − XO** | **−0.106 [−0.188, −0.023]** | 9 / 3 | −0.126 to −0.079 | −0.121 [−0.219, −0.022] | −0.116 [−0.214, −0.019] | −0.035 [−0.137, +0.067] |
+| ZT − S | −0.174 [−0.232, −0.115] | 11 / 1 | −0.191 to −0.150 | −0.178 [−0.226, −0.130] | −0.194 [−0.254, −0.133] | −0.123 [−0.241, −0.005] |
+| ZT − YT | −0.080 [−0.113, −0.047] | 11 / 1 | −0.090 to −0.072 | −0.081 [−0.115, −0.047] | −0.088 [−0.117, −0.058] | −0.061 [−0.150, +0.028] |
+| ZT − XO | −0.186 [−0.270, −0.101] | 12 / 0 | −0.201 to −0.156 | −0.201 [−0.324, −0.079] | −0.204 [−0.306, −0.102] | −0.096 [−0.140, −0.052] |
+| H − S (stored) | −0.028 [−0.064, +0.008] | 9 / 3 | | | −0.047 [−0.095, +0.001] | +0.018 [−0.032, +0.069] |
+| XO − S (stored) | +0.012 [−0.088, +0.112] | 5 / 7 | | | +0.011 [−0.108, +0.129] | −0.027 [−0.162, +0.109] |
+| YT unshrunk − YT | −0.010 [−0.035, +0.015] | 8 / 4 | | | −0.024 [−0.051, +0.003] | +0.016 [−0.049, +0.082] |
+| ZT unshrunk − ZT | −0.047 [−0.070, −0.025] | 11 / 1 | | | −0.066 [−0.085, −0.047] | −0.019 [−0.094, +0.055] |
+
+H − S and XO − S reproduce the stored figures exactly. The no-high-bleed row drops the same 3
+parts as before. Without wickerman elecgtr7 (the lag check's part) every row moves by at most
+0.003.
+
+**The 2×2 against S** (band-weighted, all rows as above):
+
+| | Target: htdemucs stem | Target: amp track (perfect separation) |
+|---|---|---|
+| **DI: C′'s rebuild of the target** | H −0.028 | YT −0.094 |
+| **DI: true DI** | XO +0.012 | ZT −0.174 |
+
+**Shares of the gap to the ceiling**, (arm − S) / (ceiling − S):
+- **Against ZT (matched: same directions, recipe and judge; Fieller 90%):** YT **0.54 [0.42,
+  0.66]** (leave one band out 0.51 to 0.56); H 0.16 [−0.06, 0.33]; XO −0.07 [−0.83, +0.44].
+- **As scales only** (other settings): against K_S's −0.293 (stage D's parts, a search to a
+  stop), H 0.10, XO −0.04, YT 0.32, ZT 0.59; against the record-match ceiling's −0.45 (5
+  high-SNR parts, one direction each, a 150-render search), H 0.06, YT 0.21, ZT 0.39.
+
+**Per class and amp (YT − H):** clean −0.073, crunch −0.056; AC20 −0.104, PR12 −0.060, SW50R
+−0.032.
+
+**What it says.**
+- **Perfect separation is worth about −0.066 to arm A as built** (a held-half distance about 6%
+  smaller), clearly below 0, in 11 of 12 bands and in every row. It takes arm A from −0.028 to
+  −0.094 against S, and from 0.16 to 0.54 of the matched ceiling. So better separation is
+  worth pursuing for arm A, and this sets its upper value with today's rebuild and recipe.
+- **It is the target, not the DI, that blocked amendment 2.** With the stem as target a perfect DI
+  gains nothing (XO); with the amp track as target it gains a further −0.080 over C′'s rebuild
+  (ZT − YT). A clean target is worth −0.066 through the rebuilt DI and −0.186 through the true DI:
+  it is worth more with the true DI (descriptive; no interaction test was declared).
+- **With perfect separation the rebuild costs about as much as separation did:** ZT − YT −0.080
+  [−0.113, −0.047] against YT − H −0.066. A better rebuild is worth building once the target is
+  clean, though not before (XO).
+- **Even with both inputs perfect, the 52-render recipe reaches −0.174**, about 0.59 of K_S's
+  −0.293 on other parts. With clean inputs the shrink costs: ZT's unshrunk best beats its shrunk
+  output by −0.047 [−0.070, −0.025] (YT's: −0.010, a tie). Shrink 0.5 was chosen on noisy stem
+  objectives; it may not suit cleaner ones (not tested).
+- **Limits.** "Perfect separation" here means the amp track itself, which carries a little bleed
+  on some parts and is the judge's own recording (scored on the other half). One recipe, one
+  rebuild network family (C′). These are development parts (sixth use of stage F), so the figures
+  are estimates on reused data, not a fresh-draw test.
+
+**Lag (declared: judge lag).** The search's first evaluation (S through each arm's search DI) was
+also scored at −52 with no extra render: YT median |log| shift 0.0016 (max 0.039), ZT 0.0006 (max
+0.046). The convention barely matters.
+
+**Checks.** The reference rebuilds passed 1b's gates (−22.9 LUFS within 0.05 after one extra gain
+pass on colour-me-red elecgtr03; GCC 0 against H's rebuild on 20 of 21 parts, She's Gone through
+the chain). The stored S renders re-judged at the judge lag reproduce the stored judge within
+1.4e-5.
+
+**Renders: 13,986** (YT 6,993 and ZT 6,993: 63 priming + 126 × 55 each), exactly as declared.
+Three render processes, 19:43 to 21:59. The 31 GB disk guard stopped all three at 21:11, at group
+boundaries (free disk 29.99 GB, mostly another session's test temp files); they resumed at about
+21:24 with 32.1 GB free, and nothing was lost or re-rendered.
+
+Audited 2026-10-19 by an independent agent, which recomputed every primary and the ZT contrasts
+from the raw records with its own script (all match), the render count (13,986), the absence of
+fallbacks and the lag figures; changes: "about 3×" dropped (H − S's interval contains 0) and
+"compound" reworded.
