@@ -327,6 +327,11 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
         against S). The stem target, not the DI, is what limited arm A; better separation is worth
         up to about 0.07 to arm A, and a better rebuild about as much again once the target is
         clean. 13,986 renders.
+        **Next on the direct route ([plan](direct-model-stems-plan.md), declared and reviewed
+        2026-10-19):** D_existing's tie is not a verdict, since it trained on a stand-in stem and
+        was scored on separator stems. Zero-render checks of that mismatch first, then a 5k pilot
+        (real Mega-53 stems, a mix-only model, the old recipe), then one stage F test, D − S
+        primary. The full build waits on the user freeing disk.
    - **Kept:** bleed handling (no cleaning; the no-high-bleed row beside all parts), arm B paused
      until the decision point, metal out of scope.
    - **Renders:** about 250k used so far. Since the 2026-10-16 update: arm B's retrain about

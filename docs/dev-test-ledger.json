@@ -2464,6 +2464,53 @@
    "repeat_use": "A further use of stage F's parts (after S/H/M, XO, direct-existing, record-match listening, arm-a-mega53-perfect-sep); separation measures only, no arm scores read or chosen on",
    "held_out": "none touched",
    "outcome": "done 2026-10-19 (zero renders, 128 separations; audited, confirmed with corrections; docs/stereo-and-mix-check-results.md)"
+  },
+  {
+   "test_id": "direct-model-stems",
+   "plan": "docs/direct-model-stems-plan.md",
+   "entered": "2026-10-19, with the plan, before any compute for it (two one-clip separator timings ran while drafting); one independent review (go with required changes, applied)",
+   "repeat_use": "Eighth set of arms on stage F's 21 parts / 126 directions; step 1d (D_existing with matched stems, 42 directions) is descriptive and chooses nothing; nothing about D is chosen on stage F",
+   "parts": {
+    "stage_F": [
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
+     "cambridge-Passing_Ships-ElecGtr2",
+     "cambridge-Passing_Ships-ElecGtr4",
+     "cambridge-Quicksand-ElecGtr2",
+     "cambridge-Signs-ElecGtr3",
+     "cambridge-Today's_The_Day-ElecGtr07",
+     "cambridge-colour-me-red-elecgtr02",
+     "cambridge-colour-me-red-elecgtr03",
+     "cambridge-femme-elecgtr5",
+     "cambridge-get-out-of-bed-elecgtr2",
+     "cambridge-let-s-dance-elecgtr3",
+     "cambridge-let-s-dance-elecgtr4",
+     "cambridge-magilla-elecgtr1",
+     "cambridge-wickerman-elecgtr1",
+     "cambridge-wickerman-elecgtr2",
+     "cambridge-wickerman-elecgtr3",
+     "cambridge-wickerman-elecgtr7",
+     "telefunken-Gym_Hours-GTR_2",
+     "telefunken-Russian_Cream-GTR_1",
+     "telefunken-She's_Gone-GTR",
+     "telefunken-Strangest_Places-GTR"
+    ],
+    "known_answer": [
+     "heather-jane",
+     "bourbon",
+     "collide",
+     "apprehended"
+    ]
+   },
+   "bands": "stage F's 12 bands (unseen-by-part-C 6 reported apart); known-answer (zero renders, descriptive): Chris Coltraine, Rebecca Haviland, The Apprehended",
+   "audio_only": "stage F's stored full-mix contexts, htdemucs and Mega-53 crops, reference.wav (stem a, a' and judge), di.wav (measure DI)",
+   "training": "part C's band-clean pool only: 21,311 examples (20,311 train, 1,000 early stopping), 277 sections, 9 bands disjoint from stage F, the known-answer bands, part C's reserve, Guitar-TECHS P3, sets 4-6 and held-out sessions; re-rendered, true mixes with own-session backings, Mega-53 stems. Dev readouts V_dev/V_sep: part C's 5 non-stage-F val bands (1,720 examples), never trained on",
+   "seeds": "training 20261042-44 (pilot 20261042-43); a' leak 20261071; 1d amps 20261070; 1d repeat 20261075; V_sep 20261072; pilot subset 20261073; augmentation SeedSequence([20261074, i, epoch]); mastering 20261076; step 4 repeat 20261077; band bootstrap 20261078",
+   "gate": "Gate 1 (zero renders): separator route continues if per-seed movement d(a',b) or d(a,b) exceeds the two-leak-draw null (interval above 0, all or unseen bands) or the audit examples' Mega-53 - training-stem E cost is above 0; otherwise mix-only route. 1d descriptive. Pilot: STOP if neither D_sep-5k nor D_mix-5k beats D0-5k on unmastered V_sep with htdemucs stems; mix-only if D_sep-5k - D_mix-5k not below 0 on V_sep Mega-53. Step 3: stop if D not below a constant predictor. Primary: D - S on stage F, band-weighted, 90% band-clustered t (11 df); below 0 -> build on it; else stop and revisit with the user. Secondary declared: D - D0",
+   "stopping": "fixed sets; repeat checks (S within 1e-3); caps 150 (1d) and 400 (step 4); 31 GB disk guard; memory and swap guards; full build needs >= 34 GB free at start",
+   "renders": "judged: 111 (1d) + 321 (step 4) = 432; training-style (not judged): about 23k re-renders of part C examples",
+   "held_out": "none touched",
+   "limits": "D_existing trained on 6 stage F bands' sessions (gate rows also on the unseen bands); MUSDB18 songs tagged (Ill Fate, The Long Wait in training; Bannockburn out of V_sep readouts; It Was My Fault, Femme, Signs on stage F reported apart); drawn labels; pilot power 5 bands (4 df); step 4 detects about 0.05-0.13",
+   "outcome": "pending"
   }
  ]
 }
