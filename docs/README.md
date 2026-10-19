@@ -352,11 +352,14 @@ was declared, what was measured, and the research behind it.
   existing 40k models scored on stage F without training (D − S +0.033 [−0.053, +0.119], a tie
   leaning worse), and the judge re-run through the raw DI (rebuilt-DI contrasts unchanged; on the
   known-answer songs the measure DI caps the exact truth at 0.55 of S). 852 renders. Audited.
-- [direct-model-stems-plan.md](direct-model-stems-plan.md): the direct model with realistic stems
+- [direct-model-stems-plan.md](direct-model-stems-plan.md) → [gate 1 results](direct-model-stems-gate1-results.md): the direct model with realistic stems
   (declared, reviewed). Cheap checks on D_existing first (does the stem's quality move its answers;
   what the mismatch costs; 111 descriptive renders), then a 5k pilot of real Mega-53 stems against a
   mix-only model and the old recipe, then one test on stage F (D − S primary, about 321 renders).
   The full build needs the user to free disk (34 GB free at start).
+  **Gate 1 (2026-10-20, zero renders): GATE1 STEM**; the stem matters (Mega-53's stem costs +0.104
+  of E against the training stem); the mix adds little behind a clean or separated stem, so a
+  stem-only model is recommended. Audited.
 - [record-match-listening-plan.md](record-match-listening-plan.md) → [results](record-match-listening-results.md):
   a blind check of the judge by ear on 5 guitar-exposed parts: the ear broadly agrees with the
   judge's order (Spearman mean 0.8), the ceiling C is heard closest in 4/5, H beats S in 4/5, D
