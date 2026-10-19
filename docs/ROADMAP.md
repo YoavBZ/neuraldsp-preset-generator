@@ -327,6 +327,11 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
         against S). The stem target, not the DI, is what limited arm A; better separation is worth
         up to about 0.07 to arm A, and a better rebuild about as much again once the target is
         clean. 13,986 renders.
+        **Next for separation ([plan](separation-finetune-plan.md), 2026-10-19):** zero-render
+        ceilings on stage F first (how much the other guitars cost; Wiener and blend fixes), then an
+        oracle class-stem arm (about 7k renders) decides whether fine-tuning Mega-53's head can pay
+        (YG − M ≤ −0.032) or a conditioned one-guitar separator is the route (a user decision:
+        data, disk, a product question). Steps after the first need about 2 GB of disk freed.
    - **Kept:** bleed handling (no cleaning; the no-high-bleed row beside all parts), arm B paused
      until the decision point, metal out of scope.
    - **Renders:** about 250k used so far. Since the 2026-10-16 update: arm B's retrain about
