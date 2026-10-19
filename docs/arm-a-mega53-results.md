@@ -424,12 +424,12 @@ parts as before. Without wickerman elecgtr7 (the lag check's part) every row mov
 **What it says.**
 - **Perfect separation is worth about −0.066 to arm A as built** (a held-half distance about 6%
   smaller), clearly below 0, in 11 of 12 bands and in every row. It takes arm A from −0.028 to
-  −0.094 against S, about 3×, and from 0.16 to 0.54 of the matched ceiling. So better separation is
+  −0.094 against S, and from 0.16 to 0.54 of the matched ceiling. So better separation is
   worth pursuing for arm A, and this sets its upper value with today's rebuild and recipe.
 - **It is the target, not the DI, that blocked amendment 2.** With the stem as target a perfect DI
   gains nothing (XO); with the amp track as target it gains a further −0.080 over C′'s rebuild
   (ZT − YT). A clean target is worth −0.066 through the rebuilt DI and −0.186 through the true DI:
-  the two improvements compound (descriptive; no interaction test was declared).
+  it is worth more with the true DI (descriptive; no interaction test was declared).
 - **With perfect separation the rebuild costs about as much as separation did:** ZT − YT −0.080
   [−0.113, −0.047] against YT − H −0.066. A better rebuild is worth building once the target is
   clean, though not before (XO).
@@ -455,3 +455,8 @@ the chain). The stored S renders re-judged at the judge lag reproduce the stored
 Three render processes, 19:43 to 21:59. The 31 GB disk guard stopped all three at 21:11, at group
 boundaries (free disk 29.99 GB, mostly another session's test temp files); they resumed at about
 21:24 with 32.1 GB free, and nothing was lost or re-rendered.
+
+Audited 2026-10-19 by an independent agent, which recomputed every primary and the ZT contrasts
+from the raw records with its own script (all match), the render count (13,986), the absence of
+fallbacks and the lag figures; changes: "about 3×" dropped (H − S's interval contains 0) and
+"compound" reworded.
