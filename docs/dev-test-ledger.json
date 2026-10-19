@@ -2408,6 +2408,46 @@
    "held_out": "none touched",
    "outcome": "done 2026-10-19 (775 renders, 3 shards; plumbing checks max 0.00012; one blind sitting; audited; docs/record-match-listening-results.md). Mean rank of 5: C 1.2, H 2.4, D 2.8, S 3.6; above S C 5/5, H 4/5, D 4/5; ear vs judge Spearman mean 0.8, > 0 in 5/5 (S, H, D alone mean 0.6, one reversal); C closest in 4/5; closeness very 3, some 2, not 0; repeat rho 0.8, same top. Reading (descriptive): the ear broadly orders presets as the judge does; C (10-64% below S by the judge) is heard closest even where the gap is small; H beats S by ear on these high-SNR parts",
    "results": "docs/record-match-listening-results.md"
+  },
+  {
+   "test_id": "arm-a-mega53-perfect-sep",
+   "plan": "docs/arm-a-mega53-plan.md",
+   "entered": "2026-10-19, amendment 3, after amendment 2's and record-match-listening's results were read and before any render for these arms (the zero-render rebuild and lag checks ran while drafting); one independent review (plan and code), which judged ZT needed",
+   "repeat_use": "Sixth use of stage F's 21 parts / 126 directions (after S/H/M, XO, direct-existing, record-match); adds arms, nothing re-read or re-chosen",
+   "parts": {
+    "stage_F": [
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
+     "cambridge-Passing_Ships-ElecGtr2",
+     "cambridge-Passing_Ships-ElecGtr4",
+     "cambridge-Quicksand-ElecGtr2",
+     "cambridge-Signs-ElecGtr3",
+     "cambridge-Today's_The_Day-ElecGtr07",
+     "cambridge-colour-me-red-elecgtr02",
+     "cambridge-colour-me-red-elecgtr03",
+     "cambridge-femme-elecgtr5",
+     "cambridge-get-out-of-bed-elecgtr2",
+     "cambridge-let-s-dance-elecgtr3",
+     "cambridge-let-s-dance-elecgtr4",
+     "cambridge-magilla-elecgtr1",
+     "cambridge-wickerman-elecgtr1",
+     "cambridge-wickerman-elecgtr2",
+     "cambridge-wickerman-elecgtr3",
+     "cambridge-wickerman-elecgtr7",
+     "telefunken-Gym_Hours-GTR_2",
+     "telefunken-Russian_Cream-GTR_1",
+     "telefunken-She's_Gone-GTR",
+     "telefunken-Strangest_Places-GTR"
+    ]
+   },
+   "bands": "stage F's 12 bands (as arm-a-mega53)",
+   "audio_only": "the crops' reference.wav (YT/ZT search reference, YT's rebuild source, judge) and di.wav -> measure DI (ZT's search DI, the judge DI)",
+   "training": "none",
+   "seeds": "main_stage seed 20261013 (as H)",
+   "gate": "None (the user's rule): YT - S, YT - H, YT - XO (primary), with ZT: ZT - S, ZT - YT, ZT - XO; band-weighted, 90% band-clustered t intervals (11 df); rows all (declared), no high bleed (direction rule), F-song and without wickerman elecgtr7 (descriptive); one fixed direction set; shares of the ceiling gap against ZT (Fieller) and against K_S -0.293 and record-match C -0.45 (scales, descriptive)",
+   "stopping": "fixed set, no extension; arm-a-mega53 stop files, cap 7,100 per arm, 31 GB disk guard, swap guard",
+   "renders": "6,993 per arm = 63 priming + 126 x 55; YT and ZT 13,986 (ZT run: the review judged it needed); three render processes",
+   "held_out": "none newly touched",
+   "limits": "one recipe, one rebuild network family (C'); the search scores at the judge lag (offset of judge_lag + 52 samples from the rebuild's aligned -52; zero-render check: median 0.0006 log, max 0.046); the true amp track may carry a little bleed (flagged parts)"
   }
  ]
 }
