@@ -371,6 +371,12 @@ on stage F: the recipe is fixed here; gate 1 reads D_existing's answer movement,
   draws only from the training pool.
 - **Separator training data:** the MUSDB18 songs are tagged in the pool, V_sep and stage F, and
   readouts are reported without them.
+- **A fine-tuned separator (the roadmap's Mega-53 fine-tune on our multitracks, planned
+  separately):** if it is adopted before the build, the stems are made with it only if its
+  fine-tuning excluded every session of D's training bands, V_dev's bands and stage F's bands.
+  A separator trained on a section's own tracks would give that section unrealistically clean
+  stems, and stage F stems from a separator tuned on stage F would leak. Otherwise the stock
+  Mega-53 is used, and the choice is recorded in the build's provenance.
 - **No held-out data is touched.** Nothing in this plan opens a held-out use.
 
 ## What is not done

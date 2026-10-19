@@ -2466,6 +2466,21 @@
    "outcome": "done 2026-10-19 (zero renders, 128 separations; audited, confirmed with corrections; docs/stereo-and-mix-check-results.md)"
   },
   {
+   "test_id": "shrink-snr-judge-v3-checks",
+   "plan": "docs/shrink-snr-judge-v3-results.md",
+   "results": "docs/shrink-snr-judge-v3-results.md",
+   "entered": "2026-10-19, with the results (no plan: two descriptive zero-render checks asked for by the user, post hoc)",
+   "parts": "(a) stage F's 21 parts and stage D's 24; (b) the record-match check's 5 stage-F parts",
+   "bands": "(a) 16 (stages D and F pooled); (b) 5",
+   "audio_only": "(a) stored held-half judges only; (b) the record-match check's stored held-half clips, reference.wav and di.wav",
+   "renders": "0",
+   "gate": "None: descriptive. (a) a threshold rule for the shrink by stem SNR, leave one band out, band-weighted with 90% band-clustered t; (b) Spearman, pair and top-pick agreement with the ear",
+   "seeds": "none",
+   "repeat_use": "A further use of stage F's and stage D's stored arm A scores (no new scores) and of the record-match clips; nothing chosen for a later test",
+   "held_out": "none touched",
+   "outcome": "done 2026-10-19 (zero renders; docs/shrink-snr-judge-v3-results.md)"
+  },
+  {
    "test_id": "direct-model-stems",
    "plan": "docs/direct-model-stems-plan.md",
    "entered": "2026-10-19, with the plan, before any compute for it (two one-clip separator timings ran while drafting); one independent review (go with required changes, applied)",
