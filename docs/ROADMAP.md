@@ -131,8 +131,12 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    until the target is clean enough for a better rebuild to pay (XO, ZT − YT).
 
    **Next, in order:**
-   1. **Better target-guitar separation:** fine-tune Mega-53 on our multitracks (plan being
-      written).
+   1. **Better target-guitar separation** ([plan](separation-finetune-plan.md), reviewed):
+      zero-render ceilings on stage F first (how much the other guitars cost; Wiener and blend
+      fixes), then an oracle class-stem arm (about 7k renders) decides whether fine-tuning
+      Mega-53's head can pay (YG − M ≤ −0.032) or a conditioned one-guitar separator is the route
+      (a user decision: data, disk, a product question). Steps after the first need about 2 GB
+      of disk freed.
    2. **Train the direct model on realistic separated stems,** and check how much it relies on the
       stem against the mix (plan being written).
    3. **Two zero-render checks.** *Done 2026-10-19 ([results](shrink-snr-judge-v3-results.md)):*
