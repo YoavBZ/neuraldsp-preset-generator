@@ -287,6 +287,10 @@ was declared, what was measured, and the research behind it.
   Mega-53 becomes the ML default. Stereo: centred targets lose nothing to the mono fold, and on a
   panned model the target's own channel gains +1.6 dB while a blind estimate gains +0.3. Our mixes
   are unity sums, so the in-song guitar is the raw track; no session ships a master. Zero renders.
+- [separation-finetune-plan.md](separation-finetune-plan.md): how to improve target-guitar
+  separation. Zero-render ceilings first (the class ceiling and free test-time fixes), then an
+  oracle class arm in arm A (about 7k renders) decides between fine-tuning Mega-53's class head
+  and a conditioned one-guitar separator; MPS training needs the loss off the device. Planned.
 - [rebuild-gap-plan.md](rebuild-gap-plan.md) → [results](rebuild-gap-results.md): where C′'s
   rebuild loses ranking with a perfect stem. A structured short-time magnitude error, mostly above
   2 kHz; phase and rotation are minor. A fixed EQ (`dep_eq`, +0.133 [−0.009, +0.276]) and a

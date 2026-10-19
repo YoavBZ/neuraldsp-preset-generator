@@ -2481,6 +2481,22 @@
    "outcome": "done 2026-10-19 (zero renders; docs/shrink-snr-judge-v3-results.md)"
   },
   {
+   "test_id": "separation-finetune",
+   "plan": "docs/separation-finetune-plan.md",
+   "entered": "2026-10-19, with the plan, before any measurement with a new separator; one zero-data MPS probe (synthetic noise) ran while drafting; one independent review (go with changes, all applied)",
+   "parts": "stage F's 21 parts (test only, never trained on); training pool: in-scope development sessions Adam Buckley 'Drag Me Down', Ale Lak 'Nosso Mundo', Starnes And Shah 'Prodigal', Eggy x3, John Morgan Kimock x3, Swatkins x3, The Long Wait 'Drag'; high-gain (capped 25%): Death Of A Romantic, Hollow Ground, Rebuild The Evil, Renesans x3, Cnoc An Tursa, Storm Of Particles",
+   "bands": "test: stage F's 12 bands (every session of them excluded from training); train/val: 7 in-scope + 6 high-gain bands, val = 2 in-scope bands drawn by random.Random(20261042)",
+   "audio_only": "session tracks (amp tracks as targets, no DIs), stage F's stored contexts and Mega-53/htdemucs stems, reference.wav",
+   "training": "conditional (Step 2): Mega-53 electric-guitar head + last 4 trunk layers, AdamW 2e-5, batch 1 x 6 s, accumulation 2, max steps floor(11 MPS h / measured step time), early stop on val bands; loss off-device after an MPS gradient gate",
+   "seeds": "band bootstrap random.Random(20261019), 4,000 draws; training seed 0; val draw 20261042",
+   "gate": "Step 0 R0a: band median SNR(G)-SNR(M) <= 0 dB stops the class route. R0b: T1-T4 with Holm at 10%. Step 1: YG-M <= -0.032 with 90% upper bound < 0 -> Step 2; YT-YG <= -0.032 with upper < 0 -> route B plan to the user. Step 3: SNR(N)-SNR(M) < +0.5 dB or lower bound <= 0 -> stop; >= +2 dB and lower > +1 dB -> arm A test; else candidate for the step-4 fresh test. Arm A: N-M interval below 0 -> development default and step-4 separator",
+   "stopping": "earliest stop Step 0 R0a (zero renders); then Step 1 YG-M (6,993 renders) before anything is built",
+   "renders": "Step 0: 0; Step 1: <= 6,993; Step 3: <= 6,993",
+   "repeat_use": "Steps 1 and 3 would be stage F's 7th and 8th uses; nothing chosen on stage F (checkpoint on val bands; T variants Holm-corrected)",
+   "held_out": "none touched: training sessions through set3.is_held_out, set4/5/6.covers and the sets 1-2 split field, failing closed; known-answer bands (Rebecca Haviland, Chris Coltraine, The Apprehended) and Timo And The Timezone (proposed B2) excluded; no Guitar-TECHS P3",
+   "outcome": "pending (plan merged; waits for the go; Steps 1-3 need about 2 GB of disk freed first)"
+  },
+  {
    "test_id": "direct-model-stems",
    "plan": "docs/direct-model-stems-plan.md",
    "entered": "2026-10-19, with the plan, before any compute for it (two one-clip separator timings ran while drafting); one independent review (go with required changes, applied)",
