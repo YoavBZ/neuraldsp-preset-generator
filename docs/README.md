@@ -298,6 +298,12 @@ was declared, what was measured, and the research behind it.
   and a conditioned one-guitar separator; MPS training needs the loss off the device. Training
   cancelled, then allowed again the same day (user, 2026-10-20): fine-tuning or adapting an
   existing separator on this Mac is fine; a newly trained separator and rented machines are not.
+- [stereo-side-plan.md](stereo-side-plan.md) → [results](stereo-side-results.md): the pan side
+  as a separation hint, on synthetic pans of stage F (zero renders). With the side known, keeping
+  the target's channel of a stereo Mega-53 stem gains +1.50 dB at ±0.6 pan, and the MDX23C centre
+  model gains +1.35 on a centred lead against hard-L/R rhythms. Neither reaches the +2 dB step (a
+  gain to build on). Blind side picks follow the louder other guitars and lose; the ILD mask and
+  Wiener don't help. Audited.
 - [rebuild-gap-plan.md](rebuild-gap-plan.md) → [results](rebuild-gap-results.md): where C′'s
   rebuild loses ranking with a perfect stem. A structured short-time magnitude error, mostly above
   2 kHz; phase and rotation are minor. A fixed EQ (`dep_eq`, +0.133 [−0.009, +0.276]) and a
