@@ -296,8 +296,8 @@ was declared, what was measured, and the research behind it.
   separation. Zero-render ceilings first (the class ceiling and free test-time fixes), then an
   oracle class arm in arm A (about 7k renders) decides between fine-tuning Mega-53's class head
   and a conditioned one-guitar separator; MPS training needs the loss off the device. Training
-  cancelled 2026-10-20 (user): only Step 0, Step 3 for a Step 0 fix, released checkpoints and DSP
-  splits remain open.
+  cancelled, then allowed again the same day (user, 2026-10-20): fine-tuning or adapting an
+  existing separator on this Mac is fine; a newly trained separator and rented machines are not.
 - [rebuild-gap-plan.md](rebuild-gap-plan.md) → [results](rebuild-gap-results.md): where C′'s
   rebuild loses ranking with a perfect stem. A structured short-time magnitude error, mostly above
   2 kHz; phase and rotation are minor. A fixed EQ (`dep_eq`, +0.133 [−0.009, +0.276]) and a
@@ -552,5 +552,5 @@ was declared, what was measured, and the research behind it.
     user's ear), a level-difference mask, centre/wide models, Mega-53's electric/acoustic heads
     when the other guitar is acoustic, per-song solo-region adaptation, then fine-tuning on
     synthetic multi-guitar mixes. Flags the licence tension and proposes a zero-render stage-F pan
-    screen. Corrects the October separation report. Ranks 5, 6 and 9 cancelled 2026-10-20 (no
-    separator training). Research, not a declared plan.
+    screen. Corrects the October separation report. 2026-10-20 (user): ranks 5 and 6 allowed on
+    this Mac only; rank 9 (a new separator) out. Research, not a declared plan.

@@ -92,7 +92,7 @@ Every route is small. The list runs from cheapest per usable part to most expens
 | 2 | Local session lists the Cambridge sessions this container could not reach | unknown; likely a few | about 1–2 h in a real browser | Cambridge readme terms; same-take test will reject some |
 | 3 | DI-only fresh Cambridge sessions re-amped through the project's own plugins | Strobe "Maya" 4, The Apprehended 3, MekaPhil (4 songs), The Timezone "GOTGF" 4 | low | Known-target test, not a real amp; none is in the repo, but "The Timezone" may be the label table's Timo And The Timezone (unchecked) |
 | 4 | EGDB-NDSP as a known-preset test | many clean/crunch renders | 135 GB download | No song or mix context |
-| 5 | Weathervane *Shaking Through*: one paid month to read track sheets, plus an email to confirm the licence | 0 to a few dozen, unverified | $8 + a day of checking | Conflicting licence; DI presence unknown |
+| 5 | Weathervane *Shaking Through*: one paid month to read track sheets, plus an email to confirm the licence (user: no, 2026-10-20) | 0 to a few dozen, unverified | $8 + a day of checking | Conflicting licence; DI presence unknown |
 | 6 | Widen scope: metal sessions, or each mic or `DT` double as its own unit | about 70 metal pairs in ~9 sessions | medium | Out of the current style scope; doubles are not independent bands |
 | 7 | Record new DI+amp material | as many as recorded (for example 10 players × 5 parts) | high | The only route that reliably reaches 3–5× |
 
@@ -109,7 +109,7 @@ Two warnings apply to any pairs that turn up. First, run the project's waveform 
 1. Ask the ML session and the user to rule on sets 4–6 and Heather Jane.
 2. Run the local Cambridge listing.
 3. Pull any fresh pairs it finds.
-4. Buy one Weathervane month.
+4. Buy one Weathervane month (user: no, 2026-10-20).
 5. Only then decide between widening the scope and recording new material.
 
 ## Conclusion

@@ -5,14 +5,15 @@ ledger entry `separation-finetune`. Estimates with intervals; the decisions belo
 before results exist. One zero-data probe (MPS, below) ran while drafting. One independent review
 (go with changes; all required changes applied, [below](#review)).
 
-> **Status (user, 2026-10-20): no separator training of any kind, and no rented machines.** Step 2
-> (option A1, the class fine-tune) and any trained form of route B are cancelled. Step 1's two
-> readings decide only A1 (YG − M) and whether a route-B plan goes to the user (YT − YG), so it has
-> no decision left and does not run unless the ML session gives it a new one. Step 0's zero-training
-> measures and fixes (Wiener, blend, ensemble) stay open, and so does Step 3 for a Step 0 fix that
-> meets its rule (Step 3 then pairs without YG and drops N − YG). Released checkpoints (route B's
-> CPU screen included) and DSP splits of their output stay open. The ledger entry and the other
-> steps are for the ML session.
+> **Status (user, 2026-10-20, revised the same day): separator fine-tuning is allowed again, on
+> this Mac only (no rented machines).** The user first ruled out all separator training, then
+> allowed fine-tuning, adapting and feature extraction, "just not a major effort of modeling and
+> training a new separator". So Steps 0–3 are open again as declared (Step 1 stopped after 2,666
+> renders and can resume), provided any training fits the Mac; Step 2 already plans one MPS run
+> with the loss off the device. Route B's cheapest first move (screening released checkpoints on
+> the CPU) and DSP splits of their output stay open. A newly trained conditioned separator, the
+> trained form of route B, stays out unless it is a fine-tune or adaptation of an existing one.
+> The ML session amends this plan and the ledger entry as needed.
 
 ## The short version
 

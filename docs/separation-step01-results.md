@@ -89,6 +89,11 @@ through the new opt-in `--min-free-gb` flag. The default stays 31 GB. Free disk 
 
 ## The user's decision
 
+> **Revised the same day (user, 2026-10-20):** fine-tuning or adapting an existing separator is
+> fine; only designing and training a new separator is out, and there are still no rented machines.
+> So Step 2 and the rest of Step 1 are open again if their training fits the Mac
+> ([status note](separation-finetune-plan.md)). The text below records the earlier decision.
+
 On 2026-10-20 the user decided not to train any separator (too specific, and it needs research
 they want to avoid) and not to rent machines. The plan's [status note](separation-finetune-plan.md)
 records what that cancels. For this step:
