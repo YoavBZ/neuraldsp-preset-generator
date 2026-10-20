@@ -2571,7 +2571,8 @@
    "seeds": "band bootstrap random.Random(20261019), 4,000 draws",
    "repeat_use": "A further use of stage F's parts, separation measures only (as stereo-and-mix-check, mix-previews); no arm scores read or chosen on; not one of the 7th/8th arm uses reserved for separation-finetune Steps 1 and 3",
    "held_out": "none touched",
-   "outcome": "pending"
+   "outcome": "done 2026-10-20 (zero renders; 63 Mega-53 stereo separations, 45 centre-model passes; htdemucs cut at the declared time checkpoint; audited, confirmed with corrections). GAIN TO BUILD ON: no gated cell passes. Mega-53, oracle side, 19 parts: P pick +1.50 [+0.78,+2.33], LC centre model +1.35 [+0.31,+2.49], ILD mask +0.60 (P) / +0.76 (LC), mask+Wiener +0.08 / +0.28 with LSD +6.7 / +8.0; HP pick (ceiling, ungated) +6.88; SP pick +0.02; blind side right 5/19 (P), 4/19 (LC), 0/19 (HP), blind splitters -0.01 to -1.0",
+   "results": "docs/stereo-side-results.md"
   }
  ]
 }
