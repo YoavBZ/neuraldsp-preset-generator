@@ -248,8 +248,8 @@ with the stored S, H, M, YT and YG on one fixed direction set.
   - a passage the user marks where it plays exposed. Step 0's X says how often one exists.
 - **Cheapest first move:** screen existing query-conditioned separators, and permutation-invariant
   multi-instance ones, on the stored stage-F contexts, at CPU cost only. Their weights and licences
-  must be checked first (open, non-commercial or unlicensed is fine; gated weights, cloud APIs and
-  commercial tools are out; ML plan §5).
+  must be checked first (open, non-commercial, unlicensed or gated is fine; unclear terms go to the
+  user; cloud APIs and commercial tools are out; ML plan §5).
 - **Ceiling evidence:** the pan side is worth +1.55 dB in scenario P (stored). YT − YG, G_mic, I
   and X bound the rest.
 - **Needs from the user:**
