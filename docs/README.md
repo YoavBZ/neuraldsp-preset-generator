@@ -292,11 +292,12 @@ was declared, what was measured, and the research behind it.
   repeated sections, not edits). All 17 stage F crops there are covered. Mega-53 on the real mix
   loses 0.62 dB SNR against the raw track (0.31 with a per-stem lag; single tracks are shifted, and
   some flipped, in the real mix). In SNR, mastering adds little. Zero renders.
-- [separation-finetune-plan.md](separation-finetune-plan.md) → [results](separation-step01-results.md):
-  how to improve target-guitar separation. Step 0 (zero renders): the other guitars, about 5.5 dB
-  louder than the target, limit separation; a perfect class separator gains only +0.30 dB over
-  Mega-53; no free test-time fix helps. Step 1 stopped after 2,666 renders, Steps 2–3 retired:
-  the user decided not to train separators (2026-10-20).
+- [separation-finetune-plan.md](separation-finetune-plan.md) → [Step 0 results](separation-step01-results.md): how to improve target-guitar
+  separation. Zero-render ceilings first (the class ceiling and free test-time fixes), then an
+  oracle class arm in arm A (about 7k renders) decides between fine-tuning Mega-53's class head
+  and a conditioned one-guitar separator; MPS training needs the loss off the device. Training
+  cancelled 2026-10-20 (user): only Step 0, Step 3 for a Step 0 fix, released checkpoints and DSP
+  splits remain open.
 - [rebuild-gap-plan.md](rebuild-gap-plan.md) → [results](rebuild-gap-results.md): where C′'s
   rebuild loses ranking with a perfect stem. A structured short-time magnitude error, mostly above
   2 kHz; phase and rotation are minor. A fixed EQ (`dep_eq`, +0.133 [−0.009, +0.276]) and a
@@ -551,4 +552,5 @@ was declared, what was measured, and the research behind it.
     user's ear), a level-difference mask, centre/wide models, Mega-53's electric/acoustic heads
     when the other guitar is acoustic, per-song solo-region adaptation, then fine-tuning on
     synthetic multi-guitar mixes. Flags the licence tension and proposes a zero-render stage-F pan
-    screen. Corrects the October separation report. Research, not a declared plan.
+    screen. Corrects the October separation report. Ranks 5, 6 and 9 cancelled 2026-10-20 (no
+    separator training). Research, not a declared plan.

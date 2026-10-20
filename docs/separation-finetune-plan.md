@@ -5,14 +5,14 @@ ledger entry `separation-finetune`. Estimates with intervals; the decisions belo
 before results exist. One zero-data probe (MPS, below) ran while drafting. One independent review
 (go with changes; all required changes applied, [below](#review)).
 
-> **Status (2026-10-20): Step 0 done; Step 1 stopped; Steps 2–3 retired.** The user decided not to
-> train any separator (too specific, needs research they want to avoid) and not to rent machines.
-> Step 1 (YG) existed only to choose a training route, so it was stopped after 2,666 recorded
-> renders with no YG − M reading. Steps 2–3 (the class fine-tune) are retired, and so are route 6
-> (a fine-tune on synthetic multi-guitar mixes) and solo-region adaptation from the
-> [single-guitar research](research/single-guitar-separation-2026-10.md). Existing checkpoints, DSP
-> splitters and Moises (in development) remain allowed. Results:
-> [separation-step01-results.md](separation-step01-results.md).
+> **Status (user, 2026-10-20): no separator training of any kind, and no rented machines.** Step 2
+> (option A1, the class fine-tune) and any trained form of route B are cancelled. Step 1's two
+> readings decide only A1 (YG − M) and whether a route-B plan goes to the user (YT − YG), so it has
+> no decision left and does not run unless the ML session gives it a new one. Step 0's zero-training
+> measures and fixes (Wiener, blend, ensemble) stay open, and so does Step 3 for a Step 0 fix that
+> meets its rule (Step 3 then pairs without YG and drops N − YG). Released checkpoints (route B's
+> CPU screen included) and DSP splits of their output stay open. The ledger entry and the other
+> steps are for the ML session.
 
 ## The short version
 

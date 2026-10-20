@@ -28,7 +28,8 @@ Development data only (stage F's 21 parts, 12 bands).
   interval just reaches 0) and none survives Holm's correction.
 - **Step 1 was stopped after 2,666 renders by the user's decision not to train separators.** There
   is no YG − M reading. The partial records are kept but are not to be analysed or quoted.
-- **The class fine-tune (Steps 2–3) is retired.** See [the user's decision](#the-users-decision).
+- **Steps 2–3 do not run:** the fine-tune is cancelled and no Step 0 fix qualifies for Step 3.
+  See [the user's decision](#the-users-decision).
 
 ## Step 0 (zero renders)
 
@@ -88,12 +89,14 @@ through the new opt-in `--min-free-gb` flag. The default stays 31 GB. Free disk 
 
 ## The user's decision
 
-On 2026-10-20 the user decided not to train any separator: it is too specific and needs research
-they want to avoid. Renting machines is not acceptable either. So:
-- the class fine-tune (Steps 2–3) is retired;
-- so are a conditioned one-guitar separator that would need training, route 6 of the
-  [single-guitar research](research/single-guitar-separation-2026-10.md) (a fine-tune on synthetic
-  multi-guitar mixes), and route 5 (solo-region adaptation, which also trains weights per song).
-  Step 0's X says the regions route 5 needs barely exist on stage F anyway;
+On 2026-10-20 the user decided not to train any separator (too specific, and it needs research
+they want to avoid) and not to rent machines. The plan's [status note](separation-finetune-plan.md)
+records what that cancels. For this step:
+- Step 2, the class fine-tune, is cancelled, and Step 1 has no decision left;
+- Step 3 stays open only for a Step 0 fix that meets its rule, and none does, so it does not run;
+- the trained routes of the [single-guitar research](research/single-guitar-separation-2026-10.md)
+  are out, including route 6 (a fine-tune on synthetic multi-guitar mixes) and solo-region
+  adaptation. Step 0's X says the regions solo-region adaptation needs barely exist on stage F
+  anyway;
 - existing checkpoints, DSP splitters (pan or level masks, Wiener-style filters) and Moises (in
   development) remain allowed.

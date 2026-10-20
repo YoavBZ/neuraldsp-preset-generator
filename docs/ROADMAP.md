@@ -134,13 +134,15 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    until the target is clean enough for a better rebuild to pay (XO, ZT − YT).
 
    **Next, in order:**
-   1. **Better target-guitar separation** ([plan](separation-finetune-plan.md)).
-      *Step 0 done, the rest stopped 2026-10-20 ([results](separation-step01-results.md)):* the
-      other guitars (about 5.5 dB louder than the target) limit separation; a perfect class
-      separator gains only +0.30 dB of SNR over Mega-53; no free test-time fix helps. The user
-      decided not to train any separator or rent machines, so the class fine-tune, route 6 and
-      solo-region adaptation are out; Step 1 stopped after 2,666 renders with no reading. Existing
-      checkpoints, DSP splitters and Moises (in development) remain allowed.
+   1. **Better target-guitar separation** ([plan](separation-finetune-plan.md), reviewed):
+      zero-render ceilings on stage F first (how much the other guitars cost; Wiener and blend
+      fixes), then an oracle class-stem arm (about 7k renders) decides whether fine-tuning
+      Mega-53's head can pay (YG − M ≤ −0.032) or a conditioned one-guitar separator is the route
+      (a user decision: data, disk, a product question). Steps after the first need about 2 GB
+      of disk freed. *2026-10-20 (user): no separator training and no rented machines, so the
+      fine-tune, any trained route B and the oracle class arm that chooses between them are off;
+      Step 0's zero-training fixes, released checkpoints and DSP splits (the
+      [pan screen](research/single-guitar-separation-2026-10.md)) remain.*
    2. **Train the direct model on realistic separated stems,** and check how much it relies on the
       stem against the mix ([plan](direct-model-stems-plan.md), declared and reviewed 2026-10-19):
       zero-render checks of the stem mismatch on the existing model first, then a 5k pilot (real
@@ -349,5 +351,6 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-19 | The direct model's tie with S is not a verdict on the approach (user): it was trained on perfect stems and tested on htdemucs stems. Two active routes, arm A and the direct model, with better separation as the shared lever; next a Mega-53 fine-tune on our multitracks, then the direct model on realistic stems | [direct-existing results](direct-existing-results.md), step 0 |
 | 2026-10-19 | Zero-render checks: the best shrink does not measurably depend on stem SNR (held-out −0.003 [−0.013, +0.007]), so shrink 0.5 stays on separated stems; judge v3 agrees with the ear less than the default judge (Spearman 0.64 against 0.80, 5 parts), so the default judge stays | [checks](shrink-snr-judge-v3-results.md) |
 | 2026-10-20 | Licence and cost rule (user): the project is non-commercial and open source, so anything open, non-commercial, unlicensed or gated behind an access request is fine (weights, code, tools, data); unclear licence terms go to the user to check; nothing may force other users to pay (beyond the Neural DSP plugin and Claude Code), free cloud APIs are fine, and tools the user pays for personally (e.g. Moises) are fine in development, and other paid tools need the user's yes. This replaces the 2026-10-07 "open source only" rule. ML plan §5 updated | [ML plan](research/ml-plan-2026-10.md), section 5 |
+| 2026-10-20 | No separator training of any kind (fine-tune, per-song adaptation, new separator) and no rented machines (user: "way to specific and requires researches I'd like to avoid"). The separation-finetune plan's fine-tune step and trained routes are cancelled | [separation-finetune plan](separation-finetune-plan.md), [ML plan](research/ml-plan-2026-10.md), section 5 |
+| 2026-10-20 | Separation Step 0 (zero renders, audited): the other guitars, about 5.5 dB louder than the target (I +5.52 [+3.70, +7.24]), limit separation; a perfect class separator beats Mega-53 by only +0.30 dB SNR (band median, 12/12 bands); the four free test-time fixes all have negative point estimates, none survives Holm, so Step 3 has no candidate; YT − M −0.048 [−0.071, −0.026]. Step 1 (YG) stopped after 2,666 recorded renders by the no-training decision, with no reading | [separation results](separation-step01-results.md) |
 | 2026-10-20 | Direct model gate 1 (zero renders): stem quality moves D_existing's answers far beyond the leak-draw null (+0.104 [+0.090, +0.120]) and Mega-53's stem costs +0.104 of E against the training stem (0.167 → 0.270), so GATE1 STEM: the separator route continues. The model leans on the stem (share 0.70); behind a clean or real separated stem the mix adds little or nothing (post hoc), so a stem-only model is recommended (user's decision) | [gate 1 results](direct-model-stems-gate1-results.md) |
-| 2026-10-20 | Separation Step 0 (zero renders): the other guitars, about 5.5 dB louder than the target (I +5.52 [+3.70, +7.24]), limit separation; a perfect class separator beats Mega-53 by only +0.30 dB SNR (band median, 12/12 bands); the four free test-time fixes all have negative point estimates, none survives Holm; YT − M −0.048 [−0.071, −0.026]. The user decided not to train any separator or rent machines: Step 1 (YG) stopped after 2,666 renders with no reading; Steps 2–3, route 6 and solo-region adaptation retired; existing checkpoints, DSP splitters and Moises (development) stay allowed | [separation results](separation-step01-results.md) |
