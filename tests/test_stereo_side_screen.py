@@ -123,3 +123,10 @@ def test_coherence_mask_keeps_a_panned_point_source_and_cuts_uncorrelated_sides(
     x2 = np.stack([a + b, a + c])                 # centred target, different takes hard L and R
     assert S.snr_db(T.coherence_mask(x2, 0), a) > S.snr_db(T.pick(x2, 0), a) + 2
     assert S.snr_db(T.coherence_mask(x2, 0, ild=True), a) > S.snr_db(T.pick(x2, 0), a) + 2
+
+
+def test_coherence_mask_cuts_a_hard_panned_source():
+    a, _ = _two_sources()
+    hard = np.stack([a, np.zeros_like(a)])        # the empty channel has no phase to agree with
+    out = T.coherence_mask(hard, -1.0)
+    assert np.sum(out ** 2) < 0.01 * np.sum(a ** 2)   # at least 20 dB down

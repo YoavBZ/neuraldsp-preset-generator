@@ -155,8 +155,9 @@ def ild_mask(x2, p_t, sigma=SIGMA):
 def coherence_mask(x2, p_t, tau=COH_TAU, k=COH_K, ild=False):
     """Amendment 1: per-bin inter-channel coherence Γ = Re{L·R*}/(|L|·|R| + ε) (the cosine of the
     phase difference), a soft mask 1/(1 + exp(−k(Γ − τ))) applied to the target's channel with the
-    mixture phase; with `ild`, multiplied by the ILD mask at p_t. A point source panned anywhere is
-    coherent (Γ = 1); different takes on the two sides are not."""
+    mixture phase; with `ild`, multiplied by the ILD mask at p_t. A point source panned short of hard
+    is coherent (Γ = 1); different takes on the two sides are not, and nor is a hard-panned source
+    (its empty channel's phase is leakage), so HP's rows are invalid by construction."""
     import numpy as np
 
     zl, zr = stft(x2[0]), stft(x2[1])
@@ -570,13 +571,15 @@ def cmd_coherence():
     s["checks"] = {"R_null_g": {"band_mean": rg["band_mean"], "ok": abs(rg["band_mean"]) <= 0.3}} if rg else {}
     old = _load(OUT / "report.json")
     if old:
-        s["checks"]["c_matches_report"] = {
-            sc: abs(old["summary"]["cells"][f"mega53|{sc}|c|primary"]["snr"]["band_mean"]
-                    - s["cells"][f"mega53|{sc}|c|primary"]["snr"]["band_mean"]) <= 0.01
-            for sc in ("P", "LC", "HP") if f"mega53|{sc}|c|primary" in old["summary"]["cells"]}
+        for sc in ("P", "LC", "HP"):
+            key = f"mega53|{sc}|c|primary"
+            if key in old["summary"]["cells"] and key in s["cells"]:
+                a, b = (x["snr"]["band_mean"] for x in (old["summary"]["cells"][key], s["cells"][key]))
+                s["checks"][f"c_matches_report_{sc}"] = {"stored": a, "recomputed": b, "ok": abs(a - b) <= 0.01}
+    s["checks_ok"] = bool(s["checks"]) and all(c["ok"] for c in s["checks"].values())
     rep = {"rows": rows, "summary": s, "tau": COH_TAU, "k": COH_K, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     _save(OUT / "report-coherence.json", rep)
-    print(json.dumps({k: s[k] for k in ("gate", "checks", "verdict")}, indent=1))
+    print(json.dumps({k: s[k] for k in ("gate", "checks", "checks_ok", "verdict")}, indent=1))
 
 
 def delta_pairs(rows, sep, sc, k, metric="snr", base="M", pop="primary"):
