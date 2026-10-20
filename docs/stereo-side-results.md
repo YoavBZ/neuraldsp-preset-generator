@@ -144,7 +144,9 @@ after one independent review (go with changes, all applied). Zero renders, no tr
 Mega-53 stems only. Data: `~/ndsp-presets/learn/stereo-side-screen/report-coherence.json`.
 Primary population, 19 parts in 10 bands; Δ SNR against the stem's mid, dB.
 
-**Verdict: a small gain to build on, below the existing splitters. No cell is near +2 dB.**
+**Verdict: coherence alone is a stop (+0.35). No cell is near +2 dB.** The only cell rated "gain
+to build on" is LC gc, and its gain comes from its ILD part: gc (+0.69) is below the ILD mask
+alone (+0.76).
 
 | cell (gated, Holm over 3) | Δ SNR | Δ LSD | leave one band out | Holm p | reading |
 |---|---|---|---|---|---|
@@ -167,4 +169,6 @@ Primary population, 19 parts in 10 bands; Δ SNR against the stem's mid, dB.
   - the R null for g is −0.004 dB;
   - (c) recomputed matches `report.json` on P, LC and HP (0.603, 0.763, 0.863).
 - **Limit:** Γ here is the per-bin phase difference with no smoothing. A smoothed-coherence
-  variant is untested, but the class-perfect anchor's +0.56 leaves it little room.
+  variant is simply untested. The class-perfect anchor measured the unsmoothed mask only.
+- **Note:** the "all" population's G_g cells are meaningless (on the two parts with no other
+  guitar, G equals the reference) and are not used.
