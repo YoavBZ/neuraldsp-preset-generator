@@ -298,6 +298,9 @@ was declared, what was measured, and the research behind it.
   and a conditioned one-guitar separator; MPS training needs the loss off the device. Training
   cancelled, then allowed again the same day (user, 2026-10-20): fine-tuning or adapting an
   existing separator on this Mac is fine; a newly trained separator and rented machines are not.
+- [xlance-screen-plan.md](xlance-screen-plan.md) → [results](xlance-screen-results.md): X-LANCE
+  against Mega-53 fast as the build's separator (zero renders). Same SNR, mel-range LSD −1.82 dB
+  better, 1.78× the CPU time: pass, over budget; the user decides.
 - [stereo-side-plan.md](stereo-side-plan.md) → [results](stereo-side-results.md): the pan side
   as a separation hint, on synthetic pans of stage F (zero renders). With the side known, keeping
   the target's channel of a stereo Mega-53 stem gains +1.50 dB at ±0.6 pan, and the MDX23C centre

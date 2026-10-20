@@ -2608,7 +2608,9 @@
    "seeds": "band bootstrap random.Random(20261019), 4,000 draws; Mega-53 repro sample 20261082",
    "repeat_use": "Decision on the 164 non-stage-F audit examples (part C pool bands, not stage F; already used by direct-model-stems gate 1 and 1c). Stage F's 21 parts: a further descriptive use, separation measures only (as stereo-and-mix-check, mix-previews, stereo-side-screen); nothing chosen on stage F; no arm scores read",
    "held_out": "none touched",
-   "outcome": null
+   "outcome": "done 2026-10-21: PASS, OVER BUDGET (zero renders; 227 X-LANCE + 16 Mega-53 CPU separations; audited, confirmed with corrections). Audit mixes X - Mega-53 fast: SNR +0.14 [-0.11, +0.39], mel-range LSD -1.82 [-3.09, -0.54]; cost 1.78x (limit 1.5x). User decides; Mega-53 stays meanwhile",
+   "results": "docs/xlance-screen-results.md",
+   "ran": "2026-10-20/21"
   }
  ]
 }
