@@ -56,6 +56,9 @@ Band-weighted means; 90% band-clustered t intervals (5 df), with the band bootst
 
   X-LANCE darkens less on average but less consistently. A fixed brightness correction would
   suit Mega-53's stems a little better.
+- **The average hides one band.** On Death Of A Romantic, X-LANCE is 11.5 dB darker than Mega-53
+  on the 3–10 kHz brightness ratio (5.9 dB on the mean error above 3 kHz). That band drives the
+  wide brightness interval; in the other five bands the brightness difference is −1.6 to +1.8 dB.
 - **Without Cambridge sessions** (Eggy, Renesans; 2 bands, point estimates only):
   - SNR: +0.48 and −0.01.
   - Mel LSD: −1.19 and −2.48.
@@ -73,8 +76,11 @@ Band-weighted means; 90% band-clustered t intervals (5 df), with the band bootst
 - **One failure drives the all-21 rows.** On She's Gone (Bernard Purdie Tribute, the only guitar
   in its mix), X-LANCE gets 0.36 dB SNR against Mega-53's 5.21, and its mel LSD is 15.1 against
   8.3. The other single-guitar part ties (6.29 against 6.28).
-  No audit clip loses SNR like this (worst −1.8 dB), though one (29670) is 12.0 dB worse on mel
-  LSD. A song-specific failure of this size is a risk for the
+  X-LANCE's stem there follows the mix (correlation 0.52) more than the guitar (0.28), at 2.7×
+  the guitar's level: it lets the backing through. This is a real separation failure, not an
+  alignment error (lag 0).
+  No audit clip loses SNR like this (worst −1.8 dB), though one (27360, Death Of A Romantic) is 12.0 dB
+  worse on mel LSD (29670, same band, 5.75). A song-specific failure of this size is a risk for the
   product, and a reason to keep Mega-53 as the fallback.
 - **On the 19 multi-guitar parts it ties,** as on 2026-10-08. The class anchor G is only +0.44
   above Mega-53 here: the other guitars set the limit.
@@ -97,7 +103,9 @@ Band-weighted means; 90% band-clustered t intervals (5 df), with the band bootst
     and V_sep's 1,720, each with a re-render.
 - **Before a switch:**
   - X-LANCE's MPS speed (one clip, when the MPS is free);
-  - `gtr_mss` alone on the audit mixes, which could make the cost fit (descriptive here).
+  - `gtr_mss` alone on the audit mixes, which could make the cost fit: tested under
+    [amendment 1](xlance-screen-plan.md#amendment-1-gtr_mss-alone-on-the-audit-mixes-2026-10-21)
+    (reviewed), results below.
 - The pilot is unchanged and stays on Mega-53.
 
 **Caveats:**
