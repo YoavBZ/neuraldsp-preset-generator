@@ -413,6 +413,50 @@ on stage F: the recipe is fixed here; gate 1 reads D_existing's answer movement,
 - **Honesty:** B2 already had realistic separation and tied; the mix-realism part is capped near 7%
   of E in-domain; the flat curve may be an identifiability floor (all in "The question").
 
+## Amendment 1 (2026-10-20): stem-only arm, approvals, order
+
+**Why.** Gate 1 read `GATE1 STEM`: behind a clean or real separated stem the mix adds little or
+nothing (the stem carries 0.70 of the reliance). The user then decided that the model should be
+trained on the separated target stem, not handed the whole mix, with a mix version only as a small
+comparison. Feeding both channels lets the network lean on the mix for separation it cannot do
+well, and the product's input is then the stem.
+
+**The pilot arms (replaces "The pilot arms" list; recipe, seeds, epochs and data unchanged):**
+- **D0-5k:** part C's composition, unchanged (the matched control).
+- **D_mix-5k:** the stored true mix; the stem channel always 0. The small comparison.
+- **D_stem-5k:** the stored Mega-53 stem with the declared augmentations; **the mix channel always
+  0**, in training and at inference, zeroed exactly as D_mix zeroes the stem (mel and conditioning).
+  The "separator failure" augmentation becomes stem := **true mix** + U(−6, 0) dB, read from the
+  stored mix mel (the mix is still built and stored, for D_mix and this augmentation).
+- **D_stem-5k-noaug:** the same without augmentations.
+
+Still 4 arms × 2 seeds, about 2.4 GPU h at most. D_sep (stem plus mix) is dropped, not run.
+
+**The rules (replace D_sep by D_stem; otherwise as declared):**
+1. **STOP** if neither D_stem-5k − D0-5k nor D_mix-5k − D0-5k on R_out has an interval entirely
+   below 0.
+2. **Mix-only** if D_stem-5k − D_mix-5k on R_in has an interval containing 0 or above it, and D_mix
+   beat D0 in rule 1.
+3. **Otherwise build the rest** and train D_stem (step 3's D is D_stem).
+4. **Augmentation** kept unless D_stem-5k − D_stem-5k-noaug on R_in has an interval entirely above 0.
+
+Step 4 feeds D_stem the Mega-53 stem only. D0 keeps both channels.
+
+**Order.**
+1. 1c (the separator setting) runs first, on the 164 audit mixes' stored-setting separation. It is
+   separation only, about 30 min on MPS, with no training and no renders.
+2. Then the pilot build.
+3. Then the pilot training.
+
+1d stays optional and is not run.
+
+**Approvals (user, 2026-10-20).**
+- **Training time:** the pilot's training, about 2.4 h, is approved. Steps 3's D and D0 runs, 5–7.4 h,
+  each need a new yes.
+- **Disk:** for the pilot build only, the disk guard is lowered to 25 GB. Writers stop cleanly
+  below 26 GB, and the override is logged. The full build still needs at least 34 GB free and the
+  31 GB guard.
+
 ## Code (after review, before any compute)
 
 `learn/direct_stems.py`: `move` (1a and the audit cost; prints `GATE1 STEM` or `GATE1 MIX-ONLY`),
