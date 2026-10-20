@@ -292,7 +292,7 @@ was declared, what was measured, and the research behind it.
   repeated sections, not edits). All 17 stage F crops there are covered. Mega-53 on the real mix
   loses 0.62 dB SNR against the raw track (0.31 with a per-stem lag; single tracks are shifted, and
   some flipped, in the real mix). In SNR, mastering adds little. Zero renders.
-- [separation-finetune-plan.md](separation-finetune-plan.md): how to improve target-guitar
+- [separation-finetune-plan.md](separation-finetune-plan.md) → [Step 0 results](separation-step01-results.md): how to improve target-guitar
   separation. Zero-render ceilings first (the class ceiling and free test-time fixes), then an
   oracle class arm in arm A (about 7k renders) decides between fine-tuning Mega-53's class head
   and a conditioned one-guitar separator; MPS training needs the loss off the device. Training
