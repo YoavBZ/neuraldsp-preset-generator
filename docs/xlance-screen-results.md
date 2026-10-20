@@ -119,3 +119,81 @@ Band-weighted means; 90% band-clustered t intervals (5 df), with the band bootst
 A fresh-context auditor recomputed the deciding numbers from the per-clip files and checked the
 code: confirmed with corrections (run time, the denoise saving, one claim scoped to SNR), all
 applied.
+
+## Amendment 1, post-result second variant: gtr_mss alone (2026-10-21)
+
+Run under [amendment 1](xlance-screen-plan.md#amendment-1-gtr_mss-alone-on-the-audit-mixes-2026-10-21)
+and its review changes. These override the plan's line that X_g does not decide. X's verdict above
+(PASS, OVER BUDGET) is unchanged.
+- **Compute:** 164 `gtr_mss` separations of the audit mixes, CPU, 2 threads, nice 10. Mega-53 fast
+  was re-timed on the same 10 clips, interleaved clip by clip in the same process, after one
+  untimed warm-up of each. **Renders: 0.**
+- **Checks:** every re-timed Mega-53 stem matched gate 1's at ≥ 321 dB, and every X_g stem was
+  within ±3 samples. Data: `report-a1.json`, `audit-per-clip-a1.json`, `time-mega53-a1.json`,
+  `xlance-g-log.json`.
+
+### Verdict: X_g passes the CPU legs, PENDING MPS TIMING
+
+No failure lost more than 3 dB of SNR either way on the audit mixes. Stage F's failures, one on SNR (She's
+Gone) and three on mel LSD, are shared with X. Mega-53 stays the fallback.
+- **SNR:** X_g − M_f is **+0.14 dB [−0.11, +0.39]**, leave-one-band-out +0.07 to +0.20. The point
+  is ≥ 0, so the leg passes.
+- **Mel-range LSD:** **−2.30 dB [−3.00, −1.59]**. Lower in all 6 bands and in 137 of 164 clips;
+  leave-one-band-out −2.46 to −2.05. The leg passes.
+- **Cost:** 27.3 CPU s per clip against Mega-53's 27.1 in the same session: **1.01×** (wall 1.01×).
+  Against the stored 29.7 it is 0.92×. The leg passes.
+  - In the same session, X's first-run time is 1.94× Mega-53's.
+- **The build switches only after the MPS check.** X_g and Mega-53 must be timed on the same clips
+  on the MPS, with the same 1.5× limit, once the pilot training frees the GPU. Until then Mega-53
+  stays for the rest build.
+
+### Audit mixes (164, 6 bands; t intervals, 5 df)
+
+| Δ | X_g − M_f | X_g − X | Without MUSDB18, X_g − M_f |
+|---|---|---|---|
+| SNR | +0.14 [−0.11, +0.39] | +0.00 [−0.04, +0.04] | +0.19 [−0.11, +0.49] |
+| **mel LSD** | **−2.30 [−3.00, −1.59]** | −0.48 [−1.23, +0.27] | −2.46 [−3.26, −1.66] |
+| full LSD | −1.06 [−2.10, −0.02] | −0.54 [−1.46, +0.38] | −1.30 [−2.49, −0.12] |
+| brightness diff | +0.15 [−0.77, +1.08] | +2.02 [−1.75, +5.79] | +0.01 [−1.13, +1.15] |
+| SI-SDR | +0.27 [−0.58, +1.13] | +0.09 [−0.13, +0.31] | +0.42 [−0.62, +1.46] |
+
+- **X_g is at least as good as X on tone.** The X_g − X mel-range LSD interval is not entirely
+  above 0, so the rule picks X_g. Its point is in X_g's favour (bootstrap [−1.13, −0.00]).
+- **The denoise stage causes X's darkening on Death Of A Romantic.** By band, X_g − M_f brightness
+  is −1.1 to +1.8 dB, and on Death Of A Romantic it is −0.2 (X: −11.5). X_g's high-frequency error
+  is −2.87 dB median with SD 5.66 across clips. That is less darkening than Mega-53 (−4.66, SD 5.86),
+  and about as consistent.
+- **Without Cambridge sessions** (2 bands, points): SNR +0.50 and −0.09; mel LSD −1.82 and −2.47.
+
+### Failures (> 3 dB SNR or > 5 dB mel LSD, both ways)
+
+| Clips | X worse | Mega-53 worse than X | X_g worse | Mega-53 worse than X_g |
+|---|---|---|---|---|
+| Audit, SNR | 0 | 0 | 0 | 0 |
+| Audit, mel LSD | 8 | 16 | **2** (14960, 15270) | **15** |
+| Stage F, SNR | 1 (She's Gone) | 0 | 1 (She's Gone) | 0 |
+| Stage F, mel LSD | 3 | 0 | 3 | 0 |
+
+- **X's 8 audit mel-LSD failures:** 8680, 12870, 14960, 15270, 26860, 27360, 29670, 39470.
+- **Mega-53's 15 failures against X_g:** 1880, 2080, 3070, 8390, 12650, 20350, 22240, 25640, 26410,
+  29490, 30920, 32030, 32130, 33070, 36330.
+- **Stage F's mel-LSD failures, for both X and X_g:** She's Gone, and Colour Me Red ElecGtr02 and
+  ElecGtr03 (Diesel13).
+  - On the Colour Me Red parts, SNR ties (0.74 against 0.68, and 0.71 against 0.95), but mel LSD is
+    13.9 against 5.5 and 12.7 against 6.7.
+  - So X-LANCE's song-level failures on real stage F mixes are not removed by dropping `denoise`.
+    Stage F decides nothing, but this is why Mega-53 stays the fallback.
+
+### What follows
+
+- **Next: the MPS timing,** once the pilot frees the GPU: X_g and Mega-53 fast on the same clip(s),
+  with the same 1.5× limit. If it passes, the rest build can use X_g, with Mega-53 as the fallback,
+  if the user agrees.
+  - The pilot's Mega-53 stems would then differ from the full set's. Re-separating the pilot's
+    examples is part of the switch cost.
+- **The stage F failures** (3 of 21 parts much worse on mel LSD, one on SNR) are worth a listen
+  before any switch.
+
+**Audit (amendment 1).** A fresh-context auditor recomputed every number from the per-clip files
+and checked the code (including the module purge between Mega-53 and X-LANCE): confirmed. Its one
+wording fix, that stage F's failure count is one on SNR but three on mel LSD, is applied.
