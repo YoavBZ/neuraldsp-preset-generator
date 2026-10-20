@@ -5,6 +5,15 @@ ledger entry `separation-finetune`. Estimates with intervals; the decisions belo
 before results exist. One zero-data probe (MPS, below) ran while drafting. One independent review
 (go with changes; all required changes applied, [below](#review)).
 
+> **Status (2026-10-20): Step 0 done; Step 1 stopped; Steps 2–3 retired.** The user decided not to
+> train any separator (too specific, needs research they want to avoid) and not to rent machines.
+> Step 1 (YG) existed only to choose a training route, so it was stopped after 2,666 recorded
+> renders with no YG − M reading. Steps 2–3 (the class fine-tune) are retired, and so are route 6
+> (a fine-tune on synthetic multi-guitar mixes) and solo-region adaptation from the
+> [single-guitar research](research/single-guitar-separation-2026-10.md). Existing checkpoints, DSP
+> splitters and Moises (in development) remain allowed. Results:
+> [separation-step01-results.md](separation-step01-results.md).
+
 ## The short version
 
 - **Why now.** Perfect separation is worth −0.066 [−0.090, −0.042] to arm A over htdemucs on stage
