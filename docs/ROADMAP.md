@@ -119,7 +119,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      separates the electric guitar from a (likely) acoustic one. Both separators sometimes include
      another electric guitar ([stereo and mix check](stereo-and-mix-check-results.md)).
      **Mega-53 is now the ML default separator** (htdemucs stays selectable), and unlicensed
-     open-source weights are allowed (the user, 2026-10-19; widened on 2026-10-20 to anything unlicensed or non-commercial, see ML plan §5).
+     open-source weights are allowed (the user, 2026-10-19; widened on 2026-10-20 to anything
+     unlicensed or non-commercial, see ML plan §5).
    - **Our mixes are not real mixes** ([stereo and mix check](stereo-and-mix-check-results.md)).
      The development "full mixes" are the raw tracks summed at unity, and no session has a mix or
      master. [Released mixes](mix-previews-results.md) of 10 songs and a remix of Signs (same
