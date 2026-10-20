@@ -296,7 +296,8 @@ was declared, what was measured, and the research behind it.
   separation. Zero-render ceilings first (the class ceiling and free test-time fixes), then an
   oracle class arm in arm A (about 7k renders) decides between fine-tuning Mega-53's class head
   and a conditioned one-guitar separator; MPS training needs the loss off the device. Training
-  cancelled 2026-10-20 (user): only Step 0 and Step 3 for a Step 0 fix remain open.
+  cancelled 2026-10-20 (user): only Step 0, Step 3 for a Step 0 fix, released checkpoints and DSP
+  splits remain open.
 - [rebuild-gap-plan.md](rebuild-gap-plan.md) → [results](rebuild-gap-results.md): where C′'s
   rebuild loses ranking with a perfect stem. A structured short-time magnitude error, mostly above
   2 kHz; phase and rotation are minor. A fixed EQ (`dep_eq`, +0.133 [−0.009, +0.276]) and a
