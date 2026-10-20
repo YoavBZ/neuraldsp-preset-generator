@@ -623,8 +623,9 @@ def cap_problem(spent_, planned, cap):
     return None if spent_ + planned <= cap else f"{spent_} spent + {planned} planned exceeds the hard cap {cap}"
 
 
-def disk_ok(planned):
-    return LO.disk_ok(LO.disk_free_gb(), planned)
+def disk_ok(planned, guard=None):
+    """Room for `planned` renders above the guard (LO.DISK_GUARD_GB, 31 GB, unless a caller passes one)."""
+    return LO.disk_ok(LO.disk_free_gb(), planned, guard=LO.DISK_GUARD_GB if guard is None else guard)
 
 
 # --- audio ------------------------------------------------------------------------------------------

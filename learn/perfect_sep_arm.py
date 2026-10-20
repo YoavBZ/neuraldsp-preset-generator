@@ -10,12 +10,19 @@ Unchanged from H: the 52-render search (seed 20261013), shrink 0.5, the fallback
 (held half, true DI against `reference.wav`). Both arms score the search at the judge's lag
 (`part["judge_lag"]`, amendment 2's convention); `check` measures what that costs.
 
-    $TORCH_PY -m learn.perfect_sep_arm rebuild                                # C′ on reference.wav, 21 parts
+    $TORCH_PY -m learn.perfect_sep_arm rebuild [--arms YG]                    # C′ on reference.wav (or G), 21 parts
     .venv/bin/python -m learn.perfect_sep_arm check                           # zero renders
     OMP_NUM_THREADS=1 .venv/bin/python -m learn.perfect_sep_arm search --arms YT[,ZT] --shard i/3
     .venv/bin/python -m learn.perfect_sep_arm report
 
 TORCH_PY is ~/ndsp-presets/tools/demucs-venv/bin/python.
+
+YG (docs/separation-finetune-plan.md, Step 1) is YT with the class-oracle stem G in place of the
+amp track: the sum of every electric-guitar track in the part's context
+(`learn.separation_ceiling`, stored crops), in both places a product uses the stem. Its rebuild
+is C′'s rebuild of G, with 1b's gates. It reads YG − M (decides the class fine-tune), YT − YG
+(prices route B) and the share (YG − M) / (YT − M), on the directions where S, H, M, YT and YG
+all score.
 """
 
 import argparse
@@ -28,10 +35,12 @@ from learn import knob_ceiling as K
 from learn import oracle_di_arm as O
 
 OUT = A.OUT / "F-perfect-sep"
-ARMS = ("YT", "ZT")
+ARMS = ("YT", "ZT", "YG")
 REBUILT = A.fdir("rebuilt", "ref")
+REBUILT_G = A.fdir("rebuilt", "class-oracle")
+G_CROPS = K.HOME / "learn/separation-finetune/G/crop"
 LAG_TOL = 3                                      # samples: the rebuild against its source and H's rebuild
-CAP = {"YT": 7_100, "ZT": 7_100}
+CAP = {"YT": 7_100, "ZT": 7_100, "YG": 7_100}
 K_S_CEILING = O.K_S_CEILING                      # −0.293, stage D's parts (a different setting)
 RECORD_MATCH_C = -0.45                           # record-match check 1's ceiling C − S, 5 parts (context)
 LAG_PART = "cambridge-wickerman-elecgtr7"        # judge lag +329: the lag check's largest shift
@@ -42,6 +51,10 @@ CONTRASTS = {"YT_minus_S": ("YT", "S"), "YT_minus_H": ("YT", "H"), "YT_minus_XO"
 CONTRASTS_ZT = {"ZT_minus_S": ("ZT", "S"), "ZT_minus_YT": ("ZT", "YT"), "ZT_minus_XO": ("ZT", "XO"),
                 "ZT_unshrunk_minus_ZT": ("ZT_unshrunk", "ZT")}
 SHARE_ARMS = ("H", "XO", "YT")
+CONTRASTS_YG = {"YG_minus_M": ("YG", "M"), "YT_minus_YG": ("YT", "YG"), "YG_minus_H": ("YG", "H"),
+                "YG_minus_S": ("YG", "S"), "YT_minus_M": ("YT", "M"), "YG_unshrunk_minus_YG": ("YG_unshrunk", "YG")}
+YG_FIXED = ("S", "H", "M", "YT", "YG")                # Step 1's fixed direction set
+YG_STEP2_POINT = -0.032                               # Step 1: YG − M at or below this, upper bound below 0
 
 
 def result_path(arm, slug, amp, search):
@@ -75,10 +88,20 @@ def reference(slug):
     return CR.mono(A.f_part(slug)["crop"] / "reference.wav")
 
 
-def search_inputs(arm, ctx, slug):
-    """-> (reference, search DI) for an arm: YT the rebuild of the amp track, ZT the true DI."""
+def g_crop(slug):
+    """The class-oracle stem G's crop (`learn.separation_ceiling measure`)."""
     import numpy as np
 
+    return np.load(G_CROPS / f"{slug}.npy").astype(np.float64)
+
+
+def search_inputs(arm, ctx, slug):
+    """-> (reference, search DI) for an arm: YT the rebuild of the amp track, ZT the true DI, YG the
+    class-oracle stem G and its rebuild."""
+    import numpy as np
+
+    if arm == "YG":
+        return g_crop(slug), np.load(REBUILT_G / f"{slug}.npy")
     if arm == "YT":
         return reference(slug), np.load(REBUILT / f"{slug}.npy")
     if arm == "ZT":
@@ -86,13 +109,14 @@ def search_inputs(arm, ctx, slug):
     raise ValueError(arm)
 
 
-def rebuild_problems(log, slugs, h_lag, stem_lag, h_log):
+def rebuild_problems(log, slugs, h_lag, stem_lag, h_log, src_lag=None):
     """{slug: [why]}, 1b's gates (amendment 2a) on stage F: the level (−22.9 ± 0.05 LUFS) and the
     alignment with H's stem rebuild, GCC within ±3 samples. Where that GCC is not usable (a
     bleed-heavy stem), the alignment is checked through the chain instead: the rebuild's lag on
     reference.wav must equal H's rebuild's lag on its stem plus the stem's lag on reference.wav
     (amendment 2's check), within ±3. The rebuild's GCC on its own source is a diagnostic only: it
-    reads 0 or about −52 by part, as 1b's and 1c's did."""
+    reads 0 or about −52 by part, as 1b's and 1c's did. src_lag (YG): the source's own lag on
+    reference.wav, added to the chain (0 for YT, whose source is reference.wav)."""
     out = {}
     for s in slugs:
         r, p = log.get(s), []
@@ -104,7 +128,8 @@ def rebuild_problems(log, slugs, h_lag, stem_lag, h_log):
         if abs(h_lag.get(s, 99)) > LAG_TOL:
             chain = None
             if s in stem_lag and s in h_log:
-                chain = r.get("gcc_vs_source", 99) - (h_log[s].get("gcc_vs_source", 99) + stem_lag[s])
+                chain = (r.get("gcc_vs_source", 99) + (src_lag or {}).get(s, 0)
+                         - (h_log[s].get("gcc_vs_source", 99) + stem_lag[s]))
             if chain is None or abs(chain) > LAG_TOL:
                 p.append(f"GCC against H's rebuild {h_lag.get(s)}, through the chain {chain}")
         if p:
@@ -124,9 +149,10 @@ def relevel(y, target=A.LUFS_TARGET, tol=A.LUFS_TOL, tries=3):
     return y, n
 
 
-def cmd_rebuild():
-    """C′'s rebuild of each pool part's reference.wav (`arm_a_mega53.rebuild_parts`, the stage-F
-    rebuild recipe: the fold's C′, the leak assertion, re-EQ, −22.9 LUFS)."""
+def cmd_rebuild(arm="YT"):
+    """C′'s rebuild of each pool part's reference.wav (YT) or class-oracle stem G (YG)
+    (`arm_a_mega53.rebuild_parts`, the stage-F rebuild recipe: the fold's C′, the leak assertion,
+    re-EQ, −22.9 LUFS)."""
     import numpy as np
 
     from learn import rank_margin as RM
@@ -136,27 +162,29 @@ def cmd_rebuild():
     slugs = A.pool_slugs()
     from learn import local_objective as LO
 
-    log = A.rebuild_parts(slugs, A.f_part, reference, REBUILT)
+    out_dir, source = (REBUILT_G, g_crop) if arm == "YG" else (REBUILT, reference)
+    src_lag = {s: int(RM.gcc_lag(g_crop(s), reference(s))) for s in slugs} if arm == "YG" else None
+    log = A.rebuild_parts(slugs, A.f_part, source, out_dir)
     h_lag = {}
     for s in slugs:
         if s not in log:
             continue
-        y, n_ = relevel(np.load(REBUILT / f"{s}.npy"))
+        y, n_ = relevel(np.load(out_dir / f"{s}.npy"))
         if n_:
-            np.save(REBUILT / f"{s}.npy", y)
+            np.save(out_dir / f"{s}.npy", y)
             log[s].update(lufs=LO.lufs(y), relevel_passes=log[s].get("relevel_passes", 0) + n_)
-            A._save(REBUILT / "rebuild-log.json", log)
+            A._save(out_dir / "rebuild-log.json", log)
         h = np.load(A.rebuilt_path("F", "H", s))
         n = min(len(y), len(h))
         h_lag[s] = int(RM.gcc_lag(y[:n], h[:n]))
     stem_lag = (A._load(O.OUT / "check.json") or {}).get("stem_vs_reference_gcc") or {}
     h_log = A._load(A.fdir("rebuilt", "htdemucs", "rebuild-log.json")) or {}
-    bad = rebuild_problems(log, slugs, h_lag, stem_lag, h_log)
-    A._save(REBUILT / "check.json", {"ok": not bad, "problems": bad, "gcc_vs_h_rebuild": h_lag,
+    bad = rebuild_problems(log, slugs, h_lag, stem_lag, h_log, src_lag)
+    A._save(out_dir / "check.json", {"ok": not bad, "problems": bad, "gcc_vs_h_rebuild": h_lag, "source_vs_reference_gcc": src_lag,
                                      "gcc_vs_reference": {s: log[s].get("gcc_vs_source") for s in log}})
     if bad:
-        raise SystemExit(f"reference rebuilds fail their checks: {bad}")
-    print(f"reference rebuilds: {len(log)} pass")
+        raise SystemExit(f"{arm} rebuilds fail their checks: {bad}")
+    print(f"{arm} rebuilds: {len(log)} pass")
 
 
 def cmd_check():
@@ -199,12 +227,23 @@ def cmd_check():
         raise SystemExit(1)
 
 
-def cmd_search(arms, shard):
+MIN_FREE_GB_FLOOR = 10.0                                              # the override can lower the guard, not remove it
+
+
+def cmd_search(arms, shard, min_free_gb=None):
     """One process per shard of (part, amp) groups, arm by arm within a group: a discarded priming
     render (the arm's search DI at S) after the process start and every DI or amp change, then the
-    group's directions. Resumable; stops on A's stop files, the caps, the disk and swap guards."""
+    group's directions. Resumable; stops on A's stop files, the caps, the disk and swap guards.
+    `min_free_gb` overrides the disk guard for this run only (default: LO.DISK_GUARD_GB, 31 GB)."""
+    guard_gb = A.LO.DISK_GUARD_GB if min_free_gb is None else float(min_free_gb)
+    if guard_gb < MIN_FREE_GB_FLOOR:
+        raise SystemExit(f"--min-free-gb {guard_gb:g} is below the {MIN_FREE_GB_FLOOR:g} GB floor")
+    if guard_gb != A.LO.DISK_GUARD_GB:
+        print(f"disk guard overridden for this run: {guard_gb:g} GB (default {A.LO.DISK_GUARD_GB:g} GB)", flush=True)
     if not (A._load(OUT / "check.json") or {}).get("ok"):
         raise SystemExit("run `check` first")
+    if "YG" in arms and not (A._load(REBUILT_G / "check.json") or {}).get("ok"):
+        raise SystemExit("run `rebuild --arms YG` first (its checks must pass)")
     A.require_heldout_ok()
     dirs = A.stage_dirs("F")
     if len(dirs) != A.N_DIRS["F"]:
@@ -234,8 +273,8 @@ def cmd_search(arms, shard):
                 why = A.cap_problem(spent(arm), len(todo) * A.PER_DIRECTION + 1, CAP[arm])
                 if why:
                     raise SystemExit(f"{arm}: {why}")
-                if not A.disk_ok(len(todo) + 1):
-                    raise SystemExit("free disk below the 31 GB guard (resumable)")
+                if not A.disk_ok(len(todo) + 1, guard=guard_gb):
+                    raise SystemExit(f"free disk below the {guard_gb:g} GB guard (resumable)")
                 ctx = ctx or A.group_ctx(menu, ms, "F", slug, amp)
                 ref, rb = search_inputs(arm, ctx, slug)
                 n0 = rr.count
@@ -299,6 +338,40 @@ def shares(units, rep, zt):
     return out
 
 
+def contrast_yg(units, a, b, filters):
+    """a − b on Step 1's fixed set: the directions where S, H, M, YT and YG all score."""
+    kept, dropped = A.units_for(units, tuple(dict.fromkeys((*YG_FIXED, a, b))))
+    out = {"directions": len(kept), "dropped": [list(d) for d in dropped], "rows": {}}
+    for row in ROWS:
+        sel = [u for u in kept if filters[row](u)]
+        out["rows"][row] = A.L.effects(sel, a, b) if sel else None
+    return out
+
+
+def yg_reading(c):
+    """Step 1's declared reading of YG − M (all row, band-weighted, 90% band-clustered t)."""
+    e = O._all(c, "all") or {}
+    m, hi = e.get("band_weighted_mean"), e.get("hi90")
+    if m is None or hi is None:
+        return "incomplete"
+    return "step_2" if m <= YG_STEP2_POINT and hi < 0 else "no_fine_tune"
+
+
+def report_yg(units, filters):
+    from learn import local_objective_1c as C
+
+    out = {"contrasts": {k: contrast_yg(units, a, b, filters) for k, (a, b) in CONTRASTS_YG.items()}}
+    kept, _ = A.units_for(units, YG_FIXED)
+    out["share_YG_minus_M_over_YT_minus_M"] = C.share(A.log_rows(kept, "YG", "M"), A.log_rows(kept, "YT", "M"))
+    out["decision_A1"] = yg_reading(out["contrasts"]["YG_minus_M"])
+    ty = O._all(out["contrasts"]["YT_minus_YG"], "all") or {}
+    out["route_B_to_user"] = bool(ty.get("band_weighted_mean") is not None and ty["band_weighted_mean"] <= YG_STEP2_POINT
+                                  and ty.get("hi90") is not None and ty["hi90"] < 0)
+    out["fallbacks"] = sum(1 for u in units if (u["rec"].get("YG") or {}).get("fallback"))
+    out["activity_fallbacks"] = sum((u["rec"].get("YG") or {}).get("activity_fallback", 0) for u in units)
+    return out
+
+
 def report_from_units(units, bt, snr=None):
     filters = {r: A.row_filter(r, "F", bt, snr or {}) for r in ROWS if r != "no_lag_part"}
     filters["no_lag_part"] = lambda u: u["slug"] != LAG_PART
@@ -308,7 +381,9 @@ def report_from_units(units, bt, snr=None):
     for name, (a, b) in {**CONTRASTS, **(CONTRASTS_ZT if zt else {})}.items():
         rep["contrasts"][name] = contrast(units, a, b, filters, zt)
     rep["share_of_ceiling"] = shares(units, rep, zt)
-    for arm in ARMS if zt else ("YT",):
+    if has_arm(units, "YG"):
+        rep["YG"] = report_yg(units, filters)
+    for arm in [a for a in (ARMS if zt else ("YT",)) if a != "YG" or "YG" in rep]:   # no partial-YG figures
         sh = [abs(math.log(at / c["value"])) for u in units for c in [(u["rec"].get(arm) or {}).get("s_lag_check")]
               if c for at in c["at"].values() if A._num(at) and A._num(c["value"]) and at > 0 and c["value"] > 0]
         rep[f"{arm}_s_lag_shift"] = ({"n": len(sh), "median_abs_log": sorted(sh)[len(sh) // 2], "max_abs_log": max(sh)}
@@ -330,6 +405,12 @@ def cmd_report():
         print(f"  {name:22s}", "  ".join(f"{r}: {O.fmt(O._all(c, r))}" for r in ROWS))
     print("  shares:", json.dumps(rep["share_of_ceiling"], default=str))
     print("  fallbacks:", {k: v for k, v in rep.items() if "fallback" in k})
+    if "YG" in rep:
+        for name, c in rep["YG"]["contrasts"].items():
+            print(f"  {name:22s}", "  ".join(f"{r}: {O.fmt(O._all(c, r))}" for r in ROWS))
+        print("  share (YG − M)/(YT − M):", json.dumps(rep["YG"]["share_YG_minus_M_over_YT_minus_M"], default=str))
+        print("  decision A1:", rep["YG"]["decision_A1"], " route B to the user:", rep["YG"]["route_B_to_user"],
+              " YG fallbacks:", rep["YG"]["fallbacks"], rep["YG"]["activity_fallbacks"])
 
 
 def parse_shard(s):
@@ -344,14 +425,20 @@ def main(argv=None):
     ap.add_argument("cmd", choices=("rebuild", "check", "search", "report"))
     ap.add_argument("--arms", default="YT")
     ap.add_argument("--shard", type=parse_shard, default=(0, 1))
+    ap.add_argument("--min-free-gb", type=float, default=None,
+                    help="search only: override the 31 GB free-disk guard for this run (logged)")
     a = ap.parse_args(argv)
     arms = tuple(x for x in a.arms.split(",") if x)
     if any(x not in ARMS for x in arms):
         raise SystemExit(f"arms must be among {ARMS}")
     if a.cmd == "search":
-        cmd_search(arms, a.shard)
+        cmd_search(arms, a.shard, a.min_free_gb)
+    elif a.cmd == "rebuild":
+        if len(arms) != 1 or arms[0] not in ("YT", "YG"):
+            raise SystemExit("rebuild takes one arm: YT or YG")
+        cmd_rebuild(arms[0])
     else:
-        {"rebuild": cmd_rebuild, "check": cmd_check, "report": cmd_report}[a.cmd]()
+        {"check": cmd_check, "report": cmd_report}[a.cmd]()
 
 
 if __name__ == "__main__":
