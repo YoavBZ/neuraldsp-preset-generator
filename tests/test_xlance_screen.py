@@ -76,3 +76,29 @@ def test_lobo():
     pairs = [("a", 1, 1.0), ("b", 2, 2.0), ("c", 3, 3.0)]
     assert X.lobo_min(pairs) == {"min": 1.5, "max": 2.5}
     assert X.lobo_min(pairs[:2]) is None
+
+
+def test_failures_both_ways():
+    m = lambda s, l: {"snr_db": s, "mel_lsd_db": l}                     # noqa: E731
+    per = {"a": {"M_f": m(5, 8), "X": m(0.4, 15)},                       # X fails both ways
+           "b": {"M_f": m(1, 9), "X": m(4.5, 3)},                        # M_f fails both ways
+           "c": {"M_f": m(2, 8), "X": m(1, 10)}}                         # within the margins
+    f = X.failures(per, "X")
+    assert f["row_snr_worse"] == ["a"] and f["row_lsd_worse"] == ["a"]
+    assert f["base_snr_worse"] == ["b"] and f["base_lsd_worse"] == ["b"]
+    assert f["n_row_snr_worse"] == 1
+
+
+def test_decide_a1():
+    assert X.decide_a1(True, True, True, False, -0.5).startswith("X_g PASSES")
+    assert "PENDING MPS TIMING" in X.decide_a1(True, True, True, False, None)
+    assert X.decide_a1(True, True, True, True, 0.2).startswith("X PASSES")      # X clearly better on tone
+    assert X.decide_a1(True, True, True, True, -0.1).startswith("X_g PASSES")
+    assert X.decide_a1(True, False, True, False, None) == "X_g: PASS, OVER BUDGET; KEEP MEGA-53"
+    assert X.decide_a1(False, True, True, False, None) == "KEEP MEGA-53"
+
+
+def test_quality_ok():
+    assert X.quality_ok({"mean": 0.0, "hi90": 0.3}, {"hi90": -0.1})
+    assert not X.quality_ok({"mean": -0.1, "hi90": 0.3}, {"hi90": -0.1})
+    assert not X.quality_ok({"mean": 0.2, "hi90": 0.5}, {"hi90": 0.0})

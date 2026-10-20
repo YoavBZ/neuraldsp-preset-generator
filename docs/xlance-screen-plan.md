@@ -115,3 +115,22 @@ dropping `denoise` makes the cost fit; on stage F the two variants tie (SNR with
   pilot training frees the GPU; it is busy now.
 - **What follows:** per the rule, Mega-53 stays for the rest build unless X_g passes or the user
   accepts X's cost. The pilot is unchanged.
+
+### Amendment 1, review changes (2026-10-21, before any X_g audit separation)
+
+- **Label.** This overrides the plan's line that X_g does not decide. X's result (PASS, OVER
+  BUDGET) stands untouched; X_g is reported as "Amendment 1, post-result second variant", here, in
+  the results and in the ledger.
+- **Timing.** Mega-53 fast is re-timed on the same 10 clips in the same session, interleaved with
+  X_g (Mega-53, then X_g, clip by clip; one untimed warm-up of each first). The cost leg uses that
+  same-session ratio; the ratio against the stored 29.7 CPU s is reported beside it. Each re-timed
+  Mega-53 stem must match gate 1's at ≥ 100 dB, or the run stops.
+- **Failures (not deciding, but stated in the verdict line).** Per clip, against each set's own
+  reference, both directions: the variant more than 3 dB SNR below Mega-53, and Mega-53 more than
+  3 dB below the variant; and mel-range LSD more than 5 dB worse, both ways. For X and X_g, on the
+  audit mixes and on stage F, with the clips listed. Any switch keeps Mega-53 as the fallback.
+- **X against X_g.** The paired X_g − X difference is reported with its interval. If both pass on
+  quality and cost, X_g is chosen unless X_g − X mel-range LSD has an interval entirely above 0.
+- **MPS gate.** No switch until the MPS time is measured for the passing variant and Mega-53 on
+  the same clip(s), with the same 1.5× ratio, after the pilot training frees the GPU. If the CPU
+  legs pass, the verdict reads "pending MPS timing".

@@ -545,11 +545,185 @@ def SC_boot(pairs):
     return SMC.band_boot(pairs, n=N_BOOT, seed=BOOT_SEED)
 
 
+# --- Amendment 1: gtr_mss alone (X_g) on the audit mixes ----------------------------------------------
+
+SNR_FAIL_DB, LSD_FAIL_DB = 3.0, 5.0
+STORED_MEGA_CPU_S = 29.7
+
+
+def failures(per, row, base="M_f"):
+    """Clips where `row` or `base` is clearly worse than the other. per: {key: {row: measures}}."""
+    out = {"row_snr_worse": [], "base_snr_worse": [], "row_lsd_worse": [], "base_lsd_worse": []}
+    for k, p in per.items():
+        ds = p[row]["snr_db"] - p[base]["snr_db"]
+        dl = p[row]["mel_lsd_db"] - p[base]["mel_lsd_db"]
+        if ds < -SNR_FAIL_DB:
+            out["row_snr_worse"].append(k)
+        if ds > SNR_FAIL_DB:
+            out["base_snr_worse"].append(k)
+        if dl > LSD_FAIL_DB:
+            out["row_lsd_worse"].append(k)
+        if dl < -LSD_FAIL_DB:
+            out["base_lsd_worse"].append(k)
+    return {**{f"{n}": sorted(v, key=str) for n, v in out.items()}, **{f"n_{n}": len(v) for n, v in out.items()}}
+
+
+def decide_a1(xg_q, xg_cost_ok, x_q, x_cost_ok, xg_minus_x_lsd_lo):
+    """Amendment 1's verdict on CPU legs. *_q: quality legs pass; xg_minus_x_lsd_lo: the lower bound of
+    X_g - X mel-range LSD (X clearly better on tone if > 0)."""
+    xg, x = xg_q and xg_cost_ok, x_q and x_cost_ok
+    if xg and x:
+        pick = "X" if xg_minus_x_lsd_lo is not None and xg_minus_x_lsd_lo > 0 else "X_g"
+    elif xg:
+        pick = "X_g"
+    elif x:
+        pick = "X"
+    else:
+        if xg_q and not xg_cost_ok:
+            return "X_g: PASS, OVER BUDGET; KEEP MEGA-53"
+        return "KEEP MEGA-53"
+    return f"{pick} PASSES THE CPU LEGS: PENDING MPS TIMING (Mega-53 stays the fallback)"
+
+
+def quality_ok(snr_t, lsd_t):
+    return snr_t["mean"] >= 0 and snr_t["hi90"] is not None and snr_t["hi90"] >= 0 and \
+        lsd_t["hi90"] is not None and lsd_t["hi90"] < 0
+
+
+def _purge(names=("models", "inference")):
+    for k in list(sys.modules):
+        if k in names or any(k.startswith(n + ".") for n in names):
+            del sys.modules[k]
+
+
+def cmd_xlance_g():
+    import numpy as np
+
+    from learn import rank_margin as RM
+
+    disk_check()
+    if not (_load(OUT / "repro.json") or {}).get("ok"):
+        raise SystemExit("run repro first")
+    _, _, t = picks()
+    rows = {r["i"]: r for r in audit_rows()}
+    mega = mega53(THREADS)
+    warm_x = audit_mix_ref(rows[t[0]])[0]
+    mega(warm_x)                                     # untimed warm-up; caches MSST's utils
+    _purge()                                         # MSST's `models`/`inference` out of the way
+    xg = XLance(["gtr_mss"])
+    xg(warm_x)                                       # untimed warm-up
+    log_p = OUT / "xlance-g-log.json"
+    log = _load(log_p) or {}
+
+    def save(key, s, y, wall, cpu):
+        lag = RM.gcc_lag(s, y)
+        log[f"X_g/audit/{key}"] = {"wall_s": round(wall, 2), "cpu_s": round(cpu, 2), "lag": lag}
+        _save(log_p, log)
+        if len(s) != len(y) or not np.isfinite(s).all() or abs(lag) > LAG_TOL:
+            raise SystemExit(f"X_g audit {key}: bad stem or lag {lag}; stopping")
+        p = x_path("X_g", "audit", key)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        np.save(p.with_suffix(".tmp.npy"), s.astype(np.float32))
+        p.with_suffix(".tmp.npy").replace(p)
+        print(f"X_g audit {key}: {wall:.1f} s wall, {cpu:.1f} s CPU, lag {lag}", flush=True)
+
+    tm = {"threads": THREADS, "interleaved": True, "clips": {}}
+    for i in t:                                       # Mega-53, then X_g, clip by clip
+        x, y = audit_mix_ref(rows[i])
+        s, wall, cpu = timed(mega, x)
+        db = repro_db(m_stem("audit", i), s)
+        tm["clips"][str(i)] = {"wall_s": round(wall, 2), "cpu_s": round(cpu, 2), "db_vs_stored": round(db, 1)}
+        _save(OUT / "time-mega53-a1.json", tm)
+        print(f"mega53 {i}: {wall:.1f} s wall, {cpu:.1f} s CPU, {db:.0f} dB vs stored", flush=True)
+        if db < REPRO_DB:
+            raise SystemExit(f"Mega-53 {i}: {db:.1f} dB against gate 1's stem; stopping")
+        s, wall, cpu = timed(xg, x)
+        save(i, s, y, wall, cpu)
+    for n, i in enumerate(sorted(k for k in rows if k not in t)):
+        if n % 10 == 0:
+            disk_check()
+        if x_path("X_g", "audit", i).exists():
+            continue
+        x, y = audit_mix_ref(rows[i])
+        s, wall, cpu = timed(xg, x)
+        save(i, s, y, wall, cpu)
+    print("XLANCE-G DONE")
+
+
+def cmd_report_a1():
+    import numpy as np
+
+    rows = {r["i"]: r for r in audit_rows()}
+    old = {int(k): v for k, v in json.loads((OUT / "audit-per-clip.json").read_text()).items()}
+    per = {}
+    errs = []
+    for i, r in rows.items():
+        x, y = audit_mix_ref(r)
+        g = np.load(x_path("X_g", "audit", i)).astype(np.float64)
+        per[i] = {**old[i], "X_g": measures(g, y)}
+        errs.append(spectral_error(g, y))
+    _save(OUT / "audit-per-clip-a1.json", {str(k): v for k, v in per.items()})
+    MEAS = ("snr_db", "mel_lsd_db", "lsd_db", "bright_diff_db", "si_sdr_db")
+
+    def deltas(a, b, keep=lambda p: True):
+        out = {}
+        for m in MEAS:
+            pairs = [(p["band"], i, p[a][m] - p[b][m]) for i, p in per.items() if keep(p)]
+            out[m] = {**readout(pairs, True), "lobo": lobo_min(pairs)}
+        return out
+
+    rep = {"label": "Amendment 1, post-result second variant", "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+           "renders": 0, "audit": {}}
+    a = rep["audit"]
+    a["levels_X_g"] = {m: readout([(p["band"], i, p["X_g"][m]) for i, p in per.items()], True)["t"]["mean"] for m in MEAS}
+    a["Xg_minus_Mf"] = deltas("X_g", "M_f")
+    a["Xg_minus_X"] = deltas("X_g", "X")
+    a["X_minus_Mf"] = deltas("X", "M_f")
+    a["Xg_minus_Mf_without_musdb"] = deltas("X_g", "M_f", lambda p: p["band"] not in MUSDB_AUDIT_BANDS)
+    a["Xg_minus_Mf_without_cambridge_points"] = {
+        m: {b: round(float(np.mean([p["X_g"][m] - p["M_f"][m] for p in per.values() if p["band"] == b])), 3)
+            for b in sorted({p["band"] for p in per.values() if not p["section"].startswith(CAMBRIDGE)})} for m in MEAS}
+    a["spread_X_g"] = spread(errs, band_centres())
+    # failures, both variants, both sets
+    fper = json.loads((OUT / "stagef-per-part.json").read_text())
+    rep["failures"] = {"audit": {v: failures(per, v) for v in ("X", "X_g")},
+                       "stagef": {v: failures(fper, v) for v in ("X", "X_g")}}
+    # cost: same-session interleaved Mega-53 against X_g, the same 10 clips
+    tm = _load(OUT / "time-mega53-a1.json")
+    lg = _load(OUT / "xlance-g-log.json")
+    lx = _load(OUT / "xlance-log.json")
+    ids = list(tm["clips"])
+    cm = float(np.mean([tm["clips"][k]["cpu_s"] for k in ids]))
+    cg = float(np.mean([lg[f"X_g/audit/{k}"]["cpu_s"] for k in ids]))
+    cx = float(np.mean([lx[f"X/audit/{k}"]["cpu_s"] for k in ids]))
+    wm = float(np.mean([tm["clips"][k]["wall_s"] for k in ids]))
+    wg = float(np.mean([lg[f"X_g/audit/{k}"]["wall_s"] for k in ids]))
+    rep["cost"] = {"clips": ids, "mega53_cpu_s_same_session": round(cm, 1), "x_g_cpu_s": round(cg, 1),
+                   "ratio_same_session": round(cg / cm, 2), "ratio_vs_stored_29_7": round(cg / STORED_MEGA_CPU_S, 2),
+                   "x_cpu_s_first_run": round(cx, 1), "x_ratio_vs_same_session_mega": round(cx / cm, 2),
+                   "mega53_wall_s": round(wm, 1), "x_g_wall_s": round(wg, 1), "ratio_wall": round(wg / wm, 2),
+                   "limit": COST_RATIO, "lags_max_abs": max(abs(v["lag"]) for v in lg.values())}
+    t = lambda d, m: d[m]["t"]                                                                # noqa: E731
+    xg_q = quality_ok(t(a["Xg_minus_Mf"], "snr_db"), t(a["Xg_minus_Mf"], "mel_lsd_db"))
+    x_q = quality_ok(t(a["X_minus_Mf"], "snr_db"), t(a["X_minus_Mf"], "mel_lsd_db"))
+    rep["legs"] = {"X_g_quality": xg_q, "X_g_cost": cg / cm <= COST_RATIO, "X_quality": x_q,
+                   "X_cost_first_run": False}
+    rep["decision"] = decide_a1(xg_q, cg / cm <= COST_RATIO, x_q, False, t(a["Xg_minus_X"], "mel_lsd_db")["lo90"])
+    _save(OUT / "report-a1.json", rep)
+    s, l = t(a["Xg_minus_Mf"], "snr_db"), t(a["Xg_minus_Mf"], "mel_lsd_db")
+    fa = rep["failures"]["audit"]["X_g"]
+    print(f"audit X_g - M_f: SNR {s['mean']:+.3f} [{s['lo90']:+.3f}, {s['hi90']:+.3f}]; mel LSD {l['mean']:+.3f} "
+          f"[{l['lo90']:+.3f}, {l['hi90']:+.3f}]; cost x{rep['cost']['ratio_same_session']} same session; "
+          f"failures X_g/M_f SNR {fa['n_row_snr_worse']}/{fa['n_base_snr_worse']}")
+    print(f"AMENDMENT 1: {rep['decision']}")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=("repro", "time-mega", "xlance", "report"))
+    ap.add_argument("cmd", choices=("repro", "time-mega", "xlance", "report", "xlance-g", "report-a1"))
     a = ap.parse_args(argv)
-    {"repro": cmd_repro, "time-mega": cmd_time_mega, "xlance": cmd_xlance, "report": cmd_report}[a.cmd]()
+    {"repro": cmd_repro, "time-mega": cmd_time_mega, "xlance": cmd_xlance, "report": cmd_report,
+     "xlance-g": cmd_xlance_g, "report-a1": cmd_report_a1}[a.cmd]()
 
 
 if __name__ == "__main__":
