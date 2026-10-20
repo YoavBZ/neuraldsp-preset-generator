@@ -26,10 +26,11 @@ Development data only (stage F's 21 parts, 12 bands).
   other guitars are inside the class.
 - **No free test-time fix helps.** All four point estimates lower SNR against Mega-53 (T4's
   interval just reaches 0) and none survives Holm's correction.
-- **Step 1 was stopped after 2,666 renders by the user's decision not to train separators.** There
-  is no YG − M reading. The partial records are kept but are not to be analysed or quoted.
-- **Steps 2–3 do not run:** the fine-tune is cancelled and no Step 0 fix qualifies for Step 3.
-  See [the user's decision](#the-users-decision).
+- **Step 1 was stopped after 2,666 renders by the user's first decision (no separator training),
+  since revised the same day; it can resume on this Mac.** There is no YG − M reading yet. Whether
+  the partial records are reused or Step 1 restarts is the ML session's call, in a plan amendment.
+- **Steps 2–3:** open again under the revised rule (Step 2 only if Step 1 says so); no Step 0 fix
+  qualifies for Step 3. See [the user's decision](#the-users-decision).
 
 ## Step 0 (zero renders)
 
@@ -81,11 +82,12 @@ Step 1 ran arm A with the class-oracle stem G (arm YG) to decide between the cla
 separator told which guitar to extract. Its only purpose was that choice. After the user's
 decision, both options involve training a separator, so the step was moot and was stopped. It used
 2,666 recorded renders (48 of 126 directions). **There is no YG − M reading,** and the partial
-records must not be used for one.
+records must not be used for one (as decided then; see the revision note under
+[the user's decision](#the-users-decision)).
 
 The run used a disk guard of 25 GB instead of 31 GB (the user's approval, for this run only),
 through the new opt-in `--min-free-gb` flag. The default stays 31 GB. Free disk stayed at about
-30 GB.
+30 GB. A resumed run needs a fresh approval or the ~2 GB freed (see the revision note below).
 
 ## The user's decision
 

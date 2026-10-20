@@ -109,7 +109,7 @@ Two warnings apply to any pairs that turn up. First, run the project's waveform 
 1. Ask the ML session and the user to rule on sets 4–6 and Heather Jane.
 2. Run the local Cambridge listing.
 3. Pull any fresh pairs it finds.
-4. Buy one Weathervane month (user: no, 2026-10-20).
+4. ~~Buy one Weathervane month~~ (declined by the user, 2026-10-20).
 5. Only then decide between widening the scope and recording new material.
 
 ## Conclusion
