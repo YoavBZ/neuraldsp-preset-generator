@@ -387,7 +387,8 @@ DI_FILES_KEPT = 4
 def keep_recent_dis(files, current, keep=DI_FILES_KEPT):
     """Mark `current` most recently used in the renderer's {digest: path} map, then delete the
     least recently used files beyond `keep`. An evicted DI that comes back is written again by
-    `AudioUnitRenderer._di_file` with the same bytes under the same name."""
+    `AudioUnitRenderer._di_file` with the same samples under the same name (not the same bytes:
+    libsndfile's PEAK chunk carries the write time; nothing reads the raw bytes)."""
     digest = next(d for d, p in files.items() if p == current)
     files[digest] = files.pop(digest)
     while len(files) > keep:
