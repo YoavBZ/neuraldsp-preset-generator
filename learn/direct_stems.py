@@ -21,7 +21,8 @@ pilot (step 2), the full models (step 3) and the decision test on stage F (step 
     $MSST     -m learn.direct_stems parity --device cpu       # step 4's inputs path on 20 V_sep examples (renders)
     $TORCH_PY -m learn.direct_stems predict                   # step 4's answers (zero renders)
     OMP_NUM_THREADS=1 .venv/bin/python -m learn.direct_stems render --shard k/3   # 321 renders (cap 400)
-    .venv/bin/python -m learn.direct_stems report             # STEP4 CLOSER | NOT SHOWN | WORSE
+    .venv/bin/python -m learn.direct_stems report             # STEP4 CLOSER | NOT SHOWN | WORSE | INCOMPLETE
+    $TORCH_PY -m learn.direct_stems constant-check --pilot    # descriptive: pilot runs against the constant
 
 Outputs go to ~/ndsp-presets/learn/direct-stems/ (gate 1 under gate1/, 1c under sepcheck/, the
 build under build/, the pilot's runs under pilot/).
@@ -1751,6 +1752,31 @@ def xl_run_chunked(f, a, chunk=XL_CHUNK, overlap=XL_OVERLAP):
     return out[:, :n]
 
 
+def xl_unload(code, path=None, modules=None):
+    """Remove X-LANCE's code folder from sys.path and forget every module loaded from it (and its
+    top-level names `models`, `inference`, `utils`), so MSST's packages of the same names import
+    cleanly afterwards. The loaded model keeps its own references. -> the forgotten module names."""
+    path = sys.path if path is None else path
+    modules = sys.modules if modules is None else modules
+    while code in path:
+        path.remove(code)
+    root = os.path.realpath(code)
+    gone = []
+    for k in list(modules):
+        f = getattr(modules[k], "__file__", None) or ""
+        if f and os.path.realpath(f).startswith(root + os.sep):
+            del modules[k]
+            gone.append(k)
+    return sorted(gone)
+
+
+def require_amendment2(sep, what):
+    """xlance_g stems belong to amendment 2, a draft: refused until it is in force (the time-mps
+    check is exempt)."""
+    if sep == "xlance_g" and not AMENDMENT2_IN_FORCE:
+        raise SystemExit(f"{what} --sep xlance_g: amendment 2 is a draft, not in force")
+
+
 class XLanceG:
     """X-LANCE's `gtr_mss.pth` alone on mono 48-kHz audio, exactly as the X-LANCE screen's X_g: two
     equal channels at 44.1 kHz, crossfaded 10-s chunks, the mean of the output channels, back to
@@ -1768,9 +1794,10 @@ class XLanceG:
         torch.set_num_threads(threads)
         for k in [k for k in sys.modules if k in ("models", "inference") or k.startswith(("models.", "inference."))]:
             del sys.modules[k]                           # MSST's packages of the same names, if loaded
-        sys.path.insert(0, str(XL_ROOT / "code"))
+        code = str(XL_ROOT / "code")
+        sys.path.insert(0, code)
         cwd = os.getcwd()
-        os.chdir(XL_ROOT / "code")                       # its configs are read from ./configs
+        os.chdir(code)                                   # its configs are read from ./configs
         try:
             from inference import load_config_and_state_dict, load_generator
             cfg, sd = load_config_and_state_dict(str(XL_ROOT / w["path"]), "cpu")
@@ -1779,6 +1806,7 @@ class XLanceG:
             self.model = load_generator(cfg, sd, device="cpu")
         finally:
             os.chdir(cwd)
+            xl_unload(code)                              # MSST's `utils`, `models`, `inference` not shadowed
         if device == "mps":
             if not torch.backends.mps.is_available():
                 raise SystemExit("MPS is not available")
@@ -1834,12 +1862,23 @@ def cost_verdict(mega_s, xg_s, limit=XL_COST_LIMIT):
     return round(r, 3), r <= limit
 
 
+def training_procs(ps, own, is_training):
+    """PIDs of training processes (e.g. `-m learn.direct_stems train`) other than our own (read-only)."""
+    return [p for p, c in ps if p not in own and is_training(c)]
+
+
 def cmd_time_mps(args):
     """Wall seconds per 10-s clip of Mega-53 fast and X-LANCE gtr_mss on the same audit clips and device,
     interleaved clip by clip after one untimed warm-up of each; the ratio against the 1.5x limit.
     Each stem is also compared with its stored CPU stem (gate 1's; the X-LANCE screen's X_g)."""
     import numpy as np
 
+    from learn import ks_extend as X
+    from learn import local_objective_1c as C
+
+    busy = training_procs(X._ps(), {os.getpid(), os.getppid()}, C.is_training)
+    if busy:
+        raise SystemExit(f"a training process is running ({busy}): time-mps would share the device; wait")
     clips = list(XL_TIMING_CLIPS[:args.limit] if args.limit else XL_TIMING_CLIPS)
     if args.limit and not args.out:
         raise SystemExit("--limit is for smoke tests into a scratch --out only")
@@ -1880,6 +1919,7 @@ def stage_stem(args, ctx, items, root, guard):
     from learn import pretrain_set as PS
 
     sep_name = args.sep or "mega53"
+    require_amendment2(sep_name, "build --stage stem")
     if sep_name == "htdemucs" and args.part != "vsep":
         raise SystemExit("htdemucs stems are for V_sep only")
     setting, unchecked = chosen_setting(root, args.setting) if sep_name == "mega53" else (None, False)
@@ -2461,6 +2501,7 @@ def cmd_train(args):
     if args.seed not in TRAIN_SEEDS and not args.smoke:
         raise SystemExit(f"the pilot's seeds are {TRAIN_SEEDS}")
     stem_sep = train_stem_sep(args.arm, args.sep)
+    require_amendment2(stem_sep, "train --n 5000")
     root = out_root(args)
     rp = run_path(root, args.arm, args.n, args.seed, stem_sep)
     if rp.exists():
@@ -2741,6 +2782,15 @@ def model_stop(iv):
     return "OK" if iv[2] < 0 else "STOP"
 
 
+def ensemble_flag(decision, ens_iv):
+    """A flag (not a rule) when the seed-averaged reading says MODEL OK but the ensemble's
+    D - constant interval on R_in does not also lie entirely below 0."""
+    if decision == "OK" and model_stop(ens_iv) != "OK":
+        return ("the ensemble's D - constant on R_in does not clear 0 "
+                + ("(n/a)" if ens_iv is None else f"({ens_iv[0]:+.4f} [{ens_iv[1]:+.4f}, {ens_iv[2]:+.4f}])"))
+    return None
+
+
 def per_example_mean(d):
     """{i: [values]} -> {i: mean} (the halves of an example averaged)."""
     return {i: sum(v) / len(v) for i, v in d.items() if v}
@@ -2821,6 +2871,13 @@ def add_step4_arm(units, arm, value_of):
             refused += 1
         u["d"][arm] = v
     return refused
+
+
+def step4_complete(done, statuses, stopped, n_dirs=126, n_groups=63):
+    """Step 4 reads only when finished: all 126 directions done, all 63 groups' status done, and no
+    STOP.json."""
+    return (not stopped and done == n_dirs and len(statuses) == n_groups
+            and all(s == "done" for s in statuses))
 
 
 def p_reading(st):
@@ -3122,6 +3179,8 @@ def cmd_readout(args):
         out["contrasts"][ro] = con
     dec_iv = (out["contrasts"].get("R_in") or {}).get("D-constant")
     out["decision"] = model_stop(dec_iv)
+    ens_iv = (out["contrasts"].get("R_in") or {}).get("D-constant ensemble")
+    out["ensemble_flag"] = ensemble_flag(out["decision"], ens_iv)
     out["decision_rule"] = ("D's seed-averaged E on R_in minus the constant predictor's, paired, band-clustered t: "
                             "MODEL OK if the interval lies entirely below 0 (the ensemble reading is reported beside)")
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -3137,6 +3196,8 @@ def cmd_readout(args):
                 print(f"  E {k:28s} {f(v)}")
         for k, v in out["contrasts"][ro].items():
             print(f"  {k:30s} {f(v)}")
+    if out["ensemble_flag"]:
+        print(f"FLAG: {out['ensemble_flag']}")
     print(f"MODEL {out['decision']}")
 
 
@@ -3341,6 +3402,8 @@ def cmd_predict(args):
     if not man:
         raise SystemExit("run `stems` first")
     target = json.loads(DE.LEVELS.read_text())["summary"]["eval_mix_lufs_median"]
+    realised = training_mix_lufs(root)
+    print(f"inference target {target:.2f} LUFS (levels median); the stored training mixes: {realised}", flush=True)
     ms = A.L.menu_S()
     zarm = {"D": D, "D0": "D0"}
     preds = {m: {} for m in STEP4_ARMS}
@@ -3407,7 +3470,7 @@ def cmd_predict(args):
             row["errors"]["S"] = sum(errs_s) / 2
         ka.append(row)
     rec = {"plan": "docs/direct-model-stems-plan.md step 4", "D": D, "pilot_decision": report["decision"],
-           "smoke": bool(args.smoke), "target_mix_lufs": target,
+           "smoke": bool(args.smoke), "target_mix_lufs": target, "training_mix_lufs": realised,
            "models": {m: {r["seed"]: r["model_sha256"] for r in models[m][2]} for m in STEP4_ARMS},
            "inputs": {s: v["hashes"] for s, v in inputs.items()}, "predictions": preds,
            "stem_swap": extra, "known_answer": ka, "unseen_by_part_c": _load(DE_OUT / "predictions.json")["unseen_by_part_c"],
@@ -3416,6 +3479,22 @@ def cmd_predict(args):
     sp = [p["diag"]["seed_spread"] for p in preds["D"].values()]
     print(f"PREDICT: {len(preds['D'])} directions (D is {D}); seed spread median {float(np.median(sp)):.4f}; "
           f"known-answer sections {len(ka)}")
+
+
+def lufs_medians(mixrows):
+    """The stored training mixes' level: the median drawn target (whole clip, before mastering) and
+    the median stored half LUFS (after mastering), over unrefused rows."""
+    import statistics
+
+    ok = [m for m in mixrows.values() if not m.get("refused")]
+    halves = [m[k] for m in ok for k in ("lufs_mA", "lufs_mB") if m.get(k) is not None]
+    tg = [m["target_lufs"] for m in ok if m.get("target_lufs") is not None]
+    return {"examples": len(ok), "drawn_target_median": statistics.median(tg) if tg else None,
+            "stored_half_lufs_median": statistics.median(halves) if halves else None}
+
+
+def training_mix_lufs(root):
+    return lufs_medians({**build_rows(root, "pilot", "mix"), **build_rows(root, "rest", "mix")})
 
 
 def settings_from(amp, S, cont, sw, mics):
@@ -3582,7 +3661,10 @@ def cmd_report(args):
     for name, (a, b) in STEP4_CONTRASTS.items():
         rep["contrasts"][name] = step4_contrast(units, a, b, filters)
     prim = ((rep["contrasts"][STEP4_DECIDING]["rows"].get("all") or {}).get("all"))
-    rep["reading"] = p_reading(prim)
+    gfiles = sorted((od / "groups").glob("*.json")) if (od / "groups").exists() else []
+    statuses = [(_load(p) or {}).get("status") for p in gfiles]
+    rep["complete"] = step4_complete(rep["done"], statuses, (od / "STOP.json").exists())
+    rep["reading"] = p_reading(prim) if rep["complete"] else "incomplete"
     # zero renders: D's and D0's movement with stems c and b against c_f, per seed, band-weighted
     sw = {}
     for m in STEP4_ARMS:
@@ -3620,11 +3702,71 @@ def cmd_report(args):
     print(f"STEP4 {rep['reading'].upper()}: D - S {f(prim)}")
 
 
+
+# --- descriptive: the pilot's runs against the constant predictor (zero renders, no models run) ------------
+
+def cmd_constant_check(args):
+    """Descriptive, zero renders, CPU only, no model is run: each pilot run's stored per-example E
+    on R_out and R_in (as pilot-report reads them) against the constant predictor (the pilot's
+    training-label median per amp and base class), paired, band-clustered t; per run and per arm
+    seed-averaged."""
+    from learn import pretrain_set as PS
+    from learn import song_model as SM
+
+    if not args.pilot:
+        raise SystemExit("constant-check needs --pilot (the only reading declared)")
+    root = out_root(args)
+    ctx = Ctx()
+    pm, pst = build_rows(root, "pilot", "mix"), build_rows(root, "pilot", "mega53")
+    final = refusals(pm, pst, {r["i"] for r in ctx.parts["pilot"]})
+    med = label_medians([r for r in ctx.parts["pilot"] if not r["early_stop"] and r["i"] not in final], SM.encode)
+    mixrows = build_rows(root, "vsep", "mix")
+    band_of = {str(r["i"]): r["band"] for r in ctx.parts["vsep"]}
+    untagged = {str(r["i"]) for r in ctx.parts["vsep"] if not ctx.tag[r["i"]]}
+    unmastered = {str(i) for i, m in mixrows.items() if not m.get("refused") and not m.get("mastered")}
+    keep = {"R_in": untagged, "R_out": untagged & unmastered}
+    const = {}
+    for r in ctx.parts["vsep"]:
+        c, cm = SM.encode(r["label"])[:2]
+        const[str(r["i"])] = const_error(med[(r["amp"], r["base"])], c, cm)
+    out = {"descriptive": True, "smoke": bool(args.smoke), "runs": {}, "arms": {}, "missing": [],
+           "constant_E": {}, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    for ro in ("R_in", "R_out"):
+        k = keep[ro] & set(const)
+        out["constant_E"][ro] = PS.band_t_interval(PS.by_band({i: const[i] for i in k}, band_of)) if k else None
+    for arm in ARMS:
+        pers = {"R_in": [], "R_out": []}
+        for seed in TRAIN_SEEDS:
+            r = _load(run_path(root, arm, "5000", seed))
+            if not r or not r.get("readouts"):
+                out["missing"].append(f"{arm}-{seed}")
+                continue
+            for ro in ("R_in", "R_out"):
+                per = (r["readouts"].get(ro) or {}).get("per_example") or {}
+                if per:
+                    pers[ro].append(per)
+                out["runs"][f"{arm}-{seed} {ro}"] = paired(per, const, band_of, keep[ro]) if per else None
+        for ro, runs in pers.items():
+            if runs:
+                out["arms"][f"{arm} {ro}"] = paired(PS.seed_avg(runs, keep[ro]), const, band_of, keep[ro])
+    _save(root / "pilot" / "constant-check.json", out)
+
+    def f(v):
+        return "n/a" if v is None else f"{v[0]:+.4f} [{v[1]:+.4f}, {v[2]:+.4f}] ({v[3]} bands)"
+
+    print("constant E", {ro: f(v) for ro, v in out["constant_E"].items()})
+    for k, v in {**out["runs"], **out["arms"]}.items():
+        print(f"  E - constant {k:24s} {f(v)}")
+    if out["missing"]:
+        print("runs without stored readouts (run pilot-report first):", out["missing"])
+    print("CONSTANT-CHECK (descriptive)")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=("separate", "move", "reliance", "audit-mix", "sepcheck", "build", "train",
                                     "pilot-report", "time-mps", "readout", "stems", "parity", "predict", "render",
-                                    "report"))
+                                    "report", "constant-check"))
     ap.add_argument("--sep", choices=("mega53", "htdemucs", "xlance_g"),
                     help="build --stage stem: the separator (default mega53); train: the stem arms' stems (default mega53)")
     ap.add_argument("--part", choices=("pilot", "vsep", "rest"))
@@ -3644,6 +3786,7 @@ def main(argv=None):
     ap.add_argument("--limit", type=int, help="build: the first N examples of the part (smoke tests, scratch --out only)")
     ap.add_argument("--smoke", action="store_true",
                     help="train / pilot-report / readout / predict on whatever is built (scratch --out only)")
+    ap.add_argument("--pilot", action="store_true", help="constant-check: the pilot's runs")
     ap.add_argument("--no-ka", action="store_true", help="stems: the stage F stems only (no known-answer crops)")
     a = ap.parse_args(argv)
     if a.sep == "htdemucs":
@@ -3657,7 +3800,8 @@ def main(argv=None):
     {"separate": cmd_separate, "move": cmd_move, "reliance": cmd_reliance, "audit-mix": cmd_audit_mix,
      "sepcheck": cmd_sepcheck, "build": cmd_build, "train": cmd_train, "pilot-report": cmd_pilot_report,
      "time-mps": cmd_time_mps, "readout": cmd_readout, "stems": cmd_stems, "parity": cmd_parity,
-     "predict": cmd_predict, "render": cmd_render, "report": cmd_report}[a.cmd](a)
+     "predict": cmd_predict, "render": cmd_render, "report": cmd_report,
+     "constant-check": cmd_constant_check}[a.cmd](a)
 
 
 if __name__ == "__main__":

@@ -801,3 +801,58 @@ def test_renders_of_this_step_are_counted_machine_wide():
 
 def test_known_answer_items():
     assert DS.KA_ITEM == {"s1": 1, "s2": 1, "s3": 3, "s4": 3}
+
+
+# --- the code review's fixes (2026-10-21) ----------------------------------------------------------------
+
+def test_step4_reads_only_when_complete():
+    done = ["done"] * 63
+    assert DS.step4_complete(126, done, False)
+    assert not DS.step4_complete(125, done, False)
+    assert not DS.step4_complete(126, done, True)                      # STOP.json present
+    assert not DS.step4_complete(126, done[:-1] + ["stopped"], False)
+    assert not DS.step4_complete(126, done[:-1], False)                # a group record missing
+
+
+def test_ensemble_flag_only_when_ok_but_ensemble_does_not_clear():
+    assert DS.ensemble_flag("OK", (-0.02, -0.03, -0.01, 4)) is None
+    assert "does not clear" in DS.ensemble_flag("OK", (-0.02, -0.04, 0.001, 4))
+    assert "n/a" in DS.ensemble_flag("OK", None)
+    assert DS.ensemble_flag("STOP", (0.1, 0.0, 0.2, 4)) is None
+
+
+def test_xlance_g_needs_amendment_2_in_force(monkeypatch):
+    with pytest.raises(SystemExit):
+        DS.require_amendment2("xlance_g", "train --n 5000")
+    DS.require_amendment2("mega53", "build --stage stem")
+    DS.require_amendment2("htdemucs", "build --stage stem")
+    monkeypatch.setattr(DS, "AMENDMENT2_IN_FORCE", True)
+    DS.require_amendment2("xlance_g", "train --n 5000")
+
+
+def test_xl_unload_restores_path_and_forgets_its_modules(tmp_path):
+    import types
+
+    code = str(tmp_path / "code")
+    (tmp_path / "code").mkdir()
+    path = ["/x", code, "/y", code]
+    mods = {"utils": types.SimpleNamespace(__file__=f"{code}/utils.py"),
+            "models.a": types.SimpleNamespace(__file__=f"{code}/models/a.py"),
+            "msst_utils": types.SimpleNamespace(__file__="/elsewhere/utils.py"), "builtin": types.SimpleNamespace()}
+    assert DS.xl_unload(code, path, mods) == ["models.a", "utils"]
+    assert path == ["/x", "/y"] and set(mods) == {"msst_utils", "builtin"}
+
+
+def test_training_procs_counts_others_only():
+    from learn import local_objective_1c as C
+
+    ps = [(1, "python -m learn.direct_stems train --arm D0 --n full --seed 20261042"),
+          (2, "python -m learn.direct_stems time-mps --device mps"), (3, "python -m learn.direct_stems train --arm X")]
+    assert DS.training_procs(ps, {3}, C.is_training) == [1]
+
+
+def test_lufs_medians_of_the_stored_training_mixes():
+    rows = {1: {"target_lufs": -12.0, "lufs_mA": -13.0, "lufs_mB": -11.0}, 2: {"target_lufs": -14.0, "lufs_mA": -15.0,
+            "lufs_mB": -14.0}, 3: {"refused": "x", "target_lufs": 0.0}}
+    m = DS.lufs_medians(rows)
+    assert m == {"examples": 2, "drawn_target_median": -13.0, "stored_half_lufs_median": -13.5}
