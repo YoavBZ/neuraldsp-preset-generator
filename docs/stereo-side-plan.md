@@ -140,3 +140,51 @@ Steps 1 and 3.
 
 One independent skeptical review of this plan before any separation (go with changes; all nine required changes applied: HP a ceiling and ungated, stereo guitars folded and panned, mics panned as one instrument, 10 bands, the R null on (c), the SP level control, the trimmed family and centre runs, the time checkpoint, the stop rule; plus the energy floor and the LOBO minimum); one brief audit of the
 results that recomputes the key numbers from the saved per-part table.
+
+## Amendment 1 (2026-10-20): the inter-channel coherence mask
+
+**Source.** An outside report the user asked the cloud researcher to evaluate. This was the only idea
+from it worth adopting, and the user approved testing it. **Cost:** zero renders, zero training,
+zero new separation; it runs on the stored Mega-53 stems of every scenario (CPU, minutes).
+
+**Why it might help where the ILD mask can't.** When two different takes sit hard left and hard right
+at similar levels, their per-bin level ratio looks centred, so the ILD mask keeps them. Their phases
+are unrelated, so they are incoherent. A single take panned short of hard stays coherent. A
+hard-panned take is not: its empty channel holds only leakage, whose phase is random, so g cuts it.
+This targets the LC layout (centred lead against wide rhythms), and it needs no side for a centred
+target. In LC part of g's gain may come from the rhythms' empty channels, which (c) already cuts;
+gc and the c row show how much is new.
+
+**Splitters (fixed now, not swept):**
+- **g:** Γ(f,t) = Re{L·R*}/(|L|·|R| + ε), the cosine of the inter-channel phase difference. The
+  soft mask 1/(1 + exp(−10(Γ − 0.5))) is applied to (a)'s STFT with the mixture phase. Same
+  STFT (Hann 2048/512) and energy floor as (c).
+- **gc:** g's mask times (c)'s ILD mask (σ = 0.3).
+- **Anchor:** g on the class-perfect stem G, against G's mid.
+
+**Family (3 cells, Holm):** Mega-53, oracle side, primary population: LC g, LC gc, P gc. The pass,
+stop and gain-to-build-on rules, and the LSD guard, are the plan's, unchanged. Descriptive: R, HP,
+SP, P g, all-21 rows. **HP's g, gc and G_g rows are invalid by construction** (the target is hard
+left, so g cuts it) and are reported only as that.
+
+**Checks before reading:**
+- the R null: g within ±0.3 dB of M. R is as recorded, with native stereo tracks; most R stems
+  have side energy 18–31 dB below mid, but Gym Hours (−8.5 dB) and Strangest Places (−11.2 dB)
+  are wider. Per-part deltas are listed. A miss driven by those native-stereo parts is read as real
+  incoherence, not a code fault; a miss spread across mono-ish parts is a fault;
+- (c) recomputed here matches `report.json` within 0.01 dB on P, LC and HP.
+
+**Limits:**
+- Our other guitars are mono takes folded and panned, so there is no stereo reverb or delay. This
+  favours the mask, as real records would lower the lead's coherence.
+- The alternating rule can put two mics of one guitar on opposite sides. Those stay coherent.
+- τ and the slope are fixed, with one setting only.
+- Γ is the per-bin phase difference with no time or frequency averaging: a phase-difference mask,
+  not an estimated coherence. A null does not rule out a smoothed-coherence mask.
+- P keeps native stereo guitar tracks, whose own incoherence favours g and gc in P.
+- Mics of one guitar on opposite sides are not exactly coherent per bin (different distances give a
+  frequency-dependent phase difference); only P is affected, as LC pans by instrument.
+- Output goes to `report-coherence.json`. `report.json` is not touched.
+
+**Review and audit:** one independent review of this amendment and its code before the run, and one
+brief audit of the results.

@@ -110,3 +110,23 @@ def test_boot_draws_agree_with_band_boot_and_lobo():
 def test_holm():
     assert T.holm([0.01, 0.04, 0.03]) == pytest.approx([0.03, 0.06, 0.06])
     assert T.holm([0.5]) == [0.5]
+
+
+def test_coherence_mask_keeps_a_panned_point_source_and_cuts_uncorrelated_sides():
+    a, b = _two_sources()
+    rng = np.random.default_rng(3)
+    c = rng.standard_normal(len(a)) * np.std(b)
+    for p in (0, -0.6):
+        gl, gr = S.pan_gains(p)
+        alone = np.stack([gl * a, gr * a])
+        assert S.snr_db(T.coherence_mask(alone, p), T.pick(alone, p)) > 40   # coherent: untouched
+    x2 = np.stack([a + b, a + c])                 # centred target, different takes hard L and R
+    assert S.snr_db(T.coherence_mask(x2, 0), a) > S.snr_db(T.pick(x2, 0), a) + 2
+    assert S.snr_db(T.coherence_mask(x2, 0, ild=True), a) > S.snr_db(T.pick(x2, 0), a) + 2
+
+
+def test_coherence_mask_cuts_a_hard_panned_source():
+    a, _ = _two_sources()
+    hard = np.stack([a, np.zeros_like(a)])        # the empty channel has no phase to agree with
+    out = T.coherence_mask(hard, -1.0)
+    assert np.sum(out ** 2) < 0.01 * np.sum(a ** 2)   # at least 20 dB down

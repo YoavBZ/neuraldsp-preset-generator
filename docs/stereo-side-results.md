@@ -136,3 +136,39 @@ reproduction, the R null and the per-part extremes match. Corrections, applied a
 +0.02 (not +0.03) and HP's blind mask −0.63; the post hoc "opposite side" rule's counts (16/19
 HP, 5/19 P); the Step 0 class-ceiling number kept apart from this screen's anchors; the arm A
 resolution sentence.
+
+## Amendment 1: the inter-channel coherence mask (2026-10-20)
+
+Run under [amendment 1](stereo-side-plan.md#amendment-1-2026-10-20-the-inter-channel-coherence-mask)
+after one independent review (go with changes, all applied). Zero renders, no training, stored
+Mega-53 stems only. Data: `~/ndsp-presets/learn/stereo-side-screen/report-coherence.json`.
+Primary population, 19 parts in 10 bands; Δ SNR against the stem's mid, dB.
+
+**Verdict: coherence alone is a stop (+0.35). No cell is near +2 dB.** The only cell rated "gain
+to build on" is LC gc, and its gain comes from its ILD part: gc (+0.69) is below the ILD mask
+alone (+0.76).
+
+| cell (gated, Holm over 3) | Δ SNR | Δ LSD | leave one band out | Holm p | reading |
+|---|---|---|---|---|---|
+| LC g | +0.35 [+0.15, +0.59] | +0.09 | +0.26 to +0.41 | 1.0 | stop side (mean < +0.5) |
+| LC gc | +0.69 [+0.16, +1.28] | +0.45 | +0.46 to +0.79 | 1.0 | gain to build on |
+| P gc | +0.17 [−0.12, +0.46] | +0.97 | +0.08 to +0.27 | 1.0 | stop side |
+
+- **It doesn't beat what we have.** On LC the coherence mask alone gains +0.35. That is under the
+  ILD mask (+0.76) and the centre model (+1.35). Multiplying the two masks (+0.69) adds nothing
+  over the ILD mask alone.
+- **Even on perfect class separation it is small.** On the class-perfect stem G, coherence gains
+  only +0.56 [+0.13, +1.01] on LC. So the cap is in the idea, not in Mega-53's stem.
+- **Its one good property is that it barely changes the tone.** On LC, g moves LSD by +0.09 and
+  treble by −0.07 dB. The ILD mask moves them by +0.38 and −1.21.
+- **Descriptive rows:**
+  - P g: +0.46 [+0.20, +0.75].
+  - SP g: +0.01.
+  - HP g: +0.93. This row is invalid by construction (the target is hard-panned).
+- **Checks passed:**
+  - the R null for g is −0.004 dB;
+  - (c) recomputed matches `report.json` on P, LC and HP (0.603, 0.763, 0.863).
+- **Limit:** Γ here is the per-bin phase difference with no smoothing. A smoothed-coherence
+  variant is simply untested. The class-perfect anchor measured the unsmoothed mask only.
+- **Note:** the "all" population's G_g cells are meaningless (on the two parts with no other
+  guitar, G equals the reference) and are not used.
