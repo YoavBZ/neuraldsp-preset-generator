@@ -119,11 +119,14 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      separates the electric guitar from a (likely) acoustic one. Both separators sometimes include
      another electric guitar ([stereo and mix check](stereo-and-mix-check-results.md)).
      **Mega-53 is now the ML default separator** (htdemucs stays selectable), and unlicensed
-     open-source weights are allowed (the user, 2026-10-19).
+     open-source weights are allowed (the user, 2026-10-19; widened on 2026-10-20 to anything
+     unlicensed, non-commercial or gated, see ML plan §5).
    - **Our mixes are not real mixes** ([stereo and mix check](stereo-and-mix-check-results.md)).
      The development "full mixes" are the raw tracks summed at unity, and no session has a mix or
-     master, so the gap to real mixed songs is unmeasured. The Cambridge site has Full Preview MP3s
-     and Unmastered Mix WAVs; the user will download them. Stereo: with the target centred, as in
+     master. [Released mixes](mix-previews-results.md) of 10 songs and a remix of Signs (same
+     takes) measure that gap: Mega-53 on the real mix loses 0.62 dB SNR against the raw track on 17
+     stage F parts, half of it from per-track lag (polarity flips cost nothing in a gain-fitted
+     SNR). In SNR, mastering adds little. Scores on real songs need to be lag-invariant. Stereo: with the target centred, as in
      all our sums, the mono fold loses nothing.
 
    **The direction: two active routes, arm A and the direct model, with better separation as the
@@ -142,6 +145,9 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       zero-render checks of the stem mismatch on the existing model first, then a 5k pilot (real
       Mega-53 stems, a mix-only model, the old recipe), then one stage F test, D − S primary. The
       full build waits on the user freeing disk (34 GB free at start).
+      *Gate 1 done 2026-10-20 ([results](direct-model-stems-gate1-results.md)):* the stem matters
+      (GATE1 STEM); the mix adds little behind a clean or separated stem, so the next model should
+      read the separated target stem alone (a pilot-arm change for the user to approve).
    3. **Two zero-render checks.** *Done 2026-10-19 ([results](shrink-snr-judge-v3-results.md)):*
       the best shrink does not measurably depend on stem SNR (a rule by SNR gains −0.003 [−0.013,
       +0.007] on held-out bands; nothing on realistic stems), and judge v3 agrees with the ear a
@@ -341,3 +347,5 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-19 | Our development "full mixes" are unity sums of raw tracks and no session has a mix; real-mix previews (Cambridge Full Preview MP3s, Unmastered Mix WAVs) to be downloaded by the user | [stereo and mix check](stereo-and-mix-check-results.md) |
 | 2026-10-19 | The direct model's tie with S is not a verdict on the approach (user): it was trained on perfect stems and tested on htdemucs stems. Two active routes, arm A and the direct model, with better separation as the shared lever; next a Mega-53 fine-tune on our multitracks, then the direct model on realistic stems | [direct-existing results](direct-existing-results.md), step 0 |
 | 2026-10-19 | Zero-render checks: the best shrink does not measurably depend on stem SNR (held-out −0.003 [−0.013, +0.007]), so shrink 0.5 stays on separated stems; judge v3 agrees with the ear less than the default judge (Spearman 0.64 against 0.80, 5 parts), so the default judge stays | [checks](shrink-snr-judge-v3-results.md) |
+| 2026-10-20 | Licence and cost rule (user): the project is non-commercial and open source, so anything open, non-commercial, unlicensed or gated behind an access request is fine (weights, code, tools, data); unclear licence terms go to the user to check; nothing may force other users to pay (beyond the Neural DSP plugin and Claude Code), free cloud APIs are fine, and tools the user pays for personally (e.g. Moises) are fine in development, and other paid tools need the user's yes. This replaces the 2026-10-07 "open source only" rule. ML plan §5 updated | [ML plan](research/ml-plan-2026-10.md), section 5 |
+| 2026-10-20 | Direct model gate 1 (zero renders): stem quality moves D_existing's answers far beyond the leak-draw null (+0.104 [+0.090, +0.120]) and Mega-53's stem costs +0.104 of E against the training stem (0.167 → 0.270), so GATE1 STEM: the separator route continues. The model leans on the stem (share 0.70); behind a clean or real separated stem the mix adds little or nothing (post hoc), so a stem-only model is recommended (user's decision) | [gate 1 results](direct-model-stems-gate1-results.md) |

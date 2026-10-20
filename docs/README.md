@@ -287,6 +287,11 @@ was declared, what was measured, and the research behind it.
   Mega-53 becomes the ML default. Stereo: centred targets lose nothing to the mono fold, and on a
   panned model the target's own channel gains +1.6 dB while a blind estimate gains +0.3. Our mixes
   are unity sums, so the in-song guitar is the raw track; no session ships a master. Zero renders.
+- [mix-previews-results.md](mix-previews-results.md): the released mixes of 10 songs and
+  Sound On Sound's remix of Signs use the same takes as our multitracks (Signs is "partial" from
+  repeated sections, not edits). All 17 stage F crops there are covered. Mega-53 on the real mix
+  loses 0.62 dB SNR against the raw track (0.31 with a per-stem lag; single tracks are shifted, and
+  some flipped, in the real mix). In SNR, mastering adds little. Zero renders.
 - [separation-finetune-plan.md](separation-finetune-plan.md): how to improve target-guitar
   separation. Zero-render ceilings first (the class ceiling and free test-time fixes), then an
   oracle class arm in arm A (about 7k renders) decides between fine-tuning Mega-53's class head
@@ -347,11 +352,14 @@ was declared, what was measured, and the research behind it.
   existing 40k models scored on stage F without training (D − S +0.033 [−0.053, +0.119], a tie
   leaning worse), and the judge re-run through the raw DI (rebuilt-DI contrasts unchanged; on the
   known-answer songs the measure DI caps the exact truth at 0.55 of S). 852 renders. Audited.
-- [direct-model-stems-plan.md](direct-model-stems-plan.md): the direct model with realistic stems
+- [direct-model-stems-plan.md](direct-model-stems-plan.md) → [gate 1 results](direct-model-stems-gate1-results.md): the direct model with realistic stems
   (declared, reviewed). Cheap checks on D_existing first (does the stem's quality move its answers;
   what the mismatch costs; 111 descriptive renders), then a 5k pilot of real Mega-53 stems against a
   mix-only model and the old recipe, then one test on stage F (D − S primary, about 321 renders).
   The full build needs the user to free disk (34 GB free at start).
+  **Gate 1 (2026-10-20, zero renders): GATE1 STEM**; the stem matters (Mega-53's stem costs +0.104
+  of E against the training stem); the mix adds little behind a clean or separated stem, so a
+  stem-only model is recommended. Audited.
 - [record-match-listening-plan.md](record-match-listening-plan.md) → [results](record-match-listening-results.md):
   a blind check of the judge by ear on 5 guitar-exposed parts: the ear broadly agrees with the
   judge's order (Spearman mean 0.8), the ceiling C is heard closest in 4/5, H beats S in 4/5, D
@@ -535,3 +543,11 @@ was declared, what was measured, and the research behind it.
     offset-removed 2–8 kHz loss, a bounded per-bin log-gain on C′'s output, the upsampler, an
     MPS-safe magnitude-only discriminator, a PANN feature loss. Corrects the DI recovery report.
     Research, not a declared plan.
+16. [single-guitar-separation-2026-10.md](research/single-guitar-separation-2026-10.md): how to
+    extract one target guitar from a mix with several guitars (October 2026). No usable model is
+    shown to separate lead from rhythm or one electric guitar from another; open separators select
+    by class. Ranked: keep the target's side of Mega-53's stereo stem (arrangement `pan` or the
+    user's ear), a level-difference mask, centre/wide models, Mega-53's electric/acoustic heads
+    when the other guitar is acoustic, per-song solo-region adaptation, then fine-tuning on
+    synthetic multi-guitar mixes. Flags the licence tension and proposes a zero-render stage-F pan
+    screen. Corrects the October separation report. Research, not a declared plan.

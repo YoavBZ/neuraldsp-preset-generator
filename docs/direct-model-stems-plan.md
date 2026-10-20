@@ -121,6 +121,12 @@ with everything else held, band-clustered.
 - the same for d(a, b) − d(a′₁, a′₂);
 - on the 164 audit examples, (iii) − (i) has an interval entirely above 0.
 
+**Clarified 2026-10-19, after the code review and before `move` ran:** the stage F rows decide on
+each condition's own stem LUFS (as at inference); the held-LUFS reading is reported beside it. The
+audit condition decides on the band-clustered t interval (6 bands, 5 df); a band bootstrap is
+reported beside it. Gate 1 runs without 1c, so c_f is Mega-53's fast setting (it is not used by the
+gate; (iii) is defined as fast). 1d is not part of the gate and is not run with it.
+
 If none holds, the stem barely matters to this model: **the separator route is dropped** (no
 separation is spent) and the plan runs the **mix-only route**: the pilot with D0-5k and D_mix-5k
 only. The true-mix and mastering parts of the fix are still tested that way.

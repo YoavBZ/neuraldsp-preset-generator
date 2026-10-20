@@ -248,12 +248,15 @@ with the stored S, H, M, YT and YG on one fixed direction set.
   - a passage the user marks where it plays exposed. Step 0's X says how often one exists.
 - **Cheapest first move:** screen existing query-conditioned separators, and permutation-invariant
   multi-instance ones, on the stored stage-F contexts, at CPU cost only. Their weights and licences
-  must be checked first (open source only).
+  must be checked first (open, non-commercial, unlicensed or gated is fine; unclear terms go to the
+  user; beyond the Neural DSP plugin and Claude Code, nothing the product needs may cost other
+  users money; ML plan §5).
 - **Ceiling evidence:** the pan side is worth +1.55 dB in scenario P (stored). YT − YG, G_mic, I
   and X bound the rest.
 - **Needs from the user:**
   - disk beyond the guard for external multitracks: Cambridge sessions without DIs, under the same
-    educational licence as our current data, and MoisesDB (CC BY-NC-SA), which needs the user's yes;
+    educational licence as our current data, and MoisesDB (CC BY-NC-SA, allowed under the
+    2026-10-20 licence rule);
   - the product session's agreement to ask the user a question.
 - **Caveat:** on stage F every target is centred, so a pan query can only be scored in scenario P.
 
