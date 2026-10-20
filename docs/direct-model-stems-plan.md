@@ -377,10 +377,13 @@ on stage F: the recipe is fixed here; gate 1 reads D_existing's answer movement,
   draws only from the training pool.
 - **Separator training data:** the MUSDB18 songs are tagged in the pool, V_sep and stage F, and
   readouts are reported without them.
-- **A fine-tuned separator:** none will exist (user, 2026-10-20: no separator training), so D's
-  training stems, V_sep and step 4 use the stock Mega-53. A later switch to another released
-  separator, or a DSP split of its stem, is a separator change for D, measured as a transfer
-  (zero renders: answer movement on stage F), not assumed.
+- **A fine-tuned separator ([separation fine-tune plan](separation-finetune-plan.md)):** one
+  may exist again (user, 2026-10-20: fine-tuning an existing separator is fine, on this Mac
+  only). If it trains on the sessions of D's training or V_dev bands, it gives those sections
+  unrealistically clean stems, so **D's training stems and V_sep use the stock Mega-53**, and
+  step 4 feeds D the stock Mega-53 stem it was trained with. A later switch to a fine-tuned or
+  another released separator, or a DSP split of its stem, is a separator change for D, measured
+  as a transfer (zero renders: answer movement on stage F), not assumed.
 - **No held-out data is touched.** Nothing in this plan opens a held-out use.
 
 ## What is not done
