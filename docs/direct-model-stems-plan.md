@@ -224,6 +224,8 @@ halved to 10k examples to hold the budget (part C's 10k → 20k step was −0.00
 
 ### The pilot arms
 
+*Amendment 1 replaces D_sep with the stem-only D_stem and rewrites rule 2; see below.*
+
 **Training data:** 5k train examples (`random.Random(20261073)`, stratified by band and amp) and the
 1,000 early-stopping examples, all built as above. Part C's half-width network
 (`pretrain_set.build_net`) and recipe (`train_one`: Adam 1e-3, batch 64, one half per example per
@@ -251,6 +253,8 @@ epoch])`), aimed at what the user heard in the separation samples:**
 
 ### The pilot readouts and rules (declared, applied in order)
 
+*As amended: [amendment 1](#amendment-1-2026-10-20-stem-only-arm-approvals-order) holds the rules in force.*
+
 All readouts: E, seed-averaged, paired per example, 90% band-clustered t intervals over V_sep's 5
 bands (4 df, t 2.132), Bannockburn left out. **Power:** part C's paired ΔE had a band SD of about
 0.005, so the half-width here is about 0.005; effects smaller than about 0.007 read as ties, and with
@@ -272,7 +276,7 @@ bands (4 df, t 2.132), Bannockburn left out. **Power:** part C's paired ΔE had 
 
 ## Step 3: the full models (no judged renders)
 
-- **D** (D_sep, or D_mix by rule 2 or gate 1) and **D0** (part C's composition), each on the full
+- **D** (D_stem, or D_mix by rule 2 or gate 1; amendment 1) and **D0** (part C's composition), each on the full
   band-clean pool, 3 seeds (20261042–44), the same recipe, at most 40 epochs.
 - **The answer:** the three seeds' **pooled mixture's top component** (each seed's weights / 3, the
   highest-weight component's mean, clipped to [0, 1]); switches by majority; mics by the argmax of
@@ -416,54 +420,81 @@ on stage F: the recipe is fixed here; gate 1 reads D_existing's answer movement,
 ## Amendment 1 (2026-10-20): stem-only arm, approvals, order
 
 **Why.** Gate 1 read `GATE1 STEM`: behind a clean or real separated stem the mix adds little or
-nothing (the stem carries 0.70 of the reliance). The user then decided that the model should be
-trained on the separated target stem, not handed the whole mix, with a mix version only as a small
-comparison. Feeding both channels lets the network lean on the mix for separation it cannot do
-well, and the product's input is then the stem.
+nothing (the stem carries 0.70 of the reliance; these reliance rows were read after the gate,
+descriptively). The user then decided that the model should be trained on the separated target
+stem, not handed the whole mix, with a mix version only as a small comparison. The reasoning that a
+two-channel model would lean on the mix to do separation it cannot do well is an inference, not a
+measurement. **What dropping D_sep gives up:** gate 1's caveat that a model trained on real stems
+might use the mix behind drop-outs is no longer measured.
 
 **The pilot arms (replaces "The pilot arms" list; recipe, seeds, epochs and data unchanged):**
 - **D0-5k:** part C's composition, unchanged (the matched control).
 - **D_mix-5k:** the stored true mix; the stem channel always 0. The small comparison.
 - **D_stem-5k:** the stored Mega-53 stem with the declared augmentations; **the mix channel always
-  0**, in training and at inference, zeroed exactly as D_mix zeroes the stem (mel and conditioning).
-  The "separator failure" augmentation becomes stem := **true mix** + U(−6, 0) dB, read from the
-  stored mix mel (the mix is still built and stored, for D_mix and this augmentation).
+  0**, in training and at inference.
 - **D_stem-5k-noaug:** the same without augmentations.
 
 Still 4 arms × 2 seeds, about 2.4 GPU h at most. D_sep (stem plus mix) is dropped, not run.
 
+**Zeroing (exact, for D_mix's stem and D_stem's mix):** the channel is set to 0 in the normalised
+input (`song_model.norm_feat`, so −60 dB), after the half-A mask, as 1a's z condition did; its
+LUFS conditioning slot is set to 0 in the normalised conditioning vector (`cond_vec`), the same
+constant in training and at inference. The other channel's mel and LUFS are as stored.
+
+**D_stem's augmentations, in this order, on the stem only:**
+1. separator failure (p 0.05): stem := the stored true-mix mel + U(−6, 0) dB, and its LUFS := the
+   stored mix LUFS + the same offset (the mix is still built and stored, for D_mix and this);
+2. the merged second guitar (stem only; the mix channel stays 0);
+3. drop-outs;
+4. darkening.
+Steps 2–4 do not update the LUFS conditioning (a stated approximation: the merge can raise the
+true level by up to 3 dB; drop-outs and darkening lower it).
+
+**Inference level:** as in training, where each stem is separated from a mix brought to its drawn
+loudness, one gain brings the crop's mix to the training median and the stem gets the same gain.
+The stem's level then carries the guitar-to-mix ratio, which is available at inference.
+
+**Caveats:** D_stem − D0 changes three things at once (no mix channel, real stems, true mixes),
+beside the mix-diversity difference already stated. R_out's htdemucs stem is further outside
+D_stem's training than D0's, which can fall back on the mix; a fair test, stated.
+
 **The rules (replace D_sep by D_stem; otherwise as declared):**
 1. **STOP** if neither D_stem-5k − D0-5k nor D_mix-5k − D0-5k on R_out has an interval entirely
    below 0.
-2. **Mix-only** if D_stem-5k − D_mix-5k on R_in has an interval containing 0 or above it, and D_mix
-   beat D0 in rule 1.
+2. **Mix-only** only if D_mix-5k − D_stem-5k on R_in has an interval entirely below 0 (D_mix
+   clearly better) and D_mix beat D0 in rule 1. A tie keeps D_stem, the user's chosen route.
 3. **Otherwise build the rest** and train D_stem (step 3's D is D_stem).
 4. **Augmentation** kept unless D_stem-5k − D_stem-5k-noaug on R_in has an interval entirely above 0.
 
 Step 4 feeds D_stem the Mega-53 stem only. D0 keeps both channels.
 
 **Order.**
-1. 1c (the separator setting) runs first, on the 164 audit mixes' stored-setting separation. It is
-   separation only, about 30 min on MPS, with no training and no renders.
+1. 1c (the separator setting) runs first. It reuses gate 1's Mega-53 fast audit stems (hash-checked;
+   the CPU matched MPS to 81 dB) and adds the stored setting on the 164 audit mixes, about 30 min on
+   MPS. Separation only, no training, no renders.
 2. Then the pilot build.
 3. Then the pilot training.
 
 1d stays optional and is not run.
 
 **Approvals (user, 2026-10-20).**
-- **Training time:** the pilot's training, about 2.4 h, is approved. Steps 3's D and D0 runs, 5–7.4 h,
+- **Training time:** the pilot's training, about 2.4 h, is approved. Step 3's D and D0 runs, 5–7.4 h,
   each need a new yes.
-- **Disk:** for the pilot build only, the disk guard is lowered to 25 GB. Writers stop cleanly
-  below 26 GB, and the override is logged. The full build still needs at least 34 GB free and the
-  31 GB guard.
+- **Disk:** for the pilot build only, writers stop cleanly below **26 GB** free (the user approved
+  25 GB; 1 GB is margin), and the override is logged. The full build still needs at least 34 GB
+  free and the 31 GB guard.
+
+**Names elsewhere in this plan:** D_sep reads D_stem, `Dsep`/`Dsep-noaug` read `Dstem`/`Dstem-noaug`,
+and `PILOT STEM` reads `PILOT STEM`. In step 4, D_stem gets the Mega-53 stem only (mix channel 0); D0
+gets the same stem and the mix.
 
 ## Code (after review, before any compute)
 
 `learn/direct_stems.py`: `move` (1a and the audit cost; prints `GATE1 STEM` or `GATE1 MIX-ONLY`),
 `reliance` (1b), `sepcheck` (1c, prints the chosen setting), `matched --shard i/n` and
 `matched-report` (1d), `build --part pilot|rest|vsep --stage mix|stem` (renders, mixes, separates,
-stores; disk and memory guards), `train --arm D0|Dmix|Dsep|Dsep-noaug --n 5000|full --seed s`,
-`pilot-report` (prints `PILOT STOP`, `PILOT MIX` or `PILOT SEP`), `readout` (`MODEL STOP` or
+stores; disk and memory guards), `train --arm D0|Dmix|Dstem|Dstem-noaug --n 5000|full --seed s`,
+`pilot-report` (prints `PILOT STOP`, `PILOT MIX` or `PILOT STEM`), `readout` (`MODEL STOP` or
 `MODEL OK`), `predict`, `render --shard i/n`, `report`. Tests: every exclusion and tag; the a′
 construction against a numeric mix; the conditioning and quantisation parity; each augmentation on
 synthetic mels and its training-pool-only draw; gate 1 and the pilot rules on toy tables; the
