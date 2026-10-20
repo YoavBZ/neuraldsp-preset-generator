@@ -2573,6 +2573,42 @@
    "held_out": "none touched",
    "outcome": "done 2026-10-20 (zero renders; 63 Mega-53 stereo separations, 45 centre-model passes; htdemucs cut at the declared time checkpoint; audited, confirmed with corrections). GAIN TO BUILD ON: no gated cell passes. Mega-53, oracle side, 19 parts: P pick +1.50 [+0.78,+2.33], LC centre model +1.35 [+0.31,+2.49], ILD mask +0.60 (P) / +0.76 (LC), mask+Wiener +0.08 / +0.28 with LSD +6.7 / +8.0; HP pick (ceiling, ungated) +6.88; SP pick +0.02; blind side right 5/19 (P), 4/19 (LC), 0/19 (HP), blind splitters -0.01 to -1.0",
    "results": "docs/stereo-side-results.md"
+  },
+  {
+   "test_id": "xlance-screen",
+   "plan": "docs/xlance-screen-plan.md",
+   "entered": "2026-10-20, with the plan, before any X-LANCE download or separation (HF/GitHub API metadata only)",
+   "parts": [
+    "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
+    "cambridge-Passing_Ships-ElecGtr2",
+    "cambridge-Passing_Ships-ElecGtr4",
+    "cambridge-Quicksand-ElecGtr2",
+    "cambridge-Signs-ElecGtr3",
+    "cambridge-Today's_The_Day-ElecGtr07",
+    "cambridge-colour-me-red-elecgtr02",
+    "cambridge-colour-me-red-elecgtr03",
+    "cambridge-femme-elecgtr5",
+    "cambridge-get-out-of-bed-elecgtr2",
+    "cambridge-let-s-dance-elecgtr3",
+    "cambridge-let-s-dance-elecgtr4",
+    "cambridge-magilla-elecgtr1",
+    "cambridge-wickerman-elecgtr1",
+    "cambridge-wickerman-elecgtr2",
+    "cambridge-wickerman-elecgtr3",
+    "cambridge-wickerman-elecgtr7",
+    "telefunken-Gym_Hours-GTR_2",
+    "telefunken-Russian_Cream-GTR_1",
+    "telefunken-She's_Gone-GTR",
+    "telefunken-Strangest_Places-GTR"
+   ],
+   "bands": "stage F's 12 (primary: the 19 parts with another electric guitar, 10 bands)",
+   "audio_only": "stage F's crop mix.wav and stored 30-s contexts, reference.wav, gate 1's Mega-53 fast stage F stems (read-only), separation-finetune's G crops; X-LANCE denoise.pth + gtr_mss.pth (chenxie95/xlance-msr-ckpt)",
+   "renders": "0; separations: about 190 X-LANCE passes and 3 Mega-53 fast repro clips, CPU 2 threads, nice 10, no MPS",
+   "gate": "Switch to X-LANCE (denoise -> gtr_mss on the crop) only if, on both the 19 parts and all 21, paired X - Mega-53 fast band-weighted delta SNR 90% band-bootstrap upper bound >= 0 AND delta LSD upper bound < 0; else keep Mega-53. Cost: projected separation time over 1.5x the plan's Mega-53 budget -> 'pass, over budget', user decides. gtr_mss alone, 30-s context, brightness, anchors descriptive",
+   "seeds": "band bootstrap random.Random(20261019), 4,000 draws; Mega-53 repro sample 20261082",
+   "repeat_use": "A further use of stage F's parts, separation measures only (as stereo-and-mix-check, mix-previews, stereo-side-screen); no arm scores read or chosen on",
+   "held_out": "none touched",
+   "outcome": null
   }
  ]
 }
