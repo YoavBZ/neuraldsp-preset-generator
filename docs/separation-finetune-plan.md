@@ -8,15 +8,17 @@ before results exist. One zero-data probe (MPS, below) ran while drafting. One i
 > **Status (user, 2026-10-20, revised the same day): separator fine-tuning is allowed again, on
 > this Mac only (no rented machines).** The user first ruled out all separator training, then
 > allowed fine-tuning, adapting and feature extraction, "just not a major effort of modeling and
-> training a new separator". So Step 0 is done; Steps 1–3 are open again as declared, provided
-> any training fits the Mac; Step 2 already plans one MPS run with the loss off the device. Step 1
+> training a new separator". So Step 0 is done; Steps 1–3 are open again as declared, provided any
+> training fits the Mac; Step 2 already plans one MPS run with the loss off the device. Step 1
 > stopped after 2,666 renders; it can be resumed or rerun under an amendment that says whether the
 > partial records are reused. A resumed run needs a fresh disk-guard approval or the ~2 GB freed
 > that the plan asks for. Route B's cheapest first move (screening released checkpoints on the
 > CPU) and DSP splits of their output stay open. A newly trained conditioned separator, the
 > trained form of route B, stays out unless it is a fine-tune or adaptation of an existing one. A
-> route-B conditioned head on Mega-53 is a grey zone: put it to the user before any route-B plan.
-> The ML session amends this plan and the ledger entry as needed.
+> route-B conditioned head on Mega-53 is allowed if its training is small. Training time (user,
+> 2026-10-20): minutes are fine; any longer run, e.g. Step 2's fine-tune if it takes hours, needs
+> the user's approval first; no week-long efforts. The ML session amends this plan and the ledger
+> entry as needed.
 
 ## The short version
 
