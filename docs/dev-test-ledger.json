@@ -2577,7 +2577,7 @@
   {
    "test_id": "xlance-screen",
    "plan": "docs/xlance-screen-plan.md",
-   "entered": "2026-10-20, with the plan, before any X-LANCE download or separation (HF/GitHub API metadata only)",
+   "entered": "2026-10-20, with the plan, before any X-LANCE download or separation (HF/GitHub API metadata only); revised after one independent review (go with changes, all applied) before any download",
    "parts": [
     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
     "cambridge-Passing_Ships-ElecGtr2",
@@ -2601,12 +2601,12 @@
     "telefunken-She's_Gone-GTR",
     "telefunken-Strangest_Places-GTR"
    ],
-   "bands": "stage F's 12 (primary: the 19 parts with another electric guitar, 10 bands)",
-   "audio_only": "stage F's crop mix.wav and stored 30-s contexts, reference.wav, gate 1's Mega-53 fast stage F stems (read-only), separation-finetune's G crops; X-LANCE denoise.pth + gtr_mss.pth (chenxie95/xlance-msr-ckpt)",
-   "renders": "0; separations: about 190 X-LANCE passes and 3 Mega-53 fast repro clips, CPU 2 threads, nice 10, no MPS",
-   "gate": "Switch to X-LANCE (denoise -> gtr_mss on the crop) only if, on both the 19 parts and all 21, paired X - Mega-53 fast band-weighted delta SNR 90% band-bootstrap upper bound >= 0 AND delta LSD upper bound < 0; else keep Mega-53. Cost: projected separation time over 1.5x the plan's Mega-53 budget -> 'pass, over budget', user decides. gtr_mss alone, 30-s context, brightness, anchors descriptive",
+   "bands": "decides on the 164 non-stage-F audit mixes (direct-model-stems gate 1's, 6 bands: Eggy, Hollow Ground, Storm Of Particles, Death Of A Romantic, Renesans, Rebuild The Evil); descriptive on stage F's 12 (19 parts with another electric guitar, 10 bands)",
+   "audio_only": "audit true mixes rebuilt as gate 1 (rendered guitar + backing; the render is the reference) and gate 1's Mega-53 fast audit stems (hash-checked, read-only); stage F crop mix.wav, stored 30-s contexts, reference.wav, gate 1's Mega-53 fast stage F stems (read-only), separation-finetune's G crops; X-LANCE denoise.pth + gtr_mss.pth (chenxie95/xlance-msr-ckpt)",
+   "renders": "0; separations: about 490 X-LANCE passes (2 CPU threads, nice 10) and 6 Mega-53 fast reproduction clips (4 threads, as gate 1); no MPS",
+   "gate": "Switch to X-LANCE (denoise -> gtr_mss) only if, on the 164 audit mixes (band-weighted, 90% band-clustered t, 5 df): delta SNR (X - Mega-53 fast) point >= 0, AND delta LSD over the mel range 30 Hz-16 kHz entirely below 0, AND X's CPU s per clip <= 1.5x Mega-53 fast's on the same clips and threads; quality pass with cost fail -> 'pass, over budget', user decides; else keep Mega-53. Stage F, gtr_mss alone, 30-s context, full LSD, brightness, darkening spread and anchors descriptive",
    "seeds": "band bootstrap random.Random(20261019), 4,000 draws; Mega-53 repro sample 20261082",
-   "repeat_use": "A further use of stage F's parts, separation measures only (as stereo-and-mix-check, mix-previews, stereo-side-screen); no arm scores read or chosen on",
+   "repeat_use": "Decision on the 164 non-stage-F audit examples (part C pool bands, not stage F; already used by direct-model-stems gate 1 and 1c). Stage F's 21 parts: a further descriptive use, separation measures only (as stereo-and-mix-check, mix-previews, stereo-side-screen); nothing chosen on stage F; no arm scores read",
    "held_out": "none touched",
    "outcome": null
   }
