@@ -18,6 +18,8 @@ The stakes for the project are clear. On fresh full mixes, perfect target separa
 
 ## Ranked options: pan methods first, per-song adaptation next, training last
 
+**Update (user, 2026-10-20):** no separator training of any kind and no rented machines, so ranks 5 (per-song adaptation) and 6 (fine-tuning) are cancelled. The released-model and DSP routes (ranks 1–4, 7–9) remain.
+
 The ranking weighs expected gain against effort on one 32 GB Apple-silicon Mac. Effort: **S** = hours of code and CPU; **M** = days; **L** = weeks plus a rented GPU. "Quality" gives the best evidence available and says when none exists for guitars.
 
 | Rank | Route | Hint it needs | Weights / code status | Expected quality | Effort | Mac notes |

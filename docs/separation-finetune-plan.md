@@ -5,6 +5,12 @@ ledger entry `separation-finetune`. Estimates with intervals; the decisions belo
 before results exist. One zero-data probe (MPS, below) ran while drafting. One independent review
 (go with changes; all required changes applied, [below](#review)).
 
+> **Status (user, 2026-10-20): no separator training of any kind, and no rented machines.** Step 2
+> (option A1, the class fine-tune) and any trained form of route B are cancelled, so Step 1 runs
+> only if its result informs something other than a fine-tune. Step 0's zero-training measures and
+> fixes (Wiener, blend, ensemble), existing checkpoints used as released, and DSP splits of their
+> output stay open. The remaining steps are for the ML session to amend or retire.
+
 ## The short version
 
 - **Why now.** Perfect separation is worth −0.066 [−0.090, −0.042] to arm A over htdemucs on stage
