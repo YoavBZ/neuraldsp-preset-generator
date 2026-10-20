@@ -516,3 +516,56 @@ def test_rows_decide_built_and_refusals_and_run_parity():
     bad = DS.check_run_parity(runs, {1, 2}, 3)
     assert len(bad) == 2 and all(b.startswith("Dmix") for b in bad)
     assert DS.check_run_parity(runs[:1], {1, 2}, 3) == []
+
+
+# --- amendment 2: X-LANCE gtr_mss as a stem separator ---------------------------------------------------
+
+def test_xl_single_chunk_exact():
+    import numpy as np
+
+    a = np.random.default_rng(0).standard_normal((2, DS.XL_CHUNK))
+    assert np.allclose(DS.xl_run_chunked(lambda c: 2 * c, a), 2 * a)
+
+
+def test_xl_crossfade_identity_on_long_input():
+    import numpy as np
+
+    a = np.random.default_rng(1).standard_normal((2, 1_323_000))
+    assert len(DS.xl_chunk_starts(a.shape[1])) > 1
+    assert np.allclose(DS.xl_run_chunked(lambda c: c, a), a)
+
+
+def test_xl_short_input_pads():
+    import numpy as np
+
+    assert np.allclose(DS.xl_run_chunked(lambda c: c + 1, np.zeros((2, 500))), 1.0)
+
+
+def test_cost_verdict():
+    assert DS.cost_verdict([10, 10], [15, 15]) == (1.5, True)
+    assert DS.cost_verdict([10, 10], [16, 15]) == (1.55, False)
+
+
+def test_run_path_keeps_mega53_runs(tmp_path):
+    assert DS.run_path(tmp_path, "Dstem", "5000", 1).name == "Dstem-5000-1.json"
+    assert DS.run_path(tmp_path, "Dstem", "5000", 1, "xlance_g").name == "Dstem-5000-1-xlance_g.json"
+
+
+def test_readout_kinds():
+    assert DS.readout_kinds() == (("R_in", "mega53"), ("R_out", "htdemucs"))
+    assert DS.readout_kinds("xlance_g") == (("R_in", "xlance_g"), ("R_out", "htdemucs"))
+    with pytest.raises(SystemExit):
+        DS.readout_kinds("htdemucs")
+
+
+def test_xlance_g_paths_separate(tmp_path):
+    assert DS.ex_path(tmp_path, 1234, "xlance_g") != DS.ex_path(tmp_path, 1234, "mega53")
+
+
+def test_train_stem_sep():
+    assert DS.train_stem_sep("D0", None) == "mega53"
+    assert DS.train_stem_sep("Dstem", "xlance_g") == "xlance_g"
+    with pytest.raises(SystemExit):
+        DS.train_stem_sep("D0", "xlance_g")
+    with pytest.raises(SystemExit):
+        DS.train_stem_sep("Dstem", "htdemucs")

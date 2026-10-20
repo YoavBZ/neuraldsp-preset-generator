@@ -558,3 +558,59 @@ examples, and confirmed the cited figures, render counts and power arithmetic. C
 Optional suggestions taken: the audit examples' labelled cost feeds gate 1; renders and mixes before
 separation; three a′ draws; both a′ − b and a − b reported; z's LUFS declared; the merged guitar
 from the training pool only; the mix-diversity difference stated.
+
+## Amendment 2 (DRAFT, 2026-10-21): X-LANCE gtr_mss as the build's separator, if its MPS check passes
+
+**Status: a draft for the user (morning decision); not reviewed and not in force.** Until it is,
+the pilot, the rest build and every readout stay on Mega-53 fast, as amendment 1 says.
+
+**Why.** The [X-LANCE screen](xlance-screen-results.md) (on its own branch, `ml/xlance-screen`)
+compared `gtr_mss` alone with Mega-53 fast on the 164 audit mixes, under its amendment 1:
+- SNR +0.14 dB [−0.11, +0.39], a tie;
+- mel-range LSD −2.30 dB [−3.00, −1.59], better in all 6 bands;
+- 1.01× Mega-53's CPU time.
+
+It passes the CPU legs; the verdict is pending an MPS timing. Three stage F parts fail badly, so
+Mega-53 stays the fallback.
+
+**The MPS check (zero renders, after the pilot training frees the GPU).**
+`direct_stems time-mps --device mps` runs Mega-53 fast and gtr_mss on the screen's 10 timing clips,
+on the same device, interleaved, after one untimed warm-up of each. It passes if gtr_mss's mean wall
+time per clip is ≤ 1.5× Mega-53's. Each stem is also compared with its stored CPU stem.
+
+**If it passes, and the user agrees:**
+- **Which stems use `xlance_g`:**
+  - the full build, i.e. the rest's 15,311 examples (`build --part rest --stage stem --sep xlance_g`);
+  - a re-separation of the pilot's 7,720 examples and V_sep's 1,720 (`--part pilot|vsep
+    --stage stem --sep xlance_g`). Each stores beside the Mega-53 stems, which are untouched.
+- **Training:** the full D_stem trains on xlance_g stems throughout (`train --sep xlance_g`). R_in
+  reads xlance_g stems; R_out stays htdemucs. D0 and D_mix need no stems and are unchanged.
+- **The STEM/MIX decision:** the pilot's verdict, read on Mega-53 stems, carries it. The pilot is
+  not re-run.
+- **Product:** step 4 and the product feed D the separator it trained on. Mega-53 stays the
+  fallback, in the build and in the product.
+
+**What it costs (new work).** The pilot and V_sep re-separation is new: 9,440 more separations, and
+each re-renders its guitar first, since no audio is kept.
+- **On the CPU:** gtr_mss takes about 27 s per clip at 2 threads (31 s on the current, busy
+  machine). One CPU worker would need about 71 h for the pilot and V_sep, and 115 h for the rest.
+  The CPU alone does not fit.
+- **On the MPS: not yet measured.** If the ratio is r, the plan's Mega-53 budget scales by r:
+  - the rest: 13–17 h × r;
+  - the pilot and V_sep re-separation: about 8–10.5 h × r;
+  - plus their re-renders, about 9.4k plus priming, at the 3-process render cap.
+- **Disk:** at most about 0.09 MB of stem features per example (two uint8 halves), about 2 GB for all 24,751.
+
+**Code (on `ml/direct-stems-xlance`, not yet merged).**
+- `--sep xlance_g` in the stem stage: gtr_mss alone, exactly as in the screen. Weights are
+  hash-checked against `~/ndsp-presets/tools/xlance/manifest.json`; it runs on `--device cpu|mps`.
+- `train --sep xlance_g`, for the stem arms only. Runs are recorded as `<arm>-<n>-<seed>-xlance_g`,
+  so Mega-53 runs are never overwritten.
+- `time-mps`.
+- **Smoke tests (zero renders):**
+  - 3 audit clips on the CPU: the timing helper's gtr_mss stems match the screen's at ≥ 334 dB,
+    and Mega-53's match gate 1's at ≥ 333 dB;
+  - 2 stored audit mixes through the stem stage's writer: features stored under `xlance_g`, and
+    rows read back.
+- **Not yet done:** an MPS run of gtr_mss, after the pilot frees the GPU. `--n full` training is
+  step 3's code and is not implemented on this branch either.

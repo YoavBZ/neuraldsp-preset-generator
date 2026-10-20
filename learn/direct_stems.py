@@ -382,6 +382,8 @@ def cmd_separate(args):
 
     if not PS.disk_ok(guard=20.0):
         raise SystemExit("free disk below 20 GB")
+    if args.sep not in ("mega53", "htdemucs"):
+        raise SystemExit("`separate` is gate 1's (mega53, htdemucs)")
     sep = separator(args.sep)
     jobs = [("audit", str(r["i"]), r) for r in audit_rows()]
     if args.sep == "mega53":
@@ -1678,6 +1680,168 @@ def chosen_setting(root, override=None):
     return sc["chosen"], False
 
 
+# --- X-LANCE gtr_mss alone (amendment 2; docs/xlance-screen-results.md, amendment 1) -------------------
+
+XL_ROOT = HOME / "tools/xlance"
+XL_SR = 44_100
+XL_CHUNK, XL_OVERLAP = 441_000, 44_100   # 10-s chunks, 1-s crossfade (inference_full.py); a 10-s clip is one pass
+STEM_SEPS = ("mega53", "xlance_g")       # what D_stem can train and read out on
+
+
+def xl_chunk_starts(n, chunk=XL_CHUNK, overlap=XL_OVERLAP):
+    """Chunk starts covering n samples with hop chunk - overlap (the last chunk may run past n)."""
+    hop = chunk - overlap
+    if n <= chunk:
+        return [0]
+    return [i * hop for i in range(math.ceil((n - overlap) / hop))]
+
+
+def xl_windows(starts, chunk=XL_CHUNK, overlap=XL_OVERLAP):
+    """Linear crossfades on interior overlaps only, so the weights sum to 1 (as the X-LANCE screen)."""
+    import numpy as np
+
+    ws = []
+    for i, _ in enumerate(starts):
+        w = np.ones(chunk)
+        if i > 0:
+            w[:overlap] = np.linspace(0, 1, overlap)
+        if i < len(starts) - 1:
+            w[-overlap:] = np.linspace(1, 0, overlap)
+        ws.append(w)
+    return ws
+
+
+def xl_run_chunked(f, a, chunk=XL_CHUNK, overlap=XL_OVERLAP):
+    """f on (c, n) audio in crossfaded chunks; f maps (c, chunk) -> (c, chunk); exact for n == chunk."""
+    import numpy as np
+
+    c, n = a.shape
+    starts = xl_chunk_starts(n, chunk, overlap)
+    pad = np.zeros((c, starts[-1] + chunk), a.dtype)
+    pad[:, :n] = a
+    out = np.zeros(pad.shape)
+    for s0, w in zip(starts, xl_windows(starts, chunk, overlap)):
+        out[:, s0:s0 + chunk] += np.asarray(f(pad[:, s0:s0 + chunk]), np.float64) * w
+    return out[:, :n]
+
+
+class XLanceG:
+    """X-LANCE's `gtr_mss.pth` alone on mono 48-kHz audio, exactly as the X-LANCE screen's X_g: two
+    equal channels at 44.1 kHz, crossfaded 10-s chunks, the mean of the output channels, back to
+    48 kHz. Weights hash-checked against ~/ndsp-presets/tools/xlance/manifest.json."""
+
+    def __init__(self, device="cpu", threads=2):
+        import torch
+
+        from learn import separator_screen as SCR       # noqa: F401  (its lzma stub, before librosa)
+
+        man = json.loads((XL_ROOT / "manifest.json").read_text())
+        w = next(f for f in man["weights"] if f["name"] == "gtr_mss.pth")
+        if hashlib_file(XL_ROOT / w["path"]) != w["sha256"]:
+            raise SystemExit("gtr_mss.pth: hash differs from the manifest")
+        torch.set_num_threads(threads)
+        for k in [k for k in sys.modules if k in ("models", "inference") or k.startswith(("models.", "inference."))]:
+            del sys.modules[k]                           # MSST's packages of the same names, if loaded
+        sys.path.insert(0, str(XL_ROOT / "code"))
+        cwd = os.getcwd()
+        os.chdir(XL_ROOT / "code")                       # its configs are read from ./configs
+        try:
+            from inference import load_config_and_state_dict, load_generator
+            cfg, sd = load_config_and_state_dict(str(XL_ROOT / w["path"]), "cpu")
+            if cfg["data"]["sample_rate"] != XL_SR:
+                raise SystemExit("gtr_mss: unexpected sample rate")
+            self.model = load_generator(cfg, sd, device="cpu")
+        finally:
+            os.chdir(cwd)
+        if device == "mps":
+            if not torch.backends.mps.is_available():
+                raise SystemExit("MPS is not available")
+            self.model = self.model.to("mps")
+        self.device = torch.device(device)
+        self.device_name, self.setting, self.sha256 = device, "gtr_mss", w["sha256"]
+
+    def _f(self, a):
+        import numpy as np
+        import torch
+
+        with torch.no_grad():
+            x = torch.from_numpy(np.ascontiguousarray(a, np.float32))[None].to(self.device)
+            y = self.model(x)[0].float().cpu().numpy()
+        out = np.zeros(a.shape)
+        k = min(a.shape[1], y.shape[-1])
+        out[:, :k] = y.reshape(a.shape[0], -1)[:, :k]
+        return out
+
+    def __call__(self, x):
+        import numpy as np
+
+        from learn import separator_screen as SCR
+
+        y = SCR.to44(np.asarray(x, np.float64))
+        return SCR.to48(xl_run_chunked(self._f, np.stack([y, y])).mean(0), len(x))
+
+
+def stem_separator(sep_name, device, setting=None):
+    """The stem stage's separator: Mega-53 (1c's setting, mps|cpu), X-LANCE gtr_mss (mps|cpu, 2 threads)
+    or htdemucs (CPU)."""
+    if sep_name == "mega53":
+        return mega53_separator(setting, device)
+    if sep_name == "xlance_g":
+        return XLanceG(device)
+    import torch
+
+    from learn import separator_screen as SCR
+
+    s = SCR.htdemucs()
+    torch.set_num_threads(2)
+    return s
+
+
+XL_TIMING_CLIPS = (2080, 6910, 8380, 8390, 14860, 20610, 29670, 34280, 39380, 39470)   # the X-LANCE screen's 10
+XL_COST_LIMIT = 1.5
+XL_SCREEN = HOME / "learn/xlance-screen/stems/X_g/audit"
+
+
+def cost_verdict(mega_s, xg_s, limit=XL_COST_LIMIT):
+    """(ratio, passes) of X-LANCE gtr_mss's mean seconds per clip over Mega-53 fast's."""
+    r = (sum(xg_s) / len(xg_s)) / (sum(mega_s) / len(mega_s))
+    return round(r, 3), r <= limit
+
+
+def cmd_time_mps(args):
+    """Wall seconds per 10-s clip of Mega-53 fast and X-LANCE gtr_mss on the same audit clips and device,
+    interleaved clip by clip after one untimed warm-up of each; the ratio against the 1.5x limit.
+    Each stem is also compared with its stored CPU stem (gate 1's; the X-LANCE screen's X_g)."""
+    import numpy as np
+
+    clips = list(XL_TIMING_CLIPS[:args.limit] if args.limit else XL_TIMING_CLIPS)
+    if args.limit and not args.out:
+        raise SystemExit("--limit is for smoke tests into a scratch --out only")
+    by = {r["i"]: r for r in audit_rows()}
+    mix = {i: sum(audit_audio(by[i])[:2]) for i in clips}
+    mega = mega53_separator("fast", args.device)
+    mega(mix[clips[0]])                                   # warm-up, untimed (also caches MSST's utils)
+    xg = XLanceG(args.device)
+    xg(mix[clips[0]])                                     # warm-up, untimed
+    rows = {}
+    for i in clips:
+        t0 = time.time()
+        sm = np.asarray(mega(mix[i]), np.float64)
+        t1 = time.time()
+        sx = np.asarray(xg(mix[i]), np.float64)
+        t2 = time.time()
+        px = XL_SCREEN / f"{i}.npy"
+        rows[i] = {"mega53_s": round(t1 - t0, 2), "xlance_g_s": round(t2 - t1, 2),
+                   "mega53_db_vs_gate1": round(snr_db(sm, np.load(stem_path("mega53", "audit", i))), 1),
+                   "xlance_g_db_vs_screen": round(snr_db(sx, np.load(px)), 1) if px.exists() else None}
+        print(f"{i}: Mega-53 {rows[i]['mega53_s']} s, gtr_mss {rows[i]['xlance_g_s']} s", flush=True)
+    ratio, ok = cost_verdict([v["mega53_s"] for v in rows.values()], [v["xlance_g_s"] for v in rows.values()])
+    out = {"device": args.device, "clips": clips, "rows": rows, "ratio": ratio, "limit": XL_COST_LIMIT, "passes": ok,
+           "xlance_g_sha256": xg.sha256, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    _save(out_root(args) / "xlance-time" / f"time-{args.device}.json", out)
+    print(f"TIME {args.device}: gtr_mss / Mega-53 fast = {ratio}x ({'within' if ok else 'over'} the {XL_COST_LIMIT}x limit)")
+
+
 def stage_stem(args, ctx, items, root, guard):
     """Separation of each example's true mix, fed by its own re-render through a bounded queue:
     the re-render and mix must reproduce the stored mix mels (99% of cells within one step)."""
@@ -1700,24 +1864,16 @@ def stage_stem(args, ctx, items, root, guard):
     todo = render_order([r for r in items if r["i"] in mixrows and not mixrows[r["i"]].get("refused")
                          and r["i"] not in done], reverse=args.order == "desc")
     waiting = sum(1 for r in items if r["i"] not in mixrows)
-    print(f"stem stage {args.part} {sep_name} ({setting or 'htdemucs'}, {args.device if sep_name == 'mega53' else 'cpu'}, "
+    device = args.device if sep_name in STEM_SEPS else "cpu"          # htdemucs: CPU, as `separator_screen.htdemucs`
+    print(f"stem stage {args.part} {sep_name} ({setting or ('gtr_mss' if sep_name == 'xlance_g' else 'htdemucs')}, {device}, "
           f"{args.order}): {len(todo)} to do; "
           f"{waiting} without a mix yet", flush=True)
     if not todo:
         print(f"BUILD DONE {args.part} {sep_name}", flush=True)
         return
-    if sep_name == "mega53":
-        sep = mega53_separator(setting, args.device)
-    else:
-        import torch
-
-        from learn import separator_screen as SCR
-
-        sep = SCR.htdemucs()
-        torch.set_num_threads(2)
+    sep = stem_separator(sep_name, device, setting)
     swap0 = swap_mb()
     q, stop, err = queue.Queue(maxsize=QUEUE), threading.Event(), []
-    device = args.device if sep_name == "mega53" else "cpu"          # htdemucs: CPU, as `separator_screen.htdemucs`
     worker = f"{device}-{args.order}-{os.getpid()}"
 
     def produce():
@@ -1936,14 +2092,14 @@ def cmd_sepcheck(args):
 
 # --- the pilot training (TORCH_PY, MPS) ----------------------------------------------------------------
 
-def pilot_examples(ctx, root, arm, smoke=False):
+def pilot_examples(ctx, root, arm, smoke=False, stem_sep="mega53"):
     """(rows, dropped): the pilot's examples with every feature this arm needs; refused examples
-    (either stage) are dropped from every arm."""
+    (either stage) are dropped from every arm. `stem_sep`: whose stems the stem arms read."""
     mixrows = build_rows(root, "pilot", "mix")
-    stemrows = build_rows(root, "pilot", "mega53")
+    stemrows = build_rows(root, "pilot", stem_sep)
     unbuilt = pilot_unbuilt(ctx.parts["pilot"], mixrows, stemrows)
     if unbuilt and not smoke:
-        raise SystemExit(f"{len(unbuilt)} pilot examples lack a mix or Mega-53 row: the stem stage must finish "
+        raise SystemExit(f"{len(unbuilt)} pilot examples lack a mix or {stem_sep} row: the stem stage must finish "
                          "before any arm trains (every arm drops the same refusals)")
     out, dropped, missing = [], refusals(mixrows, stemrows, {r["i"] for r in ctx.parts["pilot"]}), []
     for r in ctx.parts["pilot"]:
@@ -1953,7 +2109,7 @@ def pilot_examples(ctx, root, arm, smoke=False):
         if i not in mixrows or (arm in STEM_ARMS and i not in stemrows):
             missing.append(i)                                 # smoke only (rows decide what is built)
             continue
-        need = ["mix"] + (["mega53"] if arm in STEM_ARMS else [])
+        need = ["mix"] + ([stem_sep] if arm in STEM_ARMS else [])
         if any(not ex_path(root, i, k).exists() for k in need):
             raise SystemExit(f"{i}: a row says built but the features file is missing")
         out.append(r)
@@ -1986,7 +2142,7 @@ class StemData:
     """The pilot's stored true mixes and Mega-53 stems in memory (uint8 halves), the arm's inputs
     per batch: D_mix's stem and D_stem's mix zeroed, D_stem's stem augmented (training only)."""
 
-    def __init__(self, rows, arm, root, aug):
+    def __init__(self, rows, arm, root, aug, stem_sep="mega53"):
         import numpy as np
 
         from learn import pretrain_set as PS
@@ -2004,7 +2160,7 @@ class StemData:
             self.M[j, 0], self.M[j, 1], self.LM[j] = d["mA"], d["mB"], d["lufs"]
             self.ga[j] = float(d["gain_db"])
             if self.S is not None:
-                e = np.load(ex_path(root, r["i"], "mega53"))
+                e = np.load(ex_path(root, r["i"], stem_sep))
                 self.S[j, 0], self.S[j, 1], self.LS[j] = e["sA"], e["sB"], e["lufs"]
         self.cands = merge_candidates(rows) if aug else {}
         self.gpos, self.G = {}, None
@@ -2117,12 +2273,19 @@ def readout_tensors(root, vrows, stem_kind, arm):
     return np.stack(X).astype(np.float32), np.stack(C), [np.stack(z) for z in zip(*Y)], who
 
 
-def vsep_ready(ctx, root, smoke=False):
+def readout_kinds(stem_sep="mega53"):
+    """(readout, stem kind): R_in reads the stems the arm trained on; R_out is always htdemucs."""
+    if stem_sep not in STEM_SEPS:
+        raise SystemExit(f"unknown stem separator {stem_sep!r}")
+    return (("R_in", stem_sep), ("R_out", "htdemucs"))
+
+
+def vsep_ready(ctx, root, smoke=False, stem_sep="mega53"):
     """{readout: rows} when V_sep is built (mix, Mega-53 and htdemucs for every unrefused
     example); None otherwise (smoke: whatever is built)."""
     mixrows = build_rows(root, "vsep", "mix")
     out = {}
-    for name, kind in (("R_in", "mega53"), ("R_out", "htdemucs")):
+    for name, kind in readout_kinds(stem_sep):
         st = build_rows(root, "vsep", kind)
         ok = [r for r in ctx.parts["vsep"] if r["i"] in mixrows and not mixrows[r["i"]].get("refused")
               and r["i"] in st and not st[r["i"]].get("refused")]
@@ -2133,14 +2296,14 @@ def vsep_ready(ctx, root, smoke=False):
     return out
 
 
-def evaluate_readouts(net, ctx, root, arm, dev, smoke=False):
+def evaluate_readouts(net, ctx, root, arm, dev, smoke=False, stem_sep="mega53"):
     from learn import pretrain_set as PS
 
-    ready = vsep_ready(ctx, root, smoke)
+    ready = vsep_ready(ctx, root, smoke, stem_sep)
     if ready is None:
         return None
     res = {}
-    for name, kind in (("R_in", "mega53"), ("R_out", "htdemucs")):
+    for name, kind in readout_kinds(stem_sep):
         val = readout_tensors(root, ready[name], kind, arm)
         if val is None:
             res[name] = {}
@@ -2225,8 +2388,20 @@ def train_arm(data, tr, es, seed, dev, log, epochs=MAX_EPOCHS):
     return net, state, best_ep, best
 
 
-def run_path(root, arm, n, seed):
-    return root / "pilot" / "runs" / f"{arm}-{n}-{seed}.json"
+def run_path(root, arm, n, seed, stem_sep="mega53"):
+    """A run's record; xlance_g-stem runs get their own name, so Mega-53 runs are never overwritten."""
+    suffix = "" if stem_sep == "mega53" else f"-{stem_sep}"
+    return root / "pilot" / "runs" / f"{arm}-{n}-{seed}{suffix}.json"
+
+
+def train_stem_sep(arm, sep):
+    """train --sep: which stems the stem arms read (default Mega-53); other arms take no --sep."""
+    stem_sep = sep or "mega53"
+    if stem_sep not in STEM_SEPS:
+        raise SystemExit(f"train --sep must be one of {STEM_SEPS}")
+    if stem_sep != "mega53" and arm not in STEM_ARMS:
+        raise SystemExit(f"--sep {stem_sep} is for the stem arms {STEM_ARMS}")
+    return stem_sep
 
 
 def cmd_train(args):
@@ -2245,13 +2420,14 @@ def cmd_train(args):
         raise SystemExit("--smoke writes into a scratch --out only")
     if args.seed not in TRAIN_SEEDS and not args.smoke:
         raise SystemExit(f"the pilot's seeds are {TRAIN_SEEDS}")
+    stem_sep = train_stem_sep(args.arm, args.sep)
     root = out_root(args)
-    rp = run_path(root, args.arm, args.n, args.seed)
+    rp = run_path(root, args.arm, args.n, args.seed, stem_sep)
     if rp.exists():
         print(f"{rp.name} exists: nothing to do")
         return
     ctx = Ctx()
-    rows, dropped = pilot_examples(ctx, root, args.arm, args.smoke)
+    rows, dropped = pilot_examples(ctx, root, args.arm, args.smoke, stem_sep)
     tr = np.array([j for j, r in enumerate(rows) if not r["early_stop"]])
     es = np.array([j for j, r in enumerate(rows) if r["early_stop"]])
     if not len(tr) or not len(es):
@@ -2261,7 +2437,7 @@ def cmd_train(args):
     torch.set_num_threads(2)
     dev = torch.device("cpu" if os.environ.get("DS_DEVICE") == "cpu" or not torch.backends.mps.is_available() else "mps")
     t_load = time.time()
-    data = D0Data(rows) if args.arm == "D0" else StemData(rows, args.arm, root, aug=args.arm == "Dstem")
+    data = D0Data(rows) if args.arm == "D0" else StemData(rows, args.arm, root, aug=args.arm == "Dstem", stem_sep=stem_sep)
     print(f"{args.arm} seed {args.seed}: {len(tr)} train, {len(es)} early stopping, {len(dropped)} refused examples "
           f"dropped; loaded in {time.time() - t_load:.0f} s on {dev}", flush=True)
     t0 = time.time()
@@ -2281,8 +2457,9 @@ def cmd_train(args):
     rp.parent.mkdir(parents=True, exist_ok=True)
     mp = rp.with_suffix(".pt")
     torch.save(state, mp)
-    readouts = evaluate_readouts(net, ctx, root, args.arm, dev, args.smoke)
+    readouts = evaluate_readouts(net, ctx, root, args.arm, dev, args.smoke, stem_sep)
     rec = {"plan": "docs/direct-model-stems-plan.md step 2, amendment 1", "arm": args.arm, "n": args.n, "seed": args.seed,
+           "stem_sep": stem_sep,
            "train": len(tr), "early_stop": len(es), "dropped_refused": dropped, "attempts": attempt,
            "epochs_run": len(log), "best_epoch": best_ep, "best_early_stop_loss": best, "minutes": round(minutes, 1),
            "examples_per_s": round(len(tr) * len(log) / max(minutes * 60, 1e-9), 1),
@@ -2390,12 +2567,13 @@ def cmd_pilot_report(args):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=("separate", "move", "reliance", "audit-mix", "sepcheck", "build", "train",
-                                    "pilot-report"))
-    ap.add_argument("--sep", choices=("mega53", "htdemucs"))
+                                    "pilot-report", "time-mps"))
+    ap.add_argument("--sep", choices=("mega53", "htdemucs", "xlance_g"),
+                    help="build --stage stem: the separator (default mega53); train: the stem arms' stems (default mega53)")
     ap.add_argument("--part", choices=("pilot", "vsep", "rest"))
     ap.add_argument("--stage", choices=("mix", "stem"))
     ap.add_argument("--shard", type=parse_shard, default=(0, 1), help="mix stage: whole sections, balanced (shard_sections)")
-    ap.add_argument("--device", choices=("mps", "cpu"), default="mps", help="stem stage, Mega-53")
+    ap.add_argument("--device", choices=("mps", "cpu"), default="mps", help="stem stage (Mega-53, xlance_g); time-mps")
     ap.add_argument("--order", choices=("asc", "desc"), default="asc",
                     help="stem stage: two workers (MPS asc, CPU desc) meet in the middle")
     ap.add_argument("--setting", choices=("fast", "stored"), help="smoke tests only: a Mega-53 setting without 1c")
@@ -2418,7 +2596,8 @@ def main(argv=None):
     if a.cmd == "train" and not (a.arm and a.seed is not None):
         ap.error("train needs --arm and --seed")
     {"separate": cmd_separate, "move": cmd_move, "reliance": cmd_reliance, "audit-mix": cmd_audit_mix,
-     "sepcheck": cmd_sepcheck, "build": cmd_build, "train": cmd_train, "pilot-report": cmd_pilot_report}[a.cmd](a)
+     "sepcheck": cmd_sepcheck, "build": cmd_build, "train": cmd_train, "pilot-report": cmd_pilot_report,
+     "time-mps": cmd_time_mps}[a.cmd](a)
 
 
 if __name__ == "__main__":
