@@ -271,21 +271,36 @@ def _bounded_renderer(workdir):
 
 def test_distinct_dis_do_not_accumulate_on_disk(tmp_path):
     """A render set over thousands of distinct DIs (part C) keeps a bounded few files; a DI
-    that returns after eviction is written again with the same bytes and the same samples."""
+    that returns after eviction is written again under the same name with the same samples.
+
+    Not the same bytes: libsndfile stamps a FLOAT WAV's PEAK chunk with the write time, so a
+    rewrite in a later second differs there. Nothing reads the bytes (the renderer keys DIs by
+    the array's digest and the server by path, decoding the samples), so the rewrite here is
+    forced into a later second, where a raw-byte comparison would fail every time."""
+    import time
+
     import numpy as np
     import soundfile as sf
 
     made = _bounded_renderer(tmp_path)
     first = np.linspace(-0.5, 0.5, 4096, dtype=np.float32)
     path = made._di_file(first)
-    written = path.read_bytes()
+    written_in = int(time.time())
+    info = sf.info(str(path))
     for n in range(K.DI_FILES_KEPT * 5):
         assert made._di_file(np.full(4096, n / 100.0, dtype=np.float32)).exists()
         assert len(list(tmp_path.glob("di-*.wav"))) <= K.DI_FILES_KEPT
         assert len(made._di_files) <= K.DI_FILES_KEPT
     assert not path.exists()
+    while int(time.time()) <= written_in:
+        time.sleep(0.02)
     again = made._di_file(first)
-    assert again == path and again.read_bytes() == written
+    assert again == path
+    again_info = sf.info(str(again))
+    assert (again_info.format, again_info.subtype, again_info.samplerate, again_info.channels,
+            again_info.frames) == (info.format, info.subtype, info.samplerate, info.channels,
+                                   info.frames)
+    assert again_info.subtype == "FLOAT"
     assert np.array_equal(sf.read(str(again), dtype="float32", always_2d=True)[0][:, 0], first)
 
 
