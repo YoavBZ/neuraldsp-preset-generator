@@ -249,7 +249,7 @@ with the stored S, H, M, YT and YG on one fixed direction set.
 - **Cheapest first move:** screen existing query-conditioned separators, and permutation-invariant
   multi-instance ones, on the stored stage-F contexts, at CPU cost only. Their weights and licences
   must be checked first (open, non-commercial, unlicensed or gated is fine; unclear terms go to the
-  user; cloud APIs and commercial tools are out; ML plan §5).
+  user; nothing the product needs may cost other users money; ML plan §5).
 - **Ceiling evidence:** the pan side is worth +1.55 dB in scenario P (stored). YT − YG, G_mic, I
   and X bound the rest.
 - **Needs from the user:**

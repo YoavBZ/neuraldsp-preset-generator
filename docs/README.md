@@ -544,8 +544,8 @@ was declared, what was measured, and the research behind it.
     MPS-safe magnitude-only discriminator, a PANN feature loss. Corrects the DI recovery report.
     Research, not a declared plan.
 16. [single-guitar-separation-2026-10.md](research/single-guitar-separation-2026-10.md): how to
-    extract one target guitar from a mix with several guitars (October 2026). No open, ungated
-    model separates lead from rhythm or one electric guitar from another; open separators select
+    extract one target guitar from a mix with several guitars (October 2026). No usable model is
+    shown to separate lead from rhythm or one electric guitar from another; open separators select
     by class. Ranked: keep the target's side of Mega-53's stereo stem (arrangement `pan` or the
     user's ear), a level-difference mask, centre/wide models, Mega-53's electric/acoustic heads
     when the other guitar is acoustic, per-song solo-region adaptation, then fine-tuning on
