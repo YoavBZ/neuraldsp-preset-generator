@@ -101,6 +101,8 @@ def test_disk_guard_override_is_opt_in_and_logged(monkeypatch, tmp_path, capsys)
     with pytest.raises(SystemExit, match="25 GB guard"):
         P.main(["search", "--arms", "YT", "--min-free-gb", "25"])
     assert seen[-1] == 25.0 and "disk guard overridden for this run: 25 GB" in capsys.readouterr().out
+    with pytest.raises(SystemExit, match="floor"):
+        P.main(["search", "--arms", "YT", "--min-free-gb", "0"])
     monkeypatch.undo()
     monkeypatch.setattr(M.LO, "disk_free_gb", lambda: 28.0)              # the default stays 31 GB elsewhere
     assert M.LO.DISK_GUARD_GB == 31.0 and not M.disk_ok(10) and M.disk_ok(10, guard=25)

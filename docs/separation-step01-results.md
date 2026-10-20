@@ -11,12 +11,12 @@ Development data only (stage F's 21 parts, 12 bands).
   `~/ndsp-presets/learn/arm-a-mega53/F-perfect-sep/YG/` (Step 1's partial records).
 - **Renders:** Step 0, 0. Step 1, **2,666 recorded** (48 of 126 directions finished, plus 26
   priming renders) before the user's decision stopped it. The three directions in flight at the
-  stop were not saved, so at most about 160 more renders ran without a record.
+  stop were not saved, so up to about 165 more renders (3 × 55) ran without a record.
 - **Audit:** Step 0's six decision numbers were checked by an independent auditor and confirmed.
 
 ## Headline
 
-- **The other guitars limit separation, not Mega-53's training.** On the 19 parts that have
+- **The other guitars limit separation, not how well Mega-53 does its class job.** On the 19 parts that have
   another electric guitar, the other guitars are about **5.5 dB louder than the target** in the
   crop (I +5.52 dB [+3.70, +7.24], band-weighted). The louder they are, the worse Mega-53's stem
   (Spearman −0.85 across parts).
@@ -24,8 +24,8 @@ Development data only (stage F's 21 parts, 12 bands).
   Mega-53 by only **+0.30 dB** of SNR (band median; +0.22 to +0.37 leaving one band out; above 0
   in 12 of 12 bands). That is the most a class fine-tune of Mega-53 could ever reach, because the
   other guitars are inside the class.
-- **No free test-time fix helps.** All four fixes lower SNR against Mega-53 and none survives
-  Holm's correction.
+- **No free test-time fix helps.** All four point estimates lower SNR against Mega-53 (T4's
+  interval just reaches 0) and none survives Holm's correction.
 - **Step 1 was stopped after 2,666 renders by the user's decision not to train separators.** There
   is no YG − M reading. The partial records are kept but are not to be analysed or quoted.
 - **The class fine-tune (Steps 2–3) is retired.** See [the user's decision](#the-users-decision).
@@ -39,7 +39,7 @@ Development data only (stage F's 21 parts, 12 bands).
 - leave-one-band-out range +0.221 to +0.372; 12 of 12 bands above 0;
 - without the 2 single-guitar parts (10 bands): +0.219.
 
-G's band *means* (about +39.6 dB) must not be quoted. On the two single-guitar parts G is the
+G's band *means* must not be quoted. On the two single-guitar parts G is the
 target itself, so its SNR is effectively unlimited and swamps the mean. The median is the declared
 reading for this reason.
 

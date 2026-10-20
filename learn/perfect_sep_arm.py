@@ -227,12 +227,17 @@ def cmd_check():
         raise SystemExit(1)
 
 
+MIN_FREE_GB_FLOOR = 10.0                                              # the override can lower the guard, not remove it
+
+
 def cmd_search(arms, shard, min_free_gb=None):
     """One process per shard of (part, amp) groups, arm by arm within a group: a discarded priming
     render (the arm's search DI at S) after the process start and every DI or amp change, then the
     group's directions. Resumable; stops on A's stop files, the caps, the disk and swap guards.
     `min_free_gb` overrides the disk guard for this run only (default: LO.DISK_GUARD_GB, 31 GB)."""
     guard_gb = A.LO.DISK_GUARD_GB if min_free_gb is None else float(min_free_gb)
+    if guard_gb < MIN_FREE_GB_FLOOR:
+        raise SystemExit(f"--min-free-gb {guard_gb:g} is below the {MIN_FREE_GB_FLOOR:g} GB floor")
     if guard_gb != A.LO.DISK_GUARD_GB:
         print(f"disk guard overridden for this run: {guard_gb:g} GB (default {A.LO.DISK_GUARD_GB:g} GB)", flush=True)
     if not (A._load(OUT / "check.json") or {}).get("ok"):
@@ -378,7 +383,7 @@ def report_from_units(units, bt, snr=None):
     rep["share_of_ceiling"] = shares(units, rep, zt)
     if has_arm(units, "YG"):
         rep["YG"] = report_yg(units, filters)
-    for arm in ARMS if zt else ("YT",):
+    for arm in [a for a in (ARMS if zt else ("YT",)) if a != "YG" or "YG" in rep]:   # no partial-YG figures
         sh = [abs(math.log(at / c["value"])) for u in units for c in [(u["rec"].get(arm) or {}).get("s_lag_check")]
               if c for at in c["at"].values() if A._num(at) and A._num(c["value"]) and at > 0 and c["value"] > 0]
         rep[f"{arm}_s_lag_shift"] = ({"n": len(sh), "median_abs_log": sorted(sh)[len(sh) // 2], "max_abs_log": max(sh)}
