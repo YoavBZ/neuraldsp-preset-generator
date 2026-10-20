@@ -5,20 +5,20 @@ ledger entry `separation-finetune`. Estimates with intervals; the decisions belo
 before results exist. One zero-data probe (MPS, below) ran while drafting. One independent review
 (go with changes; all required changes applied, [below](#review)).
 
-> **Status (user, 2026-10-20, revised the same day): separator fine-tuning is allowed again, on
-> this Mac only (no rented machines).** The user first ruled out all separator training, then
-> allowed fine-tuning, adapting and feature extraction, "just not a major effort of modeling and
-> training a new separator". So Step 0 is done; Steps 1–3 are open again as declared, provided any
-> training fits the Mac; Step 2 already plans one MPS run with the loss off the device. Step 1
-> stopped after 2,666 renders; it can be resumed or rerun under an amendment that says whether the
-> partial records are reused. A resumed run needs a fresh disk-guard approval or the ~2 GB freed
-> that the plan asks for. Route B's cheapest first move (screening released checkpoints on the
-> CPU) and DSP splits of their output stay open. A newly trained conditioned separator, the
-> trained form of route B, stays out unless it is a fine-tune or adaptation of an existing one. A
-> route-B conditioned head on Mega-53 is allowed if its training is small. Training time (user,
-> 2026-10-20): minutes are fine; any longer run, e.g. Step 2's fine-tune if it takes hours, needs
-> the user's approval first; no week-long efforts. The ML session amends this plan and the ledger
-> entry as needed.
+> **Status (user, 2026-10-20, revised the same day): separator fine-tuning is allowed again, on this
+> Mac only (no rented machines).** The user first ruled out all separator training, then allowed
+> fine-tuning, adapting and feature extraction, "just not a major effort of modeling and training a
+> new separator". So Step 0 is done; Steps 1–3 are open again as declared, provided any training
+> fits the Mac; Step 2 already plans one MPS run with the loss off the device. Step 1 stopped after
+> 2,666 renders; it can be resumed or rerun under an amendment that says whether the partial records
+> are reused. A resumed run needs a fresh disk-guard approval or the ~2 GB freed that the plan asks
+> for. Route B's cheapest first move (screening released checkpoints on the CPU) and DSP splits of
+> their output stay open. A newly trained conditioned separator, the trained form of route B, stays
+> out unless it is a fine-tune or adaptation of an existing one. A route-B conditioned head on
+> Mega-53 is allowed if its training is small. Training time (user, 2026-10-20): minutes are fine;
+> any longer run, e.g. Step 2's fine-tune (up to 11 MPS h) and its MPS gate (≤ 1 h), needs the
+> user's approval first; no week-long efforts. The ML session amends this plan and the ledger entry
+> as needed.
 
 ## The short version
 
@@ -161,6 +161,9 @@ fixed direction set where S, H, M, YT and YG all score:
   denominator is small).
 
 ## Step 2: the class fine-tune (only if Step 1 says so)
+
+*Needs the user's approval before it starts (training-time rule, 2026-10-20): the gate and the run
+take hours.*
 
 **Model.** Mega-53 pruned to the electric-guitar head, as stored: 38.7 M parameters (trunk 25.3 M,
 head 12.4 M). Train the mask estimator and the last 4 of the 12 trunk layers; freeze the rest.
@@ -326,7 +329,7 @@ field for sets 1–2, `band` for set 3.
 |---|---|---|---|---|---|
 | 0 | 0 | ≈1 h CPU (sums, Wiener, blends) | < 50 MB (JSON only) | ½ day with audit | executor + auditor |
 | 1 (unless R0a stops) | 6,993 | C′ rebuild of G (CPU); about 1–1.5 h at 3 render processes (amendment 3's pace) | ≈ 60 MB | ½ day | + auditor |
-| 2 (if YG − M ≤ −0.032, upper bound < 0) | 0 | MPS gate ≤ 1 h; training ≤ 11 MPS h (one run, one seed); stage F separation ≈ 35 min CPU | ≤ 0.3 GB (2 checkpoints, logs, N's stems) | 1 day to build + 1 night + ½ day | executor |
+| 2 (if YG − M ≤ −0.032, upper bound < 0) | 0 | MPS gate ≤ 1 h; training ≤ 11 MPS h (one run, one seed); stage F separation ≈ 35 min CPU; needs the user's approval | ≤ 0.3 GB (2 checkpoints, logs, N's stems) | 1 day to build + 1 night + ½ day | executor |
 | 3 (if the gate says test) | 6,993 | C′ rebuild of N; about 1–1.5 h of renders | ≈ 60 MB | ½ day | + auditor |
 | **Total if all run** | **≤ 13,986** | **≤ 12 MPS h** | **< 0.5 GB** | **about 4 working days** | **1 executor, ≤ 4 audits** |
 

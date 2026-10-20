@@ -4,6 +4,10 @@ Declared 2026-10-19, before any compute for it. Development data only. The rules
 [`research/ml-plan-2026-10.md`](research/ml-plan-2026-10.md) section 5 apply, with the user's rules
 of 2026-10-16: estimates with 90% band-clustered intervals, no pass/fail bars, evidence-based
 stopping, renders and hours declared, licence-clean open-source tools only.
+
+*Training time (user, 2026-10-20): the pilot training (≈2.4 h) and the D/D0 runs (5–7.4 h) each
+need the user's approval before they start.*
+
 - **Code (after review, before any compute):** `learn/direct_stems.py`, tests
   `tests/test_direct_stems.py`.
 - **Ledger:** `direct-model-stems` in [`dev-test-ledger.json`](dev-test-ledger.json).

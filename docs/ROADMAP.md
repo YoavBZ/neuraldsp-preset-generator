@@ -136,22 +136,23 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    **Next, in order:**
    1. **Better target-guitar separation** ([plan](separation-finetune-plan.md), reviewed):
       zero-render ceilings on stage F first (how much the other guitars cost; Wiener and blend
-      fixes), then an oracle class-stem arm (about 7k renders) decides whether fine-tuning
-      Mega-53's head can pay (YG − M ≤ −0.032) or a conditioned one-guitar separator is the route
-      (a user decision: data, disk, a product question). Steps after the first need about 2 GB
-      of disk freed. *2026-10-20 (user, revised the same day): fine-tuning or adapting an
-      existing separator is fine, but not designing and training a new one, and there are no
-      rented machines, so training runs on this Mac. Step 0 is done; Steps 1–3 are open again,
-      Step 1 can resume; a newly trained conditioned separator (trained route B) stays out.
-      Released checkpoints and DSP splits remain. The
-      [pan screen](stereo-side-results.md) ran: a known side is worth about +1.4 dB (target's
-      channel at ±0.6 +1.50; centre model on a centred lead +1.35), short of +2 dB; blind picks
-      lose.*
+      fixes), then an oracle class-stem arm (about 7k renders) decides whether fine-tuning Mega-53's
+      head can pay (YG − M ≤ −0.032) or a conditioned one-guitar separator is the route (a user
+      decision: data, disk, a product question). Steps after the first need about 2 GB of disk
+      freed. *2026-10-20 (user, revised the same day): fine-tuning or adapting an existing separator
+      is fine, but not designing and training a new one, and there are no rented machines, so
+      training runs on this Mac, and any run longer than minutes (e.g. Step 2's ≤ 11 h fine-tune)
+      needs the user's approval. Step 0 is done; Steps 1–3 are open again, Step 1 can resume; a
+      newly trained conditioned separator (trained route B) stays out. Released checkpoints and DSP
+      splits remain. The [pan screen](stereo-side-results.md) ran: a known side is worth about
+      +1.4 dB (target's channel at ±0.6 +1.50; centre model on a centred lead +1.35), short of
+      +2 dB; blind picks lose.*
    2. **Train the direct model on realistic separated stems,** and check how much it relies on the
       stem against the mix ([plan](direct-model-stems-plan.md), declared and reviewed 2026-10-19):
-      zero-render checks of the stem mismatch on the existing model first, then a 5k pilot (real
-      Mega-53 stems, a mix-only model, the old recipe), then one stage F test, D − S primary. The
-      full build waits on the user freeing disk (34 GB free at start).
+      zero-render checks of the stem mismatch on the existing model first, then a 5k pilot (its
+      ≈2.4 h of training needs the user's approval; real Mega-53 stems, a mix-only model, the old
+      recipe), then one stage F test, D − S primary. The full build (5–7.4 h of training, approval
+      first) waits on the user freeing disk (34 GB free at start).
       *Gate 1 done 2026-10-20 ([results](direct-model-stems-gate1-results.md)):* the stem matters
       (GATE1 STEM); the mix adds little behind a clean or separated stem, so the next model should
       read the separated target stem alone (a pilot-arm change for the user to approve).
@@ -357,7 +358,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-20 | Licence and cost rule (user): the project is non-commercial and open source, so anything open, non-commercial, unlicensed or gated behind an access request is fine (weights, code, tools, data); unclear licence terms go to the user to check; nothing may force other users to pay (beyond the Neural DSP plugin and Claude Code), free cloud APIs are fine, and tools the user pays for personally (e.g. Moises) are fine in development, and other paid tools need the user's yes. This replaces the 2026-10-07 "open source only" rule. ML plan §5 updated | [ML plan](research/ml-plan-2026-10.md), section 5 |
 | 2026-10-20 | No separator training of any kind (fine-tune, per-song adaptation, new separator) and no rented machines (user: "way to specific and requires researches I'd like to avoid"). The separation-finetune plan's fine-tune step and trained routes are cancelled | [separation-finetune plan](separation-finetune-plan.md), [ML plan](research/ml-plan-2026-10.md), section 5 |
 | 2026-10-20 | Separator rule revised (user, same day): fine-tuning or adapting an existing separator and feature extraction are fine; only designing and training a new separator, or a major modelling effort, is out (user: 'just not a major effort of modeling and training a new separator'); still no rented machines, so training runs on this Mac. Licences checked and accepted: SAM-Audio, Stable Audio Open VAE, X-LANCE/BS-RoFormer SW. Moises is for testing and sampling only, not training. Uploading Cambridge-MT or Telefunken audio to Moises, even for testing, is not yet ruled on; ask first. Models trained on Cambridge-MT or Telefunken audio may ship. Weathervane: no | [separation-finetune plan](separation-finetune-plan.md), [ML plan](research/ml-plan-2026-10.md), section 5 |
-| 2026-10-20 | Training time (user): training that takes minutes is fine; any longer run (e.g. a C′ fold, about 6.5 h) needs the user's approval first; no week-long efforts. Applies to all models. Moises is not part of any workflow, testing included; it is used only when the user decides to, and uploading Cambridge-MT or Telefunken audio to it is then allowed | [ML plan](research/ml-plan-2026-10.md), section 5 |
+| 2026-10-20 | Training time (user): training that takes minutes is fine; any longer run (e.g. a C′ fold, about 6.5 h) needs the user's approval first; no week-long efforts. Applies to all models. Moises is not part of any workflow, testing included; it is used only when the user decides to, and uploading Cambridge-MT or Telefunken audio to it is then allowed | [ML plan](research/ml-plan-2026-10.md), section 5, [separation-finetune plan](separation-finetune-plan.md) |
 | 2026-10-20 | Separation Step 0 (zero renders, audited): the other guitars, about 5.5 dB louder than the target (I +5.52 [+3.70, +7.24]), limit separation; a perfect class separator beats Mega-53 by only +0.30 dB SNR (band median, 12/12 bands); the four free test-time fixes all have negative point estimates, none survives Holm, so Step 3 has no candidate; YT − M −0.048 [−0.071, −0.026]. Step 1 (YG) stopped after 2,666 recorded renders by the no-training decision, with no reading | [separation results](separation-step01-results.md) |
 | 2026-10-20 | Direct model gate 1 (zero renders): stem quality moves D_existing's answers far beyond the leak-draw null (+0.104 [+0.090, +0.120]) and Mega-53's stem costs +0.104 of E against the training stem (0.167 → 0.270), so GATE1 STEM: the separator route continues. The model leans on the stem (share 0.70); behind a clean or real separated stem the mix adds little or nothing (post hoc), so a stem-only model is recommended (user's decision) | [gate 1 results](direct-model-stems-gate1-results.md) |
 | 2026-10-20 | Pan side as a separation hint (zero renders, synthetic pans of stage F, audited): with the side known, Mega-53's stereo stem gains +1.50 [+0.78, +2.33] (target's channel, ±0.6) and +1.35 [+0.31, +2.49] (MDX23C centre model, centred lead against hard-L/R rhythms) over its mid; ILD mask +0.6 to +0.8, Wiener on top no help (LSD +7 to +8); no gated cell reaches +2 dB, a gain to build on. Blind side picks follow the louder other guitars (right 5/19, 4/19, 0/19) and lose. The side must come from the arrangement or the user's ear; a product question | [pan screen](stereo-side-results.md) |
