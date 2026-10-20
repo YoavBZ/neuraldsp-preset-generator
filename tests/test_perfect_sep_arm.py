@@ -54,7 +54,7 @@ def test_search_primes_each_arm_and_scores_at_the_judge_lag(monkeypatch, tmp_pat
     monkeypatch.setattr(P, "search_inputs", lambda arm, c, s: (ref, rb if arm == "YT" else di))
     M._save(tmp_path / "check.json", {"ok": True})
     for name, fn in {"require_heldout_ok": lambda: None, "stage_dirs": lambda st: dirs, "check_stop": lambda: None,
-                     "wait_render_gate": lambda: None, "disk_ok": lambda n: True,
+                     "wait_render_gate": lambda: None, "disk_ok": lambda n, guard=None: True,
                      "group_ctx": lambda *a: ctx}.items():
         monkeypatch.setattr(M, name, fn)
     monkeypatch.setitem(M.N_DIRS, "F", 2)
@@ -81,6 +81,29 @@ def test_search_primes_each_arm_and_scores_at_the_judge_lag(monkeypatch, tmp_pat
     monkeypatch.setattr(M, "renderer", lambda: rr2)
     P.cmd_search(("YT", "ZT"), (0, 1))                                     # resumable: nothing left
     assert rr2.count == 0 and len(calls) == 4
+
+
+def test_disk_guard_override_is_opt_in_and_logged(monkeypatch, tmp_path, capsys):
+    seen = []
+    monkeypatch.setattr(P, "OUT", tmp_path)
+    M._save(tmp_path / "check.json", {"ok": True})
+    for name, fn in {"require_heldout_ok": lambda: None, "stage_dirs": lambda st: [("p", AMP, "A", "B")],
+                     "check_stop": lambda: None, "wait_render_gate": lambda: None,
+                     "disk_ok": lambda n, guard=None: seen.append(guard) or False}.items():
+        monkeypatch.setattr(M, name, fn)
+    monkeypatch.setitem(M.N_DIRS, "F", 1)
+    monkeypatch.setattr(M.L, "SwapGuard", lambda: type("G", (), {"check": lambda self: None})())
+    monkeypatch.setattr(M.L, "menu_S", lambda: {})
+    monkeypatch.setattr(M, "renderer", lambda: FakeRR())
+    with pytest.raises(SystemExit, match="31 GB guard"):
+        P.main(["search", "--arms", "YT"])
+    assert seen == [31.0] and "overridden" not in capsys.readouterr().out
+    with pytest.raises(SystemExit, match="25 GB guard"):
+        P.main(["search", "--arms", "YT", "--min-free-gb", "25"])
+    assert seen[-1] == 25.0 and "disk guard overridden for this run: 25 GB" in capsys.readouterr().out
+    monkeypatch.undo()
+    monkeypatch.setattr(M.LO, "disk_free_gb", lambda: 28.0)              # the default stays 31 GB elsewhere
+    assert M.LO.DISK_GUARD_GB == 31.0 and not M.disk_ok(10) and M.disk_ok(10, guard=25)
 
 
 def test_render_count_cap_and_gate():
@@ -173,3 +196,49 @@ def test_contrasts_share_one_direction_set_when_zt_ran():
     n = {k: c["directions"] for k, c in rep["contrasts"].items()}
     assert len(set(n.values())) == 1 and n["YT_minus_H"] == len(units) - 1
     assert rep["contrasts"]["YT_minus_H"]["rows"]["no_lag_part"] is not None
+
+
+# --- Step 1 of docs/separation-finetune-plan.md: the class-oracle arm YG -------------------------------
+
+def test_search_inputs_yg_uses_g_and_its_rebuild(monkeypatch, tmp_path):
+    g, rb = np.full(10, 4.0), np.full(10, 5.0)
+    monkeypatch.setattr(P, "G_CROPS", tmp_path / "g")
+    monkeypatch.setattr(P, "REBUILT_G", tmp_path / "rb")
+    (tmp_path / "g").mkdir()
+    (tmp_path / "rb").mkdir()
+    np.save(tmp_path / "g" / "p.npy", g.astype(np.float32))
+    np.save(tmp_path / "rb" / "p.npy", rb)
+    r, d = P.search_inputs("YG", {"di": None}, "p")
+    assert np.array_equal(r, g) and np.array_equal(d, rb)
+    assert P.CAP["YG"] >= P.expected_renders() == 6_993
+
+
+def test_rebuild_problems_chain_adds_the_source_lag():
+    ok = {"lufs": -22.9, "gcc_vs_source": -52}
+    log = {"c": ok}
+    h_log = {"c": {"gcc_vs_source": -52}}
+    assert not P.rebuild_problems(log, ["c"], {"c": 999}, {"c": 0}, h_log, {"c": 2})
+    assert P.rebuild_problems(log, ["c"], {"c": 999}, {"c": 0}, h_log, {"c": 9})
+
+
+def test_yg_reading_is_the_declared_rule():
+    def c(m, hi):
+        return {"rows": {"all": {"all": {"band_weighted_mean": m, "hi90": hi}}}}
+    assert P.yg_reading(c(-0.040, -0.010)) == "step_2"
+    assert P.yg_reading(c(-0.032, -0.001)) == "step_2"
+    assert P.yg_reading(c(-0.031, -0.010)) == "no_fine_tune"
+    assert P.yg_reading(c(-0.050, 0.001)) == "no_fine_tune"
+
+
+def test_report_reads_yg_on_its_fixed_set():
+    units = toy_units_with_arms(zt=False)
+    rng = random.Random(4)
+    for u in units:
+        u["d"]["YG"] = u["d"]["M"] * math.exp(-0.06 + 0.01 * rng.gauss(0, 1))
+        u["d"]["YG_unshrunk"] = u["d"]["YG"]
+        u["rec"]["YG"] = {"status": "done", "fallback": None, "activity_fallback": 0}
+    rep = P.report_from_units(units, {})
+    y = rep["YG"]
+    assert y["contrasts"]["YG_minus_M"]["rows"]["all"]["all"]["band_weighted_mean"] < 0
+    assert y["decision_A1"] in ("step_2", "no_fine_tune") and y["fallbacks"] == 0
+    assert "ratio" in y["share_YG_minus_M_over_YT_minus_M"]
