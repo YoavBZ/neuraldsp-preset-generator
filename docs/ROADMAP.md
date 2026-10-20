@@ -146,7 +146,13 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       newly trained conditioned separator (trained route B) stays out. Released checkpoints and DSP
       splits remain. The [pan screen](stereo-side-results.md) ran: a known side is worth about
       +1.4 dB (target's channel at ±0.6 +1.50; centre model on a centred lead +1.35), short of
-      +2 dB; blind picks lose.*
+      +2 dB; blind picks lose. The [coherence mask](stereo-side-results.md#amendment-1-the-inter-channel-coherence-mask-2026-10-20)
+      adds only +0.35.*
+      *Reading, 2026-10-20: separation is mostly mapped. A class fine-tune of Mega-53 is capped at
+      +0.30 dB (Step 0), so Steps 1–2 are parked (Step 2's ≤ 11 h would need approval). What is
+      left is small or a product question: the pan side from the arrangement or the user's ear
+      (about +1.4 dB), the centre model on centred leads, X-LANCE gtr_mss as one more separator
+      row. Moises is outside every workflow (user).*
    2. **Train the direct model on realistic separated stems,** and check how much it relies on the
       stem against the mix ([plan](direct-model-stems-plan.md), declared and reviewed 2026-10-19):
       zero-render checks of the stem mismatch on the existing model first, then a 5k pilot (its
@@ -156,12 +162,21 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       *Gate 1 done 2026-10-20 ([results](direct-model-stems-gate1-results.md)):* the stem matters
       (GATE1 STEM); the mix adds little behind a clean or separated stem, so the next model should
       read the separated target stem alone (a pilot-arm change for the user to approve).
+      *Pilot running 2026-10-20 (user approved; [amendment 1](direct-model-stems-plan.md#amendment-1-2026-10-20-stem-only-arm-approvals-order),
+      reviewed):* arms D_stem (separated stem only), D_mix (mix only, the small comparison), D0
+      (the old recipe) and D_stem without augmentation; 1c chose Mega-53's fast setting (−0.04
+      [−0.23, +0.15] dB against the stored one). The build (about 19.3k training-style renders,
+      Mega-53 on MPS and CPU) is running, then about 2.4 h of training, then the pilot rules
+      (STOP / MIX / STEM). Disk is no longer a block (the user emptied the Trash; about 133 GB
+      free); the full models' 5–7.4 h of training need a new yes.
    3. **Two zero-render checks.** *Done 2026-10-19 ([results](shrink-snr-judge-v3-results.md)):*
       the best shrink does not measurably depend on stem SNR (a rule by SNR gains −0.003 [−0.013,
       +0.007] on held-out bands; nothing on realistic stems), and judge v3 agrees with the ear a
       little less than the default judge (Spearman 0.64 against 0.80; one pair worse in four of
       five trials, sign test p 0.125, so weak).
-   4. **Real-mix previews:** once the user has downloaded them, test on real mixed songs.
+   4. **Real-mix previews:** downloaded 2026-10-20 ([results](mix-previews-results.md); 10 songs
+      and a Signs remix). The real-mix gap is measured (about 0.6 dB of stem SNR, half from lag);
+      testing the routes on real mixes, with lag-invariant scoring, is still to do.
    5. **Then a fresh-song decision test** of the two routes on unseen parts (the 21 stage-F parts
       are reused). If one clearly beats S there, build the product around it.
 
