@@ -478,8 +478,9 @@ Step 4 feeds D_stem the Mega-53 stem only. D0 keeps both channels.
 1d stays optional and is not run.
 
 **Approvals (user, 2026-10-20).**
-- **Training time:** the pilot's training, about 2.4 h, is approved. Step 3's D and D0 runs, 5–7.4 h,
-  each need a new yes.
+- **Training time:** the pilot's training, about 2.4 h, is approved. Step 3's D and D0 runs, 5–7.4 h, are
+  approved too: the user, later on 2026-10-20, ruled that runs already in an approved plan need no
+  further approval; only unplanned long runs do.
 - **Disk:** for the pilot build only, writers stop cleanly below **26 GB** free (the user approved
   25 GB; 1 GB is margin), and the override is logged. The full build still needs at least 34 GB
   free and the 31 GB guard.
