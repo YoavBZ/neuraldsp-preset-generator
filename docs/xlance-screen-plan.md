@@ -93,3 +93,25 @@ threads, matching gate 1): roughly 3–5 h; no MPS. Outputs go to
 `~/ndsp-presets/learn/xlance-screen/`; tools go to `~/ndsp-presets/tools/xlance/`, with a manifest
 of sha256 and source URLs. Disk guard 31 GB. No held-out data (Guitar-TECHS P3, sets 4–6,
 held-out ledger entries). Also checked: what X-LANCE's README says about its training data.
+
+## Amendment 1: gtr_mss alone on the audit mixes (2026-10-21)
+
+Declared after the results ([xlance-screen-results.md](xlance-screen-results.md): the chain read
+PASS, OVER BUDGET at 1.78×) and before any gtr_mss-alone audit separation. It tests whether
+dropping `denoise` makes the cost fit; on stage F the two variants tie (SNR within 0.01 dB).
+
+- **Row X_g:** `gtr_mss.pth` alone on the 164 audit mixes, inputs and chunking exactly as for X.
+  CPU only, 2 threads, nice 10; the same alignment stop (±3 samples). 164 separations, about 50 min.
+- **Measures and readout:** as for X (SNR, mel-range LSD deciding, full LSD, brightness, darkening
+  spread; band-weighted, 90% band-clustered t with the bootstrap beside it; without MUSDB18 and
+  without Cambridge as before).
+- **Rule (same as the plan's):** X_g passes if, against M_f on the 164 audit mixes, the Δ SNR point
+  estimate is ≥ 0 (so its interval reaches 0 or above), the Δ mel-range LSD interval lies entirely
+  below 0, and its CPU time is ≤ 1.5× Mega-53 fast's **29.7 CPU s per clip** (the stored timing:
+  the same 10 clips, 2 threads), i.e. ≤ 44.6 CPU s, timed on those same 10 clips.
+- **Failure count (reported, not deciding), for both X and X_g:** clips where the variant's SNR falls
+  more than 3 dB below Mega-53's (a She's Gone-type failure), on the audit mixes and on stage F.
+- **MPS timing:** measured on one clip for whichever variant passes (or both), only after the
+  pilot training frees the GPU; it is busy now.
+- **What follows:** per the rule, Mega-53 stays for the rest build unless X_g passes or the user
+  accepts X's cost. The pilot is unchanged.
