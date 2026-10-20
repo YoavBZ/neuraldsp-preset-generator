@@ -521,6 +521,35 @@ Recorded after the code review and 1c, before the pilot build.
   same count. `build --part rest` refuses unless a real pilot-report read `PILOT STEM` (or
   `PILOT MIX`, for the mix stage only), and it still needs the user's yes.
 
+### Implementation notes, steps 3 and 4 (2026-10-21)
+
+Recorded with the code, before any step 3 or 4 compute; for the code review.
+- **D's arm** follows the pilot-report: PILOT STEM trains `Dstem` (or `Dstem-noaug` if rule 4
+  dropped the augmentations), PILOT MIX trains `Dmix`. Runs go to `full/runs/`. Step 3 trains on
+  Mega-53 stems; `--sep xlance_g` is refused while amendment 2 is a draft.
+- **Refusals:** every step 3 run drops the same set, the refusals of D's build stages (mix, and
+  for D_stem the stem stage), from the pilot and the rest. The readout refuses runs that differ.
+- **The early stop** reads D's seed-averaged E on R_in (the pilot's convention) minus the constant
+  predictor's, paired, band-clustered t (3 df). The ensemble's reading is reported beside it. The
+  constant is the per-dimension median of D's training labels per amp and base class. Each seed
+  against the ensemble is read on R_in, R_out and V_dev.
+- **Step 4's stems:** gate 1's 21 stage F Mega-53 stems are exactly the fast setting on the crop
+  alone, so they are reused. Their hashes are recorded in `step4/stems/stems.json` and checked at
+  `predict` and before every render group.
+- **The parity test re-renders:** V_sep keeps no audio, so the 20 examples (seed 20261082, set
+  here) are re-rendered, mixed and separated as the build made them: about 40 unjudged renders
+  and 20 Mega-53 clips, beside step 4's 321. The test gain is the example's own level (0 dB),
+  since the stored features are at the drawn loudness. The model-input step after the grid
+  (`model_input`) is shared code with the V_sep readouts. It reproduces D_existing's
+  `features` exactly on stage F.
+- **The known-answer row:** 16 sections. Item 1 gives s1 and s2, the switch item 3 gives s3 and
+  s4. Amp and class come from the truth draw; the class input is the starting preset's class. D
+  and D0 read Mega-53 fast crop stems (16 more separations, in `stems`). D_existing reads B1's
+  stored htdemucs stems, as its stage F run did. Each half is read as the search half and the two
+  are averaged. Knob error is `known_answer.knob_errors` over S's labelled continuous dims.
+- **Kept audio:** each D and D0 render is kept as FLAC with 0.25 s trimmed (about 0.13 GB). The
+  judge scores from 1.0 s, past the isolate fade.
+
 ## Code (after review, before any compute)
 
 `learn/direct_stems.py`: `move` (1a and the audit cost; prints `GATE1 STEM` or `GATE1 MIX-ONLY`),
@@ -612,5 +641,6 @@ each re-renders its guitar first, since no audio is kept.
     and Mega-53's match gate 1's at ≥ 333 dB;
   - 2 stored audit mixes through the stem stage's writer: features stored under `xlance_g`, and
     rows read back.
-- **Not yet done:** an MPS run of gtr_mss, after the pilot frees the GPU. `--n full` training is
-  step 3's code and is not implemented on this branch either.
+- **Not yet done:** an MPS run of gtr_mss, after the pilot frees the GPU. Step 3's `--n full`
+  training is implemented, but on Mega-53 stems only: it refuses `--sep xlance_g` while this
+  amendment is a draft (`AMENDMENT2_IN_FORCE`).

@@ -1,6 +1,7 @@
 """learn/direct_stems.py: the pure parts of gate 1 (docs/direct-model-stems-plan.md)."""
 
 import math
+import random
 
 import pytest
 
@@ -569,3 +570,234 @@ def test_train_stem_sep():
         DS.train_stem_sep("D0", "xlance_g")
     with pytest.raises(SystemExit):
         DS.train_stem_sep("Dstem", "htdemucs")
+
+
+# --- step 3: the full models -----------------------------------------------------------------------------
+
+def test_d_arm_follows_the_pilot_verdict():
+    assert DS.d_arm({"decision": "STEM", "augmentation_kept": True}) == "Dstem"
+    assert DS.d_arm({"decision": "STEM", "augmentation_kept": False}) == "Dstem-noaug"
+    assert DS.d_arm({"decision": "MIX"}) == "Dmix"
+    for bad in (None, {"decision": "STOP"}, {"decision": "STEM", "smoke": True}):
+        with pytest.raises(SystemExit):
+            DS.d_arm(bad)
+    assert DS.d_arm({"decision": "STEM", "smoke": True}, smoke=True) == "Dstem"
+
+
+def test_full_stems_are_mega53_while_amendment_2_is_a_draft():
+    assert not DS.AMENDMENT2_IN_FORCE
+    assert DS.full_stem_sep("Dstem", None) == "mega53" and DS.full_stem_sep("D0", None) == "mega53"
+    with pytest.raises(SystemExit):
+        DS.full_stem_sep("Dstem", "xlance_g")
+    with pytest.raises(SystemExit):
+        DS.full_stem_sep("D0", "xlance_g")
+
+
+def test_full_build_state_and_counts():
+    items = [{"i": i} for i in range(4)]
+    mix = {0: {}, 1: {"refused": "x"}, 2: {}}
+    stem = {0: {}}
+    assert DS.full_unbuilt(items, mix, stem, True) == [2, 3]
+    assert DS.full_unbuilt(items, mix, {}, False) == [3]                 # D_mix: the mix stage only
+    rows = {i: {"i": i, "early_stop": i >= 8} for i in range(10)}
+    kept = [rows[i] for i in (0, 1, 2, 3, 4, 8)]
+    assert DS.full_counts_ok(kept, [5, 6, 7, 9], rows, n_train=8, n_es=2) == []
+    assert len(DS.full_counts_ok(kept, [5, 6], rows, n_train=8, n_es=2)) == 2
+
+
+def test_full_runs_have_their_own_folder(tmp_path):
+    assert DS.run_path(tmp_path, "D0", "full", 20261044).parent == tmp_path / "full" / "runs"
+    assert DS.run_path(tmp_path, "D0", "5000", 20261042).parent == tmp_path / "pilot" / "runs"
+    assert DS.FULL_SEEDS == (20261042, 20261043, 20261044)
+
+
+def test_seed_vs_ensemble_and_ensemble_error():
+    o = _o([0.8, 0.2], [[0.2, 0.4, 0.9], [0.0, 0.0, 0.0]], sw=(1.0, -1.0), cats=((2.0, 0.0),))
+    d, sw, mic = DS.seed_vs_ensemble(o, [0.3, 0.4, 0.0], [True, True], [1], [1, 1, 0], [1, 1], [1])
+    assert math.isclose(d, 0.05) and sw == 0.5 and mic == 0.0
+    d, sw, mic = DS.seed_vs_ensemble(o, [0.3, 0.4, 0.0], [True, True], [0], [0, 0, 0], [0, 0], [0])
+    assert math.isnan(d) and math.isnan(sw) and math.isnan(mic)
+    assert math.isclose(DS.ensemble_error([0.5, 0.5, 1.0], [0.4, 0.7, 0.0], [1, 1, 0]), 0.15)
+
+
+def test_score_readout_pools_seeds_like_direct_existing():
+    # two rows (the halves of example 7); seed 0 is confident in comp 0, seed 1 in comp 1
+    s0 = _o([0.9, 0.1], [[0.2, 0.2], [0.8, 0.8]])
+    s1 = _o([0.4, 0.6], [[0.5, 0.5], [0.6, 0.6]])
+    outs = [[s0, s0], [s1, s1]]
+    Y = [np.array([[0.3, 0.3]] * 2), np.ones((2, 2)), np.zeros((2, 1)), np.ones((2, 1)), np.zeros((2, 1), int),
+         np.ones((2, 1))]
+    sc = DS.score_readout(outs, [7, 7], Y)
+    assert math.isclose(sc["ensemble"][7], 0.1)                        # seed 0's comp 0 (pooled weight 0.45)
+    assert math.isclose(sc["per_seed"][0][7], 0.1) and math.isclose(sc["per_seed"][1][7], 0.3)
+    assert math.isclose(sc["vs"][0][7][0], 0.0) and math.isclose(sc["vs"][1][7][0], 0.4)
+
+
+def test_constant_predictor_medians_per_amp_and_class():
+    def enc(label):
+        c = np.array([label.get("a", 0.0), label.get("b", 0.0)])
+        return c, np.array(["a" in label, "b" in label], float)
+
+    rows = [{"amp": "pr12", "base": "clean", "label": {"a": v}} for v in (0.1, 0.2, 0.9)]
+    rows += [{"amp": "pr12", "base": "crunch", "label": {"a": 0.5, "b": 0.3}}]
+    med = DS.label_medians(rows, enc)
+    assert med[("pr12", "clean")][0] == 0.2 and math.isnan(med[("pr12", "clean")][1])
+    assert math.isclose(DS.const_error(med[("pr12", "clean")], [0.4, 0.0], [1, 0]), 0.2)
+    with pytest.raises(SystemExit):
+        DS.const_error(med[("pr12", "clean")], [0.4, 0.4], [1, 1])
+
+
+def test_model_stop_rule():
+    assert DS.model_stop((-0.02, -0.03, -0.01, 4)) == "OK"
+    assert DS.model_stop((-0.02, -0.03, 0.001, 4)) == "STOP"
+    assert DS.model_stop((0.02, 0.01, 0.03, 4)) == "STOP"
+    assert DS.model_stop(None) == "STOP" and DS.model_stop((-0.1, -math.inf, math.inf, 1)) == "STOP"
+
+
+def test_model_input_masks_conditions_and_zeroes():
+    from learn import pretrain_set as PS
+
+    s8 = np.full((96, 446), 100, np.uint8)
+    m8 = np.full((96, 446), 120, np.uint8)
+    xA, cA = DS.model_input(s8, m8, -20.0, -15.0, "A", "pr12", "clean", "Dstem")
+    assert not xA[:, :, :PS.MASK_A_FRAMES].any() and xA[0, :, PS.MASK_A_FRAMES:].all()
+    assert not xA[1].any() and cA[-1] == 0 and cA[-2] == 0.0             # (-20 + 20) / 10 is 0 too
+    xB, cB = DS.model_input(s8, m8, -10.0, -15.0, "B", "pr12", "clean", "D0")
+    assert xB.all() and math.isclose(cB[-2], 1.0) and math.isclose(cB[-1], 0.5)
+    assert math.isclose(float(xB[0, 0, 0]), (PS.dequant(100) + 60) / 30, rel_tol=1e-6)
+    xm, cm = DS.model_input(s8, m8, -10.0, -15.0, "B", "pr12", "clean", "Dmix")
+    assert not xm[0].any() and xm[1].all() and cm[-2] == 0
+
+
+def test_step4_half_applies_one_gain_to_both_channels():
+    rng = np.random.default_rng(3)
+    mix = 0.05 * rng.standard_normal(480_000)
+    stem = 0.5 * mix
+    s0, m0, ls0, lm0 = DS.step4_half(stem, mix, "B", 0.0)
+    s6, m6, ls6, lm6 = DS.step4_half(stem, mix, "B", 6.0)
+    assert math.isclose(ls6 - ls0, 6.0, abs_tol=0.01) and math.isclose(lm6 - lm0, 6.0, abs_tol=0.01)
+    assert math.isclose(lm0 - ls0, 20 * math.log10(2), abs_tol=0.01)
+    assert DS.match_share(m6.astype(int) - 12, m0) > 0.99                 # +6 dB is 12 grid steps
+
+
+# --- step 4: renders, parity, report ---------------------------------------------------------------------
+
+def test_step4_render_counts_and_cap():
+    assert DS.step4_expected() == 63 + 126 * 2 + 6 == 321
+    assert DS.step4_expected() <= DS.STEP4_CAP == 400
+    assert DS.step4_group_renders(False) == 5 and DS.step4_group_renders(True) == 6
+    groups = [(f"p{i}", a) for i in range(21) for a in ("pr12", "sw50r", "ac20")]
+    assert sum(DS.step4_group_renders(False) for _ in groups) + 6 == 321
+    rep = DS.step4_repeat_groups(groups)
+    assert len(rep) == 6 and rep == DS.step4_repeat_groups(list(reversed(groups)))
+    assert rep == sorted(random.Random(20261077).sample(sorted(groups), 6))
+
+
+class _RR:
+    def __init__(self):
+        self.count, self.calls = 0, []
+
+    def render(self, di, sel, x):
+        self.count += 1
+        self.calls.append(x)
+        return np.zeros(8)
+
+
+def _g():
+    return {"sel": 0, "S": "S", "di": None, "di32": None, "ref": None, "lag": 0}
+
+
+def _settings():
+    return {a: {h: f"{a}{h}" for h in "AB"} for a in ("D", "D0")}
+
+
+def test_run_group_primes_once_and_renders_each_arm_once():
+    rr = _RR()
+    rec = DS.run_group(rr, _g(), _settings(), False, None, lambda ref, y, di, lag: {"A": 1.0, "B": 2.0})
+    assert rr.calls == ["S", "DA", "DB", "D0A", "D0B"] and rec["primes"] == 1 and rec["renders"] == 5
+    assert set(rec["judge"]) == {"D|A", "D|B", "D0|A", "D0|B"} and rec["status"] == "done"
+    rr = _RR()
+    rec = DS.run_group(rr, _g(), _settings(), True, {"A": 1.0, "B": 2.0}, lambda ref, y, di, lag: {"A": 1.0, "B": 2.0})
+    assert rr.calls == ["S", "S", "DA", "DB", "D0A", "D0B"] and rec["renders"] == 6 and rec["repeat"]["dev"] == 0
+
+
+def test_run_group_repeat_miss_stops_before_any_arm():
+    rr = _RR()
+    rec = DS.run_group(rr, _g(), _settings(), True, {"A": 1.0, "B": 2.0},
+                       lambda ref, y, di, lag: {"A": 1.0, "B": 2.0 * math.exp(2e-3)})
+    assert rec["status"] == "stopped" and rr.calls == ["S", "S"] and not rec["judge"]
+    rr = _RR()
+    rec = DS.run_group(rr, _g(), _settings(), True, {"A": 1.0, "B": 2.0},
+                       lambda ref, y, di, lag: {"A": 1.0, "B": math.inf})
+    assert rec["status"] == "stopped"
+
+
+def test_deviation_matches_local_objective():
+    from learn import local_objective as LO
+
+    for a, b in ((1.0, 1.1), (math.inf, 1.0), (math.inf, math.inf), (0.5, 0.5)):
+        assert DS.deviation(a, b) == LO.deviation(a, b)
+
+
+def test_parity_rule():
+    assert DS.parity_ok([0.995, 1.0], [0.0, 0.009])
+    assert not DS.parity_ok([0.989, 1.0], [0.0])
+    assert not DS.parity_ok([1.0], [0.011])
+    assert not DS.parity_ok([], [])
+
+
+def test_refused_answer_scores_as_s_and_unrendered_stays_none():
+    units = [{"d": {"S": 2.0}}, {"d": {"S": 3.0}}, {"d": {"S": 4.0}}]
+    vals = [1.0, math.inf, None]
+    n = DS.add_step4_arm(units, "D", lambda u: vals[units.index(u)])
+    assert n == 1 and [u["d"]["D"] for u in units] == [1.0, 3.0, None]
+
+
+def test_p_reading():
+    assert DS.p_reading({"lo90": -0.1, "hi90": -0.01}) == "closer"
+    assert DS.p_reading({"lo90": -0.1, "hi90": 0.01}) == "not shown"
+    assert DS.p_reading({"lo90": 0.01, "hi90": 0.1}) == "worse"
+    assert DS.p_reading(None) == "incomplete"
+
+
+def test_step4_contrast_on_a_toy_table():
+    # 4 bands x 1 part x 2 amps x 2 directions; D = S * e^(band effect); one D refused -> S (log 0)
+    effect = {"b0": -0.2, "b1": -0.1, "b2": 0.0, "b3": -0.1}
+    units = []
+    for b, e in effect.items():
+        for amp in ("pr12", "ac20"):
+            for sh, held in (("A", "B"), ("B", "A")):
+                d = {"S": 1.0, "H": 1.0, "M": 1.0, "D0": 1.0}
+                units.append({"slug": f"p-{b}", "band": b, "cls": "clean" if b < "b2" else "crunch", "amp": amp,
+                              "search": sh, "held": held, "d": d})
+    vals = {id(u): math.exp(effect[u["band"]]) for u in units}
+    vals[id(units[0])] = math.nan                                      # refused: scores as S
+    DS.add_step4_arm(units, "D", lambda u: vals[id(u)])
+    filters = {r: (lambda u: True) for r in DS.STEP4_ROWS}
+    filters["unseen_by_part_c"] = lambda u: u["band"] in ("b0", "b1")
+    c = DS.step4_contrast(units, "D", "S", filters)
+    allr = c["rows"]["all"]["all"]
+    b0 = (-0.2 * 3 + 0.0) / 4
+    assert c["directions"] == 16
+    assert math.isclose(allr["band_weighted_mean"], (b0 - 0.1 + 0.0 - 0.1) / 4)
+    assert allr["bands"] == 4 and allr["lo90"] < allr["band_weighted_mean"] < allr["hi90"]
+    assert allr["bands_negative"] == 3 and len(allr["leave_one_band_out"]) == 4
+    assert math.isclose(c["rows"]["unseen_by_part_c"]["all"]["band_weighted_mean"], (b0 - 0.1) / 2)
+    assert set(c["rows"]["all"]["per_class"]) == {"clean", "crunch"}
+    units[1]["d"]["H"] = None                                          # an unscored fixed arm drops the direction
+    assert DS.step4_contrast(units, "D", "S", filters)["directions"] == 15
+
+
+def test_renders_of_this_step_are_counted_machine_wide():
+    import re
+
+    from learn import local_objective as LO
+
+    for c in ("python -m learn.direct_stems render --shard 0/3", "python -m learn.direct_stems parity --device cpu",
+              "python -m learn.direct_stems build --part rest --stage mix"):
+        assert any(re.search(p, c) for p in LO.RENDERS)
+    assert not any(re.search(p, "python -m learn.direct_stems report") for p in LO.RENDERS)
+
+
+def test_known_answer_items():
+    assert DS.KA_ITEM == {"s1": 1, "s2": 1, "s3": 3, "s4": 3}
