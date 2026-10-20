@@ -488,6 +488,38 @@ Step 4 feeds D_stem the Mega-53 stem only. D0 keeps both channels.
 and `PILOT STEM` reads `PILOT STEM`. In step 4, D_stem gets the Mega-53 stem only (mix channel 0); D0
 gets the same stem and the mix.
 
+### Implementation notes (2026-10-20)
+
+Recorded after the code review and 1c, before the pilot build.
+- **1c chose FAST.** The paired SNR difference (fast − stored) on the 164 audit mixes is −0.037 dB
+  [−0.228, +0.153] (6 bands). The interval reaches 0, so the fast setting is used for training and
+  inference. Gate 1's fast stems had no stored hashes: they were recorded at the first run and are
+  checked after it. Five of them, re-separated on MPS (sample seed 20261081, set in the code),
+  matched the CPU stems to at least 105 dB.
+- **Renders: about 19.3k for the pilot build, not 7,720.** Every kept render is primed: one
+  discarded render after a process start, amp change or DI change. Examples run grouped by
+  (section, amp), and mix shards take whole sections, so each group is primed once. No audio is
+  kept, so the stem stage re-renders each example (and checks it reproduces the stored mix) before
+  separating. The count: mix stage 6,831 + 1,885; Mega-53 stage 6,833 + 1,887; htdemucs on V_sep
+  1,887.
+- **The readouts have 4 bands, 3 df (t 2.353), not 5.** All of Cnoc An Tursa's V_sep examples are
+  Bannockburn (313), so leaving Bannockburn out removes the band.
+- **Scope:** the pool keeps part C's 773 beyond-scope examples (the plan's 21,311 includes them).
+  `pilot-report` adds scope-in contrasts (part C's keep_in rule) beside the deciding ones. They are
+  descriptive.
+- **D0** keeps part C's composition but trains on different data from part C's curve (the pilot's
+  5k). It uses part C's stored guitar mels, which come from unprimed renders. The new arms'
+  re-renders match them within one step on at least 99% of cells.
+- **Early stopping is never augmented** (one fixed draw of the real stems).
+- **The merged guitar's level** is set against the target guitar at the mix's overall gain. It
+  ignores any mastering gain.
+- **Floors:** drop-outs, darkening and separator failure are floored at −112 dB, the stored grid's
+  floor.
+- **Order:** the pilot's stem stage must finish before any arm trains. `train` refuses otherwise.
+  `pilot-report` refuses unless every run dropped the same refused examples and trained on the
+  same count. `build --part rest` refuses unless a real pilot-report read `PILOT STEM` (or
+  `PILOT MIX`, for the mix stage only), and it still needs the user's yes.
+
 ## Code (after review, before any compute)
 
 `learn/direct_stems.py`: `move` (1a and the audit cost; prints `GATE1 STEM` or `GATE1 MIX-ONLY`),

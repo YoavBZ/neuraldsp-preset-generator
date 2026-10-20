@@ -450,3 +450,69 @@ def test_paired_contrast_is_band_clustered():
     assert n == 3 and math.isclose(m, (0.15 + 0.0 + 0.3) / 3)
     assert DS.paired(a, b, band, {"1", "2"})[3] == 1
     assert DS.paired(a, {}, band, set(a)) is None
+
+
+# --- code review fixes (2026-10-20) --------------------------------------------------------------------
+
+def test_priming_once_per_section_and_amp_group():
+    rows = [_row(i, "A", f"s{i % 2}@1", amp=("pr12", "ac20")[i % 3 == 0]) for i in range(12)]
+    order = DS.render_order(rows)
+    keys = [(r["section"], r["amp"]) for r in order]
+    assert keys == sorted(keys)                                        # groups contiguous
+    last, primes = None, 0
+    for k in keys:
+        primes += DS.needs_priming(last, k)
+        last = k
+    assert primes == len(set(keys)) == 4
+    assert DS.render_count(order) == 12 + 4
+    assert DS.needs_priming(None, ("s", "pr12")) and not DS.needs_priming(("s", "pr12"), ("s", "pr12"))
+    assert [r["i"] for r in DS.render_order(rows, reverse=True)] == [r["i"] for r in reversed(order)]
+
+
+def test_primer_discards_one_render_per_change():
+    class RR:
+        def __init__(self):
+            self.n = 0
+
+        def render(self, di, sel, x):
+            self.n += 1
+            return np.zeros(4)
+
+    p = DS.Primer(RR())
+    for key in [("a", 1), ("a", 1), ("b", 1), ("b", 2), ("b", 2)]:
+        p.render(key, None, None, None)
+    assert p.primes == 3 and p.renders == 8 and p.rr.n == 8
+
+
+def test_shard_sections_keeps_sections_whole_and_balanced():
+    rows = [_row(i, "A", f"s{i % 7}@1") for i in range(70)] + [_row(100 + i, "A", "big@1") for i in range(15)]
+    sh = DS.shard_sections(rows, 3)
+    assert set(sh.values()) == {0, 1, 2} and sh == DS.shard_sections(list(reversed(rows)), 3)
+    loads = [sum(1 for r in rows if sh[r["section"]] == k) for k in range(3)]
+    assert max(loads) - min(loads) <= 15
+
+
+def test_rest_needs_a_real_pilot_stem_or_mix_decision():
+    with pytest.raises(SystemExit):
+        DS.rest_allowed(None, "mix")
+    with pytest.raises(SystemExit):
+        DS.rest_allowed({"decision": "STEM", "smoke": True}, "mix")
+    with pytest.raises(SystemExit):
+        DS.rest_allowed({"decision": "STOP"}, "mix")
+    with pytest.raises(SystemExit):
+        DS.rest_allowed({"decision": "MIX"}, "stem")
+    assert DS.rest_allowed({"decision": "MIX"}, "mix") == "MIX"
+    assert DS.rest_allowed({"decision": "STEM"}, "stem") == "STEM"
+
+
+def test_rows_decide_built_and_refusals_and_run_parity():
+    items = [{"i": i} for i in range(5)]
+    mix = {0: {}, 1: {"refused": "x"}, 2: {}, 3: {}}
+    stem = {0: {}, 2: {"refused": "y"}}
+    assert DS.refusals(mix, stem, {0, 1, 2, 3, 4}) == {1, 2}
+    assert DS.pilot_unbuilt(items, mix, stem) == [3, 4]                 # 1 refused at mix needs no stem row
+    runs = [{"arm": "D0", "seed": 1, "dropped_refused": [1, 2], "train": 3},
+            {"arm": "Dmix", "seed": 1, "dropped_refused": [1], "train": 4}]
+    bad = DS.check_run_parity(runs, {1, 2}, 3)
+    assert len(bad) == 2 and all(b.startswith("Dmix") for b in bad)
+    assert DS.check_run_parity(runs[:1], {1, 2}, 3) == []

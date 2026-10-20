@@ -1046,6 +1046,17 @@ def disk_guard(part, guard_gb=None):
     return g, DISK_OVERRIDE_NOTE
 
 
+def rest_allowed(report, stage):
+    """The rest of the build follows the pilot's rule only: PILOT STEM (both stages) or PILOT MIX (the
+    mix stage only), from a real (not smoke) pilot-report. SystemExit otherwise."""
+    if not report or report.get("smoke"):
+        raise SystemExit("--part rest needs a real pilot-report (PILOT STEM, or PILOT MIX for the mix stage)")
+    dec = report.get("decision")
+    if dec == "STEM" or (dec == "MIX" and stage == "mix"):
+        return dec
+    raise SystemExit(f"the pilot read PILOT {dec}: --part rest --stage {stage} is not built")
+
+
 def disk_start_ok(part, free_gb, guard):
     """A build may start: free disk at or above its guard, and the rest at 34 GB or more."""
     return free_gb >= guard and (part != "rest" or free_gb >= FULL_BUILD_START_GB)
@@ -1101,6 +1112,36 @@ def wait_render_slot():
             return
         print("waiting for a render slot", flush=True)
         time.sleep(60)
+
+
+def needs_priming(last, key):
+    """A discarded priming render is due when the (DI section, amp) changes, and at process start
+    (last is None)."""
+    return last is None or last != key
+
+
+def render_order(rows, reverse=False):
+    """Rows grouped by (section, amp), then index: the order that primes once per group."""
+    return sorted(rows, key=lambda r: (r["section"], r["amp"], r["i"]), reverse=reverse)
+
+
+def shard_sections(rows, n):
+    """{section: shard}: whole sections to shards, largest first to the least-loaded shard
+    (deterministic), so a shard's (section, amp) groups stay whole."""
+    size = {}
+    for r in rows:
+        size[r["section"]] = size.get(r["section"], 0) + 1
+    load, out = [0] * n, {}
+    for sec in sorted(size, key=lambda s: (-size[s], s)):
+        k = min(range(n), key=lambda j: (load[j], j))
+        out[sec] = k
+        load[k] += size[sec]
+    return out
+
+
+def render_count(rows):
+    """Renders for one pass over `rows` in render order (one shard or worker): examples + groups."""
+    return len(rows) + len({(r["section"], r["amp"]) for r in rows})
 
 
 # --- pure: the arms' inputs and the augmentations -----------------------------------------------------
@@ -1420,8 +1461,28 @@ class Ctx:
         return self._back[key]
 
 
-def example_audio(ctx, rr, menu, r):
-    """Example r re-rendered (primed) and mixed. -> dict with 'refused' (a reason) or the render y,
+class Primer:
+    """The renderer with the priming rule: one discarded render after any process start, amp change
+    or DI change. Examples run in (section, amp) order, so a group sharing a DI section and amp is
+    primed once; every render is counted."""
+
+    def __init__(self, rr):
+        self.rr, self.last, self.renders, self.primes = rr, None, 0, 0
+
+    def render(self, key, di, sel, x):
+        import numpy as np
+
+        if needs_priming(self.last, key):
+            self.rr.render(di, sel, x)
+            self.renders += 1
+            self.primes += 1
+        self.last = key
+        self.renders += 1
+        return np.asarray(self.rr.render(di, sel, x), np.float64)
+
+
+def example_audio(ctx, primer, menu, r):
+    """Example r re-rendered (primed on a DI or amp change) and mixed. -> dict with 'refused' (a reason) or the render y,
     the mastered true mix, the mix draw and the render's match share."""
     import numpy as np
 
@@ -1439,7 +1500,7 @@ def example_audio(ctx, rr, menu, r):
     if {f"{m}/{k}": v for (m, k), v in x.items()} != r["settings"]:
         raise SystemExit(f"{i}: settings differ from part C's row")
     di = B.measure(PS.section_audio(sec["path"], sec["start_s"])).astype(np.float32)
-    y = PS.primed_render(rr, di, sel, x)                       # one discarded render first (DI change)
+    y = primer.render((r["section"], amp), di, sel, x)
     y = (y.mean(axis=1) if y.ndim == 2 else y)[int(PS.TRIM_S * PS.SR):int((PS.TRIM_S + PS.SEC_S) * PS.SR)]
     stored = np.load(PS.example_path(i))
     share = min(match_share(m, stored[f"g{h}"]) for h, m in PS.halves_mel(y).items())
@@ -1510,6 +1571,8 @@ def cmd_build(args):
     if not disk_start_ok(args.part, free, guard):
         raise SystemExit(f"free disk {free:.1f} GB: the {args.part} build needs {guard:.0f} GB"
                          + (f" (and {FULL_BUILD_START_GB:.0f} GB to start)" if args.part == "rest" else ""))
+    if args.part == "rest":
+        rest_allowed(_load(root / "pilot" / "pilot-report.json"), args.stage)
     ctx = Ctx()
     items = ctx.parts[args.part]
     if args.limit:
@@ -1536,13 +1599,15 @@ def stage_mix(args, ctx, items, root, guard):
 
     k, n = args.shard
     done = set(build_rows(root, args.part, "mix"))
-    todo = sorted((r for r in items if r["i"] % n == k and r["i"] not in done), key=lambda r: (r["section"], r["i"]))
+    shard = shard_sections(items, n)
+    todo = render_order(r for r in items if shard[r["section"]] == k and r["i"] not in done)
     print(f"mix stage {args.part} shard {k}/{n}: {len(todo)} to do", flush=True)
     if not todo:
         print(f"BUILD DONE {args.part} mix {k}/{n}", flush=True)
         return
     wait_render_slot()
     rr = K.Renderer()
+    primer = Primer(rr)
     refused = 0
     try:
         menu = rr.menu()
@@ -1556,7 +1621,7 @@ def stage_mix(args, ctx, items, root, guard):
                     print(g[1], flush=True)
                     raise SystemExit(g[0])
                 t0 = time.time()
-                ex = example_audio(ctx, rr, menu, r)
+                ex = example_audio(ctx, primer, menu, r)
                 row = {"i": r["i"], "section": r["section"], "band": r["band"], "early_stop": bool(r.get("early_stop")),
                        "split": r["split"], "amp": r["amp"], "base": r["base"], "tag": ctx.tag[r["i"]]}
                 if "refused" in ex:
@@ -1575,7 +1640,8 @@ def stage_mix(args, ctx, items, root, guard):
                     print(f"mix {m + 1}/{len(todo)} i={r['i']} {row['seconds']} s, refused so far {refused}", flush=True)
     finally:
         rr.close()
-    print(f"BUILD DONE {args.part} mix {k}/{n} (refused {refused})", flush=True)
+    print(f"BUILD DONE {args.part} mix {k}/{n} (refused {refused}; renders {primer.renders}, of them priming "
+          f"{primer.primes})", flush=True)
 
 
 def mega53_separator(setting, device):
@@ -1631,9 +1697,8 @@ def stage_stem(args, ctx, items, root, guard):
         raise SystemExit("--setting without a 1c result is for smoke tests into a scratch --out only")
     mixrows = build_rows(root, args.part, "mix")
     done = set(build_rows(root, args.part, sep_name))
-    todo = [r for r in items if r["i"] in mixrows and not mixrows[r["i"]].get("refused") and r["i"] not in done
-            and not ex_path(root, r["i"], sep_name).exists()]
-    todo.sort(key=lambda r: (r["section"], r["i"]), reverse=args.order == "desc")
+    todo = render_order([r for r in items if r["i"] in mixrows and not mixrows[r["i"]].get("refused")
+                         and r["i"] not in done], reverse=args.order == "desc")
     waiting = sum(1 for r in items if r["i"] not in mixrows)
     print(f"stem stage {args.part} {sep_name} ({setting or 'htdemucs'}, {args.device if sep_name == 'mega53' else 'cpu'}, "
           f"{args.order}): {len(todo)} to do; "
@@ -1644,7 +1709,6 @@ def stage_stem(args, ctx, items, root, guard):
     if sep_name == "mega53":
         sep = mega53_separator(setting, args.device)
     else:
-        os.environ.setdefault("HF_HUB_OFFLINE", "1")        # the cached model only: no network
         import torch
 
         from learn import separator_screen as SCR
@@ -1661,14 +1725,15 @@ def stage_stem(args, ctx, items, root, guard):
         try:
             wait_render_slot()
             rr = K.Renderer()
+            primer = Primer(rr)
             menu = rr.menu()
             check_recipe(rr)
             for r in todo:
                 if stop.is_set():
                     break
-                if ex_path(root, r["i"], sep_name).exists():
+                if r["i"] in build_rows(root, args.part, sep_name):         # another worker's row: done
                     continue
-                ex = example_audio(ctx, rr, menu, r)
+                ex = example_audio(ctx, primer, menu, r)
                 if "refused" not in ex:
                     st = np.load(ex_path(root, r["i"], "mix"))
                     mels, lu, _ = half_features(ex["mix"])
@@ -1741,7 +1806,7 @@ def _consume(q, stop, args, root, guard, swap0, sep, sep_name, setting, worker, 
                 break
             r, ex = item
             out = ex_path(root, r["i"], sep_name)
-            if out.exists():
+            if r["i"] in build_rows(root, args.part, sep_name):              # rows decide "done", not files
                 continue
             row = {"i": r["i"], "sep": sep_name, "setting": setting, "device": worker.split("-")[0], "worker": worker,
                    "tag": ctx.tag[r["i"]]}
@@ -1783,7 +1848,11 @@ def cmd_sepcheck(args):
 
     root = out_root(args)
     d = root / "sepcheck"
-    guard = DISK_GUARD_GB if args.disk_guard_gb is None else max(DISK_GUARD_PILOT_GB, float(args.disk_guard_gb))
+    guard, note = disk_guard("pilot", args.disk_guard_gb)              # 1c belongs to the pilot build
+    if note:
+        print(f"disk guard {guard:.0f} GB ({note})", flush=True)
+        _log_build(root, {"time": time.strftime("%Y-%m-%d %H:%M:%S"), "pid": os.getpid(), "cmd": "sepcheck",
+                          "disk_guard_gb": guard, "disk_override_note": note})
     if disk_stop(PS.free_gb(), guard):
         raise SystemExit(f"free disk below {guard:.0f} GB")
     rows = audit_rows()
@@ -1858,7 +1927,8 @@ def cmd_sepcheck(args):
            "rule": "fast if the paired interval (fast - stored) reaches 0 or lies above it, else stored",
            "chosen": chosen, "fast": {"chunk_size": FAST_CHUNK, "num_overlap": FAST_OVERLAP},
            "stored_inference": inference, "repro": rep, "fast_stem_hashes": "fast-stem-hashes.json",
-           "device": "mps", "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+           "device": "mps", "disk_guard_gb": guard, "disk_override_note": note,
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     _save(d / "sepcheck.json", out)
     print(f"SNR fast {out['snr_fast_mean']:.2f} dB, stored {out['snr_stored_mean']:.2f} dB; fast - stored {fmt(t)}")
     print(f"SEPCHECK {chosen.upper()}: Mega-53 {'fast (one 10-s chunk, overlap 1)' if chosen == 'fast' else 'stored (20-s chunks, overlap 2) on exact 10-s clips'}")
@@ -1871,23 +1941,45 @@ def pilot_examples(ctx, root, arm, smoke=False):
     (either stage) are dropped from every arm."""
     mixrows = build_rows(root, "pilot", "mix")
     stemrows = build_rows(root, "pilot", "mega53")
-    unmixed = [r["i"] for r in ctx.parts["pilot"] if r["i"] not in mixrows]
-    if unmixed and not smoke:
-        raise SystemExit(f"{len(unmixed)} pilot examples have no mix stage yet (every arm drops the same refusals)")
-    out, dropped, missing = [], [], []
+    unbuilt = pilot_unbuilt(ctx.parts["pilot"], mixrows, stemrows)
+    if unbuilt and not smoke:
+        raise SystemExit(f"{len(unbuilt)} pilot examples lack a mix or Mega-53 row: the stem stage must finish "
+                         "before any arm trains (every arm drops the same refusals)")
+    out, dropped, missing = [], refusals(mixrows, stemrows, {r["i"] for r in ctx.parts["pilot"]}), []
     for r in ctx.parts["pilot"]:
         i = r["i"]
-        if mixrows.get(i, {}).get("refused") or stemrows.get(i, {}).get("refused"):
-            dropped.append(i)
+        if i in dropped:
             continue
-        need = (["mix"] if arm != "D0" or smoke else []) + (["mega53"] if arm in STEM_ARMS else [])
+        if i not in mixrows or (arm in STEM_ARMS and i not in stemrows):
+            missing.append(i)                                 # smoke only (rows decide what is built)
+            continue
+        need = ["mix"] + (["mega53"] if arm in STEM_ARMS else [])
         if any(not ex_path(root, i, k).exists() for k in need):
-            missing.append(i)
-            continue
+            raise SystemExit(f"{i}: a row says built but the features file is missing")
         out.append(r)
-    if missing and not smoke:
-        raise SystemExit(f"{len(missing)} pilot examples lack features for {arm}: build first")
-    return out, dropped
+    return out, sorted(dropped)
+
+
+def refusals(mixrows, stemrows, ids):
+    """The examples refused by either stage."""
+    return {i for i in ids if mixrows.get(i, {}).get("refused") or stemrows.get(i, {}).get("refused")}
+
+
+def pilot_unbuilt(items, mixrows, stemrows):
+    """Examples without a mix row, or unrefused without a Mega-53 row (rows decide, not files)."""
+    return [r["i"] for r in items if r["i"] not in mixrows
+            or (not mixrows[r["i"]].get("refused") and r["i"] not in stemrows)]
+
+
+def check_run_parity(runs, final_refused, n_train_expected):
+    """Every run dropped exactly the final refusal set and trained on the same count. -> [problems]."""
+    bad = []
+    for r in runs:
+        if set(r.get("dropped_refused") or []) != set(final_refused):
+            bad.append(f"{r['arm']}-{r['seed']}: dropped {len(r.get('dropped_refused') or [])}, final {len(final_refused)}")
+        if r.get("train") != n_train_expected:
+            bad.append(f"{r['arm']}-{r['seed']}: trained on {r.get('train')}, expected {n_train_expected}")
+    return bad
 
 
 class StemData:
@@ -2012,7 +2104,7 @@ def readout_tensors(root, vrows, stem_kind, arm):
     for r in vrows:
         pm, ps_ = ex_path(root, r["i"], "mix"), ex_path(root, r["i"], stem_kind)
         if not (pm.exists() and ps_.exists()):
-            continue
+            raise SystemExit(f"{r['i']}: a row says built but the features file is missing")
         dm, ds = np.load(pm), np.load(ps_)
         for k, h in enumerate("AB"):
             x = SM.norm_feat(np.stack([PS.dequant(ds[f"s{h}"]), PS.dequant(dm[f"m{h}"])]))[None]
@@ -2241,6 +2333,15 @@ def cmd_pilot_report(args):
     missing = [f"{a}-{s}" for a in ARMS for s in TRAIN_SEEDS if not any(x["seed"] == s for x in runs.get(a, []))]
     if missing and not args.smoke:
         raise SystemExit(f"runs missing: {missing}")
+    pm, pst = build_rows(root, "pilot", "mix"), build_rows(root, "pilot", "mega53")
+    pilot_ids = {r["i"] for r in ctx.parts["pilot"]}
+    final = refusals(pm, pst, pilot_ids)
+    n_tr = sum(1 for r in ctx.parts["pilot"] if not r["early_stop"] and r["i"] not in final)
+    bad = check_run_parity([x for rs in runs.values() for x in rs], final, n_tr)
+    if pilot_unbuilt(ctx.parts["pilot"], pm, pst):
+        bad.append("the pilot's stem stage is not complete")
+    if bad and not args.smoke:
+        raise SystemExit("arms did not train on the same examples: " + "; ".join(bad))
     mixrows = build_rows(root, "vsep", "mix")
     band_of = {str(r["i"]): r["band"] for r in ctx.parts["vsep"]}
     untagged = {str(r["i"]) for r in ctx.parts["vsep"] if not ctx.tag[r["i"]]}
@@ -2256,14 +2357,20 @@ def cmd_pilot_report(args):
             "Dmix-Dstem|R_in": ("Dmix", "Dstem", "R_in"), "Dstem-Dstem-noaug|R_in": ("Dstem", "Dstem-noaug", "R_in")}
     beside = {"Dstem-D0|R_in": ("Dstem", "D0", "R_in"), "Dmix-D0|R_in": ("Dmix", "D0", "R_in"),
               "Dmix-Dstem|R_out": ("Dmix", "Dstem", "R_out"), "Dstem-Dstem-noaug|R_out": ("Dstem", "Dstem-noaug", "R_out")}
+    thr = PS._load(PS.OUT / "scope-threshold.json")                     # part C's frozen scope line
+    scope_in = {str(r["i"]) for r in ctx.parts["vsep"] if not PS.is_beyond(r, thr)}
     con = {}
     for k, (a, b, ro) in {**want, **beside}.items():
         pa, pb = per.get((a, ro)), per.get((b, ro))
         con[k] = paired(pa, pb, band_of, keep[ro]) if pa and pb else None
+    for k, (a, b, ro) in want.items():                                  # descriptive: part C's keep_in rule
+        pa, pb = per.get((a, ro)), per.get((b, ro))
+        con[f"scope_in {k}"] = paired(pa, pb, band_of, keep[ro] & scope_in) if pa and pb else None
     dec, aug, why = pilot_rules({k: con[k] for k in want})
     out = {"plan": "docs/direct-model-stems-plan.md step 2, amendment 1 rules", "levels": levels, "contrasts": con,
            "deciding": list(want), "decision": dec, "augmentation_kept": aug, "reasons": why,
-           "examples": {ro: len(keep[ro]) for ro in keep},
+           "examples": {ro: len(keep[ro]) for ro in keep}, "scope_in_examples": len(scope_in),
+           "parity_problems": bad, "final_refused": sorted(final),
            "left_out_tagged": sum(1 for r in ctx.parts["vsep"] if ctx.tag[r["i"]]),
            "runs": {a: [x["seed"] for x in rs] for a, rs in runs.items()}, "smoke": bool(args.smoke),
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
@@ -2287,7 +2394,7 @@ def main(argv=None):
     ap.add_argument("--sep", choices=("mega53", "htdemucs"))
     ap.add_argument("--part", choices=("pilot", "vsep", "rest"))
     ap.add_argument("--stage", choices=("mix", "stem"))
-    ap.add_argument("--shard", type=parse_shard, default=(0, 1), help="mix stage: examples with i %% n == k")
+    ap.add_argument("--shard", type=parse_shard, default=(0, 1), help="mix stage: whole sections, balanced (shard_sections)")
     ap.add_argument("--device", choices=("mps", "cpu"), default="mps", help="stem stage, Mega-53")
     ap.add_argument("--order", choices=("asc", "desc"), default="asc",
                     help="stem stage: two workers (MPS asc, CPU desc) meet in the middle")
@@ -2302,6 +2409,8 @@ def main(argv=None):
     ap.add_argument("--limit", type=int, help="build: the first N examples of the part (smoke tests, scratch --out only)")
     ap.add_argument("--smoke", action="store_true", help="train / pilot-report on whatever is built (scratch --out only)")
     a = ap.parse_args(argv)
+    if a.sep == "htdemucs":
+        os.environ.setdefault("HF_HUB_OFFLINE", "1")          # the cached htdemucs model only, before any import
     if a.cmd == "separate" and not a.sep:
         ap.error("separate needs --sep")
     if a.cmd == "build" and not (a.part and a.stage):
