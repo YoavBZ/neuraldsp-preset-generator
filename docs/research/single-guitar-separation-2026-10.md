@@ -80,7 +80,7 @@ The best recipe is procedural [I]. Take 1–3 guitar tracks per mixture, randomi
 
 ## Licences: the user decides the rule and five items
 
-**Decision (user, 2026-10-20):** publicly released weights with no licence are acceptable, confirming the 2026-10-19 roadmap entry; ML plan §5 now says so. wesleyr36's MDX23C, CLAPSep and LASS-Net therefore need no further yes. The five non-commercial or Cambridge items below still need their own yes.
+**Decision (user, 2026-10-20):** publicly released weights with no licence are acceptable, confirming the 2026-10-19 roadmap entry; ML plan §5 now says so. wesleyr36's MDX23C, CLAPSep and LASS-Net therefore need no further yes. The user also said yes (2026-10-20) to the five non-commercial or Cambridge items below, so none of this section's items is still waiting on a decision.
 
 The rules disagree, and the ML session should not resolve that alone. The ML plan's rule is "weights and tools must be open (MIT, Apache, BSD, CC0, CC BY). Non-commercial data only with the user's yes." ([ml-plan §5](ml-plan-2026-10.md)) [V]. The request says public weights with no licence are fine. Mega-53 already sits outside the strict rule: an MIT repo with no weights licence, which the user approved on 2026-10-15 ([separator-screen-plan](../separator-screen-plan.md)) [V]. The first decision is therefore the rule itself: does the user extend the Mega-53 approval to other unlicensed public weights, as the request assumes? If yes, wesleyr36's MDX23C, CLAPSep and LASS-Net (weights unstated) need no further yes; if no, each needs its own yes, as Mega-53 did. AudioSep's checkpoint Space declares MIT, and Slakh, GuitarDuets and Guitar-TECHS are CC BY, so these pass the strict rule.
 
