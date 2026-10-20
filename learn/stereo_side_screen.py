@@ -5,6 +5,7 @@ Development only, zero renders; band-bootstrapped effect sizes against a declare
     $TORCH_PY -m learn.stereo_side_screen separate --sep htdemucs --disk-guard-gb 26 # CPU, 2 threads
     $MSST_PY  -m learn.stereo_side_screen centre --disk-guard-gb 26                  # MDX23C on Mega-53 crops
     .venv/bin/python -m learn.stereo_side_screen report
+    .venv/bin/python -m learn.stereo_side_screen coherence   # amendment 1: the coherence mask, stored stems
 
 TORCH_PY is ~/ndsp-presets/tools/demucs-venv/bin/python, MSST_PY ~/ndsp-presets/tools/msst-venv/bin/python.
 Outputs go to ~/ndsp-presets/learn/stereo-side-screen/. Scenarios R and P reuse the stereo check's
@@ -54,6 +55,9 @@ CENTRE_OVERLAP = 2
 SPLITTERS = ("M", "a", "b", "c", "d", "e", "f_pick", "f_mask")
 GATED = (("P", "a"), ("P", "c"), ("P", "d"), ("LC", "c"), ("LC", "d"), ("LC", "e"))
 GATE_DB, LOWER_DB, STOP_DB, LSD_GUARD_DB, ALPHA = 2.0, 1.0, 0.5, 1.0, 0.05
+COH_TAU, COH_K = 0.5, 10.0                     # amendment 1: the coherence mask's threshold and slope, fixed
+COH_SPLITTERS = ("c", "g", "gc")
+COH_GATED = (("LC", "g"), ("LC", "gc"), ("P", "gc"))
 CENTRE_DIR = HOME / "tools/msst/weights-centre"
 CENTRE_FILES = {"config_mdx23c_similarity.yaml": "90645b4ffb0711172bc1279233d5982f3814ecb27ec8bc0fd4e19cf8453a9c06",
                 "model_mdx23c_ep_271_l1_freq_72.2383.ckpt":
@@ -143,6 +147,26 @@ def ild_mask(x2, p_t, sigma=SIGMA):
     ph, e = pan_index(zl, zr)
     m = np.exp(-(ph - p_t) ** 2 / (2 * sigma ** 2))
     m[e < FLOOR * e.max()] = 0.0
+    s = side(p_t)
+    za = (zl + zr) / 2 if s == "C" else (zl if s == "L" else zr)
+    return istft(m * za, x2.shape[1])
+
+
+def coherence_mask(x2, p_t, tau=COH_TAU, k=COH_K, ild=False):
+    """Amendment 1: per-bin inter-channel coherence Γ = Re{L·R*}/(|L|·|R| + ε) (the cosine of the
+    phase difference), a soft mask 1/(1 + exp(−k(Γ − τ))) applied to the target's channel with the
+    mixture phase; with `ild`, multiplied by the ILD mask at p_t. A point source panned anywhere is
+    coherent (Γ = 1); different takes on the two sides are not."""
+    import numpy as np
+
+    zl, zr = stft(x2[0]), stft(x2[1])
+    al, ar = np.abs(zl), np.abs(zr)
+    g = np.real(zl * np.conj(zr)) / (al * ar + 1e-20)
+    m = 1 / (1 + np.exp(-k * (g - tau)))
+    if ild:
+        ph, _ = pan_index(zl, zr)
+        m = m * np.exp(-(ph - p_t) ** 2 / (2 * SIGMA ** 2))
+    m[al ** 2 + ar ** 2 < FLOOR * (al ** 2 + ar ** 2).max()] = 0.0
     s = side(p_t)
     za = (zl + zr) / 2 if s == "C" else (zl if s == "L" else zr)
     return istft(m * za, x2.shape[1])
@@ -485,6 +509,76 @@ def cmd_report():
     print(json.dumps({k: rep["summary"][k] for k in ("gate", "checks", "verdict")}, indent=1))
 
 
+def cmd_coherence():
+    """Amendment 1: M, c, g and gc on the stored Mega-53 stems of every scenario; writes
+    report-coherence.json and leaves report.json alone."""
+    import numpy as np
+
+    from learn import arm_a_mega53 as A
+    from learn import confirm_run as CR
+
+    rows = {}
+    for slug, band in S.parts():
+        part = A.f_part(slug)
+        ref = CR.mono(part["crop"] / "reference.wav")
+        full, info = build(slug)
+        off = info["offset"]
+        row = {"band": band, "primary": bool(info["electric_others"]), "res": {}}
+        for sc in SCENARIOS:
+            sp = stem_path("mega53", slug, sc)
+            if not sp.exists():
+                continue
+            st2 = np.load(sp).astype(np.float64)
+            p_t = TARGET_PANS[sc]
+            sig = {"M": (st2[0] + st2[1]) / 2, "c": ild_mask(st2, p_t), "g": coherence_mask(st2, p_t),
+                   "gc": coherence_mask(st2, p_t, ild=True)}
+            g2 = full[sc][1][:, off:off + CROP]
+            sig_g = {"G_g": coherence_mask(g2, p_t), "G_mid": (g2[0] + g2[1]) / 2}
+            row["res"][sc] = {k: metrics(v, ref) for k, v in {**sig, **sig_g}.items()}
+        rows[slug] = row
+        print(slug, "done", flush=True)
+    s = {"cells": {}, "gate": []}
+    for sc in SCENARIOS:
+        for pop in ("primary", "all"):
+            for k in COH_SPLITTERS + ("G_g",):
+                base = "G_mid" if k == "G_g" else "M"
+                cell = {}
+                for metric in ("snr", "si_sdr", "lsd", "bright"):
+                    pr = [(r["band"], r["res"][sc][k][metric] - r["res"][sc][base][metric]) for r in rows.values()
+                          if sc in r["res"] and (pop == "all" or r["primary"])]
+                    if pr:
+                        cell[metric] = S.band_boot(pr)
+                if cell:
+                    s["cells"][f"mega53|{sc}|{k}|{pop}"] = cell
+    ps = []
+    for sc, k in COH_GATED:
+        pr = [(r["band"], r["res"][sc][k]["snr"] - r["res"][sc]["M"]["snr"]) for r in rows.values()
+              if r["primary"] and sc in r["res"]]
+        bb, draws = boot_draws(pr)
+        p1 = sum(d <= LOWER_DB for d in draws) / len(draws)
+        lsd = S.band_boot([(r["band"], r["res"][sc][k]["lsd"] - r["res"][sc]["M"]["lsd"]) for r in rows.values()
+                           if r["primary"] and sc in r["res"]])
+        s["gate"].append({"cell": f"{sc}|{k}", "snr": bb, "p_le_1db": p1, "lsd": lsd, "lobo": lobo(pr)})
+        ps.append(p1)
+    for c, a in zip(s["gate"], holm(ps)):
+        c["p_holm"] = a
+        c["pass"] = bool(c["snr"]["band_mean"] >= GATE_DB and a < ALPHA and c["lsd"]["band_mean"] <= LSD_GUARD_DB)
+        c["stop_side"] = bool(c["snr"]["band_mean"] < STOP_DB or c["snr"]["lo"] <= 0)
+    s["verdict"] = ("PASS" if any(c["pass"] for c in s["gate"]) else
+                    "STOP" if all(c["stop_side"] for c in s["gate"]) else "GAIN TO BUILD ON")
+    rg = s["cells"].get("mega53|R|g|primary", {}).get("snr")
+    s["checks"] = {"R_null_g": {"band_mean": rg["band_mean"], "ok": abs(rg["band_mean"]) <= 0.3}} if rg else {}
+    old = _load(OUT / "report.json")
+    if old:
+        s["checks"]["c_matches_report"] = {
+            sc: abs(old["summary"]["cells"][f"mega53|{sc}|c|primary"]["snr"]["band_mean"]
+                    - s["cells"][f"mega53|{sc}|c|primary"]["snr"]["band_mean"]) <= 0.01
+            for sc in ("P", "LC", "HP") if f"mega53|{sc}|c|primary" in old["summary"]["cells"]}
+    rep = {"rows": rows, "summary": s, "tau": COH_TAU, "k": COH_K, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    _save(OUT / "report-coherence.json", rep)
+    print(json.dumps({k: s[k] for k in ("gate", "checks", "verdict")}, indent=1))
+
+
 def delta_pairs(rows, sep, sc, k, metric="snr", base="M", pop="primary"):
     out = []
     for r in rows.values():
@@ -562,7 +656,7 @@ def summarise(rows):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("cmd", choices=("separate", "centre", "report"))
+    ap.add_argument("cmd", choices=("separate", "centre", "report", "coherence"))
     ap.add_argument("--sep", choices=("mega53", "htdemucs"), default="mega53")
     ap.add_argument("--scenarios", default="LC,HP,SP", help="new scenarios to separate, in order")
     ap.add_argument("--disk-guard-gb", type=float, default=DEFAULT_DISK_GUARD_GB,
@@ -574,6 +668,8 @@ def main(argv=None):
         cmd_separate(a.sep, a.disk_guard_gb, sc)
     elif a.cmd == "centre":
         cmd_centre(a.disk_guard_gb)
+    elif a.cmd == "coherence":
+        cmd_coherence()
     else:
         cmd_report()
 
