@@ -2558,6 +2558,20 @@
    "repeat_use": "A further use of stage F's parts (after S/H/M, XO, direct-existing, record-match listening, arm-a-mega53-perfect-sep, stereo-and-mix-check); separation measures only, no arm scores read or chosen on",
    "held_out": "none touched",
    "outcome": "done 2026-10-19 (zero renders, 23 separations; audited, confirmed with corrections; docs/mix-previews-results.md)"
+  },
+  {
+   "test_id": "stereo-side-screen",
+   "plan": "docs/stereo-side-plan.md",
+   "entered": "2026-10-20, with the plan, before any separation for it (one centre-model timing on synthetic noise ran while drafting); one independent review (go with changes, all applied)",
+   "parts": "stage F's 21 parts; primary the 19 with another electric guitar (10 bands)",
+   "bands": "stage F's 12 (primary 10)",
+   "audio_only": "the session tracks (rebuilt under declared pans), the stereo check's stored stereo stems (R, P), reference.wav; MDX23C centre weights sha256 1227f8d97c74...",
+   "renders": "0; separations: Mega-53 and htdemucs stereo on HP, LC, SP (126), MDX23C centre model on Mega-53 crops of LC and R (42) plus a 3-part overlap-8 check",
+   "gate": "Primary 6 cells (Mega-53, oracle side, 19 parts: a,c,d on P; c,d,e on LC; HP is a ceiling, never gated): pass if delta SNR over the stem's mid >= +2 dB, Holm-adjusted one-sided band-bootstrap p(delta <= +1 dB) < 0.05 and delta LSD <= +1 dB (LOBO minimum reported); stop if for every cell mean < +0.5 dB or lower bound <= 0; else a gain to build on. Blind, HP, htdemucs, SP, R, anchors descriptive",
+   "seeds": "band bootstrap random.Random(20261019), 4,000 draws",
+   "repeat_use": "A further use of stage F's parts, separation measures only (as stereo-and-mix-check, mix-previews); no arm scores read or chosen on; not one of the 7th/8th arm uses reserved for separation-finetune Steps 1 and 3",
+   "held_out": "none touched",
+   "outcome": "pending"
   }
  ]
 }
