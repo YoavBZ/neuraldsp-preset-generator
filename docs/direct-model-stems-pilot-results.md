@@ -111,7 +111,8 @@ on R_in and 0.201 on R_out.
 
 - **D_stem's seeds differ:** seed 20261042 reads +0.003 on R_in, seed 20261043 +0.023.
 - **D_existing against the same constant** (`pilot/dexisting-constant.json`, zero renders, CPU,
-  seed-averaged): on V_dev (1,720 examples, 5 bands) it is nominally better, −0.0143 [−0.0351,
+  seed-averaged; written by an uncommitted scratch script, so no repo command reproduces it): on
+  V_dev (1,720 examples, 5 bands, Cnoc An Tursa's Bannockburn included) it is nominally better, −0.0143 [−0.0351,
   +0.0066], but the interval spans 0. On R_out (672 examples) it is worse, +0.0369 [+0.0182,
   +0.0556], and on R_in (1,407) worse still, +0.0595 [+0.0453, +0.0738].
 - **What the readouts reward:** the pilot's gains are real against the old recipe, but these
