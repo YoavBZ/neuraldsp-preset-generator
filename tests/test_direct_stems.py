@@ -1039,3 +1039,17 @@ def test_failure_part_rows_list_xlance_failures():
     assert r["p"]["D0-S"] == 0.0 and r["p"]["D0 scored"] == 1
     assert math.isclose(r["p"]["movement"]["D m_f vs c_f"], 0.2) and math.isclose(r["p"]["movement"]["D b vs c_f"], 0.1)
     assert r["z"] == {"directions": 0, "D-S": None, "D scored": 0, "D0-S": None, "D0 scored": 0, "movement": {}}
+
+
+def test_xlance_transfer_table_pairs_the_same_examples():
+    band_of = {"1": "a", "2": "a", "3": "b", "4": "b", "5": "c"}
+    keep = {"1", "2", "3", "4", "5"}
+    const = {i: 0.2 for i in keep}
+    m = [{"1": 0.20, "2": 0.22, "3": 0.18, "4": 0.21, "5": 0.3}, {"1": 0.22, "2": 0.20, "3": 0.20, "4": 0.19}]
+    x = [{i: v - 0.01 for i, v in r.items()} for r in m]
+    t = DS.xlance_transfer_table({"Dstem": x, "D0": [m[0]]}, {"Dstem": m, "D0": []}, const, band_of, keep)
+    v = t["Dstem xlance_g-mega53"]
+    assert math.isclose(v[0], -0.01, abs_tol=1e-12) and v[3] == 2          # "5" lacks seed 1: left out
+    assert math.isclose(t["Dstem mega53-constant"][0], 0.0025, abs_tol=1e-12)
+    assert math.isclose(t["Dstem xlance_g-constant"][0], -0.0075, abs_tol=1e-12)
+    assert "Dstem seed 1 xlance_g-mega53" in t and t["D0 xlance_g-mega53"] is None

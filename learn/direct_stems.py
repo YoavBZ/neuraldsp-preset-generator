@@ -28,6 +28,7 @@ pilot (step 2), the full models (step 3) and the decision test on stage F (step 
     $TORCH_PY -m learn.direct_stems constant-check --pilot    # descriptive: pilot runs against the constant
     $TORCH_PY -m learn.direct_stems train --arm Dstem --n 1250|2500 --seed 20261042|20261043   # amendment 4
     $TORCH_PY -m learn.direct_stems curve                     # amendment 4: PROBE PAUSE | PROBE CONTINUE
+    $TORCH_PY -m learn.direct_stems pilot-xlance-readout      # amendment 2 (descriptive): pilot runs on xlance_g R_in
 
 Outputs go to ~/ndsp-presets/learn/direct-stems/ (gate 1 under gate1/, 1c under sepcheck/, the
 build under build/, the pilot's runs under pilot/).
@@ -4167,11 +4168,99 @@ def cmd_constant_check(args):
     print("CONSTANT-CHECK (descriptive)")
 
 
+def xlance_transfer_table(per_x, per_m, const, band_of, keep):
+    """Amendment 2's pilot transfer reading (descriptive): per arm, runs' per-example E on R_in with
+    xlance_g stems (per_x[arm] = [per seed]) and with Mega-53 stems (per_m, the same runs' stored
+    R_in), on the examples both have: xlance_g - Mega-53 and each against the constant, seed-averaged
+    and per seed, paired, band-clustered t. -> {key: (mean, lo, hi, bands) or None}."""
+    from learn import pretrain_set as PS
+
+    out = {}
+    for arm in per_x:
+        xs, ms = per_x[arm], per_m.get(arm) or []
+        if not xs or len(xs) != len(ms):
+            out[f"{arm} xlance_g-mega53"] = None
+            continue
+        k = set(keep) & set.intersection(*(set(r) for r in xs + ms))
+        sx, sm = PS.seed_avg(xs, k), PS.seed_avg(ms, k)
+        out[f"{arm} xlance_g-mega53"] = paired(sx, sm, band_of, k)
+        out[f"{arm} xlance_g-constant"] = paired(sx, const, band_of, k)
+        out[f"{arm} mega53-constant"] = paired(sm, const, band_of, k)
+        for n, (x, m) in enumerate(zip(xs, ms)):
+            out[f"{arm} seed {n} xlance_g-mega53"] = paired(x, m, band_of, k)
+    return out
+
+
+def cmd_pilot_xlance_readout(args):
+    """Amendment 2, descriptive, zero renders, decides nothing: the stored pilot runs (4 arms x 2
+    seeds, trained on Mega-53 stems) read V_sep's R_in with xlance_g stems against the same runs'
+    stored Mega-53 R_in, paired per example, band-clustered t; and E - constant (the pilot's
+    constant). Bannockburn and every MUSDB18-tagged section left out, as pilot-report. CPU by
+    default (the MPS separates); DS_DEVICE=mps to use it."""
+    import torch
+
+    from learn import pretrain_set as PS
+
+    root = out_root(args)
+    if args.smoke and not args.out:
+        raise SystemExit("--smoke writes into a scratch --out only")
+    ctx = Ctx()
+    ready = vsep_ready(ctx, root, args.smoke, STEP_SEP)
+    if ready is None:
+        raise SystemExit(f"V_sep's {STEP_SEP} stems are not built")
+    const, band_of, keep = pilot_constant(ctx, root)
+    built = {str(r["i"]) for r in ready["R_in"]}
+    k_in = keep["R_in"] & built
+    rows = [r for r in ready["R_in"] if str(r["i"]) in k_in]
+    if not rows:
+        raise SystemExit("no V_sep example to read")
+    dev = torch.device("mps" if os.environ.get("DS_DEVICE") == "mps" and torch.backends.mps.is_available() else "cpu")
+    torch.set_num_threads(2)
+    per_x, per_m, missing, models = {}, {}, [], {}
+    for arm in ARMS:
+        val = None
+        for seed in TRAIN_SEEDS:
+            rp = run_path(root, arm, "5000", seed)
+            r = _load(rp)
+            if not r or not (r.get("readouts") or {}).get("R_in"):
+                missing.append(f"{arm}-{seed}")
+                continue
+            mp = rp.with_suffix(".pt")
+            if hashlib_file(mp) != r["model_sha256"]:
+                raise SystemExit(f"{mp.name}: hash differs from its run record")
+            net = PS.build_net()
+            net.load_state_dict(torch.load(mp, map_location="cpu"))
+            net = net.to(dev).eval()
+            if val is None:
+                val = readout_tensors(root, rows, STEP_SEP, arm)
+            per, _, _ = PS.evaluate(net, val, dev)
+            per_x.setdefault(arm, []).append(per)
+            per_m.setdefault(arm, []).append(r["readouts"]["R_in"]["per_example"])
+            models[f"{arm}-{seed}"] = r["model_sha256"]
+            print(f"{arm} seed {seed}: {len(per)} examples read with {STEP_SEP} stems", flush=True)
+    if missing and not args.smoke:
+        raise SystemExit(f"pilot runs missing or without stored R_in: {missing}")
+    table = xlance_transfer_table(per_x, per_m, const, band_of, k_in)
+    out = {"plan": "docs/direct-model-stems-plan.md amendment 2 (descriptive; decides nothing)", "descriptive": True,
+           "smoke": bool(args.smoke), "examples": len(rows), "stem_sep": STEP_SEP, "device": str(dev),
+           "models": models, "missing": missing, "contrasts": table, "per_example_xlance_g": per_x,
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    _save(root / "pilot" / "xlance-readout.json", out)
+
+    def f(v):
+        return "n/a" if v is None else f"{v[0]:+.4f} [{v[1]:+.4f}, {v[2]:+.4f}] ({v[3]} bands)"
+
+    print(f"[R_in, {len(rows)} examples]")
+    for k, v in table.items():
+        print(f"  {k:36s} {f(v)}")
+    print("PILOT-XLANCE-READOUT (descriptive)")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=("separate", "move", "reliance", "audit-mix", "sepcheck", "build", "train",
                                     "pilot-report", "time-mps", "readout", "stems", "parity", "predict", "render",
-                                    "report", "constant-check", "curve"))
+                                    "report", "constant-check", "curve", "pilot-xlance-readout"))
     ap.add_argument("--sep", choices=("mega53", "htdemucs", "xlance_g"),
                     help="build --stage stem: the separator (default: xlance_g for the rest, mega53 for the pilot and "
                          "V_sep); train --n 5000|2500|1250: the stem arms' stems (default mega53); train --n full, "
@@ -4210,7 +4299,8 @@ def main(argv=None):
      "sepcheck": cmd_sepcheck, "build": cmd_build, "train": cmd_train, "pilot-report": cmd_pilot_report,
      "time-mps": cmd_time_mps, "readout": cmd_readout, "stems": cmd_stems, "parity": cmd_parity,
      "predict": cmd_predict, "render": cmd_render, "report": cmd_report,
-     "constant-check": cmd_constant_check, "curve": cmd_curve}[a.cmd](a)
+     "constant-check": cmd_constant_check, "curve": cmd_curve,
+     "pilot-xlance-readout": cmd_pilot_xlance_readout}[a.cmd](a)
 
 
 if __name__ == "__main__":

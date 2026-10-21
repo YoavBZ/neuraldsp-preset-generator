@@ -694,6 +694,20 @@ Declared before any xlance_g build stem, step 3 run or step 4 input. Zero render
   - **Caveat:** the full D_stem trains on a separator the pilot did not test.
   - Amendment 4's projection was also read on Mega-53 stems, so step 3's MODEL STOP risk stands
     unchanged. Step 3 reads it on xlance_g R_in.
+- **A pilot transfer reading (descriptive, zero renders, decides nothing):**
+  `pilot-xlance-readout`.
+  - **When:** once V_sep's xlance_g stems exist, about 1.5 h into the stem stage.
+  - **What it reads:** the 8 stored pilot runs (4 arms × 2 seeds, trained on Mega-53) score
+    V_sep's R_in with xlance_g stems.
+  - **What it compares:** against the same runs' stored Mega-53 R_in, on the examples both
+    have: xlance_g − Mega-53 per arm, seed-averaged and per seed. Paired per example, 90%
+    band-clustered t over 4 bands, 3 df, with Bannockburn and the MUSDB18 tags left out as
+    pilot-report does.
+  - **Beside it:** E − constant with each stem, using the pilot's constant.
+  - **How it runs:** on the CPU, beside the separation. Output: `pilot/xlance-readout.json`.
+  - **Why:** it shows how far a model trained on Mega-53 moves when handed xlance_g stems. That
+    is the separator-change transfer that "Data hygiene" asks to measure, not assume. No rule
+    reads it.
 - **Mega-53 stays the fallback** in the build and the product. `--sep mega53` selects it for the
   rest, step 3 and step 4. Switching back needs the user, and the rest's Mega-53 stems would
   then still have to be built (13–17 h).
@@ -756,6 +770,8 @@ reason Mega-53 stays the product's fallback.
 - **Unchanged:** the pilot's `train --n 5000|2500|1250`, `pilot-report`, `curve` and
   `constant-check`, all on Mega-53.
 - **The CPU worker:** the stem stage runs gtr_mss at 4 threads on the CPU.
+- **`pilot-xlance-readout`:** the descriptive transfer reading above (`xlance_transfer_table`,
+  tested).
 
 ## Amendment 3 (2026-10-21): parity LUFS gating
 
