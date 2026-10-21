@@ -856,3 +856,47 @@ def test_lufs_medians_of_the_stored_training_mixes():
             "lufs_mB": -14.0}, 3: {"refused": "x", "target_lufs": 0.0}}
     m = DS.lufs_medians(rows)
     assert m == {"examples": 2, "drawn_target_median": -13.0, "stored_half_lufs_median": -13.5}
+
+
+# --- amendment 3: parity's LUFS gating --------------------------------------------------------------------
+
+def _integ(l):
+    l = np.asarray(l, float)
+    return float(-0.691 + 10 * np.log10(np.mean(10 ** ((l + 0.691) / 10))))
+
+
+def test_gate_toggle_matches_pyloudnorm_on_audio():
+    pytest.importorskip("pyloudnorm")
+    from learn import song_aug as SA
+
+    rng = np.random.default_rng(5)
+    x = rng.standard_normal(216_000) * np.repeat(rng.uniform(0.001, 0.3, 45), 4800)    # a sparse, uneven signal
+    g = DS.gate_toggle(DS.block_loudness(x), SA.lufs(x))
+    assert g["own_diff"] < 1e-9
+
+
+def test_a_knife_edge_block_explains_a_miss():
+    loud = [-30.0] * 20 + [-31.0] * 10
+    b = -40.0
+    for _ in range(100):                                 # the block 0.009 LU above the gate it helps set
+        b = _integ(loud + [b]) - 10.0 + 0.009
+    blocks = loud + [b]                                  # just above the gate: counted
+    stored = _integ(loud)                                # the stored run had it just below: not counted
+    g = DS.gate_toggle(blocks, stored)
+    assert g["own_diff"] > 0.01 and 0 < g["gate_margin"] <= 0.05
+    assert g["explained"] and g["toggled_diff"] < 1e-6
+    assert DS.parity_ok([1.0, 1.0], [g["own_diff"], 0.0], explained=[g["explained"], False])
+
+
+def test_a_genuine_level_change_is_not_explained():
+    blocks = [-30.0] * 20 + [-50.0] * 10                 # no block near the gate
+    stored = DS.gate_toggle(blocks, 0.0)["own"]
+    shifted = [v + 0.17 for v in blocks]                 # the whole half 0.17 LU louder
+    g = DS.gate_toggle(shifted, stored)
+    assert math.isclose(g["own_diff"], 0.17, abs_tol=1e-9) and not g["explained"]
+    assert abs(g["gate_margin"]) > 0.05
+    assert not DS.parity_ok([1.0, 1.0], [g["own_diff"], 0.0], explained=[g["explained"], False])
+    # a block at the gate that does not account for the difference does not excuse it either
+    gate = _integ(blocks) - 10.0
+    g2 = DS.gate_toggle([v + 0.17 for v in blocks] + [gate + 0.17 + 0.009], stored)
+    assert not g2["explained"]

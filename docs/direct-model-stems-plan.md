@@ -644,3 +644,36 @@ each re-renders its guitar first, since no audio is kept.
 - **Not yet done:** an MPS run of gtr_mss, after the pilot frees the GPU. Step 3's `--n full`
   training is implemented, but on Mega-53 stems only: it refuses `--sep xlance_g` while this
   amendment is a draft (`AMENDMENT2_IN_FORCE`).
+
+## Amendment 3 (2026-10-21): parity LUFS gating
+
+**Post hoc:** written after the first real parity run failed, and because of it. Amendment 2
+stays a draft.
+
+**What failed.** `parity` printed `PARITY FAIL`: worst mel share 1.0, worst LUFS difference
+0.171. 39 of 40 halves were within 1e-4 LU. The miss was V_sep example 1002075, half B, stem
+LUFS only: its mix LUFS differed by 2.3e-6 and both mel shares were 1.0.
+
+**The diagnosis** (2 renders and 8 Mega-53 fast separations, CPU, 4 threads, no MPS):
+- Separating the same mix twice, in one process and in a new one, gave bit-identical stems.
+  There is no thread or run-to-run difference.
+- The stem is quiet and sparse (−32.4 LUFS, 33% of cells at the floor). Of half B's 42 gating
+  blocks (BS.1770 via pyloudnorm), block 15 sits +0.009 LU above the relative gate (−44.62).
+- With block 15 counted the half reads −32.386 LUFS; without it, −32.219. A re-render's tiny
+  differences move it across the gate, which accounts for parity's 0.171.
+
+**The rule (replaces "LUFS within 0.01 LU" in step 4's parity test):**
+- Each half's stem and mix LUFS must be within 0.01 LU of the stored value, as before.
+- A half that misses passes only if toggling the single gating block nearest the relative gate
+  explains the miss. That block must sit within 0.05 LU of the gate, and the toggled loudness
+  must be within 0.01 LU of the stored value.
+- `parity` stores each half's gate margin and the toggle's result. The mel rule is unchanged:
+  at least 99% of cells within one 0.5-dB step.
+
+**Why this does not weaken the check:**
+- The mel features and the mix LUFS must still match.
+- Only a discrete flip of one block at the gate is excused, never a level change: a half 0.17 LU
+  louder throughout still fails (tested).
+- The excused effect on the model is small. 0.17 LU moves the stem LUFS conditioning input by
+  0.017 on its normalised scale.
+

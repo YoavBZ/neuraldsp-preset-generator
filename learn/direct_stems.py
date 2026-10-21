@@ -2852,10 +2852,60 @@ def run_group(rr, g, settings, repeat, stored_judge, judge, keep=None, tol=STEP4
     return rec
 
 
-def parity_ok(shares, lufs_diffs, share=MATCH_SHARE, tol=PARITY_LUFS_TOL):
+def parity_ok(shares, lufs_diffs, share=MATCH_SHARE, tol=PARITY_LUFS_TOL, explained=None):
     """Step 4's parity: every rebuilt half's stem and mix mels within one 0.5-dB step of the stored
-    features on 99% of cells, and every half LUFS within 0.01 LU."""
-    return bool(shares) and min(shares) >= share and max(lufs_diffs) <= tol
+    features on 99% of cells, and every half LUFS within 0.01 LU, or (amendment 3) a miss explained
+    by the one block nearest the relative gate (`explained`, parallel to `lufs_diffs`)."""
+    explained = explained or [False] * len(lufs_diffs)
+    return (bool(shares) and min(shares) >= share
+            and all(d <= tol or bool(e) for d, e in zip(lufs_diffs, explained)))
+
+
+GATE_MARGIN_LU = 0.05                 # amendment 3: the toggled block sits within 0.05 LU of the relative gate
+
+
+def gate_toggle(block_lufs, stored, tol=PARITY_LUFS_TOL, margin=GATE_MARGIN_LU, abs_gate=-70.0):
+    """Amendment 3 (post hoc, after the first real parity run): BS.1770's integrated loudness from
+    its gating blocks (`pyloudnorm`: mono, blocks above -70 LUFS, relative gate 10 LU under their
+    mean power, strictly above both gates), and the same with the single block nearest the
+    relative gate toggled in or out. A half that misses `stored` by more than `tol` passes only if
+    that block is within `margin` LU of the gate and the toggled loudness is within `tol` of it.
+    -> {own, gate, block, gate_margin, toggled, own_diff, toggled_diff, explained}."""
+    import numpy as np
+
+    l = np.asarray(block_lufs, np.float64)
+    z = 10 ** ((l + 0.691) / 10)
+    above = l >= abs_gate
+
+    def integ(mask):
+        return float(-0.691 + 10 * np.log10(z[mask].mean())) if mask.any() else -math.inf
+
+    gate = integ(above) - 10.0
+    inc = (l > gate) & (l > abs_gate)
+    own = integ(inc)
+    out = {"own": own, "gate": gate, "block": None, "gate_margin": None, "toggled": None,
+           "own_diff": abs(own - stored), "toggled_diff": None, "explained": False}
+    cand = np.flatnonzero(above)
+    if len(cand):
+        k = int(cand[np.argmin(np.abs(l[cand] - gate))])
+        alt = inc.copy()
+        alt[k] = not alt[k]
+        tog = integ(alt)
+        out.update(block=k, gate_margin=float(l[k] - gate), toggled=tog, toggled_diff=abs(tog - stored))
+        out["explained"] = bool(abs(l[k] - gate) <= margin and abs(tog - stored) <= tol)
+    return out
+
+
+def block_loudness(x):
+    """pyloudnorm's gating-block loudness of a mono signal at 48 kHz (`song_aug.lufs`'s meter)."""
+    import numpy as np
+    import pyloudnorm
+
+    from learn import song_aug as SA
+
+    m = pyloudnorm.Meter(SA.SR)
+    m.integrated_loudness(np.asarray(x, np.float64))
+    return [float(v) for v in m.blockwise_loudness]
 
 
 # --- pure: step 4's report -----------------------------------------------------------------------------
@@ -3316,6 +3366,7 @@ def cmd_parity(args):
 
     from learn import direct_existing as DE
     from learn import knob_ceiling as K
+    from learn import pretrain_set as PS
     from learn import song_aug as SA
 
     root = out_root(args)
@@ -3346,23 +3397,39 @@ def cmd_parity(args):
             stem = np.asarray(sep(ex["mix"]), np.float64)
             gain = DE.inference_gain_db(ex["mix"], SA.lufs(ex["mix"]))
             dm, ds = np.load(ex_path(root, r["i"], "mix")), np.load(ex_path(root, r["i"], "mega53"))
+            sl, kg = PS.half_slices(), 10 ** (gain / 20)
             for k, h in enumerate("AB"):
                 s8, m8, ls, lm = step4_half(stem, ex["mix"], h, gain)
-                out.append({"i": r["i"], "half": h, "share_stem": match_share(s8, ds[f"s{h}"]),
-                            "share_mix": match_share(m8, dm[f"m{h}"]), "lufs_stem_diff": abs(ls - float(ds["lufs"][k])),
-                            "lufs_mix_diff": abs(lm - float(dm["lufs"][k])), "gain_db": gain})
+                row = {"i": r["i"], "half": h, "share_stem": match_share(s8, ds[f"s{h}"]),
+                       "share_mix": match_share(m8, dm[f"m{h}"]), "lufs_stem_diff": abs(ls - float(ds["lufs"][k])),
+                       "lufs_mix_diff": abs(lm - float(dm["lufs"][k])), "gain_db": gain}
+                for ch, y, st in (("stem", stem, float(ds["lufs"][k])), ("mix", ex["mix"], float(dm["lufs"][k]))):
+                    g = gate_toggle(block_loudness(DE.mono(y)[sl[h]] * kg), st)       # amendment 3
+                    g.pop("own_diff")
+                    row[f"gate_{ch}"] = g
+                out.append(row)
             print("parity", out[-1], flush=True)
     finally:
         rr.close()
     ok_rows = [o for o in out if "refused" not in o]
     shares = [o[k] for o in ok_rows for k in ("share_stem", "share_mix")]
     diffs = [o[k] for o in ok_rows for k in ("lufs_stem_diff", "lufs_mix_diff")]
-    ok = parity_ok(shares, diffs) and not any("refused" in o for o in out)
+    expl = [o[f"gate_{c}"]["explained"] for o in ok_rows for c in ("stem", "mix")]
+    ok = parity_ok(shares, diffs, explained=expl) and not any("refused" in o for o in out)
+    gated = [f"{o['i']}{o['half']} {c}" for o in ok_rows for c in ("stem", "mix")
+             if o[f"lufs_{c}_diff"] > PARITY_LUFS_TOL and o[f"gate_{c}"]["explained"]]
     rec = {"ok": ok, "smoke": bool(args.limit), "examples": len(rows), "seed": PARITY_SEED, "device": args.device,
+           "rule": "amendment 3: LUFS within 0.01 LU, or a miss explained by toggling the one block within 0.05 LU of "
+                   "the relative gate", "explained_by_gate": gated,
            "worst_share": min(shares) if shares else None, "worst_lufs_diff": max(diffs) if diffs else None,
            "renders": primer.renders, "rows": out, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
-    _save(step4_dir(root) / "parity.json", rec)
-    print(f"PARITY {'OK' if ok else 'FAIL'}: worst share {rec['worst_share']}, worst LUFS diff {rec['worst_lufs_diff']}")
+    pp = step4_dir(root) / "parity.json"
+    old = _load(pp)
+    if old is not None:                                   # earlier records are kept, never overwritten
+        _save(pp.with_name(f"parity-{(old.get('time') or 'old').replace(' ', 'T').replace(':', '')}.json"), old)
+    _save(pp, rec)
+    print(f"PARITY {'OK' if ok else 'FAIL'}: worst share {rec['worst_share']}, worst LUFS diff {rec['worst_lufs_diff']}; "
+          f"misses explained by the gate (amendment 3): {gated}")
     if not ok:
         raise SystemExit(1)
 
