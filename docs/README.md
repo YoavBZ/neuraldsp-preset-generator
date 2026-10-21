@@ -83,6 +83,8 @@ was declared, what was measured, and the research behind it.
 - [starting-preset-listening-plan.md](starting-preset-listening-plan.md), with its
   part list → [results](starting-preset-listening-results.md): **heard** (17 of 21,
   in-sample, one listener).
+- [clean-start-breakup-results.md](clean-start-breakup-results.md): on a full open chord,
+  only the PR12 clean starts stay clean; SW50R's and AC20's break up (by ear and THD).
 
 **Song-only distance** (current)
 - [di-free-distance-plan.md](di-free-distance-plan.md) →
