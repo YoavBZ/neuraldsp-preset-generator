@@ -17,7 +17,9 @@ need the user's approval before they start.*
 
 **Status:** declared; one independent review (go with required changes, all applied; see the end).
 Amendments 1–4 are in force. Amendment 2 (2026-10-21) switched the full build, step 3 and step 4 to
-X-LANCE gtr_mss stems.
+X-LANCE gtr_mss stems. [Amendment 5](#amendment-5-2026-10-21-the-readout-e-rewards) (approved by the
+user on 2026-10-22, in force when merged) changes how step 3 and step 4 read the model's answer and
+leaves silent knobs out of E. Its E check is descriptive: amendment 6's sound gate decides step 3.
 
 ## The question, and why it is not settled yet
 
@@ -278,6 +280,10 @@ bands (4 df, t 2.132), Bannockburn left out. **Power:** part C's paired ΔE had 
 
 ## Step 3: the full models (no judged renders)
 
+*As amended: [amendment 5](#amendment-5-2026-10-21-the-readout-e-rewards) replaces "The answer" and
+leaves silent knobs out of E. The early stop below is now a descriptive E check: amendment 6's sound
+gate decides step 3 (user, 2026-10-22).*
+
 - **D** (D_stem, or D_mix by rule 2 or gate 1; amendment 1) and **D0** (part C's composition), each on the full
   band-clean pool, 3 seeds (20261042–44), the same recipe, at most 40 epochs.
 - **The answer:** the three seeds' **pooled mixture's top component** (each seed's weights / 3, the
@@ -294,6 +300,9 @@ bands (4 df, t 2.132), Bannockburn left out. **Power:** part C's paired ΔE had 
   learned nothing usable from realistic inputs: stop, no judged renders.
 
 ## Step 4: the decision test on stage F (about 320 renders)
+
+*As amended: [amendment 5](#amendment-5-2026-10-21-the-readout-e-rewards) sets the rendered answer
+(the seeds' averaged medians, pulled by step 3's weights).*
 
 Fixed now, before any training.
 - **Directions:** stage F's 126 (21 parts, 12 bands, part × amp × search half;
@@ -899,3 +908,191 @@ whether 4× more data is projected to get there.
   partners from at least 2 sections. `train` refuses a subset that fails it. The caveat stands:
   the subsets' merge pool is smaller than the pilot's.
 
+
+## Amendment 5 (2026-10-21): the readout E rewards
+
+**Status: approved by the user on 2026-10-22, together with amendment 6.** It was declared on
+2026-10-21, before any step 3 data existed: no step 3 run had started, since the X-LANCE stem stage
+was still running. Zero renders, no training. It takes effect when merged. It sets how D, D0 and
+D_existing read out their continuous answer in step 3 and step 4, and it leaves silent knobs out of E.
+- **What decides step 3.** On approval, the user made **amendment 6's sound gate** step 3's deciding
+  gate. That gate is a separate amendment, in `learn/direct_sound_gate.py` on its own branch, and it
+  uses this readout for D's and D0's answers.
+- **The E check is now descriptive.** The E reading against the constant below was drafted as step
+  3's early stop. It is now reported, and it decides nothing.
+- **If the chain runs first.** Step 3's chain runs `readout` from the main checkout. If that runs
+  before this is merged, its `MODEL` line decides nothing. Step 3 is re-read under this amendment
+  and amendment 6, which were both fixed first.
+
+**Why.** The pilot's constant check read D_stem − constant **+0.0128 [−0.0013, +0.0269]** on R_in
+(amendment 4). The [research report](research/direct-model-constant-2026-10.md) points at the readout:
+- **E is minimised by the median** of the model's predictive spread for each knob.
+- **Step 3's first answer is not that median.** It is the mean of the heaviest mixture component,
+  chosen once for all knobs together.
+- **Its "ensemble" never averages.** It takes one seed's component.
+- **In the report's toys** that readout costs 0.004–0.009 of E. With no cue in the audio it loses to
+  the constant by about 0.009.
+
+**The answer for continuous knobs.** D, D0 and D_existing are all read the same way:
+1. **A1, the median.** Per seed, half and knob, take the median of the 4-component mixture. It is
+   found by bisection between the smallest and largest component mean (40 steps), then clipped to
+   [0, 1].
+2. **A2, the average.** Take the mean of those medians over the 3 seeds × 2 halves. This gives one
+   answer per example. It is the mean of the medians, not their median.
+3. **A3, the pull toward the constant.** Per knob × amp × base class, the answer is
+   c + b·(θ̂ − c).
+   - c is the constant: the median of D's training labels per amp and base class, over the labels
+     that leave the knob audible (below).
+   - b ∈ [0, 1] is fitted by absolute error on step 3's own early-stopping set. That set is the
+     pool's 1,000 early-stopping examples less the refusals. It is read through R_in's input path:
+     the true mix and the build's xlance_g stem, both halves.
+   - The fit is exact. The best b is the weighted median of (θ − c)/(θ̂ − c), with weights
+     |θ̂ − c| / n, clipped to [0, 1]. Here n is the example's number of scored (audible, labelled)
+     knobs. The loss is convex in b, so clipping gives the constrained minimum. Where the minimum is
+     flat, the point nearest 0 is taken. A model that never leaves the constant gets b = 0.
+   - The 1/n weight matters because the silent-knob mask gives examples in one cell different knob
+     counts. With it, the fit minimises the fitting set's example-mean masked E, knob by knob and
+     cell by cell.
+- **Switches and mics are unchanged:** the seeds' majority, and the argmax of summed probabilities.
+
+**Silent knobs leave E** (user, 2026-10-21: a switched-off feature's knob values are all one
+setting).
+- **Which knobs.** The right cab's position, distance and mic level are left out of E when the
+  *true* label has `rightCabActive` false. This holds for D, D0, D_existing and the constant alike.
+  The right mic leaves the mic agreement the same way, which is descriptive.
+- **Why only the right cab.** It is the only on/off gate in the labelled space (`knob_ceiling.space`;
+  `song_relabel.RIGHT_GATED` lists the same knobs). The left cab's knobs are already out of the space
+  when S has that cab off. The amp switches change the voicing and turn no knob off.
+- **The same mask applies to the constant and the fit.** The constant's medians are taken over the
+  training labels that leave the knob audible, so the constant is the best per-class guess for the
+  masked E. A3's fit uses the masked E too.
+- **The unmasked E is reported beside it.** It covers every labelled knob, for the same answers.
+- **The training loss is not changed.** The loss still fits silent knobs' labels, and changing that
+  needs a retrain. It is noted as a later item.
+
+**Step 3's E check (descriptive).** This replaces the readout in "Early stop (declared)", which no
+longer decides.
+- **The reading.** D − constant on R_in, with D's answer read as above, E masked, paired per example,
+  and a band-clustered 90% t interval (3 df). It reads OK if the interval lies entirely below 0, and
+  STOP otherwise. R_in, the bands and Bannockburn's exclusion are unchanged.
+- **How it prints.** `readout` prints it as "E check (descriptive; Amendment 6 decides)".
+- **What it stores.** `full/readout.json` keeps it as `e_check`, beside the weights and the constant
+  that step 4 and amendment 6 read the answers with.
+
+**Reported beside it.** These rows are descriptive and never decide:
+- **The rule as first declared.** The top component, seed-averaged, over every labelled knob, against
+  the first-declared constant (medians over every training label). It is stored as
+  `e_check_first_declared`.
+- **Other readouts.** The old top-component readings: seed-averaged and
+  the pooled-mixture ensemble. Also A1 alone (seed-averaged) and A1+A2 without the pull. All are read
+  on R_in, R_out and V_dev, for every model. Each is shown with E masked, and with E unmasked.
+- **The fitting set, in-sample.** On the early-stopping set's example-mean masked E, A3 cannot lose
+  to the constant or to A1+A2. Its band-weighted readings can differ.
+- **The weights.** Every fitted b, with the unconstrained b, per knob × amp × class.
+- **A V_sep band cross-fit on R_in.** b is fitted on three of R_in's bands and scored on the fourth.
+- **A flag** if the E check's OK rests on the pull: A1+A2 alone does not clear 0.
+
+**D0 is read the same way.** Its A1, A2 and A3 use its own b, fitted on the same early-stopping
+examples with the same inputs, and the same constant. So D − D0 compares two models read alike, not
+a better readout against a worse one. D_existing is read the same way too.
+- For D, the fitting inputs are exactly its early-stopping inputs.
+- D0 early-stopped on part C's composition. Its b is fitted on the realistic inputs that R_in feeds
+  it.
+
+**Step 4's rendered answer uses the same readout.** This applies to D and D0.
+- **A1 per seed on the search half, averaged over the 3 seeds.** The held half is judged and is never
+  an input, so A2 has no second half.
+- **Pulled by step 3's b** for the part's amp and class.
+- **The known-answer row** reads each half as the search half, as before. Its knob error leaves out
+  the silent knobs.
+- **The checks.** `predict` refuses unless step 3's readout stored the weights for the same model
+  hashes. `render` refuses predictions made under the old readout.
+- **Step 4's renders wait for amendment 6.** `render` no longer reads the E check. It refuses until
+  amendment 6's sound gate reads OK (`step3_gate`). That gate fails closed until amendment 6 wires
+  its verdict in.
+
+**What is stated before any reading.**
+- **The motivation.** The pilot's constant check on R_in (+0.0128) and the research report motivated
+  this change. No variant was compared on R_in or R_out: A1, A2, A3 and the mask were chosen without
+  reading either set with them. The only data read with them are the pilot's early-stopping
+  examples, in the sanity check below, after this declaration.
+- **The in-band risk.** This is the report's guard. The early-stopping examples are whole sections
+  of the training bands, and the model reads better there than on new bands. So b fitted there will
+  tend to trust it too much on R_in, with b nearer 1 than R_in's best.
+  - That costs accuracy on R_in, and so power.
+  - It cannot make the E check read a false OK. R_in plays no part in the fit, so the reading is a
+    clean out-of-sample test of a readout fixed in advance.
+  - The V_sep band cross-fit shows how far in-band weights overstate the gain. It stays descriptive:
+    a b chosen on R_in would contaminate R_in.
+- **The unconstrained b is reported.** Above 1, the predictions are spread too narrowly for their
+  correlation; pulling toward the constant cannot help there, and the constraint holds b at 1. Below
+  0, the model is anti-informative for that knob, and the constraint holds b at 0, the constant.
+- **Why b ∈ [0, 1] can only tie or beat the constant on the fitting set.**
+  - b = 0 is the constant, and b = 1 is A1+A2. Both lie in the range searched.
+  - The fit minimises the fitting set's example-mean masked E for each knob and cell, each example's
+    terms weighted by 1 / its scored knobs.
+  - So on the early-stopping set, A3's example-mean masked E is at most the constant's and at most
+    A1+A2's. The band-weighted mean is not covered by this guarantee.
+  - The guarantee is in-sample only. On R_in, A3 can lose to either.
+- **A1 has no guarantee** for a learned, possibly miscalibrated mixture. A2's guarantee is against
+  the members' mean E: for every example and knob, by the triangle inequality.
+- **What is unchanged.** The training code (no training function changed), the likelihood early
+  stopping, R_in, R_out, the 3 seeds, step 4's directions and arms, and step 4's rules. The constant
+  changes only through the silent-knob mask.
+
+**Code.** All of it is in `learn/direct_stems.py`.
+- **The readout functions:** `mixture_median`, `median_answers`, `fit_pull`, `fit_pull_table`,
+  `pull`, `score_medians`, `silent_masks` and `encode_audible`.
+- **`readout`** reads the early-stopping set first, then R_in, R_out and V_dev in chunks of 64
+  examples. It prints the E check, labelled "descriptive; Amendment 6 decides", with the rest beside
+  it.
+- **`predict`** uses `answer` with step 3's weights. **`render`** waits for `step3_gate`.
+  **`readout-check`** is the sanity check below.
+- **Tests** are in `tests/test_direct_stems.py`:
+  - the median of known mixtures;
+  - the average over seeds and halves;
+  - b = 0 for an uninformative model and b = 1 for a perfect one;
+  - the fit never losing to the constant or A1+A2 on its own data;
+  - the silent-knob mask, and the constant's medians under it;
+  - the E check's OK and STOP read on the declared answer;
+  - step 4's refusals, and its renders waiting for amendment 6.
+
+**Sanity check (descriptive, zero renders, decides nothing).** It ran on 2026-10-22, after this
+amendment's first commit (`3b50faa`, pushed first). It was re-run after the review's fix, which
+weights each example's terms in A3's fit by 1 / its scored knobs; the numbers below are from that
+re-run. Output: `pilot/readout-check.json`.
+- **What it read.** `readout-check` read the pilot's two stored D_stem runs on the pilot's
+  early-stopping set only: 998 examples in 4 bands and 13 sections, with Mega-53 stems as trained.
+  V_sep, R_in and R_out were never read.
+- **Machine.** CPU only, 2 torch threads, nice 10, peak memory about 1.0 GB.
+- **How A3 was scored.** It was fitted on one fold of the early-stopping sections and scored on the
+  other. The folds use `random.Random(20261086)`: sections sorted, shuffled, and the first half is
+  fold 0, giving 6 sections and 461 examples. The primary reading scores fold 1 (7 sections, 537
+  examples) with fold 0's weights.
+- **The caveat.** These are in-band examples that chose the pilot's checkpoints, so every model reads
+  better here than on R_in. The differences between readouts are the point, not the levels.
+
+Masked E, fold 1, against the pilot's constant (E 0.197). Each row is the readout's E minus the
+constant's:
+
+| Readout | E − constant |
+|---|---|
+| Top component, seed-averaged (the first-declared readout) | +0.0106 [−0.0117, +0.0328] |
+| Top component, pooled ensemble | +0.0075 [−0.0231, +0.0381] |
+| A1, the median (seed-averaged) | −0.0084 [−0.0183, +0.0016] |
+| A1+A2, the average | −0.0101 [−0.0203, +0.0001] |
+| **A1+A2+A3, the declared answer** | **−0.0107 [−0.0186, −0.0027]** |
+
+- **Steps.**
+  - **The median is the step that moves:** A1 − top −0.0189 [−0.0316, −0.0063].
+  - **Averaging adds a little:** A1+A2 − A1 −0.0018 [−0.0020, −0.0015].
+  - **The pull ties:** A1+A2+A3 − A1+A2 −0.0005 [−0.0028, +0.0017].
+- **The reverse fold agrees.** Fold 0 scored with fold 1's weights reads −0.0105 [−0.0173, −0.0036]
+  against the constant, and A1+A2+A3 − A1+A2 reads +0.0001.
+- **Unmasked E agrees.** Fold 1 reads −0.0115 [−0.0207, −0.0023] against the constant.
+- **The weights.** Most b sit at 1: 36 of 58 on fold 0, with a median unconstrained b of 1.28. 36 of
+  the 58 unconstrained b lie above 1. So the predictions are spread too narrowly for their
+  correlation, and pulling toward the constant rarely helps.
+- **What this shows.** The code works as declared. On data that chose the checkpoints, reading the
+  median turns a model worse than the constant into one better than it. It is not a forecast for
+  R_in.

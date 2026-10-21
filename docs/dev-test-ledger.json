@@ -2535,8 +2535,8 @@
    "bands": "stage F's 12 bands (unseen-by-part-C 6 reported apart); known-answer (zero renders, descriptive): Chris Coltraine, Rebecca Haviland, The Apprehended",
    "audio_only": "stage F's stored full-mix contexts, htdemucs and Mega-53 crops, reference.wav (stem a, a' and judge), di.wav (measure DI)",
    "training": "part C's band-clean pool only: 21,311 examples (20,311 train, 1,000 early stopping), 277 sections, 9 bands disjoint from stage F, the known-answer bands, part C's reserve, Guitar-TECHS P3, sets 4-6 and held-out sessions; re-rendered, true mixes with own-session backings, Mega-53 stems. Dev readouts V_dev/V_sep: part C's 5 non-stage-F val bands (1,720 examples), never trained on",
-   "seeds": "training 20261042-44 (pilot 20261042-43); a' leak 20261071; 1d amps 20261070; 1d repeat 20261075; V_sep 20261072; pilot subset 20261073; augmentation SeedSequence([20261074, i, epoch]); mastering 20261076; step 4 repeat 20261077; band bootstrap 20261078",
-   "gate": "Gate 1 (zero renders): separator route continues if per-seed movement d(a',b) or d(a,b) exceeds the two-leak-draw null (interval above 0, all or unseen bands) or the audit examples' Mega-53 - training-stem E cost is above 0; otherwise mix-only route. 1d descriptive. Pilot: STOP if neither D_sep-5k nor D_mix-5k beats D0-5k on unmastered V_sep with htdemucs stems; mix-only if D_sep-5k - D_mix-5k not below 0 on V_sep Mega-53. Step 3: stop if D not below a constant predictor. Primary: D - S on stage F, band-weighted, 90% band-clustered t (11 df); below 0 -> build on it; else stop and revisit with the user. Secondary declared: D - D0",
+   "seeds": "training 20261042-44 (pilot 20261042-43); a' leak 20261071; 1d amps 20261070; 1d repeat 20261075; V_sep 20261072; pilot subset 20261073; augmentation SeedSequence([20261074, i, epoch]); mastering 20261076; step 4 repeat 20261077; band bootstrap 20261078; amendment 5's sanity-check folds (early-stopping sections) 20261086",
+   "gate": "Gate 1 (zero renders): separator route continues if per-seed movement d(a',b) or d(a,b) exceeds the two-leak-draw null (interval above 0, all or unseen bands) or the audit examples' Mega-53 - training-stem E cost is above 0; otherwise mix-only route. 1d descriptive. Pilot: STOP if neither D_sep-5k nor D_mix-5k beats D0-5k on unmastered V_sep with htdemucs stems; mix-only if D_sep-5k - D_mix-5k not below 0 on V_sep Mega-53. Step 3: stop if D not below a constant predictor. Amendment 5 (declared 2026-10-21 before any step 3 data, approved by the user 2026-10-22): D and D0 read as per-knob mixture medians averaged over 3 seeds x 2 halves, pulled toward the constant by b in [0,1] fitted per knob x amp x class on step 3's early-stopping set; E and the constant leave out the right cab's knobs when the true rightCabActive is false; that E check against the constant is descriptive, and amendment 6's sound gate decides step 3. Primary: D - S on stage F, band-weighted, 90% band-clustered t (11 df); below 0 -> build on it; else stop and revisit with the user. Secondary declared: D - D0",
    "stopping": "fixed sets; repeat checks (S within 1e-3); caps 150 (1d) and 400 (step 4); 31 GB disk guard; memory and swap guards; full build needs >= 34 GB free at start",
    "renders": "judged: 111 (1d) + 321 (step 4) = 432; training-style (not judged): about 23k re-renders of part C examples",
    "held_out": "none touched",
@@ -2613,6 +2613,21 @@
    "ran": "2026-10-20/21",
    "amendment_1": "Amendment 1, post-result second variant (declared 2026-10-21 after the X result, reviewed: go with changes): gtr_mss alone (X_g) on the 164 audit mixes; overrides the plan's 'X_g does not decide'. Same rule (SNR point >= 0, mel-range LSD interval < 0, CPU <= 1.5x Mega-53 fast re-timed interleaved in the same session on the same 10 clips); failure counts (>3 dB SNR, >5 dB mel LSD, both ways) in the verdict line; X_g preferred over X unless X_g - X mel LSD interval entirely above 0; no switch before MPS timing ('pending MPS timing'). 164 + 22 CPU separations, 2 threads, nice 10; renders 0; X's PASS, OVER BUDGET untouched",
    "amendment_1_outcome": "Amendment 1, post-result second variant: done 2026-10-21 (zero renders; 165 gtr_mss (one warm-up) + 11 Mega-53 (one warm-up) CPU separations). X_g - Mega-53 fast on the 164 audit mixes: SNR +0.14 [-0.11, +0.39], mel-range LSD -2.30 [-3.00, -1.59], CPU 1.01x same session. X_g PASSES THE CPU LEGS: PENDING MPS TIMING; Mega-53 stays the fallback. Failures: audit 0 SNR either way, mel LSD 2 (X_g worse) vs 15 (Mega-53 worse); stage F She's Gone (SNR) and Colour Me Red Gtr02/03 (mel LSD) for both variants"
-  }
+  },
+ {
+  "test_id": "direct-model-sound-gate",
+  "plan": "docs/direct-model-sound-gate-amendment.md",
+  "entered": "2026-10-22, with the amendment and code, before any non-smoke render; the user approved a sound-based stop/go gate for step 3 on 2026-10-22",
+  "parts": "R_in: V_sep's 1,407 examples (part C val examples of 4 non-stage-F bands: Dark Ride, Adam Buckley, John Morgan Kimock, Swatkins), Bannockburn and every MUSDB18-tagged section left out, as step 3's readout",
+  "bands": "4 (3 df)",
+  "audio_only": "each example's own part C DI section (measured, 10 s + 0.25 s), rendered: no separation, no backing",
+  "renders": "about 5,900 unjudged-for-training renders, judged against each other: truth + constant 2,949, D + D0 2,949 (one pass), each 1,407 examples plus one priming render per (section, amp) group (135 groups) per pass; smoke renders in a scratch dir not counted",
+  "gate": "GATE OK iff log(d_D / d_const) per example (d = knob_ceiling.judge of the arm's render against the truth's render, lag 0, mean over halves A 1.0-5.5 s and B 5.5-10.0 s, each half clipped to +-ln 10), band-weighted, has a 90% band-clustered t interval (4 bands, 3 df) entirely below 0; else GATE STOP. D's answer: amendment 5's readout (A1 medians over 3 seeds x 2 halves, pulled by step 3's fitted b); constant: amendment 5's masked medians, switch majority, mic mode. D0, D - D0, E, per class and amp: descriptive",
+  "seeds": "audit sample of kept renders random.Random(20261087), 40 examples",
+  "stopping": "fixed set; truth renders must reproduce part C's stored guitar mels (99% of cells within 0.5 dB) or the example is refused; 31 GB disk guard; at most 3 render processes machine-wide",
+  "repeat_use": "R_in already read by the pilot, amendment 2's transfer readout and step 3's readout (knob error); this is its first sound-based reading. Nothing on stage F",
+  "held_out": "none touched",
+  "outcome": "declared; not run"
+ }
  ]
 }

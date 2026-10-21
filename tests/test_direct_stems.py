@@ -1053,3 +1053,319 @@ def test_xlance_transfer_table_pairs_the_same_examples():
     assert math.isclose(t["Dstem mega53-constant"][0], 0.0025, abs_tol=1e-12)
     assert math.isclose(t["Dstem xlance_g-constant"][0], -0.0075, abs_tol=1e-12)
     assert "Dstem seed 1 xlance_g-mega53" in t and t["D0 xlance_g-mega53"] is None
+
+
+# --- amendment 5: the readout E rewards -------------------------------------------------------------
+
+def _mix(w, mu, sd):
+    """One row's (logpi [K], mu [K, n], ls [K, n]) from weights, means and sds."""
+    mu = np.asarray(mu, float)
+    return np.log(np.asarray(w, float)), mu, np.log(np.broadcast_to(np.asarray(sd, float), mu.shape))
+
+
+def _true_median(w, mu, sd):
+    from scipy.optimize import brentq
+    from scipy.stats import norm
+
+    def f(x):
+        return sum(wk * norm.cdf((x - m) / s) for wk, m, s in zip(w, mu, sd)) - 0.5
+
+    return brentq(f, -5, 5, xtol=1e-14)
+
+
+def test_median_of_a_known_mixture():
+    lp, mu, ls = _mix([0.7, 0.3], [[0.2], [0.8]], 0.05)
+    m = DS.mixture_median(lp, mu, ls)
+    assert m.shape == (1,) and math.isclose(m[0], _true_median([0.7, 0.3], [0.2, 0.8], [0.05, 0.05]), abs_tol=1e-9)
+    assert abs(m[0] - 0.2) > 0.02                                    # not the top component's mean
+    # an equal two-component mixture: the midpoint; one component: its mean; per dim, vectorised over rows
+    lp2, mu2, ls2 = _mix([0.5, 0.5], [[0.3, 0.1], [0.7, 0.1]], [[0.1, 0.2], [0.1, 0.2]])
+    rows = DS.mixture_median(np.stack([lp, lp2[[0, 1]]]), np.stack([np.c_[mu, mu], mu2]), np.stack([np.c_[ls, ls], ls2]))
+    assert rows.shape == (2, 2)
+    assert math.isclose(rows[1, 0], 0.5, abs_tol=1e-9) and math.isclose(rows[1, 1], 0.1, abs_tol=1e-9)
+    # four components, unequal sds, against a root finder
+    w, mus, sds = [0.1, 0.4, 0.3, 0.2], [0.05, 0.4, 0.55, 0.9], [0.3, 0.02, 0.15, 0.05]
+    lp4, mu4, ls4 = _mix(w, [[m] for m in mus], [[s] for s in sds])
+    assert math.isclose(DS.mixture_median(lp4, mu4, ls4)[0], _true_median(w, mus, sds), abs_tol=1e-9)
+    # clipped to [0, 1]
+    lp5, mu5, ls5 = _mix([1.0], [[1.3]], 0.1)
+    assert DS.mixture_median(lp5, mu5, ls5)[0] == 1.0
+
+
+def test_a2_averages_the_medians_over_seeds_and_halves():
+    one = _mix([1.0], [[0.2, 0.6]], 0.1)
+    two = _mix([1.0], [[0.4, 0.2]], 0.1)
+    s0 = [one + (None, None), two + (None, None), one + (None, None)]       # rows: example 7 (A, B), example 8
+    s1 = [two + (None, None), two + (None, None), two + (None, None)]
+    meds, ans = DS.median_answers([s0, s1], [7, 7, 8])
+    assert len(meds) == 2 and meds[0].shape == (3, 2)
+    assert np.allclose(ans[7], np.mean([[0.2, 0.6], [0.4, 0.2], [0.4, 0.2], [0.4, 0.2]], axis=0))    # the mean of the medians
+    assert np.allclose(ans[8], [0.3, 0.4])
+
+
+def test_pull_fit_is_0_for_an_uninformative_model_and_1_for_a_perfect_one():
+    c = 0.5
+    labels = np.array([0.2, 0.5, 0.8, 0.2, 0.5, 0.8])
+    noise = np.array([-0.2, -0.2, -0.2, 0.2, 0.2, 0.2])                     # independent of the label
+    assert DS.fit_pull(noise, labels - c) == (0.0, 0.0)
+    assert DS.fit_pull(labels - c, labels - c) == (1.0, 1.0)                # the answer is the label
+    assert DS.fit_pull(np.zeros(6), labels - c) == (0.0, 0.0)              # never leaves the constant
+    b, bu = DS.fit_pull(0.5 * (labels - c), labels - c)                     # spread too narrow for its correlation
+    assert b == 1.0 and math.isclose(bu, 2.0)
+    b, bu = DS.fit_pull(-(labels - c), labels - c)                          # anti-informative
+    assert b == 0.0 and bu < 0
+
+
+def test_pull_fit_can_only_tie_or_beat_the_constant_and_a1a2_on_its_fitting_set():
+    rng = np.random.default_rng(5)
+    for _ in range(50):
+        n = int(rng.integers(5, 80))
+        c = float(rng.uniform(0.2, 0.8))
+        theta = rng.uniform(0, 1, n)
+        pred = np.clip(rng.uniform(0, 1) * theta + rng.normal(0, rng.uniform(0.01, 0.5), n) + rng.normal(0, 0.1), 0, 1)
+        b, bu = DS.fit_pull(pred - c, theta - c)
+        assert 0.0 <= b <= 1.0
+        e = np.abs(c + b * (pred - c) - theta).sum()
+        assert e <= np.abs(c - theta).sum() + 1e-9 and e <= np.abs(pred - theta).sum() + 1e-9
+        grid = min(np.abs(c + g * (pred - c) - theta).sum() for g in np.linspace(0, 1, 201))
+        assert e <= grid + 1e-9                                             # the exact minimum over [0, 1]
+
+
+def test_pull_table_is_per_knob_and_cell_and_respects_masks():
+    ans = {1: np.array([0.9, 0.3]), 2: np.array([0.1, 0.3]), 3: np.array([0.6, 0.6])}
+    lab = {1: (np.array([0.9, 0.0]), np.array([1.0, 0.0])), 2: (np.array([0.1, 0.0]), np.array([1.0, 0.0])),
+           3: (np.array([0.5, 0.5]), np.array([1.0, 1.0]))}
+    cell_of = {1: ("pr12", "clean"), 2: ("pr12", "clean"), 3: ("ac20", "crunch")}
+    med = {("pr12", "clean"): np.array([0.5, 0.5]), ("ac20", "crunch"): np.array([0.5, 0.5])}
+    t = DS.fit_pull_table(ans, lab, cell_of, med)
+    assert t[("pr12", "clean")]["b"][0] == 1.0 and math.isnan(t[("pr12", "clean")]["b"][1])
+    assert t[("pr12", "clean")]["examples"] == 2 and t[("ac20", "crunch")]["b"][0] == 0.0
+    back = DS.table_from_json(DS.table_json(t))
+    assert back[("pr12", "clean")]["b"][0] == 1.0 and math.isnan(back[("pr12", "clean")]["b"][1])
+    assert np.allclose(DS.pull([0.9, 0.2], [0.5, 0.5], [0.25, np.nan]), [0.6, 0.2])     # NaN b: unchanged
+    b, gaps = DS.cell_b(t, ("pr12", "clean"), [1, 1])
+    assert gaps == 1 and b[1] == 0.0
+    assert DS.cell_b(t, ("sw50r", "clean"), [1, 0])[1] == 1
+    with pytest.raises(SystemExit):
+        DS.fit_pull_table(ans, lab, cell_of, {**med, ("pr12", "clean"): np.array([np.nan, 0.5])})
+
+
+def test_score_medians_reads_a1_a2_and_the_pull():
+    s0 = [_mix([1.0], [[0.2]], 0.1) + (None, None)] * 2
+    s1 = [_mix([1.0], [[0.6]], 0.1) + (None, None)] * 2
+    Y = [np.array([[0.5]] * 2), np.ones((2, 1))]
+    med = {("pr12", "clean"): np.array([0.3])}
+    table = {("pr12", "clean"): {"b": np.array([0.5]), "b_unconstrained": np.array([0.5]), "examples": 1}}
+    sc, ans, lab, gaps = DS.score_medians([s0, s1], [7, 7], Y, {7: ("pr12", "clean")}, med, table)
+    assert math.isclose(sc["A1"][0][7], 0.3) and math.isclose(sc["A1"][1][7], 0.1)
+    assert math.isclose(ans[7][0], 0.4) and math.isclose(sc["A1+A2"][7], 0.1)
+    assert math.isclose(sc["A1+A2+A3"][7], 0.15) and gaps == 0                # 0.3 + 0.5 (0.4 - 0.3) = 0.35
+
+
+def _per(model_vals):
+    """{model: {tag: {i: E}}} with every tag at the same values."""
+    return {m: {t: dict(v) for t in DS.READOUT_TAGS} for m, v in model_vals.items()}
+
+
+def test_the_e_check_reads_the_declared_answer():
+    band_of = {i: "abcd"[i % 4] for i in range(8)}
+    const = {i: 0.20 for i in range(8)}
+    better = {i: 0.18 + 0.001 * (i % 4) for i in range(8)}
+    worse = {i: 0.22 + 0.001 * (i % 4) for i in range(8)}
+    per = _per({"D": worse, "D0": worse})
+    per["D"]["A1+A2+A3"] = better                                           # the declared answer beats the constant
+    con = DS.readout_contrasts(per, const, band_of, set(const))
+    assert DS.E_CHECK in con and DS.model_stop(con[DS.E_CHECK]) == "OK"
+    assert DS.model_stop(con["D-constant [top]"]) == "STOP"                  # the old readout would stop
+    assert "D-D0 [A1+A2+A3]" in con and con["D-D0 [A1+A2+A3]"][0] < 0
+    per = _per({"D": better, "D0": better})
+    per["D"]["A1+A2+A3"] = worse                                            # only the old readouts beat it
+    con = DS.readout_contrasts(per, const, band_of, set(const))
+    assert DS.model_stop(con[DS.E_CHECK]) == "STOP" and DS.model_stop(con["D-constant [top]"]) == "OK"
+    assert "A1+A2's (no pull)" in DS.ensemble_flag("OK", con["D-constant [A1+A2+A3]"], "A1+A2's (no pull)")
+
+
+def test_band_crossfit_scores_each_band_with_the_others_weights():
+    band_of = {i: "ab"[i % 2] for i in range(8)}
+    cell_of = {i: ("pr12", "clean") for i in range(8)}
+    med = {("pr12", "clean"): np.array([0.5])}
+    lab = {i: (np.array([0.1 * i]), np.array([1.0])) for i in range(8)}
+    ans = {i: np.array([0.1 * i]) for i in range(8)}                         # perfect: b = 1 everywhere
+    e, gaps = DS.band_crossfit(ans, lab, cell_of, med, band_of)
+    assert gaps == 0 and all(math.isclose(v, 0.0, abs_tol=1e-12) for v in e.values()) and len(e) == 8
+
+
+def test_section_folds_keep_sections_whole_and_are_seeded():
+    rows = [{"i": i, "section": f"s{i // 3}"} for i in range(30)]
+    f = DS.section_folds(rows)
+    assert f == DS.section_folds(list(reversed(rows))) and set(f.values()) == {0, 1}
+    for s in {r["section"] for r in rows}:
+        assert len({f[r["i"]] for r in rows if r["section"] == s}) == 1
+    assert sum(1 for r in rows if f[r["i"]] == 0) == 15                      # 5 of 10 sections
+    assert DS.READOUT_CHECK_SEED == 20261086
+
+
+def test_silent_knobs_leave_e_when_the_right_cab_is_off():
+    from learn import song_model as SM
+
+    on = {"cabParameters/rightCabActive": "true", "cabParameters/rightCabPosition": 0.3,
+          "cabParameters/rightCabDistance": 0.4, "cabParameters/rightCabMicLevel": 0.5, "cabParameters/rightMicType": "2",
+          "cabParameters/leftCabPosition": 0.1, "parameters/inputGain": 0.6}
+    off = {**on, "cabParameters/rightCabActive": "false"}
+    gated = [SM.CONT.index(n) for n in DS.SILENT_GATES["cabParameters/rightCabActive"] if n in SM.CONT]
+    assert len(gated) == 3
+    _, cm_on, *_, km_on = DS.encode_audible(on)
+    _, cm_off, *_, km_off = DS.encode_audible(off)
+    assert all(cm_on[j] == 1 for j in gated) and all(cm_off[j] == 0 for j in gated)
+    keep = [SM.CONT.index("cabParameters/leftCabPosition"), SM.CONT.index("parameters/inputGain")]
+    assert all(cm_off[j] == 1 for j in keep)
+    r = SM.CAT.index("cabParameters/rightMicType")
+    assert km_on[r] == 1 and km_off[r] == 0
+    no_switch = {k: v for k, v in on.items() if k != "cabParameters/rightCabActive"}
+    assert all(DS.encode_audible(no_switch)[1][j] == 1 for j in gated)       # an unlabelled switch masks nothing
+    # stacked labels, the inputs untouched; E of a toy answer drops the silent knobs only
+    Y = [np.stack(z) for z in zip(SM.encode(on), SM.encode(off))]
+    Ym = DS.silent_masks(Y)
+    assert Y[1][1, gated[0]] == 1 and Ym[1][1, gated[0]] == 0 and Ym[1][0, gated[0]] == 1
+    c, cm = SM.encode(off)[:2]
+    guess = np.where(np.arange(len(c)) == gated[0], 1.0, c)                 # wrong only on a silent knob
+    assert DS.ensemble_error(guess, c, cm) > 0 and DS.ensemble_error(guess, c, Ym[1][1]) == 0
+
+
+def test_silent_gates_match_the_labelled_space_and_song_relabel():
+    from learn import knob_ceiling as K
+    from learn import song_model as SM
+    from learn import song_relabel as SR
+
+    (switch, gated), = DS.SILENT_GATES.items()
+    assert switch == SR.RIGHT_ACTIVE and set(gated) == set(SR.RIGHT_GATED) | {SR.RIGHT_MIC}
+    assert switch in SM.SW and all(n in SM.CONT or n in SM.CAT for n in gated)
+    names = {d.name for d in K.space("pr12")}
+    assert switch in names and set(gated) <= names
+    assert DS.audible("cabParameters/rightCabMicLevel", {"cabParameters/rightCabActive": "false"}) is False
+    assert DS.audible("cabParameters/rightCabMicLevel", {"cabParameters/rightCabActive": "true"}) is True
+    assert DS.audible("pr12Amp/pr12Volume", {"cabParameters/rightCabActive": "false"}) is True
+
+
+def test_constant_medians_skip_silent_labels():
+    rows = [{"amp": "pr12", "base": "clean", "label": {"cabParameters/rightCabActive": a,
+                                                         "cabParameters/rightCabPosition": v, "parameters/inputGain": v}}
+            for a, v in (("true", 0.1), ("true", 0.2), ("false", 0.9), ("false", 0.95), ("false", 0.99))]
+    from learn import song_model as SM
+
+    m = DS.label_medians(rows, DS.encode_audible)[("pr12", "clean")]
+    j, g = SM.CONT.index("cabParameters/rightCabPosition"), SM.CONT.index("parameters/inputGain")
+    assert math.isclose(m[j], 0.15, rel_tol=1e-6) and math.isclose(m[g], 0.9, rel_tol=1e-6)   # audible labels only
+    assert math.isclose(DS.label_medians(rows, SM.encode)[("pr12", "clean")][j], 0.9, rel_tol=1e-6)
+
+
+def test_step4_needs_amendment_5s_readout_from_the_same_models():
+    recs = {"D": [{"seed": 1, "model_sha256": "a"}], "D0": [{"seed": 1, "model_sha256": "b"}]}
+    models = {"D": (None, "Dstem", recs["D"]), "D0": (None, "D0", recs["D0"]), "D_existing": (None, "D0", [])}
+    t = DS.table_json({("pr12", "clean"): {"b": np.array([0.5]), "b_unconstrained": np.array([0.5]), "examples": 3}})
+    ro = {"readout_rule": DS.READOUT_RULE, "models": {"D": {"1": "a"}, "D0": {"1": "b"}},
+          "pull": {"D": t, "D0": t, "D_existing": t}, "constant": DS.medians_json({("pr12", "clean"): np.array([0.4])})}
+    pulls, cmed = DS.step4_pulls(ro, models)
+    assert pulls["D"][("pr12", "clean")]["b"][0] == 0.5 and cmed[("pr12", "clean")][0] == 0.4
+    with pytest.raises(SystemExit):
+        DS.step4_pulls(None, models)
+    with pytest.raises(SystemExit):
+        DS.step4_pulls({**ro, "readout_rule": None}, models)
+    with pytest.raises(SystemExit):
+        DS.step4_pulls({**ro, "models": {"D": {"1": "x"}, "D0": {"1": "b"}}}, models)
+    with pytest.raises(SystemExit):
+        DS.step4_pulls({**ro, "smoke": True}, models)
+
+
+def test_step4_renders_wait_for_amendment_6s_gate(tmp_path):
+    ok, why = DS.step3_gate(tmp_path)                    # no sound-gate report: step 4 stays closed
+    assert ok is False and "sound-gate" in why and DS.STEP3_GATE == "amendment 6"
+
+
+def test_readout_glue_end_to_end_on_toy_models(tmp_path, monkeypatch, capsys):
+    """cmd_readout with the models, rows and network outputs faked (no torch): the early-stopping fit,
+    the masked and unmasked readings, the E check (descriptive) and the stored pull for step 4."""
+    import types
+
+    from learn import song_model as SM
+
+    rng = np.random.default_rng(11)
+    names = ["parameters/inputGain", "pr12Amp/pr12Volume", "cabParameters/rightCabPosition"]
+
+    def row(i, band, base, early_stop=False):
+        lab = {n: float(rng.uniform(0, 1)) for n in names}
+        lab["cabParameters/rightCabActive"] = "true" if rng.random() < 0.7 else "false"
+        return {"i": i, "band": band, "amp": "pr12", "base": base, "early_stop": early_stop, "label": lab}
+
+    pool = [row(i, "t1", ("clean", "crunch")[i % 2]) for i in range(80)]
+    pool += [row(100 + i, ("t1", "t2")[i % 2], ("clean", "crunch")[(i // 2) % 2], True) for i in range(40)]
+    vsep = [row(1_000_000 + i, f"v{i % 4}", ("clean", "crunch")[(i // 4) % 2]) for i in range(48)]
+    ctx = types.SimpleNamespace(pool=pool, parts={"vsep": vsep}, tag={r["i"]: None for r in vsep})
+    recs = [{"seed": s, "model_sha256": f"h{s}", "dropped_refused": []} for s in (1, 2, 3)]
+    models = {"D": (["D"] * 3, "Dstem", recs), "D0": (["D0"] * 3, "D0", recs), "D_existing": (["DE"] * 3, "D0", [])}
+    by_i = {r["i"]: r for r in pool + vsep}
+
+    def fake_rows(nets, rows, make, chunk=64, batch=128):
+        outs, who, ys = [[] for _ in nets], [], []
+        for r in rows:
+            enc = SM.encode(r["label"])
+            for _ in "AB":
+                who.append(r["i"])
+                ys.append(enc)
+                for k, kind in enumerate(nets):
+                    good = enc[0] if kind == "D" else np.full(len(SM.CONT), 0.5)
+                    mu = np.stack([np.clip(good + rng.normal(0, 0.02, len(good)), 0, 1), np.full(len(good), 0.5)])
+                    outs[k].append((np.log([0.8, 0.2]), mu, np.full(mu.shape, -3.0), np.zeros(len(SM.SW)),
+                                    [np.zeros(len(SM.MICS)) for _ in SM.CAT]))
+        return outs, who, [np.stack(z) for z in zip(*ys)]
+
+    monkeypatch.setattr(DS, "Ctx", lambda: ctx)
+    monkeypatch.setattr(DS, "full_models", lambda root, smoke, sep: (models, "Dstem", {"decision": "STEM"}, []))
+    monkeypatch.setattr(DS, "step_sep", lambda report, sep, smoke=False: "xlance_g")
+    monkeypatch.setattr(DS, "vsep_ready", lambda ctx, root, smoke, sep: {"R_in": vsep, "R_out": vsep})
+    monkeypatch.setattr(DS, "build_rows", lambda root, part, stage: {r["i"]: {"mastered": False} for r in vsep})
+    monkeypatch.setattr(DS, "vdev_rows", lambda: [dict(r) for r in vsep])
+    monkeypatch.setattr(DS, "ex_path", lambda root, i, kind: tmp_path)
+    monkeypatch.setattr(DS, "run_rows", fake_rows)
+    DS.cmd_readout(types.SimpleNamespace(out=str(tmp_path), smoke=False, limit=None, sep=None))
+    out = capsys.readouterr().out
+    assert "E check (descriptive; Amendment 6 decides): OK" in out and "MODEL " not in out
+    ro = DS._load(tmp_path / "full" / "readout.json")
+    assert ro["decides"] == "amendment 6" and ro["e_check"] == "OK" and "decision" not in ro
+    assert set(ro["pull"]) == {"D", "D0", "D_existing"} and not any(ro["gaps"].values())
+    assert ro["fitting_set"]["examples"] == 40 and set(ro["contrasts"]) == {"R_in", "R_out", "V_dev"}
+    assert DS.E_CHECK in ro["contrasts"]["R_in"] and DS.E_CHECK in ro["contrasts_unmasked"]["R_in"]
+    assert "D-constant [A1+A2+A3, R_in band cross-fit, descriptive]" in ro["contrasts"]["R_in"]
+    j = SM.CONT.index("parameters/inputGain")
+    assert ro["pull"]["D"]["pr12|clean"]["b"][j] > 0.5                       # an informative model keeps its answer
+    pulls, cmed = DS.step4_pulls(ro, models)                                # what step 4 reads back
+    assert ("pr12", "crunch") in pulls["D_existing"] and np.isfinite(cmed[("pr12", "clean")][j])
+    # the constant's medians skip silent labels: the right cab's position over audible training labels only
+    k = SM.CONT.index("cabParameters/rightCabPosition")
+    aud = [by_i[r["i"]]["label"]["cabParameters/rightCabPosition"] for r in pool
+           if not r["early_stop"] and r["base"] == "clean" and r["label"]["cabParameters/rightCabActive"] == "true"]
+    assert math.isclose(cmed[("pr12", "clean")][k], float(np.median(np.float32(aud))), rel_tol=1e-6)
+
+
+def test_pull_fit_weights_each_example_by_its_scored_knobs():
+    # one knob, three examples; the first scores 1 knob, the others 4 (the rest silent or unlabelled)
+    d, r = [0.2, 0.2, 0.2], [0.2, -0.2, -0.2]
+    assert DS.fit_pull(d, r)[0] == 0.0                                       # unweighted: two examples say 0
+    assert DS.fit_pull(d, r, [1, 4, 4])[0] == 1.0                            # per-example E: the first weighs 4x
+    # fit_pull_table passes each example's scored dims: the fit minimises example-mean masked E
+    rng = np.random.default_rng(3)
+    ans, lab = {}, {}
+    for i in range(40):
+        m = np.ones(4) if i % 2 else np.array([1.0, 0, 0, 0])
+        theta = rng.uniform(0, 1, 4)
+        ans[i] = np.clip(theta + rng.normal(0, 0.3, 4) + (0.3 if i % 2 else -0.2), 0, 1)
+        lab[i] = (theta, m)
+    cell_of = {i: ("pr12", "clean") for i in ans}
+    med = {("pr12", "clean"): np.full(4, 0.5)}
+    b = DS.fit_pull_table(ans, lab, cell_of, med)[("pr12", "clean")]["b"]
+
+    def mean_e(bb):
+        return np.mean([DS.ensemble_error(DS.pull(ans[i], med[("pr12", "clean")], bb), *lab[i]) for i in ans])
+
+    for g in np.linspace(0, 1, 101):                                          # no other b0 does better
+        assert mean_e(b) <= mean_e(np.r_[g, b[1:]]) + 1e-12

@@ -1,4 +1,5 @@
-"""The direct model with realistic stems (`docs/direct-model-stems-plan.md`, amendments 1-4 in force).
+"""The direct model with realistic stems (`docs/direct-model-stems-plan.md`, amendments 1-4 in force; 5 approved
+2026-10-22, in force when merged).
 Development data only. Gate 1's zero-render checks (steps 1a, 1b), 1c, the pilot build and the
 pilot (step 2), the full models (step 3) and the decision test on stage F (step 4).
 
@@ -19,7 +20,7 @@ pilot (step 2), the full models (step 3) and the decision test on stage F (step 
     $MSST     -m learn.direct_stems build --part vsep|pilot|rest --stage stem --sep xlance_g --device mps --order asc
     $MSST     -m learn.direct_stems build --part vsep|pilot|rest --stage stem --sep xlance_g --device cpu --order desc
     $TORCH_PY -m learn.direct_stems train --arm Dstem|Dmix|D0 --n full --seed 20261042|20261043|20261044
-    $TORCH_PY -m learn.direct_stems readout                   # step 3 (zero renders): MODEL STOP | MODEL OK
+    $TORCH_PY -m learn.direct_stems readout                   # step 3 (zero renders): the E check (descriptive; amendment 6 decides)
     $MSST     -m learn.direct_stems stems --device mps        # step 4's stored crop-only xlance_g stems (stage F, known answer)
     $MSST     -m learn.direct_stems parity --device mps       # step 4's inputs path on 20 V_sep examples (renders)
     $TORCH_PY -m learn.direct_stems predict                   # step 4's answers (zero renders)
@@ -29,6 +30,7 @@ pilot (step 2), the full models (step 3) and the decision test on stage F (step 
     $TORCH_PY -m learn.direct_stems train --arm Dstem --n 1250|2500 --seed 20261042|20261043   # amendment 4
     $TORCH_PY -m learn.direct_stems curve                     # amendment 4: PROBE PAUSE | PROBE CONTINUE
     $TORCH_PY -m learn.direct_stems pilot-xlance-readout      # amendment 2 (descriptive): pilot runs on xlance_g R_in
+    $TORCH_PY -m learn.direct_stems readout-check             # amendment 5 (descriptive): the readouts on the pilot's early-stopping set
 
 Outputs go to ~/ndsp-presets/learn/direct-stems/ (gate 1 under gate1/, 1c under sepcheck/, the
 build under build/, the pilot's runs under pilot/).
@@ -77,15 +79,22 @@ pilot-report read PILOT STEM or PILOT MIX and the build is complete; every run d
 refusals. `readout`: R_out, R_in and V_dev for D, D0 and D_existing, per seed and the ensemble
 (the pooled mixture's top component, switches by majority, mics by summed probability), each seed
 against the ensemble in knob space, and the constant predictor (training-label medians per amp and
-base class): MODEL OK only if D's seed-averaged E on R_in minus the constant's has a band-clustered
-interval entirely below 0.
+base class). Amendment 5's answer, every model alike: each seed's per-knob mixture median (A1),
+averaged over the 3 seeds and both halves (A2), pulled toward the constant per knob, amp and base
+class by b in [0, 1] fitted on step 3's early-stopping set (A3); E, the constant's medians and the
+fit leave out the knobs of a feature switched off in the true label (the right cab's when
+rightCabActive is false). The E check reads OK if D - constant on R_in, read so, has a
+band-clustered interval entirely below 0; the old top-component readings, A1, A1+A2 and the unmasked
+E are beside. Since the user's approval (2026-10-22) the E check is descriptive: amendment 6's sound
+gate (learn/direct_sound_gate.py) decides step 3, and step 4's renders wait for it (`step3_gate`).
 
 **Step 4.** `stems` stores the 21 stage F crop-only stems and the 16 known-answer crops' of step 3's
 separator (xlance_g under amendment 2; Mega-53 fast reused gate 1's), hash-recorded. `parity`
 rebuilds 20 V_sep examples (seed 20261082) and passes them through step 4's path. `predict`: the
 stored crop (hash-checked) with one gain to the training median, the stem the same gain, the stored
 grid, the half-A mask and the arm's zeroing (`model_input`, the V_sep readouts' path); D_stem reads
-the stem only, D0 both. `render`: per (part, amp) group one discarded priming render at S, the 6
+the stem only, D0 both; the answer is amendment 5's (the search half only, so A2 averages the seeds;
+the pull is step 3's, from `readout.json`). `render`: per (part, amp) group one discarded priming render at S, the 6
 repeat groups (seed 20261077) re-judge S within 1e-3, then D and D0 once per direction through the
 measure DI; 321 renders (cap 400). `report`: D - S (primary), D - D0, and the rows beside them.
 
@@ -2887,18 +2896,19 @@ def const_error(med, c, cm):
 
 
 def model_stop(iv):
-    """Step 3's declared early stop on D - constant (R_in, paired, band-clustered): MODEL OK if the
-    interval lies entirely below 0, else MODEL STOP. iv = (mean, lo, hi, bands) or None."""
+    """D - constant on R_in (paired, band-clustered): OK if the interval lies entirely below 0, else
+    STOP. Step 3's early stop as first declared; amendment 5's E check (descriptive) reads it too.
+    iv = (mean, lo, hi, bands) or None."""
     if iv is None or iv[2] is None or not math.isfinite(iv[2]) or iv[3] < 2:
         return "STOP"
     return "OK" if iv[2] < 0 else "STOP"
 
 
-def ensemble_flag(decision, ens_iv):
-    """A flag (not a rule) when the seed-averaged reading says MODEL OK but the ensemble's
-    D - constant interval on R_in does not also lie entirely below 0."""
+def ensemble_flag(decision, ens_iv, what="the ensemble's"):
+    """A flag (not a rule) when the deciding reading says MODEL OK but another reading's (`what`;
+    by default the ensemble's) D - constant interval on R_in does not also lie entirely below 0."""
     if decision == "OK" and model_stop(ens_iv) != "OK":
-        return ("the ensemble's D - constant on R_in does not clear 0 "
+        return (f"{what} D - constant on R_in does not clear 0 "
                 + ("(n/a)" if ens_iv is None else f"({ens_iv[0]:+.4f} [{ens_iv[1]:+.4f}, {ens_iv[2]:+.4f}])"))
     return None
 
@@ -2906,6 +2916,302 @@ def ensemble_flag(decision, ens_iv):
 def per_example_mean(d):
     """{i: [values]} -> {i: mean} (the halves of an example averaged)."""
     return {i: sum(v) / len(v) for i, v in d.items() if v}
+
+
+# --- pure: amendment 5's readout (the summary E rewards) -------------------------------------------------
+
+READOUT_RULE = "amendment 5"           # A1 + A2 + A3: the declared answer of step 3 and step 4
+MEDIAN_STEPS = 40                      # bisection steps on a bracket at most 1 wide: about 1e-12
+READOUT_CHUNK = 64                     # examples per input chunk (inputs built per chunk: low memory)
+READOUT_CHECK_SEED = 20261086          # amendment 5's sanity check: the early-stopping sections in two folds
+READOUT_TAGS = ("A1+A2+A3", "A1+A2", "A1", "top", "top ensemble")   # the declared answer first, then beside it
+# Amendment 5 (user, 2026-10-21): the knobs of a feature switched off in the TRUE label are all one setting,
+# so they leave E (and the constant's medians and the pull's fit). The only on/off gate in the labelled space
+# (knob_ceiling.space): the left cab is already out of the space when S has it off; the amp switches change
+# the voicing and turn no knob off. The right mic leaves the (descriptive) mic agreement the same way.
+SILENT_GATES = {"cabParameters/rightCabActive": ("cabParameters/rightCabPosition", "cabParameters/rightCabDistance",
+                                                 "cabParameters/rightCabMicLevel", "cabParameters/rightMicType")}
+
+
+def silent_masks(Y, cont=None, sw=None, cat=None):
+    """Amendment 5: encoded labels (`song_model.encode`'s six arrays, one example or stacked) with the
+    continuous and mic masks of every feature switched off in the true label set to 0. -> a new list;
+    the inputs are not changed (training never reads this)."""
+    import numpy as np
+
+    from learn import song_model as SM
+
+    cont, sw, cat = cont or SM.CONT, sw or SM.SW, cat or SM.CAT
+    c, cm, s, sm, k, km = Y
+    cm, km = np.array(cm, copy=True), np.array(km, copy=True)
+    for switch, gated in SILENT_GATES.items():
+        if switch not in sw:
+            continue
+        j = sw.index(switch)
+        off = (np.asarray(sm)[..., j] > 0) & (np.asarray(s)[..., j] < 0.5)
+        for name in gated:
+            if name in cont:
+                cm[..., cont.index(name)] = np.where(off, 0, cm[..., cont.index(name)])
+            if name in cat:
+                km[..., cat.index(name)] = np.where(off, 0, km[..., cat.index(name)])
+    return [c, cm, s, sm, k, km]
+
+
+def encode_audible(label):
+    """`song_model.encode` with amendment 5's silent masks: what the constant's medians and E read."""
+    from learn import song_model as SM
+
+    return tuple(silent_masks(list(SM.encode(label))))
+
+
+def audible(name, settings):
+    """False for a knob of a feature switched off in `settings` ({'module/key': stored value})."""
+    for switch, gated in SILENT_GATES.items():
+        if name in gated and str(settings.get(switch, "true")).lower() in ("false", "0"):
+            return False
+    return True
+
+
+def mixture_median(logpi, mu, ls, steps=MEDIAN_STEPS):
+    """A1: per dim, the median of a diagonal Gaussian mixture (log weights [..., K], means and log-sds
+    [..., K, n]), by bisection between the smallest and largest component mean (the mixture's CDF is
+    at most 0.5 at the one and at least 0.5 at the other), clipped to [0, 1]. -> [..., n]."""
+    import numpy as np
+    from scipy.special import ndtr
+
+    lp = np.asarray(logpi, np.float64)
+    w = np.exp(lp - lp.max(-1, keepdims=True))
+    w = (w / w.sum(-1, keepdims=True))[..., None]
+    mu = np.asarray(mu, np.float64)
+    sd = np.exp(np.asarray(ls, np.float64))
+    lo, hi = mu.min(-2), mu.max(-2)
+    for _ in range(steps):
+        mid = 0.5 * (lo + hi)
+        below = (w * ndtr((mid[..., None, :] - mu) / sd)).sum(-2) < 0.5
+        lo, hi = np.where(below, mid, lo), np.where(below, hi, mid)
+    return np.clip(0.5 * (lo + hi), 0.0, 1.0)
+
+
+def median_answers(outs, who):
+    """A1 and A2 on one readout set. outs: per seed, per row (logpi [K], mu [K, n], ls [K, n], ...);
+    who: each row's example (an example's halves are two rows). -> (per seed [rows, n] of A1
+    medians, {i: the mean of the medians over the seeds and the example's rows})."""
+    import numpy as np
+
+    meds = [mixture_median(np.stack([o[0] for o in so]), np.stack([o[1] for o in so]), np.stack([o[2] for o in so]))
+            for so in outs]
+    rows = {}
+    for n, i in enumerate(who):
+        rows.setdefault(i, []).append(n)
+    return meds, {i: np.mean([m[n] for m in meds for n in ix], axis=0) for i, ix in rows.items()}
+
+
+def labels_of(who, Y):
+    """{i: (continuous label [n], mask [n])} from the readout's encoded labels (the first row of each example)."""
+    out = {}
+    for n, i in enumerate(who):
+        out.setdefault(i, (Y[0][n], Y[1][n]))
+    return out
+
+
+def fit_pull(d, r, n=None):
+    """A3 for one knob in one cell: b minimising sum_i |b d_i - r_i| / n_i (d = answer - constant, r = label
+    - constant, n_i = the example's audible labelled dims, default 1), i.e. the weighted median of r/d
+    with weights |d| / n. Summed over a cell's knobs this is the fitting set's example-mean E. The loss
+    is convex in b, so the best b in [0, 1] is the unconstrained one clipped; a flat minimum gives the
+    point nearest 0; a model that never leaves the constant gives 0. -> (b in [0, 1], unconstrained b)."""
+    import numpy as np
+
+    d, r = np.asarray(d, np.float64), np.asarray(r, np.float64)
+    n = np.ones(len(d)) if n is None else np.asarray(n, np.float64)
+    nz = np.abs(d) > 1e-12
+    if not nz.any():
+        return 0.0, 0.0
+    t, w = r[nz] / d[nz], np.abs(d[nz]) / n[nz]
+    o = np.argsort(t, kind="stable")
+    t, w = t[o], w[o]
+    cw = np.cumsum(w)
+    half, tol = cw[-1] / 2, 1e-12 * cw[-1]
+    k = min(int(np.searchsorted(cw, half - tol)), len(t) - 1)
+    lo = float(t[k])
+    hi = float(t[k + 1]) if abs(cw[k] - half) <= tol and k + 1 < len(t) else lo
+    b_unc = lo if lo > 0 else (hi if hi < 0 else 0.0)
+    return min(1.0, max(0.0, b_unc)), b_unc
+
+
+def fit_pull_table(ans, lab, cell_of, med):
+    """A3's weights per knob x amp x base class, fitted on one set: ans {i: answer}, lab {i: (label,
+    mask)}, cell_of {i: (amp, base)}, med {(amp, base): the constant}. Each example's terms weigh
+    1 / its scored dims, so the fit minimises the set's example-mean E under `lab`'s masks.
+    -> {cell: {"b": [n], "b_unconstrained": [n], "examples": count}} (NaN where no example labels the knob)."""
+    import numpy as np
+
+    by = {}
+    for i in ans:
+        by.setdefault(cell_of[i], []).append(i)
+    out = {}
+    for cell, ids in sorted(by.items()):
+        n = len(ans[ids[0]])
+        b, bu = np.full(n, np.nan), np.full(n, np.nan)
+        c0 = np.asarray(med[cell], np.float64)
+        for j in range(n):
+            use = [i for i in ids if lab[i][1][j] > 0]
+            if not use:
+                continue
+            if not math.isfinite(c0[j]):
+                raise SystemExit(f"{cell}: a labelled dim has no training median")
+            b[j], bu[j] = fit_pull([ans[i][j] - c0[j] for i in use], [float(lab[i][0][j]) - c0[j] for i in use],
+                                   [float(np.sum(np.asarray(lab[i][1]) > 0)) for i in use])
+        out[cell] = {"b": b, "b_unconstrained": bu, "examples": len(ids)}
+    return out
+
+
+def pull(ans, const, b):
+    """A3: c + b (answer - c) per dim; the answer unchanged where b or c is not finite (dims outside the
+    amp's space)."""
+    import numpy as np
+
+    a, c, b = (np.asarray(v, np.float64) for v in (ans, const, b))
+    ok = np.isfinite(b) & np.isfinite(c)
+    return np.where(ok, c + np.where(ok, b, 0.0) * (a - np.where(ok, c, 0.0)), a)
+
+
+def cell_b(table, cell, mask):
+    """The cell's b, and how many labelled dims have no fitted b (they read b = 0, the constant)."""
+    import numpy as np
+
+    m = np.asarray(mask) > 0
+    t = table.get(cell)
+    if t is None:
+        return np.zeros(len(m)), int(m.sum())
+    b = np.asarray(t["b"], np.float64)
+    gap = m & ~np.isfinite(b)
+    return np.where(gap, 0.0, b), int(gap.sum())
+
+
+def score_medians(outs, who, Y, cell_of, med, table):
+    """Amendment 5's readouts per example: 'A1' per seed (each half's median, E halves averaged),
+    'A1+A2' (one answer, the mean of the medians over seeds and halves), 'A1+A2+A3' (that answer pulled
+    toward the cell's constant by the cell's b). -> ({tag: {i: E}, 'A1': [{i: E}] per seed}, {i: A1+A2
+    answer}, labels, gaps: labelled dims without a fitted b)."""
+    meds, ans = median_answers(outs, who)
+    lab = labels_of(who, Y)
+    a1 = [{} for _ in meds]
+    for n, i in enumerate(who):
+        for s, m in enumerate(meds):
+            a1[s].setdefault(i, []).append(ensemble_error(m[n], Y[0][n], Y[1][n]))
+    pulled, gaps = pulled_errors(ans, lab, cell_of, med, table, list(ans))
+    a1a2 = {i: ensemble_error(th, *lab[i]) for i, th in ans.items()}
+    return {"A1": [per_example_mean(d) for d in a1], "A1+A2": a1a2, "A1+A2+A3": pulled}, ans, lab, gaps
+
+
+def score_all(outs, who, Y, cell_of, med, table):
+    """Every reading of one model on one set (E over Y's masks): the old top-component ones
+    (`score_readout`) and amendment 5's (`score_medians`). -> (scores, A1+A2 answers, labels, gaps)."""
+    sc = score_readout(outs, who, Y)
+    new, ans, lab, gaps = score_medians(outs, who, Y, cell_of, med, table)
+    sc.update(new)
+    return sc, ans, lab, gaps
+
+
+def const_errors(rows, med, encode):
+    """The constant predictor's E per example over `encode`'s mask. -> {i: E}."""
+    return {r["i"]: const_error(med[(r["amp"], r["base"])], *encode(r["label"])[:2]) for r in rows}
+
+
+def pulled_errors(ans, lab, cell_of, med, table, ids):
+    """E of A1+A2+A3 on `ids` under a given weight table. -> ({i: E}, gaps)."""
+    out, gaps = {}, 0
+    for i in ids:
+        c, cm = lab[i]
+        b, g = cell_b(table, cell_of[i], cm)
+        gaps += g
+        out[i] = ensemble_error(pull(ans[i], med[cell_of[i]], b), c, cm)
+    return out, gaps
+
+
+def band_crossfit(ans, lab, cell_of, med, band_of):
+    """Descriptive (amendment 5): A1+A2+A3 with b fitted on every other band of the same set and scored
+    on the left-out band. -> ({i: E}, gaps)."""
+    out, gaps = {}, 0
+    for band in sorted({band_of[i] for i in ans}):
+        fit = {i: a for i, a in ans.items() if band_of[i] != band}
+        table = fit_pull_table(fit, lab, cell_of, med)
+        e, g = pulled_errors(ans, lab, cell_of, med, table, [i for i in ans if band_of[i] == band])
+        out.update(e)
+        gaps += g
+    return out, gaps
+
+
+def pull_summary(table):
+    """The fitted weights in brief: knob x cell weights fitted, median b, shares at 0 and at 1, and how
+    many unconstrained b lie above 1 or below 0."""
+    import numpy as np
+
+    b = np.concatenate([np.asarray(t["b"], np.float64) for t in table.values()]) if table else np.zeros(0)
+    u = np.concatenate([np.asarray(t["b_unconstrained"], np.float64) for t in table.values()]) if table else np.zeros(0)
+    b, u = b[np.isfinite(b)], u[np.isfinite(u)]
+    if not len(b):
+        return {"fitted": 0}
+    return {"fitted": int(len(b)), "median_b": float(np.median(b)), "share_b_0": float(np.mean(b == 0)),
+            "share_b_1": float(np.mean(b == 1)), "unconstrained_above_1": int(np.sum(u > 1)),
+            "unconstrained_below_0": int(np.sum(u < 0)), "median_unconstrained": float(np.median(u))}
+
+
+def _num_list(v):
+    return [None if not math.isfinite(float(x)) else float(x) for x in v]
+
+
+def _arr(v):
+    import numpy as np
+
+    return np.array([np.nan if x is None else x for x in v], np.float64)
+
+
+def table_json(table):
+    """A weight table as JSON: cells 'amp|base', NaN as null."""
+    return {f"{a}|{c}": {"b": _num_list(t["b"]), "b_unconstrained": _num_list(t["b_unconstrained"]),
+                         "examples": t["examples"]} for (a, c), t in table.items()}
+
+
+def table_from_json(d):
+    """The inverse of `table_json`. -> {(amp, base): {"b": array, "b_unconstrained": array, "examples": n}}."""
+    return {tuple(k.split("|")): {"b": _arr(v["b"]), "b_unconstrained": _arr(v["b_unconstrained"]),
+                                  "examples": v["examples"]} for k, v in d.items()}
+
+
+def medians_json(med):
+    return {f"{a}|{c}": _num_list(v) for (a, c), v in med.items()}
+
+
+def medians_from_json(d):
+    return {tuple(k.split("|")): _arr(v) for k, v in d.items()}
+
+
+def section_folds(rows, seed=READOUT_CHECK_SEED):
+    """Amendment 5's sanity check: the early-stopping sections sorted, shuffled by the seed, the first
+    half fold 0, the rest fold 1. -> {i: fold}."""
+    secs = sorted({r["section"] for r in rows})
+    random.Random(seed).shuffle(secs)
+    f0 = set(secs[:len(secs) // 2])
+    return {r["i"]: 0 if r["section"] in f0 else 1 for r in rows}
+
+
+def run_rows(nets, rows, make, chunk=READOUT_CHUNK, batch=128):
+    """`run_nets` (in batches of `batch` rows) over rows in chunks; make(rows) -> (X, C, Y, who) builds each
+    chunk's inputs, so only one chunk's inputs are held. -> (outs per seed, who, Y)."""
+    import numpy as np
+
+    outs, who, ys = [[] for _ in nets], [], []
+    for j in range(0, len(rows), chunk):
+        X, C, Y, w = make(rows[j:j + chunk])
+        o = run_nets(nets, X, C, batch)
+        for k in range(len(nets)):
+            outs[k] += o[k]
+        who += list(w)
+        ys.append(Y)
+        del X, C
+    return outs, who, ([np.concatenate([y[k] for y in ys]) for k in range(len(ys[0]))] if ys else [])
 
 
 # --- pure: step 4's renders ------------------------------------------------------------------------------
@@ -3306,10 +3612,56 @@ def vdev_tensors(rows, arm):
     return X, C, Y, who
 
 
+E_CHECK = "D-constant [A1+A2+A3]"      # amendment 5's E check on R_in (descriptive since the user's 2026-10-22 approval)
+STEP3_GATE = "amendment 6"            # the deciding step 3 gate (user, 2026-10-22): the sound gate, learn/direct_sound_gate.py
+
+
+def step3_gate(root):
+    """Step 3's deciding gate before any judged render. Under amendment 5 as approved (user, 2026-10-22),
+    amendment 6's sound gate decides and the E check is descriptive. Amendment 6's own code wires its
+    verdict in here (wired 2026-10-22): ok only for a real GATE OK. -> (ok, why)."""
+    from learn import direct_sound_gate as G                      # imported here: it imports this module
+
+    return G.step3_verdict(root)
+
+
+def readout_per(sc):
+    """One model's per-example E on one set under each readout (READOUT_TAGS): the declared answer
+    (A1+A2+A3), A1+A2, A1 (seed-averaged) and the old top-component readings (seed-averaged, as first
+    declared, and the pooled-mixture ensemble)."""
+    from learn import pretrain_set as PS
+
+    keep = set(sc["ensemble"])
+    return {"A1+A2+A3": sc["A1+A2+A3"], "A1+A2": sc["A1+A2"], "A1": PS.seed_avg(sc["A1"], keep),
+            "top": PS.seed_avg(sc["per_seed"], keep), "top ensemble": sc["ensemble"]}
+
+
+def readout_contrasts(per, const, band_of, keep, pairs=(("D", "D0"), ("D", "D_existing"), ("D0", "D_existing"))):
+    """Paired, band-clustered contrasts under each readout: '{a}-{b} [tag]' (both models read the same
+    way) and '{a}-constant [tag]'. per: {model: {tag: {i: E}}}."""
+    con = {}
+    for tag in READOUT_TAGS:
+        for a, b in pairs:
+            if a in per and b in per:
+                con[f"{a}-{b} [{tag}]"] = paired(per[a][tag], per[b][tag], band_of, keep)
+        for a in per:
+            con[f"{a}-constant [{tag}]"] = paired(per[a][tag], const, band_of, keep)
+    return con
+
+
 def cmd_readout(args):
-    """Step 3's readouts (zero renders): R_out, R_in and V_dev for D, D0 and D_existing, per seed
-    and the 3-seed ensemble; each seed against the ensemble; the constant predictor; MODEL STOP or
-    MODEL OK."""
+    """Step 3's readouts (zero renders): R_out, R_in and V_dev for D, D0 and D_existing. The declared
+    answer (amendment 5, every model alike): each seed's per-knob mixture median (A1), averaged over
+    the 3 seeds and both halves (A2), pulled toward the constant per knob, amp and base class by a
+    weight in [0, 1] fitted on step 3's early-stopping set read through R_in's path (A3). E, the
+    constant's medians and the fit leave out the knobs of a feature switched off in the true label
+    (`silent_masks`). The E check (descriptive; amendment 6's sound gate decides) reads OK if
+    D - constant on R_in, read so, has a band-clustered interval entirely below 0. Beside it: the same
+    readings over every labelled knob (unmasked), A1, A1+A2, the old top-component readings
+    (seed-averaged, as first declared, and the pooled ensemble), each seed against the old ensemble,
+    the in-sample readings on the early-stopping set, the weights, and the pull cross-fitted over
+    R_in's bands. full/readout.json also holds the weights and the constant that step 4 (and
+    amendment 6) read D's and D0's answers with."""
     import numpy as np
 
     from learn import pretrain_set as PS
@@ -3318,6 +3670,8 @@ def cmd_readout(args):
     root = out_root(args)
     if args.smoke and not args.out:
         raise SystemExit("--smoke writes into a scratch --out only")
+    if args.limit and not args.smoke:
+        raise SystemExit("--limit is for smoke tests (with --smoke) only")
     ctx = Ctx()
     models, D, report, bad = full_models(root, args.smoke, args.sep)
     stem_sep = step_sep(report, args.sep, args.smoke)          # R_in: the build's stems (xlance_g), every model
@@ -3332,87 +3686,150 @@ def cmd_readout(args):
                 "R_out": ([r for r in ready["R_out"] if r["i"] in untagged & unmastered], "htdemucs"),
                 "V_dev": (vdev, None)}
     if args.limit:
-        if not args.smoke:
-            raise SystemExit("--limit is for smoke tests (with --smoke) only")
         readouts = {k: (rows[:args.limit], kind) for k, (rows, kind) in readouts.items()}
     band_of = {r["i"]: r["band"] for r in ctx.parts["vsep"]}
     band_of.update({r["i"]: r["band"] for r in vdev})
-    # the constant predictor: training-label medians per amp and base class (D's training rows)
+    # the constant predictor: training-label medians per amp and base class (D's training rows), over the
+    # labels that leave the knob audible (amendment 5: a switched-off feature's knobs are one setting)
     dropped = set(models["D"][2][0]["dropped_refused"]) if models["D"][2] else set()
-    med = label_medians([r for r in ctx.pool if not r["early_stop"] and r["i"] not in dropped], SM.encode)
-    res = {}
+    train_rows = [r for r in ctx.pool if not r["early_stop"] and r["i"] not in dropped]
+    med = label_medians(train_rows, encode_audible)
+    med_first = label_medians(train_rows, SM.encode)     # the first-declared constant (beside only)
+    # amendment 5: step 3's early-stopping set (the pool's 1,000 less the refusals), read through R_in's
+    # path (the true mix and the build's stem, both halves), fits each model's pull on the masked E
+    es_rows = [r for r in ctx.pool if r["early_stop"] and r["i"] not in dropped]
+    unbuilt = {r["i"] for r in es_rows if not (ex_path(root, r["i"], "mix").exists()
+                                               and ex_path(root, r["i"], stem_sep).exists())}
+    if unbuilt and not args.smoke:
+        raise SystemExit(f"{len(unbuilt)} early-stopping examples lack their mix or {stem_sep} features")
+    es_rows = [r for r in es_rows if r["i"] not in unbuilt][:args.limit or None]
+    if not es_rows:
+        raise SystemExit("no early-stopping example to fit the pull on")
+    band_of.update({r["i"]: r["band"] for r in es_rows})
+    cell_of = {r["i"]: (r["amp"], r["base"]) for r in es_rows + ctx.parts["vsep"] + vdev}
+    es_const = const_errors(es_rows, med, encode_audible)
+    pulls, fitting = {}, {}
+    for name, (nets, zarm, _) in models.items():
+        outs, who, Y = run_rows(nets, es_rows, lambda rr, z=zarm: readout_tensors(root, rr, stem_sep, z))
+        Ym = silent_masks(Y)
+        _, ans = median_answers(outs, who)
+        pulls[name] = fit_pull_table(ans, labels_of(who, Ym), cell_of, med)
+        fitting[name] = readout_per(score_all(outs, who, Ym, cell_of, med, pulls[name])[0])
+        del outs
+        print(f"early-stopping set {name}: {len(es_rows)} examples; pull {pull_summary(pulls[name])}", flush=True)
+    res, crossfit, gaps = {}, {}, {}
     for ro, (rows, kind) in readouts.items():
         if not rows:
             res[ro] = None
             continue
-        const = {}
+        need = {}
         for r in rows:
-            c, cm = SM.encode(r["label"])[:2]
-            const[r["i"]] = const_error(med[(r["amp"], r["base"])], c, cm)
-        res[ro] = {"examples": len(rows), "const": const, "models": {}}
+            k, cm = (r["amp"], r["base"]), encode_audible(r["label"])[1]
+            need[k] = need.get(k, np.zeros(len(cm), bool)) | (np.asarray(cm) > 0)
+        for name, t in pulls.items():                   # every scored dim has a fitted weight
+            g = sum(cell_b(t, cell, m)[1] for cell, m in need.items())
+            gaps[f"{ro} {name}"] = g
+            if g and not args.smoke:
+                raise SystemExit(f"{ro} {name}: {g} labelled dims have no weight fitted on the early-stopping set")
+        res[ro] = {"examples": len(rows), "const": const_errors(rows, med, encode_audible),
+                   "const_unmasked": const_errors(rows, med, SM.encode),
+                   "const_first": const_errors(rows, med_first, SM.encode), "models": {}, "models_unmasked": {}}
         for name, (nets, zarm, _) in models.items():
-            X, C, Y, who = vdev_tensors(rows, zarm) if kind is None else readout_tensors(root, rows, kind, zarm)
-            outs = run_nets(nets, X, C)
-            res[ro]["models"][name] = score_readout(outs, who, Y)
-            del X, C
+            if kind is None:
+                outs, who, Y = run_rows(nets, rows, lambda rr, z=zarm: vdev_tensors(rr, z))
+            else:
+                outs, who, Y = run_rows(nets, rows, lambda rr, z=zarm, k=kind: readout_tensors(root, rr, k, z))
+            sc, ans, lab, _ = score_all(outs, who, silent_masks(Y), cell_of, med, pulls[name])
+            res[ro]["models"][name] = sc
+            res[ro]["models_unmasked"][name] = score_all(outs, who, Y, cell_of, med, pulls[name])[0]
+            if ro == "R_in":                              # descriptive: never chooses the readout
+                crossfit[name] = band_crossfit(ans, lab, cell_of, med, band_of)[0]
+            del outs
             print(f"readout {ro} {name}: {len(rows)} examples", flush=True)
 
     def iv(per):
         return PS.band_t_interval(PS.by_band(per, band_of)) if per else None
 
-    def seedavg(sc):
-        return PS.seed_avg(sc["per_seed"], set(sc["ensemble"]))
-
-    out = {"plan": "docs/direct-model-stems-plan.md step 3", "D": D, "pilot_decision": report["decision"],
-           "stem_sep": stem_sep,
+    out = {"plan": "docs/direct-model-stems-plan.md step 3, amendment 5", "readout_rule": READOUT_RULE, "D": D,
+           "pilot_decision": report["decision"], "stem_sep": stem_sep,
            "smoke": bool(args.smoke), "parity_problems": bad, "left_out_tagged": len(ctx.parts["vsep"]) - len(untagged),
-           "levels": {}, "contrasts": {}, "seed_vs_ensemble": {}, "examples": {}}
+           "models": {m: {str(r["seed"]): r["model_sha256"] for r in models[m][2]} for m in STEP4_ARMS},
+           "silent_gates": {k: list(v) for k, v in SILENT_GATES.items()},
+           "constant": medians_json(med), "pull": {n: table_json(t) for n, t in pulls.items()},
+           "pull_summary": {n: pull_summary(t) for n, t in pulls.items()}, "gaps": gaps,
+           "fitting_set": {"examples": len(es_rows), "note": "in-sample: on the example-mean masked E, A1+A2+A3 "
+                           "cannot lose to the constant or to A1+A2 here (band-weighted readings can differ)", "levels": {"constant": iv(es_const)},
+                           "contrasts": readout_contrasts(fitting, es_const, band_of, set(es_const))},
+           "levels": {}, "contrasts": {}, "contrasts_unmasked": {}, "seed_vs_ensemble": {}, "examples": {}}
+    for name, p in fitting.items():
+        for t in READOUT_TAGS:
+            out["fitting_set"]["levels"][f"{name} [{t}]"] = iv(p[t])
     for ro, rr in res.items():
         if rr is None:
             continue
         out["examples"][ro] = rr["examples"]
-        lv, sa = {"constant": iv(rr["const"])}, {}
+        per = {name: readout_per(sc) for name, sc in rr["models"].items()}
+        lv = {"constant": iv(rr["const"]), "constant (unmasked)": iv(rr["const_unmasked"])}
         for name, sc in rr["models"].items():
-            sa[name] = seedavg(sc)
-            lv[f"{name} seed-averaged"] = iv(sa[name])
-            lv[f"{name} ensemble"] = iv(sc["ensemble"])
+            for t in READOUT_TAGS:
+                lv[f"{name} [{t}]"] = iv(per[name][t])
             for k, p in enumerate(sc["per_seed"]):
-                lv[f"{name} seed {k}"] = iv(p)
+                lv[f"{name} [top] seed {k}"] = iv(p)
+            for k, p in enumerate(sc["A1"]):
+                lv[f"{name} [A1] seed {k}"] = iv(p)
             out["seed_vs_ensemble"][f"{ro} {name}"] = [
                 {m: iv({i: v[j] for i, v in d.items() if math.isfinite(v[j])})
                  for j, m in enumerate(("knob_move", "switch_agree", "mic_agree"))} for d in sc["vs"]]
         out["levels"][ro] = lv
         keep = set(rr["const"])
-        con = {}
-        for a, b in (("D", "D0"), ("D", "D_existing"), ("D0", "D_existing")):
-            con[f"{a}-{b}"] = paired(sa[a], sa[b], band_of, keep)
-            con[f"{a}-{b} ensemble"] = paired(rr["models"][a]["ensemble"], rr["models"][b]["ensemble"], band_of, keep)
-        for a in ("D", "D0", "D_existing"):
-            con[f"{a}-constant"] = paired(sa[a], rr["const"], band_of, keep)
-            con[f"{a}-constant ensemble"] = paired(rr["models"][a]["ensemble"], rr["const"], band_of, keep)
+        con = readout_contrasts(per, rr["const"], band_of, keep)
+        if ro == "R_in":
+            for name, e in crossfit.items():
+                con[f"{name}-constant [A1+A2+A3, R_in band cross-fit, descriptive]"] = paired(e, rr["const"], band_of, keep)
         out["contrasts"][ro] = con
-    dec_iv = (out["contrasts"].get("R_in") or {}).get("D-constant")
-    out["decision"] = model_stop(dec_iv)
-    ens_iv = (out["contrasts"].get("R_in") or {}).get("D-constant ensemble")
-    out["ensemble_flag"] = ensemble_flag(out["decision"], ens_iv)
-    out["decision_rule"] = ("D's seed-averaged E on R_in minus the constant predictor's, paired, band-clustered t: "
-                            "MODEL OK if the interval lies entirely below 0 (the ensemble reading is reported beside)")
+        per_u = {name: readout_per(sc) for name, sc in rr["models_unmasked"].items()}
+        out["contrasts_unmasked"][ro] = readout_contrasts(per_u, rr["const_unmasked"], band_of, keep)
+    r_in = out["contrasts"].get("R_in") or {}
+    out["decides"] = STEP3_GATE                          # user, 2026-10-22: the sound gate; this E check is descriptive
+    out["e_check"] = model_stop(r_in.get(E_CHECK))
+    out["e_check_unmasked"] = model_stop((out["contrasts_unmasked"].get("R_in") or {}).get(E_CHECK))
+    # the rule as first declared: the top component, seed-averaged, every labelled knob, and the first-declared
+    # constant (medians over every training label, `SM.encode`)
+    if res.get("R_in"):
+        top = readout_per(res["R_in"]["models_unmasked"]["D"])["top"]
+        out["e_check_first_declared"] = paired(top, res["R_in"]["const_first"], band_of, set(res["R_in"]["const"]))
+    out["e_check_top_unmasked"] = model_stop(out.get("e_check_first_declared"))
+    out["pull_flag"] = ensemble_flag(out["e_check"], r_in.get("D-constant [A1+A2]"), "A1+A2's (no pull)")
+    out["e_check_rule"] = ("amendment 5, descriptive (amendment 6's sound gate decides): D's answer (A1 mixture medians, "
+                           "averaged over 3 seeds x 2 halves, pulled toward the constant by b in [0, 1] fitted per knob, "
+                           "amp and base class on step 3's early-stopping set) minus the constant predictor on R_in, E over "
+                           "the audible labelled knobs (a switched-off feature's knobs left out), paired, band-clustered t: "
+                           "OK if the interval lies entirely below 0")
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     _save(root / "full" / "readout.json", out)
 
     def f(v):
         return "n/a" if v is None else f"{v[0]:+.4f} [{v[1]:+.4f}, {v[2]:+.4f}] ({v[3]} bands)"
 
+    print(f"[early-stopping set (the pull's fitting set, in-sample): {len(es_rows)} examples]")
+    for k, v in out["fitting_set"]["contrasts"].items():
+        if "-constant" in k:
+            print(f"  {k:40s} {f(v)}")
     for ro in out["levels"]:
-        print(f"[{ro}: {out['examples'][ro]} examples]")
+        print(f"[{ro}: {out['examples'][ro]} examples; E over audible knobs]")
         for k, v in out["levels"][ro].items():
-            if "seed " not in k:
-                print(f"  E {k:28s} {f(v)}")
+            if " seed " not in k:
+                print(f"  E {k:32s} {f(v)}")
         for k, v in out["contrasts"][ro].items():
-            print(f"  {k:30s} {f(v)}")
-    if out["ensemble_flag"]:
-        print(f"FLAG: {out['ensemble_flag']}")
-    print(f"MODEL {out['decision']}")
+            print(f"{'*' if k == E_CHECK and ro == 'R_in' else ' '} {k:40s} {f(v)}")
+        print(f"  {E_CHECK} over every labelled knob (unmasked, beside) {f(out['contrasts_unmasked'][ro].get(E_CHECK))}")
+    for n, s in out["pull_summary"].items():
+        print(f"  pull {n}: {s}")
+    print(f"  beside: unmasked {out['e_check_unmasked']}; the rule as first declared (top component, seed-averaged, "
+          f"unmasked, the first-declared constant) {out['e_check_top_unmasked']} {f(out.get('e_check_first_declared'))}")
+    if out["pull_flag"]:
+        print(f"FLAG: {out['pull_flag']}")
+    print(f"E check (descriptive; Amendment 6 decides): {out['e_check']}")
 
 
 # --- step 4: inputs ---------------------------------------------------------------------------------
@@ -3611,21 +4028,50 @@ def cmd_parity(args):
         raise SystemExit(1)
 
 
-def answer(nets, x, c):
-    """The ensemble's answer on one input. -> (cont, switches, mics, diag, per-seed outs)."""
+def answer(nets, x, c, b, const):
+    """The declared answer on one input (amendment 5): each seed's per-knob mixture median (A1),
+    averaged over the seeds (A2; step 4 reads one half, the search half), pulled toward the cell's
+    constant by step 3's weights b (A3); switches by majority and mics by summed probability, as
+    `direct_existing.ensemble`. -> (cont, switches, mics, diag, per-seed outs); diag keeps the old
+    pooled top-component answer beside it."""
+    import numpy as np
+
     from learn import direct_existing as DE
 
     outs = [o[0] for o in run_nets(nets, [x], [c])]
-    cont, sw, mics, diag = DE.ensemble([(o[0], o[1], o[3], o[4]) for o in outs])
+    top_cont, sw, mics, diag = DE.ensemble([(o[0], o[1], o[3], o[4]) for o in outs])
+    meds = [mixture_median(o[0], o[1], o[2]) for o in outs]
+    a1a2 = np.mean(meds, axis=0)
+    cont = pull(a1a2, const, b)
+    diag = {**diag, "readout": READOUT_RULE, "top_cont": _num_list(top_cont), "a1a2": _num_list(a1a2),
+            "seed_spread_a1": float(np.mean([np.abs(m - a1a2).mean() for m in meds]))}
     return cont, sw, mics, diag, outs
+
+
+def step4_pulls(ro, models, smoke=False):
+    """Step 3's fitted pull for step 4 (amendment 5): the readout must be amendment 5's, from the same
+    model hashes. -> ({model: weight table}, {(amp, base): constant})."""
+    if not ro or ro.get("readout_rule") != READOUT_RULE or "pull" not in ro:
+        raise SystemExit("run `readout` first: step 4's answer uses step 3's fitted pull (amendment 5)")
+    if ro.get("smoke") and not smoke:
+        raise SystemExit("the readout is a smoke test's")
+    for m in STEP4_ARMS:
+        if {str(r["seed"]): r["model_sha256"] for r in models[m][2]} != (ro.get("models") or {}).get(m) and not smoke:
+            raise SystemExit(f"{m}: step 3's readout was made with other models")
+    missing = [m for m in models if m not in ro["pull"]]
+    if missing:
+        raise SystemExit(f"the readout has no pull for {missing}")
+    return {n: table_from_json(t) for n, t in ro["pull"].items()}, medians_from_json(ro["constant"])
 
 
 def cmd_predict(args):
     """Step 4's answers (zero renders): D and D0 on stage F's 126 directions, from the stored crop
     (hash-checked) and the stored crop-only stem of step 3's separator (`step_sep`: xlance_g under
-    amendment 2, as `c_f`); D_stem reads the stem only, D0 both, the same stem. Also: D's and D0's
-    per-seed movement with stems c (Mega-53 stored setting), b (htdemucs) and, under xlance_g, m_f
-    (Mega-53 fast, the fallback) against c_f; the known-answer knob errors (D, D0, D_existing, S)."""
+    amendment 2, as `c_f`); D_stem reads the stem only, D0 both, the same stem. The answer is
+    amendment 5's (`answer`: A1 medians averaged over the 3 seeds, pulled by step 3's weights). Also:
+    D's and D0's per-seed top-component movement and the answer's movement with stems c (Mega-53
+    stored setting), b (htdemucs) and, under xlance_g, m_f (Mega-53 fast, the fallback) against c_f;
+    the known-answer knob errors (D, D0, D_existing, S)."""
     import numpy as np
 
     from learn import arm_a_mega53 as A
@@ -3646,6 +4092,14 @@ def cmd_predict(args):
     if par.get("smoke") and not args.smoke:
         raise SystemExit("the parity record is a smoke test's")
     models, D, report, _ = full_models(root, args.smoke, args.sep)
+    pulls, cmed = step4_pulls(_load(root / "full" / "readout.json"), models, args.smoke)
+
+    def pull_of(name, amp, cls):
+        b, gap = cell_b(pulls[name], (amp, cls), masks(amp, cls)[0])
+        if gap and not args.smoke:
+            raise SystemExit(f"{name} {amp} {cls}: {gap} labelled dims have no fitted weight")
+        return b, cmed[(amp, cls)]
+
     man = _load(stems_manifest_path(root, sep_name))
     if not man:
         raise SystemExit(f"run `stems --sep {sep_name}` first")
@@ -3678,14 +4132,15 @@ def cmd_predict(args):
         _, S = ms[amp][cls]
         cm, swm, km = masks(amp, cls)
         key = f"{slug}|{amp}|{search}"
-        mv = {}
+        mv, mva = {}, {}
         for m in STEP4_ARMS:
             nets = models[m][0]
+            b, c0 = pull_of(m, amp, cls)
             res = {}
             for sname, st in it["stems"].items():
                 s8, m8, ls, lm = step4_half(st, it["mix"], search, it["gain_db"])
                 x, c = model_input(s8, m8, ls, lm, search, amp, cls, zarm[m])
-                res[sname] = answer(nets, x, c) + ((ls, lm),)
+                res[sname] = answer(nets, x, c, b, c0) + ((ls, lm),)
             cont, sw, mics, diag, outs, lu = res["c_f"]
             xs = settings_from(amp, S, cont, sw, mics)
             preds[m][key] = {"settings": LO.sdict(xs), "diag": diag, "cond_lufs": list(lu), "gain_db": it["gain_db"],
@@ -3693,7 +4148,8 @@ def cmd_predict(args):
                                                                                     it["gain_db"])[0] == 0))}
             mv[m] = {y: [list(movement(outs[s], res[y][4][s], cm, swm, km)) for s in range(len(outs))]
                      for y in it["stems"] if y != "c_f"}
-        extra.append({"key": key, "slug": slug, "band": part["band"], "movement_vs_c_f": mv})
+            mva[m] = {y: ensemble_error(res[y][0], cont, cm) for y in it["stems"] if y != "c_f"}
+        extra.append({"key": key, "slug": slug, "band": part["band"], "movement_vs_c_f": mv, "answer_movement_vs_c_f": mva})
     # the known-answer row (zero renders): knob error against the truth
     ka = []
     tr = json.loads((DE.KA / "truth" / "truth.json").read_text())
@@ -3713,17 +4169,20 @@ def cmd_predict(args):
         for name, nets, za, stem in (("D", models["D"][0], D, st), ("D0", models["D0"][0], "D0", st),
                                      ("D_existing", models["D_existing"][0], "D0", st_b)):
             errs, errs_s = [], []
+            b, c0 = pull_of(name, amp, cls)
             for h in "AB":
                 s8, m8, ls, lm = step4_half(stem, mix, h, gain)
                 x, c = model_input(s8, m8, ls, lm, h, amp, cls, za)
-                cont, sw, mics, _, _ = answer(nets, x, c)
+                cont, sw, mics, _, _ = answer(nets, x, c, b, c0)
                 ke = KAM.knob_errors(LO.sdict(settings_from(amp, S, cont, sw, mics)), truth["settings"], LO.sdict(S), dims)
+                ke = {k: v for k, v in ke.items() if audible(k, truth["settings"])}      # amendment 5
                 errs.append(float(np.mean([v[0] for v in ke.values()])))
                 errs_s.append(float(np.mean([v[1] for v in ke.values()])))
             row["errors"][name] = sum(errs) / 2
             row["errors"]["S"] = sum(errs_s) / 2
         ka.append(row)
-    rec = {"plan": "docs/direct-model-stems-plan.md step 4", "D": D, "pilot_decision": report["decision"],
+    rec = {"plan": "docs/direct-model-stems-plan.md step 4, amendment 5", "readout_rule": READOUT_RULE, "D": D,
+           "pilot_decision": report["decision"],
            "stem_sep": sep_name, "smoke": bool(args.smoke), "target_mix_lufs": target, "training_mix_lufs": realised,
            "models": {m: {r["seed"]: r["model_sha256"] for r in models[m][2]} for m in STEP4_ARMS},
            "inputs": {s: v["hashes"] for s, v in inputs.items()}, "predictions": preds,
@@ -3789,11 +4248,16 @@ def cmd_render(args):
     if (od / "STOP.json").exists():
         raise SystemExit("STOP.json present")
     ro = _load(root / "full" / "readout.json")
-    if not ro or ro.get("smoke") or ro.get("decision") != "OK":
-        raise SystemExit("step 3's readout must read MODEL OK (a real readout) before any judged render")
+    if not ro or ro.get("smoke"):
+        raise SystemExit("step 3's readout (a real one) must exist: it holds the pull step 4's answers use")
+    ok, why = step3_gate(root)                     # amendment 6's sound gate decides (user, 2026-10-22)
+    if not ok:
+        raise SystemExit(f"no judged render before step 3's gate reads OK: {why}")
     pred = _load(od / "predictions.json")
     if not pred or pred.get("smoke") or any(len(pred["predictions"][m]) != A.N_DIRS["F"] for m in STEP4_ARMS):
         raise SystemExit("run `predict` first (a real one)")
+    if pred.get("readout_rule") != READOUT_RULE or ro.get("readout_rule") != READOUT_RULE:
+        raise SystemExit(f"step 3's readout and step 4's predictions must both be read by {READOUT_RULE}")
     sep_name = pred.get("stem_sep", "mega53")
     models, _, _, _ = full_models(root, sep=sep_name)
     for m in STEP4_ARMS:
@@ -3994,15 +4458,24 @@ def cmd_report(args):
 
 # --- descriptive: the pilot's runs against the constant predictor (zero renders, no models run) ------------
 
+def pilot_medians(ctx, root, encode=None):
+    """The pilot's constant predictor: the median of its 5k training labels (refusals dropped) per amp
+    and base class, over `encode`'s mask (default every labelled knob). -> {(amp, base): array}."""
+    from learn import song_model as SM
+
+    pm, pst = build_rows(root, "pilot", "mix"), build_rows(root, "pilot", "mega53")
+    final = refusals(pm, pst, {r["i"] for r in ctx.parts["pilot"]})
+    return label_medians([r for r in ctx.parts["pilot"] if not r["early_stop"] and r["i"] not in final],
+                         encode or SM.encode)
+
+
 def pilot_constant(ctx, root):
     """The constant predictor of the pilot's readouts: the median of the pilot's 5k training labels
     (refusals dropped) per amp and base class. -> (constant E per V_sep example, band_of, keep sets
     for R_in and R_out as pilot-report reads them), keys str."""
     from learn import song_model as SM
 
-    pm, pst = build_rows(root, "pilot", "mix"), build_rows(root, "pilot", "mega53")
-    final = refusals(pm, pst, {r["i"] for r in ctx.parts["pilot"]})
-    med = label_medians([r for r in ctx.parts["pilot"] if not r["early_stop"] and r["i"] not in final], SM.encode)
+    med = pilot_medians(ctx, root)
     mixrows = build_rows(root, "vsep", "mix")
     band_of = {str(r["i"]): r["band"] for r in ctx.parts["vsep"]}
     untagged = {str(r["i"]) for r in ctx.parts["vsep"] if not ctx.tag[r["i"]]}
@@ -4256,11 +4729,151 @@ def cmd_pilot_xlance_readout(args):
     print("PILOT-XLANCE-READOUT (descriptive)")
 
 
+def part_c_rows(ids):
+    """{i: part C's row (its id, section, band, split, early-stop flag, amp, base and label)} for `ids`,
+    streamed line by line from part C's row shards, the last row of an id winning (`all_rows`)."""
+    from learn import pretrain_set as PS
+
+    want, out = set(ids), {}
+    keys = ("i", "section", "band", "split", "early_stop", "amp", "base", "label")
+    for f in sorted((PS.OUT / "rows").glob("shard-*.jsonl")):
+        with open(f) as fh:
+            for line in fh:
+                if not line.strip():
+                    continue
+                try:
+                    r = json.loads(line)
+                except json.JSONDecodeError:
+                    continue                                   # a torn last line (`read_rows` skips it too)
+                if r["i"] in want:
+                    out[r["i"]] = {k: r[k] for k in keys}
+    missing = want - set(out)
+    if missing:
+        raise SystemExit(f"{len(missing)} ids have no part C row")
+    return out
+
+
+def readout_check_table(per, const, band_of, ids):
+    """Amendment 5's sanity check on one set of early-stopping examples: each readout's E (band-weighted
+    and the example mean) and its paired, band-clustered contrasts with the constant and with the
+    previous readout. per: {tag: {i: E}}."""
+    from learn import pretrain_set as PS
+
+    keep = set(ids)
+    out = {"examples": len(keep), "levels": {}, "example_mean": {}, "contrasts": {}}
+    for tag, p in {"constant": const, **per}.items():
+        sel = {i: p[i] for i in keep if i in p}
+        out["levels"][tag] = PS.band_t_interval(PS.by_band(sel, band_of)) if sel else None
+        out["example_mean"][tag] = sum(sel.values()) / len(sel) if sel else None
+        if tag != "constant":
+            out["contrasts"][f"{tag} - constant"] = paired(p, const, band_of, keep)
+    for a, b in (("A1", "top"), ("A1+A2", "A1"), ("A1+A2+A3", "A1+A2"), ("A1+A2+A3", "top")):
+        if a in per and b in per:
+            out["contrasts"][f"{a} - {b}"] = paired(per[a], per[b], band_of, keep)
+    return out
+
+
+def cmd_readout_check(args):
+    """Amendment 5's sanity check (descriptive, zero renders, CPU, decides nothing): the pilot's two
+    stored D_stem runs on the pilot's early-stopping set only (998 examples, Mega-53 stems as trained;
+    V_sep is never read). E over the audible knobs (the unmasked E beside) of the old top-component
+    readout (seed-averaged; the pooled ensemble), A1, A1+A2 and A1+A2+A3 against the pilot's constant
+    (its training-label medians over the audible labels). A3 is fitted on one fold of the
+    early-stopping sections (seed 20261086) and scored on the other, both ways; the primary reading
+    scores fold 1 with fold 0's weights. Output: pilot/readout-check.json."""
+    import torch
+
+    from learn import pretrain_set as PS
+    from learn import song_model as SM
+
+    root = out_root(args)
+    if args.smoke and not args.out:
+        raise SystemExit("--smoke writes into a scratch --out only")
+    torch.set_num_threads(2)
+    # the pilot's own build rows and part C's labels, streamed (Ctx would hold all of part C's rows)
+    mixrows, stemrows = build_rows(root, "pilot", "mix"), build_rows(root, "pilot", PILOT_SEP)
+    final = refusals(mixrows, stemrows, set(mixrows))
+    ids = sorted(i for i in mixrows if i not in final and i in stemrows)
+    rowc = part_c_rows(ids)
+    for i in ids:
+        if any(rowc[i][k] != mixrows[i][k] for k in ("section", "band", "amp", "base", "early_stop", "split")):
+            raise SystemExit(f"{i}: the pilot's build row and part C's row disagree")
+    es = [rowc[i] for i in ids if rowc[i]["early_stop"]]
+    if any(r["i"] >= VAL_BASE_ID or r["split"] != "train" for r in es):
+        raise SystemExit("the sanity check reads the pilot's early-stopping set only, never V_sep")
+    nets, hashes = [], {}
+    for seed in TRAIN_SEEDS:
+        rp = run_path(root, "Dstem", "5000", seed)
+        r = _load(rp)
+        if r is None:
+            raise SystemExit(f"{rp.name} missing")
+        if (r["early_stop"] != len(es) or set(r["dropped_refused"]) != final) and not args.smoke:
+            raise SystemExit(f"{rp.name}: early-stopped on {r['early_stop']} examples, not these {len(es)}")
+        mp = rp.with_suffix(".pt")
+        if hashlib_file(mp) != r["model_sha256"]:
+            raise SystemExit(f"{mp.name}: hash differs from its run record")
+        net = PS.build_net()
+        net.load_state_dict(torch.load(mp, map_location="cpu"))
+        nets.append(net.eval())
+        hashes[seed] = r["model_sha256"]
+    es = es[:args.limit or None]
+    med = label_medians([rowc[i] for i in ids if not rowc[i]["early_stop"]], encode_audible)   # pilot_medians, masked
+    outs, who, Y = run_rows(nets, es, lambda rr: readout_tensors(root, rr, PILOT_SEP, "Dstem"), chunk=16, batch=16)
+    cell_of = {r["i"]: (r["amp"], r["base"]) for r in es}
+    band_of = {r["i"]: r["band"] for r in es}
+    fold = section_folds(es)
+    out = {"plan": "docs/direct-model-stems-plan.md amendment 5, sanity check (descriptive; decides nothing)",
+           "descriptive": True, "smoke": bool(args.smoke), "models": hashes, "stem_sep": PILOT_SEP,
+           "examples": len(es), "bands": len(set(band_of.values())), "fold_seed": READOUT_CHECK_SEED,
+           "fold_sections": {f: len({r["section"] for r in es if fold[r["i"]] == f}) for f in (0, 1)},
+           "fold_examples": {f: sum(1 for r in es if fold[r["i"]] == f) for f in (0, 1)}, "time": None}
+    for mname, Yx, enc in (("masked", silent_masks(Y), encode_audible), ("unmasked", Y, SM.encode)):
+        const = const_errors(es, med, enc)
+        sc, ans, lab, _ = score_all(outs, who, Yx, cell_of, med, {})
+        keep = set(ans)
+        per = {"top": PS.seed_avg(sc["per_seed"], keep), "top ensemble": sc["ensemble"],
+               "A1": PS.seed_avg(sc["A1"], keep), "A1+A2": sc["A1+A2"]}
+        tabs, crossed = {}, {}
+        for f in (0, 1):
+            tabs[f] = fit_pull_table({i: a for i, a in ans.items() if fold[i] == f}, lab, cell_of, med)
+            crossed.update(pulled_errors(ans, lab, cell_of, med, tabs[f], [i for i in ans if fold[i] != f])[0])
+        per["A1+A2+A3"] = crossed                            # each example scored by the other fold's weights
+        whole = fit_pull_table(ans, lab, cell_of, med)
+        insample = pulled_errors(ans, lab, cell_of, med, whole, list(ans))[0]
+        out[mname] = {
+            "fold 1 (primary: A3 fitted on fold 0)": readout_check_table(per, const, band_of, [i for i in ans if fold[i] == 1]),
+            "fold 0 (A3 fitted on fold 1)": readout_check_table(per, const, band_of, [i for i in ans if fold[i] == 0]),
+            "both folds (each scored by the other's weights)": readout_check_table(per, const, band_of, list(ans)),
+            "in-sample (A3 fitted and scored on the whole set)": readout_check_table(
+                {**per, "A1+A2+A3": insample}, const, band_of, list(ans)),
+            "pull": {f"fit on fold {f}": pull_summary(t) for f, t in tabs.items()} | {"fit on all": pull_summary(whole)},
+            "weights_fold0": table_json(tabs[0])}
+    out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    _save(root / "pilot" / "readout-check.json", out)
+
+    def f(v):
+        return "n/a" if v is None else f"{v[0]:+.4f} [{v[1]:+.4f}, {v[2]:+.4f}] ({v[3]} bands)"
+
+    print(f"early-stopping set: {len(es)} examples, {out['bands']} bands; folds {out['fold_sections']} sections, "
+          f"{out['fold_examples']} examples (seed {READOUT_CHECK_SEED})")
+    for mname in ("masked", "unmasked"):
+        for k, t in out[mname].items():
+            if not isinstance(t, dict) or "levels" not in t:
+                continue
+            print(f"[{mname}: {k}; {t['examples']} examples]")
+            for tag, v in t["levels"].items():
+                print(f"  E {tag:14s} {f(v)}  (example mean {t['example_mean'][tag]:.4f})")
+            for c, v in t["contrasts"].items():
+                print(f"  {c:24s} {f(v)}")
+        print(f"  pull ({mname}): {out[mname]['pull']}")
+    print("READOUT-CHECK (descriptive)")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=("separate", "move", "reliance", "audit-mix", "sepcheck", "build", "train",
                                     "pilot-report", "time-mps", "readout", "stems", "parity", "predict", "render",
-                                    "report", "constant-check", "curve", "pilot-xlance-readout"))
+                                    "report", "constant-check", "curve", "pilot-xlance-readout", "readout-check"))
     ap.add_argument("--sep", choices=("mega53", "htdemucs", "xlance_g"),
                     help="build --stage stem: the separator (default: xlance_g for the rest, mega53 for the pilot and "
                          "V_sep); train --n 5000|2500|1250: the stem arms' stems (default mega53); train --n full, "
@@ -4300,7 +4913,7 @@ def main(argv=None):
      "time-mps": cmd_time_mps, "readout": cmd_readout, "stems": cmd_stems, "parity": cmd_parity,
      "predict": cmd_predict, "render": cmd_render, "report": cmd_report,
      "constant-check": cmd_constant_check, "curve": cmd_curve,
-     "pilot-xlance-readout": cmd_pilot_xlance_readout}[a.cmd](a)
+     "pilot-xlance-readout": cmd_pilot_xlance_readout, "readout-check": cmd_readout_check}[a.cmd](a)
 
 
 if __name__ == "__main__":

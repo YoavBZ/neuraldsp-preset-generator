@@ -135,7 +135,8 @@ RENDERS = (r"-m learn\.song_relabel (render-new|probe)\b", r"-m learn\.ks_extend
            r"-m learn\.known_answer (truth|search)\b",                 # docs/known-answer-b1-plan.md
            r"-m learn\.pretrain_set (render|recheck)\b",              # docs/pretrain-set-plan.md
            r"-m learn\.direct_existing render\b",                    # docs/direct-existing-plan.md
-           r"-m learn\.direct_stems (build|parity|render)\b")       # docs/direct-model-stems-plan.md (all render)
+           r"-m learn\.direct_stems (build|parity|render)\b",      # docs/direct-model-stems-plan.md (all render)
+           r"-m learn\.direct_sound_gate gate-render\b")           # docs/direct-model-sound-gate-amendment.md
 # Separations that need the machine to themselves (amendment 3): no render starts beside one.
 SEPARATIONS = (r"-m learn\.local_objective_1c separate\b", r"-m learn\.separator_screen (separate|identity)\b",
                r"-m learn\.separate\b", r"-m learn\.known_answer separate\b")
