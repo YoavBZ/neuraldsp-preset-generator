@@ -700,3 +700,52 @@ its mix LUFS differed by 2.3e-6 and both mel shares were 1.0.
 **The re-read** (zero renders, `parity --reevaluate` on the stored per-block record):
 `PARITY OK under amendment 3 (post hoc)`. The worst unexplained LUFS difference is 0.0011, and
 1002075 half B's stem (0.171) is explained by the gate (toggled difference 0.0044).
+
+## Amendment 4 (2026-10-21): a learning-curve probe before the full build
+
+**Status:** declared before any probe run. Descriptive, zero renders. Amendment 2 stays a draft.
+
+**Why.** The pilot read `PILOT STEM`, but `constant-check` shows every pilot model worse than the
+constant predictor (the median of the pilot's training labels per amp and base class).
+- **D_stem (seed-averaged) − constant:** R_in +0.0128 [−0.0013, +0.0269], R_out +0.0178
+  [+0.0011, +0.0344].
+- **D0, D_mix and D_stem-noaug:** +0.024 to +0.038.
+
+Step 3's early stop needs D below the constant on R_in, and the full build costs about 20 h of
+separation and 6 GPU h. A learning curve on the pilot's own data is the cheapest reading of
+whether 4× more data is projected to get there.
+
+**The runs.**
+- **Arm:** D_stem with its augmentations (the pilot's `Dstem`).
+- **Data:** nested training subsets of the pilot's 5k, stratified by band and amp. n = 2,500
+  is drawn from the 5k (`random.Random(20261084)`), and n = 1,250 from those 2,500
+  (`random.Random(20261085)`). The same 1,000 early-stopping examples are used throughout, and
+  refusals are dropped as in the pilot.
+- **Recipe:** the pilot's (at most 40 epochs, patience 4), seeds 20261042 and 20261043. 4 runs
+  of a few minutes each on MPS, one at a time; `train --arm Dstem --n 1250|2500`.
+- **Readouts:** at n = 5,000 the pilot's two stored D_stem runs are reused.
+
+**The reading (`curve`).**
+- **Per n:** E − constant on R_in and R_out, as `pilot-report` and `constant-check` read them:
+  seed-averaged, paired per example. The constant is the pilot 5k's and is held fixed across n.
+- **The fit:** per band, a least-squares line of the band's mean (E − constant) on log2(n) over
+  the three points, extrapolated to n = 20,311. The slope per doubling and the extrapolated value
+  each get a 90% band-clustered t interval (4 bands, 3 df).
+- **Declared rule, on R_in (step 3's early-stop readout):**
+  - `PROBE PAUSE` if the extrapolated 20,311 value's interval lies entirely above 0. The full
+    build then projects to `MODEL STOP`: pause the rest's separation and ask the user.
+  - `PROBE CONTINUE` otherwise: the plan continues as declared.
+- R_out is reported beside it.
+
+**Caveats, stated before the run.**
+- **It is an extrapolation:** two doublings past the largest point, assuming a straight line in
+  log2(n).
+- **The fit is thin:** 4 bands, and two new points plus one.
+- **The seeds are noisy:** the pilot's two D_stem seeds differ by about 0.02 on R_in, as large as
+  the effect being projected.
+- **The subsets have a smaller merge pool:** their merged-guitar augmentation draws partners from
+  the subset only.
+- **The full model differs:** step 3 trains 3 seeds and reads the ensemble too, and the rest's
+  sections widen the band mix.
+- **It decides only a pause:** a `PROBE CONTINUE` is not evidence that step 3 will pass.
+

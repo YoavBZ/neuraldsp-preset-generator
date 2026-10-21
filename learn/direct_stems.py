@@ -23,6 +23,8 @@ pilot (step 2), the full models (step 3) and the decision test on stage F (step 
     OMP_NUM_THREADS=1 .venv/bin/python -m learn.direct_stems render --shard k/3   # 321 renders (cap 400)
     .venv/bin/python -m learn.direct_stems report             # STEP4 CLOSER | NOT SHOWN | WORSE | INCOMPLETE
     $TORCH_PY -m learn.direct_stems constant-check --pilot    # descriptive: pilot runs against the constant
+    $TORCH_PY -m learn.direct_stems train --arm Dstem --n 1250|2500 --seed 20261042|20261043   # amendment 4
+    $TORCH_PY -m learn.direct_stems curve                     # amendment 4: PROBE PAUSE | PROBE CONTINUE
 
 Outputs go to ~/ndsp-presets/learn/direct-stems/ (gate 1 under gate1/, 1c under sepcheck/, the
 build under build/, the pilot's runs under pilot/).
@@ -2182,6 +2184,52 @@ def pilot_examples(ctx, root, arm, smoke=False, stem_sep="mega53"):
     return out, sorted(dropped)
 
 
+CURVE_SEEDS = {2500: 20261084, 1250: 20261085}     # amendment 4: nested subsets of the pilot's 5k
+CURVE_NS = (1250, 2500, 5000)
+CURVE_ARMS = ("Dstem",)
+CURVE_TARGET_N = 20_311
+
+
+def curve_subsets(pilot_rows):
+    """Amendment 4's nested training subsets: 2,500 of the pilot's 5k train examples, stratified by
+    band and amp (seed 20261084), and 1,250 of those 2,500 the same way (seed 20261085).
+    -> {n: set of example ids} (5,000 included)."""
+    five = [r for r in pilot_rows if not r.get("early_stop")]
+    s2 = stratified_pick(five, 2500, CURVE_SEEDS[2500])
+    s1 = stratified_pick(s2, 1250, CURVE_SEEDS[1250])
+    return {5000: {r["i"] for r in five}, 2500: {r["i"] for r in s2}, 1250: {r["i"] for r in s1}}
+
+
+def curve_fit(by_n, x_target=None):
+    """Per band, ordinary least squares of a band's mean (E - constant) on log2(n) over the n it
+    has, then the band-clustered 90% t interval of the bands' slopes and of their values at
+    `x_target` (log2 of 20,311 by default). by_n: {n: {band: value}}.
+    -> {slope: (m, lo, hi, bands), at_target: (...), per_band: {band: (slope, at_target)}}."""
+    from learn import pretrain_set as PS
+
+    x_target = math.log2(CURVE_TARGET_N) if x_target is None else x_target
+    bands = sorted(set.intersection(*(set(v) for v in by_n.values())))
+    per = {}
+    for b in bands:
+        xs = [math.log2(n) for n in sorted(by_n)]
+        ys = [by_n[n][b] for n in sorted(by_n)]
+        mx, my = sum(xs) / len(xs), sum(ys) / len(ys)
+        sxx = sum((x - mx) ** 2 for x in xs)
+        slope = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / sxx
+        per[b] = (slope, my + slope * (x_target - mx))
+    return {"slope": PS.band_t_interval({b: [v[0]] for b, v in per.items()}) if per else None,
+            "at_target": PS.band_t_interval({b: [v[1]] for b, v in per.items()}) if per else None,
+            "per_band": per}
+
+
+def probe_reading(at_target):
+    """Amendment 4's declared reading on R_in: PAUSE if the extrapolated value's interval lies
+    entirely above 0 (the full build projects to MODEL STOP), else CONTINUE."""
+    if at_target is None or at_target[3] < 2 or not math.isfinite(at_target[1]):
+        return "INCOMPLETE"
+    return "PAUSE" if at_target[1] > 0 else "CONTINUE"
+
+
 def refusals(mixrows, stemrows, ids):
     """The examples refused by either stage."""
     return {i for i in ids if mixrows.get(i, {}).get("refused") or stemrows.get(i, {}).get("refused")}
@@ -2471,7 +2519,7 @@ def run_path(root, arm, n, seed, stem_sep="mega53"):
     """A run's record (the pilot's under pilot/runs, step 3's under full/runs); xlance_g-stem runs
     get their own name, so Mega-53 runs are never overwritten."""
     suffix = "" if stem_sep == "mega53" else f"-{stem_sep}"
-    return root / ("pilot" if str(n) == "5000" else "full") / "runs" / f"{arm}-{n}-{seed}{suffix}.json"
+    return root / ("full" if str(n) == "full" else "pilot") / "runs" / f"{arm}-{n}-{seed}{suffix}.json"
 
 
 def train_stem_sep(arm, sep):
@@ -2501,7 +2549,10 @@ def cmd_train(args):
     if args.seed not in TRAIN_SEEDS and not args.smoke:
         raise SystemExit(f"the pilot's seeds are {TRAIN_SEEDS}")
     stem_sep = train_stem_sep(args.arm, args.sep)
-    require_amendment2(stem_sep, "train --n 5000")
+    require_amendment2(stem_sep, f"train --n {args.n}")
+    n_train = int(args.n)
+    if n_train != N_PILOT_TRAIN and args.arm not in CURVE_ARMS:
+        raise SystemExit(f"--n {args.n} is amendment 4's curve probe: arms {CURVE_ARMS} only")
     root = out_root(args)
     rp = run_path(root, args.arm, args.n, args.seed, stem_sep)
     if rp.exists():
@@ -2509,12 +2560,16 @@ def cmd_train(args):
         return
     ctx = Ctx()
     rows, dropped = pilot_examples(ctx, root, args.arm, args.smoke, stem_sep)
+    if n_train != N_PILOT_TRAIN:                          # amendment 4: a nested subset of the 5k
+        sub = curve_subsets(ctx.parts["pilot"])[n_train]
+        rows = [r for r in rows if r["early_stop"] or r["i"] in sub]
+        dropped = [i for i in dropped if ctx.rows[i]["early_stop"] or i in sub]
     tr = np.array([j for j, r in enumerate(rows) if not r["early_stop"]])
     es = np.array([j for j, r in enumerate(rows) if r["early_stop"]])
     if not len(tr) or not len(es):
         raise SystemExit(f"{len(tr)} training and {len(es)} early-stopping examples")
-    if not args.smoke and len(tr) + len(dropped) - sum(1 for i in dropped if ctx.rows[i]["early_stop"]) != N_PILOT_TRAIN:
-        raise SystemExit("the pilot's training examples do not add up to 5,000")
+    if not args.smoke and len(tr) + len(dropped) - sum(1 for i in dropped if ctx.rows[i]["early_stop"]) != n_train:
+        raise SystemExit(f"the training examples do not add up to {n_train:,}")
     torch.set_num_threads(2)
     dev = torch.device("cpu" if os.environ.get("DS_DEVICE") == "cpu" or not torch.backends.mps.is_available() else "mps")
     t_load = time.time()
@@ -3816,18 +3871,12 @@ def cmd_report(args):
 
 # --- descriptive: the pilot's runs against the constant predictor (zero renders, no models run) ------------
 
-def cmd_constant_check(args):
-    """Descriptive, zero renders, CPU only, no model is run: each pilot run's stored per-example E
-    on R_out and R_in (as pilot-report reads them) against the constant predictor (the pilot's
-    training-label median per amp and base class), paired, band-clustered t; per run and per arm
-    seed-averaged."""
-    from learn import pretrain_set as PS
+def pilot_constant(ctx, root):
+    """The constant predictor of the pilot's readouts: the median of the pilot's 5k training labels
+    (refusals dropped) per amp and base class. -> (constant E per V_sep example, band_of, keep sets
+    for R_in and R_out as pilot-report reads them), keys str."""
     from learn import song_model as SM
 
-    if not args.pilot:
-        raise SystemExit("constant-check needs --pilot (the only reading declared)")
-    root = out_root(args)
-    ctx = Ctx()
     pm, pst = build_rows(root, "pilot", "mix"), build_rows(root, "pilot", "mega53")
     final = refusals(pm, pst, {r["i"] for r in ctx.parts["pilot"]})
     med = label_medians([r for r in ctx.parts["pilot"] if not r["early_stop"] and r["i"] not in final], SM.encode)
@@ -3840,6 +3889,73 @@ def cmd_constant_check(args):
     for r in ctx.parts["vsep"]:
         c, cm = SM.encode(r["label"])[:2]
         const[str(r["i"])] = const_error(med[(r["amp"], r["base"])], c, cm)
+    return const, band_of, keep
+
+
+def cmd_curve(args):
+    """Amendment 4's learning-curve probe (descriptive, zero renders, no model run): D_stem's stored
+    per-example E on R_in and R_out at n = 1,250, 2,500 and 5,000 (seeds 20261042/43, seed-averaged)
+    minus the pilot's constant predictor, per band; per band a least-squares line on log2(n),
+    extrapolated to 20,311; band-clustered 90% t intervals. Prints PROBE PAUSE (R_in's extrapolated
+    interval entirely above 0) or PROBE CONTINUE."""
+    from learn import pretrain_set as PS
+
+    root = out_root(args)
+    ctx = Ctx()
+    const, band_of, keep = pilot_constant(ctx, root)
+    out = {"plan": "docs/direct-model-stems-plan.md amendment 4 (descriptive)", "arm": "Dstem", "ns": list(CURVE_NS),
+           "target_n": CURVE_TARGET_N, "levels": {}, "fit": {}, "missing": [], "smoke": bool(args.smoke)}
+    for ro in ("R_in", "R_out"):
+        by_n = {}
+        for n in CURVE_NS:
+            runs = []
+            for seed in TRAIN_SEEDS:
+                r = _load(run_path(root, "Dstem", str(n), seed))
+                per = ((r or {}).get("readouts") or {}).get(ro, {}).get("per_example") if r else None
+                if per:
+                    runs.append(per)
+                else:
+                    out["missing"].append(f"Dstem-{n}-{seed} {ro}")
+            if not runs:
+                continue
+            k = keep[ro] & set(const)
+            sa = PS.seed_avg(runs, k)
+            d = {i: sa[i] - const[i] for i in sa}
+            out["levels"][f"{ro} n={n}"] = PS.band_t_interval(PS.by_band(d, band_of)) if d else None
+            by_n[n] = {b: sum(v) / len(v) for b, v in PS.by_band(d, band_of).items()}
+        if len(by_n) >= 2:
+            f = curve_fit(by_n)
+            out["fit"][ro] = {"slope_per_doubling": f["slope"], "at_20311": f["at_target"],
+                              "per_band": {b: {"slope": v[0], "at_20311": v[1]} for b, v in f["per_band"].items()},
+                              "points": sorted(by_n)}
+    if out["missing"] and not args.smoke:
+        raise SystemExit(f"runs or readouts missing: {out['missing']}")
+    out["reading"] = probe_reading((out["fit"].get("R_in") or {}).get("at_20311"))
+    out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    _save(root / "pilot" / "curve.json", out)
+
+    def f(v):
+        return "n/a" if v is None else f"{v[0]:+.4f} [{v[1]:+.4f}, {v[2]:+.4f}] ({v[3]} bands)"
+
+    for k, v in out["levels"].items():
+        print(f"  E - constant {k:14s} {f(v)}")
+    for ro, v in out["fit"].items():
+        print(f"  {ro}: slope per doubling {f(v['slope_per_doubling'])}; at 20,311 {f(v['at_20311'])}")
+    print(f"PROBE {out['reading']} (descriptive, amendment 4)")
+
+
+def cmd_constant_check(args):
+    """Descriptive, zero renders, CPU only, no model is run: each pilot run's stored per-example E
+    on R_out and R_in (as pilot-report reads them) against the constant predictor (the pilot's
+    training-label median per amp and base class), paired, band-clustered t; per run and per arm
+    seed-averaged."""
+    from learn import pretrain_set as PS
+
+    if not args.pilot:
+        raise SystemExit("constant-check needs --pilot (the only reading declared)")
+    root = out_root(args)
+    ctx = Ctx()
+    const, band_of, keep = pilot_constant(ctx, root)
     out = {"descriptive": True, "smoke": bool(args.smoke), "runs": {}, "arms": {}, "missing": [],
            "constant_E": {}, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     for ro in ("R_in", "R_out"):
@@ -3877,7 +3993,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=("separate", "move", "reliance", "audit-mix", "sepcheck", "build", "train",
                                     "pilot-report", "time-mps", "readout", "stems", "parity", "predict", "render",
-                                    "report", "constant-check"))
+                                    "report", "constant-check", "curve"))
     ap.add_argument("--sep", choices=("mega53", "htdemucs", "xlance_g"),
                     help="build --stage stem: the separator (default mega53); train: the stem arms' stems (default mega53)")
     ap.add_argument("--part", choices=("pilot", "vsep", "rest"))
@@ -3890,7 +4006,8 @@ def main(argv=None):
     ap.add_argument("--disk-guard-gb", type=float, default=None,
                     help=f"default {DISK_GUARD_GB:.0f}; the pilot build may go to {DISK_GUARD_PILOT_GB:.0f} ({DISK_OVERRIDE_NOTE})")
     ap.add_argument("--arm", choices=ARMS)
-    ap.add_argument("--n", default="5000", choices=("5000", "full"))
+    ap.add_argument("--n", default="5000", choices=("1250", "2500", "5000", "full"),
+                    help="5000: the pilot; 1250/2500: amendment 4's curve probe (Dstem only); full: step 3")
     ap.add_argument("--seed", type=int)
     ap.add_argument("--epochs", type=int, help=f"at most {MAX_EPOCHS} (smoke tests: fewer)")
     ap.add_argument("--out", help="a scratch output root instead of ~/ndsp-presets/learn/direct-stems (smoke tests)")
@@ -3913,7 +4030,7 @@ def main(argv=None):
      "sepcheck": cmd_sepcheck, "build": cmd_build, "train": cmd_train, "pilot-report": cmd_pilot_report,
      "time-mps": cmd_time_mps, "readout": cmd_readout, "stems": cmd_stems, "parity": cmd_parity,
      "predict": cmd_predict, "render": cmd_render, "report": cmd_report,
-     "constant-check": cmd_constant_check}[a.cmd](a)
+     "constant-check": cmd_constant_check, "curve": cmd_curve}[a.cmd](a)
 
 
 if __name__ == "__main__":

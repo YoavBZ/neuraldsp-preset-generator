@@ -924,3 +924,39 @@ def test_parity_verdict_tolerances_and_gate():
     assert not DS.parity_verdict([far])["ok"]
     assert not DS.parity_verdict([_prow(1, "A", 0.0, 0.0), {"i": 3, "refused": "x"}])["ok"]
     assert "post-hoc rule" in DS.parity_line(v) and "worst unexplained" in DS.parity_line(v)
+
+
+# --- amendment 4: the learning-curve probe ---------------------------------------------------------------
+
+def test_curve_subsets_are_nested_stratified_and_deterministic():
+    rows = [_row(i, f"B{i % 4}", f"s{i % 40}@1", amp=("pr12", "sw50r", "ac20")[i % 3]) for i in range(5000)]
+    rows += [_row(10_000 + i, "B0", "es@1", es=True) for i in range(100)]
+    sub = DS.curve_subsets(rows)
+    assert len(sub[5000]) == 5000 and len(sub[2500]) == 2500 and len(sub[1250]) == 1250
+    assert sub[1250] <= sub[2500] <= sub[5000] and not any(i >= 10_000 for i in sub[5000])
+    assert sub == DS.curve_subsets(list(reversed(rows)))
+    by = {}
+    for i in sub[1250]:
+        k = (f"B{i % 4}", i % 3)
+        by[k] = by.get(k, 0) + 1
+    assert max(by.values()) - min(by.values()) <= 1                    # 12 equal strata, proportional
+
+
+def test_curve_fit_extrapolates_per_band_on_log2_n():
+    by_n = {1250: {"a": 0.04, "b": 0.03}, 2500: {"a": 0.03, "b": 0.02}, 5000: {"a": 0.02, "b": 0.01}}
+    f = DS.curve_fit(by_n, x_target=math.log2(20000))
+    assert math.isclose(f["per_band"]["a"][0], -0.01) and math.isclose(f["per_band"]["b"][0], -0.01)
+    assert math.isclose(f["per_band"]["a"][1], 0.02 - 0.01 * 2)        # two more doublings
+    assert math.isclose(f["at_target"][0], (0.0 - 0.01) / 2, abs_tol=1e-12) and f["at_target"][3] == 2
+
+
+def test_probe_reading():
+    assert DS.probe_reading((0.02, 0.005, 0.035, 4)) == "PAUSE"
+    assert DS.probe_reading((0.01, -0.005, 0.025, 4)) == "CONTINUE"
+    assert DS.probe_reading((-0.01, -0.02, -0.001, 4)) == "CONTINUE"
+    assert DS.probe_reading(None) == "INCOMPLETE"
+
+
+def test_curve_runs_live_with_the_pilot(tmp_path):
+    assert DS.run_path(tmp_path, "Dstem", "1250", 20261042).parent == tmp_path / "pilot" / "runs"
+    assert DS.run_path(tmp_path, "Dstem", "full", 20261042).parent == tmp_path / "full" / "runs"
