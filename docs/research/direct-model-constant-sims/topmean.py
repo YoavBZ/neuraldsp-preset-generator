@@ -12,7 +12,6 @@ def em(X, K, rng, it=300):
         lp -= lp.max(1, keepdims=True); r = np.exp(lp); r /= r.sum(1, keepdims=True)
         nk = r.sum(0) + 1e-9; w = nk / n; mu = (r.T @ X) / nk[:, None]
         var = (r.T @ X ** 2) / nk[:, None] - mu ** 2 + 1e-4
-    ll = (np.log((np.exp(lp) ).sum(1))).mean()
     return w, mu, var
 class G:
     def __init__(s, X, K, seed):
@@ -54,7 +53,6 @@ r = np.array(res)
 print("MAE median %.4f  mean %.4f  topmean %.4f  gmm-median %.4f  (top weight %.2f)" % tuple(r.mean(0)))
 print("top - median: mean %.4f  min %.4f  max %.4f" % ((r[:,2]-r[:,0]).mean(), (r[:,2]-r[:,0]).min(), (r[:,2]-r[:,0]).max()))
 # informative-but-noisy model: prediction = theta + noise, blend with median
-te = te
 for s in (0.1, 0.2, 0.3):
     p = np.clip(te + rng.normal(0, s, te.shape), 0, 1)
     best = min((np.abs(te - (w*p + (1-w)*med)).mean(), w) for w in np.linspace(0, 1, 21))
