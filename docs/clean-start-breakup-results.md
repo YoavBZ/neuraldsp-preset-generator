@@ -49,28 +49,67 @@ Both PR12 presets run their compressor; the SW50R and AC20 baselines do not. A c
 ahead of the amp tames chord attacks, so part of the split may be the compressor rather
 than the amp.
 
+## Turned down, or compressed (same evening)
+
+The same linearity measure on the SW50R and AC20 clean baselines, dry, with their amp
+volume lowered, or with a compressor in front (the PR12 baseline's settings: mix 59.7%,
+compression 50.3%, level 66.7%), and then by ear on the chord riff (same listener, not
+blind):
+
+| start | linearity residual | heard |
+|---|---|---|
+| SW50R as shipped (`sw50rVolume` 35.2) | -11.1 dB | not clean |
+| SW50R, volume 25 | -13.3 dB | |
+| SW50R, volume 15 | -19.6 dB | clean |
+| SW50R + compressor | -20.8 dB | clean |
+| AC20 as shipped (`ac20Volume` 30) | -11.3 dB | not clean |
+| AC20, volume 20 | -12.6 dB | |
+| AC20, volume 10 | -20.5 dB | clean |
+| AC20 + compressor | -17.3 dB | tiny cracks, almost clean |
+
+So the breakup comes from the presets' volume: turned down, both play this riff clean, about
+where the PR12 template sits (-19.0 dB). That says nothing about the amps' headroom (any amp
+is clean turned down far enough; SW50R still broke up at 25), and knob positions do not
+compare across amps. The compressor confound above is partly answered: SW50R with a
+compressor and no volume change also played clean.
+
 ## What changes
 
-`generate` step 4 records the check beside the clean baselines, and says what it means:
-on a part documented as fully clean, a SW50R or AC20 clean start may break up on hard
-strums, and the report should say so. These are most likely the factory presets' settings
-(`Pedal Platform Clean`, `Low-Watt Americana`), not the amps' headroom (untested): the skill's own
-guidance that SW50R has the most headroom stands, and the amp is still chosen from
-research. The baselines stay: they were chosen as closest to clean development recordings
+`generate` step 4: on a part documented as fully clean, the SW50R start gets `sw50rVolume`
+15 and the AC20 start `ac20Volume` 10, and the report says so (it plays quieter; `outputGain`
+makes up the level). Volume rather than a compressor: it is the amp's own control, both
+reached clean, and the compressed AC20 still cracked a little. The skill's headroom guidance
+(SW50R has the most) was not tested here, and the amp is still chosen from research. Parts not documented as fully clean keep the presets
+as they are.
+
+The baselines themselves stay: they were chosen as closest to clean development recordings
 ([clean-baseline-results.md](clean-baseline-results.md)), and the blind check of starting
 presets on real clean parts (block X, amps rotating PR12, SW50R and AC20) preferred the
 clean start to the crunch start 4 of 5 times
-([starting-preset-listening-results.md](starting-preset-listening-results.md)).
+([starting-preset-listening-results.md](starting-preset-listening-results.md)). Whether
+the turned-down starts are also closer to real clean recordings is not tested: lower volume
+shifts an amp's tone too.
 
-Next, when render slots are free, cheapest first: the same check on the SW50R and AC20
-baselines with their volume (or input) lowered, and with a compressor; only then a
-screen of other factory presets.
+Next, when render slots are free: by ear on real clean development parts, each through its
+own DI beside its record, the start as shipped against turned down, PR12 included (its
+baseline is borderline, and no lower volume was tried on it).
 
-## Also heard
+## Also heard: crackle on the decays
 
-Faint crackle as each chord fades, through all four presets, most clearly through PR12.
-None is audible in the dry riff (heard in four variants: as shipped, without denoising,
-with downstrokes only, and one untouched EGFxSet note), so it appears after the DI: in
-the amp models, or a compressor raising the decays enough to expose something inaudible
-dry. Untested. The test: a fading sine and one untouched note through the PR12 template,
-with its compressor on and off.
+Faint crackle as each chord fades, heard first through all four presets, most clearly
+through PR12. What it is not:
+
+- **The riff:** none in the dry riff (four variants: as shipped, without denoising,
+  downstrokes only, one untouched EGFxSet note).
+- **Crossover distortion:** a 196 Hz sine fading from the riff's peak toward -60 dB over 6 s
+  (measured in windows from -4 to -54 dB) through the PR12 template: THD falls steadily with level (4.2% to 0.1% with the compressor on, 18.5%
+  to 0.0% off) and never rises as the level falls.
+- **The compressor alone:** one untouched note through the PR12 template is clean with
+  the compressor on and off.
+
+Most likely, the PR12 clean baseline's own slight breakup as the chords ring down (one
+listener, by ear, not blind; not measured on the decays). On the chord riff, re-heard, the
+PR12 template was clean with its compressor on and off, and the PR12 baseline crackled a
+little either way; the first hearing had heard some through all four presets, the
+template included. The turned-down SW50R and AC20 starts had none. The two tests above ran
+on the template, not the baseline.

@@ -84,8 +84,8 @@ was declared, what was measured, and the research behind it.
   part list → [results](starting-preset-listening-results.md): **heard** (17 of 21,
   in-sample, one listener).
 - [clean-start-breakup-results.md](clean-start-breakup-results.md): on the open-chord
-  riff, the SW50R and AC20 clean baselines break up; the PR12 ones are clean or borderline
-  (one listener, not blind; a linearity measure agrees).
+  riff, the SW50R and AC20 clean baselines break up but play clean turned down; the PR12
+  ones are clean or borderline (one listener, not blind; a linearity measure agrees).
 
 **Song-only distance** (current)
 - [di-free-distance-plan.md](di-free-distance-plan.md) →
