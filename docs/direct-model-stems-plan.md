@@ -749,3 +749,24 @@ whether 4× more data is projected to get there.
   sections widen the band mix.
 - **It decides only a pause:** a `PROBE CONTINUE` is not evidence that step 3 will pass.
 
+**Changes from the review (2026-10-21, before any probe run):**
+- **Equal optimisation steps:** at most 160 epochs for n = 1,250 and 80 for n = 2,500
+  (40 for 5,000), patience 4 unchanged. Each run's best epoch is recorded, and any within 4 of its
+  cap is flagged.
+- **Per-seed chains:** each seed's nested chain (1,250 / 2,500 / 5,000) gets its own projected
+  point at 20,311, reported beside the seed-averaged band-clustered fit. The band interval does
+  not capture common-mode seed noise, since both seeds share every band.
+- **An advisory flag, beside the declared rule:** `PROJECTED ABOVE CONSTANT` prints if the
+  seed-averaged projected point at 20,311 is above 0, or the slope is not negative. It pauses
+  nothing by itself; it goes to the user.
+- **A capped projection:** the log-linear line is an upper bound on the gain (part C flattened at
+  20k–40k; its 10k → 20k step was −0.0069). So a capped projection is printed too: the observed
+  2,500 → 5,000 per-doubling gain, halved at each further doubling, so
+  v₅₀₀₀ + g·(1 − 0.5^d) at d = log2(20,311 / 5,000).
+- **Two constants:** the full pool's constant (the median of the full build's training labels per
+  amp and base class, refusals excluded, zero renders) is printed beside the 5k constant, with the
+  difference. The probe keeps the 5k constant.
+- **The merge pool:** a dry check that every base class in the 1,250 and 2,500 subsets has merge
+  partners from at least 2 sections. `train` refuses a subset that fails it. The caveat stands:
+  the subsets' merge pool is smaller than the pilot's.
+

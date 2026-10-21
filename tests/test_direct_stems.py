@@ -960,3 +960,21 @@ def test_probe_reading():
 def test_curve_runs_live_with_the_pilot(tmp_path):
     assert DS.run_path(tmp_path, "Dstem", "1250", 20261042).parent == tmp_path / "pilot" / "runs"
     assert DS.run_path(tmp_path, "Dstem", "full", 20261042).parent == tmp_path / "full" / "runs"
+
+
+def test_amendment_4_review_epoch_caps_capped_projection_and_advisory():
+    assert DS.epoch_cap(1250) == 160 and DS.epoch_cap(2500) == 80 and DS.epoch_cap(5000) == 40
+    assert 1250 * 160 == 2500 * 80 == 5000 * 40                        # equal optimisation steps
+    assert math.isclose(DS.capped_projection(0.03, 0.02, 1), 0.015)
+    assert math.isclose(DS.capped_projection(0.03, 0.02, 2), 0.0125)
+    assert math.isclose(DS.capped_projection(0.03, 0.02, 0), 0.02)
+    assert DS.advisory((0.01, -0.01, 0.03, 4), (-0.01, -0.02, 0.0, 4)) == "PROJECTED ABOVE CONSTANT"
+    assert DS.advisory((-0.01, -0.03, 0.01, 4), (0.0, -0.01, 0.01, 4)) == "PROJECTED ABOVE CONSTANT"
+    assert DS.advisory((-0.01, -0.03, 0.01, 4), (-0.005, -0.01, 0.0, 4)) is None
+    assert DS.advisory(None, None) is None
+
+
+def test_merge_pool_problems():
+    rows = [_row(i, "A", f"s{i % 3}@1", base="clean") for i in range(6)] + [_row(9, "A", "x@1", base="crunch")]
+    assert DS.merge_pool_problems(rows) == ["crunch: 1 section(s)"]
+    assert DS.merge_pool_problems(rows[:6]) == []

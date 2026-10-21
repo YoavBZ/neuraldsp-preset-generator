@@ -2185,6 +2185,36 @@ def pilot_examples(ctx, root, arm, smoke=False, stem_sep="mega53"):
 
 
 CURVE_SEEDS = {2500: 20261084, 1250: 20261085}     # amendment 4: nested subsets of the pilot's 5k
+CURVE_EPOCHS = {1250: 160, 2500: 80, 5000: 40}       # amendment 4 review: about equal optimisation steps
+CURVE_EDGE = 4                                       # a best epoch within 4 of its cap is flagged
+
+
+def epoch_cap(n):
+    """At most 40 epochs for the pilot's 5k; amendment 4's subsets get the same number of steps."""
+    return CURVE_EPOCHS.get(int(n), MAX_EPOCHS)
+
+
+def merge_pool_problems(train_rows, min_sections=2):
+    """Amendment 4 review: every base class in a training set needs merge partners from at least 2
+    sections (a partner must come from another section). -> [problems]."""
+    secs = {}
+    for r in train_rows:
+        secs.setdefault(r["base"], set()).add(r["section"])
+    return [f"{b}: {len(v)} section(s)" for b, v in sorted(secs.items()) if len(v) < min_sections]
+
+
+def capped_projection(v_prev, v_last, doublings):
+    """Amendment 4 review: the last observed per-doubling gain (v_last - v_prev), halved at each
+    further doubling: v_last + gain * (1 - 0.5 ** doublings)."""
+    return v_last + (v_last - v_prev) * (1 - 0.5 ** doublings)
+
+
+def advisory(at_target, slope):
+    """Amendment 4 review's advisory flag (it pauses nothing): the seed-averaged projected point at
+    20,311 above 0, or a slope that is not negative."""
+    if at_target is None or slope is None:
+        return None
+    return "PROJECTED ABOVE CONSTANT" if (at_target[0] > 0 or slope[0] >= 0) else None
 CURVE_NS = (1250, 2500, 5000)
 CURVE_ARMS = ("Dstem",)
 CURVE_TARGET_N = 20_311
@@ -2564,6 +2594,9 @@ def cmd_train(args):
         sub = curve_subsets(ctx.parts["pilot"])[n_train]
         rows = [r for r in rows if r["early_stop"] or r["i"] in sub]
         dropped = [i for i in dropped if ctx.rows[i]["early_stop"] or i in sub]
+        bad = merge_pool_problems([r for r in rows if not r["early_stop"]])
+        if bad and not args.smoke:
+            raise SystemExit(f"the subset's merge pool is too small: {bad}")
     tr = np.array([j for j, r in enumerate(rows) if not r["early_stop"]])
     es = np.array([j for j, r in enumerate(rows) if r["early_stop"]])
     if not len(tr) or not len(es):
@@ -2581,7 +2614,7 @@ def cmd_train(args):
         log = []
         data.masked, data.applied = 0, {}
         try:
-            net, state, best_ep, best = train_arm(data, tr, es, args.seed, dev, log, args.epochs or MAX_EPOCHS)
+            net, state, best_ep, best = train_arm(data, tr, es, args.seed, dev, log, args.epochs or epoch_cap(n_train))
             break
         except PS.StepsSkipped as e:
             print(f"attempt {attempt} aborted: {e}", flush=True)
@@ -2602,7 +2635,7 @@ def cmd_train(args):
            "skipped_steps": sum(e["skipped_steps"] for e in log), "masked_frames": int(data.masked),
            "augmentations_applied": data.applied, "peak_rss_gb": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1e9, 2),
            "peak_mps_driver_gb": max((e["mps_driver_gb"] or 0) for e in log), "device": str(dev),
-           "max_epochs": args.epochs or MAX_EPOCHS, "smoke": bool(args.smoke), "model": mp.name,
+           "max_epochs": args.epochs or epoch_cap(n_train), "smoke": bool(args.smoke), "model": mp.name,
            "model_sha256": hashlib_file(mp), "readouts": readouts, "log": log, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     _save(rp, rec)
     print(f"TRAIN DONE {args.arm} {args.seed}: best epoch {best_ep} of {len(log)}, {minutes:.1f} min"
@@ -3892,55 +3925,111 @@ def pilot_constant(ctx, root):
     return const, band_of, keep
 
 
+def full_pool_constant(ctx, root):
+    """Amendment 4 review (zero renders): the constant from the full pool's training labels (refusals
+    of the build so far excluded), per amp and base class. -> constant E per V_sep example (str keys)."""
+    from learn import song_model as SM
+
+    mixrows = {**build_rows(root, "pilot", "mix"), **build_rows(root, "rest", "mix")}
+    stemrows = {**build_rows(root, "pilot", "mega53"), **build_rows(root, "rest", "mega53")}
+    bad = refusals(mixrows, stemrows, {r["i"] for r in ctx.pool})
+    med = label_medians([r for r in ctx.pool if not r["early_stop"] and r["i"] not in bad], SM.encode)
+    out = {}
+    for r in ctx.parts["vsep"]:
+        c, cm = SM.encode(r["label"])[:2]
+        out[str(r["i"])] = const_error(med[(r["amp"], r["base"])], c, cm)
+    return out
+
+
 def cmd_curve(args):
     """Amendment 4's learning-curve probe (descriptive, zero renders, no model run): D_stem's stored
-    per-example E on R_in and R_out at n = 1,250, 2,500 and 5,000 (seeds 20261042/43, seed-averaged)
-    minus the pilot's constant predictor, per band; per band a least-squares line on log2(n),
-    extrapolated to 20,311; band-clustered 90% t intervals. Prints PROBE PAUSE (R_in's extrapolated
-    interval entirely above 0) or PROBE CONTINUE."""
+    per-example E on R_in and R_out at n = 1,250, 2,500 and 5,000 (seeds 20261042/43) minus the
+    pilot's 5k constant predictor, per band; per band a least-squares line on log2(n), extrapolated
+    to 20,311, band-clustered 90% t intervals, seed-averaged and per seed's nested chain; a capped
+    projection (the last per-doubling gain halved each further doubling); the full-pool constant
+    beside the 5k one. Prints PROBE PAUSE (R_in's seed-averaged extrapolated interval entirely above
+    0) or PROBE CONTINUE, and the advisory PROJECTED ABOVE CONSTANT."""
     from learn import pretrain_set as PS
 
     root = out_root(args)
     ctx = Ctx()
     const, band_of, keep = pilot_constant(ctx, root)
+    cfull = full_pool_constant(ctx, root)
+    sub = curve_subsets(ctx.parts["pilot"])
     out = {"plan": "docs/direct-model-stems-plan.md amendment 4 (descriptive)", "arm": "Dstem", "ns": list(CURVE_NS),
-           "target_n": CURVE_TARGET_N, "levels": {}, "fit": {}, "missing": [], "smoke": bool(args.smoke)}
+           "target_n": CURVE_TARGET_N, "levels": {}, "fit": {}, "per_seed": {}, "capped": {}, "constant": {},
+           "best_epochs": {}, "edge_flags": [], "missing": [], "smoke": bool(args.smoke),
+           "merge_pool": {n: merge_pool_problems([ctx.rows[i] for i in sub[n]]) for n in (1250, 2500)},
+           "note": "the band interval does not capture common-mode seed noise (both seeds share every band)"}
+    d_target = math.log2(CURVE_TARGET_N / 5000)
+
+    def iv(d):
+        return PS.band_t_interval(PS.by_band(d, band_of)) if d else None
+
+    def bands(d):
+        return {b: sum(v) / len(v) for b, v in PS.by_band(d, band_of).items()}
+
     for ro in ("R_in", "R_out"):
-        by_n = {}
+        k = keep[ro] & set(const)
+        out["constant"][ro] = {"5k": iv({i: const[i] for i in k}), "full_pool": iv({i: cfull[i] for i in k}),
+                               "full_minus_5k": iv({i: cfull[i] - const[i] for i in k})}
+        per_n, seed_n = {}, {s: {} for s in TRAIN_SEEDS}
         for n in CURVE_NS:
             runs = []
             for seed in TRAIN_SEEDS:
                 r = _load(run_path(root, "Dstem", str(n), seed))
                 per = ((r or {}).get("readouts") or {}).get(ro, {}).get("per_example") if r else None
-                if per:
-                    runs.append(per)
-                else:
+                if not per:
                     out["missing"].append(f"Dstem-{n}-{seed} {ro}")
+                    continue
+                runs.append(per)
+                cap = r.get("max_epochs") or epoch_cap(n)
+                out["best_epochs"][f"{n}-{seed}"] = {"best": r.get("best_epoch"), "cap": cap, "run": r.get("epochs_run")}
+                if ro == "R_in" and r.get("best_epoch") is not None and r["best_epoch"] >= cap - CURVE_EDGE:
+                    out["edge_flags"].append(f"Dstem-{n}-{seed}: best epoch {r['best_epoch']} within {CURVE_EDGE} of {cap}")
+                d1 = {i: per[i] - const[i] for i in k if i in per}
+                seed_n[seed][n] = bands(d1)
+                out["levels"][f"{ro} n={n} seed {seed}"] = iv(d1)
             if not runs:
                 continue
-            k = keep[ro] & set(const)
             sa = PS.seed_avg(runs, k)
             d = {i: sa[i] - const[i] for i in sa}
-            out["levels"][f"{ro} n={n}"] = PS.band_t_interval(PS.by_band(d, band_of)) if d else None
-            by_n[n] = {b: sum(v) / len(v) for b, v in PS.by_band(d, band_of).items()}
-        if len(by_n) >= 2:
-            f = curve_fit(by_n)
+            out["levels"][f"{ro} n={n}"] = iv(d)
+            per_n[n] = bands(d)
+        if len(per_n) >= 2:
+            f = curve_fit(per_n)
             out["fit"][ro] = {"slope_per_doubling": f["slope"], "at_20311": f["at_target"],
                               "per_band": {b: {"slope": v[0], "at_20311": v[1]} for b, v in f["per_band"].items()},
-                              "points": sorted(by_n)}
+                              "points": sorted(per_n)}
+        out["per_seed"][ro] = {s: curve_fit(v)["at_target"] for s, v in seed_n.items() if len(v) >= 2}
+        if 2500 in per_n and 5000 in per_n:
+            cp = {b: capped_projection(per_n[2500][b], per_n[5000][b], d_target) for b in per_n[5000] if b in per_n[2500]}
+            out["capped"][ro] = PS.band_t_interval({b: [v] for b, v in cp.items()})
     if out["missing"] and not args.smoke:
         raise SystemExit(f"runs or readouts missing: {out['missing']}")
-    out["reading"] = probe_reading((out["fit"].get("R_in") or {}).get("at_20311"))
+    fin = out["fit"].get("R_in") or {}
+    out["reading"] = probe_reading(fin.get("at_20311"))
+    out["advisory"] = advisory(fin.get("at_20311"), fin.get("slope_per_doubling"))
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     _save(root / "pilot" / "curve.json", out)
 
     def f(v):
         return "n/a" if v is None else f"{v[0]:+.4f} [{v[1]:+.4f}, {v[2]:+.4f}] ({v[3]} bands)"
 
-    for k, v in out["levels"].items():
-        print(f"  E - constant {k:14s} {f(v)}")
+    for ro, c in out["constant"].items():
+        print(f"  constant E {ro}: 5k {f(c['5k'])}; full pool {f(c['full_pool'])}; full - 5k {f(c['full_minus_5k'])}")
+    for k_, v in out["levels"].items():
+        print(f"  E - constant {k_:26s} {f(v)}")
     for ro, v in out["fit"].items():
-        print(f"  {ro}: slope per doubling {f(v['slope_per_doubling'])}; at 20,311 {f(v['at_20311'])}")
+        print(f"  {ro}: slope per doubling {f(v['slope_per_doubling'])}; at 20,311 {f(v['at_20311'])} (log-linear, an upper "
+              f"bound on the gain); capped {f(out['capped'].get(ro))}; per seed "
+              + ", ".join(f"{s}: {f(x)}" for s, x in out["per_seed"][ro].items()))
+    print("  best epochs", out["best_epochs"], "| merge pool", out["merge_pool"])
+    for e in out["edge_flags"]:
+        print("  FLAG:", e)
+    print("  note:", out["note"])
+    if out["advisory"]:
+        print(out["advisory"] + " (advisory: for the user; it pauses nothing)")
     print(f"PROBE {out['reading']} (descriptive, amendment 4)")
 
 
