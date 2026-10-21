@@ -183,3 +183,16 @@ full pool's constant is the same within ±0.0003).
   real risk, after about 20 h of separation and 6 GPU h.
 - **Under the rules the plan continues.** Whether to spend that before a cheaper check is the
   user's call.
+
+## After the pilot (2026-10-22)
+
+The `MODEL STOP` named above is step 3's early stop as first declared. Two amendments, approved by
+the user on 2026-10-22 before any step 3 data, replaced it:
+- **[Amendment 5](direct-model-stems-plan.md#amendment-5-2026-10-21-the-readout-e-rewards):** step 3
+  reads each knob's mixture median, averaged over 3 seeds × 2 halves and pulled toward the constant.
+  The right cab's silent knobs leave E. The E check against the constant is descriptive. On the
+  pilot's own early-stopping examples this readout reads −0.0107 [−0.0186, −0.0027] against the
+  constant, where the first-declared one read +0.0106 (in-band, not a forecast for R_in).
+- **[Amendment 6](direct-model-stems-plan.md#amendment-6-2026-10-22-a-sound-based-stopgo-gate-for-step-3):**
+  a sound-based gate decides step 3: on R_in, does D's preset sound closer to the true preset than
+  the constant's? Step 4 runs only on `GATE OK`.

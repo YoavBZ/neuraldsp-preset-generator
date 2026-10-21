@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-21.
+lives in the linked documents. Last updated 2026-10-22.
 
 ## Where the product is
 
@@ -93,7 +93,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    *Coverage (2026-10-21):* both active routes set only `knob_ceiling.space` on Morgan: input
    gain, the amp's main knobs and switches (not its spring), and the mics with their cab
    placement. The rest, the amp choice included, stays at S, so neither covers the goal yet.
-   The ML session is to propose how and when each route covers every control.
+   The ML session is to propose how and when each route covers every control: the next planning
+   item for both routes (the direct model and arm A), due after the direct model's step 3 result.
 
    **Where it stands (2026-10-19).** Not ready to ship. Fresh full mixes (stage F, 21 parts in 12
    bands) are the yardstick; figures are against S, band-weighted, with 90% intervals.
@@ -126,7 +127,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    - **Separation.** The user heard Mega-53 as much better on the separation samples. It also
      separates the electric guitar from a (likely) acoustic one. Both separators sometimes include
      another electric guitar ([stereo and mix check](stereo-and-mix-check-results.md)).
-     **Mega-53 is now the ML default separator** (htdemucs stays selectable), and unlicensed
+     **Mega-53 is now the ML default separator** (htdemucs stays selectable; the direct model's
+     full build uses X-LANCE gtr_mss since 2026-10-21), and unlicensed
      open-source weights are allowed (the user, 2026-10-19; widened on 2026-10-20 to anything
      unlicensed, non-commercial or gated, see ML plan §5).
    - **Our mixes are not real mixes** ([stereo and mix check](stereo-and-mix-check-results.md)).
@@ -164,9 +166,9 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       row. Moises is outside every workflow (user).*
    2. **Train the direct model on realistic separated stems,** and check how much it relies on the
       stem against the mix ([plan](direct-model-stems-plan.md), declared and reviewed 2026-10-19):
-      zero-render checks of the stem mismatch on the existing model first, then a 5k pilot (its
-      ≈2.4 h of training needs the user's approval; real Mega-53 stems, a mix-only model, the old
-      recipe), then one stage F test, D − S primary. The full build's 5–7.4 h of training is approved (the user,
+      zero-render checks of the stem mismatch on the existing model first, then a 5k pilot (≈2.4 h
+      of training, approved and run; real Mega-53 stems, a mix-only model, the old recipe), then
+      one stage F test, D − S primary. Step 3's 5–7.4 h of training is approved (the user,
       2026-10-20); disk is no longer a block.
       *Gate 1 done 2026-10-20 ([results](direct-model-stems-gate1-results.md)):* the stem matters
       (GATE1 STEM); the mix adds little behind a clean or separated stem, so the next model should
@@ -177,12 +179,24 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       predictor (D_stem +0.0128 [−0.0013, +0.0269] on R_in). More data helps (−0.017 per
       doubling on average; the seeds differ, about −0.028 and −0.006), so the probe reads
       `PROBE CONTINUE`. Even so, the full model is projected to land near the constant (−0.020
-      log-linear, likely optimistic given part C's flattening; −0.004 capped), so step 3's MODEL STOP is a real
-      risk. The rest's mix stage is running.
+      log-linear, likely optimistic given part C's flattening; −0.004 capped).
       *Amendment 2 in force 2026-10-21 (user):* the full build, step 3 and step 4 use X-LANCE
       gtr_mss stems (0.988× Mega-53 on MPS). The pilot, V_sep and the rest are separated anew, about
       19–22 h on one MPS and one CPU worker. D0 is unchanged, and Mega-53 stays the fallback. Then
       step 3's training (approved by the user on 2026-10-20).
+      *Amendments 5 and 6, approved 2026-10-22 (user; PRs #263, #264), before any step 3 data:*
+      step 3 reads each knob's mixture median, averaged over 3 seeds × 2 halves, then pulled toward
+      the per-class constant (the pull fitted on the early-stopping set). The right cab's knobs
+      leave E when that cab is off. On the pilot's early-stopping examples this reads −0.0107
+      [−0.0186, −0.0027] against the constant, where the old readout read +0.0106 (in-band, not a
+      forecast). The E check is now descriptive. **A sound-based gate decides step 3:** on R_in
+      (1,407 examples, 4 bands), does D's preset render closer to the true preset than the
+      constant's (about 5.9k renders)? Step 4 runs only on `GATE OK`.
+      *Now (2026-10-22):* the X-LANCE build finishes about 04:00. Step 3's training of D_stem and
+      D0 (3 seeds each, xlance_g) follows automatically, then the readout. The gate's truth and
+      constant renders run during training, and D's and D0's after the readout.
+      *Next planning item:* how and when this model and arm A cover every control (the user's
+      rule, 2026-10-21), proposed after step 3's result.
    3. **Two zero-render checks.** *Done 2026-10-19 ([results](shrink-snr-judge-v3-results.md)):*
       the best shrink does not measurably depend on stem SNR (a rule by SNR gains −0.003 [−0.013,
       +0.007] on held-out bands; nothing on realistic stems), and judge v3 agrees with the ear a
@@ -405,3 +419,4 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-21 | Direct model amendment 2 in force (user): X-LANCE gtr_mss replaces Mega-53 fast for the full build (the rest, plus a re-separation of the pilot and V_sep, about 19–22 h), step 3's D_stem and R_in, and step 4's stems (D and D0 alike). R_out stays htdemucs, and the pilot's STEM verdict (read on Mega-53) carries. Mega-53 stays the fallback; stage F's three X-LANCE failure parts are listed in step 4's report | [plan, amendment 2](direct-model-stems-plan.md#amendment-2-in-force-2026-10-21) |
 | 2026-10-21 | Every control (user): the generated preset must cover every setting the plugin exposes (the pack manifests), including the pedals (compressor, both drives), EQ, time effects (doubler and spring included), noise gate, room mics, pan, phase, output gain, the amp choice and every other manifest control; not only input gain, the amp's knobs and the mics. Exceptions come from the manifests, not from this decision (e.g. the room mic types have no control in the plugin's UI). The knob values of a switched-off feature all count as one setting (an off pedal at level min or max is the same setting), so training losses and knob scores must not count them as different; how is for the ML session to propose. Plans already declared (part C's E, the direct model's step 3) keep their definitions until amended. Both active routes set only `knob_ceiling.space` today, on Morgan only; the ML session is to propose how and when each covers every control | [ML plan](research/ml-plan-2026-10.md), sections 1, 4 (step 3) and 5 |
 | 2026-10-21 | For a part documented as fully clean, `generate` turns the SW50R and AC20 clean starts down (`sw50rVolume` 15, `ac20Volume` 10): heard clean on the chord riff; closeness to records untested (user agreed) | [results](clean-start-breakup-results.md) |
+| 2026-10-22 | Direct model, step 3 (user; amendments 5 and 6, declared before any step 3 data): the answer is each knob's mixture median, averaged over 3 seeds × 2 halves and pulled toward the per-class constant (b fitted on the early-stopping set); the right cab's silent knobs leave E; the E check is descriptive (it replaces MODEL OK/STOP). A sound-based gate decides step 3: D's preset against the constant's, each rendered and judged against the true preset on R_in (about 5.9k renders); step 4 runs only on GATE OK. Coverage of every control (2026-10-21) is the next planning item for both routes, proposed after step 3's result | [plan, amendments 5 and 6](direct-model-stems-plan.md#amendment-5-2026-10-21-the-readout-e-rewards) |
