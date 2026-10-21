@@ -238,11 +238,11 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 - **Done, 2026-10-21: the clean starts checked on the open-chord riff.** The SW50R and
   AC20 clean baselines break up; the PR12 template is clean and the PR12 baseline
   borderline (one listener, not blind; a linearity measure agrees). `generate` step 4
-  records it and says a SW50R or AC20 start may break up on a fully clean part; the
-  presets' settings, not the amps' headroom ([results](clean-start-breakup-results.md)).
-  Next, when render slots are free: the same check with their volume lowered or a
-  compressor, then a screen of other presets; and whether the faint crackle on chord
-  decays is the amp models' (compressor on and off).
+  records it. Turned down (`sw50rVolume` 15, `ac20Volume` 10) both play clean, so for a
+  part documented as fully clean `generate` now sets those volumes and says so; the
+  faint crackle on chord decays is the PR12 baseline's own slight breakup
+  ([results](clean-start-breakup-results.md)). Next, when render slots are free: by ear on
+  real clean parts through their own DIs, as shipped against turned down, PR12 included.
 - **Setting controls has real headroom** ([knob ceiling](knob-ceiling-results.md),
   2026-10-14): with the take's true DI, on development, a knob search got about 22%
   closer by the judge than `generate`'s starting preset (−0.253) and 19% closer than
