@@ -1,4 +1,4 @@
-"""The direct model with realistic stems (`docs/direct-model-stems-plan.md`, amendment 1 in force).
+"""The direct model with realistic stems (`docs/direct-model-stems-plan.md`, amendments 1-4 in force).
 Development data only. Gate 1's zero-render checks (steps 1a, 1b), 1c, the pilot build and the
 pilot (step 2), the full models (step 3) and the decision test on stage F (step 4).
 
@@ -15,16 +15,20 @@ pilot (step 2), the full models (step 3) and the decision test on stage F (step 
     $TORCH_PY -m learn.direct_stems build --part vsep --stage stem --sep htdemucs
     $TORCH_PY -m learn.direct_stems train --arm D0|Dmix|Dstem|Dstem-noaug --n 5000 --seed 20261042|20261043
     $TORCH_PY -m learn.direct_stems pilot-report              # PILOT STOP | PILOT MIX | PILOT STEM
+    # amendment 2 (in force 2026-10-21): xlance_g stems for the full build, step 3 and step 4
+    $MSST     -m learn.direct_stems build --part vsep|pilot|rest --stage stem --sep xlance_g --device mps --order asc
+    $MSST     -m learn.direct_stems build --part vsep|pilot|rest --stage stem --sep xlance_g --device cpu --order desc
     $TORCH_PY -m learn.direct_stems train --arm Dstem|Dmix|D0 --n full --seed 20261042|20261043|20261044
     $TORCH_PY -m learn.direct_stems readout                   # step 3 (zero renders): MODEL STOP | MODEL OK
-    $MSST     -m learn.direct_stems stems --device cpu        # step 4's stored fast stems (stage F, known answer)
-    $MSST     -m learn.direct_stems parity --device cpu       # step 4's inputs path on 20 V_sep examples (renders)
+    $MSST     -m learn.direct_stems stems --device mps        # step 4's stored crop-only xlance_g stems (stage F, known answer)
+    $MSST     -m learn.direct_stems parity --device mps       # step 4's inputs path on 20 V_sep examples (renders)
     $TORCH_PY -m learn.direct_stems predict                   # step 4's answers (zero renders)
     OMP_NUM_THREADS=1 .venv/bin/python -m learn.direct_stems render --shard k/3   # 321 renders (cap 400)
     .venv/bin/python -m learn.direct_stems report             # STEP4 CLOSER | NOT SHOWN | WORSE | INCOMPLETE
     $TORCH_PY -m learn.direct_stems constant-check --pilot    # descriptive: pilot runs against the constant
     $TORCH_PY -m learn.direct_stems train --arm Dstem --n 1250|2500 --seed 20261042|20261043   # amendment 4
     $TORCH_PY -m learn.direct_stems curve                     # amendment 4: PROBE PAUSE | PROBE CONTINUE
+    $TORCH_PY -m learn.direct_stems pilot-xlance-readout      # amendment 2 (descriptive): pilot runs on xlance_g R_in
 
 Outputs go to ~/ndsp-presets/learn/direct-stems/ (gate 1 under gate1/, 1c under sepcheck/, the
 build under build/, the pilot's runs under pilot/).
@@ -67,7 +71,8 @@ MUSDB18-tagged section left out, and applies amendment 1's rules.
 
 **Step 3.** D (D_stem, with or without its augmentations as rule 4 read; or D_mix if the pilot
 read PILOT MIX) and D0 on the full band-clean pool (20,311 train, 1,000 early stopping), 3 seeds,
-the pilot's recipe and guards, Mega-53 stems (amendment 2 is a draft); `train` refuses unless a real
+the pilot's recipe and guards, xlance_g stems (amendment 2; `--sep mega53` is the fallback; D0 reads
+no separated stem but drops the same refusals, so its runs carry the separator's name); `train` refuses unless a real
 pilot-report read PILOT STEM or PILOT MIX and the build is complete; every run drops the same
 refusals. `readout`: R_out, R_in and V_dev for D, D0 and D_existing, per seed and the ensemble
 (the pooled mixture's top component, switches by majority, mics by summed probability), each seed
@@ -75,8 +80,8 @@ against the ensemble in knob space, and the constant predictor (training-label m
 base class): MODEL OK only if D's seed-averaged E on R_in minus the constant's has a band-clustered
 interval entirely below 0.
 
-**Step 4.** `stems` stores the 21 stage F Mega-53 fast crop-only stems (gate 1's, reused: they are
-exactly that setting on the crop alone) and the 16 known-answer crops', hash-recorded. `parity`
+**Step 4.** `stems` stores the 21 stage F crop-only stems and the 16 known-answer crops' of step 3's
+separator (xlance_g under amendment 2; Mega-53 fast reused gate 1's), hash-recorded. `parity`
 rebuilds 20 V_sep examples (seed 20261082) and passes them through step 4's path. `predict`: the
 stored crop (hash-checked) with one gain to the training median, the stem the same gain, the stored
 grid, the half-A mask and the arm's zeroing (`model_input`, the V_sep readouts' path); D_stem reads
@@ -1611,7 +1616,7 @@ def cmd_build(args):
             [r for r in items if not r["early_stop"]][:args.limit - args.limit // 4]
             + [r for r in items if r["early_stop"]][:args.limit // 4])
     log = {"time": time.strftime("%Y-%m-%d %H:%M:%S"), "pid": os.getpid(), "part": args.part, "stage": args.stage,
-           "sep": args.sep, "device": args.device, "shard": args.shard, "items": len(items), "disk_guard_gb": guard,
+           "sep": stem_stage_sep(args.part, args.sep) if args.stage == "stem" else args.sep, "device": args.device, "shard": args.shard, "items": len(items), "disk_guard_gb": guard,
            "disk_override_note": note, "free_gb": round(free, 1), "limit": args.limit}
     if note:
         print(f"disk guard {guard:.0f} GB ({note})", flush=True)
@@ -1772,9 +1777,16 @@ def xl_unload(code, path=None, modules=None):
     return sorted(gone)
 
 
+def stem_stage_sep(part, sep):
+    """build --stage stem's separator: as given; by default xlance_g for the rest (amendment 2) and
+    Mega-53 for the pilot and V_sep (their stored stems, reproducible; their xlance_g re-separation
+    is asked for with --sep xlance_g)."""
+    return sep or (STEP_SEP if part == "rest" else PILOT_SEP)
+
+
 def require_amendment2(sep, what):
-    """xlance_g stems belong to amendment 2, a draft: refused until it is in force (the time-mps
-    check is exempt)."""
+    """xlance_g stems belong to amendment 2 (in force since 2026-10-21; refused while it was a draft,
+    the time-mps check exempt)."""
     if sep == "xlance_g" and not AMENDMENT2_IN_FORCE:
         raise SystemExit(f"{what} --sep xlance_g: amendment 2 is a draft, not in force")
 
@@ -1838,12 +1850,12 @@ class XLanceG:
 
 
 def stem_separator(sep_name, device, setting=None):
-    """The stem stage's separator: Mega-53 (1c's setting, mps|cpu), X-LANCE gtr_mss (mps|cpu, 2 threads)
-    or htdemucs (CPU)."""
+    """The stem stage's separator: Mega-53 (1c's setting, mps|cpu), X-LANCE gtr_mss (mps, or cpu at 4
+    threads like Mega-53's CPU worker) or htdemucs (CPU)."""
     if sep_name == "mega53":
         return mega53_separator(setting, device)
     if sep_name == "xlance_g":
-        return XLanceG(device)
+        return XLanceG(device, threads=THREADS if device == "cpu" else 2)
     import torch
 
     from learn import separator_screen as SCR
@@ -1920,7 +1932,7 @@ def stage_stem(args, ctx, items, root, guard):
     from learn import knob_ceiling as K
     from learn import pretrain_set as PS
 
-    sep_name = args.sep or "mega53"
+    sep_name = stem_stage_sep(args.part, args.sep)
     require_amendment2(sep_name, "build --stage stem")
     if sep_name == "htdemucs" and args.part != "vsep":
         raise SystemExit("htdemucs stems are for V_sep only")
@@ -2741,7 +2753,9 @@ def cmd_pilot_report(args):
 FULL_SEEDS = (20261042, 20261043, 20261044)
 N_FULL_TRAIN = POOL_EXPECT["train"]                 # 20,311
 N_FULL_ES = POOL_EXPECT["early_stop"]               # 1,000
-AMENDMENT2_IN_FORCE = False                         # the X-LANCE build (amendment 2) is a draft
+AMENDMENT2_IN_FORCE = True                          # the X-LANCE build (amendment 2): in force, user 2026-10-21
+STEP_SEP = "xlance_g"                               # amendment 2: the full build's, step 3's and step 4's stems
+PILOT_SEP = "mega53"                                # the pilot's (amendment 1); its runs and readouts stay on it
 STEP4_REPEAT_SEED = 20261077
 STEP4_REPEAT_N = 6
 STEP4_REPEAT_TOL = 1e-3                             # |log| of S's fresh judge against the stored one
@@ -2778,12 +2792,21 @@ def d_arm(report, smoke=False):
     raise SystemExit(f"the pilot read PILOT {dec}: no step 3")
 
 
-def full_stem_sep(arm, sep):
-    """Step 3's stems: Mega-53 (amendment 1). xlance_g only once amendment 2 is in force."""
-    stem_sep = train_stem_sep(arm, sep)
-    if stem_sep != "mega53" and not AMENDMENT2_IN_FORCE:
-        raise SystemExit("amendment 2 (xlance_g stems) is a draft, not in force: step 3 trains on Mega-53 stems")
+def full_stem_sep(sep):
+    """Step 3's and step 4's stems (amendment 2): xlance_g by default; Mega-53 (the fallback) only by
+    --sep mega53. D_stem reads them, and every step-3 run (D0 too, which reads no separated stem in
+    training) drops the refusals of their stem stage, so its runs carry the separator's name."""
+    stem_sep = sep or STEP_SEP
+    if stem_sep not in STEM_SEPS:
+        raise SystemExit(f"step 3/4 --sep must be one of {STEM_SEPS}")
+    require_amendment2(stem_sep, "step 3/4")
     return stem_sep
+
+
+def step_sep(report, sep, smoke=False):
+    """The separator of step 3's build for the pilot's D: `full_stem_sep` when D reads stems
+    (PILOT STEM), else none needed (Mega-53, the default names)."""
+    return full_stem_sep(sep) if d_arm(report, smoke) in STEM_ARMS else PILOT_SEP
 
 
 def full_unbuilt(items, mixrows, stemrows, need_stem):
@@ -3020,11 +3043,16 @@ def parity_line(v):
             f"{v['worst_unexplained_lufs_diff']}; misses explained by the gate: {v['explained_by_gate']}")
 
 
-def save_parity(root, rec):
-    pp = step4_dir(root) / "parity.json"
+def parity_path(root, sep="mega53"):
+    """Step 4's parity record per separator: Mega-53's parity.json (amendment 3), parity-xlance_g.json."""
+    return step4_dir(root) / ("parity.json" if sep == "mega53" else f"parity-{sep}.json")
+
+
+def save_parity(root, rec, sep="mega53"):
+    pp = parity_path(root, sep)
     old = _load(pp)
     if old is not None:                                   # earlier records are kept, never overwritten
-        _save(pp.with_name(f"parity-{(old.get('time') or 'old').replace(' ', 'T').replace(':', '')}.json"), old)
+        _save(pp.with_name(f"{pp.stem}-{(old.get('time') or 'old').replace(' ', 'T').replace(':', '')}.json"), old)
     _save(pp, rec)
 
 
@@ -3154,7 +3182,7 @@ def train_full(args):
     if args.arm not in (D, "D0"):
         raise SystemExit(f"the pilot read PILOT {report['decision']}: step 3 trains {D} and D0, not {args.arm}")
     need_stem = D in STEM_ARMS
-    stem_sep = full_stem_sep(args.arm, args.sep)
+    stem_sep = step_sep(report, args.sep, args.smoke)
     rp = run_path(root, args.arm, "full", args.seed, stem_sep)
     if rp.exists():
         print(f"{rp.name} exists: nothing to do")
@@ -3183,7 +3211,7 @@ def train_full(args):
     rp.parent.mkdir(parents=True, exist_ok=True)
     mp = rp.with_suffix(".pt")
     torch.save(state, mp)
-    rec = {"plan": "docs/direct-model-stems-plan.md step 3, amendment 1", "arm": args.arm, "n": "full", "seed": args.seed,
+    rec = {"plan": "docs/direct-model-stems-plan.md step 3, amendments 1 and 2", "arm": args.arm, "n": "full", "seed": args.seed,
            "D": D, "pilot_decision": report["decision"], "augmentation_kept": report.get("augmentation_kept", True),
            "stem_sep": stem_sep, "train": len(tr), "early_stop": len(es), "dropped_refused": dropped, "attempts": attempt,
            "epochs_run": len(log), "best_epoch": best_ep, "best_early_stop_loss": best, "minutes": round(minutes, 1),
@@ -3208,7 +3236,7 @@ def load_full_runs(root, arm, smoke=False, seeds=FULL_SEEDS, stem_sep="mega53"):
 
     nets, recs = [], []
     for s in seeds:
-        rp = run_path(root, arm, "full", s, stem_sep if arm in STEM_ARMS else "mega53")
+        rp = run_path(root, arm, "full", s, stem_sep)
         r = _load(rp)
         if r is None:
             if smoke:
@@ -3228,15 +3256,17 @@ def load_full_runs(root, arm, smoke=False, seeds=FULL_SEEDS, stem_sep="mega53"):
     return nets, recs
 
 
-def full_models(root, smoke=False):
+def full_models(root, smoke=False, sep=None):
     """{model: (nets, zeroing arm, records)} for D, D0 and D_existing, after the run checks (every
-    run dropped the same refusals and trained on the same count)."""
+    run dropped the same refusals, trained on the same count and came from the same build's
+    separator, `step_sep`: xlance_g under amendment 2)."""
     report = _load(root / "pilot" / "pilot-report.json")
     D = d_arm(report, smoke)
-    stem_sep = "mega53"
+    stem_sep = step_sep(report, sep, smoke)
     nd, rd = load_full_runs(root, D, smoke, stem_sep=stem_sep)
-    n0, r0 = load_full_runs(root, "D0", smoke)
-    bad = []
+    n0, r0 = load_full_runs(root, "D0", smoke, stem_sep=stem_sep)
+    bad = [f"{r['arm']}-{r['seed']}: stems {r.get('stem_sep', 'mega53')}, not {stem_sep}"
+           for r in rd + r0 if r.get("stem_sep", "mega53") != stem_sep]
     ref = rd[0]
     for r in rd + r0:
         if set(r["dropped_refused"]) != set(ref["dropped_refused"]) or r["train"] != ref["train"]:
@@ -3289,15 +3319,16 @@ def cmd_readout(args):
     if args.smoke and not args.out:
         raise SystemExit("--smoke writes into a scratch --out only")
     ctx = Ctx()
-    models, D, report, bad = full_models(root, args.smoke)
-    ready = vsep_ready(ctx, root, args.smoke, "mega53")
+    models, D, report, bad = full_models(root, args.smoke, args.sep)
+    stem_sep = step_sep(report, args.sep, args.smoke)          # R_in: the build's stems (xlance_g), every model
+    ready = vsep_ready(ctx, root, args.smoke, stem_sep)
     if ready is None:
-        raise SystemExit("V_sep is not built")
+        raise SystemExit(f"V_sep is not built (mix, {stem_sep} and htdemucs)")
     mixrows = build_rows(root, "vsep", "mix")
     untagged = {r["i"] for r in ctx.parts["vsep"] if not ctx.tag[r["i"]]}
     unmastered = {i for i, m in mixrows.items() if not m.get("refused") and not m.get("mastered")}
     vdev = vdev_rows()
-    readouts = {"R_in": ([r for r in ready["R_in"] if r["i"] in untagged], "mega53"),
+    readouts = {"R_in": ([r for r in ready["R_in"] if r["i"] in untagged], stem_sep),
                 "R_out": ([r for r in ready["R_out"] if r["i"] in untagged & unmastered], "htdemucs"),
                 "V_dev": (vdev, None)}
     if args.limit:
@@ -3333,6 +3364,7 @@ def cmd_readout(args):
         return PS.seed_avg(sc["per_seed"], set(sc["ensemble"]))
 
     out = {"plan": "docs/direct-model-stems-plan.md step 3", "D": D, "pilot_decision": report["decision"],
+           "stem_sep": stem_sep,
            "smoke": bool(args.smoke), "parity_problems": bad, "left_out_tagged": len(ctx.parts["vsep"]) - len(untagged),
            "levels": {}, "contrasts": {}, "seed_vs_ensemble": {}, "examples": {}}
     for ro, rr in res.items():
@@ -3389,6 +3421,13 @@ def step4_dir(root):
     return root / "step4"
 
 
+def stems_manifest_path(root, sep="mega53"):
+    """Step 4's stored crop-only stems per separator: Mega-53 fast's stems/stems.json (amendment 1),
+    xlance_g's stems/xlance_g/stems.json (amendment 2)."""
+    d = step4_dir(root) / "stems"
+    return d / "stems.json" if sep == "mega53" else d / sep / "stems.json"
+
+
 def step4_half(stem, mix, half, gain_db):
     """One half through step 4's path: both channels times one gain (the crop's mix brought to the
     training median; the stem the same gain), arm B's log-mel on the stored grid, exact half LUFS.
@@ -3429,9 +3468,10 @@ def gate1_fast_ok():
 
 
 def cmd_stems(args):
-    """Step 4's stored stems (msst-venv), made once: the 21 stage F Mega-53 fast crop-only stems
-    (gate 1's, reused when they are exactly that) and the 16 known-answer crops'. Hash-recorded in
-    step4/stems.json; a recorded stem never changes."""
+    """Step 4's stored stems (msst-venv), made once per separator (`--sep`, default xlance_g under
+    amendment 2): the 21 stage F crop-only stems and the 16 known-answer crops'. Mega-53 fast reuses
+    gate 1's stage F stems when they are exactly that setting; xlance_g separates every crop alone
+    (gtr_mss, as the build). Hash-recorded (`stems_manifest_path`); a recorded stem never changes."""
     import numpy as np
 
     from learn import arm_a_mega53 as A
@@ -3439,14 +3479,16 @@ def cmd_stems(args):
     from learn import direct_existing as DE
 
     root = out_root(args)
-    d = step4_dir(root) / "stems"
-    man_p = d / "stems.json"
-    man = _load(man_p) or {"setting": "fast", "chunk_size": FAST_CHUNK, "num_overlap": FAST_OVERLAP, "stems": {}}
+    sep_name = full_stem_sep(args.sep)
+    man_p = stems_manifest_path(root, sep_name)
+    d = man_p.parent
+    man = _load(man_p) or ({"setting": "fast", "chunk_size": FAST_CHUNK, "num_overlap": FAST_OVERLAP, "stems": {}}
+                           if sep_name == "mega53" else {"separator": sep_name, "setting": "gtr_mss", "stems": {}})
     for k, v in man["stems"].items():
         if hashlib_file(v["path"]) != v["sha256"]:
             raise SystemExit(f"{k}: the stored stem changed since it was recorded")
     sep = None
-    reuse = gate1_fast_ok()
+    reuse = sep_name == "mega53" and gate1_fast_ok()
     jobs = [(f"stagef/{s}", s) for s in A.pool_slugs()]
     if not args.no_ka:
         jobs += [(f"ka/{song}-{lab}", (song, lab)) for song, lab in DE.ka_sections()]
@@ -3463,7 +3505,7 @@ def cmd_stems(args):
         else:
             x, _ = ka_crop(*what)
         if sep is None:
-            sep = mega53_separator("fast", args.device)
+            sep = mega53_separator("fast", args.device) if sep_name == "mega53" else stem_separator(sep_name, args.device)
         s = np.asarray(sep(x), np.float32)
         if len(s) != len(x) or not np.isfinite(s).all():
             raise SystemExit(f"{key}: bad stem")
@@ -3473,8 +3515,8 @@ def cmd_stems(args):
         p.with_suffix(".tmp.npy").replace(p)
         man["stems"][key] = {"path": str(p), "sha256": hashlib_file(p), "source": f"made here ({args.device})"}
         _save(man_p, man)
-        print("stem", key, flush=True)
-    print(f"STEMS DONE: {len(man['stems'])} recorded ({sum(k.startswith('ka/') for k in man['stems'])} known-answer)")
+        print("stem", sep_name, key, flush=True)
+    print(f"STEMS DONE {sep_name}: {len(man['stems'])} recorded ({sum(k.startswith('ka/') for k in man['stems'])} known-answer)")
 
 
 def stored_stem(man, key):
@@ -3495,7 +3537,9 @@ def cmd_parity(args):
     to the example's own level, so 0 dB; the stored grid; exact half LUFS); their stem and mix mels
     must match the stored features within one 0.5-dB step on 99% of cells; LUFS under amendment 3
     (post hoc): stem within 0.03 LU, mix within 0.01 LU, or a miss explained by one gating block at
-    the relative gate. `--reevaluate` re-reads the stored record under the rule (zero renders)."""
+    the relative gate. `--reevaluate` re-reads the stored record under the rule (zero renders).
+    `--sep` (default xlance_g, amendment 2): the separator, its stored V_sep features and its record
+    (`parity_path`); Mega-53's record stays parity.json."""
     import numpy as np
 
     from learn import direct_existing as DE
@@ -3504,13 +3548,14 @@ def cmd_parity(args):
     from learn import song_aug as SA
 
     root = out_root(args)
+    sep_name = full_stem_sep(args.sep)
     if args.reevaluate:                                   # zero renders: the stored record under the rule
-        old = _load(step4_dir(root) / "parity.json")
+        old = _load(parity_path(root, sep_name))
         if not old or any("gate_stem" not in o for o in old["rows"] if "refused" not in o):
             raise SystemExit("no stored parity record with per-block gate data: re-run parity")
         v = parity_verdict(old["rows"])
         rec = {**old, **v, "reevaluated": time.strftime("%Y-%m-%d %H:%M:%S"), "time": old["time"]}
-        save_parity(root, rec)
+        save_parity(root, rec, sep_name)
         print(parity_line(v))
         if not v["ok"]:
             raise SystemExit(1)
@@ -3518,7 +3563,7 @@ def cmd_parity(args):
     if args.limit and not args.out:
         raise SystemExit("--limit is for smoke tests into a scratch --out only")
     ctx = Ctx()
-    mixrows, strows = build_rows(root, "vsep", "mix"), build_rows(root, "vsep", "mega53")
+    mixrows, strows = build_rows(root, "vsep", "mix"), build_rows(root, "vsep", sep_name)
     cands = sorted(i for i, m in mixrows.items() if not m.get("refused") and i in strows
                    and not strows[i].get("refused") and not ctx.tag.get(i))
     n = args.limit or PARITY_N
@@ -3533,7 +3578,7 @@ def cmd_parity(args):
     try:
         menu = rr.menu()
         check_recipe(rr)
-        sep = mega53_separator("fast", args.device)
+        sep = mega53_separator("fast", args.device) if sep_name == "mega53" else stem_separator(sep_name, args.device)
         for r in rows:
             ex = example_audio(ctx, primer, menu, r)
             if "refused" in ex:
@@ -3541,7 +3586,7 @@ def cmd_parity(args):
                 continue
             stem = np.asarray(sep(ex["mix"]), np.float64)
             gain = DE.inference_gain_db(ex["mix"], SA.lufs(ex["mix"]))
-            dm, ds = np.load(ex_path(root, r["i"], "mix")), np.load(ex_path(root, r["i"], "mega53"))
+            dm, ds = np.load(ex_path(root, r["i"], "mix")), np.load(ex_path(root, r["i"], sep_name))
             sl, kg = PS.half_slices(), 10 ** (gain / 20)
             for k, h in enumerate("AB"):
                 s8, m8, ls, lm = step4_half(stem, ex["mix"], h, gain)
@@ -3558,8 +3603,8 @@ def cmd_parity(args):
         rr.close()
     v = parity_verdict(out)
     rec = {**v, "smoke": bool(args.limit), "examples": len(rows), "seed": PARITY_SEED, "device": args.device,
-           "renders": primer.renders, "rows": out, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
-    save_parity(root, rec)
+           "separator": sep_name, "renders": primer.renders, "rows": out, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    save_parity(root, rec, sep_name)
     print(parity_line(v))
     ok = v["ok"]
     if not ok:
@@ -3577,9 +3622,10 @@ def answer(nets, x, c):
 
 def cmd_predict(args):
     """Step 4's answers (zero renders): D and D0 on stage F's 126 directions, from the stored crop
-    (hash-checked) and the stored Mega-53 fast stem; D_stem reads the stem only, D0 both. Also: D's
-    and D0's per-seed movement with stems c (Mega-53 stored setting) and b (htdemucs) against c_f;
-    the known-answer knob errors (D, D0, D_existing, S)."""
+    (hash-checked) and the stored crop-only stem of step 3's separator (`step_sep`: xlance_g under
+    amendment 2, as `c_f`); D_stem reads the stem only, D0 both, the same stem. Also: D's and D0's
+    per-seed movement with stems c (Mega-53 stored setting), b (htdemucs) and, under xlance_g, m_f
+    (Mega-53 fast, the fallback) against c_f; the known-answer knob errors (D, D0, D_existing, S)."""
     import numpy as np
 
     from learn import arm_a_mega53 as A
@@ -3592,14 +3638,18 @@ def cmd_predict(args):
     od = step4_dir(root)
     if args.smoke and not args.out:
         raise SystemExit("--smoke writes into a scratch --out only")
-    if not (_load(od / "parity.json") or {}).get("ok") and not args.smoke:
-        raise SystemExit("run `parity` first (step 4's inputs path against stored V_sep features)")
-    if (_load(od / "parity.json") or {}).get("smoke") and not args.smoke:
+    report = _load(root / "pilot" / "pilot-report.json")
+    sep_name = step_sep(report, args.sep, args.smoke)
+    par = _load(parity_path(root, sep_name)) or {}
+    if not par.get("ok") and not args.smoke:
+        raise SystemExit(f"run `parity --sep {sep_name}` first (step 4's inputs path against stored V_sep features)")
+    if par.get("smoke") and not args.smoke:
         raise SystemExit("the parity record is a smoke test's")
-    models, D, report, _ = full_models(root, args.smoke)
-    man = _load(od / "stems" / "stems.json")
+    models, D, report, _ = full_models(root, args.smoke, args.sep)
+    man = _load(stems_manifest_path(root, sep_name))
     if not man:
-        raise SystemExit("run `stems` first")
+        raise SystemExit(f"run `stems --sep {sep_name}` first")
+    man_m = _load(stems_manifest_path(root, "mega53")) if sep_name != "mega53" else None
     target = json.loads(DE.LEVELS.read_text())["summary"]["eval_mix_lufs_median"]
     realised = training_mix_lufs(root)
     print(f"inference target {target:.2f} LUFS (levels median); the stored training mixes: {realised}", flush=True)
@@ -3620,6 +3670,10 @@ def cmd_predict(args):
                             "gain_db": DE.inference_gain_db(mix, target),
                             "hashes": {"context": hashes["context"], "c_f": man["stems"][f"stagef/{slug}"]["sha256"],
                                        "c": hashes["stem"], "b": hb["stem"]}}
+            mf = stored_stem(man_m, f"stagef/{slug}") if man_m else None
+            if mf is not None:                             # the fallback's stem, a descriptive swap (amendment 2)
+                inputs[slug]["stems"]["m_f"] = mf
+                inputs[slug]["hashes"]["m_f"] = man_m["stems"][f"stagef/{slug}"]["sha256"]
         it = inputs[slug]
         _, S = ms[amp][cls]
         cm, swm, km = masks(amp, cls)
@@ -3637,7 +3691,8 @@ def cmd_predict(args):
             preds[m][key] = {"settings": LO.sdict(xs), "diag": diag, "cond_lufs": list(lu), "gain_db": it["gain_db"],
                              "held": held, "floor_share": float(np.mean(step4_half(it["stems"]["c_f"], it["mix"], search,
                                                                                     it["gain_db"])[0] == 0))}
-            mv[m] = {y: [list(movement(outs[s], res[y][4][s], cm, swm, km)) for s in range(len(outs))] for y in ("c", "b")}
+            mv[m] = {y: [list(movement(outs[s], res[y][4][s], cm, swm, km)) for s in range(len(outs))]
+                     for y in it["stems"] if y != "c_f"}
         extra.append({"key": key, "slug": slug, "band": part["band"], "movement_vs_c_f": mv})
     # the known-answer row (zero renders): knob error against the truth
     ka = []
@@ -3669,14 +3724,14 @@ def cmd_predict(args):
             row["errors"]["S"] = sum(errs_s) / 2
         ka.append(row)
     rec = {"plan": "docs/direct-model-stems-plan.md step 4", "D": D, "pilot_decision": report["decision"],
-           "smoke": bool(args.smoke), "target_mix_lufs": target, "training_mix_lufs": realised,
+           "stem_sep": sep_name, "smoke": bool(args.smoke), "target_mix_lufs": target, "training_mix_lufs": realised,
            "models": {m: {r["seed"]: r["model_sha256"] for r in models[m][2]} for m in STEP4_ARMS},
            "inputs": {s: v["hashes"] for s, v in inputs.items()}, "predictions": preds,
            "stem_swap": extra, "known_answer": ka, "unseen_by_part_c": _load(DE_OUT / "predictions.json")["unseen_by_part_c"],
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     _save(od / "predictions.json", rec)
     sp = [p["diag"]["seed_spread"] for p in preds["D"].values()]
-    print(f"PREDICT: {len(preds['D'])} directions (D is {D}); seed spread median {float(np.median(sp)):.4f}; "
+    print(f"PREDICT: {len(preds['D'])} directions (D is {D}, {sep_name} stems); seed spread median {float(np.median(sp)):.4f}; "
           f"known-answer sections {len(ka)}")
 
 
@@ -3739,11 +3794,12 @@ def cmd_render(args):
     pred = _load(od / "predictions.json")
     if not pred or pred.get("smoke") or any(len(pred["predictions"][m]) != A.N_DIRS["F"] for m in STEP4_ARMS):
         raise SystemExit("run `predict` first (a real one)")
-    models, _, _, _ = full_models(root)
+    sep_name = pred.get("stem_sep", "mega53")
+    models, _, _, _ = full_models(root, sep=sep_name)
     for m in STEP4_ARMS:
         if {str(r["seed"]): r["model_sha256"] for r in models[m][2]} != {str(k): v for k, v in pred["models"][m].items()}:
             raise SystemExit(f"{m}'s models changed since predict")
-    man = _load(od / "stems" / "stems.json")
+    man = _load(stems_manifest_path(root, sep_name))
     all_groups = A.groups(A.stage_dirs("F"))
     rep_groups = set(map(tuple, step4_repeat_groups(all_groups)))
     mine = DE.shard(all_groups, args.shard)
@@ -3831,6 +3887,33 @@ def step4_units(od):
     return units, refused
 
 
+XL_FAILURE_PARTS = ("telefunken-She's_Gone-GTR", "cambridge-colour-me-red-elecgtr02",
+                    "cambridge-colour-me-red-elecgtr03")   # X-LANCE's stage F failures (xlance-screen-results.md)
+
+
+def failure_part_rows(units, stem_swap, slugs=XL_FAILURE_PARTS, arms=("D", "D0"), base="S"):
+    """Amendment 2: per listed part, each arm's mean log(d_arm / d_S) over its scored directions, and
+    the seed-mean knob movement of D and D0 when the xlance_g stem is swapped for the others
+    (m_f: Mega-53 fast). Listed beside the contrasts, never promoted. -> {slug: row}."""
+    out = {}
+    for slug in slugs:
+        us = [u for u in units if u["slug"] == slug]
+        row = {"directions": len(us)}
+        for a in arms:
+            v = [math.log(u["d"][a] / u["d"][base]) for u in us
+                 if u["d"].get(a) is not None and u["d"].get(base) not in (None, 0)]
+            row[f"{a}-{base}"] = sum(v) / len(v) if v else None
+            row[f"{a} scored"] = len(v)
+        mv = {}
+        for e in (e for e in stem_swap if e["slug"] == slug):
+            for m, ys in e["movement_vs_c_f"].items():
+                for y, per_seed in ys.items():
+                    mv.setdefault(f"{m} {y} vs c_f", []).append(sum(x[0] for x in per_seed) / len(per_seed))
+        row["movement"] = {k: sum(v) / len(v) for k, v in mv.items()}
+        out[slug] = row
+    return out
+
+
 def cmd_report(args):
     """Step 4's report: P = D - S (primary), D - D0 (the fix's own reading), and beside them D - H,
     D - M, D - D_existing, D - XO, D - YT, D0 - S; rows all, no high bleed (direction rule), F-song,
@@ -3867,11 +3950,14 @@ def cmd_report(args):
     # zero renders: D's and D0's movement with stems c and b against c_f, per seed, band-weighted
     sw = {}
     for m in STEP4_ARMS:
-        for y in ("c", "b"):
-            n_s = len(pred["stem_swap"][0]["movement_vs_c_f"][m][y]) if pred["stem_swap"] else 0
+        for y in (pred["stem_swap"][0]["movement_vs_c_f"][m] if pred["stem_swap"] else ()):
+            n_s = len(pred["stem_swap"][0]["movement_vs_c_f"][m][y])
             sw[f"{m} {y} vs c_f"] = [band_weighted([(e["band"], e["slug"], e["movement_vs_c_f"][m][y][s][0])
                                                     for e in pred["stem_swap"]])[0] for s in range(n_s)]
     rep["stem_swap_movement_per_seed"] = sw
+    rep["stem_sep"] = pred.get("stem_sep", "mega53")
+    if rep["stem_sep"] == "xlance_g":                      # amendment 2: the known product risk, listed
+        rep["xlance_failure_parts"] = failure_part_rows(units, pred.get("stem_swap") or [])
     ka = pred.get("known_answer") or []
     rep["known_answer"] = {}
     for m in ("D", "D0", "D_existing", "S"):
@@ -3898,6 +3984,10 @@ def cmd_report(args):
             f"{r}: {f((c['rows'].get(r) or {}).get('all'))}" for r in STEP4_ROWS))
     print("  stem swap", {k: [round(x, 4) for x in v] for k, v in sw.items()})
     print("  known answer", {m: v["band_weighted"] for m, v in rep["known_answer"].items()})
+    for slug, r in (rep.get("xlance_failure_parts") or {}).items():
+        print(f"  X-LANCE failure part {slug}: " + ", ".join(
+            f"{k} {'n/a' if v is None else f'{v:+.3f}'}" for k, v in r.items() if k.endswith("-S"))
+            + f"; movement {({k: round(v, 4) for k, v in r['movement'].items()})}")
     print(f"STEP4 {rep['reading'].upper()}: D - S {f(prim)}")
 
 
@@ -4078,13 +4168,103 @@ def cmd_constant_check(args):
     print("CONSTANT-CHECK (descriptive)")
 
 
+def xlance_transfer_table(per_x, per_m, const, band_of, keep):
+    """Amendment 2's pilot transfer reading (descriptive): per arm, runs' per-example E on R_in with
+    xlance_g stems (per_x[arm] = [per seed]) and with Mega-53 stems (per_m, the same runs' stored
+    R_in), on the examples both have: xlance_g - Mega-53 and each against the constant, seed-averaged
+    and per seed, paired, band-clustered t. -> {key: (mean, lo, hi, bands) or None}."""
+    from learn import pretrain_set as PS
+
+    out = {}
+    for arm in per_x:
+        xs, ms = per_x[arm], per_m.get(arm) or []
+        if not xs or len(xs) != len(ms):
+            out[f"{arm} xlance_g-mega53"] = None
+            continue
+        k = set(keep) & set.intersection(*(set(r) for r in xs + ms))
+        sx, sm = PS.seed_avg(xs, k), PS.seed_avg(ms, k)
+        out[f"{arm} xlance_g-mega53"] = paired(sx, sm, band_of, k)
+        out[f"{arm} xlance_g-constant"] = paired(sx, const, band_of, k)
+        out[f"{arm} mega53-constant"] = paired(sm, const, band_of, k)
+        for n, (x, m) in enumerate(zip(xs, ms)):
+            out[f"{arm} seed {n} xlance_g-mega53"] = paired(x, m, band_of, k)
+    return out
+
+
+def cmd_pilot_xlance_readout(args):
+    """Amendment 2, descriptive, zero renders, decides nothing: the stored pilot runs (4 arms x 2
+    seeds, trained on Mega-53 stems) read V_sep's R_in with xlance_g stems against the same runs'
+    stored Mega-53 R_in, paired per example, band-clustered t; and E - constant (the pilot's
+    constant). Bannockburn and every MUSDB18-tagged section left out, as pilot-report. CPU by
+    default (the MPS separates); DS_DEVICE=mps to use it."""
+    import torch
+
+    from learn import pretrain_set as PS
+
+    root = out_root(args)
+    if args.smoke and not args.out:
+        raise SystemExit("--smoke writes into a scratch --out only")
+    ctx = Ctx()
+    ready = vsep_ready(ctx, root, args.smoke, STEP_SEP)
+    if ready is None:
+        raise SystemExit(f"V_sep's {STEP_SEP} stems are not built")
+    const, band_of, keep = pilot_constant(ctx, root)
+    built = {str(r["i"]) for r in ready["R_in"]}
+    k_in = keep["R_in"] & built
+    rows = [r for r in ready["R_in"] if str(r["i"]) in k_in]
+    if not rows:
+        raise SystemExit("no V_sep example to read")
+    dev = torch.device("mps" if os.environ.get("DS_DEVICE") == "mps" and torch.backends.mps.is_available() else "cpu")
+    torch.set_num_threads(2)
+    per_x, per_m, missing, models = {}, {}, [], {}
+    for arm in ARMS:
+        val = None
+        for seed in TRAIN_SEEDS:
+            rp = run_path(root, arm, "5000", seed)
+            r = _load(rp)
+            if not r or not (r.get("readouts") or {}).get("R_in"):
+                missing.append(f"{arm}-{seed}")
+                continue
+            mp = rp.with_suffix(".pt")
+            if hashlib_file(mp) != r["model_sha256"]:
+                raise SystemExit(f"{mp.name}: hash differs from its run record")
+            net = PS.build_net()
+            net.load_state_dict(torch.load(mp, map_location="cpu"))
+            net = net.to(dev).eval()
+            if val is None:
+                val = readout_tensors(root, rows, STEP_SEP, arm)
+            per, _, _ = PS.evaluate(net, val, dev)
+            per_x.setdefault(arm, []).append(per)
+            per_m.setdefault(arm, []).append(r["readouts"]["R_in"]["per_example"])
+            models[f"{arm}-{seed}"] = r["model_sha256"]
+            print(f"{arm} seed {seed}: {len(per)} examples read with {STEP_SEP} stems", flush=True)
+    if missing and not args.smoke:
+        raise SystemExit(f"pilot runs missing or without stored R_in: {missing}")
+    table = xlance_transfer_table(per_x, per_m, const, band_of, k_in)
+    out = {"plan": "docs/direct-model-stems-plan.md amendment 2 (descriptive; decides nothing)", "descriptive": True,
+           "smoke": bool(args.smoke), "examples": len(rows), "stem_sep": STEP_SEP, "device": str(dev),
+           "models": models, "missing": missing, "contrasts": table, "per_example_xlance_g": per_x,
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    _save(root / "pilot" / "xlance-readout.json", out)
+
+    def f(v):
+        return "n/a" if v is None else f"{v[0]:+.4f} [{v[1]:+.4f}, {v[2]:+.4f}] ({v[3]} bands)"
+
+    print(f"[R_in, {len(rows)} examples]")
+    for k, v in table.items():
+        print(f"  {k:36s} {f(v)}")
+    print("PILOT-XLANCE-READOUT (descriptive)")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=("separate", "move", "reliance", "audit-mix", "sepcheck", "build", "train",
                                     "pilot-report", "time-mps", "readout", "stems", "parity", "predict", "render",
-                                    "report", "constant-check", "curve"))
+                                    "report", "constant-check", "curve", "pilot-xlance-readout"))
     ap.add_argument("--sep", choices=("mega53", "htdemucs", "xlance_g"),
-                    help="build --stage stem: the separator (default mega53); train: the stem arms' stems (default mega53)")
+                    help="build --stage stem: the separator (default: xlance_g for the rest, mega53 for the pilot and "
+                         "V_sep); train --n 5000|2500|1250: the stem arms' stems (default mega53); train --n full, "
+                         "readout, stems, parity, predict: step 3/4's stems (default xlance_g, amendment 2)")
     ap.add_argument("--part", choices=("pilot", "vsep", "rest"))
     ap.add_argument("--stage", choices=("mix", "stem"))
     ap.add_argument("--shard", type=parse_shard, default=(0, 1), help="mix stage: whole sections, balanced (shard_sections)")
@@ -4119,7 +4299,8 @@ def main(argv=None):
      "sepcheck": cmd_sepcheck, "build": cmd_build, "train": cmd_train, "pilot-report": cmd_pilot_report,
      "time-mps": cmd_time_mps, "readout": cmd_readout, "stems": cmd_stems, "parity": cmd_parity,
      "predict": cmd_predict, "render": cmd_render, "report": cmd_report,
-     "constant-check": cmd_constant_check, "curve": cmd_curve}[a.cmd](a)
+     "constant-check": cmd_constant_check, "curve": cmd_curve,
+     "pilot-xlance-readout": cmd_pilot_xlance_readout}[a.cmd](a)
 
 
 if __name__ == "__main__":

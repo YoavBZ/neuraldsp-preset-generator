@@ -16,6 +16,8 @@ need the user's approval before they start.*
   review findings are folded in here (listed at the end).
 
 **Status:** declared; one independent review (go with required changes, all applied; see the end).
+Amendments 1–4 are in force. Amendment 2 (2026-10-21) switched the full build, step 3 and step 4 to
+X-LANCE gtr_mss stems.
 
 ## The question, and why it is not settled yet
 
@@ -526,7 +528,7 @@ Recorded after the code review and 1c, before the pilot build.
 Recorded with the code, before any step 3 or 4 compute; for the code review.
 - **D's arm** follows the pilot-report: PILOT STEM trains `Dstem` (or `Dstem-noaug` if rule 4
   dropped the augmentations), PILOT MIX trains `Dmix`. Runs go to `full/runs/`. Step 3 trains on
-  Mega-53 stems; `--sep xlance_g` is refused while amendment 2 is a draft.
+  Mega-53 stems; `--sep xlance_g` was refused while amendment 2 was a draft (in force since 2026-10-21: step 3 and step 4 now default to xlance_g).
 - **Refusals:** every step 3 run drops the same set, the refusals of D's build stages (mix, and
   for D_stem the stem stage), from the pilot and the rest. The readout refuses runs that differ.
 - **The early stop** reads D's seed-averaged E on R_in (the pilot's convention) minus the constant
@@ -588,10 +590,12 @@ Optional suggestions taken: the audit examples' labelled cost feeds gate 1; rend
 separation; three a′ draws; both a′ − b and a − b reported; z's LUFS declared; the merged guitar
 from the training pool only; the mix-diversity difference stated.
 
-## Amendment 2 (DRAFT, 2026-10-21): X-LANCE gtr_mss as the build's separator, if its MPS check passes
+## Amendment 2 (2026-10-21, in force): X-LANCE gtr_mss as the build's separator
 
-**Status: a draft for the user (morning decision); not reviewed and not in force.** Until it is,
-the pilot, the rest build and every readout stay on Mega-53 fast, as amendment 1 says.
+**Status: in force.** The user chose it on 2026-10-21, after the MPS check passed (0.988×,
+`time-mps`). The draft below is kept as written. [What is now in force](#amendment-2-in-force-2026-10-21)
+follows it and overrides it where they differ. The pilot (step 2) and amendment 4 stay on
+Mega-53 fast, as run.
 
 **Why.** The [X-LANCE screen](xlance-screen-results.md) (on its own branch, `ml/xlance-screen`)
 compared `gtr_mss` alone with Mega-53 fast on the 164 audit mixes, under its amendment 1:
@@ -644,6 +648,130 @@ each re-renders its guitar first, since no audio is kept.
 - **Not yet done:** an MPS run of gtr_mss, after the pilot frees the GPU. Step 3's `--n full`
   training is implemented, but on Mega-53 stems only: it refuses `--sep xlance_g` while this
   amendment is a draft (`AMENDMENT2_IN_FORCE`).
+
+### Amendment 2 in force (2026-10-21)
+
+Declared before any xlance_g build stem, step 3 run or step 4 input. Zero renders so far.
+
+**The decision.**
+- **The user** (2026-10-21) switched the full build to X-LANCE gtr_mss alone (`xlance_g`).
+- **The MPS check passed:** gtr_mss took 4.27 s a clip against Mega-53 fast's 4.32 s on the same
+  10 audit clips (**0.988×**, limit 1.5×). Both matched their stored CPU stems to at least 99 dB
+  (`xlance-time/time-mps.json`).
+
+**Which stems are xlance_g.**
+- **The build:** gtr_mss on each example's exact 10-s mix, as in the screen. Each example is
+  re-rendered and must reproduce its stored mix first (no audio is kept):
+  - **V_sep:** 1,720;
+  - **the pilot:** 5,995 (6,000 less the mix stage's 5 refusals; 7,720 with V_sep);
+  - **the rest:** 15,311 less its mix refusals (2 so far).
+
+  The Mega-53 stems stay untouched beside them.
+- **Step 3:**
+  - **The full D_stem** trains on xlance_g stems throughout, pilot and rest alike.
+  - **D0 is unchanged,** with part C's composition. Checked in the code: `D0Data` →
+    `pretrain_set.CurveData` reads part C's stored guitar mels and the session backings, and no
+    separated stem. Every step 3 run drops the same refusals, so D0's runs drop the xlance_g stem
+    stage's refusals too. Its runs therefore carry the separator's name, and it trains after the
+    stems are built (the MPS is busy separating until then anyway).
+  - **R_in reads xlance_g stems** for D, D0 and D_existing. **R_out stays htdemucs**
+    (unmastered V_sep).
+- **Step 4:**
+  - **Stems:** stage F's 21 crops and the 16 known-answer crops get xlance_g crop-only stems
+    (gtr_mss on the 10-s crop alone, as the build separates each 10-s mix). They are made once on
+    the MPS, 37 separations, and hashed in `step4/stems/xlance_g/stems.json`.
+  - **What reads them:** D_stem reads the stem only. **D0 gets the same xlance_g stem** with the
+    mix, so the two arms' inputs stay matched, as amendment 1 had them on Mega-53. D0 trained on
+    leak stems, so either separator lies outside its training.
+  - **D_existing** still reads B1's stored htdemucs stems.
+  - **The parity test is re-run with xlance_g** (`parity --sep xlance_g`): the same 20 V_sep
+    examples (seed 20261082), about 40 unjudged renders and 20 separations, under amendment 3's
+    rule. Its record is `step4/parity-xlance_g.json`, and Mega-53's `parity.json` stays.
+  - **A zero-render stem swap, descriptive:** D's and D0's movement with Mega-53 fast (`m_f`, the
+    fallback) against xlance_g (`c_f`), beside c and b. This is the transfer measurement that
+    "Data hygiene" asks for when the separator changes.
+- **The STEM/MIX decision** is the pilot's, read on Mega-53 stems. The pilot is not re-run.
+  - **Caveat:** the full D_stem trains on a separator the pilot did not test.
+  - Amendment 4's projection was also read on Mega-53 stems, so step 3's MODEL STOP risk stands
+    unchanged. Step 3 reads it on xlance_g R_in.
+- **A pilot transfer reading (descriptive, zero renders, decides nothing):**
+  `pilot-xlance-readout`.
+  - **When:** once V_sep's xlance_g stems exist, about 1.5 h into the stem stage.
+  - **What it reads:** the 8 stored pilot runs (4 arms × 2 seeds, trained on Mega-53) score
+    V_sep's R_in with xlance_g stems.
+  - **What it compares:** against the same runs' stored Mega-53 R_in, on the examples both
+    have: xlance_g − Mega-53 per arm, seed-averaged and per seed. Paired per example, 90%
+    band-clustered t over 4 bands, 3 df, with Bannockburn and the MUSDB18 tags left out as
+    pilot-report does.
+  - **Beside it:** E − constant with each stem, using the pilot's constant.
+  - **How it runs:** on the CPU, beside the separation. Output: `pilot/xlance-readout.json`.
+  - **Why:** it shows how far a model trained on Mega-53 moves when handed xlance_g stems. That
+    is the separator-change transfer that "Data hygiene" asks to measure, not assume. No rule
+    reads it.
+- **Mega-53 stays the fallback** in the build and the product. `--sep mega53` selects it for the
+  rest, step 3 and step 4. Switching back needs the user, and the rest's Mega-53 stems would
+  then still have to be built (13–17 h).
+
+**Workers and throughput.**
+- **One MPS worker plus one CPU worker at 4 threads,** meeting in the middle (`--order asc` and
+  `desc`), as the pilot's Mega-53 stage ran. They use 2 of the 3 render slots.
+- **The MPS worker:** about 4.3–4.7 s a clip (4.27 s idle; the pilot's Mega-53 MPS worker ran at
+  4.7 s beside its renders).
+- **The CPU worker:** gtr_mss costs 27 CPU s a clip at 2 threads, 1.01× Mega-53 fast. At
+  4 threads it is not measured. The estimate is 7.5–13.5 s a clip: the pilot's Mega-53 CPU worker
+  ran at 7.5 s, and 13.5 s assumes no gain past 2 threads.
+- **Why the CPU worker is kept:** it adds 35–60% to the MPS worker's rate, about 0.29–0.34 clips
+  a second together, and saves about 6–11 h. Without it the separation would take about 27.5–30 h.
+- **Memory:** the swap and free-memory guards stop either worker cleanly.
+
+**Order.** The two workers start when the rest's mix stage ends (its three processes exit and
+free the render slots), then run V_sep → the pilot → the rest.
+- V_sep goes first, so R_in exists early.
+- The rest goes last, so every one of its mix rows exists when its stem stage lists its work. The
+  stem stage only takes examples that have a mix row.
+
+**Time and render budget (replaces step 3's separation row; amendment 2's cost).**
+
+| Stage | Separations (gtr_mss) | Unjudged renders | Wall-clock |
+|---|---|---|---|
+| V_sep, xlance_g stems | 1,720 | about 1,900 | 1.4–1.7 h |
+| Pilot, xlance_g stems | 5,995 | about 6,850 | 4.9–5.8 h |
+| Rest, xlance_g stems | about 15,309 | about 17,500 | 12.5–14.8 h |
+| Step 3: D_stem and D0, 3 seeds each | 0 | 0 | 5–7.4 GPU h, after the stems |
+| Step 4: stems, parity | 37 + 20 | about 40 | about 30 min |
+| Step 4: the decision test | 0 | 321 (cap 400) | about 2 h |
+| **Total from now** | **about 23,080** | **about 26.3k unjudged, 321 judged** | **about 1.1–1.4 days** |
+
+- **The cost of the switch:** the separation now takes about 19–22 h, against the 13–17 h the plan
+  had left for the rest on Mega-53. The difference is the re-separation of the pilot and V_sep.
+- **Renders:** one per example, plus one priming render per (section, amp) group per worker. They
+  are training-style and never judged.
+
+**Disk.** 121 GB was free on 2026-10-21, far above the full build's 34 GB start and its 31 GB
+guard. The xlance_g stem features take about 1.8 GB (23k × 76 KB).
+
+**The known product risk, listed in step 4's report.** On stage F, both X-LANCE variants fail
+badly on three parts:
+- **She's Gone** (single guitar): gtr_mss gets 0.36 dB SNR against Mega-53's 5.21. It lets the
+  backing through.
+- **Colour Me Red ElecGtr02 and ElecGtr03:** mel LSD is 13.9 against 5.5, and 12.7 against 6.7.
+
+`report` lists these parts (`xlance_failure_parts`): D − S and D0 − S per part, and the m_f
+stem-swap movement. They stay in every row, are never promoted, and decide nothing. They are the
+reason Mega-53 stays the product's fallback.
+
+**Code** (`learn/direct_stems.py`):
+- `AMENDMENT2_IN_FORCE = True`, with `STEP_SEP = "xlance_g"` and `PILOT_SEP = "mega53"`.
+- **The build:** `build --stage stem` defaults to xlance_g for the rest, and to Mega-53 for the
+  pilot and V_sep, whose xlance_g stems need `--sep xlance_g`.
+- **Step 3:** `train --n full`, `readout`, `stems`, `parity` and `predict` default to xlance_g.
+  `--sep mega53` is the fallback. The step 3 runs (D0 too) are named `<arm>-full-<seed>-xlance_g`,
+  and `full_models` refuses runs from another separator.
+- **Unchanged:** the pilot's `train --n 5000|2500|1250`, `pilot-report`, `curve` and
+  `constant-check`, all on Mega-53.
+- **The CPU worker:** the stem stage runs gtr_mss at 4 threads on the CPU.
+- **`pilot-xlance-readout`:** the descriptive transfer reading above (`xlance_transfer_table`,
+  tested).
 
 ## Amendment 3 (2026-10-21): parity LUFS gating
 
