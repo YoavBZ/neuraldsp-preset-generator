@@ -73,7 +73,9 @@ space is S's.
   - an R_in example lacks a truth, constant or D row;
   - D's answers were not read under amendment 5, or come from other models than `readout.json`;
   - `readout.json` changed after `gate-predict`;
-  - the constant differs from the stored one.
+  - the constant differs from the stored one, or `readout.json` stores no constant;
+  - the gate's R_in differs from the examples `gate-predict` answered, or from the count step 3's
+    readout read (`gate-predict` refuses on the latter too).
 
 **What no longer decides.** E is descriptive: amendment 5, as the user approved it on 2026-10-22,
 reports it as the "E check". The gate is step 3's stop/go, and step 4's renders run only after
@@ -107,7 +109,9 @@ At about 1.6 s each, the judge included (smoke), each pass takes about 27 min on
 - Whole sections per shard (`shard_sections`, 469 examples a shard), in (section, amp) order.
 - At most 3 render processes machine-wide: `local_objective.RENDERS` now counts
   `direct_sound_gate gate-render`.
-- Disk guard 31 GB, plus the memory and swap guards.
+- Disk guard 31 GB, plus the memory and swap guards (swap measured from each process's start).
+- Each process waits for a render slot and for free memory (4 GB floor + 1.5 GB) **before** it
+  loads part C's rows (about 1.4 GB). Start the shards about 60 s apart.
 
 **Resumable.** Rows go to `gate/rows/<arm>-<k>of3.jsonl`, one per (example, arm). A rerun skips
 what is done, and one process holds each shard (a lock).
@@ -122,11 +126,17 @@ what is done, and one process holds each shard (a lock).
 ```
 MAIN=/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python
 TORCH_PY=~/ndsp-presets/tools/demucs-venv/bin/python
-# after the xlance_g build completes (during step 3's training): k = 0, 1, 2
-OMP_NUM_THREADS=1 $MAIN -m learn.direct_sound_gate gate-render --what truth,constant --shard k/3
+# after the xlance_g build completes (during step 3's training); shards started 60 s apart
+for k in 0 1 2; do
+  OMP_NUM_THREADS=1 $MAIN -m learn.direct_sound_gate gate-render --what truth,constant --shard $k/3 &
+  sleep 60
+done; wait
 # after step 3's `readout` (amendment 5's pull): zero renders, CPU, about 10 min
 $TORCH_PY -m learn.direct_sound_gate gate-predict
-OMP_NUM_THREADS=1 $MAIN -m learn.direct_sound_gate gate-render --what D,D0 --shard k/3
+for k in 0 1 2; do
+  OMP_NUM_THREADS=1 $MAIN -m learn.direct_sound_gate gate-render --what D,D0 --shard $k/3 &
+  sleep 60
+done; wait
 $MAIN -m learn.direct_sound_gate gate-report      # GATE OK | GATE STOP | GATE INCOMPLETE
 ```
 
@@ -154,8 +164,10 @@ $MAIN -m learn.direct_sound_gate gate-report      # GATE OK | GATE STOP | GATE I
 - **The pull's weights come from the in-band early-stopping set** (amendment 5). R_in plays no
   part in any fit, so the gate stays out of sample.
 
-## Questions for the user before the fold
+## Declared choices (this amendment's, not amendment 5's)
 
-1. **The constant's switches and mics** (majority and mode). These are this amendment's choice;
-   amendment 5 defines only the continuous constant.
-2. **The ±ln 10 clip.**
+- **The constant's switches and mics.** Amendment 5 defines only the continuous constant. This
+  gate's constant sets each switch by the training labels' majority (on if more than half set it on)
+  and each mic by the audible labels' mode (the lowest index on a tie).
+- **The clip.** Each half's log(d_D / d_const) is clipped to [−ln 10, +ln 10] before the halves are
+  averaged. This is declared before any reading, and the clipped halves are counted in the report.

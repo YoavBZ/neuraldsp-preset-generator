@@ -477,6 +477,30 @@ class ShardLock:
 
 # --- the set (needs part C's rows) --------------------------------------------------------------------------
 
+MEM_NEED_GB = 1.5                              # one render process's peak (smoke: 1.5 GB), above the 4 GB floor
+
+
+def memory_ok(avail, need=MEM_NEED_GB, floor=DS.MEM_FREE_MIN_GB):
+    """A render process may load: free memory covers its peak and still leaves the build's 4 GB floor."""
+    return avail is None or avail >= floor + need
+
+
+def wait_memory():
+    while not memory_ok(DS.avail_gb()):
+        print(f"waiting for memory: {DS.avail_gb():.1f} GB free, need {DS.MEM_FREE_MIN_GB + MEM_NEED_GB:.1f}", flush=True)
+        time.sleep(60)
+
+
+def r_in_problems(ids, answer_ids, readout_n):
+    """The gate's R_in against gate-predict's ids and the count step 3's readout read. -> [problems]."""
+    bad = []
+    if answer_ids is None or sorted(answer_ids) != sorted(ids):
+        bad.append("the gate's R_in differs from the examples gate-predict answered")
+    if readout_n != len(ids):
+        bad.append(f"the gate's R_in has {len(ids)} examples, step 3's readout read {readout_n}")
+    return bad
+
+
 def load_set(broot, stem_sep, quiet=True):
     """(ctx, R_in rows, pending ids) from the build's rows."""
     ctx = DS.Ctx(quiet=quiet)
@@ -535,6 +559,7 @@ def cmd_predict(args):
     rows = rows[:args.limit or None]
     cell_of = {r["i"]: (r["amp"], r["base"]) for r in rows}
     rec = {"amendment": AMENDMENT, "stem_sep": stem_sep, "smoke": bool(args.smoke), "examples": len(rows),
+           "r_in_ids": [r["i"] for r in rows],
            "time": time.strftime("%Y-%m-%d %H:%M:%S"), "answers": {}}
     if args.label_answers:
         rec["readout_rule"] = "label (smoke positive control)"
@@ -558,6 +583,8 @@ def cmd_predict(args):
     stem_sep = DS.step_sep(report, args.sep, args.smoke)
     ro = DS._load(broot / "full" / "readout.json")
     pulls, cmed = DS.step4_pulls(ro, models, args.smoke)
+    if not args.smoke and (ro.get("examples") or {}).get("R_in") != len(rows):
+        raise SystemExit(f"the gate's R_in has {len(rows)} examples, step 3's readout read {(ro.get('examples') or {}).get('R_in')}")
     rec.update({"readout_rule": api.READOUT_RULE, "D": D, "stem_sep": stem_sep, "parity_problems": bad,
                 "readout_sha256": DS.hashlib_file(broot / "full" / "readout.json"),
                 "models": {m: {str(r["seed"]): r["model_sha256"] for r in models[m][2]} for m in ("D", "D0")}})
@@ -615,6 +642,8 @@ def cmd_render(args):
         raise SystemExit(f"free disk {free:.1f} GB, below the {DISK_GUARD_GB:.0f} GB guard")
     gd.mkdir(parents=True, exist_ok=True)
     lock = ShardLock(gd, k, n)                                      # noqa: F841 (held until exit)
+    DS.wait_render_slot()                                           # before part C's rows (about 1.4 GB) load
+    wait_memory()
     ctx, rows, pending = load_set(broot, stem_sep)
     if pending and not args.smoke:
         raise SystemExit(f"{len(pending)} R_in examples are not built ({stem_sep})")
@@ -650,7 +679,7 @@ def cmd_render(args):
     if not todo:
         print(f"GATE-RENDER DONE {','.join(whats)} {k}/{n}", flush=True)
         return
-    DS.wait_render_slot()
+    swap0 = DS.swap_mb()
     rr = K.Renderer()
     primer = DS.Primer(rr)
     fhs, checked = {}, set()
@@ -664,7 +693,7 @@ def cmd_render(args):
                 PS.read_rows(rp, repair=True)
             fhs[w] = open(rp, "a")
         for m, (r, ws) in enumerate(todo):
-            g = DS._guards("gate", DISK_GUARD_GB, None)
+            g = DS._guards("gate", DISK_GUARD_GB, swap0)
             if g:
                 print(g[1], flush=True)
                 raise SystemExit(g[0])
@@ -830,11 +859,15 @@ def cmd_report(args):
         cj = DS._load(gd / "constant.json")
         if not cj or cj.get("smoke"):
             problems.append("no constant.json (or a smoke test's)")
-        elif ro.get("constant"):
+        elif not ro.get("constant"):
+            problems.append("step 3's readout.json stores no constant to check the gate's against")
+        else:
             gm = {c: v["cont"] for c, v in const_from_json(cj["constant"]).items()}
             sm = DS.medians_from_json(ro["constant"]) if hasattr(DS, "medians_from_json") else \
                 {tuple(k.split("|")): _arr(v) for k, v in ro["constant"].items()}
             problems += [f"constant {p}" for p in same_constant(gm, sm, {(r["amp"], r["base"]) for r in rows})]
+    if not args.smoke:
+        problems += r_in_problems(ids, answers.get("r_in_ids"), (ro.get("examples") or {}).get("R_in"))
     # every rendered answer is the current one (answers.json unchanged since the render)
     cur = DS.hashlib_file(gd / "answers.json") if (gd / "answers.json").exists() else None
     for w in ("D", "D0"):

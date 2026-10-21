@@ -340,3 +340,33 @@ def test_step3_verdict_passes_only_a_real_current_gate_ok(tmp_path):
     rep()
     ro.write_text('{"readout_rule": "amendment 5", "changed": 1}')
     assert G.step3_verdict(tmp_path)[0] is False
+
+
+def test_direct_stems_step3_gate_reads_the_sound_gate(tmp_path):
+    if not hasattr(DS, "step3_gate"):
+        pytest.skip("direct_stems has no step3_gate (amendment 5 not merged)")
+    (tmp_path / "gate").mkdir()
+    (tmp_path / "full").mkdir()
+    ro = tmp_path / "full" / "readout.json"
+    ro.write_text('{"readout_rule": "amendment 5"}')
+    for decision in ("OK", "STOP", None):
+        if decision:
+            DS._save(tmp_path / "gate" / "report.json",
+                     {"decision": decision, "smoke": False, "readout_sha256": DS.hashlib_file(ro)})
+        got, want = DS.step3_gate(tmp_path), G.step3_verdict(tmp_path)
+        if got != want and "not wired" in str(got[1]):
+            pytest.xfail("direct_stems.step3_gate still refuses unconditionally (wired at merge)")
+        assert got == want
+
+
+def test_r_in_problems_flag_a_different_set():
+    assert G.r_in_problems([1, 2, 3], [3, 2, 1], 3) == []
+    assert len(G.r_in_problems([1, 2, 3], [1, 2], 3)) == 1
+    assert len(G.r_in_problems([1, 2, 3], None, 3)) == 1
+    assert len(G.r_in_problems([1, 2, 3], [1, 2, 3], 4)) == 1
+    assert len(G.r_in_problems([1, 2, 3], [1, 2, 3], None)) == 1
+
+
+def test_memory_ok_keeps_the_floor_and_a_process_peak():
+    assert G.memory_ok(None) and G.memory_ok(DS.MEM_FREE_MIN_GB + G.MEM_NEED_GB)
+    assert not G.memory_ok(DS.MEM_FREE_MIN_GB + G.MEM_NEED_GB - 0.1)
