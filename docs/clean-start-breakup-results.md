@@ -67,16 +67,19 @@ blind):
 | AC20, volume 10 | -20.5 dB | clean |
 | AC20 + compressor | -17.3 dB | tiny cracks, almost clean |
 
-So the breakup is the presets' settings, not the amps' headroom: both amps play this riff
-clean at a lower volume, about where the PR12 template sits (-19.0 dB).
+So the breakup comes from the presets' volume: turned down, both play this riff clean, about
+where the PR12 template sits (-19.0 dB). That says nothing about the amps' headroom (any amp
+is clean turned down far enough; SW50R still broke up at 25), and knob positions do not
+compare across amps. The compressor confound above is partly answered: SW50R with a
+compressor and no volume change also played clean.
 
 ## What changes
 
 `generate` step 4: on a part documented as fully clean, the SW50R start gets `sw50rVolume`
-15 and the AC20 start `ac20Volume` 10, and the report says so. Volume rather than a
-compressor: it is the amp's own control, both reached clean, and the compressed AC20 still
-cracked a little. The skill's guidance that SW50R has the most headroom stands, and the
-amp is still chosen from research. Parts not documented as fully clean keep the presets
+15 and the AC20 start `ac20Volume` 10, and the report says so (it plays quieter; `outputGain`
+makes up the level). Volume rather than a compressor: it is the amp's own control, both
+reached clean, and the compressed AC20 still cracked a little. The skill's headroom guidance
+(SW50R has the most) was not tested here, and the amp is still chosen from research. Parts not documented as fully clean keep the presets
 as they are.
 
 The baselines themselves stay: they were chosen as closest to clean development recordings
@@ -98,13 +101,15 @@ through PR12. What it is not:
 
 - **The riff:** none in the dry riff (four variants: as shipped, without denoising,
   downstrokes only, one untouched EGFxSet note).
-- **Crossover distortion:** a 196 Hz sine fading from the riff's peak to -60 dB through the
-  PR12 template: THD falls steadily with level (4.2% to 0.1% with the compressor on, 18.5%
+- **Crossover distortion:** a 196 Hz sine fading from the riff's peak toward -60 dB over 6 s
+  (measured in windows from -4 to -54 dB) through the PR12 template: THD falls steadily with level (4.2% to 0.1% with the compressor on, 18.5%
   to 0.0% off) and never rises as the level falls.
 - **The compressor alone:** one untouched note through the PR12 template is clean with
   the compressor on and off.
 
-What it is: the PR12 clean baseline's own settings. On the chord riff, the PR12 template
-is clean with its compressor on and off; the PR12 baseline crackles a little with it on
-and off. It is the baseline's slight breakup as the chords ring down, the borderline seen
-above. The turned-down SW50R and AC20 starts had none.
+Most likely, the PR12 clean baseline's own slight breakup as the chords ring down (one
+listener, by ear, not blind; not measured on the decays). On the chord riff, re-heard, the
+PR12 template was clean with its compressor on and off, and the PR12 baseline crackled a
+little either way; the first hearing had heard some through all four presets, the
+template included. The turned-down SW50R and AC20 starts had none. The two tests above ran
+on the template, not the baseline.

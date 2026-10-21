@@ -91,17 +91,16 @@ guitar.
 
 Any common audio file works — mp3 included, no conversion step needed.
 
-**Check the window before you use the numbers.** `--excerpt` ranks windows by
-broadband activity, so on a dense master it ranks nothing and measures the middle
-of the file, which misses a given guitar part a third of the time or more. For a
-full song, ask the user for a time where the guitar is clearly heard and pass it
-as `--excerpt-start SECONDS`. If they don't know, or ask you to find it, don't measure
-a window you chose: you cannot listen, and a mix's measurement cannot tell the guitar
-from the band. Say so; after researching, you may suggest a section the sources name
-("the intro", "the solo") for them to confirm. If no time comes, skip the measurement
-and build from research: in `generate` it only describes and sanity-checks. A fingerprint of the wrong twenty seconds is not
-noisy; it is a clean description of the wrong instrument. Two things to look at
-every time:
+**Check the window before you use the numbers.** `--excerpt` ranks windows by broadband
+activity, so on a dense master it ranks nothing and measures the middle of the file, which
+misses a given guitar part a third of the time or more. For a full song, ask the user for
+a time where the guitar is clearly heard and pass it as `--excerpt-start SECONDS`. If they
+don't know, or ask you to find it, don't measure a window you chose: you cannot listen,
+and a mix's measurement cannot tell the guitar from the band. Say so; after researching,
+you may suggest a section the sources name ("the intro", "the solo") for them to confirm.
+If no time comes, skip the measurement and build from research: in `generate` it only
+describes and sanity-checks. A fingerprint of the wrong twenty seconds is not noisy; it is
+a clean description of the wrong instrument. Two things to look at every time:
 
 - an `activity tie` excerpt policy, a clamped or ignored `--excerpt-start`, or a "does not
   look like a guitar" caveat — each means **look at the window before trusting it**, and
@@ -224,8 +223,9 @@ Tone King recipes use its verified sync-note selectors. See
   | SW50R | `Artists/Mark Johnston/Pedal Platform Clean.xml` | breaks up; clean at `sw50rVolume` 15 |
   | AC20 | `Artists/Royce Whittaker/Low-Watt Americana.xml` | breaks up; clean at `ac20Volume` 10 |
 
-  On a part documented as fully clean, set those volumes on the SW50R or AC20 start and say
-  so: the tone shifts slightly, and closeness to records is untested ([check](../../docs/clean-start-breakup-results.md)).
+  On a part documented as fully clean (no breakup at all, not edge of breakup), set those
+  volumes on the SW50R or AC20 start and say so: it plays quieter (raise `outputGain`) and its
+  tone shifts; closeness to records is untested ([check](../../docs/clean-start-breakup-results.md)).
 
   - **The evidence.** Chosen by rule on development recordings, then checked on 13
     reserved clean parts. Dry, they landed closer to the record than the shipped
@@ -236,7 +236,7 @@ Tone King recipes use its verified sync-note selectors. See
     5 (pooled with the crunch block 17 of 21, p 0.004; no block decided alone;
     in-sample, one listener; [starting-preset-listening-results.md](../../docs/starting-preset-listening-results.md)).
   - **Make it dry first** with the amp's dry recipe, `--recipe dry/<amp>` (below). Keep
-    its compressor, amp, pedals, EQ and cab unless research documents a different value for this part.
+    its compressor, amp, pedals, EQ and cab unless research documents a different value for this part (or the volume rule above applies).
   - **When the research turns an effect back on, set its parameters explicitly.** The
     factory leftovers are extreme. Royally Ambient has a 16-s reverb, heavy delay
     feedback, and a PR12 dwell of 79%: set `pr12Dwell` too if its spring comes back.
