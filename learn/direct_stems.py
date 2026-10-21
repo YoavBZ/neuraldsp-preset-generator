@@ -19,7 +19,7 @@ pilot (step 2), the full models (step 3) and the decision test on stage F (step 
     $MSST     -m learn.direct_stems build --part vsep|pilot|rest --stage stem --sep xlance_g --device mps --order asc
     $MSST     -m learn.direct_stems build --part vsep|pilot|rest --stage stem --sep xlance_g --device cpu --order desc
     $TORCH_PY -m learn.direct_stems train --arm Dstem|Dmix|D0 --n full --seed 20261042|20261043|20261044
-    $TORCH_PY -m learn.direct_stems readout                   # step 3 (zero renders): MODEL STOP | MODEL OK
+    $TORCH_PY -m learn.direct_stems readout                   # step 3 (zero renders): the E check (descriptive; amendment 6 decides)
     $MSST     -m learn.direct_stems stems --device mps        # step 4's stored crop-only xlance_g stems (stage F, known answer)
     $MSST     -m learn.direct_stems parity --device mps       # step 4's inputs path on 20 V_sep examples (renders)
     $TORCH_PY -m learn.direct_stems predict                   # step 4's answers (zero renders)
@@ -82,8 +82,10 @@ base class). Amendment 5's answer, every model alike: each seed's per-knob mixtu
 averaged over the 3 seeds and both halves (A2), pulled toward the constant per knob, amp and base
 class by b in [0, 1] fitted on step 3's early-stopping set (A3); E, the constant's medians and the
 fit leave out the knobs of a feature switched off in the true label (the right cab's when
-rightCabActive is false). MODEL OK only if D - constant on R_in, read so, has a band-clustered
-interval entirely below 0; the old top-component readings, A1, A1+A2 and the unmasked E are beside.
+rightCabActive is false). The E check reads OK if D - constant on R_in, read so, has a
+band-clustered interval entirely below 0; the old top-component readings, A1, A1+A2 and the unmasked
+E are beside. Since the user's approval (2026-10-22) the E check is descriptive: amendment 6's sound
+gate (learn/direct_sound_gate.py) decides step 3, and step 4's renders wait for it (`step3_gate`).
 
 **Step 4.** `stems` stores the 21 stage F crop-only stems and the 16 known-answer crops' of step 3's
 separator (xlance_g under amendment 2; Mega-53 fast reused gate 1's), hash-recorded. `parity`
@@ -2893,8 +2895,9 @@ def const_error(med, c, cm):
 
 
 def model_stop(iv):
-    """Step 3's declared early stop on D - constant (R_in, paired, band-clustered): MODEL OK if the
-    interval lies entirely below 0, else MODEL STOP. iv = (mean, lo, hi, bands) or None."""
+    """D - constant on R_in (paired, band-clustered): OK if the interval lies entirely below 0, else
+    STOP. Step 3's early stop as first declared; amendment 5's E check (descriptive) reads it too.
+    iv = (mean, lo, hi, bands) or None."""
     if iv is None or iv[2] is None or not math.isfinite(iv[2]) or iv[3] < 2:
         return "STOP"
     return "OK" if iv[2] < 0 else "STOP"
@@ -3189,15 +3192,15 @@ def section_folds(rows, seed=READOUT_CHECK_SEED):
     return {r["i"]: 0 if r["section"] in f0 else 1 for r in rows}
 
 
-def run_rows(nets, rows, make, chunk=READOUT_CHUNK):
-    """`run_nets` over rows in chunks; make(rows) -> (X, C, Y, who) builds each chunk's inputs, so only one
-    chunk's inputs are held. -> (outs per seed, who, Y)."""
+def run_rows(nets, rows, make, chunk=READOUT_CHUNK, batch=128):
+    """`run_nets` (in batches of `batch` rows) over rows in chunks; make(rows) -> (X, C, Y, who) builds each
+    chunk's inputs, so only one chunk's inputs are held. -> (outs per seed, who, Y)."""
     import numpy as np
 
     outs, who, ys = [[] for _ in nets], [], []
     for j in range(0, len(rows), chunk):
         X, C, Y, w = make(rows[j:j + chunk])
-        o = run_nets(nets, X, C)
+        o = run_nets(nets, X, C, batch)
         for k in range(len(nets)):
             outs[k] += o[k]
         who += list(w)
@@ -3604,7 +3607,16 @@ def vdev_tensors(rows, arm):
     return X, C, Y, who
 
 
-DECIDING = "D-constant [A1+A2+A3]"     # amendment 5: step 3's early stop reads this contrast on R_in
+E_CHECK = "D-constant [A1+A2+A3]"      # amendment 5's E check on R_in (descriptive since the user's 2026-10-22 approval)
+STEP3_GATE = "amendment 6"            # the deciding step 3 gate (user, 2026-10-22): the sound gate, learn/direct_sound_gate.py
+
+
+def step3_gate(root):
+    """Step 3's deciding gate before any judged render. Under amendment 5 as approved (user, 2026-10-22),
+    amendment 6's sound gate decides and the E check is descriptive. Amendment 6's own code wires its
+    verdict in here; until then step 4's renders fail closed. -> (ok, why)."""
+    return False, (f"{STEP3_GATE}'s sound gate (learn/direct_sound_gate.py) decides step 3 and is not wired in here yet; "
+                   "the E check in full/readout.json is descriptive")
 
 
 def readout_per(sc):
@@ -3637,11 +3649,13 @@ def cmd_readout(args):
     the 3 seeds and both halves (A2), pulled toward the constant per knob, amp and base class by a
     weight in [0, 1] fitted on step 3's early-stopping set read through R_in's path (A3). E, the
     constant's medians and the fit leave out the knobs of a feature switched off in the true label
-    (`silent_masks`). MODEL OK only if D - constant on R_in, read so, has a band-clustered interval
-    entirely below 0. Beside it, descriptive: the same readings over every labelled knob (unmasked),
-    A1, A1+A2, the old top-component readings (seed-averaged, as first declared, and the pooled
-    ensemble), each seed against the old ensemble, the in-sample readings on the early-stopping set,
-    the weights, and the pull cross-fitted over R_in's bands."""
+    (`silent_masks`). The E check (descriptive; amendment 6's sound gate decides) reads OK if
+    D - constant on R_in, read so, has a band-clustered interval entirely below 0. Beside it: the same
+    readings over every labelled knob (unmasked), A1, A1+A2, the old top-component readings
+    (seed-averaged, as first declared, and the pooled ensemble), each seed against the old ensemble,
+    the in-sample readings on the early-stopping set, the weights, and the pull cross-fitted over
+    R_in's bands. full/readout.json also holds the weights and the constant that step 4 (and
+    amendment 6) read D's and D0's answers with."""
     import numpy as np
 
     from learn import pretrain_set as PS
@@ -3767,16 +3781,17 @@ def cmd_readout(args):
         per_u = {name: readout_per(sc) for name, sc in rr["models_unmasked"].items()}
         out["contrasts_unmasked"][ro] = readout_contrasts(per_u, rr["const_unmasked"], band_of, keep)
     r_in = out["contrasts"].get("R_in") or {}
-    out["decision"] = model_stop(r_in.get(DECIDING))
-    out["decision_unmasked"] = model_stop((out["contrasts_unmasked"].get("R_in") or {}).get(DECIDING))   # beside
-    # descriptive: the first-declared readout (top component, seed-averaged, every labelled knob), with this constant
-    out["decision_top_unmasked"] = model_stop((out["contrasts_unmasked"].get("R_in") or {}).get("D-constant [top]"))
-    out["pull_flag"] = ensemble_flag(out["decision"], r_in.get("D-constant [A1+A2]"), "A1+A2's (no pull)")
-    out["decision_rule"] = ("amendment 5: D's declared answer (A1 mixture medians, averaged over 3 seeds x 2 halves, "
-                            "pulled toward the constant by b in [0, 1] fitted per knob, amp and base class on step 3's "
-                            "early-stopping set) minus the constant predictor on R_in, E over the audible labelled knobs "
-                            "(a switched-off feature's knobs left out), paired, band-clustered t: MODEL OK if the interval "
-                            "lies entirely below 0; every other reading is reported beside it")
+    out["decides"] = STEP3_GATE                          # user, 2026-10-22: the sound gate; this E check is descriptive
+    out["e_check"] = model_stop(r_in.get(E_CHECK))
+    out["e_check_unmasked"] = model_stop((out["contrasts_unmasked"].get("R_in") or {}).get(E_CHECK))
+    # the first-declared readout (top component, seed-averaged, every labelled knob), with this constant
+    out["e_check_top_unmasked"] = model_stop((out["contrasts_unmasked"].get("R_in") or {}).get("D-constant [top]"))
+    out["pull_flag"] = ensemble_flag(out["e_check"], r_in.get("D-constant [A1+A2]"), "A1+A2's (no pull)")
+    out["e_check_rule"] = ("amendment 5, descriptive (amendment 6's sound gate decides): D's answer (A1 mixture medians, "
+                           "averaged over 3 seeds x 2 halves, pulled toward the constant by b in [0, 1] fitted per knob, "
+                           "amp and base class on step 3's early-stopping set) minus the constant predictor on R_in, E over "
+                           "the audible labelled knobs (a switched-off feature's knobs left out), paired, band-clustered t: "
+                           "OK if the interval lies entirely below 0")
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     _save(root / "full" / "readout.json", out)
 
@@ -3793,15 +3808,15 @@ def cmd_readout(args):
             if " seed " not in k:
                 print(f"  E {k:32s} {f(v)}")
         for k, v in out["contrasts"][ro].items():
-            print(f"{'*' if k == DECIDING and ro == 'R_in' else ' '} {k:40s} {f(v)}")
-        print(f"  {DECIDING} over every labelled knob (unmasked, beside) {f(out['contrasts_unmasked'][ro].get(DECIDING))}")
+            print(f"{'*' if k == E_CHECK and ro == 'R_in' else ' '} {k:40s} {f(v)}")
+        print(f"  {E_CHECK} over every labelled knob (unmasked, beside) {f(out['contrasts_unmasked'][ro].get(E_CHECK))}")
     for n, s in out["pull_summary"].items():
         print(f"  pull {n}: {s}")
-    print(f"  beside (descriptive): unmasked {out['decision_unmasked']}; the first-declared readout (top component, "
-          f"seed-averaged, unmasked) {out['decision_top_unmasked']}")
+    print(f"  beside: unmasked {out['e_check_unmasked']}; the first-declared readout (top component, seed-averaged, "
+          f"unmasked) {out['e_check_top_unmasked']}")
     if out["pull_flag"]:
         print(f"FLAG: {out['pull_flag']}")
-    print(f"MODEL {out['decision']}")
+    print(f"E check (descriptive; Amendment 6 decides): {out['e_check']}")
 
 
 # --- step 4: inputs ---------------------------------------------------------------------------------
@@ -4220,8 +4235,11 @@ def cmd_render(args):
     if (od / "STOP.json").exists():
         raise SystemExit("STOP.json present")
     ro = _load(root / "full" / "readout.json")
-    if not ro or ro.get("smoke") or ro.get("decision") != "OK":
-        raise SystemExit("step 3's readout must read MODEL OK (a real readout) before any judged render")
+    if not ro or ro.get("smoke"):
+        raise SystemExit("step 3's readout (a real one) must exist: it holds the pull step 4's answers use")
+    ok, why = step3_gate(root)                     # amendment 6's sound gate decides (user, 2026-10-22)
+    if not ok:
+        raise SystemExit(f"no judged render before step 3's gate reads OK: {why}")
     pred = _load(od / "predictions.json")
     if not pred or pred.get("smoke") or any(len(pred["predictions"][m]) != A.N_DIRS["F"] for m in STEP4_ARMS):
         raise SystemExit("run `predict` first (a real one)")
@@ -4698,6 +4716,30 @@ def cmd_pilot_xlance_readout(args):
     print("PILOT-XLANCE-READOUT (descriptive)")
 
 
+def part_c_rows(ids):
+    """{i: part C's row (its id, section, band, split, early-stop flag, amp, base and label)} for `ids`,
+    streamed line by line from part C's row shards, the last row of an id winning (`all_rows`)."""
+    from learn import pretrain_set as PS
+
+    want, out = set(ids), {}
+    keys = ("i", "section", "band", "split", "early_stop", "amp", "base", "label")
+    for f in sorted((PS.OUT / "rows").glob("shard-*.jsonl")):
+        with open(f) as fh:
+            for line in fh:
+                if not line.strip():
+                    continue
+                try:
+                    r = json.loads(line)
+                except json.JSONDecodeError:
+                    continue                                   # a torn last line (`read_rows` skips it too)
+                if r["i"] in want:
+                    out[r["i"]] = {k: r[k] for k in keys}
+    missing = want - set(out)
+    if missing:
+        raise SystemExit(f"{len(missing)} ids have no part C row")
+    return out
+
+
 def readout_check_table(per, const, band_of, ids):
     """Amendment 5's sanity check on one set of early-stopping examples: each readout's E (band-weighted
     and the example mean) and its paired, band-clustered contrasts with the constant and with the
@@ -4735,22 +4777,25 @@ def cmd_readout_check(args):
     if args.smoke and not args.out:
         raise SystemExit("--smoke writes into a scratch --out only")
     torch.set_num_threads(2)
-    ctx = Ctx()
-    rows, dropped = pilot_examples(ctx, root, "Dstem", args.smoke, PILOT_SEP)
-    es = [r for r in rows if r["early_stop"]]
-    n_es = sum(1 for r in ctx.parts["pilot"] if r["early_stop"]) - sum(1 for i in dropped if ctx.rows[i]["early_stop"])
-    vsep_ids = {r["i"] for r in ctx.parts["vsep"]}
-    if any(r["i"] in vsep_ids or r["i"] >= VAL_BASE_ID or r["split"] != "train" for r in es):
+    # the pilot's own build rows and part C's labels, streamed (Ctx would hold all of part C's rows)
+    mixrows, stemrows = build_rows(root, "pilot", "mix"), build_rows(root, "pilot", PILOT_SEP)
+    final = refusals(mixrows, stemrows, set(mixrows))
+    ids = sorted(i for i in mixrows if i not in final and i in stemrows)
+    rowc = part_c_rows(ids)
+    for i in ids:
+        if any(rowc[i][k] != mixrows[i][k] for k in ("section", "band", "amp", "base", "early_stop", "split")):
+            raise SystemExit(f"{i}: the pilot's build row and part C's row disagree")
+    es = [rowc[i] for i in ids if rowc[i]["early_stop"]]
+    if any(r["i"] >= VAL_BASE_ID or r["split"] != "train" for r in es):
         raise SystemExit("the sanity check reads the pilot's early-stopping set only, never V_sep")
-    if len(es) != n_es and not args.smoke:
-        raise SystemExit(f"{len(es)} early-stopping examples, not {n_es}")
-    es = es[:args.limit or None]
     nets, hashes = [], {}
     for seed in TRAIN_SEEDS:
         rp = run_path(root, "Dstem", "5000", seed)
         r = _load(rp)
         if r is None:
             raise SystemExit(f"{rp.name} missing")
+        if (r["early_stop"] != len(es) or set(r["dropped_refused"]) != final) and not args.smoke:
+            raise SystemExit(f"{rp.name}: early-stopped on {r['early_stop']} examples, not these {len(es)}")
         mp = rp.with_suffix(".pt")
         if hashlib_file(mp) != r["model_sha256"]:
             raise SystemExit(f"{mp.name}: hash differs from its run record")
@@ -4758,8 +4803,9 @@ def cmd_readout_check(args):
         net.load_state_dict(torch.load(mp, map_location="cpu"))
         nets.append(net.eval())
         hashes[seed] = r["model_sha256"]
-    med = pilot_medians(ctx, root, encode_audible)
-    outs, who, Y = run_rows(nets, es, lambda rr: readout_tensors(root, rr, PILOT_SEP, "Dstem"))
+    es = es[:args.limit or None]
+    med = label_medians([rowc[i] for i in ids if not rowc[i]["early_stop"]], encode_audible)   # pilot_medians, masked
+    outs, who, Y = run_rows(nets, es, lambda rr: readout_tensors(root, rr, PILOT_SEP, "Dstem"), chunk=16, batch=16)
     cell_of = {r["i"]: (r["amp"], r["base"]) for r in es}
     band_of = {r["i"]: r["band"] for r in es}
     fold = section_folds(es)

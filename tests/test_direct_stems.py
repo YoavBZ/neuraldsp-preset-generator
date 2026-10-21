@@ -1167,7 +1167,7 @@ def _per(model_vals):
     return {m: {t: dict(v) for t in DS.READOUT_TAGS} for m, v in model_vals.items()}
 
 
-def test_model_ok_and_stop_read_the_declared_answer():
+def test_the_e_check_reads_the_declared_answer():
     band_of = {i: "abcd"[i % 4] for i in range(8)}
     const = {i: 0.20 for i in range(8)}
     better = {i: 0.18 + 0.001 * (i % 4) for i in range(8)}
@@ -1175,13 +1175,13 @@ def test_model_ok_and_stop_read_the_declared_answer():
     per = _per({"D": worse, "D0": worse})
     per["D"]["A1+A2+A3"] = better                                           # the declared answer beats the constant
     con = DS.readout_contrasts(per, const, band_of, set(const))
-    assert DS.DECIDING in con and DS.model_stop(con[DS.DECIDING]) == "OK"
+    assert DS.E_CHECK in con and DS.model_stop(con[DS.E_CHECK]) == "OK"
     assert DS.model_stop(con["D-constant [top]"]) == "STOP"                  # the old readout would stop
     assert "D-D0 [A1+A2+A3]" in con and con["D-D0 [A1+A2+A3]"][0] < 0
     per = _per({"D": better, "D0": better})
     per["D"]["A1+A2+A3"] = worse                                            # only the old readouts beat it
     con = DS.readout_contrasts(per, const, band_of, set(const))
-    assert DS.model_stop(con[DS.DECIDING]) == "STOP" and DS.model_stop(con["D-constant [top]"]) == "OK"
+    assert DS.model_stop(con[DS.E_CHECK]) == "STOP" and DS.model_stop(con["D-constant [top]"]) == "OK"
     assert "A1+A2's (no pull)" in DS.ensemble_flag("OK", con["D-constant [A1+A2+A3]"], "A1+A2's (no pull)")
 
 
@@ -1275,3 +1275,73 @@ def test_step4_needs_amendment_5s_readout_from_the_same_models():
         DS.step4_pulls({**ro, "models": {"D": {"1": "x"}, "D0": {"1": "b"}}}, models)
     with pytest.raises(SystemExit):
         DS.step4_pulls({**ro, "smoke": True}, models)
+
+
+def test_step4_renders_wait_for_amendment_6s_gate(tmp_path):
+    ok, why = DS.step3_gate(tmp_path)                                       # the E check never opens step 4
+    assert ok is False and "amendment 6" in why and DS.STEP3_GATE == "amendment 6"
+
+
+def test_readout_glue_end_to_end_on_toy_models(tmp_path, monkeypatch, capsys):
+    """cmd_readout with the models, rows and network outputs faked (no torch): the early-stopping fit,
+    the masked and unmasked readings, the E check (descriptive) and the stored pull for step 4."""
+    import types
+
+    from learn import song_model as SM
+
+    rng = np.random.default_rng(11)
+    names = ["parameters/inputGain", "pr12Amp/pr12Volume", "cabParameters/rightCabPosition"]
+
+    def row(i, band, base, early_stop=False):
+        lab = {n: float(rng.uniform(0, 1)) for n in names}
+        lab["cabParameters/rightCabActive"] = "true" if rng.random() < 0.7 else "false"
+        return {"i": i, "band": band, "amp": "pr12", "base": base, "early_stop": early_stop, "label": lab}
+
+    pool = [row(i, "t1", ("clean", "crunch")[i % 2]) for i in range(80)]
+    pool += [row(100 + i, ("t1", "t2")[i % 2], ("clean", "crunch")[(i // 2) % 2], True) for i in range(40)]
+    vsep = [row(1_000_000 + i, f"v{i % 4}", ("clean", "crunch")[(i // 4) % 2]) for i in range(48)]
+    ctx = types.SimpleNamespace(pool=pool, parts={"vsep": vsep}, tag={r["i"]: None for r in vsep})
+    recs = [{"seed": s, "model_sha256": f"h{s}", "dropped_refused": []} for s in (1, 2, 3)]
+    models = {"D": (["D"] * 3, "Dstem", recs), "D0": (["D0"] * 3, "D0", recs), "D_existing": (["DE"] * 3, "D0", [])}
+    by_i = {r["i"]: r for r in pool + vsep}
+
+    def fake_rows(nets, rows, make, chunk=64, batch=128):
+        outs, who, ys = [[] for _ in nets], [], []
+        for r in rows:
+            enc = SM.encode(r["label"])
+            for _ in "AB":
+                who.append(r["i"])
+                ys.append(enc)
+                for k, kind in enumerate(nets):
+                    good = enc[0] if kind == "D" else np.full(len(SM.CONT), 0.5)
+                    mu = np.stack([np.clip(good + rng.normal(0, 0.02, len(good)), 0, 1), np.full(len(good), 0.5)])
+                    outs[k].append((np.log([0.8, 0.2]), mu, np.full(mu.shape, -3.0), np.zeros(len(SM.SW)),
+                                    [np.zeros(len(SM.MICS)) for _ in SM.CAT]))
+        return outs, who, [np.stack(z) for z in zip(*ys)]
+
+    monkeypatch.setattr(DS, "Ctx", lambda: ctx)
+    monkeypatch.setattr(DS, "full_models", lambda root, smoke, sep: (models, "Dstem", {"decision": "STEM"}, []))
+    monkeypatch.setattr(DS, "step_sep", lambda report, sep, smoke=False: "xlance_g")
+    monkeypatch.setattr(DS, "vsep_ready", lambda ctx, root, smoke, sep: {"R_in": vsep, "R_out": vsep})
+    monkeypatch.setattr(DS, "build_rows", lambda root, part, stage: {r["i"]: {"mastered": False} for r in vsep})
+    monkeypatch.setattr(DS, "vdev_rows", lambda: [dict(r) for r in vsep])
+    monkeypatch.setattr(DS, "ex_path", lambda root, i, kind: tmp_path)
+    monkeypatch.setattr(DS, "run_rows", fake_rows)
+    DS.cmd_readout(types.SimpleNamespace(out=str(tmp_path), smoke=False, limit=None, sep=None))
+    out = capsys.readouterr().out
+    assert "E check (descriptive; Amendment 6 decides): OK" in out and "MODEL " not in out
+    ro = DS._load(tmp_path / "full" / "readout.json")
+    assert ro["decides"] == "amendment 6" and ro["e_check"] == "OK" and "decision" not in ro
+    assert set(ro["pull"]) == {"D", "D0", "D_existing"} and not any(ro["gaps"].values())
+    assert ro["fitting_set"]["examples"] == 40 and set(ro["contrasts"]) == {"R_in", "R_out", "V_dev"}
+    assert DS.E_CHECK in ro["contrasts"]["R_in"] and DS.E_CHECK in ro["contrasts_unmasked"]["R_in"]
+    assert "D-constant [A1+A2+A3, R_in band cross-fit, descriptive]" in ro["contrasts"]["R_in"]
+    j = SM.CONT.index("parameters/inputGain")
+    assert ro["pull"]["D"]["pr12|clean"]["b"][j] > 0.5                       # an informative model keeps its answer
+    pulls, cmed = DS.step4_pulls(ro, models)                                # what step 4 reads back
+    assert ("pr12", "crunch") in pulls["D_existing"] and np.isfinite(cmed[("pr12", "clean")][j])
+    # the constant's medians skip silent labels: the right cab's position over audible training labels only
+    k = SM.CONT.index("cabParameters/rightCabPosition")
+    aud = [by_i[r["i"]]["label"]["cabParameters/rightCabPosition"] for r in pool
+           if not r["early_stop"] and r["base"] == "clean" and r["label"]["cabParameters/rightCabActive"] == "true"]
+    assert math.isclose(cmed[("pr12", "clean")][k], float(np.median(np.float32(aud))), rel_tol=1e-6)
