@@ -1278,8 +1278,8 @@ def test_step4_needs_amendment_5s_readout_from_the_same_models():
 
 
 def test_step4_renders_wait_for_amendment_6s_gate(tmp_path):
-    ok, why = DS.step3_gate(tmp_path)                                       # the E check never opens step 4
-    assert ok is False and "amendment 6" in why and DS.STEP3_GATE == "amendment 6"
+    ok, why = DS.step3_gate(tmp_path)                    # no sound-gate report: step 4 stays closed
+    assert ok is False and "sound-gate" in why and DS.STEP3_GATE == "amendment 6"
 
 
 def test_readout_glue_end_to_end_on_toy_models(tmp_path, monkeypatch, capsys):

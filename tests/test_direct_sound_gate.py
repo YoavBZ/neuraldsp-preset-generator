@@ -354,8 +354,6 @@ def test_direct_stems_step3_gate_reads_the_sound_gate(tmp_path):
             DS._save(tmp_path / "gate" / "report.json",
                      {"decision": decision, "smoke": False, "readout_sha256": DS.hashlib_file(ro)})
         got, want = DS.step3_gate(tmp_path), G.step3_verdict(tmp_path)
-        if got != want and "not wired" in str(got[1]):
-            pytest.xfail("direct_stems.step3_gate still refuses unconditionally (wired at merge)")
         assert got == want
 
 

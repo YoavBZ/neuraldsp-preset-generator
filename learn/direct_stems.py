@@ -3619,9 +3619,10 @@ STEP3_GATE = "amendment 6"            # the deciding step 3 gate (user, 2026-10-
 def step3_gate(root):
     """Step 3's deciding gate before any judged render. Under amendment 5 as approved (user, 2026-10-22),
     amendment 6's sound gate decides and the E check is descriptive. Amendment 6's own code wires its
-    verdict in here; until then step 4's renders fail closed. -> (ok, why)."""
-    return False, (f"{STEP3_GATE}'s sound gate (learn/direct_sound_gate.py) decides step 3 and is not wired in here yet; "
-                   "the E check in full/readout.json is descriptive")
+    verdict in here (wired 2026-10-22): ok only for a real GATE OK. -> (ok, why)."""
+    from learn import direct_sound_gate as G                      # imported here: it imports this module
+
+    return G.step3_verdict(root)
 
 
 def readout_per(sc):
