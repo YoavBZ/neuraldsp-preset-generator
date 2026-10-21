@@ -1616,7 +1616,7 @@ def cmd_build(args):
             [r for r in items if not r["early_stop"]][:args.limit - args.limit // 4]
             + [r for r in items if r["early_stop"]][:args.limit // 4])
     log = {"time": time.strftime("%Y-%m-%d %H:%M:%S"), "pid": os.getpid(), "part": args.part, "stage": args.stage,
-           "sep": args.sep, "device": args.device, "shard": args.shard, "items": len(items), "disk_guard_gb": guard,
+           "sep": stem_stage_sep(args.part, args.sep) if args.stage == "stem" else args.sep, "device": args.device, "shard": args.shard, "items": len(items), "disk_guard_gb": guard,
            "disk_override_note": note, "free_gb": round(free, 1), "limit": args.limit}
     if note:
         print(f"disk guard {guard:.0f} GB ({note})", flush=True)

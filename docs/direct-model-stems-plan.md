@@ -721,7 +721,7 @@ Declared before any xlance_g build stem, step 3 run or step 4 input. Zero render
   4 threads it is not measured. The estimate is 7.5–13.5 s a clip: the pilot's Mega-53 CPU worker
   ran at 7.5 s, and 13.5 s assumes no gain past 2 threads.
 - **Why the CPU worker is kept:** it adds 35–60% to the MPS worker's rate, about 0.29–0.34 clips
-  a second together, and saves about 8–11 h. Without it the separation would take about 30 h.
+  a second together, and saves about 6–11 h. Without it the separation would take about 27.5–30 h.
 - **Memory:** the swap and free-memory guards stop either worker cleanly.
 
 **Order.** The two workers start when the rest's mix stage ends (its three processes exit and
