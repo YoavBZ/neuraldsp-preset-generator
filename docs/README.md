@@ -572,3 +572,13 @@ was declared, what was measured, and the research behind it.
     synthetic multi-guitar mixes. Flags the licence tension and proposes a zero-render stage-F pan
     screen. Corrects the October separation report. 2026-10-20 (user): ranks 5 and 6 allowed on
     this Mac only; rank 9 (a new separator) out. Research, not a declared plan.
+17. [direct-model-constant-2026-10.md](research/direct-model-constant-2026-10.md): how the direct
+    model can beat the per-class constant on knob error (October 2026). The researchers found no
+    paper that estimates amp-sim knobs from a song or stem with known answers, or reports a constant
+    baseline. Part of the pilot's gap is likely the readout: E is minimised by each knob's median,
+    but D_stem reports its top mixture component's mean and early-stops on likelihood. Ranked:
+    zero-render checks on the stored models (median readout, averaging seeds and halves, a pull
+    toward the constant, kNN in the trunk, a per-knob identifiability table), then one retrain with
+    a residual median head early-stopped on E, trees, binned heads, frozen AFx-Rep inside the stem
+    stage, then pretraining routes. Lists two licence questions for the user. Research, not a
+    declared plan.
