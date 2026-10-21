@@ -371,14 +371,20 @@ was declared, what was measured, and the research behind it.
   (declared, reviewed). Cheap checks on D_existing first (does the stem's quality move its answers;
   what the mismatch costs; 111 descriptive renders), then a 5k pilot of real Mega-53 stems against a
   mix-only model and the old recipe, then one test on stage F (D − S primary, about 321 renders).
-  The full build needs the user to free disk (34 GB free at start).
+  Amendment 2 (2026-10-21): the full build, step 3 and step 4 use X-LANCE gtr_mss stems; disk is
+  no longer a block.
   **Gate 1 (2026-10-20, zero renders): GATE1 STEM**; the stem matters (Mega-53's stem costs +0.104
   of E against the training stem); the mix adds little behind a clean or separated stem, so a
   stem-only model is recommended. Audited.
   **Pilot (2026-10-21, no judged renders): PILOT STEM.** The stem-only model beats the old
   recipe (R_out −0.0127 [−0.0216, −0.0039]), but every pilot model is still worse than a
   per-class constant predictor. A learning curve (−0.017 per doubling on average; the seeds differ
-  widely) projects the full model near the constant (PROBE CONTINUE; step 3's MODEL STOP is a real risk). Not yet audited.
+  widely) projects the full model near the constant (PROBE CONTINUE). Not yet audited.
+  **Amendments 5 and 6 (approved 2026-10-22, before any step 3 data):** step 3 reads each knob's
+  mixture median, averaged over 3 seeds × 2 halves and pulled toward the per-class constant; the
+  right cab's silent knobs leave E, and the E check is descriptive. A sound-based gate (D's preset
+  against the constant's, rendered and judged against the true preset on R_in, about 5.9k renders)
+  decides step 3, and step 4 runs only on GATE OK. Step 3's training follows the X-LANCE build.
 - [record-match-listening-plan.md](record-match-listening-plan.md) → [results](record-match-listening-results.md):
   a blind check of the judge by ear on 5 guitar-exposed parts: the ear broadly agrees with the
   judge's order (Spearman mean 0.8), the ceiling C is heard closest in 4/5, H beats S in 4/5, D
