@@ -235,6 +235,14 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
   `scripts/arrangement.py`). It was the user's idea, and it feeds the ML session's
   planned per-section fitting: one average preset is hurt where guitars or sounds
   change. That session aligns the section names to the audio and checks every claim.
+- **Done, 2026-10-21: the clean starts checked on the open-chord riff.** The SW50R and
+  AC20 clean baselines break up; the PR12 template is clean and the PR12 baseline
+  borderline (one listener, not blind; a linearity measure agrees). `generate` step 4
+  records it and says a SW50R or AC20 start may break up on a fully clean part; the
+  presets' settings, not the amps' headroom ([results](clean-start-breakup-results.md)).
+  Next, when render slots are free: the same check with their volume lowered or a
+  compressor, then a screen of other presets; and whether the faint crackle on chord
+  decays is the amp models' (compressor on and off).
 - **Setting controls has real headroom** ([knob ceiling](knob-ceiling-results.md),
   2026-10-14): with the take's true DI, on development, a knob search got about 22%
   closer by the judge than `generate`'s starting preset (−0.253) and 19% closer than

@@ -50,9 +50,8 @@ listening page, step 5b, are separate.)
 
 ### Which pack, when you have to ask
 
-Offer a shortlist rather than an open question. Run
-`apply_spec.py --list-recipes --pack <id>` for what each one can actually build;
-the differences that decide it are:
+Offer a shortlist rather than an open question. Run `apply_spec.py --list-recipes --pack
+<id>` for what each one can actually build; the differences that decide it are:
 
 | | Morgan Amps Suite | Tone King Imperial MKII |
 |---|---|---|
@@ -74,9 +73,8 @@ Two traps worth naming out loud when you present the choice:
   question of character. A heavier Tone King part has no starting preset: it needs one
   of the user's own, and if they have none, say so; it is the deciding constraint.
 
-Read `${CLAUDE_PLUGIN_ROOT}/packs/<id>/tone.md` for the voices before
-recommending one. Where a pack has no `tone.md`, say so rather than guessing at
-its character.
+Read `${CLAUDE_PLUGIN_ROOT}/packs/<id>/tone.md` for the voices before recommending one.
+Where a pack has no `tone.md`, say so rather than guessing at its character.
 
 ## 2. Research the tone
 
@@ -220,11 +218,14 @@ Tone King recipes use its verified sync-note selectors. See
 - **For a clean Morgan part, start from the amp's clean baseline.** These are factory
   presets, under `/Library/Audio/Presets/Neural DSP/Morgan Amps Suite/`:
 
-  | amp | clean baseline |
-  |---|---|
-  | PR12 | `Artists/Mark Johnston/Royally Ambient.xml` |
-  | SW50R | `Artists/Mark Johnston/Pedal Platform Clean.xml` |
-  | AC20 | `Artists/Royce Whittaker/Low-Watt Americana.xml` |
+  | amp | clean baseline | dry, on the open-chord riff (one listener, not blind) |
+  |---|---|---|
+  | PR12 | `Artists/Mark Johnston/Royally Ambient.xml` | clean beside the others; edge of breakup alone |
+  | SW50R | `Artists/Mark Johnston/Pedal Platform Clean.xml` | breaks up |
+  | AC20 | `Artists/Royce Whittaker/Low-Watt Americana.xml` | breaks up |
+
+  Most likely these presets' settings, not the amps' headroom. On a fully clean part, say a
+  SW50R or AC20 start may break up on hard strums ([check](../../docs/clean-start-breakup-results.md)).
 
   - **The evidence.** Chosen by rule on development recordings, then checked on 13
     reserved clean parts. Dry, they landed closer to the record than the shipped
@@ -375,10 +376,9 @@ through one or two short guitar riffs under the song excerpt, so they can pick o
 ask for a change. If they say no, or gave no song, go on to step 6 with the step 5 preset.
 
 Why it is worth offering, and why it is not the default: choosing the best of four by
-measurement landed about 18% closer than the template on 25 recordings
-([the measurement](../../docs/song-only-shortlist-results.md)), but a listening check
-of whether an ear does as well was inconclusive
-([the check](../../docs/listening-check-results.md)).
+measurement landed about 18% closer than the template on 25 recordings ([the
+measurement](../../docs/song-only-shortlist-results.md)), but a listening check of whether
+an ear does as well was inconclusive ([the check](../../docs/listening-check-results.md)).
 
 If they say yes:
 
