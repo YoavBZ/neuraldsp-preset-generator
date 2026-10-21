@@ -1,7 +1,7 @@
 # The direct model with realistic stems: pilot results (2026-10-21)
 
 Run under the [plan](direct-model-stems-plan.md): step 2 as amendment 1 has it, and amendments 3
-and 4. Amendment 2 (X-LANCE) is still a draft. Development data only; no judged renders.
+and 4. Amendment 2 (X-LANCE) was a draft when these ran; it is in force since 2026-10-21 and changes nothing below. Development data only; no judged renders.
 - **Code:** `learn/direct_stems.py`, tests `tests/test_direct_stems.py` (branch
   `ml/direct-stems-xlance`). An independent code review came before each launch, and its fixes
   were applied.
@@ -157,9 +157,10 @@ full pool's constant is the same within ±0.0003).
 
 - **X-LANCE gtr_mss on MPS** (`time-mps`, 10 audit clips): **0.988×** Mega-53 fast's time
   (4.27 s against 4.32 s a clip). Both match their stored CPU stems to at least 99 dB. gtr_mss
-  now passes every leg of its screen. Switching the build to it awaits the user: it would
-  re-separate the pilot's and V_sep's 9,440 examples, each re-rendered first (amendment 2,
-  still a draft).
+  now passes every leg of its screen. The user switched the build to it on 2026-10-21
+  ([amendment 2, in force](direct-model-stems-plan.md#amendment-2-in-force-2026-10-21)): the
+  pilot's and V_sep's examples are re-separated, each re-rendered first. The results above
+  stay on Mega-53.
 - **Step 4's parity: `PARITY OK`, under a post-hoc rule (amendment 3).**
   - The first run failed on one quiet stem half (V_sep 1002075, half B, +0.171 LU). One gating
     block sat at BS.1770's relative gate.

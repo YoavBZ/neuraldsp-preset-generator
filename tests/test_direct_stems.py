@@ -584,13 +584,58 @@ def test_d_arm_follows_the_pilot_verdict():
     assert DS.d_arm({"decision": "STEM", "smoke": True}, smoke=True) == "Dstem"
 
 
-def test_full_stems_are_mega53_while_amendment_2_is_a_draft():
-    assert not DS.AMENDMENT2_IN_FORCE
-    assert DS.full_stem_sep("Dstem", None) == "mega53" and DS.full_stem_sep("D0", None) == "mega53"
+def test_amendment_2_in_force_step_3_and_4_default_to_xlance_g():
+    assert DS.AMENDMENT2_IN_FORCE and DS.STEP_SEP == "xlance_g" and DS.PILOT_SEP == "mega53"
+    assert DS.full_stem_sep(None) == "xlance_g"
+    assert DS.full_stem_sep("mega53") == "mega53"                 # the fallback, only when asked for
     with pytest.raises(SystemExit):
-        DS.full_stem_sep("Dstem", "xlance_g")
-    with pytest.raises(SystemExit):
-        DS.full_stem_sep("D0", "xlance_g")
+        DS.full_stem_sep("htdemucs")
+
+
+def test_step_sep_follows_d():
+    stem = {"decision": "STEM", "augmentation_kept": True}
+    assert DS.step_sep(stem, None) == "xlance_g"
+    assert DS.step_sep(stem, "mega53") == "mega53"
+    assert DS.step_sep({"decision": "MIX"}, None) == "mega53"     # D_mix reads no stems: default names
+
+
+def test_full_runs_carry_the_build_separator(tmp_path):
+    # D0 reads no separated stem but drops the xlance_g stem stage's refusals: its own name, too
+    assert DS.run_path(tmp_path, "D0", "full", 20261042, "xlance_g").name == "D0-full-20261042-xlance_g.json"
+    assert DS.run_path(tmp_path, "Dstem", "full", 20261042, "xlance_g").parent.name == "runs"
+    assert DS.run_path(tmp_path, "D0", "full", 20261042).name == "D0-full-20261042.json"
+
+
+def test_full_models_refuse_runs_from_another_separator(tmp_path, monkeypatch):
+    DS._save(tmp_path / "pilot" / "pilot-report.json", {"decision": "STEM", "augmentation_kept": True})
+    rec = {"dropped_refused": [], "train": 10, "seed": 1}
+    monkeypatch.setattr(DS, "load_full_runs", lambda root, arm, smoke=False, seeds=None, stem_sep="mega53":
+                        ([object()], [{**rec, "arm": arm, "stem_sep": "mega53" if arm == "D0" else stem_sep}]))
+    monkeypatch.setattr(DS, "load_nets", lambda: [])
+    with pytest.raises(SystemExit, match="stems mega53, not xlance_g"):
+        DS.full_models(tmp_path)
+    _, _, _, bad = DS.full_models(tmp_path, smoke=True)
+    assert bad == ["D0-1: stems mega53, not xlance_g"]
+
+
+def test_stem_stage_defaults():
+    assert DS.stem_stage_sep("rest", None) == "xlance_g"
+    assert DS.stem_stage_sep("pilot", None) == "mega53" and DS.stem_stage_sep("vsep", None) == "mega53"
+    assert DS.stem_stage_sep("pilot", "xlance_g") == "xlance_g"
+    assert DS.stem_stage_sep("rest", "mega53") == "mega53"
+    assert DS.stem_stage_sep("vsep", "htdemucs") == "htdemucs"
+
+
+def test_step4_records_per_separator(tmp_path):
+    assert DS.stems_manifest_path(tmp_path, "mega53") == tmp_path / "step4" / "stems" / "stems.json"
+    assert DS.stems_manifest_path(tmp_path, "xlance_g") == tmp_path / "step4" / "stems" / "xlance_g" / "stems.json"
+    assert DS.parity_path(tmp_path).name == "parity.json"
+    assert DS.parity_path(tmp_path, "xlance_g").name == "parity-xlance_g.json"
+    DS.save_parity(tmp_path, {"ok": True, "time": "2026-10-21 12:00:00"}, "xlance_g")
+    DS.save_parity(tmp_path, {"ok": False, "time": "2026-10-21 13:00:00"}, "xlance_g")
+    assert DS._load(tmp_path / "step4" / "parity-xlance_g-2026-10-21T120000.json")["ok"]
+    assert not DS._load(DS.parity_path(tmp_path, "xlance_g"))["ok"]
+    assert DS._load(DS.parity_path(tmp_path)) is None              # Mega-53's record untouched
 
 
 def test_full_build_state_and_counts():
@@ -822,12 +867,14 @@ def test_ensemble_flag_only_when_ok_but_ensemble_does_not_clear():
 
 
 def test_xlance_g_needs_amendment_2_in_force(monkeypatch):
-    with pytest.raises(SystemExit):
-        DS.require_amendment2("xlance_g", "train --n 5000")
+    DS.require_amendment2("xlance_g", "train --n 5000")            # in force
     DS.require_amendment2("mega53", "build --stage stem")
     DS.require_amendment2("htdemucs", "build --stage stem")
-    monkeypatch.setattr(DS, "AMENDMENT2_IN_FORCE", True)
-    DS.require_amendment2("xlance_g", "train --n 5000")
+    monkeypatch.setattr(DS, "AMENDMENT2_IN_FORCE", False)
+    with pytest.raises(SystemExit):
+        DS.require_amendment2("xlance_g", "train --n 5000")
+    with pytest.raises(SystemExit):
+        DS.full_stem_sep(None)
 
 
 def test_xl_unload_restores_path_and_forgets_its_modules(tmp_path):
@@ -978,3 +1025,17 @@ def test_merge_pool_problems():
     rows = [_row(i, "A", f"s{i % 3}@1", base="clean") for i in range(6)] + [_row(9, "A", "x@1", base="crunch")]
     assert DS.merge_pool_problems(rows) == ["crunch: 1 section(s)"]
     assert DS.merge_pool_problems(rows[:6]) == []
+
+
+def test_failure_part_rows_list_xlance_failures():
+    assert "telefunken-She's_Gone-GTR" in DS.XL_FAILURE_PARTS and len(DS.XL_FAILURE_PARTS) == 3
+    units = [{"slug": "p", "d": {"S": 1.0, "D": math.e, "D0": 1.0}},
+             {"slug": "p", "d": {"S": 1.0, "D": 1.0, "D0": None}},
+             {"slug": "q", "d": {"S": 1.0, "D": 5.0, "D0": 5.0}}]
+    swap = [{"slug": "p", "movement_vs_c_f": {"D": {"m_f": [[0.1, 1, 1], [0.3, 1, 1]], "b": [[0.2, 1, 1]]}}},
+            {"slug": "p", "movement_vs_c_f": {"D": {"m_f": [[0.2, 1, 1], [0.2, 1, 1]], "b": [[0.0, 1, 1]]}}}]
+    r = DS.failure_part_rows(units, swap, slugs=("p", "z"))
+    assert r["p"]["directions"] == 2 and math.isclose(r["p"]["D-S"], 0.5)
+    assert r["p"]["D0-S"] == 0.0 and r["p"]["D0 scored"] == 1
+    assert math.isclose(r["p"]["movement"]["D m_f vs c_f"], 0.2) and math.isclose(r["p"]["movement"]["D b vs c_f"], 0.1)
+    assert r["z"] == {"directions": 0, "D-S": None, "D scored": 0, "D0-S": None, "D0 scored": 0, "movement": {}}
