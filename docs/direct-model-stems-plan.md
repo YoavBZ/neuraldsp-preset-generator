@@ -946,11 +946,13 @@ D_existing read out their continuous answer in step 3 and step 4, and it leaves 
    - b ∈ [0, 1] is fitted by absolute error on step 3's own early-stopping set. That set is the
      pool's 1,000 early-stopping examples less the refusals. It is read through R_in's input path:
      the true mix and the build's xlance_g stem, both halves.
-   - The fit is exact. The best b is the weighted median of (θ − c)/(θ̂ − c), with weights |θ̂ − c|,
-     clipped to [0, 1]. The loss is convex in b, so clipping gives the constrained minimum. Where the
-     minimum is flat, the point nearest 0 is taken. A model that never leaves the constant gets b = 0.
-   - Every example in a cell labels the same knobs. So the fit minimises the fitting set's
-     example-mean E, cell by cell.
+   - The fit is exact. The best b is the weighted median of (θ − c)/(θ̂ − c), with weights
+     |θ̂ − c| / n, clipped to [0, 1]. Here n is the example's number of scored (audible, labelled)
+     knobs. The loss is convex in b, so clipping gives the constrained minimum. Where the minimum is
+     flat, the point nearest 0 is taken. A model that never leaves the constant gets b = 0.
+   - The 1/n weight matters because the silent-knob mask gives examples in one cell different knob
+     counts. With it, the fit minimises the fitting set's example-mean masked E, knob by knob and
+     cell by cell.
 - **Switches and mics are unchanged:** the seeds' majority, and the argmax of summed probabilities.
 
 **Silent knobs leave E** (user, 2026-10-21: a switched-off feature's knob values are all one
@@ -978,11 +980,14 @@ longer decides.
   that step 4 and amendment 6 read the answers with.
 
 **Reported beside it.** These rows are descriptive and never decide:
-- **Other readouts.** The old top-component readings: seed-averaged (the rule as first declared) and
+- **The rule as first declared.** The top component, seed-averaged, over every labelled knob, against
+  the first-declared constant (medians over every training label). It is stored as
+  `e_check_first_declared`.
+- **Other readouts.** The old top-component readings: seed-averaged and
   the pooled-mixture ensemble. Also A1 alone (seed-averaged) and A1+A2 without the pull. All are read
   on R_in, R_out and V_dev, for every model. Each is shown with E masked, and with E unmasked.
-- **The fitting set, in-sample.** On the early-stopping set, A3 cannot lose to the constant or to
-  A1+A2.
+- **The fitting set, in-sample.** On the early-stopping set's example-mean masked E, A3 cannot lose
+  to the constant or to A1+A2. Its band-weighted readings can differ.
 - **The weights.** Every fitted b, with the unconstrained b, per knob × amp × class.
 - **A V_sep band cross-fit on R_in.** b is fitted on three of R_in's bands and scored on the fourth.
 - **A flag** if the E check's OK rests on the pull: A1+A2 alone does not clear 0.
@@ -1024,8 +1029,10 @@ a better readout against a worse one. D_existing is read the same way too.
   0, the model is anti-informative for that knob, and the constraint holds b at 0, the constant.
 - **Why b ∈ [0, 1] can only tie or beat the constant on the fitting set.**
   - b = 0 is the constant, and b = 1 is A1+A2. Both lie in the range searched.
-  - The fit minimises the fitting set's E for each knob and cell.
-  - So on the early-stopping set, A3's example-mean E is at most the constant's and at most A1+A2's.
+  - The fit minimises the fitting set's example-mean masked E for each knob and cell, each example's
+    terms weighted by 1 / its scored knobs.
+  - So on the early-stopping set, A3's example-mean masked E is at most the constant's and at most
+    A1+A2's. The band-weighted mean is not covered by this guarantee.
   - The guarantee is in-sample only. On R_in, A3 can lose to either.
 - **A1 has no guarantee** for a learned, possibly miscalibrated mixture. A2's guarantee is against
   the members' mean E: for every example and knob, by the triangle inequality.
@@ -1051,7 +1058,9 @@ a better readout against a worse one. D_existing is read the same way too.
   - step 4's refusals, and its renders waiting for amendment 6.
 
 **Sanity check (descriptive, zero renders, decides nothing).** It ran on 2026-10-22, after this
-amendment's first commit (`3b50faa`, pushed first). Output: `pilot/readout-check.json`.
+amendment's first commit (`3b50faa`, pushed first). It was re-run after the review's fix, which
+weights each example's terms in A3's fit by 1 / its scored knobs; the numbers below are from that
+re-run. Output: `pilot/readout-check.json`.
 - **What it read.** `readout-check` read the pilot's two stored D_stem runs on the pilot's
   early-stopping set only: 998 examples in 4 bands and 13 sections, with Mega-53 stems as trained.
   V_sep, R_in and R_out were never read.
@@ -1072,14 +1081,14 @@ constant's:
 | Top component, pooled ensemble | +0.0075 [−0.0231, +0.0381] |
 | A1, the median (seed-averaged) | −0.0084 [−0.0183, +0.0016] |
 | A1+A2, the average | −0.0101 [−0.0203, +0.0001] |
-| **A1+A2+A3, the declared answer** | **−0.0108 [−0.0187, −0.0029]** |
+| **A1+A2+A3, the declared answer** | **−0.0107 [−0.0186, −0.0027]** |
 
 - **Steps.**
   - **The median is the step that moves:** A1 − top −0.0189 [−0.0316, −0.0063].
   - **Averaging adds a little:** A1+A2 − A1 −0.0018 [−0.0020, −0.0015].
-  - **The pull ties:** A1+A2+A3 − A1+A2 −0.0006 [−0.0030, +0.0017].
-- **The reverse fold agrees.** Fold 0 scored with fold 1's weights reads −0.0104 [−0.0172, −0.0036]
-  against the constant, and A1+A2+A3 − A1+A2 reads +0.0002.
+  - **The pull ties:** A1+A2+A3 − A1+A2 −0.0005 [−0.0028, +0.0017].
+- **The reverse fold agrees.** Fold 0 scored with fold 1's weights reads −0.0105 [−0.0173, −0.0036]
+  against the constant, and A1+A2+A3 − A1+A2 reads +0.0001.
 - **Unmasked E agrees.** Fold 1 reads −0.0115 [−0.0207, −0.0023] against the constant.
 - **The weights.** Most b sit at 1: 36 of 58 on fold 0, with a median unconstrained b of 1.28. 36 of
   the 58 unconstrained b lie above 1. So the predictions are spread too narrowly for their

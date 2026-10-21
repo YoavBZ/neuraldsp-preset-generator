@@ -1,4 +1,5 @@
-"""The direct model with realistic stems (`docs/direct-model-stems-plan.md`, amendments 1-4 in force; 5 drafted).
+"""The direct model with realistic stems (`docs/direct-model-stems-plan.md`, amendments 1-4 in force; 5 approved
+2026-10-22, in force when merged).
 Development data only. Gate 1's zero-render checks (steps 1a, 1b), 1c, the pilot build and the
 pilot (step 2), the full models (step 3) and the decision test on stage F (step 4).
 
@@ -3013,18 +3014,20 @@ def labels_of(who, Y):
     return out
 
 
-def fit_pull(d, r):
-    """A3 for one knob in one cell: b minimising sum_i |b d_i - r_i| (d = answer - constant, r = label -
-    constant), i.e. the weighted median of r/d with weights |d|. The loss is convex in b, so the best b
-    in [0, 1] is the unconstrained one clipped; a flat minimum gives the point nearest 0; a model that
-    never leaves the constant gives 0. -> (b in [0, 1], unconstrained b)."""
+def fit_pull(d, r, n=None):
+    """A3 for one knob in one cell: b minimising sum_i |b d_i - r_i| / n_i (d = answer - constant, r = label
+    - constant, n_i = the example's audible labelled dims, default 1), i.e. the weighted median of r/d
+    with weights |d| / n. Summed over a cell's knobs this is the fitting set's example-mean E. The loss
+    is convex in b, so the best b in [0, 1] is the unconstrained one clipped; a flat minimum gives the
+    point nearest 0; a model that never leaves the constant gives 0. -> (b in [0, 1], unconstrained b)."""
     import numpy as np
 
     d, r = np.asarray(d, np.float64), np.asarray(r, np.float64)
+    n = np.ones(len(d)) if n is None else np.asarray(n, np.float64)
     nz = np.abs(d) > 1e-12
     if not nz.any():
         return 0.0, 0.0
-    t, w = r[nz] / d[nz], np.abs(d[nz])
+    t, w = r[nz] / d[nz], np.abs(d[nz]) / n[nz]
     o = np.argsort(t, kind="stable")
     t, w = t[o], w[o]
     cw = np.cumsum(w)
@@ -3038,7 +3041,8 @@ def fit_pull(d, r):
 
 def fit_pull_table(ans, lab, cell_of, med):
     """A3's weights per knob x amp x base class, fitted on one set: ans {i: answer}, lab {i: (label,
-    mask)}, cell_of {i: (amp, base)}, med {(amp, base): the constant}.
+    mask)}, cell_of {i: (amp, base)}, med {(amp, base): the constant}. Each example's terms weigh
+    1 / its scored dims, so the fit minimises the set's example-mean E under `lab`'s masks.
     -> {cell: {"b": [n], "b_unconstrained": [n], "examples": count}} (NaN where no example labels the knob)."""
     import numpy as np
 
@@ -3056,7 +3060,8 @@ def fit_pull_table(ans, lab, cell_of, med):
                 continue
             if not math.isfinite(c0[j]):
                 raise SystemExit(f"{cell}: a labelled dim has no training median")
-            b[j], bu[j] = fit_pull([ans[i][j] - c0[j] for i in use], [float(lab[i][0][j]) - c0[j] for i in use])
+            b[j], bu[j] = fit_pull([ans[i][j] - c0[j] for i in use], [float(lab[i][0][j]) - c0[j] for i in use],
+                                   [float(np.sum(np.asarray(lab[i][1]) > 0)) for i in use])
         out[cell] = {"b": b, "b_unconstrained": bu, "examples": len(ids)}
     return out
 
@@ -3686,7 +3691,9 @@ def cmd_readout(args):
     # the constant predictor: training-label medians per amp and base class (D's training rows), over the
     # labels that leave the knob audible (amendment 5: a switched-off feature's knobs are one setting)
     dropped = set(models["D"][2][0]["dropped_refused"]) if models["D"][2] else set()
-    med = label_medians([r for r in ctx.pool if not r["early_stop"] and r["i"] not in dropped], encode_audible)
+    train_rows = [r for r in ctx.pool if not r["early_stop"] and r["i"] not in dropped]
+    med = label_medians(train_rows, encode_audible)
+    med_first = label_medians(train_rows, SM.encode)     # the first-declared constant (beside only)
     # amendment 5: step 3's early-stopping set (the pool's 1,000 less the refusals), read through R_in's
     # path (the true mix and the build's stem, both halves), fits each model's pull on the masked E
     es_rows = [r for r in ctx.pool if r["early_stop"] and r["i"] not in dropped]
@@ -3724,7 +3731,8 @@ def cmd_readout(args):
             if g and not args.smoke:
                 raise SystemExit(f"{ro} {name}: {g} labelled dims have no weight fitted on the early-stopping set")
         res[ro] = {"examples": len(rows), "const": const_errors(rows, med, encode_audible),
-                   "const_unmasked": const_errors(rows, med, SM.encode), "models": {}, "models_unmasked": {}}
+                   "const_unmasked": const_errors(rows, med, SM.encode),
+                   "const_first": const_errors(rows, med_first, SM.encode), "models": {}, "models_unmasked": {}}
         for name, (nets, zarm, _) in models.items():
             if kind is None:
                 outs, who, Y = run_rows(nets, rows, lambda rr, z=zarm: vdev_tensors(rr, z))
@@ -3748,8 +3756,8 @@ def cmd_readout(args):
            "silent_gates": {k: list(v) for k, v in SILENT_GATES.items()},
            "constant": medians_json(med), "pull": {n: table_json(t) for n, t in pulls.items()},
            "pull_summary": {n: pull_summary(t) for n, t in pulls.items()}, "gaps": gaps,
-           "fitting_set": {"examples": len(es_rows), "note": "in-sample: A1+A2+A3 cannot lose to the constant or "
-                           "to A1+A2 here", "levels": {"constant": iv(es_const)},
+           "fitting_set": {"examples": len(es_rows), "note": "in-sample: on the example-mean masked E, A1+A2+A3 "
+                           "cannot lose to the constant or to A1+A2 here (band-weighted readings can differ)", "levels": {"constant": iv(es_const)},
                            "contrasts": readout_contrasts(fitting, es_const, band_of, set(es_const))},
            "levels": {}, "contrasts": {}, "contrasts_unmasked": {}, "seed_vs_ensemble": {}, "examples": {}}
     for name, p in fitting.items():
@@ -3784,8 +3792,12 @@ def cmd_readout(args):
     out["decides"] = STEP3_GATE                          # user, 2026-10-22: the sound gate; this E check is descriptive
     out["e_check"] = model_stop(r_in.get(E_CHECK))
     out["e_check_unmasked"] = model_stop((out["contrasts_unmasked"].get("R_in") or {}).get(E_CHECK))
-    # the first-declared readout (top component, seed-averaged, every labelled knob), with this constant
-    out["e_check_top_unmasked"] = model_stop((out["contrasts_unmasked"].get("R_in") or {}).get("D-constant [top]"))
+    # the rule as first declared: the top component, seed-averaged, every labelled knob, and the first-declared
+    # constant (medians over every training label, `SM.encode`)
+    if res.get("R_in"):
+        top = readout_per(res["R_in"]["models_unmasked"]["D"])["top"]
+        out["e_check_first_declared"] = paired(top, res["R_in"]["const_first"], band_of, set(res["R_in"]["const"]))
+    out["e_check_top_unmasked"] = model_stop(out.get("e_check_first_declared"))
     out["pull_flag"] = ensemble_flag(out["e_check"], r_in.get("D-constant [A1+A2]"), "A1+A2's (no pull)")
     out["e_check_rule"] = ("amendment 5, descriptive (amendment 6's sound gate decides): D's answer (A1 mixture medians, "
                            "averaged over 3 seeds x 2 halves, pulled toward the constant by b in [0, 1] fitted per knob, "
@@ -3812,8 +3824,8 @@ def cmd_readout(args):
         print(f"  {E_CHECK} over every labelled knob (unmasked, beside) {f(out['contrasts_unmasked'][ro].get(E_CHECK))}")
     for n, s in out["pull_summary"].items():
         print(f"  pull {n}: {s}")
-    print(f"  beside: unmasked {out['e_check_unmasked']}; the first-declared readout (top component, seed-averaged, "
-          f"unmasked) {out['e_check_top_unmasked']}")
+    print(f"  beside: unmasked {out['e_check_unmasked']}; the rule as first declared (top component, seed-averaged, "
+          f"unmasked, the first-declared constant) {out['e_check_top_unmasked']} {f(out.get('e_check_first_declared'))}")
     if out["pull_flag"]:
         print(f"FLAG: {out['pull_flag']}")
     print(f"E check (descriptive; Amendment 6 decides): {out['e_check']}")

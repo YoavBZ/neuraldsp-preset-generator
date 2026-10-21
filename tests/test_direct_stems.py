@@ -1345,3 +1345,27 @@ def test_readout_glue_end_to_end_on_toy_models(tmp_path, monkeypatch, capsys):
     aud = [by_i[r["i"]]["label"]["cabParameters/rightCabPosition"] for r in pool
            if not r["early_stop"] and r["base"] == "clean" and r["label"]["cabParameters/rightCabActive"] == "true"]
     assert math.isclose(cmed[("pr12", "clean")][k], float(np.median(np.float32(aud))), rel_tol=1e-6)
+
+
+def test_pull_fit_weights_each_example_by_its_scored_knobs():
+    # one knob, three examples; the first scores 1 knob, the others 4 (the rest silent or unlabelled)
+    d, r = [0.2, 0.2, 0.2], [0.2, -0.2, -0.2]
+    assert DS.fit_pull(d, r)[0] == 0.0                                       # unweighted: two examples say 0
+    assert DS.fit_pull(d, r, [1, 4, 4])[0] == 1.0                            # per-example E: the first weighs 4x
+    # fit_pull_table passes each example's scored dims: the fit minimises example-mean masked E
+    rng = np.random.default_rng(3)
+    ans, lab = {}, {}
+    for i in range(40):
+        m = np.ones(4) if i % 2 else np.array([1.0, 0, 0, 0])
+        theta = rng.uniform(0, 1, 4)
+        ans[i] = np.clip(theta + rng.normal(0, 0.3, 4) + (0.3 if i % 2 else -0.2), 0, 1)
+        lab[i] = (theta, m)
+    cell_of = {i: ("pr12", "clean") for i in ans}
+    med = {("pr12", "clean"): np.full(4, 0.5)}
+    b = DS.fit_pull_table(ans, lab, cell_of, med)[("pr12", "clean")]["b"]
+
+    def mean_e(bb):
+        return np.mean([DS.ensemble_error(DS.pull(ans[i], med[("pr12", "clean")], bb), *lab[i]) for i in ans])
+
+    for g in np.linspace(0, 1, 101):                                          # no other b0 does better
+        assert mean_e(b) <= mean_e(np.r_[g, b[1:]]) + 1e-12
