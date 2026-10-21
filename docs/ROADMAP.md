@@ -175,6 +175,11 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       gtr_mss stems (0.988× Mega-53 on MPS). The pilot, V_sep and the rest are separated anew, about
       19–22 h on one MPS and one CPU worker. D0 is unchanged, and Mega-53 stays the fallback. Then
       step 3's training (approved by the user on 2026-10-20).
+      *Amendment 5 drafted 2026-10-21, before any step 3 data:* step 3 and step 4 read the model's
+      answer as E rewards it. Each seed's per-knob mixture median is averaged over seeds and halves,
+      then pulled toward the constant by a weight fitted on the early-stopping set. The right cab's
+      knobs leave E when the true preset has that cab off. The old readout is reported beside it.
+      Under review.
    3. **Two zero-render checks.** *Done 2026-10-19 ([results](shrink-snr-judge-v3-results.md)):*
       the best shrink does not measurably depend on stem SNR (a rule by SNR gains −0.003 [−0.013,
       +0.007] on held-out bands; nothing on realistic stems), and judge v3 agrees with the ear a
