@@ -1,6 +1,8 @@
-import numpy as np
+import pytest
 
-from learn import xlance_screen as X
+np = pytest.importorskip("numpy")
+
+from learn import xlance_screen as X  # noqa: E402
 
 
 def test_single_chunk_is_exact():

@@ -224,6 +224,8 @@ halved to 10k examples to hold the budget (part C's 10k → 20k step was −0.00
 
 ### The pilot arms
 
+*Amendment 1 replaces D_sep with the stem-only D_stem and rewrites rule 2; see below.*
+
 **Training data:** 5k train examples (`random.Random(20261073)`, stratified by band and amp) and the
 1,000 early-stopping examples, all built as above. Part C's half-width network
 (`pretrain_set.build_net`) and recipe (`train_one`: Adam 1e-3, batch 64, one half per example per
@@ -251,6 +253,8 @@ epoch])`), aimed at what the user heard in the separation samples:**
 
 ### The pilot readouts and rules (declared, applied in order)
 
+*As amended: [amendment 1](#amendment-1-2026-10-20-stem-only-arm-approvals-order) holds the rules in force.*
+
 All readouts: E, seed-averaged, paired per example, 90% band-clustered t intervals over V_sep's 5
 bands (4 df, t 2.132), Bannockburn left out. **Power:** part C's paired ΔE had a band SD of about
 0.005, so the half-width here is about 0.005; effects smaller than about 0.007 read as ties, and with
@@ -272,7 +276,7 @@ bands (4 df, t 2.132), Bannockburn left out. **Power:** part C's paired ΔE had 
 
 ## Step 3: the full models (no judged renders)
 
-- **D** (D_sep, or D_mix by rule 2 or gate 1) and **D0** (part C's composition), each on the full
+- **D** (D_stem, or D_mix by rule 2 or gate 1; amendment 1) and **D0** (part C's composition), each on the full
   band-clean pool, 3 seeds (20261042–44), the same recipe, at most 40 epochs.
 - **The answer:** the three seeds' **pooled mixture's top component** (each seed's weights / 3, the
   highest-weight component's mean, clipped to [0, 1]); switches by majority; mics by the argmax of
@@ -413,13 +417,146 @@ on stage F: the recipe is fixed here; gate 1 reads D_existing's answer movement,
 - **Honesty:** B2 already had realistic separation and tied; the mix-realism part is capped near 7%
   of E in-domain; the flat curve may be an identifiability floor (all in "The question").
 
+## Amendment 1 (2026-10-20): stem-only arm, approvals, order
+
+**Why.** Gate 1 read `GATE1 STEM`: behind a clean or real separated stem the mix adds little or
+nothing (the stem carries 0.70 of the reliance; these reliance rows were read after the gate,
+descriptively). The user then decided that the model should be trained on the separated target
+stem, not handed the whole mix, with a mix version only as a small comparison. The reasoning that a
+two-channel model would lean on the mix to do separation it cannot do well is an inference, not a
+measurement. **What dropping D_sep gives up:** gate 1's caveat that a model trained on real stems
+might use the mix behind drop-outs is no longer measured.
+
+**The pilot arms (replaces "The pilot arms" list; recipe, seeds, epochs and data unchanged):**
+- **D0-5k:** part C's composition, unchanged (the matched control).
+- **D_mix-5k:** the stored true mix; the stem channel always 0. The small comparison.
+- **D_stem-5k:** the stored Mega-53 stem with the declared augmentations; **the mix channel always
+  0**, in training and at inference.
+- **D_stem-5k-noaug:** the same without augmentations.
+
+Still 4 arms × 2 seeds, about 2.4 GPU h at most. D_sep (stem plus mix) is dropped, not run.
+
+**Zeroing (exact, for D_mix's stem and D_stem's mix):** the channel is set to 0 in the normalised
+input (`song_model.norm_feat`, so −60 dB), after the half-A mask, as 1a's z condition did; its
+LUFS conditioning slot is set to 0 in the normalised conditioning vector (`cond_vec`), the same
+constant in training and at inference. The other channel's mel and LUFS are as stored.
+
+**D_stem's augmentations, in this order, on the stem only:**
+1. separator failure (p 0.05): stem := the stored true-mix mel + U(−6, 0) dB, and its LUFS := the
+   stored mix LUFS + the same offset (the mix is still built and stored, for D_mix and this);
+2. the merged second guitar (stem only; the mix channel stays 0);
+3. drop-outs;
+4. darkening.
+Steps 2–4 do not update the LUFS conditioning (a stated approximation: the merge can raise the
+true level by up to 3 dB; drop-outs and darkening lower it).
+
+**Inference level:** as in training, where each stem is separated from a mix brought to its drawn
+loudness, one gain brings the crop's mix to the training median and the stem gets the same gain.
+The stem's level then carries the guitar-to-mix ratio, which is available at inference.
+
+**Caveats:** D_stem − D0 changes three things at once (no mix channel, real stems, true mixes),
+beside the mix-diversity difference already stated. R_out's htdemucs stem is further outside
+D_stem's training than D0's, which can fall back on the mix; a fair test, stated.
+
+**The rules (replace D_sep by D_stem; otherwise as declared):**
+1. **STOP** if neither D_stem-5k − D0-5k nor D_mix-5k − D0-5k on R_out has an interval entirely
+   below 0.
+2. **Mix-only** only if D_mix-5k − D_stem-5k on R_in has an interval entirely below 0 (D_mix
+   clearly better) and D_mix beat D0 in rule 1. A tie keeps D_stem, the user's chosen route.
+3. **Otherwise build the rest** and train D_stem (step 3's D is D_stem).
+4. **Augmentation** kept unless D_stem-5k − D_stem-5k-noaug on R_in has an interval entirely above 0.
+
+Step 4 feeds D_stem the Mega-53 stem only. D0 keeps both channels.
+
+**Order.**
+1. 1c (the separator setting) runs first. It reuses gate 1's Mega-53 fast audit stems (hash-checked;
+   the CPU matched MPS to 81 dB) and adds the stored setting on the 164 audit mixes, about 30 min on
+   MPS. Separation only, no training, no renders.
+2. Then the pilot build.
+3. Then the pilot training.
+
+1d stays optional and is not run.
+
+**Approvals (user, 2026-10-20).**
+- **Training time:** the pilot's training, about 2.4 h, is approved. Step 3's D and D0 runs, 5–7.4 h, are
+  approved too: the user, later on 2026-10-20, ruled that runs already in an approved plan need no
+  further approval; only unplanned long runs do.
+- **Disk:** for the pilot build only, writers stop cleanly below **26 GB** free (the user approved
+  25 GB; 1 GB is margin), and the override is logged. The full build still needs at least 34 GB
+  free and the 31 GB guard.
+
+**Names elsewhere in this plan:** D_sep reads D_stem, `Dsep`/`Dsep-noaug` read `Dstem`/`Dstem-noaug`,
+and `PILOT STEM` reads `PILOT STEM`. In step 4, D_stem gets the Mega-53 stem only (mix channel 0); D0
+gets the same stem and the mix.
+
+### Implementation notes (2026-10-20)
+
+Recorded after the code review and 1c, before the pilot build.
+- **1c chose FAST.** The paired SNR difference (fast − stored) on the 164 audit mixes is −0.037 dB
+  [−0.228, +0.153] (6 bands). The interval reaches 0, so the fast setting is used for training and
+  inference. Gate 1's fast stems had no stored hashes: they were recorded at the first run and are
+  checked after it. Five of them, re-separated on MPS (sample seed 20261081, set in the code),
+  matched the CPU stems to at least 105 dB.
+- **Renders: about 19.3k for the pilot build, not 7,720.** Every kept render is primed: one
+  discarded render after a process start, amp change or DI change. Examples run grouped by
+  (section, amp), and mix shards take whole sections, so each group is primed once. No audio is
+  kept, so the stem stage re-renders each example (and checks it reproduces the stored mix) before
+  separating. The count: mix stage 6,831 + 1,885; Mega-53 stage 6,833 + 1,887; htdemucs on V_sep
+  1,887.
+- **The readouts have 4 bands, 3 df (t 2.353), not 5.** All of Cnoc An Tursa's V_sep examples are
+  Bannockburn (313), so leaving Bannockburn out removes the band.
+- **Scope:** the pool keeps part C's 773 beyond-scope examples (the plan's 21,311 includes them).
+  `pilot-report` adds scope-in contrasts (part C's keep_in rule) beside the deciding ones. They are
+  descriptive.
+- **D0** keeps part C's composition but trains on different data from part C's curve (the pilot's
+  5k). It uses part C's stored guitar mels, which come from unprimed renders. The new arms'
+  re-renders match them within one step on at least 99% of cells.
+- **Early stopping is never augmented** (one fixed draw of the real stems).
+- **The merged guitar's level** is set against the target guitar at the mix's overall gain. It
+  ignores any mastering gain.
+- **Floors:** drop-outs, darkening and separator failure are floored at −112 dB, the stored grid's
+  floor.
+- **Order:** the pilot's stem stage must finish before any arm trains. `train` refuses otherwise.
+  `pilot-report` refuses unless every run dropped the same refused examples and trained on the
+  same count. `build --part rest` refuses unless a real pilot-report read `PILOT STEM` (or
+  `PILOT MIX`, for the mix stage only), and it still needs the user's yes.
+
+### Implementation notes, steps 3 and 4 (2026-10-21)
+
+Recorded with the code, before any step 3 or 4 compute; for the code review.
+- **D's arm** follows the pilot-report: PILOT STEM trains `Dstem` (or `Dstem-noaug` if rule 4
+  dropped the augmentations), PILOT MIX trains `Dmix`. Runs go to `full/runs/`. Step 3 trains on
+  Mega-53 stems; `--sep xlance_g` is refused while amendment 2 is a draft.
+- **Refusals:** every step 3 run drops the same set, the refusals of D's build stages (mix, and
+  for D_stem the stem stage), from the pilot and the rest. The readout refuses runs that differ.
+- **The early stop** reads D's seed-averaged E on R_in (the pilot's convention) minus the constant
+  predictor's, paired, band-clustered t (3 df). The ensemble's reading is reported beside it. The
+  constant is the per-dimension median of D's training labels per amp and base class. Each seed
+  against the ensemble is read on R_in, R_out and V_dev.
+- **Step 4's stems:** gate 1's 21 stage F Mega-53 stems are exactly the fast setting on the crop
+  alone, so they are reused. Their hashes are recorded in `step4/stems/stems.json` and checked at
+  `predict` and before every render group.
+- **The parity test re-renders:** V_sep keeps no audio, so the 20 examples (seed 20261082, set
+  here) are re-rendered, mixed and separated as the build made them: about 40 unjudged renders
+  and 20 Mega-53 clips, beside step 4's 321. The test gain is the example's own level (0 dB),
+  since the stored features are at the drawn loudness. The model-input step after the grid
+  (`model_input`) is shared code with the V_sep readouts. It reproduces D_existing's
+  `features` exactly on stage F.
+- **The known-answer row:** 16 sections. Item 1 gives s1 and s2, the switch item 3 gives s3 and
+  s4. Amp and class come from the truth draw; the class input is the starting preset's class. D
+  and D0 read Mega-53 fast crop stems (16 more separations, in `stems`). D_existing reads B1's
+  stored htdemucs stems, as its stage F run did. Each half is read as the search half and the two
+  are averaged. Knob error is `known_answer.knob_errors` over S's labelled continuous dims.
+- **Kept audio:** each D and D0 render is kept as FLAC with 0.25 s trimmed (about 0.13 GB). The
+  judge scores from 1.0 s, past the isolate fade.
+
 ## Code (after review, before any compute)
 
 `learn/direct_stems.py`: `move` (1a and the audit cost; prints `GATE1 STEM` or `GATE1 MIX-ONLY`),
 `reliance` (1b), `sepcheck` (1c, prints the chosen setting), `matched --shard i/n` and
 `matched-report` (1d), `build --part pilot|rest|vsep --stage mix|stem` (renders, mixes, separates,
-stores; disk and memory guards), `train --arm D0|Dmix|Dsep|Dsep-noaug --n 5000|full --seed s`,
-`pilot-report` (prints `PILOT STOP`, `PILOT MIX` or `PILOT SEP`), `readout` (`MODEL STOP` or
+stores; disk and memory guards), `train --arm D0|Dmix|Dstem|Dstem-noaug --n 5000|full --seed s`,
+`pilot-report` (prints `PILOT STOP`, `PILOT MIX` or `PILOT STEM`), `readout` (`MODEL STOP` or
 `MODEL OK`), `predict`, `render --shard i/n`, `report`. Tests: every exclusion and tag; the a′
 construction against a numeric mix; the conditioning and quantisation parity; each augmentation on
 synthetic mels and its training-pool-only draw; gate 1 and the pilot rules on toy tables; the
@@ -450,3 +587,187 @@ examples, and confirmed the cited figures, render counts and power arithmetic. C
 Optional suggestions taken: the audit examples' labelled cost feeds gate 1; renders and mixes before
 separation; three a′ draws; both a′ − b and a − b reported; z's LUFS declared; the merged guitar
 from the training pool only; the mix-diversity difference stated.
+
+## Amendment 2 (DRAFT, 2026-10-21): X-LANCE gtr_mss as the build's separator, if its MPS check passes
+
+**Status: a draft for the user (morning decision); not reviewed and not in force.** Until it is,
+the pilot, the rest build and every readout stay on Mega-53 fast, as amendment 1 says.
+
+**Why.** The [X-LANCE screen](xlance-screen-results.md) (on its own branch, `ml/xlance-screen`)
+compared `gtr_mss` alone with Mega-53 fast on the 164 audit mixes, under its amendment 1:
+- SNR +0.14 dB [−0.11, +0.39], a tie;
+- mel-range LSD −2.30 dB [−3.00, −1.59], better in all 6 bands;
+- 1.01× Mega-53's CPU time.
+
+It passes the CPU legs; the verdict is pending an MPS timing. Three stage F parts fail badly, so
+Mega-53 stays the fallback.
+
+**The MPS check (zero renders, after the pilot training frees the GPU).**
+`direct_stems time-mps --device mps` runs Mega-53 fast and gtr_mss on the screen's 10 timing clips,
+on the same device, interleaved, after one untimed warm-up of each. It passes if gtr_mss's mean wall
+time per clip is ≤ 1.5× Mega-53's. Each stem is also compared with its stored CPU stem.
+
+**If it passes, and the user agrees:**
+- **Which stems use `xlance_g`:**
+  - the full build, i.e. the rest's 15,311 examples (`build --part rest --stage stem --sep xlance_g`);
+  - a re-separation of the pilot's 7,720 examples and V_sep's 1,720 (`--part pilot|vsep
+    --stage stem --sep xlance_g`). Each stores beside the Mega-53 stems, which are untouched.
+- **Training:** the full D_stem trains on xlance_g stems throughout (`train --sep xlance_g`). R_in
+  reads xlance_g stems; R_out stays htdemucs. D0 and D_mix need no stems and are unchanged.
+- **The STEM/MIX decision:** the pilot's verdict, read on Mega-53 stems, carries it. The pilot is
+  not re-run.
+- **Product:** step 4 and the product feed D the separator it trained on. Mega-53 stays the
+  fallback, in the build and in the product.
+
+**What it costs (new work).** The pilot and V_sep re-separation is new: 9,440 more separations, and
+each re-renders its guitar first, since no audio is kept.
+- **On the CPU:** gtr_mss takes about 27 s per clip at 2 threads (31 s on the current, busy
+  machine). One CPU worker would need about 71 h for the pilot and V_sep, and 115 h for the rest.
+  The CPU alone does not fit.
+- **On the MPS: not yet measured.** If the ratio is r, the plan's Mega-53 budget scales by r:
+  - the rest: 13–17 h × r;
+  - the pilot and V_sep re-separation: about 8–10.5 h × r;
+  - plus their re-renders, about 9.4k plus priming, at the 3-process render cap.
+- **Disk:** at most about 0.09 MB of stem features per example (two uint8 halves), about 2 GB for all 24,751.
+
+**Code (on `ml/direct-stems-xlance`, not yet merged).**
+- `--sep xlance_g` in the stem stage: gtr_mss alone, exactly as in the screen. Weights are
+  hash-checked against `~/ndsp-presets/tools/xlance/manifest.json`; it runs on `--device cpu|mps`.
+- `train --sep xlance_g`, for the stem arms only. Runs are recorded as `<arm>-<n>-<seed>-xlance_g`,
+  so Mega-53 runs are never overwritten.
+- `time-mps`.
+- **Smoke tests (zero renders):**
+  - 3 audit clips on the CPU: the timing helper's gtr_mss stems match the screen's at ≥ 334 dB,
+    and Mega-53's match gate 1's at ≥ 333 dB;
+  - 2 stored audit mixes through the stem stage's writer: features stored under `xlance_g`, and
+    rows read back.
+- **Not yet done:** an MPS run of gtr_mss, after the pilot frees the GPU. Step 3's `--n full`
+  training is implemented, but on Mega-53 stems only: it refuses `--sep xlance_g` while this
+  amendment is a draft (`AMENDMENT2_IN_FORCE`).
+
+## Amendment 3 (2026-10-21): parity LUFS gating
+
+**Post hoc:** written after the first real parity run failed, and because of it; revised once on
+review. Amendment 2 stays a draft. Any `PARITY OK` below or in `step4/parity.json` is a pass under
+this post-hoc rule, not under the rule declared in step 4.
+
+**What failed.** The first parity run (record kept as `step4/parity-2026-10-21T040312.json`)
+printed `PARITY FAIL`. Its worst mel share was 1.0 and its worst LUFS difference 0.171. 39 of
+its 40 halves were within 1e-4 LU. The miss was V_sep example 1002075, half B, stem LUFS only:
+its mix LUFS differed by 2.3e-6 and both mel shares were 1.0.
+
+**The diagnosis** (2 renders and 8 Mega-53 fast separations, CPU, 4 threads, no MPS):
+- **No thread or run-to-run difference in separation.** Separating the same mix twice, in one
+  process and in a new one, gave bit-identical stems. Five −120-dB perturbations of the mix moved
+  the stem's half-B LUFS by at most 0.0003.
+- **The diagnostic re-render** (its own process, one priming render, then this example alone):
+  - The stem is quiet and sparse: −32.4 LUFS, 33% of its cells at the floor.
+  - Of half B's 42 gating blocks (BS.1770 via pyloudnorm), block 15 sat +0.009 LU above the
+    relative gate (−44.62).
+  - With the block counted the half read −32.386 LUFS; without it, −32.219. The stored value is
+    −32.370.
+- **The parity record** (the re-run with per-block data, `step4/parity.json`):
+  - Block 15 sat −0.0027 LU below the gate: −32.199 as measured, −32.365 with the block toggled
+    back in.
+  - The block moved about 0.012 LU between the two renders.
+- **Where the 0.016 comes from.** Even with block 15 counted, the diagnostic read 0.016 LU off
+  the stored value. That render took a different route: its own process, this example alone
+  after one priming render. Parity renders the 20 examples in group order after its own priming,
+  and its two runs reproduced every difference exactly (0.17127227 both times). So parity's reruns
+  under-sample render-to-render noise. The 0.016 is a measure of that noise on this quiet stem.
+
+**The rule (replaces "LUFS within 0.01 LU" in step 4's parity test):**
+- **Stem LUFS within 0.03 LU** of the stored value, set from the measured repeatability: 0.016
+  (diagnostic drift), 0.0044 (after the toggle), 0.0011 (1002075's half A).
+- **Mix LUFS within 0.01 LU,** unchanged.
+- **The toggle:** a half that misses its tolerance passes only if toggling the single gating block
+  nearest the relative gate explains it. That block must sit within 0.05 LU of the gate, and the
+  toggled loudness must be within the same tolerance.
+- **Stored:** `parity` keeps each half's gate margin and the toggle's result. `parity.json`
+  reports `worst_unexplained_lufs_diff` beside the verdict.
+- **Mels unchanged:** at least 99% of cells within one 0.5-dB step.
+
+**Why this does not weaken the check, and why it must go no further:**
+- **The stem level is checked only here.** The mel check cannot see a uniform stem gain error
+  below about 0.5 dB (one grid step), so stem LUFS is the only stem-level check. It must not be
+  loosened past 0.03 LU.
+- **Only a discrete flip of one block at the gate is excused.** A half 0.17 LU louder
+  throughout still fails (tested).
+- **The mel features and the mix LUFS must still match.**
+- **The excused effect on the model is small.** 0.17 LU moves the stem LUFS conditioning input
+  by 0.017 on its normalised scale.
+
+**The re-read** (zero renders, `parity --reevaluate` on the stored per-block record):
+`PARITY OK under amendment 3 (post hoc)`. The worst unexplained LUFS difference is 0.0011, and
+1002075 half B's stem (0.171) is explained by the gate (toggled difference 0.0044).
+
+## Amendment 4 (2026-10-21): a learning-curve probe before the full build
+
+**Status:** declared before any probe run. Descriptive, zero renders. Amendment 2 stays a draft.
+
+**Why.** The pilot read `PILOT STEM`, but `constant-check` shows every pilot model worse than the
+constant predictor (the median of the pilot's training labels per amp and base class).
+- **D_stem (seed-averaged) − constant:** R_in +0.0128 [−0.0013, +0.0269], R_out +0.0178
+  [+0.0011, +0.0344].
+- **D0, D_mix and D_stem-noaug:** +0.024 to +0.038.
+
+Step 3's early stop needs D below the constant on R_in, and the full build costs about 20 h of
+separation and 6 GPU h. A learning curve on the pilot's own data is the cheapest reading of
+whether 4× more data is projected to get there.
+
+**The runs.**
+- **Arm:** D_stem with its augmentations (the pilot's `Dstem`).
+- **Data:** nested training subsets of the pilot's 5k, stratified by band and amp. n = 2,500
+  is drawn from the 5k (`random.Random(20261084)`), and n = 1,250 from those 2,500
+  (`random.Random(20261085)`). The same 1,000 early-stopping examples are used throughout, and
+  refusals are dropped as in the pilot.
+- **Recipe:** the pilot's (at most 40 epochs, patience 4), seeds 20261042 and 20261043. 4 runs
+  of a few minutes each on MPS, one at a time; `train --arm Dstem --n 1250|2500`.
+- **Readouts:** at n = 5,000 the pilot's two stored D_stem runs are reused.
+
+**The reading (`curve`).**
+- **Per n:** E − constant on R_in and R_out, as `pilot-report` and `constant-check` read them:
+  seed-averaged, paired per example. The constant is the pilot 5k's and is held fixed across n.
+- **The fit:** per band, a least-squares line of the band's mean (E − constant) on log2(n) over
+  the three points, extrapolated to n = 20,311. The slope per doubling and the extrapolated value
+  each get a 90% band-clustered t interval (4 bands, 3 df).
+- **Declared rule, on R_in (step 3's early-stop readout):**
+  - `PROBE PAUSE` if the extrapolated 20,311 value's interval lies entirely above 0. The full
+    build then projects to `MODEL STOP`: pause the rest's separation and ask the user.
+  - `PROBE CONTINUE` otherwise: the plan continues as declared.
+- R_out is reported beside it.
+
+**Caveats, stated before the run.**
+- **It is an extrapolation:** two doublings past the largest point, assuming a straight line in
+  log2(n).
+- **The fit is thin:** 4 bands, and two new points plus one.
+- **The seeds are noisy:** the pilot's two D_stem seeds differ by about 0.02 on R_in, as large as
+  the effect being projected.
+- **The subsets have a smaller merge pool:** their merged-guitar augmentation draws partners from
+  the subset only.
+- **The full model differs:** step 3 trains 3 seeds and reads the ensemble too, and the rest's
+  sections widen the band mix.
+- **It decides only a pause:** a `PROBE CONTINUE` is not evidence that step 3 will pass.
+
+**Changes from the review (2026-10-21, before any probe run):**
+- **Equal optimisation steps:** at most 160 epochs for n = 1,250 and 80 for n = 2,500
+  (40 for 5,000), patience 4 unchanged. Each run's best epoch is recorded, and any within 4 of its
+  cap is flagged.
+- **Per-seed chains:** each seed's nested chain (1,250 / 2,500 / 5,000) gets its own projected
+  point at 20,311, reported beside the seed-averaged band-clustered fit. The band interval does
+  not capture common-mode seed noise, since both seeds share every band.
+- **An advisory flag, beside the declared rule:** `PROJECTED ABOVE CONSTANT` prints if the
+  seed-averaged projected point at 20,311 is above 0, or the slope is not negative. It pauses
+  nothing by itself; it goes to the user.
+- **A capped projection:** the log-linear line is likely optimistic, given part C's flattening
+  (its curve flattened at 20k–40k; its 10k → 20k step was −0.0069). It is not an upper bound: one
+  seed's chain can project beyond it. So a capped projection is printed too: the observed
+  2,500 → 5,000 per-doubling gain, halved at each further doubling, so
+  v₅₀₀₀ + g·(1 − 0.5^d) at d = log2(20,311 / 5,000).
+- **Two constants:** the full pool's constant (the median of the full build's training labels per
+  amp and base class, refusals excluded, zero renders) is printed beside the 5k constant, with the
+  difference. The probe keeps the 5k constant.
+- **The merge pool:** a dry check that every base class in the 1,250 and 2,500 subsets has merge
+  partners from at least 2 sections. `train` refuses a subset that fails it. The caveat stands:
+  the subsets' merge pool is smaller than the pilot's.
+

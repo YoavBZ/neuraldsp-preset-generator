@@ -158,18 +158,21 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       stem against the mix ([plan](direct-model-stems-plan.md), declared and reviewed 2026-10-19):
       zero-render checks of the stem mismatch on the existing model first, then a 5k pilot (its
       ≈2.4 h of training needs the user's approval; real Mega-53 stems, a mix-only model, the old
-      recipe), then one stage F test, D − S primary. The full build (5–7.4 h of training, approval
-      first) waits on the user freeing disk (34 GB free at start).
+      recipe), then one stage F test, D − S primary. The full build's 5–7.4 h of training is approved (the user,
+      2026-10-20); disk is no longer a block.
       *Gate 1 done 2026-10-20 ([results](direct-model-stems-gate1-results.md)):* the stem matters
       (GATE1 STEM); the mix adds little behind a clean or separated stem, so the next model should
       read the separated target stem alone (a pilot-arm change for the user to approve).
-      *Pilot running 2026-10-20 (user approved; amendment 1, reviewed, on branch
-      `ml/direct-stems-pilot` until the pilot's PR merges):* arms D_stem (separated stem only), D_mix (mix only, the small comparison), D0
-      (the old recipe) and D_stem without augmentation; 1c chose Mega-53's fast setting (−0.04
-      [−0.23, +0.15] dB against the stored one). The build (about 19.3k training-style renders,
-      Mega-53 on MPS and CPU) is running, then about 2.4 h of training, then the pilot rules
-      (STOP / MIX / STEM). Disk is no longer a block (the user emptied the Trash; about 133 GB
-      free); the full models' 5–7.4 h of training need a new yes.
+      *Pilot done 2026-10-21 ([results](direct-model-stems-pilot-results.md)):* `PILOT STEM`.
+      The stem-only model beats the old recipe (R_out −0.0127 [−0.0216, −0.0039]), and its
+      augmentations help. But every pilot model is still worse than a per-class constant
+      predictor (D_stem +0.0128 [−0.0013, +0.0269] on R_in). More data helps (−0.017 per
+      doubling on average; the seeds differ, about −0.028 and −0.006), so the probe reads
+      `PROBE CONTINUE`. Even so, the full model is projected to land near the constant (−0.020
+      log-linear, likely optimistic given part C's flattening; −0.004 capped), so step 3's MODEL STOP is a real
+      risk. The rest's mix stage is running. Next: its separation (about 20 h; whether to switch to
+      X-LANCE, 0.988× on MPS, which re-separates the pilot's 9,440 examples, is the user's call),
+      then step 3's training (approved by the user on 2026-10-20).
    3. **Two zero-render checks.** *Done 2026-10-19 ([results](shrink-snr-judge-v3-results.md)):*
       the best shrink does not measurably depend on stem SNR (a rule by SNR gains −0.003 [−0.013,
       +0.007] on held-out bands; nothing on realistic stems), and judge v3 agrees with the ear a
@@ -380,3 +383,4 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-20 | Pan side as a separation hint (zero renders, synthetic pans of stage F, audited): with the side known, Mega-53's stereo stem gains +1.50 [+0.78, +2.33] (target's channel, ±0.6) and +1.35 [+0.31, +2.49] (MDX23C centre model, centred lead against hard-L/R rhythms) over its mid; ILD mask +0.6 to +0.8, Wiener on top no help (LSD +7 to +8); no gated cell reaches +2 dB, a gain to build on. Blind side picks follow the louder other guitars (right 5/19, 4/19, 0/19) and lose. The side must come from the arrangement or the user's ear; a product question | [pan screen](stereo-side-results.md) |
 | 2026-10-20 | Coherence mask (stereo-side amendment 1; zero renders, audited): per-bin inter-channel phase coherence on Mega-53's stereo stem gains only +0.35 [+0.15, +0.59] on a centred lead against hard-L/R rhythms (+0.56 even on the class-perfect stem), below the ILD mask (+0.76) and the centre model (+1.35); with the ILD mask +0.69. It barely changes tone. Not pursued | [pan screen](stereo-side-results.md#amendment-1-the-inter-channel-coherence-mask-2026-10-20) |
 | 2026-10-21 | X-LANCE screen (zero renders, CPU, audited): on the 164 audit mixes the denoise → gtr_mss chain ties Mega-53 fast on SNR (+0.14 [−0.11, +0.39]) and is better on mel-range LSD (−1.82 [−3.09, −0.54]) at 1.78× the CPU time: PASS, OVER BUDGET. [Amendment 1](xlance-screen-plan.md#amendment-1-gtr_mss-alone-on-the-audit-mixes-2026-10-21) (reviewed), gtr_mss alone: SNR +0.14 [−0.11, +0.39], mel-range LSD −2.30 [−3.00, −1.59], 1.01× CPU: passes the CPU legs, pending MPS timing after the pilot frees the GPU. Stage F failures shared by both (She's Gone, Colour Me Red ×2), so Mega-53 stays the fallback and the rest build stays on Mega-53 until the MPS check | [X-LANCE screen](xlance-screen-results.md) |
+| 2026-10-21 | Direct model pilot (no judged renders): PILOT STEM. The stem-only D_stem beats the old recipe D0 on R_out (−0.0127 [−0.0216, −0.0039]) and D_mix (R_in +0.0223 for D_mix), and its augmentations help (−0.0115). But all pilot models are worse than a per-class constant predictor (D_stem +0.0128 [−0.0013, +0.0269], R_in). Amendment 4's learning curve: −0.017 per doubling on average (seeds about −0.028 and −0.006), projected −0.020 [−0.047, +0.007] at 20,311, likely optimistic given part C's flattening (capped −0.004; the seeds split), so PROBE CONTINUE, with step 3's MODEL STOP a real risk. Parity passed under post-hoc amendment 3; X-LANCE gtr_mss 0.988× on MPS (switch awaits the user) | [pilot results](direct-model-stems-pilot-results.md) |
