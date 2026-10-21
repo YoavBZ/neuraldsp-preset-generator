@@ -18,9 +18,11 @@ and 4. Amendment 2 (X-LANCE) is still a draft. Development data only; no judged 
   setting as the median of the training labels for the amp and base class. D_stem − constant
   reads +0.0128 [−0.0013, +0.0269] on R_in and +0.0178 [+0.0011, +0.0344] on R_out. This check
   is descriptive; step 3's early stop needs D below the constant.
-- **More data clearly helps:** −0.017 of E per doubling (R_in −0.0170 [−0.0232, −0.0108]). The
-  log-linear projection to the full 20,311 is −0.020 [−0.047, +0.007] against the constant.
-  That gives `PROBE CONTINUE`, so the plan goes on.
+- **More data helps:** −0.017 of E per doubling on R_in (−0.0170 [−0.0232, −0.0108]). That
+  slope averages two very different seeds: about −0.028 per doubling for seed 20261042 and about
+  −0.006 for seed 20261043. The log-linear projection to the full 20,311 is −0.020 [−0.047,
+  +0.007] against the constant, likely optimistic given part C's flattening. That gives
+  `PROBE CONTINUE`, so the plan goes on.
 - **The full model is projected to land near the constant, so step 3's MODEL STOP is a real
   risk.** Neither projection's interval clears 0. The capped projection is −0.004, and the two
   seeds project to opposite signs.
@@ -39,7 +41,8 @@ and 4. Amendment 2 (X-LANCE) is still a draft. Development data only; no judged 
 (section, amp) group, and the per-render counts were not logged. The figures are examples plus
 groups.
 
-- **Renders:** about 19.3k in all, none judged.
+- **Renders:** about 19.3k for the build, none judged. With step 4's 74 parity and diagnosis
+  renders (two parity runs of 36, and 2 for the diagnosis) it is about 19.4k.
 - **Mastered:** 2,994 of the pilot's mixes and 901 of V_sep's (p 0.5).
 - **Build order:** the pilot mix stage ran on 2026-10-20 from 19:42 and the stem stages from
   21:00, with V_sep's Mega-53 stems following at 02:32. The rest's mix stage started at 06:14
@@ -57,13 +60,15 @@ early stopping, and dropped the same 5 refusals):
 
 - **GPU time:** 2.2 h for the pilot, plus 23 min for amendment 4's four runs. About 170–180
   examples a second; no skipped steps.
-- **Epoch caps:** D_mix 42, D_stem 43 and D_stem-noaug 42 had their best epoch within 4 of the
-  cap of 40, so they may be under-trained.
+- **Epoch caps:** three runs had their best epoch within 4 of the cap of 40, so they may be
+  under-trained: D_mix seed 20261042 (39/40), D_stem seed 20261043 (38/40) and D_stem-noaug seed
+  20261042 (38/40).
 
 ## The pilot's rules (`pilot/pilot-report.json`)
 
 E is seed-averaged and paired per example, with 90% band-clustered t intervals over V_sep's 4
-bands (3 df). Bannockburn (MUSDB18 train, 313 examples) is left out.
+bands (3 df). Bannockburn (MUSDB18 train, 313 examples; all of the band Cnoc An Tursa's V_sep
+examples) is left out.
 - **R_in:** all of V_sep, Mega-53 stem: 1,407 examples.
 - **R_out:** the unmastered examples, htdemucs stem: 672 examples.
 
@@ -87,9 +92,10 @@ bands (3 df). Bannockburn (MUSDB18 train, 313 examples) is left out.
 | D_mix | 0.238 | 0.238 |
 | D0 | 0.242 | 0.232 |
 
-**Scope-in contrasts** (part C's keep_in rule, 1,590 examples, descriptive) agree with the
-deciding contrasts: D_stem − D0, R_out −0.0134 [−0.0225, −0.0043]; D_mix − D0, R_out +0.0062;
-D_mix − D_stem, R_in +0.0222; D_stem − D_stem-noaug, R_in −0.0116.
+**Scope-in contrasts** (descriptive) agree with the deciding contrasts. They use part C's keep_in
+rule: 1,590 V_sep examples, intersected with each readout, leaving 1,292 on R_in and 623 on
+R_out. D_stem − D0, R_out −0.0134 [−0.0225, −0.0043]; D_mix − D0, R_out +0.0062; D_mix − D_stem,
+R_in +0.0222; D_stem − D_stem-noaug, R_in −0.0116.
 
 ## Against a constant predictor (`constant-check`, descriptive)
 
@@ -104,9 +110,10 @@ on R_in and 0.201 on R_out.
 | D0 | +0.0384 [+0.0204, +0.0564] | +0.0305 [+0.0182, +0.0429] |
 
 - **D_stem's seeds differ:** seed 20261042 reads +0.003 on R_in, seed 20261043 +0.023.
-- **D_existing is no better** (a zero-render check run while writing step 3's code): on all of
-  V_dev it reads −0.014 [−0.035, +0.007] against the constant, and on the 604 R_out examples
-  built by then +0.036 [+0.015, +0.056].
+- **D_existing against the same constant** (`pilot/dexisting-constant.json`, zero renders, CPU,
+  seed-averaged): on V_dev (1,720 examples, 5 bands) it is nominally better, −0.0143 [−0.0351,
+  +0.0066], but the interval spans 0. On R_out (672 examples) it is worse, +0.0369 [+0.0182,
+  +0.0556], and on R_in (1,407) worse still, +0.0595 [+0.0453, +0.0738].
 - **What the readouts reward:** the pilot's gains are real against the old recipe, but these
   models have not yet learned more than the per-class centre of the labels.
 
@@ -126,7 +133,7 @@ full pool's constant is the same within ±0.0003).
 | At 20,311 | R_in | R_out |
 |---|---|---|
 | Slope per doubling | −0.0170 [−0.0232, −0.0108] | −0.0165 [−0.0226, −0.0104] |
-| **Log-linear (an upper bound on the gain)** | **−0.0200 [−0.0473, +0.0072]** | −0.0126 [−0.0405, +0.0154] |
+| **Log-linear (likely optimistic, given part C's flattening)** | **−0.0200 [−0.0473, +0.0072]** | −0.0126 [−0.0405, +0.0154] |
 | Capped (the last doubling's gain, halved each further doubling) | −0.0037 [−0.0204, +0.0130] | −0.0015 [−0.0255, +0.0225] |
 | Seed 20261042's chain | −0.0513 [−0.0844, −0.0182] | −0.0504 [−0.0776, −0.0231] |
 | Seed 20261043's chain | +0.0113 [−0.0136, +0.0361] | +0.0252 [−0.0035, +0.0539] |
@@ -137,10 +144,13 @@ full pool's constant is the same within ±0.0003).
 - **Caveats:**
   - The band interval does not capture the seed spread. The two chains project to opposite
     signs, and most of the projected gain comes from seed 20261042's 2,500 → 5,000 step.
-  - The pilot's seed-20261043 run stopped at epoch 38 of 40, so it may be under-trained at
-    5,000.
+  - The pilot's seed-20261043 run had its best epoch at 38 of 40, so it may be under-trained
+    at 5,000.
   - Part C's curve flattened at 20k–40k (its 10k → 20k step was −0.0069), so the log-linear line
-    is an upper bound on the gain.
+    is likely optimistic. It is not an upper bound: seed 20261042's chain alone projects to
+    −0.051.
+  - The seed-averaged slope (−0.017 per doubling) averages about −0.028 (seed 20261042) and
+    about −0.006 (seed 20261043).
 
 ## Separately
 
@@ -163,8 +173,8 @@ full pool's constant is the same within ±0.0003).
 
 - **The pilot's choice holds.** The separated target stem alone (D_stem) is the best of the
   four recipes, by about 0.013–0.026 of E over the old recipe. Its augmentations help.
-- **More data clearly helps,** about −0.017 of E per doubling. The full build's 4× more data is
-  worth having.
+- **More data helps,** about −0.017 of E per doubling, but the two seeds differ a lot: about
+  −0.028 and −0.006. The full build's 4× more data should help; by how much is uncertain.
 - **The full model is projected to land near the constant predictor, not clearly below it:**
   −0.020 if the log-linear trend holds, −0.004 if it slows as part C's did. The seeds disagree.
   Step 3's declared early stop (MODEL STOP unless D is clearly below the constant on R_in) is a

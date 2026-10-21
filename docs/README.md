@@ -370,8 +370,8 @@ was declared, what was measured, and the research behind it.
   stem-only model is recommended. Audited.
   **Pilot (2026-10-21, no judged renders): PILOT STEM.** The stem-only model beats the old
   recipe (R_out −0.0127 [−0.0216, −0.0039]), but every pilot model is still worse than a
-  per-class constant predictor. A learning curve (−0.017 per doubling) projects the full model
-  near the constant (PROBE CONTINUE; step 3's MODEL STOP is a real risk). Not yet audited.
+  per-class constant predictor. A learning curve (−0.017 per doubling on average; the seeds differ
+  widely) projects the full model near the constant (PROBE CONTINUE; step 3's MODEL STOP is a real risk). Not yet audited.
 - [record-match-listening-plan.md](record-match-listening-plan.md) → [results](record-match-listening-results.md):
   a blind check of the judge by ear on 5 guitar-exposed parts: the ear broadly agrees with the
   judge's order (Spearman mean 0.8), the ceiling C is heard closest in 4/5, H beats S in 4/5, D

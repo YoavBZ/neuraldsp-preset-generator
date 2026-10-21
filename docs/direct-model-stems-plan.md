@@ -759,8 +759,9 @@ whether 4× more data is projected to get there.
 - **An advisory flag, beside the declared rule:** `PROJECTED ABOVE CONSTANT` prints if the
   seed-averaged projected point at 20,311 is above 0, or the slope is not negative. It pauses
   nothing by itself; it goes to the user.
-- **A capped projection:** the log-linear line is an upper bound on the gain (part C flattened at
-  20k–40k; its 10k → 20k step was −0.0069). So a capped projection is printed too: the observed
+- **A capped projection:** the log-linear line is likely optimistic, given part C's flattening
+  (its curve flattened at 20k–40k; its 10k → 20k step was −0.0069). It is not an upper bound: one
+  seed's chain can project beyond it. So a capped projection is printed too: the observed
   2,500 → 5,000 per-doubling gain, halved at each further doubling, so
   v₅₀₀₀ + g·(1 − 0.5^d) at d = log2(20,311 / 5,000).
 - **Two constants:** the full pool's constant (the median of the full build's training labels per

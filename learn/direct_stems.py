@@ -4021,8 +4021,8 @@ def cmd_curve(args):
     for k_, v in out["levels"].items():
         print(f"  E - constant {k_:26s} {f(v)}")
     for ro, v in out["fit"].items():
-        print(f"  {ro}: slope per doubling {f(v['slope_per_doubling'])}; at 20,311 {f(v['at_20311'])} (log-linear, an upper "
-              f"bound on the gain); capped {f(out['capped'].get(ro))}; per seed "
+        print(f"  {ro}: slope per doubling {f(v['slope_per_doubling'])}; at 20,311 {f(v['at_20311'])} (log-linear, likely "
+              f"optimistic given part C's flattening); capped {f(out['capped'].get(ro))}; per seed "
               + ", ".join(f"{s}: {f(x)}" for s, x in out["per_seed"][ro].items()))
     print("  best epochs", out["best_epochs"], "| merge pool", out["merge_pool"])
     for e in out["edge_flags"]:
