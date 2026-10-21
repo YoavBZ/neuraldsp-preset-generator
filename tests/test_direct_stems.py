@@ -946,7 +946,7 @@ def test_curve_fit_extrapolates_per_band_on_log2_n():
     by_n = {1250: {"a": 0.04, "b": 0.03}, 2500: {"a": 0.03, "b": 0.02}, 5000: {"a": 0.02, "b": 0.01}}
     f = DS.curve_fit(by_n, x_target=math.log2(20000))
     assert math.isclose(f["per_band"]["a"][0], -0.01) and math.isclose(f["per_band"]["b"][0], -0.01)
-    assert math.isclose(f["per_band"]["a"][1], 0.02 - 0.01 * 2)        # two more doublings
+    assert math.isclose(f["per_band"]["a"][1], 0.02 - 0.01 * 2, abs_tol=1e-12)   # two more doublings
     assert math.isclose(f["at_target"][0], (0.0 - 0.01) / 2, abs_tol=1e-12) and f["at_target"][3] == 2
 
 
