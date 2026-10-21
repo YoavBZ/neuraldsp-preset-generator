@@ -218,14 +218,14 @@ Tone King recipes use its verified sync-note selectors. See
 - **For a clean Morgan part, start from the amp's clean baseline.** These are factory
   presets, under `/Library/Audio/Presets/Neural DSP/Morgan Amps Suite/`:
 
-  | amp | clean baseline | on a full open chord, dry |
+  | amp | clean baseline | dry, on the open-chord riff (one listener, not blind) |
   |---|---|---|
-  | PR12 | `Artists/Mark Johnston/Royally Ambient.xml` | clean |
+  | PR12 | `Artists/Mark Johnston/Royally Ambient.xml` | clean beside the others; edge of breakup alone |
   | SW50R | `Artists/Mark Johnston/Pedal Platform Clean.xml` | breaks up |
   | AC20 | `Artists/Royce Whittaker/Low-Watt Americana.xml` | breaks up |
 
-  For a part documented as fully clean, prefer PR12; on SW50R or AC20, call the start
-  edge of breakup ([check](../../docs/clean-start-breakup-results.md)).
+  That is these presets' settings, not the amps' headroom. On a fully clean part, say a
+  SW50R or AC20 start may break up on hard strums ([check](../../docs/clean-start-breakup-results.md)).
 
   - **The evidence.** Chosen by rule on development recordings, then checked on 13
     reserved clean parts. Dry, they landed closer to the record than the shipped
