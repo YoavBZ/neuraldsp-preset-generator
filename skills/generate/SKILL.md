@@ -224,7 +224,7 @@ Tone King recipes use its verified sync-note selectors. See
   | SW50R | `Artists/Mark Johnston/Pedal Platform Clean.xml` | breaks up |
   | AC20 | `Artists/Royce Whittaker/Low-Watt Americana.xml` | breaks up |
 
-  That is these presets' settings, not the amps' headroom. On a fully clean part, say a
+  Most likely these presets' settings, not the amps' headroom. On a fully clean part, say a
   SW50R or AC20 start may break up on hard strums ([check](../../docs/clean-start-breakup-results.md)).
 
   - **The evidence.** Chosen by rule on development recordings, then checked on 13

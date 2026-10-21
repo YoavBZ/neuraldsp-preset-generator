@@ -21,7 +21,7 @@ in fresh plugin processes, not blind:
 | AC20 clean baseline (`Low-Watt Americana`) | not clean |
 
 The PR12 baseline is borderline: clean beside two presets that break up more, but heard
-breaking up on the open Em alone a week earlier (riff-library-plan.md, "Rebuilt").
+breaking up on the open Em alone four days earlier (2026-10-17) (riff-library-plan.md, "Rebuilt").
 
 ## Measured
 
@@ -53,15 +53,14 @@ than the amp.
 
 `generate` step 4 records the check beside the clean baselines, and says what it means:
 on a part documented as fully clean, a SW50R or AC20 clean start may break up on hard
-strums, and the report should say so. These are the factory presets' settings
-(`Pedal Platform Clean`, `Low-Watt Americana`), not the amps' headroom: the skill's own
+strums, and the report should say so. These are most likely the factory presets' settings
+(`Pedal Platform Clean`, `Low-Watt Americana`), not the amps' headroom (untested): the skill's own
 guidance that SW50R has the most headroom stands, and the amp is still chosen from
 research. The baselines stay: they were chosen as closest to clean development recordings
 ([clean-baseline-results.md](clean-baseline-results.md)), and the blind check of starting
 presets on real clean parts (block X, amps rotating PR12, SW50R and AC20) preferred the
 clean start to the crunch start 4 of 5 times
-([starting-preset-listening-results.md](starting-preset-listening-results.md)). That
-those recordings carry slight breakup themselves is an inference, not measured.
+([starting-preset-listening-results.md](starting-preset-listening-results.md)).
 
 Next, when render slots are free, cheapest first: the same check on the SW50R and AC20
 baselines with their volume (or input) lowered, and with a compressor; only then a
