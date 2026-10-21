@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-19.
+lives in the linked documents. Last updated 2026-10-21.
 
 ## Where the product is
 
@@ -10,6 +10,10 @@ lives in the linked documents. Last updated 2026-10-19.
 - **The goal (user, 2026-10-14):** from a song and its research, generate the most
   accurate preset by setting every control the song needs. Choosing the closest
   factory preset is not the purpose; factory presets are starting points.
+  *Every control (user, 2026-10-21):* every setting the plugin exposes (the pack
+  manifests), not only input gain, the amp's knobs and the mics: the pedals, EQ, time
+  effects, gate, room mics, pan, phase, output and the rest. The knob values of a
+  switched-off feature all count as one setting.
 - **`generate`** researches the song, sorts the part into clean, crunch or heavier
   (Tone King: clean or crunch only), starts from that class's dry factory preset, and
   sets the controls research documents (today mostly effects; amp, drive, EQ and cab
@@ -86,6 +90,10 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    possible to the song. With the true DI, a search over the controls reaches **−0.293 [−0.378,
    −0.207]** against the starting preset S ([ceiling](ks-ceiling-extend-results.md); a lower bound),
    so the plugin has the headroom. The question is how much of it a song alone can reach.
+   *Coverage (2026-10-21):* both active routes set only `knob_ceiling.space` on Morgan: input
+   gain, the amp's main knobs and switches (not its spring), and the mics with their cab
+   placement. The rest, the amp choice included, stays at S, so neither covers the goal yet.
+   The ML session is to propose how and when each route covers every control.
 
    **Where it stands (2026-10-19).** Not ready to ship. Fresh full mixes (stage F, 21 parts in 12
    bands) are the yardstick; figures are against S, band-weighted, with 90% intervals.
@@ -395,4 +403,5 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-21 | X-LANCE screen (zero renders, CPU, audited): on the 164 audit mixes the denoise → gtr_mss chain ties Mega-53 fast on SNR (+0.14 [−0.11, +0.39]) and is better on mel-range LSD (−1.82 [−3.09, −0.54]) at 1.78× the CPU time: PASS, OVER BUDGET. [Amendment 1](xlance-screen-plan.md#amendment-1-gtr_mss-alone-on-the-audit-mixes-2026-10-21) (reviewed), gtr_mss alone: SNR +0.14 [−0.11, +0.39], mel-range LSD −2.30 [−3.00, −1.59], 1.01× CPU: passes the CPU legs, pending MPS timing after the pilot frees the GPU. Stage F failures shared by both (She's Gone, Colour Me Red ×2), so Mega-53 stays the fallback and the rest build stays on Mega-53 until the MPS check | [X-LANCE screen](xlance-screen-results.md) |
 | 2026-10-21 | Direct model pilot (no judged renders): PILOT STEM. The stem-only D_stem beats the old recipe D0 on R_out (−0.0127 [−0.0216, −0.0039]) and D_mix (R_in +0.0223 for D_mix), and its augmentations help (−0.0115). But all pilot models are worse than a per-class constant predictor (D_stem +0.0128 [−0.0013, +0.0269], R_in). Amendment 4's learning curve: −0.017 per doubling on average (seeds about −0.028 and −0.006), projected −0.020 [−0.047, +0.007] at 20,311, likely optimistic given part C's flattening (capped −0.004; the seeds split), so PROBE CONTINUE, with step 3's MODEL STOP a real risk. Parity passed under post-hoc amendment 3; X-LANCE gtr_mss 0.988× on MPS (switch awaits the user) | [pilot results](direct-model-stems-pilot-results.md) |
 | 2026-10-21 | Direct model amendment 2 in force (user): X-LANCE gtr_mss replaces Mega-53 fast for the full build (the rest, plus a re-separation of the pilot and V_sep, about 19–22 h), step 3's D_stem and R_in, and step 4's stems (D and D0 alike). R_out stays htdemucs, and the pilot's STEM verdict (read on Mega-53) carries. Mega-53 stays the fallback; stage F's three X-LANCE failure parts are listed in step 4's report | [plan, amendment 2](direct-model-stems-plan.md#amendment-2-in-force-2026-10-21) |
+| 2026-10-21 | Every control (user): the generated preset must cover every setting the plugin exposes (the pack manifests), including the pedals (compressor, both drives), EQ, time effects (doubler and spring included), noise gate, room mics, pan, phase, output gain, the amp choice and every other manifest control; not only input gain, the amp's knobs and the mics. Exceptions come from the manifests, not from this decision (e.g. the room mic types have no control in the plugin's UI). The knob values of a switched-off feature all count as one setting (an off pedal at level min or max is the same setting), so training losses and knob scores must not count them as different; how is for the ML session to propose. Plans already declared (part C's E, the direct model's step 3) keep their definitions until amended. Both active routes set only `knob_ceiling.space` today, on Morgan only; the ML session is to propose how and when each covers every control | [ML plan](research/ml-plan-2026-10.md), sections 1, 4 (step 3) and 5 |
 | 2026-10-21 | For a part documented as fully clean, `generate` turns the SW50R and AC20 clean starts down (`sw50rVolume` 15, `ac20Volume` 10): heard clean on the chord riff; closeness to records untested (user agreed) | [results](clean-start-breakup-results.md) |
