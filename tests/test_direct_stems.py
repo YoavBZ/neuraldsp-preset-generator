@@ -900,3 +900,27 @@ def test_a_genuine_level_change_is_not_explained():
     gate = _integ(blocks) - 10.0
     g2 = DS.gate_toggle([v + 0.17 for v in blocks] + [gate + 0.17 + 0.009], stored)
     assert not g2["explained"]
+
+
+def _prow(i, h, ds, dm, gs=None, gm=None):
+    return {"i": i, "half": h, "share_stem": 1.0, "share_mix": 1.0, "lufs_stem_diff": ds, "lufs_mix_diff": dm,
+            "gate_stem": gs or {"gate_margin": 1.0, "toggled_diff": 0.2}, "gate_mix": gm or {"gate_margin": 1.0,
+                                                                                            "toggled_diff": 0.2}}
+
+
+def test_parity_verdict_tolerances_and_gate():
+    v = DS.parity_verdict([_prow(1, "A", 0.02, 0.005)])
+    assert v["ok"] and v["worst_unexplained_lufs_diff"] == 0.02            # stem within 0.03 LU
+    assert not DS.parity_verdict([_prow(1, "A", 0.0, 0.02)])["ok"]          # mix stays at 0.01 LU
+    assert not DS.parity_verdict([_prow(1, "A", 0.031, 0.0)])["ok"]
+    knife = _prow(2, "B", 0.171, 0.0, gs={"gate_margin": -0.0027, "toggled_diff": 0.0044})
+    v = DS.parity_verdict([_prow(1, "A", 0.001, 0.0), knife])
+    assert v["ok"] and v["explained_by_gate"] == ["2B stem"] and v["worst_unexplained_lufs_diff"] == 0.001
+    assert v["worst_lufs_diff"] == 0.171 and "post hoc" in v["rule"]
+    level = _prow(2, "B", 0.17, 0.0, gs={"gate_margin": 0.6, "toggled_diff": 0.02})     # no block at the gate
+    v = DS.parity_verdict([level])
+    assert not v["ok"] and v["worst_unexplained_lufs_diff"] == 0.17
+    far = _prow(2, "B", 0.17, 0.0, gs={"gate_margin": 0.01, "toggled_diff": 0.04})      # toggle does not explain it
+    assert not DS.parity_verdict([far])["ok"]
+    assert not DS.parity_verdict([_prow(1, "A", 0.0, 0.0), {"i": 3, "refused": "x"}])["ok"]
+    assert "post-hoc rule" in DS.parity_line(v) and "worst unexplained" in DS.parity_line(v)
