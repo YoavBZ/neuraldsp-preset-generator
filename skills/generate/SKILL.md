@@ -220,12 +220,13 @@ Tone King recipes use its verified sync-note selectors. See
   | amp | clean baseline | dry, on the open-chord riff (one listener, not blind) |
   |---|---|---|
   | PR12 | `Artists/Mark Johnston/Royally Ambient.xml` | clean beside the others; edge of breakup alone |
-  | SW50R | `Artists/Mark Johnston/Pedal Platform Clean.xml` | breaks up; clean at `sw50rVolume` 15 |
+  | SW50R | `Artists/Mark Johnston/Pedal Platform Clean.xml` | breaks up |
   | AC20 | `Artists/Royce Whittaker/Low-Watt Americana.xml` | breaks up; clean at `ac20Volume` 10 |
 
-  On a part documented as fully clean (no breakup at all, not edge of breakup), set those
-  volumes on the SW50R or AC20 start and say so: it plays quieter (raise `outputGain`) and its
-  tone shifts; closeness to records is untested ([check](../../docs/clean-start-breakup-results.md)).
+  On a part documented as fully clean (no breakup at all), set `ac20Volume` 10 on the AC20 start
+  (heard closer on 9 of 12 clean parts, 4 of 7 without bleed) and raise `outputGain`; on SW50R
+  keep its volume and say it may break up on hard strums
+  ([checks](../../docs/clean-start-volume-listening-results.md)).
 
   - **The evidence.** Chosen by rule on development recordings, then checked on 13
     reserved clean parts. Dry, they landed closer to the record than the shipped

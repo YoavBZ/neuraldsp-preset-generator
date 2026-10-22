@@ -95,9 +95,8 @@ clean start to the crunch start 4 of 5 times
 the turned-down starts are also closer to real clean recordings is not tested: lower volume
 shifts an amp's tone too.
 
-Next, when render slots are free: by ear on real clean development parts, each through its
-own DI beside its record, the start as shipped against turned down, PR12 included (its
-baseline is borderline, and no lower volume was tried on it).
+Checked next by ear on real clean parts ([results](clean-start-volume-listening-results.md)):
+AC20's turned-down start held, SW50R's was reverted, PR12 stays.
 
 ## Also heard: crackle on the decays
 
