@@ -385,6 +385,8 @@ was declared, what was measured, and the research behind it.
   right cab's silent knobs leave E, and the E check is descriptive. A sound-based gate (D's preset
   against the constant's, rendered and judged against the true preset on R_in, about 5.9k renders)
   decides step 3, and step 4 runs only on GATE OK. Step 3's training follows the X-LANCE build.
+  **Amendment 7 (2026-10-22, user):** the gate read GATE STOP (−0.1538 [−0.3360, +0.0284],
+  power about 46%); step 4 runs anyway, unchanged, labelled "run under a user override of a GATE STOP".
 - [record-match-listening-plan.md](record-match-listening-plan.md) → [results](record-match-listening-results.md):
   a blind check of the judge by ear on 5 guitar-exposed parts: the ear broadly agrees with the
   judge's order (Spearman mean 0.8), the ceiling C is heard closest in 4/5, H beats S in 4/5, D

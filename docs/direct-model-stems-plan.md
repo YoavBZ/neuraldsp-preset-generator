@@ -17,17 +17,22 @@ are both approved; runs already in an approved plan need no further approval
   review findings are folded in here (listed at the end).
 
 **Status:** declared; one independent review (go with required changes, all applied; see the end).
-Amendments 1–6 are in force. Amendment 2 (2026-10-21) switched the full build, step 3 and step 4 to
+Amendments 1–7 are in force. Amendment 2 (2026-10-21) switched the full build, step 3 and step 4 to
 X-LANCE gtr_mss stems. [Amendment 5](#amendment-5-2026-10-21-the-readout-e-rewards) (approved by the
 user on 2026-10-22; PR #263) changes how step 3 and step 4 read the model's answer and leaves silent
 knobs out of E. Its E check is descriptive.
 [Amendment 6](#amendment-6-2026-10-22-a-sound-based-stopgo-gate-for-step-3) (approved the same day;
 PR #264) adds a sound-based gate that decides step 3: step 4 runs only on `GATE OK`.
+[Amendment 7](#amendment-7-2026-10-22-step-4-runs-despite-gate-stop-user-override) (2026-10-22):
+the gate read GATE STOP, and step 4 runs anyway under the user's declared override, labelled
+"run under a user override of a GATE STOP".
 
 **Where it stands (2026-10-22).** The X-LANCE build of the rest finishes about 04:00. Step 3's
 training of D_stem and D0 (3 seeds each, xlance_g) follows automatically, then the readout. The
 sound gate's truth and constant renders run during training, and D's and D0's after the readout.
-Step 4 follows only on `GATE OK`.
+Step 4 follows only on `GATE OK`. *Update (2026-10-22):* the gate read GATE STOP; step 4 runs
+under [amendment 7](#amendment-7-2026-10-22-step-4-runs-despite-gate-stop-user-override)'s user
+override.
 
 **Next planning item (user's coverage rule, 2026-10-21; [ROADMAP](ROADMAP.md)).** Every control
 the plugin exposes, with a switched-off feature's knobs counted as one setting. Step 3 sets only
@@ -319,7 +324,9 @@ decides step 3 (user, 2026-10-22).*
 *As amended: [amendment 2](#amendment-2-in-force-2026-10-21) feeds D and D0 xlance_g stems, where
 Mega-53 is named below. [Amendment 5](#amendment-5-2026-10-21-the-readout-e-rewards) sets the
 rendered answer (the seeds' averaged medians, pulled by step 3's weights). Step 4 runs only after
-[amendment 6](#amendment-6-2026-10-22-a-sound-based-stopgo-gate-for-step-3)'s `GATE OK`.*
+[amendment 6](#amendment-6-2026-10-22-a-sound-based-stopgo-gate-for-step-3)'s `GATE OK`, or under
+[amendment 7](#amendment-7-2026-10-22-step-4-runs-despite-gate-stop-user-override)'s user override
+of its GATE STOP (labelled so).*
 
 Fixed now, before any training.
 - **Directions:** stage F's 126 (21 parts, 12 bands, part × amp × search half;
@@ -1297,3 +1304,46 @@ $MAIN -m learn.direct_sound_gate gate-report      # GATE OK | GATE STOP | GATE I
   and each mic by the audible labels' mode (the lowest index on a tie).
 - **The clip.** Each half's log(d_D / d_const) is clipped to [−ln 10, +ln 10] before the halves are
   averaged. This is declared before any reading, and the clipped halves are counted in the report.
+
+## Amendment 7 (2026-10-22): step 4 runs despite GATE STOP (user override)
+
+**Status:** declared 2026-10-22, before any step 4 render. The user decided it in chat with the ML
+session on 2026-10-22. It changes only whether step 4 may start. Step 4's design, rule and readout
+are unchanged.
+
+### The gate result (amendment 6)
+
+- **GATE STOP.** log d D − constant on R_in: −0.1538, 90% band-clustered interval
+  [−0.3360, +0.0284], 4 bands. The interval reaches above 0, so the declared rule reads STOP.
+- **Audited.** The STOP is correct under the declared rule. The gate's power was only about 46%.
+- **Beside it:** D − D0 reads −0.1266 [−0.1864, −0.0669]; D sounds closer to the truth than D0.
+
+### The user's decision
+
+Run step 4's decision test anyway. The user's rule: adopt any improvement, and underpowered is not
+failed. The point estimate favours D over the constant, and the gate had little power to show it.
+
+### What changes, and what does not
+
+- **Unchanged:** step 4's design, rule and readout. D − S is primary on stage F's 126 directions
+  (12 bands, 90% band-clustered t interval), D − D0 is the secondary reading, and the rows beside
+  them stay as declared.
+- **Step 4's own early stops still apply:** the parity test, the repeat check (6 groups within
+  1e-3), the cap of 400 renders, and the disk and STOP-file guards.
+- **The label.** Every step 4 output, and the results doc, carries the label **"run under a user
+  override of a GATE STOP"**.
+
+### Code
+
+- **`direct_sound_gate gate-override --decision "..." --date YYYY-MM-DD`** writes
+  `~/ndsp-presets/learn/direct-stems/gate/override.json`. It refuses unless the gate's `report.json`
+  exists, is a real run and reads STOP. The record stores the report's sha256, the user's decision
+  text and date, and `amendment: "amendment 7"` (`direct_stems.STEP4_OVERRIDE`).
+- **`step3_verdict` / `step3_gate`** pass a STOP only through that record, and only while it names
+  the current `report.json` (same sha256) and the readout check still holds. Without the record, or
+  with one for another report, step 4 stays closed.
+- **`predict`, `render` and `report`** record the gate and the override in their outputs
+  (`predictions.json`, each group record, `report.json`: `step3_gate`, `label`). `report` prints
+  the label above the table and on its STEP4 line.
+- **Tests:** no override refuses; an override of another report refuses; with the override the
+  gate passes and is labelled (`tests/test_direct_sound_gate.py`, `tests/test_direct_stems.py`).

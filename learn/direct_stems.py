@@ -87,6 +87,10 @@ rightCabActive is false). The E check reads OK if D - constant on R_in, read so,
 band-clustered interval entirely below 0; the old top-component readings, A1, A1+A2 and the unmasked
 E are beside. Since the user's approval (2026-10-22) the E check is descriptive: amendment 6's sound
 gate (learn/direct_sound_gate.py) decides step 3, and step 4's renders wait for it (`step3_gate`).
+Amendment 7 (user, 2026-10-22): step 4 may run despite a GATE STOP when `direct_sound_gate
+gate-override` has recorded the user's decision against that exact report (sha256); `predict`,
+`render` and `report` then record the override and carry the label "run under a user override of a
+GATE STOP". Step 4's design, rule, readout and early stops are unchanged.
 
 **Step 4.** `stems` stores the 21 stage F crop-only stems and the 16 known-answer crops' of step 3's
 separator (xlance_g under amendment 2; Mega-53 fast reused gate 1's), hash-recorded. `parity`
@@ -3625,6 +3629,25 @@ def step3_gate(root):
     return G.step3_verdict(root)
 
 
+STEP4_OVERRIDE = "amendment 7"        # step 4 may run under the user's override of a GATE STOP (user, 2026-10-22)
+STEP4_OVERRIDE_LABEL = "run under a user override of a GATE STOP"
+
+
+def step3_gate_record(root):
+    """Step 3's gate as step 4's outputs record it: {'ok', 'why', 'override' (amendment 7's record when
+    the gate passes through it, else None), 'label' (STEP4_OVERRIDE_LABEL or None)}."""
+    from learn import direct_sound_gate as G
+
+    ok, why = step3_gate(root)
+    ov = G.override_in_force(root) if ok else None
+    return {"ok": ok, "why": why, "override": ov, "label": STEP4_OVERRIDE_LABEL if ov else None}
+
+
+def step4_label(*gates):
+    """Amendment 7: the label every step 4 output carries if any of its inputs ran under the override."""
+    return STEP4_OVERRIDE_LABEL if any((g or {}).get("override") for g in gates) else None
+
+
 def readout_per(sc):
     """One model's per-example E on one set under each readout (READOUT_TAGS): the declared answer
     (A1+A2+A3), A1+A2, A1 (seed-averaged) and the old top-component readings (seed-averaged, as first
@@ -4091,6 +4114,9 @@ def cmd_predict(args):
         raise SystemExit(f"run `parity --sep {sep_name}` first (step 4's inputs path against stored V_sep features)")
     if par.get("smoke") and not args.smoke:
         raise SystemExit("the parity record is a smoke test's")
+    gate = step3_gate_record(root)                 # recorded, not required: predict renders nothing (amendment 7)
+    if gate["label"]:
+        print(f"*** step 4 {gate['label']} ({STEP4_OVERRIDE}) ***", flush=True)
     models, D, report, _ = full_models(root, args.smoke, args.sep)
     pulls, cmed = step4_pulls(_load(root / "full" / "readout.json"), models, args.smoke)
 
@@ -4187,11 +4213,11 @@ def cmd_predict(args):
            "models": {m: {r["seed"]: r["model_sha256"] for r in models[m][2]} for m in STEP4_ARMS},
            "inputs": {s: v["hashes"] for s, v in inputs.items()}, "predictions": preds,
            "stem_swap": extra, "known_answer": ka, "unseen_by_part_c": _load(DE_OUT / "predictions.json")["unseen_by_part_c"],
-           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+           "step3_gate": gate, "label": gate["label"], "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     _save(od / "predictions.json", rec)
     sp = [p["diag"]["seed_spread"] for p in preds["D"].values()]
     print(f"PREDICT: {len(preds['D'])} directions (D is {D}, {sep_name} stems); seed spread median {float(np.median(sp)):.4f}; "
-          f"known-answer sections {len(ka)}")
+          f"known-answer sections {len(ka)}" + (f" [{gate['label']}]" if gate["label"] else ""))
 
 
 def lufs_medians(mixrows):
@@ -4252,7 +4278,10 @@ def cmd_render(args):
         raise SystemExit("step 3's readout (a real one) must exist: it holds the pull step 4's answers use")
     ok, why = step3_gate(root)                     # amendment 6's sound gate decides (user, 2026-10-22)
     if not ok:
-        raise SystemExit(f"no judged render before step 3's gate reads OK: {why}")
+        raise SystemExit(f"no judged render before step 3's gate reads OK (or amendment 7's override): {why}")
+    gate = step3_gate_record(root)
+    if gate["label"]:
+        print(f"*** step 4 {gate['label']} ({STEP4_OVERRIDE}) ***", flush=True)
     pred = _load(od / "predictions.json")
     if not pred or pred.get("smoke") or any(len(pred["predictions"][m]) != A.N_DIRS["F"] for m in STEP4_ARMS):
         raise SystemExit("run `predict` first (a real one)")
@@ -4304,7 +4333,7 @@ def cmd_render(args):
                 A.save_kept_flac(od / "audio" / slug / amp / f"{arm}-{search}.flac", np.asarray(y))
 
             rec = run_group(rr, g, settings, repeat, stored_j, K.judge, keep)
-            rec.update(slug=slug, amp=amp, repeat_group=repeat)
+            rec.update(slug=slug, amp=amp, repeat_group=repeat, step3_gate=gate, label=gate["label"])
             _save(gp, rec)
             if rec["status"] == "stopped":
                 _step4_stop(od, f"{slug} {amp}: {rec['why']}")
@@ -4394,6 +4423,9 @@ def cmd_report(args):
     if not pred:
         raise SystemExit("run `predict` first")
     units, refused = step4_units(od)
+    gfiles = sorted((od / "groups").glob("*.json")) if (od / "groups").exists() else []
+    gate = step3_gate_record(root)
+    label = step4_label(gate, pred.get("step3_gate"), *((_load(p) or {}).get("step3_gate") for p in gfiles))
     bt = C.load_bleed_table()
     unseen = set(pred["unseen_by_part_c"])
     filters = {r: (lambda u: u["band"] in unseen) if r == "unseen_by_part_c" else A.row_filter(r, "F", bt, {})
@@ -4403,11 +4435,10 @@ def cmd_report(args):
            "expected": step4_expected(), "cap": STEP4_CAP, "refused_scored_as_S": refused,
            "repeat": {p.stem: (_load(p) or {}).get("repeat", {}).get("dev") for p in (od / "groups").glob("*.json")
                       if (_load(p) or {}).get("repeat")} if (od / "groups").exists() else {},
-           "contrasts": {}}
+           "step3_gate": gate, "label": label, "contrasts": {}}
     for name, (a, b) in STEP4_CONTRASTS.items():
         rep["contrasts"][name] = step4_contrast(units, a, b, filters)
     prim = ((rep["contrasts"][STEP4_DECIDING]["rows"].get("all") or {}).get("all"))
-    gfiles = sorted((od / "groups").glob("*.json")) if (od / "groups").exists() else []
     statuses = [(_load(p) or {}).get("status") for p in gfiles]
     rep["complete"] = step4_complete(rep["done"], statuses, (od / "STOP.json").exists())
     rep["reading"] = p_reading(prim) if rep["complete"] else "incomplete"
@@ -4441,6 +4472,8 @@ def cmd_report(args):
         return (f"{s['band_weighted_mean']:+.3f}" + ("" if lo is None else f" [{lo:+.3f}, {hi:+.3f}]")
                 + f" ({s['bands']} bands, {s.get('bands_negative', '?')} better, {s.get('bands_positive', '?')} worse)")
 
+    if label:
+        print(f"*** STEP 4 {label.upper()} ({STEP4_OVERRIDE}): {gate['why']} ***")
     print(f"{rep['done']}/{rep['directions']} directions; renders {rep['renders']} (expected {rep['expected']}, cap "
           f"{STEP4_CAP}); refused scored as S {refused}")
     for name, c in rep["contrasts"].items():
@@ -4452,7 +4485,7 @@ def cmd_report(args):
         print(f"  X-LANCE failure part {slug}: " + ", ".join(
             f"{k} {'n/a' if v is None else f'{v:+.3f}'}" for k, v in r.items() if k.endswith("-S"))
             + f"; movement {({k: round(v, 4) for k, v in r['movement'].items()})}")
-    print(f"STEP4 {rep['reading'].upper()}: D - S {f(prim)}")
+    print(f"STEP4 {rep['reading'].upper()}: D - S {f(prim)}" + (f" [{label}]" if label else ""))
 
 
 
