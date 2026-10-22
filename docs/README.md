@@ -600,3 +600,11 @@ was declared, what was measured, and the research behind it.
     a residual median head early-stopped on E, trees, binned heads, frozen AFx-Rep inside the stem
     stage, then pretraining routes. Lists two licence questions for the user. Research, not a
     declared plan.
+18. [di-source-inventory-2026-10.md](research/di-source-inventory-2026-10.md): which clean guitar
+    DIs could widen the direct model's training set (October 2026, zero compute). Nothing on disk
+    adds a band without spending a test or a held-out set. The 277-section pool is 49% high-gain
+    or metal, and its clean sections are one band. Ranked: Telefunken LFTL sessions never
+    downloaded (2 with an electric DI box on the chart, 2 probable), which could also be fresh
+    DI+amp test bands; Strobe and MekaPhil (B2's parked songs); EGDB; GOAT; then stage F's 10
+    bands into training once new test bands exist. Costs at 77 renders per section. Research,
+    not a declared plan.
