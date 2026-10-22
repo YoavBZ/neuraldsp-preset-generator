@@ -307,7 +307,7 @@ def phone():
         f.write_text(text)
 
 
-KEY_SHA = None          # committed before the first sitting
+KEY_SHA = "c73ef0f023e9fcb75de3b204dafee0b425a9fef5e09237826bd9cb1dc89afe5b"  # before the first sitting
 ANSWERS = ROOT / "docs" / "clean-start-volume-listening-answers.txt"
 ANSWERS_SHA = None      # committed before the key is read
 RESULTS = ROOT / "docs" / "clean-start-volume-listening-results.json"
