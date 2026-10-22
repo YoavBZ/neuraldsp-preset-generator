@@ -100,8 +100,10 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    for its first stages**; switched-off knobs are left out of losses, scores and fits. Stages 0
    (the full-space table, amp choice from stored cells, a screen of what the judge can hear, Tone
    King's search renderer) and 1 (a true-DI oracle for Morgan's unmeasured groups and Tone King's
-   whole space, about 12k renders) are built and start after an independent review. Whether a
-   rule counts as setting a control the judge can't hear stays open.
+   whole space, about 13k renders) are built. **Every control is learned (user, 2026-10-22):** no
+   fixed rule stands in for a control the judge can't hear; the stage 0 screen only sets
+   priorities. A data-quality audit is starting (the user suspects the datasets need cleaning):
+   stage 0 can run, and stage 1's long runs wait for its first findings.
 
    **Where it stands (2026-10-19).** Not ready to ship. Fresh full mixes (stage F, 21 parts in 12
    bands) are the yardstick; figures are against S, band-weighted, with 90% intervals.
@@ -438,3 +440,4 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-22 | Direct model amendment 7 (user): the sound gate read GATE STOP (log d D − constant −0.1538 [−0.3360, +0.0284], 4 bands; audited correct, power about 46%; D − D0 −0.1266 [−0.1864, −0.0669]). Adopt any improvement, underpowered is not failed: step 4 runs anyway with its design, rule and early stops unchanged, every output labelled "run under a user override of a GATE STOP" | [plan, amendment 7](direct-model-stems-plan.md#amendment-7-2026-10-22-step-4-runs-despite-gate-stop-user-override) |
 | 2026-10-22 | Direct model steps 3 and 4 (step 4 run under a user override of a GATE STOP): STEP4 NOT SHOWN. D − S on stage F −0.034 [−0.103, +0.034] (12 bands, 5 better, 7 worse; clean −0.071, crunch +0.016; power about 21% for that effect). D − D_existing −0.067 [−0.113, −0.021] (16/21 parts, mostly crunch); D − H −0.006 [−0.062, +0.050], D − M +0.011 [−0.040, +0.062]: indistinguishable from arm A's search (about 55 renders per direction) at zero renders, not shown equivalence; D − D0 −0.006. 321 renders, all checks passed. Next as the user decides: every control (#266), real mixes (#267), more bands | [results](direct-model-stems-results.md) |
 | 2026-10-22 | Every control, first stages (user): the coverage plan's stages 0 and 1 go ahead; a switched-off feature's knobs are left out of every loss, score and fit, with neutral values only where a value must be written (a saved preset, a search's canonical form). Whether a declared rule counts as setting a control the judge can't hear stays open; stage 0's screen informs it | [plan](every-control-plan.md) |
+| 2026-10-22 | Every control is learned (user): no fixed rule stands in for a control the judge can't hear; the stage 0 screen only sets search and training priorities; switched-off knobs stay ignored. A data-quality audit starts (the user suspects the datasets need cleaning); stage 0 can run, stage 1's long runs wait for its first findings | [plan, amendment 1](every-control-plan.md#amendment-1-2026-10-22-every-control-is-learned) |

@@ -157,15 +157,15 @@ def _morgan_table():
                         + ([("off", ("delay", "delaySync"))] if k == "delayTime" else [])
                         + ([("off", ("tremolo", "tremoloSync"))] if k == "tremoloRate" else []), neutral=v))
     d_on, t_on = ("on", ("delay", "delayActive")), ("on", ("tremolo", "tremoloActive"))
-    T.append(_m("delay", "delaySync", "time_effects", "rule", "off: the time in ms (packs/timing.py)",
+    T.append(_m("delay", "delaySync", "time_effects", "reparam", "off: the time in ms (packs/timing.py)",
                 gate=[_FX, d_on], neutral="0"))
-    T.append(_m("delay", "delayTempo", "time_effects", "rule", "S's value (sync off)",
+    T.append(_m("delay", "delayTempo", "time_effects", "reparam", "S's value (sync off)",
                 gate=[_FX, d_on, ("on", ("delay", "delaySync"))], neutral="120"))
-    T.append(_m("delay", "delaySyncNote", "time_effects", "rule", "S's value (sync off)",
+    T.append(_m("delay", "delaySyncNote", "time_effects", "reparam", "S's value (sync off)",
                 gate=[_FX, d_on, ("on", ("delay", "delaySync"))], neutral="13"))
-    T.append(_m("tremolo", "tremoloSync", "time_effects", "rule", "off: the rate in Hz",
+    T.append(_m("tremolo", "tremoloSync", "time_effects", "reparam", "off: the rate in Hz",
                 gate=[_FX, t_on], neutral="false"))
-    T.append(_m("tremolo", "tremoloSyncNote", "time_effects", "rule", "S's value (sync off)",
+    T.append(_m("tremolo", "tremoloSyncNote", "time_effects", "reparam", "S's value (sync off)",
                 gate=[_FX, t_on, ("on", ("tremolo", "tremoloSync"))], neutral="11"))
     T.append(_m("tremolo", "tremoloLevel", "time_effects", "stage1", "effects", gate=[_FX, t_on], neutral="0.5"))
     T.append(_m("delay", "delayTapeDrive", "time_effects", "stage1", "effects", gate=[_FX, d_on], neutral="0"))
@@ -202,10 +202,10 @@ def _morgan_table():
                     neutral="false"))
         T.append(_m("cabParameters", f"{side}RoomMicLevel", "cab_rest", "stage1", "rooms",
                     gate=[_CABS, cab, ("on", ("cabParameters", f"{side}RoomActive"))], neutral="-6"))
-    T.append(_m("parameters", "outputGain", "output", "rule", "matched to S's loudness (the judge removes level)",
+    T.append(_m("parameters", "outputGain", "output", "level", "learned against the record's loudness (the judge removes level)",
                 neutral="0"))
     for sec in ("ampParameters", "eqParameters", "pedalParameters", "cabParameters", "fxParameters"):
-        T.append(_m(sec, "sectionActive", "sections", "rule", "held on", neutral="true"))
+        T.append(_m(sec, "sectionActive", "sections", "reparam", "on; each feature's own switch carries its sounds", neutral="true"))
     T.append(_m("", "name", "never", "never", "the preset's name"))
     T.append(_m("parameters", "transpose", "never", "never", "pitch, not tone (searchable: false)"))
     for side in ("left", "right"):
@@ -292,7 +292,7 @@ def _toneking_table():
         gate = [("on", ("", "timeSectionActive")), ("on", ("", "delayActive"))]
         if k not in ("delaySync", "delayNoteMs"):                          # sync-only controls
             gate.append(("on", ("", "delaySync")))
-        T.append(_t(k, "time_effects", "rule", rule, gate=gate, neutral="0" if k == "delaySync" else nt(k)))
+        T.append(_t(k, "time_effects", "reparam", rule, gate=gate, neutral="0" if k == "delaySync" else nt(k)))
     eq = ("on", ("", "eqSectionActive"))
     T.append(_t("eqActive", "eq", "tk_stage1", gate=[eq], neutral="0"))
     for i in range(1, 10):
@@ -309,10 +309,10 @@ def _toneking_table():
         T.append(_t(f"cab{n}Phase", "cab", "screen", "tk", gate=[cabs, cab, ("both_cabs",)], neutral="0"))
         T.append(_t(f"cab{n}Pan", "cab", "screen", "tk", gate=[cabs, cab, ("both_cabs_mono",)], neutral="0"))
     for k in TK_SECTIONS:
-        T.append(_t(k, "sections", "rule", "held on", neutral="1"))
+        T.append(_t(k, "sections", "reparam", "on; each feature's own switch carries its sounds", neutral="1"))
     T.append(_t("inputGain", "io", "tk_stage1", neutral="0"))
     T.append(_t("gateThreshold", "io", "tk_stage1", neutral=nt("gateThreshold")))
-    T.append(_t("outputGain", "io", "rule", "matched to S's loudness (the judge removes level)", neutral="0"))
+    T.append(_t("outputGain", "io", "level", "learned against the record's loudness (the judge removes level)", neutral="0"))
     for k in ("presetNameProp", "presetPathProp", "presetUIDProp", "presetVersionProp"):
         T.append(_t(k, "never", "never", "the preset's own bookkeeping"))
     for k in ("filePath1", "filePath2"):
@@ -462,14 +462,14 @@ def amp_choice(out):
 
 
 def reading(s):
-    """The declared rule: interval below 0 -> enters; else a tie (the cheaper option) or worse."""
+    """The declared reading (amendment 1: priority, never membership; every control is learned)."""
     if not s or "hi90" not in s:
         return "no reading"
     if s["hi90"] < 0:
-        return "gain: enters"
+        return "gain: high priority"
     if s["lo90"] > 0:
-        return "worse: keeps its rule"
-    return "tie (not shown at this power): keeps its rule"
+        return "worse: low priority (still learned)"
+    return "tie (not shown at this power): lower priority (still learned)"
 
 
 # ============================================================== 0c: what the judge can hear
@@ -554,12 +554,11 @@ def invisible(rows, tol=REPEAT_TOL):
     return {k: bool(v) and all(x <= tol for x in v) for k, v in rows.items()}
 
 
-def visible_set(screen_path, assume_visible=False):
-    """{(module, key)} of the screened controls the judge can see (from screen.json)."""
-    if assume_visible:
-        return set(SCREEN_DIMS)
+def priorities(screen_path):
+    """The screen's reading as priorities (amendment 1): screened controls the judge can't see go
+    last in search and training order, and need a target other than the judge. Never a filter."""
     res = json.loads(pathlib.Path(screen_path).read_text())
-    return {tuple(k.split("|", 1)) for k, inv in res["invisible"].items() if not inv}
+    return {k: ("needs a non-judge target; last" if inv else "judge-visible") for k, inv in res["invisible"].items()}
 
 
 # ============================================================== 1: Morgan's groups
@@ -579,11 +578,11 @@ def _dim(path):
             ("delay", "delayTapeDrive"): Dim(m, k, "cont")}.get(path) or Dim(m, k, "switch", values=("false", "true"))
 
 
-def group_plan(group, base, visible):
+def group_plan(group, base):
     """(start, dims) for one Morgan stage-1 group on a cell's stored stage-2 setting `base`, or
     None when the group can't apply. The start switches the group's feature on (at its stored
     knobs if it was on, else its neutral values); `dims` are the group's controls that can sound
-    in the start, less any the screen found the judge can't see (those keep S's values)."""
+    in the start, the screened ones included (amendment 1: every control is learned)."""
     on = lambda p: _truthy(base.get(p))                                   # noqa: E731
     by = {c.path: c for c in table("morgan")}
     x = dict(base)
@@ -596,7 +595,7 @@ def group_plan(group, base, visible):
         if not on(("parameters", "doublerActive")):
             x[("parameters", "doublerActive")] = "true"
             x[("parameters", "doublerSpread")] = by[("parameters", "doublerSpread")].neutral
-        return x, [_dim(p) for p in [("parameters", "doublerSpread")] if p in visible]
+        return x, [_dim(("parameters", "doublerSpread"))]
     if group == "rooms":
         dims = [_dim(("cabParameters", "leftCabActive")), _dim(("cabParameters", "leftCabMicLevel"))]
         for side in ("left", "right"):
@@ -612,15 +611,13 @@ def group_plan(group, base, visible):
         if not (on(("cabParameters", "leftCabActive")) and on(("cabParameters", "rightCabActive"))):
             return None
         keys = [("cabParameters", f"{s}Cab{k}") for k in ("Phase", "Pan", "Stereo") for s in ("left", "right")]
-        dims = [_dim(p) for p in keys if p in visible]
-        return (x, dims) if dims else None
+        return x, [_dim(p) for p in keys]
     if group == "effects":
         keys = []
         if on(("tremolo", "tremoloActive")):
             keys.append(("tremolo", "tremoloLevel"))
         if on(("delay", "delayActive")):
-            keys += [("delay", "delayTapeDrive")] + [p for p in (("delay", "delayWidth"), ("delay", "delayPingPong"))
-                                                     if p in visible]
+            keys += [("delay", "delayTapeDrive"), ("delay", "delayWidth"), ("delay", "delayPingPong")]
         return (x, [_dim(p) for p in keys]) if keys else None
     raise ValueError(group)
 
@@ -689,10 +686,10 @@ def tk_dim(key):
     return Dim("", key, spec[0], spec[1], spec[2])
 
 
-def tk_space(visible):
-    """Tone King's searched dims: every tk_stage1 control, and the screened ones the judge sees."""
+def tk_space():
+    """Tone King's searched dims: every tk_stage1 control and the screened ones (amendment 1)."""
     return [tk_dim(c.key) for c in table("toneking")
-            if c.source == "tk_stage1" or (c.source == "screen" and c.path in visible)]
+            if c.source in ("tk_stage1", "screen")]
 
 
 def tk_start(state):
@@ -982,7 +979,7 @@ def tk_smoke(out, renders=30, slug=None):
             evals.append(d)
             return d["A"]
 
-        K.knob_search(tk_space(set(SCREEN_DIMS)), x0, f, renders, SEED_TK, canon=tk_canon)
+        K.knob_search(tk_space(), x0, f, renders, SEED_TK, canon=tk_canon)
         again = tk_judge(ref, rr.render(di32, x0), di, ps[slug]["judge_lag"])
         res = {"slug": slug, "class": cls, "start": name, "stored": stored, "first": first,
                "repeat_vs_stored": rep, "canon_vs_raw_start": rep_canon,
@@ -997,7 +994,7 @@ def tk_smoke(out, renders=30, slug=None):
     print(json.dumps(res, indent=1))
 
 
-def stage1(out, i, n, screen_path, assume_visible=False, budget=GROUP_BUDGET, limit=None):
+def stage1(out, i, n, budget=GROUP_BUDGET, limit=None):
     """Morgan: per cell, the stored stage-2 setting (rendered once more, the repeat check), then
     each group searched on its own from it."""
     import numpy as np
@@ -1006,7 +1003,6 @@ def stage1(out, i, n, screen_path, assume_visible=False, budget=GROUP_BUDGET, li
     from learn import knob_ceiling2 as K2
 
     wait_slot()
-    visible = visible_set(screen_path, assume_visible)
     ps = K.parts()
     rr = K.Renderer()
     done = 0
@@ -1039,7 +1035,7 @@ def stage1(out, i, n, screen_path, assume_visible=False, budget=GROUP_BUDGET, li
                    "groups": {}}
             settings = {}
             for gi, group in enumerate(GROUPS):
-                plan = group_plan(group, base, visible)
+                plan = group_plan(group, base)
                 if plan is None:
                     res["groups"][group] = {"applies": False}
                     continue
@@ -1072,7 +1068,7 @@ def stage1(out, i, n, screen_path, assume_visible=False, budget=GROUP_BUDGET, li
         rr.close()
 
 
-def tk_stage1(out, i, n, screen_path, assume_visible=False, budget=TK_BUDGET, limit=None):
+def tk_stage1(out, i, n, budget=TK_BUDGET, limit=None):
     """Tone King: per cell, the class start (repeat check against tk_baseline's stored score),
     then the whole searched space, `budget` renders."""
     import numpy as np
@@ -1080,8 +1076,7 @@ def tk_stage1(out, i, n, screen_path, assume_visible=False, budget=TK_BUDGET, li
     from learn import confirm_run as CR
 
     wait_slot()
-    visible = visible_set(screen_path, assume_visible)
-    dims = tk_space(visible)
+    dims = tk_space()
     ps, starts = tk_parts(), tk_starts()
     rr, rr_cls, done = None, None, 0
     try:
@@ -1267,9 +1262,9 @@ EAR_GROUPS = ("gate", "doubler")          # enter only where the ear agrees; roo
 def listening_verdict(trials, answers):
     """The declared rule per group. trials: {n: key trial}; answers: {n: letter}. A group's own
     clear-gain trials are its "gain" trials (not the fill, not the near-ties). Gate and doubler:
-    fewer than 2 -> keeps its rule (not shown by ear); the group's setting picked on both -> the
-    ear agrees (it enters if the judge's interval is also below 0); else the ear disagrees ->
-    keeps its rule. Rooms: descriptive."""
+    fewer than 2 -> lower priority (not shown by ear); the group's setting picked on both -> the
+    ear agrees (high priority if the judge's interval is also below 0); else the ear disagrees ->
+    lower priority. Every group stays learned (amendment 1). Rooms: descriptive."""
     out = {}
     for g in LISTEN_GROUPS:
         own = [n for n, t in trials.items() if t["group"] == g and t["why"] == "gain"]
@@ -1278,11 +1273,11 @@ def listening_verdict(trials, answers):
         if g not in EAR_GROUPS:
             verdict = "descriptive (decided by the judge)"
         elif len(own) < TOP_PER_GROUP:
-            verdict = "fewer than 2 clear-gain trials: keeps its rule (not shown by ear)"
+            verdict = "fewer than 2 clear-gain trials: lower priority, still learned (not shown by ear)"
         elif got == len(own):
-            verdict = "ear agrees: enters if the judge's interval is below 0"
+            verdict = "ear agrees: high priority if the judge's interval is below 0"
         else:
-            verdict = "ear disagrees: keeps its rule"
+            verdict = "ear disagrees: lower priority, still learned"
         out[g] = {"trials": len(own), "picked_group": got, "verdict": verdict}
     return out
 
@@ -1328,6 +1323,8 @@ def report(out):
     for name in ("screen.json", "amp-choice.json", "tk-smoke.json"):
         if (out / name).exists():
             res[name.split(".")[0]] = json.loads((out / name).read_text())
+    if (out / "screen.json").exists():
+        res["screen_priorities"] = priorities(out / "screen.json")
     s1 = [json.loads(p.read_text()) for p in sorted((out / "stage1").glob("*/[AB].json"))]
     tk = [json.loads(p.read_text()) for p in sorted((out / "tk-stage1").glob("*/[AB].json"))]
     res["stage1_cells"], res["tk_cells"] = len(s1), len(tk)
@@ -1372,19 +1369,15 @@ def main(argv=None):
     ap.add_argument("what", nargs="?", choices=("build", "score"))
     ap.add_argument("--out", type=pathlib.Path, default=OUT)
     ap.add_argument("--shard", default="0/1")
-    ap.add_argument("--screen", type=pathlib.Path, help="screen.json (default: <out>/screen.json)")
-    ap.add_argument("--assume-visible", action="store_true",
-                    help="smoke only: treat every screened control as visible (refused for the real output)")
     ap.add_argument("--budget", type=int, help="smoke only: renders per group (Morgan) or cell (Tone King)")
     ap.add_argument("--limit", type=int, help="smoke only: at most this many cells")
     ap.add_argument("--renders", type=int, default=30)
     ap.add_argument("--answers", default="")
     a = ap.parse_args(argv)
-    smoke = a.assume_visible or a.budget is not None or a.limit is not None
+    smoke = a.budget is not None or a.limit is not None
     if smoke and a.out.resolve() == OUT.resolve():
         raise SystemExit("smoke options write to a scratch --out only")
     i, n = map(int, a.shard.split("/"))
-    scr = a.screen or a.out / "screen.json"
     if a.step == "table":
         T = table()
         a.out.mkdir(parents=True, exist_ok=True)
@@ -1399,9 +1392,9 @@ def main(argv=None):
     elif a.step == "tk-smoke":
         tk_smoke(a.out, a.renders)
     elif a.step == "stage1":
-        stage1(a.out, i, n, scr, a.assume_visible, a.budget or GROUP_BUDGET, a.limit)
+        stage1(a.out, i, n, a.budget or GROUP_BUDGET, a.limit)
     elif a.step == "tk-stage1":
-        tk_stage1(a.out, i, n, scr, a.assume_visible, a.budget or TK_BUDGET, a.limit)
+        tk_stage1(a.out, i, n, a.budget or TK_BUDGET, a.limit)
     elif a.step == "listening":
         listening_build(a.out) if a.what == "build" else listening_score(a.answers)
     else:

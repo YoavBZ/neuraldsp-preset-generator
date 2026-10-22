@@ -45,10 +45,12 @@ def test_never_and_rules_are_the_plans():
     never = {c.key for c in E.table("morgan") if c.source == "never"}
     assert never == {"name", "transpose", "leftRoomMicType", "rightRoomMicType", "leftChosenIRFilePath",
                      "rightChosenIRFilePath"}
-    rules = {c.key for c in E.table("morgan") if c.source == "rule" and c.family == "time_effects"}
+    rules = {c.key for c in E.table("morgan") if c.source == "reparam" and c.family == "time_effects"}
     assert rules == {"delaySync", "delayTempo", "delaySyncNote", "tremoloSync", "tremoloSyncNote"}
-    tk_rules = {c.key for c in E.table("toneking") if c.source == "rule" and c.family == "time_effects"}
+    tk_rules = {c.key for c in E.table("toneking") if c.source == "reparam" and c.family == "time_effects"}
     assert tk_rules == set(E.TK_DELAY_RULES) and len(tk_rules) == 6
+    assert not any(c.source == "rule" for c in E.table())                 # amendment 1: no fixed rules
+    assert {c.key for c in E.table() if c.source == "level"} == {"outputGain"}
     screened = {c.key for c in E.table() if c.source == "screen"}
     assert screened == set(E.MORGAN_SCREEN) | set(E.TK_SCREEN)
 
@@ -214,9 +216,10 @@ def test_amp_choice_reads_the_picked_amp_against_the_blind_mean():
 
 
 def test_reading_is_the_declared_rule():
-    assert E.reading({"lo90": -0.2, "hi90": -0.01}) == "gain: enters"
+    assert E.reading({"lo90": -0.2, "hi90": -0.01}) == "gain: high priority"
     assert E.reading({"lo90": -0.2, "hi90": 0.01}).startswith("tie")
     assert E.reading({"lo90": 0.01, "hi90": 0.2}).startswith("worse")
+    assert "still learned" in E.reading({"lo90": -0.2, "hi90": 0.01})
 
 
 # --- 0c: the screen ------------------------------------------------------------------------------
@@ -263,20 +266,18 @@ def _base(**kw):
 
 
 def test_group_plans():
-    vis = set(E.SCREEN_DIMS)
-    x, dims = E.group_plan("gate", _base(), vis)
+    x, dims = E.group_plan("gate", _base())
     assert x[("parameters", "gateActive")] == "true" and x[("parameters", "gateThreshold")] == "-80"
     assert [d.key for d in dims] == ["gateThreshold"]
-    x, dims = E.group_plan("doubler", _base(), set())
-    assert x[("parameters", "doublerActive")] == "true" and dims == []           # spread invisible: 1 render
-    assert E.group_plan("phase", _base(cabParameters__rightCabActive="false"), vis) is None
-    assert E.group_plan("phase", _base(), set()) is None
-    _, dims = E.group_plan("phase", _base(), {("cabParameters", "leftCabPhase")})
-    assert [d.key for d in dims] == ["leftCabPhase"]
-    assert E.group_plan("effects", _base(), vis) is None
-    _, dims = E.group_plan("effects", _base(delay__delayActive="true"), set())
-    assert [d.key for d in dims] == ["delayTapeDrive"]
-    x, dims = E.group_plan("rooms", _base(cabParameters__rightCabActive="false"), vis)
+    x, dims = E.group_plan("doubler", _base())
+    assert x[("parameters", "doublerActive")] == "true" and [d.key for d in dims] == ["doublerSpread"]
+    assert E.group_plan("phase", _base(cabParameters__rightCabActive="false")) is None
+    _, dims = E.group_plan("phase", _base())                                    # screened: always searched
+    assert {d.key for d in dims} == {f"{s}Cab{k}" for s in ("left", "right") for k in ("Phase", "Pan", "Stereo")}
+    assert E.group_plan("effects", _base()) is None
+    _, dims = E.group_plan("effects", _base(delay__delayActive="true"))
+    assert [d.key for d in dims] == ["delayTapeDrive", "delayWidth", "delayPingPong"]
+    x, dims = E.group_plan("rooms", _base(cabParameters__rightCabActive="false"))
     assert x[("cabParameters", "leftRoomActive")] == "true" and x[("cabParameters", "rightRoomActive")] == "false"
     assert not any(d.key.startswith("rightRoom") for d in dims)
 
@@ -303,7 +304,7 @@ def test_tk_space_and_dims():
     for c in E.table("toneking"):
         if c.source in ("tk_stage1", "screen"):
             assert c.key in E.TK_DIMS, c.key
-    assert len(E.tk_space(set())) == 77 and len(E.tk_space(set(E.SCREEN_DIMS))) == 82
+    assert len(E.tk_space()) == 82
     assert E.tk_dim("cab1Active").values == ("0", "1")
     assert E.tk_dim("cab1MicIR").kind == "cat" and "16" not in E.tk_dim("cab1MicIR").values
     assert E.tk_lag(100) == 101
@@ -362,13 +363,13 @@ def test_render_commands_are_counted_by_the_machine_wide_cap():
 
 def test_smoke_options_refuse_the_real_output():
     with pytest.raises(SystemExit):
-        E.main(["stage1", "--assume-visible"])
+        E.main(["stage1", "--limit", "1"])
 
 
 def test_rooms_keeps_at_least_one_cab_on():
-    _, dims = E.group_plan("rooms", _base(cabParameters__rightCabActive="false"), set(E.SCREEN_DIMS))
+    _, dims = E.group_plan("rooms", _base(cabParameters__rightCabActive="false"))
     assert "leftCabActive" not in [d.key for d in dims]
-    _, dims = E.group_plan("rooms", _base(), set(E.SCREEN_DIMS))
+    _, dims = E.group_plan("rooms", _base())
     assert "leftCabActive" in [d.key for d in dims]
 
 
@@ -382,4 +383,4 @@ def test_listening_verdict_is_the_declared_rule():
     assert v["doubler"]["verdict"].startswith("fewer than 2")              # the fill doesn't count
     assert v["rooms"]["verdict"].startswith("descriptive")
     v = E.listening_verdict(trials, {"1": "A", "2": "A"})
-    assert v["gate"]["verdict"].startswith("ear disagrees")
+    assert v["gate"]["verdict"].startswith("ear disagrees") and "still learned" in v["gate"]["verdict"]

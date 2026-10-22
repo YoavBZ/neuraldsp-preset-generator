@@ -1,8 +1,11 @@
 # Every control: how and when each route covers the whole plugin: plan
 
 **Approved 2026-10-22 for its first stages (the user, in chat with the ML session).** Stages 0
-and 1 go ahead; switched-off knobs are left out, as proposed (below). Whether a declared rule counts
-as setting a control the judge can't hear stays open; stage 0c's screen informs it. Stage 0 and 1's
+and 1 go ahead; switched-off knobs are left out, as proposed (below). **Every control is learned
+(the user, 2026-10-22):** no fixed rule stands in for a control the judge can't hear; stage 0c's
+screen only sets search and training priorities ([amendment 1](#amendment-1-2026-10-22-every-control-is-learned)).
+**A data-quality audit is starting** (the user suspects the datasets need cleaning): stage 0 can
+run; stage 1's long runs wait for the audit's first findings. Stage 0 and 1's
 declared details are in [Stages 0 and 1, as built](#stages-0-and-1-as-built-2026-10-22); they run
 after an independent review of the code. The plan itself was drafted with zero compute: no renders, no training,
 no downloads. It answers the user's coverage rule (2026-10-21, PR #262; [ROADMAP](ROADMAP.md) and
@@ -140,10 +143,9 @@ Measured rates:
   with one control moved at a time show which controls it cannot see: each pan, stereo and phase
   with both cabs on; delay width and ping-pong and doubler spread with their feature on. Output gain
   (level removed) and a single cab's pan (mono fold) follow from the judge's maths without renders.
-  Those controls get a rule, not a model:
-  - output gain matched to S's loudness;
-  - pan centred, unless the arrangement prior documents a side;
-  - the stereo widths at S's values.
+  *Amendment 1:* the screen only sets priorities. Every control stays in the learned space; a
+  control the judge can't see is learned against what can see it (output gain against the record's
+  loudness, pan and stereo against a stereo reference where one exists), or last in the order.
 
 **Stage 1 (true DI, development, no training).**
 - **Morgan.** Knob ceiling 2's 24 parts, both directions, from each cell's stored stage 2 setting,
@@ -203,13 +205,13 @@ takes the cheaper option.
 
 - **Stage 1, per group:** the group searched minus not searched, over 14 bands.
   - Interval below 0: the group enters both routes' learned or searched space, largest gains first.
-  - A tie or worse: the group keeps its declared rule (off, neutral, S's value or research), and
-    the reading is reported. If the true DI cannot use a group, a song cannot either.
-  - Time effects, gate and doubler enter only where the ear agrees with a clear judge gain (knob
-    ceiling 2's reading). Off on a dry record is a correct answer.
-- **0b, amp choice:** the picked amp minus the blind mean, over 14 bands. Below 0: amp choice enters
-  both routes (a searched control in arm A, a 3-way head in the direct model). A tie: the amp stays
-  `generate`'s research choice, as today (the cheaper option).
+  - A tie or worse: the group stays in the learned space at a lower priority (amendment 1), and
+    the reading is reported.
+  - The ear's check on time effects, gate and doubler (knob ceiling 2's reading) sets their
+    priority, not their inclusion. Off on a dry record is a correct answer the model must learn.
+- **0b, amp choice:** the picked amp minus the blind mean, over 14 bands. Amp choice enters both
+  routes either way (amendment 1: a searched control in arm A, a 3-way head in the direct model);
+  the reading sets its priority, with `generate`'s research choice as its prior.
 - **2A:** A_full − A_core on stage F, over 12 bands.
   - Below 0: adopt the better budget.
   - A tie: the equal-budget full space. It costs no more renders and meets the rule.
@@ -224,8 +226,8 @@ takes the cheaper option.
 
 - **The default judge throughout**, as step 4 and arm A use it. Judge v3 is beside it, never
   deciding.
-- **Controls the judge cannot see** (stage 0c) are never searched or learned against it; they get
-  their declared rules.
+- **Controls the judge cannot see** (stage 0c) are never searched against it alone; they are still
+  learned (amendment 1), against a loudness or stereo target or last in the order.
 - **Listening:**
   - stage 1's page (gate, doubler, room, near-ties);
   - after any stage F test, a record-match page on 5 guitar-exposed parts: S, today's space and the
@@ -238,7 +240,7 @@ takes the cheaper option.
   - leaving switched-off knobs out or neutral labels: **decided 2026-10-22, left out** (masked out
     of losses, scores and fits; neutral values only where a value must be written);
   - whether a declared rule counts as setting a control the judge cannot see (output gain, pan,
-    stereo widths): **open**; stage 0c's screen informs it.
+    stereo widths): **decided 2026-10-22, no**: every control is learned (amendment 1).
 - **Training:** the 2D pilot's runs (about 1 h), D_full's 3 seeds (5–7.4 h), and a Tone King
   direct model (5–7.4 h) each need the user's approval before they start.
 - **Renders:** stages 0–2A, about 30–32k with no training. Each runs after its own reviewed plan.
@@ -270,14 +272,14 @@ here; each is flagged for the review.
   on their class starts): both cab pans and phases, and the delay's stereo mode, which stage 1's
   Tone King search would otherwise search blind. A move is a switch flipped or a knob to the far
   end of its range. **Invisible:** the score against the record moves by |log| ≤ 0.005 on both
-  halves in every cell. Invisible controls keep their rule; **visible ones join a stage-1 group**
-  (pan, stereo with phase; width and ping-pong with the effects group; spread with the doubler;
-  Tone King's with its search). The plan named only the groups, not this routing.
+  halves in every cell. *Amendment 1:* every screened control joins a stage-1 group whatever the
+  screen finds (pan, stereo with phase; width and ping-pong with the effects group; spread with the
+  doubler; Tone King's with its search); the screen's "invisible" list sets priorities only.
   **0.005 is a size bar, not a noise bar.** Repeat renders agree to about 3e-6 (log), so any
   move larger than that is technically audible to the judge; 0.005 is the smallest change worth
   searching for. It is knob ceiling 2's wet margin and its repeat tolerance, and about half the
   pedals' measured worth (+0.010). A control below it is not worth a dimension, so it takes its
-  rule. Tone King's amp tremolo speed (0.00036 at depth 0, below the bar) is ungated anyway: the
+  priority. Tone King's amp tremolo speed (0.00036 at depth 0, below the bar) is ungated anyway: the
   gate decides only what the canonical form may neutralise, and a neutralised control must make
   no difference at all, or the canonical start stops repeating its stored score. Ungating it just
   keeps its value as found; it does not make it a searched-for gain.
@@ -291,20 +293,22 @@ here; each is flagged for the review.
   and must repeat its stored score within 0.005. Each group is then searched on its own, 30
   renders, starting with its feature switched on (its stored knobs if it was on, else neutral):
   - gate: the threshold (−96 to 0 dB);
-  - doubler: the spread, if visible (else one render: on at spread 6);
+  - doubler: the spread;
   - rooms: both rooms on at −6 dB (for each cab that is on), their switches and levels, **and the
     left cab's switch** with its level (−40 to +6 dB). The plan named the left cab's level; its
     switch is in the same "cab rest" row and no other group covers it. At least one cab stays on:
     on the cells with the right cab off, the left cab's switch is not searched;
-  - phase (34 cells with both cabs on): the phase switches, plus pan and stereo if visible;
-  - effects (6 cells whose stage 2 turned on tremolo or delay): tremolo level, tape drive, plus
-    width and ping-pong if visible.
+  - phase (34 cells with both cabs on): the phase switches, pans and stereo switches;
+  - effects (6 cells whose stage 2 turned on tremolo or delay): tremolo level, tape drive, width
+    and ping-pong.
   A group's best is adopted only if it beats the stage-2 setting by ≥ 0.005 (log) on the search
   half (knob ceiling 2's wet margin); otherwise the cell reads 0. The reading is the plan's: held
-  half, the group searched minus not searched. About 4.7k renders, cap 7,296.
-- **Stage 1, Tone King: 48 cells, 150 renders each (7,248).** Its space: 77 controls, plus the
-  screened ones the judge can see. Rules: the delay's sync off; its display, tap, tempo and sync
-  notes at the start's values; the sections held on; output gain at the start's. Level ranges are
+  half, the group searched minus not searched. About 5.6k renders, cap 7,296.
+- **Stage 1, Tone King: 48 cells, 150 renders each (7,248).** Its space: 82 controls (amendment 1: the
+  5 screened ones included). Held in this oracle only: the delay's sync off (a
+  reparameterisation: the time in ms carries the same sounds); its display, tap, tempo and sync
+  notes at the start's values; the sections held on; output gain at the start's (the judge
+  removes level). The routes still learn all of them (amendment 1). Level ranges are
   narrowed to −40 to +6 dB (cab and room; the manifest allows −48 to +24 and −60 to +12),
   as Morgan's mic level. Beside the reading: Tone King searched − Morgan's stored stage-2 setting
   (descriptive).
@@ -313,12 +317,13 @@ here; each is flagged for the review.
 - **Listening: 8 trials.** Per group (gate, doubler, rooms), the 2 adopted cells with the largest
   held gains (one trial per part), leftovers filled by the next largest gains, then 2 near-ties
   (|held| < 0.005) drawn at random; the record, then the stage-2 setting and the group's setting,
-  the letter drawn at random per trial. The gate and the doubler enter only if the judge's
-  interval is below 0 and the listener also picks the group's setting on both of its own
-  clear-gain trials (knob ceiling 2's reading). A group with fewer than 2 such trials (too few
-  adopted cells with a held gain) keeps its rule: not shown by ear. Trials from the fill and the
-  near-ties are descriptive and never count towards a group. Rooms are decided by the judge; their
-  trials are descriptive. `listening score` applies this and prints the outcome per group.
+  the letter drawn at random per trial. Amendment 1: the page sets priority, not inclusion. The
+  gate and the doubler get a high priority if the judge's interval is below 0 and the listener
+  also picks the group's setting on both of its own clear-gain trials (knob ceiling 2's reading);
+  otherwise (fewer than 2 such trials, or the ear disagrees) a lower one, still learned. Trials
+  from the fill and the near-ties are descriptive and never count towards a group. Rooms are
+  ordered by the judge; their trials are descriptive. `listening score` applies this and prints
+  the outcome per group.
 - **Smoke (2026-10-22, 56 renders into a scratch folder, one process, nothing kept):** Tone King's
   renderer repeats tk-baseline's stored start score to 3e-6 (log), about 1.5 s a render with the
   preroll; Morgan's stage-2 setting repeats exactly. Two corrections came from it:
@@ -329,4 +334,28 @@ here; each is flagged for the review.
 - **The machine:** every render command waits for a slot under 3 render processes machine-wide
   (`local_objective.RENDERS` lists them) and stops below 31 GB free; cells are written atomically
   and resume; shards by `--shard i/n`.
+
+## Amendment 1 (2026-10-22): every control is learned
+
+**The user's decision:** every control must be learned. No fixed rule stands in for a control the
+judge can't hear, and switched-off knobs stay ignored (masked out of losses, scores and fits).
+
+- **Stage 0c's screen sets priorities only.** It no longer decides "rule or model". Every
+  screened control joins its stage-1 group and stays in both routes' learned space; the
+  "invisible" list orders search and training effort and says which controls need a target other
+  than the judge (output gain: the record's loudness; pan and stereo: a stereo reference where one
+  exists).
+- **Stage 1 and 0b readings set the order, not the membership.** A group or the amp choice that
+  ties is learned anyway, at a lower priority. The listening page does the same for the gate and
+  the doubler.
+- **What stays fixed in stages 0–1's oracle searches:** the delay and tremolo sync off (time in ms,
+  rate in Hz), the section switches on (each feature's own switch carries the same sounds), and
+  output gain (the judge removes level). These hold the oracle's search space; they are not rules
+  in the routes, which learn every manifest control. Whether the reparameterisations (sync,
+  sections) count as learned is for the review to confirm.
+- **Code:** `group_plan` and `tk_space` always include the screened controls; the screen's result
+  is reported, never read by stage 1. Morgan's stage 1 is now about 5.6k renders (phase 34 × 30,
+  doubler 48 × 30, effects with width and ping-pong); Tone King's space is 82 controls.
+- **Data-quality audit.** The user suspects the datasets need cleaning, so an audit is starting.
+  Stage 0 can run now. Stage 1's long runs wait for the audit's first findings.
 
