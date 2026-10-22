@@ -350,9 +350,14 @@ judge can't hear, and switched-off knobs stay ignored (masked out of losses, sco
   the doubler.
 - **What stays fixed in stages 0–1's oracle searches:** the delay and tremolo sync off (time in ms,
   rate in Hz), the section switches on (each feature's own switch carries the same sounds), and
-  output gain (the judge removes level). These hold the oracle's search space; they are not rules
-  in the routes, which learn every manifest control. Whether the reparameterisations (sync,
-  sections) count as learned is for the review to confirm.
+  output gain (the judge removes level). These hold the oracle's search space only.
+  - **Sync and sections:** covered by an equivalent learned control (time in ms or rate in Hz; each
+    feature's own switch), written as sync off and sections on. The user is asked to confirm this
+    wording.
+  - **Output gain** is learned in the routes against a declared target: the rendered preset's
+    integrated loudness matches the record's (the part's target track for training labels; the
+    separated stem's LUFS for a song), scored as the absolute LUFS error in dB, reported beside the
+    judge. Stage 2 uses this target; the oracle holds it at the start's value.
 - **Code:** `group_plan` and `tk_space` always include the screened controls; the screen's result
   is reported, never read by stage 1. Morgan's stage 1 is now about 5.6k renders (phase 34 × 30,
   doubler 48 × 30, effects with width and ping-pong); Tone King's space is 82 controls.
