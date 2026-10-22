@@ -2772,7 +2772,7 @@
      "cambridge-wickerman-elecgtr3",
      "cambridge-wickerman-elecgtr7"
     ],
-    "run": "the trusted parts among the candidates (the user's rule of 2026-10-22, 'use only what we can trust, no dirty tracks'): the data review's trusted list, passed as --trusted and hashed in inputs.json; a held-half entry (slug:A or slug:B) keeps only the directions judged on that half. Not known when this entry was made",
+    "run": "the trusted parts among the candidates (the user's rule of 2026-10-22, 'use only what we can trust, no dirty tracks'): the data review's trusted list, passed as --parts-list and hashed in inputs.json (key kept_parts); a held-half entry (slug:A or slug:B) keeps only the directions judged on that half. Not known when this entry was made",
     "unmastered_D_row": [
      "cambridge-Passing_Ships-ElecGtr2",
      "cambridge-Passing_Ships-ElecGtr4",

@@ -189,8 +189,10 @@ recipes, the readout and the judge are fixed before any real-mix render.
 Recorded with the code after its review, before any real-mix render. They change no estimate,
 recipe or judge.
 
-- **Trusted parts:** every command takes `--trusted FILE`, the trusted list from the data review,
-  and refuses to run without it. An entry can also trust one held half (`slug:A`).
+- **Trusted parts:** every command takes `--parts-list FILE`, the trusted parts from the data
+  review, and refuses to run without it. The file is JSON `{"parts": [...]}`, a bare JSON list, or
+  text with one entry per line. An entry can also trust one held half (`slug:A`). The inputs record
+  and the report store the list under `kept_parts`.
 - **The repeat check uses 12 renders, not 6:** each of its 6 S renders gets a discarded priming
   render (the priming rule). The total is 5,811 renders on all 17 parts, under the 6,300 cap.
 - **"As mixed" lag:** one lag per direction, fitted on its search half from the plain

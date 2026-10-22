@@ -43,27 +43,27 @@ def test_constants_are_the_plans():
     assert A.PER_DIRECTION == 55 and LO.DISK_GUARD_GB == 31.0
 
 
-# --- the trusted list ----------------------------------------------------------------------------------
+# --- the parts list (the trusted parts) -------------------------------------------------------------
 
-def test_parse_trusted_json_and_text():
-    j = json.dumps({"trusted": ["cambridge-magilla-elecgtr1", "cambridge-femme-elecgtr5:B"], "note": "review 1"})
-    assert M.parse_trusted(j, "t.json") == [("cambridge-magilla-elecgtr1", None), ("cambridge-femme-elecgtr5", "B")]
-    assert M.parse_trusted('["a", "b:A"]') == [("a", None), ("b", "A")]
+def test_parse_parts_list_json_and_text():
+    j = json.dumps({"parts": ["cambridge-magilla-elecgtr1", "cambridge-femme-elecgtr5:B"], "note": "review 1"})
+    assert M.parse_parts_list(j, "t.json") == [("cambridge-magilla-elecgtr1", None), ("cambridge-femme-elecgtr5", "B")]
+    assert M.parse_parts_list('["a", "b:A"]') == [("a", None), ("b", "A")]
     txt = "# trusted after review 1\ncambridge-magilla-elecgtr1   # clean\n\n  cambridge-femme-elecgtr5:A\n"
-    assert M.parse_trusted(txt, "t.txt") == [("cambridge-magilla-elecgtr1", None), ("cambridge-femme-elecgtr5", "A")]
-    for bad in ('{"parts": ["a"]}', '{"trusted": "a"}', '[1, 2]', "a:C", ":A", "{not json"):
+    assert M.parse_parts_list(txt, "t.txt") == [("cambridge-magilla-elecgtr1", None), ("cambridge-femme-elecgtr5", "A")]
+    for bad in ('{"names": ["a"]}', '{"parts": "a"}', '[1, 2]', "a:C", ":A", "{not json"):
         with pytest.raises(ValueError):
-            M.parse_trusted(bad)
+            M.parse_parts_list(bad)
 
 
-def test_every_command_refuses_without_a_trusted_list(tmp_path):
+def test_every_command_refuses_without_a_parts_list(tmp_path):
     with pytest.raises(SystemExit):
-        M.read_trusted(None)
+        M.read_parts_list(None)
     with pytest.raises(SystemExit):
-        M.read_trusted(tmp_path / "missing.json")
-    (tmp_path / "bad.json").write_text('{"parts": []}')
+        M.read_parts_list(tmp_path / "missing.json")
+    (tmp_path / "bad.json").write_text('{"names": []}')
     with pytest.raises(SystemExit):
-        M.read_trusted(tmp_path / "bad.json")
+        M.read_parts_list(tmp_path / "bad.json")
     for cmd in ("inputs", "separate", "rebuild", "predict", "render", "smoke", "as-mixed", "report"):
         with pytest.raises(SystemExit):
             M.main([cmd])
@@ -96,19 +96,19 @@ def test_repeat_groups_are_seeded():
     assert M.repeat_groups(gs[:4]) == sorted(gs[:4])
 
 
-def test_state_refuses_another_trusted_list(tmp_path):
+def test_state_refuses_another_parts_list(tmp_path):
     t1, t2 = tmp_path / "t1.txt", tmp_path / "t2.txt"
     t1.write_text("cambridge-magilla-elecgtr1\n")
     t2.write_text("cambridge-femme-elecgtr5\n")
-    args = types.SimpleNamespace(out=str(tmp_path / "run"), trusted=str(t1))
+    args = types.SimpleNamespace(out=str(tmp_path / "run"), parts_list=str(t1))
     with pytest.raises(SystemExit):
         M.state(args)                                                    # no inputs.json yet
-    M._save(tmp_path / "run" / "inputs.json", {"ok": True, "trusted": {"sha256": LO.file_sha256(t1)}})
+    M._save(tmp_path / "run" / "inputs.json", {"ok": True, "kept_parts": {"sha256": LO.file_sha256(t1)}})
     root, rec = M.state(args)
     assert root == tmp_path / "run" and rec["ok"]
     with pytest.raises(SystemExit):
-        M.state(types.SimpleNamespace(out=str(tmp_path / "run"), trusted=str(t2)))
-    M._save(tmp_path / "run" / "inputs.json", {"ok": False, "problems": {"x": 1}, "trusted": {"sha256": LO.file_sha256(t1)}})
+        M.state(types.SimpleNamespace(out=str(tmp_path / "run"), parts_list=str(t2)))
+    M._save(tmp_path / "run" / "inputs.json", {"ok": False, "problems": {"x": 1}, "kept_parts": {"sha256": LO.file_sha256(t1)}})
     with pytest.raises(SystemExit):
         M.state(args)
 
@@ -117,10 +117,10 @@ def test_inputs_limit_needs_a_scratch_out(tmp_path):
     t = tmp_path / "t.txt"
     t.write_text("cambridge-magilla-elecgtr1\n")
     with pytest.raises(SystemExit):
-        M.cmd_inputs(types.SimpleNamespace(out=None, trusted=str(t), limit=1))
+        M.cmd_inputs(types.SimpleNamespace(out=None, parts_list=str(t), limit=1))
     t.write_text("telefunken-She's_Gone-GTR\n")
     with pytest.raises(SystemExit):                                      # no trusted part of the 17
-        M.cmd_inputs(types.SimpleNamespace(out=str(tmp_path / "o"), trusted=str(t), limit=None))
+        M.cmd_inputs(types.SimpleNamespace(out=str(tmp_path / "o"), parts_list=str(t), limit=None))
 
 
 # --- the checks -------------------------------------------------------------------------------------------
@@ -180,7 +180,7 @@ def test_stored_problems():
 # --- the machine ----------------------------------------------------------------------------------------
 
 def test_render_gate_counts_jobs_and_servers():
-    jobs = [(1, f"{PY} -m learn.real_mix_test render --trusted t --shard 0/3"),
+    jobs = [(1, f"{PY} -m learn.real_mix_test render --parts-list t --shard 0/3"),
             (2, f"{PY} -m learn.direct_stems render --shard 0/3")]
     assert M.render_blocker(jobs) is None
     three = jobs + [(3, f"{PY} -m learn.arm_a_mega53 search --stage F --shard 1/3")]
@@ -189,22 +189,22 @@ def test_render_gate_counts_jobs_and_servers():
     servers = [(10 + i, "/tmp/au-bounded-x/au_render_server_bounded --x") for i in range(3)]
     assert "render servers" in M.render_blocker(servers)
     assert M.render_blocker(servers, servers=False) is None
-    beside = jobs + [(9, f"{PY} -m learn.real_mix_test separate --trusted t --device cpu")]
+    beside = jobs + [(9, f"{PY} -m learn.real_mix_test separate --parts-list t --device cpu")]
     assert "beside a separation" in M.render_blocker(beside)               # a separation lowers the cap to 2
 
 
 def test_regexes_count_this_tests_renders_and_separation():
     import re
 
-    for cmd in ("render --trusted t --shard 0/3", "smoke --trusted t --out x"):
+    for cmd in ("render --parts-list t --shard 0/3", "smoke --parts-list t --out x"):
         assert any(re.search(p, f"python -m learn.real_mix_test {cmd}") for p in LO.RENDERS), cmd
     for cmd in ("inputs", "predict", "report", "as-mixed", "rebuild", "separate"):
-        assert not any(re.search(p, f"python -m learn.real_mix_test {cmd} --trusted t") for p in LO.RENDERS), cmd
+        assert not any(re.search(p, f"python -m learn.real_mix_test {cmd} --parts-list t") for p in LO.RENDERS), cmd
     for cmd in ("inputs", "predict", "report", "render"):
-        assert not A._matches(f"{PY} -m learn.real_mix_test {cmd} --trusted t", A.SEPARATIONS), cmd
-    assert A._matches(f"{PY} -m learn.real_mix_test separate --trusted t --device cpu", A.SEPARATIONS)
-    assert A._matches(f"{PY} -m learn.real_mix_test rebuild --trusted t", A.SEPARATIONS)    # as arm_a_mega53's rebuild
-    assert A._matches(f"{PY} -m learn.real_mix_test render --trusted t", A.RENDERS)
+        assert not A._matches(f"{PY} -m learn.real_mix_test {cmd} --parts-list t", A.SEPARATIONS), cmd
+    assert A._matches(f"{PY} -m learn.real_mix_test separate --parts-list t --device cpu", A.SEPARATIONS)
+    assert A._matches(f"{PY} -m learn.real_mix_test rebuild --parts-list t", A.SEPARATIONS)    # as arm_a_mega53's rebuild
+    assert A._matches(f"{PY} -m learn.real_mix_test render --parts-list t", A.RENDERS)
 
 
 def test_separation_waits_for_an_idle_renderer_and_a_free_gpu():

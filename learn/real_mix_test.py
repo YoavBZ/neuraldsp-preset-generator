@@ -5,22 +5,22 @@ M, step 4's D) on the same directions are the other side of each pair. Developme
 sizes with 90% band-clustered intervals, no pass/fail bars.
 
 **Trusted parts only** (the user, 2026-10-22: "use only what we can trust, no dirty tracks"). Every
-command takes `--trusted FILE` and refuses to run without it. `inputs` records the file's sha256;
-every later command refuses a different file (start a new `--out` for a new list). The file is
-either JSON, `{"trusted": [entry, ...], ...}` (other keys are kept as notes) or a bare list, or
+command takes `--parts-list FILE` (the trusted parts) and refuses to run without it. `inputs`
+records the file's sha256; every later command refuses a different file (start a new `--out` for a
+new list). The file is either JSON, `{"parts": [entry, ...], ...}` (other keys are kept as notes) or a bare list, or
 plain text with one entry per line (`#` starts a comment). An entry is a label-table slug
 (`cambridge-magilla-elecgtr1`: both held halves trusted) or a slug with one held half
 (`cambridge-magilla-elecgtr1:B`: only directions judged on half B). Entries outside the plan's 17
 parts are allowed (the review's list covers more) and are listed, not used.
 
-    T="--trusted ~/ndsp-presets/learn/real-mix-test/trusted.json"
-    .venv/bin/python -m learn.real_mix_test inputs $T                     # zero renders: run set, hashes, checks
-    $MSST_PY  -m learn.real_mix_test separate $T [--device mps]           # D's crop-only stems (at most 23), CPU by default
-    $TORCH_PY -m learn.real_mix_test rebuild $T                            # C′ checks, the real-mix rebuilds
-    $TORCH_PY -m learn.real_mix_test predict $T                            # D's answers, control, damping (zero renders)
-    OMP_NUM_THREADS=1 .venv/bin/python -m learn.real_mix_test render $T --shard i/3   # i = 0, 1, 2; renders
-    .venv/bin/python -m learn.real_mix_test as-mixed $T                    # zero renders
-    .venv/bin/python -m learn.real_mix_test report $T
+    P="--parts-list ~/ndsp-presets/learn/real-mix-test/parts.json"
+    .venv/bin/python -m learn.real_mix_test inputs $P                     # zero renders: run set, hashes, checks
+    $MSST_PY  -m learn.real_mix_test separate $P [--device mps]           # D's crop-only stems (at most 23), CPU by default
+    $TORCH_PY -m learn.real_mix_test rebuild $P                            # C′ checks, the real-mix rebuilds
+    $TORCH_PY -m learn.real_mix_test predict $P                            # D's answers, control, damping (zero renders)
+    OMP_NUM_THREADS=1 .venv/bin/python -m learn.real_mix_test render $P --shard i/3   # i = 0, 1, 2; renders
+    .venv/bin/python -m learn.real_mix_test as-mixed $P                    # zero renders
+    .venv/bin/python -m learn.real_mix_test report $P
 
 MSST_PY is ~/ndsp-presets/tools/msst-venv/bin/python, TORCH_PY ~/ndsp-presets/tools/demucs-venv/bin/python.
 Outputs go to ~/ndsp-presets/learn/real-mix-test/ (`--out DIR` for a scratch run; `--limit K` keeps
@@ -184,9 +184,9 @@ def _pos(x):
     return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) and x > 0
 
 
-# --- the trusted list (pure) ------------------------------------------------------------------------
+# --- the parts list: the trusted parts (pure) ------------------------------------------------------------------------
 
-def parse_trusted(text, name=""):
+def parse_parts_list(text, name=""):
     """-> [(slug, held half or None)] from the file's text (JSON or one entry per line)."""
     s = text.strip()
     if name.endswith(".json") or s.startswith(("{", "[")):
@@ -195,11 +195,11 @@ def parse_trusted(text, name=""):
         except json.JSONDecodeError as e:
             raise ValueError(f"not valid JSON: {e}") from None
         if isinstance(obj, dict):
-            if "trusted" not in obj:
-                raise ValueError("a JSON trusted list needs a 'trusted' key")
-            obj = obj["trusted"]
+            if "parts" not in obj:
+                raise ValueError("a JSON parts list needs a 'parts' key")
+            obj = obj["parts"]
         if not isinstance(obj, list) or not all(isinstance(x, str) for x in obj):
-            raise ValueError("'trusted' must be a list of strings")
+            raise ValueError("'parts' must be a list of strings")
         raw = obj
     else:
         raw = [ln.split("#", 1)[0] for ln in text.splitlines()]
@@ -225,17 +225,17 @@ def run_set(entries, parts=PARTS):
     return {s: sorted(h) for s, h in sorted(run.items())}, sorted(outside)
 
 
-def read_trusted(path):
+def read_parts_list(path):
     """-> (path, entries, sha256); SystemExit without a readable list."""
     if not path:
-        raise SystemExit("--trusted FILE is required: the test runs on trusted parts only (the user's rule, 2026-10-22)")
+        raise SystemExit("--parts-list FILE is required: the test runs on trusted parts only (the user's rule, 2026-10-22)")
     p = pathlib.Path(path).expanduser()
     if not p.is_file():
-        raise SystemExit(f"trusted list {p} not found: the test runs on trusted parts only")
+        raise SystemExit(f"parts list {p} not found: the test runs on trusted parts only")
     try:
-        entries = parse_trusted(p.read_text(), p.name)
+        entries = parse_parts_list(p.read_text(), p.name)
     except ValueError as e:
-        raise SystemExit(f"trusted list {p}: {e}") from None
+        raise SystemExit(f"parts list {p}: {e}") from None
     return p, entries, LO.file_sha256(p)
 
 
@@ -329,14 +329,14 @@ def load_checked(path, sha):
 
 
 def state(args):
-    """(root, inputs record) after the trusted-list and inputs checks every command but `inputs` needs."""
+    """(root, inputs record) after the parts-list and inputs checks every command but `inputs` needs."""
     root = out_root(args)
-    _, _, sha = read_trusted(args.trusted)
+    _, _, sha = read_parts_list(args.parts_list)
     rec = _load(root / "inputs.json")
     if rec is None:
         raise SystemExit(f"run `inputs` first ({root / 'inputs.json'} is missing)")
-    if rec["trusted"]["sha256"] != sha:
-        raise SystemExit("this trusted list is not the one `inputs` recorded: start a new --out for a new list")
+    if rec["kept_parts"]["sha256"] != sha:
+        raise SystemExit("this parts list is not the one `inputs` recorded: start a new --out for a new list")
     if not rec.get("ok"):
         raise SystemExit(f"`inputs` found problems: {json.dumps(rec.get('problems'), ensure_ascii=False)[:2000]}")
     return root, rec
@@ -787,7 +787,7 @@ def alignment_entry(al, slug, kind):
 
 
 def cmd_inputs(args):
-    """Zero renders: the run set from the trusted list, the inputs' hashes, and the checks (see the
+    """Zero renders: the run set from the parts list (the trusted parts), the inputs' hashes, and the checks (see the
     module docstring); writes inputs.json, ok only if every check passed."""
     import numpy as np
     import soundfile as sf
@@ -795,7 +795,7 @@ def cmd_inputs(args):
     from learn import confirm_run as CR
 
     root = out_root(args)
-    tp, entries, sha = read_trusted(args.trusted)
+    tp, entries, sha = read_parts_list(args.parts_list)
     run, outside = run_set(entries)
     if args.limit:
         if root == OUT:
@@ -804,8 +804,8 @@ def cmd_inputs(args):
     if not run:
         raise SystemExit(f"no trusted part among the plan's {len(PARTS)}: nothing to run")
     old = _load(root / "inputs.json")
-    if old and old["trusted"]["sha256"] != sha:
-        raise SystemExit("inputs.json was made from another trusted list: start a new --out for a new list")
+    if old and old["kept_parts"]["sha256"] != sha:
+        raise SystemExit("inputs.json was made from another parts list: start a new --out for a new list")
     slugs = sorted(run)
     dirs = run_dirs(run)
     probs = {}
@@ -877,7 +877,7 @@ def cmd_inputs(args):
             raise SystemExit(f"inputs changed since `inputs` recorded them ({len(ch)}: {ch[:5]}): the recorded "
                              "hashes stay; investigate, and start a new --out if the change is meant")
     rec = {"plan": PLAN, "ok": not probs, "problems": probs, "smoke": bool(args.limit), "limit": args.limit,
-           "trusted": {"path": str(tp), "sha256": sha, "entries": [s if h is None else f"{s}:{h}" for s, h in entries],
+           "kept_parts": {"path": str(tp), "sha256": sha, "entries": [s if h is None else f"{s}:{h}" for s, h in entries],
                        "outside_this_test": outside},
            "run": run, "parts": len(run), "directions": len(dirs), "groups": len(A.groups(dirs)),
            "expected_renders": expected_renders(dirs), "cap": CAP, "hashes": hashes, "logged_lags": lags,
@@ -1426,7 +1426,7 @@ def cmd_report(args):
     part_of = A.f_part
     units = make_units(dirs, part_of, value_of, FIXED)
     unm = make_units([d for d in dirs if d[0] in UNMASTERED], part_of, value_of, FIXED + ("D_unm",))
-    rep = {"plan": PLAN, "label_D": pred.get("label"), "trusted": rec["trusted"], "run": run,
+    rep = {"plan": PLAN, "label_D": pred.get("label"), "kept_parts": rec["kept_parts"], "run": run,
            "directions": len(dirs), **report_from_units(units, unm, dirs),
            "refused_scored_as_S": {a: len(v) for a, v in refused.items()}}
     band_of = lambda s: A.pool_band(s)  # noqa: E731
@@ -1524,15 +1524,15 @@ def cmd_report(args):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", choices=("inputs", "separate", "rebuild", "predict", "render", "smoke", "as-mixed", "report"))
-    ap.add_argument("--trusted", help="the trusted-parts list (required by every command)")
+    ap.add_argument("--parts-list", help="the list of trusted parts (required by every command)")
     ap.add_argument("--out", help="a scratch output root instead of ~/ndsp-presets/learn/real-mix-test")
     ap.add_argument("--limit", type=int, help="inputs: keep the first K run parts (scratch --out only)")
     ap.add_argument("--device", choices=("cpu", "mps"), default="cpu",
                     help="separate: CPU (default; 4 threads) or MPS, refused while another job may use the GPU")
     ap.add_argument("--shard", default="0/1")
     a = ap.parse_args(argv)
-    if not a.trusted:
-        ap.error("--trusted FILE is required: the test runs on trusted parts only")
+    if not a.parts_list:
+        ap.error("--parts-list FILE is required: the test runs on trusted parts only")
     a.shard = tuple(int(x) for x in a.shard.split("/"))
     {"inputs": cmd_inputs, "separate": cmd_separate, "rebuild": cmd_rebuild, "predict": cmd_predict,
      "render": cmd_render, "smoke": cmd_smoke, "as-mixed": cmd_as_mixed, "report": cmd_report}[a.cmd](a)
