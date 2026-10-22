@@ -1,49 +1,50 @@
-# Cleaning the direct model's data: review and options
+# Cleaning the direct model's data: declared plan
 
-Drafted 2026-10-22: zero renders, no training, no downloads beyond web pages. It reviews the ML
-session's cleaning proposal for D_stem and recommends a declared design. Development data only.
-The ML plan's rules apply (effect sizes with 90% band-clustered intervals, no pass bars, renders
-declared). **The user's rule (2026-10-22):** use only what we can trust, no dirty tracks.
-Measurements, training and listening use a reviewed trusted set, and dirty tracks are excluded,
-not flagged.
+Declared 2026-10-22, before any non-smoke run. Development data only. The ML plan's rules apply
+(effect sizes with 90% band-clustered intervals, no pass bars, renders declared). **The user's rule
+(2026-10-22):** use only what we can trust, no dirty tracks. Measurements, training and listening
+use a reviewed trusted set, and dirty tracks are excluded, not flagged.
 
+- **Status.** The user decided on 2026-10-22 to go with the rebuild approach: "review, search and
+  go with the best"; the review agreed that rebuilding beats dropping. An independent review read
+  **go with changes**. Its seven required changes are applied below
+  ([what the review changed](#what-the-independent-review-changed)).
+- **Code:** `learn/data_cleaning.py` (steps 0 and 1), tests `tests/test_data_cleaning.py`.
+- **Ledger:** `data-cleaning` in [`dev-test-ledger.json`](dev-test-ledger.json), entered before any
+  compute.
+- **Data:** `~/ndsp-presets/learn/data-cleaning/`.
+- **Not run yet.** Only scratch smoke runs exist (listed under [Smoke](#smoke-development-decides-nothing)).
 - **Inputs read:** the [data-quality audit](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/272)
   (draft PR #272) and its evidence; [the plan](direct-model-stems-plan.md) (steps 3–4,
   amendments 2 and 5–7); [step 3–4 results](direct-model-stems-results.md);
   [pilot results](direct-model-stems-pilot-results.md); `learn/pretrain_set.py` and
   `learn/direct_stems.py`.
-- **New counts here** come from stored files only:
-  `~/ndsp-presets/learn/data-quality-2026-10-22/contam-*.jsonl`, `pretrain-set/leakage.json`,
-  the audit's `di-library-match-summary.json`, `r-in-gate-vs-contamination.json.gz` and the build
-  rows' `early_stop` flags.
 - **Tags:** *[project]* is measured in this repo. *[published]* is from the literature.
   *[inferred]* is reasoning, not measured.
 
 ## Headline
 
-1. **The 3-way split is right in spirit, but kinds 1 and 2 are not yet defined from data.**
-   - **Kind 1 does not exist in D's own data.** Its targets are exact renders.
-   - **The live-room problem reaches D only through the backing.** No stored metric gives its
-     level.
-   - **The stored doubles rule misses most named doubles.**
-   - **The level draw is not dirt.**
-2. **Comparing with step 3's models mixes "cleaner" with "fewer".**
-   - Kind 2 as proposed removes 15–29% of the pool.
-   - Along the pilot's learning curve, that alone costs about **+0.004 to +0.008 E**. D's whole
-     margin over the constant on R_in is −0.016.
-3. **The trusted test set collapses.** Applied to R_in, the proposal's own kinds leave 1–2 bands:
-   no band-clustered interval is possible.
-4. **Recommended: rebuild, don't drop.**
-   - Measure one per-example quantity first: how loud the target's own part is in the backing
-     (zero renders).
-   - Rebuild the affected examples without those tracks, at the same N, band mix and level mix.
-     Use the same rebuild for the test set.
-   - Retrain D_stem once on the trusted pool (2 seeds) and compare with step 3's seeds on the
-     rebuilt trusted R_in.
-   - Rebuilding costs about as much MPS time as a size-matched control. It separates cleaner from
-     fewer exactly, and keeps the data the learning curve says we need.
+1. **The ML session's 3-way split is right in spirit, but its kinds 1 and 2 were not defined from
+   data** (§A).
+   - Kind 1 does not exist in D's own data, because its targets are exact renders.
+   - The live-room problem reaches D only through the backing.
+   - The stored doubles rule missed most named doubles.
+   - The level draw is not dirt.
+2. **Dropping would mix "cleaner" with "fewer"** (§A). The learning curve prices a 15–29% drop at
+   +0.004 to +0.008 E. D's whole margin over the constant on R_in is −0.016.
+3. **The declared plan rebuilds instead of dropping** (§C).
+   - **Step 0** (zero renders, CPU) measures, per section, how much of the target's own part each
+     backing track carries.
+   - **Step 1** (zero renders) rebuilds every untrusted R_in example without those tracks, and reads
+     step 3's model on the original against the rebuilt stems of the same examples.
+   - **Step 2** retrains D_stem on the rebuilt trusted pool at the same N.
+4. **One threshold, −30 dB of the target's own track,** for training and test backings and for
+   amp-track targets.
+5. **The take estimator must pass an injection check first.** In development smoke runs, close mics
+   read injected takes back within about 1.5 dB. One loud room mic read −34.4 dB for an injected
+   −30 dB, so the declared check can fail. If it does, step 0 stops and returns to review.
 
-## A. Review of the proposal
+## A. Review of the ML session's proposal (as first written)
 
 ### What it gets right
 
@@ -184,17 +185,17 @@ not flagged.
 - **R_in has been read many times.** Every threshold here is fixed before any model output is
   read by it.
 
-## B. Options compared
+## B. Options compared (as first written)
 
-GPU hours assume step 3's speed (67–77 min per D_stem seed at 20.3k). Separation runs on X-LANCE
-with the two workers at 0.29–0.34 clips/s, about 8–10 h per 10k. Renders are training-style, about
-0.94 per example plus priming.
+GPU hours assume step 3's speed (67–77 min per D_stem seed at 20.3k). X-LANCE separation runs at
+4.3–5 s a clip on the MPS alone (about 12–14 h per 10k), or about 0.35 clips/s with the CPU worker
+beside it (about 8 h per 10k). Renders are training-style, about 0.94 per example plus priming.
 
 | Approach | What it fixes | Evidence | Cost | Risk |
 |---|---|---|---|---|
 | **Proposal as written:** drop kinds 1–2, compare with step 3's seeds | Doubles, level, live sessions | None for this setup | 2.3–2.6 GPU h | Confounds cleaner with fewer, 3 vs 2 seeds, and the early-stopping set; drops real levels; R_in collapses |
 | **Drop plus a size-matched random control** (the audit's step 1 design) | Separates cleaner from fewer when dirt is spread across bands | Standard ablation *[inferred]* | 4.6–5.2 GPU h, 0 renders | Cannot separate band-wide dirt from band mix; the control trains on dirty tracks; still loses data |
-| **Rebuild affected examples without same-part tracks (recommended)** | Doubles and live-room takes, at equal N, band and level mix | Removes the cause at the source *[inferred]*; matches the user's rule | v0: about 3.6k renders and separations (about 3–3.5 h); at most about 13.4k (11–13 h) if the live-room tracks count; 2.3–2.6 GPU h | The backing loses doubles and room mics, so the input is a little less realistic; needs a small code change in the backing list |
+| **Rebuild affected examples without same-part tracks (recommended)** | Doubles and live-room takes, at equal N, band and level mix | Removes the cause at the source *[inferred]*; matches the user's rule | v0: about 3.6k renders and separations (4.3–5 h MPS alone, about 2.9 h with the CPU worker); at most about 13.4k (16–19 h, or about 10.6 h); 2.3–2.6 GPU h | The backing loses doubles and room mics, so the input is a little less realistic; needs a small code change in the backing list |
 | **Rebuild with consistent doubles** (partner DI rendered at the label's settings) | As above, and keeps realistic doubling | *[inferred]* | One more render per affected example | More code; partner DIs exist only for named pairs |
 | **Drop by separator contamination** (kind 3 filter; the audit's arms a/c) | Heavy residue | Pruning beats scaling only with abundant data and a good metric ([Sorscher 2022](https://arxiv.org/abs/2206.14486)). Filtering helped little when all stems were corrupted (MDX23 bleeding, +0.5 dB; [Fabbro 2024](https://transactions.ismir.net/articles/171)). Cleaning can hurt ([CleanML](https://arxiv.org/abs/1904.09483)). All *[published]* | About 6 GPU h | Shifts training away from the test; the measure is partly difficulty |
 | **Level floor** (redraw < −15 dB) | Buried guitars | *[project]*: those examples are where D fails | About 3.4k separations (about 4 h) | Not dirt; a product-scope decision |
@@ -205,118 +206,242 @@ with the two workers at 0.29–0.34 clips/s, about 8–10 h per 10k. Renders are
 | **More separator-aware augmentation** | The separator mismatch | The pilot's augmentations −0.0115 E *[project]*; StemFX trains on separated stems ([2026](https://arxiv.org/abs/2607.15634)) *[published]* | Code plus 2.3 GPU h | Not cleaning |
 | **Clean the test, early-stopping and readout sets** | Trust in every number | The user's rule; test-side doubles hint (§A) *[project]* | Included in the rebuild | Few bands left unless rebuilt |
 
-## C. Recommendation: a trusted rebuild, cheapest first
+## C. The declared plan
 
-### Step 0: declare the trusted sets (0 renders, 0 GPU, about 1–2 h of CPU)
+### What the independent review changed
+
+| # | Required change | Where it is now |
+|---|---|---|
+| 1 | Confirm "same part" by pitch (chroma), not onsets alone | Step 0: a candidate (naming or onsets) must also reach chroma ≥ 0.70. Onsets alone never decide. Swatkins' Leslie is judged by its data, not its name |
+| 2 | Remove tracks per section, not per example | Step 0: the take is read against the target's own track, so it does not depend on the example's level draw. Removal lists are per section, and no level filter comes back |
+| 3 | Validate the swapped-role take estimate by injection first; decide the amp-source estimate | Step 0a: injection at −20, −25 and −30 dB into clean Cambridge backings, with declared pass rules. `scan` refuses without INJECTION OK. The amp-source reading decides (upper bound); the DI-source reading is reported beside |
+| 4 | One threshold, or justify two | One: −30 dB of the target's own track, for backings and for amp-track targets |
+| 5 | Step 1 is paired; rebuild every untrusted R_in example; no target renders | Step 1: F read on the original and the rebuilt stems of the same examples. The gate's 1,407 stored truth renders are the targets |
+| 6 | Step 2: untouched trusted R_in co-primary; doubled test examples with consistent doubles; the gate on F's re-rendered answers | Step 2 |
+| 7 | Both separation rates in the budget | Budget: MPS alone 4.3–5 s a clip; MPS with the CPU worker about 0.35 clips/s |
+
+### Step 0: declare the trusted sets (zero renders, CPU)
 
 No model output is read in this step.
 
-**OTL, the original-take level,** per example and half, in dB relative to the rendered target in
-the mix. It is computed in the example's own backing variant (with or without vocals):
+**The take level.** For a kept backing track in a section, the take level is the energy of the
+target's own part that the track carries, in dB of the target's own close-mic (amp) track. This is
+the same reference the bleed audit uses for amp-track targets.
+- **Not tied to the level draw.** The rule cannot become a level filter (review change 2).
+- **Dropped:** the per-example level relative to the render, OTL in the first draft.
 
-  OTL = 10·log10((P_same + E_take) / P_backing) − ratio_db
-
-The example's OTL is the maximum over its two halves.
-
-- **P_same:** the full section power of every kept **same-part track**. A track is same-part if
-  any of these holds:
-  1. Cambridge naming: the DI's part name with "DT" added or removed.
-  2. A guitar track with onset r > 0.6 in ≥ 25% of the DI's playing windows (`di_match.py`).
-  3. A guitar track that beats the own amp track in ≥ 25% of ≥ 10 windows.
-
-  Rules 2 and 3 are re-run on the windows that overlap the section.
-- **E_take:** the energy of the other kept tracks explained by the part's own amp track beyond
-  the session's drum and bass close mics.
-  - **How:** `bleed4.py`'s held-out regression with its shifted-track null, roles swapped. The
-    backing is the "record", the own amp track the source, the close mics covariates.
-  - **A lower bound, reported beside:** the same with the DI as the source.
-- **Trusted example:** OTL ≤ −20 dB. That is the bleed audit's "high" boundary, where every user
-  bleed complaint (U0, U1, U8, U10, U13) sits.
-  - **Sensitivity:** the count at −30 dB is reported. It decides nothing.
-- **Trusted amp-track half** (stage F, knob ceiling 2, listening):
-  - bleed flag low (< −30 dB) on both halves;
-  - DI active ≥ 50% of frames;
-  - DI–reference chroma ≥ 0.8 or onset ≥ 0.35.
-
-  This leaves 16 of stage F's 21 parts.
-- **Not dirt, kept:** contamination (`leak_A`/`leak_B`) and the level draw. Both are reported as
-  strata.
-- **Route, fixed by the count:**
-  - **Drop** if the untrusted share of the training pool is ≤ 5%. The projected size cost is
+- **Same-part tracks** (another take of the part, such as a double):
+  - **Their whole power counts**, read per section as the larger half.
+  - **Candidates:**
+    - Cambridge "DT" naming (ElecGtr01 and ElecGtr01DT);
+    - section onset correlation with the DI ≥ 0.6;
+    - onsets that follow the DI at least as well as the own amp track does.
+  - **Confirmed by pitch:** chroma similarity with the own amp track (the DI when there is none)
+    ≥ 0.70 in the section. That is the label table's weakest verified own pair (0.696).
+- **Any other track: a session-level take.** A room path does not change between sections, and the
+  whole session gives far more frames than a 9-s section.
+  - **The regression:** a per-bin complex ridge regression of the track on the own amp track, with
+    lags −1 to 6 STFT frames (about −43 to +256 ms).
+    - Analysis rate 24 kHz, STFT 2048/1024, 250 Hz–8 kHz.
+    - Ridge 0.3 relative to the bin's mean diagonal.
+  - **Cross-validated:** in 10 contiguous blocks of the session, on frames where the amp plays.
+  - **Less chance:** minus the mean of four nulls, the source rolled by ±2 and ±3 s. The nulls
+    are past the lags, and close enough to keep the music's structure.
+  - **Never above the track's own power.**
+  - **The amp-source reading decides.** It is an upper bound, since a live amp track's own drum
+    bleed can pose as take. The DI-source reading is reported beside it.
+  - **Floor:** takes under −40 dB count as none.
+  - **Parts with no amp track** (Dark Ride's DIs) recorded no original take, so only confirmed
+    same-part tracks count there.
+- **The rule:** per section, remove the fewest tracks, largest take first, until the section's
+  summed take is ≤ −30 dB.
+  - An example is untrusted only if its own backing variant (with or without vocals) loses a track.
+  - A section's removal list applies to every example of that section.
+- **Why −30 dB, for both backings and amp-track targets** (review change 4):
+  - It is the bleed audit's "low" boundary and its measured floor.
+  - In both cases the quantity is the same: foreign content in dB of the target's own track.
+- **Not dirt, kept:** separator contamination (`leak_A`/`leak_B`) and the level draw. Both are
+  reported as strata.
+- **Route:**
+  - **Drop** if at most 5% of the training pool is untrusted. The projected size cost is
     ≤ 0.0013 E.
-  - **Rebuild** if it is above 5%.
-  - **R_in:** rebuild its untrusted examples whenever dropping them would leave a band with fewer
-    than 3 sections or 90 examples.
-- **The stored-data count (v0, before the measurement):** 15.1% of the pool and 374 R_in
-  examples. So the expected route is **rebuild**.
+  - **Rebuild** otherwise.
+  - **R_in:** every untrusted example is rebuilt (review change 5).
 
-### Step 1: read the test-side effect (0 GPU; renders only for rebuilt R_in examples)
+**0a, the injection check** (`inject`; it gates `scan`):
+- **The sessions:** 12 clean Cambridge training sessions.
+  - Each has an own amp track, and every kept track reads coherence ≤ 0.002 in part C's leak check.
+  - They are drawn by seed 20261097 from the 13 not used in development.
+- **The injection:** a room-filtered copy of the own amp track (direct path after 5–20 ms, an
+  exponential tail with RT60 0.3–0.8 s), added to the loudest kept drum or room track at −20, −25
+  and −30 dB.
+- **INJECTION OK requires all of these:**
+  - at −20 and −25 dB, a read-back within 3 dB in ≥ 10 of 12 sessions;
+  - at −30 dB, a read-back ≥ −33 dB in ≥ 10 of 12;
+  - the uninjected target under −35 dB in ≥ 11 of 12;
+  - at most 5% of the other non-guitar tracks of these studio sessions reading ≥ −30 dB.
+- **On INJECTION FAIL:** step 0 stops and returns to review. There is no silent fallback.
 
-- **The models:** step 3's D_stem, called F (seeds 20261042 and 20261043, and all 3 beside).
-- **The pull:** amendment 5's b refitted on the trusted early-stopping set. The constant stays
-  step 3's stored one.
-- **What it reads, on R_in-trusted against R_in-untrusted:**
-  - masked E;
-  - the gate's log d D − constant from the stored rows.
-- **On rebuilt R_in examples:** F's answers are re-rendered. About 374 v0 renders plus priming;
-  the truth and constant renders are reused, since they do not depend on the mix.
-- **Stage F:** D − S on the trusted parts, from the stored step 4 rows.
-- **It decides nothing.** It gives the trusted baseline and shows whether test-side dirt biased
-  step 3.
+**0b, the scan, and 0c, the lists:**
+- **The scan** (`scan`) covers all 332 sections of the D build (277 pool, 55 V_sep).
+- **The lists** (`lists`) write `trusted.json` with:
+  - per section, the removed tracks, with their class and both readings;
+  - per example, trusted or untrusted;
+  - counts for the training pool, early stopping, V_sep and R_in per band;
+  - the route;
+  - descriptive counts at −25 and −20 dB.
+- **Review before use.** The removal lists are reviewed before step 1 or 2 reads them, which is the
+  "reviewed trusted set" of the user's rule.
 
-### Step 2: the trusted retrain (the GPU test)
+**Amp-track targets** (stage F, knob ceiling 2, listening pages; not in steps 0–2):
+- **A trusted half needs all of these:**
+  - bleed flag low (< −30 dB, `audits/bleed-2026-10-16/bleed-table.json`);
+  - the DI active on ≥ 50% of frames;
+  - DI–reference chroma ≥ 0.8, or onset correlation ≥ 0.35.
+- **A trusted part has both halves trusted.** That leaves 16 of stage F's 21 parts.
 
-- **Arm T:** D_stem on the trusted pool, rebuilt.
-  - **Kept as drawn:** the DI section, label, ratio, vocals, leak, LUFS and mastering draws.
-  - **Changed:** the backing loses its same-part and take-carrying tracks.
-  - **Then:** X-LANCE re-separates, into a new root. The old stems stay untouched.
-  - **Also:** the early-stopping set is rebuilt the same way.
-  - **Recipe:** step 3's, unchanged (augmentations, at most 40 epochs, patience 4), at the same
-    N, so the optimisation steps are equal. Seeds 20261042 and 20261043.
-- **Reference F:** step 3's seeds 20261042 and 20261043 (no training), with b refitted on the
-  trusted early-stopping set.
-  - **Declared mismatch:** F's checkpoints were chosen on the old early-stopping set.
-- **Readout (zero renders):**
-  - masked E on R_in-trusted;
-  - both arms read the same way: A1+A2+A3 over 2 seeds × 2 halves;
-  - paired per example, band-weighted, 90% band-clustered t interval (4 bands, 3 df, if
-    rebuilt).
-- **Beside it:**
+### Step 1: the paired R_in rebuild (zero renders, X-LANCE on MPS)
+
+- **1a, the rebuild** (`rin-rebuild`). For each untrusted R_in example:
+  - **The target:** the gate's stored truth render (24-bit FLAC, hash-checked) is the example's
+    rendered guitar, so no target is rendered.
+  - **A parity check first:** the original mix is re-made from it with the stored draw, and must
+    match the stored mix mels (99% of cells within one 0.5-dB step, half LUFS within 0.01).
+    Otherwise the example is refused and counted.
+  - **The rebuilt mix:**
+    - drops the section's removed tracks from the example's backing variant;
+    - keeps the ratio, vocals, loudness and mastering draws;
+    - rescales the backing to the same drawn ratio (the overall gain is unchanged);
+    - is separated by X-LANCE gtr_mss on the MPS.
+- **1b, the read** (`rin-read`, descriptive, decides nothing). It reads **F**, step 3's D_stem: all
+  3 seeds, with the 20261042/20261043 pair beside.
+  - **How:** amendment 5's A1+A2+A3, masked E, with step 3's stored constant and pull. Model
+    hashes are checked against `full/readout.json`.
+  - **What it reports:**
+    - rebuilt − original per example, on the same rebuilt examples: band-clustered, with a
+      section-clustered reading beside;
+    - F − constant on the untouched trusted R_in;
+    - F − constant on the trusted R_in (untouched and rebuilt);
+    - F − constant on the rebuilt examples (both stems), the untrusted examples as stored, and R_in
+      as stored (step 3's reading).
+
+### Step 2: the trusted retrain (declared here, launched separately)
+
+- **Arm T:** D_stem on the rebuilt trusted pool.
+  - **Same as before:** the same examples, DI sections, labels and level, vocals, loudness and
+    mastering draws.
+  - **Changed:** each untrusted section's backing loses its removed tracks, and X-LANCE re-separates
+    into a new root. The old stems stay untouched.
+  - **The early-stopping set** is rebuilt the same way.
+  - **Recipe:** step 3's, unchanged, at the same N, so the optimisation steps are equal. Seeds
+    20261042 and 20261043.
+  - **Training targets need renders**, about 0.94 per example plus priming; no audio was kept.
+- **Reference F:** step 3's seeds 20261042 and 20261043, with the pull b refitted on the trusted
+  early-stopping set. F's checkpoints were chosen on the old early-stopping set; that is a declared
+  mismatch.
+- **The test set: R_in trusted.**
+  - **Doubled examples** (a removed same-part track with its own DI in the library) are rebuilt
+    with **consistent doubles**: the partner DI is rendered at the example's label settings and
+    placed at the original track's section level. That takes about 374 renders plus priming.
+  - **Every other untrusted example** uses step 1's rebuild.
+- **Co-primary readouts** (masked E, A1+A2+A3 over 2 seeds × 2 halves, paired per example,
+  band-weighted, 90% band-clustered t):
+  1. **T − F on the untouched trusted R_in examples.** Identical inputs for both arms; nothing
+     rebuilt.
+  2. **T − F on the whole trusted R_in.**
+- **Beside them:**
   - each arm's seed difference (the noise floor);
   - contamination terciles, level bins and class;
-  - rebuilt and untouched examples;
   - R_out on the trusted examples.
-- **The sound gate:** only if T − F's E interval excludes 0.
-  - Train T's seed 20261044, then render T's 3-seed answers on R_in-trusted (about 1.5k renders).
-  - Read T − F with the gate's statistic against F's stored renders.
-- **If the user declines renders and the share is above 5%:** use the drop route. Add a control
-  R: the same count dropped at random within band × level bin (`random.Random(20261096)`), seeds
-  20261042 and 20261043, epoch caps scaled to equal steps.
-  - **T − R** reads cleaner; **R − F** reads fewer.
-  - **The limit:** the contrast cannot read a band that is wholly dirty.
+- **The sound gate,** only if either co-primary E interval excludes 0:
+  - **Renders:** T's answers on the trusted R_in. F's answers are re-rendered on the rebuilt
+    examples, whose stems changed; F's stored renders are reused on the untouched ones. Truth and
+    constant renders are reused.
+  - **Reading:** T − F on the gate's statistic.
+- **If the route is "drop":** T drops the untrusted examples, and the epoch cap is scaled to equal
+  optimisation steps.
+  - A size-matched random control is used only if the user declines the rebuild's renders and more
+    than 5% is untrusted: same count, within band × level bin, `random.Random(20261096)`.
 
 ### What each outcome means
 
 | Reading | Meaning | Next |
 |---|---|---|
-| **T − F below 0** | Training-side dirt was costing accuracy | T is the baseline. The same-part rule goes into `backing_tracks` for every future build |
-| **Contains 0** | Not shown at this power | T is still the baseline (the user's rule). The open levers are buried guitars and separator residue |
-| **Above 0** | The removed tracks were helping as realism | Revisit with the user; the next arm is consistent doubles |
-| **Step 1: trusted and untrusted R_in differ** | Step 3's gate was biased by test-side dirt | The trusted reading becomes the record |
+| **0a INJECTION FAIL** | The estimator cannot enforce −30 dB on some backings | Stop; review the estimator or the threshold; no lists are used |
+| **Step 1: rebuilt − original below or above 0** | Test-side dirt moved step 3's reading | The trusted reading becomes the record |
+| **Step 2: T − F below 0** | Training-side dirt was costing accuracy | T is the baseline; the same-part and take rule goes into `backing_tracks` for every future build |
+| **Contains 0** | Not shown at this power | T is still the baseline (the user's rule); the open levers are buried guitars and separator residue |
+| **Above 0** | The removed tracks were helping as realism | Revisit with the user; consistent doubles in training are the next arm |
 
-### Budget
+### Budget and launch
 
-| Item | Renders | Separations | GPU | CPU |
+The run order and expected times:
+
+```
+MAIN=/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python
+MSST=~/ndsp-presets/tools/msst-venv/bin/python; TORCH_PY=~/ndsp-presets/tools/demucs-venv/bin/python
+$MAIN -m learn.data_cleaning inject                                # 0a: about 15 min CPU
+for k in 0 1 2; do nice -n 10 $MAIN -m learn.data_cleaning scan --shard $k/3 & done; wait   # 0b: about 1-1.5 h
+$MAIN -m learn.data_cleaning lists                                 # 0c: under a minute; then review
+$MSST -m learn.data_cleaning rin-rebuild --device mps              # 1a: 4.3-5 s per untrusted R_in example
+$TORCH_PY -m learn.data_cleaning rin-read                          # 1b: about 3 min CPU
+```
+
+| Item | Renders | Separations | GPU / MPS | CPU |
 |---|---|---|---|---|
-| Step 0 | 0 | 0 | 0 | 1–2 h |
-| Step 1 | about 400 for v0's rebuilt R_in (up to about 1k) | counted in the rebuild rows | 0 | about 15 min |
-| Step 2 rebuild, v0 | about 3.6k | about 3.6k (3–3.5 h MPS + CPU) | — | — |
-| Step 2 rebuild, live-room tracks included (upper) | about 13.4k | about 13.4k (11–13 h) | — | — |
-| Step 2 training (T, 2 seeds) | 0 | 0 | 2.3–2.6 h | — |
-| Gate, only if E moves | about 1.5k | 0 | +1.1–1.3 h | — |
+| 0a inject | 0 | 0 | 0 | about 15 min (12 sessions, 1–2 min each) |
+| 0b scan | 0 | 0 | 0 | about 3 h single, about 1–1.5 h on 3 shards (about 4 GB each) |
+| 1a R_in rebuild | 0 | the untrusted R_in count: about 30 min for 374, up to about 2 h for all 1,407 | MPS | — |
+| 1b read | 0 | 0 | 0 | about 3 min |
+| 2 training-pool rebuild, v0 (about 3.6k) | about 3.6k | 4.3–5 h MPS alone, about 2.9 h with the CPU worker | MPS | — |
+| 2 rebuild, upper (about 13.4k) | about 13.4k | 16–19 h MPS alone, about 10.6 h with the CPU worker | MPS | — |
+| 2 consistent doubles (R_in) | about 374 plus priming | counted in 1a's re-separation | — | — |
+| 2 training (T, 2 seeds) | 0 | 0 | 2.3–2.6 h | — |
+| 2 gate, only if E moves | about 1.4k for T plus F's rebuilt examples, plus priming | 0 | — | — |
 
-**Without the gate:** 2.3–2.6 GPU h, about 4k renders and 3.6k separations (v0), or 13.8k and
-13.4k if the live-room tracks count. No held-out data is touched.
+- **Machine:** at most 3 render processes machine-wide; steps 0–1 render nothing.
+- **Disk:** guard 31 GB, plus memory and swap guards.
+- **Held-out data:** none touched.
+
+### Smoke (development, decides nothing)
+
+The smoke runs used scratch directories only.
+- **0a on the 4 development sessions:**
+  - close mics (snare) read −20.8, −25.9 and −31.2 dB for −20, −25 and −30 injected;
+  - a loud drum-room mic read −20.9, −26.5 and −34.4;
+  - no uninjected target, and no other non-guitar track, read ≥ −35 or ≥ −30 dB.
+  - That would read FAIL on these 4 (3 of 4 at −30 dB). The declared check uses the other 13
+    sessions.
+- **How the settings were chosen.** The 250-Hz floor, per-bin weights, ridge 0.3, session folds
+  and near nulls were chosen there.
+  - **Drops 1 and 2:** per-section fits read musical phase-lock (kick against palm-mutes, other
+    guitars) as take at −22 to −31 dB.
+  - **Drop 3:** far (±30 s) nulls missed a room mic's offset.
+- **0b on 4 DIs:**
+  - **Ale Lak ElecGtr02:** its double 02DT was confirmed by pitch (chroma 0.93–0.98) and removed.
+  - **Adam Buckley ElecGtr3:** ElecGtr2 and 2DT follow its onsets (0.53–0.71), but play other notes
+    (chroma 0.05–0.21). They were not confirmed and not removed; the audit's "same riff" there was
+    onsets only.
+  - **Adam Buckley ElecGtr2:** its named double 2DT failed pitch (0.50) but read a take of
+    −24.1 dB and was removed.
+  - **Swatkins "Honey":** removed Close Rooms (−19.6), Mono OH (−22.4), OH, a keys DI and both
+    vocal mics. The amp-source upper bound bites in live rooms; the DI-source reading is in the
+    lists for review.
+- **1a on 3 Adam Buckley examples:** the re-made original mixes matched the stored ones (cells
+  1.0, LUFS within 2×10⁻⁶).
+- **1b:** F − constant on R_in as stored read −0.0159 [−0.0363, +0.0046], exactly step 3's
+  reading. The read path is right.
+
+### Limits
+
+- **The amp-source take is an upper bound in live rooms.** A live amp track's drum and keys bleed
+  can pose as take, so live-room backings may lose drum, keys and vocal mics. The DI-source reading
+  and the per-class counts are reviewed before use.
+- **The near nulls can absorb a true take** when a part repeats sample-exactly every 2 or 3 s
+  (programmed loops). Human playing does not.
+- **The estimator's settings were developed on 4 of the 17 clean sessions.** The check uses the
+  other 13, which share their bands' backing tracks.
+- **Consistent doubles** exist only where the partner part has its own DI.
 
 ## Sources
 
