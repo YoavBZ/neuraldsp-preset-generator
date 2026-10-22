@@ -1,10 +1,11 @@
 import json
 import pathlib
 
-import numpy as np
 import pytest
 
-from learn import build_data_review as M
+np = pytest.importorskip("numpy")
+
+from learn import build_data_review as M  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
