@@ -15,6 +15,8 @@ the list touches and reads step 3's D_stem (F) on rebuilt against re-separated o
     $MSST     -m learn.data_cleaning pool-rebuild --device mps --order asc   # 2 (data): renders + X-LANCE
     $MSST     -m learn.data_cleaning pool-rebuild --device cpu --order desc  # optional second worker
     $MAIN     -m learn.data_cleaning pool-status              # 2 (data): what the list asks for; the manifest
+    $MSST     -m learn.data_cleaning bleed-test --device mps  # decision memo: the bleed-injection test (after pool-rebuild)
+    $TORCH_PY -m learn.data_cleaning bleed-read               # its readout: F on injected vs clean stems
 
 **The take level** of a kept backing track in a section is the energy of the target's original take in
 it, in dB of the original take's own close-mic (amp) track. It does not depend on the example's level
@@ -1734,6 +1736,269 @@ def cmd_pool_rebuild(args):
     print(f"POOL-REBUILD DONE ({n_done} this run, refused {refused}); run pool-status for the manifest", flush=True)
 
 
+# --- the bleed-injection test (decision memo, 2026-10-23) ------------------------------------------------------
+#
+# Does the target take's own bleed, at the levels measured in the live sessions, move F's answers? The example's own
+# original amp track, through a synthetic room path, is added to the backing of R_in examples step 0 trusts, at
+# -18, -14 and -8 dB under the render; the injected and the clean (re-made original) mixes are separated by the same
+# path and F reads both. Zero renders. It shares the MPS with nothing: it refuses while a pool rebuild runs.
+
+BLEED_SEED = 20261098
+BLEED_DB = (-18.0, -14.0, -8.0)            # Eggy's and Swatkins' medians (both readings agree); Renesans' amp-source
+BLEED_BAND = "Adam Buckley"
+BLEED_EXPECT = (188, 6)                    # examples, sections: Adam Buckley's trusted ElecGtr3 R_in examples
+BLEED_SPAN = (1.0, 10.0)                   # the judged span (s), where the level is set
+POOL_REBUILD_RE = r"-m learn\.data_cleaning pool-rebuild\b"
+
+
+def bleed_key(level):
+    return f"bleed{int(round(abs(level)))}"
+
+
+def band_energy(x, sr=48_000, lo=F_LO, hi=F_HI, span=BLEED_SPAN):
+    """Energy of x in [lo, hi) Hz over the judged span."""
+    import numpy as np
+
+    seg = np.asarray(x, np.float64)[int(span[0] * sr):int(span[1] * sr)]
+    if not len(seg):
+        return 0.0
+    X = np.fft.rfft(seg)
+    f = np.fft.rfftfreq(len(seg), 1 / sr)
+    return float(np.sum(np.abs(X[(f >= lo) & (f < hi)]) ** 2))
+
+
+def bleed_gain(y, c, level_db, sr=48_000):
+    """The gain that puts c at level_db (energy, 250 Hz-8 kHz, judged span) against the render y; None if c is
+    silent there."""
+    ey, ec = band_energy(y, sr), band_energy(c, sr)
+    return math.sqrt(10 ** (level_db / 10) * ey / ec) if ec > 0 and ey > 0 else None
+
+
+def others_running(ps, pattern, own=()):
+    """[pid] of python processes (not shell wrappers) whose command matches `pattern`, other than `own`."""
+    out = []
+    for pid, cmd in ps:
+        first = cmd.split(" ", 1)[0] if cmd else ""
+        if pid not in own and "python" in os.path.basename(first).lower() and re.search(pattern, cmd):
+            out.append(pid)
+    return out
+
+
+def answer_movement(a, b):
+    """Mean over shared examples of the mean |a - b| of their continuous answers (0-1 knob scale)."""
+    import numpy as np
+
+    keys = sorted(set(a) & set(b))
+    if not keys:
+        return None
+    return float(np.mean([np.nanmean(np.abs(np.asarray(a[i], float) - np.asarray(b[i], float))) for i in keys]))
+
+
+def bleed_examples(ctx, trusted):
+    """R_in examples step 0 trusts, of the declared band, whose DI has its own amp track; in section order."""
+    bad = set(trusted["untrusted"])
+    return sorted((r for r in ctx.parts["vsep"] if not ctx.tag[r["i"]] and r["i"] not in bad and r["band"] == BLEED_BAND
+                   and ctx.inv[ctx.sections[r["section"]]["di"]].get("own")), key=lambda r: (r["section"], r["i"]))
+
+
+def bleed_root(root):
+    return root / "bleed"
+
+
+def refuse_beside_pool_rebuild():
+    from learn import ks_extend as X
+
+    busy = others_running(X._ps(), POOL_REBUILD_RE, {os.getpid(), os.getppid()})
+    if busy:
+        raise SystemExit(f"a data_cleaning pool-rebuild is running (pids {busy}): the bleed test waits for the MPS")
+
+
+def cmd_bleed_test(args):
+    import gc
+
+    import numpy as np
+    from scipy.signal import fftconvolve
+
+    from learn import direct_sound_gate as G
+    from learn import direct_stems as DS
+    from learn import pretrain_set as PS
+    from learn import song_aug as SA
+
+    require_real(args)
+    refuse_beside_pool_rebuild()
+    root = out_root(args)
+    trusted = _load(root / "trusted.json")
+    if not trusted or (trusted.get("smoke") and not args.smoke):
+        raise SystemExit("bleed-test needs step 0's trusted.json")
+    free = PS.free_gb()
+    if free < DISK_GUARD_GB:
+        raise SystemExit(f"free disk {free:.1f} GB, below the {DISK_GUARD_GB:.0f} GB guard")
+    ctx = DS.Ctx(quiet=True)
+    exs = bleed_examples(ctx, trusted)
+    n_sec = len({r["section"] for r in exs})
+    if (len(exs), n_sec) != BLEED_EXPECT and not args.smoke:
+        raise SystemExit(f"{len(exs)} examples in {n_sec} sections, not the declared {BLEED_EXPECT}")
+    ctx.rows = None
+    gc.collect()
+    br = bleed_root(root)
+    keys = ["clean"] + [bleed_key(L) for L in BLEED_DB]
+    built = keyed_rows(br / "rows", "bleed")
+    todo = [r for r in exs if any((r["i"], k) not in built for k in keys)][:args.limit or None]
+    print(f"bleed-test: {len(exs)} examples in {n_sec} sections, {len(todo)} to do; levels {BLEED_DB} dB; "
+          f"X-LANCE on {args.device}", flush=True)
+    if not todo:
+        print("BLEED-TEST DONE", flush=True)
+        return
+    gd = DS.ROOT / "gate"
+    truth = G.gate_rows(gd, "truth")
+    sep = DS.stem_separator(STEP_SEP, args.device)
+    swap0 = DS.swap_mb()
+    rp = br / "rows" / f"bleed-{args.device}-{os.getpid()}.jsonl"
+    rp.parent.mkdir(parents=True, exist_ok=True)
+    rooms, refused, n_sep, t_start = {}, 0, 0, time.time()
+
+    def separate(mix):
+        s_ = np.asarray(sep(mix), np.float64)
+        if len(s_) != len(mix) or not np.isfinite(s_).all():
+            raise SystemExit("bad stem")
+        return DS.half_features(s_)
+
+    with open(rp, "a") as fh:
+        for m, r in enumerate(todo):
+            g = DS._guards("bleed", DISK_GUARD_GB, swap0)
+            if g:
+                print(g[1], flush=True)
+                raise SystemExit(g[0])
+            i, sid = r["i"], r["section"]
+            base = {"i": i, "section": sid, "band": r["band"]}
+            need = [k for k in keys if (i, k) not in built]
+            made = _truth_mix(ctx, G, gd, truth, r, PS, DS, SA)
+            if isinstance(made, str):
+                refused += 1
+                for k in need:
+                    fh.write(json.dumps({**base, "key": k, "refused": made}) + "\n")
+                fh.flush()
+                continue
+            if "clean" in need:
+                sm, sl, floor = separate(made["orig"])
+                DS._save_npz(DS.ex_path(br, i, f"{STEP_SEP}-clean"), sA=sm["A"], sB=sm["B"], lufs=[sl["A"], sl["B"]])
+                fh.write(json.dumps({**base, "key": "clean", "orig_share": made["orig_share"],
+                                     "lufs_sA": sl["A"], "lufs_sB": sl["B"], "floor_share": floor}) + "\n")
+                n_sep += 1
+            if sid not in rooms:                          # one room per section: the own amp track through it
+                sec = ctx.sections[sid]
+                rec = ctx.inv[sec["di"]]
+                part = rec.get("part") or part_base(sec["di"])
+                own = [o for o in rec["own"] if part.lower() in o.lower()] or list(rec["own"])
+                sess = pathlib.Path(rec["session_dir"])
+                amp = sum(PS.section_audio(sess / o, sec["start_s"])[int(PS.TRIM_S * PS.SR):] for o in own)
+                rng = np.random.default_rng(int(hashlib.sha256(f"{BLEED_SEED}|{sid}".encode()).hexdigest()[:8], 16))
+                rooms[sid] = (fftconvolve(np.asarray(amp, np.float64), room_ir(rng, sr=PS.SR))[:len(amp)], own)
+            c, own = rooms[sid]
+            for L in BLEED_DB:
+                k = bleed_key(L)
+                if k not in need:
+                    continue
+                gain = bleed_gain(made["y"], c, L, PS.SR)
+                if gain is None:
+                    fh.write(json.dumps({**base, "key": k, "refused": "the own amp track is silent here"}) + "\n")
+                    continue
+                pre = made["y"] + made["b"] * 10 ** (made["gb"] / 20) + gain * c
+                mix = pre * 10 ** (made["ga"] / 20)
+                _, mrng = DS.master_draw(i)
+                mix = SA.compress(mix, mrng) if made["mastered"] else mix
+                mm, ml, _ = DS.half_features(mix)
+                sm, sl, floor = separate(mix)
+                DS._save_npz(DS.ex_path(br, i, f"mix-{k}"), mA=mm["A"], mB=mm["B"], lufs=[ml["A"], ml["B"]],
+                             gain_db=made["ga"], mastered=made["mastered"])
+                DS._save_npz(DS.ex_path(br, i, f"{STEP_SEP}-{k}"), sA=sm["A"], sB=sm["B"], lufs=[sl["A"], sl["B"]])
+                got = 10 * math.log10(band_energy(gain * c, PS.SR) / band_energy(made["y"], PS.SR))
+                fh.write(json.dumps({**base, "key": k, "level_db": L, "level_check_db": round(got, 3), "own": own,
+                                     "lufs_mA": ml["A"], "lufs_mB": ml["B"], "lufs_sA": sl["A"], "lufs_sB": sl["B"],
+                                     "floor_share": floor}) + "\n")
+                n_sep += 1
+            fh.flush()
+            if m % 10 == 0:
+                print(f"bleed {m + 1}/{len(todo)} i={i}: {n_sep} separations, refused {refused}; "
+                      f"{(time.time() - t_start) / (m + 1):.1f} s per example", flush=True)
+    print(f"BLEED-TEST DONE ({len(todo)} examples, {n_sep} separations, refused {refused})", flush=True)
+
+
+def cmd_bleed_read(args):
+    import numpy as np
+
+    from learn import direct_stems as DS
+
+    require_real(args)
+    root = out_root(args)
+    trusted = _load(root / "trusted.json")
+    if not trusted or (trusted.get("smoke") and not args.smoke):
+        raise SystemExit("bleed-read needs step 0's trusted.json")
+    br = bleed_root(root)
+    keys = ["clean"] + [bleed_key(L) for L in BLEED_DB]
+    built = keyed_rows(br / "rows", "bleed")
+    ro = DS._load(DS.ROOT / "full" / "readout.json")
+    if not ro or ro.get("smoke"):
+        raise SystemExit("bleed-read needs step 3's real full/readout.json")
+    D = DS.d_arm(DS._load(DS.ROOT / "pilot" / "pilot-report.json"))
+    nets, recs = DS.load_full_runs(DS.ROOT, D, stem_sep=STEP_SEP)
+    if {str(r["seed"]): r["model_sha256"] for r in recs} != ro["models"]["D"]:
+        raise SystemExit("step 3's D_stem runs differ from those readout.json read")
+    med, table = DS.medians_from_json(ro["constant"]), DS.table_from_json(ro["pull"]["D"])
+    ctx = DS.Ctx(quiet=True)
+    exs = bleed_examples(ctx, trusted)
+    missing = [r["i"] for r in exs if any((r["i"], k) not in built for k in keys)]
+    if missing and not args.smoke:
+        raise SystemExit(f"{len(missing)} examples are not built at every level (run bleed-test)")
+    refused = sorted({r["i"] for r in exs for k in keys if built.get((r["i"], k), {}).get("refused")})
+    rows = [r for r in exs if r["i"] not in refused and r["i"] not in missing]
+    if not rows:
+        raise SystemExit("no example built at every level")
+    section_of = {r["i"]: r["section"] for r in rows}
+    cell_of = {r["i"]: (r["amp"], r["base"]) for r in rows}
+    const = DS.const_errors(rows, med, DS.encode_audible)
+    stored_mix = lambda i: DS.ex_path(DS.ROOT, i, "mix")               # noqa: E731
+    per, ans, seed_ref = {}, {}, None
+    for k in keys:
+        mix_of = stored_mix if k == "clean" else (lambda i, k=k: DS.ex_path(br, i, f"mix-{k}"))
+        outs, who, Y = DS.run_rows(nets, rows, lambda x, a=mix_of, k=k: stem_tensors(
+            x, a, lambda i: DS.ex_path(br, i, f"{STEP_SEP}-{k}"), D))
+        sc, ans[k], _, _ = DS.score_all(outs, who, DS.silent_masks(Y), cell_of, med, table)
+        per[k] = DS.readout_per(sc)["A1+A2+A3"]
+        if k == "clean":
+            seed_ref = answer_movement(DS.median_answers(outs[:2], who)[1], DS.median_answers(outs[2:], who)[1])
+    res = {"examples": len(rows), "sections": len(set(section_of.values())), "refused": len(refused),
+           "F - constant, clean": section_interval(per["clean"], const, section_of, set(per["clean"])),
+           "seed disagreement on clean (42+43 vs 44), mean |answer change|": seed_ref, "levels": {}}
+    for L in BLEED_DB:
+        k = bleed_key(L)
+        res["levels"][str(L)] = {
+            "injected - clean (paired, section-clustered; primary)": section_interval(per[k], per["clean"], section_of,
+                                                                                     set(per[k])),
+            "F - constant, injected": section_interval(per[k], const, section_of, set(per[k])),
+            "mean |answer change|, injected vs clean": answer_movement(ans[k], ans["clean"]),
+            "per section, injected - clean": {
+                sid.split("/")[-1]: float(np.mean([per[k][i] - per["clean"][i] for i in per[k] if section_of[i] == sid]))
+                for sid in sorted(set(section_of.values()))}}
+    out = {"plan": PLAN, "step": "bleed-injection test (decision memo, 2026-10-23)", "smoke": bool(args.smoke),
+           "decides": "nothing by itself (descriptive; the user decides on option (a))",
+           "readout": "amendment 5: A1+A2+A3, masked E; step 3's stored constant and D pull; 3 seeds",
+           "models": ro["models"]["D"], "levels_db": list(BLEED_DB), "results": res,
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    _save(root / "bleed-read.json", out)
+
+    def f(v):
+        return "n/a" if v is None else f"{v[0]:+.4f} [{v[1]:+.4f}, {v[2]:+.4f}] ({v[3]} sections)"
+
+    print(f"bleed test: {res['examples']} examples in {res['sections']} sections (refused {res['refused']})")
+    print(f"  F - constant, clean: {f(res['F - constant, clean'])}")
+    print(f"  seed disagreement on clean: {seed_ref}")
+    for L, v in res["levels"].items():
+        print(f"  {L} dB: injected - clean {f(v['injected - clean (paired, section-clustered; primary)'])}; "
+              f"F - constant {f(v['F - constant, injected'])}; answer change "
+              f"{v['mean |answer change|, injected vs clean']}")
+
+
 # --- CLI -------------------------------------------------------------------------------------------------------
 
 def parse_shard(s):
@@ -1775,6 +2040,14 @@ def main(argv=None):
     common(p)
     p.add_argument("--candidates", help="the candidate list (default <out>/candidates.json)")
     p.set_defaults(fn=cmd_rin_read)
+    p = sub.add_parser("bleed-test", help="the bleed-injection test's mixes and stems (zero renders; X-LANCE on MPS, "
+                                           "never beside a pool rebuild)")
+    common(p)
+    p.add_argument("--device", choices=("mps", "cpu"), default="mps")
+    p.set_defaults(fn=cmd_bleed_test)
+    p = sub.add_parser("bleed-read", help="the bleed-injection test's readout: F on injected vs clean (zero renders)")
+    common(p)
+    p.set_defaults(fn=cmd_bleed_read)
     p = sub.add_parser("pool-candidates", help="2 (data): the candidate list from step 0 (never overwrites verdicts)")
     common(p)
     p.set_defaults(fn=cmd_pool_candidates)

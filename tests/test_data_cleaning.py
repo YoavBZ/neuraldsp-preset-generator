@@ -390,3 +390,63 @@ def test_declared_constants():
                                  "TheLongWait_Drag_Full")
     assert C.DROP_MAX_SHARE == 0.05 and C.STEP_SEP == "xlance_g" and C.DISK_GUARD_GB == 31.0
     assert len(C.DEV_DIS) == 4
+
+
+# --- the bleed-injection test (decision memo, 2026-10-23) ------------------------------------------------------
+
+def test_bleed_levels_are_set_in_the_declared_band_and_span():
+    rng = np.random.default_rng(0)
+    sr = 48_000
+    y = rng.standard_normal(10 * sr)
+    c = rng.standard_normal(10 * sr) * 0.3
+    for L in C.BLEED_DB:
+        g = C.bleed_gain(y, c, L, sr)
+        got = 10 * math.log10(C.band_energy(g * c, sr) / C.band_energy(y, sr))
+        assert got == pytest.approx(L, abs=1e-9)
+    assert C.bleed_gain(y, np.zeros_like(y), -14.0, sr) is None
+    # energy outside 250 Hz-8 kHz, or before 1 s, does not count
+    t = np.arange(10 * sr) / sr
+    assert C.band_energy(np.sin(2 * np.pi * 100 * t), sr) < 1e-3 * C.band_energy(np.sin(2 * np.pi * 1000 * t), sr)
+    early = np.zeros(10 * sr)
+    early[: sr // 2] = 1.0
+    assert C.band_energy(early, sr) == 0.0
+
+
+def test_the_bleed_test_waits_for_a_running_pool_rebuild():
+    ps = [(1, "/x/msst-venv/bin/python -m learn.data_cleaning pool-rebuild --device mps --order asc"),
+          (2, "/bin/zsh -c ~/python -m learn.data_cleaning pool-rebuild"),               # a shell wrapper
+          (3, "/x/python -m learn.data_cleaning pool-status"),
+          (4, "/x/python -m learn.data_cleaning pool-rebuild --device cpu --order desc")]
+    assert C.others_running(ps, C.POOL_REBUILD_RE) == [1, 4]
+    assert C.others_running(ps, C.POOL_REBUILD_RE, own={1, 4}) == []
+
+
+def test_bleed_keys_and_answer_movement():
+    assert [C.bleed_key(L) for L in C.BLEED_DB] == ["bleed18", "bleed14", "bleed8"]
+    a = {1: [0.1, 0.5], 2: [0.2, float("nan")]}
+    b = {1: [0.3, 0.5], 2: [0.2, 0.9], 3: [0.0, 0.0]}
+    assert C.answer_movement(a, b) == pytest.approx((0.1 + 0.0) / 2)
+    assert C.answer_movement({}, b) is None
+
+
+def test_the_bleed_examples_are_trusted_r_in_with_an_own_amp():
+    import types
+
+    sec = {"s1": {"di": "d1"}, "s2": {"di": "d2"}, "s3": {"di": "d1"}}
+    inv = {"d1": {"own": ["30_ElecGtr3.wav"]}, "d2": {"own": []}}
+    vsep = [{"i": 1, "section": "s3", "band": "Adam Buckley"}, {"i": 2, "section": "s1", "band": "Adam Buckley"},
+            {"i": 3, "section": "s2", "band": "Adam Buckley"}, {"i": 4, "section": "s1", "band": "Dark Ride"},
+            {"i": 5, "section": "s1", "band": "Adam Buckley"}, {"i": 6, "section": "s1", "band": "Adam Buckley"}]
+    ctx = types.SimpleNamespace(parts={"vsep": vsep}, sections=sec, inv=inv,
+                                tag={1: None, 2: None, 3: None, 4: None, 5: None, 6: "MUSDB18 train"})
+    got = C.bleed_examples(ctx, {"untrusted": [5]})
+    assert [r["i"] for r in got] == [2, 1]                  # section order; no own amp, flagged, tagged, other band out
+
+
+def test_the_bleed_test_is_not_a_render_and_is_declared():
+    from learn import local_objective as LO
+
+    for cmd in ("bleed-test --device mps", "bleed-read"):
+        assert not any(re.search(p, f"python -m learn.data_cleaning {cmd}") for p in LO.RENDERS)
+    assert C.BLEED_SEED == 20261098 and C.BLEED_DB == (-18.0, -14.0, -8.0) and C.BLEED_EXPECT == (188, 6)
+    assert C.BLEED_BAND == "Adam Buckley" and C.BLEED_SPAN == (1.0, 10.0)
