@@ -1,5 +1,10 @@
 # The song-to-preset routes on real mixes: plan
 
+*Status, 2026-10-22 evening:* merged (#267). It runs after the data review and the cleaning, on
+trusted parts only ("use only what we can trust, no dirty tracks", the user, 2026-10-22), which
+replaces the no-high-bleed row below. As declared, D_real needs `GATE OK`; step 3's gate read
+STOP and the user's override covered step 4 only. The text below is as declared.
+
 Drafted 2026-10-22, zero compute. **Approved by the user on 2026-10-22.** It runs after the
 every-control stages and the data-quality audit's first findings (the user suspects the datasets need
 cleaning; any cleaning that touches these parts is applied first). Development data only. The ML plan's rules apply (section 5; the user's rules of

@@ -35,6 +35,8 @@ was declared, what was measured, and the research behind it.
   `data/<workstream>/`.
 - **`docs/research/`** holds the literature research rounds, oldest first (the
   research *tooling* is the top-level `research/` folder).
+- **Status words in a record** ("running", "pending", "next") are as of its date. The
+  current state is in ROADMAP.
 - **Crop rules:** rule 1 (the loudest 10 s) cut the crops every experiment through the
   shortlist measurement used. Rule 2 (where the DI plays most) is for crops cut from now
   on ([validation-datasets.md](validation-datasets.md)). The product's own excerpt rule
@@ -64,6 +66,18 @@ was declared, what was measured, and the research behind it.
 **Validation data** (current)
 - [validation-datasets.md](validation-datasets.md): the development and held-out sets,
   crop rules, lags.
+- **Trusted data only (the user, 2026-10-22):** measurements, training, tests and listening
+  pages use a reviewed trusted set, and dirty tracks are excluded, not flagged. The user's
+  verdicts on a data-review page (being built: amp and mic tracks, suspected doubles, DIs)
+  define the set ([ROADMAP](ROADMAP.md), step 0; [ML plan](research/ml-plan-2026-10.md) §5).
+  - The data-quality audit ([draft PR #272](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/272),
+    zero renders): stems carry a median 45% of power above the matched render, and within each
+    band the most contaminated third scores worse on the sound gate; doubles stay in the
+    training backings; DIs are clean; labels are exact; bleed sits in the live-room amp and mic
+    tracks.
+  - The cleaning plan ([PR #273](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/273),
+    in progress): rebuild the affected examples without the offending backing tracks, rather
+    than drop them.
 
 **Song-only shortlist** (current)
 - [song-only-shortlist-plan.md](song-only-shortlist-plan.md) →
@@ -308,7 +322,8 @@ was declared, what was measured, and the research behind it.
 - [xlance-screen-plan.md](xlance-screen-plan.md) → [results](xlance-screen-results.md): X-LANCE
   against Mega-53 fast as the build's separator (zero renders). The full chain: same SNR, mel-range
   LSD −1.82 dB, 1.78× the CPU time (pass, over budget). Amendment 1, gtr_mss alone: same SNR,
-  mel-range LSD −2.30 dB, 1.01× the CPU time; pending MPS timing.
+  mel-range LSD −2.30 dB, 1.01× the CPU time. On MPS it ran at 0.988× Mega-53 (the direct
+  model's pilot), and it became the full build's separator (amendment 2, 2026-10-21).
 - [stereo-side-plan.md](stereo-side-plan.md) → [results](stereo-side-results.md): the pan side
   as a separation hint, on synthetic pans of stage F (zero renders). With the side known, keeping
   the target's channel of a stereo Mega-53 stem gains +1.50 dB at ±0.6 pan, and the MDX23C centre
@@ -372,7 +387,6 @@ was declared, what was measured, and the research behind it.
   leaning worse), and the judge re-run through the raw DI (rebuilt-DI contrasts unchanged; on the
   known-answer songs the measure DI caps the exact truth at 0.55 of S). 852 renders. Audited.
 - [direct-model-stems-plan.md](direct-model-stems-plan.md) → [gate 1 results](direct-model-stems-gate1-results.md), [pilot results](direct-model-stems-pilot-results.md), [steps 3–4 results](direct-model-stems-results.md): the direct model with realistic stems
-- [every-control-plan.md](every-control-plan.md): how and when each route covers every manifest control (approved 2026-10-22 for stages 0–1: the full-space table and masking, amp choice, the judge-visibility screen, Tone King's search renderer, a true-DI oracle for the unmeasured groups); code `learn/every_control.py`
   (declared, reviewed). Cheap checks on D_existing first (does the stem's quality move its answers;
   what the mismatch costs; 111 descriptive renders), then a 5k pilot of real Mega-53 stems against a
   mix-only model and the old recipe, then one test on stage F (D − S primary, about 321 renders).
@@ -396,7 +410,17 @@ was declared, what was measured, and the research behind it.
   SHOWN.** D − S on stage F −0.034 [−0.103, +0.034], 12 bands (clean leans better, crunch worse).
   The new model clearly beats the old one (D − D_existing −0.067 [−0.113, −0.021]) and is
   indistinguishable from arm A's search (D − H −0.006 [−0.062, +0.050]; not shown equivalence)
-  at zero renders. 321 renders. Audited.
+  at zero renders. 321 renders. Audited. Read on all parts, before the trusted-data rule.
+- [every-control-plan.md](every-control-plan.md) → [stage 0 results](every-control-stage0-results.md):
+  how and when each route covers every manifest control (approved 2026-10-22 for stages 0–1;
+  every control is learned); code `learn/every_control.py`. Stage 0 (94 renders): amp choice
+  pays, −0.044 [−0.062, −0.026] against a blind pick (high priority); no screened control is
+  invisible to the judge, cab phase moves it most; Tone King's renderer works. Stage 1 waits
+  for the trusted set.
+- [real-mix-test-plan.md](real-mix-test-plan.md): arm A on the released mixes of stage F's songs
+  against their unity sums (same takes), about 5.8k renders; the direct model joins only on
+  `GATE OK` as declared (step 3's gate read STOP, overridden for step 4 only). Approved and
+  merged 2026-10-22 (#267); it runs after the cleaning.
 - [record-match-listening-plan.md](record-match-listening-plan.md) → [results](record-match-listening-results.md):
   a blind check of the judge by ear on 5 guitar-exposed parts: the ear broadly agrees with the
   judge's order (Spearman mean 0.8), the ceiling C is heard closest in 4/5, H beats S in 4/5, D
@@ -409,7 +433,8 @@ was declared, what was measured, and the research behind it.
 - [bleed-listening-plan.md](bleed-listening-plan.md) → [results](bleed-listening-results.md), with
   the [bleed audit](audits/bleed-2026-10-16/README.md): bleed only in the Telefunken live-room
   sessions, audible on the high parts; the cleaning isn't adopted, and every key result holds
-  without bleed.
+  without bleed. *Superseded 2026-10-22: dirty tracks are excluded, not flagged (trusted data
+  only).*
 - [song-to-settings-diagnostics-plan.md](song-to-settings-diagnostics-plan.md) →
   [results](song-to-settings-diagnostics-results.md): arm B has signal on renders but hedges
   toward mid-range on records.

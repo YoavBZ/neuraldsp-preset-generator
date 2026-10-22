@@ -1,5 +1,10 @@
 # Every control: how and when each route covers the whole plugin: plan
 
+*Status, 2026-10-22 evening:* stage 0 is done ([results](every-control-stage0-results.md)). Stage 1
+waits for the trusted set from the user's data review (the user's decision: "use only what we can
+trust, no dirty tracks") and runs on trusted parts only, by a dated amendment. The text below is as
+declared.
+
 **Approved 2026-10-22 for its first stages (the user, in chat with the ML session).** Stages 0
 and 1 go ahead; switched-off knobs are left out, as proposed (below). **Every control is learned
 (the user, 2026-10-22):** no fixed rule stands in for a control the judge can't hear; stage 0c's

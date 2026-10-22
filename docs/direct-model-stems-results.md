@@ -132,6 +132,10 @@ over amps and halves.
 
 ## Next (the user decides)
 
+*2026-10-22 evening:* both plans below are approved and merged, and the order is in
+[ROADMAP](ROADMAP.md) step 0: the data review and cleaning first. These results were read on all
+parts, before the trusted-data rule; the cleaning plan's step 1 re-reads them on trusted data.
+
 - **Every control:** the coverage plan ([#266](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/266),
   draft).
 - **Real mixes:** the real-mix plan ([#267](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/267),
