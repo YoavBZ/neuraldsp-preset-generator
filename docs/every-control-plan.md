@@ -273,6 +273,14 @@ here; each is flagged for the review.
   halves in every cell. Invisible controls keep their rule; **visible ones join a stage-1 group**
   (pan, stereo with phase; width and ping-pong with the effects group; spread with the doubler;
   Tone King's with its search). The plan named only the groups, not this routing.
+  **0.005 is a size bar, not a noise bar.** Repeat renders agree to about 3e-6 (log), so any
+  move larger than that is technically audible to the judge; 0.005 is the smallest change worth
+  searching for. It is knob ceiling 2's wet margin and its repeat tolerance, and about half the
+  pedals' measured worth (+0.010). A control below it is not worth a dimension, so it takes its
+  rule. Tone King's amp tremolo speed (0.00036 at depth 0, below the bar) is ungated anyway: the
+  gate decides only what the canonical form may neutralise, and a neutralised control must make
+  no difference at all, or the canonical start stops repeating its stored score. Ungating it just
+  keeps its value as found; it does not make it a searched-for gain.
 - **0d, Tone King's renderer.** The class start's dry preset (tk-baseline) is the base state; each
   render writes only the controls that differ from it, through the pack, in a reused process with
   isolate=True and the bounded server, behind a 1-s preroll that is cut off (as tk-baseline). Its
@@ -286,7 +294,8 @@ here; each is flagged for the review.
   - doubler: the spread, if visible (else one render: on at spread 6);
   - rooms: both rooms on at −6 dB (for each cab that is on), their switches and levels, **and the
     left cab's switch** with its level (−40 to +6 dB). The plan named the left cab's level; its
-    switch is in the same "cab rest" row and no other group covers it;
+    switch is in the same "cab rest" row and no other group covers it. At least one cab stays on:
+    on the cells with the right cab off, the left cab's switch is not searched;
   - phase (34 cells with both cabs on): the phase switches, plus pan and stereo if visible;
   - effects (6 cells whose stage 2 turned on tremolo or delay): tremolo level, tape drive, plus
     width and ping-pong if visible.
@@ -304,9 +313,12 @@ here; each is flagged for the review.
 - **Listening: 8 trials.** Per group (gate, doubler, rooms), the 2 adopted cells with the largest
   held gains (one trial per part), leftovers filled by the next largest gains, then 2 near-ties
   (|held| < 0.005) drawn at random; the record, then the stage-2 setting and the group's setting,
-  the letter drawn at random per trial. The gate and the doubler enter only if the listener also
-  picks the group's setting on both of its clear-gain trials (knob ceiling 2's reading); rooms by
-  the judge, listening descriptive.
+  the letter drawn at random per trial. The gate and the doubler enter only if the judge's
+  interval is below 0 and the listener also picks the group's setting on both of its own
+  clear-gain trials (knob ceiling 2's reading). A group with fewer than 2 such trials (too few
+  adopted cells with a held gain) keeps its rule: not shown by ear. Trials from the fill and the
+  near-ties are descriptive and never count towards a group. Rooms are decided by the judge; their
+  trials are descriptive. `listening score` applies this and prints the outcome per group.
 - **Smoke (2026-10-22, 56 renders into a scratch folder, one process, nothing kept):** Tone King's
   renderer repeats tk-baseline's stored start score to 3e-6 (log), about 1.5 s a render with the
   preroll; Morgan's stage-2 setting repeats exactly. Two corrections came from it:

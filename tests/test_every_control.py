@@ -363,3 +363,23 @@ def test_render_commands_are_counted_by_the_machine_wide_cap():
 def test_smoke_options_refuse_the_real_output():
     with pytest.raises(SystemExit):
         E.main(["stage1", "--assume-visible"])
+
+
+def test_rooms_keeps_at_least_one_cab_on():
+    _, dims = E.group_plan("rooms", _base(cabParameters__rightCabActive="false"), set(E.SCREEN_DIMS))
+    assert "leftCabActive" not in [d.key for d in dims]
+    _, dims = E.group_plan("rooms", _base(), set(E.SCREEN_DIMS))
+    assert "leftCabActive" in [d.key for d in dims]
+
+
+def test_listening_verdict_is_the_declared_rule():
+    def t(g, why, group_letter="A"):
+        return {"group": g, "why": why, "letters": {group_letter: "group", "AB".replace(group_letter, ""): "base"}}
+    trials = {"1": t("gate", "gain"), "2": t("gate", "gain", "B"), "3": t("doubler", "gain"),
+              "4": t("doubler", "gain-fill"), "5": t("rooms", "gain"), "6": t("gate", "near-tie")}
+    v = E.listening_verdict(trials, {"1": "A", "2": "B", "3": "A", "4": "A", "5": "B", "6": "B"})
+    assert v["gate"]["verdict"].startswith("ear agrees") and v["gate"]["trials"] == 2
+    assert v["doubler"]["verdict"].startswith("fewer than 2")              # the fill doesn't count
+    assert v["rooms"]["verdict"].startswith("descriptive")
+    v = E.listening_verdict(trials, {"1": "A", "2": "A"})
+    assert v["gate"]["verdict"].startswith("ear disagrees")

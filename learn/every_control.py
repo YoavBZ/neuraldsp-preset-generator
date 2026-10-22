@@ -604,8 +604,9 @@ def group_plan(group, base, visible):
                 x[("cabParameters", f"{side}RoomActive")] = "true"
                 x[("cabParameters", f"{side}RoomMicLevel")] = by[("cabParameters", f"{side}RoomMicLevel")].neutral
             dims += [_dim(("cabParameters", f"{side}RoomActive")), _dim(("cabParameters", f"{side}RoomMicLevel"))]
-        if not on(("cabParameters", "rightCabActive")):              # the right cab's room can't sound
-            dims = [d for d in dims if not d.key.startswith("rightRoom")]
+        if not on(("cabParameters", "rightCabActive")):              # the right cab's room can't sound,
+            dims = [d for d in dims if not d.key.startswith("rightRoom")    # and the left cab must stay on
+                    and d.key != "leftCabActive"]
         return x, dims
     if group == "phase":
         if not (on(("cabParameters", "leftCabActive")) and on(("cabParameters", "rightCabActive"))):
@@ -1030,10 +1031,12 @@ def stage1(out, i, n, screen_path, assume_visible=False, budget=GROUP_BUDGET, li
             rr.render(di32, select, base)                                       # priming
             b = K.judge(ref, rr.render(di32, select, base), di, part["judge_lag"])
             repeat = abs(math.log(b[search] / stored["search"]))
+            repeat_held = abs(math.log(b[held] / stored["held"]))           # logged, not gating
             if repeat > REPEAT_TOL:
                 raise RuntimeError(f"repeat moved {repeat:.4f} on {slug} {amp} {search}")
             res = {"slug": slug, "amp": amp, "search_half": search, "held_half": held, "band": part["band"],
-                   "gain_class": part["gain_class"], "base": b, "repeat": repeat, "groups": {}}
+                   "gain_class": part["gain_class"], "base": b, "repeat": repeat, "repeat_held": repeat_held,
+                   "groups": {}}
             settings = {}
             for gi, group in enumerate(GROUPS):
                 plan = group_plan(group, base, visible)
@@ -1064,7 +1067,7 @@ def stage1(out, i, n, screen_path, assume_visible=False, budget=GROUP_BUDGET, li
             K._atomic(path, res)
             done += 1
             print(slug, amp, search, {g: round(v["log_held"], 4) for g, v in res["groups"].items() if v.get("applies")},
-                  res["renders"], flush=True)
+                  res["renders"], f"repeat {repeat:.2g} held {repeat_held:.2g}", flush=True)
     finally:
         rr.close()
 
@@ -1258,6 +1261,32 @@ def listening_build(out):
     print(dest / "every-control-listening.html")
 
 
+EAR_GROUPS = ("gate", "doubler")          # enter only where the ear agrees; rooms by the judge
+
+
+def listening_verdict(trials, answers):
+    """The declared rule per group. trials: {n: key trial}; answers: {n: letter}. A group's own
+    clear-gain trials are its "gain" trials (not the fill, not the near-ties). Gate and doubler:
+    fewer than 2 -> keeps its rule (not shown by ear); the group's setting picked on both -> the
+    ear agrees (it enters if the judge's interval is also below 0); else the ear disagrees ->
+    keeps its rule. Rooms: descriptive."""
+    out = {}
+    for g in LISTEN_GROUPS:
+        own = [n for n, t in trials.items() if t["group"] == g and t["why"] == "gain"]
+        picks = [t_pick for t_pick in (trials[n]["letters"].get(answers.get(n, "?")) for n in own)]
+        got = sum(p == "group" for p in picks)
+        if g not in EAR_GROUPS:
+            verdict = "descriptive (decided by the judge)"
+        elif len(own) < TOP_PER_GROUP:
+            verdict = "fewer than 2 clear-gain trials: keeps its rule (not shown by ear)"
+        elif got == len(own):
+            verdict = "ear agrees: enters if the judge's interval is below 0"
+        else:
+            verdict = "ear disagrees: keeps its rule"
+        out[g] = {"trials": len(own), "picked_group": got, "verdict": verdict}
+    return out
+
+
 def listening_score(answers):
     key = json.loads((K.HOME / "listening" / "every-control" / "private" / "key.json").read_text())
     ans = dict((t[:-1], t[-1]) for t in answers.split())
@@ -1268,6 +1297,8 @@ def listening_score(answers):
             wins[pick] += 1
         print(n, t["slug"], t["group"], t["why"], round(t["log_held"], 4), "picked", pick)
     print("picked:", wins, "of", len(key["trials"]))
+    for g, v in listening_verdict(key["trials"], ans).items():
+        print(f"{g}: {v['picked_group']}/{v['trials']} own clear-gain trials -> {v['verdict']}")
 
 
 # ============================================================== report
