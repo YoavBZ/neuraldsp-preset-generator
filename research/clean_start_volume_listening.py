@@ -58,6 +58,34 @@ def _parts():
     return main, controls, crunch
 
 
+def rebuild_measfix(parts):
+    """The set 1-2 and 12 parts' measfix DIs, removed in the approved 2026-10-20 cleanup,
+    rebuilt the way `learn.confirm_run.build_di("measfix", ...)` makes them (the crop's DI
+    EQ'd to the average guitar spectrum, at -22.9 LUFS) into this check's own folder, and
+    `songs_check` pointed there; learn/ is not touched. The reproduction check then confirms
+    they match the stored scores."""
+    import numpy as np
+
+    from learn import confirm_run as CR
+    from learn import songs_check as SC
+    from learn.di_robustness import smoothed_spectrum
+    from learn.direc_check import eq_to, to_lufs
+
+    folder = OUT / "measfix"
+    avg = np.load(CR.AVERAGE)
+    for p in parts:
+        if p["set"] == 3:
+            continue
+        target = folder / p["slug"] / "di.npy"
+        if not target.exists():
+            part = SC.parts()[p["slug"]]
+            di = CR.mono(part["crop"] / "di.wav")
+            own = smoothed_spectrum(di)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            np.save(target, to_lufs(eq_to(di, avg - (own - own.mean()))))
+    SC.OUT = OUT                       # kind_dir("measfix", slug, part) -> OUT/measfix/slug
+
+
 def driven_margin(entries, slug):
     """How driven the record is, from stored scores only: the mean over amps and halves of
     log d(clean start) - log d(crunch start). Higher means the crunch start sat closer."""
@@ -92,6 +120,7 @@ def build(isolate: bool):
     from packs.loader import load_pack
 
     main, controls, crunch = _parts()
+    rebuild_measfix(main + controls + crunch)
     listen, private = OUT / "listen", OUT / "private"
     for folder in (listen, private):
         if folder.exists() and any(folder.iterdir()):
