@@ -85,18 +85,73 @@ def test_route_drops_only_a_small_share():
     assert C.route(0.05) == "drop" and C.route(0.0501) == "rebuild"
 
 
-def test_injection_verdict():
-    good = [{"base": None, "inj": {-20.0: -21.0, -25.0: -26.0, -30.0: -31.5}, "others": {"k": None, "s": -38.0}}
-            for _ in range(12)]
-    assert C.injection_verdict(good)[0] == "OK"
-    bad_at_30 = [dict(r, inj={-20.0: -21.0, -25.0: -26.0, -30.0: -34.0}) for r in good[:3]] + good[3:]
-    v, shares, _, _ = C.injection_verdict(bad_at_30)
-    assert v == "FAIL" and shares[-30.0] == pytest.approx(0.75)
-    fp = [dict(r, others={"k": -29.0}) for r in good[:2]] + good[2:]
-    assert C.injection_verdict(fp)[0] == "FAIL"                # 2 of 23 others at or above -30 dB
-    base = [dict(r, base=-30.0) for r in good[:2]] + good[2:]
-    assert C.injection_verdict(base)[0] == "FAIL"
-    assert C.injection_verdict([])[0] == "FAIL"
+def _session_row(name, deciding=True, n=10, rooms=2, at30=-31.5, base=None, others=None):
+    tg = {f"t{k}": {"room": k < rooms, "base": base, "inj": {-20.0: -21.0, -25.0: -26.0, -30.0: at30}}
+          for k in range(n)}
+    return {"session": name, "di": f"{name}/di", "deciding": deciding, "targets": tg,
+            "others": others if others is not None else {"bass": None, "vox": -45.0}}
+
+
+def test_readback_and_room_names():
+    assert C.readback_ok(-20.0, -22.9) and not C.readback_ok(-20.0, -23.1) and not C.readback_ok(-25.0, None)
+    assert C.readback_ok(-30.0, -33.0) and not C.readback_ok(-30.0, -33.5) and C.readback_ok(-30.0, -20.0)
+    assert C.is_room("06_DrumsRoom.wav") and C.is_room("05_Overheads.wav") and C.is_room("DRUM Mono OH U48.wav")
+    assert not C.is_room("02_Snare.wav")
+
+
+def test_a_session_votes_on_all_its_targets_and_on_its_room_mics():
+    assert C.session_verdict(_session_row("s"))[0]
+    row = _session_row("s")
+    for k in ("t0", "t1"):                                     # both room targets miss at -30 dB
+        row["targets"][k]["inj"][-30.0] = -36.0
+    ok, shares, _ = C.session_verdict(row)
+    assert not ok and shares[-30.0] == (pytest.approx(0.8), 0.0)
+    row = _session_row("s")
+    for k in ("t2", "t3", "t4"):                               # 3 of 10 close mics miss: 0.7 < 0.8
+        row["targets"][k]["inj"][-25.0] = None
+    assert not C.session_verdict(row)[0]
+    assert not C.session_verdict(_session_row("s", base=-30.0))[0]
+    assert not C.session_verdict({"targets": {}})[0]
+
+
+def test_only_the_new_sessions_decide():
+    rows = [_session_row(n) for n in C.INJECT_DECIDING] + [_session_row("AleLak", deciding=False, at30=-40.0)]
+    assert C.injection_verdict(rows)[0] == "OK"                 # a failing development session is read beside
+    assert C.injection_verdict(rows[1:])[0] == "FAIL"            # a deciding session missing
+    bad = [_session_row(C.INJECT_DECIDING[0], at30=-40.0)] + rows[1:]
+    assert C.injection_verdict(bad)[0] == "FAIL"
+    no_room = [_session_row(n, rooms=0) for n in C.INJECT_DECIDING]
+    assert C.injection_verdict(no_room)[0] == "FAIL"             # room mics must be tested
+    fp = [_session_row(n, others={"bass": -28.0, "vox": -29.0}) for n in C.INJECT_DECIDING]
+    v, _, share = C.injection_verdict(fp)
+    assert v == "FAIL" and share == 1.0
+
+
+def test_scan_accepts_only_a_real_ok_record_with_the_declared_sessions():
+    rows = [_session_row(n) for n in C.INJECT_DECIDING]
+    expected = {r["session"]: r["di"] for r in rows}
+    stored = [{**r, "targets": {t: {**x, "inj": {str(L): v for L, v in x["inj"].items()}}
+                                for t, x in r["targets"].items()}} for r in rows]
+    rec = {"smoke": False, "verdict": "OK", "rule": C.injection_rule(), "rows": stored}
+    assert C.injection_record_problem(rec, expected) is None
+    assert C.injection_record_problem(None, expected)
+    assert C.injection_record_problem({**rec, "smoke": True}, expected)
+    assert C.injection_record_problem({**rec, "verdict": "FAIL"}, expected)
+    assert C.injection_record_problem({**rec, "rule": {**C.injection_rule(), "ridge": 1.0}}, expected)
+    assert C.injection_record_problem({**rec, "rows": stored[:2]}, expected)
+    assert C.injection_record_problem(rec, {**expected, C.INJECT_DECIDING[0]: "another DI"})
+    worse = [dict(stored[0], targets={t: {**x, "inj": {"-20.0": None, "-25.0": None, "-30.0": None}}
+                                      for t, x in stored[0]["targets"].items()})] + stored[1:]
+    assert C.injection_record_problem({**rec, "rows": worse}, expected)    # a hand-edited "OK" is re-checked
+
+
+def test_inject_never_overwrites_a_record(tmp_path):
+    import argparse
+
+    (tmp_path / "injection.json").write_text('{"verdict": "FAIL"}')
+    with pytest.raises(SystemExit, match="exists"):
+        C.cmd_inject(argparse.Namespace(out=str(tmp_path), smoke=False, limit=0, dev=False))
+    assert json.loads((tmp_path / "injection.json").read_text())["verdict"] == "FAIL"
 
 
 # --- signals ----------------------------------------------------------------------------------------------
@@ -221,7 +276,9 @@ def test_smoke_flags_need_a_scratch_root():
         C.require_real(argparse.Namespace(smoke=True, out=None, limit=0))
     with pytest.raises(SystemExit):
         C.require_real(argparse.Namespace(smoke=False, out=None, limit=2))
-    C.require_real(argparse.Namespace(smoke=True, out="/tmp/x", limit=2))
+    with pytest.raises(SystemExit):
+        C.require_real(argparse.Namespace(smoke=False, out=None, limit=0, dev=True))     # --dev only in smoke
+    C.require_real(argparse.Namespace(smoke=True, out="/tmp/x", limit=2, dev=True))
 
 
 def test_only_the_pool_rebuild_renders():
@@ -261,6 +318,9 @@ def test_candidates_split_doubles_from_takes_and_count_examples():
     cands = C.candidates_from(rows, _secs())
     by = {(c["track"], c["kind"]): c for c in cands}
     assert by[("dt", "double")]["rebuild"] and by[("dt", "double")]["sections"] == ["s1", "s2"]
+    bass = dict(dt, **{"class": "bass"})
+    bc = C.candidates_from({"s1": _scan_row("s1", "d1", {"bassamp": bass})}, _secs())
+    assert bc[0]["kind"] == "double" and not bc[0]["rebuild"] and bc[0]["verdict"] is None   # pending, not on
     assert by[("dt", "double")]["pool_examples"] == 3 and by[("dt", "double")]["r_in_examples"] == 1
     assert not by[("room", "take")]["rebuild"] and by[("room", "take")]["sections"] == ["s1"]
     assert by[("vox", "take")]["pool_examples"] == 1                   # only the with-vocals example of s2
@@ -283,17 +343,50 @@ def test_pool_state_builds_and_unbuilds_the_difference():
     assert k(["a", "b"]) == k(["b", "a"]) != k(["a"])
     built = {(1, k(["dt"])): {"i": 1, "key": k(["dt"])}, (2, k(["dt"])): {"i": 2, "key": k(["dt"])},
              (5, k(["x"])): {"i": 5, "key": k(["x"]), "refused": "the original re-mix differs"}}
-    to_build, current, stale = C.pool_state({1: ["dt"], 4: ["dt", "vox"], 5: ["x"]}, built)
+    to_build, current, stale, excluded = C.pool_state({1: ["dt"], 4: ["dt", "vox"], 5: ["x"]}, built)
     assert set(current) == {1} and to_build == {4: ["dt", "vox"]} and set(stale) == {2}
+    assert set(excluded) == {5} and excluded[5].startswith("refused")      # never read as original
     # a candidate switched off: its rebuilds go stale and the examples read their originals again
-    to_build, current, stale = C.pool_state({}, built)
-    assert not to_build and not current and set(stale) == {1, 2}
-    # a refused rebuild is not retried
-    assert 5 not in C.pool_state({5: ["x"]}, built)[0]
+    to_build, current, stale, excluded = C.pool_state({}, built)
+    assert not to_build and not current and set(stale) == {1, 2} and not excluded
+
+
+def test_pending_candidates_exclude_their_examples():
+    cands = [{"track": "dt", "sections": ["s1"], "rebuild": True, "verdict": None},
+             {"track": "room", "sections": ["s1", "s2"], "rebuild": False, "verdict": None},
+             {"track": "bassamp", "sections": ["s2"], "rebuild": False, "verdict": "not a double"}]
+    assert C.pending_removals(cands) == {"s1": {"room"}, "s2": {"room"}}
+    variants = {"s1": {"v": ["dt", "room"], "n": ["dt", "room"]}, "s2": {"v": ["room", "bassamp"], "n": ["bassamp"]}}
+    pending = C.example_plan(C.pending_removals(cands), _secs(), variants)
+    assert pending == {1: ["room"], 2: ["room"], 4: ["room"]}
+    k = C.removal_key
+    built = {(1, k(["dt"])): {"i": 1, "key": k(["dt"])}}
+    _, current, _, excluded = C.pool_state({1: ["dt"], 2: ["dt"]}, built, pending)
+    assert not current and set(excluded) == {1, 2, 4} and excluded[4].startswith("pending")
+    cands[1]["verdict"] = "keep: not a take"                     # reviewed: the examples read their originals
+    assert C.pending_removals(cands) == {}
+
+
+def test_rin_needs_the_rebuild_and_its_null_under_the_wanted_key():
+    k = C.removal_key
+    built = {(1, k(["dt"])): {"i": 1, "key": k(["dt"])}, (1, "orig"): {"i": 1, "key": "orig"},
+             (2, k(["dt"])): {"i": 2, "key": k(["dt"])},
+             (3, k(["old"])): {"i": 3, "key": k(["old"])}, (3, "orig"): {"i": 3, "key": "orig"},
+             (4, "orig"): {"i": 4, "key": "orig", "refused": "no stored truth render"}}
+    to_build, current, excluded = C.rin_state({1: ["dt"], 2: ["dt"], 3: ["dt"], 4: ["dt"]}, {5: ["room"]}, built)
+    assert set(current) == {1}
+    assert to_build == {2: ["orig"], 3: [k(["dt"])]}               # a stale key is never read: rebuilt again
+    assert set(excluded) == {4, 5}
+    assert C.rin_ids({"s": [{"i": 7, "part": "vsep", "tag": None, "refused": False},
+                            {"i": 8, "part": "vsep", "tag": "MUSDB18 train", "refused": False},
+                            {"i": 9, "part": "rest", "tag": None, "refused": False}]}) == {7}
 
 
 def test_declared_constants():
     assert C.TAKE_DB == -30.0 and C.FLOOR_DB == -40.0 and C.CHROMA_MIN == 0.70 and C.ONSET_MIN == 0.60
-    assert C.INJECT_DB == (-20.0, -25.0, -30.0) and C.INJECT_N == 12 and C.INJECT_SEED == 20261097
+    assert C.INJECT_DB == (-20.0, -25.0, -30.0) and C.INJECT_SEED == 20261097
+    assert C.INJECT_TRACK_NEED == 0.8 and C.INJECT_BASE_NEED == 0.9 and C.INJECT_FP_MAX == 0.05
+    assert C.INJECT_DECIDING == ("HollowGround_IllFate_Full", "RebuildTheEvil_BurialOfSilence_Full",
+                                 "TheLongWait_Drag_Full")
     assert C.DROP_MAX_SHARE == 0.05 and C.STEP_SEP == "xlance_g" and C.DISK_GUARD_GB == 31.0
     assert len(C.DEV_DIS) == 4

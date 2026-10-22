@@ -13,6 +13,10 @@ use a reviewed trusted set, and dirty tracks are excluded, not flagged.
 - **Ledger:** `data-cleaning` in [`dev-test-ledger.json`](dev-test-ledger.json), entered before any
   compute.
 - **Data:** `~/ndsp-presets/learn/data-cleaning/`.
+- **Amendment 1 (2026-10-22, from the PR #273 code review, before any real run):** the injection check
+  votes per session, and only the sessions the estimator was not developed on decide. The code
+  review's other six fixes are folded in with it
+  ([amendment 1](#amendment-1-2026-10-22-code-review-the-injection-check-votes-per-session)).
 - **Not run yet.** Only scratch smoke runs exist (listed under [Smoke](#smoke-development-decides-nothing)).
   Step 2's data part (the candidate-driven pool rebuild) is built too; training waits for the user's
   listening verdicts on the suspected doubles.
@@ -42,9 +46,12 @@ use a reviewed trusted set, and dirty tracks are excluded, not flagged.
    - **Step 2** retrains D_stem on the rebuilt trusted pool at the same N.
 4. **One threshold, −30 dB of the target's own track,** for training and test backings and for
    amp-track targets.
-5. **The take estimator must pass an injection check first.** In development smoke runs, close mics
-   read injected takes back within about 1.5 dB. One loud room mic read −34.4 dB for an injected
-   −30 dB, so the declared check can fail. If it does, step 0 stops and returns to review.
+5. **The take estimator must pass an injection check first** (amendment 1).
+   - **The vote:** every drum, room and overhead track of each clean session gets an injected take,
+     and 3 sessions the estimator was not developed on decide.
+   - **In development smoke runs,** close mics read takes back within about 1.5 dB, but one loud room
+     mic read −34.4 dB for −30 dB.
+   - **The check can fail.** If it does, step 0 stops and returns to review.
 
 ## A. Review of the ML session's proposal (as first written)
 
@@ -270,18 +277,31 @@ the same reference the bleed audit uses for amp-track targets.
   - **Rebuild** otherwise.
   - **R_in:** every untrusted example is rebuilt (review change 5).
 
-**0a, the injection check** (`inject`; it gates `scan`):
-- **The sessions:** 12 clean Cambridge training sessions.
-  - Each has an own amp track, and every kept track reads coherence ≤ 0.002 in part C's leak check.
-  - They are drawn by seed 20261097 from the 13 not used in development.
+**0a, the injection check** (`inject`; it gates `scan`), as amendment 1 has it:
+- **The sessions:** the clean Cambridge training sessions. Each has an own amp track, and every
+  kept track reads coherence ≤ 0.002 in part C's leak check. There are 6, with 17 DIs.
+  - **Deciding (3):** Hollow Ground "Ill Fate", Rebuild The Evil "Burial Of Silence" and The Long
+    Wait "Drag". The estimator was not developed on them.
+  - **Read beside (3):** Ale Lak, Death Of A Romantic and Storm Of Particles, the development
+    sessions.
+  - **The source:** one DI per session, drawn by seed 20261097; its own amp track is the injected
+    source.
 - **The injection:** a room-filtered copy of the own amp track (direct path after 5–20 ms, an
-  exponential tail with RT60 0.3–0.8 s), added to the loudest kept drum or room track at −20, −25
-  and −30 dB.
+  exponential tail with RT60 0.3–0.8 s), added in turn to every kept drum, room and overhead track
+  at −20, −25 and −30 dB.
+- **A session passes when, at every level:**
+  - ≥ 80% of its targets read back (within 3 dB at −20 and −25 dB, ≥ −33 dB at −30 dB);
+  - ≥ 80% of its room and overhead targets read back, when it has any;
+  - ≥ 90% of its targets read under −35 dB uninjected.
 - **INJECTION OK requires all of these:**
-  - at −20 and −25 dB, a read-back within 3 dB in ≥ 10 of 12 sessions;
-  - at −30 dB, a read-back ≥ −33 dB in ≥ 10 of 12;
-  - the uninjected target under −35 dB in ≥ 11 of 12;
-  - at most 5% of the other non-guitar tracks of these studio sessions reading ≥ −30 dB.
+  - all 3 deciding sessions pass;
+  - they hold at least one room or overhead target;
+  - at most 5% of their other non-guitar tracks read ≥ −30 dB uninjected.
+- **Fail closed:**
+  - **A record is never overwritten,** so a FAIL cannot be rerun silently.
+  - **`--dev`** (the development sessions alone) runs only as a scratch smoke.
+  - **`scan` checks the record:** it must be real, OK, made under the current rule and estimator,
+    and hold exactly the 3 deciding sessions with their drawn DIs.
 - **On INJECTION FAIL:** step 0 stops and returns to review. There is no silent fallback.
 
 **0b, the scan, and 0c, the lists:**
@@ -304,7 +324,11 @@ the same reference the bleed audit uses for amp-track targets.
 
 ### Step 1: the paired R_in rebuild (zero renders, X-LANCE on MPS)
 
-- **1a, the rebuild** (`rin-rebuild`). For each untrusted R_in example:
+- **Driven by the candidate list** (amendment 1). The R_in examples rebuilt are those a switched-on
+  candidate touches. Examples a pending candidate touches are excluded from the trusted R_in, as are
+  refused ones. Files and rows are keyed by the removed tracks, and a row under another key is never
+  read: `rin-read` refuses while any wanted example is not built under the current list.
+- **1a, the rebuild** (`rin-rebuild`). For each R_in example the list wants rebuilt:
   - **The target:** the gate's stored truth render (24-bit FLAC, hash-checked) is the example's
     rendered guitar, so no target is rendered.
   - **A parity check first:** the original mix is re-made from it with the stored draw, and must
@@ -315,13 +339,19 @@ the same reference the bleed audit uses for amp-track targets.
     - keeps the ratio, vocals, loudness and mastering draws;
     - rescales the backing to the same drawn ratio (the overall gain is unchanged);
     - is separated by X-LANCE gtr_mss on the MPS.
+  - **The null** (amendment 1): the re-made original mix is separated the same way.
+    - **Why:** 653 of V_sep's 1,721 stored stems were separated on the CPU, from rendered rather
+      than FLAC-made mixes.
+    - **The primary contrast** therefore compares two stems made by the same path.
 - **1b, the read** (`rin-read`, descriptive, decides nothing). It reads **F**, step 3's D_stem: all
   3 seeds, with the 20261042/20261043 pair beside.
   - **How:** amendment 5's A1+A2+A3, masked E, with step 3's stored constant and pull. Model
     hashes are checked against `full/readout.json`.
   - **What it reports:**
-    - rebuilt − original per example, on the same rebuilt examples: band-clustered, with a
-      section-clustered reading beside;
+    - **primary:** rebuilt − re-separated original per example, on the same rebuilt examples,
+      band-clustered, with a section-clustered reading beside;
+    - **the null:** re-separated original − stored original;
+    - **beside:** rebuilt − stored original;
     - F − constant on the untouched trusted R_in;
     - F − constant on the trusted R_in (untouched and rebuilt);
     - F − constant on the rebuilt examples (both stems), the untrusted examples as stored, and R_in
@@ -371,8 +401,12 @@ The user listens to the suspected doubles first (2026-10-23 morning), so the poo
 an editable candidate list. A verdict can then rebuild, or stop using, exactly the difference.
 - **`pool-candidates`** turns step 0's removals into `candidates.json`, one entry per (DI, track,
   kind):
-  - **Doubles** (pitch-confirmed same-part tracks): `rebuild: true` until a verdict says otherwise.
-  - **Takes** (live-room tracks over the threshold): `rebuild: false` until they are reviewed.
+  - **Guitar-class doubles** (pitch-confirmed same-part guitar tracks): `rebuild: true` until a
+    verdict says otherwise.
+  - **Everything else is pending** (`rebuild: false`, no verdict): non-guitar doubles (a
+    riff-following bass or keys track can pass the pitch test; amendment 1) and live-room takes.
+  - **A pending candidate excludes its examples.** They are neither rebuilt nor read as original
+    until a verdict either keeps the track (`rebuild: false` with a verdict) or switches it on.
   - **Each entry lists:** its sections, the per-section evidence (chroma, onsets, power, both take
     readings) and the pool and R_in examples it touches.
   - **Verdicts are safe:** it never overwrites an existing list; a fresh one goes to
@@ -396,7 +430,10 @@ an editable candidate list. A verdict can then rebuild, or stop using, exactly t
   - **current:** built under the wanted key;
   - **stale:** built under a key no longer wanted. The files are kept, and the example reads its
     original again.
-  - It writes `pool/manifest.json`, the file list arm T would read.
+  - **excluded** (amendment 1): a refused rebuild, or an example a pending candidate touches. Arm T
+    never reads these, as original or rebuilt.
+  - It writes `pool/manifest.json`, the file list arm T would read. Arm T needs it complete, with
+    nothing left to build.
 - **Nothing here trains.** Arm T waits for the verdicts and its own launch.
 
 ### What each outcome means
@@ -416,12 +453,12 @@ The run order and expected times:
 ```
 MAIN=/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python
 MSST=~/ndsp-presets/tools/msst-venv/bin/python; TORCH_PY=~/ndsp-presets/tools/demucs-venv/bin/python
-$MAIN -m learn.data_cleaning inject                                # 0a: about 15 min CPU
+$MAIN -m learn.data_cleaning inject                                # 0a: about 10 min CPU (6 sessions)
 for k in 0 1 2; do nice -n 10 $MAIN -m learn.data_cleaning scan --shard $k/3 & done; wait   # 0b: about 1-1.5 h
 $MAIN -m learn.data_cleaning lists                                 # 0c: under a minute; then review
-$MSST -m learn.data_cleaning rin-rebuild --device mps              # 1a: 4.3-5 s per untrusted R_in example
+$MAIN -m learn.data_cleaning pool-candidates                       # seconds; listen, edit verdicts
+$MSST -m learn.data_cleaning rin-rebuild --device mps              # 1a: about 10 s per R_in example (2 separations)
 $TORCH_PY -m learn.data_cleaning rin-read                          # 1b: about 3 min CPU
-$MAIN -m learn.data_cleaning pool-candidates                       # 2 data: seconds; listen, edit verdicts
 $MSST -m learn.data_cleaning pool-rebuild --device mps --order asc  # 2 data: renders + X-LANCE
 $MSST -m learn.data_cleaning pool-rebuild --device cpu --order desc # optional second worker
 $MAIN -m learn.data_cleaning pool-status                           # 2 data: the difference; the manifest
@@ -429,9 +466,9 @@ $MAIN -m learn.data_cleaning pool-status                           # 2 data: the
 
 | Item | Renders | Separations | GPU / MPS | CPU |
 |---|---|---|---|---|
-| 0a inject | 0 | 0 | 0 | about 15 min (12 sessions, 1–2 min each) |
+| 0a inject | 0 | 0 | 0 | about 10 min (6 sessions, about 1.5 min each; 2 GB) |
 | 0b scan | 0 | 0 | 0 | about 3 h single, about 1–1.5 h on 3 shards (about 4 GB each) |
-| 1a R_in rebuild | 0 | the untrusted R_in count: about 30 min for 374, up to about 2 h for all 1,407 | MPS | — |
+| 1a R_in rebuild | 0 | 2 per example (rebuilt and re-made original), about 10 s an example: about 1 h for 374, up to about 4 h for all 1,407 | MPS | — |
 | 1b read | 0 | 0 | 0 | about 3 min |
 | 2 data: pool rebuild of the confirmed doubles (about 1–3.2k examples, set by step 0) | one per example plus priming | 4.3–5 s per example on the MPS alone (1.2–4.5 h); about 0.35 examples/s with the CPU worker (0.8–2.6 h) | MPS | — |
 | 2 training-pool rebuild, all untrusted, v0 (about 3.6k) | about 3.6k | 4.3–5 h MPS alone, about 2.9 h with the CPU worker | MPS | — |
@@ -472,6 +509,15 @@ The smoke runs used scratch directories only.
   1.0, LUFS within 2×10⁻⁶).
 - **1b:** F − constant on R_in as stored read −0.0159 [−0.0363, +0.0046], exactly step 3's
   reading. The read path is right.
+- **After amendment 1:**
+  - **0a on the deciding session Hollow Ground:** 9 targets (2 room or overhead) read back at
+    −20.7 to −20.9, −25.7 to −25.9 and −30.5 to −31.0 dB, and every uninjected target read under
+    −50 dB. The session passed (84 s, 1.9 GB).
+  - **1a/1b with Adam Buckley's takes switched on in a copy of the list:** 2 examples, about 10 s
+    each.
+    - The null (re-separated − stored original) read −0.0000 and the rebuilt contrast +0.0013,
+      both on 2 examples.
+    - Swatkins' 125 examples were excluded by their pending takes.
 - **Step 2's data:**
   - `pool-candidates` listed Ale Lak's 02DT as a double: 154 pool examples, chroma 0.98 and 0.93.
   - `pool-rebuild` rebuilt 3 of them with 4 renders (1 priming); the original mixes matched the
@@ -486,9 +532,43 @@ The smoke runs used scratch directories only.
   and the per-class counts are reviewed before use.
 - **The near nulls can absorb a true take** when a part repeats sample-exactly every 2 or 3 s
   (programmed loops). Human playing does not.
-- **The estimator's settings were developed on 4 of the 17 clean sessions.** The check uses the
-  other 13, which share their bands' backing tracks.
+- **The estimator's settings were developed on 4 DIs from 3 sessions.** Only the other 3 sessions
+  decide the check (amendment 1). That is few sessions, all studio overdubs; live-room estimation is
+  untested by injection.
 - **Consistent doubles** exist only where the partner part has its own DI.
+
+## Amendment 1 (2026-10-22, code review): the injection check votes per session
+
+Declared before any real run, from PR #273's code review ("go with fixes"). Only fix 1 changes the
+plan. Fixes 2–7 make the code match the plan, or fail closed where it did not.
+
+1. **The injection check was not independent.**
+   - **The problem:**
+     - The first draw took 12 DIs from only 6 sessions, and 7 of them shared a session with the
+       4 development DIs (Ale Lak, Death Of A Romantic, Storm Of Particles).
+     - The target was the loudest drum track, mostly a close mic, while room mics are the failing
+       case.
+   - **Now:**
+     - one DI per session;
+     - the take injected into every drum, room and overhead track;
+     - a vote per session, with room and overhead targets voting on their own;
+     - only Hollow Ground, Rebuild The Evil and The Long Wait deciding, and the development
+       sessions read beside.
+   - The plan, the code and the ledger no longer say "12 sessions".
+2. **Fail closed:**
+   - `inject --dev` runs only as a smoke;
+   - `inject` never overwrites a record, so a FAIL stays;
+   - `scan` checks the record's rule, estimator, deciding sessions and their DIs, and re-checks the
+     stored readings.
+3. **No dirty fallback:** a refused rebuild, and any example a pending candidate touches, is
+   excluded in the manifest (and from the trusted R_in), never read as original.
+4. **R_in follows the verdicts:** `rin-rebuild` and `rin-read` take the same candidate list as the
+   pool. Files are keyed by the removed tracks, and stale or missing rows are refused.
+5. **Step 1's null:** the re-made original mix is separated by the same path as the rebuilt one.
+   Rebuilt − re-separated original is primary, and re-separated − stored original is the null.
+6. **Guards:** `scan` stops on the disk, memory and swap guards (`direct_stems._guards`), as the
+   plan promised.
+7. **Doubles on by default are guitar-class only.** Bass, keys and other doubles start pending.
 
 ## Sources
 

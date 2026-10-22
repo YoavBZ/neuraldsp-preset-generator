@@ -1,63 +1,67 @@
-"""Cleaning the direct model's data (`docs/data-cleaning-options.md`, declared 2026-10-22; the user's rule
-of 2026-10-22: use only what we can trust, no dirty tracks). Development data only; no held-out data.
-Step 0 (zero renders, CPU) declares the trusted sets; step 1 (zero renders) rebuilds every untrusted
-R_in example without its offending backing tracks and reads step 3's D_stem (F) on the original against
-the rebuilt stems of the same examples.
+"""Cleaning the direct model's data (`docs/data-cleaning-options.md`, declared 2026-10-22, amendment 1 from the code
+review; the user's rule of 2026-10-22: use only what we can trust, no dirty tracks). Development data only; no
+held-out data. Step 0 (zero renders, CPU) declares the trusted sets; a candidate list made from it drives every
+rebuild, so a listening verdict changes R_in and the pool alike. Step 1 (zero renders) rebuilds the R_in examples
+the list touches and reads step 3's D_stem (F) on rebuilt against re-separated original stems of the same examples.
 
     MAIN=/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python
     MSST=~/ndsp-presets/tools/msst-venv/bin/python; TORCH_PY=~/ndsp-presets/tools/demucs-venv/bin/python
-    $MAIN     -m learn.data_cleaning inject                   # 0a: INJECTION OK | INJECTION FAIL (gates 0b)
+    $MAIN     -m learn.data_cleaning inject                   # 0a: INJECTION OK | FAIL (gates 0b; never overwritten)
     $MAIN     -m learn.data_cleaning scan --shard k/3         # 0b: per section and kept track: take level, same part
     $MAIN     -m learn.data_cleaning lists                    # 0c: trusted lists, counts, route (drop | rebuild)
-    $MSST     -m learn.data_cleaning rin-rebuild --device mps # 1a: untrusted R_in re-mixed without them, X-LANCE
-    $TORCH_PY -m learn.data_cleaning rin-read                 # 1b: F on original vs rebuilt stems (paired)
-    $MAIN     -m learn.data_cleaning pool-candidates          # 2 (data): the candidate list (doubles on, takes off)
+    $MAIN     -m learn.data_cleaning pool-candidates          # the candidate list (guitar doubles on, the rest pending)
+    $MSST     -m learn.data_cleaning rin-rebuild --device mps # 1a: R_in rebuilt + re-made originals, X-LANCE
+    $TORCH_PY -m learn.data_cleaning rin-read                 # 1b: F on rebuilt vs re-separated original (paired)
     $MSST     -m learn.data_cleaning pool-rebuild --device mps --order asc   # 2 (data): renders + X-LANCE
     $MSST     -m learn.data_cleaning pool-rebuild --device cpu --order desc  # optional second worker
     $MAIN     -m learn.data_cleaning pool-status              # 2 (data): what the list asks for; the manifest
 
 **The take level** of a kept backing track in a section is the energy of the target's original take in
-it, in dB of the original take's own close-mic (amp) track, per judge half (A 1.0-5.5 s, B 5.5-10 s),
-the larger of the two. It does not depend on the example's level draw (the review: removal is per
-section, never per example, so no level filter comes back).
-- **A confirmed same-part track** (another take of the target's part): its whole power counts.
-  Candidates: Cambridge "DT" naming, onset correlation with the DI >= 0.6 in the section, or onsets
-  that follow the DI at least as well as the own amp track does. **Confirmed by pitch:** chroma
-  similarity with the own amp track (the DI when there is none) >= 0.70 in the section, the weakest
-  own pair of the label table (0.696).
+it, in dB of the original take's own close-mic (amp) track. It does not depend on the example's level
+draw (removal is per section, never per example, so no level filter comes back).
+- **A confirmed same-part track** (another take of the target's part): its whole power in the section counts
+  (the larger half). Candidates: Cambridge "DT" naming, onset correlation with the DI >= 0.6 in the section,
+  or onsets that follow the DI at least as well as the own amp track does. **Confirmed by pitch:** chroma
+  similarity with the own amp track (the DI when there is none) >= 0.70 in the section, the weakest own pair
+  of the label table (0.696).
 - **Any other track:** a session-level reading (a room path does not change between sections): the
   held-out energy a per-bin complex ridge regression on the own amp track (lags -1..6 STFT frames,
   24 kHz, 2048/1024, 250 Hz-8 kHz, ridge 0.3) explains over the whole session in 10 contiguous folds,
   on frames where the amp plays, less the mean of four nulls (the source rolled +-2 and +-3 s), in dB
-  of the amp's energy, never above the track's own. The amp source is the upper bound (a live amp
-  track's own drum bleed can pose as take); the DI-source reading is reported beside as the lower
-  bound. Takes under -40 dB count as none. Parts without an amp track have no original take: only
-  confirmed same-part tracks count there.
+  of the amp's energy, never above the track's own. The amp source decides (an upper bound: a live amp
+  track's own drum bleed can pose as take); the DI-source reading is reported beside. Takes under -40 dB
+  count as none. Parts without an amp track have no original take: only confirmed same-part tracks count.
 - **The rule (one threshold, as the amp-track targets' "low" bleed flag):** remove the fewest tracks,
   largest take first, until the section's summed take is <= -30 dB. An example is untrusted iff its
   own backing variant (with or without vocals) loses a track.
-- **The estimator is validated first** (`inject`): a room-filtered copy of the own amp track injected
-  at -20, -25 and -30 dB into the loudest kept drum or room track of 12 clean Cambridge sessions (not
-  the 4 it was developed on) must read back within 3 dB (at -20 and -25) and at >= -33 dB (at -30) in
-  >= 10 of 12; the uninjected track must read under -35 dB in >= 11 of 12; and at most 5% of the other
-  non-guitar tracks of those studio sessions may read at or above -30 dB. `scan` refuses without
-  INJECTION OK.
+- **The estimator is validated first** (`inject`, amendment 1): per clean Cambridge session, a room-filtered
+  copy of the own amp track is injected at -20, -25 and -30 dB into each kept drum, room and overhead track in
+  turn. A session passes if, at every level, >= 80% of its targets (and of its room/overhead ones) read back
+  (within 3 dB at -20 and -25, >= -33 dB at -30) and >= 90% read under -35 dB uninjected. INJECTION OK needs
+  every deciding session (the 3 the estimator was not developed on) to pass, a room/overhead target among
+  them, and <= 5% of their other non-guitar tracks at or above -30 dB. The development sessions are read
+  beside. `scan` refuses unless the record is real, OK, made under the current rule, and holds exactly the
+  declared deciding sessions; `inject` never overwrites a record.
+
+**The candidate list** (`pool-candidates`): one entry per removed (DI, track, kind). Guitar-class doubles are
+on; every other candidate (non-guitar doubles, live-room takes) is off and pending: its examples are
+excluded, not read as original, until a verdict keeps the track or switches it on.
 
 **Step 1 (no target renders):** the gate's 1,407 stored truth renders (FLAC, hash-checked) are each
-example's rendered guitar. The original mix is rebuilt from it with the stored draw and must match
+example's rendered guitar. The original mix is re-made from it with the stored draw and must match
 the stored mix mels (99% of cells within one 0.5-dB step, half LUFS within 0.01) or the example is
-refused. The rebuilt mix drops the section's removed tracks from the example's backing, keeps the
+refused. The rebuilt mix drops the list's switched-on tracks from the example's backing, keeps the
 ratio, vocals, loudness and mastering draws (the backing is rescaled to the same ratio), and is
-separated by X-LANCE gtr_mss on MPS. `rin-read` scores F (step 3's D_stem, 3 seeds; the 2-seed pair
-beside) with step 3's stored constant and pull (amendment 5's A1+A2+A3, masked E).
+separated by X-LANCE gtr_mss on MPS; so is the re-made original (the null: the stored stems were made
+partly on the CPU from rendered mixes). Files are keyed by the removed tracks; rows under another key
+are never read. `rin-read` scores F (3 seeds; the 2-seed pair beside) with step 3's stored constant and
+pull (amendment 5's A1+A2+A3, masked E).
 
-**Step 2's data (no training here).** `pool-candidates` turns step 0's removals into a candidate list:
-pitch-confirmed doubles (rebuild on) and live-room takes (off until reviewed). It never overwrites a list
-that may carry listening verdicts. `pool-rebuild` re-renders each wanted pool example (isolate=True, primed,
-at most 3 render processes machine-wide), checks its original mix against the stored one, rebuilds the mix
-without the candidate tracks and separates it; files and rows carry the removal key, beside the D build's
-untouched originals. After a verdict flips a candidate, `pool-status` shows the difference (to build, or
-stale and read as original again) and writes the manifest that arm T would read.
+**Step 2's data (no training here).** `pool-rebuild` re-renders each pool example the list wants rebuilt
+(isolate=True, primed, at most 3 render processes machine-wide), checks its original mix against the stored
+one, rebuilds the mix without the tracks and separates it; files and rows carry the removal key, beside the
+D build's untouched originals. `pool-status` shows the difference after a verdict (to build; stale, read as
+original again; excluded: refused or pending) and writes the manifest that arm T would read.
 
 The pure parts are unit-tested (`tests/test_data_cleaning.py`).
 """
@@ -106,18 +110,22 @@ ONSET_MIN = 0.60                           # a same-part candidate by onsets (th
 DROP_MAX_SHARE = 0.05                      # route: drop if at most 5% of the pool is untrusted, else rebuild
 
 # --- the injection check (declared) -----------------------------------------------------------------
+# Amendment 1 (code review, 2026-10-22): the check votes per session, the sessions the estimator was not developed
+# on decide, and the take is injected into every drum, room and overhead track (room mics are the hard case).
 INJECT_SEED = 20261097
-INJECT_N = 12
 INJECT_DB = (-20.0, -25.0, -30.0)
 INJECT_TOL_DB = 3.0
 INJECT_DETECT_DB = -33.0                   # at -30 dB the reading must reach at least this
-INJECT_BASE_DB = -35.0                     # the uninjected track must read under this
-INJECT_NEED = 10 / 12                      # shares of sections (12: >= 10)
-INJECT_BASE_NEED = 11 / 12
-INJECT_FP_MAX = 0.05                       # other non-guitar tracks of the clean sessions at or above TAKE_DB
+INJECT_BASE_DB = -35.0                     # an uninjected drum/room track must read under this
+INJECT_TRACK_NEED = 0.8                    # per session and level: share of its targets (and of its room ones) read back
+INJECT_BASE_NEED = 0.9                     # per session: share of its targets whose uninjected reading is under -35 dB
+INJECT_FP_MAX = 0.05                       # pooled over the deciding sessions: other non-guitar tracks at or above -30
+INJECT_DECIDING = ("HollowGround_IllFate_Full", "RebuildTheEvil_BurialOfSilence_Full", "TheLongWait_Drag_Full")
 CLEAN_EXCESS = 0.002                       # injection sessions: Cambridge, every kept track's coherence <= this
+ROOM_RE = re.compile(r"room|\boh\b|overhead|amb", re.I)
 # The estimator's settings (250 Hz floor, per-bin weights, ridge 0.3, session-level folds, nulls at +-2/3 s, the clip
-# at the track's power) were chosen in smoke runs on these 4 clean sessions' DIs; the check draws its 12 of the other 13.
+# at the track's power) were chosen in smoke runs on these 4 DIs, from 3 sessions (Ale Lak, Death Of A Romantic, Storm
+# Of Particles). Those sessions are read beside the check; only the other clean sessions (INJECT_DECIDING) decide.
 DEV_DIS = ("cambridge/AleLak_NossoMundoDeixouDeExistir_Full/20_ElecGtr04DI.wav",
            "cambridge/AleLak_NossoMundoDeixouDeExistir_Full/22_ElecGtr04DTDI.wav",
            "cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/14_ElecGtr02DI.wav",
@@ -238,28 +246,78 @@ def route(share, max_share=DROP_MAX_SHARE):
     return "drop" if share <= max_share else "rebuild"
 
 
-def injection_verdict(rows, levels=INJECT_DB, tol=INJECT_TOL_DB, need=INJECT_NEED, base_need=INJECT_BASE_NEED,
-                      detect=INJECT_DETECT_DB, base_max=INJECT_BASE_DB, fp_max=INJECT_FP_MAX, thr=TAKE_DB):
-    """INJECTION OK iff every declared level reads back (within tol at the louder levels, >= detect at the
-    threshold level) in >= need of the sessions, the uninjected target stays under base_max in >= base_need,
-    and at most fp_max of the other non-guitar tracks of these clean studio sessions read at or above thr.
-    rows: [{"base": dB|None, "inj": {level: dB|None}, "others": {track: dB|None}}].
-    -> (verdict, {level: share}, base share, false-positive share)."""
-    n = len(rows)
-    if not n:
-        return "FAIL", {}, 0.0, 1.0
-    shares = {}
+def is_room(name):
+    return bool(ROOM_RE.search(pathlib.PurePosixPath(name).stem))
+
+
+def readback_ok(level, reading, levels=INJECT_DB, tol=INJECT_TOL_DB, detect=INJECT_DETECT_DB):
+    """An injected take read back: within tol at the louder levels, at least `detect` at the threshold level."""
+    if reading is None:
+        return False
+    return reading >= detect if level == min(levels) else abs(reading - level) <= tol
+
+
+def session_verdict(row, levels=INJECT_DB, need=INJECT_TRACK_NEED, base_need=INJECT_BASE_NEED,
+                    base_max=INJECT_BASE_DB):
+    """One session's vote. row["targets"]: {track: {"room": bool, "base": dB|None, "inj": {level: dB|None}}}.
+    It passes iff at every level >= need of its targets read back, and >= need of its room/overhead targets
+    (when it has any), and >= base_need of its targets read under base_max uninjected.
+    -> (pass, {level: (share, room share or None)}, base share)."""
+    tg = row.get("targets") or {}
+    if not tg:
+        return False, {}, 0.0
+    shares, good = {}, True
     for L in levels:
-        if L == min(levels):
-            ok = [r["inj"].get(L) is not None and r["inj"][L] >= detect for r in rows]
-        else:
-            ok = [r["inj"].get(L) is not None and abs(r["inj"][L] - L) <= tol for r in rows]
-        shares[L] = sum(ok) / n
-    base = sum(r["base"] is None or r["base"] < base_max for r in rows) / n
-    others = [v for r in rows for v in (r.get("others") or {}).values()]
+        ok = {t: readback_ok(L, r["inj"].get(L), levels) for t, r in tg.items()}
+        rooms = [ok[t] for t, r in tg.items() if r.get("room")]
+        sh = sum(ok.values()) / len(ok)
+        rs = sum(rooms) / len(rooms) if rooms else None
+        shares[L] = (sh, rs)
+        good &= sh >= need - 1e-9 and (rs is None or rs >= need - 1e-9)
+    base = sum(r["base"] is None or r["base"] < base_max for r in tg.values()) / len(tg)
+    return good and base >= base_need - 1e-9, shares, base
+
+
+def injection_verdict(rows, fp_max=INJECT_FP_MAX, thr=TAKE_DB, deciding=INJECT_DECIDING):
+    """INJECTION OK iff every deciding session (one row each, all present) passes its vote, the deciding sessions
+    hold at least one room/overhead target, and at most fp_max of their other non-guitar tracks read at or above
+    thr uninjected. Development sessions are read beside and never decide.
+    -> (verdict, {session: pass}, false-positive share)."""
+    dec = {r["session"]: r for r in rows if r.get("deciding")}
+    votes = {k: session_verdict(r)[0] for k, r in dec.items()}
+    others = [v for r in dec.values() for v in (r.get("others") or {}).values()]
     fp = sum(v is not None and v >= thr for v in others) / len(others) if others else 0.0
-    good = all(s >= need - 1e-9 for s in shares.values()) and base >= base_need - 1e-9 and fp <= fp_max + 1e-9
-    return ("OK" if good else "FAIL"), shares, base, fp
+    rooms = sum(1 for r in dec.values() for t in (r.get("targets") or {}).values() if t.get("room"))
+    good = (set(dec) == set(deciding) and all(votes.values()) and rooms > 0 and fp <= fp_max + 1e-9)
+    return ("OK" if good else "FAIL"), votes, fp
+
+
+def injection_rule():
+    """The declared rule, stored with the record and checked by `scan`."""
+    return {"levels": list(INJECT_DB), "tol_db": INJECT_TOL_DB, "detect_db": INJECT_DETECT_DB,
+            "base_db": INJECT_BASE_DB, "track_need": INJECT_TRACK_NEED, "base_need": INJECT_BASE_NEED,
+            "fp_max": INJECT_FP_MAX, "take_db": TAKE_DB, "deciding": list(INJECT_DECIDING), "seed": INJECT_SEED,
+            "estimator": {"f_lo": F_LO, "f_hi": F_HI, "ridge": RIDGE, "folds": FOLDS, "lags": list(LAGS),
+                          "null_s": list(NULL_S)}}
+
+
+def injection_record_problem(rec, expected_dis):
+    """None if an injection record lets `scan` run: real, OK, the current rule, and exactly the expected deciding
+    sessions with their expected DIs; else the reason. expected_dis: {session: DI}."""
+    if not rec:
+        return "no injection record (run inject first)"
+    if rec.get("smoke"):
+        return "the injection record is a smoke test's"
+    if rec.get("rule") != injection_rule():
+        return "the injection record was made under another rule or estimator"
+    rows = [{**r, "targets": {t: {**x, "inj": {float(L): v for L, v in x["inj"].items()}}
+                              for t, x in (r.get("targets") or {}).items()}} for r in rec.get("rows") or []]
+    got = {r["session"]: r["di"] for r in rows if r.get("deciding")}
+    if got != expected_dis or len(got) != len(INJECT_DECIDING):
+        return f"the record's deciding sessions differ from the declared ones: {sorted(got)}"
+    if rec.get("verdict") != "OK" or injection_verdict(rows)[0] != "OK":
+        return f"the injection check read {rec.get('verdict')}"
+    return None
 
 
 # --- pure: signals ----------------------------------------------------------------------------------------
@@ -559,8 +617,8 @@ def require_real(args):
         if not getattr(args, "out", None):
             raise SystemExit("--smoke writes into a scratch --out only")
         return
-    if getattr(args, "limit", 0) or getattr(args, "only", None):
-        raise SystemExit("--limit and --only are for smoke tests (with --smoke and --out) only")
+    if getattr(args, "limit", 0) or getattr(args, "only", None) or getattr(args, "dev", False):
+        raise SystemExit("--limit, --only and --dev are for smoke tests (with --smoke and --out) only")
     if not ledger_ok():
         raise SystemExit(f"the ledger has no {LEDGER_ID} entry")
 
@@ -727,11 +785,10 @@ def scan_di(meta, di, sids, log=print):
     return rows
 
 
-def clean_injection_dis(meta, secs, n=INJECT_N, seed=INJECT_SEED, max_excess=CLEAN_EXCESS, exclude=DEV_DIS):
-    """INJECT_N training DIs (Cambridge, with an own amp track) whose kept tracks all read coherence excess
-    <= max_excess in part C's leakage check, drawn by the seed, leaving out the DIs the estimator was developed
-    on (`DEV_DIS`)."""
-    dis = set()
+def clean_injection_sessions(meta, secs, max_excess=CLEAN_EXCESS):
+    """{session name: sorted DIs}: Cambridge training DIs with an own amp track whose kept tracks all read
+    coherence excess <= max_excess in part C's leakage check, by session."""
+    out = {}
     for sid, exs in secs.items():
         if all(e["split"] != "train" for e in exs):
             continue
@@ -742,26 +799,20 @@ def clean_injection_dis(meta, secs, n=INJECT_N, seed=INJECT_SEED, max_excess=CLE
         lk = meta.leak.get(di) or {}
         kept = {t: e for t, e in (lk.get("excess") or {}).items() if t not in (lk.get("dropped") or [])}
         if kept and max(kept.values()) <= max_excess:
-            dis.add(di)
-    dis = sorted(dis - set(exclude))
-    random.Random(seed).shuffle(dis)
-    return dis[:n]
+            out.setdefault(pathlib.Path(rec["session_dir"]).name, set()).add(di)
+    return {k: sorted(v) for k, v in sorted(out.items())}
 
 
-def injection_target(tracks):
-    """The injection's target: the loudest kept drum or room track (else the loudest non-vocal, non-guitar
-    track). tracks: {name: session power dB}."""
-    for ok in (lambda t: track_class(t) == "drums", lambda t: track_class(t) not in ("vocal", "guitar")):
-        c = {t: p for t, p in tracks.items() if ok(t) and p is not None}
-        if c:
-            return max(c, key=c.get)
-    return None
+def injection_sources(sessions, seed=INJECT_SEED):
+    """One DI per session (its own amp track is the injected source), drawn by the seed. -> {session: DI}."""
+    return {k: random.Random(f"{seed}|{k}").choice(v) for k, v in sorted(sessions.items())}
 
 
-def inject_di(meta, di, seed=INJECT_SEED, levels=INJECT_DB):
-    """The injection check on one clean session: a room-filtered copy of the own amp track added to the target
-    track at each level (dB of the own amp over its counted frames), read back with the session estimator;
-    every other kept track read uninjected (false positives)."""
+def inject_session(meta, di, seed=INJECT_SEED, levels=INJECT_DB):
+    """The injection check on one clean session: a room-filtered copy of the own amp track added, one at a time,
+    to every kept drum, room and overhead track at each level (dB of the own amp over its counted frames), read back
+    with the session estimator; every target read uninjected too, and every other non-guitar track (false
+    positives)."""
     import numpy as np
     from scipy.signal import fftconvolve
 
@@ -777,25 +828,25 @@ def inject_di(meta, di, seed=INJECT_SEED, levels=INJECT_DB):
     idx, _ = band_bins()
     S_ref = stft(amp)[idx]
     reader = TakeReader(S_ref, S_ref)
-    audio, Ys = {}, {}
+    targets = [t for t in withv if track_class(t) == "drums"]
+    Ys = {}
     for t in withv:
         y = load_window(sess / t, 0.0, dur)
         Ys[t] = stft(y)[idx]
-        audio[t] = y
-    power = {t: reader.power(Y) for t, Y in Ys.items()}
-    target = injection_target(power)
-    rng = np.random.default_rng(int(hashlib.sha256(f"{seed}|{di}".encode()).hexdigest()[:8], 16))
-    c = fftconvolve(amp, room_ir(rng))[:len(amp)].astype(np.float32)
-    C = stft(c)[idx]
-    unit = float(np.sum(np.abs(C[:, reader.counted]) ** 2)) / reader.ref
-    for L in levels:
-        g = math.sqrt(10 ** (L / 10) / unit)
-        Ys[f"inject {L:+.0f}"] = stft(audio[target] + g * c)[idx]
-    del audio
+        if t in targets and float(np.mean(y.astype(np.float64) ** 2)) > 0:
+            rng = np.random.default_rng(int(hashlib.sha256(f"{seed}|{di}|{t}".encode()).hexdigest()[:8], 16))
+            c = fftconvolve(amp, room_ir(rng))[:len(amp)].astype(np.float32)
+            C = stft(c)[idx]
+            unit = float(np.sum(np.abs(C[:, reader.counted]) ** 2)) / reader.ref
+            for L in levels:
+                Ys[f"{t} @ {L:+.0f}"] = stft(y + math.sqrt(10 ** (L / 10) / unit) * c)[idx]
+        del y
+    targets = [t for t in targets if f"{t} @ {levels[0]:+.0f}" in Ys]
     takes = reader.takes(Ys)
-    others = {t: takes[t] for t in withv if t != target and track_class(t) != "guitar"}
-    return {"di": di, "source": src_name, "track": target, "base": takes[target],
-            "inj": {L: takes[f"inject {L:+.0f}"] for L in levels}, "others": others}
+    return {"session": sess.name, "di": di, "source": src_name,
+            "targets": {t: {"room": is_room(t), "base": takes[t],
+                            "inj": {L: takes[f"{t} @ {L:+.0f}"] for L in levels}} for t in targets},
+            "others": {t: takes[t] for t in withv if track_class(t) not in ("guitar", "drums")}}
 
 
 # --- commands: step 0 -------------------------------------------------------------------------------------
@@ -803,29 +854,48 @@ def inject_di(meta, di, seed=INJECT_SEED, levels=INJECT_DB):
 def cmd_inject(args):
     require_real(args)
     root = out_root(args)
+    path = root / "injection.json"
+    if path.exists() and not args.smoke:                # fail closed: a record (a FAIL above all) is never overwritten
+        raise SystemExit(f"{path} exists (verdict {(_load(path) or {}).get('verdict')}): a rerun needs review; "
+                         "move the record aside by hand first")
     meta, secs = Meta(), build_sections()
-    chosen = (list(DEV_DIS)[:args.limit or None] if args.dev else clean_injection_dis(meta, secs, args.limit or INJECT_N))
-    print(f"injection check: {len(chosen)} clean Cambridge sessions (seed {INJECT_SEED})", flush=True)
+    sessions = clean_injection_sessions(meta, secs)
+    sources = injection_sources(sessions)
+    dev_sessions = {pathlib.Path(meta.inv[d]["session_dir"]).name for d in DEV_DIS}
+    if set(INJECT_DECIDING) & dev_sessions or not set(INJECT_DECIDING) <= set(sources):
+        raise SystemExit(f"the deciding sessions {INJECT_DECIDING} are not clean, new sessions: {sorted(sources)}")
+    order = [k for k in INJECT_DECIDING] + sorted(k for k in sources if k not in INJECT_DECIDING)
+    if args.dev:
+        order = sorted(dev_sessions)
+    order = order[:args.limit or None]
+    print(f"injection check: {len(order)} sessions ({len(INJECT_DECIDING)} deciding); seed {INJECT_SEED}", flush=True)
     rows = []
-    for k, di in enumerate(chosen):
+    for k, name in enumerate(order):
         t = time.time()
-        r = inject_di(meta, di)
+        r = inject_session(meta, sources[name])
+        r["deciding"] = name in INJECT_DECIDING
         rows.append(r)
+        ok, shares, base = session_verdict(r)
         fp = [f"{o[:20]} {v:.1f}" for o, v in r["others"].items() if v is not None and v >= TAKE_DB]
-        print(f"  {k + 1}/{len(chosen)} {di[-50:]} -> {r['track']}: base {r['base']}, "
-              + ", ".join(f"{L:+.0f}: {v if v is None else round(v, 1)}" for L, v in r["inj"].items())
-              + f"; others at or above {TAKE_DB:.0f} dB: {fp} ({time.time() - t:.0f} s)", flush=True)
-    verdict, shares, base, fp = injection_verdict(rows)
-    rec = {"plan": PLAN, "step": "0a", "smoke": bool(args.smoke), "verdict": verdict,
-           "shares": {str(k): v for k, v in shares.items()}, "base_share": base, "false_positive_share": fp,
-           "rule": {"levels": INJECT_DB, "tol_db": INJECT_TOL_DB, "detect_db": INJECT_DETECT_DB,
-                    "base_db": INJECT_BASE_DB, "need": INJECT_NEED, "base_need": INJECT_BASE_NEED,
-                    "fp_max": INJECT_FP_MAX, "take_db": TAKE_DB},
-           "rows": [{**r, "inj": {str(k): v for k, v in r["inj"].items()}} for r in rows],
+        print(f"  {k + 1}/{len(order)} {name} ({'deciding' if r['deciding'] else 'beside'}; source "
+              f"{r['source']}): {len(r['targets'])} targets, "
+              f"{sum(x['room'] for x in r['targets'].values())} room/overhead; vote {'PASS' if ok else 'FAIL'}; "
+              + "; ".join(f"{L:+.0f}: {a:.2f}" + ("" if rs is None else f" (rooms {rs:.2f})")
+                          for L, (a, rs) in shares.items())
+              + f"; uninjected under {INJECT_BASE_DB:.0f} dB {base:.2f}; others >= {TAKE_DB:.0f} dB {fp} "
+              f"({time.time() - t:.0f} s)", flush=True)
+        for tname, x in r["targets"].items():
+            print(f"      {tname[:28]:28s} {'room' if x['room'] else '    '} base {x['base']}, "
+                  + ", ".join(f"{L:+.0f}: {v if v is None else round(v, 1)}" for L, v in x["inj"].items()), flush=True)
+    verdict, votes, fp = injection_verdict(rows)
+    rec = {"plan": PLAN, "step": "0a (amendment 1)", "smoke": bool(args.smoke), "dev": bool(args.dev),
+           "verdict": verdict, "votes": votes, "false_positive_share": fp, "rule": injection_rule(),
+           "rows": [{**r, "targets": {t: {**x, "inj": {str(L): v for L, v in x["inj"].items()}}
+                                      for t, x in r["targets"].items()}} for r in rows],
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
-    _save(root / "injection.json", rec)
-    print(f"INJECTION {verdict}: read-back shares {shares}; uninjected under {INJECT_BASE_DB:.0f} dB {base:.2f}; "
-          f"false positives (other non-guitar tracks at or above {TAKE_DB:.0f} dB) {fp:.3f}", flush=True)
+    _save(path, rec)
+    print(f"INJECTION {verdict}: votes {votes}; false positives (other non-guitar tracks of the deciding sessions at "
+          f"or above {TAKE_DB:.0f} dB) {fp:.3f}", flush=True)
 
 
 def scan_rows_path(root, k, n):
@@ -841,14 +911,17 @@ def scan_rows(root):
 
 
 def cmd_scan(args):
+    from learn import direct_stems as DS
+
     require_real(args)
     root = out_root(args)
-    inj = _load(root / "injection.json")
-    if not inj or inj.get("verdict") != "OK" or (inj.get("smoke") and not args.smoke):
-        if not args.smoke:
-            raise SystemExit("scan needs a real INJECTION OK (run inject first)")
-        print("smoke: scanning without a real INJECTION OK", flush=True)
     meta, secs = Meta(), build_sections()
+    expected = {k: v for k, v in injection_sources(clean_injection_sessions(meta, secs)).items() if k in INJECT_DECIDING}
+    why = injection_record_problem(_load(root / "injection.json"), expected)
+    if why:
+        if not args.smoke:
+            raise SystemExit(f"scan needs a real INJECTION OK under amendment 1: {why}")
+        print(f"smoke: scanning anyway ({why})", flush=True)
     if len(secs) != EXPECT_SECTIONS and not args.smoke:
         raise SystemExit(f"the D build has {len(secs)} sections, not {EXPECT_SECTIONS}")
     by_di = {}
@@ -864,10 +937,13 @@ def cmd_scan(args):
     rp = scan_rows_path(root, k, n)
     rp.parent.mkdir(parents=True, exist_ok=True)
     t_start = time.time()
+    swap0 = DS.swap_mb()
     with open(rp, "a") as fh:
         for m, di in enumerate(todo):
-            if PS_free_gb() < DISK_GUARD_GB:
-                raise SystemExit(f"DISK GUARD: below {DISK_GUARD_GB:.0f} GB")
+            g = DS._guards("scan", DISK_GUARD_GB, swap0)          # disk, then memory and swap
+            if g:
+                print(g[1], flush=True)
+                raise SystemExit(g[0])
             t = time.time()
             rows = scan_di(meta, di, [s for s in by_di[di] if s not in done], log=lambda x: print(x, flush=True))
             for row in rows:
@@ -878,12 +954,6 @@ def cmd_scan(args):
                   f"{sorted({x for r in rows for x in r['removed']})}; {time.time() - t:.0f} s "
                   f"({(time.time() - t_start) / (m + 1):.0f} s per DI)", flush=True)
     print(f"SCAN DONE {k}/{n}", flush=True)
-
-
-def PS_free_gb():
-    from learn import pretrain_set as PS
-
-    return PS.free_gb()
 
 
 def example_lists(rows, secs, thr=TAKE_DB):
@@ -990,11 +1060,64 @@ def parity(mels, lufs, stored, mshare=0.99, ltol=0.01):
     return share >= mshare and dl <= ltol, share, dl
 
 
-def rin_rows(ctx, trusted):
-    """R_in's untrusted examples (part C rows), in section order."""
-    bad = set(trusted["untrusted"])
-    return sorted((r for r in ctx.parts["vsep"] if not ctx.tag[r["i"]] and r["i"] in bad),
-                  key=lambda r: (r["section"], r["i"]))
+def rin_ids(secs):
+    """R_in: V_sep's unrefused examples outside Bannockburn and every MUSDB18-tagged section."""
+    return {e["i"] for exs in secs.values() for e in exs if e["part"] == "vsep" and not e["tag"] and not e["refused"]}
+
+
+def rin_state(plan, pending, built):
+    """R_in under a candidate list. plan/pending: {i: tracks}; built: {(i, key): row}, key "orig" for the re-made
+    original's re-separation (the null). -> (to build: {i: [keys]}, current: {i: (row, orig row)}, excluded:
+    {i: reason}). An example is current only with both its rebuild (under the wanted key) and its re-separated
+    original; a refusal of either, or a pending candidate, excludes it."""
+    to_build, current, excluded = {}, {}, {}
+    for i, t in pending.items():
+        excluded[i] = "pending review: " + ", ".join(sorted(t))
+    for i, t in plan.items():
+        k = removal_key(t)
+        rows = {kk: built.get((i, kk)) for kk in (k, "orig")}
+        bad = [r["refused"] for r in rows.values() if r and r.get("refused")]
+        if bad:
+            excluded.setdefault(i, f"refused: {bad[0]}")
+            continue
+        need = [kk for kk, r in rows.items() if r is None]
+        if need:
+            to_build[i] = need
+        elif i not in excluded:
+            current[i] = (rows[k], rows["orig"])
+    return to_build, current, excluded
+
+
+def rin_rows(proot):
+    return keyed_rows(proot / "rows", "rin")
+
+
+def _truth_mix(ctx, G, gd, truth, r, PS, DS, SA):
+    """The example's guitar (the stored truth render) and its original mix re-made with the stored draw, checked
+    against the stored mix. -> (y, b, meta, kind, gains, mastered, orig mix, parity record) or a refusal string."""
+    import numpy as np
+
+    i, sid = r["i"], r["section"]
+    tr = truth.get(i)
+    if tr is None or tr.get("refused"):
+        return "no stored truth render"
+    y = G.read_flac(G.truth_path(gd, i), tr["scale"], tr["sha256"])
+    meta = json.loads(PS.backing_path(sid).with_suffix(".json").read_text())
+    ratio, v, leak, target = PS.mix_params(i, ctx.ratios, meta["has_vocals"], ctx.eval_mix, 0)
+    kind = "v" if v else "n"
+    b, meta = ctx.backing(sid, kind)
+    gb, gl, ga = PS.mix_gains_db(r["lufs"], meta[f"lufs_{kind}"], ratio, leak, target)
+    if max(abs(p - q) for p, q in zip((gb, gl, ga), r["mix"]["gains_db"])) > 1e-6:
+        raise SystemExit(f"{i}: the V_sep mix draw differs from part C's val mix")
+    mastered, mrng = DS.master_draw(i)
+    orig = assemble(y, b, gb, ga)
+    orig = SA.compress(orig, mrng) if mastered else orig
+    mels, lu, _ = DS.half_features(orig)
+    ok, share, dl = parity(mels, lu, np.load(DS.ex_path(DS.ROOT, i, "mix")))
+    if not ok:
+        return "the original re-mix differs from the stored mix"
+    return {"y": y, "b": b, "meta": meta, "kind": kind, "gb": gb, "ga": ga, "mastered": mastered, "orig": orig,
+            "orig_share": share, "orig_lufs_diff": dl}
 
 
 def cmd_rin_rebuild(args):
@@ -1009,31 +1132,43 @@ def cmd_rin_rebuild(args):
 
     require_real(args)
     root = out_root(args)
-    trusted = _load(root / "trusted.json")
-    if not trusted or (trusted.get("smoke") and not args.smoke):
-        raise SystemExit("rin-rebuild needs step 0's trusted.json (run lists first)")
+    rec, cpath = load_candidates(root, args.candidates, args.smoke)
     free = PS.free_gb()
     if free < DISK_GUARD_GB:
         raise SystemExit(f"free disk {free:.1f} GB, below the {DISK_GUARD_GB:.0f} GB guard")
-    ctx = DS.Ctx(quiet=True)
-    todo_all = rin_rows(ctx, trusted)
-    ctx.rows = None                                       # part C's rows (about 1.4 GB): not needed past here
-    gc.collect()
+    plan, pending = candidate_plans(root, rec, ("vsep",))
+    ids = rin_ids(build_sections())
+    plan = {i: t for i, t in plan.items() if i in ids}
+    pending = {i: t for i, t in pending.items() if i in ids}
     rr = rin_root(root)
-    rp = rr / "rows.jsonl"
-    done = {r["i"] for r in read_jsonl(rp)}
-    todo = [r for r in todo_all if r["i"] not in done][:args.limit or None]
-    gd = DS.ROOT / "gate"
-    truth = G.gate_rows(gd, "truth")
-    print(f"rin-rebuild: {len(todo_all)} untrusted R_in examples, {len(todo)} to do; X-LANCE on {args.device}", flush=True)
-    if not todo:
+    to_build, current, excluded = rin_state(plan, pending, rin_rows(rr))
+    print(f"rin-rebuild ({cpath.name}): {len(plan)} R_in examples wanted rebuilt, {len(to_build)} to build, "
+          f"{len(current)} current, {len(excluded)} excluded; X-LANCE on {args.device}", flush=True)
+    if not to_build:
         print("RIN-REBUILD DONE", flush=True)
         return
+    ctx = DS.Ctx(quiet=True)
+    by_i = {r["i"]: r for r in ctx.parts["vsep"]}
+    todo = sorted((by_i[i] for i in to_build), key=lambda r: (r["section"], r["i"]))[:args.limit or None]
+    ctx.rows = None                                       # part C's rows (about 1.4 GB): not needed past here
+    gc.collect()
+    gd = DS.ROOT / "gate"
+    truth = G.gate_rows(gd, "truth")
     sep = DS.stem_separator(STEP_SEP, args.device)
     swap0 = DS.swap_mb()
+    worker = f"{args.device}-{os.getpid()}"
+    rp = rr / "rows" / f"rin-{worker}.jsonl"
     rp.parent.mkdir(parents=True, exist_ok=True)
-    refused = 0
+    csha = sha256_file(cpath)
+    refused, n_sep = 0, 0
     t_start = time.time()
+
+    def separate(mix):
+        s_ = np.asarray(sep(mix), np.float64)
+        if len(s_) != len(mix) or not np.isfinite(s_).all():
+            raise SystemExit("bad stem")
+        return s_
+
     with open(rp, "a") as fh:
         for m, r in enumerate(todo):
             g = DS._guards("rin", DISK_GUARD_GB, swap0)
@@ -1041,64 +1176,76 @@ def cmd_rin_rebuild(args):
                 print(g[1], flush=True)
                 raise SystemExit(g[0])
             i, sid = r["i"], r["section"]
-            row = {"i": i, "section": sid, "band": r["band"]}
-            tr = truth.get(i)
-            if tr is None or tr.get("refused"):
-                row["refused"] = "no stored truth render"
-            else:
-                y = G.read_flac(G.truth_path(gd, i), tr["scale"], tr["sha256"])
-                meta = json.loads(PS.backing_path(sid).with_suffix(".json").read_text())
-                ratio, v, leak, target = PS.mix_params(i, ctx.ratios, meta["has_vocals"], ctx.eval_mix, 0)
-                kind = "v" if v else "n"
-                b, meta = ctx.backing(sid, kind)
-                gb, gl, ga = PS.mix_gains_db(r["lufs"], meta[f"lufs_{kind}"], ratio, leak, target)
-                if max(abs(p - q) for p, q in zip((gb, gl, ga), r["mix"]["gains_db"])) > 1e-6:
-                    raise SystemExit(f"{i}: the V_sep mix draw differs from part C's val mix")
-                stored = np.load(DS.ex_path(DS.ROOT, i, "mix"))
-                mastered, mrng = DS.master_draw(i)
-                orig = assemble(y, b, gb, ga)
-                orig = SA.compress(orig, mrng) if mastered else orig
-                mels, lu, _ = DS.half_features(orig)
-                ok, share, dl = parity(mels, lu, stored)
-                row.update(orig_share=share, orig_lufs_diff=dl)
-                sec_rm = trusted["sections"][sid]["removed"]
-                gone = [t for t in sec_rm if t in (meta["tracks"][kind])]
-                row["removed"] = gone
-                if not ok:
-                    row["refused"] = "the original re-mix differs from the stored mix"
-                elif not gone:
-                    row["refused"] = "no removed track in this example's backing"
-                else:
-                    sec = ctx.sections[sid]
-                    sess = pathlib.Path(ctx.inv[sec["di"]]["session_dir"])
-                    nb = np.asarray(b, np.float64).copy()
-                    for t in gone:
-                        nb -= PS.section_audio(sess / t, sec["start_s"])[int(PS.TRIM_S * PS.SR):]
-                    lb_new = SA.lufs(nb)
-                    gb_new = rebuilt_gain_db(gb, meta[f"lufs_{kind}"], lb_new, r["lufs"])
-                    _, mrng2 = DS.master_draw(i)
-                    mix = assemble(y, nb, gb_new, ga)
-                    mix = SA.compress(mix, mrng2) if mastered else mix
-                    t0 = time.time()
-                    s = np.asarray(sep(mix), np.float64)
-                    if len(s) != len(mix) or not np.isfinite(s).all():
-                        raise SystemExit(f"{i}: bad stem")
-                    mm, ml, _ = DS.half_features(mix)
-                    sm, sl, floor = DS.half_features(s)
-                    DS._save_npz(DS.ex_path(rr, i, "mix"), mA=mm["A"], mB=mm["B"], lufs=[ml["A"], ml["B"]],
-                                 gain_db=ga, mastered=mastered)
-                    DS._save_npz(DS.ex_path(rr, i, STEP_SEP), sA=sm["A"], sB=sm["B"], lufs=[sl["A"], sl["B"]])
-                    row.update(kind=kind, lufs_backing_old=meta[f"lufs_{kind}"], lufs_backing_new=lb_new,
-                               gain_backing_db=[gb, gb_new], mastered=mastered, lufs_mA=ml["A"], lufs_mB=ml["B"],
-                               lufs_sA=sl["A"], lufs_sB=sl["B"], floor_share=floor, sep=STEP_SEP,
-                               device=args.device, sep_seconds=round(time.time() - t0, 2))
-            refused += bool(row.get("refused"))
-            fh.write(json.dumps(row) + "\n")
+            gone, need = plan[i], to_build[i]
+            key = removal_key(gone)
+            base = {"i": i, "section": sid, "band": r["band"], "candidates_sha256": csha}
+            made = _truth_mix(ctx, G, gd, truth, r, PS, DS, SA)
+            if isinstance(made, str):
+                refused += 1
+                for kk in need:
+                    fh.write(json.dumps({**base, "key": kk, "refused": made}) + "\n")
+                fh.flush()
+                continue
+            par = {"orig_share": made["orig_share"], "orig_lufs_diff": made["orig_lufs_diff"]}
+            if "orig" in need:                            # the null: the re-made original, separated by this path
+                t0 = time.time()
+                sm, sl, floor = DS.half_features(separate(made["orig"]))
+                DS._save_npz(DS.ex_path(rr, i, f"{STEP_SEP}-orig"), sA=sm["A"], sB=sm["B"], lufs=[sl["A"], sl["B"]])
+                fh.write(json.dumps({**base, **par, "key": "orig", "removed": [], "lufs_sA": sl["A"], "lufs_sB": sl["B"],
+                                     "floor_share": floor, "sep": STEP_SEP, "device": args.device,
+                                     "sep_seconds": round(time.time() - t0, 2)}) + "\n")
+                n_sep += 1
+            if key in need:
+                meta, kind = made["meta"], made["kind"]
+                if not set(gone) <= set(meta["tracks"][kind]):
+                    raise SystemExit(f"{i}: {gone} not all in its backing")
+                sec = ctx.sections[sid]
+                sess = pathlib.Path(ctx.inv[sec["di"]]["session_dir"])
+                nb = np.asarray(made["b"], np.float64).copy()
+                for t in gone:
+                    nb -= PS.section_audio(sess / t, sec["start_s"])[int(PS.TRIM_S * PS.SR):]
+                lb_new = SA.lufs(nb)
+                gb_new = rebuilt_gain_db(made["gb"], meta[f"lufs_{kind}"], lb_new, r["lufs"])
+                _, mrng2 = DS.master_draw(i)
+                mix = assemble(made["y"], nb, gb_new, made["ga"])
+                mix = SA.compress(mix, mrng2) if made["mastered"] else mix
+                t0 = time.time()
+                mm, ml, _ = DS.half_features(mix)
+                sm, sl, floor = DS.half_features(separate(mix))
+                DS._save_npz(DS.ex_path(rr, i, f"mix-{key}"), mA=mm["A"], mB=mm["B"], lufs=[ml["A"], ml["B"]],
+                             gain_db=made["ga"], mastered=made["mastered"])
+                DS._save_npz(DS.ex_path(rr, i, f"{STEP_SEP}-{key}"), sA=sm["A"], sB=sm["B"], lufs=[sl["A"], sl["B"]])
+                fh.write(json.dumps({**base, **par, "key": key, "removed": gone, "kind": kind,
+                                     "lufs_backing_old": meta[f"lufs_{kind}"], "lufs_backing_new": lb_new,
+                                     "gain_backing_db": [made["gb"], gb_new], "mastered": made["mastered"],
+                                     "lufs_mA": ml["A"], "lufs_mB": ml["B"], "lufs_sA": sl["A"], "lufs_sB": sl["B"],
+                                     "floor_share": floor, "sep": STEP_SEP, "device": args.device,
+                                     "sep_seconds": round(time.time() - t0, 2)}) + "\n")
+                n_sep += 1
             fh.flush()
             if m % 25 == 0:
-                print(f"rin {m + 1}/{len(todo)} i={i} refused {refused}; "
-                      f"{(time.time() - t_start) / (m + 1):.1f} s each", flush=True)
-    print(f"RIN-REBUILD DONE ({len(todo)} this run, refused {refused})", flush=True)
+                print(f"rin {m + 1}/{len(todo)} i={i}: {n_sep} separations, refused {refused}; "
+                      f"{(time.time() - t_start) / (m + 1):.1f} s per example", flush=True)
+    print(f"RIN-REBUILD DONE ({len(todo)} examples this run, {n_sep} separations, refused {refused})", flush=True)
+
+
+def stem_tensors(rows, mix_of, stem_of, arm):
+    """`direct_stems.readout_tensors` with explicit feature files: (X, C, Y, who) over both halves."""
+    import numpy as np
+
+    from learn import direct_stems as DS
+    from learn import song_model as SM
+
+    X, C, Y, who = [], [], [], []
+    for r in rows:
+        dm, ds = np.load(mix_of(r["i"])), np.load(stem_of(r["i"]))
+        for k, h in enumerate("AB"):
+            x, c = DS.model_input(ds[f"s{h}"], dm[f"m{h}"], float(ds["lufs"][k]), float(dm["lufs"][k]), h,
+                                  r["amp"], r["base"], arm)
+            X.append(x), C.append(c), Y.append(SM.encode(r["label"])), who.append(r["i"])
+    if not X:
+        return None
+    return np.stack(X).astype(np.float32), np.stack(C), [np.stack(z) for z in zip(*Y)], who
 
 
 def section_interval(per_a, per_b, section_of, keep):
@@ -1118,13 +1265,15 @@ def cmd_rin_read(args):
 
     require_real(args)
     root = out_root(args)
+    rec, cpath = load_candidates(root, args.candidates, args.smoke)
+    plan, pending = candidate_plans(root, rec, ("vsep",))
+    ids = rin_ids(build_sections())
+    plan = {i: t for i, t in plan.items() if i in ids}
+    pending = {i: t for i, t in pending.items() if i in ids}
     rr = rin_root(root)
-    trusted = _load(root / "trusted.json")
-    if not trusted or (trusted.get("smoke") and not args.smoke):
-        raise SystemExit("rin-read needs step 0's trusted.json")
-    tried = {r["i"]: r for r in read_jsonl(rr / "rows.jsonl")}
-    rebuilt = {i: r for i, r in tried.items() if not r.get("refused")}
-    refused = sorted(i for i, r in tried.items() if r.get("refused"))
+    to_build, current, excluded = rin_state(plan, pending, rin_rows(rr))
+    if to_build and not args.smoke:                       # fail closed: stale or missing rows are never read
+        raise SystemExit(f"{len(to_build)} R_in examples are not rebuilt under {cpath.name} (run rin-rebuild)")
     ro = DS._load(DS.ROOT / "full" / "readout.json")
     if not ro or ro.get("smoke"):
         raise SystemExit("rin-read needs step 3's real full/readout.json")
@@ -1136,49 +1285,51 @@ def cmd_rin_read(args):
     med = DS.medians_from_json(ro["constant"])
     table = DS.table_from_json(ro["pull"]["D"])
     ctx = DS.Ctx(quiet=True)
-    r_in = [r for r in ctx.parts["vsep"] if not ctx.tag[r["i"]]]
-    bad = set(trusted["untrusted"])
-    if not args.smoke:
-        missing = sorted(i for i in bad if i in {r["i"] for r in r_in} and i not in tried)
-        if missing:
-            raise SystemExit(f"{len(missing)} untrusted R_in examples are not rebuilt yet (run rin-rebuild)")
-    if refused:
-        print(f"note: {len(refused)} untrusted R_in examples were refused by the rebuild and leave the trusted set",
-              flush=True)
+    r_in = [r for r in ctx.parts["vsep"] if r["i"] in ids]
     band_of = {r["i"]: r["band"] for r in r_in}
     section_of = {r["i"]: r["section"] for r in r_in}
     cell_of = {r["i"]: (r["amp"], r["base"]) for r in r_in}
     const = DS.const_errors(r_in, med, DS.encode_audible)
-    reb_rows = [r for r in r_in if r["i"] in rebuilt]
+    reb_rows = [r for r in r_in if r["i"] in current]
+    key_of = {i: row["key"] for i, (row, _) in current.items()}
+    stored_mix = lambda i: DS.ex_path(DS.ROOT, i, "mix")               # noqa: E731
+    sets = {"stored original": (r_in, stored_mix, lambda i: DS.ex_path(DS.ROOT, i, STEP_SEP)),
+            "re-separated original": (reb_rows, stored_mix, lambda i: DS.ex_path(rr, i, f"{STEP_SEP}-orig")),
+            "rebuilt": (reb_rows, lambda i: DS.ex_path(rr, i, f"mix-{key_of[i]}"),
+                        lambda i: DS.ex_path(rr, i, f"{STEP_SEP}-{key_of[i]}"))}
     res = {}
     for tag, k in (("3 seeds", len(nets)), ("2 seeds (20261042, 20261043)", 2)):
         per = {}
-        for name, rows, broot in (("original", r_in, DS.ROOT), ("rebuilt", reb_rows, rr)):
+        for name, (rows, mix_of, stem_of) in sets.items():
             if not rows:
                 per[name] = {}
                 continue
-            outs, who, Y = DS.run_rows(nets[:k], rows, lambda x, b=broot: DS.readout_tensors(b, x, STEP_SEP, D))
-            sc = DS.score_all(outs, who, DS.silent_masks(Y), cell_of, med, table)[0]
-            per[name] = DS.readout_per(sc)["A1+A2+A3"]
-        orig, reb = per["original"], per["rebuilt"]
-        untouched = {i for i in orig if i not in bad}
+            outs, who, Y = DS.run_rows(nets[:k], rows, lambda x, a=mix_of, b=stem_of: stem_tensors(x, a, b, D))
+            per[name] = DS.readout_per(DS.score_all(outs, who, DS.silent_masks(Y), cell_of, med, table)[0])["A1+A2+A3"]
+        orig, reorig, reb = per["stored original"], per["re-separated original"], per["rebuilt"]
+        untouched = {i for i in orig if i not in plan and i not in excluded}
         trusted_set = {**{i: e for i, e in orig.items() if i in untouched}, **reb}
         res[tag] = {
-            "rebuilt - original (paired, rebuilt examples)": DS.paired(reb, orig, band_of, set(reb)),
-            "rebuilt - original, section-clustered (descriptive)": section_interval(reb, orig, section_of, set(reb)),
-            "F - constant, untouched trusted R_in (co-primary)": DS.paired(orig, const, band_of, untouched),
+            "rebuilt - re-separated original (paired, same path; primary)": DS.paired(reb, reorig, band_of, set(reb)),
+            "rebuilt - re-separated original, section-clustered": section_interval(reb, reorig, section_of, set(reb)),
+            "re-separated original - stored original (the null: the path only)": DS.paired(reorig, orig, band_of,
+                                                                                         set(reorig)),
+            "rebuilt - stored original (beside)": DS.paired(reb, orig, band_of, set(reb)),
+            "F - constant, untouched trusted R_in (co-primary in step 2)": DS.paired(orig, const, band_of, untouched),
             "F - constant, trusted R_in (untouched + rebuilt)": DS.paired(trusted_set, const, band_of, set(trusted_set)),
             "F - constant, rebuilt examples (rebuilt stems)": DS.paired(reb, const, band_of, set(reb)),
-            "F - constant, rebuilt examples (original stems)": DS.paired(orig, const, band_of, set(reb)),
-            "F - constant, untrusted examples as stored": DS.paired(orig, const, band_of, bad & set(orig)),
+            "F - constant, rebuilt examples (stored stems)": DS.paired(orig, const, band_of, set(reb)),
             "F - constant, R_in as stored (step 3)": DS.paired(orig, const, band_of, set(orig)),
-            "per band, rebuilt - original": {b: float(np.mean([reb[i] - orig[i] for i in reb if band_of[i] == b]))
-                                             for b in sorted({band_of[i] for i in reb})},
+            "per band, rebuilt - re-separated original": {
+                b: float(np.mean([reb[i] - reorig[i] for i in reb if band_of[i] == b]))
+                for b in sorted({band_of[i] for i in reb})},
             "examples": {"r_in": len(orig), "untouched": len(untouched), "rebuilt": len(reb),
-                         "untrusted": len(bad & set(orig)), "refused": len(refused)}}
+                         "excluded": len(excluded), "not built (smoke only)": len(to_build)}}
     out = {"plan": PLAN, "step": "1b", "smoke": bool(args.smoke), "decides": "nothing (descriptive)",
+           "candidates": str(cpath), "candidates_sha256": sha256_file(cpath),
            "readout": "amendment 5: A1+A2+A3, masked E; step 3's stored constant and D pull",
-           "models": ro["models"]["D"], "results": res, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+           "models": ro["models"]["D"], "excluded": {str(i): w for i, w in sorted(excluded.items())},
+           "results": res, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     _save(root / "rin-read.json", out)
 
     def f(v):
@@ -1187,9 +1338,9 @@ def cmd_rin_read(args):
     for tag, rs in res.items():
         print(f"[{tag}] {rs['examples']}")
         for k2, v in rs.items():
-            if k2 not in ("examples", "per band, rebuilt - original"):
-                print(f"  {k2:55s} {f(v)}")
-        print(f"  per band, rebuilt - original: { {b: round(v, 4) for b, v in rs['per band, rebuilt - original'].items()} }")
+            if k2 not in ("examples", "per band, rebuilt - re-separated original"):
+                print(f"  {k2:66s} {f(v)}")
+        print(f"  per band: { {b: round(v, 4) for b, v in rs['per band, rebuilt - re-separated original'].items()} }")
 
 
 # --- step 2's data: the candidate-driven pool rebuild ----------------------------------------------------------
@@ -1218,8 +1369,10 @@ def candidates_path(root):
 
 def candidates_from(rows, secs):
     """Step 0's scan rows -> candidates, one per (DI, track, kind): pitch-confirmed same-part tracks the rule
-    removes ("double": rebuild on until a verdict says otherwise) and the other removed tracks ("take": live-room
-    takes, off until reviewed). Each lists its sections, the evidence and the examples it touches."""
+    removes ("double") and the other removed tracks ("take": live-room takes). Rebuild is on by default only for
+    guitar-class doubles (a riff-following bass or keys track can pass the pitch test); every other candidate is
+    off and pending until a verdict, and its examples are excluded meanwhile (`pending_removals`). Each lists its
+    sections, the evidence and the examples it touches."""
     out = {}
     for sid in sorted(rows):
         row = rows[sid]
@@ -1230,7 +1383,7 @@ def candidates_from(rows, secs):
             c = out.setdefault((row["di"], t, kind), {
                 "id": f"{row['di']}|{t}|{kind}", "di": row["di"], "track": t, "kind": kind, "class": rec.get("class"),
                 "band": row["band"], "sections": [], "evidence": [], "pool_examples": 0, "r_in_examples": 0,
-                "rebuild": kind == "double", "verdict": None, "note": ""})
+                "rebuild": kind == "double" and rec.get("class") == "guitar", "verdict": None, "note": ""})
             c["sections"].append(sid)
             c["evidence"].append({"section": sid, "same_part": bool(rec.get("same_part")), "chroma": rec.get("chroma"),
                                   "onset": rec.get("onset"), "onset_own": row.get("onset_own"),
@@ -1256,6 +1409,17 @@ def desired_removals(candidates):
     return out
 
 
+def pending_removals(candidates):
+    """{section: set of tracks} of the candidates still pending: switched off with no verdict. Their examples are
+    excluded (fail closed), not read as original, until a verdict keeps the track in or switches it on."""
+    out = {}
+    for c in candidates:
+        if not c.get("rebuild") and c.get("verdict") is None:
+            for sid in c["sections"]:
+                out.setdefault(sid, set()).add(c["track"])
+    return out
+
+
 def example_plan(desired, secs, variants, parts=("pilot", "rest")):
     """{i: sorted removed tracks} of the unrefused examples of `parts` whose own backing variant loses a track."""
     plan = {}
@@ -1269,29 +1433,45 @@ def example_plan(desired, secs, variants, parts=("pilot", "rest")):
     return plan
 
 
-def pool_rows(proot):
-    """{(i, removal key): last row} over every worker's rows."""
+def keyed_rows(d, prefix):
+    """{(i, key): last row} over every worker's rows `<prefix>-*.jsonl` in d."""
     out = {}
-    for f in sorted((proot / "rows").glob("pool-*.jsonl")):
+    for f in sorted(d.glob(f"{prefix}-*.jsonl")):
         for r in read_jsonl(f):
-            out[(r["i"], r["key"])] = r
+            if "key" in r:
+                out[(r["i"], r["key"])] = r
     return out
 
 
-def pool_state(plan, built):
-    """-> (to build: {i: tracks}, current: {i: row}, stale: {i: [rows]}): what the candidate list asks for against
-    what is built. Stale rows are rebuilds whose key is no longer wanted (un-rebuilt: arm T reads the original)."""
-    to_build, current, stale = {}, {}, {}
+def pool_rows(proot):
+    return keyed_rows(proot / "rows", "pool")
+
+
+def pool_state(plan, built, pending=None):
+    """What the candidate list asks for against what is built.
+    plan: {i: tracks} wanted removed; pending: {i: tracks} touched by a pending candidate.
+    -> (to build: {i: tracks}, current: {i: row}, stale: {i: [rows]}, excluded: {i: reason}).
+    - current: built under the wanted key (and not excluded);
+    - stale: rebuilds under a key no longer wanted (kept on disk, not read);
+    - excluded (fail closed: neither original nor rebuilt may be read): a refused rebuild under the wanted key,
+      or an example still touched by a pending candidate."""
+    pending = pending or {}
+    to_build, current, stale, excluded = {}, {}, {}, {}
     keys = {i: removal_key(t) for i, t in plan.items()}
     for (i, k), r in built.items():
-        if keys.get(i) == k and not r.get("refused"):
+        if keys.get(i) == k and r.get("refused"):
+            excluded[i] = f"refused: {r['refused']}"
+        elif keys.get(i) == k:
             current[i] = r
-        elif keys.get(i) != k and not r.get("refused"):
+        elif not r.get("refused"):
             stale.setdefault(i, []).append(r)
+    for i, t in pending.items():
+        excluded.setdefault(i, "pending review: " + ", ".join(sorted(t)))
     for i, t in plan.items():
         if i not in current and not built.get((i, keys[i]), {}).get("refused"):
             to_build[i] = t
-    return to_build, current, stale
+    current = {i: r for i, r in current.items() if i not in excluded}
+    return to_build, current, stale, excluded
 
 
 def cmd_pool_candidates(args):
@@ -1304,9 +1484,10 @@ def cmd_pool_candidates(args):
     cands = candidates_from(rows, secs)
     rec = {"plan": PLAN, "step": "2 (data)", "smoke": bool(args.smoke),
            "made_from": {"trusted_sha256": sha256_file(root / "trusted.json")},
-           "how_to_edit": "set a candidate's 'verdict' (e.g. 'double' or 'not a double') and 'rebuild' (true: its "
-                          "sections' examples are rebuilt without the track; false: they keep the original); then run "
-                          "pool-status to see the difference and pool-rebuild to build it",
+           "how_to_edit": "after listening, set each candidate's 'verdict' (e.g. 'double' or 'not a double') and "
+                          "'rebuild': true rebuilds its sections' examples without the track; false with a verdict keeps "
+                          "the track (the examples read their originals); false with no verdict is pending and excludes "
+                          "the examples. Then pool-status shows the difference and pool-rebuild / rin-rebuild build it",
            "candidates": cands, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     path = candidates_path(root)
     if path.exists():                                   # never overwrite a list that may carry verdicts
@@ -1314,47 +1495,64 @@ def cmd_pool_candidates(args):
         print(f"candidates.json exists: the fresh list goes to {path.name} for comparison", flush=True)
     _save(path, rec)
     d = [c for c in cands if c["kind"] == "double"]
-    print(f"candidates: {len(d)} doubles (rebuild on), {len(cands) - len(d)} takes (off until reviewed); pool examples "
-          f"touched by the doubles {sum(c['pool_examples'] for c in d):,}", flush=True)
+    on = [c for c in d if c["rebuild"]]
+    print(f"candidates: {len(d)} doubles ({len(on)} guitar doubles on; the rest pending), {len(cands) - len(d)} takes "
+          f"(pending review); pool examples touched by the doubles switched on {sum(c['pool_examples'] for c in on):,}",
+          flush=True)
     for c in d:
         ch = [round(e["chroma"], 2) for e in c["evidence"] if e["chroma"] is not None]
-        print(f"  double {c['band']}: {c['di'].split('/')[-1]} <- {c['track']}: {len(c['sections'])} sections, "
+        print(f"  double ({'on' if c['rebuild'] else 'pending'}, {c['class']}) {c['band']}: "
+              f"{c['di'].split('/')[-1]} <- {c['track']}: {len(c['sections'])} sections, "
               f"{c['pool_examples']} pool / {c['r_in_examples']} R_in examples, chroma {ch}", flush=True)
 
 
-def load_candidates(root, path=None):
+def load_candidates(root, path=None, smoke=False):
+    """The candidate list, refused if it is a smoke test's (for a real run) or was made from other step-0 lists."""
     p = pathlib.Path(path).expanduser() if path else candidates_path(root)
     rec = _load(p)
     if not rec:
         raise SystemExit(f"no candidate list at {p} (run pool-candidates first)")
+    if rec.get("smoke") and not smoke:
+        raise SystemExit("the candidate list is a smoke test's")
+    tp = root / "trusted.json"
+    if not tp.exists() or rec.get("made_from", {}).get("trusted_sha256") != sha256_file(tp):
+        raise SystemExit("the candidate list was made from other step-0 lists than trusted.json")
     return rec, p
 
 
-def cmd_pool_status(args):
-    require_real(args)
-    root = out_root(args)
-    rec, cpath = load_candidates(root, args.candidates)
-    if rec.get("smoke") and not args.smoke:
-        raise SystemExit("the candidate list is a smoke test's")
+def candidate_plans(root, rec, parts):
+    """(wanted {i: tracks}, pending {i: tracks}) of the examples of `parts` under a candidate list."""
     rows, secs = scan_rows(root), build_sections()
     variants = {sid: r["variants"] for sid, r in rows.items()}
-    plan = example_plan(desired_removals(rec["candidates"]), secs, variants)
-    proot = pool_root(root)
-    to_build, current, stale = pool_state(plan, pool_rows(proot))
+    return (example_plan(desired_removals(rec["candidates"]), secs, variants, parts),
+            example_plan(pending_removals(rec["candidates"]), secs, variants, parts))
+
+
+def cmd_pool_status(args):
     from learn import direct_stems as DS
 
+    require_real(args)
+    root = out_root(args)
+    rec, cpath = load_candidates(root, args.candidates, args.smoke)
+    plan, pending = candidate_plans(root, rec, ("pilot", "rest"))
+    proot = pool_root(root)
+    to_build, current, stale, excluded = pool_state(plan, pool_rows(proot), pending)
     man = {"plan": PLAN, "step": "2 (data)", "smoke": bool(args.smoke), "candidates": str(cpath),
-           "candidates_sha256": sha256_file(cpath), "stem_sep": STEP_SEP,
+           "candidates_sha256": sha256_file(cpath), "stem_sep": STEP_SEP, "complete": not to_build,
            "rebuilt": {str(i): {"key": r["key"], "removed": r["removed"],
                                 "mix": str(DS.ex_path(proot, i, f"mix-{r['key']}")),
                                 "stem": str(DS.ex_path(proot, i, f"{STEP_SEP}-{r['key']}"))} for i, r in current.items()},
+           "excluded": {str(i): why for i, why in sorted(excluded.items())},
            "to_build": {str(i): t for i, t in to_build.items()},
            "stale": {str(i): [r["key"] for r in rs] for i, rs in stale.items()},
-           "note": "every pool example not under 'rebuilt' reads its original D-build files; 'stale' rebuilds are kept "
-                   "on disk and not used", "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+           "note": "arm T reads 'rebuilt' examples from their listed files, never reads 'excluded' ones (refused "
+                   "rebuilds, or examples a pending candidate still touches), and reads every other pool example from "
+                   "its original D-build files; 'stale' rebuilds stay on disk unused; arm T needs complete = true",
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     _save(proot / "manifest.json", man)
-    print(f"pool: {len(plan):,} examples wanted rebuilt; {len(current):,} built and current, {len(to_build):,} to build, "
-          f"{len(stale):,} with a stale rebuild (now read as original)", flush=True)
+    print(f"pool: {len(plan):,} examples wanted rebuilt; {len(current):,} built and current, {len(to_build):,} to "
+          f"build, {len(excluded):,} excluded (refused or pending review), {len(stale):,} with a stale rebuild "
+          f"(read as original unless excluded)", flush=True)
 
 
 def _rebuilt_mix(ctx, r, ex, gone):
@@ -1399,17 +1597,13 @@ def cmd_pool_rebuild(args):
 
     require_real(args)
     root = out_root(args)
-    rec, cpath = load_candidates(root, args.candidates)
-    if rec.get("smoke") and not args.smoke:
-        raise SystemExit("the candidate list is a smoke test's")
+    rec, cpath = load_candidates(root, args.candidates, args.smoke)
     free = PS.free_gb()
     if free < DISK_GUARD_GB:
         raise SystemExit(f"free disk {free:.1f} GB, below the {DISK_GUARD_GB:.0f} GB guard")
-    rows, secs = scan_rows(root), build_sections()
-    variants = {sid: r["variants"] for sid, r in rows.items()}
-    plan = example_plan(desired_removals(rec["candidates"]), secs, variants)
+    plan, pending = candidate_plans(root, rec, ("pilot", "rest"))
     proot = pool_root(root)
-    to_build = pool_state(plan, pool_rows(proot))[0]
+    to_build = pool_state(plan, pool_rows(proot), pending)[0]
     print(f"pool-rebuild ({cpath.name}): {len(plan):,} examples wanted, {len(to_build):,} to build; X-LANCE on "
           f"{args.device}, order {args.order}", flush=True)
     if not to_build:
@@ -1571,12 +1765,15 @@ def main(argv=None):
     p = sub.add_parser("lists", help="0c: the trusted lists, counts and route")
     common(p)
     p.set_defaults(fn=cmd_lists)
-    p = sub.add_parser("rin-rebuild", help="1a: untrusted R_in examples re-mixed without their tracks, X-LANCE")
+    p = sub.add_parser("rin-rebuild", help="1a: R_in examples the candidate list touches, re-mixed without the "
+                                            "tracks; X-LANCE on the rebuilt and the re-made original mixes")
     common(p)
+    p.add_argument("--candidates", help="the candidate list (default <out>/candidates.json)")
     p.add_argument("--device", choices=("mps", "cpu"), default="mps")
     p.set_defaults(fn=cmd_rin_rebuild)
-    p = sub.add_parser("rin-read", help="1b: F on the original against the rebuilt stems (paired, zero renders)")
+    p = sub.add_parser("rin-read", help="1b: F on the rebuilt against the re-separated original stems (paired)")
     common(p)
+    p.add_argument("--candidates", help="the candidate list (default <out>/candidates.json)")
     p.set_defaults(fn=cmd_rin_read)
     p = sub.add_parser("pool-candidates", help="2 (data): the candidate list from step 0 (never overwrites verdicts)")
     common(p)
