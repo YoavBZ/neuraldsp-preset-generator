@@ -300,7 +300,7 @@ def phone():
     SPL.phone()
     for f in sorted((OUT / "listen").glob("sitting-*-phone.html")):
         text = f.read_text()
-        for old, new in (("Listening check S", "Listening check V"), ('"start-', '"volume-check-')):
+        for old, new in (("Listening check S", "Listening check V"), ('"start-', '"check-v-')):
             if old not in text:
                 raise SystemExit(f"{f.name}: {old!r} not found")
             text = text.replace(old, new)
