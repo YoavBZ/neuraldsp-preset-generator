@@ -1,6 +1,10 @@
 # Every control: how and when each route covers the whole plugin: plan
 
-**Draft, 2026-10-22, for the user's decision.** Zero compute went into it: no renders, no training,
+**Approved 2026-10-22 for its first stages (the user, in chat with the ML session).** Stages 0
+and 1 go ahead; switched-off knobs are left out, as proposed (below). Whether a declared rule counts
+as setting a control the judge can't hear stays open; stage 0c's screen informs it. Stage 0 and 1's
+declared details are in [Stages 0 and 1, as built](#stages-0-and-1-as-built-2026-10-22); they run
+after an independent review of the code. The plan itself was drafted with zero compute: no renders, no training,
 no downloads. It answers the user's coverage rule (2026-10-21, PR #262; [ROADMAP](ROADMAP.md) and
 [ML plan](research/ml-plan-2026-10.md) §5 "Coverage"). Nothing here runs until the user decides and
 each stage's own plan has had an independent review. Declared plans keep their definitions: the
@@ -62,7 +66,7 @@ band-clustered intervals, as their results report them. Stage 1 reports both wei
   and gate 3 (the gate has no on switch). Six delay sync, tap and display selectors are set by rule. The other channel's 3–4
   knobs are silent. Knob ceiling 2 deferred Tone King's oracle (its stage 3), so it has no number.
 
-## Switched-off features: leave them out (proposed)
+## Switched-off features: leave them out (approved 2026-10-22)
 
 The user's rule: every knob value of a switched-off feature is one setting. The proposal is to
 **leave those knobs out of every loss and knob score**. They get a declared **neutral value** only
@@ -231,11 +235,86 @@ takes the cheaper option.
 ## Approvals needed
 
 - **The user's choices:**
-  - leaving switched-off knobs out (proposed) or neutral labels;
+  - leaving switched-off knobs out or neutral labels: **decided 2026-10-22, left out** (masked out
+    of losses, scores and fits; neutral values only where a value must be written);
   - whether a declared rule counts as setting a control the judge cannot see (output gain, pan,
-    stereo widths).
+    stereo widths): **open**; stage 0c's screen informs it.
 - **Training:** the 2D pilot's runs (about 1 h), D_full's 3 seeds (5–7.4 h), and a Tone King
   direct model (5–7.4 h) each need the user's approval before they start.
 - **Renders:** stages 0–2A, about 30–32k with no training. Each runs after its own reviewed plan.
 - **Paid or downloaded:** nothing.
 - **Disk:** at most about 3 GB, against today's 118 GB free and the 31 GB guard.
+
+## Stages 0 and 1, as built (2026-10-22)
+
+Declared before any render, in `learn/every_control.py` (tests: `tests/test_every_control.py`;
+ledger: `every-control-stage0`, `every-control-stage1`). Details the plan left open are decided
+here; each is flagged for the review.
+
+- **0a, the table.** One entry per writable manifest control (Morgan 131, Tone King 94 plus 6
+  strings and paths), with its family, source (searched today, measured, stage 1, screen, amp
+  choice, rule, never), gate and neutral value. The test walks both manifests and checks the
+  plan's counts (today 12/17/14, to add 75/74/73, Tone King 94). Neutral values are knob ceiling
+  2's where it declared them (pedals, the effects' "on" values, the spring), knob ceiling's flat
+  EQ, and otherwise the plugin's own `Default.xml` (tested against it).
+- **The masking helper.** `mask(x)` gives each control's weight (does it sound in `x`?) and
+  `neutralise(x)` the canonical form. The gates are the plan's list. Pan and stereo count only with
+  both cabs on under a mono judge (`mono=False` keeps them for a written stereo preset).
+- **0b, amp choice.** Per part and direction with all three amps usable: log(held half of the amp
+  with the lowest K_S search half) − the mean log held half of the three; per part the mean over
+  directions; the plan's rule.
+- **0c, the screen: 60 renders, not about 40.** Morgan: 3 cells (every 8th sorted part, on PR12,
+  SW50R, AC20), from S: both cabs on (rendered twice, the repeat), each pan, stereo and phase moved;
+  the delay on (knob ceiling 2's "on" values, sync off), width and ping-pong moved; the doubler on
+  (spread 6), spread moved. **Added:** Tone King, 2 cells (the first clean and first crunch part,
+  on their class starts): both cab pans and phases, and the delay's stereo mode, which stage 1's
+  Tone King search would otherwise search blind. A move is a switch flipped or a knob to the far
+  end of its range. **Invisible:** the score against the record moves by |log| ≤ 0.005 on both
+  halves in every cell. Invisible controls keep their rule; **visible ones join a stage-1 group**
+  (pan, stereo with phase; width and ping-pong with the effects group; spread with the doubler;
+  Tone King's with its search). The plan named only the groups, not this routing.
+- **0d, Tone King's renderer.** The class start's dry preset (tk-baseline) is the base state; each
+  render writes only the controls that differ from it, through the pack, in a reused process with
+  isolate=True and the bounded server, behind a 1-s preroll that is cut off (as tk-baseline). Its
+  check: the canonical start must repeat `tk-baseline/distances-dev.json` within 0.005 log.
+  Switches search as "0"/"1". `tk-smoke` runs the plan's 30-render smoke (speed, repeat).
+- **Stage 1, Morgan: 48 cells (knob ceiling 2's 24 parts × 2 directions, each on its amp), from
+  each cell's stored stage-2 setting.** That setting is rendered once more (after a priming render)
+  and must repeat its stored score within 0.005. Each group is then searched on its own, 30
+  renders, starting with its feature switched on (its stored knobs if it was on, else neutral):
+  - gate: the threshold (−96 to 0 dB);
+  - doubler: the spread, if visible (else one render: on at spread 6);
+  - rooms: both rooms on at −6 dB (for each cab that is on), their switches and levels, **and the
+    left cab's switch** with its level (−40 to +6 dB). The plan named the left cab's level; its
+    switch is in the same "cab rest" row and no other group covers it;
+  - phase (34 cells with both cabs on): the phase switches, plus pan and stereo if visible;
+  - effects (6 cells whose stage 2 turned on tremolo or delay): tremolo level, tape drive, plus
+    width and ping-pong if visible.
+  A group's best is adopted only if it beats the stage-2 setting by ≥ 0.005 (log) on the search
+  half (knob ceiling 2's wet margin); otherwise the cell reads 0. The reading is the plan's: held
+  half, the group searched minus not searched. About 4.7k renders, cap 7,296.
+- **Stage 1, Tone King: 48 cells, 150 renders each (7,248).** Its space: 77 controls, plus the
+  screened ones the judge can see. Rules: the delay's sync off; its display, tap, tempo and sync
+  notes at the start's values; the sections held on; output gain at the start's. Level ranges are
+  narrowed to −40 to +6 dB (cab and room; the manifest allows −48 to +24 and −60 to +12),
+  as Morgan's mic level. Beside the reading: Tone King searched − Morgan's stored stage-2 setting
+  (descriptive).
+- **Stage F is not used.** Stage 1 runs on knob ceiling 2's development parts, as the plan
+  declares; like knob ceiling 2 it is a separation-free oracle (the true DI), with no stem.
+- **Listening: 8 trials.** Per group (gate, doubler, rooms), the 2 adopted cells with the largest
+  held gains (one trial per part), leftovers filled by the next largest gains, then 2 near-ties
+  (|held| < 0.005) drawn at random; the record, then the stage-2 setting and the group's setting,
+  the letter drawn at random per trial. The gate and the doubler enter only if the listener also
+  picks the group's setting on both of its clear-gain trials (knob ceiling 2's reading); rooms by
+  the judge, listening descriptive.
+- **Smoke (2026-10-22, 56 renders into a scratch folder, one process, nothing kept):** Tone King's
+  renderer repeats tk-baseline's stored start score to 3e-6 (log), about 1.5 s a render with the
+  preroll; Morgan's stage-2 setting repeats exactly. Two corrections came from it:
+  - Tone King's amp tremolo speed is audible at depth 0 (0.00036 log), so it is not gated by the
+    depth (the PR12's dwell at spring level 0 was checked bit-identical, so that gate stays);
+  - Vintage Trem's dry start has the EQ section off; a section the start has off is held on with
+    its features switched off (the same sound), so the start repeats.
+- **The machine:** every render command waits for a slot under 3 render processes machine-wide
+  (`local_objective.RENDERS` lists them) and stops below 31 GB free; cells are written atomically
+  and resume; shards by `--shard i/n`.
+
