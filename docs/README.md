@@ -68,16 +68,18 @@ was declared, what was measured, and the research behind it.
   crop rules, lags.
 - **Trusted data only (the user, 2026-10-22):** measurements, training, tests and listening
   pages use a reviewed trusted set, and dirty tracks are excluded, not flagged. The user's
-  verdicts on a data-review page (being built: amp and mic tracks, suspected doubles, DIs)
-  define the set ([ROADMAP](ROADMAP.md), step 0; [ML plan](research/ml-plan-2026-10.md) §5).
+  listening verdicts on a data-review page (being built: amp and mic tracks, suspected doubles,
+  DIs) define the set; rule-based measures only name candidates for that review
+  ([ROADMAP](ROADMAP.md), step 0; [ML plan](research/ml-plan-2026-10.md) §5).
   - The data-quality audit ([draft PR #272](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/272),
     zero renders): stems carry a median 45% of power above the matched render, and within each
     band the most contaminated third scores worse on the sound gate; doubles stay in the
     training backings; DIs are clean; labels are exact; bleed sits in the live-room amp and mic
     tracks.
-  - The cleaning plan ([PR #273](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/273),
-    in progress): rebuild the affected examples without the offending backing tracks, rather
-    than drop them.
+  - The cleaning plan ([PR #273](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/273)):
+    it recommends rebuilding the affected examples without the offending backing tracks, rather
+    than dropping them (about 4k renders, at most about 13.8k if the live-room tracks count).
+    Reviewed (go, with changes); the user chose "the best approach"; implementation in progress.
 
 **Song-only shortlist** (current)
 - [song-only-shortlist-plan.md](song-only-shortlist-plan.md) →
@@ -414,13 +416,13 @@ was declared, what was measured, and the research behind it.
 - [every-control-plan.md](every-control-plan.md) → [stage 0 results](every-control-stage0-results.md):
   how and when each route covers every manifest control (approved 2026-10-22 for stages 0–1;
   every control is learned); code `learn/every_control.py`. Stage 0 (94 renders): amp choice
-  pays, −0.044 [−0.062, −0.026] against a blind pick (high priority); no screened control is
-  invisible to the judge, cab phase moves it most; Tone King's renderer works. Stage 1 waits
-  for the trusted set.
-- [real-mix-test-plan.md](real-mix-test-plan.md): arm A on the released mixes of stage F's songs
-  against their unity sums (same takes), about 5.8k renders; the direct model joins only on
-  `GATE OK` as declared (step 3's gate read STOP, overridden for step 4 only). Approved and
-  merged 2026-10-22 (#267); it runs after the cleaning.
+  pays against a blind pick, band-weighted −0.048, part-weighted −0.044 [−0.062, −0.026] (high
+  priority); no screened control is invisible to the judge, cab phase moves it most; Tone King's
+  renderer works. Stage 1 waits for the trusted amp-track list from the user's review.
+- [real-mix-test-plan.md](real-mix-test-plan.md): arm A and the direct model on the released mixes
+  of stage F's songs against their unity sums (same takes), about 5.8k renders. Approved and
+  merged 2026-10-22 (#267); amendment 1 (user): the direct model joins regardless of step 3's
+  gate. It runs after the cleaning.
 - [record-match-listening-plan.md](record-match-listening-plan.md) → [results](record-match-listening-results.md):
   a blind check of the judge by ear on 5 guitar-exposed parts: the ear broadly agrees with the
   judge's order (Spearman mean 0.8), the ceiling C is heard closest in 4/5, H beats S in 4/5, D

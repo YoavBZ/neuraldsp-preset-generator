@@ -104,17 +104,20 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    whole space, about 13k renders) are built. **Every control is learned (user, 2026-10-22):** no
    fixed rule stands in for a control the judge can't hear; the stage 0 screen only sets
    priorities. *Stage 0 done 2026-10-22 ([results](every-control-stage0-results.md), 94 renders):*
-   amp choice pays, −0.044 [−0.062, −0.026] against an amp chosen blind (22 of 24 parts, 13 of 14
-   bands; high priority); no screened control is invisible to the judge, and cab phase moves it
-   most; Tone King's renderer repeats its stored scores. **Stage 1 waits for the trusted set** (the
-   user's decision) and runs on trusted parts only.
+   amp choice pays against an amp chosen blind, band-weighted −0.048 (the plan's weighting) and
+   part-weighted −0.044 [−0.062, −0.026] (22 of 24 parts, 13 of 14 bands; high priority); no
+   screened control is invisible to the judge, and cab phase moves it most; Tone King's renderer
+   repeats its stored scores. **Stage 1 waits for the trusted set** (the user's decision) and runs
+   on trusted parts only. It needs the review's trusted amp-track list, not the rebuild: it is a
+   true-DI oracle on amp-track targets, with no backing or stem.
 
    **Trusted data only (the user, 2026-10-22): "use only what we can trust, no dirty tracks".**
    Measurements, training, tests and listening pages use a reviewed trusted set. Dirty tracks are
    excluded, not flagged. This supersedes the 2026-10-17 bleed decision (high-bleed parts flagged,
-   a no-high-bleed row beside all parts). The user's listening is the authority for trust: a
-   data-review page is being built (amp and mic tracks, suspected doubles, DIs), and the user's
-   verdicts on it define the trusted set ([ML plan](research/ml-plan-2026-10.md) §5).
+   a no-high-bleed row beside all parts). **The user's listening verdicts define the trusted
+   set,** on a data-review page being built (amp and mic tracks, suspected doubles, DIs). Rule-based
+   measures (the audit's checks, #273's original-take level and bleed flags) only name candidates
+   for that review ([ML plan](research/ml-plan-2026-10.md) §5).
    - **The data-quality audit** ([draft PR #272](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/272),
      zero renders):
      - separated stems carry a median 45% of their power above the matched render (other music
@@ -125,12 +128,14 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      - the DIs are clean, and the labels are exact renders;
      - bleed sits in the live-room amp and mic tracks (Telefunken). Trial 47 (Sculptor's Request
        GTR 1) is bleed, not a wrong DI.
-   - **The cleaning plan** ([PR #273](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/273),
-     in progress; the user approved going with the best approach): rebuild the affected training
-     examples without the offending backing tracks, rather than drop them: dropping would cost about
-     a quarter of D's margin over the constant from size alone. Order: zero-render
-     checks; a paired R_in rebuild read (no training); then the pool rebuild (about 4k renders plus
-     separations) and 2 training seeds (about 2.5 GPU h).
+   - **The cleaning plan** ([PR #273](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/273)):
+     its recommendation is to rebuild the affected training examples without the offending backing
+     tracks, rather than drop them. Dropping would cost a quarter to a half of D's margin over the
+     constant from size alone. The plan was reviewed (go, with changes) and the user chose "the
+     best approach"; its implementation is in progress. Order: zero-render checks; a paired R_in
+     rebuild read (no training); then the pool rebuild and 2 training seeds (about 2.5 GPU h). The
+     rebuild is about 4k renders and 3.6k separations, and at most about 13.8k renders and 13.4k
+     separations if the live-room tracks count.
 
    **Where it stands (2026-10-19).** Not ready to ship. Fresh full mixes (stage F, 21 parts in 12
    bands) are the yardstick; figures are against S, band-weighted, with 90% intervals.
@@ -181,16 +186,17 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 
    **Next, in order (2026-10-22 evening):**
    - (a) **The data review** by the user: the verdicts define the trusted set.
-   - (b) **Cleaning steps 0–1, then the rebuild** (PR #273, above), on the trusted set.
-   - (c) **Every-control stage 1** on trusted data only.
-   - (d) **A DI-source inventory** for more bands: *proposed, not yet approved*. Why: the 277
-     sections and 9 bands limit both training and test power, and part C's curve flattened with
-     more renders of the same DIs.
-   - (e) **The real-mix test** ([plan](real-mix-test-plan.md), approved and merged, #267), after
+   - (b) After (a): **cleaning steps 0–1, then the rebuild** (PR #273, above), on the trusted set.
+   - (c) After (a): **every-control stage 1** on trusted parts only. It needs the trusted amp-track
+     list, not the rebuild, so it need not wait for (b); the two share the renderer.
+   - (d) **The real-mix test** ([plan](real-mix-test-plan.md), approved and merged, #267), after
      the cleaning. It runs arm A and the direct model (the user's amendment 1, 2026-10-22).
-   - (f) **The coverage stage 2 build:** every-control labels, clean backings and new DIs together
+   - (e) **The coverage stage 2 build:** every-control labels, clean backings and new DIs together
      (an amendment to the every-control plan first).
    - Then the fresh-song decision test (item 5 below).
+   - *Proposed, not yet approved, so not in the order:* a DI-source inventory for more bands. Why:
+     the 277 sections and 9 bands limit both training and test power, and part C's curve flattened
+     with more renders of the same DIs. New DIs reach (e) only if the user approves it.
 
    **The earlier work order (from 2026-10-19), with its status:**
    1. **Better target-guitar separation** ([plan](separation-finetune-plan.md), reviewed):
@@ -264,7 +270,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    4. **Real-mix previews:** downloaded 2026-10-20 ([results](mix-previews-results.md); 10 songs
       and a Signs remix). The real-mix gap is measured (about 0.6 dB of stem SNR, half from lag).
       *The real-mix test plan is approved and merged (#267, 2026-10-22); it runs after the cleaning
-      (step (e) above).*
+      (step (d) above).*
    5. **Then a fresh-song decision test** of the two routes on unseen parts (the 21 stage-F parts
       are reused). If one clearly beats S there, build the product around it.
 
@@ -492,7 +498,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-22 | Every control, first stages (user): the coverage plan's stages 0 and 1 go ahead; a switched-off feature's knobs are left out of every loss, score and fit, with neutral values only where a value must be written (a saved preset, a search's canonical form). Whether a declared rule counts as setting a control the judge can't hear stays open; stage 0's screen informs it | [plan](every-control-plan.md) |
 | 2026-10-22 | Every control is learned (user): no fixed rule stands in for a control the judge can't hear; the stage 0 screen only sets search and training priorities; switched-off knobs stay ignored. A data-quality audit starts (the user suspects the datasets need cleaning); stage 0 can run, stage 1's long runs wait for its first findings | [plan, amendment 1](every-control-plan.md#amendment-1-2026-10-22-every-control-is-learned) |
 | 2026-10-22 | Real-mix test plan approved and merged (user): arm A on each part's released mix against its unity sum (same takes), about 5.8k renders; the direct model joins too (user, amendment 1: it first read "only on `GATE OK`"). It runs after the cleaning | [plan](real-mix-test-plan.md), #267 |
-| 2026-10-22 | Trusted data only (user): "use only what we can trust, no dirty tracks". Measurements, training, tests and listening pages use a reviewed trusted set; dirty tracks are excluded, not flagged. The user's listening is the authority for trust: the verdicts on the data-review page (amp and mic tracks, suspected doubles, DIs) define the set. Supersedes the 2026-10-17 bleed decision | [ML plan](research/ml-plan-2026-10.md), section 5 |
+| 2026-10-22 | Trusted data only (user): "use only what we can trust, no dirty tracks". Measurements, training, tests and listening pages use a reviewed trusted set; dirty tracks are excluded, not flagged. The user's listening is the authority for trust: the verdicts on the data-review page (amp and mic tracks, suspected doubles, DIs) define the set; rule-based measures only name candidates for that review. Supersedes the 2026-10-17 bleed decision | [ML plan](research/ml-plan-2026-10.md), section 5 |
 | 2026-10-22 | Data-quality audit (zero renders, draft): separated stems carry a median 45% of power above the matched render, and within each band the most contaminated third scores worse on the sound gate (+0.103 [+0.055, +0.156]); doubles stay in the training backings and the stored leak check misses them; DIs are clean; labels are exact renders; bleed sits in the live-room amp and mic tracks (trial 47, Sculptor's Request GTR 1: bleed, not a wrong DI) | [draft PR #272](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/272) |
-| 2026-10-22 | Cleaning (user: go with the best approach): rebuild the affected examples without the offending backing tracks, not drop them (dropping alone would lose about a quarter of D's margin from size); zero-render checks, then a paired R_in rebuild read (no training), then the pool rebuild (about 4k renders plus separations) and 2 training seeds (about 2.5 GPU h) | [PR #273](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/273), in progress |
-| 2026-10-22 | Every control, stage 0 (94 renders): amp choice −0.044 [−0.062, −0.026] against a blind pick (22/24 parts, 13/14 bands; high priority); no screened control invisible to the judge, cab phase largest; Tone King's renderer repeats its stored scores. Stage 1 waits for the trusted set (user) and runs on trusted parts only | [results](every-control-stage0-results.md) |
+| 2026-10-22 | Cleaning: #273 recommends rebuilding the affected examples without the offending backing tracks, not dropping them (dropping would cost a quarter to a half of D's margin from size alone). Reviewed (go, with changes); the user chose "the best approach"; implementation in progress. Zero-render checks, then a paired R_in rebuild read (no training), then the pool rebuild (about 4k renders and 3.6k separations; at most about 13.8k and 13.4k if the live-room tracks count) and 2 training seeds (about 2.5 GPU h) | [PR #273](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/273), in progress |
+| 2026-10-22 | Every control, stage 0 (94 renders): amp choice against a blind pick, band-weighted −0.048 (declared), part-weighted −0.044 [−0.062, −0.026] (22/24 parts, 13/14 bands; high priority); no screened control invisible to the judge, cab phase largest; Tone King's renderer repeats its stored scores. Stage 1 waits for the trusted amp-track list from the user's review (not the rebuild) and runs on trusted parts only | [results](every-control-stage0-results.md) |

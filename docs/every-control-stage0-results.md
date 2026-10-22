@@ -11,7 +11,8 @@ Development data only, true DI, no training. Ledger entry `every-control-stage0`
 ## Headline
 
 - **Amp choice pays: high priority.** Picking the amp by its searched score beats an amp chosen
-  blind by **−0.044 [−0.062, −0.026]**, 22 of 24 parts and 13 of 14 bands better.
+  blind: band-weighted **−0.048** (the plan's declared weighting), part-weighted **−0.044
+  [−0.062, −0.026]** (band-clustered), 22 of 24 parts and 13 of 14 bands better.
 - **No screened control is invisible to the judge.** Every one moved the score by more than 0.005
   in at least one cell. Cab phase moves it most.
 - **Tone King's search renderer works.** It repeats the stored start score to about 3e-6 (log),
@@ -28,7 +29,9 @@ of the amp with the best K_S search half, minus the mean of the three amps' held
 | Clean | −0.042 [−0.064, −0.019] | −0.045 | 17 / 19 | 8 / 9 |
 | Crunch | −0.054 [−0.095, −0.012] | −0.054 | 5 / 5 | 5 / 5 |
 
-- **Leave one band out:** −0.051 to −0.039.
+- **Leave one band out:** −0.051 to −0.039 (part-weighted).
+- **The interval is the part-weighted mean's,** clustered by band; the band-weighted mean has no
+  stored interval.
 - **What it is:** the worth of choosing among the three amps once the knobs are searched, with the
   true DI. Each amp's figure comes from one 150-render search, so it is a lower bound per amp.
 
@@ -74,6 +77,7 @@ moved its search half by about −0.20 (log). That is one cell's search half, de
 ## Next
 
 - **Stage 1 waits for the trusted set** from the user's data review (the user's decision), and runs
-  on trusted parts only ([ROADMAP](ROADMAP.md), step 0).
+  on trusted parts only ([ROADMAP](ROADMAP.md), step 0). It needs the trusted amp-track list, not
+  the cleaning's rebuild: it is a true-DI oracle on amp-track targets, with no backing or stem.
 - **Amp choice enters both routes at high priority:** a searched control in arm A, a 3-way head in
   the direct model.
