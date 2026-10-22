@@ -2761,6 +2761,51 @@
    "renders": "none in steps 0-1. Step 2's data (pool-rebuild, candidate-driven): one training-style render per rebuilt pool example plus one priming render per (section, amp) group, never judged; about 1-3.2k examples depending on step 0's confirmed doubles (knob_ceiling.Renderer isolate=True, at most 3 render processes machine-wide via local_objective.RENDERS); training on the rebuilt pool (arm T) waits for the user's listening verdicts and its own launch",
    "repeat_use": "R_in already read by the pilot, amendment 2's transfer readout, step 3's readout and the sound gate; this re-reads step 3's stored models on rebuilt stems of its untrusted examples. Nothing on stage F",
    "held_out": "none touched"
+  },
+  {
+   "test_id": "real-mix-test",
+   "plan": "docs/real-mix-test-plan.md",
+   "entered": "2026-10-22, with the code (learn/real_mix_test.py), before any real-mix render or separation for it; the plan approved by the user 2026-10-22 (#267), amendment 1 (the direct model joins regardless of step 3's gate) in force. Only scratch smokes ran first (2 parts: 3 X-LANCE separations and 1 reproduction, 1 identity and 2 real-mix C′ rebuilds, D's answers, 5 renders on one group); nothing kept or read into a decision",
+   "repeat_use": "Stage F's ninth set of arms (step 4 is the eighth; the 7th/8th uses reserved for separation-finetune's steps 1 and 3 are noted here): the 17 Cambridge parts with a released mix, already scored by S, H, M (arm-a-mega53), XO, D_existing, YT/ZT and step 4's D, and read by the stereo-and-mix and mix-previews checks. Nothing is chosen on them: the recipes, the readout and the judge are fixed before any real-mix render",
+   "parts": {
+    "candidates": [
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
+     "cambridge-Passing_Ships-ElecGtr2",
+     "cambridge-Passing_Ships-ElecGtr4",
+     "cambridge-Quicksand-ElecGtr2",
+     "cambridge-Signs-ElecGtr3",
+     "cambridge-Today's_The_Day-ElecGtr07",
+     "cambridge-colour-me-red-elecgtr02",
+     "cambridge-colour-me-red-elecgtr03",
+     "cambridge-femme-elecgtr5",
+     "cambridge-get-out-of-bed-elecgtr2",
+     "cambridge-let-s-dance-elecgtr3",
+     "cambridge-let-s-dance-elecgtr4",
+     "cambridge-magilla-elecgtr1",
+     "cambridge-wickerman-elecgtr1",
+     "cambridge-wickerman-elecgtr2",
+     "cambridge-wickerman-elecgtr3",
+     "cambridge-wickerman-elecgtr7"
+    ],
+    "run": "the trusted parts among the candidates (the user's rule of 2026-10-22, 'use only what we can trust, no dirty tracks'): the data review's trusted list, passed as --parts-list and hashed in inputs.json (key kept_parts); a held-half entry (slug:A or slug:B) keeps only the directions judged on that half. Not known when this entry was made",
+    "unmastered_D_row": [
+     "cambridge-Passing_Ships-ElecGtr2",
+     "cambridge-Passing_Ships-ElecGtr4",
+     "cambridge-Quicksand-ElecGtr2",
+     "cambridge-Signs-ElecGtr3",
+     "cambridge-femme-elecgtr5",
+     "cambridge-get-out-of-bed-elecgtr2"
+    ]
+   },
+   "bands": "up to 9 (8 df) if all 17 candidates are trusted; the unmastered row up to 4",
+   "audio_only": "the stored real-mix 10-s crops and Mega-53 stems (mix-previews; hashed before first use), alignment.json, the previews (crop re-derivation check only), stage F's contexts, Mega-53 stems, rebuilds, S and M records and kept FLACs, step 4's predictions, groups, stems and kept FLACs; reference.wav (truth), di.wav (measure DI), mix.wav (the unity control of 'as mixed')",
+   "training": "none: C′, step 3's D and the separators are used as stored, hash-checked",
+   "seeds": "repeat check random.Random(20261092), 6 groups; arm A's search seed 20261013 (stage F's)",
+   "gate": "None: descriptive, no pass/fail bar. Primary: each route's real-mix penalty log(d_real / d_unity), M (arm A, stage F's recipe on the real-mix Mega-53 stem and its C′ rebuild) and D (step 4's models, readout and pull on an X-LANCE crop-only stem of the real-mix crop; labelled 'run under a user override of a GATE STOP'), per part over amps and halves, band-weighted with a 90% band-clustered t interval; above 0: real mixes hurt; containing 0: no penalty shown at this power (undecided); below 0: they help. Beside it, never promoted: X_real - S, the subsets (6 lagged, 8 flipped, Colour Me Red x2), D on the 6 unmastered parts, per part against the stem SNR change and D's input level shift, the damping row, the lag/polarity control (zero renders), 'as mixed' (a part left out when a fit's coherence over 0.2-5 kHz is below 0.1), per class and amp, leave one band out, part-weighted",
+   "stopping": "fixed set. Stops: the held-out check (fail closed); inputs (hashes, crops re-derived within 1e-6, stored S re-judged within 0.005); C′ network hashes and one unity rebuild reproduced within 1e-6; the rebuild-lag check (±3 samples; Passing Ships ElecGtr4 logged); the separator reproducing step 4's stored stem (40 dB); step 4's unity answers reproduced (1e-5); the repeat check (1e-3). Hard cap 6,300 renders; 31 GB disk guard; swap guard; at most 3 render processes machine-wide; separations only on an idle renderer",
+   "renders": "5,811 if all 17 candidates are trusted (51 priming + 102 x 55 arm A + 102 D + 36 D unmastered + 12 repeat check with its 6 priming renders); fewer on a smaller trusted set. Separations: up to 23 X-LANCE crop-only stems and 1 reproduction",
+   "held_out": "none touched",
+   "status": "2026-10-22: code written and smoke-tested on scratch, not run. Waits for the user's trusted list (data review) and the cleaning"
   }
  ]
 }
