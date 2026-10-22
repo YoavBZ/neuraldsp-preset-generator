@@ -2541,8 +2541,8 @@
    "renders": "judged: 111 (1d) + 321 (step 4) = 432; training-style (not judged): about 23k re-renders of part C examples",
    "held_out": "none touched",
    "limits": "D_existing trained on 6 stage F bands' sessions (gate rows also on the unseen bands); MUSDB18 songs tagged (Ill Fate, The Long Wait in training; Bannockburn out of V_sep readouts; It Was My Fault, Femme, Signs on stage F reported apart); drawn labels; pilot power 5 bands (4 df); step 4 detects about 0.05-0.13",
-   "results": "docs/direct-model-stems-gate1-results.md",
-   "outcome": "gate 1 done 2026-10-20 (zero renders; 349 separations; 1d not run): GATE1 STEM, all five checks. Stage F d(a',b) - null +0.104 [+0.090,+0.120] (unseen +0.106), d(a,b) - null +0.114 [+0.103,+0.128]; audit E (iii) Mega-53 - (i) training stem +0.104 [+0.088,+0.120] (0.167 -> 0.270). Reliance (V_dev): stem zeroed +0.099, mix zeroed +0.043, stem share 0.70; post hoc: behind a clean guitar the mix is worth +0.011 [+0.005,+0.016], behind Mega-53/htdemucs stems (audit) +0.001/+0.005, both intervals reach 0. Recommendation (user's decision): a stem-only model, mix-only as a comparison at most. Audited, confirmed with corrections (applied). Pilot done 2026-10-21 (docs/direct-model-stems-pilot-results.md): PILOT STEM, D_stem - D0 on R_out -0.0127 [-0.0216,-0.0039]; D_stem - constant on R_in +0.0128 [-0.0013,+0.0269]; learning curve PROBE CONTINUE. Amendments 5-6 approved 2026-10-22. Full xlance_g build running; step 3 not yet trained"
+   "results": "docs/direct-model-stems-gate1-results.md; docs/direct-model-stems-pilot-results.md; docs/direct-model-stems-results.md",
+   "outcome": "gate 1 done 2026-10-20 (zero renders; 349 separations; 1d not run): GATE1 STEM, all five checks. Stage F d(a',b) - null +0.104 [+0.090,+0.120] (unseen +0.106), d(a,b) - null +0.114 [+0.103,+0.128]; audit E (iii) Mega-53 - (i) training stem +0.104 [+0.088,+0.120] (0.167 -> 0.270). Reliance (V_dev): stem zeroed +0.099, mix zeroed +0.043, stem share 0.70; post hoc: behind a clean guitar the mix is worth +0.011 [+0.005,+0.016], behind Mega-53/htdemucs stems (audit) +0.001/+0.005, both intervals reach 0. Recommendation (user's decision): a stem-only model, mix-only as a comparison at most. Audited, confirmed with corrections (applied). Pilot done 2026-10-21 (docs/direct-model-stems-pilot-results.md): PILOT STEM, D_stem - D0 on R_out -0.0127 [-0.0216,-0.0039]; D_stem - constant on R_in +0.0128 [-0.0013,+0.0269]; learning curve PROBE CONTINUE. Amendments 5-6 approved 2026-10-22. Steps 3-4 done 2026-10-22 (docs/direct-model-stems-results.md): xlance_g build V_sep 1,720, pilot 5,995, rest 15,309, 0 refused; 6 runs trained; readout masked E D - constant R_in -0.0159 [-0.0363,+0.0046] (descriptive); amendment 6 gate GATE STOP; step 4 run under a user override of a GATE STOP (amendment 7), 321 renders: STEP4 NOT SHOWN, D - S -0.034 [-0.103,+0.034] (12 bands, 5 better); D - D0 -0.006 [-0.032,+0.019]; D - D_existing -0.067 [-0.113,-0.021]; D - H -0.006 [-0.062,+0.050]; D - M +0.011 [-0.040,+0.062]"
   },
   {
    "test_id": "mix-previews",
@@ -2614,20 +2614,21 @@
    "amendment_1": "Amendment 1, post-result second variant (declared 2026-10-21 after the X result, reviewed: go with changes): gtr_mss alone (X_g) on the 164 audit mixes; overrides the plan's 'X_g does not decide'. Same rule (SNR point >= 0, mel-range LSD interval < 0, CPU <= 1.5x Mega-53 fast re-timed interleaved in the same session on the same 10 clips); failure counts (>3 dB SNR, >5 dB mel LSD, both ways) in the verdict line; X_g preferred over X unless X_g - X mel LSD interval entirely above 0; no switch before MPS timing ('pending MPS timing'). 164 + 22 CPU separations, 2 threads, nice 10; renders 0; X's PASS, OVER BUDGET untouched",
    "amendment_1_outcome": "Amendment 1, post-result second variant: done 2026-10-21 (zero renders; 165 gtr_mss (one warm-up) + 11 Mega-53 (one warm-up) CPU separations). X_g - Mega-53 fast on the 164 audit mixes: SNR +0.14 [-0.11, +0.39], mel-range LSD -2.30 [-3.00, -1.59], CPU 1.01x same session. X_g PASSES THE CPU LEGS: PENDING MPS TIMING; Mega-53 stays the fallback. Failures: audit 0 SNR either way, mel LSD 2 (X_g worse) vs 15 (Mega-53 worse); stage F She's Gone (SNR) and Colour Me Red Gtr02/03 (mel LSD) for both variants"
   },
- {
-  "test_id": "direct-model-sound-gate",
-  "plan": "docs/direct-model-sound-gate-amendment.md",
-  "entered": "2026-10-22, with the amendment and code, before any non-smoke render; the user approved a sound-based stop/go gate for step 3 on 2026-10-22",
-  "parts": "R_in: V_sep's 1,407 examples (part C val examples of 4 non-stage-F bands: Dark Ride, Adam Buckley, John Morgan Kimock, Swatkins), Bannockburn and every MUSDB18-tagged section left out, as step 3's readout",
-  "bands": "4 (3 df)",
-  "audio_only": "each example's own part C DI section (measured, 10 s + 0.25 s), rendered: no separation, no backing",
-  "renders": "about 5,900 unjudged-for-training renders, judged against each other: truth + constant 2,949, D + D0 2,949 (one pass), each 1,407 examples plus one priming render per (section, amp) group (135 groups) per pass; smoke renders in a scratch dir not counted",
-  "gate": "GATE OK iff log(d_D / d_const) per example (d = knob_ceiling.judge of the arm's render against the truth's render, lag 0, mean over halves A 1.0-5.5 s and B 5.5-10.0 s, each half clipped to +-ln 10), band-weighted, has a 90% band-clustered t interval (4 bands, 3 df) entirely below 0; else GATE STOP. D's answer: amendment 5's readout (A1 medians over 3 seeds x 2 halves, pulled by step 3's fitted b); constant: amendment 5's masked medians, switch majority, mic mode. D0, D - D0, E, per class and amp: descriptive",
-  "seeds": "audit sample of kept renders random.Random(20261087), 40 examples",
-  "stopping": "fixed set; truth renders must reproduce part C's stored guitar mels (99% of cells within 0.5 dB) or the example is refused; 31 GB disk guard; at most 3 render processes machine-wide",
-  "repeat_use": "R_in already read by the pilot, amendment 2's transfer readout and step 3's readout (knob error); this is its first sound-based reading. Nothing on stage F",
-  "held_out": "none touched",
-  "outcome": "declared; not run"
- }
+  {
+   "test_id": "direct-model-sound-gate",
+   "plan": "docs/direct-model-sound-gate-amendment.md",
+   "entered": "2026-10-22, with the amendment and code, before any non-smoke render; the user approved a sound-based stop/go gate for step 3 on 2026-10-22",
+   "parts": "R_in: V_sep's 1,407 examples (part C val examples of 4 non-stage-F bands: Dark Ride, Adam Buckley, John Morgan Kimock, Swatkins), Bannockburn and every MUSDB18-tagged section left out, as step 3's readout",
+   "bands": "4 (3 df)",
+   "audio_only": "each example's own part C DI section (measured, 10 s + 0.25 s), rendered: no separation, no backing",
+   "renders": "about 5,900 unjudged-for-training renders, judged against each other: truth + constant 2,949, D + D0 2,949 (one pass), each 1,407 examples plus one priming render per (section, amp) group (135 groups) per pass; smoke renders in a scratch dir not counted",
+   "gate": "GATE OK iff log(d_D / d_const) per example (d = knob_ceiling.judge of the arm's render against the truth's render, lag 0, mean over halves A 1.0-5.5 s and B 5.5-10.0 s, each half clipped to +-ln 10), band-weighted, has a 90% band-clustered t interval (4 bands, 3 df) entirely below 0; else GATE STOP. D's answer: amendment 5's readout (A1 medians over 3 seeds x 2 halves, pulled by step 3's fitted b); constant: amendment 5's masked medians, switch majority, mic mode. D0, D - D0, E, per class and amp: descriptive",
+   "seeds": "audit sample of kept renders random.Random(20261087), 40 examples",
+   "stopping": "fixed set; truth renders must reproduce part C's stored guitar mels (99% of cells within 0.5 dB) or the example is refused; 31 GB disk guard; at most 3 render processes machine-wide",
+   "repeat_use": "R_in already read by the pilot, amendment 2's transfer readout and step 3's readout (knob error); this is its first sound-based reading. Nothing on stage F",
+   "held_out": "none touched",
+   "outcome": "run 2026-10-22 (docs/direct-model-stems-results.md): GATE STOP. log d D - constant -0.1538 [-0.3360,+0.0284] (4 bands), closer share 0.638, 1,398 scored (9 unscored: silent truth render), 5,628 judged renders recorded; power about 46%. D0 - constant -0.0275; D - D0 -0.1266 [-0.1864,-0.0669]. The user overrode the STOP for step 4 (amendment 7)",
+   "results": "docs/direct-model-stems-results.md"
+  }
  ]
 }

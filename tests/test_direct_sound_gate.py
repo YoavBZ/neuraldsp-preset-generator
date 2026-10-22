@@ -368,3 +368,93 @@ def test_r_in_problems_flag_a_different_set():
 def test_memory_ok_keeps_the_floor_and_a_process_peak():
     assert G.memory_ok(None) and G.memory_ok(DS.MEM_FREE_MIN_GB + G.MEM_NEED_GB)
     assert not G.memory_ok(DS.MEM_FREE_MIN_GB + G.MEM_NEED_GB - 0.1)
+
+
+def _stop_setup(tmp_path, decision="STOP"):
+    (tmp_path / "gate").mkdir()
+    (tmp_path / "full").mkdir()
+    ro = tmp_path / "full" / "readout.json"
+    ro.write_text('{"readout_rule": "amendment 5"}')
+    DS._save(tmp_path / "gate" / "report.json",
+             {"decision": decision, "smoke": False, "readout_sha256": DS.hashlib_file(ro),
+              "table": {"deciding": [-0.15, -0.34, 0.03, 4]}})
+    return tmp_path / "gate"
+
+
+def _override(gd, **kw):
+    args = types.SimpleNamespace(out=str(gd), decision=kw.get("decision", "run step 4 anyway"),
+                                 date=kw.get("date", "2026-10-22"))
+    G.cmd_override(args)
+
+
+def test_gate_override_refuses_without_a_real_stop_report(tmp_path):
+    gd = tmp_path / "gate"
+    gd.mkdir()
+    with pytest.raises(SystemExit):                                     # no report
+        _override(gd)
+    for kw in ({"decision": "OK"}, {"decision": "INCOMPLETE"}, {"decision": "STOP", "smoke": True}):
+        DS._save(gd / "report.json", {"smoke": False, **kw})
+        with pytest.raises(SystemExit):
+            _override(gd)
+    assert not G.override_path(gd).exists()
+    DS._save(gd / "report.json", {"decision": "STOP", "smoke": False})
+    with pytest.raises(SystemExit):                                     # no decision text
+        _override(gd, decision="  ")
+
+
+def test_gate_override_records_the_report_hash_and_decision(tmp_path):
+    gd = _stop_setup(tmp_path)
+    _override(gd)
+    ov = DS._load(G.override_path(gd))
+    assert ov["report_sha256"] == DS.hashlib_file(gd / "report.json") and ov["report_decision"] == "STOP"
+    assert ov["user_decision"] == "run step 4 anyway" and ov["decision_date"] == "2026-10-22"
+    assert ov["amendment"] == DS.STEP4_OVERRIDE == "amendment 7" and ov["label"] == G.OVERRIDE_LABEL
+    with pytest.raises(SystemExit):                                     # one override per report
+        _override(gd)
+
+
+def test_step3_verdict_without_an_override_refuses_a_stop(tmp_path):
+    _stop_setup(tmp_path)
+    assert G.step3_verdict(tmp_path) == (False, "GATE STOP")
+    assert DS.step3_gate(tmp_path)[0] is False
+    rec = DS.step3_gate_record(tmp_path)
+    assert rec["ok"] is False and rec["override"] is None and rec["label"] is None
+
+
+def test_step3_verdict_refuses_an_override_of_another_report(tmp_path):
+    gd = _stop_setup(tmp_path)
+    _override(gd)
+    rep = DS._load(gd / "report.json")
+    DS._save(gd / "report.json", {**rep, "time": "later"})             # gate-report re-run: a new hash
+    ok, why = G.step3_verdict(tmp_path)
+    assert ok is False and "another report.json" in why
+    assert G.override_in_force(tmp_path) is None
+    ov = DS._load(G.override_path(gd))                                   # a hand-edited record
+    DS._save(gd / "report.json", rep)
+    for bad in ({"amendment": "amendment 6"}, {"label": "x"}, {"user_decision": ""}, {"report_decision": "OK"}):
+        DS._save(G.override_path(gd), {**ov, **bad})
+        assert G.step3_verdict(tmp_path)[0] is False, bad
+
+
+def test_step3_verdict_passes_a_stop_through_the_override_and_labels_it(tmp_path):
+    gd = _stop_setup(tmp_path)
+    _override(gd)
+    ok, why = G.step3_verdict(tmp_path)
+    assert ok is True and G.OVERRIDE_LABEL in why and "amendment 7" in why
+    assert DS.step3_gate(tmp_path) == (ok, why)
+    rec = DS.step3_gate_record(tmp_path)
+    assert rec["ok"] and rec["label"] == DS.STEP4_OVERRIDE_LABEL == G.OVERRIDE_LABEL
+    assert rec["override"]["report_sha256"] == DS.hashlib_file(gd / "report.json")
+    assert DS.step4_label(None, {"override": None}, rec) == DS.STEP4_OVERRIDE_LABEL
+    (tmp_path / "full" / "readout.json").write_text('{"readout_rule": "amendment 5", "changed": 1}')
+    assert G.step3_verdict(tmp_path)[0] is False                         # the readout check still applies
+
+
+def test_an_override_does_not_touch_a_gate_ok(tmp_path):
+    gd = _stop_setup(tmp_path, decision="OK")
+    assert G.step3_verdict(tmp_path) == (True, "GATE OK (amendment 6)")
+    DS._save(G.override_path(gd), {"amendment": "amendment 7"})
+    assert G.step3_verdict(tmp_path) == (True, "GATE OK (amendment 6)")
+    rec = DS.step3_gate_record(tmp_path)
+    assert rec["override"] is None and rec["label"] is None
+    assert DS.step4_label(rec, {}, None) is None

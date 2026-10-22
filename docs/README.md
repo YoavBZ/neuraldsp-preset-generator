@@ -367,7 +367,7 @@ was declared, what was measured, and the research behind it.
   existing 40k models scored on stage F without training (D − S +0.033 [−0.053, +0.119], a tie
   leaning worse), and the judge re-run through the raw DI (rebuilt-DI contrasts unchanged; on the
   known-answer songs the measure DI caps the exact truth at 0.55 of S). 852 renders. Audited.
-- [direct-model-stems-plan.md](direct-model-stems-plan.md) → [gate 1 results](direct-model-stems-gate1-results.md), [pilot results](direct-model-stems-pilot-results.md): the direct model with realistic stems
+- [direct-model-stems-plan.md](direct-model-stems-plan.md) → [gate 1 results](direct-model-stems-gate1-results.md), [pilot results](direct-model-stems-pilot-results.md), [steps 3–4 results](direct-model-stems-results.md): the direct model with realistic stems
   (declared, reviewed). Cheap checks on D_existing first (does the stem's quality move its answers;
   what the mismatch costs; 111 descriptive renders), then a 5k pilot of real Mega-53 stems against a
   mix-only model and the old recipe, then one test on stage F (D − S primary, about 321 renders).
@@ -385,6 +385,13 @@ was declared, what was measured, and the research behind it.
   right cab's silent knobs leave E, and the E check is descriptive. A sound-based gate (D's preset
   against the constant's, rendered and judged against the true preset on R_in, about 5.9k renders)
   decides step 3, and step 4 runs only on GATE OK. Step 3's training follows the X-LANCE build.
+  **Amendment 7 (2026-10-22, user):** the gate read GATE STOP (−0.1538 [−0.3360, +0.0284],
+  power about 46%); step 4 runs anyway, unchanged, labelled "run under a user override of a GATE STOP".
+  **Steps 3 and 4 (2026-10-22; step 4 run under a user override of a GATE STOP): STEP4 NOT
+  SHOWN.** D − S on stage F −0.034 [−0.103, +0.034], 12 bands (clean leans better, crunch worse).
+  The new model clearly beats the old one (D − D_existing −0.067 [−0.113, −0.021]) and is
+  indistinguishable from arm A's search (D − H −0.006 [−0.062, +0.050]; not shown equivalence)
+  at zero renders. 321 renders. Audited.
 - [record-match-listening-plan.md](record-match-listening-plan.md) → [results](record-match-listening-results.md):
   a blind check of the judge by ear on 5 guitar-exposed parts: the ear broadly agrees with the
   judge's order (Spearman mean 0.8), the ceiling C is heard closest in 4/5, H beats S in 4/5, D
