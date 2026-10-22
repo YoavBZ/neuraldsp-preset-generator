@@ -309,7 +309,7 @@ def phone():
 
 KEY_SHA = "c73ef0f023e9fcb75de3b204dafee0b425a9fef5e09237826bd9cb1dc89afe5b"  # before the first sitting
 ANSWERS = ROOT / "docs" / "clean-start-volume-listening-answers.txt"
-ANSWERS_SHA = None      # committed before the key is read
+ANSWERS_SHA = "42027ad56f91f71cbf7bc59c66403a09784ba2bc680af7e451554c8991eff670"  # before the key is read
 RESULTS = ROOT / "docs" / "clean-start-volume-listening-results.json"
 
 
