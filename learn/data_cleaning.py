@@ -11,6 +11,10 @@ the rebuilt stems of the same examples.
     $MAIN     -m learn.data_cleaning lists                    # 0c: trusted lists, counts, route (drop | rebuild)
     $MSST     -m learn.data_cleaning rin-rebuild --device mps # 1a: untrusted R_in re-mixed without them, X-LANCE
     $TORCH_PY -m learn.data_cleaning rin-read                 # 1b: F on original vs rebuilt stems (paired)
+    $MAIN     -m learn.data_cleaning pool-candidates          # 2 (data): the candidate list (doubles on, takes off)
+    $MSST     -m learn.data_cleaning pool-rebuild --device mps --order asc   # 2 (data): renders + X-LANCE
+    $MSST     -m learn.data_cleaning pool-rebuild --device cpu --order desc  # optional second worker
+    $MAIN     -m learn.data_cleaning pool-status              # 2 (data): what the list asks for; the manifest
 
 **The take level** of a kept backing track in a section is the energy of the target's original take in
 it, in dB of the original take's own close-mic (amp) track, per judge half (A 1.0-5.5 s, B 5.5-10 s),
@@ -46,6 +50,14 @@ refused. The rebuilt mix drops the section's removed tracks from the example's b
 ratio, vocals, loudness and mastering draws (the backing is rescaled to the same ratio), and is
 separated by X-LANCE gtr_mss on MPS. `rin-read` scores F (step 3's D_stem, 3 seeds; the 2-seed pair
 beside) with step 3's stored constant and pull (amendment 5's A1+A2+A3, masked E).
+
+**Step 2's data (no training here).** `pool-candidates` turns step 0's removals into a candidate list:
+pitch-confirmed doubles (rebuild on) and live-room takes (off until reviewed). It never overwrites a list
+that may carry listening verdicts. `pool-rebuild` re-renders each wanted pool example (isolate=True, primed,
+at most 3 render processes machine-wide), checks its original mix against the stored one, rebuilds the mix
+without the candidate tracks and separates it; files and rows carry the removal key, beside the D build's
+untouched originals. After a verdict flips a candidate, `pool-status` shows the difference (to build, or
+stale and read as original again) and writes the manifest that arm T would read.
 
 The pure parts are unit-tested (`tests/test_data_cleaning.py`).
 """
@@ -1180,6 +1192,354 @@ def cmd_rin_read(args):
         print(f"  per band, rebuilt - original: { {b: round(v, 4) for b, v in rs['per band, rebuilt - original'].items()} }")
 
 
+# --- step 2's data: the candidate-driven pool rebuild ----------------------------------------------------------
+#
+# The pool's untrusted examples are rebuilt (never dropped) by removing candidate tracks from their section's
+# backing. A candidate list drives it, so that a listening verdict can turn a candidate on or off and the next
+# run rebuilds (or stops using) exactly the difference. Each rebuilt example's files carry the removal key (the
+# removed tracks), so no rebuild overwrites another, and the D build's original files are never touched.
+# `pool-status` writes the manifest arm T would read; nothing here trains.
+
+QUEUE = 2                                  # the rebuild's bounded render -> separation queue
+
+
+def removal_key(tracks):
+    """A short, order-free key of a removal set (file names and rows carry it)."""
+    return hashlib.sha1("|".join(sorted(tracks)).encode()).hexdigest()[:10]
+
+
+def pool_root(root):
+    return root / "pool"
+
+
+def candidates_path(root):
+    return root / "candidates.json"
+
+
+def candidates_from(rows, secs):
+    """Step 0's scan rows -> candidates, one per (DI, track, kind): pitch-confirmed same-part tracks the rule
+    removes ("double": rebuild on until a verdict says otherwise) and the other removed tracks ("take": live-room
+    takes, off until reviewed). Each lists its sections, the evidence and the examples it touches."""
+    out = {}
+    for sid in sorted(rows):
+        row = rows[sid]
+        removed = section_decision(row)[0]
+        for t in removed:
+            rec = row["tracks"][t]
+            kind = "double" if rec.get("same_part") else "take"
+            c = out.setdefault((row["di"], t, kind), {
+                "id": f"{row['di']}|{t}|{kind}", "di": row["di"], "track": t, "kind": kind, "class": rec.get("class"),
+                "band": row["band"], "sections": [], "evidence": [], "pool_examples": 0, "r_in_examples": 0,
+                "rebuild": kind == "double", "verdict": None, "note": ""})
+            c["sections"].append(sid)
+            c["evidence"].append({"section": sid, "same_part": bool(rec.get("same_part")), "chroma": rec.get("chroma"),
+                                  "onset": rec.get("onset"), "onset_own": row.get("onset_own"),
+                                  "partner": rec.get("partner"), "power_db": rec.get("power_db"),
+                                  "take_amp_db": rec.get("take_amp_db"), "take_di_db": rec.get("take_di_db")})
+            for e in secs.get(sid, []):
+                if e["refused"] or t not in row["variants"]["v" if e["vocals"] else "n"]:
+                    continue
+                if e["part"] == "vsep":
+                    c["r_in_examples"] += not e["tag"]
+                else:
+                    c["pool_examples"] += 1
+    return sorted(out.values(), key=lambda c: (c["kind"] != "double", c["band"], c["di"], c["track"]))
+
+
+def desired_removals(candidates):
+    """{section: set of tracks} of the candidates switched on (`rebuild` true)."""
+    out = {}
+    for c in candidates:
+        if c.get("rebuild"):
+            for sid in c["sections"]:
+                out.setdefault(sid, set()).add(c["track"])
+    return out
+
+
+def example_plan(desired, secs, variants, parts=("pilot", "rest")):
+    """{i: sorted removed tracks} of the unrefused examples of `parts` whose own backing variant loses a track."""
+    plan = {}
+    for sid, tracks in desired.items():
+        for e in secs.get(sid, []):
+            if e["refused"] or e["part"] not in parts:
+                continue
+            gone = sorted(set(tracks) & set(variants[sid]["v" if e["vocals"] else "n"]))
+            if gone:
+                plan[e["i"]] = gone
+    return plan
+
+
+def pool_rows(proot):
+    """{(i, removal key): last row} over every worker's rows."""
+    out = {}
+    for f in sorted((proot / "rows").glob("pool-*.jsonl")):
+        for r in read_jsonl(f):
+            out[(r["i"], r["key"])] = r
+    return out
+
+
+def pool_state(plan, built):
+    """-> (to build: {i: tracks}, current: {i: row}, stale: {i: [rows]}): what the candidate list asks for against
+    what is built. Stale rows are rebuilds whose key is no longer wanted (un-rebuilt: arm T reads the original)."""
+    to_build, current, stale = {}, {}, {}
+    keys = {i: removal_key(t) for i, t in plan.items()}
+    for (i, k), r in built.items():
+        if keys.get(i) == k and not r.get("refused"):
+            current[i] = r
+        elif keys.get(i) != k and not r.get("refused"):
+            stale.setdefault(i, []).append(r)
+    for i, t in plan.items():
+        if i not in current and not built.get((i, keys[i]), {}).get("refused"):
+            to_build[i] = t
+    return to_build, current, stale
+
+
+def cmd_pool_candidates(args):
+    require_real(args)
+    root = out_root(args)
+    trusted = _load(root / "trusted.json")
+    if not trusted or (trusted.get("smoke") and not args.smoke):
+        raise SystemExit("pool-candidates needs step 0's trusted.json (run lists first)")
+    rows, secs = scan_rows(root), build_sections()
+    cands = candidates_from(rows, secs)
+    rec = {"plan": PLAN, "step": "2 (data)", "smoke": bool(args.smoke),
+           "made_from": {"trusted_sha256": sha256_file(root / "trusted.json")},
+           "how_to_edit": "set a candidate's 'verdict' (e.g. 'double' or 'not a double') and 'rebuild' (true: its "
+                          "sections' examples are rebuilt without the track; false: they keep the original); then run "
+                          "pool-status to see the difference and pool-rebuild to build it",
+           "candidates": cands, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    path = candidates_path(root)
+    if path.exists():                                   # never overwrite a list that may carry verdicts
+        path = root / "candidates-new.json"
+        print(f"candidates.json exists: the fresh list goes to {path.name} for comparison", flush=True)
+    _save(path, rec)
+    d = [c for c in cands if c["kind"] == "double"]
+    print(f"candidates: {len(d)} doubles (rebuild on), {len(cands) - len(d)} takes (off until reviewed); pool examples "
+          f"touched by the doubles {sum(c['pool_examples'] for c in d):,}", flush=True)
+    for c in d:
+        ch = [round(e["chroma"], 2) for e in c["evidence"] if e["chroma"] is not None]
+        print(f"  double {c['band']}: {c['di'].split('/')[-1]} <- {c['track']}: {len(c['sections'])} sections, "
+              f"{c['pool_examples']} pool / {c['r_in_examples']} R_in examples, chroma {ch}", flush=True)
+
+
+def load_candidates(root, path=None):
+    p = pathlib.Path(path).expanduser() if path else candidates_path(root)
+    rec = _load(p)
+    if not rec:
+        raise SystemExit(f"no candidate list at {p} (run pool-candidates first)")
+    return rec, p
+
+
+def cmd_pool_status(args):
+    require_real(args)
+    root = out_root(args)
+    rec, cpath = load_candidates(root, args.candidates)
+    if rec.get("smoke") and not args.smoke:
+        raise SystemExit("the candidate list is a smoke test's")
+    rows, secs = scan_rows(root), build_sections()
+    variants = {sid: r["variants"] for sid, r in rows.items()}
+    plan = example_plan(desired_removals(rec["candidates"]), secs, variants)
+    proot = pool_root(root)
+    to_build, current, stale = pool_state(plan, pool_rows(proot))
+    from learn import direct_stems as DS
+
+    man = {"plan": PLAN, "step": "2 (data)", "smoke": bool(args.smoke), "candidates": str(cpath),
+           "candidates_sha256": sha256_file(cpath), "stem_sep": STEP_SEP,
+           "rebuilt": {str(i): {"key": r["key"], "removed": r["removed"],
+                                "mix": str(DS.ex_path(proot, i, f"mix-{r['key']}")),
+                                "stem": str(DS.ex_path(proot, i, f"{STEP_SEP}-{r['key']}"))} for i, r in current.items()},
+           "to_build": {str(i): t for i, t in to_build.items()},
+           "stale": {str(i): [r["key"] for r in rs] for i, rs in stale.items()},
+           "note": "every pool example not under 'rebuilt' reads its original D-build files; 'stale' rebuilds are kept "
+                   "on disk and not used", "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    _save(proot / "manifest.json", man)
+    print(f"pool: {len(plan):,} examples wanted rebuilt; {len(current):,} built and current, {len(to_build):,} to build, "
+          f"{len(stale):,} with a stale rebuild (now read as original)", flush=True)
+
+
+def _rebuilt_mix(ctx, r, ex, gone):
+    """The rebuilt true mix of a rendered pool example: its backing variant without `gone`, rescaled to the drawn
+    ratio, the same overall gain and mastering draw. -> (mix, record)."""
+    import numpy as np
+
+    from learn import direct_stems as DS
+    from learn import pretrain_set as PS
+    from learn import song_aug as SA
+
+    i, sid = r["i"], r["section"]
+    kind = "v" if ex["draw"]["vocals"] else "n"
+    b, meta = ctx.backing(sid, kind)
+    sec = ctx.sections[sid]
+    sess = pathlib.Path(ctx.inv[sec["di"]]["session_dir"])
+    nb = np.asarray(b, np.float64).copy()
+    for t in gone:
+        if t not in meta["tracks"][kind]:
+            raise SystemExit(f"{i}: {t} is not in its backing")
+        nb -= PS.section_audio(sess / t, sec["start_s"])[int(PS.TRIM_S * PS.SR):]
+    gb, ga = ex["draw"]["gains_db"]
+    lb_new = SA.lufs(nb)
+    gb_new = rebuilt_gain_db(gb, meta[f"lufs_{kind}"], lb_new, r["lufs"])
+    mastered, mrng = DS.master_draw(i)
+    mix = assemble(ex["y"], nb, gb_new, ga)
+    mix = SA.compress(mix, mrng) if mastered else mix
+    return mix, {"kind": kind, "lufs_backing_old": meta[f"lufs_{kind}"], "lufs_backing_new": lb_new,
+                 "gain_backing_db": [gb, gb_new], "gain_db": ga, "mastered": mastered}
+
+
+def cmd_pool_rebuild(args):
+    import gc
+    import queue
+    import threading
+
+    import numpy as np
+
+    from learn import direct_stems as DS
+    from learn import knob_ceiling as K
+    from learn import pretrain_set as PS
+
+    require_real(args)
+    root = out_root(args)
+    rec, cpath = load_candidates(root, args.candidates)
+    if rec.get("smoke") and not args.smoke:
+        raise SystemExit("the candidate list is a smoke test's")
+    free = PS.free_gb()
+    if free < DISK_GUARD_GB:
+        raise SystemExit(f"free disk {free:.1f} GB, below the {DISK_GUARD_GB:.0f} GB guard")
+    rows, secs = scan_rows(root), build_sections()
+    variants = {sid: r["variants"] for sid, r in rows.items()}
+    plan = example_plan(desired_removals(rec["candidates"]), secs, variants)
+    proot = pool_root(root)
+    to_build = pool_state(plan, pool_rows(proot))[0]
+    print(f"pool-rebuild ({cpath.name}): {len(plan):,} examples wanted, {len(to_build):,} to build; X-LANCE on "
+          f"{args.device}, order {args.order}", flush=True)
+    if not to_build:
+        print("POOL-REBUILD DONE", flush=True)
+        return
+    ctx = DS.Ctx(quiet=True)
+    by_i = {r["i"]: r for r in ctx.pool}
+    todo = DS.render_order([by_i[i] for i in to_build], reverse=args.order == "desc")[:args.limit or None]
+    ctx.rows = None                                       # part C's rows (about 1.4 GB): the pool rows are kept above
+    gc.collect()
+    sep = DS.stem_separator(STEP_SEP, args.device)
+    swap0 = DS.swap_mb()
+    q, stop, err = queue.Queue(maxsize=QUEUE), threading.Event(), []
+    worker = f"{args.device}-{args.order}-{os.getpid()}"
+
+    def produce():
+        rr = None
+        try:
+            DS.wait_render_slot()
+            rr = K.Renderer()
+            primer = DS.Primer(rr)
+            menu = rr.menu()
+            DS.check_recipe(rr)
+            for r in todo:
+                if stop.is_set():
+                    break
+                gone = to_build[r["i"]]
+                key = removal_key(gone)
+                if (r["i"], key) in pool_rows(proot):                   # another worker's row: done
+                    continue
+                ex = DS.example_audio(ctx, primer, menu, r)
+                item = {"r": r, "gone": gone, "key": key}
+                if "refused" in ex:
+                    item["refused"] = ex["refused"]
+                else:
+                    stored = np.load(DS.ex_path(DS.ROOT, r["i"], "mix"))
+                    mels, lu, _ = DS.half_features(ex["mix"])
+                    ok, share, dl = parity(mels, lu, stored)
+                    item.update(orig_share=share, orig_lufs_diff=dl)
+                    if not ok:
+                        item["refused"] = "the original re-mix differs from the stored mix"
+                    else:
+                        item["mix"], item["rec"] = _rebuilt_mix(ctx, r, ex, gone)
+                while not stop.is_set():
+                    try:
+                        q.put(item, timeout=1)
+                        break
+                    except queue.Full:
+                        pass
+            print(f"renders {primer.renders} (priming {primer.primes})", flush=True)
+        except BaseException as e:                     # noqa: BLE001 - handed to the main thread
+            err.append(e)
+        finally:
+            if rr is not None:
+                rr.close()
+            while True:
+                try:
+                    q.put(None, timeout=1)
+                    break
+                except queue.Full:
+                    if stop.is_set():
+                        try:
+                            q.get_nowait()
+                        except queue.Empty:
+                            pass
+
+    th = threading.Thread(target=produce, daemon=True)
+    th.start()
+    rp = proot / "rows" / f"pool-{worker}.jsonl"
+    rp.parent.mkdir(parents=True, exist_ok=True)
+    n_done, refused, code = 0, 0, 0
+    t_start = time.time()
+    try:
+        with open(rp, "a") as fh:
+            while True:
+                item = q.get()
+                if item is None:
+                    break
+                g = DS._guards("pool", DISK_GUARD_GB, swap0)
+                if g:
+                    print(g[1], flush=True)
+                    code = g[0]
+                    stop.set()
+                    break
+                r, key = item["r"], item["key"]
+                if (r["i"], key) in pool_rows(proot):
+                    continue
+                row = {"i": r["i"], "section": r["section"], "band": r["band"], "early_stop": bool(r.get("early_stop")),
+                       "key": key, "removed": item["gone"], "candidates_sha256": sha256_file(cpath),
+                       "orig_share": item.get("orig_share"), "orig_lufs_diff": item.get("orig_lufs_diff")}
+                if "refused" in item:
+                    refused += 1
+                    row["refused"] = item["refused"]
+                else:
+                    t0 = time.time()
+                    mix = item["mix"]
+                    s = np.asarray(sep(mix), np.float64)
+                    if len(s) != len(mix) or not np.isfinite(s).all():
+                        raise SystemExit(f"{r['i']}: bad stem")
+                    mm, ml, _ = DS.half_features(mix)
+                    sm, sl, floor = DS.half_features(s)
+                    DS._save_npz(DS.ex_path(proot, r["i"], f"mix-{key}"), mA=mm["A"], mB=mm["B"],
+                                 lufs=[ml["A"], ml["B"]], gain_db=item["rec"]["gain_db"],
+                                 mastered=item["rec"]["mastered"])
+                    DS._save_npz(DS.ex_path(proot, r["i"], f"{STEP_SEP}-{key}"), sA=sm["A"], sB=sm["B"],
+                                 lufs=[sl["A"], sl["B"]])
+                    row.update(**item["rec"], lufs_mA=ml["A"], lufs_mB=ml["B"], lufs_sA=sl["A"], lufs_sB=sl["B"],
+                               floor_share=floor, sep=STEP_SEP, device=args.device, worker=worker,
+                               sep_seconds=round(time.time() - t0, 2))
+                fh.write(json.dumps(row) + "\n")
+                fh.flush()
+                n_done += 1
+                if n_done % 25 == 0:
+                    print(f"pool {n_done}/{len(todo)} i={r['i']} refused {refused}; "
+                          f"{(time.time() - t_start) / n_done:.1f} s each", flush=True)
+    finally:
+        stop.set()
+        while th.is_alive():
+            try:
+                q.get(timeout=1)
+            except queue.Empty:
+                pass
+        th.join()
+    if err:
+        raise err[0]
+    if code:
+        raise SystemExit(code)
+    print(f"POOL-REBUILD DONE ({n_done} this run, refused {refused}); run pool-status for the manifest", flush=True)
+
+
 # --- CLI -------------------------------------------------------------------------------------------------------
 
 def parse_shard(s):
@@ -1218,6 +1578,19 @@ def main(argv=None):
     p = sub.add_parser("rin-read", help="1b: F on the original against the rebuilt stems (paired, zero renders)")
     common(p)
     p.set_defaults(fn=cmd_rin_read)
+    p = sub.add_parser("pool-candidates", help="2 (data): the candidate list from step 0 (never overwrites verdicts)")
+    common(p)
+    p.set_defaults(fn=cmd_pool_candidates)
+    p = sub.add_parser("pool-status", help="2 (data): the candidate list against what is built; the manifest")
+    common(p)
+    p.add_argument("--candidates", help="the candidate list (default <out>/candidates.json)")
+    p.set_defaults(fn=cmd_pool_status)
+    p = sub.add_parser("pool-rebuild", help="2 (data): rebuild the pool examples the candidate list asks for (renders)")
+    common(p)
+    p.add_argument("--candidates", help="the candidate list (default <out>/candidates.json)")
+    p.add_argument("--device", choices=("mps", "cpu"), default="mps")
+    p.add_argument("--order", choices=("asc", "desc"), default="asc", help="two workers meet in the middle")
+    p.set_defaults(fn=cmd_pool_rebuild)
     args = ap.parse_args(argv)
     args.fn(args)
 

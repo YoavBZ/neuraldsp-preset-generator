@@ -14,6 +14,8 @@ use a reviewed trusted set, and dirty tracks are excluded, not flagged.
   compute.
 - **Data:** `~/ndsp-presets/learn/data-cleaning/`.
 - **Not run yet.** Only scratch smoke runs exist (listed under [Smoke](#smoke-development-decides-nothing)).
+  Step 2's data part (the candidate-driven pool rebuild) is built too; training waits for the user's
+  listening verdicts on the suspected doubles.
 - **Inputs read:** the [data-quality audit](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/272)
   (draft PR #272) and its evidence; [the plan](direct-model-stems-plan.md) (steps 3–4,
   amendments 2 and 5–7); [step 3–4 results](direct-model-stems-results.md);
@@ -363,6 +365,40 @@ the same reference the bleed audit uses for amp-track targets.
   - A size-matched random control is used only if the user declines the rebuild's renders and more
     than 5% is untrusted: same count, within band × level bin, `random.Random(20261096)`.
 
+### Step 2's data: the candidate-driven pool rebuild (built; no training)
+
+The user listens to the suspected doubles first (2026-10-23 morning), so the pool rebuild is driven by
+an editable candidate list. A verdict can then rebuild, or stop using, exactly the difference.
+- **`pool-candidates`** turns step 0's removals into `candidates.json`, one entry per (DI, track,
+  kind):
+  - **Doubles** (pitch-confirmed same-part tracks): `rebuild: true` until a verdict says otherwise.
+  - **Takes** (live-room tracks over the threshold): `rebuild: false` until they are reviewed.
+  - **Each entry lists:** its sections, the per-section evidence (chroma, onsets, power, both take
+    readings) and the pool and R_in examples it touches.
+  - **Verdicts are safe:** it never overwrites an existing list; a fresh one goes to
+    `candidates-new.json`.
+- **`pool-rebuild`:** for every pool example whose backing variant loses a switched-on candidate
+  track, it:
+  - **re-renders the guitar** (knob_ceiling's renderer, isolate=True, primed per section and amp, at
+    most 3 render processes machine-wide; `local_objective.RENDERS` counts it);
+  - **checks the original mix** against the stored one (99% of cells, LUFS within 0.01), or refuses
+    the example;
+  - **rebuilds the mix** without the tracks, as in step 1 (same draws, backing rescaled to the drawn
+    ratio);
+  - **separates** with X-LANCE.
+- **Storage:**
+  - Files go to `pool/build/ex/…-mix-<key>.npz` and `…-xlance_g-<key>.npz`, where the key names the
+    removed tracks; rows go to `pool/rows/`.
+  - The D build's original files are never touched, and no rebuild overwrites another.
+  - Two workers (MPS ascending, CPU descending) meet in the middle.
+- **`pool-status`** compares the list with what is built:
+  - **to build:** wanted, not yet built;
+  - **current:** built under the wanted key;
+  - **stale:** built under a key no longer wanted. The files are kept, and the example reads its
+    original again.
+  - It writes `pool/manifest.json`, the file list arm T would read.
+- **Nothing here trains.** Arm T waits for the verdicts and its own launch.
+
 ### What each outcome means
 
 | Reading | Meaning | Next |
@@ -385,6 +421,10 @@ for k in 0 1 2; do nice -n 10 $MAIN -m learn.data_cleaning scan --shard $k/3 & d
 $MAIN -m learn.data_cleaning lists                                 # 0c: under a minute; then review
 $MSST -m learn.data_cleaning rin-rebuild --device mps              # 1a: 4.3-5 s per untrusted R_in example
 $TORCH_PY -m learn.data_cleaning rin-read                          # 1b: about 3 min CPU
+$MAIN -m learn.data_cleaning pool-candidates                       # 2 data: seconds; listen, edit verdicts
+$MSST -m learn.data_cleaning pool-rebuild --device mps --order asc  # 2 data: renders + X-LANCE
+$MSST -m learn.data_cleaning pool-rebuild --device cpu --order desc # optional second worker
+$MAIN -m learn.data_cleaning pool-status                           # 2 data: the difference; the manifest
 ```
 
 | Item | Renders | Separations | GPU / MPS | CPU |
@@ -393,7 +433,8 @@ $TORCH_PY -m learn.data_cleaning rin-read                          # 1b: about 3
 | 0b scan | 0 | 0 | 0 | about 3 h single, about 1–1.5 h on 3 shards (about 4 GB each) |
 | 1a R_in rebuild | 0 | the untrusted R_in count: about 30 min for 374, up to about 2 h for all 1,407 | MPS | — |
 | 1b read | 0 | 0 | 0 | about 3 min |
-| 2 training-pool rebuild, v0 (about 3.6k) | about 3.6k | 4.3–5 h MPS alone, about 2.9 h with the CPU worker | MPS | — |
+| 2 data: pool rebuild of the confirmed doubles (about 1–3.2k examples, set by step 0) | one per example plus priming | 4.3–5 s per example on the MPS alone (1.2–4.5 h); about 0.35 examples/s with the CPU worker (0.8–2.6 h) | MPS | — |
+| 2 training-pool rebuild, all untrusted, v0 (about 3.6k) | about 3.6k | 4.3–5 h MPS alone, about 2.9 h with the CPU worker | MPS | — |
 | 2 rebuild, upper (about 13.4k) | about 13.4k | 16–19 h MPS alone, about 10.6 h with the CPU worker | MPS | — |
 | 2 consistent doubles (R_in) | about 374 plus priming | counted in 1a's re-separation | — | — |
 | 2 training (T, 2 seeds) | 0 | 0 | 2.3–2.6 h | — |
@@ -431,6 +472,12 @@ The smoke runs used scratch directories only.
   1.0, LUFS within 2×10⁻⁶).
 - **1b:** F − constant on R_in as stored read −0.0159 [−0.0363, +0.0046], exactly step 3's
   reading. The read path is right.
+- **Step 2's data:**
+  - `pool-candidates` listed Ale Lak's 02DT as a double: 154 pool examples, chroma 0.98 and 0.93.
+  - `pool-rebuild` rebuilt 3 of them with 4 renders (1 priming); the original mixes matched the
+    stored ones (cells 1.0).
+  - Switching the candidate off in a copy of the list turned those 3 stale (read as original), and
+    switching it back made them current again.
 
 ### Limits
 

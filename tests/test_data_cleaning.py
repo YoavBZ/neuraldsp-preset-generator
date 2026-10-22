@@ -8,6 +8,7 @@ import re
 import pytest
 
 np = pytest.importorskip("numpy")
+pytest.importorskip("scipy")
 
 from learn import data_cleaning as C  # noqa: E402
 
@@ -223,11 +224,72 @@ def test_smoke_flags_need_a_scratch_root():
     C.require_real(argparse.Namespace(smoke=True, out="/tmp/x", limit=2))
 
 
-def test_no_command_renders():
+def test_only_the_pool_rebuild_renders():
     from learn import local_objective as LO
 
-    for cmd in ("inject", "scan --shard 0/3", "lists", "rin-rebuild --device mps", "rin-read"):
+    for cmd in ("inject", "scan --shard 0/3", "lists", "rin-rebuild --device mps", "rin-read", "pool-candidates",
+                "pool-status"):
         assert not any(re.search(p, f"python -m learn.data_cleaning {cmd}") for p in LO.RENDERS)
+    assert any(re.search(p, "python -m learn.data_cleaning pool-rebuild --device mps") for p in LO.RENDERS)
+
+
+# --- step 2's data: the candidate-driven pool rebuild ---------------------------------------------------------
+
+def _scan_row(sid, di, tracks, variants=None, band="B"):
+    return {"section": sid, "di": di, "band": band, "source": {"kind": "amp"}, "onset_own": 0.5,
+            "variants": variants or {"v": list(tracks), "n": [t for t in tracks if "vox" not in t]},
+            "tracks": tracks}
+
+
+def _secs():
+    ex = lambda i, part, vocals, tag=None, refused=False: {  # noqa: E731
+        "i": i, "part": part, "band": "B", "early_stop": False, "split": "train", "tag": tag, "vocals": vocals,
+        "refused": refused}
+    return {"s1": [ex(1, "pilot", False), ex(2, "rest", True), ex(3, "rest", False, refused=True)],
+            "s2": [ex(4, "rest", True), ex(1000001, "vsep", True)]}
+
+
+def test_candidates_split_doubles_from_takes_and_count_examples():
+    dt = {"same_part": True, "power_db": {"A": -2.0, "B": -3.0}, "take_amp_db": None, "chroma": 0.95,
+          "onset": 0.4, "partner": True, "class": "guitar"}
+    room = {"same_part": False, "power_db": {"A": 2.0, "B": 2.0}, "take_amp_db": -20.0, "chroma": 0.1,
+            "onset": 0.2, "partner": False, "class": "drums"}
+    vox = {"same_part": False, "power_db": {"A": 0.0, "B": 0.0}, "take_amp_db": -25.0, "chroma": 0.2,
+           "onset": 0.1, "partner": False, "class": "vocal"}
+    rows = {"s1": _scan_row("s1", "d1", {"dt": dt, "room": room}),
+            "s2": _scan_row("s2", "d1", {"dt": dt, "room": dict(room, take_amp_db=-50.0), "vox": vox})}
+    cands = C.candidates_from(rows, _secs())
+    by = {(c["track"], c["kind"]): c for c in cands}
+    assert by[("dt", "double")]["rebuild"] and by[("dt", "double")]["sections"] == ["s1", "s2"]
+    assert by[("dt", "double")]["pool_examples"] == 3 and by[("dt", "double")]["r_in_examples"] == 1
+    assert not by[("room", "take")]["rebuild"] and by[("room", "take")]["sections"] == ["s1"]
+    assert by[("vox", "take")]["pool_examples"] == 1                   # only the with-vocals example of s2
+    assert cands[0]["kind"] == "double" and by[("dt", "double")]["verdict"] is None
+
+
+def test_the_plan_follows_the_switched_on_candidates_and_each_examples_variant():
+    variants = {"s1": {"v": ["dt", "vox"], "n": ["dt"]}, "s2": {"v": ["dt", "vox"], "n": ["dt"]}}
+    cands = [{"track": "dt", "sections": ["s1", "s2"], "rebuild": True},
+             {"track": "vox", "sections": ["s2"], "rebuild": True},
+             {"track": "room", "sections": ["s1"], "rebuild": False}]
+    plan = C.example_plan(C.desired_removals(cands), _secs(), variants)
+    assert plan == {1: ["dt"], 2: ["dt"], 4: ["dt", "vox"]}             # no refused, no V_sep example
+    cands[0]["rebuild"] = False
+    assert C.example_plan(C.desired_removals(cands), _secs(), variants) == {4: ["vox"]}
+
+
+def test_pool_state_builds_and_unbuilds_the_difference():
+    k = C.removal_key
+    assert k(["a", "b"]) == k(["b", "a"]) != k(["a"])
+    built = {(1, k(["dt"])): {"i": 1, "key": k(["dt"])}, (2, k(["dt"])): {"i": 2, "key": k(["dt"])},
+             (5, k(["x"])): {"i": 5, "key": k(["x"]), "refused": "the original re-mix differs"}}
+    to_build, current, stale = C.pool_state({1: ["dt"], 4: ["dt", "vox"], 5: ["x"]}, built)
+    assert set(current) == {1} and to_build == {4: ["dt", "vox"]} and set(stale) == {2}
+    # a candidate switched off: its rebuilds go stale and the examples read their originals again
+    to_build, current, stale = C.pool_state({}, built)
+    assert not to_build and not current and set(stale) == {1, 2}
+    # a refused rebuild is not retried
+    assert 5 not in C.pool_state({5: ["x"]}, built)[0]
 
 
 def test_declared_constants():
