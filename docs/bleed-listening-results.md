@@ -1,5 +1,9 @@
 # Bleed listening check 1: results (2026-10-16)
 
+*Superseded 2026-10-22 (the user): "use only what we can trust, no dirty tracks". Dirty tracks are
+now excluded, not flagged, so the "stay flagged" and no-high-bleed-row practice below is
+historical ([ROADMAP](ROADMAP.md), step 0).*
+
 Plan: [bleed-listening-plan.md](bleed-listening-plan.md). One sitting by the user, scored with
 `learn.build_bleed_listening score`. Answers: `1Both-no 2N-no 3N-no 4Both-no 5Both-no 6N-no`.
 
