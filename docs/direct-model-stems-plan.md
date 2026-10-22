@@ -1330,7 +1330,7 @@ failed. The point estimate favours D over the constant, and the gate had little 
   them stay as declared.
 - **Step 4's own early stops still apply:** the parity test, the repeat check (6 groups within
   1e-3), the cap of 400 renders, and the disk and STOP-file guards.
-- **The label.** Every step 4 output, and the results doc, carries the label **"run under a user
+- **The label.** Step 4's predict, render and report outputs, and the results doc, carries the label **"run under a user
   override of a GATE STOP"**.
 
 ### Code

@@ -195,9 +195,9 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       *Amendment 7 (2026-10-22, user):* the gate read GATE STOP (log d D − constant −0.1538
       [−0.3360, +0.0284], 4 bands; power about 46%; D − D0 −0.1266 [−0.1864, −0.0669]). Step 4
       runs anyway, unchanged, labelled "run under a user override of a GATE STOP".
-      *Now (2026-10-22):* the X-LANCE build finishes about 04:00. Step 3's training of D_stem and
-      D0 (3 seeds each, xlance_g) follows automatically, then the readout. The gate's truth and
-      constant renders run during training, and D's and D0's after the readout.
+      *Now (2026-10-22):* the X-LANCE build (15,310 examples, 0 refused), step 3's training (6 runs)
+      and the readout are done (masked E, D − constant: R_in −0.0159 [−0.0363, +0.0046], V_dev
+      −0.0143 [−0.0223, −0.0063]); the gate read STOP; step 4 runs under amendment 7.
       *Next planning item:* how and when this model and arm A cover every control (the user's
       rule, 2026-10-21), proposed after step 3's result.
    3. **Two zero-render checks.** *Done 2026-10-19 ([results](shrink-snr-judge-v3-results.md)):*
