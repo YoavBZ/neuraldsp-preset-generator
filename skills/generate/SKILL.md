@@ -138,9 +138,9 @@ When the sources are thin, say so in the report rather than filling the gap with
 Capture: the **amp character** (Vox / Marshall / Fender-ish? clean, edge, or driven?), the
 **effects** (delay, reverb, modulation, drive pedals), and the part's **place in the mix**.
 Keep the source links — you'll cite them. For a real song, also write its **arrangement
-prior** ([format, rules, check](../../reference/arrangement.md)): every guitar, the sections
-each plays and known sound changes (a pedal in the chorus, a solo tone), with sources and
-confidence; say in the report where you wrote it.
+prior** ([format, rules, check](../../reference/arrangement.md)): every guitar in the whole
+song, not only the part asked for, the sections each plays and known sound changes (a pedal
+in the chorus, a solo tone), with sources and confidence; say in the report where.
 
 **Effects stay off unless documented.** The starting presets are made dry. Turn a reverb,
 delay or modulation back on only when research documents it on this part (a named effect,
