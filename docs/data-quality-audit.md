@@ -19,21 +19,30 @@ Held-out data (sets 4–6, Guitar-TECHS P3, `dev-test-ledger.json`) was not touc
 
 1. **The biggest dirt is in the separated stems the direct model trains and is scored on, not
    in the DIs or labels.**
-   - **Training pool** (21,304 stored X-LANCE stems): a median of **45%** of a stem's mel power
-     is not explained by the rendered guitar it is labelled with. 41% of examples are above
-     50%, and 17% are above 70%.
+   - **Training pool** (21,304 stored X-LANCE stems): in a median example, **45%** of the
+     stem's mel power lies above the rendered guitar, once the two are aligned by their median
+     level difference. That excess counts other music in the stem, but also any spectral
+     mismatch between stem and render: it correlates with the per-cell error at ρ 0.64. 41% of
+     examples are above 50%, and 17% are above 70%.
    - **V_sep:** the same, at 45%, with all three separators (X-LANCE, Mega-53, htdemucs).
-   - **Floor:** examples where the guitar is at or above the backing level read 22%. That is
-     roughly what separator colouring alone produces.
+   - **No measured floor.** Examples with the guitar at or above the backing level read 22%.
+     *Inference:* that is a rough floor, but those examples still have backing only 0–2 dB
+     under the guitar, and separator colouring alone was never measured.
 2. **Contamination costs accuracy.**
    - **Within each R_in band,** examples in the most-contaminated third score worse on step 3's
      sound gate than those in the least-contaminated third, by **+0.103 log d [+0.055,
      +0.156]**.
    - **Holding the guitar's level fixed,** each +0.1 of contamination costs **+0.026
      [+0.014, +0.040]**.
-   - **The band ranking matches** (finding). Swatkins (median contamination 0.25) and John
-     Morgan Kimock (0.39) are the two bands that gained (−0.287, −0.283). Adam Buckley (0.50)
-     and Dark Ride (0.64) are the two that stayed flat (−0.061, +0.016).
+   - **The band ranking matches, but explains only part of the gap.** Swatkins (median
+     contamination 0.25) and John Morgan Kimock (0.39) are the two bands that gained (−0.287,
+     −0.283). Adam Buckley (0.50) and Dark Ride (0.64) are the two that stayed flat (−0.061,
+     +0.016).
+     - A 4-band ranking matches like this at random 1 time in 24.
+     - The within-band slope predicts only about 0.05–0.10 of the 0.26–0.30 gap between the
+       strong and flat bands, depending on how it is computed.
+     - Low-contamination examples still differ by band: Dark Ride −0.04 and Adam Buckley
+       −0.12, against −0.33 to −0.35 for the strong bands.
 3. **What contaminates the stems:**
    - **The guitar's level in the mix.** 16% of training examples put the guitar more than
      15 dB under the backing. Their contamination is 0.70.
@@ -45,17 +54,20 @@ Held-out data (sets 4–6, Guitar-TECHS P3, `dev-test-ledger.json`) was not touc
    - **Where:** 6 of stage F's 42 halves and 8 of knob ceiling 2's 48 halves read high bleed.
      They are all Telefunken live sessions. They are exactly the parts the user complained
      about.
-   - **No DI is paired with the wrong amp track.** Wherever the DI plays, it plays the same
-     notes as its target (chroma similarity ≥ 0.70 in every played half of all 59
-     label-table parts).
+   - **No wrong-DI pairing was found** where the check can see one. In all 94 label-table
+     halves where the DI plays, it plays the same notes as its target. The minimum chroma
+     similarity is 0.696 (Today's The Day ElecGtr07, half A). This rules out a DI paired with
+     a part playing different notes. It cannot rule out a swap between two guitars playing the
+     same chords (see §3b).
 5. **Trial 47 (Sculptor's Request GTR 1).** The render and the reference play the same notes
    at the same place (chroma 0.94), and the DI follows its amp track across the song. The
    files are not swapped. What the user heard is not explained by a wrong DI. See below.
 6. **The DIs themselves are clean.** Part A's screen already removed hum, clipping and
    drop-outs. The pool's 332 sections have 0 clip runs, 0 drop-outs and hum below −56 dB.
-7. **First step:** a clean-versus-random retrain at pilot scale, with E on V_dev read first
-   (zero renders). It is the cheapest test that decides whether cleaning the *training* stems
-   helps, as opposed to cleaning the test stems. See [the plan](#the-cleaning-plan-cheapest-decisive-first).
+7. **First step:** a clean-versus-random retrain at full size: 3 arms × 2 seeds, about 6 h
+   of MPS. The control is a random drop matched by band × guitar-level bin. Masked E on V_dev
+   is read first, at zero renders. It is the cheapest test that decides whether cleaning the
+   *training* stems helps, as opposed to cleaning the test stems. See [the plan](#the-cleaning-plan-cheapest-decisive-first).
 
 ## 1. What the user reported
 
@@ -115,12 +127,17 @@ stored separator stem mel (`direct-stems/build/ex`). Both are on part C's 0.5-dB
 - Use half A from 1 s on, and half B.
 - Find the level offset as the median of (stem − render) on the render's active cells (those
   within 50 dB of its maximum).
-- **Contamination** is the share of stem power that lies above the level-shifted render. In
-  other words, how much of the stem is not the labelled guitar.
+- **Contamination** is the share of stem power that lies above the level-shifted render.
+- **What it counts:** other music in the stem, and also any spectral or time mismatch between
+  stem and render: separator colouring, mastering, smearing. It is not a pure "share that is
+  not the labelled guitar".
+  - **Against the error:** across halves it correlates with the mean per-cell |stem − render|
+    on the active cells at Spearman ρ 0.64.
 - **Reliability:** halves A and B agree, r = 0.87.
-- **Floor:** examples whose guitar is at or above the backing (ratio ≥ −2 dB, n = 787) read
-  0.22. That is about what the separator's colouring and mastering add with no backing in the
-  stem.
+- **No measured floor.** Examples whose guitar is at or above the backing (ratio ≥ −2 dB,
+  n = 787) read 0.22. *Inference:* that is a rough floor for colouring and mastering, but
+  those stems still carry backing 0–2 dB under the guitar. Separator colouring alone, a stem
+  of a solo render, was never measured.
 
 **Training pool** (21,304 X-LANCE stems; 7 of the 21,311 were refused at build):
 
@@ -245,8 +262,15 @@ These were joined to the bleed audit
   in both tracks. Others leave the reference holding only bleed at about −40 dB: Until I Get
   Back B, Lost & Alive B, Measurements B.
 - **Stage F's rule** (a finite S on both halves) already removed all of these but She's Gone A.
-- **No swapped pairs:** in every half where the DI plays, chroma similarity with the reference
-  is ≥ 0.70.
+- **No swapped pairs that chroma can see.** In the 94 halves where the DI plays (at least 50% of
+  frames), chroma similarity with the reference is ≥ 0.696. The minimum is Today's The Day
+  ElecGtr07, half A.
+  - **Ruled out:** a DI paired with a reference playing different notes or chords.
+  - **Not ruled out:**
+    - a swap between two guitars playing the same chords, where chroma matches either way;
+    - the 24 halves where the DI is silent or nearly so.
+  - **Partial check for same-chord swaps:** onset correlation. The 5 halves with onset
+    correlation below 0.35 (§3b table) are candidates, not shown swaps.
 
 ### 3c. DI-to-amp-track correspondence across the DI library (session level)
 
@@ -266,7 +290,9 @@ checked against every track instead.
   Today's The Day ElecGtr04 and The Long Wait ElecGtr1. Each plays the same notes as its own
   amp track (0.43–0.95). Where ensemble guitars play the same chords, others score about as
   high, but none is clearly higher.
-- **No DI was found paired with the wrong amp track.**
+- **No DI was found to follow another track clearly better than its own amp.** The same limit
+  applies: when guitars play the same chords, chroma cannot tell them apart. Onsets can, but
+  they are weak through heavy distortion.
 
 **Same-riff tracks left in the backing.** These are non-own amp tracks whose onsets follow the
 DI at r > 0.6 in at least 25% of its windows. 9 DIs have one, 7 of them in the direct pool or
@@ -322,12 +348,30 @@ GTR 2's DI follows GTR 2's amp at r ≈ 0.95 throughout. **The DIs are not swapp
 **What is in R:**
 - the drum room mic at −10.9 dB (half A) and −12.6 dB (half B), per the bleed audit; flagged
   high on both halves;
-- GTR 2 at about −11 dB in half A (NNLS share 0.07), and about 0 in half B.
+- GTR 2 at about −11 dB (NNLS share 0.07) in the 10-s window from 118.5 s, which covers both
+  halves; about 0 in the window from 123.5 s.
 
-B's onsets match R's less well (0.69) than R's match the DI (0.82).
+**R's onsets follow the backing more than its own DI.**
+
+| Half | Reference ↔ backing | Reference ↔ own DI |
+|---|---|---|
+| A | 0.64 | 0.50 |
+| B | 0.58 | 0.50 |
+
+So much of what is rhythmically audible in R is not GTR 1. Also, B's onsets match R's less well
+(0.69) than R's match the DI (0.82).
+
+**Two half-B bleed figures, reconciled.** The bleed audit puts half B's drum room at −12.6 dB.
+The NNLS split here gives the backing a 0.006 share of half B's 200–4000 Hz power envelope.
+*Inference:* both can hold. The NNLS fits 10-ms power envelopes, and bleed that rises and falls
+with the guitar is absorbed into the DI's coefficient. The share it gives the backing is a
+lower bound on bleed power, not an estimate. The bleed audit's coherence model is the better
+level estimate. The backing's onset lead above is the more direct sign that the bleed is
+audible.
 
 **Inference:**
-- **The leakage he heard is real and measured:** drum room, plus GTR 2 in half A.
+- **The leakage he heard is real and measured:** the drum room, whose onsets R follows more than
+  GTR 1's own, plus some GTR 2.
 - **"Follows the wrong guitar" is not a wrong DI or a misplaced crop.** The likeliest
   explanation is that the bleed in R (drums plus a second guitar) makes R sound like a
   different performance from the dry, isolated render. The render's attack and envelope
@@ -394,8 +438,11 @@ averaged over halves). Joined to each example's X-LANCE contamination:
   | Swatkins | −0.330 | −0.112 |
 
 - **Inference:**
-  - Most of the gap between the "strong" and "flat" bands is how much of each band's stem is
-    other music.
+  - Contamination explains only part of the gap between the "strong" and "flat" bands. The
+    within-band slope predicts about 0.05–0.10 of a 0.26–0.30 gap, and low-contamination
+    examples still differ by band (Dark Ride −0.04, Adam Buckley −0.12–0.15, against −0.33
+    to −0.35). A 4-band ranking that matches would arise by chance 1 time in 24. Something
+    else about Dark Ride and Adam Buckley also costs.
   - Dark Ride has almost no clean examples (8 of 403 below 0.3).
   - This is contamination of the **test** stem, and realistic songs have it too. So it says
     contamination costs, not yet that the *training* labels are dirty enough to matter. §5
@@ -434,36 +481,69 @@ be reported with intervals and no pass bar ([learn from improvements](ROADMAP.md
 
 ### Step 1 (cheapest decisive test): does cleaning the *training* stems help?
 
-**Arms.** Train D_stem on the pool:
-- **(a) clean:** minus examples with contamination > 0.6. That drops 5,845 (27%): Renesans
-  53%, Eggy 30%, Storm 29%, Death Of A Romantic 24%, Hollow Ground 17%, Ale Lak 16%, Rebuild
-  The Evil 7%.
-- **(b) control:** minus the same number per band, chosen at random. This keeps quantity equal,
-  so the contrast reads quality alone.
+**Strata.** Levels are binned by the guitar-to-backing draw: < −15, −15 to −10, −10 to −5 and
+≥ −5 dB. Combined with the 9 bands, these give band × level cells. Contamination is taken from
+`sections.json` / `stem_contam.py`; 7 refused examples are left out as in step 3.
 
-**Recipe:** the step 3 recipe, 2 seeds per arm. About 4 × 1 h of MPS on 15.5k examples. A
-5k-example pilot version would take about 4 × 20 min.
+**Arms.** D_stem is trained on the 20,311 training examples less the drops below. The
+1,000 early-stopping examples are unchanged.
 
-**Readout first, zero renders:**
-- masked E on V_dev, (a) − (b), paired per example, band-clustered t over 5 bands;
-- plus the same split by test contamination tercile.
+| Arm | Drops | What it isolates |
+|---|---|---|
+| **(a) clean** | Every example with contamination > 0.6: 5,845 (27%). By level bin: 2,224 / 2,265 / 1,116 / 240, i.e. 65% / 36% / 14% / 6% of each bin. | Cleaning, as a simple filter would do it. It also shifts the level mix: the share of draws below −15 dB falls from 16% to 8%. |
+| **(b) control** | In every band × level cell, the same number as (a) drops there, chosen at random (seeded). | Same size and same band × level mix as (a). (a) − (b) is the cost of the contaminated examples themselves, at matched band and level. |
+| **(c) level-neutral clean** | In every band × level cell, the most contaminated 27.4%: 5,836. | Keeps the full pool's level mix and band mix while removing about as much contamination as (a): median kept 0.375, against 0.370 for (a) and 0.446 for the full pool. (c) − (a) shows whether (a)'s level shift matters. |
 
-**Then, only if E moves:** step 3's sound gate on R_in for the two arms' D. It reuses the stored
-truth and constant renders, so it needs about 2 × 1,407 renders.
+**Seeds and recipe:**
+- 2 seeds per arm (20261042, 20261043);
+- step 3's D_stem recipe and readout unchanged: X-LANCE stems, at most 40 epochs, patience 4,
+  amendment 5's mixture-median readout pulled toward the constant.
 
-**What it decides:** whether training-label contamination costs anything beyond what the test
-stems already cost. If (a) ≈ (b), training contamination is not the lever: put the effort into
-test-time separation and level (step 3). If (a) is better, adopt the filter and test a stricter
-threshold (0.5, 41% dropped).
+**GPU time:**
+- **Full size (about 14.5k examples per arm): about 6 h.** Step 3's D_stem runs took 67–77 min
+  on 20.3k examples, so these should take about 50–60 min each. 6 runs make about 5–6 h of
+  MPS, run one after another.
+- **5k size (about 20 min each, about 2 h):** cheaper, but the pilot's seed-to-seed spread at
+  5k was about 0.02 E (D_stem seeds read +0.003 and +0.023 on R_in). Step 3's whole D −
+  constant effect was −0.014 E, so an effect of the size a cleaning filter could plausibly
+  have would read as a tie at 5k.
+- **The decisive version is the full size.** The 5k version decides only if the effect is
+  larger than about 0.03 E.
+
+**Readouts, all zero renders, in this order:**
+1. **Primary:** masked E on V_dev (1,720 examples, 5 bands), (a) − (b), seed-averaged, paired per
+   example, band-weighted with a band-clustered t interval (4 df).
+2. **Noise floor, beside it:** the seed-to-seed difference within each arm (seed 20261042 −
+   20261043, the same statistic). An (a) − (b) no larger than the seed difference is reported as
+   inside seed noise.
+3. **Secondary:** (c) − (b) and (c) − (a), the same way.
+4. **By test contamination tercile:** all three contrasts again, split by each V_dev example's
+   own stem contamination. This shows whether cleaner training helps on clean or on dirty test
+   stems.
+5. **R_in alone** (4 bands, without Bannockburn), for continuity with step 3.
+
+**Renders only if the user asks after reading E:** step 3's sound gate on R_in for the arms' D.
+The stored truth and constant renders are reused, so it costs about 1,407 renders per arm.
+
+**What it decides:**
+- **If (a) ≈ (b) within seed noise,** training contamination is not the lever. Put the effort
+  into test-time separation and level (step 2).
+- **If (a) or (c) is better than (b),** adopt the better filter, then test a stricter threshold
+  (0.5, 41% dropped) the same way.
+- Effects are reported with intervals and no pass bar.
+
+**To approve:**
+- 6 MPS runs, about 6 h;
+- 0 renders (about 2,800 more only on request).
 
 ### Step 2 (zero renders): stop the level draw from burying the guitar
 
 **Change:** the 16% of draws with the guitar more than 15 dB under the backing produce stems
 that are 70% other music.
 
-**Test:** this can ride on step 1 as a third arm. Cap the ratio at −15 dB by redrawing, which
-needs a rebuild of those examples' mixes and stems: about 3.4k X-LANCE runs, roughly 4 h.
-Alternatively, drop them (no rebuild) and compare with the random control.
+**Test:** step 1's (c) − (a) reads part of this already, because (a) drops most of the quiet
+draws and (c) keeps them. A direct test would cap the ratio at −15 dB by redrawing. That needs
+a rebuild of those examples' mixes and stems: about 3.4k X-LANCE runs, roughly 4 h.
 
 **Inference:** the songs users bring have an audible target guitar (U4, U16). A floor matches
 the product.
@@ -510,7 +590,7 @@ Cap Eggy (35% of examples) and the high-gain-style DIs per band. Same paired des
 ## Limits
 
 - **The contamination measure is mel-domain and approximate.** Colouring by the separator, and
-  mastering, count as "excess". Hence the 0.22 floor. Its ranking is stable across separators
+  mastering, count as "excess" (ρ 0.64 with the per-cell error). The 0.22 read at ratio ≥ −2 dB is not a measured floor. Its ranking is stable across separators
   and halves (r = 0.87).
 - **The onset measures are weak on heavily distorted parts.** Cnoc An Tursa ElecGtr1 reads
   0.08 against its own amp across ±3 s of lag. Chroma is the more robust check of "same notes",
