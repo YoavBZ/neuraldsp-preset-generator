@@ -183,3 +183,29 @@ recipes, the readout and the judge are fixed before any real-mix render.
 - **No training of any kind,** no new separator, no rented machine and no download. The previews
   are already local. Moises is not used.
 - **Optional, a separate yes:** arm A on the 6 unmastered parts, about 2,000 more renders.
+
+## Implementation notes (code, 2026-10-22; PR #277)
+
+Recorded with the code after its review, before any real-mix render. They change no estimate,
+recipe or judge.
+
+- **Trusted parts:** every command takes `--trusted FILE`, the trusted list from the data review,
+  and refuses to run without it. An entry can also trust one held half (`slug:A`).
+- **The repeat check uses 12 renders, not 6:** each of its 6 S renders gets a discarded priming
+  render (the priming rule). The total is 5,811 renders on all 17 parts, under the 6,300 cap.
+- **"As mixed" lag:** one lag per direction, fitted on its search half from the plain
+  cross-correlation (sign free).
+  - The method was chosen on lag agreement with the real-mix stems' logged lags (14 of 17 parts),
+    not on any score.
+  - GCC-PHAT locked onto the amp track's bleed at lag 0 (wickerman 1–3 read 0 instead of 398).
+- **The coherence floor stays at the declared 0.1, so "as mixed" is a thin row.** Measured on all 17
+  parts (zero renders), only 5 pass: Quicksand 2, femme 5, get-out-of-bed 2, Let's Dance 3 and 4 (4
+  bands). The unity mixes mostly read below 0.1 too.
+  - A part trusted on one held half only is also left out of this row, since its fit would read the
+    untrusted half.
+- **Plumbing checks added as stops:**
+  - the real-mix crops re-derived from the previews (1e-6);
+  - the stored S renders re-judged against today's `reference.wav` (0.005);
+  - the X-LANCE separator reproducing step 4's stored stem (40 dB);
+  - step 4's unity D answers reproduced (A1+A2 within 1e-5, and every pulled setting equal);
+  - a rerun of `inputs` refusing changed input hashes.

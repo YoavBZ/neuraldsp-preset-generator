@@ -200,8 +200,10 @@ def test_regexes_count_this_tests_renders_and_separation():
         assert any(re.search(p, f"python -m learn.real_mix_test {cmd}") for p in LO.RENDERS), cmd
     for cmd in ("inputs", "predict", "report", "as-mixed", "rebuild", "separate"):
         assert not any(re.search(p, f"python -m learn.real_mix_test {cmd} --trusted t") for p in LO.RENDERS), cmd
+    for cmd in ("inputs", "predict", "report", "render"):
+        assert not A._matches(f"{PY} -m learn.real_mix_test {cmd} --trusted t", A.SEPARATIONS), cmd
     assert A._matches(f"{PY} -m learn.real_mix_test separate --trusted t --device cpu", A.SEPARATIONS)
-    assert not A._matches(f"{PY} -m learn.real_mix_test rebuild --trusted t", A.SEPARATIONS)
+    assert A._matches(f"{PY} -m learn.real_mix_test rebuild --trusted t", A.SEPARATIONS)    # as arm_a_mega53's rebuild
     assert A._matches(f"{PY} -m learn.real_mix_test render --trusted t", A.RENDERS)
 
 
@@ -413,7 +415,8 @@ def test_unit_values_fall_back_to_s_and_count_refusals(tmp_path, monkeypatch):
     s4 = {"status": "done", "judge": {"D|A": {"A": 1.0, "B": 2.5}}}
     value_of, refused = M.unit_values(tmp_path, lambda s, a: s4)
     assert value_of("S", u) == 5.0 and value_of("M_unity", u) == 5.0 and value_of("M_real", u) == 3.0
-    assert value_of("D_unity", u) == 2.5 and value_of("D_real", u) == 5.0 and refused["D_real"] == 1
+    assert value_of("D_unity", u) == 2.5 and value_of("D_real", u) == 5.0 and len(refused["D_real"]) == 1
+    assert value_of("D_real", u) == 5.0 and len(refused["D_real"]) == 1        # read again (the unmastered units): once
     assert value_of("D_unm", u) is None
 
 
@@ -440,3 +443,35 @@ def test_the_ledger_has_this_tests_entry():
     e = e[0]
     assert e["plan"] == "docs/real-mix-test-plan.md" and sorted(e["parts"]["candidates"]) == sorted(M.PARTS)
     assert e["held_out"] == "none touched" and "outcome" not in e
+
+
+# --- review fixes (PR #277) -----------------------------------------------------------------------------
+
+def test_the_unity_check_needs_equal_pulled_settings_too():
+    good = {"k1": {"a1a2_max_abs_diff": 0.0, "settings_equal": True}, "k2": {"a1a2_max_abs_diff": 1e-7, "settings_equal": True}}
+    assert M.unity_check_ok(good)
+    assert not M.unity_check_ok({**good, "k3": {"a1a2_max_abs_diff": 0.0, "settings_equal": False}})   # a changed pull
+    assert not M.unity_check_ok({**good, "k3": {"a1a2_max_abs_diff": 1e-4, "settings_equal": True}})
+    assert not M.unity_check_ok({})
+
+
+def test_half_only_parts_leave_the_as_mixed_row():
+    run = {"cambridge-magilla-elecgtr1": ["A", "B"], "cambridge-femme-elecgtr5": ["A"], "cambridge-Quicksand-ElecGtr2": ["B"]}
+    assert M.as_mixed_parts(run) == (["cambridge-magilla-elecgtr1"], ["cambridge-Quicksand-ElecGtr2", "cambridge-femme-elecgtr5"])
+
+
+def test_a_rerun_of_inputs_refuses_changed_hashes():
+    old = {"alignment": "a", "real_crop": {"p--x": "h1"}, "parts": {"p": {"reference.wav": "r1", "di.wav": "d1"}}}
+    assert M.hash_changes(old, json.loads(json.dumps(old))) == []
+    new = json.loads(json.dumps(old))
+    new["parts"]["p"]["reference.wav"] = "r2"                            # a cleaned amp track
+    new["real_crop"]["q--x"] = "h9"
+    assert M.hash_changes(old, new) == ["parts/p/reference.wav", "real_crop/q--x"]
+    assert M.flat({"a": {"b": {"c": 1}}, "d": 2}) == {"a/b/c": 1, "d": 2}
+
+
+def test_the_reports_notes_say_what_the_review_asked():
+    n = M.NOTES
+    assert "12 renders" in n["repeat_check"] and "5,811" in n["repeat_check"] and "6,300" in n["repeat_check"]
+    assert "lag agreement" in n["as_mixed_lag"] and "not on any score" in n["as_mixed_lag"]
+    assert "0.1" in n["coherence"] and "5 pass" in n["coherence"]

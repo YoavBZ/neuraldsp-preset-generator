@@ -34,7 +34,8 @@ closed); each crop covered by `alignment.json` and re-derived from its preview f
 stored offset within 1e-6; the Mega-53 run equal to stage F's (checkpoint, pruned head, CPU at 4
 threads, chunking); stage F's S, M and step 4's D stored for every run direction; each stored S
 render (kept FLAC) re-judged against today's `reference.wav` within 0.005 of its stored judge (a
-cleaned amp track or DI would make the stored unity side stale). Logged, zero renders: each stem's
+cleaned amp track or DI would make the stored unity side stale). A rerun refuses when an ok record's
+hashes would change. Logged, zero renders: each stem's
 lag against the raw track (±100 ms, gain-fitted, sign free; the mix-previews report's), which
 replaces stage F's ±3-sample check against the htdemucs crop.
 
@@ -51,8 +52,8 @@ fallback to S counted.
 (mastered, and unmastered where there is one) with step 4's separator (`predictions.json`'s
 `stem_sep`: X-LANCE gtr_mss), after re-separating one stored unity crop against step 4's stored
 stem (≥ 40 dB, a plumbing check). `predict` loads step 3's models (hashes against step 4's
-`predictions.json`) and pull, first reproduces step 4's unity answers (A1+A2 within 1e-5; else it
-stops), then answers on the real stems: the mix gets one gain to the training median and the stem
+`predictions.json`) and pull, first reproduces step 4's unity answers (A1+A2 within 1e-5 and every
+pulled setting equal; else it stops), then answers on the real stems: the mix gets one gain to the training median and the stem
 the same gain, the search half only. Zero-render rows: the damping row (the answer's movement
 before and after amendment 5's pull, with the pull weight) and the lag/polarity control (the unity
 stem shifted by the part's mix lag, and sign-flipped). Every D output carries step 4's label.
@@ -61,7 +62,8 @@ stem shifted by the part's mix lag, and sign-flipped). Every D output carries st
 rebuild at S, arm A's directions, then D's real-mix (and unmastered) answers through the measure
 DI (the DI arm A's judges left primed, same amp; a resumed group primes again). Before any group,
 shard 0 re-renders S on 6 groups (`random.Random(20261092)`, a priming render each) within 1e-3 of
-the stored judge, or every shard stops; the others wait for it. isolate=True; at most 3 render
+the stored judge, or every shard stops; the others wait for it (12 renders, not the plan's 6: each S render
+is primed; 5,811 renders on all 17 parts stay under the cap). isolate=True; at most 3 render
 processes machine-wide (counted as python jobs and render servers at start); the 31 GB disk guard;
 the swap guard; a hard cap of 6,300 renders; resumable by direction (arm A) and render (D).
 
@@ -74,7 +76,9 @@ input level shift, the damping and control rows, and "as mixed" (`as-mixed`, zer
 target is `reference.wav` carried into the real mix by a lag and a 1/3-octave EQ fitted on each
 direction's search half (the cross-correlation's peak, then |Σ S_xy| / Σ S_xx per band), every arm re-judged on the held
 half from the kept FLACs at judge_lag + that lag; a part is left out when a fit's mean coherence
-over 0.2-5 kHz is below 0.1; the same fit on the unity mix is the control.
+over 0.2-5 kHz is below 0.1 (the declared floor: about 5 of 17 parts pass, a thin row), and when only
+one held half is trusted (its fit would read the untrusted half); the same fit on the unity mix is the
+control. The lag method was chosen on lag agreement with the stems, not on scores (`NOTES`).
 
 The pure parts are unit-tested (`tests/test_real_mix_test.py`); the commands that load audio,
 models or the renderer are not, like the other step modules.
@@ -155,6 +159,16 @@ UNM_CONTRASTS = {"D_unmastered_minus_D_unity": ("D_unm", "D_unity"), "D_unmaster
 ROWS = ("all", "lagged", "flipped", "xlance_failures")
 SEP_MIN_GB = 4.0
 REPEAT_WAIT_S = 1800
+NOTES = {
+    "repeat_check": ("the repeat check uses 12 renders, not the plan's 6: each of its 6 S renders is primed (one "
+                     "discarded render after a DI or amp change); 5,811 renders on all 17 parts stay under the 6,300 cap"),
+    "as_mixed_lag": ("'as mixed' fits one lag per direction on its search half from the plain cross-correlation; that "
+                     "method was chosen on lag agreement with the real-mix stems' logged lags (14 of 17 parts; "
+                     "GCC-PHAT locked onto amp-track bleed at lag 0), not on any score"),
+    "coherence": ("the 'as mixed' coherence floor stays at the declared 0.1, so the row is thin: on all 17 parts only 5 "
+                  "pass (Quicksand 2, femme 5, get-out-of-bed 2, Let's Dance 3 and 4; 4 bands), measured 2026-10-22 "
+                  "with zero renders; the unity mixes mostly read below 0.1 too"),
+}
 POLL_S = 60
 
 
@@ -411,6 +425,14 @@ def stored_problems(dirs, s_done, m_done, d_done, in_log):
     return out
 
 
+def unity_check_ok(per_direction, tol=A1A2_TOL):
+    """Step 4's unity answers reproduced: on every direction the A1+A2 answer within `tol` (before the
+    pull) and the pulled settings equal to step 4's (so a changed pull in readout.json cannot slip
+    through)."""
+    return bool(per_direction) and all(v["a1a2_max_abs_diff"] <= tol and v["settings_equal"] is True
+                                       for v in per_direction.values())
+
+
 # --- the machine (pure) -----------------------------------------------------------------------------
 
 def render_blocker(ps, own=(), servers=True):
@@ -622,6 +644,13 @@ def flatness_db(fit, band=COH_BAND):
     return statistics.pstdev(v) if len(v) > 1 else None
 
 
+def as_mixed_parts(run):
+    """(parts in the "as mixed" row, parts left out because only one held half is trusted: a direction's
+    fit reads its search half of reference.wav, the half that is not trusted)."""
+    both = sorted(s for s, h in run.items() if set(h) == {"A", "B"})
+    return both, sorted(set(run) - set(both))
+
+
 def excluded_parts(fits, cmin=COH_MIN):
     """A part is left out of "as mixed" when any of its fits' coherence is below the declared 0.1."""
     return sorted({k.split("|")[0] for k, f in fits.items() if not f["coherence"] >= cmin})
@@ -729,6 +758,23 @@ def knob_movement(dims, x, y):
 
 # --- inputs ---------------------------------------------------------------------------------------------
 
+def flat(d, pre=""):
+    """A nested dict flattened to {"a/b/c": leaf}."""
+    out = {}
+    for k, v in (d or {}).items():
+        if isinstance(v, dict):
+            out.update(flat(v, f"{pre}{k}/"))
+        else:
+            out[f"{pre}{k}"] = v
+    return out
+
+
+def hash_changes(old, new):
+    """The recorded input hashes that a rerun of `inputs` would change (or drop, or add). -> sorted keys."""
+    a, b = flat(old), flat(new)
+    return sorted(k for k in set(a) | set(b) if a.get(k) != b.get(k))
+
+
 def alignment_entry(al, slug, kind):
     """(song, crop entry) of the part's crop in `kind`, or (None, None)."""
     for song, e in al.items():
@@ -825,6 +871,11 @@ def cmd_inputs(args):
                          lambda s: s in ulog)
     if st:
         probs["stored_unity_side"] = st
+    if old and old.get("ok"):
+        ch = hash_changes(old.get("hashes"), hashes)
+        if ch:
+            raise SystemExit(f"inputs changed since `inputs` recorded them ({len(ch)}: {ch[:5]}): the recorded "
+                             "hashes stay; investigate, and start a new --out if the change is meant")
     rec = {"plan": PLAN, "ok": not probs, "problems": probs, "smoke": bool(args.limit), "limit": args.limit,
            "trusted": {"path": str(tp), "sha256": sha, "entries": [s if h is None else f"{s}:{h}" for s, h in entries],
                        "outside_this_test": outside},
@@ -1055,7 +1106,7 @@ def cmd_predict(args):
                             for n, st in ctrl_stems.items()}
         print("predict", slug, {k: round(v, 4) for k, v in gains.items()}, flush=True)
     worst = max((v["a1a2_max_abs_diff"] for v in unity_chk.values()), default=None)
-    ok = worst is not None and worst <= A1A2_TOL
+    ok = unity_check_ok(unity_chk)
     res = {"plan": PLAN, "ok": ok, "label": label, "step3_gate": gate, "D": D, "stem_sep": sep_name,
            "readout_rule": DS.READOUT_RULE, "models": {"D": pred4["models"]["D"]}, "target_mix_lufs": target,
            "unity_check": {"worst_a1a2_diff": worst, "tol": A1A2_TOL,
@@ -1068,7 +1119,8 @@ def cmd_predict(args):
           f"within {worst} (tol {A1A2_TOL}), settings equal {res['unity_check']['settings_equal']}/{len(unity_chk)}"
           + (f" [{label}]" if label else ""))
     if not ok:
-        raise SystemExit("step 4's unity answers are not reproduced: D's path differs; stop")
+        raise SystemExit("step 4's unity answers are not reproduced (A1+A2 within the tolerance and every pulled "
+                         "setting equal): D's path or pull differs; stop")
 
 
 # --- render ---------------------------------------------------------------------------------------------
@@ -1269,7 +1321,8 @@ def cmd_as_mixed(args):
     root, rec = state(args)
     fits, control, values = {}, {}, {}
     cache = {}
-    for slug in sorted(rec["run"]):
+    parts, half_only = as_mixed_parts(rec["run"])
+    for slug in parts:
         part = A.f_part(slug)
         k = f"{slug}--{mastered_kind(slug)}"
         mix = load_checked(real_crop_path(slug, mastered_kind(slug)), rec["hashes"]["real_crop"][k]).astype(np.float64)
@@ -1298,17 +1351,20 @@ def cmd_as_mixed(args):
         print("as mixed", slug, {k: (v["lag"], round(v["coherence"], 3)) for k, v in fits.items() if k.startswith(slug + "|")},
               flush=True)
     out = {"plan": PLAN, "fits": fits, "unity_control": control, "excluded_parts": excluded_parts(fits),
-           "coherence_min": COH_MIN, "values": values, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+           "half_only_parts_left_out": half_only, "coherence_min": COH_MIN, "values": values,
+           "note": NOTES["coherence"], "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     _save(root / "as-mixed.json", out)
-    print(f"AS MIXED: {len(values)} directions; parts left out (coherence < {COH_MIN}): {out['excluded_parts']}")
+    print(f"AS MIXED: {len(values)} directions; parts left out (coherence < {COH_MIN}): {out['excluded_parts']}; "
+          f"left out with one trusted half only (the fit would read the untrusted half): {half_only}")
 
 
 # --- report ---------------------------------------------------------------------------------------------
 
 def unit_values(root, step4_groups):
     """value_of(arm, unit) for the report: S, stage F's M and step 4's D stored; M_real and D_real (and
-    D_unm) from this run. A fallback (M) or a refused answer (D) scores as S. -> (value_of, refused counts)."""
-    refused = {"D_unity": 0, "D_real": 0, "D_unm": 0}
+    D_unm) from this run. A fallback (M) or a refused answer (D) scores as S. -> (value_of, refused: {arm:
+    the set of refused (slug, amp, search)}, so a direction read by several unit lists counts once)."""
+    refused = {"D_unity": set(), "D_real": set(), "D_unm": set()}
 
     def s_of(u):
         r = _load(A.s_path(u["slug"], u["amp"]))
@@ -1331,7 +1387,7 @@ def unit_values(root, step4_groups):
             return None
         v = g["judge"][k][u["held"]]
         if not _pos(v):
-            refused[arm] += 1
+            refused[arm].add((u["slug"], u["amp"], u["search"]))
             return s
         return v
 
@@ -1371,7 +1427,8 @@ def cmd_report(args):
     units = make_units(dirs, part_of, value_of, FIXED)
     unm = make_units([d for d in dirs if d[0] in UNMASTERED], part_of, value_of, FIXED + ("D_unm",))
     rep = {"plan": PLAN, "label_D": pred.get("label"), "trusted": rec["trusted"], "run": run,
-           "directions": len(dirs), **report_from_units(units, unm, dirs), "refused_scored_as_S": refused}
+           "directions": len(dirs), **report_from_units(units, unm, dirs),
+           "refused_scored_as_S": {a: len(v) for a, v in refused.items()}}
     band_of = lambda s: A.pool_band(s)  # noqa: E731
     mp = (_load(MP_REPORT) or {}).get("parts", {})
     snr = {s: mp[k]["snr_db"]["c_real_stem"] - mp[k]["snr_db"]["b_unity_stem"]
@@ -1408,7 +1465,7 @@ def cmd_report(args):
                               "sign-flipped ('sign'), against its unity answer; beside it the real mix's own movement"}
     am = _load(root / "as-mixed.json")
     if am:
-        ex = set(am["excluded_parts"])
+        ex = set(am["excluded_parts"]) | set(am.get("half_only_parts_left_out", [])) | set(as_mixed_parts(run)[1])
 
         def am_value(arm, u):
             return (am["values"].get(f"{u['slug']}|{u['amp']}|{u['search']}") or {}).get(arm)
@@ -1416,7 +1473,9 @@ def cmd_report(args):
         am_units = make_units([d for d in dirs if d[0] not in ex], part_of, am_value, FIXED)
         rep["as_mixed"] = {"note": "descriptive; the EQ'd target changes the judge's bands, so not comparable with the "
                                    "primary; cannot capture compression or reverb tails",
-                           "excluded_parts": sorted(ex),
+                           "excluded_parts": sorted(ex), "coherence_left_out": am["excluded_parts"],
+                           "half_only_left_out": as_mixed_parts(run)[1],
+                           "parts_in_row": len(set(run) - ex), "parts": len(run),
                            "contrasts": {n: contrast(am_units, a, b) for n, (a, b) in CONTRASTS.items()},
                            "unity_control": am["unity_control"],
                            "fit_lags": {k: f["lag"] for k, f in am["fits"].items()},
@@ -1432,6 +1491,7 @@ def cmd_report(args):
                      "fallbacks": {"M_real": sum(1 for d in dirs if (_load(m_path(root, *d[:3])) or {}).get("fallback")),
                                    "M_unity": sum(1 for d in dirs if (_load(A.result_path("F", "M", *d[:3])) or {}).get("fallback"))}}
     rep["renders"] = {"spent": spent(root), "expected": expected_renders(dirs), "cap": CAP}
+    rep["notes"] = NOTES
     rep["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     _save(root / "report.json", rep)
 
@@ -1454,7 +1514,9 @@ def cmd_report(args):
     for name, c in rep["unmastered"].items():
         print(f"  unmastered {name}: {f(_all(c))}")
     print("  priming", rep["checks"]["primes"]["recorded"], "of", rep["checks"]["primes"]["expected"],
-          "| fallbacks", rep["checks"]["fallbacks"], "| D refused scored as S", refused)
+          "| fallbacks", rep["checks"]["fallbacks"], "| D refused scored as S", rep["refused_scored_as_S"])
+    for n in NOTES.values():
+        print("  note:", n)
 
 
 # --- main -----------------------------------------------------------------------------------------------
