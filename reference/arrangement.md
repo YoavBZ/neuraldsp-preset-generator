@@ -23,6 +23,13 @@ In a clone or worktree, pass the data root before the subcommand
 
 ## Rules
 
+- **The whole song, not only the part asked for.** The file describes every guitar on the
+  recording (rhythm, 12-string, acoustic, overdubs) and every section, because its reader fits
+  a preset per section. Research the other parts at least to their instrument, role and
+  sections; list what you could not find in `gaps`, never leave a guitar out as out of scope.
+  Keep it bounded: for the parts the user did not ask about, one lineup or credits source and
+  one structure source are enough; leave their `rig` null unless a source you already have
+  states it, and do not fetch lessons or rundowns for them.
 - **Every item carries a `confidence`**:
   - `documented`: a source states it, and the item cites that source;
   - `corroborated`: two or more independent sources state it, and the item cites them;
