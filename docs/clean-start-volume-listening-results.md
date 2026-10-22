@@ -13,7 +13,8 @@ key was read. Renders reproduced the stored scores (half B worst |Δ log| 0.0002
 - **Hidden references:** both found; no sitting void.
 - **Reversed taste:** on both controls (crunch parts on SW50R and AC20, where the judge prefers
   the shipped start) the listener chose the shipped start. A plain preference for the cleaner
-  option did not drive the answers.
+  option did not drive these two (two trials: it argues against such a preference, it
+  cannot rule it out).
 - **Repeats:** one of three decided twice, consistent; the other two had a "?" in one of the
   pair.
 
@@ -32,7 +33,8 @@ key was read. Renders reproduced the stored scores (half B worst |Δ log| 0.0002
 - **Ear and judge** agreed on 18 of 26 decided trials, on all 7 where the judge's margin was
   over 0.15.
 - **Levelling:** the turned-down renders are quieter and got more gain (median: PR12 2.6 dB,
-  SW50R 5.6, AC20 12.5), so their hiss rose with them; AC20's was preferred anyway.
+  SW50R 5.6, AC20 12.5), so their hiss rose with them; AC20's was preferred with more hiss, which on references that
+  carry room bleed could itself sound closer.
 
 ## Bleed in the references (added after the results, not declared)
 
@@ -50,7 +52,12 @@ other 8 parts low. The project reports the no-bleed row beside all parts, so:
 
 The decisions are the same on the low-bleed parts (AC20 at least half, SW50R below), but
 AC20's lead is much weaker on clean references (4 of 7) than over all parts: most of it came
-from parts whose reference itself carries other instruments.
+from parts whose reference itself carries other instruments. The two splits overlap: 4 of the
+6 "cleaner" parts are bleed-flagged, so AC20's 6 of 6 on cleaner records and 5 of 5 on bleed
+parts are largely the same trials (on low-bleed parts AC20 is 2 of 2 cleaner, 2 of 5 more
+driven), and SW50R's 3 of 5 on cleaner records also rests on bleed parts. Two small choices,
+not spelled out in the plan: the median part goes to "more driven" (6 and 7), and the
+same-song reading drops all four parts of the two pairs.
 
 ## Decision (as declared)
 
@@ -60,7 +67,8 @@ from parts whose reference itself carries other instruments.
   below half; the interval is wide, and on the cleaner records it leaned the other way (3 of 5),
   so this is a best estimate, not a finding that the shipped volume is better.
 - **PR12: no change.** Mostly "can't tell": 35 and the shipped 49 are hard to tell apart on real
-  clean parts, so the borderline breakup heard on the synthetic riff does not show on these.
+  clean parts; the borderline breakup heard on the synthetic riff was rarely audible on these
+  (the 3 decided trials went to the shipped start).
 
 ## Limits
 

@@ -78,7 +78,7 @@ PR12 was swept the same way, for the next check (2026-10-22): `pr12Volume` 35, 2
 render pair each, fresh processes, the chord riff). 35 is the highest of these that reaches
 the template; the grid is coarse.
 
-## What changes
+## What changes (0.7.117; superseded for SW50R in 0.7.119, see the end of this section)
 
 `generate` step 4: on a part documented as fully clean, the SW50R start gets `sw50rVolume`
 15 and the AC20 start `ac20Volume` 10, and the report says so (it plays quieter; `outputGain`
