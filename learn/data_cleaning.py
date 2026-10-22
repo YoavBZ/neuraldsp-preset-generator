@@ -1736,16 +1736,29 @@ def cmd_pool_rebuild(args):
     print(f"POOL-REBUILD DONE ({n_done} this run, refused {refused}); run pool-status for the manifest", flush=True)
 
 
-# --- the bleed-injection test (decision memo, 2026-10-23) ------------------------------------------------------
+# --- the bleed-injection test (decision memo, 2026-10-23; review fixes the same day) ----------------------------
 #
 # Does the target take's own bleed, at the levels measured in the live sessions, move F's answers? The example's own
-# original amp track, through a synthetic room path, is added to the backing of R_in examples step 0 trusts, at
-# -18, -14 and -8 dB under the render; the injected and the clean (re-made original) mixes are separated by the same
-# path and F reads both. Zero renders. It shares the MPS with nothing: it refuses while a pool rebuild runs.
+# original amp track, through a synthetic room path, is added to the backing of R_in examples step 0 trusts; the
+# injected and the clean (re-made original) mixes are separated by the same path and F reads both. Zero renders. It
+# shares the MPS with nothing: it refuses while a pool rebuild runs.
+#
+# Variants: a diffuse room (a direct path ~22 dB under its tail) at -18, -14 and -8 dB under the render, and at 0 dB as
+# the positive control; a direct-heavy room (taps at 3-30 ms, 6 dB above the tail) at -14 dB.
 
 BLEED_SEED = 20261098
-BLEED_DB = (-18.0, -14.0, -8.0)            # Eggy's and Swatkins' medians (both readings agree); Renesans' amp-source
+BLEED_VARIANTS = (("bleed18", "diffuse", -18.0), ("bleed14", "diffuse", -14.0), ("bleed8", "diffuse", -8.0),
+                  ("direct14", "direct", -14.0), ("bleed0", "diffuse", 0.0))
+BLEED_LIVE = ("bleed18", "bleed14", "direct14")    # the measured live levels (Eggy's, Swatkins' medians)
+BLEED_LOUD = "bleed8"                              # Renesans' amp-source median
+BLEED_CONTROL = "bleed0"                           # the positive control
+BLEED_DB = tuple(L for _, _, L in BLEED_VARIANTS)
+BLEED_TIE = 0.004                                  # |point| under this, with the interval containing 0: a tie
+DIRECT_TAPS = 4
+DIRECT_MS = (3.0, 30.0)
+DIRECT_OVER_TAIL_DB = 6.0
 BLEED_BAND = "Adam Buckley"
+BLEED_OWN = ["30_ElecGtr3.wav"]
 BLEED_EXPECT = (188, 6)                    # examples, sections: Adam Buckley's trusted ElecGtr3 R_in examples
 BLEED_SPAN = (1.0, 10.0)                   # the judged span (s), where the level is set
 POOL_REBUILD_RE = r"-m learn\.data_cleaning pool-rebuild\b"
@@ -1753,6 +1766,42 @@ POOL_REBUILD_RE = r"-m learn\.data_cleaning pool-rebuild\b"
 
 def bleed_key(level):
     return f"bleed{int(round(abs(level)))}"
+
+
+def bleed_keys():
+    return ["clean"] + [k for k, _, _ in BLEED_VARIANTS]
+
+
+def bleed_room(rng, kind, sr=48_000):
+    """A synthetic room path and its direct-to-tail energy ratio (dB). "diffuse": room_ir's shape, one direct
+    impulse at 5-20 ms and an exponential noise tail (RT60 0.3-0.8 s); "direct": DIRECT_TAPS taps at 3-30 ms
+    (amplitudes 0.5-1, random signs) with the same kind of tail scaled DIRECT_OVER_TAIL_DB under them.
+    -> (unit-energy h, direct-to-tail dB)."""
+    import numpy as np
+
+    rt = rng.uniform(0.3, 0.8)
+    n = int(rt * sr)
+    t = np.arange(n) / sr
+    if kind == "diffuse":
+        d = int(rng.uniform(0.005, 0.020) * sr)
+        direct = np.zeros(d + n)
+        direct[d] = 1.0
+        tail = np.zeros(d + n)
+        tail[d:] = rng.standard_normal(n) * np.exp(-6.91 * t / rt) * 0.3
+    elif kind == "direct":
+        d = [int(rng.uniform(*DIRECT_MS) / 1000 * sr) for _ in range(DIRECT_TAPS)]
+        L = max(d) + n
+        direct = np.zeros(L)
+        for k in d:
+            direct[k] += rng.uniform(0.5, 1.0) * rng.choice((-1.0, 1.0))
+        tail = np.zeros(L)
+        tail[min(d):min(d) + n] = rng.standard_normal(n) * np.exp(-6.91 * t / rt)
+        tail *= math.sqrt(np.sum(direct ** 2) / np.sum(tail ** 2) * 10 ** (-DIRECT_OVER_TAIL_DB / 10))
+    else:
+        raise ValueError(kind)
+    dt = 10 * math.log10(np.sum(direct ** 2) / np.sum(tail ** 2))
+    h = direct + tail
+    return h / math.sqrt(np.sum(h ** 2)), dt
 
 
 def band_energy(x, sr=48_000, lo=F_LO, hi=F_HI, span=BLEED_SPAN):
@@ -1792,6 +1841,55 @@ def answer_movement(a, b):
     if not keys:
         return None
     return float(np.mean([np.nanmean(np.abs(np.asarray(a[i], float) - np.asarray(b[i], float))) for i in keys]))
+
+
+def seed_movements(ans_by_seed, key, ref_key="clean"):
+    """Like with like (review fix 3): the mean over seeds of each seed's own movement from ref_key to key, and the
+    mean single-seed disagreement on ref_key over seed pairs. ans_by_seed: [{key: {i: answer}}] per seed.
+    -> (movement, reference)."""
+    import itertools
+
+    import numpy as np
+
+    mv = [answer_movement(a[key], a[ref_key]) for a in ans_by_seed]
+    ref = [answer_movement(a[ref_key], b[ref_key]) for a, b in itertools.combinations(ans_by_seed, 2)]
+    mv, ref = [m for m in mv if m is not None], [r for r in ref if r is not None]
+    return (float(np.mean(mv)) if mv else None), (float(np.mean(ref)) if ref else None)
+
+
+def classify_level(iv, move, ref, tie=BLEED_TIE):
+    """One variant's reading: "up" (interval entirely above 0), "down" (entirely below), "tie" (contains 0, |point|
+    under `tie`, and the per-seed movement at most the single-seed reference) or "undecided" (anything else)."""
+    if iv is None:
+        return "undecided"
+    m, lo, hi = iv[0], iv[1], iv[2]
+    if lo > 0:
+        return "up"
+    if hi < 0:
+        return "down"
+    if abs(m) < tie and move is not None and ref is not None and move <= ref:
+        return "tie"
+    return "undecided"
+
+
+def control_moves(iv, move, ref):
+    """The positive control moves F: its interval lies above 0, or its per-seed movement exceeds the reference."""
+    return bool(iv is not None and iv[1] > 0) or bool(move is not None and ref is not None and move > ref)
+
+
+def bleed_outcome(readings, control_moved):
+    """The declared outcome (the first matching row). readings: {variant key: classify_level result}."""
+    live = [readings[k] for k in BLEED_LIVE]
+    loud = readings[BLEED_LOUD]
+    if not control_moved:
+        return "F insensitive"
+    if "up" in live:
+        return "live bleed moves F"
+    if all(r == "tie" for r in live) and loud == "up":
+        return "loud bleed only"
+    if all(r == "tie" for r in live) and loud == "tie":
+        return "ambience"
+    return "undecided"
 
 
 def bleed_examples(ctx, trusted):
@@ -1841,11 +1939,11 @@ def cmd_bleed_test(args):
     ctx.rows = None
     gc.collect()
     br = bleed_root(root)
-    keys = ["clean"] + [bleed_key(L) for L in BLEED_DB]
+    keys = bleed_keys()
     built = keyed_rows(br / "rows", "bleed")
     todo = [r for r in exs if any((r["i"], k) not in built for k in keys)][:args.limit or None]
-    print(f"bleed-test: {len(exs)} examples in {n_sec} sections, {len(todo)} to do; levels {BLEED_DB} dB; "
-          f"X-LANCE on {args.device}", flush=True)
+    print(f"bleed-test: {len(exs)} examples in {n_sec} sections, {len(todo)} to do; variants "
+          f"{[(k, kind, L) for k, kind, L in BLEED_VARIANTS]}; X-LANCE on {args.device}", flush=True)
     if not todo:
         print("BLEED-TEST DONE", flush=True)
         return
@@ -1863,6 +1961,13 @@ def cmd_bleed_test(args):
             raise SystemExit("bad stem")
         return DS.half_features(s_)
 
+    def save(i, k, mix):
+        mm, ml, _ = DS.half_features(mix)
+        sm, sl, floor = separate(mix)
+        DS._save_npz(DS.ex_path(br, i, f"mix-{k}"), mA=mm["A"], mB=mm["B"], lufs=[ml["A"], ml["B"]])
+        DS._save_npz(DS.ex_path(br, i, f"{STEP_SEP}-{k}"), sA=sm["A"], sB=sm["B"], lufs=[sl["A"], sl["B"]])
+        return {"lufs_mA": ml["A"], "lufs_mB": ml["B"], "lufs_sA": sl["A"], "lufs_sB": sl["B"], "floor_share": floor}
+
     with open(rp, "a") as fh:
         for m, r in enumerate(todo):
             g = DS._guards("bleed", DISK_GUARD_GB, swap0)
@@ -1879,43 +1984,39 @@ def cmd_bleed_test(args):
                     fh.write(json.dumps({**base, "key": k, "refused": made}) + "\n")
                 fh.flush()
                 continue
-            if "clean" in need:
-                sm, sl, floor = separate(made["orig"])
-                DS._save_npz(DS.ex_path(br, i, f"{STEP_SEP}-clean"), sA=sm["A"], sB=sm["B"], lufs=[sl["A"], sl["B"]])
-                fh.write(json.dumps({**base, "key": "clean", "orig_share": made["orig_share"],
-                                     "lufs_sA": sl["A"], "lufs_sB": sl["B"], "floor_share": floor}) + "\n")
+            if "clean" in need:                           # the re-made original, saved and read as the clean side
+                rec_ = save(i, "clean", made["orig"])
+                fh.write(json.dumps({**base, "key": "clean", "orig_share": made["orig_share"], **rec_}) + "\n")
                 n_sep += 1
-            if sid not in rooms:                          # one room per section: the own amp track through it
+            if sid not in rooms:                          # one room of each kind per section, the own amp through it
                 sec = ctx.sections[sid]
                 rec = ctx.inv[sec["di"]]
-                part = rec.get("part") or part_base(sec["di"])
-                own = [o for o in rec["own"] if part.lower() in o.lower()] or list(rec["own"])
+                if list(rec["own"]) != BLEED_OWN:
+                    raise SystemExit(f"{sid}: own amp tracks {rec['own']}, not the declared {BLEED_OWN}")
                 sess = pathlib.Path(rec["session_dir"])
-                amp = sum(PS.section_audio(sess / o, sec["start_s"])[int(PS.TRIM_S * PS.SR):] for o in own)
-                rng = np.random.default_rng(int(hashlib.sha256(f"{BLEED_SEED}|{sid}".encode()).hexdigest()[:8], 16))
-                rooms[sid] = (fftconvolve(np.asarray(amp, np.float64), room_ir(rng, sr=PS.SR))[:len(amp)], own)
-            c, own = rooms[sid]
-            for L in BLEED_DB:
-                k = bleed_key(L)
+                amp = np.asarray(PS.section_audio(sess / BLEED_OWN[0], sec["start_s"])[int(PS.TRIM_S * PS.SR):],
+                                 np.float64)
+                rooms[sid] = {}
+                for kind in sorted({kd for _, kd, _ in BLEED_VARIANTS}):
+                    rng = np.random.default_rng(
+                        int(hashlib.sha256(f"{BLEED_SEED}|{sid}|{kind}".encode()).hexdigest()[:8], 16))
+                    h, dt = bleed_room(rng, kind, PS.SR)
+                    rooms[sid][kind] = (fftconvolve(amp, h)[:len(amp)], dt)
+            for k, kind, L in BLEED_VARIANTS:
                 if k not in need:
                     continue
+                c, dt = rooms[sid][kind]
                 gain = bleed_gain(made["y"], c, L, PS.SR)
                 if gain is None:
                     fh.write(json.dumps({**base, "key": k, "refused": "the own amp track is silent here"}) + "\n")
                     continue
-                pre = made["y"] + made["b"] * 10 ** (made["gb"] / 20) + gain * c
-                mix = pre * 10 ** (made["ga"] / 20)
+                mix = (made["y"] + made["b"] * 10 ** (made["gb"] / 20) + gain * c) * 10 ** (made["ga"] / 20)
                 _, mrng = DS.master_draw(i)
                 mix = SA.compress(mix, mrng) if made["mastered"] else mix
-                mm, ml, _ = DS.half_features(mix)
-                sm, sl, floor = separate(mix)
-                DS._save_npz(DS.ex_path(br, i, f"mix-{k}"), mA=mm["A"], mB=mm["B"], lufs=[ml["A"], ml["B"]],
-                             gain_db=made["ga"], mastered=made["mastered"])
-                DS._save_npz(DS.ex_path(br, i, f"{STEP_SEP}-{k}"), sA=sm["A"], sB=sm["B"], lufs=[sl["A"], sl["B"]])
+                rec_ = save(i, k, mix)
                 got = 10 * math.log10(band_energy(gain * c, PS.SR) / band_energy(made["y"], PS.SR))
-                fh.write(json.dumps({**base, "key": k, "level_db": L, "level_check_db": round(got, 3), "own": own,
-                                     "lufs_mA": ml["A"], "lufs_mB": ml["B"], "lufs_sA": sl["A"], "lufs_sB": sl["B"],
-                                     "floor_share": floor}) + "\n")
+                fh.write(json.dumps({**base, "key": k, "room": kind, "direct_to_tail_db": round(dt, 2),
+                                     "level_db": L, "level_check_db": round(got, 3), **rec_}) + "\n")
                 n_sep += 1
             fh.flush()
             if m % 10 == 0:
@@ -1935,7 +2036,7 @@ def cmd_bleed_read(args):
     if not trusted or (trusted.get("smoke") and not args.smoke):
         raise SystemExit("bleed-read needs step 0's trusted.json")
     br = bleed_root(root)
-    keys = ["clean"] + [bleed_key(L) for L in BLEED_DB]
+    keys = bleed_keys()
     built = keyed_rows(br / "rows", "bleed")
     ro = DS._load(DS.ROOT / "full" / "readout.json")
     if not ro or ro.get("smoke"):
@@ -1949,41 +2050,46 @@ def cmd_bleed_read(args):
     exs = bleed_examples(ctx, trusted)
     missing = [r["i"] for r in exs if any((r["i"], k) not in built for k in keys)]
     if missing and not args.smoke:
-        raise SystemExit(f"{len(missing)} examples are not built at every level (run bleed-test)")
+        raise SystemExit(f"{len(missing)} examples are not built in every variant (run bleed-test)")
     refused = sorted({r["i"] for r in exs for k in keys if built.get((r["i"], k), {}).get("refused")})
     rows = [r for r in exs if r["i"] not in refused and r["i"] not in missing]
     if not rows:
-        raise SystemExit("no example built at every level")
+        raise SystemExit("no example built in every variant")
     section_of = {r["i"]: r["section"] for r in rows}
     cell_of = {r["i"]: (r["amp"], r["base"]) for r in rows}
     const = DS.const_errors(rows, med, DS.encode_audible)
-    stored_mix = lambda i: DS.ex_path(DS.ROOT, i, "mix")               # noqa: E731
-    per, ans, seed_ref = {}, {}, None
-    for k in keys:
-        mix_of = stored_mix if k == "clean" else (lambda i, k=k: DS.ex_path(br, i, f"mix-{k}"))
-        outs, who, Y = DS.run_rows(nets, rows, lambda x, a=mix_of, k=k: stem_tensors(
-            x, a, lambda i: DS.ex_path(br, i, f"{STEP_SEP}-{k}"), D))
-        sc, ans[k], _, _ = DS.score_all(outs, who, DS.silent_masks(Y), cell_of, med, table)
-        per[k] = DS.readout_per(sc)["A1+A2+A3"]
-        if k == "clean":
-            seed_ref = answer_movement(DS.median_answers(outs[:2], who)[1], DS.median_answers(outs[2:], who)[1])
+    per, by_seed = {}, [{} for _ in nets]
+    for k in keys:                                        # every side, clean included, read from this test's own files
+        outs, who, Y = DS.run_rows(nets, rows, lambda x, k=k: stem_tensors(
+            x, lambda i: DS.ex_path(br, i, f"mix-{k}"), lambda i: DS.ex_path(br, i, f"{STEP_SEP}-{k}"), D))
+        per[k] = DS.readout_per(DS.score_all(outs, who, DS.silent_masks(Y), cell_of, med, table)[0])["A1+A2+A3"]
+        for s in range(len(nets)):
+            by_seed[s][k] = DS.median_answers([outs[s]], who)[1]
     res = {"examples": len(rows), "sections": len(set(section_of.values())), "refused": len(refused),
-           "F - constant, clean": section_interval(per["clean"], const, section_of, set(per["clean"])),
-           "seed disagreement on clean (42+43 vs 44), mean |answer change|": seed_ref, "levels": {}}
-    for L in BLEED_DB:
-        k = bleed_key(L)
-        res["levels"][str(L)] = {
-            "injected - clean (paired, section-clustered; primary)": section_interval(per[k], per["clean"], section_of,
-                                                                                     set(per[k])),
+           "F - constant, clean": section_interval(per["clean"], const, section_of, set(per["clean"])), "variants": {}}
+    readings = {}
+    for k, kind, L in BLEED_VARIANTS:
+        iv = section_interval(per[k], per["clean"], section_of, set(per[k]))
+        mv, ref = seed_movements(by_seed, k)
+        readings[k] = classify_level(iv, mv, ref)
+        res["variants"][k] = {
+            "room": kind, "level_db": L, "reading": readings[k],
+            "injected - clean (paired, section-clustered; primary)": iv,
             "F - constant, injected": section_interval(per[k], const, section_of, set(per[k])),
-            "mean |answer change|, injected vs clean": answer_movement(ans[k], ans["clean"]),
+            "per-seed answer movement, injected vs clean": mv, "single-seed disagreement on clean": ref,
             "per section, injected - clean": {
-                sid.split("/")[-1]: float(np.mean([per[k][i] - per["clean"][i] for i in per[k] if section_of[i] == sid]))
+                sid.split("/")[-1].split("@")[1]: float(np.mean([per[k][i] - per["clean"][i] for i in per[k]
+                                                                if section_of[i] == sid]))
                 for sid in sorted(set(section_of.values()))}}
+    c = res["variants"][BLEED_CONTROL]
+    moved = control_moves(c["injected - clean (paired, section-clustered; primary)"],
+                          c["per-seed answer movement, injected vs clean"], c["single-seed disagreement on clean"])
+    res["control moves F"] = moved
+    res["outcome"] = bleed_outcome(readings, moved)
     out = {"plan": PLAN, "step": "bleed-injection test (decision memo, 2026-10-23)", "smoke": bool(args.smoke),
            "decides": "nothing by itself (descriptive; the user decides on option (a))",
            "readout": "amendment 5: A1+A2+A3, masked E; step 3's stored constant and D pull; 3 seeds",
-           "models": ro["models"]["D"], "levels_db": list(BLEED_DB), "results": res,
+           "models": ro["models"]["D"], "variants": [list(v) for v in BLEED_VARIANTS], "results": res,
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     _save(root / "bleed-read.json", out)
 
@@ -1992,11 +2098,11 @@ def cmd_bleed_read(args):
 
     print(f"bleed test: {res['examples']} examples in {res['sections']} sections (refused {res['refused']})")
     print(f"  F - constant, clean: {f(res['F - constant, clean'])}")
-    print(f"  seed disagreement on clean: {seed_ref}")
-    for L, v in res["levels"].items():
-        print(f"  {L} dB: injected - clean {f(v['injected - clean (paired, section-clustered; primary)'])}; "
-              f"F - constant {f(v['F - constant, injected'])}; answer change "
-              f"{v['mean |answer change|, injected vs clean']}")
+    for k, v in res["variants"].items():
+        print(f"  {k} ({v['room']}, {v['level_db']:+.0f} dB): {v['reading']}; injected - clean "
+              f"{f(v['injected - clean (paired, section-clustered; primary)'])}; movement "
+              f"{v['per-seed answer movement, injected vs clean']} vs {v['single-seed disagreement on clean']}")
+    print(f"control moves F: {moved}; OUTCOME: {res['outcome']}")
 
 
 # --- CLI -------------------------------------------------------------------------------------------------------

@@ -422,7 +422,8 @@ def test_the_bleed_test_waits_for_a_running_pool_rebuild():
 
 
 def test_bleed_keys_and_answer_movement():
-    assert [C.bleed_key(L) for L in C.BLEED_DB] == ["bleed18", "bleed14", "bleed8"]
+    assert C.bleed_keys() == ["clean", "bleed18", "bleed14", "bleed8", "direct14", "bleed0"]
+    assert [C.bleed_key(L) for L in (-18.0, -14.0, -8.0, 0.0)] == ["bleed18", "bleed14", "bleed8", "bleed0"]
     a = {1: [0.1, 0.5], 2: [0.2, float("nan")]}
     b = {1: [0.3, 0.5], 2: [0.2, 0.9], 3: [0.0, 0.0]}
     assert C.answer_movement(a, b) == pytest.approx((0.1 + 0.0) / 2)
@@ -448,5 +449,50 @@ def test_the_bleed_test_is_not_a_render_and_is_declared():
 
     for cmd in ("bleed-test --device mps", "bleed-read"):
         assert not any(re.search(p, f"python -m learn.data_cleaning {cmd}") for p in LO.RENDERS)
-    assert C.BLEED_SEED == 20261098 and C.BLEED_DB == (-18.0, -14.0, -8.0) and C.BLEED_EXPECT == (188, 6)
-    assert C.BLEED_BAND == "Adam Buckley" and C.BLEED_SPAN == (1.0, 10.0)
+    assert C.BLEED_SEED == 20261098 and C.BLEED_DB == (-18.0, -14.0, -8.0, -14.0, 0.0) and C.BLEED_EXPECT == (188, 6)
+    assert C.BLEED_BAND == "Adam Buckley" and C.BLEED_SPAN == (1.0, 10.0) and C.BLEED_OWN == ["30_ElecGtr3.wav"]
+    assert C.BLEED_LIVE == ("bleed18", "bleed14", "direct14") and C.BLEED_LOUD == "bleed8"
+    assert C.BLEED_CONTROL == "bleed0" and C.BLEED_TIE == 0.004
+
+
+def test_the_two_rooms_have_the_declared_direct_to_tail_ratios():
+    for k in range(20):
+        h, dt = C.bleed_room(np.random.default_rng(k), "diffuse")
+        assert -25.0 < dt < -19.0 and np.sum(h ** 2) == pytest.approx(1.0)
+        h, dt = C.bleed_room(np.random.default_rng(k), "direct")
+        assert dt == pytest.approx(C.DIRECT_OVER_TAIL_DB) and np.sum(h ** 2) == pytest.approx(1.0)
+        first = int(np.argmax(np.abs(h) > 0))
+        assert 0.003 * 48_000 - 1 <= first <= 0.030 * 48_000           # the first tap at 3-30 ms
+    with pytest.raises(ValueError):
+        C.bleed_room(np.random.default_rng(0), "plate")
+
+
+def test_movement_compares_single_seeds_with_single_seeds():
+    a = [{"clean": {1: [0.5]}, "x": {1: [0.6]}}, {"clean": {1: [0.52]}, "x": {1: [0.72]}},
+         {"clean": {1: [0.47]}, "x": {1: [0.47]}}]
+    mv, ref = C.seed_movements(a, "x")
+    assert mv == pytest.approx((0.1 + 0.2 + 0.0) / 3)
+    assert ref == pytest.approx((0.02 + 0.03 + 0.05) / 3)
+
+
+def test_each_variant_reads_up_down_tie_or_undecided():
+    assert C.classify_level((0.01, 0.002, 0.02, 6), 0.01, 0.02) == "up"
+    assert C.classify_level((-0.01, -0.02, -0.002, 6), 0.01, 0.02) == "down"
+    assert C.classify_level((0.001, -0.003, 0.005, 6), 0.01, 0.02) == "tie"
+    assert C.classify_level((0.005, -0.003, 0.013, 6), 0.01, 0.02) == "undecided"   # point at or above 0.004
+    assert C.classify_level((0.001, -0.003, 0.005, 6), 0.03, 0.02) == "undecided"   # moves more than seeds disagree
+    assert C.classify_level(None, 0.01, 0.02) == "undecided"
+    assert C.control_moves((0.02, 0.01, 0.03, 6), 0.0, 1.0) and C.control_moves((0.0, -0.01, 0.01, 6), 0.05, 0.02)
+    assert not C.control_moves((0.0, -0.01, 0.01, 6), 0.01, 0.02)
+
+
+def test_the_outcome_rows_are_exclusive_and_ordered():
+    tie = {k: "tie" for k in ("bleed18", "bleed14", "direct14", "bleed8", "bleed0")}
+    assert C.bleed_outcome(tie, control_moved=False) == "F insensitive"
+    assert C.bleed_outcome(dict(tie, bleed14="up"), control_moved=False) == "F insensitive"
+    assert C.bleed_outcome(dict(tie, direct14="up", bleed8="up"), True) == "live bleed moves F"
+    assert C.bleed_outcome(dict(tie, bleed8="up"), True) == "loud bleed only"
+    assert C.bleed_outcome(tie, True) == "ambience"
+    assert C.bleed_outcome(dict(tie, bleed8="undecided"), True) == "undecided"     # Kimock waits on -8 dB
+    assert C.bleed_outcome(dict(tie, bleed18="undecided"), True) == "undecided"
+    assert C.bleed_outcome(dict(tie, bleed14="down"), True) == "undecided"
