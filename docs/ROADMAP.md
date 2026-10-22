@@ -187,8 +187,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      sections and 9 bands limit both training and test power, and part C's curve flattened with
      more renders of the same DIs.
    - (e) **The real-mix test** ([plan](real-mix-test-plan.md), approved and merged, #267), after
-     the cleaning. As declared it runs arm A, and the direct model only on `GATE OK` (the gate
-     read STOP; the override covered step 4 only).
+     the cleaning. It runs arm A and the direct model (the user's amendment 1, 2026-10-22).
    - (f) **The coverage stage 2 build:** every-control labels, clean backings and new DIs together
      (an amendment to the every-control plan first).
    - Then the fresh-song decision test (item 5 below).
