@@ -86,6 +86,10 @@ was declared, what was measured, and the research behind it.
 - [clean-start-breakup-results.md](clean-start-breakup-results.md): on the open-chord
   riff, the SW50R and AC20 clean baselines break up but play clean turned down; the PR12
   ones are clean or borderline (one listener, not blind; a linearity measure agrees).
+- [clean-start-volume-listening-plan.md](clean-start-volume-listening-plan.md) →
+  [results](clean-start-volume-listening-results.md): on 13 real clean parts, the
+  turned-down AC20 start was closer (9 of 12, weakly: 4 of 7 without bleed), SW50R's not (5 of
+  11), PR12 mostly can't tell (blind trials, one listener).
 
 **Song-only distance** (current)
 - [di-free-distance-plan.md](di-free-distance-plan.md) →

@@ -73,7 +73,12 @@ is clean turned down far enough; SW50R still broke up at 25), and knob positions
 compare across amps. The compressor confound above is partly answered: SW50R with a
 compressor and no volume change also played clean.
 
-## What changes
+PR12 was swept the same way, for the next check (2026-10-22): `pr12Volume` 35, 25 and 15 read
+-21.4, -26.6 and -30.5 dB against the shipped baseline's -17.7 and the template's -19.0 (one
+render pair each, fresh processes, the chord riff). 35 is the highest of these that reaches
+the template; the grid is coarse.
+
+## What changes (0.7.117; superseded for SW50R in 0.7.119, see the end of this section)
 
 `generate` step 4: on a part documented as fully clean, the SW50R start gets `sw50rVolume`
 15 and the AC20 start `ac20Volume` 10, and the report says so (it plays quieter; `outputGain`
@@ -90,9 +95,8 @@ clean start to the crunch start 4 of 5 times
 the turned-down starts are also closer to real clean recordings is not tested: lower volume
 shifts an amp's tone too.
 
-Next, when render slots are free: by ear on real clean development parts, each through its
-own DI beside its record, the start as shipped against turned down, PR12 included (its
-baseline is borderline, and no lower volume was tried on it).
+Checked next by ear on real clean parts ([results](clean-start-volume-listening-results.md)):
+AC20's turned-down start held, SW50R's was reverted, PR12 stays.
 
 ## Also heard: crackle on the decays
 
