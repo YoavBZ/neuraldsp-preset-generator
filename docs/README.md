@@ -372,6 +372,7 @@ was declared, what was measured, and the research behind it.
   leaning worse), and the judge re-run through the raw DI (rebuilt-DI contrasts unchanged; on the
   known-answer songs the measure DI caps the exact truth at 0.55 of S). 852 renders. Audited.
 - [direct-model-stems-plan.md](direct-model-stems-plan.md) → [gate 1 results](direct-model-stems-gate1-results.md), [pilot results](direct-model-stems-pilot-results.md), [steps 3–4 results](direct-model-stems-results.md): the direct model with realistic stems
+- [every-control-plan.md](every-control-plan.md): how and when each route covers every manifest control (approved 2026-10-22 for stages 0–1: the full-space table and masking, amp choice, the judge-visibility screen, Tone King's search renderer, a true-DI oracle for the unmeasured groups); code `learn/every_control.py`
   (declared, reviewed). Cheap checks on D_existing first (does the stem's quality move its answers;
   what the mismatch costs; 111 descriptive renders), then a 5k pilot of real Mega-53 stems against a
   mix-only model and the old recipe, then one test on stage F (D − S primary, about 321 renders).
