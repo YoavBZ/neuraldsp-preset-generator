@@ -8,6 +8,7 @@ only; no held-out data.
     $TORCH_PY -m learn.direct_sound_gate gate-predict              # after step 3's `readout` (zero renders, CPU)
     $MAIN     -m learn.direct_sound_gate gate-render --what D,D0 --shard k/3          # after gate-predict
     $MAIN     -m learn.direct_sound_gate gate-report               # GATE OK | GATE STOP | GATE INCOMPLETE
+    $MAIN     -m learn.direct_sound_gate gate-override --decision "..." --date YYYY-MM-DD   # amendment 7
 
 **The set.** R_in: V_sep's examples with their mix and xlance_g stem built and unrefused, Bannockburn
 (and every MUSDB18-tagged section) left out, as step 3's `readout` reads it: 1,407 examples, 4 bands.
@@ -28,6 +29,12 @@ and knob_ceiling use it) of X's render against the truth's render, lag 0, on hal
 and B (5.5-10.0 s) of the 0.25-s-trimmed render. Per example, the mean over its scorable halves of
 log(d_D / d_const), each clipped to [-ln 10, +ln 10]. **GATE OK** iff the paired band-clustered 90% t
 interval (4 bands, 3 df) lies entirely below 0; else **GATE STOP**.
+
+**Amendment 7 (user, 2026-10-22).** `gate-override` records the user's decision to run step 4
+despite a GATE STOP (override.json: the report's sha256, the decision text and date). It refuses
+unless report.json exists, is real and reads STOP; `step3_verdict` passes a STOP only through a
+record naming the current report, and step 4 labels everything "run under a user override of a
+GATE STOP".
 
 **Renders:** isolate=True, the bounded server, one discarded priming render after a process start or
 a (DI section, amp) change, whole sections per shard; at most 3 render processes machine-wide
@@ -923,7 +930,8 @@ def cmd_report(args):
 
 def step3_verdict(root=None, gd=None):
     """Step 3's deciding gate for step 4 (amendment 5 as approved: `direct_stems.step3_gate` reads this).
-    -> (ok, why): ok only for a real GATE OK whose readout.json is the current one."""
+    -> (ok, why): ok for a real GATE OK whose readout.json is the current one, or (amendment 7) for a
+    real GATE STOP with a valid user override record (`gate-override`) of that exact report."""
     root = DS.ROOT if root is None else pathlib.Path(root)
     gd = root / "gate" if gd is None else pathlib.Path(gd)
     rep = DS._load(gd / "report.json")
@@ -931,12 +939,91 @@ def step3_verdict(root=None, gd=None):
         return False, "no sound-gate report (run `direct_sound_gate gate-report`)"
     if rep.get("smoke"):
         return False, "the sound-gate report is a smoke test's"
-    if rep.get("decision") != "OK":
-        return False, f"GATE {rep.get('decision')}"
+    dec = rep.get("decision")
+    if dec not in ("OK", "STOP"):
+        return False, f"GATE {dec}"
+    ov = None
+    if dec == "STOP":
+        ov = DS._load(override_path(gd))
+        if not ov:
+            return False, "GATE STOP"
+        bad = override_problem(ov, gd)
+        if bad:
+            return False, f"GATE STOP; the override record does not apply: {bad}"
     ro = root / "full" / "readout.json"
     if not ro.exists() or rep.get("readout_sha256") != DS.hashlib_file(ro):
         return False, "full/readout.json changed after the sound gate read it"
+    if ov:
+        return True, f"GATE STOP, {OVERRIDE_LABEL} ({DS.STEP4_OVERRIDE}, user decision {ov['decision_date']})"
     return True, "GATE OK (amendment 6)"
+
+
+# --- amendment 7: the user's override of a GATE STOP ------------------------------------------------------
+
+OVERRIDE_LABEL = "run under a user override of a GATE STOP"
+
+
+def override_path(gd):
+    return pathlib.Path(gd) / "override.json"
+
+
+def override_problem(ov, gd):
+    """-> None if the override record is amendment 7's and names the current report (sha256), which
+    reads a real GATE STOP; else why not."""
+    if ov.get("amendment") != DS.STEP4_OVERRIDE:
+        return f"not {DS.STEP4_OVERRIDE}'s ({ov.get('amendment')})"
+    if ov.get("label") != OVERRIDE_LABEL:
+        return "the record carries another label"
+    if not (ov.get("user_decision") or "").strip() or not ov.get("decision_date"):
+        return "no user decision text or date"
+    rp = pathlib.Path(gd) / "report.json"
+    if not rp.exists() or ov.get("report_sha256") != DS.hashlib_file(rp):
+        return "it was written for another report.json (sha256 differs)"
+    if ov.get("report_decision") != "STOP":
+        return "it does not override a GATE STOP"
+    return None
+
+
+def override_in_force(root=None, gd=None):
+    """The override record when step 3's gate passes through it (amendment 7), else None."""
+    root = DS.ROOT if root is None else pathlib.Path(root)
+    gd = root / "gate" if gd is None else pathlib.Path(gd)
+    rep = DS._load(gd / "report.json") or {}
+    if rep.get("decision") != "STOP" or not step3_verdict(root, gd)[0]:
+        return None
+    return DS._load(override_path(gd))
+
+
+def override_record(gd, decision, date):
+    """Amendment 7's record: the current report must exist, be real and read GATE STOP."""
+    rp = pathlib.Path(gd) / "report.json"
+    rep = DS._load(rp)
+    if not rep:
+        raise SystemExit("no sound-gate report (run `gate-report` first)")
+    if rep.get("smoke"):
+        raise SystemExit("the sound-gate report is a smoke test's")
+    if rep.get("decision") != "STOP":
+        raise SystemExit(f"the gate reads {rep.get('decision')}: an override is only for a GATE STOP")
+    if not (decision or "").strip() or not date:
+        raise SystemExit("the override needs the user's decision text and date")
+    return {"amendment": DS.STEP4_OVERRIDE, "label": OVERRIDE_LABEL,
+            "plan": "docs/direct-model-stems-plan.md, amendment 7",
+            "report_sha256": DS.hashlib_file(rp), "report_decision": rep["decision"],
+            "report_time": rep.get("time"), "readout_sha256": rep.get("readout_sha256"),
+            "deciding_interval": (rep.get("table") or {}).get("deciding"),
+            "user_decision": decision.strip(), "decision_date": date,
+            "written": time.strftime("%Y-%m-%d %H:%M:%S")}
+
+
+def cmd_override(args):
+    gd = gate_dir(args)
+    p = override_path(gd)
+    if p.exists():
+        raise SystemExit(f"{p} exists (one override per report; remove it by hand only if the user withdraws it)")
+    rec = override_record(gd, args.decision, args.date)
+    DS._save(p, rec)
+    print(f"GATE OVERRIDE ({DS.STEP4_OVERRIDE}): report {rec['report_sha256'][:12]} reads STOP; "
+          f"step 4 is {OVERRIDE_LABEL}")
 
 
 # --- CLI ----------------------------------------------------------------------------------------------------------
@@ -965,6 +1052,11 @@ def main(argv=None):
     p = sub.add_parser("gate-report")
     common(p)
     p.set_defaults(fn=cmd_report)
+    p = sub.add_parser("gate-override", help="amendment 7: record the user's override of a GATE STOP")
+    p.add_argument("--out", help="the gate's directory (default ~/ndsp-presets/learn/direct-stems/gate)")
+    p.add_argument("--decision", required=True, help="the user's decision, in their words")
+    p.add_argument("--date", required=True, help="the date of the user's decision (YYYY-MM-DD)")
+    p.set_defaults(fn=cmd_override)
     args = ap.parse_args(argv)
     args.fn(args)
 

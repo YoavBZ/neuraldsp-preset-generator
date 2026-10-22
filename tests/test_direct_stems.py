@@ -1369,3 +1369,23 @@ def test_pull_fit_weights_each_example_by_its_scored_knobs():
 
     for g in np.linspace(0, 1, 101):                                          # no other b0 does better
         assert mean_e(b) <= mean_e(np.r_[g, b[1:]]) + 1e-12
+
+
+def test_step4_renders_open_only_through_a_gate_ok_or_amendment_7s_override(tmp_path):
+    from learn import direct_sound_gate as G
+
+    (tmp_path / "gate").mkdir()
+    (tmp_path / "full").mkdir()
+    ro = tmp_path / "full" / "readout.json"
+    ro.write_text('{"readout_rule": "amendment 5"}')
+    DS._save(tmp_path / "gate" / "report.json",
+             {"decision": "STOP", "smoke": False, "readout_sha256": DS.hashlib_file(ro)})
+    assert DS.step3_gate(tmp_path) == (False, "GATE STOP")                       # no override: refuses
+    rec = G.override_record(tmp_path / "gate", "run step 4 anyway", "2026-10-22")
+    DS._save(G.override_path(tmp_path / "gate"), {**rec, "report_sha256": "0" * 64})
+    assert DS.step3_gate(tmp_path)[0] is False                                  # another report's hash: refuses
+    DS._save(G.override_path(tmp_path / "gate"), rec)
+    ok, why = DS.step3_gate(tmp_path)
+    g = DS.step3_gate_record(tmp_path)
+    assert ok and DS.STEP4_OVERRIDE_LABEL in why and g["label"] == DS.STEP4_OVERRIDE_LABEL
+    assert DS.step4_label(g) == "run under a user override of a GATE STOP"
