@@ -160,7 +160,8 @@ doubling of data.
   on (a).
   1. **Rebuild the pitch-confirmed guitar doubles (c).** This is already the default ("on") in
      `candidates.json`: 2,226 pool examples, about 2–3 h. These are unambiguous dirt.
-  2. **A bleed-injection test on R_in.** It needs a small code addition and a review, but no renders
+  2. **A bleed-injection test on R_in,** declared
+     [below](#the-bleed-injection-test-declared-2026-10-23-before-any-data). It needs no renders
      and no training.
      - **Examples:** Adam Buckley's unflagged ElecGtr3 examples (188, in 6 sections).
      - **The injection:** add the original ElecGtr3 amp track, room-filtered as in the injection
@@ -176,6 +177,72 @@ doubling of data.
 - **R_in meanwhile:** John Morgan Kimock and Swatkins stay excluded as "pending". The trusted R_in
   is Dark Ride (407) plus Adam Buckley's 188 unflagged examples: 2 bands. Under (c), all 1,407 are
   trusted again.
+
+### The bleed-injection test (declared 2026-10-23, before any data)
+
+Declared before any of its data exists. Option (c), the guitar-double pool rebuild, is running
+meanwhile. Zero renders, no training; it decides nothing by itself, and the user decides on (a).
+
+- **Examples:** R_in examples that step 0 trusts and whose DI has its own amp track. That is Adam
+  Buckley's ElecGtr3: 188 examples in 6 sections, asserted in code. Dark Ride has no amp tracks, and
+  Kimock's and Swatkins' examples are all flagged.
+- **The bleed:** the example's own original amp track (`30_ElecGtr3.wav`).
+  - **Section audio:** aligned like every backing track.
+  - **Room path:** filtered through a synthetic room path, as in the injection check: a direct
+    path after 5–20 ms and an exponential tail with RT60 0.3–0.8 s.
+  - **One room per section,** seed 20261098.
+- **Three levels under our render:**
+  - **−18 dB:** Eggy's median, where both readings agree;
+  - **−14 dB:** Swatkins' median;
+  - **−8 dB:** a stronger level, Renesans' amp-source median.
+
+  A level is the bleed's energy against the render's, in 250 Hz–8 kHz over the judged span (1–10 s).
+- **The mixes:**
+  - **Injected:** the example's stored draw, with the bleed added inside the backing (before the
+    overall gain and the mastering draw). The rest of the backing is unchanged.
+  - **Clean:** the re-made original (from the stored truth render, parity-checked), separated by the
+    same path, X-LANCE on the MPS.
+- **The readout** (`bleed-read`, zero renders):
+  - **The model:** F, step 3's D_stem (3 seeds), read with amendment 5's A1+A2+A3 and step 3's
+    stored constant and pull; masked E.
+  - **Primary, per level:** injected − clean per example, paired, with a section-clustered 90% t
+    interval (6 sections, 5 df, t = 2.015).
+  - **Beside:**
+    - F − constant on the clean stems and at each level;
+    - per section;
+    - **answer movement:** the mean absolute change of the continuous A1+A2 answer (0–1 knob
+      scale), injected against clean. It is set against the seeds' own disagreement on the clean
+      stems (seeds 20261042 and 20261043 against 20261044), and needs no label.
+- **Power, stated before the data:**
+  - **Clusters:** one band and 6 sections, so 5 df. The interval's half-width is about 0.82 times
+    the section SD of the paired ΔE.
+  - **The pilot's paired ΔE had a band SD of about 0.005,** which gives a half-width of about
+    0.004 E. Effects under about 0.004 E would read as ties.
+  - **For scale:** D's whole margin over the constant on R_in is −0.016 E.
+- **What each outcome means:**
+
+  | Reading | Meaning | For the options |
+  |---|---|---|
+  | **At −18 and −14 dB the interval contains 0 (point under 0.004), and the movement stays under the seeds' disagreement** | At live levels the bleed is ambience to F | (c) is the trusted rule: the take candidates get the verdict "keep", and Kimock and Swatkins return to the trusted R_in. (a) is not run |
+  | **At −18 or −14 dB the interval lies entirely above 0** | Live-level bleed moves F's error, so the training labels are inconsistent where bleed exists | (a), restricted to sections where both take readings agree, goes to the user |
+  | **Only −8 dB lies above 0** | Bleed matters only when loud | A level rule in the spirit of (d): remove only tracks whose take sits within about 10 dB of the render. That is a few examples |
+  | **An interval lies entirely below 0** | Unexpected: the bleed helps | Reported; the bleed is kept |
+
+- **Limits:**
+  - **Test-side only.** F trained with bleed in about half its pool, so it may have learned to
+    ignore bleed. That would itself mean its training did not take the original tone as a cue.
+  - **A synthetic room path.**
+  - **One band and one clean part.**
+- **Cost:**
+  - **Separations:** 188 × 4 = 752 (clean plus 3 levels), 4.3–5 s each on the MPS: about 55–65 min.
+  - **Renders:** zero.
+  - **The read:** about 3 min of CPU.
+- **Machine rule:** `bleed-test` refuses while any `data_cleaning pool-rebuild` process runs.
+
+```
+$MSST -m learn.data_cleaning bleed-test --device mps     # after the pool rebuild: about 1 h
+$TORCH_PY -m learn.data_cleaning bleed-read              # about 3 min
+```
 
 ### Is −30 dB too strict?
 
