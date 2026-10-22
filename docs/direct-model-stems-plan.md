@@ -27,12 +27,14 @@ PR #264) adds a sound-based gate that decides step 3: step 4 runs only on `GATE 
 the gate read GATE STOP, and step 4 runs anyway under the user's declared override, labelled
 "run under a user override of a GATE STOP".
 
-**Where it stands (2026-10-22).** The X-LANCE build of the rest finishes about 04:00. Step 3's
+**Where it stands (2026-10-22).** The X-LANCE build of the rest finished at 03:46. Step 3's
 training of D_stem and D0 (3 seeds each, xlance_g) follows automatically, then the readout. The
 sound gate's truth and constant renders run during training, and D's and D0's after the readout.
 Step 4 follows only on `GATE OK`. *Update (2026-10-22):* the gate read GATE STOP; step 4 runs
 under [amendment 7](#amendment-7-2026-10-22-step-4-runs-despite-gate-stop-user-override)'s user
-override.
+override. *Done (2026-10-22; [results](direct-model-stems-results.md)):* step 4, run under a user
+override of a GATE STOP, reads `STEP4 NOT SHOWN` (D − S −0.034 [−0.103, +0.034]); by the declared
+rule, stop and revisit with the user.
 
 **Next planning item (user's coverage rule, 2026-10-21; [ROADMAP](ROADMAP.md)).** Every control
 the plugin exposes, with a switched-off feature's knobs counted as one setting. Step 3 sets only

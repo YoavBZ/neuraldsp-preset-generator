@@ -53,7 +53,9 @@ lives in the linked documents. Last updated 2026-10-22.
   (song to settings). Neither is yet shown better than the starting preset on fresh full mixes:
   arm A reads −0.028 [−0.064, +0.008] with htdemucs and −0.046 [−0.091, −0.000] with Mega-53
   ([results](arm-a-mega53-results.md)); the first, untuned direct model +0.033 [−0.053, +0.119]
-  ([results](direct-existing-results.md)). Better separation is the shared lever (step 0). The
+  ([results](direct-existing-results.md)), and the direct model trained on realistic stems −0.034
+  [−0.103, +0.034] (run under a user override of a GATE STOP;
+  [results](direct-model-stems-results.md)). Better separation is the shared lever (step 0). The
   earlier menu-ranking route is in the [history](roadmap-history.md).
 - **The judge** ([measuring-closeness.md](measuring-closeness.md)) is how closeness is
   measured. It needs the DI of the same take, and listening validated it only for clear
@@ -93,8 +95,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    *Coverage (2026-10-21):* both active routes set only `knob_ceiling.space` on Morgan: input
    gain, the amp's main knobs and switches (not its spring), and the mics with their cab
    placement. The rest, the amp choice included, stays at S, so neither covers the goal yet.
-   The ML session is to propose how and when each route covers every control: the next planning
-   item for both routes (the direct model and arm A), due after the direct model's step 3 result.
+   The ML session's proposal for how and when each route covers every control is a draft plan
+   (PR #266, 2026-10-22), for the user's decision.
 
    **Where it stands (2026-10-19).** Not ready to ship. Fresh full mixes (stage F, 21 parts in 12
    bands) are the yardstick; figures are against S, band-weighted, with 90% intervals.
@@ -195,11 +197,16 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       *Amendment 7 (2026-10-22, user):* the gate read GATE STOP (log d D − constant −0.1538
       [−0.3360, +0.0284], 4 bands; power about 46%; D − D0 −0.1266 [−0.1864, −0.0669]). Step 4
       runs anyway, unchanged, labelled "run under a user override of a GATE STOP".
-      *Now (2026-10-22):* the X-LANCE build (15,310 examples, 0 refused), step 3's training (6 runs)
-      and the readout are done (masked E, D − constant: R_in −0.0159 [−0.0363, +0.0046], V_dev
-      −0.0143 [−0.0223, −0.0063]); the gate read STOP; step 4 runs under amendment 7.
-      *Next planning item:* how and when this model and arm A cover every control (the user's
-      rule, 2026-10-21), proposed after step 3's result.
+      *Steps 3 and 4 done 2026-10-22 ([results](direct-model-stems-results.md)):* the X-LANCE
+      build (V_sep 1,720, pilot 5,995, rest 15,309 examples, 0 refused), step 3's training (6
+      runs) and the readout (masked E, D − constant: R_in −0.0159 [−0.0363, +0.0046], V_dev
+      −0.0143 [−0.0223, −0.0063]; descriptive); the gate read STOP. **Step 4, run under a user
+      override of a GATE STOP: `STEP4 NOT SHOWN`,** D − S −0.034 [−0.103, +0.034] (12 bands, 5
+      better; power about 21% for that effect). The new model clearly beats the old one (D −
+      D_existing −0.067 [−0.113, −0.021]) and is indistinguishable from arm A's search (D − H
+      −0.006 [−0.062, +0.050]; not shown equivalence) with no renders; clean leans better than S, crunch worse.
+      *Next (the user decides):* the coverage plan (every control, PR #266), the real-mix plan
+      (PR #267), and more power (more bands).
    3. **Two zero-render checks.** *Done 2026-10-19 ([results](shrink-snr-judge-v3-results.md)):*
       the best shrink does not measurably depend on stem SNR (a rule by SNR gains −0.003 [−0.013,
       +0.007] on held-out bands; nothing on realistic stems), and judge v3 agrees with the ear a
@@ -424,3 +431,4 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-21 | For a part documented as fully clean, `generate` turns the SW50R and AC20 clean starts down (`sw50rVolume` 15, `ac20Volume` 10): heard clean on the chord riff; closeness to records untested (user agreed) | [results](clean-start-breakup-results.md) |
 | 2026-10-22 | Direct model, step 3 (user; amendments 5 and 6, declared before any step 3 data): the answer is each knob's mixture median, averaged over 3 seeds × 2 halves and pulled toward the per-class constant (b fitted on the early-stopping set); the right cab's silent knobs leave E; the E check is descriptive (it replaces MODEL OK/STOP). A sound-based gate decides step 3: D's preset against the constant's, each rendered and judged against the true preset on R_in (about 5.9k renders); step 4 runs only on GATE OK. Coverage of every control (2026-10-21) is the next planning item for both routes, proposed after step 3's result | [plan, amendments 5 and 6](direct-model-stems-plan.md#amendment-5-2026-10-21-the-readout-e-rewards) |
 | 2026-10-22 | Direct model amendment 7 (user): the sound gate read GATE STOP (log d D − constant −0.1538 [−0.3360, +0.0284], 4 bands; audited correct, power about 46%; D − D0 −0.1266 [−0.1864, −0.0669]). Adopt any improvement, underpowered is not failed: step 4 runs anyway with its design, rule and early stops unchanged, every output labelled "run under a user override of a GATE STOP" | [plan, amendment 7](direct-model-stems-plan.md#amendment-7-2026-10-22-step-4-runs-despite-gate-stop-user-override) |
+| 2026-10-22 | Direct model steps 3 and 4 (step 4 run under a user override of a GATE STOP): STEP4 NOT SHOWN. D − S on stage F −0.034 [−0.103, +0.034] (12 bands, 5 better, 7 worse; clean −0.071, crunch +0.016; power about 21% for that effect). D − D_existing −0.067 [−0.113, −0.021] (16/21 parts, mostly crunch); D − H −0.006 [−0.062, +0.050], D − M +0.011 [−0.040, +0.062]: indistinguishable from arm A's search (about 55 renders per direction) at zero renders, not shown equivalence; D − D0 −0.006. 321 renders, all checks passed. Next as the user decides: every control (#266), real mixes (#267), more bands | [results](direct-model-stems-results.md) |
