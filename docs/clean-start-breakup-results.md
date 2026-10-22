@@ -73,6 +73,11 @@ is clean turned down far enough; SW50R still broke up at 25), and knob positions
 compare across amps. The compressor confound above is partly answered: SW50R with a
 compressor and no volume change also played clean.
 
+PR12 was swept the same way, for the next check (2026-10-22): `pr12Volume` 35, 25 and 15 read
+-21.4, -26.6 and -30.5 dB against the shipped baseline's -17.7 and the template's -19.0 (one
+render pair each, fresh processes, the chord riff). 35 is the highest of these that reaches
+the template; the grid is coarse.
+
 ## What changes
 
 `generate` step 4: on a part documented as fully clean, the SW50R start gets `sw50rVolume`
