@@ -1,7 +1,8 @@
 # The song-to-preset routes on real mixes: plan
 
-Drafted 2026-10-22, zero compute. **A draft for the user's decision:** nothing runs until the
-user approves it. Development data only. The ML plan's rules apply (section 5; the user's rules of
+Drafted 2026-10-22, zero compute. **Approved by the user on 2026-10-22.** It runs after the
+every-control stages and the data-quality audit's first findings (the user suspects the datasets need
+cleaning; any cleaning that touches these parts is applied first). Development data only. The ML plan's rules apply (section 5; the user's rules of
 2026-10-16): effect sizes with 90% band-clustered intervals, no pass/fail bars, renders declared.
 This is ROADMAP step 0, Next item 4.
 
