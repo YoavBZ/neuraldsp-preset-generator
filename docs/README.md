@@ -410,6 +410,13 @@ was declared, what was measured, and the research behind it.
   the [bleed audit](audits/bleed-2026-10-16/README.md): bleed only in the Telefunken live-room
   sessions, audible on the high parts; the cleaning isn't adopted, and every key result holds
   without bleed.
+- [data-quality-audit.md](data-quality-audit.md) (draft, 2026-10-22; evidence in
+  [audits/data-quality-2026-10-22](audits/data-quality-2026-10-22/)): zero-render audit. In a median
+  training or V_sep stem, 45% of the mel power lies above the median-aligned render (other music
+  plus mismatch). It costs on the sound gate (+0.103 [+0.055, +0.156] log d, high against low
+  third, within band), though it explains only part of the band gap. No different-notes DI
+  pairing was found. The targets' dirt is Telefunken live-room bleed. Proposes a
+  level-matched clean-versus-random retrain first (3 arms × 2 seeds, about 6 h of MPS).
 - [song-to-settings-diagnostics-plan.md](song-to-settings-diagnostics-plan.md) →
   [results](song-to-settings-diagnostics-results.md): arm B has signal on renders but hedges
   toward mid-range on records.
