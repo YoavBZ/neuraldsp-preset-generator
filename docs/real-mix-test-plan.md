@@ -1,5 +1,12 @@
 # The song-to-preset routes on real mixes: plan
 
+*Status, 2026-10-22 evening:* merged (#267). It runs after the data review and the cleaning, on
+trusted parts only ("use only what we can trust, no dirty tracks", the user, 2026-10-22), which
+replaces the no-high-bleed row below. **Amendment 1 (user, 2026-10-22): the direct model joins
+regardless of step 3's gate** ("of course the direct model should join the test"). D_real runs
+with step 4's models and readout, labelled like step 4 ("run under a user override of a GATE
+STOP"). The conditions on `GATE OK` below are replaced by this.
+
 Drafted 2026-10-22, zero compute. **Approved by the user on 2026-10-22.** It runs after the
 every-control stages and the data-quality audit's first findings (the user suspects the datasets need
 cleaning; any cleaning that touches these parts is applied first). Development data only. The ML plan's rules apply (section 5; the user's rules of
@@ -36,7 +43,7 @@ themselves is not measured. This plan runs each route on each part's real mix an
 - **D_real:** the direct model exactly as in step 4: amendment 5's readout, the search half only,
   step 4's separator and model hashes (checked against its `predictions.json`). It is fed a
   crop-only stem of the real-mix crop. The mix gets one gain to the training median and the stem
-  the same gain. D_real runs only on `GATE OK`; `GATE INCOMPLETE` counts as STOP. D0 is not run.
+  the same gain. D_real runs (amendment 1; it first read "only on `GATE OK`"). D0 is not run.
 - **The unity side is stored:** stage F's S and M, and step 4's D, on the same directions.
 - **S needs nothing new.** It reads no input, and the truth does not change, so its score is the
   same on both sides. Each route's **real-mix penalty** is therefore X_real − X_unity, direction by
@@ -161,7 +168,7 @@ discarded priming render per process start or amp change, the 31 GB disk guard, 
 ## Order
 
 1. **Now:** the user reads this plan. No compute, no code.
-2. **After step 4's report, or after `GATE STOP`** (then arm A only, and D's rows drop): code, tests
+2. **After step 4's report** (arm A and D, amendment 1): code, tests
    and an independent code review; the 23 separations when the renderer is idle; the renders; the
    report and an independent audit; then ROADMAP and docs/README.md. Arm A does not need D. It waits
    only so the gate and step 4 keep the render slots.
