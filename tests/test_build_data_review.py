@@ -21,6 +21,7 @@ def test_track_names():
     assert M.stereo_siblings("13_ElecGtr3.wav", files) == ["13_ElecGtr3.wav"]
     assert M.dt_counterpart("ElecGtr02") == "ElecGtr02DT"
     assert M.dt_counterpart("ElecGtr02DT") == "ElecGtr02"
+    assert M.dt_counterpart("elecgtr1dt") == "elecgtr1" and M.dt_counterpart("elecgtr1") == "elecgtr1dt"
 
 
 def test_guitar_tracks_exclude_dis():
@@ -31,6 +32,7 @@ def test_guitar_tracks_exclude_dis():
     assert not M.is_guitar_track("GTR DI_TDP-1.wav")
     assert not M.is_guitar_track("35_ElecGtr6D.wav")
     assert not M.is_guitar_track("Leslie Top TF11 Stereo Set_02.wav")
+    assert M.is_guitar_track("GTR Lead.wav")
 
 
 def test_plain_names():
@@ -63,6 +65,7 @@ def test_half_flags_and_rank():
     assert M.half_flags({"flag": "low"}, {"onset_ref_di": 0.8, "ref_active_di_silent": 0.48,
                                           "di_play_share": 0.52}) == ["reference_without_di"]
     assert M.half_flags({"flag": "low"}, {"onset_ref_di": 0.8, "di_play_share": 0.9}) == []
+    assert M.half_flags({"flag": "low"}, {"onset_ref_di": 0.2, "di_play_share": None}) == ["onsets_differ"]
     assert M.part_rank({"A": ["bleed_moderate"], "B": ["bleed_high"]}) == 0
     assert M.part_rank({"A": ["bleed_moderate"], "B": []}) == 1
     assert M.part_rank({"A": [], "B": ["onsets_differ"]}) == 2
@@ -152,13 +155,26 @@ def test_take_of_track():
     assert M.take_of_track("GTR Pre Rec.R.wav", dis) == "GTR Pre Rec"
 
 
+def test_backing_partner_matches_by_take():
+    dis = [{"part": "ElecGtr3", "own": ["27_ElecGtr3Mic1.wav", "28_ElecGtr3Mic2.wav"]}]
+    backing = {"27_ElecGtr3Mic1.wav", "01_Kick.wav"}
+    assert M.backing_partner("27_ElecGtr3Mic1.wav", backing, dis) == "27_ElecGtr3Mic1.wav"
+    # the flagged mic was left out of the backing, but the take's other mic is in it
+    assert M.backing_partner("28_ElecGtr3Mic2.wav", backing, dis) == "27_ElecGtr3Mic1.wav"
+    assert M.backing_partner("28_ElecGtr3Mic2.wav", {"01_Kick.wav"}, dis) is None
+    assert M.backing_partner("Leslie.wav", {"Leslie.wav"}, dis) == "Leslie.wav"
+
+
 def test_direction_options_and_pick():
     cands = [{"di": "a", "partner": "B", "rule": "dt_naming"}, {"di": "a", "partner": "B", "rule": "onsets_follow"},
-             {"di": "b", "partner": "A", "rule": "dt_naming"}, {"di": "c", "partner": "X", "rule": "dt_naming"}]
-    opts = M.direction_options(cands, lambda c: c["di"] != "c")
-    assert [(o["di"], o["partner"]) for o in opts] == [("a", "B"), ("b", "A")]
+             {"di": "b", "partner": "A", "rule": "dt_naming"}, {"di": "c", "partner": "X", "rule": "dt_naming"},
+             {"di": "d", "partner": "Y2", "rule": "beats_own_amp"}]
+    resolve = {"a": "B", "b": "A", "c": None, "d": "Y1"}
+    opts = M.direction_options(cands, lambda c: resolve[c["di"]])
+    assert [(o["di"], o["partner"]) for o in opts] == [("a", "B"), ("b", "A"), ("d", "Y1")]
     assert opts[0]["rules"] == ["dt_naming", "onsets_follow"]
-    assert M.direction_options(cands, lambda c: False) == []
+    assert opts[2]["flagged"] == ["Y2"]                                # played by another track of its take
+    assert M.direction_options(cands, lambda c: None) == []
     a, b = {"di": "a"}, {"di": "b"}
     # both playing beats a stored render; then a stored render beats more overlap
     assert M.pick_play([(a, True, 0.2, 0.9), (b, False, 0.8, 0.0)])[0] is b
@@ -228,6 +244,9 @@ def test_check_export():
                                                            {"id": "zzz", "verdict": "clean"}]}, _items())
     assert len(probs) == 2
     assert M.check_export({"page": "other"}, _items())[1]
+    _, probs = M.check_export(dict(obj, build="old"), _items(), builds={"new"})
+    assert probs and "old" in probs[0]
+    assert M.check_export(dict(obj, build="new"), _items(), builds={"new"})[1] == []
 
 
 def test_merge_verdicts_later_wins():

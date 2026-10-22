@@ -19,8 +19,9 @@ Three sections, in order of value; every clip is cut from source files and level
    crop checks flag come first, with a few low-flag parts mixed in as calibration.
 2. **Suspected doubles in the backings** (part C's training pool and V_sep): every distinct take
    pair the doubles rules flag (Cambridge "DT" naming; onset r > 0.6 in at least a quarter of the
-   DI's windows; another guitar track beating the own amp track in at least a quarter of at
-   least 10 windows; `di-library-match-summary.json`), plus a few unflagged pairs as calibration.
+   DI's windows; the own amp track beaten in at least a quarter of at least 10 windows, a guitar
+   track most often; `di-library-match-summary.json`), plus a few unflagged pairs as calibration.
+   A pair counts when its partner take is in the DI's backing (by any of that take's tracks).
    The target take's amp render, then the partner track at the same moment. Stored renders are
    used where they exist; the rest are rendered once (`render`: one process, isolate=True, a
    discarded priming render first, the machine-wide render cap).
@@ -190,7 +191,10 @@ CALIB_PAIRS = 3
 CALIB_PAIR_SLOTS = (2, 7, 12)                       # their places among the flagged pairs
 
 GUITAR_WORDS = ("gtr", "guitar")
-BETTER_MIN, BETTER_MIN_WINDOWS = 0.25, 10           # the "beats its own amp track" rule
+# The "beats its own amp track" rule as the audit and the cleaning plan count it: `better` (the share of
+# the DI's windows where some other track beats the own amp track by 0.1) at least a quarter of at least
+# 10 windows, with a guitar track the most frequent winner (`top`). Looser than that track's own share.
+BETTER_MIN, BETTER_MIN_WINDOWS = 0.25, 10
 
 
 def _save(path, obj):
@@ -227,13 +231,13 @@ def stereo_siblings(name, files):
 
 
 def dt_counterpart(part):
-    """Cambridge's double-track naming: 'ElecGtr02' <-> 'ElecGtr02DT'."""
-    return part[:-2] if part.endswith("DT") else part + "DT"
+    """Cambridge's double-track naming: 'ElecGtr02' <-> 'ElecGtr02DT' (any case: 'elecgtr1dt')."""
+    return part[:-2] if part.lower().endswith("dt") else part + ("dt" if part == part.lower() else "DT")
 
 
 def is_guitar_track(name):
     n = name.lower()
-    return any(w in n for w in GUITAR_WORDS) and not re.search(r"(^|[^a-z])di([^a-z]|$)|di\.wav$|d\.wav$", n)
+    return any(w in n for w in GUITAR_WORDS) and not re.search(r"(^|[^a-z])di([^a-z]|$)|di\.wav$|\dd\.wav$", n)
 
 
 def plain_song(band, song):
@@ -278,12 +282,12 @@ def half_flags(bleed_half, crop_half):
     if bleed_half.get("flag") in ("high", "moderate"):
         f.append("bleed_" + bleed_half["flag"])
     if crop_half:
-        on = crop_half.get("onset_ref_di")
-        if isinstance(on, (int, float)) and 0 <= on < 0.35 and crop_half.get("di_play_share", 1) >= 0.5:
+        on, plays = crop_half.get("onset_ref_di"), crop_half.get("di_play_share")
+        if isinstance(on, (int, float)) and 0 <= on < 0.35 and (plays is None or plays >= 0.5):
             f.append("onsets_differ")
         if (crop_half.get("ref_active_di_silent") or 0) >= 0.3:
             f.append("reference_without_di")
-        if (crop_half.get("di_play_share") if crop_half.get("di_play_share") is not None else 1) < 0.5:
+        if plays is not None and plays < 0.5:
             f.append("di_mostly_silent")
     return f
 
@@ -369,10 +373,11 @@ def doubles_candidates(scope, summary, inv, session_files):
         files = session_files.get(rec.get("session_dir"), [])
         if rec.get("source") == "cambridge":
             q = dt_counterpart(rec["part"])
-            mates = [r for r in by_session.get(rec["session_dir"], []) if r["part"] == q]
+            mates = [r for r in by_session.get(rec["session_dir"], []) if r["part"].lower() == q.lower()]
             tracks = sorted({t for r in mates for t in (r.get("own") or [])})
             if not tracks:
-                tracks = sorted(f for f in files if track_stem(f) == q and not f.lower().endswith("di.wav"))
+                tracks = sorted(f for f in files if track_stem(f).lower() == q.lower()
+                                and not f.lower().endswith("di.wav"))
             for t in tracks:
                 add(di, t, "dt_naming")
         row = summary.get(di)
@@ -403,14 +408,27 @@ def group_pairs(cands):
     return out
 
 
-def direction_options(cands, in_backing):
-    """The ways to play one pair: each (DI, partner track) whose partner is in that DI's backing,
-    with the rules that flag it, most rules first. -> [{"di", "partner", "rules"}] (empty: none)."""
-    rules = {}
+def backing_partner(partner, backing, session_dis):
+    """The backing track to play for a flagged partner track: the track itself if the backing has
+    it, else another track of the same take (another mic of it) that the backing has. -> name or None."""
+    if partner in backing:
+        return partner
+    take = take_of_track(partner, session_dis)
+    same = sorted(t for t in backing if take_of_track(t, session_dis) == take)
+    return same[0] if same else None
+
+
+def direction_options(cands, resolve):
+    """The ways to play one pair: each (DI, backing track) that `resolve(candidate)` finds for a
+    flagged partner, with the rules and flagged tracks behind it, most rules first.
+    -> [{"di", "partner", "rules", "flagged"}] (empty: the partner take is in no backing)."""
+    rules, flagged = {}, {}
     for c in cands:
-        if in_backing(c):
-            rules.setdefault((c["di"], c["partner"]), set()).add(c["rule"])
-    return [{"di": d, "partner": p, "rules": sorted(rules[(d, p)])}
+        t = resolve(c)
+        if t is not None:
+            rules.setdefault((c["di"], t), set()).add(c["rule"])
+            flagged.setdefault((c["di"], t), set()).add(c["partner"])
+    return [{"di": d, "partner": p, "rules": sorted(rules[(d, p)]), "flagged": sorted(flagged[(d, p)])}
             for d, p in sorted(rules, key=lambda dp: (-len(rules[dp]), dp))]
 
 
@@ -513,11 +531,15 @@ def item_id(kind, *parts):
     return f"{kind}-" + hashlib.sha1("|".join(map(str, parts)).encode()).hexdigest()[:10]
 
 
-def check_export(obj, items):
-    """An exported answer file against the items. -> ({id: {"verdict", "note"}}, [problems])."""
+def check_export(obj, items, builds=None):
+    """An exported answer file against the items (and, given `builds`, the current pages' clip
+    digests: an export from an older build may have heard other clips under the same ids).
+    -> ({id: {"verdict", "note"}}, [problems])."""
     probs = []
     if not isinstance(obj, dict) or obj.get("page") != PAGE:
         return {}, [f"not a {PAGE} export"]
+    if builds is not None and obj.get("build") not in builds:
+        probs.append(f"build {obj.get('build')!r} is not one of the current pages' {sorted(builds)}")
     by_id = {it["id"]: it for it in items}
     out = {}
     for a in obj.get("answers", []):
@@ -650,8 +672,8 @@ footer button.primary { background:var(--on); color:var(--on-fg); }
 <span id="left" class="ask"></span></div><div class="prog"><div id="bar"></div></div></header>
 <main>
 <h1>Which tracks can we trust?</h1>
-<p class="intro">{{COUNT}} short clips, about {{MINUTES}} minutes. Each clip is at the same loudness
-(&minus;23 LUFS). Tap Play, then the answer that fits; add a note if something is worth saying. Answers
+<p class="intro">{{COUNT}} short clips, about {{MINUTES}} minutes. Clips are levelled to &minus;23 LUFS
+(a few with sharp peaks sit up to 3 dB lower). Tap Play, then the answer that fits; add a note if something is worth saying. Answers
 are saved on this phone as you go. With <b>Autoplay next</b> on, an answer moves on and plays the next clip.
 When you finish (or stop), tap <b>Export</b> and send the text.</p>
 {{ITEMS}}
@@ -1073,8 +1095,11 @@ def _pair_items():
         keep, _ = PS.backing_tracks(rec, files[rec["session_dir"]], (leak.get(di) or {}).get("dropped", ()))
         return set(keep)
 
-    def in_backing(c):
-        return c["partner"] in backing(c["di"])
+    def session_dis(di):
+        return [r for r in inv.values() if r.get("session_dir") == inv[di]["session_dir"]]
+
+    def resolve(c):
+        return backing_partner(c["partner"], backing(c["di"]), session_dis(c["di"]))
 
     def score(opt):
         """Every section of the option's DI (those with a stored render, if any): the target is the
@@ -1097,9 +1122,10 @@ def _pair_items():
 
     pairs, skipped = [], []
     for g in group_pairs(cands):
-        opts = direction_options(g["cands"], in_backing)
+        opts = direction_options(g["cands"], resolve)
         if not opts:
-            skipped.append({"takes": list(g["takes"]), "session": g["key"][0], "why": "partner not in the backing"})
+            skipped.append({"takes": list(g["takes"]), "session": g["key"][0],
+                            "why": "no track of the partner take is in the backing"})
             continue
         best = pick_play([x for o in opts for x in score(o)])
         pairs.append((best, {"takes": list(g["takes"]), "all_rules": g["rules"], "calibration": False}))
@@ -1110,12 +1136,13 @@ def _pair_items():
     calib, bands = [], set()
     for di in CALIB_PAIR_DIS:
         rec = inv[di]
-        if len(calib) >= CALIB_PAIRS or rec["band"] in bands or (rec["session_dir"], rec["part"]) in flagged_takes:
+        if (len(calib) >= CALIB_PAIRS or rec["band"] in bands or not summary.get(di)     # scored by the detector
+                or (rec["session_dir"], rec["part"]) in flagged_takes):
             continue
         mates = [r for r in inv.values() if r.get("session_dir") == rec["session_dir"]]
         others = sorted(t for t in backing(di) if is_guitar_track(t)
                         and (rec["session_dir"], take_of_track(t, mates)) not in flagged_takes)
-        scored = [x for t in others for x in score({"di": di, "partner": t, "rules": []})]
+        scored = [x for t in others for x in score({"di": di, "partner": t, "rules": [], "flagged": []})]
         scored = [x for x in scored if x[1] and x[2] >= 0.5]       # stored, and both playing
         if not scored:
             continue
@@ -1153,11 +1180,13 @@ def _pair_items():
             "clip_s": 2 * PAIR_PART_S + PAIR_GAP_S,
             "src": {"render": {**render, "offset_s": t0, "dur_s": PAIR_PART_S},
                     "partner": [{"path": str(sd / g), "start_s": start, "dur_s": PAIR_PART_S} for g in group]},
-            "private": {"di": opt["di"], "partner": partner, "takes": takes, "rules": meta["all_rules"],
+            "private": {"di": opt["di"], "partner": partner, "flagged_tracks": opt["flagged"],
+                        "takes": takes, "rules": meta["all_rules"],
                         "direction_rules": opt["rules"], "calibration": meta["calibration"],
                         "datasets": scope.get(opt["di"]), "section": s["id"],
                         "both_playing_share": round(both, 3), "onset_r": round(r, 3)}})
-    return items, needs, skipped
+    unscored = sorted(di for di in scope if not summary.get(di))
+    return items, needs, skipped, unscored
 
 
 def _di_items():
@@ -1245,7 +1274,7 @@ def cmd_plan(args):
         raise SystemExit(f"{AUDIT_DIR} has no di-library-match-summary.json (the data-quality audit, PR #272)")
     t0 = time.time()
     amp = _amp_items(AUDIT_DIR)
-    pairs, needs, skipped = _pair_items()
+    pairs, needs, skipped, unscored = _pair_items()
     dis = _di_items()
     items = amp + pairs + dis
     ids = [it["id"] for it in items]
@@ -1253,10 +1282,11 @@ def cmd_plan(args):
         raise SystemExit("two items share an id")
     plan = {"page": PAGE, "audit_dir": str(AUDIT_DIR), "items": items, "renders_needed": needs,
             "pairs_skipped": skipped,
+            "dis_without_detector_row": unscored,      # no doubles reading for these (DI-only parts)
             "counts": {k: sum(it["section"] == k for it in items) for k in SECTIONS}}
     _save(OUT / "plan.json", plan)
     print(json.dumps(plan["counts"]), f"renders needed {len(needs)}", f"pairs skipped {len(skipped)}",
-          f"({time.time() - t0:.0f} s)")
+          f"DIs without a doubles reading {len(unscored)}", f"({time.time() - t0:.0f} s)")
     print("PLAN DONE")
 
 
@@ -1304,6 +1334,8 @@ def cmd_render(_args):
             y = (y.mean(axis=1) if y.ndim == 2 else y)[int(PS.TRIM_S * PS.SR):int((PS.TRIM_S + PS.SEC_S) * PS.SR)]
             stored = np.load(PS.example_path(i))
             share = min(DS.match_share(m, stored[f"g{h}"]) for h, m in PS.halves_mel(y).items())
+            if share < DS.MATCH_SHARE:
+                raise SystemExit(f"{i}: the render differs from part C's stored mels (share {share:.4f})")
             from learn import direct_sound_gate as G
 
             scale, sha = G.write_flac(pathlib.Path(n["path"]), y, PS.SR)
@@ -1423,7 +1455,8 @@ def cmd_ingest(args):
     if not items:
         raise SystemExit("run `build` first")
     obj = json.loads(pathlib.Path(args.export).expanduser().read_text())
-    new, probs = check_export(obj, items)
+    builds = {p["build"] for p in (_load(OUT / "items.json") or {}).get("sittings", [])}
+    new, probs = check_export(obj, items, builds)
     if probs:
         raise SystemExit("the export does not fit the items: " + "; ".join(probs[:10]))
     path = OUT / "verdicts.json"
