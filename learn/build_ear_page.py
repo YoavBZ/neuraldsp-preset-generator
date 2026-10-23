@@ -343,6 +343,8 @@ def page_html(part, items, clips, build, n_parts):
             "secs": {i["id"]: seconds_of(i) for i in items}}
     body = "\n".join(item_html(i, n + 1, total) for n, i in enumerate(items))
     js = JS.replace("GAP_MS", str(int(GAP_S * 1000)))
+    data_json = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
+    clips_json = json.dumps(clips)
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -364,8 +366,8 @@ tap <b>Export</b> any time, even halfway, and send the file. Unanswered items si
 <div class="row"><button type="button" id="copy">Copy</button><button type="button" id="save">Save file</button>
 <button type="button" id="close">Close</button></div></div>
 <audio id="player" preload="none" playsinline></audio>
-<script id="data" type="application/json">{json.dumps(data, ensure_ascii=False).replace("</", "<\\/")}</script>
-<script id="clips" type="application/json">{json.dumps(clips)}</script>
+<script id="data" type="application/json">{data_json}</script>
+<script id="clips" type="application/json">{clips_json}</script>
 <script>{js}</script></body></html>"""
 
 
