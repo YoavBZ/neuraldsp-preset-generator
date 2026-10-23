@@ -17,9 +17,9 @@ use a reviewed trusted set, and dirty tracks are excluded, not flagged.
   votes per session, and only the sessions the estimator was not developed on decide. The code
   review's other six fixes are folded in with it
   ([amendment 1](#amendment-1-2026-10-22-code-review-the-injection-check-votes-per-session)).
-- **Not run yet.** Only scratch smoke runs exist (listed under [Smoke](#smoke-development-decides-nothing)).
-  Step 2's data part (the candidate-driven pool rebuild) is built too; training waits for the user's
-  listening verdicts on the suspected doubles.
+- **Step 0 ran on 2026-10-23** (the injection check passed). Its result needs a decision from the
+  user: see the [decision memo](#decision-memo-2026-10-23-the-target-takes-own-bleed). Nothing past
+  step 0 has run, apart from the candidate list and the guitar-double pool rebuild it switches on.
 - **Inputs read:** the [data-quality audit](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/272)
   (draft PR #272) and its evidence; [the plan](direct-model-stems-plan.md) (steps 3–4,
   amendments 2 and 5–7); [step 3–4 results](direct-model-stems-results.md);
@@ -52,6 +52,284 @@ use a reviewed trusted set, and dirty tracks are excluded, not flagged.
    - **In development smoke runs,** close mics read takes back within about 1.5 dB, but one loud room
      mic read −34.4 dB for −30 dB.
    - **The check can fail.** If it does, step 0 stops and returns to review.
+
+## Decision memo (2026-10-23): the target take's own bleed
+
+Written for the user's morning, from step 0's stored outputs only (zero compute). The logs are in
+`~/ndsp-presets/learn/data-cleaning/logs/`.
+
+### What step 0 found
+
+- **The injection check passed.** All 3 deciding sessions passed, with 0 false positives; room and
+  overhead mics read back within 1 dB. Storm Of Particles, a development session read beside, failed
+  at −30 dB on its room mics.
+- **The declared rule flags most of the data:**
+  - **Pool:** 63.5% untrusted (13,536 of 21,304), and 767 of the 998 early-stopping examples.
+  - **R_in:** John Morgan Kimock 376/376, Swatkins 219/219, Adam Buckley 217/405, Dark Ride 0/407.
+- **The flagged examples are concentrated in five bands.**
+
+  | Band (pool) | Untrusted | What is removed |
+  |---|---|---|
+  | Eggy | 7,387/7,387 | drums 292, vocal mics 193, keys 30 |
+  | Renesans | 2,847/2,847 | drums 370, other 137, bass 59, vocals 37 |
+  | Ale Lak | 2,380/2,380 | guitar 50 (its "DT" doubles), bass 10 |
+  | Death Of A Romantic | 461/2,460 | drums 27, vocals 24, guitar 16, bass 12 |
+  | Storm Of Particles, Hollow Ground, Starnes And Shah | 307, 77, 77 | guitar |
+  | Rebuild The Evil, The Long Wait | 0 | — |
+
+- **Removed tracks by class:** drums 802, vocal 291, other 167, bass 108, keys 44, guitar 94.
+  - **Only 67 removals are pitch-confirmed "same part":** 38 guitar, 22 vocal mics, 6 drum mics,
+    1 keys.
+  - **The vocal and drum "doubles" are not other takes.** They are bandmates' mics that pick up the
+    guitar amp: Eggy's VOX BASS and VOX KEYS, the overhead and the ride (chroma 0.7–0.96).
+
+### What the dirt is
+
+- **In the live sessions, the target's original amp sound bleeds into the room, overhead, drum and
+  vocal mics.** These are Eggy, Renesans, John Morgan Kimock and Swatkins.
+- **The bleed keeps the original settings.** Our render replaces only the close-mic track, so the
+  bleed carries the original amp settings, not the label's.
+- **So the separated stem holds two versions of the target:** our render (the label) and the
+  original take (other settings), quieter and roomier. That is a label inconsistency, not just
+  "other instruments". In Ale Lak the second version is a real double at about the render's level.
+- **How loud the original take sits under our render in the mix** (median per example
+  *[inferred]*: the summed take less the backing level and the drawn ratio):
+
+  | Band | Amp-source reading (upper bound) | DI-source reading |
+  |---|---|---|
+  | Eggy | −18 dB | −18 dB |
+  | Swatkins (R_in) | −14 dB | −16 dB |
+  | John Morgan Kimock (R_in) | −2 dB | −19 dB |
+  | Renesans | −7.5 dB | −33 dB |
+  | Ale Lak (doubles) | +2.4 dB | +2.6 dB |
+  | Death Of A Romantic | −5 dB | −2 dB |
+
+  - **Where the two readings agree** (Eggy, Swatkins), the original take sits about 14–18 dB under
+    our render: audible room ambience, not a second lead.
+  - **Where they disagree** (Renesans, John Morgan Kimock), the live amp track carries drum bleed of
+    its own, and the amp-source reading counts those drums as take. Only 4% of Renesans' removed
+    tracks pass −30 dB on the DI-source reading.
+  - **Death Of A Romantic is a studio session,** where bleed should not exist, yet both readings
+    agree. It needs a listen before any decision.
+- **Realistic in kind, not in tone.** A live-recorded song also has its guitar in the room mics, but
+  with the same tone as the close mic. Ours has the original tone in the room and the label's tone
+  at the close mic.
+
+### What step 3 suggests (stored gate rows; descriptive)
+
+- **The two fully flagged bands are step 3's strongest.** On the sound gate (D − constant, log d),
+  John Morgan Kimock reads −0.283 and Swatkins −0.287. Dark Ride, unaffected, reads +0.016.
+- **Within Adam Buckley,** flagged examples read −0.072 (215) and unflagged ones −0.048 (186, a single
+  DI).
+- **What this suggests:** at its real level, the bleed in the *test* stems does not stop D from
+  landing closer than the constant. Nothing here shows it hurting.
+- **Caveats:**
+  - **Bands are confounded.** John Morgan Kimock and Swatkins have the cleanest stems
+    (contamination 0.39 and 0.25) and no other guitars in their backing. Dark Ride has 71% other
+    guitars and contamination 0.64.
+  - **4 bands only.**
+  - **Only test-side bleed is shown.** The gate compares renders of the same DI, and says nothing
+    about bleed in *training*. Eggy and Renesans alone are 48% of the training pool, and no stored
+    reading separates their effect.
+
+### Options
+
+Measured rates: a render about 1.6 s (it overlaps the separation). X-LANCE takes 4.3–5 s a clip on
+the MPS alone, or about 0.35 clips/s with the CPU worker. The learning curve gives −0.017 E per
+doubling of data.
+
+| Option | Pool affected | R_in affected | Cost | Trade-off |
+|---|---|---|---|---|
+| **(a) Rebuild without every flagged track** (the declared rule) | 13,536 rebuilt | 812 rebuilt (2 separations each) | about 13.5k renders; pool 16–19 h MPS alone or about 10.7 h with the CPU worker; R_in about 2 h | Strips drums and vocals from live-band backings. Median backing power removed per section: Eggy 22%, Renesans 67%, Swatkins 87%, John Morgan Kimock 97%, Death Of A Romantic 98%. Unrealistic the other way, and inflated where the amp-source reading is only an upper bound |
+| **(b) Drop the affected sections** | 13,536 dropped (36.5% kept) | Kimock and Swatkins out | 0 renders | About 1.5 fewer doublings: +0.025 E projected (+0.041 on the steeper seed), larger than D's whole margin over the constant (−0.016). All of Eggy, Renesans and Ale Lak go. R_in is left with 2 bands, so there is no band-clustered test |
+| **(c) Keep the target-take bleed; remove only other-guitar doubles** | 2,226 (pitch-confirmed guitar doubles, 10.4%); 3,225 with guitar-class takes | 0 (217 with guitar-class takes) | 2.2k renders, 2.7–3.1 h MPS alone or about 1.8 h with the CPU worker | Removes the clear dirt (Ale Lak's doubles sit at the render's level). Keeps the live bleed, which is realistic in kind but inconsistent in tone |
+| **(d) Remove a track only where the target take is at least X dB relative to that track's own content** (the track is mostly the target), plus same-part tracks | X = −3: 2,942 (13.8%); X = −6: 7,533 (35%); X = −10: 10,998 (52%) | X = −3: 0; X = −6: 64 (Kimock) and 31 (Buckley); X = −10: Kimock 376 | X = −3: about 2.9k renders, 3.5–4.1 h MPS alone or about 2.3 h with the CPU worker | Removes mics that are mostly guitar (a bandmate's vocal mic aimed at the amp) and keeps overheads that are mostly drums. X has no validated value. By class, the removed take tracks' medians sit 15–20 dB under their own content (keys 35 dB) |
+
+### Fit with the user's rule, and the recommendation
+
+- **The rule as written** ("use only what we can trust, no dirty tracks") reads the bleed as dirt,
+  since it contradicts the label.
+  - **That points to (a):** the most data-preserving way to exclude it.
+  - **Its costs:** 10–19 h of separation, backings stripped of drums and vocals, and removals partly
+    inflated by the upper-bound reading.
+  - **(b) breaks the test set and costs more accuracy** than the model has.
+- **Why not (a) yet.** The user's bleed complaints (U0, U1, U8, U10, U13) were about other
+  instruments in the *target* amp track. This is the reverse, the target in *other* tracks. At about
+  −14 to −18 dB under our render, its harm is not shown. The strongest bands carry it.
+- **Recommended:** (c) now, and decide the bleed with one cheap direct test before spending 10–19 h
+  on (a).
+  1. **Rebuild the pitch-confirmed guitar doubles (c).** This is already the default ("on") in
+     `candidates.json`: 2,226 pool examples, about 2–3 h. These are unambiguous dirt.
+  2. **A bleed-injection test on R_in,** declared
+     [below](#the-bleed-injection-test-declared-2026-10-23-revised-after-review-before-any-data).
+     It needs no renders and no training. Its outcome table says what it means for (a) and (c).
+  3. **Listen to Death Of A Romantic's 461 flagged examples** before deciding them.
+- **R_in meanwhile:** John Morgan Kimock and Swatkins stay excluded as "pending". The trusted R_in
+  is Dark Ride (407) plus Adam Buckley's 188 unflagged examples: 2 bands. Under (c), all 1,407 are
+  trusted again.
+
+### The bleed-injection test (declared 2026-10-23, revised after review, before any data)
+
+Declared before any of its data existed, and revised the same day after its code review ("go with
+fixes"); still no data. Option (c), the guitar-double pool rebuild, runs first. The test needs zero
+renders and no training. It decides nothing by itself: the user decides on (a).
+
+- **Examples:** R_in examples that step 0 trusts and whose DI has its own amp track. That is Adam
+  Buckley's ElecGtr3: 188 examples in 6 sections, with its own amp track `30_ElecGtr3.wav`. Both the
+  count and the track are asserted in code.
+  - Dark Ride has no amp tracks.
+  - Kimock's and Swatkins' examples are all flagged.
+- **The bleed:** the example's own original amp track, as section audio aligned like every backing
+  track. It goes through one of two synthetic rooms, one of each per section (seed 20261098):
+  - **Diffuse:** a direct path after 5–20 ms and an exponential noise tail (RT60 0.3–0.8 s). The
+    direct path sits **about 22 dB under the tail** (−24 to −20 dB), like a far room mic.
+  - **Direct-heavy:** 4 taps at 3–30 ms with the same kind of tail **6 dB under them**, like a mic
+    near the amp, or a bandmate's vocal mic facing it.
+- **Five variants, as levels under our render.** A level is the bleed's energy against the render's,
+  in 250 Hz–8 kHz over the judged span (1–10 s).
+
+  | Variant | Room | Level | Why |
+  |---|---|---|---|
+  | `bleed18` | diffuse | −18 dB | Eggy's median, where both readings agree (live) |
+  | `bleed14` | diffuse | −14 dB | Swatkins' median (live) |
+  | `direct14` | direct-heavy | −14 dB | the same level, with a direct path (live) |
+  | `bleed8` | diffuse | −8 dB | Renesans' amp-source median (loud) |
+  | `bleed0` | diffuse | 0 dB | **the positive control**: a second take as loud as ours |
+
+- **The mixes:**
+  - **Injected:** the example's stored draw, with the bleed added inside the backing (before the
+    overall gain and the mastering draw). The rest of the backing is unchanged.
+  - **Clean:** the re-made original (from the stored truth render, parity-checked). It is saved and
+    separated by the same path, and both sides are read from this test's own files. X-LANCE runs on
+    the MPS.
+- **The readout** (`bleed-read`, zero renders):
+  - **The model:** F, step 3's D_stem (3 seeds), read with amendment 5's A1+A2+A3 and step 3's
+    stored constant and pull; masked E.
+  - **Primary, per variant:** injected − clean per example, paired, with a section-clustered 90% t
+    interval (6 sections, 5 df, t = 2.015).
+  - **Answer movement, like with like:** each seed's own mean absolute change of its continuous
+    answer (0–1 knob scale), injected against clean, averaged over the 3 seeds. It is set against the
+    mean single-seed disagreement on the clean stems over the 3 seed pairs. It needs no label.
+  - **Beside:** F − constant on clean and per variant; per section.
+- **How each variant reads:**
+  - **up:** the interval lies entirely above 0;
+  - **down:** entirely below 0;
+  - **tie:** the interval contains 0, the point is under 0.004 E, and the movement is at most the
+    seeds' disagreement;
+  - **undecided:** anything else.
+
+  **The control moves F** if its interval lies above 0, or its movement exceeds the seeds'
+  disagreement.
+- **Power, stated before the data:**
+  - **Clusters:** one band, 6 sections, 5 df. The interval's half-width is about 0.82 times the
+    section SD of the paired ΔE.
+  - **At the pilot's band SD of about 0.005,** that is about 0.004 E; effects under it read as ties.
+  - **For scale:** D's whole margin over the constant on R_in is −0.016 E.
+- **What each outcome means.** The rows are mutually exclusive, and the first that matches applies
+  (`bleed_outcome`).
+
+  | # | Condition | Reading | For the options |
+  |---|---|---|---|
+  | 1 | The 0-dB control does not move F | **F insensitive:** the test cannot tell ambience from a model that ignores the stem's details | Nothing changes. Pending candidates stay pending, and (c) runs as planned |
+  | 2 | Any live variant (−18, −14, direct −14) reads up | **Live bleed moves F:** the training labels are inconsistent where bleed exists | (a), restricted to sections where both take readings agree, goes to the user |
+  | 3 | Every live variant ties and −8 dB reads up | **Loud bleed only** | A level rule: rebuild only the sections whose take (amp-source reading) sits within 10 dB of our render. Members now: Renesans 1,957 of 2,847 pool examples, Eggy 973, Death Of A Romantic 342, Ale Lak 102, Starnes And Shah 13, Storm Of Particles 12 (3,399 in all); in R_in, Kimock 366/376, Swatkins 50/219 and Adam Buckley 44/217. Every other take is kept |
+  | 4 | Every live variant and −8 dB tie | **Ambience** at every measured level | (c) is the trusted rule for R_in: the take candidates get the verdict "keep". Kimock rejoins the trusted R_in only here, since his amp-source median is −2 dB; Swatkins also rejoins. For the pool, see the training-side caveat below |
+  | 5 | Anything else: a live or −8 dB variant undecided, or any variant down | **Undecided** | Pending stays pending; the result goes to the user; no new spend without the user |
+
+- **The training side, plainly:**
+  - **This test reads test-side bleed only.** F was trained with bleed in about half its pool
+    (Eggy and Renesans are 48% of it).
+  - **A test-side tie cannot price bleed in training.** Row 4's "keep" for the *pool* would rest on
+    this test alone. A tie shows that F, as trained, is not moved by bleed at inference. It does not
+    show that a model trained without the bleed would be no better.
+  - *[inferred]* F may have learned to ignore bleed, which would itself say its training did not take
+    the original tone as a cue. That is a reading, not a measurement.
+- **Limits:**
+  - **Synthetic rooms:** diffuse (direct-to-tail about −22 dB) and direct-heavy (+6 dB). Real
+    bleed paths lie between and vary by mic.
+  - **One band, one clean part, 6 sections.**
+  - **Readings, not truth:** the levels are medians of the take readings, and the amp-source reading
+    is an upper bound in live rooms.
+- **Cost:**
+  - **Separations:** 188 × 6 = 1,128 (clean plus 5 variants). At 4.3–5 s each on the MPS that is
+    about 1.4–1.6 h.
+  - **Renders:** zero.
+  - **The read:** about 5 min of CPU.
+- **Machine rule:** `bleed-test` refuses while any `data_cleaning pool-rebuild` process runs.
+
+```
+$MSST -m learn.data_cleaning bleed-test --device mps     # after the pool rebuild: about 1.4-1.6 h
+$TORCH_PY -m learn.data_cleaning bleed-read              # about 5 min; prints the OUTCOME row
+```
+
+### The bleed-injection test: result (2026-10-23, audited)
+
+Run 02:51–04:14 as declared: 188 examples in 6 sections, 1,128 X-LANCE separations on MPS, 0
+refused, zero renders. An independent audit recomputed every row from the stored stems with its own
+code (all match to 4 decimals) and confirmed the rules ran in the declared order.
+
+| Variant | Injected − clean (E, 6 sections) | Reading |
+|---|---|---|
+| −18 dB diffuse (live level) | −0.0001 | tie |
+| −14 dB diffuse (live level) | +0.0001 | tie |
+| −14 dB direct-heavy | +0.0002 | tie |
+| −8 dB diffuse | +0.0006 [+0.0002, +0.0011] | up |
+| 0 dB control | +0.0030 [+0.0017, +0.0043] | up (the control moves F) |
+
+Answer movement 0.003–0.019 against a single-seed disagreement of 0.049; F − constant on the clean
+side −0.0028. **Declared outcome: "loud bleed only".**
+
+**Sizes (audit).** The section SD came in at 0.0003–0.0016 against the declared 0.005, so the test
+was about 10× more sensitive than planned; that is why +0.0006 reads "up" while sitting well under the
+0.004 tie point. −8 dB is 4% of D's R_in margin over the constant (−0.016); even 0 dB is 19%. The live
+variants' upper bounds stay at or under +0.0007.
+
+**What it means.**
+- **(a), rebuilding without all bleeding mics: not supported.** Bleed at live levels has no
+  measurable test-side effect.
+- **(c), rebuilding the true guitar doubles, stands** (done: 954 rebuilt examples are current).
+- **The level rule (row 3)** as counted per example on the amp-source upper bound covers 3,399 pool
+  and 460 R_in examples (Kimock 366, Swatkins 50, Adam Buckley 44). Two caveats: the rule counts
+  examples, not sections (by section it would cover nearly every flagged section, e.g. Eggy 95/96);
+  and on the DI-source reading it is 1,530 pool and 227 R_in (Kimock 75).
+- **Kimock and Swatkins:** strictly under row 3, only Swatkins 169 and Kimock 10 rejoin the trusted
+  R_in; in practice the result supports them rejoining. For the user to decide.
+- **Training side: not priced.** This test cannot say whether training without bleed would help.
+
+**Limits.** One band, one part, 6 sections; synthetic rooms; the 0 dB effect is thin (55% of examples
+worse, one section none).
+
+### The user's decision (2026-10-23)
+
+"Let's only keep clean ones for now. We'll add the not-loud ones only if we must. Let's not
+compromise quality." So every example with any flagged take or bleed stays excluded from training and
+from the trusted test set, even though the injection test found live-level bleed harmless on the test
+side. Kimock and Swatkins stay out of the trusted R_in for now. The rebuilt guitar doubles (option (c),
+954 current examples) count as clean. Adding not-loud bleed back is a last resort, proposed only if
+data size forces it. The trusted R_in is then Adam Buckley's untouched examples and Dark Ride (2 bands),
+so new test bands (the DI-source inventory, #276) matter for power.
+
+### Is −30 dB too strict?
+
+- **The counts at looser thresholds** (`lists.log`):
+
+  | Threshold | Pool untrusted | John Morgan Kimock (R_in) | Swatkins (R_in) | Adam Buckley (R_in) |
+  |---|---|---|---|---|
+  | −30 dB | 63.5% | 376/376 | 219/219 | 217/405 |
+  | −25 dB | 61.4% | 376/376 | 219/219 | 186/405 |
+  | −20 dB | 31.1% | 376/376 | 174/219 | 31/405 |
+
+- **For live bleed, −30 dB (re the original close mic) is strict.** It is the measure's floor,
+  chosen for amp-track targets, where any foreign content enters the judged sound.
+- **The threshold is not the lever.**
+  - −20 dB, the bleed audit's "high" boundary, halves the flagged pool but still flags all of John
+    Morgan Kimock.
+  - Most of the difference between thresholds is Eggy's ambience: 7,387 flagged at −30 dB, 7,344 at
+    −25 dB, and 1,123 at −20 dB. Renesans (2,847) and Death Of A Romantic (461) stay flagged at
+    −20 dB.
+  - Whether bleed counts as dirt at all (the test above) matters more than where the line sits.
+- **Recommended:** keep −30 dB for same-part doubles and for amp-track targets. Set the bleed rule
+  from the injection test, not by moving the threshold.
 
 ## A. Review of the ML session's proposal (as first written)
 
