@@ -2807,6 +2807,28 @@
    "renders": "5,811 if all 17 candidates are trusted (51 priming + 102 x 55 arm A + 102 D + 36 D unmastered + 12 repeat check with its 6 priming renders); fewer on a smaller trusted set. Separations: up to 23 X-LANCE crop-only stems and 1 reproduction",
    "held_out": "none touched",
    "status": "2026-10-22: code written and smoke-tested on scratch, not run. Waits for the user's trusted list (data review) and the cleaning"
+  },
+  {
+   "test_id": "telefunken-new-test-band-jhnc",
+   "plan": "docs/research/di-source-inventory-2026-10.md",
+   "entered": "2026-10-23, right after the download and before any listening, measurement, render or separation of its audio. The user approved the download in chat (relayed by the ML session, 2026-10-23) and decided, on the ML session's recommendation, that new Telefunken bands with a confirmed DI and amp track become test bands first",
+   "kind": "reservation: a NEW TEST band, reserved from training",
+   "parts": {
+    "candidates": [
+     "Jen Hartswick & Nick Cassarino - Drowning: Guitar-Passive DI.wav -> Guitar-Amp-M81.wav",
+     "Jen Hartswick & Nick Cassarino - Numb (folder 'Novacaine'): Guitar-Passive Di.wav -> Guitar-Amp-M81.wav",
+     "Jen Hartswick & Nick Cassarino - Silent Waves: Guitar-Passive DI.wav -> Guitar-Amp-M81.wav",
+     "Jen Hartswick & Nick Cassarino - You Cant Take It Back: Guitar-Passive DI.wav -> Guitar-Amp-M81.wav"
+    ],
+    "run": "the parts the user trusts after listening (the 2026-10-22 rule: 'use only what we can trust, no dirty tracks'); not known when this entry was made"
+   },
+   "bands": "1 new band (Jen Hartswick & Nick Cassarino, Telefunken LFTL season 4), never used by this project",
+   "gate": "none yet: not used by any test until the user has listened to its tracks; a test that uses it declares its own gate in its own entry",
+   "audio_only": "~/ndsp-presets/references/datasets-telefunken-new/ (manifest.json: source URLs, archive and per-WAV sha256, WAV headers; the four ZIPs kept in _zips/). 48 kHz, 24-bit, mono; DI lengths 215.8, 327.6, 318.5 and 359.7 s (20.4 min)",
+   "training": "reserved: never in a training pool, a pre-training render set, a backing pool or a screen that chooses anything. No code reads this directory yet",
+   "renders": "0; separations: 0",
+   "held_out": "none touched",
+   "outcome": "pending: waits for the user's listening"
   }
  ]
 }

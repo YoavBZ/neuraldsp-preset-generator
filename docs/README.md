@@ -628,3 +628,13 @@ was declared, what was measured, and the research behind it.
     a residual median head early-stopped on E, trees, binned heads, frozen AFx-Rep inside the stem
     stage, then pretraining routes. Lists two licence questions for the user. Research, not a
     declared plan.
+18. [di-source-inventory-2026-10.md](research/di-source-inventory-2026-10.md): which clean guitar
+    DIs could widen the direct model's training set (October 2026, zero compute). Nothing on disk
+    adds a band without spending a test or a held-out set. The 277-section pool is 49% high-gain
+    or metal, and its clean sections are one band. The Telefunken file listings (2026-10-23)
+    confirm one new band with an electric DI and amp track, Jen Hartswick & Nick Cassarino, which
+    becomes a test band first (the user's decision); Uglybraine, Melt and the five sessions with
+    no DI box hold no guitar DI, and Braiden Sunshine's is probably acoustic. Then Strobe and
+    MekaPhil (B2's parked songs, now allowed for training), EGDB and GOAT (licences confirmed),
+    then stage F's 10 bands into training once enough new test bands exist. Costs at 77 renders
+    per section. Research, not a declared plan.
