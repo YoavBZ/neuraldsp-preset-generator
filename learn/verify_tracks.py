@@ -295,7 +295,7 @@ def d2_status(flags, hum_suspect=False):
 def target_verdict(st, ear_clean, ear_amp, disputed=False, in_mix=False):
     """A target's standing. st: {measure: status}; ear_clean: True/False/None (both halves heard clean on
     data-review-1); ear_amp: True/False/None (heard as an amp on the target-vs-DI page).
-    -> (verdict, reasons): 'trusted', 'excluded' (a measured fail, or the ear said no) or 'pending ear'."""
+    -> (verdict, reasons): 'verified', 'excluded' (a measured fail, or the ear said no) or 'pending ear'."""
     need = ["A1", "A2", "A3", "A4", "A5", "A6"] + (["A6mix"] if in_mix else [])
     fails = [m for m in need if st.get(m) == "fail" or st.get(m) is None]
     if fails:
@@ -312,7 +312,7 @@ def target_verdict(st, ear_clean, ear_amp, disputed=False, in_mix=False):
         why.append("not yet heard (clean or not)")
         if disputed:
             why.append("user-disputed: excluded until the user's ear rules")
-    return ("pending ear", why) if why else ("trusted", [])
+    return ("pending ear", why) if why else ("verified", [])
 
 
 def d1_status(halves, prom_min=A1_PROM_MIN, min_bins=A2_MIN_BINS, pass_db=A2_PASS_DB, fail_db=A2_FAIL_DB):
@@ -341,7 +341,7 @@ def d1_status(halves, prom_min=A1_PROM_MIN, min_bins=A2_MIN_BINS, pass_db=A2_PAS
 def di_verdict(st):
     """A DI's standing: 'excluded' on a measured fail of D1-D3 (D4 alone never excludes an unheard DI); 'pending ear'
     when D1 went to the ear, when the DI has no amp track (DI-only: D1 not measurable), or when D4 flags it; else
-    'trusted'. -> (verdict, reasons)."""
+    'verified'. -> (verdict, reasons)."""
     fails = [m for m in ("D1", "D2", "D3") if st.get(m) == "fail"]
     if fails:
         return "excluded", [f"{m} fails" for m in fails]
@@ -352,7 +352,7 @@ def di_verdict(st):
         why.append("DI-only: D1 not measurable")
     if st.get("D4") == "fail":
         why.append("D4 flags it (processed?)")
-    return ("pending ear", why) if why else ("trusted", [])
+    return ("pending ear", why) if why else ("verified", [])
 
 
 def d4_status(crest_db, bright_slope, crest_min=D4_CREST_DB, slope_min=D4_SLOPE_MIN):
@@ -1920,7 +1920,7 @@ def cmd_lists(args):
             conflict = heard is True
             v, why = "pending ear", ["conflict: heard clean, D4 flags it" if conflict else "D4 flags it (unheard)"]
         else:
-            v, why = "trusted", []
+            v, why = "verified", []
         crop_di[slug] = {"verdict": v, "why": why, "status": st, "ear": heard, "d4": cr["d4"], "d2": cr["d2"]}
     agreement = d4_agreement({s: h for s, h in crop_heard.items()}, crop_meas)
 
@@ -1942,7 +1942,7 @@ def cmd_lists(args):
                                     bright_slope=cr["d4"]["bright_slope"]))
         if md and md["verdict"] == "excluded" and v != "excluded":
             v, why = "excluded", [f"measure DI: {', '.join(md['why'])}"]
-        elif md and md["verdict"] == "pending ear" and v == "trusted":
+        elif md and md["verdict"] == "pending ear" and v == "verified":
             v, why = "pending ear", [f"measure DI: {', '.join(md['why'])}"]
         targets[slug] = {"verdict": v, "why": why, "uses": r["uses"], "band": r["band"], "status": st,
                          "bleed_db": r["bleed_db"], "lag_ms": {h: r["readings"]["halves"][h]["lag_ms"] for h in HALVES},
@@ -1978,7 +1978,7 @@ def cmd_lists(args):
                 if w.startswith("DI-only") and any(merge_ear([x[2]], "clean") is True for x in wins):
                     continue
                 left.append(w)
-            v, why = ("pending ear", left) if left else ("trusted", [])
+            v, why = ("pending ear", left) if left else ("verified", [])
         if v != "excluded" and di in sample and not wins:
             v, why = "pending ear", why + ["sampled for the ear (D4 passed)"]
         secs = {}
@@ -2038,7 +2038,7 @@ def cmd_lists(args):
         for s in passing if targets[s]["status"].get("A5") == "fail"}
     prior, counts = rederive_prior(PS.SECTIONS_MS, passing - set(crop_only), crop_only)
     old = PS.ratio_values()
-    trusted_stems = {sd: sorted(f for f, v in r["stems"].items() if v["pass"]) for sd, r in stems.items()}
+    verified_stems = {sd: sorted(f for f, v in r["stems"].items() if v["pass"]) for sd, r in stems.items()}
 
     def uses(v, u):
         return sorted(s for s, r in targets.items() if r["verdict"] == v and u in (r.get("uses") or []))
@@ -2060,25 +2060,25 @@ def cmd_lists(args):
     rec = {"plan": PLAN, "smoke": bool(args.smoke), "thresholds": thresholds(),
            "ear_files": [str(p) for p in args.ear or []], "ear_di_files": [str(p) for p in args.ear_di or []],
            "targets": targets, "dis": dis_out, "measure_dis": crop_di, "unusable_sections": sorted(unusable),
-           "stems": trusted_stems, "stem_floor_db": floor,
-           "v_real": uses("trusted", "stage F"), "v_real_pending": uses("pending ear", "stage F"),
-           "kc2_trusted": uses("trusted", "knob ceiling 2"), "kc2_pending": uses("pending ear", "knob ceiling 2"),
-           "k_dis": sorted(d for d, v in dis_out.items() if v["verdict"] == "trusted" and "V_sep" in v["datasets"]
+           "stems": verified_stems, "stem_floor_db": floor,
+           "v_real": uses("verified", "stage F"), "v_real_pending": uses("pending ear", "stage F"),
+           "kc2_verified": uses("verified", "knob ceiling 2"), "kc2_pending": uses("pending ear", "knob ceiling 2"),
+           "k_dis": sorted(d for d, v in dis_out.items() if v["verdict"] == "verified" and "V_sep" in v["datasets"]
                            and v["band"] not in K_OUT_BANDS),
-           "training_dis": sorted(d for d, v in dis_out.items() if v["verdict"] == "trusted"
+           "training_dis": sorted(d for d, v in dis_out.items() if v["verdict"] == "verified"
                                   and "training pool" in v["datasets"]),
            "d4_agreement_with_ear": agreement, "pool_sections_by_band": by_band,
            "level_prior": {"rederived": prior, "rederived_summary": prior_summary(prior), "old_summary": prior_summary(old),
                            "per_part": counts, "crop_only_a5": crop_only},
            "ear_queue": {"items": len(queue), "counts": counts_q}, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
-    _save(root / "t0" / "trusted.json", rec)
-    for v in ("trusted", "pending ear", "excluded"):
+    _save(root / "t0" / "verified.json", rec)
+    for v in ("verified", "pending ear", "excluded"):
         print(f"targets {v}: {sum(1 for r in targets.values() if r['verdict'] == v)}; "
               f"DIs {v}: {sum(1 for r in dis_out.values() if r['verdict'] == v)}")
-    print(f"V-real: {len(rec['v_real'])} trusted, {len(rec['v_real_pending'])} pending the ear; knob ceiling 2: "
-          f"{len(rec['kc2_trusted'])} trusted, {len(rec['kc2_pending'])} pending")
+    print(f"V-real: {len(rec['v_real'])} verified, {len(rec['v_real_pending'])} pending the ear; knob ceiling 2: "
+          f"{len(rec['kc2_verified'])} verified, {len(rec['kc2_pending'])} pending")
     print(f"K's DIs {len(rec['k_dis'])} ({REMOVED}); training DIs {len(rec['training_dis'])}")
-    print(f"stems passing: {sum(len(v) for v in trusted_stems.values())} in {len(trusted_stems)} sessions "
+    print(f"stems passing: {sum(len(v) for v in verified_stems.values())} in {len(verified_stems)} sessions "
           f"(floor {floor:.0f} dB)")
     print(f"level prior: re-derived {rec['level_prior']['rederived_summary']}; old {rec['level_prior']['old_summary']}")
     a = agreement
@@ -2102,7 +2102,7 @@ def subset_stats(rows, keep):
 
 
 def cmd_reread(args):
-    """The plan's re-reads on the trusted panel (zero renders), each beside its stored headline: knob ceiling's
+    """The plan's re-reads on the verified panel (zero renders), each beside its stored headline: knob ceiling's
     K_S - S, K_S ceiling's extension, knob ceiling 2's (e) and time effects, amp choice; and the listening
     footnotes. Prints the dated notes for the results docs."""
     import math as _m
@@ -2114,34 +2114,34 @@ def cmd_reread(args):
 
     require_real(args)
     root = out_root(args)
-    tr = _load(root / "t0" / "trusted.json")
+    tr = _load(root / "t0" / "verified.json")
     if not tr:
         raise SystemExit("run `lists` first")
-    keep = set(tr["kc2_trusted"])                       # the panel: no measured fail (the plan's "12 parts") ...
-    if not args.trusted_only:
+    keep = set(tr["kc2_verified"])                       # the panel: no measured fail (the plan's "12 parts") ...
+    if not args.verified_only:
         keep |= set(tr["kc2_pending"])                  # ... the ear's confirmation pending beside
     cells = [json.loads(p.read_text()) for p in sorted((K.OUT / "cells").glob("*/*/result.json"))]
-    out = {"panel": sorted(keep), "trusted_only": bool(args.trusted_only)}
+    out = {"panel": sorted(keep), "verified_only": bool(args.verified_only)}
     ks_vs_s = [(c["slug"], c["band"], K.cell_rows(c)[0]["KS_vs_S"]) for c in cells if "KS_vs_S" in K.cell_rows(c)[0]]
     out["knob ceiling K_S - S (cells)"] = {"all": subset_stats(ks_vs_s, {s for s, _, _ in ks_vs_s}),
-                                          "trusted": subset_stats(ks_vs_s, keep)}
+                                          "verified": subset_stats(ks_vs_s, keep)}
     base, res = KS.base_figures(), KS.stored_results()
     sub = lambda d: {k: v for k, v in d.items() if k[0] in keep}                 # noqa: E731
     out["K_S ceiling (extension, at stop)"] = {"all": KS.summarise(base, res)["estimate_at_stop"]["all"],
-                                               "trusted": KS.summarise(sub(base), sub(res))["estimate_at_stop"]["all"]}
+                                               "verified": KS.summarise(sub(base), sub(res))["estimate_at_stop"]["all"]}
     s1 = [json.loads(p.read_text()) for p in sorted((K2.OUT / "stage1").glob("*/[AB].json"))]
     e = [(r["slug"], r["band"], r["gain_class"], _m.log(r["held"] / r["start_held"])) for r in s1]
     out["knob ceiling 2 (e)"] = {"all": K2._stats(K2._per_part([x for x in e])),
-                                 "trusted": K2._stats(K2._per_part([x for x in e if x[0] in keep]))}
+                                 "verified": K2._stats(K2._per_part([x for x in e if x[0] in keep]))}
     s2 = [(p.parent.name, json.loads(p.read_text())) for p in sorted((K2.OUT / "stage2").glob("*/[AB].json"))]
     t = [(r.get("slug") or slug, r["band"], r["gain_class"], _m.log(r["held"] / r["start_held"])) for slug, r in s2]
     out["knob ceiling 2 time effects (stage 2 - stage 1, judge)"] = {
-        "all": K2._stats(K2._per_part(t)), "trusted": K2._stats(K2._per_part([x for x in t if x[0] in keep])),
+        "all": K2._stats(K2._per_part(t)), "verified": K2._stats(K2._per_part([x for x in t if x[0] in keep])),
         "large_cells_on_failing_parts": sorted([(x[0], round(x[3], 3)) for x in t if x[0] not in keep and x[3] < -0.05])}
     ac = EC.amp_choice_rows(cells)
     out["amp choice (part-weighted mean; band-weighted beside)"] = {
         "all": subset_stats([(s, b, v) for s, b, _, v in ac], {s for s, *_ in ac}),
-        "trusted": subset_stats([(s, b, v) for s, b, _, v in ac], keep)}
+        "verified": subset_stats([(s, b, v) for s, b, _, v in ac], keep)}
     tv = tr["targets"]
     out["listening footnotes"] = {
         "record-match trial 5 (Today's The Day ElecGtr07)": tv.get("cambridge-Today's_The_Day-ElecGtr07", {}).get("verdict"),
@@ -2164,10 +2164,10 @@ def cmd_reread(args):
             return json.dumps(s)[:120]
         return f"{m:+.3f} [{s.get('lo90', float('nan')):+.3f}, {s.get('hi90', float('nan')):+.3f}]"
 
-    print(f"Dated notes ({date}; trusted panel of {len(keep)} parts):")
+    print(f"Dated notes ({date}; verified panel of {len(keep)} parts):")
     for k_, v in out.items():
-        if isinstance(v, dict) and "trusted" in v:
-            print(f"- {k_}: all {f(v['all'])}; trusted {f(v['trusted'])}")
+        if isinstance(v, dict) and "verified" in v:
+            print(f"- {k_}: all {f(v['all'])}; verified {f(v['verified'])}")
     print("- listening:", json.dumps(out["listening footnotes"]))
     print("- level prior:", json.dumps(out["level prior"]))
 
@@ -2192,7 +2192,7 @@ def main(argv=None):
     ap.add_argument("--only", default=None, help="smoke runs: only sessions whose path contains this")
     ap.add_argument("--ear", action="append", help="an exported answers file judging the targets")
     ap.add_argument("--ear-di", action="append", help="a data-review-1 export judged on the DI clip (sitting 1)")
-    ap.add_argument("--trusted-only", action="store_true", help="reread: only parts the ear has confirmed")
+    ap.add_argument("--verified-only", action="store_true", help="reread: only parts the ear has confirmed")
     args = ap.parse_args(argv)
     if (args.limit or args.only) and not args.smoke:
         raise SystemExit("--limit and --only are for smoke runs (with --smoke and --out)")

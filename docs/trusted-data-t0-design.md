@@ -248,7 +248,7 @@ ElecGtr3, colour-me-red 02 and 03, femme 5, get-out-of-bed 2, let's dance 3 and 
   section-clustered interval is primary.
 - V-real's stored crop stems beside, by ratio.
 
-**Plans carry trusted.json's sha256.** `render`, `build`, `t1-read`, `train`, `fit` and `e-on-k`
+**Plans carry T0's lists' sha256 (`t0/verified.json`).** `render`, `build`, `t1-read`, `train`, `fit` and `e-on-k`
 refuse when it has changed.
 
 | Step | Command | Cost |
@@ -312,7 +312,7 @@ early-stopping set.
 4. **`lists` refuses** on missing, incomplete or stale shards, and on a target without its crop
    row.
 5. **Stale results.**
-   - Plans stamp trusted.json's sha256, and the later commands re-check it.
+   - Plans stamp the sha256 of T0's lists (`t0/verified.json`), and the later commands re-check it.
    - `targets` and `dis` refuse to resume under other thresholds.
    - `lists` recomputes every verdict from the stored readings.
    - Stem floors are checked.

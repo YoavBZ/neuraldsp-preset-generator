@@ -125,21 +125,21 @@ def test_only_the_render_commands_render():
         assert any(re.search(p, f"python -u -m learn.trusted_data {cmd}") for p in LO.RENDERS)
 
 
-def test_trusted_dis_and_unusable_sections():
-    tr = {"dis": {"a": {"verdict": "trusted"}, "b": {"verdict": "pending ear"}, "c": {"verdict": "excluded"}},
+def test_verified_dis_and_unusable_sections():
+    tr = {"dis": {"a": {"verdict": "verified"}, "b": {"verdict": "pending ear"}, "c": {"verdict": "excluded"}},
           "unusable_sections": ["b@10.0", "a@20.0"]}
-    assert T.trusted_dis(tr) == {"a"} and T.unusable(tr) == {"b@10.0", "a@20.0"}
+    assert T.verified_dis(tr) == {"a"} and T.unusable(tr) == {"b@10.0", "a@20.0"}
     tr["dis"]["a"]["sections"] = {"a@10.0": "usable", "a@20.0": "pending ear"}
     assert T.windows_of(tr) == {"a": {"a@10.0": "usable", "a@20.0": "pending ear"}, "b": {}, "c": {}}
 
 
 def test_a_stale_plan_is_refused(tmp_path):
     (tmp_path / "t0").mkdir()
-    (tmp_path / "t0" / "trusted.json").write_text("{}")
-    plan = {"trusted_sha256": T.trusted_sha(tmp_path)}
-    T.check_trusted(tmp_path, plan)
-    (tmp_path / "t0" / "trusted.json").write_text('{"changed": 1}')
+    (tmp_path / "t0" / "verified.json").write_text("{}")
+    plan = {"lists_sha256": T.lists_sha(tmp_path)}
+    T.check_lists(tmp_path, plan)
+    (tmp_path / "t0" / "verified.json").write_text('{"changed": 1}')
     with pytest.raises(SystemExit):
-        T.check_trusted(tmp_path, plan)
+        T.check_lists(tmp_path, plan)
     with pytest.raises(SystemExit):
-        T.check_trusted(tmp_path, {})
+        T.check_lists(tmp_path, {})
