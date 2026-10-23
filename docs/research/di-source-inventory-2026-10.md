@@ -4,7 +4,9 @@
 decisions. The listings came from each ZIP's central directory, read with HTTP range requests
 (about 1.7 MB over 27 archives, then 13.0 MB over the other 206 the site links; approved by the
 user). The one confirmed band, Jen Hartswick & Nick Cassarino, was then downloaded (0.94 GB,
-approved by the user) as a reserved test band. Nothing was rendered, separated or listened to. Local facts come from the stored inventory, manifest and pool
+approved by the user) as a reserved test band. Later that day, at the user's request, Blue Manic
+"Acomatay" (a second reserved test band) and EGDB's DI folder were downloaded through the user's
+browser, and the user requested GOAT's access on Zenodo. Nothing was rendered, separated or listened to. Local facts come from the stored inventory, manifest and pool
 files; outside facts from dataset pages, papers, the Telefunken "Live From The Lab" (LFTL) pages,
 the Hugging Face re-host's file listing and archived Cambridge-MT pages. Research, not a declared
 plan.*
@@ -146,8 +148,8 @@ set or a declared reservation. Sizes are archive sizes.
 | Cambridge: Hollow Ground "Left Blind" | DI-only, 3 DIs + lead | 1 song [V] | heavy | same | no | MUSDB18 train; band already trains | — | adds no band |
 | Cambridge, added since 2025: Blue Manic "Acomatay" (DI + amp), DGX "Rest In Hell" (4 DIs), Slimy Soul Suckers "Big Bang", Prusinski "80s Rocker", Hollowstate "Hurricane" | multitracks | DI confirmed only for the first two [V, partial re-host] | stoner rock; unknown; blues rock; MOR rock; hard rock | same | no | none known | about 1–1.3 GB each [U] | site behind Cloudflare; needs a human pass |
 | Cambridge metal sessions with DIs (Arcadian Alone, Daimon B, Inhumanity Vortex, Peppermark ×2, Serapis ×2, SkalyVan ×3, Szymon Skiba "Trashy Thrash") | DI + amp or DI-only | about 80 DI files [V] | **metal: out of scope** | same | no | Szymon Skiba is a stage F band | — | — |
-| **EGDB** | DI only (plus amp renders) | 1.97 h; 240 clips / 1 player / 1 Strat-type [V, U] | solo, arpeggio and comping, various genres [U] | none stated, "feel free to use" [V]; the Zenodo copy is CC BY 4.0 [V]; confirmed by the user (2026-10-23) | arm A literature only | none | about 0.6 GB DI folder [U]; 1.04 GB CC BY zip [V] | played to a click; hex pickup for labels; DI box vs hex sum unclear [U] |
-| **GOAT** | DI only (plus NAM and Guitar Pro renders, tabs) | 5.9 h; 172 cover songs / authors + 2 creators, no performer IDs / 4 guitars (Strat 235 min) [V] | covers; some "rock/metal"; share unknown [V, U] | CC BY-NC 4.0, restricted: request on Zenodo, "research purposes only" [V]; confirmed by the user (2026-10-23) | no (ML plan: "not now") | none | 15–25 GB [U] | no backing [V] |
+| **EGDB** | DI only (plus amp renders) | 1.79 h (107.5 min, read after the download); 240 clips / 1 player / 1 Strat-type [V, U] | solo, arpeggio and comping, various genres [U] | none stated, "feel free to use" [V]; the Zenodo copy is CC BY 4.0 [V]; confirmed by the user (2026-10-23) | arm A literature only | none | **downloaded 2026-10-23**: the Drive `audio_DI` folder, 0.46 GB ZIP, 44.1 kHz, 16-bit, mono [V]; the 1.04 GB Zenodo zip is BIAS FX2 renders of 4-s clips only [V] | played to a click; hex pickup for labels; DI box vs hex sum unclear [U] |
+| **GOAT** | DI only (plus NAM and Guitar Pro renders, tabs) | 5.9 h; 172 cover songs / authors + 2 creators, no performer IDs / 4 guitars (Strat 235 min) [V] | covers; some "rock/metal"; share unknown [V, U] | CC BY-NC 4.0, restricted: request on Zenodo, "research purposes only" [V]; confirmed by the user (2026-10-23); **access requested by the user (2026-10-23)** | no (ML plan: "not now") | none | 15–25 GB [U] | no backing [V] |
 | GuitarJam (Hugging Face) | DI only | 2.5 h; 580 × 15-s monophonic improvisations / 1 Strat, players unstated [V] | single-note lines only | CC0 [V] | no | none | 796 MB [V] | no chords; no backing |
 | IDMT-SMT-Guitar | DI, mostly notes and licks | about 15–20 min of short pieces (subsets 3–4) [U] / 7 guitars [V] | genre-tagged short pieces | CC BY-NC-ND 4.0 [V]; confirmed by the user (2026-10-23) | via ToneTwist | none | 1.33 GB [V] | ND: re-rendering makes derivatives; the user confirmed the licence |
 | Five guitar | line out after the amp's preamp | 6 covers × 3 electrics / 1 player [V] | clean jazz amp | CC BY 4.0 [V] | no (ML plan: yes if a true DI) | none | 730 MB [V] | **not a true DI**: the DV Mark line out carries its EQ and reverb [V] |
@@ -206,7 +208,8 @@ and separation costs fall about 4×.
 
 - **Cheaper extras.**
   - GuitarJam: CC0, 2.5 h of single-note lines, 0.8 GB.
-  - Blue Manic "Acomatay": a DI + amp pair, stoner rock, needs a scope check.
+  - Blue Manic "Acomatay": downloaded 2026-10-23 as a reserved test band; 5 DI + amp pairs (20.2 min
+    of DI), stoner rock, so scope by ear.
   - The two pending listening pages: they may return some hum- or hiss-flagged sections of the
     train bands, at no download.
 - **Not recommended.** Five guitar (not a true DI), EG-IPT and EGFxSet (notes), GuitarSet
@@ -288,6 +291,17 @@ Telefunken sessions are a mix of 48 and 96 kHz [P].
    known-answer pool.
 4. **Licences confirmed:** EGDB ("feel free to use"; the Zenodo copy is CC BY 4.0),
    IDMT-SMT-Guitar (CC BY-NC-ND 4.0) and GOAT (CC BY-NC 4.0, through a Zenodo access request).
+5. **Downloads (later on 2026-10-23, through the user's browser at their request):**
+   - Blue Manic "Acomatay", the full multitrack (0.51 GB ZIP, 32 WAVs), as a **reserved test band**
+     (ledger `cambridge-new-test-band-bluemanic`; new bands go to test first). It holds **5 DI +
+     amp pairs, not 1**: ElecGtr1 (two amp mics), 2, 6, 7 and 8, 20.2 min of DI at 44.1 kHz,
+     24-bit [V]. Stoner rock, so each part's scope is checked by ear. The site's mix (Full Preview
+     MP3) is not downloaded yet. Stored in `datasets-cambridge-new/`.
+   - EGDB's `audio_DI` folder from the authors' Google Drive (0.46 GB ZIP): 240 clips, 107.5 min,
+     44.1 kHz, 16-bit, mono [V]. The Zenodo record holds only BIAS FX2 renders of 4-s clips, so
+     the Drive folder is the DI source. Stored in `datasets-egdb/`. Training only (no backing),
+     and only after its DIs pass the trusted-data DI checks.
+   - GOAT: the user sent the Zenodo access request.
 
 **Still open:**
 1. **Stage F into training** (rank 5): one new test band does not replace stage F's 12.
