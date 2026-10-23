@@ -205,6 +205,13 @@ Measured rates:
 
 ## Decision rules (declared now)
 
+*2026-10-23 (the review before the ear):* stage 0's code read its intervals part-weighted while this section declares
+band-weighted; `every_control` now decides on the band-weighted interval (`song_readout.bw_stats`), with the
+part-weighted one beside. Stage 0's amp-choice reading does not change (both weightings are far below 0). Stage 2D is
+now the trusted-data plan's T3, read on K and V-real (set by the ML session, the user may overrule); stage 2A (arm A
+first, on `GATE STOP`) is not in today's order, an open user decision. Stage 1's panel is the trusted panel (7 parts,
+pending the ear), not 14 bands; its parts change by a dated amendment before it runs.
+
 Every reading is an effect size with a 90% band-clustered t interval, band-weighted, on the held
 half. There are no pass/fail bars. Any gain shown is built on. A tie means "not shown at this power" and
 takes the cheaper option.

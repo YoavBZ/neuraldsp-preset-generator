@@ -67,7 +67,9 @@ part of the gate). Development data only.
 - Per seed, the movement is the mean |Δ| of the top-component means over the amp's labelled
   continuous settings, then averaged over the three seeds.
 - Rows are band-weighted (part means, then band means), with 90% band-bootstrap intervals (4,000
-  draws, seed 20261078).
+  draws, seed 20261078). *(2026-10-23 note: with 6-12 bands a percentile band bootstrap is about
+  12-30% narrower than the band-clustered t interval the project reads elsewhere; every deciding lower
+  bound here is far above 0, so GATE1 STEM stands.)*
 - The decision reads each stem's own LUFS. The held-LUFS reading agrees to within 0.003 everywhere.
 
 | Movement above the two-leak-draw null | All, 12 bands | Unseen by part C, 6 | Without MUSDB18 songs, 9 |

@@ -8,14 +8,19 @@ Three parts, one question each, so each file stays phone-sized:
    kept together in time order.
 
 Exports carry page `trusted-data-ear` and the queue's item ids, which `verify_tracks lists --ear` decodes through
-`t0/ear-items.json`. Each part exports its own file; pass each as its own `--ear`. A partial export is fine: unanswered
-items stay pending. The DI part's blindness has one limit: D4-flagged windows come in runs, so a file with many windows
+`t0/ear-items.json`. Each part exports its own file; pass every part's export, and the sitting-1 export, in one call
+(`lists --ear-di SITTING1.json --ear part-1.json ... --ear part-N.json`), every time: a run that would drop an earlier
+run's export refuses, and a later export of the same part replaces an earlier one. A partial export is fine:
+unanswered items stay pending. The DI part's blindness has one limit: D4-flagged windows come in runs, so a file with many windows
 is likely a flagged one.
 
 Every clip must be audible (peak at least SILENT_PEAK): the build refuses a silent window.
 
     $MAIN -m learn.build_ear_page build      # -> ~/ndsp-presets/listening/trusted-data-ear/part-{1,2,3}.html
     $MAIN -m learn.build_ear_page extra      # queued items no built part holds -> part-<next>.html (manifest updated)
+    $MAIN -m learn.build_ear_page check      # before listening (zero renders): the cards to skip, and live windows
+                                             # where the DI or track hardly plays against its own file's level
+                                             # (--retire: record the quiet DI windows for `verify_tracks lists`)
 """
 from __future__ import annotations
 
@@ -453,6 +458,89 @@ def cmd_extra(args):
     (out / "manifest.json").write_text(json.dumps(manifest, indent=1))
 
 
+QUIET_SHARE = 0.10            # a window where under 10% of frames play against its file's own level: likely a floor
+SKIP_ADVICE = ("Skipping saves time and loses nothing: once any clip of a DI file is marked Processed, Not a DI or "
+               "Hum, its other clips cannot change its verdict; once one half of a target is anything but Clean amp "
+               "or Not sure, its other half cannot either.")
+
+
+def card_status(manifest, registry, live_ids):
+    """{part: [(card number, item id, status)]} in each part's display order: 'live', 'retired: <why>' (its answers
+    are skipped on import) or 'not queued now' (no longer needed, e.g. a DI-only repeat that left the queue)."""
+    out = {}
+    for part, rec in sorted(manifest["parts"].items(), key=lambda kv: int(kv[0])):
+        rows = []
+        for n, iid in enumerate(rec["items"], 1):
+            why = (registry.get(iid) or {}).get("retired")
+            rows.append((n, iid, f"retired: {why}" if why else ("live" if iid in live_ids else "not queued now")))
+        out[int(part)] = rows
+    return out
+
+
+def play_share(fdb, play, start_s, dur_s, sr=48000):
+    """The share of a window's frames that play against its whole file's loudest frames (`clean_di.playing`)."""
+    import numpy as np
+
+    from learn import clean_di as CD
+
+    r = CD.frames_in(int(round(start_s * sr)), int(round((start_s + dur_s) * sr)), len(play))
+    return float(np.mean(play[r.start:r.stop])) if len(r) else 0.0
+
+
+def cmd_check(args):
+    """Before listening (zero renders): per built part, the card numbers to skip; then every live clip whose window
+    hardly plays against its own file's level (a noise or hum floor raised to -23 LUFS: its answer would judge the
+    floor, not the playing). `--retire` records the quiet DI windows in `t0/quiet-items.json`; the next
+    `verify_tracks lists` retires them like silent windows, so they hold no DI back."""
+    from learn import clean_di as CD
+    from learn import pretrain_set as PS
+
+    out = pathlib.Path(args.out)
+    manifest = json.loads((out / "manifest.json").read_text())
+    registry = json.loads((T0 / "ear-items.json").read_text())
+    live = {i["id"] for i in json.loads((T0 / "ear-queue.json").read_text())["queue"]}
+    cards = card_status(manifest, registry, live)
+    for part, rows in cards.items():
+        skip = [(n, st) for n, _, st in rows if st != "live"]
+        print(f"part {part}: {len(rows)} cards, {len(rows) - len(skip)} live"
+              + (f"; skip cards {[n for n, _ in skip]}" if skip else ""))
+        for n, st in skip:
+            print(f"    card {n}: {st}")
+    files, quiet = {}, []
+    for part, rows in cards.items():
+        for n, iid, st in rows:
+            if st != "live":
+                continue
+            it = registry[iid]
+            for _, path, a, d, label in item_clips(it):
+                if path not in files:
+                    fdb = CD.frame_db(PS.load_mono(path, PS.SR))
+                    files[path] = (fdb, CD.playing(fdb))
+                share = play_share(*files[path], a, d)
+                if share < args.quiet:
+                    quiet.append((part, n, iid, title_of(it), label, share))
+    if quiet:
+        print(f"{len(quiet)} live clips hardly play against their own file's level (likely a floor):")
+        for part, n, iid, title, label, share in quiet:
+            print(f"    part {part} card {n} ({title}): {label} plays on {share:.0%} of the window")
+    else:
+        print("every live clip plays")
+    retire = {iid: {"key": registry[iid]["key"], "start_s": registry[iid]["start_s"], "share": round(share, 3)}
+              for _, _, iid, _, label, share in quiet
+              if label == "the DI" and registry[iid]["family"] in ("di", "di_amp")}
+    if args.retire and retire:
+        path = T0 / "quiet-items.json"
+        rec = json.loads(path.read_text()) if path.exists() else {"items": {}}
+        rec["criterion"] = f"the DI plays on under {args.quiet:.0%} of the window against its own file's level"
+        rec["items"].update(retire)
+        path.write_text(json.dumps(rec, indent=1))
+        print(f"retired {len(retire)} quiet DI windows in {path}: rerun `verify_tracks lists` (it retires them and "
+              "they hold no DI back), then `build_ear_page extra` if it queues new items, then `check` again")
+    elif retire:
+        print(f"{len(retire)} of them are DI windows: `check --retire` retires them (then rerun `verify_tracks lists`)")
+    print(SKIP_ADVICE)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -464,6 +552,11 @@ def main(argv=None):
     x = sub.add_parser("extra", help="queued items no built part holds, as one more part")
     x.add_argument("--out", default=str(OUT))
     x.set_defaults(fn=cmd_extra)
+    c = sub.add_parser("check", help="before listening: the cards to skip, and live clips that hardly play")
+    c.add_argument("--out", default=str(OUT))
+    c.add_argument("--quiet", type=float, default=QUIET_SHARE, help="flag clips playing on under this share")
+    c.add_argument("--retire", action="store_true", help="write the quiet DI windows to t0/quiet-items.json")
+    c.set_defaults(fn=cmd_check)
     args = ap.parse_args(argv)
     args.fn(args)
 

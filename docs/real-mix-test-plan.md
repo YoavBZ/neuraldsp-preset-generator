@@ -1,5 +1,9 @@
 # The song-to-preset routes on real mixes: plan
 
+*Amended 2026-10-23 (the trusted-data plan, set by the ML session, the user may overrule):* it runs on V-real's parts
+(stage F's parts that pass T0's checks and the ear), not on the data review's list. Its "9 bands (8 df)" power is now
+at most 7 bands.
+
 *Status, 2026-10-22 evening:* merged (#267). It runs after the data review and the cleaning, on
 trusted parts only ("use only what we can trust, no dirty tracks", the user, 2026-10-22), which
 replaces the no-high-bleed row below. **Amendment 1 (user, 2026-10-22): the direct model joins

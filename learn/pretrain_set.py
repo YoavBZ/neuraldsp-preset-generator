@@ -120,7 +120,14 @@ WIDTHS = (16, 32, 64, 96)
 EPOCHS, PATIENCE, BATCH, LR = 30, 4, 64, 1e-3
 T90 = {1: 6.314, 2: 2.920, 3: 2.353, 4: 2.132, 5: 2.015, 6: 1.943, 7: 1.895, 8: 1.860, 9: 1.833,
        10: 1.812, 11: 1.796, 12: 1.782, 13: 1.771, 14: 1.761, 15: 1.753, 16: 1.746, 17: 1.740,
-       18: 1.734, 19: 1.729, 20: 1.725}
+       18: 1.734, 19: 1.729, 20: 1.725, 21: 1.721, 22: 1.717, 23: 1.714, 24: 1.711, 25: 1.708, 26: 1.706,
+       27: 1.703, 28: 1.701, 29: 1.699, 30: 1.697, 40: 1.684, 60: 1.671, 120: 1.658}
+
+
+def t90(df):
+    """The one-sided 95% t quantile (a 90% two-sided interval) for df >= 1: exact to 30 df, then the table's next
+    smaller df (conservative: a wider interval), never z (1.645 under-covers with tens of clusters)."""
+    return T90[max(k for k in T90 if k <= df)]
 
 
 def _save(path, obj):
@@ -896,7 +903,7 @@ def band_t_interval(values_by_band):
     if n < 2:
         return m, -math.inf, math.inf, n
     sd = math.sqrt(sum((x - m) ** 2 for x in means) / (n - 1))
-    h = T90.get(n - 1, 1.645) * sd / math.sqrt(n)
+    h = t90(n - 1) * sd / math.sqrt(n)
     return m, m - h, m + h, n
 
 

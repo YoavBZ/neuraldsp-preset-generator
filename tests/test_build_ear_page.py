@@ -164,3 +164,20 @@ def test_build_refuses_over_built_pages(tmp_path):
     (tmp_path / "manifest.json").write_text("{}")
     with pytest.raises(SystemExit, match="built pages exist"):
         E.cmd_build(type("A", (), {"out": str(tmp_path), "force": False, "seed": E.SEED})())
+
+
+def test_check_lists_the_cards_to_skip_and_finds_a_floor_window():
+    np = pytest.importorskip("numpy")
+    manifest = {"parts": {"2": {"items": ["ear-a", "ear-b", "ear-c"]}, "1": {"items": ["ear-d"]}}}
+    registry = {"ear-a": {}, "ear-b": {"retired": "a silent window: its answers are skipped"}, "ear-c": {}, "ear-d": {}}
+    cards = E.card_status(manifest, registry, {"ear-a", "ear-d"})
+    assert list(cards) == [1, 2] and cards[1] == [(1, "ear-d", "live")]
+    assert [st for _, _, st in cards[2]] == ["live", "retired: a silent window: its answers are skipped",
+                                             "not queued now"]
+    from learn import clean_di as CD
+
+    rng = np.random.default_rng(1)
+    x = np.concatenate([0.3 * rng.standard_normal(48000 * 20), 1e-4 * rng.standard_normal(48000 * 20)])
+    fdb = CD.frame_db(x)
+    play = CD.playing(fdb)
+    assert E.play_share(fdb, play, 5.0, 10.0) > 0.9 and E.play_share(fdb, play, 25.0, 10.0) < E.QUIET_SHARE

@@ -61,8 +61,13 @@ per-class constant. E leaves out the right cab's knobs when that cab is off.
 | R_out (672, 4 bands) | −0.0110 [−0.0315, +0.0094] |
 | V_dev (1,720, 5 bands) | −0.0143 [−0.0223, −0.0063] |
 
+*V_dev (2026-10-23 note):* the same examples as R_in plus Bannockburn, read on part C's stand-in stems, not
+separated: not an independent or deployment-like second reading.
+
 - **The readout matters.** The old top-component readout (as first declared: seed-averaged,
-  unmasked) reads +0.012 [−0.021, +0.045] on R_in, worse than the constant.
+  unmasked) reads +0.012 [−0.021, +0.045] on R_in, worse than the constant. *(2026-10-23 note: that
+  is the pilot's own reading at 5k, +0.0128, so like for like the curve was flat from 5k to 20k, with
+  the separator change as the caveat; the pilot's −0.017 per doubling did not hold.)*
 - **This E check is descriptive.** It reads STOP. Under amendment 5 it does not decide; the sound
   gate does.
 - **Beside it, on R_in:** D − D0 −0.0087 [−0.0202, +0.0028]. D0 − constant −0.0071 [−0.0165,

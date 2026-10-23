@@ -348,3 +348,13 @@ def test_a_recheck_render_is_primed_at_the_same_di_and_settings():
     y = M.primed_render(Fake(), di, sel, x)
     assert len(calls) == 2 and all(c[0] is di and c[1] == sel and c[2] is x for c in calls)
     assert (y == 2.0).all()                                   # the second render is the one kept
+
+
+def test_t90_never_falls_back_to_z():
+    import statistics
+
+    assert M.t90(6) == 1.943 and M.t90(25) == 1.708
+    assert M.t90(35) == M.T90[30] and M.t90(500) == M.T90[120] > 1.645    # the next smaller df: wider
+    vals = [float(k % 3) for k in range(40)]
+    m, lo, hi, n = M.band_t_interval({f"b{k}": [v] for k, v in enumerate(vals)})
+    assert n == 40 and math.isclose(hi - m, M.T90[30] * statistics.stdev(vals) / math.sqrt(40))

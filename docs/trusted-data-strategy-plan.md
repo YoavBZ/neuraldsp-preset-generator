@@ -1,7 +1,8 @@
 # Trusted data: a self-built training set and a verified real test: plan
 
-**Draft, for the user's decision (2026-10-23).** It was drafted with zero compute: only stored files
-were read.
+**Approved by the user on 2026-10-23,** with the [recorded decisions](#recorded-decisions-user-2026-10-23)
+at the end; [notes after approval](#notes-after-approval-dated) follow them. It was drafted with zero compute: only
+stored files were read.
 
 It answers the user's direction of 2026-10-23: "Consider only using songs with mix+guitar amp
 track+guitar DI, which are clearly distinguishable, or using a totally different approach if
@@ -270,3 +271,27 @@ Set by the ML session, consistent with the user's rules; the user may overrule a
   2D becomes T3, and the real-mix test runs on V-real's parts.
 - **T3's downloads** (Strobe and MekaPhil, 2.4 GB) are asked for at T3. Downloads need the user's yes
   at the time.
+
+### Notes after approval (dated)
+
+Facts that changed after the approval, and what each means for the plan. None is a new user decision.
+- **2026-10-23, (b), set by the ML session:** the Blue Manic, EGDB and GOAT lines were added after the approval
+  (commits aa3df97 and 34106e5). They reserve a test band and record downloads; no approved step changed.
+- **2026-10-23, T0 ran** (ROADMAP, step 0):
+  - **Eggy's three DIs were heard processed.** So self-built mixes do not bring a clean-class band back for now, SYN-E
+    cannot run, and T3's "with Eggy" no longer applies. Where clean-class DIs come from is an open user decision.
+  - **V-real is 11 parts in 7 bands** (3 clean parts in 2 bands), all pending the ear. At 7 bands a paired arm contrast
+    reads about ±0.036 log d (90%), not (f)'s ±0.028 on about 10 bands, before seed noise.
+  - **The two conflicts** (decision 2) fail measures (Quicksand ElecGtr2 A6; Today's The Day ElecGtr07 A5), and in
+    code a measured fail excludes before the ear is read, so they are not on the ear pages and no answer can bring them
+    back. Sitting 1, the basis of the conflict, judged their DI clips, not these targets. Whether the measured fails
+    stand is an open user decision.
+  - **T0's by-ear stem spot-check** is not queued yet; T1 and T2 would use stems that passed the scan alone. Open user
+    decision.
+- **2026-10-23, the review before the ear** ([record](research/program-review-2026-10-23.md)):
+  - **T1 and T2 draw their levels from the stored prior,** so K − V_sep and SYN − SES stay paired on the same draws, as
+    (f) requires; the re-derived prior of (c) is for T3's new examples.
+  - **T1's row ("a gap adds realism levers")** has no lever coded or approved (controlled bleed and studio amp tracks are
+    off; mix EQ and reverb are not built). T1 is read as descriptive.
+  - **(d)'s "no other take of the target"** now holds in code: a same-part double confirmed by pitch takes the target's
+    settings, as a DT double does.
