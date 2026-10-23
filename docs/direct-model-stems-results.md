@@ -130,10 +130,15 @@ over amps and halves.
 - **Neither route has yet clearly beaten S on stage F.** Clean leans better, crunch leans worse.
   At this power a real gain of about 0.03 would read as a tie.
 
-## Next (the user decides)
+## Next (decided 2026-10-22 evening)
 
-- **Every control:** the coverage plan ([#266](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/266),
-  draft).
-- **Real mixes:** the real-mix plan ([#267](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/267),
-  draft).
-- **More power:** more bands, if the user wants this result tightened.
+The order is in [ROADMAP](ROADMAP.md) step 0: the user's data review and the cleaning first. These
+results were read on all parts, before the trusted-data rule; the cleaning plan's step 1 re-reads
+them on trusted data.
+
+- **Every control:** the coverage plan ([#266](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/266)),
+  approved and merged for stages 0–1. Stage 0 is done ([results](every-control-stage0-results.md));
+  stage 1 waits for the trusted amp-track list.
+- **Real mixes:** the real-mix plan ([#267](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/267)),
+  approved and merged; the direct model joins (its amendment 1). It runs after the cleaning.
+- **More power (more bands):** a DI-source inventory is proposed, not yet approved.

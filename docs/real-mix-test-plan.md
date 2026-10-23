@@ -1,5 +1,12 @@
 # The song-to-preset routes on real mixes: plan
 
+*Status, 2026-10-22 evening:* merged (#267). It runs after the data review and the cleaning, on
+trusted parts only ("use only what we can trust, no dirty tracks", the user, 2026-10-22), which
+replaces the no-high-bleed row below. **Amendment 1 (user, 2026-10-22): the direct model joins
+regardless of step 3's gate** ("of course the direct model should join the test"). D_real runs
+with step 4's models and readout, labelled like step 4 ("run under a user override of a GATE
+STOP"). The conditions on `GATE OK` below are replaced by this.
+
 Drafted 2026-10-22, zero compute. **Approved by the user on 2026-10-22.** It runs after the
 every-control stages and the data-quality audit's first findings (the user suspects the datasets need
 cleaning; any cleaning that touches these parts is applied first). Development data only. The ML plan's rules apply (section 5; the user's rules of
@@ -36,7 +43,7 @@ themselves is not measured. This plan runs each route on each part's real mix an
 - **D_real:** the direct model exactly as in step 4: amendment 5's readout, the search half only,
   step 4's separator and model hashes (checked against its `predictions.json`). It is fed a
   crop-only stem of the real-mix crop. The mix gets one gain to the training median and the stem
-  the same gain. D_real runs only on `GATE OK`; `GATE INCOMPLETE` counts as STOP. D0 is not run.
+  the same gain. D_real runs (amendment 1; it first read "only on `GATE OK`"). D0 is not run.
 - **The unity side is stored:** stage F's S and M, and step 4's D, on the same directions.
 - **S needs nothing new.** It reads no input, and the truth does not change, so its score is the
   same on both sides. Each route's **real-mix penalty** is therefore X_real − X_unity, direction by
@@ -161,7 +168,7 @@ discarded priming render per process start or amp change, the 31 GB disk guard, 
 ## Order
 
 1. **Now:** the user reads this plan. No compute, no code.
-2. **After step 4's report, or after `GATE STOP`** (then arm A only, and D's rows drop): code, tests
+2. **After step 4's report** (arm A and D, amendment 1): code, tests
    and an independent code review; the 23 separations when the renderer is idle; the renders; the
    report and an independent audit; then ROADMAP and docs/README.md. Arm A does not need D. It waits
    only so the gate and step 4 keep the render slots.
@@ -176,3 +183,31 @@ recipes, the readout and the judge are fixed before any real-mix render.
 - **No training of any kind,** no new separator, no rented machine and no download. The previews
   are already local. Moises is not used.
 - **Optional, a separate yes:** arm A on the 6 unmastered parts, about 2,000 more renders.
+
+## Implementation notes (code, 2026-10-22; PR #277)
+
+Recorded with the code after its review, before any real-mix render. They change no estimate,
+recipe or judge.
+
+- **Trusted parts:** every command takes `--parts-list FILE`, the trusted parts from the data
+  review, and refuses to run without it. The file is JSON `{"parts": [...]}`, a bare JSON list, or
+  text with one entry per line. An entry can also trust one held half (`slug:A`). The inputs record
+  and the report store the list under `kept_parts`.
+- **The repeat check uses 12 renders, not 6:** each of its 6 S renders gets a discarded priming
+  render (the priming rule). The total is 5,811 renders on all 17 parts, under the 6,300 cap.
+- **"As mixed" lag:** one lag per direction, fitted on its search half from the plain
+  cross-correlation (sign free).
+  - The method was chosen on lag agreement with the real-mix stems' logged lags (14 of 17 parts),
+    not on any score.
+  - GCC-PHAT locked onto the amp track's bleed at lag 0 (wickerman 1–3 read 0 instead of 398).
+- **The coherence floor stays at the declared 0.1, so "as mixed" is a thin row.** Measured on all 17
+  parts (zero renders), only 5 pass: Quicksand 2, femme 5, get-out-of-bed 2, Let's Dance 3 and 4 (4
+  bands). The unity mixes mostly read below 0.1 too.
+  - A part trusted on one held half only is also left out of this row, since its fit would read the
+    untrusted half.
+- **Plumbing checks added as stops:**
+  - the real-mix crops re-derived from the previews (1e-6);
+  - the stored S renders re-judged against today's `reference.wav` (0.005);
+  - the X-LANCE separator reproducing step 4's stored stem (40 dB);
+  - step 4's unity D answers reproduced (A1+A2 within 1e-5, and every pulled setting equal);
+  - a rerun of `inputs` refusing changed input hashes.
