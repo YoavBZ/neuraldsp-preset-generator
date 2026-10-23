@@ -1,9 +1,10 @@
 # Clean guitar DIs to widen the direct model's training set: an inventory
 
 *Research report, 2026-10-22; updated 2026-10-23 with the Telefunken file listings and the user's
-decisions. Zero compute: no audio was downloaded, nothing was rendered or separated. The listings
-came from each ZIP's central directory, read with HTTP range requests (about 1.7 MB over 27
-archives; approved by the user). Local facts come from the stored inventory, manifest and pool
+decisions. The listings came from each ZIP's central directory, read with HTTP range requests
+(about 1.7 MB over 27 archives, then about 13 MB over the rest of the catalogue; approved by the
+user). The one confirmed band, Jen Hartswick & Nick Cassarino, was then downloaded (0.94 GB,
+approved by the user) as a reserved test band. Nothing was rendered, separated or listened to. Local facts come from the stored inventory, manifest and pool
 files; outside facts from dataset pages, papers, the Telefunken "Live From The Lab" (LFTL) pages,
 the Hugging Face re-host's file listing and archived Cambridge-MT pages. Research, not a declared
 plan.*
@@ -36,6 +37,10 @@ files (`~/ndsp-presets/learn/clean-di/`, `~/ndsp-presets/learn/pretrain-set/pool
   - **Jen Hartswick & Nick Cassarino (S4, 4 songs, 0.94 GB):** every song has
     `Guitar-Passive DI.wav` and `Guitar-Amp-M81.wav`. It is a guitar-and-vocals duo. The backing
     is two vocal mics, plus a trumpet in one song; a stereo room pair also carries the guitar.
+    **Downloaded 2026-10-23** to `~/ndsp-presets/references/datasets-telefunken-new/` (ZIPs kept,
+    `manifest.json` with URLs, sha256s and WAV headers): 48 kHz, 24-bit, mono, 20.4 min of DI.
+    Reserved as a new test band in `docs/dev-test-ledger.json`
+    (`telefunken-new-test-band-jhnc`); not used until the user has listened to it.
   - **Uglybraine "Sometimes":** no DI, despite the chart's box. Its one guitar track is a stereo
     `GTR w-SYNTH.wav`, with no amp mic.
   - **Melt "Fake Romantic":** no guitar DI. It has two electric-guitar mics; its DIs are bass and
@@ -127,7 +132,7 @@ set or a declared reservation. Sizes are archive sizes.
 
 | Source | What it holds | EG DI: hours; songs / players / bands | Genre fit | Licence | Already used? | Conflicts | Download | Quality notes |
 |---|---|---|---|---|---|---|---|---|
-| **Telefunken LFTL: Jen Hartswick & Nick Cassarino** (S4, 4 songs) | guitar DI + amp mic in every song; 2 vocal mics, a trumpet in 1 song, a stereo room pair [V] | 4 DIs [V], about 20 min if 48 kHz (header not read) [U]; 4 songs / 1 band | jazz/soul duo: clean to crunch [U] | home-studio and educational use only, attribution line [V] | no (not in any set, ledger or `learn/` code) | none; **a test band first (2026-10-23)** | 0.94 GB on Telefunken's Amazon S3 buckets [V] | file named `Guitar-Passive DI`; live room, so check bleed; 12 of the 28 local Telefunken DIs are hum-flagged, 6 in every window, and 27 of 28 read 60-Hz mains [P]; the "Numb" archive's folder is named "Novacaine" [V] |
+| **Telefunken LFTL: Jen Hartswick & Nick Cassarino** (S4, 4 songs) | guitar DI + amp mic in every song; 2 vocal mics, a trumpet in 1 song, a stereo room pair [V] | 4 DIs, 20.4 min at 48 kHz, 24-bit (headers read after the download) [V]; 4 songs / 1 band | jazz/soul duo: clean to crunch [U] | home-studio and educational use only, attribution line [V] | no (not in any set, ledger or `learn/` code) | none; **a reserved test band (2026-10-23)**, ledger `telefunken-new-test-band-jhnc` | 0.94 GB, **downloaded 2026-10-23** to `datasets-telefunken-new/` [V] | file named `Guitar-Passive DI`; live room, so check bleed; 12 of the 28 local Telefunken DIs are hum-flagged, 6 in every window, and 27 of 28 read 60-Hz mains [P]; the "Numb" archive's folder is named "Novacaine" [V] |
 | Telefunken LFTL: Uglybraine "Sometimes" (S3), Melt "Fake Romantic" (S9) | full live multitrack, **no guitar DI** [V] | 0 | — | same | no | none | 0.92 + 1.84 GB [V] | Uglybraine: one stereo `GTR w-SYNTH` track, no amp mic, although the chart lists a DI box. Melt: two electric mics (`E GTR a_M80`, `E GTR b_TF11`); DIs only on bass and keys |
 | Telefunken LFTL: Braiden Sunshine (S8, 4 songs) | full live multitrack; an `Ac GTR_TDA-1` DI and electric-amp mics (`Ele GTR 1` or `2`, M80 + TF11) [V] | electric DI unlikely [U]; 4 songs / 1 band | rock/soul [U] | same | no | none | 5.86 GB [V] | The chart's "Acoustic Guitar" box was the electric's DI in Catbite and Wild & Co, but there the file was named "Guitar …" [P]; here it is named "Ac GTR". Deciding needs one song's audio (1.3 GB) and a pairing check |
 | Telefunken LFTL, no DI box on the chart: Ryan Montbleau (S9, 3), Jeffery John Band (S8, 4), Jelly (S8, 1), Kat Wright (S4, 4), West End Blend (S4, 4) | full live multitrack; amp mics only, **no guitar DI** in any archive [V] | 0 | singer-songwriter, blues rock, soul, funk [U] | same | no | none | 23.6 GB [V] | The DIs are bass, keys and a drum pad. West End Blend's S5 song lists a TDP-1 box, but its archive still returns HTTP 403 (2026-10-23) [V]. |
@@ -217,13 +222,13 @@ stage F may then train (rank 5) stays open: one new band does not replace 12.
 
 Read from each ZIP's central directory with HTTP range requests: the last 64 kB of each archive,
 1.7 MB over 27 archives [V]. Every archive answered with a byte range and none needed a second
-read; no audio was fetched. macOS metadata entries (`__MACOSX`, `.DS_Store`) are left out. The
-WAV headers were not read, so durations assume 48 kHz, 24-bit; the local Telefunken sessions are
-a mix of 48 and 96 kHz [P].
+read; no audio was fetched for the listing. macOS metadata entries (`__MACOSX`, `.DS_Store`) are
+left out. Jen Hartswick & Nick Cassarino's WAV headers were read after its download; the local
+Telefunken sessions are a mix of 48 and 96 kHz [P].
 
 | Session (season) | Archives | Tracks per song | Electric-guitar DI | Amp or mic tracks for it | Backing (other instruments) |
 |---|---|---|---|---|---|
-| Jen Hartswick & Nick Cassarino (S4): "Drowning", "Numb" (folder "Novacaine"), "Silent Waves", "You Cant Take It Back" | 4; 0.16 + 0.24 + 0.23 + 0.31 = 0.94 GB | 6 (7 with the trumpet) | **`Guitar-Passive DI.wav` in all 4; high confidence** (the chart lists the box on the electric) | `Guitar-Amp-M81.wav` | thin: `Vocals-Jen-Ela M 251`, `Vocals-Nick-Ela M 251T`, `Trumpet-M81` in "You Cant Take It Back"; `Room-M60 L/R` carry the guitar too. DI lengths 3.6, 5.5, 5.3 and 6.0 min at 48 kHz (half at 96 kHz) |
+| Jen Hartswick & Nick Cassarino (S4): "Drowning", "Numb" (folder "Novacaine"), "Silent Waves", "You Cant Take It Back" | 4; 0.16 + 0.24 + 0.23 + 0.31 = 0.94 GB | 6 (7 with the trumpet) | **`Guitar-Passive DI.wav` in all 4; high confidence** (the chart lists the box on the electric) | `Guitar-Amp-M81.wav` | thin: `Vocals-Jen-Ela M 251`, `Vocals-Nick-Ela M 251T`, `Trumpet-M81` in "You Cant Take It Back"; `Room-M60 L/R` carry the guitar too. Every track 48 kHz, 24-bit, mono; DI lengths 215.8, 327.6, 318.5 and 359.7 s (read after the download) |
 | Uglybraine "Sometimes" (S3) | 1; 0.92 GB | 17 | **none**; the one guitar track is a stereo `GTR w-SYNTH.wav` | none separate | full band: drum mics and rooms, `BASS DI`, `KEYS`, `SYNTH`, `SAX`, `BONE`, `FLUTE` |
 | Melt "Fake Romantic" (S9) | 1; 1.84 GB | 21 audio + a mic-preamp input list (PDF) | **none** | `E GTR a_M80.wav`, `E GTR b_TF11.wav` (no DI to pair) | full band: drums, `Bass DI_TDA-1`, `Bass Amp_M82`, `Nord_TDP-2`, 3 vocal mics, rooms |
 | Braiden Sunshine (S8): "Beautiful Roads", "Live Again", "Sail Away", "Under Your Spell" | 4; 1.27 + 1.83 + 1.47 + 1.29 = 5.86 GB | 23–26 | **probably none** [U]: `Ac GTR_TDA-1.wav` is the chart's "Acoustic Guitar" box, named as an acoustic | `Ele GTR 2_M80` + `Ele GTR 2_TF11` (`Ele GTR 1_…` in "Live Again") | full band: drums, bass DI and amp, Nord and Roland keys, vocals; horns in 3 of the 4 songs |
@@ -246,7 +251,9 @@ a mix of 48 and 96 kHz [P].
 ## Decisions and open questions
 
 **Decided by the user (2026-10-23):**
-1. **The Telefunken file listing:** approved, and done (above).
+1. **The Telefunken file listing:** approved, and done (above). Then (relayed by the ML session):
+   download Jen Hartswick & Nick Cassarino as a reserved test band, done; and list the rest of the
+   catalogue, done (below).
 2. **Test or train:** new Telefunken bands with a confirmed DI and amp track become test bands
    first (the ML session's recommendation).
 3. **B2's songs:** Strobe "Maya" and MekaPhil may be used for training, which spends B2's parked
