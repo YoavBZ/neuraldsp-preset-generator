@@ -15,14 +15,14 @@ V_sep; nothing from sets 4-6, Guitar-TECHS P3 or a reservation in `dev-test-ledg
 
 **The standard** (plan (a)), per judge half of a crop (A 1.0-5.5 s, B 5.5-10.0 s), the crop's `reference.wav`
 against its `di.wav`:
-- **A1, mic delay:** GCC-PHAT lag, DI to target, over 80 Hz-4 kHz (calibration: the full band reads 0 ms on 9 of
-  the 18 known amps, whose amp tracks carry a zero-lag direct path above 4 kHz; the bleed audit's stored
-  `di_lag_ms`, read at 24 kHz over +-40 s, agrees with the band-limited reading and is shown beside). Pass
-  0.1 <= |lag| <= 30 ms; a negative lag goes to the ear.
+- **A1, mic delay:** GCC-PHAT lag, DI to target, over 80 Hz-4 kHz (the full band reads 0 ms on several amps, whose
+  tracks carry a zero-lag path above 4 kHz; the bleed audit's stored `di_lag_ms`, read at 24 kHz over +-40 s, agrees
+  with the band-limited reading and is shown beside). Pass 0.1 <= |lag| <= 30 ms; a negative lag, or a GCC peak under
+  12x the median (unreadable), goes to the ear.
 - **A2, cab roll-off:** H1 = S_xy/S_xx (Welch, 4096, Hann), bins with coherence >= 0.5: the median |H| over 6-10 kHz
-  at least `A2_DROP_DB` under the median over 1-3 kHz. A half decides only with >= `A2_MIN_BINS` coherent bins in
-  both bands; with fewer, the half goes to the ear. A part fails if a deciding half fails, passes if a half
-  passes and none fails, else goes to the ear.
+  under the median over 1-3 kHz by at least 12 dB (the plan's), over at least `A2_MIN_BINS` coherent bins in each
+  band, passes; under 3.3 dB on any coherent bins fails; between, or with nothing coherent, the ear. A part fails if
+  a half fails, passes if a half passes and none fails, else goes to the ear.
 - **A3, linear copy:** the residual of the best linear filter (least squares, exact covariance method, 24 kHz,
   taps -5..+60 ms around the A1 lag, ridge 1e-7 of the mean diagonal) fitted on one half and applied to the other,
   both ways; pass when both residuals are above -40 dB (calibration: EQ'd copies read -80 to -110 dB, amps -1 to
@@ -34,14 +34,19 @@ against its `di.wav`:
 - **A6, clean:** the bleed audit's bleed under -30 dB (`bleed-table.json`); and, where the part is read in a mix
   (stage F, V-real), no other take of the part in the mix: a pitch-confirmed same-part track (the cleaning plan's
   `same_part` rule on the crop window) at or above -30 dB of the target.
-- **DIs:** D1, the DI passes A1 and does not fail A2 against its own amp track, per section; D2, no clipping or
-  drop-outs on the window and no hum (part A's flags; the user's decision 2 excludes hummy measure DIs), hiss and
-  bleed shown; D3, not a line out or processor output by name. DI-only parts take D2-D3 and the ear.
+- **DIs:** D1, A1 and A2 against the DI's own amp track over its sections (medians); D2, no clipping or drop-outs on
+  the window and no hum (part A's flags and hum-suspect list; decision 2 excludes hummy measure DIs), hiss and bleed
+  shown; D3, not a line out or processor output by name; D4 (user, 2026-10-23), the DI is unprocessed: crest factor
+  and brightness against level, calibrated on the user's sitting-1 DI verdicts.
 
-**The rule:** a measured fail is excluded (decision 2). A target is trusted only when it passes the measures and the
-user has heard it clean (data-review-1, both halves) and, where A1 or A2 went to the ear, heard it as an amp (the
-target-vs-DI page). Quicksand ElecGtr2 and Today's The Day ElecGtr07 stay excluded until the user's ear rules on
-them. Thresholds move only to separate the calibration's known cases (`THRESHOLD_MOVES`).
+**The rule:** a measured fail of A1-A6 or D1-D3 is excluded (decision 2). The ear decides the rest: a DI heard
+processed is excluded; heard clean clears the heard window only, and a heard-clean DI that D4 flags is a conflict for
+the user; D4 alone never decides an unheard DI (a flag, D1 to the ear and DI-only parts wait for the ear, as does a
+seeded sample of D4-passed DIs). A target is trusted only when it passes the measures and the user has heard it clean
+and, where A1 or A2 went to the ear, as an amp. Quicksand ElecGtr2 and Today's The Day ElecGtr07 stay excluded until
+the user's ear rules on them. `lists` writes the ear queue (every item the ear must hear) and recomputes every verdict
+from the stored readings under the current thresholds. Thresholds move only to separate the calibration's known
+cases (`THRESHOLD_MOVES`; revised after the review of #281).
 
 The pure parts are unit-tested (`tests/test_verify_tracks.py`); the commands that read audio or render are not,
 like the other step modules.
@@ -88,8 +93,9 @@ A2_NPERSEG = 4096
 A2_COH_MIN = 0.5
 A2_LO_HZ = (1000.0, 3000.0)
 A2_HI_HZ = (6000.0, 10000.0)
-A2_MIN_BINS = 17                      # 5% of the 342 bins over 6-10 kHz at 48 kHz / 4096 (the plan gave no number)
-A2_DROP_DB = 3.3                      # moved from the plan's 12 dB by calibration (THRESHOLD_MOVES)
+A2_MIN_BINS = 17                      # a pass needs this many coherent bins in each band (5% of 6-10 kHz's 342)
+A2_PASS_DB = 12.0                     # the plan's: a drop of at least this (over enough bins) passes
+A2_FAIL_DB = 3.3                      # a drop under this fails (any coherent bins); between the two: the ear
 
 # --- A3: linear copy -------------------------------------------------------------------------------------------
 A3_SR = 24_000
@@ -119,48 +125,57 @@ D4_PLAY_DB = 30.0                     # frames within this of the loudest
 D4_CREST_DB = 8.4                     # a median frame crest under this reads as driven or compressed
 D4_SLOPE_MIN = -0.2                   # dB of (3-8 kHz over 0.1-1.5 kHz) per dB of level: under this, brightness does
                                       # not rise with picking strength (a saturating stage)
+D4_SAMPLE_SEED = 20261103             # the D4-passed DIs sampled for the ear (one per band; set here)
+D4_GRID = {"crest": (6.5, 10.5, 0.1), "slope": (-0.4, 0.8, 0.02)}   # D4's rule search (in-sample and leave-one-out)
 
 # --- D3: by name -----------------------------------------------------------------------------------------------
 D3_RE = re.compile(r"pedal\s*board|line\s*out|lineout|\bfx\b|\bsim\b|kemper|\baxe\b|helix|\bpod\b|processed|"
                    r"re-?amp|effects?\b|\bwet\b", re.I)
 
-# The plan's thresholds that calibration moved, toward keeping the known amps (plan (a): "each move is recorded").
+# The plan's thresholds that calibration moved or added, toward keeping the known amps (plan (a): "each move is
+# recorded"); revised after the code review of #281.
 THRESHOLD_MOVES = (
-    {"threshold": "A2_DROP_DB", "plan": 12.0, "now": A2_DROP_DB,
-     "why": "the known amps colour-me-red elecgtr03 (half A, 6.2 dB over 46 coherent bins) and Signs ElecGtr2 (half A, "
-            "10.3 dB over 27) read under 12 dB; the highest known fail is Prodigal ElecGtr5 half B at 0.4 dB (255 bins) "
-            "and the DI copy reads 0.0. Set at the midpoint of 0.4 and 6.2; the cab-off negative must read under it, "
-            "else the threshold moves to the midpoint of the new closest pair (recorded)"},
+    {"threshold": "A2", "plan": "pass >= 12 dB", "now": f"pass >= {A2_PASS_DB} dB over >= {A2_MIN_BINS} bins; "
+                                                         f"{A2_FAIL_DB}-{A2_PASS_DB} dB to the ear; fail < {A2_FAIL_DB} dB",
+     "why": "the plan's pass is kept. Known amps read 6.2 dB (colour-me-red 03, half A) and 10.3 dB (Signs 2, half A): "
+            "they go to the ear, not to a pass (the review: the parts behind a lower pass all have D4-flagged DIs). The "
+            "fail line sits midway between Prodigal ElecGtr5's 0.4 dB and colour-me-red 03's 6.2 dB"},
     {"threshold": "A2_MIN_BINS", "plan": None, "now": A2_MIN_BINS,
-     "why": "the plan sends 'too few coherent bins above 6 kHz' to the ear without a number; 5% of the band. "
-            "Quicksand ElecGtr2 (12 and 10 bins, -2.5 and -3.9 dB) falls under it and goes to the ear"},
+     "why": "the plan sends 'too few coherent bins above 6 kHz' to the ear without a number: a pass needs 17 bins (5% "
+            "of the band); a drop under the fail line fails on any coherent bins (the gate never turns a fail into the "
+            "ear)"},
     {"threshold": "A1_PROM_MIN", "plan": None, "now": A1_PROM_MIN,
-     "why": "a lag is read only where the GCC peak stands out: the 18 known amps' halves read prominence 24-279, "
-            "the unreadable high-gain DI/amp pairs 4.4-6.7; under it A1 goes to the ear (no known case moves)"},
+     "why": "a lag is read only where the GCC peak stands out: the known amps' halves read prominence 24-279, the "
+            "unreadable high-gain DI/amp pairs 4.4-6.7; under it A1 goes to the ear (no known case moves)"},
     {"threshold": "D4 (new, user 2026-10-23)", "plan": None, "now": f"crest < {D4_CREST_DB} dB or slope < {D4_SLOPE_MIN}",
-     "why": "set on the user's 35 heard crop DIs (sitting 1): the OR rule that best separates heard-processed from "
-            "heard-clean (16 of 17 processed caught; 4 of 18 clean flagged: Drag Me Down 4, Quicksand 2, Signs 2, "
-            "colour-me-red 03). The ear overrides it both ways on heard DIs"},
+     "why": "set on the user's 35 heard crop DIs (sitting 1): in-sample 30 of 35 agree, leave-one-out fewer (the "
+            "calibration record); the ear decides heard DIs, and D4 alone never decides an unheard one (a flag queues "
+            "it for the ear)"},
     {"threshold": "A1 band", "plan": "full band (the bleed audit's di_lag_ms)", "now": f"{LAG_BAND_HZ[0]:.0f}-{LAG_BAND_HZ[1]:.0f} Hz",
-     "why": "on the 48 kHz crops the full-band GCC-PHAT reads 0 ms on 9 of the 18 known amps (a zero-lag path above "
+     "why": "on the 48 kHz crops the full-band GCC-PHAT reads 0 ms on several known amps (a zero-lag path above "
             "4 kHz); the band-limited lag agrees with the stored di_lag_ms (read at 24 kHz)"},
 )
 
 # --- calibration ---------------------------------------------------------------------------------------------
-# The 18 targets heard clean on data-review-1 and measured as amps on the target-vs-DI check (2026-10-23); the two
-# Prodigal parts heard clean but measured as processed DIs with no cab.
+# The known amps come from the target-vs-DI measurements of 2026-10-23 (docs/audits/target-vs-di-2026-10-23), not
+# from data-review-1's sitting 1 (which judged the DI clips): every part whose target follows its DI with a mic delay
+# of 0.1-30 ms and whose |H| falls at least 12 dB from 0.5-2 kHz to 6-12 kHz in both halves (`known_amps_from`),
+# less Passing Ships ElecGtr4 (its DI was heard as an amp in half B; dropped by the review).
+TVD_MEASURES = PLUGIN_ROOT / "docs/audits/target-vs-di-2026-10-23/measures.json"
+KNOWN_RULE = {"lag_ms": (0.1, 30.0), "hf_drop_db": -12.0, "halves": 2}
+KNOWN_DROPPED = ("cambridge-Passing_Ships-ElecGtr4",)
 KNOWN_AMPS = (
-    "cambridge-Drag_Me_Down-ElecGtr4", "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1",
     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2", "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
-    "cambridge-Passing_Ships-ElecGtr4", "cambridge-Quicksand-ElecGtr2", "cambridge-Signs-ElecGtr2",
-    "cambridge-Today's_The_Day-ElecGtr07", "cambridge-colour-me-red-elecgtr02", "cambridge-colour-me-red-elecgtr03",
-    "cambridge-get-out-of-bed-elecgtr2", "cambridge-let-s-dance-elecgtr3", "cambridge-let-s-dance-elecgtr4",
-    "cambridge-magilla-elecgtr1", "cambridge-magilla-elecgtr1dt", "cambridge-wickerman-elecgtr3",
-    "telefunken-Blind_Spots-GTR", "telefunken-Sculptor's_Request-GTR_2")
+    "cambridge-Passing_Ships-ElecGtr6", "cambridge-Signs-ElecGtr2", "cambridge-colour-me-red-elecgtr02",
+    "cambridge-colour-me-red-elecgtr03", "cambridge-get-out-of-bed-elecgtr2", "cambridge-magilla-elecgtr1",
+    "cambridge-magilla-elecgtr1dt", "cambridge-wickerman-elecgtr3", "telefunken-Blind_Spots-GTR",
+    "telefunken-Bloomlight-GTR", "telefunken-Farthest_Step-GTR", "telefunken-First_Offering-GTR_2",
+    "telefunken-Gym_Hours-GTR_2", "telefunken-Russian_Cream-GTR_2", "telefunken-Sculptor's_Request-GTR_2",
+    "telefunken-She's_Gone-GTR")
 KNOWN_FAILS = ("cambridge-Prodigal-ElecGtr3", "cambridge-Prodigal-ElecGtr5")
-# The constructed negatives' DIs: one whose HF stays coherent through an amp (Passing Ships ElecGtr4) and one clean
-# part whose amp track is incoherent above 6 kHz (magilla elecgtr1).
-NEG_SOURCES = ("cambridge-Passing_Ships-ElecGtr4", "cambridge-magilla-elecgtr1")
+# The constructed negatives' DIs (both heard clean and passing D4): one whose HF stays coherent through its amp
+# (It Was My Fault ElecGtr3) and one whose amp track is incoherent above 6 kHz (magilla elecgtr1).
+NEG_SOURCES = ("cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3", "cambridge-magilla-elecgtr1")
 NEG_KINDS = ("copy", "eq", "cab_off_clean", "cab_off_crunch")
 NEG_DECLARED = {"copy": "the DI itself", "eq": "the DI through a cab-like linear EQ, delayed 1.5 ms",
                 "cab_off_clean": "the DI through Morgan PR12 (clean start), cab section off",
@@ -195,11 +210,14 @@ def a1_status(lag_ms, lo=LAG_MIN_MS, hi=LAG_MAX_MS, prominence=None, prom_min=A1
     return "ear" if lag_ms < 0 else "pass"
 
 
-def a2_half_status(drop_db, n_lo, n_hi, min_bins=A2_MIN_BINS, thr=A2_DROP_DB):
-    """One half's A2: 'ear' with too few coherent bins in either band, else pass/fail on the drop."""
-    if drop_db is None or n_lo < min_bins or n_hi < min_bins:
+def a2_half_status(drop_db, n_lo, n_hi, min_bins=A2_MIN_BINS, pass_db=A2_PASS_DB, fail_db=A2_FAIL_DB):
+    """One half's A2: fail under fail_db on any coherent bins; pass at pass_db or more over min_bins in both bands;
+    otherwise (between the two, too few bins to pass, or nothing coherent) the ear."""
+    if drop_db is None or not n_lo or not n_hi:
         return "ear"
-    return "pass" if drop_db >= thr else "fail"
+    if drop_db < fail_db:
+        return "fail"
+    return "pass" if drop_db >= pass_db and n_lo >= min_bins and n_hi >= min_bins else "ear"
 
 
 def combine_part(statuses):
@@ -282,35 +300,50 @@ def target_verdict(st, ear_clean, ear_amp, disputed=False, in_mix=False):
         why.append(f"{', '.join(ear)} to the ear (amp or not)")
     if ear_clean is None:
         why.append("not yet heard (clean or not)")
-    if disputed:
-        why.append("user-disputed: excluded until the user's ear rules")
+        if disputed:
+            why.append("user-disputed: excluded until the user's ear rules")
     return ("pending ear", why) if why else ("trusted", [])
 
 
-def d1_status(halves, prom_min=A1_PROM_MIN, min_bins=A2_MIN_BINS, thr=A2_DROP_DB):
+def d1_status(halves, prom_min=A1_PROM_MIN, min_bins=A2_MIN_BINS, pass_db=A2_PASS_DB, fail_db=A2_FAIL_DB):
     """D1 over a DI's sections (a chain property, read robustly): A1 on the median of its readable lags (GCC
-    prominence >= prom_min), A2 on the median drop of its deciding halves; 'ear' where nothing is readable.
-    halves: [{"lag_ms", "lag_prominence", "a2": {...}}]. -> {"status", "A1", "A2", "lag_ms", "drop_db", "n"}."""
+    prominence >= prom_min); A2 fails when the median drop over its coherent halves is under fail_db, passes when the
+    median over its halves with min_bins is at least pass_db, else the ear. halves: [{"lag_ms", "lag_prominence",
+    "a2": {...}}]. -> {"status", "A1", "A2", "lag_ms", "drop_db", "n_lags", "n_drops"}."""
     lags = [h["lag_ms"] for h in halves if (h.get("lag_prominence") or 0) >= prom_min]
-    drops = [h["a2"]["drop_db"] for h in halves
-             if a2_half_status(h["a2"]["drop_db"], h["a2"]["n_lo"], h["a2"]["n_hi"], min_bins, thr) != "ear"]
+    coh = [h["a2"]["drop_db"] for h in halves if h["a2"]["drop_db"] is not None and h["a2"]["n_lo"] and h["a2"]["n_hi"]]
+    full = [h["a2"]["drop_db"] for h in halves if h["a2"]["drop_db"] is not None
+            and h["a2"]["n_lo"] >= min_bins and h["a2"]["n_hi"] >= min_bins]
     lag = statistics.median(lags) if lags else None
-    drop = statistics.median(drops) if drops else None
+    drop = statistics.median(coh) if coh else None
     a1 = a1_status(lag) if lags else "ear"
-    a2 = "ear" if drop is None else ("pass" if drop >= thr else "fail")
+    if coh and statistics.median(coh) < fail_db:
+        a2 = "fail"
+    elif full and statistics.median(full) >= pass_db:
+        a2 = "pass"
+    else:
+        a2 = "ear"
+    drops = coh
     status = "fail" if "fail" in (a1, a2) else ("pass" if (a1, a2) == ("pass", "pass") else "ear")
     return {"status": status, "A1": a1, "A2": a2, "lag_ms": lag, "drop_db": drop, "n_lags": len(lags),
             "n_drops": len(drops)}
 
 
 def di_verdict(st):
-    """A DI's standing: excluded on a measured fail; D1 to the ear (a negative lag, or A2 undecided) keeps the DI
-    in use and queues it for the ear (not a measured fail); DI-only parts (no D1) likewise."""
-    fails = [m for m in ("D1", "D2", "D3", "D4") if st.get(m) == "fail"]
+    """A DI's standing: 'excluded' on a measured fail of D1-D3 (D4 alone never excludes an unheard DI); 'pending ear'
+    when D1 went to the ear, when the DI has no amp track (DI-only: D1 not measurable), or when D4 flags it; else
+    'trusted'. -> (verdict, reasons)."""
+    fails = [m for m in ("D1", "D2", "D3") if st.get(m) == "fail"]
     if fails:
         return "excluded", [f"{m} fails" for m in fails]
-    q = [m for m in ("D1",) if st.get(m) in ("ear", None)]
-    return "trusted", ([f"{m} {'to the ear' if st.get(m) == 'ear' else 'not measurable (DI-only)'}" for m in q])
+    why = []
+    if st.get("D1") == "ear":
+        why.append("D1 to the ear")
+    elif st.get("D1") is None:
+        why.append("DI-only: D1 not measurable")
+    if st.get("D4") == "fail":
+        why.append("D4 flags it (processed?)")
+    return ("pending ear", why) if why else ("trusted", [])
 
 
 def d4_status(crest_db, bright_slope, crest_min=D4_CREST_DB, slope_min=D4_SLOPE_MIN):
@@ -321,13 +354,72 @@ def d4_status(crest_db, bright_slope, crest_min=D4_CREST_DB, slope_min=D4_SLOPE_
     return "fail" if crest_db < crest_min or bright_slope < slope_min else "pass"
 
 
+def merge_ear(values, positive):
+    """Several answers on one item: any answer other than `positive` and 'unsure' wins (False); all `positive` is
+    True; otherwise (unsure, or nothing) None."""
+    vs = [v for v in values if v is not None]
+    if any(v not in (positive, "unsure") for v in vs):
+        return False
+    return True if vs and all(v == positive for v in vs) else None
+
+
+def d4_fit(rows, grid=D4_GRID):
+    """D4's OR rule (crest under c, or slope under s) that best separates heard-processed from heard-clean DIs: the
+    most (caught - flagged), then the most caught, then the lowest (c, s). rows: [(ear_clean, crest, slope)].
+    -> (c, s, caught, flagged)."""
+    import numpy as np
+
+    best = None
+    cs = np.round(np.arange(grid["crest"][0], grid["crest"][1] + 1e-9, grid["crest"][2]), 4)
+    ss_ = np.round(np.arange(grid["slope"][0], grid["slope"][1] + 1e-9, grid["slope"][2]), 4)
+    for c in cs:
+        for sl in ss_:
+            tp = sum(1 for e, cr, s_ in rows if e is False and (cr < c or s_ < sl))
+            fp = sum(1 for e, cr, s_ in rows if e is True and (cr < c or s_ < sl))
+            key = (tp - fp, tp, -c, -sl)
+            if best is None or key > best[0]:
+                best = (key, float(c), float(sl), tp, fp)
+    return best[1], best[2], best[3], best[4]
+
+
+def d4_loo(rows, grid=D4_GRID):
+    """Leave-one-out agreement of D4's rule search with the ear: each heard DI judged by the rule fitted on the
+    others. -> (agreeing, heard)."""
+    ok = 0
+    for i, (e, cr, sl) in enumerate(rows):
+        c, s_, _, _ = d4_fit(rows[:i] + rows[i + 1:], grid)
+        ok += (cr < c or sl < s_) == (e is False)
+    return ok, len(rows)
+
+
+def overlaps(a0, a1, b0, b1):
+    return a0 < b1 and b0 < a1
+
+
+def known_amps_from(measures, rule=KNOWN_RULE, dropped=KNOWN_DROPPED, fails=None):
+    """The calibration's known amps from the target-vs-DI measurements: both halves with a mic delay in range and
+    the |H| roll-off at least the rule's (hf_drop_H <= -12 dB), less the dropped parts and the known fails."""
+    fails = set(KNOWN_FAILS if fails is None else fails)
+    sr = measures.get("sample_rate", SR)
+    out = []
+    for slug, v in sorted(measures["parts"].items()):
+        hs = v["halves"]
+        if len(hs) < rule["halves"] or slug in dropped or slug in fails:
+            continue
+        if all(rule["lag_ms"][0] <= 1000.0 * h["lag"] / sr <= rule["lag_ms"][1] and h["hf_drop_H"] <= rule["hf_drop_db"]
+               for h in hs.values()):
+            out.append(slug)
+    return tuple(out)
+
+
 def ear_di_verdict(halves):
-    """The user's ear on a crop's DI (data-review-1, sitting 1: the DI clip): True when every heard half is 'clean',
-    False when any half is heard otherwise (processed, an amp, another guitar), None when not heard."""
-    vs = [v for v in halves.values() if v is not None]
-    if not vs:
-        return None
-    return all(v == "clean" for v in vs)
+    """The user's ear on a crop's DI (data-review-1, sitting 1: the DI clip): True when every answer on every heard
+    half is 'clean', False when any is not (processed, an amp, another guitar: a negative wins), None when unheard.
+    halves: {half: verdict or [verdicts]}."""
+    vs = []
+    for v in halves.values():
+        vs += v if isinstance(v, list) else [v]
+    return merge_ear(vs, "clean")
 
 
 def calibration_verdict(rows, must_fail=NEG_MUST_FAIL):
@@ -904,9 +996,10 @@ def _copy_check(crop, ref, rec, base, part, dis):
 
 
 def cmd_calibrate(args):
-    """Calibration (zero renders): the 18 known amps, the 2 known fails and the constructed negatives through
-    A1-A4; CALIBRATION OK iff the known amps fail nothing, the known fails fail something and each declared
-    negative fails its measure. Never overwrites an OK record."""
+    """Calibration (zero renders): the 18 known amps (re-derived from the target-vs-DI measurements, checked here), the
+    2 known fails and the constructed negatives through A1-A4; CALIBRATION OK iff the known amps fail nothing, the
+    known fails fail something and each declared negative fails its measure. D4 against the user's ear (`--ear-di`,
+    required): the agreement in-sample and leave-one-out. Never overwrites an OK record."""
     import numpy as np
 
     from learn import direct_sound_gate as G
@@ -918,6 +1011,11 @@ def cmd_calibrate(args):
         raise SystemExit(f"{path} reads OK: a rerun needs review; move it aside by hand first")
     lt = label_table()
     heldout_ok(KNOWN_AMPS + KNOWN_FAILS + NEG_SOURCES)
+    derived = known_amps_from(json.loads(TVD_MEASURES.read_text()))
+    if tuple(sorted(derived)) != tuple(sorted(KNOWN_AMPS)):
+        raise SystemExit(f"KNOWN_AMPS differs from the target-vs-DI derivation: {sorted(set(derived) ^ set(KNOWN_AMPS))}")
+    if not args.ear_di and not args.smoke:
+        raise SystemExit("calibrate needs --ear-di (the sitting-1 export): D4 is calibrated on the user's ear")
     bt = json.loads(BLEED_TABLE.read_text())
     man = _load(neg_dir(root) / "negatives.json") or {"renders": {}}
     rows = []
@@ -960,18 +1058,23 @@ def cmd_calibrate(args):
     # D4 against the user's ear on the crops' DIs (sitting 1 of data-review-1, judged on the DI clip)
     d4 = None
     if args.ear_di:
-        _, _, di_ear = ear_answers([], args.ear_di)
+        di_ear = ear_answers([], args.ear_di)["crop_di"]
         heard = {slug: ear_di_verdict(h) for slug, h in di_ear.items() if slug in lt}
         meas, readings = {}, {}
         for slug in sorted(heard):
             f = di_processing(mono(pathlib.Path(lt[slug]["crop"]) / "di.wav")[int(HALVES["A"][0] * SR):])
             readings[slug] = {**f, "ear_clean": heard[slug]}
             meas[slug] = d4_status(f["crest_db"], f["bright_slope"])
-        d4 = {"agreement": d4_agreement(heard, meas), "readings": readings,
-              "thresholds": {"crest_db": D4_CREST_DB, "bright_slope": D4_SLOPE_MIN}}
+        fit_rows = [(heard[s_], readings[s_]["crest_db"], readings[s_]["bright_slope"]) for s_ in sorted(heard)
+                    if heard[s_] is not None and readings[s_]["crest_db"] is not None]
+        loo, n_loo = d4_loo(fit_rows)
+        refit = d4_fit(fit_rows)
+        d4 = {"agreement": d4_agreement(heard, meas), "leave_one_out": {"agree": loo, "heard": n_loo},
+              "refit_on_all": {"crest_db": refit[0], "slope_min": refit[1], "caught": refit[2], "flagged": refit[3]},
+              "readings": readings, "thresholds": {"crest_db": D4_CREST_DB, "bright_slope": D4_SLOPE_MIN}}
         a = d4["agreement"]
-        print(f"D4 against the ear: {a['agree']}/{a['heard']}; processed missed {a['processed_missed']}; "
-              f"clean flagged {a['clean_flagged']}")
+        print(f"D4 against the ear: in-sample {a['agree']}/{a['heard']}, leave-one-out {loo}/{n_loo}; processed "
+              f"missed {a['processed_missed']}; clean flagged (conflicts for the ear) {a['clean_flagged']}")
     verdict, probs = calibration_verdict(rows)
     if missing:
         probs.append(f"negatives not rendered: {missing} (run `negatives`)")
@@ -979,13 +1082,15 @@ def cmd_calibrate(args):
 
     def a2_val(r):
         ds = [r["readings"]["halves"][h]["a2"]["drop_db"] for h in "AB"
-              if a2_half_status(**{k: r["readings"]["halves"][h]["a2"][k] for k in ("drop_db", "n_lo", "n_hi")}) != "ear"]
+              if r["readings"]["halves"][h]["a2"]["drop_db"] is not None and r["readings"]["halves"][h]["a2"]["n_hi"]]
         return min(ds) if r["kind"] == "known" and ds else (max(ds) if ds else None)
 
     rec = {"plan": PLAN, "design": DESIGN, "smoke": bool(args.smoke), "verdict": verdict, "problems": probs,
            "thresholds": thresholds(), "threshold_moves": list(THRESHOLD_MOVES), "negatives": NEG_DECLARED,
            "must_fail": {k: list(v) for k, v in NEG_MUST_FAIL.items()},
-           "margins": [margins(rows, "A2 drop (deciding halves)", a2_val,
+           "known_amps": {"rule": KNOWN_RULE, "dropped": list(KNOWN_DROPPED), "source": str(TVD_MEASURES.name),
+                          "parts": list(KNOWN_AMPS)},
+           "margins": [margins(rows, "A2 drop (halves with coherent bins)", a2_val,
                                lambda r: r["kind"] in ("fail", "copy", "cab_off_clean")),
                        margins(rows, "A3 residual (lowest direction)",
                                lambda r: min([v for v in r["readings"]["a3"].values() if v is not None], default=None),
@@ -1005,11 +1110,12 @@ def thresholds():
     return {"A1": {"band_hz": list(LAG_BAND_HZ), "min_ms": LAG_MIN_MS, "max_ms": LAG_MAX_MS, "search_ms": LAG_SEARCH_MS,
                    "prom_min": A1_PROM_MIN},
             "A2": {"nperseg": A2_NPERSEG, "coh_min": A2_COH_MIN, "lo_hz": list(A2_LO_HZ), "hi_hz": list(A2_HI_HZ),
-                   "min_bins": A2_MIN_BINS, "drop_db": A2_DROP_DB},
+                   "min_bins": A2_MIN_BINS, "pass_db": A2_PASS_DB, "fail_db": A2_FAIL_DB},
             "A3": {"sr": A3_SR, "pre_ms": A3_PRE_MS, "post_ms": A3_POST_MS, "ridge": A3_RIDGE, "max_db": A3_MAX_DB},
             "A4": {"max_corr": A4_MAX_CORR, "lag_ms": A4_LAG_MS},
             "A5": {"play_min": A5_PLAY_MIN, "chroma_min": A5_CHROMA_MIN, "onset_min": A5_ONSET_MIN},
             "measure_play_min": MEASURE_PLAY_MIN,
+            "D4": {"crest_db": D4_CREST_DB, "slope_min": D4_SLOPE_MIN, "sample_seed": D4_SAMPLE_SEED},
             "A6": {"bleed_db": A6_BLEED_DB, "mix_take_db": A6_TAKE_DB},
             "stems": {"take_db": STEM_TAKE_DB, "strict_levels": list(STRICT_LEVELS)}}
 
@@ -1122,7 +1228,10 @@ def cmd_targets(args):
     bt = json.loads(BLEED_TABLE.read_text())
     stage_f = set(A.pool_slugs())
     path = root / "t0" / "targets.json"
-    done = (_load(path) or {}).get("parts", {})
+    prev = _load(path) or {}
+    if prev and prev.get("thresholds") != thresholds():
+        raise SystemExit(f"{path} was measured under other thresholds: move it aside by hand (no silent resume)")
+    done = prev.get("parts", {})
     for k, (slug, uses) in enumerate(scope.items()):
         if slug in done:
             continue
@@ -1135,31 +1244,49 @@ def cmd_targets(args):
         a5 = same_take(di, ref)
         m = measure_pair(di, ref, playing={h: (v["di_play_share"] or 0) >= MEASURE_PLAY_MIN for h, v in a5.items()})
         mc, same, corr = _copy_check(crop, ref, rec, base, cpart, dis)
-        st = pair_status(m, mc, same)
         windows = None
         if not any(m["playing"].values()) and "level prior" in uses:
             windows = session_windows(slug, base, cpart)          # the crop is silent: read the prior's sections
-            if windows:
-                st.update(windows["status"])
-        st["A5"] = combine_part([a5_half_status(v["di_play_share"], v["chroma"], v["onset"]) for v in a5.values()])
         bh = (bt.get(slug) or {}).get("halves") or {}
-        st["A6"] = combine_part([a6_half_status(bh.get(h)) for h in HALVES])
         mix = None
         if slug in stage_f:
             own_x = [cpart["reference"], *(cpart.get("alternate") or []), *(cpart.get("simulated") or [])]
             mix = same_part_in_mix(crop, rec, base, di, ref, own_x)
-            lv = [v["power_db"] for t in mix.values() for v in t.values() if v["counts"]]
-            st["A6mix"] = a6_mix_status(lv)
-        done[slug] = {"uses": uses, "band": lt[slug]["band"], "gain_class": lt[slug]["gain_class"], "status": st,
-                      "readings": m, "a4_max_corr": mc, "a4_same_hash": same, "a4_corr": corr, "a5": a5,
-                      "bleed_db": {h: (bh.get(h) or {}).get("bleed_db") for h in HALVES},
-                      "stored_di_lag_ms": (bt.get(slug) or {}).get("di_lag_ms"), "mix_same_part": mix,
-                      "session_windows": windows,
-                      "in_mix": slug in stage_f}
+        row = {"uses": uses, "band": lt[slug]["band"], "gain_class": lt[slug]["gain_class"],
+               "readings": m, "a4_max_corr": mc, "a4_same_hash": same, "a4_corr": corr, "a5": a5,
+               "bleed": {h: {"flag": (bh.get(h) or {}).get("flag"), "bleed_db": (bh.get(h) or {}).get("bleed_db")}
+                         for h in HALVES},
+               "bleed_db": {h: (bh.get(h) or {}).get("bleed_db") for h in HALVES},
+               "stored_di_lag_ms": (bt.get(slug) or {}).get("di_lag_ms"), "mix_same_part": mix,
+               "session_windows": windows, "in_mix": slug in stage_f,
+               "crop_start_s": float(rec.get("excerpt_start_s", 0.0))}
+        row["status"] = target_status(row)
+        done[slug] = row
         _save(path, {"plan": PLAN, "smoke": bool(args.smoke), "thresholds": thresholds(), "parts": done,
-                     "time": time.strftime("%Y-%m-%d %H:%M:%S")})
-        print(f"{k + 1}/{len(scope)} {slug[:50]:50s} {st}", flush=True)
+                     "scope": sorted(scope), "complete": False, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+        print(f"{k + 1}/{len(scope)} {slug[:50]:50s} {row['status']}", flush=True)
+    _save(path, {"plan": PLAN, "smoke": bool(args.smoke), "thresholds": thresholds(), "parts": done,
+                 "scope": sorted(scope), "complete": set(done) >= set(scope), "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"TARGETS DONE: {len(done)} parts")
+
+
+def target_status(row):
+    """A1-A6 of a stored target row, recomputed from its readings under the current thresholds (`lists` re-reads
+    every verdict this way). A6's mix clause counts only electric same-part tracks."""
+    st = pair_status(row["readings"])
+    st["A4"] = a4_status(row.get("a4_max_corr"), row.get("a4_same_hash", False))
+    w = row.get("session_windows")
+    if w and w.get("readings"):
+        sts = [pair_status(x["readings"]) for x in w["readings"]]
+        st.update({"A1": combine_part([x["A1"] for x in sts]), "A2": a2_part([x["A2"] for x in sts]),
+                   "A3": combine_part([x["A3"] for x in sts])})
+    st["A5"] = combine_part([a5_half_status(v["di_play_share"], v["chroma"], v["onset"]) for v in row["a5"].values()])
+    st["A6"] = combine_part([a6_half_status((row.get("bleed") or {}).get(h)) for h in HALVES])
+    if row.get("in_mix"):
+        mix = row.get("mix_same_part")
+        st["A6mix"] = None if mix is None else a6_mix_status(
+            [v["power_db"] for t, hh in mix.items() for v in hh.values() if v["same_part"] and is_electric_take(t)])
+    return st
 
 
 # --- commands: T0 DIs --------------------------------------------------------------------------------------------
@@ -1238,6 +1365,8 @@ def cmd_dis(args):
     from learn import data_cleaning as DC
     from learn import pretrain_set as PS
 
+    from learn import clean_di as CD
+
     require_real(args)
     root = out_root(args)
     k, n = args.shard
@@ -1245,10 +1374,16 @@ def cmd_dis(args):
     man_rows = json.loads(PS.MANIFEST.read_text())["sections"]
     lt = label_table()
     crops = {s: u for s, u in target_scope().items() if s in lt}
-    jobs = [("di", d) for d in sorted(scope)] + [("crop", s) for s in sorted(crops)]
-    jobs = [j for i, j in enumerate(jobs) if i % n == k][:args.limit or None]
+    heldout_ok(crops)                                   # the crops: the data-review page's fail-closed check
+    for d in scope:                                     # every inventory DI read here: part A's held-out refusal
+        CD.refuse_held_out(meta.inv[d])
+    all_jobs = [("di", d) for d in sorted(scope)] + [("crop", s) for s in sorted(crops)]
+    jobs = [j for i, j in enumerate(all_jobs) if i % n == k][:args.limit or None]
     path = root / "t0" / f"dis-{k}of{n}.json"
-    done = (_load(path) or {}).get("rows", {})
+    prev = _load(path) or {}
+    if prev and prev.get("thresholds") != thresholds():
+        raise SystemExit(f"{path} was measured under other thresholds: move it aside by hand (no silent resume)")
+    done = prev.get("rows", {})
     for m, (kind, key) in enumerate(jobs):
         if f"{kind}:{key}" in done:
             continue
@@ -1279,19 +1414,13 @@ def cmd_dis(args):
                     d2m = d2m or DiD2(rec["path"])
                     mf = d2m.window(s["start_s"])
                     src = "measured here"
-                d2 = {"flags": mf[0], "tags": mf[1], "status": d2_status(mf[0], key in PS.HUM_SUSPECT), "source": src}
+                d2 = {"flags": mf[0], "tags": mf[1], "source": src}
                 d4 = di_processing(di)
-                d4["status"] = d4_status(d4["crest_db"], d4["bright_slope"])
                 secs.append({"section": s["id"], "start_s": s["start_s"], "D1": d1, "D2": d2, "D4": d4})
-            d1 = d1_status([h for x in secs if x["D1"] for h in x["D1"]["halves"].values()]) if amps else None
-            d4_fail = [x["section"] for x in secs if x["D4"]["status"] == "fail"]
-            st = {"D1": None if d1 is None else d1["status"],
-                  "D2": combine_part([x["D2"]["status"] for x in secs]), "D3": d3_status(key),
-                  "D4": "fail" if 2 * len(d4_fail) > len(secs) else "pass"}       # a majority of processed sections
-            done[f"{kind}:{key}"] = {"di": key, "band": scope[key]["band"], "datasets": scope[key]["datasets"],
-                                     "amp_tracks": amps, "status": st, "d1": d1, "d4_failing_sections": d4_fail,
-                                     "sections": secs,
-                                     "verdict": di_verdict(st)}
+            row = {"di": key, "band": scope[key]["band"], "datasets": scope[key]["datasets"], "amp_tracks": amps,
+                   "hum_suspect": key in PS.HUM_SUSPECT, "path": rec["path"], "sections": secs}
+            row.update(di_row_status(row))
+            done[f"{kind}:{key}"] = row
         else:
             crop = pathlib.Path(lt[key]["crop"])
             rec, base, cpart, dis, _ = crop_session(crop)
@@ -1301,17 +1430,37 @@ def cmd_dis(args):
             src = next((r for r in meta.inv.values() if r.get("slug") == key), None)
             suspect = bool(src) and src["id"] in PS.HUM_SUSPECT
             d4 = di_processing(mono(crop / "di.wav")[int(HALVES["A"][0] * SR):])
-            d4["status"] = d4_status(d4["crest_db"], d4["bright_slope"])
-            st = {"D1": None, "D2": d2_status(flags, suspect), "D3": d3_status(cpart["di"]),   # D1: the target's A1-A2
-                  "D4": d4["status"]}
-            done[f"{kind}:{key}"] = {"slug": key, "uses": crops[key], "di_file": str(di_path), "window_s": t0,
-                                     "status": st, "d2": {"flags": flags, "tags": tags, "row": row, "hum_suspect": suspect},
-                                     "d4": d4, "inventory_di": src["id"] if src else None,
-                                     "verdict": di_verdict({**st, "D1": "pass"})}
-        _save(path, {"plan": PLAN, "smoke": bool(args.smoke), "shard": [k, n], "rows": done,
-                     "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+            crow = {"slug": key, "uses": crops[key], "di_file": str(di_path), "di_name": cpart["di"], "window_s": t0,
+                    "d2": {"flags": flags, "tags": tags, "row": row, "hum_suspect": suspect},
+                    "d4": d4, "inventory_di": src["id"] if src else None}
+            crow["status"] = crop_status(crow)                   # D1 for a crop is its target's A1-A2 (targets)
+            done[f"{kind}:{key}"] = crow
+        _save(path, {"plan": PLAN, "smoke": bool(args.smoke), "shard": [k, n], "thresholds": thresholds(),
+                     "jobs": len(jobs), "complete": False, "rows": done, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
         print(f"{m + 1}/{len(jobs)} {kind} {key[-60:]}: {done[f'{kind}:{key}']['status']}", flush=True)
+    _save(path, {"plan": PLAN, "smoke": bool(args.smoke), "shard": [k, n], "thresholds": thresholds(), "jobs": len(jobs),
+                 "complete": all(f"{a}:{b}" in done for a, b in jobs) and not args.limit, "rows": done,
+                 "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"DIS DONE {k}/{n}")
+
+
+def di_row_status(row):
+    """A pool, V_sep or other-guitar DI's statuses, recomputed from its stored readings under the current thresholds:
+    D1 over its sections (None for a DI-only part), D2 (every section's part A flags; hum-suspect), D3 by name, and
+    per section D4 (pass/fail; D4 never excludes alone). -> {"status", "d1", "d4_sections"}."""
+    secs = row["sections"]
+    d1 = d1_status([h for x in secs if x["D1"] for h in x["D1"]["halves"].values()]) if row.get("amp_tracks") else None
+    d2 = combine_part([d2_status(x["D2"]["flags"], row.get("hum_suspect", False)) for x in secs])
+    d4 = {x["section"]: d4_status(x["D4"]["crest_db"], x["D4"]["bright_slope"]) for x in secs}
+    return {"status": {"D1": None if d1 is None else d1["status"], "D2": d2, "D3": d3_status(row["di"])},
+            "d1": d1, "d4_sections": d4}
+
+
+def crop_status(row):
+    """A crop's measure DI: D2 on the crop window (flags, hum-suspect), D3 by name, D4 on the crop window."""
+    d2 = row["d2"]
+    return {"D2": d2_status(d2["flags"], d2.get("hum_suspect", False)), "D3": d3_status(row.get("di_name") or row["di_file"]),
+            "D4": d4_status(row["d4"]["crest_db"], row["d4"]["bright_slope"])}
 
 
 # --- commands: the stem scan -------------------------------------------------------------------------------------
@@ -1443,7 +1592,10 @@ def cmd_stem_scan(args):
     jobs = [s for i, s in enumerate(sess) if i % n == k and (not args.only or args.only in s)][:args.limit or None]
     floor = stem_floor(root)
     path = root / "t0" / f"stems-{k}of{n}.json"
-    done = (_load(path) or {}).get("sessions", {})
+    prev = _load(path) or {}
+    if prev and prev.get("floor_db") != floor:
+        raise SystemExit(f"{path} was scanned at another floor: move it aside by hand (no silent resume)")
+    done = prev.get("sessions", {})
     idx, _ = DC.band_bins()
     for m, sd in enumerate(jobs):
         if sd in done:
@@ -1472,11 +1624,14 @@ def cmd_stem_scan(args):
                               for f in stems}, "seconds": round(time.time() - t, 1)}
         del Ys
         gc.collect()
-        _save(path, {"plan": PLAN, "smoke": bool(args.smoke), "shard": [k, n], "sessions": done,
-                     "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+        _save(path, {"plan": PLAN, "smoke": bool(args.smoke), "shard": [k, n], "floor_db": floor, "complete": False,
+                     "sessions": done, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
         bad = [f for f, v in done[sd]["stems"].items() if not v["pass"]]
         print(f"{m + 1}/{len(jobs)} {pathlib.Path(sd).name}: {len(stems)} stems, {len(gtr)} guitar tracks, "
               f"failing {bad} ({time.time() - t:.0f} s)", flush=True)
+    _save(path, {"plan": PLAN, "smoke": bool(args.smoke), "shard": [k, n], "floor_db": floor,
+                 "complete": all(s_ in done for s_ in jobs) and not (args.limit or args.only), "sessions": done,
+                 "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"STEM SCAN DONE {k}/{n} (floor {floor:.0f} dB)")
 
 
@@ -1486,13 +1641,25 @@ def scope_dis(dis):
 
 # --- commands: the lists -----------------------------------------------------------------------------------------
 
-def ear_answers(paths, di_paths=()):
-    """The user's ear, each answer id mapped through its page's items.json. -> (target clean {(slug, half): verdict},
-    target amp {slug: verdict}, DI {slug: {half: verdict}}).
-    - `paths`: exports that judged the targets (a data-review sitting heard on its main clip; the target-vs-DI page);
-    - `di_paths`: data-review-1 exports whose amp items were judged on their DI clip (sitting 1, 2026-10-23: 'clean'
-      is a clean, unprocessed DI; 'other' is a processed DI, an amp or a stem)."""
-    clean, amp, di = {}, {}, {}
+EAR_PAGE = "trusted-data-ear"          # the listening page built from `ear-queue.json`
+EAR_VERDICTS = {"target": ("clean_amp", "bleed", "other_guitar", "not_amp", "unsure"),
+                "di": ("clean", "processed", "not_a_di", "hum", "unsure"),
+                "di_amp": ("amp", "same_di", "processed", "unsure")}
+
+
+def item_id(kind, key, start_s=None):
+    return "ear-" + hashlib.sha1(f"{kind}|{key}|{start_s}".encode()).hexdigest()[:12]
+
+
+def ear_answers(paths, di_paths=(), registry=None):
+    """The user's ear. -> {"target_clean": {(slug, half): [verdicts]}, "target_amp": {slug: [verdicts]},
+    "crop_di": {slug: {half: [verdicts]}}, "di_windows": {key: [(start_s, end_s, verdict)]}, "di_pairs": {di: [verdicts]}}.
+    - `di_paths`: data-review-1 exports judged on the DI clip (sitting 1: 'clean' is a clean, unprocessed DI);
+    - `paths`: target judgments: the target-vs-DI page ('amp' or not) and the ear-queue page (`EAR_PAGE`, its ids
+      decoded through `registry`, the items `lists` has queued). A data-review-1 export is refused here (its amp
+      items were judged on the DI clip). Several answers on one item are all kept; `merge_ear` lets a negative win."""
+    out = {"target_clean": {}, "target_amp": {}, "crop_di": {}, "di_windows": {}, "di_pairs": {}}
+    registry = registry or {}
     pages = {"data-review-1": HOME / "listening/data-review-1/items.json",
              "target-vs-di-check": HOME / "listening/target-vs-di-check/items.json"}
     items = {}
@@ -1502,20 +1669,42 @@ def ear_answers(paths, di_paths=()):
                 items[it["id"]] = it
     for p, about_di in [(q, False) for q in paths or ()] + [(q, True) for q in di_paths or ()]:
         d = json.loads(pathlib.Path(p).expanduser().read_text())
+        page = d.get("page")
+        if about_di and page != "data-review-1":
+            raise SystemExit(f"{p}: --ear-di takes data-review-1 exports only (page {page})")
+        if not about_di and page == "data-review-1":
+            raise SystemExit(f"{p}: a data-review-1 export judged the DI clips; pass it as --ear-di, not --ear")
+        if not about_di and page not in ("target-vs-di-check", EAR_PAGE):
+            raise SystemExit(f"{p}: unknown page {page}")
         for a in d.get("answers") or []:
-            it = items.get(a["id"])
-            if it is None or not a.get("verdict"):
+            v = a.get("verdict")
+            if not v:
                 continue
-            if d.get("page") == "data-review-1" and it.get("section") == "amp":
-                if about_di:
-                    di.setdefault(it["slug"], {})[it["half"]] = a["verdict"]
+            if page == EAR_PAGE:
+                it = registry.get(a["id"])
+                if it is None:
+                    raise SystemExit(f"{p}: answer {a['id']} is not a queued item")
+                if v not in EAR_VERDICTS[it["family"]]:
+                    raise SystemExit(f"{p}: {a['id']}: verdict {v} is not one of {EAR_VERDICTS[it['family']]}")
+                if it["kind"] == "target":
+                    out["target_clean"].setdefault((it["key"], it["half"]), []).append("clean" if v == "clean_amp" else v)
+                    if v in ("clean_amp", "not_amp"):
+                        out["target_amp"].setdefault(it["key"], []).append("amp" if v == "clean_amp" else "not_amp")
+                elif it["kind"] == "di_amp":
+                    out["di_pairs"].setdefault(it["key"], []).append(v)
                 else:
-                    clean[(it["slug"], it["half"])] = a["verdict"]
-            elif d.get("page") == "target-vs-di-check" and not about_di:
+                    out["di_windows"].setdefault(it["key"], []).append((it["start_s"], it["start_s"] + it["dur_s"], v))
+                continue
+            it = items.get(a["id"])
+            if it is None:
+                continue
+            if page == "data-review-1" and it.get("section") == "amp":
+                out["crop_di"].setdefault(it["slug"], {}).setdefault(it["half"], []).append(v)
+            elif page == "target-vs-di-check":
                 slug = (it.get("private") or {}).get("slug")
                 if slug:
-                    amp[slug] = a["verdict"]
-    return clean, amp, di
+                    out["target_amp"].setdefault(slug, []).append(v)
+    return out
 
 
 def d4_agreement(ear, measured):
@@ -1531,16 +1720,20 @@ def d4_agreement(ear, measured):
 
 
 def ear_clean_of(slug, clean, halves_used=("A", "B")):
-    """True if every half used was heard 'clean', False if any half was heard otherwise, None if not all heard."""
-    vs = [clean.get((slug, h)) for h in halves_used]
-    if any(v is not None and v != "clean" for v in vs):
+    """A target heard clean: False if any half was heard otherwise (any negative answer wins), True if every half was
+    heard clean, None if a half is unheard. clean: {(slug, half): [verdicts]} (a bare verdict is one answer)."""
+    vs = []
+    for h in halves_used:
+        a = clean.get((slug, h))
+        vs.append(merge_ear(a if isinstance(a, list) else [a], "clean"))
+    if any(v is False for v in vs):
         return False
-    return True if all(v == "clean" for v in vs) else None
+    return True if all(v is True for v in vs) else None
 
 
 def ear_amp_of(slug, amp):
-    v = amp.get(slug)
-    return None if v in (None, "unsure") else v == "amp"
+    a = amp.get(slug)
+    return merge_ear(a if isinstance(a, list) else [a], "amp")
 
 
 def rederive_prior(sections_dir, passing, crop_only_a5):
@@ -1576,125 +1769,298 @@ def prior_summary(vals):
             "p5": float(np.percentile(allv, 5)), "p95": float(np.percentile(allv, 95))}
 
 
-def merged_shards(root, prefix, key):
+def load_shards(root, prefix, key, check):
+    """Every shard of a sharded command, merged. -> (merged rows, problems): a missing, incomplete or stale shard
+    (`check(record)` false) is a problem; `lists` refuses on any."""
+    files = sorted((root / "t0").glob(f"{prefix}-*of*.json"))
+    if not files:
+        return {}, [f"no {prefix} shard"]
+    probs, have, ns = [], {}, set()
+    for f in files:
+        d = _load(f) or {}
+        k, n = d.get("shard", (None, None))
+        ns.add(n)
+        have[k] = d
+        if not d.get("complete"):
+            probs.append(f"{f.name} is incomplete")
+        if not check(d):
+            probs.append(f"{f.name} was made under other thresholds or another floor")
+    if len(ns) != 1:
+        probs.append(f"{prefix} shards of different splits: {sorted(map(str, ns))}")
+    else:
+        n = ns.pop()
+        missing = [k for k in range(n) if k not in have]
+        if missing:
+            probs.append(f"{prefix} shards missing: {missing} of {n}")
     out = {}
-    for p in sorted((root / "t0").glob(f"{prefix}-*of*.json")):
-        out.update((_load(p) or {}).get(key, {}))
+    for d in have.values():
+        out.update(d.get(key, {}))
+    return out, probs
+
+
+def queue_item(kind, key, family, start_s, dur_s, paths, reason, **extra):
+    return {"id": item_id(kind, key, start_s), "kind": kind, "family": family, "key": key, "start_s": start_s,
+            "dur_s": dur_s, "paths": paths, "reason": reason, "verdicts": list(EAR_VERDICTS[family]), **extra}
+
+
+def windows_of(key, ear, crop_rows):
+    """Heard windows of a DI or crop key: [(start_s, end_s, verdict)], in the DI file's time. A crop's sitting-1 halves
+    map to the crop's window (`build_data_review.HALF_CLIPS`); queue answers carry their own window."""
+    from learn import build_data_review as BDR
+
+    out = list(ear["di_windows"].get(key, []))
+    for slug, cr in crop_rows.items():
+        if key in (f"crop:{slug}", cr.get("inventory_di")):
+            for h, vs in ear["crop_di"].get(slug, {}).items():
+                a, b = BDR.HALF_CLIPS[h]
+                out += [(cr["window_s"] + a, cr["window_s"] + b, v) for v in vs]
+            out += [(s0, s1, v) for s0, s1, v in ear["di_windows"].get(f"crop:{slug}", [])
+                    if key == cr.get("inventory_di")]
+    return out
+
+
+def section_ear(start_s, windows, dur=CROP_S):
+    """The ear on one section: merged over the heard windows overlapping it (a negative wins)."""
+    return merge_ear([v for a, b, v in windows if overlaps(start_s, start_s + dur, a, b)], "clean")
+
+
+def sample_passed(di_rows, seed=D4_SAMPLE_SEED):
+    """One D4-passed DI per band (pool and V_sep DIs with no D4-flagged section), seeded: queued for the ear to check
+    D4's misses. -> {di: section start_s}."""
+    import random as _r
+
+    by = {}
+    for di, row in sorted(di_rows.items()):
+        if not ({"training pool", "V_sep"} & set(row["datasets"])):
+            continue
+        d4 = di_row_status(row)["d4_sections"]
+        if row["sections"] and all(v == "pass" for v in d4.values()):
+            by.setdefault(row["band"], []).append(di)
+    rng = _r.Random(seed)
+    out = {}
+    for band in sorted(by):
+        di = rng.choice(by[band])
+        out[di] = rng.choice([x["start_s"] for x in di_rows[di]["sections"]])
     return out
 
 
 def cmd_lists(args):
-    """The trusted lists (zero renders): targets by use, DIs, stems, the ear's queue, the re-derived level prior."""
+    """The trusted lists and the ear queue (zero renders). Refuses when any `dis` or `stem-scan` shard is missing,
+    incomplete or stale, when `targets` is incomplete or stale, or when a target lacks its crop row; every verdict is
+    recomputed from the stored readings under the current thresholds."""
     from learn import pretrain_set as PS
 
     require_real(args)
     root = out_root(args)
-    tg = (_load(root / "t0" / "targets.json") or {}).get("parts")
-    if not tg:
+    tgrec = _load(root / "t0" / "targets.json")
+    if not tgrec:
         raise SystemExit("run `targets` first")
-    dis = merged_shards(root, "dis", "rows")
-    stems = merged_shards(root, "stems", "sessions")
-    clean, amp, di_ear = ear_answers(args.ear or [], args.ear_di or [])
-    di_rows = {k: v for k, v in dis.items() if k.startswith("di:")}
+    probs = []
+    if tgrec.get("thresholds") != thresholds():
+        probs.append("targets.json was measured under other thresholds")
+    if not tgrec.get("complete"):
+        probs.append("targets.json is incomplete")
+    dis, p1 = load_shards(root, "dis", "rows", lambda d: d.get("thresholds") == thresholds())
+    floor = stem_floor(root)
+    stems, p2 = load_shards(root, "stems", "sessions", lambda d: d.get("floor_db") == floor)
+    probs += p1 + p2
+    lt = label_table()
+    tg = tgrec["parts"]
     crop_rows = {k[5:]: v for k, v in dis.items() if k.startswith("crop:")}
-    # the ear on the crops' DIs is authoritative (user, 2026-10-23): heard processed -> excluded; heard clean -> D4 passes
-    ear_of_slug = {slug: ear_di_verdict(h) for slug, h in di_ear.items()}
-    ear_of_di = {}
-    for slug, cr in crop_rows.items():
-        e = ear_of_slug.get(slug)
-        if e is not None and cr.get("inventory_di"):
-            prev = ear_of_di.get(cr["inventory_di"])
-            ear_of_di[cr["inventory_di"]] = e if prev is None else (prev and e)
-    agreement = d4_agreement({s: e for s, e in ear_of_slug.items() if s in crop_rows},
-                             {s: crop_rows[s]["status"].get("D4") for s in crop_rows})
+    di_rows = {k[3:]: v for k, v in dis.items() if k.startswith("di:")}
+    no_crop = sorted(s for s in tg if s in lt and s not in crop_rows)
+    if no_crop:
+        probs.append(f"{len(no_crop)} targets lack their crop (measure DI) row: {no_crop[:5]}")
+    if probs and not args.smoke:
+        raise SystemExit("lists refuses: " + "; ".join(probs))
+    for p in probs:
+        print("smoke: ignoring:", p)
+    reg_path = root / "t0" / "ear-items.json"
+    registry = _load(reg_path) or {}
+    ear = ear_answers(args.ear or [], args.ear_di or [], registry)
+    queue = []
 
-    def with_ear(st, e):
-        st = dict(st)
-        if e is True:
-            st["D4"] = "pass"
-        elif e is False:
-            st["D4"] = "fail"
-            st["ear"] = "heard processed"
-        return st
-
+    # the crops' measure DIs: D2-D3 measured; D4 and the ear (a negative wins; heard clean and D4-flagged: a conflict)
+    crop_di, crop_heard, crop_meas = {}, {}, {}
     for slug, cr in crop_rows.items():
-        cr["status"] = with_ear(cr["status"], ear_of_slug.get(slug))
-        cr["verdict"] = di_verdict({**cr["status"], "D1": "pass"})
-        cr["ear"] = ear_of_slug.get(slug)
-    for k, v in di_rows.items():
-        e = ear_of_di.get(k[3:])
-        v["status"] = with_ear(v["status"], e)
-        v["verdict"] = di_verdict(v["status"])
-        v["ear"] = e
-        v["excluded_sections"] = [] if e is True else list(v.get("d4_failing_sections") or [])
+        st = crop_status(cr)
+        heard = merge_ear([v for vs in ear["crop_di"].get(slug, {}).values() for v in vs]
+                          + [v for _, _, v in ear["di_windows"].get(f"crop:{slug}", [])], "clean")
+        resolved = merge_ear([v for _, _, v in ear["di_windows"].get(f"crop:{slug}", [])], "clean")
+        crop_heard[slug] = merge_ear([v for vs in ear["crop_di"].get(slug, {}).values() for v in vs], "clean")
+        crop_meas[slug] = st["D4"]
+        if "fail" in (st["D2"], st["D3"]):
+            v, why = "excluded", [f"{m} fails" for m in ("D2", "D3") if st[m] == "fail"]
+        elif heard is False:
+            v, why = "excluded", ["heard processed or not a clean DI"]
+        elif st["D4"] == "fail" and resolved is not True:       # only a queue answer on the flagged window clears it
+            conflict = heard is True
+            v, why = "pending ear", ["conflict: heard clean, D4 flags it" if conflict else "D4 flags it (unheard)"]
+        else:
+            v, why = "trusted", []
+        crop_di[slug] = {"verdict": v, "why": why, "status": st, "ear": heard, "d4": cr["d4"], "d2": cr["d2"]}
+    agreement = d4_agreement({s: h for s, h in crop_heard.items()}, crop_meas)
+
+    # targets: A1-A6 recomputed; the ear on the target (clean, amp); the measure DI's standing
     targets = {}
     for slug, r in tg.items():
-        if "status" not in r:
+        if "readings" not in r:
             targets[slug] = {"verdict": "excluded", "why": [r.get("error", "not measured")], "uses": r.get("uses")}
             continue
-        v, why = target_verdict(r["status"], ear_clean_of(slug, clean), ear_amp_of(slug, amp),
+        st = target_status(r)
+        v, why = target_verdict(st, ear_clean_of(slug, ear["target_clean"]), ear_amp_of(slug, ear["target_amp"]),
                                 disputed=slug in EAR_DISPUTED, in_mix=r.get("in_mix", False))
-        targets[slug] = {"verdict": v, "why": why, "uses": r["uses"], "band": r["band"], "status": r["status"],
+        md = crop_di.get(slug)
+        if md and md["verdict"] == "pending ear" and v != "excluded":   # the measure DI waits for the ear too
+            cr = crop_rows[slug]
+            conflict = md["why"][0].startswith("conflict")
+            queue.append(queue_item("di_conflict" if conflict else "di_flagged", f"crop:{slug}", "di", cr["window_s"],
+                                    CROP_S, {"di": cr["di_file"]}, md["why"][0], crest_db=cr["d4"]["crest_db"],
+                                    bright_slope=cr["d4"]["bright_slope"]))
+        if md and md["verdict"] == "excluded" and v != "excluded":
+            v, why = "excluded", [f"measure DI: {', '.join(md['why'])}"]
+        elif md and md["verdict"] == "pending ear" and v == "trusted":
+            v, why = "pending ear", [f"measure DI: {', '.join(md['why'])}"]
+        targets[slug] = {"verdict": v, "why": why, "uses": r["uses"], "band": r["band"], "status": st,
                          "bleed_db": r["bleed_db"], "lag_ms": {h: r["readings"]["halves"][h]["lag_ms"] for h in HALVES},
                          "a3": r["readings"]["a3"], "a5": r["a5"]}
-    for slug, cr in crop_rows.items():                              # a target's measure DI must pass D2-D4 too
-        if slug in targets and cr["verdict"][0] == "excluded" and targets[slug]["verdict"] != "excluded":
-            targets[slug]["verdict"] = "excluded"
-            targets[slug]["why"] = [f"measure DI: {', '.join(cr['verdict'][1])}"]
-    pool_d4 = {}
-    for k, v in di_rows.items():
-        for x in v["sections"]:
-            if "training pool" in v["datasets"] or "V_sep" in v["datasets"]:
-                b = pool_d4.setdefault(v["band"], {"sections": 0, "excluded": 0})
+        if v == "pending ear":
+            from learn import build_data_review as BDR
+
+            crop = pathlib.Path(lt[slug]["crop"])
+            for h in HALVES:
+                if merge_ear(ear["target_clean"].get((slug, h), []), "clean") is None:
+                    a, b = BDR.HALF_CLIPS[h]
+                    queue.append(queue_item("target", slug, "target", a, b - a,
+                                            {"di": str(crop / "di.wav"), "target": str(crop / "reference.wav")},
+                                            "; ".join(why) or "not yet heard", half=h,
+                                            question="The DI, then the target: is the target clean (no bleed, no "
+                                                     "other guitar) and an amp recording?"))
+
+    # pool, V_sep and other-guitar DIs: D1-D3 measured; D4 per section never decides alone; the ear decides
+    sample = sample_passed(di_rows)
+    dis_out, unusable, by_band = {}, set(), {}
+    for di, row in sorted(di_rows.items()):
+        rs = di_row_status(row)
+        v, why = di_verdict(rs["status"])
+        wins = windows_of(di, ear, crop_rows)
+        pairs = merge_ear(ear["di_pairs"].get(di, []), "amp")
+        if any(merge_ear([w[2]], "clean") is False for w in wins) or pairs is False:
+            v, why = "excluded", ["heard processed, or not a DI of an amp take"]
+        elif v == "pending ear":
+            left = []
+            for w in why:
+                if w == "D1 to the ear" and pairs is True:
+                    continue
+                if w.startswith("DI-only") and any(merge_ear([x[2]], "clean") is True for x in wins):
+                    continue
+                left.append(w)
+            v, why = ("pending ear", left) if left else ("trusted", [])
+        if v != "excluded" and di in sample and not wins:
+            v, why = "pending ear", why + ["sampled for the ear (D4 passed)"]
+        secs = {}
+        for x in row["sections"]:
+            sid, t0 = x["section"], x["start_s"]
+            e = section_ear(t0, wins)
+            if v == "excluded":
+                secs[sid] = "excluded"
+            elif rs["d4_sections"][sid] == "fail" and not (e is True and any(
+                    overlaps(t0, t0 + CROP_S, a, b) and merge_ear([vv], "clean") for a, b, vv in ear["di_windows"].get(di, []))):
+                secs[sid] = "pending ear"                         # flagged: only a queue answer on this section clears it
+            elif v == "pending ear":
+                secs[sid] = "pending ear"
+            else:
+                secs[sid] = "usable"
+            if secs[sid] != "usable":
+                unusable.add(sid)
+        dis_out[di] = {"verdict": v, "why": why, "status": rs["status"], "d1": rs["d1"], "datasets": row["datasets"],
+                       "band": row["band"], "sections": secs}
+        if v == "excluded":
+            continue
+        flagged = [x for x in row["sections"] if secs[x["section"]] == "pending ear"
+                   and rs["d4_sections"][x["section"]] == "fail"]
+        for x in flagged:
+            queue.append(queue_item("di_flagged", di, "di", x["start_s"], CROP_S, {"di": row["path"]},
+                                    "D4 flags this section (unheard)", crest_db=x["D4"]["crest_db"],
+                                    bright_slope=x["D4"]["bright_slope"]))
+        if "D1 to the ear" in why:
+            x = max(row["sections"], key=lambda x: x["D4"]["frames"] or 0)
+            amp = (x["D1"] or {}).get("amp_track")
+            sess = pathlib.Path(row["path"]).parent
+            queue.append(queue_item("di_amp", di, "di_amp", x["start_s"], CROP_S,
+                                    {"di": row["path"], "amp": str(sess / amp) if amp else None},
+                                    "D1 went to the ear (no readable lag or roll-off)",
+                                    question="The DI, then its amp track: is the DI the clean DI of this amp take?"))
+        if any(w.startswith("DI-only") for w in why):
+            x = max(row["sections"], key=lambda x: x["D4"]["frames"] or 0)
+            queue.append(queue_item("di_only", di, "di", x["start_s"], CROP_S, {"di": row["path"]},
+                                    "a DI-only part (no amp track to check it against)"))
+        if di in sample and not wins:
+            queue.append(queue_item("di_sample", di, "di", sample[di], CROP_S, {"di": row["path"]},
+                                    "a D4-passed DI sampled to check D4's misses"))
+    for di, d in dis_out.items():
+        if {"training pool", "V_sep"} & set(d["datasets"]):
+            b = by_band.setdefault(d["band"], {"sections": 0, "usable": 0, "pending ear": 0, "excluded": 0})
+            for v in d["sections"].values():
                 b["sections"] += 1
-                b["excluded"] += bool(v["verdict"][0] == "excluded" or x["section"] in v["excluded_sections"])
-    passing = {s for s, r in tg.items() if "status" in r and all(r["status"].get(m) == "pass" or r["status"].get(m) == "ear"
-                                                                  for m in ("A1", "A2", "A3", "A4", "A6"))}
-    crop_only = {s: json.loads((pathlib.Path(label_table()[s]["crop"]) / "record.json").read_text())["excerpt_start_s"]
-                 for s in passing if tg[s]["status"].get("A5") == "fail"}
+                b[v] += 1
+
+    passing = {s for s, r in targets.items() if r.get("status") and all(
+        r["status"].get(m) in ("pass", "ear") for m in ("A1", "A2", "A3", "A4", "A6"))}
+    crop_only = {s: float(tg[s].get("crop_start_s") or json.loads(
+        (pathlib.Path(lt[s]["crop"]) / "record.json").read_text())["excerpt_start_s"])
+        for s in passing if targets[s]["status"].get("A5") == "fail"}
     prior, counts = rederive_prior(PS.SECTIONS_MS, passing - set(crop_only), crop_only)
     old = PS.ratio_values()
     trusted_stems = {sd: sorted(f for f, v in r["stems"].items() if v["pass"]) for sd, r in stems.items()}
 
     def uses(v, u):
-        return [s for s, r in targets.items() if r["verdict"] == v and u in (r.get("uses") or [])]
+        return sorted(s for s, r in targets.items() if r["verdict"] == v and u in (r.get("uses") or []))
 
-    rec = {"plan": PLAN, "smoke": bool(args.smoke), "ear_files": [str(p) for p in args.ear or []],
-           "ear_di_files": [str(p) for p in args.ear_di or []],
-           "targets": targets, "dis": {k[3:]: {"verdict": v["verdict"], "status": v["status"], "datasets": v["datasets"],
-                                               "band": v["band"], "ear": v["ear"],
-                                               "excluded_sections": v["excluded_sections"]} for k, v in di_rows.items()},
-           "measure_dis": {s: {"verdict": v["verdict"], "status": v["status"], "d2": v["d2"], "d4": v.get("d4"),
-                               "ear": v.get("ear")} for s, v in crop_rows.items()},
-           "d4_agreement_with_ear": agreement, "d4_pool_sections_by_band": pool_d4,
-           "excluded_sections": sorted(x for v in di_rows.values() if v["verdict"][0] == "trusted"
-                                       for x in v["excluded_sections"]),
-           "stems": trusted_stems, "stem_floor_db": stem_floor(root),
+    seen = set()
+    queue = [q for q in queue if not (q["id"] in seen or seen.add(q["id"]))]
+    for q in queue:
+        registry[q["id"]] = q
+    counts_q = {}
+    for q in queue:
+        counts_q[q["kind"]] = counts_q.get(q["kind"], 0) + 1
+    qrec = {"plan": PLAN, "page": EAR_PAGE, "smoke": bool(args.smoke), "counts": counts_q, "items": len(queue),
+            "dis": len({q["key"] for q in queue if q["family"] != "target"}),
+            "targets": len({q["key"] for q in queue if q["family"] == "target"}),
+            "verdicts": {k: list(v) for k, v in EAR_VERDICTS.items()}, "queue": queue,
+            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    _save(root / "t0" / "ear-queue.json", qrec)
+    _save(reg_path, registry)
+    rec = {"plan": PLAN, "smoke": bool(args.smoke), "thresholds": thresholds(),
+           "ear_files": [str(p) for p in args.ear or []], "ear_di_files": [str(p) for p in args.ear_di or []],
+           "targets": targets, "dis": dis_out, "measure_dis": crop_di, "unusable_sections": sorted(unusable),
+           "stems": trusted_stems, "stem_floor_db": floor,
            "v_real": uses("trusted", "stage F"), "v_real_pending": uses("pending ear", "stage F"),
            "kc2_trusted": uses("trusted", "knob ceiling 2"), "kc2_pending": uses("pending ear", "knob ceiling 2"),
-           "k_dis": sorted(d[3:] for d, v in di_rows.items() if v["verdict"][0] == "trusted" and "V_sep" in v["datasets"]
+           "k_dis": sorted(d for d, v in dis_out.items() if v["verdict"] == "trusted" and "V_sep" in v["datasets"]
                            and v["band"] not in K_OUT_BANDS),
-           "training_dis": sorted(d[3:] for d, v in di_rows.items() if v["verdict"][0] == "trusted"
+           "training_dis": sorted(d for d, v in dis_out.items() if v["verdict"] == "trusted"
                                   and "training pool" in v["datasets"]),
+           "d4_agreement_with_ear": agreement, "pool_sections_by_band": by_band,
            "level_prior": {"rederived": prior, "rederived_summary": prior_summary(prior), "old_summary": prior_summary(old),
                            "per_part": counts, "crop_only_a5": crop_only},
-           "ear_queue": sorted([s for s, r in targets.items() if r["verdict"] == "pending ear"]),
-           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+           "ear_queue": {"items": len(queue), "counts": counts_q}, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     _save(root / "t0" / "trusted.json", rec)
     for v in ("trusted", "pending ear", "excluded"):
-        print(f"targets {v}: {sum(1 for r in targets.values() if r['verdict'] == v)}")
+        print(f"targets {v}: {sum(1 for r in targets.values() if r['verdict'] == v)}; "
+              f"DIs {v}: {sum(1 for r in dis_out.values() if r['verdict'] == v)}")
     print(f"V-real: {len(rec['v_real'])} trusted, {len(rec['v_real_pending'])} pending the ear; knob ceiling 2: "
           f"{len(rec['kc2_trusted'])} trusted, {len(rec['kc2_pending'])} pending")
-    print(f"DIs: {sum(1 for v in di_rows.values() if v['verdict'][0] == 'trusted')} trusted of {len(di_rows)}; "
-          f"K's DIs {len(rec['k_dis'])} ({REMOVED})")
+    print(f"K's DIs {len(rec['k_dis'])} ({REMOVED}); training DIs {len(rec['training_dis'])}")
     print(f"stems passing: {sum(len(v) for v in trusted_stems.values())} in {len(trusted_stems)} sessions "
-          f"(floor {rec['stem_floor_db']:.0f} dB)")
+          f"(floor {floor:.0f} dB)")
     print(f"level prior: re-derived {rec['level_prior']['rederived_summary']}; old {rec['level_prior']['old_summary']}")
     a = agreement
-    print(f"D4 against the ear: {a['agree']}/{a['heard']} agree; processed caught {a['processed_caught']}, missed "
-          f"{a['processed_missed']}; clean passed {a['clean_passed']}, flagged {a['clean_flagged']}")
-    print("pool and V_sep sections excluded by DI checks (D1-D4, the ear), per band: "
-          + ", ".join(f"{b} {v['excluded']}/{v['sections']}" for b, v in sorted(pool_d4.items())))
+    print(f"D4 against the ear (crops): {a['agree']}/{a['heard']} agree; processed missed {a['processed_missed']}; "
+          f"heard clean but flagged (conflicts) {a['clean_flagged']}")
+    print("pool and V_sep sections (usable / pending ear / excluded) per band: "
+          + ", ".join(f"{b} {v['usable']}/{v['pending ear']}/{v['excluded']}" for b, v in sorted(by_band.items())))
+    print(f"EAR QUEUE: {len(queue)} items ({qrec['dis']} DIs, {qrec['targets']} targets): {counts_q}")
 
 
 # --- commands: the re-reads (zero renders) -----------------------------------------------------------------------

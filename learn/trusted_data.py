@@ -321,11 +321,32 @@ def load_trusted(root, smoke=False):
     tr = _load(root / "t0" / "trusted.json")
     if not tr or (tr.get("smoke") and not smoke):
         raise SystemExit("T0's lists are missing (run `verify_tracks lists`)")
+    if tr.get("thresholds") != V.thresholds() and not smoke:
+        raise SystemExit("T0's lists were made under other thresholds (rerun `verify_tracks lists`)")
     return tr
 
 
+def trusted_sha(root):
+    return V.sha256_file(root / "t0" / "trusted.json")
+
+
+def check_trusted(root, plan, smoke=False):
+    """Refuse a plan made from other T0 lists than the current trusted.json (stale results never run)."""
+    if not plan.get("trusted_sha256") or plan["trusted_sha256"] != trusted_sha(root):
+        if smoke:
+            print("smoke: T0's lists changed since the plan", flush=True)
+            return
+        raise SystemExit("T0's trusted.json changed since this plan was made: rerun `plan` (and what follows)")
+
+
 def trusted_dis(tr):
-    return {d for d, v in tr["dis"].items() if v["verdict"][0] == "trusted"}
+    """The DIs T0 trusts (pending-ear and excluded DIs are out)."""
+    return {d for d, v in tr["dis"].items() if v["verdict"] == "trusted"}
+
+
+def unusable(tr):
+    """Sections T0 does not let any mix use: excluded, or waiting for the ear (D4 flags, pending DIs)."""
+    return set(tr.get("unusable_sections") or [])
 
 
 # --- plan (zero renders) -----------------------------------------------------------------------------------------
@@ -362,7 +383,7 @@ def stems_for(rec, trusted_stems, sd):
     return keep, [f for f in keep if f not in v]
 
 
-def example_recipe(ctx, r, trusted, trusted_stems, act_cache):
+def example_recipe(ctx, r, trusted, trusted_stems, act_cache, bad_sections=frozenset()):
     """One example's self-built recipe (plan (c)), zero renders. r: a part C row."""
     from learn import data_cleaning as DC
     from learn import direct_stems as DS
@@ -371,7 +392,8 @@ def example_recipe(ctx, r, trusted, trusted_stems, act_cache):
     sec = ctx.sections[r["section"]]
     rec = ctx.inv[sec["di"]]
     sd = rec["session_dir"]
-    cands = session_dis(ctx, sd, trusted)
+    cands = [d for d in session_dis(ctx, sd, trusted)
+             if f"{d}@{float(sec['start_s']):.1f}" not in bad_sections]      # other guitars respect T0's sections
     for d in cands:
         key = (d, float(sec["start_s"]))
         if key not in act_cache:
@@ -434,18 +456,18 @@ def cmd_plan(args):
     if args.stage == "t1":
         truth = G.gate_rows(DS.ROOT / "gate", "truth")
         k_dis = set(tr["k_dis"])
-        bad_secs = set(tr.get("excluded_sections") or [])
+        bad_secs = unusable(tr)
         rows = [r for r in ctx.parts["vsep"] if not ctx.tag[r["i"]] and r["band"] not in K_OUT_BANDS
                 and ctx.sections[r["section"]]["di"] in k_dis and r["section"] not in bad_secs
                 and r["i"] in truth and not truth[r["i"]].get("refused")]
         rows = rows[:args.limit or None]
-        recipes = [example_recipe(ctx, r, trusted, tr["stems"], act) for r in rows]
+        recipes = [example_recipe(ctx, r, trusted, tr["stems"], act, bad_secs) for r in rows]
         rec = {"plan": PLAN, "stage": "t1", "smoke": bool(args.smoke), "k_out_bands": list(K_OUT_BANDS),
                "examples": recipes, "renders_others": sum(len(x["others"]) for x in recipes),
                "renders_targets": 0, "separations": len(recipes)}
     else:
         ses, _ = ses_rows(ctx)
-        bad_secs = set(tr.get("excluded_sections") or [])
+        bad_secs = unusable(tr)
         cand = [r for i, r in sorted(ses.items()) if r["band"] != EGGY and ctx.sections[r["section"]]["di"] in trusted
                 and r["section"] not in bad_secs]
         by_band = {}
@@ -456,7 +478,7 @@ def cmd_plan(args):
         if len(es) > ES_CAP:
             es = sorted(random.Random(ES_SEED).sample(es, ES_CAP), key=lambda r: r["i"])
         pilot = stratified_by_band([r for r in cand if r["section"] not in es_sec], N_PILOT, PILOT_SEED)
-        excluded_secs = set(tr.get("excluded_sections") or [])
+        excluded_secs = unusable(tr)
         eggy = [r for r in ctx.pool if r["band"] == EGGY and not r.get("early_stop")
                 and ctx.sections[r["section"]]["di"] in trusted and r["section"] not in excluded_secs]
         try:
@@ -468,7 +490,7 @@ def cmd_plan(args):
         need = sorted({r["i"] for r in pilot} | {r["i"] for r in es} | set(eg))
         if args.limit:
             need = need[:args.limit]
-        recipes = [example_recipe(ctx, rows_by[i], trusted, tr["stems"], act) for i in need]
+        recipes = [example_recipe(ctx, rows_by[i], trusted, tr["stems"], act, bad_secs) for i in need]
         rec = {"plan": PLAN, "stage": "t2", "smoke": bool(args.smoke), "seeds": {"pilot": PILOT_SEED, "es": ES_SEED,
                "eggy": EGGY_SEED, "others": OTHER_SEED}, "pilot": [r["i"] for r in pilot], "es": [r["i"] for r in es],
                "es_sections": sorted(es_sec), "syn_e": syn_e,
@@ -476,6 +498,7 @@ def cmd_plan(args):
                "examples": recipes, "renders_targets": len(recipes),
                "renders_others": sum(len(x["others"]) for x in recipes), "separations": len(recipes)}
     rec["pan_prior"] = PAN_PRIOR
+    rec["trusted_sha256"] = trusted_sha(root)
     rec["max_others"] = MAX_OTHERS
     rec["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     _save(plan_path(root, args.stage), rec)
@@ -544,6 +567,7 @@ def cmd_render(args):
     plan = _load(plan_path(root, args.stage))
     if not plan or (plan.get("smoke") and not args.smoke):
         raise SystemExit(f"run `plan --stage {args.stage}` first")
+    check_trusted(root, plan, args.smoke)
     k, n = args.shard
     shard = DS.shard_sections(plan["examples"], n)
     todo = [x for x in plan["examples"] if shard[x["section"]] == k]
@@ -706,6 +730,7 @@ def cmd_build(args):
     plan = _load(plan_path(root, args.stage))
     if not plan:
         raise SystemExit(f"run `plan --stage {args.stage}` first")
+    check_trusted(root, plan, args.smoke)
     rend = rows_of(root, args.stage, "render")
     built = rows_of(root, args.stage, "build")
     todo = [x for x in plan["examples"] if x["i"] in rend and x["i"] not in built]
@@ -781,6 +806,8 @@ def cmd_t1_read(args):
     V.require_real(args)
     root = V.out_root(args)
     plan = _load(plan_path(root, "t1"))
+    if plan:
+        check_trusted(root, plan, args.smoke)
     built = {i: r for i, r in rows_of(root, "t1", "build").items() if not r.get("refused")}
     if not plan or (len(built) < len(plan["examples"]) and not args.smoke):
         raise SystemExit("K is not fully built (run render and build --stage t1)")
@@ -803,9 +830,15 @@ def cmd_t1_read(args):
             cont[name][i] = statistics.fmean([contamination(d[f"s{h}"], ref[h]) for h in "AB"])
         band_of[i], section_of[i], ratio_of[i] = x["band"], x["section"], x["draw"]["ratio_db"]
     keep = set(per["K"]) & set(per["V_sep"])
-    res = {"examples": len(keep), "bands": sorted({band_of[i] for i in keep}),
-           "K - V_sep mel SNR (paired, band-clustered)": DS.paired(per["K"], per["V_sep"], band_of, keep),
-           "K - V_sep mel SNR (section-clustered)": DC.section_interval(per["K"], per["V_sep"], section_of, keep),
+    bands = sorted({band_of[i] for i in keep})
+    band_iv = DS.paired(per["K"], per["V_sep"], band_of, keep)
+    sec_iv = DC.section_interval(per["K"], per["V_sep"], section_of, keep)
+    primary = band_iv if len(bands) >= 2 else sec_iv       # one band (K is Adam Buckley alone): a band interval is +-inf
+    res = {"examples": len(keep), "bands": bands,
+           "primary": "band-clustered" if len(bands) >= 2 else "section-clustered (one band)",
+           "K - V_sep mel SNR (primary)": primary,
+           "K - V_sep mel SNR (paired, band-clustered)": band_iv,
+           "K - V_sep mel SNR (section-clustered)": sec_iv,
            "K - V_sep contamination (paired)": DS.paired(cont["K"], cont["V_sep"], band_of, keep),
            "levels": {n: PS.band_t_interval(PS.by_band({i: per[n][i] for i in keep}, band_of)) for n in per},
            "by_ratio": {}}
@@ -845,8 +878,7 @@ def cmd_t1_read(args):
                                 "V_real": statistics.median([s for _, s in rv])}
     res["v_real"] = vr
     res["reading"] = ("a gap: K's stems are cleaner than V_sep's, so T2's SYN arm adds realism levers"
-                      if (res["K - V_sep mel SNR (paired, band-clustered)"] or (0, 0, 0, 0))[1] > 0 else
-                      "no gap shown (K's stems not cleaner than V_sep's)")
+                      if (primary or (0, 0, 0, 0))[1] > 0 else "no gap shown (K's stems not cleaner than V_sep's)")
     out = {"plan": PLAN, "stage": "T1", "smoke": bool(args.smoke), "results": res, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     _save(stage_root(root, "t1") / "read.json", out)
     print(json.dumps({k: v for k, v in res.items() if k != "v_real"}, indent=1, default=float))
@@ -961,6 +993,7 @@ def cmd_train(args):
     plan = _load(plan_path(root, "t2"))
     if not plan:
         raise SystemExit("run `plan --stage t2` first")
+    check_trusted(root, plan, args.smoke)
     if args.arm not in arms_of(plan):
         raise SystemExit(f"{args.arm} cannot run: {plan['syn_e'].get('refused')}")
     ctx = DS.Ctx(quiet=True)
@@ -1032,6 +1065,9 @@ def cmd_fit(args):
     V.require_real(args)
     root = V.out_root(args)
     plan = _load(plan_path(root, "t2"))
+    if not plan:
+        raise SystemExit("run `plan --stage t2` first")
+    check_trusted(root, plan, args.smoke)
     ctx = DS.Ctx(quiet=True)
     ses, ses_files = ses_rows(ctx)
     refused, _ = t2_refused(root, plan, ses)
@@ -1076,6 +1112,9 @@ def cmd_e_on_k(args):
     V.require_real(args)
     root = V.out_root(args)
     k_plan = _load(plan_path(root, "t1"))
+    if not k_plan:
+        raise SystemExit("run `plan --stage t1` first")
+    check_trusted(root, k_plan, args.smoke)
     built = {i for i, r in rows_of(root, "t1", "build").items() if not r.get("refused")}
     ctx = DS.Ctx(quiet=True)
     by = {r["i"]: r for r in ctx.parts["vsep"]}
@@ -1240,7 +1279,7 @@ def cmd_report(args):
            "contrasts": con, "reading": reading(iv),
            "e_on_k": (_load(stage_root(root, "t2") / "e-on-k.json") or {}).get("results"),
            "t1": ((_load(stage_root(root, "t1") / "read.json") or {}).get("results") or {}).get(
-               "K - V_sep mel SNR (paired, band-clustered)"),
+               "K - V_sep mel SNR (primary)"),
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     _save(stage_root(root, "t2") / "report.json", rep)
     print(f"{rep['done']}/{rep['directions']} V-real directions; refused scored as S {refused}")

@@ -23,11 +23,12 @@ def test_a1_lag_rule():
 
 
 def test_a2_half_and_part_rules():
-    assert V.a2_half_status(6.2, 100, 46) == "pass"        # colour-me-red elecgtr03 half A, at the moved threshold
+    assert V.a2_half_status(6.2, 100, 46) == "ear"         # colour-me-red elecgtr03 half A: between fail and pass
+    assert V.a2_half_status(12.0, 100, 46) == "pass"       # the plan's 12 dB pass is kept
     assert V.a2_half_status(0.4, 171, 255) == "fail"       # Prodigal ElecGtr5 half B
-    assert V.a2_half_status(-3.9, 171, 10) == "ear"        # Quicksand ElecGtr2: too few coherent bins
+    assert V.a2_half_status(-3.9, 171, 10) == "fail"       # Quicksand ElecGtr2: the bin gate never turns a fail into the ear
     assert V.a2_half_status(None, 0, 0) == "ear"
-    assert V.a2_half_status(25.0, V.A2_MIN_BINS - 1, 300) == "ear"
+    assert V.a2_half_status(25.0, V.A2_MIN_BINS - 1, 300) == "ear"   # too few bins to pass
     assert V.a2_part(["pass", "ear"]) == "pass"
     assert V.a2_part(["pass", "fail"]) == "fail"
     assert V.a2_part(["ear", "ear"]) == "ear"
@@ -66,7 +67,9 @@ def test_dis_rules():
     assert V.d2_status(["hiss", "bleed"]) == "pass"        # shown, not excluded
     assert V.di_verdict({"D1": "pass", "D2": "pass", "D3": "pass"}) == ("trusted", [])
     v, why = V.di_verdict({"D1": "ear", "D2": "pass", "D3": "pass"})
-    assert v == "trusted" and why                          # queued for the ear, not a measured fail
+    assert v == "pending ear" and why == ["D1 to the ear"]                  # queued, pending until heard
+    assert V.di_verdict({"D1": None, "D2": "pass", "D3": "pass"})[0] == "pending ear"   # DI-only
+    assert V.di_verdict({"D1": "pass", "D2": "pass", "D3": "pass", "D4": "fail"})[0] == "pending ear"   # never excluded
     assert V.di_verdict({"D1": "fail", "D2": "pass", "D3": "pass"})[0] == "excluded"
     assert V.di_verdict({"D1": None, "D2": "fail", "D3": "pass"})[0] == "excluded"
 
@@ -85,7 +88,8 @@ def test_target_verdict():
     assert V.target_verdict(_ok(A2="ear"), True, False)[0] == "excluded"
     assert V.target_verdict(_ok(), None, None)[0] == "pending ear"
     assert V.target_verdict(_ok(), False, True)[0] == "excluded"
-    assert V.target_verdict(_ok(), True, True, disputed=True)[0] == "pending ear"
+    assert V.target_verdict(_ok(), None, True, disputed=True)[0] == "pending ear"
+    assert V.target_verdict(_ok(), True, None, disputed=True) == ("trusted", [])      # the ear has ruled
     assert V.target_verdict(_ok(), True, True, in_mix=True)[0] == "excluded"       # A6's mix clause unread
     assert V.target_verdict(_ok(A6mix="pass"), True, True, in_mix=True) == ("trusted", [])
 
@@ -124,14 +128,26 @@ def test_calibration_verdict():
 
 def test_threshold_moves_are_recorded_against_the_constants():
     moves = {m["threshold"]: m for m in V.THRESHOLD_MOVES}
-    assert moves["A2_DROP_DB"]["plan"] == 12.0 and moves["A2_DROP_DB"]["now"] == V.A2_DROP_DB
+    assert "12" in moves["A2"]["plan"] and str(V.A2_PASS_DB) in moves["A2"]["now"] and str(V.A2_FAIL_DB) in moves["A2"]["now"]
+    assert V.A2_PASS_DB == 12.0                                       # the plan's pass, kept (review of #281)
     assert moves["A2_MIN_BINS"]["now"] == V.A2_MIN_BINS
     assert V.A3_MAX_DB == -40.0 and V.A4_MAX_CORR == 0.95 and V.A6_BLEED_DB == -30.0      # the plan's, unmoved
     assert (V.LAG_MIN_MS, V.LAG_MAX_MS) == (0.1, 30.0)
     assert set(V.KNOWN_AMPS).isdisjoint(V.KNOWN_FAILS) and len(V.KNOWN_AMPS) == 18 and len(V.KNOWN_FAILS) == 2
-    assert set(V.EAR_DISPUTED) <= set(V.KNOWN_AMPS)
+    assert not set(V.KNOWN_DROPPED) & set(V.KNOWN_AMPS) and not set(V.NEG_SOURCES) & set(V.KNOWN_DROPPED)
     th = V.thresholds()
-    assert th["A2"]["drop_db"] == V.A2_DROP_DB and th["A3"]["max_db"] == V.A3_MAX_DB
+    assert th["A2"]["pass_db"] == V.A2_PASS_DB and th["A2"]["fail_db"] == V.A2_FAIL_DB and th["A3"]["max_db"] == V.A3_MAX_DB
+
+
+def test_known_amps_come_from_the_target_vs_di_measurements():
+    meas = json.loads(V.TVD_MEASURES.read_text())
+    assert tuple(sorted(V.known_amps_from(meas))) == tuple(sorted(V.KNOWN_AMPS))
+    toy = {"sample_rate": 48000, "parts": {
+        "amp": {"halves": {"A": {"lag": 24, "hf_drop_H": -15.0}, "B": {"lag": 24, "hf_drop_H": -13.0}}},
+        "flat": {"halves": {"A": {"lag": 24, "hf_drop_H": -2.0}, "B": {"lag": 24, "hf_drop_H": -13.0}}},
+        "zero": {"halves": {"A": {"lag": 0, "hf_drop_H": -20.0}, "B": {"lag": 0, "hf_drop_H": -20.0}}},
+        "one": {"halves": {"A": {"lag": 24, "hf_drop_H": -20.0}}}}}
+    assert V.known_amps_from(toy, dropped=(), fails=()) == ("amp",)
 
 
 def test_only_the_negatives_render():
@@ -281,8 +297,10 @@ def _half(lag, prom, drop, n_hi, n_lo=171):
 
 def test_d1_over_sections_reads_medians():
     hs = [_half(19.8, 76, 9.0, 4), _half(19.8, 63, 9.7, 14), _half(19.6, 45, 6.0, 25), _half(19.8, 70, 4.5, 23)]
-    d = V.d1_status(hs)
-    assert d["A1"] == "pass" and d["A2"] == "pass" and d["status"] == "pass" and d["n_drops"] == 2
+    d = V.d1_status(hs)                                            # Adam Buckley ElecGtr3: a roll-off under 12 dB
+    assert d["A1"] == "pass" and d["A2"] == "ear" and d["status"] == "ear"
+    d = V.d1_status([_half(0.6, 80, 20.0, 40), _half(0.6, 90, 18.0, 30)])
+    assert d["status"] == "pass"
     d = V.d1_status([_half(35.0, 5.8, None, 0), _half(-1.5, 4.9, None, 0)])
     assert d["status"] == "ear" and d["A1"] == "ear" and d["A2"] == "ear"
     d = V.d1_status([_half(0.0, 108, 0.0, 339), _half(0.0, 645, 0.0, 342)])        # Prodigal ElecGtr3's DI
@@ -346,24 +364,72 @@ def test_ear_answers_split_di_and_target(tmp_path, monkeypatch):
         {"id": "tvd-1", "section": "tvd", "private": {"slug": "s", "half": "A"}}]}))
     monkeypatch.setattr(V, "HOME", tmp_path)
     s1 = tmp_path / "s1.json"
-    s1.write_text(json.dumps({"page": "data-review-1", "answers": [{"id": "amp-1", "verdict": "clean"},
-                                                                   {"id": "amp-2", "verdict": "other"}]}))
+    s1.write_text(json.dumps({"page": "data-review-1", "sitting": 1, "answers": [
+        {"id": "amp-1", "verdict": "clean"}, {"id": "amp-2", "verdict": "other"}]}))
     tv = tmp_path / "tv.json"
-    tv.write_text(json.dumps({"page": "target-vs-di-check", "answers": [{"id": "tvd-1", "verdict": "amp"}]}))
-    clean, amp, di = V.ear_answers([tv], [s1])
-    assert clean == {} and amp == {"s": "amp"} and di == {"s": {"A": "clean", "B": "other"}}
-    assert V.ear_di_verdict(di["s"]) is False
-    clean, amp, di = V.ear_answers([s1, tv], [])
-    assert clean == {("s", "A"): "clean", ("s", "B"): "other"} and di == {}
+    tv.write_text(json.dumps({"page": "target-vs-di-check", "answers": [{"id": "tvd-1", "verdict": "amp"},
+                                                                        {"id": "tvd-1", "verdict": "same_di"}]}))
+    e = V.ear_answers([tv], [s1])
+    assert e["target_clean"] == {} and e["target_amp"] == {"s": ["amp", "same_di"]}
+    assert e["crop_di"] == {"s": {"A": ["clean"], "B": ["other"]}}
+    assert V.ear_amp_of("s", e["target_amp"]) is False                 # any "not amp" wins
+    assert V.ear_di_verdict(e["crop_di"]["s"]) is False
+    with pytest.raises(SystemExit):
+        V.ear_answers([s1], [])                                        # a DI-verdict export is not a target verdict
+    with pytest.raises(SystemExit):
+        V.ear_answers([], [tv])
+    reg = {"ear-x": {"kind": "target", "family": "target", "key": "t", "half": "B", "start_s": 4.0, "dur_s": 6.0},
+           "ear-y": {"kind": "di_flagged", "family": "di", "key": "d", "start_s": 30.0, "dur_s": 10.0},
+           "ear-z": {"kind": "di_amp", "family": "di_amp", "key": "d", "start_s": 30.0, "dur_s": 10.0}}
+    q = tmp_path / "q.json"
+    q.write_text(json.dumps({"page": V.EAR_PAGE, "answers": [{"id": "ear-x", "verdict": "clean_amp"},
+                                                             {"id": "ear-y", "verdict": "clean"},
+                                                             {"id": "ear-z", "verdict": "amp"}]}))
+    e = V.ear_answers([q], [], reg)
+    assert e["target_clean"] == {("t", "B"): ["clean"]} and e["target_amp"] == {"t": ["amp"]}
+    assert e["di_windows"] == {"d": [(30.0, 40.0, "clean")]} and e["di_pairs"] == {"d": ["amp"]}
+    bad = tmp_path / "bad.json"
+    bad.write_text(json.dumps({"page": V.EAR_PAGE, "answers": [{"id": "ear-x", "verdict": "clean"}]}))
+    with pytest.raises(SystemExit):
+        V.ear_answers([bad], [], reg)                                  # not a target verdict
 
 
-def test_stem_scan_reads_one_source_per_guitar_part():
-    assert V.guitar_part_key("20_ElecGtr1DI.wav") == V.guitar_part_key("21_ElecGtr1Mic1.wav") == "elecgtr1"
-    assert V.guitar_part_key("17_ElecGtr2c_DI.wav") == "elecgtr2c" != V.guitar_part_key("15_ElecGtr2a_Amp1.wav")
-    assert V.guitar_part_key("16_ElecGtr2DT.wav") == "elecgtr2dt"
-    assert V.guitar_part_key("GTR DI.04_02.wav") == V.guitar_part_key("GTR M80.04_02.wav") == "gtr"
-    assert V.guitar_part_key("GTR 1 DI TDP-1.1-Norm_01-01.wav") == V.guitar_part_key("GTR 1 Amp M80.1-Norm_01-01.wav")
-    assert V.guitar_part_key("GTR Pre Rec.L.wav") != V.guitar_part_key("GTR 1 Amp_M81.wav")
-    files = ["20_ElecGtr1DI.wav", "21_ElecGtr1Mic1.wav", "22_ElecGtr1Mic2.wav", "23_ElecGtr2DI.wav", "01_Kick.wav"]
-    energy = {"21_ElecGtr1Mic1.wav": 1.0, "22_ElecGtr1Mic2.wav": 2.0, "20_ElecGtr1DI.wav": 9.0, "23_ElecGtr2DI.wav": 1.0}
-    assert V.scan_sources(files, energy) == ["22_ElecGtr1Mic2.wav", "23_ElecGtr2DI.wav"]   # loudest mic; a DI-only part
+def test_merge_ear_lets_a_negative_win():
+    assert V.merge_ear(["clean", "clean"], "clean") is True
+    assert V.merge_ear(["clean", "processed"], "clean") is False
+    assert V.merge_ear(["clean", "unsure"], "clean") is None
+    assert V.merge_ear([], "clean") is None and V.merge_ear([None], "amp") is None
+    assert V.ear_clean_of("s", {("s", "A"): ["clean"], ("s", "B"): ["clean", "bleed"]}) is False
+
+
+def test_d4_rule_search_and_leave_one_out():
+    rows = [(False, 6.0, 0.5), (False, 7.0, -0.6), (False, 9.5, 0.4), (True, 11.0, 0.5), (True, 10.0, 0.3),
+            (True, 12.0, 0.9), (True, 7.5, 1.0)]
+    c, s_, caught, flagged = V.d4_fit(rows)
+    assert caught >= 2 and flagged <= 1
+    ok, n = V.d4_loo(rows)
+    assert n == len(rows) and 0 <= ok <= n
+
+
+def test_load_shards_refuses_gaps(tmp_path):
+    (tmp_path / "t0").mkdir()
+    for k in (0, 2):
+        (tmp_path / "t0" / f"dis-{k}of3.json").write_text(json.dumps(
+            {"shard": [k, 3], "complete": k == 0, "thresholds": V.thresholds(), "rows": {f"di:{k}": {}}}))
+    rows, probs = V.load_shards(tmp_path, "dis", "rows", lambda d: d.get("thresholds") == V.thresholds())
+    assert set(rows) == {"di:0", "di:2"}
+    assert any("missing" in p for p in probs) and any("incomplete" in p for p in probs)
+    rows, probs = V.load_shards(tmp_path, "stems", "sessions", lambda d: True)
+    assert probs == ["no stems shard"]
+
+
+def test_sample_passed_and_overlaps():
+    def row(band, crests):
+        return {"datasets": ["training pool"], "band": band, "amp_tracks": [], "di": "d", "hum_suspect": False,
+                "sections": [{"section": f"s{k}", "start_s": 10.0 * k, "D1": None, "D2": {"flags": []},
+                              "D4": {"crest_db": c, "bright_slope": 0.5, "frames": 90}} for k, c in enumerate(crests)]}
+    rows = {"a": row("X", [11, 12]), "b": row("X", [6, 12]), "c": row("Y", [11])}
+    s = V.sample_passed(rows)
+    assert set(s) == {"a", "c"} and s == V.sample_passed(rows)
+    assert V.overlaps(0, 10, 9.9, 20) and not V.overlaps(0, 10, 10, 20)
+    assert V.section_ear(10.0, [(12.0, 18.0, "clean"), (40.0, 46.0, "processed")]) is True

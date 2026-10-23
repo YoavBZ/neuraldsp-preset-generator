@@ -123,3 +123,21 @@ def test_only_the_render_commands_render():
         assert not any(re.search(p, f"python -m learn.trusted_data {cmd}") for p in LO.RENDERS)
     for cmd in ("render --stage t1 --shard 0/3", "vreal-render --shard 2/3"):
         assert any(re.search(p, f"python -u -m learn.trusted_data {cmd}") for p in LO.RENDERS)
+
+
+def test_trusted_dis_and_unusable_sections():
+    tr = {"dis": {"a": {"verdict": "trusted"}, "b": {"verdict": "pending ear"}, "c": {"verdict": "excluded"}},
+          "unusable_sections": ["b@10.0", "a@20.0"]}
+    assert T.trusted_dis(tr) == {"a"} and T.unusable(tr) == {"b@10.0", "a@20.0"}
+
+
+def test_a_stale_plan_is_refused(tmp_path):
+    (tmp_path / "t0").mkdir()
+    (tmp_path / "t0" / "trusted.json").write_text("{}")
+    plan = {"trusted_sha256": T.trusted_sha(tmp_path)}
+    T.check_trusted(tmp_path, plan)
+    (tmp_path / "t0" / "trusted.json").write_text('{"changed": 1}')
+    with pytest.raises(SystemExit):
+        T.check_trusted(tmp_path, plan)
+    with pytest.raises(SystemExit):
+        T.check_trusted(tmp_path, {})
