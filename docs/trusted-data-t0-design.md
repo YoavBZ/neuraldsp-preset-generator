@@ -417,4 +417,24 @@ with new renders: everything below comes from the 4 stored negative renders and 
 - **The rule:** each of the 4 must fail A2 (`NEG_MUST_FAIL`).
 - **Then:** `calibrate` runs on the scratch root.
 - **If any fails to fail,** the work stops there and is reported. The check is not tuned.
-- **The result is recorded below** once rendered.
+- **The result is recorded below.**
+
+**Fresh negatives, result (2026-10-23).** All 4 fail A2, and `calibrate` on the scratch root reads OK.
+- **Renders used:** 4 plus 4 priming, in one process, with no other render process running.
+- **How each failed:** every one went to the slope check, because none had enough coherent bins
+  for the coherent A2 to decide (under 17 bins in each half). A1, A3 and A4 pass all 4, as they
+  do for the PR12 cab-off renders.
+
+| Render | Coherent bins (A, B) | Slope vs DI, dB/oct (A, B) | A2 |
+|---|---|---|---|
+| SW50R clean, It Was My Fault ElecGtr3 | 3, 0 | +1.6, +2.0 | fail |
+| AC20 clean, It Was My Fault ElecGtr3 | 5, 1 | +1.4, +1.8 | fail |
+| SW50R clean, magilla elecgtr1 | 0, 0 | +5.6, +5.2 | fail |
+| AC20 clean, magilla elecgtr1 | 0, 0 | +4.8, +5.3 | fail |
+
+- **Margin:** the closest reading, +1.4 dB/oct, sits about 3 dB/oct above the −1.65 line. The
+  bleed-clean known amps read −10.5 to −24.2.
+- **Nothing was tuned.** The thresholds are the ones declared above.
+- **The stored data root does not hold these renders yet.** Until it does, `calibrate` there refuses
+  ("negatives not rendered"). The next T0 run's `negatives` step renders them (4 plus 4 priming)
+  before `calibrate`.
