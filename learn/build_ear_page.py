@@ -8,9 +8,14 @@ Three parts, one question each, so each file stays phone-sized:
    kept together in time order.
 
 Exports carry page `trusted-data-ear` and the queue's item ids, which `verify_tracks lists --ear` decodes through
-`t0/ear-items.json`. A partial export is fine: unanswered items stay pending.
+`t0/ear-items.json`. Each part exports its own file; pass each as its own `--ear`. A partial export is fine: unanswered
+items stay pending. The DI part's blindness has one limit: D4-flagged windows come in runs, so a file with many windows
+is likely a flagged one.
+
+Every clip must be audible (peak at least SILENT_PEAK): the build refuses a silent window.
 
     $MAIN -m learn.build_ear_page build      # -> ~/ndsp-presets/listening/trusted-data-ear/part-{1,2,3}.html
+    $MAIN -m learn.build_ear_page extra      # queued items no built part holds -> part-<next>.html (manifest updated)
 """
 from __future__ import annotations
 
@@ -36,6 +41,7 @@ SEED = 20261023
 AAC_KBPS = 96                 # 128 in earlier pages; 96 keeps part 3 (122 clips) near 20 MB for a phone
 GAP_S = 0.5
 DECIDE_S = 4.0                # listening time beyond the clips, per item
+SILENT_PEAK = 1e-4            # a clip whose source window peaks below this is digital silence: refused
 
 LABELS = {
     "target": [("clean_amp", "Clean amp recording"), ("bleed", "Other instruments leak in"),
@@ -96,14 +102,15 @@ def title_of(item):
 
 
 def mmss(t):
-    return f"{int(t // 60)}:{int(t % 60):02d}"
+    s = f"{int(t // 60)}:{int(t % 60):02d}"
+    return s if t == int(t) else s + f"{t % 1:.1f}"[1:]
 
 
 def subtitle_of(item):
     a, b = item["start_s"], item["start_s"] + item["dur_s"]
     if item["family"] == "target":
-        half = "First half" if item["half"] == "A" else "Second half"
-        return f"{half} of the crop, {a:.1f}–{b:.1f} s · DI, then the target track"
+        half = "first" if item["half"] == "A" else "second"
+        return f"Crop {a:.1f}–{b:.1f} s (covers its {half} half) · DI, then the target track"
     if item["family"] == "di_amp":
         return (f"{mmss(a)}–{mmss(b)} · DI ({pathlib.Path(item['paths']['di']).name}), then "
                 f"{pathlib.Path(item['paths']['amp']).name}")
@@ -125,7 +132,10 @@ def clip_b64(path, start_s, dur_s, cache):
     m4a = pathlib.Path(cache) / f"{key}.m4a"
     if not m4a.exists():
         m4a.parent.mkdir(parents=True, exist_ok=True)
-        y, _, _, _ = BDR.level_clip(BDR.load(path, start_s, dur_s))
+        x = BDR.load(path, start_s, dur_s)
+        if not abs(x).max() >= SILENT_PEAK:
+            raise SystemExit(f"silent window: {path} at {start_s} s (peak {abs(x).max():.2g}); fix the queue first")
+        y, _, _, _ = BDR.level_clip(x)
         flac = m4a.with_suffix(".flac")
         sf.write(str(flac), BDR.fade(y), BDR.SR, subtype="PCM_24")
         tmp = m4a.with_name(m4a.stem + ".tmp.m4a")
@@ -148,7 +158,12 @@ def item_clips(item):
     return [(item["id"] + "-di", item["paths"]["di"], a, d, "the DI")]
 
 
-def item_html(item, n, total):
+ASK = {"target": "Judge the target (second sound): a clean amp recording?",
+       "di_amp": "Is the second sound an amp recording of this same DI take?",
+       "di": "Is this a clean, unprocessed DI?"}
+
+
+def item_html(item, n, total, ask=False):
     e = html.escape
     clips = item_clips(item)
     seq = ",".join(c[0] for c in clips)
@@ -161,6 +176,7 @@ def item_html(item, n, total):
     vs = "".join(f'<button type="button" class="v" data-v="{v}">{e(t)}</button>' for v, t in LABELS[item["family"]])
     return (f'<article class="item" data-id="{item["id"]}" data-n="{n}"><div class="num">{n} / {total}</div>'
             f'<h3>{e(title_of(item))}</h3><p class="sub">{e(subtitle_of(item))}</p>'
+            + (f'<p class="ask"><b>{e(ASK[item["family"]])}</b></p>' if ask else "") +
             f'<div class="plays">{"".join(plays)}</div><p class="now"></p><div class="vs">{vs}</div>'
             f'<input class="note" type="text" placeholder="Note (optional)" aria-label="Note"></article>')
 
@@ -334,14 +350,22 @@ paint();
 """
 
 
-def page_html(part, items, clips, build, n_parts):
-    spec = PARTS[part]
+def page_html(part, items, clips, build, n_parts, title=None):
+    fams = {i["family"] for i in items}
+    spec = PARTS[part] if part in PARTS else dict(
+        title=title or "Extra items",
+        question="A few more items: each card says what to judge.",
+        intro="These replace items that were silent on the earlier pages. Each card's buttons follow its question: "
+              "<b>DI then target</b>, judge the target; <b>DI then amp track</b>, is it an amp take of this DI; "
+              "<b>a DI alone</b>, is it a clean, unprocessed DI?")
+    if part in PARTS and fams - {spec["family"]}:
+        raise SystemExit(f"part {part} holds {sorted(fams)}")
     total = len(items)
     minutes = round(sum(seconds_of(i) for i in items) / 60)
     data = {"page": VT.EAR_PAGE, "part": part, "build": build,
             "items": [{"id": i["id"], "title": title_of(i), "subtitle": subtitle_of(i)} for i in items],
             "secs": {i["id"]: seconds_of(i) for i in items}}
-    body = "\n".join(item_html(i, n + 1, total) for n, i in enumerate(items))
+    body = "\n".join(item_html(i, n + 1, total, ask=part not in PARTS) for n, i in enumerate(items))
     js = JS.replace("GAP_MS", str(int(GAP_S * 1000)))
     data_json = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     clips_json = json.dumps(clips)
@@ -371,7 +395,7 @@ tap <b>Export</b> any time, even halfway, and send the file. Unanswered items si
 <script>{js}</script></body></html>"""
 
 
-def cmd_build(args):
+def load_queue():
     q = json.loads((T0 / "ear-queue.json").read_text())
     reg = json.loads((T0 / "ear-items.json").read_text())
     if q.get("page") != VT.EAR_PAGE:
@@ -380,22 +404,46 @@ def cmd_build(args):
     if missing:
         raise SystemExit(f"{len(missing)} queued items are not in ear-items.json: {missing[:3]}")
     build = hashlib.sha256((T0 / "ear-items.json").read_bytes()).hexdigest()[:12]
-    parts = plan_parts([reg[i["id"]] for i in q["queue"]], args.seed)
+    return [reg[i["id"]] for i in q["queue"]], build
+
+
+def write_part(out, part, items, build, n_parts, title=None):
+    clips = {}
+    for it in items:
+        for key, path, a, d, _ in item_clips(it):
+            clips[key] = clip_b64(path, a, d, out / "cache")
+    p = out / f"part-{part}.html"
+    p.write_text(page_html(part, items, clips, build, n_parts, title))
+    rec = {"file": p.name, "build": build, "items": [i["id"] for i in items],
+           "minutes": round(sum(seconds_of(i) for i in items) / 60, 1), "mb": round(p.stat().st_size / 1e6, 1)}
+    print(f"part {part}: {len(items)} items, about {rec['minutes']} min, {rec['mb']} MB -> {p}")
+    return rec
+
+
+def cmd_build(args):
+    queue, build = load_queue()
+    parts = plan_parts(queue, args.seed)
     out = pathlib.Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     manifest = {"page": VT.EAR_PAGE, "build": build, "seed": args.seed, "aac_kbps": AAC_KBPS, "parts": {}}
     for part, items in parts.items():
-        clips = {}
-        for it in items:
-            for key, path, a, d, _ in item_clips(it):
-                clips[key] = clip_b64(path, a, d, out / "cache")
-        p = out / f"part-{part}.html"
-        p.write_text(page_html(part, items, clips, build, len(parts)))
-        manifest["parts"][part] = {"file": p.name, "items": [i["id"] for i in items],
-                                   "minutes": round(sum(seconds_of(i) for i in items) / 60, 1),
-                                   "mb": round(p.stat().st_size / 1e6, 1)}
-        print(f"part {part}: {len(items)} items, about {manifest['parts'][part]['minutes']} min, "
-              f"{manifest['parts'][part]['mb']} MB -> {p}")
+        manifest["parts"][str(part)] = write_part(out, part, items, build, len(parts))
+    (out / "manifest.json").write_text(json.dumps(manifest, indent=1))
+
+
+def cmd_extra(args):
+    """Queued items that no built part holds (e.g. re-picked windows after a queue fix) as one more part, in the
+    parts' order; the built parts and their stored answers are left alone."""
+    out = pathlib.Path(args.out)
+    manifest = json.loads((out / "manifest.json").read_text())
+    have = {i for rec in manifest["parts"].values() for i in rec["items"]}
+    queue, build = load_queue()
+    items = [i for part in plan_parts(queue, manifest["seed"]).values() for i in part if i["id"] not in have]
+    if not items:
+        print("every queued item is on a built part")
+        return
+    part = max(int(k) for k in manifest["parts"]) + 1
+    manifest["parts"][str(part)] = write_part(out, part, items, build, part, title="Extra items")
     (out / "manifest.json").write_text(json.dumps(manifest, indent=1))
 
 
@@ -406,6 +454,9 @@ def main(argv=None):
     b.add_argument("--out", default=str(OUT))
     b.add_argument("--seed", type=int, default=SEED)
     b.set_defaults(fn=cmd_build)
+    x = sub.add_parser("extra", help="queued items no built part holds, as one more part")
+    x.add_argument("--out", default=str(OUT))
+    x.set_defaults(fn=cmd_extra)
     args = ap.parse_args(argv)
     args.fn(args)
 

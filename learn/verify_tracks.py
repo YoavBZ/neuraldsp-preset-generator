@@ -1764,6 +1764,9 @@ def ear_answers(paths, di_paths=(), registry=None):
                 it = registry.get(a["id"])
                 if it is None:
                     raise SystemExit(f"{p}: answer {a['id']} is not a queued item")
+                if it.get("retired"):
+                    print(f"{p}: skipping the answer on {a['id']}: {it['retired']}")
+                    continue
                 if v not in EAR_VERDICTS[it["family"]]:
                     raise SystemExit(f"{p}: {a['id']}: verdict {v} is not one of {EAR_VERDICTS[it['family']]}")
                 if it["kind"] == "target":
@@ -1904,6 +1907,25 @@ def section_ear(start_s, windows, dur=CROP_S):
     return merge_ear([v for a, b, v in windows if overlaps(start_s, start_s + dur, a, b)], "clean")
 
 
+def busiest_audible(sections):
+    """The section an ear item plays for a whole DI: audible first (D4 reads a crest), then the most playing frames.
+    A digitally silent section counts every frame as playing (all sit within `play_db` of the max), so `frames`
+    alone picks silence (15 items of the first ear queue, 2026-10-23)."""
+    return max(sections, key=lambda x: (x["D4"]["crest_db"] is not None, x["D4"]["frames"] or 0))
+
+
+def silent_items(registry, di_rows):
+    """Queued DI windows that are digital silence (D4 reads no crest there). -> {item id}. Their answers carry no
+    evidence, so `ear_answers` skips them."""
+    out = set()
+    for iid, it in registry.items():
+        row = di_rows.get(it["key"]) if it["family"] in ("di", "di_amp") else None
+        for x in (row or {}).get("sections", []):
+            if abs(x["start_s"] - it["start_s"]) < 1e-6 and x["D4"]["crest_db"] is None:
+                out.add(iid)
+    return out
+
+
 def sample_passed(di_rows, seed=D4_SAMPLE_SEED):
     """One D4-passed DI per band (pool and V_sep DIs with no D4-flagged section), seeded: queued for the ear to check
     D4's misses. -> {di: section start_s}."""
@@ -1960,6 +1982,8 @@ def cmd_lists(args):
         print("smoke: ignoring:", p)
     reg_path = root / "t0" / "ear-items.json"
     registry = _load(reg_path) or {}
+    for iid in silent_items(registry, di_rows):
+        registry[iid]["retired"] = "a silent window: its answers are skipped"
     ear = ear_answers(args.ear or [], args.ear_di or [], registry)
     queue = []
 
@@ -2039,6 +2063,8 @@ def cmd_lists(args):
                     continue
                 left.append(w)
             v, why = ("pending ear", left) if left else ("verified", [])
+        if row["sections"] and all(rs["d4_sections"][x["section"]] == "silent" for x in row["sections"]):
+            v, why = "excluded", ["silent in every section: nothing to hear, and no mix uses it"]
         if v != "excluded" and di in sample and not wins:
             v, why = "pending ear", why + ["sampled for the ear (D4 passed)"]
         secs = {}
@@ -2070,7 +2096,7 @@ def cmd_lists(args):
                                     "D4 flags this section (unheard)", crest_db=x["D4"]["crest_db"],
                                     bright_slope=x["D4"]["bright_slope"]))
         if "D1 to the ear" in why:
-            x = max(row["sections"], key=lambda x: x["D4"]["frames"] or 0)
+            x = busiest_audible(row["sections"])
             amp = (x["D1"] or {}).get("amp_track")
             sess = pathlib.Path(row["path"]).parent
             queue.append(queue_item("di_amp", di, "di_amp", x["start_s"], CROP_S,
@@ -2078,7 +2104,7 @@ def cmd_lists(args):
                                     "D1 went to the ear (no readable lag or roll-off)",
                                     question="The DI, then its amp track: is the DI the clean DI of this amp take?"))
         if any(w.startswith("DI-only") for w in why):
-            x = max(row["sections"], key=lambda x: x["D4"]["frames"] or 0)
+            x = busiest_audible(row["sections"])
             queue.append(queue_item("di_only", di, "di", x["start_s"], CROP_S, {"di": row["path"]},
                                     "a DI-only part (no amp track to check it against)"))
         if di in sample and not wins:
@@ -2105,8 +2131,14 @@ def cmd_lists(args):
 
     seen = set()
     queue = [q for q in queue if not (q["id"] in seen or seen.add(q["id"]))]
+    quiet = silent_items({q["id"]: q for q in queue}, di_rows)
+    if quiet:
+        print(f"left out of the ear queue: {len(quiet)} silent windows")
+        queue = [q for q in queue if q["id"] not in quiet]
     for q in queue:
         registry[q["id"]] = q
+    for iid in silent_items(registry, di_rows):
+        registry[iid]["retired"] = "a silent window: its answers are skipped"
     counts_q = {}
     for q in queue:
         counts_q[q["kind"]] = counts_q.get(q["kind"], 0) + 1
