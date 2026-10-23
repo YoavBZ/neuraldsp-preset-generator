@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-22 (evening).
+lives in the linked documents. Last updated 2026-10-23.
 
 ## Where the product is
 
@@ -503,3 +503,4 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-22 | Cleaning: #273 recommends rebuilding the affected examples without the offending backing tracks, not dropping them (dropping would cost a quarter to a half of D's margin from size alone). Reviewed (go, with changes); the user chose "the best approach"; implementation in progress. Zero-render checks, then a paired R_in rebuild read (no training), then the pool rebuild (about 4k renders and 3.6k separations; at most about 13.8k and 13.4k if the live-room tracks count) and 2 training seeds (about 2.5 GPU h) | [PR #273](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/273), in progress |
 | 2026-10-22 | Every control, stage 0 (94 renders): amp choice against a blind pick, band-weighted −0.048 (declared), part-weighted −0.044 [−0.062, −0.026] (22/24 parts, 13/14 bands; high priority); no screened control invisible to the judge, cab phase largest; Tone King's renderer repeats its stored scores. Stage 1 waits for the trusted amp-track list from the user's review (not the rebuild) and runs on trusted parts only | [results](every-control-stage0-results.md) |
 | 2026-10-22 | Data cleaning for the direct model (user): use only what we can trust, no dirty tracks; go with the rebuild route after review (an independent review: go with changes, all applied). Untrusted backing tracks (another take of the target's part, confirmed by pitch, or a session-level take of the part at or above −30 dB of its own track) leave each section's backing; examples are rebuilt, not dropped. Step 0 (zero renders, injection-checked) and step 1 (a paired R_in rebuild read on step 3's model, zero renders) are built; step 2 retrains D_stem on the rebuilt trusted pool | [plan](data-cleaning-options.md) |
+| 2026-10-23 | Trusted data, T0–T2 code (reviewed and re-reviewed, fixes applied; nothing run): the verification standard (A2 keeps the plan's 12 dB pass, 3.3–12 dB to the ear; 11 known amps re-derived from the target-vs-DI measurements, less the pairs whose DI the ear rejected), a processed-DI check on the user's sitting-1 DI verdicts (30/35 in-sample, 26/35 leave-one-out; never decides an unheard DI alone), T0's lists, ear queue and re-reads, T1 and T2. A zero-render dry run: Eggy's DIs heard processed (SYN-E cannot run), V-real 11 parts in 7 bands pending the ear, an ear queue of 195 items before K and T2 can run | [design](trusted-data-t0-design.md) |

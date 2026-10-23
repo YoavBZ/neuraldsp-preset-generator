@@ -2829,6 +2829,22 @@
    "renders": "0; separations: 0",
    "held_out": "none touched",
    "outcome": "pending: waits for the user's listening"
+  },
+  {
+   "test_id": "trusted-data",
+   "plan": "docs/trusted-data-strategy-plan.md",
+   "design": "docs/trusted-data-t0-design.md",
+   "entered": "2026-10-23, with the code (learn/verify_tracks.py, learn/trusted_data.py) and its code review (#281: go with fixes, all applied), before any non-smoke run. Only zero-render smokes ran first, in a scratch directory: calibration's zero-render cases, targets and DIs on every part in use, the lists, one stem-scan session (Hollow Ground) and one strict-injection session (Hollow Ground); nothing kept, nothing read into a decision. D4 (the processed-DI check) was set on the user's sitting-1 DI verdicts (35 crop DIs), so those DIs are not blind for D4",
+   "parts": "T0: the label-table parts in use (stage F's 21, knob ceiling 2's 24, the listening pages' parts, the level prior's 38 parts; sets 1-3 crops only), calibration's 18 known amps (re-derived from docs/audits/target-vs-di-2026-10-23) and 2 known fails (Prodigal ElecGtr3, ElecGtr5), the D build's DIs (277 pool and 55 V_sep sections) and the other inventory DIs of their sessions, every session's non-guitar tracks (stem scan), and the cleaning plan's 3 deciding injection sessions. T1: R_in's examples outside John Morgan Kimock and Swatkins and the MUSDB18-tagged Bannockburn, on DIs and sections T0 trusts, with R_in's stored truth renders. T2: 5k trusted-pool examples and an early-stopping set; V-real (stage F's parts T0 and the ear trust)",
+   "bands": "T0: every band of the parts above; T1 (K): Adam Buckley (Dark Ride if its DIs clear the ear); T2: the trusted pool's bands (6 at most; Eggy only if its DIs clear the ear), V-real's bands",
+   "audio_only": "crops (di.wav, reference.wav, mix tracks), session DIs and tracks, part A's manifest; T1/T2: the gate's stored truth FLACs, stored X-LANCE stems, self-built mixes; stage F's stored crop-only xlance_g stems",
+   "training": "T2 only (4-6 D_stem runs, 2 seeds per arm), on its own launch after T0's lists and the ear",
+   "seeds": "T2 pilot 20261099, early stopping 20261100, SYN-E swap 20261101, other guitars' presets and pans 20261102, D4's passed-DI sample 20261103",
+   "gate": "Calibration (A1-A4): CALIBRATION OK iff the 18 known amps fail none, both Prodigal parts fail one, the copy fails A1, A3 or A4, the EQ'd DI fails A3 and the PR12 cab-off DI (clean start) fails A2; thresholds move only to separate these cases (THRESHOLD_MOVES). T0's rule: a measured fail of A1-A6 or D1-D3 excludes; D4 alone never decides an unheard DI; the user's ear decides heard items (a negative answer wins), and a target is trusted only when heard clean and, where A1/A2 went to the ear, as an amp. T1: K - V_sep stem SNR on the mel grid, paired, 90% band-clustered (section-clustered with one band), descriptive. T2: SYN - SES on V-real by the judge with the measure DI, paired by direction, band-weighted, 90% band-clustered; a tie (|point| < 0.03) picks SYN (recorded decision 4)",
+   "stopping": "lists refuses on a missing, incomplete or stale shard; plans carry the sha256 of T0's lists (t0/verified.json) and render, build and train refuse when it changed; 31 GB disk guard, memory and swap guards",
+   "renders": "T0: 6 (calibration's cab-off negatives: one process, isolate=True, primed). T1: about 0.8-1.5k (other guitars). T2: about 12-18k (targets and other guitars) and about 165 for V-real; every render command in local_objective.RENDERS (at most 3 machine-wide)",
+   "repeat_use": "Stage F re-read as V-real (its tenth set of arms); knob ceiling 2's stored cells re-read on the trusted panel at zero renders; R_in re-read as K",
+   "held_out": "none touched (sets 4-6, Guitar-TECHS P3 and every reservation stay closed; build_data_review.heldout_ok on every crop, clean_di.refuse_held_out on every DI)"
   }
  ]
 }
