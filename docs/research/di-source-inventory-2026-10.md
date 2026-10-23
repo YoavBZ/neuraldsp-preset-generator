@@ -4,10 +4,12 @@
 decisions. The listings came from each ZIP's central directory, read with HTTP range requests
 (about 1.7 MB over 27 archives, then 13.0 MB over the other 206 the site links; approved by the
 user). The one confirmed band, Jen Hartswick & Nick Cassarino, was then downloaded (0.94 GB,
-approved by the user) as a reserved test band. Nothing was rendered, separated or listened to. Local facts come from the stored inventory, manifest and pool
-files; outside facts from dataset pages, papers, the Telefunken "Live From The Lab" (LFTL) pages,
-the Hugging Face re-host's file listing and archived Cambridge-MT pages. Research, not a declared
-plan.*
+approved by the user) as a reserved test band. Later that day, at the user's request, Blue
+Manic "Acomatay" (a second reserved test band) and EGDB's DI folder were downloaded through the
+user's browser, and the user requested GOAT's access on Zenodo. Nothing was rendered, separated or
+listened to. Local facts come from the stored inventory, manifest and pool files; outside facts
+from dataset pages, papers, the Telefunken "Live From The Lab" (LFTL) pages, the Hugging Face
+re-host's file listing and archived Cambridge-MT pages. Research, not a declared plan.*
 
 Tags: **[V]** verified at the source in this session; **[P]** this repo's committed docs or stored
 files (`~/ndsp-presets/learn/clean-di/`, `~/ndsp-presets/learn/pretrain-set/pool.json`);
@@ -23,6 +25,9 @@ files (`~/ndsp-presets/learn/clean-di/`, `~/ndsp-presets/learn/pretrain-set/pool
   - screened or set aside: Guitar-TECHS for hum, "Sascha" because its band is held out, "Crucial
     Taunt" because its DI comes after the amp, Timo And The Timezone as a B2 candidate, and
     EGFxSet and ToneTwist, which are notes or capture inputs.
+
+  Since 2026-10-23 three downloads sit beside them: two reserved test bands (Jen Hartswick & Nick
+  Cassarino, Blue Manic) and EGDB's DI folder, which can train once its DIs pass the DI checks.
 - **The pool is short of exactly what the tests ask for.** Of the 277 training sections [P]:
   - 135 come from high-gain DIs or a melodic death metal session;
   - 96 of the 97 clean-class sections are one band, Eggy;
@@ -63,7 +68,7 @@ files (`~/ndsp-presets/learn/clean-di/`, `~/ndsp-presets/learn/pretrain-set/pool
   3. EGDB's DI folder (1 player);
   4. GOAT (5.9 h, needs an access request);
   5. a zero-download swap: once fresh test bands exist, stage F's bands could train. That adds 284
-     already-screened sections in 10 bands, 123 of them clean-class. One new test band is not
+     already-screened sections in 10 bands, 123 of them clean-class. Two new test bands are not
      enough to replace stage F's 12.
 - **The user's decisions (2026-10-23):**
   - reading the Telefunken file lists: approved, and done;
@@ -133,6 +138,8 @@ set or a declared reservation. Sizes are archive sizes.
 
 ### Not on disk
 
+*Not on disk when this report was first written; the rows marked "downloaded" have since arrived.*
+
 | Source | What it holds | EG DI: hours; songs / players / bands | Genre fit | Licence | Already used? | Conflicts | Download | Quality notes |
 |---|---|---|---|---|---|---|---|---|
 | **Telefunken LFTL: Jen Hartswick & Nick Cassarino** (S4, 4 songs) | guitar DI + amp mic in every song; 2 vocal mics, a trumpet in 1 song, a stereo room pair [V] | 4 DIs, 20.4 min at 48 kHz, 24-bit (headers read after the download) [V]; 4 songs / 1 band | jazz/soul duo: clean to crunch [U] | home-studio and educational use only, attribution line [V] | no (not in any set, ledger or `learn/` code) | none; **a reserved test band (2026-10-23)**, ledger `telefunken-new-test-band-jhnc` | 0.94 GB, **downloaded 2026-10-23** to `datasets-telefunken-new/` [V] | file named `Guitar-Passive DI`; live room, so check bleed; 12 of the 28 local Telefunken DIs are hum-flagged, 6 in every window, and 27 of 28 read 60-Hz mains [P]; the "Numb" archive's folder is named "Novacaine" [V] |
@@ -144,10 +151,11 @@ set or a declared reservation. Sizes are archive sizes.
 | Cambridge DI-only: The Timezone "GOTGF" | full multitrack, 4 DIs | 4 DIs; 1 song [V] | funk | same | no | **it is Timo And The Timezone** (same SoundCloud) [V], a B2-candidate band left out of part C | 616 MB | — |
 | Cambridge DI-only: Perpetual Escape "Stop And Rise" | full multitrack, 11 DI parts in 19 files | 1 song / 1 band [V] | progressive heavy rock: likely out of scope [P] | same | no | B2 candidate | 657 MB | gain unknown until heard |
 | Cambridge: Hollow Ground "Left Blind" | DI-only, 3 DIs + lead | 1 song [V] | heavy | same | no | MUSDB18 train; band already trains | — | adds no band |
-| Cambridge, added since 2025: Blue Manic "Acomatay" (DI + amp), DGX "Rest In Hell" (4 DIs), Slimy Soul Suckers "Big Bang", Prusinski "80s Rocker", Hollowstate "Hurricane" | multitracks | DI confirmed only for the first two [V, partial re-host] | stoner rock; unknown; blues rock; MOR rock; hard rock | same | no | none known | about 1–1.3 GB each [U] | site behind Cloudflare; needs a human pass |
+| Cambridge, added since 2025: Blue Manic "Acomatay" | full multitrack | **5 DI + amp pairs** (ElecGtr1 with two amp mics, 2, 6, 7, 8), 20.2 min of DI, 44.1 kHz, 24-bit [V] | stoner rock: scope by ear | same | no | **a reserved test band (2026-10-23)**, ledger `cambridge-new-test-band-bluemanic` | 0.51 GB ZIP, **downloaded 2026-10-23** to `datasets-cambridge-new/` [V] | the site's mix (Full Preview MP3) not downloaded yet |
+| Cambridge, added since 2025: DGX "Rest In Hell" (4 DIs), Slimy Soul Suckers "Big Bang", Prusinski "80s Rocker", Hollowstate "Hurricane" | multitracks | DI confirmed only for DGX [V, partial re-host] | unknown; blues rock; MOR rock; hard rock | same | no | none known | about 1–1.3 GB each [U] | site behind Cloudflare; a browser opened it (2026-10-23) |
 | Cambridge metal sessions with DIs (Arcadian Alone, Daimon B, Inhumanity Vortex, Peppermark ×2, Serapis ×2, SkalyVan ×3, Szymon Skiba "Trashy Thrash") | DI + amp or DI-only | about 80 DI files [V] | **metal: out of scope** | same | no | Szymon Skiba is a stage F band | — | — |
-| **EGDB** | DI only (plus amp renders) | 1.97 h; 240 clips / 1 player / 1 Strat-type [V, U] | solo, arpeggio and comping, various genres [U] | none stated, "feel free to use" [V]; the Zenodo copy is CC BY 4.0 [V]; confirmed by the user (2026-10-23) | arm A literature only | none | about 0.6 GB DI folder [U]; 1.04 GB CC BY zip [V] | played to a click; hex pickup for labels; DI box vs hex sum unclear [U] |
-| **GOAT** | DI only (plus NAM and Guitar Pro renders, tabs) | 5.9 h; 172 cover songs / authors + 2 creators, no performer IDs / 4 guitars (Strat 235 min) [V] | covers; some "rock/metal"; share unknown [V, U] | CC BY-NC 4.0, restricted: request on Zenodo, "research purposes only" [V]; confirmed by the user (2026-10-23) | no (ML plan: "not now") | none | 15–25 GB [U] | no backing [V] |
+| **EGDB** | DI only (plus amp renders) | 1.79 h (107.5 min, read after the download); 240 clips / 1 player / 1 Strat-type [V, U] | solo, arpeggio and comping, various genres [U] | none stated, "feel free to use" [V], which covers the downloaded Drive DIs; the Zenodo renders are CC BY 4.0 [V]; confirmed by the user (2026-10-23) | arm A literature only | none | **downloaded 2026-10-23**: the Drive `audio_DI` folder, 0.46 GB ZIP, 44.1 kHz, 16-bit, mono [V]; the 1.04 GB Zenodo zip holds the BIAS FX2 renders, not the dry DIs ([round 1's check](round-1-song-only-matching.md)) [P] | played to a click; hex pickup for labels; DI box vs hex sum unclear [U] |
+| **GOAT** | DI only (plus NAM and Guitar Pro renders, tabs) | 5.9 h; 172 cover songs / authors + 2 creators, no performer IDs / 4 guitars (Strat 235 min) [V] | covers; some "rock/metal"; share unknown [V, U] | CC BY-NC 4.0, restricted: request on Zenodo, "research purposes only" [V]; confirmed by the user (2026-10-23); **access requested by the user (2026-10-23)** | no (ML plan: "not now") | none | 15–25 GB [U] | no backing [V] |
 | GuitarJam (Hugging Face) | DI only | 2.5 h; 580 × 15-s monophonic improvisations / 1 Strat, players unstated [V] | single-note lines only | CC0 [V] | no | none | 796 MB [V] | no chords; no backing |
 | IDMT-SMT-Guitar | DI, mostly notes and licks | about 15–20 min of short pieces (subsets 3–4) [U] / 7 guitars [V] | genre-tagged short pieces | CC BY-NC-ND 4.0 [V]; confirmed by the user (2026-10-23) | via ToneTwist | none | 1.33 GB [V] | ND: re-rendering makes derivatives; the user confirmed the licence |
 | Five guitar | line out after the amp's preamp | 6 covers × 3 electrics / 1 player [V] | clean jazz amp | CC BY 4.0 [V] | no (ML plan: yes if a true DI) | none | 730 MB [V] | **not a true DI**: the DV Mark line out carries its EQ and reverb [V] |
@@ -200,13 +208,14 @@ and separation costs fall about 4×.
 | 1 | **Telefunken: Jen Hartswick & Nick Cassarino** (file listing confirmed, 2026-10-23) | 1 new band, likely clean to crunch, DI + amp mic in all 4 songs; the backing is vocals only (a trumpet in 1 song) | 0.94 GB | about 40 (20–60) if it trained, from 4 DIs at the Telefunken yield of about 10 sections per DI | 3.1k; 0.5 h if it trained | 3.7–4.3 h if it trained | 4 DIs; the user's listening makes it trusted | **yes, decided (2026-10-23): a test band first**, in the stage F format (DI + amp mic + backing) |
 | 1b | **Telefunken: Braiden Sunshine** | 1 more band only if its `Ac GTR_TDA-1` DI turns out to be the electric's, which its name argues against | 1.3 GB for one song's check; 5.86 GB for all 4 | 0, or about 40 if so | — | — | a pairing check of the DI against the `Ele GTR` mics | a test band, if so |
 | 2 | **Strobe "Maya" + MekaPhil ×4** | 2 new bands, real backing; DI-only | 2.4 GB | about 75 (40–110) at the Cambridge yield | 5.8k; 0.9 h | 6.9–8.0 h | 18 DI files; MekaPhil's gain by ear; re-host timeline check | no: **the user allows them for training (2026-10-23)**, which spends B2's pool |
-| 3 | **EGDB DI folder** | 1 new player and guitar, comping and arpeggios in many styles | 0.6 GB | cap about 100 (up to about 400 pass) | 7.7k; 1.1 h | 9.2–10.7 h | 240 clips; borrowed backing | no |
+| 3 | **EGDB DI folder** | 1 new player and guitar, comping and arpeggios in many styles | 0.46 GB, downloaded 2026-10-23 | cap about 100 (up to about 400 pass) | 7.7k; 1.1 h | 9.2–10.7 h | 240 clips; borrowed backing | no |
 | 4 | **GOAT** | the most real musical DI (5.9 h), 4 guitars, several players | 15–25 GB [U], after an access request | cap about 100 per guitar, about 400 | 31k; 4.6 h | 37–43 h | 172 DIs; screen out metal by ear or tags; no player IDs, so cluster by guitar | no |
 | 5 | **Stage F's 10 bands into training** (zero download) | 284 sections already screened and in part C's pool; 123 clean-class, 7 crunch; more than doubles the clean-class pool (97 to 220) and adds 10 bands | 0 | 284 (the 102 sections of stage F's own DIs stay out) | 21.9k; 3.2 h | 26–30 h | none new | **spends stage F**: only once rank 1 (or 2) gives replacement test bands |
 
 - **Cheaper extras.**
   - GuitarJam: CC0, 2.5 h of single-note lines, 0.8 GB.
-  - Blue Manic "Acomatay": a DI + amp pair, stoner rock, needs a scope check.
+  - Blue Manic "Acomatay": downloaded 2026-10-23 as a reserved test band; 5 DI + amp pairs (20.2 min
+    of DI), stoner rock, so scope by ear.
   - The two pending listening pages: they may return some hum- or hiss-flagged sections of the
     train bands, at no download.
 - **Not recommended.** Five guitar (not a true DI), EG-IPT and EGFxSet (notes), GuitarSet
@@ -214,12 +223,12 @@ and separation costs fall about 4×.
   out), Guitar-TECHS (hum, exercises), and every metal session.
 
 **Test bands.** Today the sound gate reads 4 bands, V_dev 5 and stage F 12, and the trusted test
-set is 2 bands. Only the Telefunken sessions (and Blue Manic's one pair) give fresh real-amp DI +
+set is 2 bands. Only the Telefunken sessions (and Blue Manic's five pairs) give fresh real-amp DI +
 amp + backing parts, the format stage F uses. Every band spent on testing is lost to training.
 **Decided (the user, 2026-10-23, on the ML session's recommendation):** new Telefunken bands with
 a confirmed DI and amp track become test bands first, trusted once the user has listened, and B2's
 songs go to training. The listings confirm one such band, Jen Hartswick & Nick Cassarino. Whether
-stage F may then train (rank 5) stays open: one new band does not replace 12.
+stage F may then train (rank 5) stays open: two new bands do not replace 12.
 
 ## Telefunken file listings (2026-10-23)
 
@@ -286,18 +295,31 @@ Telefunken sessions are a mix of 48 and 96 kHz [P].
    first (the ML session's recommendation).
 3. **B2's songs:** Strobe "Maya" and MekaPhil may be used for training, which spends B2's parked
    known-answer pool.
-4. **Licences confirmed:** EGDB ("feel free to use"; the Zenodo copy is CC BY 4.0),
+4. **Licences confirmed:** EGDB ("feel free to use"; the Zenodo renders are CC BY 4.0),
    IDMT-SMT-Guitar (CC BY-NC-ND 4.0) and GOAT (CC BY-NC 4.0, through a Zenodo access request).
+5. **Downloads (later on 2026-10-23, through the user's browser at their request):**
+   - Blue Manic "Acomatay", the full multitrack (0.51 GB ZIP, 32 WAVs), as a **reserved test band**
+     (ledger `cambridge-new-test-band-bluemanic`). Test first is the ML session applying decision 2
+     to this Cambridge band, as told to the user the same day, not a separate user decision. It
+     holds **5 DI + amp pairs, not 1**: ElecGtr1 (two amp mics), 2, 6, 7 and 8, 20.2 min of DI at
+     44.1 kHz, 24-bit [V]. Stoner rock, so each part's scope is checked by ear. The site's mix
+     (Full Preview MP3) is not downloaded yet. Stored in `datasets-cambridge-new/`.
+   - EGDB's `audio_DI` folder from the authors' Google Drive (0.46 GB ZIP): 240 clips, 107.5 min,
+     44.1 kHz, 16-bit, mono [V]. The Zenodo record holds the BIAS FX2 renders, not the dry DIs
+     ([round 1's check](round-1-song-only-matching.md)), so the Drive folder is the DI source.
+     Stored in `datasets-egdb/`. Training only (no backing), and only after its DIs pass the
+     trusted-data DI checks.
+   - GOAT: the user sent the Zenodo access request.
 
 **Still open:**
-1. **Stage F into training** (rank 5): one new test band does not replace stage F's 12.
+1. **Stage F into training** (rank 5): two new test bands do not replace stage F's 12.
 2. **Braiden Sunshine:** download one song (1.3 GB) to check whether `Ac GTR_TDA-1` pairs with the
    electric's mics.
 3. **The 8 refused archives** (Dopapod ×2, Holly Bowling ×4, "Crucial Taunt", Josh Quimby "Ten
    Year Town") stay unread; only Dopapod, a jam band with electric guitar, might matter, and a
    manual check on the site is the user's call.
-4. **Disk.** About 119 GB was free on 2026-10-22. Ranks 1–3 now need about 4 GB of downloads
-   (0.94 + 2.4 + 0.6) and about 3 GB of features.
+4. **Disk.** About 113 GB was free on 2026-10-23. Ranks 1 and 3 are downloaded (0.94 + 0.46 GB);
+   rank 2 needs 2.4 GB, and the features about 3 GB.
 
 ## Sources
 
