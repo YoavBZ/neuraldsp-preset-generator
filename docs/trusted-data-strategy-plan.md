@@ -245,3 +245,26 @@ note beside each headline; nothing re-runs.
    - the real-mix test (#267) runs on V-real's parts.
 7. **Downloads for T3:** Strobe and MekaPhil (2.4 GB). EGDB and GOAT only with a borrowed backing.
 8. **Controlled bleed:** an arm in T3, or off.
+
+### Recorded decisions (user, 2026-10-23)
+
+The user approved the plan ("Sounds good") after the ML session's summary, which proposed:
+1. **The hybrid: adopted.**
+2. **Every measured verification failure is excluded.** The two conflicts (Quicksand ElecGtr2, and
+   Today's The Day ElecGtr07) wait for the user's ear on the target-vs-DI page; until then they are
+   excluded. Hummy measure DIs are excluded too, under the trusted-data rule.
+3. **T0–T2 run:** about 16–23k renders, 8.8k separations and about 2 h of training. The full rebuild
+   (T3) is decided after T2.
+4. **A tie at T2 picks the self-built set**, because only it can grow under the trusted-data rule.
+   This replaces the "cheaper option on a tie" default for this decision only.
+
+Set by the ML session, consistent with the user's rules; the user may overrule any of them:
+- **Kimock and Swatkins stay out of K.** The user's 2026-10-23 decision to keep only clean examples
+  stands; this plan's item 3 would have reversed it.
+- **Stage F is shrunk to V-real** (the recommended option).
+- **Other guitars are DI renders only** (the recommended option).
+- **Controlled bleed is off**, under the clean-only rule.
+- **The amendments in item 6 apply:** the cleaning plan's step 2 becomes T2's SES arm, coverage stage
+  2D becomes T3, and the real-mix test runs on V-real's parts.
+- **T3's downloads** (Strobe and MekaPhil, 2.4 GB) are asked for at T3. Downloads need the user's yes
+  at the time.
