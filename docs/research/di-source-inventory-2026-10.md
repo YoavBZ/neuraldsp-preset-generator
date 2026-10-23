@@ -2,8 +2,8 @@
 
 *Research report, 2026-10-22; updated 2026-10-23 with the Telefunken file listings and the user's
 decisions. The listings came from each ZIP's central directory, read with HTTP range requests
-(about 1.7 MB over 27 archives, then about 13 MB over the rest of the catalogue; approved by the
-user). The one confirmed band, Jen Hartswick & Nick Cassarino, was then downloaded (0.94 GB,
+(about 1.7 MB over 27 archives, then 7.2 MB over 115 more before that pass stopped; approved by
+the user). The one confirmed band, Jen Hartswick & Nick Cassarino, was then downloaded (0.94 GB,
 approved by the user) as a reserved test band. Nothing was rendered, separated or listened to. Local facts come from the stored inventory, manifest and pool
 files; outside facts from dataset pages, papers, the Telefunken "Live From The Lab" (LFTL) pages,
 the Hugging Face re-host's file listing and archived Cambridge-MT pages. Research, not a declared
@@ -243,17 +243,33 @@ Telefunken sessions are a mix of 48 and 96 kHz [P].
   `Guitar DI_TDP-1` [P]. Here the file says `Ac GTR` and the electric has its own two mics, the
   same M80 + TF11 pair as Wild & Co's amp. Wild & Co's real acoustic was a separate mic track
   (`Ac Guitar_M260`) [P].
-- **The rest of the Telefunken catalogue.** The LFTL pages link 262 archives in seasons 2–7 [V].
-  About 190 of them come from bands this repo never mentions and this inventory did not assess,
-  e.g. The Western Den (S4) and Kate Callahan (S3) [V]. Reading their file lists would cost about
-  64 kB each (about 12 MB), but it needs the user's yes.
+- **The rest of the Telefunken catalogue (pass of 2026-10-23, stopped part-way).** The LFTL pages
+  link 262 archives in seasons 2–7 [V]. 206 of them were neither local nor already listed above.
+  The pass read them in order with the same range reads (7.2 MB). **It stopped at 115 of the 206**
+  on S3 refusals (HTTP 403, `AccessDenied` XML, per object): 2 Dopapod archives, then 3 Holly
+  Bowling archives in a row, which hit the pass's stop rule. Other archives in the same bucket
+  answered between the refusals, so this looks like private or missing objects, not a block [U].
+  The refusals were not retried or worked around.
+  - **Read: 110 archives, no electric-guitar DI in any** [V]. That covers all 49 of season 2
+    (38 bands), all 42 of season 3 (39 bands, e.g. Kate Callahan, Gang Of Thieves, Consider The
+    Source, MOE.), and 19 in season 4 (Alex Wong, Barnstar!, Candlebox, Deadgrass, Hayley Jane).
+    Their DIs are bass, keys, acoustic guitar, violin, mandolin, theremin and drum pads. The
+    electric guitars there have only amp mics, e.g. `ELE Guitar-Dyn-M81` + `ELE Guitar-Con-AK47`.
+  - **Not read: 91 archives.** These are 36 in season 4 (e.g. The Western Den, Penniless Wild, The
+    Great Enough, Pretty Saro, Leslie Mendelson), 12 in season 5 (Kris Allen Quintet, Nicole
+    Zuraitis and others), 22 in season 6 (Toad The Wet Sprocket, Hayley Reardon & Pau Figueres,
+    Friendz World Music, and new songs of the local JMK, Mikaela Davis, Mipso and Rebecca
+    Haviland) and 21 in season 7 (Carrion Crow, Highway Ghost Song, Jesse Terry, Josh Quimby,
+    People Like Us, Podunk Bluegrass, Red Moon, The Cuckoo, and new songs of Bernard Purdie,
+    Briana Maia and Wild & Co). Seasons 6 and 7 are where the local sessions with a DI come from,
+    so this unread part is the more promising one [U].
 
 ## Decisions and open questions
 
 **Decided by the user (2026-10-23):**
 1. **The Telefunken file listing:** approved, and done (above). Then (relayed by the ML session):
    download Jen Hartswick & Nick Cassarino as a reserved test band, done; and list the rest of the
-   catalogue, done (below).
+   catalogue, stopped part-way on S3 refusals (above).
 2. **Test or train:** new Telefunken bands with a confirmed DI and amp track become test bands
    first (the ML session's recommendation).
 3. **B2's songs:** Strobe "Maya" and MekaPhil may be used for training, which spends B2's parked
@@ -265,7 +281,8 @@ Telefunken sessions are a mix of 48 and 96 kHz [P].
 1. **Stage F into training** (rank 5): one new test band does not replace stage F's 12.
 2. **Braiden Sunshine:** download one song (1.3 GB) to check whether `Ac GTR_TDA-1` pairs with the
    electric's mics.
-3. **The rest of the Telefunken catalogue:** a file-list pass over about 190 more archives.
+3. **The rest of the Telefunken catalogue:** whether to resume the stopped pass over the 91
+   unread archives (about 6 MB of range reads; the refused ones would be skipped, not retried).
 4. **Disk.** About 119 GB was free on 2026-10-22. Ranks 1–3 now need about 4 GB of downloads
    (0.94 + 2.4 + 0.6) and about 3 GB of features.
 
