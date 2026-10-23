@@ -306,8 +306,9 @@ Telefunken sessions are a mix of 48 and 96 kHz [P].
      (Full Preview MP3) is not downloaded yet. Stored in `datasets-cambridge-new/`.
    - EGDB's `audio_DI` folder from the authors' Google Drive (0.46 GB ZIP): 240 clips, 107.5 min,
      44.1 kHz, 16-bit, mono [V]. The Zenodo record holds the BIAS FX2 renders, not the dry DIs
-     ([round 1's check](round-1-song-only-matching.md)), so the Drive folder is the DI source. Stored in `datasets-egdb/`. Training only (no backing),
-     and only after its DIs pass the trusted-data DI checks.
+     ([round 1's check](round-1-song-only-matching.md)), so the Drive folder is the DI source.
+     Stored in `datasets-egdb/`. Training only (no backing), and only after its DIs pass the
+     trusted-data DI checks.
    - GOAT: the user sent the Zenodo access request.
 
 **Still open:**
