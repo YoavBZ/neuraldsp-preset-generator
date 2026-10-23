@@ -262,6 +262,43 @@ $MSST -m learn.data_cleaning bleed-test --device mps     # after the pool rebuil
 $TORCH_PY -m learn.data_cleaning bleed-read              # about 5 min; prints the OUTCOME row
 ```
 
+### The bleed-injection test: result (2026-10-23, audited)
+
+Run 02:51–04:14 as declared: 188 examples in 6 sections, 1,128 X-LANCE separations on MPS, 0
+refused, zero renders. An independent audit recomputed every row from the stored stems with its own
+code (all match to 4 decimals) and confirmed the rules ran in the declared order.
+
+| Variant | Injected − clean (E, 6 sections) | Reading |
+|---|---|---|
+| −18 dB diffuse (live level) | −0.0001 | tie |
+| −14 dB diffuse (live level) | +0.0001 | tie |
+| −14 dB direct-heavy | +0.0002 | tie |
+| −8 dB diffuse | +0.0006 [+0.0002, +0.0011] | up |
+| 0 dB control | +0.0030 [+0.0017, +0.0043] | up (the control moves F) |
+
+Answer movement 0.003–0.019 against a single-seed disagreement of 0.049; F − constant on the clean
+side −0.0028. **Declared outcome: "loud bleed only".**
+
+**Sizes (audit).** The section SD came in at 0.0003–0.0016 against the declared 0.005, so the test
+was about 10× more sensitive than planned; that is why +0.0006 reads "up" while sitting well under the
+0.004 tie point. −8 dB is 4% of D's R_in margin over the constant (−0.016); even 0 dB is 19%. The live
+variants' upper bounds stay at or under +0.0007.
+
+**What it means.**
+- **(a), rebuilding without all bleeding mics: not supported.** Bleed at live levels has no
+  measurable test-side effect.
+- **(c), rebuilding the true guitar doubles, stands** (done: 954 rebuilt examples are current).
+- **The level rule (row 3)** as counted per example on the amp-source upper bound covers 3,399 pool
+  and 460 R_in examples (Kimock 366, Swatkins 50, Adam Buckley 44). Two caveats: the rule counts
+  examples, not sections (by section it would cover nearly every flagged section, e.g. Eggy 95/96);
+  and on the DI-source reading it is 1,530 pool and 227 R_in (Kimock 75).
+- **Kimock and Swatkins:** strictly under row 3, only Swatkins 169 and Kimock 10 rejoin the trusted
+  R_in; in practice the result supports them rejoining. For the user to decide.
+- **Training side: not priced.** This test cannot say whether training without bleed would help.
+
+**Limits.** One band, one part, 6 sections; synthetic rooms; the 0 dB effect is thin (55% of examples
+worse, one section none).
+
 ### Is −30 dB too strict?
 
 - **The counts at looser thresholds** (`lists.log`):
