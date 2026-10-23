@@ -1,9 +1,12 @@
 # Clean guitar DIs to widen the direct model's training set: an inventory
 
-*Research report, 2026-10-22. Zero compute: no audio or archive was downloaded, nothing was
-rendered or separated. Local facts come from the stored inventory, manifest and pool files; outside
-facts from dataset pages, papers, the Telefunken "Live From The Lab" (LFTL) pages, the Hugging Face
-re-host's file listing and archived Cambridge-MT pages. Research, not a declared plan.*
+*Research report, 2026-10-22; updated 2026-10-23 with the Telefunken file listings and the user's
+decisions. Zero compute: no audio was downloaded, nothing was rendered or separated. The listings
+came from each ZIP's central directory, read with HTTP range requests (about 1.7 MB over 27
+archives; approved by the user). Local facts come from the stored inventory, manifest and pool
+files; outside facts from dataset pages, papers, the Telefunken "Live From The Lab" (LFTL) pages,
+the Hugging Face re-host's file listing and archived Cambridge-MT pages. Research, not a declared
+plan.*
 
 Tags: **[V]** verified at the source in this session; **[P]** this repo's committed docs or stored
 files (`~/ndsp-presets/learn/clean-di/`, `~/ndsp-presets/learn/pretrain-set/pool.json`);
@@ -26,25 +29,42 @@ files (`~/ndsp-presets/learn/clean-di/`, `~/ndsp-presets/learn/pretrain-set/pool
   - Part C's learning curve flattened, and drawing the same number of renders from half the
     sections was worse (one seed) ([pretrain-set results](../pretrain-set-results.md)). So new
     clean and crunch bands are the lever.
-- **The best outside source is Telefunken LFTL sessions this project never downloaded:**
-  - **2 whose mic charts list a direct box on the electric guitar:** Jen Hartswick & Nick
-    Cassarino (4 songs) and Uglybraine (1 song), 1.9 GB [V].
-  - **2 whose charts list an "Acoustic Guitar" direct box:** Melt (1 linked song) and Braiden
-    Sunshine (4 songs), 7.7 GB [V]. In the project's own Catbite and Wild & Co sessions, that
-    "Acoustic Guitar" box is the electric guitar's same-take DI [P]. So these probably hold one
-    too [U].
-  - **5 more** list no direct box at all, so a DI there is unlikely (23.6 GB) [U].
-  - They are new bands with live backings and same-take amp microphones. Their styles look clean
-    to crunch, but that is not yet checked [U].
-  - So they could also be **fresh DI+amp test bands**. The October multitrack search
-    ([report](fresh-di-amp-multitracks-2026-10.md)) found no fresh pair at all.
+- **The Telefunken LFTL file listings (2026-10-23) found one new band with an electric-guitar DI
+  and its amp track: Jen Hartswick & Nick Cassarino** [V]. The 2026-10-22 version of this report
+  counted 2 sessions whose mic charts list an electric DI box and 2 probable ones; the archives
+  settle them ([details](#telefunken-file-listings-2026-10-23)):
+  - **Jen Hartswick & Nick Cassarino (S4, 4 songs, 0.94 GB):** every song has
+    `Guitar-Passive DI.wav` and `Guitar-Amp-M81.wav`. It is a guitar-and-vocals duo. The backing
+    is two vocal mics, plus a trumpet in one song; a stereo room pair also carries the guitar.
+  - **Uglybraine "Sometimes":** no DI, despite the chart's box. Its one guitar track is a stereo
+    `GTR w-SYNTH.wav`, with no amp mic.
+  - **Melt "Fake Romantic":** no guitar DI. It has two electric-guitar mics; its DIs are bass and
+    keys.
+  - **Braiden Sunshine (4 songs):** the chart's box is `Ac GTR_TDA-1.wav`, named as an acoustic
+    beside separately named electric-amp mics. Catbite's and Wild & Co's electric DIs were named
+    "Guitar …" in their files [P], so this is probably a real acoustic [U]. Only a pairing check on
+    one song's audio (1.3 GB) decides.
+  - **The 5 sessions with no DI box on the chart:** none has a guitar DI (16 archives). West End
+    Blend's S5 song still returns HTTP 403.
+  - The new band is a **fresh DI+amp test band** (the user's decision below). The October
+    multitrack search ([report](fresh-di-amp-multitracks-2026-10.md)) found no fresh pair at all.
 - **Ranked additions:**
-  1. the first four Telefunken sessions (two of them probable);
-  2. the Cambridge DI-only sessions Strobe "Maya" and MekaPhil ×4 (parked as part B2 candidates);
+  1. Jen Hartswick & Nick Cassarino, as a test band first;
+  2. the Cambridge DI-only sessions Strobe "Maya" and MekaPhil ×4: B2's parked songs, which the
+     user allows for training (2026-10-23);
   3. EGDB's DI folder (1 player);
   4. GOAT (5.9 h, needs an access request);
   5. a zero-download swap: once fresh test bands exist, stage F's bands could train. That adds 284
-     already-screened sections in 10 bands, 123 of them clean-class.
+     already-screened sections in 10 bands, 123 of them clean-class. One new test band is not
+     enough to replace stage F's 12.
+- **The user's decisions (2026-10-23):**
+  - reading the Telefunken file lists: approved, and done;
+  - B2's parked known-answer songs (Strobe "Maya", MekaPhil) may be used for training;
+  - licences confirmed: EGDB, IDMT-SMT-Guitar and GOAT;
+  - the new bands' use follows the ML session's recommendation: **new Telefunken bands with a
+    confirmed DI and amp track become test bands first.** They are fresh, and trusted once the
+    user has listened to them, which raises test power: the trusted test set is only 2 bands
+    today. B2's songs go to training.
 
 ## Where the training set stands
 
@@ -107,20 +127,21 @@ set or a declared reservation. Sizes are archive sizes.
 
 | Source | What it holds | EG DI: hours; songs / players / bands | Genre fit | Licence | Already used? | Conflicts | Download | Quality notes |
 |---|---|---|---|---|---|---|---|---|
-| **Telefunken LFTL, chart lists an electric-guitar DI box:** Jen Hartswick & Nick Cassarino (S4, 4 songs), Uglybraine "Sometimes" (S3) | DI + amp mic + full live multitrack (session backing) | about 5 DIs [U]; 5 songs / 2 bands [V] | jazz/soul, funk/jazz-rock: clean to crunch [U] | home-studio and educational use only, attribution line [V] | no (not in any set, ledger or `learn/` code) | none | 0.94 + 0.92 GB on Telefunken's Amazon S3 buckets [V] | TDA-1 box [V]; live room, so check bleed; 12 of the 28 local Telefunken DIs are hum-flagged, 6 in every window, and 27 of 28 read 60-Hz mains [P] |
-| **Telefunken LFTL, chart lists an "Acoustic Guitar" DI box:** Melt (S9, 1 of 3 songs linked), Braiden Sunshine (S8, 4 songs) | full live multitrack; probably an electric DI | about 5 DIs if so [U]; 5 songs / 2 bands [V] | indie soul; rock/soul [U] | same | no | none | 1.84 + 5.86 GB [V] | In Catbite (2 songs) and Wild & Co "Past Dues", the chart's "Acoustic Guitar TDP-1" is the electric guitar's same-take DI (pairing with the amp 0.85–0.98) [P]. Mipso's is a real acoustic [P]. A file listing decides. |
-| Telefunken LFTL, no DI box on the chart: Ryan Montbleau (S9, 3), Jeffery John Band (S8, 4), Jelly (S8, 1), Kat Wright (S4, 4), West End Blend (S4, 4) | full live multitrack; amp mics only | DI unlikely [U]; 16 songs / 5 bands [V] | singer-songwriter, blues rock, soul, funk [U] | same | no | none | 23.6 GB [V] | The one local session with such a chart, Mikaela Davis, has no DI [P]. West End Blend's S5 song lists a TDP-1 box, but its archive returns HTTP 403 [V]. |
+| **Telefunken LFTL: Jen Hartswick & Nick Cassarino** (S4, 4 songs) | guitar DI + amp mic in every song; 2 vocal mics, a trumpet in 1 song, a stereo room pair [V] | 4 DIs [V], about 20 min if 48 kHz (header not read) [U]; 4 songs / 1 band | jazz/soul duo: clean to crunch [U] | home-studio and educational use only, attribution line [V] | no (not in any set, ledger or `learn/` code) | none; **a test band first (2026-10-23)** | 0.94 GB on Telefunken's Amazon S3 buckets [V] | file named `Guitar-Passive DI`; live room, so check bleed; 12 of the 28 local Telefunken DIs are hum-flagged, 6 in every window, and 27 of 28 read 60-Hz mains [P]; the "Numb" archive's folder is named "Novacaine" [V] |
+| Telefunken LFTL: Uglybraine "Sometimes" (S3), Melt "Fake Romantic" (S9) | full live multitrack, **no guitar DI** [V] | 0 | — | same | no | none | 0.92 + 1.84 GB [V] | Uglybraine: one stereo `GTR w-SYNTH` track, no amp mic, although the chart lists a DI box. Melt: two electric mics (`E GTR a_M80`, `E GTR b_TF11`); DIs only on bass and keys |
+| Telefunken LFTL: Braiden Sunshine (S8, 4 songs) | full live multitrack; an `Ac GTR_TDA-1` DI and electric-amp mics (`Ele GTR 1` or `2`, M80 + TF11) [V] | electric DI unlikely [U]; 4 songs / 1 band | rock/soul [U] | same | no | none | 5.86 GB [V] | The chart's "Acoustic Guitar" box was the electric's DI in Catbite and Wild & Co, but there the file was named "Guitar …" [P]; here it is named "Ac GTR". Deciding needs one song's audio (1.3 GB) and a pairing check |
+| Telefunken LFTL, no DI box on the chart: Ryan Montbleau (S9, 3), Jeffery John Band (S8, 4), Jelly (S8, 1), Kat Wright (S4, 4), West End Blend (S4, 4) | full live multitrack; amp mics only, **no guitar DI** in any archive [V] | 0 | singer-songwriter, blues rock, soul, funk [U] | same | no | none | 23.6 GB [V] | The DIs are bass, keys and a drum pad. West End Blend's S5 song lists a TDP-1 box, but its archive still returns HTTP 403 (2026-10-23) [V]. |
 | Telefunken LFTL, new songs of known bands: Bernard Purdie & Friends "It's Your Thing", John Morgan Kimock "Negative Space > Speed", Briana Maia "Over You", Wild & Co ×2 | full multitrack with DI | 5 songs [V] | clean/crunch | same | no | **stage F band, V_dev band, set-2 held-out band ×2** | 1–2 GB each | — |
-| **Cambridge DI-only: Strobe "Maya", MekaPhil ×4** | full multitrack; DI-only guitar parts | 18 DI files, about 12 parts; 5 songs / 2 bands [V] | pop/electronica; anime alt rock (gain unknown) | Cambridge "educational purposes only" [V] | no | **part B2's proposed known-answer songs (parked)** | 0.40 + 1.99 GB [V] | MekaPhil's publisher host is behind Cloudflare; the Hugging Face re-host has it, but set 5 found re-host tracks trimmed to different lengths |
+| **Cambridge DI-only: Strobe "Maya", MekaPhil ×4** | full multitrack; DI-only guitar parts | 18 DI files, about 12 parts; 5 songs / 2 bands [V] | pop/electronica; anime alt rock (gain unknown) | Cambridge "educational purposes only" [V] | no | part B2's parked known-answer songs; **the user allows them for training (2026-10-23)** | 0.40 + 1.99 GB [V] | MekaPhil's publisher host is behind Cloudflare; the Hugging Face re-host has it, but set 5 found re-host tracks trimmed to different lengths |
 | Cambridge DI-only: The Timezone "GOTGF" | full multitrack, 4 DIs | 4 DIs; 1 song [V] | funk | same | no | **it is Timo And The Timezone** (same SoundCloud) [V], a B2-candidate band left out of part C | 616 MB | — |
 | Cambridge DI-only: Perpetual Escape "Stop And Rise" | full multitrack, 11 DI parts in 19 files | 1 song / 1 band [V] | progressive heavy rock: likely out of scope [P] | same | no | B2 candidate | 657 MB | gain unknown until heard |
 | Cambridge: Hollow Ground "Left Blind" | DI-only, 3 DIs + lead | 1 song [V] | heavy | same | no | MUSDB18 train; band already trains | — | adds no band |
 | Cambridge, added since 2025: Blue Manic "Acomatay" (DI + amp), DGX "Rest In Hell" (4 DIs), Slimy Soul Suckers "Big Bang", Prusinski "80s Rocker", Hollowstate "Hurricane" | multitracks | DI confirmed only for the first two [V, partial re-host] | stoner rock; unknown; blues rock; MOR rock; hard rock | same | no | none known | about 1–1.3 GB each [U] | site behind Cloudflare; needs a human pass |
 | Cambridge metal sessions with DIs (Arcadian Alone, Daimon B, Inhumanity Vortex, Peppermark ×2, Serapis ×2, SkalyVan ×3, Szymon Skiba "Trashy Thrash") | DI + amp or DI-only | about 80 DI files [V] | **metal: out of scope** | same | no | Szymon Skiba is a stage F band | — | — |
-| **EGDB** | DI only (plus amp renders) | 1.97 h; 240 clips / 1 player / 1 Strat-type [V, U] | solo, arpeggio and comping, various genres [U] | none stated, "feel free to use" [V]; the Zenodo copy is CC BY 4.0 [V] | arm A literature only | none | about 0.6 GB DI folder [U]; 1.04 GB CC BY zip [V] | played to a click; hex pickup for labels; DI box vs hex sum unclear [U] |
-| **GOAT** | DI only (plus NAM and Guitar Pro renders, tabs) | 5.9 h; 172 cover songs / authors + 2 creators, no performer IDs / 4 guitars (Strat 235 min) [V] | covers; some "rock/metal"; share unknown [V, U] | CC BY-NC 4.0, restricted: request on Zenodo, "research purposes only" [V] | no (ML plan: "not now") | none | 15–25 GB [U] | no backing [V] |
+| **EGDB** | DI only (plus amp renders) | 1.97 h; 240 clips / 1 player / 1 Strat-type [V, U] | solo, arpeggio and comping, various genres [U] | none stated, "feel free to use" [V]; the Zenodo copy is CC BY 4.0 [V]; confirmed by the user (2026-10-23) | arm A literature only | none | about 0.6 GB DI folder [U]; 1.04 GB CC BY zip [V] | played to a click; hex pickup for labels; DI box vs hex sum unclear [U] |
+| **GOAT** | DI only (plus NAM and Guitar Pro renders, tabs) | 5.9 h; 172 cover songs / authors + 2 creators, no performer IDs / 4 guitars (Strat 235 min) [V] | covers; some "rock/metal"; share unknown [V, U] | CC BY-NC 4.0, restricted: request on Zenodo, "research purposes only" [V]; confirmed by the user (2026-10-23) | no (ML plan: "not now") | none | 15–25 GB [U] | no backing [V] |
 | GuitarJam (Hugging Face) | DI only | 2.5 h; 580 × 15-s monophonic improvisations / 1 Strat, players unstated [V] | single-note lines only | CC0 [V] | no | none | 796 MB [V] | no chords; no backing |
-| IDMT-SMT-Guitar | DI, mostly notes and licks | about 15–20 min of short pieces (subsets 3–4) [U] / 7 guitars [V] | genre-tagged short pieces | CC BY-NC-ND 4.0 [V] | via ToneTwist | none | 1.33 GB [V] | ND: re-rendering makes derivatives, a question for the user |
+| IDMT-SMT-Guitar | DI, mostly notes and licks | about 15–20 min of short pieces (subsets 3–4) [U] / 7 guitars [V] | genre-tagged short pieces | CC BY-NC-ND 4.0 [V]; confirmed by the user (2026-10-23) | via ToneTwist | none | 1.33 GB [V] | ND: re-rendering makes derivatives; the user confirmed the licence |
 | Five guitar | line out after the amp's preamp | 6 covers × 3 electrics / 1 player [V] | clean jazz amp | CC BY 4.0 [V] | no (ML plan: yes if a true DI) | none | 730 MB [V] | **not a true DI**: the DV Mark line out carries its EQ and reverb [V] |
 | EG-IPT | DI + 5 mics, isolated notes | 4.7 h per signal / 1 player / 1 SG [V] | notes only | CC BY 4.0 [V] | no | none | 23.8 GB [V] | no phrases |
 | GuitarSet | hex pickup + mic on an **acoustic** guitar | 3 h / 6 players [V] | out | CC BY 4.0 | no | none | 8.2 GB | not an electric DI |
@@ -137,7 +158,9 @@ set or a declared reservation. Sizes are archive sizes.
   new Telefunken sessions, Strobe, MekaPhil, The Timezone, Stop And Rise, the post-2025 Cambridge
   sessions). Part C's `backing_tracks` rule applies unchanged: the mix list, less the part's own
   tracks, every DI and the leaking tracks [P]. For the re-hosted MekaPhil, check first that the
-  tracks share one timeline.
+  tracks share one timeline. Jen Hartswick & Nick Cassarino's backing is thin: two vocal mics
+  (and a trumpet in one song), with the room pair dropped as leaking. Its mixes are guitar and
+  vocals, with no drums, bass or keys [V].
 - **Synthetic or borrowed backing needed:** EGDB, GOAT, GuitarJam, IDMT, EG-IPT and Guitar-TECHS.
   Two options:
   - A borrowed backing from another session or MoisesDB's non-guitar stems. Its key and tempo won't
@@ -166,9 +189,9 @@ and separation costs fall about 4×.
 
 | Rank | Addition | Why | Download | New sections (estimate) | Renders; wall time on 3 shards | X-LANCE (MPS) | Screening | Also a test band? |
 |---|---|---|---|---|---|---|---|---|
-| 1 | **Telefunken, electric DI box on the chart:** Jen Hartswick & Nick Cassarino, Uglybraine | 2 new bands, likely clean to crunch, true DI box, real backing | 1.9 GB | about 50 (25–75), from about 5 DIs at the Telefunken yield of about 10 sections per DI | 3.9k; 0.6 h | 4.6–5.3 h | 5 DIs; listen to one clip per band | **yes: fresh DI + amp mic + backing**, the stage F format |
-| 1b | **Telefunken, "Acoustic Guitar" DI box on the chart:** Melt, Braiden Sunshine | 2 more bands, if the box is the electric's (a ZIP file listing, tens of kB each, decides first) | 7.7 GB | 0–75, about 50 if so | up to 5.8k; 0.9 h | up to 6.9–8.0 h | as above | **yes**, if so |
-| 2 | **Strobe "Maya" + MekaPhil ×4** | 2 new bands, real backing; DI-only | 2.4 GB | about 75 (40–110) at the Cambridge yield | 5.8k; 0.9 h | 6.9–8.0 h | 18 DI files; MekaPhil's gain by ear; re-host timeline check | as known-answer or V_dev-style bands (render truth), not real-amp; **taking them for training spends B2's pool** |
+| 1 | **Telefunken: Jen Hartswick & Nick Cassarino** (file listing confirmed, 2026-10-23) | 1 new band, likely clean to crunch, DI + amp mic in all 4 songs; the backing is vocals only (a trumpet in 1 song) | 0.94 GB | about 40 (20–60) if it trained, from 4 DIs at the Telefunken yield of about 10 sections per DI | 3.1k; 0.5 h if it trained | 3.7–4.3 h if it trained | 4 DIs; the user's listening makes it trusted | **yes, decided (2026-10-23): a test band first**, in the stage F format (DI + amp mic + backing) |
+| 1b | **Telefunken: Braiden Sunshine** | 1 more band only if its `Ac GTR_TDA-1` DI turns out to be the electric's, which its name argues against | 1.3 GB for one song's check; 5.86 GB for all 4 | 0, or about 40 if so | — | — | a pairing check of the DI against the `Ele GTR` mics | a test band, if so |
+| 2 | **Strobe "Maya" + MekaPhil ×4** | 2 new bands, real backing; DI-only | 2.4 GB | about 75 (40–110) at the Cambridge yield | 5.8k; 0.9 h | 6.9–8.0 h | 18 DI files; MekaPhil's gain by ear; re-host timeline check | no: **the user allows them for training (2026-10-23)**, which spends B2's pool |
 | 3 | **EGDB DI folder** | 1 new player and guitar, comping and arpeggios in many styles | 0.6 GB | cap about 100 (up to about 400 pass) | 7.7k; 1.1 h | 9.2–10.7 h | 240 clips; borrowed backing | no |
 | 4 | **GOAT** | the most real musical DI (5.9 h), 4 guitars, several players | 15–25 GB [U], after an access request | cap about 100 per guitar, about 400 | 31k; 4.6 h | 37–43 h | 172 DIs; screen out metal by ear or tags; no player IDs, so cluster by guitar | no |
 | 5 | **Stage F's 10 bands into training** (zero download) | 284 sections already screened and in part C's pool; 123 clean-class, 7 crunch; more than doubles the clean-class pool (97 to 220) and adds 10 bands | 0 | 284 (the 102 sections of stage F's own DIs stay out) | 21.9k; 3.2 h | 26–30 h | none new | **spends stage F**: only once rank 1 (or 2) gives replacement test bands |
@@ -182,27 +205,62 @@ and separation costs fall about 4×.
   (acoustic), Slakh and SynthTab (synthetic guitar), MoisesDB and MedleyDB (no DI; MedleyDB is held
   out), Guitar-TECHS (hum, exercises), and every metal session.
 
-**Test bands.** Today the sound gate reads 4 bands, V_dev 5 and stage F 12. Only the Telefunken
-sessions (and Blue Manic's one pair) give fresh real-amp DI + amp + backing parts, the format
-stage F uses. Every band spent on
-testing is lost to training, so the split is the user's call:
-- (a) the Telefunken bands become new test bands, which lets stage F's bands train (rank 5);
-- (b) the Telefunken bands train, and stage F stays the test.
+**Test bands.** Today the sound gate reads 4 bands, V_dev 5 and stage F 12, and the trusted test
+set is 2 bands. Only the Telefunken sessions (and Blue Manic's one pair) give fresh real-amp DI +
+amp + backing parts, the format stage F uses. Every band spent on testing is lost to training.
+**Decided (the user, 2026-10-23, on the ML session's recommendation):** new Telefunken bands with
+a confirmed DI and amp track become test bands first, trusted once the user has listened, and B2's
+songs go to training. The listings confirm one such band, Jen Hartswick & Nick Cassarino. Whether
+stage F may then train (rank 5) stays open: one new band does not replace 12.
 
-## Questions for the user
+## Telefunken file listings (2026-10-23)
 
-1. **The Telefunken file listing.** Reading each ZIP's file names means fetching its last tens of
-   kilobytes (a partial download). It confirms rank 1 and decides rank 1b and the five sessions
-   with no DI box on the chart.
-2. **Test or train** for the new Telefunken bands; and whether stage F may then train (rank 5).
-3. **B2's songs.** Strobe and MekaPhil are B2's parked known-answer candidates. Training on them
-   spends that pool.
-4. **Licence wording to confirm:**
-   - EGDB states no licence beyond "feel free to use";
-   - IDMT-SMT-Guitar is NoDerivatives, and re-rendering makes derivatives;
-   - GOAT needs a Zenodo request stating non-commercial research use.
-5. **Disk.** About 119 GB is free now. Ranks 1–3 (with 1b) need about 13 GB of downloads plus
-   about 4 GB of features. The five sessions with no DI box would add 23.6 GB.
+Read from each ZIP's central directory with HTTP range requests: the last 64 kB of each archive,
+1.7 MB over 27 archives [V]. Every archive answered with a byte range and none needed a second
+read; no audio was fetched. macOS metadata entries (`__MACOSX`, `.DS_Store`) are left out. The
+WAV headers were not read, so durations assume 48 kHz, 24-bit; the local Telefunken sessions are
+a mix of 48 and 96 kHz [P].
+
+| Session (season) | Archives | Tracks per song | Electric-guitar DI | Amp or mic tracks for it | Backing (other instruments) |
+|---|---|---|---|---|---|
+| Jen Hartswick & Nick Cassarino (S4): "Drowning", "Numb" (folder "Novacaine"), "Silent Waves", "You Cant Take It Back" | 4; 0.16 + 0.24 + 0.23 + 0.31 = 0.94 GB | 6 (7 with the trumpet) | **`Guitar-Passive DI.wav` in all 4; high confidence** (the chart lists the box on the electric) | `Guitar-Amp-M81.wav` | thin: `Vocals-Jen-Ela M 251`, `Vocals-Nick-Ela M 251T`, `Trumpet-M81` in "You Cant Take It Back"; `Room-M60 L/R` carry the guitar too. DI lengths 3.6, 5.5, 5.3 and 6.0 min at 48 kHz (half at 96 kHz) |
+| Uglybraine "Sometimes" (S3) | 1; 0.92 GB | 17 | **none**; the one guitar track is a stereo `GTR w-SYNTH.wav` | none separate | full band: drum mics and rooms, `BASS DI`, `KEYS`, `SYNTH`, `SAX`, `BONE`, `FLUTE` |
+| Melt "Fake Romantic" (S9) | 1; 1.84 GB | 21 audio + a mic-preamp input list (PDF) | **none** | `E GTR a_M80.wav`, `E GTR b_TF11.wav` (no DI to pair) | full band: drums, `Bass DI_TDA-1`, `Bass Amp_M82`, `Nord_TDP-2`, 3 vocal mics, rooms |
+| Braiden Sunshine (S8): "Beautiful Roads", "Live Again", "Sail Away", "Under Your Spell" | 4; 1.27 + 1.83 + 1.47 + 1.29 = 5.86 GB | 23–26 | **probably none** [U]: `Ac GTR_TDA-1.wav` is the chart's "Acoustic Guitar" box, named as an acoustic | `Ele GTR 2_M80` + `Ele GTR 2_TF11` (`Ele GTR 1_…` in "Live Again") | full band: drums, bass DI and amp, Nord and Roland keys, vocals; horns in 3 of the 4 songs |
+| Ryan Montbleau (S9), 3 songs | 3; 5.87 GB | 25–26 | none | `E GTR_M80`, `E GTR_TF11`; `GTR_M80`, `GTR_TF11` (another guitar) | full band |
+| Jeffery John Band (S8), 4 songs | 4; 7.83 GB | 26 | none | `GTR Amp M80`, `GTR Amp TF11` | full band |
+| Jelly "XMAS jams" (S8) | 1; 1.82 GB | 17 | none | `GTR AMP TF47`, `GTR AMP M81` | full band |
+| Kat Wright (S4), 4 songs | 4; 3.71 GB | 21–23 | none | `ELE Guitar-M80`, `ELE Guitar-Proto 647` | full band |
+| West End Blend (S4), 4 songs | 4; 4.40 GB | 21–22 | none | `ELE Guitar1-Mike-Proto`, `ELE Guitar2-Jesse-Proto` | full band; the S5 song "Love Having You Around" returns HTTP 403 |
+
+- **Braiden Sunshine's DI.** In Catbite and Wild & Co the chart's "Acoustic Guitar" box was the
+  electric's DI, but their files were named `Guitar TDP-1`, `Guitar DI_18` and
+  `Guitar DI_TDP-1` [P]. Here the file says `Ac GTR` and the electric has its own two mics, the
+  same M80 + TF11 pair as Wild & Co's amp. Wild & Co's real acoustic was a separate mic track
+  (`Ac Guitar_M260`) [P].
+- **The rest of the Telefunken catalogue.** The LFTL pages link 262 archives in seasons 2–7 [V].
+  About 190 of them come from bands this repo never mentions and this inventory did not assess,
+  e.g. The Western Den (S4) and Kate Callahan (S3) [V]. Reading their file lists would cost about
+  64 kB each (about 12 MB), but it needs the user's yes.
+
+## Decisions and open questions
+
+**Decided by the user (2026-10-23):**
+1. **The Telefunken file listing:** approved, and done (above).
+2. **Test or train:** new Telefunken bands with a confirmed DI and amp track become test bands
+   first (the ML session's recommendation).
+3. **B2's songs:** Strobe "Maya" and MekaPhil may be used for training, which spends B2's parked
+   known-answer pool.
+4. **Licences confirmed:** EGDB ("feel free to use"; the Zenodo copy is CC BY 4.0),
+   IDMT-SMT-Guitar (CC BY-NC-ND 4.0) and GOAT (CC BY-NC 4.0, through a Zenodo access request).
+
+**Still open:**
+1. **Stage F into training** (rank 5): one new test band does not replace stage F's 12.
+2. **Braiden Sunshine:** download one song (1.3 GB) to check whether `Ac GTR_TDA-1` pairs with the
+   electric's mics.
+3. **The rest of the Telefunken catalogue:** a file-list pass over about 190 more archives.
+4. **Disk.** About 119 GB was free on 2026-10-22. Ranks 1–3 now need about 4 GB of downloads
+   (0.94 + 2.4 + 0.6) and about 3 GB of features.
 
 ## Sources
 
@@ -210,8 +268,12 @@ testing is lost to training, so the split is the user's call:
   - [session pages and mic charts](https://www.telefunken-elektroakustik.com/livefromthelab/),
     including the Jen Hartswick & Nick Cassarino and Uglybraine charts;
   - Telefunken's Amazon S3 buckets, e.g.
-    [Uglybraine](https://season3multitracks.s3.us-east-2.amazonaws.com/UGLYBRAINE_Sometimes.zip)
-    (HTTP HEAD only).
+    [Uglybraine](https://season3multitracks.s3.us-east-2.amazonaws.com/UGLYBRAINE_Sometimes.zip),
+    [Jen Hartswick & Nick Cassarino "Drowning"](https://season4multitracks.s3.us-east-2.amazonaws.com/Jen+Hartswick+%26+Nick+Cassarino_Drowning.zip)
+    and
+    [Braiden Sunshine "Live Again"](https://season7multitracks.s3.us-east-2.amazonaws.com/Braiden+Sunshine+-+Live+Again.zip)
+    (HTTP HEAD, then a range read of each archive's last 64 kB on 2026-10-23; the S8 and S9
+    sessions sit in the `season7multitracks` bucket).
 - **Cambridge-MT:**
   - [Hugging Face re-host listing](https://huggingface.co/datasets/kwatcharasupat/mixing-secrets-rawstems)
     (revision b482eb2e);
