@@ -67,7 +67,7 @@ def test_dis_rules():
     assert V.d3_status("GTR Line Out.wav") == "fail"
     assert V.d2_status(["hum"]) == "fail" and V.d2_status(["clipping"]) == "fail"
     assert V.d2_status(["hiss", "bleed"]) == "pass"        # shown, not excluded
-    assert V.di_verdict({"D1": "pass", "D2": "pass", "D3": "pass"}) == ("trusted", [])
+    assert V.di_verdict({"D1": "pass", "D2": "pass", "D3": "pass"}) == ("verified", [])
     v, why = V.di_verdict({"D1": "ear", "D2": "pass", "D3": "pass"})
     assert v == "pending ear" and why == ["D1 to the ear"]                  # queued, pending until heard
     assert V.di_verdict({"D1": None, "D2": "pass", "D3": "pass"})[0] == "pending ear"   # DI-only
@@ -83,17 +83,17 @@ def _ok(**kw):
 
 
 def test_target_verdict():
-    assert V.target_verdict(_ok(), True, None) == ("trusted", [])
+    assert V.target_verdict(_ok(), True, None) == ("verified", [])
     assert V.target_verdict(_ok(A6="fail"), True, True)[0] == "excluded"
     assert V.target_verdict(_ok(A2="ear"), True, None)[0] == "pending ear"
-    assert V.target_verdict(_ok(A2="ear"), True, True) == ("trusted", [])
+    assert V.target_verdict(_ok(A2="ear"), True, True) == ("verified", [])
     assert V.target_verdict(_ok(A2="ear"), True, False)[0] == "excluded"
     assert V.target_verdict(_ok(), None, None)[0] == "pending ear"
     assert V.target_verdict(_ok(), False, True)[0] == "excluded"
     assert V.target_verdict(_ok(), None, True, disputed=True)[0] == "pending ear"
-    assert V.target_verdict(_ok(), True, None, disputed=True) == ("trusted", [])      # the ear has ruled
+    assert V.target_verdict(_ok(), True, None, disputed=True) == ("verified", [])      # the ear has ruled
     assert V.target_verdict(_ok(), True, True, in_mix=True)[0] == "excluded"       # A6's mix clause unread
-    assert V.target_verdict(_ok(A6mix="pass"), True, True, in_mix=True) == ("trusted", [])
+    assert V.target_verdict(_ok(A6mix="pass"), True, True, in_mix=True) == ("verified", [])
 
 
 def _cal_rows(known=None, fails=None, negs=None):
@@ -194,6 +194,7 @@ def test_strict_floor():
 
 
 def test_rederive_prior(tmp_path):
+    pytest.importorskip("numpy")                           # prior_summary
     def part(slug, band, c0, rows):
         (tmp_path / f"{slug}.json").write_text(json.dumps({"slug": slug, "band": band, "crop_start_s": c0, "rows": rows}))
 
@@ -407,6 +408,7 @@ def test_merge_ear_lets_a_negative_win():
 
 
 def test_d4_rule_search_and_leave_one_out():
+    pytest.importorskip("numpy")                           # d4_fit's grid
     rows = [(False, 6.0, 0.5), (False, 7.0, -0.6), (False, 9.5, 0.4), (True, 11.0, 0.5), (True, 10.0, 0.3),
             (True, 12.0, 0.9), (True, 7.5, 1.0)]
     c, s_, caught, flagged = V.d4_fit(rows)
