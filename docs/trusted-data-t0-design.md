@@ -1,8 +1,8 @@
 # Trusted data, T0 to T2: the code, the calibration and the launch (design)
 
 **Status (2026-10-23):** code only. Nothing here has run as T0, T1 or T2.
-- **The code review of #281** returned "go with fixes". All its fixes are applied, and listed at
-  the end.
+- **The code review of #281** returned "go with fixes", and the re-review two more fixes plus a
+  ruling. All are applied, and listed at the end.
 - **The numbers below** come from zero-render dry runs on the stored crops and sections, written to
   a scratch folder. They show what T0 should find, not T0's record.
 - **An input that arrived during the work is built in:** sitting 1 of data-review-1 judged the
@@ -31,7 +31,7 @@ Per judge half of a crop (A 1.0–5.5 s, B 5.5–10.0 s), `reference.wav` agains
 | | Measure | Rule | Changed from the plan? |
 |---|---|---|---|
 | A1 | GCC-PHAT lag over 80 Hz–4 kHz | 0.1 ≤ \|lag\| ≤ 30 ms passes. A negative lag, or a peak under 12× the median (unreadable), goes to the ear | band and prominence gate added |
-| A2 | H1 = S_xy/S_xx (Welch 4096), coherence ≥ 0.5; median \|H\| 1–3 kHz minus 6–10 kHz | **≥ 12 dB passes** (the plan's), with ≥ 17 coherent bins in each band. **Under 3.3 dB fails** on any coherent bins. In between, or nothing coherent, goes to the ear | an ear band and a fail line added; the pass is unchanged |
+| A2 | H1 = S_xy/S_xx (Welch 4096), coherence ≥ 0.5; median \|H\| 1–3 kHz minus 6–10 kHz | Decided only over ≥ 17 coherent bins in each band: **≥ 12 dB passes** (the plan's), **under 3.3 dB fails**. In between, or fewer bins, goes to the ear and stays out until heard | an ear band and a fail line added; the pass is unchanged |
 | A3 | Least-squares FIR (exact covariance, 24 kHz, −5..+60 ms around the A1 lag), fitted on one half, read on the other, both ways | both residuals above −40 dB | no |
 | A4 | Peak \|r\| (±50 ms) with every session DI; file hash | < 0.95; no shared hash | no |
 | A5 | `crop_match2.py`'s measures (ported) | play share ≥ 0.5; chroma ≥ 0.8 or onset ≥ 0.35 | no |
@@ -43,9 +43,14 @@ Per judge half of a crop (A 1.0–5.5 s, B 5.5–10.0 s), `reference.wav` agains
   sections instead.
 
 **DIs:**
-- **D1:** against the loudest own amp track, using the medians over the DI's sections.
+- **D1:** against the loudest own amp track, using the medians over every window the DI is read on.
+- **Every session DI is read at every D-build section time of its session.** These are the
+  windows where it plays as another guitar in a self-built mix. `trusted_data` refuses a window T0
+  never measured, and uses only usable ones.
 - **D2:** part A's flags on the window (clipping, drop-outs, hum ≥ −55 dB), plus part A's
   hum-suspect list.
+  - A fail on the DI's own D-build sections excludes the DI.
+  - A fail on another window excludes that window only.
 - **D3:** by name.
 - **D4:** below.
 
@@ -90,22 +95,23 @@ user's 35 heard crop DIs.
 
 ## Calibration (`negatives`, then `calibrate --ear-di <sitting-1 export>`)
 
-**Known amps (18), re-derived** from the target-vs-DI measurements, not from sitting 1:
+**Known amps (11), re-derived** from the target-vs-DI measurements, not from sitting 1:
 - **The rule:** both halves follow the DI with a mic delay of 0.1–30 ms, and |H| falls at least
   12 dB from 0.5–2 kHz to 6–12 kHz (`known_amps_from`). `calibrate` checks `KNOWN_AMPS` against it.
-- **Dropped:** Passing Ships ElecGtr4, whose DI was heard as an amp in half B.
-- **The 18:**
+- **Dropped:**
+  - Passing Ships ElecGtr4 (the review);
+  - the 7 pairs whose DI sitting 1 rejected (the re-review: a pair without a real DI cannot anchor
+    a DI-to-amp calibration): Passing Ships ElecGtr6, Bloomlight, Farthest Step, First Offering
+    GTR 2, Gym Hours GTR 2, Russian Cream GTR 2, She's Gone.
+- **The 11:**
   - It Was My Fault ElecGtr2 and 3;
-  - Passing Ships ElecGtr6;
   - Signs ElecGtr2;
   - colour-me-red 02 and 03;
   - get-out-of-bed 2;
   - magilla 1 and 1DT;
   - wickerman 3;
-  - Blind Spots, Bloomlight and Farthest Step;
-  - First Offering GTR 2, Gym Hours GTR 2 and Russian Cream GTR 2;
-  - Sculptor's Request GTR 2;
-  - She's Gone.
+  - Blind Spots;
+  - Sculptor's Request GTR 2.
 
 **The other cases:**
 - **Known fails:** Prodigal ElecGtr3 and ElecGtr5.
@@ -125,8 +131,8 @@ user's 35 heard crop DIs.
 - the clean cab-off DI fails A2.
 
 **Dry run, zero-render part:**
-- **Known amps:** none fails. 5 pass A2 (It Was My Fault ElecGtr3, colour-me-red 02, magilla 1DT,
-  Blind Spots, She's Gone); 13 go to the ear on A2.
+- **Known amps:** none fails. 4 pass A2 (It Was My Fault ElecGtr3, colour-me-red 02, magilla 1DT,
+  Blind Spots); 7 go to the ear on A2.
 - **Prodigal ElecGtr5:** lag 0.0 ms, drop −0.3 and 0.4 dB over 324 and 255 bins. Fails A1 and A2.
 - **Prodigal ElecGtr3:** lag 0.0 ms, drop 0.0 dB over 342 bins. Fails A1 and A2.
 - **Copies:** fail A1–A4 (residual −71 to −93 dB).
@@ -138,8 +144,10 @@ user's 35 heard crop DIs.
 - **A2's pass stays at the plan's 12 dB.**
   - 3.3–12 dB goes to the ear. colour-me-red 03 (6.2 dB) and Signs 2 (10.3 dB) land there.
   - The fail line, 3.3 dB, is the midpoint of Prodigal ElecGtr5's 0.4 and colour-me-red 03's
-    6.2.
-  - The 17-bin gate only stops a pass; it never turns a fail into the ear.
+    6.2. It is unchanged with 11 known amps.
+  - **Ruling (a), from the re-review:** a fail must pass the existing 17-bin gate, as a pass does,
+    so no new number is fitted. A half under the gate goes to the ear and stays out until heard:
+    Quicksand ElecGtr2 (12 and 10 bins) and Adam Buckley ElecGtr5's DI (one bin at −19 dB).
 - **A1 band and prominence gate.**
   - The known amps' peaks stand 24–279× over the median. Unreadable high-gain pairs stand 4–7×.
     The gate sits at 12.
@@ -180,15 +188,15 @@ back through `t0/ear-items.json`.
 
 **What the dry run shows** (scratch, zero renders):
 
-**Ear queue: 148 items (54 DIs, 18 targets).**
+**Ear queue: 195 items (59 DIs, 18 targets).**
 
 | Kind | Items |
 |---|---|
 | target (18 targets × 2 halves) | 36 |
-| di_flagged (54 pool sections, 2 crops) | 56 |
-| di_amp | 39 |
+| di_flagged | 101 (own sections and other-guitar windows) |
+| di_amp | 37 |
+| di_only | 11 |
 | di_sample | 7 |
-| di_only | 7 |
 | di_conflict | 3 (the fourth, Quicksand 2, has an excluded target) |
 
 **Targets:** 41 excluded, 18 pending the ear, none trusted yet.
@@ -211,15 +219,13 @@ ElecGtr3, colour-me-red 02 and 03, femme 5, get-out-of-bed 2, let's dance 3 and 
 **Knob ceiling 2: 7 parts pending the ear.** Drag Me Down 4, It Was My Fault 2, Quicksand 1, Signs
 2, Today's The Day 10, femme 3 and get-out-of-bed 1. This is the panel for the re-reads.
 
-**DIs:** 3 trusted outright, 46 pending the ear, 10 excluded.
+**DIs:** 5 trusted outright, 49 pending the ear, 5 excluded.
 - **Excluded:**
   - the three Eggy DIs, heard processed;
-  - Prodigal ElecGtr1 and ElecGtr3;
-  - Dark Ride ElecGtr03 and 04 (drop-outs);
-  - Storm Of Particles ElecGtr01 and 02;
-  - Adam Buckley ElecGtr5. Its D1 fails on one coherent bin (−19 dB), under the review's rule that
-    a fail stands on any coherent bins.
-- **Usable pool and V_sep sections until the ear has answered:** only Kimock 4 and Swatkins 1.
+  - Prodigal ElecGtr1 (hum) and ElecGtr3 (D1).
+- **Dark Ride's and Storm Of Particles' drop-outs** now exclude only their windows, and Adam
+  Buckley ElecGtr5 waits for the ear.
+- **Usable pool and V_sep sections until the ear has answered:** Ale Lak 2, Kimock 4 and Swatkins 1.
   Every other band's sections are pending, and Eggy's 96 are excluded. So K and T2 wait for the
   ear.
 
@@ -282,13 +288,12 @@ early-stopping set.
 
 ## Open questions
 
-1. **The ear queue is large: 148 items.** The 39 `di_amp` items alone cover the D1 rule on
-   metal DIs. T2 waits until the ear has answered.
+1. **The ear queue is large: 195 items.** The 37 `di_amp` items cover the D1 rule on metal DIs,
+   and other-guitar windows add flagged items. T2 waits until the ear has answered.
 2. **SYN-E has no Eggy.** Drop the arm, or name another clean-class source?
 3. **K may be one band.** Admit Cnoc An Tursa despite its MUSDB18 tag?
 4. **The cab-off negative is pending (6 renders).**
-5. **A2 fails on a single coherent bin.** This is the review's rule. Adam Buckley ElecGtr5's DI is
-   excluded on one such bin.
+5. **Ruled:** a fail now needs the 17-bin gate, so Adam Buckley ElecGtr5's DI goes to the ear.
 
 ## The review's fixes (#281, "go with fixes")
 
@@ -319,3 +324,15 @@ early-stopping set.
 9. **T1 with one band** reads the section-clustered interval.
 10. **The ledger entry** is written. `dis` calls `heldout_ok` on crops and
     `clean_di.refuse_held_out` on every DI.
+
+## The re-review's fixes (#281, two fixes and a ruling)
+
+1. **KNOWN_AMPS less the 7 pairs whose DI sitting 1 rejected.** 11 remain, and the fail line is
+   unchanged. Recorded in `THRESHOLD_MOVES` and the calibration record.
+2. **Other guitars.**
+   - Every session DI, the pool's and V_sep's included, is read at every D-build section time of
+     its session.
+   - `trusted_data plan` refuses a window T0 never measured.
+   - An other guitar enters a mix only on a usable window.
+3. **Ruling (a):** an A2 fail needs the same 17-bin gate as a pass. A half under the gate goes to
+   the ear and stays out until heard. Recorded.
