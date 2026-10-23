@@ -106,7 +106,11 @@ def _cal_rows(known=None, fails=None, negs=None):
              {"name": "n|cab_off_clean", "kind": "cab_off_clean",
               "status": {"A1": "pass", "A2": "fail", "A3": "pass", "A4": "pass"}},
              {"name": "n|cab_off_crunch", "kind": "cab_off_crunch",
-              "status": {"A1": "pass", "A2": "ear", "A3": "pass", "A4": "pass"}}]
+              "status": {"A1": "pass", "A2": "ear", "A3": "pass", "A4": "pass"}},
+             {"name": "n|cab_off_clean_sw50r", "kind": "cab_off_clean_sw50r",
+              "status": {"A1": "pass", "A2": "fail", "A3": "pass", "A4": "pass"}},
+             {"name": "n|cab_off_clean_ac20", "kind": "cab_off_clean_ac20",
+              "status": {"A1": "pass", "A2": "fail", "A3": "pass", "A4": "pass"}}]
     for r in rows:
         r["status"].update((known or {}).get(r["name"], {}))
         r["status"].update((fails or {}).get(r["name"], {}))
@@ -126,6 +130,9 @@ def test_calibration_verdict():
     assert v == "OK"                                       # the crunch cab-off is beside, not declared
     v, p = V.calibration_verdict([r for r in _cal_rows() if r["kind"] != "cab_off_clean"])
     assert v == "FAIL" and any("cab_off_clean" in x for x in p)
+    v, p = V.calibration_verdict(_cal_rows(negs={"cab_off_clean_ac20": {"A2": "ear"}}))
+    assert v == "FAIL"                                     # a fresh cab-off negative must fail A2 too
+    assert set(V.NEG_RENDERS) <= set(V.NEG_KINDS) and V.NEG_MUST_FAIL["cab_off_clean_sw50r"] == ("A2",)
 
 
 def test_threshold_moves_are_recorded_against_the_constants():
@@ -455,3 +462,37 @@ def test_d1_and_d2_read_every_window_but_d2_excludes_only_on_own_sections():
     assert rs["d2_sections"]["other1"] == "fail" and rs["d4_sections"]["other2"] == "silent"
     row["sections"][0]["D2"]["flags"] = ["hum"]
     assert V.di_row_status(row)["status"]["D2"] == "fail"
+
+
+def test_a2_slope_fails_only_bleed_clean_halves_with_no_roll_off():
+    fail = V.A2_SLOPE_FAIL
+    assert math.isclose(fail, -V.A2_FAIL_DB / 2)                     # A2's fail line over its two octaves
+    assert V.a2_slope_fails(0.9, -99.0)                               # the clean cab-off negative
+    assert not V.a2_slope_fails(-10.5, -90.0)                         # the flattest bleed-clean known amp
+    assert not V.a2_slope_fails(12.6, -28.6)                          # Sculptor's Request GTR 2: its top is bleed
+    assert not V.a2_slope_fails(5.0, None) and not V.a2_slope_fails(None, -90.0)
+
+
+def test_pair_status_uses_the_slope_only_where_the_coherent_a2_is_unsure():
+    def half(drop, n_hi, rel):
+        return {"lag_ms": 1.06, "lag_prominence": 50.0, "a2": {"drop_db": drop, "n_lo": 150, "n_hi": n_hi},
+                "slope": {"target": -11.0, "di": -12.0, "rel": rel}}
+    m = {"halves": {"A": half(-2.0, 12, 0.9), "B": half(-2.8, 7, 0.9)}, "a3": {"A>B": -13.9, "B>A": -13.8}}
+    clean = {"A": -99.0, "B": -99.0}
+    assert V.pair_status(m)["A2"] == "ear"                            # no bleed reading: no opinion
+    assert V.pair_status(m, bleed=clean)["A2"] == "fail"              # the stored cab-off negative's readings
+    m["halves"]["A"] = half(20.0, 40, 0.9)                            # a coherent pass is not overridden
+    assert V.pair_status(m, bleed=clean)["A2"] == "fail"              # ... but half B still fails
+    m["halves"]["B"] = half(20.0, 40, 0.9)
+    assert V.pair_status(m, bleed=clean)["A2"] == "pass"
+
+
+def test_hf_slope_reads_a_cab_like_roll_off():
+    np = pytest.importorskip("numpy")
+    ss = pytest.importorskip("scipy.signal")
+    x = np.random.default_rng(7).standard_normal(48000 * 4)
+    b, a = ss.butter(4, 5000, fs=48000)
+    cab = ss.lfilter(b, a, x)
+    r = V.rel_hf_slope(x, cab)
+    assert r["rel"] < -15 and abs(V.rel_hf_slope(x, 0.5 * x)["rel"]) < 0.5
+    assert V.hf_slope(np.zeros(48000)) is None

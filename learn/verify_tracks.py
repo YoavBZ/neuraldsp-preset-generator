@@ -96,6 +96,13 @@ A2_HI_HZ = (6000.0, 10000.0)
 A2_MIN_BINS = 17                      # a pass needs this many coherent bins in each band (5% of 6-10 kHz's 342)
 A2_PASS_DB = 12.0                     # the plan's: a drop of at least this (over enough bins) passes
 A2_FAIL_DB = 3.3                      # a drop under this fails (any coherent bins); between the two: the ear
+# A2's coherence-free cab check (calibration fix, 2026-10-23): the target's spectral slope over 5-10 kHz less its DI's
+# (dB per octave). A speaker cab falls steeply above about 5 kHz; an amp without one keeps the DI's top or adds to it.
+# Where the coherent drop goes to the ear, a relative slope above the fail line fails A2. The line is A2's own fail line
+# (3.3 dB) spread over the two octaves between its bands (1-3 and 6-10 kHz), so nothing new is fitted. It reads only on
+# halves whose bleed is under -30 dB (bleed rules a cab-filtered target's top end).
+A2_SLOPE_BAND_HZ = (5000.0, 10000.0)
+A2_SLOPE_FAIL = -A2_FAIL_DB / 2.0      # dB/oct
 
 # --- A3: linear copy -------------------------------------------------------------------------------------------
 A3_SR = 24_000
@@ -150,6 +157,13 @@ THRESHOLD_MOVES = (
     {"threshold": "known amps", "plan": "18 (heard clean, measured as amps)", "now": 11,
      "why": "re-derived from the target-vs-DI measurements, less Passing Ships ElecGtr4 (review) and the 7 pairs whose "
             "DI sitting 1 rejected (re-review: a pair without a real DI cannot anchor a DI-to-amp calibration)"},
+    {"threshold": "A2 slope (calibration fix)", "plan": None,
+     "now": f"where the coherent A2 goes to the ear: target-minus-DI slope over 5-10 kHz > {A2_SLOPE_FAIL} dB/oct fails "
+            f"(bleed under -30 dB only)",
+     "why": "the real T0 calibration stopped (2026-10-23): the clean cab-off negative read a coherent drop of -2.0 and "
+            "-2.8 dB over 12 and 7 bins (under the 17-bin gate: the ear), and A1 passed it on Morgan's 52-sample latency. "
+            "A cab's top falls steeply; no cab keeps the DI's. The fail line is A2's 3.3 dB over two octaves; on the stored "
+            "data the bleed-clean known amps read -10.5 to -24.2 dB/oct, the cab-off and Prodigal cases +0.0 to +10.9"},
     {"threshold": "A1_PROM_MIN", "plan": None, "now": A1_PROM_MIN,
      "why": "a lag is read only where the GCC peak stands out: the known amps' halves read prominence 24-279, the "
             "unreadable high-gain DI/amp pairs 4.4-6.7; under it A1 goes to the ear (no known case moves)"},
@@ -185,12 +199,19 @@ KNOWN_FAILS = ("cambridge-Prodigal-ElecGtr3", "cambridge-Prodigal-ElecGtr5")
 # The constructed negatives' DIs (both heard clean and passing D4): one whose HF stays coherent through its amp
 # (It Was My Fault ElecGtr3) and one whose amp track is incoherent above 6 kHz (magilla elecgtr1).
 NEG_SOURCES = ("cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3", "cambridge-magilla-elecgtr1")
-NEG_KINDS = ("copy", "eq", "cab_off_clean", "cab_off_crunch")
+# The rendered negatives: kind -> (amp, start). The SW50R and AC20 clean cab-off renders were declared after the
+# first real calibration failed and the A2 slope check was added (#282's review): fresh cases the check never saw.
+NEG_RENDERS = {"cab_off_clean": ("pr12", "clean"), "cab_off_crunch": ("pr12", "crunch"),
+               "cab_off_clean_sw50r": ("sw50r", "clean"), "cab_off_clean_ac20": ("ac20", "clean")}
+NEG_KINDS = ("copy", "eq") + tuple(NEG_RENDERS)
 NEG_DECLARED = {"copy": "the DI itself", "eq": "the DI through a cab-like linear EQ, delayed 1.5 ms",
                 "cab_off_clean": "the DI through Morgan PR12 (clean start), cab section off",
-                "cab_off_crunch": "beside: the DI through Morgan PR12 (crunch start), cab section off"}
-NEG_MUST_FAIL = {"copy": ("A1", "A3", "A4"), "eq": ("A3",), "cab_off_clean": ("A2",)}   # any one of these must fail
-NEG_AMP, NEG_LEVEL_LUFS = "pr12", -22.9
+                "cab_off_crunch": "beside: the DI through Morgan PR12 (crunch start), cab section off",
+                "cab_off_clean_sw50r": "fresh (declared after the slope check): SW50R (clean start), cab section off",
+                "cab_off_clean_ac20": "fresh (declared after the slope check): AC20 (clean start), cab section off"}
+NEG_MUST_FAIL = {"copy": ("A1", "A3", "A4"), "eq": ("A3",), "cab_off_clean": ("A2",),
+                 "cab_off_clean_sw50r": ("A2",), "cab_off_clean_ac20": ("A2",)}   # any one of these must fail
+NEG_LEVEL_LUFS = -22.9
 NEG_EQ = {"band_hz": (80.0, 5000.0), "order": 4, "peak_hz": 2000.0, "peak_q": 1.5, "peak_gain": 1.0, "delay_ms": 1.5,
           "gain": 0.5}
 EAR_DISPUTED = ("cambridge-Quicksand-ElecGtr2", "cambridge-Today's_The_Day-ElecGtr07")
@@ -740,7 +761,8 @@ def measure_pair(di, ref, sr=SR, halves=HALVES, playing=None):
     for h, (a, b) in halves.items():
         s = slice(int(a * sr), int(b * sr))
         lag, prom = gcc_lag_ms(di[s], ref[s], sr)
-        out["halves"][h] = {"lag_ms": round(lag, 3), "lag_prominence": round(prom, 1), "a2": cab_drop(di[s], ref[s], sr)}
+        out["halves"][h] = {"lag_ms": round(lag, 3), "lag_prominence": round(prom, 1), "a2": cab_drop(di[s], ref[s], sr),
+                            "slope": rel_hf_slope(di[s], ref[s], sr)}
     lags = [out["halves"][h]["lag_ms"] for h in halves if out["playing"].get(h)]
     lag_c, _ = gcc_lag_ms(di[int(halves["A"][0] * sr):], ref[int(halves["A"][0] * sr):], sr)
     out["lag_ms_crop"] = round(lag_c, 3)
@@ -748,12 +770,44 @@ def measure_pair(di, ref, sr=SR, halves=HALVES, playing=None):
     return out
 
 
-def pair_status(m, max_corr=None, same_hash=False):
+def hf_slope(x, sr=SR, band=A2_SLOPE_BAND_HZ, nper=A2_NPERSEG):
+    """The spectral slope (dB per octave) of x over `band`: a least-squares line through its Welch PSD in dB against
+    log2 frequency. None for a silent signal."""
+    import numpy as np
+    import scipy.signal as ss
+
+    f, P = ss.welch(np.asarray(x, np.float64), sr, nperseg=nper)
+    m = (f >= band[0]) & (f <= band[1])
+    if not m.any() or not np.any(P[m] > 0):
+        return None
+    return float(np.polyfit(np.log2(f[m]), 10 * np.log10(P[m] + 1e-30), 1)[0])
+
+
+def rel_hf_slope(di, ref, sr=SR):
+    """A2's coherence-free reading: {"target", "di", "rel"} slopes over 5-10 kHz (dB/oct), rel = target - DI."""
+    t, d = hf_slope(ref, sr), hf_slope(di, sr)
+    return {"target": t, "di": d, "rel": None if t is None or d is None else t - d}
+
+
+def a2_slope_fails(rel, bleed_db, fail=A2_SLOPE_FAIL, bleed_max=A6_BLEED_DB):
+    """The cab check without coherence: a target whose top falls no faster than its DI's (rel above `fail`) has no
+    cab. Read only on a half known clean of bleed (bleed_db under bleed_max; None: no reading, no opinion)."""
+    return rel is not None and bleed_db is not None and bleed_db < bleed_max and rel > fail
+
+
+def pair_status(m, max_corr=None, same_hash=False, bleed=None):
     """A1-A4 statuses of a `measure_pair` reading over its playing halves (A4 from the copy check, when given);
-    with no playing half every measure fails (fail closed)."""
+    with no playing half every measure fails (fail closed). bleed: {half: bleed dB} where known (the bleed audit's;
+    constructed negatives carry none, -99): where the coherent A2 goes to the ear, the relative HF slope can fail it."""
     hs = {h: v for h, v in m["halves"].items() if m.get("playing", {}).get(h, True)}
     a1 = combine_part([a1_status(v["lag_ms"], prominence=v.get("lag_prominence")) for v in hs.values()])
-    a2 = a2_part([a2_half_status(v["a2"]["drop_db"], v["a2"]["n_lo"], v["a2"]["n_hi"]) for v in hs.values()])
+
+    def a2h(h, v):
+        st = a2_half_status(v["a2"]["drop_db"], v["a2"]["n_lo"], v["a2"]["n_hi"])
+        rel = (v.get("slope") or {}).get("rel")
+        return "fail" if st == "ear" and a2_slope_fails(rel, (bleed or {}).get(h)) else st
+
+    a2 = a2_part([a2h(h, v) for h, v in hs.items()])
     a3 = a3_status(list(m["a3"].values()))
     st = {"A1": a1, "A2": a2 if hs else "fail", "A3": a3}
     if max_corr is not None or same_hash:
@@ -923,8 +977,9 @@ def neg_dir(root):
 
 def cmd_negatives(args):
     """The cab-off negatives (renders): each source crop's DI, levelled to -22.9 LUFS by one gain (no EQ, so the
-    target is the amp alone), through PR12 at its clean and crunch starts with the cab section off; one process,
-    isolate=True, a discarded priming render per DI; 6 renders. Never overwrites a stored negative."""
+    target is the amp alone), through `NEG_RENDERS` (PR12 clean and crunch; SW50R and AC20 clean, the fresh pair)
+    with the cab section off; one process, isolate=True, a discarded priming render per (DI, amp); 12 renders in all
+    (the first 6 are stored). Never overwrites a stored negative."""
     import numpy as np
 
     from learn import direc_check as DC_
@@ -939,7 +994,8 @@ def cmd_negatives(args):
     nd = neg_dir(root)
     man_p = nd / "negatives.json"
     man = _load(man_p) or {"plan": PLAN, "renders": {}, "primes": 0}
-    todo = [(s, k) for s in NEG_SOURCES for k in ("cab_off_clean", "cab_off_crunch") if f"{s}|{k}" not in man["renders"]]
+    todo = sorted(((s, k) for s in NEG_SOURCES for k in NEG_RENDERS if f"{s}|{k}" not in man["renders"]),
+                  key=lambda sk: (sk[0], NEG_RENDERS[sk[1]][0], sk[1]))
     if not todo:
         print("NEGATIVES DONE (stored)")
         return
@@ -956,8 +1012,8 @@ def cmd_negatives(args):
         menu = rr.menu()
         last = None
         for slug, kind in todo:
-            base = "clean" if kind == "cab_off_clean" else "crunch"
-            sel, S = menu[NEG_AMP][K.START[base][NEG_AMP]]
+            amp, base = NEG_RENDERS[kind]
+            sel, S = menu[amp][K.START[base][amp]]
             x = dict(S)
             x[("cabParameters", "sectionActive")] = "false"
             crop = pathlib.Path(lt[slug]["crop"])
@@ -965,11 +1021,11 @@ def cmd_negatives(args):
             di = DC_.to_lufs(di, NEG_LEVEL_LUFS)
             lead = int(round(PS.TRIM_S * SR))
             di32 = np.concatenate([np.zeros(lead), di]).astype(np.float32)
-            if last != slug:
+            if last != (slug, amp):                             # a new DI or amp: prime
                 rr.render(di32, sel, x)                         # priming, discarded (a new DI)
                 man["primes"] += 1
                 n0 += 1
-            last = slug
+            last = (slug, amp)
             y = np.asarray(rr.render(di32, sel, x), np.float64)
             n0 += 1
             y = (y.mean(axis=1) if y.ndim == 2 else y)[lead:lead + len(di)]
@@ -978,8 +1034,8 @@ def cmd_negatives(args):
                 raise SystemExit(f"{slug} {kind}: the cab-off render is silent or non-finite (peak {peak:.2e})")
             p = nd / f"{slug}__{kind}.flac"
             scale, sha = G.write_flac(p, y, SR)
-            man["renders"][f"{slug}|{kind}"] = {"path": str(p), "scale": scale, "sha256": sha, "amp": NEG_AMP,
-                                                "start": K.START[base][NEG_AMP], "cab": "off", "level_lufs": NEG_LEVEL_LUFS,
+            man["renders"][f"{slug}|{kind}"] = {"path": str(p), "scale": scale, "sha256": sha, "amp": amp,
+                                                "start": K.START[base][amp], "cab": "off", "level_lufs": NEG_LEVEL_LUFS,
                                                 "settings": LO.sdict(x), "peak": peak}
             _save(man_p, man)
             print(f"negative {slug} {kind}: peak {20 * math.log10(peak):.1f} dBFS", flush=True)
@@ -1034,15 +1090,15 @@ def cmd_calibrate(args):
     man = _load(neg_dir(root) / "negatives.json") or {"renders": {}}
     rows = []
 
-    def row(name, kind, di, ref, crop=None):
+    def row(name, kind, di, ref, crop=None, bleed=None):
         m = measure_pair(di, ref)
         if crop is not None:
             rec, base, cpart, dis, _ = crop_session(crop)
             mc, same, corr = _copy_check(crop, ref, rec, base, cpart, dis)
         else:
             mc, same, corr = max_copy_corr(ref, {"own DI": di}, SR)["own DI"], False, None
-        st = pair_status(m, mc, same)
-        r = {"name": name, "kind": kind, "status": st, "readings": m, "a4_max_corr": mc, "a4_same_hash": same,
+        st = pair_status(m, mc, same, bleed)
+        r = {"name": name, "kind": kind, "status": st, "readings": m, "a4_max_corr": mc, "a4_same_hash": same, "bleed": bleed,
              "a4_corr": corr}
         rows.append(r)
         hs = m["halves"]
@@ -1054,21 +1110,24 @@ def cmd_calibrate(args):
 
     for slug in KNOWN_AMPS + KNOWN_FAILS:
         crop = pathlib.Path(lt[slug]["crop"])
-        r = row(slug, "known" if slug in KNOWN_AMPS else "fail", mono(crop / "di.wav"), mono(crop / "reference.wav"), crop)
+        bh = (bt.get(slug) or {}).get("halves") or {}
+        r = row(slug, "known" if slug in KNOWN_AMPS else "fail", mono(crop / "di.wav"), mono(crop / "reference.wav"), crop,
+                {h: (bh.get(h) or {}).get("bleed_db") for h in HALVES})
         r["stored_di_lag_ms"] = (bt.get(slug) or {}).get("di_lag_ms")
     missing = []
     for slug in NEG_SOURCES:
         crop = pathlib.Path(lt[slug]["crop"])
         di = mono(crop / "di.wav")
-        row(f"{slug}|copy", "copy", di, di.copy())
-        row(f"{slug}|eq", "eq", di, neg_eq(di, SR))
-        for kind in ("cab_off_clean", "cab_off_crunch"):
+        clean = {h: -99.0 for h in HALVES}                  # constructed: no bleed by construction
+        row(f"{slug}|copy", "copy", di, di.copy(), bleed=clean)
+        row(f"{slug}|eq", "eq", di, neg_eq(di, SR), bleed=clean)
+        for kind in NEG_RENDERS:
             v = man["renders"].get(f"{slug}|{kind}")
             if v is None:
                 missing.append(f"{slug}|{kind}")
                 continue
             y = G.read_flac(pathlib.Path(v["path"]), v["scale"], v["sha256"])
-            row(f"{slug}|{kind}", kind, di, np.asarray(y, np.float64))
+            row(f"{slug}|{kind}", kind, di, np.asarray(y, np.float64), bleed=clean)
     # D4 against the user's ear on the crops' DIs (sitting 1 of data-review-1, judged on the DI clip)
     d4 = None
     if args.ear_di:
@@ -1125,7 +1184,8 @@ def thresholds():
     return {"A1": {"band_hz": list(LAG_BAND_HZ), "min_ms": LAG_MIN_MS, "max_ms": LAG_MAX_MS, "search_ms": LAG_SEARCH_MS,
                    "prom_min": A1_PROM_MIN},
             "A2": {"nperseg": A2_NPERSEG, "coh_min": A2_COH_MIN, "lo_hz": list(A2_LO_HZ), "hi_hz": list(A2_HI_HZ),
-                   "min_bins": A2_MIN_BINS, "pass_db": A2_PASS_DB, "fail_db": A2_FAIL_DB},
+                   "min_bins": A2_MIN_BINS, "pass_db": A2_PASS_DB, "fail_db": A2_FAIL_DB,
+                   "slope_band_hz": list(A2_SLOPE_BAND_HZ), "slope_fail_db_oct": A2_SLOPE_FAIL},
             "A3": {"sr": A3_SR, "pre_ms": A3_PRE_MS, "post_ms": A3_POST_MS, "ridge": A3_RIDGE, "max_db": A3_MAX_DB},
             "A4": {"max_corr": A4_MAX_CORR, "lag_ms": A4_LAG_MS},
             "A5": {"play_min": A5_PLAY_MIN, "chroma_min": A5_CHROMA_MIN, "onset_min": A5_ONSET_MIN},
@@ -1288,7 +1348,7 @@ def cmd_targets(args):
 def target_status(row):
     """A1-A6 of a stored target row, recomputed from its readings under the current thresholds (`lists` re-reads
     every verdict this way). A6's mix clause counts only electric same-part tracks."""
-    st = pair_status(row["readings"])
+    st = pair_status(row["readings"], bleed={h: ((row.get("bleed") or {}).get(h) or {}).get("bleed_db") for h in HALVES})
     st["A4"] = a4_status(row.get("a4_max_corr"), row.get("a4_same_hash", False))
     w = row.get("session_windows")
     if w and w.get("readings"):
