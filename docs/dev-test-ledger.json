@@ -2831,6 +2831,29 @@
    "outcome": "pending: waits for the user's listening"
   },
   {
+   "test_id": "cambridge-new-test-band-bluemanic",
+   "plan": "docs/research/di-source-inventory-2026-10.md",
+   "entered": "2026-10-23, right after the download and before any listening, measurement, render or separation of its audio. Only the ZIP's file list, its Readme and the WAV headers (rate, channels, length) were read, and the files hashed. The user asked for the download in chat ('use the Chrome extension and download these files yourself', 2026-10-23). Test first: the user's 2026-10-23 rule for new Telefunken bands with a DI and amp track, applied by the ML session to this Cambridge band and told to the user the same day",
+   "kind": "reservation: a NEW TEST band, reserved from training",
+   "parts": {
+    "candidates": [
+     "Blue Manic - Acomatay: 15_ElecGtr1DI.wav -> 13_ElecGtr1Amp1.wav, 14_ElecGtr1Amp2.wav",
+     "Blue Manic - Acomatay: 17_ElecGtr2DI.wav -> 16_ElecGtr2.wav",
+     "Blue Manic - Acomatay: 22_ElecGtr6DI.wav -> 21_ElecGtr6.wav",
+     "Blue Manic - Acomatay: 24_ElecGtr7DI.wav -> 23_ElecGtr7.wav",
+     "Blue Manic - Acomatay: 26_ElecGtr8DI.wav -> 25_ElecGtr8.wav"
+    ],
+    "run": "the parts that pass the trusted-data checks (docs/trusted-data-t0-design.md: A1-A6 on each amp-against-DI pair, D1-D4 on the DI) and the user's ear, including a scope check by ear (stoner rock: parts beyond the clean-to-crunch scope are left out). Alignment is measured for every pair, not assumed (ElecGtr1's amp tracks run 299.19 and 299.33 s against a 298.79 s DI; ElecGtr8's 268.19 s against 266.99 s). Not known when this entry was made"
+   },
+   "bands": "1 new band (Blue Manic, Cambridge-MT 'Acomatay', added to the library after 2025), never used by this project",
+   "gate": "none yet: not used by any test until its parts pass the checks and the user has listened; a test that uses it declares its own gate in its own entry",
+   "audio_only": "~/ndsp-presets/references/datasets-cambridge-new/BlueManic_Acomatay_Full/ (manifest.json one level up: source URLs, archive and per-file sha256, WAV headers; the ZIP kept in _zips/). 32 WAVs, 44.1 kHz, 24-bit; the guitar tracks mono; DI lengths 298.8, 298.8, 174.5, 174.5 and 267.0 s (20.2 min). The site's mix (Full Preview MP3) is not downloaded yet",
+   "training": "reserved: never in a training pool, a pre-training render set, a backing pool or a screen that chooses anything. No code reads this directory yet",
+   "renders": "0; separations: 0",
+   "held_out": "none touched",
+   "outcome": "pending: waits for the checks and the user's listening"
+  },
+  {
    "test_id": "trusted-data",
    "plan": "docs/trusted-data-strategy-plan.md",
    "design": "docs/trusted-data-t0-design.md",

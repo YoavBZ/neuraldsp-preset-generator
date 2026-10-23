@@ -638,4 +638,6 @@ was declared, what was measured, and the research behind it.
     no DI box hold no guitar DI, and Braiden Sunshine's is probably acoustic. Then Strobe and
     MekaPhil (B2's parked songs, now allowed for training), EGDB and GOAT (licences confirmed),
     then stage F's 10 bands into training once enough new test bands exist. Costs at 77 renders
-    per section. Research, not a declared plan.
+    per section. Later on 2026-10-23: Blue Manic "Acomatay" (5 DI + amp pairs) downloaded as a
+    second reserved test band, EGDB's 240 DI clips downloaded, GOAT's access requested. Research,
+    not a declared plan.
