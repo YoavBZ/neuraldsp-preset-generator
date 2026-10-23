@@ -637,4 +637,6 @@ was declared, what was measured, and the research behind it.
     no DI box hold no guitar DI, and Braiden Sunshine's is probably acoustic. Then Strobe and
     MekaPhil (B2's parked songs, now allowed for training), EGDB and GOAT (licences confirmed),
     then stage F's 10 bands into training once enough new test bands exist. Costs at 77 renders
-    per section. Research, not a declared plan.
+    per section. The Cambridge-MT scan (2026-10-23) found no new band with a confirmed DI + amp
+    track on the hosts it could read; the leads (Blue Manic "Acomatay" first) sit behind the
+    site's Cloudflare challenge. Research, not a declared plan.
