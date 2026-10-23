@@ -397,3 +397,24 @@ with new renders: everything below comes from the 4 stored negative renders and 
 **Not changed:**
 - D1's per-DI A2 still uses the coherent drop alone.
 - The calibration rule for negatives is unchanged.
+
+**How to read this fix (review of #282):**
+- **When it was added:** after the calibration failed, to make it pass.
+- **The −1.65 dB/oct line is a relabelling,** not a derivation. It restates A2's 3.3 dB fail line
+  per octave between the two bands. Nothing physical fixes it there.
+- **Its only effect on today's real data** is that calibration reads OK. On the real targets it
+  fails only halves of parts that other checks already exclude.
+- **So its evidence is weak until fresh negatives confirm it** (below).
+- **Sculptor's Request GTR 2 needs no change.** Its top end is cymbal bleed: the slope check does
+  not read it, A2 stays "ear", and A6 fails it at −28.6 dB.
+
+**Fresh negatives, declared 2026-10-23 before any of them was rendered.**
+- **The renders:** SW50R and AC20, each at its clean start with the cab section off, on both source
+  DIs (It Was My Fault ElecGtr3, magilla elecgtr1).
+  - 4 renders plus 4 priming renders: one process, isolate=True, a priming render per DI and amp,
+    at most 3 render processes machine-wide (checked first).
+  - Written to a scratch root holding a copy of the stored negatives' manifest.
+- **The rule:** each of the 4 must fail A2 (`NEG_MUST_FAIL`).
+- **Then:** `calibrate` runs on the scratch root.
+- **If any fails to fail,** the work stops there and is reported. The check is not tuned.
+- **The result is recorded below** once rendered.

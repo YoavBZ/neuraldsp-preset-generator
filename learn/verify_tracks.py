@@ -199,12 +199,19 @@ KNOWN_FAILS = ("cambridge-Prodigal-ElecGtr3", "cambridge-Prodigal-ElecGtr5")
 # The constructed negatives' DIs (both heard clean and passing D4): one whose HF stays coherent through its amp
 # (It Was My Fault ElecGtr3) and one whose amp track is incoherent above 6 kHz (magilla elecgtr1).
 NEG_SOURCES = ("cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3", "cambridge-magilla-elecgtr1")
-NEG_KINDS = ("copy", "eq", "cab_off_clean", "cab_off_crunch")
+# The rendered negatives: kind -> (amp, start). The SW50R and AC20 clean cab-off renders were declared after the
+# first real calibration failed and the A2 slope check was added (#282's review): fresh cases the check never saw.
+NEG_RENDERS = {"cab_off_clean": ("pr12", "clean"), "cab_off_crunch": ("pr12", "crunch"),
+               "cab_off_clean_sw50r": ("sw50r", "clean"), "cab_off_clean_ac20": ("ac20", "clean")}
+NEG_KINDS = ("copy", "eq") + tuple(NEG_RENDERS)
 NEG_DECLARED = {"copy": "the DI itself", "eq": "the DI through a cab-like linear EQ, delayed 1.5 ms",
                 "cab_off_clean": "the DI through Morgan PR12 (clean start), cab section off",
-                "cab_off_crunch": "beside: the DI through Morgan PR12 (crunch start), cab section off"}
-NEG_MUST_FAIL = {"copy": ("A1", "A3", "A4"), "eq": ("A3",), "cab_off_clean": ("A2",)}   # any one of these must fail
-NEG_AMP, NEG_LEVEL_LUFS = "pr12", -22.9
+                "cab_off_crunch": "beside: the DI through Morgan PR12 (crunch start), cab section off",
+                "cab_off_clean_sw50r": "fresh (declared after the slope check): SW50R (clean start), cab section off",
+                "cab_off_clean_ac20": "fresh (declared after the slope check): AC20 (clean start), cab section off"}
+NEG_MUST_FAIL = {"copy": ("A1", "A3", "A4"), "eq": ("A3",), "cab_off_clean": ("A2",),
+                 "cab_off_clean_sw50r": ("A2",), "cab_off_clean_ac20": ("A2",)}   # any one of these must fail
+NEG_LEVEL_LUFS = -22.9
 NEG_EQ = {"band_hz": (80.0, 5000.0), "order": 4, "peak_hz": 2000.0, "peak_q": 1.5, "peak_gain": 1.0, "delay_ms": 1.5,
           "gain": 0.5}
 EAR_DISPUTED = ("cambridge-Quicksand-ElecGtr2", "cambridge-Today's_The_Day-ElecGtr07")
@@ -970,8 +977,9 @@ def neg_dir(root):
 
 def cmd_negatives(args):
     """The cab-off negatives (renders): each source crop's DI, levelled to -22.9 LUFS by one gain (no EQ, so the
-    target is the amp alone), through PR12 at its clean and crunch starts with the cab section off; one process,
-    isolate=True, a discarded priming render per DI; 6 renders. Never overwrites a stored negative."""
+    target is the amp alone), through `NEG_RENDERS` (PR12 clean and crunch; SW50R and AC20 clean, the fresh pair)
+    with the cab section off; one process, isolate=True, a discarded priming render per (DI, amp); 12 renders in all
+    (the first 6 are stored). Never overwrites a stored negative."""
     import numpy as np
 
     from learn import direc_check as DC_
@@ -986,7 +994,8 @@ def cmd_negatives(args):
     nd = neg_dir(root)
     man_p = nd / "negatives.json"
     man = _load(man_p) or {"plan": PLAN, "renders": {}, "primes": 0}
-    todo = [(s, k) for s in NEG_SOURCES for k in ("cab_off_clean", "cab_off_crunch") if f"{s}|{k}" not in man["renders"]]
+    todo = sorted(((s, k) for s in NEG_SOURCES for k in NEG_RENDERS if f"{s}|{k}" not in man["renders"]),
+                  key=lambda sk: (sk[0], NEG_RENDERS[sk[1]][0], sk[1]))
     if not todo:
         print("NEGATIVES DONE (stored)")
         return
@@ -1003,8 +1012,8 @@ def cmd_negatives(args):
         menu = rr.menu()
         last = None
         for slug, kind in todo:
-            base = "clean" if kind == "cab_off_clean" else "crunch"
-            sel, S = menu[NEG_AMP][K.START[base][NEG_AMP]]
+            amp, base = NEG_RENDERS[kind]
+            sel, S = menu[amp][K.START[base][amp]]
             x = dict(S)
             x[("cabParameters", "sectionActive")] = "false"
             crop = pathlib.Path(lt[slug]["crop"])
@@ -1012,11 +1021,11 @@ def cmd_negatives(args):
             di = DC_.to_lufs(di, NEG_LEVEL_LUFS)
             lead = int(round(PS.TRIM_S * SR))
             di32 = np.concatenate([np.zeros(lead), di]).astype(np.float32)
-            if last != slug:
+            if last != (slug, amp):                             # a new DI or amp: prime
                 rr.render(di32, sel, x)                         # priming, discarded (a new DI)
                 man["primes"] += 1
                 n0 += 1
-            last = slug
+            last = (slug, amp)
             y = np.asarray(rr.render(di32, sel, x), np.float64)
             n0 += 1
             y = (y.mean(axis=1) if y.ndim == 2 else y)[lead:lead + len(di)]
@@ -1025,8 +1034,8 @@ def cmd_negatives(args):
                 raise SystemExit(f"{slug} {kind}: the cab-off render is silent or non-finite (peak {peak:.2e})")
             p = nd / f"{slug}__{kind}.flac"
             scale, sha = G.write_flac(p, y, SR)
-            man["renders"][f"{slug}|{kind}"] = {"path": str(p), "scale": scale, "sha256": sha, "amp": NEG_AMP,
-                                                "start": K.START[base][NEG_AMP], "cab": "off", "level_lufs": NEG_LEVEL_LUFS,
+            man["renders"][f"{slug}|{kind}"] = {"path": str(p), "scale": scale, "sha256": sha, "amp": amp,
+                                                "start": K.START[base][amp], "cab": "off", "level_lufs": NEG_LEVEL_LUFS,
                                                 "settings": LO.sdict(x), "peak": peak}
             _save(man_p, man)
             print(f"negative {slug} {kind}: peak {20 * math.log10(peak):.1f} dBFS", flush=True)
@@ -1112,7 +1121,7 @@ def cmd_calibrate(args):
         clean = {h: -99.0 for h in HALVES}                  # constructed: no bleed by construction
         row(f"{slug}|copy", "copy", di, di.copy(), bleed=clean)
         row(f"{slug}|eq", "eq", di, neg_eq(di, SR), bleed=clean)
-        for kind in ("cab_off_clean", "cab_off_crunch"):
+        for kind in NEG_RENDERS:
             v = man["renders"].get(f"{slug}|{kind}")
             if v is None:
                 missing.append(f"{slug}|{kind}")

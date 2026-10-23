@@ -106,7 +106,11 @@ def _cal_rows(known=None, fails=None, negs=None):
              {"name": "n|cab_off_clean", "kind": "cab_off_clean",
               "status": {"A1": "pass", "A2": "fail", "A3": "pass", "A4": "pass"}},
              {"name": "n|cab_off_crunch", "kind": "cab_off_crunch",
-              "status": {"A1": "pass", "A2": "ear", "A3": "pass", "A4": "pass"}}]
+              "status": {"A1": "pass", "A2": "ear", "A3": "pass", "A4": "pass"}},
+             {"name": "n|cab_off_clean_sw50r", "kind": "cab_off_clean_sw50r",
+              "status": {"A1": "pass", "A2": "fail", "A3": "pass", "A4": "pass"}},
+             {"name": "n|cab_off_clean_ac20", "kind": "cab_off_clean_ac20",
+              "status": {"A1": "pass", "A2": "fail", "A3": "pass", "A4": "pass"}}]
     for r in rows:
         r["status"].update((known or {}).get(r["name"], {}))
         r["status"].update((fails or {}).get(r["name"], {}))
@@ -126,6 +130,9 @@ def test_calibration_verdict():
     assert v == "OK"                                       # the crunch cab-off is beside, not declared
     v, p = V.calibration_verdict([r for r in _cal_rows() if r["kind"] != "cab_off_clean"])
     assert v == "FAIL" and any("cab_off_clean" in x for x in p)
+    v, p = V.calibration_verdict(_cal_rows(negs={"cab_off_clean_ac20": {"A2": "ear"}}))
+    assert v == "FAIL"                                     # a fresh cab-off negative must fail A2 too
+    assert set(V.NEG_RENDERS) <= set(V.NEG_KINDS) and V.NEG_MUST_FAIL["cab_off_clean_sw50r"] == ("A2",)
 
 
 def test_threshold_moves_are_recorded_against_the_constants():
