@@ -2,8 +2,8 @@
 
 *Research report, 2026-10-22; updated 2026-10-23 with the Telefunken file listings and the user's
 decisions. The listings came from each ZIP's central directory, read with HTTP range requests
-(about 1.7 MB over 27 archives, then 7.2 MB over 115 more before that pass stopped; approved by
-the user). The one confirmed band, Jen Hartswick & Nick Cassarino, was then downloaded (0.94 GB,
+(about 1.7 MB over 27 archives, then 13.0 MB over the other 206 the site links; approved by the
+user). The one confirmed band, Jen Hartswick & Nick Cassarino, was then downloaded (0.94 GB,
 approved by the user) as a reserved test band. Nothing was rendered, separated or listened to. Local facts come from the stored inventory, manifest and pool
 files; outside facts from dataset pages, papers, the Telefunken "Live From The Lab" (LFTL) pages,
 the Hugging Face re-host's file listing and archived Cambridge-MT pages. Research, not a declared
@@ -51,6 +51,9 @@ files (`~/ndsp-presets/learn/clean-di/`, `~/ndsp-presets/learn/pretrain-set/pool
     one song's audio (1.3 GB) decides.
   - **The 5 sessions with no DI box on the chart:** none has a guitar DI (16 archives). West End
     Blend's S5 song still returns HTTP 403.
+  - **The rest of the catalogue** (206 more archives, 198 readable): no other new band has an
+    electric DI with an amp track. The pairs found are new songs of Wild & Co, John Morgan Kimock
+    and Rebecca Haviland, bands already held out, in V_dev or local.
   - The new band is a **fresh DI+amp test band** (the user's decision below). The October
     multitrack search ([report](fresh-di-amp-multitracks-2026-10.md)) found no fresh pair at all.
 - **Ranked additions:**
@@ -136,7 +139,7 @@ set or a declared reservation. Sizes are archive sizes.
 | Telefunken LFTL: Uglybraine "Sometimes" (S3), Melt "Fake Romantic" (S9) | full live multitrack, **no guitar DI** [V] | 0 | — | same | no | none | 0.92 + 1.84 GB [V] | Uglybraine: one stereo `GTR w-SYNTH` track, no amp mic, although the chart lists a DI box. Melt: two electric mics (`E GTR a_M80`, `E GTR b_TF11`); DIs only on bass and keys |
 | Telefunken LFTL: Braiden Sunshine (S8, 4 songs) | full live multitrack; an `Ac GTR_TDA-1` DI and electric-amp mics (`Ele GTR 1` or `2`, M80 + TF11) [V] | electric DI unlikely [U]; 4 songs / 1 band | rock/soul [U] | same | no | none | 5.86 GB [V] | The chart's "Acoustic Guitar" box was the electric's DI in Catbite and Wild & Co, but there the file was named "Guitar …" [P]; here it is named "Ac GTR". Deciding needs one song's audio (1.3 GB) and a pairing check |
 | Telefunken LFTL, no DI box on the chart: Ryan Montbleau (S9, 3), Jeffery John Band (S8, 4), Jelly (S8, 1), Kat Wright (S4, 4), West End Blend (S4, 4) | full live multitrack; amp mics only, **no guitar DI** in any archive [V] | 0 | singer-songwriter, blues rock, soul, funk [U] | same | no | none | 23.6 GB [V] | The DIs are bass, keys and a drum pad. West End Blend's S5 song lists a TDP-1 box, but its archive still returns HTTP 403 (2026-10-23) [V]. |
-| Telefunken LFTL, new songs of known bands: Bernard Purdie & Friends "It's Your Thing", John Morgan Kimock "Negative Space > Speed", Briana Maia "Over You", Wild & Co ×2 | full multitrack with DI | 5 songs [V] | clean/crunch | same | no | **stage F band, V_dev band, set-2 held-out band ×2** | 1–2 GB each | — |
+| Telefunken LFTL, new songs of known bands: Bernard Purdie & Friends "It's Your Thing", John Morgan Kimock "Negative Space > Speed", Briana Maia "Over You", Wild & Co ×2 | full multitrack with DI | 5 songs [V] | clean/crunch | same | no | **stage F band, V_dev band, set-2 held-out band ×2** | 1–2 GB each | listed 2026-10-23 [V]: DI + amp mics in both Wild & Co songs (one DI named `Guitar_Helix_DI`) and in JMK's (`Keys GTR`); Purdie's and Briana Maia's have a DI but no guitar amp track |
 | **Cambridge DI-only: Strobe "Maya", MekaPhil ×4** | full multitrack; DI-only guitar parts | 18 DI files, about 12 parts; 5 songs / 2 bands [V] | pop/electronica; anime alt rock (gain unknown) | Cambridge "educational purposes only" [V] | no | part B2's parked known-answer songs; **the user allows them for training (2026-10-23)** | 0.40 + 1.99 GB [V] | MekaPhil's publisher host is behind Cloudflare; the Hugging Face re-host has it, but set 5 found re-host tracks trimmed to different lengths |
 | Cambridge DI-only: The Timezone "GOTGF" | full multitrack, 4 DIs | 4 DIs; 1 song [V] | funk | same | no | **it is Timo And The Timezone** (same SoundCloud) [V], a B2-candidate band left out of part C | 616 MB | — |
 | Cambridge DI-only: Perpetual Escape "Stop And Rise" | full multitrack, 11 DI parts in 19 files | 1 song / 1 band [V] | progressive heavy rock: likely out of scope [P] | same | no | B2 candidate | 657 MB | gain unknown until heard |
@@ -243,33 +246,42 @@ Telefunken sessions are a mix of 48 and 96 kHz [P].
   `Guitar DI_TDP-1` [P]. Here the file says `Ac GTR` and the electric has its own two mics, the
   same M80 + TF11 pair as Wild & Co's amp. Wild & Co's real acoustic was a separate mic track
   (`Ac Guitar_M260`) [P].
-- **The rest of the Telefunken catalogue (pass of 2026-10-23, stopped part-way).** The LFTL pages
-  link 262 archives in seasons 2–7 [V]. 206 of them were neither local nor already listed above.
-  The pass read them in order with the same range reads (7.2 MB). **It stopped at 115 of the 206**
-  on S3 refusals (HTTP 403, `AccessDenied` XML, per object): 2 Dopapod archives, then 3 Holly
-  Bowling archives in a row, which hit the pass's stop rule. Other archives in the same bucket
-  answered between the refusals, so this looks like private or missing objects, not a block [U].
-  The refusals were not retried or worked around.
-  - **Read: 110 archives, no electric-guitar DI in any** [V]. That covers all 49 of season 2
-    (38 bands), all 42 of season 3 (39 bands, e.g. Kate Callahan, Gang Of Thieves, Consider The
-    Source, MOE.), and 19 in season 4 (Alex Wong, Barnstar!, Candlebox, Deadgrass, Hayley Jane).
-    Their DIs are bass, keys, acoustic guitar, violin, mandolin, theremin and drum pads. The
-    electric guitars there have only amp mics, e.g. `ELE Guitar-Dyn-M81` + `ELE Guitar-Con-AK47`.
-  - **Not read: 91 archives.** These are 36 in season 4 (e.g. The Western Den, Penniless Wild, The
-    Great Enough, Pretty Saro, Leslie Mendelson), 12 in season 5 (Kris Allen Quintet, Nicole
-    Zuraitis and others), 22 in season 6 (Toad The Wet Sprocket, Hayley Reardon & Pau Figueres,
-    Friendz World Music, and new songs of the local JMK, Mikaela Davis, Mipso and Rebecca
-    Haviland) and 21 in season 7 (Carrion Crow, Highway Ghost Song, Jesse Terry, Josh Quimby,
-    People Like Us, Podunk Bluegrass, Red Moon, The Cuckoo, and new songs of Bernard Purdie,
-    Briana Maia and Wild & Co). Seasons 6 and 7 are where the local sessions with a DI come from,
-    so this unread part is the more promising one [U].
+- **The rest of the Telefunken catalogue (pass of 2026-10-23).** The LFTL pages link 262 archives
+  in seasons 2–7 [V]. 206 of them were neither local nor already listed above, and all 206 were
+  tried with the same range reads (13.0 MB in all). The first run stopped at 115 on S3 refusals;
+  under the coordinator's updated rule (a 403 on one archive is recorded and skipped, never
+  retried) it was resumed and finished. **198 were read, 8 refused** (HTTP 403, `AccessDenied`
+  XML from S3, per object, with other archives in the same buckets answering in between): Dopapod
+  ×2, Holly Bowling ×4, Umphrey's McGee "Crucial Taunt" (its Cambridge copy is local) and Josh
+  Quimby "Ten Year Town" [V].
+  - **No new band has an electric-guitar DI with an amp or mic track** [V]. Jen Hartswick & Nick
+    Cassarino stays the only one in the catalogue's readable archives.
+  - **The electric DI + amp pairs found are all new songs of bands this project already uses**,
+    so they belong to those bands' roles:
+
+    | Song (season) | Archive | DI | Amp or mic tracks | Confidence | Backing | Band's role |
+    |---|---|---|---|---|---|---|
+    | Wild & Co "Run Crawl Walk" (S8) | 1.05 GB | `EGT2di.wav` | `EGT2m80.wav`, `EGT2tf11.wav` (plus `EGTlead`, `EGTleadHelix`) | high | full band | set-2 held out |
+    | Wild & Co "Sorry Our Demons" (S8) | 2.09 GB | `Guitar_Helix_DI.wav` | `Guitar_Amp_M80.wav`, `Guitar_Amp_TF11.wav` | medium: may be a Helix output, not a raw DI ("Past Dues" has both a `Guitar DI_TDP-1` and a `Guitar Helix`) | full band | set-2 held out |
+    | John Morgan Kimock "Negative Space > Speed" (S6) | 1.14 GB | `Keys GTR DI_TDP-1.wav` | `Keys GTR Amp_M80.wav`, `GTR KEYS AMP_TF51.wav` | instrument unverified, as for JMK's local "Keys GTR" DIs | full band | V_dev |
+    | Rebecca Haviland ×3 (S6) | 0.69–0.86 GB | `GTR 1/2 DI_TDP-1` | `GTR 1/2 Amp M 80`, `GTR 1/2 Amp TF 11` | high | full band | already local: part B's known-answer band |
+
+    Bernard Purdie "It's Your Thing" (`GuitarElectric(direct).wav`) and Briana Maia "Over You"
+    (`GTR DI_TDP-1.wav`) have an electric DI but no guitar amp or mic track.
+  - **Everything else is acoustic-guitar DIs or amp mics only.** The acoustic DIs include Toad The
+    Wet Sprocket, Jesse Terry, Josh Quimby, People Like Us, the Oliver Myles Mashburn sessions,
+    Hayley Reardon & Pau Figueres, The Great Enough, Plywood Cowboy and Megan Slankard; Megan
+    Slankard and Cyro Baptista also put an acoustic through an amp. Penniless Wild, SixFoxWhiskey,
+    Szlachetka, The Western Den, Mikaela Davis and all of seasons 2 and 3 have electric amp mics
+    only. Seasons 5's jazz sessions (Kris Allen, Nicole Zuraitis, Thana Alexa) and Podunk
+    Bluegrass have no electric guitar track.
 
 ## Decisions and open questions
 
 **Decided by the user (2026-10-23):**
 1. **The Telefunken file listing:** approved, and done (above). Then (relayed by the ML session):
    download Jen Hartswick & Nick Cassarino as a reserved test band, done; and list the rest of the
-   catalogue, stopped part-way on S3 refusals (above).
+   catalogue, done (198 read, 8 refused; above).
 2. **Test or train:** new Telefunken bands with a confirmed DI and amp track become test bands
    first (the ML session's recommendation).
 3. **B2's songs:** Strobe "Maya" and MekaPhil may be used for training, which spends B2's parked
@@ -281,8 +293,9 @@ Telefunken sessions are a mix of 48 and 96 kHz [P].
 1. **Stage F into training** (rank 5): one new test band does not replace stage F's 12.
 2. **Braiden Sunshine:** download one song (1.3 GB) to check whether `Ac GTR_TDA-1` pairs with the
    electric's mics.
-3. **The rest of the Telefunken catalogue:** whether to resume the stopped pass over the 91
-   unread archives (about 6 MB of range reads; the refused ones would be skipped, not retried).
+3. **The 8 refused archives** (Dopapod ×2, Holly Bowling ×4, "Crucial Taunt", Josh Quimby "Ten
+   Year Town") stay unread; only Dopapod, a jam band with electric guitar, might matter, and a
+   manual check on the site is the user's call.
 4. **Disk.** About 119 GB was free on 2026-10-22. Ranks 1–3 now need about 4 GB of downloads
    (0.94 + 2.4 + 0.6) and about 3 GB of features.
 
