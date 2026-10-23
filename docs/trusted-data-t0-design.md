@@ -336,3 +336,64 @@ early-stopping set.
    - An other guitar enters a mix only on a usable window.
 3. **Ruling (a):** an A2 fail needs the same 17-bin gate as a pass. A half under the gate goes to
    the ear and stays out until heard. Recorded.
+
+## Calibration fix: the clean cab-off negative (2026-10-23)
+
+**What happened.** The real T0 stopped, as designed, on `CALIBRATION FAIL`. The negative It Was
+My Fault ElecGtr3 through clean PR12 with the cab off "fails none of [A2]". It wasn't diagnosed
+with new renders: everything below comes from the 4 stored negative renders and the stored crops.
+
+**Why A2 did not fail it.**
+- **Its coherent |H| does not roll off at all.** It reads −2.0 and −2.8 dB from 1–3 kHz to
+  6–10 kHz, rising slightly.
+- **It has only 12 and 7 coherent bins above 6 kHz.** The median coherence is 0.04.
+- **Under ruling (a), a fail needs 17 bins,** so the half went to the ear, not to a fail.
+- **The other negatives:**
+  - magilla's clean cab-off has 17 and 19 bins, and fails at −5.6 and −8.2 dB;
+  - the crunch cab-off negatives have no coherent bins at all.
+- **The 11 known amps** read 6.2–22.4 dB on the halves that decide. Seven go to the ear on too few
+  bins.
+
+**A1 does not catch it either.** A render is not zero-delay: Morgan's 52-sample latency
+(1.06–1.08 ms) stays in the renders by design, and A1 reads it as a mic delay and passes. A3
+(−13.9 dB) and A4 (r 0.91) pass as well.
+- **So "must fail at least one check" would not rescue the negative:** it fails none.
+- **The targeted rule is the right one.** Each negative is built to probe one measure (the cab-off
+  one probes A2). A looser "any one" rule would let a gap in A2 hide behind an accident elsewhere.
+
+**The fix: a cab signature that needs no coherence.**
+- **The measure:** the target's spectral slope over 5–10 kHz, less its DI's, in dB per octave.
+- **Why it works:** a speaker cab falls steeply above about 5 kHz. An amp without one, clean or
+  driven, keeps the DI's top or adds harmonics to it. Measuring against the DI's own slope removes
+  the pickup, the cable and the playing.
+- **The rule:** where the coherent A2 goes to the ear, a relative slope above −1.65 dB/oct fails
+  A2.
+- **Nothing new is fitted.** The line is A2's existing 3.3 dB fail line spread over the two
+  octaves between its bands.
+- **It reads only on halves with bleed under −30 dB.** Bleed dominates the top of a cab-filtered
+  track. Constructed negatives carry none.
+- **It never overrides a coherent pass,** and it never passes anything.
+
+**On the stored data:**
+
+| Case | Relative slope (dB/oct) |
+|---|---|
+| The 10 bleed-clean known amps | −10.5 to −24.2 |
+| The cab-off negatives | +0.8 to +10.9 |
+| Prodigal | −0.0 to +1.5 |
+| The copies | 0.0 |
+| The EQ'd DIs | −27.5 (caught by A3) |
+
+- **Sculptor's Request GTR 2** reads +11 and +12.6, but its halves carry −28.6 dB of drum-room
+  bleed, so the check does not read it. It stays at "ear".
+- **Calibration re-run on the stored negatives** (scratch, zero renders): **CALIBRATION OK**. All
+  four cab-off renders fail A2, and no known amp fails.
+- **Across all 59 real targets,** the check newly fails only halves of parts that were already
+  excluded: Passing Ships ElecGtr3 B (−1.6), Gym Hours GTR 2 (its DI was heard processed) and
+  Hikikomori B.
+- **Recorded** in `THRESHOLD_MOVES` and `thresholds()`. The stored T0 records are therefore stale;
+  T0 reruns from `calibrate` after review, and the 6 renders are reused.
+
+**Not changed:**
+- D1's per-DI A2 still uses the coherent drop alone.
+- The calibration rule for negatives is unchanged.
