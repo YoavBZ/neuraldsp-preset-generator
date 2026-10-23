@@ -184,7 +184,10 @@ has an id, kind, files, window, reason and allowed verdicts. The kinds:
 - **`di_amp`:** the DI, then its amp track (D1 to the ear).
 
 The page built from the queue exports to page `trusted-data-ear`. `lists --ear` reads that export
-back through `t0/ear-items.json`.
+back through `t0/ear-items.json`. `learn/build_ear_page.py build` writes it as three parts, one
+question each: targets (DI, then target), DI and amp pairs (DI, then amp track), and DIs. The DI
+part is blind: it never shows why an item is queued, and its files are shuffled (seed 20261023),
+each file's windows kept together. Clips are levelled to −23 LUFS, AAC at 96 kbps.
 
 **What the dry run shows** (scratch, zero renders):
 
