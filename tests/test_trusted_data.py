@@ -129,6 +129,8 @@ def test_trusted_dis_and_unusable_sections():
     tr = {"dis": {"a": {"verdict": "trusted"}, "b": {"verdict": "pending ear"}, "c": {"verdict": "excluded"}},
           "unusable_sections": ["b@10.0", "a@20.0"]}
     assert T.trusted_dis(tr) == {"a"} and T.unusable(tr) == {"b@10.0", "a@20.0"}
+    tr["dis"]["a"]["sections"] = {"a@10.0": "usable", "a@20.0": "pending ear"}
+    assert T.windows_of(tr) == {"a": {"a@10.0": "usable", "a@20.0": "pending ear"}, "b": {}, "c": {}}
 
 
 def test_a_stale_plan_is_refused(tmp_path):

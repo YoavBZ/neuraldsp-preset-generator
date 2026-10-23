@@ -135,15 +135,21 @@ D3_RE = re.compile(r"pedal\s*board|line\s*out|lineout|\bfx\b|\bsim\b|kemper|\bax
 # The plan's thresholds that calibration moved or added, toward keeping the known amps (plan (a): "each move is
 # recorded"); revised after the code review of #281.
 THRESHOLD_MOVES = (
-    {"threshold": "A2", "plan": "pass >= 12 dB", "now": f"pass >= {A2_PASS_DB} dB over >= {A2_MIN_BINS} bins; "
-                                                         f"{A2_FAIL_DB}-{A2_PASS_DB} dB to the ear; fail < {A2_FAIL_DB} dB",
+    {"threshold": "A2", "plan": "pass >= 12 dB", "now": f"over >= {A2_MIN_BINS} coherent bins in both bands: pass >= "
+                                                         f"{A2_PASS_DB} dB, fail < {A2_FAIL_DB} dB, between to the ear; "
+                                                         f"fewer bins: the ear",
      "why": "the plan's pass is kept. Known amps read 6.2 dB (colour-me-red 03, half A) and 10.3 dB (Signs 2, half A): "
             "they go to the ear, not to a pass (the review: the parts behind a lower pass all have D4-flagged DIs). The "
-            "fail line sits midway between Prodigal ElecGtr5's 0.4 dB and colour-me-red 03's 6.2 dB"},
+            "fail line sits midway between Prodigal ElecGtr5's 0.4 dB and colour-me-red 03's 6.2 dB; unchanged when the "
+            "re-review cut the known amps to 11"},
     {"threshold": "A2_MIN_BINS", "plan": None, "now": A2_MIN_BINS,
-     "why": "the plan sends 'too few coherent bins above 6 kHz' to the ear without a number: a pass needs 17 bins (5% "
-            "of the band); a drop under the fail line fails on any coherent bins (the gate never turns a fail into the "
-            "ear)"},
+     "why": "the plan sends 'too few coherent bins above 6 kHz' to the ear without a number: 17 bins (5% of the band). "
+            "The re-review's ruling (a): a fail must pass the same gate as a pass, so no new number is fitted; a half "
+            "under it goes to the ear and stays out until heard (Adam Buckley ElecGtr5's DI, one bin at -19 dB, and "
+            "Quicksand ElecGtr2, 12 and 10 bins, go to the ear)"},
+    {"threshold": "known amps", "plan": "18 (heard clean, measured as amps)", "now": 11,
+     "why": "re-derived from the target-vs-DI measurements, less Passing Ships ElecGtr4 (review) and the 7 pairs whose "
+            "DI sitting 1 rejected (re-review: a pair without a real DI cannot anchor a DI-to-amp calibration)"},
     {"threshold": "A1_PROM_MIN", "plan": None, "now": A1_PROM_MIN,
      "why": "a lag is read only where the GCC peak stands out: the known amps' halves read prominence 24-279, the "
             "unreadable high-gain DI/amp pairs 4.4-6.7; under it A1 goes to the ear (no known case moves)"},
@@ -160,18 +166,21 @@ THRESHOLD_MOVES = (
 # The known amps come from the target-vs-DI measurements of 2026-10-23 (docs/audits/target-vs-di-2026-10-23), not
 # from data-review-1's sitting 1 (which judged the DI clips): every part whose target follows its DI with a mic delay
 # of 0.1-30 ms and whose |H| falls at least 12 dB from 0.5-2 kHz to 6-12 kHz in both halves (`known_amps_from`),
-# less Passing Ships ElecGtr4 (its DI was heard as an amp in half B; dropped by the review).
+# less Passing Ships ElecGtr4 (its DI was heard as an amp in half B; dropped by the review) and less the pairs whose DI
+# sitting 1 rejected (dropped by the re-review).
 TVD_MEASURES = PLUGIN_ROOT / "docs/audits/target-vs-di-2026-10-23/measures.json"
 KNOWN_RULE = {"lag_ms": (0.1, 30.0), "hf_drop_db": -12.0, "halves": 2}
-KNOWN_DROPPED = ("cambridge-Passing_Ships-ElecGtr4",)
+# The re-review of #281 also drops every pair whose DI the user's ear rejected in sitting 1 (processed, an amp or a
+# stem): a pair without a real DI cannot anchor a DI-to-amp calibration. 11 known amps remain; the fail line stands.
+KNOWN_EAR_REJECTED = ("cambridge-Passing_Ships-ElecGtr6", "telefunken-Bloomlight-GTR", "telefunken-Farthest_Step-GTR",
+                      "telefunken-First_Offering-GTR_2", "telefunken-Gym_Hours-GTR_2", "telefunken-Russian_Cream-GTR_2",
+                      "telefunken-She's_Gone-GTR")
+KNOWN_DROPPED = ("cambridge-Passing_Ships-ElecGtr4",) + KNOWN_EAR_REJECTED
 KNOWN_AMPS = (
     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr2", "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3",
-    "cambridge-Passing_Ships-ElecGtr6", "cambridge-Signs-ElecGtr2", "cambridge-colour-me-red-elecgtr02",
-    "cambridge-colour-me-red-elecgtr03", "cambridge-get-out-of-bed-elecgtr2", "cambridge-magilla-elecgtr1",
-    "cambridge-magilla-elecgtr1dt", "cambridge-wickerman-elecgtr3", "telefunken-Blind_Spots-GTR",
-    "telefunken-Bloomlight-GTR", "telefunken-Farthest_Step-GTR", "telefunken-First_Offering-GTR_2",
-    "telefunken-Gym_Hours-GTR_2", "telefunken-Russian_Cream-GTR_2", "telefunken-Sculptor's_Request-GTR_2",
-    "telefunken-She's_Gone-GTR")
+    "cambridge-Signs-ElecGtr2", "cambridge-colour-me-red-elecgtr02", "cambridge-colour-me-red-elecgtr03",
+    "cambridge-get-out-of-bed-elecgtr2", "cambridge-magilla-elecgtr1", "cambridge-magilla-elecgtr1dt",
+    "cambridge-wickerman-elecgtr3", "telefunken-Blind_Spots-GTR", "telefunken-Sculptor's_Request-GTR_2")
 KNOWN_FAILS = ("cambridge-Prodigal-ElecGtr3", "cambridge-Prodigal-ElecGtr5")
 # The constructed negatives' DIs (both heard clean and passing D4): one whose HF stays coherent through its amp
 # (It Was My Fault ElecGtr3) and one whose amp track is incoherent above 6 kHz (magilla elecgtr1).
@@ -211,13 +220,14 @@ def a1_status(lag_ms, lo=LAG_MIN_MS, hi=LAG_MAX_MS, prominence=None, prom_min=A1
 
 
 def a2_half_status(drop_db, n_lo, n_hi, min_bins=A2_MIN_BINS, pass_db=A2_PASS_DB, fail_db=A2_FAIL_DB):
-    """One half's A2: fail under fail_db on any coherent bins; pass at pass_db or more over min_bins in both bands;
-    otherwise (between the two, too few bins to pass, or nothing coherent) the ear."""
-    if drop_db is None or not n_lo or not n_hi:
+    """One half's A2, decided only over min_bins coherent bins in both bands (the re-review's ruling: a fail must
+    pass the same gate as a pass): pass at pass_db or more, fail under fail_db; otherwise (between the two, or too
+    few coherent bins) the ear, which keeps the part out until heard."""
+    if drop_db is None or (n_lo or 0) < min_bins or (n_hi or 0) < min_bins:
         return "ear"
     if drop_db < fail_db:
         return "fail"
-    return "pass" if drop_db >= pass_db and n_lo >= min_bins and n_hi >= min_bins else "ear"
+    return "pass" if drop_db >= pass_db else "ear"
 
 
 def combine_part(statuses):
@@ -307,23 +317,22 @@ def target_verdict(st, ear_clean, ear_amp, disputed=False, in_mix=False):
 
 def d1_status(halves, prom_min=A1_PROM_MIN, min_bins=A2_MIN_BINS, pass_db=A2_PASS_DB, fail_db=A2_FAIL_DB):
     """D1 over a DI's sections (a chain property, read robustly): A1 on the median of its readable lags (GCC
-    prominence >= prom_min); A2 fails when the median drop over its coherent halves is under fail_db, passes when the
-    median over its halves with min_bins is at least pass_db, else the ear. halves: [{"lag_ms", "lag_prominence",
-    "a2": {...}}]. -> {"status", "A1", "A2", "lag_ms", "drop_db", "n_lags", "n_drops"}."""
+    prominence >= prom_min); A2 on the median drop of its halves with min_bins coherent bins in both bands: fail under
+    fail_db, pass at pass_db, else (or none such) the ear. halves: [{"lag_ms", "lag_prominence", "a2": {...}}].
+    -> {"status", "A1", "A2", "lag_ms", "drop_db", "n_lags", "n_drops"}."""
     lags = [h["lag_ms"] for h in halves if (h.get("lag_prominence") or 0) >= prom_min]
-    coh = [h["a2"]["drop_db"] for h in halves if h["a2"]["drop_db"] is not None and h["a2"]["n_lo"] and h["a2"]["n_hi"]]
     full = [h["a2"]["drop_db"] for h in halves if h["a2"]["drop_db"] is not None
-            and h["a2"]["n_lo"] >= min_bins and h["a2"]["n_hi"] >= min_bins]
+            and (h["a2"]["n_lo"] or 0) >= min_bins and (h["a2"]["n_hi"] or 0) >= min_bins]
     lag = statistics.median(lags) if lags else None
-    drop = statistics.median(coh) if coh else None
+    drop = statistics.median(full) if full else None
     a1 = a1_status(lag) if lags else "ear"
-    if coh and statistics.median(coh) < fail_db:
+    if drop is not None and drop < fail_db:              # both a fail and a pass need the 17-bin gate
         a2 = "fail"
-    elif full and statistics.median(full) >= pass_db:
+    elif drop is not None and drop >= pass_db:
         a2 = "pass"
     else:
         a2 = "ear"
-    drops = coh
+    drops = full
     status = "fail" if "fail" in (a1, a2) else ("pass" if (a1, a2) == ("pass", "pass") else "ear")
     return {"status": status, "A1": a1, "A2": a2, "lag_ms": lag, "drop_db": drop, "n_lags": len(lags),
             "n_drops": len(drops)}
@@ -866,9 +875,10 @@ def target_scope():
 
 
 def di_scope():
-    """{di id: {"datasets", "band", "sections": [{id, start_s}]}} for part C's D build (pool and V_sep sections),
-    plus every other inventory DI of those sessions (the self-built mixes' other guitars), read at the session's
-    D-build section times. -> (scope, data_cleaning.Meta)."""
+    """{di id: {"datasets", "band", "sections": [{id, start_s, own}]}} for part C's D build (pool and V_sep sections,
+    own=True), every DI of those sessions at every other D-build section time of its session (own=False: the windows
+    where it plays as another guitar in a self-built mix, so every window a mix can use is measured), and the
+    sessions' other inventory DIs at those times and at up to 4 of their own clean sections. -> (scope, Meta)."""
     from learn import data_cleaning as DC
 
     meta, secs = DC.Meta(), DC.build_sections()
@@ -881,8 +891,12 @@ def di_scope():
         d = out.setdefault(sec["di"], {"datasets": [], "band": sec["band"], "sections": []})
         if ds not in d["datasets"]:
             d["datasets"].append(ds)
-        d["sections"].append({"id": sid, "start_s": float(sec["start_s"])})
+        d["sections"].append({"id": sid, "start_s": float(sec["start_s"]), "own": True})
         times.setdefault(meta.inv[sec["di"]]["session_dir"], set()).add(float(sec["start_s"]))
+    for di, d in out.items():                            # a D-build DI as another guitar: the session's other times
+        have = {round(x["start_s"], 1) for x in d["sections"]}
+        d["sections"] += [{"id": f"{di}@{t:.1f}", "start_s": t, "own": False}
+                          for t in sorted(times[meta.inv[di]["session_dir"]]) if round(t, 1) not in have]
     from learn import pretrain_set as PS
 
     own = {}
@@ -897,7 +911,7 @@ def di_scope():
         mine = [mine[int(round(k * (len(mine) - 1) / 3))] for k in range(4)] if len(mine) > 4 else mine
         ts = sorted(set(times[sd]) | set(mine))          # the session's mix times and where the DI itself plays
         out[di] = {"datasets": ["other guitar"], "band": rec.get("band"),
-                   "sections": [{"id": f"{di}@{t:.1f}", "start_s": t} for t in ts]}
+                   "sections": [{"id": f"{di}@{t:.1f}", "start_s": t, "own": False} for t in ts]}
     return out, meta
 
 
@@ -996,7 +1010,7 @@ def _copy_check(crop, ref, rec, base, part, dis):
 
 
 def cmd_calibrate(args):
-    """Calibration (zero renders): the 18 known amps (re-derived from the target-vs-DI measurements, checked here), the
+    """Calibration (zero renders): the 11 known amps (re-derived from the target-vs-DI measurements, checked here), the
     2 known fails and the constructed negatives through A1-A4; CALIBRATION OK iff the known amps fail nothing, the
     known fails fail something and each declared negative fails its measure. D4 against the user's ear (`--ear-di`,
     required): the agreement in-sample and leave-one-out. Never overwrites an OK record."""
@@ -1088,7 +1102,8 @@ def cmd_calibrate(args):
     rec = {"plan": PLAN, "design": DESIGN, "smoke": bool(args.smoke), "verdict": verdict, "problems": probs,
            "thresholds": thresholds(), "threshold_moves": list(THRESHOLD_MOVES), "negatives": NEG_DECLARED,
            "must_fail": {k: list(v) for k, v in NEG_MUST_FAIL.items()},
-           "known_amps": {"rule": KNOWN_RULE, "dropped": list(KNOWN_DROPPED), "source": str(TVD_MEASURES.name),
+           "known_amps": {"rule": KNOWN_RULE, "dropped": list(KNOWN_DROPPED), "ear_rejected": list(KNOWN_EAR_REJECTED),
+                          "source": str(TVD_MEASURES.name),
                           "parts": list(KNOWN_AMPS)},
            "margins": [margins(rows, "A2 drop (halves with coherent bins)", a2_val,
                                lambda r: r["kind"] in ("fail", "copy", "cab_off_clean")),
@@ -1416,7 +1431,8 @@ def cmd_dis(args):
                     src = "measured here"
                 d2 = {"flags": mf[0], "tags": mf[1], "source": src}
                 d4 = di_processing(di)
-                secs.append({"section": s["id"], "start_s": s["start_s"], "D1": d1, "D2": d2, "D4": d4})
+                secs.append({"section": s["id"], "start_s": s["start_s"], "own": s.get("own", True), "D1": d1, "D2": d2,
+                             "D4": d4})
             row = {"di": key, "band": scope[key]["band"], "datasets": scope[key]["datasets"], "amp_tracks": amps,
                    "hum_suspect": key in PS.HUM_SUSPECT, "path": rec["path"], "sections": secs}
             row.update(di_row_status(row))
@@ -1446,14 +1462,18 @@ def cmd_dis(args):
 
 def di_row_status(row):
     """A pool, V_sep or other-guitar DI's statuses, recomputed from its stored readings under the current thresholds:
-    D1 over its sections (None for a DI-only part), D2 (every section's part A flags; hum-suspect), D3 by name, and
-    per section D4 (pass/fail; D4 never excludes alone). -> {"status", "d1", "d4_sections"}."""
+    D1 over every measured window (None for a DI-only part); D2 over its own D-build sections (hum-suspect DIs fail),
+    and per window; D3 by name; per window D4 ('silent' where the DI does not play; D4 never excludes alone).
+    -> {"status", "d1", "d4_sections", "d2_sections"}."""
     secs = row["sections"]
     d1 = d1_status([h for x in secs if x["D1"] for h in x["D1"]["halves"].values()]) if row.get("amp_tracks") else None
-    d2 = combine_part([d2_status(x["D2"]["flags"], row.get("hum_suspect", False)) for x in secs])
-    d4 = {x["section"]: d4_status(x["D4"]["crest_db"], x["D4"]["bright_slope"]) for x in secs}
+    d2w = {x["section"]: d2_status(x["D2"]["flags"], row.get("hum_suspect", False)) for x in secs}
+    own = [x["section"] for x in secs if x.get("own", True)]
+    d2 = combine_part([d2w[k] for k in own]) if own else ("fail" if row.get("hum_suspect") else "pass")
+    d4 = {x["section"]: ("silent" if x["D4"]["crest_db"] is None else d4_status(x["D4"]["crest_db"], x["D4"]["bright_slope"]))
+          for x in secs}
     return {"status": {"D1": None if d1 is None else d1["status"], "D2": d2, "D3": d3_status(row["di"])},
-            "d1": d1, "d4_sections": d4}
+            "d1": d1, "d4_sections": d4, "d2_sections": d2w}
 
 
 def crop_status(row):
@@ -1834,13 +1854,16 @@ def sample_passed(di_rows, seed=D4_SAMPLE_SEED):
         if not ({"training pool", "V_sep"} & set(row["datasets"])):
             continue
         d4 = di_row_status(row)["d4_sections"]
-        if row["sections"] and all(v == "pass" for v in d4.values()):
+        own = [x for x in row["sections"] if x.get("own", True)]
+        if own and all(d4[x["section"]] in ("pass", "silent") for x in own) and any(d4[x["section"]] == "pass" for x in own):
             by.setdefault(row["band"], []).append(di)
     rng = _r.Random(seed)
     out = {}
     for band in sorted(by):
         di = rng.choice(by[band])
-        out[di] = rng.choice([x["start_s"] for x in di_rows[di]["sections"]])
+        d4 = di_row_status(di_rows[di])["d4_sections"]
+        out[di] = rng.choice([x["start_s"] for x in di_rows[di]["sections"] if x.get("own", True)
+                              and d4[x["section"]] == "pass"])
     return out
 
 
@@ -1962,8 +1985,10 @@ def cmd_lists(args):
         for x in row["sections"]:
             sid, t0 = x["section"], x["start_s"]
             e = section_ear(t0, wins)
-            if v == "excluded":
+            if v == "excluded" or rs["d2_sections"][sid] == "fail":
                 secs[sid] = "excluded"
+            elif rs["d4_sections"][sid] == "silent":
+                secs[sid] = "silent"                              # the DI does not play here: no mix uses it
             elif rs["d4_sections"][sid] == "fail" and not (e is True and any(
                     overlaps(t0, t0 + CROP_S, a, b) and merge_ear([vv], "clean") for a, b, vv in ear["di_windows"].get(di, []))):
                 secs[sid] = "pending ear"                         # flagged: only a queue answer on this section clears it
@@ -1974,7 +1999,8 @@ def cmd_lists(args):
             if secs[sid] != "usable":
                 unusable.add(sid)
         dis_out[di] = {"verdict": v, "why": why, "status": rs["status"], "d1": rs["d1"], "datasets": row["datasets"],
-                       "band": row["band"], "sections": secs}
+                       "band": row["band"], "sections": secs,
+                       "own_sections": [x["section"] for x in row["sections"] if x.get("own", True)]}
         if v == "excluded":
             continue
         flagged = [x for x in row["sections"] if secs[x["section"]] == "pending ear"
@@ -2000,10 +2026,10 @@ def cmd_lists(args):
                                     "a D4-passed DI sampled to check D4's misses"))
     for di, d in dis_out.items():
         if {"training pool", "V_sep"} & set(d["datasets"]):
-            b = by_band.setdefault(d["band"], {"sections": 0, "usable": 0, "pending ear": 0, "excluded": 0})
-            for v in d["sections"].values():
+            b = by_band.setdefault(d["band"], {"sections": 0, "usable": 0, "pending ear": 0, "excluded": 0, "silent": 0})
+            for sid in d["own_sections"]:
                 b["sections"] += 1
-                b[v] += 1
+                b[d["sections"][sid]] += 1
 
     passing = {s for s, r in targets.items() if r.get("status") and all(
         r["status"].get(m) in ("pass", "ear") for m in ("A1", "A2", "A3", "A4", "A6"))}

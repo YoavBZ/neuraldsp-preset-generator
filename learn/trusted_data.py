@@ -344,6 +344,11 @@ def trusted_dis(tr):
     return {d for d, v in tr["dis"].items() if v["verdict"] == "trusted"}
 
 
+def windows_of(tr):
+    """{di: {window id: 'usable' | 'pending ear' | 'excluded' | 'silent'}} of every window T0 measured."""
+    return {d: v.get("sections") or {} for d, v in tr["dis"].items()}
+
+
 def unusable(tr):
     """Sections T0 does not let any mix use: excluded, or waiting for the ear (D4 flags, pending DIs)."""
     return set(tr.get("unusable_sections") or [])
@@ -383,8 +388,10 @@ def stems_for(rec, trusted_stems, sd):
     return keep, [f for f in keep if f not in v]
 
 
-def example_recipe(ctx, r, trusted, trusted_stems, act_cache, bad_sections=frozenset()):
-    """One example's self-built recipe (plan (c)), zero renders. r: a part C row."""
+def example_recipe(ctx, r, trusted, trusted_stems, act_cache, bad_sections=frozenset(), dis_windows=None):
+    """One example's self-built recipe (plan (c)), zero renders. r: a part C row; dis_windows: {di: {window id:
+    status}} from T0's lists (an other guitar's window must have been measured and be usable)."""
+    dis_windows = dis_windows or {}
     from learn import data_cleaning as DC
     from learn import direct_stems as DS
     from learn import pretrain_set as PS
@@ -392,8 +399,16 @@ def example_recipe(ctx, r, trusted, trusted_stems, act_cache, bad_sections=froze
     sec = ctx.sections[r["section"]]
     rec = ctx.inv[sec["di"]]
     sd = rec["session_dir"]
-    cands = [d for d in session_dis(ctx, sd, trusted)
-             if f"{d}@{float(sec['start_s']):.1f}" not in bad_sections]      # other guitars respect T0's sections
+    cands = []
+    for d in session_dis(ctx, sd, trusted):              # other guitars: only windows T0 measured and found usable
+        if d == sec["di"]:
+            continue
+        w = f"{d}@{float(sec['start_s']):.1f}"
+        st = (dis_windows.get(d) or {}).get(w)
+        if st is None:
+            raise SystemExit(f"{r['i']}: {w} was never measured by T0 (rerun verify_tracks dis and lists)")
+        if st == "usable" and w not in bad_sections:
+            cands.append(d)
     for d in cands:
         key = (d, float(sec["start_s"]))
         if key not in act_cache:
@@ -451,6 +466,7 @@ def cmd_plan(args):
     root = V.out_root(args)
     tr = load_trusted(root, args.smoke)
     trusted = trusted_dis(tr)
+    wins = windows_of(tr)
     ctx = DS.Ctx(quiet=True)
     act = {}
     if args.stage == "t1":
@@ -461,7 +477,7 @@ def cmd_plan(args):
                 and ctx.sections[r["section"]]["di"] in k_dis and r["section"] not in bad_secs
                 and r["i"] in truth and not truth[r["i"]].get("refused")]
         rows = rows[:args.limit or None]
-        recipes = [example_recipe(ctx, r, trusted, tr["stems"], act, bad_secs) for r in rows]
+        recipes = [example_recipe(ctx, r, trusted, tr["stems"], act, bad_secs, wins) for r in rows]
         rec = {"plan": PLAN, "stage": "t1", "smoke": bool(args.smoke), "k_out_bands": list(K_OUT_BANDS),
                "examples": recipes, "renders_others": sum(len(x["others"]) for x in recipes),
                "renders_targets": 0, "separations": len(recipes)}
@@ -490,7 +506,7 @@ def cmd_plan(args):
         need = sorted({r["i"] for r in pilot} | {r["i"] for r in es} | set(eg))
         if args.limit:
             need = need[:args.limit]
-        recipes = [example_recipe(ctx, rows_by[i], trusted, tr["stems"], act, bad_secs) for i in need]
+        recipes = [example_recipe(ctx, rows_by[i], trusted, tr["stems"], act, bad_secs, wins) for i in need]
         rec = {"plan": PLAN, "stage": "t2", "smoke": bool(args.smoke), "seeds": {"pilot": PILOT_SEED, "es": ES_SEED,
                "eggy": EGGY_SEED, "others": OTHER_SEED}, "pilot": [r["i"] for r in pilot], "es": [r["i"] for r in es],
                "es_sections": sorted(es_sec), "syn_e": syn_e,

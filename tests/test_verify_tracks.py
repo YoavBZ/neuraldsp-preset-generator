@@ -26,7 +26,9 @@ def test_a2_half_and_part_rules():
     assert V.a2_half_status(6.2, 100, 46) == "ear"         # colour-me-red elecgtr03 half A: between fail and pass
     assert V.a2_half_status(12.0, 100, 46) == "pass"       # the plan's 12 dB pass is kept
     assert V.a2_half_status(0.4, 171, 255) == "fail"       # Prodigal ElecGtr5 half B
-    assert V.a2_half_status(-3.9, 171, 10) == "fail"       # Quicksand ElecGtr2: the bin gate never turns a fail into the ear
+    assert V.a2_half_status(-3.9, 171, 10) == "ear"        # Quicksand ElecGtr2: a fail needs the 17-bin gate too
+    assert V.a2_half_status(-19.0, 40, 1) == "ear"         # Adam Buckley ElecGtr5's DI: one coherent bin
+    assert V.a2_half_status(3.2, 17, 17) == "fail"
     assert V.a2_half_status(None, 0, 0) == "ear"
     assert V.a2_half_status(25.0, V.A2_MIN_BINS - 1, 300) == "ear"   # too few bins to pass
     assert V.a2_part(["pass", "ear"]) == "pass"
@@ -133,8 +135,10 @@ def test_threshold_moves_are_recorded_against_the_constants():
     assert moves["A2_MIN_BINS"]["now"] == V.A2_MIN_BINS
     assert V.A3_MAX_DB == -40.0 and V.A4_MAX_CORR == 0.95 and V.A6_BLEED_DB == -30.0      # the plan's, unmoved
     assert (V.LAG_MIN_MS, V.LAG_MAX_MS) == (0.1, 30.0)
-    assert set(V.KNOWN_AMPS).isdisjoint(V.KNOWN_FAILS) and len(V.KNOWN_AMPS) == 18 and len(V.KNOWN_FAILS) == 2
+    assert set(V.KNOWN_AMPS).isdisjoint(V.KNOWN_FAILS) and len(V.KNOWN_AMPS) == 11 and len(V.KNOWN_FAILS) == 2
     assert not set(V.KNOWN_DROPPED) & set(V.KNOWN_AMPS) and not set(V.NEG_SOURCES) & set(V.KNOWN_DROPPED)
+    assert set(V.KNOWN_EAR_REJECTED) <= set(V.KNOWN_DROPPED) and len(V.KNOWN_EAR_REJECTED) == 7
+    assert "known amps" in moves and moves["known amps"]["now"] == 11
     th = V.thresholds()
     assert th["A2"]["pass_db"] == V.A2_PASS_DB and th["A2"]["fail_db"] == V.A2_FAIL_DB and th["A3"]["max_db"] == V.A3_MAX_DB
 
@@ -433,3 +437,19 @@ def test_sample_passed_and_overlaps():
     assert set(s) == {"a", "c"} and s == V.sample_passed(rows)
     assert V.overlaps(0, 10, 9.9, 20) and not V.overlaps(0, 10, 10, 20)
     assert V.section_ear(10.0, [(12.0, 18.0, "clean"), (40.0, 46.0, "processed")]) is True
+
+
+def test_d1_and_d2_read_every_window_but_d2_excludes_only_on_own_sections():
+    def sec(sid, own, flags, crest, halves=None):
+        return {"section": sid, "start_s": 0.0, "own": own, "D2": {"flags": flags},
+                "D1": {"halves": halves} if halves else None,
+                "D4": {"crest_db": crest, "bright_slope": 0.5, "frames": 90 if crest else 0}}
+    good = {"A": _half(0.6, 80, 20.0, 40), "B": _half(0.6, 80, 19.0, 40)}
+    row = {"di": "x/ElecGtr1DI.wav", "amp_tracks": ["amp"], "hum_suspect": False,
+           "sections": [sec("own1", True, [], 11.0, good), sec("other1", False, ["dropout"], 11.0, good),
+                        sec("other2", False, [], None)]}
+    rs = V.di_row_status(row)
+    assert rs["status"] == {"D1": "pass", "D2": "pass", "D3": "pass"}                 # a window's drop-out stays local
+    assert rs["d2_sections"]["other1"] == "fail" and rs["d4_sections"]["other2"] == "silent"
+    row["sections"][0]["D2"]["flags"] = ["hum"]
+    assert V.di_row_status(row)["status"]["D2"] == "fail"
