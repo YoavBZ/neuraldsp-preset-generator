@@ -1391,6 +1391,37 @@ def guitar_sources(files):
     return [f for f in files if DC.track_class(f) == "guitar"]
 
 
+PART_RE = re.compile(r"((?i:elec|ac(?:oustic)?)?\s*(?i:gtr)\s*_?\d+(?:[a-z](?![a-z]))?(?:\s*DT)?)")
+GEAR_RE = re.compile(r"tdp-?\d*|tda-?\d*|\bm\d+\b|\btf\d+\b|\bdi\b|\bamp\b|\bmic\d*\b|\bclose\b|\bfar\b|norm.*$", re.I)
+
+
+def guitar_part_key(name):
+    """A guitar track's part, so a part's mics and DI group together: a numbered part (ElecGtr1, ElecGtr1c, ElecGtr2DT,
+    GTR 1, AcousticGtr2; a lower-case letter suffix is a sub-part, upper-case DI/Mic/Amp are not), else the name less
+    its gear and take tokens (Telefunken's "GTR DI", "GTR M80" and "GTR TF11" are one part)."""
+    stem = re.sub(r"^\d+_", "", pathlib.PurePosixPath(name).stem)
+    m = PART_RE.search(stem)
+    if m:
+        return re.sub(r"[\s_]", "", m.group(1)).lower()
+    s = re.sub(r"[._-]\d+(?:[_-]\d+)*$", "", stem).replace("_", " ")
+    s = GEAR_RE.sub(" ", s)
+    return re.sub(r"[\s_.-]+", " ", s).strip().lower()
+
+
+def scan_sources(files, energy):
+    """The stem scan's sources: per guitar part, its loudest amp or mic track (a take reaches a room through the
+    amp, and a part's mics are one take); its DI only when it has no amp track. energy: {track: mean square}."""
+    groups = {}
+    for f in guitar_sources(files):
+        groups.setdefault(guitar_part_key(f), []).append(f)
+    out = []
+    for k in sorted(groups):
+        amps = [f for f in groups[k] if not is_di_name(f)]
+        pool = amps or groups[k]
+        out.append(max(pool, key=lambda f: (energy.get(f, 0.0), f)))
+    return out
+
+
 def stem_pass(takes_db, floor):
     """A stem passes when every guitar source's take in it is under `floor` (None: none read)."""
     return all(v is None or v < floor for v in takes_db.values())
@@ -1409,7 +1440,7 @@ def cmd_stem_scan(args):
     k, n = args.shard
     scope, meta = di_scope()
     sess = scan_sessions(meta, scope)
-    jobs = [s for i, s in enumerate(sess) if i % n == k][:args.limit or None]
+    jobs = [s for i, s in enumerate(sess) if i % n == k and (not args.only or args.only in s)][:args.limit or None]
     floor = stem_floor(root)
     path = root / "t0" / f"stems-{k}of{n}.json"
     done = (_load(path) or {}).get("sessions", {})
@@ -1419,13 +1450,15 @@ def cmd_stem_scan(args):
             continue
         t = time.time()
         files = sorted(f.name for f in pathlib.Path(sd).glob("*.wav"))
-        gtr = guitar_sources(files)
-        stems = [f for f in files if DC.track_class(f) != "guitar" and f not in gtr]
+        allg = guitar_sources(files)
+        stems = [f for f in files if f not in allg]
         dur = max(DC.file_seconds(pathlib.Path(sd) / f) for f in files)
         Ys = {f: DC.stft(DC.load_window(pathlib.Path(sd) / f, 0.0, dur))[idx] for f in stems}
+        gaud = {g: DC.load_window(pathlib.Path(sd) / g, 0.0, dur) for g in allg}
+        gtr = scan_sources(allg, {g: float((a.astype("float64") ** 2).mean()) for g, a in gaud.items()})
         takes = {f: {} for f in stems}
         for g in gtr:
-            S = DC.stft(DC.load_window(pathlib.Path(sd) / g, 0.0, dur))[idx]
+            S = DC.stft(gaud[g])[idx]
             if not (abs(S) > 0).any():
                 continue
             got = DC.TakeReader(S, S).takes(Ys)
@@ -1433,7 +1466,8 @@ def cmd_stem_scan(args):
                 takes[f][g] = v
             del S
             gc.collect()
-        done[sd] = {"dis": scope_dis(sess[sd]), "guitar_tracks": gtr, "floor_db": floor,
+        del gaud
+        done[sd] = {"dis": scope_dis(sess[sd]), "guitar_tracks": allg, "sources": gtr, "floor_db": floor,
                     "stems": {f: {"class": DC.track_class(f), "takes_db": takes[f], "pass": stem_pass(takes[f], floor)}
                               for f in stems}, "seconds": round(time.time() - t, 1)}
         del Ys
@@ -1763,12 +1797,13 @@ def main(argv=None):
     ap.add_argument("--out", default=None)
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--only", default=None, help="smoke runs: only sessions whose path contains this")
     ap.add_argument("--ear", action="append", help="an exported answers file judging the targets")
     ap.add_argument("--ear-di", action="append", help="a data-review-1 export judged on the DI clip (sitting 1)")
     ap.add_argument("--trusted-only", action="store_true", help="reread: only parts the ear has confirmed")
     args = ap.parse_args(argv)
-    if args.limit and not args.smoke:
-        raise SystemExit("--limit is for smoke runs (with --smoke and --out)")
+    if (args.limit or args.only) and not args.smoke:
+        raise SystemExit("--limit and --only are for smoke runs (with --smoke and --out)")
     {"negatives": cmd_negatives, "calibrate": cmd_calibrate, "targets": cmd_targets, "dis": cmd_dis,
      "inject-strict": cmd_inject_strict, "stem-scan": cmd_stem_scan, "lists": cmd_lists, "reread": cmd_reread}[args.cmd](args)
 

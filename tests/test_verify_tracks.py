@@ -355,3 +355,15 @@ def test_ear_answers_split_di_and_target(tmp_path, monkeypatch):
     assert V.ear_di_verdict(di["s"]) is False
     clean, amp, di = V.ear_answers([s1, tv], [])
     assert clean == {("s", "A"): "clean", ("s", "B"): "other"} and di == {}
+
+
+def test_stem_scan_reads_one_source_per_guitar_part():
+    assert V.guitar_part_key("20_ElecGtr1DI.wav") == V.guitar_part_key("21_ElecGtr1Mic1.wav") == "elecgtr1"
+    assert V.guitar_part_key("17_ElecGtr2c_DI.wav") == "elecgtr2c" != V.guitar_part_key("15_ElecGtr2a_Amp1.wav")
+    assert V.guitar_part_key("16_ElecGtr2DT.wav") == "elecgtr2dt"
+    assert V.guitar_part_key("GTR DI.04_02.wav") == V.guitar_part_key("GTR M80.04_02.wav") == "gtr"
+    assert V.guitar_part_key("GTR 1 DI TDP-1.1-Norm_01-01.wav") == V.guitar_part_key("GTR 1 Amp M80.1-Norm_01-01.wav")
+    assert V.guitar_part_key("GTR Pre Rec.L.wav") != V.guitar_part_key("GTR 1 Amp_M81.wav")
+    files = ["20_ElecGtr1DI.wav", "21_ElecGtr1Mic1.wav", "22_ElecGtr1Mic2.wav", "23_ElecGtr2DI.wav", "01_Kick.wav"]
+    energy = {"21_ElecGtr1Mic1.wav": 1.0, "22_ElecGtr1Mic2.wav": 2.0, "20_ElecGtr1DI.wav": 9.0, "23_ElecGtr2DI.wav": 1.0}
+    assert V.scan_sources(files, energy) == ["22_ElecGtr1Mic2.wav", "23_ElecGtr2DI.wav"]   # loudest mic; a DI-only part

@@ -143,7 +143,7 @@ Run from the merged checkout. Expected times, CPU unless stated:
 | 3 | `$MAIN -m learn.verify_tracks targets` | about 1 min |
 | 4 | `$MAIN -m learn.verify_tracks dis --shard k/3` (k = 0, 1, 2) | about 1–2 min each |
 | 5 | `$MAIN -m learn.verify_tracks inject-strict` | about 20–40 min |
-| 6 | `$MAIN -m learn.verify_tracks stem-scan --shard k/3` | about 30–60 min each |
+| 6 | `$MAIN -m learn.verify_tracks stem-scan --shard k/3` | about 30–45 min each (20 sessions, 101 guitar sources; the dry run read Hollow Ground, 8 sources over 142 s, in 235 s) |
 | 7 | `$MAIN -m learn.verify_tracks lists --ear-di <sitting-1 export> [--ear <target export>]` | under 1 min |
 | 8 | `$MAIN -m learn.verify_tracks reread` | under 1 min |
 
@@ -158,9 +158,11 @@ The sitting-1 export is
   - the other DIs of those sessions, at the session's section times and at up to 4 of their own
     clean sections;
   - every crop's measure DI.
-- **`stem-scan`** reads every guitar track's session-level take in every non-guitar track (the
-  cleaning plan's estimator). Its floor is −30 dB, or −35 or −40 dB if `inject-strict` validates
-  that level on the 3 deciding sessions.
+- **`stem-scan`** reads every guitar part's session-level take in every non-guitar track (the
+  cleaning plan's estimator). It uses one source per part: the loudest amp or mic track, or the
+  DI when the part has none. A take reaches a room through the amp, and a part's mics carry one
+  take. Its floor is −30 dB, or −35 or −40 dB if `inject-strict` validates that level on the 3
+  deciding sessions. In the dry run, Hollow Ground validated both stricter levels.
 - **`lists`** writes `t0/trusted.json`:
   - targets by use, trusted, pending the ear, or excluded with their reasons;
   - DIs, and the sections D4 excludes;
