@@ -135,3 +135,32 @@ def test_queue_never_picks_a_silent_section_and_retires_silent_answers(tmp_path)
     p = tmp_path / "e.json"
     p.write_text(json.dumps({"page": VT.EAR_PAGE, "answers": [{"id": old["id"], "verdict": "clean"}]}))
     assert VT.ear_answers([str(p)], [], reg)["di_windows"] == {}
+
+
+def test_registry_keeps_retired_items_retired():
+    secs = [{"section": "s1", "start_s": 10.0, "D4": {"crest_db": 7.0, "frames": 90}}]
+    it = _item("di_only", "di", "k/a.wav", 10.0, di="/x/a.wav")
+    reg = {it["id"]: dict(it, retired="silent")}
+    VT.update_registry(reg, [dict(it)], {"k/a.wav": {"sections": secs}})
+    assert reg[it["id"]]["retired"] == "silent"
+    new = _item("di_only", "di", "k/b.wav", 5.0, di="/x/b.wav")
+    VT.update_registry(reg, [new], {"k/b.wav": {"sections": [dict(secs[0], start_s=5.0, D4={"crest_db": None, "frames": 100})]}})
+    assert reg[new["id"]]["retired"]
+
+
+def test_cached_silent_clip_still_refused(monkeypatch, tmp_path):
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("soundfile")
+    import hashlib
+    from learn import build_data_review as BDR
+    key = hashlib.sha256(f"/x.wav|0.0|1.0|{E.AAC_KBPS}".encode()).hexdigest()[:16]
+    (tmp_path / f"{key}.m4a").write_bytes(b"cached")
+    monkeypatch.setattr(BDR, "load", lambda path, a, d: np.zeros(int(d * BDR.SR)))
+    with pytest.raises(SystemExit, match="silent window"):
+        E.clip_b64("/x.wav", 0.0, 1.0, tmp_path)
+
+
+def test_build_refuses_over_built_pages(tmp_path):
+    (tmp_path / "manifest.json").write_text("{}")
+    with pytest.raises(SystemExit, match="built pages exist"):
+        E.cmd_build(type("A", (), {"out": str(tmp_path), "force": False, "seed": E.SEED})())

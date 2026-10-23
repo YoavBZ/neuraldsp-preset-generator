@@ -194,10 +194,13 @@ exports its own file, passed as its own `--ear`.
 **Silent windows (fixed 2026-10-23).** The first queue held 15 digitally silent windows: for
 `di_amp` and `di_only` it played the section with the most "playing" frames, and a silent section
 counts every frame as playing. The queue now picks the busiest audible section; a DI silent in
-every section (4: Dark Ride ElecGtr03 and 04, Prodigal ElecGtr4 and 5, short files off the
-session's timeline) is excluded, since no mix uses it; `lists` retires the silent items, and
-`ear_answers` skips any answer on them. The build refuses a silent clip. `build_ear_page extra`
-put the 11 re-picked windows on a fourth part, leaving parts 1–3 and their stored answers alone.
+every section (4 "other guitar" overdubs: Dark Ride ElecGtr03 and 04, Prodigal ElecGtr4 and 5,
+which play outside every measured window) is excluded, since no mix uses it; `lists` retires the
+silent items, and `ear_answers` skips any answer on them. The build refuses a silent clip, cached
+or not, and refuses to rebuild over built pages. `build_ear_page extra` put the 11 re-picked
+windows on a fourth part, leaving parts 1–3 and their stored answers alone. A `di_only` item is no
+longer queued when the DI already has a flagged window queued (a flagged window heard clean clears
+it too): 7 such repeats left the queue (184 items), part 4's items 4, 5, 6, 8, 9 and 11 among them.
 
 **What the dry run shows** (scratch, zero renders):
 

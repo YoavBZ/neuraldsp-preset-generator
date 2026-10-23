@@ -130,11 +130,11 @@ def clip_b64(path, start_s, dur_s, cache):
 
     key = hashlib.sha256(f"{path}|{start_s}|{dur_s}|{AAC_KBPS}".encode()).hexdigest()[:16]
     m4a = pathlib.Path(cache) / f"{key}.m4a"
+    x = BDR.load(path, start_s, dur_s)                  # checked even when cached
+    if not abs(x).max() >= SILENT_PEAK:
+        raise SystemExit(f"silent window: {path} at {start_s} s (peak {abs(x).max():.2g}); fix the queue first")
     if not m4a.exists():
         m4a.parent.mkdir(parents=True, exist_ok=True)
-        x = BDR.load(path, start_s, dur_s)
-        if not abs(x).max() >= SILENT_PEAK:
-            raise SystemExit(f"silent window: {path} at {start_s} s (peak {abs(x).max():.2g}); fix the queue first")
         y, _, _, _ = BDR.level_clip(x)
         flac = m4a.with_suffix(".flac")
         sf.write(str(flac), BDR.fade(y), BDR.SR, subtype="PCM_24")
@@ -398,6 +398,9 @@ tap <b>Export</b> any time, even halfway, and send the file. Unanswered items si
 def load_queue():
     q = json.loads((T0 / "ear-queue.json").read_text())
     reg = json.loads((T0 / "ear-items.json").read_text())
+    retired = [i["id"] for i in q["queue"] if reg.get(i["id"], {}).get("retired")]
+    if retired:
+        raise SystemExit(f"{len(retired)} queued items are retired: {retired[:3]}")
     if q.get("page") != VT.EAR_PAGE:
         raise SystemExit(f"ear-queue.json is for page {q.get('page')}")
     missing = [i["id"] for i in q["queue"] if i["id"] not in reg]
@@ -421,6 +424,9 @@ def write_part(out, part, items, build, n_parts, title=None):
 
 
 def cmd_build(args):
+    if (pathlib.Path(args.out) / "manifest.json").exists() and not args.force:
+        raise SystemExit("built pages exist: a rebuild changes their build ids and hides the listener's stored "
+                         "answers (export them first); use `extra` for new items, or --force")
     queue, build = load_queue()
     parts = plan_parts(queue, args.seed)
     out = pathlib.Path(args.out)
@@ -453,6 +459,7 @@ def main(argv=None):
     b = sub.add_parser("build", help="the listening pages from t0/ear-queue.json")
     b.add_argument("--out", default=str(OUT))
     b.add_argument("--seed", type=int, default=SEED)
+    b.add_argument("--force", action="store_true", help="rebuild over built pages (export their answers first)")
     b.set_defaults(fn=cmd_build)
     x = sub.add_parser("extra", help="queued items no built part holds, as one more part")
     x.add_argument("--out", default=str(OUT))

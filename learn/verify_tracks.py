@@ -1926,6 +1926,17 @@ def silent_items(registry, di_rows):
     return out
 
 
+def update_registry(registry, queue, di_rows):
+    """Add the queue's items to the registry (every item ever queued, so old exports still decode). A retired item
+    stays retired, and every silent window is (re)marked retired."""
+    for q in queue:
+        old = registry.get(q["id"]) or {}
+        registry[q["id"]] = dict(q, **({"retired": old["retired"]} if old.get("retired") else {}))
+    for iid in silent_items(registry, di_rows):
+        registry[iid]["retired"] = "a silent window: its answers are skipped"
+    return registry
+
+
 def sample_passed(di_rows, seed=D4_SAMPLE_SEED):
     """One D4-passed DI per band (pool and V_sep DIs with no D4-flagged section), seeded: queued for the ear to check
     D4's misses. -> {di: section start_s}."""
@@ -2063,7 +2074,8 @@ def cmd_lists(args):
                     continue
                 left.append(w)
             v, why = ("pending ear", left) if left else ("verified", [])
-        if row["sections"] and all(rs["d4_sections"][x["section"]] == "silent" for x in row["sections"]):
+        if v != "excluded" and row["sections"] and all(rs["d4_sections"][x["section"]] == "silent"
+                                                       for x in row["sections"]):
             v, why = "excluded", ["silent in every section: nothing to hear, and no mix uses it"]
         if v != "excluded" and di in sample and not wins:
             v, why = "pending ear", why + ["sampled for the ear (D4 passed)"]
@@ -2103,7 +2115,7 @@ def cmd_lists(args):
                                     {"di": row["path"], "amp": str(sess / amp) if amp else None},
                                     "D1 went to the ear (no readable lag or roll-off)",
                                     question="The DI, then its amp track: is the DI the clean DI of this amp take?"))
-        if any(w.startswith("DI-only") for w in why):
+        if any(w.startswith("DI-only") for w in why) and not flagged:   # a flagged window heard clean clears it too
             x = busiest_audible(row["sections"])
             queue.append(queue_item("di_only", di, "di", x["start_s"], CROP_S, {"di": row["path"]},
                                     "a DI-only part (no amp track to check it against)"))
@@ -2135,10 +2147,7 @@ def cmd_lists(args):
     if quiet:
         print(f"left out of the ear queue: {len(quiet)} silent windows")
         queue = [q for q in queue if q["id"] not in quiet]
-    for q in queue:
-        registry[q["id"]] = q
-    for iid in silent_items(registry, di_rows):
-        registry[iid]["retired"] = "a silent window: its answers are skipped"
+    update_registry(registry, queue, di_rows)
     counts_q = {}
     for q in queue:
         counts_q[q["kind"]] = counts_q.get(q["kind"], 0) + 1
