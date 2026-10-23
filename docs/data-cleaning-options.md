@@ -299,6 +299,16 @@ variants' upper bounds stay at or under +0.0007.
 **Limits.** One band, one part, 6 sections; synthetic rooms; the 0 dB effect is thin (55% of examples
 worse, one section none).
 
+### The user's decision (2026-10-23)
+
+"Let's only keep clean ones for now. We'll add the not-loud ones only if we must. Let's not
+compromise quality." So every example with any flagged take or bleed stays excluded from training and
+from the trusted test set, even though the injection test found live-level bleed harmless on the test
+side. Kimock and Swatkins stay out of the trusted R_in for now. The rebuilt guitar doubles (option (c),
+954 current examples) count as clean. Adding not-loud bleed back is a last resort, proposed only if
+data size forces it. The trusted R_in is then Adam Buckley's untouched examples and Dark Ride (2 bands),
+so new test bands (the DI-source inventory, #276) matter for power.
+
 ### Is −30 dB too strict?
 
 - **The counts at looser thresholds** (`lists.log`):
