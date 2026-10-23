@@ -184,7 +184,23 @@ has an id, kind, files, window, reason and allowed verdicts. The kinds:
 - **`di_amp`:** the DI, then its amp track (D1 to the ear).
 
 The page built from the queue exports to page `trusted-data-ear`. `lists --ear` reads that export
-back through `t0/ear-items.json`.
+back through `t0/ear-items.json`. `learn/build_ear_page.py build` writes it as three parts, one
+question each: targets (DI, then target), DI and amp pairs (DI, then amp track), and DIs. The DI
+part is blind: it never shows why an item is queued, and its files are shuffled (seed 20261023),
+each file's windows kept together (one limit: flagged windows come in runs, so a file with many
+windows is likely a flagged one). Clips are levelled to −23 LUFS, AAC at 96 kbps. Each part
+exports its own file, passed as its own `--ear`.
+
+**Silent windows (fixed 2026-10-23).** The first queue held 15 digitally silent windows: for
+`di_amp` and `di_only` it played the section with the most "playing" frames, and a silent section
+counts every frame as playing. The queue now picks the busiest audible section; a DI silent in
+every section (4 "other guitar" overdubs: Dark Ride ElecGtr03 and 04, Prodigal ElecGtr4 and 5,
+which play outside every measured window) is excluded, since no mix uses it; `lists` retires the
+silent items, and `ear_answers` skips any answer on them. The build refuses a silent clip, cached
+or not, and refuses to rebuild over built pages. `build_ear_page extra` put the 11 re-picked
+windows on a fourth part, leaving parts 1–3 and their stored answers alone. A `di_only` item is no
+longer queued when the DI already has a flagged window queued (a flagged window heard clean clears
+it too): 7 such repeats left the queue (184 items), part 4's items 4, 5, 6, 8, 9 and 11 among them.
 
 **What the dry run shows** (scratch, zero renders):
 
