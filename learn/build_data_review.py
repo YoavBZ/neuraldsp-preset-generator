@@ -974,7 +974,8 @@ def _amp_items(audit_dir):
             if halves_silent(bleed[s]["halves"][h]):
                 continue
             a, b = HALF_CLIPS[h]
-            mics = "amp track" if p["n_amp_tracks"] == 1 else f"{p['n_amp_tracks']} amp mics summed"
+            # the clip is the crop's reference.wav: the main mic alone (trusted-data plan (a): the label is fixed)
+            mics = "amp track" if p["n_amp_tracks"] == 1 else f"main amp mic (of {p['n_amp_tracks']})"
             items.append({
                 "id": item_id("amp", s, h), "section": "amp", "slug": s, "half": h,
                 "title": f"{p['band']} · {p['song']} · {p['part']}",
