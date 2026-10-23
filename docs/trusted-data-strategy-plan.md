@@ -124,11 +124,11 @@ note beside each headline; nothing re-runs.
   at −35 and −40 dB, and adopts a stricter floor only if it validates.
 - **Gaps.** One clean-class band (Eggy) and one crunch section. Eggy's backing becomes a bass DI
   and 2 keys tracks; Renesans' a bass DI and its line-level playback tracks (never `GTR Pre Rec`, a
-  double of the riff). The Cambridge scan found no new DI-and-amp band on the
-  hosts it could read. Blue Manic "Acomatay", downloaded through the user's browser on 2026-10-23,
-  is a reserved test band with 5 DI + amp pairs. It is not in this plan's V-real or T4; a test that
-  uses it declares its own gate in its own ledger entry. EGDB (downloaded the same day) and GOAT have no session, so they stay
-  out of T3 unless the user accepts a borrowed backing.
+  double of the riff). The Cambridge scan found no new DI-and-amp band on the hosts it could read.
+  Blue Manic "Acomatay", downloaded through the user's browser on 2026-10-23, is a reserved test
+  band with 5 DI + amp pairs. It is not in this plan's V-real or T4; a test that uses it declares
+  its own gate in its own ledger entry. EGDB (downloaded the same day) and GOAT have no session, so
+  they stay out of T3 unless the user accepts a borrowed backing.
 
 ## (c) How a mix is built
 

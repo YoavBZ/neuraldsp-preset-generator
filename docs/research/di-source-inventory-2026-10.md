@@ -7,9 +7,9 @@ user). The one confirmed band, Jen Hartswick & Nick Cassarino, was then download
 approved by the user) as a reserved test band. Later that day, at the user's request, Blue
 Manic "Acomatay" (a second reserved test band) and EGDB's DI folder were downloaded through the
 user's browser, and the user requested GOAT's access on Zenodo. Nothing was rendered, separated or
-listened to. Local facts come from the stored inventory, manifest and pool files; outside facts from dataset pages, papers, the Telefunken "Live From The Lab" (LFTL) pages,
-the Hugging Face re-host's file listing and archived Cambridge-MT pages. Research, not a declared
-plan.*
+listened to. Local facts come from the stored inventory, manifest and pool files; outside facts
+from dataset pages, papers, the Telefunken "Live From The Lab" (LFTL) pages, the Hugging Face
+re-host's file listing and archived Cambridge-MT pages. Research, not a declared plan.*
 
 Tags: **[V]** verified at the source in this session; **[P]** this repo's committed docs or stored
 files (`~/ndsp-presets/learn/clean-di/`, `~/ndsp-presets/learn/pretrain-set/pool.json`);
@@ -25,6 +25,9 @@ files (`~/ndsp-presets/learn/clean-di/`, `~/ndsp-presets/learn/pretrain-set/pool
   - screened or set aside: Guitar-TECHS for hum, "Sascha" because its band is held out, "Crucial
     Taunt" because its DI comes after the amp, Timo And The Timezone as a B2 candidate, and
     EGFxSet and ToneTwist, which are notes or capture inputs.
+
+  Since 2026-10-23 three downloads sit beside them: two reserved test bands (Jen Hartswick & Nick
+  Cassarino, Blue Manic) and EGDB's DI folder, which can train once its DIs pass the DI checks.
 - **The pool is short of exactly what the tests ask for.** Of the 277 training sections [P]:
   - 135 come from high-gain DIs or a melodic death metal session;
   - 96 of the 97 clean-class sections are one band, Eggy;
@@ -135,6 +138,8 @@ set or a declared reservation. Sizes are archive sizes.
 
 ### Not on disk
 
+*Not on disk when this report was first written; the rows marked "downloaded" have since arrived.*
+
 | Source | What it holds | EG DI: hours; songs / players / bands | Genre fit | Licence | Already used? | Conflicts | Download | Quality notes |
 |---|---|---|---|---|---|---|---|---|
 | **Telefunken LFTL: Jen Hartswick & Nick Cassarino** (S4, 4 songs) | guitar DI + amp mic in every song; 2 vocal mics, a trumpet in 1 song, a stereo room pair [V] | 4 DIs, 20.4 min at 48 kHz, 24-bit (headers read after the download) [V]; 4 songs / 1 band | jazz/soul duo: clean to crunch [U] | home-studio and educational use only, attribution line [V] | no (not in any set, ledger or `learn/` code) | none; **a reserved test band (2026-10-23)**, ledger `telefunken-new-test-band-jhnc` | 0.94 GB, **downloaded 2026-10-23** to `datasets-telefunken-new/` [V] | file named `Guitar-Passive DI`; live room, so check bleed; 12 of the 28 local Telefunken DIs are hum-flagged, 6 in every window, and 27 of 28 read 60-Hz mains [P]; the "Numb" archive's folder is named "Novacaine" [V] |
@@ -149,7 +154,7 @@ set or a declared reservation. Sizes are archive sizes.
 | Cambridge, added since 2025: Blue Manic "Acomatay" | full multitrack | **5 DI + amp pairs** (ElecGtr1 with two amp mics, 2, 6, 7, 8), 20.2 min of DI, 44.1 kHz, 24-bit [V] | stoner rock: scope by ear | same | no | **a reserved test band (2026-10-23)**, ledger `cambridge-new-test-band-bluemanic` | 0.51 GB ZIP, **downloaded 2026-10-23** to `datasets-cambridge-new/` [V] | the site's mix (Full Preview MP3) not downloaded yet |
 | Cambridge, added since 2025: DGX "Rest In Hell" (4 DIs), Slimy Soul Suckers "Big Bang", Prusinski "80s Rocker", Hollowstate "Hurricane" | multitracks | DI confirmed only for DGX [V, partial re-host] | unknown; blues rock; MOR rock; hard rock | same | no | none known | about 1–1.3 GB each [U] | site behind Cloudflare; a browser opened it (2026-10-23) |
 | Cambridge metal sessions with DIs (Arcadian Alone, Daimon B, Inhumanity Vortex, Peppermark ×2, Serapis ×2, SkalyVan ×3, Szymon Skiba "Trashy Thrash") | DI + amp or DI-only | about 80 DI files [V] | **metal: out of scope** | same | no | Szymon Skiba is a stage F band | — | — |
-| **EGDB** | DI only (plus amp renders) | 1.79 h (107.5 min, read after the download); 240 clips / 1 player / 1 Strat-type [V, U] | solo, arpeggio and comping, various genres [U] | none stated, "feel free to use" [V], which covers the downloaded Drive DIs; the Zenodo renders are CC BY 4.0 [V]; confirmed by the user (2026-10-23) | arm A literature only | none | **downloaded 2026-10-23**: the Drive `audio_DI` folder, 0.46 GB ZIP, 44.1 kHz, 16-bit, mono [V]; the 1.04 GB Zenodo zip is EGDB rendered through BIAS FX2 (its record's title and description) [V]; whether it also holds the dry DIs was not checked [U] | played to a click; hex pickup for labels; DI box vs hex sum unclear [U] |
+| **EGDB** | DI only (plus amp renders) | 1.79 h (107.5 min, read after the download); 240 clips / 1 player / 1 Strat-type [V, U] | solo, arpeggio and comping, various genres [U] | none stated, "feel free to use" [V], which covers the downloaded Drive DIs; the Zenodo renders are CC BY 4.0 [V]; confirmed by the user (2026-10-23) | arm A literature only | none | **downloaded 2026-10-23**: the Drive `audio_DI` folder, 0.46 GB ZIP, 44.1 kHz, 16-bit, mono [V]; the 1.04 GB Zenodo zip holds the BIAS FX2 renders, not the dry DIs ([round 1's check](round-1-song-only-matching.md)) [P] | played to a click; hex pickup for labels; DI box vs hex sum unclear [U] |
 | **GOAT** | DI only (plus NAM and Guitar Pro renders, tabs) | 5.9 h; 172 cover songs / authors + 2 creators, no performer IDs / 4 guitars (Strat 235 min) [V] | covers; some "rock/metal"; share unknown [V, U] | CC BY-NC 4.0, restricted: request on Zenodo, "research purposes only" [V]; confirmed by the user (2026-10-23); **access requested by the user (2026-10-23)** | no (ML plan: "not now") | none | 15–25 GB [U] | no backing [V] |
 | GuitarJam (Hugging Face) | DI only | 2.5 h; 580 × 15-s monophonic improvisations / 1 Strat, players unstated [V] | single-note lines only | CC0 [V] | no | none | 796 MB [V] | no chords; no backing |
 | IDMT-SMT-Guitar | DI, mostly notes and licks | about 15–20 min of short pieces (subsets 3–4) [U] / 7 guitars [V] | genre-tagged short pieces | CC BY-NC-ND 4.0 [V]; confirmed by the user (2026-10-23) | via ToneTwist | none | 1.33 GB [V] | ND: re-rendering makes derivatives; the user confirmed the licence |
@@ -290,18 +295,18 @@ Telefunken sessions are a mix of 48 and 96 kHz [P].
    first (the ML session's recommendation).
 3. **B2's songs:** Strobe "Maya" and MekaPhil may be used for training, which spends B2's parked
    known-answer pool.
-4. **Licences confirmed:** EGDB ("feel free to use"; the Zenodo copy is CC BY 4.0),
+4. **Licences confirmed:** EGDB ("feel free to use"; the Zenodo renders are CC BY 4.0),
    IDMT-SMT-Guitar (CC BY-NC-ND 4.0) and GOAT (CC BY-NC 4.0, through a Zenodo access request).
 5. **Downloads (later on 2026-10-23, through the user's browser at their request):**
    - Blue Manic "Acomatay", the full multitrack (0.51 GB ZIP, 32 WAVs), as a **reserved test band**
-     (ledger `cambridge-new-test-band-bluemanic`; the ML session applies decision 2 to this
-     Cambridge band, as told to the user the same day). It holds **5 DI +
-     amp pairs, not 1**: ElecGtr1 (two amp mics), 2, 6, 7 and 8, 20.2 min of DI at 44.1 kHz,
-     24-bit [V]. Stoner rock, so each part's scope is checked by ear. The site's mix (Full Preview
-     MP3) is not downloaded yet. Stored in `datasets-cambridge-new/`.
+     (ledger `cambridge-new-test-band-bluemanic`). Test first is the ML session applying decision 2
+     to this Cambridge band, as told to the user the same day, not a separate user decision. It
+     holds **5 DI + amp pairs, not 1**: ElecGtr1 (two amp mics), 2, 6, 7 and 8, 20.2 min of DI at
+     44.1 kHz, 24-bit [V]. Stoner rock, so each part's scope is checked by ear. The site's mix
+     (Full Preview MP3) is not downloaded yet. Stored in `datasets-cambridge-new/`.
    - EGDB's `audio_DI` folder from the authors' Google Drive (0.46 GB ZIP): 240 clips, 107.5 min,
-     44.1 kHz, 16-bit, mono [V]. The Zenodo record holds only BIAS FX2 renders of 4-s clips, so
-     the Drive folder is the DI source. Stored in `datasets-egdb/`. Training only (no backing),
+     44.1 kHz, 16-bit, mono [V]. The Zenodo record holds the BIAS FX2 renders, not the dry DIs
+     ([round 1's check](round-1-song-only-matching.md)), so the Drive folder is the DI source. Stored in `datasets-egdb/`. Training only (no backing),
      and only after its DIs pass the trusted-data DI checks.
    - GOAT: the user sent the Zenodo access request.
 
