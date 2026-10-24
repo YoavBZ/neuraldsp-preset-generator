@@ -759,13 +759,15 @@ def cmd_render(args):
 # --- build (MSST; separations) -----------------------------------------------------------------------------------
 
 class Stems:
-    """A section's stems summed at the session's balance (cached per section and vocal variant)."""
+    """A section's stems summed at the session's balance (cached per section and vocal variant), folded to mono as a
+    centred source: a mono file by pan_fold(0); a stereo file is folded already ((L + R) / 2 on loading)."""
 
     def __init__(self, ctx):
         self.ctx, self.cache = ctx, {}
 
     def get(self, sid, tracks):
         import numpy as np
+        import soundfile as sf
 
         from learn import pretrain_set as PS
 
@@ -775,7 +777,8 @@ class Stems:
             sess = pathlib.Path(self.ctx.inv[sec["di"]]["session_dir"])
             b = np.zeros(int(round((PS.SEC_S + PS.TRIM_S) * PS.SR)))
             for t in tracks:
-                b += PS.section_audio(sess / t, sec["start_s"])
+                fold = pan_fold(0.0) if sf.info(str(sess / t)).channels == 1 else 1.0
+                b += PS.section_audio(sess / t, sec["start_s"]) * fold
             if len(self.cache) >= 4:
                 self.cache.pop(next(iter(self.cache)))
             self.cache[key] = b[int(PS.TRIM_S * PS.SR):]
@@ -783,13 +786,13 @@ class Stems:
 
 
 def self_built_mix(y, others, stems_audio, x):
-    """The mix of one example (plan (c)): backing = other guitars (already levelled and pan-folded) + stems (centred,
-    so folded by pan_fold(0), as a centred other guitar would be); the backing set against the target by the drawn
-    ratio, the drawn loudness, and the drawn mastering. -> (mix, gains {gb, ga}, backing LUFS)."""
+    """The mix of one example (plan (c)): backing = other guitars (already levelled and pan-folded) + stems (already
+    folded as centred sources by `Stems`); the backing set against the target by the drawn ratio, the drawn loudness,
+    and the drawn mastering. -> (mix, gains {gb, ga}, backing LUFS)."""
     from learn import direct_stems as DS
     from learn import song_aug as SA
 
-    b = others + stems_audio * pan_fold(0.0)
+    b = others + stems_audio
     lg, lb = float(SA.lufs(y)), float(SA.lufs(b))
     gb, ga = mix_gains(lg, lb, x["draw"])
     mix = (y + b * 10 ** (gb / 20)) * 10 ** (ga / 20)

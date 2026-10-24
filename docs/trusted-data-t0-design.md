@@ -69,7 +69,9 @@ Per judge half of a crop (A 1.0–5.5 s, B 5.5–10.0 s), `reference.wav` agains
     - DI-only parts;
     - a seeded sample of D4-passed DIs (one per band, seed 20261103).
 - **A target is trusted only once heard** clean, and as an amp where A1 or A2 went to the ear.
-  Quicksand ElecGtr2 and Today's The Day ElecGtr07 wait for the ear.
+  Quicksand ElecGtr2 and Today's The Day ElecGtr07 stay excluded on their measured fails (user,
+  2026-10-24). A target's measure DI is heard first too: an unheard one queues a `di_unheard` card
+  (6 on 2026-10-24: 4 of V-real's parts, 2 of knob ceiling 2's).
 - **`lists` recomputes every verdict** from the stored readings under the current thresholds. It
   refuses on:
   - a missing, incomplete or stale `dis` or `stem-scan` shard;
@@ -305,7 +307,7 @@ early-stopping set.
 | plan, render | `$MAIN -m learn.trusted_data plan --stage t2`; `$MAIN -u … render --stage t2 --shard k/3` | about 12–18k renders, 2.5–3.5 h on 3 processes |
 | build | `$MSST -m learn.trusted_data build --stage t2 --device mps` | about 6k separations, 5–8 h |
 | train | `$TORCH_PY -m learn.trusted_data train --arm SES\|SYN --seed 20261042\|20261043` | 4 runs, about 1.5 h MPS |
-| fit, E on K, V-real | `fit`, `e-on-k`, `vreal-predict` (TORCH_PY); `vreal-render --shard k/3`, `report` (MAIN) | about 165 renders (SES, SYN and the constant; about 220 if SYN-E runs) |
+| fit, E on K, V-real | `fit`, `e-on-k`, `vreal-predict` (TORCH_PY); `vreal-render --shard k/3`, `report` (MAIN) | about 231 renders at 11 V-real parts (66 per arm for SES, SYN and the constant, plus 33 priming; about 300 if SYN-E runs) |
 
 ## Open questions
 
@@ -539,6 +541,6 @@ The review's four decisions before the ear, each as the ML session recommended. 
 - **The song-blind constant is one more V-real arm at T2.** `fit` stores the step 3 gate's constant
   (`direct_sound_gate.constant_answers`: continuous medians of the audible labels, switches by majority, mics by the
   most frequent) over the SYN arm's training labels (SES's are the same). `vreal-predict` adds it as arm "constant",
-  `vreal-render` renders it with the others (about 55 renders per arm), and `report` reads SES − constant, SYN − constant
+  `vreal-render` renders it with the others (about 66 renders per arm at 11 parts), and `report` reads SES − constant, SYN − constant
   and constant − S beside the primary. The reading rule is unchanged.
 

@@ -1755,9 +1755,11 @@ def ear_answers(paths, di_paths=(), registry=None):
     - `paths`: target judgments: the target-vs-DI page ('amp' or not) and the ear-queue page (`EAR_PAGE`, its ids
       decoded through `registry`, the items `lists` has queued). A data-review-1 export is refused here (its amp
       items were judged on the DI clip). Several answers on one item are all kept; `merge_ear` lets a negative win.
-    An ear-page export holds every item of its part (unanswered ones as null), so on one item the export with the
-    latest `exported` time replaces the others: a changed answer replaces the old one, and an answer taken back clears
-    it. Notes go to `notes`, with or without a verdict, for the ML session to read before T1."""
+    An ear-page export holds every item of its part, each stamped with the time the listener last touched it (`t`;
+    null on a card never touched in that browser). On one item the latest touch across all exports stands: a changed
+    answer replaces the old one, and an answer taken back (a null verdict with a time) clears it. A card never touched
+    holds no answer, so an export from another browser or a rebuilt page never erases one. Notes go to `notes`, with
+    or without a verdict, for the ML session to read before T1."""
     out = {"target_clean": {}, "target_amp": {}, "crop_di": {}, "di_windows": {}, "di_pairs": {}, "stems": {},
            "notes": [], "superseded": 0}
     registry = registry or {}
@@ -1779,24 +1781,24 @@ def ear_answers(paths, di_paths=(), registry=None):
         if not about_di and page not in ("target-vs-di-check", EAR_PAGE):
             raise SystemExit(f"{p}: unknown page {page}")
         loaded.append((p, page, d))
-    latest = {}                                     # ear-page item id -> ((exported, file order), file order)
+    latest = {}                                     # ear-page item id -> (touch time, file order) of the answer that stands
     for n, (p, page, d) in enumerate(loaded):
         if page == EAR_PAGE:
             for a in d.get("answers") or []:
-                k = (d.get("exported") or "", n)
-                if a["id"] not in latest or k >= latest[a["id"]][0]:
-                    latest[a["id"]] = (k, n)
+                t = answer_time(a, d)
+                if t and (a["id"] not in latest or (t, n) >= latest[a["id"]]):
+                    latest[a["id"]] = (t, n)
     for n, (p, page, d) in enumerate(loaded):
         for a in d.get("answers") or []:
             v = a.get("verdict")
-            if page == EAR_PAGE and latest[a["id"]][1] != n:
+            if page == EAR_PAGE and latest.get(a["id"], (None, None))[1] != n:
                 out["superseded"] += bool(v)
                 continue
             note = (a.get("note") or "").strip()
             src = registry.get(a["id"]) if page == EAR_PAGE else items.get(a["id"])
-            if note and not (src or {}).get("retired"):
+            if note:                                     # kept on retired cards too: the note may say why
                 out["notes"].append({"file": str(p), "page": page, "id": a["id"], "verdict": v, "note": note,
-                                     "kind": (src or {}).get("kind"),
+                                     "retired": (src or {}).get("retired"), "kind": (src or {}).get("kind"),
                                      "key": (src or {}).get("key") or (src or {}).get("slug"), "title": a.get("title")})
             if not v:
                 continue
@@ -1832,22 +1834,34 @@ def ear_answers(paths, di_paths=(), registry=None):
     return out
 
 
+def answer_time(a, d):
+    """When the listener last touched an ear-page answer: its own `t`; an answer with a verdict but no `t` (a
+    hand-made export) takes the export's time, or "0000" (before any real time) if it has none; an untouched card has
+    none."""
+    return a.get("t") or ((d.get("exported") or "0000") if a.get("verdict") else None)
+
+
 def export_records(paths):
-    """[{path, sha256, page, part, build, exported}] of answer exports, as `lists` records them in verified.json."""
+    """[{path, sha256, page, part, build, exported, answered}] of answer exports, as `lists` records them in
+    verified.json. `answered`: {item id: touch time} of an ear-page export's touched cards."""
     out = []
     for p in paths or ():
         q = pathlib.Path(p).expanduser()
         d = json.loads(q.read_text())
+        answered = {a["id"]: answer_time(a, d) for a in d.get("answers") or [] if answer_time(a, d)} \
+            if d.get("page") == EAR_PAGE else None
         out.append({"path": str(q), "sha256": sha256_file(q), "page": d.get("page"), "part": d.get("part"),
-                    "build": d.get("build"), "exported": d.get("exported")})
+                    "build": d.get("build"), "exported": d.get("exported"), "answered": answered})
     return out
 
 
 def dropped_exports(prev, now):
     """The exports an earlier `lists` read that this run would drop. Each run rebuilds every verdict from the files it
     is given, so leaving one out loses its answers. An earlier export counts as kept when this run passes the same
-    file (by sha256 or path), or a later export of the same ear-page part and build (it holds every item of the
-    part). prev: an earlier verified.json; now: `export_records` of this run. -> [paths]."""
+    file (by sha256), or when this run's exports touched every card it touched, each as late or later (a later export
+    from the same browser does; one from another browser usually doesn't). A record without `answered` (from before
+    the per-card times) is kept only by the same file. prev: an earlier verified.json; now: `export_records` of this
+    run. -> [paths]."""
     if not prev:
         return []
     old = prev.get("ear_exports")
@@ -1856,14 +1870,16 @@ def dropped_exports(prev, now):
         for p in (prev.get("ear_files") or []) + (prev.get("ear_di_files") or []):
             q = pathlib.Path(p).expanduser()
             old.append({"path": str(q), "sha256": sha256_file(q) if q.exists() else None})
-    shas, paths = {e["sha256"] for e in now}, {e["path"] for e in now}
+    shas = {e["sha256"] for e in now}
+    touched = {}
+    for n in now:
+        for iid, t in (n.get("answered") or {}).items():
+            touched[iid] = max(touched.get(iid, ""), t)
     out = []
     for e in old:
-        if e.get("sha256") in shas or e["path"] in paths:
+        if e.get("sha256") and e["sha256"] in shas:
             continue
-        if e.get("page") == EAR_PAGE and any(
-                (n["page"], n["part"], n["build"]) == (EAR_PAGE, e.get("part"), e.get("build"))
-                and (n["exported"] or "") >= (e.get("exported") or "") for n in now):
+        if e.get("answered") is not None and all(touched.get(iid, "") >= t for iid, t in e["answered"].items()):
             continue
         out.append(e["path"])
     return out
@@ -2194,6 +2210,8 @@ def cmd_lists(args):
         inv = cr.get("inventory_di")                     # the same DI file heard on another window, or with its amp
         file_bad = bool(inv) and (any(merge_ear([v], "clean") is False for _, _, v in ear["di_windows"].get(inv, []))
                                   or merge_ear(ear["di_pairs"].get(inv, []), "amp") is False)
+        file_heard = bool(inv) and (any(merge_ear([v], "clean") is True for _, _, v in ear["di_windows"].get(inv, []))
+                                    or merge_ear(ear["di_pairs"].get(inv, []), "amp") is True)
         if "fail" in (st["D2"], st["D3"]):
             v, why = "excluded", [f"{m} fails" for m in ("D2", "D3") if st[m] == "fail"]
         elif heard is False:
@@ -2203,6 +2221,8 @@ def cmd_lists(args):
         elif st["D4"] == "fail" and resolved is not True:       # only a queue answer on the flagged window clears it
             conflict = heard is True
             v, why = "pending ear", ["conflict: heard clean, D4 flags it" if conflict else "D4 flags it (unheard)"]
+        elif heard is not True and not file_heard:              # every DI is heard before it counts (user, 2026-10-24)
+            v, why = "pending ear", ["unheard: every DI is heard before it counts"]
         else:
             v, why = "verified", []
         crop_di[slug] = {"verdict": v, "why": why, "status": st, "ear": heard, "d4": cr["d4"], "d2": cr["d2"]}
@@ -2222,8 +2242,8 @@ def cmd_lists(args):
             w.startswith(("heard", "its DI file")) for w in md["why"]))
         if md and md["verdict"] == "pending ear" and v != "excluded":   # the measure DI waits for the ear too
             cr = crop_rows[slug]
-            conflict = md["why"][0].startswith("conflict")
-            queue.append(queue_item("di_conflict" if conflict else "di_flagged", f"crop:{slug}", "di", cr["window_s"],
+            kind = {"conflict": "di_conflict", "unheard": "di_unheard"}.get(md["why"][0].split(":")[0], "di_flagged")
+            queue.append(queue_item(kind, f"crop:{slug}", "di", cr["window_s"],
                                     CROP_S, {"di": cr["di_file"]}, md["why"][0], crest_db=cr["d4"]["crest_db"],
                                     bright_slope=cr["d4"]["bright_slope"]))
         if md and md["verdict"] == "excluded" and v != "excluded":

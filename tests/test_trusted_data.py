@@ -156,19 +156,23 @@ def test_a_pitch_confirmed_double_takes_the_targets_settings_and_silent_own_amps
     assert T.other_level(None, [-30.0], [-25.0], has_own=False) == (-30.0, "session amp median")
 
 
-def test_stems_fold_like_a_centred_guitar():
+def test_stems_fold_once_as_centred_sources(tmp_path):
     np = pytest.importorskip("numpy")
-    pytest.importorskip("pyloudnorm")
-    t = np.arange(48000 * 3) / 48000
-    y = 0.1 * np.sin(2 * np.pi * 220 * t)
-    other = 0.1 * np.sin(2 * np.pi * 330 * t) * T.pan_fold(0.0)    # a centred other guitar, folded
-    stem = 0.1 * np.sin(2 * np.pi * 330 * t)                        # the same source as a (centred) stem, raw
-    from learn import direct_stems as DS
+    sf = pytest.importorskip("soundfile")
+    pytest.importorskip("scipy")
+    import types
 
-    x = {"i": 1, "draw": {"ratio_db": -6.0, "leak_db": -99.0, "target_lufs": -20.0, "mastered": DS.master_draw(1)[0]}}
-    _, _, lb_other = T.self_built_mix(y, other, np.zeros_like(y), x)
-    _, _, lb_stem = T.self_built_mix(y, np.zeros_like(y), stem, x)
-    assert abs(lb_other - lb_stem) < 0.05                          # both centred sources fold alike
+    from learn import pretrain_set as PS
+
+    n = int(round((PS.SEC_S + PS.TRIM_S + 2) * PS.SR))
+    s = 0.1 * np.sin(2 * np.pi * 330 * np.arange(n) / PS.SR)
+    sf.write(str(tmp_path / "mono.wav"), s, PS.SR)                                 # a centred source, one channel
+    g = T.pan_fold(0.0)
+    sf.write(str(tmp_path / "stereo.wav"), np.stack([s * g, s * g], 1), PS.SR)     # the same source panned centre
+    ctx = types.SimpleNamespace(sections={"x": {"di": "d", "start_s": 0.5}}, inv={"d": {"session_dir": str(tmp_path)}})
+    st = T.Stems(ctx)
+    a, b = st.get("x", ["mono.wav"]), st.get("x", ["stereo.wav"])
+    assert np.allclose(a, b, atol=1e-4) and np.isclose(np.abs(a).max(), 0.1 * g, rtol=0.02)
 
 
 def test_empty_backing_is_refused():

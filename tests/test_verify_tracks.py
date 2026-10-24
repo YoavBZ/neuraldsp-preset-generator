@@ -541,10 +541,11 @@ class _Lists:
         return json.loads((t0 / "verified.json").read_text()), json.loads((t0 / "ear-queue.json").read_text())
 
     def export(self, answers, part=3, exported="2026-10-24T08:00:00Z", page=V.EAR_PAGE):
+        """answers: (id, verdict, note) or (id, verdict, note, t); t None marks a card never touched."""
         self.n += 1
         p = self.tmp / f"export-{self.n}.json"
-        p.write_text(json.dumps({"page": page, "part": part, "build": "b1", "exported": exported,
-                                 "answers": [{"id": i, "verdict": v, "note": n} for i, v, n in answers]}))
+        p.write_text(json.dumps({"page": page, "part": part, "build": "b1", "exported": exported, "answers": [
+            {"id": a[0], "verdict": a[1], "note": a[2], **({"t": a[3]} if len(a) > 3 else {})} for a in answers]}))
         return str(p)
 
 
@@ -573,17 +574,35 @@ def test_lists_refuses_to_drop_an_earlier_export_and_a_real_run_needs_sitting_1(
         env.run([p2, later], real=True)
 
 
-def test_dropped_exports_by_hash_path_or_a_later_export_of_the_part():
+def test_dropped_exports_by_hash_or_by_later_touches_of_every_card():
     old = {"ear_exports": [{"path": "/a.json", "sha256": "1", "page": V.EAR_PAGE, "part": 1, "build": "b",
-                            "exported": "2026-10-24T08:00"},
+                            "exported": "2026-10-24T08:00", "answered": {"x": "08:00", "y": "07:00"}},
                            {"path": "/s1.json", "sha256": "2", "page": "data-review-1", "part": None, "build": None,
-                            "exported": None}]}
-    now = [{"path": "/elsewhere/s1.json", "sha256": "2", "page": "data-review-1", "part": None, "build": None,
-            "exported": None}]
-    assert V.dropped_exports(old, now) == ["/a.json"]
-    now.append({"path": "/a2.json", "sha256": "3", "page": V.EAR_PAGE, "part": 1, "build": "b",
-                "exported": "2026-10-24T09:00"})
-    assert V.dropped_exports(old, now) == [] and V.dropped_exports(None, now) == []
+                            "exported": None, "answered": None}]}
+    s1 = {"path": "/elsewhere/s1.json", "sha256": "2", "page": "data-review-1", "answered": None}
+    assert V.dropped_exports(old, [s1]) == ["/a.json"]
+    other_browser = {"path": "/a2.json", "sha256": "3", "page": V.EAR_PAGE, "part": 1, "build": "b",
+                     "exported": "2026-10-24T09:00", "answered": {"z": "09:00"}}
+    assert V.dropped_exports(old, [s1, other_browser]) == ["/a.json"]          # a later file that lacks x and y
+    same_browser = dict(other_browser, sha256="4", answered={"x": "08:00", "y": "08:30", "z": "09:00"})
+    assert V.dropped_exports(old, [s1, same_browser]) == [] and V.dropped_exports(None, [s1]) == []
+    assert V.dropped_exports({"ear_exports": [dict(old["ear_exports"][0], answered=None)]}, [same_browser]) == ["/a.json"]
+
+
+def test_an_export_from_another_browser_never_erases_an_answer(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")                           # lists -> prior_summary
+    env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 10.0, crest=6.0), _sec("x2", 40.0)])])
+    _, q = env.run()
+    iid = _ids(q, "di_flagged", "x")[10.0]
+    phone = env.export([(iid, "processed", "", "2026-10-24T08:00:00Z")])
+    laptop = env.export([(iid, None, "", None)], exported="2026-10-24T10:00:00Z")   # the card untouched there
+    rec, _ = env.run([phone, laptop])
+    assert rec["dis"]["x"]["verdict"] == "excluded"
+    with pytest.raises(SystemExit, match="drop"):
+        env.run([laptop])                                     # the laptop's file does not hold the phone's answer
+    taken_back = env.export([(iid, None, "", "2026-10-24T11:00:00Z")], exported="2026-10-24T11:00:00Z")
+    rec, _ = env.run([phone, laptop, taken_back])             # a later touch that clears the answer does stand
+    assert rec["dis"]["x"]["verdict"] != "excluded"
 
 
 def test_unsure_on_a_sampled_di_keeps_it_pending(tmp_path, monkeypatch):
@@ -620,10 +639,10 @@ def test_notes_are_kept_and_a_retracted_answer_clears(tmp_path):
     reg = {"ear-y": {"kind": "di_flagged", "family": "di", "key": "d", "start_s": 30.0, "dur_s": 10.0},
            "ear-z": {"kind": "di_flagged", "family": "di", "key": "e", "start_s": 30.0, "dur_s": 10.0}}
 
-    def ex(name, ans, exported):
+    def ex(name, ans, exported):                                  # the page stamps every touched card with its time
         p = tmp_path / name
         p.write_text(json.dumps({"page": V.EAR_PAGE, "part": 3, "build": "b1", "exported": exported,
-                                 "answers": [{"id": i, "verdict": v, "note": n} for i, v, n in ans]}))
+                                 "answers": [{"id": i, "verdict": v, "note": n, "t": exported} for i, v, n in ans]}))
         return p
     half = ex("half.json", [("ear-y", "processed", ""), ("ear-z", "clean", "")], "2026-10-24T08:00")
     final = ex("final.json", [("ear-y", "clean", "the crunch is the pick"), ("ear-z", None, "not sure any more")],
@@ -650,9 +669,22 @@ def test_a_measure_di_heard_processed_on_another_window_excludes_its_crop(tmp_pa
             "d2": {"flags": []}, "d4": {"crest_db": 12.0, "bright_slope": 0.5}}
     env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 10.0, crest=6.0)])], {"Song-x": crop})
     rec, q = env.run()
-    assert rec["measure_dis"]["Song-x"]["verdict"] == "verified"
+    assert rec["measure_dis"]["Song-x"]["verdict"] == "pending ear"          # unheard: every DI is heard first
     rec, _ = env.run([env.export([(_ids(q, "di_flagged", "x")[10.0], "processed", "")])])
     assert rec["measure_dis"]["Song-x"]["verdict"] == "excluded"
+
+
+def test_an_unheard_measure_di_waits_and_counts_once_its_file_is_heard_clean(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")                           # lists -> prior_summary
+    crop = {"window_s": 100.0, "di_file": "/x/B1_Full/x.wav", "inventory_di": "x", "di_name": "x.wav",
+            "d2": {"flags": []}, "d4": {"crest_db": 12.0, "bright_slope": 0.5}}
+    env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 10.0)])], {"Song-x": crop})
+    rec, q = env.run()                       # (its card is queued with its target's; this fake has no target)
+    md = rec["measure_dis"]["Song-x"]
+    assert md["verdict"] == "pending ear" and md["why"][0].startswith("unheard")
+    (sid,) = _ids(q, "di_sample", "x").values()                    # the same DI file heard clean on another window
+    rec, _ = env.run([env.export([(sid, "clean", "")])])
+    assert rec["measure_dis"]["Song-x"]["verdict"] == "verified"
 
 
 def test_calibration_ok_needs_todays_negatives_and_known_amps(tmp_path):

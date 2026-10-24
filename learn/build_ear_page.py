@@ -545,6 +545,14 @@ def cmd_check(args):
     retire = {iid: {"key": registry[iid]["key"], "start_s": registry[iid]["start_s"], "share": round(share, 3)}
               for _, _, iid, _, label, share in quiet
               if label == "the DI" and registry[iid]["family"] in ("di", "di_amp")}
+    answered = set()                                     # cards an export `lists` read has touched: never retired here
+    for e in (json.loads((T0 / "verified.json").read_text()) if (T0 / "verified.json").exists() else {}).get(
+            "ear_exports") or []:
+        answered |= set(e.get("answered") or {})
+    kept = sorted(set(retire) & answered)
+    if kept:
+        print(f"not retiring {len(kept)} quiet windows the listener already answered (their answers stand): {kept}")
+        retire = {k: v for k, v in retire.items() if k not in answered}
     if args.retire and retire:
         path = T0 / "quiet-items.json"
         rec = json.loads(path.read_text()) if path.exists() else {"items": {}}
