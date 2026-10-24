@@ -293,7 +293,13 @@ variants' upper bounds stay at or under +0.0007.
   examples, not sections (by section it would cover nearly every flagged section, e.g. Eggy 95/96);
   and on the DI-source reading it is 1,530 pool and 227 R_in (Kimock 75).
 - **Kimock and Swatkins:** strictly under row 3, only Swatkins 169 and Kimock 10 rejoin the trusted
-  R_in; in practice the result supports them rejoining. For the user to decide.
+  R_in; in practice the result supports them rejoining. For the user to decide. *(2026-10-23 review:
+  on the 188 probed examples F's own margin over the constant is −0.0028, so the 0 dB control's
+  +0.0030 is 107% of it, −8 dB is 21% and the live upper bounds up to about 25%; the control's
+  answer movement is under the seed disagreement and its effect under the test's tie size (0.004).
+  Read "harmless" as "not detectable with F on this band": a model with a real margin might move.
+  Any later proposal to readmit bleed needs a probe where the model has a margin, or a training-side
+  test.)*
 - **Training side: not priced.** This test cannot say whether training without bleed would help.
 
 **Limits.** One band, one part, 6 sections; synthetic rooms; the 0 dB effect is thin (55% of examples
@@ -636,6 +642,9 @@ the same reference the bleed audit uses for amp-track targets.
       as stored (step 3's reading).
 
 ### Step 2: the trusted retrain (declared here, launched separately)
+
+*Amended 2026-10-23 (the trusted-data plan, set by the ML session, the user may overrule): step 2 is not
+launched on its own; it becomes T2's SES arm ([plan](trusted-data-strategy-plan.md), (f)).*
 
 - **Arm T:** D_stem on the rebuilt trusted pool.
   - **Same as before:** the same examples, DI sections, labels and level, vocals, loudness and

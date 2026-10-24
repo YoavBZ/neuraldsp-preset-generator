@@ -1,21 +1,28 @@
 """The trusted-data ear page: T0's queue (`t0/ear-queue.json`) as listening pages.
 
-Three parts, one question each, so each file stays phone-sized:
+Up to four parts, one question each, so each file stays phone-sized:
 1. **Targets:** the DI, then the target track (6 s each, both at -23 LUFS); judge the target.
 2. **DI and amp pairs:** the DI, then its amp track (10 s each); is the amp track an amp take of this DI?
 3. **DIs:** one 10-s DI window; is it a clean, unprocessed DI? Blind: why an item is queued (a D4 flag, a D4-passed
    sample, a conflict, a DI-only part) is not shown, and the DI files are shuffled (seed 20261023), each file's windows
    kept together in time order.
+4. **Backing tracks** (the stem spot-check, user 2026-10-24): one 10-s backing track alone; is an electric guitar
+   audible in it?
 
 Exports carry page `trusted-data-ear` and the queue's item ids, which `verify_tracks lists --ear` decodes through
-`t0/ear-items.json`. Each part exports its own file; pass each as its own `--ear`. A partial export is fine: unanswered
-items stay pending. The DI part's blindness has one limit: D4-flagged windows come in runs, so a file with many windows
+`t0/ear-items.json`. Each part exports its own file; pass every part's export, and the sitting-1 export, in one call
+(`lists --ear-di SITTING1.json --ear part-1.json ... --ear part-N.json`), every time: a run that would drop an earlier
+run's export refuses, and on one card the latest touch across all exports stands. A partial export is fine:
+unanswered items stay pending. The DI part's blindness has one limit: D4-flagged windows come in runs, so a file with many windows
 is likely a flagged one.
 
 Every clip must be audible (peak at least SILENT_PEAK): the build refuses a silent window.
 
     $MAIN -m learn.build_ear_page build      # -> ~/ndsp-presets/listening/trusted-data-ear/part-{1,2,3}.html
     $MAIN -m learn.build_ear_page extra      # queued items no built part holds -> part-<next>.html (manifest updated)
+    $MAIN -m learn.build_ear_page check      # before listening (zero renders): the cards to skip, and live windows
+                                             # where the DI or track hardly plays against its own file's level
+                                             # (--retire: record the quiet DI windows for `verify_tracks lists`)
 """
 from __future__ import annotations
 
@@ -51,6 +58,7 @@ LABELS = {
                ("processed", "The DI itself sounds processed"), ("unsure", "Not sure")],
     "di": [("clean", "Clean DI"), ("processed", "Processed (pedals or effects)"),
            ("not_a_di", "Not a DI (amp or mic sound)"), ("hum", "Hum or buzz"), ("unsure", "Not sure")],
+    "stem": [("clean", "No guitar in it"), ("guitar", "A guitar can be heard"), ("unsure", "Not sure")],
 }
 PARTS = {
     1: dict(family="target", title="Targets",
@@ -70,12 +78,17 @@ PARTS = {
             intro="Each clip is a DI alone, 10 seconds. Is it a <b>clean, unprocessed DI</b>: the guitar straight "
                   "into the DI box, no pedals or effects, no amp or mic sound, no hum? Clips of the same DI file "
                   "sit together. Levelled to &minus;23 LUFS."),
+    4: dict(family="stem", title="Backing tracks",
+            question="Is an electric guitar audible in this track?",
+            intro="Each clip is one backing track alone (drums, a room mic, bass, keys or vocals), 10 seconds. Is an "
+                  "<b>electric guitar audible</b> in it, even faintly? These are the tracks the self-built training "
+                  "mixes use, so a guitar in one would leak into training. Levelled to &minus;23 LUFS."),
 }
 
 
 def plan_parts(queue, seed=SEED):
     """{part: [items in display order]}. Targets by key then half; pairs in queue order; DIs blind: files shuffled
-    with `seed`, each file's windows in time order."""
+    with `seed`, each file's windows in time order; backing tracks (stems) by key, as part 4 when there are any."""
     targets = sorted((i for i in queue if i["family"] == "target"), key=lambda i: (i["key"], i["half"]))
     pairs = [i for i in queue if i["family"] == "di_amp"]
     by_file = {}
@@ -85,15 +98,16 @@ def plan_parts(queue, seed=SEED):
     files = sorted(by_file)
     random.Random(seed).shuffle(files)
     dis = [i for f in files for i in sorted(by_file[f], key=lambda i: i["start_s"])]
-    left = {i["family"] for i in queue} - {"target", "di_amp", "di"}
+    stems = sorted((i for i in queue if i["family"] == "stem"), key=lambda i: i["key"])
+    left = {i["family"] for i in queue} - {"target", "di_amp", "di", "stem"}
     if left:
         raise SystemExit(f"unknown item families {sorted(left)}")
-    return {1: targets, 2: pairs, 3: dis}
+    return {1: targets, 2: pairs, 3: dis, **({4: stems} if stems else {})}
 
 
 def title_of(item):
     """'Song · track' from the item's paths; a crop's slug when the DI is a crop's."""
-    p = pathlib.Path(item["paths"]["di"])
+    p = pathlib.Path(item["paths"].get("di") or item["paths"]["stem"])
     if p.name == "di.wav":                          # validation-crops/<source>-<Song>-<Track>/di.wav
         song, _, track = p.parent.name.split("-", 1)[1].rpartition("-")
         return f"{song.replace('_', ' ')} · {track}"
@@ -114,6 +128,8 @@ def subtitle_of(item):
     if item["family"] == "di_amp":
         return (f"{mmss(a)}–{mmss(b)} · DI ({pathlib.Path(item['paths']['di']).name}), then "
                 f"{pathlib.Path(item['paths']['amp']).name}")
+    if item["family"] == "stem":
+        return f"{mmss(a)}–{mmss(b)} · {pathlib.Path(item['paths']['stem']).name} (a backing track)"
     return f"{mmss(a)}–{mmss(b)} · {pathlib.Path(item['paths']['di']).name}"
 
 
@@ -155,12 +171,15 @@ def item_clips(item):
     if item["family"] == "di_amp":
         return [(item["id"] + "-di", item["paths"]["di"], a, d, "the DI"),
                 (item["id"] + "-amp", item["paths"]["amp"], a, d, "the amp track")]
+    if item["family"] == "stem":
+        return [(item["id"] + "-stem", item["paths"]["stem"], a, d, "the backing track")]
     return [(item["id"] + "-di", item["paths"]["di"], a, d, "the DI")]
 
 
 ASK = {"target": "Judge the target (second sound): a clean amp recording?",
        "di_amp": "Is the second sound an amp recording of this same DI take?",
-       "di": "Is this a clean, unprocessed DI?"}
+       "di": "Is this a clean, unprocessed DI?",
+       "stem": "Is an electric guitar audible in this backing track?"}
 
 
 def item_html(item, n, total, ask=False):
@@ -355,9 +374,12 @@ def page_html(part, items, clips, build, n_parts, title=None):
     spec = PARTS[part] if part in PARTS else dict(
         title=title or "Extra items",
         question="A few more items: each card says what to judge.",
-        intro="These replace items that were silent on the earlier pages. Each card's buttons follow its question: "
-              "<b>DI then target</b>, judge the target; <b>DI then amp track</b>, is it an amp take of this DI; "
-              "<b>a DI alone</b>, is it a clean, unprocessed DI?")
+        intro="Items the earlier pages do not hold. Each card's buttons follow its question: "
+              + "; ".join(t for f, t in (("target", "<b>DI then target</b>, judge the target"),
+                                         ("di_amp", "<b>DI then amp track</b>, is it an amp take of this DI"),
+                                         ("di", "<b>a DI alone</b>, is it a clean, unprocessed DI"),
+                                         ("stem", "<b>a backing track alone</b>, is an electric guitar audible in it"))
+                          if f in fams) + ".")
     if part in PARTS and fams - {spec["family"]}:
         raise SystemExit(f"part {part} holds {sorted(fams)}")
     total = len(items)
@@ -453,6 +475,101 @@ def cmd_extra(args):
     (out / "manifest.json").write_text(json.dumps(manifest, indent=1))
 
 
+QUIET_SHARE = 0.10            # a window where under 10% of frames play against its file's own level: likely a floor
+SKIP_ADVICE = ("Skipping saves time and loses nothing: once any clip of a DI file is marked Processed, Not a DI or "
+               "Hum, its other clips cannot change its verdict; once one half of a target is anything but Clean amp "
+               "or Not sure, its other half cannot either.")
+
+
+def card_status(manifest, registry, live_ids):
+    """{part: [(card number, item id, status)]} in each part's display order: 'live', 'retired: <why>' (its answers
+    are skipped on import) or 'not queued now' (no longer needed, e.g. a DI-only repeat that left the queue)."""
+    out = {}
+    for part, rec in sorted(manifest["parts"].items(), key=lambda kv: int(kv[0])):
+        rows = []
+        for n, iid in enumerate(rec["items"], 1):
+            why = (registry.get(iid) or {}).get("retired")
+            rows.append((n, iid, f"retired: {why}" if why else ("live" if iid in live_ids else "not queued now")))
+        out[int(part)] = rows
+    return out
+
+
+def play_share(fdb, play, start_s, dur_s, sr=48000):
+    """The share of a window's frames that play against its whole file's loudest frames (`clean_di.playing`)."""
+    import numpy as np
+
+    from learn import clean_di as CD
+
+    r = CD.frames_in(int(round(start_s * sr)), int(round((start_s + dur_s) * sr)), len(play))
+    return float(np.mean(play[r.start:r.stop])) if len(r) else 0.0
+
+
+def cmd_check(args):
+    """Before listening (zero renders): per built part, the card numbers to skip; then every live clip whose window
+    hardly plays against its own file's level (a noise or hum floor raised to -23 LUFS: its answer would judge the
+    floor, not the playing). `--retire` records the quiet DI windows in `t0/quiet-items.json`; the next
+    `verify_tracks lists` retires them like silent windows, so they hold no DI back."""
+    from learn import clean_di as CD
+    from learn import pretrain_set as PS
+
+    out = pathlib.Path(args.out)
+    manifest = json.loads((out / "manifest.json").read_text())
+    registry = json.loads((T0 / "ear-items.json").read_text())
+    live = {i["id"] for i in json.loads((T0 / "ear-queue.json").read_text())["queue"]}
+    cards = card_status(manifest, registry, live)
+    for part, rows in cards.items():
+        skip = [(n, st) for n, _, st in rows if st != "live"]
+        print(f"part {part}: {len(rows)} cards, {len(rows) - len(skip)} live"
+              + (f"; skip cards {[n for n, _ in skip]}" if skip else ""))
+        for n, st in skip:
+            print(f"    card {n}: {st}")
+    files, quiet = {}, []
+    for part, rows in cards.items():
+        for n, iid, st in rows:
+            if st != "live":
+                continue
+            it = registry[iid]
+            for _, path, a, d, label in item_clips(it):
+                if path not in files:
+                    fdb = CD.frame_db(PS.load_mono(path, PS.SR))
+                    files[path] = (fdb, CD.playing(fdb))
+                share = play_share(*files[path], a, d)
+                if share < args.quiet:
+                    quiet.append((part, n, iid, title_of(it), label, share))
+    if quiet:
+        print(f"{len(quiet)} live clips hardly play against their own file's level (likely a floor):")
+        for part, n, iid, title, label, share in quiet:
+            print(f"    part {part} card {n} ({title}): {label} plays on {share:.0%} of the window")
+    else:
+        print("every live clip plays")
+    retire = {iid: {"key": registry[iid]["key"], "start_s": registry[iid]["start_s"], "share": round(share, 3)}
+              for _, _, iid, _, label, share in quiet
+              if label == "the DI" and registry[iid]["family"] in ("di", "di_amp")
+              and not registry[iid]["key"].startswith("crop:")}      # a crop window can't be re-picked: listen to it
+    crops = [iid for _, _, iid, _, label, _ in quiet if registry[iid]["key"].startswith("crop:")]
+    if crops:
+        print(f"not retiring {len(crops)} quiet crop windows (no other window exists): {crops}")
+    answered = set()                                     # cards an export `lists` read has touched: never retired here
+    for e in (json.loads((T0 / "verified.json").read_text()) if (T0 / "verified.json").exists() else {}).get(
+            "ear_exports") or []:
+        answered |= set(e.get("answered") or {})
+    kept = sorted(set(retire) & answered)
+    if kept:
+        print(f"not retiring {len(kept)} quiet windows the listener already answered (their answers stand): {kept}")
+        retire = {k: v for k, v in retire.items() if k not in answered}
+    if args.retire and retire:
+        path = T0 / "quiet-items.json"
+        rec = json.loads(path.read_text()) if path.exists() else {"items": {}}
+        rec["criterion"] = f"the DI plays on under {args.quiet:.0%} of the window against its own file's level"
+        rec["items"].update(retire)
+        path.write_text(json.dumps(rec, indent=1))
+        print(f"retired {len(retire)} quiet DI windows in {path}: rerun `verify_tracks lists` (it retires them and "
+              "they hold no DI back), then `build_ear_page extra` if it queues new items, then `check` again")
+    elif retire:
+        print(f"{len(retire)} of them are DI windows: `check --retire` retires them (then rerun `verify_tracks lists`)")
+    print(SKIP_ADVICE)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -464,6 +581,11 @@ def main(argv=None):
     x = sub.add_parser("extra", help="queued items no built part holds, as one more part")
     x.add_argument("--out", default=str(OUT))
     x.set_defaults(fn=cmd_extra)
+    c = sub.add_parser("check", help="before listening: the cards to skip, and live clips that hardly play")
+    c.add_argument("--out", default=str(OUT))
+    c.add_argument("--quiet", type=float, default=QUIET_SHARE, help="flag clips playing on under this share")
+    c.add_argument("--retire", action="store_true", help="write the quiet DI windows to t0/quiet-items.json")
+    c.set_defaults(fn=cmd_check)
     args = ap.parse_args(argv)
     args.fn(args)
 

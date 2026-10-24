@@ -445,16 +445,26 @@ def amp_choice_rows(cells):
     return rows
 
 
-def amp_choice(out):
+def band_weighted_stats(sel):
+    """The plan's declared statistic (decision rules: band-weighted, 90% band-clustered t interval on the band means,
+    `song_readout.bw_stats`), with the part-weighted mean and interval (`confirm_run.stats`) beside under
+    "part_weighted". sel: [(band, value)]."""
     from learn import confirm_run as CR
+    from learn import song_readout as R
 
+    s = R.bw_stats(sel)
+    s["part_weighted"] = CR.stats(sel)
+    return s
+
+
+def amp_choice(out):
     cells = [json.loads(p.read_text()) for p in sorted((K.OUT / "cells").glob("*/*/result.json"))]
     rows = amp_choice_rows(cells)
     res = {"parts": len(rows), "rule": "picked (lowest K_S search half) minus the blind mean, held half, log"}
     for name, keep in (("clean+crunch", ("clean", "crunch")), ("clean", ("clean",)), ("crunch", ("crunch",))):
         sel = [(b, v) for _, b, c, v in rows if c in keep]
         if len({b for b, _ in sel}) >= 2:
-            res[name] = CR.stats(sel)
+            res[name] = band_weighted_stats(sel)
     res["reading"] = reading(res.get("clean+crunch"))
     out.mkdir(parents=True, exist_ok=True)
     K._atomic(out / "amp-choice.json", res)
@@ -1306,12 +1316,10 @@ def _per_part(rows):
 
 
 def _stats(rows, keep):
-    from learn import confirm_run as CR
-
     sel = [(b, v) for _, b, c, v in _per_part(rows) if c in keep]
     if len({b for b, _ in sel}) < 2:
         return {"n": len(sel), "note": "too few bands"}
-    s = CR.stats(sel)
+    s = band_weighted_stats(sel)                     # the reading decides on the band-weighted interval, as declared
     s["reading"] = reading(s)
     return s
 
@@ -1353,10 +1361,12 @@ def report(out):
     out.mkdir(parents=True, exist_ok=True)
     K._atomic(out / "result.json", res)
     for k, v in res.items():
-        if isinstance(v, dict) and "clean+crunch" in v and "mean" in v["clean+crunch"]:
+        if isinstance(v, dict) and "clean+crunch" in v and "band_weighted_mean" in v["clean+crunch"]:
             s = v["clean+crunch"]
-            print(f"{k:45s} mean {s['mean']:+.3f} band-w {s['band_weighted_mean']:+.3f} "
-                  f"90% [{s['lo90']:+.3f}, {s['hi90']:+.3f}] bands- {s['bands_negative']}/{s['bands']} {s['reading']}")
+            pw = s["part_weighted"]
+            print(f"{k:45s} band-w {s['band_weighted_mean']:+.3f} 90% [{s['lo90']:+.3f}, {s['hi90']:+.3f}] "
+                  f"(part-w {pw['mean']:+.3f} [{pw['lo90']:+.3f}, {pw['hi90']:+.3f}]) "
+                  f"bands- {s['bands_negative']}/{s['bands']} {s['reading']}")
     print("renders", res["renders"])
 
 
