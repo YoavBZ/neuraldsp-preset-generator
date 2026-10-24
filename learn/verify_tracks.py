@@ -45,10 +45,11 @@ against its `di.wav`:
 processed is excluded; heard clean clears the heard window only, and a heard-clean DI that D4 flags is a conflict for
 the user; D4 alone never decides an unheard DI (a flag, D1 to the ear and DI-only parts wait for the ear, as does a
 seeded sample of D4-passed DIs). A target is trusted only when it passes the measures and the user has heard it clean
-and, where A1 or A2 went to the ear, as an amp. Quicksand ElecGtr2 and Today's The Day ElecGtr07 stay excluded until
-the user's ear rules on them. `lists` writes the ear queue (every item the ear must hear) and recomputes every verdict
-from the stored readings under the current thresholds. Thresholds move only to separate the calibration's known
-cases (`THRESHOLD_MOVES`; revised after the review of #281).
+and, where A1 or A2 went to the ear, as an amp. Quicksand ElecGtr2 and Today's The Day ElecGtr07 stay excluded: their
+measured fails stand (the user, 2026-10-24). Every DI is heard before it counts (the user, 2026-10-24), and a session's
+stems count once its stem spot-check is heard clean. `lists` writes the ear queue (every item the ear must hear) and
+recomputes every verdict from the stored readings under the current thresholds. Thresholds move only to separate the
+calibration's known cases (`THRESHOLD_MOVES`; revised after the review of #281).
 
 The pure parts are unit-tested (`tests/test_verify_tracks.py`); the commands that read audio or render are not,
 like the other step modules.
@@ -134,7 +135,11 @@ D4_PLAY_DB = 30.0                     # frames within this of the loudest
 D4_CREST_DB = 8.4                     # a median frame crest under this reads as driven or compressed
 D4_SLOPE_MIN = -0.2                   # dB of (3-8 kHz over 0.1-1.5 kHz) per dB of level: under this, brightness does
                                       # not rise with picking strength (a saturating stage)
-D4_SAMPLE_SEED = 20261103             # the D4-passed DIs sampled for the ear (one per band; set here)
+D4_SAMPLE_SEED = 20261103             # the D4-passed DIs sampled for the ear (one per band; set here); also the
+                                      # window of an unheard DI queued under the every-DI rule (user, 2026-10-24)
+STEM_CHECK_FILE = "stem-checks.json"  # the stem spot-check's choice per session (stored: the queue stays stable)
+STEM_CHECK_MIN_SHARE = 0.10           # the checked stem must play on this share of the window (its own file's level)
+STEM_CHECK_TRIES = 5                  # stems tried per session, nearest the floor first
 D4_GRID = {"crest": (6.5, 10.5, 0.1), "slope": (-0.4, 0.8, 0.02)}   # D4's rule search (in-sample and leave-one-out)
 
 # --- D3: by name -----------------------------------------------------------------------------------------------
@@ -216,7 +221,8 @@ NEG_MUST_FAIL = {"copy": ("A1", "A3", "A4"), "eq": ("A3",), "cab_off_clean": ("A
 NEG_LEVEL_LUFS = -22.9
 NEG_EQ = {"band_hz": (80.0, 5000.0), "order": 4, "peak_hz": 2000.0, "peak_q": 1.5, "peak_gain": 1.0, "delay_ms": 1.5,
           "gain": 0.5}
-EAR_DISPUTED = ("cambridge-Quicksand-ElecGtr2", "cambridge-Today's_The_Day-ElecGtr07")
+# The two conflicts of decision 2 (Quicksand ElecGtr2, Today's The Day ElecGtr07) fail measures (A6; A5): their measured
+# fails stand (the user, 2026-10-24), so they are excluded like any measured fail and not queued.
 
 # --- the stem scan ---------------------------------------------------------------------------------------------
 STEM_TAKE_DB = -30.0                  # a stem passes when every guitar track of its session reads under this
@@ -315,7 +321,7 @@ def d2_status(flags, hum_suspect=False):
     return "fail" if hum_suspect or set(flags or ()) & {"clipping", "dropout", "hum"} else "pass"
 
 
-def target_verdict(st, ear_clean, ear_amp, disputed=False, in_mix=False):
+def target_verdict(st, ear_clean, ear_amp, in_mix=False):
     """A target's standing. st: {measure: status}; ear_clean: True/False/None (both halves heard clean on
     data-review-1); ear_amp: True/False/None (heard as an amp on the target-vs-DI page).
     -> (verdict, reasons): 'verified', 'excluded' (a measured fail, or the ear said no) or 'pending ear'."""
@@ -333,8 +339,6 @@ def target_verdict(st, ear_clean, ear_amp, disputed=False, in_mix=False):
         why.append(f"{', '.join(ear)} to the ear (amp or not)")
     if ear_clean is None:
         why.append("not yet heard (clean or not)")
-        if disputed:
-            why.append("user-disputed: excluded until the user's ear rules")
     return ("pending ear", why) if why else ("verified", [])
 
 
@@ -1736,7 +1740,8 @@ def scope_dis(dis):
 EAR_PAGE = "trusted-data-ear"          # the listening page built from `ear-queue.json`
 EAR_VERDICTS = {"target": ("clean_amp", "bleed", "other_guitar", "not_amp", "unsure"),
                 "di": ("clean", "processed", "not_a_di", "hum", "unsure"),
-                "di_amp": ("amp", "same_di", "processed", "unsure")}
+                "di_amp": ("amp", "same_di", "processed", "unsure"),
+                "stem": ("clean", "guitar", "unsure")}
 
 
 def item_id(kind, key, start_s=None):
@@ -1753,8 +1758,8 @@ def ear_answers(paths, di_paths=(), registry=None):
     An ear-page export holds every item of its part (unanswered ones as null), so on one item the export with the
     latest `exported` time replaces the others: a changed answer replaces the old one, and an answer taken back clears
     it. Notes go to `notes`, with or without a verdict, for the ML session to read before T1."""
-    out = {"target_clean": {}, "target_amp": {}, "crop_di": {}, "di_windows": {}, "di_pairs": {}, "notes": [],
-           "superseded": 0}
+    out = {"target_clean": {}, "target_amp": {}, "crop_di": {}, "di_windows": {}, "di_pairs": {}, "stems": {},
+           "notes": [], "superseded": 0}
     registry = registry or {}
     pages = {"data-review-1": HOME / "listening/data-review-1/items.json",
              "target-vs-di-check": HOME / "listening/target-vs-di-check/items.json"}
@@ -1810,6 +1815,8 @@ def ear_answers(paths, di_paths=(), registry=None):
                         out["target_amp"].setdefault(it["key"], []).append("amp" if v == "clean_amp" else "not_amp")
                 elif it["kind"] == "di_amp":
                     out["di_pairs"].setdefault(it["key"], []).append(v)
+                elif it["kind"] == "stem":
+                    out["stems"].setdefault(it["key"], []).append(v)
                 else:
                     out["di_windows"].setdefault(it["key"], []).append((it["start_s"], it["start_s"] + it["dur_s"], v))
                 continue
@@ -2006,6 +2013,69 @@ def quiet_windows(root):
     return set(items), {(v["key"], round(float(v["start_s"]), 1)) for v in items.values()}
 
 
+def stem_activity(path, times, dur=CROP_S):
+    """{start_s: the share of the window's frames that play against the file's own loudest (`clean_di.playing`)}."""
+    import numpy as np
+
+    from learn import clean_di as CD
+    from learn import pretrain_set as PS
+
+    fdb = CD.frame_db(PS.load_mono(path, PS.SR))
+    play = CD.playing(fdb)
+    out = {}
+    for t in times:
+        r = CD.frames_in(int(round(t * PS.SR)), int(round((t + dur) * PS.SR)), len(play))
+        out[t] = float(np.mean(play[r.start:r.stop])) if len(r) else 0.0
+    return out
+
+
+def stem_risk(v):
+    """A scanned stem's highest guitar take (dB; -inf when none was read): the nearest the floor is the riskiest."""
+    vals = [float(x) for x in (v.get("takes_db") or {}).values() if x is not None]
+    return max(vals) if vals else -math.inf
+
+
+def pick_stem_checks(stems, di_rows, stored, activity=None, min_share=STEM_CHECK_MIN_SHARE, tries=STEM_CHECK_TRIES):
+    """The stem spot-check (plan (f)'s T0 "spot-check stems by ear"; added to the sitting by the user, 2026-10-24): per
+    scanned session, the passing stem nearest the floor (the highest guitar take; name order on a tie) that plays in
+    one of the session's D-build section times, at its most active one. A stored choice is kept while its stem still
+    passes, so the queue stays stable. -> {session dir: {"stem", "start_s", "share", "risk_db"} or {"none": why}}."""
+    activity = activity or stem_activity
+    out = {}
+    for sd in sorted(stems):
+        passing = {f: v for f, v in stems[sd]["stems"].items() if v["pass"]}
+        old = stored.get(sd) or {}
+        if old.get("stem") in passing:
+            out[sd] = old
+            continue
+        times = sorted({float(x["start_s"]) for r in di_rows.values()
+                        if str(pathlib.Path(r["path"]).parent) == str(pathlib.Path(sd))
+                        for x in r["sections"] if x.get("own", True)})
+        if not passing or not times:
+            out[sd] = {"none": "no passing stem" if not passing else "no D-build section"}
+            continue
+        out[sd] = {"none": "no passing stem plays in a D-build section"}
+        for f in sorted(passing, key=lambda f: (-stem_risk(passing[f]), f))[:tries]:
+            act = activity(pathlib.Path(sd) / f, times)
+            t = max(times, key=lambda t: (act[t], -t))
+            if act[t] >= min_share:
+                risk = stem_risk(passing[f])
+                out[sd] = {"stem": f, "start_s": t, "share": round(act[t], 3),
+                           "risk_db": risk if math.isfinite(risk) else None}
+                break
+    return out
+
+
+def unheard_window(di, row, rs):
+    """The window an unheard DI is queued on (the every-DI rule): a seeded D4-passed section, its own first."""
+    import random as _r
+
+    ok = [x["start_s"] for x in row["sections"] if rs["d4_sections"][x["section"]] == "pass"]
+    own = [x["start_s"] for x in row["sections"] if x.get("own", True) and rs["d4_sections"][x["section"]] == "pass"]
+    pick = own or ok
+    return _r.Random(f"{D4_SAMPLE_SEED}:{di}").choice(pick) if pick else None
+
+
 def update_registry(registry, queue, di_rows):
     """Add the queue's items to the registry (every item ever queued, so old exports still decode). A retired item
     stays retired, and every silent window is (re)marked retired."""
@@ -2146,7 +2216,7 @@ def cmd_lists(args):
             continue
         st = target_status(r)
         ec, ea = ear_clean_of(slug, ear["target_clean"]), ear_amp_of(slug, ear["target_amp"])
-        v, why = target_verdict(st, ec, ea, disputed=slug in EAR_DISPUTED, in_mix=r.get("in_mix", False))
+        v, why = target_verdict(st, ec, ea, in_mix=r.get("in_mix", False))
         md = crop_di.get(slug)
         heard_bad = ec is False or ea is False or bool(md and md["verdict"] == "excluded" and any(
             w.startswith(("heard", "its DI file")) for w in md["why"]))
@@ -2204,7 +2274,8 @@ def cmd_lists(args):
                                                        for x in row["sections"]):
             v, why = "excluded", ["silent in every section: nothing to hear, and no mix uses it"]
         heard_clean = any(merge_ear([w[2]], "clean") is True for w in wins)   # 'unsure' is not heard clean
-        if v != "excluded" and sampled and not heard_clean:
+        heard = heard_clean or pairs is True          # a window heard clean, or the pair heard as an amp take of it
+        if v != "excluded" and sampled and not heard:
             v, why = "pending ear", why + ["sampled for the ear (D4 passed)"]
         secs = {}
         for x in row["sections"]:
@@ -2226,6 +2297,9 @@ def cmd_lists(args):
             # processing is a property of the DI (heard processed: excluded with all its sections), so the DI waits
             # while any window D4 flags is not yet heard clean
             v, why = "pending ear", ["D4 flags a window not yet heard clean"]
+            secs = {k: ("pending ear" if s == "usable" else s) for k, s in secs.items()}
+        if v == "verified" and not heard:             # every DI is heard before it counts (user, 2026-10-24)
+            v, why = "pending ear", ["not yet heard (every DI is heard before it counts)"]
             secs = {k: ("pending ear" if s == "usable" else s) for k, s in secs.items()}
         unusable |= {sid for sid, s in secs.items() if s != "usable"}
         dis_out[di] = {"verdict": v, "why": why, "status": rs["status"], "d1": rs["d1"], "datasets": row["datasets"],
@@ -2251,9 +2325,11 @@ def cmd_lists(args):
             x = busiest_audible(audible)
             queue.append(queue_item("di_only", di, "di", x["start_s"], CROP_S, {"di": row["path"]},
                                     "a DI-only part (no amp track to check it against)"))
-        if sampled and not heard_clean and not any(q["kind"] == "di_only" and q["key"] == di for q in queue):
-            queue.append(queue_item("di_sample", di, "di", sample[di], CROP_S, {"di": row["path"]},
-                                    "a D4-passed DI sampled to check D4's misses"))
+        if not heard and not any(q["key"] == di for q in queue) and (sampled or "not yet heard" in why[0]):
+            t = sample[di] if sampled else unheard_window(di, row, rs)     # nothing else of it is queued
+            if t is not None:
+                queue.append(queue_item("di_sample", di, "di", t, CROP_S, {"di": row["path"]},
+                                        "a D4-passed DI, not yet heard"))
     for di, d in dis_out.items():
         if {"training pool", "V_sep"} & set(d["datasets"]):
             b = by_band.setdefault(d["band"], {"sections": 0, "usable": 0, "pending ear": 0, "excluded": 0, "silent": 0})
@@ -2270,7 +2346,25 @@ def cmd_lists(args):
         for s in passing if targets[s]["status"].get("A5") == "fail"}
     prior, counts = rederive_prior(PS.SECTIONS_MS, passing - set(crop_only), crop_only)
     old = PS.ratio_values()
-    verified_stems = {sd: sorted(f for f, v in r["stems"].items() if v["pass"]) for sd, r in stems.items()}
+    stored = (_load(root / "t0" / STEM_CHECK_FILE) or {}).get("sessions") or {}
+    checks = pick_stem_checks(stems, di_rows, stored)
+    _save(root / "t0" / STEM_CHECK_FILE, {"plan": PLAN, "smoke": bool(args.smoke), "sessions": checks,
+                                         "rule": "per session, the passing stem nearest the floor, at its busiest "
+                                                 "D-build section; the session's stems are used once it is heard clean"})
+    stem_heard = {}
+    for sd, c in checks.items():
+        if "stem" not in c:
+            continue
+        key = f"{sd}|{c['stem']}"
+        stem_heard[sd] = merge_ear(ear["stems"].get(key, []), "clean")
+        if stem_heard[sd] is None:
+            queue.append(queue_item("stem", key, "stem", c["start_s"], CROP_S, {"stem": str(pathlib.Path(sd) / c["stem"])},
+                                    "the stem spot-check: the passing stem nearest the floor",
+                                    question="Is an electric guitar audible in this track?"))
+    # a session's stems are used once its spot-check is heard clean; a guitar heard holds all of them (the scan missed
+    # one there), and unheard or 'unsure' waits
+    verified_stems = {sd: sorted(f for f, v in r["stems"].items() if v["pass"]) for sd, r in stems.items()
+                      if stem_heard.get(sd) is True}
 
     def uses(v, u):
         return sorted(s for s, r in targets.items() if r["verdict"] == v and u in (r.get("uses") or []))
@@ -2296,6 +2390,7 @@ def cmd_lists(args):
            "ear_files": [str(p) for p in args.ear or []], "ear_di_files": [str(p) for p in args.ear_di or []],
            "ear_exports": exports, "ear_notes": ear["notes"], "targets": targets, "dis": dis_out, "measure_dis": crop_di, "unusable_sections": sorted(unusable),
            "stems": verified_stems, "stem_floor_db": floor,
+           "stem_checks": {sd: {**c, "heard": stem_heard.get(sd)} for sd, c in checks.items()},
            "v_real": uses("verified", "stage F"), "v_real_pending": uses("pending ear", "stage F"),
            "kc2_verified": uses("verified", "knob ceiling 2"), "kc2_pending": uses("pending ear", "knob ceiling 2"),
            "k_dis": sorted(d for d, v in dis_out.items() if v["verdict"] == "verified" and "V_sep" in v["datasets"]
@@ -2313,8 +2408,11 @@ def cmd_lists(args):
     print(f"V-real: {len(rec['v_real'])} verified, {len(rec['v_real_pending'])} pending the ear; knob ceiling 2: "
           f"{len(rec['kc2_verified'])} verified, {len(rec['kc2_pending'])} pending")
     print(f"K's DIs {len(rec['k_dis'])} ({REMOVED}); training DIs {len(rec['training_dis'])}")
-    print(f"stems passing: {sum(len(v) for v in verified_stems.values())} in {len(verified_stems)} sessions "
-          f"(floor {floor:.0f} dB)")
+    print(f"stems usable: {sum(len(v) for v in verified_stems.values())} in {len(verified_stems)} sessions "
+          f"(floor {floor:.0f} dB; a session's stems once its spot-check is heard clean)")
+    sh = list(stem_heard.values())
+    print(f"stem spot-check: {len(sh)} sessions; heard clean {sh.count(True)}, a guitar heard {sh.count(False)} "
+          f"(their stems held), waiting {sh.count(None)}; no check {sum(1 for c in checks.values() if 'none' in c)}")
     print(f"level prior: re-derived {rec['level_prior']['rederived_summary']}; old {rec['level_prior']['old_summary']}")
     a = agreement
     print(f"D4 against the ear (crops): {a['agree']}/{a['heard']} agree; processed missed {a['processed_missed']}; "

@@ -181,3 +181,14 @@ def test_check_lists_the_cards_to_skip_and_finds_a_floor_window():
     fdb = CD.frame_db(x)
     play = CD.playing(fdb)
     assert E.play_share(fdb, play, 5.0, 10.0) > 0.9 and E.play_share(fdb, play, 25.0, 10.0) < E.QUIET_SHARE
+
+
+def test_backing_track_items_get_their_own_part_and_question():
+    stem = _item("stem", "stem", "/x/S_Full|07_Kick.wav", 20.0, stem="/x/S_Full/07_Kick.wav")
+    parts = E.plan_parts(QUEUE + [stem])
+    assert parts[4] == [stem] and 4 not in E.plan_parts(QUEUE)
+    assert E.item_clips(stem) == [(stem["id"] + "-stem", "/x/S_Full/07_Kick.wav", 20.0, 10.0, "the backing track")]
+    assert E.title_of(stem) == "S · 07_Kick" and "backing track" in E.subtitle_of(stem)
+    assert [v for v, _ in E.LABELS["stem"]] == list(VT.EAR_VERDICTS["stem"])
+    page = E.page_html(5, [QUEUE[0], stem], {k: "" for i in (QUEUE[0], stem) for k, *_ in E.item_clips(i)}, "b", 5)
+    assert "A guitar can be heard" in page and "a backing track alone" in page

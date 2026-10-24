@@ -32,6 +32,17 @@ algorithms, cleaning, training and testing.
 - **No fresh test is left for the decision test.** V-real is development data; where the decision test's data comes
   from is a user decision before T4.
 
+## Decided by the user (2026-10-24)
+
+Four of the user decisions came first, because they shape the listening sitting or T2. Each went as recommended:
+- **The two conflicts stay excluded** on their measured fails (VT-2, DOC-2, S-4).
+- **The stem spot-check joins this sitting** (VT-5, DOC-3, ROAD-7).
+- **Every DI is heard before it counts** (S-5).
+- **The song-blind constant is one more V-real arm at T2** (ROAD-1, ML-1, and part of S-1).
+
+They are built in code ([design](../trusted-data-t0-design.md#the-users-decisions-2026-10-24)). The other user
+decisions are in the ROADMAP's open decisions.
+
 ## Every finding
 
 Review, dimension, id, the skeptic's verdict and severity, the finding, and what was done.

@@ -90,8 +90,7 @@ def test_target_verdict():
     assert V.target_verdict(_ok(A2="ear"), True, False)[0] == "excluded"
     assert V.target_verdict(_ok(), None, None)[0] == "pending ear"
     assert V.target_verdict(_ok(), False, True)[0] == "excluded"
-    assert V.target_verdict(_ok(), None, True, disputed=True)[0] == "pending ear"
-    assert V.target_verdict(_ok(), True, None, disputed=True) == ("verified", [])      # the ear has ruled
+    assert V.target_verdict(_ok(A5="fail"), True, True) == ("excluded", ["A5 fails"])   # a measured fail stands
     assert V.target_verdict(_ok(), True, True, in_mix=True)[0] == "excluded"       # A6's mix clause unread
     assert V.target_verdict(_ok(A6mix="pass"), True, True, in_mix=True) == ("verified", [])
 
@@ -515,7 +514,7 @@ def _di(di, band, secs, ds=("training pool",)):
 class _Lists:
     """Fake T0 records under a scratch root, and `lists` run on them (smoke unless real=True)."""
 
-    def __init__(self, tmp_path, monkeypatch, dis, crops=None):
+    def __init__(self, tmp_path, monkeypatch, dis, crops=None, stems=None):
         from learn import pretrain_set as PS
 
         self.root = tmp_path / "root"
@@ -526,7 +525,7 @@ class _Lists:
         (self.root / "t0" / "dis-0of1.json").write_text(json.dumps(
             {"shard": [0, 1], "complete": True, "thresholds": V.thresholds(), "rows": rows}))
         (self.root / "t0" / "stems-0of1.json").write_text(json.dumps(
-            {"shard": [0, 1], "complete": True, "floor_db": V.STEM_TAKE_DB, "sessions": {}}))
+            {"shard": [0, 1], "complete": True, "floor_db": V.STEM_TAKE_DB, "sessions": stems or {}}))
         monkeypatch.setattr(PS, "ratio_values", lambda: {})
         monkeypatch.setattr(PS, "SECTIONS_MS", tmp_path / "no-sections")
         monkeypatch.setattr(V, "HOME", tmp_path / "home")
@@ -674,3 +673,32 @@ def test_a_quiet_window_is_retired_and_holds_no_di_back(tmp_path, monkeypatch):
     assert rec["dis"]["x"]["why"] == ["sampled for the ear (D4 passed)"]   # only its own sample is left to hear
     reg = json.loads((env.root / "t0" / "ear-items.json").read_text())
     assert "quiet" in reg[iid]["retired"] and [i["kind"] for i in q["queue"]] == ["di_sample"]
+
+
+def test_every_di_is_heard_before_it_counts(tmp_path, monkeypatch):
+    env = _Lists(tmp_path, monkeypatch, [_di("p", "B1", [_sec("p1", 10.0)]), _di("q", "B1", [_sec("q1", 20.0)])])
+    rec, q = env.run()
+    samples = {x["key"]: x for x in q["queue"] if x["kind"] == "di_sample"}
+    assert set(samples) == {"p", "q"} and rec["training_dis"] == []        # the band's draw and the other DI
+    assert {rec["dis"][d]["verdict"] for d in "pq"} == {"pending ear"}
+    rec, q = env.run([env.export([(samples["p"]["id"], "clean", ""), (samples["q"]["id"], "clean", "")])])
+    assert rec["training_dis"] == ["p", "q"] and q["queue"] == []
+
+
+def test_a_sessions_stems_count_once_its_spot_check_is_heard_clean(tmp_path, monkeypatch):
+    sd = "/x/B1_Full"
+    stems = {sd: {"stems": {"01_Kick.wav": {"pass": True, "takes_db": {"g": -45.0}},
+                            "02_Vox.wav": {"pass": True, "takes_db": {"g": -31.0}},
+                            "03_Room.wav": {"pass": False, "takes_db": {"g": -25.0}}}}}
+    monkeypatch.setattr(V, "stem_activity", lambda path, times: {t: 0.8 if t == 20.0 else 0.0 for t in times})
+    env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 10.0), _sec("x2", 20.0)])], stems=stems)
+    rec, q = env.run()
+    (item,) = [x for x in q["queue"] if x["kind"] == "stem"]
+    assert item["key"] == f"{sd}|02_Vox.wav" and item["start_s"] == 20.0     # nearest the floor, where it plays
+    assert rec["stems"] == {}                                                 # waits for the ear
+    rec, q = env.run([env.export([(item["id"], "clean", "")])])
+    assert rec["stems"] == {sd: ["01_Kick.wav", "02_Vox.wav"]} and rec["stem_checks"][sd]["heard"] is True
+    rec, q = env.run([env.export([(item["id"], "guitar", "")], exported="2026-10-24T09:00:00Z")], drop=True)
+    assert rec["stems"] == {}                                                 # a guitar heard: the session's stems held
+    stored = json.loads((env.root / "t0" / V.STEM_CHECK_FILE).read_text())["sessions"][sd]
+    assert stored["stem"] == "02_Vox.wav"                                     # the choice is kept between runs

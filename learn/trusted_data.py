@@ -48,7 +48,9 @@ labels and draws; SYN-E, SYN with a seeded third (seed 20261101) swapped for Egg
 recipe (`direct_stems.train_arm`, augmented), 2 seeds each, early stopping on the set in each arm's own mix type
 (SYN-E reads SYN's). Per arm the constant (training-label medians) and amendment 5's pull (fitted on the set).
 Reads: SYN - SES on V-real by the judge with the measure DI, paired by direction (primary; a tie under about 0.03
-picks SYN, recorded decision 4); SYN-E - SYN; E on K; stem SNR.
+picks SYN, recorded decision 4); SYN-E - SYN; each arm against the song-blind constant (the step 3 gate's
+constant on the training labels, rendered on V-real as one more arm: user, 2026-10-24), so a gain over S can be split
+into the song and the constant's pull; E on K; stem SNR.
 
 The pure parts are unit-tested (`tests/test_trusted_data.py`); the commands that render, separate or train are not,
 like the other step modules.
@@ -87,6 +89,8 @@ MAX_OTHERS = 4                         # the plan's "1-4 per example"
 ACTIVE_MIN = 0.10                      # an other guitar plays: >= 10% of the section's frames within 40 dB of the
                                        # DI file's loudest frames (not the section's own: a resting floor reads 1.0)
 ARMS = ("SES", "SYN", "SYN-E")
+CONST_ARM = "constant"                 # the song-blind constant on V-real (user, 2026-10-24): one more answer per
+                                       # direction, read beside the primary
 TRAIN_SEEDS = (20261042, 20261043)
 MODEL_ARM = "Dstem"                    # D_stem's inputs (mix zeroed) and augmentations
 TIE = 0.03                             # the plan's power: effects under about 0.03 read as ties
@@ -1172,10 +1176,12 @@ def cmd_fit(args):
     ses, ses_files = ses_rows(ctx)
     refused, _ = t2_refused(root, plan, ses)
     out = {"plan": PLAN, "stage": "T2 fit", "readout_rule": DS.READOUT_RULE, "arms": {}}
+    train_rows = {}
     for arm in arms_of(plan):
         nets, recs = load_arm(root, arm, args.smoke)
         files = arm_files(root, plan, arm, ses_files)
         tr_rows, es_rows = arm_rows(ctx, plan, arm, files, refused)
+        train_rows[arm] = tr_rows
         med = DS.label_medians(tr_rows, DS.encode_audible)
         cell_of = {r["i"]: (r["amp"], r["base"]) for r in es_rows}
         outs, who, Y = DS.run_rows(nets, es_rows, lambda rr, f=files: DC.stem_tensors(
@@ -1187,8 +1193,40 @@ def cmd_fit(args):
                             "pull": DS.table_json(table), "pull_summary": DS.pull_summary(table),
                             "early_stop_examples": len(es_rows)}
         print(f"{arm}: pull {DS.pull_summary(table)}", flush=True)
+    out["constant_arm"] = constant_arm(train_rows["SYN"])
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     _save(stage_root(root, "t2") / "fit.json", out)
+
+
+def constant_arm(rows):
+    """The song-blind constant as an answer per (amp, base class): the step 3 sound gate's constant
+    (`direct_sound_gate.constant_answers`: continuous medians of the audible labels, switches by majority, mics by the
+    most frequent) over the SYN arm's training rows (SES trains on the same examples and labels)."""
+    from learn import direct_sound_gate as G
+    from learn import direct_stems as DS
+    from learn import song_model as SM
+
+    const = G.constant_answers(rows, DS.encode_audible, len(SM.CONT), len(SM.SW), len(SM.CAT))
+    return {"from": "the SYN arm's training labels (SES's are the same)", "rows": len(rows),
+            "constant": G.const_json(const)}
+
+
+def constant_settings(fit, amp, cls, S):
+    """The constant arm's settings for one direction (the gate's `_answer_settings` on the cell's labelled dims)."""
+    from learn import direct_sound_gate as G
+    from learn import direct_stems as DS
+
+    c = G.const_from_json(fit["constant"])[(amp, cls)]
+    return G._answer_settings(amp, S, {"cont": c["cont"], "sw": c["sw"], "mics": c["mics"]}, DS.masks(amp, cls))
+
+
+def t2_contrasts(arms):
+    """{name: (a, b)} of T2's V-real contrasts: the primary SYN - SES first, then the arms against S and against the
+    song-blind constant (does an arm read the song, or only the constant's pull?)."""
+    pairs = {"SYN - SES": ("SYN", "SES"), "SYN-E - SYN": ("SYN-E", "SYN"), "SES - S": ("SES", "S"),
+             "SYN - S": ("SYN", "S"), "SYN-E - S": ("SYN-E", "S"), "SES - constant": ("SES", CONST_ARM),
+             "SYN - constant": ("SYN", CONST_ARM), "constant - S": (CONST_ARM, "S")}
+    return {k: (a, b) for k, (a, b) in pairs.items() if a in arms and (b in arms or b == "S")}
 
 
 def arm_fit(root, arm, recs):
@@ -1293,10 +1331,19 @@ def cmd_vreal_predict(args):
             _, S = ms[amp][cls]
             preds[arm][f"{slug}|{amp}|{search}"] = {"settings": LO.sdict(DS.settings_from(amp, S, cont, sw, mics)),
                                                     "held": held, "diag": diag}
+    cfit = (_load(stage_root(root, "t2") / "fit.json") or {}).get("constant_arm")
+    if not cfit:
+        raise SystemExit("fit.json has no constant arm: rerun `fit`")
+    preds[CONST_ARM] = {}
+    for slug, amp, search, held in dirs:
+        _, S = ms[amp][A.f_part(slug)["gain_class"]]
+        preds[CONST_ARM][f"{slug}|{amp}|{search}"] = {
+            "settings": LO.sdict(constant_settings(cfit, amp, A.f_part(slug)["gain_class"], S)), "held": held, "diag": {}}
+    arms = tuple(arms) + (CONST_ARM,)
     _save(stage_root(root, "t2") / "vreal" / "predictions.json",
           {"plan": PLAN, "smoke": bool(args.smoke), "directions": len(dirs), "arms": list(arms), "predictions": preds,
            "inputs": {s: v["hashes"] for s, v in inputs.items()}, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
-    print(f"VREAL PREDICT: {len(dirs)} directions x {len(ARMS)} arms")
+    print(f"VREAL PREDICT: {len(dirs)} directions x {len(arms)} arms ({', '.join(arms)})")
 
 
 def cmd_vreal_render(args):
@@ -1384,7 +1431,8 @@ def runs_at_cap(root, arms):
 
 def cmd_report(args):
     """T2's report: SYN - SES on V-real (primary, paired by direction, band-weighted, 90% band-clustered), SYN-E - SYN
-    and each arm - S beside (rows: all, F-song, without the MUSDB18 songs; per class and amp in report.json); E on K;
+    and each arm - S and - the song-blind constant beside (rows: all, F-song, without the MUSDB18 songs; per class
+    and amp in report.json); E on K;
     T1's stem SNR; the reading (no pass bar; a tie picks SYN). The reading is 'incomplete' until every V-real
     direction is judged for every arm, the predictions cover exactly today's V-real parts, and no answer was refused
     (a refused answer would score as S, which can favour the broken arm)."""
@@ -1417,10 +1465,8 @@ def cmd_report(args):
     bt = C.load_bleed_table()
     filt = {r: A.row_filter(r, "F", bt, {}) for r in rows_}
     con = {}
-    for name, (a, b) in {"SYN - SES": ("SYN", "SES"), "SYN-E - SYN": ("SYN-E", "SYN"), "SES - S": ("SES", "S"),
-                         "SYN - S": ("SYN", "S"), "SYN-E - S": ("SYN-E", "S")}.items():
-        if a in arms and (b in arms or b == "S"):
-            con[name] = DS.step4_contrast(units, a, b, filt, rows=rows_, fixed=("S",))
+    for name, (a, b) in t2_contrasts(arms).items():
+        con[name] = DS.step4_contrast(units, a, b, filt, rows=rows_, fixed=("S",))
     prim = (con["SYN - SES"]["rows"].get("all") or {}).get("all") or {}
     iv = (prim.get("band_weighted_mean"), prim.get("lo90"), prim.get("hi90"))
     gaps = report_gaps(units, arms, groups, set(pred.get("inputs") or {}), keep, refused)

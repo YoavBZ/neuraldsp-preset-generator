@@ -1,11 +1,13 @@
 """The trusted-data ear page: T0's queue (`t0/ear-queue.json`) as listening pages.
 
-Three parts, one question each, so each file stays phone-sized:
+Up to four parts, one question each, so each file stays phone-sized:
 1. **Targets:** the DI, then the target track (6 s each, both at -23 LUFS); judge the target.
 2. **DI and amp pairs:** the DI, then its amp track (10 s each); is the amp track an amp take of this DI?
 3. **DIs:** one 10-s DI window; is it a clean, unprocessed DI? Blind: why an item is queued (a D4 flag, a D4-passed
    sample, a conflict, a DI-only part) is not shown, and the DI files are shuffled (seed 20261023), each file's windows
    kept together in time order.
+4. **Backing tracks** (the stem spot-check, user 2026-10-24): one 10-s backing track alone; is an electric guitar
+   audible in it?
 
 Exports carry page `trusted-data-ear` and the queue's item ids, which `verify_tracks lists --ear` decodes through
 `t0/ear-items.json`. Each part exports its own file; pass every part's export, and the sitting-1 export, in one call
@@ -56,6 +58,7 @@ LABELS = {
                ("processed", "The DI itself sounds processed"), ("unsure", "Not sure")],
     "di": [("clean", "Clean DI"), ("processed", "Processed (pedals or effects)"),
            ("not_a_di", "Not a DI (amp or mic sound)"), ("hum", "Hum or buzz"), ("unsure", "Not sure")],
+    "stem": [("clean", "No guitar in it"), ("guitar", "A guitar can be heard"), ("unsure", "Not sure")],
 }
 PARTS = {
     1: dict(family="target", title="Targets",
@@ -75,12 +78,17 @@ PARTS = {
             intro="Each clip is a DI alone, 10 seconds. Is it a <b>clean, unprocessed DI</b>: the guitar straight "
                   "into the DI box, no pedals or effects, no amp or mic sound, no hum? Clips of the same DI file "
                   "sit together. Levelled to &minus;23 LUFS."),
+    4: dict(family="stem", title="Backing tracks",
+            question="Is an electric guitar audible in this track?",
+            intro="Each clip is one backing track alone (drums, a room mic, bass, keys or vocals), 10 seconds. Is an "
+                  "<b>electric guitar audible</b> in it, even faintly? These are the tracks the self-built training "
+                  "mixes use, so a guitar in one would leak into training. Levelled to &minus;23 LUFS."),
 }
 
 
 def plan_parts(queue, seed=SEED):
     """{part: [items in display order]}. Targets by key then half; pairs in queue order; DIs blind: files shuffled
-    with `seed`, each file's windows in time order."""
+    with `seed`, each file's windows in time order; backing tracks (stems) by key, as part 4 when there are any."""
     targets = sorted((i for i in queue if i["family"] == "target"), key=lambda i: (i["key"], i["half"]))
     pairs = [i for i in queue if i["family"] == "di_amp"]
     by_file = {}
@@ -90,15 +98,16 @@ def plan_parts(queue, seed=SEED):
     files = sorted(by_file)
     random.Random(seed).shuffle(files)
     dis = [i for f in files for i in sorted(by_file[f], key=lambda i: i["start_s"])]
-    left = {i["family"] for i in queue} - {"target", "di_amp", "di"}
+    stems = sorted((i for i in queue if i["family"] == "stem"), key=lambda i: i["key"])
+    left = {i["family"] for i in queue} - {"target", "di_amp", "di", "stem"}
     if left:
         raise SystemExit(f"unknown item families {sorted(left)}")
-    return {1: targets, 2: pairs, 3: dis}
+    return {1: targets, 2: pairs, 3: dis, **({4: stems} if stems else {})}
 
 
 def title_of(item):
     """'Song · track' from the item's paths; a crop's slug when the DI is a crop's."""
-    p = pathlib.Path(item["paths"]["di"])
+    p = pathlib.Path(item["paths"].get("di") or item["paths"]["stem"])
     if p.name == "di.wav":                          # validation-crops/<source>-<Song>-<Track>/di.wav
         song, _, track = p.parent.name.split("-", 1)[1].rpartition("-")
         return f"{song.replace('_', ' ')} · {track}"
@@ -119,6 +128,8 @@ def subtitle_of(item):
     if item["family"] == "di_amp":
         return (f"{mmss(a)}–{mmss(b)} · DI ({pathlib.Path(item['paths']['di']).name}), then "
                 f"{pathlib.Path(item['paths']['amp']).name}")
+    if item["family"] == "stem":
+        return f"{mmss(a)}–{mmss(b)} · {pathlib.Path(item['paths']['stem']).name} (a backing track)"
     return f"{mmss(a)}–{mmss(b)} · {pathlib.Path(item['paths']['di']).name}"
 
 
@@ -160,12 +171,15 @@ def item_clips(item):
     if item["family"] == "di_amp":
         return [(item["id"] + "-di", item["paths"]["di"], a, d, "the DI"),
                 (item["id"] + "-amp", item["paths"]["amp"], a, d, "the amp track")]
+    if item["family"] == "stem":
+        return [(item["id"] + "-stem", item["paths"]["stem"], a, d, "the backing track")]
     return [(item["id"] + "-di", item["paths"]["di"], a, d, "the DI")]
 
 
 ASK = {"target": "Judge the target (second sound): a clean amp recording?",
        "di_amp": "Is the second sound an amp recording of this same DI take?",
-       "di": "Is this a clean, unprocessed DI?"}
+       "di": "Is this a clean, unprocessed DI?",
+       "stem": "Is an electric guitar audible in this backing track?"}
 
 
 def item_html(item, n, total, ask=False):
@@ -360,9 +374,12 @@ def page_html(part, items, clips, build, n_parts, title=None):
     spec = PARTS[part] if part in PARTS else dict(
         title=title or "Extra items",
         question="A few more items: each card says what to judge.",
-        intro="These replace items that were silent on the earlier pages. Each card's buttons follow its question: "
-              "<b>DI then target</b>, judge the target; <b>DI then amp track</b>, is it an amp take of this DI; "
-              "<b>a DI alone</b>, is it a clean, unprocessed DI?")
+        intro="Items the earlier pages do not hold. Each card's buttons follow its question: "
+              + "; ".join(t for f, t in (("target", "<b>DI then target</b>, judge the target"),
+                                         ("di_amp", "<b>DI then amp track</b>, is it an amp take of this DI"),
+                                         ("di", "<b>a DI alone</b>, is it a clean, unprocessed DI"),
+                                         ("stem", "<b>a backing track alone</b>, is an electric guitar audible in it"))
+                          if f in fams) + ".")
     if part in PARTS and fams - {spec["family"]}:
         raise SystemExit(f"part {part} holds {sorted(fams)}")
     total = len(items)

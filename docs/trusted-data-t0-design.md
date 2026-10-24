@@ -305,7 +305,7 @@ early-stopping set.
 | plan, render | `$MAIN -m learn.trusted_data plan --stage t2`; `$MAIN -u … render --stage t2 --shard k/3` | about 12–18k renders, 2.5–3.5 h on 3 processes |
 | build | `$MSST -m learn.trusted_data build --stage t2 --device mps` | about 6k separations, 5–8 h |
 | train | `$TORCH_PY -m learn.trusted_data train --arm SES\|SYN --seed 20261042\|20261043` | 4 runs, about 1.5 h MPS |
-| fit, E on K, V-real | `fit`, `e-on-k`, `vreal-predict` (TORCH_PY); `vreal-render --shard k/3`, `report` (MAIN) | about 165 renders |
+| fit, E on K, V-real | `fit`, `e-on-k`, `vreal-predict` (TORCH_PY); `vreal-render --shard k/3`, `report` (MAIN) | about 165 renders (SES, SYN and the constant; about 220 if SYN-E runs) |
 
 ## Open questions
 
@@ -491,8 +491,7 @@ After T0 and before the ear, two multi-agent reviews (the trusted-data change, t
   DI back (with the rule above, an unheard quiet window would have kept its DI out for good, and a "Hum" answer on a
   noise floor would have excluded it).
 - **Unchanged:** a measured fail excludes before the ear is read, so the two conflicts (Quicksand ElecGtr2, Today's The
-  Day ElecGtr07) stay excluded and are not on the pages; the module and plan text that says they "wait for the ear" is
-  an open decision for the user.
+  Day ElecGtr07) stay excluded and are not on the pages (the user confirmed it on 2026-10-24, below).
 
 **T1 and T2 (`trusted_data`):**
 - **Centred stems fold like a centred guitar** (`pan_fold(0)`): other guitars sat about 3 dB low against the stems.
@@ -518,3 +517,28 @@ After T0 and before the ear, two multi-agent reviews (the trusted-data change, t
 
 **Restated, not changed:** at V-real's 7 bands a paired arm contrast reads about ±0.036 log d (90%), not the plan's
 ±0.028; the tie rule (|point| < 0.03 picks SYN) is unchanged.
+
+## The user's decisions (2026-10-24)
+
+The review's four decisions before the ear, each as the ML session recommended. Built at zero renders:
+- **The two conflicts stay excluded.** Quicksand ElecGtr2 (A6) and Today's The Day ElecGtr07 (A5): their measured fails
+  stand. Sitting 1, the basis of the conflict, judged their DI clips, not these targets. `EAR_DISPUTED` is gone.
+- **The stem spot-check joins this sitting** (plan (f)'s T0 "spot-check stems by ear"):
+  - **One clip per scanned session:** the passing stem nearest the floor (the highest guitar take; name order on a
+    tie), at the D-build section time where it plays most (at least 10% of the window against its own file's level;
+    up to 5 stems tried). `lists` stores the choice in `t0/stem-checks.json` and keeps it while the stem passes.
+  - **Question:** is an electric guitar audible in this backing track? Clean, a guitar can be heard, or not sure. The
+    pages give it part 4 on a fresh build; today it goes on the next extra part.
+  - **Rule:** a session's scanned stems are used once its clip is heard clean. A guitar heard holds all of the
+    session's stems (the scan missed one there, so the ML session looks before T1), and an unheard or "not sure"
+    clip waits.
+- **Every DI is heard before it counts.** A DI that passes every measure is verified only once heard: a window heard
+  clean, or its pair heard as an amp take of it (the pair page offers "the DI itself sounds processed"). A DI with
+  nothing else queued gets one window: the band's seeded draw where it had one, else a seeded D4-passed section
+  (seed 20261103, its own sections first). The per-band sample is now a subset of this rule.
+- **The song-blind constant is one more V-real arm at T2.** `fit` stores the step 3 gate's constant
+  (`direct_sound_gate.constant_answers`: continuous medians of the audible labels, switches by majority, mics by the
+  most frequent) over the SYN arm's training labels (SES's are the same). `vreal-predict` adds it as arm "constant",
+  `vreal-render` renders it with the others (about 55 renders per arm), and `report` reads SES − constant, SYN − constant
+  and constant − S beside the primary. The reading rule is unchanged.
+

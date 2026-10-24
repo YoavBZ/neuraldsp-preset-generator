@@ -225,3 +225,23 @@ def test_section_activity_reads_against_the_files_playing_level(tmp_path):
     files = {}
     assert T.section_activity(p, 5.0, files=files) > 0.9            # playing
     assert T.section_activity(p, 25.0, files=files) < 0.05          # a resting floor, 70 dB down
+
+
+def test_the_song_blind_constant_joins_t2s_v_real_contrasts():
+    pytest.importorskip("numpy")
+    from learn import direct_sound_gate as G
+    from learn import song_model as SM
+
+    con = T.t2_contrasts(("SES", "SYN", T.CONST_ARM))
+    assert list(con)[0] == "SYN - SES" and con["SYN - constant"] == ("SYN", "constant")
+    assert con["constant - S"] == ("constant", "S") and "SYN-E - SYN" not in con
+    assert "SES - constant" not in T.t2_contrasts(("SES", "SYN"))
+
+    def label(vol, mic):
+        return {"pr12Amp/pr12Volume": vol, "cabParameters/rightCabActive": "true",
+                "cabParameters/rightCabPosition": 0.3, "cabParameters/rightMicType": mic,
+                "cabParameters/leftMicType": "2", "sw50rAmp/sw50rBright": "false"}
+    rows = [{"amp": "pr12", "base": "clean", "label": label(v, m)} for v, m in ((0.2, "3"), (0.4, "3"), (0.9, "7"))]
+    c = G.const_from_json(T.constant_arm(rows)["constant"])[("pr12", "clean")]
+    assert c["cont"][SM.CONT.index("pr12Amp/pr12Volume")] == pytest.approx(0.4)
+    assert c["mics"][SM.CAT.index("cabParameters/rightMicType")] == 3

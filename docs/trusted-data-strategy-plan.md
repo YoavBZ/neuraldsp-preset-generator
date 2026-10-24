@@ -295,3 +295,10 @@ Facts that changed after the approval, and what each means for the plan. None is
     off; mix EQ and reverb are not built). T1 is read as descriptive.
   - **(d)'s "no other take of the target"** now holds in code: a same-part double confirmed by pitch takes the target's
     settings, as a DT double does.
+- **2026-10-24, the user's decisions** (each as the ML session recommended; [design](trusted-data-t0-design.md#the-users-decisions-2026-10-24)):
+  - decision 2's two conflicts stay excluded on their measured fails;
+  - T0's by-ear stem spot-check joins this sitting, one clip per scanned session, and a session's stems are used once
+    its clip is heard clean;
+  - every DI is heard before it counts;
+  - the song-blind per-class constant is one more V-real arm at T2, read beside the primary (e)/(f).
+

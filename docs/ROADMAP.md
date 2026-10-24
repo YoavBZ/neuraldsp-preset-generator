@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-23.
+lives in the linked documents. Last updated 2026-10-24.
 
 ## Where the product is
 
@@ -234,15 +234,17 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    - (a) **The user's ear on T0's queue** (184 live items on `trusted-data-ear` parts 1–4). Before
      listening, zero renders: `build_ear_page check --retire` (records DI windows that hardly play
      against their own file, so they are retired like the silent ones and hold no DI back), then
-     `verify_tracks lists --ear-di <sitting-1 export>` (the review's fixed rules; it may queue a
-     few items), `build_ear_page extra` if it does, and `build_ear_page check` for the cards to
-     skip (22 retired or no longer queued, plus any retired now). After listening, one command,
+     `verify_tracks lists --ear-di <sitting-1 export>` (the review's fixed rules; it queues the
+     stem spot-check, one backing-track clip per scanned session, and every DI no one has heard
+     yet), `build_ear_page extra` (one more part with them), and `build_ear_page check` for the
+     cards to skip (22 retired or no longer queued, plus any retired now). After listening, one command,
      with every export each time: `verify_tracks lists --ear-di <sitting-1 export> [--ear <the
      target-vs-DI export, if T0's run used it>] --ear part-1.json --ear part-2.json --ear
      part-3.json --ear part-4.json` (it refuses a run that would drop an earlier export). K and T2
-     wait for it. Not on the pages: the two conflicts (Quicksand ElecGtr2, Today's The Day
-     ElecGtr07: excluded on their measures, an open decision below) and the plan's by-ear stem
-     spot-check (open below).
+     wait for it. *Decided 2026-10-24 (user):* the two conflicts (Quicksand ElecGtr2, Today's The
+     Day ElecGtr07) stay excluded on their measured fails; the stem spot-check joins this sitting (a
+     session's stems are used once its clip is heard clean; a guitar heard holds them all); every
+     DI is heard before it counts (a window heard clean, or its pair heard as an amp take).
    - (b) **T1, stem quality** (no training): build K from R_in's stored truth renders and separate
      it; read K − V_sep stem SNR, paired on the same examples and draws, with V-real's stem SNR
      beside it. The design estimates about 0.8–1.5k renders for the other guitars and about 370
@@ -259,7 +261,10 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      arm contrast reads about ±0.036 log d (90%), before seed noise; a tie cannot rule out a
      realism loss about the size of D's whole margin over S (−0.034). The report prints per-class,
      F-song and without-MUSDB18 rows (V-real is 2 clean bands and 5 crunch), and reads
-     'incomplete' until every direction is judged and no answer was refused.
+     'incomplete' until every direction is judged and no answer was refused. *Added 2026-10-24
+     (user):* the song-blind per-class constant (the step 3 gate's constant on T2's training labels)
+     is one more V-real arm, about 55 renders, read beside the primary as SES − constant, SYN −
+     constant and constant − S: does a model read the song, or only the constant's pull?
    - (d) **T3, decided after T2:** one rebuild that is also every-control stage 2D, on self-built
      mixes with full-space labels and any approved new DIs, read on K and V-real. Its downloads are
      asked for then.
@@ -358,7 +363,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       not yet split. The 21% and 46% are observed power, which adds nothing to the interval; the
       interval says step 4 rules out a gain beyond −0.103 and a loss beyond +0.034. The song-blind
       per-class constant was never scored on stage F, so how much of D − S is the constant's pull is
-      unknown: an open decision below.)*
+      unknown; T2 now scores it on V-real, the user's decision of 2026-10-24.)*
       *Since (2026-10-22 evening):* every control (#266) and the real-mix test (#267) are approved
       and merged, and the order is above. These figures were read on all parts, before the
       trusted-data rule; they get a trusted re-read on V-real's parts once the ear has answered (the
@@ -399,16 +404,11 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    [history](roadmap-history.md#step-0-the-song-to-preset-model-as-it-stood-on-2026-10-19)).
    **Open user decisions** (updated 2026-10-23 after the [review](research/program-review-2026-10-23.md);
    the ML session's recommendation first):
-   - *Before the ear:*
-     - the two conflicts (Quicksand ElecGtr2, Today's The Day ElecGtr07): their measured fails
-       stand (recommended: sitting 1 judged their DI clips, not these targets), or they are queued
-       and a clean answer overrules the measures for these two only;
-     - the plan's by-ear stem spot-check: a short extra part now (recommended), later, or dropped;
-     - the 5 DIs verified with no ear (D4 passed everywhere): queue them now, about 1 min
-       (recommended).
-   - *Before T2:* add the song-blind per-class constant as a V-real arm (about 66 renders;
-     recommended: otherwise no reading can tell a model reading the song from the constant's pull);
-     read T2's tie from the interval (a tie when it holds 0) rather than |point| < 0.03.
+   - *Decided 2026-10-24 (user, all as recommended):* the two conflicts' measured fails stand; the
+     stem spot-check joins this sitting; every DI is heard before it counts; the song-blind constant
+     is a V-real arm at T2.
+   - *Before T2:* read T2's tie from the interval (a tie when it holds 0) rather than
+     |point| < 0.03.
    - *Before T1 or T3:* K's bands. K may be Adam Buckley alone. Kimock and Swatkins could rejoin K
      on self-built clean backings (the ML session kept them out; the plan says their bleed lived in
      live backings, which K does not use). Cnoc An Tursa's MUSDB18 tag concerns htdemucs, not
@@ -637,3 +637,4 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-23 | Trusted data, T0–T2 code (reviewed and re-reviewed, fixes applied; nothing run): the verification standard (A2 keeps the plan's 12 dB pass, 3.3–12 dB to the ear; 11 known amps re-derived from the target-vs-DI measurements, less the pairs whose DI the ear rejected), a processed-DI check on the user's sitting-1 DI verdicts (30/35 in-sample, 26/35 leave-one-out; never decides an unheard DI alone), T0's lists, ear queue and re-reads, T1 and T2. A zero-render dry run: Eggy's DIs heard processed (SYN-E cannot run), V-real 11 parts in 7 bands pending the ear, an ear queue of 195 items before K and T2 can run. *T0 ran later the same day (step 0)* | [design](trusted-data-t0-design.md) |
 | 2026-10-23 | New sources (user): Blue Manic "Acomatay" (Cambridge-MT, 5 DI + amp pairs, 20.2 min of DI) downloaded as a reserved test band (ledger `cambridge-new-test-band-bluemanic`; the user's test-first rule for new Telefunken DI + amp bands, applied by the ML session); EGDB's 240 DI clips (107.5 min) downloaded for training only, and only once its DIs pass the DI checks; GOAT's access requested on Zenodo by the user. Downloads through the user's browser at their request (user: never use Chrome without explicit approval) | [inventory](research/di-source-inventory-2026-10.md) |
 | 2026-10-23 | The review before the ear (requested by the user; set by the ML session, no user decision in it): two multi-agent reviews, of the trusted-data change and of the whole program (11 reviewers, each finding checked by a skeptic: 73 confirmed, 23 plausible, 6 refuted). Fixed in code before the ear, zero renders: the ear's import keeps earlier exports and needs the sitting-1 export; an "unsure" answer no longer clears a DI; a DI waits while a flagged window is unheard; other guitars no longer sit 3 dB low against the stems; same-part doubles take the target's settings in SYN and K; a refused T2 example no longer blocks training; a re-plan cannot reuse stale renders; the T2 reading waits for complete renders; every-control readings decide on the declared band-weighted interval. Restated: T2's power at 7 bands (about ±0.036); the step 3 gate on trusted rows (about −0.016, 2 bands); the flat 5k-to-20k curve. The open decisions above list what is the user's | [record](research/program-review-2026-10-23.md) |
+| 2026-10-24 | The review's four decisions before the ear (user, each as the ML session recommended): Quicksand ElecGtr2 and Today's The Day ElecGtr07 stay excluded on their measured fails (sitting 1 judged their DI clips, not these targets); the plan's by-ear stem spot-check joins this sitting (one backing-track clip per scanned session, the passing stem nearest the floor; a session's stems are used once it is heard clean, and a guitar heard holds them all); every DI is heard before it counts (a window heard clean, or its pair heard as an amp take); the song-blind per-class constant is one more V-real arm at T2 (about 55 renders), read beside the primary | [design](trusted-data-t0-design.md#the-users-decisions-2026-10-24) |
