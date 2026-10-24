@@ -291,7 +291,7 @@ refuse when it has changed.
 **The arms:**
 - **SES:** the stored stems.
 - **SYN:** the same examples, labels and draws, with self-built backings.
-- **SYN-E:** a seeded third (seed 20261101) swapped for Eggy. It is recorded as refused while no
+- **SYN-E:** a seeded third (seed 20261101) swapped for Eggy. It is recorded as refused while no *Dropped from T2 for now (user, 2026-10-24).*
   Eggy DI is trusted, which the ear now implies.
 
 **Training:** D_stem's recipe, 2 seeds per arm. The constant and pull are fitted per arm on its
@@ -313,7 +313,7 @@ early-stopping set.
 
 1. **The ear queue is large: 195 items** (184 live after the queue fixes; resolved by the sitting). The 37 `di_amp` items cover the D1 rule on metal DIs,
    and other-guitar windows add flagged items. T2 waits until the ear has answered.
-2. **SYN-E has no Eggy.** Drop the arm, or name another clean-class source?
+2. **SYN-E has no Eggy.** *Decided 2026-10-24 (user):* dropped from T2 until a clean-class DI source (EGDB or GOAT) passes the DI checks.
 3. **K may be one band.** Admit Cnoc An Tursa despite its MUSDB18 tag?
 4. **The cab-off negative is pending (6 renders).** Resolved: rendered and failing A2 (the calibration fix below).
 5. **Ruled:** a fail now needs the 17-bin gate, so Adam Buckley ElecGtr5's DI goes to the ear.
