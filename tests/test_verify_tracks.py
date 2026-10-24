@@ -553,6 +553,7 @@ def _ids(q, kind, key):
 
 
 def test_lists_refuses_to_drop_an_earlier_export_and_a_real_run_needs_sitting_1(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")                           # lists -> prior_summary
     env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 10.0, crest=6.0), _sec("x2", 40.0)])])
     rec, q = env.run()
     p1 = env.export([(_ids(q, "di_flagged", "x")[10.0], "processed", "")])
@@ -586,6 +587,7 @@ def test_dropped_exports_by_hash_path_or_a_later_export_of_the_part():
 
 
 def test_unsure_on_a_sampled_di_keeps_it_pending(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")                           # lists -> prior_summary
     env = _Lists(tmp_path, monkeypatch, [_di("s", "B1", [_sec("s1", 10.0), _sec("s2", 20.0)])])
     rec, q = env.run()
     (t, iid), = _ids(q, "di_sample", "s").items()
@@ -597,6 +599,7 @@ def test_unsure_on_a_sampled_di_keeps_it_pending(tmp_path, monkeypatch):
 
 
 def test_a_clean_window_clears_only_the_flagged_section_it_covers(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")                           # lists -> prior_summary
     env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 30.0, crest=6.0),
                                                          _sec("x@35.0", 35.0, crest=6.0, own=False),
                                                          _sec("x3", 60.0)])])
@@ -642,6 +645,7 @@ def test_sample_redraws_past_a_di_the_measures_exclude():
 
 
 def test_a_measure_di_heard_processed_on_another_window_excludes_its_crop(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")                           # lists -> prior_summary
     crop = {"window_s": 100.0, "di_file": "/x/B1_Full/x.wav", "inventory_di": "x", "di_name": "x.wav",
             "d2": {"flags": []}, "d4": {"crest_db": 12.0, "bright_slope": 0.5}}
     env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 10.0, crest=6.0)])], {"Song-x": crop})
@@ -663,6 +667,7 @@ def test_calibration_ok_needs_todays_negatives_and_known_amps(tmp_path):
 
 
 def test_a_quiet_window_is_retired_and_holds_no_di_back(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")                           # lists -> prior_summary
     env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 10.0), _sec("x@40.0", 40.0, crest=6.0, own=False)])])
     rec, q = env.run()
     (t, iid), = _ids(q, "di_flagged", "x").items()
@@ -676,6 +681,7 @@ def test_a_quiet_window_is_retired_and_holds_no_di_back(tmp_path, monkeypatch):
 
 
 def test_every_di_is_heard_before_it_counts(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")                           # lists -> prior_summary
     env = _Lists(tmp_path, monkeypatch, [_di("p", "B1", [_sec("p1", 10.0)]), _di("q", "B1", [_sec("q1", 20.0)])])
     rec, q = env.run()
     samples = {x["key"]: x for x in q["queue"] if x["kind"] == "di_sample"}
@@ -686,6 +692,7 @@ def test_every_di_is_heard_before_it_counts(tmp_path, monkeypatch):
 
 
 def test_a_sessions_stems_count_once_its_spot_check_is_heard_clean(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")                           # lists -> prior_summary
     sd = "/x/B1_Full"
     stems = {sd: {"stems": {"01_Kick.wav": {"pass": True, "takes_db": {"g": -45.0}},
                             "02_Vox.wav": {"pass": True, "takes_db": {"g": -31.0}},
