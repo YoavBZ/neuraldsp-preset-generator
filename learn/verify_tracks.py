@@ -1788,11 +1788,18 @@ def ear_answers(paths, di_paths=(), registry=None):
                 t = answer_time(a, d)
                 if t and (a["id"] not in latest or (t, n) >= latest[a["id"]]):
                     latest[a["id"]] = (t, n)
+    out["cleared"] = []                             # a verdict cleared by a later empty touch in another file
     for n, (p, page, d) in enumerate(loaded):
         for a in d.get("answers") or []:
             v = a.get("verdict")
             if page == EAR_PAGE and latest.get(a["id"], (None, None))[1] != n:
                 out["superseded"] += bool(v)
+                if v:
+                    w = loaded[latest[a["id"]][1]]
+                    wa = next(x for x in w[2].get("answers") or [] if x["id"] == a["id"])
+                    if not wa.get("verdict"):           # a take-back, or a note typed in another browser
+                        out["cleared"].append({"id": a["id"], "verdict": v, "file": str(p), "by": str(w[0]),
+                                               "note": (wa.get("note") or "").strip()})
                 continue
             note = (a.get("note") or "").strip()
             src = registry.get(a["id"]) if page == EAR_PAGE else items.get(a["id"])
@@ -2182,8 +2189,9 @@ def cmd_lists(args):
     dropped = dropped_exports(prev, exports) if prev and bool(prev.get("smoke")) == bool(args.smoke) else []
     if dropped and not args.drop_ear:
         raise SystemExit("lists refuses: an earlier run read these answer exports, and this run would drop their "
-                         f"answers: {dropped}. Pass every export each time (a later export of the same ear-page part "
-                         "replaces an earlier one), or --drop-ear to drop them on purpose")
+                         f"answers: {dropped}. Pass every export each time (an earlier export can be left out only when "
+                         "this run's exports touched each of its cards as late or later), or --drop-ear to drop them on "
+                         "purpose")
     for p in dropped:
         print(f"--drop-ear: dropping the answers in {p}")
     reg_path = root / "t0" / "ear-items.json"
@@ -2195,7 +2203,10 @@ def cmd_lists(args):
         registry[iid]["retired"] = "a quiet window (the DI hardly plays here): its answers are skipped"
     ear = ear_answers(args.ear or [], args.ear_di or [], registry)
     if ear["superseded"]:
-        print(f"{ear['superseded']} answers replaced by a later export of the same item")
+        print(f"{ear['superseded']} answers replaced by a later touch of the same card")
+    for c in ear["cleared"]:
+        print(f"CHECK WITH THE LISTENER: {c['id']}'s '{c['verdict']}' ({c['file']}) was cleared by a later empty touch "
+              f"in {c['by']} (note: {c['note']!r}): a take-back, or a note typed in another browser?")
     queue = []
 
     # the crops' measure DIs: D2-D3 measured; D4 and the ear (a negative wins; heard clean and D4-flagged: a conflict)
@@ -2221,7 +2232,9 @@ def cmd_lists(args):
         elif st["D4"] == "fail" and resolved is not True:       # only a queue answer on the flagged window clears it
             conflict = heard is True
             v, why = "pending ear", ["conflict: heard clean, D4 flags it" if conflict else "D4 flags it (unheard)"]
-        elif heard is not True and not file_heard:              # every DI is heard before it counts (user, 2026-10-24)
+        elif not file_heard and not any(merge_ear([v], "clean") is True for v in      # every DI is heard first
+                                        [v for vs in ear["crop_di"].get(slug, {}).values() for v in vs]
+                                        + [v for _, _, v in ear["di_windows"].get(f"crop:{slug}", [])]):
             v, why = "pending ear", ["unheard: every DI is heard before it counts"]
         else:
             v, why = "verified", []

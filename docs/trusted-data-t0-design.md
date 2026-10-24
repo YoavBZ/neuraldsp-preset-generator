@@ -471,8 +471,11 @@ After T0 and before the ear, two multi-agent reviews (the trusted-data change, t
 - `lists` rebuilds every verdict from the exports it is given, so it now refuses a real run without `--ear-di`, and any
   run that would drop an export an earlier run read (`--drop-ear` does it on purpose). Each export's path and sha256
   are recorded in `verified.json`, and T1 and T2 refuse lists made without the sitting-1 export.
-- An ear-page export holds every item of its part, so on one item the latest export replaces the others: a changed
-  answer replaces the old one, and an answer taken back clears it.
+- On one ear-page card the latest touch across all exports stands (each answer carries the time it was last
+  touched): a changed answer replaces the old one, and an answer taken back clears it. A card never touched in a
+  browser holds no answer, so another browser's export cannot erase one. A verdict cleared by an empty touch in
+  another file (a take-back, or a note typed in another browser) is printed for the ML session to check with the
+  listener. (Fixed 2026-10-24: the first rule let a later export's untouched cards erase answers.)
 - Notes are kept (`ear_notes`) and printed: a note can qualify or replace a verdict.
 
 **The rule:**

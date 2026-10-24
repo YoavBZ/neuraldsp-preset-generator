@@ -238,7 +238,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      `verify_tracks lists --ear-di <sitting-1 export>` (the review's fixed rules; it queues the
      stem spot-check, one backing-track clip per scanned session, and every DI no one has heard
      yet), `build_ear_page extra` (one more part with them), and `build_ear_page check` for the
-     cards to skip (22 retired or no longer queued, plus any retired now). After listening, one command,
+     cards to skip (29 on 2026-10-24: retired, or no longer queued). After listening, one command,
      with every export each time: `verify_tracks lists --ear-di <sitting-1 export> [--ear <the
      target-vs-DI export, if T0's run used it>] --ear part-1.json ... --ear part-6.json` (it
      refuses a run that would drop an earlier export; on one card the latest touch across all

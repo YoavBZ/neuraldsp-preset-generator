@@ -741,3 +741,18 @@ def test_a_sessions_stems_count_once_its_spot_check_is_heard_clean(tmp_path, mon
     assert rec["stems"] == {}                                                 # a guitar heard: the session's stems held
     stored = json.loads((env.root / "t0" / V.STEM_CHECK_FILE).read_text())["sessions"][sd]
     assert stored["stem"] == "02_Vox.wav"                                     # the choice is kept between runs
+
+
+def test_a_note_from_another_browser_is_flagged_not_silent(tmp_path):
+    reg = {"ear-y": {"kind": "di_flagged", "family": "di", "key": "d", "start_s": 30.0, "dur_s": 10.0}}
+
+    def ex(name, ans):
+        p = tmp_path / name
+        p.write_text(json.dumps({"page": V.EAR_PAGE, "part": 3, "build": "b1", "exported": ans[-1],
+                                 "answers": [{"id": "ear-y", "verdict": ans[0], "note": ans[1], "t": ans[2]}]}))
+        return p
+    phone = ex("phone.json", ("processed", "", "2026-10-24T08:00"))
+    laptop = ex("laptop.json", (None, "pick noise?", "2026-10-24T09:00"))
+    e = V.ear_answers([phone, laptop], [], reg)
+    assert e["cleared"] == [{"id": "ear-y", "verdict": "processed", "file": str(phone), "by": str(laptop),
+                             "note": "pick noise?"}]

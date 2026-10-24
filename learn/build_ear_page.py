@@ -12,7 +12,7 @@ Up to four parts, one question each, so each file stays phone-sized:
 Exports carry page `trusted-data-ear` and the queue's item ids, which `verify_tracks lists --ear` decodes through
 `t0/ear-items.json`. Each part exports its own file; pass every part's export, and the sitting-1 export, in one call
 (`lists --ear-di SITTING1.json --ear part-1.json ... --ear part-N.json`), every time: a run that would drop an earlier
-run's export refuses, and a later export of the same part replaces an earlier one. A partial export is fine:
+run's export refuses, and on one card the latest touch across all exports stands. A partial export is fine:
 unanswered items stay pending. The DI part's blindness has one limit: D4-flagged windows come in runs, so a file with many windows
 is likely a flagged one.
 
@@ -544,7 +544,11 @@ def cmd_check(args):
         print("every live clip plays")
     retire = {iid: {"key": registry[iid]["key"], "start_s": registry[iid]["start_s"], "share": round(share, 3)}
               for _, _, iid, _, label, share in quiet
-              if label == "the DI" and registry[iid]["family"] in ("di", "di_amp")}
+              if label == "the DI" and registry[iid]["family"] in ("di", "di_amp")
+              and not registry[iid]["key"].startswith("crop:")}      # a crop window can't be re-picked: listen to it
+    crops = [iid for _, _, iid, _, label, _ in quiet if registry[iid]["key"].startswith("crop:")]
+    if crops:
+        print(f"not retiring {len(crops)} quiet crop windows (no other window exists): {crops}")
     answered = set()                                     # cards an export `lists` read has touched: never retired here
     for e in (json.loads((T0 / "verified.json").read_text()) if (T0 / "verified.json").exists() else {}).get(
             "ear_exports") or []:
