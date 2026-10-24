@@ -143,3 +143,105 @@ def test_a_stale_plan_is_refused(tmp_path):
         T.check_lists(tmp_path, plan)
     with pytest.raises(SystemExit):
         T.check_lists(tmp_path, {})
+
+
+# --- the 2026-10-23 review's fixes -------------------------------------------------------------------------------
+
+def test_a_pitch_confirmed_double_takes_the_targets_settings_and_silent_own_amps_leave_a_part_out():
+    cands = ["s/04_ElecGtr04DI.wav", "s/05_ElecGtr05DI.wav"]
+    out = T.pick_others("s/01_ElecGtr01DI.wav", "ElecGtr01", cands, {c: 0.5 for c in cands},
+                        doubles={"s/04_ElecGtr04DI.wav"})
+    assert {o["di"]: o["dt"] for o in out} == {"s/04_ElecGtr04DI.wav": True, "s/05_ElecGtr05DI.wav": False}
+    assert T.other_level(None, [-30.0], [-25.0], has_own=True) == (None, "own amp tracks silent here")
+    assert T.other_level(None, [-30.0], [-25.0], has_own=False) == (-30.0, "session amp median")
+
+
+def test_stems_fold_like_a_centred_guitar():
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("pyloudnorm")
+    t = np.arange(48000 * 3) / 48000
+    y = 0.1 * np.sin(2 * np.pi * 220 * t)
+    other = 0.1 * np.sin(2 * np.pi * 330 * t) * T.pan_fold(0.0)    # a centred other guitar, folded
+    stem = 0.1 * np.sin(2 * np.pi * 330 * t)                        # the same source as a (centred) stem, raw
+    from learn import direct_stems as DS
+
+    x = {"i": 1, "draw": {"ratio_db": -6.0, "leak_db": -99.0, "target_lufs": -20.0, "mastered": DS.master_draw(1)[0]}}
+    _, _, lb_other = T.self_built_mix(y, other, np.zeros_like(y), x)
+    _, _, lb_stem = T.self_built_mix(y, np.zeros_like(y), stem, x)
+    assert abs(lb_other - lb_stem) < 0.05                          # both centred sources fold alike
+
+
+def test_empty_backing_is_refused():
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("pyloudnorm")
+    y = 0.1 * np.sin(2 * np.pi * 220 * np.arange(48000 * 3) / 48000)
+    assert T.empty_backing_ok(y, -30.0) and not T.empty_backing_ok(y, -70.0)
+
+
+def test_a_refused_t2_example_is_dropped_not_unbuilt(tmp_path):
+    import json
+
+    rows = tmp_path / "t2" / "rows"
+    rows.mkdir(parents=True)
+    (rows / "render-0.jsonl").write_text("\n".join(json.dumps({"i": i}) for i in (1, 2, 3)) + "\n")
+    (rows / "build-0.jsonl").write_text(json.dumps({"i": 1}) + "\n" + json.dumps({"i": 2, "refused": "x"}) + "\n")
+    bad, unbuilt = T.t2_refused(tmp_path, {"pilot": [1, 2], "es": [3]}, {1: {}, 2: {}, 3: {}})
+    assert bad == {2, 3} and unbuilt == {3}                        # 2 is dropped for every arm; 3 is not built yet
+
+
+def test_stale_rows_and_the_lists_hash(tmp_path, monkeypatch):
+    import json
+
+    old = {"examples": [{"i": 1, "others": [{"di": "a"}]}, {"i": 2, "others": []}]}
+    new = {"examples": [{"i": 1, "others": []}, {"i": 2, "others": []}, {"i": 3, "others": []}]}
+    assert T.stale_rows(old, new, {1: {}, 2: {}}) == [1] and T.stale_rows(None, new, {1: {}}) == []
+    (tmp_path / "t0").mkdir()
+    (tmp_path / "t0" / "verified.json").write_text(json.dumps({"dis": {"a": 1}, "time": "10:00"}))
+    h = T.lists_sha(tmp_path)
+    (tmp_path / "t0" / "verified.json").write_text(json.dumps({"dis": {"a": 1}, "time": "11:00"}))
+    assert T.lists_sha(tmp_path) == h                              # a rerun that changes no verdict keeps the hash
+    (tmp_path / "t0" / "verified.json").write_text(json.dumps({"dis": {"a": 2}, "time": "11:00"}))
+    assert T.lists_sha(tmp_path) != h
+
+
+def test_t2_reading_waits_for_every_direction_and_flags_refusals():
+    units = [{"slug": "p", "amp": "pr12", "d": {"SES": 1.0, "SYN": 1.0}},
+             {"slug": "q", "amp": "pr12", "d": {"SES": 1.0, "SYN": None}}]
+    groups = {("p", "pr12"): {"status": "done"}, ("q", "pr12"): {"status": "done"}}
+    gaps = T.report_gaps(units, ("SES", "SYN"), groups, {"p", "q"}, {"p", "q"}, {"SES": 0, "SYN": 0})
+    assert len(gaps) == 1 and "SYN" in gaps[0]
+    units[1]["d"]["SYN"] = 1.0
+    assert T.report_gaps(units, ("SES", "SYN"), groups, {"p", "q"}, {"p", "q"}, {"SES": 0, "SYN": 0}) == []
+    assert T.report_gaps(units, ("SES", "SYN"), groups, {"p"}, {"p", "q"}, {"SES": 0, "SYN": 1})
+
+
+def test_section_activity_reads_against_the_files_playing_level(tmp_path):
+    np = pytest.importorskip("numpy")
+    sf = pytest.importorskip("soundfile")
+    rng = np.random.default_rng(3)
+    x = np.concatenate([0.3 * rng.standard_normal(48000 * 20), 1e-4 * rng.standard_normal(48000 * 20)])
+    p = tmp_path / "di.wav"
+    sf.write(str(p), x.astype(np.float32), 48000)
+    files = {}
+    assert T.section_activity(p, 5.0, files=files) > 0.9            # playing
+    assert T.section_activity(p, 25.0, files=files) < 0.05          # a resting floor, 70 dB down
+
+
+def test_the_song_blind_constant_joins_t2s_v_real_contrasts():
+    pytest.importorskip("numpy")
+    from learn import direct_sound_gate as G
+    from learn import song_model as SM
+
+    con = T.t2_contrasts(("SES", "SYN", T.CONST_ARM))
+    assert list(con)[0] == "SYN - SES" and con["SYN - constant"] == ("SYN", "constant")
+    assert con["constant - S"] == ("constant", "S") and "SYN-E - SYN" not in con
+    assert "SES - constant" not in T.t2_contrasts(("SES", "SYN"))
+
+    def label(vol, mic):
+        return {"pr12Amp/pr12Volume": vol, "cabParameters/rightCabActive": "true",
+                "cabParameters/rightCabPosition": 0.3, "cabParameters/rightMicType": mic,
+                "cabParameters/leftMicType": "2", "sw50rAmp/sw50rBright": "false"}
+    rows = [{"amp": "pr12", "base": "clean", "label": label(v, m)} for v, m in ((0.2, "3"), (0.4, "3"), (0.9, "7"))]
+    c = G.const_from_json(T.constant_arm(rows)["constant"])[("pr12", "clean")]
+    assert c["cont"][SM.CONT.index("pr12Amp/pr12Volume")] == pytest.approx(0.4)
+    assert c["mics"][SM.CAT.index("cabParameters/rightMicType")] == 3

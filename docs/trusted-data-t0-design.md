@@ -1,6 +1,9 @@
 # Trusted data, T0 to T2: the code, the calibration and the launch (design)
 
-**Status (2026-10-23):** code only. Nothing here has run as T0, T1 or T2.
+**Status (2026-10-23):** T0 ran on the user's Mac (calibration OK; the lists and the ear queue; see the ROADMAP and the
+ledger's outcome). T1 and T2 have not run. After T0 and before the ear, a multi-agent review changed the import of the
+ear's answers and several rules, at zero renders: [the review before the ear](#the-review-before-the-ear-2026-10-23)
+at the end. The next `lists` run recomputes every verdict under them.
 - **The code review of #281** returned "go with fixes", and the re-review two more fixes plus a
   ruling. All are applied, and listed at the end.
 - **The numbers below** come from zero-render dry runs on the stored crops and sections, written to
@@ -123,12 +126,12 @@ user's 35 heard crop DIs.
   - the DI through PR12 with the cab section off: the clean start is declared, the crunch start is
     beside. 6 renders.
 
-**CALIBRATION OK needs all of these:**
+**CALIBRATION OK needs all of these** (as amended by the calibration fix below; `NEG_MUST_FAIL`):
 - the known amps fail none of A1–A4;
 - both known fails fail one;
 - the copy fails A1, A3 or A4;
 - the EQ'd DI fails A3;
-- the clean cab-off DI fails A2.
+- every cab-off negative in `NEG_MUST_FAIL` fails A2: PR12's clean start, and (from the fix) SW50R's and AC20's.
 
 **Dry run, zero-render part:**
 - **Known amps:** none fails. 4 pass A2 (It Was My Fault ElecGtr3, colour-me-red 02, magilla 1DT,
@@ -154,19 +157,19 @@ user's 35 heard crop DIs.
   - The band-limited lag agrees with the stored `di_lag_ms`.
 - **D4:** as above.
 
-## T0 (zero renders apart from calibration's 6)
+## T0 (zero renders apart from calibration's cab-off negatives: 8, plus 6 priming)
 
 Run from the merged checkout. `MAIN=…/.venv/bin/python`.
 
 | Step | Command | Time |
 |---|---|---|
-| 1 | `$MAIN -u -m learn.verify_tracks negatives` (6 renders) | about 2 min |
+| 1 | `$MAIN -u -m learn.verify_tracks negatives` (8 renders plus 6 priming) | about 2 min |
 | 2 | `$MAIN -m learn.verify_tracks calibrate --ear-di <sitting-1 export>` | under 1 min |
 | 3 | `$MAIN -m learn.verify_tracks targets` | about 1 min |
 | 4 | `$MAIN -m learn.verify_tracks dis --shard k/3` (k = 0, 1, 2) | about 1–2 min each |
 | 5 | `$MAIN -m learn.verify_tracks inject-strict` | about 20–40 min |
 | 6 | `$MAIN -m learn.verify_tracks stem-scan --shard k/3` | about 30–45 min each (20 sessions, 101 sources; Hollow Ground, 8 sources over 142 s, took 235 s) |
-| 7 | `$MAIN -m learn.verify_tracks lists --ear-di <sitting-1 export> [--ear <target-vs-DI or ear-page export>]` | under 1 min |
+| 7 | `$MAIN -m learn.verify_tracks lists --ear-di <sitting-1 export> [--ear <target-vs-DI export>] [--ear <each ear-page part's export> ...]`: every export in one call, every time (a run that would drop an earlier run's export refuses) | under 1 min |
 | 8 | `$MAIN -m learn.verify_tracks reread` | under 1 min |
 
 The sitting-1 export is
@@ -225,7 +228,7 @@ ElecGtr3, colour-me-red 02 and 03, femme 5, get-out-of-bed 2, let's dance 3 and 
 |---|---|
 | Passing Ships ElecGtr2 | A1 and A2: a zero-lag path, no roll-off |
 | Passing Ships ElecGtr4 | measure-DI hum |
-| Quicksand ElecGtr2 | A2, A6 |
+| Quicksand ElecGtr2 | A6 (its A2 goes to the ear under ruling (a)) |
 | Today's The Day ElecGtr07 | A5 |
 | magilla elecgtr1 | its DT double is in the mix |
 | wickerman elecgtr7 | hum-suspect DI |
@@ -246,7 +249,9 @@ ElecGtr3, colour-me-red 02 and 03, femme 5, get-out-of-bed 2, let's dance 3 and 
   ear.
 
 **The level prior** is re-derived on 308 values in 11 bands (median −7.8 dB, 5–95% −11.6 to
-−2.9), against 971 values (median −7.9, −18.9 to −2.7).
+−2.9), against 971 values (median −7.9, −18.9 to −2.7). *T1 and T2 draw from the stored prior, not this one,* so that
+K − V_sep and SYN − SES stay paired on the same draws (the plan's T1 and T2 rows: "the same examples and draws"); the
+re-derived prior is for T3's new examples (the plan's (c)).
 
 ## T1 (`trusted_data`, no training)
 
@@ -300,15 +305,15 @@ early-stopping set.
 | plan, render | `$MAIN -m learn.trusted_data plan --stage t2`; `$MAIN -u … render --stage t2 --shard k/3` | about 12–18k renders, 2.5–3.5 h on 3 processes |
 | build | `$MSST -m learn.trusted_data build --stage t2 --device mps` | about 6k separations, 5–8 h |
 | train | `$TORCH_PY -m learn.trusted_data train --arm SES\|SYN --seed 20261042\|20261043` | 4 runs, about 1.5 h MPS |
-| fit, E on K, V-real | `fit`, `e-on-k`, `vreal-predict` (TORCH_PY); `vreal-render --shard k/3`, `report` (MAIN) | about 165 renders |
+| fit, E on K, V-real | `fit`, `e-on-k`, `vreal-predict` (TORCH_PY); `vreal-render --shard k/3`, `report` (MAIN) | about 165 renders (SES, SYN and the constant; about 220 if SYN-E runs) |
 
 ## Open questions
 
-1. **The ear queue is large: 195 items.** The 37 `di_amp` items cover the D1 rule on metal DIs,
+1. **The ear queue is large: 195 items** (184 live after the queue fixes; resolved by the sitting). The 37 `di_amp` items cover the D1 rule on metal DIs,
    and other-guitar windows add flagged items. T2 waits until the ear has answered.
 2. **SYN-E has no Eggy.** Drop the arm, or name another clean-class source?
 3. **K may be one band.** Admit Cnoc An Tursa despite its MUSDB18 tag?
-4. **The cab-off negative is pending (6 renders).**
+4. **The cab-off negative is pending (6 renders).** Resolved: rendered and failing A2 (the calibration fix below).
 5. **Ruled:** a fail now needs the 17-bin gate, so Adam Buckley ElecGtr5's DI goes to the ear.
 
 ## The review's fixes (#281, "go with fixes")
@@ -454,3 +459,86 @@ with new renders: everything below comes from the 4 stored negative renders and 
 - **The stored data root does not hold these renders yet.** Until it does, `calibrate` there refuses
   ("negatives not rendered"). The next T0 run's `negatives` step renders them (4 plus 4 priming)
   before `calibrate`.
+
+## The review before the ear (2026-10-23)
+
+After T0 and before the ear, two multi-agent reviews (the trusted-data change, then the whole program;
+[record](research/program-review-2026-10-23.md)). No threshold moved and nothing was rendered. Changes:
+
+**The ear's import (`verify_tracks lists`):**
+- `lists` rebuilds every verdict from the exports it is given, so it now refuses a real run without `--ear-di`, and any
+  run that would drop an export an earlier run read (`--drop-ear` does it on purpose). Each export's path and sha256
+  are recorded in `verified.json`, and T1 and T2 refuse lists made without the sitting-1 export.
+- An ear-page export holds every item of its part, so on one item the latest export replaces the others: a changed
+  answer replaces the old one, and an answer taken back clears it.
+- Notes are kept (`ear_notes`) and printed: a note can qualify or replace a verdict.
+
+**The rule:**
+- **A DI waits for the ear while any window D4 flags is not heard clean.** It was "verified" with its other windows
+  usable, although a later "processed" excludes the DI with all its sections.
+- **Only a clean answer clears a D4-passed sample;** "unsure" kept nothing pending.
+- **A clean answer clears a flagged section only when its window covers the whole section** (it cleared any
+  overlapping one).
+- **A measure DI whose file was heard processed** on another window, or not the DI of its amp take, excludes its target.
+- **The sample of D4-passed DIs** redraws within a band when the draw lands on a DI the measures exclude (other bands'
+  draws unchanged), and skips a DI already queued as DI-only.
+- **The level prior leaves out parts the ear rejected** (the target, or its measure DI). A part waiting for the ear on
+  A1 or A2 still counts: it is a level statistic, not a label.
+- **An OK calibration counts only under today's negatives, must-fail rule and known amps.**
+- **Quiet windows:** `build_ear_page check` reads every live clip against its own file's playing level; `--retire`
+  records DI windows where the DI plays on under 10% of the frames (`t0/quiet-items.json`). `lists` retires their items
+  like silent ones and reads their sections as silent: their answers are skipped, no mix uses them, and they hold no
+  DI back (with the rule above, an unheard quiet window would have kept its DI out for good, and a "Hum" answer on a
+  noise floor would have excluded it).
+- **Unchanged:** a measured fail excludes before the ear is read, so the two conflicts (Quicksand ElecGtr2, Today's The
+  Day ElecGtr07) stay excluded and are not on the pages (the user confirmed it on 2026-10-24, below).
+
+**T1 and T2 (`trusted_data`):**
+- **Centred stems fold like a centred guitar** (`pan_fold(0)`): other guitars sat about 3 dB low against the stems.
+- **A same-part double confirmed by pitch** (the cleaning plan's `same_part` rule on the target and other DI in the
+  section) takes the target's settings and the opposite pan, as a DT double does. Step 0 removed such doubles from
+  SES's backings; SYN and K rendered them with their own drawn tone.
+- **Other guitars are ranked by playing against their own file's level** (a resting floor read as fully active), and a
+  part whose own amp tracks are silent in the section is left out (only a part with no amp track takes the session
+  median).
+- **A backing with nothing in it** (no stem, no other guitar heard) is refused at build, and `plan` counts such
+  examples by band.
+- **A refused T2 example drops for every arm;** it was counted as unbuilt, which blocked every training run.
+- **Re-planning over rendered rows refuses** when an example's recipe changed (render and build skip any example with a
+  row, so the old audio would have been reused). The lists' hash ignores their run time, so a `lists` rerun that
+  changes no verdict needs no re-plan. T1's completeness counts the plan's own examples.
+- **T1's reading is descriptive.** K cleaner than V_sep is the cleaning gain the plan expects; realism is K against
+  V-real at matched ratio (now verified parts only, LUFS on both sides). No lever is coded or approved, so T1 changes
+  nothing in T2 by itself.
+- **T2's reading is "incomplete"** until every V-real direction is judged for every arm, the predictions cover today's
+  V-real, and no answer was refused (a refused answer would score as S, which can favour the broken arm). The report
+  adds F-song, without-MUSDB18 and per-class rows, and flags runs whose best epoch is within 4 of the cap.
+- **E on K** has the section-clustered fallback when K is one band, as T1 has.
+
+**Restated, not changed:** at V-real's 7 bands a paired arm contrast reads about ±0.036 log d (90%), not the plan's
+±0.028; the tie rule (|point| < 0.03 picks SYN) is unchanged.
+
+## The user's decisions (2026-10-24)
+
+The review's four decisions before the ear, each as the ML session recommended. Built at zero renders:
+- **The two conflicts stay excluded.** Quicksand ElecGtr2 (A6) and Today's The Day ElecGtr07 (A5): their measured fails
+  stand. Sitting 1, the basis of the conflict, judged their DI clips, not these targets. `EAR_DISPUTED` is gone.
+- **The stem spot-check joins this sitting** (plan (f)'s T0 "spot-check stems by ear"):
+  - **One clip per scanned session:** the passing stem nearest the floor (the highest guitar take; name order on a
+    tie), at the D-build section time where it plays most (at least 10% of the window against its own file's level;
+    up to 5 stems tried). `lists` stores the choice in `t0/stem-checks.json` and keeps it while the stem passes.
+  - **Question:** is an electric guitar audible in this backing track? Clean, a guitar can be heard, or not sure. The
+    pages give it part 4 on a fresh build; today it goes on the next extra part.
+  - **Rule:** a session's scanned stems are used once its clip is heard clean. A guitar heard holds all of the
+    session's stems (the scan missed one there, so the ML session looks before T1), and an unheard or "not sure"
+    clip waits.
+- **Every DI is heard before it counts.** A DI that passes every measure is verified only once heard: a window heard
+  clean, or its pair heard as an amp take of it (the pair page offers "the DI itself sounds processed"). A DI with
+  nothing else queued gets one window: the band's seeded draw where it had one, else a seeded D4-passed section
+  (seed 20261103, its own sections first). The per-band sample is now a subset of this rule.
+- **The song-blind constant is one more V-real arm at T2.** `fit` stores the step 3 gate's constant
+  (`direct_sound_gate.constant_answers`: continuous medians of the audible labels, switches by majority, mics by the
+  most frequent) over the SYN arm's training labels (SES's are the same). `vreal-predict` adds it as arm "constant",
+  `vreal-render` renders it with the others (about 55 renders per arm), and `report` reads SES − constant, SYN − constant
+  and constant − S beside the primary. The reading rule is unchanged.
+

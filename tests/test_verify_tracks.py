@@ -90,8 +90,7 @@ def test_target_verdict():
     assert V.target_verdict(_ok(A2="ear"), True, False)[0] == "excluded"
     assert V.target_verdict(_ok(), None, None)[0] == "pending ear"
     assert V.target_verdict(_ok(), False, True)[0] == "excluded"
-    assert V.target_verdict(_ok(), None, True, disputed=True)[0] == "pending ear"
-    assert V.target_verdict(_ok(), True, None, disputed=True) == ("verified", [])      # the ear has ruled
+    assert V.target_verdict(_ok(A5="fail"), True, True) == ("excluded", ["A5 fails"])   # a measured fail stands
     assert V.target_verdict(_ok(), True, True, in_mix=True)[0] == "excluded"       # A6's mix clause unread
     assert V.target_verdict(_ok(A6mix="pass"), True, True, in_mix=True) == ("verified", [])
 
@@ -496,3 +495,210 @@ def test_hf_slope_reads_a_cab_like_roll_off():
     r = V.rel_hf_slope(x, cab)
     assert r["rel"] < -15 and abs(V.rel_hf_slope(x, 0.5 * x)["rel"]) < 0.5
     assert V.hf_slope(np.zeros(48000)) is None
+
+
+# --- `lists` end to end on synthetic T0 records (the 2026-10-23 review of the ear's round trip) -----------------
+
+def _sec(sid, t0, crest=12.0, own=True, d1=True):
+    return {"section": sid, "start_s": t0, "own": own, "D2": {"flags": []},
+            "D1": {"halves": {"A": _half(2.0, 50, 20.0, 50, 50), "B": _half(2.0, 50, 20.0, 50, 50)},
+                   "amp_track": "05_Gtr.wav"} if d1 else None,
+            "D4": {"crest_db": crest, "bright_slope": 0.5, "frames": 50}}
+
+
+def _di(di, band, secs, ds=("training pool",)):
+    return {"di": di, "band": band, "datasets": list(ds), "amp_tracks": ["05_Gtr.wav"], "hum_suspect": False,
+            "path": f"/x/{band}_Full/{di}.wav", "sections": secs}
+
+
+class _Lists:
+    """Fake T0 records under a scratch root, and `lists` run on them (smoke unless real=True)."""
+
+    def __init__(self, tmp_path, monkeypatch, dis, crops=None, stems=None):
+        from learn import pretrain_set as PS
+
+        self.root = tmp_path / "root"
+        (self.root / "t0").mkdir(parents=True)
+        (self.root / "t0" / "targets.json").write_text(json.dumps({"thresholds": V.thresholds(), "complete": True,
+                                                                   "parts": {}}))
+        rows = {f"di:{r['di']}": r for r in dis} | {f"crop:{k}": c for k, c in (crops or {}).items()}
+        (self.root / "t0" / "dis-0of1.json").write_text(json.dumps(
+            {"shard": [0, 1], "complete": True, "thresholds": V.thresholds(), "rows": rows}))
+        (self.root / "t0" / "stems-0of1.json").write_text(json.dumps(
+            {"shard": [0, 1], "complete": True, "floor_db": V.STEM_TAKE_DB, "sessions": stems or {}}))
+        monkeypatch.setattr(PS, "ratio_values", lambda: {})
+        monkeypatch.setattr(PS, "SECTIONS_MS", tmp_path / "no-sections")
+        monkeypatch.setattr(V, "HOME", tmp_path / "home")
+        monkeypatch.setattr(V, "OUT", self.root)
+        self.tmp, self.n = tmp_path, 0
+
+    def run(self, ear=(), ear_di=(), real=False, drop=False):
+        import types
+
+        V.cmd_lists(types.SimpleNamespace(smoke=not real, out=None if real else str(self.root), ear=list(ear),
+                                          ear_di=list(ear_di), drop_ear=drop))
+        t0 = self.root / "t0"
+        return json.loads((t0 / "verified.json").read_text()), json.loads((t0 / "ear-queue.json").read_text())
+
+    def export(self, answers, part=3, exported="2026-10-24T08:00:00Z", page=V.EAR_PAGE):
+        self.n += 1
+        p = self.tmp / f"export-{self.n}.json"
+        p.write_text(json.dumps({"page": page, "part": part, "build": "b1", "exported": exported,
+                                 "answers": [{"id": i, "verdict": v, "note": n} for i, v, n in answers]}))
+        return str(p)
+
+
+def _ids(q, kind, key):
+    return {x["start_s"]: x["id"] for x in q["queue"] if x["kind"] == kind and x["key"] == key}
+
+
+def test_lists_refuses_to_drop_an_earlier_export_and_a_real_run_needs_sitting_1(tmp_path, monkeypatch):
+    env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 10.0, crest=6.0), _sec("x2", 40.0)])])
+    rec, q = env.run()
+    p1 = env.export([(_ids(q, "di_flagged", "x")[10.0], "processed", "")])
+    rec, _ = env.run([p1])
+    assert rec["dis"]["x"]["verdict"] == "excluded" and rec["ear_exports"][0]["sha256"]
+    p2 = env.export([], part=4)
+    with pytest.raises(SystemExit, match="drop"):
+        env.run([p2])                                             # part 3's answers would be lost
+    rec, _ = env.run([p1, p2])
+    assert rec["dis"]["x"]["verdict"] == "excluded"
+    rec, _ = env.run([p2], drop=True)                             # on purpose only
+    assert rec["dis"]["x"]["verdict"] != "excluded"
+    later = env.export([(_ids(q, "di_flagged", "x")[10.0], "clean", "")], exported="2026-10-24T09:00:00Z")
+    rec, _ = env.run([p2, later])                                 # a later export of part 3 replaces the earlier one
+    assert rec["dis"]["x"]["verdict"] == "verified"
+    with pytest.raises(SystemExit, match="ear-di"):
+        env.run([p2, later], real=True)
+
+
+def test_dropped_exports_by_hash_path_or_a_later_export_of_the_part():
+    old = {"ear_exports": [{"path": "/a.json", "sha256": "1", "page": V.EAR_PAGE, "part": 1, "build": "b",
+                            "exported": "2026-10-24T08:00"},
+                           {"path": "/s1.json", "sha256": "2", "page": "data-review-1", "part": None, "build": None,
+                            "exported": None}]}
+    now = [{"path": "/elsewhere/s1.json", "sha256": "2", "page": "data-review-1", "part": None, "build": None,
+            "exported": None}]
+    assert V.dropped_exports(old, now) == ["/a.json"]
+    now.append({"path": "/a2.json", "sha256": "3", "page": V.EAR_PAGE, "part": 1, "build": "b",
+                "exported": "2026-10-24T09:00"})
+    assert V.dropped_exports(old, now) == [] and V.dropped_exports(None, now) == []
+
+
+def test_unsure_on_a_sampled_di_keeps_it_pending(tmp_path, monkeypatch):
+    env = _Lists(tmp_path, monkeypatch, [_di("s", "B1", [_sec("s1", 10.0), _sec("s2", 20.0)])])
+    rec, q = env.run()
+    (t, iid), = _ids(q, "di_sample", "s").items()
+    rec, q = env.run([env.export([(iid, "unsure", "")])])
+    assert rec["dis"]["s"]["verdict"] == "pending ear" and "s" not in rec["training_dis"]
+    assert _ids(q, "di_sample", "s") == {t: iid}                  # still asked
+    rec, q = env.run([env.export([(iid, "clean", "")], exported="2026-10-24T09:00:00Z")], drop=True)
+    assert rec["dis"]["s"]["verdict"] == "verified" and rec["training_dis"] == ["s"]
+
+
+def test_a_clean_window_clears_only_the_flagged_section_it_covers(tmp_path, monkeypatch):
+    env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 30.0, crest=6.0),
+                                                         _sec("x@35.0", 35.0, crest=6.0, own=False),
+                                                         _sec("x3", 60.0)])])
+    rec, q = env.run()
+    fl = _ids(q, "di_flagged", "x")
+    assert sorted(fl) == [30.0, 35.0]
+    assert rec["dis"]["x"]["verdict"] == "pending ear"           # the DI waits while a flagged window is unheard
+    assert set(rec["dis"]["x"]["sections"].values()) == {"pending ear"} and rec["training_dis"] == []
+    rec, q = env.run([env.export([(fl[30.0], "clean", "")])])
+    assert rec["dis"]["x"]["sections"]["x@35.0"] == "pending ear" and 35.0 in _ids(q, "di_flagged", "x")
+    assert rec["dis"]["x"]["verdict"] == "pending ear"
+    rec, q = env.run([env.export([(fl[30.0], "clean", ""), (fl[35.0], "clean", "")], exported="2026-10-24T09:00Z")])
+    assert rec["dis"]["x"]["verdict"] == "verified"
+    assert set(rec["dis"]["x"]["sections"].values()) == {"usable"} and q["queue"] == []
+
+
+def test_notes_are_kept_and_a_retracted_answer_clears(tmp_path):
+    reg = {"ear-y": {"kind": "di_flagged", "family": "di", "key": "d", "start_s": 30.0, "dur_s": 10.0},
+           "ear-z": {"kind": "di_flagged", "family": "di", "key": "e", "start_s": 30.0, "dur_s": 10.0}}
+
+    def ex(name, ans, exported):
+        p = tmp_path / name
+        p.write_text(json.dumps({"page": V.EAR_PAGE, "part": 3, "build": "b1", "exported": exported,
+                                 "answers": [{"id": i, "verdict": v, "note": n} for i, v, n in ans]}))
+        return p
+    half = ex("half.json", [("ear-y", "processed", ""), ("ear-z", "clean", "")], "2026-10-24T08:00")
+    final = ex("final.json", [("ear-y", "clean", "the crunch is the pick"), ("ear-z", None, "not sure any more")],
+               "2026-10-24T09:00")
+    e = V.ear_answers([final, half], [], reg)                     # the later export wins whatever the order
+    assert e["di_windows"] == {"d": [(30.0, 40.0, "clean")]} and e["superseded"] == 2
+    assert [(n["id"], n["verdict"], n["note"]) for n in e["notes"]] == [
+        ("ear-y", "clean", "the crunch is the pick"), ("ear-z", None, "not sure any more")]
+
+
+def test_sample_redraws_past_a_di_the_measures_exclude():
+    rows = {"p": _di("p", "B", [_sec("p1", 10.0)]), "q": _di("q", "B", [_sec("q1", 10.0)]),
+            "r": _di("r", "C", [_sec("r1", 10.0)])}
+    before = V.sample_passed(rows)
+    bad = next(d for d in before if rows[d]["band"] == "B")
+    rows[bad]["hum_suspect"] = True                                # D2 fails: the draw would hear nothing for B
+    after = V.sample_passed(rows)
+    assert set(after) == ({"p", "q"} - {bad}) | {"r"} and after["r"] == before["r"]
+
+
+def test_a_measure_di_heard_processed_on_another_window_excludes_its_crop(tmp_path, monkeypatch):
+    crop = {"window_s": 100.0, "di_file": "/x/B1_Full/x.wav", "inventory_di": "x", "di_name": "x.wav",
+            "d2": {"flags": []}, "d4": {"crest_db": 12.0, "bright_slope": 0.5}}
+    env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 10.0, crest=6.0)])], {"Song-x": crop})
+    rec, q = env.run()
+    assert rec["measure_dis"]["Song-x"]["verdict"] == "verified"
+    rec, _ = env.run([env.export([(_ids(q, "di_flagged", "x")[10.0], "processed", "")])])
+    assert rec["measure_dis"]["Song-x"]["verdict"] == "excluded"
+
+
+def test_calibration_ok_needs_todays_negatives_and_known_amps(tmp_path):
+    (tmp_path / "calibration").mkdir()
+    rec = {"verdict": "OK", "smoke": False, "thresholds": V.thresholds(), "negatives": V.NEG_DECLARED,
+           "must_fail": {k: list(v) for k, v in V.NEG_MUST_FAIL.items()}, "known_amps": {"parts": list(V.KNOWN_AMPS)}}
+    (tmp_path / "calibration" / "calibration.json").write_text(json.dumps(rec))
+    assert V.calibration_ok(tmp_path)[0]
+    rec["must_fail"] = {"copy": ["A1"]}                            # an OK from before a negative was added
+    (tmp_path / "calibration" / "calibration.json").write_text(json.dumps(rec))
+    assert not V.calibration_ok(tmp_path)[0]
+
+
+def test_a_quiet_window_is_retired_and_holds_no_di_back(tmp_path, monkeypatch):
+    env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 10.0), _sec("x@40.0", 40.0, crest=6.0, own=False)])])
+    rec, q = env.run()
+    (t, iid), = _ids(q, "di_flagged", "x").items()
+    assert rec["dis"]["x"]["verdict"] == "pending ear"
+    (env.root / "t0" / "quiet-items.json").write_text(json.dumps({"items": {iid: {"key": "x", "start_s": t, "share": 0.0}}}))
+    rec, q = env.run()
+    assert rec["dis"]["x"]["sections"]["x@40.0"] == "silent"
+    assert rec["dis"]["x"]["why"] == ["sampled for the ear (D4 passed)"]   # only its own sample is left to hear
+    reg = json.loads((env.root / "t0" / "ear-items.json").read_text())
+    assert "quiet" in reg[iid]["retired"] and [i["kind"] for i in q["queue"]] == ["di_sample"]
+
+
+def test_every_di_is_heard_before_it_counts(tmp_path, monkeypatch):
+    env = _Lists(tmp_path, monkeypatch, [_di("p", "B1", [_sec("p1", 10.0)]), _di("q", "B1", [_sec("q1", 20.0)])])
+    rec, q = env.run()
+    samples = {x["key"]: x for x in q["queue"] if x["kind"] == "di_sample"}
+    assert set(samples) == {"p", "q"} and rec["training_dis"] == []        # the band's draw and the other DI
+    assert {rec["dis"][d]["verdict"] for d in "pq"} == {"pending ear"}
+    rec, q = env.run([env.export([(samples["p"]["id"], "clean", ""), (samples["q"]["id"], "clean", "")])])
+    assert rec["training_dis"] == ["p", "q"] and q["queue"] == []
+
+
+def test_a_sessions_stems_count_once_its_spot_check_is_heard_clean(tmp_path, monkeypatch):
+    sd = "/x/B1_Full"
+    stems = {sd: {"stems": {"01_Kick.wav": {"pass": True, "takes_db": {"g": -45.0}},
+                            "02_Vox.wav": {"pass": True, "takes_db": {"g": -31.0}},
+                            "03_Room.wav": {"pass": False, "takes_db": {"g": -25.0}}}}}
+    monkeypatch.setattr(V, "stem_activity", lambda path, times: {t: 0.8 if t == 20.0 else 0.0 for t in times})
+    env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 10.0), _sec("x2", 20.0)])], stems=stems)
+    rec, q = env.run()
+    (item,) = [x for x in q["queue"] if x["kind"] == "stem"]
+    assert item["key"] == f"{sd}|02_Vox.wav" and item["start_s"] == 20.0     # nearest the floor, where it plays
+    assert rec["stems"] == {}                                                 # waits for the ear
+    rec, q = env.run([env.export([(item["id"], "clean", "")])])
+    assert rec["stems"] == {sd: ["01_Kick.wav", "02_Vox.wav"]} and rec["stem_checks"][sd]["heard"] is True
+    rec, q = env.run([env.export([(item["id"], "guitar", "")], exported="2026-10-24T09:00:00Z")], drop=True)
+    assert rec["stems"] == {}                                                 # a guitar heard: the session's stems held
+    stored = json.loads((env.root / "t0" / V.STEM_CHECK_FILE).read_text())["sessions"][sd]
+    assert stored["stem"] == "02_Vox.wav"                                     # the choice is kept between runs

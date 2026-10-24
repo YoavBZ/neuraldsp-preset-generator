@@ -384,3 +384,13 @@ def test_listening_verdict_is_the_declared_rule():
     assert v["rooms"]["verdict"].startswith("descriptive")
     v = E.listening_verdict(trials, {"1": "A", "2": "A"})
     assert v["gate"]["verdict"].startswith("ear disagrees") and "still learned" in v["gate"]["verdict"]
+
+
+def test_readings_decide_on_the_declared_band_weighted_interval():
+    pytest.importorskip("scipy")
+    a = [-0.026, -0.005, -0.019, -0.019, -0.024, -0.026]               # one band with six parts
+    b = [0.002, -0.005, -0.012, -0.014, -0.016, -0.002, 0.002, 0.013]   # eight bands, one part each
+    rows = [(f"a{k}", "A", "clean", v) for k, v in enumerate(a)] + [(f"b{k}", f"B{k}", "clean", v) for k, v in enumerate(b)]
+    s = E._stats(rows, ("clean",))
+    assert s["bands"] == 9 and s["reading"].startswith("tie")          # band-weighted: the interval spans 0
+    assert E.reading(s["part_weighted"]).startswith("gain")            # the part-weighted one would have read a gain
