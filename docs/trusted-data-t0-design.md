@@ -547,3 +547,46 @@ The review's four decisions before the ear, each as the ML session recommended. 
   `vreal-render` renders it with the others (about 66 renders per arm at 11 parts), and `report` reads SES − constant, SYN − constant
   and constant − S beside the primary. The reading rule is unchanged.
 
+
+## T0 outcome (2026-10-25)
+
+**The ear is done.** The user heard all 202 cards on `trusted-data-ear` parts 1–4 (exports 2026-10-24 and 25). One
+`lists` run read the four exports with the sitting-1 export; nothing was superseded, cleared or skipped (log
+`learn/trusted-data/logs/lists-ear-final.log`). Answers: targets 35 clean amp, 1 bleed; DI and amp pairs 34 amp,
+1 processed; DI windows 99 clean, 13 processed; stems 14 clean, 5 with a guitar.
+
+**The final lists** (`t0/verified.json`):
+- **Targets** 17 verified, 42 excluded. **DIs** 46 verified, 13 excluded.
+- **V-real:** 10 parts in 7 bands (3 clean parts in 2 bands, 7 crunch; 3 of the 10 from one song, Wickerman).
+- **Knob ceiling 2:** 7 parts in 7 bands verified, the panel for every-control stage 1.
+- **K:** 17 DIs in 3 bands, but T1's K uses Adam Buckley and Dark Ride only. Cnoc An Tursa is not admitted (user,
+  2026-10-24); Kimock and Swatkins are excluded by the ear, all 4 of their DIs heard processed (Hikikomori, New One,
+  Honey, Lost & Alive).
+- **Training:** 27 DIs in 8 bands, 181 usable sections; only 1 is clean-class and 1 crunch (61% high gain, the rest
+  unclassed).
+- **Stems:** 167 usable in 14 sessions. The 5 sessions heard with a guitar are held (Eggy Farthest Step and
+  Fragments, Hikikomori, Honey, Lost & Alive).
+
+**Let's Dance ElecGtr4** (the user, 2026-10-24): the leak is in the DI (quiet high notes); the target was too distorted
+to judge. The target is excluded and the DI counts as not clean. `verified.json` still shows the DI heard clean in
+sitting 1; nothing downstream uses it. The leak sat at about −33 dB, so A6's −30 dB line is not a guarantee.
+
+**The audit's caveats:**
+- Eggy Bloomlight's 14 stems count as usable, but no Eggy DI is verified, so they go unused: 153 stems in 13 sessions
+  in practice. Its clip was a Moog the user said can be confused with a guitar.
+- Renesans' stem evidence is weak (a kick trigger, a playback bounce, a growl vocal), and Split Brow's usable list
+  holds the unheard Pre Rec.L/R tracks, which the plan says never to use (GTR Pre Rec). This must be settled before T2
+  uses Renesans' backings.
+- One thin DI: Ale Lak 15_ElecGtr02DTDI is verified on a single window that plays 31% (the double of 13_ElecGtr02DI,
+  which has a full amp pair).
+- Leaked drums were noted on the amp tracks of Honey and Renesans (×3); none is used as a target or for levels.
+- The re-derived level prior (229 values, 10 bands) draws 131 values from 4 parts whose targets are excluded (allowed as
+  a level statistic).
+
+**The main finding:** the training pool holds almost no clean or crunch playing (1 + 1 of 181 sections), against the
+clean/crunch scope. Clean-style DIs must come from new sources: EGDB (downloaded; needs its DI checks and a borrowed
+backing), GOAT (access requested); Jen Hartswick & Nick Cassarino is reserved for test. Where they come from is an open
+user decision before T3.
+
+**T1 started** on 2026-10-25 at 08:29: 812 examples from Adam Buckley and Dark Ride, about 1.8k renders plus priming and
+812 separations. It is running.

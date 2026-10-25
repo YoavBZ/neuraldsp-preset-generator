@@ -109,7 +109,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    screened control is invisible to the judge, and cab phase moves it most; Tone King's renderer
    repeats its stored scores. **Stage 1 waits for the trusted set** (the user's decision) and runs
    on trusted parts only. It needs the trusted amp-track list (since 2026-10-23, T0's lists once the
-   ear has answered), not the rebuild: it is a true-DI oracle on amp-track targets, with no backing
+   ear has answered; it answered on 2026-10-25), not the rebuild: it is a true-DI oracle on amp-track targets, with no backing
    or stem.
 
    **Trusted data only (the user, 2026-10-22): "use only what we can trust, no dirty tracks".**
@@ -162,6 +162,33 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
        parts; part 4 is the stem spot-check (19 backing-track clips). K and T2 wait for the ear. The plan's review-label fix ("2 amp mics summed" where
        only the main mic plays) is in `learn/build_data_review.py`, but the built data-review pages
        are not rebuilt.
+     - **The ear on T0's queue: done** ([outcome](trusted-data-t0-design.md#t0-outcome-2026-10-25)).
+       The user heard all 202 cards on parts 1–4 (exports 2026-10-24 and 25), read in one `lists`
+       run with the sitting-1 export; nothing was superseded, cleared or skipped. Answers: targets
+       35 clean amp, 1 bleed; pairs 34 amp, 1 processed; DI windows 99 clean, 13 processed; stems
+       14 clean, 5 with a guitar. The lists now read:
+       - targets 17 verified, 42 excluded; DIs 46 verified, 13 excluded;
+       - V-real 10 parts in 7 bands (3 clean parts in 2 bands, 7 crunch; 3 of the 10 from one song,
+         Wickerman); knob ceiling 2's 7 parts in 7 bands verified;
+       - K 17 DIs in 3 bands, but T1's K uses Adam Buckley and Dark Ride only (Cnoc An Tursa not
+         admitted; Kimock and Swatkins now excluded by the ear: all 4 of their DIs were heard
+         processed, Hikikomori, New One, Honey, Lost & Alive);
+       - training 27 DIs in 8 bands, 181 usable sections, of which only 1 is clean-class and 1 crunch
+         (61% high gain, the rest unclassed);
+       - stems 167 usable in 14 sessions; the 5 sessions heard with a guitar are held (Eggy Farthest
+         Step and Fragments, Hikikomori, Honey, Lost & Alive).
+
+       Let's Dance ElecGtr4 (the user, 2026-10-24): the leak is in the DI (quiet high notes), and the
+       target was too distorted to judge. The target is excluded and the DI counts as not clean
+       (`verified.json` still shows it heard clean in sitting 1; nothing downstream uses it). That
+       leak sat at about −33 dB, so A6's −30 dB line is no guarantee. **The main finding:** the
+       training pool holds almost no clean or crunch playing (1 + 1 of 181 sections), against the
+       clean/crunch scope. Clean-style DIs must come from new sources (EGDB, downloaded, needs its
+       DI checks and a borrowed backing; GOAT, access requested; Jen Hartswick & Nick Cassarino is
+       reserved for test), an open user decision before T3. The audit's caveats are in the
+       [outcome](trusted-data-t0-design.md#t0-outcome-2026-10-25): Eggy Bloomlight's 14 stems are
+       unused (no Eggy DI is verified), Renesans' stems must be settled before T2 uses its
+       backings, one thin DI, leaked drums on some amp tracks, and the level prior.
      - **The review before the ear (2026-10-23;
        [record](research/program-review-2026-10-23.md)):** two multi-agent reviews (11 reviewers,
        each finding checked by a skeptic) of the trusted-data change and of the whole program.
@@ -231,27 +258,17 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    until the target is clean enough for a better rebuild to pay (XO, ZT − YT).
 
    **Next, in order (2026-10-23, the [trusted-data plan](trusted-data-strategy-plan.md)'s order):**
-   - (a) **The user's ear on T0's queue** (202 cards on `trusted-data-ear` parts 1–4; the
-     steps below ran on 2026-10-24, then the pages were rebuilt to the live queue). Before listening, zero renders: `build_ear_page check --retire` (records DI windows that hardly play
-     against their own file, so they are retired like the silent ones and hold no DI back), then
-     `verify_tracks lists --ear-di <sitting-1 export>` (the review's fixed rules; it queues the
-     stem spot-check, one backing-track clip per scanned session, and every DI no one has heard
-     yet), then `build_ear_page build --force` (done 2026-10-24: the old parts, kept in `old-v1/`,
-     held 29 dead cards; `extra` adds a part if the queue grows, and `check` lists any card to skip). After listening, one command,
-     with every export each time: `verify_tracks lists --ear-di <sitting-1 export> [--ear <the
-     target-vs-DI export, if T0's run used it>] --ear part-1.json ... --ear part-4.json` (plus any export already made from `old-v1/`) (it
-     refuses a run that would drop an earlier export; on one card the latest touch across all
-     exports stands, and a card never touched in a browser holds no answer). K and T2
-     wait for it. *Decided 2026-10-24 (user):* the two conflicts (Quicksand ElecGtr2, Today's The
-     Day ElecGtr07) stay excluded on their measured fails; the stem spot-check joins this sitting (a
-     session's stems are used once its clip is heard clean; a guitar heard holds them all); every
-     DI is heard before it counts (a window heard clean, or its pair heard as an amp take).
+   - (a) **The user's ear on T0's queue: done 2026-10-25.** All 202 cards on `trusted-data-ear`
+     parts 1–4 were heard and read in one `lists` run with the sitting-1 export (the lists are
+     above, the steps in the [design](trusted-data-t0-design.md#t0-outcome-2026-10-25)).
    - (b) **T1, stem quality** (no training): build K from R_in's stored truth renders and separate
      it; read K − V_sep stem SNR, paired on the same examples and draws, with V-real's stem SNR
      beside it. The design estimates about 0.8–1.5k renders for the other guitars and about 370
      separations; the plan budgets about 3.5–5.5k renders and 1.7k separations for T0–T1. The read
      is descriptive: K cleaner than V_sep is the cleaning gain the plan expects, not a realism
      verdict, and no realism lever is coded or approved, so T1 changes nothing in T2 by itself.
+     *Started 2026-10-25 08:29 on 812 examples from Adam Buckley and Dark Ride (about 1.8k renders
+     plus priming, 812 separations); running.*
    - (c) **T2, the 5k pilot:** SES (the stored stems; the cleaning plan's step 2) against SYN
      (self-built backings of the same examples, labels and draws), 2 seeds each; primary SYN − SES
      on V-real. A tie picks the self-built set (the user, 2026-10-23). If SES reads better beyond a
@@ -271,7 +288,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      mixes with full-space labels and any approved new DIs, read on K and V-real. Its downloads are
      asked for then.
    - **Every-control stage 1** runs on the trusted panel's parts once the ear has cleared their amp
-     tracks (knob ceiling 2's panel: 7 parts pending the ear). It needs no rebuild, so it need not
+     tracks (knob ceiling 2's panel: 7 parts in 7 bands, verified 2026-10-25). It needs no rebuild, so it need not
      wait for (b)–(d); they share the renderer.
    - **The real-mix test** ([plan](real-mix-test-plan.md), #267) runs on V-real's parts.
    - **T4:** V-real (with Jen Hartswick & Nick Cassarino), K, then the ear. V-real picks T2's winner
@@ -414,12 +431,13 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      source (EGDB or GOAT) passes the DI checks.
    - *Before T2:* read T2's tie from the interval (a tie when it holds 0) rather than
      |point| < 0.03.
-   - *Before T1 or T3:* K's bands. K may be Adam Buckley alone. Kimock and Swatkins could rejoin K
-     on self-built clean backings (the ML session kept them out; the plan says their bleed lived in
-     live backings, which K does not use). (Cnoc An Tursa: decided 2026-10-24, not admitted.)
-   - *Before T3:* where clean-class training DIs come from (the pool has none since Eggy; V-real has
-     2 clean bands): EGDB on a borrowed backing, Jen Hartswick & Nick Cassarino as training instead
-     of test, Strobe and MekaPhil now, or none.
+   - *Settled by the ear (2026-10-25):* K's bands. T1's K is Adam Buckley and Dark Ride; Kimock's
+     and Swatkins' 4 DIs were all heard processed, so they cannot rejoin. (Cnoc An Tursa: decided
+     2026-10-24, not admitted.)
+   - *Before T3:* where clean-class training DIs come from (after the ear the pool holds 1
+     clean-class and 1 crunch section of 181; V-real has 2 clean bands): EGDB on a borrowed backing
+     (downloaded; its DI checks first), GOAT (access requested), Jen Hartswick & Nick Cassarino as
+     training instead of test, Strobe and MekaPhil now, or none.
    - *Before T4:* the decision test's data and ship rule (keep the fresh bands out of pooled V-real
      readings; possibly bring step 7 forward with a declared verification phase); whether arm A
      gets every-control coverage (stage 2A, which dropped out after GATE STOP) or routes are
@@ -644,3 +662,4 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-24 | The review's four decisions before the ear (user, each as the ML session recommended): Quicksand ElecGtr2 and Today's The Day ElecGtr07 stay excluded on their measured fails (sitting 1 judged their DI clips, not these targets); the plan's by-ear stem spot-check joins this sitting (one backing-track clip per scanned session, the passing stem nearest the floor; a session's stems are used once it is heard clean, and a guitar heard holds them all); every DI is heard before it counts (a window heard clean, or its pair heard as an amp take); the song-blind per-class constant is one more V-real arm at T2 (about 66 renders per arm; about 231 with SES, SYN and 33 priming), read beside the primary | [design](trusted-data-t0-design.md#the-users-decisions-2026-10-24) |
 | 2026-10-24 | PR #286 verified on this machine (its 10-step checklist; all passed) and fixed after an independent review: on one ear-page card the latest touch across all exports stands, and a card never touched in a browser holds no answer (an export from another browser could have erased answers); a target's measure DI is heard first too (6 `di_unheard` cards, part 6); stems fold once by channel count; notes on retired cards are kept; `check --retire` never retires an answered card. The ear pages are parts 1–6, 202 live cards (rebuilt to 4 parts in the row below) | [design](trusted-data-t0-design.md) |
 | 2026-10-24 | User decisions (ML session): Cnoc An Tursa stays out of K (a side check at most); SYN-E dropped from T2 until a clean-class DI source passes the checks. The ear pages were rebuilt to the 202 live cards (4 parts, nothing to skip; old pages kept in `old-v1/`); Blue Manic's mix preview downloaded | [design](trusted-data-t0-design.md) |
+| 2026-10-25 | T0's ear done (the user heard all 202 cards; one `lists` run with the sitting-1 export): targets 17 verified, 42 excluded; DIs 46 verified, 13 excluded; V-real 10 parts in 7 bands (3 clean parts in 2 bands); knob ceiling 2's 7 parts verified; T1's K is Adam Buckley and Dark Ride (Kimock's and Swatkins' 4 DIs all heard processed); training 27 DIs in 8 bands, 181 sections, only 1 clean-class and 1 crunch; stems 167 usable in 14 sessions, 5 sessions held. Let's Dance ElecGtr4 (user, 2026-10-24): the leak is in the DI, the target is excluded and the DI is not clean. Open before T3 (user): clean-style DIs from new sources. T1 started the same day | [outcome](trusted-data-t0-design.md#t0-outcome-2026-10-25) |
