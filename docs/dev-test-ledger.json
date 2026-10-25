@@ -2892,7 +2892,7 @@
     "run": "the DIs that pass T0's DI checks (D2, D3; D1 and A1-A6 where an amp or mic track exists, informative for training) and the user's ear, including a scope call by ear for Mopia (jazz-metal) and Empty Signifier ('various styles'): parts beyond the clean-to-crunch scope are left out. Not known when this entry was made"
    },
    "bands": "5 new bands (Cambridge-MT, added to the library after 2025), never used by this project; none is in a held-out list (clean_di.refuse_held_out on every DI)",
-   "gate": "none: an intake, not a test. Training permission is recorded in learn/clean_di.py TRAINING_DOWNLOADS (split 'library'), which the DI inventory and assert_training_ok read",
+   "gate": "none: an intake, not a test. Training permission is recorded in learn/clean_di.py TRAINING_DOWNLOADS (split 'library'), which the DI inventory and assert_training_ok read; every row also carries clean_di.INTAKE_PENDING (training_ok False) until a verified list admits it",
    "audio_only": "~/ndsp-presets/references/datasets-cambridge-new/<session>_Full/ (manifest beside Blue Manic's: archive and per-file sha256, WAV headers; the ZIPs kept in _zips/)",
    "training": "training only: never a test, V-real, K, known-answer or held-out set, nor a screen that chooses a test. A DI enters a training pool only after it passes T0's checks and the user's ear (the trusted-data rule)",
    "renders": "0; separations: 0",

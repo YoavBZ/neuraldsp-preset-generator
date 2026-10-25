@@ -601,6 +601,10 @@ TRAINING_DOWNLOADS = {
     "Soren_ALittleLate_Full": ("Soren", "library", "2026-10-25 training band (disco-pop; DI only)"),
 }
 RESERVED_NEW = {"BlueManic_Acomatay_Full": "reserved test band (ledger cambridge-new-test-band-bluemanic)"}
+RESERVED_BANDS = {"Blue Manic"}          # refused even if its session is ever added to TRAINING_DOWNLOADS
+# Every TRAINING_DOWNLOADS row carries this note, which `training_ok` rejects: a DI trains only once a verified list
+# (T0's checks and the ear) admits it.
+INTAKE_PENDING = "catalogue: pending T0 intake (trains only once a verified list admits it)"
 REFUSED_SESSIONS = {
     "cambridge/DunningKruger_Sascha_Full": "Dunning Kruger is a set-3 held-out band",
     "cambridge/UmphreysMcGee_CrucialTaunt_Full": "its 'DI' is a Palmer PDI-09 speaker-simulated line-out after the "
@@ -678,6 +682,8 @@ def refuse_held_out(rec):
         raise ValueError(f"set 4-6 material: {p}")
     if "P3_music" in p:
         raise ValueError(f"Guitar-TECHS P3 is never used: {p}")
+    if any(k in p for k in RESERVED_NEW) or rec.get("band") in RESERVED_BANDS:
+        raise ValueError(f"reserved test band: {p}")
     if rec["set"] in ("undeclared", "guitar-techs-P2", "cambridge-new"):
         band = rec["band"]
         if band in _held_out_names() or set4.covers(band) or set5.covers(band) or set6.covers(band):
@@ -819,7 +825,8 @@ def inventory():
             part = re.search(r"(?i)elecgtr\d*", di).group(0)
             add(id=f"cambridge-new/{key}/{di}", path=str(inner / di), source="cambridge", set="cambridge-new",
                 band=band, song=key, part=part, slug=None, gain_class=None, genre=None, split=split,
-                session_dir=str(inner), own=own_tracks(part, files, di), mix=None, vocals=None, notes=[why])
+                session_dir=str(inner), own=own_tracks(part, files, di), mix=None, vocals=None,
+                notes=[why, INTAKE_PENDING])
     # Guitar-TECHS P1 and P2 (development; P3 never)
     for band, root in GT_DIRS.items():
         for f in sorted(root.glob("*/audio/directinput/*.wav")):

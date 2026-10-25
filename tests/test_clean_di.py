@@ -266,6 +266,34 @@ def test_training_downloads_are_training_only_and_not_held_out():
         C.refuse_held_out({"set": "cambridge-new", "band": "Rebecca Haviland", "path": "/nowhere/x.wav"})
 
 
+def test_reserved_test_band_is_refused_even_as_a_training_download():
+    with pytest.raises(ValueError):
+        C.refuse_held_out({"set": "cambridge-new", "band": "Blue Manic",
+                           "path": str(C.CAMBRIDGE_NEW / "BlueManic_Acomatay_Full" / "17_ElecGtr2DI.wav")})
+    with pytest.raises(ValueError):                     # by path, whatever the band says
+        C.refuse_held_out({"set": "cambridge-new", "band": "Someone Else",
+                           "path": str(C.CAMBRIDGE_NEW / "BlueManic_Acomatay_Full" / "x_ElecGtrDI.wav")})
+    with pytest.raises(ValueError):                     # by band, whatever the path says
+        C.refuse_held_out({"set": "cambridge-new", "band": "Blue Manic", "path": "/nowhere/x_ElecGtrDI.wav"})
+
+
+def test_intake_note_blocks_training():
+    assert C.INTAKE_PENDING.startswith("catalogue:")
+
+
+@pytest.mark.skipif(not any((C.CAMBRIDGE_NEW / k).is_dir() for k in C.TRAINING_DOWNLOADS),
+                    reason="the 2026-10-25 sessions are not on this machine")
+def test_intake_rows_are_not_trainable_until_admitted():
+    dis, excluded = C.inventory()
+    rows = [r for r in dis if r["set"] == "cambridge-new"]
+    assert rows
+    assert all(C.INTAKE_PENDING in r["notes"] and not r["training_ok"] for r in rows)
+    assert not any("BlueManic" in r["path"] for r in rows)
+    assert any("BlueManic_Acomatay_Full" in e["what"] for e in excluded)
+    with pytest.raises(ValueError):
+        C.assert_training_ok([rows[0]["path"]], {"dis": dis})
+
+
 def test_held_out_paths_are_refused():
     root = os.path.expanduser("~/ndsp-presets/references/datasets")
     rec = {"set": 2, "band": "Forkupines", "path": f"{root}/cambridge/Forkupines_Semantics_Full/x.wav"}
