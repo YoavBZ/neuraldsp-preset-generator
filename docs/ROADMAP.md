@@ -107,9 +107,9 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    amp choice pays against an amp chosen blind, band-weighted −0.048 (the plan's weighting) and
    part-weighted −0.044 [−0.062, −0.026] (22 of 24 parts, 13 of 14 bands; high priority); no
    screened control is invisible to the judge, and cab phase moves it most; Tone King's renderer
-   repeats its stored scores. **Stage 1 waits for the trusted set** (the user's decision) and runs
-   on trusted parts only. It needs the trusted amp-track list (since 2026-10-23, T0's lists once the
-   ear has answered; it answered on 2026-10-25), not the rebuild: it is a true-DI oracle on amp-track targets, with no backing
+   repeats its stored scores. **Stage 1 runs on trusted parts only** (the user's decision) and can
+   now run, not yet run: the trusted amp-track list now exists (T0's lists after the ear, 2026-10-25;
+   7 panel parts). It needs that list, not the rebuild: it is a true-DI oracle on amp-track targets, with no backing
    or stem.
 
    **Trusted data only (the user, 2026-10-22): "use only what we can trust, no dirty tracks".**
@@ -150,16 +150,16 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      songs is the last check. It amends three approved plans (set by the ML session; the user may
      overrule): the cleaning plan's step 2 becomes T2's SES arm, every-control stage 2D becomes T3
      (read on K and V-real), and the real-mix test runs on V-real's parts.
-     - **T0 ran on 2026-10-23** (`verify_tracks`: calibration OK, then targets, DIs, the stem scan,
+     - **T0 ran on 2026-10-23** (before the ear; `verify_tracks`: calibration OK, then targets, DIs, the stem scan,
        lists and the re-read; renders only for calibration's 8 cab-off negatives, plus 6 priming).
        After two ear-queue fixes (silent windows, DI-only repeats; PR #284) and the review's rules
-       (PR #286, run 2026-10-24 on this machine), the lists read: targets 0 verified, 18 pending the
+       (PR #286, run 2026-10-24 on this machine), the lists read before the ear: targets 0 verified, 18 pending the
        ear, 41 excluded; DIs 0 verified, 50 pending the ear, 9 excluded (every DI is heard first);
-       V-real 11 parts pending the ear; no stems usable until their spot-check is heard. The user
-       has the listening pages `trusted-data-ear` parts 1–4 (`learn/build_ear_page.py`, rebuilt
+       V-real 11 parts pending the ear; no stems usable until their spot-check was heard. The user
+       had the listening pages `trusted-data-ear` parts 1–4 (`learn/build_ear_page.py`, rebuilt
        2026-10-24 to the live queue, nothing to skip; the earlier parts 1–6 are kept in `old-v1/`):
        202 cards, about 55 min. Part 3 holds the 6 unheard measure DIs of V-real and knob ceiling 2's
-       parts; part 4 is the stem spot-check (19 backing-track clips). K and T2 wait for the ear. The plan's review-label fix ("2 amp mics summed" where
+       parts; part 4 is the stem spot-check (19 backing-track clips). K and T2 waited for the ear. The plan's review-label fix ("2 amp mics summed" where
        only the main mic plays) is in `learn/build_data_review.py`, but the built data-review pages
        are not rebuilt.
      - **The ear on T0's queue: done** ([outcome](trusted-data-t0-design.md#t0-outcome-2026-10-25)).
@@ -287,8 +287,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
    - (d) **T3, decided after T2:** one rebuild that is also every-control stage 2D, on self-built
      mixes with full-space labels and any approved new DIs, read on K and V-real. Its downloads are
      asked for then.
-   - **Every-control stage 1** runs on the trusted panel's parts once the ear has cleared their amp
-     tracks (knob ceiling 2's panel: 7 parts in 7 bands, verified 2026-10-25). It needs no rebuild, so it need not
+   - **Every-control stage 1** runs on the trusted panel's parts and can now run, now that the ear
+     has cleared their amp tracks (knob ceiling 2's panel: 7 parts in 7 bands, verified 2026-10-25). It needs no rebuild, so it need not
      wait for (b)–(d); they share the renderer.
    - **The real-mix test** ([plan](real-mix-test-plan.md), #267) runs on V-real's parts.
    - **T4:** V-real (with Jen Hartswick & Nick Cassarino), K, then the ear. V-real picks T2's winner
@@ -385,7 +385,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
       unknown; T2 now scores it on V-real, the user's decision of 2026-10-24.)*
       *Since (2026-10-22 evening):* every control (#266) and the real-mix test (#267) are approved
       and merged, and the order is above. These figures were read on all parts, before the
-      trusted-data rule; they get a trusted re-read on V-real's parts once the ear has answered (the
+      trusted-data rule; they get a trusted re-read on V-real's parts now that the ear has answered (the
       trusted-data plan; stage F's no-high-bleed row read −0.023).
    3. **Two zero-render checks.** *Done 2026-10-19 ([results](shrink-snr-judge-v3-results.md)):*
       the best shrink does not measurably depend on stem SNR (a rule by SNR gains −0.003 [−0.013,

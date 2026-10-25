@@ -1,6 +1,7 @@
 # Trusted data, T0 to T2: the code, the calibration and the launch (design)
 
-**Status (2026-10-23):** T0 ran on the user's Mac (calibration OK; the lists and the ear queue; see the ROADMAP and the
+**Status (2026-10-25):** the ear has answered T0's queue and T1 is running; see
+[T0 outcome (2026-10-25)](#t0-outcome-2026-10-25). *Before the ear (2026-10-23):* T0 ran on the user's Mac (calibration OK; the lists and the ear queue; see the ROADMAP and the
 ledger's outcome). T1 and T2 have not run. After T0 and before the ear, a multi-agent review changed the import of the
 ear's answers and several rules, at zero renders: [the review before the ear](#the-review-before-the-ear-2026-10-23)
 at the end. The next `lists` run recomputes every verdict under them.
@@ -291,8 +292,8 @@ refuse when it has changed.
 **The arms:**
 - **SES:** the stored stems.
 - **SYN:** the same examples, labels and draws, with self-built backings.
-- **SYN-E:** a seeded third (seed 20261101) swapped for Eggy. It is recorded as refused while no *Dropped from T2 for now (user, 2026-10-24).*
-  Eggy DI is trusted, which the ear now implies.
+- **SYN-E:** a seeded third (seed 20261101) swapped for Eggy. *Dropped from T2 for now (user, 2026-10-24):* no Eggy
+  DI is trusted.
 
 **Training:** D_stem's recipe, 2 seeds per arm. The constant and pull are fitted per arm on its
 early-stopping set.
@@ -311,10 +312,11 @@ early-stopping set.
 
 ## Open questions
 
-1. **The ear queue is large: 195 items** (184 live after the queue fixes; resolved by the sitting). The 37 `di_amp` items cover the D1 rule on metal DIs,
+1. **The ear queue is large: 195 items** (184 live after the queue fixes). *Resolved:* answered 2026-10-25, queue 0. The 37 `di_amp` items cover the D1 rule on metal DIs,
    and other-guitar windows add flagged items. T2 waits until the ear has answered.
 2. **SYN-E has no Eggy.** *Decided 2026-10-24 (user):* dropped from T2 until a clean-class DI source (EGDB or GOAT) passes the DI checks.
-3. **K may be one band.** Admit Cnoc An Tursa despite its MUSDB18 tag?
+3. **K may be one band.** Admit Cnoc An Tursa despite its MUSDB18 tag? *Answered (user, 2026-10-24):* not admitted;
+   T1's K is Adam Buckley and Dark Ride.
 4. **The cab-off negative is pending (6 renders).** Resolved: rendered and failing A2 (the calibration fix below).
 5. **Ruled:** a fail now needs the 17-bin gate, so Adam Buckley ElecGtr5's DI goes to the ear.
 
@@ -573,10 +575,12 @@ sitting 1; nothing downstream uses it. The leak sat at about −33 dB, so A6's �
 
 **The audit's caveats:**
 - Eggy Bloomlight's 14 stems count as usable, but no Eggy DI is verified, so they go unused: 153 stems in 13 sessions
-  in practice. Its clip was a Moog the user said can be confused with a guitar.
-- Renesans' stem evidence is weak (a kick trigger, a playback bounce, a growl vocal), and Split Brow's usable list
-  holds the unheard Pre Rec.L/R tracks, which the plan says never to use (GTR Pre Rec). This must be settled before T2
-  uses Renesans' backings.
+  in practice. Its clip was the Key Moog track; the user's note: "Might be a synthesizer, high pitch sound that can be
+  confused with a guitar".
+- Renesans' stem evidence is weak (a kick trigger, a playback bounce, a growl vocal). Split Brow's usable list holds
+  Pre Rec.L/R, unheard there. The plan bans `GTR Pre Rec` (a different file) and allows Renesans' line-level playback
+  tracks, but Pre Rec.L/R may be the same material as the banned file, so they must be checked before T2 uses
+  Renesans' backings. (Less Than Nothing's Pre Rec.R was heard clean.)
 - One thin DI: Ale Lak 15_ElecGtr02DTDI is verified on a single window that plays 31% (the double of 13_ElecGtr02DI,
   which has a full amp pair).
 - Leaked drums were noted on the amp tracks of Honey and Renesans (×3); none is used as a target or for levels.

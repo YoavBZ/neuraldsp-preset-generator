@@ -425,8 +425,8 @@ was declared, what was measured, and the research behind it.
   every control is learned); code `learn/every_control.py`. Stage 0 (94 renders): amp choice
   pays against a blind pick, band-weighted −0.048, part-weighted −0.044 [−0.062, −0.026] (high
   priority); no screened control is invisible to the judge, cab phase moves it most; Tone King's
-  renderer works. Stage 1 runs on the trusted amp-track list (T0's lists; its 7 panel parts were
-  verified by the ear on 2026-10-25).
+  renderer works. Stage 1 can now run (not yet run): the trusted amp-track list now exists (T0's
+  lists after the ear, 2026-10-25; 7 panel parts).
 - [real-mix-test-plan.md](real-mix-test-plan.md): arm A and the direct model on the released mixes
   of stage F's songs against their unity sums (same takes), about 5.8k renders. Approved and
   merged 2026-10-22 (#267); amendment 1 (user): the direct model joins regardless of step 3's
