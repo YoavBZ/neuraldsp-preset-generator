@@ -1,5 +1,10 @@
 # Data-quality audit (2026-10-22)
 
+> **Record.** This is the record of the 2026-10-22 audit. Its proposed level-matched retrain
+> (clean against random, 3 arms × 2 seeds) was not run: the trusted-data plan (T0–T2, see
+> [ROADMAP](ROADMAP.md)) superseded it. Its measures became the A5/A6 rules in
+> `learn/verify_tracks.py`.
+
 The user has listened to many of the project's pages and suspects that the datasets are too
 dirty and need cleaning. This audit measures how dirty they are, where, and what it costs, and
 proposes the cheapest decisive cleaning. It used zero renders, no training and no downloads.

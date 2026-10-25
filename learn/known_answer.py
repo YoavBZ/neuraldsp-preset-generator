@@ -341,7 +341,7 @@ def band_interval(values_by_band):
     if n < 2:
         return {"mean": m, "lo": None, "hi": None, "bands": n, "sd": None}
     sd = math.sqrt(sum((x - m) ** 2 for x in means) / (n - 1))
-    h = T90.get(n - 1, 1.645) * sd / math.sqrt(n)
+    h = T90[max(k for k in T90 if k <= n - 1)] * sd / math.sqrt(n)    # a missing df takes the next smaller (wider)
     return {"mean": m, "lo": m - h, "hi": m + h, "bands": n, "sd": sd}
 
 

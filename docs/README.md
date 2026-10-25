@@ -35,6 +35,8 @@ was declared, what was measured, and the research behind it.
   `data/<workstream>/`.
 - **`docs/research/`** holds the literature research rounds, oldest first (the
   research *tooling* is the top-level `research/` folder).
+- **Status words in a record** ("running", "pending", "next") are as of its date. The
+  current state is in ROADMAP.
 - **Crop rules:** rule 1 (the loudest 10 s) cut the crops every experiment through the
   shortlist measurement used. Rule 2 (where the DI plays most) is for crops cut from now
   on ([validation-datasets.md](validation-datasets.md)). The product's own excerpt rule
@@ -64,6 +66,24 @@ was declared, what was measured, and the research behind it.
 **Validation data** (current)
 - [validation-datasets.md](validation-datasets.md): the development and held-out sets,
   crop rules, lags.
+- **Trusted data only (the user, 2026-10-22):** measurements, training, tests and listening
+  pages use a reviewed trusted set, and dirty tracks are excluded, not flagged. The user's
+  listening verdicts on the data-review pages (amp and mic tracks, suspected doubles, DIs) define
+  the set; rule-based measures only name candidates for that review
+  ([ROADMAP](ROADMAP.md), step 0; [ML plan](research/ml-plan-2026-10.md) §5). *Since 2026-10-23
+  (the [trusted-data plan](trusted-data-strategy-plan.md)): a measured verification fail excludes
+  and the ear decides the rest; T0 ran, and the user's ear finished it on 2026-10-25 (V-real 10
+  parts in 7 bands; the training pool holds almost no clean or crunch playing).*
+  - The data-quality audit ([record](data-quality-audit.md),
+    zero renders): stems carry a median 45% of power above the matched render, and within each
+    band the most contaminated third scores worse on the sound gate; doubles stay in the
+    training backings; DIs are clean; labels are exact; bleed sits in the live-room amp and mic
+    tracks.
+  - The cleaning plan ([PR #273](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/273)):
+    it recommends rebuilding the affected examples without the offending backing tracks, rather
+    than dropping them (about 4k renders, at most about 13.8k if the live-room tracks count).
+    Reviewed (go, with changes); the user chose "the best approach"; implementation in progress.
+    *Since 2026-10-23: its step 2 becomes the trusted-data plan's T2 SES arm.*
 
 **Song-only shortlist** (current)
 - [song-only-shortlist-plan.md](song-only-shortlist-plan.md) →
@@ -308,7 +328,8 @@ was declared, what was measured, and the research behind it.
 - [xlance-screen-plan.md](xlance-screen-plan.md) → [results](xlance-screen-results.md): X-LANCE
   against Mega-53 fast as the build's separator (zero renders). The full chain: same SNR, mel-range
   LSD −1.82 dB, 1.78× the CPU time (pass, over budget). Amendment 1, gtr_mss alone: same SNR,
-  mel-range LSD −2.30 dB, 1.01× the CPU time; pending MPS timing.
+  mel-range LSD −2.30 dB, 1.01× the CPU time. On MPS it ran at 0.988× Mega-53 (the direct
+  model's pilot), and it became the full build's separator (amendment 2, 2026-10-21).
 - [stereo-side-plan.md](stereo-side-plan.md) → [results](stereo-side-results.md): the pan side
   as a separation hint, on synthetic pans of stage F (zero renders). With the side known, keeping
   the target's channel of a stereo Mega-53 stem gains +1.50 dB at ±0.6 pan, and the MDX23C centre
@@ -372,7 +393,9 @@ was declared, what was measured, and the research behind it.
   leaning worse), and the judge re-run through the raw DI (rebuilt-DI contrasts unchanged; on the
   known-answer songs the measure DI caps the exact truth at 0.55 of S). 852 renders. Audited.
 - [direct-model-stems-plan.md](direct-model-stems-plan.md) → [gate 1 results](direct-model-stems-gate1-results.md), [pilot results](direct-model-stems-pilot-results.md), [steps 3–4 results](direct-model-stems-results.md): the direct model with realistic stems
-- [every-control-plan.md](every-control-plan.md): how and when each route covers every manifest control (approved 2026-10-22 for stages 0–1: the full-space table and masking, amp choice, the judge-visibility screen, Tone King's search renderer, a true-DI oracle for the unmeasured groups); code `learn/every_control.py`
+- [data-cleaning-options.md](data-cleaning-options.md): cleaning the direct model's data under the user's rule (only trusted data, no dirty tracks; 2026-10-22): a review of the first proposal, options compared, and the declared plan (the user chose the rebuild route): a per-section take level of the target's own part in each backing track (−30 dB, injection-checked first), a paired R_in rebuild read on step 3's model, then a retrain on the rebuilt trusted pool; code `learn/data_cleaning.py`
+- [trusted-data-strategy-plan.md](trusted-data-strategy-plan.md) → [T0–T2 design](trusted-data-t0-design.md): self-built training mixes from verified DIs and a verified real test (V-real); the verification standard (mic delay, cab roll-off with the plan's 12 dB pass and an ear band, EQ'd copy, copy, same take, bleed, the DI checks including a processed-DI check calibrated on the user's ear: 30/35 in-sample, 26/35 leave-one-out), its calibration on 11 known amps re-derived from the target-vs-DI measurements (less the pairs whose DI the ear rejected), 2 known fails and constructed negatives, T0's lists, ear queue and re-reads, T1's paired stem-quality check and T2's 5k pilot; code `learn/verify_tracks.py`, `learn/trusted_data.py` (reviewed, fixes applied; approved by the user 2026-10-23; T0 ran 2026-10-23 and the ear finished it 2026-10-25, [outcome](trusted-data-t0-design.md#t0-outcome-2026-10-25); T1 ran and was audited 2026-10-25, no cleaning gain established, [T1 audited](trusted-data-t0-design.md#t1-audited-2026-10-25); the user's rule 1 the same day, active guitars that cannot be rendered as their own amp tracks after a bleed check: after the review's fixes no amp track passes, T2's pilot still reachable (5,154 candidates), T1 keeps no example, [rule 1](trusted-data-t0-design.md#rule-1-after-the-users-decision-2026-10-25); T1 waived and T2 started the same day, K empty, the realism check read inside T2 and the data gap by declared diagnostics, [T1 waived](trusted-data-t0-design.md#t1-waived-and-the-realism-check-moved-into-t2-2026-10-25))
+- [research/program-review-2026-10-23.md](research/program-review-2026-10-23.md): the review before the ear, two multi-agent reviews (the trusted-data change, then the roadmap, ML approach, algorithms, cleaning, training and testing): 102 findings, each checked by a skeptic, with what was fixed in code (the ear's import, the DI rules, the self-built mixes, T2's reading) and what is the user's to decide
   (declared, reviewed). Cheap checks on D_existing first (does the stem's quality move its answers;
   what the mismatch costs; 111 descriptive renders), then a 5k pilot of real Mega-53 stems against a
   mix-only model and the old recipe, then one test on stage F (D − S primary, about 321 renders).
@@ -396,7 +419,18 @@ was declared, what was measured, and the research behind it.
   SHOWN.** D − S on stage F −0.034 [−0.103, +0.034], 12 bands (clean leans better, crunch worse).
   The new model clearly beats the old one (D − D_existing −0.067 [−0.113, −0.021]) and is
   indistinguishable from arm A's search (D − H −0.006 [−0.062, +0.050]; not shown equivalence)
-  at zero renders. 321 renders. Audited.
+  at zero renders. 321 renders. Audited. Read on all parts, before the trusted-data rule.
+- [every-control-plan.md](every-control-plan.md) → [stage 0 results](every-control-stage0-results.md):
+  how and when each route covers every manifest control (approved 2026-10-22 for stages 0–1;
+  every control is learned); code `learn/every_control.py`. Stage 0 (94 renders): amp choice
+  pays against a blind pick, band-weighted −0.048, part-weighted −0.044 [−0.062, −0.026] (high
+  priority); no screened control is invisible to the judge, cab phase moves it most; Tone King's
+  renderer works. Stage 1 can now run (not yet run): the trusted amp-track list now exists (T0's
+  lists after the ear, 2026-10-25; 7 panel parts).
+- [real-mix-test-plan.md](real-mix-test-plan.md): arm A and the direct model on the released mixes
+  of stage F's songs against their unity sums (same takes), about 5.8k renders. Approved and
+  merged 2026-10-22 (#267); amendment 1 (user): the direct model joins regardless of step 3's
+  gate. It runs on V-real's parts (the trusted-data plan, 2026-10-23).
 - [record-match-listening-plan.md](record-match-listening-plan.md) → [results](record-match-listening-results.md):
   a blind check of the judge by ear on 5 guitar-exposed parts: the ear broadly agrees with the
   judge's order (Spearman mean 0.8), the ceiling C is heard closest in 4/5, H beats S in 4/5, D
@@ -409,14 +443,14 @@ was declared, what was measured, and the research behind it.
 - [bleed-listening-plan.md](bleed-listening-plan.md) → [results](bleed-listening-results.md), with
   the [bleed audit](audits/bleed-2026-10-16/README.md): bleed only in the Telefunken live-room
   sessions, audible on the high parts; the cleaning isn't adopted, and every key result holds
-  without bleed.
-- [data-quality-audit.md](data-quality-audit.md) (draft, 2026-10-22; evidence in
+  without bleed. *Superseded 2026-10-22: dirty tracks are excluded, not flagged (trusted data
+  only).*
+- [data-quality-audit.md](data-quality-audit.md) (the record of the 2026-10-22 audit; evidence in
   [audits/data-quality-2026-10-22](audits/data-quality-2026-10-22/)): zero-render audit. In a median
   training or V_sep stem, 45% of the mel power lies above the median-aligned render (other music
-  plus mismatch). It costs on the sound gate (+0.103 [+0.055, +0.156] log d, high against low
-  third, within band), though it explains only part of the band gap. No different-notes DI
-  pairing was found. The targets' dirt is Telefunken live-room bleed. Proposes a
-  level-matched clean-versus-random retrain first (3 arms × 2 seeds, about 6 h of MPS).
+  plus mismatch); bleed sits in the Telefunken live-room tracks; no different-notes DI pairing was
+  found. Its proposed level-matched retrain was not run: the trusted-data plan (T0–T2) superseded
+  it. Its measures became A5/A6 in `learn/verify_tracks.py`.
 - [song-to-settings-diagnostics-plan.md](song-to-settings-diagnostics-plan.md) →
   [results](song-to-settings-diagnostics-results.md): arm B has signal on renders but hedges
   toward mid-range on records.
@@ -607,3 +641,15 @@ was declared, what was measured, and the research behind it.
     a residual median head early-stopped on E, trees, binned heads, frozen AFx-Rep inside the stem
     stage, then pretraining routes. Lists two licence questions for the user. Research, not a
     declared plan.
+18. [di-source-inventory-2026-10.md](research/di-source-inventory-2026-10.md): which clean guitar
+    DIs could widen the direct model's training set (October 2026, zero compute). Nothing on disk
+    adds a band without spending a test or a held-out set. The 277-section pool is 49% high-gain
+    or metal, and its clean sections are one band. The Telefunken file listings (2026-10-23)
+    confirm one new band with an electric DI and amp track, Jen Hartswick & Nick Cassarino, which
+    becomes a test band first (the user's decision); Uglybraine, Melt and the five sessions with
+    no DI box hold no guitar DI, and Braiden Sunshine's is probably acoustic. Then Strobe and
+    MekaPhil (B2's parked songs, now allowed for training), EGDB and GOAT (licences confirmed),
+    then stage F's 10 bands into training once enough new test bands exist. Costs at 77 renders
+    per section. Later on 2026-10-23: Blue Manic "Acomatay" (5 DI + amp pairs) downloaded as a
+    second reserved test band, EGDB's 240 DI clips downloaded, GOAT's access requested. Research,
+    not a declared plan.

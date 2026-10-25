@@ -1,5 +1,11 @@
 # Every control: how and when each route covers the whole plugin: plan
 
+*Status, 2026-10-22 evening:* stage 0 is done ([results](every-control-stage0-results.md)). Stage 1
+waits for the trusted amp-track list from the user's data review (the user's decision: "use only
+what we can trust, no dirty tracks") and runs on trusted parts only, by a dated amendment. It does
+not need the cleaning's rebuild: it is a true-DI oracle on amp-track targets, with no backing or
+stem. The text below is as declared.
+
 **Approved 2026-10-22 for its first stages (the user, in chat with the ML session).** Stages 0
 and 1 go ahead; switched-off knobs are left out, as proposed (below). **Every control is learned
 (the user, 2026-10-22):** no fixed rule stands in for a control the judge can't hear; stage 0c's
@@ -198,6 +204,13 @@ Measured rates:
   sets the wall-clock: about 19–22 h for the 23k.
 
 ## Decision rules (declared now)
+
+*2026-10-23 (the review before the ear):* stage 0's code read its intervals part-weighted while this section declares
+band-weighted; `every_control` now decides on the band-weighted interval (`song_readout.bw_stats`), with the
+part-weighted one beside. Stage 0's amp-choice reading does not change (both weightings are far below 0). Stage 2D is
+now the trusted-data plan's T3, read on K and V-real (set by the ML session, the user may overrule); stage 2A (arm A
+first, on `GATE STOP`) is not in today's order, an open user decision. Stage 1's panel is the trusted panel (7 parts,
+pending the ear), not 14 bands; its parts change by a dated amendment before it runs.
 
 Every reading is an effect size with a 90% band-clustered t interval, band-weighted, on the held
 half. There are no pass/fail bars. Any gain shown is built on. A tie means "not shown at this power" and
