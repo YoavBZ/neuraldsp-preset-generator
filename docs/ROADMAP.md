@@ -169,9 +169,10 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
        35 clean amp, 1 bleed; pairs 34 amp, 1 processed; DI windows 99 clean, 13 processed; stems
        14 clean, 5 with a guitar. The lists now read:
        - targets 17 verified, 42 excluded; DIs 46 verified, 13 excluded;
-         *window re-check 2026-10-25:* 5 excluded targets failed A5/A6 only because their crop window caught
-         the DI silent; on other windows they pass (5/5, 5/5, 4/5, 3/3, 5/5), 1 is borderline, 10 stay out on
-         real faults. They join only after the user's ear (re-check page ready) and after T2's chain ends
+         *window re-check 2026-10-25:* 3 excluded targets failed A5/A6 only because their crop window caught
+         the DI silent; on 3–5 other windows each they have no measured fail (5/5, 3/3, 5/5); 13 stay out (DI
+         hum, an A1 fail on 1 of 5 windows, real faults). The 3 join only after the user's ear (re-check page
+         ready) and after T2's chain ends
          ([rule](trusted-data-t0-design.md#t0-window-re-check-2026-10-25));
        - V-real 10 parts in 7 bands (3 clean parts in 2 bands, 7 crunch; 3 of the 10 from one song,
          Wickerman); knob ceiling 2's 7 parts in 7 bands verified;
