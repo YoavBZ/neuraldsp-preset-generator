@@ -281,7 +281,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      F-song and without-MUSDB18 rows (V-real is 2 clean bands and 5 crunch), and reads
      'incomplete' until every direction is judged and no answer was refused. *Added 2026-10-24
      (user):* the song-blind per-class constant (the step 3 gate's constant on T2's training labels)
-     is one more V-real arm, about 66 renders (about 231 for SES, SYN and the constant with 33
+     is one more V-real arm, about 60 renders at V-real's 10 parts (about 210 for SES, SYN and the constant with 30
      shared priming renders), read beside the primary as SES − constant, SYN −
      constant and constant − S: does a model read the song, or only the constant's pull?
    - (d) **T3, decided after T2:** one rebuild that is also every-control stage 2D, on self-built

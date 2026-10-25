@@ -307,7 +307,7 @@ early-stopping set.
 | plan, render | `$MAIN -m learn.trusted_data plan --stage t2`; `$MAIN -u … render --stage t2 --shard k/3` | about 12–18k renders, 2.5–3.5 h on 3 processes |
 | build | `$MSST -m learn.trusted_data build --stage t2 --device mps` | about 6k separations, 5–8 h |
 | train | `$TORCH_PY -m learn.trusted_data train --arm SES\|SYN --seed 20261042\|20261043` | 4 runs, about 1.5 h MPS |
-| fit, E on K, V-real | `fit`, `e-on-k`, `vreal-predict` (TORCH_PY); `vreal-render --shard k/3`, `report` (MAIN) | about 231 renders at 11 V-real parts (66 per arm for SES, SYN and the constant, plus 33 priming; about 300 if SYN-E runs) |
+| fit, E on K, V-real | `fit`, `e-on-k`, `vreal-predict` (TORCH_PY); `vreal-render --shard k/3`, `report` (MAIN) | about 210 renders at 10 V-real parts (60 per arm for SES, SYN and the constant, plus 30 priming; SYN-E dropped) |
 
 ## Open questions
 
@@ -544,7 +544,7 @@ The review's four decisions before the ear, each as the ML session recommended. 
 - **The song-blind constant is one more V-real arm at T2.** `fit` stores the step 3 gate's constant
   (`direct_sound_gate.constant_answers`: continuous medians of the audible labels, switches by majority, mics by the
   most frequent) over the SYN arm's training labels (SES's are the same). `vreal-predict` adds it as arm "constant",
-  `vreal-render` renders it with the others (about 66 renders per arm at 11 parts), and `report` reads SES − constant, SYN − constant
+  `vreal-render` renders it with the others (about 60 renders per arm at 10 parts), and `report` reads SES − constant, SYN − constant
   and constant − S beside the primary. The reading rule is unchanged.
 
 
