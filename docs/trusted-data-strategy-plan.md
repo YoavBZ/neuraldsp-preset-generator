@@ -280,7 +280,7 @@ Facts that changed after the approval, and what each means for the plan. None is
 - **2026-10-23, T0 ran** (ROADMAP, step 0):
   - **Eggy's three DIs were heard processed.** So self-built mixes do not bring a clean-class band back for now, SYN-E
     cannot run, and T3's "with Eggy" no longer applies. Where clean-class DIs come from is an open user decision.
-  - **V-real is 11 parts in 7 bands** (3 clean parts in 2 bands), all pending the ear. At 7 bands a paired arm contrast
+  - **V-real is 11 parts in 7 bands** (3 clean parts in 2 bands), all pending the ear (now 10 parts; see the [T0 outcome](trusted-data-t0-design.md#t0-outcome-2026-10-25)). At 7 bands a paired arm contrast
     reads about ±0.036 log d (90%), not (f)'s ±0.028 on about 10 bands, before seed noise.
   - **The two conflicts** (decision 2) fail measures (Quicksand ElecGtr2 A6; Today's The Day ElecGtr07 A5), and in
     code a measured fail excludes before the ear is read, so they are not on the ear pages and no answer can bring them

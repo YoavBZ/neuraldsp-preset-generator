@@ -72,7 +72,8 @@ was declared, what was measured, and the research behind it.
   the set; rule-based measures only name candidates for that review
   ([ROADMAP](ROADMAP.md), step 0; [ML plan](research/ml-plan-2026-10.md) §5). *Since 2026-10-23
   (the [trusted-data plan](trusted-data-strategy-plan.md)): a measured verification fail excludes
-  and the ear decides the rest; T0 ran and its ear queue (184 items) is with the user.*
+  and the ear decides the rest; T0 ran, and the user's ear finished it on 2026-10-25 (V-real 10
+  parts in 7 bands; the training pool holds almost no clean or crunch playing).*
   - The data-quality audit ([draft PR #272](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/272),
     zero renders): stems carry a median 45% of power above the matched render, and within each
     band the most contaminated third scores worse on the sound gate; doubles stay in the
@@ -393,7 +394,7 @@ was declared, what was measured, and the research behind it.
   known-answer songs the measure DI caps the exact truth at 0.55 of S). 852 renders. Audited.
 - [direct-model-stems-plan.md](direct-model-stems-plan.md) → [gate 1 results](direct-model-stems-gate1-results.md), [pilot results](direct-model-stems-pilot-results.md), [steps 3–4 results](direct-model-stems-results.md): the direct model with realistic stems
 - [data-cleaning-options.md](data-cleaning-options.md): cleaning the direct model's data under the user's rule (only trusted data, no dirty tracks; 2026-10-22): a review of the first proposal, options compared, and the declared plan (the user chose the rebuild route): a per-section take level of the target's own part in each backing track (−30 dB, injection-checked first), a paired R_in rebuild read on step 3's model, then a retrain on the rebuilt trusted pool; code `learn/data_cleaning.py`
-- [trusted-data-strategy-plan.md](trusted-data-strategy-plan.md) → [T0–T2 design](trusted-data-t0-design.md): self-built training mixes from verified DIs and a verified real test (V-real); the verification standard (mic delay, cab roll-off with the plan's 12 dB pass and an ear band, EQ'd copy, copy, same take, bleed, the DI checks including a processed-DI check calibrated on the user's ear: 30/35 in-sample, 26/35 leave-one-out), its calibration on 11 known amps re-derived from the target-vs-DI measurements (less the pairs whose DI the ear rejected), 2 known fails and constructed negatives, T0's lists, ear queue and re-reads, T1's paired stem-quality check and T2's 5k pilot; code `learn/verify_tracks.py`, `learn/trusted_data.py` (reviewed, fixes applied; approved by the user 2026-10-23; T0 ran 2026-10-23, and its ear queue of 184 items is with the user)
+- [trusted-data-strategy-plan.md](trusted-data-strategy-plan.md) → [T0–T2 design](trusted-data-t0-design.md): self-built training mixes from verified DIs and a verified real test (V-real); the verification standard (mic delay, cab roll-off with the plan's 12 dB pass and an ear band, EQ'd copy, copy, same take, bleed, the DI checks including a processed-DI check calibrated on the user's ear: 30/35 in-sample, 26/35 leave-one-out), its calibration on 11 known amps re-derived from the target-vs-DI measurements (less the pairs whose DI the ear rejected), 2 known fails and constructed negatives, T0's lists, ear queue and re-reads, T1's paired stem-quality check and T2's 5k pilot; code `learn/verify_tracks.py`, `learn/trusted_data.py` (reviewed, fixes applied; approved by the user 2026-10-23; T0 ran 2026-10-23 and the ear finished it 2026-10-25, [outcome](trusted-data-t0-design.md#t0-outcome-2026-10-25); T1 is running)
 - [research/program-review-2026-10-23.md](research/program-review-2026-10-23.md): the review before the ear, two multi-agent reviews (the trusted-data change, then the roadmap, ML approach, algorithms, cleaning, training and testing): 102 findings, each checked by a skeptic, with what was fixed in code (the ear's import, the DI rules, the self-built mixes, T2's reading) and what is the user's to decide
   (declared, reviewed). Cheap checks on D_existing first (does the stem's quality move its answers;
   what the mismatch costs; 111 descriptive renders), then a 5k pilot of real Mega-53 stems against a
@@ -424,8 +425,8 @@ was declared, what was measured, and the research behind it.
   every control is learned); code `learn/every_control.py`. Stage 0 (94 renders): amp choice
   pays against a blind pick, band-weighted −0.048, part-weighted −0.044 [−0.062, −0.026] (high
   priority); no screened control is invisible to the judge, cab phase moves it most; Tone King's
-  renderer works. Stage 1 waits for the trusted amp-track list (since 2026-10-23, T0's lists once
-  the ear has answered).
+  renderer works. Stage 1 can now run (not yet run): the trusted amp-track list now exists (T0's
+  lists after the ear, 2026-10-25; 7 panel parts).
 - [real-mix-test-plan.md](real-mix-test-plan.md): arm A and the direct model on the released mixes
   of stage F's songs against their unity sums (same takes), about 5.8k renders. Approved and
   merged 2026-10-22 (#267); amendment 1 (user): the direct model joins regardless of step 3's

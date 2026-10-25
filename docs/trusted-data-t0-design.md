@@ -1,6 +1,7 @@
 # Trusted data, T0 to T2: the code, the calibration and the launch (design)
 
-**Status (2026-10-23):** T0 ran on the user's Mac (calibration OK; the lists and the ear queue; see the ROADMAP and the
+**Status (2026-10-25):** the ear has answered T0's queue and T1 is running; see
+[T0 outcome (2026-10-25)](#t0-outcome-2026-10-25). *Before the ear (2026-10-23):* T0 ran on the user's Mac (calibration OK; the lists and the ear queue; see the ROADMAP and the
 ledger's outcome). T1 and T2 have not run. After T0 and before the ear, a multi-agent review changed the import of the
 ear's answers and several rules, at zero renders: [the review before the ear](#the-review-before-the-ear-2026-10-23)
 at the end. The next `lists` run recomputes every verdict under them.
@@ -291,8 +292,8 @@ refuse when it has changed.
 **The arms:**
 - **SES:** the stored stems.
 - **SYN:** the same examples, labels and draws, with self-built backings.
-- **SYN-E:** a seeded third (seed 20261101) swapped for Eggy. It is recorded as refused while no *Dropped from T2 for now (user, 2026-10-24).*
-  Eggy DI is trusted, which the ear now implies.
+- **SYN-E:** a seeded third (seed 20261101) swapped for Eggy. *Dropped from T2 for now (user, 2026-10-24):* no Eggy
+  DI is trusted.
 
 **Training:** D_stem's recipe, 2 seeds per arm. The constant and pull are fitted per arm on its
 early-stopping set.
@@ -307,14 +308,15 @@ early-stopping set.
 | plan, render | `$MAIN -m learn.trusted_data plan --stage t2`; `$MAIN -u … render --stage t2 --shard k/3` | about 12–18k renders, 2.5–3.5 h on 3 processes |
 | build | `$MSST -m learn.trusted_data build --stage t2 --device mps` | about 6k separations, 5–8 h |
 | train | `$TORCH_PY -m learn.trusted_data train --arm SES\|SYN --seed 20261042\|20261043` | 4 runs, about 1.5 h MPS |
-| fit, E on K, V-real | `fit`, `e-on-k`, `vreal-predict` (TORCH_PY); `vreal-render --shard k/3`, `report` (MAIN) | about 231 renders at 11 V-real parts (66 per arm for SES, SYN and the constant, plus 33 priming; about 300 if SYN-E runs) |
+| fit, E on K, V-real | `fit`, `e-on-k`, `vreal-predict` (TORCH_PY); `vreal-render --shard k/3`, `report` (MAIN) | about 210 renders at 10 V-real parts (60 per arm for SES, SYN and the constant, plus 30 priming; SYN-E dropped) |
 
 ## Open questions
 
-1. **The ear queue is large: 195 items** (184 live after the queue fixes; resolved by the sitting). The 37 `di_amp` items cover the D1 rule on metal DIs,
+1. **The ear queue is large: 195 items** (184 live after the queue fixes). *Resolved:* answered 2026-10-25, queue 0. The 37 `di_amp` items cover the D1 rule on metal DIs,
    and other-guitar windows add flagged items. T2 waits until the ear has answered.
 2. **SYN-E has no Eggy.** *Decided 2026-10-24 (user):* dropped from T2 until a clean-class DI source (EGDB or GOAT) passes the DI checks.
-3. **K may be one band.** Admit Cnoc An Tursa despite its MUSDB18 tag?
+3. **K may be one band.** Admit Cnoc An Tursa despite its MUSDB18 tag? *Answered (user, 2026-10-24):* not admitted;
+   T1's K is Adam Buckley and Dark Ride.
 4. **The cab-off negative is pending (6 renders).** Resolved: rendered and failing A2 (the calibration fix below).
 5. **Ruled:** a fail now needs the 17-bin gate, so Adam Buckley ElecGtr5's DI goes to the ear.
 
@@ -544,6 +546,51 @@ The review's four decisions before the ear, each as the ML session recommended. 
 - **The song-blind constant is one more V-real arm at T2.** `fit` stores the step 3 gate's constant
   (`direct_sound_gate.constant_answers`: continuous medians of the audible labels, switches by majority, mics by the
   most frequent) over the SYN arm's training labels (SES's are the same). `vreal-predict` adds it as arm "constant",
-  `vreal-render` renders it with the others (about 66 renders per arm at 11 parts), and `report` reads SES − constant, SYN − constant
+  `vreal-render` renders it with the others (about 60 renders per arm at 10 parts), and `report` reads SES − constant, SYN − constant
   and constant − S beside the primary. The reading rule is unchanged.
 
+
+## T0 outcome (2026-10-25)
+
+**The ear is done.** The user heard all 202 cards on `trusted-data-ear` parts 1–4 (exports 2026-10-24 and 25). One
+`lists` run read the four exports with the sitting-1 export; nothing was superseded, cleared or skipped (log
+`learn/trusted-data/logs/lists-ear-final.log`). Answers: targets 35 clean amp, 1 bleed; DI and amp pairs 34 amp,
+1 processed; DI windows 99 clean, 13 processed; stems 14 clean, 5 with a guitar.
+
+**The final lists** (`t0/verified.json`):
+- **Targets** 17 verified, 42 excluded. **DIs** 46 verified, 13 excluded.
+- **V-real:** 10 parts in 7 bands (3 clean parts in 2 bands, 7 crunch; 3 of the 10 from one song, Wickerman).
+- **Knob ceiling 2:** 7 parts in 7 bands verified, the panel for every-control stage 1.
+- **K:** 17 DIs in 3 bands, but T1's K uses Adam Buckley and Dark Ride only. Cnoc An Tursa is not admitted (user,
+  2026-10-24); Kimock and Swatkins are excluded by the ear, all 4 of their DIs heard processed (Hikikomori, New One,
+  Honey, Lost & Alive).
+- **Training:** 27 DIs in 8 bands, 181 usable sections; only 1 is clean-class and 1 crunch (61% high gain, the rest
+  unclassed).
+- **Stems:** 167 usable in 14 sessions. The 5 sessions heard with a guitar are held (Eggy Farthest Step and
+  Fragments, Hikikomori, Honey, Lost & Alive).
+
+**Let's Dance ElecGtr4** (the user, 2026-10-24): the leak is in the DI (quiet high notes); the target was too distorted
+to judge. The target is excluded and the DI counts as not clean. `verified.json` still shows the DI heard clean in
+sitting 1; nothing downstream uses it. The leak sat at about −33 dB, so A6's −30 dB line is not a guarantee.
+
+**The audit's caveats:**
+- Eggy Bloomlight's 14 stems count as usable, but no Eggy DI is verified, so they go unused: 153 stems in 13 sessions
+  in practice. Its clip was the Key Moog track; the user's note: "Might be a synthesizer, high pitch sound that can be
+  confused with a guitar".
+- Renesans' stem evidence is weak (a kick trigger, a playback bounce, a growl vocal). Split Brow's usable list holds
+  Pre Rec.L/R, unheard there. The plan bans `GTR Pre Rec` (a different file) and allows Renesans' line-level playback
+  tracks, but Pre Rec.L/R may be the same material as the banned file, so they must be checked before T2 uses
+  Renesans' backings. (Less Than Nothing's Pre Rec.R was heard clean.)
+- One thin DI: Ale Lak 15_ElecGtr02DTDI is verified on a single window that plays 31% (the double of 13_ElecGtr02DI,
+  which has a full amp pair).
+- Leaked drums were noted on the amp tracks of Honey and Renesans (×3); none is used as a target or for levels.
+- The re-derived level prior (229 values, 10 bands) draws 131 values from 4 parts whose targets are excluded (allowed as
+  a level statistic).
+
+**The main finding:** the training pool holds almost no clean or crunch playing (1 + 1 of 181 sections), against the
+clean/crunch scope. Clean-style DIs must come from new sources: EGDB (downloaded; needs its DI checks and a borrowed
+backing), GOAT (access requested); Jen Hartswick & Nick Cassarino is reserved for test. Where they come from is an open
+user decision before T3.
+
+**T1 started** on 2026-10-25 at 08:29: 812 examples from Adam Buckley and Dark Ride, about 1.8k renders plus priming and
+812 separations. It is running.
