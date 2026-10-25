@@ -897,21 +897,25 @@ ML session suggested it.
 - **The measures:** per example, SYN's X-LANCE stem and SES's stored stem against the truth, by T1's mel-grid stem SNR
   and the audit's contamination, both halves averaged, paired.
 - **The truth:** T2's target render, the same file for both arms. For SES it is a matched re-render, not the exact
-  guitar in its mix (above).
+  guitar in its mix (above). That biases SES's SNR a little low, so SYN − SES a little high (recorded in the read as
+  its truth caveat).
 - **The interval:** section-clustered primary, the declared deviation (`STEM_READ_PRIMARY`), band-clustered beside.
 - **Beside it:** per arm the mean, median, share of stems below 0 dB and contamination; the paired contamination;
   per band; medians by drawn ratio.
 - **The reading** keys on the primary interval and stays a ceiling check (`stem_reading`). Above 0 reads "SYN may be
   easier than real mixes, or only cleaner; this read cannot tell which". Otherwise it reads "SYN is not shown to be
-  much easier than SES" or "SYN is not easier on this measure". Every wording adds "a ceiling check only, not a
+  easier than SES" or "SYN is not easier on this measure". Every wording adds "a ceiling check only, not a
   realism certificate"; realism is SYN − SES on V-real. `report` carries its reading.
 
 **What counts as a playing guitar (diagnostics (a) and (b)):** rule 1's activity rule, unchanged. The window's
 guitars are the target's part plus each other guitar part of the session (`session_guitar_parts`: DIs always; amp and
 mic tracks when they are in the mix list; acoustic guitars included). A part plays when any of its tracks plays on at
 least 10% of the window's frames against its own file's level (`playing_count`). For a V-real part the window is the
-crop's 10 s in its session, and the mix list is the crop's declared mix tracks. A DI-only part counts, as in the plan;
-`t2-density` lists which parts are not in the crop's mix (only Wickerman's ElecGtr8, which plays).
+crop's 10 s in its session, and the mix list is the crop's declared mix tracks. A DI-only part counts, as in the plan, so
+the count is of guitars playing in the session, not of guitars heard in V-real's mix. `t2-density` lists the parts not
+in the crop's mix: Wickerman's ElecGtr8 (DI only) plays in the crop and is counted though V-real's mix does not hold it
+(Wickerman's parts count 9 where 8 are heard; the split does not move); Let's Dance's ElecGtr1 and 2 are silent there
+and not counted.
 
 **Diagnostic (a), the split** (`DENSE_MIN`, declared before any T2 result): a V-real part is dense when at least 5
 guitars play in its crop, sparse with fewer. It is a median split of V-real's part counts. Those counts were read
@@ -922,6 +926,8 @@ first (zero renders; no T2 result): 2, 4, 4, 4, 5, 5, 5, 9, 9, 9 (median 4.5).
   - sparse: It Was My Fault ElecGtr3, Femme ElecGtr5, Get Out Of Bed ElecGtr2, Let's Dance ElecGtr3; 4 parts in 4
     bands.
 - 5 is also 1 + `MAX_OTHERS`, the most a kept T2 example holds.
+- The rule is mechanical, a median of the parts' counts. Earlier per-part results exist for these parts (stage F's
+  arms and step 4), so it was not chosen blind to every outcome on them; no T2 result existed.
 - **What `report` reads:** SES − S, SYN − S and SES-ALL − SES on each side and per count, band-weighted with the 90%
   band-clustered interval. Descriptive, with 3–4 bands a side.
 
@@ -946,12 +952,17 @@ guitars in all 71 sections.
   the kept examples.
 
 **Option (c), the SES-ALL arm** (approved above):
-- **The draw** (`plan-ses-all`, zero renders, writes `t2/ses-all.json`; `--dry` prints only): 5,000 examples, the
-  pilot's size (the design implies the same N, so the read is about which examples, not how many).
+- **The draw** (`plan-ses-all`, zero renders, writes `t2/ses-all.json`; `--dry` prints only): 5,000 examples from the
+  8,414 candidates outside early stopping, the pilot's size.
+  - **Scope (the build's interpretation; the ML session confirms it matches the intent it suggested):** N is kept
+    equal to SES's, so SES-ALL − SES reads what the left-out sections are worth at equal size, not more data. The
+    left-out share is about 39% either way (3,260 of the 8,414 candidates; 1,946 of the 5,000 drawn).
   - Stratified by band with a new declared seed, 20261104 (`SES_ALL_SEED`).
   - Drawn from every T2 candidate before rule 1 and the cap (the trusted pool outside Eggy, on verified DIs and
     sections T0 lets a mix use), outside T2's early-stopping sections.
 - **Early stopping:** SES's set, with the shared refusals. The recipe and seeds are SES's (20261042, 20261043).
+- **N can differ slightly:** SES drops the pilot examples any arm refused (shared with SYN, to stay paired), while
+  SES-ALL keeps its whole draw (its stored stems need no render), so SES trains on 5,000 less those refusals.
 - **The guard** (`ses_all_guard`): the draw must stay inside the D build's trusted pool, outside T2's early-stopping
   examples and sections, and off the bands of V-real, V_sep, stage F and the known-answer set. `direct_stems.Ctx`
   already refuses pool bands that overlap V_sep, stage F or the known-answer bands, and every held-out DI.
@@ -967,8 +978,8 @@ guitars in all 71 sections.
   | Storm Of Particles | 868 |
   | The Long Wait | 46 |
 
-  1,946 of the 5,000 come from left-out sections (1,891 with no usable amp track, 55 over the cap); 2,966 are also in
-  SES's pilot.
+  The draw spans 6 bands; its 1,946 left-out examples (1,891 with no usable amp track, 55 over the cap) come from 5
+  (all but Storm Of Particles). 2,966 are also in SES's pilot.
 - **The read:** SES-ALL − SES on V-real, paired by direction, band-weighted, 90% band-clustered, with SES-ALL − S
   beside. `report` reads it on its own: T2's primary reading does not wait for it.
 - **Caveat: the left-out data are mostly one band.** SES-ALL − SES mixes "the dense sections" with "two more bands"
@@ -977,21 +988,24 @@ guitars in all 71 sections.
   artist tag, like Hollow Ground's Ill Fate (MUSDB18 test) in the pilot; the tags matter for readouts, not training.
 - **What is added, never re-made:**
   - `fit` keeps an arm already fitted on the same models;
-  - `vreal-predict` keeps the stored arms' answers and adds SES-ALL's (it refuses other V-real directions or changed
-    inputs);
+  - `vreal-predict` keeps the stored arms' answers and adds SES-ALL's (it refuses other V-real directions, changed
+    inputs, or a kept arm whose recorded models differ from fit.json's; T2's own arms have no recorded models);
   - `vreal-render` renders SES-ALL alone into `vreal/groups-added/SES-ALL/`, one priming render per group, and leaves
     the groups' records as they are.
 - **The extra cost:** 2 training runs of about 1.5 h; about 60 V-real renders plus 30 priming; zero separations (SES's
   stems are stored).
 
 **`report`:**
-- labels T1's 812-example read superseded (`t1 (superseded)`, not read) and carries the stem read;
+- labels T1's 812-example read superseded (`t1 (superseded)`, not read) and carries the stem read. T2's own
+  report.json, written by T2's chain with the code before this change, keeps the unlabelled `t1` key; the label
+  arrives with the follow-up's report;
 - adds diagnostic (a) (the parts' counts and the contrasts by side and by count);
 - lists SES-ALL's gaps apart from the primary's.
 
 **The follow-up chain** (`docs/trusted-data-t2-followup.sh`, after T2's chain prints "T2 CHAIN DONE" and the PR is
 merged):
-1. Copy fit.json, report.json and predictions.json aside.
-2. `t2-stem-read`, `t2-density`, `plan-ses-all`.
+1. Refuse if T2's report lists V-real groups not done (SES-ALL is never rendered into a group's own record); copy
+   fit.json, report.json and predictions.json aside.
+2. `t2-stem-read` and `t2-density` (non-fatal: a failure is logged and the chain goes on), `plan-ses-all`.
 3. `train --arm SES-ALL` for both seeds.
 4. `fit`, `vreal-predict`, `vreal-render --shard k/3`, `report`.

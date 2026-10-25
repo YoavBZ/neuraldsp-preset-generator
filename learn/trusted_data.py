@@ -631,8 +631,8 @@ def stem_reading(iv):
     if not iv or iv[0] is None:
         return "incomplete"
     if holds_zero(iv):
-        return ("no difference shown: SYN is not shown to be much easier than SES (a ceiling check only, not a "
-                "realism certificate; realism is SYN - SES on V-real)")
+        return ("no difference shown: SYN is not shown to be easier than SES (a ceiling check only, not a realism "
+                "certificate; realism is SYN - SES on V-real)")
     if iv[1] > 0:
         return ("SYN's stems read cleaner than SES's: SYN's mixes may be easier than real ones, or only cleaner; this "
                 "read cannot tell which (a ceiling flag, not a realism verdict; read SYN - SES on V-real)")
@@ -2178,7 +2178,7 @@ def cmd_fit(args):
     for arm in arms:
         old = (prev.get("arms") or {}).get(arm)
         runs = [_load(run_path(root, arm, s)) or {} for s in TRAIN_SEEDS]
-        if old and old.get("models") == {str(r.get("seed")): r.get("model_sha256") for r in runs}:
+        if fit_kept(old, runs):
             out["arms"][arm] = old              # an arm already fitted on these models is kept as it is (V-real's
             print(f"{arm}: kept from fit.json (same models)", flush=True)   # renders were made from it); add-only
             continue
@@ -2304,6 +2304,48 @@ def vreal_dirs(tr):
     return [d for d in A.stage_dirs("F") if d[0] in keep]
 
 
+def kept_predictions(prev, keys, smoke, fit_models, where="predictions.json"):
+    """vreal-predict's add-only rule: the arms a stored predictions file holds (and V-real was rendered from) are kept
+    as stored. It refuses when they cover other V-real directions, or when a kept arm's recorded models differ from
+    fit.json's for that arm (a refit or retrain since); an arm recorded without models (T2's own SES, SYN and
+    constant, made before models were recorded) is kept unchecked. -> {arm: predictions}."""
+    if not prev or bool(prev.get("smoke")) != bool(smoke):
+        return {}
+    if any(set(v) != keys for v in prev["predictions"].values()):
+        raise SystemExit(f"{where} covers other V-real directions: move it and vreal/groups aside, then rerun")
+    rec = prev.get("models") or {}
+    bad = sorted(a for a in prev["predictions"] if rec.get(a) is not None and rec[a] != fit_models.get(a))
+    if bad:
+        raise SystemExit(f"{where}: kept arms {bad} were predicted with other models than fit.json's: move the file "
+                         "and the arms' renders aside, then rerun")
+    return dict(prev["predictions"])
+
+
+def fit_kept(old, runs):
+    """fit's add-only rule: an arm fit.json already holds is kept when its models equal the arm's run records'.
+    old: the stored arm entry (or None); runs: the arm's run records, one per seed."""
+    return bool(old) and old.get("models") == {str(r.get("seed")): r.get("model_sha256") for r in runs}
+
+
+def render_todo(done, added, arms, directions):
+    """vreal-render's choice for one (part, amp) group. done: the group's record ({} when none); added: {arm: its
+    added record}; directions: the search halves. -> None to render every arm into a new group record (no record yet,
+    and no arm added since T2's chain), else the arms to render on their own into vreal/groups-added/ (empty: nothing
+    to do). A group T2's chain left unfinished is refused once an arm was added: the added arm never joins the
+    group's own record."""
+    def has(rec, a):
+        return all(f"{a}|{sh}" in ((rec or {}).get("judge") or {}) for sh in directions)
+
+    if done.get("status") != "done":
+        extra = [a for a in arms if a in EXTRA_ARMS]
+        if extra:
+            raise SystemExit(f"group {done.get('slug', '?')}|{done.get('amp', '?')} is not done by T2's chain: finish "
+                             f"T2's own vreal-render (without {extra}) before adding arms")
+        return None
+    return [a for a in arms if not has(done, a) and not ((added.get(a) or {}).get("status") == "done"
+                                                         and has(added.get(a), a))]
+
+
 def cmd_vreal_predict(args):
     """The arms' answers on V-real (zero renders): step 4's inputs path (the stored crop and its xlance_g crop stem,
     one gain to the training median), the search half, amendment 5's answer with the arm's constant and pull.
@@ -2328,14 +2370,9 @@ def cmd_vreal_predict(args):
     keys = {f"{s}|{a}|{sh}" for s, a, sh, _ in dirs}
     pp = stage_root(root, "t2") / "vreal" / "predictions.json"
     prev = _load(pp) or {}
-    if prev and bool(prev.get("smoke")) == bool(args.smoke):
-        # add-only: the arms already predicted (and rendered from these predictions) are kept as stored, new arms
-        # (SES-ALL after T2's chain) are added; stale V-real parts or inputs refuse
-        if any(set(v) != keys for v in prev["predictions"].values()):
-            raise SystemExit(f"{pp} covers other V-real directions: move it and vreal/groups aside, then rerun")
-        kept = {a: v for a, v in prev["predictions"].items()}
-    else:
-        kept = {}
+    fit_models = {a: f.get("models") for a, f in
+                  ((_load(stage_root(root, "t2") / "fit.json") or {}).get("arms") or {}).items()}
+    kept = kept_predictions(prev, keys, args.smoke, fit_models, pp)
     preds, inputs = {a: {} for a in arms if a not in kept}, {}
     models = dict(prev.get("models") or {}) if kept else {}
     for arm in arms:
@@ -2433,23 +2470,20 @@ def cmd_vreal_render(args):
         for slug, amp in mine:
             gp = od / "groups" / f"{slug}|{amp}.json"
             arms = tuple(pred.get("arms") or ARMS)
-            done = _load(gp) or {}
-            if done.get("status") == "done":
-                # an arm added after the group was rendered (SES-ALL after T2's chain) renders on its own, into
-                # vreal/groups-added/<arm>/; the group's record is left as it is
-                todo = [a for a in arms if (_load(added_group_path(od, a, slug, amp)) or {}).get("status") != "done"
-                        and not all(f"{a}|{sh}" in (done.get("judge") or {}) for sh, _ in K.DIRECTIONS)]
-                if not todo:
-                    continue
-            else:
-                todo = None
+            # an arm added after the group was rendered (SES-ALL after T2's chain) renders on its own, into
+            # vreal/groups-added/<arm>/; the group's record is left as it is (`render_todo`)
+            todo = render_todo({"slug": slug, "amp": amp, **(_load(gp) or {})},
+                               {a: _load(added_group_path(od, a, slug, amp)) for a in arms}, arms,
+                               [sh for sh, _ in K.DIRECTIONS])
+            if todo == []:
+                continue
             ctx = A.group_ctx(menu, ms, "F", slug, amp)
             if K.key(dict(ctx["S"])) != K.key(ctx["S_stored"]):
                 raise SystemExit(f"{amp}: the live S differs from the stored copy")
             g = {"sel": ctx["sel"], "S": ctx["S"], "di": ctx["di"], "di32": ctx["di32"], "ref": ctx["ref"],
                  "lag": ctx["part"]["judge_lag"]}
             settings = {a: {sh: LO.tdict(pred["predictions"][a][f"{slug}|{amp}|{sh}"]["settings"]) for sh, _ in K.DIRECTIONS}
-                        for a in (todo or arms)}
+                        for a in (arms if todo is None else todo)}
             if todo is None:
                 rec = DS.run_group(rr, g, settings, False, None, K.judge, arms=arms)
                 rec.update(slug=slug, amp=amp)
@@ -2553,15 +2587,19 @@ def cmd_report(args):
     extra = {a: report_gaps(units, (a,), groups, set(pred.get("inputs") or {}), keep, {a: refused.get(a)})
              for a in EXTRA_ARMS if a in arms}
     # diagnostic (a): V-real by the number of guitars playing in the part's crop (declared before any result)
-    files = {}
-    dens = {s: vreal_playing(s, files) for s in sorted(keep)}
+    files, dens_error = {}, None
+    try:                                # a descriptive diagnostic never stops the report: its failure is recorded
+        dens = {s: vreal_playing(s, files) for s in sorted(keep)}
+    except (Exception, SystemExit) as e:
+        dens, dens_error = {}, f"{type(e).__name__}: {e}"
     dfilt = {"dense": lambda u: dens[u["slug"]]["density"] == "dense",
              "sparse": lambda u: dens[u["slug"]]["density"] == "sparse"}
     counts = sorted({d["playing"] for d in dens.values()})
     dfilt.update({f"{n} playing": (lambda u, n=n: dens[u["slug"]]["playing"] == n) for n in counts})
     drows = tuple(dfilt)
     dcon = {name: DS.step4_contrast(units, a, b, dfilt, rows=drows, fixed=("S",))
-            for name, (a, b) in t2_contrasts(arms).items() if name in ("SES - S", "SYN - S", "SES-ALL - SES")}
+            for name, (a, b) in t2_contrasts(arms).items()
+            if name in ("SES - S", "SYN - S", "SES-ALL - SES")} if dens else {}
     stem = (_load(stage_root(root, "t2") / "stem-read.json") or {}).get("results")
     t1_old = ((_load(stage_root(root, "t1") / "read.json") or {}).get("results") or {}).get(
         "K - V_sep mel SNR (primary)")
@@ -2571,7 +2609,8 @@ def cmd_report(args):
            "contrasts": con, "reading": reading(iv) if not gaps else "incomplete",
            "extra_arms": {a: {"complete": not g, "incomplete_because": g} for a, g in extra.items()},
            "density": {"rule": f"playing guitars in the crop, the target's part included (`playing_count`, ACTIVE_MIN "
-                               f"{ACTIVE_MIN}); dense at {DENSE_MIN} or more", "parts": dens, "contrasts": dcon},
+                               f"{ACTIVE_MIN}); dense at {DENSE_MIN} or more", "parts": dens, "contrasts": dcon,
+                       "error": dens_error},
            "stem_read": stem,
            "e_on_k": (_load(stage_root(root, "t2") / "e-on-k.json") or {}).get("results"),
            "t1 (superseded)": {"note": "T1's 812-example K - V_sep read (2026-10-25), superseded: T1 was audited and "
@@ -2597,8 +2636,11 @@ def cmd_report(args):
             line(name, row, (c["rows"].get(row) or {}).get("all") or {})
         for cls, s in sorted(((c["rows"].get("all") or {}).get("per_class") or {}).items()):
             line("", f"class {cls}", s)
-    print(f"diagnostic (a), V-real by playing guitars ({rep['density']['rule']}): "
-          + ", ".join(f"{s} {d['playing']}" for s, d in sorted(dens.items())))
+    if dens_error:
+        print(f"diagnostic (a) failed (recorded in report.json, the rest stands): {dens_error}")
+    else:
+        print(f"diagnostic (a), V-real by playing guitars ({rep['density']['rule']}): "
+              + ", ".join(f"{s} {d['playing']}" for s, d in sorted(dens.items())))
     for name, c in dcon.items():
         for row in drows:
             line(name, row, (c["rows"].get(row) or {}).get("all") or {})
@@ -2659,6 +2701,8 @@ def cmd_t2_stem_read(args):
     res["truth"] = ("T2's target render (t2/audio/...-target.flac) for both arms; for SES a matched re-render of the "
                     "label in its stored mix (part C's mels within one 0.5-dB step on 99% of cells), not the exact "
                     "guitar in it")
+    res["truth caveat"] = ("SES's truth is a matched re-render, not the guitar in its mix, so SES's SNR reads a little "
+                           "low and SYN - SES a little high")
     res["backings differ by design"] = ("SES's stored backing holds real guitars SYN lacks (other guitars below "
                                         "ACTIVE_MIN, with or without a DI); the left-out dense sections are not read")
     res["examples by set"] = {"pilot": sum(1 for i in per["SYN"] if i in set(plan["pilot"])),

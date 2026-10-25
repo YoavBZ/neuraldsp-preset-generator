@@ -679,6 +679,7 @@ def test_the_t2_stem_read_is_section_clustered_and_only_a_ceiling_check():
     assert s["per arm"]["SYN"]["contamination"]["mean"] == pytest.approx(0.02)
     assert s["SYN - SES contamination (section-clustered)"][0] == pytest.approx(-0.01)
     assert s["reading"].startswith("SYN's stems read cleaner") and "ceiling" in s["reading"]
+    assert T.stem_reading((0.1, -1.0, 1.2, 12)).startswith("no difference shown: SYN is not shown to be easier")
     for shift in (-2.0, 0.0):
         per, cont, band, sec = _stem_per(shift)
         assert "ceiling" in T.stem_read_summary(per, cont, band, sec, set(sec))["reading"]
@@ -851,3 +852,66 @@ def test_the_new_commands_render_nothing_and_dry_is_for_plan_ses_all():
         assert not any(re.search(p, f"python -m learn.trusted_data {cmd}") for p in LO.RENDERS)
     with pytest.raises(SystemExit, match="--dry is for plan-ses-all"):
         T.main(["report", "--dry"])
+
+
+# --- the review of #292 (2026-10-25) --------------------------------------------------------------------------------
+
+def test_vreal_render_adds_an_arm_on_its_own_and_never_into_an_unfinished_group():
+    dirs = ["A", "B"]
+    arms = ("SES", "SYN", T.CONST_ARM, T.SES_ALL)
+    full = {"status": "done", "judge": {f"{a}|{d}": {} for a in ("SES", "SYN", T.CONST_ARM) for d in dirs}}
+    assert T.render_todo({}, {}, ("SES", "SYN", T.CONST_ARM), dirs) is None          # T2's own first render
+    with pytest.raises(SystemExit, match="not done by T2's chain"):
+        T.render_todo({"status": "running", "slug": "p", "amp": "pr12"}, {}, arms, dirs)
+    assert T.render_todo(full, {}, arms, dirs) == [T.SES_ALL]
+    done = {"status": "done", "judge": {f"{T.SES_ALL}|{d}": {} for d in dirs}}
+    assert T.render_todo(full, {T.SES_ALL: done}, arms, dirs) == []
+    assert T.render_todo(full, {T.SES_ALL: {"status": "running"}}, arms, dirs) == [T.SES_ALL]
+    assert T.render_todo(full, {}, ("SES", "SYN", T.CONST_ARM), dirs) == []
+
+
+def test_fit_keeps_an_arm_fitted_on_the_same_models():
+    runs = [{"seed": 20261042, "model_sha256": "a"}, {"seed": 20261043, "model_sha256": "b"}]
+    assert T.fit_kept({"models": {"20261042": "a", "20261043": "b"}}, runs)
+    assert not T.fit_kept({"models": {"20261042": "a", "20261043": "c"}}, runs)      # retrained: refit
+    assert not T.fit_kept(None, runs) and not T.fit_kept({"models": {}}, runs)
+
+
+def test_vreal_predict_keeps_stored_arms_and_refuses_other_models_or_directions():
+    keys = {"p|pr12|A", "p|pr12|B"}
+    preds = {a: {k: {"settings": {}} for k in keys} for a in ("SES", "SYN", T.CONST_ARM)}
+    prev = {"smoke": False, "predictions": preds}                                    # T2's own: no models recorded
+    assert T.kept_predictions(prev, keys, False, {"SES": {"1": "x"}}) == preds
+    assert T.kept_predictions({}, keys, False, {}) == {} and T.kept_predictions(prev, keys, True, {}) == {}
+    with pytest.raises(SystemExit, match="other V-real directions"):
+        T.kept_predictions(prev, keys | {"q|pr12|A"}, False, {})
+    added = {**prev, "predictions": {**preds, T.SES_ALL: preds["SES"]}, "models": {T.SES_ALL: {"1": "m"}}}
+    assert T.SES_ALL in T.kept_predictions(added, keys, False, {T.SES_ALL: {"1": "m"}})
+    with pytest.raises(SystemExit, match="other models"):
+        T.kept_predictions(added, keys, False, {T.SES_ALL: {"1": "retrained"}})
+
+
+def test_a_failing_density_diagnostic_is_recorded_not_fatal(monkeypatch, tmp_path, capsys):
+    pytest.importorskip("numpy")
+    from learn import arm_a_mega53 as A
+    from learn import direct_stems as DS
+    from learn import local_objective_1c as C
+    from learn import perfect_sep_arm as P
+
+    monkeypatch.setattr(T.V, "require_real", lambda args: None)
+    monkeypatch.setattr(T.V, "out_root", lambda args: tmp_path)
+    monkeypatch.setattr(T, "load_lists", lambda root, smoke=False: {"v_real": ["p"]})
+    monkeypatch.setattr(P, "build_units", lambda: [{"slug": "p", "amp": "pr12", "search": "A", "held": "B",
+                                                    "band": "X", "d": {"S": 1.0}}])
+    monkeypatch.setattr(C, "load_bleed_table", lambda: {})
+    monkeypatch.setattr(A, "row_filter", lambda row, stage, bt, snr: (lambda u: True))
+    monkeypatch.setattr(DS, "step4_contrast", lambda *a, **k: {"rows": {}})
+
+    def boom(s, files=None):
+        raise SystemExit("p: no session files")
+
+    monkeypatch.setattr(T, "vreal_playing", boom)
+    T.main(["report"])
+    rep = T._load(tmp_path / "t2" / "report.json")
+    assert rep["density"]["error"] == "SystemExit: p: no session files" and rep["density"]["parts"] == {}
+    assert "diagnostic (a) failed" in capsys.readouterr().out

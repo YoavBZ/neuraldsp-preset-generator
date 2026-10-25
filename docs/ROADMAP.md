@@ -322,8 +322,10 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      4 in 81% against 18%; 2,308 of the 3,260 left out are Rebuild The Evil, all at 4; V-real is denser still, 9 of 10
      parts at 4 or more). A third, *approved by the user 2026-10-25* ("Approved if you suggest following this
      approach"), is **SES-ALL**: SES's recipe, seeds and early-stopping set on a 5k draw (seed 20261104, stratified by
-     band) from all T2 candidates, the left-out sections included (1,946 of its 5,000; 6 bands), read as SES-ALL − SES
-     on V-real. Extra cost: 2 runs of about 1.5 h, about 60 V-real renders plus 30 priming, no separations. It runs after
+     band) from the 8,414 T2 candidates outside early stopping, the left-out sections included, read as SES-ALL − SES
+     on V-real. N is kept equal to SES's (the build's interpretation, confirmed by the ML session), so it reads what
+     the left-out sections are worth at equal size; their share is about 39% either way (1,946 of the 5,000). The
+     draw spans 6 bands; its left-out examples come from 5. Extra cost: 2 runs of about 1.5 h, about 60 V-real renders plus 30 priming, no separations. It runs after
      T2's chain ([follow-up chain](trusted-data-t2-followup.sh)), adding to T2's records without re-making them. Caveat:
      the left-out data are mostly one band, so SES-ALL − SES also carries two more bands, not density alone
      ([as built](trusted-data-t0-design.md#t2s-additions-as-built-2026-10-25)). The read, the diagnostics and the `report` fix are built (2026-10-25) and independently

@@ -15,11 +15,16 @@ TD=(-u -m learn.trusted_data)
 step() { echo "$(date) $1"; }
 grep -q "T2 CHAIN DONE" $L/t2-chain.log || { echo "T2's chain is not done: wait"; exit 1; }
 grep -q '"plan-ses-all"' learn/trusted_data.py || { echo "the main checkout lacks the T2 additions: merge the PR first"; exit 1; }
+# every V-real group must be done by T2's chain: SES-ALL is never rendered into a group's own record
+if grep -q "groups not done" $L/t2-report.log; then
+  echo "T2's chain left V-real groups not done ($(grep -m1 'groups not done' $L/t2-report.log)): finish T2's own vreal-render first"; exit 1
+fi
 # keep T2's own records as they were (the add-only commands leave them, this is a second guard)
 mkdir -p $T2/before-followup
 for f in fit.json report.json vreal/predictions.json; do [ -e $T2/$f ] && cp -n $T2/$f $T2/before-followup/${f:t}; done
-step "t2-stem-read"; $MAIN ${TD[@]} t2-stem-read > $L/t2-stem-read.log 2>&1 || { echo "STEM READ FAILED"; exit 1; }
-step "t2-density"; $MAIN ${TD[@]} t2-density > $L/t2-density.log 2>&1 || { echo "DENSITY FAILED"; exit 1; }
+# descriptive and zero-render: a failure is logged and the chain goes on
+step "t2-stem-read"; $MAIN ${TD[@]} t2-stem-read > $L/t2-stem-read.log 2>&1 || echo "STEM READ FAILED (non-fatal; see t2-stem-read.log)"
+step "t2-density"; $MAIN ${TD[@]} t2-density > $L/t2-density.log 2>&1 || echo "DENSITY FAILED (non-fatal; see t2-density.log)"
 step "plan-ses-all"; $MAIN ${TD[@]} plan-ses-all > $L/t2-ses-all-plan.log 2>&1 || { echo "PLAN SES-ALL FAILED"; exit 1; }
 for seed in 20261042 20261043; do
   step "train SES-ALL $seed"
