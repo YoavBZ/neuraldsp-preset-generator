@@ -146,7 +146,8 @@ note beside each headline; nothing re-runs.
   - **Level:** each sits at its real amp track's level in that section. A DI-only part takes the
     median level of the session's amp tracks.
   - **Doubles:** a "DT" double takes the target's preset, panned opposite.
-  - **Parts with no DI** are left out (decision 4).
+  - **Parts with no DI** are left out (decision 4). *Since 2026-10-25 (user):* an active guitar that cannot be
+    rendered is the session's own amp track(s) after an automatic bleed check, or the example is left out (note below).
 - **Other instruments:** stems that pass the scan, at the session's own balance.
 - **Level:** the backing is set against the target by a ratio drawn from the re-derived level prior
   (today: median −7.9 dB, 5–95%: −18.9 to −2.6 dB).
@@ -309,3 +310,13 @@ Facts that changed after the approval, and what each means for the plan. None is
   refuses its example, and with fewer than 3 bands the section-clustered interval is primary. Rule 1 leaves out all
   of T1's examples and cuts T2's candidates to 3,955 in 3 bands (parts with no DI play in most sections): a user
   decision before T1 or T2 runs again. T1 must be re-planned in any case (T0's lists changed, PR #289).
+- **2026-10-25, the user's decision on rule 1** ("Sounds good, go ahead" to the ML session's option 1;
+  [design](trusted-data-t0-design.md#rule-1-after-the-users-decision-2026-10-25)): in self-built mixes, an active guitar
+  that cannot be rendered is the session's own recorded amp track(s), at the session's balance, after an automatic
+  leakage check with no listening (other-instrument bleed under −30 dB, A6's line, read by the cleaning plan's take
+  estimator); a part with no such track, or one that fails, leaves the example out of every arm. Only K's and SYN's
+  backings change; SES and pairing do not. Dry run: T2 keeps all 8,722 candidates (8,184 in 5 bands outside early
+  stopping), so the 5k pilot is reachable; T1 keeps none of its 812 (every K section has a part that fails, Adam
+  Buckley's guitars at −20 to −30 dB, Dark Ride's DT pairs reading each other at −24 to −30 dB). T1 must be re-planned
+  and re-run before T2, because K's mixes change; as decided, the re-plan holds no example (zero renders), so T1 cannot
+  read until K changes or the user waives T1 before T2.
