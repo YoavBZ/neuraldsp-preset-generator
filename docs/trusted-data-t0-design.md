@@ -572,6 +572,7 @@ The review's four decisions before the ear, each as the ML session recommended. 
 
 **The final lists** (`t0/verified.json`):
 - **Targets** 17 verified, 42 excluded. **DIs** 46 verified, 13 excluded.
+  *Amended 2026-10-25:* 5 of the 42 likely pass on other windows, pending the ear and T2's end ([T0 window re-check](#t0-window-re-check-2026-10-25)).
 - **V-real:** 10 parts in 7 bands (3 clean parts in 2 bands, 7 crunch; 3 of the 10 from one song, Wickerman).
 - **Knob ceiling 2:** 7 parts in 7 bands verified, the panel for every-control stage 1.
 - **K:** 17 DIs in 3 bands, but T1's K uses Adam Buckley and Dark Ride only. Cnoc An Tursa is not admitted (user,
@@ -879,3 +880,52 @@ track in the target DI's inventory `own` list, so an own track of another part (
 "GTR 1 DI") is never counted as an active other guitar. *Checked 2026-10-25 (read-only, the inventory):* it does not
 touch T2's four bands. In Ale Lak, Death Of A Romantic, Hollow Ground and Storm Of Particles every `own` track has its
 DI's part number (Hollow Ground's lettered takes are one part); only Renesans' three sessions list another part's track.
+
+## T0 window re-check (2026-10-25)
+
+**Why.** 42 of 59 targets were excluded. A re-check (zero renders) found that 5 of them failed A5 or A6 only because
+their one 10-s crop window caught the DI silent or barely playing. On other windows where the DI plays, the same
+unchanged measures pass. The re-check's code reproduced the stored crop measures for all 16 parts it read (except
+A1–A3 of Prodigal ElecGtr1 and 2 and Signs ElecGtr6, whose stored values came from the level prior's sections).
+
+**The rule (amends the standard's "a measured fail of A1–A6 excludes"):**
+- A target that fails A5 or A6 only because its DI is silent or sparse in the crop window (play share < 0.5 in a half)
+  is re-measured with the unchanged A1–A6 and D2 on up to 5 other 10-s windows where its DI plays (play share ≥ 0.5 in
+  both halves).
+- It passes only if a majority of those windows pass with no measured fail ("ear" readings allowed, as for verified
+  parts). The count of passing windows out of windows checked is always reported, to guard against a lucky window.
+- It must then also pass the user's ear on 2 of those windows, as before (DI, then target; each window's two halves).
+- A part that fails on a real track property stays excluded: hum or clipping in every window, no cab, live-room bleed,
+  a different take.
+
+**The result** (16 parts read; evidence and per-window numbers in
+`~/ndsp-presets/listening/trusted-data-ear/part5-recheck/recheck/results.json`):
+
+| Part | Windows passing | Reading |
+|---|---|---|
+| Drag Me Down ElecGtr3 | 5/5 | likely pass (crop half A silent) |
+| It Was My Fault ElecGtr1 | 5/5 | likely pass (crop half A plays 26%) |
+| It Was My Fault ElecGtr4 | 4/5 | likely pass (crop half B silent; one window fails A1) |
+| Nosso Mundo ElecGtr03 | 3/3 | likely pass (crop half A silent; sparse DI, only 3 windows exist) |
+| Signs ElecGtr6 | 5/5 | likely pass (crop half B silent; every measure passes outright) |
+| Today's The Day ElecGtr07 | 1/5 | borderline: its crop DI plays fully, so the rule does not apply; D2 hum on 3/5 windows. Stays excluded (the user's decision of 2026-10-24 stands); on the ear page only as a check |
+| Prodigal ElecGtr1 | 0/5 | excluded: DI hum on every window (target measures pass on 5/5) |
+| Prodigal ElecGtr2 | 0/2 | excluded: DI plays about 30 s; one window D2 hum, one A1 near-zero lag |
+| Prodigal ElecGtr3 | 0/5 | excluded: no cab (A1 0.0 ms, A2 0 dB on every window) |
+| Prodigal ElecGtr4 | none | excluded: DI plays only about 4 s; no window qualifies |
+| Passing Ships ElecGtr3 | 0/2 | excluded: DI hum on every window |
+| Passing Ships ElecGtr4 | 1/5 | excluded: measure-DI hum and hiss (D2 fails 3/5), heard not clean |
+| Measurements GTR (Telefunken) | 0/5 | excluded: live-room bleed −6 to −23 dB on 4/5 windows |
+| colour-me-red elecgtr01 | 0/5 | excluded: DI hum and clipping on every window |
+| magilla elecgtr1dt | 0/5 | excluded: DI hum on every window |
+| wickerman elecgtr7 | 0/5 | excluded: hum-suspect DI (D2 fails every window) |
+
+**The ear.** `~/ndsp-presets/listening/trusted-data-ear/part5-recheck/index.html`: 22 cards (2 windows for each likely
+pass, 1 for Today's The Day, two 6-s halves each), the same cards and export as part 1. Its export is page
+`trusted-data-ear-recheck`, with its own item ids (`items.json` beside it), so `lists --ear` refuses it until the rule
+is in code. Windows: the no-fail windows ranked by every measure passing outright, fewest D2 flags, highest
+lowest-half play share.
+
+**When they join.** A recovered part joins the verified set only after the user's ear, and only after T2's chain
+finishes: T2 runs on the current lists, which must not change mid-run. The rule goes into `verify_tracks` then
+(code, reviewed), and `lists` is re-run with every export.
