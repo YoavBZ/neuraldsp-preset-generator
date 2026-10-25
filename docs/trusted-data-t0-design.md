@@ -310,6 +310,8 @@ early-stopping set.
 - **Primary:** SYN − SES on V-real, by the judge with the measure DI. Paired by direction,
   band-weighted, 90% band-clustered. A tie under 0.03 picks SYN.
 - **Beside:** SYN-E − SYN, each arm − S, E on K, and T1's stem SNR.
+- *Added 2026-10-25 (proposed, in review):* the T2-side stem read, SYN's stems against SES's
+  ([T1 waived](#t1-waived-and-the-realism-check-moved-into-t2-2026-10-25)).
 
 | Step | Command | Cost |
 |---|---|---|
@@ -810,3 +812,34 @@ pass) and T0's lists changed (PR #289): `amp-bleed --stage t1` (about 20 min CPU
 another recipe), then `render`, `build` and `t1-read`. Under the check as reviewed the re-plan keeps no example, so
 there is nothing to render or read: T1 cannot run on K until the check or K changes, and T2 can run without it only if
 the user accepts that.
+
+## T1 waived and the realism check moved into T2 (2026-10-25)
+
+**The user's answer** (in chat, 2026-10-25), asked whether T2 should run without amp tracks and on 4 bands after the
+reviewed bleed check (PR #290) cleared none of the 23 amp tracks: "I prefer reliable data and additional/longer runs
+than data that can't be fully trusted".
+
+**T2 started 2026-10-25 at 17:54** under PR #290's rules, as the dry run above planned it: 5,154 candidates in 4 bands
+(Ale Lak, Death Of A Romantic, Hollow Ground, Storm Of Particles), a pilot of 5,000, early stopping 308 examples in 4
+sections, no amp tracks; 5,308 target renders, 10,099 other-guitar renders plus priming and 5,308 separations. Rebuild
+The Evil and The Long Wait drop out.
+
+**T1's re-run is waived, not passed.** Under the reviewed rules K is empty: every T1 section has an active guitar with
+no usable amp track. T1 was descriptive and gates nothing, so nothing downstream waits on it.
+
+**The realism question moves into T2** (the ML session's proposal, in review):
+1. **T2's primary read is the decisive realism test:** SYN − SES on V-real compares a model trained on self-built
+   mixes with one trained on stored real-backing stems, on verified real songs. Unchanged.
+2. **A T2-side stem read** (new; zero renders; descriptive): after T2's build, SYN's stems against SES's stems on T2's
+   own examples, by T1's mel-grid stem SNR, paired, section-clustered as primary, with medians and the share below
+   0 dB per arm. It asks T1's question on T2's 4 bands. It needs a small `report` addition or its own command; not
+   built yet.
+
+**The known gap:** a section with an active guitar that has no usable DI or amp track is left out, so dense
+multi-guitar arrangements are under-represented in training. Recovering them needs a leakage measure that resolves
+sparse sources (for example, reading takes only on the frames where the source plays). Proposed: build it after T2,
+and only if T2 shows the gap matters (SYN short of SES on V-real, or the T2-side stem read showing self-built mixes
+clearly easier). It would also let T1 run and bring back Rebuild The Evil and The Long Wait.
+
+**A latent bug** (the review of #290), to fix before Renesans enters any stage: `session_guitar_parts` skips
+"GTR 2 Amp" as GTR 1's `own`.

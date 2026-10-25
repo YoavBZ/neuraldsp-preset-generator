@@ -324,3 +324,13 @@ Facts that changed after the approval, and what each means for the plan. None is
   its 812; T2 keeps 5,154 candidates in 4 bands outside early stopping (Rebuild The Evil and The Long Wait drop out), so
   the 5k pilot is still reachable, narrowly. T1 must be re-planned and re-run before T2, because K's mixes change; as it
   stands the re-plan holds no example, so the user decides whether T1 is waived before T2 or the check changes.
+- **2026-10-25, T1 waived and T2 started** ([design](trusted-data-t0-design.md#t1-waived-and-the-realism-check-moved-into-t2-2026-10-25)):
+  asked whether T2 should run without amp tracks and on 4 bands, the user answered "I prefer reliable data and
+  additional/longer runs than data that can't be fully trusted". T2 started at 17:54 under PR #290's rules: 5,154
+  candidates in 4 bands, a pilot of 5,000, no amp tracks (Rebuild The Evil and The Long Wait drop out). T1's re-run is
+  waived, not passed: K is empty under the reviewed rules, and T1 gates nothing. The realism question moves into T2
+  (the ML session's proposal, in review): the primary SYN − SES on V-real is the decisive test, and a new zero-render,
+  descriptive T2-side stem read (SYN's stems against SES's on T2's examples, T1's measure) asks T1's question on T2's
+  bands. Known gap: sections with an active guitar that has no usable DI or amp track are left out, so dense
+  multi-guitar arrangements are under-represented. A leakage measure that resolves sparse sources would recover them;
+  it is proposed after T2, only if T2 shows the gap matters.
