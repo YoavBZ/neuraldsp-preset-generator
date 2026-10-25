@@ -172,7 +172,7 @@ note beside each headline; nothing re-runs.
 
 | Test | What | Read |
 |---|---|---|
-| **K** | V_dev's DIs in mixes built from their own sessions' clean stems; the truth rendered through the example's DI, as step 3's gate did | E (zero renders); the sound gate, log d of D against the constant |
+| **K** | V_dev's DIs in mixes built from their own sessions' clean stems; the truth rendered through the example's DI, as step 3's gate did | E (zero renders); the sound gate, log d of D against the constant. *Empty since 2026-10-25 (no example passes rule 1's bleed check): no E on K and no sound gate until a better leakage measure, or another route, brings K back ([design](trusted-data-t0-design.md#t1-waived-and-the-realism-check-moved-into-t2-2026-10-25))* |
 | **V-real** | Stage F's parts that pass (a) (up to 16, 10 bands), plus JHNC at T4 | D − S and arm A − S by the judge with the measure DI; band-weighted, 90% band-clustered. The primary input is the unity sum (all parts have one); the released mix (10 songs) is a second reading |
 | **The ear** | Real, guitar-exposed songs: S, D and arm A, blind, letters at random | the user's picks |
 
@@ -189,9 +189,9 @@ note beside each headline; nothing re-runs.
 |---|---|---|
 | **T0** (about 6 renders) | Code and calibrate the measures; run them on every target and DI in use; re-read (a)'s results; scan and spot-check stems by ear; fix the review label. One listening sitting: the conflicts, the knife-edge passes and the unmeasured parts | the trusted parts, DIs and stems |
 | **T1** (no training) | Build K (R_in's 1,407 truth renders reused) and separate it | paired K − V_sep stem SNR on the same examples and draws, 90% interval; V-real's stem SNR beside it, at matched ratio. A gap adds realism levers to T2's SYN arm |
-| **T2, the pilot** | 5k trusted-pool examples (seed 20261099, stratified by band), three arms: **SES**, the stored stems; **SYN**, self-built backings of the same examples, labels and draws; **SYN-E**, SYN with a seeded third swapped for Eggy sections (Eggy's DIs pass (a) first). Today's control space; D_stem's recipe; 2 seeds each. All arms early-stop on one new trusted early-stopping set: about 5% of the trusted sections, at least one per band in all 6 bands (seed 20261100), held out of the 5k draw and built in each arm's own mix type. Checkpoints and amendment 5's constant and pull are fitted there | **Primary:** SYN − SES on V-real, paired by direction. **Beside:** SYN-E − SYN (the clean-band payoff; clean parts beside); E on K; stem SNR |
-| **T3** | Every-control stage 2D on self-built mixes. **Pilot:** T2's examples with full-space labels, D_full-5k against D_SYN-5k on K's sound gate. **Full:** about 20k, with Eggy, Renesans and any approved new DIs; 3 seeds | 2D's rules, read on K and V-real |
-| **T4** | V-real (with JHNC), K, then the ear | the route decision |
+| **T2, the pilot** | 5k trusted-pool examples (seed 20261099, stratified by band), three arms: **SES**, the stored stems; **SYN**, self-built backings of the same examples, labels and draws; **SYN-E**, SYN with a seeded third swapped for Eggy sections (Eggy's DIs pass (a) first). Today's control space; D_stem's recipe; 2 seeds each. All arms early-stop on one new trusted early-stopping set: about 5% of the trusted sections, at least one per band in all 6 bands (seed 20261100), held out of the 5k draw and built in each arm's own mix type. Checkpoints and amendment 5's constant and pull are fitted there | **Primary:** SYN − SES on V-real, paired by direction. **Beside:** SYN-E − SYN (the clean-band payoff; clean parts beside); E on K; stem SNR. *Since 2026-10-25: no E on K (K is empty); the stem SNR is the T2-side stem read, SYN's stems against SES's* |
+| **T3** | Every-control stage 2D on self-built mixes. **Pilot:** T2's examples with full-space labels, D_full-5k against D_SYN-5k on K's sound gate (*K is empty since 2026-10-25; open until K comes back*). **Full:** about 20k, with Eggy, Renesans and any approved new DIs; 3 seeds | 2D's rules, read on K and V-real |
+| **T4** | V-real (with JHNC), K (*empty since 2026-10-25; open*), then the ear | the route decision |
 
 **How T2 reads** (no pass bar):
 - **Power:** on about 10 bands, a paired arm contrast reads about ±0.028 log d, plus 2-seed noise.
@@ -324,3 +324,20 @@ Facts that changed after the approval, and what each means for the plan. None is
   its 812; T2 keeps 5,154 candidates in 4 bands outside early stopping (Rebuild The Evil and The Long Wait drop out), so
   the 5k pilot is still reachable, narrowly. T1 must be re-planned and re-run before T2, because K's mixes change; as it
   stands the re-plan holds no example, so the user decides whether T1 is waived before T2 or the check changes.
+  *Superseded the same day (next note).*
+- **2026-10-25, T1 waived and T2 started** ([design](trusted-data-t0-design.md#t1-waived-and-the-realism-check-moved-into-t2-2026-10-25)):
+  the user answered "I prefer reliable data and additional/longer runs than data that can't be fully trusted" when
+  asked whether T2 should run on 4 bands without amp tracks. T2 started at 17:54 under PR #290's rules: 5,154
+  candidates in 4 bands, a pilot of 5,000, no amp tracks (Rebuild The Evil and The Long Wait drop out). T1's re-run is
+  waived, not passed, which follows from that answer: K is empty under the reviewed rules, and T1 gates nothing. So T2
+  reads no E on K, and K's sound gate for T3 and T4 is open until a better leakage measure, or another route, brings K
+  back. The realism question moves into T2 (the ML session's proposal, approved after review, 2026-10-25): the primary
+  SYN − SES on V-real is the decisive test, and a zero-render, descriptive T2-side stem read (SYN's stems against
+  SES's on T2's examples, T1's measure; at best a ceiling check, since above 0 cannot tell cleaner from unrealistically
+  easy) is built and reviewed before T2's results are seen. Known gap: sections with an active guitar that has no
+  usable DI or amp track are left out, so dense multi-guitar arrangements are under-represented. SYN short of SES on
+  V-real would be a realism signal, not a gap signal (both arms train on the same examples); the gap is read by two
+  zero-cost diagnostics declared now (V-real by the number of playing guitars, for SES − S and SYN − S; active-guitar
+  counts of kept against left-out examples) and, pending the user's OK, an SES arm trained with the left-out dense
+  sections (2 runs, about 1.5 h, no renders). A leakage measure that resolves sparse sources is built after T2 if these
+  show the gap matters, or when T3 or T4 needs K.

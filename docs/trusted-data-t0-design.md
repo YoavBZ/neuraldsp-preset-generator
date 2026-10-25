@@ -309,15 +309,19 @@ early-stopping set.
 **The reads:**
 - **Primary:** SYN − SES on V-real, by the judge with the measure DI. Paired by direction,
   band-weighted, 90% band-clustered. A tie under 0.03 picks SYN.
-- **Beside:** SYN-E − SYN, each arm − S, E on K, and T1's stem SNR.
+- **Beside:** SYN-E − SYN, each arm − S, E on K, and T1's stem SNR. *Since 2026-10-25* ([T1
+  waived](#t1-waived-and-the-realism-check-moved-into-t2-2026-10-25)): K is empty, so T2 reads no E on K; T1's stem
+  SNR is the superseded 812-example read and must be labelled or dropped in `report`.
+- *Added 2026-10-25 (approved after review):* the T2-side stem read and the data-gap diagnostics, declared in the
+  same section and built before T2's results are seen.
 
 | Step | Command | Cost |
 |---|---|---|
 | amp-bleed | `$MAIN -u -m learn.trusted_data amp-bleed --stage t2 --shard k/2` | zero renders; about 20 min on 2 processes (CPU) |
-| plan, render | `$MAIN -m learn.trusted_data plan --stage t2`; `$MAIN -u … render --stage t2 --shard k/3` | about 12–18k renders, 2.5–3.5 h on 3 processes (the 2026-10-25 dry run: 5,538 targets and 8,732 other guitars, plus priming) |
+| plan, render | `$MAIN -m learn.trusted_data plan --stage t2`; `$MAIN -u … render --stage t2 --shard k/3` | about 12–18k renders, 2.5–3.5 h on 3 processes (the 2026-10-25 dry run: 5,538 targets and 8,732 other guitars, plus priming; *superseded:* the run of 2026-10-25 plans 5,308 targets and 10,099 other guitars in 4 bands) |
 | build | `$MSST -m learn.trusted_data build --stage t2 --device mps` | about 6k separations, 5–8 h |
 | train | `$TORCH_PY -m learn.trusted_data train --arm SES\|SYN --seed 20261042\|20261043` | 4 runs, about 1.5 h MPS |
-| fit, E on K, V-real | `fit`, `e-on-k`, `vreal-predict` (TORCH_PY); `vreal-render --shard k/3`, `report` (MAIN) | about 210 renders at 10 V-real parts (60 per arm for SES, SYN and the constant, plus 30 priming; SYN-E dropped) |
+| fit, E on K (*none since 2026-10-25: K is empty*), V-real | `fit`, `e-on-k`, `vreal-predict` (TORCH_PY); `vreal-render --shard k/3`, `report` (MAIN) | about 210 renders at 10 V-real parts (60 per arm for SES, SYN and the constant, plus 30 priming; SYN-E dropped) |
 
 ## Open questions
 
@@ -804,9 +808,74 @@ separations. SYN-E stays refused.
   rule off) or a reading that resolves sparse sources, which is a new measure.
 - A fail can also be the guitar in the other track, or a part locked in time with the drums.
 
+*Superseded 2026-10-25: T1's re-run is waived ([below](#t1-waived-and-the-realism-check-moved-into-t2-2026-10-25)).*
 **T1 must be re-planned and re-run before T2,** because K's mixes change (amp tracks join the backings wherever they
 pass) and T0's lists changed (PR #289): `amp-bleed --stage t1` (about 20 min CPU per session on 2 processes), then
 `plan --stage t1` after moving `t1/rows` and its audio aside (the plan refuses to re-plan over rows rendered under
 another recipe), then `render`, `build` and `t1-read`. Under the check as reviewed the re-plan keeps no example, so
 there is nothing to render or read: T1 cannot run on K until the check or K changes, and T2 can run without it only if
 the user accepts that.
+
+## T1 waived and the realism check moved into T2 (2026-10-25)
+
+**The user's answer** (in chat, 2026-10-25): "I prefer reliable data and additional/longer runs than data that can't
+be fully trusted". It answered whether T2 should run on 4 bands without amp tracks, after the reviewed bleed check
+(PR #290) cleared none of the 23 amp tracks.
+
+**T2 started 2026-10-25 at 17:54** under PR #290's rules, as the dry run above planned it: 5,154 candidates in 4 bands
+(Ale Lak, Death Of A Romantic, Hollow Ground, Storm Of Particles), a pilot of 5,000, early stopping 308 examples in 4
+sections, no amp tracks; 5,308 target renders, 10,099 other-guitar renders plus priming and 5,308 separations. Rebuild
+The Evil and The Long Wait drop out.
+
+**T1's re-run is waived, not passed.** This follows from the user's answer: under the reviewed rules K is empty, since
+every T1 section has an active guitar with no usable amp track. T1 was descriptive and gates nothing.
+
+**K is empty, so T2 reads no E on K.** `e-on-k` has nothing to read: the stored T1 plan (812 examples) is refused on
+T0's lists' hash, and a re-plan holds no example. The T2 chain treats its failure as non-fatal. K, and with it the
+sound gate T3 and T4 read on K, stay open until a leakage measure that resolves sparse sources, or another route,
+brings K back.
+
+**T2's `report` still prints T1's old read** (the 812-example K − V_sep from `t1/read.json`). It is superseded and must
+be labelled or dropped in the same `report` fix that adds the T2-side stem read (code later, not in this change).
+
+**The realism question moves into T2** (the ML session's proposal, approved after review, 2026-10-25):
+1. **T2's primary read is the decisive realism test:** SYN − SES on V-real compares a model trained on self-built
+   mixes with one trained on stored real-backing stems, on verified real songs. Unchanged.
+2. **A T2-side stem read** (new; zero renders; descriptive). After T2's build, SYN's stems against SES's stems on T2's
+   own examples, by T1's mel-grid stem SNR and contamination, paired, with medians and the share below 0 dB per arm.
+   It asks T1's question on T2's 4 bands.
+   - **The truth** is T2's target render (`t2/audio/…-target.flac`), the same file for both arms. SYN's mix holds that
+     file. SES's stored mix holds its own render of the same label (the D build's, or the cleaning rebuild's), which
+     was not kept as audio; both renders were checked against part C's stored mels (within one 0.5-dB step on 99% of
+     cells, `MATCH_SHARE`). So for SES the truth is a matched re-render, not the exact guitar in its mix.
+   - **The sign is ambiguous.** Above 0 cannot tell "SYN's stems are cleaner" from "SYN's mixes are unrealistically
+     easy". At best the read is a ceiling check; it is not a realism verdict.
+   - **The backings differ by design.** SES's backing holds real guitars SYN lacks: other guitars that play below the
+     activity line (`ACTIVE_MIN`, 10% of the section's frames), with or without a DI, which SYN never renders, so a DI-less
+     guitar can sit in SES's backing only there. The left-out dense sections are not read at all.
+   - **The interval:** section-clustered is primary, a declared deviation from `MIN_BANDS` (3): 4 bands give a 3-df
+     band interval too wide to read, and section-clustering keeps the read comparable with T1's. The band-clustered
+     interval is printed beside.
+   - It needs a small `report` addition or its own command. It must be built and independently reviewed before T2's
+     results are seen.
+
+**The known gap:** a section with an active guitar that has no usable DI or amp track is left out, so dense
+multi-guitar arrangements are under-represented in training. SYN short of SES on V-real is a realism signal, not a
+gap signal: both arms train on the same filtered examples. The gap is read by these, declared now (zero cost; built and
+reviewed before T2's results are seen):
+- (a) V-real by the number of guitars playing in the part's crop (dense against sparse parts), for SES − S and
+  SYN − S;
+- (b) the distribution of active-guitar counts in kept against left-out examples, from the plan's `left_out`;
+- (c) *proposed, pending the user's OK (an unplanned longer run):* an SES arm trained on all trusted-pool examples,
+  the left-out dense sections included (SES needs no rendering), against SES on the kept set: 2 runs of about 1.5 h,
+  no renders. It measures directly what the dense sections are worth on V-real.
+
+**The leakage measure** that resolves sparse sources (for example, reading takes only on the frames where the source
+plays) would recover the dense sections, let T1 run, bring back Rebuild The Evil and The Long Wait, and give T3 and T4
+a known-answer set again. Proposed: build it after T2, when (a)–(c) show the gap matters, or when T3 or T4 needs K.
+
+**A latent bug** (the review of #290), to fix before Renesans enters any stage: `session_guitar_parts` skips every
+track in the target DI's inventory `own` list, so an own track of another part (Renesans' "GTR 2 Amp_M81" under
+"GTR 1 DI") is never counted as an active other guitar. *Checked 2026-10-25 (read-only, the inventory):* it does not
+touch T2's four bands. In Ale Lak, Death Of A Romantic, Hollow Ground and Storm Of Particles every `own` track has its
+DI's part number (Hollow Ground's lettered takes are one part); only Renesans' three sessions list another part's track.
