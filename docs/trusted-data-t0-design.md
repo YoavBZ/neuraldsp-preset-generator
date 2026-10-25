@@ -566,7 +566,7 @@ The review's four decisions before the ear, each as the ML session recommended. 
   Honey, Lost & Alive).
 - **Training:** 27 DIs in 8 bands, 181 usable sections; only 1 is clean-class and 1 crunch (61% high gain, the rest
   unclassed).
-- **Stems:** 167 usable in 14 sessions. The 5 sessions heard with a guitar are held (Eggy Farthest Step and
+- **Stems:** 166 usable in 14 sessions (167 before click, metronome and talkback tracks were barred from backings and spot-checks, `NON_MUSICAL`: Split Brow's BAND CLICK; its Pre Rec.L/R are low bass playback, centroid about 120 Hz, and stay). The 5 sessions heard with a guitar are held (Eggy Farthest Step and
   Fragments, Hikikomori, Honey, Lost & Alive).
 
 **Let's Dance ElecGtr4** (the user, 2026-10-24): the leak is in the DI (quiet high notes); the target was too distorted

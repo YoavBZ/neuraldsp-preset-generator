@@ -2067,7 +2067,7 @@ def pick_stem_checks(stems, di_rows, stored, activity=None, min_share=STEM_CHECK
     activity = activity or stem_activity
     out = {}
     for sd in sorted(stems):
-        passing = {f: v for f, v in stems[sd]["stems"].items() if v["pass"]}
+        passing = {f: v for f, v in stems[sd]["stems"].items() if v["pass"] and not NON_MUSICAL.search(f)}
         old = stored.get(sd) or {}
         if old.get("stem") in passing:
             out[sd] = old
