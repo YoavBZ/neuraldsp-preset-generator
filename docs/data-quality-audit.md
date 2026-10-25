@@ -2,8 +2,10 @@
 
 > **Record.** This is the record of the 2026-10-22 audit. Its proposed level-matched retrain
 > (clean against random, 3 arms × 2 seeds) was not run: the trusted-data plan (T0–T2, see
-> [ROADMAP](ROADMAP.md)) superseded it. Its measures became the A5/A6 rules in
-> `learn/verify_tracks.py`.
+> [ROADMAP](ROADMAP.md)) superseded it. In `learn/verify_tracks.py`, A5 ports its `crop_match2.py`;
+> A6 builds on the bleed audit it joined (the 2026-10-16 bleed table, plus the cleaning plan's
+> same-part rule). Its proposed steps 1–5 (section 5) are all superseded by the trusted-data rule
+> of 2026-10-22: dirty tracks are excluded, not tagged or flagged.
 
 The user has listened to many of the project's pages and suspects that the datasets are too
 dirty and need cleaning. This audit measures how dirty they are, where, and what it costs, and

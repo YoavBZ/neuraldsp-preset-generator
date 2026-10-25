@@ -450,7 +450,8 @@ was declared, what was measured, and the research behind it.
   training or V_sep stem, 45% of the mel power lies above the median-aligned render (other music
   plus mismatch); bleed sits in the Telefunken live-room tracks; no different-notes DI pairing was
   found. Its proposed level-matched retrain was not run: the trusted-data plan (T0–T2) superseded
-  it. Its measures became A5/A6 in `learn/verify_tracks.py`.
+  it. In `learn/verify_tracks.py`, A5 ports its `crop_match2.py`; A6 builds on the bleed audit it
+  joined.
 - [song-to-settings-diagnostics-plan.md](song-to-settings-diagnostics-plan.md) →
   [results](song-to-settings-diagnostics-results.md): arm B has signal on renders but hedges
   toward mid-range on records.
