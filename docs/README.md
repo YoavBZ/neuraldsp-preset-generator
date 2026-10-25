@@ -74,7 +74,7 @@ was declared, what was measured, and the research behind it.
   (the [trusted-data plan](trusted-data-strategy-plan.md)): a measured verification fail excludes
   and the ear decides the rest; T0 ran, and the user's ear finished it on 2026-10-25 (V-real 10
   parts in 7 bands; the training pool holds almost no clean or crunch playing).*
-  - The data-quality audit ([draft PR #272](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/272),
+  - The data-quality audit ([record](data-quality-audit.md),
     zero renders): stems carry a median 45% of power above the matched render, and within each
     band the most contaminated third scores worse on the sound gate; doubles stay in the
     training backings; DIs are clean; labels are exact; bleed sits in the live-room amp and mic
@@ -445,6 +445,13 @@ was declared, what was measured, and the research behind it.
   sessions, audible on the high parts; the cleaning isn't adopted, and every key result holds
   without bleed. *Superseded 2026-10-22: dirty tracks are excluded, not flagged (trusted data
   only).*
+- [data-quality-audit.md](data-quality-audit.md) (the record of the 2026-10-22 audit; evidence in
+  [audits/data-quality-2026-10-22](audits/data-quality-2026-10-22/)): zero-render audit. In a median
+  training or V_sep stem, 45% of the mel power lies above the median-aligned render (other music
+  plus mismatch); bleed sits in the Telefunken live-room tracks; no different-notes DI pairing was
+  found. Its proposed level-matched retrain was not run: the trusted-data plan (T0–T2) superseded
+  it. In `learn/verify_tracks.py`, A5 ports its `crop_match2.py`; A6 builds on the bleed audit it
+  joined.
 - [song-to-settings-diagnostics-plan.md](song-to-settings-diagnostics-plan.md) →
   [results](song-to-settings-diagnostics-results.md): arm B has signal on renders but hedges
   toward mid-range on records.
