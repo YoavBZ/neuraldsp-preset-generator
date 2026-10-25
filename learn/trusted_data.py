@@ -123,10 +123,9 @@ LEFT_OUT_NO_AMP = "an active guitar has no usable amp track"
 AMP_BLEED_DB = V.A6_BLEED_DB           # an amp track is used when its other-instrument bleed reads under this (-30 dB)
 AMP_BLEED_DIR = "amp-bleed"            # root/amp-bleed/<session>.json: the readings (`amp-bleed`)
 AMP_BLEED_MEASURE = ("data_cleaning's session-level take estimator (SessionMeter, counted frames, rolled nulls, "
-                     "take_db; the stem scan's) with each other track of the session as the source and the amp track "
-                     "as the reference, held-out explained energies clipped at 0 (amp_take_db); summed over sources "
-                     "at or above data_cleaning.FLOOR_DB; sources: every non-guitar track and each other guitar "
-                     "part's loudest amp track (verify_tracks.scan_sources, parts by part_keys)")
+                     "take_db; the stem scan's) with each non-guitar track of the session as the source (never "
+                     "another guitar track: bleed_sources) and the amp track as the reference, held-out explained "
+                     "energies clipped at 0 (amp_take_db); summed over sources at or above data_cleaning.FLOOR_DB")
 
 
 # --- pure: the recipe ----------------------------------------------------------------------------------------
@@ -783,14 +782,21 @@ def load_amp_bleed(root, needed):
     return out
 
 
-def measure_amp_bleed(sd, tracks, log=print, owners=None):
+def bleed_sources(files):
+    """The bleed check's sources: the session's non-guitar tracks (drums, room, vocals, bass, keys and the rest), as
+    the stem scan classifies them (`verify_tracks.guitar_sources`). Never another guitar track: A6 reads
+    other-instrument bleed, and in these sessions guitars double or play the same riffs, which the estimator reads as
+    a coherent path (DT pairs read each other at -24 to -27 dB, 2026-10-25)."""
+    allg = set(V.guitar_sources(files))
+    return [f for f in files if f not in allg]
+
+
+def measure_amp_bleed(sd, tracks, log=print):
     """Each amp or mic track's other-instrument bleed (zero renders, CPU), by the cleaning plan's session-level take
     estimator (`data_cleaning`'s SessionMeter, counted frames and rolled nulls, as the stem scan reads it) with the
-    roles of A6's bleed: each other track of the session is the source and the amp track the reference, so a take is
-    the held-out share of the amp track's energy (on its playing frames) that the other track explains, less its
-    rolled nulls (`amp_take_db`: readings clipped at 0). Sources: every non-guitar track, and per other guitar part
-    its loudest amp track (its DI when it has none; `verify_tracks.scan_sources`, parts by `part_keys` with the
-    inventory's owners); the part's own tracks are never sources. The bleed is the takes' power sum
+    roles of A6's bleed: each non-guitar track of the session (`bleed_sources`) is the source and the amp track the
+    reference, so a take is the held-out share of the amp track's energy (on its playing frames) that the other track
+    explains, less its rolled nulls (`amp_take_db`: readings clipped at 0). The bleed is the takes' power sum
     (`amp_bleed_total`). Not injection-checked in these roles (the cleaning plan checked guitar into drum and room
     tracks): an upper bound, since it reads any coherent path between the two tracks, either way.
     -> {track: {"bleed_db", "takes", "sources", "silent"}}."""
@@ -804,20 +810,13 @@ def measure_amp_bleed(sd, tracks, log=print, owners=None):
     files = sorted(f.name for f in sd.glob("*.wav"))
     dur = max(DC.file_seconds(sd / f) for f in files)
     idx, _ = DC.band_bins()
-    allg = V.guitar_sources(files)
-    keys = part_keys(files, owners)
-    energy = {}
-    for g in allg:
-        a = DC.load_window(sd / g, 0.0, dur).astype(np.float64)
-        energy[g] = float((a ** 2).mean())
-    srcs = [f for f in files if f not in allg] + V.scan_sources(allg, energy, key=keys.get)
+    srcs = bleed_sources(files)
     Ys = {t: DC.stft(DC.load_window(sd / t, 0.0, dur))[idx] for t in tracks}
     silent = {t for t, Y in Ys.items() if not (np.abs(Y) > 0).any()}
     takes = {t: {} for t in tracks}
     t0 = time.time()
     for m, s in enumerate(srcs):
-        own = keys.get(s)
-        want = [t for t in tracks if t not in silent and (own is None or keys.get(t) != own)]
+        want = [t for t in tracks if t not in silent]
         if not want:
             continue
         S = DC.stft(DC.load_window(sd / s, 0.0, dur))[idx]
@@ -1103,7 +1102,7 @@ def cmd_amp_bleed(args):
         todo = [t for t in tracks if t not in have]
         if todo:
             t0 = time.time()
-            have.update(measure_amp_bleed(sd, todo, owners=session_owners(ctx, sd)))
+            have.update(measure_amp_bleed(sd, todo))
             _save(path, {"plan": PLAN, "smoke": bool(args.smoke), "measure": AMP_BLEED_MEASURE, "session_dir": sd,
                          "threshold_db": AMP_BLEED_DB, "tracks": have, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
             print(f"{pathlib.Path(sd).name}: {len(todo)} read in {time.time() - t0:.0f} s", flush=True)

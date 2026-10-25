@@ -382,6 +382,13 @@ def _bleed_file(root, sd, tracks):
     T._save(T.amp_bleed_path(root, sd), {"measure": T.AMP_BLEED_MEASURE, "session_dir": sd, "tracks": tracks})
 
 
+def test_bleed_sources_are_the_non_guitar_tracks():
+    files = ["01_Kick.wav", "16_Overheads.wav", "18_BassDI.wav", "22_AcousticGtr1.wav", "25_ElecGtr1.wav",
+             "28_ElecGtr2DT.wav", "36_Synth1.wav", "43_LeadVox1.wav", "GTR 2 Amp_M81.wav"]
+    assert T.bleed_sources(files) == ["01_Kick.wav", "16_Overheads.wav", "18_BassDI.wav", "36_Synth1.wav",
+                                      "43_LeadVox1.wav"]
+
+
 def test_amp_bleed_sums_takes_over_the_floor_on_a6s_line():
     assert T.AMP_BLEED_DB == -30.0
     total = T.amp_bleed_total({"kick": -35.0, "oh": -35.0, "bass": -45.0, "snare": None})
@@ -469,15 +476,16 @@ def test_measure_amp_bleed_reads_other_instruments_in_the_amp_track(tmp_path):
     g2 = (0.3 * rng.standard_normal(n) * env[::-1]).astype(np.float32)
     leak = np.concatenate([np.zeros(48), kick[:-48]])                       # a 1 ms path into the mic
     gain = 10 ** (-12 / 20) * np.sqrt(np.mean(g1 ** 2) / np.mean(leak ** 2))
+    unison = 0.8 * np.concatenate([np.zeros(48), g2[:-48]])                 # another guitar locked to ElecGtr2
     files = {"01_Kick.wav": kick, "25_ElecGtr1.wav": g1 + gain * leak, "26_ElecGtr2.wav": g2,
-             "27_ElecGtr2DI.wav": g2, "28_ElecGtr3.wav": np.zeros(n, np.float32)}
+             "27_ElecGtr2DI.wav": g2, "28_ElecGtr3.wav": np.zeros(n, np.float32), "30_ElecGtr2DT.wav": unison}
     for name, x in files.items():
         sf.write(str(tmp_path / name), np.asarray(x, np.float32), sr)
+    assert T.bleed_sources(sorted(files)) == ["01_Kick.wav"]                  # never another guitar track
     r = T.measure_amp_bleed(tmp_path, ["25_ElecGtr1.wav", "26_ElecGtr2.wav", "28_ElecGtr3.wav"], log=lambda *a: None)
     assert T.amp_status(r["25_ElecGtr1.wav"]) == "fail" and -20.0 < r["25_ElecGtr1.wav"]["bleed_db"] < -6.0
-    assert T.amp_status(r["26_ElecGtr2.wav"]) == "pass"
-    assert "27_ElecGtr2DI.wav" not in r["26_ElecGtr2.wav"]["takes"]          # the part's own tracks are never sources
-    assert "26_ElecGtr2.wav" in r["25_ElecGtr1.wav"]["takes"]                # another part's loudest amp track is one
+    # a unison guitar (its double, at -2 dB and 1 ms) is musical similarity, not bleed: it must not fail the track
+    assert T.amp_status(r["26_ElecGtr2.wav"]) == "pass" and set(r["26_ElecGtr2.wav"]["takes"]) == {"01_Kick.wav"}
     assert T.amp_status(r["28_ElecGtr3.wav"]) == "silent"
 
 

@@ -1653,14 +1653,12 @@ def guitar_part_key(name):
     return re.sub(r"[\s_.-]+", " ", s).strip().lower()
 
 
-def scan_sources(files, energy, key=None):
+def scan_sources(files, energy):
     """The stem scan's sources: per guitar part, its loudest amp or mic track (a take reaches a room through the
-    amp, and a part's mics are one take); its DI only when it has no amp track. energy: {track: mean square}; key:
-    a track's part (default `guitar_part_key`)."""
-    key = key or guitar_part_key
+    amp, and a part's mics are one take); its DI only when it has no amp track. energy: {track: mean square}."""
     groups = {}
     for f in guitar_sources(files):
-        groups.setdefault(key(f), []).append(f)
+        groups.setdefault(guitar_part_key(f), []).append(f)
     out = []
     for k in sorted(groups):
         amps = [f for f in groups[k] if not is_di_name(f)]

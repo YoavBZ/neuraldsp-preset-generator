@@ -314,9 +314,9 @@ Facts that changed after the approval, and what each means for the plan. None is
   [design](trusted-data-t0-design.md#rule-1-after-the-users-decision-2026-10-25)): in self-built mixes, an active guitar
   that cannot be rendered is the session's own recorded amp track(s), at the session's balance, after an automatic
   leakage check with no listening (other-instrument bleed under −30 dB, A6's line, read by the cleaning plan's take
-  estimator); a part with no such track, or one that fails, leaves the example out of every arm. Only K's and SYN's
-  backings change; SES and pairing do not. Dry run: T2 keeps all 8,722 candidates (8,184 in 5 bands outside early
-  stopping), so the 5k pilot is reachable; T1 keeps none of its 812 (every K section has a part that fails, Adam
-  Buckley's guitars at −20 to −30 dB, Dark Ride's DT pairs reading each other at −24 to −30 dB). T1 must be re-planned
-  and re-run before T2, because K's mixes change; as decided, the re-plan holds no example (zero renders), so T1 cannot
-  read until K changes or the user waives T1 before T2.
+  estimator from the session's non-guitar tracks only: doubled guitars read as each other's leakage); a part with no
+  such track, or one that fails, leaves the example out of every arm. Only K's and SYN's backings change; SES and
+  pairing do not. Dry run: T2 keeps all 8,722 candidates (8,184 in 5 bands outside early stopping), so the 5k pilot is
+  reachable; T1 keeps 343 of its 812, Dark Ride only (Adam Buckley's guitars read −22 to −30 dB of drum and bass
+  bleed). T1 must be re-planned and re-run before T2, because K's mixes change: about 1.0k other-guitar renders plus
+  priming and 343 separations.
