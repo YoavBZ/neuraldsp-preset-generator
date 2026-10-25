@@ -647,4 +647,7 @@ was declared, what was measured, and the research behind it.
     per section. The Cambridge-MT scan (2026-10-23) found no new band with a confirmed DI + amp
     track on the hosts it could read. Later on 2026-10-23: Blue Manic "Acomatay" (5 DI + amp
     pairs) downloaded as a second reserved test band, EGDB's 240 DI clips downloaded, GOAT's
-    access requested. Research, not a declared plan.
+    access requested. The newer-host listing (2026-10-25, through the user's Chrome) finds 5 new
+    in-scope DI bands: Ember Rev, Empty Signifier, Goran Levi, Mòpia and Sören (Empty Signifier and
+    Mòpia scope by ear); Empty Signifier is downloaded, the other four are pending. Research, not a
+    declared plan.
