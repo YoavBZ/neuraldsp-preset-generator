@@ -1,0 +1,4837 @@
+{
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/19_ElecGtr3b_DI.wav@100.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.624,
+"ratio_db_median": -9.4,
+"backing_share": {
+"drums": 0.1475,
+"bass": 0.3309,
+"egtr": 0.5216
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@130.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.464,
+"ratio_db_median": -8.9,
+"backing_share": {
+"bass": 0.1699,
+"drums": 0.1369,
+"keys": 0.6932
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/09_ElecGtr01DI.wav@45.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.316,
+"ratio_db_median": -9.2,
+"backing_share": {
+"drums": 0.1366,
+"bass": 0.2935,
+"egtr": 0.5698
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@295.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.295,
+"ratio_db_median": -9.5,
+"backing_share": {
+"bass": 0.0811,
+"drums": 0.3933,
+"keys": 0.5256
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/23_ElecGtr4DI.wav@20.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 76,
+"contam_median": 0.339,
+"ratio_db_median": -9.4,
+"backing_share": {
+"drums": 0.6066,
+"other": 0.0,
+"bass": 0.0399,
+"egtr": 0.3535
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/11_ElecGtr01DTDI.wav@150.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.311,
+"ratio_db_median": -9.8,
+"backing_share": {
+"drums": 0.0796,
+"bass": 0.3856,
+"egtr": 0.5348
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Labor Of Hate/Renesans - Labor Of Hate Take 2/GTR 1 DI_TDP-1.wav@160.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.427,
+"ratio_db_median": -8.4,
+"backing_share": {
+"bass": 0.0742,
+"drums": 0.1171,
+"prerec": 0.8087
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@220.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.595,
+"ratio_db_median": -9.5,
+"backing_share": {
+"bass": 0.1485,
+"drums": 0.198,
+"keys": 0.6535
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@50.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 76,
+"contam_median": 0.145,
+"ratio_db_median": -8.9,
+"backing_share": {
+"bass": 0.0,
+"drums": 0.0099,
+"keys": 0.9901
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/19_ElecGtr3b_DI.wav@80.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.471,
+"ratio_db_median": -7.8,
+"backing_share": {
+"drums": 0.2033,
+"bass": 0.4144,
+"egtr": 0.3823
+},
+"leak_dropped": []
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/18_ElecGtr04DI.wav@130.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.116,
+"ratio_db_median": -9.5,
+"backing_share": {
+"drums": 0.7984,
+"bass": 0.0936,
+"egtr": 0.1055,
+"keys": 0.0025
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Less Than Nothing/Renesans - Less Than Nothing Take 2/GTR 1 DI_TDP-1.wav@130.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.856,
+"ratio_db_median": -10.1,
+"backing_share": {
+"bass": 0.231,
+"drums": 0.7106,
+"prerec": 0.0585
+},
+"leak_dropped": [
+"Bass Amp_M82.wav"
+]
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/17_ElecGtr2c_DI.wav@115.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.558,
+"ratio_db_median": -10.1,
+"backing_share": {
+"drums": 0.1249,
+"bass": 0.3672,
+"egtr": 0.5079
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Less Than Nothing/Renesans - Less Than Nothing Take 2/GTR 1 DI_TDP-1.wav@110.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.734,
+"ratio_db_median": -9.4,
+"backing_share": {
+"bass": 0.256,
+"drums": 0.7124,
+"prerec": 0.0316
+},
+"leak_dropped": [
+"Bass Amp_M82.wav"
+]
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/23_ElecGtr4DI.wav@30.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.375,
+"ratio_db_median": -8.1,
+"backing_share": {
+"drums": 0.6754,
+"other": 0.0,
+"bass": 0.0268,
+"egtr": 0.2978
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@130.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.518,
+"ratio_db_median": -9.4,
+"backing_share": {
+"bass": 0.3318,
+"drums": 0.4199,
+"keys": 0.2483
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/21_ElecGtr3DI.wav@10.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.36,
+"ratio_db_median": -8.5,
+"backing_share": {
+"drums": 0.614,
+"other": 0.0,
+"bass": 0.0343,
+"egtr": 0.3517
+},
+"leak_dropped": []
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/12_ElecGtr01DI.wav@160.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.488,
+"ratio_db_median": -9.5,
+"backing_share": {
+"drums": 0.6991,
+"bass": 0.09,
+"egtr": 0.2095,
+"keys": 0.0014
+},
+"leak_dropped": []
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/14_ElecGtr1c_DI.wav@100.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.334,
+"ratio_db_median": -9.3,
+"backing_share": {
+"drums": 0.2693,
+"bass": 0.6044,
+"egtr": 0.1263
+},
+"leak_dropped": []
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/19_ElecGtr3b_DI.wav@0.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.46,
+"ratio_db_median": -9.5,
+"backing_share": {
+"drums": 0.2009,
+"bass": 0.4118,
+"egtr": 0.3873
+},
+"leak_dropped": []
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/14_ElecGtr02DI.wav@150.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.275,
+"ratio_db_median": -10.5,
+"backing_share": {
+"drums": 0.8252,
+"bass": 0.0408,
+"egtr": 0.1328,
+"keys": 0.0011
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@55.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.494,
+"ratio_db_median": -9.5,
+"backing_share": {
+"bass": 0.2068,
+"drums": 0.3245,
+"keys": 0.4688
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/18_ElecGtr04DI.wav@140.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.331,
+"ratio_db_median": -9.2,
+"backing_share": {
+"drums": 0.8034,
+"bass": 0.1071,
+"egtr": 0.0871,
+"keys": 0.0024
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@210.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.37,
+"ratio_db_median": -10.0,
+"backing_share": {
+"bass": 0.2287,
+"drums": 0.2436,
+"keys": 0.5277
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/21_ElecGtr3DI.wav@70.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.382,
+"ratio_db_median": -9.4,
+"backing_share": {
+"drums": 0.4891,
+"other": 0.0,
+"bass": 0.0285,
+"egtr": 0.4824
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@290.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.571,
+"ratio_db_median": -9.1,
+"backing_share": {
+"bass": 0.1521,
+"drums": 0.2333,
+"keys": 0.6147
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/17_ElecGtr2c_DI.wav@10.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.487,
+"ratio_db_median": -9.8,
+"backing_share": {
+"drums": 0.1676,
+"bass": 0.4105,
+"egtr": 0.4219
+},
+"leak_dropped": []
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/12_ElecGtr01DI.wav@255.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 76,
+"contam_median": 0.472,
+"ratio_db_median": -8.3,
+"backing_share": {
+"drums": 0.7878,
+"bass": 0.0941,
+"egtr": 0.1181,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@305.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.438,
+"ratio_db_median": -9.5,
+"backing_share": {
+"bass": 0.1207,
+"drums": 0.3777,
+"keys": 0.5016
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Renesans - Labor Of Hate/Renesans - Labor Of Hate Take 2/GTR 1 DI_TDP-1.wav@95.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 76,
+"contam_median": 0.45,
+"ratio_db_median": -9.9,
+"backing_share": {
+"bass": 0.0753,
+"drums": 0.1322,
+"prerec": 0.7924
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Less Than Nothing/Renesans - Less Than Nothing Take 2/GTR 1 DI_TDP-1.wav@90.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.897,
+"ratio_db_median": -8.6,
+"backing_share": {
+"bass": 0.1751,
+"drums": 0.7249,
+"prerec": 0.1
+},
+"leak_dropped": [
+"Bass Amp_M82.wav"
+]
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/24_ElecGtr05DI.wav@100.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.774,
+"ratio_db_median": -9.4,
+"backing_share": {
+"drums": 0.0758,
+"bass": 0.227,
+"egtr": 0.6972
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@145.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.57,
+"ratio_db_median": -10.1,
+"backing_share": {
+"bass": 0.1681,
+"drums": 0.1776,
+"keys": 0.6543
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/17_ElecGtr05DI.wav@75.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.545,
+"ratio_db_median": -9.8,
+"backing_share": {
+"drums": 0.7142,
+"bass": 0.1585,
+"egtr": 0.065,
+"keys": 0.0624
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@345.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.583,
+"ratio_db_median": -10.4,
+"backing_share": {
+"bass": 0.2097,
+"drums": 0.1977,
+"keys": 0.5926
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/14_ElecGtr1c_DI.wav@120.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.359,
+"ratio_db_median": -8.7,
+"backing_share": {
+"drums": 0.2078,
+"bass": 0.6488,
+"egtr": 0.1433
+},
+"leak_dropped": []
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/12_ElecGtr01DI.wav@30.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.53,
+"ratio_db_median": -9.8,
+"backing_share": {
+"drums": 0.6788,
+"bass": 0.1091,
+"egtr": 0.212,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Split Brow/Renesans - Split Brow Take 2/GTR 1 DI_TDP-1.wav@130.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.631,
+"ratio_db_median": -9.7,
+"backing_share": {
+"bass": 0.4218,
+"drums": 0.5438,
+"prerec": 0.0344
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@90.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.177,
+"ratio_db_median": -7.8,
+"backing_share": {
+"bass": 0.0658,
+"drums": 0.0229,
+"keys": 0.9113
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"telefunken/Renesans - Labor Of Hate/Renesans - Labor Of Hate Take 2/GTR 1 DI_TDP-1.wav@150.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.389,
+"ratio_db_median": -8.3,
+"backing_share": {
+"bass": 0.0713,
+"drums": 0.1196,
+"prerec": 0.8091
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@80.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.152,
+"ratio_db_median": -9.8,
+"backing_share": {
+"bass": 0.1998,
+"drums": 0.0316,
+"keys": 0.7686
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/14_ElecGtr02DI.wav@35.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.506,
+"ratio_db_median": -8.9,
+"backing_share": {
+"drums": 0.7617,
+"bass": 0.1268,
+"egtr": 0.1115,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@165.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.367,
+"ratio_db_median": -7.8,
+"backing_share": {
+"bass": 0.1029,
+"drums": 0.0982,
+"keys": 0.7989
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/21_ElecGtr3DI.wav@140.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.342,
+"ratio_db_median": -7.9,
+"backing_share": {
+"drums": 0.6137,
+"other": 0.0,
+"bass": 0.0406,
+"egtr": 0.3457
+},
+"leak_dropped": []
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/17_ElecGtr2c_DI.wav@0.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.387,
+"ratio_db_median": -10.0,
+"backing_share": {
+"drums": 0.2035,
+"bass": 0.4171,
+"egtr": 0.3793
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/11_ElecGtr01DTDI.wav@25.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.293,
+"ratio_db_median": -9.8,
+"backing_share": {
+"drums": 0.1063,
+"bass": 0.3822,
+"egtr": 0.5115
+},
+"leak_dropped": []
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/19_ElecGtr06DI.wav@220.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.419,
+"ratio_db_median": -9.1,
+"backing_share": {
+"drums": 0.5277,
+"bass": 0.2681,
+"egtr": 0.1197,
+"keys": 0.0845
+},
+"leak_dropped": []
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/21_ElecGtr07DI.wav@125.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.448,
+"ratio_db_median": -10.0,
+"backing_share": {
+"drums": 0.7165,
+"bass": 0.1736,
+"egtr": 0.1096,
+"keys": 0.0003
+},
+"leak_dropped": []
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/14_ElecGtr02DI.wav@270.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.609,
+"ratio_db_median": -9.1,
+"backing_share": {
+"drums": 0.7373,
+"bass": 0.0895,
+"egtr": 0.1732,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/11_ElecGtr01DTDI.wav@160.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.306,
+"ratio_db_median": -8.6,
+"backing_share": {
+"drums": 0.0929,
+"bass": 0.3824,
+"egtr": 0.5246
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@380.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.653,
+"ratio_db_median": -10.2,
+"backing_share": {
+"bass": 0.1854,
+"drums": 0.397,
+"keys": 0.4176
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/17_ElecGtr05DI.wav@105.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.476,
+"ratio_db_median": -8.5,
+"backing_share": {
+"drums": 0.5735,
+"bass": 0.2248,
+"egtr": 0.1445,
+"keys": 0.0573
+},
+"leak_dropped": []
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/17_ElecGtr05DI.wav@150.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 76,
+"contam_median": 0.573,
+"ratio_db_median": -9.4,
+"backing_share": {
+"drums": 0.6753,
+"bass": 0.1848,
+"egtr": 0.1399,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/11_ElecGtr01DTDI.wav@45.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.341,
+"ratio_db_median": -9.2,
+"backing_share": {
+"drums": 0.1379,
+"bass": 0.2963,
+"egtr": 0.5658
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Less Than Nothing/Renesans - Less Than Nothing Take 2/GTR 1 DI_TDP-1.wav@120.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.672,
+"ratio_db_median": -9.2,
+"backing_share": {
+"bass": 0.2168,
+"drums": 0.6933,
+"prerec": 0.0899
+},
+"leak_dropped": [
+"Bass Amp_M82.wav"
+]
+},
+"telefunken/Renesans - Less Than Nothing/Renesans - Less Than Nothing Take 2/GTR 1 DI_TDP-1.wav@60.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.66,
+"ratio_db_median": -10.8,
+"backing_share": {
+"bass": 0.1251,
+"drums": 0.8126,
+"prerec": 0.0624
+},
+"leak_dropped": [
+"Bass Amp_M82.wav"
+]
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/23_ElecGtr4DI.wav@80.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.339,
+"ratio_db_median": -9.7,
+"backing_share": {
+"drums": 0.5207,
+"other": 0.0,
+"bass": 0.129,
+"egtr": 0.3503
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Less Than Nothing/Renesans - Less Than Nothing Take 2/GTR 1 DI_TDP-1.wav@140.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.889,
+"ratio_db_median": -8.7,
+"backing_share": {
+"bass": 0.1841,
+"drums": 0.7095,
+"prerec": 0.1064
+},
+"leak_dropped": [
+"Bass Amp_M82.wav"
+]
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/14_ElecGtr02DI.wav@160.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.522,
+"ratio_db_median": -10.3,
+"backing_share": {
+"drums": 0.6899,
+"bass": 0.0888,
+"egtr": 0.22,
+"keys": 0.0014
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/09_ElecGtr01DI.wav@35.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.394,
+"ratio_db_median": -9.2,
+"backing_share": {
+"drums": 0.0808,
+"bass": 0.2642,
+"egtr": 0.655
+},
+"leak_dropped": []
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/17_ElecGtr2c_DI.wav@35.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.373,
+"ratio_db_median": -9.4,
+"backing_share": {
+"drums": 0.1848,
+"bass": 0.4718,
+"egtr": 0.3434
+},
+"leak_dropped": []
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/14_ElecGtr02DI.wav@235.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.412,
+"ratio_db_median": -10.6,
+"backing_share": {
+"drums": 0.8185,
+"bass": 0.0973,
+"egtr": 0.0841,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@10.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.196,
+"ratio_db_median": -9.8,
+"backing_share": {
+"bass": 0.4657,
+"drums": 0.3894,
+"keys": 0.1449
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@30.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.107,
+"ratio_db_median": -9.2,
+"backing_share": {
+"bass": 0.0,
+"drums": 0.008,
+"keys": 0.992
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@180.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.358,
+"ratio_db_median": -8.9,
+"backing_share": {
+"bass": 0.271,
+"drums": 0.1862,
+"keys": 0.5428
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@30.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.345,
+"ratio_db_median": -10.5,
+"backing_share": {
+"bass": 0.4429,
+"drums": 0.3481,
+"keys": 0.209
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/11_ElecGtr01DTDI.wav@80.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 76,
+"contam_median": 0.303,
+"ratio_db_median": -8.9,
+"backing_share": {
+"drums": 0.1201,
+"bass": 0.3617,
+"egtr": 0.5182
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Labor Of Hate/Renesans - Labor Of Hate Take 2/GTR 1 DI_TDP-1.wav@75.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.573,
+"ratio_db_median": -8.6,
+"backing_share": {
+"bass": 0.4241,
+"drums": 0.5169,
+"prerec": 0.0589
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/20_ElecGtr04DI.wav@15.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 75,
+"contam_median": 0.251,
+"ratio_db_median": -9.2,
+"backing_share": {
+"drums": 0.1584,
+"bass": 0.352,
+"egtr": 0.4896
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@40.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.096,
+"ratio_db_median": -9.4,
+"backing_share": {
+"bass": 0.0,
+"drums": 0.0084,
+"keys": 0.9916
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/23_ElecGtr4DI.wav@130.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.364,
+"ratio_db_median": -8.4,
+"backing_share": {
+"drums": 0.5437,
+"other": 0.0,
+"bass": 0.113,
+"egtr": 0.3433
+},
+"leak_dropped": []
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/19_ElecGtr3b_DI.wav@20.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.519,
+"ratio_db_median": -10.5,
+"backing_share": {
+"drums": 0.2346,
+"bass": 0.4279,
+"egtr": 0.3376
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@270.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.359,
+"ratio_db_median": -10.0,
+"backing_share": {
+"bass": 0.0833,
+"drums": 0.1055,
+"keys": 0.8112
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/21_ElecGtr3DI.wav@0.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.441,
+"ratio_db_median": -9.4,
+"backing_share": {
+"drums": 0.6496,
+"other": 0.0,
+"bass": 0.0254,
+"egtr": 0.325
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/09_ElecGtr01DI.wav@170.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 76,
+"contam_median": 0.343,
+"ratio_db_median": -9.1,
+"backing_share": {
+"drums": 0.0975,
+"bass": 0.3716,
+"egtr": 0.5309
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/20_ElecGtr04DI.wav@130.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 76,
+"contam_median": 0.26,
+"ratio_db_median": -8.4,
+"backing_share": {
+"drums": 0.1165,
+"bass": 0.3725,
+"egtr": 0.511
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@210.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.367,
+"ratio_db_median": -7.8,
+"backing_share": {
+"bass": 0.1956,
+"drums": 0.516,
+"keys": 0.2884
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@190.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.508,
+"ratio_db_median": -8.9,
+"backing_share": {
+"bass": 0.2868,
+"drums": 0.4893,
+"keys": 0.2238
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/21_ElecGtr3DI.wav@120.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.434,
+"ratio_db_median": -9.4,
+"backing_share": {
+"drums": 0.5863,
+"other": 0.0,
+"bass": 0.0636,
+"egtr": 0.3501
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@360.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.493,
+"ratio_db_median": -9.9,
+"backing_share": {
+"bass": 0.135,
+"drums": 0.3303,
+"keys": 0.5347
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@140.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.507,
+"ratio_db_median": -9.7,
+"backing_share": {
+"bass": 0.2829,
+"drums": 0.4506,
+"keys": 0.2666
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@10.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.296,
+"ratio_db_median": -8.5,
+"backing_share": {
+"bass": 0.0,
+"drums": 0.0081,
+"keys": 0.9919
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@160.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.222,
+"ratio_db_median": -10.0,
+"backing_share": {
+"bass": 0.1816,
+"drums": 0.1076,
+"keys": 0.7107
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@90.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.476,
+"ratio_db_median": -8.6,
+"backing_share": {
+"bass": 0.1753,
+"drums": 0.2295,
+"keys": 0.5951
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/16_ElecGtr03DI.wav@130.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 76,
+"contam_median": 0.102,
+"ratio_db_median": -7.7,
+"backing_share": {
+"drums": 0.7986,
+"bass": 0.0936,
+"egtr": 0.1054,
+"keys": 0.0025
+},
+"leak_dropped": []
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/14_ElecGtr1c_DI.wav@85.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.291,
+"ratio_db_median": -10.3,
+"backing_share": {
+"drums": 0.3049,
+"bass": 0.6261,
+"egtr": 0.069
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/22_ElecGtr04DTDI.wav@100.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.535,
+"ratio_db_median": -9.2,
+"backing_share": {
+"drums": 0.0599,
+"bass": 0.1796,
+"egtr": 0.7605
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/09_ElecGtr01DI.wav@0.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.397,
+"ratio_db_median": -8.9,
+"backing_share": {
+"drums": 0.1417,
+"bass": 0.3019,
+"egtr": 0.5564
+},
+"leak_dropped": []
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/12_ElecGtr01DI.wav@170.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.481,
+"ratio_db_median": -8.9,
+"backing_share": {
+"drums": 0.6871,
+"bass": 0.1027,
+"egtr": 0.2097,
+"keys": 0.0005
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Less Than Nothing/Renesans - Less Than Nothing Take 2/GTR 1 DI_TDP-1.wav@160.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.365,
+"ratio_db_median": -10.0,
+"backing_share": {
+"bass": 0.205,
+"drums": 0.7626,
+"prerec": 0.0323
+},
+"leak_dropped": [
+"Bass Amp_M82.wav"
+]
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/12_ElecGtr01DI.wav@270.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.565,
+"ratio_db_median": -10.5,
+"backing_share": {
+"drums": 0.7583,
+"bass": 0.092,
+"egtr": 0.1497,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/12_ElecGtr01DI.wav@180.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.357,
+"ratio_db_median": -8.6,
+"backing_share": {
+"drums": 0.7466,
+"bass": 0.1221,
+"egtr": 0.1313,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/22_ElecGtr04DTDI.wav@110.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.535,
+"ratio_db_median": -9.6,
+"backing_share": {
+"drums": 0.0614,
+"bass": 0.2104,
+"egtr": 0.7282
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Less Than Nothing/Renesans - Less Than Nothing Take 2/GTR 1 DI_TDP-1.wav@180.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.229,
+"ratio_db_median": -8.3,
+"backing_share": {
+"bass": 0.1487,
+"drums": 0.8158,
+"prerec": 0.0355
+},
+"leak_dropped": [
+"Bass Amp_M82.wav"
+]
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/12_ElecGtr01DI.wav@20.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 76,
+"contam_median": 0.615,
+"ratio_db_median": -10.3,
+"backing_share": {
+"drums": 0.6722,
+"bass": 0.1014,
+"egtr": 0.2264,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@150.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.429,
+"ratio_db_median": -8.2,
+"backing_share": {
+"bass": 0.2401,
+"drums": 0.4443,
+"keys": 0.3156
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"cambridge/TheLongWait_Drag_Full/TheLongWait_Drag_Full/10_ElecGtr1DI.wav@95.0": {
+"part": "train",
+"band": "The Long Wait",
+"examples": 77,
+"contam_median": 0.778,
+"ratio_db_median": -8.9,
+"backing_share": {
+"drums": 0.2464,
+"bass": 0.1825,
+"acgtr": 0.3444,
+"egtr": 0.2267
+},
+"leak_dropped": []
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/21_ElecGtr3DI.wav@20.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.315,
+"ratio_db_median": -8.8,
+"backing_share": {
+"drums": 0.6041,
+"other": 0.0,
+"bass": 0.0397,
+"egtr": 0.3562
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@135.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.498,
+"ratio_db_median": -8.3,
+"backing_share": {
+"bass": 0.1584,
+"drums": 0.1765,
+"keys": 0.6651
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/14_ElecGtr1c_DI.wav@30.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.223,
+"ratio_db_median": -8.6,
+"backing_share": {
+"drums": 0.2992,
+"bass": 0.6421,
+"egtr": 0.0587
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/09_ElecGtr01DI.wav@160.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.311,
+"ratio_db_median": -8.0,
+"backing_share": {
+"drums": 0.093,
+"bass": 0.3827,
+"egtr": 0.5243
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@20.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.298,
+"ratio_db_median": -9.2,
+"backing_share": {
+"bass": 0.4174,
+"drums": 0.4671,
+"keys": 0.1155
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Renesans - Split Brow/Renesans - Split Brow Take 2/GTR 1 DI_TDP-1.wav@220.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.44,
+"ratio_db_median": -10.4,
+"backing_share": {
+"bass": 0.1602,
+"drums": 0.7946,
+"prerec": 0.0453
+},
+"leak_dropped": []
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/21_ElecGtr3DI.wav@40.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.404,
+"ratio_db_median": -9.9,
+"backing_share": {
+"drums": 0.6253,
+"other": 0.0,
+"bass": 0.0305,
+"egtr": 0.3442
+},
+"leak_dropped": []
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/14_ElecGtr02DI.wav@15.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.373,
+"ratio_db_median": -8.6,
+"backing_share": {
+"drums": 0.7609,
+"bass": 0.11,
+"egtr": 0.1291,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@350.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.493,
+"ratio_db_median": -8.7,
+"backing_share": {
+"bass": 0.1846,
+"drums": 0.3768,
+"keys": 0.4385
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@200.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.693,
+"ratio_db_median": -10.2,
+"backing_share": {
+"bass": 0.118,
+"drums": 0.1542,
+"keys": 0.7278
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/21_ElecGtr3DI.wav@60.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.289,
+"ratio_db_median": -8.5,
+"backing_share": {
+"drums": 0.3428,
+"other": 0.0,
+"bass": 0.0119,
+"egtr": 0.6453
+},
+"leak_dropped": []
+},
+"cambridge/StarnesAndShah_Prodigal_Full/08_ElecGtr2DI.wav@65.0": {
+"part": "train",
+"band": "Starnes And Shah",
+"examples": 77,
+"contam_median": 0.357,
+"ratio_db_median": -8.2,
+"backing_share": {
+"drums": 0.1307,
+"bass": 0.6955,
+"egtr": 0.1738
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@115.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.449,
+"ratio_db_median": -8.8,
+"backing_share": {
+"bass": 0.2128,
+"drums": 0.2769,
+"keys": 0.5104
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/12_ElecGtr01DI.wav@245.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.598,
+"ratio_db_median": -9.2,
+"backing_share": {
+"drums": 0.7853,
+"bass": 0.0848,
+"egtr": 0.1299,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/17_ElecGtr05DI.wav@40.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.403,
+"ratio_db_median": -8.2,
+"backing_share": {
+"drums": 0.6305,
+"bass": 0.162,
+"egtr": 0.0708,
+"keys": 0.1367
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@220.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.431,
+"ratio_db_median": -8.7,
+"backing_share": {
+"bass": 0.265,
+"drums": 0.2301,
+"keys": 0.5049
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"telefunken/Renesans - Less Than Nothing/Renesans - Less Than Nothing Take 2/GTR 1 DI_TDP-1.wav@50.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.879,
+"ratio_db_median": -8.5,
+"backing_share": {
+"bass": 0.1948,
+"drums": 0.779,
+"prerec": 0.0263
+},
+"leak_dropped": [
+"Bass Amp_M82.wav"
+]
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@260.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.563,
+"ratio_db_median": -10.3,
+"backing_share": {
+"bass": 0.1461,
+"drums": 0.259,
+"keys": 0.5948
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/21_ElecGtr07DI.wav@145.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.504,
+"ratio_db_median": -9.1,
+"backing_share": {
+"drums": 0.6709,
+"bass": 0.2133,
+"egtr": 0.1158,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/15_ElecGtr04DI.wav@155.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.526,
+"ratio_db_median": -8.9,
+"backing_share": {
+"drums": 0.7143,
+"bass": 0.1256,
+"egtr": 0.1601,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Split Brow/Renesans - Split Brow Take 2/GTR 1 DI_TDP-1.wav@95.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.588,
+"ratio_db_median": -8.5,
+"backing_share": {
+"bass": 0.2966,
+"drums": 0.6669,
+"prerec": 0.0365
+},
+"leak_dropped": []
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/19_ElecGtr06DI.wav@25.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 76,
+"contam_median": 0.396,
+"ratio_db_median": -8.8,
+"backing_share": {
+"drums": 0.6293,
+"bass": 0.2422,
+"egtr": 0.0848,
+"keys": 0.0438
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/09_ElecGtr01DI.wav@25.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.326,
+"ratio_db_median": -9.2,
+"backing_share": {
+"drums": 0.1058,
+"bass": 0.3801,
+"egtr": 0.5141
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@335.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.724,
+"ratio_db_median": -9.4,
+"backing_share": {
+"bass": 0.0871,
+"drums": 0.2588,
+"keys": 0.6541
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/20_ElecGtr04DI.wav@100.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.573,
+"ratio_db_median": -9.8,
+"backing_share": {
+"drums": 0.0598,
+"bass": 0.1791,
+"egtr": 0.7612
+},
+"leak_dropped": []
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/14_ElecGtr02DI.wav@65.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.408,
+"ratio_db_median": -9.3,
+"backing_share": {
+"drums": 0.7029,
+"bass": 0.0876,
+"egtr": 0.2096,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@325.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 76,
+"contam_median": 0.613,
+"ratio_db_median": -10.2,
+"backing_share": {
+"bass": 0.1216,
+"drums": 0.3096,
+"keys": 0.5688
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@60.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.179,
+"ratio_db_median": -9.2,
+"backing_share": {
+"bass": 0.2048,
+"drums": 0.0402,
+"keys": 0.755
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/09_ElecGtr01DI.wav@150.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.331,
+"ratio_db_median": -10.0,
+"backing_share": {
+"drums": 0.0782,
+"bass": 0.379,
+"egtr": 0.5428
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/13_ElecGtr02DI.wav@115.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.531,
+"ratio_db_median": -10.5,
+"backing_share": {
+"drums": 0.0589,
+"bass": 0.1911,
+"egtr": 0.75
+},
+"leak_dropped": []
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/14_ElecGtr1c_DI.wav@10.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.327,
+"ratio_db_median": -8.9,
+"backing_share": {
+"drums": 0.2578,
+"bass": 0.6313,
+"egtr": 0.1109
+},
+"leak_dropped": []
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/15_ElecGtr04DI.wav@75.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.457,
+"ratio_db_median": -8.4,
+"backing_share": {
+"drums": 0.7128,
+"bass": 0.1582,
+"egtr": 0.0668,
+"keys": 0.0622
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@250.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.575,
+"ratio_db_median": -8.8,
+"backing_share": {
+"bass": 0.1682,
+"drums": 0.3414,
+"keys": 0.4904
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/13_ElecGtr02DI.wav@150.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.445,
+"ratio_db_median": -8.1,
+"backing_share": {
+"drums": 0.0734,
+"bass": 0.3555,
+"egtr": 0.5711
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@85.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.435,
+"ratio_db_median": -9.8,
+"backing_share": {
+"bass": 0.1681,
+"drums": 0.2169,
+"keys": 0.615
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/21_ElecGtr3DI.wav@130.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.391,
+"ratio_db_median": -10.4,
+"backing_share": {
+"drums": 0.563,
+"other": 0.0,
+"bass": 0.1171,
+"egtr": 0.32
+},
+"leak_dropped": []
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/19_ElecGtr3b_DI.wav@10.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.501,
+"ratio_db_median": -10.5,
+"backing_share": {
+"drums": 0.1645,
+"bass": 0.4029,
+"egtr": 0.4326
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@20.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 76,
+"contam_median": 0.088,
+"ratio_db_median": -8.6,
+"backing_share": {
+"bass": 0.0,
+"drums": 0.0084,
+"keys": 0.9916
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"telefunken/Renesans - Less Than Nothing/Renesans - Less Than Nothing Take 2/GTR 1 DI_TDP-1.wav@150.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.545,
+"ratio_db_median": -8.0,
+"backing_share": {
+"bass": 0.1936,
+"drums": 0.7188,
+"prerec": 0.0876
+},
+"leak_dropped": [
+"Bass Amp_M82.wav"
+]
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/12_ElecGtr01DI.wav@150.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.26,
+"ratio_db_median": -8.0,
+"backing_share": {
+"drums": 0.8383,
+"bass": 0.0415,
+"egtr": 0.1191,
+"keys": 0.0011
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/11_ElecGtr01DTDI.wav@35.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.423,
+"ratio_db_median": -9.6,
+"backing_share": {
+"drums": 0.0807,
+"bass": 0.2639,
+"egtr": 0.6555
+},
+"leak_dropped": []
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/19_ElecGtr3b_DI.wav@30.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.438,
+"ratio_db_median": -9.2,
+"backing_share": {
+"drums": 0.2173,
+"bass": 0.4664,
+"egtr": 0.3163
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Split Brow/Renesans - Split Brow Take 2/GTR 1 DI_TDP-1.wav@140.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.627,
+"ratio_db_median": -8.6,
+"backing_share": {
+"bass": 0.3939,
+"drums": 0.5778,
+"prerec": 0.0284
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Split Brow/Renesans - Split Brow Take 2/GTR 1 DI_TDP-1.wav@210.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.604,
+"ratio_db_median": -8.8,
+"backing_share": {
+"bass": 0.1775,
+"drums": 0.7644,
+"prerec": 0.0582
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@200.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.46,
+"ratio_db_median": -9.8,
+"backing_share": {
+"bass": 0.2242,
+"drums": 0.2487,
+"keys": 0.5271
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/19_ElecGtr06DI.wav@105.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.47,
+"ratio_db_median": -9.8,
+"backing_share": {
+"drums": 0.5974,
+"bass": 0.2342,
+"egtr": 0.1087,
+"keys": 0.0596
+},
+"leak_dropped": []
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/19_ElecGtr3b_DI.wav@40.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 76,
+"contam_median": 0.446,
+"ratio_db_median": -9.4,
+"backing_share": {
+"drums": 0.1406,
+"bass": 0.4644,
+"egtr": 0.395
+},
+"leak_dropped": []
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/21_ElecGtr3DI.wav@50.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.305,
+"ratio_db_median": -10.1,
+"backing_share": {
+"drums": 0.6014,
+"other": 0.0,
+"bass": 0.0333,
+"egtr": 0.3653
+},
+"leak_dropped": []
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/23_ElecGtr4DI.wav@140.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.329,
+"ratio_db_median": -8.5,
+"backing_share": {
+"drums": 0.6193,
+"other": 0.0,
+"bass": 0.041,
+"egtr": 0.3398
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/11_ElecGtr01DTDI.wav@0.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 76,
+"contam_median": 0.363,
+"ratio_db_median": -9.6,
+"backing_share": {
+"drums": 0.1439,
+"bass": 0.3065,
+"egtr": 0.5496
+},
+"leak_dropped": []
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/19_ElecGtr06DI.wav@95.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.425,
+"ratio_db_median": -9.4,
+"backing_share": {
+"drums": 0.5966,
+"bass": 0.2618,
+"egtr": 0.0785,
+"keys": 0.0631
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/15_ElecGtr02DTDI.wav@115.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.551,
+"ratio_db_median": -9.8,
+"backing_share": {
+"drums": 0.0535,
+"bass": 0.1737,
+"egtr": 0.7728
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@325.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.54,
+"ratio_db_median": -9.3,
+"backing_share": {
+"bass": 0.1836,
+"drums": 0.1957,
+"keys": 0.6208
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/21_ElecGtr07DI.wav@135.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.435,
+"ratio_db_median": -9.8,
+"backing_share": {
+"drums": 0.7619,
+"bass": 0.1154,
+"egtr": 0.1226,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@120.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.554,
+"ratio_db_median": -10.5,
+"backing_share": {
+"bass": 0.3358,
+"drums": 0.4196,
+"keys": 0.2446
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Renesans - Labor Of Hate/Renesans - Labor Of Hate Take 2/GTR 1 DI_TDP-1.wav@105.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 76,
+"contam_median": 0.73,
+"ratio_db_median": -9.9,
+"backing_share": {
+"bass": 0.2839,
+"drums": 0.5758,
+"prerec": 0.1403
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@335.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.592,
+"ratio_db_median": -10.6,
+"backing_share": {
+"bass": 0.2024,
+"drums": 0.2652,
+"keys": 0.5324
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@180.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.43,
+"ratio_db_median": -8.8,
+"backing_share": {
+"bass": 0.1785,
+"drums": 0.3205,
+"keys": 0.501
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@260.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.429,
+"ratio_db_median": -9.5,
+"backing_share": {
+"bass": 0.1182,
+"drums": 0.1456,
+"keys": 0.7362
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"telefunken/Renesans - Split Brow/Renesans - Split Brow Take 2/GTR 1 DI_TDP-1.wav@20.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.451,
+"ratio_db_median": -8.9,
+"backing_share": {
+"bass": 0.165,
+"drums": 0.6074,
+"prerec": 0.2277
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@390.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.633,
+"ratio_db_median": -9.5,
+"backing_share": {
+"bass": 0.1606,
+"drums": 0.215,
+"keys": 0.6244
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@210.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.658,
+"ratio_db_median": -9.8,
+"backing_share": {
+"bass": 0.1327,
+"drums": 0.1624,
+"keys": 0.7048
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/17_ElecGtr05DI.wav@115.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.549,
+"ratio_db_median": -9.5,
+"backing_share": {
+"drums": 0.5096,
+"bass": 0.1877,
+"egtr": 0.2098,
+"keys": 0.0928
+},
+"leak_dropped": []
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/17_ElecGtr2c_DI.wav@95.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.399,
+"ratio_db_median": -7.3,
+"backing_share": {
+"drums": 0.1583,
+"bass": 0.4097,
+"egtr": 0.432
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@150.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.192,
+"ratio_db_median": -8.7,
+"backing_share": {
+"bass": 0.1494,
+"drums": 0.0992,
+"keys": 0.7514
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@230.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.41,
+"ratio_db_median": -8.5,
+"backing_share": {
+"bass": 0.1711,
+"drums": 0.2233,
+"keys": 0.6056
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"telefunken/Renesans - Less Than Nothing/Renesans - Less Than Nothing Take 2/GTR 1 DI_TDP-1.wav@70.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.723,
+"ratio_db_median": -8.5,
+"backing_share": {
+"bass": 0.2009,
+"drums": 0.7653,
+"prerec": 0.0338
+},
+"leak_dropped": [
+"Bass Amp_M82.wav"
+]
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/14_ElecGtr02DI.wav@5.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.291,
+"ratio_db_median": -8.4,
+"backing_share": {
+"drums": 0.7864,
+"bass": 0.1173,
+"egtr": 0.0963,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/14_ElecGtr02DI.wav@260.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.551,
+"ratio_db_median": -9.8,
+"backing_share": {
+"drums": 0.7747,
+"bass": 0.0945,
+"egtr": 0.1308,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@75.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.561,
+"ratio_db_median": -9.6,
+"backing_share": {
+"bass": 0.1474,
+"drums": 0.1709,
+"keys": 0.6818
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/23_ElecGtr4DI.wav@110.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.354,
+"ratio_db_median": -10.6,
+"backing_share": {
+"drums": 0.2491,
+"other": 0.374,
+"bass": 0.0282,
+"egtr": 0.3487
+},
+"leak_dropped": []
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/16_ElecGtr03DI.wav@150.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.368,
+"ratio_db_median": -9.7,
+"backing_share": {
+"drums": 0.7707,
+"bass": 0.0382,
+"egtr": 0.1901,
+"keys": 0.001
+},
+"leak_dropped": []
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/15_ElecGtr04DI.wav@115.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.522,
+"ratio_db_median": -8.8,
+"backing_share": {
+"drums": 0.5002,
+"bass": 0.1842,
+"egtr": 0.2244,
+"keys": 0.0911
+},
+"leak_dropped": []
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/14_ElecGtr02DI.wav@25.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.401,
+"ratio_db_median": -9.1,
+"backing_share": {
+"drums": 0.6991,
+"bass": 0.1013,
+"egtr": 0.1995,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@240.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.415,
+"ratio_db_median": -8.0,
+"backing_share": {
+"bass": 0.1636,
+"drums": 0.1428,
+"keys": 0.6936
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@155.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.557,
+"ratio_db_median": -9.2,
+"backing_share": {
+"bass": 0.1428,
+"drums": 0.1726,
+"keys": 0.6845
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/17_ElecGtr2c_DI.wav@25.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 76,
+"contam_median": 0.425,
+"ratio_db_median": -9.6,
+"backing_share": {
+"drums": 0.2212,
+"bass": 0.4629,
+"egtr": 0.3159
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@120.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.216,
+"ratio_db_median": -8.3,
+"backing_share": {
+"bass": 0.3089,
+"drums": 0.1854,
+"keys": 0.5057
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/22_ElecGtr04DTDI.wav@15.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 76,
+"contam_median": 0.322,
+"ratio_db_median": -7.5,
+"backing_share": {
+"drums": 0.158,
+"bass": 0.351,
+"egtr": 0.491
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Split Brow/Renesans - Split Brow Take 2/GTR 1 DI_TDP-1.wav@115.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.551,
+"ratio_db_median": -10.0,
+"backing_share": {
+"bass": 0.3242,
+"drums": 0.6344,
+"prerec": 0.0414
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Split Brow/Renesans - Split Brow Take 2/GTR 1 DI_TDP-1.wav@185.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.701,
+"ratio_db_median": -8.8,
+"backing_share": {
+"bass": 0.4403,
+"drums": 0.5071,
+"prerec": 0.0527
+},
+"leak_dropped": []
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/23_ElecGtr4DI.wav@100.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.319,
+"ratio_db_median": -8.5,
+"backing_share": {
+"drums": 0.5161,
+"other": 0.0,
+"bass": 0.0819,
+"egtr": 0.402
+},
+"leak_dropped": []
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/21_ElecGtr3DI.wav@110.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.363,
+"ratio_db_median": -9.8,
+"backing_share": {
+"drums": 0.2445,
+"other": 0.367,
+"bass": 0.0276,
+"egtr": 0.3609
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Labor Of Hate/Renesans - Labor Of Hate Take 2/GTR 1 DI_TDP-1.wav@130.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.6,
+"ratio_db_median": -9.4,
+"backing_share": {
+"bass": 0.1168,
+"drums": 0.2249,
+"prerec": 0.6583
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@125.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.535,
+"ratio_db_median": -10.5,
+"backing_share": {
+"bass": 0.1245,
+"drums": 0.1363,
+"keys": 0.7392
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@285.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.195,
+"ratio_db_median": -9.5,
+"backing_share": {
+"bass": 0.1193,
+"drums": 0.2513,
+"keys": 0.6294
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@285.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.451,
+"ratio_db_median": -8.5,
+"backing_share": {
+"bass": 0.1897,
+"drums": 0.2514,
+"keys": 0.559
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/17_ElecGtr2c_DI.wav@105.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.397,
+"ratio_db_median": -8.9,
+"backing_share": {
+"drums": 0.1577,
+"bass": 0.3341,
+"egtr": 0.5082
+},
+"leak_dropped": []
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/21_ElecGtr3DI.wav@100.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.377,
+"ratio_db_median": -10.5,
+"backing_share": {
+"drums": 0.5194,
+"other": 0.0,
+"bass": 0.0824,
+"egtr": 0.3982
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@250.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.528,
+"ratio_db_median": -8.4,
+"backing_share": {
+"bass": 0.167,
+"drums": 0.2146,
+"keys": 0.6184
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/15_ElecGtr04DI.wav@105.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.475,
+"ratio_db_median": -9.4,
+"backing_share": {
+"drums": 0.571,
+"bass": 0.2238,
+"egtr": 0.1482,
+"keys": 0.057
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@365.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.614,
+"ratio_db_median": -10.0,
+"backing_share": {
+"bass": 0.1907,
+"drums": 0.2598,
+"keys": 0.5494
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@50.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.307,
+"ratio_db_median": -10.4,
+"backing_share": {
+"bass": 0.3773,
+"drums": 0.4595,
+"keys": 0.1632
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@20.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.308,
+"ratio_db_median": -9.8,
+"backing_share": {
+"bass": 0.3428,
+"drums": 0.42,
+"keys": 0.2372
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/18_ElecGtr03DI.wav@15.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.735,
+"ratio_db_median": -8.7,
+"backing_share": {
+"drums": 0.1298,
+"bass": 0.2884,
+"egtr": 0.5818
+},
+"leak_dropped": []
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/23_ElecGtr4DI.wav@70.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.383,
+"ratio_db_median": -9.2,
+"backing_share": {
+"drums": 0.4888,
+"other": 0.0,
+"bass": 0.0285,
+"egtr": 0.4827
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Less Than Nothing/Renesans - Less Than Nothing Take 2/GTR 1 DI_TDP-1.wav@200.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.676,
+"ratio_db_median": -10.7,
+"backing_share": {
+"bass": 0.1992,
+"drums": 0.7397,
+"prerec": 0.0611
+},
+"leak_dropped": [
+"Bass Amp_M82.wav"
+]
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/15_ElecGtr04DI.wav@85.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.499,
+"ratio_db_median": -8.6,
+"backing_share": {
+"drums": 0.6803,
+"bass": 0.1283,
+"egtr": 0.0562,
+"keys": 0.1351
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@190.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.434,
+"ratio_db_median": -8.6,
+"backing_share": {
+"bass": 0.1355,
+"drums": 0.1342,
+"keys": 0.7303
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"telefunken/Renesans - Less Than Nothing/Renesans - Less Than Nothing Take 2/GTR 1 DI_TDP-1.wav@190.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.733,
+"ratio_db_median": -9.5,
+"backing_share": {
+"bass": 0.2233,
+"drums": 0.6969,
+"prerec": 0.0798
+},
+"leak_dropped": [
+"Bass Amp_M82.wav"
+]
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@240.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.597,
+"ratio_db_median": -9.8,
+"backing_share": {
+"bass": 0.1318,
+"drums": 0.3405,
+"keys": 0.5277
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@170.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.344,
+"ratio_db_median": -7.8,
+"backing_share": {
+"bass": 0.2144,
+"drums": 0.1583,
+"keys": 0.6273
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/23_ElecGtr4DI.wav@10.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.338,
+"ratio_db_median": -10.2,
+"backing_share": {
+"drums": 0.6191,
+"other": 0.0,
+"bass": 0.0346,
+"egtr": 0.3463
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Labor Of Hate/Renesans - Labor Of Hate Take 2/GTR 1 DI_TDP-1.wav@45.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.785,
+"ratio_db_median": -9.8,
+"backing_share": {
+"bass": 0.3194,
+"drums": 0.4523,
+"prerec": 0.2283
+},
+"leak_dropped": []
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/21_ElecGtr07DI.wav@155.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 76,
+"contam_median": 0.403,
+"ratio_db_median": -8.7,
+"backing_share": {
+"drums": 0.7492,
+"bass": 0.1317,
+"egtr": 0.119,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/21_ElecGtr3DI.wav@30.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.391,
+"ratio_db_median": -8.1,
+"backing_share": {
+"drums": 0.6659,
+"other": 0.0,
+"bass": 0.0264,
+"egtr": 0.3077
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@270.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.475,
+"ratio_db_median": -9.8,
+"backing_share": {
+"bass": 0.1198,
+"drums": 0.179,
+"keys": 0.7012
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/11_ElecGtr01DTDI.wav@70.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.304,
+"ratio_db_median": -10.3,
+"backing_share": {
+"drums": 0.1087,
+"bass": 0.3729,
+"egtr": 0.5184
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@280.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.737,
+"ratio_db_median": -10.3,
+"backing_share": {
+"bass": 0.1469,
+"drums": 0.2126,
+"keys": 0.6405
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/14_ElecGtr02DI.wav@170.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.511,
+"ratio_db_median": -9.8,
+"backing_share": {
+"drums": 0.6676,
+"bass": 0.0998,
+"egtr": 0.2322,
+"keys": 0.0004
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/24_ElecGtr05DI.wav@110.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.649,
+"ratio_db_median": -8.3,
+"backing_share": {
+"drums": 0.0792,
+"bass": 0.2718,
+"egtr": 0.649
+},
+"leak_dropped": []
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/15_ElecGtr04DI.wav@30.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.461,
+"ratio_db_median": -10.0,
+"backing_share": {
+"drums": 0.6123,
+"bass": 0.2292,
+"egtr": 0.1036,
+"keys": 0.0549
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@270.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.679,
+"ratio_db_median": -9.2,
+"backing_share": {
+"bass": 0.1295,
+"drums": 0.2496,
+"keys": 0.6209
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/17_ElecGtr05DI.wav@30.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.495,
+"ratio_db_median": -10.3,
+"backing_share": {
+"drums": 0.6115,
+"bass": 0.2289,
+"egtr": 0.1047,
+"keys": 0.0549
+},
+"leak_dropped": []
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/23_ElecGtr4DI.wav@40.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.364,
+"ratio_db_median": -9.1,
+"backing_share": {
+"drums": 0.6364,
+"other": 0.0,
+"bass": 0.0311,
+"egtr": 0.3325
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@45.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.433,
+"ratio_db_median": -9.1,
+"backing_share": {
+"bass": 0.3206,
+"drums": 0.4192,
+"keys": 0.2602
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"telefunken/Renesans - Labor Of Hate/Renesans - Labor Of Hate Take 2/GTR 1 DI_TDP-1.wav@35.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.661,
+"ratio_db_median": -9.2,
+"backing_share": {
+"bass": 0.2527,
+"drums": 0.4972,
+"prerec": 0.2501
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@190.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.406,
+"ratio_db_median": -8.3,
+"backing_share": {
+"bass": 0.273,
+"drums": 0.286,
+"keys": 0.441
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"telefunken/Renesans - Split Brow/Renesans - Split Brow Take 2/GTR 1 DI_TDP-1.wav@200.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.579,
+"ratio_db_median": -10.2,
+"backing_share": {
+"bass": 0.1697,
+"drums": 0.7876,
+"prerec": 0.0427
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/20_ElecGtr04DI.wav@110.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.504,
+"ratio_db_median": -8.7,
+"backing_share": {
+"drums": 0.0603,
+"bass": 0.2068,
+"egtr": 0.7329
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@170.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.545,
+"ratio_db_median": -9.4,
+"backing_share": {
+"bass": 0.1439,
+"drums": 0.2362,
+"keys": 0.6198
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Renesans - Labor Of Hate/Renesans - Labor Of Hate Take 2/GTR 1 DI_TDP-1.wav@215.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.627,
+"ratio_db_median": -8.9,
+"backing_share": {
+"bass": 0.041,
+"drums": 0.0956,
+"prerec": 0.8634
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@10.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.7,
+"ratio_db_median": -8.5,
+"backing_share": {
+"bass": 0.0,
+"drums": 1.0,
+"keys": 0.0
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@70.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.435,
+"ratio_db_median": -9.6,
+"backing_share": {
+"bass": 0.1991,
+"drums": 0.2738,
+"keys": 0.5271
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@310.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.497,
+"ratio_db_median": -9.7,
+"backing_share": {
+"bass": 0.1897,
+"drums": 0.2901,
+"keys": 0.5201
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/15_ElecGtr04DI.wav@40.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.419,
+"ratio_db_median": -9.2,
+"backing_share": {
+"drums": 0.6279,
+"bass": 0.1613,
+"egtr": 0.0746,
+"keys": 0.1362
+},
+"leak_dropped": []
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/23_ElecGtr4DI.wav@60.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 76,
+"contam_median": 0.422,
+"ratio_db_median": -10.5,
+"backing_share": {
+"drums": 0.3291,
+"other": 0.0,
+"bass": 0.0114,
+"egtr": 0.6595
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/09_ElecGtr01DI.wav@80.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.325,
+"ratio_db_median": -10.0,
+"backing_share": {
+"drums": 0.119,
+"bass": 0.3585,
+"egtr": 0.5224
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@355.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.624,
+"ratio_db_median": -9.4,
+"backing_share": {
+"bass": 0.2003,
+"drums": 0.2205,
+"keys": 0.5792
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/14_ElecGtr1c_DI.wav@0.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.227,
+"ratio_db_median": -8.4,
+"backing_share": {
+"drums": 0.3025,
+"bass": 0.62,
+"egtr": 0.0775
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@295.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.327,
+"ratio_db_median": -8.8,
+"backing_share": {
+"bass": 0.1663,
+"drums": 0.0961,
+"keys": 0.7376
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/14_ElecGtr1c_DI.wav@110.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.31,
+"ratio_db_median": -9.4,
+"backing_share": {
+"drums": 0.2173,
+"bass": 0.675,
+"egtr": 0.1077
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@100.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.302,
+"ratio_db_median": -10.0,
+"backing_share": {
+"bass": 0.023,
+"drums": 0.0463,
+"keys": 0.9307
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/18_ElecGtr04DI.wav@150.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.373,
+"ratio_db_median": -9.4,
+"backing_share": {
+"drums": 0.7681,
+"bass": 0.038,
+"egtr": 0.1928,
+"keys": 0.001
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@80.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 76,
+"contam_median": 0.457,
+"ratio_db_median": -10.4,
+"backing_share": {
+"bass": 0.1583,
+"drums": 0.2313,
+"keys": 0.6104
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@65.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.593,
+"ratio_db_median": -10.5,
+"backing_share": {
+"bass": 0.1461,
+"drums": 0.1446,
+"keys": 0.7093
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/17_ElecGtr2c_DI.wav@80.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.433,
+"ratio_db_median": -10.0,
+"backing_share": {
+"drums": 0.2034,
+"bass": 0.4146,
+"egtr": 0.382
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@110.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.415,
+"ratio_db_median": -9.0,
+"backing_share": {
+"bass": 0.3092,
+"drums": 0.4575,
+"keys": 0.2333
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@200.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.45,
+"ratio_db_median": -9.2,
+"backing_share": {
+"bass": 0.3401,
+"drums": 0.4212,
+"keys": 0.2387
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/12_ElecGtr01DI.wav@65.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.633,
+"ratio_db_median": -9.8,
+"backing_share": {
+"drums": 0.6313,
+"bass": 0.0786,
+"egtr": 0.2901,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/19_ElecGtr3b_DI.wav@90.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.461,
+"ratio_db_median": -8.6,
+"backing_share": {
+"drums": 0.2122,
+"bass": 0.4619,
+"egtr": 0.3259
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@95.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.402,
+"ratio_db_median": -8.7,
+"backing_share": {
+"bass": 0.3364,
+"drums": 0.3562,
+"keys": 0.3073
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@40.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 76,
+"contam_median": 0.415,
+"ratio_db_median": -10.4,
+"backing_share": {
+"bass": 0.4286,
+"drums": 0.3625,
+"keys": 0.2089
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/14_ElecGtr02DI.wav@180.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.34,
+"ratio_db_median": -9.4,
+"backing_share": {
+"drums": 0.7529,
+"bass": 0.1231,
+"egtr": 0.124,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/23_ElecGtr4DI.wav@90.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.306,
+"ratio_db_median": -9.8,
+"backing_share": {
+"drums": 0.6006,
+"other": 0.0,
+"bass": 0.0929,
+"egtr": 0.3065
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@180.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.526,
+"ratio_db_median": -9.5,
+"backing_share": {
+"bass": 0.1121,
+"drums": 0.1307,
+"keys": 0.7573
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"telefunken/Renesans - Labor Of Hate/Renesans - Labor Of Hate Take 2/GTR 1 DI_TDP-1.wav@225.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.738,
+"ratio_db_median": -10.1,
+"backing_share": {
+"bass": 0.0313,
+"drums": 0.1522,
+"prerec": 0.8164
+},
+"leak_dropped": []
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/23_ElecGtr4DI.wav@120.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.394,
+"ratio_db_median": -8.9,
+"backing_share": {
+"drums": 0.5767,
+"other": 0.0,
+"bass": 0.0625,
+"egtr": 0.3608
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@375.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.569,
+"ratio_db_median": -10.1,
+"backing_share": {
+"bass": 0.1523,
+"drums": 0.336,
+"keys": 0.5117
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@105.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.161,
+"ratio_db_median": -8.5,
+"backing_share": {
+"bass": 0.1566,
+"drums": 0.3168,
+"keys": 0.5266
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@70.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.118,
+"ratio_db_median": -7.6,
+"backing_share": {
+"bass": 0.1057,
+"drums": 0.0235,
+"keys": 0.8708
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/19_ElecGtr3b_DI.wav@70.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.539,
+"ratio_db_median": -9.1,
+"backing_share": {
+"drums": 0.1496,
+"bass": 0.4034,
+"egtr": 0.447
+},
+"leak_dropped": []
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/16_ElecGtr03DI.wav@140.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.357,
+"ratio_db_median": -10.0,
+"backing_share": {
+"drums": 0.8026,
+"bass": 0.107,
+"egtr": 0.088,
+"keys": 0.0024
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Labor Of Hate/Renesans - Labor Of Hate Take 2/GTR 1 DI_TDP-1.wav@85.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.54,
+"ratio_db_median": -9.3,
+"backing_share": {
+"bass": 0.0944,
+"drums": 0.1306,
+"prerec": 0.775
+},
+"leak_dropped": []
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/21_ElecGtr3DI.wav@90.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.304,
+"ratio_db_median": -8.3,
+"backing_share": {
+"drums": 0.594,
+"other": 0.0,
+"bass": 0.0919,
+"egtr": 0.3141
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@160.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.417,
+"ratio_db_median": -8.5,
+"backing_share": {
+"bass": 0.1646,
+"drums": 0.2636,
+"keys": 0.5718
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/12_ElecGtr01DI.wav@55.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.622,
+"ratio_db_median": -9.5,
+"backing_share": {
+"drums": 0.6259,
+"bass": 0.091,
+"egtr": 0.2831,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/14_ElecGtr02DI.wav@55.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 76,
+"contam_median": 0.486,
+"ratio_db_median": -10.1,
+"backing_share": {
+"drums": 0.6848,
+"bass": 0.0995,
+"egtr": 0.2157,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/HollowGround_IllFate_Full/HollowGround_IllFate_Full/14_ElecGtr1c_DI.wav@40.0": {
+"part": "train",
+"band": "Hollow Ground",
+"examples": 77,
+"contam_median": 0.232,
+"ratio_db_median": -9.6,
+"backing_share": {
+"drums": 0.2145,
+"bass": 0.7086,
+"egtr": 0.0769
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Less Than Nothing/Renesans - Less Than Nothing Take 2/GTR 1 DI_TDP-1.wav@210.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.71,
+"ratio_db_median": -10.5,
+"backing_share": {
+"bass": 0.2139,
+"drums": 0.7163,
+"prerec": 0.0697
+},
+"leak_dropped": [
+"Bass Amp_M82.wav"
+]
+},
+"telefunken/Renesans - Less Than Nothing/Renesans - Less Than Nothing Take 2/GTR 1 DI_TDP-1.wav@80.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.727,
+"ratio_db_median": -8.9,
+"backing_share": {
+"bass": 0.1817,
+"drums": 0.7327,
+"prerec": 0.0855
+},
+"leak_dropped": [
+"Bass Amp_M82.wav"
+]
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/14_ElecGtr02DI.wav@45.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.591,
+"ratio_db_median": -9.5,
+"backing_share": {
+"drums": 0.7479,
+"bass": 0.1374,
+"egtr": 0.1147,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/21_ElecGtr3DI.wav@80.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.35,
+"ratio_db_median": -8.4,
+"backing_share": {
+"drums": 0.5177,
+"other": 0.0,
+"bass": 0.1283,
+"egtr": 0.354
+},
+"leak_dropped": []
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/21_ElecGtr07DI.wav@165.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.358,
+"ratio_db_median": -9.2,
+"backing_share": {
+"drums": 0.7105,
+"bass": 0.2051,
+"egtr": 0.0844,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Renesans - Labor Of Hate/Renesans - Labor Of Hate Take 2/GTR 1 DI_TDP-1.wav@140.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.497,
+"ratio_db_median": -7.8,
+"backing_share": {
+"bass": 0.0817,
+"drums": 0.114,
+"prerec": 0.8043
+},
+"leak_dropped": []
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/23_ElecGtr4DI.wav@50.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.304,
+"ratio_db_median": -9.2,
+"backing_share": {
+"drums": 0.596,
+"other": 0.0,
+"bass": 0.033,
+"egtr": 0.371
+},
+"leak_dropped": []
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/22_ElecGtr04DTDI.wav@130.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.317,
+"ratio_db_median": -10.0,
+"backing_share": {
+"drums": 0.1094,
+"bass": 0.3498,
+"egtr": 0.5409
+},
+"leak_dropped": []
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/13_ElecGtr03DI.wav@60.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.623,
+"ratio_db_median": -10.2,
+"backing_share": {
+"drums": 0.7147,
+"bass": 0.1764,
+"egtr": 0.054,
+"keys": 0.0549
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@100.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.511,
+"ratio_db_median": -10.3,
+"backing_share": {
+"bass": 0.2481,
+"drums": 0.4447,
+"keys": 0.3072
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@315.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.57,
+"ratio_db_median": -9.6,
+"backing_share": {
+"bass": 0.0926,
+"drums": 0.2757,
+"keys": 0.6317
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/12_ElecGtr01DI.wav@235.0": {
+"part": "train",
+"band": "Death Of A Romantic",
+"examples": 77,
+"contam_median": 0.324,
+"ratio_db_median": -8.9,
+"backing_share": {
+"drums": 0.8167,
+"bass": 0.0971,
+"egtr": 0.0861,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@60.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.332,
+"ratio_db_median": -8.5,
+"backing_share": {
+"bass": 0.3517,
+"drums": 0.4197,
+"keys": 0.2286
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Eggy \"Farthest Step\" TELEFUNKEN Live From The Lab/GTR DI.04_01.wav@30.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.526,
+"ratio_db_median": -10.4,
+"backing_share": {
+"bass": 0.3589,
+"drums": 0.3693,
+"keys": 0.2717
+},
+"leak_dropped": [
+"DRUM Kick Out.04_01.wav"
+]
+},
+"telefunken/Renesans - Labor Of Hate/Renesans - Labor Of Hate Take 2/GTR 1 DI_TDP-1.wav@195.0": {
+"part": "train",
+"band": "Renesans",
+"examples": 77,
+"contam_median": 0.706,
+"ratio_db_median": -10.1,
+"backing_share": {
+"bass": 0.1365,
+"drums": 0.2624,
+"prerec": 0.6011
+},
+"leak_dropped": []
+},
+"cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/17_ElecGtr05DI.wav@85.0": {
+"part": "train",
+"band": "Storm Of Particles",
+"examples": 77,
+"contam_median": 0.57,
+"ratio_db_median": -9.2,
+"backing_share": {
+"drums": 0.6852,
+"bass": 0.1293,
+"egtr": 0.0494,
+"keys": 0.1361
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@140.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.32,
+"ratio_db_median": -8.6,
+"backing_share": {
+"bass": 0.173,
+"drums": 0.1562,
+"keys": 0.6708
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"cambridge/AleLak_NossoMundoDeixouDeExistir_Full/09_ElecGtr01DI.wav@70.0": {
+"part": "train",
+"band": "Ale Lak",
+"examples": 77,
+"contam_median": 0.33,
+"ratio_db_median": -10.5,
+"backing_share": {
+"drums": 0.1089,
+"bass": 0.3737,
+"egtr": 0.5173
+},
+"leak_dropped": []
+},
+"cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/23_ElecGtr4DI.wav@0.0": {
+"part": "train",
+"band": "Rebuild The Evil",
+"examples": 77,
+"contam_median": 0.409,
+"ratio_db_median": -9.9,
+"backing_share": {
+"drums": 0.6651,
+"other": 0.0,
+"bass": 0.026,
+"egtr": 0.309
+},
+"leak_dropped": []
+},
+"telefunken/Eggy \"Fragments\" TELEFUNKEN Live From The Lab /GTR DI_01-02.wav@370.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.564,
+"ratio_db_median": -9.3,
+"backing_share": {
+"bass": 0.1569,
+"drums": 0.3298,
+"keys": 0.5133
+},
+"leak_dropped": [
+"DRUM Kick Out_01.wav",
+"VOX GTR_01.wav"
+]
+},
+"telefunken/Eggy \"Bloomlight\" TELEFUNKEN Live From The Lab/GTR DI.04_02.wav@110.0": {
+"part": "train",
+"band": "Eggy",
+"examples": 77,
+"contam_median": 0.526,
+"ratio_db_median": -10.6,
+"backing_share": {
+"bass": 0.0092,
+"drums": 0.0476,
+"keys": 0.9432
+},
+"leak_dropped": [
+"DRUM Kick Out.04_02.wav",
+"VOX GTR.04_02.wav"
+]
+},
+"cambridge/DarkRide_DeadEnemies_Full/27_ElecGtr09DI.wav@310.0": {
+"part": "vsep",
+"band": "Dark Ride",
+"examples": 31,
+"contam_median": 0.669,
+"ratio_db_median": -10.1,
+"backing_share": {
+"drums": 0.1405,
+"bass": 0.1471,
+"acgtr": 0.0,
+"egtr": 0.7124,
+"keys": 0.0,
+"other": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Hikikomori > Love Does/GTR DI_TDP-1.wav@300.0": {
+"part": "vsep",
+"band": "John Morgan Kimock",
+"examples": 32,
+"contam_median": 0.415,
+"ratio_db_median": -10.2,
+"backing_share": {
+"bass": 0.7697,
+"drums": 0.1437,
+"prerec": 0.0866
+},
+"leak_dropped": [
+"GTR KEYS AMP_TF51.wav",
+"Rooms_TF47.wav"
+]
+},
+"telefunken/Swatkins \"Lost & Alive\" TELEFUNKEN Live From The Lab/GTR DI TDP-1_02.wav@65.0": {
+"part": "vsep",
+"band": "Swatkins",
+"examples": 32,
+"contam_median": 0.287,
+"ratio_db_median": -10.2,
+"backing_share": {
+"drums": 0.8745,
+"bass": 0.0495,
+"keys": 0.0761
+},
+"leak_dropped": [
+"VOX Backing M80_02.wav"
+]
+},
+"telefunken/Hikikomori > Love Does/GTR DI_TDP-1.wav@285.0": {
+"part": "vsep",
+"band": "John Morgan Kimock",
+"examples": 31,
+"contam_median": 0.269,
+"ratio_db_median": -9.8,
+"backing_share": {
+"bass": 0.7994,
+"drums": 0.1804,
+"prerec": 0.0202
+},
+"leak_dropped": [
+"GTR KEYS AMP_TF51.wav",
+"Rooms_TF47.wav"
+]
+},
+"cambridge/DarkRide_DeadEnemies_Full/27_ElecGtr09DI.wav@330.0": {
+"part": "vsep",
+"band": "Dark Ride",
+"examples": 32,
+"contam_median": 0.622,
+"ratio_db_median": -9.1,
+"backing_share": {
+"drums": 0.1411,
+"bass": 0.1554,
+"acgtr": 0.0,
+"egtr": 0.7035,
+"keys": 0.0,
+"other": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/AdamBuckley_DragMeDown_Full/31_ElecGtr3DI.wav@115.0": {
+"part": "vsep",
+"band": "Adam Buckley",
+"examples": 31,
+"contam_median": 0.555,
+"ratio_db_median": -10.8,
+"backing_share": {
+"drums": 0.4381,
+"bass": 0.204,
+"acgtr": 0.0225,
+"egtr": 0.3347,
+"keys": 0.0001,
+"other": 0.0006
+},
+"leak_dropped": []
+},
+"cambridge/CnocAnTursa_Bannockburn_Full/CnocAnTursa_Bannockburn_Full/26_ElecGtr3DI.wav@270.0": {
+"part": "vsep",
+"band": "Cnoc An Tursa",
+"examples": 31,
+"contam_median": 0.33,
+"ratio_db_median": -8.5,
+"backing_share": {
+"drums": 0.2425,
+"bass": 0.2621,
+"egtr": 0.4954,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Hikikomori > Love Does/GTR DI_TDP-1.wav@225.0": {
+"part": "vsep",
+"band": "John Morgan Kimock",
+"examples": 31,
+"contam_median": 0.443,
+"ratio_db_median": -9.6,
+"backing_share": {
+"bass": 0.8079,
+"drums": 0.1055,
+"prerec": 0.0867
+},
+"leak_dropped": [
+"GTR KEYS AMP_TF51.wav",
+"Rooms_TF47.wav"
+]
+},
+"cambridge/DarkRide_DeadEnemies_Full/29_ElecGtr11DI.wav@275.0": {
+"part": "vsep",
+"band": "Dark Ride",
+"examples": 31,
+"contam_median": 0.668,
+"ratio_db_median": -10.6,
+"backing_share": {
+"drums": 0.1363,
+"bass": 0.1465,
+"acgtr": 0.0,
+"egtr": 0.7171,
+"keys": 0.0,
+"other": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/DarkRide_DeadEnemies_Full/27_ElecGtr09DI.wav@270.0": {
+"part": "vsep",
+"band": "Dark Ride",
+"examples": 31,
+"contam_median": 0.6,
+"ratio_db_median": -8.5,
+"backing_share": {
+"drums": 0.1516,
+"bass": 0.1358,
+"acgtr": 0.0,
+"egtr": 0.7126,
+"keys": 0.0,
+"other": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Hikikomori > Love Does/GTR DI_TDP-1.wav@215.0": {
+"part": "vsep",
+"band": "John Morgan Kimock",
+"examples": 31,
+"contam_median": 0.422,
+"ratio_db_median": -10.5,
+"backing_share": {
+"bass": 0.8092,
+"drums": 0.1414,
+"prerec": 0.0494
+},
+"leak_dropped": [
+"GTR KEYS AMP_TF51.wav",
+"Rooms_TF47.wav"
+]
+},
+"cambridge/DarkRide_DeadEnemies_Full/28_ElecGtr10DI.wav@275.0": {
+"part": "vsep",
+"band": "Dark Ride",
+"examples": 31,
+"contam_median": 0.62,
+"ratio_db_median": -8.1,
+"backing_share": {
+"drums": 0.1363,
+"bass": 0.1465,
+"acgtr": 0.0,
+"egtr": 0.7171,
+"keys": 0.0,
+"other": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/New One/GTR DI_TDP-1.wav@125.0": {
+"part": "vsep",
+"band": "John Morgan Kimock",
+"examples": 32,
+"contam_median": 0.482,
+"ratio_db_median": -10.1,
+"backing_share": {
+"bass": 0.0698,
+"drums": 0.902,
+"keys": 0.0283
+},
+"leak_dropped": [
+"GTR KEYS AMP_M80.wav",
+"Mono OH_TF51.wav",
+"OH_TF11.wav",
+"Pre Record Tracks.wav",
+"Rooms_TF47.wav"
+]
+},
+"cambridge/AdamBuckley_DragMeDown_Full/31_ElecGtr3DI.wav@65.0": {
+"part": "vsep",
+"band": "Adam Buckley",
+"examples": 31,
+"contam_median": 0.501,
+"ratio_db_median": -10.5,
+"backing_share": {
+"drums": 0.4191,
+"bass": 0.3049,
+"acgtr": 0.0,
+"egtr": 0.2749,
+"keys": 0.0012,
+"other": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/CnocAnTursa_Bannockburn_Full/CnocAnTursa_Bannockburn_Full/29_ElecGtr4DI.wav@270.0": {
+"part": "vsep",
+"band": "Cnoc An Tursa",
+"examples": 31,
+"contam_median": 0.417,
+"ratio_db_median": -10.8,
+"backing_share": {
+"drums": 0.2332,
+"bass": 0.252,
+"egtr": 0.5149,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Hikikomori > Love Does/GTR DI_TDP-1.wav@65.0": {
+"part": "vsep",
+"band": "John Morgan Kimock",
+"examples": 31,
+"contam_median": 0.253,
+"ratio_db_median": -7.1,
+"backing_share": {
+"bass": 0.4974,
+"drums": 0.2852,
+"prerec": 0.2173
+},
+"leak_dropped": [
+"GTR KEYS AMP_TF51.wav",
+"Rooms_TF47.wav"
+]
+},
+"cambridge/CnocAnTursa_Bannockburn_Full/CnocAnTursa_Bannockburn_Full/32_ElecGtr5DI.wav@30.0": {
+"part": "vsep",
+"band": "Cnoc An Tursa",
+"examples": 31,
+"contam_median": 0.359,
+"ratio_db_median": -10.1,
+"backing_share": {
+"drums": 0.2661,
+"bass": 0.2273,
+"egtr": 0.4744,
+"keys": 0.0323
+},
+"leak_dropped": []
+},
+"telefunken/Swatkins \"Lost & Alive\" TELEFUNKEN Live From The Lab/GTR DI TDP-1_02.wav@75.0": {
+"part": "vsep",
+"band": "Swatkins",
+"examples": 31,
+"contam_median": 0.34,
+"ratio_db_median": -10.2,
+"backing_share": {
+"drums": 0.8446,
+"bass": 0.081,
+"keys": 0.0744
+},
+"leak_dropped": [
+"VOX Backing M80_02.wav"
+]
+},
+"cambridge/AdamBuckley_DragMeDown_Full/31_ElecGtr3DI.wav@125.0": {
+"part": "vsep",
+"band": "Adam Buckley",
+"examples": 31,
+"contam_median": 0.537,
+"ratio_db_median": -10.5,
+"backing_share": {
+"drums": 0.4374,
+"bass": 0.2404,
+"acgtr": 0.0192,
+"egtr": 0.303,
+"keys": 0.0,
+"other": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/CnocAnTursa_Bannockburn_Full/CnocAnTursa_Bannockburn_Full/23_ElecGtr2DI.wav@270.0": {
+"part": "vsep",
+"band": "Cnoc An Tursa",
+"examples": 31,
+"contam_median": 0.385,
+"ratio_db_median": -7.8,
+"backing_share": {
+"drums": 0.2333,
+"bass": 0.2522,
+"egtr": 0.5145,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/AdamBuckley_DragMeDown_Full/33_ElecGtr4DI.wav@185.0": {
+"part": "vsep",
+"band": "Adam Buckley",
+"examples": 31,
+"contam_median": 0.567,
+"ratio_db_median": -9.6,
+"backing_share": {
+"drums": 0.3956,
+"bass": 0.2746,
+"acgtr": 0.0218,
+"egtr": 0.3081,
+"keys": 0.0,
+"other": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/CnocAnTursa_Bannockburn_Full/CnocAnTursa_Bannockburn_Full/20_ElecGtr1DI.wav@270.0": {
+"part": "vsep",
+"band": "Cnoc An Tursa",
+"examples": 32,
+"contam_median": 0.411,
+"ratio_db_median": -10.6,
+"backing_share": {
+"drums": 0.2449,
+"bass": 0.2647,
+"egtr": 0.4904,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/AdamBuckley_DragMeDown_Full/27_ElecGtr2DI.wav@165.0": {
+"part": "vsep",
+"band": "Adam Buckley",
+"examples": 31,
+"contam_median": 0.307,
+"ratio_db_median": -7.7,
+"backing_share": {
+"drums": 0.152,
+"bass": 0.4749,
+"acgtr": 0.1056,
+"egtr": 0.2311,
+"keys": 0.0316,
+"other": 0.0048
+},
+"leak_dropped": []
+},
+"cambridge/DarkRide_DeadEnemies_Full/30_ElecGtr12DI.wav@285.0": {
+"part": "vsep",
+"band": "Dark Ride",
+"examples": 32,
+"contam_median": 0.6,
+"ratio_db_median": -9.2,
+"backing_share": {
+"drums": 0.1538,
+"bass": 0.1544,
+"acgtr": 0.0,
+"egtr": 0.6918,
+"keys": 0.0,
+"other": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Hikikomori > Love Does/GTR DI_TDP-1.wav@315.0": {
+"part": "vsep",
+"band": "John Morgan Kimock",
+"examples": 32,
+"contam_median": 0.247,
+"ratio_db_median": -6.9,
+"backing_share": {
+"bass": 0.7146,
+"drums": 0.1565,
+"prerec": 0.129
+},
+"leak_dropped": [
+"GTR KEYS AMP_TF51.wav",
+"Rooms_TF47.wav"
+]
+},
+"cambridge/AdamBuckley_DragMeDown_Full/31_ElecGtr3DI.wav@180.0": {
+"part": "vsep",
+"band": "Adam Buckley",
+"examples": 31,
+"contam_median": 0.498,
+"ratio_db_median": -10.6,
+"backing_share": {
+"drums": 0.4256,
+"bass": 0.2281,
+"acgtr": 0.0208,
+"egtr": 0.2955,
+"keys": 0.0002,
+"other": 0.0299
+},
+"leak_dropped": []
+},
+"cambridge/DarkRide_DeadEnemies_Full/28_ElecGtr10DI.wav@310.0": {
+"part": "vsep",
+"band": "Dark Ride",
+"examples": 31,
+"contam_median": 0.693,
+"ratio_db_median": -10.5,
+"backing_share": {
+"drums": 0.1405,
+"bass": 0.1471,
+"acgtr": 0.0,
+"egtr": 0.7124,
+"keys": 0.0,
+"other": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Honey - Swatkins TELEFUNKEN Live From The Lab/GTR DI TDP-1.wav@150.0": {
+"part": "vsep",
+"band": "Swatkins",
+"examples": 31,
+"contam_median": 0.232,
+"ratio_db_median": -8.2,
+"backing_share": {
+"drums": 0.5758,
+"keys": 0.1057,
+"bass": 0.3185
+},
+"leak_dropped": [
+"VOX Backing M80.wav"
+]
+},
+"cambridge/DarkRide_DeadEnemies_Full/27_ElecGtr09DI.wav@290.0": {
+"part": "vsep",
+"band": "Dark Ride",
+"examples": 31,
+"contam_median": 0.569,
+"ratio_db_median": -7.9,
+"backing_share": {
+"drums": 0.1516,
+"bass": 0.1493,
+"acgtr": 0.0,
+"egtr": 0.6992,
+"keys": 0.0,
+"other": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/AdamBuckley_DragMeDown_Full/29_ElecGtr2DTDI.wav@185.0": {
+"part": "vsep",
+"band": "Adam Buckley",
+"examples": 31,
+"contam_median": 0.564,
+"ratio_db_median": -9.9,
+"backing_share": {
+"drums": 0.3518,
+"bass": 0.2442,
+"acgtr": 0.0194,
+"egtr": 0.3846,
+"keys": 0.0,
+"other": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Hikikomori > Love Does/GTR DI_TDP-1.wav@245.0": {
+"part": "vsep",
+"band": "John Morgan Kimock",
+"examples": 31,
+"contam_median": 0.298,
+"ratio_db_median": -7.6,
+"backing_share": {
+"bass": 0.7718,
+"drums": 0.1553,
+"prerec": 0.0729
+},
+"leak_dropped": [
+"GTR KEYS AMP_TF51.wav",
+"Rooms_TF47.wav"
+]
+},
+"telefunken/New One/GTR DI_TDP-1.wav@135.0": {
+"part": "vsep",
+"band": "John Morgan Kimock",
+"examples": 32,
+"contam_median": 0.558,
+"ratio_db_median": -10.5,
+"backing_share": {
+"bass": 0.0956,
+"drums": 0.8906,
+"keys": 0.0138
+},
+"leak_dropped": [
+"GTR KEYS AMP_M80.wav",
+"Mono OH_TF51.wav",
+"OH_TF11.wav",
+"Pre Record Tracks.wav",
+"Rooms_TF47.wav"
+]
+},
+"telefunken/Hikikomori > Love Does/GTR DI_TDP-1.wav@235.0": {
+"part": "vsep",
+"band": "John Morgan Kimock",
+"examples": 31,
+"contam_median": 0.711,
+"ratio_db_median": -10.8,
+"backing_share": {
+"bass": 0.6315,
+"drums": 0.2169,
+"prerec": 0.1517
+},
+"leak_dropped": [
+"GTR KEYS AMP_TF51.wav",
+"Rooms_TF47.wav"
+]
+},
+"cambridge/AdamBuckley_DragMeDown_Full/29_ElecGtr2DTDI.wav@165.0": {
+"part": "vsep",
+"band": "Adam Buckley",
+"examples": 31,
+"contam_median": 0.282,
+"ratio_db_median": -9.8,
+"backing_share": {
+"drums": 0.1519,
+"bass": 0.4744,
+"acgtr": 0.1055,
+"egtr": 0.2318,
+"keys": 0.0316,
+"other": 0.0048
+},
+"leak_dropped": []
+},
+"telefunken/Honey - Swatkins TELEFUNKEN Live From The Lab/GTR DI TDP-1.wav@50.0": {
+"part": "vsep",
+"band": "Swatkins",
+"examples": 31,
+"contam_median": 0.225,
+"ratio_db_median": -8.3,
+"backing_share": {
+"drums": 0.5212,
+"keys": 0.0979,
+"bass": 0.3809
+},
+"leak_dropped": [
+"VOX Backing M80.wav"
+]
+},
+"cambridge/CnocAnTursa_Bannockburn_Full/CnocAnTursa_Bannockburn_Full/35_ElecGtr6D.wav@80.0": {
+"part": "vsep",
+"band": "Cnoc An Tursa",
+"examples": 31,
+"contam_median": 0.361,
+"ratio_db_median": -8.6,
+"backing_share": {
+"drums": 0.2543,
+"bass": 0.2221,
+"egtr": 0.4908,
+"keys": 0.0328
+},
+"leak_dropped": []
+},
+"cambridge/DarkRide_DeadEnemies_Full/29_ElecGtr11DI.wav@295.0": {
+"part": "vsep",
+"band": "Dark Ride",
+"examples": 32,
+"contam_median": 0.714,
+"ratio_db_median": -10.7,
+"backing_share": {
+"drums": 0.145,
+"bass": 0.1547,
+"acgtr": 0.0,
+"egtr": 0.7004,
+"keys": 0.0,
+"other": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/DarkRide_DeadEnemies_Full/32_ElecGtr14DI.wav@325.0": {
+"part": "vsep",
+"band": "Dark Ride",
+"examples": 31,
+"contam_median": 0.626,
+"ratio_db_median": -7.9,
+"backing_share": {
+"drums": 0.1443,
+"bass": 0.143,
+"acgtr": 0.0,
+"egtr": 0.7127,
+"keys": 0.0,
+"other": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/CnocAnTursa_Bannockburn_Full/CnocAnTursa_Bannockburn_Full/35_ElecGtr6D.wav@30.0": {
+"part": "vsep",
+"band": "Cnoc An Tursa",
+"examples": 31,
+"contam_median": 0.351,
+"ratio_db_median": -10.4,
+"backing_share": {
+"drums": 0.2647,
+"bass": 0.2261,
+"egtr": 0.4771,
+"keys": 0.0321
+},
+"leak_dropped": []
+},
+"cambridge/AdamBuckley_DragMeDown_Full/31_ElecGtr3DI.wav@15.0": {
+"part": "vsep",
+"band": "Adam Buckley",
+"examples": 32,
+"contam_median": 0.487,
+"ratio_db_median": -9.8,
+"backing_share": {
+"drums": 0.3889,
+"bass": 0.2605,
+"acgtr": 0.0,
+"egtr": 0.341,
+"keys": 0.0069,
+"other": 0.0026
+},
+"leak_dropped": []
+},
+"cambridge/CnocAnTursa_Bannockburn_Full/CnocAnTursa_Bannockburn_Full/32_ElecGtr5DI.wav@80.0": {
+"part": "vsep",
+"band": "Cnoc An Tursa",
+"examples": 32,
+"contam_median": 0.366,
+"ratio_db_median": -9.7,
+"backing_share": {
+"drums": 0.2541,
+"bass": 0.2218,
+"egtr": 0.4913,
+"keys": 0.0328
+},
+"leak_dropped": []
+},
+"telefunken/Honey - Swatkins TELEFUNKEN Live From The Lab/GTR DI TDP-1.wav@110.0": {
+"part": "vsep",
+"band": "Swatkins",
+"examples": 31,
+"contam_median": 0.242,
+"ratio_db_median": -8.8,
+"backing_share": {
+"drums": 0.5444,
+"keys": 0.0957,
+"bass": 0.3599
+},
+"leak_dropped": [
+"VOX Backing M80.wav"
+]
+},
+"cambridge/DarkRide_DeadEnemies_Full/28_ElecGtr10DI.wav@295.0": {
+"part": "vsep",
+"band": "Dark Ride",
+"examples": 31,
+"contam_median": 0.733,
+"ratio_db_median": -9.4,
+"backing_share": {
+"drums": 0.145,
+"bass": 0.1547,
+"acgtr": 0.0,
+"egtr": 0.7004,
+"keys": 0.0,
+"other": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Honey - Swatkins TELEFUNKEN Live From The Lab/GTR DI TDP-1.wav@95.0": {
+"part": "vsep",
+"band": "Swatkins",
+"examples": 32,
+"contam_median": 0.127,
+"ratio_db_median": -8.7,
+"backing_share": {
+"drums": 0.7224,
+"keys": 0.0304,
+"bass": 0.2472
+},
+"leak_dropped": [
+"VOX Backing M80.wav"
+]
+},
+"cambridge/CnocAnTursa_Bannockburn_Full/CnocAnTursa_Bannockburn_Full/35_ElecGtr6D.wav@175.0": {
+"part": "vsep",
+"band": "Cnoc An Tursa",
+"examples": 31,
+"contam_median": 0.364,
+"ratio_db_median": -10.2,
+"backing_share": {
+"drums": 0.2704,
+"bass": 0.2244,
+"egtr": 0.5053,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/AdamBuckley_DragMeDown_Full/31_ElecGtr3DI.wav@55.0": {
+"part": "vsep",
+"band": "Adam Buckley",
+"examples": 32,
+"contam_median": 0.571,
+"ratio_db_median": -10.7,
+"backing_share": {
+"drums": 0.4125,
+"bass": 0.2728,
+"acgtr": 0.0,
+"egtr": 0.2994,
+"keys": 0.0135,
+"other": 0.0017
+},
+"leak_dropped": []
+},
+"cambridge/AdamBuckley_DragMeDown_Full/35_ElecGtr5DI.wav@100.0": {
+"part": "vsep",
+"band": "Adam Buckley",
+"examples": 31,
+"contam_median": 0.453,
+"ratio_db_median": -10.8,
+"backing_share": {
+"drums": 0.4922,
+"bass": 0.4439,
+"acgtr": 0.0,
+"egtr": 0.0285,
+"keys": 0.0345,
+"other": 0.0009
+},
+"leak_dropped": []
+},
+"cambridge/AdamBuckley_DragMeDown_Full/29_ElecGtr2DTDI.wav@175.0": {
+"part": "vsep",
+"band": "Adam Buckley",
+"examples": 31,
+"contam_median": 0.509,
+"ratio_db_median": -7.4,
+"backing_share": {
+"drums": 0.3335,
+"bass": 0.2046,
+"acgtr": 0.0275,
+"egtr": 0.2753,
+"keys": 0.0069,
+"other": 0.1522
+},
+"leak_dropped": []
+},
+"cambridge/DarkRide_DeadEnemies_Full/31_ElecGtr13DI.wav@285.0": {
+"part": "vsep",
+"band": "Dark Ride",
+"examples": 32,
+"contam_median": 0.608,
+"ratio_db_median": -8.3,
+"backing_share": {
+"drums": 0.1538,
+"bass": 0.1544,
+"acgtr": 0.0,
+"egtr": 0.6918,
+"keys": 0.0,
+"other": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Swatkins \"Lost & Alive\" TELEFUNKEN Live From The Lab/GTR DI TDP-1_02.wav@30.0": {
+"part": "vsep",
+"band": "Swatkins",
+"examples": 31,
+"contam_median": 0.368,
+"ratio_db_median": -10.2,
+"backing_share": {
+"drums": 0.8422,
+"bass": 0.0774,
+"keys": 0.0804
+},
+"leak_dropped": [
+"VOX Backing M80_02.wav"
+]
+},
+"cambridge/CnocAnTursa_Bannockburn_Full/CnocAnTursa_Bannockburn_Full/32_ElecGtr5DI.wav@175.0": {
+"part": "vsep",
+"band": "Cnoc An Tursa",
+"examples": 32,
+"contam_median": 0.329,
+"ratio_db_median": -7.4,
+"backing_share": {
+"drums": 0.2691,
+"bass": 0.2233,
+"egtr": 0.5076,
+"keys": 0.0
+},
+"leak_dropped": []
+},
+"cambridge/AdamBuckley_DragMeDown_Full/29_ElecGtr2DTDI.wav@15.0": {
+"part": "vsep",
+"band": "Adam Buckley",
+"examples": 31,
+"contam_median": 0.631,
+"ratio_db_median": -10.5,
+"backing_share": {
+"drums": 0.3448,
+"bass": 0.231,
+"acgtr": 0.0,
+"egtr": 0.4157,
+"keys": 0.0062,
+"other": 0.0023
+},
+"leak_dropped": []
+},
+"cambridge/DarkRide_DeadEnemies_Full/29_ElecGtr11DI.wav@310.0": {
+"part": "vsep",
+"band": "Dark Ride",
+"examples": 31,
+"contam_median": 0.677,
+"ratio_db_median": -10.5,
+"backing_share": {
+"drums": 0.1405,
+"bass": 0.1471,
+"acgtr": 0.0,
+"egtr": 0.7124,
+"keys": 0.0,
+"other": 0.0
+},
+"leak_dropped": []
+},
+"telefunken/Hikikomori > Love Does/GTR DI_TDP-1.wav@255.0": {
+"part": "vsep",
+"band": "John Morgan Kimock",
+"examples": 31,
+"contam_median": 0.37,
+"ratio_db_median": -10.6,
+"backing_share": {
+"bass": 0.8092,
+"drums": 0.1273,
+"prerec": 0.0635
+},
+"leak_dropped": [
+"GTR KEYS AMP_TF51.wav",
+"Rooms_TF47.wav"
+]
+},
+"telefunken/Hikikomori > Love Does/GTR DI_TDP-1.wav@265.0": {
+"part": "vsep",
+"band": "John Morgan Kimock",
+"examples": 31,
+"contam_median": 0.246,
+"ratio_db_median": -9.1,
+"backing_share": {
+"bass": 0.8246,
+"drums": 0.1196,
+"prerec": 0.0558
+},
+"leak_dropped": [
+"GTR KEYS AMP_TF51.wav",
+"Rooms_TF47.wav"
+]
+}
+}

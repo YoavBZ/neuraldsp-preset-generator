@@ -20,8 +20,8 @@ use a reviewed trusted set, and dirty tracks are excluded, not flagged.
 - **Step 0 ran on 2026-10-23** (the injection check passed). Its result needs a decision from the
   user: see the [decision memo](#decision-memo-2026-10-23-the-target-takes-own-bleed). Nothing past
   step 0 has run, apart from the candidate list and the guitar-double pool rebuild it switches on.
-- **Inputs read:** the [data-quality audit](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/272)
-  (draft PR #272) and its evidence; [the plan](direct-model-stems-plan.md) (steps 3–4,
+- **Inputs read:** the [data-quality audit](data-quality-audit.md)
+  and its [evidence](audits/data-quality-2026-10-22/); [the plan](direct-model-stems-plan.md) (steps 3–4,
   amendments 2 and 5–7); [step 3–4 results](direct-model-stems-results.md);
   [pilot results](direct-model-stems-pilot-results.md); `learn/pretrain_set.py` and
   `learn/direct_stems.py`.
@@ -880,6 +880,6 @@ plan. Fixes 2–7 make the code match the plan, or fail closed where it did not.
 - [Lyrics transcription with separation](https://arxiv.org/abs/2506.15514), 2025: separator artefacts
   in downstream models.
 
-**Project:** the [audit](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/272),
+**Project:** the [audit](data-quality-audit.md),
 [bleed audit](audits/bleed-2026-10-16/README.md), [step 3–4 results](direct-model-stems-results.md),
 [pilot results](direct-model-stems-pilot-results.md).
