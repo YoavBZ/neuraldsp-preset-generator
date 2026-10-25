@@ -756,3 +756,8 @@ def test_a_note_from_another_browser_is_flagged_not_silent(tmp_path):
     e = V.ear_answers([phone, laptop], [], reg)
     assert e["cleared"] == [{"id": "ear-y", "verdict": "processed", "file": str(phone), "by": str(laptop),
                              "note": "pick noise?"}]
+
+
+def test_click_tracks_never_join_a_backing():
+    assert V.NON_MUSICAL.search("BAND CLICK.wav") and V.NON_MUSICAL.search("Metronome.wav")
+    assert not V.NON_MUSICAL.search("Kick Trigger.wav") and not V.NON_MUSICAL.search("Pre Rec.L.wav")
