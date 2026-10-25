@@ -249,3 +249,120 @@ def test_the_song_blind_constant_joins_t2s_v_real_contrasts():
     c = G.const_from_json(T.constant_arm(rows)["constant"])[("pr12", "clean")]
     assert c["cont"][SM.CONT.index("pr12Amp/pr12Volume")] == pytest.approx(0.4)
     assert c["mics"][SM.CAT.index("cabParameters/rightMicType")] == 3
+
+
+# --- the T1 audit's fixes (2026-10-25) ----------------------------------------------------------------------------
+
+ADAM = ["22_AcousticGtr1.wav", "25_ElecGtr1.wav", "26_ElecGtr2.wav", "27_ElecGtr2DI.wav", "28_ElecGtr2DT.wav",
+        "29_ElecGtr2DTDI.wav", "30_ElecGtr3.wav", "31_ElecGtr3DI.wav", "36_Synth1.wav", "18_BassDI.wav",
+        "99_ElecGtr9.wav"]
+
+
+def test_the_sessions_other_guitar_parts_include_parts_with_no_di():
+    mix = [f for f in ADAM if not f.endswith("DI.wav") and f != "99_ElecGtr9.wav"]   # 99 is not in the mix list
+    parts = T.session_guitar_parts(ADAM, mix, "s/31_ElecGtr3DI.wav", own=["30_ElecGtr3.wav"])
+    assert parts == {"acousticgtr1": ["22_AcousticGtr1.wav"], "elecgtr1": ["25_ElecGtr1.wav"],
+                     "elecgtr2": ["26_ElecGtr2.wav", "27_ElecGtr2DI.wav"],
+                     "elecgtr2dt": ["28_ElecGtr2DT.wav", "29_ElecGtr2DTDI.wav"]}
+    assert "elecgtr9" in T.session_guitar_parts(ADAM, None, "s/31_ElecGtr3DI.wav")     # no mix list: every file
+
+
+def test_an_active_guitar_that_cannot_be_rendered_leaves_the_example_out():
+    parts = {"elecgtr1": ["25_ElecGtr1.wav"], "elecgtr2": ["26_ElecGtr2.wav", "27_ElecGtr2DI.wav"],
+             "elecgtr4": ["32_ElecGtr4.wav", "33_ElecGtr4DI.wav"], "elecgtr5": ["34_ElecGtr5.wav", "35_ElecGtr5DI.wav"]}
+    act = {"25_ElecGtr1.wav": 1.0, "26_ElecGtr2.wav": 0.8, "27_ElecGtr2DI.wav": 0.78, "32_ElecGtr4.wav": 1.0,
+           "33_ElecGtr4DI.wav": 0.02, "34_ElecGtr5.wav": 0.0, "35_ElecGtr5DI.wav": 0.0}
+    ren = {"elecgtr2": None, "elecgtr4": "window excluded", "elecgtr5": "window silent"}
+    b = T.blocked_parts(parts, act, ren)
+    # ElecGtr1 has no DI; ElecGtr4's amp track plays while its window is excluded (the amp track counts); ElecGtr2 can
+    # be rendered and ElecGtr5 is silent
+    assert [(x["part"], x["why"]) for x in b] == [("elecgtr1", "no DI"), ("elecgtr4", "window excluded")]
+    assert [x["part"] for x in T.blocked_parts(parts, act, ren, scope="di")] == ["elecgtr4"]
+    assert T.blocked_parts(parts, {k: 0.05 for k in act}, ren) == []
+    assert T.LEFT_OUT_ACTIVE == "an active guitar cannot be rendered"
+
+
+def test_left_out_examples_are_counted_with_their_reason(monkeypatch, capsys):
+    blocked = {"a@55.0": [{"part": "elecgtr1", "activity": 1.0, "why": "no DI"}], "a@15.0": []}
+    monkeypatch.setattr(T, "section_blocked", lambda ctx, sid, *a, **k: blocked[sid])
+    rows = [{"i": 1, "section": "a@55.0", "band": "X"}, {"i": 2, "section": "a@55.0", "band": "X"},
+            {"i": 3, "section": "a@15.0", "band": "X"}]
+    kept, left = T.leave_out_blocked(None, rows, set(), {}, set(), {})
+    assert [r["i"] for r in kept] == [3]
+    assert left == [{"section": "a@55.0", "band": "X", "reason": T.LEFT_OUT_ACTIVE, "examples": 2,
+                     "guitars": blocked["a@55.0"]}]
+    T.print_left_out(left)
+    assert "left out: 2 examples in 1 sections" in capsys.readouterr().out
+
+
+def test_section_blocked_reads_amp_tracks_and_t0s_windows(tmp_path):
+    np = pytest.importorskip("numpy")
+    sf = pytest.importorskip("soundfile")
+    import types
+
+    rng = np.random.default_rng(5)
+    play = (0.2 * rng.standard_normal(48000 * 40)).astype(np.float32)
+    rest = np.concatenate([play[:48000 * 20], 1e-5 * rng.standard_normal(48000 * 20)]).astype(np.float32)
+    for name, x in (("31_ElecGtr3DI.wav", play), ("25_ElecGtr1.wav", play), ("26_ElecGtr2.wav", play),
+                    ("27_ElecGtr2DI.wav", play), ("32_ElecGtr4.wav", rest), ("33_ElecGtr4DI.wav", rest)):
+        sf.write(str(tmp_path / name), x, 48000)
+    inv = {f"s/{n}": {"path": str(tmp_path / n), "session_dir": str(tmp_path), "own": []}
+           for n in ("31_ElecGtr3DI.wav", "27_ElecGtr2DI.wav", "33_ElecGtr4DI.wav")}
+    ctx = types.SimpleNamespace(sections={"s/31_ElecGtr3DI.wav@25.0": {"di": "s/31_ElecGtr3DI.wav", "start_s": 25.0},
+                                          "s/31_ElecGtr3DI.wav@5.0": {"di": "s/31_ElecGtr3DI.wav", "start_s": 5.0}},
+                                inv=inv)
+    ver = {"s/27_ElecGtr2DI.wav", "s/33_ElecGtr4DI.wav"}
+    wins = {"s/27_ElecGtr2DI.wav": {"s/27_ElecGtr2DI.wav@25.0": "usable", "s/27_ElecGtr2DI.wav@5.0": "usable"},
+            "s/33_ElecGtr4DI.wav": {"s/33_ElecGtr4DI.wav@25.0": "silent", "s/33_ElecGtr4DI.wav@5.0": "excluded"}}
+    b25 = T.section_blocked(ctx, "s/31_ElecGtr3DI.wav@25.0", ver, wins, set(), {})
+    assert [(x["part"], x["why"]) for x in b25] == [("elecgtr1", "no DI")]        # ElecGtr4 rests at 25 s
+    b5 = T.section_blocked(ctx, "s/31_ElecGtr3DI.wav@5.0", ver, wins, set(), {})
+    assert [(x["part"], x["why"]) for x in b5] == [("elecgtr1", "no DI"), ("elecgtr4", "window excluded")]
+    b5di = T.section_blocked(ctx, "s/31_ElecGtr3DI.wav@5.0", ver, wins, {"s/27_ElecGtr2DI.wav@5.0"}, {}, scope="di")
+    assert [(x["part"], x["why"]) for x in b5di] == [("elecgtr2", "window in T0's unusable sections"),
+                                                      ("elecgtr4", "window excluded")]
+
+
+def test_a_near_silent_render_is_refused_not_lifted():
+    assert T.RENDER_FLOOR_LUFS == -50.0
+    assert T.near_silent(-50.5) == T.NEAR_SILENT == "near-silent render (gate or low output)"
+    assert T.near_silent(None) == T.NEAR_SILENT and T.near_silent(-49.0) is None
+    rows = {1: {"others": [{"di": "a", "render_lufs": -30.0}, {"di": "b", "render_lufs": -62.0}]},
+            2: {"others": [{"di": "a", "left_out": "silent render"}]},
+            3: {"others": [{"di": "a", "render_lufs": -46.0}, {"di": "c", "left_out": "no level"}]},
+            4: {"refused": T.NEAR_SILENT, "others": [{"di": "a", "refused": T.NEAR_SILENT, "render_lufs": None}]}}
+    assert T.rule2_examples(rows) == [1, 2, 4]
+    src = __import__("inspect").getsource(T.cmd_render)                 # the render path refuses through the rows
+    assert "near_silent(ly)" in src and '"left_out": "silent render"' not in src
+
+
+def test_t1_reads_section_clustered_under_three_bands_and_keys_on_it():
+    band_iv, sec_iv = (1.63, 0.12, 3.14, 2), (1.62, -0.31, 3.56, 26)            # T1 as run (2026-10-25)
+    label, iv = T.primary_interval(band_iv, sec_iv, 2)
+    assert label.startswith("section-clustered") and iv == sec_iv
+    assert T.primary_interval(band_iv, sec_iv, 3) == ("band-clustered", band_iv)
+    assert T.t1_reading(iv).startswith("no difference shown")
+    assert T.t1_reading((1.0, 0.2, 1.8, 26)).startswith("K's stems are cleaner")
+    assert T.t1_reading((-1.0, -1.8, -0.2, 26)).startswith("K's stems are less clean")
+    assert T.t1_reading(None) == "incomplete"
+
+
+def test_t1_summary_reports_medians_tails_and_bands():
+    per = {"K": {1: 5.0, 2: -1.0, 3: 4.0, 4: 2.0, 5: 3.0, 6: -2.0},
+           "V_sep": {1: 1.0, 2: 1.0, 3: 3.0, 4: 2.0, 5: 3.5, 6: 1.0}}
+    band_of = {1: "A", 2: "A", 3: "A", 4: "B", 5: "B", 6: "B"}
+    section_of = {1: "a1", 2: "a1", 3: "a2", 4: "b1", 5: "b2", 6: "b2"}
+    s = T.t1_summary(per, band_of, section_of, set(per["K"]))
+    assert s["examples"] == 6 and s["bands"] == ["A", "B"] and s["sections"] == 4
+    assert s["primary"].startswith("section-clustered")
+    assert s["K - V_sep mel SNR (primary)"] == s["K - V_sep mel SNR (section-clustered)"]
+    assert s["K - V_sep median"] == pytest.approx(-0.25) and s["K - V_sep mean"] == pytest.approx(-0.5 / 6)
+    assert s["per arm"]["K"]["share below 0 dB"] == pytest.approx(2 / 6)
+    assert s["per arm"]["V_sep"]["share below 0 dB"] == 0.0
+    assert s["per band"]["A"] == {"n": 3, "mean": pytest.approx(1.0), "median": pytest.approx(1.0)}
+    assert s["reading"] == T.t1_reading(s["K - V_sep mel SNR (primary)"])
+
+
+def test_subset_is_only_for_t1_read():
+    with pytest.raises(SystemExit):
+        T.main(["plan", "--subset", "rules"])

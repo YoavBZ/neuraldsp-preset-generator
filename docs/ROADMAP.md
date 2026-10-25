@@ -267,8 +267,16 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      separations; the plan budgets about 3.5–5.5k renders and 1.7k separations for T0–T1. The read
      is descriptive: K cleaner than V_sep is the cleaning gain the plan expects, not a realism
      verdict, and no realism lever is coded or approved, so T1 changes nothing in T2 by itself.
-     *Started 2026-10-25 08:29 on 812 examples from Adam Buckley and Dark Ride (about 1.8k renders
-     plus priming, 812 separations); running.*
+     *Ran 2026-10-25 on 812 examples from Adam Buckley and Dark Ride; audited
+     ([T1 audited](trusted-data-t0-design.md#t1-audited-2026-10-25)).* It read +1.63 dB on a 1-df band interval
+     (section-clustered [−0.31, +3.56]); 63 examples whose other guitars could not be rendered carried about +1.2 dB,
+     and near-silent renders were lifted by up to +43 dB. **No cleaning gain is established and no realism lever
+     follows.** Fixed in code: a section where a session guitar plays but cannot be rendered is left out of every
+     arm, a near-silent render (below −50 LUFS) refuses its example, and under 3 bands the section-clustered interval
+     is primary. That rule leaves out all 812 T1 examples (parts with no DI play in every section) and cuts T2's
+     candidates to 3,955 in 3 bands, so **T1 and T2 wait for a user decision:** keep the rule and shrink T2, add the
+     session's own amp tracks for parts with no DI (decision 4's other option), or accept those missing guitars as
+     a known bias. T1 must be re-planned in any case (T0's lists changed, PR #289).
    - (c) **T2, the 5k pilot:** SES (the stored stems; the cleaning plan's step 2) against SYN
      (self-built backings of the same examples, labels and draws), 2 seeds each; primary SYN − SES
      on V-real. A tie picks the self-built set (the user, 2026-10-23). If SES reads better beyond a
@@ -664,3 +672,4 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-24 | User decisions (ML session): Cnoc An Tursa stays out of K (a side check at most); SYN-E dropped from T2 until a clean-class DI source passes the checks. The ear pages were rebuilt to the 202 live cards (4 parts, nothing to skip; old pages kept in `old-v1/`); Blue Manic's mix preview downloaded | [design](trusted-data-t0-design.md) |
 | 2026-10-25 | T0's ear done (the user heard all 202 cards; one `lists` run with the sitting-1 export): targets 17 verified, 42 excluded; DIs 46 verified, 13 excluded; V-real 10 parts in 7 bands (3 clean parts in 2 bands); knob ceiling 2's 7 parts verified; T1's K is Adam Buckley and Dark Ride (Kimock's and Swatkins' 4 DIs all heard processed); training 27 DIs in 8 bands, 181 sections, only 1 clean-class and 1 crunch; stems 167 usable in 14 sessions, 5 sessions held. Let's Dance ElecGtr4 (user, 2026-10-24): the leak is in the DI, the target is excluded and the DI is not clean. Open before T3 (user): clean-style DIs from new sources. T1 started the same day | [outcome](trusted-data-t0-design.md#t0-outcome-2026-10-25) |
 | 2026-10-25 | Backings and spot-checks never use click, metronome or talkback tracks (`NON_MUSICAL` in `verify_tracks`, PR #289): Split Brow's BAND CLICK had passed the stem scan; usable stems 167 → 166, nothing else moved | [design](trusted-data-t0-design.md) |
+| 2026-10-25 | T1 audited: K − V_sep +1.63 dB rested on a 1-df band interval (section-clustered [−0.31, +3.56]); 63 examples missing other guitars carried about +1.2 dB (without them +0.42, [−0.89, +1.72]), and near-silent renders were lifted up to +43 dB. No cleaning gain established; no realism lever follows. Fixed (zero renders): an active guitar that cannot be rendered leaves its example out of every arm, a render below −50 LUFS refuses its example, under 3 bands the section-clustered interval is primary. Re-read: the rule leaves out all 812 (parts with no DI play everywhere); on parts with a DI only, 452 read +1.67 [−0.15, +3.49]. T2 under the rule: 3,955 candidates in 3 bands; a user decision before T1 or T2 runs again | [design](trusted-data-t0-design.md#t1-audited-2026-10-25) |

@@ -1,6 +1,7 @@
 # Trusted data, T0 to T2: the code, the calibration and the launch (design)
 
-**Status (2026-10-25):** the ear has answered T0's queue and T1 is running; see
+**Status (2026-10-25):** the ear has answered T0's queue and T1 ran; an audit found no cleaning gain established, and
+its fixes leave every T1 example out until a user decision: see [T1 audited (2026-10-25)](#t1-audited-2026-10-25) and
 [T0 outcome (2026-10-25)](#t0-outcome-2026-10-25). *Before the ear (2026-10-23):* T0 ran on the user's Mac (calibration OK; the lists and the ear queue; see the ROADMAP and the
 ledger's outcome). T1 and T2 have not run. After T0 and before the ear, a multi-agent review changed the import of the
 ear's answers and several rules, at zero renders: [the review before the ear](#the-review-before-the-ear-2026-10-23)
@@ -264,12 +265,13 @@ re-derived prior is for T3's new examples (the plan's (c)).
 - on DIs and sections T0 trusts;
 - each with R_in's stored truth render.
 
-**Other guitars** respect T0's unusable sections.
+**Other guitars** respect T0's unusable sections. *Since 2026-10-25:* a section where a session guitar plays but cannot
+be rendered is left out, and a near-silent other-guitar render refuses its example ([T1 audited](#t1-audited-2026-10-25)).
 
 **The read:**
 - K − V_sep mel-grid stem SNR, paired on the same examples and draws.
-- Band-clustered with two or more bands. With one band (K may be Adam Buckley alone), the
-  section-clustered interval is primary.
+- Band-clustered with three or more bands. With one or two bands (K is Adam Buckley and Dark Ride), the
+  section-clustered interval is primary (*amended 2026-10-25:* two bands, not one; [T1 audited](#t1-audited-2026-10-25)).
 - V-real's stored crop stems beside, by ratio.
 
 **Plans carry T0's lists' sha256 (`t0/verified.json`).** `render`, `build`, `t1-read`, `train`, `fit` and `e-on-k`
@@ -593,4 +595,77 @@ backing), GOAT (access requested); Jen Hartswick & Nick Cassarino is reserved fo
 user decision before T3.
 
 **T1 started** on 2026-10-25 at 08:29: 812 examples from Adam Buckley and Dark Ride, about 1.8k renders plus priming and
-812 separations. It is running.
+812 separations. It ran; see the next section.
+
+## T1 audited (2026-10-25)
+
+**What T1 read** (812 examples, Adam Buckley and Dark Ride, 26 sections; `t1/read.json`, log `logs/t1-read.log`):
+K − V_sep mel stem SNR **+1.63 dB**, band-clustered [+0.12, +3.14] on 2 bands (1 df), section-clustered [−0.31, +3.56].
+The code printed "K's stems are cleaner than V_sep's", keyed on the 1-df band interval.
+
+**The independent audit (2026-10-25)** found:
+- **Missing guitars carry most of it.** 63 examples (Adam Buckley "Drag Me Down", the ElecGtr3 DI sections at 55 s and
+  65 s) had no other guitar in K's backing, although other guitars play there: their T0 windows are excluded, so they
+  were silently left out, while V_sep's real backing has them. K − V_sep is about +16 dB on them, about +1.2 dB of the
+  +1.63. Without them: **+0.42 dB** (median +0.08), section-clustered [−0.89, +1.72]; Adam Buckley −1.31.
+- **Near-silent renders were lifted.** 65 other-guitar renders (in 63 examples) read below −45 LUFS (down to −69) and
+  were scaled up by as much as +43 dB to their level; 14 renders were silent and dropped (one example lost all its
+  other guitars).
+- **K's tail is fatter:** 18.6% of K's stems read below 0 dB mel SNR, against 4.4% of V_sep's.
+
+**The outcome:**
+- **No cleaning gain is established.** With the missing guitars out, the interval holds 0.
+- **No realism lever follows.** The gap to V-real at matched ratio is within noise and changes sign between readings.
+  T2's SYN arm is otherwise unchanged.
+
+**The fixes** (`learn/trusted_data.py`; tests in `tests/test_trusted_data.py`). Whatever leaves an example out leaves it
+out of every arm, so K, SES and SYN stay paired:
+1. **Plan time: an active guitar that cannot be rendered leaves the example out** (`LEFT_OUT_ACTIVE`, "an active
+   guitar cannot be rendered"). For each guitar part of the section's session other than the target's
+   (`session_guitar_parts`: non-DI tracks from the inventory's mix list, the stored backing's source; DIs always;
+   acoustic guitars included), the part plays when any of its tracks, amp track or DI, plays on at least 10% of the
+   section's frames against its own file's level (`section_activity`, as other guitars are picked). It cannot be
+   rendered when it has no DI, its DI is not verified, or the DI's window is not usable in T0's lists. `plan` records
+   the left-out sections with the guitars and reasons (`left_out`), counts and prints them, and for T2 removes them
+   before any draw.
+2. **Render time: a near-silent render is refused, never lifted.** An other guitar's render below
+   `RENDER_FLOOR_LUFS` (−50.0), or silent, refuses the example through the existing refusal path ("near-silent render
+   (gate or low output)"), so it drops for every arm. The example's remaining renders are skipped.
+3. **The reading.** With fewer than 3 bands (`MIN_BANDS`) the primary interval is section-clustered (the one-band rule,
+   extended: 2 bands give 1 df). `t1-read` prints medians beside means, the share of stems below 0 dB per arm and the
+   per-band difference, and keys the reading on the primary interval ("no difference shown" when it holds 0). E on K
+   takes the same rule. T2's report reads V-real at 7 bands, so its rule is unchanged.
+4. **A zero-render re-read:** `t1-read --subset rules` reads the stored rows less the examples rules 1 and 2 would
+   have left out, under today's lists; `--subset rules-di` is a diagnostic that applies rule 1 only to parts that
+   have a DI. Both write nothing (logs `logs/t1-read-audit-subset-rules[-di]-2026-10-25.log`).
+
+**The re-read (2026-10-25, zero renders):**
+- **Rule 1 leaves out all 812 examples (26 sections).** Every K section has a playing guitar with no DI in V_sep's
+  stored backing: Adam Buckley's ElecGtr1 (amp track only) and acoustic guitars, Dark Ride's ElecGtr02, 02DT, 08 and
+  08DT (amp tracks only). 781 examples have such a part; 314 have an active part whose DI window T0 excluded (the 63
+  above among them). Under rules 1 and 2 as coded there is nothing to read.
+- **Rule 2 leaves out 61 examples:** 48 with a render below −50 LUFS, 14 with a silent render (one has both).
+- **The diagnostic (`rules-di`: rule 1 on parts with a DI only, plus rule 2):** 360 left out (rule 1: 314 in 10
+  sections; rule 2: 61), **452 read** (Adam Buckley 142, Dark Ride 310; 16 sections).
+
+  | | K − V_sep (dB) |
+  |---|---|
+  | mean, median | +1.80, +0.65 |
+  | section-clustered (primary) | +1.67 [−0.15, +3.49], 16 sections |
+  | band-clustered | +1.25 [−8.11, +10.61], 2 bands |
+  | Adam Buckley | −0.23 (median −0.31), n 142 |
+  | Dark Ride | +2.73 (median +1.12), n 310 |
+
+  Below 0 dB: K 10.6%, V_sep 3.1% (K mean +3.85, median +2.56; V_sep +2.05, +1.57). Reading: no difference shown.
+  Dark Ride's +2.73 still has its 4 amp-only guitars in V_sep's backing and not in K's, the bias rule 1 removes.
+
+**What this means for T2:** under rule 1 as coded, T2's candidates fall from 8,722 examples in 6 bands (114
+sections) to 3,955 in 3 bands (Ale Lak, Death Of A Romantic, Storm Of Particles; 52 sections), short of the 5k pilot
+and its early-stopping set; Hollow Ground, Rebuild The Evil and The Long Wait lose every section, on parts with no DI.
+Restricted to parts with a DI, 7,956 in 6 bands remain. Self-built mixes cannot hold a guitar that has no DI (decision
+4: other guitars are DI renders only), so T2 needs a user decision first: keep rule 1 and shrink T2, add the
+session's own amp tracks for parts with no DI (decision 4's other option, verified studio amp tracks), or accept the
+missing guitars for parts with no DI and read them as a known bias.
+
+**T1 must be re-planned before any further T1 run:** T0's lists' hash changed after T1 (Split Brow's click track only,
+PR #289), so `render`, `build` and `t1-read` refuse T1's stored plan (`--subset` reads it with a warning).

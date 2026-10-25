@@ -8,7 +8,7 @@ reads T0's lists (`learn/verify_tracks.py lists`): only verified DIs, targets an
     $MAIN -u -m learn.trusted_data render --stage t1|t2 --shard k/3   # renders: T2's targets, every other guitar
     $MSST -m learn.trusted_data build --stage t1|t2 --device mps --order asc    # self-built mixes + X-LANCE stems
     $MSST -m learn.trusted_data build --stage t1|t2 --device cpu --order desc   # optional second worker
-    $MAIN -m learn.trusted_data t1-read                            # T1: paired K - V_sep stem SNR; V-real beside
+    $MAIN -m learn.trusted_data t1-read [--subset rules|rules-di]  # T1: paired K - V_sep stem SNR; V-real beside
     $TORCH_PY -m learn.trusted_data train --arm SES|SYN|SYN-E --seed 20261042|20261043     # T2: 6 runs
     $TORCH_PY -m learn.trusted_data fit                            # per arm: the constant and the pull (early stopping)
     $TORCH_PY -m learn.trusted_data e-on-k                         # E on K per arm (zero renders)
@@ -25,7 +25,10 @@ reads T0's lists (`learn/verify_tracks.py lists`): only verified DIs, targets an
   same-part rule by pitch in the section) takes the target's settings. A part whose amp tracks are silent in the
   section is left out. Each sits at its own amp track's LUFS in the section; a
   DI-only part at the median LUFS of the session's playing guitar amp tracks (failing that, of its stems). Parts
-  with no DI are left out (decision 4: other guitars are DI renders only).
+  with no DI are not rendered (decision 4: other guitars are DI renders only). *T1 audit (2026-10-25):* a section
+  where a session guitar plays (amp track or DI) but cannot be rendered (no DI, a DI T0 does not verify, or a window
+  it does not mark usable) is left out of every arm at plan time, and an other guitar's render below
+  RENDER_FLOOR_LUFS (or silent) refuses its example, never lifted to its level.
 - **Other instruments:** the session's mix tracks that pass T0's stem scan, summed at the session's own balance;
   vocal tracks only when the example's vocal draw says so.
 - **Pan:** a declared prior (other guitars uniform in [-1, 1]; a DT double opposite the target; stems centred),
@@ -38,8 +41,10 @@ reads T0's lists (`learn/verify_tracks.py lists`): only verified DIs, targets an
 **T1** (no training): K is R_in's examples outside John Morgan Kimock and Swatkins (set by the ML session: they stay out
 of K) whose DIs pass T0, rebuilt with self-built backings and separated by X-LANCE. The read: per example the stem's
 SNR on the stored mel grid (levels aligned by the median offset on the render's active cells), K against V_sep's
-stored stem of the same example and draws, paired, 90% band-clustered (section-clustered beside); the audit's
-contamination beside; V-real's stored crop stems against their amp tracks beside, by guitar-to-backing ratio.
+stored stem of the same example and draws, paired, 90% band-clustered with at least 3 bands, else section-clustered
+(primary; the other beside), means with medians and the share of stems below 0 dB; the audit's contamination beside;
+V-real's stored crop stems against their amp tracks beside, by guitar-to-backing ratio. `t1-read --subset` re-reads
+the stored rows under the T1 audit's rules at zero renders.
 
 **T2** (the pilot): 5k trusted-pool examples (seed 20261099, stratified by band) outside an early-stopping set of
 about 5% of the trusted sections, at least one per band (seed 20261100, at most 1,000 examples). Arms: SES, the stored
@@ -100,6 +105,11 @@ K_OUT_BANDS = V.K_OUT_BANDS
 DISK_GUARD_GB = 31.0
 PAN_PRIOR = {"other_guitar": "uniform [-1, 1]", "dt_double": "opposite the target", "target": "uniform [-1, 1]",
              "stems": "centre"}
+# The T1 audit (2026-10-25): a self-built mix never drops an active guitar or lifts a near-silent render
+LEFT_OUT_ACTIVE = "an active guitar cannot be rendered"   # plan time: a session guitar plays here, no usable DI
+RENDER_FLOOR_LUFS = -50.0              # render time: an other guitar's render below this is refused, never lifted
+NEAR_SILENT = "near-silent render (gate or low output)"
+MIN_BANDS = 3                          # fewer bands: the section-clustered interval is primary (2 bands = 1 df)
 
 
 # --- pure: the recipe ----------------------------------------------------------------------------------------
@@ -297,6 +307,127 @@ def union_refused(*sets):
     return out
 
 
+# --- pure: the T1 audit's fixes (2026-10-25) ----------------------------------------------------------------------
+
+def session_guitar_parts(files, mix, target_di, own=(), is_di=None):
+    """{part key: [track]}: the session's guitar tracks (`verify_tracks.guitar_sources`, acoustic ones included)
+    other than the target's own part, grouped by `verify_tracks.guitar_part_key`. Non-DI tracks count only when they
+    are in the inventory's mix list (the stored session backing's source), when there is one; DIs always count (the
+    stored backing never holds a DI, but a self-built mix renders one). files: the session's file names."""
+    if is_di is None:
+        from learn import clean_di as CD
+
+        is_di = CD.is_guitar_di
+    tname = pathlib.PurePosixPath(target_di).name
+    tkey = V.guitar_part_key(tname)
+    mixset = set(mix or [])
+    out = {}
+    for f in V.guitar_sources(files):
+        if f == tname or f in set(own) or V.NON_MUSICAL.search(f):
+            continue
+        if not is_di(f) and mixset and f not in mixset:
+            continue
+        k = V.guitar_part_key(f)
+        if k != tkey:
+            out.setdefault(k, []).append(f)
+    return {k: sorted(v) for k, v in sorted(out.items())}
+
+
+def blocked_parts(parts, activity, renderable, active_min=ACTIVE_MIN, scope="all"):
+    """The T1 audit's rule 1: the other guitars that play in the section but cannot be rendered. parts: {part:
+    [track]}; activity: {track: share of the section's frames playing against the track's own file's level}; a part
+    plays when any of its tracks (amp track or DI) reaches active_min. renderable: {part: None if a DI of the part can
+    be rendered here, else why not ('no DI', 'DI not verified', 'window excluded', ...)}; a part missing from it has
+    no DI. scope 'di' (a diagnostic, not the rule) counts only parts that have a DI.
+    -> [{"part", "activity", "why"}], sorted by part."""
+    out = []
+    for p, tracks in sorted(parts.items()):
+        why = renderable.get(p, "no DI")
+        if why is None or (scope == "di" and why == "no DI"):
+            continue
+        a = max((activity.get(t) or 0.0) for t in tracks) if tracks else 0.0
+        if a >= active_min:
+            out.append({"part": p, "activity": round(a, 3), "why": why})
+    return out
+
+
+def near_silent(render_lufs, floor=RENDER_FLOOR_LUFS):
+    """The T1 audit's rule 2: an other guitar's render below the floor (or silent: None) is refused, never lifted to
+    its level. -> the refusal reason, or None."""
+    if render_lufs is None or render_lufs < floor:
+        return NEAR_SILENT
+    return None
+
+
+def rule2_examples(render_rows, floor=RENDER_FLOOR_LUFS):
+    """Examples of stored render rows that rule 2 would have refused: an other guitar rendered below the floor, or
+    left out as a silent render (the old path). -> sorted ids."""
+    out = set()
+    for i, r in render_rows.items():
+        for o in r.get("others") or []:
+            if o.get("left_out") == "silent render" or o.get("refused") == NEAR_SILENT or (
+                    o.get("render_lufs") is not None and o["render_lufs"] < floor):
+                out.add(i)
+    return sorted(out)
+
+
+def primary_interval(band_iv, sec_iv, n_bands, min_bands=MIN_BANDS):
+    """(label, interval): band-clustered with at least min_bands bands; else section-clustered (with 2 bands a
+    band-clustered t interval has 1 df: the design's one-band rule, extended by the T1 audit)."""
+    if n_bands >= min_bands:
+        return "band-clustered", band_iv
+    return f"section-clustered (fewer than {min_bands} bands)", sec_iv
+
+
+def holds_zero(iv):
+    return iv is None or iv[0] is None or not (iv[1] > 0 or iv[2] < 0)
+
+
+def t1_reading(iv):
+    """T1's reading, keyed on the primary interval (descriptive; no pass bar)."""
+    if not iv or iv[0] is None:
+        return "incomplete"
+    if holds_zero(iv):
+        return "no difference shown between K's and V_sep's stems"
+    return ("K's stems are cleaner than V_sep's (the expected cleaning gain); realism: see matched_ratio"
+            if iv[1] > 0 else "K's stems are less clean than V_sep's")
+
+
+def share_below(values, thr=0.0):
+    v = [x for x in values if x is not None]
+    return sum(1 for x in v if x < thr) / len(v) if v else None
+
+
+def t1_summary(per, band_of, section_of, keep, min_bands=MIN_BANDS):
+    """T1's K - V_sep summary on `keep`: per arm the mean, median and share of stems below 0 dB; the paired
+    difference's mean and median, band-clustered and section-clustered intervals, per band, the primary interval
+    and the reading. per: {"K": {i: dB}, "V_sep": {i: dB}}."""
+    from learn import data_cleaning as DC
+    from learn import direct_stems as DS
+
+    keep = sorted(set(keep) & set(per["K"]) & set(per["V_sep"]))
+    bands = sorted({band_of[i] for i in keep})
+    diff = {i: per["K"][i] - per["V_sep"][i] for i in keep}
+    band_iv = DS.paired(per["K"], per["V_sep"], band_of, keep) if keep else None
+    sec_iv = DC.section_interval(per["K"], per["V_sep"], section_of, keep) if keep else None
+    label, prim = primary_interval(band_iv, sec_iv, len(bands), min_bands)
+    by_band = {}
+    for i in keep:
+        by_band.setdefault(band_of[i], []).append(diff[i])
+    return {"examples": len(keep), "bands": bands, "sections": len({section_of[i] for i in keep}), "primary": label,
+            "K - V_sep mel SNR (primary)": prim,
+            "K - V_sep mel SNR (paired, band-clustered)": band_iv,
+            "K - V_sep mel SNR (section-clustered)": sec_iv,
+            "K - V_sep mean": statistics.fmean(diff.values()) if keep else None,
+            "K - V_sep median": statistics.median(diff.values()) if keep else None,
+            "per arm": {n: {"mean": statistics.fmean(per[n][i] for i in keep) if keep else None,
+                            "median": statistics.median(per[n][i] for i in keep) if keep else None,
+                            "share below 0 dB": share_below([per[n][i] for i in keep])} for n in ("K", "V_sep")},
+            "per band": {b: {"n": len(v), "mean": statistics.fmean(v), "median": statistics.median(v)}
+                         for b, v in sorted(by_band.items())},
+            "reading": t1_reading(prim)}
+
+
 # --- I/O ---------------------------------------------------------------------------------------------------------
 
 _save, _load = V._save, V._load
@@ -420,6 +551,90 @@ def same_part_doubles(target_path, others, start_s, target_part):
     return out
 
 
+def section_blocked(ctx, sid, verified, dis_windows, bad_sections, act_cache, scope="all"):
+    """Rule 1 of the T1 audit on one section (zero renders): the session's other guitars that play here (any of
+    their tracks, amp track or DI, against its own file's level, `section_activity`) but have no DI that can be
+    rendered here (no DI, a DI T0 does not verify, or a window T0 marks other than usable). -> [{"part",
+    "activity", "why"}]; an example of the section is left out when it is not empty."""
+    sec = ctx.sections[sid]
+    rec = ctx.inv[sec["di"]]
+    sd = pathlib.Path(rec["session_dir"])
+    start = float(sec["start_s"])
+    key = ("blocked", sid, scope)
+    if key in act_cache:
+        return act_cache[key]
+    names = sorted(f.name for f in sd.glob("*.wav"))
+    parts = session_guitar_parts(names, rec.get("mix"), sec["di"], rec.get("own") or [])
+    inv_of = {pathlib.Path(r["path"]).name: d for d, r in ctx.inv.items()
+              if r.get("session_dir") == rec["session_dir"]}
+    from learn import clean_di as CD
+
+    renderable = {}
+    for p, tracks in parts.items():
+        whys = []
+        for t in tracks:
+            if not CD.is_guitar_di(t):
+                continue
+            d = inv_of.get(t)
+            if d is None:
+                whys.append("DI not in the inventory")
+                continue
+            if d not in verified:
+                whys.append("DI not verified")
+                continue
+            w = f"{d}@{start:.1f}"
+            st = (dis_windows.get(d) or {}).get(w)
+            if st == "usable" and w not in bad_sections:
+                whys.append(None)
+            elif st == "usable":
+                whys.append("window in T0's unusable sections")
+            else:
+                whys.append(f"window {st or 'not measured'}")
+        if whys:
+            renderable[p] = None if None in whys else "; ".join(sorted(set(whys)))
+    files = act_cache.setdefault("files", {})
+    activity = {}
+    for tracks in parts.values():
+        for t in tracks:
+            k = ("track", str(sd / t), start)
+            if k not in act_cache:
+                act_cache[k] = section_activity(sd / t, start, files=files)
+            activity[t] = act_cache[k]
+    act_cache[key] = blocked_parts(parts, activity, renderable, scope=scope)
+    return act_cache[key]
+
+
+def leave_out_blocked(ctx, rows, verified, dis_windows, bad_sections, act_cache, scope="all"):
+    """(kept rows, left-out records): rows whose section has an active guitar that cannot be rendered are left out
+    of every arm, with the reason and the guitars recorded."""
+    kept, out = [], {}
+    for r in rows:
+        b = section_blocked(ctx, r["section"], verified, dis_windows, bad_sections, act_cache, scope)
+        if b:
+            o = out.setdefault(r["section"], {"section": r["section"], "band": r["band"], "reason": LEFT_OUT_ACTIVE,
+                                              "guitars": b, "examples": 0})
+            o["examples"] += 1
+        else:
+            kept.append(r)
+    return kept, [out[s] for s in sorted(out)]
+
+
+def print_left_out(left):
+    n = sum(x["examples"] for x in left)
+    if not n:
+        print(f"left out: none ({LEFT_OUT_ACTIVE})", flush=True)
+        return
+    bands = {}
+    why = {}
+    for x in left:
+        bands[x["band"]] = bands.get(x["band"], 0) + x["examples"]
+        for w in {g["why"] for g in x["guitars"]}:
+            why[w] = why.get(w, 0) + x["examples"]
+    print(f"left out: {n} examples in {len(left)} sections ({LEFT_OUT_ACTIVE}); by band "
+          + ", ".join(f"{b} {k}" for b, k in sorted(bands.items())) + "; examples per blocking reason "
+          + ", ".join(f"{w} {k}" for w, k in sorted(why.items())), flush=True)
+
+
 def session_dis(ctx, sd, verified):
     """The session's trusted inventory DIs."""
     return sorted(d for d, r in ctx.inv.items() if r.get("session_dir") == sd and d in verified)
@@ -533,6 +748,7 @@ def cmd_plan(args):
                 and ctx.sections[r["section"]]["di"] in k_dis and r["section"] not in bad_secs
                 and r["i"] in truth and not truth[r["i"]].get("refused")]
         rows = rows[:args.limit or None]
+        rows, left = leave_out_blocked(ctx, rows, verified, wins, bad_secs, act)     # K and V_sep both drop them
         recipes = [example_recipe(ctx, r, verified, tr["stems"], act, bad_secs, wins) for r in rows]
         rec = {"plan": PLAN, "stage": "t1", "smoke": bool(args.smoke), "k_out_bands": list(K_OUT_BANDS),
                "examples": recipes, "renders_others": sum(len(x["others"]) for x in recipes),
@@ -542,6 +758,7 @@ def cmd_plan(args):
         bad_secs = unusable(tr)
         cand = [r for i, r in sorted(ses.items()) if r["band"] != EGGY and ctx.sections[r["section"]]["di"] in verified
                 and r["section"] not in bad_secs]
+        cand, left = leave_out_blocked(ctx, cand, verified, wins, bad_secs, act)  # before any draw: out of every arm
         by_band = {}
         for r in cand:
             by_band.setdefault(r["band"], set()).add(r["section"])
@@ -557,6 +774,8 @@ def cmd_plan(args):
         excluded_secs = unusable(tr)
         eggy = [r for r in ctx.pool if r["band"] == EGGY and not r.get("early_stop")
                 and ctx.sections[r["section"]]["di"] in verified and r["section"] not in excluded_secs]
+        eggy, left_e = leave_out_blocked(ctx, eggy, verified, wins, bad_secs, act)
+        left = sorted(left + left_e, key=lambda x: x["section"])
         try:
             kept, out, eg = eggy_swap([r["i"] for r in pilot], eggy)
             syn_e = {"kept": kept, "swapped_out": out, "eggy": eg}
@@ -574,6 +793,9 @@ def cmd_plan(args):
                "examples": recipes, "renders_targets": len(recipes),
                "renders_others": sum(len(x["others"]) for x in recipes), "separations": len(recipes)}
     rec["pan_prior"] = PAN_PRIOR
+    rec["left_out"] = left
+    rec["left_out_examples"] = sum(x["examples"] for x in left)
+    print_left_out(left)
     rec["lists_sha256"] = lists_sha(root)
     stale = stale_rows(_load(plan_path(root, args.stage)), rec, rows_of(root, args.stage, "render"))
     if stale:
@@ -724,6 +946,8 @@ def cmd_render(args):
                 jobs.sort(key=lambda j: (j[0], j[1], j[2]))
                 di_cache = {}
                 for di_id, amp, i, o, sel, st in jobs:
+                    if rows[i].get("refused"):                   # refused by an earlier render: no more renders
+                        continue
                     lv, src = levels[di_id]
                     if lv is None:
                         rows[i]["others"].append({"di": di_id, "left_out": "no level"})
@@ -733,8 +957,10 @@ def cmd_render(args):
                     y = primer.render((f"{sid}|{di_id}", amp), di_cache[di_id], sel, st)
                     y = (y.mean(axis=1) if y.ndim == 2 else y)[trim0:trim1]
                     ly = lufs_or_none(y)
-                    if ly is None:
-                        rows[i]["others"].append({"di": di_id, "left_out": "silent render"})
+                    why = near_silent(ly)                        # rule 2 (T1 audit): refused, never lifted
+                    if why:
+                        rows[i]["refused"] = why
+                        rows[i]["others"].append({"di": di_id, "amp": amp, "render_lufs": ly, "refused": why})
                         continue
                     gain = 10 ** ((lv - ly) / 20) * pan_fold(o["pan"])
                     acc[i] += y * gain
@@ -892,10 +1118,27 @@ def cmd_build(args):
 
 # --- T1: the paired stem-quality check (zero renders) -------------------------------------------------------------
 
+def t1_subset(ctx, root, plan, tr, scope="all"):
+    """The zero-render re-read's subset (`t1-read --subset`): the plan's examples less those rule 1 (an active guitar
+    that cannot be rendered, under today's lists) and rule 2 (any stored other-guitar render below the floor, or
+    silent) would have left out. -> (kept ids, {"rule 1": n, "rule 2": n, "either": n})."""
+    ids = [x["i"] for x in plan["examples"]]
+    rows = [{"i": x["i"], "section": x["section"], "band": x["band"]} for x in plan["examples"]]
+    _, left = leave_out_blocked(ctx, rows, verified_dis(tr), windows_of(tr), unusable(tr), {}, scope)
+    r1 = {x["i"] for x in rows if x["section"] in {o["section"] for o in left}}
+    r2 = set(rule2_examples(rows_of(root, "t1", "render")))
+    gone = r1 | (r2 & set(ids))
+    return [i for i in ids if i not in gone], {"rule 1": len(r1), "rule 2": len(r2 & set(ids)), "either": len(gone),
+                                               "rule 1 sections": left}
+
+
 def cmd_t1_read(args):
     """T1's read: per K example the stem's mel SNR (and contamination) against its truth render, K's self-built stem
-    against V_sep's stored stem of the same example and draws (paired, band-clustered; section-clustered beside);
-    by guitar-to-backing ratio; V-real's stored crop stems against their amp tracks beside."""
+    against V_sep's stored stem of the same example and draws (paired; band-clustered with at least MIN_BANDS bands,
+    else section-clustered, primary; the other beside); means and medians, the share of stems below 0 dB per arm, per
+    band and by guitar-to-backing ratio; V-real's stored crop stems against their amp tracks beside.
+    --subset rules|rules-di: the T1 audit's zero-render re-read of the stored rows under rules 1 and 2 (rules-di, a
+    diagnostic: rule 1 on parts that have a DI only). It writes nothing and reads stale lists with a warning."""
     import numpy as np
 
     from learn import data_cleaning as DC
@@ -905,21 +1148,34 @@ def cmd_t1_read(args):
 
     V.require_real(args)
     root = V.out_root(args)
+    subset = getattr(args, "subset", None)
     plan = _load(plan_path(root, "t1"))
     if plan:
-        check_lists(root, plan, args.smoke)
+        if subset and plan.get("lists_sha256") != lists_sha(root):
+            print("WARNING: T0's lists changed since T1's plan (read-only re-read; re-plan before any T1 run)",
+                  flush=True)
+        else:
+            check_lists(root, plan, args.smoke)
     built = {i: r for i, r in rows_of(root, "t1", "build").items() if not r.get("refused")}
     allrows = rows_of(root, "t1", "build")
     if not plan or (any(x["i"] not in allrows for x in plan["examples"]) and not args.smoke):
         raise SystemExit("K is not fully built (run render and build --stage t1)")
     truth = G.gate_rows(DS.ROOT / "gate", "truth")
     tr = load_lists(root, args.smoke)
+    only = None
+    if subset:
+        only, counts = t1_subset(DS.Ctx(quiet=True), root, plan, tr, "di" if subset == "rules-di" else "all")
+        print(f"subset {subset}: {len(plan['examples'])} planned; rule 1 leaves out {counts['rule 1']} "
+              f"({LEFT_OUT_ACTIVE}), rule 2 {counts['rule 2']} ({NEAR_SILENT}, floor {RENDER_FLOOR_LUFS} LUFS), "
+              f"either {counts['either']}; {len(only)} kept", flush=True)
+        print_left_out(counts["rule 1 sections"])
+        only = set(only)
     per = {"K": {}, "V_sep": {}}
     cont = {"K": {}, "V_sep": {}}
     band_of, section_of, ratio_of = {}, {}, {}
     for x in plan["examples"]:
         i = x["i"]
-        if i not in built:
+        if i not in built or (only is not None and i not in only):
             continue
         t = truth[i]
         y = G.read_flac(G.truth_path(DS.ROOT / "gate", i), t["scale"], t["sha256"])
@@ -931,18 +1187,13 @@ def cmd_t1_read(args):
             cont[name][i] = statistics.fmean([contamination(d[f"s{h}"], ref[h]) for h in "AB"])
         band_of[i], section_of[i], ratio_of[i] = x["band"], x["section"], x["draw"]["ratio_db"]
     keep = set(per["K"]) & set(per["V_sep"])
-    bands = sorted({band_of[i] for i in keep})
-    band_iv = DS.paired(per["K"], per["V_sep"], band_of, keep)
-    sec_iv = DC.section_interval(per["K"], per["V_sep"], section_of, keep)
-    primary = band_iv if len(bands) >= 2 else sec_iv       # one band (K is Adam Buckley alone): a band interval is +-inf
-    res = {"examples": len(keep), "bands": bands,
-           "primary": "band-clustered" if len(bands) >= 2 else "section-clustered (one band)",
-           "K - V_sep mel SNR (primary)": primary,
-           "K - V_sep mel SNR (paired, band-clustered)": band_iv,
-           "K - V_sep mel SNR (section-clustered)": sec_iv,
-           "K - V_sep contamination (paired)": DS.paired(cont["K"], cont["V_sep"], band_of, keep),
-           "levels": {n: PS.band_t_interval(PS.by_band({i: per[n][i] for i in keep}, band_of)) for n in per},
-           "by_ratio": {}}
+    if not keep:
+        print("T1: no examples to read")
+        return
+    res = t1_summary(per, band_of, section_of, keep)
+    res["K - V_sep contamination (paired)"] = DS.paired(cont["K"], cont["V_sep"], band_of, keep)
+    res["levels"] = {n: PS.band_t_interval(PS.by_band({i: per[n][i] for i in keep}, band_of)) for n in per}
+    res["by_ratio"] = {}
     for i in keep:
         b = ratio_bin(ratio_of[i])
         res["by_ratio"].setdefault(b, {"n": 0, "K": [], "V_sep": []})
@@ -980,13 +1231,27 @@ def cmd_t1_read(args):
     res["v_real"] = vr
     # descriptive (ROADMAP (b)): K cleaner than V_sep is the cleaning gain the plan expects (no other take, no
     # original-tone bleed), not a realism verdict; realism is K against V-real at matched ratio, beside. No lever is
-    # coded or approved, so T1 changes nothing in T2 by itself
-    res["reading"] = ("K's stems are cleaner than V_sep's (the expected cleaning gain); realism: see matched_ratio"
-                      if (primary or (0, 0, 0, 0))[1] > 0 else "K's stems are not shown cleaner than V_sep's")
+    # coded or approved, so T1 changes nothing in T2 by itself. The reading keys on the primary interval only.
+    print(json.dumps({k: v for k, v in res.items() if k != "v_real"}, indent=1, default=float))
+    pa = res["per arm"]
+    print(f"K - V_sep: mean {res['K - V_sep mean']:+.2f} dB, median {res['K - V_sep median']:+.2f} dB; primary "
+          f"{res['primary']} {fmt_iv(res['K - V_sep mel SNR (primary)'])}; band-clustered "
+          f"{fmt_iv(res['K - V_sep mel SNR (paired, band-clustered)'])}; n {res['examples']} in {len(res['bands'])} "
+          f"bands, {res['sections']} sections")
+    print("stems below 0 dB: " + ", ".join(f"{n} {100 * pa[n]['share below 0 dB']:.1f}% (mean {pa[n]['mean']:+.2f}, "
+                                           f"median {pa[n]['median']:+.2f})" for n in ("K", "V_sep")))
+    if subset:
+        print(f"T1 (subset {subset}, nothing written): {res['reading']}")
+        return
     out = {"plan": PLAN, "stage": "T1", "smoke": bool(args.smoke), "results": res, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     _save(stage_root(root, "t1") / "read.json", out)
-    print(json.dumps({k: v for k, v in res.items() if k != "v_real"}, indent=1, default=float))
     print(f"T1: {res['reading']}")
+
+
+def fmt_iv(iv):
+    if not iv or iv[0] is None:
+        return "n/a"
+    return f"{iv[0]:+.2f} [{iv[1]:+.2f}, {iv[2]:+.2f}] ({iv[3]} clusters)"
 
 
 # --- T2: training, fitting, readouts ------------------------------------------------------------------------------
@@ -1277,9 +1542,11 @@ def cmd_e_on_k(args):
            "SYN - SES": DS.paired(per["SYN"], per["SES"], band_of, ids),
            "SYN-E - SYN": DS.paired(per["SYN-E"], per["SYN"], band_of, ids) if "SYN-E" in per else None,
            "per arm - its constant": {a: DS.paired(per[a], consts[a], band_of, ids) for a in arms}}
-    if len({band_of[i] for i in ids}) < 2:            # one band: a band interval is +-inf (T1's fallback, as there)
+    nb = len({band_of[i] for i in ids})
+    res["primary"] = primary_interval(None, None, nb)[0]
+    if nb < MIN_BANDS:                  # 1-2 bands: a band interval is +-inf or 1 df (T1's rule, as there): primary
         section_of = {x["i"]: x["section"] for x in k_plan["examples"]}
-        res["section-clustered (one band)"] = {
+        res[f"section-clustered (fewer than {MIN_BANDS} bands: primary)"] = {
             "SYN - SES": DC.section_interval(per["SYN"], per["SES"], section_of, ids),
             "per arm - its constant": {a: DC.section_interval(per[a], consts[a], section_of, ids) for a in arms}}
     _save(stage_root(root, "t2") / "e-on-k.json", {"plan": PLAN, "results": res, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
@@ -1513,7 +1780,11 @@ def main(argv=None):
     ap.add_argument("--out", default=None)
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--subset", choices=("rules", "rules-di"), default=None,
+                    help="t1-read only: the T1 audit's zero-render re-read under rules 1-2 (writes nothing)")
     args = ap.parse_args(argv)
+    if args.subset and args.cmd != "t1-read":
+        raise SystemExit("--subset is for t1-read")
     if args.limit and not args.smoke:
         raise SystemExit("--limit is for smoke runs (with --smoke and --out)")
     {"plan": cmd_plan, "render": cmd_render, "build": cmd_build, "t1-read": cmd_t1_read, "train": cmd_train,

@@ -301,4 +301,11 @@ Facts that changed after the approval, and what each means for the plan. None is
     its clip is heard clean;
   - every DI is heard before it counts;
   - the song-blind per-class constant is one more V-real arm at T2, read beside the primary (e)/(f).
-
+- **2026-10-25, T1 ran and was audited** ([design](trusted-data-t0-design.md#t1-audited-2026-10-25)): K − V_sep +1.63 dB
+  rested on a 1-df band interval (section-clustered [−0.31, +3.56]); 63 examples whose other guitars could not be
+  rendered carried about +1.2 dB of it, and near-silent renders were lifted by up to +43 dB. No cleaning gain is
+  established, and no realism lever follows; T2's SYN arm is otherwise unchanged. Fixed in code: an example whose
+  section has a playing guitar that cannot be rendered is left out of every arm, a near-silent render (below −50 LUFS)
+  refuses its example, and with fewer than 3 bands the section-clustered interval is primary. Rule 1 leaves out all
+  of T1's examples and cuts T2's candidates to 3,955 in 3 bands (parts with no DI play in most sections): a user
+  decision before T1 or T2 runs again. T1 must be re-planned in any case (T0's lists changed, PR #289).
