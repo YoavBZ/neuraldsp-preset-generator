@@ -656,5 +656,6 @@ was declared, what was measured, and the research behind it.
     pairs) downloaded as a second reserved test band, EGDB's 240 DI clips downloaded, GOAT's
     access requested. The newer-host listing (2026-10-25, through the user's Chrome) finds 5 new
     in-scope DI bands: Ember Rev, Empty Signifier, Goran Levi, Mòpia and Sören (Empty Signifier and
-    Mòpia scope by ear); Empty Signifier is downloaded, the other four are pending. Research, not a
-    declared plan.
+    Mòpia scope by ear); all five are downloaded and are training bands (user, 2026-10-25; ledger
+    `cambridge-new-training-bands-2026-10-25`), checked by T0's standard before they train.
+    Research, not a declared plan.
