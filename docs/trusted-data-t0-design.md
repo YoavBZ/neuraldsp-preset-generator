@@ -1,7 +1,11 @@
 # Trusted data, T0 to T2: the code, the calibration and the launch (design)
 
-**Status (2026-10-25):** the ear has answered T0's queue and T1 is running; see
-[T0 outcome (2026-10-25)](#t0-outcome-2026-10-25). *Before the ear (2026-10-23):* T0 ran on the user's Mac (calibration OK; the lists and the ear queue; see the ROADMAP and the
+**Status (2026-10-25):** the ear has answered T0's queue and T1 ran; an audit found no cleaning gain established. The
+user then decided that an active guitar that cannot be rendered is the session's own amp track(s) after an automatic
+bleed check ([rule 1 after the user's decision](#rule-1-after-the-users-decision-2026-10-25)): T2's pilot is
+reachable (5,154 candidates in 4 bands outside early stopping), but under the reviewed check every amp track has an
+unmeasurable source, so T1 keeps no example. See
+[T1 audited (2026-10-25)](#t1-audited-2026-10-25) and [T0 outcome (2026-10-25)](#t0-outcome-2026-10-25). *Before the ear (2026-10-23):* T0 ran on the user's Mac (calibration OK; the lists and the ear queue; see the ROADMAP and the
 ledger's outcome). T1 and T2 have not run. After T0 and before the ear, a multi-agent review changed the import of the
 ear's answers and several rules, at zero renders: [the review before the ear](#the-review-before-the-ear-2026-10-23)
 at the end. The next `lists` run recomputes every verdict under them.
@@ -264,12 +268,15 @@ re-derived prior is for T3's new examples (the plan's (c)).
 - on DIs and sections T0 trusts;
 - each with R_in's stored truth render.
 
-**Other guitars** respect T0's unusable sections.
+**Other guitars** respect T0's unusable sections. *Since 2026-10-25 (the user's decision):* a session guitar that plays
+in the section but cannot be rendered is its own amp tracks when they pass an automatic bleed check, else the example
+is left out ([rule 1](#rule-1-after-the-users-decision-2026-10-25)); a near-silent other-guitar render refuses its
+example ([T1 audited](#t1-audited-2026-10-25)).
 
 **The read:**
 - K − V_sep mel-grid stem SNR, paired on the same examples and draws.
-- Band-clustered with two or more bands. With one band (K may be Adam Buckley alone), the
-  section-clustered interval is primary.
+- Band-clustered with three or more bands. With one or two bands (K is Adam Buckley and Dark Ride), the
+  section-clustered interval is primary (*amended 2026-10-25:* two bands, not one; [T1 audited](#t1-audited-2026-10-25)).
 - V-real's stored crop stems beside, by ratio.
 
 **Plans carry T0's lists' sha256 (`t0/verified.json`).** `render`, `build`, `t1-read`, `train`, `fit` and `e-on-k`
@@ -277,6 +284,7 @@ refuse when it has changed.
 
 | Step | Command | Cost |
 |---|---|---|
+| amp-bleed | `$MAIN -u -m learn.trusted_data amp-bleed --stage t1 --shard k/2` | zero renders; about 20 min per session (CPU) |
 | plan | `$MAIN -m learn.trusted_data plan --stage t1` | zero renders |
 | render | `$MAIN -u -m learn.trusted_data render --stage t1 --shard k/3` | about 0.8–1.5k renders plus priming |
 | build | `$MSST -m learn.trusted_data build --stage t1 --device mps --order asc` (CPU worker beside) | about 370 separations, about 30 min |
@@ -305,7 +313,8 @@ early-stopping set.
 
 | Step | Command | Cost |
 |---|---|---|
-| plan, render | `$MAIN -m learn.trusted_data plan --stage t2`; `$MAIN -u … render --stage t2 --shard k/3` | about 12–18k renders, 2.5–3.5 h on 3 processes |
+| amp-bleed | `$MAIN -u -m learn.trusted_data amp-bleed --stage t2 --shard k/2` | zero renders; about 20 min on 2 processes (CPU) |
+| plan, render | `$MAIN -m learn.trusted_data plan --stage t2`; `$MAIN -u … render --stage t2 --shard k/3` | about 12–18k renders, 2.5–3.5 h on 3 processes (the 2026-10-25 dry run: 5,538 targets and 8,732 other guitars, plus priming) |
 | build | `$MSST -m learn.trusted_data build --stage t2 --device mps` | about 6k separations, 5–8 h |
 | train | `$TORCH_PY -m learn.trusted_data train --arm SES\|SYN --seed 20261042\|20261043` | 4 runs, about 1.5 h MPS |
 | fit, E on K, V-real | `fit`, `e-on-k`, `vreal-predict` (TORCH_PY); `vreal-render --shard k/3`, `report` (MAIN) | about 210 renders at 10 V-real parts (60 per arm for SES, SYN and the constant, plus 30 priming; SYN-E dropped) |
@@ -593,4 +602,211 @@ backing), GOAT (access requested); Jen Hartswick & Nick Cassarino is reserved fo
 user decision before T3.
 
 **T1 started** on 2026-10-25 at 08:29: 812 examples from Adam Buckley and Dark Ride, about 1.8k renders plus priming and
-812 separations. It is running.
+812 separations. It ran; see the next section.
+
+## T1 audited (2026-10-25)
+
+**What T1 read** (812 examples, Adam Buckley and Dark Ride, 26 sections; `t1/read.json`, log `logs/t1-read.log`):
+K − V_sep mel stem SNR **+1.63 dB**, band-clustered [+0.12, +3.14] on 2 bands (1 df), section-clustered [−0.31, +3.56].
+The code printed "K's stems are cleaner than V_sep's", keyed on the 1-df band interval.
+
+**The independent audit (2026-10-25)** found:
+- **Missing guitars carry most of it.** 63 examples (Adam Buckley "Drag Me Down", the ElecGtr3 DI sections at 55 s and
+  65 s) had no other guitar in K's backing, although other guitars play there: their T0 windows are excluded, so they
+  were silently left out, while V_sep's real backing has them. K − V_sep is about +16 dB on them, about +1.2 dB of the
+  +1.63. Without them: **+0.42 dB** (median +0.08), section-clustered [−0.89, +1.72]; Adam Buckley −1.31.
+- **Near-silent renders were lifted.** 65 other-guitar renders (in 63 examples) read below −45 LUFS (down to −69) and
+  were scaled up by as much as +43 dB to their level; 14 renders were silent and dropped (one example lost all its
+  other guitars).
+- **K's tail is fatter:** 18.6% of K's stems read below 0 dB mel SNR, against 4.4% of V_sep's.
+
+**The outcome:**
+- **No cleaning gain is established.** With the missing guitars out, the interval holds 0.
+- **No realism lever follows.** The gap to V-real at matched ratio is within noise and changes sign between readings.
+  T2's SYN arm is otherwise unchanged.
+
+**The fixes** (`learn/trusted_data.py`; tests in `tests/test_trusted_data.py`). Whatever leaves an example out leaves it
+out of every arm, so K, SES and SYN stay paired:
+1. **Plan time: an active guitar that cannot be rendered leaves the example out** (`LEFT_OUT_ACTIVE`, "an active
+   guitar cannot be rendered"). For each guitar part of the section's session other than the target's
+   (`session_guitar_parts`: non-DI tracks from the inventory's mix list, the stored backing's source; DIs always;
+   acoustic guitars included), the part plays when any of its tracks, amp track or DI, plays on at least 10% of the
+   section's frames against its own file's level (`section_activity`, as other guitars are picked). It cannot be
+   rendered when it has no DI, its DI is not verified, or the DI's window is not usable in T0's lists. `plan` records
+   the left-out sections with the guitars and reasons (`left_out`), counts and prints them, and for T2 removes them
+   before any draw.
+2. **Render time: a near-silent render is refused, never lifted.** An other guitar's render below
+   `RENDER_FLOOR_LUFS` (−50.0), or silent, refuses the example through the existing refusal path ("near-silent render
+   (gate or low output)"), so it drops for every arm. The example's remaining renders are skipped.
+3. **The reading.** With fewer than 3 bands (`MIN_BANDS`) the primary interval is section-clustered (the one-band rule,
+   extended: 2 bands give 1 df). `t1-read` prints medians beside means, the share of stems below 0 dB per arm and the
+   per-band difference, and keys the reading on the primary interval ("no difference shown" when it holds 0). E on K
+   takes the same rule. T2's report reads V-real at 7 bands, so its rule is unchanged.
+4. **A zero-render re-read:** `t1-read --subset rules` reads the stored rows less the examples rules 1 and 2 would
+   have left out, under today's lists; `--subset rules-di` is a diagnostic that applies rule 1 only to parts that
+   have a DI. Both write nothing (logs `logs/t1-read-audit-subset-rules[-di]-2026-10-25.log`).
+
+**The re-read (2026-10-25, zero renders):**
+- **Rule 1 leaves out all 812 examples (26 sections).** Every K section has a playing guitar with no DI in V_sep's
+  stored backing: Adam Buckley's ElecGtr1 (amp track only) and acoustic guitars, Dark Ride's ElecGtr02, 02DT, 08 and
+  08DT (amp tracks only). 781 examples have such a part; 314 have an active part whose DI window T0 excluded (the 63
+  above among them). Under rules 1 and 2 as coded there is nothing to read.
+- **Rule 2 leaves out 61 examples:** 48 with a render below −50 LUFS, 14 with a silent render (one has both).
+- **The diagnostic (`rules-di`: rule 1 on parts with a DI only, plus rule 2):** 360 left out (rule 1: 314 in 10
+  sections; rule 2: 61), **452 read** (Adam Buckley 142, Dark Ride 310; 16 sections).
+
+  | | K − V_sep (dB) |
+  |---|---|
+  | mean, median | +1.80, +0.65 |
+  | section-clustered (primary) | +1.67 [−0.15, +3.49], 16 sections |
+  | band-clustered | +1.25 [−8.11, +10.61], 2 bands |
+  | Adam Buckley | −0.23 (median −0.31), n 142 |
+  | Dark Ride | +2.73 (median +1.12), n 310 |
+
+  Below 0 dB: K 10.6%, V_sep 3.1% (K mean +3.85, median +2.56; V_sep +2.05, +1.57). Reading: no difference shown.
+  Dark Ride's +2.73 still has its 4 amp-only guitars in V_sep's backing and not in K's, the bias rule 1 removes.
+
+**What this means for T2:** under rule 1 as coded, T2's candidates fall from 8,722 examples in 6 bands (114
+sections) to 3,955 in 3 bands (Ale Lak, Death Of A Romantic, Storm Of Particles; 52 sections), short of the 5k pilot
+and its early-stopping set; Hollow Ground, Rebuild The Evil and The Long Wait lose every section, on parts with no DI.
+Restricted to parts with a DI, 7,956 in 6 bands remain. Self-built mixes cannot hold a guitar that has no DI (decision
+4: other guitars are DI renders only), so T2 needs a user decision first: keep rule 1 and shrink T2, add the
+session's own amp tracks for parts with no DI (decision 4's other option, verified studio amp tracks), or accept the
+missing guitars for parts with no DI and read them as a known bias.
+
+**T1 must be re-planned before any further T1 run:** T0's lists' hash changed after T1 (Split Brow's click track only,
+PR #289), so `render`, `build` and `t1-read` refuse T1's stored plan (`--subset` reads it with a warning).
+
+### Rule 1 after the user's decision (2026-10-25)
+
+**The decision** (the user, in chat, 2026-10-25, "Sounds good, go ahead" to the ML session's option 1): in self-built
+mixes, an active guitar that cannot be rendered is represented by the session's own recorded amp track(s), after an
+automatic leakage check, with no listening. It replaces rule 1 above and takes decision 4's other option (verified
+studio amp tracks) for these parts only; parts with a usable DI are still rendered.
+
+**The code** (`learn/trusted_data.py`; tests in `tests/test_trusted_data.py`):
+- **Which guitars:** as above (`section_blocked`): each guitar part of the session other than the target's that plays
+  in the section (any of its tracks, amp track or DI, against its own file's level) and has no DI that can be rendered
+  there. Acoustic guitars count. A part is grouped by name and by the inventory: a DI's own amp tracks (inventory
+  `own`) are its part (`part_keys`; Hollow Ground's ElecGtr1a_Amp1, ElecGtr1b_Amp2 and ElecGtr1c_DI are one take,
+  which the name key split by their letters), unless the track's name gives another part number than the DI's
+  (Renesans' "GTR 2 Amp_M81", listed under "GTR 1 DI", stays part 2).
+- **What goes in the backing:** all the part's amp or mic tracks in the session's mix list, summed with the stems at the
+  session's balance as recorded and folded like them (a mono file by pan_fold(0); a stereo file is folded on loading;
+  `backing_tracks`). Only K's and SYN's backings get them; SES keeps its stored stems, V_sep its stored stems, and
+  pairing across arms is unchanged.
+- **The bleed check** (`amp-bleed`, zero renders, CPU, before `plan`): each such track's other-instrument bleed must
+  read under −30 dB (A6's line, `AMP_BLEED_DB`), every track of the part. The measure is the cleaning plan's take
+  estimator (`data_cleaning`'s SessionMeter, counted frames and rolled nulls, the stem scan's), read once per session
+  over the whole session (not per section or half: a recorded leakage path does not change between sections), with
+  each non-guitar track as the source and the amp track as the reference: a take is the share of the amp track's
+  energy on its playing frames that the other track explains on held-out folds, less the mean of the rolled readings
+  (`data_cleaning.take_db`, raw, capped at 0 dB); the bleed is the power sum of the takes at or above −40 dB
+  (`data_cleaning.FLOOR_DB`). The raw real and rolled readings and the source's active share are stored per source
+  (`source_raw`), and the verdict is drawn from them (`track_bleed`, `amp_status`). T0's stored target readings were
+  not used: they exist only for label-table parts (with a DI) and read the crop, not the session.
+- **Sources are non-guitar tracks only** (`bleed_sources`: drums, room, vocals, bass, keys and the other non-guitar
+  tracks, by the stem scan's guitar classification; amended the same day, as the coordinating session asked). A6 reads
+  other-instrument bleed, and in these sessions guitars double or play the same riffs, which the estimator reads as a
+  coherent path: on the first full pass, with each other guitar part's loudest amp track as a source too, Dark Ride's
+  ElecGtr02 pair read each other at −24 to −27 dB and Adam Buckley's ElecGtr2 pair at −24 to −25 dB, overdubs that
+  cannot leak into each other.
+- **Unmeasurable sources** (the independent review of #290, replacing a 0-dB clip of the held-out readings, which
+  read injected bleed of −27 to −28 dB as none or −35, so its line sat near −26 dB). A source is unmeasurable when the
+  estimator cannot be trusted on it (`source_take`):
+  - a blow-up: the real or a rolled reading beyond the amp track's own energy (a source silent for long stretches gives
+    fold weights that blow up where it plays; the first pass read these as takes of the whole track, 0 dB);
+  - rolled readings spread as wide as the line (max − min ≥ −30 dB of the amp track): the chance level is not known
+    well enough to place a take on either side of it;
+  - the source plays on fewer than half of the amp track's playing frames (`AMP_SOURCE_MIN_SHARE`).
+
+  Under the trusted-data rule (use only what can be trusted) a track with any unmeasurable source fails ("amp track
+  bleed unmeasurable"), with the sources and reasons recorded.
+- **Left out** of every arm before any draw, each counted and printed once by reason, with the guitars, tracks and
+  readings recorded in the plan:
+  - "an active guitar has no usable amp track" (`LEFT_OUT_NO_AMP`): a part with no amp track, a silent one, one at or
+    above −30 dB, or one with an unmeasurable source. A missing reading refuses the plan;
+  - "an added amp track is in the cleaning scan's removed or same-part tracks" (`LEFT_OUT_OWN_TAKE`, `cleaning_clash`):
+    a track the cleaning plan took out of the section's stored backing, or confirmed as another take of the target's
+    part, never comes back (a section the scan has no row for is left out too);
+  - "more active guitars than the cap" (`LEFT_OUT_CAP`, `apply_cap`): more renderable active guitars than
+    `MAX_OTHERS` (4, the plan's "1–4 per example"); `pick_others` used to drop the quietest silently (Ale Lak's
+    ElecGtr01DI and ElecGtr01DTDI in 65 pilot examples). Raising the cap would change the declared recipe, so the
+    examples are left out instead.
+- **Rule 2** (a render below −50 LUFS refuses its example) is unchanged (`place_other`); `render` and `t1-read` print
+  the refusals by reason. `t1-read --subset` still re-reads the stored K
+  under the audit's rule 1 (those mixes have no amp tracks).
+- **A fix on the way:** T2's `plan` overwrote its left-out records with the candidate rows (the same variable), and
+  would have failed when printing them.
+
+**The injection check, in the check's own roles** (read-only, in memory; log `logs/amp-bleed-injection-2026-10-25.log`):
+a copy of a real non-guitar track, 1 ms later, added to a real amp track at −25, −30 and −33 dB of its energy on its
+playing frames, read with `source_raw` and `source_take`:
+
+| Amp track | Source: reads at −25 / −30 / −33 dB injected |
+|---|---|
+| Hollow Ground ElecGtr1a_Amp1 | Kick −25.5 / −30.6 / −33.8; Overheads −25.1 / −30.3 / −33.7; BassDI −24.3 / −28.9 / −31.6; Vox1 −25.1 / −29.8 / −32.4 (unmeasurable: plays on 29% of the frames) |
+| Dark Ride ElecGtr08 | KickMic1 −23.5 / −29.5 / −34.4; Overheads −23.3 / −28.5 / −32.1; Bass −21.1 / −26.2 / −29.4; LeadVox1 −17.3 / −22.3 / −25.3 (unmeasurable) |
+
+The raw reading reads injected bleed back within about 1 dB, or high (the injected copy also plays where the guitar
+rests, which adds playing frames): never more than 1.4 dB low. A synthetic version is a test (`tests/test_trusted_data.py`).
+
+**The readings** (2026-10-25, a scratch root; logs `logs/amp-bleed-dryrun-raw-2026-10-25-*.log` and
+`logs/plan-dryrun-rule1-raw-2026-10-25-t1|t2.log`; earlier passes' logs are kept beside). **Every amp track has at
+least one unmeasurable source, so every one fails.** Per track: non-guitar sources; unmeasurable by blow-up / spread /
+share; the worst take among the measurable sources; their sum:
+
+| Session | Track | Sources | Blow-up / spread / share | Worst measurable take (dB) | Sum (dB) |
+|---|---|---|---|---|---|
+| AdamBuckley | 22_AcousticGtr1 | 36 | 1 / 16 / 16 | 08_HiHat -34.6 | -34.6 |
+| AdamBuckley | 23_AcousticGtr2 | 36 | 0 / 1 / 27 | 49_BackingVox2DT -33.8 | -30.9 |
+| AdamBuckley | 24_AcousticGtr3 | 36 | 0 / 5 / 27 | 40_Piano -46.1 | under -40 |
+| AdamBuckley | 25_ElecGtr1 | 36 | 1 / 16 / 13 | 08_HiHat -32.3 | -31.3 |
+| AdamBuckley | 26_ElecGtr2 | 36 | 0 / 15 / 14 | 17_DrumsRoom -35.7 | -32.9 |
+| AdamBuckley | 28_ElecGtr2DT | 36 | 0 / 12 / 16 | 17_DrumsRoom -31.0 | -28.4 |
+| AdamBuckley | 32_ElecGtr4 | 36 | 0 / 24 / 9 | 17_DrumsRoom -29.9 | -29.1 |
+| AdamBuckley | 34_ElecGtr5 | 36 | 0 / 2 / 24 | 18_BassDI -35.7 | -33.1 |
+| AleLak | 14_ElecGtr02DT | 9 | 0 / 2 / 3 | 05_Overheads -30.4 | -26.8 |
+| DarkRide | 18_ElecGtr02 | 38 | 5 / 10 / 16 | none | under -40 |
+| DarkRide | 19_ElecGtr02DT | 38 | 5 / 11 / 15 | none | under -40 |
+| DarkRide | 25_ElecGtr08 | 38 | 0 / 8 / 22 | 06_SnareDown -37.7 | -33.6 |
+| DarkRide | 26_ElecGtr08DT | 38 | 0 / 9 / 21 | 15_Bass -44.1 | under -40 |
+| DeathOfARomantic | 11_ElecGtr01 | 17 | 0 / 3 / 7 | none | under -40 |
+| DeathOfARomantic | 13_ElecGtr02 | 17 | 0 / 2 / 8 | none | under -40 |
+| HollowGround | 12_ElecGtr1a_Amp1 | 13 | 0 / 2 / 2 | none | under -40 |
+| RebuildTheEvil | 18_ElecGtr1 | 20 | 2 / 1 / 2 | 14_Tom5 -37.3 | -34.5 |
+| RebuildTheEvil | 19_ElecGtr2 | 20 | 2 / 1 / 2 | 11_Tom2 -37.0 | -33.4 |
+| TheLongWait | 06_AcGtr1Mic1 | 15 | 0 / 3 / 11 | none | under -40 |
+| TheLongWait | 07_AcGtr1Mic2 | 15 | 0 / 2 / 11 | none | under -40 |
+| TheLongWait | 11_ElecGtr2Mic1 | 15 | 0 / 4 / 9 | 03_Overheads -43.6 | under -40 |
+| TheLongWait | 12_ElecGtr2Mic2 | 15 | 0 / 4 / 9 | 03_Overheads -40.6 | under -40 |
+| TheLongWait | 13_ElecGtr3 | 15 | 0 / 2 / 11 | 04_DrumsRoom -31.2 | -31.2 |
+
+Without the share rule, every track still has a source whose rolled readings spread as wide as the line (1 to 24 per
+track), mostly vocals, synths, sound effects and toms: in these roles the estimator cannot resolve −30 dB on sparse
+sources.
+
+**T1 under rule 1 as reviewed: 0 kept, all 812 left out** (26 sections; Adam Buckley 405, Dark Ride 407), all with
+"an active guitar has no usable amp track": every needed amp track is unmeasurable (and Dark Ride's ElecGtr09 has no
+amp track, 64).
+
+**T2 under rule 1 as reviewed:** 3,151 candidates left out for unmeasurable amp tracks (Ale Lak 152, Death Of A Romantic
+307, Hollow Ground 307, Rebuild The Evil 2,308, The Long Wait 77) and 109 for the cap (Ale Lak); none for the cleaning
+guard. 5,154 remain outside early stopping in 4 bands (Ale Lak 539, Death Of A Romantic 1,615, Hollow Ground 1,539, Storm
+Of Particles 1,461; early stopping 308 examples in 4 sections). Rebuild The Evil and The Long Wait drop out. The 5k pilot
+is still reachable, narrowly: it drew 5,000 (Ale Lak 523, Death Of A Romantic 1,567, Hollow Ground 1,493, Storm Of
+Particles 1,417), with no amp tracks; 5,308 target renders, 10,099 other-guitar renders plus priming and 5,308
+separations. SYN-E stays refused.
+
+**Caveats:**
+- The verdicts above are the estimator's limits, not measured bleed: the measurable sums are under −30 dB on 17 of the
+  23 tracks. Adding amp tracks at all needs either a source set and thresholds the user accepts (for example the share
+  rule off) or a reading that resolves sparse sources, which is a new measure.
+- A fail can also be the guitar in the other track, or a part locked in time with the drums.
+
+**T1 must be re-planned and re-run before T2,** because K's mixes change (amp tracks join the backings wherever they
+pass) and T0's lists changed (PR #289): `amp-bleed --stage t1` (about 20 min CPU per session on 2 processes), then
+`plan --stage t1` after moving `t1/rows` and its audio aside (the plan refuses to re-plan over rows rendered under
+another recipe), then `render`, `build` and `t1-read`. Under the check as reviewed the re-plan keeps no example, so
+there is nothing to render or read: T1 cannot run on K until the check or K changes, and T2 can run without it only if
+the user accepts that.

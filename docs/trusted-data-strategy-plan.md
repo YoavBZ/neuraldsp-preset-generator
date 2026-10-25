@@ -146,7 +146,9 @@ note beside each headline; nothing re-runs.
   - **Level:** each sits at its real amp track's level in that section. A DI-only part takes the
     median level of the session's amp tracks.
   - **Doubles:** a "DT" double takes the target's preset, panned opposite.
-  - **Parts with no DI** are left out (decision 4).
+  - **Parts with no DI** are left out (decision 4). *Since 2026-10-25 (user):* an active guitar that cannot be
+    rendered is the session's own amp track(s) after an automatic bleed check, or the example is left out
+    ([the 2026-10-25 note](#notes-after-approval-dated), [design](trusted-data-t0-design.md#rule-1-after-the-users-decision-2026-10-25)).
 - **Other instruments:** stems that pass the scan, at the session's own balance.
 - **Level:** the backing is set against the target by a ratio drawn from the re-derived level prior
   (today: median −7.9 dB, 5–95%: −18.9 to −2.6 dB).
@@ -236,7 +238,8 @@ note beside each headline; nothing re-runs.
 3. **K and stage F:**
    - Kimock and Swatkins rejoin K (it reverses "stay out for now");
    - stage F is shrunk to V-real (recommended), or its bands train once fresh test bands exist.
-4. **Other guitars:** DI renders only (recommended), or also verified studio amp tracks.
+4. **Other guitars:** DI renders only (recommended), or also verified studio amp tracks. *Amended 2026-10-25 (user):*
+   amp tracks stand for active guitars that cannot be rendered, after an automatic bleed check ([the 2026-10-25 note](#notes-after-approval-dated)).
 5. **T0–T2:**
    - approve about 16–23k renders, 8.8k separations and about 2 h of training;
    - rule on a tie at T2: SES is cheaper, but only the self-built set can grow under the
@@ -301,4 +304,23 @@ Facts that changed after the approval, and what each means for the plan. None is
     its clip is heard clean;
   - every DI is heard before it counts;
   - the song-blind per-class constant is one more V-real arm at T2, read beside the primary (e)/(f).
-
+- **2026-10-25, T1 ran and was audited** ([design](trusted-data-t0-design.md#t1-audited-2026-10-25)): K − V_sep +1.63 dB
+  rested on a 1-df band interval (section-clustered [−0.31, +3.56]); 63 examples whose other guitars could not be
+  rendered carried about +1.2 dB of it, and near-silent renders were lifted by up to +43 dB. No cleaning gain is
+  established, and no realism lever follows; T2's SYN arm is otherwise unchanged. Fixed in code: an example whose
+  section has a playing guitar that cannot be rendered is left out of every arm, a near-silent render (below −50 LUFS)
+  refuses its example, and with fewer than 3 bands the section-clustered interval is primary. Rule 1 leaves out all
+  of T1's examples and cuts T2's candidates to 3,955 in 3 bands (parts with no DI play in most sections): a user
+  decision before T1 or T2 runs again. T1 must be re-planned in any case (T0's lists changed, PR #289).
+- **2026-10-25, the user's decision on rule 1** ("Sounds good, go ahead" to the ML session's option 1;
+  [design](trusted-data-t0-design.md#rule-1-after-the-users-decision-2026-10-25)): in self-built mixes, an active guitar
+  that cannot be rendered is the session's own recorded amp track(s), at the session's balance, after an automatic
+  leakage check with no listening (other-instrument bleed under −30 dB, A6's line, read once per session by the
+  cleaning plan's take estimator from the session's non-guitar tracks only, since doubled guitars read as each other's
+  leakage; a source the estimator cannot be trusted on fails the track); a part with no such track, or one that fails,
+  leaves the example out of every arm, as do examples with more active guitars than the cap of 4. Only K's and SYN's
+  backings change; SES and pairing do not. Dry run after the independent review: every amp track has at least one
+  source the estimator cannot resolve at −30 dB (sparse vocals, synths, effects, toms), so none is used; T1 keeps none of
+  its 812; T2 keeps 5,154 candidates in 4 bands outside early stopping (Rebuild The Evil and The Long Wait drop out), so
+  the 5k pilot is still reachable, narrowly. T1 must be re-planned and re-run before T2, because K's mixes change; as it
+  stands the re-plan holds no example, so the user decides whether T1 is waived before T2 or the check changes.

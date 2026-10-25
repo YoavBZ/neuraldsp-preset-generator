@@ -249,3 +249,409 @@ def test_the_song_blind_constant_joins_t2s_v_real_contrasts():
     c = G.const_from_json(T.constant_arm(rows)["constant"])[("pr12", "clean")]
     assert c["cont"][SM.CONT.index("pr12Amp/pr12Volume")] == pytest.approx(0.4)
     assert c["mics"][SM.CAT.index("cabParameters/rightMicType")] == 3
+
+
+# --- the T1 audit's fixes (2026-10-25) ----------------------------------------------------------------------------
+
+ADAM = ["22_AcousticGtr1.wav", "25_ElecGtr1.wav", "26_ElecGtr2.wav", "27_ElecGtr2DI.wav", "28_ElecGtr2DT.wav",
+        "29_ElecGtr2DTDI.wav", "30_ElecGtr3.wav", "31_ElecGtr3DI.wav", "36_Synth1.wav", "18_BassDI.wav",
+        "99_ElecGtr9.wav"]
+
+
+def test_the_sessions_other_guitar_parts_include_parts_with_no_di():
+    mix = [f for f in ADAM if not f.endswith("DI.wav") and f != "99_ElecGtr9.wav"]   # 99 is not in the mix list
+    parts = T.session_guitar_parts(ADAM, mix, "s/31_ElecGtr3DI.wav", own=["30_ElecGtr3.wav"])
+    assert parts == {"acousticgtr1": ["22_AcousticGtr1.wav"], "elecgtr1": ["25_ElecGtr1.wav"],
+                     "elecgtr2": ["26_ElecGtr2.wav", "27_ElecGtr2DI.wav"],
+                     "elecgtr2dt": ["28_ElecGtr2DT.wav", "29_ElecGtr2DTDI.wav"]}
+    assert "elecgtr9" in T.session_guitar_parts(ADAM, None, "s/31_ElecGtr3DI.wav")     # no mix list: every file
+
+
+def test_an_active_guitar_that_cannot_be_rendered_leaves_the_example_out():
+    parts = {"elecgtr1": ["25_ElecGtr1.wav"], "elecgtr2": ["26_ElecGtr2.wav", "27_ElecGtr2DI.wav"],
+             "elecgtr4": ["32_ElecGtr4.wav", "33_ElecGtr4DI.wav"], "elecgtr5": ["34_ElecGtr5.wav", "35_ElecGtr5DI.wav"]}
+    act = {"25_ElecGtr1.wav": 1.0, "26_ElecGtr2.wav": 0.8, "27_ElecGtr2DI.wav": 0.78, "32_ElecGtr4.wav": 1.0,
+           "33_ElecGtr4DI.wav": 0.02, "34_ElecGtr5.wav": 0.0, "35_ElecGtr5DI.wav": 0.0}
+    ren = {"elecgtr2": None, "elecgtr4": "window excluded", "elecgtr5": "window silent"}
+    b = T.blocked_parts(parts, act, ren)
+    # ElecGtr1 has no DI; ElecGtr4's amp track plays while its window is excluded (the amp track counts); ElecGtr2 can
+    # be rendered and ElecGtr5 is silent
+    assert [(x["part"], x["why"]) for x in b] == [("elecgtr1", "no DI"), ("elecgtr4", "window excluded")]
+    assert [x["part"] for x in T.blocked_parts(parts, act, ren, scope="di")] == ["elecgtr4"]
+    assert T.blocked_parts(parts, {k: 0.05 for k in act}, ren) == []
+    assert T.LEFT_OUT_ACTIVE == "an active guitar cannot be rendered"
+
+
+def test_left_out_examples_are_counted_with_their_reason(monkeypatch, capsys):
+    blocked = {"a@55.0": [{"part": "elecgtr1", "activity": 1.0, "why": "no DI"}], "a@15.0": []}
+    monkeypatch.setattr(T, "section_blocked", lambda ctx, sid, *a, **k: blocked[sid])
+    rows = [{"i": 1, "section": "a@55.0", "band": "X"}, {"i": 2, "section": "a@55.0", "band": "X"},
+            {"i": 3, "section": "a@15.0", "band": "X"}]
+    kept, left = T.leave_out_blocked(None, rows, set(), {}, set(), {})
+    assert [r["i"] for r in kept] == [3]
+    assert left == [{"section": "a@55.0", "band": "X", "reason": T.LEFT_OUT_ACTIVE, "examples": 2,
+                     "guitars": blocked["a@55.0"]}]
+    T.print_left_out(left)
+    assert "left out: 2 examples in 1 sections" in capsys.readouterr().out
+
+
+def test_section_blocked_reads_amp_tracks_and_t0s_windows(tmp_path):
+    np = pytest.importorskip("numpy")
+    sf = pytest.importorskip("soundfile")
+    import types
+
+    rng = np.random.default_rng(5)
+    play = (0.2 * rng.standard_normal(48000 * 40)).astype(np.float32)
+    rest = np.concatenate([play[:48000 * 20], 1e-5 * rng.standard_normal(48000 * 20)]).astype(np.float32)
+    for name, x in (("31_ElecGtr3DI.wav", play), ("25_ElecGtr1.wav", play), ("26_ElecGtr2.wav", play),
+                    ("27_ElecGtr2DI.wav", play), ("32_ElecGtr4.wav", rest), ("33_ElecGtr4DI.wav", rest)):
+        sf.write(str(tmp_path / name), x, 48000)
+    inv = {f"s/{n}": {"path": str(tmp_path / n), "session_dir": str(tmp_path), "own": []}
+           for n in ("31_ElecGtr3DI.wav", "27_ElecGtr2DI.wav", "33_ElecGtr4DI.wav")}
+    ctx = types.SimpleNamespace(sections={"s/31_ElecGtr3DI.wav@25.0": {"di": "s/31_ElecGtr3DI.wav", "start_s": 25.0},
+                                          "s/31_ElecGtr3DI.wav@5.0": {"di": "s/31_ElecGtr3DI.wav", "start_s": 5.0}},
+                                inv=inv)
+    ver = {"s/27_ElecGtr2DI.wav", "s/33_ElecGtr4DI.wav"}
+    wins = {"s/27_ElecGtr2DI.wav": {"s/27_ElecGtr2DI.wav@25.0": "usable", "s/27_ElecGtr2DI.wav@5.0": "usable"},
+            "s/33_ElecGtr4DI.wav": {"s/33_ElecGtr4DI.wav@25.0": "silent", "s/33_ElecGtr4DI.wav@5.0": "excluded"}}
+    b25 = T.section_blocked(ctx, "s/31_ElecGtr3DI.wav@25.0", ver, wins, set(), {})
+    assert [(x["part"], x["why"]) for x in b25] == [("elecgtr1", "no DI")]        # ElecGtr4 rests at 25 s
+    b5 = T.section_blocked(ctx, "s/31_ElecGtr3DI.wav@5.0", ver, wins, set(), {})
+    assert [(x["part"], x["why"]) for x in b5] == [("elecgtr1", "no DI"), ("elecgtr4", "window excluded")]
+    b5di = T.section_blocked(ctx, "s/31_ElecGtr3DI.wav@5.0", ver, wins, {"s/27_ElecGtr2DI.wav@5.0"}, {}, scope="di")
+    assert [(x["part"], x["why"]) for x in b5di] == [("elecgtr2", "window in T0's unusable sections"),
+                                                      ("elecgtr4", "window excluded")]
+
+
+def test_a_near_silent_render_is_refused_not_lifted():
+    assert T.RENDER_FLOOR_LUFS == -50.0
+    assert T.near_silent(-50.5) == T.NEAR_SILENT == "near-silent render (gate or low output)"
+    assert T.near_silent(None) == T.NEAR_SILENT and T.near_silent(-49.0) is None
+    rows = {1: {"others": [{"di": "a", "render_lufs": -30.0}, {"di": "b", "render_lufs": -62.0}]},
+            2: {"others": [{"di": "a", "left_out": "silent render"}]},
+            3: {"others": [{"di": "a", "render_lufs": -46.0}, {"di": "c", "left_out": "no level"}]},
+            4: {"refused": T.NEAR_SILENT, "others": [{"di": "a", "refused": T.NEAR_SILENT, "render_lufs": None}]}}
+    assert T.rule2_examples(rows) == [1, 2, 4]
+    o = {"di": "s/27_ElecGtr2DI.wav", "dt": False, "pan": 0.0}
+    row = {"i": 1, "others": []}                                          # the render path's placement (rule 2)
+    acc = T.place_other(row, 0.0, 1.0, -62.0, -20.0, "own amp track", o, "pr12", {})
+    assert acc == 0.0 and row["refused"] == T.NEAR_SILENT and row["others"][0]["render_lufs"] == -62.0
+    row = {"i": 2, "others": []}
+    assert T.place_other(row, 0.0, 1.0, None, -20.0, "own amp track", o, "pr12", {}) == 0.0 and row["refused"]
+    row = {"i": 3, "others": []}
+    acc = T.place_other(row, 0.0, 1.0, -30.0, -20.0, "own amp track", o, "pr12", {})   # +10 dB, centre fold
+    assert acc == pytest.approx(10 ** 0.5 * T.pan_fold(0.0)) and "refused" not in row
+    assert row["others"][0]["gain_db"] == pytest.approx(10 + 20 * math.log10(T.pan_fold(0.0)))
+    assert T.refusal_counts([{"refused": T.NEAR_SILENT}, {}, {"refused": T.NEAR_SILENT}, {"refused": "x"}]) == {
+        T.NEAR_SILENT: 2, "x": 1}
+
+
+def test_t1_reads_section_clustered_under_three_bands_and_keys_on_it():
+    band_iv, sec_iv = (1.63, 0.12, 3.14, 2), (1.62, -0.31, 3.56, 26)            # T1 as run (2026-10-25)
+    label, iv = T.primary_interval(band_iv, sec_iv, 2)
+    assert label.startswith("section-clustered") and iv == sec_iv
+    assert T.primary_interval(band_iv, sec_iv, 3) == ("band-clustered", band_iv)
+    assert T.t1_reading(iv).startswith("no difference shown")
+    assert T.t1_reading((1.0, 0.2, 1.8, 26)).startswith("K's stems are cleaner")
+    assert T.t1_reading((-1.0, -1.8, -0.2, 26)).startswith("K's stems are less clean")
+    assert T.t1_reading(None) == "incomplete"
+
+
+def test_t1_summary_reports_medians_tails_and_bands():
+    per = {"K": {1: 5.0, 2: -1.0, 3: 4.0, 4: 2.0, 5: 3.0, 6: -2.0},
+           "V_sep": {1: 1.0, 2: 1.0, 3: 3.0, 4: 2.0, 5: 3.5, 6: 1.0}}
+    band_of = {1: "A", 2: "A", 3: "A", 4: "B", 5: "B", 6: "B"}
+    section_of = {1: "a1", 2: "a1", 3: "a2", 4: "b1", 5: "b2", 6: "b2"}
+    s = T.t1_summary(per, band_of, section_of, set(per["K"]))
+    assert s["examples"] == 6 and s["bands"] == ["A", "B"] and s["sections"] == 4
+    assert s["primary"].startswith("section-clustered")
+    assert s["K - V_sep mel SNR (primary)"] == s["K - V_sep mel SNR (section-clustered)"]
+    assert s["K - V_sep median"] == pytest.approx(-0.25) and s["K - V_sep mean"] == pytest.approx(-0.5 / 6)
+    assert s["per arm"]["K"]["share below 0 dB"] == pytest.approx(2 / 6)
+    assert s["per arm"]["V_sep"]["share below 0 dB"] == 0.0
+    assert s["per band"]["A"] == {"n": 3, "mean": pytest.approx(1.0), "median": pytest.approx(1.0)}
+    assert s["reading"] == T.t1_reading(s["K - V_sep mel SNR (primary)"])
+
+
+def test_subset_is_only_for_t1_read():
+    with pytest.raises(SystemExit, match="--subset is for t1-read"):
+        T.main(["plan", "--subset", "rules"])
+
+
+# --- rule 1, the user's decision (2026-10-25): amp tracks stand for active guitars that cannot be rendered ---------
+
+def _rule1_ctx(sd, sids=("s/31_ElecGtr3DI.wav@55.0", "s/31_ElecGtr3DI.wav@15.0")):
+    import types
+
+    return types.SimpleNamespace(sections={sid: {"di": "s/31_ElecGtr3DI.wav", "start_s": float(sid.split("@")[1])}
+                                           for sid in sids},
+                                 inv={"s/31_ElecGtr3DI.wav": {"session_dir": sd}})
+
+
+def _raw(bleed_db=None, share=1.0):
+    """A stored reading whose one non-guitar source reads `bleed_db` (None: no take)."""
+    real = 0.0 if bleed_db is None else 10 ** (bleed_db / 10)
+    return {"silent": False, "sources": {"01_Kick.wav": {"real": real, "nulls": [0.0] * 4, "active_share": share}}}
+
+
+def _bleed_file(root, sd, tracks):
+    T._save(T.amp_bleed_path(root, sd), {"measure": T.AMP_BLEED_MEASURE, "session_dir": sd, "tracks": tracks})
+
+
+def test_bleed_sources_are_the_non_guitar_tracks():
+    files = ["01_Kick.wav", "16_Overheads.wav", "18_BassDI.wav", "22_AcousticGtr1.wav", "25_ElecGtr1.wav",
+             "28_ElecGtr2DT.wav", "36_Synth1.wav", "43_LeadVox1.wav", "GTR 2 Amp_M81.wav"]
+    assert T.bleed_sources(files) == ["01_Kick.wav", "16_Overheads.wav", "18_BassDI.wav", "36_Synth1.wav",
+                                      "43_LeadVox1.wav"]
+
+
+def test_raw_takes_are_not_clipped_and_untrustworthy_sources_are_unmeasurable():
+    # an unrelated source reads slightly below 0 in both the real and the rolled readings; injected bleed at -28 dB
+    # rides on that: the raw take reads it, while clipping both at 0 (the first fix) read it about 2 dB low
+    t, why = T.source_take({"real": 10 ** -2.8 - 5e-4, "nulls": [-5e-4] * 4, "active_share": 0.9})
+    assert why is None and t == pytest.approx(-28.0, abs=0.01)
+    assert T.source_take({"real": -5e-4, "nulls": [-5e-4] * 4, "active_share": 0.9}) == (None, None)
+    assert T.source_take({"real": 2.0, "nulls": [0.0] * 4, "active_share": 0.9})[0] == 0.0          # capped at 0 dB
+    blow = T.source_take({"real": -0.53, "nulls": [-0.011, -256.7, -0.0065, 0.0], "active_share": 0.9})
+    assert blow[1].startswith("blow-up")                     # Adam Buckley, AcousticGtr3 read in ElecGtr1 (1st pass)
+    assert T.source_take({"real": 0.0, "nulls": [0.0, 1.2e-3, 0.0, 0.0], "active_share": 0.9})[1].startswith(
+        "rolled readings spread")
+    assert T.source_take({"real": 0.0, "nulls": [0.0] * 4, "active_share": 0.3})[1].startswith("source plays on 30%")
+    r = {"silent": False, "sources": {"01_Kick.wav": _raw(-33.0)["sources"]["01_Kick.wav"],
+                                      "43_LeadVox1.wav": {"real": 0.0, "nulls": [0.0] * 4, "active_share": 0.2}}}
+    assert T.amp_status(r) == "unmeasurable"                # any unmeasurable source fails the track
+    assert T.amp_reason(r).startswith("unmeasurable: 43_LeadVox1.wav source plays on 20%")
+
+
+def test_amp_bleed_sums_takes_over_the_floor_on_a6s_line():
+    assert T.AMP_BLEED_DB == -30.0
+    total = T.amp_bleed_total({"kick": -35.0, "oh": -35.0, "bass": -45.0, "snare": None})
+    assert total == pytest.approx(-31.99, abs=0.01)
+    assert T.amp_bleed_total({"kick": -41.0, "bass": None}) is None                  # every take under -40 dB: none
+    assert T.amp_status(_raw(-30.0)) == "fail" and T.amp_status(_raw(-30.1)) == "pass"
+    assert T.amp_status(_raw(None)) == "pass" and T.amp_status({"silent": True}) == "silent"
+    assert T.amp_status(None) == "not measured"
+    assert T.amp_reason(_raw(-24.0)) == "bleed -24.0 dB, worst 01_Kick.wav -24.0"
+
+
+def test_an_amp_only_active_guitar_is_added_to_the_backing(monkeypatch, tmp_path):
+    blocked = {"s/31_ElecGtr3DI.wav@55.0": [{"part": "elecgtr1", "activity": 1.0, "why": "no DI",
+                                             "amp_tracks": ["25_ElecGtr1.wav"]},
+                                            {"part": "acousticgtr1", "activity": 0.6, "why": "no DI",
+                                             "amp_tracks": ["22_AcousticGtr1.wav"]}],
+               "s/31_ElecGtr3DI.wav@15.0": []}
+    monkeypatch.setattr(T, "section_blocked", lambda ctx, sid, *a, **k: blocked[sid])
+    _bleed_file(tmp_path, "/sess", {"25_ElecGtr1.wav": _raw(None), "22_AcousticGtr1.wav": _raw(-36.5)})
+    rows = [{"i": 1, "section": "s/31_ElecGtr3DI.wav@55.0", "band": "X"},
+            {"i": 2, "section": "s/31_ElecGtr3DI.wav@15.0", "band": "X"}]
+    scan = {sid: {"source": {"kind": "amp"}, "tracks": {}, "removed": []} for sid in blocked}
+    kept, left, amp_of = T.apply_rule1(_rule1_ctx("/sess"), tmp_path, rows, set(), {}, set(), {}, scan)
+    assert [r["i"] for r in kept] == [1, 2] and left == []
+    assert amp_of["s/31_ElecGtr3DI.wav@55.0"][0] == {"part": "elecgtr1", "track": "25_ElecGtr1.wav", "bleed_db": None}
+    assert amp_of["s/31_ElecGtr3DI.wav@55.0"][1]["track"] == "22_AcousticGtr1.wav"    # acoustics follow the same path
+    assert amp_of["s/31_ElecGtr3DI.wav@55.0"][1]["bleed_db"] == pytest.approx(-36.5)
+    x = {"stems": {"v": ["16_Overheads.wav", "43_LeadVox1.wav"], "n": ["16_Overheads.wav"]},
+         "amp_tracks": amp_of["s/31_ElecGtr3DI.wav@55.0"]}
+    assert T.backing_tracks(x, False) == ["16_Overheads.wav", "25_ElecGtr1.wav", "22_AcousticGtr1.wav"]
+    assert T.backing_tracks(x, True)[:2] == ["16_Overheads.wav", "43_LeadVox1.wav"]
+    assert T.backing_tracks({"stems": {"v": [], "n": ["a.wav"]}}, False) == ["a.wav"]       # older recipes
+
+
+def test_the_backing_sums_amp_tracks_with_the_stems_as_recorded(tmp_path):
+    np = pytest.importorskip("numpy")
+    sf = pytest.importorskip("soundfile")
+    import types
+
+    from learn import pretrain_set as PS
+
+    rng = np.random.default_rng(3)
+    n = 48000 * 30
+    sf.write(str(tmp_path / "16_Overheads.wav"), (0.1 * rng.standard_normal(n)).astype(np.float32), 48000)
+    sf.write(str(tmp_path / "25_ElecGtr1.wav"), (0.2 * rng.standard_normal((n, 2))).astype(np.float32), 48000)
+    ctx = types.SimpleNamespace(sections={"s/31_ElecGtr3DI.wav@5.0": {"di": "s/31_ElecGtr3DI.wav", "start_s": 5.0}},
+                                inv={"s/31_ElecGtr3DI.wav": {"session_dir": str(tmp_path)}})
+    x = {"stems": {"v": ["16_Overheads.wav"], "n": ["16_Overheads.wav"]},
+         "amp_tracks": [{"part": "elecgtr1", "track": "25_ElecGtr1.wav", "bleed_db": None}]}
+    b = T.Stems(ctx).get("s/31_ElecGtr3DI.wav@5.0", T.backing_tracks(x, False))
+    trim = int(PS.TRIM_S * PS.SR)
+    want = (PS.section_audio(tmp_path / "16_Overheads.wav", 5.0) * T.pan_fold(0.0)      # mono: a centred source
+            + PS.section_audio(tmp_path / "25_ElecGtr1.wav", 5.0))[trim:]           # stereo: folded on loading
+    assert np.allclose(b, want)
+
+
+def test_a_failing_or_unmeasurable_amp_track_leaves_the_example_out(monkeypatch, tmp_path, capsys):
+    b = {"part": "elecgtr02", "activity": 0.9, "why": "no DI", "amp_tracks": ["18_ElecGtr02.wav"]}
+    use, bad = T.resolve_blocked([b], {"18_ElecGtr02.wav": _raw(-24.0)})
+    assert use == [] and bad[0]["amp_why"] == "amp track bleed at or above -30 dB"
+    assert bad[0]["amp"] == [{"track": "18_ElecGtr02.wav", "status": "fail", "bleed_db": pytest.approx(-24.0),
+                              "reason": "bleed -24.0 dB, worst 01_Kick.wav -24.0"}]
+    two = {**b, "amp_tracks": ["11_ElecGtr2Mic1.wav", "12_ElecGtr2Mic2.wav"]}            # each track must pass
+    assert T.resolve_blocked([two], {"11_ElecGtr2Mic1.wav": _raw(-40.0), "12_ElecGtr2Mic2.wav": _raw(-29.0)})[0] == []
+    assert T.resolve_blocked([b], {"18_ElecGtr02.wav": _raw(-40.0, share=0.2)})[1][0]["amp_why"] == (
+        "amp track bleed unmeasurable")
+    assert T.resolve_blocked([{**b, "amp_tracks": []}], {})[1][0]["amp_why"] == "no amp track"
+    assert T.resolve_blocked([b], {"18_ElecGtr02.wav": {"silent": True}})[1][0]["amp_why"] == "amp track silent"
+    with pytest.raises(SystemExit):                                                   # never guessed: amp-bleed first
+        T.resolve_blocked([b], {})
+    blocked = {"s/31_ElecGtr3DI.wav@55.0": [b], "s/31_ElecGtr3DI.wav@15.0": []}
+    monkeypatch.setattr(T, "section_blocked", lambda ctx, sid, *a, **k: blocked[sid])
+    _bleed_file(tmp_path, "/sess", {"18_ElecGtr02.wav": _raw(-24.0)})
+    rows = [{"i": 1, "section": "s/31_ElecGtr3DI.wav@55.0", "band": "X"},
+            {"i": 2, "section": "s/31_ElecGtr3DI.wav@55.0", "band": "X"},
+            {"i": 3, "section": "s/31_ElecGtr3DI.wav@15.0", "band": "X"}]
+    kept, left, amp_of = T.apply_rule1(_rule1_ctx("/sess"), tmp_path, rows, set(), {}, set(), {}, {})
+    assert [r["i"] for r in kept] == [3] and amp_of == {}
+    assert left[0]["reason"] == T.LEFT_OUT_NO_AMP == "an active guitar has no usable amp track"
+    assert left[0]["examples"] == 2 and left[0]["guitars"][0]["amp"][0]["bleed_db"] == pytest.approx(-24.0)
+    T.print_left_out(left, T.LEFT_OUT_NO_AMP)
+    out = capsys.readouterr().out
+    assert "left out: 2 examples in 1 sections (an active guitar has no usable amp track)" in out
+    assert "amp track bleed at or above -30 dB 2" in out
+    _bleed_file(tmp_path, "/sess", {})                                               # a missing reading refuses
+    with pytest.raises(SystemExit):
+        T.apply_rule1(_rule1_ctx("/sess"), tmp_path, rows, set(), {}, set(), {}, {})
+
+
+def test_an_amp_track_the_cleaning_scan_removed_never_comes_back(monkeypatch, tmp_path):
+    amp = [{"part": "elecgtr2dt", "track": "28_ElecGtr2DT.wav", "bleed_db": None}]
+    row = {"source": {"kind": "amp"}, "removed": [],
+           "tracks": {"28_ElecGtr2DT.wav": {"same_part": True, "power_db": {"A": -9.0, "B": -12.0},
+                                            "take_amp_db": None},
+                      "01_Kick.wav": {"same_part": False, "power_db": {"A": -9.0}, "take_amp_db": -45.0}}}
+    assert T.cleaning_clash(amp, row) == ["28_ElecGtr2DT.wav"]
+    assert T.cleaning_clash(amp, {"source": {"kind": "amp"}, "removed": [], "tracks": {}}) == []
+    assert T.cleaning_clash(amp, None) == ["no cleaning scan row"]
+    assert T.cleaning_clash([], None) == []
+    blocked = {"s/31_ElecGtr3DI.wav@55.0": [{"part": "elecgtr2dt", "activity": 0.9, "why": "window excluded",
+                                             "amp_tracks": ["28_ElecGtr2DT.wav"]}]}
+    monkeypatch.setattr(T, "section_blocked", lambda ctx, sid, *a, **k: blocked[sid])
+    _bleed_file(tmp_path, "/sess", {"28_ElecGtr2DT.wav": _raw(None)})
+    rows = [{"i": 1, "section": "s/31_ElecGtr3DI.wav@55.0", "band": "X"}]
+    kept, left, amp_of = T.apply_rule1(_rule1_ctx("/sess", ("s/31_ElecGtr3DI.wav@55.0",)), tmp_path, rows, set(), {},
+                                       set(), {}, {"s/31_ElecGtr3DI.wav@55.0": row})
+    assert kept == [] and amp_of == {} and left[0]["reason"] == T.LEFT_OUT_OWN_TAKE
+
+
+def test_more_active_guitars_than_the_cap_leave_the_example_out(monkeypatch):
+    act = {f"s/{k}_ElecGtr{k}DI.wav": 0.5 for k in range(1, 7)}
+    act["s/6_ElecGtr6DI.wav"] = 0.05                                                 # resting: not counted
+    assert T.over_cap(sorted(act), act) == ["s/5_ElecGtr5DI.wav"]                   # 5 active, cap 4: the quietest
+    assert T.over_cap(sorted(act)[:4], act) == []
+    cands = {"a@5.0": (sorted(act), act), "b@5.0": (sorted(act)[:3], act)}
+    monkeypatch.setattr(T, "section_candidates", lambda ctx, sid, *a, **k: cands[sid])
+    rows = [{"i": 1, "section": "a@5.0", "band": "X"}, {"i": 2, "section": "a@5.0", "band": "X"},
+            {"i": 3, "section": "b@5.0", "band": "X"}]
+    kept, left = T.apply_cap(None, rows, set(), {}, set(), {})
+    assert [r["i"] for r in kept] == [3]
+    assert left == [{"section": "a@5.0", "band": "X", "reason": T.LEFT_OUT_CAP, "examples": 2,
+                     "guitars": [{"part": "5_ElecGtr5DI.wav", "why": T.LEFT_OUT_CAP}]}]
+    assert T.LEFT_OUT_CAP == "more active guitars than the cap"
+
+
+def test_t2_plan_records_left_out_examples_once_with_their_reasons(monkeypatch, tmp_path, capsys):
+    import types
+
+    from learn import data_cleaning as DC
+    from learn import direct_stems as DS
+
+    sids = [f"s/31_ElecGtr3DI.wav@{k}.0" for k in range(10, 80, 10)]                # 7 sections, 2 bands
+    band = {sid: ("A" if k < 4 else "B") for k, sid in enumerate(sids)}
+    rows = [{"i": 10 * k + j, "section": sid, "band": band[sid]} for k, sid in enumerate(sids) for j in range(3)]
+    ctx = _rule1_ctx("/sess", sids)
+    ctx.pool = rows
+    fail, amp_ok, clash, cap = sids[0], sids[1], sids[2], sids[4]
+    blocked = {sid: [] for sid in sids}
+    blocked[fail] = [{"part": "elecgtr1", "activity": 1.0, "why": "no DI", "amp_tracks": ["25_ElecGtr1.wav"]}]
+    blocked[amp_ok] = [{"part": "elecgtr5", "activity": 1.0, "why": "no DI", "amp_tracks": ["34_ElecGtr5.wav"]}]
+    blocked[clash] = [{"part": "elecgtr2dt", "activity": 1.0, "why": "no DI", "amp_tracks": ["28_ElecGtr2DT.wav"]}]
+    _bleed_file(tmp_path, "/sess", {"25_ElecGtr1.wav": _raw(-22.0), "34_ElecGtr5.wav": _raw(-36.0),
+                                    "28_ElecGtr2DT.wav": _raw(None)})
+    scan = {sid: {"source": {"kind": "amp"}, "removed": [], "tracks": {}} for sid in sids}
+    scan[clash]["removed"] = ["28_ElecGtr2DT.wav"]
+    act = {f"d{k}": 0.5 for k in range(5)}
+    monkeypatch.setattr(T, "load_lists", lambda root, smoke=False: {"dis": {}, "unusable_sections": [], "stems": {}})
+    monkeypatch.setattr(DS, "Ctx", lambda quiet=True: ctx)
+    monkeypatch.setattr(DC, "scan_rows", lambda root: scan)
+    monkeypatch.setattr(T, "stage_rows", lambda ctx, tr, stage, limit=0: (list(rows), []))
+    monkeypatch.setattr(T, "section_blocked", lambda ctx, sid, *a, **k: blocked[sid])
+    monkeypatch.setattr(T, "section_candidates",
+                        lambda ctx, sid, *a, **k: (sorted(act), act) if sid == cap else ([], {}))
+    monkeypatch.setattr(T, "example_recipe", lambda ctx, r, *a: {
+        "i": r["i"], "section": r["section"], "band": r["band"], "di": "s/31_ElecGtr3DI.wav", "others": [],
+        "stems": {"v": ["16_Overheads.wav"], "n": ["16_Overheads.wav"]}, "amp_tracks": [dict(x) for x in a[5]]})
+    monkeypatch.setattr(T, "N_PILOT", 3)
+    T.main(["plan", "--stage", "t2", "--smoke", "--out", str(tmp_path)])
+    plan = T._load(T.plan_path(tmp_path, "t2"))
+    gone = {fail: T.LEFT_OUT_NO_AMP, clash: T.LEFT_OUT_OWN_TAKE, cap: T.LEFT_OUT_CAP}
+    assert {x["section"]: x["reason"] for x in plan["left_out"]} == gone                 # records, not rows
+    assert all(x["examples"] == 3 for x in plan["left_out"]) and plan["left_out_examples"] == 9
+    used = {x["section"] for x in plan["examples"]}
+    assert not used & set(gone) and not {r["section"] for r in rows if r["i"] in plan["pilot"]} & set(gone)
+    for x in plan["examples"]:
+        assert bool(x["amp_tracks"]) == (x["section"] == amp_ok)
+    out = capsys.readouterr().out
+    for rsn in gone.values():
+        assert out.count(f"sections ({rsn})") == 1                                     # printed once
+
+
+def test_measure_amp_bleed_reads_injected_bleed_back_and_ignores_a_unison_guitar(tmp_path):
+    np = pytest.importorskip("numpy")
+    sf = pytest.importorskip("soundfile")
+    pytest.importorskip("scipy")
+    from scipy.signal import resample_poly
+
+    from learn import data_cleaning as DC
+
+    sr, n = 48000, 48000 * 40
+    rng = np.random.default_rng(11)
+    env = np.repeat(rng.random(n // 4800) < 0.7, 4800)[:n].astype(np.float32)   # a part that plays most of the time
+    oh = (0.1 * rng.standard_normal(n)).astype(np.float32)                      # a non-guitar source, always on
+    leak = np.concatenate([np.zeros(48, np.float32), oh[:-48]])                 # a 1 ms path into the mic
+    files = {"06_Overheads.wav": oh}
+    for k, lev in enumerate((-25.0, -30.0, -33.0)):                            # a known copy at each level
+        g = (0.3 * rng.standard_normal(n) * env).astype(np.float32)
+        y24, l24 = (np.asarray(resample_poly(v, 1, 2), np.float32) for v in (g, leak))   # the estimator's 24 kHz
+        idx, _ = DC.band_bins()
+        Y, L = DC.stft(y24)[idx], DC.stft(l24)[idx]
+        cnt = DC.counted_frames(Y)
+        gain = math.sqrt(10 ** (lev / 10) * np.sum(np.abs(Y[:, cnt]) ** 2) / np.sum(np.abs(L[:, cnt]) ** 2))
+        files[f"2{k}_ElecGtr{k + 1}.wav"] = g + gain * leak
+    g5 = (0.3 * rng.standard_normal(n) * env[::-1]).astype(np.float32)
+    files["25_ElecGtr5.wav"] = g5
+    files["26_ElecGtr5DT.wav"] = 0.8 * np.concatenate([np.zeros(48, np.float32), g5[:-48]])   # locked double
+    files["27_ElecGtr6.wav"] = np.zeros(n, np.float32)
+    for name, x in files.items():
+        sf.write(str(tmp_path / name), np.asarray(x, np.float32), sr)
+    assert T.bleed_sources(sorted(files)) == ["06_Overheads.wav"]               # never another guitar track
+    tracks = ["20_ElecGtr1.wav", "21_ElecGtr2.wav", "22_ElecGtr3.wav", "25_ElecGtr5.wav", "27_ElecGtr6.wav"]
+    r = T.measure_amp_bleed(tmp_path, tracks, log=lambda *a: None)
+    got = {t: T.track_bleed(r[t])["bleed_db"] for t in tracks[:3]}
+    assert got["20_ElecGtr1.wav"] == pytest.approx(-25.0, abs=1.5)              # read back in the check's own roles
+    assert got["21_ElecGtr2.wav"] == pytest.approx(-30.0, abs=1.5)
+    assert got["22_ElecGtr3.wav"] == pytest.approx(-33.0, abs=2.0)
+    assert [T.amp_status(r[t]) for t in tracks[:3]] == ["fail", "fail", "pass"]
+    assert T.amp_status(r["25_ElecGtr5.wav"]) == "pass"                         # its unison double is not bleed
+    assert set(r["25_ElecGtr5.wav"]["sources"]) == {"06_Overheads.wav"}
+    assert T.amp_status(r["27_ElecGtr6.wav"]) == "silent"
+
+
+def test_an_inventory_dis_own_amp_tracks_are_its_part():
+    files = ["12_ElecGtr1a_Amp1.wav", "13_ElecGtr1b_Amp2.wav", "14_ElecGtr1c_DI.wav", "18_ElecGtr3a_Amp.wav",
+             "19_ElecGtr3b_DI.wav", "20_ElecGtr3.wav", "21_ElecGtr3DI.wav", "01_Kick.wav"]
+    owners = {"14_ElecGtr1c_DI.wav": ["12_ElecGtr1a_Amp1.wav", "13_ElecGtr1b_Amp2.wav"],
+              "19_ElecGtr3b_DI.wav": ["18_ElecGtr3a_Amp.wav"], "21_ElecGtr3DI.wav": ["20_ElecGtr3.wav"]}
+    keys = T.part_keys(files, owners)
+    assert keys["12_ElecGtr1a_Amp1.wav"] == keys["13_ElecGtr1b_Amp2.wav"] == keys["14_ElecGtr1c_DI.wav"]
+    assert keys["18_ElecGtr3a_Amp.wav"] == keys["19_ElecGtr3b_DI.wav"] != keys["20_ElecGtr3.wav"]
+    assert "01_Kick.wav" not in keys
+    assert T.part_keys(files)["12_ElecGtr1a_Amp1.wav"] == "elecgtr1a"                 # the name key alone splits them
+    parts = T.session_guitar_parts(files, None, "s/21_ElecGtr3DI.wav", own=["20_ElecGtr3.wav"], owners=owners)
+    assert parts == {"elecgtr1c": ["12_ElecGtr1a_Amp1.wav", "13_ElecGtr1b_Amp2.wav", "14_ElecGtr1c_DI.wav"],
+                     "elecgtr3b": ["18_ElecGtr3a_Amp.wav", "19_ElecGtr3b_DI.wav"]}
+    # Renesans: the inventory lists GTR 2's amp under GTR 1's DI; another part number stays its own part
+    ren = ["GTR 1 Amp_M81.wav", "GTR 1 DI_TDP-1.wav", "GTR 2 Amp_M81.wav"]
+    k = T.part_keys(ren, {"GTR 1 DI_TDP-1.wav": ["GTR 1 Amp_M81.wav", "GTR 2 Amp_M81.wav"]})
+    assert k["GTR 1 Amp_M81.wav"] == k["GTR 1 DI_TDP-1.wav"] == "gtr1" and k["GTR 2 Amp_M81.wav"] == "gtr2"
+    assert T.part_keys(["15_ElecGtrFar.wav", "16_ElecGtr1DI.wav"],
+                       {"16_ElecGtr1DI.wav": ["15_ElecGtrFar.wav"]})["15_ElecGtrFar.wav"] == "elecgtr1"   # no number
+    assert T.part_number("elecgtr02dt") == 2 and T.part_number("elecgtrfar") is None
