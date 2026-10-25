@@ -120,12 +120,16 @@ MIN_BANDS = 3                          # fewer bands: the section-clustered inte
 # check equivalent to the targets' A6 (no listening); a part with no such track, or one that fails, leaves the example
 # out of every arm
 LEFT_OUT_NO_AMP = "an active guitar has no usable amp track"
+LEFT_OUT_CAP = "more active guitars than the cap"           # more renderable active guitars than MAX_OTHERS
+LEFT_OUT_OWN_TAKE = "an added amp track is in the cleaning scan's removed or same-part tracks"
 AMP_BLEED_DB = V.A6_BLEED_DB           # an amp track is used when its other-instrument bleed reads under this (-30 dB)
 AMP_BLEED_DIR = "amp-bleed"            # root/amp-bleed/<session>.json: the readings (`amp-bleed`)
-AMP_BLEED_MEASURE = ("data_cleaning's session-level take estimator (SessionMeter, counted frames, rolled nulls, "
-                     "take_db; the stem scan's) with each non-guitar track of the session as the source (never "
-                     "another guitar track: bleed_sources) and the amp track as the reference, held-out explained "
-                     "energies clipped at 0 (amp_take_db); summed over sources at or above data_cleaning.FLOOR_DB")
+AMP_SOURCE_MIN_SHARE = 0.5             # a source playing on fewer of the amp track's playing frames is unmeasurable
+AMP_BLEED_MEASURE = ("data_cleaning's session-level take estimator (SessionMeter, counted frames, rolled nulls; the "
+                     "stem scan's) over the whole session, with each non-guitar track as the source (never another "
+                     "guitar track: bleed_sources) and the amp track as the reference; stored raw per source: the real "
+                     "and rolled held-out explained energies as shares of the amp track's energy on its playing "
+                     "frames, and the source's active share of those frames (v3)")
 
 
 # --- pure: the recipe ----------------------------------------------------------------------------------------
@@ -325,15 +329,27 @@ def union_refused(*sets):
 
 # --- pure: the T1 audit's fixes (2026-10-25) ----------------------------------------------------------------------
 
+def part_number(key):
+    """The part number in a part key ('elecgtr1a' -> 1, 'gtr2' -> 2, 'elecgtr02dt' -> 2), None without one."""
+    import re
+
+    m = re.search(r"(\d+)", key or "")
+    return int(m.group(1)) if m else None
+
+
 def part_keys(files, owners=None):
     """{guitar track: part key}: `verify_tracks.guitar_part_key`, except that an inventory DI's own amp tracks take
     the DI's part (owners: {DI file: [its own amp tracks]}, the inventory's `own`): Hollow Ground's ElecGtr1a_Amp1,
-    ElecGtr1b_Amp2 and ElecGtr1c_DI are one take, which the name key splits by their letters."""
+    ElecGtr1b_Amp2 and ElecGtr1c_DI are one take, which the name key splits by their letters. An own track whose name
+    gives another part number than the DI's stays its own part (Renesans' "GTR 2 Amp_M81" under "GTR 1 DI")."""
     keys = {f: V.guitar_part_key(f) for f in V.guitar_sources(files)}
+    base = dict(keys)
     for di, own in sorted((owners or {}).items()):
         for o in own or []:
             if di in keys and o in keys:
-                keys[o] = keys[di]
+                a, b = part_number(base[o]), part_number(base[di])
+                if a is None or b is None or a == b:
+                    keys[o] = keys[di]
     return keys
 
 
@@ -411,43 +427,96 @@ def amp_bleed_total(takes, floor=None):
     return DC.db_sum(v) if v else None
 
 
-def amp_take_db(real, nulls, ref):
-    """One other track's take in an amp track (dB of the amp track's energy): `data_cleaning.take_db` on held-out
-    explained energies clipped at 0, never above 0 dB. The clip guards the reversed roles: a source that is silent for
-    long stretches (an acoustic part, a backing vocal) gives fold weights that blow up where it plays, so its real and
-    rolled readings go far below 0, and subtracting a null far below 0 would read as a take of the whole track. A
-    held-out reading below 0 explains nothing; a null cannot explain less than nothing."""
+def source_take(src, thr=AMP_BLEED_DB, min_share=None):
+    """One non-guitar source's reading in an amp track, from its stored raw values (src: {"real", "nulls": held-out
+    explained energies as shares of the amp track's energy on its playing frames, "active_share"}). -> (take dB or
+    None, unmeasurable reason or None). The take is `data_cleaning.take_db` on the raw values (no clipping), capped
+    at 0 dB. A source is unmeasurable, and fails its track, when the estimator cannot be trusted on it:
+    - a blow-up: the real or a rolled reading beyond the amp track's own energy (|share| > 1), which a sane fit
+      cannot reach (a source silent for long stretches gives fold weights that blow up where it plays);
+    - rolled readings spread as wide as the line itself (max - min >= 10^(thr/10)): the chance level is not known
+      well enough to place the take on either side of it;
+    - the source plays on fewer than `min_share` of the amp track's playing frames (within 40 dB of its own loudest,
+      `data_cleaning.counted_frames`), where the fold weights are fitted on too little of it."""
     from learn import data_cleaning as DC
 
-    t = DC.take_db(max(0.0, real), [max(0.0, v) for v in nulls], ref)
-    return None if t is None else min(t, 0.0)
+    min_share = AMP_SOURCE_MIN_SHARE if min_share is None else min_share
+    r, n = src["real"], list(src["nulls"])
+    if abs(r) > 1.0 or any(abs(v) > 1.0 for v in n):
+        why = "blow-up (a held-out reading beyond the amp track's energy)"
+    elif n and max(n) - min(n) >= 10 ** (thr / 10):
+        why = f"rolled readings spread as wide as the line ({10 * math.log10(max(n) - min(n)):+.1f} dB)"
+    elif src["active_share"] < min_share:
+        why = f"source plays on {100 * src['active_share']:.0f}% of the amp track's playing frames"
+    else:
+        why = None
+    t = DC.take_db(r, n, 1.0)
+    return (None if t is None else min(t, 0.0)), why
+
+
+def track_bleed(reading, thr=AMP_BLEED_DB, min_share=None):
+    """An amp track's bleed from its stored reading (`measure_amp_bleed`): {"bleed_db" (the power sum of the takes at
+    or above -40 dB, `amp_bleed_total`; None under it), "takes", "unmeasurable" {source: reason}, "worst" (source, dB)
+    or None}."""
+    takes, bad = {}, {}
+    for s, src in sorted((reading.get("sources") or {}).items()):
+        takes[s], why = source_take(src, thr, min_share)
+        if why:
+            bad[s] = why
+    worst = max(((v, s) for s, v in takes.items() if v is not None), default=None)
+    return {"bleed_db": amp_bleed_total(takes), "takes": takes, "unmeasurable": bad,
+            "worst": None if worst is None else (worst[1], worst[0])}
 
 
 def amp_status(reading, thr=AMP_BLEED_DB):
     """An amp track's bleed check (A6's line): 'pass' when its bleed reads under thr (None: under the floor), 'fail'
-    at or above it, 'silent' for a silent file, 'not measured' without a reading."""
+    at or above it, 'unmeasurable' when a source cannot be read (it fails too: only what can be trusted is used),
+    'silent' for a silent file, 'not measured' without a reading."""
     if not reading:
         return "not measured"
     if reading.get("silent"):
         return "silent"
-    b = reading.get("bleed_db")
-    return "pass" if b is None or b < thr else "fail"
+    tb = track_bleed(reading, thr)
+    if tb["unmeasurable"]:
+        return "unmeasurable"
+    return "pass" if tb["bleed_db"] is None or tb["bleed_db"] < thr else "fail"
+
+
+def amp_reason(reading, thr=AMP_BLEED_DB):
+    """A short reason for an amp track's verdict, with its numbers."""
+    st = amp_status(reading, thr)
+    if st in ("not measured", "silent"):
+        return st
+    tb = track_bleed(reading, thr)
+    if st == "unmeasurable":
+        return "unmeasurable: " + "; ".join(f"{s} {w}" for s, w in sorted(tb["unmeasurable"].items()))
+    b = tb["bleed_db"]
+    w = f", worst {tb['worst'][0]} {tb['worst'][1]:+.1f}" if tb["worst"] else ""
+    return f"bleed {'under -40' if b is None else f'{b:+.1f}'} dB{w}"
+
+
+AMP_WHY = {"fail": f"amp track bleed at or above {AMP_BLEED_DB:.0f} dB", "unmeasurable": "amp track bleed unmeasurable",
+           "silent": "amp track silent"}
 
 
 def resolve_blocked(blocked, readings, thr=AMP_BLEED_DB):
     """The user's rule 1 (2026-10-25) on one section. blocked: the active guitars that cannot be rendered ([{"part",
     "activity", "why", "amp_tracks"}], `section_blocked`); readings: {track: reading} (`measure_amp_bleed`). A part is
     represented by all its amp or mic tracks when every one passes the bleed check; a part with none, or with one that
-    fails, is unusable. -> (amp tracks [{"part", "track", "bleed_db"}], unusable parts [{**part, "amp", "amp_why"}]);
-    the section's examples are left out when the second is not empty."""
+    fails or cannot be measured, is unusable. -> (amp tracks [{"part", "track", "bleed_db"}], unusable parts [{**part,
+    "amp", "amp_why"}]); the section's examples are left out when the second is not empty."""
     use, bad = [], []
     for b in blocked:
         tracks = b.get("amp_tracks") or []
         if not tracks:
             bad.append({**b, "amp": [], "amp_why": "no amp track"})
             continue
-        amp = [{"track": t, "status": amp_status(readings.get(t), thr),
-                "bleed_db": (readings.get(t) or {}).get("bleed_db")} for t in tracks]
+        amp = []
+        for t in tracks:
+            r = readings.get(t)
+            st = amp_status(r, thr)
+            amp.append({"track": t, "status": st, "reason": amp_reason(r, thr),
+                        "bleed_db": track_bleed(r, thr)["bleed_db"] if st not in ("not measured", "silent") else None})
         miss = [a["track"] for a in amp if a["status"] == "not measured"]
         if miss:
             raise SystemExit(f"no bleed reading for {miss} (run `amp-bleed` for this stage first)")
@@ -455,8 +524,8 @@ def resolve_blocked(blocked, readings, thr=AMP_BLEED_DB):
         if sts == {"pass"}:
             use += [{"part": b["part"], "track": a["track"], "bleed_db": a["bleed_db"]} for a in amp]
         else:
-            bad.append({**b, "amp": amp, "amp_why": f"amp track bleed at or above {thr:.0f} dB" if "fail" in sts
-                        else "amp track silent"})
+            bad.append({**b, "amp": amp, "amp_why": "; ".join(AMP_WHY[k] for k in ("fail", "unmeasurable", "silent")
+                                                               if k in sts)})
     return use, bad
 
 
@@ -726,19 +795,36 @@ def leave_out_blocked(ctx, rows, verified, dis_windows, bad_sections, act_cache,
 
 
 def print_left_out(left, reason=LEFT_OUT_ACTIVE):
-    n = sum(x["examples"] for x in left)
-    if not n:
+    """Print the left-out examples, once per reason (records carry their own reason; `reason` names the rule when
+    nothing is left out)."""
+    if not sum(x["examples"] for x in left):
         print(f"left out: none ({reason})", flush=True)
         return
-    bands = {}
-    why = {}
-    for x in left:
-        bands[x["band"]] = bands.get(x["band"], 0) + x["examples"]
-        for w in {g.get("amp_why") or g["why"] for g in x["guitars"]}:
-            why[w] = why.get(w, 0) + x["examples"]
-    print(f"left out: {n} examples in {len(left)} sections ({reason}); by band "
-          + ", ".join(f"{b} {k}" for b, k in sorted(bands.items())) + "; examples per blocking reason "
-          + ", ".join(f"{w} {k}" for w, k in sorted(why.items())), flush=True)
+    for rsn in sorted({x.get("reason", reason) for x in left}):
+        xs = [x for x in left if x.get("reason", reason) == rsn]
+        bands, why = {}, {}
+        for x in xs:
+            bands[x["band"]] = bands.get(x["band"], 0) + x["examples"]
+            for w in {g.get("amp_why") or g["why"] for g in x["guitars"]}:
+                why[w] = why.get(w, 0) + x["examples"]
+        print(f"left out: {sum(x['examples'] for x in xs)} examples in {len(xs)} sections ({rsn}); by band "
+              + ", ".join(f"{b} {k}" for b, k in sorted(bands.items())) + "; examples per blocking reason "
+              + ", ".join(f"{w} {k}" for w, k in sorted(why.items())), flush=True)
+
+
+def cleaning_clash(amp_tracks, scan_row):
+    """The added amp tracks that the cleaning scan removed from the section's backing or confirmed as another take of
+    the target's part (`data_cleaning.section_decision`, `same_part`): they must never come back in a self-built
+    backing. A section the scan has no row for clashes as a whole. -> sorted tracks (or ['no cleaning scan row'])."""
+    from learn import data_cleaning as DC
+
+    if not amp_tracks:
+        return []
+    if scan_row is None:
+        return ["no cleaning scan row"]
+    removed = set(DC.section_decision(scan_row)[0]) | set(scan_row.get("removed") or [])
+    same = {t for t, v in (scan_row.get("tracks") or {}).items() if v.get("same_part")}
+    return sorted({a["track"] for a in amp_tracks} & (removed | same))
 
 
 def section_session(ctx, sid):
@@ -791,15 +877,36 @@ def bleed_sources(files):
     return [f for f in files if f not in allg]
 
 
+def source_raw(S, Y):
+    """One source's raw reading in one amp track (STFTs on `data_cleaning.band_bins`): the real and rolled held-out
+    explained energies (`data_cleaning.SessionMeter`, the nulls' rolls of `TakeReader`) as shares of the amp track's
+    energy on its playing frames, and the share of those frames where the source plays (within 40 dB of its own
+    loudest frame). -> {"real", "nulls", "active_share"} (None for a silent amp track)."""
+    import numpy as np
+
+    from learn import data_cleaning as DC
+
+    tr = DC.TakeReader(S, Y)
+    if tr.ref <= 0 or not tr.counted.any():
+        return None
+    vals = []
+    for roll in [0] + tr.rolls:
+        meter = DC.SessionMeter(np.roll(S, roll, axis=1) if roll else S, tr.counted, tr.band)
+        vals.append(meter.explained(Y))
+        del meter
+    act = DC.counted_frames(S)
+    return {"real": vals[0] / tr.ref, "nulls": [v / tr.ref for v in vals[1:]],
+            "active_share": float(np.mean(act[tr.counted]))}
+
+
 def measure_amp_bleed(sd, tracks, log=print):
-    """Each amp or mic track's other-instrument bleed (zero renders, CPU), by the cleaning plan's session-level take
-    estimator (`data_cleaning`'s SessionMeter, counted frames and rolled nulls, as the stem scan reads it) with the
-    roles of A6's bleed: each non-guitar track of the session (`bleed_sources`) is the source and the amp track the
-    reference, so a take is the held-out share of the amp track's energy (on its playing frames) that the other track
-    explains, less its rolled nulls (`amp_take_db`: readings clipped at 0). The bleed is the takes' power sum
-    (`amp_bleed_total`). Not injection-checked in these roles (the cleaning plan checked guitar into drum and room
-    tracks): an upper bound, since it reads any coherent path between the two tracks, either way.
-    -> {track: {"bleed_db", "takes", "sources", "silent"}}."""
+    """Each amp or mic track's raw other-instrument bleed readings (zero renders, CPU), one reading per session (not
+    per section or half: a recorded leakage path does not change between sections), by the cleaning plan's take
+    estimator with the roles of A6's bleed: each non-guitar track of the session (`bleed_sources`) is the source and
+    the amp track the reference (`source_raw`). The verdict is drawn from the stored raw values (`track_bleed`,
+    `amp_status`). Injection-checked in these roles on synthetic signals (tests) and on Hollow Ground's and Dark Ride's
+    amp tracks (the design).
+    -> {track: {"silent", "sources": {source: raw}}}."""
     import gc
 
     import numpy as np
@@ -812,58 +919,61 @@ def measure_amp_bleed(sd, tracks, log=print):
     idx, _ = DC.band_bins()
     srcs = bleed_sources(files)
     Ys = {t: DC.stft(DC.load_window(sd / t, 0.0, dur))[idx] for t in tracks}
-    silent = {t for t, Y in Ys.items() if not (np.abs(Y) > 0).any()}
-    takes = {t: {} for t in tracks}
+    silent = {t for t, Y in Ys.items() if not DC.counted_frames(Y).any()}
+    out = {t: {"silent": t in silent, "sources": {}} for t in tracks}
     t0 = time.time()
     for m, s in enumerate(srcs):
         want = [t for t in tracks if t not in silent]
         if not want:
             continue
         S = DC.stft(DC.load_window(sd / s, 0.0, dur))[idx]
-        if not (np.abs(S) > 0).any():
+        if not (np.abs(S) > 0).any():                       # a silent file cannot leak
             continue
         for t in want:
-            tr = DC.TakeReader(S, Ys[t])                     # the amp track's counted frames, energy and nulls' rolls
-            vals = []
-            for roll in [0] + tr.rolls:
-                meter = DC.SessionMeter(np.roll(S, roll, axis=1) if roll else S, tr.counted, tr.band)
-                vals.append(meter.explained(Ys[t]))
-                del meter
-            takes[t][s] = amp_take_db(vals[0], vals[1:], tr.ref)
+            raw = source_raw(S, Ys[t])
+            if raw is not None:
+                out[t]["sources"][s] = raw
         del S
         gc.collect()
         log(f"  {sd.name[:40]}: source {m + 1}/{len(srcs)} {s} ({time.time() - t0:.0f} s)")
-    return {t: {"bleed_db": None if t in silent else amp_bleed_total(takes[t]), "takes": takes[t],
-                "sources": len(takes[t]), "silent": t in silent} for t in tracks}
+    return out
 
 
-def apply_rule1(ctx, root, rows, verified, dis_windows, bad_sections, act_cache):
+def apply_rule1(ctx, root, rows, verified, dis_windows, bad_sections, act_cache, scan=None):
     """The user's rule 1 (2026-10-25) at plan time: in each row's section, every active guitar that cannot be
     rendered is represented by its amp or mic tracks when each passes the bleed check (`resolve_blocked`); otherwise
-    the row is left out of every arm (LEFT_OUT_NO_AMP), with the guitars, tracks and readings recorded.
+    the row is left out of every arm (LEFT_OUT_NO_AMP), with the guitars, tracks and readings recorded. An added amp
+    track that the cleaning scan removed or confirmed as the target's other take leaves the row out too
+    (LEFT_OUT_OWN_TAKE; scan: {section: scan row}, `data_cleaning.scan_rows`).
     -> (kept rows, left-out records, {section: amp tracks})."""
     blocked = blocked_by_section(ctx, rows, verified, dis_windows, bad_sections, act_cache)
     readings = load_amp_bleed(root, needed_amp_tracks(ctx, blocked))
-    res = {sid: resolve_blocked(b, readings.get(section_session(ctx, sid)) or {}) for sid, b in blocked.items()}
+    res = {}
+    for sid, b in blocked.items():
+        use, bad = resolve_blocked(b, readings.get(section_session(ctx, sid)) or {})
+        clash = cleaning_clash(use, (scan or {}).get(sid)) if not bad else []
+        res[sid] = (use, bad, clash)
     kept, out = [], {}
     for r in rows:
-        use, bad = res[r["section"]]
-        if bad:
-            o = out.setdefault(r["section"], {"section": r["section"], "band": r["band"], "reason": LEFT_OUT_NO_AMP,
-                                              "guitars": bad, "examples": 0})
+        use, bad, clash = res[r["section"]]
+        if bad or clash:
+            o = out.setdefault(r["section"], {
+                "section": r["section"], "band": r["band"], "reason": LEFT_OUT_NO_AMP if bad else LEFT_OUT_OWN_TAKE,
+                "guitars": bad or [{"part": t, "why": LEFT_OUT_OWN_TAKE} for t in clash], "examples": 0})
             o["examples"] += 1
         else:
             kept.append(r)
-    amp_of = {sid: use for sid, (use, bad) in res.items() if use and not bad}
+    amp_of = {sid: use for sid, (use, bad, clash) in res.items() if use and not bad and not clash}
     return kept, [out[s] for s in sorted(out)], amp_of
 
 
 def print_amp_use(recipes):
     with_amp = [x for x in recipes if x.get("amp_tracks")]
     parts = {}
-    for x in with_amp:
+    for x in with_amp:                                  # a part is per session (ElecGtr2 in two sessions is two parts)
+        sess = pathlib.PurePosixPath(x["di"]).parent.name
         for a in x["amp_tracks"]:
-            parts.setdefault(a["part"], set()).add(a["track"])
+            parts.setdefault(f"{sess}/{a['part']}", set()).add(a["track"])
     print(f"amp tracks (rule 1, 2026-10-25): {len(with_amp)} of {len(recipes)} examples carry the session's own amp "
           f"tracks for {len(parts)} parts" + (": " + ", ".join(f"{p} ({len(t)})" for p, t in sorted(parts.items()))
                                                if parts else ""), flush=True)
@@ -888,6 +998,54 @@ def stems_for(rec, verified_stems, sd):
     return keep, [f for f in keep if f not in v]
 
 
+def section_candidates(ctx, sid, verified, dis_windows, bad_sections, act_cache):
+    """(candidates, {di: activity}): the section's other trusted DIs whose window T0 measured and found usable, with
+    their share of playing frames (`section_activity`); `pick_others` takes the active ones, at most MAX_OTHERS."""
+    sec = ctx.sections[sid]
+    sd = ctx.inv[sec["di"]]["session_dir"]
+    start = float(sec["start_s"])
+    cands = []
+    for d in session_dis(ctx, sd, verified):              # other guitars: only windows T0 measured and found usable
+        if d == sec["di"]:
+            continue
+        w = f"{d}@{start:.1f}"
+        st = (dis_windows.get(d) or {}).get(w)
+        if st is None:
+            raise SystemExit(f"{sid}: {w} was never measured by T0 (rerun verify_tracks dis and lists)")
+        if st == "usable" and w not in bad_sections:
+            cands.append(d)
+    files = act_cache.setdefault("files", {})
+    for d in cands:
+        key = (d, start)
+        if key not in act_cache:
+            act_cache[key] = section_activity(ctx.inv[d]["path"], start, files=files)
+    return cands, {d: act_cache[(d, start)] for d in cands}
+
+
+def over_cap(cands, activity, max_n=MAX_OTHERS, active_min=ACTIVE_MIN):
+    """The renderable other guitars that play in a section beyond the cap: `pick_others` would drop them silently, so
+    the section's examples are left out instead (LEFT_OUT_CAP). -> sorted DIs past the cap (empty: within it)."""
+    act = sorted((d for d in cands if (activity.get(d) or 0.0) >= active_min), key=lambda d: (-activity[d], d))
+    return sorted(act[max_n:])
+
+
+def apply_cap(ctx, rows, verified, dis_windows, bad_sections, act_cache, max_n=MAX_OTHERS):
+    """Rows whose section has more renderable active guitars than the cap are left out of every arm (before any draw).
+    -> (kept rows, left-out records)."""
+    kept, out, memo = [], {}, {}
+    for r in rows:
+        sid = r["section"]
+        if sid not in memo:
+            memo[sid] = over_cap(*section_candidates(ctx, sid, verified, dis_windows, bad_sections, act_cache), max_n)
+        if memo[sid]:
+            o = out.setdefault(sid, {"section": sid, "band": r["band"], "reason": LEFT_OUT_CAP, "examples": 0,
+                                     "guitars": [{"part": d.split("/")[-1], "why": LEFT_OUT_CAP} for d in memo[sid]]})
+            o["examples"] += 1
+        else:
+            kept.append(r)
+    return kept, [out[s] for s in sorted(out)]
+
+
 def example_recipe(ctx, r, verified, verified_stems, act_cache, bad_sections=frozenset(), dis_windows=None,
                    amp_tracks=()):
     """One example's self-built recipe (plan (c)), zero renders. r: a part C row; dis_windows: {di: {window id:
@@ -901,22 +1059,7 @@ def example_recipe(ctx, r, verified, verified_stems, act_cache, bad_sections=fro
     sec = ctx.sections[r["section"]]
     rec = ctx.inv[sec["di"]]
     sd = rec["session_dir"]
-    cands = []
-    for d in session_dis(ctx, sd, verified):              # other guitars: only windows T0 measured and found usable
-        if d == sec["di"]:
-            continue
-        w = f"{d}@{float(sec['start_s']):.1f}"
-        st = (dis_windows.get(d) or {}).get(w)
-        if st is None:
-            raise SystemExit(f"{r['i']}: {w} was never measured by T0 (rerun verify_tracks dis and lists)")
-        if st == "usable" and w not in bad_sections:
-            cands.append(d)
-    files = act_cache.setdefault("files", {})
-    for d in cands:
-        key = (d, float(sec["start_s"]))
-        if key not in act_cache:
-            act_cache[key] = section_activity(ctx.inv[d]["path"], float(sec["start_s"]), files=files)
-    activity = {d: act_cache[(d, float(sec["start_s"]))] for d in cands}
+    cands, activity = section_candidates(ctx, r["section"], verified, dis_windows, bad_sections, act_cache)
     part = rec.get("part") or DC.part_base(sec["di"])
     dkey = ("doubles", sec["di"], float(sec["start_s"]))
     if dkey not in act_cache:
@@ -992,7 +1135,9 @@ def stage_rows(ctx, tr, stage, limit=0):
 def cmd_plan(args):
     """The examples and their recipes (zero renders, CPU): T1's K, or T2's pilot, early-stopping set and SYN-E swap.
     Rule 1 (the user, 2026-10-25) first: an active guitar that cannot be rendered is its amp tracks (read by
-    `amp-bleed`), or the example is left out of every arm before any draw."""
+    `amp-bleed`), or the example is left out of every arm before any draw; so is an example with more renderable
+    active guitars than the cap (`apply_cap`)."""
+    from learn import data_cleaning as DC
     from learn import direct_stems as DS
 
     V.require_real(args)
@@ -1004,7 +1149,13 @@ def cmd_plan(args):
     ctx = DS.Ctx(quiet=True)
     act = {}
     rows, eggy = stage_rows(ctx, tr, args.stage, args.limit)
-    rows, left, amp_of = apply_rule1(ctx, root, rows, verified, wins, bad_secs, act)   # every arm drops them
+    scan = DC.scan_rows(DC.OUT)                         # the cleaning scan (read only): rule 1's own-take guard
+    if not scan:
+        raise SystemExit(f"the cleaning scan's rows are missing ({DC.OUT / 'scan'})")
+    rows, left, amp_of = apply_rule1(ctx, root, rows, verified, wins, bad_secs, act, scan)   # every arm drops them
+    rows, left_cap = apply_cap(ctx, rows, verified, wins, bad_secs, act)
+    left = sorted(left + left_cap, key=lambda x: x["section"])
+    print_left_out(left, LEFT_OUT_NO_AMP)
     if args.stage == "t1":
         recipes = [example_recipe(ctx, r, verified, tr["stems"], act, bad_secs, wins, amp_of.get(r["section"], ()))
                    for r in rows]
@@ -1025,10 +1176,12 @@ def cmd_plan(args):
               + ", ".join(f"{b} {sum(1 for r in rest if r['band'] == b)}" for b in sorted({r["band"] for r in rest}))
               + f" (total {len(rest)} in {len({r['section'] for r in rest})} sections; early stopping {len(es)} in "
               f"{len(es_sec)} sections; the pilot needs {N_PILOT})", flush=True)
-        print_left_out(left, LEFT_OUT_NO_AMP)
         pilot = stratified_by_band(rest, N_PILOT, PILOT_SEED)
-        eggy, left_e, amp_e = apply_rule1(ctx, root, eggy, verified, wins, bad_secs, act)
-        left = sorted(left + left_e, key=lambda x: x["section"])
+        eggy, left_e, amp_e = apply_rule1(ctx, root, eggy, verified, wins, bad_secs, act, scan)
+        eggy, left_ec = apply_cap(ctx, eggy, verified, wins, bad_secs, act)
+        if left_e or left_ec:
+            print(f"Eggy (SYN-E's swap pool): {sum(x['examples'] for x in left_e + left_ec)} left out", flush=True)
+        left = sorted(left + left_e + left_ec, key=lambda x: x["section"])
         amp_of.update(amp_e)
         try:
             kept, out, eg = eggy_swap([r["i"] for r in pilot], eggy)
@@ -1051,7 +1204,6 @@ def cmd_plan(args):
     rec["left_out"] = left
     rec["left_out_examples"] = sum(x["examples"] for x in left)
     rec["amp_bleed_db"] = AMP_BLEED_DB
-    print_left_out(left, LEFT_OUT_NO_AMP)
     print_amp_use(rec["examples"])
     rec["lists_sha256"] = lists_sha(root)
     stale = stale_rows(_load(plan_path(root, args.stage)), rec, rows_of(root, args.stage, "render"))
@@ -1107,12 +1259,7 @@ def cmd_amp_bleed(args):
                          "threshold_db": AMP_BLEED_DB, "tracks": have, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
             print(f"{pathlib.Path(sd).name}: {len(todo)} read in {time.time() - t0:.0f} s", flush=True)
         for t in tracks:
-            r = have[t]
-            b = r["bleed_db"]
-            top = sorted(((v, s) for s, v in r["takes"].items() if v is not None), reverse=True)[:2]
-            print(f"  {pathlib.Path(sd).name[:40]} {t}: {amp_status(r)} (bleed "
-                  f"{'under the floor' if b is None else f'{b:+.1f} dB'}; top " + ", ".join(f"{s} {v:+.1f}" for v, s in top)
-                  + ")", flush=True)
+            print(f"  {pathlib.Path(sd).name[:40]} {t}: {amp_status(have[t])} ({amp_reason(have[t])})", flush=True)
     print(f"AMP-BLEED DONE {k}/{n}")
 
 
@@ -1152,6 +1299,30 @@ def section_levels(ctx, sec, others, stems):
         vals = [v for v in (lu(a) for a in own) if v is not None]
         out[o["di"]] = other_level(max(vals) if vals else None, sess_amp, stem_l, has_own=bool(own))
     return out
+
+
+def place_other(row, acc, y, ly, level, level_from, o, amp, settings):
+    """One other guitar's render into its example (rule 2, T1 audit): a render below RENDER_FLOOR_LUFS, or silent,
+    refuses the example (row["refused"]), never lifted to its level; otherwise it is scaled to its level, pan-folded
+    and added. -> the example's accumulated other guitars."""
+    why = near_silent(ly)
+    if why:
+        row["refused"] = why
+        row["others"].append({"di": o["di"], "amp": amp, "render_lufs": ly, "refused": why})
+        return acc
+    gain = 10 ** ((level - ly) / 20) * pan_fold(o["pan"])
+    row["others"].append({"di": o["di"], "dt": o["dt"], "amp": amp, "settings": settings, "level_lufs": level,
+                          "level_from": level_from, "render_lufs": ly, "pan": o["pan"], "gain_db": 20 * math.log10(gain)})
+    return acc + y * gain
+
+
+def refusal_counts(rows):
+    """{reason: examples} of refused rows (render or build rows)."""
+    out = {}
+    for r in rows:
+        if r.get("refused"):
+            out[r["refused"]] = out.get(r["refused"], 0) + 1
+    return dict(sorted(out.items()))
 
 
 def cmd_render(args):
@@ -1196,6 +1367,7 @@ def cmd_render(args):
     rp.parent.mkdir(parents=True, exist_ok=True)
     trim0, trim1 = int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR)
     t_start = time.time()
+    written = []
     try:
         DS.check_recipe(rr)
         menu = rr.menu()
@@ -1255,29 +1427,21 @@ def cmd_render(args):
                         di_cache = {di_id: B.measure(PS.section_audio(ctx.inv[di_id]["path"], sec["start_s"])).astype(np.float32)}
                     y = primer.render((f"{sid}|{di_id}", amp), di_cache[di_id], sel, st)
                     y = (y.mean(axis=1) if y.ndim == 2 else y)[trim0:trim1]
-                    ly = lufs_or_none(y)
-                    why = near_silent(ly)                        # rule 2 (T1 audit): refused, never lifted
-                    if why:
-                        rows[i]["refused"] = why
-                        rows[i]["others"].append({"di": di_id, "amp": amp, "render_lufs": ly, "refused": why})
-                        continue
-                    gain = 10 ** ((lv - ly) / 20) * pan_fold(o["pan"])
-                    acc[i] += y * gain
-                    rows[i]["others"].append({"di": di_id, "dt": o["dt"], "amp": amp, "settings": LO.sdict(st),
-                                              "level_lufs": lv, "level_from": src, "render_lufs": ly, "pan": o["pan"],
-                                              "gain_db": 20 * math.log10(gain)})
+                    acc[i] = place_other(rows[i], acc[i], y, lufs_or_none(y), lv, src, o, amp, LO.sdict(st))
                 for x in xs:
                     rw = rows[x["i"]]
                     if not rw.get("refused"):
                         sc, sha = G.write_flac(flac_path(root, args.stage, x["i"], "others"), acc[x["i"]], PS.SR)
                         rw["others_file"] = {"scale": sc, "sha256": sha}
                     rw["renders_so_far"] = primer.renders
+                    written.append(rw)
                     fh.write(json.dumps(rw) + "\n")
                 fh.flush()
                 print(f"section {m + 1}/{len(by_sec)} {sid[-50:]}: {len(xs)} examples; renders {primer.renders} "
                       f"({primer.primes} priming); {(time.time() - t_start) / (m + 1):.0f} s per section", flush=True)
     finally:
         rr.close()
+    print(f"refused in this shard, by reason: {refusal_counts(written) or 'none'}")
     print(f"RENDER DONE {k}/{n}: {primer.renders} renders ({primer.primes} priming)")
 
 
@@ -1459,6 +1623,9 @@ def cmd_t1_read(args):
     allrows = rows_of(root, "t1", "build")
     if not plan or (any(x["i"] not in allrows for x in plan["examples"]) and not args.smoke):
         raise SystemExit("K is not fully built (run render and build --stage t1)")
+    planned = {x["i"] for x in plan["examples"]}
+    print(f"T1 refused (every arm drops them), by reason: "
+          f"{refusal_counts(r for i, r in allrows.items() if i in planned) or 'none'}", flush=True)
     truth = G.gate_rows(DS.ROOT / "gate", "truth")
     tr = load_lists(root, args.smoke)
     only = None

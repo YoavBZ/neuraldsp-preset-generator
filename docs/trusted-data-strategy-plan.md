@@ -147,7 +147,8 @@ note beside each headline; nothing re-runs.
     median level of the session's amp tracks.
   - **Doubles:** a "DT" double takes the target's preset, panned opposite.
   - **Parts with no DI** are left out (decision 4). *Since 2026-10-25 (user):* an active guitar that cannot be
-    rendered is the session's own amp track(s) after an automatic bleed check, or the example is left out (note below).
+    rendered is the session's own amp track(s) after an automatic bleed check, or the example is left out
+    ([the 2026-10-25 note](#notes-after-approval-dated), [design](trusted-data-t0-design.md#rule-1-after-the-users-decision-2026-10-25)).
 - **Other instruments:** stems that pass the scan, at the session's own balance.
 - **Level:** the backing is set against the target by a ratio drawn from the re-derived level prior
   (today: median −7.9 dB, 5–95%: −18.9 to −2.6 dB).
@@ -237,7 +238,8 @@ note beside each headline; nothing re-runs.
 3. **K and stage F:**
    - Kimock and Swatkins rejoin K (it reverses "stay out for now");
    - stage F is shrunk to V-real (recommended), or its bands train once fresh test bands exist.
-4. **Other guitars:** DI renders only (recommended), or also verified studio amp tracks.
+4. **Other guitars:** DI renders only (recommended), or also verified studio amp tracks. *Amended 2026-10-25 (user):*
+   amp tracks stand for active guitars that cannot be rendered, after an automatic bleed check ([the 2026-10-25 note](#notes-after-approval-dated)).
 5. **T0–T2:**
    - approve about 16–23k renders, 8.8k separations and about 2 h of training;
    - rule on a tie at T2: SES is cheaper, but only the self-built set can grow under the
@@ -313,10 +315,12 @@ Facts that changed after the approval, and what each means for the plan. None is
 - **2026-10-25, the user's decision on rule 1** ("Sounds good, go ahead" to the ML session's option 1;
   [design](trusted-data-t0-design.md#rule-1-after-the-users-decision-2026-10-25)): in self-built mixes, an active guitar
   that cannot be rendered is the session's own recorded amp track(s), at the session's balance, after an automatic
-  leakage check with no listening (other-instrument bleed under −30 dB, A6's line, read by the cleaning plan's take
-  estimator from the session's non-guitar tracks only: doubled guitars read as each other's leakage); a part with no
-  such track, or one that fails, leaves the example out of every arm. Only K's and SYN's backings change; SES and
-  pairing do not. Dry run: T2 keeps all 8,722 candidates (8,184 in 5 bands outside early stopping), so the 5k pilot is
-  reachable; T1 keeps 343 of its 812, Dark Ride only (Adam Buckley's guitars read −22 to −30 dB of drum and bass
-  bleed). T1 must be re-planned and re-run before T2, because K's mixes change: about 1.0k other-guitar renders plus
-  priming and 343 separations.
+  leakage check with no listening (other-instrument bleed under −30 dB, A6's line, read once per session by the
+  cleaning plan's take estimator from the session's non-guitar tracks only, since doubled guitars read as each other's
+  leakage; a source the estimator cannot be trusted on fails the track); a part with no such track, or one that fails,
+  leaves the example out of every arm, as do examples with more active guitars than the cap of 4. Only K's and SYN's
+  backings change; SES and pairing do not. Dry run after the independent review: every amp track has at least one
+  source the estimator cannot resolve at −30 dB (sparse vocals, synths, effects, toms), so none is used; T1 keeps none of
+  its 812; T2 keeps 5,154 candidates in 4 bands outside early stopping (Rebuild The Evil and The Long Wait drop out), so
+  the 5k pilot is still reachable, narrowly. T1 must be re-planned and re-run before T2, because K's mixes change; as it
+  stands the re-plan holds no example, so the user decides whether T1 is waived before T2 or the check changes.
