@@ -588,6 +588,19 @@ UNDECLARED = {
     "cambridge/TheApprehended_StillFlyin_Full": ("The Apprehended", "known_answer",
                                                  "3 DIs with no amp track; never used; part B's first song"),
 }
+CAMBRIDGE_NEW = REFS / "datasets-cambridge-new"
+# Downloaded on 2026-10-25 as TRAINING bands (the user, 2026-10-25; ledger `cambridge-new-training-bands-2026-10-25`):
+# {session dir: (band, split, why)}. Training permission only: a DI still trains once T0's checks and the ear pass it.
+# Blue Manic, in the same folder, is a reserved test band and is not here.
+TRAINING_DOWNLOADS = {
+    "EmberRev_DivesAndLazarus_Full": ("Ember Rev", "library", "2026-10-25 training band (art rock)"),
+    "EmptySignifier_Change_Full": ("Empty Signifier", "library",
+                                   "2026-10-25 training band ('various styles': scope by ear)"),
+    "GoranLevi_QueSeYo_Full": ("Goran Levi", "library", "2026-10-25 training band (Afro-Cuban jazz)"),
+    "Mopia_IfYouThenI_Full": ("Mopia", "library", "2026-10-25 training band (jazz-metal big band: scope by ear)"),
+    "Soren_ALittleLate_Full": ("Soren", "library", "2026-10-25 training band (disco-pop; DI only)"),
+}
+RESERVED_NEW = {"BlueManic_Acomatay_Full": "reserved test band (ledger cambridge-new-test-band-bluemanic)"}
 REFUSED_SESSIONS = {
     "cambridge/DunningKruger_Sascha_Full": "Dunning Kruger is a set-3 held-out band",
     "cambridge/UmphreysMcGee_CrucialTaunt_Full": "its 'DI' is a Palmer PDI-09 speaker-simulated line-out after the "
@@ -665,7 +678,7 @@ def refuse_held_out(rec):
         raise ValueError(f"set 4-6 material: {p}")
     if "P3_music" in p:
         raise ValueError(f"Guitar-TECHS P3 is never used: {p}")
-    if rec["set"] in ("undeclared", "guitar-techs-P2"):
+    if rec["set"] in ("undeclared", "guitar-techs-P2", "cambridge-new"):
         band = rec["band"]
         if band in _held_out_names() or set4.covers(band) or set5.covers(band) or set6.covers(band):
             raise ValueError(f"held-out band: {band}")
@@ -796,6 +809,17 @@ def inventory():
                 song=pathlib.PurePosixPath(key).name, part=part, slug=None, gain_class=None, genre=None,
                 split=split, session_dir=str(inner), own=own_tracks(part, files, di), mix=None, vocals=None,
                 notes=[why])
+    # downloaded 2026-10-25 for training (datasets-cambridge-new); the reserved test band stays out
+    for key, why in RESERVED_NEW.items():
+        excluded.append({"what": f"datasets-cambridge-new/{key}", "why": why})
+    for key, (band, split, why) in TRAINING_DOWNLOADS.items():
+        inner = CAMBRIDGE_NEW / key
+        files = sorted(p.name for p in inner.glob("*.wav"))
+        for di in [f for f in files if is_guitar_di(f)]:
+            part = re.search(r"(?i)elecgtr\d*", di).group(0)
+            add(id=f"cambridge-new/{key}/{di}", path=str(inner / di), source="cambridge", set="cambridge-new",
+                band=band, song=key, part=part, slug=None, gain_class=None, genre=None, split=split,
+                session_dir=str(inner), own=own_tracks(part, files, di), mix=None, vocals=None, notes=[why])
     # Guitar-TECHS P1 and P2 (development; P3 never)
     for band, root in GT_DIRS.items():
         for f in sorted(root.glob("*/audio/directinput/*.wav")):

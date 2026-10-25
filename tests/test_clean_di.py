@@ -252,6 +252,20 @@ def test_undeclared_sessions_were_never_eligible_for_a_held_out_draw():
     assert {"Rebecca Haviland", "Chris Coltraine"} <= C._held_out_names()
 
 
+def test_training_downloads_are_training_only_and_not_held_out():
+    import json
+
+    assert not set(C.TRAINING_DOWNLOADS) & set(C.RESERVED_NEW)
+    assert all(split == "library" for _, split, _ in C.TRAINING_DOWNLOADS.values())
+    ledger = json.loads((C.PLUGIN_ROOT / "docs/dev-test-ledger.json").read_text())
+    entry = next(t for t in ledger["tests"] if t["test_id"] == "cambridge-new-training-bands-2026-10-25")
+    assert all(key in json.dumps(entry) for key in C.TRAINING_DOWNLOADS)
+    for key, (band, _, _) in C.TRAINING_DOWNLOADS.items():
+        C.refuse_held_out({"set": "cambridge-new", "band": band, "path": str(C.CAMBRIDGE_NEW / key / "x_ElecGtrDI.wav")})
+    with pytest.raises(ValueError):
+        C.refuse_held_out({"set": "cambridge-new", "band": "Rebecca Haviland", "path": "/nowhere/x.wav"})
+
+
 def test_held_out_paths_are_refused():
     root = os.path.expanduser("~/ndsp-presets/references/datasets")
     rec = {"set": 2, "band": "Forkupines", "path": f"{root}/cambridge/Forkupines_Semantics_Full/x.wav"}

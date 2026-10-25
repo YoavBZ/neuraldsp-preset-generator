@@ -451,6 +451,12 @@ DIs, unconfirmed on 2026-10-23, are now confirmed. The full list is in
 - The other four (Ember Rev, Goran Levi, Mòpia, Sören) were blocked by Chrome's multiple-download
   prompt and are pending.
 - Jeff Hirata and The Ferryboat Men are not downloaded (set-5 held out).
+- *Later on 2026-10-25:* the other four were downloaded too (checksums in `_zips/sha256-2026-10-25.txt`).
+  **The user decided all five are training bands, not test bands.** The role was recorded before
+  any audio was opened: ledger `cambridge-new-training-bands-2026-10-25` and `TRAINING_DOWNLOADS` in
+  `learn/clean_di.py` (read by the DI inventory and `assert_training_ok`). 9 electric DIs: Ember Rev 2,
+  Empty Signifier 2, Goran Levi 1, Mòpia 2 (each with an amp or mic track) and Sören 2 (DI only).
+  Mòpia and Empty Signifier are scope by ear. A DI trains only after T0's checks and the ear.
 
 ## Decisions and open questions
 
@@ -486,9 +492,8 @@ DIs, unconfirmed on 2026-10-23, are now confirmed. The full list is in
    Year Town") stay unread; only Dopapod, a jam band with electric guitar, might matter, and a
    manual check on the site is the user's call.
 4. **The Cambridge leads behind the Cloudflare challenge:** listed on 2026-10-25 (above). The user
-   approved the download of the 5 new in-scope sessions (2026-10-25): Empty Signifier is
-   downloaded, and the other four are pending after Chrome's multiple-download prompt blocked
-   them. Each band's test-or-train role is set in the ledger before any audio is opened.
+   approved the download of the 5 new in-scope sessions (2026-10-25); all five are downloaded and,
+   by the user's decision the same day, are training bands (above).
 5. **Disk.** About 113 GB was free on 2026-10-23. Ranks 1 and 3 are downloaded (0.94 + 0.46 GB);
    rank 2 needs 2.4 GB, and the features about 3 GB.
 
