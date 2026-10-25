@@ -1737,6 +1737,7 @@ def scope_dis(dis):
 
 # --- commands: the lists -----------------------------------------------------------------------------------------
 
+NON_MUSICAL = re.compile(r"click|metronome|talkback", re.I)   # never in a backing (Split Brow's BAND CLICK, 2026-10-25)
 EAR_PAGE = "trusted-data-ear"          # the listening page built from `ear-queue.json`
 EAR_VERDICTS = {"target": ("clean_amp", "bleed", "other_guitar", "not_amp", "unsure"),
                 "di": ("clean", "processed", "not_a_di", "hum", "unsure"),
@@ -2066,7 +2067,7 @@ def pick_stem_checks(stems, di_rows, stored, activity=None, min_share=STEM_CHECK
     activity = activity or stem_activity
     out = {}
     for sd in sorted(stems):
-        passing = {f: v for f, v in stems[sd]["stems"].items() if v["pass"]}
+        passing = {f: v for f, v in stems[sd]["stems"].items() if v["pass"] and not NON_MUSICAL.search(f)}
         old = stored.get(sd) or {}
         if old.get("stem") in passing:
             out[sd] = old
@@ -2396,8 +2397,8 @@ def cmd_lists(args):
                                     question="Is an electric guitar audible in this track?"))
     # a session's stems are used once its spot-check is heard clean; a guitar heard holds all of them (the scan missed
     # one there), and unheard or 'unsure' waits
-    verified_stems = {sd: sorted(f for f, v in r["stems"].items() if v["pass"]) for sd, r in stems.items()
-                      if stem_heard.get(sd) is True}
+    verified_stems = {sd: sorted(f for f, v in r["stems"].items() if v["pass"] and not NON_MUSICAL.search(f))
+                      for sd, r in stems.items() if stem_heard.get(sd) is True}
 
     def uses(v, u):
         return sorted(s for s, r in targets.items() if r["verdict"] == v and u in (r.get("uses") or []))

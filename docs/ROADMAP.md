@@ -175,7 +175,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
          processed, Hikikomori, New One, Honey, Lost & Alive);
        - training 27 DIs in 8 bands, 181 usable sections, of which only 1 is clean-class and 1 crunch
          (61% high gain, the rest unclassed);
-       - stems 167 usable in 14 sessions; the 5 sessions heard with a guitar are held (Eggy Farthest
+       - stems 166 usable in 14 sessions (Split Brow's click track barred, PR #289); the 5 sessions heard with a guitar are held (Eggy Farthest
          Step and Fragments, Hikikomori, Honey, Lost & Alive).
 
        Let's Dance ElecGtr4 (the user, 2026-10-24): the leak is in the DI (quiet high notes), and the
@@ -663,3 +663,4 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-24 | PR #286 verified on this machine (its 10-step checklist; all passed) and fixed after an independent review: on one ear-page card the latest touch across all exports stands, and a card never touched in a browser holds no answer (an export from another browser could have erased answers); a target's measure DI is heard first too (6 `di_unheard` cards, part 6); stems fold once by channel count; notes on retired cards are kept; `check --retire` never retires an answered card. The ear pages are parts 1–6, 202 live cards (rebuilt to 4 parts in the row below) | [design](trusted-data-t0-design.md) |
 | 2026-10-24 | User decisions (ML session): Cnoc An Tursa stays out of K (a side check at most); SYN-E dropped from T2 until a clean-class DI source passes the checks. The ear pages were rebuilt to the 202 live cards (4 parts, nothing to skip; old pages kept in `old-v1/`); Blue Manic's mix preview downloaded | [design](trusted-data-t0-design.md) |
 | 2026-10-25 | T0's ear done (the user heard all 202 cards; one `lists` run with the sitting-1 export): targets 17 verified, 42 excluded; DIs 46 verified, 13 excluded; V-real 10 parts in 7 bands (3 clean parts in 2 bands); knob ceiling 2's 7 parts verified; T1's K is Adam Buckley and Dark Ride (Kimock's and Swatkins' 4 DIs all heard processed); training 27 DIs in 8 bands, 181 sections, only 1 clean-class and 1 crunch; stems 167 usable in 14 sessions, 5 sessions held. Let's Dance ElecGtr4 (user, 2026-10-24): the leak is in the DI, the target is excluded and the DI is not clean. Open before T3 (user): clean-style DIs from new sources. T1 started the same day | [outcome](trusted-data-t0-design.md#t0-outcome-2026-10-25) |
+| 2026-10-25 | Backings and spot-checks never use click, metronome or talkback tracks (`NON_MUSICAL` in `verify_tracks`, PR #289): Split Brow's BAND CLICK had passed the stem scan; usable stems 167 → 166, nothing else moved | [design](trusted-data-t0-design.md) |
