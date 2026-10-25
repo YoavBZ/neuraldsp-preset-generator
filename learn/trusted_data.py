@@ -16,6 +16,11 @@ reads T0's lists (`learn/verify_tracks.py lists`): only verified DIs, targets an
     $TORCH_PY -m learn.trusted_data vreal-predict                  # the arms' answers on V-real (zero renders)
     $MAIN -u -m learn.trusted_data vreal-render --shard k/3        # the answers through the measure DI, judged
     $MAIN -m learn.trusted_data report                             # SYN - SES on V-real (primary) and the rest
+    # T2's additions (2026-10-25; after T2's chain: docs/trusted-data-t2-followup.sh)
+    $MAIN -m learn.trusted_data t2-density                         # diagnostic (b), and (a)'s V-real counts; writes nothing
+    $MAIN -m learn.trusted_data plan-ses-all [--dry]               # option (c): SES-ALL's 5k draw (zero renders)
+    $TORCH_PY -m learn.trusted_data train --arm SES-ALL --seed 20261042|20261043   # 2 runs, stored stems only
+    $MAIN -m learn.trusted_data t2-stem-read                       # SYN's stems against SES's (zero renders)
 
 **A self-built mix** (plan (c)), deterministic from the example's index; the recipe is stored, the audio is not:
 - **The target:** the example's verified DI section through its drawn settings (part C's label, today's space).
@@ -61,6 +66,17 @@ Reads: SYN - SES on V-real by the judge with the measure DI, paired by direction
 picks SYN, recorded decision 4); SYN-E - SYN; each arm against the song-blind constant (the step 3 gate's
 constant on the training labels, rendered on V-real as one more arm: user, 2026-10-24), so a gain over S can be split
 into the song and the constant's pull; E on K; stem SNR.
+
+**T2's additions** (declared 2026-10-25 before any T2 result; the design's "T1 waived and the realism check moved into
+T2"): the T2-side stem read (`t2-stem-read`: SYN's stems against SES's on T2's examples, T2's target render as the
+truth; section-clustered primary; a ceiling check, never a realism certificate); diagnostic (a), V-real by the number of
+guitars playing in the part's crop (dense at DENSE_MIN = 5 or more, the target's part included) for SES - S, SYN - S
+and SES-ALL - SES, in `report`; diagnostic (b), the playing-guitar counts of kept against left-out T2 candidates
+(`t2-density`); option (c), approved by the user 2026-10-25: SES-ALL, SES's recipe, seeds and early-stopping set on a
+5k draw (seed 20261104, stratified by band) from every T2 candidate before rule 1 and the cap (`plan-ses-all`), read
+as SES-ALL - SES on V-real. Arms added after T2's chain are added, never re-made: `fit` keeps an arm already fitted
+on the same models, `vreal-predict` keeps the stored arms' answers, and `vreal-render` renders a new arm into
+vreal/groups-added/<arm>/ beside the groups' records. `report` labels T1's 812-example read superseded.
 
 The pure parts are unit-tested (`tests/test_trusted_data.py`); the commands that render, separate or train are not,
 like the other step modules.
@@ -130,6 +146,20 @@ AMP_BLEED_MEASURE = ("data_cleaning's session-level take estimator (SessionMeter
                      "guitar track: bleed_sources) and the amp track as the reference; stored raw per source: the real "
                      "and rolled held-out explained energies as shares of the amp track's energy on its playing "
                      "frames, and the source's active share of those frames (v3)")
+# T2's additions (declared 2026-10-25 before any T2 result; the design's "T1 waived and the realism check moved into T2")
+SES_ALL = "SES-ALL"                    # option (c), approved by the user 2026-10-25: SES's recipe on a 5k draw from all
+                                       # trusted-pool candidates, the sections rule 1 and the cap left out included
+SES_ALL_SEED = 20261104                # SES-ALL's 5k draw (set here; stratified by band as the pilot)
+EXTRA_ARMS = (SES_ALL,)                # arms that join T2 after its chain (stored stems only: no renders to train)
+DENSE_MIN = 5                          # diagnostic (a)'s split: a V-real part is dense when at least 5 guitars play in its
+                                       # crop (the target's part included), sparse with fewer. Declared 2026-10-25 before
+                                       # any T2 result, from V-real's part counts only (2, 4, 4, 4, 5, 5, 5, 9, 9, 9; median
+                                       # 4.5): a median split keeps parts in 3-4 bands on each side. The first draft's 3
+                                       # put 9 of 10 parts on one side (1 sparse part, 1 band: unreadable). 5 is also
+                                       # 1 + MAX_OTHERS, the most a kept T2 example holds
+COUNT_SHARES = (3, 4, 5)               # diagnostic (b): the share of examples with at least this many playing guitars
+STEM_READ_PRIMARY = ("section-clustered (declared deviation from MIN_BANDS: 4 bands give a 3-df band interval; "
+                     "comparable with T1's read)")
 
 
 # --- pure: the recipe ----------------------------------------------------------------------------------------
@@ -592,6 +622,144 @@ def t1_summary(per, band_of, section_of, keep, min_bands=MIN_BANDS):
             "reading": t1_reading(prim)}
 
 
+# --- pure: T2's additions (2026-10-25: the T2-side stem read, diagnostics (a) and (b), SES-ALL) ------------------
+
+def stem_reading(iv):
+    """The T2-side stem read's reading, keyed on its primary (section-clustered) interval of SYN - SES mel SNR. It is a
+    ceiling check at best: above 0 cannot tell "SYN's stems are cleaner" from "SYN's mixes are unrealistically easy",
+    so no wording here certifies realism (that is SYN - SES on V-real)."""
+    if not iv or iv[0] is None:
+        return "incomplete"
+    if holds_zero(iv):
+        return ("no difference shown: SYN is not shown to be much easier than SES (a ceiling check only, not a "
+                "realism certificate; realism is SYN - SES on V-real)")
+    if iv[1] > 0:
+        return ("SYN's stems read cleaner than SES's: SYN's mixes may be easier than real ones, or only cleaner; this "
+                "read cannot tell which (a ceiling flag, not a realism verdict; read SYN - SES on V-real)")
+    return ("SYN's stems read less clean than SES's: SYN is not easier than SES on this measure (a ceiling check "
+            "only, not a realism certificate; realism is SYN - SES on V-real)")
+
+
+def stem_read_summary(per, cont, band_of, section_of, keep, a="SYN", b="SES"):
+    """The T2-side stem read (descriptive): per arm the mean, median and share of stems below 0 dB mel SNR, and the
+    mean and median contamination; the paired a - b mel SNR and contamination, section-clustered (primary: a declared
+    deviation from MIN_BANDS, `STEM_READ_PRIMARY`) with the band-clustered interval beside; per band. per, cont:
+    {arm: {i: value}}."""
+    from learn import data_cleaning as DC
+    from learn import direct_stems as DS
+
+    keep = sorted(set(keep) & set(per[a]) & set(per[b]))
+    diff = {i: per[a][i] - per[b][i] for i in keep}
+    sec_iv = DC.section_interval(per[a], per[b], section_of, keep) if keep else None
+    band_iv = DS.paired(per[a], per[b], band_of, keep) if keep else None
+    ck = [i for i in keep if cont[a].get(i) is not None and cont[b].get(i) is not None]
+    by_band = {}
+    for i in keep:
+        by_band.setdefault(band_of[i], []).append(diff[i])
+
+    def stats(vals):
+        v = [x for x in vals if x is not None]
+        return {"mean": statistics.fmean(v) if v else None, "median": statistics.median(v) if v else None}
+
+    n = f"{a} - {b}"
+    return {"examples": len(keep), "bands": sorted({band_of[i] for i in keep}),
+            "sections": len({section_of[i] for i in keep}), "primary": STEM_READ_PRIMARY,
+            f"{n} mel SNR (primary, section-clustered)": sec_iv,
+            f"{n} mel SNR (band-clustered, beside)": band_iv,
+            f"{n} mean": statistics.fmean(diff.values()) if keep else None,
+            f"{n} median": statistics.median(diff.values()) if keep else None,
+            f"{n} contamination (section-clustered)": DC.section_interval(cont[a], cont[b], section_of, ck) if ck else None,
+            f"{n} contamination (band-clustered, beside)": DS.paired(cont[a], cont[b], band_of, ck) if ck else None,
+            "per arm": {x: {**stats(per[x][i] for i in keep), "share below 0 dB": share_below([per[x][i] for i in keep]),
+                            "contamination": stats(cont[x].get(i) for i in keep)} for x in (a, b)},
+            "per band": {bb: {"n": len(v), "mean": statistics.fmean(v), "median": statistics.median(v)}
+                         for bb, v in sorted(by_band.items())},
+            "reading": stem_reading(sec_iv)}
+
+
+def playing_parts(parts, activity, active_min=ACTIVE_MIN):
+    """The other guitar parts that play in a window, as rule 1 counts an active guitar (`blocked_parts`): a part
+    plays when any of its tracks, amp track or DI, plays on at least active_min of the window's frames against its
+    own file's level. parts: {part: [track]} (`session_guitar_parts`, the target's part left out); activity: {track:
+    share}. -> sorted parts."""
+    return sorted(p for p, tracks in parts.items()
+                  if tracks and max((activity.get(t) or 0.0) for t in tracks) >= active_min)
+
+
+def playing_count(parts, activity, active_min=ACTIVE_MIN):
+    """Diagnostics (a) and (b): the guitars playing in a window, the target's part included (1 + `playing_parts`)."""
+    return 1 + len(playing_parts(parts, activity, active_min))
+
+
+def density(n, dense_min=DENSE_MIN):
+    """Diagnostic (a)'s declared split (2026-10-25, before any T2 result): 'dense' with at least dense_min playing
+    guitars, the target's part included (`DENSE_MIN`), else 'sparse'."""
+    return "dense" if n >= dense_min else "sparse"
+
+
+def count_table(items):
+    """The distribution of playing-guitar counts in one group. items: [(section, count, examples)]. -> {"sections",
+    "examples", "by count" {n: {"sections", "examples"}}, "mean" and "median" (per example), "share at least" {k:
+    share of the examples with at least k playing, k in COUNT_SHARES}}."""
+    by, ex = {}, []
+    for _, n, k in items:
+        c = by.setdefault(n, {"sections": 0, "examples": 0})
+        c["sections"] += 1
+        c["examples"] += k
+        ex += [n] * k
+    return {"sections": len(items), "examples": len(ex), "by count": {n: by[n] for n in sorted(by)},
+            "mean": statistics.fmean(ex) if ex else None, "median": statistics.median(ex) if ex else None,
+            "share at least": {k: (sum(1 for n in ex if n >= k) / len(ex) if ex else None) for k in COUNT_SHARES}}
+
+
+def density_groups(cand, left_out, count_of):
+    """Diagnostic (b): kept against left-out T2 candidates by playing-guitar count. cand: the candidate rows before
+    rule 1 and the cap ([{"i", "section", "band"}]); left_out: the plan's records; count_of: {section: count}.
+    -> {group: count_table} for "kept" and each left-out reason, and "kept by band" / "left out by band"."""
+    reason = {x["section"]: x["reason"] for x in left_out}
+    per = {}
+    for r in cand:
+        per.setdefault(r["section"], [r["band"], 0])[1] += 1
+    groups, by_band = {}, {}
+    for sid, (band, k) in sorted(per.items()):
+        g = "kept" if sid not in reason else f"left out: {reason[sid]}"
+        groups.setdefault(g, []).append((sid, count_of[sid], k))
+        by_band.setdefault(("kept" if sid not in reason else "left out", band), []).append((sid, count_of[sid], k))
+    out = {g: count_table(v) for g, v in sorted(groups.items())}
+    out["left out (all)"] = count_table([t for g, v in groups.items() if g != "kept" for t in v])
+    out["by band"] = {f"{g} | {b}": count_table(v) for (g, b), v in sorted(by_band.items())}
+    return out
+
+
+def ses_all_draw(cand, es_sections, n=N_PILOT, seed=SES_ALL_SEED):
+    """SES-ALL's training draw (option (c)): n examples stratified by band (the pilot's rule, `stratified_by_band`)
+    from every T2 candidate before rule 1 and the cap (the trusted pool outside Eggy, on verified DIs and sections T0
+    lets a mix use), outside T2's early-stopping sections, which SES-ALL shares with SES. -> rows sorted by index."""
+    es_sections = set(es_sections)
+    return stratified_by_band([r for r in cand if r["section"] not in es_sections], n, seed)
+
+
+def ses_all_guard(rows, es_ids, es_sections, forbidden_bands, pool_ids):
+    """SES-ALL's examples stay inside the D build's training pool (`direct_stems.Ctx` refuses pool bands that overlap
+    V_sep, stage F or the known-answer bands, and every held-out DI), outside T2's early-stopping set and off V-real's
+    bands. Raises on a breach."""
+    bad = []
+    if any(r["i"] not in pool_ids for r in rows):
+        bad.append("examples outside the trusted pool")
+    if any(r["i"] in set(es_ids) or r["section"] in set(es_sections) for r in rows):
+        bad.append("examples in T2's early-stopping set")
+    hit = sorted({r["band"] for r in rows} & set(forbidden_bands))
+    if hit:
+        bad.append(f"bands of V-real, V_sep, stage F or the known-answer set: {hit}")
+    if bad:
+        raise SystemExit("SES-ALL's draw breaks the ledger's rules: " + "; ".join(bad))
+
+
+def primary_arms(arms):
+    """The arms T2's primary reading waits for: SES-ALL joins after T2's chain and is read on its own."""
+    return tuple(a for a in arms if a not in EXTRA_ARMS)
+
+
 # --- I/O ---------------------------------------------------------------------------------------------------------
 
 _save, _load = V._save, V._load
@@ -680,10 +848,10 @@ def unusable(tr):
 
 # --- plan (zero renders) -----------------------------------------------------------------------------------------
 
-def section_activity(path, start_s, sr=SR, files=None):
+def section_activity(path, start_s, sr=SR, files=None, dur_s=None):
     """The share of a DI's 10-s section frames that play: within 40 dB of the DI file's loudest frames
     (`clean_di.playing` over the whole file, as part A reads a DI), so a resting section's noise floor reads near 0.
-    files: a cache {path: (frame dB, playing)} across calls."""
+    files: a cache {path: (frame dB, playing)} across calls; dur_s: another window length (a V-real crop's)."""
     import numpy as np
 
     from learn import clean_di as CD
@@ -694,7 +862,8 @@ def section_activity(path, start_s, sr=SR, files=None):
         fdb = CD.frame_db(PS.load_mono(path, PS.SR))
         files[str(path)] = (fdb, CD.playing(fdb))
     fdb, play = files[str(path)]
-    r = CD.frames_in(int(round(start_s * PS.SR)), int(round((start_s + PS.SEC_S) * PS.SR)), len(play))
+    dur = PS.SEC_S if dur_s is None else dur_s
+    r = CD.frames_in(int(round(start_s * PS.SR)), int(round((start_s + dur) * PS.SR)), len(play))
     return float(np.mean(play[r.start:r.stop])) if len(r) else 0.0
 
 
@@ -730,14 +899,11 @@ def section_blocked(ctx, sid, verified, dis_windows, bad_sections, act_cache, sc
     stand for them when they pass the bleed check (`apply_rule1`)."""
     sec = ctx.sections[sid]
     rec = ctx.inv[sec["di"]]
-    sd = pathlib.Path(rec["session_dir"])
     start = float(sec["start_s"])
     key = ("blocked", sid, scope)
     if key in act_cache:
         return act_cache[key]
-    names = sorted(f.name for f in sd.glob("*.wav"))
-    parts = session_guitar_parts(names, rec.get("mix"), sec["di"], rec.get("own") or [],
-                                 owners=session_owners(ctx, rec["session_dir"]))
+    parts, activity = section_parts(ctx, sid, act_cache)
     inv_of = {pathlib.Path(r["path"]).name: d for d, r in ctx.inv.items()
               if r.get("session_dir") == rec["session_dir"]}
     from learn import clean_di as CD
@@ -765,17 +931,67 @@ def section_blocked(ctx, sid, verified, dis_windows, bad_sections, act_cache, sc
                 whys.append(f"window {st or 'not measured'}")
         if whys:
             renderable[p] = None if None in whys else "; ".join(sorted(set(whys)))
-    files = act_cache.setdefault("files", {})
-    activity = {}
-    for tracks in parts.values():
-        for t in tracks:
-            k = ("track", str(sd / t), start)
-            if k not in act_cache:
-                act_cache[k] = section_activity(sd / t, start, files=files)
-            activity[t] = act_cache[k]
     act_cache[key] = [{**b, "amp_tracks": [t for t in parts[b["part"]] if not CD.is_guitar_di(t)]}
                       for b in blocked_parts(parts, activity, renderable, scope=scope)]
     return act_cache[key]
+
+
+def section_parts(ctx, sid, act_cache):
+    """(parts, activity) of one section: the session's other guitar parts (`session_guitar_parts`) and each track's
+    share of the section's frames playing against its own file's level (`section_activity`); zero renders, cached."""
+    sec = ctx.sections[sid]
+    rec = ctx.inv[sec["di"]]
+    sd = pathlib.Path(rec["session_dir"])
+    start = float(sec["start_s"])
+    key = ("parts", sid)
+    if key not in act_cache:
+        names = sorted(f.name for f in sd.glob("*.wav"))
+        parts = session_guitar_parts(names, rec.get("mix"), sec["di"], rec.get("own") or [],
+                                     owners=session_owners(ctx, rec["session_dir"]))
+        files = act_cache.setdefault("files", {})
+        activity = {}
+        for tracks in parts.values():
+            for t in tracks:
+                k = ("track", str(sd / t), start)
+                if k not in act_cache:
+                    act_cache[k] = section_activity(sd / t, start, files=files)
+                activity[t] = act_cache[k]
+        act_cache[key] = (parts, activity)
+    return act_cache[key]
+
+
+def vreal_playing(slug, files=None):
+    """Diagnostic (a): the guitars playing in a V-real part's crop, counted as the plan counts active guitars
+    (`playing_count`): the part's session (`verify_tracks.crop_session`), its other guitar parts (DIs always; amp and
+    mic tracks when they are in the crop's declared mix tracks; the target's own amp tracks left out), each track's
+    activity over the crop's window against its own file's level. -> {"playing", "density", "parts" {part: max
+    activity}, "in_mix" {part: any track in the crop's mix}}."""
+    from learn import arm_a_mega53 as A
+
+    part = A.f_part(slug)
+    rec, base, cpart, _, mix = V.crop_session(part["crop"])
+
+    def name(x):                                            # set 3's catalogue names carry the session folder
+        return pathlib.PurePosixPath(x).name
+
+    base = pathlib.Path(base) / pathlib.PurePosixPath(cpart.get("di") or "x").parent   # set 3: base/<session>/
+    names = sorted(f.name for f in base.glob("*.wav"))
+    if not names:
+        raise SystemExit(f"{slug}: no session files under {base}")
+    mix = [name(m) for m in mix]
+    tdi = name(cpart.get("di") or next((d for d in rec.get("excluded_guitar_dis") or []
+                                        if V.guitar_part_key(name(d)) == V.guitar_part_key(rec["part"])), rec["part"]))
+    parts = session_guitar_parts(names, mix, tdi, [name(o) for o in rec.get("removed_own_amp_tracks") or []])
+    start, dur = float(rec["excerpt_start_s"]), float(rec["excerpt_duration_s"])
+    files = {} if files is None else files
+    act = {t: section_activity(pathlib.Path(base) / t, start, files=files, dur_s=dur)
+           for tracks in parts.values() for t in tracks}
+    n = playing_count(parts, act)
+    mixset = set(mix)
+    return {"playing": n, "density": density(n),
+            "parts": {p: round(max(act[t] for t in ts), 3) for p, ts in parts.items() if ts},
+            "playing_parts": playing_parts(parts, act),
+            "in_mix": {p: any(t in mixset for t in ts) for p, ts in parts.items()}}
 
 
 def leave_out_blocked(ctx, rows, verified, dis_windows, bad_sections, act_cache, scope="all"):
@@ -1727,13 +1943,45 @@ def arms_of(plan):
     return tuple(a for a in ARMS if a != "SYN-E" or not (plan.get("syn_e") or {}).get("refused"))
 
 
-def arm_files(root, plan, arm, ses_files):
+def ses_all_path(root):
+    return stage_root(root, "t2") / "ses-all.json"
+
+
+def plan_key(plan):
+    """The T2 plan's draw (pilot, early stopping and its sections, lists) as a hash, so SES-ALL's draw is bound to it."""
+    import hashlib
+
+    body = {k: plan.get(k) for k in ("pilot", "es", "es_sections", "lists_sha256")}
+    return hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
+
+
+def load_ses_all(root, plan):
+    """SES-ALL's stored draw (`plan-ses-all`), refused when it was drawn for another T2 plan."""
+    rec = _load(ses_all_path(root))
+    if not rec:
+        raise SystemExit("run `plan-ses-all` first")
+    if rec.get("t2_plan") != plan_key(plan):
+        raise SystemExit("SES-ALL's draw was made for another T2 plan: rerun `plan-ses-all`")
+    return rec
+
+
+def t2_arms(root, plan):
+    """The arms T2's commands after training read: `arms_of`, then SES-ALL once its draw exists."""
+    return arms_of(plan) + ((SES_ALL,) if ses_all_path(root).exists() else ())
+
+
+def arm_files(root, plan, arm, ses_files, ses_all=None):
     """{i: (mix path, stem path)} of an arm's training and early-stopping examples."""
     out = {}
     syn = {x["i"] for x in plan["examples"]}
     if arm == "SES":
         for i in plan["pilot"] + plan["es"]:
             out[i] = ses_files[i]
+        return out
+    if arm == SES_ALL:                                      # stored stems only, on SES's early-stopping set
+        for i in ses_all["train"] + plan["es"]:
+            if i in ses_files:
+                out[i] = ses_files[i]
         return out
     ids = (plan["pilot"] if arm == "SYN" else plan["syn_e"]["kept"] + plan["syn_e"]["eggy"]) + plan["es"]
     for i in ids:
@@ -1743,10 +1991,16 @@ def arm_files(root, plan, arm, ses_files):
     return out
 
 
-def arm_rows(ctx, plan, arm, files, refused):
+def arm_rows(ctx, plan, arm, files, refused, ses_all=None):
     """(training rows, early-stopping rows) of an arm, the shared refusals dropped (every arm drops the pilot
-    examples any arm refused; SYN-E's own swap-ins drop only from SYN-E)."""
+    examples any arm refused; SYN-E's own swap-ins drop only from SYN-E). SES-ALL trains on its own draw (stored
+    stems: SYN's render and build refusals are about SYN's mixes, so they do not touch it) and early-stops on SES's
+    set, with the shared refusals dropped as for every arm."""
     by = {r["i"]: r for r in ctx.pool}
+    if arm == SES_ALL:
+        tr = [{**by[i], "early_stop": False, "split": "train"} for i in ses_all["train"] if i in files]
+        es = [{**by[i], "early_stop": True, "split": "train"} for i in plan["es"] if i not in refused and i in files]
+        return tr, es
     tr_ids = plan["pilot"] if arm in ("SES", "SYN") else plan["syn_e"]["kept"] + plan["syn_e"]["eggy"]
     tr = [{**by[i], "early_stop": False, "split": "train"} for i in tr_ids if i not in refused and i in files]
     es = [{**by[i], "early_stop": True, "split": "train"} for i in plan["es"] if i not in refused and i in files]
@@ -1819,8 +2073,8 @@ def cmd_train(args):
 
     V.require_real(args)
     root = V.out_root(args)
-    if args.arm not in ARMS or (args.seed not in TRAIN_SEEDS and not args.smoke):
-        raise SystemExit(f"--arm in {ARMS}, --seed in {TRAIN_SEEDS}")
+    if args.arm not in ARMS + EXTRA_ARMS or (args.seed not in TRAIN_SEEDS and not args.smoke):
+        raise SystemExit(f"--arm in {ARMS + EXTRA_ARMS}, --seed in {TRAIN_SEEDS}")
     rp = run_path(root, args.arm, args.seed)
     if rp.exists():
         print(f"{rp.name} exists: nothing to do")
@@ -1829,15 +2083,18 @@ def cmd_train(args):
     if not plan:
         raise SystemExit("run `plan --stage t2` first")
     check_lists(root, plan, args.smoke)
-    if args.arm not in arms_of(plan):
+    sa = load_ses_all(root, plan) if args.arm == SES_ALL else None
+    if args.arm not in arms_of(plan) + EXTRA_ARMS:
         raise SystemExit(f"{args.arm} cannot run: {plan['syn_e'].get('refused')}")
     ctx = DS.Ctx(quiet=True)
     ses, ses_files = ses_rows(ctx)
     refused, unbuilt = t2_refused(root, plan, ses)
     if unbuilt and not args.smoke:
         raise SystemExit(f"{len(unbuilt)} pilot or early-stopping examples are not built: every arm waits for the build")
-    files = arm_files(root, plan, args.arm, ses_files)
-    tr_rows, es_rows = arm_rows(ctx, plan, args.arm, files, refused)
+    files = arm_files(root, plan, args.arm, ses_files, sa)
+    tr_rows, es_rows = arm_rows(ctx, plan, args.arm, files, refused, sa)
+    if sa and len(tr_rows) != len(sa["train"]):
+        raise SystemExit(f"SES-ALL: {len(sa['train']) - len(tr_rows)} drawn examples have no stored stems")
     rows = tr_rows + es_rows
     tr = np.arange(len(tr_rows))
     es = np.arange(len(tr_rows), len(rows))
@@ -1868,6 +2125,8 @@ def cmd_train(args):
            "minutes": round((time.time() - t0) / 60, 1), "augmentations_applied": data.applied, "device": str(dev),
            "model": mp.name, "model_sha256": DS.hashlib_file(mp), "log": log, "smoke": bool(args.smoke),
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    if sa:
+        rec["ses_all_draw"] = {"seed": sa["seed"], "t2_plan": sa["t2_plan"], "by_band": sa["by_band"]}
     _save(rp, rec)
     print(f"TRAIN DONE T2 {args.arm} {args.seed}: best epoch {best_ep} of {len(log)}")
     if best_ep is not None and best_ep >= DS.MAX_EPOCHS - CAP_EDGE:
@@ -1896,7 +2155,9 @@ def load_arm(root, arm, smoke=False):
 
 def cmd_fit(args):
     """Per arm (zero renders): the constant (the arm's training-label medians per amp and base class, audible knobs)
-    and amendment 5's pull, fitted on the arm's early-stopping set read through its own mixes and stems."""
+    and amendment 5's pull, fitted on the arm's early-stopping set read through its own mixes and stems. Add-only: an
+    arm fit.json already holds for the same models is kept as stored (V-real's answers were made from it), so a rerun
+    after SES-ALL's training fits SES-ALL alone (move fit.json aside to refit everything)."""
     from learn import data_cleaning as DC
     from learn import direct_stems as DS
 
@@ -1910,11 +2171,20 @@ def cmd_fit(args):
     ses, ses_files = ses_rows(ctx)
     refused, _ = t2_refused(root, plan, ses)
     out = {"plan": PLAN, "stage": "T2 fit", "readout_rule": DS.READOUT_RULE, "arms": {}}
+    prev = _load(stage_root(root, "t2") / "fit.json") or {}
+    arms = t2_arms(root, plan)
+    sa = load_ses_all(root, plan) if SES_ALL in arms else None
     train_rows = {}
-    for arm in arms_of(plan):
+    for arm in arms:
+        old = (prev.get("arms") or {}).get(arm)
+        runs = [_load(run_path(root, arm, s)) or {} for s in TRAIN_SEEDS]
+        if old and old.get("models") == {str(r.get("seed")): r.get("model_sha256") for r in runs}:
+            out["arms"][arm] = old              # an arm already fitted on these models is kept as it is (V-real's
+            print(f"{arm}: kept from fit.json (same models)", flush=True)   # renders were made from it); add-only
+            continue
         nets, recs = load_arm(root, arm, args.smoke)
-        files = arm_files(root, plan, arm, ses_files)
-        tr_rows, es_rows = arm_rows(ctx, plan, arm, files, refused)
+        files = arm_files(root, plan, arm, ses_files, sa)
+        tr_rows, es_rows = arm_rows(ctx, plan, arm, files, refused, sa)
         train_rows[arm] = tr_rows
         med = DS.label_medians(tr_rows, DS.encode_audible)
         cell_of = {r["i"]: (r["amp"], r["base"]) for r in es_rows}
@@ -1927,7 +2197,12 @@ def cmd_fit(args):
                             "pull": DS.table_json(table), "pull_summary": DS.pull_summary(table),
                             "early_stop_examples": len(es_rows)}
         print(f"{arm}: pull {DS.pull_summary(table)}", flush=True)
-    out["constant_arm"] = constant_arm(train_rows["SYN"])
+    if prev.get("constant_arm") and "SYN" not in train_rows:
+        out["constant_arm"] = prev["constant_arm"]          # SYN kept as it was: so is the constant made from it
+    else:
+        if "SYN" not in train_rows:
+            train_rows["SYN"] = arm_rows(ctx, plan, "SYN", arm_files(root, plan, "SYN", ses_files), refused)[0]
+        out["constant_arm"] = constant_arm(train_rows["SYN"])
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     _save(stage_root(root, "t2") / "fit.json", out)
 
@@ -1959,7 +2234,9 @@ def t2_contrasts(arms):
     song-blind constant (does an arm read the song, or only the constant's pull?)."""
     pairs = {"SYN - SES": ("SYN", "SES"), "SYN-E - SYN": ("SYN-E", "SYN"), "SES - S": ("SES", "S"),
              "SYN - S": ("SYN", "S"), "SYN-E - S": ("SYN-E", "S"), "SES - constant": ("SES", CONST_ARM),
-             "SYN - constant": ("SYN", CONST_ARM), "constant - S": (CONST_ARM, "S")}
+             "SYN - constant": ("SYN", CONST_ARM), "constant - S": (CONST_ARM, "S"),
+             # option (c): what the left-out dense sections are worth on V-real (SES-ALL - SES), and SES-ALL - S
+             "SES-ALL - SES": (SES_ALL, "SES"), "SES-ALL - S": (SES_ALL, "S")}
     return {k: (a, b) for k, (a, b) in pairs.items() if a in arms and (b in arms or b == "S")}
 
 
@@ -2029,7 +2306,9 @@ def vreal_dirs(tr):
 
 def cmd_vreal_predict(args):
     """The arms' answers on V-real (zero renders): step 4's inputs path (the stored crop and its xlance_g crop stem,
-    one gain to the training median), the search half, amendment 5's answer with the arm's constant and pull."""
+    one gain to the training median), the search half, amendment 5's answer with the arm's constant and pull.
+    Add-only: arms predictions.json already holds are kept as stored (they were rendered), new arms (SES-ALL) added;
+    other V-real directions or changed inputs refuse."""
     from learn import arm_a_mega53 as A
     from learn import direct_existing as DE
     from learn import direct_stems as DS
@@ -2044,11 +2323,28 @@ def cmd_vreal_predict(args):
     man = DS._load(DS.stems_manifest_path(DS.ROOT, SEP))
     target = json.loads(DE.LEVELS.read_text())["summary"]["eval_mix_lufs_median"]
     ms = A.L.menu_S()
-    arms = arms_of(_load(plan_path(root, "t2")) or {})
-    preds, inputs = {a: {} for a in arms}, {}
+    plan = _load(plan_path(root, "t2")) or {}
+    arms = t2_arms(root, plan) if plan else arms_of(plan)
+    keys = {f"{s}|{a}|{sh}" for s, a, sh, _ in dirs}
+    pp = stage_root(root, "t2") / "vreal" / "predictions.json"
+    prev = _load(pp) or {}
+    if prev and bool(prev.get("smoke")) == bool(args.smoke):
+        # add-only: the arms already predicted (and rendered from these predictions) are kept as stored, new arms
+        # (SES-ALL after T2's chain) are added; stale V-real parts or inputs refuse
+        if any(set(v) != keys for v in prev["predictions"].values()):
+            raise SystemExit(f"{pp} covers other V-real directions: move it and vreal/groups aside, then rerun")
+        kept = {a: v for a, v in prev["predictions"].items()}
+    else:
+        kept = {}
+    preds, inputs = {a: {} for a in arms if a not in kept}, {}
+    models = dict(prev.get("models") or {}) if kept else {}
     for arm in arms:
+        if arm in kept:
+            print(f"{arm}: kept from predictions.json", flush=True)
+            continue
         nets, recs = load_arm(root, arm, args.smoke)
         med, table = arm_fit(root, arm, recs)
+        models[arm] = {str(r["seed"]): r["model_sha256"] for r in recs}
         for slug, amp, search, held in dirs:
             part = A.f_part(slug)
             cls = part["gain_class"]
@@ -2057,6 +2353,8 @@ def cmd_vreal_predict(args):
                 cf = DS.stored_stem(man, f"stagef/{slug}")
                 inputs[slug] = {"mix": mix, "stem": cf, "gain_db": DE.inference_gain_db(mix, target),
                                 "hashes": {"context": hashes["context"], "stem": man["stems"][f"stagef/{slug}"]["sha256"]}}
+                if kept and (prev.get("inputs") or {}).get(slug) != inputs[slug]["hashes"]:
+                    raise SystemExit(f"{slug}: V-real's inputs changed since the stored predictions")
             it = inputs[slug]
             b, gap = DS.cell_b(table, (amp, cls), DS.masks(amp, cls)[0])
             if gap and not args.smoke:
@@ -2067,25 +2365,50 @@ def cmd_vreal_predict(args):
             _, S = ms[amp][cls]
             preds[arm][f"{slug}|{amp}|{search}"] = {"settings": LO.sdict(DS.settings_from(amp, S, cont, sw, mics)),
                                                     "held": held, "diag": diag}
-    cfit = (_load(stage_root(root, "t2") / "fit.json") or {}).get("constant_arm")
-    if not cfit:
-        raise SystemExit("fit.json has no constant arm: rerun `fit`")
-    preds[CONST_ARM] = {}
-    for slug, amp, search, held in dirs:
-        _, S = ms[amp][A.f_part(slug)["gain_class"]]
-        preds[CONST_ARM][f"{slug}|{amp}|{search}"] = {
-            "settings": LO.sdict(constant_settings(cfit, amp, A.f_part(slug)["gain_class"], S)), "held": held, "diag": {}}
-    arms = tuple(arms) + (CONST_ARM,)
-    _save(stage_root(root, "t2") / "vreal" / "predictions.json",
-          {"plan": PLAN, "smoke": bool(args.smoke), "directions": len(dirs), "arms": list(arms), "predictions": preds,
-           "inputs": {s: v["hashes"] for s, v in inputs.items()}, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
-    print(f"VREAL PREDICT: {len(dirs)} directions x {len(arms)} arms ({', '.join(arms)})")
+    if CONST_ARM not in kept:
+        cfit = (_load(stage_root(root, "t2") / "fit.json") or {}).get("constant_arm")
+        if not cfit:
+            raise SystemExit("fit.json has no constant arm: rerun `fit`")
+        preds[CONST_ARM] = {}
+        for slug, amp, search, held in dirs:
+            _, S = ms[amp][A.f_part(slug)["gain_class"]]
+            preds[CONST_ARM][f"{slug}|{amp}|{search}"] = {
+                "settings": LO.sdict(constant_settings(cfit, amp, A.f_part(slug)["gain_class"], S)), "held": held,
+                "diag": {}}
+    order = tuple(prev.get("arms") or ()) if kept else ()
+    arms = order + tuple(a for a in tuple(arms) + (CONST_ARM,) if a not in order)
+    hashes = dict(prev.get("inputs") or {}) if kept else {}
+    hashes.update({s: v["hashes"] for s, v in inputs.items()})
+    _save(pp, {"plan": PLAN, "smoke": bool(args.smoke), "directions": len(dirs), "arms": list(arms),
+               "predictions": {**kept, **preds}, "inputs": hashes, "models": models,
+               "added": sorted(preds) if kept else [], "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"VREAL PREDICT: {len(dirs)} directions x {len(arms)} arms ({', '.join(arms)})"
+          + (f"; added {', '.join(sorted(preds))}, kept {', '.join(sorted(kept))}" if kept else ""))
+
+
+def added_group_path(od, arm, slug, amp):
+    return od / "groups-added" / arm / f"{slug}|{amp}.json"
+
+
+def group_value(group, added, arm, search, held):
+    """One direction's held-half distance for an arm: from the group's record, else from the arm's added record
+    (`vreal-render` after an arm joined); None when neither has it (not rendered)."""
+    if (group or {}).get("status") != "done":
+        return None
+    k = f"{arm}|{search}"
+    if k in (group.get("judge") or {}):
+        return group["judge"][k][held]
+    if (added or {}).get("status") == "done" and k in (added.get("judge") or {}):
+        return added["judge"][k][held]
+    return None
 
 
 def cmd_vreal_render(args):
     """V-real's renders for one shard of (part, amp) groups: one discarded priming render at S, then each arm's
     answer once per direction through the part's measure DI, judged on both halves (`direct_stems.run_group`).
-    isolate=True; at most 3 render processes machine-wide; resumable."""
+    isolate=True; at most 3 render processes machine-wide; resumable. A group already done keeps its record; an arm
+    the predictions gained since (SES-ALL after T2's chain) renders on its own, one priming render and its 2 directions
+    per group, into vreal/groups-added/<arm>/ (about 60 renders and 30 priming at 10 V-real parts)."""
     from learn import arm_a_mega53 as A
     from learn import direct_existing as DE
     from learn import direct_stems as DS
@@ -2109,20 +2432,35 @@ def cmd_vreal_render(args):
         menu = rr.menu()
         for slug, amp in mine:
             gp = od / "groups" / f"{slug}|{amp}.json"
-            if (_load(gp) or {}).get("status") == "done":
-                continue
+            arms = tuple(pred.get("arms") or ARMS)
+            done = _load(gp) or {}
+            if done.get("status") == "done":
+                # an arm added after the group was rendered (SES-ALL after T2's chain) renders on its own, into
+                # vreal/groups-added/<arm>/; the group's record is left as it is
+                todo = [a for a in arms if (_load(added_group_path(od, a, slug, amp)) or {}).get("status") != "done"
+                        and not all(f"{a}|{sh}" in (done.get("judge") or {}) for sh, _ in K.DIRECTIONS)]
+                if not todo:
+                    continue
+            else:
+                todo = None
             ctx = A.group_ctx(menu, ms, "F", slug, amp)
             if K.key(dict(ctx["S"])) != K.key(ctx["S_stored"]):
                 raise SystemExit(f"{amp}: the live S differs from the stored copy")
             g = {"sel": ctx["sel"], "S": ctx["S"], "di": ctx["di"], "di32": ctx["di32"], "ref": ctx["ref"],
                  "lag": ctx["part"]["judge_lag"]}
-            arms = tuple(pred.get("arms") or ARMS)
             settings = {a: {sh: LO.tdict(pred["predictions"][a][f"{slug}|{amp}|{sh}"]["settings"]) for sh, _ in K.DIRECTIONS}
-                        for a in arms}
-            rec = DS.run_group(rr, g, settings, False, None, K.judge, arms=arms)
-            rec.update(slug=slug, amp=amp)
-            _save(gp, rec)
-            print(slug, amp, rec["renders"], flush=True)
+                        for a in (todo or arms)}
+            if todo is None:
+                rec = DS.run_group(rr, g, settings, False, None, K.judge, arms=arms)
+                rec.update(slug=slug, amp=amp)
+                _save(gp, rec)
+                print(slug, amp, rec["renders"], flush=True)
+                continue
+            for a in todo:                                  # one priming render per added arm and group
+                rec = DS.run_group(rr, g, {a: settings[a]}, False, None, K.judge, arms=(a,))
+                rec.update(slug=slug, amp=amp, arm=a, added_to=gp.name)
+                _save(added_group_path(od, a, slug, amp), rec)
+                print(slug, amp, f"added {a}", rec["renders"], flush=True)
     finally:
         rr.close()
     print(f"VREAL RENDER DONE {args.shard[0]}/{args.shard[1]}; renders {rr.count}")
@@ -2168,10 +2506,12 @@ def runs_at_cap(root, arms):
 def cmd_report(args):
     """T2's report: SYN - SES on V-real (primary, paired by direction, band-weighted, 90% band-clustered), SYN-E - SYN
     and each arm - S and - the song-blind constant beside (rows: all, F-song, without the MUSDB18 songs; per class
-    and amp in report.json); E on K;
-    T1's stem SNR; the reading (no pass bar; a tie picks SYN). The reading is 'incomplete' until every V-real
-    direction is judged for every arm, the predictions cover exactly today's V-real parts, and no answer was refused
-    (a refused answer would score as S, which can favour the broken arm)."""
+    and amp in report.json); E on K (none while K is empty); the T2-side stem read (`t2-stem-read`); diagnostic (a),
+    SES - S, SYN - S and SES-ALL - SES by the number of guitars playing in the V-real part's crop (dense at DENSE_MIN
+    or more); option (c), SES-ALL - SES and SES-ALL - S, read on its own (the primary does not wait for it); T1's
+    812-example read only as superseded. The reading (no pass bar; a tie picks SYN) is 'incomplete' until every V-real
+    direction is judged for SES, SYN and the constant, the predictions cover exactly today's V-real parts, and no answer
+    was refused (a refused answer would score as S, which can favour the broken arm)."""
     from learn import arm_a_mega53 as A
     from learn import direct_stems as DS
     from learn import local_objective_1c as C
@@ -2183,15 +2523,16 @@ def cmd_report(args):
     tr = load_lists(root, args.smoke)
     keep = set(tr["v_real"])
     units = [u for u in P.build_units() if u["slug"] in keep]
-    groups = {}
+    groups, added = {}, {}
 
     def value(arm):
         def f(u):
             k = (u["slug"], u["amp"])
             if k not in groups:
                 groups[k] = _load(od / "groups" / f"{u['slug']}|{u['amp']}.json") or {}
-            g = groups[k]
-            return g["judge"][f"{arm}|{u['search']}"][u["held"]] if g.get("status") == "done" else None
+            if (arm,) + k not in added:
+                added[(arm,) + k] = _load(added_group_path(od, arm, *k)) or {}
+            return group_value(groups[k], added[(arm,) + k], arm, u["search"], u["held"])
         return f
 
     pred = _load(od / "predictions.json") or {}
@@ -2205,30 +2546,250 @@ def cmd_report(args):
         con[name] = DS.step4_contrast(units, a, b, filt, rows=rows_, fixed=("S",))
     prim = (con["SYN - SES"]["rows"].get("all") or {}).get("all") or {}
     iv = (prim.get("band_weighted_mean"), prim.get("lo90"), prim.get("hi90"))
-    gaps = report_gaps(units, arms, groups, set(pred.get("inputs") or {}), keep, refused)
+    # the primary reading waits for SES, SYN and the constant only; SES-ALL (option (c)) is read on its own
+    p_arms = primary_arms(arms)
+    gaps = report_gaps(units, p_arms, groups, set(pred.get("inputs") or {}), keep,
+                       {a: n for a, n in refused.items() if a in p_arms})
+    extra = {a: report_gaps(units, (a,), groups, set(pred.get("inputs") or {}), keep, {a: refused.get(a)})
+             for a in EXTRA_ARMS if a in arms}
+    # diagnostic (a): V-real by the number of guitars playing in the part's crop (declared before any result)
+    files = {}
+    dens = {s: vreal_playing(s, files) for s in sorted(keep)}
+    dfilt = {"dense": lambda u: dens[u["slug"]]["density"] == "dense",
+             "sparse": lambda u: dens[u["slug"]]["density"] == "sparse"}
+    counts = sorted({d["playing"] for d in dens.values()})
+    dfilt.update({f"{n} playing": (lambda u, n=n: dens[u["slug"]]["playing"] == n) for n in counts})
+    drows = tuple(dfilt)
+    dcon = {name: DS.step4_contrast(units, a, b, dfilt, rows=drows, fixed=("S",))
+            for name, (a, b) in t2_contrasts(arms).items() if name in ("SES - S", "SYN - S", "SES-ALL - SES")}
+    stem = (_load(stage_root(root, "t2") / "stem-read.json") or {}).get("results")
+    t1_old = ((_load(stage_root(root, "t1") / "read.json") or {}).get("results") or {}).get(
+        "K - V_sep mel SNR (primary)")
     rep = {"plan": PLAN, "stage": "T2", "v_real_parts": sorted(keep), "directions": len(units),
            "done": sum(1 for u in units if u["d"].get("SYN") is not None), "refused_scored_as_S": refused,
            "complete": not gaps, "incomplete_because": gaps, "runs_at_epoch_cap": runs_at_cap(root, arms),
            "contrasts": con, "reading": reading(iv) if not gaps else "incomplete",
+           "extra_arms": {a: {"complete": not g, "incomplete_because": g} for a, g in extra.items()},
+           "density": {"rule": f"playing guitars in the crop, the target's part included (`playing_count`, ACTIVE_MIN "
+                               f"{ACTIVE_MIN}); dense at {DENSE_MIN} or more", "parts": dens, "contrasts": dcon},
+           "stem_read": stem,
            "e_on_k": (_load(stage_root(root, "t2") / "e-on-k.json") or {}).get("results"),
-           "t1": ((_load(stage_root(root, "t1") / "read.json") or {}).get("results") or {}).get(
-               "K - V_sep mel SNR (primary)"),
+           "t1 (superseded)": {"note": "T1's 812-example K - V_sep read (2026-10-25), superseded: T1 was audited and "
+                                       "waived (K is empty under the reviewed rules); not read. The stem read is "
+                                       "`stem_read`", "K - V_sep mel SNR (primary)": t1_old} if t1_old else None,
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     _save(stage_root(root, "t2") / "report.json", rep)
     print(f"{rep['done']}/{rep['directions']} V-real directions; refused scored as S {refused}")
     for g in gaps:
         print(f"  incomplete: {g}")
+    for a, g in extra.items():
+        for x in g:
+            print(f"  {a} incomplete (read on its own, the primary does not wait): {x}")
     for r in rep["runs_at_epoch_cap"]:
         print(f"  WARNING: {r} stopped within {CAP_EDGE} epochs of the cap: still improving, extend it before reading")
+
+    def line(name, row, s):
+        print(f"  {name:13s} {row:18s} {s.get('band_weighted_mean')} [{s.get('lo90')}, {s.get('hi90')}] "
+              f"({s.get('bands')} bands)")
+
     for name, c in con.items():
         for row in rows_:
-            s = (c["rows"].get(row) or {}).get("all") or {}
-            print(f"  {name:12s} {row:18s} {s.get('band_weighted_mean')} [{s.get('lo90')}, {s.get('hi90')}] "
-                  f"({s.get('bands')} bands)")
+            line(name, row, (c["rows"].get(row) or {}).get("all") or {})
         for cls, s in sorted(((c["rows"].get("all") or {}).get("per_class") or {}).items()):
-            print(f"  {'':12s} class {cls:12s} {s.get('band_weighted_mean')} [{s.get('lo90')}, {s.get('hi90')}] "
-                  f"({s.get('bands')} bands)")
+            line("", f"class {cls}", s)
+    print(f"diagnostic (a), V-real by playing guitars ({rep['density']['rule']}): "
+          + ", ".join(f"{s} {d['playing']}" for s, d in sorted(dens.items())))
+    for name, c in dcon.items():
+        for row in drows:
+            line(name, row, (c["rows"].get(row) or {}).get("all") or {})
+    if stem:
+        print(f"T2-side stem read: {stem.get('reading')}")
+    if t1_old:
+        print("T1's 812-example read: superseded (T1 waived 2026-10-25), not read")
     print(f"T2 READING: {rep['reading']}")
+
+
+# --- T2's additions (2026-10-25): the stem read, diagnostic (b), SES-ALL's draw (zero renders) ---------------------
+
+def cmd_t2_stem_read(args):
+    """The T2-side stem read (zero renders; descriptive; after T2's build): on T2's own examples (pilot and early
+    stopping, the shared refusals dropped), SYN's X-LANCE stem and SES's stored stem against T2's target render (the
+    same file for both: SYN's mix holds it; SES's mix holds the D build's or the cleaning rebuild's render of the same
+    label, matched to part C's mels, so for SES the truth is a matched re-render), by T1's mel-grid stem SNR and
+    contamination, paired. Section-clustered primary (a declared deviation, `STEM_READ_PRIMARY`), band-clustered beside.
+    A ceiling check at best, never a realism certificate (`stem_reading`). Writes t2/stem-read.json."""
+    import numpy as np
+
+    from learn import direct_sound_gate as G
+    from learn import direct_stems as DS
+    from learn import pretrain_set as PS
+
+    V.require_real(args)
+    root = V.out_root(args)
+    plan = _load(plan_path(root, "t2"))
+    if not plan:
+        raise SystemExit("run `plan --stage t2` first")
+    check_lists(root, plan, args.smoke)
+    ctx = DS.Ctx(quiet=True)
+    ses, ses_files = ses_rows(ctx)
+    refused, unbuilt = t2_refused(root, plan, ses)
+    if unbuilt and not args.smoke:
+        raise SystemExit(f"{len(unbuilt)} pilot or early-stopping examples are not built: run after T2's build")
+    rend = rows_of(root, "t2", "render")
+    by = {x["i"]: x for x in plan["examples"]}
+    ids = [i for i in plan["pilot"] + plan["es"] if i not in refused and i in rend and i in ses_files]
+    per, cont, silent = {"SYN": {}, "SES": {}}, {"SYN": {}, "SES": {}}, []
+    t0 = time.time()
+    for m, i in enumerate(ids):
+        t = rend[i]["target"]
+        ref = PS.halves_mel(G.read_flac(flac_path(root, "t2", i, "target"), t["scale"], t["sha256"]))
+        d = {"SYN": np.load(ex_path(root, "t2", i, f"{SEP}-t2")), "SES": np.load(ses_files[i][1])}
+        snr = {n: [mel_snr(d[n][f"s{h}"], ref[h]) for h in "AB"] for n in d}
+        con = {n: [contamination(d[n][f"s{h}"], ref[h]) for h in "AB"] for n in d}
+        if any(v is None for n in d for v in snr[n] + con[n]):
+            silent.append(i)                                # a silent truth half: no SNR for either arm
+            continue
+        for n in d:
+            per[n][i], cont[n][i] = statistics.fmean(snr[n]), statistics.fmean(con[n])
+        if m % 500 == 0:
+            print(f"stem read {m + 1}/{len(ids)}: {(time.time() - t0) / (m + 1):.2f} s per example", flush=True)
+    band_of = {i: by[i]["band"] for i in per["SYN"]}
+    section_of = {i: by[i]["section"] for i in per["SYN"]}
+    res = stem_read_summary(per, cont, band_of, section_of, set(per["SYN"]))
+    res["truth"] = ("T2's target render (t2/audio/...-target.flac) for both arms; for SES a matched re-render of the "
+                    "label in its stored mix (part C's mels within one 0.5-dB step on 99% of cells), not the exact "
+                    "guitar in it")
+    res["backings differ by design"] = ("SES's stored backing holds real guitars SYN lacks (other guitars below "
+                                        "ACTIVE_MIN, with or without a DI); the left-out dense sections are not read")
+    res["examples by set"] = {"pilot": sum(1 for i in per["SYN"] if i in set(plan["pilot"])),
+                              "early stopping": sum(1 for i in per["SYN"] if i in set(plan["es"]))}
+    res["dropped"] = {"refused or unbuilt (every arm)": len(refused & (set(plan["pilot"]) | set(plan["es"]))),
+                      "silent truth half": len(silent)}
+    rb = {}
+    for i in per["SYN"]:
+        x = rb.setdefault(ratio_bin(by[i]["draw"]["ratio_db"]), {"n": 0, "SYN": [], "SES": []})
+        x["n"] += 1
+        x["SYN"].append(per["SYN"][i])
+        x["SES"].append(per["SES"][i])
+    res["by_ratio"] = {b: {"n": v["n"], "SYN": statistics.median(v["SYN"]), "SES": statistics.median(v["SES"])}
+                       for b, v in sorted(rb.items())}
+    _save(stage_root(root, "t2") / "stem-read.json", {"plan": PLAN, "stage": "T2 stem read", "smoke": bool(args.smoke),
+                                                     "results": res, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(json.dumps(res, indent=1, default=float))
+    pa = res["per arm"]
+    print(f"SYN - SES mel SNR: mean {res['SYN - SES mean']:+.2f} dB, median {res['SYN - SES median']:+.2f} dB; primary "
+          f"(section-clustered) {fmt_iv(res['SYN - SES mel SNR (primary, section-clustered)'])}; band-clustered "
+          f"{fmt_iv(res['SYN - SES mel SNR (band-clustered, beside)'])}; n {res['examples']} in {len(res['bands'])} "
+          f"bands, {res['sections']} sections")
+    print("stems below 0 dB: " + ", ".join(f"{n} {100 * pa[n]['share below 0 dB']:.1f}% (mean {pa[n]['mean']:+.2f}, "
+                                           f"median {pa[n]['median']:+.2f}; contamination mean "
+                                           f"{pa[n]['contamination']['mean']:.4f})" for n in ("SYN", "SES")))
+    print(f"SYN - SES contamination (section-clustered): "
+          f"{fmt_iv(res['SYN - SES contamination (section-clustered)'])}")
+    print(f"T2 STEM READ: {res['reading']}")
+
+
+def cmd_t2_density(args):
+    """Diagnostic (b) (zero renders, CPU; writes nothing): the playing-guitar counts (`playing_count`, rule 1's
+    activity rule over `session_guitar_parts`, the target's part included) of the kept against the left-out T2
+    candidates (the plan's `left_out`, by reason), per example and per section, and by band; with each kept section's
+    count beside the plan's own (1 + its other guitars) as a check. Then diagnostic (a)'s per-part counts on V-real
+    (the parts only: no result is read here)."""
+    from learn import direct_stems as DS
+
+    V.require_real(args)
+    root = V.out_root(args)
+    plan = _load(plan_path(root, "t2"))
+    if not plan:
+        raise SystemExit("run `plan --stage t2` first")
+    check_lists(root, plan, args.smoke)
+    tr = load_lists(root, args.smoke)
+    ctx = DS.Ctx(quiet=True)
+    cand, _ = stage_rows(ctx, tr, "t2")
+    act = {}
+    cnt = {sid: playing_count(*section_parts(ctx, sid, act)) for sid in sorted({r["section"] for r in cand})}
+    left = [x for x in plan["left_out"] if x["section"] in cnt]
+    res = density_groups(cand, left, cnt)
+    n_left = sum(x["examples"] for x in left)
+    print(f"T2 candidates before rule 1 and the cap: {len(cand)} in {len(cnt)} sections; left out {n_left} in "
+          f"{len(left)} sections; kept {len(cand) - n_left} (pilot and early stopping drawn from them)", flush=True)
+    print("playing guitars, the target's part included (shares: of the examples with at least k playing):")
+    for g, t in res.items():
+        if g == "by band":
+            continue
+        print(f"  {g}: {t['examples']} examples in {t['sections']} sections; mean {t['mean']:.2f}, median "
+              f"{t['median']}; at least " + ", ".join(f"{k}: {100 * v:.1f}%" for k, v in t["share at least"].items())
+              + "; by count (examples/sections) "
+              + ", ".join(f"{n}: {c['examples']}/{c['sections']}" for n, c in t["by count"].items()))
+    for g, t in res["by band"].items():
+        print(f"    {g}: {t['examples']} examples, {t['sections']} sections; mean {t['mean']:.2f}; by count "
+              + ", ".join(f"{n}: {c['examples']}" for n, c in t["by count"].items()))
+    plan_n = {}
+    for x in plan["examples"]:
+        plan_n.setdefault(x["section"], 1 + len(x["others"]) + len({a["part"] for a in x.get("amp_tracks") or []}))
+    agree = sum(1 for s, n in plan_n.items() if cnt.get(s) == n)
+    diff = sorted((s, cnt.get(s), n) for s, n in plan_n.items() if cnt.get(s) != n)
+    print(f"check: kept sections in the plan whose count equals 1 + the plan's other guitars: {agree} of "
+          f"{len(plan_n)}" + (f"; differ: {diff[:6]}" if diff else ""))
+    files = {}
+    print("diagnostic (a)'s V-real counts (parts only; no result):")
+    for s in sorted(tr["v_real"]):
+        d = vreal_playing(s, files)
+        print(f"  {s}: {d['playing']} playing ({d['density']}); other parts {d['parts']}; not in the crop's mix: "
+              f"{sorted(p for p, m in d['in_mix'].items() if not m) or 'none'}")
+
+
+def cmd_plan_ses_all(args):
+    """SES-ALL's draw (option (c), the user, 2026-10-25; zero renders): 5,000 examples stratified by band (seed
+    SES_ALL_SEED) from every T2 candidate before rule 1 and the cap, outside T2's early-stopping sections; SES-ALL
+    early-stops on SES's set. Guarded against V-real's, V_sep's, stage F's and the known-answer bands and the
+    early-stopping set (`ses_all_guard`). Writes t2/ses-all.json (--dry: prints only); never redraws over a stored draw."""
+    from learn import direct_stems as DS
+
+    V.require_real(args)
+    root = V.out_root(args)
+    plan = _load(plan_path(root, "t2"))
+    if not plan:
+        raise SystemExit("run `plan --stage t2` first")
+    check_lists(root, plan, args.smoke)
+    tr = load_lists(root, args.smoke)
+    ctx = DS.Ctx(quiet=True)
+    cand, _ = stage_rows(ctx, tr, "t2")
+    draw = ses_all_draw(cand, plan["es_sections"])
+    lt = V.label_table()
+    forbidden = ({lt[s]["band"] for s in tr["v_real"]} | set(ctx.f_bands) | set(ctx.vsep_counts["per_band"])
+                 | set(DS.KNOWN_ANSWER_BANDS))
+    ses, _ = ses_rows(ctx)
+    ses_all_guard(draw, plan["es"], plan["es_sections"], forbidden, set(ses))
+    reason = {x["section"]: x["reason"] for x in plan["left_out"]}
+    from_left = {}
+    for r in draw:
+        if r["section"] in reason:
+            from_left[reason[r["section"]]] = from_left.get(reason[r["section"]], 0) + 1
+    by_band = {b: sum(1 for r in draw if r["band"] == b) for b in sorted({r["band"] for r in draw})}
+    pool = [r for r in cand if r["section"] not in set(plan["es_sections"])]
+    rec = {"plan": PLAN, "arm": SES_ALL, "seed": SES_ALL_SEED, "n": N_PILOT, "t2_plan": plan_key(plan),
+           "lists_sha256": plan["lists_sha256"], "smoke": bool(args.smoke),
+           "rule": "stratified by band (the pilot's rule) from every T2 candidate before rule 1 and the cap, outside "
+                   "T2's early-stopping sections; early stopping on SES's set",
+           "candidates": len(cand), "candidates_outside_es": len(pool),
+           "candidates_by_band": {b: sum(1 for r in pool if r["band"] == b) for b in sorted({r["band"] for r in pool})},
+           "train": [r["i"] for r in draw], "es": list(plan["es"]), "by_band": by_band,
+           "from_left_out": from_left, "shared_with_pilot": len({r["i"] for r in draw} & set(plan["pilot"])),
+           "forbidden_bands_checked": sorted(forbidden), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    print(f"SES-ALL: {len(draw)} drawn (seed {SES_ALL_SEED}) from {len(pool)} candidates outside early stopping "
+          f"({len(cand)} before); by band {by_band}; from left-out sections {from_left} "
+          f"({sum(from_left.values())}); shared with SES's pilot {rec['shared_with_pilot']}; early stopping "
+          f"{len(plan['es'])} (SES's)", flush=True)
+    if args.dry:
+        print("dry run: nothing written")
+        return
+    old = _load(ses_all_path(root))
+    if old and (old.get("train") != rec["train"] or old.get("t2_plan") != rec["t2_plan"]):
+        raise SystemExit(f"{ses_all_path(root)} holds another draw: move it aside by hand (no silent redraw)")
+    if not old:
+        _save(ses_all_path(root), rec)
+    print(f"PLAN SES-ALL DONE: {ses_all_path(root)}")
 
 
 # --- main --------------------------------------------------------------------------------------------------------
@@ -2236,7 +2797,8 @@ def cmd_report(args):
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="trusted_data", description=__doc__.split("\n")[0])
     ap.add_argument("cmd", choices=("amp-bleed", "plan", "render", "build", "t1-read", "train", "fit", "e-on-k",
-                                    "vreal-predict", "vreal-render", "report"))
+                                    "vreal-predict", "vreal-render", "report", "t2-stem-read", "t2-density",
+                                    "plan-ses-all"))
     ap.add_argument("--stage", choices=("t1", "t2"), default="t1")
     ap.add_argument("--shard", type=V.parse_shard, default=(0, 1))
     ap.add_argument("--device", default="mps")
@@ -2248,14 +2810,18 @@ def main(argv=None):
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--subset", choices=("rules", "rules-di"), default=None,
                     help="t1-read only: the T1 audit's zero-render re-read under rules 1-2 (writes nothing)")
+    ap.add_argument("--dry", action="store_true", help="plan-ses-all only: print the draw, write nothing")
     args = ap.parse_args(argv)
     if args.subset and args.cmd != "t1-read":
         raise SystemExit("--subset is for t1-read")
+    if args.dry and args.cmd != "plan-ses-all":
+        raise SystemExit("--dry is for plan-ses-all")
     if args.limit and not args.smoke:
         raise SystemExit("--limit is for smoke runs (with --smoke and --out)")
     {"amp-bleed": cmd_amp_bleed, "plan": cmd_plan, "render": cmd_render, "build": cmd_build, "t1-read": cmd_t1_read, "train": cmd_train,
      "fit": cmd_fit, "e-on-k": cmd_e_on_k, "vreal-predict": cmd_vreal_predict, "vreal-render": cmd_vreal_render,
-     "report": cmd_report}[args.cmd](args)
+     "report": cmd_report, "t2-stem-read": cmd_t2_stem_read, "t2-density": cmd_t2_density,
+     "plan-ses-all": cmd_plan_ses_all}[args.cmd](args)
 
 
 if __name__ == "__main__":

@@ -341,3 +341,12 @@ Facts that changed after the approval, and what each means for the plan. None is
   counts of kept against left-out examples) and, pending the user's OK, an SES arm trained with the left-out dense
   sections (2 runs, about 1.5 h, no renders). A leakage measure that resolves sparse sources is built after T2 if these
   show the gap matters, or when T3 or T4 needs K.
+- **2026-10-25, the SES-ALL arm approved and T2's additions built** ([design](trusted-data-t0-design.md#t2s-additions-as-built-2026-10-25)): the user approved the third
+  diagnostic ("Approved if you suggest following this approach", after the ML session suggested it). SES-ALL is SES's
+  recipe, seeds and early-stopping set on a 5k draw (seed 20261104, stratified by band) from every T2 candidate, the
+  sections rule 1 and the cap left out included, read as SES-ALL − SES on V-real: 2 runs of about 1.5 h, about 60
+  V-real renders plus 30 priming, no separations. Built before any T2 result, with the T2-side stem read (a ceiling
+  check only), diagnostic (a)'s split (5 or more playing guitars, a median split of V-real's part counts) and the
+  `report` fix (T1's 812-example read labelled superseded). It all runs after T2's chain and adds to its records.
+  Diagnostic (b), read at zero renders: the left-out candidates are denser (mean 3.82 playing guitars against 2.90
+  kept), but 2,308 of the 3,260 are one band (Rebuild The Evil), so SES-ALL − SES also carries two more bands.

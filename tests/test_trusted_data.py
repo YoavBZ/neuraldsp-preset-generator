@@ -655,3 +655,199 @@ def test_an_inventory_dis_own_amp_tracks_are_its_part():
     assert T.part_keys(["15_ElecGtrFar.wav", "16_ElecGtr1DI.wav"],
                        {"16_ElecGtr1DI.wav": ["15_ElecGtrFar.wav"]})["15_ElecGtrFar.wav"] == "elecgtr1"   # no number
     assert T.part_number("elecgtr02dt") == 2 and T.part_number("elecgtrfar") is None
+
+
+# --- T2's additions (2026-10-25): the stem read, diagnostics (a) and (b), SES-ALL, the report fix ------------------
+
+def _stem_per(shift):
+    sec = {i: f"{b}{i % 3}" for i, b in zip(range(24), "ABCD" * 6)}
+    band = {i: sec[i][0] for i in sec}
+    syn = {i: 3.0 + shift + 0.1 * (i % 5) for i in sec}
+    ses = {i: 3.0 + 0.1 * ((i + 2) % 5) for i in sec}
+    cont = {"SYN": {i: 0.02 for i in sec}, "SES": {i: 0.03 for i in sec}}
+    return {"SYN": syn, "SES": ses}, cont, band, sec
+
+
+def test_the_t2_stem_read_is_section_clustered_and_only_a_ceiling_check():
+    per, cont, band, sec = _stem_per(2.0)
+    s = T.stem_read_summary(per, cont, band, sec, set(sec))
+    assert len(s["bands"]) == 4 >= T.MIN_BANDS                        # 4 bands: still section-clustered (declared)
+    assert s["primary"] == T.STEM_READ_PRIMARY and s["primary"].startswith("section-clustered")
+    assert s["SYN - SES mel SNR (primary, section-clustered)"][3] == s["sections"] == 12
+    assert s["SYN - SES mel SNR (band-clustered, beside)"][3] == 4
+    assert s["per arm"]["SES"]["share below 0 dB"] == 0.0 and s["per arm"]["SYN"]["median"] is not None
+    assert s["per arm"]["SYN"]["contamination"]["mean"] == pytest.approx(0.02)
+    assert s["SYN - SES contamination (section-clustered)"][0] == pytest.approx(-0.01)
+    assert s["reading"].startswith("SYN's stems read cleaner") and "ceiling" in s["reading"]
+    for shift in (-2.0, 0.0):
+        per, cont, band, sec = _stem_per(shift)
+        assert "ceiling" in T.stem_read_summary(per, cont, band, sec, set(sec))["reading"]
+    for iv in ((2.0, 1.0, 3.0, 12), (0.1, -1.0, 1.2, 12), (-2.0, -3.0, -1.0, 12)):
+        r = T.stem_reading(iv)
+        assert "ceiling" in r and ("not a realism certificate" in r or "not a realism verdict" in r)
+        assert not re.search(r"\b(is|are) realistic\b|realism (is )?(shown|established|confirmed)", r)
+    assert T.stem_reading(None) == "incomplete"
+
+
+def test_playing_guitars_are_counted_as_rule_1_counts_and_split_as_declared():
+    parts = {"elecgtr1": ["25_ElecGtr1.wav"], "elecgtr2": ["26_ElecGtr2.wav", "27_ElecGtr2DI.wav"],
+             "elecgtr4": ["33_ElecGtr4DI.wav"], "acousticgtr1": ["22_AcousticGtr1.wav"]}
+    act = {"25_ElecGtr1.wav": 0.5, "26_ElecGtr2.wav": 0.02, "27_ElecGtr2DI.wav": 0.4, "33_ElecGtr4DI.wav": 0.05,
+           "22_AcousticGtr1.wav": 0.1}
+    assert T.playing_parts(parts, act) == ["acousticgtr1", "elecgtr1", "elecgtr2"]   # any track; DI-only counts
+    assert T.playing_count(parts, act) == 4 and T.playing_count({}, {}) == 1          # the target's part included
+    assert T.DENSE_MIN == 5 and T.density(5) == "dense" and T.density(4) == "sparse"
+
+
+def test_density_groups_compare_kept_with_left_out_candidates():
+    cand = ([{"i": i, "section": "a@0", "band": "X"} for i in range(3)]
+            + [{"i": 10 + i, "section": "b@0", "band": "Y"} for i in range(2)]
+            + [{"i": 20, "section": "c@0", "band": "Y"}])
+    left = [{"section": "b@0", "reason": T.LEFT_OUT_NO_AMP, "examples": 2},
+            {"section": "c@0", "reason": T.LEFT_OUT_CAP, "examples": 1}]
+    g = T.density_groups(cand, left, {"a@0": 2, "b@0": 4, "c@0": 7})
+    assert g["kept"]["examples"] == 3 and g["kept"]["by count"] == {2: {"sections": 1, "examples": 3}}
+    assert g[f"left out: {T.LEFT_OUT_NO_AMP}"]["mean"] == 4
+    assert g["left out (all)"]["examples"] == 3 and g["left out (all)"]["mean"] == pytest.approx(5.0)
+    assert g["left out (all)"]["share at least"] == {3: 1.0, 4: 1.0, 5: pytest.approx(1 / 3)}
+    assert g["kept"]["share at least"][3] == 0.0
+    assert set(g["by band"]) == {"kept | X", "left out | Y"}
+
+
+def _cand():
+    rows = []
+    for b, n_sec in (("A", 6), ("B", 4), ("C", 3)):
+        for s in range(n_sec):
+            rows += [{"i": len(rows) + k, "section": f"{b}{s}@0", "band": b} for k in range(10)]
+    return rows
+
+
+def test_ses_all_draws_from_every_candidate_outside_early_stopping():
+    cand = _cand()
+    es_sections = ["A0@0", "B0@0"]
+    d = T.ses_all_draw(cand, es_sections, n=60)
+    assert len(d) == 60 and d == T.ses_all_draw(cand, es_sections, n=60)          # seeded
+    assert not {r["section"] for r in d} & set(es_sections)
+    assert {b: sum(1 for r in d if r["band"] == b) for b in "ABC"} == {"A": 27, "B": 17, "C": 16}   # by band
+    assert T.SES_ALL_SEED == 20261104 and T.SES_ALL_SEED not in (T.PILOT_SEED, T.ES_SEED, T.EGGY_SEED, T.OTHER_SEED)
+    pool = {r["i"] for r in cand}
+    T.ses_all_guard(d, [0, 1], es_sections, {"Z"}, pool)
+    with pytest.raises(SystemExit, match="early-stopping"):
+        T.ses_all_guard(d + [cand[0]], [0], es_sections, {"Z"}, pool)
+    with pytest.raises(SystemExit, match="bands of V-real"):
+        T.ses_all_guard(d, [], es_sections, {"C"}, pool)
+    with pytest.raises(SystemExit, match="outside the trusted pool"):
+        T.ses_all_guard(d, [], es_sections, set(), pool - {d[0]["i"]})
+
+
+def test_ses_all_trains_on_its_draw_and_early_stops_on_ses_set(tmp_path):
+    import types
+
+    plan = {"pilot": [1, 2], "es": [3, 4], "es_sections": ["s3"], "lists_sha256": "x", "examples": [],
+            "syn_e": {"refused": "no Eggy DI is trusted"}}
+    files = {i: (f"m{i}", f"s{i}") for i in range(1, 8)}
+    assert T.t2_arms(tmp_path, plan) == ("SES", "SYN")
+    with pytest.raises(SystemExit, match="plan-ses-all"):
+        T.load_ses_all(tmp_path, plan)
+    sa = {"train": [2, 5, 6], "t2_plan": T.plan_key(plan)}
+    T._save(T.ses_all_path(tmp_path), sa)
+    assert T.t2_arms(tmp_path, plan) == ("SES", "SYN", T.SES_ALL) and T.load_ses_all(tmp_path, plan) == sa
+    with pytest.raises(SystemExit, match="another T2 plan"):
+        T.load_ses_all(tmp_path, {**plan, "es": [3]})
+    f = T.arm_files(tmp_path, plan, T.SES_ALL, files, sa)
+    assert sorted(f) == [2, 3, 4, 5, 6] and f[5] == ("m5", "s5")
+    ctx = types.SimpleNamespace(pool=[{"i": i, "band": "X"} for i in range(1, 8)])
+    tr, es = T.arm_rows(ctx, plan, T.SES_ALL, f, refused={2, 4}, ses_all=sa)
+    assert [r["i"] for r in tr] == [2, 5, 6]                       # SYN's refusals do not touch SES-ALL's training
+    assert [r["i"] for r in es] == [3] and es[0]["early_stop"]     # the shared early-stopping refusals do
+
+
+def test_ses_all_joins_the_contrasts_and_the_primary_does_not_wait_for_it():
+    con = T.t2_contrasts(("SES", "SYN", T.CONST_ARM, T.SES_ALL))
+    assert list(con)[0] == "SYN - SES"
+    assert con["SES-ALL - SES"] == (T.SES_ALL, "SES") and con["SES-ALL - S"] == (T.SES_ALL, "S")
+    assert "SES-ALL - SES" not in T.t2_contrasts(("SES", "SYN", T.CONST_ARM))
+    arms = ("SES", "SYN", T.CONST_ARM, T.SES_ALL)
+    assert T.primary_arms(arms) == ("SES", "SYN", T.CONST_ARM)
+    units = [{"slug": "p", "amp": "pr12", "d": {"SES": 1.0, "SYN": 1.0, T.CONST_ARM: 1.0, T.SES_ALL: None}}]
+    groups = {("p", "pr12"): {"status": "done"}}
+    assert T.report_gaps(units, T.primary_arms(arms), groups, {"p"}, {"p"}, {}) == []
+    assert T.report_gaps(units, (T.SES_ALL,), groups, {"p"}, {"p"}, {}) == ["1 directions have no SES-ALL value"]
+
+
+def test_an_added_arm_is_read_from_its_own_record():
+    g = {"status": "done", "judge": {"SES|A": {"B": 0.5}}}
+    added = {"status": "done", "judge": {"SES-ALL|A": {"B": 0.4}}}
+    assert T.group_value(g, added, "SES", "A", "B") == 0.5
+    assert T.group_value(g, added, "SES-ALL", "A", "B") == 0.4
+    assert T.group_value(g, {}, "SES-ALL", "A", "B") is None
+    assert T.group_value({"status": "running"}, added, "SES-ALL", "A", "B") is None
+    od = T.pathlib.Path("/x/vreal")
+    assert T.added_group_path(od, "SES-ALL", "p", "pr12") == od / "groups-added" / "SES-ALL" / "p|pr12.json"
+
+
+def test_vreal_playing_reads_the_crops_session(monkeypatch, tmp_path):
+    from learn import arm_a_mega53 as A
+
+    sess = tmp_path / "set3" / "Band_Song_Full"                    # set 3: base/<session>/, names carry the folder
+    sess.mkdir(parents=True)
+    names = ["01_Kick.wav", "10_ElecGtr1.wav", "11_ElecGtr1DI.wav", "12_ElecGtr2.wav", "13_ElecGtr2DI.wav",
+             "14_ElecGtr3DI.wav", "15_ElecGtr4.wav", "16_ElecGtr4DI.wav"]
+    for n in names:
+        (sess / n).write_bytes(b"")
+    rec = {"excerpt_start_s": 20.0, "excerpt_duration_s": 10.0, "part": "ElecGtr1",
+           "removed_own_amp_tracks": ["Band_Song_Full/10_ElecGtr1.wav"]}
+    cpart = {"part": "ElecGtr1", "di": "Band_Song_Full/11_ElecGtr1DI.wav"}
+    mix = [f"Band_Song_Full/{n}" for n in ("01_Kick.wav", "12_ElecGtr2.wav", "15_ElecGtr4.wav")]
+    monkeypatch.setattr(A, "f_part", lambda slug: {"crop": tmp_path / "crop"})
+    monkeypatch.setattr(T.V, "crop_session", lambda crop: (rec, tmp_path / "set3", cpart, [], mix))
+    act = {"12_ElecGtr2.wav": 0.9, "13_ElecGtr2DI.wav": 0.9, "14_ElecGtr3DI.wav": 0.5, "15_ElecGtr4.wav": 0.0,
+           "16_ElecGtr4DI.wav": 0.0, "10_ElecGtr1.wav": 1.0, "11_ElecGtr1DI.wav": 1.0}
+    seen = []
+
+    def fake(path, start, files=None, dur_s=None):
+        seen.append((path.parent, start, dur_s))
+        return act[path.name]
+
+    monkeypatch.setattr(T, "section_activity", fake)
+    d = T.vreal_playing("p")
+    assert d["playing_parts"] == ["elecgtr2", "elecgtr3"] and d["playing"] == 3 and d["density"] == "sparse"
+    assert d["in_mix"] == {"elecgtr2": True, "elecgtr3": False, "elecgtr4": True}   # a DI-only part counts, as in plan
+    assert {s for s in seen} == {(sess, 20.0, 10.0)}
+
+
+def test_the_report_labels_t1s_old_read_superseded(monkeypatch, tmp_path, capsys):
+    pytest.importorskip("numpy")
+    from learn import arm_a_mega53 as A
+    from learn import direct_stems as DS
+    from learn import local_objective_1c as C
+    from learn import perfect_sep_arm as P
+
+    T._save(tmp_path / "t1" / "read.json", {"results": {"K - V_sep mel SNR (primary)": [1.62, -0.31, 3.56, 26]}})
+    T._save(tmp_path / "t2" / "stem-read.json", {"results": {"reading": "no difference shown: ... ceiling ..."}})
+    monkeypatch.setattr(T.V, "require_real", lambda args: None)
+    monkeypatch.setattr(T.V, "out_root", lambda args: tmp_path)
+    monkeypatch.setattr(T, "load_lists", lambda root, smoke=False: {"v_real": ["p"]})
+    monkeypatch.setattr(P, "build_units", lambda: [{"slug": "p", "amp": "pr12", "search": "A", "held": "B",
+                                                    "band": "X", "d": {"S": 1.0}}])
+    monkeypatch.setattr(C, "load_bleed_table", lambda: {})
+    monkeypatch.setattr(A, "row_filter", lambda row, stage, bt, snr: (lambda u: True))
+    monkeypatch.setattr(DS, "step4_contrast", lambda *a, **k: {"rows": {}})
+    monkeypatch.setattr(T, "vreal_playing", lambda s, files=None: {"playing": 2, "density": "sparse"})
+    T.main(["report"])
+    rep = T._load(tmp_path / "t2" / "report.json")
+    assert "t1" not in rep and "superseded" in rep["t1 (superseded)"]["note"]
+    assert rep["stem_read"]["reading"].startswith("no difference shown")
+    assert rep["density"]["parts"] == {"p": {"playing": 2, "density": "sparse"}}
+    out = capsys.readouterr().out
+    assert "T1's 812-example read: superseded" in out and "T2-side stem read" in out
+
+
+def test_the_new_commands_render_nothing_and_dry_is_for_plan_ses_all():
+    from learn import local_objective as LO
+
+    for cmd in ("t2-stem-read", "t2-density", "plan-ses-all", "plan-ses-all --dry",
+                "train --arm SES-ALL --seed 20261042"):
+        assert not any(re.search(p, f"python -m learn.trusted_data {cmd}") for p in LO.RENDERS)
+    with pytest.raises(SystemExit, match="--dry is for plan-ses-all"):
+        T.main(["report", "--dry"])
