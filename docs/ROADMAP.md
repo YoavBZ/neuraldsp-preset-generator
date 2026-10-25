@@ -149,7 +149,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      parts that pass the checks and the ear) is the final development test; the user's ear on real
      songs is the last check. It amends three approved plans (set by the ML session; the user may
      overrule): the cleaning plan's step 2 becomes T2's SES arm, every-control stage 2D becomes T3
-     (read on K and V-real), and the real-mix test runs on V-real's parts.
+     (read on K and V-real; *K is empty since 2026-10-25, so T3's K read is open*, [design](trusted-data-t0-design.md#t1-waived-and-the-realism-check-moved-into-t2-2026-10-25)), and the real-mix test runs
+     on V-real's parts.
      - **T0 ran on 2026-10-23** (before the ear; `verify_tracks`: calibration OK, then targets, DIs, the stem scan,
        lists and the re-read; renders only for calibration's 8 cab-off negatives, plus 6 priming).
        After two ear-queue fixes (silent windows, DI-only repeats; PR #284) and the review's rules
@@ -282,22 +283,18 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      the estimator cannot resolve at −30 dB (sparse vocals, synths, effects, toms), so none is used. Dry run: T1 keeps
      0 of 812; T2 keeps 5,154 candidates in 4 bands outside early stopping (Rebuild The Evil and The Long Wait drop
      out; 109 Ale Lak candidates over the cap), so the 5k pilot is still reachable, narrowly.
-     **T1 must be re-planned and re-run before T2,** because K's mixes change: `amp-bleed` (about 20 min CPU per
-     session) and `plan`, zero renders; as it stands the plan holds no example. **T1 waived, not passed (user,
-     2026-10-25):** "I prefer reliable data and additional/longer runs than data that can't be fully trusted". K is
-     empty under the reviewed rules, and T1 gates nothing; its question moves into T2 (below;
-     [design](trusted-data-t0-design.md#t1-waived-and-the-realism-check-moved-into-t2-2026-10-25)).
+     *Superseded 2026-10-25 (next sentence):* **T1 must be re-planned and re-run before T2,** because K's mixes
+     change: `amp-bleed` (about 20 min CPU per session) and `plan`, zero renders; as it stands the plan holds no
+     example; the user was to decide whether T1 is waived or the check changes. **T1 waived, not passed
+     (2026-10-25):** this follows from the user's answer to whether T2 should run on 4 bands without amp tracks, "I
+     prefer reliable data and additional/longer runs than data that can't be fully trusted". K is empty under the
+     reviewed rules, and T1 gates nothing; its question moves into T2 (below; [design](trusted-data-t0-design.md#t1-waived-and-the-realism-check-moved-into-t2-2026-10-25)). With K empty, T2 reads no E on
+     K (`e-on-k` has nothing to read; the T2 chain treats its failure as non-fatal), and K and the T3/T4 sound gate stay
+     open until a better leakage measure, or another route, brings K back.
    - (c) **T2, the 5k pilot. *Started 2026-10-25 at 17:54*** under PR #290's rules: 5,154 candidates in 4 bands
      (Ale Lak, Death Of A Romantic, Hollow Ground, Storm Of Particles), a pilot of 5,000, early stopping 308 in 4
      sections, no amp tracks; 5,308 target renders, 10,099 other-guitar renders plus priming, 5,308 separations.
-     *The realism check, inside T2 (the ML session's proposal, in review):* the primary SYN − SES on V-real is the
-     decisive realism test; beside it, a new T2-side stem read (zero renders, descriptive; not built yet) reads SYN's
-     stems against SES's on T2's examples with T1's measure. *Known gap:* sections with an active guitar that has no
-     usable DI or amp track are left out, so dense multi-guitar arrangements are under-represented; a leakage measure
-     that resolves sparse sources would recover them (and T1, Rebuild The Evil and The Long Wait), proposed after T2
-     only if T2 shows the gap matters. Before Renesans enters any stage: `session_guitar_parts` skips GTR 2 Amp as
-     GTR 1's `own` (a latent bug the review of #290 found).
-     The design: SES (the stored stems; the cleaning plan's step 2) against SYN
+     SES (the stored stems; the cleaning plan's step 2) against SYN
      (self-built backings of the same examples, labels and draws), 2 seeds each; primary SYN − SES
      on V-real. A tie picks the self-built set (the user, 2026-10-23). If SES reads better beyond a
      tie, the realism levers still on (mix EQ and reverb) are tried at 5k before T3 (they are not
@@ -312,14 +309,30 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      is one more V-real arm, about 60 renders at V-real's 10 parts (about 210 for SES, SYN and the constant with 30
      shared priming renders), read beside the primary as SES − constant, SYN −
      constant and constant − S: does a model read the song, or only the constant's pull?
+     **The realism check, inside T2** (the ML session's proposal, approved after review, 2026-10-25;
+     [design](trusted-data-t0-design.md#t1-waived-and-the-realism-check-moved-into-t2-2026-10-25)): the primary SYN − SES on V-real is the decisive realism test. Beside it, a T2-side stem read (zero renders,
+     descriptive; not built yet): SYN's stems against SES's on T2's examples, with T2's target render as the truth for
+     both. At best a ceiling check, since above 0 cannot tell cleaner from unrealistically easy. `report` still prints
+     T1's old 812-example read, superseded; the same fix labels or drops it. *Known gap:* sections with an active guitar
+     that has no usable DI or amp track are left out, so dense multi-guitar arrangements are under-represented. SYN
+     short of SES on V-real is a realism signal, not a gap signal (both arms train on the same examples). The gap is
+     read by two zero-cost diagnostics declared now: V-real by the number of playing guitars, for SES − S and SYN − S;
+     and active-guitar counts of kept against left-out examples. A third, *pending the user's OK* (an unplanned longer
+     run), is an SES arm trained with the left-out dense sections against SES on the kept set (2 runs, about 1.5 h, no
+     renders). The read, the diagnostics and the `report` fix are built and independently reviewed before T2's results
+     are seen. A leakage measure that resolves sparse sources (which would recover them, T1, Rebuild The Evil and The
+     Long Wait) is built after T2 if these show the gap matters, or when T3 or T4 needs K. Before Renesans enters any
+     stage: `session_guitar_parts` skips GTR 2 Amp as GTR 1's `own` (a latent bug the review of #290 found; it does
+     not touch T2's four bands).
    - (d) **T3, decided after T2:** one rebuild that is also every-control stage 2D, on self-built
-     mixes with full-space labels and any approved new DIs, read on K and V-real. Its downloads are
+     mixes with full-space labels and any approved new DIs, read on K and V-real (*K empty since 2026-10-25: its
+     read is open until K comes back*). Its downloads are
      asked for then.
    - **Every-control stage 1** runs on the trusted panel's parts and can now run, now that the ear
      has cleared their amp tracks (knob ceiling 2's panel: 7 parts in 7 bands, verified 2026-10-25). It needs no rebuild, so it need not
      wait for (b)–(d); they share the renderer.
    - **The real-mix test** ([plan](real-mix-test-plan.md), #267) runs on V-real's parts.
-   - **T4:** V-real (with Jen Hartswick & Nick Cassarino), K, then the ear. V-real picks T2's winner
+   - **T4:** V-real (with Jen Hartswick & Nick Cassarino), K (*empty since 2026-10-25; open*), then the ear. V-real picks T2's winner
      and is read again here, so T4 is not independent. Then the fresh-song decision test (item 5
      below).
 
@@ -694,4 +707,4 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-25 | Backings and spot-checks never use click, metronome or talkback tracks (`NON_MUSICAL` in `verify_tracks`, PR #289): Split Brow's BAND CLICK had passed the stem scan; usable stems 167 → 166, nothing else moved | [design](trusted-data-t0-design.md) |
 | 2026-10-25 | T1 audited: K − V_sep +1.63 dB rested on a 1-df band interval (section-clustered [−0.31, +3.56]); 63 examples missing other guitars carried about +1.2 dB (without them +0.42, [−0.89, +1.72]), and near-silent renders were lifted up to +43 dB. No cleaning gain established; no realism lever follows. Fixed (zero renders): an active guitar that cannot be rendered leaves its example out of every arm, a render below −50 LUFS refuses its example, under 3 bands the section-clustered interval is primary. Re-read: the rule leaves out all 812 (parts with no DI play everywhere); on parts with a DI only, 452 read +1.67 [−0.15, +3.49]. T2 under the rule: 3,955 candidates in 3 bands; a user decision before T1 or T2 runs again | [design](trusted-data-t0-design.md#t1-audited-2026-10-25) |
 | 2026-10-25 | User decision (in chat, "Sounds good, go ahead" to the ML session's option 1): in self-built mixes an active guitar that cannot be rendered is the session's own recorded amp track(s), at the session's balance, after an automatic leakage check (other-instrument bleed under −30 dB by the cleaning plan's take estimator, read once per session from non-guitar tracks only; a source it cannot be trusted on fails the track; no listening), else the example is left out; examples with more active guitars than the cap of 4 are left out too; only K's and SYN's backings change. After the independent review's fixes, dry run: every amp track fails as unmeasurable; T1 keeps 0 of 812; T2 keeps 5,154 candidates in 4 bands outside early stopping (pilot reachable, narrowly). T1 must be re-planned and re-run before T2 (K's mixes change); as it stands it holds no example | [design](trusted-data-t0-design.md#rule-1-after-the-users-decision-2026-10-25) |
-| 2026-10-25 | User (in chat), asked whether T2 should run without amp tracks and on 4 bands after the reviewed bleed check (PR #290) cleared none of the 23: "I prefer reliable data and additional/longer runs than data that can't be fully trusted". T2 started at 17:54 on 5,154 candidates in 4 bands (pilot 5,000, no amp tracks; Rebuild The Evil and The Long Wait drop out). T1's re-run is waived, not passed (K is empty under the reviewed rules; T1 gates nothing). Proposed by the ML session, in review: the realism question is read inside T2 (primary SYN − SES on V-real, plus a zero-render T2-side stem read, SYN's stems against SES's); a leakage measure that resolves sparse sources is built after T2 only if T2 shows the left-out dense sections matter | [design](trusted-data-t0-design.md#t1-waived-and-the-realism-check-moved-into-t2-2026-10-25) |
+| 2026-10-25 | User (in chat), asked whether T2 should run on 4 bands without amp tracks after the reviewed bleed check (PR #290) cleared none of the 23: "I prefer reliable data and additional/longer runs than data that can't be fully trusted". T2 started at 17:54 on 5,154 candidates in 4 bands (pilot 5,000, no amp tracks; Rebuild The Evil and The Long Wait drop out). Following from that answer, T1's re-run is waived, not passed: K is empty under the reviewed rules, so T2 reads no E on K, and K and the T3/T4 sound gate stay open. The ML session's proposal, approved after review: the realism question is read inside T2 (primary SYN − SES on V-real, plus a zero-render T2-side stem read, a ceiling check at best); the data gap (left-out dense sections) is read by two zero-cost diagnostics declared now, and an SES arm with the dense sections is pending the user's OK; a leakage measure that resolves sparse sources is built after T2 if they show the gap matters, or when T3/T4 needs K | [design](trusted-data-t0-design.md#t1-waived-and-the-realism-check-moved-into-t2-2026-10-25) |
