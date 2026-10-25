@@ -435,7 +435,8 @@ range. 48 sessions name an electric-guitar DI [V]:
 | DGX "Redemptive Pain", "Rest In Hell" | hard rock/metal | DIs | — | 827, 686 MB |
 
 MekaPhil (four DI-only songs) is also listed; it was downloaded earlier by hand. The earlier
-scan's other leads have no electric DI: Prusinski, Hollowstate, Sunbreak and Escarràs. Ember Rev's
+scan's other leads (Prusinski, Hollowstate, Sunbreak, Escarràs) show no electric DI, unless
+one of them is among the 2 unread archives, whose names were not kept. Ember Rev's
 DIs, unconfirmed on 2026-10-23, are now confirmed. The full list is in
 `~/ndsp-presets/references/cambridge-scan-2026-10-25/scan.md`.
 
