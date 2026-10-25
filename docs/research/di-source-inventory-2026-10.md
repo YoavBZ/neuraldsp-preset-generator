@@ -457,6 +457,17 @@ DIs, unconfirmed on 2026-10-23, are now confirmed. The full list is in
   `learn/clean_di.py` (read by the DI inventory and `assert_training_ok`). 9 electric DIs: Ember Rev 2,
   Empty Signifier 2, Goran Levi 1, Mòpia 2 (each with an amp or mic track) and Sören 2 (DI only).
   Mòpia and Empty Signifier are scope by ear. A DI trains only after T0's checks and the ear.
+- *T0's checks (2026-10-25, zero renders; `verify_tracks`' functions unchanged, up to 5 windows per
+  DI where it plays; outputs in `~/ndsp-presets/learn/trusted-data/intake-2026-10-25/`).* D3 passes
+  all 9. D2 passes 4: Empty Signifier ElecGtr2DI, Goran Levi's DI and both Mòpia DIs. It fails Ember
+  Rev's two DIs (clipped in every window, and they play only from 3:15 on), Empty Signifier
+  ElecGtr1DI (hum, −40 to −50 dB) and both Sören DIs (drop-outs in every window). The amp checks
+  inform only. Empty Signifier's mics look like real amps: a cab is present, the mic leads the DI
+  by 1.1 ms (A1 to the ear), and there is no bleed. Goran Levi's "ElecGtr" fails as an amp: zero
+  lag, no cab, up to 0.98 correlation with the DI, so it reads as a processed copy, not a mic'd amp.
+  Its DI fails D1 and D4 flags it. Mòpia's amp tracks have no coherent top end, and D4 flags both
+  DIs (heavy drive, a scope worry). An ear page (`listening/trusted-data-ear/part6-new-bands/`, 32
+  cards) asks clean-DI and tone-class questions.
 
 ## Decisions and open questions
 
