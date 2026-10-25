@@ -407,6 +407,38 @@ band's three older sessions have no DI.
 *Later: Blue Manic "Acomatay" was downloaded on 2026-10-23 through the user's browser at their
 request and is reserved as a test band (ledger `cambridge-new-test-band-bluemanic`).*
 
+## Cambridge-MT newer-host listing (2026-10-25)
+
+With the user's approval, the library page was opened in their Chrome. Each of the 220 full-multitrack
+archives on `multitracks.cambridge-mt.com` (the challenged host) was range-read for its ZIP central
+directory only: file names, no audio. 218 were read; one request timed out and one ignored the
+range. 48 sessions name an electric-guitar DI [V]:
+
+- **Out of scope (metal):** 21 sessions from 14 bands.
+- **Already held, held out or reserved:**
+  - Saturn Syndicate, Hazael ×2, Fytakyte, MOPP and Nova-One (set 5);
+  - Laminar Flow and Lead Inc (set 4);
+  - Chris Coltraine ×2 and Eat The Feeder ×2 (cambridge);
+  - Swatkins and Rebecca Haviland (Telefunken bands with held-out songs);
+  - Blue Manic (test band).
+- **New and in scope** (genre from the site):
+
+| Session | Genre | Electric DIs [V] | Amp tracks | ZIP |
+|---|---|---|---|---|
+| Jeff Hirata "Sunshine" | pop/rock | ElecGtrDI01–04, each doubled | ElecGtr01–11, doubled | 1073 MB |
+| The Ferryboat Men "The Winds Of Gypsy Moor" | indie folk-rock | ElecGtr3DI, 4DI, 4DTDI | ElecGtr1–4, 4DT | 1037 MB |
+| Ember Rev "Divers & Lazarus" | art rock | ElecGtr8DI, 9DI | ElecGtr1–9, some FX | 536 MB |
+| Empty Signifier "Change" | various | ElecGtr1DI, 2DI | three mics each | 193 MB |
+| Goran Levi "Que Se Yo" | Afro-Cuban jazz | ElecGtrDI | ElecGtr | 457 MB |
+| Mòpia "If You Then I" | jazz-metal big band | ElecGtr2DI, 3DI | ElecGtr1–4 | 717 MB |
+| Sören "A Little Late" | disco-pop | ElecGtrDI, DTDI | none (DI only) | 613 MB |
+| DGX "Redemptive Pain", "Rest In Hell" | hard rock/metal | DIs | — | 827, 686 MB |
+
+MekaPhil (four DI-only songs) is also listed; it was downloaded earlier by hand. The earlier
+scan's other leads have no electric DI: Prusinski, Hollowstate, Sunbreak and Escarràs. Ember Rev's
+DIs, unconfirmed on 2026-10-23, are now confirmed. The full list is in
+`~/ndsp-presets/references/cambridge-scan-2026-10-25/scan.md`.
+
 ## Decisions and open questions
 
 **Decided by the user (2026-10-23):**
@@ -440,10 +472,9 @@ request and is reserved as a test band (ledger `cambridge-new-test-band-bluemani
 3. **The 8 refused archives** (Dopapod ×2, Holly Bowling ×4, "Crucial Taunt", Josh Quimby "Ten
    Year Town") stay unread; only Dopapod, a jam band with electric guitar, might matter, and a
    manual check on the site is the user's call.
-4. **The other Cambridge leads behind the Cloudflare challenge** (ranked in the
-   [scan](#cambridge-mt-library-scan-2026-10-23); Prusinski "80s Rocker" is the best genre fit).
-   Listing them needs the user, either to download the archives by hand or to pass the browser
-   check once.
+4. **The Cambridge leads behind the Cloudflare challenge:** listed on 2026-10-25 (above). The
+   download of the new in-scope sessions waits for the user's yes, and each band's test-or-train
+   role is set in the ledger before any audio is opened.
 5. **Disk.** About 113 GB was free on 2026-10-23. Ranks 1 and 3 are downloaded (0.94 + 0.46 GB);
    rank 2 needs 2.4 GB, and the features about 3 GB.
 
