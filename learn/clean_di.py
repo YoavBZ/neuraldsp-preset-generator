@@ -623,9 +623,22 @@ TRAINING_DOWNLOADS = {
     "MekaPhil_TimelessPart1_Full": ("MekaPhil", "library", "2026-10-23 B2-pool training band (anime alt rock; DI only)"),
     "Mekaphil_TimelessPart2_Full": ("MekaPhil", "library",
                                     "2026-10-23 B2-pool training band (anime alt rock; its DIs have no amp track)"),
+    # Two more Strobe songs, downloaded by mistake beside 'Maya' and kept for training by the user on 2026-10-26
+    # (ledger `cambridge-new-training-bands-2026-10-26c`). Taken in, no usable DI: no file in either is named as a DI,
+    # and their electric guitar tracks are excluded as unconfirmed DIs (INTAKE_UNNAMED_DI).
+    "Strobe_Gone_Full": ("Strobe", "library", "2026-10-26c training band (pop/electronica; no usable DI)"),
+    "Strobe_Nostalgic_Full": ("Strobe", "library", "2026-10-26c training band (pop/electronica; no usable DI)"),
 }
 # Not an electric guitar DI although the name reads as one: acoustic-guitar DIs and MIDI renders (2026-10-26)
 INTAKE_NOT_DI = re.compile(r"(?i)acoustic|midi")
+# Electric guitar tracks not named as DIs (2026-10-26c): Strobe 'Gone' and 'Nostalgic' name no file as a DI. Not a
+# confirmed DI, so excluded: no DI row (one ear click cannot establish an unnamed track as a DI; review of PR #303).
+INTAKE_UNNAMED_DI = {
+    "Strobe_Gone_Full": ("21_ElecGtr1.wav", "22_ElecGtr1DT.wav", "23_ElecGtr2.wav", "24_ElecGtr2DT.wav",
+                         "25_ElecGtr3.wav", "26_ElecGtr4.wav"),
+    "Strobe_Nostalgic_Full": ("07_ElecGtr.wav",),
+}
+INTAKE_UNNAMED_WHY = "not a confirmed DI (unnamed); excluded"
 RESERVED_NEW = {"BlueManic_Acomatay_Full": "reserved test band (ledger cambridge-new-test-band-bluemanic)"}
 RESERVED_BANDS = {"Blue Manic"}          # refused even if its session is ever added to TRAINING_DOWNLOADS
 # Every TRAINING_DOWNLOADS row carries this note, which `training_ok` rejects: a DI trains only once a verified list
@@ -862,6 +875,9 @@ def inventory():
     for key, (band, split, why) in TRAINING_DOWNLOADS.items():
         inner = CAMBRIDGE_NEW / key
         files = sorted(p.name for p in inner.glob("*.wav"))
+        for f in INTAKE_UNNAMED_DI.get(key, ()):
+            if f in files:
+                excluded.append({"what": f"datasets-cambridge-new/{key}/{f}", "why": INTAKE_UNNAMED_WHY})
         for di in [f for f in files if is_guitar_di(f) and not INTAKE_NOT_DI.search(f)]:
             part = re.search(r"(?i)elecgtr\d*", di).group(0)
             rid = f"cambridge-new/{key}/{di}"

@@ -417,7 +417,9 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      pool. Clean and crunch sources for F20: Strobe and MekaPhil ×4 (approved 2026-10-26; ledger
      `cambridge-new-training-bands-2026-10-26b`) are DI only. 13 of their 18 DIs pass D2/D3; ear page part 9 (14
      cards) is pending. Each DI card also asks the playing style. Only a clean/crunch-style answer makes a DI-only DI
-     not high gain; "can't tell" or no answer counts as high gain. F5 needs none of them.
+     not high gain; "can't tell" or no answer counts as high gain. Strobe "Gone" and "Nostalgic" (kept 2026-10-26;
+     ledger `cambridge-new-training-bands-2026-10-26c`) give no usable DI: no file is named as a DI, so their 7 guitar
+     tracks are excluded. F5 needs none of them.
      **F5's outcome (2026-10-26, audited: every row recomputed;
      [outcome](trusted-data-t0-design.md#f5-outcome-2026-10-26)).** Log ratios, lower is better, 7 bands, V-real-11:
      - **The gate, D_F5 − D_core5: +0.079 [−0.065, +0.224]: not shown** (2 bands better, 5 worse; per seed +0.082
@@ -593,7 +595,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      clean-class and 1 crunch section of 181; V-real has 2 clean bands): EGDB on a borrowed backing
      (downloaded; its DI checks first), GOAT (access requested), Jen Hartswick & Nick Cassarino as
      training instead of test, Strobe and MekaPhil now, or none. *Strobe and MekaPhil taken in 2026-10-26
-     (part 9's ear pending).*
+     (part 9's ear pending); Strobe "Gone" and "Nostalgic" the same day, with no usable DI.*
    - *Before T4:* the decision test's data and ship rule (keep the fresh bands out of pooled V-real
      readings; possibly bring step 7 forward with a declared verification phase); whether arm A
      gets every-control coverage (stage 2A, which dropped out after GATE STOP) or routes are
