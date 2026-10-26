@@ -2879,7 +2879,7 @@
    },
    "bands": "7 new bands (Arcadian Alone, Daimon B, Dark Illusion, Inhumanity Vortex, Peppermark, Serapis, DGX; Cambridge-MT), never used by this project; none is in a held-out list (clean_di.refuse_held_out on every band; no set 3-6 session folder carries their names; docs/validation-set3.md names Arcadian Alone, Daimon B, Inhumanity Vortex, Peppermark and Serapis only in its 'not obtained' list)",
    "gate": "none: an intake, not a test. Training permission is recorded in learn/clean_di.py TRAINING_DOWNLOADS (split 'library'), which the DI inventory and assert_training_ok read; every row also carries clean_di.INTAKE_PENDING (training_ok False) until a verified list admits it. clean_di.INTAKE_NOT_DI keeps acoustic-guitar DIs and MIDI renders out of the DI rows",
-   "audio_only": "~/ndsp-presets/references/datasets-cambridge-new/<session>_Full/ (manifest-2026-10-26.json beside the others; the ZIPs kept in _zips/)",
+   "audio_only": "~/ndsp-presets/references/datasets-cambridge-new/<session>_Full/ (guitar tracks and Readmes only, for the disk floor; the rest stays in the ZIPs in _zips/; manifest-2026-10-26.json beside the others)",
    "training": "training only: never a test, V-real, K, known-answer or held-out set, nor a screen that chooses a test. Tests stay clean to crunch (the user does not play metal). A DI enters a training pool only after it passes T0's checks and the user's ear (the trusted-data rule)",
    "renders": "0; separations: 0",
    "held_out": "none touched",

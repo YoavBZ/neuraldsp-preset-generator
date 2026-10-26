@@ -533,6 +533,32 @@ Peppermark "Another Feeling"'s `34_ElecGtrDI` has no part number (`33_ElecGtr4` 
 trains only after T0's checks and the ear, which adds a tone card per amp track (clean, crunch, high
 gain or too heavy).
 
+*Extraction and T0's checks (2026-10-26, zero renders; `verify_tracks`' and `clean_di`'s functions
+unchanged; outputs in `~/ndsp-presets/learn/trusted-data/intake-2026-10-26/`).* Only the guitar
+tracks and Readmes were extracted (manifest `datasets-cambridge-new/manifest-2026-10-26.json`): the
+full sessions are about 26 GB, which would take free disk under the 75 GB floor. The rest stays in the
+ZIPs. So A6 (bleed) was not run, because it needs every other track of the session. Windows are
+picked as on 2026-10-25: DI play share ≥ 0.5 in both halves, up to 5 spread across the song.
+
+- **D3 passes all 89. D2 passes 78 of 89.** By session (DIs, D2 passes): Arcadian Alone 4, 3; Daimon B
+  "Broken Again" 6, 6; Dark Illusion "Dark Illusion" 6, 2, and "Evil Bones" 4, 4; Inhumanity Vortex 5,
+  4; Peppermark "Lua Negra" 10, 9, "Another Feeling" 14, 12, and "Interlude" 14, 13; Serapis "The Dark
+  Abyss" 9, 8, and "Morbus Animi" 6, 6; DGX "Redemptive Pain" 7, 7, and "Rest In Hell" 4, 4.
+- Of the 11 D2 fails, 9 are hum, 1 is clipping and 1 is drop-outs. **In 6 of the 9 hum fails the hum is
+  not confirmed on the rests** (`hum_unconfirmed_on_rests`; 4 of the 6 Dark Illusion DIs fail D2).
+  Sustained low-tuned riffs may read as mains lines here. This looks like a possible miscalibration on
+  dense high-gain playing, and the threshold was not changed. The DIs stay out.
+- The amp checks inform only (on the DI's own take). A5 fails 38 of 78 pairs: chroma median 0.79
+  against a 0.8 line, and onset 0.48, while A1's lag is clean on most. Distortion smears chroma and
+  onsets, so A5 looks miscalibrated for high gain. A2 goes to the ear on 72 of 78 (little coherent top
+  end). Six DIs read near-zero lag to their amp track (−0.06 to +0.09 ms: Dark Illusion ×3, Peppermark
+  "Lua Negra" ElecGtr3, Serapis "The Dark Abyss" ElecGtr1 and DT). That suggests a re-amp or plugin
+  render, not a miked cab; the Serapis pair is also brighter than its DI.
+- D4 flags 52 of 89, which is expected for driven, compressed metal playing (the ear's flag only).
+- The ear page `listening/trusted-data-ear/part7-metal/` holds the 78 D2-passing DIs, 2 windows each
+  (1 where only one window qualifies): 148 DI cards. It adds 66 tone cards, one per amp track (clean,
+  crunch, high gain or too heavy). 214 cards in all, pending.
+
 ## Sources
 
 - **Telefunken LFTL:**
