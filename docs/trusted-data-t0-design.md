@@ -1777,6 +1777,32 @@ over bands:
 **Reading:** the user's rule (an effect size with its interval, no pass bar), labelled post hoc. The unreadable list
 comes from FS5 alone, but it was declared after F5's V-real reads were seen.
 
+### R0 outcome (2026-10-26, zero renders; `t3/followup-r/r0.json`)
+
+R0 ran once, after the declaration above was committed, on FS5's 722 examples in 12 sections. **20 of 116 heads read
+better than chance; 96 do not.** About 6 of 116 would read by chance alone.
+
+| Family | Readable | Which |
+|---|---|---|
+| Today's space | 5 of 25 | SW50R bright, treble boost and input mode; AC20 bright; right cab on. No knob (E within ±0.006 of the constant's), no mic |
+| Amp choice | 1 of 1 | accuracy 0.40 against a base rate of 0.33: +0.069 [+0.033, +0.105] |
+| Amp EQ | 4 of 36 | PR12 EQ on; PR12 bands 2 and 4; SW50R band 4 (each E about 0.002–0.004 under the constant's) |
+| Pedals | 4 of 14 | the three on switches (AUC 0.58–0.67) and the compressor's release; no knob |
+| Time effects | 1 of 19 | delay on, AUC 0.557 [0.505, 0.609]; reverb 0.493, tremolo 0.507, no knob |
+| Spring | 0 of 5 | derived switches 0.487 and 0.498 |
+| Gate and doubler | 1 of 4 | doubler on, AUC 0.585 |
+| Cab rest | 4 of 12 | left cab pan, right room level, right cab stereo, right room on |
+
+By kind: 5 of 85 continuous heads, 14 of 28 switches, 0 of 2 mics and the amp choice.
+- **The knobs read nothing:** every continuous head's E sits within 0.01 of the constant's, except the EQ high-pass
+  filters, which read worse (SW50R +0.023, AC20 +0.013).
+- **What R1 writes:** F5's D_F5 answers rebuild exactly from F5's stored readout in all 66 directions (checked at zero
+  renders, nothing written). D_F5:R therefore has reverb, tremolo and the springs off everywhere. The delay's switch
+  reads, so delay stays on in 29 of 66 directions, its knobs at S's stored values (mix 0.07–0.5, 500 ms, written
+  sync off).
+- **For R1's reading:** 96 heads at S, today's knobs among them, make D_F5:R close to S plus the 20 readable heads.
+  R1 compares that against D_core5. It does not compare D_F5's own knobs against D_core5's.
+
 ### How R1 sits with amendment 1
 
 [Amendment 1](every-control-plan.md#amendment-1-2026-10-22-every-control-is-learned) says every control is learned
