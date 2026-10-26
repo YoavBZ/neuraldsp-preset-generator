@@ -447,6 +447,11 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        unreadable control fits amendment 1 is the user's call. F20's three fixes are declared in the plan.
        R0 read the same day: 20 of 116 heads read better than chance (5 of 85 knobs, 14 of 28 switches, the amp
        choice, no mic); time effects only the delay's switch, springs none. R1 waits for review.*
+       *A zero-render tone-information probe (2026-10-27, [design and outcome](tone-info-probe.md)): a linear probe
+       per head reads 86 of 116 from the target render, 30 from the self-built mix and 20 from the X-LANCE stem (as
+       D_F5). The mix step loses most (87 heads reliably worse, today's knobs 24/25 → 4/25), the separator a little
+       more (18 heads); a finer representation or the DI adds nothing. Faint "on" labels explain part of the delay's
+       weakness (stem AUC 0.62 → 0.73 on its loudest third), not the reverb's, tremolo's or springs'.*
    - **Every-control stage 1** runs on the trusted panel's parts and can now run, now that the ear
      has cleared their amp tracks (knob ceiling 2's panel: 7 parts in 7 bands, verified 2026-10-25). It needs no rebuild, so it need not
      wait for (b)–(d); they share the renderer.
