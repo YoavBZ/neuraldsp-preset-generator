@@ -325,6 +325,15 @@ def test_strobe_extra_intake_is_training_only_and_not_held_out():
     for name in ("21_ElecGtr1.wav", "22_ElecGtr1DT.wav", "23_ElecGtr2.wav", "24_ElecGtr2DT.wav", "25_ElecGtr3.wav",
                  "26_ElecGtr4.wav", "07_ElecGtr.wav", "20_AcousticGtr.wav"):
         assert not C.is_guitar_di(name), name
+    # ... so its electric guitar tracks are DI candidates, with no own amp track, carrying the unnamed note
+    gone = ["20_AcousticGtr.wav", "21_ElecGtr1.wav", "22_ElecGtr1DT.wav", "23_ElecGtr2.wav", "24_ElecGtr2DT.wav",
+            "25_ElecGtr3.wav", "26_ElecGtr4.wav", "33_LeadVox.wav"]
+    assert C.intake_dis("Strobe_Gone_Full", gone) == gone[1:7]
+    assert C.intake_dis("Strobe_Nostalgic_Full", ["06_AcousticGtr.wav", "07_ElecGtr.wav"]) == ["07_ElecGtr.wav"]
+    assert C.intake_own("Strobe_Gone_Full", "ElecGtr1", gone, "21_ElecGtr1.wav") == []     # not ElecGtr1DT
+    assert C.own_tracks("ElecGtr1", gone, "21_ElecGtr1.wav") == ["22_ElecGtr1DT.wav"]      # what the name rule says
+    assert C.intake_dis("Strobe_Maya_Full", ["21_ElecGtrDI1.wav", "15_ElecGtr2.wav"]) == ["21_ElecGtrDI1.wav"]
+    assert set(C.INTAKE_UNNAMED_DI) == set(extra)
 
 
 def test_reserved_test_band_is_refused_even_as_a_training_download():

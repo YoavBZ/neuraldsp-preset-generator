@@ -629,6 +629,42 @@ hashes).
   [design](../trusted-data-t0-design.md#the-strobe-and-mekaphil-intakes-ear-part-9-2026-10-26).
   Until a DI is heard it stays pending.
 
+## Strobe "Gone" and "Nostalgic" training intake (2026-10-26)
+
+These two Strobe songs were the ones downloaded by mistake beside "Maya". The user decided on 2026-10-26 to keep
+both for training. They were moved from `_zips-unapproved/` to `_zips/`; checksums are in
+`_zips/sha256-2026-10-26c.txt`.
+
+**The role was recorded first,** before any audio was extracted:
+- ledger `cambridge-new-training-bands-2026-10-26c`;
+- `TRAINING_DOWNLOADS` rows (split `library`; every DI row `INTAKE_PENDING`);
+- `refuse_held_out` passes Strobe; no set 3–6 dataset or crop folder carries Strobe, "Gone" or "Nostalgic".
+
+**No file in either session is named as a DI.** "Gone" has `ElecGtr1`, `ElecGtr1DT`, `ElecGtr2`, `ElecGtr2DT`,
+`ElecGtr3` and `ElecGtr4`; "Nostalgic" has one `ElecGtr`. A probe (`scripts/probe_is_di.py`) cannot tell them apart
+from a clean amp track:
+- D4 passes 6 of the 7 (the median crest is 10.1–11.6 dB). Maya's `ElecGtrDI2` reads 8.9 dB and Timeless Part 2's amp
+  track `ElecGtr2` reads 11.3 dB, and both pass too.
+- Power above 6 kHz is −31 to −41 dB, against −40 dB for Maya's DI and −23 dB for that amp track.
+
+So each electric guitar track is a **DI candidate** (`clean_di.INTAKE_UNNAMED_DI`). It has no own amp track: the
+other tracks are candidates or double-tracks, not its amp. The DI card's "not a DI" excludes it.
+
+*Extraction and T0's checks (2026-10-26, zero renders, outputs in
+`~/ndsp-presets/learn/trusted-data/intake-2026-10-26c/`):*
+- **What was extracted:** the electric guitar tracks and Readmes (manifest `manifest-2026-10-26c.json`; free disk
+  79.6 → 79.0 GB).
+- **What ran:** D2, D3 and D4 on every candidate, on windows with play share ≥ 0.5, up to 5 per track. D1 and A1–A5
+  have no pair to run on.
+- **D3 passes all 7. D2 passes 5 of 7.** "Gone" `ElecGtr1` and `ElecGtr1DT` show hum on every window.
+- **Few windows:** "Gone" `ElecGtr2`, `ElecGtr2DT` and `ElecGtr3` have 2 qualifying windows each; `ElecGtr4` and
+  "Nostalgic" `ElecGtr` have 1.
+- **D4 flags (the ear's flag only):** "Nostalgic" `ElecGtr` (crest 8.1 dB, brightness slope −0.09).
+- **The ear page** `listening/trusted-data-ear/part10-strobe-extra/` (page `trusted-data-ear-strobe-extra`, 5 DI
+  cards, no tone card) is pending. It asks part 9's two questions. No session has a track known to be an amp track,
+  so there is no tone card. `lists` reads it like part 9 (`B2_PAGES`, `B2_DIRS`): a candidate heard as a clean DI
+  counts as high gain unless it is heard as clean/crunch-style.
+
 ## Sources
 
 - **Telefunken LFTL:**

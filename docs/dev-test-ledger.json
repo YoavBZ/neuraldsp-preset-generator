@@ -2928,7 +2928,7 @@
    "training": "training only: never a test, V-real, K, known-answer or held-out set, nor a screen that chooses a test. A DI enters a training pool only after it passes T0's checks and the user's ear (the trusted-data rule)",
    "renders": "0; separations: 0",
    "held_out": "none touched",
-   "outcome": "pending: waits for the checks and the user's listening"
+   "outcome": "checks done 2026-10-26 (zero renders; ~/ndsp-presets/learn/trusted-data/intake-2026-10-26c/): no file is named as a DI, and D4 cannot tell the guitar tracks from a clean amp track (probe_is_di.py: D4 passes 6 of 7, as it does Maya's DI and Timeless Part 2's amp track), so after the probe all 7 electric guitar tracks were made DI candidates (clean_di.INTAKE_UNNAMED_DI; no own amp track; the ear's 'not a DI' excludes). D1 and A1-A5 had no pair to run on. D3 7/7; D2 5/7 (out: Gone ElecGtr1 and ElecGtr1DT, hum on every window). D4 flags Nostalgic ElecGtr (the ear's flag). Ear page part 10 (trusted-data-ear-strobe-extra, 5 DI cards with part 9's two questions, no tone card: no track is known to be an amp track) pending; verify_tracks lists reads it as part 9 (B2_PAGES, B2_DIRS, metal_verdicts with no_tone_counts_as=high_gain). No DI has trained. Renders 0, separations 0, held out none touched"
   },
   {
    "test_id": "trusted-data",

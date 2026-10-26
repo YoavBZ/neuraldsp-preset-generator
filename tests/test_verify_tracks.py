@@ -1067,6 +1067,41 @@ def test_b2_page_is_read_by_lists_and_only_a_clean_crunch_style_lifts_high_gain(
         assert r["screen_tones"] == [cls] and T3.ear_call(r) == "high_gain"
 
 
+def test_part10_strobe_extra_is_read_by_lists_like_part9(tmp_path, monkeypatch):
+    """Part 10 (Strobe 'Gone' and 'Nostalgic', ledger cambridge-new-training-bands-2026-10-26c): its own page id and
+    T0 folder, read by metal_verdicts like part 9. Its DI cards play guitar tracks not named as DIs, so 'not a DI'
+    excludes; a heard-clean one counts as high gain unless heard clean/crunch-style."""
+    pytest.importorskip("numpy")                           # lists -> prior_summary
+    page = "trusted-data-ear-strobe-extra"
+    assert page in V.B2_PAGES and page in V.CARD_PAGES and V.B2_EXTRA_DIR in V.B2_DIRS and V.B2_DIR in V.B2_DIRS
+    assert len(set(V.B2_DIRS) | {V.METAL_DIR, V.INTAKE_DIR}) == 4
+    assert V.page_items_path(page).parent.name == "part10-strobe-extra"
+    env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 10.0)])])
+    g1, g2 = "/r/Strobe_Gone_Full/21_ElecGtr1.wav", "/r/Strobe_Gone_Full/23_ElecGtr2.wav"
+    items = [{"id": f"b10-{n}", "kind": "di", "family": "di", "key": k, "start_s": 50.0, "dur_s": 10.0,
+              "paths": {"di": k}} for n, k in (("1", g1), ("2", g2))]
+    ip = V.page_items_path(page)
+    ip.parent.mkdir(parents=True)
+    ip.write_text(json.dumps({"page": page, "build": "b10", "items": items}))
+    only = {"status": {"D1": None, "D2": "pass", "D3": "pass", "D4": "pass"}, "verdict": [
+        "pending ear", ["DI-only: D1 not measurable"]], "pairs": {}}
+    (env.root / V.B2_EXTRA_DIR).mkdir()
+    (env.root / V.B2_EXTRA_DIR / "summary.json").write_text(json.dumps({"sessions": {"Strobe_Gone_Full": {
+        "21_ElecGtr1.wav": {"band": "Strobe", **only}, "23_ElecGtr2.wav": {"band": "Strobe", **only}}}}))
+    f = tmp_path / "p10.json"
+    f.write_text(json.dumps({"page": page, "part": "10", "build": "b10", "exported": "2026-10-27T06:00:00Z",
+                             "answers": [{"id": i, "verdict": v, "style": st, "note": "", "t": "2026-10-27T06:00:00Z"}
+                                         for i, v, st in (("b10-1", "clean", "clean_crunch"),
+                                                          ("b10-2", "not_a_di", "cant_tell"))]}))
+    rec, _ = env.run([str(f)])
+    a, b = (rec["intake_dis"][f"cambridge-new/Strobe_Gone_Full/{n}"] for n in ("21_ElecGtr1.wav", "23_ElecGtr2.wav"))
+    assert rec["intake_admitted"] == ["cambridge-new/Strobe_Gone_Full/21_ElecGtr1.wav"]
+    assert a["verdict"] == "verified" and a["style_class"] == "clean_crunch" and a["no_tone_counts_as"] == "high_gain"
+    assert b["verdict"] == "excluded" and b["why"] == ["heard not_a_di"]
+    from learn import trusted_data_t3 as T3
+    assert T3.gain_group(T3.gain_class(None, T3.ear_call(a))[0], False) == "not high gain"
+
+
 def test_lists_admits_a_heard_clean_intake_di(tmp_path, monkeypatch):
     pytest.importorskip("numpy")                           # lists -> prior_summary
     env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 10.0)])])
