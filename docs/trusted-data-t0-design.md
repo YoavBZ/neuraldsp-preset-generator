@@ -292,6 +292,8 @@ refuse when it has changed.
 
 ## T2 (`trusted_data`, the 5k pilot; code only)
 
+*Ran 2026-10-25 to 26: a tie, SYN picked by recorded decision 4 ([outcome](#t2-outcome-2026-10-26)).*
+
 **The examples:**
 - **The pilot:** 5k trusted-pool examples (seed 20261099, stratified by band) on usable sections.
 - **The early-stopping set:** about 5% of sections, at least one per band (seed 20261100), at most
@@ -875,7 +877,7 @@ reviewed before T2's results are seen):
 
 **The leakage measure** that resolves sparse sources (for example, reading takes only on the frames where the source
 plays) would recover the dense sections, let T1 run, bring back Rebuild The Evil and The Long Wait, and give T3 and T4
-a known-answer set again. Proposed: build it after T2, when (a)–(c) show the gap matters, or when T3 or T4 needs K.
+a known-answer set again. Proposed: build it after T2, when (a)–(c) show the gap matters, or when T3 or T4 needs K. (After T2, 2026-10-26: not shown to matter; it waits until T3/T4 need K.)
 
 **A latent bug** (the review of #290), to fix before Renesans enters any stage: `session_guitar_parts` skips every
 track in the target DI's inventory `own` list, so an own track of another part (Renesans' "GTR 2 Amp_M81" under
@@ -1074,3 +1076,65 @@ is in code.
 **When they join.** A recovered part joins the verified set only after the user's ear, and only after T2's chain
 finishes: T2 runs on the current lists, which must not change mid-run. The rule goes into `verify_tracks` then
 (code, reviewed), and `lists` is re-run with every export.
+
+## T2 outcome (2026-10-26)
+
+T2's chain reported at 02:54 on 2026-10-26, then the follow-up chain ran. An independent audit recomputed every row
+below from `t2/vreal/groups` (and SES-ALL's added groups); all match. Rows are log(d_a/d_b), lower is better,
+band-weighted with 90% band-clustered intervals, 7 bands unless noted (logs `t2-report.log`,
+`t2-report-followup.log`, `t2-stem-read.log`, `t2-density.log`, `t2-ses-all-plan.log`; `t2/fit.json`).
+
+**The additions were declared before any result:** committed at 3740e70 (2026-10-25 19:05), before T2's report.
+
+**The primary, SYN − SES on V-real: +0.019 [−0.001, +0.040].** A tie under the declared rule (|point| < 0.03), so
+SYN is picked by recorded decision 4; the interval holds 0, so the proposed interval rule reads a tie too. It is not
+"equal": SYN leans worse, 5 of 7 bands lean to SES, and every leave-one-band-out mean is +0.013 to +0.026. The upper
+bound exceeds D's margin over S (−0.034).
+
+| Row | Point [90%] |
+|---|---|
+| SES − constant | −0.031 [−0.068, +0.005] |
+| SYN − constant | −0.012 [−0.045, +0.021] |
+| SES − S | +0.012 [−0.061, +0.084] |
+| SYN − S | +0.031 [−0.039, +0.101] |
+| constant − S | +0.043 [−0.015, +0.101] |
+
+Neither arm beats S or clearly beats the constant. Caveats:
+- each arm's pull was fitted on the shared 278-example early-stopping set (4 sections), built in its own arm's mix
+  (median b SES 0.79, SYN 0.44),
+  so the contrast includes the pull;
+- seed noise is not in the interval;
+- the 2-band rows (F-song, class clean) are descriptive only;
+- the − S rows use stored S judges, not re-rendered.
+
+**Data integrity:**
+- 334 near-silent refusals (rule 2), applied identically to every arm (5,000 + 308 drawn; 304 + 30 near-silent
+  refused = 334);
+- all 4 runs used the same 4,696 training and 278 early-stopping examples;
+- a second CPU build worker ran from 00:49; 1 build by both workers, matching to within 1e-6 dB; 78 refusals logged twice;
+- `e-on-k` refused on T1's stale lists hash (T1 waived, K empty); it does not touch T2;
+- training was healthy: best epochs SES 21 of 26 and 23 of 28, SYN 20 of 25 and 29 of 34.
+
+**SES-ALL − SES: −0.026 [−0.070, +0.018]; crunch −0.045 [−0.099, +0.009] (5 bands).** Descriptive, and not a clean
+density test:
+- the draw adds 2 bands SES never saw (Rebuild The Evil 1,372, The Long Wait 46);
+- it shares only 2,966 examples with SES;
+- it trains on 5,000 against SES's 4,696, including 175 that SES dropped as refusals;
+- its pull differs (median b 0.94);
+- it rests on one band (Zeno −0.127; without it −0.009);
+- it was rendered in a separate session, with no repeat render.
+
+So it reads as "a broader draw (more bands and denser sections) leans better", not "dense sections help". SES-ALL − S
+is −0.014 [−0.085, +0.057], the first T2 arm to lean past S; its interval holds 0.
+
+**Diagnostic (a):** SES − S dense −0.050 [−0.189, +0.089] (3 bands), sparse +0.058 [−0.048, +0.165] (4 bands).
+Nothing shown, and confounded with band: no band falls on both sides. **Diagnostic (b):** as read before
+([as built](#t2s-additions-as-built-2026-10-25)): the left-out candidates are denser.
+
+**The stem read (a ceiling check only):** SYN − SES mel SNR −0.80 dB [−1.12, −0.47] section-clustered (71 sections,
+the declared primary), −0.56 [−1.78, +0.66] band-clustered (4 bands). SYN's stems are not cleaner than SES's, so SYN
+is not shown to be unrealistically easy. Not a realism verdict, and the band-clustered interval holds 0.
+
+**Next:** decision 5, whether T3 runs on a tie, is open for the user. Pending inputs: the window re-check's 3
+recovered parts and the new bands' 4 DIs await the user's ear (PR #293, PR #294). The clean/crunch shortage stays the
+clearest gap.

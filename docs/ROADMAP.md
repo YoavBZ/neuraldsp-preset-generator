@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-24.
+lives in the linked documents. Last updated 2026-10-26.
 
 ## Where the product is
 
@@ -174,7 +174,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
          *window re-check 2026-10-25:* 3 excluded targets failed A5/A6 only because their crop window caught
          the DI silent; on 3–5 other windows each they have no measured fail (5/5, 3/3, 5/5); 13 stay out (DI
          hum, an A1 fail on 1 of 5 windows, real faults). The 3 join only after the user's ear (re-check page
-         ready) and after T2's chain ends
+         ready) and after T2's chain ends (*it ended 2026-10-26; they await the ear*)
          ([rule](trusted-data-t0-design.md#t0-window-re-check-2026-10-25));
        - V-real 10 parts in 7 bands (3 clean parts in 2 bands, 7 crunch; 3 of the 10 from one song,
          Wickerman); knob ceiling 2's 7 parts in 7 bands verified;
@@ -307,7 +307,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      reviewed rules, and T1 gates nothing; its question moves into T2 (below; [design](trusted-data-t0-design.md#t1-waived-and-the-realism-check-moved-into-t2-2026-10-25)). With K empty, T2 reads no E on
      K (`e-on-k` has nothing to read; the T2 chain treats its failure as non-fatal), and K and the T3/T4 sound gate stay
      open until a better leakage measure, or another route, brings K back.
-   - (c) **T2, the 5k pilot. *Started 2026-10-25 at 17:54*** under PR #290's rules: 5,154 candidates in 4 bands
+   - (c) **T2, the 5k pilot. *Ran 2026-10-25 to 26: a tie, SYN picked (outcome at the end of this item)*.** Started 2026-10-25 at 17:54 under PR #290's rules: 5,154 candidates in 4 bands
      (Ale Lak, Death Of A Romantic, Hollow Ground, Storm Of Particles), a pilot of 5,000, early stopping 308 in 4
      sections, no amp tracks; 5,308 target renders, 10,099 other-guitar renders plus priming, 5,308 separations.
      SES (the stored stems; the cleaning plan's step 2) against SYN
@@ -346,9 +346,28 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      the left-out data are mostly one band, so SES-ALL − SES also carries two more bands, not density alone
      ([as built](trusted-data-t0-design.md#t2s-additions-as-built-2026-10-25)). The read, the diagnostics and the `report` fix are built (2026-10-25) and independently
      reviewed before T2's results are seen. A leakage measure that resolves sparse sources (which would recover them, T1, Rebuild The Evil and The
-     Long Wait) is built after T2 if these show the gap matters, or when T3 or T4 needs K. Before Renesans enters any
+     Long Wait) is built after T2 if these show the gap matters, or when T3 or T4 needs K. *After T2 (2026-10-26): not shown to matter: (a) is null and SES-ALL is descriptive; the sparse-source leakage measure waits until T3/T4 need K.* Before Renesans enters any
      stage: `session_guitar_parts` skips GTR 2 Amp as GTR 1's `own` (a latent bug the review of #290 found; it does
      not touch T2's four bands).
+     **T2's outcome (2026-10-26, audited: every row recomputed from the V-real groups;
+     [outcome](trusted-data-t0-design.md#t2-outcome-2026-10-26)).** Log ratios, lower is better, 7 bands:
+     - **Primary SYN − SES on V-real +0.019 [−0.001, +0.040]: a tie** (|point| < 0.03, and the interval holds 0), so
+       SYN is picked by recorded decision 4. Not "equal": SYN leans worse (5 of 7 bands lean to SES; every
+       leave-one-band-out mean +0.013 to +0.026), and the upper bound exceeds D's margin over S.
+     - SES − constant −0.031 [−0.068, +0.005], SYN − constant −0.012 [−0.045, +0.021]; against S, SES +0.012, SYN
+       +0.031, constant +0.043. Neither arm beats S or clearly beats the constant. Each arm's pull was fitted on the shared
+       278-example early-stopping set, built in its own arm's mix (median b SES 0.79, SYN 0.44), so the contrast includes it; seed noise is not in the interval.
+     - Data and training clean: 334 near-silent refusals applied to every arm; all 4 runs on the same 4,696 training and
+       278 early-stopping examples (5,000 + 308 drawn; 304 + 30 near-silent refused = 334); training healthy (best epochs SES 21 of 26 and 23 of 28, SYN 20 of 25 and 29 of 34).
+     - SES-ALL − SES −0.026 [−0.070, +0.018], descriptive and not a density test: it adds 2 bands SES never saw,
+       shares only 2,966 examples with SES, has its own pull and rests on one band (without Zeno −0.009). It reads
+       "a broader draw leans better". SES-ALL − S −0.014, the first T2 arm to lean past S; its interval holds 0.
+     - Diagnostic (a): dense against sparse shows nothing and is confounded with band. The stem read: SYN's stems
+       are not cleaner than SES's (−0.80 dB [−1.12, −0.47] section-clustered; band-clustered holds 0), so SYN is
+       not shown to be unrealistically easy (a ceiling check only).
+     - **Next: decision 5 (whether T3 runs on a tie) is open for the user.** Pending inputs: the window re-check's 3
+       recovered parts and the new bands' 4 DIs ([PR #294](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/294), ear page `part6-new-bands`) await the user's ear (PR #293, PR #294); the clean/crunch shortage
+       stays the clearest gap.
    - (d) **T3, decided after T2:** one rebuild that is also every-control stage 2D, on self-built
      mixes with full-space labels and any approved new DIs, read on K and V-real (*K empty since 2026-10-25: its
      read is open until K comes back*). Its downloads are
@@ -496,7 +515,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      most a side check, never in a deciding number. SYN-E is dropped from T2 until a clean-class DI
      source (EGDB or GOAT) passes the DI checks.
    - *Before T2:* read T2's tie from the interval (a tie when it holds 0) rather than
-     |point| < 0.03.
+     |point| < 0.03. *Moot for T2 (2026-10-26): both rules read its primary as a tie.*
+   - *After T2 (2026-10-26):* decision 5, whether T3 goes ahead on T2's tie.
    - *Settled by the ear (2026-10-25):* K's bands. T1's K is Adam Buckley and Dark Ride; Kimock's
      and Swatkins' 4 DIs were all heard processed, so they cannot rejoin. (Cnoc An Tursa: decided
      2026-10-24, not admitted.)
@@ -735,3 +755,4 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-25 | User decision (in chat, "Sounds good, go ahead" to the ML session's option 1): in self-built mixes an active guitar that cannot be rendered is the session's own recorded amp track(s), at the session's balance, after an automatic leakage check (other-instrument bleed under −30 dB by the cleaning plan's take estimator, read once per session from non-guitar tracks only; a source it cannot be trusted on fails the track; no listening), else the example is left out; examples with more active guitars than the cap of 4 are left out too; only K's and SYN's backings change. After the independent review's fixes, dry run: every amp track fails as unmeasurable; T1 keeps 0 of 812; T2 keeps 5,154 candidates in 4 bands outside early stopping (pilot reachable, narrowly). T1 must be re-planned and re-run before T2 (K's mixes change); as it stands it holds no example | [design](trusted-data-t0-design.md#rule-1-after-the-users-decision-2026-10-25) |
 | 2026-10-25 | User (in chat), asked whether T2 should run on 4 bands without amp tracks after the reviewed bleed check (PR #290) cleared none of the 23: "I prefer reliable data and additional/longer runs than data that can't be fully trusted". T2 started at 17:54 on 5,154 candidates in 4 bands (pilot 5,000, no amp tracks; Rebuild The Evil and The Long Wait drop out). Following from that answer, T1's re-run is waived, not passed: K is empty under the reviewed rules, so T2 reads no E on K, and K and the T3/T4 sound gate stay open. The ML session's proposal, approved after review: the realism question is read inside T2 (primary SYN − SES on V-real, plus a zero-render T2-side stem read, a ceiling check at best); the data gap (left-out dense sections) is read by two zero-cost diagnostics declared now, and an SES arm with the dense sections is pending the user's OK; a leakage measure that resolves sparse sources is built after T2 if they show the gap matters, or when T3/T4 needs K | [design](trusted-data-t0-design.md#t1-waived-and-the-realism-check-moved-into-t2-2026-10-25) |
 | 2026-10-25 | Option (c) approved by the user (in chat, "Approved if you suggest following this approach", after the ML session suggested it): the SES-ALL arm, SES's recipe, seeds (20261042, 20261043) and early-stopping set on a 5k draw (seed 20261104, stratified by band) from every T2 candidate before rule 1 and the cap, read as SES-ALL − SES on V-real; 2 runs of about 1.5 h, about 60 V-real renders plus 30 priming, no separations; run after T2's chain, adding to its records. Built the same day before any T2 result, with the T2-side stem read (section-clustered primary; a ceiling check, never a realism certificate), diagnostic (a) (V-real split at 5 or more playing guitars, a median split of the parts' counts) and the `report` fix (T1's 812-example read labelled superseded). Diagnostic (b), read: left-out candidates are denser (mean 3.82 playing guitars against 2.90 kept), mostly Rebuild The Evil | [design](trusted-data-t0-design.md#t2s-additions-as-built-2026-10-25) |
+| 2026-10-26 | T2 read (audited; every row recomputed from the V-real groups). Primary SYN − SES on V-real +0.019 [−0.001, +0.040], 7 bands: a tie, so SYN is picked by recorded decision 4; SYN leans worse (5 of 7 bands; leave-one-band-out +0.013 to +0.026). SES − constant −0.031, SYN − constant −0.012; against S, SES +0.012, SYN +0.031: neither arm beats S or clearly beats the constant. Follow-up, descriptive: SES-ALL − SES −0.026 [−0.070, +0.018], a broader draw (2 more bands, one band carries it), not a density test; diagnostic (a) shows nothing; the stem read finds SYN's stems not cleaner than SES's (a ceiling check only). Decision 5, T3 on a tie, is open for the user | [design](trusted-data-t0-design.md#t2-outcome-2026-10-26) |
