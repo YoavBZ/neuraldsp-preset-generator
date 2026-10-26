@@ -405,7 +405,7 @@ def _pool_rows(ctx, tr, t2, kept_sections, classify=True):
     for r in ctx.pool:
         pool_by.setdefault(r["section"], []).append(r["i"])
     left = {x["section"]: x["reason"] for x in t2.get("left_out") or []}
-    intake_calls = {d: v.get("tone_class") for d, v in (tr.get("intake_dis") or {}).items()}
+    intake_calls = {d: ear_call(v) for d, v in (tr.get("intake_dis") or {}).items()}
     rows = []
     for sid, sec in sorted(ctx.sections.items()):
         rec = ctx.inv.get(sec["di"]) or {}
@@ -432,28 +432,48 @@ def _pool_rows(ctx, tr, t2, kept_sections, classify=True):
     return rows
 
 
+def ear_call(rec):
+    """An intake DI's ear call on the amp track: its own tone card, else its session's (PR #297's metal records),
+    else the metal intake's rule for a session with no amp track (DGX: counts as high gain)."""
+    return rec.get("tone_class") or rec.get("session_tone") or rec.get("no_tone_counts_as")
+
+
+def metal_counts(intake_dis, summary):
+    """{band: {verdict: DIs}} of the metal intake: T0's lists' verdicts where they hold the metal DIs (PR #297's
+    `metal_verdicts`), else the intake's measured T0 checks (every DI then waits for the ear: nothing is heard yet).
+    -> (counts, source)."""
+    rec = {d: v for d, v in (intake_dis or {}).items() if v.get("band") in METAL_BANDS}
+    by = {}
+    if rec:
+        for v in rec.values():
+            b = by.setdefault(v["band"], {})
+            b[v["verdict"]] = b.get(v["verdict"], 0) + 1
+        return by, "T0's lists"
+    for sess, d in (summary.get("sessions") or {}).items():
+        for f, v in d.items():
+            b = by.setdefault(v["band"], {})
+            k = "excluded" if v["verdict"][0] == "excluded" else "pending ear"
+            b[k] = b.get(k, 0) + 1
+    return by, "the intake's T0 checks (not yet in T0's lists)"
+
+
 def _intake_lines(tr, root):
     """Empty Signifier's admitted DI and the metal intake (zero renders): what joins once each passes."""
     out = []
     for d, v in sorted((tr.get("intake_dis") or {}).items()):
-        if d in (tr.get("intake_admitted") or []):
+        if d in (tr.get("intake_admitted") or []) and v.get("band") not in METAL_BANDS:
             out.append(f"  {v.get('band')}: {pathlib.Path(d).name} admitted (PR #296), ear call "
                        f"{v.get('tone_class')} ({gain_group(gain_class(None, v.get('tone_class'))[0], False)}); "
                        f"heard windows {[w[:2] for w in v.get('heard') or []]}; trains once the DI inventory is "
                        "rebuilt (its sections are counted then); ElecGtr1's DI is excluded (hum), so sections where "
                        "ElecGtr1 plays leave unless its mic tracks pass the bleed check")
     s = _load(root / METAL_INTAKE / "summary.json") or {}
-    by = {}
-    for sess, d in (s.get("sessions") or {}).items():
-        for f, v in d.items():
-            b = by.setdefault(v["band"], {})
-            k = v["verdict"][0]
-            b[k] = b.get(k, 0) + 1
-    adm = set(tr.get("intake_admitted") or [])
-    n_adm = sum(1 for d in adm if any(d.endswith(f"/{f}") for sess in (s.get("sessions") or {}).values() for f in sess))
-    out.append(f"  the metal and hard-rock intake ({METAL_INTAKE}): {sum(sum(b.values()) for b in by.values())} "
-               f"electric DIs in {len(by)} bands, {n_adm} admitted to the pool so far (each joins F20 after T0's checks "
-               f"and the ear, as high gain unless its tone card says otherwise):")
+    by, src = metal_counts(tr.get("intake_dis"), s)
+    n_adm = sum(b.get("verified", 0) for b in by.values())
+    out.append(f"  the metal and hard-rock intake ({METAL_INTAKE}; verdicts from {src}): "
+               f"{sum(sum(b.values()) for b in by.values())} electric DIs in {len(by)} bands, {n_adm} admitted so far; "
+               "none is in the pool until heard (each joins F20 after T0's checks and the ear, under the caps, as high "
+               "gain unless its tone card says otherwise):")
     for b in sorted(by):
         out.append(f"    {b}: " + ", ".join(f"{k} {n}" for k, n in sorted(by[b].items())))
     return out

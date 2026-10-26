@@ -220,3 +220,21 @@ def test_answer_sets_are_safe_judge_keys():
     assert all("|" not in a for a in T3.ANSWERS)
     assert len(set(T3.ANSWERS)) == len(T3.ANSWERS)
     assert math.isclose(len(T3.FAMILY_ARMS), 5)
+
+
+def test_metal_counts_wait_for_the_ear():
+    summary = {"sessions": {"S1": {"a.wav": {"band": "Peppermark", "verdict": ["pending ear", ["D1 to the ear"]]},
+                                   "b.wav": {"band": "Peppermark", "verdict": ["excluded", ["D2 fails"]]}}}}
+    by, src = T3.metal_counts({}, summary)
+    assert by == {"Peppermark": {"pending ear": 1, "excluded": 1}} and "not yet" in src
+    lists = {"x": {"band": "DGX", "verdict": "verified"}, "y": {"band": "DGX", "verdict": "pending ear"},
+             "z": {"band": "Empty Signifier", "verdict": "verified"}}
+    by, src = T3.metal_counts(lists, summary)
+    assert by == {"DGX": {"verified": 1, "pending ear": 1}} and src == "T0's lists"
+
+
+def test_ear_call_order():
+    assert T3.ear_call({"tone_class": "crunch", "session_tone": "high_gain"}) == "crunch"
+    assert T3.ear_call({"tone_class": None, "session_tone": "clean"}) == "clean"
+    assert T3.ear_call({"no_tone_counts_as": "high_gain"}) == "high_gain"
+    assert T3.ear_call({}) is None
