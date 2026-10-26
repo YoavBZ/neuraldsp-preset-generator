@@ -364,3 +364,8 @@ Facts that changed after the approval, and what each means for the plan. None is
   window re-check recovers 2 targets on their re-check windows. Signs ElecGtr6 is pending until its DI is heard as a
   DI (part 8). Targets are 19 verified and 1 pending. None joins V-real or knob ceiling 2. The new bands give **1 new training DI from 5 bands** (Empty Signifier 20_ElecGtr2DI, a high-gain
   part); Mòpia's two DIs and Goran Levi's were heard processed. The clean/crunch shortage is unchanged.
+- **2026-10-26, decision 5 and T3 declared** ([design](trusted-data-t0-design.md#t3-declared-2026-10-26-nothing-run)):
+  the user approved T3 after T2's tie. The plan's T3 row is declared in full: (f)'s pilot (D_full-5k against D_SYN-5k)
+  becomes F5, read on V-real because K is empty, against a retrained today's-space model on the same examples and a
+  shared, larger fit set; the full build is F20 (20k, 3 seeds). "With Eggy" no longer applies; Strobe and MekaPhil
+  (decision 7) are asked for now, with EGDB on borrowed backings as the other option. Controlled bleed stays off.

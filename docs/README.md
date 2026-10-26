@@ -426,7 +426,9 @@ was declared, what was measured, and the research behind it.
   pays against a blind pick, band-weighted −0.048, part-weighted −0.044 [−0.062, −0.026] (high
   priority); no screened control is invisible to the judge, cab phase moves it most; Tone King's
   renderer works. Stage 1 can now run (not yet run): the trusted amp-track list now exists (T0's
-  lists after the ear, 2026-10-25; 7 panel parts).
+  lists after the ear, 2026-10-25; 7 panel parts). Amendment 2 (2026-10-26): stage 2D is the trusted-data plan's T3, with
+  its label space (115 Morgan controls) declared; the T3 design is in
+  [trusted-data-t0-design.md](trusted-data-t0-design.md#t3-declared-2026-10-26-nothing-run).
 - [real-mix-test-plan.md](real-mix-test-plan.md): arm A and the direct model on the released mixes
   of stage F's songs against their unity sums (same takes), about 5.8k renders. Approved and
   merged 2026-10-22 (#267); amendment 1 (user): the direct model joins regardless of step 3's
