@@ -1668,14 +1668,17 @@ the declared reading applies: not shown; stop and report; F20 runs only with the
 
 **Why:**
 - **One part drives the gate.** Colour Me Red ElecGtr03 reads +1.015; every other part is between −0.12 and +0.09.
-  With time effects and spring at S, D_F5 − D_core5 is −0.0075 [−0.069, +0.054].
+  With time effects and spring at S, D_F5 − D_core5 is −0.0075 [−0.069, +0.054] (a post-hoc re-read, not declared;
+  the interval holds 0).
 - **The time-effect heads learn nothing.** FS5 switch AUCs: reverb 0.49, springs 0.49–0.50, tremolo 0.51, delay
   0.56. The readout (on above 0.5) at the training base rate turns reverb on in 54 of 66 directions, delay in 29 of
   66 and the spring in 10 of 44, where S has them off.
+- **Other switch heads are weak too:** compressor and drive AUCs about 0.58–0.59.
 - **A rough probe:** reverb and delay are visible in the target render (AUC 0.70 and 0.73) but mostly gone after
   X-LANCE separation (stem 0.52 and 0.59, mix 0.53 and 0.58).
 - **Training draws are wet:** factory draws have reverb on 74% of the time and delay 63%.
-- **The judge only punishes this on sparse parts,** where the tails fill the gaps.
+- **Where the judge punishes it, likely:** one sparse part, where the tails fill the gaps (one part; its sparseness
+  not measured).
 - **The amp head is near chance:** FS5 accuracy 0.39.
 
 **Integrity:**
@@ -1705,4 +1708,5 @@ The plan estimated about 6.4k renders.
 - then F20's decision, whose main value is new data (metal, Strobe/MekaPhil and the new bands' DIs, pending the ear).
 
 Fixes for F20: redraw near-silent draws instead of dropping them; keep each pair on one device; reconsider the
-switch readout and prior, since time effects can't be heard from separated stems.
+switch readout and prior, since time effects are barely readable from separated stems (rough probe: delay 0.59,
+reverb 0.52).
