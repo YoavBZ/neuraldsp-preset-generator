@@ -1710,3 +1710,115 @@ The plan estimated about 6.4k renders.
 Fixes for F20: redraw near-silent draws instead of dropping them; keep each pair on one device; reconsider the
 switch readout and prior, since time effects are barely readable from separated stems (rough probe: delay 0.59,
 reverb 0.52).
+
+## F5 follow-up: readability (R0) and the unreadable controls at S (R1) (declared 2026-10-26)
+
+**What and why.** The user approved the ML session's proposal (a) and (b) from the [F5 outcome](#f5-outcome-2026-10-26)
+on 2026-10-26. Declared here, and in the ledger (`trusted-data-t3`, amendment 1), before R0 is computed and before any
+R1 render. **Both are post hoc and descriptive:** F5's V-real reads are already seen, and the audit already re-read
+"time effects and spring at S" (−0.0075 [−0.069, +0.054]). Neither decides F20; F20 stays the user's call. Code:
+`learn/trusted_data_t3_r.py`; chain `docs/trusted-data-t3-r-chain.sh` (not launched). Outputs go to
+`t3/followup-r/` only; F5's files are read, never written.
+
+### R0, readability on FS5 (zero renders)
+
+D_F5's two seeds on FS5 (the shared fit set, full twins: 845 planned, 722 after F5's drops in either twin, the set
+`fit` read), each example's answer as the readout makes it
+(A1 + A2 over seeds and halves; the mean switch, mic and amp probabilities), against D_F5's constant from `fit.json`.
+One row per head:
+- **Continuous (85 heads):** E against the constant: per example |answer − label| − |constant − label| in unit
+  space, on examples where the dimension sounds; 90% section-clustered t interval (12 sections). The answer is A1 + A2
+  without the pull: the pull is fitted on FS5 itself, and at b = 0 it is the constant, so a pulled E is in-sample.
+- **Switches (26, plus the two springs' derived switches):** AUC of the mean probability against the label, on
+  examples where the switch is scored; 90% interval by the delete-one-section jackknife (t, sections − 1 df).
+- **Amp choice:** the amp head's accuracy minus the base rate, per example (the base rate: D_F5's training labels'
+  majority amp, guessed for every example); 90% section-clustered t.
+- **The two mics** (not named in the approval; declared the same way as the amp): accuracy minus the constant's mic
+  mode's, on examples where the mic sounds; 90% section-clustered t.
+- **Output gain:** not a head (fitted to loudness), so no row.
+
+**Readable** if the interval excludes chance in the right direction: AUC's lower end above 0.5; the E difference's
+upper end below 0; the accuracy difference's lower end above 0. **Otherwise unreadable**, including a head with no
+interval (fewer than 2 sections with data, one class only, or a jackknife fold left with one class). Printed by
+family, with n, sections, point and interval, and each switch's training on-rate (the prior an unreadable head falls
+back on).
+
+Limits: about 116 rows at 90% two-sided, so about 5% of heads that read nothing come out readable by chance (no
+correction, declared). FS5 is self-built mixes, so readable there does not mean readable on real songs.
+
+### R1, D_F5 with every unreadable control at S (99 renders)
+
+**One new answer set**, `D_F5:R`, on the frozen V-real-11 with F5's inputs, models and fit: D_F5's pulled answer (the gate's
+arm), with every head R0 calls unreadable written at S's value (S of the part's class on the same amp). This covers
+today's space too; the readable heads stay as F5 wrote them. D_core5 is unchanged.
+- **The spring:** an unreadable derived switch puts the whole spring (level and the PR12's dwell) at S. An unreadable
+  level under a readable switch takes S's level; when the switch reads on and S's level is 0, it takes the least level,
+  as F5's answer does.
+- **Amp choice** does not enter: the answers are amp-fixed, as F5's.
+- **The rest is written as F5 writes an answer:** sync off, sections on, never both cabs off, off features neutral.
+  Output gain is fitted per answer at render, and its |LUFS error| is the pipeline check.
+
+**Renders:**
+- 33 (part, amp) groups × (1 priming at S + 2 directions) = **99**, about 5 minutes on 3 processes.
+- F5's rule primes once per new DI or amp (`direct_stems.run_group`), not once per process, so the count is 99, not
+  about 70.
+- isolate=True, the first 0.25 s trimmed, at most 3 render processes machine-wide, the 31 GB disk guard.
+- No other answer set is rendered: D_F5:R's per-seed and no-pull variants would cost 66 renders each.
+
+**Rows:** log(d_a/d_b), band-weighted, 90% band-clustered t (7 bands), per class and V-real-10 beside, the sign split
+over bands:
+- **R1: D_F5:R − D_core5** (post hoc, descriptive);
+- D_F5:R − S, D_F5:R − constant, D_F5:R − D_F5 (what the at-S rule changes), D_F5:R − D_F5 with time effects and
+  spring at S;
+- **time effects only:** D_F5 with time effects and spring at S − D_core5, from F5's stored renders (the audit's
+  re-read, already seen);
+- every F5 row again, from F5's stored groups, beside.
+
+**Reading:** the user's rule (an effect size with its interval, no pass bar), labelled post hoc. The unreadable list
+comes from FS5 alone, but it was declared after F5's V-real reads were seen.
+
+### How R1 sits with amendment 1
+
+[Amendment 1](every-control-plan.md#amendment-1-2026-10-22-every-control-is-learned) says every control is learned
+and no fixed rule stands in for a control the judge can't hear.
+- **What R1 keeps:** every control stays in the learned space. The heads, labels and loss are unchanged, and nothing
+  is retrained. Only the written answer takes S's value, and only where FS5 shows the head reading no better than
+  chance.
+- **The precedent:** T3's own decision rule already writes S's values for the new controls when their worth is not
+  shown, "while they stay learned (amendment 1)" (section 5 above). R1 follows it.
+- **Where it may conflict (the user's call):**
+  - **S is not the model's constant.** The pull's limit (b = 0) is D_F5's constant: training medians and switch
+    majorities. For the time-effect switches that constant is "on", because the factory draws are wet. S's values are
+    a fixed preset, chosen per control by a data test (R0), not learned from FS5.
+  - So calling R1 "the model's pull to the constant (S)" is not accurate. **Read strictly, writing S for an
+    unreadable control is a fixed rule standing in for it in the written answer.** It keeps amendment 1's membership
+    rule but not its letter.
+  - If the user rules it out, R1 still reads what the unreadable heads cost, as a description. The written answer
+    would then use the constant instead (F5 read that already: D_F5 − constant −0.004) or wait for heads that read
+    more.
+
+### F20's fixes from the F5 audit (declared in the plan only; no F20 code yet)
+
+F20 still waits for the user's yes. When it runs:
+1. **Near-silent draws are redrawn, not dropped.**
+   - When a target render falls below rule 2's floor (−50 LUFS), the example's new controls are drawn again from its
+     own stream: the next draw of seed 20261107's stream for that example, so a redraw can be reproduced. Up to 5 tries.
+   - The same applies to an other guitar's full-space preset (seed 20261102's stream for that example and DI).
+   - An example drops only when every try is silent, and that drop is printed. The kept label is the redrawn one.
+   - The redraw share is printed by mode, with every switch's training on-rate before and after.
+   - At F5's rate (785 of 4,974, mostly wide draws with quiet cab mics) this costs about 16% more target renders.
+2. **Each core/full pair stays on one separation device.**
+   - Wherever F20 builds a twin of a stored example (F5's twins carried in, or any re-run of the paired gate), the
+     twin is separated on the device its stored twin used. This is the positive control's rule (`pc_todo`).
+   - The CPU worker takes only examples whose stored twin was CPU-built, or that have no twin. F20's new examples have
+     no twin, so either worker can take them.
+   - The device is recorded per example, and the split is printed per arm.
+3. **The switch readout, and the prior for controls that can't be heard.**
+   - After D_F20 trains, R0's check runs on FS20 under the same rule, at zero renders.
+   - **Readout:** a readable switch is written on above 0.5, as now. An unreadable head (switch, knob or mic) is
+     written at S's value, R1's rule, instead of falling back on its training prior.
+   - **Prior:** the training draws keep their declared rates. R0's table prints each switch's training on-rate
+     beside its AUC, so the prior an unreadable head falls back on is visible. Drawing switches 50/50 was considered
+     and not taken: an unreadable head then flips a coin, and still turns reverb on in about half its answers.
+   - **Which readout decides:** D_F20's rows are read both ways, plain and at S. The plain readout stays primary, as
+     declared, unless the user rules on amendment 1 (above) before any F20 V-real read.

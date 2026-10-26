@@ -438,6 +438,11 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        then about 70 renders of D_F5 with its unreadable controls at S against D_core5, then F20's decision (its
        main value is new data: metal, Strobe/MekaPhil and the new bands' DIs, pending the ear). Fixes for F20:
        redraw near-silent draws, keep each pair on one device, reconsider the switch readout and prior.
+       *Approved by the user 2026-10-26 and declared the same day, before any of it ran
+       ([F5 follow-up](trusted-data-t0-design.md#f5-follow-up-readability-r0-and-the-unreadable-controls-at-s-r1-declared-2026-10-26)):
+       R0 reads each of D_F5's heads on FS5 against the constant (zero renders); R1 renders D_F5 with every
+       unreadable head at S against D_core5 (99 renders), post hoc and descriptive. Whether writing S for an
+       unreadable control fits amendment 1 is the user's call. F20's three fixes are declared in the plan.*
    - **Every-control stage 1** runs on the trusted panel's parts and can now run, now that the ear
      has cleared their amp tracks (knob ceiling 2's panel: 7 parts in 7 bands, verified 2026-10-25). It needs no rebuild, so it need not
      wait for (b)–(d); they share the renderer.
@@ -586,6 +591,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      ahead.*
    - *After F5 (2026-10-26):* whether F20 runs on F5's gate (+0.079, not shown), and first whether the readability
      check and the ~70-render re-read run ([F5 outcome](trusted-data-t0-design.md#f5-outcome-2026-10-26)).
+     *The check and the re-read approved 2026-10-26 (R0, R1).* Open: whether writing S's value for a control the
+     model can't read fits amendment 1 ("no fixed rule stands in for an unheard control"); it also sets F20's readout.
    - *Settled by the ear (2026-10-25):* K's bands. T1's K is Adam Buckley and Dark Ride; Kimock's
      and Swatkins' 4 DIs were all heard processed, so they cannot rejoin. (Cnoc An Tursa: decided
      2026-10-24, not admitted.)
@@ -831,3 +838,4 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-26 | Scope refined for training (user): high-gain songs can train, as long as too-heavy songs don't interfere; testing and perfecting stay clean/crunch-focused. High gain no longer drops a training source ("scope by ear" screens out only extreme cases); readouts stay clean/crunch-weighted and per class. The 2026-10-25 scan's metal sessions outside the held-out sets, 11 sessions from 6 bands (V.M.GY is set-3 held out), plus DGX ×2, become possible training candidates. With the user's yes, these 13 were downloaded on 2026-10-26 and are under intake on branch `ml/metal-intake` | [scope](#scope-user-decision-2026-10-10) |
 | 2026-10-26 | Decision 5 (user): T3 goes ahead on T2's tie. T3's plan declared the same day, before any T3 data (every-control amendment 2 and the T3 design; ledger `trusted-data-t3`; pending review, nothing run): 115 Morgan controls learned, switched-off knobs masked out of loss, scores and fits; F5 (T2's examples with full-space labels against a today's-space model on the same examples, the gate) then F20 (20k, high-gain sources at most 50%); primary D_F20 − S on V-real (up to 12 parts), band-weighted, 90% band-clustered, per class; a shared, larger fit set and no-pull rows fix T2's pull caveat; about 58k renders, 22k separations, 5–6 h MPS. Open: clean and crunch sources for F20 | [design](trusted-data-t0-design.md#t3-declared-2026-10-26-nothing-run) |
 | 2026-10-26 | T3's F5 read (audited; every row recomputed). The gate D_F5 − D_core5 +0.079 [−0.065, +0.224], 2 bands better and 5 worse: not shown, so F5 stops and F20 runs only with the user's yes. One part (Colour Me Red ElecGtr03, +1.015) drives it through the time effects and spring, whose heads learn nothing (FS5 switch AUCs 0.49–0.56; reverb read on in 54 of 66 directions); with that family at S the gate is −0.0075 (a post-hoc re-read, not declared; interval holds 0). D_F5 − S +0.088, D_core5 − S +0.009, D_F5 − constant −0.004; the amp head is near chance. Integrity checks passed; 785 of 4,974 full twins dropped as near-silent; 6,246 renders. Output gain is set by loudness matching, not predicted (user). Proposed next: a zero-render readability check, about 70 renders with unreadable controls at S, then F20's decision | [outcome](trusted-data-t0-design.md#f5-outcome-2026-10-26) |
+| 2026-10-26 | F5 follow-up approved (user) and declared before any of it ran (ledger `trusted-data-t3` amendment 1): R0, each D_F5 head's readability on FS5 against the constant (AUC, E, accuracy; readable when its 90% interval excludes chance; zero renders); R1, D_F5 with every unreadable head at S against D_core5 on V-real-11 (99 renders), post hoc and descriptive; F20's fixes declared (redraw near-silent draws, one device per pair, unreadable heads at S instead of their prior). Writing S for an unreadable control may conflict with amendment 1: the user's call | [design](trusted-data-t0-design.md#f5-follow-up-readability-r0-and-the-unreadable-controls-at-s-r1-declared-2026-10-26) |
