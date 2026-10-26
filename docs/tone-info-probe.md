@@ -85,6 +85,34 @@ The same probe for every input:
 - **Negative control (n):** the DI alone should read about as many heads as chance gives (about 6 of 116). More
   than about 12 means the probe or the split leaks, and the read is flagged.
 
+## Addition: are "on" effects audible? (declared 2026-10-27, before it is computed)
+
+**Why.** The user's hypothesis, sent by the coordinator after the main read had run: many effects may be labelled
+"on" at settings too faint to hear (a low delay or reverb mix, a shallow tremolo, a spring at its least level
+`SPRING_MIN` = 1e−3). Such labels are unreadable by construction. Zero renders.
+
+**The proxy, per switch** (the label's unit-space value, as `full_space.encode` stores it):
+
+| Switch | Audibility proxy |
+|---|---|
+| `reverb/reverbActive` | `reverb/reverbMix` |
+| `delay/delayActive` | `delay/delayMix` |
+| `tremolo/tremoloActive` | `tremolo/tremoloDepth` |
+| `pr12Amp/springOn`, `sw50rAmp/springOn` | `pr12Amp/pr12Reverb`, `sw50rAmp/sw50rReverb` (the spring's level) |
+
+**What is shown:**
+- **The distribution** of each proxy among "on" labels in F5's examples (probe training and FS5 together): quantiles
+  (min, 10, 25, 50, 75, 90%, max) in unit space and in the plugin's own values, by draw mode (factory, start, wide)
+  and overall, and the share of springs "on" at exactly `SPRING_MIN`.
+- **Readability restricted:** for inputs (a), (b) and (c), the same probes' scores (refitted exactly as in the main
+  read, deterministic; not retrained on the subset) read on FS5 with "off" examples against only the "on" examples
+  whose proxy is at or above a cut. **The cuts are the proxy's tertiles and median among "on" labels in the
+  probe-training set** (FS5 does not set them). Primary: **the top third** against "off". Beside: the top half, the
+  bottom third, and all "on" (the main read). R0's rule: AUC with the 90% delete-one-section jackknife; readable iff
+  the lower end is above 0.5. FS5 cells with fewer than 2 sections holding both classes have no interval.
+- **Wording, declared:** "rises sharply" if the top third's AUC is at least 0.10 above the all-"on" AUC for that
+  input; said plainly per switch and input.
+
 ## Limits
 
 - **A linear probe on summaries is a lower bound** on what an input carries. "Not carried" means not by these
