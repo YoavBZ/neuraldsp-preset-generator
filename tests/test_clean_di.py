@@ -260,7 +260,7 @@ def test_training_downloads_are_training_only_and_not_held_out():
     ledger = json.loads((C.PLUGIN_ROOT / "docs/dev-test-ledger.json").read_text())
     entries = json.dumps([t for t in ledger["tests"] if t["test_id"] in (
         "cambridge-new-training-bands-2026-10-25", "cambridge-new-training-bands-2026-10-26",
-        "cambridge-new-training-bands-2026-10-26b")])
+        "cambridge-new-training-bands-2026-10-26b", "cambridge-new-training-bands-2026-10-26c")])
     assert all(key in entries for key in C.TRAINING_DOWNLOADS)
     for key, (band, _, _) in C.TRAINING_DOWNLOADS.items():
         C.refuse_held_out({"set": "cambridge-new", "band": band, "path": str(C.CAMBRIDGE_NEW / key / "x_ElecGtrDI.wav")})
@@ -274,7 +274,7 @@ def test_metal_intake_is_training_only_and_screens_non_dis():
     ledger = json.loads((C.PLUGIN_ROOT / "docs/dev-test-ledger.json").read_text())
     entry = next(t for t in ledger["tests"] if t["test_id"] == "cambridge-new-training-bands-2026-10-26")
     assert "training only" in entry["training"] and entry["renders"].startswith("0")
-    metal = [k for k, (_, _, why) in C.TRAINING_DOWNLOADS.items() if why.startswith("2026-10-26")]
+    metal = [k for k, (_, _, why) in C.TRAINING_DOWNLOADS.items() if why.startswith("2026-10-26 ")]
     assert len(metal) == 13 and all(k in json.dumps(entry) for k in metal)
     assert not any("VMGY" in k.upper().replace(".", "") for k in C.TRAINING_DOWNLOADS)
     with pytest.raises(ValueError):                     # V.M.GY is a set-3 held-out band, whatever the folder
@@ -306,6 +306,25 @@ def test_b2_pool_intake_is_training_only_and_not_held_out():
         assert not C.is_guitar_di(name)
     assert C.own_tracks("ElecGtr1", ["13_ElecGtr1DI.wav", "14_ElecGtr1DIDT.wav", "15_ElecGtr2.wav", "16_ElecGtr3.wav"],
                         "13_ElecGtr1DI.wav") == []
+
+
+def test_strobe_extra_intake_is_training_only_and_not_held_out():
+    """Strobe 'Gone' and 'Nostalgic': downloaded by mistake beside 'Maya', kept for training (user, 2026-10-26)."""
+    import json
+
+    ledger = json.loads((C.PLUGIN_ROOT / "docs/dev-test-ledger.json").read_text())
+    entry = next(t for t in ledger["tests"] if t["test_id"] == "cambridge-new-training-bands-2026-10-26c")
+    assert "training only" in entry["training"] and entry["renders"].startswith("0")
+    extra = {k: (band, split) for k, (band, split, why) in C.TRAINING_DOWNLOADS.items() if why.startswith("2026-10-26c")}
+    assert sorted(extra) == ["Strobe_Gone_Full", "Strobe_Nostalgic_Full"]
+    assert set(extra.values()) == {("Strobe", "library")} and all(k in json.dumps(entry) for k in extra)
+    assert "Strobe" not in C.KNOWN_ANSWER
+    for key in extra:
+        C.refuse_held_out({"set": "cambridge-new", "band": "Strobe", "path": str(C.CAMBRIDGE_NEW / key / "21_ElecGtr1.wav")})
+    # By name neither session holds an electric DI: its guitar tracks make no inventory row
+    for name in ("21_ElecGtr1.wav", "22_ElecGtr1DT.wav", "23_ElecGtr2.wav", "24_ElecGtr2DT.wav", "25_ElecGtr3.wav",
+                 "26_ElecGtr4.wav", "07_ElecGtr.wav", "20_AcousticGtr.wav"):
+        assert not C.is_guitar_di(name), name
 
 
 def test_reserved_test_band_is_refused_even_as_a_training_download():

@@ -623,6 +623,11 @@ TRAINING_DOWNLOADS = {
     "MekaPhil_TimelessPart1_Full": ("MekaPhil", "library", "2026-10-23 B2-pool training band (anime alt rock; DI only)"),
     "Mekaphil_TimelessPart2_Full": ("MekaPhil", "library",
                                     "2026-10-23 B2-pool training band (anime alt rock; its DIs have no amp track)"),
+    # Two more Strobe songs, downloaded by mistake beside 'Maya' and kept for training by the user on 2026-10-26
+    # (ledger `cambridge-new-training-bands-2026-10-26c`). No file in either is named as a DI, so neither makes a DI
+    # row by name; their electric guitar tracks are checked and heard like any other intake's.
+    "Strobe_Gone_Full": ("Strobe", "library", "2026-10-26c training band (pop/electronica; no file named as a DI)"),
+    "Strobe_Nostalgic_Full": ("Strobe", "library", "2026-10-26c training band (pop/electronica; no file named as a DI)"),
 }
 # Not an electric guitar DI although the name reads as one: acoustic-guitar DIs and MIDI renders (2026-10-26)
 INTAKE_NOT_DI = re.compile(r"(?i)acoustic|midi")
