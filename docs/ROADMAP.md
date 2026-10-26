@@ -134,7 +134,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
    - **R1 (post hoc, descriptive, audited):** D_F5 with its 96 unreadable heads written at S still reads +0.062
      [−0.080, +0.204] against D_core5 (4 of 7 bands better; crunch −0.013). The delay, the one time effect still read
      (AUC 0.557, lower bound 0.505), stays on in 29 of 66 directions, and Colour Me Red ElecGtr03 drives the result
-     again (+0.949). "Delay is the cause" is the best fit, not proven: no render isolates it. The user allowed R1 as
+     again: +0.846 against D_core5 (+0.949 against D_F5 with time effects at S, the better evidence that delay is the cause). "Delay is the cause" is the best fit, not proven: no render isolates it. The user allowed R1 as
      a measurement only; writing S for unreadable controls is not adopted as the method.
    - **Where the tone is lost** ([tone probe](tone-info-probe.md), zero renders): a linear probe reads 86 of 116
      heads from the target render, 30 from the self-built mix and 20 from the X-LANCE stem. The separator does not
@@ -143,6 +143,9 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      left out, 96.6–96.7% counting it as high gain).
 
    **Next, in order (2026-10-27; cheapest decisive first).** Replaces the earlier lists below for what comes next.
+   - (a0) **A zero-cost check first:** the tone probe's linear probe on the mix plus the stem (minutes, no training,
+     no renders), to see whether the stem adds anything to the mix. It runs tonight (2026-10-27); its result is
+     added here.
    - (a) **A mix-aware input.** Train the every-control model on the mix's features, or the mix's plus the stem's,
      instead of the stem alone. No new training renders: F5's stored mixes, targets and labels. Read first on FS5's
      readability (R0's rule, zero renders; D_F5 reads 20 of 116), then on V-real (about 99 renders per arm, as R1) only
@@ -151,12 +154,13 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
    - (b) **Fine-tune X-LANCE gtr_mss** on our self-built mixes against their known target renders (stored; no new
      renders to train). Allowed under the user's rule ("no new separators; fine-tuning OK"). **Pending the user's
      yes** (training longer than minutes). Rough cost, to be sized in its declaration: up to about 11 h of MPS for
-     the fine-tune (the separation plan's bound for a Mega-53 head fine-tune), about 4 h to re-separate F5's
-     examples and FS5, and about 40 min to retrain D. Read like (a): FS5 first, V-real only if it helps.
+     the fine-tune (a bound borrowed from the separation plan's Mega-53 head fine-tune, so rough for X-LANCE), about
+     4–6 h to re-separate F5's about 4.2k examples and FS5 (T2's separations ran about 6k in 5–8 h), and about 40 min
+     to retrain D. Read like (a): FS5 first, V-real only if it helps.
    - (c) **Audibility-aware labels for the time effects.** The probe's audibility split: from the stem, the delay's
      AUC rises from 0.62 to 0.73 on its loudest third, while reverb, tremolo and the springs stay weak even at their
      loudest. So a time effect's label should reflect how audible it is, not only its switch. Zero renders to
-     relabel; a retrain to read it. Research on it is requested from the cloud researcher session (pending).
+     relabel; a retrain to read it (about F5's size, so it needs the user's yes too). Research on it is requested from the cloud researcher session (pending).
    - (d) **F20** still waits for the user's yes. Its value now rests on (a)/(b) and on the new data. Its declared
      fixes: redraw near-silent draws (up to 5 tries; about 16% more target renders at F5's rate); keep each
      core/full pair on one separation device; the switch readout and prior (since 2026-10-27 the plain readout is
@@ -167,11 +171,10 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 
    **Open decisions for the user (2026-10-27):**
    - F20: whether and when it runs.
-   - Training time for (a) (about 40 min of MPS) and for the X-LANCE fine-tune (b) (up to about 11 h), each once
-     declared.
+   - Training time for (a) (about 40 min of MPS), the X-LANCE fine-tune (b) (up to about 11 h, plus 4–6 h of
+     re-separation) and (c)'s retrain (about F5's size), each once declared.
    - Before T4: the decision test's data and ship rule; whether arm A gets every-control coverage; whether the
      stored C′ and step 3's D keep running under a recorded exception to the trusted rule.
-   - A default the user may overrule: the 25% cap on "unknown" draws.
    - Reopening arm B, at the decision test.
 
    **Trusted data only (the user, 2026-10-22): "use only what we can trust, no dirty tracks".**
@@ -486,7 +489,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      cards) is pending. *Heard 2026-10-26: all 13 admitted; every style question left blank.* Each DI card also asks
      the playing style. Only a clean/crunch-style answer makes a DI-only DI not high gain. A raw DI cannot show the
      style, so the user decided on 2026-10-27: a DI-only DI with no style or song tone is **"unknown"**, its own
-     group, left out of the high-gain cap and capped at 25% of F20's draws (DGX keeps high gain). Where a song has an
+     group, left out of the high-gain cap and capped at 25% of F20's draws (decided; a design default the user may
+     overrule) (DGX keeps high gain). Where a song has an
      amp track, its tone sets the class: only "Timeless (Part 2)", whose `ElecGtr2` part 9 heard alone as clean, so
      its 2 DIs become clean at the next `lists` run. The other songs are DI only and stay "unknown". Strobe "Gone" and "Nostalgic" (kept 2026-10-26;
      ledger `cambridge-new-training-bands-2026-10-26c`) give no usable DI: no file is named as a DI, so their 7 guitar
@@ -531,12 +535,12 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        D_F5:R (D_F5 with every unreadable head at S) − D_core5 **+0.062 [−0.080, +0.204]**, 4 bands better and 3
        worse; crunch −0.013. D_F5:R − S +0.071, D_F5:R − constant −0.022, and D_F5:R − D_F5 with time effects and
        spring at S +0.070. The delay's switch, counted readable at AUC 0.557 (lower bound 0.505), stays on in 29 of
-       66 directions, and Colour Me Red ElecGtr03 again drives the result (+0.949). "Delay is the cause" is the best
+       66 directions, and Colour Me Red ElecGtr03 again drives the result: +0.846 against D_core5 (+0.949 against D_F5 with time effects at S, the better evidence that delay is the cause). "Delay is the cause" is the best
        fit, not proven: no render isolates it. **The user's ruling (2026-10-27, the amendment 1 question):** R1 is
        allowed as a measurement only; writing S for unreadable controls is not adopted as the method.
    - **Every-control stage 1** runs on the trusted panel's parts and can now run, now that the ear
      has cleared their amp tracks (knob ceiling 2's panel: 7 parts in 7 bands, verified 2026-10-25). It needs no rebuild, so it need not
-     wait for (b)–(d); they share the renderer.
+     wait for T1, T2 or T3 ((b)–(d) of the 2026-10-23 order above); they share the renderer.
    - **The real-mix test** ([plan](real-mix-test-plan.md), #267) runs on V-real's parts.
    - **T4:** V-real (with Jen Hartswick & Nick Cassarino), K (*empty since 2026-10-25; open*), then the ear. V-real picks T2's winner
      and is read again here, so T4 is not independent. Then the fresh-song decision test (item 5
@@ -938,6 +942,6 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-26 | Parts 7a, 7b, 8 and 9 heard (user), read by `verify_tracks lists` with every export (code, no hand edits; `t0/` backed up first; the runs waited for T3's R1, whose plan holds the lists' hash). Part 8: Signs ElecGtr6's measure DI heard clean on all 3 windows, so Signs is verified on all 5 re-check windows; targets 20 verified, 0 pending, 39 excluded. T3's frozen membership stays V-real-11; a future plan would see V-real-12. Metal intake: tone cards 5 too heavy (Daimon B "Broken Again", Dark Illusion "Evil Bones", Inhumanity Vortex "Cybermod", Serapis ×2: all 30 of their DIs out) and 5 high gain; DI cards 76 clean, 1 processed, 1 unsure (both in too-heavy sessions). **50 of 89 metal DIs admitted, every one high gain** (DGX's 11 by the DI-only rule). Part 9: all 13 Strobe/MekaPhil DIs heard clean and admitted; every style question left blank (the user: style can't be judged from a DI), so they counted as high gain under the merged rule (changed 2026-10-27, PR #306: 11 "unknown", out of the high-gain cap; Timeless Part 2's 2 clean). Intake 64 admitted, 52 excluded, 0 pending. An F20 pool would be about 96.2–96.3% high gain with "unknown" left out, or 96.6–96.7% with "unknown" counted as high gain (the worst case), against 96% of today's 181 sections; the clean/crunch shortage is nearly unchanged. DI inventory not rebuilt (no training draw is planned) | [outcome](trusted-data-t0-design.md#parts-7a-7b-8-and-9-heard-2026-10-26) |
 | 2026-10-27 | Part 9's DI-only DIs with no style or song tone are "unknown" (user): their own T3 gain group, left out of the high-gain cap's sums, and at most 25% of F20's draws (a design constant the user may overrule). `plan` prints the high-gain share both ways. A song's amp track heard alone sets its DI-only DIs' class: Timeless Part 2's 2 DIs become clean at the next `lists` run. The other Strobe/MekaPhil songs are DI only. DGX and the metal sessions keep high gain. A per-song mix page was built and dropped as a worse repeat | [design](trusted-data-t0-design.md#part-9s-di-only-dis-unknown-or-the-songs-tone-2026-10-27) |
 | 2026-10-27 | `lists` re-run after PR #306 (01:17, code, no hand edits): Timeless Part 2's 2 DIs read clean from its amp track's tone. The admitted intake DIs are 51 high gain, 11 unknown and 2 clean; T0's targets, DIs, V-real and stems unchanged | [design](trusted-data-t0-design.md#part-9s-di-only-dis-unknown-or-the-songs-tone-2026-10-27) |
-| 2026-10-27 | R1 read (post hoc, descriptive; audited, every row recomputed; 99 renders): D_F5 with its 96 unreadable heads at S − D_core5 +0.062 [−0.080, +0.204], 4/3 bands, crunch −0.013; against S +0.071, against the constant −0.022, against D_F5 with time effects and spring at S +0.070. The delay's switch (AUC 0.557, lower bound 0.505) stays on in 29 of 66 directions and Colour Me Red ElecGtr03 drives it again (+0.949); "delay is the cause" is the best fit, not proven. The user (the amendment 1 question): R1 is a measurement only; writing S for unreadable controls is not adopted as the method | [R1 outcome](trusted-data-t0-design.md#r1-outcome-2026-10-27-99-renders-post-hoc-and-descriptive-audited) |
+| 2026-10-27 | R1 read (post hoc, descriptive; audited, every row recomputed; 99 renders): D_F5 with its 96 unreadable heads at S − D_core5 +0.062 [−0.080, +0.204], 4/3 bands, crunch −0.013; against S +0.071, against the constant −0.022, against D_F5 with time effects and spring at S +0.070. The delay's switch (AUC 0.557, lower bound 0.505) stays on in 29 of 66 directions and Colour Me Red ElecGtr03 drives it again, +0.846 against D_core5 (+0.949 against D_F5 with time effects at S, the better evidence that delay is the cause); "delay is the cause" is the best fit, not proven. The user (the amendment 1 question): R1 is a measurement only; writing S for unreadable controls is not adopted as the method | [R1 outcome](trusted-data-t0-design.md#r1-outcome-2026-10-27-99-renders-post-hoc-and-descriptive-audited) |
 | 2026-10-27 | Tone-information probe (approved by the user; declared first; zero renders; ledger `trusted-data-t3` amendment 2): a linear probe reads 86 of 116 heads from the target render, 30 from the self-built mix, 20 from the X-LANCE stem. The separator does not recover what the mix masks (a 66-head gap); level, finer features and the DI explain none of it. Faint labels explain part of the delay's weakness only | [probe](tone-info-probe.md) |
-| 2026-10-27 | Plan brought up to date: next, in order, (a) a mix-aware input (no new training renders), (b) an X-LANCE fine-tune on the self-built mixes (pending the user's yes), (c) audibility-aware time-effect labels, (d) F20 (waits for the user's yes); the open decisions in one list | [step 0](#next-in-order) |
+| 2026-10-27 | Plan brought up to date: next, in order, (a0) a zero-cost linear probe on mix plus stem, (a) a mix-aware input (no new training renders), (b) an X-LANCE fine-tune on the self-built mixes (pending the user's yes), (c) audibility-aware time-effect labels, (d) F20 (waits for the user's yes); the open decisions in one list | [step 0](#next-in-order) |

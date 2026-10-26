@@ -1891,7 +1891,7 @@ and they match. Log ratios, lower is better:
 - **Putting the 96 unreadable heads at S does not close the gap.** R1 reads +0.062 against D_core5, close to F5's
   gate (+0.079). Crunch leans better (−0.013, 4 of 5 bands); the 2 clean bands carry the rest.
 - **The one time effect left on is the delay.** R0 counted its switch readable at AUC 0.557, lower bound 0.505, just
-  above chance, so it stays on in 29 of 66 directions. Colour Me Red ElecGtr03 again drives the result (+0.949).
+  above chance, so it stays on in 29 of 66 directions. Colour Me Red ElecGtr03 again drives the result: +0.846 against D_core5 (+0.949 against D_F5 with time effects at S, the better evidence that delay is the cause).
   With the whole time-effects family at S, D_F5 reads −0.0075 against D_core5 (F5's audit re-read); D_F5:R sits
   +0.070 above that.
 - **"Delay is the cause" is the best fit, not proven.** No render isolates the delay (D_F5:R with only the delay at
