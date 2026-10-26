@@ -9,6 +9,7 @@ and `t3/` are read, never written.
     $MAIN -m learn.tone_info_probe read         # the probes and the table, tone-probe/probe.json
     $MAIN -m learn.tone_info_probe audible      # the audibility addition, tone-probe/audible.json
     $MAIN -m learn.tone_info_probe posthoc      # the review's post-hoc inputs, tone-probe/posthoc.json
+    $MAIN -m learn.tone_info_probe mixstem      # (f) mix + stem against (b), (c) and the conditioning, mixstem.json
 """
 
 from __future__ import annotations
@@ -710,16 +711,82 @@ def cmd_posthoc(args):
     print(f"POSTHOC DONE: {od / 'posthoc.json'}")
 
 
+MIXSTEM = {"f": "mix + stem", "b": INPUTS["b"], "c": INPUTS["c"], "cond": "conditioning alone"}
+
+
+def cmd_mixstem(args):
+    """(f), post hoc: the mix's and the stem's summaries side by side, read as (a)-(c), beside (b), (c) and the
+    conditioning alone; the heads (f) reads that (b) does not, and the paired step (f) - (b)."""
+    from learn import full_space as F
+    from learn import trusted_data_t3_r as R
+    from learn import verify_tracks as V
+
+    root, _, tr, fs, _ = load_sets()
+    od = out_dir(root)
+    S = prepare(root, tr, fs)
+    base = S["X_of"]
+
+    def X_of(key, rows):
+        if key == "f":
+            return np.hstack([base("b", rows), base("c", rows)])
+        if key == "cond":
+            return np.zeros((len(rows), 1))
+        return base(key, rows)
+
+    S["X_of"] = X_of
+    lab_te, ids, sec, const_te = S["lab_te"], S["ids"], S["sec"], S["const_te"]
+    preds, rows_by = {}, {}
+    for key in MIXSTEM:
+        P, _ = fit_input(S, key, tr, fs)
+        preds[key] = P
+        ex = {i: {"a2": P["a2"][n], "sw_p": P["sw_p"][n], "mic_p": [m[n] for m in P["mic_p"]],
+                  "amp_p": P["amp_p"][n], "c": lab_te[0][n], "cm": lab_te[1][n], "s": lab_te[2][n],
+                  "sm": lab_te[3][n], "k": lab_te[4][n], "km": lab_te[5][n]} for n, i in enumerate(ids)}
+        rows_by[key] = R.r0_rows(ex, S["info"], S["const"], S["rates"], S["majority"])
+        print(f"({key}) {MIXSTEM[key]}: {sum(r['readable'] for r in rows_by[key])} readable", flush=True)
+    jix = {**{n: j for j, n in enumerate(F.CONT)}, **{n: j for j, n in enumerate(F.SW)},
+           **{n: j for j, n in enumerate(F.CAT)}}
+    heads = []
+    for h, r in enumerate(rows_by["f"]):
+        name, kind = r["name"], r["kind"]
+        k2 = {"continuous": "continuous", "switch": "switch"}.get(kind, "amp" if name == R.AMP_NAME else "mic")
+        fb = step_row(k2, preds["f"], preds["b"], ids, jix.get(name), lab_te, sec, const_te)
+        bf = step_row(k2, preds["b"], preds["f"], ids, jix.get(name), lab_te, sec, const_te)
+        heads.append({"name": name, "family": r["family"], "kind": kind,
+                      "readable": {k: bool(rows_by[k][h]["readable"]) for k in MIXSTEM},
+                      "points": {k: rows_by[k][h]["point"] for k in MIXSTEM},
+                      "f_better_than_b": fb["reliable"], "b_better_than_f": bf["reliable"], "step_f_minus_b": fb})
+    fam = {k: family_table(rows_by[k]) for k in MIXSTEM}
+    rec = {"design": DESIGN + "#addition-mix-plus-stem-f-declared-2026-10-27-post-hoc-before-it-is-computed",
+           "status": STATUS + "; post hoc", "inputs": MIXSTEM, "lists_check": LISTS.get("check"),
+           "readable": {k: sum(r["readable"] for r in rows_by[k]) for k in MIXSTEM},
+           "knobs": {k: sum(r["readable"] for r in rows_by[k] if r["kind"] == "continuous") for k in MIXSTEM},
+           "switches": {k: sum(r["readable"] for r in rows_by[k] if r["kind"] == "switch") for k in MIXSTEM},
+           "f_not_b": [h["name"] for h in heads if h["readable"]["f"] and not h["readable"]["b"]],
+           "f_not_b_nor_c": [h["name"] for h in heads if h["readable"]["f"] and not (h["readable"]["b"] or h["readable"]["c"])],
+           "b_not_f": [h["name"] for h in heads if h["readable"]["b"] and not h["readable"]["f"]],
+           "step_f_better": sum(h["f_better_than_b"] for h in heads),
+           "step_b_better": sum(h["b_better_than_f"] for h in heads),
+           "families": fam, "heads": heads, "rows": rows_by, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    V._save(od / "mixstem.json", rec)
+    print({k: rec[k] for k in ("readable", "knobs", "switches", "step_f_better", "step_b_better")})
+    print("f not b:", rec["f_not_b"]); print("f not b nor c:", rec["f_not_b_nor_c"]); print("b not f:", rec["b_not_f"])
+    for f in fam["f"]:
+        print(f"  {f:14s} " + "  ".join(f"{k} {fam[k][f]['readable']}/{fam[k][f]['heads']}" for k in MIXSTEM))
+    print(f"MIXSTEM DONE: {od / 'mixstem.json'}")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("features")
     sub.add_parser("audible")
     sub.add_parser("posthoc")
+    sub.add_parser("mixstem")
     p = sub.add_parser("read")
     p.add_argument("--force", action="store_true")
     a = ap.parse_args(argv)
-    {"features": cmd_features, "read": cmd_read, "audible": cmd_audible, "posthoc": cmd_posthoc}[a.cmd](a)
+    {"features": cmd_features, "read": cmd_read, "audible": cmd_audible, "posthoc": cmd_posthoc, "mixstem": cmd_mixstem}[a.cmd](a)
 
 
 if __name__ == "__main__":

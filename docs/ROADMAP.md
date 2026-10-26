@@ -471,7 +471,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        level removed reads 91), and a finer representation or the DI adds nothing. Next: a model fed the mix, or mix
        plus stem, first; then fine-tuning X-LANCE on the self-built mixes against their known targets. Faint "on"
        labels explain part of the delay's weakness (stem AUC 0.62 → 0.73 on its loudest third), not the reverb's,
-       tremolo's or springs'.*
+       tremolo's or springs'. Post hoc, mix plus stem reads 24, no more than the mix alone (30), to a linear reader
+       ([addition](tone-info-probe.md#addition-mix-plus-stem-f-declared-2026-10-27-post-hoc-before-it-is-computed)).*
    - **Every-control stage 1** runs on the trusted panel's parts and can now run, now that the ear
      has cleared their amp tracks (knob ceiling 2's panel: 7 parts in 7 bands, verified 2026-10-25). It needs no rebuild, so it need not
      wait for (b)–(d); they share the renderer.
