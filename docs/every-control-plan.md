@@ -377,3 +377,78 @@ judge can't hear, and switched-off knobs stay ignored (masked out of losses, sco
 - **Data-quality audit.** The user suspects the datasets need cleaning, so an audit is starting.
   Stage 0 can run now. Stage 1's long runs wait for the audit's first findings.
 
+
+## Amendment 2 (2026-10-26): stage 2D is T3, and its label space
+
+**Why.** The trusted-data plan made stage 2D its T3 (recorded 2026-10-23), read on K and V-real
+instead of R_in. T2 read a tie and picked the self-built mixes (SYN); the user approved T3 on
+2026-10-26 (decision 5). Step 3's `GATE STOP` no longer decides 2D: T3 replaces the 2D pilot's
+sound gate (K is empty) with a read on V-real. Declared before any T3 data; the data, model,
+readout, decision rule, cost and ledger entry are in the
+[T3 design](trusted-data-t0-design.md#t3-declared-2026-10-26-nothing-run). Morgan only: Tone King
+stays stage 3.
+
+**The label space: every Morgan manifest control, 115 controls** (union over the three amps; 77,
+81 and 77 sound with PR12, SW50R and AC20). Today's model sets 25 (12, 17 and 14 per amp).
+
+| Family | Controls | Continuous | Switches | Categorical |
+|---|---|---|---|---|
+| Today's space: input gain, amp knobs and switches, both mics, positions, distances, right cab on and level | 25 | 17 | 6 | 2 mics (10-way) |
+| Amp choice (`selectedAmp`) | 1 | | | 1 (3-way) |
+| Amp EQ (per amp: on, 9 bands, HPF, LPF) | 36 | 33 | 3 | |
+| Pedals: compressor (on, compression, level, mix, release), drive 1 (on, drive, level, tone), drive 2 (on, gain, level, bass, treble) | 14 | 10 | 4 | |
+| Time effects: reverb (on + 5), delay (on, mix, feedback, time, low and high cut, tape drive, width, ping-pong), tremolo (on, depth, rate, level) | 19 | 15 | 4 | |
+| Amp spring (PR12 level and dwell, SW50R level) | 3 | 3 | | |
+| Gate (on, threshold), doubler (on, spread) | 4 | 2 | 2 | |
+| Cab rest: left cab on and level; per side phase, stereo, pan, room on, room level | 12 | 5 | 7 | |
+| Output gain | 1 | 1 | | |
+| **Total** | **115** | **86** | **26** | **3** |
+
+Not in the space, as declared in stages 0–1: the preset name, `transpose`, both room mic types,
+both IR paths (never set); the five section switches (held on: each feature's own switch carries
+its sounds); delay and tremolo sync off with their tempo and sync notes (the time in ms and the
+rate in Hz carry the same sounds). The full-space table (`every_control.table`) is the list; its
+test walks the manifest.
+
+**How each type is encoded:**
+- **Continuous:** the unit interval over the declared range (`Dim.to_unit`): log for frequencies
+  and times (EQ filters, reverb decay and pre-delay, delay time and cuts, tremolo rate), linear
+  for the rest (dB levels, pans, rotations). Ranges are the manifest's, narrowed where an earlier
+  stage declared them (knob ceiling's EQ, knob ceiling 2's effects, stage 1's −40 to +6 dB levels).
+  A 4-component mixture per dimension, as today.
+- **Switches:** one probability each.
+- **Amp choice:** a 3-way head that reads the audio only, before the amp and class condition joins
+  the trunk. The amp's own knobs keep the amp as a condition: the true amp in training, each amp
+  in turn at readout. So one network gives an answer on every amp and its own choice.
+- **Mics:** two 10-way heads, as today.
+- **The spring:** a level of 0 is off. It is encoded as a derived switch (level above 0) plus the
+  level, masked when off, and written back as level 0. The PR12's dwell is gated by it.
+- **Output gain:** not a head. Every input is loudness-normalised, so the mix carries no trace of
+  it. It is learned against the record's loudness (amendment 1): per answer, the gain that makes
+  the rendered answer's LUFS match the target's (the stem's LUFS on a song; the amp track's LUFS
+  is the truth on V-real), scored as the absolute LUFS error in dB beside the judge. Training
+  renders hold it at the draw's base preset value.
+
+**Switched-off features (the user's rule, unchanged):** every knob of a feature that is off in the
+true label is one setting.
+- **Loss:** weight 0 for every dimension that does not sound in the true label, by the gates of
+  `every_control.mask` (mono): the other amps' knobs and EQs; each pedal's, effect's, gate's,
+  doubler's and EQ's knobs when its switch is off; a cab's mic, placement, level, phase, pan,
+  stereo and room when the cab is off; phase, pan and stereo unless both cabs are on (the judge
+  and the inputs are mono); a room's level when the room is off; the dwell when the spring is off. A switch is
+  scored whenever its own gate sounds. Amp choice is always scored.
+- **Scores:** knob error E masked the same way. Sound scores need nothing: identical sounds score
+  the same.
+- **Fits:** the constant's medians, switch majorities and mic modes, and amendment 5's pull, use
+  only examples where the dimension sounds in the true label.
+- **Answers:** a feature the model switches off is written at its neutral values
+  (`every_control.neutralise`), so it renders exactly as off.
+
+**What changes in this plan's stage 2D:**
+- The pilot's primary, the new controls' own worth, is kept as a beside row at T3's full build.
+  The paired pilot (T3's F5 against a today's-space model on the same examples) is T3's gate
+  before the full build.
+- The 2D full read (D_full − S on stage F) becomes T3's primary on V-real.
+- Decision rules: the trusted-data and every-control rules (effect sizes with 90% band-clustered
+  intervals, band-weighted, no pass bar, any gain built on), as T3 declares them.
+- The training runs it needs are in T3's cost table; the user's OK on T3 covers them.

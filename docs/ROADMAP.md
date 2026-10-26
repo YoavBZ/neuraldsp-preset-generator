@@ -386,14 +386,23 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      - Diagnostic (a): dense against sparse shows nothing and is confounded with band. The stem read: SYN's stems
        are not cleaner than SES's (−0.80 dB [−1.12, −0.47] section-clustered; band-clustered holds 0), so SYN is
        not shown to be unrealistically easy (a ceiling check only).
-     - **Next: decision 5 (whether T3 runs on a tie) is open for the user.** Pending inputs: the window re-check's 3
+     - **Decision 5: T3 goes ahead (user, 2026-10-26).** Pending inputs at the time: the window re-check's 3
        recovered parts and the new bands' 4 DIs ([PR #294](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/294), ear page `part6-new-bands`) await the user's ear (PR #293, PR #294); the clean/crunch shortage
        stays the clearest gap. *Heard 2026-10-26: 2 targets recovered, Signs ElecGtr6 pending its DI (part 8), 1 new training DI (high gain).
        The clean/crunch shortage is unchanged.*
    - (d) **T3, decided after T2:** one rebuild that is also every-control stage 2D, on self-built
      mixes with full-space labels and any approved new DIs, read on K and V-real (*K empty since 2026-10-25: its
      read is open until K comes back*). Its downloads are
-     asked for then.
+     asked for then. *Approved by the user 2026-10-26 (decision 5); plan declared the same day, pending review, nothing
+     run ([T3](trusted-data-t0-design.md#t3-declared-2026-10-26-nothing-run), every-control
+     [amendment 2](every-control-plan.md#amendment-2-2026-10-26-stage-2d-is-t3-and-its-label-space)):* 115 Morgan
+     controls learned (today 25). Two steps: **F5**, T2's examples re-rendered with full-space labels against a
+     today's-space model on the same examples and fit set (the gate: what every control is worth); then **F20**, 20k
+     examples with high-gain sources capped at 50%. Primary D_F20 − S on V-real-12 (the 10 plus the 2 eligible recovered
+     clean parts, 7 bands), per class beside; an interference check (high-gain sources against none, at equal size).
+     The pull is shared, fitted on 12 sections instead of 4, and read with and without. About 56k renders, 21k
+     separations, 5–6 h MPS, 31–41 h wall. Open for the user: clean and crunch sources for F20 (Strobe and MekaPhil,
+     EGDB, or none); F5 needs none of them.
    - **Every-control stage 1** runs on the trusted panel's parts and can now run, now that the ear
      has cleared their amp tracks (knob ceiling 2's panel: 7 parts in 7 bands, verified 2026-10-25). It needs no rebuild, so it need not
      wait for (b)–(d); they share the renderer.
@@ -538,7 +547,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      source (EGDB or GOAT) passes the DI checks.
    - *Before T2:* read T2's tie from the interval (a tie when it holds 0) rather than
      |point| < 0.03. *Moot for T2 (2026-10-26): both rules read its primary as a tie.*
-   - *After T2 (2026-10-26):* decision 5, whether T3 goes ahead on T2's tie.
+   - *After T2 (2026-10-26):* decision 5, whether T3 goes ahead on T2's tie. *Decided 2026-10-26 (user): T3 goes
+     ahead.*
    - *Settled by the ear (2026-10-25):* K's bands. T1's K is Adam Buckley and Dark Ride; Kimock's
      and Swatkins' 4 DIs were all heard processed, so they cannot rejoin. (Cnoc An Tursa: decided
      2026-10-24, not admitted.)
@@ -780,3 +790,4 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-26 | T2 read (audited; every row recomputed from the V-real groups). Primary SYN − SES on V-real +0.019 [−0.001, +0.040], 7 bands: a tie, so SYN is picked by recorded decision 4; SYN leans worse (5 of 7 bands; leave-one-band-out +0.013 to +0.026). SES − constant −0.031, SYN − constant −0.012; against S, SES +0.012, SYN +0.031: neither arm beats S or clearly beats the constant. Follow-up, descriptive: SES-ALL − SES −0.026 [−0.070, +0.018], a broader draw (2 more bands, one band carries it), not a density test; diagnostic (a) shows nothing; the stem read finds SYN's stems not cleaner than SES's (a ceiling check only). Decision 5, T3 on a tie, is open for the user | [design](trusted-data-t0-design.md#t2-outcome-2026-10-26) |
 | 2026-10-26 | Parts 5 and 6 heard (user), read by `verify_tracks lists` (code, no hand edits). Window re-check: all 22 cards clean amp. It Was My Fault ElecGtr1 and Nosso Mundo ElecGtr03 are recovered, each on its re-check windows only, with its crop re-cut to a heard window. Signs ElecGtr6 stays pending: those cards never judged its DI, so part 8 (3 DI cards) asks. Targets are now 19 verified, 1 pending, 39 excluded. Signs ElecGtr6 checked: not a copy of its DI. The other three stay excluded; their answers are informative only. New bands: **1 new training DI from 5 bands** (Empty Signifier 20_ElecGtr2DI, heard clean, a high-gain part; its DI-and-amp pairing was never heard); Mòpia ×2 and Goran Levi heard processed. V-real (10) and knob ceiling 2 (7) unchanged | [outcome](trusted-data-t0-design.md#parts-5-and-6-heard-2026-10-26) |
 | 2026-10-26 | Scope refined for training (user): high-gain songs can train, as long as too-heavy songs don't interfere; testing and perfecting stay clean/crunch-focused. High gain no longer drops a training source ("scope by ear" screens out only extreme cases); readouts stay clean/crunch-weighted and per class. The 2026-10-25 scan's metal sessions outside the held-out sets, 11 sessions from 6 bands (V.M.GY is set-3 held out), plus DGX ×2, become possible training candidates. With the user's yes, these 13 were downloaded on 2026-10-26 and are under intake on branch `ml/metal-intake` | [scope](#scope-user-decision-2026-10-10) |
+| 2026-10-26 | Decision 5 (user): T3 goes ahead on T2's tie. T3's plan declared the same day, before any T3 data (every-control amendment 2 and the T3 design; ledger `trusted-data-t3`; pending review, nothing run): 115 Morgan controls learned, switched-off knobs masked out of loss, scores and fits; F5 (T2's examples with full-space labels against a today's-space model on the same examples, the gate) then F20 (20k, high-gain sources at most 50%); primary D_F20 − S on V-real-12, band-weighted, 90% band-clustered, per class; a shared, larger fit set and no-pull rows fix T2's pull caveat; about 56k renders, 21k separations, 5–6 h MPS. Open: clean and crunch sources for F20 | [design](trusted-data-t0-design.md#t3-declared-2026-10-26-nothing-run) |
