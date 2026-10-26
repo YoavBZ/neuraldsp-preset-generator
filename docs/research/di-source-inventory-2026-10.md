@@ -514,6 +514,25 @@ DIs, unconfirmed on 2026-10-23, are now confirmed. The full list is in
 5. **Disk.** About 113 GB was free on 2026-10-23. Ranks 1 and 3 are downloaded (0.94 + 0.46 GB);
    rank 2 needs 2.4 GB, and the features about 3 GB.
 
+## Metal and hard-rock training intake (2026-10-26)
+
+The user decided on 2026-10-26 that high-gain songs can train, "as long as too heavy songs don't
+interfere with the model". Tests stay clean to crunch. 13 Cambridge-MT sessions were downloaded
+(checksums in `_zips/sha256-2026-10-26.txt`): Arcadian Alone "The Deathless One", Daimon B "Broken
+Again" and "Crying Rivers", Dark Illusion "Dark Illusion" and "Evil Bones", Inhumanity Vortex
+"Cybermod", Peppermark "Lua Negra", "Another Feeling" and "Interlude", Serapis "The Dark Abyss" and
+"Morbus Animi", and DGX "Redemptive Pain" and "Rest In Hell". V.M.GY was left out on purpose: it is a
+set-3 held-out band. None of the 7 bands is held out; set 3 lists five of them only as "not obtained".
+
+The role was recorded before any audio was extracted: ledger `cambridge-new-training-bands-2026-10-26`
+and `TRAINING_DOWNLOADS` in `learn/clean_di.py`, every DI row pending until a verified list admits
+it. From the file lists, 89 electric DIs: 77 with a named amp track, 12 without (DGX's 11 and one
+Peppermark DI). Daimon B "Crying Rivers" has no electric DI: its `ElecGtr*MIDI` tracks are named as
+MIDI renders, not DIs. They and DGX's acoustic DIs are kept out of the DI rows (`INTAKE_NOT_DI`).
+Peppermark "Another Feeling"'s `34_ElecGtrDI` has no part number (`33_ElecGtr4` by track order). A DI
+trains only after T0's checks and the ear, which adds a tone card per amp track (clean, crunch, high
+gain or too heavy).
+
 ## Sources
 
 - **Telefunken LFTL:**
