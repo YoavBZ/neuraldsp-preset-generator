@@ -228,6 +228,19 @@ AUC on FS5, "off" against "on" above the cut (R0's rule; R = readable):
   while the target reads them at 0.77–0.87. So for these, the loss is the mix, not inaudible labels.
 - The tremolo's depth is not its whole audibility (its level and rate matter too); the proxy is the declared one.
 
+## Addition: mix plus stem, (f) (declared 2026-10-27, post hoc, before it is computed)
+
+**Why.** The outcome's first next step is a model fed the mix, or the mix plus the stem. This asks, at zero renders,
+whether the two together carry more than the mix alone. Post hoc and descriptive: (b) and (c) are already read.
+
+- **(f) mix + stem:** the mix's and the stem's summaries side by side (`mix-t3` and `xlance_g-t3`), with the
+  conditioning as (b) and (c). The same probe, split (F5's training examples, FS5) and readable rule as (a)–(c).
+- **Beside:** (b), (c) and the conditioning alone (amp and class, no audio), refitted the same way.
+- **Read:** readable counts per family for (f), (b), (c) and the conditioning; the number of heads (f) reads that (b)
+  does not, and that neither (b) nor (c) reads; and the paired step (f) − (b) per head, as the main read's steps
+  (reliable if its 90% section-clustered interval, jackknife for AUC, excludes 0), counted both ways.
+- Code: `$MAIN -m learn.tone_info_probe mixstem` (`tone-probe/mixstem.json`).
+
 ## Limits
 
 - **A linear probe on summaries is a lower bound** on what an input carries. "Not carried" means not by these
