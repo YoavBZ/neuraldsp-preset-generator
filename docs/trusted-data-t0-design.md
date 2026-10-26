@@ -1259,15 +1259,25 @@ yet. K is empty, so T3 reads nothing on K.
 - **DIs:** T0's verified training DIs (27 in 8 bands). Empty Signifier 20_ElecGtr2DI joins, admitted by the ear
   (PR #296), once that PR is merged and the DI inventory is rebuilt. So does any new source the user approves, after
   T0's checks and the ear.
+- **The metal and hard-rock intake** (downloaded with the user's yes on 2026-10-26; ledger
+  `cambridge-new-training-bands-2026-10-26`, branch `ml/metal-intake`): 13 Cambridge-MT sessions in 7 bands, 89
+  electric DIs by file name (Arcadian Alone, Daimon B, Dark Illusion, Inhumanity Vortex, Peppermark, Serapis, DGX;
+  V.M.GY was left out as a set-3 held-out band).
+  - Each DI that passes T0's checks and the user's ear is an eligible training band under F20's caps (high-gain
+    sources at most 50%, a band at most 35%). Parts heard "too heavy" are left out.
+  - T2's follow-up (SES-ALL, a broader draw with 2 more bands) leaned better, so more training bands may help.
+  - DGX's sessions are DI-only, so rule 1 keeps them where every playing guitar's DI passes.
 - **Kept out:** K's bands (Adam Buckley, Dark Ride) and Cnoc An Tursa, so that K can come back; set by the ML
   session, the user may overrule. Every reservation in the ledger, and V-real's bands.
 - **Rule 1 and the cap of 4 apply unchanged.** No amp track has passed the bleed check, so Rebuild The Evil and The
   Long Wait stay out.
 - **Renesans** joins only after two fixes: the `session_guitar_parts` bug (GTR 2 Amp read as GTR 1's own take, from
   the review of #290) and its stems settled.
-- **What is certain** is T2's 71 sections in 4 bands. The zero-render dry run (`plan --stage t3 --dry`) prints the
-  rest before any render: Renesans (up to 37 sections), and Empty Signifier (its ElecGtr1 DI was excluded for hum,
-  so sections where ElecGtr1 plays leave unless its mic tracks pass the bleed check).
+- **What is certain** is T2's 71 sections in 4 bands. **F5's first step is the zero-render dry run**
+  (`plan --stage t3 --dry`). It prints the real pool by band and gain group before any render: Renesans (up to 37
+  sections); Empty Signifier (its ElecGtr1 DI was excluded for hum, so sections where ElecGtr1 plays leave unless its
+  mic tracks pass the bleed check); and the metal intake's admitted DIs. F20's own `plan` prints it again with
+  whatever the ear has admitted by then.
 
 **The sets:**
 
@@ -1299,9 +1309,9 @@ yet. K is empty, so T3 reads nothing on K.
 - **Band:** new draws are equal per section within each gain group, and no band holds more than 35% of F20.
 - **Class:** the base class is 50/50 clean and crunch (part C's draw).
 - **High gain must not swamp clean and crunch:**
-  - Source sections are grouped by their DI's playing class: part A's class, or the intake's ear note where part A
-    has none (Empty Signifier ElecGtr2: high gain). Unclassed sections count as not high gain; that is a stated
-    limit.
+  - Source sections are grouped by their DI's playing class: part A's class, or the intake's ear call on the amp
+    track where part A has none (Empty Signifier ElecGtr2, and the metal intake's tone cards: clean, crunch, high
+    gain). Unclassed sections count as not high gain; that is a stated limit.
   - The new draws are split so that **F20 holds at most 50% high-gain-source examples.** T2's examples were 61%.
     F5 keeps T2's mix, which keeps its pairing.
   - Each target's rendered gain class is measured as part C did, at zero renders. If high-gain renders exceed 40% of
@@ -1387,7 +1397,7 @@ contrast included the pull):
 | D_F20 − D_F20 with the new controls at S | F20 | the new controls' own worth within one model (the 2D pilot's primary) |
 | Amp choice: D_F20 own amp − the mean of its three amp-fixed answers; own amp − S averaged over the three amps | F20 | stage 0b's reading, for the model |
 | D_F20 − D_F5; D_F20 − D_core5 | F20 | size and new bands; everything at once. Descriptive |
-| **Interference: D_mixN − D_noHG** (equal size), overall and per class; D_F20 − D_noHG beside | F20 | does high-gain-source data hurt clean and crunch (above 0 means it does) |
+| **Interference: D_mixN − D_noHG** (equal size), overall and per class; D_F20 − D_noHG beside. D_mixN's high-gain share draws from every eligible high-gain band (the metal intake's included); D_noHG drops them all | F20 | does high-gain-source data hurt clean and crunch (above 0 means it does) |
 | Families: the answer minus the answer with one family at S (EQ; pedals; time effects and spring; gate and doubler; cab rest) | F5, F20 | each family's worth; sets priorities, never membership |
 | \|LUFS error\| of the output-gain fit | F5, F20 | output gain against the amp track |
 | E on FS per family, model against constant (zero renders, section-clustered) | F5, F20 | whether each family is read from the mix at all (the known-answer read K would have given) |
@@ -1483,13 +1493,12 @@ render.
 
 1. **Clean and crunch sources for F20** (open since T0). After the ear the pool holds 1 clean-class and 1 crunch
    section of 181, and Empty Signifier's DI is high gain. Options:
-   - (a) download Strobe "Maya" and MekaPhil ×4 (2.4 GB). They are DI-only sessions: every guitar has a DI, so rule
+   - (a) download Strobe "Maya" and MekaPhil ×4 (about 2.4 GB, not on disk). They are DI-only sessions: every guitar has a DI, so rule
      1 keeps them. About 75 sections in 2 bands, gain unknown. They need T0's checks and one ear sitting.
      Recommended;
    - (b) EGDB (on disk) on borrowed backings;
    - (c) none.
 
-   F5 needs none of these.
-2. **The 13 metal sessions** (PR #296's possible candidates). Recommended: not for T3. They add only high-gain
-   sources, which the 50% cap already limits, and need the held-out checks, T0's checks and the ear. T3 does not wait
-   for them.
+   F5 can start without any of these.
+
+The metal intake needs no decision here: its DIs join F20 as they pass the checks and the ear, under the caps.

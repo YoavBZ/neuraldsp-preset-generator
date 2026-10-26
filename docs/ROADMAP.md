@@ -401,8 +401,10 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      examples with high-gain sources capped at 50%. Primary D_F20 − S on V-real-12 (the 10 plus the 2 eligible recovered
      clean parts, 7 bands), per class beside; an interference check (high-gain sources against none, at equal size).
      The pull is shared, fitted on 12 sections instead of 4, and read with and without. About 56k renders, 21k
-     separations, 5–6 h MPS, 31–41 h wall. Open for the user: clean and crunch sources for F20 (Strobe and MekaPhil,
-     EGDB, or none); F5 needs none of them.
+     separations, 5–6 h MPS, 31–41 h wall. The metal intake's DIs (13 sessions, 7 bands, downloaded 2026-10-26) join
+     F20 as they pass the checks and the ear, under the caps. F5 starts with a zero-render dry run that prints the real
+     pool. Open for the user: clean and crunch sources for F20 (Strobe and MekaPhil recommended, EGDB, or none); F5
+     needs none of them.
    - **Every-control stage 1** runs on the trusted panel's parts and can now run, now that the ear
      has cleared their amp tracks (knob ceiling 2's panel: 7 parts in 7 bands, verified 2026-10-25). It needs no rebuild, so it need not
      wait for (b)–(d); they share the renderer.
