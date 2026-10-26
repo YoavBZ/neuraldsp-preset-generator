@@ -4,12 +4,14 @@
 decisions. The listings came from each ZIP's central directory, read with HTTP range requests
 (about 1.7 MB over 27 archives, then 13.0 MB over the other 206 the site links; approved by the
 user). The one confirmed band, Jen Hartswick & Nick Cassarino, was then downloaded (0.94 GB,
-approved by the user) as a reserved test band. Later that day, at the user's request, Blue
-Manic "Acomatay" (a second reserved test band) and EGDB's DI folder were downloaded through the
-user's browser, and the user requested GOAT's access on Zenodo. Nothing was rendered, separated or
-listened to. Local facts come from the stored inventory, manifest and pool files; outside facts
-from dataset pages, papers, the Telefunken "Live From The Lab" (LFTL) pages, the Hugging Face
-re-host's file listing and archived Cambridge-MT pages. Research, not a declared plan.*
+approved by the user) as a reserved test band. A scan of the Cambridge-MT library followed the
+same day ([section](#cambridge-mt-library-scan-2026-10-23)). Later that day, at the user's
+request, Blue Manic "Acomatay" (a second reserved test band) and EGDB's DI folder were downloaded
+through the user's browser, and the user requested GOAT's access on Zenodo. Nothing was rendered,
+separated or listened to. Local facts come from the stored inventory, manifest and pool files;
+outside facts from dataset pages, papers, the Telefunken "Live From The Lab" (LFTL) pages, the
+Hugging Face re-host's file listing and archived Cambridge-MT pages. Research, not a declared
+plan.*
 
 Tags: **[V]** verified at the source in this session; **[P]** this repo's committed docs or stored
 files (`~/ndsp-presets/learn/clean-di/`, `~/ndsp-presets/learn/pretrain-set/pool.json`);
@@ -61,6 +63,16 @@ files (`~/ndsp-presets/learn/clean-di/`, `~/ndsp-presets/learn/pretrain-set/pool
     and Rebecca Haviland, bands already held out, in V_dev or local.
   - The new band is a **fresh DI+amp test band** (the user's decision below). The October
     multitrack search ([report](fresh-di-amp-multitracks-2026-10.md)) found no fresh pair at all.
+- **The Cambridge-MT scan (2026-10-23) found no new band with a confirmed DI + amp track** on any
+  host it could read ([details](#cambridge-mt-library-scan-2026-10-23)). Every session found
+  with an electric DI (75 in the re-host's lists, 11 of the 132 archives listed directly) is from
+  a band the project already uses, holds out or parks, or is metal or not a raw DI. The site and its newer archive host sit behind a
+  Cloudflare challenge, and the scan stopped there. The leads are on that host: Blue Manic
+  "Acomatay" has a named DI + amp pair (`ElecGtr2DI` + `ElecGtr2`, stoner rock; downloaded later
+  that day: 5 pairs, a reserved test band). Prusinski,
+  Hollowstate, Ember Rev and DGX are possible at best; their DIs are unconfirmed or they have no
+  amp track. (Superseded 2026-10-25: the newer-host listing confirms electric DIs in Ember Rev and
+  DGX and finds 5 new in-scope DI bands; [details](#cambridge-mt-newer-host-listing-2026-10-25).)
 - **Ranked additions:**
   1. Jen Hartswick & Nick Cassarino, as a test band first;
   2. the Cambridge DI-only sessions Strobe "Maya" and MekaPhil ×4: B2's parked songs, which the
@@ -152,7 +164,7 @@ set or a declared reservation. Sizes are archive sizes.
 | Cambridge DI-only: Perpetual Escape "Stop And Rise" | full multitrack, 11 DI parts in 19 files | 1 song / 1 band [V] | progressive heavy rock: likely out of scope [P] | same | no | B2 candidate | 657 MB | gain unknown until heard |
 | Cambridge: Hollow Ground "Left Blind" | DI-only, 3 DIs + lead | 1 song [V] | heavy | same | no | MUSDB18 train; band already trains | — | adds no band |
 | Cambridge, added since 2025: Blue Manic "Acomatay" | full multitrack | **5 DI + amp pairs** (ElecGtr1 with two amp mics, 2, 6, 7, 8), 20.2 min of DI, 44.1 kHz, 24-bit [V] | stoner rock: scope by ear | same | no | **a reserved test band (2026-10-23)**, ledger `cambridge-new-test-band-bluemanic` | 0.51 GB ZIP, **downloaded 2026-10-23** to `datasets-cambridge-new/` [V] | the site's mix (Full Preview MP3) not downloaded yet |
-| Cambridge, added since 2025: DGX "Rest In Hell" (4 DIs), Slimy Soul Suckers "Big Bang", Prusinski "80s Rocker", Hollowstate "Hurricane" | multitracks | DI confirmed only for DGX [V, partial re-host] | unknown; blues rock; MOR rock; hard rock | same | no | none known | about 1–1.3 GB each [U] | site behind Cloudflare; a browser opened it (2026-10-23) |
+| Cambridge, added since 2025: DGX "Rest In Hell" (4 DIs), Slimy Soul Suckers "Big Bang", Prusinski "80s Rocker", Hollowstate "Hurricane" | multitracks | DI confirmed only for DGX [V, partial re-host] (superseded 2026-10-25: the newer-host listing confirms Ember Rev's DIs too) | unknown; blues rock; MOR rock; hard rock | same | no | none known | DGX not listed; 1.25, 0.42 and 0.52 GB for the last three [P] | site behind Cloudflare; a browser opened it (2026-10-23); ranked in the [scan](#cambridge-mt-library-scan-2026-10-23) |
 | Cambridge metal sessions with DIs (Arcadian Alone, Daimon B, Inhumanity Vortex, Peppermark ×2, Serapis ×2, SkalyVan ×3, Szymon Skiba "Trashy Thrash") | DI + amp or DI-only | about 80 DI files [V] | **metal: out of scope** | same | no | Szymon Skiba is a stage F band | — | — |
 | **EGDB** | DI only (plus amp renders) | 1.79 h (107.5 min, read after the download); 240 clips / 1 player / 1 Strat-type [V, U] | solo, arpeggio and comping, various genres [U] | none stated, "feel free to use" [V], which covers the downloaded Drive DIs; the Zenodo renders are CC BY 4.0 [V]; confirmed by the user (2026-10-23) | arm A literature only | none | **downloaded 2026-10-23**: the Drive `audio_DI` folder, 0.46 GB ZIP, 44.1 kHz, 16-bit, mono [V]; the 1.04 GB Zenodo zip holds the BIAS FX2 renders, not the dry DIs ([round 1's check](round-1-song-only-matching.md)) [P] | played to a click; hex pickup for labels; DI box vs hex sum unclear [U] |
 | **GOAT** | DI only (plus NAM and Guitar Pro renders, tabs) | 5.9 h; 172 cover songs / authors + 2 creators, no performer IDs / 4 guitars (Strat 235 min) [V] | covers; some "rock/metal"; share unknown [V, U] | CC BY-NC 4.0, restricted: request on Zenodo, "research purposes only" [V]; confirmed by the user (2026-10-23); **access requested by the user (2026-10-23)** | no (ML plan: "not now") | none | 15–25 GB [U] | no backing [V] |
@@ -285,6 +297,184 @@ Telefunken sessions are a mix of 48 and 96 kHz [P].
     only. Seasons 5's jazz sessions (Kris Allen, Nicole Zuraitis, Thana Alexa) and Podunk
     Bluegrass have no electric guitar track.
 
+## Cambridge-MT library scan (2026-10-23)
+
+The user approved a scan of the Cambridge-MT ("Mixing Secrets") library for electric-guitar DIs
+from new bands, with DI + amp/mic + full backing, as new test bands first. No audio and no full
+archive was downloaded.
+
+**What could be reached.**
+- **The site is behind a Cloudflare challenge.** `cambridge-mt.com/ms3/mtk/`, `www.cambridge-mt.com`
+  and `multitracks.cambridge-mt.com` answered HTTP 403 with `cf-mitigated: challenge`
+  (2026-10-23, 07:29 UTC) [V]. `multitracks.cambridge-mt.com` also hosts the newer archives, and
+  a HEAD on one of them (Hollowstate "Hurricane") got the same challenge [V]. The scan stopped at
+  the challenge on those hosts and did not try to pass it.
+- **The older archive host answers normally.** `mtkdata.cambridgemusictechnology.co.uk` served
+  plain ZIP files with byte ranges; its folders give no directory listing (403, no challenge) [V].
+- **Index and earlier listings, from local copies only.** Three listings saved by the 2026-10-17
+  and 2026-10-22 passes; no request went to Hugging Face or the Wayback Machine this time:
+  - the library index as archived on 2025-07-17 (625 rows, with archive links, sizes and genres)
+    [P];
+  - the RawStems re-host's file list (483 sessions, the library to about April 2025) [P];
+  - the partial 2026 re-host's file list (24 sessions, revision `74d985e`, last changed
+    2026-08-13) [P].
+
+**Three passes.**
+1. **The re-host's file names (483 sessions):** 75 sessions have a file named as an
+   electric-guitar DI [P]. Every one belongs to a band this project already uses, holds out or
+   parks, or is metal, or is not a raw DI:
+   - train bands (Ale Lak, Death Of A Romantic, Rebuild The Evil, Starnes & Shah, Storm Of
+     Particles, The Long Wait);
+   - V_dev (Adam Buckley, Dark Ride, Swatkins);
+   - stage F (Diesel13, Eat The Feeder ×2, Magician's Nephew, Szymon Skiba ×2, The Travelling
+     Band ×2, Turbosauro);
+   - known-answer or B2 (Chris Coltraine ×2, Rebecca Haviland, The Apprehended, MekaPhil ×4,
+     Strobe, The Timezone and Timo, Perpetual Escape);
+   - held-out sets 2–5 (Boogie Snakes, Forkupines, The Maybe Next Years; Dunning Kruger ×3,
+     Scott Elliott, Silence Is Near, Silona, V.M.GY ×5; Decypher, Last Legacy, Lead Inc, Sonnet &
+     Alcohol, The Black Crown, The Bright Star Alliance, The Laminar Flow, Tholas P., Umbriferous;
+     Fytakyte, Hannes Keseberg, Hazael ×2, Jeff Hirata, MOPP, Nova-One Studio, Peter White, Ronnie
+     Jones, Saturn Syndicate, The Ferryboat Men);
+   - metal, never used (Arcadian Alone, Daimon B "Broken Again", Inhumanity Vortex, Peppermark ×2,
+     Serapis ×2, SkalyVan ×3);
+   - not a raw DI (Umphrey's McGee's Palmer PDI-09).
+2. **Central-directory reads on the direct host (132 archives):** every session the July 2025
+   index puts on `mtkdata` whose list the re-host lacks (112 archives, the MUSDB18 songs among
+   them, which the re-host keeps apart), plus 20 whose re-host file count differs from the
+   site's. The reads
+   took 8.65 MB in all, the last 64 kB of each archive. All 132 answered with a byte range: no
+   challenge, no refusal, no second read [V]. 11 archives have an electric DI, all from bands
+   already in the project:
+   - Atlantis Bound, Zeno and Wall Of Death (stage F);
+   - Tim Taler, Forkupines "Semantics" and Lights Off Clarity's "All The Same"
+     (`MR0912_NorthToAlaska`), all set-2 held out;
+   - Chris Durban (set 5);
+   - Cnoc An Tursa (V_dev);
+   - Hollow Ground ×2 (train band);
+   - Strobe (B2, now training).
+
+   The other 121 have no electric DI. Rod Alexander's `02_DI.wav` sits in a two-track solo
+   guitar instrumental (a main stereo pair + DI, no backing), probably acoustic [U]. The DIs in
+   Al James and Signe Jakobsen are MIDI guitar tracks. The Telefunken sessions mirrored there
+   (Big Head Todd, Kat Wright, Jackie Greene, Zane Carney, West End Blend and others) have amp
+   mics, and acoustic DIs at most.
+3. **The challenged host, where the new bands are:**
+   - 31 sessions of the July 2025 index sit on `multitracks.cambridge-mt.com` with no track list
+     in the re-host; 13 of them are in the partial 2026 re-host;
+   - 11 more sessions appear only in that partial re-host, so they were added after July 2025;
+   - anything added after 2026-08-13 is unknown.
+
+   The partial re-host drops files all through each session (kick and snare, most of each
+   session's tracks), so a missing number next to a guitar is weak evidence [P].
+
+**Result: no new band with a confirmed electric DI + amp track and full backing on any readable
+host.** The leads below are all on the challenged host; only the first is a named DI + amp pair.
+
+| Rank | Band | Song | Genre | DI track | Amp/mic tracks | Backing | Archive size | Already local? | Held-out conflict |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | Blue Manic | "Acomatay" | stoner rock (earlier report): crunch or fuzz, needs a listen [U] | `17_ElecGtr2DI`; 13–15 and 22, 24, 26 are missing beside other electrics, so maybe more [U] | `16_ElecGtr2` | full band: drums, bass DI + amp, acoustic, 7 more electrics, synth, sax, vocals | not listed (challenged); about 1–1.3 GB [U] | no | none |
+| 2 | Prusinski | "80s Rocker" | MOR rock (site): best gain fit | none seen; numbers 12, 16 and 19 are missing after `ElecGtr01`, `04` and `06` [U] | `ElecGtr01`–`ElecGtr10` | drums, bass DI, cowbell, vocals | 424 MB | no | none; but the band's 3 older sessions have amp tracks only [P] |
+| 3 | Hollowstate | "Hurricane" | hard melodic rock (site) | none seen; 20 and 27 missing after `ElecGtr01` and `07` [U] | `ElecGtr01`–`ElecGtr13` | drums, bass DI, acoustic, vocals | 516 MB | no | none; the band's "Gravediggers" has no DI [P] |
+| 4 | Ember Rev | "Divers & Lazarus" | art rock (site) | none seen; every other number is missing between `ElecGtr1` and `ElecGtr9` [U] | `ElecGtr1`–`ElecGtr9` | drums, percussion, bass DI, 4 acoustics, synths, accordions, vocals | 536 MB | no | none |
+| 5 | DGX | "Rest In Hell" | unknown; the title suggests heavy [U] | `ElecGtr1DI`–`ElecGtr4DI` | none seen (17–19 missing) | drums, bass, vocals | not listed | no | none |
+| 6 | Sunbreak | "Flawed" | post-hardcore (site): likely heavy | none seen; 14 and 16 missing [U] | `ElecGtr1`–`ElecGtr4` | drums, bass, synths, vocals | 454 MB | no | none |
+| 7 | Escarràs | "No Limits" | ska fusion (site) | no list anywhere | — | 55 tracks | 644 MB | no | none |
+| by ear | Empty Signifier | "Change" | "Various Styles" (site, read 2026-10-25); the band's "Wrong" is filed as punk metal: scope by ear | `ElecGtr1DI`, `ElecGtr2DI` | `ElecGtr1Mic1` | drums, bass amp, vocals | not listed | no | none |
+| out | Daimon B ×4, Dark Illusion ×2, Peppermark "Lua Negra", Harvst | — | nu metal, metalcore, metal | some gaps beside guitars | — | — | — | no | none |
+| — | Fytakyte "Dumber By The Minute", Saturn Syndicate "Dead Men's Ride" | — | melodic rock, retro pop | none seen | — | — | — | no | **set-5 held-out bands** |
+
+The rest of the challenged-host list is unlikely to add a band:
+- **electric guitars but no DI in the partial lists:** David Tyo, Fizzo Fizzzz & Triviul, Alas
+  Vector, Moni Blue ×2, Fabian Navarro and Simplemachine. Slimy Soul Suckers "Big Bang" (blues
+  rock, 1.25 GB) would fit by genre, but its 17 electrics are numbered without a gap
+  (`19_ElecGtr01` to `35_ElecGtr17`), so a DI there is unlikely [U];
+- **no list anywhere, and the band's other sessions have no electric DI:** Geometría Chicken ×2
+  (funk rock; "Chasque" and "Das Funkeren" were read directly) and Perpetual Escape "Into My
+  Dreams" (progressive heavy rock, 3.2 GB in 4 parts; the band's 4 listed sessions have DIs with
+  no amp track or amps with no DI);
+- **no list anywhere, other genres:** Masé Jara (Brazilian jazz, 10 tracks), FriendZWorldMusic
+  (16 tracks), Gurnzy ×2 (drum & bass), Sören (disco pop), and the hip-hop, choral, classical
+  and folk sessions.
+
+**What it would take.** A real listing of ranks 1–7 needs the challenged host. Two routes, both
+the user's call:
+- the user opens each session page and downloads the archives by hand, as for MekaPhil
+  (about 4 GB for ranks 1–7);
+- the user passes the browser check once, and the archive lists are read in that session.
+
+Blue Manic is the one with a named pair. Prusinski "80s Rocker" is the best genre fit, but the
+band's three older sessions have no DI.
+
+*Later: Blue Manic "Acomatay" was downloaded on 2026-10-23 through the user's browser at their
+request and is reserved as a test band (ledger `cambridge-new-test-band-bluemanic`).*
+
+## Cambridge-MT newer-host listing (2026-10-25)
+
+With the user's approval, the library page was opened in their Chrome. Each of the 220 full-multitrack
+archives on `multitracks.cambridge-mt.com` (the challenged host) was range-read for its ZIP central
+directory only: file names, no audio. 218 were read; one request timed out and one ignored the
+range. 48 sessions name an electric-guitar DI [V]:
+
+- **Out of scope (metal):** 20 sessions from 14 bands. 7 of these bands are also set-4 held out:
+  Decypher, Last Legacy, Sonnet & Alcohol, The Black Crown, The Bright Star Alliance, Tholas P.
+  and Umbriferous.
+- **Already held, held out or reserved:**
+  - Saturn Syndicate, Hazael ×2, Fytakyte, MOPP, Nova-One, Jeff Hirata "Sunshine" and The
+    Ferryboat Men "The Winds Of Gypsy Moor" (set 5);
+  - Laminar Flow and Lead Inc (set 4);
+  - known-answer/B2 (Chris Coltraine ×2) and stage F (Eat The Feeder ×2);
+  - Swatkins and Rebecca Haviland (Telefunken bands with held-out songs);
+  - Blue Manic (test band).
+- **New and in scope: 5 bands** (genre from the site):
+
+| Session | Genre | Electric DIs [V] | Amp tracks | ZIP |
+|---|---|---|---|---|
+| Ember Rev "Divers & Lazarus" | art rock | ElecGtr8DI, 9DI | ElecGtr1–9, some FX | 536 MB |
+| Empty Signifier "Change" | "Various Styles": scope by ear | ElecGtr1DI, 2DI | three mics each | 193 MB |
+| Goran Levi "Que Se Yo" | Afro-Cuban jazz | ElecGtrDI | ElecGtr | 457 MB |
+| Mòpia "If You Then I" | jazz-metal big band: scope by ear | ElecGtr2DI, 3DI | ElecGtr1–4 | 717 MB |
+| Sören "A Little Late" | disco-pop | ElecGtrDI, DTDI | none (DI only) | 613 MB |
+
+DGX "Redemptive Pain" and "Rest In Hell" (827 and 686 MB) also name electric DIs; the site files
+them as hard rock/metal, so their scope is by ear. They are not downloaded.
+
+MekaPhil (four DI-only songs) is also listed; it was downloaded earlier by hand. The earlier
+scan's other leads (Prusinski, Hollowstate, Sunbreak, Escarràs) show no electric DI, unless
+one of them is among the 2 unread archives, whose names were not kept. Ember Rev's
+DIs, unconfirmed on 2026-10-23, are now confirmed. The full list is in
+`~/ndsp-presets/references/cambridge-scan-2026-10-25/scan.md`.
+
+**Downloads (2026-10-25).** The user approved downloading the in-scope sessions through Chrome.
+- Empty Signifier "Change" (197,314,032 bytes) was downloaded to
+  `~/ndsp-presets/references/datasets-cambridge-new/_zips/`. Its audio is not opened until its
+  ledger role is set.
+- The other four (Ember Rev, Goran Levi, Mòpia, Sören) were blocked by Chrome's multiple-download
+  prompt and are pending.
+- Jeff Hirata and The Ferryboat Men are not downloaded (set-5 held out).
+- *Later on 2026-10-25:* the other four were downloaded too (checksums in `_zips/sha256-2026-10-25.txt`).
+  **The user decided all five are training bands, not test bands.** The role was recorded before
+  any audio was opened: ledger `cambridge-new-training-bands-2026-10-25` and `TRAINING_DOWNLOADS` in
+  `learn/clean_di.py` (read by the DI inventory and `assert_training_ok`). 9 electric DIs: Ember Rev 2,
+  Empty Signifier 2, Goran Levi 1, Mòpia 2 (each with an amp or mic track) and Sören 2 (DI only).
+  Mòpia and Empty Signifier are scope by ear. A DI trains only after T0's checks and the ear.
+- *T0's checks (2026-10-25, zero renders; `verify_tracks`' functions unchanged, up to 5 windows per
+  DI where it plays; outputs in `~/ndsp-presets/learn/trusted-data/intake-2026-10-25/`).* D3 passes
+  all 9. **D2 passes 4 of 9:** Empty Signifier ElecGtr2DI, Goran Levi's DI and both Mòpia DIs. It
+  fails, and so excludes whatever the ear says:
+  - Ember Rev's two DIs: clipping in every window (and they play only from 3:15 on);
+  - Empty Signifier ElecGtr1DI: hum, −40 to −50 dB against its playing level;
+  - both Sören DIs: exact-zero gaps of 3–22 ms locked to the groove, about 200 per DI, so the DI
+    was gated or edited (drop-outs in every window).
+
+  The amp checks inform only. Empty Signifier's mics read as real amps: a cab is present and the
+  mic leads the DI by 1.1 ms (A1 to the ear). They are not all bleed-free: A6 (bleed) fails in a
+  window on ElecGtr1 Mic1 and Mic3, so bleed shows in 2 of 6 mics, and A5 (same take) fails in a
+  window on ElecGtr2 Mic1. Goran Levi's "ElecGtr" is a processed copy of the DI, not a miked amp:
+  zero lag, no cab, up to 0.98 correlation with the DI. Its DI fails D1, and D4 flags it. Mòpia's
+  amp tracks have no coherent top end (A2 fails), and D4 flags both DIs, which suggests heavy drive
+  and a scope worry. The user's ear page (`listening/trusted-data-ear/part6-new-bands/`) holds the
+  4 D2-passing DIs, 2 windows each, with a tone-class card per window: 16 cards, pending.
+
 ## Decisions and open questions
 
 **Decided by the user (2026-10-23):**
@@ -318,7 +508,10 @@ Telefunken sessions are a mix of 48 and 96 kHz [P].
 3. **The 8 refused archives** (Dopapod ×2, Holly Bowling ×4, "Crucial Taunt", Josh Quimby "Ten
    Year Town") stay unread; only Dopapod, a jam band with electric guitar, might matter, and a
    manual check on the site is the user's call.
-4. **Disk.** About 113 GB was free on 2026-10-23. Ranks 1 and 3 are downloaded (0.94 + 0.46 GB);
+4. **The Cambridge leads behind the Cloudflare challenge:** listed on 2026-10-25 (above). The user
+   approved the download of the 5 new in-scope sessions (2026-10-25); all five are downloaded and,
+   by the user's decision the same day, are training bands (above).
+5. **Disk.** About 113 GB was free on 2026-10-23. Ranks 1 and 3 are downloaded (0.94 + 0.46 GB);
    rank 2 needs 2.4 GB, and the features about 3 GB.
 
 ## Sources
@@ -341,7 +534,14 @@ Telefunken sessions are a mix of 48 and 96 kHz [P].
   - direct host, e.g.
     [Strobe](https://mtkdata.cambridgemusictechnology.co.uk/MTK021/Strobe_Maya_Full.zip) and
     [The Timezone](https://mtkdata.cambridgemusictechnology.co.uk/MTK017/TheTimezone_GOTGF_Full.zip);
-  - [partial 2026 re-host](https://huggingface.co/datasets/fattyyyyyyyyyy/free_multitrack_2026).
+  - [partial 2026 re-host](https://huggingface.co/datasets/fattyyyyyyyyyy/free_multitrack_2026);
+  - the 2026-10-23 scan: HTTP HEAD and a range read of the last 64 kB of 132 archives on the
+    direct host, e.g.
+    [Zeno](https://mtkdata.cambridgemusictechnology.co.uk/MTK001/MR1003_Zeno_Full.zip) and
+    [Rod Alexander](https://mtkdata.cambridgemusictechnology.co.uk/MTK019/RodAlexander_Canon_Full.zip);
+    the Cloudflare challenge on
+    [the library page](https://cambridge-mt.com/ms3/mtk/) and
+    [the newer archive host](https://multitracks.cambridge-mt.com/Hollowstate_Hurricane_Full.zip).
 - **Datasets:**
   - GOAT: [Zenodo 15690894](https://zenodo.org/records/15690894),
     [paper](https://arxiv.org/html/2509.22655);
