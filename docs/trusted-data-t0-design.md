@@ -1794,8 +1794,11 @@ better than chance; 96 do not.** About 6 of 116 would read by chance alone.
 | Cab rest | 4 of 12 | left cab pan, right room level, right cab stereo, right room on |
 
 By kind: 5 of 85 continuous heads, 14 of 28 switches, 0 of 2 mics and the amp choice.
-- **The knobs read nothing:** every continuous head's E sits within 0.01 of the constant's, except the EQ high-pass
-  filters, which read worse (SW50R +0.023, AC20 +0.013).
+- **The knobs read nothing:** 5 of 85 knobs read, about as many as chance alone gives (about 4). Every continuous
+  head's E sits within 0.01 of the constant's except three, which read worse: the EQ high-pass filters (SW50R +0.023,
+  AC20 +0.013) and drive 2's treble (+0.0106).
+  - **9 knobs read reliably worse than the constant** (interval above 0): input gain, right cab distance, right cab mic
+    level, AC20 EQ band 1, both high-pass filters (AC20, SW50R), drive 2's level and treble, and the SW50R spring level.
 - **What R1 writes:** F5's D_F5 answers rebuild exactly from F5's stored readout in all 66 directions (checked at zero
   renders, nothing written). D_F5:R therefore has reverb, tremolo and the springs off everywhere. The delay's switch
   reads, so delay stays on in 29 of 66 directions, its knobs at S's stored values (mix 0.07–0.5, 500 ms, written
@@ -1811,7 +1814,10 @@ and no fixed rule stands in for a control the judge can't hear.
   is retrained. Only the written answer takes S's value, and only where FS5 shows the head reading no better than
   chance.
 - **The precedent:** T3's own decision rule already writes S's values for the new controls when their worth is not
-  shown, "while they stay learned (amendment 1)" (section 5 above). R1 follows it.
+  shown, "while they stay learned (amendment 1)" (section 5 above).
+- **R1 goes beyond that rule.** T3's rule puts only the new controls at S, by family. R1 puts heads at S one by one,
+  and today's space too: input gain, the amp knobs, the mics and the cab positions. So D_F5:R − D_core5 sits close to
+  S − D_core5.
 - **Where it may conflict (the user's call):**
   - **S is not the model's constant.** The pull's limit (b = 0) is D_F5's constant: training medians and switch
     majorities. For the time-effect switches that constant is "on", because the factory draws are wet. S's values are
