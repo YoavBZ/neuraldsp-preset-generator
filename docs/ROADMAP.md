@@ -82,6 +82,19 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
   *Done 2026-10-10 ([results](crunch-baseline-results.md)): adopted on weak evidence. The
   ML chooser over it is not shown.*
 
+**Refined for training (user, 2026-10-26):** high-gain songs can definitely be used for
+training, as long as too-heavy songs don't interfere with the model. The user doesn't play
+heavy metal, so testing and perfecting stay clean/crunch-focused.
+- Training sources are no longer dropped for being high gain. "Scope by ear" screens out only
+  extreme cases.
+- Readouts stay clean/crunch-weighted and per class, to watch for interference.
+- The 2026-10-25 Cambridge scan's metal sessions outside the held-out sets become possible
+  training candidates: 11 sessions from 6 bands (Arcadian Alone, Daimon B ×2, Dark Illusion ×2,
+  Inhumanity Vortex, Peppermark ×3, Serapis ×2), plus DGX ×2 (hard rock/metal). V.M.GY is a
+  set-3 held-out band, so it is not a candidate. The user said yes, and these 13 were downloaded
+  on 2026-10-26. They are under intake on branch `ml/metal-intake`: the held-out checks, T0's
+  checks and the ear.
+
 ## Next, in order
 
 0. **Song-to-preset model** (the ML session; [plan](research/ml-plan-2026-10.md), approved by the
@@ -175,7 +188,12 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
          the DI silent; on 3–5 other windows each they have no measured fail (5/5, 3/3, 5/5); 13 stay out (DI
          hum, an A1 fail on 1 of 5 windows, real faults). The 3 join only after the user's ear (re-check page
          ready) and after T2's chain ends (*it ended 2026-10-26; they await the ear*)
-         ([rule](trusted-data-t0-design.md#t0-window-re-check-2026-10-25));
+         ([rule](trusted-data-t0-design.md#t0-window-re-check-2026-10-25)). *Heard 2026-10-26: all 3
+         passed, and 2 are verified (It Was My Fault ElecGtr1, Nosso Mundo ElecGtr03). Signs ElecGtr6
+         stays pending until its DI is heard as a DI (part 8, 3 cards), so targets are 19 verified,
+         1 pending, 39 excluded. Each uses only its re-check windows, and none joins V-real, knob
+         ceiling 2 or the level prior
+         ([outcome](trusted-data-t0-design.md#parts-5-and-6-heard-2026-10-26)).*
        - V-real 10 parts in 7 bands (3 clean parts in 2 bands, 7 crunch; 3 of the 10 from one song,
          Wickerman); knob ceiling 2's 7 parts in 7 bands verified;
        - K 17 DIs in 3 bands, but T1's K uses Adam Buckley and Dark Ride only (Cnoc An Tursa not
@@ -231,7 +249,10 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
        ElecGtr2DI, Goran Levi, Mòpia ×2). Ember Rev is out for clipping, Empty Signifier ElecGtr1DI for
        hum, and Sören for gating or edits. Goran Levi's amp track is a processed copy, not a miked amp.
        Mòpia is a scope worry: D4 flags both DIs and the amp tracks read heavily driven. The user's ear
-       page (part6, 16 cards) is pending.
+       page (part6, 16 cards) is pending. *Heard 2026-10-26: **1 new training DI from 5 bands.** Empty
+       Signifier 20_ElecGtr2DI was heard clean and is admitted. Its amp track is high gain, so it
+       does not ease the clean/crunch shortage. Mòpia's two DIs and Goran Levi's were heard processed
+       ([outcome](trusted-data-t0-design.md#parts-5-and-6-heard-2026-10-26)).*
 
    **Where it stands (2026-10-19).** Not ready to ship. Fresh full mixes (stage F, 21 parts in 12
    bands) are the yardstick; figures are against S, band-weighted, with 90% intervals.
@@ -376,7 +397,8 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
        not shown to be unrealistically easy (a ceiling check only).
      - **Next: decision 5 (whether T3 runs on a tie) is open for the user.** Pending inputs: the window re-check's 3
        recovered parts and the new bands' 4 DIs ([PR #294](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/294), ear page `part6-new-bands`) await the user's ear (PR #293, PR #294); the clean/crunch shortage
-       stays the clearest gap.
+       stays the clearest gap. *Heard 2026-10-26: 2 targets recovered, Signs ElecGtr6 pending its DI (part 8), 1 new training DI (high gain).
+       The clean/crunch shortage is unchanged.*
    - (d) **T3, decided after T2:** one rebuild that is also every-control stage 2D, on self-built
      mixes with full-space labels and any approved new DIs, read on K and V-real (*K empty since 2026-10-25: its
      read is open until K comes back*). Its downloads are
@@ -766,3 +788,5 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
 | 2026-10-25 | Option (c) approved by the user (in chat, "Approved if you suggest following this approach", after the ML session suggested it): the SES-ALL arm, SES's recipe, seeds (20261042, 20261043) and early-stopping set on a 5k draw (seed 20261104, stratified by band) from every T2 candidate before rule 1 and the cap, read as SES-ALL − SES on V-real; 2 runs of about 1.5 h, about 60 V-real renders plus 30 priming, no separations; run after T2's chain, adding to its records. Built the same day before any T2 result, with the T2-side stem read (section-clustered primary; a ceiling check, never a realism certificate), diagnostic (a) (V-real split at 5 or more playing guitars, a median split of the parts' counts) and the `report` fix (T1's 812-example read labelled superseded). Diagnostic (b), read: left-out candidates are denser (mean 3.82 playing guitars against 2.90 kept), mostly Rebuild The Evil | [design](trusted-data-t0-design.md#t2s-additions-as-built-2026-10-25) |
 | 2026-10-26 | New sources (user): 13 Cambridge-MT metal and hard-rock sessions (7 bands) recorded as **training** sessions before any audio was extracted (ledger `cambridge-new-training-bands-2026-10-26`; `clean_di.TRAINING_DOWNLOADS`, pending until a verified list admits a DI). High gain may train; parts heard as too heavy stay out; tests stay clean to crunch. Acoustic DIs and MIDI renders are not DI rows (`INTAKE_NOT_DI`) | [inventory](research/di-source-inventory-2026-10.md#metal-and-hard-rock-training-intake-2026-10-26) |
 | 2026-10-26 | T2 read (audited; every row recomputed from the V-real groups). Primary SYN − SES on V-real +0.019 [−0.001, +0.040], 7 bands: a tie, so SYN is picked by recorded decision 4; SYN leans worse (5 of 7 bands; leave-one-band-out +0.013 to +0.026). SES − constant −0.031, SYN − constant −0.012; against S, SES +0.012, SYN +0.031: neither arm beats S or clearly beats the constant. Follow-up, descriptive: SES-ALL − SES −0.026 [−0.070, +0.018], a broader draw (2 more bands, one band carries it), not a density test; diagnostic (a) shows nothing; the stem read finds SYN's stems not cleaner than SES's (a ceiling check only). Decision 5, T3 on a tie, is open for the user | [design](trusted-data-t0-design.md#t2-outcome-2026-10-26) |
+| 2026-10-26 | Parts 5 and 6 heard (user), read by `verify_tracks lists` (code, no hand edits). Window re-check: all 22 cards clean amp. It Was My Fault ElecGtr1 and Nosso Mundo ElecGtr03 are recovered, each on its re-check windows only, with its crop re-cut to a heard window. Signs ElecGtr6 stays pending: those cards never judged its DI, so part 8 (3 DI cards) asks. Targets are now 19 verified, 1 pending, 39 excluded. Signs ElecGtr6 checked: not a copy of its DI. The other three stay excluded; their answers are informative only. New bands: **1 new training DI from 5 bands** (Empty Signifier 20_ElecGtr2DI, heard clean, a high-gain part; its DI-and-amp pairing was never heard); Mòpia ×2 and Goran Levi heard processed. V-real (10) and knob ceiling 2 (7) unchanged | [outcome](trusted-data-t0-design.md#parts-5-and-6-heard-2026-10-26) |
+| 2026-10-26 | Scope refined for training (user): high-gain songs can train, as long as too-heavy songs don't interfere; testing and perfecting stay clean/crunch-focused. High gain no longer drops a training source ("scope by ear" screens out only extreme cases); readouts stay clean/crunch-weighted and per class. The 2026-10-25 scan's metal sessions outside the held-out sets, 11 sessions from 6 bands (V.M.GY is set-3 held out), plus DGX ×2, become possible training candidates. With the user's yes, these 13 were downloaded on 2026-10-26 and are under intake on branch `ml/metal-intake` | [scope](#scope-user-decision-2026-10-10) |

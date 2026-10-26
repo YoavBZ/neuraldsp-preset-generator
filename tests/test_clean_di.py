@@ -297,11 +297,26 @@ def test_reserved_test_band_is_refused_even_as_a_training_download():
 
 def test_intake_note_blocks_training():
     assert C.INTAKE_PENDING.startswith("catalogue:")
+    assert not C.INTAKE_ADMITTED.startswith("catalogue:")
+
+
+def test_intake_admitted_comes_from_a_real_verified_list(tmp_path):
+    import json
+
+    p = tmp_path / "verified.json"
+    assert C.intake_admitted(p) == set()                            # no list: nothing admitted
+    p.write_text(json.dumps({"smoke": False, "intake_admitted": ["cambridge-new/S_Full/20_ElecGtr2DI.wav"]}))
+    assert C.intake_admitted(p) == {"cambridge-new/S_Full/20_ElecGtr2DI.wav"}
+    p.write_text(json.dumps({"smoke": True, "intake_admitted": ["cambridge-new/S_Full/20_ElecGtr2DI.wav"]}))
+    assert C.intake_admitted(p) == set()                            # a smoke run admits nothing
+    p.write_text(json.dumps({"smoke": False}))
+    assert C.intake_admitted(p) == set()                            # a list from before the intake
 
 
 @pytest.mark.skipif(not any((C.CAMBRIDGE_NEW / k).is_dir() for k in C.TRAINING_DOWNLOADS),
                     reason="the 2026-10-25 sessions are not on this machine")
-def test_intake_rows_are_not_trainable_until_admitted():
+def test_intake_rows_are_not_trainable_until_admitted(monkeypatch):
+    monkeypatch.setattr(C, "intake_admitted", lambda path=None: set())
     dis, excluded = C.inventory()
     rows = [r for r in dis if r["set"] == "cambridge-new"]
     assert rows
@@ -310,6 +325,14 @@ def test_intake_rows_are_not_trainable_until_admitted():
     assert any("BlueManic_Acomatay_Full" in e["what"] for e in excluded)
     with pytest.raises(ValueError):
         C.assert_training_ok([rows[0]["path"]], {"dis": dis})
+    one = rows[0]["id"]                                             # admitted: only that row trains
+    monkeypatch.setattr(C, "intake_admitted", lambda path=None: {one})
+    dis, _ = C.inventory()
+    rows = {r["id"]: r for r in dis if r["set"] == "cambridge-new"}
+    assert rows[one]["training_ok"] and C.INTAKE_ADMITTED in rows[one]["notes"]
+    assert C.INTAKE_PENDING not in rows[one]["notes"]
+    assert all(C.INTAKE_PENDING in r["notes"] and not r["training_ok"] for k, r in rows.items() if k != one)
+    C.assert_training_ok([rows[one]["path"]], {"dis": dis})
 
 
 def test_held_out_paths_are_refused():
