@@ -629,6 +629,43 @@ hashes).
   [design](../trusted-data-t0-design.md#the-strobe-and-mekaphil-intakes-ear-part-9-2026-10-26).
   Until a DI is heard it stays pending.
 
+## Strobe "Gone" and "Nostalgic" training intake (2026-10-26)
+
+These two Strobe songs were the ones downloaded by mistake beside "Maya". The user decided on 2026-10-26 to keep
+both for training. They were moved from `_zips-unapproved/` to `_zips/`; checksums are in
+`_zips/sha256-2026-10-26c.txt`.
+
+**The role was recorded first,** before any audio was extracted:
+- ledger `cambridge-new-training-bands-2026-10-26c`;
+- `TRAINING_DOWNLOADS` rows (split `library`; every DI row `INTAKE_PENDING`);
+- `refuse_held_out` passes Strobe; no set 3–6 dataset or crop folder carries Strobe, "Gone" or "Nostalgic".
+
+**Taken in, no usable DI.** No file in either session is named as a DI. "Gone" has `ElecGtr1`, `ElecGtr1DT`,
+`ElecGtr2`, `ElecGtr2DT`, `ElecGtr3` and `ElecGtr4`; "Nostalgic" has one `ElecGtr`. All 7 are recorded as "not a
+confirmed DI (unnamed); excluded" (`clean_di.INTAKE_UNNAMED_DI`), and the inventory makes no DI row from either
+session.
+
+*Why (review of PR #303, 2026-10-26):* the first version of the PR made the 7 tracks DI candidates for the ear. The
+review found that one ear click cannot establish an unnamed track as a DI under the trusted-data rule, and that the
+gain would be tiny: the passing "Gone" tracks play only 8.6–11.7 s each. Nothing measured settles it either:
+- **D4** passes 6 of the 7 (median crest 10.1–11.6 dB). It also passes Maya's DI `ElecGtrDI2` (8.9 dB) and Timeless
+  Part 2's amp track `ElecGtr2` (11.3 dB).
+- **Power above 6 kHz** does not work as a cab roll-off test here. `ElecGtr1`, `ElecGtr1DT` and "Nostalgic" read −40.5
+  to −41.1 dB, like Maya's DI (−40.4 dB). But `ElecGtr2`, `ElecGtr2DT`, `ElecGtr3` and `ElecGtr4` read −31 to −36 dB,
+  between that DI and the amp track (−23 dB).
+- **A mic-delay (same-take) check cannot apply.** The tracks are double-tracks or other parts, not one take recorded
+  twice. Their peak waveform cross-correlation within ±50 ms is 0.00–0.22 on shared windows
+  (`~/ndsp-presets/learn/trusted-data/intake-2026-10-26c/scripts/xcorr_pairs.py`).
+
+*What ran before the decision (2026-10-26, zero renders, outputs in
+`~/ndsp-presets/learn/trusted-data/intake-2026-10-26c/`):*
+- **Extraction:** the electric guitar tracks and Readmes only (manifest `manifest-2026-10-26c.json`; free disk
+  79.6 → 79.0 GB). The ZIPs and the extracted files are kept.
+- **T0's checks on the 7 tracks** (`scripts/intake_t0.py`, which ran against the PR's first version): D3 passed
+  7/7 and D2 passed 5/7. `ElecGtr1` and `ElecGtr1DT` showed hum on every window. D4 flagged "Nostalgic". These
+  readings decide nothing now.
+- **An ear page, part 10** (5 cards), was built and never sent. It is in the Trash, and `lists` has no reader for it.
+
 ## Sources
 
 - **Telefunken LFTL:**
