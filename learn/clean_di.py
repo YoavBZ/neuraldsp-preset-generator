@@ -605,6 +605,10 @@ RESERVED_BANDS = {"Blue Manic"}          # refused even if its session is ever a
 # Every TRAINING_DOWNLOADS row carries this note, which `training_ok` rejects: a DI trains only once a verified list
 # (T0's checks and the ear) admits it.
 INTAKE_PENDING = "catalogue: pending T0 intake (trains only once a verified list admits it)"
+# The verified list that admits them: T0's `verified.json` (`verify_tracks lists`), its `intake_admitted` (T0's intake
+# checks and the user's ear, part 6). An admitted row carries INTAKE_ADMITTED in place of INTAKE_PENDING.
+TRUSTED_VERIFIED = HOME / "learn/trusted-data/t0/verified.json"
+INTAKE_ADMITTED = "admitted by T0's verified list (verified.json intake_admitted: T0's checks and the ear)"
 REFUSED_SESSIONS = {
     "cambridge/DunningKruger_Sascha_Full": "Dunning Kruger is a set-3 held-out band",
     "cambridge/UmphreysMcGee_CrucialTaunt_Full": "its 'DI' is a Palmer PDI-09 speaker-simulated line-out after the "
@@ -691,6 +695,16 @@ def refuse_held_out(rec):
         return
     if set3.is_held_out(pathlib.Path(p)):
         raise ValueError(f"held out: {p}")
+
+
+def intake_admitted(path=None):
+    """The TRAINING_DOWNLOADS DI ids that T0's verified list admits (a real `lists` run, not a smoke one); none when
+    there is no such list."""
+    p = pathlib.Path(path or TRUSTED_VERIFIED)
+    if not p.exists():
+        return set()
+    rec = json.loads(p.read_text())
+    return set() if rec.get("smoke") else set(rec.get("intake_admitted") or ())
 
 
 def assert_training_ok(paths, manifest=None):
@@ -818,15 +832,17 @@ def inventory():
     # downloaded 2026-10-25 for training (datasets-cambridge-new); the reserved test band stays out
     for key, why in RESERVED_NEW.items():
         excluded.append({"what": f"datasets-cambridge-new/{key}", "why": why})
+    admitted = intake_admitted()
     for key, (band, split, why) in TRAINING_DOWNLOADS.items():
         inner = CAMBRIDGE_NEW / key
         files = sorted(p.name for p in inner.glob("*.wav"))
         for di in [f for f in files if is_guitar_di(f)]:
             part = re.search(r"(?i)elecgtr\d*", di).group(0)
-            add(id=f"cambridge-new/{key}/{di}", path=str(inner / di), source="cambridge", set="cambridge-new",
+            rid = f"cambridge-new/{key}/{di}"
+            add(id=rid, path=str(inner / di), source="cambridge", set="cambridge-new",
                 band=band, song=key, part=part, slug=None, gain_class=None, genre=None, split=split,
                 session_dir=str(inner), own=own_tracks(part, files, di), mix=None, vocals=None,
-                notes=[why, INTAKE_PENDING])
+                notes=[why, INTAKE_ADMITTED if rid in admitted else INTAKE_PENDING])
     # Guitar-TECHS P1 and P2 (development; P3 never)
     for band, root in GT_DIRS.items():
         for f in sorted(root.glob("*/audio/directinput/*.wav")):

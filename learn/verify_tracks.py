@@ -1749,21 +1749,176 @@ def item_id(kind, key, start_s=None):
     return "ear-" + hashlib.sha1(f"{kind}|{key}|{start_s}".encode()).hexdigest()[:12]
 
 
-def ear_answers(paths, di_paths=(), registry=None):
+# Two later card pages, each with its own page id and item ids, decoded through its own `items.json` (not the queue's
+# registry): part 5, the T0 window re-check (design "T0 window re-check (2026-10-25)"; targets heard on new windows),
+# and part 6, the 2026-10-25 training bands (inventory "Cambridge-MT newer-host listing"; their DIs and a tone class
+# per amp track). Both were heard on 2026-10-26.
+RECHECK_PAGE = "trusted-data-ear-recheck"
+INTAKE_PAGE = "trusted-data-ear-new-bands"
+CARD_PAGES = (EAR_PAGE, RECHECK_PAGE, INTAKE_PAGE)    # per-card times: the latest touch of a card stands
+SCOPE_VERDICTS = ("clean", "crunch", "high_gain", "not_fit", "unsure")   # part 6's tone class of an amp track alone
+RECHECK_MIN_WINDOWS = 3                # the re-check's pass: at least 3 windows, none with a measured fail
+RECHECK_HEARD = 2                      # ... then the user hears 2 of them (DI, then target; both halves)
+RECHECK_MEASURES = ("A1", "A2", "A3", "A4", "A5", "A6", "A6mix", "D2")   # D4 stays the ear's flag only
+INTAKE_DIR = "intake-2026-10-25"       # under the trusted-data root: T0's checks on the training bands (PR #294)
+INTAKE_ID = "cambridge-new/{session}/{di}"            # `clean_di.inventory`'s id of a TRAINING_DOWNLOADS DI
+
+
+def page_items_path(page):
+    return HOME / "listening/trusted-data-ear" / {RECHECK_PAGE: "part5-recheck",
+                                                  INTAKE_PAGE: "part6-new-bands"}[page] / "items.json"
+
+
+def recheck_results_path():
+    return HOME / "listening/trusted-data-ear/part5-recheck/recheck/results.json"
+
+
+def load_card_pages(paths):
+    """{page: {item id: item}} for the part 5 and part 6 exports among `paths`, each from its page's items.json; an
+    export of another build than the page's items is refused (its ids would not decode)."""
+    out = {}
+    for p in paths or ():
+        d = json.loads(pathlib.Path(p).expanduser().read_text())
+        page = d.get("page")
+        if page not in (RECHECK_PAGE, INTAKE_PAGE):
+            continue
+        ip = page_items_path(page)
+        if not ip.exists():
+            raise SystemExit(f"{p}: page {page} needs its items at {ip}")
+        rec = json.loads(ip.read_text())
+        if rec.get("page") != page or (d.get("build") and rec.get("build") != d.get("build")):
+            raise SystemExit(f"{p}: build {d.get('build')} of {page}, but {ip} holds {rec.get('page')} build "
+                             f"{rec.get('build')}")
+        out[page] = {it["id"]: it for it in rec["items"]}
+    return out
+
+
+def recheck_eligible(row, measure_di, play_min=A5_PLAY_MIN):
+    """The window re-check's eligibility (design "T0 window re-check", the rule as amended after review): among
+    A1-A6 only A5 or A6 fail, a crop half's DI plays under `play_min` (silent or sparse), and T0 did not exclude the
+    measure DI (T0's verdict, not the new windows' D2, which is weak where the DI plays almost throughout).
+    row: a `lists` target; measure_di: its `measure_dis` entry. -> (eligible, why not)."""
+    st = row.get("status") or {}
+    fails = [m for m in ("A1", "A2", "A3", "A4", "A5", "A6", "A6mix") if st.get(m) == "fail"]
+    if not fails:
+        return False, "no measured fail on its crop"
+    if set(fails) - {"A5", "A6"}:
+        return False, f"{', '.join(m for m in fails if m not in ('A5', 'A6'))} fails (a track property)"
+    shares = [((row.get("a5") or {}).get(h) or {}).get("di_play_share") for h in HALVES]
+    if not any(s is not None and s < play_min for s in shares):
+        return False, "its crop DI plays in both halves (the rule does not apply)"
+    if not measure_di:
+        return False, "no measure DI row"
+    if measure_di["verdict"] == "excluded":
+        return False, f"its measure DI is excluded in T0 ({', '.join(measure_di['why'])})"
+    return True, None
+
+
+def recheck_heard(halves, need=HALVES):
+    """One re-check window's ear: False if any half was heard otherwise than clean (a negative wins), True if every
+    half was heard clean, else None. halves: {half: [verdicts]}."""
+    vs = [merge_ear(halves.get(h, []), "clean") for h in need]
+    if any(v is False for v in vs):
+        return False
+    return True if all(v is True for v in vs) else None
+
+
+def recheck_verdict(windows, heard, min_windows=RECHECK_MIN_WINDOWS, need_heard=RECHECK_HEARD):
+    """An eligible part on its re-check windows. windows: the re-check's windows ([{start_s, end_s, status}]); heard:
+    {window start_s: {half: [verdicts]}} from part 5. Pass: at least `min_windows` windows and no measured fail on any
+    (RECHECK_MEASURES; 'ear' readings allowed, as for verified parts). Then the ear: `need_heard` windows heard clean
+    on both halves; a negative on any half excludes, 'unsure' waits. The part keeps only its passing windows, and its
+    crop is re-cut to an ear-verified window (one D4 passes first, then the earliest).
+    -> (verdict, why, record)."""
+    by = {round(float(w["start_s"]), 1): w for w in windows}
+    failing = {k: [m for m in RECHECK_MEASURES if w["status"].get(m) == "fail"] for k, w in by.items()}
+    ear = {round(float(k), 1): recheck_heard(v) for k, v in heard.items()}
+    rec = {"windows_checked": len(by), "windows": [[w["start_s"], w["end_s"]] for k, w in sorted(by.items())
+                                                   if not failing[k]],
+           "failing": {f"{k:.1f}": v for k, v in sorted(failing.items()) if v},
+           "heard": {f"{k:.1f}": v for k, v in sorted(ear.items())},
+           "d4_flags": [f"{k:.1f}" for k, w in sorted(by.items()) if w["status"].get("D4(ear only)") == "fail"]}
+    unknown = sorted(set(ear) - set(by))
+    if unknown:
+        raise SystemExit(f"re-check answers on windows the re-check did not measure: {unknown}")
+    if len(by) < min_windows:
+        return "excluded", [f"re-check: {len(by)} windows (needs {min_windows})"], rec
+    bad = [k for k, v in failing.items() if v]
+    if bad:
+        return "excluded", [f"re-check: a measured fail on {len(bad)} of {len(by)} windows "
+                            f"({'; '.join(f'{k:.1f} s ' + ', '.join(failing[k]) for k in sorted(bad))})"], rec
+    if any(v is False for v in ear.values()):
+        return "excluded", ["re-check: heard not clean on a window"], rec
+    clean = sorted(k for k, v in ear.items() if v is True)
+    if len(clean) < need_heard:
+        return "pending ear", [f"re-check: {len(clean)} of {need_heard} windows heard clean"], rec
+    crop = min(clean, key=lambda k: (by[k]["status"].get("D4(ear only)") == "fail", k))
+    rec["crop_window_s"] = [by[crop]["start_s"], by[crop]["end_s"]]
+    return "verified", [], rec
+
+
+def intake_verdicts(summary, di_windows, scope):
+    """The 2026-10-25 training bands' DIs (PR #294's intake). summary: the intake's T0 checks ({session: {di file:
+    {band, status, verdict}}}: D2 and D3 measured, D1 against the loudest own amp track, D4 the ear's flag);
+    di_windows: {DI path: [(start_s, end_s, verdict)]} and scope: {DI path: [(amp path, class)]}, both from part 6.
+    A measured fail excludes whatever the ear says; a window heard other than clean excludes. A DI heard clean on
+    every heard window (at least 2) is verified. Part 6 played no DI-and-amp pair, so 'D1 to the ear' is answered by
+    the DI card (which offers 'not a DI') heard clean together with its amp track heard as an amp tone (any class but
+    'not a fit' or 'not sure'). The class is kept: high gain no longer drops a training source (user, 2026-10-26);
+    'not a fit' does. -> {inventory id: record}."""
+    def by_tail(d):
+        return {"/".join(pathlib.PurePosixPath(k).parts[-2:]): v for k, v in d.items()}
+
+    heard_by, scope_by = by_tail(di_windows), by_tail(scope)
+    out = {}
+    for session, dis in sorted(summary.items()):
+        for di, r in sorted(dis.items()):
+            tail = f"{session}/{di}"
+            wins = heard_by.get(tail, [])
+            classes = [c for _, c in scope_by.get(tail, [])]
+            heard = merge_ear([v for _, _, v in wins], "clean")
+            amp_heard = bool(classes) and all(c not in ("not_fit", "unsure") for c in classes)
+            measured, mwhy = r["verdict"]
+            if measured == "excluded":
+                v, why = "excluded", list(mwhy)
+            elif heard is False:
+                v, why = "excluded", ["heard " + ", ".join(sorted({x for _, _, x in wins if x not in ("clean", "unsure")}))]
+            elif "not_fit" in classes:
+                v, why = "excluded", ["its amp track heard as not a fit"]
+            elif heard is not True or len(wins) < 2:
+                v, why = "pending ear", ["not yet heard clean on 2 windows"]
+            elif "D1 to the ear" in mwhy and not amp_heard:
+                v, why = "pending ear", ["D1 to the ear: its amp track not yet heard as an amp tone"]
+            else:
+                v, why = "verified", []
+            cls = sorted(set(classes))
+            out[INTAKE_ID.format(session=session, di=di)] = {
+                "verdict": v, "why": why, "band": r.get("band"), "status": r.get("status"), "measured": [measured, mwhy],
+                "heard": [list(w) for w in wins], "tone_class": cls[0] if len(cls) == 1 else (cls or None),
+                "amp_tracks_heard": sorted({pathlib.PurePosixPath(a).name for a, _ in scope_by.get(tail, [])})}
+    return out
+
+
+def ear_answers(paths, di_paths=(), registry=None, card_pages=None):
     """The user's ear. -> {"target_clean": {(slug, half): [verdicts]}, "target_amp": {slug: [verdicts]},
     "crop_di": {slug: {half: [verdicts]}}, "di_windows": {key: [(start_s, end_s, verdict)]}, "di_pairs": {di: [verdicts]}}.
     - `di_paths`: data-review-1 exports judged on the DI clip (sitting 1: 'clean' is a clean, unprocessed DI);
     - `paths`: target judgments: the target-vs-DI page ('amp' or not) and the ear-queue page (`EAR_PAGE`, its ids
       decoded through `registry`, the items `lists` has queued). A data-review-1 export is refused here (its amp
-      items were judged on the DI clip). Several answers on one item are all kept; `merge_ear` lets a negative win.
+      items were judged on the DI clip). Several answers on one item are all kept; `merge_ear` lets a negative win;
+    - also in `paths`: part 5 (`RECHECK_PAGE`, targets on the window re-check's windows -> "recheck": {slug: {window
+      start_s: {half: [verdicts]}}}, kept apart from the crop's answers) and part 6 (`INTAKE_PAGE`, the training bands'
+      DIs -> "intake_di": {DI path: [(start_s, end_s, verdict)]}, and their amp tracks' tone class -> "intake_scope":
+      {DI path: [(amp path, class)]}), each decoded through `card_pages` ({page: {id: item}}, `load_card_pages`).
     An ear-page export holds every item of its part, each stamped with the time the listener last touched it (`t`;
     null on a card never touched in that browser). On one item the latest touch across all exports stands: a changed
     answer replaces the old one, and an answer taken back (a null verdict with a time) clears it. A card never touched
     holds no answer, so an export from another browser or a rebuilt page never erases one. Notes go to `notes`, with
     or without a verdict, for the ML session to read before T1."""
     out = {"target_clean": {}, "target_amp": {}, "crop_di": {}, "di_windows": {}, "di_pairs": {}, "stems": {},
-           "notes": [], "superseded": 0}
+           "recheck": {}, "intake_di": {}, "intake_scope": {}, "notes": [], "superseded": 0}
     registry = registry or {}
+    card_pages = card_pages or {}
     pages = {"data-review-1": HOME / "listening/data-review-1/items.json",
              "target-vs-di-check": HOME / "listening/target-vs-di-check/items.json"}
     items = {}
@@ -1779,12 +1934,12 @@ def ear_answers(paths, di_paths=(), registry=None):
             raise SystemExit(f"{p}: --ear-di takes data-review-1 exports only (page {page})")
         if not about_di and page == "data-review-1":
             raise SystemExit(f"{p}: a data-review-1 export judged the DI clips; pass it as --ear-di, not --ear")
-        if not about_di and page not in ("target-vs-di-check", EAR_PAGE):
+        if not about_di and page not in ("target-vs-di-check",) + CARD_PAGES:
             raise SystemExit(f"{p}: unknown page {page}")
         loaded.append((p, page, d))
     latest = {}                                     # ear-page item id -> (touch time, file order) of the answer that stands
     for n, (p, page, d) in enumerate(loaded):
-        if page == EAR_PAGE:
+        if page in CARD_PAGES:
             for a in d.get("answers") or []:
                 t = answer_time(a, d)
                 if t and (a["id"] not in latest or (t, n) >= latest[a["id"]]):
@@ -1793,7 +1948,7 @@ def ear_answers(paths, di_paths=(), registry=None):
     for n, (p, page, d) in enumerate(loaded):
         for a in d.get("answers") or []:
             v = a.get("verdict")
-            if page == EAR_PAGE and latest.get(a["id"], (None, None))[1] != n:
+            if page in CARD_PAGES and latest.get(a["id"], (None, None))[1] != n:
                 out["superseded"] += bool(v)
                 if v:
                     w = loaded[latest[a["id"]][1]]
@@ -1803,7 +1958,8 @@ def ear_answers(paths, di_paths=(), registry=None):
                                                "note": (wa.get("note") or "").strip()})
                 continue
             note = (a.get("note") or "").strip()
-            src = registry.get(a["id"]) if page == EAR_PAGE else items.get(a["id"])
+            src = registry.get(a["id"]) if page == EAR_PAGE else (card_pages.get(page) or {}).get(a["id"]) \
+                if page in CARD_PAGES else items.get(a["id"])
             if note:                                     # kept on retired cards too: the note may say why
                 out["notes"].append({"file": str(p), "page": page, "id": a["id"], "verdict": v, "note": note,
                                      "retired": (src or {}).get("retired"), "kind": (src or {}).get("kind"),
@@ -1829,6 +1985,22 @@ def ear_answers(paths, di_paths=(), registry=None):
                     out["stems"].setdefault(it["key"], []).append(v)
                 else:
                     out["di_windows"].setdefault(it["key"], []).append((it["start_s"], it["start_s"] + it["dur_s"], v))
+                continue
+            if page in (RECHECK_PAGE, INTAKE_PAGE):
+                it = (card_pages.get(page) or {}).get(a["id"])
+                if it is None:
+                    raise SystemExit(f"{p}: answer {a['id']} is not an item of {page}")
+                fam = it["family"]
+                allowed = SCOPE_VERDICTS if fam == "scope" else EAR_VERDICTS[fam]
+                if v not in allowed:
+                    raise SystemExit(f"{p}: {a['id']}: verdict {v} is not one of {allowed}")
+                if page == RECHECK_PAGE:
+                    out["recheck"].setdefault(it["key"], {}).setdefault(float(it["window_s"][0]), {}).setdefault(
+                        it["half"], []).append("clean" if v == "clean_amp" else v)
+                elif fam == "scope":
+                    out["intake_scope"].setdefault(it["paths"]["di"], []).append((it["key"], v))
+                else:
+                    out["intake_di"].setdefault(it["key"], []).append((it["start_s"], it["start_s"] + it["dur_s"], v))
                 continue
             it = items.get(a["id"])
             if it is None:
@@ -1857,7 +2029,7 @@ def export_records(paths):
         q = pathlib.Path(p).expanduser()
         d = json.loads(q.read_text())
         answered = {a["id"]: answer_time(a, d) for a in d.get("answers") or [] if answer_time(a, d)} \
-            if d.get("page") == EAR_PAGE else None
+            if d.get("page") in CARD_PAGES else None
         out.append({"path": str(q), "sha256": sha256_file(q), "page": d.get("page"), "part": d.get("part"),
                     "build": d.get("build"), "exported": d.get("exported"), "answered": answered})
     return out
@@ -2202,7 +2374,7 @@ def cmd_lists(args):
     quiet_ids, quiet_keys = quiet_windows(root)
     for iid in quiet_ids & set(registry):
         registry[iid]["retired"] = "a quiet window (the DI hardly plays here): its answers are skipped"
-    ear = ear_answers(args.ear or [], args.ear_di or [], registry)
+    ear = ear_answers(args.ear or [], args.ear_di or [], registry, load_card_pages(args.ear))
     if ear["superseded"]:
         print(f"{ear['superseded']} answers replaced by a later touch of the same card")
     for c in ear["cleared"]:
@@ -2279,6 +2451,37 @@ def cmd_lists(args):
                                             "; ".join(why) or "not yet heard", half=h,
                                             question="The DI, then the target: is the target clean (no bleed, no "
                                                      "other guitar) and an amp recording?"))
+
+    # the T0 window re-check (design "T0 window re-check"): an eligible excluded target whose re-check windows pass
+    # is recovered once the ear verifies 2 of them; it keeps only its passing windows, its crop re-cut to a heard one.
+    # Its old crop is not used, so it joins no list read from the crops (V-real, knob ceiling 2), nor the level prior
+    # (still read on the crops). An ineligible part's answers are informative only.
+    rres = _load(recheck_results_path()) or {}
+    for slug, part in sorted((rres.get("parts") or {}).items()):
+        r = targets.get(slug)
+        if not r or r["verdict"] != "excluded" or "status" not in r:
+            continue
+        heard = ear["recheck"].get(slug, {})
+        ok, why_not = recheck_eligible(r, crop_di.get(slug))
+        if not ok:
+            r["recheck"] = {"eligible": False, "why": why_not, "informative_only": bool(heard),
+                            "heard": {f"{float(k):.1f}": recheck_heard(v) for k, v in sorted(heard.items())}}
+            continue
+        v, why, rec = recheck_verdict(part.get("windows") or [], heard)
+        rec.update(eligible=True, verdict=v, why=why, recovered=v != "excluded",
+                   session_dir=part.get("session_dir"), di_file=part.get("di_file"), target_file=part.get("target_file"))
+        r["recheck"] = rec
+        if v == "excluded":
+            rec["informative_only"] = bool(heard)
+            continue
+        r["verdict"], r["why"] = v, why
+        md = crop_di.get(slug)
+        if v == "verified" and md and md["verdict"] == "pending ear":
+            # the DI plays first on every re-check card, so the measure DI is heard on its re-check windows; the old
+            # crop's flag lapses with the old crop (D4 never excludes alone; the crop is re-cut where D4 passes first)
+            md["recheck"] = {"was": [md["verdict"], md["why"]], "heard_on": sorted(rec["heard"])}
+            md["verdict"], md["why"] = "verified", ["re-check: heard first on every card of its re-check windows; "
+                                                    "the old crop is not used"]
 
     # pool, V_sep and other-guitar DIs: D1-D3 measured; D4 per section never decides alone; the ear decides
     sample = sample_passed(di_rows)
@@ -2400,8 +2603,14 @@ def cmd_lists(args):
     verified_stems = {sd: sorted(f for f, v in r["stems"].items() if v["pass"] and not NON_MUSICAL.search(f))
                       for sd, r in stems.items() if stem_heard.get(sd) is True}
 
-    def uses(v, u):
-        return sorted(s for s, r in targets.items() if r["verdict"] == v and u in (r.get("uses") or []))
+    def uses(v, u):                                # a recovered part's crop is not its verified audio: never here
+        return sorted(s for s, r in targets.items() if r["verdict"] == v and u in (r.get("uses") or [])
+                      and not (r.get("recheck") or {}).get("recovered"))
+
+    # the 2026-10-25 training bands (PR #294): T0's intake checks and part 6's ear; a verified DI is admitted, and
+    # `clean_di.inventory` lifts its INTAKE_PENDING note (`intake_admitted`). Nothing else reads them yet.
+    isum = _load(root / INTAKE_DIR / "summary.json")
+    intake = intake_verdicts(isum["sessions"], ear["intake_di"], ear["intake_scope"]) if isum else {}
 
     seen = set()
     queue = [q for q in queue if not (q["id"] in seen or seen.add(q["id"]))]
@@ -2425,6 +2634,8 @@ def cmd_lists(args):
            "ear_exports": exports, "ear_notes": ear["notes"], "targets": targets, "dis": dis_out, "measure_dis": crop_di, "unusable_sections": sorted(unusable),
            "stems": verified_stems, "stem_floor_db": floor,
            "stem_checks": {sd: {**c, "heard": stem_heard.get(sd)} for sd, c in checks.items()},
+           "recovered_targets": sorted(s for s, r in targets.items() if (r.get("recheck") or {}).get("recovered")),
+           "intake_dis": intake, "intake_admitted": sorted(d for d, r in intake.items() if r["verdict"] == "verified"),
            "v_real": uses("verified", "stage F"), "v_real_pending": uses("pending ear", "stage F"),
            "kc2_verified": uses("verified", "knob ceiling 2"), "kc2_pending": uses("pending ear", "knob ceiling 2"),
            "k_dis": sorted(d for d, v in dis_out.items() if v["verdict"] == "verified" and "V_sep" in v["datasets"]
@@ -2442,6 +2653,10 @@ def cmd_lists(args):
     print(f"V-real: {len(rec['v_real'])} verified, {len(rec['v_real_pending'])} pending the ear; knob ceiling 2: "
           f"{len(rec['kc2_verified'])} verified, {len(rec['kc2_pending'])} pending")
     print(f"K's DIs {len(rec['k_dis'])} ({REMOVED}); training DIs {len(rec['training_dis'])}")
+    print(f"window re-check: recovered {rec['recovered_targets']}; answers informative only (stay excluded): "
+          f"{sorted(s for s, r in targets.items() if (r.get('recheck') or {}).get('informative_only'))}")
+    print(f"intake (2026-10-25 training bands): {len(intake)} DIs; admitted {rec['intake_admitted']}; "
+          + ", ".join(f"{pathlib.PurePosixPath(d).name} {r['verdict']}" for d, r in intake.items()))
     print(f"stems usable: {sum(len(v) for v in verified_stems.values())} in {len(verified_stems)} sessions "
           f"(floor {floor:.0f} dB; a session's stems once its spot-check is heard clean)")
     sh = list(stem_heard.values())

@@ -474,6 +474,16 @@ DIs, unconfirmed on 2026-10-23, are now confirmed. The full list is in
   amp tracks have no coherent top end (A2 fails), and D4 flags both DIs, which suggests heavy drive
   and a scope worry. The user's ear page (`listening/trusted-data-ear/part6-new-bands/`) holds the
   4 D2-passing DIs, 2 windows each, with a tone-class card per window: 16 cards, pending.
+- *The ear (2026-10-26; export `ear-exports/part6-new-bands-2026-10-26.json`, read by `verify_tracks lists`):*
+  **1 new training DI from 5 bands.**
+  - Empty Signifier 20_ElecGtr2DI: heard clean on both windows, and admitted (`verified.json`'s `intake_admitted`; the
+    inventory lifts its `INTAKE_PENDING` note). Its amp track (Mic3) was heard high gain, so it adds a high-gain DI,
+    not a clean or crunch one.
+  - Mòpia 19_ElecGtr2DI and 21_ElecGtr3DI: heard processed, excluded. Both amp tracks were heard high gain.
+  - Goran Levi 12_ElecGtrDI: heard processed, excluded. Its amp track was heard clean, with drum and bass leaks, and is
+    a processed copy anyway.
+  - Under the user's scope refinement of 2026-10-26 ([ROADMAP](../ROADMAP.md#scope-user-decision-2026-10-10)), high gain
+    no longer drops a training source. "Scope by ear" screens out only extreme cases.
 
 ## Decisions and open questions
 
@@ -510,7 +520,10 @@ DIs, unconfirmed on 2026-10-23, are now confirmed. The full list is in
    manual check on the site is the user's call.
 4. **The Cambridge leads behind the Cloudflare challenge:** listed on 2026-10-25 (above). The user
    approved the download of the 5 new in-scope sessions (2026-10-25); all five are downloaded and,
-   by the user's decision the same day, are training bands (above).
+   by the user's decision the same day, are training bands (above). *Heard 2026-10-26: 1 DI admitted (Empty Signifier
+   ElecGtr2DI). Since the scope refinement of that day, the scan's 13 metal sessions outside the held-out sets
+   (Arcadian Alone, Daimon B ×2, Dark Illusion ×2, Inhumanity Vortex, Peppermark ×3, Serapis ×2, V.M.GY ×2), and DGX
+   ×2, are possible training candidates. Downloading any of them is the user's decision.*
 5. **Disk.** About 113 GB was free on 2026-10-23. Ranks 1 and 3 are downloaded (0.94 + 0.46 GB);
    rank 2 needs 2.4 GB, and the features about 3 GB.
 

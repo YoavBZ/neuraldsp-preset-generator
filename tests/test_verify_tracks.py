@@ -768,3 +768,147 @@ def test_a_click_is_never_the_checked_stem():
                     "sections": []}}
     out = V.pick_stem_checks(stems, {}, {}, activity=lambda *a, **k: 1.0)
     assert all((r or {}).get("stem") != "BAND CLICK.wav" for r in out.values())
+
+
+# --- parts 5 and 6 (2026-10-26): the window re-check's ear and the training bands' intake ------------------------
+
+def _tgt(fails=("A5",), play=(0.1, 1.0)):
+    st = {m: ("fail" if m in fails else "pass") for m in ("A1", "A2", "A3", "A4", "A5", "A6")}
+    return {"verdict": "excluded", "status": st, "a5": {"A": {"di_play_share": play[0]}, "B": {"di_play_share": play[1]}}}
+
+
+def test_recheck_eligibility_follows_the_amended_rule():
+    ok_md = {"verdict": "verified", "why": []}
+    assert V.recheck_eligible(_tgt(), ok_md) == (True, None)                              # It Was My Fault ElecGtr1
+    assert V.recheck_eligible(_tgt(("A5", "A6"), (0.1, 0.0)), {"verdict": "pending ear", "why": ["D4"]})[0]  # Signs E6
+    ok, why = V.recheck_eligible(_tgt(("A5", "A6"), (0.0, 0.46)), {"verdict": "excluded", "why": ["D2 fails"]})
+    assert not ok and "D2 fails" in why                                                   # Drag Me Down ElecGtr3
+    ok, why = V.recheck_eligible(_tgt(("A5",), (1.0, 1.0)), ok_md)
+    assert not ok and "plays" in why                                                      # Today's The Day ElecGtr07
+    ok, why = V.recheck_eligible(_tgt(("A1", "A5"), (0.0, 1.0)), ok_md)
+    assert not ok and "A1" in why                                                         # a track property
+    assert not V.recheck_eligible(_tgt((), (0.0, 1.0)), ok_md)[0]
+    assert not V.recheck_eligible(_tgt(), None)[0]
+
+
+def _win(t, **st):
+    base = {m: "pass" for m in V.RECHECK_MEASURES} | {"D4(ear only)": "pass"}
+    return {"start_s": t, "end_s": t + 10.0, "status": base | st}
+
+
+def test_recheck_verdict_needs_three_clean_windows_and_two_heard():
+    wins = [_win(63.5), _win(82.0, **{"D4(ear only)": "fail"}), _win(123.5, A2="ear")]
+    clean = {"A": ["clean"], "B": ["clean"]}
+    v, why, rec = V.recheck_verdict(wins, {82.0: clean, 63.5: clean})
+    assert v == "verified" and rec["crop_window_s"] == [63.5, 73.5]           # D4 passing first
+    assert rec["windows"] == [[63.5, 73.5], [82.0, 92.0], [123.5, 133.5]] and rec["d4_flags"] == ["82.0"]
+    v, _, rec = V.recheck_verdict(wins, {82.0: clean, 123.5: clean})
+    assert v == "verified" and rec["crop_window_s"] == [123.5, 133.5]         # the heard D4 pass, not the earlier flag
+    assert V.recheck_verdict(wins, {63.5: clean})[0] == "pending ear"          # one window heard
+    assert V.recheck_verdict(wins, {63.5: clean, 82.0: {"A": ["clean"], "B": ["unsure"]}})[0] == "pending ear"
+    assert V.recheck_verdict(wins, {63.5: clean, 82.0: {"A": ["clean"], "B": ["bleed"]}})[0] == "excluded"
+    v, why, _ = V.recheck_verdict(wins[:2], {63.5: clean, 82.0: clean})
+    assert v == "excluded" and "2 windows" in why[0]                           # under 3 windows
+    v, why, rec = V.recheck_verdict(wins + [_win(171.0, A1="fail")], {63.5: clean, 82.0: clean})
+    assert v == "excluded" and "171.0 s A1" in why[0] and rec["failing"] == {"171.0": ["A1"]}   # It Was My Fault E4
+    assert V.recheck_verdict(wins + [_win(171.0, D2="fail")], {63.5: clean, 82.0: clean})[0] == "excluded"
+    with pytest.raises(SystemExit):
+        V.recheck_verdict(wins, {99.0: clean})                                 # a window the re-check never measured
+
+
+def _card_pages(tmp_path, monkeypatch):
+    monkeypatch.setattr(V, "HOME", tmp_path / "home")
+    di = "/r/Mopia_Full/19_ElecGtr2DI.wav"
+    es = "/r/Empty_Full/20_ElecGtr2DI.wav"
+    rc = [{"id": f"rc-{w}-{h}", "kind": "target", "family": "target", "key": "cambridge-Signs-ElecGtr6",
+           "window_s": [w, w + 10.0], "half": h, "start_s": w + (0.5 if h == "A" else 4.0), "dur_s": 6.0}
+          for w in (63.5, 82.0) for h in "AB"]
+    nb = [{"id": "nb-di-1", "kind": "di", "family": "di", "key": di, "start_s": 45.5, "dur_s": 10.0,
+           "paths": {"di": di}},
+          {"id": "nb-es-1", "kind": "di", "family": "di", "key": es, "start_s": 18.5, "dur_s": 10.0, "paths": {"di": es}},
+          {"id": "nb-es-2", "kind": "di", "family": "di", "key": es, "start_s": 50.5, "dur_s": 10.0, "paths": {"di": es}},
+          {"id": "nb-sc-1", "kind": "scope", "family": "scope", "key": "/r/Empty_Full/19_ElecGtr2Mic3.wav",
+           "start_s": 18.5, "dur_s": 10.0, "paths": {"di": es, "amp": "/r/Empty_Full/19_ElecGtr2Mic3.wav"}}]
+    for page, items in ((V.RECHECK_PAGE, rc), (V.INTAKE_PAGE, nb)):
+        ip = V.page_items_path(page)
+        ip.parent.mkdir(parents=True)
+        ip.write_text(json.dumps({"page": page, "build": "b5" if page == V.RECHECK_PAGE else "b6", "items": items}))
+
+    def export(name, page, build, answers, exported="2026-10-26T06:00:00Z"):
+        p = tmp_path / name
+        p.write_text(json.dumps({"page": page, "part": 5, "build": build, "exported": exported, "answers": [
+            {"id": i, "verdict": v, "note": n, "t": exported} for i, v, n in answers]}))
+        return str(p)
+    return export, di, es
+
+
+def test_ear_answers_decode_parts_5_and_6(tmp_path, monkeypatch):
+    export, di, es = _card_pages(tmp_path, monkeypatch)
+    p5 = export("p5.json", V.RECHECK_PAGE, "b5", [(f"rc-{w}-{h}", "clean_amp", "") for w in (63.5, 82.0) for h in "AB"])
+    p6 = export("p6.json", V.INTAKE_PAGE, "b6", [("nb-di-1", "processed", ""), ("nb-es-1", "clean", ""),
+                                                 ("nb-es-2", "clean", ""), ("nb-sc-1", "high_gain", "loud")])
+    pages = V.load_card_pages([p5, p6])
+    e = V.ear_answers([p5, p6], [], {}, pages)
+    assert e["recheck"] == {"cambridge-Signs-ElecGtr6": {63.5: {"A": ["clean"], "B": ["clean"]},
+                                                         82.0: {"A": ["clean"], "B": ["clean"]}}}
+    assert e["target_clean"] == {} and e["target_amp"] == {}          # never read as the crop's answers
+    assert e["intake_di"] == {di: [(45.5, 55.5, "processed")], es: [(18.5, 28.5, "clean"), (50.5, 60.5, "clean")]}
+    assert e["intake_scope"] == {es: [("/r/Empty_Full/19_ElecGtr2Mic3.wav", "high_gain")]}
+    assert [n["note"] for n in e["notes"]] == ["loud"]
+    later = export("p6b.json", V.INTAKE_PAGE, "b6", [("nb-es-2", "hum", "")], exported="2026-10-26T07:00:00Z")
+    e = V.ear_answers([p6, later], [], {}, V.load_card_pages([p6, later]))   # the latest touch of a card stands
+    assert e["intake_di"][es] == [(18.5, 28.5, "clean"), (50.5, 60.5, "hum")] and e["superseded"] == 1
+    recs = V.export_records([p5, p6])
+    assert set(recs[0]["answered"]) == {f"rc-{w}-{h}" for w in (63.5, 82.0) for h in "AB"}
+    with pytest.raises(SystemExit, match="build"):
+        V.load_card_pages([export("old.json", V.RECHECK_PAGE, "b0", [])])
+    with pytest.raises(SystemExit, match="not one of"):
+        V.ear_answers([export("bad.json", V.RECHECK_PAGE, "b5", [("rc-63.5-A", "clean", "")])], [], {}, pages)
+    with pytest.raises(SystemExit, match="not an item"):
+        V.ear_answers([export("unk.json", V.INTAKE_PAGE, "b6", [("nb-x", "clean", "")])], [], {}, pages)
+
+
+def test_intake_verdicts_measured_fails_first_then_the_ear():
+    summary = {"Empty_Full": {"20_ElecGtr2DI.wav": {"band": "E", "status": {"D1": "ear"},
+                                                    "verdict": ["pending ear", ["D1 to the ear"]]},
+                              "16_ElecGtr1DI.wav": {"band": "E", "status": {"D2": "fail"},
+                                                    "verdict": ["excluded", ["D2 fails"]]}},
+               "Goran_Full": {"12_ElecGtrDI.wav": {"band": "G", "status": {"D1": "fail"},
+                                                   "verdict": ["excluded", ["D1 fails"]]}},
+               "Mopia_Full": {"19_ElecGtr2DI.wav": {"band": "M", "status": {"D4": "fail"},
+                                                    "verdict": ["pending ear", ["D1 to the ear", "D4 flags it"]]}}}
+    es, amp = "/r/Empty_Full/20_ElecGtr2DI.wav", "/r/Empty_Full/19_ElecGtr2Mic3.wav"
+    wins = {es: [(18.5, 28.5, "clean"), (50.5, 60.5, "clean")], "/r/Goran_Full/12_ElecGtrDI.wav": [(1, 11, "clean")],
+            "/r/Mopia_Full/19_ElecGtr2DI.wav": [(45.5, 55.5, "processed"), (71.5, 81.5, "processed")]}
+    out = V.intake_verdicts(summary, wins, {es: [(amp, "high_gain"), (amp, "high_gain")]})
+    e = out["cambridge-new/Empty_Full/20_ElecGtr2DI.wav"]
+    assert e["verdict"] == "verified" and e["tone_class"] == "high_gain"         # high gain no longer drops it
+    assert out["cambridge-new/Empty_Full/16_ElecGtr1DI.wav"]["verdict"] == "excluded"    # unheard, measured fail
+    assert out["cambridge-new/Goran_Full/12_ElecGtrDI.wav"]["why"] == ["D1 fails"]     # a measured fail beats 'clean'
+    m = out["cambridge-new/Mopia_Full/19_ElecGtr2DI.wav"]
+    assert m["verdict"] == "excluded" and m["why"] == ["heard processed"]
+    assert V.intake_verdicts(summary, wins, {})["cambridge-new/Empty_Full/20_ElecGtr2DI.wav"]["verdict"] == "pending ear"
+    assert V.intake_verdicts(summary, wins, {es: [(amp, "not_fit")]})[
+        "cambridge-new/Empty_Full/20_ElecGtr2DI.wav"]["verdict"] == "excluded"
+    one = {es: wins[es][:1]}
+    assert V.intake_verdicts(summary, one, {es: [(amp, "clean")]})[
+        "cambridge-new/Empty_Full/20_ElecGtr2DI.wav"]["verdict"] == "pending ear"   # 2 windows heard
+
+
+def test_lists_admits_a_heard_clean_intake_di(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")                           # lists -> prior_summary
+    env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 10.0)])])
+    export, di, es = _card_pages(tmp_path, monkeypatch)
+    (env.root / V.INTAKE_DIR).mkdir()
+    (env.root / V.INTAKE_DIR / "summary.json").write_text(json.dumps({"sessions": {"Empty_Full": {
+        "20_ElecGtr2DI.wav": {"band": "E", "status": {"D1": "ear"}, "verdict": ["pending ear", ["D1 to the ear"]]}},
+        "Mopia_Full": {"19_ElecGtr2DI.wav": {"band": "M", "status": {}, "verdict": ["pending ear", ["D4 flags it"]]}}}}))
+    rec, _ = env.run()
+    assert rec["intake_admitted"] == [] and {r["verdict"] for r in rec["intake_dis"].values()} == {"pending ear"}
+    p6 = export("p6.json", V.INTAKE_PAGE, "b6", [("nb-di-1", "processed", ""), ("nb-es-1", "clean", ""),
+                                                 ("nb-es-2", "clean", ""), ("nb-sc-1", "high_gain", "")])
+    rec, _ = env.run([p6])
+    assert rec["intake_admitted"] == ["cambridge-new/Empty_Full/20_ElecGtr2DI.wav"]
+    assert rec["intake_dis"]["cambridge-new/Mopia_Full/19_ElecGtr2DI.wav"]["verdict"] == "excluded"
+    assert "cambridge-new/Empty_Full/20_ElecGtr2DI.wav" not in rec["training_dis"]   # T0's D-build pool is unchanged
+    assert rec["ear_exports"][0]["answered"]

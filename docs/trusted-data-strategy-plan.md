@@ -350,3 +350,15 @@ Facts that changed after the approval, and what each means for the plan. None is
   `report` fix (T1's 812-example read labelled superseded). It all runs after T2's chain and adds to its records.
   Diagnostic (b), read at zero renders: the left-out candidates are denser (mean 3.82 playing guitars against 2.90
   kept), but 2,308 of the 3,260 are one band (Rebuild The Evil), so SES-ALL − SES also carries two more bands.
+- **2026-10-26, scope refined for training (user decision):** high-gain songs can definitely be used for training, as
+  long as too-heavy songs don't interfere with the model. The user doesn't play heavy metal, so testing and perfecting
+  stay clean/crunch-focused. For this plan:
+  - a training source is no longer dropped for being high gain; "scope by ear" screens out only extreme cases;
+  - V-real, K and every readout stay clean/crunch-weighted and are also read per class, to catch interference;
+  - the 2026-10-25 Cambridge scan's metal sessions outside the held-out sets (13 sessions, 7 bands; DGX ×2 too) become
+    possible training candidates. They need a download decision by the user, then the held-out checks, T0's checks and
+    the ear ([ROADMAP](ROADMAP.md#scope-user-decision-2026-10-10)).
+- **2026-10-26, parts 5 and 6 heard** ([design](trusted-data-t0-design.md#parts-5-and-6-heard-2026-10-26)): the
+  window re-check's 3 targets are recovered on their re-check windows, so targets are 20 verified. None joins V-real
+  or knob ceiling 2. The new bands give **1 new training DI from 5 bands** (Empty Signifier 20_ElecGtr2DI, a high-gain
+  part); Mòpia's two DIs and Goran Levi's were heard processed. The clean/crunch shortage is unchanged.
