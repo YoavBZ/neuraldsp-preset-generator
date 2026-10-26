@@ -1758,7 +1758,13 @@ INTAKE_PAGE = "trusted-data-ear-new-bands"
 # part 8: DI cards for a recovered part's measure DI on its re-check windows (part 5's cards judged the target only, so
 # they never judged the DI: the review of PR #296); answers -> "recheck_di"
 RECHECK_DI_PAGE = "trusted-data-ear-signs-di"
-CARD_PAGES = (EAR_PAGE, RECHECK_PAGE, INTAKE_PAGE, RECHECK_DI_PAGE)   # per-card times: the latest touch stands
+# part 7a/7b: the 2026-10-26 metal and hard-rock training sessions (PR #297): one DI card per D2/D3-passing DI (its
+# busiest checked window; the measures ran on up to 5) and one tone card per session (its main amp track). Answers ->
+# "metal_di" {DI path: [(start_s, end_s, verdict)]} and "metal_scope" {session: [(amp path, class, the card's DI path)]}
+METAL_PAGES = {"trusted-data-ear-metal-a": "part7a-metal", "trusted-data-ear-metal-b": "part7b-metal"}
+METAL_SCOPE_VERDICTS = ("clean", "crunch", "high_gain", "too_heavy")
+METAL_DIR = "intake-2026-10-26"        # under the trusted-data root: T0's checks on the metal sessions (PR #297)
+CARD_PAGES = (EAR_PAGE, RECHECK_PAGE, INTAKE_PAGE, RECHECK_DI_PAGE, *METAL_PAGES)   # per-card times: latest touch stands
 SCOPE_VERDICTS = ("clean", "crunch", "high_gain", "not_fit", "unsure")   # part 6's tone class of an amp track alone
 RECHECK_MIN_WINDOWS = 3                # the re-check's pass: at least 3 windows, none with a measured fail
 RECHECK_HEARD = 2                      # ... then the user hears 2 of them (DI, then target; both halves)
@@ -1769,7 +1775,7 @@ INTAKE_ID = "cambridge-new/{session}/{di}"            # `clean_di.inventory`'s i
 
 def page_items_path(page):
     return HOME / "listening/trusted-data-ear" / {RECHECK_PAGE: "part5-recheck", INTAKE_PAGE: "part6-new-bands",
-                                                  RECHECK_DI_PAGE: "part8-signs-di"}[page] / "items.json"
+                                                  RECHECK_DI_PAGE: "part8-signs-di", **METAL_PAGES}[page] / "items.json"
 
 
 def recheck_results_path():
@@ -1783,7 +1789,7 @@ def load_card_pages(paths):
     for p in paths or ():
         d = json.loads(pathlib.Path(p).expanduser().read_text())
         page = d.get("page")
-        if page not in (RECHECK_PAGE, INTAKE_PAGE, RECHECK_DI_PAGE):
+        if page not in (RECHECK_PAGE, INTAKE_PAGE, RECHECK_DI_PAGE, *METAL_PAGES):
             continue
         ip = page_items_path(page)
         if not ip.exists():
@@ -1935,6 +1941,60 @@ def intake_verdicts(summary, di_windows, scope):
     return out
 
 
+def metal_verdicts(summary, di_windows, session_tone):
+    """The 2026-10-26 metal and hard-rock training sessions' DIs (PR #297). summary: their T0 checks (as
+    `intake_verdicts`); di_windows: {DI path: [(start_s, end_s, verdict)]} and session_tone: {session: [(amp path,
+    class, the tone card's DI path)]}, both from parts 7a/7b. Training-only DIs, so one heard window suffices (the
+    measures ran on up to 5). A measured fail excludes whatever the ear says; a window heard other than clean excludes.
+    The session's tone card screens heaviness (the user, 2026-10-26: high gain may train, too heavy may not):
+    'too_heavy' excludes every DI of the session, and until the tone is heard the session's DIs wait. A session with no
+    amp track at all (DGX, DI only; the coordinator's decision of 2026-10-26, which the user may overrule) has nothing to
+    screen: its DIs join once heard clean and count as high gain under T3's cap (`no_tone_counts_as`).
+    The tone card plays one amp track, so it classes that card's own DI only (`tone_class`); every DI of the session
+    carries the session's class as `session_tone`, and a DI with no `tone_class` falls to T3's rule (unclassed metal
+    counts as high gain). No card played a DI with its amp track, so the pairing is never heard: a heard tone does not
+    clear 'D1 to the ear' for the DI's own amp track, and every verified DI with an amp track carries `pair_unheard`,
+    which T3's rule 1 must honour before it uses that amp track. -> {inventory id: record}."""
+    def tail(k):
+        return "/".join(pathlib.PurePosixPath(k).parts[-2:])
+
+    heard_by = {tail(k): v for k, v in di_windows.items()}
+    out = {}
+    for session, dis in sorted(summary.items()):
+        cards = session_tone.get(session, [])
+        classes = [c for _, c, _ in cards]
+        card_dis = {tail(d) for _, _, d in cards}
+        no_amp = not any(r.get("pairs") for r in dis.values())
+        for di, r in sorted(dis.items()):
+            wins = heard_by.get(f"{session}/{di}", [])
+            heard = merge_ear([v for _, _, v in wins], "clean")
+            measured, mwhy = r["verdict"]
+            if measured == "excluded":
+                v, why = "excluded", list(mwhy)
+            elif heard is False:
+                v, why = "excluded", ["heard " + ", ".join(sorted({x for _, _, x in wins if x not in ("clean", "unsure")}))]
+            elif "too_heavy" in classes:
+                v, why = "excluded", ["its session's tone heard as too heavy"]
+            elif heard is not True:
+                v, why = "pending ear", ["not yet heard clean"]
+            elif not classes and not no_amp:
+                v, why = "pending ear", ["its session's tone not yet heard (the too-heavy screen)"]
+            else:
+                v, why = "verified", []
+            cls = sorted(set(classes))
+            session_cls = cls[0] if len(cls) == 1 else (cls or None)
+            own = sorted({c for _, c, d in cards if tail(d) == f"{session}/{di}"})
+            out[INTAKE_ID.format(session=session, di=di)] = {
+                "verdict": v, "why": why, "band": r.get("band"), "status": r.get("status"), "measured": [measured, mwhy],
+                "heard": [list(w) for w in wins], "session_tone": session_cls,
+                "tone_class": (own[0] if len(own) == 1 else own) if f"{session}/{di}" in card_dis and own else None,
+                "no_tone_counts_as": "high_gain" if no_amp else None,
+                "tone_tracks_heard": sorted({pathlib.PurePosixPath(a).name for a, _, _ in cards}),
+                "pair_unheard": ("the DI-and-amp pairing itself was never heard: hear it before anything uses its amp "
+                                 "track (T3's rule 1)") if r.get("pairs") and v == "verified" else None}
+    return out
+
+
 def ear_answers(paths, di_paths=(), registry=None, card_pages=None):
     """The user's ear. -> {"target_clean": {(slug, half): [verdicts]}, "target_amp": {slug: [verdicts]},
     "crop_di": {slug: {half: [verdicts]}}, "di_windows": {key: [(start_s, end_s, verdict)]}, "di_pairs": {di: [verdicts]}}.
@@ -1952,7 +2012,8 @@ def ear_answers(paths, di_paths=(), registry=None, card_pages=None):
     holds no answer, so an export from another browser or a rebuilt page never erases one. Notes go to `notes`, with
     or without a verdict, for the ML session to read before T1."""
     out = {"target_clean": {}, "target_amp": {}, "crop_di": {}, "di_windows": {}, "di_pairs": {}, "stems": {},
-           "recheck": {}, "recheck_di": {}, "intake_di": {}, "intake_scope": {}, "notes": [], "superseded": 0}
+           "recheck": {}, "recheck_di": {}, "intake_di": {}, "intake_scope": {}, "metal_di": {}, "metal_scope": {},
+           "notes": [], "superseded": 0}
     registry = registry or {}
     card_pages = card_pages or {}
     pages = {"data-review-1": HOME / "listening/data-review-1/items.json",
@@ -2022,15 +2083,21 @@ def ear_answers(paths, di_paths=(), registry=None, card_pages=None):
                 else:
                     out["di_windows"].setdefault(it["key"], []).append((it["start_s"], it["start_s"] + it["dur_s"], v))
                 continue
-            if page in (RECHECK_PAGE, INTAKE_PAGE, RECHECK_DI_PAGE):
+            if page in (RECHECK_PAGE, INTAKE_PAGE, RECHECK_DI_PAGE, *METAL_PAGES):
                 it = (card_pages.get(page) or {}).get(a["id"])
                 if it is None:
                     raise SystemExit(f"{p}: answer {a['id']} is not an item of {page}")
                 fam = it["family"]
-                allowed = SCOPE_VERDICTS if fam == "scope" else EAR_VERDICTS[fam]
+                allowed = (METAL_SCOPE_VERDICTS if page in METAL_PAGES else SCOPE_VERDICTS) if fam == "scope" \
+                    else EAR_VERDICTS[fam]
                 if v not in allowed:
                     raise SystemExit(f"{p}: {a['id']}: verdict {v} is not one of {allowed}")
-                if page == RECHECK_DI_PAGE:
+                if page in METAL_PAGES:
+                    if fam == "scope":
+                        out["metal_scope"].setdefault(it["session"], []).append((it["key"], v, it["paths"]["di"]))
+                    else:
+                        out["metal_di"].setdefault(it["key"], []).append((it["start_s"], it["start_s"] + it["dur_s"], v))
+                elif page == RECHECK_DI_PAGE:
                     out["recheck_di"].setdefault(it["key"], {}).setdefault(float(it["window_s"][0]), []).append(v)
                 elif page == RECHECK_PAGE:
                     out["recheck"].setdefault(it["key"], {}).setdefault(float(it["window_s"][0]), {}).setdefault(
@@ -2645,6 +2712,8 @@ def cmd_lists(args):
     # `clean_di.inventory` lifts its INTAKE_PENDING note (`intake_admitted`). Nothing else reads them yet.
     isum = _load(root / INTAKE_DIR / "summary.json")
     intake = intake_verdicts(isum["sessions"], ear["intake_di"], ear["intake_scope"]) if isum else {}
+    msum = _load(root / METAL_DIR / "summary.json")              # the 2026-10-26 metal sessions (PR #297): parts 7a/7b
+    intake.update(metal_verdicts(msum["sessions"], ear["metal_di"], ear["metal_scope"]) if msum else {})
 
     seen = set()
     queue = [q for q in queue if not (q["id"] in seen or seen.add(q["id"]))]
@@ -2690,7 +2759,7 @@ def cmd_lists(args):
     print(f"window re-check: recovered {[(s, targets[s]['verdict']) for s in rec['recovered_targets']]}; "
           f"answers informative only (stay excluded): "
           f"{sorted(s for s, r in targets.items() if (r.get('recheck') or {}).get('informative_only'))}")
-    print(f"intake (2026-10-25 training bands): {len(intake)} DIs; admitted {rec['intake_admitted']}; "
+    print(f"intake (2026-10-25 training bands, 2026-10-26 metal): {len(intake)} DIs; admitted {rec['intake_admitted']}; "
           + ", ".join(f"{pathlib.PurePosixPath(d).name} {r['verdict']}" for d, r in intake.items()))
     print(f"stems usable: {sum(len(v) for v in verified_stems.values())} in {len(verified_stems)} sessions "
           f"(floor {floor:.0f} dB; a session's stems once its spot-check is heard clean)")

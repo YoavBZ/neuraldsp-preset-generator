@@ -599,7 +599,24 @@ TRAINING_DOWNLOADS = {
     "GoranLevi_QueSeYo_Full": ("Goran Levi", "library", "2026-10-25 training band (Afro-Cuban jazz)"),
     "Mopia_IfYouThenI_Full": ("Mopia", "library", "2026-10-25 training band (jazz-metal big band: scope by ear)"),
     "Soren_ALittleLate_Full": ("Soren", "library", "2026-10-25 training band (disco-pop; DI only)"),
+    # Metal and hard rock, downloaded on 2026-10-26 as TRAINING sessions (the user, 2026-10-26: high gain may train,
+    # parts heard as too heavy are left out; ledger `cambridge-new-training-bands-2026-10-26`). Not V.M.GY (held out).
+    "ArcadianAlone_TheDeathlessOne_Full": ("Arcadian Alone", "library", "2026-10-26 training band (symphonic metal)"),
+    "DaimonB_BrokenAgain_Full": ("Daimon B", "library", "2026-10-26 training band (nu metal)"),
+    "DaimonB_CryingRivers_Full": ("Daimon B", "library", "2026-10-26 training band (nu metal; no electric DI)"),
+    "DarkIllusion_DarkIllusion_Full": ("Dark Illusion", "library", "2026-10-26 training band (metal)"),
+    "DarkIllusion_EvilBones_Full": ("Dark Illusion", "library", "2026-10-26 training band (metal)"),
+    "InhumanityVortex_Cybermod_Full": ("Inhumanity Vortex", "library", "2026-10-26 training band (death metal)"),
+    "Peppermark_LuaNegra_Full": ("Peppermark", "library", "2026-10-26 training band (melodic metal)"),
+    "Peppermark_AnotherFeeling_Full": ("Peppermark", "library", "2026-10-26 training band (melodic metal)"),
+    "Peppermark_Interlude_Full": ("Peppermark", "library", "2026-10-26 training band (melodic metal)"),
+    "Serapis_TheDarkAbyss_Full": ("Serapis", "library", "2026-10-26 training band (progressive death metal)"),
+    "Serapis_MorbusAnimi_Full": ("Serapis", "library", "2026-10-26 training band (progressive death metal)"),
+    "DGX_RedemptivePain_Full": ("DGX", "library", "2026-10-26 training band (hard rock/metal; DI only)"),
+    "DGX_RestInHell_Full": ("DGX", "library", "2026-10-26 training band (hard rock/metal; DI only)"),
 }
+# Not an electric guitar DI although the name reads as one: acoustic-guitar DIs and MIDI renders (2026-10-26)
+INTAKE_NOT_DI = re.compile(r"(?i)acoustic|midi")
 RESERVED_NEW = {"BlueManic_Acomatay_Full": "reserved test band (ledger cambridge-new-test-band-bluemanic)"}
 RESERVED_BANDS = {"Blue Manic"}          # refused even if its session is ever added to TRAINING_DOWNLOADS
 # Every TRAINING_DOWNLOADS row carries this note, which `training_ok` rejects: a DI trains only once a verified list
@@ -836,7 +853,7 @@ def inventory():
     for key, (band, split, why) in TRAINING_DOWNLOADS.items():
         inner = CAMBRIDGE_NEW / key
         files = sorted(p.name for p in inner.glob("*.wav"))
-        for di in [f for f in files if is_guitar_di(f)]:
+        for di in [f for f in files if is_guitar_di(f) and not INTAKE_NOT_DI.search(f)]:
             part = re.search(r"(?i)elecgtr\d*", di).group(0)
             rid = f"cambridge-new/{key}/{di}"
             add(id=rid, path=str(inner / di), source="cambridge", set="cambridge-new",

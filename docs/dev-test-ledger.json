@@ -2854,6 +2854,38 @@
    "outcome": "pending: waits for the checks and the user's listening"
   },
   {
+   "test_id": "cambridge-new-training-bands-2026-10-26",
+   "plan": "docs/research/di-source-inventory-2026-10.md",
+   "design": "docs/trusted-data-t0-design.md",
+   "entered": "2026-10-26, after the download and before any audio was extracted, listened to, measured, rendered or separated. Only the 13 ZIPs' file lists and Readmes were read and their sha256 checked against sha256-2026-10-26.txt. The user decided on 2026-10-26 that these metal and hard-rock sessions are for training: 'high-gain songs can definitely be used for training, as long as too heavy songs don't interfere with the model'. V.M.GY's sessions were deliberately not downloaded (V.M.GY is a set-3 held-out band)",
+   "kind": "intake: 13 NEW TRAINING sessions in 7 bands (not test bands)",
+   "parts": {
+    "candidates": [
+     "Arcadian Alone - The Deathless One (ArcadianAlone_TheDeathlessOne_Full): 11_ElecGtr1DI.wav -> 10_ElecGtr1.wav; 13_ElecGtr2DI.wav -> 12_ElecGtr2.wav; 15_ElecGtr3DI.wav -> 14_ElecGtr3.wav; 17_ElecGtr3DTDI.wav -> 16_ElecGtr3DT.wav",
+     "Daimon B - Broken Again (DaimonB_BrokenAgain_Full): ElecGtr1-3 DI and DTDI (19, 21, 23, 25, 27, 29) -> ElecGtr1-3 and ElecGtr1-3DT (18, 20, 22, 24, 26, 28)",
+     "Daimon B - Crying Rivers (DaimonB_CryingRivers_Full): no electric DI (ElecGtr1/3/4MIDI are named as MIDI renders, not DIs)",
+     "Dark Illusion - Dark Illusion (DarkIllusion_DarkIllusion_Full): ElecGtr1-6DI (11-21, odd) -> ElecGtr1-6 (10-20, even); also 16_LeadguitarsAMP-glued.wav",
+     "Dark Illusion - Evil Bones (DarkIllusion_EvilBones_Full): ElecGtr1-4DI (14-20, even) -> ElecGtr1-4 (13-19, odd)",
+     "Inhumanity Vortex - Cybermod (InhumanityVortex_Cybermod_Full): ElecGtr1-2 DI and DTDI (18, 20, 22, 24) -> ElecGtr1-2 and DT (17, 19, 21, 23); 26_ElecGtr3DI.wav -> 25_ElecGtr3.wav",
+     "Peppermark - Lua Negra (Peppermark_LuaNegra_Full): ElecGtr1DI, 1DTDI -> ElecGtr1, 1DT; ElecGtr2DI1, 2DI2 -> 24_ElecGtr2.wav; ElecGtr3-8DI -> ElecGtr3-8",
+     "Peppermark - Another Feeling (Peppermark_AnotherFeeling_Full): ElecGtr1-3, 6, 8 DI and DTDI -> their amp and DT tracks; ElecGtr5, 7, 9 DI -> ElecGtr5, 7, 9; 34_ElecGtrDI.wav (no part number; 33_ElecGtr4.wav by track order)",
+     "Peppermark - Interlude (Peppermark_Interlude_Full): ElecGtr01-10 DI (02, 03, 04, 07 also DTDI) -> ElecGtr01-10 (and DT)",
+     "Serapis - The Dark Abyss (Serapis_TheDarkAbyss_Full): ElecGtr1-3 DI and DTDI -> ElecGtr1-3 and DT; ElecGtr4-6DI -> ElecGtr4-6",
+     "Serapis - Morbus Animi (Serapis_MorbusAnimi_Full): ElecGtr1-2 DI and DTDI -> ElecGtr1-2 and DT; ElecGtr3-4DI -> ElecGtr3-4",
+     "DGX - Redemptive Pain (DGX_RedemptivePain_Full): ElecGtr1DI, 1DIDT, 2-6DI (DI only, no amp track; the acoustic-guitar DIs are not candidates)",
+     "DGX - Rest In Hell (DGX_RestInHell_Full): ElecGtr1-4DI (DI only, no amp track)"
+    ],
+    "run": "the DIs that pass T0's DI checks (D2, D3; D1 and A1-A6 where an amp track exists, informative for training) and the user's ear, with one ear window per DI and a tone-class call by ear per session on its main amp track (clean, crunch, high gain, too heavy): high-gain parts may train; parts heard as too heavy (extreme) are left out. Decision (the coordinator, 2026-10-26; the user may overrule): DGX's DI-only DIs, with no amp track to screen, join once heard clean and count as high gain under T3's cap. Not known when this entry was made"
+   },
+   "bands": "7 new bands (Arcadian Alone, Daimon B, Dark Illusion, Inhumanity Vortex, Peppermark, Serapis, DGX; Cambridge-MT), never used by this project; none is in a held-out list (clean_di.refuse_held_out on every band; no set 3-6 session folder carries their names; docs/validation-set3.md names Arcadian Alone, Daimon B, Inhumanity Vortex, Peppermark and Serapis only in its 'not obtained' list)",
+   "gate": "none: an intake, not a test. Training permission is recorded in learn/clean_di.py TRAINING_DOWNLOADS (split 'library'), which the DI inventory and assert_training_ok read; every row also carries clean_di.INTAKE_PENDING (training_ok False) until a verified list admits it. clean_di.INTAKE_NOT_DI keeps acoustic-guitar DIs and MIDI renders out of the DI rows",
+   "audio_only": "~/ndsp-presets/references/datasets-cambridge-new/<session>_Full/ (guitar tracks and Readmes only, for the disk floor; the rest stays in the ZIPs in _zips/; manifest-2026-10-26.json beside the others)",
+   "training": "training only: never a test, V-real, K, known-answer or held-out set, nor a screen that chooses a test. Tests stay clean to crunch (the user does not play metal). A DI enters a training pool only after it passes T0's checks and the user's ear (the trusted-data rule)",
+   "renders": "0; separations: 0",
+   "held_out": "none touched",
+   "outcome": "pending: waits for the checks and the user's listening"
+  },
+  {
    "test_id": "trusted-data",
    "plan": "docs/trusted-data-strategy-plan.md",
    "design": "docs/trusted-data-t0-design.md",
