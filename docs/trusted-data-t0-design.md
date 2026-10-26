@@ -1267,7 +1267,14 @@ yet. K is empty, so T3 reads nothing on K.
   - Each DI that passes T0's checks and the user's ear is an eligible training band under F20's caps (high-gain
     sources at most 50%, a band at most 35%). Parts heard "too heavy" are left out.
   - T2's follow-up (SES-ALL, a broader draw with 2 more bands) leaned better, so more training bands may help.
-  - DGX's sessions are DI-only, so rule 1 keeps them where every playing guitar's DI passes.
+  - DGX's sessions are DI-only, so rule 1 keeps them where every playing guitar's DI passes. **Decision (the
+    coordinator, 2026-10-26; the user may overrule):** DGX's DIs have no amp track for a tone card, so they join
+    once heard clean and count as high gain under the 50% cap (the site labels them hard rock/metal, not extreme).
+  - The metal intake's tone card classes only its own DI (`tone_class`); the session's other DIs carry the class as
+    `session_tone` only, and an unclassed metal DI counts as high gain (above).
+  - **Rule 1 must honour `pair_unheard`:** no metal card played a DI with its amp track (68 of the 78 DIs on the
+    pages never have their own amp track heard at all), so a verified metal DI's amp track is not used as an active
+    guitar's stand-in until its pairing is heard.
 - **Kept out:** K's bands (Adam Buckley, Dark Ride) and Cnoc An Tursa, so that K can come back; set by the ML
   session, the user may overrule. Every reservation in the ledger, and V-real's bands.
 - **Rule 1 and the cap of 4 apply unchanged.** No amp track has passed the bleed check, so Rebuild The Evil and The
@@ -1543,8 +1550,13 @@ checks are in the [inventory](research/di-source-inventory-2026-10.md#metal-and-
   - one window heard clean is enough;
   - the session's tone screens heaviness: too heavy excludes every DI of the session;
   - until the tone is heard, the session's DIs wait;
-  - DI-only sessions (DGX, 11 DIs) cannot be screened, so they wait (fail closed). This is for the user to decide.
-  - A heard tone also clears "D1 to the ear", as in part 6, and the pairing itself stays unheard (`pair_unheard`).
+  - DI-only sessions (DGX, 11 DIs) have no tone to screen: their DIs join once heard clean and count as high gain
+    under T3's cap (`no_tone_counts_as`). This is the coordinator's decision of 2026-10-26, which the user may overrule.
+  - The tone card classes its own DI only (`tone_class`); the session's other DIs carry `session_tone`, and an
+    unclassed metal DI counts as high gain under T3's rule.
+  - A heard tone does **not** clear "D1 to the ear" for a DI's own amp track: no card played a DI with its amp track,
+    and 68 of the 78 DIs never have their own amp track heard. A verified DI is admitted for training as a DI; every
+    one with an amp track carries `pair_unheard`, which T3's rule 1 must honour before it uses that amp track.
 - Three page DIs already fail D1, so they stay excluded whatever the ear says: Serapis "The Dark Abyss" ElecGtr1DI and
   DTDI, and Dark Illusion "Evil Bones" ElecGtr4DI. Their amp tracks sit at near-zero delay (a render, not a miked cab).
 - Clips were re-checked after decoding: none silent or sparse (decoded peaks −11.6 dBFS or louder; every clip has

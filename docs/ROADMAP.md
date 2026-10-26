@@ -92,7 +92,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
   training candidates: 11 sessions from 6 bands (Arcadian Alone, Daimon B ×2, Dark Illusion ×2,
   Inhumanity Vortex, Peppermark ×3, Serapis ×2), plus DGX ×2 (hard rock/metal). V.M.GY is a
   set-3 held-out band, so it is not a candidate. The user said yes, and these 13 were downloaded
-  on 2026-10-26. They are under intake on branch `ml/metal-intake`: the held-out checks, T0's
+  on 2026-10-26. Their intake is PR #297: the held-out checks, T0's
   checks and the ear.
 
 ## Next, in order

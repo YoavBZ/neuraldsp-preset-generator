@@ -560,7 +560,7 @@ picked as on 2026-10-25: DI play share ≥ 0.5 in both halves, up to 5 spread ac
   4; Peppermark "Lua Negra" 10, 9, "Another Feeling" 14, 12, and "Interlude" 14, 13; Serapis "The Dark
   Abyss" 9, 8, and "Morbus Animi" 6, 6; DGX "Redemptive Pain" 7, 7, and "Rest In Hell" 4, 4.
 - Of the 11 D2 fails, 9 are hum, 1 is clipping and 1 is drop-outs. **In 6 of the 9 hum fails the hum is
-  not confirmed on the rests** (`hum_unconfirmed_on_rests`; 4 of the 6 Dark Illusion DIs fail D2).
+  not confirmed on the rests** (`hum_unconfirmed_on_rests`; 3 of them are Dark Illusion's, which fails D2 on 4 of its 6 DIs).
   Sustained low-tuned riffs may read as mains lines here. This looks like a possible miscalibration on
   dense high-gain playing, and the threshold was not changed. The DIs stay out.
 - The amp checks inform only (on the DI's own take). A5 fails 38 of 78 pairs: chroma median 0.79

@@ -922,7 +922,8 @@ def test_metal_pages_decode_to_their_own_buckets(tmp_path, monkeypatch):
         return str(f)
     p = export("p7a.json", [("ma-di", "clean"), ("ma-sc", "too_heavy")])
     e = V.ear_answers([p], [], {}, V.load_card_pages([p]))
-    assert e["metal_di"] == {di: [(40.0, 50.0, "clean")]} and e["metal_scope"] == {"Serapis_X_Full": [(amp, "too_heavy")]}
+    assert e["metal_di"] == {di: [(40.0, 50.0, "clean")]}
+    assert e["metal_scope"] == {"Serapis_X_Full": [(amp, "too_heavy", di)]}
     assert e["intake_di"] == {} and e["intake_scope"] == {}
     with pytest.raises(SystemExit, match="not one of"):                 # part 6's 'not_fit' is not a metal class
         V.ear_answers([export("bad.json", [("ma-sc", "not_fit")])], [], {}, V.load_card_pages([p]))
@@ -930,24 +931,64 @@ def test_metal_pages_decode_to_their_own_buckets(tmp_path, monkeypatch):
 
 def test_metal_verdicts_one_window_and_the_session_tone_screen():
     ok = {"band": "S", "status": {"D1": "ear"}, "verdict": ["pending ear", ["D1 to the ear"]], "pairs": {"20_ElecGtr1.wav": {}}}
-    summary = {"Serapis_X_Full": {"21_ElecGtr1DI.wav": ok, "23_ElecGtr1DTDI.wav": ok,
+    summary = {"Serapis_X_Full": {"21_ElecGtr1DI.wav": ok, "23_ElecGtr1DTDI.wav": ok, "25_ElecGtr2DI.wav": ok,
                                   "29_ElecGtr3DI.wav": {"band": "S", "verdict": ["excluded", ["D2 fails"]], "pairs": {}}},
                "DGX_Y_Full": {"13_ElecGtr1DI.wav": {"band": "D", "verdict": ["pending ear", ["DI-only: D1 not measurable"]],
+                                                    "pairs": {}},
+                              "14_ElecGtr2DI.wav": {"band": "D", "verdict": ["pending ear", ["DI-only: D1 not measurable"]],
                                                     "pairs": {}}}}
-    di, dt = "/r/Serapis_X_Full/21_ElecGtr1DI.wav", "/r/Serapis_X_Full/23_ElecGtr1DTDI.wav"
-    wins = {di: [(40.0, 50.0, "clean")], dt: [(12.0, 22.0, "processed")], "/r/Serapis_X_Full/29_ElecGtr3DI.wav":
-            [(1.0, 11.0, "clean")], "/r/DGX_Y_Full/13_ElecGtr1DI.wav": [(5.0, 15.0, "clean")]}
-    tone = {"Serapis_X_Full": [("/r/Serapis_X_Full/20_ElecGtr1.wav", "high_gain")]}
-    out = V.metal_verdicts(summary, wins, tone)
+    di, dt, d2 = (f"/r/Serapis_X_Full/{n}" for n in ("21_ElecGtr1DI.wav", "23_ElecGtr1DTDI.wav", "25_ElecGtr2DI.wav"))
+    wins = {di: [(40.0, 50.0, "clean")], dt: [(12.0, 22.0, "processed")], d2: [(60.0, 70.0, "clean")],
+            "/r/Serapis_X_Full/29_ElecGtr3DI.wav": [(1.0, 11.0, "clean")],
+            "/r/DGX_Y_Full/13_ElecGtr1DI.wav": [(5.0, 15.0, "clean")]}
+    amp = "/r/Serapis_X_Full/20_ElecGtr1.wav"
+    out = V.metal_verdicts(summary, wins, {"Serapis_X_Full": [(amp, "high_gain", di)]})
     k = "cambridge-new/Serapis_X_Full/{}".format
-    assert out[k("21_ElecGtr1DI.wav")]["verdict"] == "verified"                       # one window heard clean suffices
-    assert out[k("21_ElecGtr1DI.wav")]["tone_class"] == "high_gain" and out[k("21_ElecGtr1DI.wav")]["pair_unheard"]
+    e = out[k("21_ElecGtr1DI.wav")]
+    assert e["verdict"] == "verified"                                                  # one window heard clean suffices
+    assert e["tone_class"] == "high_gain" and e["session_tone"] == "high_gain"         # the tone card's own DI
+    assert "never heard" in e["pair_unheard"]                                          # T3's rule 1 must honour it
+    o = out[k("25_ElecGtr2DI.wav")]                                                    # another DI of the session
+    assert o["verdict"] == "verified" and o["tone_class"] is None and o["session_tone"] == "high_gain"
     assert out[k("23_ElecGtr1DTDI.wav")]["why"] == ["heard processed"]
     assert out[k("29_ElecGtr3DI.wav")]["why"] == ["D2 fails"]                          # a measured fail beats 'clean'
-    assert out["cambridge-new/DGX_Y_Full/13_ElecGtr1DI.wav"]["verdict"] == "pending ear"   # no tone to screen: waits
-    assert V.metal_verdicts(summary, wins, {})[k("21_ElecGtr1DI.wav")]["verdict"] == "pending ear"
-    heavy = V.metal_verdicts(summary, wins, {"Serapis_X_Full": [("/r/Serapis_X_Full/20_ElecGtr1.wav", "too_heavy")]})
-    assert heavy[k("21_ElecGtr1DI.wav")]["why"] == ["its session's tone heard as too heavy"]
+    g = out["cambridge-new/DGX_Y_Full/13_ElecGtr1DI.wav"]                              # DI only: nothing to screen
+    assert g["verdict"] == "verified" and g["no_tone_counts_as"] == "high_gain" and g["pair_unheard"] is None
+    assert out["cambridge-new/DGX_Y_Full/14_ElecGtr2DI.wav"]["why"] == ["not yet heard clean"]
+    assert e["no_tone_counts_as"] is None
+    assert V.metal_verdicts(summary, wins, {})[k("21_ElecGtr1DI.wav")]["verdict"] == "pending ear"   # tone unheard
+    heavy = V.metal_verdicts(summary, wins, {"Serapis_X_Full": [(amp, "too_heavy", di)]})
+    assert heavy[k("21_ElecGtr1DI.wav")]["why"] == heavy[k("25_ElecGtr2DI.wav")]["why"] == [
+        "its session's tone heard as too heavy"]
+
+
+def test_lists_admits_heard_metal_dis(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")                           # lists -> prior_summary
+    env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 10.0)])])
+    di, amp = "/r/Serapis_X_Full/21_ElecGtr1DI.wav", "/r/Serapis_X_Full/20_ElecGtr1.wav"
+    items = [{"id": "ma-di", "kind": "di", "family": "di", "key": di, "start_s": 40.0, "dur_s": 10.0, "paths": {"di": di}},
+             {"id": "ma-sc", "kind": "scope", "family": "scope", "key": amp, "session": "Serapis_X_Full",
+              "start_s": 40.0, "dur_s": 10.0, "paths": {"di": di, "amp": amp}}]
+    page = next(iter(V.METAL_PAGES))
+    ip = V.page_items_path(page)
+    ip.parent.mkdir(parents=True)
+    ip.write_text(json.dumps({"page": page, "build": "b7", "items": items}))
+    (env.root / V.METAL_DIR).mkdir()
+    (env.root / V.METAL_DIR / "summary.json").write_text(json.dumps({"sessions": {"Serapis_X_Full": {
+        "21_ElecGtr1DI.wav": {"band": "Serapis", "status": {"D1": "ear"}, "verdict": ["pending ear", ["D1 to the ear"]],
+                              "pairs": {"20_ElecGtr1.wav": {}}}}}}))
+    rec, _ = env.run()
+    assert rec["intake_admitted"] == [] and rec["intake_dis"]["cambridge-new/Serapis_X_Full/21_ElecGtr1DI.wav"][
+        "verdict"] == "pending ear"
+    f = tmp_path / "p7a.json"
+    f.write_text(json.dumps({"page": page, "part": "7a", "build": "b7", "exported": "2026-10-27T06:00:00Z", "answers": [
+        {"id": i, "verdict": v, "note": "", "t": "2026-10-27T06:00:00Z"} for i, v in (("ma-di", "clean"),
+                                                                                      ("ma-sc", "crunch"))]}))
+    rec, _ = env.run([str(f)])
+    assert rec["intake_admitted"] == ["cambridge-new/Serapis_X_Full/21_ElecGtr1DI.wav"]
+    r = rec["intake_dis"]["cambridge-new/Serapis_X_Full/21_ElecGtr1DI.wav"]
+    assert r["tone_class"] == "crunch" and r["pair_unheard"]
+
 
 def test_lists_admits_a_heard_clean_intake_di(tmp_path, monkeypatch):
     pytest.importorskip("numpy")                           # lists -> prior_summary
