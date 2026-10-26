@@ -8,7 +8,7 @@
 # separations first; about 5.2k renders (0.8 h), about 5.0k separations (3.7-5.9 h with the optional CPU worker),
 # 1 crop and its stem (minutes), 4 training runs (about 1 h MPS), about 1k V-real renders (0.2 h).
 setopt no_bg_nice
-caffeinate -i -w $$ &                    # the machine stays awake for the whole chain
+caffeinate -i -w $$ &!                   # the machine stays awake for the whole chain; disowned (&!) so the bare `wait`s below never wait on it (they deadlocked on 2026-10-26)
 cd /Users/yoavbz/projects/neuraldsp-preset-generator
 L=~/ndsp-presets/learn/trusted-data/logs
 MAIN=/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python
