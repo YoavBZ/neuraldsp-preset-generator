@@ -829,10 +829,12 @@ def _card_pages(tmp_path, monkeypatch):
           {"id": "nb-es-2", "kind": "di", "family": "di", "key": es, "start_s": 50.5, "dur_s": 10.0, "paths": {"di": es}},
           {"id": "nb-sc-1", "kind": "scope", "family": "scope", "key": "/r/Empty_Full/19_ElecGtr2Mic3.wav",
            "start_s": 18.5, "dur_s": 10.0, "paths": {"di": es, "amp": "/r/Empty_Full/19_ElecGtr2Mic3.wav"}}]
-    for page, items in ((V.RECHECK_PAGE, rc), (V.INTAKE_PAGE, nb)):
+    sd = [{"id": f"sd-{w}", "kind": "di", "family": "di", "key": "cambridge-Signs-ElecGtr6", "window_s": [w, w + 10.0],
+           "start_s": w, "dur_s": 10.0, "paths": {"di": "/r/Zeno_Full/33_ElecGtr6DI.wav"}} for w in (63.5, 82.0)]
+    for page, items, build in ((V.RECHECK_PAGE, rc, "b5"), (V.INTAKE_PAGE, nb, "b6"), (V.RECHECK_DI_PAGE, sd, "b8")):
         ip = V.page_items_path(page)
         ip.parent.mkdir(parents=True)
-        ip.write_text(json.dumps({"page": page, "build": "b5" if page == V.RECHECK_PAGE else "b6", "items": items}))
+        ip.write_text(json.dumps({"page": page, "build": build, "items": items}))
 
     def export(name, page, build, answers, exported="2026-10-26T06:00:00Z"):
         p = tmp_path / name
@@ -854,6 +856,9 @@ def test_ear_answers_decode_parts_5_and_6(tmp_path, monkeypatch):
     assert e["target_clean"] == {} and e["target_amp"] == {}          # never read as the crop's answers
     assert e["intake_di"] == {di: [(45.5, 55.5, "processed")], es: [(18.5, 28.5, "clean"), (50.5, 60.5, "clean")]}
     assert e["intake_scope"] == {es: [("/r/Empty_Full/19_ElecGtr2Mic3.wav", "high_gain")]}
+    p8 = export("p8.json", V.RECHECK_DI_PAGE, "b8", [("sd-82.0", "processed", "")])
+    e8 = V.ear_answers([p8], [], {}, V.load_card_pages([p8]))
+    assert e8["recheck_di"] == {"cambridge-Signs-ElecGtr6": {82.0: ["processed"]}} and e8["recheck"] == {}
     assert [n["note"] for n in e["notes"]] == ["loud"]
     later = export("p6b.json", V.INTAKE_PAGE, "b6", [("nb-es-2", "hum", "")], exported="2026-10-26T07:00:00Z")
     e = V.ear_answers([p6, later], [], {}, V.load_card_pages([p6, later]))   # the latest touch of a card stands
@@ -883,6 +888,7 @@ def test_intake_verdicts_measured_fails_first_then_the_ear():
     out = V.intake_verdicts(summary, wins, {es: [(amp, "high_gain"), (amp, "high_gain")]})
     e = out["cambridge-new/Empty_Full/20_ElecGtr2DI.wav"]
     assert e["verdict"] == "verified" and e["tone_class"] == "high_gain"         # high gain no longer drops it
+    assert "never heard" in e["pair_unheard"]                                     # the pair itself, before any use
     assert out["cambridge-new/Empty_Full/16_ElecGtr1DI.wav"]["verdict"] == "excluded"    # unheard, measured fail
     assert out["cambridge-new/Goran_Full/12_ElecGtrDI.wav"]["why"] == ["D1 fails"]     # a measured fail beats 'clean'
     m = out["cambridge-new/Mopia_Full/19_ElecGtr2DI.wav"]
@@ -912,3 +918,65 @@ def test_lists_admits_a_heard_clean_intake_di(tmp_path, monkeypatch):
     assert rec["intake_dis"]["cambridge-new/Mopia_Full/19_ElecGtr2DI.wav"]["verdict"] == "excluded"
     assert "cambridge-new/Empty_Full/20_ElecGtr2DI.wav" not in rec["training_dis"]   # T0's D-build pool is unchanged
     assert rec["ear_exports"][0]["answered"]
+
+
+def test_recheck_measure_di_judged_as_a_di():
+    def rec():
+        return {"windows": [[63.5, 73.5], [82.0, 92.0], [148.0, 158.0]], "d4_flags": ["82.0", "148.0"],
+                "crop_window_s": [63.5, 73.5]}
+    md = {"verdict": "pending ear", "why": ["D4 flags it (unheard)"]}
+    r = rec()
+    v, why = V.recheck_measure_di(r, {}, dict(md), "verified", [])       # part 5's cards never judged the DI
+    assert v == "pending ear" and "measure DI" in why[0]
+    assert r["windows"] == [[63.5, 73.5]] and r["windows_waiting_di_ear"] == [[82.0, 92.0], [148.0, 158.0]]
+    r, m = rec(), dict(md)
+    v, _ = V.recheck_measure_di(r, {82.0: ["clean"], 63.5: ["clean"]}, m, "verified", [])
+    assert v == "verified" and m["verdict"] == "verified"
+    assert r["windows"] == [[63.5, 73.5], [82.0, 92.0]] and r["windows_waiting_di_ear"] == [[148.0, 158.0]]
+    r, m = rec(), dict(md)
+    assert V.recheck_measure_di(r, {82.0: ["processed"]}, m, "verified", [])[0] == "excluded"
+    assert m["verdict"] == "excluded"
+    r = rec()                                                              # a verified measure DI: flagged windows wait
+    assert V.recheck_measure_di(r, {}, {"verdict": "verified", "why": []}, "verified", [])[0] == "verified"
+    assert r["windows"] == [[63.5, 73.5]]
+    r = dict(rec(), crop_window_s=[82.0, 92.0])                            # a flagged crop waits for its DI
+    assert V.recheck_measure_di(r, {}, {"verdict": "verified", "why": []}, "verified", [])[0] == "pending ear"
+
+
+def test_lists_recovers_a_rechecked_target_but_keeps_it_off_the_crop_lists(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")                           # lists -> prior_summary
+    slug = "cambridge-Signs-ElecGtr6"
+    crop = {"slug": slug, "uses": ["knob ceiling 2", "stage F"], "di_file": "/r/Zeno_Full/33_ElecGtr6DI.wav",
+            "di_name": "33_ElecGtr6DI.wav", "window_s": 158.0, "inventory_di": None,
+            "d2": {"flags": [], "hum_suspect": False}, "d4": {"crest_db": 5.0, "bright_slope": 0.5}}   # D4 flags it
+    env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 10.0)])], crops={slug: crop})
+    export, _, _ = _card_pages(tmp_path, monkeypatch)
+    st = {"A1": "pass", "A2": "pass", "A3": "pass", "A4": "pass", "A5": "fail", "A6": "fail"}
+    (env.root / "t0" / "targets.json").write_text(json.dumps({"thresholds": V.thresholds(), "complete": True, "parts": {
+        slug: {"readings": {"halves": {"A": {"lag_ms": 0.8}, "B": {"lag_ms": 0.0}}, "a3": {}}, "status": st,
+               "uses": ["knob ceiling 2", "stage F"], "band": "Zeno", "bleed_db": {}, "crop_start_s": 158.0,
+               "a5": {"A": {"di_play_share": 0.1}, "B": {"di_play_share": 0.0}}}}}))
+    monkeypatch.setattr(V, "target_status", lambda r: dict(r["status"]))
+    res = tmp_path / "results.json"
+    win = lambda t, d4="pass": {"start_s": t, "end_s": t + 10.0, "status": {**{m: "pass" for m in V.RECHECK_MEASURES},
+                                                                            "D4(ear only)": d4}}
+    res.write_text(json.dumps({"parts": {slug: {"windows": [win(63.5), win(82.0, "fail"), win(123.5)]}}}))
+    monkeypatch.setattr(V, "recheck_results_path", lambda: res)
+    rec, _ = env.run()
+    assert rec["targets"][slug]["verdict"] == "pending ear"                  # passes on 3 windows, not heard yet
+    assert rec["targets"][slug]["recheck"]["why"] == ["re-check: 0 of 2 windows heard clean"]
+    p5 = export("p5.json", V.RECHECK_PAGE, "b5", [(f"rc-{w}-{h}", "clean_amp", "") for w in (63.5, 82.0) for h in "AB"])
+    rec, _ = env.run([p5])
+    t = rec["targets"][slug]
+    assert t["verdict"] == "pending ear" and rec["recovered_targets"] == [slug]       # its DI not judged as a DI
+    assert rec["measure_dis"][slug]["verdict"] == "pending ear"
+    assert t["recheck"]["windows"] == [[63.5, 73.5], [123.5, 133.5]] and t["recheck"]["crop_window_s"] == [63.5, 73.5]
+    p8 = export("p8.json", V.RECHECK_DI_PAGE, "b8", [("sd-63.5", "clean", ""), ("sd-82.0", "clean", "")])
+    rec, _ = env.run([p5, p8])
+    t = rec["targets"][slug]
+    assert t["verdict"] == "verified" and rec["measure_dis"][slug]["verdict"] == "verified"
+    assert [82.0, 92.0] in t["recheck"]["windows"]
+    assert rec["v_real"] == [] and rec["kc2_verified"] == [] and rec["v_real_pending"] == []   # uses(): off the crops
+    bad = export("p8b.json", V.RECHECK_DI_PAGE, "b8", [("sd-82.0", "processed", "")], exported="2026-10-26T09:00:00Z")
+    rec, _ = env.run([p5, p8, bad])
+    assert rec["targets"][slug]["verdict"] == "excluded" and rec["recovered_targets"] == []

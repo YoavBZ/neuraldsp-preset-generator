@@ -575,7 +575,7 @@ The review's four decisions before the ear, each as the ML session recommended. 
 **The final lists** (`t0/verified.json`):
 - **Targets** 17 verified, 42 excluded. **DIs** 46 verified, 13 excluded.
   *Amended 2026-10-25:* 3 of the 42 pass on other windows, pending the ear and T2's end ([T0 window re-check](#t0-window-re-check-2026-10-25)).
-  *Amended 2026-10-26:* heard and recovered: targets 20 verified, 39 excluded ([parts 5 and 6](#parts-5-and-6-heard-2026-10-26)).
+  *Amended 2026-10-26:* heard: targets 19 verified, 1 pending, 39 excluded ([parts 5 and 6](#parts-5-and-6-heard-2026-10-26)).
 - **V-real:** 10 parts in 7 bands (3 clean parts in 2 bands, 7 crunch; 3 of the 10 from one song, Wickerman).
 - **Knob ceiling 2:** 7 parts in 7 bands verified, the panel for every-control stage 1.
 - **K:** 17 DIs in 3 bands, but T1's K uses Adam Buckley and Dark Ride only. Cnoc An Tursa is not admitted (user,
@@ -1077,8 +1077,8 @@ is in code.
 
 **When they join.** A recovered part joins the verified set only after the user's ear, and only after T2's chain
 finishes: T2 runs on the current lists, which must not change mid-run. The rule goes into `verify_tracks` then
-(code, reviewed), and `lists` is re-run with every export. *Done 2026-10-26: all 3 recovered
-([parts 5 and 6](#parts-5-and-6-heard-2026-10-26)).*
+(code, reviewed), and `lists` is re-run with every export. *Done 2026-10-26: 2 recovered, Signs ElecGtr6 pending its
+DI ([parts 5 and 6](#parts-5-and-6-heard-2026-10-26)).*
 
 ## T2 outcome (2026-10-26)
 
@@ -1140,7 +1140,7 @@ is not shown to be unrealistically easy. Not a realism verdict, and the band-clu
 
 **Next:** decision 5, whether T3 runs on a tie, is open for the user. Pending inputs: the window re-check's 3
 recovered parts and the new bands' 4 DIs await the user's ear (PR #293, PR #294). The clean/crunch shortage stays the
-clearest gap. *Heard 2026-10-26: 3 targets recovered, 1 new training DI (high gain) ([parts 5 and 6](#parts-5-and-6-heard-2026-10-26)).*
+clearest gap. *Heard 2026-10-26: 2 targets recovered (a third pending its DI), 1 new training DI (high gain) ([parts 5 and 6](#parts-5-and-6-heard-2026-10-26)).*
 
 ## Parts 5 and 6 heard (2026-10-26)
 
@@ -1153,21 +1153,24 @@ Nothing was superseded, cleared or skipped.
 build that doesn't match is refused. On each card the latest touch stands, as on the ear queue's pages.
 - Part 5's answers stay apart from the crop's answers.
 - `recheck_eligible` and `recheck_verdict` apply the re-check rule above to the re-check's `results.json`.
+- `recheck_measure_di` reads part 8 (`trusted-data-ear-signs-di`, below): DI cards for a recovered part's measure DI
+  on its re-check windows.
 - `intake_verdicts` reads the intake's checks (`intake-2026-10-25/summary.json`) with part 6.
 - `verified.json` gains `recovered_targets`, `intake_dis` and `intake_admitted`.
 - `clean_di.inventory` swaps an admitted DI's `INTAKE_PENDING` note for `INTAKE_ADMITTED` (PR #294's design). Only a
   real `lists` run admits.
 - `verified.json` was not edited by hand.
 
-**Part 5, the window re-check: 3 targets recovered.** All 22 cards were heard "clean amp".
+**Part 5, the window re-check: 2 targets recovered, 1 pending.** All 22 cards were heard "clean amp".
 
-| Part | Band | Windows (no measured fail) | Heard | Crop re-cut to |
-|---|---|---|---|---|
-| It Was My Fault ElecGtr1 | Atlantis Bound | 5/5 | 90 s, 125.5 s | 90–100 s |
-| Nosso Mundo ElecGtr03 | Ale Lak | 3/3 | 52.5 s, 123.5 s | 52.5–62.5 s |
-| Signs ElecGtr6 | Zeno | 5/5 | 63.5 s, 82 s | 63.5–73.5 s (D4 passes there) |
+| Part | Band | Windows (no measured fail) | Heard | Crop re-cut to | Now |
+|---|---|---|---|---|---|
+| It Was My Fault ElecGtr1 | Atlantis Bound | 5/5 | 90 s, 125.5 s | 90–100 s | verified |
+| Nosso Mundo ElecGtr03 | Ale Lak | 3/3 | 52.5 s, 123.5 s | 52.5–62.5 s | verified |
+| Signs ElecGtr6 | Zeno | 5/5 | 63.5 s, 82 s | 63.5–73.5 s (D4 passes there) | pending: its DI on part 8 |
 
-Each keeps only its passing re-check windows (`targets[].recheck.windows`). Its old crop is not used. So a recovered
+Each keeps only its passing re-check windows (`targets[].recheck.windows`), less any window D4 flags until its DI is
+heard clean there as a DI. Its old crop is not used. So a recovered
 part joins no list read from the crops: not V-real, not knob ceiling 2, not the level prior. It Was My Fault ElecGtr1
 is a knob-ceiling-2 candidate (the re-check section above missed this). It stays out of that panel until its crop is
 rebuilt on the new window. Its band is already on the panel through ElecGtr2.
@@ -1177,11 +1180,20 @@ The other three stay excluded under the rule; their answers are informative only
 - It Was My Fault ElecGtr4: A1 fails on the 171-s window;
 - Today's The Day ElecGtr07: its crop DI plays, so the rule does not apply.
 
-**Signs ElecGtr6's measure DI.** It was pending the ear because D4 flagged the old crop, where the DI plays 10% of
-half A. The DI plays first on every re-check card, and the user heard both windows clean, including 82 s, which D4
-flags. So the measure DI counts as heard on its re-check windows (`measure_dis[].recheck`). The old crop's flag goes
-with the old crop. The new crop sits where D4 passes. D4 flags 2 of the 5 windows (82 s, 148 s), and D4 never excludes
-on its own.
+**Signs ElecGtr6's measure DI stays pending the ear** (fixed after the PR #296 review). It was pending because D4
+flagged the old crop, where the DI plays 10% of half A. The DI played first on every re-check card, but those cards
+judged only the target and offered no "processed" answer, so the DI itself was never judged.
+- Signs ElecGtr6 stays pending, and its measure DI stays pending (`measure_dis`).
+- Its windows: 63.5, 123.5 and 200.5 s, where D4 passes. 82 s and 148 s, which D4 flags, wait for the DI ear
+  (`windows_waiting_di_ear`).
+- **Part 8** (`~/ndsp-presets/listening/trusted-data-ear/part8-signs-di/`, page `trusted-data-ear-signs-di`) holds 3
+  DI cards for 33_ElecGtr6DI at 63.5, 82 and 148 s. These are part 6's DI cards (clean, processed, not a DI, hum, not
+  sure). The clips are not silent: decoded peaks −8.2, −8.0 and −7.7 dBFS.
+- When `lists` reads part 8's export:
+  - a window heard other than clean excludes the part;
+  - a window heard clean clears the measure DI and verifies Signs;
+  - a D4-flagged window joins its windows only once heard clean.
+- Pending.
 
 **Signs ElecGtr6 is not a copy of its DI** (the user asked for a double-check). On the 5 re-check windows:
 - A4's highest correlation with the DI is 0.70–0.75, against the < 0.95 rule;
@@ -1197,15 +1209,16 @@ So it is a very clean, close-miked amp, not the DI.
 already out on measured fails.
 - **Empty Signifier 20_ElecGtr2DI: admitted.** Heard clean on both windows. Its amp track (19_ElecGtr2Mic3) was heard
   as high gain on both. Part 6 had no DI-and-amp pair card, so its "D1 to the ear" is cleared differently: the DI card
-  (which offers "not a DI") heard clean, plus the amp track heard as an amp tone. It is a high-gain DI, so it does not
-  ease the clean/crunch shortage.
+  (which offers "not a DI") heard clean, plus the amp track heard as an amp tone. **The DI-and-amp pairing itself was
+  never heard.** Hear it before anything uses that amp track (`intake_dis[].pair_unheard`). It is a high-gain DI, so it
+  does not ease the clean/crunch shortage.
 - **Mòpia 19_ElecGtr2DI and 21_ElecGtr3DI: excluded,** heard processed on all 4 windows. Both amp tracks were heard
   high gain.
 - **Goran Levi 12_ElecGtrDI: excluded,** heard processed (and D1 had already failed). Its amp track was heard clean,
   with drum and bass leaks (the user's notes). It is a processed copy of the DI anyway.
 
 **The lists now** (`t0/verified.json`, 2026-10-26):
-- targets 20 verified, 39 excluded;
+- targets 19 verified, 1 pending (Signs ElecGtr6, its DI on part 8), 39 excluded;
 - T0's DIs 46 verified, 13 excluded (unchanged);
 - intake 1 admitted, 8 excluded;
 - V-real unchanged: 10 parts in 7 bands;

@@ -478,7 +478,8 @@ DIs, unconfirmed on 2026-10-23, are now confirmed. The full list is in
   **1 new training DI from 5 bands.**
   - Empty Signifier 20_ElecGtr2DI: heard clean on both windows, and admitted (`verified.json`'s `intake_admitted`; the
     inventory lifts its `INTAKE_PENDING` note). Its amp track (Mic3) was heard high gain, so it adds a high-gain DI,
-    not a clean or crunch one.
+    not a clean or crunch one. The DI-and-amp pairing itself was never heard (part 6 had no pair card): hear it
+    before anything uses that amp track.
   - Mòpia 19_ElecGtr2DI and 21_ElecGtr3DI: heard processed, excluded. Both amp tracks were heard high gain.
   - Goran Levi 12_ElecGtrDI: heard processed, excluded. Its amp track was heard clean, with drum and bass leaks, and is
     a processed copy anyway.
@@ -521,9 +522,10 @@ DIs, unconfirmed on 2026-10-23, are now confirmed. The full list is in
 4. **The Cambridge leads behind the Cloudflare challenge:** listed on 2026-10-25 (above). The user
    approved the download of the 5 new in-scope sessions (2026-10-25); all five are downloaded and,
    by the user's decision the same day, are training bands (above). *Heard 2026-10-26: 1 DI admitted (Empty Signifier
-   ElecGtr2DI). Since the scope refinement of that day, the scan's 13 metal sessions outside the held-out sets
-   (Arcadian Alone, Daimon B ×2, Dark Illusion ×2, Inhumanity Vortex, Peppermark ×3, Serapis ×2, V.M.GY ×2), and DGX
-   ×2, are possible training candidates. Downloading any of them is the user's decision.*
+   ElecGtr2DI). Since the scope refinement of that day, the scan's metal sessions outside the held-out sets are
+   possible training candidates: 11 sessions from 6 bands (Arcadian Alone, Daimon B ×2, Dark Illusion ×2, Inhumanity
+   Vortex, Peppermark ×3, Serapis ×2; V.M.GY is set-3 held out), plus DGX ×2 (hard rock/metal). With the user's yes,
+   these 13 were downloaded on 2026-10-26 and are under intake on branch `ml/metal-intake`.*
 5. **Disk.** About 113 GB was free on 2026-10-23. Ranks 1 and 3 are downloaded (0.94 + 0.46 GB);
    rank 2 needs 2.4 GB, and the features about 3 GB.
 

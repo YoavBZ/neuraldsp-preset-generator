@@ -89,10 +89,11 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
   extreme cases.
 - Readouts stay clean/crunch-weighted and per class, to watch for interference.
 - The 2026-10-25 Cambridge scan's metal sessions outside the held-out sets become possible
-  training candidates: 13 sessions from 7 bands (Arcadian Alone, Daimon B ×2, Dark Illusion ×2,
-  Inhumanity Vortex, Peppermark ×3, Serapis ×2, V.M.GY ×2), plus DGX ×2. None is downloaded.
-  Downloading any of them is the user's decision, and each would still go through the held-out
-  checks, T0's checks and the ear.
+  training candidates: 11 sessions from 6 bands (Arcadian Alone, Daimon B ×2, Dark Illusion ×2,
+  Inhumanity Vortex, Peppermark ×3, Serapis ×2), plus DGX ×2 (hard rock/metal). V.M.GY is a
+  set-3 held-out band, so it is not a candidate. The user said yes, and these 13 were downloaded
+  on 2026-10-26. They are under intake on branch `ml/metal-intake`: the held-out checks, T0's
+  checks and the ear.
 
 ## Next, in order
 
@@ -188,8 +189,10 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          hum, an A1 fail on 1 of 5 windows, real faults). The 3 join only after the user's ear (re-check page
          ready) and after T2's chain ends (*it ended 2026-10-26; they await the ear*)
          ([rule](trusted-data-t0-design.md#t0-window-re-check-2026-10-25)). *Heard 2026-10-26: all 3
-         recovered, so targets are 20 verified, 39 excluded. Each uses only its re-check windows,
-         and none joins V-real, knob ceiling 2 or the level prior
+         passed, and 2 are verified (It Was My Fault ElecGtr1, Nosso Mundo ElecGtr03). Signs ElecGtr6
+         stays pending until its DI is heard as a DI (part 8, 3 cards), so targets are 19 verified,
+         1 pending, 39 excluded. Each uses only its re-check windows, and none joins V-real, knob
+         ceiling 2 or the level prior
          ([outcome](trusted-data-t0-design.md#parts-5-and-6-heard-2026-10-26)).*
        - V-real 10 parts in 7 bands (3 clean parts in 2 bands, 7 crunch; 3 of the 10 from one song,
          Wickerman); knob ceiling 2's 7 parts in 7 bands verified;
@@ -385,7 +388,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        not shown to be unrealistically easy (a ceiling check only).
      - **Next: decision 5 (whether T3 runs on a tie) is open for the user.** Pending inputs: the window re-check's 3
        recovered parts and the new bands' 4 DIs ([PR #294](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/294), ear page `part6-new-bands`) await the user's ear (PR #293, PR #294); the clean/crunch shortage
-       stays the clearest gap. *Heard 2026-10-26: 3 targets recovered, 1 new training DI (high gain).
+       stays the clearest gap. *Heard 2026-10-26: 2 targets recovered, Signs ElecGtr6 pending its DI (part 8), 1 new training DI (high gain).
        The clean/crunch shortage is unchanged.*
    - (d) **T3, decided after T2:** one rebuild that is also every-control stage 2D, on self-built
      mixes with full-space labels and any approved new DIs, read on K and V-real (*K empty since 2026-10-25: its
@@ -775,5 +778,5 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-25 | User (in chat), asked whether T2 should run on 4 bands without amp tracks after the reviewed bleed check (PR #290) cleared none of the 23: "I prefer reliable data and additional/longer runs than data that can't be fully trusted". T2 started at 17:54 on 5,154 candidates in 4 bands (pilot 5,000, no amp tracks; Rebuild The Evil and The Long Wait drop out). Following from that answer, T1's re-run is waived, not passed: K is empty under the reviewed rules, so T2 reads no E on K, and K and the T3/T4 sound gate stay open. The ML session's proposal, approved after review: the realism question is read inside T2 (primary SYN − SES on V-real, plus a zero-render T2-side stem read, a ceiling check at best); the data gap (left-out dense sections) is read by two zero-cost diagnostics declared now, and an SES arm with the dense sections is pending the user's OK; a leakage measure that resolves sparse sources is built after T2 if they show the gap matters, or when T3/T4 needs K | [design](trusted-data-t0-design.md#t1-waived-and-the-realism-check-moved-into-t2-2026-10-25) |
 | 2026-10-25 | Option (c) approved by the user (in chat, "Approved if you suggest following this approach", after the ML session suggested it): the SES-ALL arm, SES's recipe, seeds (20261042, 20261043) and early-stopping set on a 5k draw (seed 20261104, stratified by band) from every T2 candidate before rule 1 and the cap, read as SES-ALL − SES on V-real; 2 runs of about 1.5 h, about 60 V-real renders plus 30 priming, no separations; run after T2's chain, adding to its records. Built the same day before any T2 result, with the T2-side stem read (section-clustered primary; a ceiling check, never a realism certificate), diagnostic (a) (V-real split at 5 or more playing guitars, a median split of the parts' counts) and the `report` fix (T1's 812-example read labelled superseded). Diagnostic (b), read: left-out candidates are denser (mean 3.82 playing guitars against 2.90 kept), mostly Rebuild The Evil | [design](trusted-data-t0-design.md#t2s-additions-as-built-2026-10-25) |
 | 2026-10-26 | T2 read (audited; every row recomputed from the V-real groups). Primary SYN − SES on V-real +0.019 [−0.001, +0.040], 7 bands: a tie, so SYN is picked by recorded decision 4; SYN leans worse (5 of 7 bands; leave-one-band-out +0.013 to +0.026). SES − constant −0.031, SYN − constant −0.012; against S, SES +0.012, SYN +0.031: neither arm beats S or clearly beats the constant. Follow-up, descriptive: SES-ALL − SES −0.026 [−0.070, +0.018], a broader draw (2 more bands, one band carries it), not a density test; diagnostic (a) shows nothing; the stem read finds SYN's stems not cleaner than SES's (a ceiling check only). Decision 5, T3 on a tie, is open for the user | [design](trusted-data-t0-design.md#t2-outcome-2026-10-26) |
-| 2026-10-26 | Parts 5 and 6 heard (user), read by `verify_tracks lists` (code, no hand edits). Window re-check: all 22 cards clean amp; It Was My Fault ElecGtr1, Nosso Mundo ElecGtr03 and Signs ElecGtr6 are recovered, each on its re-check windows only, with its crop re-cut to a heard window. Targets are now 20 verified, 39 excluded. Signs ElecGtr6 checked: not a copy of its DI. The other three stay excluded; their answers are informative only. New bands: **1 new training DI from 5 bands** (Empty Signifier 20_ElecGtr2DI, heard clean, a high-gain part); Mòpia ×2 and Goran Levi heard processed. V-real (10) and knob ceiling 2 (7) unchanged | [outcome](trusted-data-t0-design.md#parts-5-and-6-heard-2026-10-26) |
-| 2026-10-26 | Scope refined for training (user): high-gain songs can train, as long as too-heavy songs don't interfere; testing and perfecting stay clean/crunch-focused. High gain no longer drops a training source ("scope by ear" screens out only extreme cases); readouts stay clean/crunch-weighted and per class. The 2026-10-25 scan's 13 metal sessions outside the held-out sets (7 bands), plus DGX ×2, become possible training candidates; downloading any is the user's decision | [scope](#scope-user-decision-2026-10-10) |
+| 2026-10-26 | Parts 5 and 6 heard (user), read by `verify_tracks lists` (code, no hand edits). Window re-check: all 22 cards clean amp. It Was My Fault ElecGtr1 and Nosso Mundo ElecGtr03 are recovered, each on its re-check windows only, with its crop re-cut to a heard window. Signs ElecGtr6 stays pending: those cards never judged its DI, so part 8 (3 DI cards) asks. Targets are now 19 verified, 1 pending, 39 excluded. Signs ElecGtr6 checked: not a copy of its DI. The other three stay excluded; their answers are informative only. New bands: **1 new training DI from 5 bands** (Empty Signifier 20_ElecGtr2DI, heard clean, a high-gain part; its DI-and-amp pairing was never heard); Mòpia ×2 and Goran Levi heard processed. V-real (10) and knob ceiling 2 (7) unchanged | [outcome](trusted-data-t0-design.md#parts-5-and-6-heard-2026-10-26) |
+| 2026-10-26 | Scope refined for training (user): high-gain songs can train, as long as too-heavy songs don't interfere; testing and perfecting stay clean/crunch-focused. High gain no longer drops a training source ("scope by ear" screens out only extreme cases); readouts stay clean/crunch-weighted and per class. The 2026-10-25 scan's metal sessions outside the held-out sets, 11 sessions from 6 bands (V.M.GY is set-3 held out), plus DGX ×2, become possible training candidates. With the user's yes, these 13 were downloaded on 2026-10-26 and are under intake on branch `ml/metal-intake` | [scope](#scope-user-decision-2026-10-10) |
