@@ -565,14 +565,16 @@ picked as on 2026-10-25: DI play share ≥ 0.5 in both halves, up to 5 spread ac
   dense high-gain playing, and the threshold was not changed. The DIs stay out.
 - The amp checks inform only (on the DI's own take). A5 fails 38 of 78 pairs: chroma median 0.79
   against a 0.8 line, and onset 0.48, while A1's lag is clean on most. Distortion smears chroma and
-  onsets, so A5 looks miscalibrated for high gain. A2 goes to the ear on 72 of 78 (little coherent top
+  onsets, so A5 looks miscalibrated for high gain. That matters only if an amp track is used, not for
+  training DIs. A2 goes to the ear on 72 of 78 (little coherent top
   end). Six DIs read near-zero lag to their amp track (−0.06 to +0.09 ms: Dark Illusion ×3, Peppermark
   "Lua Negra" ElecGtr3, Serapis "The Dark Abyss" ElecGtr1 and DT). That suggests a re-amp or plugin
   render, not a miked cab; the Serapis pair is also brighter than its DI.
 - D4 flags 52 of 89, which is expected for driven, compressed metal playing (the ear's flag only).
-- The ear page `listening/trusted-data-ear/part7-metal/` holds the 78 D2-passing DIs, 2 windows each
-  (1 where only one window qualifies): 148 DI cards. It adds 66 tone cards, one per amp track (clean,
-  crunch, high gain or too heavy). 214 cards in all, pending.
+- The ear pages `listening/trusted-data-ear/part7a-metal/` and `part7b-metal/` (44 cards each, about
+  7 MB) hold one DI card per D2-passing DI (78) and one tone card per session with an amp track (10:
+  clean, crunch, high gain or too heavy). They are pending. How `lists` reads them is in the
+  [design](../trusted-data-t0-design.md#the-metal-intakes-ear-parts-7a-and-7b-2026-10-26).
 
 ## Sources
 

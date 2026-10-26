@@ -240,7 +240,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        V.M.GY was not downloaded (set-3 held out). T0's checks (2026-10-26; guitar tracks only, so no A6):
        D3 passes all 89 electric DIs, D2 passes 78. Most D2 fails are hum not confirmed on the rests, a
        possible miscalibration on dense low riffs (left unchanged). A5 looks miscalibrated for high gain.
-       The ear page (part7, 214 cards: 148 DI, 66 tone) is pending.
+       The ear pages (parts 7a and 7b, 44 cards each: 1 window per DI, 78 DI and 10 tone cards) are pending;
+       `lists` reads them (`metal_verdicts`).
      - **New training bands (2026-10-25, user):** five Cambridge-MT sessions (Ember Rev, Empty
        Signifier, Goran Levi, Mòpia, Sören; 9 electric DIs, 7 with an amp or mic track) are training
        bands (ledger `cambridge-new-training-bands-2026-10-25`), aimed at the pool's missing clean and

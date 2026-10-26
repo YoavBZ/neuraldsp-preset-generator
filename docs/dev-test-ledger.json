@@ -2875,7 +2875,7 @@
      "DGX - Redemptive Pain (DGX_RedemptivePain_Full): ElecGtr1DI, 1DIDT, 2-6DI (DI only, no amp track; the acoustic-guitar DIs are not candidates)",
      "DGX - Rest In Hell (DGX_RestInHell_Full): ElecGtr1-4DI (DI only, no amp track)"
     ],
-    "run": "the DIs that pass T0's DI checks (D2, D3; D1 and A1-A6 where an amp track exists, informative for training) and the user's ear, with a tone-class call by ear on each amp track (clean, crunch, high gain, too heavy): high-gain parts may train; parts heard as too heavy (extreme) are left out. Not known when this entry was made"
+    "run": "the DIs that pass T0's DI checks (D2, D3; D1 and A1-A6 where an amp track exists, informative for training) and the user's ear, with one ear window per DI and a tone-class call by ear per session on its main amp track (clean, crunch, high gain, too heavy): high-gain parts may train; parts heard as too heavy (extreme) are left out. Not known when this entry was made"
    },
    "bands": "7 new bands (Arcadian Alone, Daimon B, Dark Illusion, Inhumanity Vortex, Peppermark, Serapis, DGX; Cambridge-MT), never used by this project; none is in a held-out list (clean_di.refuse_held_out on every band; no set 3-6 session folder carries their names; docs/validation-set3.md names Arcadian Alone, Daimon B, Inhumanity Vortex, Peppermark and Serapis only in its 'not obtained' list)",
    "gate": "none: an intake, not a test. Training permission is recorded in learn/clean_di.py TRAINING_DOWNLOADS (split 'library'), which the DI inventory and assert_training_ok read; every row also carries clean_di.INTAKE_PENDING (training_ok False) until a verified list admits it. clean_di.INTAKE_NOT_DI keeps acoustic-guitar DIs and MIDI renders out of the DI rows",
