@@ -3,6 +3,7 @@ No data files, no renders, no training."""
 
 import json
 import math
+import pathlib
 
 import pytest
 
@@ -184,7 +185,7 @@ def test_positive_control_state(monkeypatch, tmp_path):
     rend = {1: {"positive": {"ok": True, "share_t2_target": 1.0}}, 2: {"positive": {"ok": True, "share_t2_target": 0.995}}}
     built = {1: {"positive": {"ok": True, "mix_share": 1.0, "stem_share": 0.999}},
              2: {"positive": {"ok": False, "mix_share": 1.0, "stem_share": 0.9}}}
-    monkeypatch.setattr(T, "rows_of", lambda root, stage, prefix: rend if prefix == "render" else built)
+    monkeypatch.setattr(T, "rows_of", lambda root, stage, prefix: rend if prefix == "pc-render" else built)
     ok, s = T3.positive_control(tmp_path, {"positive_control": [1, 2]})
     assert not ok and s["render_ok"] == 2 and s["build_ok"] == 1 and s["min_stem_share"] == 0.9
     built[2]["positive"]["ok"] = True
@@ -340,3 +341,141 @@ def test_cmd_vreal_crops_cuts_separates_and_records(monkeypatch, tmp_path):
 def test_vreal_crops_is_t3s():
     with pytest.raises(SystemExit, match="t3"):
         T.main(["vreal-crops"])
+
+
+# --- the review's fixes: the rendered setting, the device rule, the merge partners, the shared FS5 -------------
+
+class _Primer:
+    def __init__(self):
+        self.calls, self.renders = [], 0
+
+    def render(self, key, di, sel, x):
+        self.calls.append(dict(x))
+        self.renders += 1
+        return np.zeros((48_000 * 11, 2))
+
+
+def _fake_twin(monkeypatch):
+    from learn import full_space as F
+    from learn import knob_ceiling as K
+
+    core = {("parameters", "inputGain"): "1", ("reverb", "reverbActive"): "false", ("delay", "delaySync"): "1"}
+    full = F.full_settings(core, {("reverb", "reverbActive"): "true", ("reverb", "reverbMix"): "0.4"})
+    monkeypatch.setattr(T3, "full_twin", lambda i, menus: ("pr12", "wide", "clean", 1, full, core, None, 1))
+
+    class M:
+        dried = {"pr12": {K.START["clean"]["pr12"]: (1, dict(core))}}
+    return M(), core, full
+
+
+@pytest.mark.parametrize("kind", ["full", "positive"])
+def test_render_example_saves_exactly_the_rendered_setting(monkeypatch, kind):
+    from learn import local_objective as LO
+
+    menus, core, full = _fake_twin(monkeypatch)
+    pr = _Primer()
+    x = {"i": 7, "amp": "pr12", "set": "F5"}
+    row, y, _ = T3.render_example(x, menus, pr, "sec", None, {f"{a}/{b}": v for (a, b), v in core.items()}, kind,
+                                  (12_000, 12_000 + 480_000))
+    assert row["settings"] == LO.sdict(pr.calls[-1]) and row["kind"] == kind
+    assert (pr.calls[-1] == full) == (kind == "full")
+    assert y.shape == (480_000,)
+    with pytest.raises(SystemExit, match="core draw"):
+        T3.render_example(x, menus, pr, "sec", None, {"parameters/inputGain": "2"}, kind, (0, 10))
+
+
+def test_control_move_is_a_sounding_new_control():
+    from learn import every_control as EC
+    from learn import full_space as F
+
+    x = {c.path: c.neutral for c in EC.table("morgan") if c.neutral is not None}
+    y = T3.control_move(x, "sw50r")
+    assert {p for p in y if y[p] != x.get(p)} <= {("sw50rEQ", "sw50rEQActive"), ("sw50rEQ", "sw50rEQBand5")}
+    assert ("sw50rEQ", "sw50rEQBand5") in F.new_paths()
+    assert EC.mask(y, "morgan", amp="sw50r")[("sw50rEQ", "sw50rEQBand5")]
+
+
+def test_positive_control_builds_on_t2s_device():
+    dev = {1: "mps", 2: "cpu", 3: "mps", 4: None}
+    rend = {1: {}, 2: {}, 3: {}, 4: {}}
+    assert T3.pc_todo([1, 2, 3, 4, 5], rend, {3: {}}, dev, "mps") == [1]
+    assert T3.pc_todo([1, 2, 3, 4, 5], rend, {}, dev, "cpu") == [2]
+
+
+def test_target_features_match_part_cs_store():
+    from learn import pretrain_set as PS
+    from learn import song_aug as SA
+
+    y = 0.1 * np.sin(2 * np.pi * 330 * np.arange(480_000) / 48_000)
+    mels, halves = T3.target_features(y)
+    h = PS.halves_mel(y)
+    assert np.array_equal(mels["gA"], h["A"]) and np.array_equal(mels["gB"], h["B"])
+    assert halves["lufs_A"] == pytest.approx(float(SA.lufs(y[PS.half_slices()["A"]])))
+
+
+def test_shared_fs():
+    rows = [{"i": 1}, {"i": 2}]
+    assert T3.shared_fs({"D_core5": rows, "D_F5": list(rows)}) == [1, 2]
+    with pytest.raises(SystemExit, match="FS5"):
+        T3.shared_fs({"D_core5": rows, "D_F5": rows[:1]})
+
+
+def test_train_data_parity_partners_from_each_arms_own_renders(monkeypatch, tmp_path):
+    """Both arms train on the same examples with the same merge partners; each arm's partner mels and its rows'
+    half loudness come from its own render family (part C's core renders for D_core5, the full twins for D_F5)."""
+    from learn import direct_stems as DS
+    from learn import every_control as EC
+    from learn import full_space as F
+    from learn import local_objective as LO
+    from learn import pretrain_set as PS
+
+    setting = {c.path: c.neutral for c in EC.table("morgan") if c.neutral is not None}
+    ids = list(range(10, 22))
+    pool = [{"i": i, "section": f"S{i % 4}", "band": "B", "amp": "pr12", "base": ("clean", "crunch")[i % 2],
+             "label": {"parameters/inputGain": 0.5}, "lufs_A": -20.0, "lufs_B": -21.0} for i in ids]
+    rend = {i: {"i": i, "settings": LO.sdict(setting),
+                "target": {"lufs_A": -14.0 - i / 100, "lufs_B": -15.0 - i / 100}} for i in ids}
+    rows = {"render": rend, "build": {i: {"i": i} for i in ids}}
+    monkeypatch.setattr(T, "rows_of", lambda root, stage, prefix: rows[prefix] if stage == "t3" else {})
+    plan = {"f5": ids[:9], "fs5": ids[9:]}
+
+    class Ctx:
+        pass
+    ctx = Ctx()
+    ctx.pool = pool
+    core = T3.arm_rows(tmp_path, ctx, plan, "D_core5")
+    full = T3.arm_rows(tmp_path, ctx, plan, "D_F5")
+    for a, b in zip(core, full):
+        assert [r["i"] for r in a] == [r["i"] for r in b] and [r["section"] for r in a] == [r["section"] for r in b]
+    assert all(r["lufs_A"] == -20.0 for r in core[0])
+    assert all(r["lufs_A"] == rend[r["i"]]["target"]["lufs_A"] for r in full[0])
+
+    def npz(path, **arrays):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        np.savez(path, **arrays)
+
+    u8 = lambda v: np.full((96, 446), v, np.uint8)     # noqa: E731
+    files = {}
+    for i in ids:
+        for arm in ("D_core5", "D_F5"):
+            m, s = T3.files_of(tmp_path, arm, i)
+            npz(pathlib.Path(m), mA=u8(1), mB=u8(1), lufs=[-20.0, -20.0], gain_db=0.0, mastered=False)
+            npz(pathlib.Path(s), sA=u8(2), sB=u8(2), lufs=[-22.0, -22.0])
+            files[(arm, i)] = (m, s)
+        npz(tmp_path / "partc" / f"{i}.npz", gA=u8(10), gB=u8(11))
+        npz(T3.tgt_path(tmp_path, i), gA=u8(20), gB=u8(21), lufs=[-14.0, -15.0])
+    monkeypatch.setattr(PS, "example_path", lambda i: tmp_path / "partc" / f"{i}.npz")
+    data = {}
+    for arm, (tr, es) in (("D_core5", core), ("D_F5", full)):
+        rws = tr + es
+        data[arm] = T.ArmData(rws, {r["i"]: files[(arm, r["i"])] for r in rws}, aug=True,
+                              encode=T3.encode_for(arm), partner_path=T3.partner_path(tmp_path, arm))
+    a, b = data["D_core5"], data["D_F5"]
+    assert a.cands == b.cands and a.gpos == b.gpos and a.cands
+    assert (a.G[:, 0] == 10).all() and (b.G[:, 0] == 20).all() and (b.G[:, 1] == 21).all()
+    assert len(b.Y) == 7 and b.Y[0].shape[1] == len(F.CONT) and len(a.Y) == 6
+    # the same partner draws (augmentation is seeded by example and epoch, not by arm)
+    rng_a, rng_b = DS.aug_rng(ids[0], 3), DS.aug_rng(ids[0], 3)
+    pa = DS.merge_partner(rng_a, a.cands[core[0][0]["base"]], core[0][0]["section"])
+    pb = DS.merge_partner(rng_b, b.cands[full[0][0]["base"]], full[0][0]["section"])
+    assert pa == pb

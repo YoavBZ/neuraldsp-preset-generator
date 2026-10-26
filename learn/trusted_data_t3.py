@@ -603,52 +603,158 @@ def cmd_plan(args):
 
 # --- render (MAIN; renders) --------------------------------------------------------------------------------------
 
-def cmd_render(args):
-    """Renders for one shard of whole sections: each example's full twin (T2's core draw + the new controls), refused
-    below RENDER_FLOOR_LUFS; the positive control's examples also with every new control at S's value, compared with
-    T2's stored target (T2's match share). isolate=True, one priming render per (DI, amp) change, 0.25 s trimmed."""
-    import numpy as np
+CONTROL_MOVE_DB = 12.0                   # the control check: the amp EQ's 1-kHz band at +12 dB (EQ on)
+PC_DEVICE_RULE = ("the positive control's stems are compared within one device: each control example is separated "
+                  "on the device T2 built it on (T2's build rows); the chain runs the MPS and CPU workers")
 
-    from learn import direct_sound_gate as G
+
+def control_move(x, amp):
+    """The control check's moved setting: x with the amp's EQ on (section on) and its 1-kHz band at +12 dB, a new
+    control that sounds whenever the amp is selected."""
+    y = dict(x)
+    y[("eqParameters", "sectionActive")] = "true"
+    y[(f"{amp}EQ", f"{amp}EQActive")] = "true"
+    y[(f"{amp}EQ", f"{amp}EQBand5")] = f"{CONTROL_MOVE_DB:g}"
+    return y
+
+
+def render_example(x, menus, primer, sid, di, part_c_settings, kind, trim):
+    """One example's render (`kind` "full": its full twin; "positive": every new control at S's value). The row's
+    stored settings are exactly the settings rendered. -> (row, trimmed mono render, core setting)."""
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+
+    amp, mode, base, sel, xf, core, cname, tries = full_twin(x["i"], menus)
+    if {f"{a}/{b}": v for (a, b), v in core.items()} != part_c_settings or amp != x["amp"]:
+        raise SystemExit(f"{x['i']}: the core draw differs from part C's row")
+    settings = xf if kind == "full" else F.positive_settings(core, menus.dried[amp][K.START[base][amp]][1])
+    y = primer.render((sid, amp), di, sel, settings)
+    y = (y.mean(axis=1) if y.ndim == 2 else y)[trim[0]:trim[1]]
+    row = {"i": x["i"], "section": sid, "set": x["set"], "kind": kind, "amp": amp, "mode": mode, "centre": cname,
+           "tries": tries, "settings": LO.sdict(settings)}
+    return row, y, core
+
+
+def target_features(y):
+    """A target render's half mels and half loudness, as part C stored its targets (`halves_mel`; LUFS per half):
+    the full twins' merge partners for D_F5's augmentation. -> ({"gA", "gB"}, {"lufs_A", "lufs_B"})."""
+    from learn import pretrain_set as PS
+    from learn import song_aug as SA
+
+    m = PS.halves_mel(y)
+    return {"gA": m["A"], "gB": m["B"]}, {f"lufs_{h}": float(SA.lufs(y[s])) for h, s in PS.half_slices().items()}
+
+
+def tgt_path(root, i):
+    return T.ex_path(root, STAGE, i, f"tgt-{STAGE}")
+
+
+def _render_setup(args, plan, prefix):
     from learn import direct_stems as DS
     from learn import knob_ceiling as K
     from learn import local_objective as LO
+    from learn import pretrain_set as PS
+
+    if PS.free_gb() < T.DISK_GUARD_GB:
+        raise SystemExit(f"free disk below {T.DISK_GUARD_GB:.0f} GB")
+    menus = Menus()
+    menus.gate_u = plan["gate_cap"]["unit"]
+    LO._wait_cap()
+    DS.wait_render_slot()
+    rr = K.Renderer()
+    try:
+        DS.check_recipe(rr)
+        check_menu(rr.menu(), menus.dried)
+        if abs(F.gate_cap_u(menus.gate_thresholds())[0] - plan["gate_cap"]["unit"]) > 1e-12:
+            raise SystemExit("the factory gate thresholds changed since the plan")
+    except BaseException:
+        rr.close()
+        raise
+    k, n = args.shard
+    rp = T.stage_root(T.V.out_root(args), STAGE) / "rows" / f"{prefix}-{k}of{n}.jsonl"
+    rp.parent.mkdir(parents=True, exist_ok=True)
+    return menus, rr, DS.Primer(rr), rp
+
+
+def cmd_control_check(args):
+    """The chain's first renders (3: one priming, then 2): the first positive-control example with every new control
+    at S's value, and the same with one new control moved (`control_move`). The two must differ (the plugin takes
+    the new controls' edits); written to t3/control-check.json, and an unchanged output stops here."""
+    import numpy as np
+
+    from learn import direct_stems as DS
+    from learn import knob_ceiling as K
     from learn import pretrain_set as PS
     from learn import song_bank as B
 
     require_t3(args)
     root = V.out_root(args)
     plan = load_plan(root, args.smoke)
+    x = next(e for e in plan["examples"] if e["i"] == plan["positive_control"][0])
+    ctx = DS.Ctx(quiet=True)
+    sec = ctx.sections[x["section"]]
+    di = B.measure(PS.section_audio(sec["path"], sec["start_s"])).astype(np.float32)
+    menus, rr, primer, _ = _render_setup(args, plan, "control")
+    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
+    try:
+        amp, mode, base, sel, xf, core, cname, tries = full_twin(x["i"], menus)
+        S = menus.dried[amp][K.START[base][amp]][1]
+        a = F.positive_settings(core, S)
+        b = control_move(a, amp)
+        ya = primer.render((x["section"], amp), di, sel, a)
+        yb = primer.render((x["section"], amp), di, sel, b)
+    finally:
+        rr.close()
+    ya, yb = ((y.mean(axis=1) if y.ndim == 2 else y)[trim[0]:trim[1]] for y in (ya, yb))
+    share = min(DS.match_share(PS.halves_mel(yb)[h], m) for h, m in PS.halves_mel(ya).items())
+    diff = float(np.max(np.abs(ya - yb)))
+    rec = {"i": x["i"], "amp": amp, "move": f"{amp}EQ/{amp}EQBand5 at +{CONTROL_MOVE_DB:g} dB (EQ on)",
+           "mel_share_unchanged": share, "max_abs_diff": diff, "renders": primer.renders, "primes": primer.primes,
+           "changed": share < DS.MATCH_SHARE, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    _save(T.stage_root(root, STAGE) / "control-check.json", rec)
+    print(f"control check: {rec}")
+    if not rec["changed"]:
+        raise SystemExit("CONTROL CHECK FAILED: moving a new control did not change the render")
+    print("CONTROL CHECK OK")
+
+
+def cmd_render(args):
+    """Renders for one shard of whole sections (isolate=True, one priming render per (DI, amp) change, 0.25 s
+    trimmed). Default: each example's full twin (T2's core draw + the new controls), refused below
+    RENDER_FLOOR_LUFS, its half mels and loudness saved as `tgt-t3` (D_F5's merge partners). `--positive-only`:
+    the positive control's 50 examples with every new control at S's value, each compared with T2's stored target
+    and part C's mels (T2's match share); the chain renders and builds them before anything else."""
+    import numpy as np
+
+    from learn import direct_sound_gate as G
+    from learn import direct_stems as DS
+    from learn import pretrain_set as PS
+    from learn import song_bank as B
+
+    require_t3(args)
+    root = V.out_root(args)
+    plan = load_plan(root, args.smoke)
+    kind = "positive" if args.positive_only else "full"
+    prefix = "pc-render" if kind == "positive" else "render"
     k, n = args.shard
-    shard = DS.shard_sections(plan["examples"], n)
-    done = T.rows_of(root, STAGE, "render")
-    todo = [x for x in plan["examples"] if shard[x["section"]] == k and x["i"] not in done]
+    pcs = set(plan["positive_control"])
+    exs = [x for x in plan["examples"] if kind == "full" or x["i"] in pcs]
+    shard = DS.shard_sections(exs, n)
+    done = T.rows_of(root, STAGE, prefix)
+    todo = [x for x in exs if shard[x["section"]] == k and x["i"] not in done]
     if not todo:
         print(f"RENDER DONE {k}/{n} (nothing to do)")
         return
-    if PS.free_gb() < T.DISK_GUARD_GB:
-        raise SystemExit(f"free disk below {T.DISK_GUARD_GB:.0f} GB")
-    menus = Menus()
-    menus.gate_u = plan["gate_cap"]["unit"]
-    t2rend = T.rows_of(root, "t2", "render")
+    t2rend = T.rows_of(root, "t2", "render") if kind == "positive" else {}
     ctx = DS.Ctx(quiet=True)
     by_sec = {}
     for x in todo:
         by_sec.setdefault(x["section"], []).append(x)
-    LO._wait_cap()
-    DS.wait_render_slot()
-    rr = K.Renderer()
-    primer = DS.Primer(rr)
+    menus, rr, primer, rp = _render_setup(args, plan, prefix)
     swap0 = DS.swap_mb()
-    rp = T.stage_root(root, STAGE) / "rows" / f"render-{k}of{n}.jsonl"
-    rp.parent.mkdir(parents=True, exist_ok=True)
-    trim0, trim1 = int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR)
+    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
     t_start, written = time.time(), []
     try:
-        DS.check_recipe(rr)
-        check_menu(rr.menu(), menus.dried)
-        if abs(F.gate_cap_u(menus.gate_thresholds())[0] - plan["gate_cap"]["unit"]) > 1e-12:
-            raise SystemExit("the factory gate thresholds changed since the plan")
         with open(rp, "a") as fh:
             for m, (sid, xs) in enumerate(sorted(by_sec.items())):
                 g = DS._guards("t3-render", T.DISK_GUARD_GB, swap0)
@@ -658,31 +764,26 @@ def cmd_render(args):
                 sec = ctx.sections[sid]
                 di = B.measure(PS.section_audio(sec["path"], sec["start_s"])).astype(np.float32)
                 for x in sorted(xs, key=lambda x: (x["amp"], x["i"])):
-                    amp, mode, base, sel, xf, core, cname, tries = full_twin(x["i"], menus)
-                    if {f"{a}/{b}": v for (a, b), v in core.items()} != ctx.rows[x["i"]]["settings"] or amp != x["amp"]:
-                        raise SystemExit(f"{x['i']}: the core draw differs from part C's row")
-                    row = {"i": x["i"], "section": sid, "set": x["set"], "amp": amp, "mode": mode, "centre": cname,
-                           "tries": tries, "settings": LO.sdict(xf)}
-                    y = primer.render((sid, amp), di, sel, xf)
-                    y = (y.mean(axis=1) if y.ndim == 2 else y)[trim0:trim1]
-                    ly = T.lufs_or_none(y)
-                    why = T.near_silent(ly)
-                    if why:
-                        row.update(refused=f"full twin: {why}", lufs=ly)
+                    row, y, _ = render_example(x, menus, primer, sid, di, ctx.rows[x["i"]]["settings"], kind, trim)
+                    if kind == "full":
+                        ly = T.lufs_or_none(y)
+                        why = T.near_silent(ly)
+                        if why:
+                            row.update(refused=f"full twin: {why}", lufs=ly)
+                        else:
+                            sc, sha = G.write_flac(T.flac_path(root, STAGE, x["i"], "target"), y, PS.SR)
+                            mels, halves = target_features(y)
+                            DS._save_npz(tgt_path(root, x["i"]), lufs=[halves["lufs_A"], halves["lufs_B"]], **mels)
+                            row["target"] = {"scale": sc, "sha256": sha, "lufs": ly, **halves,
+                                             "tgt_sha256": DS.hashlib_file(tgt_path(root, x["i"]))}
                     else:
-                        sc, sha = G.write_flac(T.flac_path(root, STAGE, x["i"], "target"), y, PS.SR)
-                        row["target"] = {"scale": sc, "sha256": sha, "lufs": ly}
-                    if x["positive"]:
-                        S = menus.dried[amp][K.START[base][amp]][1]
-                        yp = primer.render((sid, amp), di, sel, F.positive_settings(core, S))
-                        yp = (yp.mean(axis=1) if yp.ndim == 2 else yp)[trim0:trim1]
                         stored = np.load(PS.example_path(x["i"]))
-                        share_c = min(DS.match_share(mm, stored[f"g{h}"]) for h, mm in PS.halves_mel(yp).items())
+                        h1 = PS.halves_mel(y)
+                        share_c = min(DS.match_share(h1[h], stored[f"g{h}"]) for h in h1)
                         t2r = t2rend[x["i"]]["target"]
-                        y2 = G.read_flac(T.flac_path(root, "t2", x["i"], "target"), t2r["scale"], t2r["sha256"])
-                        h2 = PS.halves_mel(y2)
-                        share_t2 = min(DS.match_share(mm, h2[h]) for h, mm in PS.halves_mel(yp).items())
-                        sc, sha = G.write_flac(T.flac_path(root, STAGE, x["i"], "pc-target"), yp, PS.SR)
+                        h2 = PS.halves_mel(G.read_flac(T.flac_path(root, "t2", x["i"], "target"), t2r["scale"], t2r["sha256"]))
+                        share_t2 = min(DS.match_share(h1[h], h2[h]) for h in h1)
+                        sc, sha = G.write_flac(T.flac_path(root, STAGE, x["i"], "pc-target"), y, PS.SR)
                         row["positive"] = {"share_t2_target": share_t2, "share_part_c": share_c,
                                            "ok": share_t2 >= DS.MATCH_SHARE and share_c >= DS.MATCH_SHARE,
                                            "file": {"scale": sc, "sha256": sha}}
@@ -694,11 +795,10 @@ def cmd_render(args):
                       f"({primer.primes} priming); {(time.time() - t_start) / (m + 1):.0f} s per section", flush=True)
     finally:
         rr.close()
-    pcs = [r["positive"] for r in written if r.get("positive")]
     print(f"refused in this shard, by reason: {T.refusal_counts(written) or 'none'}")
-    if pcs:
-        print(f"positive control (render) in this shard: {sum(p['ok'] for p in pcs)}/{len(pcs)} match "
-              f"(min share vs T2's target {min(p['share_t2_target'] for p in pcs):.4f})")
+    if kind == "positive":
+        print(f"positive control (render) in this shard: {sum(r['positive']['ok'] for r in written)}/{len(written)} "
+              f"match (min share vs T2's target {min(r['positive']['share_t2_target'] for r in written):.4f})")
     print(f"RENDER DONE {k}/{n}: {primer.renders} renders ({primer.primes} priming)")
 
 
@@ -711,11 +811,18 @@ def feature_share(new, stored, keys):
     return min(DS.match_share(new[k], stored[k]) for k in keys)
 
 
+def pc_todo(pcs, pc_rendered, pc_built, t2_device, device):
+    """The positive control's examples this worker separates: rendered, not built, and built by T2 on this device
+    (the stems are compared within one device)."""
+    return [i for i in sorted(pcs) if i in pc_rendered and i not in pc_built and t2_device.get(i) == device]
+
+
 def cmd_build(args):
-    """Mixes and X-LANCE stems of the full twins (msst-venv): each example's full-twin target with T2's stored other
-    guitars, stems, pans and mix draw (`trusted_data.self_built_mix`); features as `mix-t3` and `xlance_g-t3`. The
-    positive control's examples are also built from their S-valued render and their features compared with T2's
-    stored `mix-t2` and `xlance_g-t2` (T2's match share)."""
+    """Mixes and X-LANCE stems (msst-venv), with T2's stored other guitars, stems, pans and mix draw
+    (`trusted_data.self_built_mix`). Default: the full twins, features as `mix-t3` and `xlance_g-t3`.
+    `--positive-only`: the positive control's S-valued renders, built and separated on the device T2 built them on,
+    their mix and stem features compared with T2's stored `mix-t2` and `xlance_g-t2` (T2's match share); nothing
+    is saved but the comparison."""
     import numpy as np
 
     from learn import direct_sound_gate as G
@@ -728,20 +835,29 @@ def cmd_build(args):
     rec2 = {x["i"]: x for x in t2["examples"]}
     t2rend = T.rows_of(root, "t2", "render")
     t2built = T.rows_of(root, "t2", "build")
-    rend = T.rows_of(root, STAGE, "render")
-    built = T.rows_of(root, STAGE, "build")
-    todo = [x for x in plan["examples"] if x["i"] in rend and x["i"] not in built]
-    todo.sort(key=lambda x: (x["section"], x["i"]), reverse=args.order == "desc")
-    todo = todo[:args.limit or None]
-    print(f"build t3: {len(todo)} to build ({len(rend)} rendered, {len(built)} built) on {args.device}", flush=True)
-    if not todo:
+    xp_of = {x["i"]: x for x in plan["examples"]}
+    if args.positive_only:
+        pc_rend = T.rows_of(root, STAGE, "pc-render")
+        ids = pc_todo(plan["positive_control"], pc_rend, T.rows_of(root, STAGE, "pc-build"),
+                      {i: r.get("device") for i, r in t2built.items()}, args.device)
+        rp = T.stage_root(root, STAGE) / "rows" / f"pc-build-{args.device}-{os.getpid()}.jsonl"
+    else:
+        rend = T.rows_of(root, STAGE, "render")
+        built = T.rows_of(root, STAGE, "build")
+        ids = [x["i"] for x in plan["examples"] if x["i"] in rend and x["i"] not in built]
+        rp = T.stage_root(root, STAGE) / "rows" / f"build-{args.device}-{os.getpid()}.jsonl"
+    ids.sort(key=lambda i: (xp_of[i]["section"], i), reverse=args.order == "desc")
+    ids = ids[:args.limit or None]
+    print(f"build t3{' (positive control)' if args.positive_only else ''}: {len(ids)} to build on {args.device}",
+          flush=True)
+    if not ids:
+        print(f"BUILD DONE t3 ({args.device})")
         return
     ctx = DS.Ctx(quiet=True)
     ctx.rows = None
     sep = DS.stem_separator(T.SEP, args.device)
     stems = T.Stems(ctx)
     swap0 = DS.swap_mb()
-    rp = T.stage_root(root, STAGE) / "rows" / f"build-{args.device}-{os.getpid()}.jsonl"
     rp.parent.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
 
@@ -755,39 +871,40 @@ def cmd_build(args):
         return mix, s, gains, lb
 
     with open(rp, "a") as fh:
-        for m, xp in enumerate(todo):
+        for m, i in enumerate(ids):
             g = DS._guards("t3-build", T.DISK_GUARD_GB, swap0)
             if g:
                 print(g[1], flush=True)
                 raise SystemExit(g[0])
-            i = xp["i"]
-            if T.ex_path(root, STAGE, i, f"{T.SEP}-{STAGE}").exists():
+            if not args.positive_only and T.ex_path(root, STAGE, i, f"{T.SEP}-{STAGE}").exists():
                 continue                                    # the other worker's
-            rw, x = rend[i], rec2[i]
-            base = {"i": i, "section": x["section"], "band": x["band"], "set": xp["set"]}
+            x = rec2[i]
+            row = {"i": i, "section": x["section"], "band": x["band"], "set": xp_of[i]["set"], "device": args.device}
             o2 = t2rend[i]["others_file"]
             oth = G.read_flac(T.flac_path(root, "t2", i, "others"), o2["scale"], o2["sha256"])
             voc = x["draw"]["vocals_drawn"] and x["stems"]["v"] != x["stems"]["n"]
             st = stems.get(x["section"], T.backing_tracks(x, voc))
-            row = {**base, "vocals": bool(voc), "device": args.device}
-            if xp["positive"]:
-                pf = rw["positive"]["file"]
-                yp = G.read_flac(T.flac_path(root, STAGE, i, "pc-target"), pf["scale"], pf["sha256"])
-                made = make(yp, oth, st, x)
+            row["vocals"] = bool(voc)
+            if args.positive_only:
+                pf = pc_rend[i]["positive"]["file"]
+                made = make(G.read_flac(T.flac_path(root, STAGE, i, "pc-target"), pf["scale"], pf["sha256"]), oth, st, x)
                 if made is None:
                     row["positive"] = {"ok": False, "why": "no backing (T2 built this example)"}
                 else:
                     mix, s, _, _ = made
                     mm, ml, _ = DS.half_features(mix)
-                    sm, sl, _ = DS.half_features(s)
+                    sm, _, _ = DS.half_features(s)
                     d2m, d2s = np.load(T.ex_path(root, "t2", i, "mix-t2")), np.load(T.ex_path(root, "t2", i, f"{T.SEP}-t2"))
                     sh_m = feature_share({"mA": mm["A"], "mB": mm["B"]}, d2m, ("mA", "mB"))
                     sh_s = feature_share({"sA": sm["A"], "sB": sm["B"]}, d2s, ("sA", "sB"))
-                    row["positive"] = {"mix_share": sh_m, "stem_share": sh_s,
+                    row["positive"] = {"mix_share": sh_m, "stem_share": sh_s, "t2_device": t2built[i].get("device"),
                                        "mix_lufs_diff": float(max(abs(ml["A"] - d2m["lufs"][0]), abs(ml["B"] - d2m["lufs"][1]))),
-                                       "t2_device": (t2built.get(i) or {}).get("device"),
                                        "ok": sh_m >= DS.MATCH_SHARE and sh_s >= DS.MATCH_SHARE}
-            if rw.get("refused"):                           # the positive control is built all the same
+                fh.write(json.dumps(row) + "\n")
+                fh.flush()
+                continue
+            rw = rend[i]
+            if rw.get("refused"):
                 fh.write(json.dumps({**row, "refused": rw["refused"]}) + "\n")
                 fh.flush()
                 continue
@@ -810,13 +927,13 @@ def cmd_build(args):
             fh.write(json.dumps(row) + "\n")
             fh.flush()
             if m % 25 == 0:
-                print(f"build {m + 1}/{len(todo)}: {(time.time() - t0) / (m + 1):.1f} s per example", flush=True)
+                print(f"build {m + 1}/{len(ids)}: {(time.time() - t0) / (m + 1):.1f} s per example", flush=True)
     print(f"BUILD DONE t3 ({args.device})")
 
 
 def positive_control(root, plan):
-    """The positive control's state from the render and build rows: (ok, summary dict)."""
-    rend, built = T.rows_of(root, STAGE, "render"), T.rows_of(root, STAGE, "build")
+    """The positive control's state from its own render and build rows (`--positive-only`): (ok, summary dict)."""
+    rend, built = T.rows_of(root, STAGE, "pc-render"), T.rows_of(root, STAGE, "pc-build")
     pcs = plan["positive_control"]
     r = [rend[i].get("positive") or {} for i in pcs if i in rend]
     b = [built[i].get("positive") or {} for i in pcs if i in built]
@@ -824,9 +941,21 @@ def positive_control(root, plan):
          "render_ok": sum(1 for v in r if v.get("ok")), "build_ok": sum(1 for v in b if v.get("ok")),
          "min_render_share": min((v.get("share_t2_target", 0) for v in r), default=None),
          "min_mix_share": min((v.get("mix_share", 0) for v in b), default=None),
-         "min_stem_share": min((v.get("stem_share", 0) for v in b), default=None)}
+         "min_stem_share": min((v.get("stem_share", 0) for v in b), default=None), "rule": PC_DEVICE_RULE}
     s["ok"] = s["render_ok"] == s["build_ok"] == len(pcs)
     return s["ok"], s
+
+
+def cmd_pc_check(args):
+    """The positive control's verdict (zero renders): exits non-zero unless every control example matched T2 in
+    the render and in the build."""
+    require_t3(args)
+    root = V.out_root(args)
+    ok, s = positive_control(root, load_plan(root, args.smoke))
+    print(f"positive control: {s}")
+    if not ok:
+        raise SystemExit("POSITIVE CONTROL FAILED: the pipeline does not repeat T2; nothing else runs")
+    print("POSITIVE CONTROL OK")
 
 
 # --- train, fit (demucs-venv) ------------------------------------------------------------------------------------
@@ -842,7 +971,9 @@ def t3_sets(root, plan):
 
 
 def arm_rows(root, ctx, plan, arm):
-    """(training rows, FS5 rows) of an arm: part C's rows; D_F5's labels are the full twins' (from the render rows)."""
+    """(training rows, FS5 rows) of an arm, the same examples in the same order for both arms: part C's rows; D_F5's
+    labels and target half loudness (`lufs_A`, `lufs_B`: the merge augmentation's gains) are its full twins' (from
+    the render rows), as its merge partners' mels are (`partner_path`)."""
     f5, fs, _, _ = t3_sets(root, plan)
     by = {r["i"]: r for r in ctx.pool}
     rend = T.rows_of(root, STAGE, "render") if arm == FULL else {}
@@ -852,9 +983,27 @@ def arm_rows(root, ctx, plan, arm):
         if arm == FULL:
             x = {tuple(k.rsplit("/", 1)): v for k, v in rend[i]["settings"].items()}
             r["label"] = F.label_of(x, r["amp"])
+            r["lufs_A"], r["lufs_B"] = rend[i]["target"]["lufs_A"], rend[i]["target"]["lufs_B"]
         return r
 
     return [row(i, False) for i in f5], [row(i, True) for i in fs]
+
+
+def partner_path(root, arm):
+    """Where an arm's merge partners' half mels are: part C's stored targets (the core twins' renders) for
+    D_core5, the full twins' `tgt-t3` for D_F5."""
+    if arm == CORE:
+        return None                                           # ArmData's default: pretrain_set.example_path
+    return lambda i: tgt_path(root, i)
+
+
+def shared_fs(fs_by_arm):
+    """Both models are fitted on the same FS5 examples (the shared fit): -> the ids, or refuse."""
+    ids = {a: [r["i"] for r in rows] for a, rows in fs_by_arm.items()}
+    first = next(iter(ids.values()))
+    if any(v != first for v in ids.values()):
+        raise SystemExit(f"the arms' FS5 sets differ: {[(a, len(v)) for a, v in ids.items()]}")
+    return first
 
 
 def encode_for(arm):
@@ -902,7 +1051,7 @@ def cmd_train(args):
     es = np.arange(len(tr_rows), len(rows))
     torch.set_num_threads(2)
     dev = torch.device("cpu" if os.environ.get("DS_DEVICE") == "cpu" or not torch.backends.mps.is_available() else "mps")
-    data = T.ArmData(rows, files, aug=True, encode=encode_for(args.arm))
+    data = T.ArmData(rows, files, aug=True, encode=encode_for(args.arm), partner_path=partner_path(root, args.arm))
     kw = {"build": F.build_net, "loss": F.loss_fn} if args.arm == FULL else {}
     print(f"T3 F5 {args.arm} seed {args.seed}: {len(tr)} train, {len(es)} early stopping (FS5), {len(refused)} "
           f"refused in either twin; {dev}", flush=True)
@@ -1022,9 +1171,11 @@ def cmd_fit(args):
     ctx = DS.Ctx(quiet=True)
     out = {"plan": T.PLAN, "design": DESIGN, "stage": "T3 F5 fit", "readout_rule": DS.READOUT_RULE + " (T3's)",
            "models": {}}
+    rows_of_arm = {arm: arm_rows(root, ctx, plan, arm) for arm in ARMS}
+    out["fs5_ids"] = shared_fs({a: v[1] for a, v in rows_of_arm.items()})
     for arm in ARMS:
         nets, recs = load_models(root, arm, args.smoke)
-        tr_rows, fs_rows = arm_rows(root, ctx, plan, arm)
+        tr_rows, fs_rows = rows_of_arm[arm]
         files = {r["i"]: files_of(root, arm, r["i"]) for r in tr_rows + fs_rows}
         enc = encode_for(arm) if arm == FULL else DS.encode_audible
         enc6 = (lambda lab: enc(lab)[:6]) if arm == FULL else enc

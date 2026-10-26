@@ -1533,6 +1533,14 @@ open, decided here for the review:
 - **The positive control's 50** are drawn with `seed_int(20261107, "positive control")`. They must match T2's
   stored target FLAC and part C's mels at 0.99. Built from the same T2 backing, their mix and stem features must
   match T2's `mix-t2` and `xlance_g-t2` at 0.99. Every run waits for it.
+- **The positive control runs first** (the review of #299). `control-check` makes 3 renders: one control example,
+  then the same with the amp EQ's 1-kHz band moved to +12 dB; the output must change. Then the 50 examples are
+  rendered (`render --positive-only`) and built (`build --positive-only`). Each stem is separated on the device T2
+  built it on, so the stem comparison stays within one device. `pc-check` stops the chain on any miss, and all four
+  runs refuse without it.
+- **D_F5's merge augmentation reads its own renders** (the review of #299). The full twins' half mels and half
+  loudness are saved at render (`tgt-t3`). D_F5's merge partners and its rows' `lufs_A`/`lufs_B` come from them;
+  D_core5's come from part C's core renders. Both arms keep the same examples and the same partner draws.
 - **The amp head** is a 256-unit MLP on the pooled audio features. The readout's switches use the mean probability
   over seeds, for D_core5 too. A per-seed answer is that seed's A1, pulled by the model's b. A both-cabs-off answer
   turns on the likelier cab.
