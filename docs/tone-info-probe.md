@@ -113,14 +113,21 @@ The same probe for every input:
 - **Wording, declared:** "rises sharply" if the top third's AUC is at least 0.10 above the all-"on" AUC for that
   input; said plainly per switch and input.
 
-## Outcome (2026-10-27, zero renders; `tone-probe/probe.json`, `tone-probe/audible.json`)
+## Outcome (2026-10-27, zero renders; `tone-probe/probe.json`, `audible.json`, `posthoc.json`)
 
 Run once after the declarations above were committed (main read d2ffe28, the addition a3e2aed). Probe-trained on
 3,467 examples in 59 sections, read on FS5's 722 in 12. T0's lists changed at 00:49 the same day (another session's
 ear update, after the declaration); the probe reads T3's stored sets as planned, so the list-hash check was recorded,
 not enforced. Features took 2 minutes on 4 processes, the read 8.
 
-**The mix hides the tone. The separator loses a little more. The features carry most of it.**
+**The target render holds most of the tone (86 of 116). The mix hides most of it from a linear reader (30). The
+stem gets none of it back and is slightly worse (20). The fixable loss is the separator failing to recover what the
+mix masks: a 66-head gap that a better stem or a mix-aware model must close.**
+
+**Next steps this points to:**
+1. A model fed the mix, or the mix plus the stem, is the cheap first try.
+2. Fine-tune X-LANCE on our self-built mixes against their known targets.
+3. Different features are not needed: (e) adds nothing.
 
 | Input | Readable of 116 | Knobs (of 85) | Switches (of 28) |
 |---|---|---|---|
@@ -130,6 +137,10 @@ not enforced. Features took 2 minutes on 4 processes, the read 8.
 | (d) target + DI | 85 | 54 | 28 |
 | (e) target, richer | 87 | 57 | 27 |
 | (n) DI alone (negative control) | 8 | 3 | 5 |
+| *Post hoc, from the review:* | | | |
+| target, level removed | 91 | 60 | 28 |
+| target loudness alone | 33 | 9 | 23 |
+| conditioning alone (amp and class, no audio) | 6 | 1 | 5 |
 | D_F5 on the stem (R0, beside) | 20 | 5 | 14 |
 
 Per family: readable/heads · median AUC − 0.5 (switches) · median E gain ×100 (knobs; the constant's E minus the
@@ -151,23 +162,27 @@ needs the DI 2, separator alone 0. The verdict is "mix" in today's space, amp EQ
 doubler; "survives" in cab rest and the amp choice; "not carried" in the spring (3 of 5, the other 2 mix).
 
 - **The mix step is the big loss:** 87 heads read reliably worse from the mix than from the target, none better.
-  Today's knobs go from 24 of 25 readable to 4; the amp EQ from 25 of 36 to 9; reverb's switch from AUC 0.75 to 0.60,
+  Today's space (knobs, switches, mics) goes from 24 of 25 readable to 4; the amp EQ from 25 of 36 to 9; reverb's switch from AUC 0.75 to 0.60,
   delay's from 0.81 to 0.66, tremolo's from 0.72 to 0.55.
-- **The separator adds a smaller loss:** 18 heads read reliably worse from the stem than from the mix (12 of them
+- **The separator adds a smaller loss:** 18 heads read reliably worse from the stem than from the mix (13 of them
   already lost at the mix), 1 better. Readable heads go from 30 to 20.
 - **The features are not the bottleneck:** the target reads 86 of 116 with a linear probe on summaries of the
-  model's own mels; the finer, unquantised representation (e) reads 87, its step reliable either way about equally
+  model's own mels, reliably but modestly for the knobs: the 55 readable knobs gain a median 3.1 points of their range
+  over the constant (2.3 in today's space), against the constant's own error of about 17 points; the finer, unquantised representation (e) reads 87, its step reliable either way about equally
   often (18 better, 12 worse). The PR12's and AC20's volume (not the SW50R's), reverb and delay mix, and the amp choice (accuracy +0.26 over the
   base rate) read from the target.
 - **The DI adds nothing:** (d) reads 85, 2 heads reliably better and 13 worse (more dimensions, same examples).
-- **The negative control holds:** the DI alone reads 8 of 116, under the declared flag of 12.
+- **The negative control holds:** the DI alone reads 8 of 116, under the declared flag of 12. The conditioning alone
+  (amp and class, no audio; post hoc) reads 6, so the DI's 8 is the conditioning, not leakage, and the stem's audio
+  carries about 15 heads beyond it.
 - **D_F5 is no better than the linear probe on its own input:** 20 readable on the stem, as the probe; its time
   effects read 1 of 19 against the probe's 3 (reverb AUC 0.49 against 0.58).
 
 **Caveats:**
-- The target carries its absolute level, set partly by the preset. The mix is built to a target loudness at a drawn
-  guitar-to-backing ratio, so whatever the level told is gone from (b) and (c) by construction. Part of "the mix
-  hides it" is that normalisation, not masking; this read does not split the two.
+- **Level does not inflate (a)** (post hoc, the review's re-run, reproduced by `posthoc`): with the target's
+  level-carrying summaries (per band mean and percentiles, broadband mean and percentiles) taken relative to its
+  loudness, as the mix is normalised, the target reads 91 (60 knobs, 28 switches). Its loudness alone reads 33. So
+  the drop to the mix is masking, not the mix's loudness normalisation.
 - The 7 "richer features" heads are about what chance gives one column (about 6).
 - A linear probe is a lower bound; a model trained on the target could read more, not less.
 
@@ -232,4 +247,4 @@ Zero renders and zero separations. It reads about 4.2k examples' three feature f
 ## Code
 
 `learn/tone_info_probe.py` (written after this declaration):
-`$MAIN -m learn.tone_info_probe features` (the summaries, cached in `tone-probe/`), then `$MAIN -m learn.tone_info_probe read` (the table, `tone-probe/probe.json`). The addition: `$MAIN -m learn.tone_info_probe audible` (`tone-probe/audible.json`).
+`$MAIN -m learn.tone_info_probe features` (the summaries, cached in `tone-probe/`), then `$MAIN -m learn.tone_info_probe read` (the table, `tone-probe/probe.json`). The addition: `$MAIN -m learn.tone_info_probe audible` (`tone-probe/audible.json`). The review's post-hoc inputs: `$MAIN -m learn.tone_info_probe posthoc` (`tone-probe/posthoc.json`).

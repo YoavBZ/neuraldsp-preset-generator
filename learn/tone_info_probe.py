@@ -7,6 +7,8 @@ and `t3/` are read, never written.
     MAIN=/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python
     $MAIN -m learn.tone_info_probe features     # the summaries (4 processes), cached in tone-probe/features.npz
     $MAIN -m learn.tone_info_probe read         # the probes and the table, tone-probe/probe.json
+    $MAIN -m learn.tone_info_probe audible      # the audibility addition, tone-probe/audible.json
+    $MAIN -m learn.tone_info_probe posthoc      # the review's post-hoc inputs, tone-probe/posthoc.json
 """
 
 from __future__ import annotations
@@ -646,15 +648,78 @@ def cmd_audible(args):
     print(f"AUDIBLE DONE: {od / 'audible.json'}")
 
 
+POSTHOC = {"a_norm": "target, level removed", "level": "target loudness alone", "cond": "conditioning alone"}
+# the summary's level-carrying entries: per band mean, p10, p50, p90; the broadband envelope's mean, p10, p90
+LEVEL_IX = tuple(range(0, 96)) + tuple(range(192, 480)) + (736, 738, 739)
+
+
+def level_removed(A, lufs):
+    """The target's summaries with its loudness (mean of the halves' LUFS) taken off every level-carrying entry, as
+    the mix is loudness-normalised; the shape statistics (sd, frame change, autocorrelation, change percentiles)
+    are level-free already."""
+    An = np.array(A, np.float64, copy=True)
+    An[:, list(LEVEL_IX)] -= np.asarray(lufs, np.float64)[:, None]
+    return An
+
+
+def cmd_posthoc(args):
+    """The review's post-hoc inputs (declared in the doc as post hoc): the target with its level removed, the
+    target's loudness alone, and the conditioning alone (amp and class, no audio), each read as the main inputs."""
+    from learn import trusted_data_t3 as T3
+    from learn import trusted_data_t3_r as R
+    from learn import verify_tracks as V
+
+    root, _, tr, fs, _ = load_sets()
+    od = out_dir(root)
+    S = prepare(root, tr, fs)
+    z = np.load(od / "features.npz")
+    ids = [int(i) for i in z["ids"]]
+    pos = {i: n for n, i in enumerate(ids)}
+    lufs = np.array([float(np.mean(np.load(T3.tgt_path(root, i))["lufs"])) for i in ids])
+    An = level_removed(z["a"], lufs)
+    base = S["X_of"]
+
+    def X_of(key, rows):
+        ix = [pos[r["i"]] for r in rows]
+        if key == "a_norm":
+            return An[ix]
+        if key == "level":
+            return lufs[ix][:, None]
+        if key == "cond":
+            return np.zeros((len(rows), 1))
+        return base(key, rows)
+
+    S["X_of"] = X_of
+    lab_te, out = S["lab_te"], {}
+    for key in POSTHOC:
+        P, _ = fit_input(S, key, tr, fs)
+        ex = {i: {"a2": P["a2"][n], "sw_p": P["sw_p"][n], "mic_p": [m[n] for m in P["mic_p"]],
+                  "amp_p": P["amp_p"][n], "c": lab_te[0][n], "cm": lab_te[1][n], "s": lab_te[2][n],
+                  "sm": lab_te[3][n], "k": lab_te[4][n], "km": lab_te[5][n]} for n, i in enumerate(S["ids"])}
+        rows = R.r0_rows(ex, S["info"], S["const"], S["rates"], S["majority"])
+        out[key] = {"readable": sum(r["readable"] for r in rows),
+                    "knobs": sum(r["readable"] for r in rows if r["kind"] == "continuous"),
+                    "switches": sum(r["readable"] for r in rows if r["kind"] == "switch"),
+                    "families": family_table(rows), "rows": rows}
+        print(f"({key}) {POSTHOC[key]}: {out[key]['readable']} readable (knobs {out[key]['knobs']}, switches "
+              f"{out[key]['switches']}); " + ", ".join(f"{f} {v['readable']}/{v['heads']}"
+                                                         for f, v in out[key]["families"].items()), flush=True)
+    V._save(od / "posthoc.json", {"design": DESIGN, "status": STATUS + "; post hoc (from the review of PR #307)",
+                                  "inputs": POSTHOC, "lists_check": LISTS.get("check"), **out,
+                                  "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"POSTHOC DONE: {od / 'posthoc.json'}")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("features")
     sub.add_parser("audible")
+    sub.add_parser("posthoc")
     p = sub.add_parser("read")
     p.add_argument("--force", action="store_true")
     a = ap.parse_args(argv)
-    {"features": cmd_features, "read": cmd_read, "audible": cmd_audible}[a.cmd](a)
+    {"features": cmd_features, "read": cmd_read, "audible": cmd_audible, "posthoc": cmd_posthoc}[a.cmd](a)
 
 
 if __name__ == "__main__":

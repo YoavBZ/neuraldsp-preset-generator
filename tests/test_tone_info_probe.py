@@ -1,8 +1,11 @@
 """The tone-information probe's pure parts (`learn/tone_info_probe.py`, `docs/tone-info-probe.md`)."""
 
-import numpy as np
+import pytest
 
-from learn import tone_info_probe as P
+np = pytest.importorskip("numpy")
+pytest.importorskip("scipy")
+
+from learn import tone_info_probe as P  # noqa: E402
 
 
 def test_summary_has_a_fixed_length_and_reads_a_delay():
@@ -63,3 +66,12 @@ def test_attribution_follows_the_declared_order():
     assert P.attribute(a, {"mix": False, "separator": True}) == "separator"
     assert P.attribute(a, {"mix": True, "separator": True}) == "both"
     assert P.attribute(a, steps) == "unresolved"
+
+
+def test_level_removed_shifts_only_the_level_entries():
+    rng = np.random.default_rng(3)
+    A = rng.normal(size=(4, 740))
+    An = P.level_removed(A, [1.0, 2.0, 3.0, 4.0])
+    moved = np.where(~np.isclose(An, A).all(0))[0].tolist()
+    assert moved == list(P.LEVEL_IX)
+    assert np.allclose(A[:, 736] - An[:, 736], [1, 2, 3, 4])
