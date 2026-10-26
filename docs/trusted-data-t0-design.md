@@ -1673,7 +1673,8 @@ track or a mix, let the user hear it and say which style.
 - **Timeless Part 2's tone was already heard.** Part 9's tone card played `ElecGtr2` alone, and the user answered
   clean. That answer is the song's tone, so on part 9 it now sets the class of the session's DI-only DIs
   (`metal_verdicts(screen_sets_song=True)` → `song_tone`, source `SONG_FROM`: "song's amp track, heard alone (part
-  9)"). Timeless Part 2's 2 DIs become clean at the next `lists` run. "Too heavy" still excludes the session.
+  9)"). Timeless Part 2's 2 DIs become clean at the next `lists` run (*it ran 2026-10-27 01:17; both read clean*). "Too
+  heavy" still excludes the session.
 - **No new page.** A 10-s card of Timeless Part 2's own mix was built (part 9b) and dropped the same day. The guitar
   sat about 14–17 dB under the piano, synths and lead vocal, so it would only have been a worse repeat of the card
   already heard. The page went to the Trash, and `lists` has no reader for it.
@@ -1870,6 +1871,34 @@ and no fixed rule stands in for a control the judge can't hear.
   - If the user rules it out, R1 still reads what the unreadable heads cost, as a description. The written answer
     would then use the constant instead (F5 read that already: D_F5 − constant −0.004) or wait for heads that read
     more.
+- **The user's ruling (2026-10-27):** R1 stands as a measurement only. Writing S for unreadable controls is not
+  adopted as the method.
+
+### R1 outcome (2026-10-27, 99 renders; post hoc and descriptive; audited)
+
+R1's chain ran on 2026-10-27 from 00:38 to 00:39 (log `logs/t3r-r1-report.log`, `t3/followup-r/r1-report.json`),
+complete: 66 directions on the frozen V-real-11, 7 bands, 99 renders. An independent audit recomputed the rows below,
+and they match. Log ratios, lower is better:
+
+| Row | All (7 bands) | Bands −/+ | Crunch (5 bands) |
+|---|---|---|---|
+| **D_F5:R − D_core5 (R1)** | **+0.062 [−0.080, +0.204]** | 4/3 | −0.013 [−0.070, +0.044] |
+| D_F5:R − S | +0.071 [−0.047, +0.188] | 1/6 | +0.012 |
+| D_F5:R − constant | −0.022 [−0.093, +0.050] | 4/3 | −0.022 |
+| D_F5:R − D_F5 (what the at-S rule changes) | −0.017 [−0.072, +0.038] | 4/3 | −0.010 |
+| D_F5:R − D_F5 with time effects and spring at S | +0.070 [−0.108, +0.247] | 3/4 | −0.012 |
+
+- **Putting the 96 unreadable heads at S does not close the gap.** R1 reads +0.062 against D_core5, close to F5's
+  gate (+0.079). Crunch leans better (−0.013, 4 of 5 bands); the 2 clean bands carry the rest.
+- **The one time effect left on is the delay.** R0 counted its switch readable at AUC 0.557, lower bound 0.505, just
+  above chance, so it stays on in 29 of 66 directions. Colour Me Red ElecGtr03 again drives the result: +0.846 against D_core5 (+0.949 against D_F5 with time effects at S, the better evidence that delay is the cause).
+  With the whole time-effects family at S, D_F5 reads −0.0075 against D_core5 (F5's audit re-read); D_F5:R sits
+  +0.070 above that.
+- **"Delay is the cause" is the best fit, not proven.** No render isolates the delay (D_F5:R with only the delay at
+  S was not rendered).
+- **Pipeline check:** |LUFS error| mean 5.5 dB, median 5.6, 2 of 66 clamped (stem against amp-track level, as in F5).
+- **What it changes:** nothing is adopted. R1 decides nothing about F20 (declared), and under the user's ruling above
+  the at-S rule is not F20's method (fix 3 below).
 
 ### F20's fixes from the F5 audit (declared in the plan only; no F20 code yet)
 
@@ -1896,6 +1925,9 @@ F20 still waits for the user's yes. When it runs:
      and not taken: an unreadable head then flips a coin, and still turns reverb on in about half its answers.
    - **Which readout decides:** D_F20's rows are read both ways, plain and at S. The plain readout stays primary, as
      declared, unless the user rules on amendment 1 (above) before any F20 V-real read.
+   - *The user ruled on 2026-10-27: writing S for unreadable controls is not adopted as the method. So the plain
+     readout is F20's readout, and an at-S read is at most descriptive beside it. How the switch readout and prior
+     change is left to F20's plan, after the mix-aware model and the separator fine-tune ([ROADMAP](ROADMAP.md)).*
 
 
 ## Parts 7a, 7b, 8 and 9 heard (2026-10-26)
@@ -2006,13 +2038,15 @@ T0's DIs are unchanged (46 verified, 13 excluded), as is T0's training pool (27 
     crunch 4, Starnes And Shah clean 1, Storm Of Particles crunch 1 and unclassed 1. Only 3 of the 7 are among T2's
     sections (Ale Lak 1, Storm Of Particles 2). The other 4 were excluded at cleaning or refused at the D build.
   - The 64 admitted intake DIs' sections are not cut yet; they come when the inventory and part A's sections are
-    rebuilt. 51 are high gain; of part 9's 13, 11 are "unknown" and 2 clean (2026-10-27).
+    rebuilt. 51 are high gain; of part 9's 13, 11 are "unknown" and 2 clean (2026-10-27; applied by the `lists`
+    re-run after PR #306 at 01:17, `logs/lists-pr306.log`, and checked in `verified.json`).
   - At T0's training DIs' mean of 6.7 sections per DI they add about 430 sections: about 342 high gain, 74 unknown and
     13 clean. The pool becomes 516 high gain, 20 not, 74 unknown of 610. **With unknown left out, 516 of 536 are high
-    gain (about 96%); with unknown counted as high gain (the worst case), 590 of 610 (about 97%).** Unknown is 12%,
+    gain (96.3%); with unknown counted as high gain (the worst case), 590 of 610 (96.7%).** Unknown is 12%,
     under F20's 25% cap.
-  - At part C's median of 4 per DI: 378 high gain, 15 not, 44 unknown of 437; 96% with unknown left out, 97% counted
-    as high gain; unknown 10%.
+  - At part C's median of 4 per DI: 378 high gain, 15 not, 44 unknown of 437; 96.2% with unknown left out, 96.6%
+    counted as high gain; unknown 10%.
+  - So about 96.2–96.3% high gain with unknown left out, and 96.6–96.7% counting unknown as high gain.
   - The non-high-gain part grows from 7 sections to about 15–20 (Timeless Part 2's 2 DIs).
 - **What that means for F20's 50% cap:**
   - F20 may hold at most 50% high-gain examples. F5's 4,974 examples are 96% high gain (4,767).
