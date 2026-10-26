@@ -622,10 +622,10 @@ hashes).
   - 13 DI cards;
   - 1 tone card, Timeless Part 2's `ElecGtr2` alone.
 
-  How `lists` reads it is in the
+  Each DI card also asks what playing style the DI suggests (clean/crunch-style, high-gain-style, or
+  can't tell). That answer gives a DI-only DI its gain group in T3. How `lists` reads the page is in the
   [design](../trusted-data-t0-design.md#the-strobe-and-mekaphil-intakes-ear-part-9-2026-10-26).
-  Until a DI is heard it stays pending. Its gain class stays unknown: the 4 DI-only sessions have no
-  amp track to class.
+  Until a DI is heard it stays pending.
 
 ## Sources
 

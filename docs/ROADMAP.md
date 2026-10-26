@@ -416,7 +416,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      F20 as they pass the checks and the ear, under the caps. F5 starts with a zero-render dry run that prints the real
      pool. Clean and crunch sources for F20: Strobe and MekaPhil ×4 (approved 2026-10-26; ledger
      `cambridge-new-training-bands-2026-10-26b`) are DI only. 13 of their 18 DIs pass D2/D3; ear page part 9 (14
-     cards) is pending, and their gain class is unknown (no amp track). F5 needs none of them.
+     cards) is pending. Each DI card also asks the playing style, which gives a DI-only DI its gain group ("can't
+     tell" stays unclassed). F5 needs none of them.
    - **Every-control stage 1** runs on the trusted panel's parts and can now run, now that the ear
      has cleared their amp tracks (knob ceiling 2's panel: 7 parts in 7 bands, verified 2026-10-25). It needs no rebuild, so it need not
      wait for (b)–(d); they share the renderer.

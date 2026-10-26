@@ -1018,16 +1018,37 @@ def test_b2_page_is_read_by_lists_and_its_di_only_dis_stay_unclassed(tmp_path, m
         "Mekaphil_TimelessPart2_Full": {"13_ElecGtr1DI.wav": {"band": "MekaPhil", **only}}}}))
     rec, _ = env.run()
     assert rec["intake_admitted"] == [] and {r["verdict"] for r in rec["intake_dis"].values()} == {"pending ear"}
-    f = tmp_path / "p9.json"
-    f.write_text(json.dumps({"page": page, "part": "9", "build": "b9", "exported": "2026-10-27T06:00:00Z", "answers": [
-        {"id": i, "verdict": v, "note": "", "t": "2026-10-27T06:00:00Z"} for i, v in (("b9-s", "clean"), ("b9-t", "clean"),
-                                                                                      ("b9-sc", "crunch"))]}))
-    rec, _ = env.run([str(f)])
+    def export(name, answers):
+        f = tmp_path / name
+        f.write_text(json.dumps({"page": page, "part": "9", "build": "b9", "exported": "2026-10-27T06:00:00Z",
+                                 "answers": [{"id": i, "verdict": v, "style": st, "note": "", "t": "2026-10-27T06:00:00Z"}
+                                             for i, v, st in answers]}))
+        return str(f)
+    f = export("p9.json", (("b9-s", "clean", None), ("b9-t", "clean", None), ("b9-sc", "crunch", None)))
+    rec, _ = env.run([f])
     s, t = (rec["intake_dis"][f"cambridge-new/{k}"] for k in ("Strobe_Maya_Full/23_ElecGtrDI2.wav",
                                                               "Mekaphil_TimelessPart2_Full/13_ElecGtr1DI.wav"))
     assert s["verdict"] == t["verdict"] == "verified" and s["pair_unheard"] is None
     assert s["no_tone_counts_as"] is None and s["session_tone"] is None and s["tone_class"] is None   # unclassed
+    assert s["style_class"] is None and s["style"] == []
     assert t["session_tone"] == "crunch" and t["tone_class"] is None                 # the card played no DI of its own
+    # the second question: the playing style the DI suggests (a DI-only DI's class); can't tell stays unclassed
+    f = export("p9b.json", (("b9-s", "clean", "clean_crunch"), ("b9-t", "clean", "cant_tell"), ("b9-sc", "crunch", None)))
+    e = V.ear_answers([f], [], {}, V.load_card_pages([f]))
+    assert e["metal_style"] == {s_di: ["clean_crunch"], t_di: ["cant_tell"]}
+    rec, _ = env.run([f])
+    s, t = (rec["intake_dis"][f"cambridge-new/{k}"] for k in ("Strobe_Maya_Full/23_ElecGtrDI2.wav",
+                                                              "Mekaphil_TimelessPart2_Full/13_ElecGtr1DI.wav"))
+    assert s["style_class"] == "clean_crunch" and t["style_class"] is None and t["style"] == ["cant_tell"]
+    f = export("p9c.json", (("b9-s", None, "high_gain"),))                          # a style alone still counts
+    assert V.ear_answers([f], [], {}, V.load_card_pages([f]))["metal_style"] == {s_di: ["high_gain"]}
+    with pytest.raises(SystemExit, match="style"):                                 # only DI cards, only its classes
+        V.ear_answers([export("bad.json", (("b9-sc", "crunch", "clean_crunch"),))], [], {}, V.load_card_pages([f]))
+    with pytest.raises(SystemExit, match="style"):
+        V.ear_answers([export("bad2.json", (("b9-s", "clean", "metal"),))], [], {}, V.load_card_pages([f]))
+    paired = V.metal_verdicts({"X_Full": {"1_ElecGtr1DI.wav": {"band": "S", **only, "pairs": {"2_ElecGtr1.wav": {}}}}},
+                              {}, {}, no_tone_counts_as=None, styles={"/r/X_Full/1_ElecGtr1DI.wav": ["high_gain"]})
+    assert paired["cambridge-new/X_Full/1_ElecGtr1DI.wav"]["style_class"] is None   # a DI with an amp track: its tone
     heavy = V.metal_verdicts({"Mekaphil_TimelessPart2_Full": {"13_ElecGtr1DI.wav": {"band": "MekaPhil", **only}}},
                              {t_di: [(18.5, 28.5, "clean")]},
                              {"Mekaphil_TimelessPart2_Full": [(t_amp, "too_heavy", None)]}, no_tone_counts_as=None)

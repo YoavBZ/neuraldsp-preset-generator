@@ -434,9 +434,12 @@ def _pool_rows(ctx, tr, t2, kept_sections, classify=True):
 
 
 def ear_call(rec):
-    """An intake DI's ear call on the amp track: its own tone card, else its session's (PR #297's metal records),
-    else the metal intake's rule for a session with no amp track (DGX: counts as high gain)."""
-    return rec.get("tone_class") or rec.get("session_tone") or rec.get("no_tone_counts_as")
+    """An intake DI's ear call: its own tone card on its amp track; else, for a DI with no amp track of its own, the
+    playing style heard on its DI card (part 9's second question, `style_class`: clean_crunch or high_gain; can't
+    tell leaves it None); else its session's tone (PR #297's metal records); else the metal intake's rule for a
+    session with no amp track (DGX: counts as high gain). A DI-only intake DI with none of these stays unclassed."""
+    return (rec.get("tone_class") or rec.get("style_class") or rec.get("session_tone")
+            or rec.get("no_tone_counts_as"))
 
 
 def metal_counts(intake_dis, summary):
@@ -459,15 +462,22 @@ def metal_counts(intake_dis, summary):
 
 
 def _intake_lines(tr, root):
-    """Empty Signifier's admitted DI and the metal intake (zero renders): what joins once each passes."""
+    """The admitted non-metal intake DIs (Empty Signifier's; Strobe's and MekaPhil's, part 9) and the metal intake
+    (zero renders): what joins once each passes."""
     out = []
     for d, v in sorted((tr.get("intake_dis") or {}).items()):
         if d in (tr.get("intake_admitted") or []) and v.get("band") not in METAL_BANDS:
-            out.append(f"  {v.get('band')}: {pathlib.Path(d).name} admitted (PR #296), ear call "
-                       f"{v.get('tone_class')} ({gain_group(gain_class(None, v.get('tone_class'))[0], False)}); "
-                       f"heard windows {[w[:2] for w in v.get('heard') or []]}; trains once the DI inventory is "
-                       "rebuilt (its sections are counted then); ElecGtr1's DI is excluded (hum), so sections where "
-                       "ElecGtr1 plays leave unless its mic tracks pass the bleed check")
+            call = ear_call(v)
+            src = ("its amp track's tone card" if v.get("tone_class") else "the playing style on its DI card"
+                   if v.get("style_class") else "its session's tone card" if v.get("session_tone") else "none: unclassed")
+            line = (f"  {v.get('band')}: {pathlib.Path(d).name} admitted, ear call {call} "
+                    f"({gain_group(gain_class(None, call)[0], False)}; from {src}); "
+                    f"heard windows {[w[:2] for w in v.get('heard') or []]}; trains once the DI inventory is "
+                    "rebuilt (its sections are counted then)")
+            if v.get("band") == "Empty Signifier":
+                line += ("; ElecGtr1's DI is excluded (hum), so sections where ElecGtr1 plays leave unless its mic "
+                         "tracks pass the bleed check (PR #296)")
+            out.append(line)
     s = _load(root / METAL_INTAKE / "summary.json") or {}
     by, src = metal_counts(tr.get("intake_dis"), s)
     n_adm = sum(b.get("verified", 0) for b in by.values())

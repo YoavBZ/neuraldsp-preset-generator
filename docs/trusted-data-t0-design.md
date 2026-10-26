@@ -1324,8 +1324,15 @@ yet. K is empty, so T3 reads nothing on K.
 - **Class:** the base class is 50/50 clean and crunch (part C's draw).
 - **High gain must not swamp clean and crunch:**
   - **Every section gets a gain class at zero renders, before any split,** and `plan` prints it by band. In order:
-    part A's class; else the intake's ear call on the amp track (Empty Signifier ElecGtr2, and the metal intake's tone
-    cards: clean, crunch, high gain); else part A's classifier run on the section's own amp track. A section still
+    part A's class; else the intake's ear call (`ear_call`), in this order:
+    - the DI's own amp track's tone card (Empty Signifier ElecGtr2 and the metal intake's tone cards: clean, crunch,
+      high gain);
+    - for a **DI-only intake DI** (no amp track of its own; Strobe and MekaPhil, part 9), the playing style heard on
+      its DI card (`style_class`: clean/crunch-style or high-gain-style). "Can't tell" leaves it unclassed;
+    - the session's tone card (`session_tone`);
+    - the metal intake's DI-only rule (DGX: high gain).
+
+    Else part A's classifier runs on the section's own amp track. A section still
     unclassed counts as high gain if its band came in through the metal intake, and as not high gain otherwise (T2's
     unclassed bands, Ale Lak and Storm Of Particles); that is a stated limit.
   - The new draws are split so that **F20 holds at most 50% high-gain-source examples.** T2's examples were 61%.
@@ -1619,7 +1626,13 @@ approved the intake on 2026-10-26, as T3's clean/crunch source for F20. They are
   with one difference: `no_tone_counts_as=None`.
   - The rules are as for the metal pages. A measured fail excludes. A window heard other than clean excludes. One
     window heard clean is enough. A too-heavy tone excludes the session's DIs.
-  - **The DI-only DIs are not counted as high gain.** These are not metal-intake bands, so T3 counts an unclassed DI
-    as not high gain. Their gain class is unknown: there is no amp track or mix to hear.
+  - **Every DI card asks a second question** (the coordinator, 2026-10-26): the playing style the DI suggests.
+    The answers are clean/crunch-style playing, high-gain-style playing (for example palm-muted riffs), or can't tell.
+    - The answer is exported as `style` (`STYLE_VERDICTS`) and read into `metal_style`.
+    - A DI with no amp track of its own takes `style_class` from it. T3's `ear_call` reads that before the session's
+      tone, so this is how a DI-only intake DI gets its gain group.
+    - "Can't tell" (or conflicting answers) leaves the DI unclassed. These are not metal-intake bands, so an
+      unclassed DI counts as not high gain (`no_tone_counts_as=None`).
+    - A card counts as done once both questions are answered. A style answer counts even without a DI verdict.
   - Timeless Part 2's tone card classes the session only (`session_tone`). Its DI path is None, so no DI gets a
     `tone_class` from it.

@@ -240,6 +240,27 @@ def test_ear_call_order():
     assert T3.ear_call({"tone_class": None, "session_tone": "clean"}) == "clean"
     assert T3.ear_call({"no_tone_counts_as": "high_gain"}) == "high_gain"
     assert T3.ear_call({}) is None
+    # part 9's DI-only DIs: the playing style heard on the DI card, before the session's tone; can't tell -> None
+    assert T3.ear_call({"style_class": "clean_crunch", "session_tone": "high_gain"}) == "clean_crunch"
+    assert T3.ear_call({"tone_class": "high_gain", "style_class": "clean_crunch"}) == "high_gain"
+    assert T3.gain_group(T3.gain_class(None, T3.ear_call({"style_class": "clean_crunch"}))[0], False) == "not high gain"
+    assert T3.gain_group(T3.gain_class(None, T3.ear_call({"style_class": "high_gain"}))[0], False) == "high gain"
+    assert T3.ear_call({"style_class": None, "no_tone_counts_as": None}) is None
+
+
+def test_intake_lines_name_each_admitted_band_correctly(tmp_path):
+    tr = {"intake_admitted": ["cambridge-new/Strobe_Maya_Full/23_ElecGtrDI2.wav",
+                              "cambridge-new/EmptySignifier_Change_Full/20_ElecGtr2DI.wav"],
+          "intake_dis": {"cambridge-new/Strobe_Maya_Full/23_ElecGtrDI2.wav": {
+                             "band": "Strobe", "verdict": "verified", "style_class": "clean_crunch", "heard": []},
+                         "cambridge-new/EmptySignifier_Change_Full/20_ElecGtr2DI.wav": {
+                             "band": "Empty Signifier", "verdict": "verified", "tone_class": "high_gain", "heard": []}}}
+    lines = T3._intake_lines(tr, tmp_path)
+    s = next(x for x in lines if "Strobe" in x)
+    assert "clean_crunch (not high gain; from the playing style on its DI card)" in s
+    assert "PR #296" not in s and "ElecGtr1" not in s
+    e = next(x for x in lines if "Empty Signifier" in x)
+    assert "high_gain (high gain; from its amp track's tone card)" in e and "PR #296" in e
 
 
 # --- V-real's new crops (vreal-crops) ---------------------------------------------------------------------------
