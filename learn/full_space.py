@@ -6,8 +6,8 @@ The commands that use them are in `learn/trusted_data_t3.py`.
 **The space:** the 115 Morgan controls of `every_control.table` (union over the three amps; never-set and
 reparametrised controls out). Continuous ones on the unit interval over their declared range (`knob_ceiling.Dim`:
 log for frequencies and times), switches as one probability each, the two mics as 10-way heads, the amp choice as a
-3-way head that reads the audio only. Output gain is not a head: it is fitted to loudness per answer (pending the
-user's explicit confirmation, amendment 2), and training renders hold it at the draw's base preset value (S's).
+3-way head that reads the audio only. Output gain is not a head: it is fitted to loudness per answer (confirmed by
+the user 2026-10-26, amendment 2), and training renders hold it at the draw's base preset value (S's).
 The spring is a derived switch (`springOn`, level above 0) plus its level, masked when off and written back as 0.
 
 **Switched-off features** (the user's rule): the loss, E, the constant and the pull weigh a dimension only where it
@@ -63,7 +63,7 @@ GATE_THR = ("parameters", "gateThreshold")
 # The answer families of the T3 readout ("the answer minus the answer with one family at S")
 FAMILIES = {"EQ": ("amp_eq",), "pedals": ("pedals",), "time effects and spring": ("time_effects", "spring"),
             "gate and doubler": ("gate_doubler",), "cab rest": ("cab_rest",)}
-OUTPUT_FIT_STATUS = "pending the user's explicit confirmation (amendment 2)"
+OUTPUT_FIT_STATUS = "confirmed by the user 2026-10-26 (amendment 2)"
 
 
 # --- the layout ------------------------------------------------------------------------------------------------
@@ -376,7 +376,7 @@ def answer_settings(amp, S, cont, sw_p, mics, at_S=()):
 
 def output_gain_fit(gain_now, render_lufs, target_lufs, lo=OUTPUT_RANGE[0], hi=OUTPUT_RANGE[1]):
     """The output gain that brings a render (made at `gain_now` dB) to the target's loudness, within the manifest's
-    range (output gain is a post gain: the level moves dB for dB). Pending the user's explicit confirmation
+    range (output gain is a post gain: the level moves dB for dB). Confirmed by the user 2026-10-26
     (amendment 2). -> (gain, clamped?)."""
     g = gain_now + (target_lufs - render_lufs)
     c = min(hi, max(lo, g))

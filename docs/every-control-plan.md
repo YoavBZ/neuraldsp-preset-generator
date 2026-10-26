@@ -423,7 +423,7 @@ test walks the manifest.
 - **Mics:** two 10-way heads, as today.
 - **The spring:** a level of 0 is off. It is encoded as a derived switch (level above 0) plus the
   level, masked when off, and written back as level 0. The PR12's dwell is gated by it.
-- **Output gain** (pending the user's explicit confirmation): not a head. Every input is loudness-normalised, so the mix carries no trace of
+- **Output gain** (confirmed by the user 2026-10-26): not a head. Every input is loudness-normalised, so the mix carries no trace of
   it. It is learned against the record's loudness (amendment 1): per answer, the gain that makes
   the rendered answer's LUFS match the target's (the stem's LUFS on a song; the amp track's LUFS
   is the truth on V-real), scored as the absolute LUFS error in dB beside the judge. Training
