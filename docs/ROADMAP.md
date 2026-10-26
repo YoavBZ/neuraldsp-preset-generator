@@ -144,10 +144,12 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 
    **Next, in order (2026-10-27; cheapest decisive first).** Replaces the earlier lists below for what comes next.
    - (a0) **A zero-cost check first:** the tone probe's linear probe on the mix plus the stem (minutes, no training,
-     no renders), to see whether the stem adds anything to the mix. It runs tonight (2026-10-27); its result is
-     added here.
-   - (a) **A mix-aware input.** Train the every-control model on the mix's features, or the mix's plus the stem's,
-     instead of the stem alone. No new training renders: F5's stored mixes, targets and labels. Read first on FS5's
+     no renders), to see whether the stem adds anything to the mix. *Done 2026-10-27 (#309, post hoc, reviewed): the
+     mix plus the stem reads 24 of 116 against the mix alone's 30 (the stem 20); it reads 3 heads the mix does not,
+     about chance, and the mix is reliably better on 11 heads against 3. So (a)'s model is fed the mix
+     ([addition](tone-info-probe.md#addition-mix-plus-stem-f-declared-2026-10-27-post-hoc-before-it-is-computed)).*
+   - (a) **A mix-aware input.** Train the every-control model on the mix's features (the stem adds nothing to a
+     linear reader, per (a0)) instead of the stem alone. No new training renders: F5's stored mixes, targets and labels. Read first on FS5's
      readability (R0's rule, zero renders; D_F5 reads 20 of 116), then on V-real (about 99 renders per arm, as R1) only
      if it helps. Declared and reviewed before it runs. Training is about F5's size (its 4 runs took 37 min of MPS), so it
      needs the user's yes (training longer than minutes).
@@ -529,7 +531,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        level removed reads 91), and a finer representation or the DI adds nothing. Next: a model fed the mix, or mix
        plus stem, first; then fine-tuning X-LANCE on the self-built mixes against their known targets. Faint "on"
        labels explain part of the delay's weakness (stem AUC 0.62 → 0.73 on its loudest third), not the reverb's,
-       tremolo's or springs'.*
+       tremolo's or springs'. Post hoc, mix plus stem reads 24, no more than the mix alone (30), to a linear reader
+       ([addition](tone-info-probe.md#addition-mix-plus-stem-f-declared-2026-10-27-post-hoc-before-it-is-computed)).*
      - **R1's outcome (2026-10-27, 99 renders; post hoc and descriptive; audited, every row recomputed;
        [R1 outcome](trusted-data-t0-design.md#r1-outcome-2026-10-27-99-renders-post-hoc-and-descriptive-audited)).**
        D_F5:R (D_F5 with every unreadable head at S) − D_core5 **+0.062 [−0.080, +0.204]**, 4 bands better and 3

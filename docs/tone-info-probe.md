@@ -228,6 +228,41 @@ AUC on FS5, "off" against "on" above the cut (R0's rule; R = readable):
   while the target reads them at 0.77–0.87. So for these, the loss is the mix, not inaudible labels.
 - The tremolo's depth is not its whole audibility (its level and rate matter too); the proxy is the declared one.
 
+## Addition: mix plus stem, (f) (declared 2026-10-27, post hoc, before it is computed)
+
+**Why.** The outcome's first next step is a model fed the mix, or the mix plus the stem. This asks, at zero renders,
+whether the two together carry more than the mix alone. Post hoc and descriptive: (b) and (c) are already read.
+
+- **(f) mix + stem:** the mix's and the stem's summaries side by side (`mix-t3` and `xlance_g-t3`), with the
+  conditioning as (b) and (c). The same probe, split (F5's training examples, FS5) and readable rule as (a)–(c).
+- **Beside:** (b), (c) and the conditioning alone (amp and class, no audio), refitted the same way.
+- **Read:** readable counts per family for (f), (b), (c) and the conditioning; the number of heads (f) reads that (b)
+  does not, and that neither (b) nor (c) reads; and the paired step (f) − (b) per head, as the main read's steps
+  (reliable if its 90% section-clustered interval, jackknife for AUC, excludes 0), counted both ways.
+- Code: `$MAIN -m learn.tone_info_probe mixstem` (`tone-probe/mixstem.json`).
+
+**Outcome (2026-10-27, run once after the declaration, 5f60bd0):** mix plus stem reads no more than the mix alone.
+
+| Family | (f) mix + stem | (b) mix | (c) stem | Conditioning alone |
+|---|---|---|---|---|
+| Today's space | 3/25 | 4/25 | 3/25 | 1/25 |
+| Amp choice | 1/1 | 1/1 | 1/1 | 0/1 |
+| Amp EQ | 6/36 | 9/36 | 4/36 | 1/36 |
+| Pedals | 3/14 | 3/14 | 3/14 | 3/14 |
+| Time effects | 5/19 | 5/19 | 3/19 | 0/19 |
+| Spring | 1/5 | 2/5 | 0/5 | 0/5 |
+| Gate and doubler | 1/4 | 1/4 | 1/4 | 0/4 |
+| Cab rest | 4/12 | 5/12 | 5/12 | 1/12 |
+| **All 116** (knobs, switches) | **24** (8, 15) | **30** (11, 18) | **20** (5, 14) | **6** (1, 5) |
+
+- **(f) reads 3 heads that (b) does not:** AC20 EQ band 5, SW50R EQ band 6 and the left cab's switch. Two of them
+  (SW50R band 6, the left cab) neither (b) nor (c) reads. That is about what chance gives.
+- **(b) reads 9 that (f) does not**, and the paired step favours the mix alone: (f) reliably better than (b) on 3
+  heads, (b) better than (f) on 11.
+- **Reading:** to a linear reader, the stem adds nothing to the mix, and its extra 740 dimensions cost a little. This
+  does not rule out a trained model using the two together; it says the stem holds no tone the mix lacks that a
+  linear probe can find.
+
 ## Limits
 
 - **A linear probe on summaries is a lower bound** on what an input carries. "Not carried" means not by these
