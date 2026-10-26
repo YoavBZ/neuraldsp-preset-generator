@@ -877,7 +877,7 @@ reviewed before T2's results are seen):
 
 **The leakage measure** that resolves sparse sources (for example, reading takes only on the frames where the source
 plays) would recover the dense sections, let T1 run, bring back Rebuild The Evil and The Long Wait, and give T3 and T4
-a known-answer set again. Proposed: build it after T2, when (a)–(c) show the gap matters, or when T3 or T4 needs K.
+a known-answer set again. Proposed: build it after T2, when (a)–(c) show the gap matters, or when T3 or T4 needs K. (After T2, 2026-10-26: not shown to matter; it waits until T3/T4 need K.)
 
 **A latent bug** (the review of #290), to fix before Renesans enters any stage: `session_guitar_parts` skips every
 track in the target DI's inventory `own` list, so an own track of another part (Renesans' "GTR 2 Amp_M81" under
