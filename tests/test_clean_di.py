@@ -315,25 +315,22 @@ def test_strobe_extra_intake_is_training_only_and_not_held_out():
     ledger = json.loads((C.PLUGIN_ROOT / "docs/dev-test-ledger.json").read_text())
     entry = next(t for t in ledger["tests"] if t["test_id"] == "cambridge-new-training-bands-2026-10-26c")
     assert "training only" in entry["training"] and entry["renders"].startswith("0")
-    extra = {k: (band, split) for k, (band, split, why) in C.TRAINING_DOWNLOADS.items() if why.startswith("2026-10-26c")}
+    extra = {k: (band, split) for k, (band, split, why) in C.TRAINING_DOWNLOADS.items()
+             if why.startswith("2026-10-26c")}
     assert sorted(extra) == ["Strobe_Gone_Full", "Strobe_Nostalgic_Full"]
     assert set(extra.values()) == {("Strobe", "library")} and all(k in json.dumps(entry) for k in extra)
     assert "Strobe" not in C.KNOWN_ANSWER
     for key in extra:
-        C.refuse_held_out({"set": "cambridge-new", "band": "Strobe", "path": str(C.CAMBRIDGE_NEW / key / "21_ElecGtr1.wav")})
+        C.refuse_held_out({"set": "cambridge-new", "band": "Strobe",
+                           "path": str(C.CAMBRIDGE_NEW / key / "21_ElecGtr1.wav")})
     # By name neither session holds an electric DI: its guitar tracks make no inventory row
     for name in ("21_ElecGtr1.wav", "22_ElecGtr1DT.wav", "23_ElecGtr2.wav", "24_ElecGtr2DT.wav", "25_ElecGtr3.wav",
                  "26_ElecGtr4.wav", "07_ElecGtr.wav", "20_AcousticGtr.wav"):
         assert not C.is_guitar_di(name), name
-    # ... so its electric guitar tracks are DI candidates, with no own amp track, carrying the unnamed note
-    gone = ["20_AcousticGtr.wav", "21_ElecGtr1.wav", "22_ElecGtr1DT.wav", "23_ElecGtr2.wav", "24_ElecGtr2DT.wav",
-            "25_ElecGtr3.wav", "26_ElecGtr4.wav", "33_LeadVox.wav"]
-    assert C.intake_dis("Strobe_Gone_Full", gone) == gone[1:7]
-    assert C.intake_dis("Strobe_Nostalgic_Full", ["06_AcousticGtr.wav", "07_ElecGtr.wav"]) == ["07_ElecGtr.wav"]
-    assert C.intake_own("Strobe_Gone_Full", "ElecGtr1", gone, "21_ElecGtr1.wav") == []     # not ElecGtr1DT
-    assert C.own_tracks("ElecGtr1", gone, "21_ElecGtr1.wav") == ["22_ElecGtr1DT.wav"]      # what the name rule says
-    assert C.intake_dis("Strobe_Maya_Full", ["21_ElecGtrDI1.wav", "15_ElecGtr2.wav"]) == ["21_ElecGtrDI1.wav"]
-    assert set(C.INTAKE_UNNAMED_DI) == set(extra)
+    # ... and its electric guitar tracks are recorded as unconfirmed DIs and excluded (review of PR #303)
+    assert set(C.INTAKE_UNNAMED_DI) == set(extra) and C.INTAKE_UNNAMED_WHY.endswith("excluded")
+    assert all(not C.is_guitar_di(f) for fs in C.INTAKE_UNNAMED_DI.values() for f in fs)
+    assert all("no usable DI" in why for _, _, why in C.TRAINING_DOWNLOADS.values() if why.startswith("2026-10-26c"))
 
 
 def test_reserved_test_band_is_refused_even_as_a_training_download():

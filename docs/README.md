@@ -661,6 +661,6 @@ was declared, what was measured, and the research behind it.
     Mòpia scope by ear); all five are downloaded and are training bands (user, 2026-10-25; ledger
     `cambridge-new-training-bands-2026-10-25`), checked by T0's standard before they train. Heard 2026-10-26: 1 DI admitted (Empty Signifier ElecGtr2DI, high gain).
     Strobe and MekaPhil ×4 were taken in for training on 2026-10-26. They are DI only: 13 of 18 DIs pass D2/D3, and
-    ear page part 9 is pending. Strobe "Gone" and "Nostalgic" followed the same day (no file named as a DI: 7 guitar
-    tracks are DI candidates, 5 pass D2/D3; ear page part 10 is pending).
+    ear page part 9 is pending. Strobe "Gone" and "Nostalgic" were taken in the same day with no usable DI: no file is
+    named as a DI, so their 7 guitar tracks are excluded.
     Research, not a declared plan.

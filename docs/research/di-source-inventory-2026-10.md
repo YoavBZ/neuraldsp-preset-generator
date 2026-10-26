@@ -640,30 +640,30 @@ both for training. They were moved from `_zips-unapproved/` to `_zips/`; checksu
 - `TRAINING_DOWNLOADS` rows (split `library`; every DI row `INTAKE_PENDING`);
 - `refuse_held_out` passes Strobe; no set 3–6 dataset or crop folder carries Strobe, "Gone" or "Nostalgic".
 
-**No file in either session is named as a DI.** "Gone" has `ElecGtr1`, `ElecGtr1DT`, `ElecGtr2`, `ElecGtr2DT`,
-`ElecGtr3` and `ElecGtr4`; "Nostalgic" has one `ElecGtr`. A probe (`scripts/probe_is_di.py`) cannot tell them apart
-from a clean amp track:
-- D4 passes 6 of the 7 (the median crest is 10.1–11.6 dB). Maya's `ElecGtrDI2` reads 8.9 dB and Timeless Part 2's amp
-  track `ElecGtr2` reads 11.3 dB, and both pass too.
-- Power above 6 kHz is −31 to −41 dB, against −40 dB for Maya's DI and −23 dB for that amp track.
+**Taken in, no usable DI.** No file in either session is named as a DI. "Gone" has `ElecGtr1`, `ElecGtr1DT`,
+`ElecGtr2`, `ElecGtr2DT`, `ElecGtr3` and `ElecGtr4`; "Nostalgic" has one `ElecGtr`. All 7 are recorded as "not a
+confirmed DI (unnamed); excluded" (`clean_di.INTAKE_UNNAMED_DI`), and the inventory makes no DI row from either
+session.
 
-So each electric guitar track is a **DI candidate** (`clean_di.INTAKE_UNNAMED_DI`). It has no own amp track: the
-other tracks are candidates or double-tracks, not its amp. The DI card's "not a DI" excludes it.
+*Why (review of PR #303, 2026-10-26):* the first version of the PR made the 7 tracks DI candidates for the ear. The
+review found that one ear click cannot establish an unnamed track as a DI under the trusted-data rule, and that the
+gain would be tiny: the passing "Gone" tracks play only 8.6–11.7 s each. Nothing measured settles it either:
+- **D4** passes 6 of the 7 (median crest 10.1–11.6 dB). It also passes Maya's DI `ElecGtrDI2` (8.9 dB) and Timeless
+  Part 2's amp track `ElecGtr2` (11.3 dB).
+- **Power above 6 kHz** does not work as a cab roll-off test here. `ElecGtr1`, `ElecGtr1DT` and "Nostalgic" read −40.5
+  to −41.1 dB, like Maya's DI (−40.4 dB). But `ElecGtr2`, `ElecGtr2DT`, `ElecGtr3` and `ElecGtr4` read −31 to −36 dB,
+  between that DI and the amp track (−23 dB).
+- **A mic-delay (same-take) check cannot apply.** The tracks are double-tracks or other parts, not one take recorded
+  twice. Their peak waveform cross-correlation within ±50 ms is 0.00–0.22 on shared windows (`scripts/xcorr_pairs.py`).
 
-*Extraction and T0's checks (2026-10-26, zero renders, outputs in
+*What ran before the decision (2026-10-26, zero renders, outputs in
 `~/ndsp-presets/learn/trusted-data/intake-2026-10-26c/`):*
-- **What was extracted:** the electric guitar tracks and Readmes (manifest `manifest-2026-10-26c.json`; free disk
-  79.6 → 79.0 GB).
-- **What ran:** D2, D3 and D4 on every candidate, on windows with play share ≥ 0.5, up to 5 per track. D1 and A1–A5
-  have no pair to run on.
-- **D3 passes all 7. D2 passes 5 of 7.** "Gone" `ElecGtr1` and `ElecGtr1DT` show hum on every window.
-- **Few windows:** "Gone" `ElecGtr2`, `ElecGtr2DT` and `ElecGtr3` have 2 qualifying windows each; `ElecGtr4` and
-  "Nostalgic" `ElecGtr` have 1.
-- **D4 flags (the ear's flag only):** "Nostalgic" `ElecGtr` (crest 8.1 dB, brightness slope −0.09).
-- **The ear page** `listening/trusted-data-ear/part10-strobe-extra/` (page `trusted-data-ear-strobe-extra`, 5 DI
-  cards, no tone card) is pending. It asks part 9's two questions. No session has a track known to be an amp track,
-  so there is no tone card. `lists` reads it like part 9 (`B2_PAGES`, `B2_DIRS`): a candidate heard as a clean DI
-  counts as high gain unless it is heard as clean/crunch-style.
+- **Extraction:** the electric guitar tracks and Readmes only (manifest `manifest-2026-10-26c.json`; free disk
+  79.6 → 79.0 GB). The ZIPs and the extracted files are kept.
+- **T0's checks on the 7 tracks** (`scripts/intake_t0.py`, which ran against the PR's first version): D3 passed
+  7/7 and D2 passed 5/7. `ElecGtr1` and `ElecGtr1DT` showed hum on every window. D4 flagged "Nostalgic". These
+  readings decide nothing now.
+- **An ear page, part 10** (5 cards), was built and never sent. It is in the Trash, and `lists` has no reader for it.
 
 ## Sources
 

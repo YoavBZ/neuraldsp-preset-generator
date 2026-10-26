@@ -1768,14 +1768,8 @@ METAL_DIR = "intake-2026-10-26"        # under the trusted-data root: T0's check
 # cambridge-new-training-bands-2026-10-26b). The same cards as parts 7a/7b (one DI card per D2/D3-passing DI, one tone
 # card per session with an amp track), read by `metal_verdicts` into the same buckets and rules (a DI-only DI with no
 # class counts as high gain, as DGX's), plus a playing-style question on each DI card (below).
-# Part 10: Strobe 'Gone' and 'Nostalgic' (ledger cambridge-new-training-bands-2026-10-26c), read the same way. No file
-# there is named as a DI: each electric guitar track is a DI candidate (`clean_di.INTAKE_UNNAMED_DI`, no own amp
-# track), so the DI card's 'not a DI' excludes it, and no session has a tone card.
-B2_PAGES = {"trusted-data-ear-strobe-meka": "part9-strobe-meka",
-            "trusted-data-ear-strobe-extra": "part10-strobe-extra"}
+B2_PAGES = {"trusted-data-ear-strobe-meka": "part9-strobe-meka"}
 B2_DIR = "intake-2026-10-26b"          # under the trusted-data root: T0's checks on the B2-pool sessions
-B2_EXTRA_DIR = "intake-2026-10-26c"    # ... and on Strobe 'Gone' and 'Nostalgic' (part 10)
-B2_DIRS = (B2_DIR, B2_EXTRA_DIR)
 SESSION_PAGES = {**METAL_PAGES, **B2_PAGES}                    # pages read by `metal_verdicts`
 # Part 9's second question on each DI card (coordinator, 2026-10-26): the playing style the DI suggests. Exported as the
 # answer's "style"; a DI-only DI takes its gain group from it (`style_class`). Only "clean_crunch" makes it not high
@@ -2090,7 +2084,7 @@ def ear_answers(paths, di_paths=(), registry=None, card_pages=None):
                 out["notes"].append({"file": str(p), "page": page, "id": a["id"], "verdict": v, "note": note,
                                      "retired": (src or {}).get("retired"), "kind": (src or {}).get("kind"),
                                      "key": (src or {}).get("key") or (src or {}).get("slug"), "title": a.get("title")})
-            if page in B2_PAGES and a.get("style"):    # parts 9-10's second question (with or without a verdict)
+            if page in B2_PAGES and a.get("style"):    # part 9's second question (recorded with or without a verdict)
                 it = (card_pages.get(page) or {}).get(a["id"])
                 if it is None:
                     raise SystemExit(f"{p}: answer {a['id']} is not an item of {page}")
@@ -2750,10 +2744,9 @@ def cmd_lists(args):
     intake = intake_verdicts(isum["sessions"], ear["intake_di"], ear["intake_scope"]) if isum else {}
     msum = _load(root / METAL_DIR / "summary.json")              # the 2026-10-26 metal sessions (PR #297): parts 7a/7b
     intake.update(metal_verdicts(msum["sessions"], ear["metal_di"], ear["metal_scope"]) if msum else {})
-    for bdir in B2_DIRS:                         # Strobe and MekaPhil (B2's pool): part 9; Strobe's other two: part 10
-        bsum = _load(root / bdir / "summary.json")
-        intake.update(metal_verdicts(bsum["sessions"], ear["metal_di"], ear["metal_scope"],
-                                     no_tone_counts_as="high_gain", styles=ear["metal_style"]) if bsum else {})
+    bsum = _load(root / B2_DIR / "summary.json")                 # Strobe and MekaPhil (B2's pool): part 9
+    intake.update(metal_verdicts(bsum["sessions"], ear["metal_di"], ear["metal_scope"], no_tone_counts_as="high_gain",
+                                 styles=ear["metal_style"]) if bsum else {})
 
     seen = set()
     queue = [q for q in queue if not (q["id"] in seen or seen.add(q["id"]))]

@@ -1643,20 +1643,6 @@ approved the intake on 2026-10-26, as T3's clean/crunch source for F20. They are
     heavy" excludes the session's DIs. Any other answer is kept as `screen_tones` and sets neither `session_tone` nor a
     `tone_class`.
 
-## The Strobe "Gone" and "Nostalgic" intake's ear (part 10, 2026-10-26)
-
-The user kept the two Strobe songs downloaded by mistake beside "Maya" for training (ledger
-`cambridge-new-training-bands-2026-10-26c`); the checks are in the
-[inventory](research/di-source-inventory-2026-10.md#strobe-gone-and-nostalgic-training-intake-2026-10-26).
-- **No file is named as a DI.** Every electric guitar track is a DI candidate (`clean_di.INTAKE_UNNAMED_DI`,
-  `intake_dis`). It has no own amp track (`intake_own`), and its row carries `INTAKE_UNNAMED_NOTE` beside
-  `INTAKE_PENDING`. D4 cannot tell these tracks from a clean amp track, so the ear decides: "not a DI" excludes.
-- **Page:** `~/ndsp-presets/listening/trusted-data-ear/part10-strobe-extra/` (page `trusted-data-ear-strobe-extra`).
-  It has 5 DI cards, one per D2/D3-passing candidate, each with part 9's two questions. There is no tone card.
-- **How `lists` reads it:** as part 9. `B2_PAGES` holds both pages, and `lists` runs `metal_verdicts` on each of
-  `B2_DIRS` (`intake-2026-10-26b`, `intake-2026-10-26c`) with `no_tone_counts_as="high_gain"` and the style answers.
-  A candidate heard as a clean DI counts as high gain unless it is heard as clean/crunch-style.
-
 ## F5 outcome (2026-10-26)
 
 F5's chain (`docs/trusted-data-t3-f5-chain.sh`) ran on 2026-10-26 from 10:35 to 15:47. An independent audit
