@@ -246,6 +246,9 @@ def test_ear_call_order():
     assert T3.gain_group(T3.gain_class(None, T3.ear_call({"style_class": "clean_crunch"}))[0], False) == "not high gain"
     assert T3.gain_group(T3.gain_class(None, T3.ear_call({"style_class": "high_gain"}))[0], False) == "high gain"
     assert T3.ear_call({"style_class": None, "no_tone_counts_as": None}) is None
+    # part 9 (DI only): can't tell or no answer falls to the DI-only rule, high gain
+    assert T3.ear_call({"style_class": None, "session_tone": None, "no_tone_counts_as": "high_gain"}) == "high_gain"
+    assert T3.ear_call({"style_class": "clean_crunch", "no_tone_counts_as": "high_gain"}) == "clean_crunch"
 
 
 def test_intake_lines_name_each_admitted_band_correctly(tmp_path):
@@ -259,6 +262,10 @@ def test_intake_lines_name_each_admitted_band_correctly(tmp_path):
     s = next(x for x in lines if "Strobe" in x)
     assert "clean_crunch (not high gain; from the playing style on its DI card)" in s
     assert "PR #296" not in s and "ElecGtr1" not in s
+    tr["intake_dis"]["cambridge-new/Strobe_Maya_Full/23_ElecGtrDI2.wav"].update(style_class=None,
+                                                                                no_tone_counts_as="high_gain")
+    s = next(x for x in T3._intake_lines(tr, tmp_path) if "Strobe" in x)
+    assert "high_gain (high gain; from the DI-only rule)" in s
     e = next(x for x in lines if "Empty Signifier" in x)
     assert "high_gain (high gain; from its amp track's tone card)" in e and "PR #296" in e
 

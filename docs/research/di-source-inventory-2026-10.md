@@ -591,7 +591,7 @@ mistake into `_zips-unapproved/`, are unapproved and stay unopened.
 
 **18 electric DIs, all DI only.** No DI has its own amp track. Timeless Part 2's `ElecGtr2` and
 `ElecGtr3` have no DI. A probe (`scripts/probe_tp2.py`) found that neither plays the same take as the
-session's `ElecGtr1` DI or its DT: chroma 0.0–0.58 against A5's 0.8, with no steady lag. Strobe's DIs
+session's `ElecGtr1` DI or its DT: chroma −0.04 to 0.58 against A5's 0.8, with no steady lag. Strobe's DIs
 are named `ElecGtrDI1`, `ElecGtrDI1DT`, `ElecGtrDI2` and `ElecGtrDI2DT`, so the inventory's part token
 reads `ElecGtr` for all four. Timeless Part 1 has two different files both named `ElecGtr4DI` (different
 hashes).
@@ -610,7 +610,7 @@ hashes).
   - "Timeless (Part 2)" 2, 2.
 - **The D2 fails:**
   - "Core": both DIs show hum on every window;
-  - "Alive" `ElecGtr2DTDI`: clipping;
+  - "Alive" `ElecGtr2DTDI`: clipping in one window, and hum and hiss in a second;
   - "Timeless (Part 1)" `ElecGtr3DI` and the first `ElecGtr4DI`: hum on 1 window of 5 each
     (`hum_kept_by_fundamental`). This may be a false positive, as with Dark Illusion; the threshold was
     not changed.
@@ -623,7 +623,9 @@ hashes).
   - 1 tone card, Timeless Part 2's `ElecGtr2` alone.
 
   Each DI card also asks what playing style the DI suggests (clean/crunch-style, high-gain-style, or
-  can't tell). That answer gives a DI-only DI its gain group in T3. How `lists` reads the page is in the
+  can't tell). That answer gives a DI-only DI its gain group in T3. Only a clean/crunch-style answer
+  makes it not high gain: "can't tell" or no answer counts as high gain, as for DGX. Timeless Part 2's
+  tone card can only screen out a too-heavy session; it never classes the session's DIs. How `lists` reads the page is in the
   [design](../trusted-data-t0-design.md#the-strobe-and-mekaphil-intakes-ear-part-9-2026-10-26).
   Until a DI is heard it stays pending.
 

@@ -1328,9 +1328,11 @@ yet. K is empty, so T3 reads nothing on K.
     - the DI's own amp track's tone card (Empty Signifier ElecGtr2 and the metal intake's tone cards: clean, crunch,
       high gain);
     - for a **DI-only intake DI** (no amp track of its own; Strobe and MekaPhil, part 9), the playing style heard on
-      its DI card (`style_class`: clean/crunch-style or high-gain-style). "Can't tell" leaves it unclassed;
-    - the session's tone card (`session_tone`);
-    - the metal intake's DI-only rule (DGX: high gain).
+      its DI card (`style_class`: clean/crunch-style or high-gain-style);
+    - the session's tone card (`session_tone`; only a card that played a DI's own amp track sets it);
+    - the DI-only rule (`no_tone_counts_as`): high gain. It covers DGX, and Strobe's and MekaPhil's DI-only DIs heard
+      "can't tell" or with no style answer. **Only an explicit clean/crunch-style answer makes a DI-only DI not high
+      gain.**
 
     Else part A's classifier runs on the section's own amp track. A section still
     unclassed counts as high gain if its band came in through the metal intake, and as not high gain otherwise (T2's
@@ -1565,8 +1567,10 @@ open, decided here for the review:
 
 ### Open for the user
 
-1. **Clean and crunch sources for F20** (open since T0). After the ear the pool holds 1 clean-class and 1 crunch
-   section of 181, and Empty Signifier's DI is high gain. Options:
+1. **Clean and crunch sources for F20** (open since T0). *Decided 2026-10-26: option (a). Strobe "Maya" and MekaPhil ×4
+   were downloaded and taken in for training the same day (ledger `cambridge-new-training-bands-2026-10-26b`; ear page
+   part 9 pending; [below](#the-strobe-and-mekaphil-intakes-ear-part-9-2026-10-26)).* After the ear the pool holds 1
+   clean-class and 1 crunch section of 181, and Empty Signifier's DI is high gain. Options:
    - (a) download Strobe "Maya" and MekaPhil ×4 (about 2.4 GB, not on disk). They are DI-only sessions: every guitar has a DI, so rule
      1 keeps them. About 75 sections in 2 bands, gain unknown. They need T0's checks and one ear sitting.
      Recommended;
@@ -1623,7 +1627,7 @@ approved the intake on 2026-10-26, as T3's clean/crunch source for F20. They are
     neither plays the same take as the session's `ElecGtr1` DI or its DT. The card plays `ElecGtr2` alone, with no DI
     of its own.
 - **How `lists` reads it:** it uses `metal_verdicts` on `intake-2026-10-26b/summary.json` (`B2_PAGES`, `B2_DIR`),
-  with one difference: `no_tone_counts_as=None`.
+  with the metal rule for DI-only DIs (`no_tone_counts_as="high_gain"`) and the style answers (`styles`).
   - The rules are as for the metal pages. A measured fail excludes. A window heard other than clean excludes. One
     window heard clean is enough. A too-heavy tone excludes the session's DIs.
   - **Every DI card asks a second question** (the coordinator, 2026-10-26): the playing style the DI suggests.
@@ -1631,8 +1635,9 @@ approved the intake on 2026-10-26, as T3's clean/crunch source for F20. They are
     - The answer is exported as `style` (`STYLE_VERDICTS`) and read into `metal_style`.
     - A DI with no amp track of its own takes `style_class` from it. T3's `ear_call` reads that before the session's
       tone, so this is how a DI-only intake DI gets its gain group.
-    - "Can't tell" (or conflicting answers) leaves the DI unclassed. These are not metal-intake bands, so an
-      unclassed DI counts as not high gain (`no_tone_counts_as=None`).
+    - **Only "clean/crunch-style playing" makes a DI-only DI not high gain.** "Can't tell", conflicting answers or no
+      answer leave `style_class` None, and the DI-only rule counts it as high gain, as for DGX.
     - A card counts as done once both questions are answered. A style answer counts even without a DI verdict.
-  - Timeless Part 2's tone card classes the session only (`session_tone`). Its DI path is None, so no DI gets a
-    `tone_class` from it.
+  - Timeless Part 2's tone card plays `ElecGtr2`, another take with no DI. **It can only screen, never class:** "too
+    heavy" excludes the session's DIs. Any other answer is kept as `screen_tones` and sets neither `session_tone` nor a
+    `tone_class`.

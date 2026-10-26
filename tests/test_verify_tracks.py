@@ -990,9 +990,10 @@ def test_lists_admits_heard_metal_dis(tmp_path, monkeypatch):
     assert r["tone_class"] == "crunch" and r["pair_unheard"]
 
 
-def test_b2_page_is_read_by_lists_and_its_di_only_dis_stay_unclassed(tmp_path, monkeypatch):
-    """Part 9 (Strobe and MekaPhil, ledger cambridge-new-training-bands-2026-10-26b): metal_verdicts' cards and rules,
-    but a DI-only DI is not counted as high gain, and a tone card with no DI classes its session only."""
+def test_b2_page_is_read_by_lists_and_only_a_clean_crunch_style_lifts_high_gain(tmp_path, monkeypatch):
+    """Part 9 (Strobe and MekaPhil, ledger cambridge-new-training-bands-2026-10-26b): metal_verdicts' cards and rules.
+    A DI-only DI counts as high gain unless its DI card's playing style is heard clean/crunch-style, and a tone card
+    with no DI of its own only screens (too heavy) and never classes the session."""
     pytest.importorskip("numpy")                           # lists -> prior_summary
     assert set(V.B2_PAGES) <= set(V.CARD_PAGES) and not set(V.B2_PAGES) & set(V.METAL_PAGES)
     assert V.B2_DIR != V.METAL_DIR
@@ -1029,10 +1030,11 @@ def test_b2_page_is_read_by_lists_and_its_di_only_dis_stay_unclassed(tmp_path, m
     s, t = (rec["intake_dis"][f"cambridge-new/{k}"] for k in ("Strobe_Maya_Full/23_ElecGtrDI2.wav",
                                                               "Mekaphil_TimelessPart2_Full/13_ElecGtr1DI.wav"))
     assert s["verdict"] == t["verdict"] == "verified" and s["pair_unheard"] is None
-    assert s["no_tone_counts_as"] is None and s["session_tone"] is None and s["tone_class"] is None   # unclassed
-    assert s["style_class"] is None and s["style"] == []
-    assert t["session_tone"] == "crunch" and t["tone_class"] is None                 # the card played no DI of its own
-    # the second question: the playing style the DI suggests (a DI-only DI's class); can't tell stays unclassed
+    assert s["no_tone_counts_as"] == "high_gain" and s["session_tone"] is None and s["tone_class"] is None
+    assert s["style_class"] is None and s["style"] == []                            # no style answer: high gain
+    assert t["session_tone"] is None and t["tone_class"] is None                    # a DI-less card never classes
+    assert t["screen_tones"] == ["crunch"] and t["no_tone_counts_as"] == "high_gain"
+    # the second question: the playing style the DI suggests; only clean/crunch-style lifts the high-gain default
     f = export("p9b.json", (("b9-s", "clean", "clean_crunch"), ("b9-t", "clean", "cant_tell"), ("b9-sc", "crunch", None)))
     e = V.ear_answers([f], [], {}, V.load_card_pages([f]))
     assert e["metal_style"] == {s_di: ["clean_crunch"], t_di: ["cant_tell"]}
@@ -1040,6 +1042,9 @@ def test_b2_page_is_read_by_lists_and_its_di_only_dis_stay_unclassed(tmp_path, m
     s, t = (rec["intake_dis"][f"cambridge-new/{k}"] for k in ("Strobe_Maya_Full/23_ElecGtrDI2.wav",
                                                               "Mekaphil_TimelessPart2_Full/13_ElecGtr1DI.wav"))
     assert s["style_class"] == "clean_crunch" and t["style_class"] is None and t["style"] == ["cant_tell"]
+    from learn import trusted_data_t3 as T3
+    group = lambda r: T3.gain_group(T3.gain_class(None, T3.ear_call(r))[0], False)     # noqa: E731
+    assert group(s) == "not high gain" and group(t) == "high gain"                 # can't tell: high gain
     f = export("p9c.json", (("b9-s", None, "high_gain"),))                          # a style alone still counts
     assert V.ear_answers([f], [], {}, V.load_card_pages([f]))["metal_style"] == {s_di: ["high_gain"]}
     with pytest.raises(SystemExit, match="style"):                                 # only DI cards, only its classes
@@ -1051,9 +1056,15 @@ def test_b2_page_is_read_by_lists_and_its_di_only_dis_stay_unclassed(tmp_path, m
     assert paired["cambridge-new/X_Full/1_ElecGtr1DI.wav"]["style_class"] is None   # a DI with an amp track: its tone
     heavy = V.metal_verdicts({"Mekaphil_TimelessPart2_Full": {"13_ElecGtr1DI.wav": {"band": "MekaPhil", **only}}},
                              {t_di: [(18.5, 28.5, "clean")]},
-                             {"Mekaphil_TimelessPart2_Full": [(t_amp, "too_heavy", None)]}, no_tone_counts_as=None)
+                             {"Mekaphil_TimelessPart2_Full": [(t_amp, "too_heavy", None)]})
     assert heavy["cambridge-new/Mekaphil_TimelessPart2_Full/13_ElecGtr1DI.wav"]["why"] == [
-        "its session's tone heard as too heavy"]
+        "its session's tone heard as too heavy"]                                    # a DI-less card may only exclude
+    for cls in ("clean", "crunch", "high_gain"):                                    # ... and never classes
+        r = V.metal_verdicts({"Mekaphil_TimelessPart2_Full": {"13_ElecGtr1DI.wav": {"band": "MekaPhil", **only}}},
+                             {t_di: [(18.5, 28.5, "clean")]}, {"Mekaphil_TimelessPart2_Full": [(t_amp, cls, None)]},
+                             styles={t_di: ["cant_tell"]})["cambridge-new/Mekaphil_TimelessPart2_Full/13_ElecGtr1DI.wav"]
+        assert r["verdict"] == "verified" and r["session_tone"] is None and r["tone_class"] is None
+        assert r["screen_tones"] == [cls] and T3.ear_call(r) == "high_gain"
 
 
 def test_lists_admits_a_heard_clean_intake_di(tmp_path, monkeypatch):

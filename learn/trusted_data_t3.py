@@ -437,7 +437,8 @@ def ear_call(rec):
     """An intake DI's ear call: its own tone card on its amp track; else, for a DI with no amp track of its own, the
     playing style heard on its DI card (part 9's second question, `style_class`: clean_crunch or high_gain; can't
     tell leaves it None); else its session's tone (PR #297's metal records); else the metal intake's rule for a
-    session with no amp track (DGX: counts as high gain). A DI-only intake DI with none of these stays unclassed."""
+    session with no amp track (DGX, and Strobe's and MekaPhil's DI-only DIs heard "can't tell" or not asked: counts as
+    high gain). Only an explicit clean/crunch-style answer makes a DI-only DI not high gain."""
     return (rec.get("tone_class") or rec.get("style_class") or rec.get("session_tone")
             or rec.get("no_tone_counts_as"))
 
@@ -469,7 +470,8 @@ def _intake_lines(tr, root):
         if d in (tr.get("intake_admitted") or []) and v.get("band") not in METAL_BANDS:
             call = ear_call(v)
             src = ("its amp track's tone card" if v.get("tone_class") else "the playing style on its DI card"
-                   if v.get("style_class") else "its session's tone card" if v.get("session_tone") else "none: unclassed")
+                   if v.get("style_class") else "its session's tone card" if v.get("session_tone")
+                   else "the DI-only rule" if v.get("no_tone_counts_as") else "none: unclassed")
             line = (f"  {v.get('band')}: {pathlib.Path(d).name} admitted, ear call {call} "
                     f"({gain_group(gain_class(None, call)[0], False)}; from {src}); "
                     f"heard windows {[w[:2] for w in v.get('heard') or []]}; trains once the DI inventory is "
