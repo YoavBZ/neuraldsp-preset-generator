@@ -654,7 +654,8 @@ gain would be tiny: the passing "Gone" tracks play only 8.6–11.7 s each. Nothi
   to −41.1 dB, like Maya's DI (−40.4 dB). But `ElecGtr2`, `ElecGtr2DT`, `ElecGtr3` and `ElecGtr4` read −31 to −36 dB,
   between that DI and the amp track (−23 dB).
 - **A mic-delay (same-take) check cannot apply.** The tracks are double-tracks or other parts, not one take recorded
-  twice. Their peak waveform cross-correlation within ±50 ms is 0.00–0.22 on shared windows (`scripts/xcorr_pairs.py`).
+  twice. Their peak waveform cross-correlation within ±50 ms is 0.00–0.22 on shared windows
+  (`~/ndsp-presets/learn/trusted-data/intake-2026-10-26c/scripts/xcorr_pairs.py`).
 
 *What ran before the decision (2026-10-26, zero renders, outputs in
 `~/ndsp-presets/learn/trusted-data/intake-2026-10-26c/`):*

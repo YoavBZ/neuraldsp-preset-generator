@@ -384,6 +384,18 @@ def test_intake_rows_are_not_trainable_until_admitted(monkeypatch):
     C.assert_training_ok([rows[one]["path"]], {"dis": dis})
 
 
+@pytest.mark.skipif(not all((C.CAMBRIDGE_NEW / k).is_dir() for k in ("Strobe_Gone_Full", "Strobe_Nostalgic_Full")),
+                    reason="Strobe 'Gone' and 'Nostalgic' are not on this machine")
+def test_strobe_extra_gives_no_inventory_row_and_excludes_its_7_tracks():
+    """Strobe 'Gone' and 'Nostalgic' (review of PR #303): taken in with no usable DI."""
+    dis, excluded = C.inventory()
+    assert not [r for r in dis if r["song"] in ("Strobe_Gone_Full", "Strobe_Nostalgic_Full")]
+    ex = [e for e in excluded if "/Strobe_Gone_Full/" in e["what"] or "/Strobe_Nostalgic_Full/" in e["what"]]
+    assert len(ex) == 7 and all(e["why"].startswith("not a confirmed DI (unnamed)") for e in ex)
+    names = sorted(f for fs in C.INTAKE_UNNAMED_DI.values() for f in fs)
+    assert sorted(e["what"].rsplit("/", 1)[1] for e in ex) == names
+
+
 def test_held_out_paths_are_refused():
     root = os.path.expanduser("~/ndsp-presets/references/datasets")
     rec = {"set": 2, "band": "Forkupines", "path": f"{root}/cambridge/Forkupines_Semantics_Full/x.wav"}
