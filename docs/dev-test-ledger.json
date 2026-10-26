@@ -2886,6 +2886,30 @@
    "outcome": "pending: waits for the checks and the user's listening"
   },
   {
+   "test_id": "cambridge-new-training-bands-2026-10-26b",
+   "plan": "docs/research/di-source-inventory-2026-10.md",
+   "design": "docs/trusted-data-t0-design.md",
+   "entered": "2026-10-26, after the download and before any audio was extracted, listened to, measured, rendered or separated. Only the 5 ZIPs' file lists and Readmes were read and their sha256 checked against sha256-2026-10-26b.txt. The user decided on 2026-10-23 that part B2's parked known-answer songs (Strobe 'Maya', MekaPhil x4) may be used for training, which spends B2's pool, and approved this intake on 2026-10-26 as T3's clean/crunch source for F20. Two other Strobe songs downloaded by mistake (_zips-unapproved/) are unapproved and stay unopened: not in this entry",
+   "kind": "intake: 5 NEW TRAINING sessions in 2 bands (not test bands; no longer known-answer candidates)",
+   "parts": {
+    "candidates": [
+     "Strobe - Maya (Strobe_Maya_Full): 21_ElecGtrDI1.wav, 22_ElecGtrDI1DT.wav, 23_ElecGtrDI2.wav, 24_ElecGtrDI2DT.wav (DI only, no amp track; the DI number follows 'DI', so the inventory's part token reads 'ElecGtr' for all four)",
+     "MekaPhil - Alive (Yet Free) (Mekaphil_AliveYetFree_Full): 13_ElecGtr1DI.wav, 14_ElecGtr2DI.wav, 15_ElecGtr2DTDI.wav, 16_ElecGtr3DI.wav, 17_ElecGtr4DI.wav (DI only)",
+     "MekaPhil - Core (Eternal Waltz) (Mekaphil_Core_Full): 15_ElecGtr1DI.wav, 16_ElecGtr1DTDI.wav (DI only)",
+     "MekaPhil - Timeless (Part 1) (MekaPhil_TimelessPart1_Full): 12_ElecGtr1DI.wav, 13_ElecGtr2DI.wav, 14_ElecGtr3DI.wav, 15_ElecGtr4DI.wav, 16_ElecGtr4DI.wav (DI only; two files named ElecGtr4DI)",
+     "MekaPhil - Timeless (Part 2) (Mekaphil_TimelessPart2_Full): 13_ElecGtr1DI.wav, 14_ElecGtr1DIDT.wav (no own amp track); 15_ElecGtr2.wav and 16_ElecGtr3.wav are amp tracks with no DI"
+    ],
+    "run": "the DIs that pass T0's DI checks (D2, D3; D1 and A1-A6 where an amp track exists, informative for training) and the user's ear: one DI card per D2/D3-passing DI (clean, processed, not a DI, hum, not sure) and one tone card per session with an amp track (clean, crunch, high gain, too heavy). DI-only DIs have no amp track to class: they are not metal-intake bands, so T3 counts them unclassed (not high gain) unless a tone card classes them. Not known when this entry was made"
+   },
+   "bands": "2 bands (Strobe, MekaPhil; Cambridge-MT), never trained on by this project; part B2's parked known-answer candidates (docs/known-answer-b1-results.md), never used in a test. None is in a held-out list (clean_di.refuse_held_out on both bands; no set 3-6 dataset or crop folder carries their names; KNOWN_ANSWER holds neither)",
+   "gate": "none: an intake, not a test. Training permission is recorded in learn/clean_di.py TRAINING_DOWNLOADS (split 'library'), which the DI inventory and assert_training_ok read; every row also carries clean_di.INTAKE_PENDING (training_ok False) until a verified list admits it",
+   "audio_only": "~/ndsp-presets/references/datasets-cambridge-new/<session>/ (manifest-2026-10-26b.json beside the others; the ZIPs kept in _zips/)",
+   "training": "training only: never a test, V-real, K, known-answer or held-out set, nor a screen that chooses a test. B2 can no longer use these songs as known-answer songs. A DI enters a training pool only after it passes T0's checks and the user's ear (the trusted-data rule)",
+   "renders": "0; separations: 0",
+   "held_out": "none touched",
+   "outcome": "pending: waits for the checks and the user's listening"
+  },
+  {
    "test_id": "trusted-data",
    "plan": "docs/trusted-data-strategy-plan.md",
    "design": "docs/trusted-data-t0-design.md",

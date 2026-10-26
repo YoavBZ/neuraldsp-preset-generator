@@ -259,7 +259,8 @@ def test_training_downloads_are_training_only_and_not_held_out():
     assert all(split == "library" for _, split, _ in C.TRAINING_DOWNLOADS.values())
     ledger = json.loads((C.PLUGIN_ROOT / "docs/dev-test-ledger.json").read_text())
     entries = json.dumps([t for t in ledger["tests"] if t["test_id"] in (
-        "cambridge-new-training-bands-2026-10-25", "cambridge-new-training-bands-2026-10-26")])
+        "cambridge-new-training-bands-2026-10-25", "cambridge-new-training-bands-2026-10-26",
+        "cambridge-new-training-bands-2026-10-26b")])
     assert all(key in entries for key in C.TRAINING_DOWNLOADS)
     for key, (band, _, _) in C.TRAINING_DOWNLOADS.items():
         C.refuse_held_out({"set": "cambridge-new", "band": band, "path": str(C.CAMBRIDGE_NEW / key / "x_ElecGtrDI.wav")})
@@ -282,6 +283,29 @@ def test_metal_intake_is_training_only_and_screens_non_dis():
         assert C.is_guitar_di(name) and C.INTAKE_NOT_DI.search(name)
     for name in ("15_ElecGtr1DIDT.wav", "25_ElecGtr2DI1.wav", "34_ElecGtrDI.wav", "21_ElecGtr1DTDI.wav"):
         assert C.is_guitar_di(name) and not C.INTAKE_NOT_DI.search(name)
+
+
+def test_b2_pool_intake_is_training_only_and_not_held_out():
+    """Strobe 'Maya' and MekaPhil x4: part B2's parked songs, allowed for training (user, 2026-10-23)."""
+    import json
+
+    ledger = json.loads((C.PLUGIN_ROOT / "docs/dev-test-ledger.json").read_text())
+    entry = next(t for t in ledger["tests"] if t["test_id"] == "cambridge-new-training-bands-2026-10-26b")
+    assert "training only" in entry["training"] and entry["renders"].startswith("0")
+    b2 = {k: band for k, (band, _, why) in C.TRAINING_DOWNLOADS.items() if why.startswith("2026-10-23 B2-pool")}
+    assert sorted(b2) == ["MekaPhil_TimelessPart1_Full", "Mekaphil_AliveYetFree_Full", "Mekaphil_Core_Full",
+                          "Mekaphil_TimelessPart2_Full", "Strobe_Maya_Full"]
+    assert all(k in json.dumps(entry) for k in b2) and set(b2.values()) == {"Strobe", "MekaPhil"}
+    assert not set(b2.values()) & C.KNOWN_ANSWER
+    assert not any(k for k in C.TRAINING_DOWNLOADS if "unapproved" in k.lower())
+    for key, band in b2.items():
+        C.refuse_held_out({"set": "cambridge-new", "band": band, "path": str(C.CAMBRIDGE_NEW / key / "x_ElecGtr1DI.wav")})
+    for name in ("21_ElecGtrDI1.wav", "22_ElecGtrDI1DT.wav", "14_ElecGtr1DIDT.wav", "15_ElecGtr2DTDI.wav"):
+        assert C.is_guitar_di(name) and not C.INTAKE_NOT_DI.search(name)
+    for name in ("15_ElecGtr2.wav", "16_ElecGtr3.wav"):      # Timeless Part 2's amp tracks: no DI of their own
+        assert not C.is_guitar_di(name)
+    assert C.own_tracks("ElecGtr1", ["13_ElecGtr1DI.wav", "14_ElecGtr1DIDT.wav", "15_ElecGtr2.wav", "16_ElecGtr3.wav"],
+                        "13_ElecGtr1DI.wav") == []
 
 
 def test_reserved_test_band_is_refused_even_as_a_training_download():
