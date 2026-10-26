@@ -191,11 +191,12 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          ([rule](trusted-data-t0-design.md#t0-window-re-check-2026-10-25)). *Heard 2026-10-26: all 3
          passed, and 2 are verified (It Was My Fault ElecGtr1, Nosso Mundo ElecGtr03). Signs ElecGtr6
          stays pending until its DI is heard as a DI (part 8, 3 cards), so targets are 19 verified,
-         1 pending, 39 excluded. *Part 8 heard 2026-10-26: its DI is clean on all 3 windows, so Signs
-         ElecGtr6 is verified on all 5 windows; targets 20 verified, 0 pending, 39 excluded. T3's frozen
-         V-real-11 is unchanged; a future plan would see V-real-12.* Each uses only its re-check windows, and none joins V-real, knob
+         1 pending, 39 excluded. Each uses only its re-check windows, and none joins V-real, knob
          ceiling 2 or the level prior
-         ([outcome](trusted-data-t0-design.md#parts-5-and-6-heard-2026-10-26)).*
+         ([outcome](trusted-data-t0-design.md#parts-5-and-6-heard-2026-10-26)).* *Part 8 heard 2026-10-26:
+         its DI is clean on all 3 windows, so Signs ElecGtr6 is verified on all 5 windows; targets 20
+         verified, 0 pending, 39 excluded. T3's frozen V-real-11 is unchanged; a future plan would see
+         V-real-12 ([outcome](trusted-data-t0-design.md#parts-7a-7b-8-and-9-heard-2026-10-26)).*
        - V-real 10 parts in 7 bands (3 clean parts in 2 bands, 7 crunch; 3 of the 10 from one song,
          Wickerman); knob ceiling 2's 7 parts in 7 bands verified;
        - K 17 DIs in 3 bands, but T1's K uses Adam Buckley and Dark Ride only (Cnoc An Tursa not

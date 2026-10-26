@@ -1966,7 +1966,8 @@ T0's DIs are unchanged (46 verified, 13 excluded), as is T0's training pool (27 
 - Part 9's DIs count as high gain until the per-song mix tone cards class them.
 - **The high-gain share of a T3 F20 pool:**
   - Today's pool, from T3's plan table, is 181 sections, 174 of them high gain (96%). The 7 that are not are Ale Lak
-    crunch 4, Starnes And Shah clean 1, Storm Of Particles crunch 1 and unclassed 1.
+    crunch 4, Starnes And Shah clean 1, Storm Of Particles crunch 1 and unclassed 1. Only 3 of the 7 are among T2's
+    sections (Ale Lak 1, Storm Of Particles 2). The other 4 were excluded at cleaning or refused at the D build.
   - The 64 admitted intake DIs add only high-gain sections. Their sections are not cut yet; they come when the
     inventory and part A's sections are rebuilt.
   - At T0's training DIs' mean of 6.7 sections per DI, they add about 430 sections, so the pool becomes about 603 of
@@ -1978,7 +1979,8 @@ T0's DIs are unchanged (46 verified, 13 excluded), as is T0's training pool (27 
 - **What that means for F20's 50% cap:**
   - F20 may hold at most 50% high-gain examples. F5's 4,974 examples are 96% high gain (4,767).
   - So without new clean/crunch sections, F20's roughly 15k new draws need about 9.8k non-high-gain examples from 7
-    sections, about 1,400 draws per section.
+    sections, about 1,400 draws per section. That figure assumes all 7 can be drawn. If only T2's 3 can, it is
+    about 3,300 per section.
 
 **The DI inventory was not rebuilt.** By the process, an admitted DI trains only once the DI inventory is rebuilt and
 a training draw includes it (as for Empty Signifier's DI). No training draw is planned: F20 waits for the user's yes.
@@ -1991,4 +1993,6 @@ a training draw includes it (as for Empty Signifier's DI). No training draw is p
 - From here, any T3 command needs a re-plan first.
 - A re-plan over T3's rendered rows refuses, because `vreal_membership` now gives V-real-12 against the frozen
   V-real-11.
-- F20's plan has to settle this: keep the frozen V-real-11, or move `t3/` aside.
+- F20's plan has to settle this. **Keeping the frozen V-real-11 needs a code change.** `cmd_plan` (in
+  `trusted_data_t3.py`) refuses on the membership change before the line that carries the old frozen V-real over
+  can apply. Without that change, the only route is moving `t3/` aside, and the re-plan then freezes V-real-12.
