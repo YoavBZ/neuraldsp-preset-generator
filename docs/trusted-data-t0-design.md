@@ -1236,7 +1236,8 @@ Nothing does yet.
 trained on self-built mixes (SYN, picked by T2's tie under recorded decision 4) with labels over every Morgan control,
 read on V-real. The user approved going ahead on 2026-10-26 (decision 5). Declared before any T3 data: the counts
 below come from T2's stored plan and T0's lists, and nothing was rendered, separated or trained. No code is written
-yet. K is empty, so T3 reads nothing on K.
+yet. K is empty, so T3 reads nothing on K. *F5 ran 2026-10-26: the gate read +0.079, not shown
+([F5 outcome](#f5-outcome-2026-10-26)).*
 
 **Two steps, cheapest decisive first:**
 - **F5, the paired pilot.** T2's own examples, re-rendered with full-space labels, against a today's-space model on
@@ -1249,8 +1250,8 @@ yet. K is empty, so T3 reads nothing on K.
 - **115 Morgan controls:** 86 continuous, 26 switches, amp choice (3-way) and the two mics (10-way). 77, 81 and 77
   sound with PR12, SW50R and AC20. Today's space is 25.
 - **Encodings:** continuous on the unit interval, log for frequencies and times. Amp choice is a head that reads the
-  audio only. The spring is a derived switch plus its level. Output gain is fitted to loudness, not a head (pending
-  the user's explicit confirmation).
+  audio only. The spring is a derived switch plus its level. Output gain is fitted to loudness, not a head
+  (confirmed by the user 2026-10-26).
 - **Switched-off features:** their knobs are masked out of the loss, E, the constant and the pull, and written at
   neutral in an answer.
 
@@ -1400,8 +1401,7 @@ alone.
 - A feature the answer switches off is written at neutral.
 - **Amp-fixed answers:** one per amp, the knob heads conditioned on it. **Own-amp answer:** the amp head's choice, so
   it is one of the three and costs no render.
-- **Output gain:** fitted per answer to the loudness target (amendment 2; pending the user's explicit
-  confirmation).
+- **Output gain:** fitted per answer to the loudness target (amendment 2; confirmed by the user 2026-10-26).
 
 **The pull, fixed** (T2's audit: each arm's pull was fitted on its own mix of a 278-example, 4-section set, so the arm
 contrast included the pull):
@@ -1536,7 +1536,8 @@ open, decided here for the review:
   off is redrawn, not only wide.
 - **Output gain** is held at S's value in every training render. Per answer it is fitted on V-real from the render's
   search-half loudness against the stem's, dB for dB, within -24 to +24 dB. Its |LUFS error| is scored on the held
-  half against the amp track, with no extra render. Marked pending the user's confirmation in code and records.
+  half against the amp track, with no extra render. *Confirmed by the user 2026-10-26: output gain is set by
+  loudness matching, not predicted ([F5 outcome](#f5-outcome-2026-10-26)).*
 - **The wide gate cap** is the 95th percentile (nearest rank) of every menu preset's stored threshold, over the
   three amps: -61.3 dB from 111 presets.
 - **The positive control's 50** are drawn with `seed_int(20261107, "positive control")`. They must match T2's
@@ -1641,3 +1642,71 @@ approved the intake on 2026-10-26, as T3's clean/crunch source for F20. They are
   - Timeless Part 2's tone card plays `ElecGtr2`, another take with no DI. **It can only screen, never class:** "too
     heavy" excludes the session's DIs. Any other answer is kept as `screen_tones` and sets neither `session_tone` nor a
     `tone_class`.
+
+## F5 outcome (2026-10-26)
+
+F5's chain (`docs/trusted-data-t3-f5-chain.sh`) ran on 2026-10-26 from 10:35 to 15:47. An independent audit
+recomputed every row from the stored V-real rows; all match. Rows are log(d_a/d_b), lower is better, band-weighted
+with 90% band-clustered intervals, 7 bands, V-real-11 (11 parts, 66 directions; logs `t3-*.log`, `t3/fit.json`,
+`t3/report.json`).
+
+**The gate, D_F5 − D_core5: +0.079 [−0.065, +0.224]**, 2 bands better and 5 worse. The point is at or above 0, so
+the declared reading applies: not shown; stop and report; F20 runs only with the user's yes.
+
+| Row | Point [90%] |
+|---|---|
+| Gate, seed 20261042 pair | +0.082 (bands −/+ 3/4) |
+| Gate, seed 20261043 pair | +0.091 (bands −/+ 2/5) |
+| Gate without the pull | +0.087 |
+| Gate, crunch (5 bands) / clean (2 bands, descriptive) | −0.003 [−0.073, +0.067] / +0.285 |
+| D_F5 − S | +0.088 [−0.044, +0.220] |
+| D_core5 − S | +0.009 [−0.033, +0.050] |
+| D_F5 − constant | −0.004 [−0.052, +0.043] |
+| D_core5 − D_SYN (T2's stored, own pull; V-real-10) | −0.020 [−0.056, +0.016]: it reproduces T2 |
+| Family time effects and spring: D_F5 − D_F5 with it at S | +0.087 [−0.080, +0.253] |
+| Families EQ, pedals, gate and doubler, cab rest | each within ±0.002 |
+
+**Why:**
+- **One part drives the gate.** Colour Me Red ElecGtr03 reads +1.015; every other part is between −0.12 and +0.09.
+  With time effects and spring at S, D_F5 − D_core5 is −0.0075 [−0.069, +0.054] (a post-hoc re-read, not declared;
+  the interval holds 0).
+- **The time-effect heads learn nothing.** FS5 switch AUCs: reverb 0.49, springs 0.49–0.50, tremolo 0.51, delay
+  0.56. The readout (on above 0.5) at the training base rate turns reverb on in 54 of 66 directions, delay in 29 of
+  66 and the spring in 10 of 44, where S has them off.
+- **Other switch heads are weak too:** compressor and drive AUCs about 0.58–0.59.
+- **A rough probe:** reverb and delay are visible in the target render (AUC 0.70 and 0.73) but mostly gone after
+  X-LANCE separation (stem 0.52 and 0.59, mix 0.53 and 0.58).
+- **Training draws are wet:** factory draws have reverb on 74% of the time and delay 63%.
+- **Where the judge punishes it, likely:** one sparse part, where the tails fill the gaps (one part; its sparseness
+  not measured).
+- **The amp head is near chance:** FS5 accuracy 0.39.
+
+**Integrity:**
+- The control check passed (unchanged share 0.34), and the positive control matched 50 of 50 at 1.0.
+- Both arms had the same examples, the same drops and the same FS5.
+- V-real-11 was frozen at 10:35:58, before any read. It Was My Fault ElecGtr1's crop is on 90–100 s.
+- A 13-minute stall (a bare `wait` on caffeinate, fixed live, PR #300) skipped nothing.
+- Training was healthy: best epochs D_core5 20 of 25 and 32 of 37, D_F5 20 of 25 and 15 of 20.
+
+**Caveats and issues:**
+- 785 of 4,974 full twins were dropped as near-silent, 747 of them wide draws, driven by low cab mic levels (about
+  −22.6 dB). The labels are barely biased; the kept modes are 48/23/29.
+- 28% of full twins were separated on CPU while their core twin was on MPS. The effect is unknown; F20 should keep
+  each pair on one device.
+- The |LUFS error| row compares unlike sets: S has n = 6, one part only. The ~5.6 dB is stem level against amp-track
+  level, and it is the same for every arm.
+- **Output gain (user, 2026-10-26):** set by loudness matching, not predicted. Amendment 2's rule is confirmed and no
+  longer pending; the code's status string says so from now on (the records written on 2026-10-26 still say pending).
+
+**Cost:** 6,246 renders (5,187 full-twin renders with 213 priming, 93 for the positive control, 3 for the control
+check, 963 on V-real), about 4.2k X-LANCE separations plus the positive control's 50, and 37 min of MPS training.
+The plan estimated about 6.4k renders.
+
+**Next: the user's decision.** The ML session proposes:
+- (a) a zero-render, per-control readability check on FS5;
+- (b) about 70 renders of D_F5 with its unreadable controls at S, against D_core5;
+- then F20's decision, whose main value is new data (metal, Strobe/MekaPhil and the new bands' DIs, pending the ear).
+
+Fixes for F20: redraw near-silent draws instead of dropping them; keep each pair on one device; reconsider the
+switch readout and prior, since time effects are barely readable from separated stems (rough probe: delay 0.59,
+reverb 0.52).

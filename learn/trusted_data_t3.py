@@ -28,7 +28,7 @@ masked loss, the amp head) train on the same examples, seeds 20261042 and 202610
 own twins; each model's constant and pull are fitted on FS5 (the same sections and examples), with the pull's
 two-fold check printed. V-real: amp-fixed answers (S on the same amp), the gate D_F5 - D_core5 with both per-seed
 pairs, no-pull answers, the constant, the families at S, T2's stored SYN; the output gain fitted to the stem's
-loudness per answer (pending the user's explicit confirmation), its |LUFS error| a pipeline check.
+loudness per answer (confirmed by the user 2026-10-26), its |LUFS error| a pipeline check.
 
 Every Morgan render is isolate=True with one discarded priming render per (DI, amp) change (`direct_stems.Primer`)
 and the first 0.25 s trimmed; at most 3 render processes machine-wide (`local_objective.RENDERS` matches
@@ -1527,7 +1527,7 @@ def half_lufs(y, half):
 
 
 def lufs_check(gain_now, render, stem, ref, search, held):
-    """The output-gain fit on one direction (pending the user's confirmation): the gain that brings the render's
+    """The output-gain fit on one direction (confirmed by the user 2026-10-26): the gain that brings the render's
     search half to the stem's search-half loudness; the |LUFS error| of the gained render's held half against the
     amp track's (a pipeline check). -> dict."""
     rs, rh, ss, fh = (half_lufs(render, search), half_lufs(render, held), half_lufs(stem, search), half_lufs(ref, held))

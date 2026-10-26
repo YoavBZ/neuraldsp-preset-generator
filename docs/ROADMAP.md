@@ -403,21 +403,41 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
    - (d) **T3, decided after T2:** one rebuild that is also every-control stage 2D, on self-built
      mixes with full-space labels and any approved new DIs, read on K and V-real (*K empty since 2026-10-25: its
      read is open until K comes back*). Its downloads are
-     asked for then. *Approved by the user 2026-10-26 (decision 5); plan declared the same day, pending review, nothing
-     run ([T3](trusted-data-t0-design.md#t3-declared-2026-10-26-nothing-run), every-control
+     asked for then. *Approved by the user 2026-10-26 (decision 5); plan declared the same day, F5 run and read the
+     same day ([T3](trusted-data-t0-design.md#t3-declared-2026-10-26-nothing-run), every-control
      [amendment 2](every-control-plan.md#amendment-2-2026-10-26-stage-2d-is-t3-and-its-label-space)):* 115 Morgan
      controls learned (today 25). Two steps: **F5**, T2's examples re-rendered with full-space labels against a
      today's-space model on the same examples and fit set (the gate: what every control is worth); then **F20**, 20k
      examples with high-gain sources capped at 50%. Primary D_F20 − S on V-real (the 10 plus It Was My Fault ElecGtr1,
-     and Signs ElecGtr6 if part 8 clears its DI; frozen before any T3 read), per class beside; an interference check
+     and Signs ElecGtr6 if part 8 clears its DI; frozen before any T3 read: *V-real-11 at F5's plan, without Signs*), per class beside; an interference check
      (adding high-gain sources, D_F20 − D_noHG). The pull is shared, fitted on 12 sections instead of 4, and read with
-     and without. Output gain's loudness fit waits for the user's confirmation. About 58k renders, 22k separations,
+     and without. Output gain is set by loudness matching, not predicted (confirmed by the user 2026-10-26). About 58k renders, 22k separations,
      5–6 h MPS, 32–42 h wall. The metal intake's DIs (13 sessions, 7 bands, downloaded 2026-10-26) join
      F20 as they pass the checks and the ear, under the caps. F5 starts with a zero-render dry run that prints the real
      pool. Clean and crunch sources for F20: Strobe and MekaPhil ×4 (approved 2026-10-26; ledger
      `cambridge-new-training-bands-2026-10-26b`) are DI only. 13 of their 18 DIs pass D2/D3; ear page part 9 (14
      cards) is pending. Each DI card also asks the playing style. Only a clean/crunch-style answer makes a DI-only DI
      not high gain; "can't tell" or no answer counts as high gain. F5 needs none of them.
+     **F5's outcome (2026-10-26, audited: every row recomputed;
+     [outcome](trusted-data-t0-design.md#f5-outcome-2026-10-26)).** Log ratios, lower is better, 7 bands, V-real-11:
+     - **The gate, D_F5 − D_core5: +0.079 [−0.065, +0.224]: not shown** (2 bands better, 5 worse; per seed +0.082
+       and +0.091, without the pull +0.087). By the declared rule F5 stops and reports; **F20 runs only with the
+       user's yes.** D_F5 − S +0.088, D_core5 − S +0.009, D_F5 − constant −0.004; D_core5 − D_SYN −0.020 on
+       V-real-10 (it reproduces T2).
+     - **Why:** one part (Colour Me Red ElecGtr03, +1.015) drives it, through the time effects and spring (that
+       family +0.087; every other family within ±0.002; with it at S the gate is −0.0075 [−0.069, +0.054], a post-hoc re-read, not declared; interval holds 0). The
+       time-effect heads learn nothing (FS5 switch AUCs 0.49–0.56; compressor and drive about 0.58–0.59), so the readout turns reverb on in 54 of 66
+       directions where S has it off. A rough probe finds reverb and delay mostly gone after separation; the factory
+       draws are wet (reverb 74%, delay 63%); where the judge punishes the tails is likely one sparse part, where tails fill the gaps (one part; its sparseness not measured). The amp head is
+       near chance (FS5 accuracy 0.39).
+     - Integrity checks passed (control check, positive control 50 of 50, same examples and FS5 for both arms,
+       V-real-11 frozen before any read, healthy training). Caveats: 785 of 4,974 full twins dropped as near-silent
+       (mostly wide draws with quiet cab mics); 28% of full twins separated on another device than their core twin.
+       6,246 renders.
+     - **Next, the user's decision.** The ML session proposes a zero-render per-control readability check on FS5,
+       then about 70 renders of D_F5 with its unreadable controls at S against D_core5, then F20's decision (its
+       main value is new data: metal, Strobe/MekaPhil and the new bands' DIs, pending the ear). Fixes for F20:
+       redraw near-silent draws, keep each pair on one device, reconsider the switch readout and prior.
    - **Every-control stage 1** runs on the trusted panel's parts and can now run, now that the ear
      has cleared their amp tracks (knob ceiling 2's panel: 7 parts in 7 bands, verified 2026-10-25). It needs no rebuild, so it need not
      wait for (b)–(d); they share the renderer.
@@ -564,6 +584,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      |point| < 0.03. *Moot for T2 (2026-10-26): both rules read its primary as a tie.*
    - *After T2 (2026-10-26):* decision 5, whether T3 goes ahead on T2's tie. *Decided 2026-10-26 (user): T3 goes
      ahead.*
+   - *After F5 (2026-10-26):* whether F20 runs on F5's gate (+0.079, not shown), and first whether the readability
+     check and the ~70-render re-read run ([F5 outcome](trusted-data-t0-design.md#f5-outcome-2026-10-26)).
    - *Settled by the ear (2026-10-25):* K's bands. T1's K is Adam Buckley and Dark Ride; Kimock's
      and Swatkins' 4 DIs were all heard processed, so they cannot rejoin. (Cnoc An Tursa: decided
      2026-10-24, not admitted.)
@@ -808,3 +830,4 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-26 | Parts 5 and 6 heard (user), read by `verify_tracks lists` (code, no hand edits). Window re-check: all 22 cards clean amp. It Was My Fault ElecGtr1 and Nosso Mundo ElecGtr03 are recovered, each on its re-check windows only, with its crop re-cut to a heard window. Signs ElecGtr6 stays pending: those cards never judged its DI, so part 8 (3 DI cards) asks. Targets are now 19 verified, 1 pending, 39 excluded. Signs ElecGtr6 checked: not a copy of its DI. The other three stay excluded; their answers are informative only. New bands: **1 new training DI from 5 bands** (Empty Signifier 20_ElecGtr2DI, heard clean, a high-gain part; its DI-and-amp pairing was never heard); Mòpia ×2 and Goran Levi heard processed. V-real (10) and knob ceiling 2 (7) unchanged | [outcome](trusted-data-t0-design.md#parts-5-and-6-heard-2026-10-26) |
 | 2026-10-26 | Scope refined for training (user): high-gain songs can train, as long as too-heavy songs don't interfere; testing and perfecting stay clean/crunch-focused. High gain no longer drops a training source ("scope by ear" screens out only extreme cases); readouts stay clean/crunch-weighted and per class. The 2026-10-25 scan's metal sessions outside the held-out sets, 11 sessions from 6 bands (V.M.GY is set-3 held out), plus DGX ×2, become possible training candidates. With the user's yes, these 13 were downloaded on 2026-10-26 and are under intake on branch `ml/metal-intake` | [scope](#scope-user-decision-2026-10-10) |
 | 2026-10-26 | Decision 5 (user): T3 goes ahead on T2's tie. T3's plan declared the same day, before any T3 data (every-control amendment 2 and the T3 design; ledger `trusted-data-t3`; pending review, nothing run): 115 Morgan controls learned, switched-off knobs masked out of loss, scores and fits; F5 (T2's examples with full-space labels against a today's-space model on the same examples, the gate) then F20 (20k, high-gain sources at most 50%); primary D_F20 − S on V-real (up to 12 parts), band-weighted, 90% band-clustered, per class; a shared, larger fit set and no-pull rows fix T2's pull caveat; about 58k renders, 22k separations, 5–6 h MPS. Open: clean and crunch sources for F20 | [design](trusted-data-t0-design.md#t3-declared-2026-10-26-nothing-run) |
+| 2026-10-26 | T3's F5 read (audited; every row recomputed). The gate D_F5 − D_core5 +0.079 [−0.065, +0.224], 2 bands better and 5 worse: not shown, so F5 stops and F20 runs only with the user's yes. One part (Colour Me Red ElecGtr03, +1.015) drives it through the time effects and spring, whose heads learn nothing (FS5 switch AUCs 0.49–0.56; reverb read on in 54 of 66 directions); with that family at S the gate is −0.0075 (a post-hoc re-read, not declared; interval holds 0). D_F5 − S +0.088, D_core5 − S +0.009, D_F5 − constant −0.004; the amp head is near chance. Integrity checks passed; 785 of 4,974 full twins dropped as near-silent; 6,246 renders. Output gain is set by loudness matching, not predicted (user). Proposed next: a zero-render readability check, about 70 renders with unreadable controls at S, then F20's decision | [outcome](trusted-data-t0-design.md#f5-outcome-2026-10-26) |

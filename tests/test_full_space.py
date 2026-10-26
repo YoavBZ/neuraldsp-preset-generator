@@ -262,7 +262,7 @@ def test_output_gain_fit_is_linear_and_clamped():
     assert F.output_gain_fit(3.0, -20.0, -14.0) == (9.0, False)
     assert F.output_gain_fit(20.0, -30.0, -10.0) == (24.0, True)
     assert F.output_gain_fit(0.0, -10.0, -40.0) == (-24.0, True)
-    assert "pending" in F.OUTPUT_FIT_STATUS
+    assert "confirmed" in F.OUTPUT_FIT_STATUS
 
 
 def test_readout_without_amp_head():
