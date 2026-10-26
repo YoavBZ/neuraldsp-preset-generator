@@ -2936,7 +2936,7 @@
    "renders": "about 58k: F5 about 5.3k (50 positive-control, carried through build and separation and matched to T2's stored mix and stem files; about 5.0k full-twin targets; priming), F20 about 50.7k (about 16.8k targets, covering about 6% refusals; 31.9k other guitars; priming), V-real about 2.3k (S on the new parts 6 each; per arm 72 = 12 parts x 3 amps x 2 directions; 36 priming per pass); every Morgan render isolate=True, one discarded priming render, 0.25 s trimmed, at most 3 render processes machine-wide. Separations about 22k (X-LANCE, MPS and CPU workers); every DI section measured to -22.9 LUFS (song_bank.measure) before rendering; wide draws with both cabs off redrawn",
    "repeat_use": "V-real (stage F's trusted parts) read for its eleventh set of arms, so T4 is not independent; It Was My Fault ElecGtr1 was a knob ceiling 2 development part (true-DI oracle; never trained on); T2's examples, draws and builds reused for F5",
    "held_out": "none touched (sets 4-6, Guitar-TECHS P3 and every reservation, JHNC and Blue Manic included, stay closed)",
-   "status": "declared 2026-10-26; code not written; waits for an independent review of the plan and then of the code"
+   "status": "declared 2026-10-26; F5's code written 2026-10-26 (learn/trusted_data_t3.py, learn/full_space.py; the zero-render dry run run, nothing written), waits for an independent review of the code; nothing rendered, separated or trained"
   }
  ]
 }

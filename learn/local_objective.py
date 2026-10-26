@@ -142,7 +142,7 @@ RENDERS = (r"-m learn\.song_relabel (render-new|probe)\b", r"-m learn\.ks_extend
            r"-m learn\.build_data_review render\b",               # the data-review page's doubles renders
            r"-m learn\.data_cleaning pool-rebuild\b",                # docs/data-cleaning-options.md (step 2's data)
            r"-m learn\.verify_tracks negatives\b",                   # docs/trusted-data-t0-design.md (T0 calibration)
-           r"-m learn\.trusted_data (render|vreal-render)\b")       # docs/trusted-data-t0-design.md (T1, T2)
+           r"-m learn\.trusted_data (render|vreal-render)\b")       # docs/trusted-data-t0-design.md (T1, T2, T3)
 # Separations that need the machine to themselves (amendment 3): no render starts beside one.
 SEPARATIONS = (r"-m learn\.local_objective_1c separate\b", r"-m learn\.separator_screen (separate|identity)\b",
                r"-m learn\.separate\b", r"-m learn\.known_answer separate\b",

@@ -2504,18 +2504,21 @@ def grad_norm(params):
     return torch.sqrt(torch.stack(gs).sum()) if gs else torch.tensor(0.0)
 
 
-def train_arm(data, tr, es, seed, dev, log, epochs=MAX_EPOCHS):
+def train_arm(data, tr, es, seed, dev, log, epochs=MAX_EPOCHS, build=None, loss=None):
     """Part C's recipe (`pretrain_set.train_one`): Adam 1e-3, batch 64, one half per example per
     epoch, gradients scaled to norm 5, early stopping on the early-stopping loss (patience 4), at
-    most `epochs`; an epoch skipping more than 5% of its steps aborts. -> (best state, best epoch)."""
+    most `epochs`; an epoch skipping more than 5% of its steps aborts. `build` and `loss` default to
+    part C's network and loss (T3's full space passes its own). -> (best state, best epoch)."""
     import numpy as np
     import torch
 
     from learn import pretrain_set as PS
     from learn import song_model as SM
 
+    build = build or PS.build_net
+    loss_fn = loss or SM.loss_fn
     torch.manual_seed(seed)
-    net = PS.build_net().to(dev)
+    net = build().to(dev)
     opt = torch.optim.Adam(net.parameters(), lr=PS.LR)
     best, bad, state, best_ep = math.inf, 0, None, None
     rng = np.random.default_rng(seed)
@@ -2526,7 +2529,7 @@ def train_arm(data, tr, es, seed, dev, log, epochs=MAX_EPOCHS):
         tl, skipped, steps = [], 0, 0
         for j in range(0, len(order), PS.BATCH):
             x, c, y = data.batch(order[j:j + PS.BATCH], epoch, dev)
-            loss = SM.loss_fn(net(x, c), *y)
+            loss = loss_fn(net(x, c), *y)
             opt.zero_grad()
             loss.backward()
             g = grad_norm(net.parameters())
@@ -2544,7 +2547,7 @@ def train_arm(data, tr, es, seed, dev, log, epochs=MAX_EPOCHS):
             el = []
             for j in range(0, len(es), PS.BATCH):
                 x, c, y = data.batch(es[j:j + PS.BATCH], -1, dev)          # one fixed draw, never augmented
-                el.append(float(SM.loss_fn(net(x, c), *y)))
+                el.append(float(loss_fn(net(x, c), *y)))
         v = sum(el) / max(1, len(el))
         dt = max(time.time() - t0, 1e-9)
         mem = None

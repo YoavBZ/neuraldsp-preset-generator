@@ -1508,6 +1508,36 @@ without it.
 **Fixes first:** the Renesans bug. The pure parts are unit-tested. An independent review covers the code before any
 render.
 
+### F5 as built (code only, 2026-10-26; nothing rendered, separated or trained)
+
+`learn/full_space.py` (the label space, the draw, the masked encoding, the answer, the network) and
+`learn/trusted_data_t3.py` (`--stage t3` on `plan`, `render`, `build`, `train`, `fit`, `vreal-predict`,
+`vreal-render`, `report`); the chain is `docs/trusted-data-t3-f5-chain.sh` (not launched). Details the plan left
+open, decided here for the review:
+- **The new controls in factory and start draws** take part C's draw rule around the mode's centre (continuous
+  jittered by sigma 0.1 in unit space, switches kept with p 0.7, else a fair coin), as "drawn with part C's modes"
+  reads. The spring's derived switch follows the centre's level there, as the plan states. Any mode with both cabs
+  off is redrawn, not only wide.
+- **Output gain** is held at S's value in every training render. Per answer it is fitted on V-real from the render's
+  search-half loudness against the stem's, dB for dB, within -24 to +24 dB. Its |LUFS error| is scored on the held
+  half against the amp track, with no extra render. Marked pending the user's confirmation in code and records.
+- **The wide gate cap** is the 95th percentile (nearest rank) of every menu preset's stored threshold, over the
+  three amps: -61.3 dB from 111 presets.
+- **The positive control's 50** are drawn with `seed_int(20261107, "positive control")`. They must match T2's
+  stored target FLAC and part C's mels at 0.99. Built from the same T2 backing, their mix and stem features must
+  match T2's `mix-t2` and `xlance_g-t2` at 0.99. Every run waits for it.
+- **The amp head** is a 256-unit MLP on the pooled audio features. The readout's switches use the mean probability
+  over seeds, for D_core5 too. A per-seed answer is that seed's A1, pulled by the model's b. A both-cabs-off answer
+  turns on the likelier cab.
+- **A cell dimension with no FS5 example that sounds** reads b = 0 (`cell_b`'s rule). It is printed and recorded,
+  not refused.
+- **V-real:** It Was My Fault ElecGtr1 has no stage-F-style crop yet (`vreal-crops` is not in this code).
+  `vreal-predict` refuses a frozen member without a crop, unless `--drop-missing-crops` drops it (printed) before
+  any read.
+- **The dry run's gain classes:** part A's classifier on the amp tracks classes most Ale Lak and Storm Of Particles
+  sections high gain. So T2's examples are 96% high-gain-source by the declared order (61% by part A's class
+  alone, the plan's figure). F5 keeps T2's mix; the 50% cap applies to F20.
+
 ### Open for the user
 
 1. **Clean and crunch sources for F20** (open since T0). After the ear the pool holds 1 clean-class and 1 crunch
