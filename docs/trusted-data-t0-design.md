@@ -1249,18 +1249,19 @@ yet. K is empty, so T3 reads nothing on K.
 - **115 Morgan controls:** 86 continuous, 26 switches, amp choice (3-way) and the two mics (10-way). 77, 81 and 77
   sound with PR12, SW50R and AC20. Today's space is 25.
 - **Encodings:** continuous on the unit interval, log for frequencies and times. Amp choice is a head that reads the
-  audio only. The spring is a derived switch plus its level. Output gain is fitted to loudness, not a head.
+  audio only. The spring is a derived switch plus its level. Output gain is fitted to loudness, not a head (pending
+  the user's explicit confirmation).
 - **Switched-off features:** their knobs are masked out of the loss, E, the constant and the pull, and written at
   neutral in an answer.
 
 ### 2. Data
 
 **Sources:**
-- **DIs:** T0's verified training DIs (27 in 8 bands). Empty Signifier 20_ElecGtr2DI joins, admitted by the ear
-  (PR #296), once that PR is merged and the DI inventory is rebuilt. So does any new source the user approves, after
+- **DIs:** T0's verified training DIs (27 in 8 bands). Empty Signifier 20_ElecGtr2DI joins: the ear admitted it
+  (PR #296, merged), and it trains once the DI inventory is rebuilt. So does any new source the user approves, after
   T0's checks and the ear.
-- **The metal and hard-rock intake** (downloaded with the user's yes on 2026-10-26; ledger
-  `cambridge-new-training-bands-2026-10-26`, branch `ml/metal-intake`): 13 Cambridge-MT sessions in 7 bands, 89
+- **The metal and hard-rock intake** (downloaded with the user's yes on 2026-10-26; its ledger entry lands on merge
+  of #297): 13 Cambridge-MT sessions in 7 bands, 89
   electric DIs by file name (Arcadian Alone, Daimon B, Dark Illusion, Inhumanity Vortex, Peppermark, Serapis, DGX;
   V.M.GY was left out as a set-3 held-out band).
   - Each DI that passes T0's checks and the user's ear is an eligible training band under F20's caps (high-gain
@@ -1297,21 +1298,29 @@ yet. K is empty, so T3 reads nothing on K.
   - wide: uniform in unit space, each switch on with p 0.5.
 
   The gate threshold's wide draw stops at the factory presets' 95th percentile (computed from the menu and printed),
-  so most wide gates don't silence the DI.
+  so most wide gates don't silence the DI. A wide draw with both cabs off is redrawn (the plugin needs one cab on).
+  The spring's derived switch is a switch like the others: on with p 0.5 in a wide draw, its level then uniform above
+  0; in factory and start draws it is on when the preset's level is above 0.
 - **F5's twins:** each F5 and FS5 example keeps its T2 draw for today's space and every mix draw, and takes the new
   stream for the rest. Its other-guitar renders, stems and pans are T2's stored ones. So each core twin (T2's stored
   SYN build) and its full twin differ only in the target's new controls.
 - **F20's new examples:** their other guitars draw full-space presets too (seed 20261102 per example and DI, as T2).
 - **The positive control:** 50 F5 examples rendered with the new controls at S's values must reproduce T2's stored
-  target mels (T2's match share).
+  target mels (T2's match share). They are then carried through the build and separation, and their mix and stem
+  features must match T2's stored files at the same share, so the whole pipeline, not only the renderer, repeats T2.
+- **The DI level:** every DI section, in training and on V-real, is measured to the yardstick's −22.9 LUFS
+  (`song_bank.measure`, as part C and T2) before it is rendered. Gate thresholds and the output-gain fit are read
+  against that level.
 
 **Balance:**
 - **Band:** new draws are equal per section within each gain group, and no band holds more than 35% of F20.
 - **Class:** the base class is 50/50 clean and crunch (part C's draw).
 - **High gain must not swamp clean and crunch:**
-  - Source sections are grouped by their DI's playing class: part A's class, or the intake's ear call on the amp
-    track where part A has none (Empty Signifier ElecGtr2, and the metal intake's tone cards: clean, crunch, high
-    gain). Unclassed sections count as not high gain; that is a stated limit.
+  - **Every section gets a gain class at zero renders, before any split,** and `plan` prints it by band. In order:
+    part A's class; else the intake's ear call on the amp track (Empty Signifier ElecGtr2, and the metal intake's tone
+    cards: clean, crunch, high gain); else part A's classifier run on the section's own amp track. A section still
+    unclassed counts as high gain if its band came in through the metal intake, and as not high gain otherwise (T2's
+    unclassed bands, Ale Lak and Storm Of Particles); that is a stated limit.
   - The new draws are split so that **F20 holds at most 50% high-gain-source examples.** T2's examples were 61%.
     F5 keeps T2's mix, which keeps its pairing.
   - Each target's rendered gain class is measured as part C did, at zero renders. If high-gain renders exceed 40% of
@@ -1325,19 +1334,25 @@ example from both.
 **Separation:** X-LANCE gtr_mss (`xlance_g`), as T2. The MPS worker and the CPU worker run in opposite orders.
 
 **Render budget and disk:** in the cost table (6). F20's audio is about 1.5 MB an example (target and other-guitar
-FLACs, as T2's 7.5 GB for 5.3k), so T3 adds about 31 GB. That leaves about 59 GB free of today's 90 GB, above the 31
-GB guard. `plan` refuses if the projection falls under the guard plus 5 GB.
+FLACs, as T2's 7.5 GB for 5.3k), so T3 adds about 31 GB. That leaves about 53 GB free of today's 84 GB, about 43 GB
+with the metal intake extracted, above the 31 GB guard. `plan` refuses if the projection falls under the guard plus
+5 GB (36 GB).
 
-**V-real grows to 12 parts, where eligible.** The window re-check recovered 3 targets (PR #296):
-- **It Was My Fault ElecGtr1** (Atlantis Bound, clean) **and Signs ElecGtr6** (Zeno, clean) are eligible: their
-  bands are already V-real bands and never train.
+**V-real grows to up to 12 parts, where eligible.** The window re-check recovered targets (PR #296, merged):
+- **It Was My Fault ElecGtr1** (Atlantis Bound, clean) is eligible: its band is already a V-real band and never
+  trains. **Signs ElecGtr6** (Zeno, clean) is eligible on the same grounds **only if part 8 clears its DI** (it is
+  pending until its DI is heard as a DI).
   - Each gets a stage-F-style crop on its heard window (90–100 s; 63.5–73.5 s): the unity sum of the session's
     tracks and the measure DI, built as stage F's crops were.
-  - S is rendered on each (12 renders).
+  - S is rendered on each (6 renders per part).
 - **Nosso Mundo ElecGtr03 is not eligible:** Ale Lak trains.
-- **V-real-12:** 12 parts in 7 bands; clean 5 parts in 3 bands, crunch 7 parts in 5 bands.
-- If a crop cannot be built under T0's rules on its window, that part stays out. V-real-10 rows sit beside every
-  read, for comparison with T2.
+- **With Signs, V-real-12:** 12 parts in 7 bands; clean 5 parts in 3 bands (Atlantis Bound, Diesel13, Zeno; 2 df),
+  crunch 7 parts in 5 bands. **Without it, V-real-11:** clean 4 parts in 2 bands (1 df, so the clean row is
+  descriptive only, as at T2), crunch unchanged.
+- **Membership is frozen** in T3's `plan.json` at F5's plan step, before any T3 read on V-real. A later ear sitting
+  cannot change it: if part 8 has not cleared Signs' DI by then, Signs stays out of all of T3. A part whose crop then
+  fails to build under T0's rules on its window is dropped before any V-real read, and the drop is printed.
+- V-real-10 rows sit beside every read, for comparison with T2.
 
 ### 3. Model and training
 
@@ -1355,11 +1370,13 @@ network.
 | **D_core5**, the today's-space model | F5's core twins (T2's stored SYN builds) | today's 25 | 20261042, 20261043 | FS5, core twins |
 | **D_F5** | F5's full twins | 115 | 20261042, 20261043 | FS5, full twins |
 | **D_F20**, T3's model | F20 | 115 | 20261042, 20261043, 20261044 | FS20 |
-| **D_noHG** | F20's examples off high-gain-source sections (about 10k) | 115 | 20261042, 20261043 | FS20 |
+| **D_noHG** | F20's examples on sections not classed high gain (about 10k) | 115 | 20261042, 20261043 | FS20 |
 | **D_mixN** | the same number drawn from all of F20, at F20's mix (seed 20261108) | 115 | 20261042, 20261043 | FS20 |
 
 D_core5 and D_F5 share examples, sections, backings, mix draws, today's-space labels, seeds and fit sections. Only the
-target's new controls and their labels differ.
+target's new controls and their labels differ. D_core5 also lacks the amp head and the wider heads, so F5 measures the
+every-control package (the new controls in the audio, their labels and the heads that learn them), not the labels
+alone.
 
 **The readout:** amendment 5's, extended:
 - A1, the mixture median per seed; A2, the median over seeds; A3, the pull.
@@ -1367,7 +1384,8 @@ target's new controls and their labels differ.
 - A feature the answer switches off is written at neutral.
 - **Amp-fixed answers:** one per amp, the knob heads conditioned on it. **Own-amp answer:** the amp head's choice, so
   it is one of the three and costs no render.
-- **Output gain:** fitted per answer to the loudness target (amendment 2).
+- **Output gain:** fitted per answer to the loudness target (amendment 2; pending the user's explicit
+  confirmation).
 
 **The pull, fixed** (T2's audit: each arm's pull was fitted on its own mix of a 278-example, 4-section set, so the arm
 contrast included the pull):
@@ -1383,23 +1401,23 @@ contrast included the pull):
 
 - **Every row:** log(d_a / d_b) by the judge with the measure DI, paired per part, amp and direction as T2 read V-real.
   Band-weighted, 90% band-clustered t (7 bands, 6 df); lower is better.
-- **Per class:** clean (3 bands, 2 df) and crunch (5 bands). V-real-10 beside every row.
+- **Per class:** clean (3 bands with Signs, 2 df; 2 bands without, descriptive) and crunch (5 bands). V-real-10 beside every row.
 - **Seed noise:** each seed's answer alone, for T3's model and the F5 pair (descriptive; T2's interval lacked it).
 - T2's |point| < 0.03 tie rule is not used.
 
 | Row | Read at | What it says |
 |---|---|---|
 | **D_F20 − S (primary)** | F20 | does T3 beat the starting preset, amp-fixed (S on the same amp) |
-| **D_F5 − D_core5 (the gate)** | F5 | what every control is worth, everything else equal |
+| **D_F5 − D_core5 (the gate)** | F5 | what every control is worth, everything else equal. Both per-seed-pair contrasts (seed 20261042 against 20261042, 20261043 against 20261043) are printed beside, each with its sign split over bands |
 | D_F5 − S, D_core5 − S, D_F5 − constant | F5 | as T2's rows |
 | D_core5 − D_SYN (T2's stored models, with their own pull) | F5 | what the moved sections and the new fit set change; descriptive |
 | D_F20 − constant | F20 | the song against the constant's pull |
 | D_F20 − D_F20 with the new controls at S | F20 | the new controls' own worth within one model (the 2D pilot's primary) |
 | Amp choice: D_F20 own amp − the mean of its three amp-fixed answers; own amp − S averaged over the three amps | F20 | stage 0b's reading, for the model |
 | D_F20 − D_F5; D_F20 − D_core5 | F20 | size and new bands; everything at once. Descriptive |
-| **Interference: D_mixN − D_noHG** (equal size), overall and per class; D_F20 − D_noHG beside. D_mixN's high-gain share draws from every eligible high-gain band (the metal intake's included); D_noHG drops them all | F20 | does high-gain-source data hurt clean and crunch (above 0 means it does) |
+| **Interference: D_F20 − D_noHG** (deciding: adding high-gain sources), overall and per class; D_mixN − D_noHG beside (equal size, descriptive). D_F20's and D_mixN's high-gain share draws from every eligible high-gain band (the metal intake's included); D_noHG drops them all. `report` prints the bands each arm trained on | F20 | does high-gain-source data hurt clean and crunch (above 0 means it does) |
 | Families: the answer minus the answer with one family at S (EQ; pedals; time effects and spring; gate and doubler; cab rest) | F5, F20 | each family's worth; sets priorities, never membership |
-| \|LUFS error\| of the output-gain fit | F5, F20 | output gain against the amp track |
+| \|LUFS error\| of the output-gain fit | F5, F20 | a pipeline check, not an arm contrast: the fit reads the stem's loudness, so the error is the same for every arm |
 | E on FS per family, model against constant (zero renders, section-clustered) | F5, F20 | whether each family is read from the mix at all (the known-answer read K would have given) |
 
 ### 5. The decision rule, power and next steps
@@ -1412,7 +1430,8 @@ Undecided is not failed.
 
 | Contrast | 90% half-width | Effect seen with 80% power |
 |---|---|---|
-| Paired models (D_F5 − D_core5, interference) | about 0.02–0.035 | about 0.03–0.05 |
+| Paired models (D_F5 − D_core5) | about 0.02–0.035 | about 0.03–0.05 |
+| Interference (D_F20 − D_noHG; different examples, not paired) | about 0.045 | about 0.065 |
 | Model − constant | about 0.035 | about 0.05 |
 | Model − S | about 0.07 | about 0.10 |
 
@@ -1437,8 +1456,8 @@ the sharpest read.
 - **Amp choice:**
   - below 0: the model's amp is used;
   - otherwise: `generate`'s research amp stays.
-- **Interference:**
-  - above 0 (high-gain-source data hurts clean or crunch): the next build halves the high-gain cap to 25%;
+- **Interference, D_F20 − D_noHG:**
+  - above 0 (adding high-gain sources hurts clean or crunch): the next build halves the high-gain cap to 25%;
   - otherwise: the cap stays.
 - **V-real is reused** (its eleventh set of arms). T4 is not independent; the fresh-song decision test stays.
 
@@ -1452,10 +1471,10 @@ All rates are T2's measured ones:
 | Step | Renders | Separations | MPS training | Wall time |
 |---|---|---|---|---|
 | F5: dry run, positive control, full twins (about 5.0k targets; other guitars reused) | about 5.3k | about 5.0k | | about 0.5 + 0.8 + 3.7–5.9 h |
-| F5: 4 runs; fit; V-real (2 crops' S, 5 answer sets, per seed, families) | about 1.1k | | about 0.9 h | about 1.5 h |
-| F20: about 16.1k new targets, about 30.6k other guitars, priming | about 48.6k | about 16.1k | | about 0.5 + 7.0 + 11.9–19 h |
+| F5: 4 runs; fit; V-real (the new crops' S, 5 answer sets, per seed, families) | about 1.1k | | about 0.9 h | about 1.5 h |
+| F20: about 16.8k new targets (16.1k needed, plus about 6% refusals as T2's), about 31.9k other guitars, priming | about 50.7k | about 16.8k | | about 0.5 + 7.3 + 12.4–19.8 h |
 | F20: 7 runs (3 at 20k, 4 at about 10k); fit; V-real | about 1.2k | | about 4–5 h | about 5.5 h |
-| **Total** | **about 56k** | **about 21k** | **about 5–6 h** | **about 31–41 h**, plus the review and any ear sitting |
+| **Total** | **about 58k** | **about 22k** | **about 5–6 h** | **about 32–42 h**, plus the review and any ear sitting |
 
 The plan budgeted 50–70k renders, about 20k separations and 6–8.5 h of training for T3.
 
@@ -1468,8 +1487,8 @@ The plan budgeted 50–70k renders, about 20k separations and 6–8.5 h of train
 
 ### 7. The ledger entry
 
-`trusted-data-t3` is added to `dev-test-ledger.json` with this plan, before any render. It gives the V-real-12 parts
-and bands, the seeds, the gate (the rows and rules above), the stopping rules and the renders. Real runs refuse
+`trusted-data-t3` is added to `dev-test-ledger.json` with this plan, before any render. It gives the V-real parts
+(Signs' condition and the freeze) and bands, the seeds, the gate (the rows and rules above), the stopping rules and the renders. Real runs refuse
 without it.
 
 ### Code to write, then review (nothing runs before)
@@ -1480,7 +1499,7 @@ without it.
 - `build` (as T2);
 - `train` (full-space heads, masks from `every_control.mask`, the amp head);
 - `fit` (shared FS, pull, the two-fold check, constant);
-- `vreal-crops` for the two recovered parts;
+- `vreal-crops` for the recovered parts (Signs only if part 8 clears its DI), and V-real's frozen membership;
 - `vreal-predict` (amp-fixed, own amp, new controls at S, families, per seed, no pull);
 - `vreal-render` (add-only);
 - `report` (the rows above, per class, V-real-10);

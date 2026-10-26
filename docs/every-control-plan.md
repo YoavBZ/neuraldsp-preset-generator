@@ -423,7 +423,7 @@ test walks the manifest.
 - **Mics:** two 10-way heads, as today.
 - **The spring:** a level of 0 is off. It is encoded as a derived switch (level above 0) plus the
   level, masked when off, and written back as level 0. The PR12's dwell is gated by it.
-- **Output gain:** not a head. Every input is loudness-normalised, so the mix carries no trace of
+- **Output gain** (pending the user's explicit confirmation): not a head. Every input is loudness-normalised, so the mix carries no trace of
   it. It is learned against the record's loudness (amendment 1): per answer, the gain that makes
   the rendered answer's LUFS match the target's (the stem's LUFS on a song; the amp track's LUFS
   is the truth on V-real), scored as the absolute LUFS error in dB beside the judge. Training
@@ -449,6 +449,8 @@ true label is one setting.
   The paired pilot (T3's F5 against a today's-space model on the same examples) is T3's gate
   before the full build.
 - The 2D full read (D_full − S on stage F) becomes T3's primary on V-real.
+- Decision 5 waives 2D full's condition that step 4's D − S read below 0: the nearest reading, T2's SYN − S, was
+  +0.031. T3's own gate is the paired F5 read.
 - Decision rules: the trusted-data and every-control rules (effect sizes with 90% band-clustered
   intervals, band-weighted, no pass bar, any gain built on), as T3 declares them.
 - The training runs it needs are in T3's cost table; the user's OK on T3 covers them.
