@@ -1100,16 +1100,18 @@ bound exceeds D's margin over S (−0.034).
 | constant − S | +0.043 [−0.015, +0.101] |
 
 Neither arm beats S or clearly beats the constant. Caveats:
-- each arm's pull was fitted on its own early-stopping set (278 examples, 4 sections; median b SES 0.79, SYN 0.44),
+- each arm's pull was fitted on the shared 278-example early-stopping set (4 sections), built in its own arm's mix
+  (median b SES 0.79, SYN 0.44),
   so the contrast includes the pull;
 - seed noise is not in the interval;
 - the 2-band rows (F-song, class clean) are descriptive only;
 - the − S rows use stored S judges, not re-rendered.
 
 **Data integrity:**
-- 334 near-silent refusals (rule 2), applied identically to every arm;
+- 334 near-silent refusals (rule 2), applied identically to every arm (5,000 + 308 drawn; 304 + 30 near-silent
+  refused = 334);
 - all 4 runs used the same 4,696 training and 278 early-stopping examples;
-- a second CPU build worker ran from 00:49; 1 example was built by both, with identical results;
+- a second CPU build worker ran from 00:49; 1 build by both workers, matching to within 1e-6 dB; 78 refusals logged twice;
 - `e-on-k` refused on T1's stale lists hash (T1 waived, K empty); it does not touch T2;
 - training was healthy: best epochs SES 21 of 26 and 23 of 28, SYN 20 of 25 and 29 of 34.
 
@@ -1123,7 +1125,7 @@ density test:
 - it was rendered in a separate session, with no repeat render.
 
 So it reads as "a broader draw (more bands and denser sections) leans better", not "dense sections help". SES-ALL − S
-is −0.014 [−0.085, +0.057], the first arm to lean past S; its interval holds 0.
+is −0.014 [−0.085, +0.057], the first T2 arm to lean past S; its interval holds 0.
 
 **Diagnostic (a):** SES − S dense −0.050 [−0.189, +0.089] (3 bands), sparse +0.058 [−0.048, +0.165] (4 bands).
 Nothing shown, and confounded with band: no band falls on both sides. **Diagnostic (b):** as read before

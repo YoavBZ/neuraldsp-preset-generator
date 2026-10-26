@@ -346,7 +346,7 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
      the left-out data are mostly one band, so SES-ALL − SES also carries two more bands, not density alone
      ([as built](trusted-data-t0-design.md#t2s-additions-as-built-2026-10-25)). The read, the diagnostics and the `report` fix are built (2026-10-25) and independently
      reviewed before T2's results are seen. A leakage measure that resolves sparse sources (which would recover them, T1, Rebuild The Evil and The
-     Long Wait) is built after T2 if these show the gap matters, or when T3 or T4 needs K. Before Renesans enters any
+     Long Wait) is built after T2 if these show the gap matters, or when T3 or T4 needs K. *After T2 (2026-10-26): not shown to matter: (a) is null and SES-ALL is descriptive; the sparse-source leakage measure waits until T3/T4 need K.* Before Renesans enters any
      stage: `session_guitar_parts` skips GTR 2 Amp as GTR 1's `own` (a latent bug the review of #290 found; it does
      not touch T2's four bands).
      **T2's outcome (2026-10-26, audited: every row recomputed from the V-real groups;
@@ -355,18 +355,18 @@ aren't covered. The project focuses on clean, edge-of-breakup and crunch tones.
        SYN is picked by recorded decision 4. Not "equal": SYN leans worse (5 of 7 bands lean to SES; every
        leave-one-band-out mean +0.013 to +0.026), and the upper bound exceeds D's margin over S.
      - SES − constant −0.031 [−0.068, +0.005], SYN − constant −0.012 [−0.045, +0.021]; against S, SES +0.012, SYN
-       +0.031, constant +0.043. Neither arm beats S or clearly beats the constant. Each arm's pull was fitted on its own
-       early-stopping set (median b SES 0.79, SYN 0.44), so the contrast includes it; seed noise is not in the interval.
+       +0.031, constant +0.043. Neither arm beats S or clearly beats the constant. Each arm's pull was fitted on the shared
+       278-example early-stopping set, built in its own arm's mix (median b SES 0.79, SYN 0.44), so the contrast includes it; seed noise is not in the interval.
      - Data and training clean: 334 near-silent refusals applied to every arm; all 4 runs on the same 4,696 training and
-       278 early-stopping examples; training healthy (best epochs SES 21 of 26 and 23 of 28, SYN 20 of 25 and 29 of 34).
+       278 early-stopping examples (5,000 + 308 drawn; 304 + 30 near-silent refused = 334); training healthy (best epochs SES 21 of 26 and 23 of 28, SYN 20 of 25 and 29 of 34).
      - SES-ALL − SES −0.026 [−0.070, +0.018], descriptive and not a density test: it adds 2 bands SES never saw,
        shares only 2,966 examples with SES, has its own pull and rests on one band (without Zeno −0.009). It reads
-       "a broader draw leans better". SES-ALL − S −0.014, the first arm to lean past S; its interval holds 0.
+       "a broader draw leans better". SES-ALL − S −0.014, the first T2 arm to lean past S; its interval holds 0.
      - Diagnostic (a): dense against sparse shows nothing and is confounded with band. The stem read: SYN's stems
        are not cleaner than SES's (−0.80 dB [−1.12, −0.47] section-clustered; band-clustered holds 0), so SYN is
        not shown to be unrealistically easy (a ceiling check only).
      - **Next: decision 5 (whether T3 runs on a tie) is open for the user.** Pending inputs: the window re-check's 3
-       recovered parts and the new bands' 4 DIs await the user's ear (PR #293, PR #294); the clean/crunch shortage
+       recovered parts and the new bands' 4 DIs ([PR #294](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/294), ear page `part6-new-bands`) await the user's ear (PR #293, PR #294); the clean/crunch shortage
        stays the clearest gap.
    - (d) **T3, decided after T2:** one rebuild that is also every-control stage 2D, on self-built
      mixes with full-space labels and any approved new DIs, read on K and V-real (*K empty since 2026-10-25: its
