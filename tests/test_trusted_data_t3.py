@@ -1,6 +1,7 @@
 """T3's F5 (`learn/trusted_data_t3.py`): the pure sets, membership, gain groups, readings and checks, with fakes.
 No data files, no renders, no training."""
 
+import json
 import math
 
 import pytest
@@ -238,3 +239,104 @@ def test_ear_call_order():
     assert T3.ear_call({"tone_class": None, "session_tone": "clean"}) == "clean"
     assert T3.ear_call({"no_tone_counts_as": "high_gain"}) == "high_gain"
     assert T3.ear_call({}) is None
+
+
+# --- V-real's new crops (vreal-crops) ---------------------------------------------------------------------------
+
+IWMF1 = "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1"
+
+
+def _tr_recut(**over):
+    rc = {"crop_window_s": [90.0, 100.0], "recovered": True, "verdict": "verified", "heard": {"90.0": True}}
+    rc.update(over)
+    return {"recovered_targets": [IWMF1], "targets": {IWMF1: {"verdict": "verified", "recheck": rc}}}
+
+
+def test_recut_window_needs_the_ear_verified_recheck():
+    assert T3.recut_window(_tr_recut(), IWMF1) == ([90.0, 100.0], "ear-verified re-cut window")
+    assert T3.recut_window(_tr_recut(heard={}), IWMF1)[0] is None
+    assert T3.recut_window(_tr_recut(verdict="pending ear"), IWMF1)[0] is None
+    assert T3.recut_window(_tr_recut(), "someone-else")[0] is None
+
+
+def test_vreal_parts_reads_t3_crops_and_drops_only_on_the_rules():
+    members = ["f1", "f2", IWMF1]
+    built = {IWMF1: {"status": "built", "band": "Atlantis Bound", "gain_class": "clean"}}
+    parts, dropped = T3.vreal_parts(members, ["f1", "f2", "f3"], built)
+    assert parts["f1"] == {"kind": "stagef"} and parts[IWMF1]["kind"] == "t3" and not dropped
+    assert T3.crop_jobs(members, ["f1", "f2"]) == [IWMF1]
+    parts, dropped = T3.vreal_parts(members, ["f1", "f2"], {IWMF1: {"status": "dropped", "why": "x"}})
+    assert IWMF1 not in parts and dropped[0][0] == IWMF1                # a crop that did not build: dropped
+    with pytest.raises(SystemExit, match="vreal-crops"):
+        T3.vreal_parts(members, ["f1", "f2"], {})                       # never attempted: refused
+    parts, dropped = T3.vreal_parts(members, ["f1", "f2"], {}, drop_missing=True)
+    assert IWMF1 not in parts and "drop-missing-crops" in dropped[0][1]  # the opt-in escape
+
+
+def test_t3_units_carry_the_groups_own_s(tmp_path):
+    parts = {"f1": {"kind": "stagef"}, IWMF1: {"kind": "t3", "band": "Atlantis Bound", "gain_class": "clean"}}
+    (tmp_path / f"{IWMF1}|pr12.json").write_text(json.dumps(
+        {"status": "done", "judge": {"S|A": {"A": 0.1, "B": 0.2}, "S|B": {"A": 0.3, "B": 0.4}}}))
+    units = T3.t3_units(parts, tmp_path)
+    assert len(units) == 6 and {u["slug"] for u in units} == {IWMF1}
+    d = {(u["amp"], u["search"]): u["d"]["S"] for u in units}
+    assert d[("pr12", "A")] == 0.2 and d[("pr12", "B")] == 0.3 and d[("ac20", "A")] is None
+    assert all(u["cls"] == "clean" and u["band"] == "Atlantis Bound" for u in units)
+
+
+def test_cmd_vreal_crops_cuts_separates_and_records(monkeypatch, tmp_path):
+    import argparse
+    import sys
+
+    import soundfile as sf
+
+    from learn import arm_a_mega53 as A
+    from learn import direct_stems as DS
+
+    sys.path.insert(0, str(T.V.PLUGIN_ROOT / "research"))
+    import build_validation_crops as BVC
+
+    old_crop = tmp_path / "old-crop"
+    old_crop.mkdir()
+    (old_crop / "record.json").write_text(json.dumps({"source": "cambridge", "song": "It Was My Fault For Waiting",
+                                                      "part": "ElecGtr1", "verified_source_sha256": {"di.wav": "d", "amp.wav": "a"}}))
+    plan = {"vreal": {"members": ["f1", IWMF1], "recovered": {IWMF1: {"window_s": [90.0, 100.0]}}}}
+    calls = {}
+
+    def fake_build(cat, root, source, song, part, out, *, rule, start_s):
+        calls["args"] = (source, song, part, rule, start_s)
+        out.mkdir(parents=True)
+        sf.write(out / "mix.wav", np.full(480_000, 0.1, np.float32), 48_000, subtype="FLOAT")
+        (out / "record.json").write_text("{}")
+        return {"verified_source_sha256": {"di.wav": "d", "amp.wav": "a"}, "di_activity": 0.9, "reference_lufs": -20.0}
+
+    monkeypatch.setattr(T3, "require_t3", lambda a: None)
+    monkeypatch.setattr(T3, "load_plan", lambda root, smoke=False: plan)
+    monkeypatch.setattr(T, "load_lists", lambda root, smoke=False: _tr_recut())
+    monkeypatch.setattr(T.V, "out_root", lambda a: tmp_path)
+    monkeypatch.setattr(A, "pool_slugs", lambda: ["f1"])
+    monkeypatch.setattr(A, "lt_parts", lambda: {IWMF1: {"band": "Atlantis Bound", "gain_class": "clean",
+                                                        "judge_lag": -43, "crop": str(old_crop)}})
+    monkeypatch.setattr(BVC, "build", fake_build)
+    monkeypatch.setattr(DS, "stem_separator", lambda sep, dev: (lambda x: x * 0.5))
+    args = argparse.Namespace(smoke=False, out=None, device="cpu")
+    T3.cmd_vreal_crops(args)
+    man = json.loads(T3.crops_manifest_path(tmp_path).read_text())
+    e = man["crops"][IWMF1]
+    assert e["status"] == "built" and e["judge_lag"] == -43 and e["window_s"] == [90.0, 100.0]
+    assert calls["args"] == ("cambridge", "It Was My Fault For Waiting", "ElecGtr1", "window", 90.0)
+    assert np.allclose(T3.crop_stem({"stem": e["stem"]}), 0.05)
+    assert "f1" not in man["crops"]                                      # stage F's crops are never cut again
+    T3.cmd_vreal_crops(args)                                             # kept on a rerun (hash-checked)
+    plan["vreal"]["recovered"][IWMF1]["window_s"] = [125.5, 135.5]
+    T3.crops_manifest_path(tmp_path).unlink()
+    import shutil
+    shutil.rmtree(T3.crops_root(tmp_path))
+    T3.cmd_vreal_crops(args)                                             # not the frozen window: dropped
+    e = json.loads(T3.crops_manifest_path(tmp_path).read_text())["crops"][IWMF1]
+    assert e["status"] == "dropped" and "frozen" in e["why"]
+
+
+def test_vreal_crops_is_t3s():
+    with pytest.raises(SystemExit, match="t3"):
+        T.main(["vreal-crops"])

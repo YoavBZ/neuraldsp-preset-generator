@@ -11,6 +11,7 @@
     $MSST -m learn.trusted_data build --stage t3 --device cpu --order desc   # optional second worker
     $TORCH_PY -m learn.trusted_data train --stage t3 --arm D_F5|D_core5 --seed 20261042|20261043
     $TORCH_PY -m learn.trusted_data fit --stage t3                   # constants, pulls (shared FS5), folds, E on FS
+    $MSST -m learn.trusted_data vreal-crops --stage t3 --device mps  # the recovered members' crops and stems
     $TORCH_PY -m learn.trusted_data vreal-predict --stage t3         # the answer sets on V-real (zero renders)
     $MAIN -u -m learn.trusted_data vreal-render --stage t3 --shard k/3
     $MAIN -m learn.trusted_data report --stage t3                    # every F5 row
@@ -1070,20 +1071,173 @@ def cmd_fit(args):
 
 # --- V-real (predict: demucs-venv, zero renders; render: MAIN) --------------------------------------------------
 
-def vreal_dirs(plan, drop_missing=False):
-    """V-real's directions on the frozen members; a member without a stage-F-style crop refuses, or with
-    `drop_missing` is dropped (printed) before any read. -> (dirs, dropped members)."""
+def crops_root(root):
+    return T.stage_root(root, STAGE) / "vreal" / "crops"
+
+
+def crops_manifest_path(root):
+    return crops_root(root) / "manifest.json"
+
+
+def recut_window(tr, slug):
+    """A recovered target's ear-verified re-cut window from T0's lists (the window re-check, PR #296): the re-check's
+    `crop_window_s`, its target verified and recovered, the window heard. -> ([start, end] or None, why)."""
+    t = (tr.get("targets") or {}).get(slug) or {}
+    rc = t.get("recheck") or {}
+    w = rc.get("crop_window_s")
+    if slug not in (tr.get("recovered_targets") or []) or not rc.get("recovered"):
+        return None, "not a recovered target in T0's lists"
+    if t.get("verdict") != "verified" or rc.get("verdict") != "verified" or not w:
+        return None, f"its re-check is not verified ({rc.get('verdict')})"
+    if not (rc.get("heard") or {}).get(str(float(w[0]))):
+        return None, f"its re-cut window {w} was not heard"
+    return [float(w[0]), float(w[1])], "ear-verified re-cut window"
+
+
+def crop_jobs(members, pool):
+    """The frozen members stage F has no crop for: T3 cuts their crops (`vreal-crops`)."""
+    return [m for m in members if m not in set(pool)]
+
+
+def vreal_parts(members, pool, crops, drop_missing=False):
+    """V-real's parts: stage F's crops for its pool, T3's own crops for the rest. crops: the vreal-crops manifest's
+    entries. A member whose crop did not build under T0's rules is dropped before any read (printed); a member with
+    no crop attempt refuses, unless `drop_missing` (an opt-in escape) drops it too.
+    -> ({slug: {"kind": "stagef"} | {"kind": "t3", **entry}}, [(dropped member, why)])."""
+    parts, dropped, missing = {}, [], []
+    for m in members:
+        e = crops.get(m) or {}
+        if m in set(pool):
+            parts[m] = {"kind": "stagef"}
+        elif e.get("status") == "built":
+            parts[m] = {"kind": "t3", **e}
+        elif e.get("status") == "dropped":
+            dropped.append((m, f"its crop did not build: {e.get('why')}"))
+        else:
+            missing.append(m)
+    if missing and not drop_missing:
+        raise SystemExit(f"frozen V-real members without a crop: {missing} (run `vreal-crops --stage t3`; "
+                         "--drop-missing-crops drops them instead, an opt-in escape)")
+    return parts, dropped + [(m, "no crop (dropped by --drop-missing-crops)") for m in missing]
+
+
+def vreal_dirs(root, plan, drop_missing=False):
+    """V-real's directions on the frozen members (stage F's, then T3's crops on every amp and direction).
+    -> (dirs, {slug: part info}, dropped members)."""
+    from learn import arm_a_mega53 as A
+    from learn import knob_ceiling as K
+
+    crops = (_load(crops_manifest_path(root)) or {}).get("crops") or {}
+    parts, dropped = vreal_parts(plan["vreal"]["members"], A.pool_slugs(), crops, drop_missing)
+    for m, why in dropped:
+        print(f"V-real member dropped before any read: {m} ({why})", flush=True)
+    dirs = [d for d in A.stage_dirs("F") if d[0] in parts]
+    dirs += [(s, a, sh, h) for s in sorted(p for p, v in parts.items() if v["kind"] == "t3")
+             for a in K.AMPS for sh, h in K.DIRECTIONS]
+    return dirs, parts, [m for m, _ in dropped]
+
+
+def crop_stem(info):
+    """A T3 crop's stored xlance_g stem, hash-checked."""
+    import numpy as np
+
+    from learn import direct_stems as DS
+
+    st = info["stem"]
+    if DS.hashlib_file(st["path"]) != st["sha256"]:
+        raise SystemExit(f"{st['path']}: the stored stem changed since it was recorded")
+    return np.load(st["path"]).astype(np.float64)
+
+
+def part_info(slug, info):
+    """(gain class, band) of a V-real part: stage F's label table, or the T3 crop's entry."""
     from learn import arm_a_mega53 as A
 
-    members = plan["vreal"]["members"]
-    have = {d[0] for d in A.stage_dirs("F")}
-    missing = [m for m in members if m not in have]
-    if missing and not drop_missing:
-        raise SystemExit(f"frozen V-real members without a crop: {missing} (build their crops, or pass "
-                         "--drop-missing-crops to drop them before any read)")
-    for m in missing:
-        print(f"V-real member dropped before any read (no crop): {m}", flush=True)
-    return [d for d in A.stage_dirs("F") if d[0] in members and d[0] not in missing], missing
+    if info["kind"] == "stagef":
+        p = A.f_part(slug)
+        return p["gain_class"], p["band"]
+    return info["gain_class"], info["band"]
+
+
+def cmd_vreal_crops(args):
+    """The stage-F-style crops of the frozen V-real members stage F has none for (msst-venv; no render): the session's
+    unity sum, the DI and the amp track cut on the member's ear-verified re-cut window (T0's re-check,
+    `recut_window`; it must be the window frozen in the plan) by the validation-crop builder's `window` rule, into
+    t3/vreal/crops/<slug>/ (the same files and record as stage F's crops; no existing crop is touched), and its
+    crop-only xlance_g stem as step 4 made stage F's (gtr_mss on the crop's mix alone). The judge lag is the label
+    table's for the same DI and amp track. A crop that does not build is recorded as dropped (before any V-real
+    read). Recorded crops are kept, hash-checked."""
+    import sys
+
+    import numpy as np
+
+    from learn import arm_a_mega53 as A
+    from learn import confirm_run as CR
+    from learn import direct_stems as DS
+
+    require_t3(args)
+    root = V.out_root(args)
+    plan = load_plan(root, args.smoke)
+    tr = T.load_lists(root, args.smoke)
+    sys.path.insert(0, str(V.PLUGIN_ROOT / "research"))
+    import build_validation_crops as BVC
+
+    mp = crops_manifest_path(root)
+    man = _load(mp) or {"plan": T.PLAN, "design": DESIGN, "separator": T.SEP, "setting": "gtr_mss", "crops": {}}
+    for slug, e in man["crops"].items():
+        if e.get("status") == "built":
+            if DS.hashlib_file(pathlib.Path(e["crop"]) / "record.json") != e["record_sha256"]:
+                raise SystemExit(f"{slug}: its crop record changed since it was recorded")
+            crop_stem(e)
+    jobs = crop_jobs(plan["vreal"]["members"], A.pool_slugs())
+    catalog = json.loads(BVC.CATALOG.read_text())
+    sep = None
+    for slug in jobs:
+        if slug in man["crops"]:
+            print(f"{slug}: {man['crops'][slug]['status']} (kept)", flush=True)
+            continue
+        frozen = (plan["vreal"]["recovered"].get(slug) or {}).get("window_s")
+        w, why = recut_window(tr, slug)
+        lt = A.lt_parts().get(slug)
+        old = _load(pathlib.Path(lt["crop"]) / "record.json") if lt else None
+        e = {"status": "dropped", "window_s": w}
+        if w is None:
+            e["why"] = why
+        elif w != frozen:
+            e["why"] = f"T0's re-cut window {w} is not the one frozen in the plan ({frozen})"
+        elif not lt or not old:
+            e["why"] = "no label-table entry (band, class, judge lag) for the part"
+        else:
+            out = crops_root(root) / slug
+            try:
+                rec = BVC.build(BVC.CATALOG, pathlib.Path(catalog["root"]).expanduser(), old["source"], old["song"],
+                                old["part"], out, rule="window", start_s=w[0])
+            except ValueError as err:
+                rec, e["why"] = None, f"the crop builder refused: {err}"
+            if rec is not None:
+                srcs = {k: old["verified_source_sha256"].get(k) for k in rec["verified_source_sha256"]}
+                same = all(srcs[k] == v for k, v in rec["verified_source_sha256"].items() if srcs[k] is not None)
+                if not same:
+                    e["why"] = "the cut read other source files than the label table's crop (its judge lag would not hold)"
+                else:
+                    if sep is None:
+                        sep = DS.stem_separator(T.SEP, args.device)
+                    x = CR.mono(out / "mix.wav")
+                    st = np.asarray(sep(x), np.float32)
+                    if len(st) != len(x) or not np.isfinite(st).all():
+                        raise SystemExit(f"{slug}: bad stem")
+                    sp = out.parent / f"{slug}.{T.SEP}.npy"
+                    np.save(sp.with_suffix(".tmp.npy"), st)
+                    sp.with_suffix(".tmp.npy").replace(sp)
+                    e = {"status": "built", "crop": str(out), "window_s": w, "record_sha256": DS.hashlib_file(out / "record.json"),
+                         "di_activity": rec.get("di_activity"), "reference_lufs": rec["reference_lufs"],
+                         "band": lt["band"], "gain_class": lt["gain_class"], "judge_lag": lt["judge_lag"],
+                         "stem": {"path": str(sp), "sha256": DS.hashlib_file(sp), "device": args.device}}
+        man["crops"][slug] = {**e, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+        _save(mp, man)
+        print(f"{slug}: {e['status']}" + (f" ({e['why']})" if e.get("why") else f", window {w} s"), flush=True)
+    print(f"VREAL CROPS DONE t3: {sum(1 for e in man['crops'].values() if e['status'] == 'built')} built, "
+          f"{sum(1 for e in man['crops'].values() if e['status'] == 'dropped')} dropped")
 
 
 def core_answer(amp, S, r, med, b, seed=None):
@@ -1130,7 +1284,7 @@ def cmd_vreal_predict(args):
     require_t3(args)
     root = V.out_root(args)
     plan = load_plan(root, args.smoke)
-    dirs, dropped = vreal_dirs(plan, args.drop_missing_crops)
+    dirs, parts, dropped = vreal_dirs(root, plan, args.drop_missing_crops)
     fit = _load(T.stage_root(root, STAGE) / "fit.json")
     if not fit:
         raise SystemExit("run `fit --stage t3` first")
@@ -1147,13 +1301,19 @@ def cmd_vreal_predict(args):
         fits[arm] = (DS.medians_from_json(f["constant"]), DS.table_from_json(f["pull"]),
                      G.const_from_json(f["constant_answers"]))
     for slug, amp, search, held in dirs:
-        part = A.f_part(slug)
-        cls = part["gain_class"]
-        if slug not in inputs:
+        cls, _ = part_info(slug, parts[slug])
+        if slug not in inputs and parts[slug]["kind"] == "stagef":
             mix, _, hashes = DE.f_inputs(slug, "mega53")
             cf = DS.stored_stem(man, f"stagef/{slug}")
             inputs[slug] = {"mix": mix, "stem": cf, "gain_db": DE.inference_gain_db(mix, target),
                             "hashes": {"context": hashes["context"], "stem": man["stems"][f"stagef/{slug}"]["sha256"]}}
+        elif slug not in inputs:                            # T3's own crop: its mix.wav and crop-only stem
+            from learn import confirm_run as CR
+
+            info = parts[slug]
+            mix = CR.mono(pathlib.Path(info["crop"]) / "mix.wav")
+            inputs[slug] = {"mix": mix, "stem": crop_stem(info), "gain_db": DE.inference_gain_db(mix, target),
+                            "hashes": {"crop_record": info["record_sha256"], "stem": info["stem"]["sha256"]}}
         it = inputs[slug]
         s8, m8, ls, lm = DS.step4_half(it["stem"], it["mix"], search, it["gain_db"])
         x, c = DS.model_input(s8, m8, ls, lm, search, amp, cls, T.MODEL_ARM)
@@ -1186,7 +1346,7 @@ def cmd_vreal_predict(args):
             any((T.stage_root(root, STAGE) / "vreal" / "groups").glob("*.json")):
         raise SystemExit("V-real was rendered from other models' predictions: move t3/vreal aside first")
     _save(pp, {"plan": T.PLAN, "design": DESIGN, "smoke": bool(args.smoke), "members": plan["vreal"]["members"],
-               "dropped_members": dropped, "directions": len(dirs), "answers": list(ANSWERS), "predictions": preds,
+               "dropped_members": dropped, "t3_crops": sorted(p for p, v in parts.items() if v["kind"] == "t3"), "directions": len(dirs), "answers": list(ANSWERS), "predictions": preds,
                "own_amp": own, "pull_gaps": gaps, "inputs": {s: v["hashes"] for s, v in inputs.items()},
                "models": {a: m for a, (_, m) in models.items()}, "output_gain": "S's here; fitted per answer at render ("
                + F.OUTPUT_FIT_STATUS + ")", "time": time.strftime("%Y-%m-%d %H:%M:%S")})
@@ -1216,6 +1376,37 @@ def lufs_check(gain_now, render, stem, ref, search, held):
             "amp_track_held": fh, "abs_error_db": abs(pred - fh)}
 
 
+def t3_group_ctx(menu, ms, info, amp):
+    """`arm_a_mega53.group_ctx` for a T3 crop: S of the part's class on the amp, the crop's measure DI (as stage F's:
+    `knob_ceiling.measure_di`), its amp track as the reference, the label table's judge lag."""
+    from learn import confirm_run as CR
+    from learn import knob_ceiling as K
+
+    crop = pathlib.Path(info["crop"])
+    cls = info["gain_class"]
+    sel, S = menu[amp][K.START[cls][amp]]
+    di = K.measure_di({"crop": crop})
+    part = {"gain_class": cls, "band": info["band"], "judge_lag": info["judge_lag"], "crop": crop}
+    return {"part": part, "sel": sel, "S": S, "S_stored": ms[amp][cls][1], "di": di, "di32": di.astype("float32"),
+            "ref": CR.mono(crop / "reference.wav")}
+
+
+def t3_units(parts, groups_dir):
+    """Report units for T3's crops (as `perfect_sep_arm.build_units` gives stage F's): every amp and direction, S's
+    held-half distance from the group's own S render (None until rendered)."""
+    from learn import knob_ceiling as K
+
+    out = []
+    for slug in sorted(p for p, v in parts.items() if v["kind"] == "t3"):
+        for amp in K.AMPS:
+            gr = _load(groups_dir / f"{slug}|{amp}.json") or {}
+            for sh, h in K.DIRECTIONS:
+                s = ((gr.get("judge") or {}).get(f"S|{sh}") or {}).get(h) if gr.get("status") == "done" else None
+                out.append({"slug": slug, "band": parts[slug]["band"], "cls": parts[slug]["gain_class"], "amp": amp,
+                            "search": sh, "held": h, "d": {"S": s}, "rec": {}})
+    return out
+
+
 def cmd_vreal_render(args):
     """F5's V-real renders for one shard of (part, amp) groups: one discarded priming render at S, then each answer
     set once per direction through the part's measure DI, judged on both halves (`direct_stems.run_group`); each
@@ -1236,7 +1427,9 @@ def cmd_vreal_render(args):
         raise SystemExit("run `vreal-predict --stage t3` first")
     if pred["members"] != plan["vreal"]["members"]:
         raise SystemExit("the predictions were made for another V-real membership")
-    dirs, _ = vreal_dirs(plan, bool(pred.get("dropped_members")))
+    dirs, parts, dropped = vreal_dirs(root, plan, bool(pred.get("dropped_members")))
+    if sorted(dropped) != sorted(pred.get("dropped_members") or []):
+        raise SystemExit("V-real's parts changed since the predictions: rerun vreal-predict")
     man = DS._load(DS.stems_manifest_path(DS.ROOT, T.SEP))
     mine = DE.shard(A.groups(dirs), args.shard)
     LO._wait_cap()
@@ -1249,14 +1442,19 @@ def cmd_vreal_render(args):
             gp = od / "groups" / f"{slug}|{amp}.json"
             if (_load(gp) or {}).get("status") == "done":
                 continue
-            ctx = A.group_ctx(menu, ms, "F", slug, amp)
+            info = parts[slug]
+            ctx = A.group_ctx(menu, ms, "F", slug, amp) if info["kind"] == "stagef" else t3_group_ctx(menu, ms, info, amp)
             if K.key(dict(ctx["S"])) != K.key(ctx["S_stored"]):
                 raise SystemExit(f"{amp}: the live S differs from the stored copy")
             g = {"sel": ctx["sel"], "S": ctx["S"], "di": ctx["di"], "di32": ctx["di32"], "ref": ctx["ref"],
                  "lag": ctx["part"]["judge_lag"]}
-            stem = DS.stored_stem(man, f"stagef/{slug}")
+            stem = DS.stored_stem(man, f"stagef/{slug}") if info["kind"] == "stagef" else crop_stem(info)
             settings = {a: {sh: LO.tdict(pred["predictions"][a][f"{slug}|{amp}|{sh}"]["settings"]) for sh, _ in K.DIRECTIONS}
                         for a in ANSWERS}
+            arms = ANSWERS
+            if info["kind"] == "t3":                        # a new crop has no stored S: S is rendered here (6 a part)
+                settings["S"] = {sh: dict(g["S"]) for sh, _ in K.DIRECTIONS}
+                arms = ("S",) + ANSWERS
             held_of = dict(K.DIRECTIONS)
             checks = {}
 
@@ -1264,7 +1462,7 @@ def cmd_vreal_render(args):
                 gain = float(settings[arm][search].get(F.OUTPUT, "0"))
                 checks[f"{arm}|{search}"] = lufs_check(gain, y, stem, ref, search, held_of[search])
 
-            rec = DS.run_group(rr, g, settings, False, None, K.judge, keep=keep, arms=ANSWERS)
+            rec = DS.run_group(rr, g, settings, False, None, K.judge, keep=keep, arms=arms)
             rec.update(slug=slug, amp=amp, lufs=checks, output_gain_fit=F.OUTPUT_FIT_STATUS)
             _save(gp, rec)
             print(slug, amp, rec["renders"], flush=True)
@@ -1280,19 +1478,21 @@ def cmd_report(args):
     and V-real-10 beside; the gate D_F5 - D_core5 with both per-seed pairs and their sign split over bands, and the
     no-pull pair; each model against S, D_F5 against its constant; D_core5 against T2's stored SYN; the families;
     the output-gain fit's |LUFS error| (a pipeline check); E on FS per family; the bands each arm trained on."""
+    from learn import arm_a_mega53 as A
     from learn import direct_stems as DS
     from learn import perfect_sep_arm as P
 
     require_t3(args)
     root = V.out_root(args)
     plan = load_plan(root, args.smoke)
-    tr = T.load_lists(root, args.smoke)
     od = T.stage_root(root, STAGE) / "vreal"
     pred = _load(od / "predictions.json") or {}
     members = set(plan["vreal"]["members"]) - set(pred.get("dropped_members") or [])
     v10 = set(plan["vreal"]["v_real_10"])
-    units = [u for u in P.build_units() if u["slug"] in members]
-    groups, t2g, t2a = {}, {}, {}
+    crops = (_load(crops_manifest_path(root)) or {}).get("crops") or {}
+    parts, _ = vreal_parts(sorted(members), A.pool_slugs(), crops, drop_missing=True)
+    units = [u for u in P.build_units() if u["slug"] in members] + t3_units(parts, od / "groups")
+    groups, t2g = {}, {}
 
     def value(arm):
         def f(u):

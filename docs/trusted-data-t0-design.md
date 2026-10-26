@@ -1538,9 +1538,12 @@ open, decided here for the review:
   turns on the likelier cab.
 - **A cell dimension with no FS5 example that sounds** reads b = 0 (`cell_b`'s rule). It is printed and recorded,
   not refused.
-- **V-real:** It Was My Fault ElecGtr1 has no stage-F-style crop yet (`vreal-crops` is not in this code).
-  `vreal-predict` refuses a frozen member without a crop, unless `--drop-missing-crops` drops it (printed) before
-  any read.
+- **V-real's new crop:** `vreal-crops` cuts It Was My Fault ElecGtr1 on its ear-verified re-cut window from T0's
+  re-check (90-100 s, which must equal the frozen window). It uses the validation-crop builder's new `window` rule,
+  into `t3/vreal/crops/` (same files and record; no existing crop is touched). It adds the crop-only xlance_g stem,
+  made as step 4 made stage F's. The judge lag is the label table's for the same DI and amp track. S is rendered in
+  T3's own groups (6 renders a part). A crop that does not build is dropped before any read, and the drop is
+  printed. `--drop-missing-crops` is only an opt-in escape for a member with no crop attempt.
 - **The dry run's gain classes:** part A's classifier on the amp tracks classes most Ale Lak and Storm Of Particles
   sections high gain. So T2's examples are 96% high-gain-source by the declared order (61% by part A's class
   alone, the plan's figure). F5 keeps T2's mix; the 50% cap applies to F20.

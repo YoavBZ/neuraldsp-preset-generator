@@ -20,7 +20,9 @@ where the part's DI plays in the most frames (2048-sample frames, hop 1024, with
 40 dB of the DI's loudest), breaking ties within 0.02 by the reference's ungated
 mean square, then by the earliest. Rule `loudness` (the first rule) takes the earliest
 maximum-integrated-loudness window of the mono reference; integrated loudness is
-gated, so it often picked a window the part barely plays in.
+gated, so it often picked a window the part barely plays in. Rule `window` (T3's `vreal-crops`,
+docs/trusted-data-t0-design.md) takes a given start on the same grid: an ear-verified re-cut
+window of T0's re-check; it records the DI activity there as rule 2 measures it.
 No normalization, limiter, or gain change is applied. Float32 WAV preserves
 out-of-range raw mix samples without integer clipping. The output is private.
 Held-out parts require --declaration pointing to an unchanged, committed
@@ -200,17 +202,43 @@ def _window_by_di(di, reference, rate: int) -> tuple[int, int, float, float]:
     return start, start + frames, lufs, share[start]
 
 
+def _window_at(di, reference, rate: int, start_s: float) -> tuple[int, int, float, float]:
+    """(start, end, reference LUFS, DI activity) of a given window on the 0.5-second grid
+    (rule `window`); the activity is crop rule 2's share of playing DI frames."""
+    import numpy as np
+
+    from analysis import io
+
+    if abs(start_s * 2 - round(start_s * 2)) > 1e-9 or start_s < 0:
+        raise ValueError(f"the window's start {start_s} s is not on the 0.5-second grid")
+    frames = 10 * rate
+    start = int(round(start_s * 2)) * (rate // 2)
+    if start + frames > len(di):
+        raise ValueError("the window runs past the part's DI")
+    db = io.frame_rms_db(di, 2048, 1024)
+    playing = db >= db.max() - 40.0
+    activity = float(np.mean(playing[start // 1024:(start + frames - 2048) // 1024 + 1]))
+    lufs = io.loudness_lufs(io.from_samples(reference[start:start + frames], rate))
+    if lufs is None:
+        raise ValueError("reference has no measurable loudness in the window")
+    return start, start + frames, lufs, activity
+
+
 def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
           song: str, part_name: str, out_dir: pathlib.Path,
           declaration_path: pathlib.Path | None = None,
-          *, repo_root: pathlib.Path = ROOT, rule: str = "loudness") -> dict:
+          *, repo_root: pathlib.Path = ROOT, rule: str = "loudness",
+          start_s: float | None = None) -> dict:
     """Verify a trusted catalog and atomically publish private WAV crops and hashes.
 
     The CLI accepts only the unchanged committed catalog. A different catalog
     argument here permits synthetic unit fixtures, not held-out authorization.
+    `start_s` goes with rule `window` only.
     """
-    if rule not in ("loudness", "di-activity"):
+    if rule not in ("loudness", "di-activity", "window"):
         raise ValueError(f"unknown excerpt rule {rule!r}")
+    if (rule == "window") != (start_s is not None):
+        raise ValueError("rule `window` takes start_s, and only it does")
     import numpy as np
     import soundfile as sf
     from analysis import io
@@ -267,6 +295,8 @@ def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
     reference = _fit(load(part["reference"]), length)
     if rule == "di-activity":
         start, end, lufs, activity = _window_by_di(di, reference, io.SAMPLE_RATE)
+    elif rule == "window":
+        start, end, lufs, activity = _window_at(di, reference, io.SAMPLE_RATE, start_s)
     else:
         start, end, lufs = _window(reference, io.SAMPLE_RATE)
         activity = None
@@ -305,7 +335,7 @@ def build(catalog_path: pathlib.Path, data_root: pathlib.Path, source: str,
         outputs["backing_instrumental"] = (backing - singing).astype(np.float32)
 
     record = {
-        "schema": "validation-crops-2" if rule == "di-activity" else "validation-crops-1",
+        "schema": "validation-crops-2" if rule in ("di-activity", "window") else "validation-crops-1",
         "excerpt_rule": rule, "di_activity": activity,
         "catalog": {"path": str(catalog_path), "sha256": _sha256(catalog_path)},
         "source": source, "song": song, "part": part_name, "split": session["split"],

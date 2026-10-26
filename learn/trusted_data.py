@@ -21,7 +21,7 @@ reads T0's lists (`learn/verify_tracks.py lists`): only verified DIs, targets an
     $MAIN -m learn.trusted_data plan-ses-all [--dry]               # option (c): SES-ALL's 5k draw (zero renders)
     $TORCH_PY -m learn.trusted_data train --arm SES-ALL --seed 20261042|20261043   # 2 runs, stored stems only
     $MAIN -m learn.trusted_data t2-stem-read                       # SYN's stems against SES's (zero renders)
-    # T3's F5 (declared 2026-10-26): `--stage t3` on plan [--dry], render, build, train, fit, vreal-predict,
+    # T3's F5 (declared 2026-10-26): `--stage t3` on plan [--dry], render, build, train, fit, vreal-crops, vreal-predict,
     # vreal-render and report runs learn/trusted_data_t3.py (docs/trusted-data-t3-f5-chain.sh)
 
 **A self-built mix** (plan (c)), deterministic from the example's index; the recipe is stored, the audio is not:
@@ -2844,7 +2844,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(prog="trusted_data", description=__doc__.split("\n")[0])
     ap.add_argument("cmd", choices=("amp-bleed", "plan", "render", "build", "t1-read", "train", "fit", "e-on-k",
                                     "vreal-predict", "vreal-render", "report", "t2-stem-read", "t2-density",
-                                    "plan-ses-all"))
+                                    "plan-ses-all", "vreal-crops"))
     ap.add_argument("--stage", choices=("t1", "t2", "t3"), default="t1")
     ap.add_argument("--shard", type=V.parse_shard, default=(0, 1))
     ap.add_argument("--device", default="mps")
@@ -2869,11 +2869,13 @@ def main(argv=None):
         raise SystemExit("--drop-missing-crops is for vreal-predict --stage t3")
     if args.limit and not args.smoke:
         raise SystemExit("--limit is for smoke runs (with --smoke and --out)")
+    if args.cmd == "vreal-crops" and args.stage != "t3":
+        raise SystemExit("vreal-crops is T3's (--stage t3)")
     if args.stage == "t3":                     # T3 (F5): learn/trusted_data_t3.py
         from learn import trusted_data_t3 as T3
 
         cmds = {"plan": T3.cmd_plan, "render": T3.cmd_render, "build": T3.cmd_build, "train": T3.cmd_train,
-                "fit": T3.cmd_fit, "vreal-predict": T3.cmd_vreal_predict, "vreal-render": T3.cmd_vreal_render,
+                "fit": T3.cmd_fit, "vreal-crops": T3.cmd_vreal_crops, "vreal-predict": T3.cmd_vreal_predict, "vreal-render": T3.cmd_vreal_render,
                 "report": T3.cmd_report}
         if args.cmd not in cmds:
             raise SystemExit(f"--stage t3 runs {', '.join(cmds)}")
