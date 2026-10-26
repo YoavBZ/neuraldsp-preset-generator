@@ -193,7 +193,10 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          stays pending until its DI is heard as a DI (part 8, 3 cards), so targets are 19 verified,
          1 pending, 39 excluded. Each uses only its re-check windows, and none joins V-real, knob
          ceiling 2 or the level prior
-         ([outcome](trusted-data-t0-design.md#parts-5-and-6-heard-2026-10-26)).*
+         ([outcome](trusted-data-t0-design.md#parts-5-and-6-heard-2026-10-26)).* *Part 8 heard 2026-10-26:
+         its DI is clean on all 3 windows, so Signs ElecGtr6 is verified on all 5 windows; targets 20
+         verified, 0 pending, 39 excluded. T3's frozen V-real-11 is unchanged; a future plan would see
+         V-real-12 ([outcome](trusted-data-t0-design.md#parts-7a-7b-8-and-9-heard-2026-10-26)).*
        - V-real 10 parts in 7 bands (3 clean parts in 2 bands, 7 crunch; 3 of the 10 from one song,
          Wickerman); knob ceiling 2's 7 parts in 7 bands verified;
        - K 17 DIs in 3 bands, but T1's K uses Adam Buckley and Dark Ride only (Cnoc An Tursa not
@@ -241,7 +244,14 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        D3 passes all 89 electric DIs, D2 passes 78. Most D2 fails are hum not confirmed on the rests, a
        possible miscalibration on dense low riffs (left unchanged). A5 looks miscalibrated for high gain.
        The ear pages (parts 7a and 7b, 44 cards each: 1 window per DI, 78 DI and 10 tone cards) are pending;
-       `lists` reads them (`metal_verdicts`).
+       `lists` reads them (`metal_verdicts`). *Heard 2026-10-26: **50 of 89 DIs admitted, every one high gain**
+       (Peppermark 34, DGX 11 by the DI-only rule, Arcadian Alone 3, Dark Illusion 2). 5 sessions were heard too
+       heavy and dropped whole: Daimon B "Broken Again", Dark Illusion "Evil Bones", Inhumanity Vortex, and Serapis
+       ×2 (30 DIs). No tone was heard clean or crunch. Part 9 (Strobe/MekaPhil) was heard the same day: all 13 DIs
+       clean and admitted, but every style question was left blank (style can't be judged from a DI), so they count
+       as high gain until a per-song mix tone card classes them. The clean/crunch shortage is unchanged. The
+       high-gain share of an F20 pool rises from 96% to about 98–99% of sections
+       ([outcome](trusted-data-t0-design.md#parts-7a-7b-8-and-9-heard-2026-10-26)).*
      - **New training bands (2026-10-25, user):** five Cambridge-MT sessions (Ember Rev, Empty
        Signifier, Goran Levi, Mòpia, Sören; 9 electric DIs, 7 with an amp or mic track) are training
        bands (ledger `cambridge-new-training-bands-2026-10-25`), aimed at the pool's missing clean and
@@ -399,7 +409,9 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      - **Decision 5: T3 goes ahead (user, 2026-10-26).** Pending inputs at the time: the window re-check's 3
        recovered parts and the new bands' 4 DIs ([PR #294](https://github.com/YoavBZ/neuraldsp-preset-generator/pull/294), ear page `part6-new-bands`) await the user's ear (PR #293, PR #294); the clean/crunch shortage
        stays the clearest gap. *Heard 2026-10-26: 2 targets recovered, Signs ElecGtr6 pending its DI (part 8), 1 new training DI (high gain).
-       The clean/crunch shortage is unchanged.*
+       The clean/crunch shortage is unchanged.* *Parts 7a, 7b, 8 and 9 heard 2026-10-26: Signs ElecGtr6 verified (not in
+       T3's frozen V-real-11); 50 metal DIs admitted, all high gain; Strobe/MekaPhil's 13 DIs admitted but counted
+       high gain until a per-song mix tone card; the shortage is still unchanged.*
    - (d) **T3, decided after T2:** one rebuild that is also every-control stage 2D, on self-built
      mixes with full-space labels and any approved new DIs, read on K and V-real (*K empty since 2026-10-25: its
      read is open until K comes back*). Its downloads are
@@ -416,7 +428,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      F20 as they pass the checks and the ear, under the caps. F5 starts with a zero-render dry run that prints the real
      pool. Clean and crunch sources for F20: Strobe and MekaPhil ×4 (approved 2026-10-26; ledger
      `cambridge-new-training-bands-2026-10-26b`) are DI only. 13 of their 18 DIs pass D2/D3; ear page part 9 (14
-     cards) is pending. Each DI card also asks the playing style. Only a clean/crunch-style answer makes a DI-only DI
+     cards) is pending. *Heard 2026-10-26: all 13 admitted, but counted high gain for now (style left blank; a
+     per-song mix tone card follows).* Each DI card also asks the playing style. Only a clean/crunch-style answer makes a DI-only DI
      not high gain; "can't tell" or no answer counts as high gain. Strobe "Gone" and "Nostalgic" (kept 2026-10-26;
      ledger `cambridge-new-training-bands-2026-10-26c`) give no usable DI: no file is named as a DI, so their 7 guitar
      tracks are excluded. F5 needs none of them.
@@ -604,7 +617,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      clean-class and 1 crunch section of 181; V-real has 2 clean bands): EGDB on a borrowed backing
      (downloaded; its DI checks first), GOAT (access requested), Jen Hartswick & Nick Cassarino as
      training instead of test, Strobe and MekaPhil now, or none. *Strobe and MekaPhil taken in 2026-10-26
-     (part 9's ear pending); Strobe "Gone" and "Nostalgic" the same day, with no usable DI.*
+     (part 9's ear pending); Strobe "Gone" and "Nostalgic" the same day, with no usable DI. Part 9 heard
+     2026-10-26: 13 DIs admitted, counted high gain until a per-song mix tone card classes them.*
    - *Before T4:* the decision test's data and ship rule (keep the fresh bands out of pooled V-real
      readings; possibly bring step 7 forward with a declared verification phase); whether arm A
      gets every-control coverage (stage 2A, which dropped out after GATE STOP) or routes are
@@ -843,3 +857,4 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-26 | Decision 5 (user): T3 goes ahead on T2's tie. T3's plan declared the same day, before any T3 data (every-control amendment 2 and the T3 design; ledger `trusted-data-t3`; pending review, nothing run): 115 Morgan controls learned, switched-off knobs masked out of loss, scores and fits; F5 (T2's examples with full-space labels against a today's-space model on the same examples, the gate) then F20 (20k, high-gain sources at most 50%); primary D_F20 − S on V-real (up to 12 parts), band-weighted, 90% band-clustered, per class; a shared, larger fit set and no-pull rows fix T2's pull caveat; about 58k renders, 22k separations, 5–6 h MPS. Open: clean and crunch sources for F20 | [design](trusted-data-t0-design.md#t3-declared-2026-10-26-nothing-run) |
 | 2026-10-26 | T3's F5 read (audited; every row recomputed). The gate D_F5 − D_core5 +0.079 [−0.065, +0.224], 2 bands better and 5 worse: not shown, so F5 stops and F20 runs only with the user's yes. One part (Colour Me Red ElecGtr03, +1.015) drives it through the time effects and spring, whose heads learn nothing (FS5 switch AUCs 0.49–0.56; reverb read on in 54 of 66 directions); with that family at S the gate is −0.0075 (a post-hoc re-read, not declared; interval holds 0). D_F5 − S +0.088, D_core5 − S +0.009, D_F5 − constant −0.004; the amp head is near chance. Integrity checks passed; 785 of 4,974 full twins dropped as near-silent; 6,246 renders. Output gain is set by loudness matching, not predicted (user). Proposed next: a zero-render readability check, about 70 renders with unreadable controls at S, then F20's decision | [outcome](trusted-data-t0-design.md#f5-outcome-2026-10-26) |
 | 2026-10-26 | F5 follow-up approved (user) and declared before any of it ran (ledger `trusted-data-t3` amendment 1): R0, each D_F5 head's readability on FS5 against the constant (AUC, E, accuracy; readable when its 90% interval excludes chance; zero renders); R1, D_F5 with every unreadable head at S against D_core5 on V-real-11 (99 renders), post hoc and descriptive; F20's fixes declared (redraw near-silent draws, one device per pair, unreadable heads at S instead of their prior). Writing S for an unreadable control may conflict with amendment 1: the user's call. R0 read: 20 of 116 heads readable on FS5 (5 of 85 knobs, 14 of 28 switches, the amp choice, no mic) | [design](trusted-data-t0-design.md#f5-follow-up-readability-r0-and-the-unreadable-controls-at-s-r1-declared-2026-10-26) |
+| 2026-10-26 | Parts 7a, 7b, 8 and 9 heard (user), read by `verify_tracks lists` with every export (code, no hand edits; `t0/` backed up first; the runs waited for T3's R1, whose plan holds the lists' hash). Part 8: Signs ElecGtr6's measure DI heard clean on all 3 windows, so Signs is verified on all 5 re-check windows; targets 20 verified, 0 pending, 39 excluded. T3's frozen membership stays V-real-11; a future plan would see V-real-12. Metal intake: tone cards 5 too heavy (Daimon B "Broken Again", Dark Illusion "Evil Bones", Inhumanity Vortex "Cybermod", Serapis ×2: all 30 of their DIs out) and 5 high gain; DI cards 76 clean, 1 processed, 1 unsure (both in too-heavy sessions). **50 of 89 metal DIs admitted, every one high gain** (DGX's 11 by the DI-only rule). Part 9: all 13 Strobe/MekaPhil DIs heard clean and admitted; every style question left blank (the user: style can't be judged from a DI), so they count as high gain under the merged rule, a known limitation until a per-song mix tone card classes them. Intake 64 admitted, 52 excluded, 0 pending. An F20 pool would be about 98–99% high-gain sections (was 96%); the clean/crunch shortage is unchanged. DI inventory not rebuilt (no training draw is planned) | [outcome](trusted-data-t0-design.md#parts-7a-7b-8-and-9-heard-2026-10-26) |
