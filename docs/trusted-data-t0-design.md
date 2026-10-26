@@ -1193,7 +1193,8 @@ judged only the target and offered no "processed" answer, so the DI itself was n
   - a window heard other than clean excludes the part;
   - a window heard clean clears the measure DI and verifies Signs;
   - a D4-flagged window joins its windows only once heard clean.
-- Pending.
+- *Heard 2026-10-26: all 3 windows clean. Signs ElecGtr6 is verified on all 5 windows
+  ([outcome](#parts-7a-7b-and-8-heard-2026-10-26)).*
 
 **Signs ElecGtr6 is not a copy of its DI** (the user asked for a double-check). On the 5 re-check windows:
 - A4's highest correlation with the DI is 0.70–0.75, against the < 0.95 rule;
@@ -1370,6 +1371,8 @@ with the metal intake extracted, above the 31 GB guard. `plan` refuses if the pr
   cannot change it: if part 8 has not cleared Signs' DI by then, Signs stays out of all of T3. A part whose crop then
   fails to build under T0's rules on its window is dropped before any V-real read, and the drop is printed.
 - V-real-10 rows sit beside every read, for comparison with T2.
+- *Part 8 was heard after F5's plan froze V-real-11, so T3's membership stays V-real-11, without Signs. A future plan
+  not bound by T3's freeze would see V-real-12 ([outcome](#parts-7a-7b-and-8-heard-2026-10-26)).*
 
 ### 3. Model and training
 
@@ -1614,6 +1617,8 @@ checks are in the [inventory](research/di-source-inventory-2026-10.md#metal-and-
   DTDI, and Dark Illusion "Evil Bones" ElecGtr4DI. Their amp tracks sit at near-zero delay (a render, not a miked cab).
 - Clips were re-checked after decoding: none silent or sparse (decoded peaks −11.6 dBFS or louder; every clip has
   frames within 40 dB of its loudest on at least 30% of its length).
+- *Heard 2026-10-26: 50 of the 89 DIs admitted, all high gain; 5 sessions too heavy
+  ([outcome](#parts-7a-7b-and-8-heard-2026-10-26)).*
 
 ## The Strobe and MekaPhil intake's ear (part 9, 2026-10-26)
 
@@ -1854,3 +1859,101 @@ F20 still waits for the user's yes. When it runs:
      and not taken: an unreadable head then flips a coin, and still turns reverb on in about half its answers.
    - **Which readout decides:** D_F20's rows are read both ways, plain and at S. The plain readout stays primary, as
      declared, unless the user rules on amendment 1 (above) before any F20 V-real read.
+
+## Parts 7a, 7b and 8 heard (2026-10-26)
+
+The user heard all three pages on 2026-10-26. Exports: `learn/trusted-data/ear-exports/part7a-metal-2026-10-26.json`,
+`part7b-metal-2026-10-26.json` and `part8-signs-di-2026-10-26.json`. One real `lists` run read them with every earlier
+export (log `learn/trusted-data/logs/lists-ear78.log`; `t0/` backed up first to
+`t0-backup-before-ear78-20261027-003402`). No answer was superseded or cleared, and no card has a note. The code was
+already on main (`metal_verdicts`, PR #297; part 8's reader `recheck_measure_di`, PR #296). `verified.json` was not
+edited by hand.
+
+**Part 8: Signs ElecGtr6 is verified.** Its measure DI, 33_ElecGtr6DI, was heard clean on all 3 windows (63.5, 82 and
+148 s).
+- Under PR #296's rule the measure DI is cleared and the part is verified. The two windows D4 flags (82 and 148 s)
+  rejoin, so it keeps all 5 re-check windows (63.5, 82, 123.5, 148 and 200.5 s). Its crop stays 63.5–73.5 s.
+- Targets are now **20 verified**, 0 pending, 39 excluded.
+- Like the other recovered parts, it joins no list read from the old crops. T0's V-real (10), knob ceiling 2 (7) and
+  the level prior are unchanged.
+- **T3's frozen membership is unchanged: V-real-11, without Signs.** F5's plan froze it at 2026-10-26 10:35:58,
+  before part 8 was heard. Any later plan that is not bound by T3's freeze would see Signs (`vreal_membership` now
+  gives V-real-12).
+
+**Parts 7a and 7b: the metal intake. 50 of its 89 DIs are admitted, and every one is high gain.**
+- **Tone cards (10):**
+  - Heard too heavy (5): Daimon B "Broken Again", Dark Illusion "Evil Bones", Inhumanity Vortex "Cybermod", Serapis
+    "Morbus Animi", Serapis "The Dark Abyss". Every DI of these sessions is excluded: 30 DIs, 24 of which would
+    otherwise have passed.
+  - Heard high gain (5): Arcadian Alone, Dark Illusion "Dark Illusion", Peppermark "Interlude", "Another Feeling" and
+    "Lua Negra".
+  - None was heard clean or crunch.
+- **DI cards (78):** 76 clean, 1 processed (Daimon B 27_ElecGtr3DI) and 1 unsure (Serapis "The Dark Abyss"
+  23_ElecGtr1DI). Both are in too-heavy sessions anyway, and the Serapis DI already fails D1.
+- **DGX** has no amp track, so it has no tone card. All 11 of its DIs were heard clean and join as high gain under
+  the recorded DI-only rule (`no_tone_counts_as`).
+
+| Session | Tone heard | DIs | Admitted | Out |
+|---|---|---|---|---|
+| Arcadian Alone "The Deathless One" | high gain | 4 | 3 | 1 (D2) |
+| Daimon B "Broken Again" | too heavy | 6 | 0 | 6 (too heavy; ElecGtr3DI also heard processed) |
+| Dark Illusion "Dark Illusion" | high gain | 6 | 2 | 4 (D2; 2 of them also D1) |
+| Dark Illusion "Evil Bones" | too heavy | 4 | 0 | 4 (too heavy; ElecGtr4DI also fails D1) |
+| Inhumanity Vortex "Cybermod" | too heavy | 5 | 0 | 5 (too heavy; ElecGtr3DI also fails D2) |
+| Peppermark "Another Feeling" | high gain | 14 | 12 | 2 (D2) |
+| Peppermark "Interlude" | high gain | 14 | 13 | 1 (D2) |
+| Peppermark "Lua Negra" | high gain | 10 | 9 | 1 (D1, D2) |
+| Serapis "Morbus Animi" | too heavy | 6 | 0 | 6 (too heavy) |
+| Serapis "The Dark Abyss" | too heavy | 9 | 0 | 9 (too heavy; 3 also fail D1 or D2) |
+| DGX "Redemptive Pain" | none (DI only) | 7 | 7 | 0 |
+| DGX "Rest In Hell" | none (DI only) | 4 | 4 | 0 |
+| **Total** | | **89** | **50** | **39** (24 too heavy, 14 measured fails, 1 heard processed) |
+
+- **By band:** the 50 admitted DIs come from 4 bands: Peppermark 34, DGX 11, Arcadian Alone 3, Dark Illusion 2.
+  Daimon B, Inhumanity Vortex and Serapis drop out entirely. Peppermark is 68% of the admitted DIs, so F20's 35% band
+  cap will bind on it.
+- **By gain group:** all 50 are high gain (`ear_call`). 39 are high gain from their session's tone card; the 5 tone
+  cards' own DIs also carry `tone_class` high gain. 11 (DGX) are high gain by the DI-only rule.
+- 39 of the 50 have an amp track, and each carries `pair_unheard`. The DI-and-amp pairing was never heard, so T3's
+  rule 1 must not use those amp tracks yet.
+- **A caveat on D4:** it flags most checked windows on 16 of the 50 admitted DIs. One window heard clean clears
+  them, which is the declared rule for training-only metal DIs. Dense palm-muted playing may trip D4, as it may trip
+  D2's hum check.
+
+**The intake lists now** (`intake_dis`, 116 DIs):
+- 51 admitted: Empty Signifier 20_ElecGtr2DI (part 6) and the 50 metal DIs, all high gain;
+- 52 excluded;
+- 13 pending. These are part 9's Strobe and MekaPhil DIs, whose page is not answered yet.
+
+T0's DIs are unchanged (46 verified, 13 excluded), as is T0's training pool (27 DIs, 181 sections). Stems are unchanged
+(166 in 14 sessions).
+
+**What this does to the clean/crunch shortage: nothing.**
+- Every admitted metal DI is high gain, and 5 sessions were dropped as too heavy.
+- The clean/crunch shortage is unchanged until the Strobe/MekaPhil page (part 9) is answered.
+- **The high-gain share of a T3 F20 pool:**
+  - Today's pool, from T3's plan table, is 181 sections, 174 of them high gain (96%). The 7 that are not are Ale Lak
+    crunch 4, Starnes And Shah clean 1, Storm Of Particles crunch 1 and unclassed 1.
+  - The 51 admitted intake DIs add only high-gain sections. Their sections are not cut yet; they come when the
+    inventory and part A's sections are rebuilt.
+  - At T0's training DIs' mean of 6.7 sections per DI, they add about 340 sections, so the pool becomes about 516 of
+    523 high gain (**about 99%**). At part C's median of 4 per DI, it is 378 of 385 (98%).
+  - Either way the non-high-gain part stays at 7 sections.
+- **What that means for F20's 50% cap:**
+  - F20 may hold at most 50% high-gain examples. F5's 4,974 examples are 96% high gain (4,767).
+  - So without new clean/crunch DIs, F20's roughly 15k new draws need about 9.8k non-high-gain examples from those
+    7 sections, about 1,400 draws per section.
+  - The metal DIs add high-gain variety, not clean/crunch coverage.
+
+**The DI inventory was not rebuilt.** By the process, an admitted DI trains only once the DI inventory is rebuilt and
+a training draw includes it (as for Empty Signifier's DI). No training draw is planned: F20 waits for the user's yes.
+- A rebuild alone would add no sections. Part C's pool (`pool.json`, which records the inventory's sha256) and part
+  A's sections would have to be rebuilt too.
+- So the rebuild belongs to F20's plan step, after part 9 is heard.
+
+**T3 and T0's lists' hash.** T3's `plan.json` holds the hash of T0's lists, so every T3 command refuses once a
+`lists` run changes them (`check_lists`).
+- This run was therefore held until the F5 follow-up's R1 had run, at the coordinator's request.
+- From here, any T3 command needs a re-plan first. A re-plan over T3's rendered rows refuses, because
+  `vreal_membership` now gives V-real-12 against the frozen V-real-11. F20's plan has to settle this: keep the frozen
+  V-real-11, or move `t3/` aside.

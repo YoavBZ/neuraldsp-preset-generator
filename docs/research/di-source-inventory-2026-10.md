@@ -575,6 +575,10 @@ picked as on 2026-10-25: DI play share ≥ 0.5 in both halves, up to 5 spread ac
   7 MB) hold one DI card per D2-passing DI (78) and one tone card per session with an amp track (10:
   clean, crunch, high gain or too heavy). They are pending. How `lists` reads them is in the
   [design](../trusted-data-t0-design.md#the-metal-intakes-ear-parts-7a-and-7b-2026-10-26).
+- *Heard 2026-10-26: 50 of the 89 DIs are admitted for training, all high gain (Peppermark 34, DGX 11,
+  Arcadian Alone 3, Dark Illusion 2). Five sessions were heard too heavy and are out whole: Daimon B
+  "Broken Again", Dark Illusion "Evil Bones", Inhumanity Vortex, and Serapis ×2
+  ([outcome](../trusted-data-t0-design.md#parts-7a-7b-and-8-heard-2026-10-26)).*
 
 ## Strobe and MekaPhil training intake (2026-10-26)
 
