@@ -529,6 +529,53 @@ DIs, unconfirmed on 2026-10-23, are now confirmed. The full list is in
 5. **Disk.** About 113 GB was free on 2026-10-23. Ranks 1 and 3 are downloaded (0.94 + 0.46 GB);
    rank 2 needs 2.4 GB, and the features about 3 GB.
 
+## Metal and hard-rock training intake (2026-10-26)
+
+The user decided on 2026-10-26 that high-gain songs can train, "as long as too heavy songs don't
+interfere with the model". Tests stay clean to crunch. 13 Cambridge-MT sessions were downloaded
+(checksums in `_zips/sha256-2026-10-26.txt`): Arcadian Alone "The Deathless One", Daimon B "Broken
+Again" and "Crying Rivers", Dark Illusion "Dark Illusion" and "Evil Bones", Inhumanity Vortex
+"Cybermod", Peppermark "Lua Negra", "Another Feeling" and "Interlude", Serapis "The Dark Abyss" and
+"Morbus Animi", and DGX "Redemptive Pain" and "Rest In Hell". V.M.GY was left out on purpose: it is a
+set-3 held-out band. None of the 7 bands is held out; set 3 lists five of them only as "not obtained".
+
+The role was recorded before any audio was extracted: ledger `cambridge-new-training-bands-2026-10-26`
+and `TRAINING_DOWNLOADS` in `learn/clean_di.py`, every DI row pending until a verified list admits
+it. From the file lists, 89 electric DIs: 77 with a named amp track, 12 without (DGX's 11 and one
+Peppermark DI). Daimon B "Crying Rivers" has no electric DI: its `ElecGtr*MIDI` tracks are named as
+MIDI renders, not DIs. They and DGX's acoustic DIs are kept out of the DI rows (`INTAKE_NOT_DI`).
+Peppermark "Another Feeling"'s `34_ElecGtrDI` has no part number (`33_ElecGtr4` by track order). A DI
+trains only after T0's checks and the ear, which adds a tone card per amp track (clean, crunch, high
+gain or too heavy).
+
+*Extraction and T0's checks (2026-10-26, zero renders; `verify_tracks`' and `clean_di`'s functions
+unchanged; outputs in `~/ndsp-presets/learn/trusted-data/intake-2026-10-26/`).* Only the guitar
+tracks and Readmes were extracted (manifest `datasets-cambridge-new/manifest-2026-10-26.json`): the
+full sessions are about 26 GB, which would take free disk under the 75 GB floor. The rest stays in the
+ZIPs. So A6 (bleed) was not run, because it needs every other track of the session. Windows are
+picked as on 2026-10-25: DI play share ≥ 0.5 in both halves, up to 5 spread across the song.
+
+- **D3 passes all 89. D2 passes 78 of 89.** By session (DIs, D2 passes): Arcadian Alone 4, 3; Daimon B
+  "Broken Again" 6, 6; Dark Illusion "Dark Illusion" 6, 2, and "Evil Bones" 4, 4; Inhumanity Vortex 5,
+  4; Peppermark "Lua Negra" 10, 9, "Another Feeling" 14, 12, and "Interlude" 14, 13; Serapis "The Dark
+  Abyss" 9, 8, and "Morbus Animi" 6, 6; DGX "Redemptive Pain" 7, 7, and "Rest In Hell" 4, 4.
+- Of the 11 D2 fails, 9 are hum, 1 is clipping and 1 is drop-outs. **In 6 of the 9 hum fails the hum is
+  not confirmed on the rests** (`hum_unconfirmed_on_rests`; 3 of them are Dark Illusion's, which fails D2 on 4 of its 6 DIs).
+  Sustained low-tuned riffs may read as mains lines here. This looks like a possible miscalibration on
+  dense high-gain playing, and the threshold was not changed. The DIs stay out.
+- The amp checks inform only (on the DI's own take). A5 fails 38 of 78 pairs: chroma median 0.79
+  against a 0.8 line, and onset 0.48, while A1's lag is clean on most. Distortion smears chroma and
+  onsets, so A5 looks miscalibrated for high gain. That matters only if an amp track is used, not for
+  training DIs. A2 goes to the ear on 72 of 78 (little coherent top
+  end). Six DIs read near-zero lag to their amp track (−0.06 to +0.09 ms: Dark Illusion ×3, Peppermark
+  "Lua Negra" ElecGtr3, Serapis "The Dark Abyss" ElecGtr1 and DT). That suggests a re-amp or plugin
+  render, not a miked cab; the Serapis pair is also brighter than its DI.
+- D4 flags 52 of 89, which is expected for driven, compressed metal playing (the ear's flag only).
+- The ear pages `listening/trusted-data-ear/part7a-metal/` and `part7b-metal/` (44 cards each, about
+  7 MB) hold one DI card per D2-passing DI (78) and one tone card per session with an amp track (10:
+  clean, crunch, high gain or too heavy). They are pending. How `lists` reads them is in the
+  [design](../trusted-data-t0-design.md#the-metal-intakes-ear-parts-7a-and-7b-2026-10-26).
+
 ## Sources
 
 - **Telefunken LFTL:**

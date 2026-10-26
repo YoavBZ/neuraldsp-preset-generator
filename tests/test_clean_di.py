@@ -258,12 +258,30 @@ def test_training_downloads_are_training_only_and_not_held_out():
     assert not set(C.TRAINING_DOWNLOADS) & set(C.RESERVED_NEW)
     assert all(split == "library" for _, split, _ in C.TRAINING_DOWNLOADS.values())
     ledger = json.loads((C.PLUGIN_ROOT / "docs/dev-test-ledger.json").read_text())
-    entry = next(t for t in ledger["tests"] if t["test_id"] == "cambridge-new-training-bands-2026-10-25")
-    assert all(key in json.dumps(entry) for key in C.TRAINING_DOWNLOADS)
+    entries = json.dumps([t for t in ledger["tests"] if t["test_id"] in (
+        "cambridge-new-training-bands-2026-10-25", "cambridge-new-training-bands-2026-10-26")])
+    assert all(key in entries for key in C.TRAINING_DOWNLOADS)
     for key, (band, _, _) in C.TRAINING_DOWNLOADS.items():
         C.refuse_held_out({"set": "cambridge-new", "band": band, "path": str(C.CAMBRIDGE_NEW / key / "x_ElecGtrDI.wav")})
     with pytest.raises(ValueError):
         C.refuse_held_out({"set": "cambridge-new", "band": "Rebecca Haviland", "path": "/nowhere/x.wav"})
+
+
+def test_metal_intake_is_training_only_and_screens_non_dis():
+    import json
+
+    ledger = json.loads((C.PLUGIN_ROOT / "docs/dev-test-ledger.json").read_text())
+    entry = next(t for t in ledger["tests"] if t["test_id"] == "cambridge-new-training-bands-2026-10-26")
+    assert "training only" in entry["training"] and entry["renders"].startswith("0")
+    metal = [k for k, (_, _, why) in C.TRAINING_DOWNLOADS.items() if why.startswith("2026-10-26")]
+    assert len(metal) == 13 and all(k in json.dumps(entry) for k in metal)
+    assert not any("VMGY" in k.upper().replace(".", "") for k in C.TRAINING_DOWNLOADS)
+    with pytest.raises(ValueError):                     # V.M.GY is a set-3 held-out band, whatever the folder
+        C.refuse_held_out({"set": "cambridge-new", "band": "V.M.GY", "path": "/nowhere/x_ElecGtr1DI.wav"})
+    for name in ("23_AcousticGtr2DI.wav", "30_ElecGtr1MIDI.wav"):   # read as guitar DIs by name, but are not
+        assert C.is_guitar_di(name) and C.INTAKE_NOT_DI.search(name)
+    for name in ("15_ElecGtr1DIDT.wav", "25_ElecGtr2DI1.wav", "34_ElecGtrDI.wav", "21_ElecGtr1DTDI.wav"):
+        assert C.is_guitar_di(name) and not C.INTAKE_NOT_DI.search(name)
 
 
 def test_reserved_test_band_is_refused_even_as_a_training_download():
