@@ -614,6 +614,15 @@ TRAINING_DOWNLOADS = {
     "Serapis_MorbusAnimi_Full": ("Serapis", "library", "2026-10-26 training band (progressive death metal)"),
     "DGX_RedemptivePain_Full": ("DGX", "library", "2026-10-26 training band (hard rock/metal; DI only)"),
     "DGX_RestInHell_Full": ("DGX", "library", "2026-10-26 training band (hard rock/metal; DI only)"),
+    # Part B2's parked known-answer songs, which the user allowed for training on 2026-10-23 (spending that pool);
+    # downloaded on 2026-10-26 as T3's clean/crunch source for F20 (ledger `cambridge-new-training-bands-2026-10-26b`).
+    # DI-only sessions: no DI has its own amp track (Timeless Part 2's ElecGtr2 and ElecGtr3 have no DI).
+    "Strobe_Maya_Full": ("Strobe", "library", "2026-10-23 B2-pool training band (pop/electronica; DI only)"),
+    "Mekaphil_AliveYetFree_Full": ("MekaPhil", "library", "2026-10-23 B2-pool training band (anime alt rock; DI only)"),
+    "Mekaphil_Core_Full": ("MekaPhil", "library", "2026-10-23 B2-pool training band (anime alt rock; DI only)"),
+    "MekaPhil_TimelessPart1_Full": ("MekaPhil", "library", "2026-10-23 B2-pool training band (anime alt rock; DI only)"),
+    "Mekaphil_TimelessPart2_Full": ("MekaPhil", "library",
+                                    "2026-10-23 B2-pool training band (anime alt rock; its DIs have no amp track)"),
 }
 # Not an electric guitar DI although the name reads as one: acoustic-guitar DIs and MIDI renders (2026-10-26)
 INTAKE_NOT_DI = re.compile(r"(?i)acoustic|midi")

@@ -660,4 +660,6 @@ was declared, what was measured, and the research behind it.
     in-scope DI bands: Ember Rev, Empty Signifier, Goran Levi, Mòpia and Sören (Empty Signifier and
     Mòpia scope by ear); all five are downloaded and are training bands (user, 2026-10-25; ledger
     `cambridge-new-training-bands-2026-10-25`), checked by T0's standard before they train. Heard 2026-10-26: 1 DI admitted (Empty Signifier ElecGtr2DI, high gain).
+    Strobe and MekaPhil ×4 were taken in for training on 2026-10-26. They are DI only: 13 of 18 DIs pass D2/D3, and
+    ear page part 9 is pending.
     Research, not a declared plan.

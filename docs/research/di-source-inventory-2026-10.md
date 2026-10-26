@@ -576,6 +576,59 @@ picked as on 2026-10-25: DI play share ≥ 0.5 in both halves, up to 5 spread ac
   clean, crunch, high gain or too heavy). They are pending. How `lists` reads them is in the
   [design](../trusted-data-t0-design.md#the-metal-intakes-ear-parts-7a-and-7b-2026-10-26).
 
+## Strobe and MekaPhil training intake (2026-10-26)
+
+Strobe "Maya" and MekaPhil's "Alive (Yet Free)", "Core (Eternal Waltz)", "Timeless (Part 1)" and
+"Timeless (Part 2)" were part B2's parked known-answer songs. The user allowed them for training on
+2026-10-23, which spends that pool, and approved the intake on 2026-10-26 as T3's clean/crunch source
+for F20. Checksums are in `_zips/sha256-2026-10-26b.txt`. Two other Strobe songs, downloaded by
+mistake into `_zips-unapproved/`, are unapproved and stay unopened.
+
+**The role was recorded first,** before any audio was extracted:
+- ledger `cambridge-new-training-bands-2026-10-26b`;
+- `TRAINING_DOWNLOADS` rows, each `INTAKE_PENDING`;
+- `refuse_held_out` passes both bands; no set 3–6 dataset or crop folder carries their names.
+
+**18 electric DIs, all DI only.** No DI has its own amp track. Timeless Part 2's `ElecGtr2` and
+`ElecGtr3` have no DI. A probe (`scripts/probe_tp2.py`) found that neither plays the same take as the
+session's `ElecGtr1` DI or its DT: chroma −0.04 to 0.58 against A5's 0.8, with no steady lag. Strobe's DIs
+are named `ElecGtrDI1`, `ElecGtrDI1DT`, `ElecGtrDI2` and `ElecGtrDI2DT`, so the inventory's part token
+reads `ElecGtr` for all four. Timeless Part 1 has two different files both named `ElecGtr4DI` (different
+hashes).
+
+*Extraction and T0's checks (2026-10-26, zero renders, outputs in
+`~/ndsp-presets/learn/trusted-data/intake-2026-10-26b/`):*
+- **What was extracted:** the guitar tracks and Readmes, plus all of Timeless Part 2, the only session
+  with amp tracks (manifest `manifest-2026-10-26b.json`; free disk 82.4 → 80.8 GB).
+- **What ran:** D2, D3 and D4 on every DI, on windows with DI play share ≥ 0.5, up to 5 per DI. D1 and
+  A1–A6 have no pair to run on.
+- **D3 passes all 18. D2 passes 13 of 18.** By session (DIs, D2 passes):
+  - Strobe 4, 4;
+  - "Alive (Yet Free)" 5, 4;
+  - "Core" 2, 0;
+  - "Timeless (Part 1)" 5, 3;
+  - "Timeless (Part 2)" 2, 2.
+- **The D2 fails:**
+  - "Core": both DIs show hum on every window;
+  - "Alive" `ElecGtr2DTDI`: clipping in one window, and hum and hiss in a second;
+  - "Timeless (Part 1)" `ElecGtr3DI` and the first `ElecGtr4DI`: hum on 1 window of 5 each
+    (`hum_kept_by_fundamental`). This may be a false positive, as with Dark Illusion; the threshold was
+    not changed.
+- **D4 flags (the ear's flag only):** Strobe's `ElecGtrDI1` (5/5 windows) and `ElecGtrDI1DT` (4/5), and
+  the passing `ElecGtr4DI` of "Timeless (Part 1)" (1/1).
+- **Short or sparse DIs:** "Alive" `ElecGtr1DI` is a 32-s file, and the passing Timeless Part 1
+  `ElecGtr4DI` has only 1 window that qualifies.
+- **The ear page** `listening/trusted-data-ear/part9-strobe-meka/` (14 cards) is pending:
+  - 13 DI cards;
+  - 1 tone card, Timeless Part 2's `ElecGtr2` alone.
+
+  Each DI card also asks what playing style the DI suggests (clean/crunch-style, high-gain-style, or
+  can't tell). That answer gives a DI-only DI its gain group in T3. Only a clean/crunch-style answer
+  makes it not high gain: "can't tell" or no answer counts as high gain, as for DGX. Timeless Part 2's
+  tone card can only screen out a too-heavy session; it never classes the session's DIs. How `lists` reads the page is in the
+  [design](../trusted-data-t0-design.md#the-strobe-and-mekaphil-intakes-ear-part-9-2026-10-26).
+  Until a DI is heard it stays pending.
+
 ## Sources
 
 - **Telefunken LFTL:**

@@ -1324,8 +1324,17 @@ yet. K is empty, so T3 reads nothing on K.
 - **Class:** the base class is 50/50 clean and crunch (part C's draw).
 - **High gain must not swamp clean and crunch:**
   - **Every section gets a gain class at zero renders, before any split,** and `plan` prints it by band. In order:
-    part A's class; else the intake's ear call on the amp track (Empty Signifier ElecGtr2, and the metal intake's tone
-    cards: clean, crunch, high gain); else part A's classifier run on the section's own amp track. A section still
+    part A's class; else the intake's ear call (`ear_call`), in this order:
+    - the DI's own amp track's tone card (Empty Signifier ElecGtr2 and the metal intake's tone cards: clean, crunch,
+      high gain);
+    - for a **DI-only intake DI** (no amp track of its own; Strobe and MekaPhil, part 9), the playing style heard on
+      its DI card (`style_class`: clean/crunch-style or high-gain-style);
+    - the session's tone card (`session_tone`; only a card that played a DI's own amp track sets it);
+    - the DI-only rule (`no_tone_counts_as`): high gain. It covers DGX, and Strobe's and MekaPhil's DI-only DIs heard
+      "can't tell" or with no style answer. **Only an explicit clean/crunch-style answer makes a DI-only DI not high
+      gain.**
+
+    Else part A's classifier runs on the section's own amp track. A section still
     unclassed counts as high gain if its band came in through the metal intake, and as not high gain otherwise (T2's
     unclassed bands, Ale Lak and Storm Of Particles); that is a stated limit.
   - The new draws are split so that **F20 holds at most 50% high-gain-source examples.** T2's examples were 61%.
@@ -1558,8 +1567,10 @@ open, decided here for the review:
 
 ### Open for the user
 
-1. **Clean and crunch sources for F20** (open since T0). After the ear the pool holds 1 clean-class and 1 crunch
-   section of 181, and Empty Signifier's DI is high gain. Options:
+1. **Clean and crunch sources for F20** (open since T0). *Decided 2026-10-26: option (a). Strobe "Maya" and MekaPhil ×4
+   were downloaded and taken in for training the same day (ledger `cambridge-new-training-bands-2026-10-26b`; ear page
+   part 9 pending; [below](#the-strobe-and-mekaphil-intakes-ear-part-9-2026-10-26)).* After the ear the pool holds 1
+   clean-class and 1 crunch section of 181, and Empty Signifier's DI is high gain. Options:
    - (a) download Strobe "Maya" and MekaPhil ×4 (about 2.4 GB, not on disk). They are DI-only sessions: every guitar has a DI, so rule
      1 keeps them. About 75 sections in 2 bands, gain unknown. They need T0's checks and one ear sitting.
      Recommended;
@@ -1602,3 +1613,31 @@ checks are in the [inventory](research/di-source-inventory-2026-10.md#metal-and-
   DTDI, and Dark Illusion "Evil Bones" ElecGtr4DI. Their amp tracks sit at near-zero delay (a render, not a miked cab).
 - Clips were re-checked after decoding: none silent or sparse (decoded peaks −11.6 dBFS or louder; every clip has
   frames within 40 dB of its loudest on at least 30% of its length).
+
+## The Strobe and MekaPhil intake's ear (part 9, 2026-10-26)
+
+Strobe "Maya" and MekaPhil ×4 are part B2's parked known-answer songs. The user allowed them for training on 2026-10-23 and
+approved the intake on 2026-10-26, as T3's clean/crunch source for F20. They are training-only (ledger
+`cambridge-new-training-bands-2026-10-26b`); the checks are in the
+[inventory](research/di-source-inventory-2026-10.md#strobe-and-mekaphil-training-intake-2026-10-26).
+- **Page:** `~/ndsp-presets/listening/trusted-data-ear/part9-strobe-meka/` (page `trusted-data-ear-strobe-meka`). It
+  has 14 cards (about 4 MB), built the same way as parts 7a/7b:
+  - 13 DI cards, one per D2/D3-passing DI, at its busiest checked window;
+  - 1 tone card. Only MekaPhil "Timeless (Part 2)" has amp tracks (`ElecGtr2`, `ElecGtr3`). Neither has a DI, and
+    neither plays the same take as the session's `ElecGtr1` DI or its DT. The card plays `ElecGtr2` alone, with no DI
+    of its own.
+- **How `lists` reads it:** it uses `metal_verdicts` on `intake-2026-10-26b/summary.json` (`B2_PAGES`, `B2_DIR`),
+  with the metal rule for DI-only DIs (`no_tone_counts_as="high_gain"`) and the style answers (`styles`).
+  - The rules are as for the metal pages. A measured fail excludes. A window heard other than clean excludes. One
+    window heard clean is enough. A too-heavy tone excludes the session's DIs.
+  - **Every DI card asks a second question** (the coordinator, 2026-10-26): the playing style the DI suggests.
+    The answers are clean/crunch-style playing, high-gain-style playing (for example palm-muted riffs), or can't tell.
+    - The answer is exported as `style` (`STYLE_VERDICTS`) and read into `metal_style`.
+    - A DI with no amp track of its own takes `style_class` from it. T3's `ear_call` reads that before the session's
+      tone, so this is how a DI-only intake DI gets its gain group.
+    - **Only "clean/crunch-style playing" makes a DI-only DI not high gain.** "Can't tell", conflicting answers or no
+      answer leave `style_class` None, and the DI-only rule counts it as high gain, as for DGX.
+    - A card counts as done once both questions are answered. A style answer counts even without a DI verdict.
+  - Timeless Part 2's tone card plays `ElecGtr2`, another take with no DI. **It can only screen, never class:** "too
+    heavy" excludes the session's DIs. Any other answer is kept as `screen_tones` and sets neither `session_tone` nor a
+    `tone_class`.
