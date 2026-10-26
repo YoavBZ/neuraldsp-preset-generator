@@ -990,10 +990,11 @@ def test_lists_admits_heard_metal_dis(tmp_path, monkeypatch):
     assert r["tone_class"] == "crunch" and r["pair_unheard"]
 
 
-def test_b2_page_is_read_by_lists_and_only_a_clean_crunch_style_lifts_high_gain(tmp_path, monkeypatch):
+def test_b2_page_is_read_by_lists_and_a_di_only_di_without_a_style_is_unknown(tmp_path, monkeypatch):
     """Part 9 (Strobe and MekaPhil, ledger cambridge-new-training-bands-2026-10-26b): metal_verdicts' cards and rules.
-    A DI-only DI counts as high gain unless its DI card's playing style is heard clean/crunch-style, and a tone card
-    with no DI of its own only screens (too heavy) and never classes the session."""
+    A DI-only DI is "unknown" (out of T3's high-gain cap; the user, 2026-10-27) unless its DI card's playing style is
+    heard, and a tone card with no DI of its own only screens (too heavy) and never classes the session. Called
+    directly, `metal_verdicts` keeps the metal pages' high-gain default (DGX)."""
     pytest.importorskip("numpy")                           # lists -> prior_summary
     assert set(V.B2_PAGES) <= set(V.CARD_PAGES) and not set(V.B2_PAGES) & set(V.METAL_PAGES)
     assert V.B2_DIR != V.METAL_DIR
@@ -1030,10 +1031,12 @@ def test_b2_page_is_read_by_lists_and_only_a_clean_crunch_style_lifts_high_gain(
     s, t = (rec["intake_dis"][f"cambridge-new/{k}"] for k in ("Strobe_Maya_Full/23_ElecGtrDI2.wav",
                                                               "Mekaphil_TimelessPart2_Full/13_ElecGtr1DI.wav"))
     assert s["verdict"] == t["verdict"] == "verified" and s["pair_unheard"] is None
-    assert s["no_tone_counts_as"] == "high_gain" and s["session_tone"] is None and s["tone_class"] is None
-    assert s["style_class"] is None and s["style"] == []                            # no style answer: high gain
-    assert t["session_tone"] is None and t["tone_class"] is None                    # a DI-less card never classes
-    assert t["screen_tones"] == ["crunch"] and t["no_tone_counts_as"] == "high_gain"
+    assert s["no_tone_counts_as"] == "unknown" and s["session_tone"] is None and s["tone_class"] is None
+    assert s["style_class"] is None and s["style"] == []                            # no style answer: unknown
+    assert t["session_tone"] is None and t["tone_class"] is None                    # a DI-less card: not the DI's own
+    assert t["screen_tones"] == ["crunch"] and t["no_tone_counts_as"] == "unknown"
+    assert t["song_tone"] == "crunch" and t["song_from"] == V.SONG_FROM             # ... but the song's tone (part 9)
+    assert s["song_tone"] is None and s["song_from"] is None                        # Maya: DI only, no amp track
     # the second question: the playing style the DI suggests; only clean/crunch-style lifts the high-gain default
     f = export("p9b.json", (("b9-s", "clean", "clean_crunch"), ("b9-t", "clean", "cant_tell"), ("b9-sc", "crunch", None)))
     e = V.ear_answers([f], [], {}, V.load_card_pages([f]))
@@ -1044,7 +1047,7 @@ def test_b2_page_is_read_by_lists_and_only_a_clean_crunch_style_lifts_high_gain(
     assert s["style_class"] == "clean_crunch" and t["style_class"] is None and t["style"] == ["cant_tell"]
     from learn import trusted_data_t3 as T3
     group = lambda r: T3.gain_group(T3.gain_class(None, T3.ear_call(r))[0], False)     # noqa: E731
-    assert group(s) == "not high gain" and group(t) == "high gain"                 # can't tell: high gain
+    assert group(s) == "not high gain" and group(t) == "not high gain"             # can't tell: the song's crunch
     f = export("p9c.json", (("b9-s", None, "high_gain"),))                          # a style alone still counts
     assert V.ear_answers([f], [], {}, V.load_card_pages([f]))["metal_style"] == {s_di: ["high_gain"]}
     with pytest.raises(SystemExit, match="style"):                                 # only DI cards, only its classes
@@ -1065,6 +1068,58 @@ def test_b2_page_is_read_by_lists_and_only_a_clean_crunch_style_lifts_high_gain(
                              styles={t_di: ["cant_tell"]})["cambridge-new/Mekaphil_TimelessPart2_Full/13_ElecGtr1DI.wav"]
         assert r["verdict"] == "verified" and r["session_tone"] is None and r["tone_class"] is None
         assert r["screen_tones"] == [cls] and T3.ear_call(r) == "high_gain"
+
+
+def test_part9_song_amp_track_sets_the_class_of_di_only_dis(tmp_path, monkeypatch):
+    """Part 9 (the user, 2026-10-27): a tone card on an amp track with no DI is the song's tone. It sets `song_tone`
+    on the session's DI-only DIs with no style answer (Timeless Part 2's ElecGtr2, heard alone as clean, makes its 2
+    DIs clean); too heavy still excludes. A DI-only session with no amp track stays "unknown". The metal pages
+    (`screen_sets_song` off) keep "never classes". Part 9b's mix page was dropped: no reader."""
+    from learn import trusted_data_t3 as T3
+    group = lambda r: T3.gain_group(T3.gain_class(None, T3.ear_call(r))[0], False)     # noqa: E731
+    assert not hasattr(V, "SONG_PAGES") and "trusted-data-ear-strobe-meka-songs" not in V.CARD_PAGES
+    dropped = tmp_path / "p9b.json"
+    dropped.write_text(json.dumps({"page": "trusted-data-ear-strobe-meka-songs", "build": "x", "answers": []}))
+    assert V.load_card_pages([dropped]) == {}
+    with pytest.raises(SystemExit, match="unknown page"):
+        V.ear_answers([str(dropped)], [], {}, {})
+    only = {"status": {"D1": None, "D2": "pass", "D3": "pass", "D4": "pass"}, "verdict": [
+        "pending ear", ["DI-only: D1 not measurable"]], "pairs": {}}
+    tp2 = "Mekaphil_TimelessPart2_Full"
+    amp = f"/r/{tp2}/15_ElecGtr2.wav"
+    summary = {tp2: {"13_ElecGtr1DI.wav": {"band": "MekaPhil", **only},
+                     "14_ElecGtr1DIDT.wav": {"band": "MekaPhil", **only}},
+               "Strobe_Maya_Full": {"23_ElecGtrDI2.wav": {"band": "Strobe", **only}}}
+    heard = {f"/r/{tp2}/13_ElecGtr1DI.wav": [(18.5, 28.5, "clean")],
+             f"/r/{tp2}/14_ElecGtr1DIDT.wav": [(18.5, 28.5, "clean")],
+             "/r/Strobe_Maya_Full/23_ElecGtrDI2.wav": [(134.0, 144.0, "clean")]}
+
+    def run(cards, **kw):
+        return V.metal_verdicts(summary, heard, {tp2: cards}, V.B2_NO_TONE, screen_sets_song=True, **kw)
+    out = run([(amp, "clean", None)])
+    for di in ("13_ElecGtr1DI.wav", "14_ElecGtr1DIDT.wav"):
+        r = out[f"cambridge-new/{tp2}/{di}"]
+        assert r["verdict"] == "verified" and r["song_tone"] == "clean" and r["song_from"] == V.SONG_FROM
+        assert r["session_tone"] is None and r["tone_class"] is None and group(r) == "not high gain"
+        assert T3.ear_call(r) == "clean"
+    maya = out["cambridge-new/Strobe_Maya_Full/23_ElecGtrDI2.wav"]
+    assert maya["song_tone"] is None and group(maya) == "unknown"                   # DI only: no song tone to hear
+    r = run([(amp, "high_gain", None)])[f"cambridge-new/{tp2}/13_ElecGtr1DI.wav"]
+    assert r["song_tone"] == "high_gain" and group(r) == "high gain"
+    r = run([(amp, "clean", None), (amp, "high_gain", None)])[f"cambridge-new/{tp2}/13_ElecGtr1DI.wav"]
+    assert r["song_tone"] is None and group(r) == "unknown"                         # conflicting answers: no class
+    r = run([(amp, "too_heavy", None)])[f"cambridge-new/{tp2}/13_ElecGtr1DI.wav"]
+    assert r["verdict"] == "excluded" and r["song_tone"] is None                    # too heavy still excludes
+    r = run([(amp, "clean", None)], styles={f"/r/{tp2}/13_ElecGtr1DI.wav": ["high_gain"]})[
+        f"cambridge-new/{tp2}/13_ElecGtr1DI.wav"]
+    assert r["style_class"] == "high_gain" and r["song_tone"] == "clean" and group(r) == "high gain"   # style first
+    paired = V.metal_verdicts({"X_Full": {"1_ElecGtr1DI.wav": {"band": "S", **only, "pairs": {"2_ElecGtr1.wav": {}}}}},
+                              {}, {"X_Full": [("/r/X_Full/3_ElecGtr2.wav", "clean", None)]}, None,
+                              screen_sets_song=True)
+    assert paired["cambridge-new/X_Full/1_ElecGtr1DI.wav"]["song_tone"] is None      # a DI with its own amp track
+    metal = V.metal_verdicts(summary, heard, {tp2: [(amp, "clean", None)]})          # the metal pages: screen only
+    r = metal[f"cambridge-new/{tp2}/13_ElecGtr1DI.wav"]
+    assert r["song_tone"] is None and r["screen_tones"] == ["clean"] and group(r) == "high gain"
 
 
 def test_lists_admits_a_heard_clean_intake_di(tmp_path, monkeypatch):

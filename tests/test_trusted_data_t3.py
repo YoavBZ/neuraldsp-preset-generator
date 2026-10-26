@@ -249,6 +249,31 @@ def test_ear_call_order():
     # part 9 (DI only): can't tell or no answer falls to the DI-only rule, high gain
     assert T3.ear_call({"style_class": None, "session_tone": None, "no_tone_counts_as": "high_gain"}) == "high_gain"
     assert T3.ear_call({"style_class": "clean_crunch", "no_tone_counts_as": "high_gain"}) == "clean_crunch"
+    # part 9's DI-only DIs with no style or song tone: "unknown", its own group, out of the cap's arithmetic
+    assert T3.ear_call({"style_class": None, "song_tone": None, "no_tone_counts_as": "unknown"}) == "unknown"
+    assert T3.gain_group(T3.gain_class(None, "unknown")[0], False) == "unknown"
+    assert T3.gain_group(T3.gain_class(None, "unknown")[0], True) == "unknown"
+    assert T3.hg_share(["high gain", "not high gain", "unknown", "unknown", "high gain", None]) == (2, 4, 2)
+    assert T3.hg_share([]) == (0, 0, 0)
+    # F20's cap on unknown (25%, a design constant) and the high-gain share both ways
+    assert T3.UNKNOWN_CAP == 0.25
+    h = T3.hg_shares(["high gain", "not high gain", "unknown", "not high gain"])
+    assert (h["excluded"], h["worst"], h["unknown_share"], h["unknown_ok"]) == (1 / 3, 0.5, 0.25, True)
+    h = T3.hg_shares(["high gain", "unknown", "unknown", "not high gain"])
+    assert (h["excluded"], h["worst"], h["unknown_ok"]) == (0.5, 0.75, False)
+    assert T3.hg_shares([])["unknown_ok"] and T3.hg_shares([])["worst"] == 0.0
+    line = T3.share_line(["high gain", "unknown", "unknown", "not high gain"])
+    assert "1/2 (50%) with unknown left out" in line and "3/4 (75%) with unknown counted as high gain" in line
+    assert "unknown 2/4 (50%; F20's cap 25%: OVER)" in line
+    table, tot = T3.pool_table([{"band": "Strobe", "status": "usable", "class": "unknown", "group": "unknown"}])
+    assert tot == {"usable": {"unknown": 1}} and table["Strobe"]["usable"]["by_group"] == {"unknown": 1}
+    # part 9: the song's tone (its amp track with no DI, heard alone) after the DI card's style, before the session's
+    assert T3.ear_call({"song_tone": "crunch", "session_tone": "high_gain", "no_tone_counts_as": "high_gain"}) == "crunch"
+    assert T3.ear_call({"style_class": "high_gain", "song_tone": "clean"}) == "high_gain"
+    assert T3.ear_call({"song_tone": None, "no_tone_counts_as": "high_gain"}) == "high_gain"     # can't tell
+    for cls, want in (("clean", "not high gain"), ("crunch", "not high gain"), ("high_gain", "high gain")):
+        assert T3.gain_group(T3.gain_class(None, T3.ear_call({"song_tone": cls, "no_tone_counts_as": "high_gain"}))[0],
+                             False) == want
 
 
 def test_intake_lines_name_each_admitted_band_correctly(tmp_path):
@@ -266,6 +291,13 @@ def test_intake_lines_name_each_admitted_band_correctly(tmp_path):
                                                                                 no_tone_counts_as="high_gain")
     s = next(x for x in T3._intake_lines(tr, tmp_path) if "Strobe" in x)
     assert "high_gain (high gain; from the DI-only rule)" in s
+    tr["intake_dis"]["cambridge-new/Strobe_Maya_Full/23_ElecGtrDI2.wav"].update(
+        song_tone="clean", song_from="song's amp track, heard alone (part 9)")
+    s = next(x for x in T3._intake_lines(tr, tmp_path) if "Strobe" in x)
+    assert "clean (not high gain; from song's amp track, heard alone (part 9))" in s
+    tr["intake_dis"]["cambridge-new/Strobe_Maya_Full/23_ElecGtrDI2.wav"].update(song_tone=None, no_tone_counts_as="unknown")
+    s = next(x for x in T3._intake_lines(tr, tmp_path) if "Strobe" in x)
+    assert "unknown (unknown; from the DI-only rule)" in s
     e = next(x for x in lines if "Empty Signifier" in x)
     assert "high_gain (high gain; from its amp track's tone card)" in e and "PR #296" in e
 

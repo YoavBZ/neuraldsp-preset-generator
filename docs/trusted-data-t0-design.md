@@ -1331,15 +1331,24 @@ yet. K is empty, so T3 reads nothing on K. *F5 ran 2026-10-26: the gate read +0.
       high gain);
     - for a **DI-only intake DI** (no amp track of its own; Strobe and MekaPhil, part 9), the playing style heard on
       its DI card (`style_class`: clean/crunch-style or high-gain-style);
+    - for a DI-only intake DI with no style answer, its song's tone (`song_tone`; part 9's tone card on the song's amp
+      track with no DI, heard alone: clean, crunch or high gain);
     - the session's tone card (`session_tone`; only a card that played a DI's own amp track sets it);
-    - the DI-only rule (`no_tone_counts_as`): high gain. It covers DGX, and Strobe's and MekaPhil's DI-only DIs heard
-      "can't tell" or with no style answer. **Only an explicit clean/crunch-style answer makes a DI-only DI not high
-      gain.**
+    - the DI-only rule (`no_tone_counts_as`). For DGX and the metal sessions it is high gain. For Strobe's and
+      MekaPhil's DI-only DIs (part 9) with neither a style nor a song tone it is **"unknown"** (`B2_NO_TONE`; the
+      user, 2026-10-27: these songs have no target to hear the tone in).
+
+    **"Unknown" is its own gain group.** It counts neither as high gain nor as clean/crunch: `hg_share` leaves it out of
+    both sides of the high-gain cap's sums, and `plan` prints it as its own group.
 
     Else part A's classifier runs on the section's own amp track. A section still
     unclassed counts as high gain if its band came in through the metal intake, and as not high gain otherwise (T2's
     unclassed bands, Ale Lak and Storm Of Particles); that is a stated limit.
-  - The new draws are split so that **F20 holds at most 50% high-gain-source examples.** T2's examples were 61%.
+  - The new draws are split so that **F20 holds at most 50% high-gain-source examples** among examples of known
+    group ("unknown" is left out of the sums). T2's examples were 61%.
+  - **F20's draws hold at most 25% "unknown" sections** (`UNKNOWN_CAP`; a design constant of 2026-10-27, which the
+    user may overrule). `plan` prints the high-gain share both ways: with unknown left out, and with unknown counted as
+    high gain (the worst case), beside the unknown share against the cap (`hg_shares`).
     F5 keeps T2's mix, which keeps its pairing.
   - Each target's rendered gain class is measured as part C did, at zero renders. If high-gain renders exceed 40% of
     F20, the training sampler down-weights them to 33%.
@@ -1633,7 +1642,8 @@ approved the intake on 2026-10-26, as T3's clean/crunch source for F20. They are
     neither plays the same take as the session's `ElecGtr1` DI or its DT. The card plays `ElecGtr2` alone, with no DI
     of its own.
 - **How `lists` reads it:** it uses `metal_verdicts` on `intake-2026-10-26b/summary.json` (`B2_PAGES`, `B2_DIR`),
-  with the metal rule for DI-only DIs (`no_tone_counts_as="high_gain"`) and the style answers (`styles`).
+  with part 9's rule for DI-only DIs (`no_tone_counts_as=B2_NO_TONE`, "unknown" since 2026-10-27; it was high gain),
+  the style answers (`styles`) and the song's tone from a DI-less tone card (`screen_sets_song=True`).
   - The rules are as for the metal pages. A measured fail excludes. A window heard other than clean excludes. One
     window heard clean is enough. A too-heavy tone excludes the session's DIs.
   - **Every DI card asks a second question** (the coordinator, 2026-10-26): the playing style the DI suggests.
@@ -1642,14 +1652,38 @@ approved the intake on 2026-10-26, as T3's clean/crunch source for F20. They are
     - A DI with no amp track of its own takes `style_class` from it. T3's `ear_call` reads that before the session's
       tone, so this is how a DI-only intake DI gets its gain group.
     - **Only "clean/crunch-style playing" makes a DI-only DI not high gain.** "Can't tell", conflicting answers or no
-      answer leave `style_class` None, and the DI-only rule counts it as high gain, as for DGX.
+      answer leave `style_class` None; then the song's tone, else the DI-only rule makes it "unknown" (below).
     - A card counts as done once both questions are answered. A style answer counts even without a DI verdict.
-  - Timeless Part 2's tone card plays `ElecGtr2`, another take with no DI. **It can only screen, never class:** "too
-    heavy" excludes the session's DIs. Any other answer is kept as `screen_tones` and sets neither `session_tone` nor a
-    `tone_class`.
+  - Timeless Part 2's tone card plays `ElecGtr2`, another take with no DI. "Too heavy" excludes the session's DIs. Any
+    other answer is kept as `screen_tones` and sets neither `session_tone` nor a `tone_class`. Since 2026-10-27 it
+    sets the song's tone (`song_tone`) on the session's DI-only DIs (below).
 - *Heard 2026-10-26: all 13 DIs clean and admitted. Every style question was left blank (the user: playing style
-  can't be judged from a DI), so all 13 count as high gain for now. A per-song mix tone card will class them
-  ([outcome](#parts-7a-7b-8-and-9-heard-2026-10-26)).*
+  can't be judged from a DI). Since 2026-10-27 they are "unknown", or take their song's tone (below;
+  [outcome](#parts-7a-7b-8-and-9-heard-2026-10-26)).*
+
+### Part 9's DI-only DIs: "unknown", or the song's tone (2026-10-27)
+
+The user heard part 9's 13 DIs as clean but could not judge the playing style: a raw DI does not show it. So the
+DI-only DIs kept no class and counted as high gain, which defeats their purpose as T3's clean/crunch source. The user
+decided on 2026-10-27: label the DI-only DIs **"unknown"** (out of the high-gain cap), but where a song has an amp
+track or a mix, let the user hear it and say which style.
+- **Which songs have a guitar tone to hear.** Only MekaPhil "Timeless (Part 2)" holds a processed guitar track
+  (`ElecGtr2`, `ElecGtr3`; no DI, other takes than the session's DIs). Strobe "Maya", "Alive (Yet Free)", "Core" and
+  "Timeless (Part 1)" hold guitar DIs only (the zips' track names), so their mix has no guitar tone to hear.
+- **Timeless Part 2's tone was already heard.** Part 9's tone card played `ElecGtr2` alone, and the user answered
+  clean. That answer is the song's tone, so on part 9 it now sets the class of the session's DI-only DIs
+  (`metal_verdicts(screen_sets_song=True)` → `song_tone`, source `SONG_FROM`: "song's amp track, heard alone (part
+  9)"). Timeless Part 2's 2 DIs become clean at the next `lists` run. "Too heavy" still excludes the session.
+- **No new page.** A 10-s card of Timeless Part 2's own mix was built (part 9b) and dropped the same day. The guitar
+  sat about 14–17 dB under the piano, synths and lead vocal, so it would only have been a worse repeat of the card
+  already heard. The page went to the Trash, and `lists` has no reader for it.
+- **The rule, in T3's order** (`ear_call`): the DI's own amp track's tone card; the DI card's style; the song's tone
+  (`song_tone`); the session's tone card; else part 9's DI-only rule, "unknown".
+  - Clean or crunch puts the DI in the not-high-gain group, and high gain in the high-gain group. Conflicting
+    answers set nothing.
+  - A DI with its own amp track never takes the song's tone.
+  - The metal pages keep the earlier rule: a DI-less card only screens and never classes (DGX stays high gain).
+- **"Unknown" now:** Strobe "Maya", "Alive (Yet Free)" and "Timeless (Part 1)". Core's two DIs are excluded at T0.
 
 ## F5 outcome (2026-10-26)
 
@@ -1948,10 +1982,12 @@ reader `recheck_measure_di` (PR #296). `verified.json` was not edited by hand.
   judged from a DI. Under the merged rule a DI-only DI with no clean/crunch-style answer counts as high gain, so all
   13 do (`no_tone_counts_as`; `style_class` None).
 - These were meant as F20's clean/crunch source. Until they are classed, they add nothing to it.
-- **Next:** a per-song mix tone card (one per song, heard on the mix) will follow to class them properly.
+- **Changed 2026-10-27 (PR #306):** they are "unknown" (out of the high-gain cap), except Timeless Part 2's 2, which
+  take its amp track's clean tone. A per-song mix card was built and dropped
+  ([below](#part-9s-di-only-dis-unknown-or-the-songs-tone-2026-10-27)).
 
 **The intake lists now** (`intake_dis`, 116 DIs):
-- **64 admitted**, all high gain today:
+- **64 admitted**, all high gain at this sitting (part 9's 13 change on 2026-10-27, below):
   - Empty Signifier 20_ElecGtr2DI (part 6);
   - the 50 metal DIs;
   - 13 Strobe/MekaPhil DIs.
@@ -1963,30 +1999,32 @@ T0's DIs are unchanged (46 verified, 13 excluded), as is T0's training pool (27 
 
 **The clean/crunch shortage is unchanged.**
 - Every admitted metal DI is high gain, and 5 metal sessions were dropped as too heavy.
-- Part 9's DIs count as high gain until the per-song mix tone cards class them.
+- Part 9's DIs counted as high gain at this sitting. Since 2026-10-27, 11 are "unknown" and Timeless Part 2's 2 are
+  clean.
 - **The high-gain share of a T3 F20 pool:**
   - Today's pool, from T3's plan table, is 181 sections, 174 of them high gain (96%). The 7 that are not are Ale Lak
     crunch 4, Starnes And Shah clean 1, Storm Of Particles crunch 1 and unclassed 1. Only 3 of the 7 are among T2's
     sections (Ale Lak 1, Storm Of Particles 2). The other 4 were excluded at cleaning or refused at the D build.
-  - The 64 admitted intake DIs add only high-gain sections. Their sections are not cut yet; they come when the
-    inventory and part A's sections are rebuilt.
-  - At T0's training DIs' mean of 6.7 sections per DI, they add about 430 sections, so the pool becomes about 603 of
-    610 high gain (**about 99%**). At part C's median of 4 per DI, it is 430 of 437 (98%).
-  - Without part 9's 13 DIs, the figures are 516 of 523 and 378 of 385, nearly the same.
-  - Either way the non-high-gain part stays at 7 sections.
-  - If the mix tone cards class Strobe/MekaPhil as clean or crunch, those 13 DIs move across: at 4 to 6.7 sections per
-    DI, about 50–90 sections (the intake estimated about 75).
+  - The 64 admitted intake DIs' sections are not cut yet; they come when the inventory and part A's sections are
+    rebuilt. 51 are high gain; of part 9's 13, 11 are "unknown" and 2 clean (2026-10-27).
+  - At T0's training DIs' mean of 6.7 sections per DI they add about 430 sections: about 342 high gain, 74 unknown and
+    13 clean. The pool becomes 516 high gain, 20 not, 74 unknown of 610. **With unknown left out, 516 of 536 are high
+    gain (about 96%); with unknown counted as high gain (the worst case), 590 of 610 (about 97%).** Unknown is 12%,
+    under F20's 25% cap.
+  - At part C's median of 4 per DI: 378 high gain, 15 not, 44 unknown of 437; 96% with unknown left out, 97% counted
+    as high gain; unknown 10%.
+  - The non-high-gain part grows from 7 sections to about 15–20 (Timeless Part 2's 2 DIs).
 - **What that means for F20's 50% cap:**
   - F20 may hold at most 50% high-gain examples. F5's 4,974 examples are 96% high gain (4,767).
-  - So without new clean/crunch sections, F20's roughly 15k new draws need about 9.8k non-high-gain examples from 7
-    sections, about 1,400 draws per section. That figure assumes all 7 can be drawn. If only T2's 3 can, it is
-    about 3,300 per section.
+  - So F20's roughly 15k new draws need about 9.8k non-high-gain examples from 7 sections, about 1,400 draws per
+    section. That figure assumes all 7 can be drawn. If only T2's 3 can, it is about 3,300 per section. With
+    Timeless Part 2's sections once cut (15–20 in all), it is about 500–650 per section.
 
 **The DI inventory was not rebuilt.** By the process, an admitted DI trains only once the DI inventory is rebuilt and
 a training draw includes it (as for Empty Signifier's DI). No training draw is planned: F20 waits for the user's yes.
 - A rebuild alone would add no sections. Part C's pool (`pool.json`, which records the inventory's sha256) and part
   A's sections would have to be rebuilt too.
-- So the rebuild belongs to F20's plan step, after the per-song mix tone cards.
+- So the rebuild belongs to F20's plan step.
 
 **T3 and T0's lists' hash.** T3's `plan.json` holds the hash of T0's lists, so every T3 command refuses once a
 `lists` run changes them (`check_lists`). This is why the runs waited for R1.
