@@ -414,8 +414,9 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      and without. Output gain's loudness fit waits for the user's confirmation. About 58k renders, 22k separations,
      5–6 h MPS, 32–42 h wall. The metal intake's DIs (13 sessions, 7 bands, downloaded 2026-10-26) join
      F20 as they pass the checks and the ear, under the caps. F5 starts with a zero-render dry run that prints the real
-     pool. Open for the user: clean and crunch sources for F20 (Strobe and MekaPhil recommended, EGDB, or none); F5
-     needs none of them.
+     pool. Clean and crunch sources for F20: Strobe and MekaPhil ×4 (approved 2026-10-26; ledger
+     `cambridge-new-training-bands-2026-10-26b`) are DI only. 13 of their 18 DIs pass D2/D3; ear page part 9 (14
+     cards) is pending, and their gain class is unknown (no amp track). F5 needs none of them.
    - **Every-control stage 1** runs on the trusted panel's parts and can now run, now that the ear
      has cleared their amp tracks (knob ceiling 2's panel: 7 parts in 7 bands, verified 2026-10-25). It needs no rebuild, so it need not
      wait for (b)–(d); they share the renderer.
@@ -568,7 +569,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
    - *Before T3:* where clean-class training DIs come from (after the ear the pool holds 1
      clean-class and 1 crunch section of 181; V-real has 2 clean bands): EGDB on a borrowed backing
      (downloaded; its DI checks first), GOAT (access requested), Jen Hartswick & Nick Cassarino as
-     training instead of test, Strobe and MekaPhil now, or none.
+     training instead of test, Strobe and MekaPhil now, or none. *Strobe and MekaPhil taken in 2026-10-26
+     (part 9's ear pending).*
    - *Before T4:* the decision test's data and ship rule (keep the fresh bands out of pooled V-real
      readings; possibly bring step 7 forward with a declared verification phase); whether arm A
      gets every-control coverage (stage 2A, which dropped out after GATE STOP) or routes are

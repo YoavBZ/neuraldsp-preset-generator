@@ -990,6 +990,51 @@ def test_lists_admits_heard_metal_dis(tmp_path, monkeypatch):
     assert r["tone_class"] == "crunch" and r["pair_unheard"]
 
 
+def test_b2_page_is_read_by_lists_and_its_di_only_dis_stay_unclassed(tmp_path, monkeypatch):
+    """Part 9 (Strobe and MekaPhil, ledger cambridge-new-training-bands-2026-10-26b): metal_verdicts' cards and rules,
+    but a DI-only DI is not counted as high gain, and a tone card with no DI classes its session only."""
+    pytest.importorskip("numpy")                           # lists -> prior_summary
+    assert set(V.B2_PAGES) <= set(V.CARD_PAGES) and not set(V.B2_PAGES) & set(V.METAL_PAGES)
+    assert V.B2_DIR != V.METAL_DIR
+    env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 10.0)])])
+    page = next(iter(V.B2_PAGES))
+    assert V.page_items_path(page).parent.name == "part9-strobe-meka"
+    s_di = "/r/Strobe_Maya_Full/23_ElecGtrDI2.wav"
+    t_di, t_amp = "/r/Mekaphil_TimelessPart2_Full/13_ElecGtr1DI.wav", "/r/Mekaphil_TimelessPart2_Full/15_ElecGtr2.wav"
+    items = [{"id": "b9-s", "kind": "di", "family": "di", "key": s_di, "start_s": 134.0, "dur_s": 10.0,
+              "paths": {"di": s_di}},
+             {"id": "b9-t", "kind": "di", "family": "di", "key": t_di, "start_s": 18.5, "dur_s": 10.0,
+              "paths": {"di": t_di}},
+             {"id": "b9-sc", "kind": "scope", "family": "scope", "key": t_amp, "session": "Mekaphil_TimelessPart2_Full",
+              "start_s": 65.5, "dur_s": 10.0, "paths": {"di": None, "amp": t_amp}}]
+    ip = V.page_items_path(page)
+    ip.parent.mkdir(parents=True)
+    ip.write_text(json.dumps({"page": page, "build": "b9", "items": items}))
+    only = {"status": {"D1": None, "D2": "pass", "D3": "pass", "D4": "pass"}, "verdict": [
+        "pending ear", ["DI-only: D1 not measurable"]], "pairs": {}}
+    (env.root / V.B2_DIR).mkdir()
+    (env.root / V.B2_DIR / "summary.json").write_text(json.dumps({"sessions": {
+        "Strobe_Maya_Full": {"23_ElecGtrDI2.wav": {"band": "Strobe", **only}},
+        "Mekaphil_TimelessPart2_Full": {"13_ElecGtr1DI.wav": {"band": "MekaPhil", **only}}}}))
+    rec, _ = env.run()
+    assert rec["intake_admitted"] == [] and {r["verdict"] for r in rec["intake_dis"].values()} == {"pending ear"}
+    f = tmp_path / "p9.json"
+    f.write_text(json.dumps({"page": page, "part": "9", "build": "b9", "exported": "2026-10-27T06:00:00Z", "answers": [
+        {"id": i, "verdict": v, "note": "", "t": "2026-10-27T06:00:00Z"} for i, v in (("b9-s", "clean"), ("b9-t", "clean"),
+                                                                                      ("b9-sc", "crunch"))]}))
+    rec, _ = env.run([str(f)])
+    s, t = (rec["intake_dis"][f"cambridge-new/{k}"] for k in ("Strobe_Maya_Full/23_ElecGtrDI2.wav",
+                                                              "Mekaphil_TimelessPart2_Full/13_ElecGtr1DI.wav"))
+    assert s["verdict"] == t["verdict"] == "verified" and s["pair_unheard"] is None
+    assert s["no_tone_counts_as"] is None and s["session_tone"] is None and s["tone_class"] is None   # unclassed
+    assert t["session_tone"] == "crunch" and t["tone_class"] is None                 # the card played no DI of its own
+    heavy = V.metal_verdicts({"Mekaphil_TimelessPart2_Full": {"13_ElecGtr1DI.wav": {"band": "MekaPhil", **only}}},
+                             {t_di: [(18.5, 28.5, "clean")]},
+                             {"Mekaphil_TimelessPart2_Full": [(t_amp, "too_heavy", None)]}, no_tone_counts_as=None)
+    assert heavy["cambridge-new/Mekaphil_TimelessPart2_Full/13_ElecGtr1DI.wav"]["why"] == [
+        "its session's tone heard as too heavy"]
+
+
 def test_lists_admits_a_heard_clean_intake_di(tmp_path, monkeypatch):
     pytest.importorskip("numpy")                           # lists -> prior_summary
     env = _Lists(tmp_path, monkeypatch, [_di("x", "B1", [_sec("x1", 10.0)])])

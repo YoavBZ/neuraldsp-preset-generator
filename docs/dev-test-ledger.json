@@ -2903,11 +2903,11 @@
    },
    "bands": "2 bands (Strobe, MekaPhil; Cambridge-MT), never trained on by this project; part B2's parked known-answer candidates (docs/known-answer-b1-results.md), never used in a test. None is in a held-out list (clean_di.refuse_held_out on both bands; no set 3-6 dataset or crop folder carries their names; KNOWN_ANSWER holds neither)",
    "gate": "none: an intake, not a test. Training permission is recorded in learn/clean_di.py TRAINING_DOWNLOADS (split 'library'), which the DI inventory and assert_training_ok read; every row also carries clean_di.INTAKE_PENDING (training_ok False) until a verified list admits it",
-   "audio_only": "~/ndsp-presets/references/datasets-cambridge-new/<session>/ (manifest-2026-10-26b.json beside the others; the ZIPs kept in _zips/)",
+   "audio_only": "~/ndsp-presets/references/datasets-cambridge-new/<session>/ (guitar tracks and Readmes; Mekaphil_TimelessPart2_Full in full, the only session with amp tracks; manifest-2026-10-26b.json beside the others; the ZIPs kept in _zips/)",
    "training": "training only: never a test, V-real, K, known-answer or held-out set, nor a screen that chooses a test. B2 can no longer use these songs as known-answer songs. A DI enters a training pool only after it passes T0's checks and the user's ear (the trusted-data rule)",
    "renders": "0; separations: 0",
    "held_out": "none touched",
-   "outcome": "pending: waits for the checks and the user's listening"
+   "outcome": "checks done 2026-10-26 (zero renders; ~/ndsp-presets/learn/trusted-data/intake-2026-10-26b/): 18 electric DIs, all DI only (Timeless Part 2's ElecGtr2/ElecGtr3 have no DI and play other takes: probe_tp2.py, chroma 0.0-0.58), so D1 and A1-A6 had no pair to run on. D3 18/18; D2 13/18 (out: Core x2 hum on every window, Alive ElecGtr2DTDI clipping, Timeless Part 1 ElecGtr3DI and 15_ElecGtr4DI hum on 1 window of 5, possibly false positives; threshold unchanged). D4 flags Strobe ElecGtrDI1 and DI1DT and Timeless Part 1 16_ElecGtr4DI (the ear's flag). Ear page part 9 (trusted-data-ear-strobe-meka, 13 DI cards + 1 tone card on Timeless Part 2's ElecGtr2) pending; verify_tracks lists reads it (B2_PAGES, B2_DIR; metal_verdicts with DI-only DIs left unclassed, not high gain). No DI has trained. Renders 0, separations 0, held out none touched"
   },
   {
    "test_id": "trusted-data",

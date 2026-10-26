@@ -1602,3 +1602,24 @@ checks are in the [inventory](research/di-source-inventory-2026-10.md#metal-and-
   DTDI, and Dark Illusion "Evil Bones" ElecGtr4DI. Their amp tracks sit at near-zero delay (a render, not a miked cab).
 - Clips were re-checked after decoding: none silent or sparse (decoded peaks −11.6 dBFS or louder; every clip has
   frames within 40 dB of its loudest on at least 30% of its length).
+
+## The Strobe and MekaPhil intake's ear (part 9, 2026-10-26)
+
+Strobe "Maya" and MekaPhil ×4 are part B2's parked known-answer songs. The user allowed them for training on 2026-10-23 and
+approved the intake on 2026-10-26, as T3's clean/crunch source for F20. They are training-only (ledger
+`cambridge-new-training-bands-2026-10-26b`); the checks are in the
+[inventory](research/di-source-inventory-2026-10.md#strobe-and-mekaphil-training-intake-2026-10-26).
+- **Page:** `~/ndsp-presets/listening/trusted-data-ear/part9-strobe-meka/` (page `trusted-data-ear-strobe-meka`). It
+  has 14 cards (about 4 MB), built the same way as parts 7a/7b:
+  - 13 DI cards, one per D2/D3-passing DI, at its busiest checked window;
+  - 1 tone card. Only MekaPhil "Timeless (Part 2)" has amp tracks (`ElecGtr2`, `ElecGtr3`). Neither has a DI, and
+    neither plays the same take as the session's `ElecGtr1` DI or its DT. The card plays `ElecGtr2` alone, with no DI
+    of its own.
+- **How `lists` reads it:** it uses `metal_verdicts` on `intake-2026-10-26b/summary.json` (`B2_PAGES`, `B2_DIR`),
+  with one difference: `no_tone_counts_as=None`.
+  - The rules are as for the metal pages. A measured fail excludes. A window heard other than clean excludes. One
+    window heard clean is enough. A too-heavy tone excludes the session's DIs.
+  - **The DI-only DIs are not counted as high gain.** These are not metal-intake bands, so T3 counts an unclassed DI
+    as not high gain. Their gain class is unknown: there is no amp track or mix to hear.
+  - Timeless Part 2's tone card classes the session only (`session_tone`). Its DI path is None, so no DI gets a
+    `tone_class` from it.
