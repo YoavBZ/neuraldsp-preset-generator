@@ -21,6 +21,8 @@ reads T0's lists (`learn/verify_tracks.py lists`): only verified DIs, targets an
     $MAIN -m learn.trusted_data plan-ses-all [--dry]               # option (c): SES-ALL's 5k draw (zero renders)
     $TORCH_PY -m learn.trusted_data train --arm SES-ALL --seed 20261042|20261043   # 2 runs, stored stems only
     $MAIN -m learn.trusted_data t2-stem-read                       # SYN's stems against SES's (zero renders)
+    # T3's F5 (declared 2026-10-26): `--stage t3` on plan [--dry], render, build, train, fit, vreal-crops, vreal-predict,
+    # vreal-render and report runs learn/trusted_data_t3.py (docs/trusted-data-t3-f5-chain.sh)
 
 **A self-built mix** (plan (c)), deterministic from the example's index; the recipe is stored, the audio is not:
 - **The target:** the example's verified DI section through its drawn settings (part C's label, today's space).
@@ -2010,7 +2012,7 @@ def arm_rows(ctx, plan, arm, files, refused, ses_all=None):
 class ArmData:
     """`direct_stems.StemData` with explicit feature files per example (an arm's own mixes and stems)."""
 
-    def __new__(cls, rows, files, aug=True):
+    def __new__(cls, rows, files, aug=True, encode=None, partner_path=None):
         import numpy as np
 
         from learn import direct_stems as DS
@@ -2038,10 +2040,10 @@ class ArmData:
             self.gpos = {p: k for k, p in enumerate(pos)}
             self.G = np.zeros((len(pos), 2, 96, 446), np.uint8)
             for p, k in self.gpos.items():
-                g = np.load(PS.example_path(rows[p]["i"]))
+                g = np.load((partner_path or PS.example_path)(rows[p]["i"]))   # T3's D_F5: its full twins' mels
                 self.G[k, 0], self.G[k, 1] = g["gA"], g["gB"]
         self.centres = DS.mel_centres_hz()
-        enc = [SM.encode(r["label"]) for r in rows]
+        enc = [(encode or SM.encode)(r["label"]) for r in rows]           # T3's D_F5: the full space's
         self.Y = [np.stack(z) for z in zip(*enc)]
         self.masked = 0
         self.applied = {}
@@ -2842,8 +2844,8 @@ def main(argv=None):
     ap = argparse.ArgumentParser(prog="trusted_data", description=__doc__.split("\n")[0])
     ap.add_argument("cmd", choices=("amp-bleed", "plan", "render", "build", "t1-read", "train", "fit", "e-on-k",
                                     "vreal-predict", "vreal-render", "report", "t2-stem-read", "t2-density",
-                                    "plan-ses-all"))
-    ap.add_argument("--stage", choices=("t1", "t2"), default="t1")
+                                    "plan-ses-all", "vreal-crops", "control-check", "pc-check"))
+    ap.add_argument("--stage", choices=("t1", "t2", "t3"), default="t1")
     ap.add_argument("--shard", type=V.parse_shard, default=(0, 1))
     ap.add_argument("--device", default="mps")
     ap.add_argument("--order", choices=("asc", "desc"), default="asc")
@@ -2854,14 +2856,35 @@ def main(argv=None):
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--subset", choices=("rules", "rules-di"), default=None,
                     help="t1-read only: the T1 audit's zero-render re-read under rules 1-2 (writes nothing)")
-    ap.add_argument("--dry", action="store_true", help="plan-ses-all only: print the draw, write nothing")
+    ap.add_argument("--dry", action="store_true",
+                    help="plan-ses-all and plan --stage t3 only: print, write nothing (T3's zero-render dry run)")
+    ap.add_argument("--drop-missing-crops", action="store_true",
+                    help="T3's vreal-predict only: drop frozen V-real members without a crop (printed) before any read")
+    ap.add_argument("--positive-only", action="store_true",
+                    help="T3's render and build only: the positive control's 50 examples (first, before anything else)")
     args = ap.parse_args(argv)
+    if args.positive_only and not (args.cmd in ("render", "build") and args.stage == "t3"):
+        raise SystemExit("--positive-only is for render and build --stage t3")
     if args.subset and args.cmd != "t1-read":
         raise SystemExit("--subset is for t1-read")
-    if args.dry and args.cmd != "plan-ses-all":
-        raise SystemExit("--dry is for plan-ses-all")
+    if args.dry and not (args.cmd == "plan-ses-all" or (args.cmd == "plan" and args.stage == "t3")):
+        raise SystemExit("--dry is for plan-ses-all and plan --stage t3")
+    if args.drop_missing_crops and not (args.cmd == "vreal-predict" and args.stage == "t3"):
+        raise SystemExit("--drop-missing-crops is for vreal-predict --stage t3")
     if args.limit and not args.smoke:
         raise SystemExit("--limit is for smoke runs (with --smoke and --out)")
+    if args.cmd in ("vreal-crops", "control-check", "pc-check") and args.stage != "t3":
+        raise SystemExit(f"{args.cmd} is T3's (--stage t3)")
+    if args.stage == "t3":                     # T3 (F5): learn/trusted_data_t3.py
+        from learn import trusted_data_t3 as T3
+
+        cmds = {"plan": T3.cmd_plan, "render": T3.cmd_render, "build": T3.cmd_build, "train": T3.cmd_train,
+                "fit": T3.cmd_fit, "vreal-crops": T3.cmd_vreal_crops, "control-check": T3.cmd_control_check,
+                "pc-check": T3.cmd_pc_check, "vreal-predict": T3.cmd_vreal_predict, "vreal-render": T3.cmd_vreal_render,
+                "report": T3.cmd_report}
+        if args.cmd not in cmds:
+            raise SystemExit(f"--stage t3 runs {', '.join(cmds)}")
+        return cmds[args.cmd](args)
     {"amp-bleed": cmd_amp_bleed, "plan": cmd_plan, "render": cmd_render, "build": cmd_build, "t1-read": cmd_t1_read, "train": cmd_train,
      "fit": cmd_fit, "e-on-k": cmd_e_on_k, "vreal-predict": cmd_vreal_predict, "vreal-render": cmd_vreal_render,
      "report": cmd_report, "t2-stem-read": cmd_t2_stem_read, "t2-density": cmd_t2_density,

@@ -1515,6 +1515,47 @@ without it.
 **Fixes first:** the Renesans bug. The pure parts are unit-tested. An independent review covers the code before any
 render.
 
+### F5 as built (code only, 2026-10-26; nothing rendered, separated or trained)
+
+`learn/full_space.py` (the label space, the draw, the masked encoding, the answer, the network) and
+`learn/trusted_data_t3.py` (`--stage t3` on `plan`, `render`, `build`, `train`, `fit`, `vreal-predict`,
+`vreal-render`, `report`); the chain is `docs/trusted-data-t3-f5-chain.sh` (not launched). Details the plan left
+open, decided here for the review:
+- **The new controls in factory and start draws** take part C's draw rule around the mode's centre (continuous
+  jittered by sigma 0.1 in unit space, switches kept with p 0.7, else a fair coin), as "drawn with part C's modes"
+  reads. The spring's derived switch follows the centre's level there, as the plan states. Any mode with both cabs
+  off is redrawn, not only wide.
+- **Output gain** is held at S's value in every training render. Per answer it is fitted on V-real from the render's
+  search-half loudness against the stem's, dB for dB, within -24 to +24 dB. Its |LUFS error| is scored on the held
+  half against the amp track, with no extra render. Marked pending the user's confirmation in code and records.
+- **The wide gate cap** is the 95th percentile (nearest rank) of every menu preset's stored threshold, over the
+  three amps: -61.3 dB from 111 presets.
+- **The positive control's 50** are drawn with `seed_int(20261107, "positive control")`. They must match T2's
+  stored target FLAC and part C's mels at 0.99. Built from the same T2 backing, their mix and stem features must
+  match T2's `mix-t2` and `xlance_g-t2` at 0.99. Every run waits for it.
+- **The positive control runs first** (the review of #299). `control-check` makes 3 renders: one control example,
+  then the same with the amp EQ's 1-kHz band moved to +12 dB; the output must change. Then the 50 examples are
+  rendered (`render --positive-only`) and built (`build --positive-only`). Each stem is separated on the device T2
+  built it on, so the stem comparison stays within one device. `pc-check` stops the chain on any miss, and all four
+  runs refuse without it.
+- **D_F5's merge augmentation reads its own renders** (the review of #299). The full twins' half mels and half
+  loudness are saved at render (`tgt-t3`). D_F5's merge partners and its rows' `lufs_A`/`lufs_B` come from them;
+  D_core5's come from part C's core renders. Both arms keep the same examples and the same partner draws.
+- **The amp head** is a 256-unit MLP on the pooled audio features. The readout's switches use the mean probability
+  over seeds, for D_core5 too. A per-seed answer is that seed's A1, pulled by the model's b. A both-cabs-off answer
+  turns on the likelier cab.
+- **A cell dimension with no FS5 example that sounds** reads b = 0 (`cell_b`'s rule). It is printed and recorded,
+  not refused.
+- **V-real's new crop:** `vreal-crops` cuts It Was My Fault ElecGtr1 on its ear-verified re-cut window from T0's
+  re-check (90-100 s, which must equal the frozen window). It uses the validation-crop builder's new `window` rule,
+  into `t3/vreal/crops/` (same files and record; no existing crop is touched). It adds the crop-only xlance_g stem,
+  made as step 4 made stage F's. The judge lag is the label table's for the same DI and amp track. S is rendered in
+  T3's own groups (6 renders a part). A crop that does not build is dropped before any read, and the drop is
+  printed. `--drop-missing-crops` is only an opt-in escape for a member with no crop attempt.
+- **The dry run's gain classes:** part A's classifier on the amp tracks classes most Ale Lak and Storm Of Particles
+  sections high gain. So T2's examples are 96% high-gain-source by the declared order (61% by part A's class
+  alone, the plan's figure). F5 keeps T2's mix; the 50% cap applies to F20.
+
 ### Open for the user
 
 1. **Clean and crunch sources for F20** (open since T0). After the ear the pool holds 1 clean-class and 1 crunch

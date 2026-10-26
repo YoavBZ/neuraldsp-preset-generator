@@ -591,3 +591,22 @@ def test_crop_rule_two_end_to_end_records_its_rule_and_activity(tmp_path):
     with pytest.raises(ValueError, match="unknown excerpt rule"):
         build(catalog, data_root, "test", "song", "one", tmp_path / "x", rule="median")
     assert not (tmp_path / "x").exists()
+
+
+def test_window_rule_cuts_the_given_window(tmp_path):
+    catalog, data_root, _ = _fixture(tmp_path)
+    out = tmp_path / "private-window"
+    record = build(catalog, data_root, "test", "song", "one", out, rule="window", start_s=1.5)
+    assert record["schema"] == "validation-crops-2" and record["excerpt_rule"] == "window"
+    assert record["excerpt_start_s"] == 1.5 and record["excerpt_start_frame"] == int(1.5 * RATE)
+    assert record["di_activity"] == pytest.approx(1.0)
+    assert set(record["outputs"]) == {"di", "reference", "mix", "backing"}
+    assert io.load(out / "mix.wav").frames == 10 * RATE
+    with pytest.raises(ValueError, match="grid"):
+        build(catalog, data_root, "test", "song", "one", tmp_path / "w2", rule="window", start_s=1.2)
+    with pytest.raises(ValueError, match="past"):
+        build(catalog, data_root, "test", "song", "one", tmp_path / "w3", rule="window", start_s=2.5)
+    with pytest.raises(ValueError, match="start_s"):
+        build(catalog, data_root, "test", "song", "one", tmp_path / "w4", rule="di-activity", start_s=1.5)
+    with pytest.raises(ValueError, match="start_s"):
+        build(catalog, data_root, "test", "song", "one", tmp_path / "w5", rule="window")
