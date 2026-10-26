@@ -1194,7 +1194,7 @@ judged only the target and offered no "processed" answer, so the DI itself was n
   - a window heard clean clears the measure DI and verifies Signs;
   - a D4-flagged window joins its windows only once heard clean.
 - *Heard 2026-10-26: all 3 windows clean. Signs ElecGtr6 is verified on all 5 windows
-  ([outcome](#parts-7a-7b-and-8-heard-2026-10-26)).*
+  ([outcome](#parts-7a-7b-8-and-9-heard-2026-10-26)).*
 
 **Signs ElecGtr6 is not a copy of its DI** (the user asked for a double-check). On the 5 re-check windows:
 - A4's highest correlation with the DI is 0.70–0.75, against the < 0.95 rule;
@@ -1372,7 +1372,7 @@ with the metal intake extracted, above the 31 GB guard. `plan` refuses if the pr
   fails to build under T0's rules on its window is dropped before any V-real read, and the drop is printed.
 - V-real-10 rows sit beside every read, for comparison with T2.
 - *Part 8 was heard after F5's plan froze V-real-11, so T3's membership stays V-real-11, without Signs. A future plan
-  not bound by T3's freeze would see V-real-12 ([outcome](#parts-7a-7b-and-8-heard-2026-10-26)).*
+  not bound by T3's freeze would see V-real-12 ([outcome](#parts-7a-7b-8-and-9-heard-2026-10-26)).*
 
 ### 3. Model and training
 
@@ -1618,7 +1618,7 @@ checks are in the [inventory](research/di-source-inventory-2026-10.md#metal-and-
 - Clips were re-checked after decoding: none silent or sparse (decoded peaks −11.6 dBFS or louder; every clip has
   frames within 40 dB of its loudest on at least 30% of its length).
 - *Heard 2026-10-26: 50 of the 89 DIs admitted, all high gain; 5 sessions too heavy
-  ([outcome](#parts-7a-7b-and-8-heard-2026-10-26)).*
+  ([outcome](#parts-7a-7b-8-and-9-heard-2026-10-26)).*
 
 ## The Strobe and MekaPhil intake's ear (part 9, 2026-10-26)
 
@@ -1647,6 +1647,9 @@ approved the intake on 2026-10-26, as T3's clean/crunch source for F20. They are
   - Timeless Part 2's tone card plays `ElecGtr2`, another take with no DI. **It can only screen, never class:** "too
     heavy" excludes the session's DIs. Any other answer is kept as `screen_tones` and sets neither `session_tone` nor a
     `tone_class`.
+- *Heard 2026-10-26: all 13 DIs clean and admitted. Every style question was left blank (the user: playing style
+  can't be judged from a DI), so all 13 count as high gain for now. A per-song mix tone card will class them
+  ([outcome](#parts-7a-7b-8-and-9-heard-2026-10-26)).*
 
 ## F5 outcome (2026-10-26)
 
@@ -1860,14 +1863,22 @@ F20 still waits for the user's yes. When it runs:
    - **Which readout decides:** D_F20's rows are read both ways, plain and at S. The plain readout stays primary, as
      declared, unless the user rules on amendment 1 (above) before any F20 V-real read.
 
-## Parts 7a, 7b and 8 heard (2026-10-26)
 
-The user heard all three pages on 2026-10-26. Exports: `learn/trusted-data/ear-exports/part7a-metal-2026-10-26.json`,
-`part7b-metal-2026-10-26.json` and `part8-signs-di-2026-10-26.json`. One real `lists` run read them with every earlier
-export (log `learn/trusted-data/logs/lists-ear78.log`; `t0/` backed up first to
-`t0-backup-before-ear78-20261027-003402`). No answer was superseded or cleared, and no card has a note. The code was
-already on main (`metal_verdicts`, PR #297; part 8's reader `recheck_measure_di`, PR #296). `verified.json` was not
-edited by hand.
+## Parts 7a, 7b, 8 and 9 heard (2026-10-26)
+
+The user heard all four pages on 2026-10-26. Exports in `learn/trusted-data/ear-exports/`:
+`part7a-metal-2026-10-26.json`, `part7b-metal-2026-10-26.json`, `part8-signs-di-2026-10-26.json` and
+`part9-strobe-meka-2026-10-26.json`.
+
+**How `lists` ran.** Real `lists` runs read them with every earlier export. No answer was superseded or cleared, and
+no card has a note. The code was already on main: `metal_verdicts` (PR #297, part 9's reading as built) and part 8's
+reader `recheck_measure_di` (PR #296). `verified.json` was not edited by hand.
+1. Parts 7a, 7b and 8. `t0/` was backed up first to `t0-backup-before-ear78-20261027-003402`.
+2. T3's plan holds T0's lists' hash, so `t0/` was put back from that backup while the F5 follow-up's R1 ran. The
+   result was kept as `t0-after-ear78-pending-20261027-003751`.
+3. The re-run after R1 matched that copy (same lists hash, `4f298b5a9ec9`; log `logs/lists-ear78.log`).
+4. Part 9 was added in one more run (backup `t0-backup-before-ear9-20261027-004956`; log `logs/lists-ear789.log`).
+   It changed only part 9's 13 DIs.
 
 **Part 8: Signs ElecGtr6 is verified.** Its measure DI, 33_ElecGtr6DI, was heard clean on all 3 windows (63.5, 82 and
 148 s).
@@ -1910,8 +1921,8 @@ edited by hand.
 | **Total** | | **89** | **50** | **39** (24 too heavy, 14 measured fails, 1 heard processed) |
 
 - **By band:** the 50 admitted DIs come from 4 bands: Peppermark 34, DGX 11, Arcadian Alone 3, Dark Illusion 2.
-  Daimon B, Inhumanity Vortex and Serapis drop out entirely. Peppermark is 68% of the admitted DIs, so F20's 35% band
-  cap will bind on it.
+  Daimon B, Inhumanity Vortex and Serapis drop out entirely. Peppermark is 68% of the admitted metal DIs, so F20's
+  35% band cap will bind on it.
 - **By gain group:** all 50 are high gain (`ear_call`). 39 are high gain from their session's tone card; the 5 tone
   cards' own DIs also carry `tone_class` high gain. 11 (DGX) are high gain by the DI-only rule.
 - 39 of the 50 have an amp track, and each carries `pair_unheard`. The DI-and-amp pairing was never heard, so T3's
@@ -1920,40 +1931,64 @@ edited by hand.
   them, which is the declared rule for training-only metal DIs. Dense palm-muted playing may trip D4, as it may trip
   D2's hum check.
 
+**Part 9: Strobe and MekaPhil. All 13 DIs were heard clean and are admitted, but they count as high gain for now.**
+
+| Session | DIs | Admitted | Out |
+|---|---|---|---|
+| Strobe "Maya" | 4 | 4 | 0 |
+| MekaPhil "Alive (Yet Free)" | 5 | 4 | 1 (D2) |
+| MekaPhil "Timeless (Part 1)" | 5 | 3 | 2 (D2) |
+| MekaPhil "Timeless (Part 2)" | 2 | 2 | 0 |
+| MekaPhil "Core (Eternal Waltz)" | 2 | 0 | 2 (D2) |
+| **Total** | **18** | **13** | **5** (T0's D2 fails, before the ear) |
+
+- Timeless Part 2's tone card (its `ElecGtr2`, a take with no DI) was heard clean. By design it screens only, so it
+  is kept as `screen_tones` and classes nothing.
+- **Known limitation: the style question was left blank on every card.** The user's reason: playing style can't be
+  judged from a DI. Under the merged rule a DI-only DI with no clean/crunch-style answer counts as high gain, so all
+  13 do (`no_tone_counts_as`; `style_class` None).
+- These were meant as F20's clean/crunch source. Until they are classed, they add nothing to it.
+- **Next:** a per-song mix tone card (one per song, heard on the mix) will follow to class them properly.
+
 **The intake lists now** (`intake_dis`, 116 DIs):
-- 51 admitted: Empty Signifier 20_ElecGtr2DI (part 6) and the 50 metal DIs, all high gain;
+- **64 admitted**, all high gain today:
+  - Empty Signifier 20_ElecGtr2DI (part 6);
+  - the 50 metal DIs;
+  - 13 Strobe/MekaPhil DIs.
 - 52 excluded;
-- 13 pending. These are part 9's Strobe and MekaPhil DIs, whose page is not answered yet.
+- 0 pending.
 
 T0's DIs are unchanged (46 verified, 13 excluded), as is T0's training pool (27 DIs, 181 sections). Stems are unchanged
 (166 in 14 sessions).
 
-**What this does to the clean/crunch shortage: nothing.**
-- Every admitted metal DI is high gain, and 5 sessions were dropped as too heavy.
-- The clean/crunch shortage is unchanged until the Strobe/MekaPhil page (part 9) is answered.
+**The clean/crunch shortage is unchanged.**
+- Every admitted metal DI is high gain, and 5 metal sessions were dropped as too heavy.
+- Part 9's DIs count as high gain until the per-song mix tone cards class them.
 - **The high-gain share of a T3 F20 pool:**
   - Today's pool, from T3's plan table, is 181 sections, 174 of them high gain (96%). The 7 that are not are Ale Lak
     crunch 4, Starnes And Shah clean 1, Storm Of Particles crunch 1 and unclassed 1.
-  - The 51 admitted intake DIs add only high-gain sections. Their sections are not cut yet; they come when the
+  - The 64 admitted intake DIs add only high-gain sections. Their sections are not cut yet; they come when the
     inventory and part A's sections are rebuilt.
-  - At T0's training DIs' mean of 6.7 sections per DI, they add about 340 sections, so the pool becomes about 516 of
-    523 high gain (**about 99%**). At part C's median of 4 per DI, it is 378 of 385 (98%).
+  - At T0's training DIs' mean of 6.7 sections per DI, they add about 430 sections, so the pool becomes about 603 of
+    610 high gain (**about 99%**). At part C's median of 4 per DI, it is 430 of 437 (98%).
+  - Without part 9's 13 DIs, the figures are 516 of 523 and 378 of 385, nearly the same.
   - Either way the non-high-gain part stays at 7 sections.
+  - If the mix tone cards class Strobe/MekaPhil as clean or crunch, those 13 DIs move across: at 4 to 6.7 sections per
+    DI, about 50–90 sections (the intake estimated about 75).
 - **What that means for F20's 50% cap:**
   - F20 may hold at most 50% high-gain examples. F5's 4,974 examples are 96% high gain (4,767).
-  - So without new clean/crunch DIs, F20's roughly 15k new draws need about 9.8k non-high-gain examples from those
-    7 sections, about 1,400 draws per section.
-  - The metal DIs add high-gain variety, not clean/crunch coverage.
+  - So without new clean/crunch sections, F20's roughly 15k new draws need about 9.8k non-high-gain examples from 7
+    sections, about 1,400 draws per section.
 
 **The DI inventory was not rebuilt.** By the process, an admitted DI trains only once the DI inventory is rebuilt and
 a training draw includes it (as for Empty Signifier's DI). No training draw is planned: F20 waits for the user's yes.
 - A rebuild alone would add no sections. Part C's pool (`pool.json`, which records the inventory's sha256) and part
   A's sections would have to be rebuilt too.
-- So the rebuild belongs to F20's plan step, after part 9 is heard.
+- So the rebuild belongs to F20's plan step, after the per-song mix tone cards.
 
 **T3 and T0's lists' hash.** T3's `plan.json` holds the hash of T0's lists, so every T3 command refuses once a
-`lists` run changes them (`check_lists`).
-- This run was therefore held until the F5 follow-up's R1 had run, at the coordinator's request.
-- From here, any T3 command needs a re-plan first. A re-plan over T3's rendered rows refuses, because
-  `vreal_membership` now gives V-real-12 against the frozen V-real-11. F20's plan has to settle this: keep the frozen
-  V-real-11, or move `t3/` aside.
+`lists` run changes them (`check_lists`). This is why the runs waited for R1.
+- From here, any T3 command needs a re-plan first.
+- A re-plan over T3's rendered rows refuses, because `vreal_membership` now gives V-real-12 against the frozen
+  V-real-11.
+- F20's plan has to settle this: keep the frozen V-real-11, or move `t3/` aside.

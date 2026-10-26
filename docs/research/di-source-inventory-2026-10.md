@@ -578,7 +578,7 @@ picked as on 2026-10-25: DI play share ≥ 0.5 in both halves, up to 5 spread ac
 - *Heard 2026-10-26: 50 of the 89 DIs are admitted for training, all high gain (Peppermark 34, DGX 11,
   Arcadian Alone 3, Dark Illusion 2). Five sessions were heard too heavy and are out whole: Daimon B
   "Broken Again", Dark Illusion "Evil Bones", Inhumanity Vortex, and Serapis ×2
-  ([outcome](../trusted-data-t0-design.md#parts-7a-7b-and-8-heard-2026-10-26)).*
+  ([outcome](../trusted-data-t0-design.md#parts-7a-7b-8-and-9-heard-2026-10-26)).*
 
 ## Strobe and MekaPhil training intake (2026-10-26)
 
@@ -632,6 +632,11 @@ hashes).
   tone card can only screen out a too-heavy session; it never classes the session's DIs. How `lists` reads the page is in the
   [design](../trusted-data-t0-design.md#the-strobe-and-mekaphil-intakes-ear-part-9-2026-10-26).
   Until a DI is heard it stays pending.
+- *Heard 2026-10-26: all 13 DIs clean and admitted (Strobe "Maya" 4, "Alive (Yet Free)" 4, "Timeless
+  (Part 1)" 3, "Timeless (Part 2)" 2), and Timeless Part 2's amp track clean. The user left every style
+  question blank, because playing style can't be judged from a DI, so all 13 count as high gain for now.
+  A per-song mix tone card will class them
+  ([outcome](../trusted-data-t0-design.md#parts-7a-7b-8-and-9-heard-2026-10-26)).*
 
 ## Strobe "Gone" and "Nostalgic" training intake (2026-10-26)
 
