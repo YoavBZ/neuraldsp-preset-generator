@@ -149,9 +149,16 @@ def gain_class(part_a=None, ear_call=None, classified=None):
     return None, "unclassed"
 
 
+UNKNOWN = "unknown"     # part 9's DI-only DIs with neither a style nor a song tone (the user, 2026-10-27)
+UNKNOWN_CAP = 0.25      # F20's draws hold at most 25% "unknown" sections (a design constant; the user may overrule)
+
+
 def gain_group(cls, metal_intake):
     """High gain or not: an unclassed section counts as high gain if its band came through the metal intake, else
-    not (T2's unclassed bands, Ale Lak and Storm Of Particles; a stated limit)."""
+    not (T2's unclassed bands, Ale Lak and Storm Of Particles; a stated limit). Class "unknown" (part 9's DI-only DIs
+    with no style or song tone) is its own group: neither high gain nor clean/crunch, and out of the cap's sums."""
+    if cls == UNKNOWN:
+        return UNKNOWN
     if cls is None:
         return "high gain" if metal_intake else "not high gain"
     return "high gain" if cls == "high-gain" else "not high gain"
@@ -170,6 +177,34 @@ def pool_table(rows):
         t = tot.setdefault(r["status"], {})
         t[r["group"]] = t.get(r["group"], 0) + 1
     return out, tot
+
+
+def hg_share(groups):
+    """The high-gain cap's arithmetic over examples' gain groups: "unknown" counts neither as high gain nor as
+    clean/crunch, so it leaves both sides. -> (high gain, the known total, unknown)."""
+    groups = list(groups)
+    unknown = sum(g == UNKNOWN for g in groups)
+    return sum(g == "high gain" for g in groups), len(groups) - unknown, unknown
+
+
+def hg_shares(groups):
+    """The high-gain share both ways, and the unknown share against `UNKNOWN_CAP`. -> {"high_gain", "known",
+    "unknown", "n", "excluded": share with unknown left out, "worst": share with unknown counted as high gain,
+    "unknown_share", "unknown_ok"}."""
+    hg, known, unk = hg_share(groups)
+    n = known + unk
+    return {"high_gain": hg, "known": known, "unknown": unk, "n": n, "excluded": hg / known if known else 0.0,
+            "worst": (hg + unk) / n if n else 0.0, "unknown_share": unk / n if n else 0.0,
+            "unknown_ok": unk <= UNKNOWN_CAP * n}
+
+
+def share_line(groups):
+    """One readout line of `hg_shares`."""
+    h = hg_shares(groups)
+    return (f"high gain {h['high_gain']}/{h['known']} ({h['excluded']:.0%}) with unknown left out; "
+            f"{h['high_gain'] + h['unknown']}/{h['n']} ({h['worst']:.0%}) with unknown counted as high gain (the worst "
+            f"case); unknown {h['unknown']}/{h['n']} ({h['unknown_share']:.0%}; F20's cap {UNKNOWN_CAP:.0%}"
+            f"{'' if h['unknown_ok'] else ': OVER'})")
 
 
 # --- pure: the readout and the report ---------------------------------------------------------------------------
@@ -436,10 +471,13 @@ def _pool_rows(ctx, tr, t2, kept_sections, classify=True):
 def ear_call(rec):
     """An intake DI's ear call: its own tone card on its amp track; else, for a DI with no amp track of its own, the
     playing style heard on its DI card (part 9's second question, `style_class`: clean_crunch or high_gain; can't
-    tell leaves it None); else its session's tone (PR #297's metal records); else the metal intake's rule for a
-    session with no amp track (DGX, and Strobe's and MekaPhil's DI-only DIs heard "can't tell" or not asked: counts as
-    high gain). Only an explicit clean/crunch-style answer makes a DI-only DI not high gain."""
-    return (rec.get("tone_class") or rec.get("style_class") or rec.get("session_tone")
+    tell leaves it None); else the song's tone (part 9's tone card on the song's amp track with no DI, heard alone,
+    `song_tone`: clean, crunch or high_gain); else its session's tone (PR #297's metal records); else the metal
+    intake's rule for a session with no amp track (DGX, and Strobe's and MekaPhil's DI-only DIs with neither a style
+    nor a song tone: DGX counts as high gain; Strobe's and MekaPhil's, part 9, are "unknown", out of the cap's
+    arithmetic). Only an explicit clean/crunch-style answer or a clean or crunch song tone makes a DI-only DI not high
+    gain, and only a high-gain style or song tone makes part 9's high gain."""
+    return (rec.get("tone_class") or rec.get("style_class") or rec.get("song_tone") or rec.get("session_tone")
             or rec.get("no_tone_counts_as"))
 
 
@@ -470,7 +508,8 @@ def _intake_lines(tr, root):
         if d in (tr.get("intake_admitted") or []) and v.get("band") not in METAL_BANDS:
             call = ear_call(v)
             src = ("its amp track's tone card" if v.get("tone_class") else "the playing style on its DI card"
-                   if v.get("style_class") else "its session's tone card" if v.get("session_tone")
+                   if v.get("style_class") else (v.get("song_from") or "its song's tone") if v.get("song_tone")
+                   else "its session's tone card" if v.get("session_tone")
                    else "the DI-only rule" if v.get("no_tone_counts_as") else "none: unclassed")
             line = (f"  {v.get('band')}: {pathlib.Path(d).name} admitted, ear call {call} "
                     f"({gain_group(gain_class(None, call)[0], False)}; from {src}); "
@@ -496,7 +535,7 @@ def print_pool(rows, tr, root):
     table, tot = pool_table(rows)
     print("THE POOL, by band and gain group (zero renders; each section's class: part A's, else the intake's ear "
           "call, else part A's classifier on its own amp track; unclassed counts as not high gain outside the metal "
-          "intake):")
+          "intake; \"unknown\", part 9's DI-only DIs with no style or song tone, is its own group, out of the cap):")
     for band in sorted(table):
         for status, v in sorted(table[band].items()):
             cls = ", ".join(f"{k} {n}" for k, n in sorted(v["by_class"].items()))
@@ -579,11 +618,13 @@ def cmd_plan(args):
     print_pool(prow, tr, root)
     grp = {r["section"]: r["group"] for r in prow}
     src = {r["section"]: r["class_from"] for r in prow}
-    hg = sum(1 for x in exs if grp.get(x["section"]) == "high gain")
+    _, n_known, _ = hg_share(grp.get(x["section"]) for x in exs)
     hg_a = sum(1 for x in exs if grp.get(x["section"]) == "high gain" and src.get(x["section"]) == "part A")
-    print(f"F5 and FS5 by gain group (example-weighted): high gain {hg}/{len(exs)} ({hg / max(1, len(exs)):.0%}); "
-          f"by part A's class alone {hg_a}/{len(exs)} ({hg_a / max(1, len(exs)):.0%}). F5 keeps T2's mix (pairing); "
-          "the 50% cap applies to F20's new draws")
+    print(f"F5 and FS5 by gain group (example-weighted): {share_line(grp.get(x['section']) for x in exs)}; by part "
+          f"A's class alone {hg_a}/{n_known} ({hg_a / max(1, n_known):.0%}). F5 keeps T2's mix (pairing); F20's new "
+          f"draws hold at most 50% high gain (unknown left out) and at most {UNKNOWN_CAP:.0%} unknown")
+    for status in sorted({r["status"] for r in prow}):
+        print(f"  the pool [{status}] by section: {share_line(r['group'] for r in prow if r['status'] == status)}")
     print(f"cost (T2's rates): {est['renders']} renders ({len(exs)} full-twin targets, {len(pc)} positive control, "
           f"about {est['renders'] - len(exs) - len(pc)} priming), about {est['render_h']:.1f} h on 3 processes; "
           f"{est['separations']} separations, about {est['sep_h'][0]:.1f}-{est['sep_h'][1]:.1f} h; 4 runs about "

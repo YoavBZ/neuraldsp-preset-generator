@@ -1766,15 +1766,21 @@ METAL_SCOPE_VERDICTS = ("clean", "crunch", "high_gain", "too_heavy")
 METAL_DIR = "intake-2026-10-26"        # under the trusted-data root: T0's checks on the metal sessions (PR #297)
 # part 9: Strobe 'Maya' and MekaPhil x4, part B2's parked songs taken in for training (ledger
 # cambridge-new-training-bands-2026-10-26b). The same cards as parts 7a/7b (one DI card per D2/D3-passing DI, one tone
-# card per session with an amp track), read by `metal_verdicts` into the same buckets and rules (a DI-only DI with no
-# class counts as high gain, as DGX's), plus a playing-style question on each DI card (below).
+# card per session with an amp track), read by `metal_verdicts` into the same buckets and rules, plus a playing-style
+# question on each DI card (below). A DI-only DI with no class is "unknown" (`B2_NO_TONE`; the user, 2026-10-27), not
+# high gain as DGX's: T3 leaves it out of the high-gain cap's arithmetic.
 B2_PAGES = {"trusted-data-ear-strobe-meka": "part9-strobe-meka"}
 B2_DIR = "intake-2026-10-26b"          # under the trusted-data root: T0's checks on the B2-pool sessions
+B2_NO_TONE = "unknown"                 # part 9's DI-only rule (`no_tone_counts_as`); DGX and metal keep high gain
 SESSION_PAGES = {**METAL_PAGES, **B2_PAGES}                    # pages read by `metal_verdicts`
 # Part 9's second question on each DI card (coordinator, 2026-10-26): the playing style the DI suggests. Exported as the
-# answer's "style"; a DI-only DI takes its gain group from it (`style_class`). Only "clean_crunch" makes it not high
-# gain: "cant_tell", or no answer, leaves the metal rule (`no_tone_counts_as`, high gain).
+# answer's "style"; a DI-only DI takes its gain group from it (`style_class`). "cant_tell", or no answer, leaves the
+# song's class (below), else part 9's DI-only rule (`no_tone_counts_as`, "unknown").
 STYLE_VERDICTS = ("clean_crunch", "high_gain", "cant_tell")
+# A raw DI cannot show the playing style (the user, 2026-10-27: "if we have an amp track or a mix, let me hear it"). On
+# part 9, a tone card on an amp track with no DI (Timeless Part 2's ElecGtr2, heard alone) is the song's tone: it sets
+# `song_tone` on the session's DI-only DIs (`metal_verdicts(screen_sets_song=True)`), with this source.
+SONG_FROM = "song's amp track, heard alone (part 9)"
 CARD_PAGES = (EAR_PAGE, RECHECK_PAGE, INTAKE_PAGE, RECHECK_DI_PAGE, *SESSION_PAGES)   # per-card times: latest touch stands
 SCOPE_VERDICTS = ("clean", "crunch", "high_gain", "not_fit", "unsure")   # part 6's tone class of an amp track alone
 RECHECK_MIN_WINDOWS = 3                # the re-check's pass: at least 3 windows, none with a measured fail
@@ -1952,7 +1958,8 @@ def intake_verdicts(summary, di_windows, scope):
     return out
 
 
-def metal_verdicts(summary, di_windows, session_tone, no_tone_counts_as="high_gain", styles=None):
+def metal_verdicts(summary, di_windows, session_tone, no_tone_counts_as="high_gain", styles=None,
+                   screen_sets_song=False):
     """The 2026-10-26 metal and hard-rock training sessions' DIs (PR #297). summary: their T0 checks (as
     `intake_verdicts`); di_windows: {DI path: [(start_s, end_s, verdict)]} and session_tone: {session: [(amp path,
     class, the tone card's DI path)]}, both from parts 7a/7b. Training-only DIs, so one heard window suffices (the
@@ -1970,7 +1977,10 @@ def metal_verdicts(summary, di_windows, session_tone, no_tone_counts_as="high_ga
     screen, never class: 'too_heavy' excludes the session's DIs, and its class is kept as `screen_tones`, not as
     `session_tone`. styles: {DI path: [style]} from part 9's second question; a DI with no own amp track (no pairs)
     takes `style_class` from it ('clean_crunch' or 'high_gain'; 'cant_tell' or conflicting answers leave it None),
-    which T3's `ear_call` reads before the session's tone and `no_tone_counts_as`. -> {inventory id: record}."""
+    which T3's `ear_call` reads before the session's tone and `no_tone_counts_as`. screen_sets_song (part 9; the user,
+    2026-10-27): a DI-less card's class is the song's tone, so a DI with no own amp track takes it as `song_tone`
+    ('clean', 'crunch' or 'high_gain'; conflicting answers leave it None; too heavy still excludes), source `SONG_FROM`,
+    read after `style_class`. -> {inventory id: record}."""
     def tail(k):
         return "/".join(pathlib.PurePosixPath(k).parts[-2:])
 
@@ -2004,12 +2014,15 @@ def metal_verdicts(summary, di_windows, session_tone, no_tone_counts_as="high_ga
             own = sorted({c for _, c, d in cards if d and tail(d) == f"{session}/{di}"})
             sty = style_by.get(f"{session}/{di}", [])
             sty_cls = next(iter(set(sty))) if len(set(sty)) == 1 and not r.get("pairs") else None
+            song = sorted({c for _, c, d in cards if not d}) if screen_sets_song and not r.get("pairs") else []
+            song_cls = song[0] if len(song) == 1 and song[0] != "too_heavy" else None
             out[INTAKE_ID.format(session=session, di=di)] = {
                 "verdict": v, "why": why, "band": r.get("band"), "status": r.get("status"), "measured": [measured, mwhy],
                 "heard": [list(w) for w in wins], "session_tone": session_cls,
                 "tone_class": (own[0] if len(own) == 1 else own) if f"{session}/{di}" in card_dis and own else None,
                 "no_tone_counts_as": no_tone_counts_as if no_amp else None,
                 "style": list(sty), "style_class": None if sty_cls == "cant_tell" else sty_cls,
+                "song_tone": song_cls, "song_from": SONG_FROM if song_cls else None,
                 "tone_tracks_heard": sorted({pathlib.PurePosixPath(a).name for a, _, _ in cards}),
                 "screen_tones": sorted({c for _, c, d in cards if not d}) or None,
                 "pair_unheard": ("the DI-and-amp pairing itself was never heard: hear it before anything uses its amp "
@@ -2745,8 +2758,8 @@ def cmd_lists(args):
     msum = _load(root / METAL_DIR / "summary.json")              # the 2026-10-26 metal sessions (PR #297): parts 7a/7b
     intake.update(metal_verdicts(msum["sessions"], ear["metal_di"], ear["metal_scope"]) if msum else {})
     bsum = _load(root / B2_DIR / "summary.json")                 # Strobe and MekaPhil (B2's pool): part 9
-    intake.update(metal_verdicts(bsum["sessions"], ear["metal_di"], ear["metal_scope"], no_tone_counts_as="high_gain",
-                                 styles=ear["metal_style"]) if bsum else {})
+    intake.update(metal_verdicts(bsum["sessions"], ear["metal_di"], ear["metal_scope"], no_tone_counts_as=B2_NO_TONE,
+                                 styles=ear["metal_style"], screen_sets_song=True) if bsum else {})
 
     seen = set()
     queue = [q for q in queue if not (q["id"] in seen or seen.add(q["id"]))]

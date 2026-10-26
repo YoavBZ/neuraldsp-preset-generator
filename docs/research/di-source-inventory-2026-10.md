@@ -628,15 +628,18 @@ hashes).
 
   Each DI card also asks what playing style the DI suggests (clean/crunch-style, high-gain-style, or
   can't tell). That answer gives a DI-only DI its gain group in T3. Only a clean/crunch-style answer
-  makes it not high gain: "can't tell" or no answer counts as high gain, as for DGX. Timeless Part 2's
-  tone card can only screen out a too-heavy session; it never classes the session's DIs. How `lists` reads the page is in the
+  makes it not high gain: "can't tell" or no answer left it high gain, as for DGX, until 2026-10-27 (below). Timeless
+  Part 2's tone card screens out a too-heavy session. How `lists` reads the page is in the
   [design](../trusted-data-t0-design.md#the-strobe-and-mekaphil-intakes-ear-part-9-2026-10-26).
   Until a DI is heard it stays pending.
 - *Heard 2026-10-26: all 13 DIs clean and admitted (Strobe "Maya" 4, "Alive (Yet Free)" 4, "Timeless
   (Part 1)" 3, "Timeless (Part 2)" 2), and Timeless Part 2's amp track clean. The user left every style
-  question blank, because playing style can't be judged from a DI, so all 13 count as high gain for now.
-  A per-song mix tone card will class them
+  question blank, because playing style can't be judged from a DI
   ([outcome](../trusted-data-t0-design.md#parts-7a-7b-8-and-9-heard-2026-10-26)).*
+- **The songs' tones (2026-10-27).** A raw DI cannot show the playing style. A DI-only DI with no style or song tone
+  is "unknown" in T3, out of the high-gain cap (the user, 2026-10-27). Only "Timeless (Part 2)" has an amp track:
+  part 9 heard its `ElecGtr2` alone as clean, which sets its 2 DIs clean at the next `lists` run. The other 4 sessions are DI only. See
+  the [design](../trusted-data-t0-design.md#part-9s-di-only-dis-unknown-or-the-songs-tone-2026-10-27).
 
 ## Strobe "Gone" and "Nostalgic" training intake (2026-10-26)
 
