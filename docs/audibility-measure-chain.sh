@@ -7,11 +7,13 @@
 # now runs in its own new process (one discarded priming render with the example's own setting, then the one kept).
 # Cost: archive (the first run moved aside, zero renders), plan (zero renders), then about 2,700 renders on 3 shards
 # (r_on' for each of the ~483 examples, ~824 effect-off renders, one exact repeat per (section, amp) group, each job
-# 2 renders: priming + kept), about 40-70 min when the slots are free; measure (zero renders, 4 CPU workers), read (the
-# tone probe refitted, zero renders) and the page. isolate=True, 0.25 s trimmed, at most 3 render processes machine-wide
-# (every new process waits for a slot and for any separation, e.g. step (b)'s), the 31 GB disk guard. Zero
-# separations, zero training. FS5 only; V-real untouched. Outputs only under trusted-data/audibility/ and
-# listening/audibility-mix/; t0/, t2/, t3/ and tone-probe/ are read.
+# 2 renders: priming + kept), about 40-70 min with the process starts when the slots are free; measure (zero renders,
+# 2 CPU workers beside step (b)), read (the tone probe refitted, zero renders) and the page. isolate=True, 0.25 s
+# trimmed, at most 3 render processes machine-wide (checked once per shard at its start; before each new process a
+# shard waits, printing why, for any separation, e.g. step (b)'s, and for any other job's render server, never for its
+# sibling shards), the 31 GB disk guard and the memory guard. Zero separations, zero training. FS5 only; V-real
+# untouched. Outputs only under trusted-data/audibility/ and listening/audibility-mix/; t0/, t2/, t3/ and tone-probe/
+# are read.
 setopt no_bg_nice
 caffeinate -i -w $$ &!                   # disowned (&!): no job for a wait to hang on (PR #300); waits below name pids
 cd /Users/yoavbz/projects/neuraldsp-preset-generator

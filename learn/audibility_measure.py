@@ -69,7 +69,7 @@ PAGE_SEED = 20261114                                  # the page's order and eac
 TAU = 0.005                                           # the every-control plan's log bar: the starting threshold
 NEAR = 2                                              # page: the pairs nearest tau on each side, per effect
 CATCH = 3                                             # page: identical pairs (the mix against itself)
-WORKERS = 4                                           # measure: one section per worker (as the tone probe's 4)
+WORKERS = 2                                           # measure: one section per worker (2: memory beside step (b))
 HALVES = ("A", "B")
 WHICH = ("all on", "measured", "bottom third", "middle third", "top third", "below tau", "at or above tau")
 PAGE_NAME = "audibility-mix"
@@ -312,12 +312,17 @@ def flac_of(root, i, what):
 
 def render_rows(od, own=None):
     """Every shard's render rows (`pretrain_set.read_rows`: a torn last line, from a shard killed mid-write, is
-    skipped). Only `own`, the calling shard's file, is repaired; another shard may be writing its own."""
+    skipped). Only `own`, the calling shard's file, is repaired; another shard may be writing its own. A row of another
+    recipe (the first run's, left in place by mistake) refuses."""
     from learn import pretrain_set as PS
 
     d = od / "rows"
     paths = sorted(d.glob("render-*.jsonl")) if d.exists() else []
-    return [r for p in paths for r in PS.read_rows(p, repair=own is not None and p == own)]
+    rows = [r for p in paths for r in PS.read_rows(p, repair=own is not None and p == own)]
+    other = [(r.get("i"), r.get("what")) for r in rows if r.get("recipe") != RECIPE]
+    if other:
+        raise SystemExit(f"{len(other)} render rows are not the {RECIPE} recipe's (e.g. {other[:3]}): run `archive`")
+    return rows
 
 
 def ledger_declared(key=LEDGER_KEY, mark=LEDGER_MARK):
@@ -359,15 +364,16 @@ def load_fs5(root):
 
 # --- archive (zero renders) ------------------------------------------------------------------------------------------
 
-FIRST_RUN = ("plan.json", "measure.json", "read.json", "page-key.json", "rows", "renders")
+FIRST_RUN = ("measure.json", "read.json", "page-key.json", "rows", "renders", "plan.json")   # the plan last
 
 
 def archive_moves(od, pd):
-    """(source, destination) pairs that move the first run aside: its files under audibility/, and the listening page
-    made from them (not to be sent) into the archive's page/. Only what exists."""
+    """(source, destination) pairs that move the first run aside: the listening page made from it (not to be sent)
+    into the archive's page/, then its files under audibility/, plan.json last, so a move cut short leaves the first
+    run's plan in place and `archive` runs again. Only what exists."""
     a = od / ARCHIVE
-    out = [(od / n, a / n) for n in FIRST_RUN if (od / n).exists()]
-    out += [(pd / n, a / "page" / n) for n in ("index.html", "cache") if (pd / n).exists()]
+    out = [(pd / n, a / "page" / n) for n in ("index.html", "cache") if (pd / n).exists()]
+    out += [(od / n, a / n) for n in FIRST_RUN if (od / n).exists()]
     return out
 
 
@@ -442,16 +448,79 @@ def cmd_plan(args):
 
 # --- render (MAIN) ---------------------------------------------------------------------------------------------------
 
-def new_renderer():
-    """A new plugin process, once the render slots allow it (`local_objective._wait_cap`: fewer than 3 render
-    processes and no separation; `direct_stems.wait_render_slot`: the render servers), its recipe checked (isolate=True,
-    part C's plugin version and average DI)."""
-    from learn import direct_stems as DS
-    from learn import knob_ceiling as K
+SHARD_CMD = "-m learn.audibility_measure render"     # this step's own render shards (siblings, not outside jobs)
+SERVER = "au_render_server"
+
+
+def ps_tree():
+    """[(pid, ppid, command)] for every process."""
+    import subprocess
+
+    s = subprocess.run(["ps", "-axo", "pid=,ppid=,command="], capture_output=True, text=True).stdout
+    out = []
+    for line in s.split("\n"):
+        f = line.split(None, 2)
+        if len(f) == 3 and f[0].isdigit() and f[1].isdigit():
+            out.append((int(f[0]), int(f[1]), f[2]))
+    return out
+
+
+def outside_servers(rows):
+    """Render servers not started by one of this step's render shards (a server's ancestors are walked): the renders
+    of other jobs. rows: `ps_tree()`."""
+    parent = {p: q for p, q, _ in rows}
+    shards = {p for p, _, c in rows if SHARD_CMD in c}
+    out = []
+    for p, _, c in rows:
+        if SERVER not in c:
+            continue
+        q, seen = parent.get(p), set()
+        while q and q not in shards and q not in seen and q != 1:
+            seen.add(q)
+            q = parent.get(q)
+        if q not in shards:
+            out.append(p)
+    return out
+
+
+def job_wait_reason(rows, own=()):
+    """Why a new process must wait before its renders, or None: a separation running, or a render server of another
+    job. Sibling shards never count here (the machine-wide cap of 3 render processes is checked once per shard at its
+    start), so the shards cannot wait on each other."""
     from learn import local_objective as LO
 
-    LO._wait_cap()
-    DS.wait_render_slot()
+    sep = LO.separating([(p, c) for p, _, c in rows], set(own))
+    if sep:
+        return f"a separation is running (pid {sep[0]})"
+    srv = outside_servers(rows)
+    if srv:
+        return f"another job's render server is running (pid {srv[0]})"
+    return None
+
+
+def wait_for_job(poll_s=30):
+    """Wait, printing when a wait starts and ends, until `job_wait_reason` clears."""
+    own = (os.getpid(), os.getppid())
+    waited = None
+    while True:
+        why = job_wait_reason(ps_tree(), own)
+        if why is None:
+            if waited:
+                print(f"wait over ({time.time() - waited:.0f} s)", flush=True)
+            return
+        if not waited:
+            waited = time.time()
+            print(f"waiting: {why}", flush=True)
+        time.sleep(poll_s)
+
+
+def new_renderer():
+    """A new plugin process once `wait_for_job` clears (no separation, no other job's render server), its recipe
+    checked (isolate=True, part C's plugin version and average DI)."""
+    from learn import direct_stems as DS
+    from learn import knob_ceiling as K
+
+    wait_for_job()
     rr = K.Renderer()
     try:
         DS.check_recipe(rr)
@@ -462,15 +531,22 @@ def new_renderer():
 
 
 def _render_setup(plan3):
-    """T3's renderer checks (`trusted_data_t3._render_setup`) once per shard: the menus rebuilt and checked against the
-    live menu and the factory gate cap. That renderer only reads the menu (no render) and is closed; every job then
-    opens its own (`new_renderer`)."""
+    """Once per shard: the machine-wide cap (`local_objective._wait_cap`: fewer than 3 render processes and no
+    separation; `direct_stems.wait_render_slot`: the render servers), as every render step checks it at its start; then
+    T3's renderer checks (`trusted_data_t3._render_setup`): the menus rebuilt and checked against the live menu and the
+    factory gate cap. That renderer only reads the menu (no render) and is closed; every job then opens its own
+    (`new_renderer`)."""
+    from learn import direct_stems as DS
+    from learn import local_objective as LO
     from learn import pretrain_set as PS
 
     if PS.free_gb() < T.DISK_GUARD_GB:
         raise SystemExit(f"free disk below {T.DISK_GUARD_GB:.0f} GB")
     menus = T3.Menus()
     menus.gate_u = plan3["gate_cap"]["unit"]
+    print("checking the render cap (3 render processes, no separation)", flush=True)
+    LO._wait_cap()
+    DS.wait_render_slot()
     rr = new_renderer()
     try:
         T3.check_menu(rr.menu(), menus.dried)
@@ -505,6 +581,9 @@ def cmd_render(args):
     k, n = args.shard
     rp = od / "rows" / f"render-{k}of{n}.jsonl"
     rows = render_rows(od, own=rp)
+    failed = [r["i"] for r in rows if r["what"] == REPEAT and not r.get("repeat_exact")]
+    if failed:
+        raise SystemExit(f"a stored repeat is not bit-identical to its r_on' (ids {failed[:5]}): the recipe failed")
     done = {(r["i"], r["what"]) for r in rows}
     on_sha = {r["i"]: r["audio_sha256"] for r in rows if r["what"] == ON}
     shard = DS.shard_sections(ap["jobs"], n)
@@ -517,6 +596,7 @@ def cmd_render(args):
     plan3, _ = M.load_frozen(root)
     rend = T.rows_of(root, T3.STAGE, "render")
     ctx = DS.Ctx(quiet=True)
+    ctx.rows = None                                   # part C's rows are not used here (memory beside step (b))
     menus = _render_setup(plan3)
     swap0 = DS.swap_mb()
     trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
@@ -583,7 +663,17 @@ def _init_worker():
 
     ctx = DS.Ctx(quiet=True)
     ctx.rows = None
-    _W["ctx"], _W["stems"] = ctx, T.Stems(ctx)
+    _W["ctx"], _W["stems"], _W["swap0"] = ctx, T.Stems(ctx), DS.swap_mb()
+
+
+def _guard(part, swap0):
+    """The render steps' disk, memory and swap guard (`direct_stems._guards`), raised as an error that stops the
+    measure (in a worker too)."""
+    from learn import direct_stems as DS
+
+    g = DS._guards(part, T.DISK_GUARD_GB, swap0)
+    if g:
+        raise RuntimeError(g[1])
 
 
 def _measure_section(job):
@@ -605,6 +695,7 @@ def _measure_section(job):
     di = B.measure(PS.section_audio(sec["path"], sec["start_s"])).astype(np.float64)[trim[0]:trim[1]]
     out = []
     for e in exs:
+        _guard("audibility-measure", _W.get("swap0"))
         x, i = e["t2"], e["i"]
         y = G.read_flac(T.flac_path(root, T3.STAGE, i, "target"), e["target"]["scale"], e["target"]["sha256"])
         oth = G.read_flac(T.flac_path(root, "t2", i, "others"), e["others"]["scale"], e["others"]["sha256"])
@@ -680,6 +771,9 @@ def cmd_measure(args):
                           "gains": built[i]["gains_db"], "settings": rend[i]["settings"], "renders": rs}
                          for i, rs in sorted(exs.items())])
             for sid, exs in sorted(by.items())]
+    from learn import direct_stems as DS
+
+    _guard("audibility-measure", DS.swap_mb())
     t0 = time.time()
     with Pool(min(WORKERS, len(jobs)), initializer=_init_worker) as pool:
         res = [r for part in pool.imap_unordered(_measure_section, jobs) for r in part]

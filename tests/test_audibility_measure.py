@@ -169,10 +169,49 @@ def test_archive_moves_the_first_run_and_its_page(tmp_path):
 def test_render_count_sums_each_rows_process(tmp_path):
     d = tmp_path / "rows"
     d.mkdir()
-    (d / "render-0of3.jsonl").write_text('{"i": 1, "what": "on", "renders": 2, "primes": 1}\n'
-                                         '{"i": 1, "what": "delay", "renders": 2, "primes": 1}\n')
-    (d / "render-1of3.jsonl").write_text('{"i": 2, "what": "on", "renders": 2, "primes": 1}\n')
+    row = '"recipe": "fresh", "renders": 2, "primes": 1}\n'
+    (d / "render-0of3.jsonl").write_text('{"i": 1, "what": "on", ' + row + '{"i": 1, "what": "delay", ' + row)
+    (d / "render-1of3.jsonl").write_text('{"i": 2, "what": "on", ' + row)
     assert A.render_count(tmp_path) == {"renders": 6, "priming": 3}
+
+
+# --- the waits: the shards never wait on each other ------------------------------------------------------------------
+
+def _ps(*extra):
+    rows = [(1, 0, "launchd"), (50, 1, "zsh docs/audibility-measure-chain.sh"),
+            (100, 50, "/x/.venv/bin/python -u -m learn.audibility_measure render --shard 0/3"),
+            (101, 50, "/x/.venv/bin/python -u -m learn.audibility_measure render --shard 1/3"),
+            (102, 50, "/x/.venv/bin/python -u -m learn.audibility_measure render --shard 2/3"),
+            (200, 100, "/tmp/au-bounded-1/au_render_server"),
+            (201, 101, "/tmp/au-bounded-2/au_render_server"),
+            (210, 202, "/tmp/au-bounded-3/au_render_server"), (202, 102, "/bin/sh -c wrapper")]
+    return rows + list(extra)
+
+
+def test_sibling_shards_servers_are_not_waited_for():
+    rows = _ps()
+    assert A.outside_servers(rows) == []                                              # a wrapper in between too
+    assert A.job_wait_reason(rows, own=(100, 50)) is None
+
+
+def test_other_jobs_and_separations_are_waited_for():
+    other = (300, 299, "/tmp/au-bounded-9/au_render_server")
+    rows = _ps((299, 1, "/x/.venv/bin/python -u -m learn.xlance_finetune vreal-render --shard 0/3"), other)
+    assert A.outside_servers(rows) == [300]
+    assert "render server" in A.job_wait_reason(rows, own=(100, 50))
+    sep = _ps((400, 1, "/x/.venv/bin/python -u -m learn.xlance_finetune separate --worker 0/2"))
+    assert "separation" in A.job_wait_reason(sep, own=(100, 50))                       # step (b)'s, registered
+
+
+def test_archive_moves_the_plan_last(tmp_path):
+    od, pd = tmp_path / "audibility", tmp_path / "listening"
+    (od / "rows").mkdir(parents=True)
+    for n in ("plan.json", "measure.json", "read.json"):
+        (od / n).write_text("{}")
+    pd.mkdir()
+    (pd / "index.html").write_text("<html>")
+    moves = A.archive_moves(od, pd)
+    assert moves[-1][0] == od / "plan.json" and moves[0][0] == pd / "index.html"
 
 
 def test_off_settings_switches_only_the_effect():
@@ -313,13 +352,22 @@ def test_render_rows_skip_a_torn_line_and_repair_only_their_own(tmp_path):
     d = tmp_path / "rows"
     d.mkdir()
     mine, other = d / "render-0of3.jsonl", d / "render-1of3.jsonl"
-    mine.write_text('{"i": 1, "what": "delay"}\n{"i": 2, "wh')
-    other.write_text('{"i": 3, "what": "reverb"}\n{"i": 4, "wh')
+    mine.write_text('{"i": 1, "what": "delay", "recipe": "fresh"}\n{"i": 2, "wh')
+    other.write_text('{"i": 3, "what": "reverb", "recipe": "fresh"}\n{"i": 4, "wh')
     rows = A.render_rows(tmp_path, own=mine)
     assert [(r["i"], r["what"]) for r in rows] == [(1, "delay"), (3, "reverb")]
-    assert mine.read_text() == '{"i": 1, "what": "delay"}\n'                            # repaired
+    assert mine.read_text() == '{"i": 1, "what": "delay", "recipe": "fresh"}\n'         # repaired
     assert other.read_text().endswith('{"i": 4, "wh')                                   # another shard's: untouched
     assert A.render_rows(tmp_path / "none") == []
+
+
+def test_render_rows_refuse_the_first_runs_rows(tmp_path):
+    d = tmp_path / "rows"
+    d.mkdir()
+    (d / "render-0of3.jsonl").write_text('{"i": 1, "what": "delay", "recipe": "fresh"}\n'
+                                         '{"i": 2, "what": "repeat", "renders_so_far": 3}\n')
+    with pytest.raises(SystemExit, match="archive"):
+        A.render_rows(tmp_path)
 
 
 def test_the_key_is_outside_the_listening_folder():

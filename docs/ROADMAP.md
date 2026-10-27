@@ -203,7 +203,9 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      ([fix](trusted-data-t0-design.md#the-first-run-and-the-fresh-process-fix-2026-10-27-after-the-first-run-before-any-re-render),
      ledger `amendment_5_fix`): every render in its own new process (a priming render with the example's own
      setting, then the one kept), r_on' and m' fresh, an exact repeat per group, all pairs redone: 2,686 renders
-     (about 30–50 min); not re-run. **A caution for earlier results:** V-real renders several presets in one process
+     (about 40–70 min with the process starts); not re-run. The repeat checks r_on' only; that r_off's other running
+     effects sit at the same phase assumes switching one effect off resets none of the others (it holds by render
+     count; untested). **A caution for earlier results:** V-real renders several presets in one process
      per group, so a comparison with a time effect on in both answers carries phase noise from render order (noise,
      not bias); flagged, not fixed.*
    - (d) **F20:** the user said yes (2026-10-27); its plan is declared after (b) reads. Its value now rests on (a)/(b) and on the new data. Its declared

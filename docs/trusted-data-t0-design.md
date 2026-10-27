@@ -2575,8 +2575,13 @@ not usable as it stands, and its page is not sent:
 
 **The fix: every render in its own new plugin process.**
 - **One job, one process:** one discarded priming render with the example's own setting (r_on's), then the one render
-  kept. The priming rule, isolate=True and the 0.25 s trim are kept; each new process waits for a render slot and for
-  any separation.
+  kept. The priming rule, isolate=True and the 0.25 s trim are kept.
+- **The waits** *(after the PR #317 review: waiting for a slot before every job could deadlock the shards, which
+  count each other)*. The machine-wide cap (at most 3 render processes, no separation) is checked once per shard at
+  its start, as every render step does. Before each new process a shard waits, printing why, only for a separation
+  (e.g. step (b)'s) and for a render server another job started (a server's ancestors are walked); its sibling
+  shards' servers never count. Measure runs 2 workers beside step (b)'s fine-tune, under the same disk and memory
+  guard as the renders.
 - **r_on'** is that render of the example's own setting; **r_off** the same setting with the effect off. Both sit at
   the same process position, after the same priming render.
 - **m'** is r_on' in the example's stored backing at its stored gains and mastering (`mix_with`). The stored mix is
@@ -2584,9 +2589,16 @@ not usable as it stands, and its page is not sent:
   (to 1e-9) before m' is made; nothing else is re-mixed.
 - **A_e = |mean over the halves of log(J(r_off, m') / J(r_on', m'))|**; solo is J(r_off, r_on').
 - **The repeat** is r_on' rendered again in a new process, once per (section, amp) group (36). It must be
-  bit-identical (the float samples' sha256), or render and measure refuse. Its floor is then 0 by construction.
+  bit-identical (the float samples' sha256), or render and measure refuse (and render refuses at its start when a
+  stored repeat failed). Its floor is then 0 by construction.
+- **A caveat: the repeat checks r_on' only.** That r_off's other running effects sit at the same phase as in r_on'
+  assumes switching one effect off resets none of the others' LFOs or tails. It holds by render count (both are the
+  process's second render), but it is untested.
 - **All pairs are redone,** one recipe for all: the same draw (seed 20261113), **483 r_on' + 824 r_off + 36 repeats
-  = 1,343 jobs, 2,686 renders** (1,343 of them priming), about 30–50 minutes on 3 shards when the slots are free.
+  = 1,343 jobs, 2,686 renders** (1,343 of them priming), about 40–70 minutes on 3 shards with the process starts,
+  when the slots are free.
+- **Rows of another recipe refuse:** render, measure, read and page use only this recipe's rows; `archive` moves the
+  first run's plan last, so a move cut short can run again.
 - **A consistency check:** on the clean pairs (no other modulated effect on in r_off; the audit counted 149: delay 38,
   reverb 44, tremolo 53, PR12 spring 11, SW50R spring 3), the first run's A_e against the new one (Spearman, the
   median absolute difference, the count that crosses τ). Descriptive.
