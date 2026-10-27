@@ -2535,7 +2535,7 @@ the two mixes differ?" (they differ, maybe, same, not sure).
   pairs (the mix against itself) from different effects. About 28 items, about 12 minutes.
 - Order and each pair's play order are seeded (20261114). The key (effect, example, kind, A_e, order) is in
   `trusted-data/audibility/page-key.json`, outside the listening folder and never on the page.
-- Clips are AAC at 128 kbps *(256 since the outcome's audit: 128 hid the smallest differences)* (the ear pages use 96), about 10 MB for the page (a dry run measured 0.25 MB a pair at 96 kbps), so it stays phone-sized. A caveat: lossy
+- Clips are AAC at 128 kbps *(256 since the outcome's audit; the page is then 23.2 MB, still phone-sized)* (the ear pages use 96), about 10 MB for the page at 128 (a dry run measured 0.25 MB a pair at 96 kbps), so it stays phone-sized. A caveat: lossy
   coding may still blur the smallest differences near τ, so a "same" there is weaker evidence than a "differ".
 - The answers go into the relabel's declaration as the evidence for its τ. **No reader for the page's export exists
   yet:** one (decoding each answer through the key, by kind and side of τ, the catches first) must be written and
@@ -2642,14 +2642,17 @@ independent audit recomputed all 824 A_e values from the stored halves (0 mismat
   decorrelated from the stored target; all 11 doubler-off ones matched (−40 to −300 dB). The fresh recipe covers it
   (10 of the 36 bit-exact repeat groups had it on). Of the 149 "clean" pairs, 42 had the doubler on, and they carry 11
   of the 13 τ crossings between the runs (Spearman 0.75 against 0.98 for the other 107). It joins the caution above.
-- **The untested assumption mostly holds:** where tremolo stays on in r_off (245 pairs), its envelope in r_on' and
-  r_off correlates at median 0.985 (10th percentile 0.53), against 0.78 for the stored target.
+- **The untested assumption, measured:** where tremolo stays on in r_off (245 pairs), its envelope in r_on' and
+  r_off correlates at median 0.985 (10th percentile 0.53), against 0.78 for the stored target; in 19% of those pairs
+  r_on' matches the stored target's envelope better than r_off's.
 - **First run against the fresh run (the 149 pairs):** Spearman 0.90, median |Δ| 0.0010, 13 cross τ (12 downward);
-  the share below τ is higher in the fresh run for every effect, as the first run's phase noise would predict.
-- **A_e and the tone probe describe different audio:** r_on' differs from the stored target in 72% of examples
-  (median residual −10 dB where a modulated effect is on), and the probe read the stored mixes.
-- **The ear page** (28 pairs) was rebuilt at 256 kbps after the audit found 128 kbps coding error above the on/off
-  difference in about 7 of the 20 near-τ pairs; zero renders. It was sent to the user. Pairs at the same A_e differ
+  over all 824 pairs the share below τ is higher in the fresh run for every effect (delay 0.30 → 0.40, reverb
+  0.35 → 0.42, tremolo 0.20 → 0.23, PR12 0.27 → 0.33, SW50R 0.44 → 0.59), as the first run's phase noise would predict.
+- **A_e and the tone probe describe different audio:** r_on' differs from the stored target in 72% of the 469
+  examples with a modulated effect on (residual above −20 dB; median −10 dB), and the probe read the stored mixes.
+- **The ear page** (28 pairs) was rebuilt at 256 kbps (zero renders; 23.2 MB) after the audit found 128 kbps coding error above
+  the on/off difference in 7–8 of the 20 near-τ pairs; at 256 kbps it still is in 4 of 20, so a "same" near τ
+  stays weak evidence. The rebuild ran by hand from the PR's code, so no log records it. It was sent to the user. Pairs at the same A_e differ
   widely in waveform (−49 to −9 dB), so the answers are read per effect. By source, identical clips reveal which are
   the catches (by ear it is blind).
 - **What it changes:** nothing is relabelled. The relabel waits for the user's three rulings and the ear answers, and
