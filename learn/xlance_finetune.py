@@ -554,6 +554,7 @@ def _prep_one(i):
     """Rebuild one F5 example, check it against the stored mix features, cache (mix, wet target) at 44.1 kHz fp16."""
     import numpy as np
 
+    from learn import direct_stems as DS
     from learn import separator_screen as SCR
 
     root, S = _W["root"], _W["S"]
@@ -561,7 +562,7 @@ def _prep_one(i):
     mix, tgt, gains, lb = rebuild(y, oth, st, x)
     share, dl = features_match(mix, T.ex_path(root, T3.STAGE, i, f"mix-{T3.STAGE}"))
     p = cache_path(root, i)
-    if not p.exists():
+    if share >= DS.MATCH_SHARE and not p.exists():          # a mix that does not reproduce is never cached
         a = np.stack([SCR.to44(mix), SCR.to44(tgt)]).astype(np.float16)
         p.parent.mkdir(parents=True, exist_ok=True)
         tmp = p.with_name(p.stem + f".{os.getpid()}.tmp.npy")
