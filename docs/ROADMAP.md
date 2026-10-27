@@ -163,7 +163,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      yes (training longer than minutes), given 2026-10-27. Rough cost, to be sized in its declaration: up to about 11 h of MPS for
      the fine-tune (a bound borrowed from the separation plan's Mega-53 head fine-tune, so rough for X-LANCE), about
      4–6 h to re-separate F5's about 4.2k examples and FS5 (T2's separations ran about 6k in 5–8 h), and about 40 min
-     to retrain D. Read like (a): FS5 first, V-real only if it helps. *Approved by the user 2026-10-27 ("Yes for
+     to retrain D. Read like (a): FS5 first, then V-real (no stop rule). *Approved by the user 2026-10-27 ("Yes for
      all"); declared the same day
      ([D_F5ft](trusted-data-t0-design.md#d_f5ft-the-every-control-model-fed-the-fine-tuned-stem-roadmap-step-b-declared-2026-10-27-nothing-run),
      ledger amendment 4); not run; it runs after (a). Following the [effect-detection

@@ -2287,7 +2287,7 @@ by band, 2 + 2:
   are closest. Fold 0: Ale Lak and Death Of A Romantic (1,416 F5 examples); fold 1: Hollow Ground and Storm Of
   Particles (2,051).
 - **Fold k** fine-tunes on its own bands' F5 examples, less 3 validation sections, and separates every F5 and FS5
-  example of the other two bands. Measured (zero renders): fold 0 trains on 1,239 examples in 21 sections and
+  example of the other two bands. Measured (zero renders): fold 0 trains on 1,245 examples in 21 sections and
   separates 2,051 F5 and 363 FS5; fold 1 trains on 1,878 in 32 sections and separates 1,416 F5 and 359 FS5.
 - So **every stem D trains on, early-stops on, is fitted on or is read on** comes from the model that never trained on
   that song, which is V-real's condition too (V-real's songs are new to both models).
@@ -2303,11 +2303,13 @@ by band, 2 + 2:
 
 - **Validation** every 250 steps: the band mean of the mean SNR of the fold's validation examples (at most 120, a
   seeded subset; each full 10-s example in one pass) against their wet targets. Step 0 is the stock weights.
-- **The validation sections are within-song:** 3 held-out sections of the fold's own two bands (seed 20261111; the
-  bands in turn, one section each, round after round, a band always keeping a training section). So the stop rule
-  reads how the fine-tune does on more of the songs it trains on, not on new songs; the out-of-band SNR (readout 1)
-  is the new-song reading. Measured: fold 0 holds out 2 Ale Lak sections and 1 Death Of A Romantic; fold 1, 2 Hollow
-  Ground and 1 Storm Of Particles.
+- **The validation sections are within-song:** 3 held-out sections of the fold's own two bands: the bands in order
+  of size (F5 examples, largest first), one section each (a seeded draw, seed 20261111), round after round, a band
+  always keeping a training section, so a small band gives up the fewest. So the stop rule reads how the fine-tune
+  does on more of the songs it trains on, not on new songs; the out-of-band SNR (readout 1) is the new-song reading.
+  Measured: fold 0 holds out 2 Death Of A Romantic sections and 1 Ale Lak; fold 1, 2 Hollow Ground and 1 Storm Of
+  Particles. The validation subset is 120 examples per fold.
+- **Validation runs as training does:** under the gate's STFT routing when the mode moves the STFTs to the CPU.
 - **Stop** when it has not improved by 0.1 dB for 1,000 steps (not before 500 steps), or at the step maximum: the
   approved time, 5.5 h of the gate's measured step time per fold (11 h in all), with a wall guard at 1.25 times that.
   A fold still improving when it stops is reported, not extended: an extension needs the user's yes. The best
@@ -2327,7 +2329,7 @@ backward:
 - **The test:** the loss within 1e-4 relative, and every trainable group's gradient cosine at least 0.999 (each of
   layers 8–11, the final norm, the mask estimator).
 - **Modes, in order; the first that passes trains:** all on MPS; the STFTs and the iSTFT on the CPU (the gradients pass
-  through the moves); that plus the loss on the CPU; all on the CPU (8 threads, the step maximum recomputed from its
+  through the moves); that plus the loss on the CPU; all on the CPU (8 threads, this machine's performance cores; 2 beside an MPS run; the step maximum recomputed from its
   own step time; the probe measured about 3.4× slower).
 - **Recorded:** the step time and peak memory at the training batch (5 timed steps). An MPS mode above 20 GB falls to
   the CPU.
@@ -2340,8 +2342,12 @@ backward:
   equal channels at 44.1 kHz, crossfaded 10-s chunks, the channel mean, back to 48 kHz), only the trainable tensors
   replaced. Half features are stored as `xlance_ft-t3`, as T3's `xlance_g-t3`.
 - Two workers per fold, MPS ascending and CPU descending (MPS inference matched the CPU at 116 dB in the probe).
+- Each stem file is written atomically, then its row (flushed to disk): an example counts as done only with both, so a
+  kill between the two leaves it to do again, and `train-d`'s completeness check cannot be blocked by a stem with no
+  row. A worker skips only what the other wrote during the same run.
 - Each row records the new stem's SNR against the wet target as T3's build measured it (the render times the mix
-  gain), and T3's stored stock SNR for the same example.
+  gain), and T3's stored stock SNR for the same example; and beside it the SNR against the wet target the
+  fine-tune learned (with a mastered mix's compressor gain), which has no stock counterpart stored.
 - V-real's crops (the same `mix.wav` their stock stems came from) go through their assigned fold, hash-recorded.
 
 ### D_F5ft: D_F5-noaug with the fine-tuned stem
@@ -2362,7 +2368,8 @@ backward:
 
 **1. The stems (zero renders, descriptive).** Per fold: the validation curve (within-song), its best and the stock
 point. Per set (F5 and FS5, every stem from the model that never trained on its song): the new stem's SNR minus the
-stock one and the medians. With 4 songs, its interval is clustered by band (the mean of band means, 90% t on 3 df):
+stock one and the medians, against the uncompressed target as T3 stored the stock SNR (on mastered mixes it
+understates both stems alike), with the new stem's median SNR against the compressed wet target beside it. With 4 songs, its interval is clustered by band (the mean of band means, 90% t on 3 df):
 wide, and descriptive.
 
 **2. FS5 readability (R0's rule, zero renders, descriptive), read before V-real.** D_F5ft's R0 table on FS5 beside

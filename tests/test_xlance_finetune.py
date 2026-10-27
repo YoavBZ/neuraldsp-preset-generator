@@ -50,6 +50,34 @@ def test_val_sections_come_from_the_folds_bands_and_move_on_to_reach_three():
     assert X.val_sections({"A": {"a0"}, "B": {"b0"}}, 1) == []  # nothing to spare: no validation section taken
 
 
+def test_val_sections_take_from_the_largest_band_first():
+    secs = {"Small": {"s0", "s1", "s2", "s3", "s4"}, "Big": {f"b{k}" for k in range(16)}}
+    v = X.val_sections(secs, 0, {"Small": 293, "Big": 1123})
+    assert len(set(v) & secs["Big"]) == 2 and len(set(v) & secs["Small"]) == 1
+
+
+def test_a_stem_counts_as_the_other_workers_only_if_written_during_this_run(tmp_path):
+    import os
+    import time
+
+    p = tmp_path / "x.npz"
+    assert not X.fresh_from_other_worker(p, time.time())
+    p.write_bytes(b"0")
+    os.utime(p, (1_000, 1_000))                               # a killed run's leftover: made again
+    assert not X.fresh_from_other_worker(p, time.time())
+    started = time.time() - 5
+    p.write_bytes(b"1")
+    assert X.fresh_from_other_worker(p, started)
+
+
+def test_snr_block_is_band_clustered_and_carries_the_wet_snr():
+    S = {"band_of_ex": {1: "A", 2: "A", 3: "B", 4: "C"}}
+    rows = {i: {"set": "fs5", "snr_audio_db": -2.0 + i, "snr_stock_db": -6.0, "snr_wet_db": -1.0} for i in S["band_of_ex"]}
+    b = X.snr_block(rows, S)["fs5"]
+    assert b["new_minus_stock_db"]["bands"] == 3 and b["new_minus_stock_db"]["point"] == pytest.approx((5.5 + 7 + 8) / 3)
+    assert b["median_new_wet_db"] == -1.0 and "understates" in b["wet_note"]
+
+
 def test_sep_jobs_are_out_of_band_and_cover_every_example_once():
     band = {1: "A", 2: "A", 3: "B", 4: "C", 5: "D", 6: "B"}       # 6: an FS5 example, separated like F5's
     bf = {"A": 0, "B": 0, "C": 1, "D": 1}

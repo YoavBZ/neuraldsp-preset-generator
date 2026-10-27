@@ -95,7 +95,8 @@ GATE_LENGTHS_S = (3.0, 6.0, 10.0)
 GATE_LOSS_RTOL, GATE_COS, GATE_MEM_GB = 1e-4, 0.999, 20.0
 GATE_TIMED_STEPS = 5
 MODES = ("mps", "fft_cpu", "fft_loss_cpu", "cpu")    # in order: the first that passes trains
-CPU_THREADS = 8
+CPU_THREADS = 8                                      # this M1 Pro's 8 performance cores: the CPU reference and fallback
+MPS_THREADS = 2                                      # CPU threads beside an MPS run (as the D runs and the builds)
 RENDERS_PER_GROUP = 1 + 2                            # 1 priming at S + 1 arm x 2 directions
 XL_SR = 44_100
 
@@ -135,16 +136,18 @@ def band_folds(count_by_band):
     return {b: 0 if b in best[1] else 1 for b in bands}
 
 
-def val_sections(secs_by_band, fold, seed=VAL_SEED, n=VAL_SECTIONS):
+def val_sections(secs_by_band, fold, size_of=None, seed=VAL_SEED, n=VAL_SECTIONS):
     """Fold `fold`'s validation sections, from its own training bands (so the stop rule reads songs the fold trains
-    on: within-song): bands in a seeded order, one section from each in turn, round after round, until `n`; a band
-    keeps at least one training section. secs_by_band: {band: sections} of the fold's bands. -> sorted list."""
+    on: within-song): the bands in order of size (`size_of`: F5 examples; largest first, then by name), one section
+    from each in turn (a seeded draw within the band), round after round, until `n`; a band keeps at least one
+    training section. So a small band gives up the fewest. secs_by_band: {band: sections} of the fold's bands.
+    -> sorted list."""
     rng = _rng(seed, fold)
     left = {b: sorted(v) for b, v in secs_by_band.items()}
     for v in left.values():
         rng.shuffle(v)
-    order = sorted(left)
-    rng.shuffle(order)
+    size_of = size_of or {b: len(v) for b, v in left.items()}
+    order = sorted(left, key=lambda b: (-size_of[b], b))
     out = []
     while len(out) < n and any(len(v) > 1 for v in left.values()):
         for b in order:
@@ -370,7 +373,7 @@ def folds_of(S):
         raise SystemExit("an FS5 band has no F5 examples: no fold is defined for it")
     band_fold = band_folds(counts)
     return {"band_fold": band_fold, "band_of": band_of,
-            "val": {k: val_sections({b: f5_secs[b] for b, f in band_fold.items() if f == k}, k) for k in FOLDS}}
+            "val": {k: val_sections({b: f5_secs[b] for b, f in band_fold.items() if f == k}, k, counts) for k in FOLDS}}
 
 
 def fold_ids(S, Fd, fold):
@@ -495,11 +498,12 @@ def step_loss(model, mode, mix, tgt):
     return own_loss(model, recon.cpu(), tgt.cpu())
 
 
-def base_model(device):
-    """Stock gtr_mss (hash-checked by `direct_stems.XLanceG`), its trainable set marked. -> (model, base sha256)."""
+def base_model(device, threads):
+    """Stock gtr_mss (hash-checked by `direct_stems.XLanceG`, which sets torch's CPU threads to `threads`), its trainable
+    set marked. -> (model, base sha256)."""
     from learn import direct_stems as DS
 
-    xl = DS.XLanceG("cpu", threads=CPU_THREADS)
+    xl = DS.XLanceG("cpu", threads=threads)
     m = xl.model.to(device)
     for n, p in m.named_parameters():
         p.requires_grad_(is_trainable(n))
@@ -553,7 +557,7 @@ def cmd_check(args):
               f"validate on {z['validation']} ({len(z['validation_sections'])} sections of its own bands); separates "
               f"{z['separates_f5']} F5 + {z['separates_fs5']} FS5 of the other bands", flush=True)
     free = PS.free_gb()
-    need = 2 * 2 * len(S["f5"]) * XL_SR * PS.SEC_S / 1e9 + 1.5     # the fp16 cache (mix, target); checkpoints, stems
+    need = 2 * 2 * len(S["f5"]) * XL_SR * PS.SEC_S / 1e9 + 1.7     # the fp16 cache (mix, target); checkpoints 1.3, stems 0.4
     print(f"disk: {free:.0f} GB free; this step writes about {need:.1f} GB; guard {T.DISK_GUARD_GB:.0f} GB")
     if free - need < T.DISK_GUARD_GB and not args.smoke:
         raise SystemExit("not enough disk above the guard")
@@ -732,8 +736,7 @@ def cmd_gate(args):
     Fd = folds_of(S)
     tr, _ = fold_ids(S, Fd, 0)
     ids = sorted(tr)[:len(GATE_LENGTHS_S)]
-    torch.set_num_threads(CPU_THREADS)
-    ref_m, base_sha = base_model("cpu")
+    ref_m, base_sha = base_model("cpu", CPU_THREADS)                # the all-CPU reference
     ref_m.eval()
     refs = []
     for i, L in zip(ids, GATE_LENGTHS_S):
@@ -791,7 +794,7 @@ def time_steps(root, ids, mode, dev):
     """(seconds per optimizer step, peak GB) over GATE_TIMED_STEPS steps after one untimed, in training mode."""
     import torch
 
-    m, _ = base_model(dev)
+    m, _ = base_model(dev, CPU_THREADS if dev.type == "cpu" else MPS_THREADS)
     m.train()
     opt = torch.optim.AdamW([p for p in m.parameters() if p.requires_grad], lr=LR, betas=BETAS,
                             weight_decay=WEIGHT_DECAY)
@@ -819,9 +822,9 @@ def time_steps(root, ids, mode, dev):
 
 # --- train (MSST): one cross-fitted fine-tune ------------------------------------------------------------------------
 
-def validate(model, root, ids, band_of, dev):
+def validate(model, root, ids, band_of, dev, mode="cpu"):
     """The band mean of mean SNR (dB) over the full 10-s validation examples against their wet targets (inference,
-    the channel mean), and per example."""
+    the channel mean), and per example; the STFTs routed as the training mode routes them."""
     import numpy as np
     import torch
 
@@ -829,7 +832,7 @@ def validate(model, root, ids, band_of, dev):
 
     model.eval()
     per = {}
-    with torch.no_grad():
+    with torch.no_grad(), fft_mode(model, mode not in ("mps", "cpu")):
         for i in ids:
             a = np.load(cache_path(root, i)).astype(np.float32)
             x = torch.from_numpy(np.stack([a[0], a[0]]))[None].to(dev)
@@ -921,9 +924,9 @@ def cmd_train(args):
     band_of = {i: S["band_of_ex"][i] for i in va}
     mode, mx, mn = pinned_limits(rec, gate, args.smoke_steps if args.smoke else None)
     dev = torch.device("cpu" if mode == "cpu" else "mps")
-    torch.set_num_threads(CPU_THREADS if mode == "cpu" else 2)
+    threads = CPU_THREADS if mode == "cpu" else MPS_THREADS
     torch.manual_seed(_rng(WINDOW_SEED, args.fold, "torch").randrange(2 ** 31))
-    model, base_sha = base_model(dev)
+    model, base_sha = base_model(dev, threads)
     params = [p for p in model.parameters() if p.requires_grad]
     opt = torch.optim.AdamW(params, lr=LR, betas=BETAS, weight_decay=WEIGHT_DECAY)
     lp = ckpt_path(root, args.fold, "last")
@@ -944,6 +947,7 @@ def cmd_train(args):
     swap0 = DS.swap_mb()
     t0 = time.time() - train_s
     rec.update({"design": DESIGN, "status": "running", "fold": args.fold, "mode": mode, "device": str(dev),
+                "cpu_threads": threads,
                 "base_sha256": base_sha, "bands": sorted(b for b, f in Fd["band_fold"].items() if f == args.fold),
                 "train": len(tr), "validation": len(va), "validation_sections": Fd["val"][args.fold],
                 "validation_rule": "within-song: held-out sections of the fold's own training bands",
@@ -954,7 +958,7 @@ def cmd_train(args):
 
     def check(step):
         nonlocal best_state
-        v, _ = validate(model, root, va, band_of, dev)
+        v, _ = validate(model, root, va, band_of, dev, mode)
         curve.append((step, v))
         bs, bv = best_point(curve)
         if bs == step:
@@ -1020,7 +1024,8 @@ def cmd_train(args):
 def cmd_separate(args):
     """Fold k's model separates its examples (`sep_jobs`), each mix rebuilt exactly as T3's build made it; half
     features saved as `xlance_ft-t3` (as T3's `xlance_g-t3`), one row per example with the new stem's SNR against the
-    wet target and T3's stored one. Two workers per fold (mps ascending, cpu descending) skip what exists."""
+    wet target and T3's stored one. The stem file is written atomically, then its row: an example counts as done only
+    with both. Two workers per fold (mps ascending, cpu descending) skip what the other wrote during this run."""
     import numpy as np
 
     from learn import direct_stems as DS
@@ -1031,7 +1036,8 @@ def cmd_separate(args):
     Fd = folds_of(S)
     jobs = sep_jobs(args.fold, S["f5"] + S["fs"], S["band_of_ex"], Fd["band_fold"])
     jobs = sorted(jobs, key=lambda i: (S["section_of"][i], i), reverse=args.order == "desc")
-    jobs = [i for i in jobs if not ft_path(root, i).exists()][:args.limit or None]
+    have = sep_rows(root)
+    jobs = [i for i in jobs if i not in have or not ft_path(root, i).exists()][:args.limit or None]
     print(f"separate fold {args.fold} on {args.device}: {len(jobs)} to do", flush=True)
     if not jobs:
         print(f"SEPARATE DONE fold {args.fold} ({args.device})")
@@ -1044,15 +1050,15 @@ def cmd_separate(args):
     rp = out_dir(root) / "rows" / f"sep-{args.fold}-{args.device}-{os.getpid()}.jsonl"
     rp.parent.mkdir(parents=True, exist_ok=True)
     fs = set(S["fs"])
-    t0 = time.time()
+    t0 = started = time.time()
     with open(rp, "a") as fh:
         for m, i in enumerate(jobs):
             g = DS._guards("xlft-separate", T.DISK_GUARD_GB, swap0)
             if g:
                 print(g[1], flush=True)
                 raise SystemExit(g[0])
-            if ft_path(root, i).exists():
-                continue                                    # the other worker's
+            if fresh_from_other_worker(ft_path(root, i), started):
+                continue                                    # the other worker's, written during this run
             y, oth, st, x = example_audio(root, S, stems, i)
             mix, tgt, gains, _ = rebuild(y, oth, st, x)
             s = np.asarray(sep(mix), np.float64)
@@ -1067,9 +1073,16 @@ def cmd_separate(args):
                    "snr_wet_db": DS.snr_db(s, tgt), "snr_stock_db": S["built"][i].get("snr_audio_db")}
             fh.write(json.dumps(row) + "\n")
             fh.flush()
+            os.fsync(fh.fileno())                           # the stem file (atomic) first, then its row
             if m % 50 == 0:
                 print(f"separate {m + 1}/{len(jobs)}: {(time.time() - t0) / (m + 1):.1f} s per example", flush=True)
     print(f"SEPARATE DONE fold {args.fold} ({args.device})")
+
+
+def fresh_from_other_worker(path, started):
+    """A stem file the other worker wrote during this run (newer than this worker's start): skip it. A file older than
+    that with no row is a killed run's leftover and is made again (atomically replaced)."""
+    return path.exists() and path.stat().st_mtime >= started
 
 
 def sep_rows(root):
@@ -1630,6 +1643,10 @@ def contrasts():
 
 SNR_RULE = ("descriptive: new minus stock per example, the mean of band means with a 90% t interval clustered by band "
             "(4 bands, one song each: 3 df); every stem from the model that never trained on its band")
+WET_NOTE = ("snr_wet_db is against the target the fine-tune was trained to give (for a mastered mix, the render times "
+            "the compressor's gain curve and make-up); snr_audio_db, the one compared with the stock stem, is against the "
+            "uncompressed render times the mix gain, as T3's build stored the stock SNR, so on mastered mixes it "
+            "understates both stems alike")
 INTERVAL_NOTE = ("FS5's intervals are clustered by section (12 sections in 4 songs, one per band): optimistic, since "
                  "sections of one song are not independent; read them as descriptive")
 
@@ -1645,10 +1662,13 @@ def snr_block(rows, S):
         new = sorted(r["snr_audio_db"] for r in rows.values() if r["set"] == name)
         old = sorted(r["snr_stock_db"] for r in rows.values() if r["set"] == name and r.get("snr_stock_db") is not None)
         band = R.section_t(d, {i: S["band_of_ex"][i] for i in d})
+        wet = sorted(r["snr_wet_db"] for r in rows.values() if r["set"] == name and r.get("snr_wet_db") is not None)
         out[name] = {"new_minus_stock_db": {"point": band["point"], "lo": band["lo"], "hi": band["hi"],
                                             "bands": band.get("sections"), "n": len(d), "rule": SNR_RULE},
                      "median_new_db": new[len(new) // 2] if new else None,
-                     "median_stock_db": old[len(old) // 2] if old else None}
+                     "median_stock_db": old[len(old) // 2] if old else None,
+                     "median_new_wet_db": wet[len(wet) // 2] if wet else None,
+                     "wet_note": WET_NOTE}
     return out
 
 
@@ -1716,7 +1736,8 @@ def cmd_report(args):
     for k, v in fts.items():
         print(f"  fine-tune fold {k}: {v}")
     for name, b in rep["stems_snr"].items():
-        print(f"  stems {name}: {b}")
+        print(f"  stems {name}: {dict((k, v) for k, v in b.items() if k != 'wet_note')}")
+    print(f"  ({WET_NOTE})")
     print(f"  probe readable: {rep['probe_readable']}; R0 readable: {rep['r0_readable']}")
     for g in gaps:
         print(f"  incomplete: {g}")
