@@ -78,31 +78,24 @@ def test_model_input_dmix_zeroes_the_stem_and_its_loudness():
     assert not np.array_equal(x[1], xs[0])                              # the mix, not the stem
 
 
-def _fake_files(tmp_path, n=4):
-    rng = np.random.default_rng(1)
-    rows, files = [], {}
-    for i in range(n):
-        mp, sp = tmp_path / f"{i}-mix.npz", tmp_path / f"{i}-stem.npz"
-        np.savez(mp, mA=rng.integers(40, 200, (96, 446)).astype(np.uint8),
-                 mB=rng.integers(40, 200, (96, 446)).astype(np.uint8), lufs=[-11.0, -12.0], gain_db=0.0)
-        np.savez(sp, sA=rng.integers(40, 200, (96, 446)).astype(np.uint8),
-                 sB=rng.integers(40, 200, (96, 446)).astype(np.uint8), lufs=[-15.0, -16.0])
-        files[i] = (str(mp), str(sp))
-        rows.append({"i": i, "amp": F.AMPS[i % 3], "base": "clean", "section": f"s{i % 2}", "split": "train",
-                     "early_stop": False, "label": None, "lufs_A": -20.0, "lufs_B": -20.0})
-    return rows, files
+def test_torch_checks(tmp_path):
+    """The torch-dependent checks (`tests/torch_checks_t3_mix.py`; run there with the torch venv's python, which has
+    no pytest)."""
+    pytest.importorskip("torch")
+    from tests import torch_checks_t3_mix as TC
+
+    TC.check_arm_data_inputs_unaugmented(tmp_path)
+    TC.check_net_reads_the_input(tmp_path)
+    TC.check_train_refuses_another_arm_or_seed()
 
 
-def test_mix_data_reads_the_mix_unaugmented(tmp_path):
-    torch = pytest.importorskip("torch")
-    rows, files = _fake_files(tmp_path)
-    data = M.mix_data(rows, files, lambda lab: (np.zeros(3, np.float32), np.ones(3, np.float32)))
-    assert data.arm == "Dmix" and data.aug is False and data.G is None and data.cands == {}
-    for epoch in (0, 1, 2):
-        x, c, _ = data.batch([0, 1, 2, 3], epoch, torch.device("cpu"))
-        assert torch.all(x[:, 0] == 0) and torch.any(x[:, 1] != 0)
-        assert torch.all(c[:, -2] == 0) and torch.all(c[:, -1] != 0)
-    assert data.applied == {}                                          # no augmentation ever applied
+def test_same_examples_compares_dropped_ids_and_counts():
+    ref = {"dropped": [5, 3], "train": 10, "early_stop": 4}
+    assert M.same_examples(ref, [3, 5], 10, 4) is None
+    assert "dropped ids differ" in M.same_examples(ref, [3, 6], 10, 4)
+    assert "dropped ids differ" in M.same_examples(ref, [3], 10, 4)
+    assert "examples" in M.same_examples(ref, [3, 5], 11, 4)
+    assert "dropped ids differ" in M.same_examples({}, [1], 10, 4)
 
 
 # --- the paired FS5 read ------------------------------------------------------------------------------------------------
@@ -140,7 +133,7 @@ def test_auc_step_and_jackknife():
     g = [k % 8 for k in range(240)]
     good = [float(v) + rng.gauss(0, 0.5) for v in y]
     s = M.auc_step(y, good, [rng.random() for _ in y], g)
-    assert s["sections"] == 8 and s["lo"] > 0 and M.favours("above", s) == M.MIX_ARM
+    assert s["sections"] == 8 and s["lo"] > 0 and M.favours("above", s) == "a"
     same = M.auc_step(y, good, good, g)
     assert same["point"] == 0 and same["lo"] == pytest.approx(0) and M.favours("above", same) is None
     assert M.auc_step([1, 1, 0, 0], [0.9, 0.8, 0.1, 0.2], [0.1, 0.2, 0.3, 0.4], ["a", "a", "b", "b"])["lo"] is None
@@ -148,9 +141,9 @@ def test_auc_step_and_jackknife():
 
 
 @pytest.mark.parametrize("better,s,who", [
-    ("below", {"lo": -0.2, "hi": -0.01}, M.MIX_ARM), ("below", {"lo": 0.01, "hi": 0.2}, T3.FULL),
-    ("below", {"lo": -0.1, "hi": 0.1}, None), ("above", {"lo": 0.01, "hi": 0.2}, M.MIX_ARM),
-    ("above", {"lo": -0.2, "hi": -0.01}, T3.FULL), ("above", {"lo": None, "hi": None}, None)])
+    ("below", {"lo": -0.2, "hi": -0.01}, "a"), ("below", {"lo": 0.01, "hi": 0.2}, "b"),
+    ("below", {"lo": -0.1, "hi": 0.1}, None), ("above", {"lo": 0.01, "hi": 0.2}, "a"),
+    ("above", {"lo": -0.2, "hi": -0.01}, "b"), ("above", {"lo": None, "hi": None}, None)])
 def test_favours(better, s, who):
     assert M.favours(better, s) == who
 
@@ -160,13 +153,13 @@ def test_paired_rows_cover_every_head_and_find_what_arm_a_reads():
     rows = M.paired_rows(ex_a, ex_b, info)
     assert len(rows) == len(F.CONT) + len(F.SW) + len(F.CAT) + 1 == 116
     by = {r["name"]: r for r in rows}
-    assert by["reverb/reverbActive"]["favours"] == M.MIX_ARM and by["reverb/reverbActive"]["kind"] == "switch"
-    assert by[knob]["favours"] == M.MIX_ARM and by[knob]["hi"] < 0
-    assert by[R.AMP_NAME]["favours"] == M.MIX_ARM and by[R.AMP_NAME]["point"] == pytest.approx(1.0)
-    assert by["cabParameters/leftMicType"]["favours"] == M.MIX_ARM
-    assert sum(r["favours"] == T3.FULL for r in rows) <= 12              # noise heads mostly hold 0
+    assert by["reverb/reverbActive"]["favours"] == "a" and by["reverb/reverbActive"]["kind"] == "switch"
+    assert by[knob]["favours"] == "a" and by[knob]["hi"] < 0
+    assert by[R.AMP_NAME]["favours"] == "a" and by[R.AMP_NAME]["point"] == pytest.approx(1.0)
+    assert by["cabParameters/leftMicType"]["favours"] == "a"
+    assert sum(r["favours"] == "b" for r in rows) <= 12                  # noise heads mostly hold 0
     flipped = {r["name"]: r for r in M.paired_rows(ex_b, ex_a, info)}
-    assert flipped["reverb/reverbActive"]["favours"] == T3.FULL         # the labels say a-b; read b-a
+    assert flipped["reverb/reverbActive"]["favours"] == "b"
 
 
 def test_paired_rows_refuse_different_examples_or_labels():
@@ -183,8 +176,9 @@ def test_summary_rows_and_their_directions():
     s = M.summary_rows(ex_a, ex_b, info)
     assert list(s) == list(M.SUMMARY)
     assert s["knobs"]["better"] == "below" and s["knobs"]["point"] < 0
-    assert s["switches"]["point"] > 0 and s["switches"]["n"] == len(F.SW)
-    assert s["amp choice"]["favours"] == M.MIX_ARM and s["mics"]["point"] > 0
+    assert s["switches"]["point"] > 0 and s["switches"]["n"] == len(F.SW) and s["switches"]["left_out"] == []
+    assert s["switches"]["lo"] is not None
+    assert s["amp choice"]["favours"] == "a" and s["mics"]["point"] > 0
     assert all(v["sections"] == 8 for v in s.values())
     same = M.summary_rows(ex_a, ex_a, info)
     assert all(v["point"] == pytest.approx(0) for v in same.values()) and not any(map(M.reliably_worse, same.values()))
@@ -192,50 +186,48 @@ def test_summary_rows_and_their_directions():
     assert M.reliably_worse(worse["amp choice"])
 
 
-def _summ(**favour):
-    out = {}
-    for k in M.SUMMARY:
-        w = favour.get(k.replace(" ", "_"))
-        if w == "worse":
-            s = {"lo": 0.01, "hi": 0.1} if M.BETTER[k] == "below" else {"lo": -0.1, "hi": -0.01}
-        else:
-            s = {"lo": -0.1, "hi": 0.1}
-        out[k] = {**s, "point": (s["lo"] + s["hi"]) / 2, "better": M.BETTER[k]}
-    return out
-
-
-@pytest.mark.parametrize("n_mix,summ,run", [
-    (30, _summ(), True), (21, _summ(), True), (20, _summ(), False), (12, _summ(), False),
-    (30, _summ(knobs="worse"), False), (30, _summ(switches="worse"), False), (30, _summ(amp_choice="worse"), False),
-    (30, _summ(mics="worse"), False)])
-def test_stop_rule(n_mix, summ, run):
-    ok, why = M.helps(n_mix, 20, summ)
-    assert ok is run and why[-1] == ("V-real renders run" if run else "stop and report: no V-real render")
+def test_summary_switches_drop_a_switch_undefined_in_a_fold_and_keep_the_interval():
+    ex_a, ex_b, info, _ = _fake_pair()
+    j = F.SW.index("delay/delayActive")
+    for i in ex_a:                                   # scored in sec0 and sec1 only; sec1 holds one class
+        sec = info[i]["section"]
+        sm = np.array(ex_a[i]["sm"])
+        sm[j] = 1.0 if sec in ("sec0", "sec1") else 0.0
+        sw = np.array(ex_a[i]["s"])
+        if sec == "sec1":
+            sw[j] = 1.0
+        for ex in (ex_a, ex_b):
+            ex[i] = {**ex[i], "sm": sm, "s": sw}
+    s = M.summary_rows(ex_a, ex_b, info)["switches"]
+    assert s["left_out"] == ["delay/delayActive"] and s["n"] == len(F.SW) - 1
+    assert s["lo"] is not None and s["hi"] is not None                  # the row keeps its interval
 
 
 # --- the rows, the outputs, the CLI ----------------------------------------------------------------------------------------
 
-def test_contrasts_put_the_input_first_and_read_f5s_stored_arms():
+def test_contrasts_put_the_unconfounded_input_first():
     c = M.contrasts()
-    first = next(iter(c.values()))
-    assert first == (M.MIX_ARM, T3.FULL)
-    assert set(c.values()) >= {(M.MIX_ARM, T3.CORE), (M.MIX_ARM, "S"), (M.MIX_ARM, T3.CONST), (T3.FULL, T3.CORE),
-                               (R.R_ARM, T3.CORE)}
-    assert all(a == M.MIX_ARM for a, _ in list(c.values())[:4])
+    assert next(iter(c.values())) == (M.MIX_ARM, M.NOAUG_ARM)          # both unaugmented: only the input differs
+    assert set(c.values()) >= {(M.MIX_ARM, T3.FULL), (M.NOAUG_ARM, T3.FULL), (M.MIX_ARM, T3.CORE), (M.MIX_ARM, "S"),
+                               (M.MIX_ARM, T3.CONST), (T3.FULL, T3.CORE), (R.R_ARM, T3.CORE)}
+    assert M.PAIRS["the input"] == (M.MIX_ARM, M.NOAUG_ARM) and list(M.PAIRS)[0] == "the input"
+    assert M.INPUT_OF == {M.MIX_ARM: "Dmix", M.NOAUG_ARM: "Dstem"}
 
 
-def test_render_count_is_three_per_group():
-    assert M.renders_needed(33) == 99                                   # 11 parts x 3 amps; 1 priming + 2 directions
+def test_render_count_is_five_per_group():
+    assert M.renders_needed(33) == 165                                  # 11 parts x 3 amps; 1 priming + 2 arms x 2
 
 
 def test_outputs_stay_outside_t3(tmp_path):
     assert M.out_dir(tmp_path) == tmp_path / "t3-mix"
-    assert M.run_path(tmp_path, 20261042) == tmp_path / "t3-mix" / "runs" / "D_F5mix-20261042.json"
+    assert M.run_path(tmp_path, M.NOAUG_ARM, 20261042) == tmp_path / "t3-mix" / "runs" / "D_F5-noaug-20261042.json"
     assert "t3" not in M.out_dir(tmp_path).relative_to(tmp_path).parts
 
 
-def test_cli_scopes_shard_and_seed():
-    for argv in (["r0", "--shard", "1/3"], ["train"], ["fit", "--seed", "20261042"], ["r2"]):
+def test_cli_scopes_shard_arm_and_seed():
+    for argv in (["r0", "--shard", "1/3"], ["train"], ["train", "--seed", "20261042"], ["train", "--arm", "D_F5mix"],
+                 ["train", "--arm", "D_F5", "--seed", "20261042"], ["fit", "--seed", "20261042"],
+                 ["r0", "--arm", "D_F5mix"], ["r2"]):
         with pytest.raises(SystemExit):
             M.main(argv)
 
@@ -246,13 +238,6 @@ def test_real_runs_need_the_ledger_amendment(monkeypatch):
     monkeypatch.setattr(M, "LEDGER_MARK", "no such declaration")
     with pytest.raises(SystemExit, match="ledger"):
         M.require_mix(argparse.Namespace(smoke=False, out=None))
-
-
-def test_train_refuses_another_seed(monkeypatch):
-    pytest.importorskip("torch")
-    monkeypatch.setattr(M, "require_mix", lambda a: None)
-    with pytest.raises(SystemExit, match="--seed"):
-        M.cmd_train(argparse.Namespace(seed=1, smoke=False, out=None))
 
 
 def test_vreal_render_counts_under_the_machine_cap():
@@ -284,14 +269,15 @@ def test_chain_never_waits_bare_on_caffeinate():
     assert waits and all(re.fullmatch(r"wait \$\w+", w.strip()) for w in waits)   # only explicit pids
 
 
-def test_chain_order_and_stop_rule():
+def test_chain_order_and_no_stop_rule():
     text = CHAIN.read_text()
     assert "setopt no_bg_nice" in text and M.LEDGER_MARK in text and "NOT launched" in text
     assert "PENDING THE USER'S YES" in text
-    order = [" check ", "train --seed", " fit ", " r0 ", "vreal-predict", "vreal-render --shard", " report "]
+    order = [" check ", "train --arm", " fit ", " r0 ", "vreal-predict", "vreal-render --shard", " report "]
     pos = [text.index(f"${{TM[@]}}{o}" if o.startswith(" ") else o) for o in order]
     assert pos == sorted(pos)
-    assert text.index(M.RUN) < text.index("vreal-predict >")            # V-real only if the FS5 read says run
+    assert "VREAL: RUN" not in text and "exit 0" not in text             # V-real runs whatever FS5 shows
+    assert "for arm in D_F5mix D_F5-noaug" in text
     assert "--shard $k/3" in text and "for k in 0 1 2" in text           # at most 3 render processes
     assert "for seed in 20261042 20261043" in text
     assert len(re.findall(r"\$TORCH_PY", text)) == 4                  # train, fit, r0, vreal-predict

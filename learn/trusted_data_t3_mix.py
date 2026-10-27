@@ -6,26 +6,27 @@ never written.
     MAIN=/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python
     TORCH_PY=~/ndsp-presets/tools/demucs-venv/bin/python
     $MAIN -m learn.trusted_data_t3_mix check                        # zero renders: the frozen plan, the drift check
-    $TORCH_PY -m learn.trusted_data_t3_mix train --seed 20261042    # and 20261043: about 7-14 min of MPS each
-    $TORCH_PY -m learn.trusted_data_t3_mix fit                      # the constant (D_F5's) and the pull on FS5
-    $TORCH_PY -m learn.trusted_data_t3_mix r0                       # zero renders: R0 beside D_F5; the stop rule
-    $TORCH_PY -m learn.trusted_data_t3_mix vreal-predict            # only if r0 says "run"; zero renders
-    $MAIN -u -m learn.trusted_data_t3_mix vreal-render --shard k/3  # 99 renders in all (33 groups x 3)
+    $TORCH_PY -m learn.trusted_data_t3_mix train --arm D_F5mix|D_F5-noaug --seed 20261042|20261043   # 7-14 min each
+    $TORCH_PY -m learn.trusted_data_t3_mix fit                      # the constant (D_F5's) and each arm's pull on FS5
+    $TORCH_PY -m learn.trusted_data_t3_mix r0                       # zero renders: R0 per arm beside D_F5, paired
+    $TORCH_PY -m learn.trusted_data_t3_mix vreal-predict            # zero renders
+    $MAIN -u -m learn.trusted_data_t3_mix vreal-render --shard k/3  # 165 renders in all (33 groups x (1 + 2 x 2))
     $MAIN -m learn.trusted_data_t3_mix report                       # the rows against F5's stored renders
 
-**The arm.** D_F5 in everything but the input: the 115-control heads, the masked loss and the amp head; F5's full
-twins (after F5's drops) and their labels; FS5 for early stopping and the fit; seeds 20261042 and 20261043; the cap
-and patience; the readout and the pull rule. The input is each full twin's stored self-built mix (`mix-t3`) through
-`direct_stems`' D_mix input (the stem channel and the stem-loudness slot zero). D_stem's augmentations act on the stem
-channel only, so D_F5mix trains unaugmented (as the pilot's D_mix). The constant is D_F5's (the same labels).
+**The arms.** D_F5mix is D_F5 in everything but the input: the 115-control heads, the masked loss and the amp head;
+F5's full twins (after F5's drops) and their labels; FS5 for early stopping and the fit; seeds 20261042 and 20261043;
+the cap and patience; the readout and the pull rule. Its input is each full twin's stored self-built mix (`mix-t3`)
+through `direct_stems`' D_mix input (the stem channel and the stem-loudness slot zero). D_stem's augmentations act on
+the stem channel only, so D_F5mix trains unaugmented (as the pilot's D_mix). D_F5-noaug is D_F5 with augmentation off
+(the stem input), so the input contrast D_F5mix - D_F5-noaug differs in the input alone. The constant is D_F5's.
 
 **Frozen V-real-11.** T3's stored plan is read as frozen (no re-plan): F5's and FS5's examples and V-real-11. T0's
 lists hash is recorded, not enforced; a drift check refuses instead unless every F5/FS5 example's DIs are still
 verified and its section usable, and every V-real-11 member is still in today's membership (`lists_drift`).
 
-**The readout.** First R0's rule on FS5 (zero renders) with D_F5 beside, paired per head and in four summary rows;
-V-real (99 renders) runs only if D_F5mix reads more heads than D_F5 and no summary row is reliably worse (`helps`).
-Then one answer set, D_F5mix, on V-real-11, read against F5's stored D_F5, D_core5, S and the constant.
+**The readout.** First R0's rule on FS5 (zero renders, descriptive): each arm's table with D_F5 beside, paired per
+head and in four summary rows. Then two answer sets, D_F5mix and D_F5-noaug, on V-real-11 (no stop rule), read
+against each other and F5's stored D_F5, D_core5, S and the constant.
 """
 
 from __future__ import annotations
@@ -45,19 +46,26 @@ from learn import verify_tracks as V
 
 OUT_DIR = "t3-mix"                                   # trusted-data/t3-mix/: never under t3/
 MIX_ARM = "D_F5mix"
+NOAUG_ARM = "D_F5-noaug"                             # D_F5 with augmentation off: the input contrast's other arm
+NEW_ARMS = (MIX_ARM, NOAUG_ARM)
 INPUT_ARM = "Dmix"                                   # direct_stems' D_mix input: stem channel and its loudness slot 0
+INPUT_OF = {MIX_ARM: INPUT_ARM, NOAUG_ARM: T.MODEL_ARM}   # D_F5-noaug: D_stem's input, as D_F5
 LEDGER_KEY = "amendment_3"
 LEDGER_MARK = "D_F5mix (ROADMAP (a))"
 DESIGN = ("docs/trusted-data-t0-design.md#d_f5mix-the-every-control-model-fed-the-mix-roadmap-step-a-declared-"
           "2026-10-27-nothing-run")
 STATUS = ("declared 2026-10-27 before any training (ledger trusted-data-t3, amendment 3); not post hoc for D_F5mix; "
           "V-real read again after F5 and R1")
-INPUT = ("the full twin's stored self-built mix (mix-t3) through direct_stems' D_mix input (the stem channel and the "
-         "stem-loudness slot zero); unaugmented, because D_stem's augmentations act on the stem channel only")
-RENDERS_PER_GROUP = 3                                # 1 priming at S + 2 directions
+INPUTS = {MIX_ARM: "the full twin's stored self-built mix (mix-t3) through direct_stems' D_mix input (the stem channel "
+                   "and the stem-loudness slot zero); unaugmented, because D_stem's augmentations act on the stem "
+                   "channel only",
+          NOAUG_ARM: "the full twin's stored X-LANCE stem (xlance_g-t3) through D_F5's D_stem input; augmentation off"}
+PAIRS = {"the input": (MIX_ARM, NOAUG_ARM),                          # primary: both unaugmented
+         "input and augmentation": (MIX_ARM, T3.FULL),               # beside, descriptive
+         "augmentation": (NOAUG_ARM, T3.FULL)}                       # beside, descriptive
+RENDERS_PER_GROUP = 1 + 2 * len(NEW_ARMS)            # 1 priming at S + 2 arms x 2 directions
 SUMMARY = ("knobs", "switches", "amp choice", "mics")
 BETTER = {"knobs": "below", "switches": "above", "amp choice": "above", "mics": "above"}
-RUN, STOP = "VREAL: RUN", "VREAL: STOP"
 
 _save, _load = V._save, V._load
 
@@ -150,12 +158,12 @@ def auc_step(y, qa, qb, groups):
 
 
 def favours(better, s):
-    """Which arm a paired step's interval favours: MIX_ARM, D_F5, or None (the interval holds 0)."""
+    """Which arm a paired step a - b's interval favours: "a", "b", or None (the interval holds 0)."""
     if s.get("lo") is None or s.get("hi") is None:
         return None
     if better == "below":
-        return MIX_ARM if s["hi"] < 0 else (T3.FULL if s["lo"] > 0 else None)
-    return MIX_ARM if s["lo"] > 0 else (T3.FULL if s["hi"] < 0 else None)
+        return "a" if s["hi"] < 0 else ("b" if s["lo"] > 0 else None)
+    return "a" if s["lo"] > 0 else ("b" if s["hi"] < 0 else None)
 
 
 def _switch_data(ex_a, ex_b, j, sec):
@@ -179,7 +187,7 @@ def _check_same(ex_a, ex_b):
 
 
 def paired_rows(ex_a, ex_b, info):
-    """Per head, arm a (D_F5mix) - arm b (D_F5) on the same FS5 examples (`trusted_data_t3_r.per_example`'s): knobs
+    """Per head, arm a - arm b on the same FS5 examples (`trusted_data_t3_r.per_example`'s): knobs
     by the per-example E step |a - label| - |b - label| where the knob sounds (section-clustered 90% t; below 0
     favours a); switches by the AUC difference (jackknife; above 0 favours a); the mics and the amp by the accuracy
     difference (section-clustered; above 0 favours a). -> rows, one per head (116)."""
@@ -215,8 +223,9 @@ def paired_rows(ex_a, ex_b, info):
 def summary_rows(ex_a, ex_b, info):
     """The four summary rows, arm a - arm b, each with its 90% interval over FS5's sections: knobs, the per-example
     mean E step over sounding knobs (section-clustered t); switches, the mean AUC difference over the switches whose
-    AUCs are defined (jackknife); the amp choice, the accuracy difference; the mics, the per-example mean accuracy
-    difference over sounding mics. -> {name: {point, lo, hi, sections, n, better, favours}}."""
+    AUC difference is defined on all of FS5 and in every jackknife fold, so the row keeps its interval (those left out
+    listed); the amp choice, the accuracy difference; the mics, the per-example mean accuracy difference over sounding
+    mics. -> {name: {point, lo, hi, sections, n, better, favours}}."""
     import numpy as np
 
     _check_same(ex_a, ex_b)
@@ -230,13 +239,15 @@ def summary_rows(ex_a, ex_b, info):
             knobs[i] = float(np.mean(np.abs(np.asarray(e["a2"], np.float64) - c)[m]
                                      - np.abs(np.asarray(ex_b[i]["a2"], np.float64) - c)[m]))
     out["knobs"] = {**R.section_t(knobs, sec), "n": len(knobs)}
-    per = [_switch_data(ex_a, ex_b, j, sec) for j in range(len(F.SW))]
-    use = [p for p in per if _auc_steps([p], None) is not None]
+    secs = sorted(set(sec.values()))
+    per = {n: _switch_data(ex_a, ex_b, j, sec) for j, n in enumerate(F.SW)}
+    use = [p for n, p in per.items() if all(_auc_steps([p], d) is not None for d in [None] + secs)]
+    left = [n for n, p in per.items() if not any(p is q for q in use)]
 
     def stat(drop):
         v = _auc_steps(use, drop)
         return None if not v else float(np.mean(v))
-    out["switches"] = {**jackknife(stat, sorted(sec.values())), "n": len(use)}
+    out["switches"] = {**jackknife(stat, secs), "n": len(use), "left_out": left}
     amp = {i: float(int(np.argmax(e["amp_p"])) == F.AMPS.index(info[i]["amp"]))
            - float(int(np.argmax(ex_b[i]["amp_p"])) == F.AMPS.index(info[i]["amp"])) for i, e in ex_a.items()}
     out["amp choice"] = {**R.section_t(amp, sec), "n": len(amp)}
@@ -255,28 +266,16 @@ def summary_rows(ex_a, ex_b, info):
 
 
 def reliably_worse(s):
-    """A summary row whose interval lies wholly on D_F5mix's worse side."""
-    return favours(s["better"], s) == T3.FULL
-
-
-def helps(n_mix, n_stem, summary):
-    """The declared stop rule: V-real renders run only if D_F5mix reads more heads than D_F5 by R0's rule and no
-    summary row is reliably worse. A direction, not a bar. -> (run?, [reasons])."""
-    why = [f"readable heads: {MIX_ARM} {n_mix}, {T3.FULL} {n_stem}"]
-    worse = [k for k in SUMMARY if k in summary and reliably_worse(summary[k])]
-    if n_mix <= n_stem:
-        why.append(f"{MIX_ARM} does not read more heads than {T3.FULL}")
-    if worse:
-        why.append(f"reliably worse summary rows: {worse}")
-    ok = n_mix > n_stem and not worse
-    why.append("V-real renders run" if ok else "stop and report: no V-real render")
-    return ok, why
+    """A summary row whose interval lies wholly on arm a's worse side."""
+    return favours(s["better"], s) == "b"
 
 
 def contrasts():
-    """{name: (a, b)}: the primary (the mix input), the gate read with it, S, the constant; F5's gate and R1 beside
-    (stored)."""
-    return {f"{MIX_ARM} - {T3.FULL} (primary: the mix input)": (MIX_ARM, T3.FULL),
+    """{name: (a, b)}: the primary (the input, both unaugmented), input and augmentation together, augmentation alone,
+    the gate read with the mix input, S, the constant; F5's gate and R1 beside (stored)."""
+    return {f"{MIX_ARM} - {NOAUG_ARM} (primary: the mix input, both unaugmented)": (MIX_ARM, NOAUG_ARM),
+            f"{MIX_ARM} - {T3.FULL} (input and augmentation; descriptive)": (MIX_ARM, T3.FULL),
+            f"{NOAUG_ARM} - {T3.FULL} (augmentation alone; descriptive)": (NOAUG_ARM, T3.FULL),
             f"{MIX_ARM} - {T3.CORE} (the gate read with the mix input)": (MIX_ARM, T3.CORE),
             f"{MIX_ARM} - S": (MIX_ARM, "S"),
             f"{MIX_ARM} - constant (D_F5's, rendered in F5)": (MIX_ARM, T3.CONST),
@@ -294,8 +293,8 @@ def out_dir(root):
     return pathlib.Path(root) / OUT_DIR
 
 
-def run_path(root, seed):
-    return out_dir(root) / "runs" / f"{MIX_ARM}-{seed}.json"
+def run_path(root, arm, seed):
+    return out_dir(root) / "runs" / f"{arm}-{seed}.json"
 
 
 def ledger_declared():
@@ -347,23 +346,34 @@ def load_frozen(root, smoke=False):
     return plan, drift
 
 
-def mix_data(rows, files, encode):
-    """D_F5mix's training data: T2's `ArmData` on the full twins' files, unaugmented, read through D_mix's input."""
+def arm_data(arm, rows, files, encode):
+    """An arm's training data: T2's `ArmData` on the full twins' files, unaugmented, read through the arm's input
+    (D_F5mix: D_mix's; D_F5-noaug: D_stem's, as D_F5)."""
     data = T.ArmData(rows, files, aug=False, encode=encode)
-    data.arm, data.aug = INPUT_ARM, False
+    data.arm, data.aug = INPUT_OF[arm], False
     return data
 
 
-def load_models(root, smoke=False):
+def same_examples(ref, refused, n_train, n_es):
+    """D_F5's run record against this run's examples: the same dropped ids and the same counts. -> why not, or None."""
+    if sorted(ref.get("dropped") or []) != sorted(refused):
+        return (f"the dropped ids differ from D_F5's ({len(ref.get('dropped') or [])} there, {len(refused)} here; "
+                f"{len(set(ref.get('dropped') or []) ^ set(refused))} differ)")
+    if (ref.get("train"), ref.get("early_stop")) != (n_train, n_es):
+        return f"D_F5 trained on {ref.get('train')}/{ref.get('early_stop')} examples, here {n_train}/{n_es}"
+    return None
+
+
+def load_models(root, arm, smoke=False):
     import torch
 
     nets, recs = [], []
     for s in T3.TRAIN_SEEDS:
-        rec = _load(run_path(root, s))
+        rec = _load(run_path(root, arm, s))
         if not rec or (rec.get("smoke") and not smoke):
-            raise SystemExit(f"{MIX_ARM} seed {s} has no run")
+            raise SystemExit(f"{arm} seed {s} has no run")
         net = F.build_net()
-        net.load_state_dict(torch.load(run_path(root, s).with_suffix(".pt"), map_location="cpu"))
+        net.load_state_dict(torch.load(run_path(root, arm, s).with_suffix(".pt"), map_location="cpu"))
         net.eval()
         nets.append(net)
         recs.append(rec)
@@ -393,7 +403,8 @@ def cmd_check(args):
 # --- train, fit, r0 (TORCH_PY) ---------------------------------------------------------------------------------------
 
 def cmd_train(args):
-    """One D_F5mix run: D_F5's recipe on F5's full twins with D_mix's input, unaugmented; early stopping on FS5."""
+    """One run of a new arm: D_F5's recipe on F5's full twins with the arm's input, unaugmented; early stopping on
+    FS5. Refuses unless its examples are D_F5's (the same dropped ids and counts)."""
     import numpy as np
     import torch
 
@@ -402,9 +413,9 @@ def cmd_train(args):
 
     require_mix(args)
     root = V.out_root(args)
-    if args.seed not in T3.TRAIN_SEEDS and not args.smoke:
-        raise SystemExit(f"--seed in {T3.TRAIN_SEEDS}")
-    rp = run_path(root, args.seed)
+    if args.arm not in NEW_ARMS or (args.seed not in T3.TRAIN_SEEDS and not args.smoke):
+        raise SystemExit(f"--arm in {NEW_ARMS}, --seed in {T3.TRAIN_SEEDS}")
+    rp = run_path(root, args.arm, args.seed)
     if rp.exists():
         print(f"{rp.name} exists: nothing to do")
         return
@@ -412,21 +423,22 @@ def cmd_train(args):
     ok, pc = T3.positive_control(root, plan)
     if not ok and not args.smoke:
         raise SystemExit(f"F5's positive control has not passed: {pc}")
+    _, _, refused, _ = T3.t3_sets(root, plan)
     ctx = DS.Ctx(quiet=True)
     tr_rows, es_rows = T3.arm_rows(root, ctx, plan, T3.FULL)
-    ref = _load(T3.run_path(root, T3.FULL, args.seed)) or {}
-    if not args.smoke and (ref.get("train"), ref.get("early_stop")) != (len(tr_rows), len(es_rows)):
-        raise SystemExit(f"D_F5's run trained on {ref.get('train')}/{ref.get('early_stop')} examples, here "
-                         f"{len(tr_rows)}/{len(es_rows)}: D_F5mix must train on D_F5's examples")
+    why = same_examples(_load(T3.run_path(root, T3.FULL, args.seed)) or {}, refused, len(tr_rows), len(es_rows))
+    if why and not args.smoke:
+        raise SystemExit(f"{args.arm} must train on D_F5's examples: {why}")
     rows = tr_rows + es_rows
     files = {r["i"]: T3.files_of(root, T3.FULL, r["i"]) for r in rows}
     tr = np.arange(len(tr_rows))
     es = np.arange(len(tr_rows), len(rows))
     torch.set_num_threads(2)
-    dev = torch.device("cpu" if os.environ.get("DS_DEVICE") == "cpu" or not torch.backends.mps.is_available() else "mps")
-    data = mix_data(rows, files, T3.encode_for(T3.FULL))
-    print(f"T3 {MIX_ARM} seed {args.seed}: {len(tr)} train, {len(es)} early stopping (FS5); input: {INPUT}; {dev}",
-          flush=True)
+    dev = torch.device("cpu" if os.environ.get("DS_DEVICE") == "cpu" or not torch.backends.mps.is_available()
+                       else "mps")
+    data = arm_data(args.arm, rows, files, T3.encode_for(T3.FULL))
+    print(f"T3 {args.arm} seed {args.seed}: {len(tr)} train, {len(es)} early stopping (FS5); input: "
+          f"{INPUTS[args.arm]}; {dev}", flush=True)
     t0 = time.time()
     for attempt in (1, 2):
         log = []
@@ -440,19 +452,20 @@ def cmd_train(args):
             if dev.type == "mps":
                 torch.mps.empty_cache()
             if attempt == 2:
-                raise SystemExit(f"TRAIN FAILED {MIX_ARM} {args.seed}: {e}")
+                raise SystemExit(f"TRAIN FAILED {args.arm} {args.seed}: {e}")
     rp.parent.mkdir(parents=True, exist_ok=True)
     mp = rp.with_suffix(".pt")
     torch.save(state, mp)
-    rec = {"plan": T.PLAN, "design": DESIGN, "stage": "T3 D_F5mix", "status": STATUS, "arm": MIX_ARM,
-           "seed": args.seed, "input": INPUT, "model_arm": INPUT_ARM, "labels": "115 (full space, masked; amp head)",
-           "train": len(tr), "early_stop": len(es), "bands": sorted({r["band"] for r in tr_rows}),
-           "attempts": attempt, "epochs_run": len(log), "best_epoch": best_ep, "best_early_stop_loss": best,
+    rec = {"plan": T.PLAN, "design": DESIGN, "stage": f"T3 {args.arm}", "status": STATUS, "arm": args.arm,
+           "seed": args.seed, "input": INPUTS[args.arm], "model_arm": INPUT_OF[args.arm], "augmented": False,
+           "labels": "115 (full space, masked; amp head)", "train": len(tr), "early_stop": len(es),
+           "dropped": sorted(refused), "bands": sorted({r["band"] for r in tr_rows}), "attempts": attempt,
+           "epochs_run": len(log), "best_epoch": best_ep, "best_early_stop_loss": best,
            "minutes": round((time.time() - t0) / 60, 1), "augmentations_applied": data.applied, "device": str(dev),
            "model": mp.name, "model_sha256": DS.hashlib_file(mp), "log": log, "drift": drift,
            "smoke": bool(args.smoke), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     _save(rp, rec)
-    print(f"TRAIN DONE {MIX_ARM} {args.seed}: best epoch {best_ep} of {len(log)}")
+    print(f"TRAIN DONE {args.arm} {args.seed}: best epoch {best_ep} of {len(log)}")
     if best_ep is not None and best_ep >= DS.MAX_EPOCHS - T3.CAP_EDGE:
         print(f"WARNING: best epoch {best_ep} is within {T3.CAP_EDGE} of the cap {DS.MAX_EPOCHS}: extend this run "
               "before it is read")
@@ -472,8 +485,8 @@ def _fs5(root, plan, f5fit):
 
 
 def cmd_fit(args):
-    """D_F5mix's constant (refused unless it equals D_F5's stored one) and amendment 5's pull on FS5, with b refitted
-    on FS5's two section folds (printed); the amp head's FS5 accuracy. Zero renders."""
+    """Per new arm (zero renders): the constant (refused unless it equals D_F5's stored one) and amendment 5's pull
+    on FS5, with b refitted on FS5's two section folds (printed); the amp head's FS5 accuracy."""
     import numpy as np
 
     from learn import direct_sound_gate as G
@@ -484,35 +497,40 @@ def cmd_fit(args):
     plan, drift = load_frozen(root, args.smoke)
     f5fit = R.load_fit(root)
     fd = f5fit["models"][T3.FULL]
-    nets, recs = load_models(root, args.smoke)
     tr_rows, fs_rows, enc6, files = _fs5(root, plan, f5fit)
     med = DS.label_medians(tr_rows, enc6)
     const = G.constant_answers(tr_rows, enc6, len(F.CONT), len(F.SW), len(F.CAT))
-    if canon(DS.medians_json(med)) != canon(fd["constant"]) or canon(G.const_json(const)) != canon(fd["constant_answers"]):
+    if canon(DS.medians_json(med)) != canon(fd["constant"]) or \
+            canon(G.const_json(const)) != canon(fd["constant_answers"]):
         if not args.smoke:
-            raise SystemExit("D_F5mix's constant differs from D_F5's stored one: the labels are not D_F5's")
+            raise SystemExit("the new arms' constant differs from D_F5's stored one: the labels are not D_F5's")
     cell_of = {r["i"]: (r["amp"], r["base"]) for r in fs_rows}
-    X, C, Y, who = T3.fs_tensors(fs_rows, files, enc6, model_arm=INPUT_ARM)
-    outs = F.run_nets(nets, X, C)
-    _, ans = DS.median_answers(outs, who)
-    lab = DS.labels_of(who, Y)
-    table = DS.fit_pull_table(ans, lab, cell_of, med)
     folds = DS.section_folds(fs_rows)
-    fold_tables = {f: DS.fit_pull_table({i: a for i, a in ans.items() if folds[i] == f}, lab, cell_of, med)
-                   for f in (0, 1)}
     amp_of = {r["i"]: r["amp"] for r in fs_rows}
-    amp_acc = [float(int(np.argmax(np.mean([F._softmax(o[n][5]) for o in outs], axis=0))) == F.AMPS.index(amp_of[i]))
-               for n, i in enumerate(who)]
-    ent = {"models": model_shas(recs), "constant": DS.medians_json(med), "constant_answers": G.const_json(const),
-           "constant_is_d_f5s": True, "pull": DS.table_json(table), "pull_summary": DS.pull_summary(table),
-           "pull_folds": {str(f): DS.pull_summary(t) for f, t in fold_tables.items()},
-           "fs5_examples": len(fs_rows), "fs5_sections": len({r["section"] for r in fs_rows}),
-           "amp_head_fs_accuracy": float(np.mean(amp_acc)) if amp_acc else None}
-    print(f"{MIX_ARM}: pull {ent['pull_summary']}; folds {ent['pull_folds']}; amp head FS5 accuracy "
-          f"{ent['amp_head_fs_accuracy']}", flush=True)
+    models = {}
+    for arm in NEW_ARMS:
+        nets, recs = load_models(root, arm, args.smoke)
+        X, C, Y, who = T3.fs_tensors(fs_rows, files, enc6, model_arm=INPUT_OF[arm])
+        outs = F.run_nets(nets, X, C)
+        _, ans = DS.median_answers(outs, who)
+        lab = DS.labels_of(who, Y)
+        table = DS.fit_pull_table(ans, lab, cell_of, med)
+        fold_tables = {f: DS.fit_pull_table({i: a for i, a in ans.items() if folds[i] == f}, lab, cell_of, med)
+                       for f in (0, 1)}
+        amp_acc = [float(int(np.argmax(np.mean([F._softmax(o[n][5]) for o in outs], axis=0)))
+                         == F.AMPS.index(amp_of[i])) for n, i in enumerate(who)]
+        ent = {"models": model_shas(recs), "input": INPUTS[arm], "constant": DS.medians_json(med),
+               "constant_answers": G.const_json(const), "constant_is_d_f5s": True, "pull": DS.table_json(table),
+               "pull_summary": DS.pull_summary(table),
+               "pull_folds": {str(f): DS.pull_summary(t) for f, t in fold_tables.items()},
+               "fs5_examples": len(fs_rows), "fs5_sections": len({r["section"] for r in fs_rows}),
+               "amp_head_fs_accuracy": float(np.mean(amp_acc)) if amp_acc else None}
+        print(f"{arm}: pull {ent['pull_summary']}; folds {ent['pull_folds']}; amp head FS5 accuracy "
+              f"{ent['amp_head_fs_accuracy']}", flush=True)
+        models[arm] = ent
     _save(out_dir(root) / "fit.json", {"plan": T.PLAN, "design": DESIGN, "stage": "T3 D_F5mix fit", "status": STATUS,
                                        "readout_rule": DS.READOUT_RULE + " (T3's)", "fs5_ids": f5fit["fs5_ids"],
-                                       "models": {MIX_ARM: ent}, "drift": drift, "smoke": bool(args.smoke),
+                                       "models": models, "drift": drift, "smoke": bool(args.smoke),
                                        "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print("FIT DONE t3-mix")
 
@@ -525,27 +543,30 @@ def load_fit(root, smoke=False):
 
 
 def print_r0(rec):
-    R.print_r0(rec["rows"])
-    print(f"\nbeside, {T3.FULL} (R0, stored): " + ", ".join(f"{f} {c['readable']}/{c['heads']}"
-                                                         for f, c in rec["d_f5_by_family"].items()))
-    p = rec["paired"]
-    for who in (MIX_ARM, T3.FULL):
-        names = [r["name"] for r in p if r["favours"] == who]
-        print(f"paired per head, reliably better for {who}: {len(names)} {names}")
-    print(f"summary rows, {MIX_ARM} - {T3.FULL} (90%, 12 sections):")
-    for k in SUMMARY:
-        s = rec["summary"][k]
-        print(f"  {k:12s} {s['point']} [{s['lo']}, {s['hi']}] ({s['better']} 0 favours {MIX_ARM}; n {s['n']}; "
-              f"favours {s['favours']})")
-    for w in rec["why"]:
-        print(f"  {w}")
-    print(RUN if rec["vreal"] == "run" else STOP)
+    for arm in NEW_ARMS:
+        print(f"\n=== {arm} ===")
+        R.print_r0(rec["rows"][arm])
+    print(f"\nreadable heads (R0's rule; descriptive, no bar, about 6 per model by chance): "
+          + ", ".join(f"{a} {n}" for a, n in rec["readable"].items()))
+    print(f"beside, {T3.FULL} (R0, stored): " + ", ".join(f"{f} {c['readable']}/{c['heads']}"
+                                                       for f, c in rec["by_family"][T3.FULL].items()))
+    for name, (a, b) in PAIRS.items():
+        p, sm = rec["paired"][name], rec["summary"][name]
+        print(f"\n{a} - {b} ({name}{'; primary' if name == 'the input' else '; descriptive'}):")
+        for who, arm in (("a", a), ("b", b)):
+            names = [r["name"] for r in p if r["favours"] == who]
+            print(f"  paired per head, reliably better for {arm}: {len(names)} {names}")
+        for k in SUMMARY:
+            s = sm[k]
+            extra = f"; left out {s['left_out']}" if s.get("left_out") else ""
+            print(f"  {k:12s} {s['point']} [{s['lo']}, {s['hi']}] ({s['better']} 0 favours {a}; n {s['n']}; "
+                  f"favours {dict(a=a, b=b).get(s['favours'])}{extra})")
 
 
 def cmd_r0(args):
-    """Readout 1 (zero renders): D_F5mix's R0 table on FS5 against the constant; D_F5's readout recomputed from its
-    stored models (it must reproduce F5's stored R0 table); paired per head and the four summary rows; the stop rule.
-    Read once: an existing r0.json is kept."""
+    """Readout 1 (zero renders, descriptive): each new arm's R0 table on FS5 against the constant; D_F5's readout
+    recomputed from its stored models (it must reproduce F5's stored R0 table); paired per head and the four summary
+    rows for each pair (the input first). Read once: an existing r0.json is kept."""
     from learn import direct_sound_gate as G
 
     require_mix(args)
@@ -558,42 +579,42 @@ def cmd_r0(args):
     plan, drift = load_frozen(root, args.smoke)
     f5fit, fit = R.load_fit(root), load_fit(root, args.smoke)
     r0_f5 = R.load_r0(root, args.smoke)
-    nets_m, recs_m = load_models(root, args.smoke)
-    if fit["models"][MIX_ARM]["models"] != model_shas(recs_m):
-        raise SystemExit(f"{MIX_ARM}: fit.json was made with other models")
-    nets_s, recs_s = T3.load_models(root, T3.FULL, args.smoke)
-    if not (f5fit["models"][T3.FULL]["models"] == model_shas(recs_s) == r0_f5["models"]):
-        raise SystemExit("D_F5's models differ from those F5's fit and R0 read")
     tr_rows, fs_rows, enc6, files = _fs5(root, plan, f5fit)
     if fit["fs5_ids"] != f5fit["fs5_ids"]:
-        raise SystemExit("D_F5mix's fit read another FS5")
-    Xm, Cm, Ym, wm = T3.fs_tensors(fs_rows, files, enc6, model_arm=INPUT_ARM)
-    Xs, Cs, Ys, ws = T3.fs_tensors(fs_rows, files, enc6)
-    ex_m = R.per_example(F.run_nets(nets_m, Xm, Cm), wm, Ym)
-    ex_s = R.per_example(F.run_nets(nets_s, Xs, Cs), ws, Ys)
+        raise SystemExit("the new arms' fit read another FS5")
+    ex, shas = {}, {}
+    for arm in NEW_ARMS + (T3.FULL,):
+        if arm == T3.FULL:
+            nets, recs = T3.load_models(root, T3.FULL, args.smoke)
+            if not (f5fit["models"][T3.FULL]["models"] == model_shas(recs) == r0_f5["models"]):
+                raise SystemExit("D_F5's models differ from those F5's fit and R0 read")
+            model_arm = None
+        else:
+            nets, recs = load_models(root, arm, args.smoke)
+            if fit["models"][arm]["models"] != model_shas(recs):
+                raise SystemExit(f"{arm}: fit.json was made with other models")
+            model_arm = INPUT_OF[arm]
+        X, C, Y, who = T3.fs_tensors(fs_rows, files, enc6, model_arm=model_arm)
+        ex[arm] = R.per_example(F.run_nets(nets, X, C), who, Y)
+        shas[arm] = model_shas(recs)
     info = {r["i"]: {"section": r["section"], "cell": (r["amp"], r["base"]), "amp": r["amp"]} for r in fs_rows}
     rates, majority = R.train_priors([enc6(r["label"]) for r in tr_rows], [r["amp"] for r in tr_rows])
-    const = G.const_from_json(f5fit["models"][T3.FULL]["constant_answers"])     # D_F5mix's constant is D_F5's
-    rows_m = R.r0_rows(ex_m, info, const, rates, majority)
-    rows_s = R.r0_rows(ex_s, info, const, rates, majority)
+    const = G.const_from_json(f5fit["models"][T3.FULL]["constant_answers"])     # the new arms' constant is D_F5's
+    rows = {arm: R.r0_rows(ex[arm], info, const, rates, majority) for arm in ex}
     stored = {r["name"] for r in r0_f5["rows"] if r["readable"]}
-    again = {r["name"] for r in rows_s if r["readable"]}
+    again = {r["name"] for r in rows[T3.FULL] if r["readable"]}
     if again != stored and not args.smoke:
         raise SystemExit(f"D_F5's R0 does not reproduce F5's stored table: {sorted(again ^ stored)}")
-    paired = paired_rows(ex_m, ex_s, info)
-    summ = summary_rows(ex_m, ex_s, info)
-    n_m, n_s = sum(r["readable"] for r in rows_m), sum(r["readable"] for r in rows_s)
-    go, why = helps(n_m, n_s, summ)
     rec = {"plan": T.PLAN, "design": DESIGN, "stage": "T3 D_F5mix R0", "status": STATUS,
            "rule": "R0's: readable iff the 90% interval excludes chance in the right direction",
-           "stop_rule": "V-real renders run only if D_F5mix reads more heads than D_F5 and no summary row is reliably "
-                        "worse (its interval wholly on the worse side); a direction, not a bar",
-           "models": {MIX_ARM: model_shas(recs_m), T3.FULL: model_shas(recs_s)},
-           "fs5_examples": len(ex_m), "fs5_sections": len({v["section"] for v in info.values()}),
-           "rows": rows_m, "by_family": R.by_family(rows_m), "d_f5_rows": rows_s, "d_f5_by_family": R.by_family(rows_s),
-           "readable": {MIX_ARM: n_m, T3.FULL: n_s}, "paired": paired, "summary": summ,
-           "vreal": "run" if go else "stop", "why": why, "drift": drift, "smoke": bool(args.smoke),
-           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+           "reading": "descriptive: no stop rule, V-real runs whatever FS5 shows; readable counts have no bar",
+           "pairs": {k: list(v) for k, v in PAIRS.items()}, "models": shas,
+           "fs5_examples": len(ex[MIX_ARM]), "fs5_sections": len({v["section"] for v in info.values()}),
+           "rows": rows, "by_family": {a: R.by_family(r) for a, r in rows.items()},
+           "readable": {a: sum(x["readable"] for x in r) for a, r in rows.items()},
+           "paired": {k: paired_rows(ex[a], ex[b], info) for k, (a, b) in PAIRS.items()},
+           "summary": {k: summary_rows(ex[a], ex[b], info) for k, (a, b) in PAIRS.items()},
+           "drift": drift, "smoke": bool(args.smoke), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     _save(op, rec)
     print_r0(rec)
     print(f"R0 DONE: {op}")
@@ -636,9 +657,9 @@ def f5_predictions(root, plan, smoke=False):
 
 
 def cmd_vreal_predict(args):
-    """D_F5mix's answers on the frozen V-real-11 (zero renders), only if the FS5 read says "run": the crop's mix
-    through F5's step-4 path and D_mix's input (input hashes equal to F5's), pulled by D_F5mix's FS5 fit, the plain
-    readout; its own amp recorded. Output gain stays S's here and is fitted at render."""
+    """The new arms' answers on the frozen V-real-11 (zero renders): the crop's inputs through F5's step-4 path (input
+    hashes equal to F5's), D_F5mix through D_mix's input and D_F5-noaug through D_stem's, each pulled by its own FS5
+    fit, the plain readout; each arm's own amp recorded. Output gain stays S's here and is fitted at render."""
     from learn import arm_a_mega53 as A
     from learn import direct_existing as DE
     from learn import direct_stems as DS
@@ -647,15 +668,15 @@ def cmd_vreal_predict(args):
     require_mix(args)
     root = V.out_root(args)
     plan, drift = load_frozen(root, args.smoke)
-    r0 = load_r0(root, args.smoke)
-    if r0["vreal"] != "run" and not args.smoke:
-        raise SystemExit(f"the FS5 read says stop ({r0['why']}): no V-real")
+    r0 = load_r0(root, args.smoke)                       # read first (descriptive); no stop rule
     fit = load_fit(root, args.smoke)
-    nets, recs = load_models(root, args.smoke)
-    f = fit["models"][MIX_ARM]
-    if f["models"] != model_shas(recs) or r0["models"][MIX_ARM] != model_shas(recs):
-        raise SystemExit(f"{MIX_ARM}: the fit or R0 was made with other models")
-    med, table = DS.medians_from_json(f["constant"]), DS.table_from_json(f["pull"])
+    models = {}
+    for arm in NEW_ARMS:
+        nets, recs = load_models(root, arm, args.smoke)
+        f = fit["models"][arm]
+        if f["models"] != model_shas(recs) or r0["models"][arm] != model_shas(recs):
+            raise SystemExit(f"{arm}: the fit or R0 was made with other models")
+        models[arm] = (nets, model_shas(recs), DS.medians_from_json(f["constant"]), DS.table_from_json(f["pull"]))
     f5pred, f5pp = f5_predictions(root, plan, args.smoke)
     dirs, parts, dropped = T3.vreal_dirs(root, plan, bool(f5pred.get("dropped_members")))
     if sorted(dropped) != sorted(f5pred.get("dropped_members") or []):
@@ -663,7 +684,7 @@ def cmd_vreal_predict(args):
     man = DS._load(DS.stems_manifest_path(DS.ROOT, T.SEP))
     target = json.loads(DE.LEVELS.read_text())["summary"]["eval_mix_lufs_median"]
     ms = A.L.menu_S()
-    preds, own, inputs, gaps = {}, {}, {}, {}
+    preds, own, inputs, gaps = {a: {} for a in NEW_ARMS}, {a: {} for a in NEW_ARMS}, {}, {}
     for slug, amp, search, held in dirs:
         cls, _ = T3.part_info(slug, parts[slug])
         if slug not in inputs:
@@ -672,33 +693,35 @@ def cmd_vreal_predict(args):
                 raise SystemExit(f"{slug}: its inputs differ from those F5's predictions read")
         it = inputs[slug]
         s8, m8, ls, lm = DS.step4_half(it["stem"], it["mix"], search, it["gain_db"])
-        x, c = DS.model_input(s8, m8, ls, lm, search, amp, cls, INPUT_ARM)
         _, S = ms[amp][cls]
-        b, gap = DS.cell_b(table, (amp, cls), F.cell_masks(amp)[0])
-        if gap:
-            gaps[f"{amp}|{cls}"] = gap
-        r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
         key = f"{slug}|{amp}|{search}"
-        diag = {"a2": [float(v) for v in r["a2"]], "sw_p": [float(v) for v in r["sw_p"]], "mics": r["mics"]}
-        preds[key] = {"settings": LO.sdict(T3.full_answer(amp, S, r, med[(amp, cls)], b)), "held": held, "diag": diag}
-        own[f"{slug}|{search}"] = {"amp": r["amp"], "p": r["amp_p"]}
+        for arm, (nets, _, med, table) in models.items():
+            x, c = DS.model_input(s8, m8, ls, lm, search, amp, cls, INPUT_OF[arm])
+            b, gap = DS.cell_b(table, (amp, cls), F.cell_masks(amp)[0])
+            if gap:
+                gaps[f"{arm}|{amp}|{cls}"] = gap
+            r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
+            diag = {"a2": [float(v) for v in r["a2"]], "sw_p": [float(v) for v in r["sw_p"]], "mics": r["mics"]}
+            preds[arm][key] = {"settings": LO.sdict(T3.full_answer(amp, S, r, med[(amp, cls)], b)), "held": held,
+                               "diag": diag}
+            own[arm][f"{slug}|{search}"] = {"amp": r["amp"], "p": r["amp_p"]}
     od = out_dir(root) / "vreal"
     _save(od / "predictions.json", {
-        "plan": T.PLAN, "design": DESIGN, "stage": "T3 D_F5mix V-real", "status": STATUS, "arm": MIX_ARM,
-        "input": INPUT, "smoke": bool(args.smoke), "members": plan["vreal"]["members"], "dropped_members": dropped,
-        "directions": len(dirs), "predictions": {MIX_ARM: preds}, "own_amp": own, "pull_gaps": gaps,
-        "inputs": {s: v["hashes"] for s, v in inputs.items()}, "models": model_shas(recs),
+        "plan": T.PLAN, "design": DESIGN, "stage": "T3 D_F5mix V-real", "status": STATUS, "arms": list(NEW_ARMS),
+        "input": INPUTS, "smoke": bool(args.smoke), "members": plan["vreal"]["members"], "dropped_members": dropped,
+        "directions": len(dirs), "predictions": preds, "own_amp": own, "pull_gaps": gaps,
+        "inputs": {s: v["hashes"] for s, v in inputs.items()}, "models": {a: m[1] for a, m in models.items()},
         "r0_sha256": sha(out_dir(root) / "r0.json"), "f5_predictions_sha256": sha(f5pp), "drift": drift,
         "output_gain": "S's here; fitted per answer at render to the stem's loudness, as F5 (" + F.OUTPUT_FIT_STATUS + ")",
         "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     groups = len({(s, a) for s, a, _, _ in dirs})
-    print(f"MIX PREDICT: {len(dirs)} directions; {groups} groups, {renders_needed(groups)} renders to come"
+    print(f"MIX PREDICT: {len(dirs)} directions x {len(NEW_ARMS)} arms; {groups} groups, {renders_needed(groups)} renders to come"
           + (f"; dims with no fitted pull (read at the constant) {gaps}" if gaps else ""))
 
 
 def cmd_vreal_render(args):
-    """D_F5mix's V-real renders for one shard of (part, amp) groups: one discarded priming render at S, then the
-    answer once per direction, judged on both halves; output gain fitted to the stem's loudness and its |LUFS error|
+    """The new arms' V-real renders for one shard of (part, amp) groups: one discarded priming render at S, then each
+    arm's answer once per direction, judged on both halves; output gain fitted to the stem's loudness and its |LUFS error|
     recorded (as F5). isolate=True; at most 3 render processes machine-wide; the 31 GB disk guard; a done group is
     kept."""
     from learn import arm_a_mega53 as A
@@ -716,7 +739,7 @@ def cmd_vreal_render(args):
     if not pred or (pred.get("smoke") and not args.smoke):
         raise SystemExit("run `vreal-predict` first")
     if pred["members"] != plan["vreal"]["members"]:
-        raise SystemExit("D_F5mix's predictions were made for another V-real membership")
+        raise SystemExit("the new arms' predictions were made for another V-real membership")
     if pred["r0_sha256"] != sha(out_dir(root) / "r0.json"):
         raise SystemExit("r0.json changed since vreal-predict")
     dirs, parts, dropped = T3.vreal_dirs(root, plan, bool(pred.get("dropped_members")))
@@ -746,8 +769,8 @@ def cmd_vreal_render(args):
             g = {"sel": ctx["sel"], "S": ctx["S"], "di": ctx["di"], "di32": ctx["di32"], "ref": ctx["ref"],
                  "lag": ctx["part"]["judge_lag"]}
             stem = DS.stored_stem(man, f"stagef/{slug}") if info["kind"] == "stagef" else T3.crop_stem(info)
-            settings = {MIX_ARM: {sh: LO.tdict(pred["predictions"][MIX_ARM][f"{slug}|{amp}|{sh}"]["settings"])
-                                  for sh, _ in K.DIRECTIONS}}
+            settings = {a: {sh: LO.tdict(pred["predictions"][a][f"{slug}|{amp}|{sh}"]["settings"])
+                            for sh, _ in K.DIRECTIONS} for a in NEW_ARMS}
             held_of = dict(K.DIRECTIONS)
             checks = {}
 
@@ -755,7 +778,7 @@ def cmd_vreal_render(args):
                 gain = float(settings[arm][search].get(F.OUTPUT, "0"))
                 checks[f"{arm}|{search}"] = T3.lufs_check(gain, y, stem, ref, search, held_of[search])
 
-            rec = DS.run_group(rr, g, settings, False, None, K.judge, keep=keep, arms=(MIX_ARM,))
+            rec = DS.run_group(rr, g, settings, False, None, K.judge, keep=keep, arms=NEW_ARMS)
             rec.update(slug=slug, amp=amp, lufs=checks, output_gain_fit=F.OUTPUT_FIT_STATUS, status_mix=STATUS)
             _save(gp, rec)
             print(slug, amp, rec["renders"], flush=True)
@@ -765,8 +788,8 @@ def cmd_vreal_render(args):
 
 
 def cmd_report(args):
-    """The rows against F5's stored renders: D_F5mix - D_F5 (primary), - D_core5, - S, - the constant; F5's gate and
-    R1 beside. Band-weighted, 90% band-clustered t (7 bands), per class and V-real-10 beside."""
+    """The rows: D_F5mix - D_F5-noaug (primary), D_F5mix - D_F5 and D_F5-noaug - D_F5 (descriptive), D_F5mix -
+    D_core5, - S, - the constant (F5's stored renders); F5's gate and R1 beside. Band-weighted, 90% band-clustered t (7 bands), per class and V-real-10 beside."""
     from learn import arm_a_mega53 as A
     from learn import direct_stems as DS
     from learn import perfect_sep_arm as P
@@ -784,7 +807,7 @@ def cmd_report(args):
     parts, _ = T3.vreal_parts(sorted(members), A.pool_slugs(), crops, drop_missing=True)
     units = [u for u in P.build_units() if u["slug"] in members] + T3.t3_units(parts, f5d / "groups")
     cache = {}
-    where = {MIX_ARM: od, R.R_ARM: rd}
+    where = {MIX_ARM: od, NOAUG_ARM: od, R.R_ARM: rd}
 
     def value(arm):
         def f(u):
@@ -819,7 +842,7 @@ def cmd_report(args):
            "own_amp": mp.get("own_amp"), "renders": renders, "drift": drift,
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     _save(out_dir(root) / "report.json", rep)
-    print(f"T3 {MIX_ARM} ({STATUS}): V-real {len(members)} parts ({len(units)} directions); renders {renders}")
+    print(f"T3 {MIX_ARM} and {NOAUG_ARM} ({STATUS}): V-real {len(members)} parts ({len(units)} directions); renders {renders}")
     for g in gaps:
         print(f"  incomplete: {g}")
     for name, c in con.items():
@@ -843,6 +866,7 @@ COMMANDS = {"check": cmd_check, "train": cmd_train, "fit": cmd_fit, "r0": cmd_r0
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="trusted_data_t3_mix", description=__doc__.split("\n")[0])
     ap.add_argument("cmd", choices=tuple(COMMANDS))
+    ap.add_argument("--arm", default=None, choices=NEW_ARMS)
     ap.add_argument("--seed", type=int, default=None)
     ap.add_argument("--shard", type=V.parse_shard, default=(0, 1))
     ap.add_argument("--out", default=None)
@@ -850,8 +874,9 @@ def main(argv=None):
     args = ap.parse_args(argv)
     if args.shard != (0, 1) and args.cmd != "vreal-render":
         raise SystemExit("--shard is for vreal-render")
-    if (args.seed is None) == (args.cmd == "train"):
-        raise SystemExit("--seed is for train, and train needs it")
+    if (args.seed is None or args.arm is None) == (args.cmd == "train") or \
+            (args.cmd != "train" and (args.seed, args.arm) != (None, None)):
+        raise SystemExit("--arm and --seed are for train, and train needs both")
     return COMMANDS[args.cmd](args)
 
 
