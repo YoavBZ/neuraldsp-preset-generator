@@ -181,7 +181,12 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      its validation curve (within-song: held-out sections of its own bands; no 0.1 dB gain for 1,000 steps) or at
      the approved 5.5 h per fold. Then about 4,200 re-separations (about 3–5 h), D_F5ft
      (D_F5-noaug with the new stem, 2 runs), and the readout: the stems' SNR, R0 on FS5, the tone probe on the new
-     stems, and V-real (99 renders, no stop rule), D_F5ft − D_F5-noaug primary. About 5–16 h in all.*
+     stems, and V-real (99 renders, no stop rule), D_F5ft − D_F5-noaug primary. About 5–16 h in all.* *Running
+     since 2026-10-27 10:06 (the gate fix, PR #316, first). The gate chose the CPU: MPS training failed the gradient
+     check, and its einsum attention peaked at 21.3 GB, over the 20 GB cap; 43 s a step, so each fold ran to its
+     approved 457 steps. Validation (within-song, SNR to the wet target): fold 0 −8.24 dB stock → −0.57 dB, fold 1
+     −2.81 → −0.45 dB, both best at step 250 and slightly worse by 457 (−0.86, −1.04), so step 250 is kept.
+     Separation, D_F5ft and the readout run overnight; the outcome is written up when audited.*
    - (c) **Audibility-aware labels for the time effects.** The probe's audibility split: from the stem, the delay's
      AUC rises from 0.62 to 0.73 on its loudest third, while reverb, tremolo and the springs stay weak even at their
      loudest. So a time effect's label should reflect how audible it is, not only its switch. Measuring audibility
@@ -214,7 +219,11 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      backing, so effect size and masking are mixed; tremolo reads weakly at every level. A_e measures how much the
      effect moves the judge's render-to-mix score, not audibility as such (it is negative for 25–49% of pairs, a judge
      property). The doubler also runs on across renders. The ear page went to the user; the relabel waits for their
-     answers and the three rulings.*
+     answers and the three rulings.* *The user found that page's pairs too dense to hear (2026-10-27): FS5's mixes sit
+     in 4 dense rock songs, the guitar usually 5–19 dB under the rest. A second page, zero renders (PR #319,
+     reviewed): the same selection over the 53 measured pairs whose guitar is exposed (at most 6 dB under the rest,
+     no vocals, at most 2 other guitars), its own key; sent the same day. Answers on the dense page still count: an
+     effect not heard there is masked there. The user's direction the same day (below) settles most of the rulings.*
    - (d) **F20:** the user said yes (2026-10-27); its plan is declared after (b) reads. Its value now rests on (a)/(b) and on the new data. Its declared
      fixes: redraw near-silent draws (up to 5 tries; about 16% more target renders at F5's rate); keep each
      core/full pair on one separation device; the switch readout and prior (since 2026-10-27 the plain readout is
@@ -232,7 +241,15 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
    - For (c), how an audibility measure may change the labels ([research](research/effect-detection-2026-10.md#measure-audibility-in-the-mix-not-by-the-knob)):
      counting an effect inaudible on its own as off (extends the switched-off rule, touches every-control amendment 1); weight 0
      for an effect masked in the mix (changes "the switch itself is always scored"); masking idle knobs, measured
-     per knob (Tone King's tremolo speed was audible at depth 0).
+     per knob (Tone King's tremolo speed was audible at depth 0). *The user's direction (2026-10-27, in chat):
+     different presets that sound similar are "definitely possible and acceptable"; an effect that can almost not be
+     heard is "almost not important"; effects may be adjusted from the song research after the preset is generated.
+     Read as: an effect's label counts in proportion to how audible it is in the mix, down to near zero when masked
+     (a sliding weight unless the user prefers a hard cut; τ from the ear pages). The relabel's declaration states
+     the exact form and is reviewed before it runs.*
+   - Follow-ups from that direction, not yet planned: training scored by sound rather than knob by knob (V-real
+     already scores by sound, so a sound-alike preset already counts as right there); and a hybrid in which the
+     model sets amp, drive and EQ and the time effects come from `generate`'s song research (product session).
 
    **Trusted data only (the user, 2026-10-22): "use only what we can trust, no dirty tracks".**
    Measurements, training, tests and listening pages use a reviewed trusted set. Dirty tracks are
@@ -1005,3 +1022,4 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-27 | Plan brought up to date: next, in order, (a0) a zero-cost linear probe on mix plus stem, (a) a mix-aware input (no new training renders), (b) an X-LANCE fine-tune on the self-built mixes (pending the user's yes), (c) audibility-aware time-effect labels, (d) F20 (waits for the user's yes); the open decisions in one list | [step 0](#next-in-order) |
 | 2026-10-27 | The user said yes to all four next steps (in chat, "Yes for all"): (a) D_F5mix, (b) the X-LANCE fine-tune, (c) the audibility measurement, (d) F20. (a) ran the same day and was audited: the mix input is not shown better and leans worse (D_F5mix − D_F5-noaug +0.059 [−0.012, +0.130]), best fit, not proven: the second drive pedal's switch on real songs; the stem stays. (b) and (c) are declared and reviewed before they run; (c)'s relabelling waits for the user's three rulings; F20's plan waits for (b) | [outcome](trusted-data-t0-design.md#d_f5mix-outcome-2026-10-27-165-renders-audited) |
 | 2026-10-27 | Audibility measurement (ROADMAP (c)), the fresh run audited: 23–59% of "on" effects sit below τ in the mix; delay reads better from the mix as A_e rises, mixed with effect size; tremolo reads weakly at every level; A_e measures the judge's render-to-mix sensitivity, not audibility as such; the doubler also runs on across renders (joins the V-real caution). The ear page went to the user; nothing relabelled | [outcome](trusted-data-t0-design.md#audibility-outcome-2026-10-27-fresh-run-2686-renders-audited) |
+| 2026-10-27 | The user's direction (in chat): sound-alike presets are acceptable; barely audible effects barely matter; effects may follow the song research after generation. Read as a sliding audibility weight for (c)'s relabel (declared and reviewed before it runs). A second ear page with exposed-guitar pairs replaced the dense one (zero renders, PR #319) | [(c)](#next-in-order) |
