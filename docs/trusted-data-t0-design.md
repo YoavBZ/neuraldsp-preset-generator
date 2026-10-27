@@ -2461,6 +2461,64 @@ record says where the fine-tune helped (SNR, the probe, FS5) and where it did no
   3 render processes machine-wide (`local_objective.RENDERS` lists `xlance_finetune vreal-render`); `prep`, `separate`
   and `vreal-stems` are listed as separations (no render starts beside them); the 31 GB disk guard and the swap guard.
 
+### D_F5ft outcome (2026-10-28, 99 renders; audited)
+
+The chain ran from 2026-10-27 10:06 to 2026-10-28 00:38 (logs `logs/xlft-*.log`, `t3-xlft/report.json`, `r0.json`,
+`probe.json`), complete, no errors: the gate chose the CPU (all-MPS failed the gradient check; MPS with the STFTs on
+the CPU passed it but peaked at 21.3 GB, over the 20 GB cap), 43.3 s a step, so each fold ran to its approved 457
+steps (about 5.4 h each) with validation at steps 0, 250 and 457; 4,189 out-of-band separations plus 11 V-real crops;
+2 D runs; 99 renders. An independent audit recomputed every V-real row (match to 4 decimals), checked fold hygiene
+(every stem from the fold that never trained on its band, the step-250 best checkpoint, hashes as recorded) and found
+the result below. Log ratios, lower is better:
+
+| Row | All (7 bands) | Bands −/+ | Clean (2) | Crunch (5) |
+|---|---|---|---|---|
+| **D_F5ft − D_F5-noaug (primary)** | **+0.078 [−0.025, +0.181]** | 2/5 | +0.001 | +0.109 [−0.015, +0.234] |
+| D_F5ft − D_F5mix | +0.019 [−0.045, +0.083] | 2/5 | +0.021 | +0.018 |
+| D_F5ft − D_F5 | +0.129 [+0.015, +0.243] | 2/5 | +0.031 | +0.169 |
+| D_F5ft − D_core5 | +0.208 [+0.096, +0.321] | 1/6 | +0.315 | +0.166 |
+| D_F5ft − S | +0.217 [+0.089, +0.345] | 1/6 | +0.282 | +0.191 |
+| D_F5ft − constant | +0.125 [+0.053, +0.196] | 1/6 | +0.045 | +0.157 |
+
+- **The fine-tuned separator mostly turned its output down; it did not separate better.** The validation SNR is
+  against the wet target, so a silent output scores exactly 0 dB. Both folds' best (step 250: −0.57 and −0.45 dB,
+  from −8.24 and −2.81 stock) stayed below silence, on held-out sections of their own songs. Out of band the new
+  stems' median SNR is 0.39 dB on F5 and 0.14 dB on FS5 (silence level); 0.1% of F5 and none of FS5 exceed 3 dB, and
+  33% of F5 and 47% of FS5 fall below 0 dB. New stems are a median −33 LUFS (stock −15): about 12 dB under the target guitar (F5's median;
+  −14 to −6 dB in three bands, while Ale Lak's stems are 3.6 dB louder than the target yet still worse than
+  silence), where the stock stems were about 5.5 dB over it (they carry the other guitars). So the reported new − stock +5.3 dB [+3.3,
+  +7.4] (F5) and +5.2 [+2.0, +8.5] (FS5) measures leaving "too loud, other guitars in it" for "near silence", and is
+  not a separation gain. The training target's scale was checked (the mix projects onto it at 0.995), so it is not a target-scale
+  error. Best fit, not proven: shrinkage learned under the model's L1 waveform + STFT loss; with several rendered
+  guitars in each mix, the model shrinks when it cannot tell which one is wanted.
+- **On V-real (real mixes, with the reference guitar):** the fine-tuned stems have worse SI-SDR than the stock stems in
+  9 of 11 parts (mean −8.3 against −7.4 dB) and sit a median 7 dB under the reference; only Colour Me Red ElecGtr03
+  is clearly better (+4.7 dB), and it is also the part that leans most toward D_F5ft (−0.174).
+- **The tone probe:** the fine-tuned stem reads 22 of 116 heads, the stock stem 20, the mix 30 (reliably better per
+  head: the fine-tuned stem on 3, the stock stem on 5). The probe reads the stems' summaries only, not D.
+- **FS5 readability (R0):** D_F5ft 13, D_F5-noaug 20, D_F5mix 22. D_F5ft's pull is weak (median b 0.15; D_F5-noaug
+  0.50, D_F5mix 0.33) and it reads fewer heads than D_F5mix (13 against 22), so the near-silent stem channel seems to
+  cost more than it adds; on V-real it sits near D_F5mix (+0.02).
+- **The seed that stopped at epoch 0:** seed 20261042 kept its epoch-0 weights and stopped after epoch 4 (patience 4; its epoch-0 loss was already
+  lower than every comparator's epoch 0, so an early-stop artifact, not a broken run); seed 20261043 kept epoch 14
+  (FS5 5.230 against D_F5-noaug's 5.215 and 5.223). It does not explain the result: R0 by seed reads D_F5ft 3 and 11,
+  D_F5-noaug 18 and 19; in the written knobs the seed-43-only V-real answers differ from the ensemble's less than D_F5-noaug's
+  seed spread (0.0053 against 0.0068; switch flips 0.97 against 0.80, slightly more), zero renders; by D_F5's seed
+  yardsticks (+0.019, −0.005) a single-seed primary would likely stay within about ±0.02 of +0.078 (not rendered).
+- **Parts:** Wickerman ElecGtr1 (+0.256), Get Out Of Bed (+0.242), Wickerman ElecGtr2 (+0.211) and ElecGtr3 (+0.173)
+  lean worse; Colour Me Red ElecGtr03 (−0.174), ElecGtr02 (−0.079) and Signs ElecGtr3 (−0.070) better. Leave one
+  band out: +0.05 to +0.11. By amp: AC20 +0.012, PR12 +0.085, SW50R +0.139.
+- **Pipeline check:** |LUFS error| mean 5.6 dB (step (a) 5.6); the output gain is fitted to the stock stem's loudness
+  in every arm, so it checks the pipeline, not the stem.
+- **What was missing:** no readout compared a stem with silence (a 0 dB floor), which would have shown the shrinkage at
+  the first validation; and nothing flags a D run that never improves after epoch 0. Both belong in any later plan.
+- **What it changes (as declared):** the fine-tuned stem is not adopted; F20's input stays the stock stem. **Our
+  reading, not declared:** this does not judge fine-tuning as such; it tested one short, ill-converged fine-tune (457
+  CPU steps per fold, 914 in all, against the roughly 3,000 the borrowed 11-h MPS bound assumed). Possible fixes, each needing its own declaration and the user's
+  yes for its training time: a scale-invariant loss (SI-SDR), so turning down earns nothing; a target the mix
+  identifies (all guitars, or the target with a cue); MPS under the 20 GB cap (a shorter window or micro-batch), for
+  many more steps.
+
 ## Audibility in the mix: the measurement (ROADMAP step (c); declared 2026-10-27, nothing run)
 
 **What and why.** The tone probe read the time-effect switches weakly from the mix and the stem, and the cloud
