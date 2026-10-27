@@ -772,6 +772,7 @@ def page_html(items, clips, build):
             "secs": secs}
     minutes = round(sum(secs.values()) / 60)
     js = BEP.JS.replace("GAP_MS", str(int(BEP.GAP_S * 1000)))
+    data_json = json.dumps(data).replace("</", "<\\/")
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -796,7 +797,7 @@ go; tap <b>Export</b> any time, even halfway, and send the file.</p>
 <div class="row"><button type="button" id="copy">Copy</button><button type="button" id="save">Save file</button>
 <button type="button" id="close">Close</button></div></div>
 <audio id="player" preload="none" playsinline></audio>
-<script id="data" type="application/json">{json.dumps(data).replace("</", "<\\/")}</script>
+<script id="data" type="application/json">{data_json}</script>
 <script id="clips" type="application/json">{json.dumps(clips)}</script>
 <script>{js}</script></body></html>"""
 
