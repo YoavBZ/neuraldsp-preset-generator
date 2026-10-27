@@ -130,7 +130,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 
    **Where it stands (2026-10-27).** Not ready to ship; the detail is in the trusted-data items below.
    - **Learning every control is not yet shown to help.** T3's F5 gate, D_F5 (every control learned) − D_core5 (today's 25
-     controls), reads +0.079 [−0.065, +0.224] on V-real-11 (7 bands): not shown. F20 waits for the user's yes.
+     controls), reads +0.079 [−0.065, +0.224] on V-real-11 (7 bands): not shown. The user said yes to F20 (2026-10-27);
+     its plan waits for (b).
    - **R1 (post hoc, descriptive, audited):** D_F5 with its 96 unreadable heads written at S still reads +0.062
      [−0.080, +0.204] against D_core5 (4 of 7 bands better; crunch −0.013). The delay, the one time effect still read
      (AUC 0.557, lower bound 0.505), stays on in 29 of 66 directions, and Colour Me Red ElecGtr03 drives the result
@@ -154,18 +155,19 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      if it helps. Declared and reviewed before it runs. Training is about F5's size (its 4 runs took 37 min of MPS), so it
      needs the user's yes (training longer than minutes). *Declared 2026-10-27
      ([D_F5mix](trusted-data-t0-design.md#d_f5mix-the-every-control-model-fed-the-mix-roadmap-step-a-declared-2026-10-27-nothing-run),
-     ledger amendment 3; revised after its review); pending the user's yes, not run. D_F5mix against a D_F5-noaug arm
+     ledger amendment 3; revised after its review). D_F5mix against a D_F5-noaug arm
      (the stem unaugmented, so only the input differs); 4 runs, about 30–55 min of MPS; zero renders to the FS5 read,
      then 165 on V-real (no stop rule). It reads the frozen V-real-11 under a drift check instead of T0's lists hash.
      The pilot's prior leans against the mix (D_mix − D_stem +0.022, reliably worse).* *Ran 2026-10-27 after the
      user's yes ([outcome](trusted-data-t0-design.md#d_f5mix-outcome-2026-10-27-165-renders-audited), audited): the
-     mix input is not shown better and leans worse, D_F5mix − D_F5-noaug +0.059 [−0.012, +0.130] (crunch +0.091). It
-     reads the delay's knobs better on FS5 (22 of 116 heads against 20) but on real songs it rarely turns the second
-     drive pedal on (4 of 66 directions against 19), which carries the lean. The stem stays; (b) is read against
-     D_F5-noaug.*
+     mix input is not shown better and leans worse, D_F5mix − D_F5-noaug +0.059 [−0.012, +0.130] (crunch +0.091). On
+     FS5 it reads 22 of 116 heads (the stem 20), the delay's knobs among the 7 it reads better (the stem 13). On real
+     songs it rarely turns the second drive pedal on (4 of 66 directions against 19), the best fit for the lean, not
+     proven. The stem stays; (b) is read as planned. The free pooling check: D_F5mix reads 4 of 19 time-effect heads,
+     the linear probe 5 from the mix.*
    - (b) **Fine-tune X-LANCE gtr_mss** on our self-built mixes against their known target renders (stored; no new
-     renders to train). Allowed under the user's rule ("no new separators; fine-tuning OK"). **Pending the user's
-     yes** (training longer than minutes). Rough cost, to be sized in its declaration: up to about 11 h of MPS for
+     renders to train). Allowed under the user's rule ("no new separators; fine-tuning OK"). The user said yes
+     (2026-10-27); declared and in review before it runs. Rough cost, to be sized in its declaration: up to about 11 h of MPS for
      the fine-tune (a bound borrowed from the separation plan's Mega-53 head fine-tune, so rough for X-LANCE), about
      4–6 h to re-separate F5's about 4.2k examples and FS5 (T2's separations ran about 6k in 5–8 h), and about 40 min
      to retrain D. Read like (a): FS5 first, V-real only if it helps.
@@ -178,7 +180,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      stored mix, so it is not zero renders: about 1,000 for an FS5 test (up to 200 "on" examples per effect rendered
      off), thousands for all of F5. Its ranking puts (b) first; a free check rides on (a): D_F5mix's time-effect row
      against the probe's mix row (5 of 19). How the label is used needs the user's ruling (open decisions below).*
-   - (d) **F20** still waits for the user's yes. Its value now rests on (a)/(b) and on the new data. Its declared
+   - (d) **F20:** the user said yes (2026-10-27); its plan is declared after (b) reads. Its value now rests on (a)/(b) and on the new data. Its declared
      fixes: redraw near-silent draws (up to 5 tries; about 16% more target renders at F5's rate); keep each
      core/full pair on one separation device; the switch readout and prior (since 2026-10-27 the plain readout is
      the method; an at-S read only beside it); "unknown" DIs at most 25% of draws. Its plan must also settle
@@ -187,9 +189,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
    - Not blocked by these: every-control stage 1 (can run, not run), the real-mix test and T4 (below).
 
    **Open decisions for the user (2026-10-27):**
-   - F20: whether and when it runs.
-   - Training time for (a) (declared: 4 runs, about 30–55 min of MPS), the X-LANCE fine-tune (b) (up to about 11 h, plus 4–6 h of
-     re-separation) and (c)'s retrain (about F5's size), each once declared.
+   - *Settled 2026-10-27 ("Yes for all"): F20 runs, and the training time for (a), (b) and (c)'s measurement and
+     retrain is approved, each once declared and reviewed.*
    - Before T4: the decision test's data and ship rule; whether arm A gets every-control coverage; whether the
      stored C′ and step 3's D keep running under a recorded exception to the trusted rule.
    - Reopening arm B, at the decision test.
@@ -967,4 +968,4 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-27 | R1 read (post hoc, descriptive; audited, every row recomputed; 99 renders): D_F5 with its 96 unreadable heads at S − D_core5 +0.062 [−0.080, +0.204], 4/3 bands, crunch −0.013; against S +0.071, against the constant −0.022, against D_F5 with time effects and spring at S +0.070. The delay's switch (AUC 0.557, lower bound 0.505) stays on in 29 of 66 directions and Colour Me Red ElecGtr03 drives it again, +0.846 against D_core5 (+0.949 against D_F5 with time effects at S, the better evidence that delay is the cause); "delay is the cause" is the best fit, not proven. The user (the amendment 1 question): R1 is a measurement only; writing S for unreadable controls is not adopted as the method | [R1 outcome](trusted-data-t0-design.md#r1-outcome-2026-10-27-99-renders-post-hoc-and-descriptive-audited) |
 | 2026-10-27 | Tone-information probe (approved by the user; declared first; zero renders; ledger `trusted-data-t3` amendment 2): a linear probe reads 86 of 116 heads from the target render, 30 from the self-built mix, 20 from the X-LANCE stem. The separator does not recover what the mix masks (a 66-head gap); level, finer features and the DI explain none of it. Faint labels explain part of the delay's weakness only | [probe](tone-info-probe.md) |
 | 2026-10-27 | Plan brought up to date: next, in order, (a0) a zero-cost linear probe on mix plus stem, (a) a mix-aware input (no new training renders), (b) an X-LANCE fine-tune on the self-built mixes (pending the user's yes), (c) audibility-aware time-effect labels, (d) F20 (waits for the user's yes); the open decisions in one list | [step 0](#next-in-order) |
-| 2026-10-27 | The user said yes to all four next steps (in chat, "Yes for all"): (a) D_F5mix, (b) the X-LANCE fine-tune, (c) the audibility measurement, (d) F20. (a) ran the same day and was audited: the mix input is not shown better and leans worse (D_F5mix − D_F5-noaug +0.059 [−0.012, +0.130]), carried by the second drive pedal's switch on real songs; the stem stays. (b) and (c) are declared and reviewed before they run; (c)'s relabelling waits for the user's three rulings; F20's plan waits for (b) | [outcome](trusted-data-t0-design.md#d_f5mix-outcome-2026-10-27-165-renders-audited) |
+| 2026-10-27 | The user said yes to all four next steps (in chat, "Yes for all"): (a) D_F5mix, (b) the X-LANCE fine-tune, (c) the audibility measurement, (d) F20. (a) ran the same day and was audited: the mix input is not shown better and leans worse (D_F5mix − D_F5-noaug +0.059 [−0.012, +0.130]), best fit, not proven: the second drive pedal's switch on real songs; the stem stays. (b) and (c) are declared and reviewed before they run; (c)'s relabelling waits for the user's three rulings; F20's plan waits for (b) | [outcome](trusted-data-t0-design.md#d_f5mix-outcome-2026-10-27-165-renders-audited) |
