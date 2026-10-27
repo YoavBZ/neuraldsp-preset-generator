@@ -60,6 +60,7 @@ WORKERS = 4                                           # measure: one section per
 HALVES = ("A", "B")
 WHICH = ("all on", "measured", "bottom third", "middle third", "top third", "below tau", "at or above tau")
 PAGE_NAME = "audibility-mix"
+PAGE_KBPS = 128                                       # AAC: above the ear pages' 96; the page about 10 MB
 VERDICTS = [("different", "They differ"), ("maybe", "Maybe, barely"), ("same", "Same to me"), ("unsure", "Not sure")]
 
 _save, _load = V._save, V._load
@@ -106,7 +107,8 @@ def jobs_of(chosen, reps, group_of):
     primes once. -> [{"i", "section", "amp", "what"}]."""
     rank = {REPEAT: -1, **{e: k for k, e in enumerate(EFFECTS)}}
     out = [{"i": i, "section": g[0], "amp": g[1], "what": REPEAT} for g, i in reps.items()]
-    out += [{"i": i, "section": group_of[i][0], "amp": group_of[i][1], "what": e} for e, ids in chosen.items() for i in ids]
+    out += [{"i": i, "section": group_of[i][0], "amp": group_of[i][1], "what": e}
+            for e, ids in chosen.items() for i in ids]
     return sorted(out, key=lambda j: (j["section"], j["amp"], j["i"], rank[j["what"]]))
 
 
@@ -244,6 +246,16 @@ def flac_of(root, i, what):
     return out_dir(root) / "renders" / f"{i}-{what.replace(' ', '_')}.flac"
 
 
+def render_rows(od, own=None):
+    """Every shard's render rows (`pretrain_set.read_rows`: a torn last line, from a shard killed mid-write, is
+    skipped). Only `own`, the calling shard's file, is repaired; another shard may be writing its own."""
+    from learn import pretrain_set as PS
+
+    d = od / "rows"
+    paths = sorted(d.glob("render-*.jsonl")) if d.exists() else []
+    return [r for p in paths for r in PS.read_rows(p, repair=own is not None and p == own)]
+
+
 def ledger_declared():
     d = json.loads((V.PLUGIN_ROOT / "docs" / "dev-test-ledger.json").read_text())
     e = next((t for t in d["tests"] if t["test_id"] == T3.LEDGER_ID), {})
@@ -368,12 +380,7 @@ def cmd_render(args):
         raise SystemExit("run `plan` first")
     k, n = args.shard
     rp = od / "rows" / f"render-{k}of{n}.jsonl"
-    done = set()
-    for p in sorted((od / "rows").glob("render-*.jsonl")) if (od / "rows").exists() else []:
-        for ln in p.read_text().splitlines():
-            if ln.strip():
-                r = json.loads(ln)
-                done.add((r["i"], r["what"]))
+    done = {(r["i"], r["what"]) for r in render_rows(od, own=rp)}
     shard = DS.shard_sections(ap["jobs"], n)
     todo = [j for j in ap["jobs"] if shard[j["section"]] == k and (j["i"], j["what"]) not in done]
     if not todo:
@@ -488,7 +495,8 @@ def _measure_section(job):
         j_on = K.judge(m, y, di, 0)
         rows = []
         for r in e["renders"]:
-            z = np.asarray(G.read_flac(flac_of(root, i, r["what"]), r["file"]["scale"], r["file"]["sha256"]), np.float64)
+            f = r["file"]
+            z = np.asarray(G.read_flac(flac_of(root, i, r["what"]), f["scale"], f["sha256"]), np.float64)
             j_m = K.judge(m, z, di, 0)
             if r["what"] == REPEAT:
                 rows.append({"what": REPEAT, "j_m": j_m, "floor": a_e(j_on, j_m), "repeat_ok": r.get("repeat_ok")})
@@ -508,10 +516,8 @@ def cmd_measure(args):
     ap = _load(od / "plan.json")
     if not ap:
         raise SystemExit("run `plan` first")
-    rows = []
-    for p in sorted((od / "rows").glob("render-*.jsonl")):
-        rows += [json.loads(ln) for ln in p.read_text().splitlines() if ln.strip()]
-    have = {(r["i"], r["what"]) for r in rows}
+    rows = render_rows(od)
+    have ={(r["i"], r["what"]) for r in rows}
     missing = [j for j in ap["jobs"] if (j["i"], j["what"]) not in have]
     if missing:
         raise SystemExit(f"{len(missing)} planned renders are missing (e.g. {missing[:3]})")
@@ -582,10 +588,11 @@ def run_totals(counts):
 
 def render_count(od):
     """{renders, priming} over every shard's rows (`run_totals`; a run that rendered and wrote no row is not seen)."""
+    from learn import pretrain_set as PS
+
     tot = {"renders": 0, "priming": 0}
     for p in sorted((od / "rows").glob("render-*.jsonl")):
-        c = [(r["renders_so_far"], r["primes_so_far"]) for r in
-             (json.loads(ln) for ln in p.read_text().splitlines() if ln.strip())]
+        c = [(r["renders_so_far"], r["primes_so_far"]) for r in PS.read_rows(p)]
         r, q = run_totals(c)
         tot["renders"] += r
         tot["priming"] += q
@@ -636,6 +643,22 @@ def cmd_read(args):
     print(f"READ DONE: {od / 'read.json'}")
 
 
+def reproduce_fail(stored, sw, key, now, tol=1e-9):
+    """Why the refitted probe's all-on AUC does not reproduce the tone probe's stored one (audible.json), or None.
+    A missing file, switch, input or point refuses too: the check is declared, never skipped."""
+    if not stored:
+        return "the tone probe's audible.json is missing"
+    try:
+        ref = stored["read"][sw]["all on"][key]["point"]
+    except (KeyError, TypeError):
+        return f"audible.json holds no all-on point for {sw} ({key})"
+    if ref is None or now is None:
+        return f"an undefined all-on AUC (stored {ref}, refitted {now})"
+    if abs(now - ref) > tol:
+        return f"the refitted probe's all-on AUC {now} is not the stored {ref}"
+    return None
+
+
 def read_rows(meas, stored):
     """`cmd_read`'s rows from a measure record and the tone probe's stored audible.json. -> (read, spearman)."""
     import numpy as np
@@ -643,6 +666,8 @@ def read_rows(meas, stored):
     from learn import tone_info_probe as P
     from learn import trusted_data_t3_r as R
 
+    if not stored:
+        raise SystemExit("the tone probe's audible.json is missing: the all-on check cannot run")
     root_, _, tr, fs, _ = P.load_sets()
     S = P.prepare(root_, tr, fs)
     lab_te, sec, ids = S["lab_te"], S["sec"], S["ids"]
@@ -673,14 +698,14 @@ def read_rows(meas, stored):
                 row[key] = {**st, "readable": ok, "n_on": int((on & k).sum()), "n_off": int((~on & k).sum())}
             read[e]["rows"][which] = row
         for key in "abc":
-            ref = (((stored or {}).get("read") or {}).get(sw) or {}).get("all on", {}).get(key, {}).get("point")
-            now = read[e]["rows"]["all on"][key]["point"]
-            if ref is not None and (now is None or abs(now - ref) > 1e-9):
-                raise SystemExit(f"{e} ({key}): the refitted probe's all-on AUC {now} is not the stored {ref}")
+            why = reproduce_fail(stored, sw, key, read[e]["rows"]["all on"][key]["point"])
+            if why:
+                raise SystemExit(f"{e} ({key}): {why}")
         meas_on = [i for i in mids if (e, i) in by and by[(e, i)]["a_e"] is not None and i not in refused]
         proxy = [float(lab_te[0][pos[i], jp]) for i in meas_on]
         aes = [by[(e, i)]["a_e"] for i in meas_on]
-        corr[e] = {"a_e_vs_proxy": spearman(aes, proxy), "a_e_vs_solo": spearman(aes, [by[(e, i)]["solo"] for i in meas_on])}
+        corr[e] = {"a_e_vs_proxy": spearman(aes, proxy),
+                   "a_e_vs_solo": spearman(aes, [by[(e, i)]["solo"] for i in meas_on])}
     return read, corr
 
 
@@ -688,6 +713,11 @@ def read_rows(meas, stored):
 
 def page_dir():
     return V.HOME / "listening" / PAGE_NAME
+
+
+def key_path(root):
+    """The page's answer key, kept with the measurement and away from the listening folder."""
+    return out_dir(root) / "page-key.json"
 
 
 def pair_audio(root, it, ctx, stems, t2, t2rend, rend, built, cache):
@@ -713,36 +743,55 @@ def pair_audio(root, it, ctx, stems, t2, t2rend, rend, built, cache):
     m_on = mix_with(y, oth, st, gains, i, x["draw"]["mastered"])
     if it["kind"] == "same":
         return m_on, m_on.copy()
-    rows = [json.loads(ln) for p in sorted((out_dir(root) / "rows").glob("render-*.jsonl"))
-            for ln in p.read_text().splitlines() if ln.strip()]
-    r = next(r for r in rows if r["i"] == i and r["what"] == e)
+    r = next(r for r in render_rows(out_dir(root)) if r["i"] == i and r["what"] == e)
     z = np.asarray(G.read_flac(flac_of(root, i, e), r["file"]["scale"], r["file"]["sha256"]), np.float64)
     return m_on, mix_with(z, oth, st, gains, i, x["draw"]["mastered"])
 
 
+def level_free(a, b):
+    """Both clips at the same loudness, each levelled on its own (`build_data_review.level_clip`, -23 LUFS), as the
+    judge levels render and mix apart: A_e cannot see a level change the effect makes, so the ear check must not hear
+    one either. If the true-peak ceiling lowers one clip, the other is lowered by as much. -> (a', b')."""
+    from learn import build_data_review as BDR
+
+    ya, _, _, ca = BDR.level_clip(a)
+    yb, _, _, cb = BDR.level_clip(b)
+    cut = max(ca, cb)
+    return ya * 10 ** (-(cut - ca) / 20), yb * 10 ** (-(cut - cb) / 20)
+
+
+def aac_b64(flac, cache, kbps=PAGE_KBPS):
+    """AAC (mono, `kbps`) of a FLAC clip, cached by the clip's hash and bitrate, as base64."""
+    import base64
+    import subprocess
+
+    h = hashlib.sha256(pathlib.Path(flac).read_bytes()).hexdigest()[:16]
+    out = pathlib.Path(cache) / f"{h}-{kbps}.m4a"
+    if not out.exists():
+        out.parent.mkdir(parents=True, exist_ok=True)
+        tmp = out.with_name(out.stem + ".tmp.m4a")
+        subprocess.run(["afconvert", "-f", "m4af", "-d", "aac", "-b", str(kbps * 1000), str(flac), str(tmp)],
+                       check=True)
+        tmp.replace(out)
+    return base64.b64encode(out.read_bytes()).decode()
+
+
 def pair_clips(a, b, cache_dir):
-    """Both clips with ONE gain (the "on" mix at -23 LUFS, lowered together if either would pass -1 dBTP), 10-ms
-    fades, AAC, base64: the level difference the effect makes is kept."""
+    """Both clips level-free (`level_free`: each at -23 LUFS on its own), 10-ms fades, AAC at PAGE_KBPS, base64."""
     import numpy as np
     import soundfile as sf
 
-    from analysis import io
-
     from learn import build_data_review as BDR
 
-    _, g, _, _ = BDR.level_clip(a)
-    pk = max(io.true_peak_dbtp(io.from_samples((v * 10 ** (g / 20)).reshape(-1, 1), BDR.SR)) or -120.0 for v in (a, b))
-    if pk > BDR.PEAK_CEILING_DBTP:
-        g -= pk - BDR.PEAK_CEILING_DBTP
     out = []
-    for v in (a, b):
-        y = BDR.fade(np.asarray(v, np.float64) * 10 ** (g / 20))
+    for v in level_free(np.asarray(a, np.float64), np.asarray(b, np.float64)):
+        y = BDR.fade(v)
         h = hashlib.sha256(y.astype(np.float32).tobytes()).hexdigest()[:16]
         flac = pathlib.Path(cache_dir) / f"{h}.flac"
         flac.parent.mkdir(parents=True, exist_ok=True)
         if not flac.exists():
             sf.write(str(flac), y, BDR.SR, subtype="PCM_24")
-        out.append(BDR.aac_b64(flac, cache_dir))
+        out.append(aac_b64(flac, cache_dir))
     return out
 
 
@@ -786,8 +835,8 @@ def page_html(items, clips, build):
 <p class="intro">{total} items, about {minutes} minutes. Each Play button plays the same 10 seconds of a song twice.
 In one, the guitar's named effect is on; in the other it is switched off, and nothing else changes. The order is
 random, and a few items are the very same mix twice. Answer whether you hear <b>any</b> difference, however small.
-Both clips share one volume, so a level change counts too. Headphones help. Answers are saved in this browser as you
-go; tap <b>Export</b> any time, even halfway, and send the file.</p>
+Both clips are set to the same loudness, so listen for the effect itself, not a volume change. Headphones help.
+Answers are saved in this browser as you go; tap <b>Export</b> any time, even halfway, and send the file.</p>
 {"".join(cards)}
 </main>
 <footer><button type="button" id="next">Next unanswered</button>
@@ -803,8 +852,10 @@ go; tap <b>Export</b> any time, even halfway, and send the file.</p>
 
 
 def cmd_page(args):
-    """The ear check of tau: `page_items` from measure.json, each pair rendered as two mixes; the page, and items.json
-    (the key: each item's effect, example, kind, A_e and play order; never shown on the page)."""
+    """The ear check of tau: `page_items` from measure.json, each pair rendered as two mixes. The blind page and its
+    clips go to listening/audibility-mix/; the key (each item's effect, example, kind, A_e and play order) goes to
+    trusted-data/audibility/page-key.json, outside the listening folder. Reading an export against the key is for the
+    relabel's declaration (no reader here yet)."""
     from learn import direct_stems as DS
 
     require_declared()
@@ -814,9 +865,9 @@ def cmd_page(args):
         raise SystemExit("run `measure` first")
     refused = {r["i"] for r in meas["refused"]}
     items = page_items([p for p in meas["pairs"] if p["i"] not in refused])
-    pd = page_dir()
-    if (pd / "items.json").exists() and not args.force:
-        raise SystemExit(f"{pd / 'items.json'} exists: a rebuild hides the listener's stored answers (--force)")
+    pd, kp = page_dir(), key_path(root)
+    if kp.exists() and not args.force:
+        raise SystemExit(f"{kp} exists: a rebuild hides the listener's stored answers (--force)")
     ctx = DS.Ctx(quiet=True)
     ctx.rows = None
     stems = T.Stems(ctx)
@@ -832,7 +883,7 @@ def cmd_page(args):
     build = hashlib.sha256(json.dumps(items, sort_keys=True).encode()).hexdigest()[:12]
     key["build"] = build
     pd.mkdir(parents=True, exist_ok=True)
-    _save(pd / "items.json", key)
+    _save(kp, key)
     p = pd / "index.html"
     p.write_text(page_html(items, clips, build))
     print(f"PAGE DONE: {len(items)} items, {p.stat().st_size / 1e6:.1f} MB -> {p}")

@@ -181,8 +181,55 @@ def test_page_html_is_blind():
     page = A.page_html(items, clips, "b123")
     assert page.count('class="item"') == len(items)
     for word in ("near tau", "anchor", "a_e", '"kind"', '"first":'):
-        assert word not in page                                                         # the key stays in items.json
+        assert word not in page                                                         # the key stays in page-key.json
     assert 'name="viewport"' in page and A.PAGE_NAME in page
+
+
+def test_reproduce_check_refuses_rather_than_skips():
+    stored = {"read": {"delay/delayActive": {"all on": {"b": {"point": 0.66}}}}}
+    assert A.reproduce_fail(stored, "delay/delayActive", "b", 0.66) is None
+    assert "not the stored" in A.reproduce_fail(stored, "delay/delayActive", "b", 0.67)
+    assert "missing" in A.reproduce_fail(None, "delay/delayActive", "b", 0.66)
+    assert A.reproduce_fail(stored, "reverb/reverbActive", "b", 0.6)                    # a switch it lacks
+    assert A.reproduce_fail(stored, "delay/delayActive", "c", 0.6)                      # an input it lacks
+    assert A.reproduce_fail(stored, "delay/delayActive", "b", None)
+    with pytest.raises(SystemExit):
+        A.read_rows({"pairs": [], "refused": []}, None)                                 # before any refit
+
+
+def test_page_clips_are_level_free():
+    pytest.importorskip("pyloudnorm")
+    from analysis import io
+
+    from learn import build_data_review as BDR
+
+    rng = np.random.default_rng(1)
+    a = rng.normal(0, 0.1, 48000 * 3)
+    for b in (0.25 * a, 3.0 * a):                                                      # quieter, and loud enough to peak-cut
+        ya, yb = A.level_free(a, b)
+        la = io.loudness_lufs(io.from_samples(ya.reshape(-1, 1), BDR.SR))
+        lb = io.loudness_lufs(io.from_samples(yb.reshape(-1, 1), BDR.SR))
+        assert la == pytest.approx(lb, abs=0.1)
+        assert la <= BDR.TARGET_LUFS + 0.1
+
+
+def test_render_rows_skip_a_torn_line_and_repair_only_their_own(tmp_path):
+    d = tmp_path / "rows"
+    d.mkdir()
+    mine, other = d / "render-0of3.jsonl", d / "render-1of3.jsonl"
+    mine.write_text('{"i": 1, "what": "delay"}\n{"i": 2, "wh')
+    other.write_text('{"i": 3, "what": "reverb"}\n{"i": 4, "wh')
+    rows = A.render_rows(tmp_path, own=mine)
+    assert [(r["i"], r["what"]) for r in rows] == [(1, "delay"), (3, "reverb")]
+    assert mine.read_text() == '{"i": 1, "what": "delay"}\n'                            # repaired
+    assert other.read_text().endswith('{"i": 4, "wh')                                   # another shard's: untouched
+    assert A.render_rows(tmp_path / "none") == []
+
+
+def test_the_key_is_outside_the_listening_folder():
+    root = pathlib.Path("/data")
+    assert A.key_path(root) == root / A.OUT_DIR / "page-key.json"
+    assert A.page_dir() not in A.key_path(A.V.OUT).parents
 
 
 # --- the render count and the mix -----------------------------------------------------------------------------------

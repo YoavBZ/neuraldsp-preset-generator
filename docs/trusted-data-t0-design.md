@@ -2294,14 +2294,22 @@ that audibility in each example's own mix, the report's ranked change 2.
 ### The ear check of τ
 
 A mobile listening page (`listening/audibility-mix/index.html`), blind. Each item plays the same 10 s of a song
-twice: the stored mix, and the same mix with r_off in place of r_on (same gains, same mastering). Both clips share one
-gain, so a level change the effect makes is kept. The question is "do the two mixes differ?" (they differ, maybe,
-same, not sure).
+twice: the stored mix, and the same mix with r_off in place of r_on (same gains, same mastering). The question is "do
+the two mixes differ?" (they differ, maybe, same, not sure).
+- **Level-free, like A_e.** The judge levels the render and the mix apart, so A_e cannot see the guitar getting louder
+  or quieter against the backing when the effect goes off. The page matches it: each clip is levelled to −23 LUFS on
+  its own (if the true-peak ceiling lowers one, the other is lowered as much), so a level change cannot make a pair
+  sound different, and the τ check is not biased toward "audible". *(Changed after the independent review of
+  PR #314: the first draft kept the level change.)*
 - Per effect: the 2 pairs nearest τ below it, the 2 nearest above it, and the loudest (an anchor); plus 3 identical
   pairs (the mix against itself) from different effects. About 28 items, about 12 minutes.
 - Order and each pair's play order are seeded (20261114). The key (effect, example, kind, A_e, order) is in
-  `items.json`, never on the page.
-- The answers go into the relabel's declaration as the evidence for its τ.
+  `trusted-data/audibility/page-key.json`, outside the listening folder and never on the page.
+- Clips are AAC at 128 kbps (the ear pages use 96), about 10 MB for the page (a dry run measured 0.25 MB a pair at 96 kbps), so it stays phone-sized. A caveat: lossy
+  coding may still blur the smallest differences near τ, so a "same" there is weaker evidence than a "differ".
+- The answers go into the relabel's declaration as the evidence for its τ. **No reader for the page's export exists
+  yet:** one (decoding each answer through the key, by kind and side of τ, the catches first) must be written and
+  reviewed before the relabel uses the answers.
 
 ### Cost
 
