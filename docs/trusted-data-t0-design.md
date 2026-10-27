@@ -2231,6 +2231,46 @@ reads the stem, as D_F5:
   trimmed; at most 3 render processes machine-wide (`local_objective.RENDERS` lists `trusted_data_t3_mix
   vreal-render`); the 31 GB disk guard.
 
+### D_F5mix outcome (2026-10-27, 165 renders; audited)
+
+The user said yes on 2026-10-27. The chain ran from 08:34 to 09:11 (logs `logs/t3mix-*.log`, `t3-mix/report.json`,
+`t3-mix/r0.json`), complete: 4 runs (best epochs 11/16 and 21/26 for the mix, 20/25 and 21/26 for the stem, none near
+the cap), 66 directions on the frozen V-real-11, 7 bands, 165 renders, nothing dropped or refused. An independent
+audit recomputed the rows with its own script, and they match to 4 decimals. Log ratios, lower is better:
+
+| Row | All (7 bands) | Bands −/+ | Clean (2) | Crunch (5) |
+|---|---|---|---|---|
+| **D_F5mix − D_F5-noaug (primary)** | **+0.059 [−0.012, +0.130]** | 3/4 | −0.021 | +0.091 [−0.002, +0.184] |
+| D_F5mix − D_F5 (input and augmentation) | +0.110 [+0.009, +0.211] | 1/6 | +0.009 | +0.150 |
+| D_F5-noaug − D_F5 (augmentation) | +0.051 [−0.049, +0.150] | 3/4 | +0.030 | +0.059 |
+| D_F5mix − D_core5 | +0.189 [+0.050, +0.328] | 0/7 | +0.294 | +0.147 |
+| D_F5mix − S | +0.198 [+0.051, +0.345] | 1/6 | +0.261 | +0.173 |
+| D_F5mix − constant | +0.106 [+0.034, +0.178] | 1/6 | +0.023 | +0.139 |
+
+- **The mix input is not shown better; it leans worse** (crunch +0.091 [−0.002, +0.184]; by amp over all 7 bands,
+  PR12 +0.106, SW50R +0.091, AC20 −0.019). The 2 clean bands lean better (−0.021), descriptive only.
+- **FS5 (descriptive):** D_F5mix reads 22 of 116 heads, D_F5-noaug and D_F5 20. The mix reads the delay's mix,
+  feedback, time and low cut reliably better (7 heads in all); the stem reads 13 heads better, and the knobs' summary
+  favours the stem. FS5 shares its songs and DI tracks with training (only the time windows differ), which flatters
+  the mix most, since its backing is in-domain.
+- **What drives V-real (the audit's breakdown, after the fact, descriptive; the best fit, not proven, since no render
+  isolates it):** the second drive pedal's switch.
+  Out of 66 directions, D_F5 turns drive2 on in 26, D_F5-noaug in 19, D_F5mix in 4. The 17 directions where the mix
+  and the stem disagree on it (16 with the mix off) average +0.203; the 49 that agree, −0.005. FS5 reads drive2
+  alike (AUC 0.661 against 0.671), so the mix's reading seems not to carry over to real songs. It is not a level effect:
+  raising the V-real mix 0.85 dB to the training median still turns drive2 on in 4 of 66.
+- **Parts:** Get Out Of Bed (+0.234), Wickerman ElecGtr2 (+0.141), Let's Dance (+0.134) and Wickerman ElecGtr3
+  (+0.107) lean against the mix; Colour Me Red ElecGtr02 (−0.105) for it. D_F5mix − D_F5's interval above 0 rests on
+  Femme (an augmentation effect, +0.347 for D_F5-noaug − D_F5 there) and Get Out Of Bed: dropping either makes the
+  interval hold 0.
+- **Colour Me Red ElecGtr03:** all three arms keep delay on (p 0.50–0.55) and reverb on, as D_F5 did; the mix input
+  does not change the delay decision. Delay is on in 26 of 66 directions for D_F5mix, 24 for D_F5-noaug, 29 for D_F5.
+- **The free pooling check (research #311's ranked change 4):** D_F5mix reads 4 of 19 time-effect heads on FS5
+  (D_F5-noaug 3, D_F5 1), against the linear probe's 5 of 19 from the mix: the CNN's pooling loses little there.
+- **Pipeline check:** |LUFS error| mean 5.6 dB, median 5.8, none clamped (R1: 5.5).
+- **What it changes (as declared):** the mix input is not adopted; the stem stays, and (b) is read as planned.
+  (b)'s own declaration, in review, takes D_F5-noaug as its comparator. Nothing about F20 is decided here.
+
 ## D_F5ft: the every-control model fed the fine-tuned stem (ROADMAP step (b); declared 2026-10-27, nothing run)
 
 **What and why.** The [tone probe](tone-info-probe.md) located the song-only loss between the wet target render (86
@@ -2414,3 +2454,93 @@ record says where the fine-tune helped (SNR, the probe, FS5) and where it did no
 - **Machine rules:** every Morgan render isolate=True, one discarded priming render, the first 0.25 s trimmed; at most
   3 render processes machine-wide (`local_objective.RENDERS` lists `xlance_finetune vreal-render`); `prep`, `separate`
   and `vreal-stems` are listed as separations (no render starts beside them); the 31 GB disk guard and the swap guard.
+
+## Audibility in the mix: the measurement (ROADMAP step (c); declared 2026-10-27, nothing run)
+
+**What and why.** The tone probe read the time-effect switches weakly from the mix and the stem, and the cloud
+researcher's [report](research/effect-detection-2026-10.md) found masking by the backing, more than faint "on" labels,
+the main loss. Step (c) would label a time effect by how audible it is. Before any label changes, this step measures
+that audibility in each example's own mix, the report's ranked change 2.
+- **Approved by the user** in chat on 2026-10-27 ("Yes for all", to steps (a)–(d)). Declared here and in the ledger
+  (`trusted-data-t3`, amendment 5) before any render.
+- **Descriptive.** It decides nothing, relabels nothing and trains nothing. How a label may use A_e waits for the
+  user's three rulings (ROADMAP, open decisions): counting an effect inaudible on its own as off; weight 0 for an
+  effect masked in the mix; masking idle knobs, per knob. The relabelled retrain gets its own declaration after them.
+- **Data:** FS5 only, development data that R0, the tone probe and step (a) have read. V-real and held-out data are
+  not touched.
+- Code: `learn/audibility_measure.py`. Chain: `docs/audibility-measure-chain.sh`. Outputs go to
+  `trusted-data/audibility/` and `listening/audibility-mix/` only; `t0/`, `t2/`, `t3/` and `tone-probe/` are read.
+
+### What is measured
+
+- **The effects:** delay, reverb and tremolo (each `…Active` switch set to `false`), and the PR12 and SW50R springs
+  (each spring level set to `0`, how the full space writes a spring that is off). Each keeps the tone probe's proxy
+  for its level (delay and reverb mix, tremolo depth, spring level).
+- **The examples:** FS5's 722 full twins (12 sections), from T3's frozen plan under step (a)'s drift check, with the
+  effect on (its switch scored and on, the probe's rule). All of them, or a seeded draw of 200 (seed 20261113) where
+  there are more. Counted (zero renders): delay 200 of 362, reverb 200 of 386, tremolo 200 of 241, PR12 spring 120,
+  SW50R spring 104; **824 effect-off renders on 483 examples**, every effect in all 12 sections.
+- **The renders:** r_off is the example's full twin with that one effect off, nothing else changed.
+  - Each render rebuilds the full twin (`full_twin`) and refuses unless it equals T3's render row; the effect-off
+    setting must encode the effect on before and off after.
+  - **A repeat** of r_on, once per (section, amp) group (36), checked against the stored target's mels (T2's match
+    share, 0.99). It measures the render's own floor.
+  - One discarded priming render per group (36). **896 renders in all.**
+- **A_e** (the report's definition). m is the example's stored self-built mix, rebuilt exactly from the stored target,
+  other guitars, stems, gains and mastering draw. It is refused unless its mel features match the stored `mix-t3`
+  (share 0.99) and its gains equal the build row's. Nothing is re-mixed: r_off is scored against the mix that holds
+  r_on.
+  - J is the judge (`knob_ceiling.judge`, the aligned distance on the two halves, lag 0, the section's measured DI).
+  - **A_e = |mean over the halves of log(J(r_off, m) / J(r_on, m))|.** A refused half leaves A_e undefined (counted).
+  - Beside it: the signed mean (below 0, r_off sits closer to the mix than r_on: noise); **solo**, the plain
+    distance J(r_off, r_on), with no threshold (the report leaves solo's open); and **the repeat floor**, the same
+    log ratio for r_on rendered again.
+  - A zero-render check on one FS5 example rebuilt its stored mix exactly (mel share 1.0, gains equal); the judge
+    scores a render against itself at 0 and is level-free.
+- **τ starts at 0.005 log**, the every-control plan's bar, and is checked by ear (below). No τ is adopted here.
+
+### The read (zero renders)
+
+- **Per effect:** A_e's quantiles, the share under τ, the count with a negative signed mean, the solo distance's
+  quantiles, and the repeat floor's quantiles beside.
+- **The tone probe by audibility.** The probe's switch readouts for (a) the target, (b) the mix and (c) the stem are
+  refitted (deterministic; the stored "all on" AUCs must reproduce, or the read refuses). On FS5 each reads every "off"
+  example against the "on" examples in one subset: all on; measured; A_e's bottom, middle and top thirds (tertiles of
+  the measured A_e); below τ; at or above τ. R0's rule: the AUC with a delete-one-section jackknife interval, readable
+  when its lower end is above 0.5.
+- **Spearman's ρ** of A_e against the proxy level and against the solo distance: is audibility in the mix predicted by
+  the knob, or by how much the effect changes the guitar alone?
+- **What it would show.** If the mix's switch AUC climbs from the bottom to the top third, masking explains the weak
+  reads, and an audibility label has something to carry. If A_e tracks the proxy closely, the knob already carries it.
+  If the measured "on" pairs mostly fall under the repeat floor, A_e cannot separate them at this judge. Each is
+  reported with its interval and no bar.
+
+### The ear check of τ
+
+A mobile listening page (`listening/audibility-mix/index.html`), blind. Each item plays the same 10 s of a song
+twice: the stored mix, and the same mix with r_off in place of r_on (same gains, same mastering). The question is "do
+the two mixes differ?" (they differ, maybe, same, not sure).
+- **Level-free, like A_e.** The judge levels the render and the mix apart, so A_e cannot see the guitar getting louder
+  or quieter against the backing when the effect goes off. The page matches it: each clip is levelled to −23 LUFS on
+  its own (if the true-peak ceiling lowers one, the other is lowered as much), so a level change cannot make a pair
+  sound different, and the τ check is not biased toward "audible". *(Changed after the independent review of
+  PR #314: the first draft kept the level change.)*
+- Per effect: the 2 pairs nearest τ below it, the 2 nearest above it, and the loudest (an anchor); plus 3 identical
+  pairs (the mix against itself) from different effects. About 28 items, about 12 minutes.
+- Order and each pair's play order are seeded (20261114). The key (effect, example, kind, A_e, order) is in
+  `trusted-data/audibility/page-key.json`, outside the listening folder and never on the page.
+- Clips are AAC at 128 kbps (the ear pages use 96), about 10 MB for the page (a dry run measured 0.25 MB a pair at 96 kbps), so it stays phone-sized. A caveat: lossy
+  coding may still blur the smallest differences near τ, so a "same" there is weaker evidence than a "differ".
+- The answers go into the relabel's declaration as the evidence for its τ. **No reader for the page's export exists
+  yet:** one (decoding each answer through the key, by kind and side of τ, the catches first) must be written and
+  reviewed before the relabel uses the answers.
+
+### Cost
+
+- **896 renders** (824 effect-off, 36 repeats, 36 priming); about 10–20 min on 3 processes when the slots are free
+  (T3's rate, about 6,900 an hour). The renders wait for a free slot and for any separation (step (a)'s renders are done).
+- Measure, read and page: minutes of CPU (the judge takes about 0.07 s a half; 4 workers). Zero separations, zero
+  training. About 1 GB of FLAC.
+- **Machine rules** (F5's): every Morgan render isolate=True, one discarded priming render per (section, amp) group,
+  0.25 s trimmed; at most 3 render processes machine-wide (`local_objective.RENDERS` lists `audibility_measure
+  render`); the 31 GB disk guard.
