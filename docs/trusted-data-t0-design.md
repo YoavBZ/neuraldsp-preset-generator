@@ -2271,6 +2271,190 @@ audit recomputed the rows with its own script, and they match to 4 decimals. Log
 - **What it changes (as declared):** the mix input is not adopted; the stem stays, and (b) is read as planned.
   (b)'s own declaration, in review, takes D_F5-noaug as its comparator. Nothing about F20 is decided here.
 
+## D_F5ft: the every-control model fed the fine-tuned stem (ROADMAP step (b); declared 2026-10-27, nothing run)
+
+**What and why.** The [tone probe](tone-info-probe.md) located the song-only loss between the wet target render (86
+of 116 heads readable) and the mix (30), and found the stock X-LANCE stem recovers none of it (20; mix plus stem 24).
+The [effect-detection research](research/effect-detection-2026-10.md) ranks a fine-tune of the separator on our own
+wet targets first: it is the one lever aimed at what the mix masks. T3's stock stems sit at a median −5.7 dB SNR
+against the wet target (F5 and FS5, as T3's build measured it), so there is room. This step fine-tunes X-LANCE gtr_mss
+on F5's self-built mixes, re-separates F5 and FS5, retrains the every-control model on the new stems, and reads it as
+step (a) was read.
+- **Approved by the user 2026-10-27** ("Yes for all", after the ML session's summary listed this fine-tune at several
+  hours plus 4–6 h of re-separation). Declared here and in the ledger (`trusted-data-t3`, amendment 4) before any
+  fine-tune, separation or training.
+- It runs after step (a) (D_F5mix and D_F5-noaug), which it is read against: `check` refuses until step (a)'s report
+  is complete.
+- Code: `learn/xlance_finetune.py`. Chain: `docs/trusted-data-t3-xlance-chain.sh` (not launched).
+- Outputs go to `trusted-data/t3-xlft/` only. `t0/`, `t2/`, `t3/`, `t3-mix/` and `tone-probe/` are read, never
+  written. No held-out data: F5, FS5 and the frozen V-real-11 only, under step (a)'s drift check.
+- Allowed under the user's rule "no new separators; fine-tuning OK" (2026-10-20): the stock gtr_mss weights
+  (hash-checked against `tools/xlance/manifest.json`), some of its layers trained further.
+
+### The fine-tune
+
+- **Model:** gtr_mss as `direct_stems.XLanceG` loads it (BS-RoFormer, 51.0 M parameters, stereo, one stem).
+  Trainable: the last 4 of its 12 transformer layers (8.4 M), the final norm and the mask estimator (24.7 M), 33.1 M in
+  all. The band split, layers 0–7 and the rotary frequencies (one tensor shared by every layer) stay frozen (the
+  separation plan's choice for Mega-53, kept: a light fine-tune, less to overfit on 4 bands).
+- **Recipe:** AdamW at X-LANCE's own learning rate 2e-5 and betas (0.8, 0.99), no weight decay; 100-step linear
+  warm-up, then cosine to 0 at the step maximum; one 6-s window per micro-batch, 2 accumulated per step; global-norm
+  clipping at 5 (each tensor's sum of squares on the device, the total on the CPU: MPS's `clip_grad_norm_` has
+  returned NaN here), a non-finite step skipped (10 in a row stop the run); the config's dropout (0.1); fp32.
+- **Loss:** the model's own: L1 on the waveform plus L1 on the multi-resolution STFT (windows 4096 to 256), weight 1.
+- **Inputs and targets, zero renders.** For each F5 full twin, T3's build is redone exactly: the stored target render
+  (`t3/audio/…-target.flac`), T2's stored other guitars, the section's stems, and the drawn ratio, loudness and
+  mastering (`trusted_data.self_built_mix`).
+  - The input is that mix, mono duplicated to two channels at 44.1 kHz, as the build fed gtr_mss.
+  - The target is the wet target render as it sits in the mix: the render times the mix gain. For a mastered mix
+    (1,704 of F5's 3,467) it is also multiplied by the compressor's gain curve and make-up gain (`compress_parts`,
+    tested equal to `song_aug.compress`). The final −1 dBFS clip cannot be split per source and is left out.
+  - Every rebuilt mix must reproduce its stored `mix-t3` half features (match share at least 0.99 on both halves), or
+    `prep` refuses. Cached at 44.1 kHz in fp16 (about 6 GB).
+  - A window whose target is below −50 dBFS RMS is redrawn (up to 20 tries).
+- **The pipeline control (before any training).** Stock gtr_mss through this rebuild and the build's separation path
+  must reproduce T3's stored stems: one FS5 example per section (12), each on the device its stored stem was made on,
+  match share at least 0.99, or `prep` refuses.
+
+### Cross-fitting by band: no stem D sees comes from a model that trained on its song
+
+A separator fine-tuned on F5 and then run on F5 would hand D in-sample stems. And F5 and FS5 are only 4 songs, one per
+band (11 DI tracks): a section is a DI track at a start time, so any split by section leaves every out-of-fold section
+in a song, and nearly always a DI track, its model trained on. *(The first draft split by section; the independent
+review of PR #313 found that near-useless, and it was changed before anything ran.)* So the fine-tune is cross-fitted
+by band, 2 + 2:
+- **The split** (`band_folds`, deterministic, no seed): of the splits into two pairs, the one whose F5 example counts
+  are closest. Fold 0: Ale Lak and Death Of A Romantic (1,416 F5 examples); fold 1: Hollow Ground and Storm Of
+  Particles (2,051).
+- **Fold k** fine-tunes on its own bands' F5 examples, less 3 validation sections, and separates every F5 and FS5
+  example of the other two bands. Measured (zero renders): fold 0 trains on 1,245 examples in 21 sections and
+  separates 2,051 F5 and 363 FS5; fold 1 trains on 1,878 in 32 sections and separates 1,416 F5 and 359 FS5.
+- So **every stem D trains on, early-stops on, is fitted on or is read on** comes from the model that never trained on
+  that song, which is V-real's condition too (V-real's songs are new to both models).
+- **FS5** never trains, validates or chooses anything in the fine-tune; its examples are separated with their band's
+  F5 examples.
+- **V-real-11's parts** are dealt alternately (seed 20261113): 6 to fold 0, 5 to fold 1.
+- **What is still shared:** each model trains on 2 songs and separates 2 others. D's F5 (training) and FS5 (early
+  stopping, fit, R0) stems are of the same 4 songs, as before; that is D's own design (FS5 is new sections of F5's
+  bands), not the separator's. Two songs per fold is little to fine-tune on: the fine-tune may learn the 2 songs'
+  backing more than guitar in general, which the out-of-band separation then shows honestly.
+
+### Stopping on evidence, and the time
+
+- **Validation** every 250 steps: the band mean of the mean SNR of the fold's validation examples (at most 120, a
+  seeded subset; each full 10-s example in one pass) against their wet targets. Step 0 is the stock weights.
+- **The validation sections are within-song:** 3 held-out sections of the fold's own two bands: the bands in order
+  of size (F5 examples, largest first), one section each (a seeded draw, seed 20261111), round after round, a band
+  always keeping a training section, so a small band gives up the fewest. So the stop rule reads how the fine-tune
+  does on more of the songs it trains on, not on new songs; the out-of-band SNR (readout 1) is the new-song reading.
+  Measured: fold 0 holds out 2 Death Of A Romantic sections and 1 Ale Lak; fold 1, 2 Hollow Ground and 1 Storm Of
+  Particles. The validation subset is 120 examples per fold.
+- **Validation runs as training does:** under the gate's STFT routing when the mode moves the STFTs to the CPU.
+- **Stop** when it has not improved by 0.1 dB for 1,000 steps (not before 500 steps), or at the step maximum: the
+  approved time, 5.5 h of the gate's measured step time per fold (11 h in all), with a wall guard at 1.25 times that.
+  A fold still improving when it stops is reported, not extended: an extension needs the user's yes. The best
+  checkpoint (trainable tensors) separates.
+- **Resuming:** a killed run resumes from its last checkpoint (recorded). That one file holds everything a resume
+  needs (the trainable tensors, the optimizer, the step, the curve, the best tensors and their step) and is written
+  atomically (a temporary file, then a rename) before the fold's record, so the record never runs ahead of it; the
+  best checkpoint is written from it, atomically, when the fold stops. A resumed fold keeps the mode and step limits
+  pinned in its record when it started, not today's `gate.json`. `prep` and `gate` skip when their record exists.
+
+### The MPS gate (before training)
+
+The model's forward and loss on MPS gave wrong gradients when the separation plan probed them (head gradient cosine
+0.001 with the CPU's, trunk NaN), which fits the MPS STFT bug above 65,536 samples. So the gate runs first, on stock
+weights with dropout off, on three cached F5 training examples (3, 6 and 10 s), against an all-CPU forward and
+backward:
+- **The test:** the loss within 1e-4 relative, and every trainable group's gradient cosine at least 0.999 (each of
+  layers 8–11, the final norm, the mask estimator).
+- **Modes, in order; the first that passes trains:** all on MPS; the STFTs and the iSTFT on the CPU (the gradients pass
+  through the moves); that plus the loss on the CPU; all on the CPU (8 threads, this machine's performance cores; 2 beside an MPS run; the step maximum recomputed from its
+  own step time; the probe measured about 3.4× slower).
+- **Recorded:** the step time and peak memory at the training batch (5 timed steps). An MPS mode above 20 GB falls to
+  the CPU.
+- **Alone on MPS:** `gate`, `train` and `train-d` refuse while another MPS training job runs
+  (`local_objective_1c.TRAINING`, which now lists `xlance_finetune gate` too, so other jobs see the gate).
+
+### The re-separation
+
+- Each fold's best checkpoint separates its examples through the build's path unchanged (`direct_stems.XLanceG`: two
+  equal channels at 44.1 kHz, crossfaded 10-s chunks, the channel mean, back to 48 kHz), only the trainable tensors
+  replaced. Half features are stored as `xlance_ft-t3`, as T3's `xlance_g-t3`.
+- Two workers per fold, MPS ascending and CPU descending (MPS inference matched the CPU at 116 dB in the probe).
+- Each stem file is written atomically, then its row (flushed to disk): an example counts as done only with both, so a
+  kill between the two leaves it to do again, and `train-d`'s completeness check cannot be blocked by a stem with no
+  row. A worker skips only what the other wrote during the same run.
+- Each row records the new stem's SNR against the wet target as T3's build measured it (the render times the mix
+  gain), and T3's stored stock SNR for the same example; and beside it the SNR against the wet target the
+  fine-tune learned (with a mastered mix's compressor gain), which has no stock counterpart stored.
+- V-real's crops (the same `mix.wav` their stock stems came from) go through their assigned fold, hash-recorded.
+
+### D_F5ft: D_F5-noaug with the fine-tuned stem
+
+- **D_F5ft is D_F5-noaug (step (a)) in everything but the stem:** the 115-control heads, the masked loss and the amp
+  head; F5's 3,467 full twins after F5's drops, and their labels; FS5's 722 for early stopping and the fit; seeds
+  20261042 and 20261043, the cap and patience; D_stem's input (stem and mix channels) with augmentation off; the
+  readout and the pull rule. Each run refuses unless every stem is in place and from the model that never trained
+  on its band, and its examples are D_F5's.
+- Unaugmented, because D_stem's augmentations imitate the stock separator's errors. The contrast with D_F5-noaug then
+  differs in the stem alone.
+- **The constant** is D_F5's (`fit` refuses otherwise); the pull is refitted on FS5.
+- **V-real's input:** step (a)'s (the crop's mix through F5's path, hashes equal to F5's predictions'), with the
+  fine-tuned stem in the stem channel. **Output gain** is fitted to the *stock* stem's search-half loudness, as F5 and
+  step (a) did, so the gain does not move with the input.
+
+### The readout, in order
+
+**1. The stems (zero renders, descriptive).** Per fold: the validation curve (within-song), its best and the stock
+point. Per set (F5 and FS5, every stem from the model that never trained on its song): the new stem's SNR minus the
+stock one and the medians, against the uncompressed target as T3 stored the stock SNR (on mastered mixes it
+understates both stems alike), with the new stem's median SNR against the compressed wet target beside it. With 4 songs, its interval is clustered by band (the mean of band means, 90% t on 3 df):
+wide, and descriptive.
+
+**2. FS5 readability (R0's rule, zero renders, descriptive), read before V-real.** D_F5ft's R0 table on FS5 beside
+D_F5-noaug's and D_F5mix's (recomputed from step (a)'s stored models; their readable sets must reproduce step (a)'s),
+and D_F5's (must reproduce F5's). D_F5ft trains on out-of-song stems and is read on out-of-song stems; the other
+arms on stock stems. Paired per head and in the four summary rows, as step (a). R0's intervals are clustered by
+section (FS5's 12 sections in 4 songs), which is optimistic here: read them as descriptive.
+- **D_F5ft − D_F5-noaug (primary):** what the fine-tuned stem is worth, both unaugmented;
+- D_F5ft − D_F5mix and D_F5ft − D_F5 (descriptive).
+
+**3. The tone probe on the new stems (zero renders, descriptive).** `tone_info_probe`'s linear probes on the
+fine-tuned stem's summaries, beside the stored mix (30) and stock stem (20): probe-trained on F5's stems and read on
+FS5's, both out of song; readable heads per input, and the paired step fine-tuned − stock per head (section-clustered,
+optimistic as R0's). This is the research's reading for a separator: what a linear reader recovers, not SDR alone.
+
+**4. V-real (99 renders).** D_F5ft (pulled, plain readout), amp-fixed on the frozen V-real-11: 33 (part, amp) groups ×
+(1 priming at S + 2 directions) = **99** renders. Rows log(d_a/d_b), lower is better, band-weighted, 90%
+band-clustered t (7 bands), per class and V-real-10 beside:
+- **D_F5ft − D_F5-noaug (primary)**;
+- D_F5ft − D_F5mix, D_F5ft − D_F5 (descriptive);
+- D_F5ft − D_core5 (the gate read with the fine-tuned stem), D_F5ft − S, D_F5ft − constant;
+- beside: step (a)'s primary and F5's gate, as stored.
+
+**No stop rule** between the readouts. **Reading (the user's rule):** effect sizes with intervals, no pass bar. An
+interval below 0 is shown; a point below 0 with the interval holding 0 leans better and is built on; undecided is not
+failed. **What it changes:** a stem that reads better becomes F20's input, with the fine-tuned separator. Otherwise the
+record says where the fine-tune helped (SNR, the probe, FS5) and where it did not. Neither outcome runs F20 by itself.
+
+### Cost
+
+- **Prep:** about 20–30 min of CPU (4 processes) to rebuild and check 3,467 mixes, plus the control's 12 separations.
+- **Gate:** up to about 30 min.
+- **Fine-tunes:** up to 5.5 h each of measured step time (11 h in all), less at the plateau.
+- **Separations:** 4,189, plus 11 V-real crops. At T3's rates (about 850 an hour on MPS, 1,350 with a CPU worker
+  beside), about 3–5 h.
+- **D_F5ft:** 2 runs of about 7–14 min of MPS; the fit, R0, the probe and V-real's predictions take minutes.
+- **Renders:** none before V-real; **99** on V-real (a few minutes on 3 processes).
+- **Disk:** about 6 GB of cache, about 1.3 GB of checkpoints (per fold: the last, with the optimizer and the best
+  tensors, about 0.53 GB, and the best, 0.13 GB; a save briefly holds a second copy), about 0.4 GB of stem features;
+  `check` refuses unless the 31 GB guard holds after them.
+- **Wall time:** about 5–16 h in all, most of it the fine-tunes and the re-separation.
+- **Machine rules:** every Morgan render isolate=True, one discarded priming render, the first 0.25 s trimmed; at most
+  3 render processes machine-wide (`local_objective.RENDERS` lists `xlance_finetune vreal-render`); `prep`, `separate`
+  and `vreal-stems` are listed as separations (no render starts beside them); the 31 GB disk guard and the swap guard.
+
 ## Audibility in the mix: the measurement (ROADMAP step (c); declared 2026-10-27, nothing run)
 
 **What and why.** The tone probe read the time-effect switches weakly from the mix and the stem, and the cloud

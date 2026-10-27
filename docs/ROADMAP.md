@@ -170,7 +170,18 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      (2026-10-27); declared and in review before it runs. Rough cost, to be sized in its declaration: up to about 11 h of MPS for
      the fine-tune (a bound borrowed from the separation plan's Mega-53 head fine-tune, so rough for X-LANCE), about
      4–6 h to re-separate F5's about 4.2k examples and FS5 (T2's separations ran about 6k in 5–8 h), and about 40 min
-     to retrain D. Read like (a): FS5 first, V-real only if it helps.
+     to retrain D. Read like (a): FS5 first, then V-real (no stop rule). *Approved by the user 2026-10-27 ("Yes for
+     all"); declared the same day
+     ([D_F5ft](trusted-data-t0-design.md#d_f5ft-the-every-control-model-fed-the-fine-tuned-stem-roadmap-step-b-declared-2026-10-27-nothing-run),
+     ledger amendment 4); not run; (a) has run, which it is read against. Following the [effect-detection
+     research](research/effect-detection-2026-10.md): trained on the stored wet target renders as they sit in each
+     rebuilt mix (zero renders), mono duplicated; the MPS gate first, with the STFTs, then the loss, then everything
+     moved to the CPU as fallbacks. Cross-fitted by band (2 + 2; F5 and FS5 are 4 songs), so every stem D trains on or
+     is read on comes from a model that never trained on its song; FS5 and V-real never train or choose. Stops on
+     its validation curve (within-song: held-out sections of its own bands; no 0.1 dB gain for 1,000 steps) or at
+     the approved 5.5 h per fold. Then about 4,200 re-separations (about 3–5 h), D_F5ft
+     (D_F5-noaug with the new stem, 2 runs), and the readout: the stems' SNR, R0 on FS5, the tone probe on the new
+     stems, and V-real (99 renders, no stop rule), D_F5ft − D_F5-noaug primary. About 5–16 h in all.*
    - (c) **Audibility-aware labels for the time effects.** The probe's audibility split: from the stem, the delay's
      AUC rises from 0.62 to 0.73 on its loudest third, while reverb, tremolo and the springs stay weak even at their
      loudest. So a time effect's label should reflect how audible it is, not only its switch. Measuring audibility
