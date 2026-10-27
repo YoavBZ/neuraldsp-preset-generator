@@ -207,7 +207,14 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      effects sit at the same phase assumes switching one effect off resets none of the others (it holds by render
      count; untested). **A caution for earlier results:** V-real renders several presets in one process
      per group, so a comparison with a time effect on in both answers carries phase noise from render order (noise,
-     not bias); flagged, not fixed.*
+     not bias); flagged, not fixed.* *Fresh run 2026-10-27 10:38–11:24 (2,686 renders, all 36 repeats bit-exact;
+     [outcome](trusted-data-t0-design.md#audibility-outcome-2026-10-27-fresh-run-2686-renders-audited), audited):
+     23–59% of "on" effects sit below τ in the mix (delay 0.40, reverb 0.42, tremolo 0.23, PR12 spring 0.33, SW50R
+     spring 0.59). The delay reads better from the mix as A_e rises (0.57 → 0.71), but so does the target without
+     backing, so effect size and masking are mixed; tremolo reads weakly at every level. A_e measures how much the
+     effect moves the judge's render-to-mix score, not audibility as such (it is negative for 29–49% of pairs, a judge
+     property). The doubler also runs on across renders. The ear page went to the user; the relabel waits for their
+     answers and the three rulings.*
    - (d) **F20:** the user said yes (2026-10-27); its plan is declared after (b) reads. Its value now rests on (a)/(b) and on the new data. Its declared
      fixes: redraw near-silent draws (up to 5 tries; about 16% more target renders at F5's rate); keep each
      core/full pair on one separation device; the switch readout and prior (since 2026-10-27 the plain readout is

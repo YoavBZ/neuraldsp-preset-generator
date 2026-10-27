@@ -73,7 +73,7 @@ WORKERS = 2                                           # measure: one section per
 HALVES = ("A", "B")
 WHICH = ("all on", "measured", "bottom third", "middle third", "top third", "below tau", "at or above tau")
 PAGE_NAME = "audibility-mix"
-PAGE_KBPS = 128                                       # AAC: above the ear pages' 96; the page about 10 MB
+PAGE_KBPS = 256                                       # AAC: 128 hid the smallest on/off differences near tau (audit 2026-10-27)
 VERDICTS = [("different", "They differ"), ("maybe", "Maybe, barely"), ("same", "Same to me"), ("unsure", "Not sure")]
 
 _save, _load = V._save, V._load
