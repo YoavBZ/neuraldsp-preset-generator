@@ -665,3 +665,11 @@ was declared, what was measured, and the research behind it.
     "unknown", out of the high-gain cap, and Timeless Part 2's 2 DIs take their amp track's clean tone). Strobe "Gone" and "Nostalgic" were taken in the same day with no usable DI: no file is
     named as a DI, so their 7 guitar tracks are excluded.
     Research, not a declared plan.
+19. [effect-detection-2026-10.md](research/effect-detection-2026-10.md): why the every-control model
+    reads so few time effects and knobs, and what to change (October 2026). The tone probe already
+    shows the mix, not the labels or the features, is the main loss; faint "on" labels explain only
+    part of the delay. Adds: `gtr_mss` probably learned dry guitar, so a fine-tune should use wet
+    targets (MPS gradient check first); an audibility measure taken in the mix for step (c); and why
+    amp knobs read only modestly. Ranked: a zero-render oracle-mask bound before the fine-tune, the
+    wet-target fine-tune, audibility labels in the mix, a pooling check on D_F5mix, effective-drive
+    and response-curve heads, then stereo. Research, not a declared plan.
