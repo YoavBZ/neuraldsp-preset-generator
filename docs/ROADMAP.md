@@ -128,10 +128,10 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
    7 panel parts). It needs that list, not the rebuild: it is a true-DI oracle on amp-track targets, with no backing
    or stem.
 
-   **Where it stands (2026-10-27).** Not ready to ship; the detail is in the trusted-data items below.
+   **Where it stands (2026-10-28).** Not ready to ship; the detail is in the trusted-data items below.
    - **Learning every control is not yet shown to help.** T3's F5 gate, D_F5 (every control learned) − D_core5 (today's 25
      controls), reads +0.079 [−0.065, +0.224] on V-real-11 (7 bands): not shown. The user said yes to F20 (2026-10-27);
-     its plan waits for (b).
+     (b) read 2026-10-28 (the stock stem stays F20's input), so its plan is next to declare.
    - **R1 (post hoc, descriptive, audited):** D_F5 with its 96 unreadable heads written at S still reads +0.062
      [−0.080, +0.204] against D_core5 (4 of 7 bands better; crunch −0.013). The delay, the one time effect still read
      (AUC 0.557, lower bound 0.505), stays on in 29 of 66 directions, and Colour Me Red ElecGtr03 drives the result
@@ -190,10 +190,10 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      D_F5ft − D_F5-noaug +0.078 [−0.025, +0.181] on V-real, not shown, leans worse. The audit found that the
      fine-tune learned to turn its output down rather than to separate: a silent output scores 0 dB on that SNR, both
      folds' best stayed below it, and the new stems sit about 12 dB under the target guitar (median −33 LUFS), so the
-     +5.2 dB over the stock stem on FS5 is not a separation gain; on V-real the new stems are worse than stock in 9 of
-     11 parts. The tone probe reads 22 heads from them (stock 20, mix 30). One D seed stopped at epoch 0; it does not
-     explain the result. The fine-tuned stem is not adopted; F20 keeps the stock stem. The route is not judged: one
-     short CPU run, under an L1 loss that rewards shrinking. Fixes, each needing a declaration and the user's yes: a
+     +5.2 dB over the stock stem on FS5 is not a separation gain; on V-real the new stems are worse than stock in SI-SDR
+     in 9 of 11 parts. The tone probe reads 22 heads from them (stock 20, mix 30). One D seed kept its epoch-0 weights; it does
+     not explain the result. The fine-tuned stem is not adopted; F20 keeps the stock stem. The route is not judged: one
+     short CPU run, under an L1 loss that likely rewards shrinking (best fit, not proven). Fixes, each needing a declaration and the user's yes: a
      scale-invariant loss, a target the mix identifies, MPS under the cap for many more steps.*
    - (c) **Audibility-aware labels for the time effects.** The probe's audibility split: from the stem, the delay's
      AUC rises from 0.62 to 0.73 on its loudest third, while reverb, tremolo and the springs stay weak even at their
@@ -1032,5 +1032,5 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-27 | The user said yes to all four next steps (in chat, "Yes for all"): (a) D_F5mix, (b) the X-LANCE fine-tune, (c) the audibility measurement, (d) F20. (a) ran the same day and was audited: the mix input is not shown better and leans worse (D_F5mix − D_F5-noaug +0.059 [−0.012, +0.130]), best fit, not proven: the second drive pedal's switch on real songs; the stem stays. (b) and (c) are declared and reviewed before they run; (c)'s relabelling waits for the user's three rulings; F20's plan waits for (b) | [outcome](trusted-data-t0-design.md#d_f5mix-outcome-2026-10-27-165-renders-audited) |
 | 2026-10-27 | Audibility measurement (ROADMAP (c)), the fresh run audited: 23–59% of "on" effects sit below τ in the mix; delay reads better from the mix as A_e rises, mixed with effect size; tremolo reads weakly at every level; A_e measures the judge's render-to-mix sensitivity, not audibility as such; the doubler also runs on across renders (joins the V-real caution). The ear page went to the user; nothing relabelled | [outcome](trusted-data-t0-design.md#audibility-outcome-2026-10-27-fresh-run-2686-renders-audited) |
 | 2026-10-27 | The user's direction (in chat): sound-alike presets are acceptable; barely audible effects barely matter; effects might later be adjusted from the song research. Read as a sliding audibility weight for (c)'s relabel (declared and reviewed before it runs). A second ear page with exposed-guitar pairs was added beside the dense one (zero renders, PR #319) | [(c)](#next-in-order) |
-| 2026-10-28 | X-LANCE fine-tune (ROADMAP (b)) outcome, audited: D_F5ft − D_F5-noaug +0.078 [−0.025, +0.181] on V-real, not shown, leans worse; the fine-tune shrank its output (new stems about 12 dB under the target guitar, SNR at the silence level), so its +5.2 dB over the stock stem is not separation; tone probe 22 against the stock stem's 20. Not adopted; F20 keeps the stock stem; the route is not judged | [outcome](trusted-data-t0-design.md#d_f5ft-outcome-2026-10-28-99-renders-audited) |
+| 2026-10-28 | X-LANCE fine-tune (ROADMAP (b)) outcome, audited: D_F5ft − D_F5-noaug +0.078 [−0.025, +0.181] on V-real, not shown, leans worse; the fine-tune mostly shrank its output (F5 median about 12 dB under the target guitar, −14 to −6 dB in three bands; Ale Lak's stems louder than the target but still worse than silence), so its +5.2 dB over the stock stem is not separation; tone probe 22 against the stock stem's 20 (per head the stock stem is reliably better on 5, the fine-tuned on 3). Not adopted; F20 keeps the stock stem; the route is not judged | [outcome](trusted-data-t0-design.md#d_f5ft-outcome-2026-10-28-99-renders-audited) |
 
