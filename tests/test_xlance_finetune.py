@@ -272,3 +272,22 @@ def test_gate_train_and_train_d_count_as_mps_training():
         assert C.is_training(f"/x/msst-venv/bin/python -u -m learn.xlance_finetune {cmd}")
     for cmd in ("prep", "separate --fold 0 --device mps", "report", "probe"):
         assert not C.is_training(f"/x/python -u -m learn.xlance_finetune {cmd}")
+
+
+def test_mps_attention_switches_flash_off():
+    import types
+
+    from learn import xlance_finetune as X
+
+    class Attend:
+        def __init__(self):
+            self.flash = True
+
+    class Other:
+        flash = True
+
+    mods = [Attend(), Attend(), Other()]
+    model = types.SimpleNamespace(modules=lambda: iter(mods))
+    assert X.mps_attention(model) == 2
+    assert [m.flash for m in mods] == [False, False, True]
+    assert X.mps_attention(model) == 0

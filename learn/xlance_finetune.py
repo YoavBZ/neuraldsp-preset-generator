@@ -498,13 +498,27 @@ def step_loss(model, mode, mix, tgt):
     return own_loss(model, recon.cpu(), tgt.cpu())
 
 
+def mps_attention(model):
+    """MPS's scaled_dot_product_attention refuses dropout, so in training mode the model's flash path errors there
+    (the first gate, 2026-10-27). On MPS every `Attend` takes its own einsum path instead: the same attention, with
+    its nn.Dropout. The gate compares this path's gradients against the all-CPU reference. -> how many were switched."""
+    n = 0
+    for mod in model.modules():
+        if type(mod).__name__ == "Attend" and getattr(mod, "flash", False):
+            mod.flash = False
+            n += 1
+    return n
+
+
 def base_model(device, threads):
     """Stock gtr_mss (hash-checked by `direct_stems.XLanceG`, which sets torch's CPU threads to `threads`), its trainable
-    set marked. -> (model, base sha256)."""
+    set marked; on MPS its attention takes the einsum path (`mps_attention`). -> (model, base sha256)."""
     from learn import direct_stems as DS
 
     xl = DS.XLanceG("cpu", threads=threads)
     m = xl.model.to(device)
+    if str(device).startswith("mps"):
+        mps_attention(m)
     for n, p in m.named_parameters():
         p.requires_grad_(is_trainable(n))
     return m, xl.sha256
@@ -752,6 +766,7 @@ def cmd_gate(args):
             results.append({"mode": mode, "ok": False, "why": "MPS is not available"})
             continue
         m = copy.deepcopy(ref_m).to("mps")
+        mps_attention(m)
         ok, rows = True, []
         for i, L, mix, tgt, rl, rg in refs:
             m.zero_grad(set_to_none=True)
@@ -767,6 +782,19 @@ def cmd_gate(args):
             r_ok = gate_ok(lv, rl, cos)
             rows.append({"i": i, "seconds": L, "loss": lv, "cpu_loss": rl, "cosine": cos, "ok": r_ok})
             ok = ok and r_ok
+        if ok:                                           # one step in training mode (dropout on) must also run
+            i, L, mix, tgt, _, _ = refs[0]
+            m.train()
+            m.zero_grad(set_to_none=True)
+            try:
+                loss = step_loss(m, mode, mix.to("mps"), tgt.to("mps"))
+                loss.backward()
+                lv = float(loss)
+                rows.append({"i": i, "seconds": L, "train_mode_loss": lv, "ok": bool(math.isfinite(lv))})
+                ok = math.isfinite(lv)
+            except Exception as e:                       # noqa: BLE001  (a mode that errors fails the gate)
+                rows.append({"i": i, "seconds": L, "train_mode_error": repr(e)[:300]})
+                ok = False
         results.append({"mode": mode, "ok": ok, "rows": rows})
         print(f"gate {mode}: {'pass' if ok else 'fail'} {rows}", flush=True)
         del m

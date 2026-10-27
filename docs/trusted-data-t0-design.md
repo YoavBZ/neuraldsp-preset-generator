@@ -2375,6 +2375,12 @@ backward:
   the CPU.
 - **Alone on MPS:** `gate`, `train` and `train-d` refuse while another MPS training job runs
   (`local_objective_1c.TRAINING`, which now lists `xlance_finetune gate` too, so other jobs see the gate).
+- **Attention on MPS, and a training-mode step (added 2026-10-27, after the first gate, before any training):** the
+  first gate failed MPS (gradient cosines about 0), passed the STFTs-on-CPU mode, then stopped in its step timing:
+  MPS's `scaled_dot_product_attention` refuses dropout, and the attention's dropout (0.1) is on in training. On MPS
+  every attention block now takes the model's own einsum path, the same attention with its `nn.Dropout`
+  (`mps_attention`); the gate compares that path against the CPU reference, and a mode that passes must also run one
+  training-mode step (dropout on) to a finite loss, or it fails. The recipe is unchanged (dropout stays 0.1).
 
 ### The re-separation
 
