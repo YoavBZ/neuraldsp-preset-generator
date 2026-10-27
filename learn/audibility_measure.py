@@ -6,17 +6,23 @@ development data; V-real is not touched. Outputs go to `trusted-data/audibility/
 `t2/`, `t3/` and `tone-probe/` are read, never written.
 
     MAIN=/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python
+    $MAIN -m learn.audibility_measure archive                # zero renders: the first run moved aside (a record)
     $MAIN -m learn.audibility_measure plan                   # zero renders: FS5's "on" examples drawn, plan.json
-    $MAIN -u -m learn.audibility_measure render --shard k/3  # the effect-off renders, repeats and priming (~900)
+    $MAIN -u -m learn.audibility_measure render --shard k/3  # r_on', the effect-off renders, repeats (~2,700)
     $MAIN -m learn.audibility_measure measure                # zero renders: A_e and the solo distance per pair
     $MAIN -m learn.audibility_measure read                   # zero renders: the tone probe's switches by A_e
     $MAIN -m learn.audibility_measure page                   # the ear check of tau, a listening page
 
-**A_e.** For an FS5 example i with effect e on, r_on is its stored target render, r_off the same setting with e
-switched off (rendered here), m its stored self-built mix (rebuilt bit-for-bit from the stored target, other guitars,
-stems and draw, and checked against the stored mix features; nothing is re-mixed). The judge J scores a render against
-the mix on the two halves; A_e = |mean over halves of log(J(r_off, m) / J(r_on, m))|. Beside it, solo, the plain
-distance J(r_off, r_on) (no threshold), and a repeat floor: r_on rendered again once per (section, amp) group.
+**A_e (the fresh-process recipe, amendment 5's fix).** Morgan's tremolo, tape delay and rack reverb run on across
+renders in one plugin process (isolate=True does not reset them), so a render is a fixed function of its position in
+its process. Every render here therefore runs in its own new plugin process: one discarded priming render with the
+example's own setting (r_on's), then the one render kept. For an FS5 example i with effect e on, r_on' is that render
+of its own setting and r_off the same setting with e switched off, both at the same process position; m' is r_on' in
+the example's stored backing at its stored gains and mastering (`mix_with`, checked first to rebuild the stored mix
+from the stored target). The judge J scores a render against the mix on the two halves; A_e = |mean over halves of
+log(J(r_off, m') / J(r_on', m'))|. Beside it, solo, the plain distance J(r_off, r_on') (no threshold), and a repeat:
+r_on' rendered again, in its own new process, once per (section, amp) group, which must be bit-identical. The first
+run (2026-10-27: stored r_on and m, renders sharing a process) is kept under `audibility/first-run-2026-10-27/`.
 """
 
 from __future__ import annotations
@@ -39,24 +45,31 @@ from learn import verify_tracks as V
 OUT_DIR = "audibility"                                # trusted-data/audibility/: never under t3/
 LEDGER_KEY = "amendment_5"
 LEDGER_MARK = "audibility measurement (ROADMAP (c))"
+FIX_KEY = "amendment_5_fix"
+FIX_MARK = "audibility fresh-process recipe (ROADMAP (c))"
 DESIGN = ("docs/trusted-data-t0-design.md#audibility-in-the-mix-the-measurement-roadmap-step-c-declared-2026-10-27-"
           "nothing-run")
-STATUS = ("declared 2026-10-27 before any render (ledger trusted-data-t3, amendment 5); descriptive, decides nothing; "
-          "FS5 read before by R0, the tone probe and step (a)")
+STATUS = ("declared 2026-10-27 before any render (ledger trusted-data-t3, amendment 5); re-declared 2026-10-27 after "
+          "the first run and before any re-render (amendment 5's fix: every render in its own new plugin process); "
+          "descriptive, decides nothing; FS5 read before by R0, the tone probe, step (a) and the first run")
+RECIPE = "fresh"                                      # each render in its own new process, primed with r_on's setting
+ARCHIVE = "first-run-2026-10-27"                      # the first run's files, moved aside as a record
+MODULATED = ("delay", "reverb", "tremolo")            # run on across renders in a process; the springs do not
 # name: (switch head, the edit that turns it off, the tone probe's proxy for its level)
 EFFECTS = {"delay": ("delay/delayActive", (("delay", "delayActive"), "false"), "delay/delayMix"),
            "reverb": ("reverb/reverbActive", (("reverb", "reverbActive"), "false"), "reverb/reverbMix"),
            "tremolo": ("tremolo/tremoloActive", (("tremolo", "tremoloActive"), "false"), "tremolo/tremoloDepth"),
            "pr12 spring": ("pr12Amp/springOn", (("pr12Amp", "pr12Reverb"), "0"), "pr12Amp/pr12Reverb"),
            "sw50r spring": ("sw50rAmp/springOn", (("sw50rAmp", "sw50rReverb"), "0"), "sw50rAmp/sw50rReverb")}
-REPEAT = "repeat"                                     # r_on rendered again: the render's own floor
+ON = "on"                                             # r_on': the example's own setting, rendered fresh
+REPEAT = "repeat"                                     # r_on' rendered again, fresh: it must be bit-identical
 N_MAX = 200                                           # "on" examples per effect (the research's ranked change 2)
 SEED = 20261113                                       # the draw of N_MAX among more (set here)
 PAGE_SEED = 20261114                                  # the page's order and each pair's play order (set here)
 TAU = 0.005                                           # the every-control plan's log bar: the starting threshold
 NEAR = 2                                              # page: the pairs nearest tau on each side, per effect
 CATCH = 3                                             # page: identical pairs (the mix against itself)
-WORKERS = 4                                           # measure: one section per worker (as the tone probe's 4)
+WORKERS = 2                                           # measure: one section per worker (2: memory beside step (b))
 HALVES = ("A", "B")
 WHICH = ("all on", "measured", "bottom third", "middle third", "top third", "below tau", "at or above tau")
 PAGE_NAME = "audibility-mix"
@@ -93,7 +106,7 @@ def select(on_ids, n_max=N_MAX, seed=SEED):
 
 
 def repeats(chosen, group_of):
-    """{(section, amp): the group's least chosen id}: one repeat render of r_on per group that renders anything."""
+    """{(section, amp): the group's least chosen id}: one repeat render of r_on' per group that renders anything."""
     out = {}
     for ids in chosen.values():
         for i in ids:
@@ -103,18 +116,69 @@ def repeats(chosen, group_of):
 
 
 def jobs_of(chosen, reps, group_of):
-    """The renders, in (section, amp, id) order, each id's repeat first and its effects in EFFECTS order: a group
-    primes once. -> [{"i", "section", "amp", "what"}]."""
-    rank = {REPEAT: -1, **{e: k for k, e in enumerate(EFFECTS)}}
-    out = [{"i": i, "section": g[0], "amp": g[1], "what": REPEAT} for g, i in reps.items()]
+    """The jobs, in (section, amp, id) order: each chosen id's r_on' first, then its repeat (if any), then its effects
+    off in EFFECTS order. Each job is one new process: a priming render, then the render kept.
+    -> [{"i", "section", "amp", "what"}]."""
+    rank = {ON: -2, REPEAT: -1, **{e: k for k, e in enumerate(EFFECTS)}}
+    ids = sorted({i for v in chosen.values() for i in v})
+    out = [{"i": i, "section": group_of[i][0], "amp": group_of[i][1], "what": ON} for i in ids]
+    out += [{"i": i, "section": g[0], "amp": g[1], "what": REPEAT} for g, i in reps.items()]
     out += [{"i": i, "section": group_of[i][0], "amp": group_of[i][1], "what": e}
-            for e, ids in chosen.items() for i in ids]
+            for e, ids_e in chosen.items() for i in ids_e]
     return sorted(out, key=lambda j: (j["section"], j["amp"], j["i"], rank[j["what"]]))
 
 
 def plan_unchanged(old, new):
     """The stored plan and a recomputed one draw the same renders (a re-run of the chain resumes)."""
-    return all(old.get(k) == new.get(k) for k in ("seed", "n_max", "tau", "chosen", "jobs"))
+    return all(old.get(k) == new.get(k) for k in ("recipe", "seed", "n_max", "tau", "chosen", "jobs"))
+
+
+def fresh_render(make, di, sel, x_prime, x):
+    """One render in its own new process: `make()` opens a renderer, one discarded priming render with `x_prime`
+    (r_on's setting, the same for every job of an example), then the render of `x` that is kept; the renderer is
+    closed whatever happens. Every kept render so sits at the same process position. -> the kept render."""
+    import numpy as np
+
+    rr = make()
+    try:
+        rr.render(di, sel, x_prime)
+        return np.asarray(rr.render(di, sel, x), np.float64)
+    finally:
+        rr.close()
+
+
+def audio_sha(y):
+    """sha256 of a render's float64 samples: two renders are bit-identical exactly when these agree."""
+    import numpy as np
+
+    return hashlib.sha256(np.ascontiguousarray(y, np.float64).tobytes()).hexdigest()
+
+
+def clean_pair(settings, effect):
+    """True when no modulated effect other than `effect` is on in the setting (T3's render-row form, "module/key"):
+    the first run's r_off then differed from its stored r_on by `effect` alone (the consistency check's pairs)."""
+    for f in MODULATED:
+        if f == effect:
+            continue
+        (m, k), _ = EFFECTS[f][1]
+        if F._truthy(settings.get(f"{m}/{k}")):
+            return False
+    return True
+
+
+def consistency(old, new, clean, tau=TAU):
+    """The first run's A_e against this run's, on the clean pairs. old, new: {(effect, i): A_e or None}; clean: a set
+    of (effect, i). -> {effect or "all": {"n", "spearman", "median_abs_diff", "crossed_tau"}}."""
+    out = {}
+    for e in (*EFFECTS, "all"):
+        ks = sorted(k for k in clean if (e == "all" or k[0] == e) and old.get(k) is not None
+                    and new.get(k) is not None)
+        a, b = [old[k] for k in ks], [new[k] for k in ks]
+        d = sorted(abs(x - y) for x, y in zip(a, b))
+        out[e] = {"n": len(ks), "spearman": spearman(a, b)[0] if ks else None,
+                  "median_abs_diff": d[len(d) // 2] if d else None,
+                  "crossed_tau": sum((x < tau) != (y < tau) for x, y in zip(a, b))}
+    return out
 
 
 def off_settings(x, effect):
@@ -248,28 +312,34 @@ def flac_of(root, i, what):
 
 def render_rows(od, own=None):
     """Every shard's render rows (`pretrain_set.read_rows`: a torn last line, from a shard killed mid-write, is
-    skipped). Only `own`, the calling shard's file, is repaired; another shard may be writing its own."""
+    skipped). Only `own`, the calling shard's file, is repaired; another shard may be writing its own. A row of another
+    recipe (the first run's, left in place by mistake) refuses."""
     from learn import pretrain_set as PS
 
     d = od / "rows"
     paths = sorted(d.glob("render-*.jsonl")) if d.exists() else []
-    return [r for p in paths for r in PS.read_rows(p, repair=own is not None and p == own)]
+    rows = [r for p in paths for r in PS.read_rows(p, repair=own is not None and p == own)]
+    other = [(r.get("i"), r.get("what")) for r in rows if r.get("recipe") != RECIPE]
+    if other:
+        raise SystemExit(f"{len(other)} render rows are not the {RECIPE} recipe's (e.g. {other[:3]}): run `archive`")
+    return rows
 
 
-def ledger_declared():
+def ledger_declared(key=LEDGER_KEY, mark=LEDGER_MARK):
     d = json.loads((V.PLUGIN_ROOT / "docs" / "dev-test-ledger.json").read_text())
     e = next((t for t in d["tests"] if t["test_id"] == T3.LEDGER_ID), {})
-    return LEDGER_MARK in str(e.get(LEDGER_KEY, ""))
+    return mark in str(e.get(key, ""))
 
 
 def require_declared():
-    if not ledger_declared():
-        raise SystemExit(f"the ledger's {T3.LEDGER_ID} has no {LEDGER_KEY} declaring '{LEDGER_MARK}': runs refuse")
+    for key, mark in ((LEDGER_KEY, LEDGER_MARK), (FIX_KEY, FIX_MARK)):
+        if not ledger_declared(key, mark):
+            raise SystemExit(f"the ledger's {T3.LEDGER_ID} has no {key} declaring '{mark}': runs refuse")
 
 
 def mix_with(r, others, stems_audio, gains, i, mastered):
     """A mix of render r with an example's stored backing at its stored gains (gb, ga) and its mastering draw: the
-    stored mix when r is the stored target, the listening page's "off" mix when r is r_off."""
+    stored mix when r is the stored target, m' when r is r_on', the page's "off" mix when r is r_off."""
     from learn import direct_stems as DS
     from learn import song_aug as SA
 
@@ -292,6 +362,45 @@ def load_fs5(root):
     return plan, drift, fs, T.rows_of(root, T3.STAGE, "render")
 
 
+# --- archive (zero renders) ------------------------------------------------------------------------------------------
+
+FIRST_RUN = ("measure.json", "read.json", "page-key.json", "rows", "renders", "plan.json")   # the plan last
+
+
+def archive_moves(od, pd):
+    """(source, destination) pairs that move the first run aside: the listening page made from it (not to be sent)
+    into the archive's page/, then its files under audibility/, plan.json last, so a move cut short leaves the first
+    run's plan in place and `archive` runs again. Only what exists."""
+    a = od / ARCHIVE
+    out = [(pd / n, a / "page" / n) for n in ("index.html", "cache") if (pd / n).exists()]
+    out += [(od / n, a / n) for n in FIRST_RUN if (od / n).exists()]
+    return out
+
+
+def cmd_archive(args):
+    """The first run (renders sharing a process) moved under audibility/first-run-2026-10-27/: renamed, never
+    deleted. A plan of this recipe is left alone, so a re-run of the chain resumes; a destination that exists
+    refuses (nothing is overwritten)."""
+    require_declared()
+    od, pd = out_dir(V.OUT), page_dir()
+    plan = _load(od / "plan.json")
+    if plan and plan.get("recipe") == RECIPE:
+        print(f"ARCHIVE DONE (nothing to move: the plan is the {RECIPE} recipe)")
+        return
+    moves = archive_moves(od, pd)
+    if not moves:
+        print("ARCHIVE DONE (nothing to move)")
+        return
+    clash = [str(d) for _, d in moves if d.exists()]
+    if clash:
+        raise SystemExit(f"the archive already holds {clash}: nothing moved")
+    for src, dst in moves:
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        src.rename(dst)
+        print(f"moved {src} -> {dst}")
+    print(f"ARCHIVE DONE: {len(moves)} moved under {od / ARCHIVE}")
+
+
 # --- plan (zero renders) ---------------------------------------------------------------------------------------------
 
 def cmd_plan(args):
@@ -309,17 +418,19 @@ def cmd_plan(args):
     chosen = select(on_ids)
     reps = repeats(chosen, group_of)
     jobs = jobs_of(chosen, reps, group_of)
-    rec = {"design": DESIGN, "status": STATUS, "seed": SEED, "n_max": N_MAX, "tau": TAU,
+    rec = {"design": DESIGN, "status": STATUS, "recipe": RECIPE, "seed": SEED, "n_max": N_MAX, "tau": TAU,
            "fs5": len(fs), "fs5_sections": len({r["section"] for r in fs}),
            "on": {e: len(v) for e, v in on_ids.items()}, "chosen": chosen,
            "repeats": [{"section": g[0], "amp": g[1], "i": i} for g, i in sorted(reps.items())],
            "jobs": jobs, "groups": len({(j["section"], j["amp"]) for j in jobs}),
-           "renders_projected": len(jobs) + len({(j["section"], j["amp"]) for j in jobs}),
+           "renders_projected": 2 * len(jobs),          # each job a new process: one priming render, one kept
            "drift": {k: drift[k] for k in ("ok", "plan_lists_sha256", "today_lists_sha256", "frozen")},
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     old = _load(od / "plan.json")
+    if old and old.get("recipe") != RECIPE:
+        raise SystemExit("the stored plan is the first run's (renders sharing a process): run `archive` first")
     if old and plan_unchanged(old, rec):
-        print(f"PLAN DONE (unchanged, {od / 'plan.json'}): {len(jobs)} renders + {rec['groups']} priming")
+        print(f"PLAN DONE (unchanged, {od / 'plan.json'}): {len(jobs)} jobs, {rec['renders_projected']} renders")
         return
     if old and (od / "rows").exists() and any((od / "rows").iterdir()):
         raise SystemExit("renders exist and the plan would change: it is fixed")
@@ -328,17 +439,104 @@ def cmd_plan(args):
     od.mkdir(parents=True, exist_ok=True)
     _save(od / "plan.json", rec)
     print(f"FS5: {rec['fs5']} examples in {rec['fs5_sections']} sections; on: {rec['on']}")
-    print(f"chosen: { {e: len(v) for e, v in chosen.items()} }; repeats {len(reps)}; groups {rec['groups']}")
-    print(f"PLAN DONE: {len(jobs)} renders + {rec['groups']} priming = {rec['renders_projected']} projected")
+    n_on = sum(j["what"] == ON for j in jobs)
+    print(f"chosen: { {e: len(v) for e, v in chosen.items()} }; r_on' {n_on}; repeats {len(reps)}; "
+          f"groups {rec['groups']}")
+    print(f"PLAN DONE: {len(jobs)} jobs, each a new process (1 priming + 1 kept) = {rec['renders_projected']} renders "
+          f"projected")
 
 
 # --- render (MAIN) ---------------------------------------------------------------------------------------------------
 
-def _render_setup(plan3):
-    """T3's renderer setup (`trusted_data_t3._render_setup`) without its rows path: the menus rebuilt and checked
-    against the live menu and the factory gate cap, the render-slot waits, isolate=True, the priming rule."""
+SHARD_CMD = "-m learn.audibility_measure render"     # this step's own render shards (siblings, not outside jobs)
+SERVER = "au_render_server"
+
+
+def ps_tree():
+    """[(pid, ppid, command)] for every process."""
+    import subprocess
+
+    s = subprocess.run(["ps", "-axo", "pid=,ppid=,command="], capture_output=True, text=True).stdout
+    out = []
+    for line in s.split("\n"):
+        f = line.split(None, 2)
+        if len(f) == 3 and f[0].isdigit() and f[1].isdigit():
+            out.append((int(f[0]), int(f[1]), f[2]))
+    return out
+
+
+def outside_servers(rows):
+    """Render servers not started by one of this step's render shards (a server's ancestors are walked): the renders
+    of other jobs. rows: `ps_tree()`."""
+    parent = {p: q for p, q, _ in rows}
+    shards = {p for p, _, c in rows if SHARD_CMD in c}
+    out = []
+    for p, _, c in rows:
+        if SERVER not in c:
+            continue
+        q, seen = parent.get(p), set()
+        while q and q not in shards and q not in seen and q != 1:
+            seen.add(q)
+            q = parent.get(q)
+        if q not in shards:
+            out.append(p)
+    return out
+
+
+def job_wait_reason(rows, own=()):
+    """Why a new process must wait before its renders, or None: a separation running, or a render server of another
+    job. Sibling shards never count here (the machine-wide cap of 3 render processes is checked once per shard at its
+    start), so the shards cannot wait on each other."""
+    from learn import local_objective as LO
+
+    sep = LO.separating([(p, c) for p, _, c in rows], set(own))
+    if sep:
+        return f"a separation is running (pid {sep[0]})"
+    srv = outside_servers(rows)
+    if srv:
+        return f"another job's render server is running (pid {srv[0]})"
+    return None
+
+
+def wait_for_job(poll_s=30):
+    """Wait, printing when a wait starts and ends, until `job_wait_reason` clears."""
+    own = (os.getpid(), os.getppid())
+    waited = None
+    while True:
+        why = job_wait_reason(ps_tree(), own)
+        if why is None:
+            if waited:
+                print(f"wait over ({time.time() - waited:.0f} s)", flush=True)
+            return
+        if not waited:
+            waited = time.time()
+            print(f"waiting: {why}", flush=True)
+        time.sleep(poll_s)
+
+
+def new_renderer():
+    """A new plugin process once `wait_for_job` clears (no separation, no other job's render server), its recipe
+    checked (isolate=True, part C's plugin version and average DI)."""
     from learn import direct_stems as DS
     from learn import knob_ceiling as K
+
+    wait_for_job()
+    rr = K.Renderer()
+    try:
+        DS.check_recipe(rr)
+    except BaseException:
+        rr.close()
+        raise
+    return rr
+
+
+def _render_setup(plan3):
+    """Once per shard: the machine-wide cap (`local_objective._wait_cap`: fewer than 3 render processes and no
+    separation; `direct_stems.wait_render_slot`: the render servers), as every render step checks it at its start; then
+    T3's renderer checks (`trusted_data_t3._render_setup`): the menus rebuilt and checked against the live menu and the
+    factory gate cap. That renderer only reads the menu (no render) and is closed; every job then opens its own
+    (`new_renderer`)."""
+    from learn import direct_stems as DS
     from learn import local_objective as LO
     from learn import pretrain_set as PS
 
@@ -346,24 +544,24 @@ def _render_setup(plan3):
         raise SystemExit(f"free disk below {T.DISK_GUARD_GB:.0f} GB")
     menus = T3.Menus()
     menus.gate_u = plan3["gate_cap"]["unit"]
+    print("checking the render cap (3 render processes, no separation)", flush=True)
     LO._wait_cap()
     DS.wait_render_slot()
-    rr = K.Renderer()
+    rr = new_renderer()
     try:
-        DS.check_recipe(rr)
         T3.check_menu(rr.menu(), menus.dried)
         if abs(F.gate_cap_u(menus.gate_thresholds())[0] - plan3["gate_cap"]["unit"]) > 1e-12:
             raise SystemExit("the factory gate thresholds changed since T3's plan")
-    except BaseException:
+    finally:
         rr.close()
-        raise
-    return menus, rr, DS.Primer(rr)
+    return menus
 
 
 def cmd_render(args):
     """One shard of whole sections: per job, the example's full twin rebuilt (`full_twin`) and checked against T3's
-    render row, then r_on again (a repeat, checked against the stored target's mels) or r_off (the effect switched
-    off, checked to encode as off), 0.25 s trimmed, written as FLAC with a row."""
+    render row, then, in a new plugin process primed once with that setting, r_on' (the setting), a repeat of it (which
+    must be bit-identical to r_on') or r_off (the effect switched off, checked to encode as off); 0.25 s trimmed,
+    written as FLAC with a row."""
     import numpy as np
 
     from learn import direct_sound_gate as G
@@ -378,9 +576,16 @@ def cmd_render(args):
     ap = _load(od / "plan.json")
     if not ap:
         raise SystemExit("run `plan` first")
+    if ap.get("recipe") != RECIPE:
+        raise SystemExit("the stored plan is the first run's: run `archive`, then `plan`")
     k, n = args.shard
     rp = od / "rows" / f"render-{k}of{n}.jsonl"
-    done = {(r["i"], r["what"]) for r in render_rows(od, own=rp)}
+    rows = render_rows(od, own=rp)
+    failed = [r["i"] for r in rows if r["what"] == REPEAT and not r.get("repeat_exact")]
+    if failed:
+        raise SystemExit(f"a stored repeat is not bit-identical to its r_on' (ids {failed[:5]}): the recipe failed")
+    done = {(r["i"], r["what"]) for r in rows}
+    on_sha = {r["i"]: r["audio_sha256"] for r in rows if r["what"] == ON}
     shard = DS.shard_sections(ap["jobs"], n)
     todo = [j for j in ap["jobs"] if shard[j["section"]] == k and (j["i"], j["what"]) not in done]
     if not todo:
@@ -391,58 +596,60 @@ def cmd_render(args):
     plan3, _ = M.load_frozen(root)
     rend = T.rows_of(root, T3.STAGE, "render")
     ctx = DS.Ctx(quiet=True)
-    menus, rr, primer = _render_setup(plan3)
+    ctx.rows = None                                   # part C's rows are not used here (memory beside step (b))
+    menus = _render_setup(plan3)
     swap0 = DS.swap_mb()
     trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
     rp.parent.mkdir(parents=True, exist_ok=True)
-    t0, di_cache, n_done = time.time(), {}, 0
-    try:
-        with open(rp, "a") as fh:
-            for j in todo:
-                g = DS._guards("audibility-render", T.DISK_GUARD_GB, swap0)
-                if g:
-                    print(g[1], flush=True)
-                    raise SystemExit(g[0])
-                i, sid = j["i"], j["section"]
-                rw = rend[i]
-                if rw.get("refused") or "target" not in rw:
-                    raise SystemExit(f"{i}: T3 refused this example; it cannot be in FS5")
-                amp, mode, base, sel, xf, core, cname, tries = T3.full_twin(i, menus)
-                if amp != j["amp"] or LO.sdict(xf) != rw["settings"]:
-                    raise SystemExit(f"{i}: the rebuilt full twin differs from T3's render row")
-                if sid not in di_cache:
-                    sec = ctx.sections[sid]
-                    di_cache = {sid: B.measure(PS.section_audio(sec["path"], sec["start_s"])).astype(np.float32)}
-                row = {"i": i, "section": sid, "amp": amp, "what": j["what"]}
-                if j["what"] == REPEAT:
-                    x = xf
-                else:
-                    x = off_settings(xf, j["what"])
-                    sw = EFFECTS[j["what"]][0]
-                    js = F.SW.index(sw)
-                    e_on, e_off = F.encode(xf, amp), F.encode(x, amp)
-                    if not (e_on[3][js] > 0 and e_on[2][js] > 0.5) or e_off[2][js] > 0.5:
-                        raise SystemExit(f"{i}: {j['what']} does not encode on, then off")
-                    row["off"] = {"path": "/".join(EFFECTS[j["what"]][1][0]), "value": EFFECTS[j["what"]][1][1]}
-                y = primer.render((sid, amp), di_cache[sid], sel, x)
-                y = (y.mean(axis=1) if y.ndim == 2 else y)[trim[0]:trim[1]]
-                if j["what"] == REPEAT:
-                    stored = np.load(T3.tgt_path(root, i))
-                    h = PS.halves_mel(y)
-                    row["repeat_share"] = min(DS.match_share(h[q], stored[f"g{q}"]) for q in h)
-                    row["repeat_ok"] = row["repeat_share"] >= DS.MATCH_SHARE
-                sc, sha = G.write_flac(flac_of(root, i, j["what"]), y, PS.SR)
-                row.update(file={"scale": sc, "sha256": sha}, lufs=T.lufs_or_none(y), renders_so_far=primer.renders,
-                           primes_so_far=primer.primes)
-                fh.write(json.dumps(row) + "\n")
-                fh.flush()
-                n_done += 1
-                if n_done % 50 == 0:
-                    print(f"{n_done}/{len(todo)} jobs; renders {primer.renders} ({primer.primes} priming); "
-                          f"{(time.time() - t0) / n_done:.1f} s per job", flush=True)
-    finally:
-        rr.close()
-    print(f"AUDIBILITY RENDER DONE {k}/{n}: {primer.renders} renders ({primer.primes} priming), "
+    t0, di_cache, n_done, renders = time.time(), {}, 0, 0
+    with open(rp, "a") as fh:
+        for j in todo:
+            g = DS._guards("audibility-render", T.DISK_GUARD_GB, swap0)
+            if g:
+                print(g[1], flush=True)
+                raise SystemExit(g[0])
+            i, sid = j["i"], j["section"]
+            rw = rend[i]
+            if rw.get("refused") or "target" not in rw:
+                raise SystemExit(f"{i}: T3 refused this example; it cannot be in FS5")
+            amp, mode, base, sel, xf, core, cname, tries = T3.full_twin(i, menus)
+            if amp != j["amp"] or LO.sdict(xf) != rw["settings"]:
+                raise SystemExit(f"{i}: the rebuilt full twin differs from T3's render row")
+            if sid not in di_cache:
+                sec = ctx.sections[sid]
+                di_cache = {sid: B.measure(PS.section_audio(sec["path"], sec["start_s"])).astype(np.float32)}
+            row = {"i": i, "section": sid, "amp": amp, "what": j["what"], "recipe": RECIPE}
+            if j["what"] in (ON, REPEAT):
+                x = xf
+            else:
+                x = off_settings(xf, j["what"])
+                sw = EFFECTS[j["what"]][0]
+                js = F.SW.index(sw)
+                e_on, e_off = F.encode(xf, amp), F.encode(x, amp)
+                if not (e_on[3][js] > 0 and e_on[2][js] > 0.5) or e_off[2][js] > 0.5:
+                    raise SystemExit(f"{i}: {j['what']} does not encode on, then off")
+                row["off"] = {"path": "/".join(EFFECTS[j["what"]][1][0]), "value": EFFECTS[j["what"]][1][1]}
+            if j["what"] == REPEAT and i not in on_sha:
+                raise SystemExit(f"{i}: the repeat comes before its r_on' (the plan's order)")
+            y = fresh_render(new_renderer, di_cache[sid], sel, xf, x)
+            renders += 2
+            y = np.ascontiguousarray((y.mean(axis=1) if y.ndim == 2 else y)[trim[0]:trim[1]])
+            sc, sha = G.write_flac(flac_of(root, i, j["what"]), y, PS.SR)
+            row.update(file={"scale": sc, "sha256": sha}, audio_sha256=audio_sha(y), lufs=T.lufs_or_none(y),
+                       renders=2, primes=1)
+            if j["what"] == ON:
+                on_sha[i] = row["audio_sha256"]
+            if j["what"] == REPEAT:
+                row["repeat_exact"] = row["audio_sha256"] == on_sha[i]
+            fh.write(json.dumps(row) + "\n")
+            fh.flush()
+            if j["what"] == REPEAT and not row["repeat_exact"]:
+                raise SystemExit(f"{i}: the repeat is not bit-identical to r_on' (the fresh-process recipe fails)")
+            n_done += 1
+            if n_done % 50 == 0:
+                print(f"{n_done}/{len(todo)} jobs; renders {renders} ({renders // 2} priming); "
+                      f"{(time.time() - t0) / n_done:.1f} s per job", flush=True)
+    print(f"AUDIBILITY RENDER DONE {k}/{n}: {renders} renders ({renders // 2} priming), "
           f"{(time.time() - t0) / 60:.1f} min")
 
 
@@ -456,12 +663,23 @@ def _init_worker():
 
     ctx = DS.Ctx(quiet=True)
     ctx.rows = None
-    _W["ctx"], _W["stems"] = ctx, T.Stems(ctx)
+    _W["ctx"], _W["stems"], _W["swap0"] = ctx, T.Stems(ctx), DS.swap_mb()
+
+
+def _guard(part, swap0):
+    """The render steps' disk, memory and swap guard (`direct_stems._guards`), raised as an error that stops the
+    measure (in a worker too)."""
+    from learn import direct_stems as DS
+
+    g = DS._guards(part, T.DISK_GUARD_GB, swap0)
+    if g:
+        raise RuntimeError(g[1])
 
 
 def _measure_section(job):
-    """One section's examples: each stored mix rebuilt and checked, then J(r_on, m), and per render row J(r_off, m)
-    and J(r_off, r_on) (or, for a repeat, J(r_on', m))."""
+    """One section's examples: each stored mix rebuilt from the stored target and checked (features, gains, and
+    `mix_with` against `self_built_mix`), then m' = r_on' in that backing (`mix_with`), J(r_on', m'), and per render
+    row J(r_off, m') and J(r_off, r_on') (or, for a repeat, J(repeat, m'))."""
     import numpy as np
 
     from learn import direct_sound_gate as G
@@ -477,6 +695,7 @@ def _measure_section(job):
     di = B.measure(PS.section_audio(sec["path"], sec["start_s"])).astype(np.float64)[trim[0]:trim[1]]
     out = []
     for e in exs:
+        _guard("audibility-measure", _W.get("swap0"))
         x, i = e["t2"], e["i"]
         y = G.read_flac(T.flac_path(root, T3.STAGE, i, "target"), e["target"]["scale"], e["target"]["sha256"])
         oth = G.read_flac(T.flac_path(root, "t2", i, "others"), e["others"]["scale"], e["others"]["sha256"])
@@ -488,26 +707,42 @@ def _measure_section(job):
         stored = np.load(T.ex_path(root, T3.STAGE, i, f"mix-{T3.STAGE}"))
         share = T3.feature_share({"mA": mm["A"], "mB": mm["B"]}, stored, ("mA", "mB"))
         gains_ok = all(abs(gains[q] - e["gains"][q]) < 1e-6 for q in ("gb", "ga"))
-        base = {"i": i, "section": sid, "mix_share": share, "gains_ok": gains_ok}
-        if share < DS.MATCH_SHARE or not gains_ok:
+        mastered = x["draw"]["mastered"]
+        mw = mix_with(y, oth, st, e["gains"], i, mastered)
+        mix_with_ok = bool(np.allclose(mw, m, rtol=0, atol=1e-9))
+        base = {"i": i, "section": sid, "mix_share": share, "gains_ok": gains_ok, "mix_with_ok": mix_with_ok}
+        if share < DS.MATCH_SHARE or not gains_ok or not mix_with_ok:
             out.append({**base, "refused": "the stored mix does not rebuild"})
             continue
-        j_on = K.judge(m, y, di, 0)
+        on = [r for r in e["renders"] if r["what"] == ON]
+        if len(on) != 1:
+            out.append({**base, "refused": f"{len(on)} r_on' renders"})
+            continue
+        f = on[0]["file"]
+        r_on = np.asarray(G.read_flac(flac_of(root, i, ON), f["scale"], f["sha256"]), np.float64)
+        mp = mix_with(r_on, oth, st, e["gains"], i, mastered)
+        j_on = K.judge(mp, r_on, di, 0)
         rows = []
         for r in e["renders"]:
+            if r["what"] == ON:
+                continue
             f = r["file"]
             z = np.asarray(G.read_flac(flac_of(root, i, r["what"]), f["scale"], f["sha256"]), np.float64)
-            j_m = K.judge(m, z, di, 0)
+            j_m = K.judge(mp, z, di, 0)
             if r["what"] == REPEAT:
-                rows.append({"what": REPEAT, "j_m": j_m, "floor": a_e(j_on, j_m), "repeat_ok": r.get("repeat_ok")})
+                rows.append({"what": REPEAT, "j_m": j_m, "floor": a_e(j_on, j_m),
+                             "repeat_exact": r.get("repeat_exact")})
             else:
-                rows.append({"what": r["what"], "j_m": j_m, "a": a_e(j_on, j_m), "solo": solo(K.judge(y, z, di, 0))})
+                rows.append({"what": r["what"], "j_m": j_m, "a": a_e(j_on, j_m),
+                             "solo": solo(K.judge(r_on, z, di, 0)), "clean": clean_pair(e["settings"], r["what"])})
         out.append({**base, "j_on": j_on, "rows": rows})
     return out
 
 
 def cmd_measure(args):
-    """Every rendered pair's A_e and solo distance, and each group's repeat floor, to audibility/measure.json."""
+    """Every rendered pair's A_e and solo distance, each group's repeat (it must be bit-identical, or the step refuses
+    before writing anything), and the first run's A_e against this run's on the clean pairs, to
+    audibility/measure.json."""
     from multiprocessing import Pool
 
     require_declared()
@@ -516,7 +751,12 @@ def cmd_measure(args):
     ap = _load(od / "plan.json")
     if not ap:
         raise SystemExit("run `plan` first")
+    if ap.get("recipe") != RECIPE:
+        raise SystemExit("the stored plan is the first run's: run `archive`, then `plan`")
     rows = render_rows(od)
+    inexact = [(r["i"], r["section"]) for r in rows if r["what"] == REPEAT and not r.get("repeat_exact")]
+    if inexact:
+        raise SystemExit(f"{len(inexact)} repeats are not bit-identical to their r_on' (e.g. {inexact[:3]}): refused")
     have ={(r["i"], r["what"]) for r in rows}
     missing = [j for j in ap["jobs"] if (j["i"], j["what"]) not in have]
     if missing:
@@ -528,8 +768,12 @@ def cmd_measure(args):
     for r in rows:
         by.setdefault(r["section"], {}).setdefault(r["i"], []).append(r)
     jobs = [(root, sid, [{"i": i, "t2": t2[i], "target": rend[i]["target"], "others": t2rend[i]["others_file"],
-                          "gains": built[i]["gains_db"], "renders": rs} for i, rs in sorted(exs.items())])
+                          "gains": built[i]["gains_db"], "settings": rend[i]["settings"], "renders": rs}
+                         for i, rs in sorted(exs.items())])
             for sid, exs in sorted(by.items())]
+    from learn import direct_stems as DS
+
+    _guard("audibility-measure", DS.swap_mb())
     t0 = time.time()
     with Pool(min(WORKERS, len(jobs)), initializer=_init_worker) as pool:
         res = [r for part in pool.imap_unordered(_measure_section, jobs) for r in part]
@@ -539,12 +783,17 @@ def cmd_measure(args):
     for r in res:
         for q in r.get("rows", []):
             if q["what"] == REPEAT:
-                floors.append({"i": r["i"], "section": r["section"], "floor": q["floor"], "repeat_ok": q["repeat_ok"]})
+                floors.append({"i": r["i"], "section": r["section"], "floor": q["floor"],
+                               "repeat_exact": q["repeat_exact"]})
             else:
                 a = q["a"] or {}
                 pairs.append({"i": r["i"], "section": r["section"], "effect": q["what"], "a_e": a.get("a_e"),
-                              "signed": a.get("signed"), "halves": a.get("halves"), "solo": q["solo"]})
-    bad_groups = {f["section"] for f in floors if not f["repeat_ok"]}
+                              "signed": a.get("signed"), "halves": a.get("halves"), "solo": q["solo"],
+                              "clean": q["clean"]})
+    old = _load(od / ARCHIVE / "measure.json") or {}
+    old_ae = {(p["effect"], p["i"]): p["a_e"] for p in old.get("pairs", [])}
+    new_ae = {(p["effect"], p["i"]): p["a_e"] for p in pairs}
+    cons = consistency(old_ae, new_ae, {(p["effect"], p["i"]) for p in pairs if p["clean"]}) if old_ae else None
     summ = {}
     for e in EFFECTS:
         v = [p for p in pairs if p["effect"] == e]
@@ -554,16 +803,20 @@ def cmd_measure(args):
                    "negative_signed": sum(1 for p in v if p["signed"] is not None and p["signed"] < 0),
                    "a_e": quantiles(fin), "solo": quantiles([p["solo"] for p in v])}
     fl = [f["floor"]["a_e"] for f in floors if f["floor"]]
-    rec = {"design": DESIGN, "status": STATUS, "tau": TAU, "examples": len(res),
+    rec = {"design": DESIGN, "status": STATUS, "recipe": RECIPE, "tau": TAU, "examples": len(res),
            "refused": [{"i": r["i"], "why": r["refused"]} for r in res if r.get("refused")],
            "renders": render_count(od), "rows": len(rows),
-           "repeat_floor": {"groups": len(floors), "repeat_mel_ok": sum(bool(f["repeat_ok"]) for f in floors),
-                            "a_e": quantiles(fl), "sections_with_a_failed_repeat": sorted(bad_groups)},
+           "repeat_floor": {"groups": len(floors), "repeat_exact": sum(bool(f["repeat_exact"]) for f in floors),
+                            "a_e": quantiles(fl)},
+           "clean_pairs": {e: sum(1 for p in pairs if p["effect"] == e and p["clean"]) for e in EFFECTS},
+           "first_run_consistency": cons,
            "summary": summ, "pairs": pairs, "floors": floors, "examples_detail": res,
            "minutes": round((time.time() - t0) / 60, 1), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     _save(od / "measure.json", rec)
     print(f"renders used: {rec['renders']}")
     print(f"repeat floor: {rec['repeat_floor']}")
+    print(f"clean pairs (no other modulated effect on): {rec['clean_pairs']}")
+    print(f"first run against this run, clean pairs: {cons}")
     for e, s in summ.items():
         print(f"{e:13s} measured {s['measured']:3d}/{s['pairs']:3d}; below tau {s['below_tau']} "
               f"({0 if s['share_below_tau'] is None else s['share_below_tau']:.2f}); negative {s['negative_signed']}; "
@@ -587,15 +840,13 @@ def run_totals(counts):
 
 
 def render_count(od):
-    """{renders, priming} over every shard's rows (`run_totals`; a run that rendered and wrote no row is not seen)."""
-    from learn import pretrain_set as PS
-
+    """{renders, priming} over every shard's rows: each row is one new process, its own priming render and the one
+    kept (a job that rendered and wrote no row is not seen). The first run's rows carried running counts
+    (`run_totals`)."""
     tot = {"renders": 0, "priming": 0}
-    for p in sorted((od / "rows").glob("render-*.jsonl")):
-        c = [(r["renders_so_far"], r["primes_so_far"]) for r in PS.read_rows(p)]
-        r, q = run_totals(c)
-        tot["renders"] += r
-        tot["priming"] += q
+    for r in render_rows(od):
+        tot["renders"] += r["renders"]
+        tot["priming"] += r["primes"]
     return tot
 
 
@@ -625,6 +876,8 @@ def cmd_read(args):
     meas = _load(od / "measure.json")
     if not meas:
         raise SystemExit("run `measure` first")
+    if meas.get("recipe") != RECIPE:
+        raise SystemExit("measure.json is not the fresh-process recipe's")
     read, corr = read_rows(meas, _load(P.out_dir(root) / "audible.json"))
     rec = {"design": DESIGN, "status": STATUS, "tau": TAU, "lists_check": P.LISTS.get("check"), "read": read,
            "spearman": corr, "renders": meas.get("renders"), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
@@ -720,9 +973,10 @@ def key_path(root):
     return out_dir(root) / "page-key.json"
 
 
-def pair_audio(root, it, ctx, stems, t2, t2rend, rend, built, cache):
-    """(on mix, off mix) for a page item: the stored mix rebuilt, and r_off in the same backing at the same gains and
-    mastering (`mix_with`); "same": the stored mix twice."""
+def pair_audio(root, it, stems, t2, t2rend, built, rows, cache):
+    """(on mix, off mix) for a page item: m' (r_on' in the stored backing at the stored gains and mastering,
+    `mix_with`) and r_off in the same backing; both renders sit at the same process position. "same": m' twice.
+    rows: {(i, what): render row}."""
     import numpy as np
 
     from learn import direct_sound_gate as G
@@ -730,8 +984,8 @@ def pair_audio(root, it, ctx, stems, t2, t2rend, rend, built, cache):
     i, e = it["i"], it["effect"]
     x = t2[i]
     if i not in cache:
-        tg = rend[i]["target"]
-        y = np.asarray(G.read_flac(T.flac_path(root, T3.STAGE, i, "target"), tg["scale"], tg["sha256"]), np.float64)
+        r = rows[(i, ON)]
+        y = np.asarray(G.read_flac(flac_of(root, i, ON), r["file"]["scale"], r["file"]["sha256"]), np.float64)
         o = t2rend[i]["others_file"]
         oth = np.asarray(G.read_flac(T.flac_path(root, "t2", i, "others"), o["scale"], o["sha256"]), np.float64)
         voc = x["draw"]["vocals_drawn"] and x["stems"]["v"] != x["stems"]["n"]
@@ -743,7 +997,7 @@ def pair_audio(root, it, ctx, stems, t2, t2rend, rend, built, cache):
     m_on = mix_with(y, oth, st, gains, i, x["draw"]["mastered"])
     if it["kind"] == "same":
         return m_on, m_on.copy()
-    r = next(r for r in render_rows(out_dir(root)) if r["i"] == i and r["what"] == e)
+    r = rows[(i, e)]
     z = np.asarray(G.read_flac(flac_of(root, i, e), r["file"]["scale"], r["file"]["sha256"]), np.float64)
     return m_on, mix_with(z, oth, st, gains, i, x["draw"]["mastered"])
 
@@ -863,6 +1117,8 @@ def cmd_page(args):
     meas = _load(out_dir(root) / "measure.json")
     if not meas:
         raise SystemExit("run `measure` first")
+    if meas.get("recipe") != RECIPE:
+        raise SystemExit("measure.json is not the fresh-process recipe's: the page is built from it only")
     refused = {r["i"] for r in meas["refused"]}
     items = page_items([p for p in meas["pairs"] if p["i"] not in refused])
     pd, kp = page_dir(), key_path(root)
@@ -873,10 +1129,11 @@ def cmd_page(args):
     stems = T.Stems(ctx)
     t2 = {x["i"]: x for x in _load(T.plan_path(root, "t2"))["examples"]}
     t2rend = T.rows_of(root, "t2", "render")
-    rend, built = T.rows_of(root, T3.STAGE, "render"), T.rows_of(root, T3.STAGE, "build")
+    built = T.rows_of(root, T3.STAGE, "build")
+    rows = {(r["i"], r["what"]): r for r in render_rows(out_dir(root))}
     clips, cache = {}, {}
     for it in sorted(items, key=lambda it: it["i"]):
-        on, off = pair_audio(root, it, ctx, stems, t2, t2rend, rend, built, cache)
+        on, off = pair_audio(root, it, stems, t2, t2rend, built, rows, cache)
         first, second = (on, off) if it["first"] == "on" else (off, on)
         clips[it["id"] + "-1"], clips[it["id"] + "-2"] = pair_clips(first, second, pd / "cache")
     key = {"page": PAGE_NAME, "tau": TAU, "seed": PAGE_SEED, "items": items, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
@@ -889,7 +1146,8 @@ def cmd_page(args):
     print(f"PAGE DONE: {len(items)} items, {p.stat().st_size / 1e6:.1f} MB -> {p}")
 
 
-COMMANDS = {"plan": cmd_plan, "render": cmd_render, "measure": cmd_measure, "read": cmd_read, "page": cmd_page}
+COMMANDS = {"archive": cmd_archive, "plan": cmd_plan, "render": cmd_render, "measure": cmd_measure, "read": cmd_read,
+            "page": cmd_page}
 
 
 def main(argv=None):
