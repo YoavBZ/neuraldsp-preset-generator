@@ -6,8 +6,8 @@
 # Cost: plan (zero renders), then about 900 renders on 3 shards (up to 200 "on" FS5 examples per effect rendered with
 # that effect off, one repeat of r_on per (section, amp) group, one priming render per group), about 10-20 min when the
 # slots are free; measure (zero renders, 4 CPU workers), read (the tone probe refitted, zero renders) and the page.
-# isolate=True, 0.25 s trimmed, at most 3 render processes machine-wide (every render waits for a slot, so it queues
-# behind step (a)'s V-real renders), the 31 GB disk guard. Zero separations, zero training. FS5 only; V-real untouched.
+# isolate=True, 0.25 s trimmed, at most 3 render processes machine-wide (every render waits for a slot and for any separation,
+# e.g. step (b)'s), the 31 GB disk guard. Zero separations, zero training. FS5 only; V-real untouched.
 # Outputs only under trusted-data/audibility/ and listening/audibility-mix/; t0/, t2/, t3/ and tone-probe/ are read.
 setopt no_bg_nice
 caffeinate -i -w $$ &!                   # disowned (&!): no job for a wait to hang on (PR #300); waits below name pids
