@@ -166,8 +166,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      to retrain D. Read like (a): FS5 first, V-real only if it helps.
    - (c) **Audibility-aware labels for the time effects.** The probe's audibility split: from the stem, the delay's
      AUC rises from 0.62 to 0.73 on its loudest third, while reverb, tremolo and the springs stay weak even at their
-     loudest. So a time effect's label should reflect how audible it is, not only its switch. Zero renders to
-     relabel; a retrain to read it (about F5's size, so it needs the user's yes too). *Research delivered 2026-10-27
+     loudest. So a time effect's label should reflect how audible it is, not only its switch. Measuring audibility
+     takes renders (below); a retrain to read it (about F5's size, so it needs the user's yes too). *Research delivered 2026-10-27
      ([effect detection](research/effect-detection-2026-10.md), #311; not a plan): masking by the backing, not faint
      labels, is the main loss. Audibility is measured in the mix, A_e = |log(J(r_off, m) / J(r_on, m))| against the
      stored mix, so it is not zero renders: about 1,000 for an FS5 test (up to 200 "on" examples per effect rendered
@@ -189,7 +189,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      stored C′ and step 3's D keep running under a recorded exception to the trusted rule.
    - Reopening arm B, at the decision test.
    - For (c), how an audibility measure may change the labels ([research](research/effect-detection-2026-10.md#measure-audibility-in-the-mix-not-by-the-knob)):
-     counting an effect inaudible on its own as off (extends the switched-off rule, touches amendment 1); weight 0
+     counting an effect inaudible on its own as off (extends the switched-off rule, touches every-control amendment 1); weight 0
      for an effect masked in the mix (changes "the switch itself is always scored"); masking idle knobs, measured
      per knob (Tone King's tremolo speed was audible at depth 0).
 
