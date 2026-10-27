@@ -2307,7 +2307,7 @@ same, not sure).
 
 - **896 renders** (824 effect-off, 36 repeats, 36 priming); about 10–20 min on 3 processes when the slots are free
   (T3's rate, about 6,900 an hour). The renders wait for a slot, so they queue behind step (a)'s V-real renders.
-- Measure, read and page: minutes of CPU (the judge takes about 0.07 s a half; 6 workers). Zero separations, zero
+- Measure, read and page: minutes of CPU (the judge takes about 0.07 s a half; 4 workers). Zero separations, zero
   training. About 1 GB of FLAC.
 - **Machine rules** (F5's): every Morgan render isolate=True, one discarded priming render per (section, amp) group,
   0.25 s trimmed; at most 3 render processes machine-wide (`local_objective.RENDERS` lists `audibility_measure

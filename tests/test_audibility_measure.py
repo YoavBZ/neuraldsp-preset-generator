@@ -72,6 +72,13 @@ def test_repeats_and_jobs_prime_once_per_group():
     assert [j["what"] for j in jobs if j["i"] == 2] == ["delay", "reverb"]            # EFFECTS order within an id
 
 
+def test_plan_unchanged_ignores_the_time_only():
+    a = {"seed": 1, "n_max": 200, "tau": 0.005, "chosen": {"delay": [1]}, "jobs": [{"i": 1}], "time": "then"}
+    assert A.plan_unchanged(a, {**a, "time": "now"})
+    assert not A.plan_unchanged(a, {**a, "chosen": {"delay": [2]}})
+    assert not A.plan_unchanged(a, {**a, "jobs": []})
+
+
 def test_off_settings_switches_only_the_effect():
     x = {("delay", "delayActive"): "true", ("delay", "delayMix"): "0.3", ("pr12Amp", "pr12Reverb"): "0.2"}
     y = A.off_settings(x, "delay")

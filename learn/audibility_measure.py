@@ -56,7 +56,7 @@ PAGE_SEED = 20261114                                  # the page's order and eac
 TAU = 0.005                                           # the every-control plan's log bar: the starting threshold
 NEAR = 2                                              # page: the pairs nearest tau on each side, per effect
 CATCH = 3                                             # page: identical pairs (the mix against itself)
-WORKERS = 6                                           # measure: one section per worker
+WORKERS = 4                                           # measure: one section per worker (as the tone probe's 4)
 HALVES = ("A", "B")
 WHICH = ("all on", "measured", "bottom third", "middle third", "top third", "below tau", "at or above tau")
 PAGE_NAME = "audibility-mix"
@@ -108,6 +108,11 @@ def jobs_of(chosen, reps, group_of):
     out = [{"i": i, "section": g[0], "amp": g[1], "what": REPEAT} for g, i in reps.items()]
     out += [{"i": i, "section": group_of[i][0], "amp": group_of[i][1], "what": e} for e, ids in chosen.items() for i in ids]
     return sorted(out, key=lambda j: (j["section"], j["amp"], j["i"], rank[j["what"]]))
+
+
+def plan_unchanged(old, new):
+    """The stored plan and a recomputed one draw the same renders (a re-run of the chain resumes)."""
+    return all(old.get(k) == new.get(k) for k in ("seed", "n_max", "tau", "chosen", "jobs"))
 
 
 def off_settings(x, effect):
@@ -282,10 +287,6 @@ def cmd_plan(args):
     require_declared()
     root = V.OUT
     od = out_dir(root)
-    if (od / "plan.json").exists() and not args.force:
-        raise SystemExit(f"{od / 'plan.json'} exists (--force to rewrite before any render)")
-    if (od / "rows").exists() and any((od / "rows").iterdir()):
-        raise SystemExit("renders exist: the plan is fixed")
     plan, drift, fs, rend = load_fs5(root)
     enc = T3.encode_for(T3.FULL)
     on_ids, group_of = {e: [] for e in EFFECTS}, {}
@@ -304,6 +305,14 @@ def cmd_plan(args):
            "renders_projected": len(jobs) + len({(j["section"], j["amp"]) for j in jobs}),
            "drift": {k: drift[k] for k in ("ok", "plan_lists_sha256", "today_lists_sha256", "frozen")},
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    old = _load(od / "plan.json")
+    if old and plan_unchanged(old, rec):
+        print(f"PLAN DONE (unchanged, {od / 'plan.json'}): {len(jobs)} renders + {rec['groups']} priming")
+        return
+    if old and (od / "rows").exists() and any((od / "rows").iterdir()):
+        raise SystemExit("renders exist and the plan would change: it is fixed")
+    if old and not args.force:
+        raise SystemExit(f"{od / 'plan.json'} exists and differs (--force to rewrite before any render)")
     od.mkdir(parents=True, exist_ok=True)
     _save(od / "plan.json", rec)
     print(f"FS5: {rec['fs5']} examples in {rec['fs5_sections']} sections; on: {rec['on']}")
@@ -601,10 +610,7 @@ def cmd_read(args):
     """The tone probe's switch readouts for the target, the mix and the stem (its probes refitted, deterministic),
     read on FS5 with "off" against the "on" examples in each A_e subset; plus A_e against the proxy level and the solo
     distance. The probe's stored "all on" row must reproduce."""
-    import numpy as np
-
     from learn import tone_info_probe as P
-    from learn import trusted_data_t3_r as R
 
     require_declared()
     root = V.OUT
@@ -612,7 +618,31 @@ def cmd_read(args):
     meas = _load(od / "measure.json")
     if not meas:
         raise SystemExit("run `measure` first")
-    stored = _load(P.out_dir(root) / "audible.json")
+    read, corr = read_rows(meas, _load(P.out_dir(root) / "audible.json"))
+    rec = {"design": DESIGN, "status": STATUS, "tau": TAU, "lists_check": P.LISTS.get("check"), "read": read,
+           "spearman": corr, "renders": meas.get("renders"), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    _save(od / "read.json", rec)
+    for e, r in read.items():
+        print(f"\n{e} (cuts {None if r['cuts'] is None else [round(c, 4) for c in r['cuts']]}); Spearman A_e vs proxy "
+              f"{corr[e]['a_e_vs_proxy']}, vs solo {corr[e]['a_e_vs_solo']}")
+        for which, row in r["rows"].items():
+            cells = []
+            for key in "abc":
+                x = row[key]
+                iv = "no interval" if x["lo"] is None else f"[{x['lo']:.3f},{x['hi']:.3f}]"
+                pt = "n/a" if x["point"] is None else f"{x['point']:.3f}"
+                cells.append(f"{key} {pt} {iv}{' R' if x['readable'] else ''} ({x['n_on']}/{x['n_off']})")
+            print(f"  {which:16s} " + " | ".join(cells))
+    print(f"READ DONE: {od / 'read.json'}")
+
+
+def read_rows(meas, stored):
+    """`cmd_read`'s rows from a measure record and the tone probe's stored audible.json. -> (read, spearman)."""
+    import numpy as np
+
+    from learn import tone_info_probe as P
+    from learn import trusted_data_t3_r as R
+
     root_, _, tr, fs, _ = P.load_sets()
     S = P.prepare(root_, tr, fs)
     lab_te, sec, ids = S["lab_te"], S["sec"], S["ids"]
@@ -651,21 +681,7 @@ def cmd_read(args):
         proxy = [float(lab_te[0][pos[i], jp]) for i in meas_on]
         aes = [by[(e, i)]["a_e"] for i in meas_on]
         corr[e] = {"a_e_vs_proxy": spearman(aes, proxy), "a_e_vs_solo": spearman(aes, [by[(e, i)]["solo"] for i in meas_on])}
-    rec = {"design": DESIGN, "status": STATUS, "tau": TAU, "lists_check": P.LISTS.get("check"), "read": read,
-           "spearman": corr, "renders": meas.get("renders"), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
-    _save(od / "read.json", rec)
-    for e, r in read.items():
-        print(f"\n{e} (cuts {None if r['cuts'] is None else [round(c, 4) for c in r['cuts']]}); Spearman A_e vs proxy "
-              f"{corr[e]['a_e_vs_proxy']}, vs solo {corr[e]['a_e_vs_solo']}")
-        for which, row in r["rows"].items():
-            cells = []
-            for key in "abc":
-                x = row[key]
-                iv = "no interval" if x["lo"] is None else f"[{x['lo']:.3f},{x['hi']:.3f}]"
-                pt = "n/a" if x["point"] is None else f"{x['point']:.3f}"
-                cells.append(f"{key} {pt} {iv}{' R' if x['readable'] else ''} ({x['n_on']}/{x['n_off']})")
-            print(f"  {which:16s} " + " | ".join(cells))
-    print(f"READ DONE: {od / 'read.json'}")
+    return read, corr
 
 
 # --- page (MAIN; zero renders) ------------------------------------------------------------------------------------
