@@ -2,7 +2,7 @@
 
 *Research, 2026-10-27, for the ML session; not a declared plan.*
 
-The [tone probe](../tone-info-probe.md) answers most of the request: a linear probe reads 86 of 116 heads from the wet target render, 30 from the mix and 20 from the X-LANCE stem; a finer STFT reads 87, and the DI adds nothing. Faint "on" labels (4–10% below 0.05) explain only part of the delay. So the user's hypothesis, as the ML session relayed it, explains only part of it: labels are often faint, but masking by the backing is the main loss.
+The [tone probe](../tone-info-probe.md) answers most of the request: a linear probe reads 86 of 116 heads from the wet target render, 30 from the mix and 20 from the X-LANCE stem; a finer STFT reads 87, and the DI adds nothing. So the user's hypothesis, as the ML session relayed it, explains only part of the delay: "on" labels are often faint (4–10% below 0.05), but masking by the backing is the main loss.
 
 ## Features and inputs are settled; stereo is blocked
 
@@ -24,7 +24,7 @@ For step (b): train on the stored wet target renders, as planned; keep the mono-
 
 ## Measure audibility in the mix, not by the knob
 
-Even at their loudest knob third, reverb, tremolo and the springs read weakly from the stem (0.52–0.63; target 0.77–0.87). For step (c): A_e = |log(J(r_off, m) / J(r_on, m))|, where the judge J scores the target render r_on, and r_off (effect e off), against the stored mix m; nothing is re-mixed (untested against a mix). Start τ at the [every-control plan](../every-control-plan.md)'s 0.005 log bar, checked by ear. Solo audibility needs J(r_off, r_on). Three uses need the user's ruling. Counting an effect inaudible solo as off extends the switched-off rule and touches amendment 1 ("No fixed rule stands in for a control the judge can't hear"). Weight 0 for one audible solo but under τ in the mix breaks "the switch itself is always scored" (an amendment). Masking idle knobs (delay time at low mix) must be measured per knob: Tone King's tremolo speed was audible at depth 0. Published work only restricts draws ([Okita 2026](https://arxiv.org/html/2604.22276)), accepts "subjective equivalence" ([Hinrichs 2022](https://www.tnt.uni-hannover.de/papers/data/1571/EURASIP_2022.pdf)) or prunes processors that barely change the loss ([Lee 2024](https://arxiv.org/abs/2406.01049v2)).
+Even at their loudest knob third, reverb, tremolo and the springs read weakly from the stem (0.52–0.63; target 0.77–0.87). For step (c): A_e = |log(J(r_off, m) / J(r_on, m))|, where the judge J scores the target render r_on, and r_off (effect e off), against the stored mix m; nothing is re-mixed (untested against a mix). Start τ at the [every-control plan](../every-control-plan.md)'s 0.005 log bar, checked by ear. Solo audibility needs J(r_off, r_on), a plain distance whose threshold is open. Three uses need the user's ruling. Counting an effect inaudible solo as off extends the switched-off rule and touches amendment 1 ("No fixed rule stands in for a control the judge can't hear"). Weight 0 for one audible solo but under τ in the mix breaks "the switch itself is always scored" (an amendment). Masking idle knobs (delay time at low mix) must be measured per knob: Tone King's tremolo speed was audible at depth 0. Published work only restricts draws ([Okita 2026](https://arxiv.org/html/2604.22276)), accepts "subjective equivalence" ([Hinrichs 2022](https://www.tnt.uni-hannover.de/papers/data/1571/EURASIP_2022.pdf)) or prunes processors that barely change the loss ([Lee 2024](https://arxiv.org/abs/2406.01049v2)).
 
 ## Amp knobs read from the render, but modestly
 
@@ -38,7 +38,7 @@ Ranked by how directly each attacks the mix's loss, then by cost.
 |---|---|---|---|---|
 | 1 | Wet-target fine-tune (roadmap b) | MPS gate, then train; tone probe on FS5 | up to ~11 h on MPS (about 3.4× slower on the CPU fallback), 4–6 h re-separation, ~40-min retrain; the user's approval | X-LANCE MIT; SW base unlicensed, in use |
 | 2 | Audibility labels in the mix (step c) | Render up to 200 "on" FS5 examples per effect with it off; re-read the probe by A_e thirds. All of F5 needs thousands of renders, not (c)'s zero | ~1,000 renders, about an hour | project code |
-| 3 | Ideal-ratio-mask indicator, not a bound | STFT mask on unmastered FS5 examples, rebuilt at zero renders ([`self_built_mix`](../../learn/trusted_data.py), stored [gains](../../learn/trusted_data_t3.py)); then the tone probe trained on the target (a) | 0 renders, CPU | project code |
+| 3 | Ideal-ratio-mask indicator, not a bound | STFT mask on unmastered FS5 examples, rebuilt at zero renders ([`self_built_mix`](../../learn/trusted_data.py), stored [gains](../../learn/trusted_data_t3.py)); undo the stored gain, then the target-trained probe (a) | 0 renders, CPU | project code |
 | 4 | Pooling check | Free: D_F5mix's time-effect row against the probe's mix row (5 of 19); the 1-vs-3 gap was within chance | none extra | — |
 | 5 | Effective drive (a measured distortion amount; only input gain has a dB scale), response curve (target-to-DI long-term spectrum) | Probe the target for these against single knobs | 0 renders, minutes | project code |
 | 6 | Stereo | Stereo renders (a renderer change); ~100, coherence against mono | minutes | as now |
