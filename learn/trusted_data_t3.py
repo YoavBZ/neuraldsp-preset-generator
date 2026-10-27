@@ -1157,9 +1157,9 @@ def load_models(root, arm, smoke=False):
     return nets, recs
 
 
-def fs_tensors(rows, files, encode):
+def fs_tensors(rows, files, encode, model_arm=None):
     """(X, C, Y, who) over both halves of rows from their feature files (D_stem's inputs, as `data_cleaning.
-    stem_tensors`), Y by the arm's encoding."""
+    stem_tensors`; `model_arm` "Dmix" gives D_mix's, for D_F5mix), Y by the arm's encoding."""
     import numpy as np
 
     from learn import direct_stems as DS
@@ -1170,7 +1170,7 @@ def fs_tensors(rows, files, encode):
         dm, ds = np.load(mp), np.load(sp)
         for k, h in enumerate("AB"):
             x, c = DS.model_input(ds[f"s{h}"], dm[f"m{h}"], float(ds["lufs"][k]), float(dm["lufs"][k]), h,
-                                  r["amp"], r["base"], T.MODEL_ARM)
+                                  r["amp"], r["base"], model_arm or T.MODEL_ARM)
             X.append(x), C.append(c), Y.append(encode(r["label"])), who.append(r["i"])
     return np.stack(X).astype(np.float32), np.stack(C), [np.stack(z) for z in zip(*Y)], who
 
