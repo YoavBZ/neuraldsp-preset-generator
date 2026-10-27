@@ -374,6 +374,26 @@ def test_the_key_is_outside_the_listening_folder():
     root = pathlib.Path("/data")
     assert A.key_path(root) == root / A.OUT_DIR / "page-key.json"
     assert A.page_dir() not in A.key_path(A.V.OUT).parents
+    assert A.key_path(root, A.EXPOSED_PAGE) == root / A.OUT_DIR / f"page-key-{A.EXPOSED_PAGE}.json"
+    assert A.page_dir(A.EXPOSED_PAGE) not in A.key_path(A.V.OUT, A.EXPOSED_PAGE).parents
+    assert A.page_dir(A.EXPOSED_PAGE) != A.page_dir()                                  # the first page stays
+
+
+def test_exposed_needs_level_no_vocals_and_few_guitars():
+    def x(ratio, vocals=False, others=1):
+        return {"draw": {"ratio_db": ratio, "vocals_drawn": vocals}, "others": [{}] * others}
+    assert A.exposed(x(-6.0)) and A.exposed(x(-2.0, others=2))
+    assert not A.exposed(x(-6.1))
+    assert not A.exposed(x(-3.0, vocals=True))
+    assert not A.exposed(x(-3.0, others=3))
+
+
+def test_the_exposed_page_is_named_apart():
+    pytest.importorskip("soundfile")
+    items = A.page_items(_measured(), tau=0.005)
+    clips = {f"{it['id']}-{k}": "AAAA" for it in items for k in (1, 2)}
+    page = A.page_html(items, clips, "b123", A.EXPOSED_PAGE)
+    assert f'"page": "{A.EXPOSED_PAGE}"' in page
 
 
 # --- the render count and the mix -----------------------------------------------------------------------------------
@@ -425,6 +445,8 @@ def test_cli_flags():
         A.main(["measure", "--shard", "0/3"])
     with pytest.raises(SystemExit):
         A.main(["render", "--force"])
+    with pytest.raises(SystemExit):
+        A.main(["measure", "--exposed"])
 
 
 def _code_lines():
