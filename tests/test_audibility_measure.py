@@ -57,26 +57,122 @@ def test_select_keeps_all_under_the_cap_and_draws_seeded_above():
     assert A.select({"delay": ids}, n_max=200, seed=1)["delay"] != out["delay"]
 
 
-def test_repeats_and_jobs_prime_once_per_group():
+def test_repeats_and_jobs_render_r_on_first_for_every_id():
     group_of = {1: ("s1", "pr12"), 2: ("s1", "pr12"), 3: ("s1", "ac20"), 4: ("s2", "pr12")}
     chosen = {"delay": [2, 3, 4], "reverb": [1, 2], "tremolo": []}
     reps = A.repeats(chosen, group_of)
     assert reps == {("s1", "pr12"): 1, ("s1", "ac20"): 3, ("s2", "pr12"): 4}
     jobs = A.jobs_of(chosen, reps, group_of)
-    assert len(jobs) == 5 + 3
+    assert len(jobs) == 4 + 3 + 5                                                     # r_on' per id, repeats, offs
     keys = [(j["section"], j["amp"]) for j in jobs]
     assert len({k for k in keys}) == 3 and all(keys[n] == keys[n + 1] or keys[n + 1] not in keys[:n + 1]
                                                for n in range(len(keys) - 1))          # groups contiguous
-    firsts = [j for n, j in enumerate(jobs) if n == 0 or keys[n - 1] != keys[n]]
-    assert all(j["what"] == A.REPEAT for j in firsts)                                 # the repeat follows the priming
-    assert [j["what"] for j in jobs if j["i"] == 2] == ["delay", "reverb"]            # EFFECTS order within an id
+    for i in group_of:
+        whats = [j["what"] for j in jobs if j["i"] == i]
+        assert whats[0] == A.ON                                                       # r_on' before its repeat
+    assert [j["what"] for j in jobs if j["i"] == 1] == [A.ON, A.REPEAT, "reverb"]
+    assert [j["what"] for j in jobs if j["i"] == 2] == [A.ON, "delay", "reverb"]      # EFFECTS order within an id
 
 
 def test_plan_unchanged_ignores_the_time_only():
-    a = {"seed": 1, "n_max": 200, "tau": 0.005, "chosen": {"delay": [1]}, "jobs": [{"i": 1}], "time": "then"}
+    a = {"recipe": A.RECIPE, "seed": 1, "n_max": 200, "tau": 0.005, "chosen": {"delay": [1]}, "jobs": [{"i": 1}],
+         "time": "then"}
     assert A.plan_unchanged(a, {**a, "time": "now"})
     assert not A.plan_unchanged(a, {**a, "chosen": {"delay": [2]}})
     assert not A.plan_unchanged(a, {**a, "jobs": []})
+    assert not A.plan_unchanged({k: v for k, v in a.items() if k != "recipe"}, a)      # the first run's plan
+
+
+# --- the fresh-process recipe (amendment 5's fix) ------------------------------------------------------------------------
+
+class _FakeRenderer:
+    """Output depends on the render's position in its process, as Morgan's modulated effects do."""
+
+    def __init__(self, log):
+        self.log, self.n, self.closed = log, 0, False
+
+    def render(self, di, sel, x):
+        self.n += 1
+        self.log.append((self.n, x))
+        if x == "boom":
+            raise RuntimeError("render failed")
+        return np.full(4, 100.0 * self.n + {"on": 1.0, "off": 2.0}.get(x, 0.0))
+
+    def close(self):
+        self.closed = True
+
+
+def test_fresh_render_primes_once_with_r_on_then_keeps_one_render_and_closes():
+    made = []
+
+    def make():
+        made.append(_FakeRenderer([]))
+        return made[-1]
+
+    on = A.fresh_render(make, None, "amp", "on", "on")
+    rep = A.fresh_render(make, None, "amp", "on", "on")
+    off = A.fresh_render(make, None, "amp", "on", "off")
+    assert [r.log for r in made] == [[(1, "on"), (2, "on")], [(1, "on"), (2, "on")], [(1, "on"), (2, "off")]]
+    assert all(r.closed for r in made) and len(made) == 3                             # a new process per render
+    assert np.array_equal(on, rep) and A.audio_sha(on) == A.audio_sha(rep)            # same position: bit-identical
+    assert on[0] == 201.0 and off[0] == 202.0                                         # both at position 2
+    with pytest.raises(RuntimeError):
+        A.fresh_render(make, None, "amp", "on", "boom")
+    assert made[-1].closed                                                            # closed on a failure too
+
+
+def test_audio_sha_is_exact():
+    y = np.linspace(-1, 1, 1000)
+    z = y.copy()
+    assert A.audio_sha(y) == A.audio_sha(z)
+    z[500] = np.nextafter(z[500], 2.0)
+    assert A.audio_sha(y) != A.audio_sha(z)
+
+
+def test_clean_pair_looks_at_the_other_modulated_effects_only():
+    s = {"delay/delayActive": "true", "reverb/reverbActive": "false", "tremolo/tremoloActive": "false",
+         "pr12Amp/pr12Reverb": "0.4"}
+    assert A.clean_pair(s, "delay")                                                    # only delay: clean
+    assert not A.clean_pair(s, "reverb")                                               # delay still on in r_off
+    assert not A.clean_pair(s, "pr12 spring")
+    assert A.clean_pair({**s, "delay/delayActive": "false"}, "pr12 spring")            # springs do not run on
+    assert set(A.MODULATED) == {"delay", "reverb", "tremolo"}
+
+
+def test_consistency_counts_tau_crossings_on_clean_pairs():
+    old = {("delay", 1): 0.004, ("delay", 2): 0.02, ("delay", 3): 0.1, ("reverb", 4): 0.01, ("reverb", 5): None}
+    new = {("delay", 1): 0.006, ("delay", 2): 0.021, ("delay", 3): 0.09, ("reverb", 4): 0.03, ("reverb", 5): 0.2}
+    clean = {("delay", 1), ("delay", 2), ("delay", 3), ("reverb", 5)}
+    c = A.consistency(old, new, clean)
+    assert c["delay"]["n"] == 3 and c["delay"]["crossed_tau"] == 1
+    assert c["delay"]["median_abs_diff"] == pytest.approx(0.002)
+    assert c["reverb"]["n"] == 0 and c["all"]["n"] == 3                                # a None is left out
+    assert c["delay"]["spearman"] is None                                              # fewer than 5 pairs
+
+
+def test_archive_moves_the_first_run_and_its_page(tmp_path):
+    od, pd = tmp_path / "audibility", tmp_path / "listening"
+    (od / "rows").mkdir(parents=True)
+    (od / "renders").mkdir()
+    for n in ("plan.json", "measure.json"):
+        (od / n).write_text("{}")
+    pd.mkdir()
+    (pd / "index.html").write_text("<html>")
+    moves = A.archive_moves(od, pd)
+    a = od / A.ARCHIVE
+    assert (od / "plan.json", a / "plan.json") in moves and (od / "rows", a / "rows") in moves
+    assert (pd / "index.html", a / "page" / "index.html") in moves
+    assert (od / "read.json", a / "read.json") not in moves                           # only what exists
+    assert all(a in d.parents for _, d in moves)                                       # all under the archive
+
+
+def test_render_count_sums_each_rows_process(tmp_path):
+    d = tmp_path / "rows"
+    d.mkdir()
+    (d / "render-0of3.jsonl").write_text('{"i": 1, "what": "on", "renders": 2, "primes": 1}\n'
+                                         '{"i": 1, "what": "delay", "renders": 2, "primes": 1}\n')
+    (d / "render-1of3.jsonl").write_text('{"i": 2, "what": "on", "renders": 2, "primes": 1}\n')
+    assert A.render_count(tmp_path) == {"renders": 6, "priming": 3}
 
 
 def test_off_settings_switches_only_the_effect():
@@ -266,12 +362,14 @@ def test_mix_with_rebuilds_the_self_built_mix():
 
 def test_render_is_a_render_process_and_nothing_else_is():
     assert any(re.search(p, "python -u -m learn.audibility_measure render --shard 0/3") for p in LO.RENDERS)
-    for cmd in ("plan", "measure", "read", "page"):
+    for cmd in ("archive", "plan", "measure", "read", "page"):
         assert not any(re.search(p, f"python -m learn.audibility_measure {cmd}") for p in LO.RENDERS)
 
 
-def test_the_ledger_declares_it():
+def test_the_ledger_declares_it_and_its_fix():
     assert A.ledger_declared()
+    assert A.ledger_declared(A.FIX_KEY, A.FIX_MARK)
+    assert not A.ledger_declared(A.FIX_KEY, "something never declared")
 
 
 def test_cli_flags():
@@ -296,8 +394,8 @@ def test_chain_never_waits_bare_on_caffeinate():
 
 def test_chain_order_and_guards():
     text = CHAIN.read_text()
-    assert "setopt no_bg_nice" in text and A.LEDGER_MARK in text
-    order = [" plan ", "render --shard", " measure ", " read ", " page "]
+    assert "setopt no_bg_nice" in text and A.LEDGER_MARK in text and A.FIX_MARK in text
+    order = [" archive ", " plan ", "render --shard", " measure ", " read ", " page "]
     pos = [text.index(f"${{AM[@]}}{o}" if o.startswith(" ") else o) for o in order]
     assert pos == sorted(pos)
     assert "--shard $k/3" in text and "for k in 0 1 2" in text                       # at most 3 render processes

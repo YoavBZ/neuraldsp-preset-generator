@@ -193,10 +193,19 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      against the probe's mix row (5 of 19). How the label is used needs the user's ruling (open decisions below).*
      *The measurement, approved by the user 2026-10-27 ("Yes for all") and declared the same day
      ([design](trusted-data-t0-design.md#audibility-in-the-mix-the-measurement-roadmap-step-c-declared-2026-10-27-nothing-run),
-     ledger amendment 5); not run. A_e for up to 200 "on" FS5 examples per effect (824 effect-off renders on 483
+     ledger amendment 5). A_e for up to 200 "on" FS5 examples per effect (824 effect-off renders on 483
      examples, plus 36 repeats and 36 priming: 896), the tone probe's switches re-read by A_e thirds and against τ,
      and a blind listening page to check τ (0.005 log) by ear. Descriptive: the relabel and its retrain wait for the
-     user's three rulings and get their own declaration.*
+     user's three rulings and get their own declaration.* *Ran 2026-10-27 09:44–09:57 (896 renders); the audit found
+     A_e contaminated by the plugin, not the code: Morgan's tremolo, tape delay and rack reverb run on across renders
+     in one process, so r_off and the stored r_on sat at different points of their cycles (2 of 36 repeats matched; the
+     floor's median 0.0017 and 90th percentile 0.0156 straddle τ). The page is not sent. Re-declared before any re-render
+     ([fix](trusted-data-t0-design.md#the-first-run-and-the-fresh-process-fix-2026-10-27-after-the-first-run-before-any-re-render),
+     ledger `amendment_5_fix`): every render in its own new process (a priming render with the example's own
+     setting, then the one kept), r_on' and m' fresh, an exact repeat per group, all pairs redone: 2,686 renders
+     (about 30–50 min); not re-run. **A caution for earlier results:** V-real renders several presets in one process
+     per group, so a comparison with a time effect on in both answers carries phase noise from render order (noise,
+     not bias); flagged, not fixed.*
    - (d) **F20:** the user said yes (2026-10-27); its plan is declared after (b) reads. Its value now rests on (a)/(b) and on the new data. Its declared
      fixes: redraw near-silent draws (up to 5 tries; about 16% more target renders at F5's rate); keep each
      core/full pair on one separation device; the switch readout and prior (since 2026-10-27 the plain readout is
