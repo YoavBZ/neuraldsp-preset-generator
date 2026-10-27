@@ -2270,3 +2270,93 @@ audit recomputed the rows with its own script, and they match to 4 decimals. Log
 - **Pipeline check:** |LUFS error| mean 5.6 dB, median 5.8, none clamped (R1: 5.5).
 - **What it changes (as declared):** the mix input is not adopted; the stem stays, and (b) is read as planned.
   (b)'s own declaration, in review, takes D_F5-noaug as its comparator. Nothing about F20 is decided here.
+
+## Audibility in the mix: the measurement (ROADMAP step (c); declared 2026-10-27, nothing run)
+
+**What and why.** The tone probe read the time-effect switches weakly from the mix and the stem, and the cloud
+researcher's [report](research/effect-detection-2026-10.md) found masking by the backing, more than faint "on" labels,
+the main loss. Step (c) would label a time effect by how audible it is. Before any label changes, this step measures
+that audibility in each example's own mix, the report's ranked change 2.
+- **Approved by the user** in chat on 2026-10-27 ("Yes for all", to steps (a)–(d)). Declared here and in the ledger
+  (`trusted-data-t3`, amendment 5) before any render.
+- **Descriptive.** It decides nothing, relabels nothing and trains nothing. How a label may use A_e waits for the
+  user's three rulings (ROADMAP, open decisions): counting an effect inaudible on its own as off; weight 0 for an
+  effect masked in the mix; masking idle knobs, per knob. The relabelled retrain gets its own declaration after them.
+- **Data:** FS5 only, development data that R0, the tone probe and step (a) have read. V-real and held-out data are
+  not touched.
+- Code: `learn/audibility_measure.py`. Chain: `docs/audibility-measure-chain.sh`. Outputs go to
+  `trusted-data/audibility/` and `listening/audibility-mix/` only; `t0/`, `t2/`, `t3/` and `tone-probe/` are read.
+
+### What is measured
+
+- **The effects:** delay, reverb and tremolo (each `…Active` switch set to `false`), and the PR12 and SW50R springs
+  (each spring level set to `0`, how the full space writes a spring that is off). Each keeps the tone probe's proxy
+  for its level (delay and reverb mix, tremolo depth, spring level).
+- **The examples:** FS5's 722 full twins (12 sections), from T3's frozen plan under step (a)'s drift check, with the
+  effect on (its switch scored and on, the probe's rule). All of them, or a seeded draw of 200 (seed 20261113) where
+  there are more. Counted (zero renders): delay 200 of 362, reverb 200 of 386, tremolo 200 of 241, PR12 spring 120,
+  SW50R spring 104; **824 effect-off renders on 483 examples**, every effect in all 12 sections.
+- **The renders:** r_off is the example's full twin with that one effect off, nothing else changed.
+  - Each render rebuilds the full twin (`full_twin`) and refuses unless it equals T3's render row; the effect-off
+    setting must encode the effect on before and off after.
+  - **A repeat** of r_on, once per (section, amp) group (36), checked against the stored target's mels (T2's match
+    share, 0.99). It measures the render's own floor.
+  - One discarded priming render per group (36). **896 renders in all.**
+- **A_e** (the report's definition). m is the example's stored self-built mix, rebuilt exactly from the stored target,
+  other guitars, stems, gains and mastering draw. It is refused unless its mel features match the stored `mix-t3`
+  (share 0.99) and its gains equal the build row's. Nothing is re-mixed: r_off is scored against the mix that holds
+  r_on.
+  - J is the judge (`knob_ceiling.judge`, the aligned distance on the two halves, lag 0, the section's measured DI).
+  - **A_e = |mean over the halves of log(J(r_off, m) / J(r_on, m))|.** A refused half leaves A_e undefined (counted).
+  - Beside it: the signed mean (below 0, r_off sits closer to the mix than r_on: noise); **solo**, the plain
+    distance J(r_off, r_on), with no threshold (the report leaves solo's open); and **the repeat floor**, the same
+    log ratio for r_on rendered again.
+  - A zero-render check on one FS5 example rebuilt its stored mix exactly (mel share 1.0, gains equal); the judge
+    scores a render against itself at 0 and is level-free.
+- **τ starts at 0.005 log**, the every-control plan's bar, and is checked by ear (below). No τ is adopted here.
+
+### The read (zero renders)
+
+- **Per effect:** A_e's quantiles, the share under τ, the count with a negative signed mean, the solo distance's
+  quantiles, and the repeat floor's quantiles beside.
+- **The tone probe by audibility.** The probe's switch readouts for (a) the target, (b) the mix and (c) the stem are
+  refitted (deterministic; the stored "all on" AUCs must reproduce, or the read refuses). On FS5 each reads every "off"
+  example against the "on" examples in one subset: all on; measured; A_e's bottom, middle and top thirds (tertiles of
+  the measured A_e); below τ; at or above τ. R0's rule: the AUC with a delete-one-section jackknife interval, readable
+  when its lower end is above 0.5.
+- **Spearman's ρ** of A_e against the proxy level and against the solo distance: is audibility in the mix predicted by
+  the knob, or by how much the effect changes the guitar alone?
+- **What it would show.** If the mix's switch AUC climbs from the bottom to the top third, masking explains the weak
+  reads, and an audibility label has something to carry. If A_e tracks the proxy closely, the knob already carries it.
+  If the measured "on" pairs mostly fall under the repeat floor, A_e cannot separate them at this judge. Each is
+  reported with its interval and no bar.
+
+### The ear check of τ
+
+A mobile listening page (`listening/audibility-mix/index.html`), blind. Each item plays the same 10 s of a song
+twice: the stored mix, and the same mix with r_off in place of r_on (same gains, same mastering). The question is "do
+the two mixes differ?" (they differ, maybe, same, not sure).
+- **Level-free, like A_e.** The judge levels the render and the mix apart, so A_e cannot see the guitar getting louder
+  or quieter against the backing when the effect goes off. The page matches it: each clip is levelled to −23 LUFS on
+  its own (if the true-peak ceiling lowers one, the other is lowered as much), so a level change cannot make a pair
+  sound different, and the τ check is not biased toward "audible". *(Changed after the independent review of
+  PR #314: the first draft kept the level change.)*
+- Per effect: the 2 pairs nearest τ below it, the 2 nearest above it, and the loudest (an anchor); plus 3 identical
+  pairs (the mix against itself) from different effects. About 28 items, about 12 minutes.
+- Order and each pair's play order are seeded (20261114). The key (effect, example, kind, A_e, order) is in
+  `trusted-data/audibility/page-key.json`, outside the listening folder and never on the page.
+- Clips are AAC at 128 kbps (the ear pages use 96), about 10 MB for the page (a dry run measured 0.25 MB a pair at 96 kbps), so it stays phone-sized. A caveat: lossy
+  coding may still blur the smallest differences near τ, so a "same" there is weaker evidence than a "differ".
+- The answers go into the relabel's declaration as the evidence for its τ. **No reader for the page's export exists
+  yet:** one (decoding each answer through the key, by kind and side of τ, the catches first) must be written and
+  reviewed before the relabel uses the answers.
+
+### Cost
+
+- **896 renders** (824 effect-off, 36 repeats, 36 priming); about 10–20 min on 3 processes when the slots are free
+  (T3's rate, about 6,900 an hour). The renders wait for a free slot and for any separation (step (a)'s renders are done).
+- Measure, read and page: minutes of CPU (the judge takes about 0.07 s a half; 4 workers). Zero separations, zero
+  training. About 1 GB of FLAC.
+- **Machine rules** (F5's): every Morgan render isolate=True, one discarded priming render per (section, amp) group,
+  0.25 s trimmed; at most 3 render processes machine-wide (`local_objective.RENDERS` lists `audibility_measure
+  render`); the 31 GB disk guard.

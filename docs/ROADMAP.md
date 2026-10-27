@@ -180,6 +180,12 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      stored mix, so it is not zero renders: about 1,000 for an FS5 test (up to 200 "on" examples per effect rendered
      off), thousands for all of F5. Its ranking puts (b) first; a free check rides on (a): D_F5mix's time-effect row
      against the probe's mix row (5 of 19). How the label is used needs the user's ruling (open decisions below).*
+     *The measurement, approved by the user 2026-10-27 ("Yes for all") and declared the same day
+     ([design](trusted-data-t0-design.md#audibility-in-the-mix-the-measurement-roadmap-step-c-declared-2026-10-27-nothing-run),
+     ledger amendment 5); not run. A_e for up to 200 "on" FS5 examples per effect (824 effect-off renders on 483
+     examples, plus 36 repeats and 36 priming: 896), the tone probe's switches re-read by A_e thirds and against τ,
+     and a blind listening page to check τ (0.005 log) by ear. Descriptive: the relabel and its retrain wait for the
+     user's three rulings and get their own declaration.*
    - (d) **F20:** the user said yes (2026-10-27); its plan is declared after (b) reads. Its value now rests on (a)/(b) and on the new data. Its declared
      fixes: redraw near-silent draws (up to 5 tries; about 16% more target renders at F5's rate); keep each
      core/full pair on one separation device; the switch readout and prior (since 2026-10-27 the plain readout is
