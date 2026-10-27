@@ -154,9 +154,10 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      if it helps. Declared and reviewed before it runs. Training is about F5's size (its 4 runs took 37 min of MPS), so it
      needs the user's yes (training longer than minutes). *Declared 2026-10-27
      ([D_F5mix](trusted-data-t0-design.md#d_f5mix-the-every-control-model-fed-the-mix-roadmap-step-a-declared-2026-10-27-nothing-run),
-     ledger amendment 3); pending the user's yes, not run. Two runs, about 15–30 min of MPS; zero renders to the FS5
-     verdict, 99 on V-real only if FS5 improves. It reads the frozen V-real-11 under a drift check instead of T0's
-     lists hash.*
+     ledger amendment 3; revised after its review); pending the user's yes, not run. D_F5mix against a D_F5-noaug arm
+     (the stem unaugmented, so only the input differs); 4 runs, about 30–55 min of MPS; zero renders to the FS5 read,
+     then 165 on V-real (no stop rule). It reads the frozen V-real-11 under a drift check instead of T0's lists hash.
+     The pilot's prior leans against the mix (D_mix − D_stem +0.022, reliably worse).*
    - (b) **Fine-tune X-LANCE gtr_mss** on our self-built mixes against their known target renders (stored; no new
      renders to train). Allowed under the user's rule ("no new separators; fine-tuning OK"). **Pending the user's
      yes** (training longer than minutes). Rough cost, to be sized in its declaration: up to about 11 h of MPS for
@@ -177,7 +178,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 
    **Open decisions for the user (2026-10-27):**
    - F20: whether and when it runs.
-   - Training time for (a) (declared: 2 runs, about 15–30 min of MPS), the X-LANCE fine-tune (b) (up to about 11 h, plus 4–6 h of
+   - Training time for (a) (declared: 4 runs, about 30–55 min of MPS), the X-LANCE fine-tune (b) (up to about 11 h, plus 4–6 h of
      re-separation) and (c)'s retrain (about F5's size), each once declared.
    - Before T4: the decision test's data and ship rule; whether arm A gets every-control coverage; whether the
      stored C′ and step 3's D keep running under a recorded exception to the trusted rule.

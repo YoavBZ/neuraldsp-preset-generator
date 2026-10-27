@@ -2073,16 +2073,25 @@ a training draw includes it (as for Empty Signifier's DI). No training draw is p
 
 **What and why.** The [tone probe](tone-info-probe.md) read 30 of 116 heads from the self-built mix and 20 from the
 X-LANCE stem with a linear reader, and the stem added nothing to the mix (mix plus stem 24; ROADMAP (a0), #309).
-D_F5 reads 20 from the stem (R0). This step trains F5's every-control model on the mix instead of the stem, reads
-first whether it reads more heads on FS5, and only then whether it does better on V-real.
-- Declared here and in the ledger (`trusted-data-t3`, amendment 3) before any training.
+D_F5 reads 20 from the stem (R0). This step trains F5's every-control model on the mix instead of the stem, reads its
+readability on FS5, and then reads it on V-real.
+- Declared here and in the ledger (`trusted-data-t3`, amendment 3) before any training. *Revised the same day after
+  the independent review of PR #310, still before any training: a D_F5-noaug arm was added, the stop rule dropped,
+  the switches' summary row and the training check fixed.*
 - **Pending the user's yes** (training longer than minutes); nothing runs before it.
 - Nothing of D_F5mix is seen, so its rows are not post hoc. But V-real is read again after F5 and R1, and the
   probe that motivated the step read FS5.
 - Code: `learn/trusted_data_t3_mix.py`. Chain: `docs/trusted-data-t3-mix-chain.sh` (not launched).
 - Outputs go to `trusted-data/t3-mix/` only. `t0/`, `t2/` and `t3/` are read, never written.
 
-### The arm: F5 with one change, the input
+**The prior result, against the mix.** The direct-stems pilot already compared a mix-only and a stem-only model
+([pilot results](direct-model-stems-pilot-results.md)): D_mix − D_stem read **+0.0223 [+0.0142, +0.0304]** on R_in
+(+0.0191 [+0.0069, +0.0312] on R_out), reliably worse, and its rule 2 closed the mix-only route then. That was part
+C's mixes, Mega-53 stems, today's 25 controls and the E metric, not F5's self-built mixes, X-LANCE and every control;
+the linear probe is the new evidence. So the prior leans against the mix, and this step reads whether the change of
+separator, mixes and label space reverses it.
+
+### The arms: F5 with one change, the input
 
 - **D_F5mix is D_F5 in everything but the input:**
   - the network: the 115-control heads, the masked loss and the amp head;
@@ -2097,22 +2106,31 @@ first whether it reads more heads on FS5, and only then whether it does better o
   - The input is `direct_stems`' D_mix arm (the direct-stems pilot's amendment 1): the stem channel and the
     stem-loudness slot are zero; the mix channel and the mix loudness are kept. It mirrors D_F5's D_stem input, where
     the mix is zero.
-- **One consequence, stated:** D_stem's four augmentations (separator failure, a merged guitar, drop-outs, darkening)
-  act on the stem channel only, because they imitate the separator's errors. With the stem channel zero they have
-  nothing to act on, so D_F5mix trains unaugmented, as the pilot's D_mix did.
-  - A new mix augmentation would be a second, undeclared change, so none is added.
-  - So D_F5mix − D_F5 reads the input together with the augmentation that belongs to the stem input.
-- **The constant** comes from the training labels, which are D_F5's, so it is D_F5's constant. `fit` refuses unless it
-  equals F5's stored one. The pull is refitted on FS5 from D_F5mix's own answers (amendment 5's rule), with both
-  section folds printed.
+- **Augmentation, and the D_F5-noaug arm.** D_stem's four augmentations (separator failure, a merged guitar,
+  drop-outs, darkening) act on the stem channel only, because they imitate the separator's errors. With the stem
+  channel zero they have nothing to act on, so D_F5mix trains unaugmented, as the pilot's D_mix did. No mix
+  augmentation is invented.
+  - The pilot measured augmentation helping D_stem: D_stem − D_stem-noaug **−0.0115 [−0.0184, −0.0045]** on R_in.
+    So D_F5mix − D_F5 would charge the mix with the lost augmentation.
+  - **D_F5-noaug** separates the two: D_F5 exactly (stem input, the same examples, FS5, seeds, cap, readout), with
+    augmentation off. Zero renders to train.
+  - **The input contrast is D_F5mix − D_F5-noaug:** both unaugmented, only the input differs.
+  - D_F5mix − D_F5 (input and augmentation together) and D_F5-noaug − D_F5 (augmentation alone, F5's setting) are
+    read beside it, descriptive.
+- **The constant** comes from the training labels, which are D_F5's for both arms, so it is D_F5's constant. `fit`
+  refuses unless it equals F5's stored one. Each arm's pull is refitted on FS5 from its own answers (amendment 5's
+  rule), with both section folds printed.
 - **The training mixes' level (measured, zero renders):** the stored training mixes sit at a median −11.4 LUFS per
   half (10–90%: −14.2 to −8.6). V-real's crops are brought to −12.25 LUFS, the one inference gain F5 used for both
   channels. F5's path is kept unchanged: the 1-dB offset is within the training spread. Stated, not corrected.
+- **The training check:** each run refuses unless its examples are D_F5's: the same F5 and FS5 ids after the same
+  drops (T3's dropped ids must equal D_F5's run record's `dropped` list, and the counts match).
 
 ### V-real's input
 
 On V-real, D_F5mix reads the crop's mix through F5's path (`direct_stems.step4_half`: one gain to the training
-median, the search half, the stored mel grid). It is the same audio F5 fed into the zeroed mix channel:
+median, the search half, the stored mel grid). It is the same audio F5 fed into the zeroed mix channel; D_F5-noaug
+reads the stem, as D_F5:
 - **the 10 stage F parts:** the stored context `~/ndsp-presets/learn/arm-a-mega53/F/contexts/<slug>.npy`, sliced at
   `F/contexts/log.json`'s offset. `direct_existing.f_inputs` asserts it equals the crop folder's `mix.wav`:
   - `references/validation-crops/<slug>/mix.wav` for It Was My Fault ElecGtr3 and Signs ElecGtr3;
@@ -2121,7 +2139,7 @@ median, the search half, the stored mel grid). It is the same audio F5 fed into 
 - **It Was My Fault ElecGtr1** (T3's own crop): `t3/vreal/crops/cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1/mix.wav`,
   the unity sum cut on 90–100 s.
 - `vreal-predict` refuses unless each part's input hashes equal those F5's predictions recorded
-  (`t3/vreal/predictions.json`, `inputs`), so D_F5mix reads exactly F5's files.
+  (`t3/vreal/predictions.json`, `inputs`), so both arms read exactly F5's files.
 - **Output gain** is fitted per answer to the stem's search-half loudness, as in F5; the stored stem is read for that
   alone. So the gain fit follows the same rule for every arm.
 
@@ -2130,10 +2148,10 @@ median, the search half, the stored mel grid). It is the same audio F5 fed into 
 - **The issue:** T3's `plan.json` holds T0's lists' hash (`fac903559adb`). The lists have changed since (parts 7a,
   7b, 8 and 9, and PR #306; `6ac6a335d1ad` on 2026-10-27). So every T3 command refuses (`check_lists`) until a
   re-plan, and a re-plan would freeze V-real-12.
-- **The handling (minimal):** D_F5mix does not re-plan and runs no `--stage t3` command. It reads T3's stored plan as frozen:
-  F5's and FS5's examples, and **V-real-11** (frozen 2026-10-26 10:35:58, before part 8 was heard). T3's rule is that
-  a later ear sitting cannot change it. So Signs ElecGtr6 stays out, and every row is on the same 11 parts and 66
-  directions as F5 and R1.
+- **The handling (minimal):** this step does not re-plan and runs no `--stage t3` command. It reads T3's stored plan
+  as frozen: F5's and FS5's examples, and **V-real-11** (frozen 2026-10-26 10:35:58, before part 8 was heard). T3's
+  rule is that a later ear sitting cannot change it. So Signs ElecGtr6 stays out, and every row is on the same 11
+  parts and 66 directions as F5 and R1.
 - **A drift check refuses in place of the hash** (zero renders, every command). Under today's lists:
   1. every F5 and FS5 example's target DI and other guitars' DIs must still be verified, and its section still usable;
   2. every V-real-11 member must still be in today's membership.
@@ -2147,46 +2165,44 @@ median, the search half, the stored mel grid). It is the same audio F5 fed into 
 
 ### The readout, in order
 
-**1. FS5 readability (R0's rule, zero renders), decided before any V-real render.**
-- **D_F5mix's R0 table:** each of the 116 heads by R0's rule (`trusted_data_t3_r.r0_rows`) against the constant, on
-  FS5's 722 examples in 12 sections. It is printed by family, beside D_F5's stored table (`t3/followup-r/r0.json`,
-  20 of 116).
+**1. FS5 readability (R0's rule, zero renders), read before V-real, descriptive.**
+- **Each arm's R0 table** (D_F5mix and D_F5-noaug): each of the 116 heads by R0's rule (`trusted_data_t3_r.r0_rows`)
+  against the constant, on FS5's 722 examples in 12 sections, printed by family, beside D_F5's stored table
+  (`t3/followup-r/r0.json`, 20 of 116). The readable counts are printed as they are, with no bar: about 6 heads per
+  model read by chance, and the count has no interval.
 - D_F5's readout is recomputed on FS5 from its stored models. It must reproduce that table's readable set, or the
   step refuses.
-- **Paired per head, D_F5mix − D_F5,** on the same examples:
-  - knobs: the per-example E step, |mix answer − label| − |stem answer − label|, section-clustered 90% t;
+- **Paired per head,** on the same examples, for D_F5mix − D_F5-noaug (the input) and beside it D_F5mix − D_F5 and
+  D_F5-noaug − D_F5:
+  - knobs: the per-example E step, |a − label| − |b − label|, section-clustered 90% t;
   - switches: the AUC difference, delete-one-section jackknife 90% t;
   - the mics and the amp: the accuracy difference, section-clustered 90% t.
 
   Each step whose interval excludes 0 is counted, both ways.
-- **Four summary rows,** each with its 90% interval over the 12 sections:
-  - knobs: the per-example mean E step over sounding knobs (below 0: the mix reads better);
-  - switches: the mean AUC difference over the 28 switches (jackknife; above 0: better);
+- **Four summary rows** per pair, each with its 90% interval over the 12 sections:
+  - knobs: the per-example mean E step over sounding knobs (below 0: arm a reads better);
+  - switches: the mean AUC difference over the switches whose AUC is defined in every jackknife fold, so the row
+    keeps its interval (above 0: better; the switches left out are printed);
   - the amp choice: the accuracy difference (above 0: better);
   - the mics: the per-example mean accuracy difference over sounding mics (above 0: better).
-- **The stop rule ("it helps"):** V-real renders run only if both hold:
-  - D_F5mix reads more heads than D_F5 by R0's rule (21 or more of 116);
-  - none of the four summary rows reads reliably worse (its interval wholly on the worse side).
+- **No stop rule.** The V-real read runs whatever FS5 shows: it costs a few minutes of renders, and a gate there
+  would be an arbitrary bar.
 
-  Otherwise the step stops and reports, and nothing renders.
-  - This is a direction, not a bar: any gain in the count goes on to V-real, per the user's rule.
-  - A reliably worse summary row stops it, because a higher count then does not mean a better reader.
-  - The count difference has no interval (about 6 heads per model read by chance), so it is read beside the
-    summary rows, never alone.
-
-**2. V-real (99 renders), only if step 1 says so.**
-- **One new answer set, D_F5mix,** amp-fixed (S on the same amp) on the frozen V-real-11:
-  - pulled by its FS5 fit;
+**2. V-real (165 renders).**
+- **Two new answer sets, D_F5mix and D_F5-noaug,** amp-fixed (S on the same amp) on the frozen V-real-11:
+  - each pulled by its own FS5 fit;
   - the plain readout, as F5 wrote D_F5: switches on above 0.5, mics by argmax, off features neutral, never both cabs
     off, sync off.
-- **Renders:** 33 (part, amp) groups × (1 priming at S + 2 directions) = **99**.
-- **Rows** against F5's stored renders: log(d_a/d_b), lower is better, band-weighted, 90% band-clustered t (7 bands),
-  per class and V-real-10 beside, with the sign split over bands:
-  - **D_F5mix − D_F5 (primary):** what the mix input is worth, everything else F5's;
+- **Renders:** 33 (part, amp) groups × (1 priming at S + 2 arms × 2 directions) = **165**.
+- **Rows** against each other and F5's stored renders: log(d_a/d_b), lower is better, band-weighted, 90%
+  band-clustered t (7 bands), per class and V-real-10 beside, with the sign split over bands:
+  - **D_F5mix − D_F5-noaug (primary):** what the mix input is worth, both unaugmented;
+  - D_F5mix − D_F5 (input and augmentation together; descriptive);
+  - D_F5-noaug − D_F5 (augmentation alone; descriptive);
   - **D_F5mix − D_core5:** the gate read again with the mix input (every control against today's 25);
-  - D_F5mix − S;
-  - D_F5mix − constant (D_F5's constant, rendered in F5; the two constants are equal).
-- D_F5mix's own amp (its amp head) is recorded, not rendered.
+  - D_F5mix − S; D_F5mix − constant (D_F5's constant, rendered in F5; the constants are equal).
+  - Beside: F5's gate and R1's row, as stored.
+- Each arm's own amp (its amp head) is recorded, not rendered.
 - No per-seed, no-pull or family answer sets are rendered (66 renders each).
 - **Reading (the user's rule):** effect sizes with intervals, no pass bar.
   - Interval below 0: shown.
@@ -2194,23 +2210,23 @@ median, the search half, the stored mel grid). It is the same audio F5 fed into 
   - Undecided is not failed.
   - F5's gate read about ±0.145, driven by one part (Colour Me Red ElecGtr03), so a lean is the likely result.
 - **What it changes:**
-  - If D_F5mix − D_F5 leans or is shown better, the mix input becomes the baseline that (b)'s separator fine-tune is
-    read against, and F20's plan takes it.
+  - If D_F5mix − D_F5-noaug leans or is shown better, the mix input becomes the baseline that (b)'s separator
+    fine-tune is read against, and F20's plan takes it (with whatever augmentation F20 declares).
   - Otherwise the stem stays, and (b) is read as planned.
   - Neither outcome runs F20; that stays the user's call.
 
 ### Cost
 
-- **Training:** 2 runs on MPS.
+- **Training:** 4 runs on MPS, 2 per arm.
   - F5's D_F5 runs took 8.5 and 6.8 min (best epochs 20 and 15); D_core5's took 8.4 and 12.4 min.
   - At F5's rate of about 0.34 min an epoch, a run takes about 7–14 min (the cap is 40 epochs).
-  - So about **15–30 min of MPS** for both, a little less without augmentation; plus a few minutes of CPU for the fit
-    and the R0 read.
+  - So about **30–55 min of MPS** for the four, a little less without augmentation; plus a few minutes of CPU for the
+    fits and the R0 read.
   - A run whose best epoch falls within 4 of the cap is extended before it is read (T2's rule). The chain stops
     before any render then.
-- **Renders:** none for the FS5 read; **99** on V-real if it helps (about 5 min on 3 processes, R1's rate). Zero
-  separations.
-- **Wall time:** about 20–35 min to the FS5 verdict; about 5 min more if V-real runs.
+- **Renders:** none for the FS5 read; **165** on V-real (R1's 99 took about 2 minutes on 3 processes, so a few
+  minutes). Zero separations.
+- **Wall time:** about 35–65 min in all.
 - **Machine rules** (F5's): every Morgan render isolate=True, with one discarded priming render and the first 0.25 s
   trimmed; at most 3 render processes machine-wide (`local_objective.RENDERS` lists `trusted_data_t3_mix
   vreal-render`); the 31 GB disk guard.
