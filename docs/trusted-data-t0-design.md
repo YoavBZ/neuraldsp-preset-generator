@@ -2498,7 +2498,7 @@ that audibility in each example's own mix, the report's ranked change 2.
   r_on.
   - J is the judge (`knob_ceiling.judge`, the aligned distance on the two halves, lag 0, the section's measured DI).
   - **A_e = |mean over the halves of log(J(r_off, m) / J(r_on, m))|.** A refused half leaves A_e undefined (counted).
-  - Beside it: the signed mean (below 0, r_off sits closer to the mix than r_on: noise); **solo**, the plain
+  - Beside it: the signed mean (below 0, r_off sits closer to the mix than r_on; *read 2026-10-27: a property of the judge, not noise, see the outcome*); **solo**, the plain
     distance J(r_off, r_on), with no threshold (the report leaves solo's open); and **the repeat floor**, the same
     log ratio for r_on rendered again.
   - A zero-render check on one FS5 example rebuilt its stored mix exactly (mel share 1.0, gains equal); the judge
@@ -2535,7 +2535,7 @@ the two mixes differ?" (they differ, maybe, same, not sure).
   pairs (the mix against itself) from different effects. About 28 items, about 12 minutes.
 - Order and each pair's play order are seeded (20261114). The key (effect, example, kind, A_e, order) is in
   `trusted-data/audibility/page-key.json`, outside the listening folder and never on the page.
-- Clips are AAC at 128 kbps (the ear pages use 96), about 10 MB for the page (a dry run measured 0.25 MB a pair at 96 kbps), so it stays phone-sized. A caveat: lossy
+- Clips are AAC at 128 kbps *(256 since the outcome's audit; the page is then 23.2 MB, still phone-sized)* (the ear pages use 96), about 10 MB for the page at 128 (a dry run measured 0.25 MB a pair at 96 kbps), so it stays phone-sized. A caveat: lossy
   coding may still blur the smallest differences near τ, so a "same" there is weaker evidence than a "differ".
 - The answers go into the relabel's declaration as the evidence for its τ. **No reader for the page's export exists
   yet:** one (decoding each answer through the key, by kind and side of τ, the catches first) must be written and
@@ -2608,3 +2608,52 @@ not usable as it stands, and its page is not sent:
   (part, amp) group (a priming render, then the arms in turn). Any earlier V-real comparison in which a time effect is
   on in both answers therefore carries phase noise from render order: noise, not a bias toward either arm, but it widens
   those rows. Future render plans should render each kept render at a fixed process position.
+
+### Audibility outcome (2026-10-27, fresh run, 2,686 renders; audited)
+
+The fresh chain ran from 10:38 to 11:24 (logs `logs/audibility-*-fresh.log`, `audibility/measure.json`,
+`read.json`), complete: 483 examples, 824 pairs, nothing refused. **All 36 repeats were bit-identical** (floor 0). An
+independent audit recomputed all 824 A_e values from the stored halves (0 mismatches), the cuts and every third's AUC.
+
+| Effect | Pairs | Below τ | Signed below 0 | A_e median | Mix AUC by thirds (bottom → top) |
+|---|---|---|---|---|---|
+| Delay | 200 | 0.40 | 79 | 0.0095 | 0.568 → 0.648 → 0.711 |
+| Reverb | 200 | 0.42 | 58 | 0.0083 | 0.598 → 0.592 → 0.625 |
+| Tremolo | 200 | 0.23 | 98 | 0.0147 | 0.508 → 0.556 → 0.548 |
+| PR12 spring | 120 | 0.33 | 30 | 0.0152 | 0.640 → 0.596 → 0.546 |
+| SW50R spring | 104 | 0.59 | 32 | 0.0030 | 0.562 → 0.601 → 0.656 |
+
+- **Many "on" effects barely move the judge in the mix:** 23–59% of them sit below τ.
+- **The delay reads better from the mix the more it moves the judge** (the stem too, 0.565 → 0.630). But the
+  target alone, with no backing, rises as well (delay 0.774 → 0.889, reverb 0.699 → 0.824), and A_e tracks the solo
+  distance closely (Spearman 0.91 delay, 0.89 reverb). So the thirds sort by the effect's own size as much as by
+  masking; crediting the rise to masking needs a read with the solo distance held fixed.
+- **Tremolo reads weakly from the mix at every level** and its A_e tracks its own size weakly (against solo 0.50,
+  against depth 0.19): some near-τ tremolo pairs differ by −9 to −16 dB of waveform. So "23% below τ" does not mean
+  77% are audible, and tremolo's weakness in the mix is not explained by A_e.
+- **The signed value below 0 is a property of the judge, not noise** (the floor is 0, and the halves agree in sign
+  in 95–97% of the pairs at or above τ). J(r, m') compares the level-normalised guitar alone with the whole mix, a
+  large distance (about 5–10) dominated by the backing; switching an effect off moves the render toward or away from
+  that backing more or less arbitrarily (the largest delay A_e, 0.775, is itself negative). So **A_e measures how far
+  the effect moves the judge's render-to-mix score**, useful for whether matching can see the effect, not "does the
+  mix audibly change". A zero-render alternative, the mix-against-mix distance J(m_off, m'), needs its own
+  declaration; the ear page answers the audibility question directly.
+- **The doubler also runs on across renders.** All 3 doubler-on examples with no other modulated effect had an r_on'
+  decorrelated from the stored target; all 11 doubler-off ones matched (−40 to −300 dB). The fresh recipe covers it
+  (10 of the 36 bit-exact repeat groups had it on). Of the 149 "clean" pairs, 42 had the doubler on, and they carry 11
+  of the 13 τ crossings between the runs (Spearman 0.75 against 0.98 for the other 107). It joins the caution above.
+- **The untested assumption, measured:** where tremolo stays on in r_off (245 pairs), its envelope in r_on' and
+  r_off correlates at median 0.985 (10th percentile 0.53), against 0.78 for the stored target; in 19% of those pairs
+  r_on' matches the stored target's envelope better than r_off's.
+- **First run against the fresh run (the 149 pairs):** Spearman 0.90, median |Δ| 0.0010, 13 cross τ (12 downward);
+  over all 824 pairs the share below τ is higher in the fresh run for every effect (delay 0.30 → 0.40, reverb
+  0.35 → 0.42, tremolo 0.20 → 0.23, PR12 0.27 → 0.33, SW50R 0.44 → 0.59), as the first run's phase noise would predict.
+- **A_e and the tone probe describe different audio:** r_on' differs from the stored target in 72% of the 469
+  examples with a modulated effect on (residual above −20 dB; median −10 dB), and the probe read the stored mixes.
+- **The ear page** (28 pairs) was rebuilt at 256 kbps (zero renders; 23.2 MB) after the audit found 128 kbps coding error above
+  the on/off difference in 7–8 of the 20 near-τ pairs; at 256 kbps it still is in 4 of 20, so a "same" near τ
+  stays weak evidence. The rebuild ran by hand from the PR's code, so no log records it. It was sent to the user. Pairs at the same A_e differ
+  widely in waveform (−49 to −9 dB), so the answers are read per effect. By source, identical clips reveal which are
+  the catches (by ear it is blind).
+- **What it changes:** nothing is relabelled. The relabel waits for the user's three rulings and the ear answers, and
+  any label built from A_e must state what A_e measures (above).

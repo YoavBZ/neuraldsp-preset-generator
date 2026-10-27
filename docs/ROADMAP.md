@@ -203,11 +203,18 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      ([fix](trusted-data-t0-design.md#the-first-run-and-the-fresh-process-fix-2026-10-27-after-the-first-run-before-any-re-render),
      ledger `amendment_5_fix`): every render in its own new process (a priming render with the example's own
      setting, then the one kept), r_on' and m' fresh, an exact repeat per group, all pairs redone: 2,686 renders
-     (about 40–70 min with the process starts); not re-run. The repeat checks r_on' only; that r_off's other running
+     (about 40–70 min with the process starts). The repeat checks r_on' only; that r_off's other running
      effects sit at the same phase assumes switching one effect off resets none of the others (it holds by render
      count; untested). **A caution for earlier results:** V-real renders several presets in one process
      per group, so a comparison with a time effect on in both answers carries phase noise from render order (noise,
-     not bias); flagged, not fixed.*
+     not bias); flagged, not fixed.* *Fresh run 2026-10-27 10:38–11:24 (2,686 renders, all 36 repeats bit-exact;
+     [outcome](trusted-data-t0-design.md#audibility-outcome-2026-10-27-fresh-run-2686-renders-audited), audited):
+     23–59% of "on" effects sit below τ in the mix (delay 0.40, reverb 0.42, tremolo 0.23, PR12 spring 0.33, SW50R
+     spring 0.59). The delay reads better from the mix as A_e rises (0.57 → 0.71), but so does the target without
+     backing, so effect size and masking are mixed; tremolo reads weakly at every level. A_e measures how much the
+     effect moves the judge's render-to-mix score, not audibility as such (it is negative for 25–49% of pairs, a judge
+     property). The doubler also runs on across renders. The ear page went to the user; the relabel waits for their
+     answers and the three rulings.*
    - (d) **F20:** the user said yes (2026-10-27); its plan is declared after (b) reads. Its value now rests on (a)/(b) and on the new data. Its declared
      fixes: redraw near-silent draws (up to 5 tries; about 16% more target renders at F5's rate); keep each
      core/full pair on one separation device; the switch readout and prior (since 2026-10-27 the plain readout is
@@ -997,3 +1004,4 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-27 | Tone-information probe (approved by the user; declared first; zero renders; ledger `trusted-data-t3` amendment 2): a linear probe reads 86 of 116 heads from the target render, 30 from the self-built mix, 20 from the X-LANCE stem. The separator does not recover what the mix masks (a 66-head gap); level, finer features and the DI explain none of it. Faint labels explain part of the delay's weakness only | [probe](tone-info-probe.md) |
 | 2026-10-27 | Plan brought up to date: next, in order, (a0) a zero-cost linear probe on mix plus stem, (a) a mix-aware input (no new training renders), (b) an X-LANCE fine-tune on the self-built mixes (pending the user's yes), (c) audibility-aware time-effect labels, (d) F20 (waits for the user's yes); the open decisions in one list | [step 0](#next-in-order) |
 | 2026-10-27 | The user said yes to all four next steps (in chat, "Yes for all"): (a) D_F5mix, (b) the X-LANCE fine-tune, (c) the audibility measurement, (d) F20. (a) ran the same day and was audited: the mix input is not shown better and leans worse (D_F5mix − D_F5-noaug +0.059 [−0.012, +0.130]), best fit, not proven: the second drive pedal's switch on real songs; the stem stays. (b) and (c) are declared and reviewed before they run; (c)'s relabelling waits for the user's three rulings; F20's plan waits for (b) | [outcome](trusted-data-t0-design.md#d_f5mix-outcome-2026-10-27-165-renders-audited) |
+| 2026-10-27 | Audibility measurement (ROADMAP (c)), the fresh run audited: 23–59% of "on" effects sit below τ in the mix; delay reads better from the mix as A_e rises, mixed with effect size; tremolo reads weakly at every level; A_e measures the judge's render-to-mix sensitivity, not audibility as such; the doubler also runs on across renders (joins the V-real caution). The ear page went to the user; nothing relabelled | [outcome](trusted-data-t0-design.md#audibility-outcome-2026-10-27-fresh-run-2686-renders-audited) |
