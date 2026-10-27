@@ -12,6 +12,7 @@ development data; V-real is not touched. Outputs go to `trusted-data/audibility/
     $MAIN -m learn.audibility_measure measure                # zero renders: A_e and the solo distance per pair
     $MAIN -m learn.audibility_measure read                   # zero renders: the tone probe's switches by A_e
     $MAIN -m learn.audibility_measure page                   # the ear check of tau, a listening page
+    $MAIN -m learn.audibility_measure page --exposed         # the same, exposed-guitar pairs only (a second page)
 
 **A_e (the fresh-process recipe, amendment 5's fix).** Morgan's tremolo, tape delay and rack reverb run on across
 renders in one plugin process (isolate=True does not reset them), so a render is a fixed function of its position in
@@ -73,6 +74,9 @@ WORKERS = 2                                           # measure: one section per
 HALVES = ("A", "B")
 WHICH = ("all on", "measured", "bottom third", "middle third", "top third", "below tau", "at or above tau")
 PAGE_NAME = "audibility-mix"
+EXPOSED_PAGE = "audibility-mix-exposed"             # the second page (the user, 2026-10-27: the first was too dense)
+# the second page's pairs: the guitar at most 6 dB under the rest of the mix, no vocals drawn, at most 2 other guitars
+EXPOSED = {"min_ratio_db": -6.0, "vocals": False, "max_others": 2}
 PAGE_KBPS = 256                                       # AAC: 128 hid more of the smallest on/off differences near tau (audit 2026-10-27); 256 halves it
 VERDICTS = [("different", "They differ"), ("maybe", "Maybe, barely"), ("same", "Same to me"), ("unsure", "Not sure")]
 
@@ -259,6 +263,15 @@ def quantiles(values, qs=(0, 10, 25, 50, 75, 90, 100)):
 
     v = np.asarray([x for x in values if x is not None and math.isfinite(x)], np.float64)
     return {str(q): float(np.percentile(v, q)) for q in qs} if len(v) else {}
+
+
+def exposed(x, rule=EXPOSED):
+    """A T2 example whose guitar is exposed in its self-built mix (`EXPOSED`): its drawn level against the rest, no
+    vocals drawn, few other guitars. FS5's mixes all sit in 4 dense rock songs, the guitar usually 5-19 dB under the
+    rest; the first page's pairs were too dense to tell apart (the user, 2026-10-27)."""
+    d = x["draw"]
+    return (d["ratio_db"] >= rule["min_ratio_db"] and bool(d["vocals_drawn"]) == rule["vocals"]
+            and len(x["others"]) <= rule["max_others"])
 
 
 # --- pure: the page ---------------------------------------------------------------------------------------------
@@ -964,13 +977,13 @@ def read_rows(meas, stored):
 
 # --- page (MAIN; zero renders) ------------------------------------------------------------------------------------
 
-def page_dir():
-    return V.HOME / "listening" / PAGE_NAME
+def page_dir(name=PAGE_NAME):
+    return V.HOME / "listening" / name
 
 
-def key_path(root):
+def key_path(root, name=PAGE_NAME):
     """The page's answer key, kept with the measurement and away from the listening folder."""
-    return out_dir(root) / "page-key.json"
+    return out_dir(root) / ("page-key.json" if name == PAGE_NAME else f"page-key-{name}.json")
 
 
 def pair_audio(root, it, stems, t2, t2rend, built, rows, cache):
@@ -1049,7 +1062,7 @@ def pair_clips(a, b, cache_dir):
     return out
 
 
-def page_html(items, clips, build):
+def page_html(items, clips, build, name=PAGE_NAME):
     """The page: per item, the two mixes one after the other (blind order), "do they differ?"; the ear page's style,
     player and export (`build_ear_page`)."""
     from learn import build_ear_page as BEP
@@ -1070,7 +1083,7 @@ def page_html(items, clips, build):
             f'<button type="button" class="play small" data-seq="{b}" data-names="the second mix">Second only</button>'
             f'</div><p class="now"></p><div class="vs">{vs}</div>'
             f'<input class="note" type="text" placeholder="Note (optional)" aria-label="Note"></article>')
-    data = {"page": PAGE_NAME, "part": 1, "build": build,
+    data = {"page": name, "part": 1, "build": build,
             "items": [{"id": it["id"], "title": f"Listen for: {it['effect']}", "subtitle": ""} for it in items],
             "secs": secs}
     minutes = round(sum(secs.values()) / 60)
@@ -1108,8 +1121,10 @@ Answers are saved in this browser as you go; tap <b>Export</b> any time, even ha
 def cmd_page(args):
     """The ear check of tau: `page_items` from measure.json, each pair rendered as two mixes. The blind page and its
     clips go to listening/audibility-mix/; the key (each item's effect, example, kind, A_e and play order) goes to
-    trusted-data/audibility/page-key.json, outside the listening folder. Reading an export against the key is for the
-    relabel's declaration (no reader here yet)."""
+    trusted-data/audibility/page-key.json, outside the listening folder. With --exposed, only pairs whose guitar is
+    exposed (`exposed`), to listening/audibility-mix-exposed/ and page-key-audibility-mix-exposed.json. Reading an
+    export against the key is for the relabel's declaration (no reader here yet); a reader picks the key by the
+    export's "page": an item id can sit on both pages with a different play order."""
     from learn import direct_stems as DS
 
     require_declared()
@@ -1120,14 +1135,16 @@ def cmd_page(args):
     if meas.get("recipe") != RECIPE:
         raise SystemExit("measure.json is not the fresh-process recipe's: the page is built from it only")
     refused = {r["i"] for r in meas["refused"]}
-    items = page_items([p for p in meas["pairs"] if p["i"] not in refused])
-    pd, kp = page_dir(), key_path(root)
+    t2 = {x["i"]: x for x in _load(T.plan_path(root, "t2"))["examples"]}
+    name = EXPOSED_PAGE if args.exposed else PAGE_NAME
+    pairs = [p for p in meas["pairs"] if p["i"] not in refused and (not args.exposed or exposed(t2[p["i"]]))]
+    items = page_items(pairs)
+    pd, kp = page_dir(name), key_path(root, name)
     if kp.exists() and not args.force:
         raise SystemExit(f"{kp} exists: a rebuild hides the listener's stored answers (--force)")
     ctx = DS.Ctx(quiet=True)
     ctx.rows = None
     stems = T.Stems(ctx)
-    t2 = {x["i"]: x for x in _load(T.plan_path(root, "t2"))["examples"]}
     t2rend = T.rows_of(root, "t2", "render")
     built = T.rows_of(root, T3.STAGE, "build")
     rows = {(r["i"], r["what"]): r for r in render_rows(out_dir(root))}
@@ -1136,13 +1153,18 @@ def cmd_page(args):
         on, off = pair_audio(root, it, stems, t2, t2rend, built, rows, cache)
         first, second = (on, off) if it["first"] == "on" else (off, on)
         clips[it["id"] + "-1"], clips[it["id"] + "-2"] = pair_clips(first, second, pd / "cache")
-    key = {"page": PAGE_NAME, "tau": TAU, "seed": PAGE_SEED, "items": items, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    key = {"page": name, "tau": TAU, "seed": PAGE_SEED, "items": items, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    if args.exposed:
+        key["exposed"] = EXPOSED
+        for it in items:
+            d = t2[it["i"]]
+            it["ratio_db"], it["others"] = d["draw"]["ratio_db"], len(d["others"])
     build = hashlib.sha256(json.dumps(items, sort_keys=True).encode()).hexdigest()[:12]
     key["build"] = build
     pd.mkdir(parents=True, exist_ok=True)
     _save(kp, key)
     p = pd / "index.html"
-    p.write_text(page_html(items, clips, build))
+    p.write_text(page_html(items, clips, build, name))
     print(f"PAGE DONE: {len(items)} items, {p.stat().st_size / 1e6:.1f} MB -> {p}")
 
 
@@ -1155,11 +1177,14 @@ def main(argv=None):
     ap.add_argument("cmd", choices=tuple(COMMANDS))
     ap.add_argument("--shard", type=V.parse_shard, default=(0, 1))
     ap.add_argument("--force", action="store_true")
+    ap.add_argument("--exposed", action="store_true", help="page: the exposed-guitar pairs only (`EXPOSED`)")
     args = ap.parse_args(argv)
     if args.shard != (0, 1) and args.cmd != "render":
         raise SystemExit("--shard is for render")
     if args.force and args.cmd not in ("plan", "page"):
         raise SystemExit("--force is for plan and page")
+    if args.exposed and args.cmd != "page":
+        raise SystemExit("--exposed is for page")
     return COMMANDS[args.cmd](args)
 
 
