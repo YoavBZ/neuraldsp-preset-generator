@@ -2069,7 +2069,7 @@ a training draw includes it (as for Empty Signifier's DI). No training draw is p
   `trusted_data_t3.py`) refuses on the membership change before the line that carries the old frozen V-real over
   can apply. Without that change, the only route is moving `t3/` aside, and the re-plan then freezes V-real-12.
 
-## D_F5mix: the every-control model fed the mix (ROADMAP step (a); declared 2026-10-27, nothing run)
+## D_F5mix: the every-control model fed the mix (ROADMAP step (a); declared 2026-10-27, ran and read the same day)
 
 **What and why.** The [tone probe](tone-info-probe.md) read 30 of 116 heads from the self-built mix and 20 from the
 X-LANCE stem with a linear reader, and the stem added nothing to the mix (mix plus stem 24; ROADMAP (a0), #309).
@@ -2230,3 +2230,39 @@ reads the stem, as D_F5:
 - **Machine rules** (F5's): every Morgan render isolate=True, with one discarded priming render and the first 0.25 s
   trimmed; at most 3 render processes machine-wide (`local_objective.RENDERS` lists `trusted_data_t3_mix
   vreal-render`); the 31 GB disk guard.
+
+### D_F5mix outcome (2026-10-27, 165 renders; audited)
+
+The user said yes on 2026-10-27. The chain ran from 08:34 to 09:11 (logs `logs/t3mix-*.log`, `t3-mix/report.json`,
+`t3-mix/r0.json`), complete: 4 runs (best epochs 11/16 and 21/26 for the mix, 20/25 and 21/26 for the stem, none near
+the cap), 66 directions on the frozen V-real-11, 7 bands, 165 renders, nothing dropped or refused. An independent
+audit recomputed the rows with its own script, and they match to 4 decimals. Log ratios, lower is better:
+
+| Row | All (7 bands) | Bands −/+ | Clean (2) | Crunch (5) |
+|---|---|---|---|---|
+| **D_F5mix − D_F5-noaug (primary)** | **+0.059 [−0.012, +0.130]** | 3/4 | −0.021 | +0.091 [−0.002, +0.184] |
+| D_F5mix − D_F5 (input and augmentation) | +0.110 [+0.009, +0.211] | 1/6 | +0.009 | +0.150 |
+| D_F5-noaug − D_F5 (augmentation) | +0.051 [−0.049, +0.150] | 3/4 | +0.030 | +0.059 |
+| D_F5mix − D_core5 | +0.189 [+0.050, +0.328] | 0/7 | +0.294 | +0.147 |
+| D_F5mix − S | +0.198 [+0.051, +0.345] | 1/6 | +0.261 | +0.173 |
+| D_F5mix − constant | +0.106 [+0.034, +0.178] | 1/6 | +0.023 | +0.139 |
+
+- **The mix input is not shown better; it leans worse,** on crunch (PR12 +0.106, SW50R +0.091; AC20 −0.019).
+- **FS5 (descriptive):** D_F5mix reads 22 of 116 heads, D_F5-noaug and D_F5 20. The mix reads the delay's mix,
+  feedback, time and low cut reliably better (7 heads in all); the stem reads 13 heads better, and the knobs' summary
+  favours the stem. FS5 shares its songs and DI tracks with training (only the time windows differ), which flatters
+  the mix most, since its backing is in-domain.
+- **What drives V-real (the audit's breakdown, after the fact, descriptive):** the second drive pedal's switch.
+  Out of 66 directions, D_F5 turns drive2 on in 26, D_F5-noaug in 19, D_F5mix in 4. The 17 directions where the mix
+  and the stem disagree on it (16 with the mix off) average +0.203; the 49 that agree, −0.005. FS5 reads drive2
+  alike (AUC 0.661 against 0.671), so the mix's reading fails to carry over to real songs. It is not a level effect:
+  raising the V-real mix 0.85 dB to the training median still turns drive2 on in 4 of 66.
+- **Parts:** Get Out Of Bed (+0.234), Wickerman ElecGtr2 (+0.141), Let's Dance (+0.134) and Wickerman ElecGtr3
+  (+0.107) lean against the mix; Colour Me Red ElecGtr02 (−0.105) for it. D_F5mix − D_F5's interval above 0 rests on
+  Femme (an augmentation effect, +0.347 for D_F5-noaug − D_F5 there) and Get Out Of Bed: dropping either brings it
+  over 0.
+- **Colour Me Red ElecGtr03:** all three arms keep delay on (p 0.50–0.55) and reverb on, as D_F5 did; the mix input
+  does not change the delay decision. Delay is on in 26 of 66 directions for D_F5mix, 24 for D_F5-noaug, 29 for D_F5.
+- **Pipeline check:** |LUFS error| mean 5.6 dB, median 5.8, none clamped (R1: 5.5).
+- **What it changes (as declared):** the mix input is not adopted. The stem stays, and (b)'s fine-tune is read
+  against D_F5-noaug as planned. Nothing about F20 is decided here.
