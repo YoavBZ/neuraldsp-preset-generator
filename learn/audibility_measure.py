@@ -1121,8 +1121,10 @@ Answers are saved in this browser as you go; tap <b>Export</b> any time, even ha
 def cmd_page(args):
     """The ear check of tau: `page_items` from measure.json, each pair rendered as two mixes. The blind page and its
     clips go to listening/audibility-mix/; the key (each item's effect, example, kind, A_e and play order) goes to
-    trusted-data/audibility/page-key.json, outside the listening folder. Reading an export against the key is for the
-    relabel's declaration (no reader here yet)."""
+    trusted-data/audibility/page-key.json, outside the listening folder. With --exposed, only pairs whose guitar is
+    exposed (`exposed`), to listening/audibility-mix-exposed/ and page-key-audibility-mix-exposed.json. Reading an
+    export against the key is for the relabel's declaration (no reader here yet); a reader picks the key by the
+    export's "page": an item id can sit on both pages with a different play order."""
     from learn import direct_stems as DS
 
     require_declared()

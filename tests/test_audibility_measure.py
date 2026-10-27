@@ -441,11 +441,11 @@ def test_the_ledger_declares_it_and_its_fix():
 
 
 def test_cli_flags():
-    with pytest.raises(SystemExit):
+    with pytest.raises(SystemExit, match="--shard is for render"):
         A.main(["measure", "--shard", "0/3"])
-    with pytest.raises(SystemExit):
+    with pytest.raises(SystemExit, match="--force is for plan and page"):
         A.main(["render", "--force"])
-    with pytest.raises(SystemExit):
+    with pytest.raises(SystemExit, match="--exposed is for page"):
         A.main(["measure", "--exposed"])
 
 
