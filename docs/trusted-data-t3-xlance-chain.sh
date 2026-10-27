@@ -3,7 +3,7 @@
 # fine-tuned stem (declared 2026-10-27: docs/trusted-data-t0-design.md, "D_F5ft: the every-control model fed the
 # fine-tuned stem"; ledger trusted-data-t3, amendment 4 "X-LANCE fine-tune (ROADMAP (b))"). Approved by the user
 # 2026-10-27 ("Yes for all"). Run from the main checkout AFTER step (a)'s chain has finished (`check` refuses before).
-# Cost: prep about 20-30 min of CPU (4 processes, zero renders); the gate up to about 30 min; two cross-fitted
+# Cost: prep about 20-30 min of CPU (4 processes, zero renders); the gate up to about 30 min; two band-cross-fitted
 # fine-tunes, each up to 5.5 h of the gate's measured step time (11 h in all; earlier at the validation plateau);
 # about 4,190 separations, about 3-5 h on MPS + CPU; D_F5ft's 2 runs about 15-30 min of MPS; fit, R0, the probe and
 # V-real's predictions minutes; V-real 99 renders (33 groups x (1 priming at S + 2 directions)), a few minutes on 3
@@ -52,7 +52,7 @@ step "vreal-stems (V-real-11's crops through their assigned fold)"
 $MSST ${XF[@]} vreal-stems --device cpu > $L/xlft-vreal-stems.log 2>&1 || { echo "VREAL-STEMS FAILED"; exit 1; }
 
 for seed in 20261042 20261043; do
-  step "train-d D_F5ft $seed"   # refuses unless every stem is in place and out of fold, and the examples are D_F5's
+  step "train-d D_F5ft $seed"   # refuses unless every stem is in place and out of band, and the examples are D_F5's
   $TORCH_PY ${XF[@]} train-d --seed $seed > $L/xlft-traind-$seed.log 2>&1 || { echo "TRAIN-D FAILED $seed"; exit 1; }
 done
 if grep -l "WARNING: best epoch" $L/xlft-traind-*.log; then

@@ -28,13 +28,15 @@ waveform + multi-resolution STFT). Input: each F5 full twin's self-built mix, re
 checked against the stored `mix-t3` features, mono duplicated to two channels at 44.1 kHz. Target: the wet target
 render as it sits in that mix (the mix gain; a mastered mix's compressor gain curve and make-up, without the clip).
 
-**Cross-fitting.** F5's 59 sections split into two halves within each band (seed 20261110). Fold k fine-tunes on half
-k less 3 validation sections (seed 20261111) and separates half 1 - k, so every F5 stem D trains on comes from a model
-that never saw its section, as FS5's and V-real's stems do. FS5 sections and V-real parts are assigned to a fold
-(seeds 20261110, 20261113). FS5 and V-real never train or choose anything in the fine-tune.
+**Cross-fitting by band.** F5 and FS5 are 4 songs, one per band. The bands split in two (2 + 2, the split with the
+closest F5 counts: Ale Lak and Death Of A Romantic, then Hollow Ground and Storm Of Particles). Fold k fine-tunes on
+its bands' F5 examples less 3 validation sections and separates every F5 and FS5 example of the other two bands, so
+every stem D trains on or is read on comes from a model that never trained on that song, as V-real's stems do. V-real's
+parts are dealt to the folds alternately (seed 20261113). FS5 and V-real never train, validate or choose anything.
 
 **Stopping on evidence.** Validation every 250 steps: the band mean of the mean SNR of the full 10-s validation
-examples against their wet targets, step 0 the stock weights. Stop when it has not improved by 0.1 dB for 1,000 steps
+examples against their wet targets, step 0 the stock weights. The validation sections are held-out sections of the
+fold's own bands (seed 20261111): the stop rule reads songs the fold trains on (within-song). Stop when it has not improved by 0.1 dB for 1,000 steps
 (not before 500), or at the approved time: 5.5 h of the gate's measured step time per fold (11 h in all).
 
 **The MPS gate** first: on 3-, 6- and 10-s examples against an all-CPU step, the loss within 1e-4 relative and each
@@ -77,8 +79,8 @@ INPUT = ("the full twin's stem from the cross-fitted fine-tuned gtr_mss (xlance_
          "augmentation off (as D_F5-noaug)")
 
 FOLDS = (0, 1)
-FOLD_SEED, VAL_SEED, WINDOW_SEED, VREAL_SEED = 20261110, 20261111, 20261112, 20261113
-VAL_SECTIONS = 3                                     # per fold, from distinct bands
+VAL_SEED, WINDOW_SEED, VREAL_SEED = 20261111, 20261112, 20261113        # (20261110: the withdrawn section folds' seed)
+VAL_SECTIONS = 3                                     # per fold, from its own bands in turn
 VAL_MAX = 120                                        # validation examples per fold (a seeded subset)
 CONTROL_PER_SECTION = 1                              # the stock-weights pipeline control: one FS5 example per section
 TRAIN_LAYERS = (8, 9, 10, 11)
@@ -116,45 +118,50 @@ def alternate(items, rng, start=0):
     return {x: (start + n) % 2 for n, x in enumerate(xs)}
 
 
-def section_folds(sections_by_band, seed=FOLD_SEED):
-    """F5's sections in two halves within each band: {section: fold}. Bands deal from alternating folds (by sorted
-    band) so an odd band's extra section does not always land in fold 0."""
-    out = {}
-    for n, band in enumerate(sorted(sections_by_band)):
-        out.update(alternate(sections_by_band[band], _rng(seed, "f5", band), start=n % 2))
-    return out
+def band_folds(count_by_band):
+    """The bands in two halves: of the splits whose first half holds the first band (sorted) and half the bands
+    (rounded down), the one whose halves' example counts differ least; ties to the first such split in sorted order.
+    -> {band: fold} (fold 0: the half with the first band). Deterministic: no seed."""
+    import itertools
+
+    bands = sorted(count_by_band)
+    total = sum(count_by_band.values())
+    best = None
+    for rest in itertools.combinations(bands[1:], len(bands) // 2 - 1):
+        half = (bands[0],) + rest
+        d = abs(total - 2 * sum(count_by_band[b] for b in half))
+        if best is None or d < best[0]:
+            best = (d, set(half))
+    return {b: 0 if b in best[1] else 1 for b in bands}
 
 
-def val_sections(fold_of, band_of, fold, seed=VAL_SEED, n=VAL_SECTIONS):
-    """Fold `fold`'s validation sections: one from each of `n` distinct bands (a seeded band order), drawn from the
-    fold's own half. -> sorted list."""
+def val_sections(secs_by_band, fold, seed=VAL_SEED, n=VAL_SECTIONS):
+    """Fold `fold`'s validation sections, from its own training bands (so the stop rule reads songs the fold trains
+    on: within-song): bands in a seeded order, one section from each in turn, round after round, until `n`; a band
+    keeps at least one training section. secs_by_band: {band: sections} of the fold's bands. -> sorted list."""
     rng = _rng(seed, fold)
-    bands = sorted({band_of[s] for s, f in fold_of.items() if f == fold})
-    rng.shuffle(bands)
+    left = {b: sorted(v) for b, v in secs_by_band.items()}
+    for v in left.values():
+        rng.shuffle(v)
+    order = sorted(left)
+    rng.shuffle(order)
     out = []
-    for b in bands[:n]:
-        secs = sorted(s for s, f in fold_of.items() if f == fold and band_of[s] == b)
-        if len(secs) > 1:                                   # never a band's only section in this half
-            out.append(rng.choice(secs))
+    while len(out) < n and any(len(v) > 1 for v in left.values()):
+        for b in order:
+            if len(out) < n and len(left[b]) > 1:
+                out.append(left[b].pop())
     return sorted(out)
 
 
-def fs5_folds(sections_by_band, seed=FOLD_SEED):
-    """FS5's sections assigned to the fold whose model separates them: {section: fold} (both models never saw them)."""
-    out = {}
-    for n, band in enumerate(sorted(sections_by_band)):
-        out.update(alternate(sections_by_band[band], _rng(seed, "fs5", band), start=n % 2))
-    return out
-
-
 def vreal_folds(slugs, seed=VREAL_SEED):
+    """V-real's parts dealt alternately to the two models (songs neither trained on)."""
     return alternate(slugs, _rng(seed, "vreal"))
 
 
-def sep_jobs(fold, f5_ids, fs_ids, section_of, fold_of, fs_fold_of):
-    """The examples fold `fold`'s model separates: F5's of the other half (out of fold) and FS5's assigned to it."""
-    return ([i for i in f5_ids if fold_of[section_of[i]] != fold]
-            + [i for i in fs_ids if fs_fold_of[section_of[i]] == fold])
+def sep_jobs(fold, ids, band_of_ex, band_fold):
+    """The examples fold `fold`'s model separates: every F5 and FS5 example of the other half's bands (songs it never
+    trained on)."""
+    return [i for i in ids if band_fold[band_of_ex[i]] != fold]
 
 
 def step_limits(step_s, budget_h=BUDGET_H, min_steps=MIN_STEPS):
@@ -348,31 +355,48 @@ def load_sets(root, smoke=False):
 
 
 def folds_of(S):
-    """The cross-fit's folds from the frozen sets (deterministic): F5 section -> fold, FS5 section -> fold, each fold's
-    validation sections, band of each section."""
+    """The cross-fit's folds from the frozen sets (deterministic): band -> fold (`band_folds` on F5's example counts),
+    each fold's validation sections (within its own bands), section -> band. FS5 never trains or validates: its
+    examples are separated, with F5's of the same bands, by the model that never trained on their band."""
     band_of = {S["section_of"][i]: S["band_of_ex"][i] for i in S["f5"] + S["fs"]}
-    f5_secs, fs_secs = {}, {}
+    f5_secs, counts = {}, {}
     for i in S["f5"]:
-        f5_secs.setdefault(band_of[S["section_of"][i]], set()).add(S["section_of"][i])
-    for i in S["fs"]:
-        fs_secs.setdefault(band_of[S["section_of"][i]], set()).add(S["section_of"][i])
-    fold_of = section_folds(f5_secs)
-    if set(fold_of) & set().union(*fs_secs.values(), set()):
+        b = S["band_of_ex"][i]
+        f5_secs.setdefault(b, set()).add(S["section_of"][i])
+        counts[b] = counts.get(b, 0) + 1
+    if {S["section_of"][i] for i in S["f5"]} & {S["section_of"][i] for i in S["fs"]}:
         raise SystemExit("an FS5 section is also an F5 section")
-    return {"fold_of": fold_of, "fs_fold_of": fs5_folds(fs_secs), "band_of": band_of,
-            "val": {k: val_sections(fold_of, band_of, k) for k in FOLDS}}
+    if {S["band_of_ex"][i] for i in S["fs"]} - set(counts):
+        raise SystemExit("an FS5 band has no F5 examples: no fold is defined for it")
+    band_fold = band_folds(counts)
+    return {"band_fold": band_fold, "band_of": band_of,
+            "val": {k: val_sections({b: f5_secs[b] for b, f in band_fold.items() if f == k}, k) for k in FOLDS}}
 
 
 def fold_ids(S, Fd, fold):
-    """(training ids, validation ids) of one fold's fine-tune: its half's F5 examples, the validation sections apart;
+    """(training ids, validation ids) of one fold's fine-tune: its bands' F5 examples, the validation sections apart;
     validation at most VAL_MAX (a seeded subset)."""
     val_secs = set(Fd["val"][fold])
-    mine = [i for i in S["f5"] if Fd["fold_of"][S["section_of"][i]] == fold]
+    mine = [i for i in S["f5"] if Fd["band_fold"][S["band_of_ex"][i]] == fold]
     tr = [i for i in mine if S["section_of"][i] not in val_secs]
     va = sorted(i for i in mine if S["section_of"][i] in val_secs)
     if len(va) > VAL_MAX:
         va = sorted(_rng(VAL_SEED, fold, "subset").sample(va, VAL_MAX))
     return tr, va
+
+
+def fold_sizes(S, Fd):
+    """Per fold: bands, training and validation examples and sections, and what it separates (F5, FS5)."""
+    out = {}
+    for k in FOLDS:
+        tr, va = fold_ids(S, Fd, k)
+        jobs = sep_jobs(k, S["f5"] + S["fs"], S["band_of_ex"], Fd["band_fold"])
+        fs = set(S["fs"])
+        out[k] = {"bands": sorted(b for b, f in Fd["band_fold"].items() if f == k), "train": len(tr),
+                  "train_sections": len({S["section_of"][i] for i in tr}), "validation": len(va),
+                  "validation_sections": Fd["val"][k], "separates_f5": sum(1 for i in jobs if i not in fs),
+                  "separates_fs5": sum(1 for i in jobs if i in fs)}
+    return out
 
 
 def example_audio(root, S, stems, i):
@@ -524,11 +548,10 @@ def cmd_check(args):
         raise SystemExit("step (a)'s report is missing or incomplete (t3-mix/): D_F5ft is read against it")
     S = load_sets(root, args.smoke)
     Fd = folds_of(S)
-    for k in FOLDS:
-        tr, va = fold_ids(S, Fd, k)
-        jobs = sep_jobs(k, S["f5"], S["fs"], S["section_of"], Fd["fold_of"], Fd["fs_fold_of"])
-        print(f"fold {k}: fine-tune on {len(tr)} ({len({S['section_of'][i] for i in tr})} sections), validate on "
-              f"{len(va)} ({Fd['val'][k]}); separates {len(jobs)}", flush=True)
+    for k, z in fold_sizes(S, Fd).items():
+        print(f"fold {k} ({', '.join(z['bands'])}): fine-tune on {z['train']} ({z['train_sections']} sections), "
+              f"validate on {z['validation']} ({len(z['validation_sections'])} sections of its own bands); separates "
+              f"{z['separates_f5']} F5 + {z['separates_fs5']} FS5 of the other bands", flush=True)
     free = PS.free_gb()
     need = 2 * 2 * len(S["f5"]) * XL_SR * PS.SEC_S / 1e9 + 1.5     # the fp16 cache (mix, target); checkpoints, stems
     print(f"disk: {free:.0f} GB free; this step writes about {need:.1f} GB; guard {T.DISK_GUARD_GB:.0f} GB")
@@ -584,12 +607,18 @@ def cmd_prep(args):
     S = load_sets(root, args.smoke)
     Fd = folds_of(S)
     fp = out_dir(root) / "folds.json"
-    rec = {"seeds": {"folds": FOLD_SEED, "validation": VAL_SEED, "vreal": VREAL_SEED},
-           "f5_fold_of": Fd["fold_of"], "fs5_fold_of": Fd["fs_fold_of"], "val": {str(k): v for k, v in Fd["val"].items()}}
+    rec = {"seeds": {"validation": VAL_SEED, "vreal": VREAL_SEED}, "band_fold": Fd["band_fold"],
+           "val": {str(k): v for k, v in Fd["val"].items()},
+           "sizes": {str(k): v for k, v in fold_sizes(S, Fd).items()}}
     old = _load(fp)
     if old and TM.canon({k: old[k] for k in rec}) != TM.canon(rec):
         raise SystemExit("folds.json differs from today's folds: the frozen sets moved")
     _save(fp, {**rec, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    done = _load(out_dir(root) / "prep.json") or {}
+    if (done.get("control") or {}).get("ok") and done.get("cached") == len(S["f5"]) and not done.get("not_reproduced") \
+            and not args.smoke:
+        print(f"prep.json exists ({done['cached']} cached, control passed): nothing to do")
+        return
     t0 = time.time()
     todo = sorted(S["f5"], key=lambda i: (S["section_of"][i], i))[:args.limit or None]
     bad = []
@@ -640,6 +669,18 @@ def pipeline_control(root, S, smoke=False):
 
 # --- gate (MSST) ------------------------------------------------------------------------------------------------------
 
+def refuse_if_training():
+    """Refuse while another MPS training job runs (`local_objective_1c.TRAINING`, which lists this module's `gate`,
+    `train` and `train-d` too, so they see each other and others see them)."""
+    from learn import direct_stems as DS
+    from learn import ks_extend as KX
+    from learn import local_objective_1c as C
+
+    busy = DS.training_procs(KX._ps(), {os.getpid(), os.getppid()}, C.is_training)
+    if busy:
+        raise SystemExit(f"another MPS training job runs (pids {busy}): refused, nothing started")
+
+
 def load_window(root, i, start, n):
     """(mix, wet target) tensors (1, 2, n), mono duplicated, from the fp16 cache."""
     import numpy as np
@@ -681,8 +722,12 @@ def cmd_gate(args):
 
     require_ft(args)
     root = V.out_root(args)
+    if (_load(out_dir(root) / "gate.json") or {}).get("mode") and not args.smoke:
+        print("gate.json exists: nothing to do (train pins its mode and step limits from it)")
+        return
     if not (_load(out_dir(root) / "prep.json") or {}).get("control", {}).get("ok") and not args.smoke:
         raise SystemExit("run `prep` first (its control must pass)")
+    refuse_if_training()
     S = load_sets(root, args.smoke)
     Fd = folds_of(S)
     tr, _ = fold_ids(S, Fd, 0)
@@ -796,8 +841,8 @@ def validate(model, root, ids, band_of, dev):
 
 
 def clip_grads(params, max_norm=CLIP_NORM):
-    """Global-norm clipping computed on the CPU (MPS's clip_grad_norm_ has returned NaN here). -> the norm (NaN or
-    inf: the caller skips the step)."""
+    """Global-norm clipping: each tensor's sum of squares on the device, the total on the CPU (MPS's
+    clip_grad_norm_ has returned NaN here). -> the norm (NaN or inf: the caller skips the step)."""
     import torch
 
     tot = 0.0
@@ -813,10 +858,46 @@ def clip_grads(params, max_norm=CLIP_NORM):
     return norm
 
 
+def atomic_torch_save(obj, path):
+    """torch.save through a temporary file in the same folder, then a rename: a kill never leaves a torn file."""
+    import torch
+
+    path = pathlib.Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + f".{os.getpid()}.tmp")
+    torch.save(obj, tmp)
+    tmp.replace(path)
+
+
+PLATEAU_WHY = f"plateau: no {MIN_GAIN_DB} dB gain for {PATIENCE} steps"
+
+
+def stop_reason(curve, step, mx, mn, wall_s, budget_h=BUDGET_H):
+    """Why a fine-tune stops after a validation check at `step`, or None to go on."""
+    if step >= mx:
+        return "the step maximum (the approved time)"
+    if plateau(curve, mn):
+        return PLATEAU_WHY
+    if wall_s > WALL_FACTOR * budget_h * 3600:
+        return "the wall guard"
+    return None
+
+
+def pinned_limits(rec, gate, smoke_steps=None):
+    """(mode, max steps, min steps): a resumed fold keeps its own record's (set when it started), else the gate's."""
+    if rec.get("max_steps") is not None:
+        return rec["mode"], rec["max_steps"], rec["min_steps"]
+    if smoke_steps:
+        return gate["mode"], smoke_steps, 1
+    return gate["mode"], gate["max_steps"], gate["min_steps"]
+
+
 def cmd_train(args):
-    """One fold's fine-tune (MSST): the gate's mode and step limits; validation every CHECK_EVERY steps from step 0
-    (stock weights); best and last checkpoints (trainable tensors); a killed run resumes from its last checkpoint
-    (recorded). Stops at the plateau, the step maximum or the wall guard."""
+    """One fold's fine-tune (MSST). Mode and step limits are the gate's when the fold starts and pinned in its record
+    (a resumed fold keeps them). Validation every CHECK_EVERY steps from step 0 (the stock weights). Everything a
+    resume needs (the trainable tensors, the optimizer, the step, the curve, and the best tensors with their step) is
+    one checkpoint, written atomically before the record; the best checkpoint is written from it when the fold
+    stops. Stops at the plateau, the step maximum or the wall guard. Refuses while another MPS training job runs."""
     import torch
 
     from learn import direct_stems as DS
@@ -833,57 +914,64 @@ def cmd_train(args):
     if rec.get("status") == "done":
         print(f"fold {args.fold}: done (best step {rec['best_step']})")
         return
+    refuse_if_training()
     S = load_sets(root, args.smoke)
     Fd = folds_of(S)
     tr, va = fold_ids(S, Fd, args.fold)
     band_of = {i: S["band_of_ex"][i] for i in va}
-    mode = gate["mode"]
+    mode, mx, mn = pinned_limits(rec, gate, args.smoke_steps if args.smoke else None)
     dev = torch.device("cpu" if mode == "cpu" else "mps")
     torch.set_num_threads(CPU_THREADS if mode == "cpu" else 2)
     torch.manual_seed(_rng(WINDOW_SEED, args.fold, "torch").randrange(2 ** 31))
-    mx, mn = (gate["max_steps"], gate["min_steps"]) if not args.smoke else (args.smoke_steps, 1)
     model, base_sha = base_model(dev)
     params = [p for p in model.parameters() if p.requires_grad]
     opt = torch.optim.AdamW(params, lr=LR, betas=BETAS, weight_decay=WEIGHT_DECAY)
     lp = ckpt_path(root, args.fold, "last")
-    lp.parent.mkdir(parents=True, exist_ok=True)
-    step, curve, resumed, skipped = 0, [], rec.get("resumed", []), rec.get("skipped_steps", 0)
-    if lp.exists() and rec.get("curve"):
+    step, curve, best_state, resumed = 0, [], None, rec.get("resumed", [])
+    skipped, train_s = 0, 0.0
+    if lp.exists():
         ck = torch.load(lp, map_location="cpu")
         load_trainable(model, ck["state"])
         opt.load_state_dict(ck["opt"])
-        step, curve = ck["step"], [tuple(c) for c in rec["curve"]]
+        step, curve, best_state = ck["step"], [tuple(c) for c in ck["curve"]], ck["best_state"]
+        skipped, train_s = ck["skipped_steps"], ck["train_seconds"]
+        if best_point(curve)[0] != ck["best_step"]:
+            raise SystemExit(f"fold {args.fold}: the checkpoint's best step disagrees with its own curve")
         resumed.append({"at_step": step, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
         print(f"fold {args.fold}: resumed at step {step}", flush=True)
     rng = _rng(WINDOW_SEED, args.fold, "windows", step)
     n = int(WINDOW_S * XL_SR)
     swap0 = DS.swap_mb()
-    t0 = time.time()
-    wall0 = time.time() - rec.get("train_seconds", 0.0)
+    t0 = time.time() - train_s
     rec.update({"design": DESIGN, "status": "running", "fold": args.fold, "mode": mode, "device": str(dev),
-                "base_sha256": base_sha, "train": len(tr), "validation": len(va), "validation_sections": Fd["val"][args.fold],
+                "base_sha256": base_sha, "bands": sorted(b for b, f in Fd["band_fold"].items() if f == args.fold),
+                "train": len(tr), "validation": len(va), "validation_sections": Fd["val"][args.fold],
+                "validation_rule": "within-song: held-out sections of the fold's own training bands",
                 "train_sections": sorted({S["section_of"][i] for i in tr}), "max_steps": mx, "min_steps": mn,
                 "trainable": sum(p.numel() for p in params), "resumed": resumed,
                 "recipe": {"lr": LR, "betas": BETAS, "weight_decay": WEIGHT_DECAY, "warmup": WARMUP, "window_s": WINDOW_S,
                            "accumulate": ACCUM, "clip": CLIP_NORM, "layers": TRAIN_LAYERS}, "smoke": bool(args.smoke)})
 
     def check(step):
+        nonlocal best_state
         v, _ = validate(model, root, va, band_of, dev)
         curve.append((step, v))
         bs, bv = best_point(curve)
         if bs == step:
-            torch.save({"state": trainable_state(model), "step": step}, ckpt_path(root, args.fold, "best"))
-        torch.save({"state": trainable_state(model), "opt": opt.state_dict(), "step": step}, lp)
+            best_state = trainable_state(model)
+        atomic_torch_save({"state": trainable_state(model), "opt": opt.state_dict(), "step": step, "curve": curve,
+                           "best_state": best_state, "best_step": bs, "skipped_steps": skipped,
+                           "train_seconds": time.time() - t0}, lp)
         rec.update(curve=curve, best_step=bs, best_db=bv, step=step, skipped_steps=skipped,
-                   train_seconds=time.time() - wall0, time=time.strftime("%Y-%m-%d %H:%M:%S"))
-        _save(rp, rec)
+                   train_seconds=time.time() - t0, time=time.strftime("%Y-%m-%d %H:%M:%S"))
+        _save(rp, rec)                                   # after the checkpoint: the record never runs ahead of it
         print(f"fold {args.fold} step {step}: validation {v:.3f} dB (best {bv:.3f} at {bs}); "
               f"{(time.time() - t0) / 60:.0f} min", flush=True)
 
     if not curve:
         check(0)
+    why = stop_reason(curve, step, mx, mn, 0.0 if args.smoke else time.time() - t0) if step else None
     model.train()
-    why = None
     bad_run = 0
     while why is None:
         for g in opt.param_groups:
@@ -914,16 +1002,13 @@ def cmd_train(args):
                 print(g[1], flush=True)
                 raise SystemExit(g[0])
             check(step)
-            if step >= mx:
-                why = "the step maximum (the approved time)"
-            elif plateau(curve, mn):
-                why = f"plateau: no {MIN_GAIN_DB} dB gain for {PATIENCE} steps"
-            elif time.time() - wall0 > WALL_FACTOR * BUDGET_H * 3600 and not args.smoke:
-                why = "the wall guard"
+            why = stop_reason(curve, step, mx, mn, 0.0 if args.smoke else time.time() - t0)
     bs, bv = best_point(curve)
+    bp = ckpt_path(root, args.fold, "best")
+    atomic_torch_save({"state": best_state, "step": bs}, bp)
     rec.update(status="done", stopped=why, best_step=bs, best_db=bv, stock_db=curve[0][1],
-               at_cap_improving=why != f"plateau: no {MIN_GAIN_DB} dB gain for {PATIENCE} steps" and bs == curve[-1][0],
-               best_sha256=DS.hashlib_file(ckpt_path(root, args.fold, "best")), minutes=round((time.time() - t0) / 60, 1))
+               at_cap_improving=why != PLATEAU_WHY and bs == curve[-1][0],
+               best_sha256=DS.hashlib_file(bp), minutes=round((time.time() - t0) / 60, 1))
     _save(rp, rec)
     print(f"TRAIN DONE fold {args.fold}: {why}; best {bv:.3f} dB at step {bs} (stock {curve[0][1]:.3f} dB)")
     if rec["at_cap_improving"]:
@@ -944,7 +1029,7 @@ def cmd_separate(args):
     root = V.out_root(args)
     S = load_sets(root, args.smoke)
     Fd = folds_of(S)
-    jobs = sep_jobs(args.fold, S["f5"], S["fs"], S["section_of"], Fd["fold_of"], Fd["fs_fold_of"])
+    jobs = sep_jobs(args.fold, S["f5"] + S["fs"], S["band_of_ex"], Fd["band_fold"])
     jobs = sorted(jobs, key=lambda i: (S["section_of"][i], i), reverse=args.order == "desc")
     jobs = [i for i in jobs if not ft_path(root, i).exists()][:args.limit or None]
     print(f"separate fold {args.fold} on {args.device}: {len(jobs)} to do", flush=True)
@@ -976,7 +1061,7 @@ def cmd_separate(args):
             sm, sl, floor = DS.half_features(s)
             DS._save_npz(ft_path(root, i), sA=sm["A"], sB=sm["B"], lufs=[sl["A"], sl["B"]])
             row = {"i": i, "set": "fs5" if i in fs else "f5", "section": S["section_of"][i], "band": S["band_of_ex"][i],
-                   "fold": args.fold, "section_fold": (Fd["fs_fold_of"] if i in fs else Fd["fold_of"])[S["section_of"][i]],
+                   "fold": args.fold, "band_fold": Fd["band_fold"][S["band_of_ex"][i]],
                    "device": args.device, "ckpt": sep.ft["best_sha256"], "lufs_sA": sl["A"], "lufs_sB": sl["B"],
                    "floor_share": floor, "snr_audio_db": DS.snr_db(s, y * 10 ** (gains["ga"] / 20)),
                    "snr_wet_db": DS.snr_db(s, tgt), "snr_stock_db": S["built"][i].get("snr_audio_db")}
@@ -998,20 +1083,16 @@ def sep_rows(root):
 
 
 def stems_complete(root, S, Fd):
-    """Every F5 and FS5 example has its fine-tuned stem, made by the fold assigned to it (out of fold for F5).
+    """Every F5 and FS5 example has its fine-tuned stem, made by the model that never trained on its band.
     -> list of problems."""
     rows = sep_rows(root)
-    f5, fs = set(S["f5"]), set(S["fs"])
     bad = []
     for i in S["f5"] + S["fs"]:
         r = rows.get(i)
-        sec = S["section_of"][i]
         if r is None or not ft_path(root, i).exists():
             bad.append((i, "no stem"))
-        elif i in f5 and r["fold"] == Fd["fold_of"][sec]:
-            bad.append((i, "in-fold stem"))
-        elif i in fs and r["fold"] != Fd["fs_fold_of"][sec]:
-            bad.append((i, "FS5 stem from the other fold"))
+        elif r["fold"] == Fd["band_fold"][S["band_of_ex"][i]]:
+            bad.append((i, "a stem from the model that trained on its band"))
     return bad
 
 
@@ -1107,7 +1188,8 @@ def load_ft_models(root, smoke=False):
 
 def cmd_train_d(args):
     """One D_F5ft run: D_F5-noaug's recipe (D_F5's, augmentation off) with the fine-tuned stems; early stopping on FS5.
-    Refuses unless every stem is in place and out of fold, and its examples are D_F5's."""
+    Refuses unless every stem is in place and from the model that never trained on its band, and its examples are
+    D_F5's."""
     import numpy as np
     import torch
 
@@ -1122,10 +1204,11 @@ def cmd_train_d(args):
     if rp.exists():
         print(f"{rp.name} exists: nothing to do")
         return
+    refuse_if_training()
     S = load_sets(root, args.smoke)
     bad = stems_complete(root, S, folds_of(S))
     if bad and not args.smoke:
-        raise SystemExit(f"{len(bad)} fine-tuned stems missing or not out of fold: {bad[:5]}")
+        raise SystemExit(f"{len(bad)} fine-tuned stems missing or not out of band: {bad[:5]}")
     ctx = DS.Ctx(quiet=True)
     tr_rows, es_rows = T3.arm_rows(root, ctx, S["plan"], T3.FULL)
     why = TM.same_examples(_load(T3.run_path(root, T3.FULL, args.seed)) or {}, S["refused"], len(tr_rows), len(es_rows))
@@ -1245,6 +1328,7 @@ PAIRS = {"the fine-tuned stem": (FT_ARM, TM.NOAUG_ARM),            # primary: bo
 def print_r0(rec):
     print(f"\n=== {FT_ARM} ===")
     R.print_r0(rec["rows"][FT_ARM])
+    print(f"\n{INTERVAL_NOTE}")
     print("\nreadable heads (R0's rule; descriptive, no bar, about 6 per model by chance): "
           + ", ".join(f"{a} {n}" for a, n in rec["readable"].items()))
     for name, (a, b) in PAIRS.items():
@@ -1311,7 +1395,7 @@ def cmd_r0(args):
     rec = {"plan": T.PLAN, "design": DESIGN, "stage": "T3 D_F5ft R0", "status": STATUS,
            "rule": "R0's: readable iff the 90% interval excludes chance in the right direction",
            "reading": "descriptive: no stop rule, V-real runs whatever FS5 shows; readable counts have no bar",
-           "pairs": {k: list(v) for k, v in PAIRS.items()}, "models": shas,
+           "intervals": INTERVAL_NOTE, "pairs": {k: list(v) for k, v in PAIRS.items()}, "models": shas,
            "fs5_examples": len(ex[FT_ARM]), "fs5_sections": len({v["section"] for v in info.values()}),
            "rows": rows, "by_family": {a: R.by_family(r) for a, r in rows.items()},
            "readable": {a: sum(x["readable"] for x in r) for a, r in rows.items()},
@@ -1381,7 +1465,7 @@ def cmd_probe(args):
         heads.append({"name": name, "family": r["family"], "kind": kind,
                       "readable": {k: bool(rows_by[k][h]["readable"]) for k in PROBE},
                       "x_better_than_c": xc["reliable"], "c_better_than_x": cx["reliable"], "step_x_minus_c": xc})
-    rec = {"design": DESIGN, "status": STATUS + "; the probe is descriptive", "inputs": PROBE,
+    rec = {"design": DESIGN, "status": STATUS + "; the probe is descriptive", "inputs": PROBE, "intervals": INTERVAL_NOTE,
            "readable": {k: sum(r["readable"] for r in rows_by[k]) for k in PROBE},
            "x_not_c": [h["name"] for h in heads if h["readable"]["x"] and not h["readable"]["c"]],
            "c_not_x": [h["name"] for h in heads if h["readable"]["c"] and not h["readable"]["x"]],
@@ -1544,16 +1628,25 @@ def contrasts():
             f"F5: {T3.FULL} - {T3.CORE} (the gate, stored)": (T3.FULL, T3.CORE)}
 
 
+SNR_RULE = ("descriptive: new minus stock per example, the mean of band means with a 90% t interval clustered by band "
+            "(4 bands, one song each: 3 df); every stem from the model that never trained on its band")
+INTERVAL_NOTE = ("FS5's intervals are clustered by section (12 sections in 4 songs, one per band): optimistic, since "
+                 "sections of one song are not independent; read them as descriptive")
+
+
 def snr_block(rows, S):
     """The stems' SNR against the wet target (as T3's build measured it: the target render times the mix gain), new
-    minus stock per example, section-clustered 90% t, for F5 (out of fold) and FS5."""
+    minus stock, for F5 and FS5 (both separated by the model that never trained on their band). Descriptive:
+    clustered by band (`SNR_RULE`)."""
     out = {}
     for name in ("f5", "fs5"):
         d = {i: r["snr_audio_db"] - r["snr_stock_db"] for i, r in rows.items()
              if r["set"] == name and r.get("snr_stock_db") is not None}
         new = sorted(r["snr_audio_db"] for r in rows.values() if r["set"] == name)
         old = sorted(r["snr_stock_db"] for r in rows.values() if r["set"] == name and r.get("snr_stock_db") is not None)
-        out[name] = {"new_minus_stock_db": {**R.section_t(d, {i: S["section_of"][i] for i in d}), "n": len(d)},
+        band = R.section_t(d, {i: S["band_of_ex"][i] for i in d})
+        out[name] = {"new_minus_stock_db": {"point": band["point"], "lo": band["lo"], "hi": band["hi"],
+                                            "bands": band.get("sections"), "n": len(d), "rule": SNR_RULE},
                      "median_new_db": new[len(new) // 2] if new else None,
                      "median_stock_db": old[len(old) // 2] if old else None}
     return out

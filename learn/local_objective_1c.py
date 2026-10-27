@@ -54,7 +54,8 @@ MEM_GATE_PRUNED_GB = 11.0
 MEM_GATE_FULL_GB = 18.0
 MEM_GATE_GB = MEM_GATE_PRUNED_GB
 POLL_S = 60
-TRAINING = (r"-m learn\.\S+\s+(train|fit)\b",)    # MPS training jobs (song_soundspace, direc, train, ...)
+TRAINING = (r"-m learn\.\S+\s+(train|fit)\b",     # MPS training jobs (song_soundspace, direc, train, ...)
+            r"-m learn\.xlance_finetune gate\b")   # D_F5ft's MPS gate (ROADMAP (b)): trains steps on MPS
 SUBSETS_1C = {**LO.SUBSETS, "without_armA": ("S", "nbr", "ks")}
 # Amendment 3a: bleed and leak rows, on all of Σ, each with the share's numerator and denominator on
 # the same cells. Bleed flags per part and half come from the bleed audit; "cell" drops a cell if

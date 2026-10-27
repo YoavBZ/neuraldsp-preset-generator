@@ -17,6 +17,7 @@ from learn import direct_stems as DS  # noqa: E402
 from learn import local_objective as LO  # noqa: E402
 from learn import song_aug as SA  # noqa: E402
 from learn import trusted_data as T  # noqa: E402
+from learn import local_objective_1c as C  # noqa: E402
 from learn import xlance_finetune as X  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -26,13 +27,12 @@ SECS = {"A": {f"a{k}" for k in range(7)}, "B": {f"b{k}" for k in range(4)}, "C":
 
 # --- folds and jobs ----------------------------------------------------------------------------------------------
 
-def test_section_folds_split_each_band_in_halves_deterministically():
-    f = X.section_folds(SECS)
-    assert f == X.section_folds(SECS) and set(f) == set().union(*SECS.values())
-    for band, secs in SECS.items():
-        n1 = sum(f[s] for s in secs)
-        assert abs((len(secs) - n1) - n1) <= 1
-    assert any(f != X.section_folds(SECS, seed=k) for k in range(1, 6))
+def test_band_folds_balance_examples_and_keep_the_first_band_in_fold_0():
+    counts = {"Death Of A Romantic": 1123, "Hollow Ground": 1065, "Storm Of Particles": 986, "Ale Lak": 293}
+    f = X.band_folds(counts)
+    assert f == {"Ale Lak": 0, "Death Of A Romantic": 0, "Hollow Ground": 1, "Storm Of Particles": 1}   # 1,416 / 2,051
+    assert X.band_folds(dict(reversed(list(counts.items())))) == f                     # order-free, no seed
+    assert sorted(X.band_folds({"a": 1, "b": 1, "c": 1, "d": 1, "e": 9}).values()) == [0, 0, 1, 1, 1]
 
 
 def test_alternate_start_moves_the_odd_item():
@@ -40,26 +40,22 @@ def test_alternate_start_moves_the_odd_item():
     assert sorted(X.alternate(["x", "y", "z"], random.Random(0)).values()) == [0, 0, 1]
 
 
-def test_val_sections_from_the_fold_and_distinct_bands():
-    f = X.section_folds(SECS)
-    band_of = {s: b for b, ss in SECS.items() for s in ss}
-    for k in X.FOLDS:
-        v = X.val_sections(f, band_of, k)
-        assert all(f[s] == k for s in v)
-        assert len({band_of[s] for s in v}) == len(v) <= X.VAL_SECTIONS
-        for s in v:                                       # never a band's only section in the half
-            assert sum(1 for t in SECS[band_of[s]] if f[t] == k) > 1
-        assert v == X.val_sections(f, band_of, k)
+def test_val_sections_come_from_the_folds_bands_and_move_on_to_reach_three():
+    secs = {"A": {"a0", "a1", "a2", "a3"}, "B": {"b0", "b1"}}
+    v = X.val_sections(secs, 0)
+    assert len(v) == X.VAL_SECTIONS and set(v) <= secs["A"] | secs["B"]
+    assert len(set(v) & secs["B"]) <= 1                       # a band keeps a training section
+    assert len(set(v) & secs["A"]) >= 2                       # moved on to the next band instead of stopping short
+    assert v == X.val_sections(secs, 0)
+    assert X.val_sections({"A": {"a0"}, "B": {"b0"}}, 1) == []  # nothing to spare: no validation section taken
 
 
-def test_sep_jobs_are_out_of_fold_and_cover_every_example_once():
-    sec = {1: "a0", 2: "a1", 3: "b0", 4: "b1", 5: "fa", 6: "fb"}
-    fold_of = {"a0": 0, "a1": 1, "b0": 0, "b1": 1}
-    fs_fold_of = {"fa": 0, "fb": 1}
-    j0 = X.sep_jobs(0, [1, 2, 3, 4], [5, 6], sec, fold_of, fs_fold_of)
-    j1 = X.sep_jobs(1, [1, 2, 3, 4], [5, 6], sec, fold_of, fs_fold_of)
-    assert j0 == [2, 4, 5] and j1 == [1, 3, 6]
-    assert sorted(j0 + j1) == [1, 2, 3, 4, 5, 6]
+def test_sep_jobs_are_out_of_band_and_cover_every_example_once():
+    band = {1: "A", 2: "A", 3: "B", 4: "C", 5: "D", 6: "B"}       # 6: an FS5 example, separated like F5's
+    bf = {"A": 0, "B": 0, "C": 1, "D": 1}
+    j0, j1 = X.sep_jobs(0, list(band), band, bf), X.sep_jobs(1, list(band), band, bf)
+    assert j0 == [4, 5] and j1 == [1, 2, 3, 6]
+    assert sorted(j0 + j1) == sorted(band)
 
 
 def test_vreal_folds_are_balanced_and_fixed():
@@ -177,7 +173,7 @@ def test_cli_refuses_misplaced_or_missing_arguments(argv):
 def test_ledger_declares_amendment_4():
     d = json.loads((ROOT / "docs" / "dev-test-ledger.json").read_text())
     e = next(t for t in d["tests"] if t["test_id"] == "trusted-data-t3")
-    assert X.LEDGER_MARK in e[X.LEDGER_KEY] and "20261110" in e[X.LEDGER_KEY]
+    assert X.LEDGER_MARK in e[X.LEDGER_KEY] and "BY BAND" in e[X.LEDGER_KEY] and "20261113" in e[X.LEDGER_KEY]
     assert X.ledger_declared()
 
 
@@ -229,3 +225,22 @@ def test_torch_checks():
     from tests import torch_checks_xlance_ft as TC
 
     TC.main([])
+
+
+def test_stop_reason_and_pinned_limits():
+    c = [(0, -5.0)] + [(250 * k, -5.0) for k in range(1, 5)]
+    assert X.stop_reason(c, 1000, 2000, 500, 0.0) == X.PLATEAU_WHY
+    assert X.stop_reason(c[:2], 250, 250, 500, 0.0).startswith("the step maximum")
+    assert X.stop_reason(c[:2], 250, 2000, 500, 10 * 3600.0) == "the wall guard"
+    assert X.stop_reason(c[:2], 250, 2000, 500, 0.0) is None
+    gate = {"mode": "fft_cpu", "max_steps": 9000, "min_steps": 500}
+    assert X.pinned_limits({}, gate) == ("fft_cpu", 9000, 500)
+    assert X.pinned_limits({"mode": "mps", "max_steps": 7000, "min_steps": 500}, gate) == ("mps", 7000, 500)
+    assert X.pinned_limits({}, gate, smoke_steps=4) == ("fft_cpu", 4, 1)
+
+
+def test_gate_train_and_train_d_count_as_mps_training():
+    for cmd in ("gate", "train --fold 0", "train-d --seed 20261042"):
+        assert C.is_training(f"/x/msst-venv/bin/python -u -m learn.xlance_finetune {cmd}")
+    for cmd in ("prep", "separate --fold 0 --device mps", "report", "probe"):
+        assert not C.is_training(f"/x/python -u -m learn.xlance_finetune {cmd}")

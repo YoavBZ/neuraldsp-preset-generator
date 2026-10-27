@@ -169,9 +169,10 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      ledger amendment 4); not run; it runs after (a). Following the [effect-detection
      research](research/effect-detection-2026-10.md): trained on the stored wet target renders as they sit in each
      rebuilt mix (zero renders), mono duplicated; the MPS gate first, with the STFTs, then the loss, then everything
-     moved to the CPU as fallbacks. Cross-fitted in two folds by section, so every stem D trains on comes from a
-     model that never saw its section; FS5 and V-real never train or choose. Stops on its validation curve (no 0.1 dB
-     gain for 1,000 steps) or at the approved 5.5 h per fold. Then about 4,200 re-separations (about 3–5 h), D_F5ft
+     moved to the CPU as fallbacks. Cross-fitted by band (2 + 2; F5 and FS5 are 4 songs), so every stem D trains on or
+     is read on comes from a model that never trained on its song; FS5 and V-real never train or choose. Stops on
+     its validation curve (within-song: held-out sections of its own bands; no 0.1 dB gain for 1,000 steps) or at
+     the approved 5.5 h per fold. Then about 4,200 re-separations (about 3–5 h), D_F5ft
      (D_F5-noaug with the new stem, 2 runs), and the readout: the stems' SNR, R0 on FS5, the tone probe on the new
      stems, and V-real (99 renders, no stop rule), D_F5ft − D_F5-noaug primary. About 5–16 h in all.*
    - (c) **Audibility-aware labels for the time effects.** The probe's audibility split: from the stem, the delay's
