@@ -3038,84 +3038,104 @@
    "test_id": "clean-crunch-pool",
    "plan": "docs/clean-crunch-pool-plan.md",
    "entered": "2026-10-28, with step 2's groundwork code (learn/cc_pool.py), before its first run. Zero renders, no training, no separation: the released sessions' DI inventory, part A's screen and sections on them, their backing metadata and T0's session-level stem scan (written as t0/ccstems-*, so T0's stems shards and floor stay as T2 and T3 read them)",
-   "released": {
-    "BoogieSnakes_ItsMyRight_Full": {
-     "band": "Boogie Snakes",
-     "set": "sets-1-2"
+   "parts": {
+    "released_sessions": {
+     "BoogieSnakes_ItsMyRight_Full": {
+      "band": "Boogie Snakes",
+      "set": "sets-1-2"
+     },
+     "Forkupines_Semantics_Full": {
+      "band": "Forkupines",
+      "set": "sets-1-2"
+     },
+     "Forkupines_SugarFaith_Full": {
+      "band": "Forkupines",
+      "set": "sets-1-2"
+     },
+     "MR0912_NorthToAlaska_Full": {
+      "band": "Lights Off Clarity",
+      "set": "sets-1-2"
+     },
+     "TheMaybeNextYears_OneFlipFlop_Full": {
+      "band": "The Maybe Next Years",
+      "set": "sets-1-2"
+     },
+     "TimTaler_Stalker_Full": {
+      "band": "Tim Taler",
+      "set": "sets-1-2"
+     },
+     "DunningKruger_EnDance_Full": {
+      "band": "Dunning Kruger",
+      "set": "set3"
+     },
+     "DunningKruger_JapanSong_Full": {
+      "band": "Dunning Kruger",
+      "set": "set3"
+     },
+     "DunningKruger_Sascha_Full": {
+      "band": "Dunning Kruger",
+      "set": "set3"
+     },
+     "Silona_LearningHowToFly_Full": {
+      "band": "Silona",
+      "set": "set3"
+     },
+     "Hazael_AMiLado_Full": {
+      "band": "Hazael",
+      "set": "set5"
+     },
+     "Hazael_ResistenciaParaUnNuevoComenzar_Full": {
+      "band": "Hazael",
+      "set": "set5"
+     },
+     "PeterWhite_CrazyGirl_Full": {
+      "band": "Peter White",
+      "set": "set5"
+     },
+     "BKS_TooMuch_Full": {
+      "band": "BKS",
+      "set": "set5"
+     },
+     "BKS_Bulldozer_Full": {
+      "band": "BKS",
+      "set": "set5"
+     },
+     "RonnieJones_WhyDontYouStay_Full": {
+      "band": "Ronnie Jones",
+      "set": "set5"
+     },
+     "SaturnSyndicate_NeverLeaveTheNightAlone_Full": {
+      "band": "Saturn Syndicate",
+      "set": "set5"
+     },
+     "MR0905_ChrisDurban_Full": {
+      "band": "Chris Durban",
+      "set": "set5"
+     },
+     "HannesKeseberg_YouKnowBetter_Full": {
+      "band": "Hannes Keseberg",
+      "set": "set5"
+     }
     },
-    "Forkupines_Semantics_Full": {
-     "band": "Forkupines",
-     "set": "sets-1-2"
-    },
-    "Forkupines_SugarFaith_Full": {
-     "band": "Forkupines",
-     "set": "sets-1-2"
-    },
-    "MR0912_NorthToAlaska_Full": {
-     "band": "Lights Off Clarity",
-     "set": "sets-1-2"
-    },
-    "TheMaybeNextYears_OneFlipFlop_Full": {
-     "band": "The Maybe Next Years",
-     "set": "sets-1-2"
-    },
-    "TimTaler_Stalker_Full": {
-     "band": "Tim Taler",
-     "set": "sets-1-2"
-    },
-    "DunningKruger_EnDance_Full": {
-     "band": "Dunning Kruger",
-     "set": "set3"
-    },
-    "DunningKruger_JapanSong_Full": {
-     "band": "Dunning Kruger",
-     "set": "set3"
-    },
-    "DunningKruger_Sascha_Full": {
-     "band": "Dunning Kruger",
-     "set": "set3"
-    },
-    "Silona_LearningHowToFly_Full": {
-     "band": "Silona",
-     "set": "set3"
-    },
-    "Hazael_AMiLado_Full": {
-     "band": "Hazael",
-     "set": "set5"
-    },
-    "Hazael_ResistenciaParaUnNuevoComenzar_Full": {
-     "band": "Hazael",
-     "set": "set5"
-    },
-    "PeterWhite_CrazyGirl_Full": {
-     "band": "Peter White",
-     "set": "set5"
-    },
-    "BKS_TooMuch_Full": {
-     "band": "BKS",
-     "set": "set5"
-    },
-    "BKS_Bulldozer_Full": {
-     "band": "BKS",
-     "set": "set5"
-    },
-    "RonnieJones_WhyDontYouStay_Full": {
-     "band": "Ronnie Jones",
-     "set": "set5"
-    },
-    "SaturnSyndicate_NeverLeaveTheNightAlone_Full": {
-     "band": "Saturn Syndicate",
-     "set": "set5"
-    },
-    "MR0905_ChrisDurban_Full": {
-     "band": "Chris Durban",
-     "set": "set5"
-    },
-    "HannesKeseberg_YouKnowBetter_Full": {
-     "band": "Hannes Keseberg",
-     "set": "set5"
-    }
+    "di_rows": "every guitar DI of the released sessions, pending T0's intake checks and the ear (learn.cc_pool.inventory)"
    },
+   "bands": [
+    "BKS",
+    "Boogie Snakes",
+    "Chris Durban",
+    "Dunning Kruger",
+    "Forkupines",
+    "Hannes Keseberg",
+    "Hazael",
+    "Lights Off Clarity",
+    "Peter White",
+    "Ronnie Jones",
+    "Saturn Syndicate",
+    "Silona",
+    "The Maybe Next Years",
+    "Tim Taler"
+   ],
+   "gate": "none: groundwork, no read. The pool (step 2's renders) and step 3's read get their own entries before any render",
    "spent_not_released": {
     "Fytakyte": "set 5's re-host of BKS 'Too Much', whose band and song train since 2026-10-28"
    },
