@@ -1672,6 +1672,30 @@ def stem_pass(takes_db, floor):
     return all(v is None or v < floor for v in takes_db.values())
 
 
+# The clean/crunch pool's leak rule (docs/clean-crunch-pool-plan.md step 1, 2026-10-28). Line-level tracks cannot pick
+# up an amp, so a reading in them is the meter reading shared playing, not leakage (12 of 48 such readings reach the
+# -35 dB floor: Death Of A Romantic's BassDI -18.8 and KickSample -30.4, Adam Buckley's BassDI +1.4). Exempt by name
+# only: pre-recorded and master bounces can hold real guitars, and amp, mic, Leslie and FX tracks are mics or re-amps.
+LINE_LEVEL_RE = re.compile(r"(?<![A-Za-z])(?i:di)(?![A-Za-z])|(?<=[a-z])DI(?![a-z])|(?i:sample|synth)")
+NOT_LINE_LEVEL_RE = re.compile(r"(?i)pre ?rec|master|amp(?!le)|leslie|mic|fx|overdrive|(?<![a-z])m\d\d(?!\d)")
+
+
+def is_line_level(name):
+    """A stem named as a DI, a sample or a synth, and not as a pre-recorded track, master, amp, mic, Leslie or effect."""
+    stem = pathlib.PurePosixPath(name).stem
+    return bool(LINE_LEVEL_RE.search(stem)) and not NOT_LINE_LEVEL_RE.search(stem)
+
+
+def stem_pass_replaced(name, takes_db, floor, replaced):
+    """The per-example rule: a stem passes when it is line-level, or when every guitar source the example replaces
+    (`replaced`: scan sources of the target and the rendered other guitars) reads under `floor` in it. The readings
+    stay session-level, where the floor was validated; guitars the example does not replace stay in the backing as
+    their own amp tracks or are silent, so their readings do not count."""
+    if is_line_level(name):
+        return True
+    return all(v is None or v < floor for s, v in takes_db.items() if s in replaced)
+
+
 def cmd_stem_scan(args):
     """Every non-guitar track of every session in use: each guitar track's session-level take in it (the cleaning
     plan's estimator, `data_cleaning.TakeReader`, read against that guitar track itself). A stem passes when every

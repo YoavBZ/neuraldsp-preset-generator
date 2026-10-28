@@ -140,6 +140,7 @@ MIN_BANDS = 3                          # fewer bands: the section-clustered inte
 LEFT_OUT_NO_AMP = "an active guitar has no usable amp track"
 LEFT_OUT_CAP = "more active guitars than the cap"           # more renderable active guitars than MAX_OTHERS
 LEFT_OUT_OWN_TAKE = "an added amp track is in the cleaning scan's removed or same-part tracks"
+LEFT_OUT_TARGET_DOUBLE = "an added amp track doubles the target's part (it would carry the target's own tone)"
 AMP_BLEED_DB = V.A6_BLEED_DB           # an amp track is used when its other-instrument bleed reads under this (-30 dB)
 AMP_BLEED_DIR = "amp-bleed"            # root/amp-bleed/<session>.json: the readings (`amp-bleed`)
 AMP_SOURCE_MIN_SHARE = 0.5             # a source playing on fewer of the amp track's playing frames is unmeasurable
@@ -1157,27 +1158,46 @@ def measure_amp_bleed(sd, tracks, log=print):
     return out
 
 
-def apply_rule1(ctx, root, rows, verified, dis_windows, bad_sections, act_cache, scan=None):
+def target_doubles(target_part, amp_tracks):
+    """The added amp tracks that double the target's part: the same part, or its Cambridge DT partner
+    (`data_cleaning.name_partner`). The clean/crunch pool plan leaves such an example out (2026-10-28)."""
+    from learn import data_cleaning as DC
+
+    return sorted(a["track"] for a in amp_tracks
+                  if DC.part_base(a["track"]) == target_part or DC.name_partner(target_part, a["track"]))
+
+
+def apply_rule1(ctx, root, rows, verified, dis_windows, bad_sections, act_cache, scan=None, doubles_out=False):
     """The user's rule 1 (2026-10-25) at plan time: in each row's section, every active guitar that cannot be
     rendered is represented by its amp or mic tracks when each passes the bleed check (`resolve_blocked`); otherwise
     the row is left out of every arm (LEFT_OUT_NO_AMP), with the guitars, tracks and readings recorded. An added amp
     track that the cleaning scan removed or confirmed as the target's other take leaves the row out too
-    (LEFT_OUT_OWN_TAKE; scan: {section: scan row}, `data_cleaning.scan_rows`).
+    (LEFT_OUT_OWN_TAKE; scan: {section: scan row}, `data_cleaning.scan_rows`). With `doubles_out` (the clean/crunch
+    pool), an added amp track that doubles the target's part by name leaves it out as well (LEFT_OUT_TARGET_DOUBLE).
     -> (kept rows, left-out records, {section: amp tracks})."""
+    from learn import data_cleaning as DC
+
     blocked = blocked_by_section(ctx, rows, verified, dis_windows, bad_sections, act_cache)
     readings = load_amp_bleed(root, needed_amp_tracks(ctx, blocked))
     res = {}
     for sid, b in blocked.items():
         use, bad = resolve_blocked(b, readings.get(section_session(ctx, sid)) or {})
         clash = cleaning_clash(use, (scan or {}).get(sid)) if not bad else []
+        if doubles_out and not bad and not clash:
+            sec = ctx.sections[sid]
+            clash = target_doubles(ctx.inv[sec["di"]].get("part") or DC.part_base(sec["di"]), use)
+            if clash:
+                clash = [(t, LEFT_OUT_TARGET_DOUBLE) for t in clash]
         res[sid] = (use, bad, clash)
     kept, out = [], {}
     for r in rows:
         use, bad, clash = res[r["section"]]
         if bad or clash:
             o = out.setdefault(r["section"], {
-                "section": r["section"], "band": r["band"], "reason": LEFT_OUT_NO_AMP if bad else LEFT_OUT_OWN_TAKE,
-                "guitars": bad or [{"part": t, "why": LEFT_OUT_OWN_TAKE} for t in clash], "examples": 0})
+                "section": r["section"], "band": r["band"], "reason": LEFT_OUT_NO_AMP if bad else (
+                    clash[0][1] if isinstance(clash[0], tuple) else LEFT_OUT_OWN_TAKE),
+                "guitars": bad or [{"part": t[0], "why": t[1]} if isinstance(t, tuple) else
+                                   {"part": t, "why": LEFT_OUT_OWN_TAKE} for t in clash], "examples": 0})
             o["examples"] += 1
         else:
             kept.append(r)
@@ -1202,13 +1222,39 @@ def session_dis(ctx, sd, verified):
     return sorted(d for d, r in ctx.inv.items() if r.get("session_dir") == sd and d in verified)
 
 
-def stems_for(rec, verified_stems, sd):
+def stem_takes(root):
+    """T0's stem scan per session, for the per-example leak rule: ({session dir: {"sources": [...], "stems": {stem:
+    takes_db}}}, floor dB). Refuses on a missing, incomplete or stale shard, as `lists` does."""
+    floor = V.stem_floor(root)
+    rows, probs = V.load_shards(root, "stems", "sessions", lambda d: d.get("floor_db") == floor)
+    if probs:
+        raise SystemExit(f"T0's stem scan cannot be read: {probs}")
+    return {sd: {"sources": list(r["sources"]), "stems": {f: v["takes_db"] for f, v in r["stems"].items()}}
+            for sd, r in rows.items()}, floor
+
+
+def replaced_sources(sources, dis):
+    """The scan sources of the guitars an example replaces (its target DI and its rendered other guitars' DIs), matched
+    by part (`verify_tracks.guitar_part_key`). A replaced part with no scan source has nothing to read. -> set."""
+    by_part = {V.guitar_part_key(s): s for s in sources}
+    return {by_part[k] for k in (V.guitar_part_key(pathlib.PurePosixPath(d).name) for d in dis) if k in by_part}
+
+
+def stems_for(rec, verified_stems, sd, takes=None, replaced=None, floor=None):
     """(with vocals, without vocals): the session's mix tracks (inventory list, else every file) that are not guitar
-    and pass T0's stem scan."""
+    and pass T0's stem scan. With `takes` (a session's `stem_takes` entry), the per-example rule of the clean/crunch
+    pool plan instead (`verify_tracks.stem_pass_replaced` on the `replaced` sources); either way only a session whose
+    stem spot-check was heard clean (`verified_stems`) gives stems, and never a click or talkback track."""
     from learn import data_cleaning as DC
     from learn import pretrain_set as PS
 
-    ok = set(verified_stems.get(sd) or [])
+    if takes is None:
+        ok = set(verified_stems.get(sd) or [])
+    elif sd not in verified_stems:
+        ok = set()
+    else:
+        ok = {f for f, t in takes["stems"].items() if not V.NON_MUSICAL.search(f)
+              and V.stem_pass_replaced(f, t, floor, replaced or set())}
     names = rec.get("mix") or sorted(ok)
     keep = [f for f in names if f in ok and DC.track_class(f) != "guitar"]
     voc = set(rec.get("vocals") or [])
@@ -1265,10 +1311,11 @@ def apply_cap(ctx, rows, verified, dis_windows, bad_sections, act_cache, max_n=M
 
 
 def example_recipe(ctx, r, verified, verified_stems, act_cache, bad_sections=frozenset(), dis_windows=None,
-                   amp_tracks=()):
+                   amp_tracks=(), takes=None):
     """One example's self-built recipe (plan (c)), zero renders. r: a part C row; dis_windows: {di: {window id:
     status}} from T0's lists (an other guitar's window must have been measured and be usable); amp_tracks: the
-    section's amp tracks that stand for active guitars that cannot be rendered (`apply_rule1`)."""
+    section's amp tracks that stand for active guitars that cannot be rendered (`apply_rule1`); takes: `stem_takes`
+    for the clean/crunch pool's per-example leak rule (None: T0's session-wide list, as T2 and T3 ran)."""
     dis_windows = dis_windows or {}
     from learn import data_cleaning as DC
     from learn import direct_stems as DS
@@ -1287,7 +1334,13 @@ def example_recipe(ctx, r, verified, verified_stems, act_cache, bad_sections=fro
     for o in others:
         o["pan"] = other_pan(r["i"], o["di"], o["dt"])
         o["draw"] = "target" if o["dt"] else other_draw(r["i"], o["di"])
-    withv, nov = stems_for(rec, verified_stems, sd)
+    if takes is None:
+        withv, nov = stems_for(rec, verified_stems, sd)
+    else:
+        scan, floor = takes
+        st = scan.get(sd)
+        rep = replaced_sources(st["sources"], [sec["di"]] + [o["di"] for o in others]) if st else set()
+        withv, nov = stems_for(rec, verified_stems, sd, st, rep, floor) if st else ([], [])
     meta = json.loads(PS.backing_path(r["section"]).with_suffix(".json").read_text())
     ratio, v, leak, target = PS.mix_params(r["i"], ctx.ratios, meta["has_vocals"], ctx.eval_mix, 0)
     mastered, _ = DS.master_draw(r["i"])
