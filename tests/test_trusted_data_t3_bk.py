@@ -137,6 +137,32 @@ def test_row_current_by_backing_hash_and_legacy_plan():
     assert not B.row_current(None, want, B.LEGACY_PLAN_SHA)
 
 
+def legacy(e):
+    """A plan entry as the first plan wrote it (before entries stored their backings)."""
+    return {k: v for k, v in e.items() if k not in ("backing", "backing_old")}
+
+
+def test_the_first_plans_entries_name_their_new_backing():
+    for e in entries():
+        assert B.entry_backing(legacy(e)) == e["backing"]
+
+
+def test_legacy_plan_accepts_rows_from_the_merged_code_and_refuses_after_a_re_plan():
+    p = ready_plan()
+    b, c = built(p)                                                        # rows with hashes (the merged code)
+    for r in c.values():
+        r["backing_sha"] = B.tracks_sha(["anything"])                      # the old backing cannot be named: want None
+    lp = {**p, "examples": [legacy(e) for e in p["examples"]]}
+    assert B.train_refusals(lp, b, c, lambda i: True, B.LEGACY_PLAN_SHA, [1, 3, 5], [2], None) == []
+    assert B.train_refusals(lp, {i: {"i": i} for i in b}, {i: {"i": i, "ok": True} for i in c}, lambda i: True,
+                            B.LEGACY_PLAN_SHA, [1, 3, 5], [2], None) == []              # tonight's hash-less rows
+    assert {w for _, w in B.train_refusals(lp, b, c, lambda i: True, "a-new-plan", [1, 3, 5], [2], None)} == {
+        "pipeline control not passed"}                                     # new rows still match the new backing
+    stale = {**b, 3: {"i": 3, "backing_sha": B.tracks_sha(["k"])}}
+    assert (3, "not built from the plan's backing") in B.train_refusals(lp, stale, c, lambda i: True,
+                                                                        B.LEGACY_PLAN_SHA, [1, 3, 5], [2], None)
+
+
 def ready_plan():
     es = entries()[:4]                                                     # 1 same; 3, 5, 2 changed
     return {"examples": es, "control": B.control_ids(es), "f5": [1, 3, 5], "fs5": [2]}

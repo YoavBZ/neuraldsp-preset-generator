@@ -93,14 +93,23 @@ def tracks_sha(tracks):
     return hashlib.sha256(json.dumps(list(tracks)).encode()).hexdigest()[:16] if tracks is not None else None
 
 
+def entry_backing(e):
+    """The tracks a plan entry's new backing sums: the stored list, or for the first plan (written before entries
+    stored it) the new variant T2's vocal choice picked (`vocals`); T2 has no amp-track stand-ins."""
+    if "backing" in e:
+        return e["backing"]
+    return list(e["new"]["v" if e["vocals"] else "n"])
+
+
 def row_current(row, want, plan_sha):
     """Whether a build or control row was made from the backing the plan now asks for (`want`: its tracks_sha). A row
-    without a hash (the first builds, before PR #325's review) counts only while the plan is the file they ran on."""
+    without a hash (the first builds, before PR #325's review), or a plan entry that cannot name its backing (the first
+    plan's old backing, `want` None), counts only while the plan is the file the first builds ran on."""
     if row is None or row.get("refused"):
         return False
-    if row.get("backing_sha") is not None:
-        return row["backing_sha"] == want
-    return plan_sha == LEGACY_PLAN_SHA
+    if row.get("backing_sha") is None or want is None:
+        return plan_sha == LEGACY_PLAN_SHA
+    return row["backing_sha"] == want
 
 
 def bk_stems(ctx, x, verified_stems, scan, floor):
@@ -129,7 +138,7 @@ def train_refusals(p, build_rows, control_rows, stem_exists, plan_sha, tr_ids, e
             r = build_rows.get(e["i"])
             if r is not None and r.get("refused"):
                 why.append((e["i"], f"refused: {r['refused']}"))
-            elif not row_current(r, tracks_sha(e.get("backing")), plan_sha) or not stem_exists(e["i"]):
+            elif not row_current(r, tracks_sha(entry_backing(e)), plan_sha) or not stem_exists(e["i"]):
                 why.append((e["i"], "not built from the plan's backing"))
     ent = {e["i"]: e for e in p["examples"]}
     for i in p["control"]:
@@ -402,7 +411,7 @@ def cmd_build(args):
     ent = {e["i"]: e for e in p["examples"]}
     have, psha = rows(root, "build"), plan_sha(root)
     jobs = [i for i in build_jobs(p["examples"], args.device)
-            if not row_current(have.get(i), tracks_sha(ent[i].get("backing")), psha)
+            if not row_current(have.get(i), tracks_sha(entry_backing(ent[i])), psha)
             or not feat_path(root, i, "stem").exists()]
     jobs.sort(key=lambda i: (ent[i]["section"], i), reverse=args.order == "desc")
     jobs = jobs[:args.limit or None]
@@ -427,7 +436,7 @@ def cmd_build(args):
                 continue                                    # another worker's, written during this run
             e, x = ent[i], A.t2[i]
             tracks = backing_of(x, e["new"]["v"], e["new"]["n"])
-            if e.get("backing") is not None and tracks != e["backing"]:
+            if tracks != entry_backing(e):
                 raise SystemExit(f"{i}: the backing differs from the plan's")
             base = {"i": i, "set": e["set"], "section": e["section"], "band": e["band"], "device": args.device,
                     "backing_sha": tracks_sha(tracks), "plan_sha": psha}
@@ -464,7 +473,7 @@ def build_problems(root, p):
         r = have.get(e["i"])
         if r is not None and r.get("refused"):
             bad.append((e["i"], r["refused"]))
-        elif not row_current(r, tracks_sha(e.get("backing")), psha) or not feat_path(root, e["i"], "stem").exists():
+        elif not row_current(r, tracks_sha(entry_backing(e)), psha) or not feat_path(root, e["i"], "stem").exists():
             bad.append((e["i"], "not built from the plan's backing"))
     return bad
 
