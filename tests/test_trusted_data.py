@@ -921,6 +921,9 @@ def test_the_per_example_leak_rule_keeps_stems_only_unreplaced_guitars_reach():
     srcs = ["11_ElecGtr01.wav", "15_ElecGtr03.wav", "17_ElecGtr04.wav"]
     rep = T.replaced_sources(srcs, ["s/10_ElecGtr01DI.wav", "s/14_ElecGtr03DI.wav"])
     assert rep == {"11_ElecGtr01.wav", "15_ElecGtr03.wav"}
+    hg = ["12_ElecGtr1a_Amp1.wav", "13_ElecGtr1b_Amp2.wav", "15_ElecGtr2a_Amp1.wav"]   # Hollow Ground's sub-parts
+    assert T.replaced_sources(hg, ["s/14_ElecGtr1c_DI.wav"], {"s/14_ElecGtr1c_DI.wav": hg[:2]}) == set(hg[:2])
+    assert T.replaced_sources(hg, ["s/40_Odd_DI.wav"]) == set(hg)                    # no match: every source
     takes = {"sources": srcs, "stems": {"01_Kick.wav": {"17_ElecGtr04.wav": -20.0},       # unreplaced guitar: kept
                                         "03_SnareUp.wav": {"15_ElecGtr03.wav": -16.0},    # replaced guitar: dropped
                                         "09_BassDI.wav": {"15_ElecGtr03.wav": -18.8},     # line-level: kept

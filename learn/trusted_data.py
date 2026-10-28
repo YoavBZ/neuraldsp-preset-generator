@@ -1233,11 +1233,21 @@ def stem_takes(root):
             for sd, r in rows.items()}, floor
 
 
-def replaced_sources(sources, dis):
-    """The scan sources of the guitars an example replaces (its target DI and its rendered other guitars' DIs), matched
-    by part (`verify_tracks.guitar_part_key`). A replaced part with no scan source has nothing to read. -> set."""
-    by_part = {V.guitar_part_key(s): s for s in sources}
-    return {by_part[k] for k in (V.guitar_part_key(pathlib.PurePosixPath(d).name) for d in dis) if k in by_part}
+def replaced_sources(sources, dis, own=None):
+    """The scan sources of the guitars an example replaces (its target DI and its rendered other guitars' DIs): per DI,
+    the sources of its part and of its inventory's own amp tracks (`own`: {DI: [track]}; Hollow Ground's ElecGtr1c DI
+    owns ElecGtr1a/1b, Renesans' GTR 1 DI owns GTR 2 Amp), matched by part (`verify_tracks.guitar_part_key`). A DI
+    that matches no source falls back to every source (the session-wide rule) rather than reading nothing. -> set."""
+    own = own or {}
+    by_part = {}
+    for s in sources:
+        by_part.setdefault(V.guitar_part_key(s), set()).add(s)
+    out = set()
+    for d in dis:
+        keys = {V.guitar_part_key(pathlib.PurePosixPath(d).name)} | {V.guitar_part_key(t) for t in own.get(d) or []}
+        hit = set().union(*(by_part.get(k, set()) for k in keys))
+        out |= hit or set(sources)
+    return out
 
 
 def stems_for(rec, verified_stems, sd, takes=None, replaced=None, floor=None):
@@ -1339,7 +1349,8 @@ def example_recipe(ctx, r, verified, verified_stems, act_cache, bad_sections=fro
     else:
         scan, floor = takes
         st = scan.get(sd)
-        rep = replaced_sources(st["sources"], [sec["di"]] + [o["di"] for o in others]) if st else set()
+        dis = [sec["di"]] + [o["di"] for o in others]
+        rep = replaced_sources(st["sources"], dis, {d: ctx.inv[d].get("own") for d in dis}) if st else set()
         withv, nov = stems_for(rec, verified_stems, sd, st, rep, floor) if st else ([], [])
     meta = json.loads(PS.backing_path(r["section"]).with_suffix(".json").read_text())
     ratio, v, leak, target = PS.mix_params(r["i"], ctx.ratios, meta["has_vocals"], ctx.eval_mix, 0)
