@@ -98,7 +98,9 @@ def _prepare_run(config):
     """
     from learn import set3
 
-    selected = set3.parts(config.split)
+    # The held-out run reproduces set 3's spent confirmation, verified below against its frozen
+    # manifest, so it opts in to the parts released into training on 2026-10-28 (learn.cc_pool).
+    selected = set3.parts(config.split, include_released=config.split == "held_out")
     parts = {p["slug"]: p for p in selected}
     if not parts or len(parts) != len(selected):
         raise ValueError("selected parts must be nonempty with unique slugs")

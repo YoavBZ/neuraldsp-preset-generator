@@ -50,7 +50,9 @@ def test_schema():
 
 def test_every_part_is_held_out_and_unused():
     d = set5.load()
-    assert [u["test_id"] for u in d["held_out_uses"]] == ["set5-cprime-test-2026-10-12"]   # one declared use
+    # one declared use, then the clean/crunch pool's release of 9 sessions into training (not a test use)
+    assert [u["test_id"] for u in d["held_out_uses"]] == ["set5-cprime-test-2026-10-12",
+                                                          "released-into-training-2026-10-28"]
     assert d["held_out_bands"] == set5.bands()
     assert all(s["split"] == "held_out" and s["fold"] is None for s in d["sessions"])
     assert all(p["split"] == "held_out" and p["fold"] is None for p in d["parts"])
@@ -66,7 +68,8 @@ def test_scope_clean_and_crunch_in_high_gain_report_only():
         assert p["scope"] == ("in_scope" if p["gain_class"] in ("clean", "crunch") else "report_only")
     assert {p["band"] for p in set5.parts(scope="report_only")} >= {"Nova-One Studio"}
     assert all(p["scope"] == "report_only" for p in d["parts"] if p["band"] == "Nova-One Studio")
-    assert len(set5.parts(scope="in_scope")) + len(set5.parts(scope="report_only")) == len(d["parts"])
+    assert len(set5.parts(scope="in_scope", include_released=True)) \
+        + len(set5.parts(scope="report_only", include_released=True)) == len(d["parts"])
     with pytest.raises(ValueError):
         set5.parts(scope="high-gain")
 

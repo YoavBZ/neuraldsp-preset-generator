@@ -1,6 +1,24 @@
 # Clean/crunch-led training pool (plan, 2026-10-28)
 
-**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). Nothing run yet.**
+**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). Zero renders so far.**
+
+**Progress (2026-10-28):**
+- **Step 0 (intake checks, `~/ndsp-presets/learn/trusted-data/intake-2026-10-28/`):** 80 DI rows in 21 sessions (the
+  released sessions and tier 1's additions). Most fail D2 (46 of 79 summarized; 12 of them on a single failing
+  window, since one bad window fails the DI, and one with no window to check). Set 5's backings were re-downloaded (6 sessions, all checksums match).
+- **Step 1 (the leak rule, PR #323):** merged. Not adopted: the −10 dB reverse-bleed reading (the line-level
+  exemption by name stands in for it); the stand-ins' bleed from replaced guitars is unmeasurable with this meter and
+  is left to the ear. Its 5 backing clips (Death Of A Romantic ×2, Storm Of Particles ×3,
+  no vocals) are on the ear page. T2 holds no rule-1 stand-in example, so the stand-in clip waits for step 2's pool.
+- **Ear sitting E (one page, `listening/trusted-data-ear/part11-clean-crunch`, 120 cards):** the DIs that pass the
+  measured checks, their amp tones' class (clean, crunch, high gain), and the 5 backing clips. Sent 2026-10-28; the
+  answers decide the DIs, the classes and the leak rule.
+- **Step 2 groundwork (PR #324, below):** merged. 74 DI rows in 19 released sessions (all pending the ear), 1,297
+  sections (381 clean by part A's screen), backing metadata, and T0's stem scan on the new sessions. Under the old
+  session-wide rule many lose most drums and bass (North To Alaska keeps 0 of 12 stems); the per-example rule keeps
+  most.
+- **Step 3's D_F5bk inputs (branch `ml/cc-f5bk`):** F5/FS5 remixed under the per-example backings and separated,
+  started 2026-10-28 night. D_F5bk does not train before the ear clears the leak rule.
 
 Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
 draft takes in the findings: tiers by release status, set 5's
@@ -111,6 +129,25 @@ justify spending it. A later confirmation needs fresh songs.
   amending: F_POOL, `check_example`, `refuse_held_out`, `clean_di.REFUSED_SESSIONS` (Dunning Kruger "Sascha") and the set3/set5 covers, which fail
   closed. Tests and a
   review come before any render.
+  - **Groundwork (2026-10-28, `learn/cc_pool.py`, zero renders).**
+    - The 19 released sessions are declared in `cc_pool.RELEASED`. `refuse_held_out` passes them, under their
+      declared band only. Their crops and their bands' unreleased material stay held out.
+    - "Sascha" stays in part A's `excluded` list (part A's inventory reproduces); it is released to this pool only.
+    - Each declaration's `held_out_uses` records the release. `refuse_test` bars them, their songs, slugs, crop
+      folders and bands from any later test (names casefolded, `_`, `-` and spaces alike, every path component),
+      plus Fytakyte "Too Much" (BKS's song, re-hosted), which never trains either. `set3.parts`, `set5.parts` and
+      `set5_test.parts` leave them out by default; reproductions of earlier tests opt in (`include_released`).
+    - Every pool row enters through `pool_rows` (released, tier 1 and part A rows alike): it bars V-real's 7 bands
+      (any of their songs), the known-answer and reserved bands (names casefolded, punctuation ignored), and fails
+      closed on a missing band.
+    - Set-5 parts whose only passing amp tracks belong to another part are no DI rows (BKS "Too Much" ElecGtr4a,
+      "Bulldozer" ElecGtr6a). Set 5's other excluded and failing parts stay pending, and set 5's status and reasons
+      are in each row's notes.
+    - Part C's `F_POOL`, `check_example` and `pool_examples` are unchanged: the new pool does not go through part
+      C's pool.
+    - The released sessions' DI rows (pending the ear), part A's screen and sections, their backing metadata and
+      T0's stem scan are written under their own names (`~/ndsp-presets/learn/clean-crunch-pool/`,
+      `t0/ccstems-*`). Part A's inventory and manifest and T0's `stems` shards are not touched.
 - **Cost.** About 12–16k renders: about 8–12 h with priming and the carry-over rule. About 4k separations, 3–5 h.
 - **Report.** Bands, sections and DIs for both pools.
 

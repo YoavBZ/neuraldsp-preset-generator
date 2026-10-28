@@ -3034,6 +3034,125 @@
    "amendment_4_outcome": "D_F5ft outcome (2026-10-27 10:06 to 2026-10-28 00:38; CPU fine-tune, 457 steps per fold, best step 250; 4,189 out-of-band separations + 11 V-real crops; 2 D runs; 99 renders; t3-xlft/report.json, r0.json, probe.json; audited independently, V-real rows recomputed to 4 decimals, fold hygiene checked). V-real-11 (66 directions, 7 bands): primary D_F5ft - D_F5-noaug +0.0784 [-0.0246, +0.1815], bands -/+ 2/5 (clean +0.001, crunch +0.109 [-0.015, +0.234]): not shown, leans worse. Descriptive: D_F5ft - D_F5mix +0.019 [-0.045, +0.083]; - D_F5 +0.129 [+0.015, +0.243]; - D_core5 +0.208 [+0.096, +0.321]; - S +0.217 [+0.089, +0.345]; - constant +0.125 [+0.053, +0.196]. Stems: the fine-tune learned to shrink its output, not to separate: validation SNR against the wet target (silence = 0 dB) best -0.57 / -0.45 dB (stock -8.24 / -2.81); out of band median 0.39 dB (F5) and 0.14 dB (FS5), 33% (F5) and 47% (FS5) below 0, new stems a median -33 LUFS (stock -15), about 12 dB under the target guitar (F5 median; -14 to -6 dB in three bands, Ale Lak's louder than the target yet still worse than silence); new - stock +5.32 [+3.28, +7.35] (F5) and +5.24 [+1.97, +8.50] (FS5) measure that shrinkage, not separation; not a target-scale error (projection 0.995); the loss as cause is the best fit, not proven. V-real stems: SI-SDR worse than stock in 9 of 11 parts. Tone probe readable: fine-tuned 22, stock 20, mix 30. FS5 R0 readable: D_F5ft 13, D_F5-noaug 20, D_F5mix 22. Seed 20261042 kept epoch 0 (stopped after epoch 4 on patience; an early-stop artifact), seed 20261043 at epoch 14; by seed R0 3 and 11 (noaug 18 and 19); in the written knobs the seed-43-only V-real answers differ from the ensemble's less than noaug's seed spread (0.0053 vs 0.0068; switch flips 0.97 vs 0.80), zero renders; by D_F5's seed yardsticks a single-seed primary would likely stay within about 0.02 (not rendered), so the bad seed does not explain the result. Pipeline |LUFS error| mean 5.6 dB. What it changes, as declared: the fine-tuned stem is not adopted; F20's input stays the stock stem. Our reading, not declared: this run does not judge fine-tuning as such (one short CPU run of 457 steps per fold). Later plans add a silence floor to separator readouts and a flag for a D run that never improves after epoch 0.",
    "amendment_5_fix": "The audibility fresh-process recipe (ROADMAP (c)) (2026-10-27; written after the first run of amendment 5 and before any re-render; within the user's yes of that day). Why: the first run (2026-10-27 09:44-09:57, 896 renders) was audited independently. Morgan's tremolo, tape delay and rack reverb run on across renders in one plugin process (isolate=True does not reset them), so a render is a fixed function of its position in its process: the audit's 8 diagnostic renders (4 new processes) were bit-identical across processes at the same position and differed between positions in one process (example 59 by -8.6 dB, 4107 fully decorrelated); the SW50R spring alone was bit-identical. The first run compared each new r_off with the stored target and stored mix, rendered in other processes at other positions: only 2 of 36 repeats passed the mel check, the repeat floor's A_e had median 0.0017, 75th percentile 0.0074, 90th 0.0156 (tau 0.005), so about a third of the pairs' tau calls were unreliable; 675 of 824 pairs kept another modulated effect on in r_off; 19 of the page's 20 near-tau pairs had one running out of phase, so the page is not sent. Not a code bug: the recipe, alignment and level matched. New definitions: every render runs in its own new plugin process, one discarded priming render with the example's own setting (r_on's), then the one render kept (the priming rule kept, isolate=True, 0.25 s trimmed). r_on' is that render of the example's own setting; r_off the same with the effect off, at the same process position; m' is r_on' in the example's stored backing at its stored gains and mastering (mix_with, checked first to rebuild the stored mix from the stored target, then the stored mix features and gains checked as before). A_e = |mean over halves of log(J(r_off, m') / J(r_on', m'))|; solo J(r_off, r_on'). The repeat: r_on' rendered again in a new process once per (section, amp) group (36); it must be bit-identical (the float samples' sha256), or render and measure refuse. All pairs are redone, one recipe: the first run's draw (seed 20261113) unchanged, 483 r_on' + 824 r_off + 36 repeats = 1,343 jobs, each 2 renders = 2,686 renders (1,343 priming), about 40-70 min on 3 shards with the process starts. The first run is kept as a record (moved, never deleted) under trusted-data/audibility/first-run-2026-10-27/, its page under that folder's page/; the new measure reports the first run's A_e against the new on the clean pairs (no other modulated effect on in r_off; the audit counted 149: delay 38, reverb 44, tremolo 53, PR12 spring 11, SW50R spring 3) as a consistency check. The read, the page (rebuilt from the new renders, both clips at the same process position, each levelled on its own) and everything else in amendment 5 are unchanged. A general caution, flagged and not fixed here: earlier V-real renders render several presets in one process per (part, amp) group, so any comparison in which a time effect is on in both answers carries phase noise from render order. Revised after the independent review of PR #317, before any re-render: the machine-wide cap of 3 render processes is checked once per shard at its start; before each new process a shard waits, printing why, only for a separation and for another job's render server (its sibling shards never count, so they cannot deadlock); render refuses at its start when a stored repeat failed; rows of another recipe refuse; archive moves the plan last; render frees part C's rows and measure runs 2 workers under the disk and memory guard (beside step (b)'s fine-tune). Caveat: the repeat checks r_on' only; that r_off's other running effects sit at the same phase assumes switching one effect off resets none of the others' LFOs or tails (it holds by render count; untested).",
    "amendment_5_outcome": "Audibility fresh run (2026-10-27 10:38-11:24; 2,686 renders, 1,343 priming; audibility/measure.json, read.json; audited, all 824 A_e recomputed, 0 mismatches). All 36 repeats bit-identical (floor 0). Below tau: delay 79/200 (0.40), reverb 85/200 (0.42), tremolo 47/200 (0.23), PR12 spring 40/120 (0.33), SW50R spring 61/104 (0.59). Mix AUC by A_e thirds: delay 0.568/0.648/0.711, reverb 0.598/0.592/0.625, tremolo 0.508/0.556/0.548, PR12 0.640/0.596/0.546, SW50R 0.562/0.601/0.656; the target without backing also rises with A_e (delay 0.774 to 0.889), and A_e tracks solo (Spearman delay 0.91), so effect size and masking are mixed. Signed values below 0 (delay 79, tremolo 98) are a judge property, not noise: A_e measures how much the effect moves J(render, mix), not audibility as such; J(m_off, m') would need its own declaration. The doubler also runs on across renders (covered by the fresh recipe; joins the V-real caution). First run vs fresh on the 149 clean pairs: Spearman 0.90, 13 cross tau (11 of them doubler-on pairs); over all 824 pairs the share below tau is higher in the fresh run for every effect. Ear page rebuilt at 256 kbps by hand (zero renders, 23.2 MB; 128 kbps coding error exceeded the on/off difference in 7-8 of 20 near-tau pairs, 256 kbps still in 4 of 20) and sent to the user. Nothing relabelled: the relabel waits for the ear answers and the user's three rulings."
+  },
+  {
+   "test_id": "clean-crunch-pool",
+   "plan": "docs/clean-crunch-pool-plan.md",
+   "entered": "2026-10-28, with step 2's groundwork code (learn/cc_pool.py), before its first run. Zero renders, no training, no separation: the released sessions' DI inventory, part A's screen and sections on them, their backing metadata and T0's session-level stem scan (written as t0/ccstems-*, so T0's stems shards and floor stay as T2 and T3 read them)",
+   "parts": {
+    "released_sessions": {
+     "BoogieSnakes_ItsMyRight_Full": {
+      "band": "Boogie Snakes",
+      "set": "sets-1-2"
+     },
+     "Forkupines_Semantics_Full": {
+      "band": "Forkupines",
+      "set": "sets-1-2"
+     },
+     "Forkupines_SugarFaith_Full": {
+      "band": "Forkupines",
+      "set": "sets-1-2"
+     },
+     "MR0912_NorthToAlaska_Full": {
+      "band": "Lights Off Clarity",
+      "set": "sets-1-2"
+     },
+     "TheMaybeNextYears_OneFlipFlop_Full": {
+      "band": "The Maybe Next Years",
+      "set": "sets-1-2"
+     },
+     "TimTaler_Stalker_Full": {
+      "band": "Tim Taler",
+      "set": "sets-1-2"
+     },
+     "DunningKruger_EnDance_Full": {
+      "band": "Dunning Kruger",
+      "set": "set3"
+     },
+     "DunningKruger_JapanSong_Full": {
+      "band": "Dunning Kruger",
+      "set": "set3"
+     },
+     "DunningKruger_Sascha_Full": {
+      "band": "Dunning Kruger",
+      "set": "set3"
+     },
+     "Silona_LearningHowToFly_Full": {
+      "band": "Silona",
+      "set": "set3"
+     },
+     "Hazael_AMiLado_Full": {
+      "band": "Hazael",
+      "set": "set5"
+     },
+     "Hazael_ResistenciaParaUnNuevoComenzar_Full": {
+      "band": "Hazael",
+      "set": "set5"
+     },
+     "PeterWhite_CrazyGirl_Full": {
+      "band": "Peter White",
+      "set": "set5"
+     },
+     "BKS_TooMuch_Full": {
+      "band": "BKS",
+      "set": "set5"
+     },
+     "BKS_Bulldozer_Full": {
+      "band": "BKS",
+      "set": "set5"
+     },
+     "RonnieJones_WhyDontYouStay_Full": {
+      "band": "Ronnie Jones",
+      "set": "set5"
+     },
+     "SaturnSyndicate_NeverLeaveTheNightAlone_Full": {
+      "band": "Saturn Syndicate",
+      "set": "set5"
+     },
+     "MR0905_ChrisDurban_Full": {
+      "band": "Chris Durban",
+      "set": "set5"
+     },
+     "HannesKeseberg_YouKnowBetter_Full": {
+      "band": "Hannes Keseberg",
+      "set": "set5"
+     }
+    },
+    "di_rows": "every guitar DI of the released sessions, pending T0's intake checks and the ear (learn.cc_pool.inventory)"
+   },
+   "bands": [
+    "BKS",
+    "Boogie Snakes",
+    "Chris Durban",
+    "Dunning Kruger",
+    "Forkupines",
+    "Hannes Keseberg",
+    "Hazael",
+    "Lights Off Clarity",
+    "Peter White",
+    "Ronnie Jones",
+    "Saturn Syndicate",
+    "Silona",
+    "The Maybe Next Years",
+    "Tim Taler"
+   ],
+   "gate": "none: groundwork, no read. The pool (step 2's renders) and step 3's read get their own entries before any render",
+   "spent_not_released": {
+    "Fytakyte": "set 5's re-host of BKS 'Too Much', whose band and song train since 2026-10-28"
+   },
+   "pool_bars": {
+    "v_real_bands": [
+     "Atlantis Bound",
+     "Diesel13",
+     "Eat The Feeder",
+     "Magician's Nephew",
+     "Szymon Skiba",
+     "Wall Of Death",
+     "Zeno"
+    ],
+    "also": "known-answer and reserved bands"
+   },
+   "di_verdicts": "none here: T0's intake checks (step 0) and the user's ear (part 11) decide them"
   }
  ]
 }

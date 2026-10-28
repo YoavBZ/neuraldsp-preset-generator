@@ -648,6 +648,9 @@ INTAKE_PENDING = "catalogue: pending T0 intake (trains only once a verified list
 # checks and the user's ear, part 6). An admitted row carries INTAKE_ADMITTED in place of INTAKE_PENDING.
 TRUSTED_VERIFIED = HOME / "learn/trusted-data/t0/verified.json"
 INTAKE_ADMITTED = "admitted by T0's verified list (verified.json intake_admitted: T0's checks and the ear)"
+# Sessions part A's inventory leaves out (listed in its `excluded`; nothing else reads this). Dunning Kruger "Sascha"
+# stays out of part A, its text unchanged so part A's inventory reproduces: since 2026-10-28 it is released to the
+# clean/crunch pool, not to part A (`learn.cc_pool.RELEASED`, which `refuse_held_out` passes).
 REFUSED_SESSIONS = {
     "cambridge/DunningKruger_Sascha_Full": "Dunning Kruger is a set-3 held-out band",
     "cambridge/UmphreysMcGee_CrucialTaunt_Full": "its 'DI' is a Palmer PDI-09 speaker-simulated line-out after the "
@@ -717,10 +720,21 @@ def refuse_held_out(rec):
     """Raise if a record is held out anywhere. Declared sets: set3.is_held_out (sets 1-3 and
     Guitar-TECHS P1; fails closed) and set4/5/6.covers. Guitar-TECHS P2 (development, docs/
     di-domain-pilot-plan.md) and the undeclared downloads: their band in no held-out list and their
-    path under no set-4/5/6 root."""
+    path under no set-4/5/6 root. A session the clean/crunch pool plan released into training
+    (`learn.cc_pool.released_entry`, 2026-10-28) passes, its band as declared and never a V-real band;
+    its crops and its band's unreleased material stay held out."""
+    from learn import cc_pool as CC
     from learn import set3, set4, set5, set6
 
     p = rec["path"]
+    if "P3_music" in p:
+        raise ValueError(f"Guitar-TECHS P3 is never used: {p}")
+    rel = CC.released_entry(p)
+    if rel is not None:
+        if rec.get("band") != rel["band"]:
+            raise ValueError(f"released session {rel['key']}: band {rec.get('band')!r}, declared {rel['band']!r}")
+        CC.refuse_pool_band(rec.get("band"))
+        return
     if set4.covers(p) or set5.covers(p) or set6.covers(p):
         raise ValueError(f"set 4-6 material: {p}")
     if "P3_music" in p:
@@ -1034,9 +1048,10 @@ def vote(path):
     return {m: line_count(f, fs, m) for m in MAINS} if fs is not None else {}
 
 
-def screen_session(recs, done):
+def screen_session(recs, done, out_dir=None):
     """Screen the DIs of one session directory (or one Guitar-TECHS file): measures, then bleed
-    from every other track of the session into each DI's rest frames."""
+    from every other track of the session into each DI's rest frames. out_dir: where the screen
+    files go (default OUT/screen; the clean/crunch pool's own screen, `learn.cc_pool`)."""
     import numpy as np
 
     todo = [r for r in recs if _key(r) not in done]
@@ -1108,7 +1123,7 @@ def screen_session(recs, done):
         st["track"]["bleed_unmeasured"] = sum(d["msc"] is None for d in st["sources"])
         st["track"]["bleed_tracks_checked"] = len(st["sources"])
         out = {"schema": SCREEN_SCHEMA, "id": r["id"], "path": r["path"], "track": st["track"], "rows": st["rows"]}
-        _atomic(OUT / "screen" / f"{_key(r)}.json", out)
+        _atomic(pathlib.Path(out_dir or OUT / "screen") / f"{_key(r)}.json", out)
         n = sum(x["passes_activity"] for x in st["rows"])
         print(f"{r['id'][:70]:70s} sections {n:3d} hum {st['track']['hum_rel_db']} hiss {st['track']['hiss_rel_db']} "
               f"clips {st['track']['clip_runs']} drops {st['track']['dropouts']} "
