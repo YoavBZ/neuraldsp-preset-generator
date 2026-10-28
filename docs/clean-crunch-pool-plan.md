@@ -2,7 +2,8 @@
 
 **Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). Nothing run yet.**
 
-Draft 1 was reviewed independently on 2026-10-28. This draft takes in its findings: tiers by release status, set 5's
+Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
+draft takes in the findings: tiers by release status, set 5's
 missing backings, a leak rule kept session-level, a backing-only control arm, a declared readout, and engineering.
 
 ## Why
@@ -78,8 +79,8 @@ justify spending it. A later confirmation needs fresh songs.
 - Tiers 2–3: read the catalogs only. No audio is read before release.
   - Per session: guitar parts with a DI, genre, the gain class where one is stored (sets 1–2 have none; it comes after release), the backing tracks, and the guitar count
     against the cap.
-- Then the user decides on releasing tier 2 and re-downloading tier 3, with these numbers. After release, the
-  released sessions go through the same checks and dry run.
+- The user approved releasing tier 2 and re-downloading tier 3 (B and C, 2026-10-28), so the released sessions go
+  through the same checks and dry run straight away, and their numbers are reported (the user can still stop it).
 
 **Step 1: the leak rule (zero renders, CPU).**
 - Keep the meter session-level, since that is where the −35 dB floor was validated. For each example, apply a
@@ -139,7 +140,7 @@ Ledger first. The render recipe is the audibility page's.
 ## Decisions for the user
 
 - **A. Use tier 1, including Adam Buckley.** Adam Buckley is one of K's 2 bands.
-- **B. Release tier 2 into training,** after step 0's metadata: sets 1–2 Cambridge held-out, set 3's Dunning
+- **B. Release tier 2 into training:** sets 1–2 Cambridge held-out, set 3's Dunning
   Kruger and Silona, and set 5's Hazael and Peter White.
 - **C. Re-download set 5's backings (tier 3).**
 - **D. The heavy share:** at most 20%, non-high-gain sections only. This drops Death Of A Romantic and Hollow
