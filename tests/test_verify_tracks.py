@@ -1201,3 +1201,21 @@ def test_lists_recovers_a_rechecked_target_but_keeps_it_off_the_crop_lists(tmp_p
     bad = export("p8b.json", V.RECHECK_DI_PAGE, "b8", [("sd-82.0", "processed", "")], exported="2026-10-26T09:00:00Z")
     rec, _ = env.run([p5, p8, bad])
     assert rec["targets"][slug]["verdict"] == "excluded" and rec["recovered_targets"] == []
+
+
+def test_line_level_stems_are_named_dis_samples_and_synths_only():
+    yes = ["09_BassDI.wav", "Bass DI_TDA-1.wav", "Bass DI.1_TDA-1.wav", "02_KickSample.wav", "07_Tom1Sample.wav",
+           "24_Synth3.wav", "SynthBass.wav"]
+    no = ["01_Kick.wav", "10_BassFX.wav", "11_BassAmp.wav", "Keys Amp_M80.wav", "Leslie Bottom.wav", "20_Vox1.wav",
+          "Pre Record Tracks.wav", "Vox Pre Rec.R.wav", "Bloomlight_RR Master.wav", "Direct Kick.wav", "Diamonds.wav",
+          "Studio Synth Amp.wav", "Kick In_M88.wav"]
+    assert all(V.is_line_level(n) for n in yes) and not any(V.is_line_level(n) for n in no)
+
+
+def test_the_per_example_rule_reads_only_the_replaced_guitars():
+    takes = {"15_ElecGtr03.wav": -16.0, "17_ElecGtr04.wav": -40.0, "11_ElecGtr01.wav": None}
+    assert not V.stem_pass_replaced("03_SnareUp.wav", takes, -35.0, {"15_ElecGtr03.wav"})
+    assert V.stem_pass_replaced("03_SnareUp.wav", takes, -35.0, {"17_ElecGtr04.wav", "11_ElecGtr01.wav"})
+    assert V.stem_pass_replaced("03_SnareUp.wav", takes, -35.0, set())               # nothing replaced reads
+    assert V.stem_pass_replaced("09_BassDI.wav", {"15_ElecGtr03.wav": 1.4}, -35.0, {"15_ElecGtr03.wav"})
+    assert not V.stem_pass_replaced("01_Kick.wav", {"g": -35.0}, -35.0, {"g"})      # at the floor fails

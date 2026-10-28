@@ -915,3 +915,41 @@ def test_a_failing_density_diagnostic_is_recorded_not_fatal(monkeypatch, tmp_pat
     rep = T._load(tmp_path / "t2" / "report.json")
     assert rep["density"]["error"] == "SystemExit: p: no session files" and rep["density"]["parts"] == {}
     assert "diagnostic (a) failed" in capsys.readouterr().out
+
+
+def test_the_per_example_leak_rule_keeps_stems_only_unreplaced_guitars_reach():
+    srcs = ["11_ElecGtr01.wav", "15_ElecGtr03.wav", "17_ElecGtr04.wav"]
+    rep = T.replaced_sources(srcs, ["s/10_ElecGtr01DI.wav", "s/14_ElecGtr03DI.wav"])
+    assert rep == {"11_ElecGtr01.wav", "15_ElecGtr03.wav"}
+    hg = ["12_ElecGtr1a_Amp1.wav", "13_ElecGtr1b_Amp2.wav", "15_ElecGtr2a_Amp1.wav"]   # Hollow Ground's sub-parts
+    assert T.replaced_sources(hg, ["s/14_ElecGtr1c_DI.wav"], {"s/14_ElecGtr1c_DI.wav": hg[:2]}) == set(hg[:2])
+    assert T.replaced_sources(hg, ["s/40_Odd_DI.wav"]) == set(hg)                    # no match: every source
+    takes = {"sources": srcs, "stems": {"01_Kick.wav": {"17_ElecGtr04.wav": -20.0},       # unreplaced guitar: kept
+                                        "03_SnareUp.wav": {"15_ElecGtr03.wav": -16.0},    # replaced guitar: dropped
+                                        "09_BassDI.wav": {"15_ElecGtr03.wav": -18.8},     # line-level: kept
+                                        "20_Vox1.wav": {"11_ElecGtr01.wav": None},
+                                        "30_Click.wav": {}, "25_ElecGtr5.wav": {}}}
+    rec = {"mix": ["01_Kick.wav", "03_SnareUp.wav", "09_BassDI.wav", "20_Vox1.wav", "25_ElecGtr5.wav", "30_Click.wav"],
+           "vocals": ["20_Vox1.wav"]}
+    v, n = T.stems_for(rec, {"/sess": ["anything"]}, "/sess", takes, rep, -35.0)
+    assert v == ["01_Kick.wav", "09_BassDI.wav", "20_Vox1.wav"] and n == ["01_Kick.wav", "09_BassDI.wav"]
+    assert T.stems_for(rec, {}, "/sess", takes, rep, -35.0) == ([], [])          # spot-check not heard clean: none
+    assert T.stems_for(rec, {"/sess": ["01_Kick.wav"]}, "/sess") == (["01_Kick.wav"], ["01_Kick.wav"])   # T2's rule
+
+
+def test_a_stand_in_that_doubles_the_target_part_leaves_the_example_out(monkeypatch, tmp_path):
+    assert T.target_doubles("ElecGtr3", [{"track": "33_ElecGtr3DT.wav"}, {"track": "25_ElecGtr1.wav"}]) == [
+        "33_ElecGtr3DT.wav"]
+    assert T.target_doubles("ElecGtr3", [{"track": "32_ElecGtr3Amp.wav"}]) == ["32_ElecGtr3Amp.wav"]
+    blocked = {"s/31_ElecGtr3DI.wav@55.0": [{"part": "elecgtr3dt", "activity": 0.9, "why": "no DI",
+                                             "amp_tracks": ["33_ElecGtr3DT.wav"]}]}
+    monkeypatch.setattr(T, "section_blocked", lambda ctx, sid, *a, **k: blocked[sid])
+    _bleed_file(tmp_path, "/sess", {"33_ElecGtr3DT.wav": _raw(None)})
+    rows = [{"i": 1, "section": "s/31_ElecGtr3DI.wav@55.0", "band": "X"}]
+    scan = {"s/31_ElecGtr3DI.wav@55.0": {"source": {"kind": "amp"}, "tracks": {}, "removed": []}}
+    ctx = _rule1_ctx("/sess", ("s/31_ElecGtr3DI.wav@55.0",))
+    kept, left, _ = T.apply_rule1(ctx, tmp_path, rows, set(), {}, set(), {}, scan)
+    assert [r["i"] for r in kept] == [1]                                             # T2's rule: unchanged
+    kept, left, amp_of = T.apply_rule1(ctx, tmp_path, rows, set(), {}, set(), {}, scan, doubles_out=True)
+    assert kept == [] and amp_of == {} and left[0]["reason"] == T.LEFT_OUT_TARGET_DOUBLE
+    assert left[0]["guitars"] == [{"part": "33_ElecGtr3DT.wav", "why": T.LEFT_OUT_TARGET_DOUBLE}]
