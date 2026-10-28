@@ -111,6 +111,25 @@ justify spending it. A later confirmation needs fresh songs.
   amending: F_POOL, `check_example`, `refuse_held_out`, `clean_di.REFUSED_SESSIONS` (Dunning Kruger "Sascha") and the set3/set5 covers, which fail
   closed. Tests and a
   review come before any render.
+  - **Groundwork (2026-10-28, `learn/cc_pool.py`, zero renders).**
+    - The 19 released sessions are declared in `cc_pool.RELEASED`. `refuse_held_out` passes them, under their
+      declared band only. Their crops and their bands' unreleased material stay held out.
+    - "Sascha" stays in part A's `excluded` list (part A's inventory reproduces); it is released to this pool only.
+    - Each declaration's `held_out_uses` records the release. `refuse_test` bars them, their songs, slugs, crop
+      folders and bands from any later test (names casefolded, `_`, `-` and spaces alike, every path component),
+      plus Fytakyte "Too Much" (BKS's song, re-hosted), which never trains either. `set3.parts`, `set5.parts` and
+      `set5_test.parts` leave them out by default; reproductions of earlier tests opt in (`include_released`).
+    - Every pool row enters through `pool_rows` (released, tier 1 and part A rows alike): it bars V-real's 7 bands
+      (any of their songs), the known-answer and reserved bands (names casefolded, punctuation ignored), and fails
+      closed on a missing band.
+    - Set-5 parts whose only passing amp tracks belong to another part are no DI rows (BKS "Too Much" ElecGtr4a,
+      "Bulldozer" ElecGtr6a). Set 5's other excluded and failing parts stay pending, and set 5's status and reasons
+      are in each row's notes.
+    - Part C's `F_POOL`, `check_example` and `pool_examples` are unchanged: the new pool does not go through part
+      C's pool.
+    - The released sessions' DI rows (pending the ear), part A's screen and sections, their backing metadata and
+      T0's stem scan are written under their own names (`~/ndsp-presets/learn/clean-crunch-pool/`,
+      `t0/ccstems-*`). Part A's inventory and manifest and T0's `stems` shards are not touched.
 - **Cost.** About 12–16k renders: about 8–12 h with priming and the carry-over rule. About 4k separations, 3–5 h.
 - **Report.** Bands, sections and DIs for both pools.
 

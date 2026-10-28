@@ -58,14 +58,19 @@ def _check(split, fold):
 
 
 def parts(split: str | None = None, fold: int | None = None, *, without_marks=(),
-          path=DECLARATION) -> list[dict]:
+          path=DECLARATION, include_released=False) -> list[dict]:
     """Kept parts, filtered by split and fold; `without_marks` drops parts carrying any of
-    the named marks (e.g. ("effects_or_bleed",))."""
+    the named marks (e.g. ("effects_or_bleed",)). Parts of the sessions released into
+    training on 2026-10-28 (Dunning Kruger, Silona: `learn.cc_pool`) are never a test again
+    and are left out, unless a reproduction of an earlier test opts in (`include_released`)."""
+    from learn import cc_pool
+
     _check(split, fold)
     return [p for p in load(path)["parts"]
             if (split is None or p["split"] == split)
             and (fold is None or p["fold"] == fold)
-            and not set(without_marks) & set(p["marks"])]
+            and not set(without_marks) & set(p["marks"])
+            and (include_released or not cc_pool.is_released_part(p))]
 
 
 def slugs(split: str | None = None, fold: int | None = None, **kw) -> list[str]:

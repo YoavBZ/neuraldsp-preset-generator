@@ -36,19 +36,25 @@ STARTS = {"clean": PLUGIN_ROOT / "docs/clean-baseline-choice.json",
 T90 = {1: 6.314, 2: 2.920, 3: 2.353, 4: 2.132, 5: 2.015, 6: 1.943, 7: 1.895, 8: 1.860}
 
 
-def parts():
-    """slug -> {crop, judge_lag, band, gain_class, scope, publisher_original}: kept set-5 parts."""
+def parts(include_released=False):
+    """slug -> {crop, judge_lag, band, gain_class, scope, publisher_original}: kept set-5 parts.
+    The sessions released into training on 2026-10-28 (and Fytakyte, spent with them:
+    `learn.cc_pool`) are left out; this test's own commands reproduce the 2026-10-12 test as run,
+    so they opt in (`include_released`) and still find every kept part."""
+    from learn import cc_pool
+
     d = json.loads(DECL.read_text())
     root = pathlib.Path(d["crops_root"]).expanduser()
     out = {}
     for p in d["parts"]:
         crop = root / p["slug"]
-        if not (crop / "di.wav").exists():
+        if not (crop / "di.wav").exists() or not (include_released or not cc_pool.is_released_part(p)):
             continue
         out[p["slug"]] = dict(crop=crop, judge_lag=p["judge_lag_samples"], band=p["band"],
                               gain_class=p["gain_class"], scope=p["scope"],
                               publisher_original=p["publisher_original"])
-    assert len(out) == d["counts"]["kept"], (len(out), d["counts"]["kept"])
+    if include_released:
+        assert len(out) == d["counts"]["kept"], (len(out), d["counts"]["kept"])
     return out
 
 
@@ -109,7 +115,7 @@ def render(shard):
         head = subprocess.run(["git", "-C", str(PLUGIN_ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
         (OUT / "manifest.json").write_text(json.dumps({"test_id": TEST_ID, "code_commit": head, "sha256": pinned,
                                                        "torch": torch.__version__, "kinds": kinds,
-                                                       "parts": sorted(parts())}, indent=1))
+                                                       "parts": sorted(parts(include_released=True))}, indent=1))
     pack = load_pack("morgan")
 
     class PanelRenderer(AudioUnitRenderer):
@@ -126,7 +132,7 @@ def render(shard):
     r = PanelRenderer("morgan", process_policy="reuse")
     M = P.menus(pack, r)
     PanelRenderer.commands = {f"{amp}|{n}": v for amp, m in M.items() for n, v in m.items()}
-    ps = parts()
+    ps = parts(include_released=True)          # the 2026-10-12 test as run
     try:
         for slug in sorted(ps)[shard[0]::shard[1]]:
             for kind in kinds:
@@ -180,7 +186,7 @@ def _score_part(job):
 def score(workers=7):
     from concurrent.futures import ProcessPoolExecutor
 
-    ps, names = parts(), G.menu_names()
+    ps, names = parts(include_released=True), G.menu_names()     # the 2026-10-12 test as run
     kinds = ("measfix", "C", *_entry()["seeds"])
     for s in ps:
         for k in kinds:
@@ -304,7 +310,7 @@ def evaluate(R, ps, seeds, out_path=None):
 
 
 def report():
-    ps = parts()
+    ps = parts(include_released=True)          # the 2026-10-12 test as run
     R = json.loads((OUT / "distances.json").read_text())
     seeds = tuple(_entry()["seeds"])
     return evaluate(R, ps, seeds, OUT / "result.json")

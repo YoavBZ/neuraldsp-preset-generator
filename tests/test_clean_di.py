@@ -398,7 +398,7 @@ def test_strobe_extra_gives_no_inventory_row_and_excludes_its_7_tracks():
 
 def test_held_out_paths_are_refused():
     root = os.path.expanduser("~/ndsp-presets/references/datasets")
-    rec = {"set": 2, "band": "Forkupines", "path": f"{root}/cambridge/Forkupines_Semantics_Full/x.wav"}
+    rec = {"set": 1, "band": "Briana Maia", "path": f"{root}/telefunken/Briana Maia - Safety/x.wav"}
     with pytest.raises(ValueError):
         C.refuse_held_out(rec)
     with pytest.raises(ValueError):
@@ -407,7 +407,12 @@ def test_held_out_paths_are_refused():
         C.refuse_held_out({"set": "undeclared", "band": "V.M.GY", "path": "/nowhere/x.wav"})
     s3 = os.path.expanduser("~/ndsp-presets/references/datasets-set3")
     with pytest.raises(ValueError):
-        C.refuse_held_out({"set": 3, "band": "Silona",
+        C.refuse_held_out({"set": 3, "band": "V.M.GY", "path": f"{s3}/cambridge/VMGY_Omen_Full/x/1.wav"})
+    # released into training by the clean/crunch pool plan (2026-10-28): pass, under their declared band only
+    C.refuse_held_out({"set": 2, "band": "Forkupines", "path": f"{root}/cambridge/Forkupines_Semantics_Full/x.wav"})
+    C.refuse_held_out({"set": 3, "band": "Silona", "path": f"{s3}/cambridge/Silona_LearningHowToFly_Full/x/1.wav"})
+    with pytest.raises(ValueError):
+        C.refuse_held_out({"set": 3, "band": "V.M.GY",
                            "path": f"{s3}/cambridge/Silona_LearningHowToFly_Full/x/1.wav"})
     C.refuse_held_out({"set": 2, "band": "Starnes And Shah",
                        "path": f"{root}/cambridge/StarnesAndShah_Prodigal_Full/14_ElecGtr5DI.wav"})

@@ -3541,6 +3541,42 @@
    "results": "docs/set5-test-results.md",
    "ran": "2026-10-12",
    "note": "First declared use of set 5. Recorded with network hashes before any set-5 render."
+  },
+  {
+   "test_id": "released-into-training-2026-10-28",
+   "kind": "released into training (not a test use)",
+   "declaration": "docs/clean-crunch-pool-plan.md",
+   "decided": "2026-10-28, the user ('Yes for all': decisions B and C)",
+   "rule": "never a test again, nor any material of their bands (learn.cc_pool.refuse_test); their crops stay held out of training",
+   "sessions": [
+    "cambridge/Hazael_AMiLado_Full",
+    "cambridge/Hazael_ResistenciaParaUnNuevoComenzar_Full",
+    "cambridge/PeterWhite_CrazyGirl_Full",
+    "cambridge/BKS_TooMuch_Full",
+    "cambridge/BKS_Bulldozer_Full",
+    "cambridge/RonnieJones_WhyDontYouStay_Full",
+    "cambridge/SaturnSyndicate_NeverLeaveTheNightAlone_Full",
+    "cambridge/MR0905_ChrisDurban_Full",
+    "cambridge/HannesKeseberg_YouKnowBetter_Full"
+   ],
+   "bands": [
+    "BKS",
+    "Chris Durban",
+    "Hannes Keseberg",
+    "Hazael",
+    "Peter White",
+    "Ronnie Jones",
+    "Saturn Syndicate"
+   ],
+   "spent_not_released": {
+    "hf-rawstems/Fytakyte - Too_Much": "set 5's re-host of BKS 'Too Much', whose band and song train since 2026-10-28"
+   },
+   "still_held_out": [
+    "cambridge/NovaOneStudio_FourGraham_Full",
+    "hf-rawstems/The_Ferryboat_Men - The_Winds_Of_Gypsy_Moor",
+    "hf-rawstems/Jeff_Hirata - Sunshine",
+    "hf-rawstems/MOPP - Ukraina"
+   ]
   }
  ]
 }
