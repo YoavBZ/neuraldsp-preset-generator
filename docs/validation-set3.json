@@ -4366,5 +4366,24 @@
    ]
   }
  ],
- "held_out_uses": []
+ "held_out_uses": [
+  {
+   "test_id": "released-into-training-2026-10-28",
+   "kind": "released into training (not a test use)",
+   "declaration": "docs/clean-crunch-pool-plan.md",
+   "decided": "2026-10-28, the user ('Yes for all': decisions B and C)",
+   "rule": "never a test again, nor any material of their bands (learn.cc_pool.refuse_test); their crops stay held out of training",
+   "sessions": [
+    "cambridge/DunningKruger_EnDance_Full",
+    "cambridge/DunningKruger_JapanSong_Full",
+    "cambridge/DunningKruger_Sascha_Full",
+    "cambridge/Silona_LearningHowToFly_Full"
+   ],
+   "bands": [
+    "Dunning Kruger",
+    "Silona"
+   ],
+   "note": "DunningKruger_Sascha_Full was downloaded with set 3 but never declared"
+  }
+ ]
 }

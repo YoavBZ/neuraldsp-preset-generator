@@ -50,7 +50,9 @@ def test_schema():
 
 def test_every_part_is_held_out_and_unused():
     d = set5.load()
-    assert [u["test_id"] for u in d["held_out_uses"]] == ["set5-cprime-test-2026-10-12"]   # one declared use
+    # one declared use, then the clean/crunch pool's release of 9 sessions into training (not a test use)
+    assert [u["test_id"] for u in d["held_out_uses"]] == ["set5-cprime-test-2026-10-12",
+                                                          "released-into-training-2026-10-28"]
     assert d["held_out_bands"] == set5.bands()
     assert all(s["split"] == "held_out" and s["fold"] is None for s in d["sessions"])
     assert all(p["split"] == "held_out" and p["fold"] is None for p in d["parts"])

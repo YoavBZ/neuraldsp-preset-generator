@@ -111,6 +111,19 @@ justify spending it. A later confirmation needs fresh songs.
   amending: F_POOL, `check_example`, `refuse_held_out`, `clean_di.REFUSED_SESSIONS` (Dunning Kruger "Sascha") and the set3/set5 covers, which fail
   closed. Tests and a
   review come before any render.
+  - **Groundwork (2026-10-28, `learn/cc_pool.py`, zero renders).**
+    - The 19 released sessions are declared in `cc_pool.RELEASED`. `refuse_held_out` passes them, under their
+      declared band only. Their crops and their bands' unreleased material stay held out.
+    - "Sascha" left `REFUSED_SESSIONS`.
+    - Each declaration's `held_out_uses` records the release. `refuse_test` bars them, their songs, slugs and
+      bands from any later test, plus Fytakyte "Too Much" (BKS's song, re-hosted), which never trains either.
+    - The pool's own guard (`refuse_pool_band`, `check_pool_rows`) bars V-real's 7 bands (any of their songs), the
+      known-answer and reserved bands, and fails closed on a missing band.
+    - Part C's `F_POOL`, `check_example` and `pool_examples` are unchanged: the new pool does not go through part
+      C's pool.
+    - The released sessions' DI rows (pending the ear), part A's screen and sections, their backing metadata and
+      T0's stem scan are written under their own names (`~/ndsp-presets/learn/clean-crunch-pool/`,
+      `t0/ccstems-*`). Part A's inventory and manifest and T0's `stems` shards are not touched.
 - **Cost.** About 12–16k renders: about 8–12 h with priming and the carry-over rule. About 4k separations, 3–5 h.
 - **Report.** Bands, sections and DIs for both pools.
 

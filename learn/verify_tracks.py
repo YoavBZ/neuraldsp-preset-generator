@@ -1700,10 +1700,6 @@ def cmd_stem_scan(args):
     """Every non-guitar track of every session in use: each guitar track's session-level take in it (the cleaning
     plan's estimator, `data_cleaning.TakeReader`, read against that guitar track itself). A stem passes when every
     guitar track reads under the floor (-30 dB, or `inject-strict`'s validated level)."""
-    import gc
-
-    from learn import data_cleaning as DC
-
     require_real(args)
     root = out_root(args)
     k, n = args.shard
@@ -1716,43 +1712,53 @@ def cmd_stem_scan(args):
     if prev and prev.get("floor_db") != floor:
         raise SystemExit(f"{path} was scanned at another floor: move it aside by hand (no silent resume)")
     done = prev.get("sessions", {})
-    idx, _ = DC.band_bins()
     for m, sd in enumerate(jobs):
         if sd in done:
             continue
         t = time.time()
-        files = sorted(f.name for f in pathlib.Path(sd).glob("*.wav"))
-        allg = guitar_sources(files)
-        stems = [f for f in files if f not in allg]
-        dur = max(DC.file_seconds(pathlib.Path(sd) / f) for f in files)
-        Ys = {f: DC.stft(DC.load_window(pathlib.Path(sd) / f, 0.0, dur))[idx] for f in stems}
-        gaud = {g: DC.load_window(pathlib.Path(sd) / g, 0.0, dur) for g in allg}
-        gtr = scan_sources(allg, {g: float((a.astype("float64") ** 2).mean()) for g, a in gaud.items()})
-        takes = {f: {} for f in stems}
-        for g in gtr:
-            S = DC.stft(gaud[g])[idx]
-            if not (abs(S) > 0).any():
-                continue
-            got = DC.TakeReader(S, S).takes(Ys)
-            for f, v in got.items():
-                takes[f][g] = v
-            del S
-            gc.collect()
-        del gaud
-        done[sd] = {"dis": scope_dis(sess[sd]), "guitar_tracks": allg, "sources": gtr, "floor_db": floor,
-                    "stems": {f: {"class": DC.track_class(f), "takes_db": takes[f], "pass": stem_pass(takes[f], floor)}
-                              for f in stems}, "seconds": round(time.time() - t, 1)}
-        del Ys
-        gc.collect()
+        done[sd] = scan_session_stems(sd, sess[sd], floor)
         _save(path, {"plan": PLAN, "smoke": bool(args.smoke), "shard": [k, n], "floor_db": floor, "complete": False,
                      "sessions": done, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
         bad = [f for f, v in done[sd]["stems"].items() if not v["pass"]]
-        print(f"{m + 1}/{len(jobs)} {pathlib.Path(sd).name}: {len(stems)} stems, {len(gtr)} guitar tracks, "
-              f"failing {bad} ({time.time() - t:.0f} s)", flush=True)
+        print(f"{m + 1}/{len(jobs)} {pathlib.Path(sd).name}: {len(done[sd]['stems'])} stems, "
+              f"{len(done[sd]['sources'])} guitar tracks, failing {bad} ({time.time() - t:.0f} s)", flush=True)
     _save(path, {"plan": PLAN, "smoke": bool(args.smoke), "shard": [k, n], "floor_db": floor,
                  "complete": all(s_ in done for s_ in jobs) and not (args.limit or args.only), "sessions": done,
                  "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"STEM SCAN DONE {k}/{n} (floor {floor:.0f} dB)")
+
+
+def scan_session_stems(sd, dis, floor):
+    """One session's stem scan (`cmd_stem_scan`'s row): each guitar source's session-level take in every non-guitar
+    track. dis: the session's DI ids in use."""
+    import gc
+
+    from learn import data_cleaning as DC
+
+    t = time.time()
+    idx, _ = DC.band_bins()
+    files = sorted(f.name for f in pathlib.Path(sd).glob("*.wav"))
+    allg = guitar_sources(files)
+    stems = [f for f in files if f not in allg]
+    dur = max(DC.file_seconds(pathlib.Path(sd) / f) for f in files)
+    Ys = {f: DC.stft(DC.load_window(pathlib.Path(sd) / f, 0.0, dur))[idx] for f in stems}
+    gaud = {g: DC.load_window(pathlib.Path(sd) / g, 0.0, dur) for g in allg}
+    gtr = scan_sources(allg, {g: float((a.astype("float64") ** 2).mean()) for g, a in gaud.items()})
+    takes = {f: {} for f in stems}
+    for g in gtr:
+        S = DC.stft(gaud[g])[idx]
+        if not (abs(S) > 0).any():
+            continue
+        got = DC.TakeReader(S, S).takes(Ys)
+        for f, v in got.items():
+            takes[f][g] = v
+        del S
+        gc.collect()
+    del gaud, Ys
+    gc.collect()
+    return {"dis": scope_dis(dis), "guitar_tracks": allg, "sources": gtr, "floor_db": floor,
+            "stems": {f: {"class": DC.track_class(f), "takes_db": takes[f], "pass": stem_pass(takes[f], floor)}
+                      for f in stems}, "seconds": round(time.time() - t, 1)}
 
 
 def scope_dis(dis):
