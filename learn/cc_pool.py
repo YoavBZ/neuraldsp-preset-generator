@@ -98,6 +98,9 @@ TEST_SPENT = {"Fytakyte": "set 5's re-host of BKS 'Too Much', whose band and son
 # none of their songs ever enters the pool. `vreal_bands` derives them again from the ledger's frozen list.
 VREAL_BANDS = frozenset({"Atlantis Bound", "Zeno", "Diesel13", "Wall Of Death", "Magician's Nephew", "Szymon Skiba",
                          "Eat The Feeder"})
+# Other names a released song goes by: Lights Off Clarity's session is "North To Alaska" (its folder and the plan) while
+# sets 1-2's catalogue calls the song "All The Same".
+SONG_ALIASES = {"MR0912_NorthToAlaska_Full": ("North To Alaska",)}
 NOT_ELECTRIC_DI = re.compile(r"(?i)acoustic|midi|synth")   # acoustic DIs, MIDI renders, a guitar synth (BKS Bulldozer)
 PART_RE = re.compile(r"(?i)(elecgtr\d+(dt)?|gtr\s*\d*)")   # `clean_di.inventory`'s unpaired-DI part rule
 RELEASE_NOTE = f"released into training {RELEASED_ON} ({PLAN}, decision B/C)"
@@ -187,6 +190,7 @@ def released_names(root=PLUGIN_ROOT):
     from learn import clean_di as CD
 
     out = set(RELEASED) | {f"cambridge/{k}" for k in RELEASED} | set(released_bands()) | set(TEST_SPENT)
+    out |= {a for k in RELEASED for a in SONG_ALIASES.get(k, ())}
     v = json.loads((pathlib.Path(root) / "docs/validation-datasets.json").read_text())
     for s in v["sessions"]:
         if pathlib.PurePosixPath(s["path"]).name in RELEASED:
@@ -285,6 +289,16 @@ def session_rows(key, tracks_dir, files, band, src, genre, declared, mix=None, v
     return out
 
 
+NOT_OWN_AMP = "passing amp tracks are not its own"     # set 5's reason when a part's amp is another part's
+
+
+def not_own_amp(p):
+    """A set-5 part whose only passing amp tracks belong to another part (BKS "Too Much" ElecGtr4a, "Bulldozer"
+    ElecGtr6a): its declared own tracks are wrong, so it is no DI row. Set 5's other exclusions (a modeller reference,
+    too few passing windows, a failed waveform test) only weaken the pairing: those DIs stay, pending, reasons noted."""
+    return p.get("status") == "excluded" and any(NOT_OWN_AMP in r for r in p.get("reasons") or [])
+
+
 def backing_candidates(rec, files):
     """(with vocals, without vocals): `pretrain_set.backing_tracks` less every guitar track of the session (other
     guitars' amp and mic tracks, acoustic guitars: `verify_tracks.guitar_sources`)."""
@@ -354,8 +368,8 @@ def inventory():
             if s["band"] != band:
                 raise SystemExit(f"{key}: set-5 inventory band {s['band']!r}")
             ps = [p for p in s["parts"] if p.get("di")]
-            excl = {nm(p["di"]): p.get("reasons") for p in ps if p.get("status") == "excluded"}
-            keep = [p for p in ps if p.get("status") != "excluded"]
+            excl = {nm(p["di"]): p.get("reasons") for p in ps if not_own_amp(p)}
+            keep = [p for p in ps if not not_own_amp(p)]
             decl = [(p["part"], nm(p["di"]), [nm(p["reference"]), *map(nm, p.get("alternates", []))])
                     for p in keep if p.get("reference")]
             decl += [(p["part"], nm(p["di"]), None) for p in keep if not p.get("reference")]

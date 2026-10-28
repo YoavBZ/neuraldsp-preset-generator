@@ -122,8 +122,9 @@ justify spending it. A later confirmation needs fresh songs.
     - Every pool row enters through `pool_rows` (released, tier 1 and part A rows alike): it bars V-real's 7 bands
       (any of their songs), the known-answer and reserved bands (names casefolded, punctuation ignored), and fails
       closed on a missing band.
-    - Set 5's `excluded` parts are no DI rows (BKS "Too Much" ElecGtr4a's passing amp tracks are ElecGtr2's), and
-      set 5's status and reasons are in each kept row's notes.
+    - Set-5 parts whose only passing amp tracks belong to another part are no DI rows (BKS "Too Much" ElecGtr4a,
+      "Bulldozer" ElecGtr6a). Set 5's other excluded and failing parts stay pending, and set 5's status and reasons
+      are in each row's notes.
     - Part C's `F_POOL`, `check_example` and `pool_examples` are unchanged: the new pool does not go through part
       C's pool.
     - The released sessions' DI rows (pending the ear), part A's screen and sections, their backing metadata and

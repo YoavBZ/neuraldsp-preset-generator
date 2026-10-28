@@ -251,7 +251,7 @@ def prepare(*, model=MODEL, out=OUTPUT, distances=DEVELOPMENT / "distances.json"
     dev = set3.slugs("development")
     return {
         "version": 1, "split": "held_out", "approved": False,
-        "amps": list(amps), "slugs": sorted(set3.slugs("held_out")),
+        "amps": list(amps), "slugs": sorted(set3.slugs("held_out", include_released=True)),
         "out": str(pathlib.Path(out).expanduser().resolve()),
         "assets": {"model": _asset(model), "average": _asset(AVERAGE),
                    "validation": _asset(set3.DECLARATION), "plan": _asset(PLAN),
@@ -275,6 +275,18 @@ def _require_committed(path):
         raise ValueError(f"input is not committed at HEAD: {relative}")
 
 
+def check_part_list(parts, manifest):
+    """The confirmation's parts are exactly set 3's declared held-out parts and the manifest's. The confirmation is
+    spent and only reproduces, so it counts the parts released into training on 2026-10-28 (`learn.cc_pool`), which
+    `set3.parts` otherwise leaves out."""
+    from learn import set3
+
+    slugs = list(parts) if isinstance(parts, dict) else [p["slug"] for p in parts]
+    declared = sorted(set3.slugs("held_out", include_released=True))
+    if sorted(slugs) != declared or sorted(slugs) != manifest["slugs"]:
+        raise ValueError("held-out part list changed")
+
+
 def validate_manifest(manifest_path, *, model, amps, parts, out, require_declared=True):
     """Fail before any held-out audio is opened if the frozen inputs changed."""
     from learn import set3
@@ -292,9 +304,7 @@ def validate_manifest(manifest_path, *, model, amps, parts, out, require_declare
         if (len(declared) != 2 or not declared[1].strip()
                 or declared[1].lstrip().startswith("_") or "DRAFT" in PLAN.read_text().splitlines()[0]):
             raise ValueError("held-out plan has not been declared")
-    slugs = list(parts) if isinstance(parts, dict) else [p["slug"] for p in parts]
-    if sorted(slugs) != sorted(set3.slugs("held_out")) or sorted(slugs) != manifest["slugs"]:
-        raise ValueError("held-out part list changed")
+    check_part_list(parts, manifest)
     if list(amps) != manifest["amps"]:
         raise ValueError("confirmation amp list changed")
     output = pathlib.Path(out).expanduser().resolve()

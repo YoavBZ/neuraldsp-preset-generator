@@ -188,7 +188,7 @@ def frozen_inputs(tmp_path, monkeypatch):
     monkeypatch.setattr(C, "PLAN", tmp_path / "plan.md")
     monkeypatch.setattr(C, "AVERAGE", tmp_path / "average.npy")
     monkeypatch.setattr(set3, "DECLARATION", tmp_path / "split.json")
-    monkeypatch.setattr(set3, "slugs", lambda split: list(panel()) if split == "development" else ["reserved"])
+    monkeypatch.setattr(set3, "slugs", lambda split, **kw: list(panel()) if split == "development" else ["reserved"])
     monkeypatch.setattr(C, "_require_committed", lambda _: None)
     menus = {"sw50r": {"factory:A": "hash-A", "factory:B": "hash-B", "template+R": "hash-T"}}
     monkeypatch.setattr(C, "menu_hashes", lambda _: menus)

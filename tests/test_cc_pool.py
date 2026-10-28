@@ -345,6 +345,38 @@ def test_backing_candidates_leave_out_every_guitar_track():
     assert withv == ["01_Kick.wav", "05_BassDI.wav", "20_LeadVox.wav"] and nov == ["01_Kick.wav", "05_BassDI.wav"]
 
 
+@pytest.mark.parametrize("x", ["North To Alaska", "north_to_alaska", "cambridge-North_To_Alaska-ElecGtr12",
+                               "Lights Off Clarity - North To Alaska"])
+def test_north_to_alaska_is_lights_off_claritys_song(x):
+    with pytest.raises(ValueError, match="never a test again"):
+        CC.refuse_test(x)
+
+
+def test_only_parts_reading_another_parts_amp_are_dropped():
+    def p(status, *reasons):
+        return {"status": status, "reasons": list(reasons)}
+
+    assert CC.not_own_amp(p("excluded", "its only passing amp tracks are not its own: 22_ElecGtr2cReamp1 also passes"))
+    assert CC.not_own_amp(p("excluded", "waveform test passes on 1 window(s), fewer than 3", "reference is a modeller "
+                            "track", "its only passing amp tracks are not its own: 35_ElecGtr6bGR4 also passes"))
+    for keep in (p("excluded", "reference is a modeller track"), p("excluded", "fails the waveform same-take test"),
+                 p("excluded", "waveform test passes on 2 window(s), fewer than 3"),
+                 p("fails", "no amp track passes the same-take tests"), p("passes")):
+        assert not CC.not_own_amp(keep)
+
+
+def test_set3_confirmation_manifest_matches_the_opted_in_parts():
+    from learn import set3
+    from learn import set3_confirmation as SC
+
+    manifest = json.loads((ROOT / "docs/set3-confirmation-inputs.json").read_text())
+    parts = set3.parts("held_out", include_released=True)               # real set-3 parts, no mock
+    SC.check_part_list(parts, manifest)
+    assert len(manifest["slugs"]) == len(parts) > len(set3.parts("held_out"))
+    with pytest.raises(ValueError, match="part list changed"):
+        SC.check_part_list(set3.parts("held_out"), manifest)          # the default leaves released parts out
+
+
 def test_ledger_ok_is_exact(tmp_path):
     p = tmp_path / "l.json"
     p.write_text(json.dumps({"tests": [{"test_id": CC.LEDGER_ID + "-x", "note": f'"{CC.LEDGER_ID}"'}]}))
