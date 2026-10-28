@@ -134,7 +134,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      from some backings. Done 2026-10-28, zero renders: step 0's DI checks, step 1's per-example leak rule (PR #323),
      step 2's guards, metadata and stem scan for the 19 released sessions (PR #324: 74 DIs pending the ear, 1,297
      sections). Waiting on the user's ear page (part 11, 120 cards: DIs, tone classes, 5 leak-rule backings); D_F5bk's
-     remix and separation run meanwhile. F20 waits for step 3's reading.
+     inputs are built (2,479 remixed examples, 2026-10-29) and its readout code is in (PR #327); it trains after the ear. F20 waits for step 3's reading.
    - **Learning every control is not yet shown to help.** T3's F5 gate, D_F5 (every control learned) − D_core5 (today's 25
      controls), reads +0.079 [−0.065, +0.224] on V-real-11 (7 bands): not shown. The user said yes to F20 (2026-10-27);
      (b) read 2026-10-28 (the stock stem stays F20's input). F20 now waits for the clean/crunch pool's step 3 reading and is

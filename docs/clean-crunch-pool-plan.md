@@ -17,8 +17,10 @@
   sections (381 clean by part A's screen), backing metadata, and T0's stem scan on the new sessions. Under the old
   session-wide rule many lose most drums and bass (North To Alaska keeps 0 of 12 stems); the per-example rule keeps
   most.
-- **Step 3's D_F5bk inputs (branch `ml/cc-f5bk`):** F5/FS5 remixed under the per-example backings and separated,
-  started 2026-10-28 night. D_F5bk does not train before the ear clears the leak rule.
+- **Step 3's D_F5bk inputs (PR #325):** F5/FS5 remixed under the per-example backings and separated, done
+  2026-10-29 01:09: 2,479 examples built, none refused, pipeline control 42 of 42. On the full builds the backing gain
+  moved a median −6.7 dB (Death Of A Romantic) and −2.3 dB (Storm Of Particles), and the stem's SNR rose +6.5 / +1.6 dB.
+  The readout commands are in PR #327. D_F5bk does not train before the ear clears the leak rule.
 
 Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
 draft takes in the findings: tiers by release status, set 5's
@@ -169,7 +171,11 @@ justify spending it. A later confirmation needs fresh songs.
   - time-effect heads set to S as a co-primary. D_F5's gate was driven by one part through time-effect heads.
 - **Power.** The clean read is 3 parts in 2 bands, so it cannot decide alone. Crunch carries most of the power.
   No pass/fail bar: build on any gain, and report underpowered results as undecided.
-- **V-real renders:** about 99 per arm.
+- **V-real renders:** 165 per arm (33 groups × a priming render and 2 answers × 2 halves): the co-primary needs its
+  own rendered answer (ledger `trusted-data-t3`, `amendment_6_readout`; code `learn/cc_readout.py`). The arm's answers
+  render right after the priming render, while D_F5's stored ones came later in their groups, so the primary carries
+  the render-order noise of delay and reverb (amendment 5's caution); the co-primary has every time effect off and does
+  not.
 
 **Step 4: listening page.** Pairs come from the new pool's clean and crunch examples:
 - full backing, with drums and bass present;

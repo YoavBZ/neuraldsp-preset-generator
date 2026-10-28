@@ -61,3 +61,16 @@ def test_ledger_declares_the_readout():
 def test_shard_only_for_render():
     with pytest.raises(SystemExit):
         R.main(["report", "--arm", "D_F5bk", "--shard", "1/3"])
+
+
+def test_new_predictions_refuse_over_groups_rendered_from_other_ones(tmp_path):
+    groups = tmp_path / "groups"
+    prev = {"models": {"s0": "a"}, "fit_sha256": "f"}
+    R.refuse_stale_groups(prev, {"s0": "b"}, "f", groups)  # nothing rendered yet: fine
+    R.refuse_stale_groups(None, {"s0": "b"}, "f", groups)
+    groups.mkdir()
+    (groups / "x|AC20.json").write_text("{}")
+    R.refuse_stale_groups(prev, {"s0": "a"}, "f", groups)  # same models and fit: a resume
+    for models, fit in (({"s0": "b"}, "f"), ({"s0": "a"}, "g")):
+        with pytest.raises(SystemExit, match="other models"):
+            R.refuse_stale_groups(prev, models, fit, groups)

@@ -64,12 +64,12 @@ def _bk_runs(root, seed):
     return BK.run_path(root, seed)
 
 
-def _bk_fit_rows(root, ctx, plan):
+def _bk_fit_rows(root, ctx, plan, smoke=False):
     """D_F5bk's (training rows, FS5 rows, files): D_F5's rows (the full twins, their labels) with the remixed
     features (`trusted_data_t3_bk.files_for`)."""
     from learn import trusted_data_t3_bk as BK
 
-    p = BK.load_bk_plan(root)
+    p = BK.load_bk_plan(root, smoke)
     ent = {e["i"]: e for e in p["examples"]}
     tr_rows, fs_rows = T3.arm_rows(root, ctx, plan, T3.FULL)
     if [r["i"] for r in tr_rows] != p["f5"] or [r["i"] for r in fs_rows] != p["fs5"]:
@@ -189,7 +189,7 @@ def cmd_fit(args):
     root = V.out_root(args)
     plan, drift = TM.load_frozen(root, args.smoke)
     ctx = DS.Ctx(quiet=True)
-    tr_rows, fs_rows, files = spec["fit_rows"](root, ctx, plan)
+    tr_rows, fs_rows, files = spec["fit_rows"](root, ctx, plan, smoke=args.smoke)
     enc = T3.encode_for(T3.FULL)
     enc6 = (lambda lab: enc(lab)[:6])
     med = DS.label_medians(tr_rows, enc6)
@@ -279,6 +279,8 @@ def cmd_vreal_predict(args):
                              "held": held, "diag": diag}
         own[f"{slug}|{search}"] = {"amp": r["amp"], "p": r["amp_p"]}
     od = out_dir(root, args.arm) / "vreal"
+    refuse_stale_groups(_load(od / "predictions.json"), model_shas(recs), sha(out_dir(root, args.arm) / "fit.json"),
+                        od / "groups")
     _save(od / "predictions.json", {
         "plan": PLAN, "stage": f"{args.arm} V-real", "ledger": f"{T3.LEDGER_ID} {LEDGER_KEY}",
         "arms": list(answer_arms(args.arm)), "input": spec["input"], "smoke": bool(args.smoke),
@@ -291,6 +293,14 @@ def cmd_vreal_predict(args):
     groups = len({(s, a) for s, a, _, _ in dirs})
     print(f"PREDICT DONE {args.arm}: {len(dirs)} directions x {ANSWERS_PER_ARM} answers; {groups} groups, "
           f"{renders_needed(groups)} renders to come" + (f"; dims with no fitted pull {gaps}" if gaps else ""))
+
+
+def refuse_stale_groups(prev, models, fit_sha, groups_dir):
+    """T3's guard: new predictions may not replace ones V-real was already rendered from (other models or another
+    fit), or a resumed render would mix two model sets' answers in one report."""
+    if prev and (prev.get("models") != models or prev.get("fit_sha256") != fit_sha) and \
+            any(pathlib.Path(groups_dir).glob("*.json")):
+        raise SystemExit(f"V-real was rendered from other models' predictions: move {pathlib.Path(groups_dir).parent} aside first")
 
 
 # --- vreal-render (MAIN; renders) --------------------------------------------------------------------------------------
@@ -430,7 +440,9 @@ def cmd_report(args):
         for row in rows_:
             r = c["rows"].get(row) or {}
             for cls, s in [("", r.get("all") or {})] + sorted((r.get("per_class") or {}).items()):
-                sign = f"; bands -/+ {s.get('bands_negative')}/{s.get('bands_positive')}" if s.get("bands") else ""
+                sign = (f"; bands -/=/+ {s.get('bands_negative')}/"
+                        f"{s['bands'] - (s.get('bands_negative') or 0) - (s.get('bands_positive') or 0)}/"
+                        f"{s.get('bands_positive')}") if s.get("bands") else ""
                 print(f"  {name if not cls and row == 'all' else '':70s} {(row + ' ' + cls).strip():18s} "
                       f"{s.get('band_weighted_mean')} [{s.get('lo90')}, {s.get('hi90')}] ({s.get('bands')} bands{sign}) "
                       f"{T3.rule_reading(s)}")
