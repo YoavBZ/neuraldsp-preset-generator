@@ -171,11 +171,11 @@ justify spending it. A later confirmation needs fresh songs.
   - time-effect heads set to S as a co-primary. D_F5's gate was driven by one part through time-effect heads.
 - **Power.** The clean read is 3 parts in 2 bands, so it cannot decide alone. Crunch carries most of the power.
   No pass/fail bar: build on any gain, and report underpowered results as undecided.
-- **V-real renders:** 165 per arm (33 groups × a priming render and 2 answers × 2 halves): the co-primary needs its
+- **V-real renders:** 165 per arm (33 groups × a priming render and 2 answers × 2 directions): the co-primary needs its
   own rendered answer (ledger `trusted-data-t3`, `amendment_6_readout`; code `learn/cc_readout.py`). The arm's answers
   render right after the priming render, while D_F5's stored ones came later in their groups, so the primary carries
-  the render-order noise of delay and reverb (amendment 5's caution); the co-primary has every time effect off and does
-  not.
+  the render-order noise of delay and reverb (amendment 5's caution); the co-primary sets the time effects and spring to
+  S's (off), so it does not.
 
 **Step 4: listening page.** Pairs come from the new pool's clean and crunch examples:
 - full backing, with drums and bass present;
