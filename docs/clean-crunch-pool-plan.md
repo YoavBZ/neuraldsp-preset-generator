@@ -1,6 +1,22 @@
 # Clean/crunch-led training pool (plan, 2026-10-28)
 
-**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). Nothing run yet.**
+**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). Zero renders so far.**
+
+**Progress (2026-10-28):**
+- **Step 0 (intake checks, `~/ndsp-presets/learn/trusted-data/intake-2026-10-28/`):** 80 DI rows in 21 sessions (the
+  released sessions and tier 1's additions). Most fail D2 (46 of 79 summarized; 13 of them on a single flagged
+  window, since one bad window fails the DI). Set 5's backings were re-downloaded (6 sessions, all checksums match).
+- **Step 1 (the leak rule, PR #323):** merged. Its 5 backing clips (Death Of A Romantic ×2, Storm Of Particles ×3,
+  no vocals) are on the ear page. T2 holds no rule-1 stand-in example, so the stand-in clip waits for step 2's pool.
+- **Ear sitting E (one page, `listening/trusted-data-ear/part11-clean-crunch`, 120 cards):** the DIs that pass the
+  measured checks, their amp tones' class (clean, crunch, high gain), and the 5 backing clips. Sent 2026-10-28; the
+  answers decide the DIs, the classes and the leak rule.
+- **Step 2 groundwork (PR #324, below):** merged. 74 DI rows in 19 released sessions (all pending the ear), 1,297
+  sections (381 clean by part A's screen), backing metadata, and T0's stem scan on the new sessions. Under the old
+  session-wide rule many lose most drums and bass (North To Alaska keeps 0 of 12 stems); the per-example rule keeps
+  most.
+- **Step 3's D_F5bk inputs (branch `ml/cc-f5bk`):** F5/FS5 remixed under the per-example backings and separated,
+  started 2026-10-28 night. D_F5bk does not train before the ear clears the leak rule.
 
 Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
 draft takes in the findings: tiers by release status, set 5's
