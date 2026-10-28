@@ -156,7 +156,11 @@ justify spending it. A later confirmation needs fresh songs.
   - D_CC: the new pool;
   - D_F5bk: F5's stored renders remixed under step 1's backings. This separates the backing fix from the
     change of songs. Its fit set is FS5 remixed the same way, so it differs from D_F5 only in the
-    backing. It costs about 4.1k separations and no target renders.
+    backing. It costs about 4.1k separations and no target renders. Measured: 2,479 examples change (Death Of A
+    Romantic and Storm Of Particles), about 2.5k separations. The mix holds each example's drawn
+    guitar-to-backing ratio, so the louder backing gets a lower gain (median −4.8 dB and −2.3 dB on the first
+    builds): the other guitars sit lower against the target and the stem's SNR rises (median +4.5 / +1.0 dB).
+    D_F5bk − D_F5 is read with that beside it (ledger `trusted-data-t3`, amendment 6).
 - **Fit and early stopping:** a declared set drawn from the new pool, with no V-real band.
 - **Readout,** declared before the first read:
   - on V-real-11, as D_F5 was read, so no new D_F5 renders are needed;
