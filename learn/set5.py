@@ -68,12 +68,18 @@ def load(path: pathlib.Path | str = DECLARATION) -> dict:
     return _load(str(path))
 
 
-def parts(path=DECLARATION, scope: str | None = None) -> list[dict]:
+def parts(path=DECLARATION, scope: str | None = None, include_released=False) -> list[dict]:
     """Kept parts, all held out; `scope` "in_scope" (clean, crunch) or "report_only"
-    (high-gain). Reading their audio needs a declared confirmation."""
+    (high-gain). Reading their audio needs a declared confirmation. Parts of the sessions
+    released into training on 2026-10-28, and Fytakyte's (BKS's song, spent with them:
+    `learn.cc_pool`), are never a test again and are left out, unless a reproduction of an
+    earlier test opts in (`include_released`)."""
+    from learn import cc_pool
+
     if scope is not None and scope not in SCOPES:
         raise ValueError(f"unknown scope {scope!r}")
-    return [p for p in load(path)["parts"] if scope is None or p["scope"] == scope]
+    return [p for p in load(path)["parts"] if (scope is None or p["scope"] == scope)
+            and (include_released or not cc_pool.is_released_part(p))]
 
 
 def bands(path=DECLARATION) -> list[str]:

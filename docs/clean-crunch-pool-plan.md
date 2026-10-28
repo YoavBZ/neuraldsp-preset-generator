@@ -114,11 +114,16 @@ justify spending it. A later confirmation needs fresh songs.
   - **Groundwork (2026-10-28, `learn/cc_pool.py`, zero renders).**
     - The 19 released sessions are declared in `cc_pool.RELEASED`. `refuse_held_out` passes them, under their
       declared band only. Their crops and their bands' unreleased material stay held out.
-    - "Sascha" left `REFUSED_SESSIONS`.
-    - Each declaration's `held_out_uses` records the release. `refuse_test` bars them, their songs, slugs and
-      bands from any later test, plus Fytakyte "Too Much" (BKS's song, re-hosted), which never trains either.
-    - The pool's own guard (`refuse_pool_band`, `check_pool_rows`) bars V-real's 7 bands (any of their songs), the
-      known-answer and reserved bands, and fails closed on a missing band.
+    - "Sascha" stays in part A's `excluded` list (part A's inventory reproduces); it is released to this pool only.
+    - Each declaration's `held_out_uses` records the release. `refuse_test` bars them, their songs, slugs, crop
+      folders and bands from any later test (names casefolded, `_`, `-` and spaces alike, every path component),
+      plus Fytakyte "Too Much" (BKS's song, re-hosted), which never trains either. `set3.parts`, `set5.parts` and
+      `set5_test.parts` leave them out by default; reproductions of earlier tests opt in (`include_released`).
+    - Every pool row enters through `pool_rows` (released, tier 1 and part A rows alike): it bars V-real's 7 bands
+      (any of their songs), the known-answer and reserved bands (names casefolded, punctuation ignored), and fails
+      closed on a missing band.
+    - Set 5's `excluded` parts are no DI rows (BKS "Too Much" ElecGtr4a's passing amp tracks are ElecGtr2's), and
+      set 5's status and reasons are in each kept row's notes.
     - Part C's `F_POOL`, `check_example` and `pool_examples` are unchanged: the new pool does not go through part
       C's pool.
     - The released sessions' DI rows (pending the ear), part A's screen and sections, their backing metadata and

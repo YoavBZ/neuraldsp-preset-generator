@@ -24,7 +24,7 @@ NAMES = {"sw50r": ["template+R", "factory:synthetic"]}
 @pytest.fixture(autouse=True)
 def synthetic_parts(monkeypatch, tmp_path):
     # No test may fall through to real set-3 metadata or data roots.
-    monkeypatch.setattr(set3, "parts", lambda split: [dict(p, split=split) for p in PARTS])
+    monkeypatch.setattr(set3, "parts", lambda split, include_released=False: [dict(p, split=split) for p in PARTS])
     for name in ("OUT", "CROPS", "STEMS", "CACHE"):
         monkeypatch.setattr(P, name, tmp_path / name.lower())
 

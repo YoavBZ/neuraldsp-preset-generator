@@ -65,10 +65,13 @@ def test_declarations_record_the_release():
     assert CC.ledger_ok()
 
 
-def test_sascha_is_released_not_refused():
-    assert "cambridge/DunningKruger_Sascha_Full" not in CD.REFUSED_SESSIONS
+def test_sascha_is_released_to_the_pool_not_to_part_a():
+    # part A's inventory keeps listing it in `excluded`, word for word, so part A's inventory reproduces
+    assert CD.REFUSED_SESSIONS["cambridge/DunningKruger_Sascha_Full"] == "Dunning Kruger is a set-3 held-out band"
     assert "cambridge/UmphreysMcGee_CrucialTaunt_Full" in CD.REFUSED_SESSIONS   # a line-out, not a DI: still out
     assert "DunningKruger_Sascha_Full" in CC.RELEASED
+    CD.refuse_held_out({"path": released_path("DunningKruger_Sascha_Full", "17_Gtr8DI.wav"), "band": "Dunning Kruger",
+                        "set": "set3"})
 
 
 # --- released_entry ----------------------------------------------------------------------------------------------
@@ -148,7 +151,7 @@ def test_refuse_held_out_refuses_a_released_path_with_another_band():
     ("datasets/telefunken/Catbite - Bad Influence LIVE FROM THE LAB/GTR DI.wav", "Catbite", 1),
 ])
 def test_refuse_held_out_still_refuses_unreleased_held_out_material(path, band, st):
-    with pytest.raises((ValueError, KeyError)):
+    with pytest.raises(ValueError, match="held out|set 4-6 material|held-out band"):
         CD.refuse_held_out({"path": str(CC.REFS / path), "band": band, "set": st})
 
 
@@ -228,3 +231,123 @@ def test_stems_report_reads_both_rules():
     k1, k2 = (V.guitar_part_key(s) for s in row["sources"])
     assert by_part[k1] == ["05_BassDI.wav", "06_Keys.wav"]            # its own leak drops the kick; BassDI exempt
     assert by_part[k2] == ["01_Kick.wav", "05_BassDI.wav", "06_Keys.wav"]
+
+
+# --- review of PR #324: names, crops, test-part lists, the one pool entry point --------------------------------------
+
+CROPS = sorted(CC.REFS.glob("validation-crops*"))
+
+
+@pytest.mark.parametrize("x", ["validation-crops-set5/cambridge-too-much-elecgtr1a", "cambridge-endance-gtr4",
+                               "validation-crops-set3/cambridge-endance-gtr4", "cambridge-stalker-elecgtr01",
+                               "validation-crops-confirm/cambridge_Stalker_ElecGtr01",
+                               "/x/validation-crops-confirm/cambridge_All_The_Same_ElecGtr12/di.wav",
+                               "cambridge_It_s_My_Right_Gtr3", "hf-rawstems-too-much-elecgtr2", "TIM TALER",
+                               "dunning_kruger", "hf-rawstems/Fytakyte - Too_Much"])
+def test_refuse_test_normalises_case_and_separators(x):
+    with pytest.raises(ValueError, match="never a test again"):
+        CC.refuse_test(x)
+
+
+def test_name_keys_treat_separators_alike():
+    assert CC.name_key("It's My Right") == CC.name_key("cambridge_It_s_My_Right")[len("cambridge-"):] == "it-s-my-right"
+    assert CC.name_key("Sugar - Faith") == "sugar-faith"
+    assert CC.band_key("Magicians Nephew") == CC.band_key("magician's nephew") == "magiciansnephew"
+
+
+def _crop_dirs():
+    return [d for root in CROPS for d in sorted(root.iterdir()) if (d / "record.json").exists()]
+
+
+@pytest.mark.skipif(not CROPS, reason="no validation crops on this machine")
+def test_every_real_crop_of_released_material_is_refused_and_no_other():
+    names = CC.released_names()
+    released_keys = {f"cambridge/{k}" for k in CC.RELEASED} | {"hf-rawstems/Fytakyte - Too_Much"}
+    wrong, n_rel = [], 0
+    for d in _crop_dirs():
+        r = json.loads((d / "record.json").read_text())
+        key = r.get("session_key")
+        rel = key in released_keys if key else CC.name_key(r.get("song", "")) in names
+        n_rel += rel
+        for x in (str(d), d.name, str(d / "di.wav")):
+            try:
+                CC.refuse_test(x)
+                got = False
+            except ValueError:
+                got = True
+            if got != rel:
+                wrong.append((x, rel))
+    assert not wrong, wrong[:10]
+    assert n_rel >= 50                          # the review counted 52 crop folders of released sessions
+
+
+def test_default_test_part_lists_hold_no_released_material():
+    from learn import set3, set5
+
+    for ps in (set3.parts(), set3.parts("held_out"), set5.parts(), set5.parts(scope="in_scope")):
+        assert not [p["slug"] for p in ps if CC.is_released_part(p)]
+        for p in ps:
+            if p["split"] == "held_out":
+                CC.refuse_test(p["slug"])                     # what is left may still be a test
+    assert {p["band"] for p in set5.parts()} <= {"Nova-One Studio", "The Ferryboat Men", "Jeff Hirata", "MOPP"}
+    assert not {p["band"] for p in set3.parts("held_out")} & {"Dunning Kruger", "Silona"}
+    # reproductions of earlier tests opt in and still see every declared part
+    assert len(set5.parts(include_released=True)) == len(set5.load()["parts"])
+    assert len(set3.parts(include_released=True)) == len(set3.load()["parts"])
+    assert set3.parts("development") == set3.parts("development", include_released=True)
+
+
+def test_set5_tests_default_parts_hold_no_released_material():
+    from learn import set5_test
+
+    d = json.loads(set5_test.DECL.read_text())
+    if not (pathlib.Path(d["crops_root"]).expanduser()).exists():
+        pytest.skip("set-5 crops not on this machine")
+    assert {p["band"] for p in set5_test.parts().values()} <= {"Nova-One Studio", "The Ferryboat Men", "Jeff Hirata",
+                                                                "MOPP"}
+    assert len(set5_test.parts(include_released=True)) == d["counts"]["kept"]
+
+
+@pytest.mark.parametrize("band", ["eat the feeder", "EAT_THE_FEEDER", "Magicians Nephew", "ZENO", "Diesel 13",
+                                  "wall-of-death", "the apprehended", "blue manic", "FYTAKYTE"])
+def test_pool_rows_refuse_band_variants_on_every_source(band):
+    tier1 = {"id": "t1", "path": str(CC.REFS / "datasets/cambridge/X_Full/1_GtrDI.wav"), "band": band}
+    with pytest.raises(ValueError):
+        CC.pool_rows([], [tier1], refuse=lambda r: None)
+
+
+def test_pool_rows_take_every_source_and_refuse_duplicates():
+    a = {"id": "a", "path": released_path("TimTaler_Stalker_Full"), "band": "Tim Taler", "set": "x"}
+    b = {"id": "b", "path": "/p/b.wav", "band": "The Travelling Band"}       # tier 1 (a stage-F, non-V-real band)
+    c = {"id": "c", "path": "/p/c.wav", "band": "Adam Buckley"}               # part A
+    assert CC.pool_rows([a], [b], [c], refuse=lambda r: None) == [a, b, c]
+    with pytest.raises(ValueError, match="duplicate"):
+        CC.pool_rows([a], [a], refuse=lambda r: None)
+    with pytest.raises(ValueError, match="V-real"):
+        CC.pool_rows([a], [b], [{**c, "band": "Szymon Skiba"}], refuse=lambda r: None)
+
+
+def test_session_rows_skip_excluded_parts_and_note_status():
+    files = ["20_ElecGtr2aDI.wav", "22_ElecGtr2cReamp1.wav", "28_ElecGtr4aDI.wav", "30_ElecGtr4b.wav"]
+    rows = CC.session_rows("BKS_TooMuch_Full", "/d", files, "BKS", "set5", None,
+                           [("ElecGtr2a", "20_ElecGtr2aDI.wav", ["22_ElecGtr2cReamp1.wav"])],
+                           excluded={"28_ElecGtr4aDI.wav": ["its only passing amp tracks are not its own"]},
+                           status={"20_ElecGtr2aDI.wav": "set 5's inventory: passes"})
+    assert [pathlib.Path(r["path"]).name for r in rows] == ["20_ElecGtr2aDI.wav"]   # 4a not re-added by name
+    assert "set 5's inventory: passes" in rows[0]["notes"]
+
+
+def test_backing_candidates_leave_out_every_guitar_track():
+    files = ["01_Kick.wav", "05_BassDI.wav", "09_ElecGtr1Amp.wav", "10_ElecGtr1DI.wav", "11_ElecGtr2.wav",
+             "12_ElecGtr2DI.wav", "13_AcousticGtr.wav", "20_LeadVox.wav"]
+    rec = {"own": ["09_ElecGtr1Amp.wav"], "mix": None, "vocals": None}
+    withv, nov = CC.backing_candidates(rec, files)
+    assert withv == ["01_Kick.wav", "05_BassDI.wav", "20_LeadVox.wav"] and nov == ["01_Kick.wav", "05_BassDI.wav"]
+
+
+def test_ledger_ok_is_exact(tmp_path):
+    p = tmp_path / "l.json"
+    p.write_text(json.dumps({"tests": [{"test_id": CC.LEDGER_ID + "-x", "note": f'"{CC.LEDGER_ID}"'}]}))
+    assert not CC.ledger_ok(p)
+    p.write_text(json.dumps({"tests": [{"test_id": CC.LEDGER_ID}]}))
+    assert CC.ledger_ok(p)

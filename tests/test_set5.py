@@ -68,7 +68,8 @@ def test_scope_clean_and_crunch_in_high_gain_report_only():
         assert p["scope"] == ("in_scope" if p["gain_class"] in ("clean", "crunch") else "report_only")
     assert {p["band"] for p in set5.parts(scope="report_only")} >= {"Nova-One Studio"}
     assert all(p["scope"] == "report_only" for p in d["parts"] if p["band"] == "Nova-One Studio")
-    assert len(set5.parts(scope="in_scope")) + len(set5.parts(scope="report_only")) == len(d["parts"])
+    assert len(set5.parts(scope="in_scope", include_released=True)) \
+        + len(set5.parts(scope="report_only", include_released=True)) == len(d["parts"])
     with pytest.raises(ValueError):
         set5.parts(scope="high-gain")
 

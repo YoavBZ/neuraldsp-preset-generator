@@ -648,9 +648,11 @@ INTAKE_PENDING = "catalogue: pending T0 intake (trains only once a verified list
 # checks and the user's ear, part 6). An admitted row carries INTAKE_ADMITTED in place of INTAKE_PENDING.
 TRUSTED_VERIFIED = HOME / "learn/trusted-data/t0/verified.json"
 INTAKE_ADMITTED = "admitted by T0's verified list (verified.json intake_admitted: T0's checks and the ear)"
-# Dunning Kruger "Sascha" (refused here as a set-3 held-out band's song until 2026-10-28) is released into training
-# with its band by the clean/crunch pool plan's decision B (`learn.cc_pool.RELEASED`).
+# Sessions part A's inventory leaves out (listed in its `excluded`; nothing else reads this). Dunning Kruger "Sascha"
+# stays out of part A, its text unchanged so part A's inventory reproduces: since 2026-10-28 it is released to the
+# clean/crunch pool, not to part A (`learn.cc_pool.RELEASED`, which `refuse_held_out` passes).
 REFUSED_SESSIONS = {
+    "cambridge/DunningKruger_Sascha_Full": "Dunning Kruger is a set-3 held-out band",
     "cambridge/UmphreysMcGee_CrucialTaunt_Full": "its 'DI' is a Palmer PDI-09 speaker-simulated line-out after the "
                                                  "amp, not a raw DI (fresh-di-amp-multitracks-2026-10.md)",
 }

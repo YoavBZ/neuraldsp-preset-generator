@@ -9,11 +9,13 @@ metadata and stem scan. Zero renders, no training, no separation.
     $MAIN -m learn.cc_pool stem-scan --shard k/3     # T0's session-level stem scan -> t0/ccstems-<k>of<n>.json
     $MAIN -m learn.cc_pool stems-report              # stems kept and dropped at T0's floor, per session
 
-Decision B released 16 held-out sessions into training; decision C re-downloaded set 5's backings. A released session
-is never a test again (`refuse_test`), and neither is its band's other material: Fytakyte "Too Much" (set 5's re-host
-of BKS's song) is spent with it, though it stays out of training (`TEST_SPENT`). The released sessions' crops stay held
-out. The pool never takes a V-real band, any of its songs (`VREAL_BANDS`, frozen at T3's plan step), a known-answer or
-a reserved band (`refuse_pool_band`).
+19 held-out sessions are released into training: 13 by decision B (sets 1-2's 6 held-out Cambridge sessions, set 3's
+Dunning Kruger x3 and Silona, set 5's Hazael x2 and Peter White) and 6 by decision C (set 5's re-downloaded backings).
+A released session is never a test again (`refuse_test`; `set3.parts`, `set5.parts` and `set5_test.parts` leave it out
+unless a reproduction opts in), and neither is its band's other material: Fytakyte "Too Much" (set 5's re-host of BKS's
+song) is spent with it, though it stays out of training (`TEST_SPENT`). The released sessions' crops stay held out of
+training. Every pool row goes through `pool_rows`: never a V-real band, any of its songs (`VREAL_BANDS`, frozen at
+T3's plan step), a known-answer or a reserved band (`refuse_pool_band`).
 
 Outputs: ~/ndsp-presets/learn/clean-crunch-pool/ (part A's own inventory, screen and manifest are never rewritten:
 part C's pool checks their hashes) and T0's root, under a prefix of its own (`ccstems`), so T0's `stems` shards and
@@ -127,21 +129,24 @@ def released_bands():
     return frozenset(b for _, b, _, _ in RELEASED.values())
 
 
+def band_key(band):
+    """A band name compared casefolded, punctuation and spacing ignored ("Magicians Nephew" is "Magician's Nephew")."""
+    return re.sub(r"[^0-9a-z]+", "", str(band or "").casefold())
+
+
 def refuse_pool_band(band):
     """Raise unless `band` may enter the clean/crunch pool: never a V-real band, a known-answer or reserved band, a
-    spent-not-released band, or a missing band (fails closed)."""
+    spent-not-released band, or a missing band (fails closed). Names compare by `band_key`."""
     from learn import clean_di as CD
 
-    if not band:
+    k = band_key(band)
+    if not k:
         raise ValueError("no band: refused (the pool's band guards fail closed)")
-    if band in VREAL_BANDS:
-        raise ValueError(f"{band} is a V-real band: none of its songs enters the pool")
-    if band in CD.KNOWN_ANSWER:
-        raise ValueError(f"{band} is a known-answer band")
-    if band in CD.RESERVED_BANDS:
-        raise ValueError(f"{band} is a reserved test band")
-    if band in TEST_SPENT:
-        raise ValueError(f"{band} is spent with the release but never trains: {TEST_SPENT[band]}")
+    for names, why in ((VREAL_BANDS, "is a V-real band: none of its songs enters the pool"),
+                       (CD.KNOWN_ANSWER, "is a known-answer band"), (CD.RESERVED_BANDS, "is a reserved test band"),
+                       (TEST_SPENT, "is spent with the release but never trains")):
+        if k in {band_key(b) for b in names}:
+            raise ValueError(f"{band} {why}")
 
 
 def check_pool_rows(rows, refuse=None):
@@ -158,12 +163,30 @@ def check_pool_rows(rows, refuse=None):
         refuse(r)
 
 
+def pool_rows(*sources, refuse=None):
+    """The one way rows enter the clean/crunch pool: every row of every source (the released sessions' inventory,
+    tier 1's development rows, part A's inventory rows) through `check_pool_rows`. -> the rows, concatenated, in
+    order; a duplicate id refuses."""
+    rows = [r for src in sources for r in src]
+    ids = [r.get("id") for r in rows]
+    if len(ids) != len(set(ids)):
+        raise ValueError("duplicate row ids in the pool's sources")
+    check_pool_rows(rows, refuse)
+    return rows
+
+
+def name_key(s):
+    """A name or path component compared casefolded, with every run of other characters (`_`, `-`, spaces,
+    apostrophes) as one '-': "cambridge_It_s_My_Right_Gtr3" and "It's My Right" share "it-s-my-right"."""
+    return re.sub(r"[^0-9a-z]+", "-", str(s).casefold()).strip("-")
+
+
 def released_names(root=PLUGIN_ROOT):
-    """The released sessions' names in the declarations (docs/): session keys as each set writes them, songs (sets 1-2
-    use "cambridge/<song>" in their uses) and part slugs (crops included)."""
+    """The released (and spent) sessions' names in the declarations (docs/), as `name_key`s: session keys, songs,
+    part slugs (their crops' folder names) and bands, plus Fytakyte's set-5 session and parts."""
     from learn import clean_di as CD
 
-    out = set(RELEASED) | {f"cambridge/{k}" for k in RELEASED}
+    out = set(RELEASED) | {f"cambridge/{k}" for k in RELEASED} | set(released_bands()) | set(TEST_SPENT)
     v = json.loads((pathlib.Path(root) / "docs/validation-datasets.json").read_text())
     for s in v["sessions"]:
         if pathlib.PurePosixPath(s["path"]).name in RELEASED:
@@ -171,27 +194,41 @@ def released_names(root=PLUGIN_ROOT):
             out |= {CD.slug12(s["source"], s["song"], p["part"]) for p in s.get("parts", [])}
     for f in ("validation-set3.json", "validation-set5.json"):
         d = json.loads((pathlib.Path(root) / "docs" / f).read_text())
-        keys = {s["key"] for s in d["sessions"] if s["key"].split("/")[-1] in RELEASED}
-        out |= {s["song"] for s in d["sessions"] if s["key"] in keys}
+        keys = {s["key"] for s in d["sessions"]
+                if s["key"].split("/")[-1] in RELEASED or s["band"] in TEST_SPENT}
+        out |= keys | {s["song"] for s in d["sessions"] if s["key"] in keys}
         out |= {p["slug"] for p in [*d["parts"], *d.get("excluded", [])] if p.get("session_key") in keys and p.get("slug")}
-    return frozenset(out)
+    return frozenset(name_key(n) for n in out if name_key(n))
+
+
+def _released_hit(s, names):
+    """The released names a string matches: whole (`name_key`) or as a run of whole tokens inside it."""
+    k = name_key(s)
+    if not k:
+        return []
+    if k in names:
+        return [k]
+    return sorted(n for n in names if f"-{n}-" in f"-{k}-")
 
 
 def refuse_test(x):
-    """Raise if `x` (a band, a session key, a song, a part slug or a path) may not be a test any more: a released
-    session, any material of a released band, or a band spent with them. For any later test's declaration."""
+    """Raise if `x` (a band, a session key, a song, a part slug or crop folder, or a path) may not be a test any more:
+    a released session, any material of a released band, or material spent with them. Every path component is read,
+    casefolded, with `_`, `-` and spaces alike. For any later test's declaration."""
     s = os.fspath(x)
     if released_entry(s) is not None:
         raise ValueError(f"released into training on {RELEASED_ON}: {s!r} is never a test again")
-    if s in released_names() or s in released_bands():
-        raise ValueError(f"released into training on {RELEASED_ON}: {s!r} is never a test again")
-    if s in TEST_SPENT:
-        raise ValueError(f"spent with the release: {s!r} ({TEST_SPENT[s]})")
-    low = s.lower()
-    hit = [b for b in (*released_bands(), *TEST_SPENT) if b.lower().replace(" ", "") in low.replace(" ", "")
-           or b.lower().replace(" ", "_") in low]
-    if hit:
-        raise ValueError(f"names a released or spent band {hit}: {s!r} is never a test again")
+    names = released_names()
+    for comp in [s, *pathlib.PurePosixPath(s).parts]:
+        hit = _released_hit(comp, names)
+        if hit:
+            raise ValueError(f"names released or spent material {hit[:3]}: {s!r} is never a test again")
+
+
+def is_released_part(p):
+    """A declared test part (set 3's or set 5's `parts` row) of a released session or a spent band."""
+    key = str(p.get("session_key") or "")
+    return key.split("/")[-1] in RELEASED or p.get("band") in released_bands() or p.get("band") in TEST_SPENT
 
 
 def vreal_bands(frozen, f_pool):
@@ -217,18 +254,22 @@ def part_of(di):
     return m.group(1) if m else pathlib.PurePosixPath(di).stem
 
 
-def session_rows(key, tracks_dir, files, band, src, genre, declared, mix=None, vocals=None):
+def session_rows(key, tracks_dir, files, band, src, genre, declared, mix=None, vocals=None, excluded=None,
+                 status=None):
     """One released session's DI rows, `clean_di.inventory`'s fields. declared: [(part, DI name, [own track names])]
     from the catalogue; a file named as a guitar DI but in no declared part is kept with `clean_di.own_tracks` (name
-    rule). Acoustic DIs, MIDI renders and guitar synths are no DI rows. Every row is pending: a DI trains only once
-    T0's checks and the ear admit it (the notes carry `clean_di.INTAKE_PENDING`)."""
+    rule). Acoustic DIs, MIDI renders and guitar synths are no DI rows, nor is a DI its catalogue excludes
+    (`excluded`: {DI name: reasons}; set 5 excludes BKS "Too Much" ElecGtr4a, whose passing amp tracks are
+    ElecGtr2's). status: {DI name: note} copied into the row's notes (set 5's part status and reasons). Every row is
+    pending: a DI trains only once T0's checks and the ear admit it (the notes carry `clean_di.INTAKE_PENDING`)."""
     from learn import clean_di as CD
 
-    got = {d for _, d, _ in declared}
+    excluded, status = excluded or {}, status or {}
+    got = {d for _, d, _ in declared} | set(excluded)
     decl = list(declared) + [(part_of(f), f, None) for f in files if f not in got and CD.is_guitar_di(f)]
     out = []
     for part, di, own in decl:
-        if NOT_ELECTRIC_DI.search(di):
+        if NOT_ELECTRIC_DI.search(di) or di in excluded:
             continue
         if di not in files:
             raise ValueError(f"{key}: declared DI {di} is not on disk")
@@ -237,11 +278,22 @@ def session_rows(key, tracks_dir, files, band, src, genre, declared, mix=None, v
                  genre=genre, split="library", session_dir=str(tracks_dir),
                  own=[o for o in own if o in files] if own else CD.own_tracks(part, files, di),
                  mix=list(mix) if mix else None, vocals=list(vocals) if vocals else None,
-                 notes=[RELEASE_NOTE, CD.INTAKE_PENDING])
+                 notes=[RELEASE_NOTE, *([status[di]] if di in status else []), CD.INTAKE_PENDING])
         r["licence"] = CD.LICENCE["cambridge"]
         r["training_ok"] = False
         out.append(r)
     return out
+
+
+def backing_candidates(rec, files):
+    """(with vocals, without vocals): `pretrain_set.backing_tracks` less every guitar track of the session (other
+    guitars' amp and mic tracks, acoustic guitars: `verify_tracks.guitar_sources`)."""
+    from learn import pretrain_set as PS
+    from learn import verify_tracks as V
+
+    g = set(V.guitar_sources(files))
+    withv, nov = PS.backing_tracks(rec, files)
+    return [f for f in withv if f not in g], [f for f in nov if f not in g]
 
 
 def stems_report(row, floor):
@@ -301,16 +353,22 @@ def inventory():
             s = s5[pathlib.PurePosixPath(sdir).name]
             if s["band"] != band:
                 raise SystemExit(f"{key}: set-5 inventory band {s['band']!r}")
+            ps = [p for p in s["parts"] if p.get("di")]
+            excl = {nm(p["di"]): p.get("reasons") for p in ps if p.get("status") == "excluded"}
+            keep = [p for p in ps if p.get("status") != "excluded"]
             decl = [(p["part"], nm(p["di"]), [nm(p["reference"]), *map(nm, p.get("alternates", []))])
-                    for p in s["parts"] if p.get("di") and p.get("reference")]
-            decl += [(p["part"], nm(p["di"]), None) for p in s["parts"] if p.get("di") and not p.get("reference")]
-            rows += session_rows(key, tdir, files, band, src, s.get("genre_by_library"), decl)
+                    for p in keep if p.get("reference")]
+            decl += [(p["part"], nm(p["di"]), None) for p in keep if not p.get("reference")]
+            status = {nm(p["di"]): f"set 5's inventory: {p.get('status')}"
+                      + (f" ({'; '.join(p['reasons'])})" if p.get("reasons") else "") for p in keep}
+            rows += session_rows(key, tdir, files, band, src, s.get("genre_by_library"), decl, excluded=excl,
+                                 status=status)
     seen = set()
     for r in rows:
         if r["id"] in seen:
             raise SystemExit(f"duplicate DI row {r['id']}")
         seen.add(r["id"])
-    check_pool_rows(rows)
+    pool_rows(rows)
     return rows
 
 
@@ -341,15 +399,17 @@ def _load(path):
     return json.loads(path.read_text()) if path.exists() else None
 
 
-def ledger_ok():
-    return f'"{LEDGER_ID}"' in (PLUGIN_ROOT / "docs" / "dev-test-ledger.json").read_text()
+def ledger_ok(path=None):
+    """The dev-test ledger holds an entry whose test_id is exactly LEDGER_ID."""
+    d = json.loads(pathlib.Path(path or PLUGIN_ROOT / "docs" / "dev-test-ledger.json").read_text())
+    return any(t.get("test_id") == LEDGER_ID for t in d.get("tests", []))
 
 
 def _inv():
     d = _load(OUT / "inventory.json")
     if d is None:
         raise SystemExit("run `inventory` first")
-    check_pool_rows(d["dis"])
+    pool_rows(d["dis"])
     return d["dis"]
 
 
@@ -408,13 +468,16 @@ def cmd_manifest(_):
     screens = {}
     for p in sorted((OUT / "screen").glob("*.json")):
         d = json.loads(p.read_text())
+        if d["track"].get("hum_amendment") != CD.HUM_AMENDMENT:             # as part A's `manifest` refuses
+            raise SystemExit(f"{p.name} predates part A's amendment 3 (hum rule): screen it again")
         screens[d["path"]] = d
     missing = [r["id"] for r in rows if r["path"] not in screens]
     secs = CD.manifest_rows({"dis": rows}, screens)
     for s in secs:
         s["id"] = f"{s['di']}@{float(s['start_s']):.1f}"
-    _save(OUT / "sections.json", {"plan": PLAN, "rule": "part A's manifest rows (activity and screens; hum fix not "
-                                  "adopted for these DIs)", "unscreened": missing, "sections": secs,
+    _save(OUT / "sections.json", {"plan": PLAN, "rule": "part A's manifest rows (activity and screens under "
+                                  "amendment 3's hum rule; part A's hum notch was never adopted, so hum-flagged "
+                                  "sections stay flagged)", "unscreened": missing, "sections": secs,
                                   "counts": {"sections": len(secs), "clean": sum(s["clean"] for s in secs),
                                              "by_band": dict(collections.Counter(s["band"] for s in secs if s["clean"]))},
                                   "time": time.strftime("%Y-%m-%d %H:%M:%S")})
@@ -423,20 +486,22 @@ def cmd_manifest(_):
 
 
 def cmd_backing(_):
-    from learn import pretrain_set as PS
     from learn import verify_tracks as V
 
     rows = _inv()
     out = {}
     for r in rows:
         files = sorted(p.name for p in pathlib.Path(r["session_dir"]).glob("*.wav"))
-        withv, nov = PS.backing_tracks(r, files)
+        withv, nov = backing_candidates(r, files)
         out[r["id"]] = {"session_dir": r["session_dir"], "with_vocals": withv, "without_vocals": nov,
                         "has_vocals": len(withv) > len(nov), "mix_list": bool(r.get("mix")),
                         "guitar_tracks": V.guitar_sources(files),
                         "non_musical": [f for f in withv if V.NON_MUSICAL.search(f)]}
-    _save(OUT / "backing.json", {"plan": PLAN, "rule": "pretrain_set.backing_tracks (no part C leakage list: the "
-                                 "per-example stem rule replaces it)", "dis": out,
+    _save(OUT / "backing.json", {"plan": PLAN, "rule": "candidates only: pretrain_set.backing_tracks less every guitar "
+                                 "track (verify_tracks.guitar_sources: other guitars' amp and mic tracks, acoustic "
+                                 "guitars). An example's stems are `trusted_data.stems_for` under the per-example "
+                                 "leak rule on the released sessions' stem scan (`cc_stem_takes`); other guitars "
+                                 "enter as renders or rule 1's amp tracks", "dis": out,
                                  "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"backing metadata for {len(out)} DIs")
 
