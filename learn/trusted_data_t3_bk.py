@@ -19,7 +19,13 @@ the per-example rule's (`trusted_data.stems_for` with `stem_takes` on the guitar
 (`trusted_data.target_doubles`) is left out, as the clean/crunch pool leaves it out; T2 has none. An example whose
 stems do not change keeps T3's stored mix and stem features (the same inputs on the same device). A changed example
 is rebuilt by `trusted_data.self_built_mix` and separated on the device T3 built it on, so the separator's device
-noise matches D_F5's.
+noise matches D_F5's. `self_built_mix` holds the drawn guitar-to-backing ratio, so a louder backing gets a lower gain
+(first builds' median -4.8 dB Death Of A Romantic, -2.3 dB Storm Of Particles): the other guitars sit that much lower
+against the target and the stem's SNR rises (median +4.5 / +1.0 dB). Read D_F5bk - D_F5 with this beside it.
+
+**Resuming and re-planning.** Build and control rows record their backing's track hash (`tracks_sha`) and count as
+done only on the plan's backing; rows from before that (the first builds) count only while `t3-bk/plan.json` is the
+file they ran on (`LEGACY_PLAN_SHA`), and `plan` refuses to rewrite the plan while such rows exist.
 
 **The pipeline control.** Before any build: per section with a changed example, its first changed example rebuilt
 with T2's old stems on its stored device must reproduce T3's stored `mix-t3` and `xlance_g-t3` (match share 0.99 on
@@ -36,6 +42,7 @@ its commands come with the step-3 readout code. Not before the user's ear clears
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import pathlib
@@ -52,6 +59,9 @@ LEDGER_KEY = "amendment_6"
 LEDGER_MARK = "D_F5bk (clean/crunch pool step 3)"
 PLAN = "docs/clean-crunch-pool-plan.md"
 DEVICES = ("mps", "cpu")
+# The plan file the first builds ran on (2026-10-28 22:43): their rows predate the backing hash, so they count as
+# done only while t3-bk/plan.json is still exactly this file (PR #325's review).
+LEGACY_PLAN_SHA = "a2f398fdc7022a07c421106d39366c7f6b35af4e2fa47f12b556e2333439c06d"
 
 _save, _load = V._save, V._load
 
@@ -69,12 +79,68 @@ def backing_of(x, v, n):
 
 
 def example_entry(x, v, n, doubles, set_name, device):
-    """One example's record in the plan: old and new stems, whether the backing changes, why it is left out."""
-    same = backing_of(x, v, n) == T.backing_tracks(x, vocal_variant(x, x["stems"]["v"], x["stems"]["n"]))
+    """One example's record in the plan: old and new stems and backings (the tracks summed, as built), whether the
+    backing changes, why it is left out."""
+    new, old = backing_of(x, v, n), T.backing_tracks(x, vocal_variant(x, x["stems"]["v"], x["stems"]["n"]))
     return {"i": x["i"], "set": set_name, "band": x["band"], "section": x["section"], "device": device,
             "old": {"v": list(x["stems"]["v"]), "n": list(x["stems"]["n"])}, "new": {"v": list(v), "n": list(n)},
-            "vocals": vocal_variant(x, v, n), "same": same,
+            "vocals": vocal_variant(x, v, n), "backing": new, "backing_old": old, "same": new == old,
             "left_out": f"a target-double stand-in: {doubles}" if doubles else None}
+
+
+def tracks_sha(tracks):
+    """A short hash of a backing's track list (in order): what a build or control row was made from."""
+    return hashlib.sha256(json.dumps(list(tracks)).encode()).hexdigest()[:16] if tracks is not None else None
+
+
+def row_current(row, want, plan_sha):
+    """Whether a build or control row was made from the backing the plan now asks for (`want`: its tracks_sha). A row
+    without a hash (the first builds, before PR #325's review) counts only while the plan is the file they ran on."""
+    if row is None or row.get("refused"):
+        return False
+    if row.get("backing_sha") is not None:
+        return row["backing_sha"] == want
+    return plan_sha == LEGACY_PLAN_SHA
+
+
+def bk_stems(ctx, x, verified_stems, scan, floor):
+    """(with vocals, without vocals): example x's stems under the per-example rule, computed as
+    `trusted_data.example_recipe(takes=(scan, floor))` computes them (its target and rendered other guitars replaced;
+    the inventory's own amp tracks)."""
+    rec = ctx.inv[x["di"]]
+    sd = rec["session_dir"]
+    st = scan.get(sd)
+    if not st:
+        return [], []
+    dis = [x["di"]] + [o["di"] for o in x["others"]]
+    rep = T.replaced_sources(st["sources"], dis, {d: ctx.inv[d].get("own") for d in dis})
+    return T.stems_for(rec, verified_stems, sd, st, rep, floor)
+
+
+def train_refusals(p, build_rows, control_rows, stem_exists, plan_sha, tr_ids, es_ids, f5_why):
+    """Why D_F5bk may not train yet (empty: it may): a changed example not built from the plan's backing, refused,
+    or its stem file missing; an example left out; a pipeline control not passed; the F5/FS5 examples not the plan's;
+    the examples not D_F5's (`f5_why`, trusted_data_t3_mix.same_examples)."""
+    why = []
+    for e in p["examples"]:
+        if e["left_out"]:
+            why.append((e["i"], f"left out: {e['left_out']}"))
+        elif not e["same"]:
+            r = build_rows.get(e["i"])
+            if r is not None and r.get("refused"):
+                why.append((e["i"], f"refused: {r['refused']}"))
+            elif not row_current(r, tracks_sha(e.get("backing")), plan_sha) or not stem_exists(e["i"]):
+                why.append((e["i"], "not built from the plan's backing"))
+    ent = {e["i"]: e for e in p["examples"]}
+    for i in p["control"]:
+        r = control_rows.get(i)
+        if not (r or {}).get("ok") or not row_current(r, tracks_sha(ent[i].get("backing_old")), plan_sha):
+            why.append((i, "pipeline control not passed"))
+    if list(tr_ids) != list(p["f5"]) or list(es_ids) != list(p["fs5"]):
+        why.append((None, "the F5/FS5 examples differ from this stage's plan"))
+    if f5_why:
+        why.append((None, f"not D_F5's examples: {f5_why}"))
+    return why
 
 
 def control_ids(entries):
@@ -122,6 +188,11 @@ def out_dir(root):
 
 def plan_file(root):
     return out_dir(root) / "plan.json"
+
+
+def plan_sha(root):
+    f = plan_file(root)
+    return hashlib.sha256(f.read_bytes()).hexdigest() if f.exists() else None
 
 
 def feat_path(root, i, what):
@@ -189,10 +260,7 @@ def cmd_plan(args):
         old = T.stems_for(rec, tr["stems"], sd)
         if (list(old[0]), list(old[1])) != (x["stems"]["v"], x["stems"]["n"]):
             raise SystemExit(f"{i}: the old rule no longer gives T2's stems: the lists moved")
-        st = scan.get(sd)
-        dis = [x["di"]] + [o["di"] for o in x["others"]]
-        rep = T.replaced_sources(st["sources"], dis, {d: ctx.inv[d].get("own") for d in dis}) if st else set()
-        v, n = T.stems_for(rec, tr["stems"], sd, st, rep, floor) if st else ([], [])
+        v, n = bk_stems(ctx, x, tr["stems"], scan, floor)
         doubles = T.target_doubles(rec.get("part") or DC.part_base(x["di"]), x.get("amp_tracks") or [])
         entries.append(example_entry(x, v, n, doubles, "fs5" if i in fss else "f5", built[i].get("device")))
     summ = summary(entries)
@@ -204,6 +272,11 @@ def cmd_plan(args):
     print(f"pipeline control: {len(ctl)} examples; builds {jobs}", flush=True)
     if args.dry:
         return
+    legacy = [r["i"] for r in [*rows(root, "build").values(), *rows(root, "control").values()]
+              if r.get("backing_sha") is None]
+    if legacy:
+        raise SystemExit(f"{len(legacy)} build or control rows predate the backing hash and count only under the "
+                         f"current plan file: move t3-bk/rows aside before re-planning")
     _save(plan_file(root), {"plan": PLAN, "stage": f"T3 {ARM}", "ledger": f"{T3.LEDGER_ID} {LEDGER_KEY}",
                             "f5": f5, "fs5": fs, "refused_in_t3": sorted(refused), "floor_db": floor,
                             "drift": drift, "summary": summ, "control": ctl, "jobs": jobs, "examples": entries,
@@ -263,8 +336,10 @@ def cmd_control(args):
     root = V.out_root(args)
     p = load_bk_plan(root, args.smoke)
     ent = {e["i"]: e for e in p["examples"]}
+    psha = plan_sha(root)
     done = rows(root, "control")
-    ids = [i for i in p["control"] if ent[i]["device"] == args.device and i not in done]
+    ids = [i for i in p["control"] if ent[i]["device"] == args.device
+           and not row_current(done.get(i), tracks_sha(ent[i].get("backing_old")), psha)]
     print(f"control on {args.device}: {len(ids)} to do", flush=True)
     if ids:
         A = _Audio(root)
@@ -274,9 +349,13 @@ def cmd_control(args):
         with open(rp, "a") as fh:
             for i in ids:
                 x = A.t2[i]
-                made = A.mix(i, T.backing_tracks(x, vocal_variant(x, x["stems"]["v"], x["stems"]["n"])))
+                old = T.backing_tracks(x, vocal_variant(x, x["stems"]["v"], x["stems"]["n"]))
+                if ent[i].get("backing_old") is not None and old != ent[i]["backing_old"]:
+                    raise SystemExit(f"{i}: T2's backing differs from the plan's")
+                made = A.mix(i, old)
                 if made is None:
-                    row = {"i": i, "ok": False, "why": "no backing (T3 built this example)"}
+                    row = {"i": i, "ok": False, "why": "no backing (T3 built this example)",
+                           "backing_sha": tracks_sha(old)}
                 else:
                     _, mix, _, _ = made
                     s = _separate(sep, mix, i)
@@ -287,21 +366,26 @@ def cmd_control(args):
                     sh_m = T3.feature_share({"mA": mm["A"], "mB": mm["B"]}, d3m, ("mA", "mB"))
                     sh_s = T3.feature_share({"sA": sm["A"], "sB": sm["B"]}, d3s, ("sA", "sB"))
                     row = {"i": i, "section": x["section"], "device": args.device, "mix_share": sh_m,
-                           "stem_share": sh_s, "ok": sh_m >= DS.MATCH_SHARE and sh_s >= DS.MATCH_SHARE}
+                           "stem_share": sh_s, "ok": sh_m >= DS.MATCH_SHARE and sh_s >= DS.MATCH_SHARE,
+                           "backing_sha": tracks_sha(old), "plan_sha": psha}
                 fh.write(json.dumps(row) + "\n")
                 fh.flush()
                 print(f"control {i}: {row}", flush=True)
     done = rows(root, "control")
-    mine = [done[i] for i in p["control"] if ent[i]["device"] == args.device]
-    bad = [r for r in mine if not r.get("ok")]
+    mine = [done.get(i) or {"i": i} for i in p["control"] if ent[i]["device"] == args.device]
+    bad = [r for r in mine if not r.get("ok")
+           or not row_current(r, tracks_sha(ent[r["i"]].get("backing_old")), psha)]
     if bad:
         raise SystemExit(f"CONTROL FAILED {args.device}: {bad}")
     print(f"CONTROL DONE {args.device}: {len(mine)} passed")
 
 
 def control_passed(root, p):
-    done = rows(root, "control")
-    return [i for i in p["control"] if not (done.get(i) or {}).get("ok")]
+    """The control examples not (yet) passed on the plan's old backing."""
+    done, psha = rows(root, "control"), plan_sha(root)
+    ent = {e["i"]: e for e in p["examples"]}
+    return [i for i in p["control"] if not (done.get(i) or {}).get("ok")
+            or not row_current(done[i], tracks_sha(ent[i].get("backing_old")), psha)]
 
 
 def cmd_build(args):
@@ -316,9 +400,10 @@ def cmd_build(args):
     if missing and not args.smoke:
         raise SystemExit(f"the pipeline control has not passed on {len(missing)} examples: run `control` first")
     ent = {e["i"]: e for e in p["examples"]}
-    have = rows(root, "build")
+    have, psha = rows(root, "build"), plan_sha(root)
     jobs = [i for i in build_jobs(p["examples"], args.device)
-            if i not in have or not feat_path(root, i, "stem").exists()]
+            if not row_current(have.get(i), tracks_sha(ent[i].get("backing")), psha)
+            or not feat_path(root, i, "stem").exists()]
     jobs.sort(key=lambda i: (ent[i]["section"], i), reverse=args.order == "desc")
     jobs = jobs[:args.limit or None]
     print(f"build {ARM} on {args.device}: {len(jobs)} to do", flush=True)
@@ -341,8 +426,12 @@ def cmd_build(args):
             if sp.exists() and sp.stat().st_mtime >= started:
                 continue                                    # another worker's, written during this run
             e, x = ent[i], A.t2[i]
-            base = {"i": i, "set": e["set"], "section": e["section"], "band": e["band"], "device": args.device}
-            made = A.mix(i, backing_of(x, e["new"]["v"], e["new"]["n"]))
+            tracks = backing_of(x, e["new"]["v"], e["new"]["n"])
+            if e.get("backing") is not None and tracks != e["backing"]:
+                raise SystemExit(f"{i}: the backing differs from the plan's")
+            base = {"i": i, "set": e["set"], "section": e["section"], "band": e["band"], "device": args.device,
+                    "backing_sha": tracks_sha(tracks), "plan_sha": psha}
+            made = A.mix(i, tracks)
             if made is None:
                 fh.write(json.dumps({**base, "refused": "no backing: the drawn ratio cannot be met"}) + "\n")
                 fh.flush()
@@ -366,17 +455,17 @@ def cmd_build(args):
 
 
 def build_problems(root, p):
-    """Changed examples not built (or refused): -> list of (id, why)."""
-    have = rows(root, "build")
+    """Changed examples not built from the plan's backing (or refused): -> list of (id, why)."""
+    have, psha = rows(root, "build"), plan_sha(root)
     bad = []
     for e in p["examples"]:
         if e["same"] or e["left_out"]:
             continue
         r = have.get(e["i"])
-        if r is None or not feat_path(root, e["i"], "stem").exists():
-            bad.append((e["i"], "not built"))
-        elif r.get("refused"):
+        if r is not None and r.get("refused"):
             bad.append((e["i"], r["refused"]))
+        elif not row_current(r, tracks_sha(e.get("backing")), psha) or not feat_path(root, e["i"], "stem").exists():
+            bad.append((e["i"], "not built from the plan's backing"))
     return bad
 
 
@@ -415,18 +504,15 @@ def cmd_train(args):
         print(f"{rp.name} exists: nothing to do")
         return
     p = load_bk_plan(root, args.smoke)
-    bad = build_problems(root, p) + [(e["i"], e["left_out"]) for e in p["examples"] if e["left_out"]]
-    if (bad or control_passed(root, p)) and not args.smoke:
-        raise SystemExit(f"{len(bad)} examples not ready: {bad[:5]}")
     plan, drift = TM.load_frozen(root, args.smoke)
     ctx = DS.Ctx(quiet=True)
     tr_rows, es_rows = T3.arm_rows(root, ctx, plan, T3.FULL)
-    if [r["i"] for r in tr_rows] != p["f5"] or [r["i"] for r in es_rows] != p["fs5"]:
-        raise SystemExit("the F5/FS5 examples differ from this stage's plan")
-    why = TM.same_examples(_load(T3.run_path(root, T3.FULL, args.seed)) or {}, p["refused_in_t3"], len(tr_rows),
-                           len(es_rows))
+    f5_why = TM.same_examples(_load(T3.run_path(root, T3.FULL, args.seed)) or {}, p["refused_in_t3"], len(tr_rows),
+                              len(es_rows))
+    why = train_refusals(p, rows(root, "build"), rows(root, "control"), lambda i: feat_path(root, i, "stem").exists(),
+                         plan_sha(root), [r["i"] for r in tr_rows], [r["i"] for r in es_rows], f5_why)
     if why and not args.smoke:
-        raise SystemExit(f"{ARM} must train on D_F5's examples: {why}")
+        raise SystemExit(f"{ARM} refuses to train: {len(why)} problems, e.g. {why[:5]}")
     ent = {e["i"]: e for e in p["examples"]}
     rows_ = tr_rows + es_rows
     files = {r["i"]: files_for(ent[r["i"]], root) for r in rows_}
