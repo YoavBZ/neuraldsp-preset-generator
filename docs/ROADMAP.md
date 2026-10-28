@@ -129,9 +129,13 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
    or stem.
 
    **Where it stands (2026-10-28).** Not ready to ship; the detail is in the trusted-data items below.
+   - **The training pool is being rebuilt around clean and crunch songs** ([plan](clean-crunch-pool-plan.md), approved
+     2026-10-28, nothing run). T2, F5 and FS5 came from 4 heavy bands only, and the stem leak check stripped drums or bass
+     from some backings. Step 0 (yield counts, zero renders) runs first; F20 waits for its step 3 reading.
    - **Learning every control is not yet shown to help.** T3's F5 gate, D_F5 (every control learned) − D_core5 (today's 25
      controls), reads +0.079 [−0.065, +0.224] on V-real-11 (7 bands): not shown. The user said yes to F20 (2026-10-27);
-     (b) read 2026-10-28 (the stock stem stays F20's input), so its plan is next to declare.
+     (b) read 2026-10-28 (the stock stem stays F20's input). F20 now waits for the clean/crunch pool's step 3 reading and is
+     re-planned on that pool.
    - **R1 (post hoc, descriptive, audited):** D_F5 with its 96 unreadable heads written at S still reads +0.062
      [−0.080, +0.204] against D_core5 (4 of 7 bands better; crunch −0.013). The delay, the one time effect still read
      (AUC 0.557, lower bound 0.505), stays on in 29 of 66 directions, and Colour Me Red ElecGtr03 drives the result
@@ -233,7 +237,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      no vocals, at most 2 other guitars), its own key; sent the same day. Answers on the dense page still count: an
      effect not heard there is masked there. The user's direction the same day (below) points the rulings toward an audibility weight; its exact
      form is declared and reviewed before the relabel.*
-   - (d) **F20:** the user said yes (2026-10-27); its plan is declared after (b) reads (read 2026-10-28: the stock stem stays its input). Its value now rests on (a)/(b) and on the new data. Its declared
+   - **Clean/crunch-led pool** ([plan](clean-crunch-pool-plan.md), approved 2026-10-28): steps 0–3 come before F20.
+   - (d) **F20:** re-planned on the clean/crunch pool after its step 3 reading. Before that: the user said yes (2026-10-27); its plan is declared after (b) reads (read 2026-10-28: the stock stem stays its input). Its value now rests on (a)/(b) and on the new data. Its declared
      fixes: redraw near-silent draws (up to 5 tries; about 16% more target renders at F5's rate); keep each
      core/full pair on one separation device; the switch readout and prior (since 2026-10-27 the plain readout is
      the method; an at-S read only beside it); "unknown" DIs at most 25% of draws. Its plan must also settle
@@ -1033,4 +1038,5 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-27 | Audibility measurement (ROADMAP (c)), the fresh run audited: 23–59% of "on" effects sit below τ in the mix; delay reads better from the mix as A_e rises, mixed with effect size; tremolo reads weakly at every level; A_e measures the judge's render-to-mix sensitivity, not audibility as such; the doubler also runs on across renders (joins the V-real caution). The ear page went to the user; nothing relabelled | [outcome](trusted-data-t0-design.md#audibility-outcome-2026-10-27-fresh-run-2686-renders-audited) |
 | 2026-10-27 | The user's direction (in chat): sound-alike presets are acceptable; barely audible effects barely matter; effects might later be adjusted from the song research. Read as a sliding audibility weight for (c)'s relabel (declared and reviewed before it runs). A second ear page with exposed-guitar pairs was added beside the dense one (zero renders, PR #319) | [(c)](#next-in-order) |
 | 2026-10-28 | X-LANCE fine-tune (ROADMAP (b)) outcome, audited: D_F5ft − D_F5-noaug +0.078 [−0.025, +0.181] on V-real, not shown, leans worse; the fine-tune mostly shrank its output (F5 median about 12 dB under the target guitar, −14 to −6 dB in three bands; Ale Lak's stems louder than the target but still worse than silence), so its +5.2 dB over the stock stem is not separation; tone probe 22 against the stock stem's 20 (per head the stock stem is reliably better on 5, the fine-tuned on 3). Not adopted; F20 keeps the stock stem; the route is not judged | [outcome](trusted-data-t0-design.md#d_f5ft-outcome-2026-10-28-99-renders-audited) |
+| 2026-10-28 | Clean/crunch-led pool (user: "Yes for all", after an independent review and a re-check): the trusted pool (T2/F5/FS5) is 4 heavy bands with no clean or crunch song, because stage F's 12 bands are kept out of the pool (7 are V-real), the other usable bands' DIs were heard processed or fail D2, and cleaning, rule 1 and the cap removed the rest. Decisions: A Adam Buckley trains (leaves K); B release sets 1–2's held-out Cambridge sessions, set 3's Dunning Kruger and Silona, and set 5's Hazael and Peter White into training (never tests again); C re-download set 5's backings; D heavy at most 20%, no high-gain sections (Death Of A Romantic and Hollow Ground out); E the ear sittings; F step 3's training. The leak rule becomes per example, replaced guitars only, session-level readings. V-real-11 stays the test. F20 re-planned after step 3 | [plan](clean-crunch-pool-plan.md) |
 
