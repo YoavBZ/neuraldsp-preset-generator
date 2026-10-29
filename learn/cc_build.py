@@ -320,7 +320,7 @@ def load_ear():
     return ear_windows([(ans, items) for _, ans, items in ear_sources()])
 
 
-def verdicts(alignment=True):
+def verdicts(alignment=True, root=None):
     """{DI id: {"band", "path", "ear", "heard", "classes", "measures", "trains", "why", "source"}} over the released
     inventory, tier 1 and the heavy bands (zero audio). With `alignment`, a DI trains only when the alignment check
     (`align`, cc/alignment-*.json) reads it in time with its amp track or song (fails closed: unchecked is out)."""
@@ -365,18 +365,24 @@ def verdicts(alignment=True):
         if v["band"] in EAR_OUT_BANDS:
             v.update(trains=False, why=f"the ear: {EAR_OUT_BANDS[v['band']]}")
     if alignment:
-        al = load_alignment(V.out_root(argparse.Namespace(out=None)) / STAGE)
-        for d, v in out.items():
-            if v["trains"]:
-                a = al.get(d)
-                if a is None:
-                    v.update(trains=False, align_hold=True, why="the alignment check has not read it")
-                elif a["verdict"] != ALIGNED:
-                    v.update(trains=False, why=f"alignment: {a['verdict']} (lag {a['lag_ms']} ms, spread "
-                                               f"{a['spread_ms']} ms, {a['readings']} readings vs {a['kind']})")
+        gate_alignment(out, load_alignment(root or V.OUT / STAGE))
     rel = {r["id"]: r for r in CP._inv()}
     CP.check_pool_rows([inv.get(d) or rel[d] for d, v in sorted(out.items()) if v["trains"]])
     return out
+
+
+def gate_alignment(ver, al):
+    """In place: a DI the ear and the measures admit trains only when the alignment check reads it in time
+    (`align_verdict`); one it has not read is held (fails closed)."""
+    for d, v in ver.items():
+        if v["trains"]:
+            a = al.get(d)
+            if a is None:
+                v.update(trains=False, align_hold=True, why="the alignment check has not read it")
+            elif a["verdict"] != ALIGNED:
+                v.update(trains=False, why=f"alignment: {a['verdict']} (lag {a['lag_ms']} ms, spread "
+                                           f"{a['spread_ms']} ms, {a['readings']} readings vs {a['kind']})")
+    return ver
 
 
 def verdicts_raw(args):
@@ -447,7 +453,7 @@ def cmd_verdicts(args):
     import collections
 
     require(args)
-    ver = verdicts()
+    ver = verdicts(root=root_of(args))
     _save(root_of(args) / "verdicts.json", {"plan": PLAN, "dis": ver, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     by = collections.Counter((v["band"], v["source"], v["trains"]) for v in ver.values())
     for (band, src, ok), n in sorted(by.items()):
@@ -462,7 +468,7 @@ def _ver(args):
     d = _load(root_of(args) / "verdicts.json")
     if not d:
         raise SystemExit("run `verdicts` first")
-    if d["dis"] != json.loads(json.dumps(verdicts(), default=float)):
+    if d["dis"] != json.loads(json.dumps(verdicts(root=root_of(args)), default=float)):
         raise SystemExit("verdicts.json is stale (the ear, the measures or T0's lists changed): rerun `verdicts`")
     return d["dis"]
 
@@ -1082,7 +1088,9 @@ def align_verdict(windows, kind, n_min=ALIGN_MIN_WINDOWS):
     envelopes of a repeated riff also match a bar away); else the envelope readings (correlation >= ALIGN_ENV_CORR)
     do; fewer than n_min of either: 'no match' (a different take, or nothing to read). 'drift' when the GCC readings
     span more than ALIGN_SPREAD_MS, or an envelope reading sits more than ALIGN_ENV_TOL_MS from their median (an
-    edit or a drifting take somewhere); 'offset' for a constant lag beyond a mic's delay; else 'aligned'. Against the
+    edit or a drifting take somewhere); 'offset' for a constant lag beyond ALIGN_OFFSET_MS; "outside A1's range"
+    for a GCC median outside A1's 0.1-30 ms (the amp track after its DI by a mic's delay), or an envelope median
+    beyond +-30 ms (their 10-ms steps cannot read A1's lower end); else 'aligned'. Against the
     song (no amp track of its own) the timing cannot be read (in-time controls peak at beat multiples too):
     'unverified'. -> (verdict, median lag ms, range ms, readings)."""
     from statistics import median
@@ -1104,6 +1112,9 @@ def align_verdict(windows, kind, n_min=ALIGN_MIN_WINDOWS):
         return "drift", med, spread, len(rd)
     if abs(med) > ALIGN_OFFSET_MS:
         return "offset", med, spread, len(rd)
+    in_range = (V.LAG_MIN_MS <= med <= V.LAG_MAX_MS) if rd is gcc else abs(med) <= V.LAG_MAX_MS
+    if not in_range:                                       # A1's mic-delay range (the envelopes' 10-ms steps: +-30)
+        return "outside A1's range", med, spread, len(rd)
     return ALIGNED, med, spread, len(rd)
 
 
@@ -1159,12 +1170,26 @@ def align_di(rec, files):
             "readings": nr}
 
 
+def align_method():
+    """A hash of the alignment's measurement (the window readings; the verdict is recomputed at read): the code of
+    `onset_strength`, `window_lag` and `align_di` and the constants they read. A stored file under another is stale."""
+    import hashlib
+    import inspect
+
+    src = "".join(inspect.getsource(f) for f in (onset_strength, window_lag, align_di))
+    consts = json.dumps([ALIGN_SR, ALIGN_HOP_S, ALIGN_STEP_S, ALIGN_MAX_S, V.CROP_S, list(V.LAG_BAND_HZ)])
+    return hashlib.sha256((src + consts).encode()).hexdigest()[:16]
+
+
 def load_alignment(root):
     """{DI id: alignment} merged over the `align` shards (any split), each verdict recomputed from its stored windows
-    under today's rule (`align_verdict`)."""
-    out = {}
+    under today's rule (`align_verdict`). A file measured under another method refuses: rerun `align`."""
+    out, method = {}, align_method()
     for f in sorted(pathlib.Path(root).glob("alignment-*of*.json")):
-        out.update((_load(f) or {}).get("dis", {}))
+        d = _load(f) or {}
+        if d.get("method") != method:
+            raise SystemExit(f"{f.name} was measured under another alignment method: rerun `align` (it redoes it)")
+        out.update(d.get("dis", {}))
     for a in out.values():
         v, med, spread, n = align_verdict(a["windows"], a["kind"])
         a.update(verdict=v, lag_ms=None if med is None else round(med, 2),
@@ -1181,7 +1206,9 @@ def cmd_align(args):
     k, n = args.shard
     dis = [d for j, d in enumerate(sorted(d for d, v in ver.items() if v["trains"] or v.get("align_hold"))) if j % n == k]
     path = root_of(args) / f"alignment-{k}of{n}.json"
-    done = (_load(path) or {}).get("dis", {})
+    method = align_method()
+    prev = _load(path) or {}
+    done = prev.get("dis", {}) if prev.get("method") == method else {}      # a stale file is redone
     t0 = time.time()
     for m, d in enumerate(dis):
         if d in done:
@@ -1189,7 +1216,8 @@ def cmd_align(args):
         rec = inv[d]
         files = sorted(f.name for f in pathlib.Path(rec["session_dir"]).glob("*.wav"))
         done[d] = align_di(rec, files)
-        _save(path, {"plan": PLAN, "shard": [k, n], "dis": done, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+        _save(path, {"plan": PLAN, "shard": [k, n], "method": method, "dis": done,
+                     "time": time.strftime("%Y-%m-%d %H:%M:%S")})
         r = done[d]
         print(f"{m + 1}/{len(dis)} {d[-55:]}: {r['verdict']} (lag {r['lag_ms']} ms, spread {r['spread_ms']}, "
               f"{r['readings']}/{len(r['windows'])} readings vs {r['kind']}) {time.time() - t0:.0f} s", flush=True)

@@ -225,3 +225,31 @@ def test_silent_amp_share():
     assert C.silent_amp_share(di, [[True] * 7 + [False] * 3]) == pytest.approx(0.3)
     assert C.silent_amp_share(di, [[False] * 10, [True] * 5 + [False] * 5]) == pytest.approx(0.5)   # any own amp plays
     assert C.silent_amp_share([False] * 10, [[False] * 10]) == 0.0                                 # no DI, no claim
+
+
+def test_alignment_gate_fails_closed_without_rows():
+    ver = {"a": {"trains": True}, "b": {"trains": True}, "c": {"trains": False}}
+    C.gate_alignment(ver, {})
+    assert not ver["a"]["trains"] and ver["a"]["align_hold"] and not ver["b"]["trains"]
+    ver = {"a": {"trains": True}, "b": {"trains": True}}
+    al = {"a": {"verdict": "aligned"}, "b": {"verdict": "drift", "lag_ms": 1.0, "spread_ms": 30.0, "readings": 5,
+                                          "kind": "amp"}}
+    C.gate_alignment(ver, al)
+    assert ver["a"]["trains"] and not ver["b"]["trains"] and "drift" in ver["b"]["why"]
+
+
+def test_aligned_only_within_a1s_range():
+    assert C.align_verdict([_w(24.4, 200)] * 3, "amp")[0] == "aligned"
+    assert C.align_verdict([_w(-0.25, 200)] * 3, "amp")[0] == "outside A1's range"     # the amp before its DI
+    assert C.align_verdict([_w(0.05, 200)] * 3, "amp")[0] == "outside A1's range"
+    assert C.align_verdict([_w(40.0, 200)] * 3, "amp")[0] == "outside A1's range"      # beyond a mic, under an offset
+    assert C.align_verdict([_w(-7.6, 5, corr=0.95, lag=0.0)] * 3, "amp")[0] == "aligned"   # envelopes: 10-ms steps
+    assert C.align_verdict([_w(-7.6, 5, corr=0.95, lag=40.0)] * 3, "amp")[0] == "outside A1's range"
+
+
+def test_a_stale_alignment_file_refuses(tmp_path):
+    (tmp_path / "alignment-0of1.json").write_text(json.dumps({"method": "old", "dis": {}}))
+    with pytest.raises(SystemExit, match="another alignment method"):
+        C.load_alignment(tmp_path)
+    (tmp_path / "alignment-0of1.json").write_text(json.dumps({"method": C.align_method(), "dis": {}}))
+    assert C.load_alignment(tmp_path) == {}
