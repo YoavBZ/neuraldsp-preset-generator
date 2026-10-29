@@ -143,7 +143,7 @@ LEFT_OUT_OWN_TAKE = "an added amp track is in the cleaning scan's removed or sam
 LEFT_OUT_TARGET_DOUBLE = "an added amp track doubles the target's part (it would carry the target's own tone)"
 AMP_BLEED_DB = V.A6_BLEED_DB           # an amp track is used when its other-instrument bleed reads under this (-30 dB)
 AMP_BLEED_DIR = "amp-bleed"            # root/amp-bleed/<session>.json: the readings (`amp-bleed`)
-AMP_SOURCE_MIN_SHARE = 0.5             # a source playing on fewer of the amp track's playing frames is unmeasurable
+AMP_SOURCE_MIN_SHARE = 0.5             # retired 2026-10-29 (the audit): a low share is no reason by itself; kept for old readers
 AMP_BLEED_MEASURE = ("data_cleaning's session-level take estimator (SessionMeter, counted frames, rolled nulls; the "
                      "stem scan's) over the whole session, with each non-guitar track as the source (never another "
                      "guitar track: bleed_sources) and the amp track as the reference; stored raw per source: the real "
@@ -460,59 +460,105 @@ def amp_bleed_total(takes, floor=None):
     return DC.db_sum(v) if v else None
 
 
+AMP_SUM_LOWER = False  # the track's power sum over each source's lower bound (real less its highest rolled reading)
+                       # instead of its point take: the review (2026-10-29) found 37 of 54 failing tracks fail only on
+                       # summed noise excursions, no single source failing. Off by default; dry runs read it.
+AMP_NEG_PASS = False   # the audit's "a non-positive real reading passes": off, since it passes the -25 dB synthetic
+                       # injection below (the estimator's held-out readings sit below 0 and the leak shows only as
+                       # real minus the rolled readings); the interval decides instead. The coordinator's call.
+
+
+def source_status(src, thr=AMP_BLEED_DB, neg_pass=None):
+    """One non-guitar source's verdict in an amp track from its stored raw values (src: {"real", "nulls": held-out
+    explained energies as shares of the amp track's energy on its playing frames, "active_share"}), the audit's repair
+    of 2026-10-29. -> (status, reason or None):
+    - 'pass' when the source is silent where the amp track plays (active_share 0: it cannot leak into it), or when
+      the take's upper bound (real less the lowest rolled reading) is under the line;
+    - 'fail' when the take's lower bound (real less the highest rolled reading) is at or above the line;
+    - 'unmeasurable' when the interval straddles the line, on a blow-up (a reading beyond the amp track's own energy,
+      |share| > 1, whatever the real reading's sign: the fit cannot be trusted there), or with no rolled reading.
+    The share of frames the source plays on is no reason by itself (the design's injection read a 29%-active vocal
+    back within 0.4 dB). With `neg_pass` (AMP_NEG_PASS) a non-positive real reading passes whatever the rolled
+    readings say; without it only the interval decides."""
+    neg_pass = AMP_NEG_PASS if neg_pass is None else neg_pass
+    line = 10 ** (thr / 10)
+    r, n = src["real"], list(src["nulls"])
+    if src.get("active_share") == 0.0:
+        return "pass", None
+    if not n:
+        return "unmeasurable", "no rolled reading (the chance level is unknown)"
+    if abs(r) > 1.0 or any(abs(v) > 1.0 for v in n):
+        return "unmeasurable", "blow-up (a held-out reading beyond the amp track's energy)"
+    if neg_pass and r <= 0:
+        return "pass", None
+    lo, hi = r - max(n), r - min(n)
+    if lo >= line:
+        return "fail", None
+    if hi < line:
+        return "pass", None
+    return "unmeasurable", f"the take's interval ({_db(lo)} to {_db(hi)} dB) straddles the line"
+
+
+def _db(x):
+    return "none" if x <= 0 else f"{10 * math.log10(x):+.1f}"
+
+
 def source_take(src, thr=AMP_BLEED_DB, min_share=None):
-    """One non-guitar source's reading in an amp track, from its stored raw values (src: {"real", "nulls": held-out
-    explained energies as shares of the amp track's energy on its playing frames, "active_share"}). -> (take dB or
-    None, unmeasurable reason or None). The take is `data_cleaning.take_db` on the raw values (no clipping), capped
-    at 0 dB. A source is unmeasurable, and fails its track, when the estimator cannot be trusted on it:
-    - a blow-up: the real or a rolled reading beyond the amp track's own energy (|share| > 1), which a sane fit
-      cannot reach (a source silent for long stretches gives fold weights that blow up where it plays);
-    - rolled readings spread as wide as the line itself (max - min >= 10^(thr/10)): the chance level is not known
-      well enough to place the take on either side of it;
-    - the source plays on fewer than `min_share` of the amp track's playing frames (within 40 dB of its own loudest,
-      `data_cleaning.counted_frames`), where the fold weights are fitted on too little of it."""
+    """(take dB or None, unmeasurable reason or None) of one source (`source_status`): the take is
+    `data_cleaning.take_db` on the raw values, capped at 0 dB, and only from a positive real reading of a source that
+    plays where the amp track plays (a negative held-out reading explains nothing). `min_share` is no longer read."""
     from learn import data_cleaning as DC
 
-    min_share = AMP_SOURCE_MIN_SHARE if min_share is None else min_share
+    st, why = source_status(src, thr)
     r, n = src["real"], list(src["nulls"])
-    if abs(r) > 1.0 or any(abs(v) > 1.0 for v in n):
-        why = "blow-up (a held-out reading beyond the amp track's energy)"
-    elif n and max(n) - min(n) >= 10 ** (thr / 10):
-        why = f"rolled readings spread as wide as the line ({10 * math.log10(max(n) - min(n)):+.1f} dB)"
-    elif src["active_share"] < min_share:
-        why = f"source plays on {100 * src['active_share']:.0f}% of the amp track's playing frames"
-    else:
-        why = None
-    t = DC.take_db(r, n, 1.0)
-    return (None if t is None else min(t, 0.0)), why
+    sane = bool(n) and abs(r) <= 1.0 and all(abs(v) <= 1.0 for v in n) and src.get("active_share") != 0.0
+    t = DC.take_db(r, n, 1.0) if sane and not (AMP_NEG_PASS and r <= 0) else None
+    return (None if t is None else min(t, 0.0)), (why if st == "unmeasurable" else None)
+
+
+def lower_take(src):
+    """A source's take at its interval's lower bound (real less its highest rolled reading), dB capped at 0, or None
+    (not positive, a blow-up, no rolled reading, or silent where the amp track plays)."""
+    r, n = src["real"], list(src["nulls"])
+    if not n or src.get("active_share") == 0.0 or abs(r) > 1.0 or any(abs(v) > 1.0 for v in n):
+        return None
+    lo = r - max(n)
+    return min(10 * math.log10(lo), 0.0) if lo > 0 else None
 
 
 def track_bleed(reading, thr=AMP_BLEED_DB, min_share=None):
     """An amp track's bleed from its stored reading (`measure_amp_bleed`): {"bleed_db" (the power sum of the takes at
-    or above -40 dB, `amp_bleed_total`; None under it), "takes", "unmeasurable" {source: reason}, "worst" (source, dB)
-    or None}."""
-    takes, bad = {}, {}
+    or above -40 dB, `amp_bleed_total`; None under it), "takes", "status" {source: verdict}, "unmeasurable" {source:
+    reason}, "failed" [sources], "worst" (source, dB) or None}."""
+    takes, lows, bad, sts = {}, {}, {}, {}
     for s, src in sorted((reading.get("sources") or {}).items()):
-        takes[s], why = source_take(src, thr, min_share)
-        if why:
+        sts[s], why = source_status(src, thr)
+        takes[s], _ = source_take(src, thr)
+        lows[s] = lower_take(src)
+        if sts[s] == "unmeasurable":
             bad[s] = why
     worst = max(((v, s) for s, v in takes.items() if v is not None), default=None)
-    return {"bleed_db": amp_bleed_total(takes), "takes": takes, "unmeasurable": bad,
+    return {"bleed_db": amp_bleed_total(takes), "bleed_lower_db": amp_bleed_total(lows), "takes": takes,
+            "lower_takes": lows, "status": sts, "unmeasurable": bad,
+            "failed": sorted(s for s, v in sts.items() if v == "fail"),
             "worst": None if worst is None else (worst[1], worst[0])}
 
 
-def amp_status(reading, thr=AMP_BLEED_DB):
-    """An amp track's bleed check (A6's line): 'pass' when its bleed reads under thr (None: under the floor), 'fail'
-    at or above it, 'unmeasurable' when a source cannot be read (it fails too: only what can be trusted is used),
-    'silent' for a silent file, 'not measured' without a reading."""
+def amp_status(reading, thr=AMP_BLEED_DB, sum_lower=None):
+    """An amp track's bleed check (A6's line): 'fail' when a source's take is surely at or above the line or the
+    takes' power sum reaches it (with `sum_lower`, AMP_SUM_LOWER, the sum of each source's lower bound); else 'unmeasurable' when a source's interval straddles it (it fails too: only what
+    can be trusted is used); else 'pass'. 'silent' for a silent file, 'not measured' without a reading."""
     if not reading:
         return "not measured"
     if reading.get("silent"):
         return "silent"
     tb = track_bleed(reading, thr)
+    total = tb["bleed_lower_db"] if (AMP_SUM_LOWER if sum_lower is None else sum_lower) else tb["bleed_db"]
+    if tb["failed"] or (total is not None and total >= thr):
+        return "fail"
     if tb["unmeasurable"]:
         return "unmeasurable"
-    return "pass" if tb["bleed_db"] is None or tb["bleed_db"] < thr else "fail"
+    return "pass"
 
 
 def amp_reason(reading, thr=AMP_BLEED_DB):
@@ -532,12 +578,15 @@ AMP_WHY = {"fail": f"amp track bleed at or above {AMP_BLEED_DB:.0f} dB", "unmeas
            "silent": "amp track silent"}
 
 
-def resolve_blocked(blocked, readings, thr=AMP_BLEED_DB):
+def resolve_blocked(blocked, readings, thr=AMP_BLEED_DB, bleed_gate=True):
     """The user's rule 1 (2026-10-25) on one section. blocked: the active guitars that cannot be rendered ([{"part",
     "activity", "why", "amp_tracks"}], `section_blocked`); readings: {track: reading} (`measure_amp_bleed`). A part is
     represented by all its amp or mic tracks when every one passes the bleed check; a part with none, or with one that
     fails or cannot be measured, is unusable. -> (amp tracks [{"part", "track", "bleed_db"}], unusable parts [{**part,
-    "amp", "amp_why"}]); the section's examples are left out when the second is not empty."""
+    "amp", "amp_why"}]); the section's examples are left out when the second is not empty. Without `bleed_gate`
+    (a policy for the user: a stand-in's non-guitar bleed is what the real song's mix holds too) a part's tracks are
+    used whatever their bleed reads, unless one is silent; the target-guitar checks (`cleaning_clash`,
+    `target_doubles`) stay on either way."""
     use, bad = [], []
     for b in blocked:
         tracks = b.get("amp_tracks") or []
@@ -554,7 +603,7 @@ def resolve_blocked(blocked, readings, thr=AMP_BLEED_DB):
         if miss:
             raise SystemExit(f"no bleed reading for {miss} (run `amp-bleed` for this stage first)")
         sts = {a["status"] for a in amp}
-        if sts == {"pass"}:
+        if sts == {"pass"} or (not bleed_gate and "silent" not in sts):
             use += [{"part": b["part"], "track": a["track"], "bleed_db": a["bleed_db"]} for a in amp]
         else:
             bad.append({**b, "amp": amp, "amp_why": "; ".join(AMP_WHY[k] for k in ("fail", "unmeasurable", "silent")
@@ -1167,13 +1216,15 @@ def target_doubles(target_part, amp_tracks):
                   if DC.part_base(a["track"]) == target_part or DC.name_partner(target_part, a["track"]))
 
 
-def apply_rule1(ctx, root, rows, verified, dis_windows, bad_sections, act_cache, scan=None, doubles_out=False):
+def apply_rule1(ctx, root, rows, verified, dis_windows, bad_sections, act_cache, scan=None, doubles_out=False,
+                bleed_gate=True):
     """The user's rule 1 (2026-10-25) at plan time: in each row's section, every active guitar that cannot be
     rendered is represented by its amp or mic tracks when each passes the bleed check (`resolve_blocked`); otherwise
     the row is left out of every arm (LEFT_OUT_NO_AMP), with the guitars, tracks and readings recorded. An added amp
     track that the cleaning scan removed or confirmed as the target's other take leaves the row out too
     (LEFT_OUT_OWN_TAKE; scan: {section: scan row}, `data_cleaning.scan_rows`). With `doubles_out` (the clean/crunch
     pool), an added amp track that doubles the target's part by name leaves it out as well (LEFT_OUT_TARGET_DOUBLE).
+    `bleed_gate` (`resolve_blocked`): False lets stand-ins in whatever their non-guitar bleed reads.
     -> (kept rows, left-out records, {section: amp tracks})."""
     from learn import data_cleaning as DC
 
@@ -1181,7 +1232,7 @@ def apply_rule1(ctx, root, rows, verified, dis_windows, bad_sections, act_cache,
     readings = load_amp_bleed(root, needed_amp_tracks(ctx, blocked))
     res = {}
     for sid, b in blocked.items():
-        use, bad = resolve_blocked(b, readings.get(section_session(ctx, sid)) or {})
+        use, bad = resolve_blocked(b, readings.get(section_session(ctx, sid)) or {}, bleed_gate=bleed_gate)
         clash = cleaning_clash(use, (scan or {}).get(sid)) if not bad else []
         if doubles_out and not bad and not clash:
             sec = ctx.sections[sid]
@@ -1321,11 +1372,13 @@ def apply_cap(ctx, rows, verified, dis_windows, bad_sections, act_cache, max_n=M
 
 
 def example_recipe(ctx, r, verified, verified_stems, act_cache, bad_sections=frozenset(), dis_windows=None,
-                   amp_tracks=(), takes=None):
+                   amp_tracks=(), takes=None, vocals_from_stems=False):
     """One example's self-built recipe (plan (c)), zero renders. r: a part C row; dis_windows: {di: {window id:
     status}} from T0's lists (an other guitar's window must have been measured and be usable); amp_tracks: the
     section's amp tracks that stand for active guitars that cannot be rendered (`apply_rule1`); takes: `stem_takes`
-    for the clean/crunch pool's per-example leak rule (None: T0's session-wide list, as T2 and T3 ran)."""
+    for the clean/crunch pool's per-example leak rule (None: T0's session-wide list, as T2 and T3 ran);
+    vocals_from_stems: the vocal draw's "has vocals" from the example's own stems (the clean/crunch pool, whose
+    sections have no part C backing) instead of part C's stored backing."""
     dis_windows = dis_windows or {}
     from learn import data_cleaning as DC
     from learn import direct_stems as DS
@@ -1352,8 +1405,11 @@ def example_recipe(ctx, r, verified, verified_stems, act_cache, bad_sections=fro
         dis = [sec["di"]] + [o["di"] for o in others]
         rep = replaced_sources(st["sources"], dis, {d: ctx.inv[d].get("own") for d in dis}) if st else set()
         withv, nov = stems_for(rec, verified_stems, sd, st, rep, floor) if st else ([], [])
-    meta = json.loads(PS.backing_path(r["section"]).with_suffix(".json").read_text())
-    ratio, v, leak, target = PS.mix_params(r["i"], ctx.ratios, meta["has_vocals"], ctx.eval_mix, 0)
+    if vocals_from_stems:
+        has_vocals = withv != nov
+    else:
+        has_vocals = json.loads(PS.backing_path(r["section"]).with_suffix(".json").read_text())["has_vocals"]
+    ratio, v, leak, target = PS.mix_params(r["i"], ctx.ratios, has_vocals, ctx.eval_mix, 0)
     mastered, _ = DS.master_draw(r["i"])
     return {"i": r["i"], "section": r["section"], "band": r["band"], "di": sec["di"], "amp": r["amp"],
             "base": r["base"], "pan_target": target_pan(r["i"]), "others": others,
