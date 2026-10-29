@@ -1083,7 +1083,7 @@ def align_verdict(windows, kind, n_min=ALIGN_MIN_WINDOWS):
     edit or a drifting take somewhere); 'offset' for a constant lag beyond a mic's delay; else 'aligned'. Against the
     song (no amp track of its own) the timing cannot be read (in-time controls peak at beat multiples too):
     'unverified'. -> (verdict, median lag ms, range ms, readings)."""
-    import numpy as np
+    from statistics import median
 
     if kind != "amp":
         return "unverified", None, None, 0
@@ -1093,10 +1093,10 @@ def align_verdict(windows, kind, n_min=ALIGN_MIN_WINDOWS):
         bad = max(gcc) - min(gcc) > tol
     elif len(env) >= n_min:
         rd, tol = env, ALIGN_ENV_TOL_MS
-        bad = any(abs(x - float(np.median(env))) > tol for x in env)
+        bad = any(abs(x - float(median(env))) > tol for x in env)
     else:
         return "no match", None, None, max(len(gcc), len(env))
-    med = float(np.median(rd))
+    med = float(median(rd))
     spread = float(max(rd) - min(rd))
     if bad:
         return "drift", med, spread, len(rd)
