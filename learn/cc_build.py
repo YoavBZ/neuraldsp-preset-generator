@@ -13,31 +13,35 @@ recipe and is read by `learn.cc_readout`.
     $MAIN -u -m learn.cc_build amp-bleed --shard k/3   # zero renders: rule 1's bleed check on the needed amp tracks
     $MAIN -u -m learn.cc_build cleaning-scan --shard k/3   # zero renders: the cleaning scan where it has no row
     $MAIN -m learn.cc_build ear-page                   # zero renders: part 13, the stem spot-checks and flagged DIs
+    $MAIN -m learn.cc_build ear-page-15                # zero renders: part 15, the DIs step 0's D2 kept from the ear
     $MAIN -m learn.cc_build plan [--dry]               # zero renders: the yield, the composition, every recipe
-                                                       # (dry only: --no-bleed-gate, --sum-lower; amendment 1)
+                                                       # (dry only: --bleed-gate, the old rule; amendment 2)
     $MAIN -u -m learn.cc_build render --shard k/3      # renders: each target in its own process; the other guitars
     $MSST -m learn.cc_build build --device mps|cpu     # mixes and X-LANCE stems
     $MAIN -m learn.cc_build check                      # every example built or refused, by reason
     $TORCH_PY -m learn.cc_build train --seed 20261042|20261043
 
-**The DIs** (`verdicts`): a released DI trains only when the ear heard it clean (ear pages parts 11 and 12, and 13's
-DI cards once answered; a later part's answer replaces an earlier part's "not sure" on the same DI; any processed,
-not-a-DI or hum answer excludes it) and step 0's DI-level measures pass (D3 passes, D1 not failed; D2 gates each window,
-not the DI: amendment 1). Tier 1: Adam Buckley's DIs as T0 verifies them (decision A); Quicksand ElecGtr1 (T0's
-measure DI, verified) and ElecGtr2 (heard clean, held by D4 alone, which no longer holds a DI the ear heard clean);
-Quicksand ElecGtr3 is out until heard. Turbosauro (no clean section in part A's manifest) and Starnes And Shah ElecGtr4
+**The DIs** (`verdicts`): a released DI trains only when the ear heard it clean (ear pages 11-15; a later part's
+answer replaces an earlier part's "not sure" on the same DI; any processed, not-a-DI or hum answer excludes it; part
+15 from either of its builds), step 0's DI-level measures pass (D3 passes, D1 not failed; D2 gates each window, not
+the DI: amendment 1), and the alignment check reads it in time with its own amp track (`align`; amendment 2: an
+offset, a drift, too few readings or no amp track to time it against leave it out). Peter White stays out (the ear).
+Tier 1: Adam Buckley's DIs as T0 verifies them (decision A); Quicksand ElecGtr1 (T0's measure DI, verified),
+ElecGtr2 (heard clean, held by D4 alone, which no longer holds a DI the ear heard clean) and ElecGtr3 (heard in part
+15). Turbosauro (no clean section in part A's manifest) and Starnes And Shah ElecGtr4
 (too short) stay out. The heavy share: Storm Of Particles and Ale Lak, T0-verified DIs, classed sections only. Death
 Of A Romantic and Hollow Ground are out (decision D). Every DI row passes `cc_pool.check_pool_rows`.
 
-**The sections.** A target section is part A's clean section (no screen flag) of a training DI, usable under T0's
-section rule (D2 on the window passes; D4 not flagged unless the ear heard the window or the DI clean; not silent),
-and not high gain. Its class: the ear's call on an overlapping heard window, else part A's class, else part A's classifier on its
+**The sections.** A target section is a training DI's section that part A's screen passes (hiss no longer screens:
+amendment 2), usable under T0's section rule (D2 on the window passes; D4 not flagged unless the ear heard the window
+or the DI clean; not silent), not high gain, and not one where the DI plays while its own amp track is silent. Its class: the ear's call on an overlapping heard window, else part A's class, else part A's classifier on its
 own amp track (T3's order, `trusted_data_t3.gain_class`); a heavy band's unclassed section is out. T0's statuses stand
 where T0 measured (Adam Buckley, Storm Of Particles, Ale Lak); `checks` measures the rest the same way
 (`verify_tracks.di_processing`, `DiD2`, part A's stored flags).
 
-**The examples** (`plan`). Rule 1 and the cap as T2 ran them (`apply_rule1` with `doubles_out`, `apply_cap`); a
-section whose rule-1 amp tracks have no cleaning scan row is left out (fail closed). The fit and early-stopping set
+**The examples** (`plan`). Rule 1 and the cap as T2 ran them (`apply_rule1` with `doubles_out`, `apply_cap`), with the
+non-guitar bleed gate on stand-ins off (the user, amendment 2; the target-guitar checks stay on); a stand-in the ear
+heard with another guitar in it, or one whose section has no cleaning scan row, leaves the section out (fail closed). The fit and early-stopping set
 (FS_CC): T2's early-stopping rule (about 5% of each band's sections, at least one) plus 2 more per band (FS5's rule),
 never more than half a band's sections. Training: N_TRAIN examples (F5's count) over the training sections by part
 C's cycle (`pretrain_set.section_for`), FS_CC's at the same rate per section. Heavy training sections are dropped,
@@ -75,7 +79,14 @@ INTAKE = HOME / "learn/trusted-data/intake-2026-10-28"
 LISTEN = HOME / "listening/trusted-data-ear"
 EAR_PARTS = {11: (INTAKE / "ear-answers-part11.json", LISTEN / "part11-clean-crunch/items.json"),
              12: (INTAKE / "ear-answers-part12.json", LISTEN / "part12-clean-crunch-di-amp/items.json")}
+AUDIT = HOME / "learn/trusted-data/audit-checks-2026-10-29"
+LATER_PARTS = {14: (AUDIT / "ear-answers-part14.json", LISTEN / "part14-audit-rejected/items.json")}
+PART15_ANSWERS = "ear-answers-part15*.json"        # INTAKE: one export or more, from either build of part 15
+PART15_V1_ITEMS = LISTEN / "part15-v1-unsent/items.json"   # the first build (sent too): its 28 DI cards only
 REJECT = ("processed", "not_a_di", "hum")
+EAR_OUT_BANDS = {"Peter White": "DIDT1 and DIDT3 heard processed (part 11), DIDT4 'sounds like an amp track' (part 14): "
+                                "the band's material stays out (the user, 2026-10-29)"}
+SCREEN_KEEPS = frozenset({"hiss"})               # part A's flags that no longer screen a section (the user, 2026-10-29)
 TIER1_MEASURE = {"cambridge/TheTravellingBand_Quicksand_Full/16_ElecGtr1DI.wav": "cambridge-Quicksand-ElecGtr1",
                  "cambridge/TheTravellingBand_Quicksand_Full/19_ElecGtr2DI.wav": "cambridge-Quicksand-ElecGtr2"}
 D4_CONFLICT = ["conflict: heard clean, D4 flags it"]    # T0's why when only D4 held a heard-clean DI (no longer holds)
@@ -92,8 +103,10 @@ HEAVY_SEED = 20261111                            # which heavy sections stay und
 FS_EXTRA = 2                                     # FS5's 2 more sections per band
 FS_SEED = 20261112
 NO_SCAN = "no cleaning scan row"
-BLEED_GATE = True          # rule 1's bleed gate on stand-ins (today's); `plan --no-bleed-gate` reads the user's open
-                           # policy question (a stand-in's non-guitar bleed is what the real mix holds too)
+BLEED_GATE = False         # rule 1's non-guitar bleed gate on stand-ins: off (the user, 2026-10-29: a stand-in's
+                           # non-guitar bleed is what the real mix holds too); `plan --dry --bleed-gate` reads the old rule
+SUM_LOWER = True           # the stand-ins' power sum over each source's lower bound (adopted with amendment 2; it only
+                           # decides with the bleed gate on)
 DEVICES = ("mps", "cpu")
 SPOT_PART = 13                                   # the stem spot-check page for the pool's unheard sessions
 SPOT_DIR = LISTEN / "part13-clean-crunch-stems"
@@ -261,26 +274,56 @@ def require(args, renders=False):
 
 
 def ear_parts():
-    """Parts 11 and 12, and part 13 (its DI cards) once its answers exist."""
+    """Parts 11 and 12; parts 13 and 14 once their answers exist. -> {part: (answers path, items path)}."""
     out = dict(EAR_PARTS)
     if SPOT_ANSWERS.exists():
         out[SPOT_PART] = (SPOT_ANSWERS, SPOT_DIR / "items.json")
+    for n, (ap, ip) in LATER_PARTS.items():
+        if ap.exists():
+            out[n] = (ap, ip)
     return out
 
 
-def load_ear():
-    parts = []
+def ear_sources():
+    """Every ear export with its page's items, build-checked, in part order (part 15's exports by export time):
+    [(part, {id: answer}, items)]. A part-15 export may come from either build: the first build's (28 DI cards) is
+    read for its DI cards only; the second's for all its cards (the stem spot-checks only from it)."""
+    out = []
     for n, (ap, ip) in sorted(ear_parts().items()):
         a, it = json.loads(ap.read_text()), json.loads(ip.read_text())
         if a.get("build") != it.get("build") or a.get("part") != n:
             raise SystemExit(f"ear part {n}: the answers' build {a.get('build')} is not the page's {it.get('build')}")
-        parts.append(({x["id"]: x for x in a["answers"]}, it["items"]))
-    return ear_windows(parts)
+        out.append((n, {x["id"]: x for x in a["answers"]}, it["items"]))
+    builds = {}
+    for ip, fams in ((PART15_V1_ITEMS, ("di",)), (PART15_DIR / "items.json", None)):
+        if ip.exists():
+            it = json.loads(ip.read_text())
+            builds[it["build"]] = [i for i in it["items"] if fams is None or i["family"] in fams]
+    exports = sorted((json.loads(f.read_text()) for f in INTAKE.glob(PART15_ANSWERS)),
+                     key=lambda a: a.get("exported") or "")
+    for a in exports:
+        if a.get("part") != PART15 or a.get("build") not in builds:
+            raise SystemExit(f"a part-15 export of build {a.get('build')} matches neither page ({sorted(builds)})")
+        out.append((PART15, {x["id"]: x for x in a["answers"]}, builds[a["build"]]))
+    return out
 
 
-def verdicts():
+def screen_ok(sec):
+    """Part A's screen on a section, less the flags the user lifted (hiss): hum, bleed, clipping and drop-outs still
+    screen it. A row with no flags field reads its `clean` (fails closed)."""
+    if "flags" not in sec:
+        return bool(sec.get("clean"))
+    return not (set(sec["flags"] or []) - SCREEN_KEEPS)
+
+
+def load_ear():
+    return ear_windows([(ans, items) for _, ans, items in ear_sources()])
+
+
+def verdicts(alignment=True, root=None):
     """{DI id: {"band", "path", "ear", "heard", "classes", "measures", "trains", "why", "source"}} over the released
-    inventory, tier 1 and the heavy bands (zero audio)."""
+    inventory, tier 1 and the heavy bands (zero audio). With `alignment`, a DI trains only when the alignment check
+    (`align`, cc/alignment-*.json) reads it in time with its amp track or song (fails closed: unchecked is out)."""
     from learn import pretrain_set as PS
 
     tr = T.load_lists(V.OUT)
@@ -319,9 +362,32 @@ def verdicts():
     for d, v in out.items():
         if v["band"] in HEAVY_OUT:
             v.update(trains=False, why="decision D: the band is high gain")
+        if v["band"] in EAR_OUT_BANDS:
+            v.update(trains=False, why=f"the ear: {EAR_OUT_BANDS[v['band']]}")
+    if alignment:
+        gate_alignment(out, load_alignment(root or V.OUT / STAGE))
     rel = {r["id"]: r for r in CP._inv()}
     CP.check_pool_rows([inv.get(d) or rel[d] for d, v in sorted(out.items()) if v["trains"]])
     return out
+
+
+def gate_alignment(ver, al):
+    """In place: a DI the ear and the measures admit trains only when the alignment check reads it in time
+    (`align_verdict`); one it has not read is held (fails closed)."""
+    for d, v in ver.items():
+        if v["trains"]:
+            a = al.get(d)
+            if a is None:
+                v.update(trains=False, align_hold=True, why="the alignment check has not read it")
+            elif a["verdict"] != ALIGNED:
+                v.update(trains=False, why=f"alignment: {a['verdict']} (lag {a['lag_ms']} ms, spread "
+                                           f"{a['spread_ms']} ms, {a['readings']} readings vs {a['kind']})")
+    return ver
+
+
+def verdicts_raw(args):
+    """The verdicts before the alignment check (what `align` reads)."""
+    return verdicts(alignment=False)
 
 
 def cc_inventory():
@@ -387,7 +453,7 @@ def cmd_verdicts(args):
     import collections
 
     require(args)
-    ver = verdicts()
+    ver = verdicts(root=root_of(args))
     _save(root_of(args) / "verdicts.json", {"plan": PLAN, "dis": ver, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     by = collections.Counter((v["band"], v["source"], v["trains"]) for v in ver.values())
     for (band, src, ok), n in sorted(by.items()):
@@ -402,7 +468,7 @@ def _ver(args):
     d = _load(root_of(args) / "verdicts.json")
     if not d:
         raise SystemExit("run `verdicts` first")
-    if d["dis"] != json.loads(json.dumps(verdicts(), default=float)):
+    if d["dis"] != json.loads(json.dumps(verdicts(root=root_of(args)), default=float)):
         raise SystemExit("verdicts.json is stale (the ear, the measures or T0's lists changed): rerun `verdicts`")
     return d["dis"]
 
@@ -576,19 +642,20 @@ def spot_sessions(tr, ver, inv):
 
 
 def spot_answers():
-    """{session dir: verdict} from the part-13 export (None when not yet answered); the page's build must match."""
+    """{session dir: verdict} from the stem spot-check cards of parts 13 and 15 (None before part 13 is answered); a
+    later export replaces an earlier one on the same session."""
     if not SPOT_ANSWERS.exists():
         return None
-    a = json.loads(SPOT_ANSWERS.read_text())
-    it = json.loads((SPOT_DIR / "items.json").read_text())
-    if a.get("build") != it.get("build") or a.get("part") != SPOT_PART:
-        raise SystemExit(f"part {SPOT_PART}: the answers' build {a.get('build')} is not the page's {it.get('build')}")
-    ans = {x["id"]: x["verdict"] for x in a["answers"]}
-    return {i["session_dir"]: ans.get(i["id"]) for i in it["items"] if i["family"] == "stem"}
+    out = {}
+    for n, ans, items in ear_sources():
+        if n in (SPOT_PART, PART15):
+            out.update({i["session_dir"]: ans[i["id"]]["verdict"] for i in items
+                        if i["family"] == "stem" and i["id"] in ans})
+    return out
 
 
 def verified_stems(tr, ver, inv):
-    """T0's verified stems, widened by the part-13 spot-check: a session heard clean gives its stems that pass the
+    """T0's verified stems, widened by the spot-checks of parts 13 and 15: a session heard clean gives its stems that pass the
     session-wide scan (T0's rule; the per-example rule then reads them); a guitar heard, 'not sure' or unheard
     gives none."""
     out = dict(tr["stems"])
@@ -639,7 +706,7 @@ def cmd_ear_page(args):
         raise SystemExit(f"no stem scan for {missing}: run `stem-scan`")
     secs = manifest_sections(ver)
     di_rows = {d: {"path": inv[d]["path"], "sections": [{"start_s": float(s["start_s"]), "own": True}
-                                                        for s in secs.values() if s["di"] == d and s.get("clean")]}
+                                                        for s in secs.values() if s["di"] == d and screen_ok(s)]}
                for d, v in ver.items() if v["trains"]}
     picks = V.pick_stem_checks({sd: rows[sd] for sd in sds}, di_rows, {})
     items = []
@@ -772,6 +839,391 @@ def cmd_cleaning_scan(args):
     print(f"CLEANING SCAN DONE {k}/{n}")
 
 
+PART15 = 15
+PART15_DIR = LISTEN / "part15-clean-crunch-d2"
+PART15_SEED = 20261030
+MIX_S = 5.0                                      # a DI with no amp track: a short moment of the song's mix after it
+
+
+def part15_dis(ver):
+    """The DIs step 0's D2 kept from the ear and nobody has heard: released or tier-1 step-0 DIs, D3 passing and D1
+    not failed (a measured fail stands), outside the bands the ear ruled out; each passes the pool's band guard."""
+    out = []
+    for d, v in sorted(ver.items()):
+        st = v["measures"] or {}
+        if v["ear"] is None and not v["trains"] and v["source"] in ("released", "tier 1 (step 0)") \
+                and st.get("D2") == "fail" and measured_ok(st) and v["band"] not in EAR_OUT_BANDS:
+            out.append(d)
+    return out
+
+
+def part15_windows(d, inv, sections, classify, n=2, apart=20.0):
+    """Up to n of the DI's candidate sections (part A's screen less hiss, not high gain by the classifier), the
+    busiest first, at least `apart` seconds apart, in time order."""
+    from learn import trusted_data as T_
+
+    cands = [s for s in sections if s["di"] == d and screen_ok(s)]
+    cands = [s for s in cands if classify(s) != "high-gain"]
+    files = {}
+    act = sorted(((T_.section_activity(inv[d]["path"], float(s["start_s"]), files=files), float(s["start_s"]))
+                  for s in cands), reverse=True)
+    out = []
+    for a, t in act:
+        if a >= 0.5 and all(abs(t - u) >= apart for u in out):
+            out.append(t)
+        if len(out) == n:
+            break
+    return sorted(out)
+
+
+def cmd_ear_page_15(args):
+    """Ear page part 15 (zero renders): the DIs step 0's D2 kept from the ear (`part15_dis`), each on up to 2 of its
+    candidate sections, the DI then its own amp track (no amp track: the DI, then a short moment of the session's
+    other tracks at their recorded levels). Not sent by this command."""
+    import hashlib
+
+    import numpy as np
+    import soundfile as sf
+
+    from learn import build_data_review as BDR
+    from learn import build_ear_page as BEP
+    from learn import clean_di as CD
+    from learn import pretrain_set as PS
+    from learn import trusted_data_t3 as T3
+
+    require(args)
+    if (PART15_DIR / "index.html").exists():
+        raise SystemExit(f"{PART15_DIR / 'index.html'} exists: a rebuild hides stored answers")
+    ver = _ver(args)
+    inv = cc_inventory()
+    dis = part15_dis(ver)
+    CP.check_pool_rows([inv[d] for d in dis])
+    rows = json.loads(PS.MANIFEST.read_text())["sections"] + json.loads((CP.OUT / "sections.json").read_text())["sections"]
+    secs = [{**s, "id": f"{s['di']}@{float(s['start_s']):.1f}"} for s in rows if s["di"] in set(dis)]
+    ctx = Ctx(inv, {s["id"]: s for s in secs})
+    cls = {}
+
+    def classify(s):
+        if s["id"] not in cls:
+            cls[s["id"]] = inv[s["di"]].get("gain_class") or T3._amp_track_class(ctx, s)
+        return cls[s["id"]]
+
+    rng = random.Random(PART15_SEED)
+    order = list(dis)
+    rng.shuffle(order)
+    items, skipped = [], []
+    ctx_dir = PART15_DIR / "context"
+    for d in order:
+        rec = inv[d]
+        sd = pathlib.Path(rec["session_dir"])
+        files = sorted(f.name for f in sd.glob("*.wav"))
+        own = V.own_amp_tracks(rec, files)
+        ts = part15_windows(d, inv, secs, classify)
+        if not ts:
+            skipped.append((d, "no candidate section: screened, high gain or quiet"))
+            continue
+        for t in ts:
+            base = {"id": V.item_id("di-d2-part15-2026-10-30", rec["path"], t), "kind": "di", "family": "di",
+                    "key": rec["path"], "start_s": t, "dur_s": V.CROP_S, "band": ver[d]["band"],
+                    "session": sd.name, "file": pathlib.Path(rec["path"]).name, "di_id": d}
+            loud = {a: float(np.max(np.abs(BDR.load(str(sd / a), t, V.CROP_S)))) for a in own}
+            amp = max(loud, key=lambda a: (loud[a], a)) if loud else None
+            if amp and loud[amp] >= BEP.SILENT_PEAK * 10:      # the loudest own amp track that plays here
+                items.append({**base, "paths": {"di": rec["path"], "amp": str(sd / amp)}})
+                continue
+            mix = np.zeros(int(round(MIX_S * BDR.SR)))
+            for f in files:
+                if CD.is_guitar_di(f) or V.NON_MUSICAL.search(f):
+                    continue
+                y = BDR.load(str(sd / f), t, MIX_S)
+                mix[:len(y)] += y[:len(mix)]
+            ctx_dir.mkdir(parents=True, exist_ok=True)
+            mp = ctx_dir / f"{sd.name}-{pathlib.Path(rec['path']).stem}-{t:.1f}.wav"
+            sf.write(str(mp), (mix / max(1.0, float(abs(mix).max()) / 0.9)).astype(np.float32), BDR.SR, subtype="FLOAT")
+            items.append({**base, "paths": {"di": rec["path"], "mix": str(mp)}})
+    # stem spot-checks (T0's rule) for every pool session no ear has cleared: the training DIs' and part 15's
+    tr = T.load_lists(V.OUT)
+    heard = spot_answers() or {}
+    card_dis = {i["di_id"] for i in items}
+    want = sorted({session_of(inv, d) for d, v in ver.items() if v["trains"] or d in card_dis} - set(tr["stems"])
+                  - {sd for sd, v in heard.items() if v == "clean"})
+    raw = scan_rows_raw()
+    missing = [sd for sd in want if sd not in raw]
+    if missing:
+        raise SystemExit(f"no stem scan for {missing}: run `stem-scan`")
+    all_secs = rows
+    di_rows = {}
+    for d in {d for d, v in ver.items() if v["trains"]} | card_dis:
+        ts = [float(x["start_s"]) for x in all_secs if x["di"] == d and screen_ok(x)]
+        di_rows[d] = {"path": inv[d]["path"], "sections": [{"start_s": t, "own": True} for t in ts]}
+    picks = V.pick_stem_checks({sd: raw[sd] for sd in want}, di_rows, {})
+    stems = []
+    for sd in want:
+        c = picks[sd]
+        if "stem" not in c:
+            skipped.append((sd, f"stem spot-check: {c['none']}"))
+            continue
+        path = str(pathlib.Path(sd) / c["stem"])
+        stems.append({"id": V.item_id("stem-cc-part15-2026-10-30", path, c["start_s"]), "kind": "stem",
+                      "family": "stem", "key": path, "paths": {"stem": path}, "start_s": c["start_s"],
+                      "dur_s": V.CROP_S, "session_dir": sd, "session": pathlib.Path(sd).name,
+                      "file": c["stem"], "band": next(v["band"] for d, v in ver.items() if session_of(inv, d) == sd),
+                      "risk_db": c["risk_db"]})
+    items = stems + items
+    assert len({i["id"] for i in items}) == len(items)
+
+    def title_of(it):
+        return f"{it['band']} · {it['session'].removesuffix('_Full')} · {it['file']}"
+
+    def subtitle_of(it):
+        a = it["start_s"]
+        w = f"{BEP.mmss(a)}–{BEP.mmss(a + it['dur_s'])}"
+        if it["family"] == "stem":
+            return f"{w} · {it['file']} alone"
+        if "amp" in it["paths"]:
+            return f"{w} · the DI, then its amp track {pathlib.Path(it['paths']['amp']).name}"
+        return f"{w} · the DI, then {MIX_S:.0f} s of the song's other tracks (it has no amp track of its own)"
+
+    def item_clips(it):
+        a, d = it["start_s"], it["dur_s"]
+        if it["family"] == "stem":
+            return [(it["id"] + "-stem", it["paths"]["stem"], a, d, "the track")]
+        out = [(it["id"] + "-di", it["paths"]["di"], a, d, "the DI")]
+        if "amp" in it["paths"]:
+            out.append((it["id"] + "-amp", it["paths"]["amp"], a, d, "its amp track"))
+        else:
+            out.append((it["id"] + "-mix", it["paths"]["mix"], 0.0, MIX_S, "the song's other tracks"))
+        return out
+
+    BEP.title_of, BEP.subtitle_of, BEP.item_clips = title_of, subtitle_of, item_clips    # this process only
+    BEP.VT.EAR_PAGE = SPOT_PAGE
+    BEP.ASK["di"] = "Judge the first sound, the DI: is it a clean, unprocessed DI?"
+    BEP.ASK["stem"] = "Is an electric guitar audible in this track, even faintly?"
+    BEP.LABELS["di"] = [(v, "Hum, buzz or hiss") if v == "hum" else (v, t) for v, t in BEP.LABELS["di"]]
+    _ih = BEP.item_html
+
+    def item_html(item, n, total, ask=False):
+        h = _ih(item, n, total, ask)
+        return h.replace(f'data-seq="{item["id"]}-mix" data-names="the song&#x27;s other tracks">Amp only',
+                         f'data-seq="{item["id"]}-mix" data-names="the song&#x27;s other tracks">Song only')
+    BEP.item_html = item_html
+    build = hashlib.sha256(json.dumps(items, sort_keys=True).encode()).hexdigest()[:12]
+    PART15_DIR.mkdir(parents=True, exist_ok=True)
+    clips = {}
+    for it in items:
+        for k, path, a, d, _ in item_clips(it):
+            clips[k] = BEP.clip_b64(path, a, d, PART15_DIR / "clips")
+    html_ = BEP.page_html(PART15, items, clips, build, PART15, title="More DIs from the new songs")
+    generic = "Items the earlier pages do not hold."
+    assert generic in html_
+    n_stem = sum(i["family"] == "stem" for i in items)
+    html_ = html_.replace(generic, (
+        f"Two kinds of card. <b>Track cards</b> (the first {n_stem}): one drum, bass, keys or vocal track per song "
+        "not yet checked, alone; can you hear an electric guitar in it, even faintly? <b>DI cards</b> (the rest): DIs "
+        "from the new training songs that a measure turned away before anyone heard them; each plays the DI, then "
+        "its amp track from the same moment (a DI with no amp track of its own: a few seconds of the song's other "
+        "tracks instead). Judge the DI: is it a clean, unprocessed DI (no pedals, no amp sound, no hum, buzz or hiss "
+        "you would mind after an amp)? Clips of the same DI sit together. All clips at &minus;23 LUFS."))
+    html_ = html_.replace(f"<title>Trusted data ear {PART15}</title>", "<title>More DIs ear</title>")
+    (PART15_DIR / "index.html").write_text(html_)
+    _save(PART15_DIR / "items.json", {"page": SPOT_PAGE, "part": PART15, "build": build, "seed": PART15_SEED,
+                                      "items": items, "skipped": skipped})
+    print(f"EAR PAGE 15: {n_stem} track cards; {len(items) - n_stem} DI cards for "
+          f"{len({i['di_id'] for i in items if 'di_id' in i})} DIs "
+          f"({sum('mix' in i['paths'] for i in items)} with the song instead of an amp track); skipped {len(skipped)}: "
+          f"{skipped}; {(PART15_DIR / 'index.html').stat().st_size / 1e6:.1f} MB -> {PART15_DIR / 'index.html'}")
+
+
+ALIGN_SR = 24000
+ALIGN_HOP_S = 0.01
+ALIGN_STEP_S = 5.0                               # a window every 5 s where the DI and the reference both play
+ALIGN_MAX_S = 3.0                                # the coarse search, +-3 s
+ALIGN_ENV_CORR = 0.5                             # an envelope correlation that counts as a reading (GCC too weak)
+ALIGN_MIN_WINDOWS = 3
+ALIGN_OFFSET_MS = 50.0                           # beyond a mic's delay (A1 reads 0.1-30 ms): an offset
+ALIGN_SPREAD_MS = 10.0                           # confident GCC lags spread wider than this across the file: drift
+ALIGN_ENV_TOL_MS = 20.0                          # an envelope lag (10-ms steps) further than this from the median: drift
+ALIGNED = "aligned"
+
+
+def onset_strength(x, sr=ALIGN_SR, hop_s=ALIGN_HOP_S):
+    """A 10-ms frame log-energy's positive differences (an onset envelope), zero-mean and unit-variance per call."""
+    import numpy as np
+
+    h = int(hop_s * sr)
+    n = len(x) // h
+    e = 10 * np.log10(np.mean(np.asarray(x[:n * h], np.float64).reshape(n, h) ** 2, 1) + 1e-10)
+    o = np.maximum(np.diff(e, prepend=e[:1]), 0.0)
+    return o, e
+
+
+def window_lag(od, orf, max_frames):
+    """The lag (frames; positive: the reference later) maximising the normalised correlation of a DI window's onset
+    envelope `od` with the reference's `orf` (which spans od's window +- max_frames). -> (lag, correlation)."""
+    import numpy as np
+
+    a = (od - od.mean()) / (od.std() + 1e-12)
+    best = (0, -1.0)
+    for k in range(2 * max_frames + 1):
+        b = orf[k:k + len(od)]
+        if len(b) < len(od):
+            break
+        c = float(np.mean(a * (b - b.mean()) / (b.std() + 1e-12)))
+        if c > best[1]:
+            best = (k - max_frames, c)
+    return best
+
+
+def align_readings(windows, min_corr=ALIGN_ENV_CORR):
+    """(GCC readings, envelope readings) in ms: a window's GCC-PHAT lag (searched over +-3 s) where its peak is
+    confident (A1's prominence); its envelope lag where the envelopes correlate at least `min_corr`."""
+    gcc = [float(w["fine_ms"]) for w in windows
+           if w.get("fine_ms") is not None and (w.get("prominence") or 0) >= V.A1_PROM_MIN]
+    env = [float(w["lag_ms"]) for w in windows if w["corr"] >= min_corr]
+    return gcc, env
+
+
+def align_verdict(windows, kind, n_min=ALIGN_MIN_WINDOWS):
+    """A DI's alignment against its own amp track: with at least n_min confident GCC readings they decide (the
+    envelopes of a repeated riff also match a bar away); else the envelope readings (correlation >= ALIGN_ENV_CORR)
+    do; fewer than n_min of either: 'no match' (a different take, or nothing to read). 'drift' when the GCC readings
+    span more than ALIGN_SPREAD_MS, or an envelope reading sits more than ALIGN_ENV_TOL_MS from their median (an
+    edit or a drifting take somewhere); 'offset' for a constant lag beyond ALIGN_OFFSET_MS; "outside A1's range"
+    for a GCC median outside A1's 0.1-30 ms (the amp track after its DI by a mic's delay), or an envelope median
+    beyond +-30 ms (their 10-ms steps cannot read A1's lower end); else 'aligned'. Against the
+    song (no amp track of its own) the timing cannot be read (in-time controls peak at beat multiples too):
+    'unverified'. -> (verdict, median lag ms, range ms, readings)."""
+    from statistics import median
+
+    if kind != "amp":
+        return "unverified", None, None, 0
+    gcc, env = align_readings(windows)
+    if len(gcc) >= n_min:
+        rd, tol = gcc, ALIGN_SPREAD_MS
+        bad = max(gcc) - min(gcc) > tol
+    elif len(env) >= n_min:
+        rd, tol = env, ALIGN_ENV_TOL_MS
+        bad = any(abs(x - float(median(env))) > tol for x in env)
+    else:
+        return "no match", None, None, max(len(gcc), len(env))
+    med = float(median(rd))
+    spread = float(max(rd) - min(rd))
+    if bad:
+        return "drift", med, spread, len(rd)
+    if abs(med) > ALIGN_OFFSET_MS:
+        return "offset", med, spread, len(rd)
+    in_range = (V.LAG_MIN_MS <= med <= V.LAG_MAX_MS) if rd is gcc else abs(med) <= V.LAG_MAX_MS
+    if not in_range:                                       # A1's mic-delay range (the envelopes' 10-ms steps: +-30)
+        return "outside A1's range", med, spread, len(rd)
+    return ALIGNED, med, spread, len(rd)
+
+
+def align_di(rec, files):
+    """One DI against its loudest own amp track (else the song: every non-DI, musical track summed), over the whole
+    file. -> {"ref", "kind", "windows": [{t, lag_ms, corr, fine_ms}], "verdict", "lag_ms", "spread_ms", "readings"}."""
+    import numpy as np
+
+    from learn import clean_di as CD
+    from learn import pretrain_set as PS
+
+    sd = pathlib.Path(rec["session_dir"])
+    di = PS.load_mono(rec["path"], ALIGN_SR).astype(np.float64)
+    own = V.own_amp_tracks(rec, files)
+    if own:
+        amps = {a: PS.load_mono(sd / a, ALIGN_SR).astype(np.float64) for a in own}
+        ref_name = max(amps, key=lambda a: float(np.sum(amps[a][:len(di)] ** 2)))
+        ref, kind = amps[ref_name], "amp"
+    else:
+        ref, kind, ref_name = np.zeros(len(di)), "song", "the song's non-DI tracks"
+        for f in files:
+            if CD.is_guitar_di(f) or V.NON_MUSICAL.search(f):
+                continue
+            y = PS.load_mono(sd / f, ALIGN_SR).astype(np.float64)
+            m = min(len(y), len(ref))
+            ref[:m] += y[:m]
+    n = min(len(di), len(ref))
+    od, ed = onset_strength(di[:n])
+    orf, er = onset_strength(ref[:n])
+    fps = int(round(1 / ALIGN_HOP_S))
+    w, mx = int(V.CROP_S * fps), int(ALIGN_MAX_S * fps)
+    playd, playr = ed > ed.max() - 40.0, er > er.max() - 40.0
+    if kind != "amp":                                      # the song cannot time a DI (align_verdict): no windows
+        return {"ref": ref_name, "kind": kind, "windows": [], "verdict": "unverified", "lag_ms": None,
+                "spread_ms": None, "readings": 0}
+    out = []
+    for k in range(mx, len(od) - w - mx, int(ALIGN_STEP_S * fps)):
+        if playd[k:k + w].mean() < 0.5 or playr[k:k + w].mean() < 0.5:   # both play in the window itself
+            continue
+        lag, c = window_lag(od[k:k + w], orf[k - mx:k + w + mx], mx)
+        row = {"t": round(k / fps, 1), "lag_ms": lag * 1000.0 / fps, "corr": round(c, 3)}
+        if kind == "amp":                                  # GCC-PHAT on its own over the whole +-3 s
+            a0 = int(k * ALIGN_HOP_S * ALIGN_SR)
+            x = di[a0:a0 + int(V.CROP_S * ALIGN_SR)]
+            y = ref[a0:a0 + len(x)]
+            if len(y) == len(x):
+                f, prom = V.gcc_lag_ms(x, y, ALIGN_SR, max_ms=ALIGN_MAX_S * 1000.0)
+                row.update(fine_ms=round(f, 2), prominence=round(prom, 1))
+        out.append(row)
+    v, med, spread, nr = align_verdict(out, kind)
+    return {"ref": ref_name, "kind": kind, "windows": out, "verdict": v,
+            "lag_ms": None if med is None else round(med, 2), "spread_ms": None if spread is None else round(spread, 2),
+            "readings": nr}
+
+
+def align_method():
+    """A hash of the alignment's measurement (the window readings; the verdict is recomputed at read): the code of
+    `onset_strength`, `window_lag` and `align_di` and the constants they read. A stored file under another is stale."""
+    import hashlib
+    import inspect
+
+    src = "".join(inspect.getsource(f) for f in (onset_strength, window_lag, align_di))
+    consts = json.dumps([ALIGN_SR, ALIGN_HOP_S, ALIGN_STEP_S, ALIGN_MAX_S, V.CROP_S, list(V.LAG_BAND_HZ)])
+    return hashlib.sha256((src + consts).encode()).hexdigest()[:16]
+
+
+def load_alignment(root):
+    """{DI id: alignment} merged over the `align` shards (any split), each verdict recomputed from its stored windows
+    under today's rule (`align_verdict`). A file measured under another method refuses: rerun `align`."""
+    out, method = {}, align_method()
+    for f in sorted(pathlib.Path(root).glob("alignment-*of*.json")):
+        d = _load(f) or {}
+        if d.get("method") != method:
+            raise SystemExit(f"{f.name} was measured under another alignment method: rerun `align` (it redoes it)")
+        out.update(d.get("dis", {}))
+    for a in out.values():
+        v, med, spread, n = align_verdict(a["windows"], a["kind"])
+        a.update(verdict=v, lag_ms=None if med is None else round(med, 2),
+                 spread_ms=None if spread is None else round(spread, 2), readings=n)
+    return out
+
+
+def cmd_align(args):
+    """The alignment check (zero renders, CPU): every DI the ear and the measures admit, against its amp track or the
+    song, a shard of the DIs; results in cc/alignment-<k>of<n>.json."""
+    require(args)
+    ver = verdicts_raw(args)
+    inv = cc_inventory()
+    k, n = args.shard
+    dis = [d for j, d in enumerate(sorted(d for d, v in ver.items() if v["trains"] or v.get("align_hold"))) if j % n == k]
+    path = root_of(args) / f"alignment-{k}of{n}.json"
+    method = align_method()
+    prev = _load(path) or {}
+    done = prev.get("dis", {}) if prev.get("method") == method else {}      # a stale file is redone
+    t0 = time.time()
+    for m, d in enumerate(dis):
+        if d in done:
+            continue
+        rec = inv[d]
+        files = sorted(f.name for f in pathlib.Path(rec["session_dir"]).glob("*.wav"))
+        done[d] = align_di(rec, files)
+        _save(path, {"plan": PLAN, "shard": [k, n], "method": method, "dis": done,
+                     "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+        r = done[d]
+        print(f"{m + 1}/{len(dis)} {d[-55:]}: {r['verdict']} (lag {r['lag_ms']} ms, spread {r['spread_ms']}, "
+              f"{r['readings']}/{len(r['windows'])} readings vs {r['kind']}) {time.time() - t0:.0f} s", flush=True)
+    print(f"ALIGN DONE {k}/{n}")
+
+
 def cmd_amp_bleed(args):
     """Rule 1's bleed check on the amp tracks the pool's candidate sections need (`trusted_data.measure_amp_bleed`),
     stored where T2's readings are (one file per session)."""
@@ -810,12 +1262,12 @@ def candidates(args):
     tr = T.load_lists(V.OUT)
     windows, classes = load_checks(root_of(args))
     verified, wins, bad = lists_for(tr, ver, inv, secs, windows)
-    out = {}
+    out, act = {}, {}
     for sid, s in sorted(secs.items()):
         c = classes.get(sid) or {}
         band = ver[s["di"]]["band"]
         why = None
-        if not s.get("clean"):
+        if not screen_ok(s):
             why = "part A's screen flags the section"
         elif s["di"] not in verified:
             why = "the DI is not verified"
@@ -825,21 +1277,94 @@ def candidates(args):
             why = "high gain"
         elif band in HEAVY_BANDS and not c.get("class"):
             why = "a heavy band's unclassed section"
+        elif amp_silent(inv[s["di"]], float(s["start_s"]), act):
+            why = AMP_SILENT
         out[sid] = {"section": sid, "band": band, "di": s["di"], "class": c.get("class"), "class_from": c.get("from"),
                     "why": why}
     return Ctx(inv, secs), verified, wins, bad, out
+
+
+AMP_SILENT = "the DI plays where its own amp track is silent (a passage the song does not hold)"
+AMP_SILENT_SHARE = 0.30                          # the share of the DI's playing frames with no own amp track playing
+
+
+def playing_frames(path, start_s, cache):
+    """The section's frames where a file plays (`clean_di.playing` against the file's own loudest frames, as
+    `trusted_data.section_activity` reads it), as a boolean array (cached per file)."""
+    from learn import clean_di as CD
+    from learn import pretrain_set as PS
+
+    if str(path) not in cache:
+        fdb = CD.frame_db(PS.load_mono(path, PS.SR))
+        cache[str(path)] = (fdb, CD.playing(fdb))
+    _, play = cache[str(path)]
+    r = CD.frames_in(int(round(start_s * PS.SR)), int(round((start_s + PS.SEC_S) * PS.SR)), len(play))
+    return play[r.start:r.stop]
+
+
+def silent_amp_share(di_play, amp_plays):
+    """The share of the DI's playing frames on which no own amp track plays (0 when the DI does not play)."""
+    n = int(sum(bool(x) for x in di_play))
+    if not n:
+        return 0.0
+    quiet = sum(1 for k, x in enumerate(di_play) if x and not any(k < len(a) and a[k] for a in amp_plays))
+    return quiet / n
+
+
+def amp_silent(rec, start_s, cache):
+    """A target section where, on AMP_SILENT_SHARE or more of the DI's playing frames, none of its own amp tracks
+    plays (Hazael "A Mi Lado" ElecGtr3, 1:07-1:21: the ear heard the DI against a silent amp track): the song holds no
+    such guitar there. DIs with no amp track cannot be read and pass."""
+    files = cache.setdefault(("files", rec["session_dir"]),
+                             sorted(f.name for f in pathlib.Path(rec["session_dir"]).glob("*.wav")))
+    own = V.own_amp_tracks(rec, files)
+    if not own:
+        return False
+    fc = cache.setdefault("frames", {})
+    sd = pathlib.Path(rec["session_dir"])
+    share = silent_amp_share(playing_frames(rec["path"], start_s, fc), [playing_frames(sd / a, start_s, fc) for a in own])
+    return share >= AMP_SILENT_SHARE
+
+
+STANDIN_OUT = ("other_guitar",)                 # a stand-in heard with another guitar in it never stands in
+
+
+def heard_stand_ins():
+    """{(session dir, amp track): verdict} of the stand-ins the ear heard (part 14's amp cards)."""
+    out = {}
+    for _, ans, items in ear_sources():
+        for i in items:
+            if i["family"] == "amp" and i["id"] in ans:
+                p = pathlib.Path(i["paths"]["amp"])
+                out[(str(p.parent), p.name)] = ans[i["id"]]["verdict"]
+    return out
+
+
+def drop_heard_stand_ins(kept, amp_of, ctx, heard):
+    """Rows whose stand-ins include one the ear heard with another guitar leave the pool (fail closed).
+    -> (kept rows, left-out records)."""
+    out, left = [], {}
+    for r in kept:
+        sd = ctx.inv[ctx.sections[r["section"]]["di"]]["session_dir"]
+        bad = [a["track"] for a in amp_of.get(r["section"], ()) if heard.get((sd, a["track"])) in STANDIN_OUT]
+        if bad:
+            x = left.setdefault(r["section"], {"section": r["section"], "band": r["band"], "examples": 0,
+                                               "reason": "a stand-in heard with another guitar in it",
+                                               "guitars": [{"part": t, "why": "heard: another guitar"} for t in bad]})
+            x["examples"] += 1
+        else:
+            out.append(r)
+    return out, [left[s] for s in sorted(left)]
 
 
 def cmd_plan(args):
     """The yield and the composition (zero renders); with --dry nothing is written."""
     import collections
 
-    gate = BLEED_GATE and not args.no_bleed_gate
-    if not gate and not args.dry:
-        raise SystemExit("--no-bleed-gate is for dry runs until the user rules on it")
-    if args.sum_lower and not args.dry:
-        raise SystemExit("--sum-lower is for dry runs until it is reviewed and adopted")
-    T.AMP_SUM_LOWER = T.AMP_SUM_LOWER or bool(args.sum_lower)
+    gate = BLEED_GATE or args.bleed_gate
+    if gate != BLEED_GATE and not args.dry:
+        raise SystemExit("--bleed-gate (the old rule) is for dry runs only")
+    T.AMP_SUM_LOWER = SUM_LOWER                          # this process only: T2's rule 1 keeps its own default
     require(args, renders=not args.dry)
     ctx, verified, wins, bad, cands = candidates(args)
     root = V.out_root(args)
@@ -849,7 +1374,9 @@ def cmd_plan(args):
     scan = scan_rows_all(root_of(args))
     kept, left, amp_of = T.apply_rule1(ctx, root, rows, verified, wins, bad, act, scan, doubles_out=True,
                                        bleed_gate=gate)
+    kept, left_heard = drop_heard_stand_ins(kept, amp_of, ctx, heard_stand_ins())
     kept, left_cap = T.apply_cap(ctx, kept, verified, wins, bad, act)
+    left_cap = left_heard + left_cap
     left = sorted(left + left_cap, key=lambda x: x["section"])
     why = collections.Counter(r["why"] for r in cands.values() if r["why"])
     print("YIELD (sections; zero renders)")
@@ -1314,19 +1841,18 @@ def main(argv=None):
     ap = argparse.ArgumentParser(prog="cc_build", description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     for name, fn in (("verdicts", cmd_verdicts), ("checks", cmd_checks), ("stem-scan", cmd_stem_scan),
-                     ("amp-bleed", cmd_amp_bleed), ("cleaning-scan", cmd_cleaning_scan), ("ear-page", cmd_ear_page),
+                     ("amp-bleed", cmd_amp_bleed), ("cleaning-scan", cmd_cleaning_scan), ("ear-page", cmd_ear_page), ("ear-page-15", cmd_ear_page_15), ("align", cmd_align),
                      ("plan", cmd_plan),
                      ("render", cmd_render), ("build", cmd_build), ("check", cmd_check), ("train", cmd_train)):
         s = sub.add_parser(name)
         s.set_defaults(fn=fn)
         s.add_argument("--out", default=None)
         s.add_argument("--smoke", action="store_true")
-        if name in ("checks", "render", "amp-bleed", "cleaning-scan"):
+        if name in ("checks", "render", "amp-bleed", "cleaning-scan", "align"):
             s.add_argument("--shard", type=CP.parse_shard, default=(0, 1))
         if name == "plan":
             s.add_argument("--dry", action="store_true")
-            s.add_argument("--no-bleed-gate", action="store_true")
-            s.add_argument("--sum-lower", action="store_true")
+            s.add_argument("--bleed-gate", action="store_true")
         if name == "build":
             s.add_argument("--device", choices=DEVICES, required=True)
             s.add_argument("--order", choices=("asc", "desc"), default="asc")
