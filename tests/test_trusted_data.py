@@ -411,16 +411,65 @@ def test_raw_takes_are_not_clipped_and_untrustworthy_sources_are_unmeasurable():
     t, why = T.source_take({"real": 10 ** -2.8 - 5e-4, "nulls": [-5e-4] * 4, "active_share": 0.9})
     assert why is None and t == pytest.approx(-28.0, abs=0.01)
     assert T.source_take({"real": -5e-4, "nulls": [-5e-4] * 4, "active_share": 0.9}) == (None, None)
-    assert T.source_take({"real": 2.0, "nulls": [0.0] * 4, "active_share": 0.9})[0] == 0.0          # capped at 0 dB
-    blow = T.source_take({"real": -0.53, "nulls": [-0.011, -256.7, -0.0065, 0.0], "active_share": 0.9})
-    assert blow[1].startswith("blow-up")                     # Adam Buckley, AcousticGtr3 read in ElecGtr1 (1st pass)
-    assert T.source_take({"real": 0.0, "nulls": [0.0, 1.2e-3, 0.0, 0.0], "active_share": 0.9})[1].startswith(
-        "rolled readings spread")
-    assert T.source_take({"real": 0.0, "nulls": [0.0] * 4, "active_share": 0.3})[1].startswith("source plays on 30%")
-    r = {"silent": False, "sources": {"01_Kick.wav": _raw(-33.0)["sources"]["01_Kick.wav"],
-                                      "43_LeadVox1.wav": {"real": 0.0, "nulls": [0.0] * 4, "active_share": 0.2}}}
-    assert T.amp_status(r) == "unmeasurable"                # any unmeasurable source fails the track
-    assert T.amp_reason(r).startswith("unmeasurable: 43_LeadVox1.wav source plays on 20%")
+    assert T.source_take({"real": 2.0, "nulls": [0.0] * 4, "active_share": 0.9}) == (
+        None, "blow-up (a held-out reading beyond the amp track's energy)")                  # no take from a blow-up
+    blow = T.source_take({"real": 0.53, "nulls": [-0.011, -256.7, -0.0065, 0.0], "active_share": 0.9})
+    assert blow[1].startswith("blow-up")
+    assert T.source_status({"real": -0.53, "nulls": [-0.011, -256.7, -0.0065, 0.0], "active_share": 0.9}) == (
+        "pass", None)               # a blow-up with no real explained energy reads nothing (Adam Buckley, AcousticGtr3)
+    assert T.source_take({"real": 0.0, "nulls": [0.0] * 4, "active_share": 0.3}) == (None, None)    # share no reason
+    r = {"silent": False, "sources": {"01_Kick.wav": _raw(-45.0)["sources"]["01_Kick.wav"],
+                                      "43_LeadVox1.wav": {"real": 1.0e-3, "nulls": [0.0, 4e-4, 0.0, 0.0],
+                                                          "active_share": 0.2}}}
+    assert T.amp_status(r) == "unmeasurable"                # an interval straddling the line fails the track
+    assert T.amp_reason(r).startswith("unmeasurable: 43_LeadVox1.wav the take's interval")
+
+
+def test_source_status_the_audits_repairs():
+    # the audit of 2026-10-29: a source silent where the amp track plays cannot fail it; the interval of the take
+    # (real less each rolled reading) decides; a low share is no reason
+    assert T.source_status({"real": 0.5, "nulls": [0.0] * 4, "active_share": 0.0}) == ("pass", None)
+    assert T.source_status({"real": 2e-3, "nulls": [1e-4, 2e-4, 0.0, 5e-4], "active_share": 0.1})[0] == "fail"
+    assert T.source_status({"real": 4e-4, "nulls": [1e-4, 2e-4, 0.0, 3e-4], "active_share": 0.1})[0] == "pass"
+    assert T.source_status({"real": 1.0e-3, "nulls": [0.0, 4e-4, 0.0, 0.0], "active_share": 1.0})[0] == "unmeasurable"
+    # a negative real reading: the interval decides by default (the -25 dB synthetic leak reads real -0.0023 with
+    # its rolled readings at -0.0056); the audit's "non-positive passes" only under AMP_NEG_PASS
+    leak = {"real": -0.002339, "nulls": [-0.005642, -0.005967, -0.005647, -0.005273], "active_share": 1.0}
+    assert T.source_status(leak)[0] == "fail"
+    assert T.source_status(leak, neg_pass=True) == ("pass", None)
+
+
+# The audit's injection on a real amp track (BKS "Too Much" 17_ElecGtr1bPod, 03_SnareTop and 44_LeadVox through a
+# room IR at a known level; audit-checks-2026-10-29/results/bks_pod.json): the injected source's stored readings.
+BKS_INJECTED = {
+    ("03_SnareTop.wav", -20): {"real": 0.0084326, "nulls": [-0.0003282, 5.23e-05, -0.0010168, -0.0006057],
+                               "active_share": 0.6627306},
+    ("03_SnareTop.wav", -25): {"real": 0.0020438, "nulls": [-0.000671, -0.0003919, -0.0009997, -0.0006519],
+                               "active_share": 0.6358241},
+    ("03_SnareTop.wav", -30): {"real": 9.92e-05, "nulls": [-0.0007527, -0.0004909, -0.0009422, -0.0005501],
+                               "active_share": 0.5914044},
+    ("03_SnareTop.wav", -35): {"real": -0.0004391, "nulls": [-0.0007719, -0.0004948, -0.0009005, -0.0005111],
+                               "active_share": 0.5663347},
+    ("44_LeadVox.wav", -20): {"real": 0.007877, "nulls": [-0.0005464, -0.0008455, -0.0007748, -0.0010409],
+                              "active_share": 0.6353139},
+    ("44_LeadVox.wav", -25): {"real": 0.0020236, "nulls": [-0.0004953, -0.0008059, -0.0007327, -0.0010127],
+                              "active_share": 0.6279703},
+    ("44_LeadVox.wav", -30): {"real": 0.0001625, "nulls": [-0.0004347, -0.0007569, -0.0006485, -0.0009551],
+                              "active_share": 0.6114003},
+    ("44_LeadVox.wav", -35): {"real": -0.0003792, "nulls": [-0.0003455, -0.0006932, -0.0005443, -0.0008485],
+                              "active_share": 0.579661},
+}
+
+
+@pytest.mark.parametrize("neg_pass", [False, True])
+def test_the_audits_injection_on_a_real_amp_track_reads_back(neg_pass):
+    want = {-20: "fail", -25: "fail", -30: "unmeasurable", -35: "pass"}      # the line at -30: straddled there
+    for (src, lev), v in BKS_INJECTED.items():
+        assert T.source_status(v, neg_pass=neg_pass)[0] == want[lev], (src, lev)
+    for (src, lev), v in BKS_INJECTED.items():
+        t, _ = T.source_take(v)
+        assert t == pytest.approx(lev, abs=2.5), (src, lev)                    # the take reads the level back
+
 
 
 def test_amp_bleed_sums_takes_over_the_floor_on_a6s_line():
@@ -487,8 +536,10 @@ def test_a_failing_or_unmeasurable_amp_track_leaves_the_example_out(monkeypatch,
                               "reason": "bleed -24.0 dB, worst 01_Kick.wav -24.0"}]
     two = {**b, "amp_tracks": ["11_ElecGtr2Mic1.wav", "12_ElecGtr2Mic2.wav"]}            # each track must pass
     assert T.resolve_blocked([two], {"11_ElecGtr2Mic1.wav": _raw(-40.0), "12_ElecGtr2Mic2.wav": _raw(-29.0)})[0] == []
-    assert T.resolve_blocked([b], {"18_ElecGtr02.wav": _raw(-40.0, share=0.2)})[1][0]["amp_why"] == (
-        "amp track bleed unmeasurable")
+    assert T.resolve_blocked([b], {"18_ElecGtr02.wav": _raw(-40.0, share=0.2)})[0][0]["track"] == "18_ElecGtr02.wav"
+    straddle = {"silent": False, "sources": {"01_Kick.wav": {"real": 1.0e-3, "nulls": [0.0, 4e-4, 0.0, 0.0],
+                                                             "active_share": 1.0}}}
+    assert T.resolve_blocked([b], {"18_ElecGtr02.wav": straddle})[1][0]["amp_why"] == "amp track bleed unmeasurable"
     assert T.resolve_blocked([{**b, "amp_tracks": []}], {})[1][0]["amp_why"] == "no amp track"
     assert T.resolve_blocked([b], {"18_ElecGtr02.wav": {"silent": True}})[1][0]["amp_why"] == "amp track silent"
     with pytest.raises(SystemExit):                                                   # never guessed: amp-bleed first
