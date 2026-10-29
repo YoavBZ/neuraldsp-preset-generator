@@ -60,7 +60,7 @@ lives in the linked documents. Last updated 2026-10-27.
   data counts (the user); the trusted-data plan's checks and the user's ear now come first (step 0).
   *2026-10-27:* learning every control (T3's F5) was not shown to help, and a zero-render probe finds the
   separator loses most of the tone the mix hides; the next steps start with a mix-aware input (step 0,
-  "Where it stands, 2026-10-27").
+  "Where it stands, 2026-10-29").
 - **The judge** ([measuring-closeness.md](measuring-closeness.md)) is how closeness is
   measured. It needs the DI of the same take, and listening validated it only for clear
   differences between clean-to-crunch PR12 renders
@@ -132,10 +132,28 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
    - **The training pool is being rebuilt around clean and crunch songs** ([plan](clean-crunch-pool-plan.md), approved
      2026-10-28). T2, F5 and FS5 came from 4 heavy bands only, and the stem leak check stripped drums or bass
      from some backings. Done 2026-10-28, zero renders: step 0's DI checks, step 1's per-example leak rule (PR #323),
-     step 2's guards, metadata and stem scan for the 19 released sessions (PR #324: 74 DIs pending the ear, 1,297
-     sections). The ear page (part 11) was answered 2026-10-29: the leak rule stands, 16 DIs clean, 7
-     processed, 8 re-asked beside their amp tracks (part 12, sent). D_F5bk (the backing fix alone) read the same day:
-     −0.008 [−0.076, +0.061] against D_F5, undecided, two band swings cancelling. The pool build (D_CC) waits for part 12. F20 waits for step 3's reading.
+     step 2's guards, metadata and stem scan for the 19 released sessions (PR #324). D_F5bk (the backing fix alone)
+     read 2026-10-29: −0.008 [−0.076, +0.061] against D_F5, undecided, two band swings cancelling.
+   - **The data checks were rejecting clean material (2026-10-29).** The pool's first dry run kept only 38 song
+     sections, 2 of them clean, with one band (BKS) making up 68% of training. The user doubted that so much could
+     fail, and an independent audit agreed:
+     - The amp-bleed check (other instruments leaking into a guitar's amp track) had never passed a track: 0 of 79.
+       Three logic bugs: a source silent where the guitar plays failed the track, so did a source playing under half
+       the time, and negative readings were turned into large leaks.
+     - Two DI checks were too strict: D4 overruled the ear on DIs heard clean, and step 0's D2 rejected a whole DI for
+       one bad window. Part A's hiss screen flagged about 270 sections.
+     - Amendment 1 (PR #329, independently reviewed) fixed the bleed verdict, D4 and D2. With the bleed check on, 89
+       sections remain (101 if small readings are summed by their lower bound); with it off, 161 (51 clean, 7 bands,
+       BKS 22% of training).
+     - The ear then backed the audit. Part 14 sampled 23 rejected items: 22 clean (10 of 10 bleed-rejected amp
+       tracks, 3 of 3 hiss-flagged sections, 4 of 5 hum-flagged DIs, 2 D4-held windows, 3 other-guitar windows).
+       Parts 12 and 13 were all clean (12 and 31 cards). Part 15 heard 15 of 17 DIs that D2 had rejected (mostly for
+       drop-outs) clean, and all 7 of its backing spot-checks.
+     - The user decided: other instruments' bleed no longer rules out a background guitar's amp track (the target
+       guitar's own checks stay), and the hiss screen no longer removes sections.
+     - Next: amendment 2 (those decisions, parts 13–15, and an alignment check on every pool DI after two timing
+       notes from the ear), reviewed before any render; then D_CC's renders, training (2 seeds) and readout on
+       V-real-11. F20 waits for step 3's reading.
    - **Learning every control is not yet shown to help.** T3's F5 gate, D_F5 (every control learned) − D_core5 (today's 25
      controls), reads +0.079 [−0.065, +0.224] on V-real-11 (7 bands): not shown. The user said yes to F20 (2026-10-27);
      (b) read 2026-10-28 (the stock stem stays F20's input). F20 now waits for the clean/crunch pool's step 3 reading and is
@@ -242,8 +260,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      effect not heard there is masked there. The user's direction the same day (below) points the rulings toward an audibility weight; its exact
      form is declared and reviewed before the relabel.*
    - **Clean/crunch-led pool** ([plan](clean-crunch-pool-plan.md), approved 2026-10-28): steps 0–3 come before F20.
-     Steps 0–1 and step 2's groundwork done (PRs #323, #324); next, the ear page's answers, then the pool build
-     (ledger first), D_CC and D_F5bk (step 3), and step 4's listening page.
+     Steps 0–1, step 2's groundwork (PRs #323, #324), D_F5bk (read, undecided) and the checks' audit (amendment 1,
+     PR #329) done; next, amendment 2 and the pool build (ledger first), D_CC (step 3), and step 4's listening page.
    - (d) **F20:** re-planned on the clean/crunch pool after its step 3 reading. Before that: the user said yes (2026-10-27); its plan is declared after (b) reads (read 2026-10-28: the stock stem stays its input). Its value now rests on (a)/(b) and on the new data. Its declared
      fixes: redraw near-silent draws (up to 5 tries; about 16% more target renders at F5's rate); keep each
      core/full pair on one separation device; the switch readout and prior (since 2026-10-27 the plain readout is
@@ -414,7 +432,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        does not ease the clean/crunch shortage. Mòpia's two DIs and Goran Levi's were heard processed
        ([outcome](trusted-data-t0-design.md#parts-5-and-6-heard-2026-10-26)).*
 
-   **Where it stood (2026-10-19; the current state is "Where it stands, 2026-10-27" above).** Not ready to ship. Fresh full mixes (stage F, 21 parts in 12
+   **Where it stood (2026-10-19; the current state is "Where it stands, 2026-10-29" above).** Not ready to ship. Fresh full mixes (stage F, 21 parts in 12
    bands) are the yardstick; figures are against S, band-weighted, with 90% intervals.
    - **Arm A** (a search through a DI rebuilt from the separated guitar, scored against that stem)
      ([results](arm-a-mega53-results.md), amendments 2 and 3):
@@ -785,7 +803,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      *The check and the re-read approved 2026-10-26 (R0, R1).* Open: whether writing S's value for a control the
      model can't read fits amendment 1 ("no fixed rule stands in for an unheard control"); it also sets F20's readout.
      *Decided 2026-10-27 (user): R1 is a measurement only; writing S is not adopted as the method. F20 itself is
-     still open (the short list under "Where it stands, 2026-10-27").*
+     still open (the short list under "Where it stands, 2026-10-29").*
    - *Settled by the ear (2026-10-25):* K's bands. T1's K is Adam Buckley and Dark Ride; Kimock's
      and Swatkins' 4 DIs were all heard processed, so they cannot rejoin. (Cnoc An Tursa: decided
      2026-10-24, not admitted.)
@@ -1046,5 +1064,6 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-28 | X-LANCE fine-tune (ROADMAP (b)) outcome, audited: D_F5ft − D_F5-noaug +0.078 [−0.025, +0.181] on V-real, not shown, leans worse; the fine-tune mostly shrank its output (F5 median about 12 dB under the target guitar, −14 to −6 dB in three bands; Ale Lak's stems louder than the target but still worse than silence), so its +5.2 dB over the stock stem is not separation; tone probe 22 against the stock stem's 20 (per head the stock stem is reliably better on 5, the fine-tuned on 3). Not adopted; F20 keeps the stock stem; the route is not judged | [outcome](trusted-data-t0-design.md#d_f5ft-outcome-2026-10-28-99-renders-audited) |
 | 2026-10-28 | Clean/crunch-led pool (user: "Yes for all", after an independent review and a re-check): the trusted pool (T2/F5/FS5) is 4 heavy bands with no clean or crunch song, because stage F's 12 bands are kept out of the pool (7 are V-real), the other usable bands' DIs were heard processed or fail D2, and cleaning, rule 1 and the cap removed the rest. Decisions: A Adam Buckley trains (leaves K); B release sets 1–2's held-out Cambridge sessions, set 3's Dunning Kruger and Silona, and set 5's Hazael and Peter White into training (never tests again); C re-download set 5's backings; D heavy at most 20%, no high-gain sections (Death Of A Romantic and Hollow Ground out); E the ear sittings; F step 3's training. The leak rule becomes per example, replaced guitars only, session-level readings. V-real-11 stays the test. F20 re-planned after step 3 | [plan](clean-crunch-pool-plan.md) |
 | 2026-10-29 | D_F5bk outcome, audited (clean/crunch pool step 3, the backing fix alone: F5's examples remixed under the per-example leak rule after the ear heard no guitar in its 5 backings): D_F5bk − D_F5 −0.008 [−0.076, +0.061] on V-real-11, 4 of 7 bands better, undecided; femme +0.157 and let-s-dance −0.162 cancel, the other 5 bands within ±0.03; co-primary (time effects and spring at S) −0.018 [−0.088, +0.051]; still behind S (+0.080). The per-example leak rule was already the pool's recipe (step 1); D_CC is the arm left | [ledger](dev-test-ledger.json) `trusted-data-t3` `amendment_6_outcome`, [plan](clean-crunch-pool-plan.md) |
+| 2026-10-29 | The pool's data checks audited (the user's doubt, an independent audit, reviewed fixes in amendment 1, PR #329): the amp-bleed check had passed 0 of 79 amp tracks (three logic bugs in its verdict), D4 overrode heard-clean DIs, step 0's D2 rejected whole DIs for one window, part A's hiss screen flagged about 270 sections. Amendment 1 fixed the bleed verdict, D4 and D2: 89 sections with the bleed check on, 161 (51 clean) with it off, against 38 before. The ear backed the audit: part 14, 22 of 23 rejected items clean; part 15, 15 of 17 D2-rejected DIs clean. User decisions: other instruments' bleed does not rule out a background amp track (target-guitar checks stay); hiss no longer screens sections; both go into amendment 2 | [plan](clean-crunch-pool-plan.md), [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` |
 | 2026-10-28 | Clean/crunch pool progress (zero renders): step 0's intake checks (80 DI rows in 21 sessions; most fail D2), set 5's backings re-downloaded, step 1's per-example leak rule merged (PR #323), step 2's groundwork merged after an independent review and re-check (PR #324): the 19 released sessions pass `refuse_held_out` under their band and are barred from every later test (`refuse_test`, `set3/set5.parts` by default); one pool entry point bars V-real's 7 bands; set-5 parts whose amp tracks are another part's (BKS "Too Much" 4a, "Bulldozer" 6a) are dropped; Fytakyte "Too Much" is spent for testing and never trains. Ear page part 11 (120 cards) sent | [plan](clean-crunch-pool-plan.md) |
 
