@@ -1321,11 +1321,13 @@ def apply_cap(ctx, rows, verified, dis_windows, bad_sections, act_cache, max_n=M
 
 
 def example_recipe(ctx, r, verified, verified_stems, act_cache, bad_sections=frozenset(), dis_windows=None,
-                   amp_tracks=(), takes=None):
+                   amp_tracks=(), takes=None, vocals_from_stems=False):
     """One example's self-built recipe (plan (c)), zero renders. r: a part C row; dis_windows: {di: {window id:
     status}} from T0's lists (an other guitar's window must have been measured and be usable); amp_tracks: the
     section's amp tracks that stand for active guitars that cannot be rendered (`apply_rule1`); takes: `stem_takes`
-    for the clean/crunch pool's per-example leak rule (None: T0's session-wide list, as T2 and T3 ran)."""
+    for the clean/crunch pool's per-example leak rule (None: T0's session-wide list, as T2 and T3 ran);
+    vocals_from_stems: the vocal draw's "has vocals" from the example's own stems (the clean/crunch pool, whose
+    sections have no part C backing) instead of part C's stored backing."""
     dis_windows = dis_windows or {}
     from learn import data_cleaning as DC
     from learn import direct_stems as DS
@@ -1352,8 +1354,11 @@ def example_recipe(ctx, r, verified, verified_stems, act_cache, bad_sections=fro
         dis = [sec["di"]] + [o["di"] for o in others]
         rep = replaced_sources(st["sources"], dis, {d: ctx.inv[d].get("own") for d in dis}) if st else set()
         withv, nov = stems_for(rec, verified_stems, sd, st, rep, floor) if st else ([], [])
-    meta = json.loads(PS.backing_path(r["section"]).with_suffix(".json").read_text())
-    ratio, v, leak, target = PS.mix_params(r["i"], ctx.ratios, meta["has_vocals"], ctx.eval_mix, 0)
+    if vocals_from_stems:
+        has_vocals = withv != nov
+    else:
+        has_vocals = json.loads(PS.backing_path(r["section"]).with_suffix(".json").read_text())["has_vocals"]
+    ratio, v, leak, target = PS.mix_params(r["i"], ctx.ratios, has_vocals, ctx.eval_mix, 0)
     mastered, _ = DS.master_draw(r["i"])
     return {"i": r["i"], "section": r["section"], "band": r["band"], "di": sec["di"], "amp": r["amp"],
             "base": r["base"], "pan_target": target_pan(r["i"]), "others": others,

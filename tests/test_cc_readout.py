@@ -31,13 +31,10 @@ def test_renders_per_arm():
     assert R.renders_needed(33) == 165
 
 
-def test_d_cc_refuses_until_registered_and_unknown_arms_refuse():
-    with pytest.raises(SystemExit, match="not merged yet"):
-        R.spec_of("D_CC")
+def test_d_cc_is_registered_with_its_own_constant_and_unknown_arms_refuse():
+    assert not R.spec_of("D_CC")["constant_is_d_f5s"]
     with pytest.raises(SystemExit):
         R.spec_of("D_nope")
-    with pytest.raises(SystemExit):
-        R.main(["fit", "--arm", "D_CC"])
     assert R.spec_of("D_F5bk")["constant_is_d_f5s"]
 
 
@@ -52,6 +49,9 @@ def test_machine_lists_see_the_renders():
     assert any(re.search(p, "/x/python -u -m learn.cc_readout vreal-render --arm D_F5bk --shard 0/3")
                for p in LO.RENDERS)
     assert not any(re.search(p, "/x/python -m learn.cc_readout report --arm D_F5bk") for p in LO.RENDERS)
+    assert any(re.search(p, "/x/python -u -m learn.cc_build render --shard 1/3") for p in LO.RENDERS)
+    assert not any(re.search(p, "/x/python -m learn.cc_build plan --dry") for p in LO.RENDERS)
+    assert any(re.search(p, "/x/python -m learn.cc_build build --device mps") for p in LO.SEPARATIONS)
 
 
 def test_ledger_declares_the_readout():

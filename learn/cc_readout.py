@@ -14,8 +14,8 @@ vreal-render and report; `trusted_data_t3_mix`'s pattern for an arm read against
 **The arms.** An arm is registered in `ARMS` with where its two runs are, its fit set (rows and feature files) and
 whether its constant must be D_F5's. D_F5bk (`trusted_data_t3_bk`) is registered: its runs, FS5 remixed under step 1's
 backings (`trusted_data_t3_bk.files_for`), D_F5's labels, so its constant must equal D_F5's stored one. D_CC registers
-when its training code lands (its pool, its own fit set drawn from the new pool, its own constant); until then
-`--arm D_CC` refuses.
+from `cc_build` (its pool, its own fit set FS_CC drawn from the new pool, its own constant; the "- constant" row stays
+D_F5's stored constant, descriptive).
 
 **The answers** (the plan's declared readout): per direction the arm's pulled answer (both seeds, as D_F5's) and the
 same answer with the time-effect and spring heads at S (`full_space.FAMILIES["time effects and spring"]`), the
@@ -77,12 +77,31 @@ def _bk_fit_rows(root, ctx, plan, smoke=False):
     return tr_rows, fs_rows, {r["i"]: BK.files_for(ent[r["i"]], root) for r in tr_rows + fs_rows}
 
 
+def _cc_runs(root, seed):
+    from learn import cc_build as CB
+
+    return CB.run_path(root, seed)
+
+
+def _cc_fit_rows(root, ctx, plan, smoke=False):
+    """D_CC's (training rows, FS_CC rows, files): its own pool (`cc_build`), its own fit set and labels."""
+    import argparse
+
+    from learn import cc_build as CB
+
+    a = argparse.Namespace(out=None if not smoke else str(root), smoke=smoke)
+    return CB.arm_rows(a, CB.load_plan(a))
+
+
 ARMS = {
     "D_F5bk": {"runs": _bk_runs, "fit_rows": _bk_fit_rows, "constant_is_d_f5s": True, "model_arm": T.MODEL_ARM,
                "input": "the stored crop's stock X-LANCE stem (D_stem's input, as D_F5); trained on F5 remixed under "
                         "step 1's per-example backings"},
+    "D_CC": {"runs": _cc_runs, "fit_rows": _cc_fit_rows, "constant_is_d_f5s": False, "model_arm": T.MODEL_ARM,
+             "input": "the stored crop's stock X-LANCE stem (D_stem's input, as D_F5); trained on the clean/crunch "
+                      "pool (cc_build), its own fit set FS_CC and constant"},
 }
-PENDING = {"D_CC": "D_CC's training code (the new pool, its fit set and runs) is not merged yet: it registers here"}
+PENDING = {}
 
 
 def spec_of(arm):
