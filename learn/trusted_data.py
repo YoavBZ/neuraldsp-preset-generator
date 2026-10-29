@@ -460,6 +460,9 @@ def amp_bleed_total(takes, floor=None):
     return DC.db_sum(v) if v else None
 
 
+AMP_SUM_LOWER = False  # the track's power sum over each source's lower bound (real less its highest rolled reading)
+                       # instead of its point take: the review (2026-10-29) found 37 of 54 failing tracks fail only on
+                       # summed noise excursions, no single source failing. Off by default; dry runs read it.
 AMP_NEG_PASS = False   # the audit's "a non-positive real reading passes": off, since it passes the -25 dB synthetic
                        # injection below (the estimator's held-out readings sit below 0 and the leak shows only as
                        # real minus the rolled readings); the interval decides instead. The coordinator's call.
@@ -472,18 +475,20 @@ def source_status(src, thr=AMP_BLEED_DB, neg_pass=None):
     - 'pass' when the source is silent where the amp track plays (active_share 0: it cannot leak into it), or when
       the take's upper bound (real less the lowest rolled reading) is under the line;
     - 'fail' when the take's lower bound (real less the highest rolled reading) is at or above the line;
-    - 'unmeasurable' when the interval straddles the line, or on a blow-up (a reading beyond the amp track's own
-      energy, |share| > 1) with a positive real reading.
+    - 'unmeasurable' when the interval straddles the line, on a blow-up (a reading beyond the amp track's own energy,
+      |share| > 1, whatever the real reading's sign: the fit cannot be trusted there), or with no rolled reading.
     The share of frames the source plays on is no reason by itself (the design's injection read a 29%-active vocal
     back within 0.4 dB). With `neg_pass` (AMP_NEG_PASS) a non-positive real reading passes whatever the rolled
     readings say; without it only the interval decides."""
     neg_pass = AMP_NEG_PASS if neg_pass is None else neg_pass
     line = 10 ** (thr / 10)
-    r, n = src["real"], list(src["nulls"]) or [0.0]
+    r, n = src["real"], list(src["nulls"])
     if src.get("active_share") == 0.0:
         return "pass", None
+    if not n:
+        return "unmeasurable", "no rolled reading (the chance level is unknown)"
     if abs(r) > 1.0 or any(abs(v) > 1.0 for v in n):
-        return ("unmeasurable", "blow-up (a held-out reading beyond the amp track's energy)") if r > 0 else ("pass", None)
+        return "unmeasurable", "blow-up (a held-out reading beyond the amp track's energy)"
     if neg_pass and r <= 0:
         return "pass", None
     lo, hi = r - max(n), r - min(n)
@@ -506,37 +511,50 @@ def source_take(src, thr=AMP_BLEED_DB, min_share=None):
 
     st, why = source_status(src, thr)
     r, n = src["real"], list(src["nulls"])
-    sane = abs(r) <= 1.0 and all(abs(v) <= 1.0 for v in n) and src.get("active_share") != 0.0
+    sane = bool(n) and abs(r) <= 1.0 and all(abs(v) <= 1.0 for v in n) and src.get("active_share") != 0.0
     t = DC.take_db(r, n, 1.0) if sane and not (AMP_NEG_PASS and r <= 0) else None
     return (None if t is None else min(t, 0.0)), (why if st == "unmeasurable" else None)
+
+
+def lower_take(src):
+    """A source's take at its interval's lower bound (real less its highest rolled reading), dB capped at 0, or None
+    (not positive, a blow-up, no rolled reading, or silent where the amp track plays)."""
+    r, n = src["real"], list(src["nulls"])
+    if not n or src.get("active_share") == 0.0 or abs(r) > 1.0 or any(abs(v) > 1.0 for v in n):
+        return None
+    lo = r - max(n)
+    return min(10 * math.log10(lo), 0.0) if lo > 0 else None
 
 
 def track_bleed(reading, thr=AMP_BLEED_DB, min_share=None):
     """An amp track's bleed from its stored reading (`measure_amp_bleed`): {"bleed_db" (the power sum of the takes at
     or above -40 dB, `amp_bleed_total`; None under it), "takes", "status" {source: verdict}, "unmeasurable" {source:
     reason}, "failed" [sources], "worst" (source, dB) or None}."""
-    takes, bad, sts = {}, {}, {}
+    takes, lows, bad, sts = {}, {}, {}, {}
     for s, src in sorted((reading.get("sources") or {}).items()):
         sts[s], why = source_status(src, thr)
         takes[s], _ = source_take(src, thr)
+        lows[s] = lower_take(src)
         if sts[s] == "unmeasurable":
             bad[s] = why
     worst = max(((v, s) for s, v in takes.items() if v is not None), default=None)
-    return {"bleed_db": amp_bleed_total(takes), "takes": takes, "status": sts, "unmeasurable": bad,
+    return {"bleed_db": amp_bleed_total(takes), "bleed_lower_db": amp_bleed_total(lows), "takes": takes,
+            "lower_takes": lows, "status": sts, "unmeasurable": bad,
             "failed": sorted(s for s, v in sts.items() if v == "fail"),
             "worst": None if worst is None else (worst[1], worst[0])}
 
 
-def amp_status(reading, thr=AMP_BLEED_DB):
+def amp_status(reading, thr=AMP_BLEED_DB, sum_lower=None):
     """An amp track's bleed check (A6's line): 'fail' when a source's take is surely at or above the line or the
-    takes' power sum reaches it; else 'unmeasurable' when a source's interval straddles it (it fails too: only what
+    takes' power sum reaches it (with `sum_lower`, AMP_SUM_LOWER, the sum of each source's lower bound); else 'unmeasurable' when a source's interval straddles it (it fails too: only what
     can be trusted is used); else 'pass'. 'silent' for a silent file, 'not measured' without a reading."""
     if not reading:
         return "not measured"
     if reading.get("silent"):
         return "silent"
     tb = track_bleed(reading, thr)
-    if tb["failed"] or (tb["bleed_db"] is not None and tb["bleed_db"] >= thr):
+    total = tb["bleed_lower_db"] if (AMP_SUM_LOWER if sum_lower is None else sum_lower) else tb["bleed_db"]
+    if tb["failed"] or (total is not None and total >= thr):
         return "fail"
     if tb["unmeasurable"]:
         return "unmeasurable"

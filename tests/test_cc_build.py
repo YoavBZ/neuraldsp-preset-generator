@@ -96,3 +96,20 @@ def test_ear_windows_reads_di_and_scope_cards():
 
 def test_ledger_declares_d_cc_before_any_render():
     assert C.ledger_declared()
+
+
+def test_policy_flags_refuse_a_written_plan():
+    for flag in ("--no-bleed-gate", "--sum-lower"):
+        with pytest.raises(SystemExit, match="dry runs"):
+            C.main(["plan", flag])
+
+
+QS = "cambridge/TheTravellingBand_Quicksand_Full/"
+
+
+@pytest.mark.skipif(not (C.INTAKE / "summary.json").exists() or not C.EAR_PARTS[11][0].exists(),
+                    reason="needs the local T0 lists and ear exports")
+def test_quicksand_elecgtr2_is_admitted_and_elecgtr3_waits_for_the_ear():
+    v = C.verdicts()
+    assert v[QS + "19_ElecGtr2DI.wav"]["trains"] and v[QS + "16_ElecGtr1DI.wav"]["trains"]
+    assert not v[QS + "22_ElecGtr3DI.wav"]["trains"] and v[QS + "22_ElecGtr3DI.wav"]["ear"] is None

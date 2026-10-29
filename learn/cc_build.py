@@ -14,22 +14,24 @@ recipe and is read by `learn.cc_readout`.
     $MAIN -u -m learn.cc_build cleaning-scan --shard k/3   # zero renders: the cleaning scan where it has no row
     $MAIN -m learn.cc_build ear-page                   # zero renders: part 13, the stem spot-checks and flagged DIs
     $MAIN -m learn.cc_build plan [--dry]               # zero renders: the yield, the composition, every recipe
+                                                       # (dry only: --no-bleed-gate, --sum-lower; amendment 1)
     $MAIN -u -m learn.cc_build render --shard k/3      # renders: each target in its own process; the other guitars
     $MSST -m learn.cc_build build --device mps|cpu     # mixes and X-LANCE stems
     $MAIN -m learn.cc_build check                      # every example built or refused, by reason
     $TORCH_PY -m learn.cc_build train --seed 20261042|20261043
 
-**The DIs** (`verdicts`): a released DI trains only when the ear heard it clean (ear pages parts 11 and 12; a part-12
-answer replaces part 11's "not sure" on the same DI; any processed, not-a-DI or hum answer excludes it) and step 0's
-measures passed (D2, D3 pass, D1 not failed; `intake-2026-10-28/summary.json`). Tier 1: Adam Buckley's DIs as T0
-verifies them (decision A), Quicksand ElecGtr1 (T0's measure DI, verified). Quicksand ElecGtr2 stays out (T0: heard
-clean but D4 flags it, the user's conflict), as do Turbosauro (no clean section in part A's manifest) and Starnes And
-Shah ElecGtr4 (too short). The heavy share: Storm Of Particles and Ale Lak, T0-verified DIs, classed sections only.
-Death Of A Romantic and Hollow Ground are out (decision D). Every DI row passes `cc_pool.check_pool_rows`.
+**The DIs** (`verdicts`): a released DI trains only when the ear heard it clean (ear pages parts 11 and 12, and 13's
+DI cards once answered; a later part's answer replaces an earlier part's "not sure" on the same DI; any processed,
+not-a-DI or hum answer excludes it) and step 0's DI-level measures pass (D3 passes, D1 not failed; D2 gates each window,
+not the DI: amendment 1). Tier 1: Adam Buckley's DIs as T0 verifies them (decision A); Quicksand ElecGtr1 (T0's
+measure DI, verified) and ElecGtr2 (heard clean, held by D4 alone, which no longer holds a DI the ear heard clean);
+Quicksand ElecGtr3 is out until heard. Turbosauro (no clean section in part A's manifest) and Starnes And Shah ElecGtr4
+(too short) stay out. The heavy share: Storm Of Particles and Ale Lak, T0-verified DIs, classed sections only. Death
+Of A Romantic and Hollow Ground are out (decision D). Every DI row passes `cc_pool.check_pool_rows`.
 
 **The sections.** A target section is part A's clean section (no screen flag) of a training DI, usable under T0's
-section rule (D2 on the window passes; D4 not flagged unless a heard-clean window covers it; not silent), and not high
-gain. Its class: the ear's call on an overlapping heard window, else part A's class, else part A's classifier on its
+section rule (D2 on the window passes; D4 not flagged unless the ear heard the window or the DI clean; not silent),
+and not high gain. Its class: the ear's call on an overlapping heard window, else part A's class, else part A's classifier on its
 own amp track (T3's order, `trusted_data_t3.gain_class`); a heavy band's unclassed section is out. T0's statuses stand
 where T0 measured (Adam Buckley, Storm Of Particles, Ale Lak); `checks` measures the rest the same way
 (`verify_tracks.di_processing`, `DiD2`, part A's stored flags).
@@ -832,8 +834,12 @@ def cmd_plan(args):
     """The yield and the composition (zero renders); with --dry nothing is written."""
     import collections
 
-    from learn import data_cleaning as DC
-
+    gate = BLEED_GATE and not args.no_bleed_gate
+    if not gate and not args.dry:
+        raise SystemExit("--no-bleed-gate is for dry runs until the user rules on it")
+    if args.sum_lower and not args.dry:
+        raise SystemExit("--sum-lower is for dry runs until it is reviewed and adopted")
+    T.AMP_SUM_LOWER = T.AMP_SUM_LOWER or bool(args.sum_lower)
     require(args, renders=not args.dry)
     ctx, verified, wins, bad, cands = candidates(args)
     root = V.out_root(args)
@@ -841,9 +847,6 @@ def cmd_plan(args):
     elig = [r for r in cands.values() if not r["why"]]
     rows = [{"i": n, "section": r["section"], "band": r["band"]} for n, r in enumerate(elig)]
     scan = scan_rows_all(root_of(args))
-    gate = BLEED_GATE and not args.no_bleed_gate
-    if not gate and not args.dry:
-        raise SystemExit("--no-bleed-gate is for dry runs until the user rules on it")
     kept, left, amp_of = T.apply_rule1(ctx, root, rows, verified, wins, bad, act, scan, doubles_out=True,
                                        bleed_gate=gate)
     kept, left_cap = T.apply_cap(ctx, kept, verified, wins, bad, act)
@@ -1323,6 +1326,7 @@ def main(argv=None):
         if name == "plan":
             s.add_argument("--dry", action="store_true")
             s.add_argument("--no-bleed-gate", action="store_true")
+            s.add_argument("--sum-lower", action="store_true")
         if name == "build":
             s.add_argument("--device", choices=DEVICES, required=True)
             s.add_argument("--order", choices=("asc", "desc"), default="asc")

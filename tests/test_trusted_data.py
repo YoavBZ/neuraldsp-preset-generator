@@ -415,8 +415,9 @@ def test_raw_takes_are_not_clipped_and_untrustworthy_sources_are_unmeasurable():
         None, "blow-up (a held-out reading beyond the amp track's energy)")                  # no take from a blow-up
     blow = T.source_take({"real": 0.53, "nulls": [-0.011, -256.7, -0.0065, 0.0], "active_share": 0.9})
     assert blow[1].startswith("blow-up")
-    assert T.source_status({"real": -0.53, "nulls": [-0.011, -256.7, -0.0065, 0.0], "active_share": 0.9}) == (
-        "pass", None)               # a blow-up with no real explained energy reads nothing (Adam Buckley, AcousticGtr3)
+    assert T.source_status({"real": -0.53, "nulls": [-0.011, -256.7, -0.0065, 0.0], "active_share": 0.9})[0] == (
+        "unmeasurable")             # a blow-up is untrustworthy whatever the real reading's sign (Adam Buckley, AcousticGtr3)
+    assert T.source_status({"real": 2e-3, "nulls": [], "active_share": 0.9})[0] == "unmeasurable"    # no rolled reading
     assert T.source_take({"real": 0.0, "nulls": [0.0] * 4, "active_share": 0.3}) == (None, None)    # share no reason
     r = {"silent": False, "sources": {"01_Kick.wav": _raw(-45.0)["sources"]["01_Kick.wav"],
                                       "43_LeadVox1.wav": {"real": 1.0e-3, "nulls": [0.0, 4e-4, 0.0, 0.0],
@@ -459,6 +460,19 @@ BKS_INJECTED = {
     ("44_LeadVox.wav", -35): {"real": -0.0003792, "nulls": [-0.0003455, -0.0006932, -0.0005443, -0.0008485],
                               "active_share": 0.579661},
 }
+
+
+def test_the_power_sum_can_read_lower_bounds():
+    # four sources each at about -35 dB with noisy rolls: point takes sum to about -29 dB (fail); their lower bounds
+    # (real less the highest roll) sum under the line (the review: summed noise excursions)
+    src = {"real": 4.5e-4, "nulls": [1e-4, 3e-4, 0.0, 2e-4], "active_share": 1.0}
+    r = {"silent": False, "sources": {f"0{k}_Drum.wav": dict(src) for k in range(4)}}
+    assert all(T.source_status(v)[0] == "pass" for v in r["sources"].values())
+    assert T.amp_status(r) == "fail"
+    assert T.amp_status(r, sum_lower=True) == "pass"
+    assert T.lower_take({"real": 1e-3, "nulls": [5e-4], "active_share": 1.0}) == pytest.approx(-33.0, abs=0.05)
+    assert T.lower_take({"real": 1e-4, "nulls": [5e-4], "active_share": 1.0}) is None
+    assert T.AMP_SUM_LOWER is False
 
 
 @pytest.mark.parametrize("neg_pass", [False, True])
