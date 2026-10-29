@@ -1,8 +1,8 @@
 # Clean/crunch-led training pool (plan, 2026-10-28)
 
-**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). Zero renders so far.**
+**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders); the pool waits for ear page part 12.**
 
-**Progress (2026-10-28):**
+**Progress (2026-10-28 and 29):**
 - **Step 0 (intake checks, `~/ndsp-presets/learn/trusted-data/intake-2026-10-28/`):** 80 DI rows in 21 sessions (the
   released sessions and tier 1's additions). Most fail D2 (46 of 79 summarized; 12 of them on a single failing
   window, since one bad window fails the DI, and one with no window to check). Set 5's backings were re-downloaded (6 sessions, all checksums match).
@@ -20,7 +20,16 @@
 - **Step 3's D_F5bk inputs (PR #325):** F5/FS5 remixed under the per-example backings and separated, done
   2026-10-29 01:09: 2,479 examples built, none refused, pipeline control 42 of 42. On the full builds the backing gain
   moved a median −6.7 dB (Death Of A Romantic) and −2.3 dB (Storm Of Particles), and the stem's SNR rose +6.5 / +1.6 dB.
-  The readout commands are in PR #327. D_F5bk does not train before the ear clears the leak rule.
+  The readout commands are in PR #327.
+- **Ear sitting E answered (2026-10-29):** all 5 backings "No guitar in it", so the leak rule stands. DIs: 16 clean, 7
+  processed (Peter White ×2, Silona ×3, Ronnie Jones ElecGtr04, Doom Flamingo), 9 unsure. Amp tones mostly crunch;
+  high gain heard on The Maybe Next Years ElecGtr1 and Turbosauro ElecGtr2DT (both windows) and ElecGtr2 (one). The
+  user asked to judge the unsure DIs beside their amp track: part 12 (12 cards, DI then amp track) is sent. Starnes And
+  Shah ElecGtr4 is out (its DI plays only its last 5 s).
+- **D_F5bk read (2026-10-29, audited; ledger `trusted-data-t3` `amendment_6_outcome`):** D_F5bk − D_F5 −0.008
+  [−0.076, +0.061], 4 of 7 bands better: undecided. Two large band swings cancel (femme +0.157, let-s-dance −0.162;
+  the other 5 within ±0.03). Co-primary −0.018 [−0.088, +0.051]. Still behind S (+0.080) and D_core5 (+0.072). The
+  backing fix alone is undecided on V-real; D_CC (the new songs) is the arm left.
 
 Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
 draft takes in the findings: tiers by release status, set 5's
