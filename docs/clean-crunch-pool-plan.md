@@ -44,17 +44,23 @@
   the non-guitar bleed gate on stand-ins is off (the target-guitar checks stay on); part A's hiss flag no longer
   screens a section (hum and bleed still do); part 15 for the DIs step 0's D2 had kept from the ear. Peter White stays
   out (two DIs heard processed, the third "sounds like an amp track").
-- **The alignment check (2026-10-30, zero renders; amendment 2):** every training DI against its own amp track over the whole file (GCC-PHAT
-  over ±3 s every 5 s, onset envelopes where the amp is too driven for GCC): 51 of 61 are in time (lags −0.25 to
-  24.4 ms, median 0.8 ms: mic delays). Out (fail closed, nothing shifted): Forkupines SugarFaith ElecGtr8 a constant
-  +129.8 ms offset against its amp track; Chris Durban ElecGtr3a drifts (10.3–10.5 ms, a 6.2 ms stretch at 4:23–4:43,
-  0 ms at 2:53); too few readings for Forkupines Semantics ElecGtr03 (1 of 20 windows), Adam Buckley ElecGtr5 and
-  Ronnie Jones ElecGtr06 (2 each, consistent, under the 3 needed); and 5 DIs with no amp track of their own (Storm Of
-  Particles ElecGtr01–03, Dunning Kruger JapanSong Gtr4, Hannes Keseberg ElecGtr2), which cannot be timed (against
-  the song, in-time controls peak at beat multiples too). The two notes from part 15: Hazael ElecGtr3 is in time
-  (1.5 ms throughout), but its amp track is silent from 1:07 to 1:21 while the DI plays on (what the user heard), so
-  target sections where a DI plays and its own amp track is silent are now left out; Hannes Keseberg ElecGtr2 cannot
-  be timed (no amp track; set 5 found none that passes its same-take tests) and is out.
+- **The alignment check (2026-10-30, zero renders; amendment 2):** every training DI against its own amp track, on
+  the windows where both play (every 5 s; GCC-PHAT over ±3 s, onset envelopes where the amp is too driven for GCC; at
+  least 3 readings): 50 of 61 are in time (48 by GCC at 0.3 to 24.4 ms, mic delays; Adam Buckley ElecGtr2 and
+  ElecGtr2DT by their envelopes at 0 ms, in 10-ms steps). Out (fail closed, nothing shifted):
+  Forkupines SugarFaith ElecGtr8 a constant +129.8 ms offset against its amp track; Chris Durban ElecGtr3a drifts
+  (10.3–10.5 ms, a 6.2 ms stretch at 4:23–4:43, 0 ms at 2:53 and −1,341.88 ms at 4:48); Tim Taler ElecGtr04a reads
+  −0.25 ms, outside A1's 0.1–30 ms (its amp track 12 samples before the DI); too few readings for Forkupines
+  Semantics ElecGtr03 (1 of 20 windows), Adam Buckley ElecGtr5 and Ronnie Jones ElecGtr06 (2 each, consistent, under
+  the 3 needed); and 5 DIs with no amp track of their own (Storm Of Particles ElecGtr01–03, Dunning Kruger JapanSong
+  Gtr4, Hannes Keseberg ElecGtr2), which cannot be timed (against the song, in-time controls peak at beat multiples
+  too). A1's prominence floor of 12 was set for a ±50 ms search; over ±3 s it admits an occasional spurious peak
+  (Adam Buckley ElecGtr2's +2,459.75 ms reading). Such a peak can only turn a DI into a false "drift" or "offset",
+  never a false "aligned". The two notes from part 15: Hazael ElecGtr3 is in time (1.5 ms throughout), but its amp
+  track is silent from 1:07 to 1:21 while the DI plays on (what the user heard), so a target section is now left out
+  when no own amp track plays on 30% or more of the DI's playing frames in it (14 sections: Dunning Kruger EnDance
+  Gtr6a 7, Hazael ElecGtr1 4 and ElecGtr3 3); Hannes Keseberg ElecGtr2 cannot be timed (no amp track; set 5 found
+  none that passes its same-take tests) and is out.
 
 Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
 draft takes in the findings: tiers by release status, set 5's
@@ -240,26 +246,27 @@ justify spending it. A later confirmation needs fresh songs.
     build (the first build's 28 DI cards, the second's 35 cards). Any processed, not-a-DI or hum answer still excludes
     a DI (Tim Taler ElecGtr02c, Saturn Syndicate ElecGtr3DT). Peter White stays out.
   - **The user's decisions.** The non-guitar bleed gate on stand-ins is off for real runs (`cc_build.BLEED_GATE`;
-    `plan --dry --bleed-gate` reads the old rule); the target-guitar checks (`cleaning_clash`, `target_doubles`) stay
+    `plan --dry --bleed-gate` reads the old gate, now always with the lower-bound sum); the target-guitar checks (`cleaning_clash`, `target_doubles`) stay
     on, and a stand-in the ear heard with another guitar in it leaves its sections. The lower-bound sum is adopted for
     the pool (it decides only with the gate on). Part A's hiss flag no longer screens a section; hum, bleed,
     clipping and drop-out flags still do. `AMP_NEG_PASS` stays off.
   - **The alignment check** (`cc_build align`; above): a DI trains only when it reads in time with its own amp track
-    (fails closed: offset, drift, too few readings or no amp track to time it against are out; nothing is shifted).
-    A target section where the DI plays but its own amp track is silent is out (8 sections).
-  - **DIs:** 51 train (released and tier 1 as heard and timed; Adam Buckley's, Storm Of Particles' and Ale Lak's as
+    (fails closed: offset, drift, a lag outside A1's 0.1–30 ms, too few readings or no amp track to time it against
+    are out; nothing is shifted; each alignment file carries a hash of the method, and a stale one refuses). A target
+    section where no own amp track plays on 30% or more of the DI's playing frames is out (14 sections).
+  - **DIs:** 50 train (released and tier 1 as heard and timed; Adam Buckley's, Storm Of Particles' and Ale Lak's as
     T0 verifies and the alignment check times them).
   - **Dry yield** (zero renders, 2026-10-30; 3,467 training examples by part C's cycle):
 
     | | Amendment 2 |
     |---|---|
-    | Candidate sections of training DIs | 892 (out before rule 1: high gain 325, part A's screen 196, DI over a silent amp track 8) |
-    | Eligible / kept | 363 / 299 in 10 bands (rule 1 and the cap leave out 64: no usable stand-in 29, the target's own take in a stand-in 23, a stand-in doubling the target 8, the cap 4) |
-    | By band | Forkupines 101, BKS 80, The Travelling Band 36, Hazael 33, The Maybe Next Years 23, Adam Buckley 13, Ale Lak 6, Storm Of Particles 4, Dunning Kruger 2, Tim Taler 1 |
-    | Clean / crunch sections | 97 / 202 |
-    | Training examples by band | Forkupines 1,225 (35%), BKS 966 (28%), The Travelling Band 417, Hazael 377, The Maybe Next Years 261, Adam Buckley 130, Ale Lak 39, Storm Of Particles 26, Dunning Kruger 13, Tim Taler 13 |
+    | Candidate sections of training DIs | 891 (out before rule 1: high gain 325, part A's screen 196, DI over a silent amp track 14) |
+    | Eligible / kept | 356 / 294 in 9 bands (rule 1 and the cap leave out 62: no usable stand-in 29, the target's own take in a stand-in 21, a stand-in doubling the target 8, the cap 4) |
+    | By band | Forkupines 101, BKS 80, The Travelling Band 36, Hazael 30, The Maybe Next Years 23, Adam Buckley 13, Ale Lak 6, Storm Of Particles 4, Dunning Kruger 1 |
+    | Clean / crunch sections | 93 / 201 |
+    | Training examples by band | Forkupines 1,244 (36%), BKS 975 (28%), The Travelling Band 424, Hazael 349, The Maybe Next Years 265, Adam Buckley 131, Ale Lak 39, Storm Of Particles 26, Dunning Kruger 14 |
     | Heavy share | 2% |
-    | FS_CC | 33 sections, 430 examples |
+    | FS_CC | 32 sections, 423 examples |
     | Examples in all | about 3.9k (13 training examples per section) |
 
   - **Process gate.** No written plan and no render before amendment 2's independent review; the plan still refuses
