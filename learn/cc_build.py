@@ -310,8 +310,10 @@ def ear_sources():
 
 def screen_ok(sec):
     """Part A's screen on a section, less the flags the user lifted (hiss): hum, bleed, clipping and drop-outs still
-    screen it."""
-    return not (set(sec.get("flags") or []) - SCREEN_KEEPS)
+    screen it. A row with no flags field reads its `clean` (fails closed)."""
+    if "flags" not in sec:
+        return bool(sec.get("clean"))
+    return not (set(sec["flags"] or []) - SCREEN_KEEPS)
 
 
 def load_ear():

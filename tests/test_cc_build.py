@@ -110,6 +110,7 @@ def test_the_screen_no_longer_reads_hiss():
     assert C.screen_ok({"flags": []}) and C.screen_ok({"flags": ["hiss"]})
     for f in (["hum"], ["hiss", "hum"], ["bleed"], ["clipping"], ["dropout", "hiss"]):
         assert not C.screen_ok({"flags": f})
+    assert not C.screen_ok({}) and not C.screen_ok({"clean": False}) and C.screen_ok({"clean": True})   # no flags field
 
 
 def test_part15_takes_the_unheard_d2_rejects_only():
