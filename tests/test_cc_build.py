@@ -20,7 +20,7 @@ def test_admission_needs_the_ear_and_the_measures():
     assert C.admit("clean", ok)[0]
     assert not C.admit("unsure", ok)[0]
     assert not C.admit(None, ok)[0]
-    assert not C.admit("clean", {**ok, "D2": "fail"})[0]
+    assert C.admit("clean", {**ok, "D2": "fail"})[0]          # D2 gates windows, not the DI (the audit)
     assert not C.admit("clean", {**ok, "D1": "fail"})[0]
     assert not C.admit("clean", None)[0]
 
@@ -39,6 +39,8 @@ def test_section_status_is_t0s_rule():
     assert C.section_status("pass", "fail", False) == "pending ear"
     assert C.section_status("pass", "fail", True) == "usable"
     assert C.section_status("pass", "pass", False) == "usable"
+    assert C.section_status("pass", "fail", False, di_heard_clean=True) == "usable"     # D4 does not override the ear
+    assert C.section_status("fail", "pass", True, di_heard_clean=True) == "excluded"    # D2 still gates the window
 
 
 def test_fs_sections_never_take_more_than_half_a_band():

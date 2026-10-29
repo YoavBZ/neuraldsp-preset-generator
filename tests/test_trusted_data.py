@@ -540,6 +540,10 @@ def test_a_failing_or_unmeasurable_amp_track_leaves_the_example_out(monkeypatch,
     straddle = {"silent": False, "sources": {"01_Kick.wav": {"real": 1.0e-3, "nulls": [0.0, 4e-4, 0.0, 0.0],
                                                              "active_share": 1.0}}}
     assert T.resolve_blocked([b], {"18_ElecGtr02.wav": straddle})[1][0]["amp_why"] == "amp track bleed unmeasurable"
+    assert T.resolve_blocked([b], {"18_ElecGtr02.wav": _raw(-24.0)}, bleed_gate=False)[0][0]["track"] == (
+        "18_ElecGtr02.wav")                                   # the policy flag: bleed no longer blocks a stand-in
+    assert T.resolve_blocked([b], {"18_ElecGtr02.wav": {"silent": True}}, bleed_gate=False)[0] == []
+    assert T.resolve_blocked([{**b, "amp_tracks": []}], {}, bleed_gate=False)[1][0]["amp_why"] == "no amp track"
     assert T.resolve_blocked([{**b, "amp_tracks": []}], {})[1][0]["amp_why"] == "no amp track"
     assert T.resolve_blocked([b], {"18_ElecGtr02.wav": {"silent": True}})[1][0]["amp_why"] == "amp track silent"
     with pytest.raises(SystemExit):                                                   # never guessed: amp-bleed first

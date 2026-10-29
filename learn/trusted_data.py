@@ -560,12 +560,15 @@ AMP_WHY = {"fail": f"amp track bleed at or above {AMP_BLEED_DB:.0f} dB", "unmeas
            "silent": "amp track silent"}
 
 
-def resolve_blocked(blocked, readings, thr=AMP_BLEED_DB):
+def resolve_blocked(blocked, readings, thr=AMP_BLEED_DB, bleed_gate=True):
     """The user's rule 1 (2026-10-25) on one section. blocked: the active guitars that cannot be rendered ([{"part",
     "activity", "why", "amp_tracks"}], `section_blocked`); readings: {track: reading} (`measure_amp_bleed`). A part is
     represented by all its amp or mic tracks when every one passes the bleed check; a part with none, or with one that
     fails or cannot be measured, is unusable. -> (amp tracks [{"part", "track", "bleed_db"}], unusable parts [{**part,
-    "amp", "amp_why"}]); the section's examples are left out when the second is not empty."""
+    "amp", "amp_why"}]); the section's examples are left out when the second is not empty. Without `bleed_gate`
+    (a policy for the user: a stand-in's non-guitar bleed is what the real song's mix holds too) a part's tracks are
+    used whatever their bleed reads, unless one is silent; the target-guitar checks (`cleaning_clash`,
+    `target_doubles`) stay on either way."""
     use, bad = [], []
     for b in blocked:
         tracks = b.get("amp_tracks") or []
@@ -582,7 +585,7 @@ def resolve_blocked(blocked, readings, thr=AMP_BLEED_DB):
         if miss:
             raise SystemExit(f"no bleed reading for {miss} (run `amp-bleed` for this stage first)")
         sts = {a["status"] for a in amp}
-        if sts == {"pass"}:
+        if sts == {"pass"} or (not bleed_gate and "silent" not in sts):
             use += [{"part": b["part"], "track": a["track"], "bleed_db": a["bleed_db"]} for a in amp]
         else:
             bad.append({**b, "amp": amp, "amp_why": "; ".join(AMP_WHY[k] for k in ("fail", "unmeasurable", "silent")
@@ -1195,13 +1198,15 @@ def target_doubles(target_part, amp_tracks):
                   if DC.part_base(a["track"]) == target_part or DC.name_partner(target_part, a["track"]))
 
 
-def apply_rule1(ctx, root, rows, verified, dis_windows, bad_sections, act_cache, scan=None, doubles_out=False):
+def apply_rule1(ctx, root, rows, verified, dis_windows, bad_sections, act_cache, scan=None, doubles_out=False,
+                bleed_gate=True):
     """The user's rule 1 (2026-10-25) at plan time: in each row's section, every active guitar that cannot be
     rendered is represented by its amp or mic tracks when each passes the bleed check (`resolve_blocked`); otherwise
     the row is left out of every arm (LEFT_OUT_NO_AMP), with the guitars, tracks and readings recorded. An added amp
     track that the cleaning scan removed or confirmed as the target's other take leaves the row out too
     (LEFT_OUT_OWN_TAKE; scan: {section: scan row}, `data_cleaning.scan_rows`). With `doubles_out` (the clean/crunch
     pool), an added amp track that doubles the target's part by name leaves it out as well (LEFT_OUT_TARGET_DOUBLE).
+    `bleed_gate` (`resolve_blocked`): False lets stand-ins in whatever their non-guitar bleed reads.
     -> (kept rows, left-out records, {section: amp tracks})."""
     from learn import data_cleaning as DC
 
@@ -1209,7 +1214,7 @@ def apply_rule1(ctx, root, rows, verified, dis_windows, bad_sections, act_cache,
     readings = load_amp_bleed(root, needed_amp_tracks(ctx, blocked))
     res = {}
     for sid, b in blocked.items():
-        use, bad = resolve_blocked(b, readings.get(section_session(ctx, sid)) or {})
+        use, bad = resolve_blocked(b, readings.get(section_session(ctx, sid)) or {}, bleed_gate=bleed_gate)
         clash = cleaning_clash(use, (scan or {}).get(sid)) if not bad else []
         if doubles_out and not bad and not clash:
             sec = ctx.sections[sid]

@@ -73,7 +73,10 @@ LISTEN = HOME / "listening/trusted-data-ear"
 EAR_PARTS = {11: (INTAKE / "ear-answers-part11.json", LISTEN / "part11-clean-crunch/items.json"),
              12: (INTAKE / "ear-answers-part12.json", LISTEN / "part12-clean-crunch-di-amp/items.json")}
 REJECT = ("processed", "not_a_di", "hum")
-TIER1_MEASURE = {"cambridge/TheTravellingBand_Quicksand_Full/16_ElecGtr1DI.wav": "cambridge-Quicksand-ElecGtr1"}
+TIER1_MEASURE = {"cambridge/TheTravellingBand_Quicksand_Full/16_ElecGtr1DI.wav": "cambridge-Quicksand-ElecGtr1",
+                 "cambridge/TheTravellingBand_Quicksand_Full/19_ElecGtr2DI.wav": "cambridge-Quicksand-ElecGtr2"}
+D4_CONFLICT = ["conflict: heard clean, D4 flags it"]    # T0's why when only D4 held a heard-clean DI (no longer holds)
+TIER1_STEP0 = {"cambridge/TheTravellingBand_Quicksand_Full/22_ElecGtr3DI.wav": "TheTravellingBand_Quicksand_Full"}
 TIER1_T0_BANDS = ("Adam Buckley",)               # decision A: T0's verified DIs and sections
 HEAVY_BANDS = ("Storm Of Particles", "Ale Lak")  # classed, non-high-gain sections only, at most HEAVY_MAX
 HEAVY_OUT = ("Death Of A Romantic", "Hollow Ground")   # decision D: every DI high gain
@@ -86,6 +89,8 @@ HEAVY_SEED = 20261111                            # which heavy sections stay und
 FS_EXTRA = 2                                     # FS5's 2 more sections per band
 FS_SEED = 20261112
 NO_SCAN = "no cleaning scan row"
+BLEED_GATE = True          # rule 1's bleed gate on stand-ins (today's); `plan --no-bleed-gate` reads the user's open
+                           # policy question (a stand-in's non-guitar bleed is what the real mix holds too)
 DEVICES = ("mps", "cpu")
 SPOT_PART = 13                                   # the stem spot-check page for the pool's unheard sessions
 SPOT_DIR = LISTEN / "part13-clean-crunch-stems"
@@ -128,8 +133,10 @@ def ear_verdict(heard):
 
 
 def measured_ok(status):
-    """Step 0's measures (the page's KEEP rule): D2 and D3 pass, D1 not failed."""
-    return bool(status) and status.get("D2") == "pass" and status.get("D3") == "pass" and status.get("D1") != "fail"
+    """Step 0's DI-level measures: D3 passes and D1 is not failed. D2 gates each window (`section_status`), not the
+    whole DI, as T0's `di_row_status` reads it (the audit, 2026-10-29: step 0 had combined D2 over every picked
+    window, so one flagged window kept the DI from the ear). The ear still decides (`admit`)."""
+    return bool(status) and status.get("D3") == "pass" and status.get("D1") != "fail"
 
 
 def admit(ear, status):
@@ -155,14 +162,14 @@ def ear_class(start_s, heard, dur=V.CROP_S, min_s=5.0):
     return None
 
 
-def section_status(d2, d4, heard_clean_covers):
-    """T0's section rule: D2 fail excludes; D4 'silent' is silent; a D4 flag waits for the ear unless a window heard
-    clean covers the section (then usable); else usable."""
+def section_status(d2, d4, heard_clean_covers, di_heard_clean=False):
+    """T0's section rule: D2 fail excludes; D4 'silent' is silent; a D4 flag sends the window to the ear unless the
+    ear has heard it, or the DI, clean (D4 does not override the ear: the audit, 2026-10-29); else usable."""
     if d2 == "fail":
         return "excluded"
     if d4 == "silent":
         return "silent"
-    if d4 == "fail" and not heard_clean_covers:
+    if d4 == "fail" and not (heard_clean_covers or di_heard_clean):
         return "pending ear"
     return "usable"
 
@@ -287,10 +294,18 @@ def verdicts():
     inv = {r["id"]: r for r in json.loads(PS.INVENTORY.read_text())["dis"]}
     for d, slug in TIER1_MEASURE.items():
         v = (tr.get("measure_dis") or {}).get(slug) or {}
-        ok = v.get("verdict") == "verified"
-        out[d] = {"band": inv[d]["band"], "path": inv[d]["path"], "source": "tier 1 (T0 measure DI)", "ear": None,
-                  "heard": [], "classes": [], "measures": v.get("status"), "trains": ok,
-                  "why": "T0 verified" if ok else f"T0: {v.get('verdict')} {v.get('why')}"}
+        ok = v.get("verdict") == "verified" or v.get("why") == D4_CONFLICT     # heard clean: D4 no longer holds it
+        out[d] = {"band": inv[d]["band"], "path": inv[d]["path"], "source": "tier 1 (T0 measure DI)",
+                  "ear": "clean" if ok else None, "heard": [], "classes": [], "measures": v.get("status"),
+                  "trains": ok, "why": ("T0 verified" if v.get("verdict") == "verified" else
+                                        "heard clean; only D4 held it" if ok else f"T0: {v.get('verdict')} {v.get('why')}")}
+    for d, key in TIER1_STEP0.items():
+        st = (summ.get(key) or {}).get(pathlib.Path(d).name, {}).get("status")
+        ear = ear_verdict(dis.get(inv[d]["path"]))
+        ok, why = admit(ear, st)
+        out[d] = {"band": inv[d]["band"], "path": inv[d]["path"], "source": "tier 1 (step 0)", "ear": ear,
+                  "heard": dis.get(inv[d]["path"], []), "classes": cls.get(inv[d]["path"], []), "measures": st,
+                  "trains": ok, "why": why}
     for d, v in sorted(tr["dis"].items()):
         band = v.get("band")
         if band in TIER1_T0_BANDS or band in HEAVY_BANDS:
@@ -488,13 +503,15 @@ def lists_for(tr, ver, inv, secs, windows):
             verified.add(d)
         elif d in verified and not v["trains"]:
             verified.discard(d)
+    t0_heard = set(T.verified_dis(tr))                     # T0 verifies a DI only once it is heard
     for key, w in windows.items():
         d = w["di"]
         if key in t0w.get(d, ()):                            # T0's own reading stands
             continue
         heard = [(t, t + V.CROP_S, vv) for _, t, vv in (ver.get(d) or {}).get("heard", [])]
         cov = any(V.covers(a, b, w["start_s"]) and vv == "clean" for a, b, vv in heard)
-        st = section_status(w["D2"], w["D4"], cov) if d in verified else "excluded"
+        di_clean = (ver.get(d) or {}).get("ear") == "clean" or d in t0_heard
+        st = section_status(w["D2"], w["D4"], cov, di_clean) if d in verified else "excluded"
         wins.setdefault(d, {})[key] = st
         if st != "usable":
             bad.add(key)
@@ -760,7 +777,11 @@ def cmd_plan(args):
     elig = [r for r in cands.values() if not r["why"]]
     rows = [{"i": n, "section": r["section"], "band": r["band"]} for n, r in enumerate(elig)]
     scan = DC.scan_rows(DC.OUT)
-    kept, left, amp_of = T.apply_rule1(ctx, root, rows, verified, wins, bad, act, scan, doubles_out=True)
+    gate = BLEED_GATE and not args.no_bleed_gate
+    if not gate and not args.dry:
+        raise SystemExit("--no-bleed-gate is for dry runs until the user rules on it")
+    kept, left, amp_of = T.apply_rule1(ctx, root, rows, verified, wins, bad, act, scan, doubles_out=True,
+                                       bleed_gate=gate)
     kept, left_cap = T.apply_cap(ctx, kept, verified, wins, bad, act)
     left = sorted(left + left_cap, key=lambda x: x["section"])
     why = collections.Counter(r["why"] for r in cands.values() if r["why"])
@@ -1236,6 +1257,7 @@ def main(argv=None):
             s.add_argument("--shard", type=CP.parse_shard, default=(0, 1))
         if name == "plan":
             s.add_argument("--dry", action="store_true")
+            s.add_argument("--no-bleed-gate", action="store_true")
         if name == "build":
             s.add_argument("--device", choices=DEVICES, required=True)
             s.add_argument("--order", choices=("asc", "desc"), default="asc")
