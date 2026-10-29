@@ -21,24 +21,27 @@ recipe and is read by `learn.cc_readout`.
     $MAIN -m learn.cc_build check                      # every example built or refused, by reason
     $TORCH_PY -m learn.cc_build train --seed 20261042|20261043
 
-**The DIs** (`verdicts`): a released DI trains only when the ear heard it clean (ear pages parts 11 and 12, and 13's
-DI cards once answered; a later part's answer replaces an earlier part's "not sure" on the same DI; any processed,
-not-a-DI or hum answer excludes it) and step 0's DI-level measures pass (D3 passes, D1 not failed; D2 gates each window,
-not the DI: amendment 1). Tier 1: Adam Buckley's DIs as T0 verifies them (decision A); Quicksand ElecGtr1 (T0's
-measure DI, verified) and ElecGtr2 (heard clean, held by D4 alone, which no longer holds a DI the ear heard clean);
-Quicksand ElecGtr3 is out until heard. Turbosauro (no clean section in part A's manifest) and Starnes And Shah ElecGtr4
+**The DIs** (`verdicts`): a released DI trains only when the ear heard it clean (ear pages 11-15; a later part's
+answer replaces an earlier part's "not sure" on the same DI; any processed, not-a-DI or hum answer excludes it; part
+15 from either of its builds), step 0's DI-level measures pass (D3 passes, D1 not failed; D2 gates each window, not
+the DI: amendment 1), and the alignment check reads it in time with its own amp track (`align`; amendment 2: an
+offset, a drift, too few readings or no amp track to time it against leave it out). Peter White stays out (the ear).
+Tier 1: Adam Buckley's DIs as T0 verifies them (decision A); Quicksand ElecGtr1 (T0's measure DI, verified),
+ElecGtr2 (heard clean, held by D4 alone, which no longer holds a DI the ear heard clean) and ElecGtr3 (heard in part
+15). Turbosauro (no clean section in part A's manifest) and Starnes And Shah ElecGtr4
 (too short) stay out. The heavy share: Storm Of Particles and Ale Lak, T0-verified DIs, classed sections only. Death
 Of A Romantic and Hollow Ground are out (decision D). Every DI row passes `cc_pool.check_pool_rows`.
 
-**The sections.** A target section is part A's clean section (no screen flag) of a training DI, usable under T0's
-section rule (D2 on the window passes; D4 not flagged unless the ear heard the window or the DI clean; not silent),
-and not high gain. Its class: the ear's call on an overlapping heard window, else part A's class, else part A's classifier on its
+**The sections.** A target section is a training DI's section that part A's screen passes (hiss no longer screens:
+amendment 2), usable under T0's section rule (D2 on the window passes; D4 not flagged unless the ear heard the window
+or the DI clean; not silent), not high gain, and not one where the DI plays while its own amp track is silent. Its class: the ear's call on an overlapping heard window, else part A's class, else part A's classifier on its
 own amp track (T3's order, `trusted_data_t3.gain_class`); a heavy band's unclassed section is out. T0's statuses stand
 where T0 measured (Adam Buckley, Storm Of Particles, Ale Lak); `checks` measures the rest the same way
 (`verify_tracks.di_processing`, `DiD2`, part A's stored flags).
 
-**The examples** (`plan`). Rule 1 and the cap as T2 ran them (`apply_rule1` with `doubles_out`, `apply_cap`); a
-section whose rule-1 amp tracks have no cleaning scan row is left out (fail closed). The fit and early-stopping set
+**The examples** (`plan`). Rule 1 and the cap as T2 ran them (`apply_rule1` with `doubles_out`, `apply_cap`), with the
+non-guitar bleed gate on stand-ins off (the user, amendment 2; the target-guitar checks stay on); a stand-in the ear
+heard with another guitar in it, or one whose section has no cleaning scan row, leaves the section out (fail closed). The fit and early-stopping set
 (FS_CC): T2's early-stopping rule (about 5% of each band's sections, at least one) plus 2 more per band (FS5's rule),
 never more than half a band's sections. Training: N_TRAIN examples (F5's count) over the training sections by part
 C's cycle (`pretrain_set.section_for`), FS_CC's at the same rate per section. Heavy training sections are dropped,

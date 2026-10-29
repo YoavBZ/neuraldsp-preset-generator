@@ -1,6 +1,6 @@
 # Clean/crunch-led training pool (plan, 2026-10-28)
 
-**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders); the pool waits for ear page part 12.**
+**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2: amendments 1 and 2 (below); ear pages 11–15 answered; the pool's renders wait for amendment 2's review.**
 
 **Progress (2026-10-28 and 29):**
 - **Step 0 (intake checks, `~/ndsp-presets/learn/trusted-data/intake-2026-10-28/`):** 80 DI rows in 21 sessions (the
@@ -30,6 +30,31 @@
   [−0.076, +0.061], 4 of 7 bands better: undecided. Two large band swings cancel (femme +0.157, let-s-dance −0.162;
   the other 5 within ±0.03). Co-primary −0.018 [−0.088, +0.051]. Still behind S (+0.080) and D_core5 (+0.072). The
   backing fix alone is undecided on V-real; D_CC (the new songs) is the arm left.
+- **Part 12 answered (2026-10-29):** all 12 cards clean (the 8 unsure DIs, each heard beside its amp track): 24 DIs
+  clean in all, 7 processed.
+- **Step 2's first dry yield (2026-10-29, zero renders): 38 of 144 eligible sections** (5 bands, BKS 68% of training).
+  Rule 1 left out 105: no stand-in amp track passed the bleed check, and the new sessions had no cleaning-scan rows.
+- **The audit and amendment 1 (PR #329, reviewed and merged):** 0 of 79 stored amp tracks could pass the bleed check
+  (verdict bugs), and D4 and step 0's D2 were stricter than T0's own rules. Repaired verdict, D4 no longer holds a DI
+  the ear heard clean, D2 gates windows, the cleaning scan on 163 sections: 89 sections with today's gate, 161 without.
+- **Parts 13–15 answered (2026-10-29/30):** part 13 all 31 clean (7 stem spot-checks, 24 flagged DI windows); part 14
+  (the audit's sample of rejected items) 22 of 23 clean, including all 10 bleed-rejected stand-ins heard against the
+  mix and 4 of 5 D2-hum DIs; part 15 (35 cards) all 7 stem spot-checks clean, 25 of 28 DI cards clean (Tim Taler
+  ElecGtr02c processed; Saturn Syndicate ElecGtr3DT heard with hum, out by the declared rule). The user's decisions:
+  the non-guitar bleed gate on stand-ins is off (the target-guitar checks stay on); part A's hiss flag no longer
+  screens a section (hum and bleed still do); part 15 for the DIs step 0's D2 had kept from the ear. Peter White stays
+  out (two DIs heard processed, the third "sounds like an amp track").
+- **The alignment check (2026-10-30, zero renders; amendment 2):** every training DI against its own amp track over the whole file (GCC-PHAT
+  over ±3 s every 5 s, onset envelopes where the amp is too driven for GCC): 51 of 61 are in time (lags −0.25 to
+  24.4 ms, median 0.8 ms: mic delays). Out (fail closed, nothing shifted): Forkupines SugarFaith ElecGtr8 a constant
+  +129.8 ms offset against its amp track; Chris Durban ElecGtr3a drifts (10.3–10.5 ms, a 6.2 ms stretch at 4:23–4:43,
+  0 ms at 2:53); too few readings for Forkupines Semantics ElecGtr03 (1 of 20 windows), Adam Buckley ElecGtr5 and
+  Ronnie Jones ElecGtr06 (2 each, consistent, under the 3 needed); and 5 DIs with no amp track of their own (Storm Of
+  Particles ElecGtr01–03, Dunning Kruger JapanSong Gtr4, Hannes Keseberg ElecGtr2), which cannot be timed (against
+  the song, in-time controls peak at beat multiples too). The two notes from part 15: Hazael ElecGtr3 is in time
+  (1.5 ms throughout), but its amp track is silent from 1:07 to 1:21 while the DI plays on (what the user heard), so
+  target sections where a DI plays and its own amp track is silent are now left out; Hannes Keseberg ElecGtr2 cannot
+  be timed (no amp track; set 5 found none that passes its same-take tests) and is out.
 
 Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
 draft takes in the findings: tiers by release status, set 5's
@@ -208,6 +233,37 @@ justify spending it. A later confirmation needs fresh songs.
     With the gate off the lower-bound sum changes nothing (161): the bleed verdict no longer decides.
   - **Process gate.** No written (non-dry) plan and no render until the user has answered ear page part 13 (the new
     sessions' stem spot-checks; `plan` refuses until they are heard clean) and decided the bleed gate.
+- **Amendment 2 (2026-10-30, after ear pages 13–15 and the user's decisions; for review before any render).**
+  - **The ear.** Part 13 (all clean) clears its 7 sessions' stems and 24 flagged windows; part 14 admits the 4 D2-hum
+    DIs heard clean (BKS Bulldozer ElecGtr1a, Saturn Syndicate ElecGtr1DT, Tim Taler ElecGtr01d, Ronnie Jones
+    ElecGtr01); part 15 admits 15 more DIs and clears 7 more sessions' stems. A part-15 export is read from either
+    build (the first build's 28 DI cards, the second's 35 cards). Any processed, not-a-DI or hum answer still excludes
+    a DI (Tim Taler ElecGtr02c, Saturn Syndicate ElecGtr3DT). Peter White stays out.
+  - **The user's decisions.** The non-guitar bleed gate on stand-ins is off for real runs (`cc_build.BLEED_GATE`;
+    `plan --dry --bleed-gate` reads the old rule); the target-guitar checks (`cleaning_clash`, `target_doubles`) stay
+    on, and a stand-in the ear heard with another guitar in it leaves its sections. The lower-bound sum is adopted for
+    the pool (it decides only with the gate on). Part A's hiss flag no longer screens a section; hum, bleed,
+    clipping and drop-out flags still do. `AMP_NEG_PASS` stays off.
+  - **The alignment check** (`cc_build align`; above): a DI trains only when it reads in time with its own amp track
+    (fails closed: offset, drift, too few readings or no amp track to time it against are out; nothing is shifted).
+    A target section where the DI plays but its own amp track is silent is out (8 sections).
+  - **DIs:** 51 train (released and tier 1 as heard and timed; Adam Buckley's, Storm Of Particles' and Ale Lak's as
+    T0 verifies and the alignment check times them).
+  - **Dry yield** (zero renders, 2026-10-30; 3,467 training examples by part C's cycle):
+
+    | | Amendment 2 |
+    |---|---|
+    | Candidate sections of training DIs | 892 (out before rule 1: high gain 325, part A's screen 196, DI over a silent amp track 8) |
+    | Eligible / kept | 363 / 299 in 10 bands (rule 1 and the cap leave out 64: no usable stand-in 29, the target's own take in a stand-in 23, a stand-in doubling the target 8, the cap 4) |
+    | By band | Forkupines 101, BKS 80, The Travelling Band 36, Hazael 33, The Maybe Next Years 23, Adam Buckley 13, Ale Lak 6, Storm Of Particles 4, Dunning Kruger 2, Tim Taler 1 |
+    | Clean / crunch sections | 97 / 202 |
+    | Training examples by band | Forkupines 1,225 (35%), BKS 966 (28%), The Travelling Band 417, Hazael 377, The Maybe Next Years 261, Adam Buckley 130, Ale Lak 39, Storm Of Particles 26, Dunning Kruger 13, Tim Taler 13 |
+    | Heavy share | 2% |
+    | FS_CC | 33 sections, 430 examples |
+    | Examples in all | about 3.9k (13 training examples per section) |
+
+  - **Process gate.** No written plan and no render before amendment 2's independent review; the plan still refuses
+    while a pool session's stem spot-check is unheard (none is now).
 - **Cost.** About 12–16k renders: about 8–12 h with priming and the carry-over rule. About 4k separations, 3–5 h.
 - **Report.** Bands, sections and DIs for both pools.
 
