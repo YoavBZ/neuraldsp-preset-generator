@@ -11,6 +11,7 @@ recipe and is read by `learn.cc_readout`.
     $MAIN -u -m learn.cc_build checks --shard k/3      # zero renders: D2/D4 per window, each section's gain class
     $MAIN -u -m learn.cc_build stem-scan               # zero renders: T0's stem scan on the tier-1 sessions it lacks
     $MAIN -u -m learn.cc_build amp-bleed --shard k/3   # zero renders: rule 1's bleed check on the needed amp tracks
+    $MAIN -u -m learn.cc_build cleaning-scan --shard k/3   # zero renders: the cleaning scan where it has no row
     $MAIN -m learn.cc_build ear-page                   # zero renders: part 13, the stem spot-checks and flagged DIs
     $MAIN -m learn.cc_build plan [--dry]               # zero renders: the yield, the composition, every recipe
     $MAIN -u -m learn.cc_build render --shard k/3      # renders: each target in its own process; the other guitars
@@ -706,6 +707,69 @@ def cmd_ear_page(args):
           f"{(SPOT_DIR / 'index.html').stat().st_size / 1e6:.1f} MB -> {SPOT_DIR / 'index.html'}")
 
 
+class ScanMeta:
+    """`data_cleaning.Meta`'s face for `scan_di` on this pool: its sections and DI rows; part C's leak drops where
+    part C read the DI, none elsewhere (the per-example stem rule reads leakage for these sessions)."""
+
+    def __init__(self, ctx):
+        from learn import pretrain_set as PS
+
+        self.sections, self.inv = ctx.sections, ctx.inv
+        leak = PS._load(PS.OUT / "leakage.json") or {}
+        self.leak = {d: leak.get(d) or {"dropped": []} for d in ctx.inv}
+
+
+def scan_rows_all(root):
+    """The cleaning scan's rows by section: part C's (`data_cleaning.scan_rows`) and this pool's own (cc/scan/)."""
+    from learn import data_cleaning as DC
+
+    out = dict(DC.scan_rows(DC.OUT))
+    for f in sorted((root / "scan").glob("rows-*.jsonl")):
+        for line in f.read_text().splitlines():
+            if line.strip():
+                r = json.loads(line)
+                out.setdefault(r["section"], r)
+    return out
+
+
+def cmd_cleaning_scan(args):
+    """The cleaning scan (`data_cleaning.scan_di`, zero renders, CPU) on the candidate sections that have no scan
+    row, per DI, a shard of the DIs; rows in cc/scan/ (part C's scan folder is not written)."""
+    from learn import direct_stems as DS
+
+    require(args)
+    ctx, verified, wins, bad, cands = candidates(args)
+    root = root_of(args)
+    have = scan_rows_all(root)
+    todo = {}
+    for sid, r in sorted(cands.items()):
+        if r["why"] is None and sid not in have:
+            todo.setdefault(r["di"], []).append(sid)
+    k, n = args.shard
+    dis = [d for j, d in enumerate(sorted(todo)) if j % n == k]
+    print(f"cleaning scan {k}/{n}: {len(dis)} DIs, {sum(len(todo[d]) for d in dis)} sections "
+          f"(of {sum(len(v) for v in todo.values())} without a row)", flush=True)
+    meta = ScanMeta(ctx)
+    rp = root / "scan" / f"rows-{k}of{n}.jsonl"
+    rp.parent.mkdir(parents=True, exist_ok=True)
+    swap0 = DS.swap_mb()
+    t0 = time.time()
+    with open(rp, "a") as fh:
+        for m, d in enumerate(dis):
+            g = DS._guards("cc-scan", T.DISK_GUARD_GB, swap0)
+            if g:
+                print(g[1], flush=True)
+                raise SystemExit(g[0])
+            from learn import data_cleaning as DC
+
+            rows = DC.scan_di(meta, d, todo[d], log=lambda x: print(x, flush=True))
+            for row in rows:
+                fh.write(json.dumps(row) + "\n")
+            fh.flush()
+            print(f"  {m + 1}/{len(dis)} DIs ({time.time() - t0:.0f} s)", flush=True)
+    print(f"CLEANING SCAN DONE {k}/{n}")
+
+
 def cmd_amp_bleed(args):
     """Rule 1's bleed check on the amp tracks the pool's candidate sections need (`trusted_data.measure_amp_bleed`),
     stored where T2's readings are (one file per session)."""
@@ -1247,13 +1311,14 @@ def main(argv=None):
     ap = argparse.ArgumentParser(prog="cc_build", description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
     for name, fn in (("verdicts", cmd_verdicts), ("checks", cmd_checks), ("stem-scan", cmd_stem_scan),
-                     ("amp-bleed", cmd_amp_bleed), ("ear-page", cmd_ear_page), ("plan", cmd_plan),
+                     ("amp-bleed", cmd_amp_bleed), ("cleaning-scan", cmd_cleaning_scan), ("ear-page", cmd_ear_page),
+                     ("plan", cmd_plan),
                      ("render", cmd_render), ("build", cmd_build), ("check", cmd_check), ("train", cmd_train)):
         s = sub.add_parser(name)
         s.set_defaults(fn=fn)
         s.add_argument("--out", default=None)
         s.add_argument("--smoke", action="store_true")
-        if name in ("checks", "render", "amp-bleed"):
+        if name in ("checks", "render", "amp-bleed", "cleaning-scan"):
             s.add_argument("--shard", type=CP.parse_shard, default=(0, 1))
         if name == "plan":
             s.add_argument("--dry", action="store_true")
