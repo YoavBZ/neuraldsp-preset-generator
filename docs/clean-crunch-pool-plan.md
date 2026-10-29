@@ -159,6 +159,46 @@ justify spending it. A later confirmation needs fresh songs.
     - The released sessions' DI rows (pending the ear), part A's screen and sections, their backing metadata and
       T0's stem scan are written under their own names (`~/ndsp-presets/learn/clean-crunch-pool/`,
       `t0/ccstems-*`). Part A's inventory and manifest and T0's `stems` shards are not touched.
+- **Amendment 1 (proposed 2026-10-29, after the audit of the pool's checks; for review before any render).** The
+  first dry run kept 38 of 144 eligible sections (5 bands, BKS 68% of training): rule 1 left out 105, almost all
+  because no stand-in amp track passed the bleed check. The audit (`trusted-data/audit-checks-2026-10-29/`) found
+  that 0 of 79 stored amp tracks could pass, through bugs in the verdict, and that two other checks were stricter
+  than T0's own. Changes (`learn/cc_build.py`, `learn/trusted_data.py`):
+  - **The bleed verdict, repaired.** Per non-guitar source in a stand-in: a source silent where the amp track plays
+    cannot fail it; the take's interval (the real reading less each rolled reading) decides: pass when its upper
+    bound is under −30 dB, fail when its lower bound is at or above it, else unmeasurable (the track fails, as
+    before); the "plays on under half the frames" rule is dropped; a blow-up with no positive real reading reads
+    nothing. The track also fails when its takes' power sum reaches −30 dB (A6's line, unchanged). The audit's
+    floored-ridge estimator is not used (the audit found it worse). Its "a non-positive real reading passes" is
+    **not** adopted: the repo's synthetic injection at −25 dB reads a real value of −0.0023 against rolled readings
+    of −0.0056, so that clause would pass a real leak (it stays a flag, `AMP_NEG_PASS`, off). Tests: the audit's
+    repros and its injection on a real amp track (BKS "Too Much", −20/−25 dB fail, −30 straddles, −35 passes).
+  - **D4 no longer overrides the ear.** A DI or window the ear heard clean is not held by a D4 flag; D4 still sends
+    unheard windows to the ear. Quicksand ElecGtr2 (heard clean, held by D4 alone) is admitted; Quicksand ElecGtr3's
+    step-0 status is read, and it stays out until heard.
+  - **Step 0's D2 gates windows, not whole DIs** (as T0's `di_row_status` reads it). It only decides which DIs go
+    to the ear; an unheard DI never trains.
+  - **The cleaning scan** (zero renders) now covers the pool's 163 eligible sections that had no row (rows in
+    `trusted-data/cc/scan/`, read with part C's).
+  - **Open policy for the user:** should a stand-in's non-guitar bleed (drums, vocals, keys) block it, given the
+    real song's mix holds the same bleed? A flag (`plan --no-bleed-gate`, dry runs only); today's gate stays on until
+    the user rules. The target-guitar checks (`cleaning_clash`, `target_doubles`) stay on either way.
+  - **The hiss screen** is unchanged until the user answers ear page part 14.
+  - **Dry yield** (zero renders, 2026-10-29; 3,467 training examples by part C's cycle, FS_CC beside):
+
+    | | Gate on (today) | Gate off (the open policy) |
+    |---|---|---|
+    | Sections kept (of 176 eligible) | 89 in 5 bands | 161 in 7 bands |
+    | By band | Forkupines 31, BKS 32, Travelling Band 18, Ale Lak 5, Storm Of Particles 3 | Forkupines 59, BKS 35, Travelling Band 28, The Maybe Next Years 17, Adam Buckley 14, Ale Lak 5, Storm Of Particles 3 |
+    | Clean / crunch sections | 25 / 64 | 51 / 110 |
+    | Training examples by band | BKS 1,293 (37%), Forkupines 1,250, Travelling Band 692, Ale Lak 139, Storm Of Particles 93 | Forkupines 1,337, BKS 763 (22%), Travelling Band 621, The Maybe Next Years 346, Adam Buckley 275, Ale Lak 75, Storm Of Particles 50 |
+    | Heavy share | 7% | 4% |
+    | FS_CC | 14 sections, 647 examples | 21 sections, 520 examples |
+    | Examples in all | about 4.1k | about 4.0k |
+    | Left out by rule 1 and the cap | 87 (no usable stand-in 84, cap 3) | 15 (no usable stand-in 8, the target's own take in a stand-in 4, cap 3) |
+
+  Still waiting before any render: ear page part 13 (the new sessions' stem spot-checks; the plan refuses until
+  they are heard clean), the user's call on the bleed policy, and the independent review of this amendment.
 - **Cost.** About 12–16k renders: about 8–12 h with priming and the carry-over rule. About 4k separations, 3–5 h.
 - **Report.** Bands, sections and DIs for both pools.
 
