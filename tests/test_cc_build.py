@@ -212,3 +212,15 @@ def test_a_section_where_the_amp_track_is_silent_is_out(tmp_path):
     cache = {}
     assert C.amp_silent(rec, 21.0, cache) and not C.amp_silent(rec, 2.0, cache)
     assert not C.amp_silent({**rec, "own": []}, 21.0, {})       # no amp track: cannot be read, passes
+    # partial silence (the review: Hazael ElecGtr3 at 65 s and 75 s): the amp plays on 15% of the section, silent on
+    # 85% of the DI's playing frames -> out; silent on under 30% of them -> kept
+    assert C.amp_silent(rec, 18.5, cache)                       # 18.5-28.5 s: silent 20-28.5 s
+    assert not C.amp_silent(rec, 11.0, cache)                   # 11-21 s: silent on the last 1 s only
+
+
+def test_silent_amp_share():
+    di = [True] * 10
+    assert C.silent_amp_share(di, [[True] * 10]) == 0.0
+    assert C.silent_amp_share(di, [[True] * 7 + [False] * 3]) == pytest.approx(0.3)
+    assert C.silent_amp_share(di, [[False] * 10, [True] * 5 + [False] * 5]) == pytest.approx(0.5)   # any own amp plays
+    assert C.silent_amp_share([False] * 10, [[False] * 10]) == 0.0                                 # no DI, no claim

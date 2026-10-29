@@ -1255,24 +1255,45 @@ def candidates(args):
 
 
 AMP_SILENT = "the DI plays where its own amp track is silent (a passage the song does not hold)"
-AMP_SILENT_DI_MIN = 0.5                          # the DI plays on at least half the section's frames
-AMP_SILENT_AMP_MAX = 0.1                         # and every own amp track on under a tenth (T2's ACTIVE_MIN)
+AMP_SILENT_SHARE = 0.30                          # the share of the DI's playing frames with no own amp track playing
+
+
+def playing_frames(path, start_s, cache):
+    """The section's frames where a file plays (`clean_di.playing` against the file's own loudest frames, as
+    `trusted_data.section_activity` reads it), as a boolean array (cached per file)."""
+    from learn import clean_di as CD
+    from learn import pretrain_set as PS
+
+    if str(path) not in cache:
+        fdb = CD.frame_db(PS.load_mono(path, PS.SR))
+        cache[str(path)] = (fdb, CD.playing(fdb))
+    _, play = cache[str(path)]
+    r = CD.frames_in(int(round(start_s * PS.SR)), int(round((start_s + PS.SEC_S) * PS.SR)), len(play))
+    return play[r.start:r.stop]
+
+
+def silent_amp_share(di_play, amp_plays):
+    """The share of the DI's playing frames on which no own amp track plays (0 when the DI does not play)."""
+    n = int(sum(bool(x) for x in di_play))
+    if not n:
+        return 0.0
+    quiet = sum(1 for k, x in enumerate(di_play) if x and not any(k < len(a) and a[k] for a in amp_plays))
+    return quiet / n
 
 
 def amp_silent(rec, start_s, cache):
-    """A target section where the DI plays but each of its own amp tracks is silent (Hazael "A Mi Lado" ElecGtr3,
-    1:07-1:21: the ear heard the DI against a silent amp track): the song holds no such guitar there. DIs with no
-    amp track cannot be read and pass."""
+    """A target section where, on AMP_SILENT_SHARE or more of the DI's playing frames, none of its own amp tracks
+    plays (Hazael "A Mi Lado" ElecGtr3, 1:07-1:21: the ear heard the DI against a silent amp track): the song holds no
+    such guitar there. DIs with no amp track cannot be read and pass."""
     files = cache.setdefault(("files", rec["session_dir"]),
                              sorted(f.name for f in pathlib.Path(rec["session_dir"]).glob("*.wav")))
     own = V.own_amp_tracks(rec, files)
     if not own:
         return False
     fc = cache.setdefault("frames", {})
-    if T.section_activity(rec["path"], start_s, files=fc) < AMP_SILENT_DI_MIN:
-        return False
     sd = pathlib.Path(rec["session_dir"])
-    return all(T.section_activity(sd / a, start_s, files=fc) < AMP_SILENT_AMP_MAX for a in own)
+    share = silent_amp_share(playing_frames(rec["path"], start_s, fc), [playing_frames(sd / a, start_s, fc) for a in own])
+    return share >= AMP_SILENT_SHARE
 
 
 STANDIN_OUT = ("other_guitar",)                 # a stand-in heard with another guitar in it never stands in
