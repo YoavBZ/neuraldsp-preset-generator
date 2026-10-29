@@ -840,7 +840,7 @@ def cmd_plan(args):
     act = {}
     elig = [r for r in cands.values() if not r["why"]]
     rows = [{"i": n, "section": r["section"], "band": r["band"]} for n, r in enumerate(elig)]
-    scan = DC.scan_rows(DC.OUT)
+    scan = scan_rows_all(root_of(args))
     gate = BLEED_GATE and not args.no_bleed_gate
     if not gate and not args.dry:
         raise SystemExit("--no-bleed-gate is for dry runs until the user rules on it")
