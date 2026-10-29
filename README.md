@@ -191,7 +191,7 @@ tests/           — round-trip, mutation, translation, cab, pack-contract,
 docs/            — the project's record: ROADMAP.md (the living plan), each
                    experiment's declared plan and results, research reports in
                    research/, and closed experiments' outputs in data/.
-                   docs/README.md is the index
+                   docs/DOCS-INDEX.md is the index
 ```
 
 ## Packs

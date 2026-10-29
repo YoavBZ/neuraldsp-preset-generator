@@ -1,4 +1,4 @@
-# docs
+# Docs index
 
 Start with **[ROADMAP.md](ROADMAP.md)**: where the product is, what comes next, and the
 decisions so far. It is the one living plan; what it superseded (the product steps' history,
