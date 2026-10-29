@@ -174,7 +174,7 @@ discarded priming render per process start or amp change, the 31 GB disk guard, 
 1. **Now:** the user reads this plan. No compute, no code.
 2. **After step 4's report** (arm A and D, amendment 1): code, tests
    and an independent code review; the 23 separations when the renderer is idle; the renders; the
-   report and an independent audit; then ROADMAP and docs/README.md. Arm A does not need D. It waits
+   report and an independent audit; then ROADMAP and docs/DOCS-INDEX.md. Arm A does not need D. It waits
    only so the gate and step 4 keep the render slots.
 
 **Repeat use.** This is stage F's ninth set of arms (step 4 is the eighth; the ledger's 7th/8th
