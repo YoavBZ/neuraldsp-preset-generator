@@ -1,6 +1,6 @@
 # Clean/crunch-led training pool (plan, 2026-10-28)
 
-**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2 built and step 3's D_CC read 2026-10-30 (amendments 1 and 2 below): undecided, leaning worse. Step 4's page sent 2026-10-30; its answers came in the same day: no pair heard as clearly different, so the page does not place tau. Runaway delays in about 2% of both pools, excluded from the next build. The user said yes to the two cheap D_CC follow-ups and the ElecGtr8 shift (2026-10-30, amendment 4): the follow-ups ran the same day; D_CC's loss is mostly its pooled answer's pedals (both seeds' answers turn the drives off, answers only, not rendered), and D_CC is worse than its own pool's constant; the shift waits for the next build. A drive-pedal page with an instant A/B switch (amendment 5, the user's yes 2026-10-30) was rendered, audited and sent the same day (17 items). Its checks take the place of the replay of three items, which the author dropped. The user then asked for the guitar alone instead of mixes (2026-10-30): guitar-only versions of the drive page and step 4's page were declared (amendment 6, zero renders), then built, audited and sent the same day (17 and 25 items); their answers are next.**
+**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2 built and step 3's D_CC read 2026-10-30 (amendments 1 and 2 below): undecided, leaning worse. Step 4's page sent 2026-10-30; its answers came in the same day: no pair heard as clearly different, so the page does not place tau. Runaway delays in about 2% of both pools, excluded from the next build. The user said yes to the two cheap D_CC follow-ups and the ElecGtr8 shift (2026-10-30, amendment 4): the follow-ups ran the same day; D_CC's loss is mostly its pooled answer's pedals (both seeds' answers turn the drives off, answers only, not rendered), and D_CC is worse than its own pool's constant; the shift waits for the next build. A drive-pedal page with an instant A/B switch (amendment 5, the user's yes 2026-10-30) was rendered, audited and sent the same day (17 items). Its checks take the place of the replay of three items, which the author dropped. The user then asked for the guitar alone instead of mixes (2026-10-30): guitar-only versions of the drive page and step 4's page were declared (amendment 6, zero renders), then built, audited and sent the same day (17 and 25 items). Their answers came in the same day (amendment 6's answers): on the guitar alone the format works (catches 8 of 8 right, 5 of 6 checks heard), but 25 of the 26 pairs near tau were not heard; mostly only the loudest pairs are. F20's re-plan comes next, for the user's yes.**
 
 **Progress (2026-10-28 to 30):**
 - **Step 0 (intake checks, `~/ndsp-presets/learn/trusted-data/intake-2026-10-28/`):** 80 DI rows in 21 sessions (the
@@ -149,8 +149,20 @@
   unchanged. Smallest AAC margin 23.1 dB in part 1 and 12.4 dB in part 2 (801921's reverb pair). Caveats: part 2 has
   back-to-back items on one excerpt (10–11, 12–13, 24–25); 800877 (its pair and its catch) and 802682's sw50r spring
   pair are in both parts (800877 with the same A/B order, so not independent answers); levelling each clip on its own
-  removes the switch's level drop (801895 5.9 dB, 800903's pr12 spring 3.0 dB, 802200 2.0 dB). Answers pending;
-  nothing decided.
+  removes the switch's level drop (801895 5.9 dB, 800903's pr12 spring 3.0 dB, 802200 2.0 dB). Nothing decided.
+- **Guitar-only answers (2026-10-30, audited; ledger `clean-crunch-pool-dcc` `amendment_6_answers`):** both parts
+  answered the same day. Catches 8 of 8 "same". Of the 6 distinct anchors and checks, 5 were heard (drive pedal 1
+  801921, drive pedal 2 801895, reverb 800877, delay 803054, tremolo 803394); 802682's sw50r spring was heard in
+  neither part (its long-term spectrum differs by 1 dB or less). Near tau, 25 of 26 pairs were not heard (21 same,
+  4 maybe); the one heard is 802350's tremolo (A_e 0.0039, solo J 2.30). All 8 near-tau drive pairs and all 8 spring
+  pairs: same. The heard pairs are the top solo-J pairs in each part (AUC 1.00 in each; A_e 1.00 and 0.81), but the
+  edge over A_e rests on 2 items and no single solo-J cut works across effects. The listener noted that items with
+  several effects are harder ("13 baseline is 12 with tremolo on so its delay is barely noticeable, if any"): 33 of
+  34 pairs have another effect on in both clips, by design (one effect switched in the example's full setting, the
+  context the labels need). Caveats: part 1 was fast (8 of 16 answers under one 10-s loop after the previous one),
+  so its near-tau result is weak; repeats across the parts (7 heard answers cover 6 pairs); small n. Readings: the
+  format works; tau (0.005, in-mix A_e) sits far below what is heard even alone. The audibility weight is declared in
+  F20's re-plan, calibrated on these answers; nothing decided here.
 
 Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
 draft takes in the findings: tiers by release status, set 5's
