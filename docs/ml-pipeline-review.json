@@ -882,7 +882,7 @@
    "rules_reproduced": {
     "clean": {
      "parts": 22,
-     "vreal_clips_in_set": [
+     "vreal_parts_in_set": [
       "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1",
       "cambridge-colour-me-red-elecgtr02",
       "cambridge-colour-me-red-elecgtr03"
@@ -911,7 +911,7 @@
     },
     "crunch": {
      "parts": 13,
-     "vreal_clips_in_set": [
+     "vreal_parts_in_set": [
       "cambridge-femme-elecgtr5",
       "cambridge-get-out-of-bed-elecgtr2",
       "cambridge-let-s-dance-elecgtr3",
@@ -963,5 +963,5 @@
    }
   }
  },
- "time": "2026-10-30 23:13:43"
+ "time": "2026-10-30 23:17:26"
 }

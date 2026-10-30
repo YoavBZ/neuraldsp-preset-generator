@@ -80,6 +80,7 @@ def test_pick_start_takes_the_lowest_median_of_half_means_with_ties_by_name():
                         {"factory:B": [4.0, 0, 0], "factory:A": [4.0, 0, 0], "template:T": [0.1, 0, 0]})},
              {"y": part({"factory:B": [1.0, 0, 0], "factory:A": [1.0, 0, 0], "factory:C": [0.0, 0, 0]},
                         {"factory:B": [1.0, 0, 0], "factory:A": [1.0, 0, 0], "factory:C": [0.0, 0, 0]})}]
-    best, med, n = P.pick_start(files, ["x", "y", "z"], "pr12")
-    assert (best, med, n) == ("factory:A", 2.0, 2)      # C lacks part x, the template is not a candidate, A < B by name
+    # part x lacks candidate C, so the rule drops part x (not C); on part y alone C is lowest; templates never count
+    assert P.pick_start(files, ["x", "y", "z"], "pr12") == ("factory:C", 0.0, 1)
+    assert P.pick_start(files, ["x"], "pr12") == ("factory:A", 3.0, 1)    # A ties B; A wins by name
     assert P.pick_start(files, ["z"], "pr12") == (None, None, 0)

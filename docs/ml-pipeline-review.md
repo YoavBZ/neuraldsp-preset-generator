@@ -71,9 +71,9 @@ record. Code is cited as `file:line` at commit e124367.
 
 **The leading suspects for step 29,** most evidence first:
 - **Step 16, the input holds the wrong guitars.** The X-LANCE stem holds every guitar in the mix, the target a
-  median 6.2 dB under the rest. Only 78 of 3,033 training examples have the target as the only guitar. On
-  V-real, two parts (Wickerman ElecGtr2 and ElecGtr3) give the model byte-identical inputs and so get one
-  answer, scored against two different amp tracks (step 32).
+  median 6.2 dB under the rest. Only 78 of 3,033 kept examples (training and early stopping) have the target as
+  the only guitar. On V-real, two parts (Wickerman ElecGtr2 and ElecGtr3) give the model byte-identical inputs
+  and so get one answer, scored against two different amp tracks (step 32).
 - **Step 22, far too little training.** 2,699 examples and 430–1,204 steps to the best epoch (whole runs of
   3.6–8.3 minutes). The earlier part C model kept improving with size up to 20,000 examples, and on the guitar
   alone up to 40,000.
@@ -128,7 +128,7 @@ record. Code is cited as `file:line` at commit e124367.
 | 32 | V-real input: the stem of a raw mix | Problem | `s32`: 2 parts, identical inputs | P4 |
 | 33 | Each answer forced onto 3 amps × 2 halves | OK (caveat) | render-order phase noise | |
 | 34 | The judge scores 1.5 s tails | OK (explains the loss) | `s34`: time effects at S → +0.001 | |
-| 35 | Band-weighted log ratio, 90% interval | Problem (power) | `s34`: model − S width 0.26 | |
+| 35 | Band-weighted log ratio, 90% interval | Problem (power) | `s34`: D_F5 − S width 0.26 | |
 | 36 | S chosen on most of the same clips | Problem (size unmeasured) | `s36`: rules re-derived; 8 of 11 clips in the choice sets | P5 |
 | 37 | The training average against S | **Problem (explains "never beats S", with 26–27 and 36)** | `s34`: +0.092, undecided; 9 of 11 parts worse | P3 |
 | 38 | Headroom with the true DI on these parts | OK | `s38`: −0.137 shrunk, −0.192 best | |
@@ -604,7 +604,7 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
   - The crunch choice set holds all 6 of V-real's crunch clips (femme ElecGtr5, get-out-of-bed ElecGtr2, let's
     dance ElecGtr3, Wickerman ElecGtr1–3). 12 of its 13 parts come from V-real's bands.
   - The clean choice set holds Colour Me Red ElecGtr02 and ElecGtr03, and It Was My Fault ElecGtr1 on another
-    clip (12.5–22.5 s in `validation-crops`; V-real's crop is 90–100 s, no overlap). 5 of its 22 parts come from
+    clip (so `s36` lists 3 V-real parts in the clean set, 2 of them on V-real's own clips) (12.5–22.5 s in `validation-crops`; V-real's crop is 90–100 s, no overlap). 5 of its 22 parts come from
     V-real's bands.
   - So 8 of the 11 V-real clips were in S's choice sets. Their stored S distances equal V-real's S values within
     4.1e-4. It Was My Fault ElecGtr3 and Signs ElecGtr3 are in neither set.

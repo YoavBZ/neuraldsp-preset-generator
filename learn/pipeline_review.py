@@ -443,21 +443,20 @@ def s34_vreal(d):
 
 
 def pick_start(files, parts, amp):
-    """A start rule (clean-baseline-plan.md, crunch-baseline-plan.md) on stored distances: the factory preset with
-    the lowest median, over the parts that have it on both halves, of the mean of its half-A and half-B `flat`
-    measure-DI distances (the first of each stored [distance, tonal, temporal]); ties by name.
+    """A start rule (clean-baseline-plan.md, crunch-baseline-plan.md) on stored distances: over the parts where
+    every factory candidate has both halves, the factory preset with the lowest median of the mean of its half-A
+    and half-B `flat` measure-DI distances (the first of each stored [distance, tonal, temporal]); ties by name.
+    The candidates are every factory preset stored for the amp on any of the parts.
     files: [{slug: {key: {preset: [d, ...]}}}]. -> (preset, median, parts used)."""
-    rows = []
+    found = []
     for p in parts:
         src = next((f[p] for f in files if p in f), None)
-        if src is None:
-            continue
-        a, b = src.get(f"flat|{amp}|measfix_A", {}), src.get(f"flat|{amp}|measfix_B", {})
-        if a and b:
-            rows.append((a, b))
+        if src is not None:
+            found.append((src.get(f"flat|{amp}|measfix_A", {}), src.get(f"flat|{amp}|measfix_B", {})))
+    cands = {k for a, b in found for k in (*a, *b) if k.startswith("factory:")}
+    rows = [(a, b) for a, b in found if cands and all(c in a and c in b for c in cands)]
     if not rows:
         return None, None, 0
-    cands = set.intersection(*[{k for k in a if k.startswith("factory:") and k in b} for a, b in rows])
     score = {c: statistics.median([(a[c][0] + b[c][0]) / 2 for a, b in rows]) for c in cands}
     best = min(sorted(score), key=lambda c: score[c])
     return best, score[best], len(rows)
@@ -492,7 +491,7 @@ def s36_s_selection(d):
             per_amp[amp] = {"picked": best, "median": med, "parts_used": n,
                             "matches_choice": best == choice[cls]["presets"][amp]
                             and n == choice[cls]["parts_used"][amp]}
-        rules[cls] = {"parts": len(parts), "vreal_clips_in_set": sorted(p for p in parts if p in VREAL),
+        rules[cls] = {"parts": len(parts), "vreal_parts_in_set": sorted(p for p in parts if p in VREAL),
                       "parts_from_vreal_bands": sum(pinned[p]["band"] in vreal_bands for p in parts),
                       "per_amp": per_amp}
     return {"parts": out, "in_a_distance_file": sum(bool(v["in"]) for v in out.values()),
