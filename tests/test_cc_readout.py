@@ -63,6 +63,54 @@ def test_shard_only_for_render():
         R.main(["report", "--arm", "D_F5bk", "--shard", "1/3"])
 
 
+def test_followups_render_two_answers_and_read_them_against_stored_renders():
+    assert R.followup_answers("D_CC") == ("D_CC:at-S:pedals", "D_CC:constant")
+    assert R.followup_renders_needed(33) == 165
+    assert R.seed_arms("D_CC") == ("D_CC:s20261042", "D_CC:s20261043")
+    c = R.followup_contrasts("D_CC")
+    assert set(c.values()) == {("D_CC:at-S:pedals", "D_CC"), ("D_CC:at-S:pedals", "D_F5:at-S:pedals"),
+                               ("D_CC", "D_CC:constant"), ("D_CC:constant", T3.CONST)}
+    assert all("descriptive" in n for n in c)
+    assert R.PEDALS in F.FAMILIES and R.pedal_arm(T3.FULL) in T3.ANSWERS and T3.CONST in T3.ANSWERS
+    assert {f"{T3.FULL}:s{s}" for s in T3.TRAIN_SEEDS} <= set(T3.ANSWERS)    # D_F5's stored per-seed answers
+
+
+def test_drive_summary_counts_drives_per_selection():
+    def ans(d1, d2, gain):
+        return {"settings": {"drive1/drive1Active": d1, "drive2/drive2Active": d2, "parameters/inputGain": gain}}
+    answers = {"x": {"a|pr12|A": ans("true", "false", "2"), "a|pr12|B": ans("true", "true", "4"),
+                     "a|ac20|A": ans("false", "true", "0"), "b|pr12|A": ans("true", "true", "6")}}
+    s = R.drive_summary(answers, {"a": "crunch", "b": "clean"})["x"]
+    assert s["pr12 crunch"] == {"directions": 2, "drive1/drive1Active": 2, "drive2/drive2Active": 1,
+                                "input_gain_median": 3.0}
+    assert s["crunch"]["directions"] == 3 and s["crunch"]["drive2/drive2Active"] == 2
+    assert s["all"]["directions"] == 4 and s["all"]["drive1/drive1Active"] == 3
+
+
+def test_runaway_prone_counts_the_scans_pattern():
+    def ans(on, fb):
+        return {"settings": {"delay/delayActive": on, "delay/delayFeedback": fb}}
+    assert R.runaway_prone({"a": ans("true", "0.8"), "b": ans("true", "0.75"), "c": ans("false", "0.9"),
+                            "d": ans("true", "0.5")}) == 2
+
+
+def test_followups_are_declared_for_d_cc_only(tmp_path):
+    import argparse
+
+    assert R.followup_declared()
+    with pytest.raises(SystemExit, match="declared for"):
+        R.require_followup(argparse.Namespace(arm="D_F5bk", smoke=True, out=str(tmp_path)))
+
+
+def test_followup_render_is_a_render_and_takes_shards():
+    assert any(re.search(p, "/x/python -u -m learn.cc_readout followup-render --arm D_CC --shard 0/3")
+               for p in LO.RENDERS)
+    for cmd in ("followup-predict", "followup-report"):
+        assert not any(re.search(p, f"/x/python -m learn.cc_readout {cmd} --arm D_CC") for p in LO.RENDERS)
+    with pytest.raises(SystemExit, match="--shard is for"):
+        R.main(["followup-report", "--arm", "D_CC", "--shard", "1/3"])
+
+
 def test_new_predictions_refuse_over_groups_rendered_from_other_ones(tmp_path):
     groups = tmp_path / "groups"
     prev = {"models": {"s0": "a"}, "fit_sha256": "f"}

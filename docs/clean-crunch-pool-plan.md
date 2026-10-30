@@ -1,6 +1,6 @@
 # Clean/crunch-led training pool (plan, 2026-10-28)
 
-**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2 built and step 3's D_CC read 2026-10-30 (amendments 1 and 2 below): undecided, leaning worse. Step 4's page sent 2026-10-30; its answers came in the same day: no pair heard as clearly different, so the page does not place tau, and a replay of three items is asked. Runaway delays in about 2% of both pools, excluded from the next build; three follow-ups wait for the user.**
+**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2 built and step 3's D_CC read 2026-10-30 (amendments 1 and 2 below): undecided, leaning worse. Step 4's page sent 2026-10-30; its answers came in the same day: no pair heard as clearly different, so the page does not place tau, and a replay of three items is asked. Runaway delays in about 2% of both pools, excluded from the next build. The user said yes to the two cheap D_CC follow-ups and the ElecGtr8 shift (2026-10-30): declared in amendment 4, they run once it is reviewed.**
 
 **Progress (2026-10-28 to 30):**
 - **Step 0 (intake checks, `~/ndsp-presets/learn/trusted-data/intake-2026-10-28/`):** 80 DI rows in 21 sessions (the
@@ -86,6 +86,13 @@
   722). Excluding them is the author's reading of the trusted-data rule (the labels are correct settings, the audio is
   not a usable target), and it thins high-feedback delay draws: an audio runaway check refuses (F20: redraws) them in
   the next build, to be declared and reviewed in F20's re-plan. D_CC and D_F5 stand as read, with that caveat.
+- **D_CC's follow-ups, declared (2026-10-30; the user's yes; ledger `amendment_4`; nothing run yet):** (a) each
+  seed's own answer on V-real-11, zero renders: drive switches, inputGain and amp head per seed beside D_F5's stored
+  per-seed answers, asking whether seed 20261043 alone turns the crunch drives off; (b) D_CC with its pedals at S and
+  D_CC's own constant, 165 renders, four descriptive rows (pedals at S against D_CC and against D_F5's pedals at S;
+  D_CC against its own constant; that constant against D_F5's). (c) Forkupines Sugar Faith ElecGtr8's DI is read from
+  a copy delayed by 129.83 ms (its amp track runs that far behind it) and joins the next build only if the alignment
+  check on the copy reads about 0 ms. The size-matched top-up stays unplanned.
 
 Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
 draft takes in the findings: tiers by release status, set 5's
