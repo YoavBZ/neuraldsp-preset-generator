@@ -319,14 +319,19 @@ justify spending it. A later confirmation needs fresh songs.
 Ledger first. The render recipe is the audibility page's.
 
 **As declared (2026-10-30; ledger `clean-crunch-pool-dcc` `amendment_3`; code `learn/cc_audibility.py`):**
-- **Pairs:** 129 examples from the D_CC pool qualify. The guitar is exposed (at most 6 dB under the rest, no vocals
-  drawn, at most 2 other guitars), the backing holds drums and bass, the band isn't heavy, and the tone is typical.
-  "Typical" is read as part C's factory or start draw, for the reviewer.
-- **Effects:** the audibility page's 5, at most 30 measured pairs each: 129 pairs.
-- **Recipe:** the fresh-process recipe with bit-exact repeats, 556 renders.
-- **Page:** about 28 blind pairs nearest tau, with anchors and 3 catch pairs.
-- **Decides:** nothing alone; the answers check tau by ear for the relabel's later declaration. Drive pedals are a
-  separate question for the user.
+- **Pairs:** 71 pairs from 32 examples in 29 sections of the D_CC pool (44 examples qualify). The rules:
+  - the guitar is exposed: at most 6 dB under the rest, no vocals drawn, at most 2 other guitars counting recorded
+    stand-ins;
+  - drums and bass play in the window, each within 20 dB of the backing;
+  - the band isn't heavy;
+  - the tone is typical, read as part C's factory or start draw with the drawn class equal to the section's.
+- **Effects:** the audibility page's 5: delay 22, reverb 24, tremolo 10, pr12 spring 9, sw50r spring 6. The springs
+  are thin, so the page may have fewer than 28 items.
+- **Recipe:** the fresh-process recipe with bit-exact repeats, 266 renders. Each process opens through `cc_build`'s
+  renderer after the separation wait.
+- **Page:** up to 28 blind pairs nearest tau, with anchors and 3 catch pairs.
+- **Decides:** nothing alone. The answers check tau by ear; a reader for the export is written and reviewed before
+  the relabel uses them. Drive pedals are a separate question for the user.
 
 ## Decisions for the user
 
