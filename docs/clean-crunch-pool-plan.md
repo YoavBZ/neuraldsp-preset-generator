@@ -121,9 +121,13 @@
 - **The drive-pedal page, sent (2026-10-30, audited; ledger `amendment_5_outcome`):** 96 renders (48 priming), 19 of
   19 repeats bit-exact, none refused. Median A_e: drive pedal 1 0.081, drive pedal 2 0.093; one pair per pedal below
   tau. 17 items, about 8 min: 10 pedal pairs, 3 catches, the 2 checks and a catch under each check's title. Caveats:
-  10 of the 17 items come from one song ("Quicksand"); some excerpts recur; in drive pedal 2's loudest pair the
-  guitar sits 5.9 dB lower with the pedal off (balance, which A_e cannot see); the pairs near tau are not physically
-  small (−15 to −20 dB, near the reverb check's −14.4 dB). Answers pending; nothing decided.
+  10 of the 17 items come from one song ("Quicksand"); the 17 items use 10 distinct 10-s excerpts (803173's in items
+  2, 3 and 17, 2 and 3 back to back; 900339's in items 1, 7 and 12; 800877's, 802682's and 801895's twice each), and
+  neighbouring Quicksand windows overlap by 5 s (items 4, 13, 5, 10, 15; items 14, 2, 3, 17). On the page's pairs:
+  in drive pedal 2's loudest pair the guitar sits 5.9 dB lower with the pedal off (balance, which A_e cannot see);
+  the pairs near tau are not physically small (−15.0 to −20.5 dB, near the reverb check's −14.4 dB). Among all 24
+  measured pairs, five others move the guitar 3.2–4.1 dB and five pedals have drive or gain at 0 (two on the page).
+  Answers pending; nothing decided.
 
 Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
 draft takes in the findings: tiers by release status, set 5's

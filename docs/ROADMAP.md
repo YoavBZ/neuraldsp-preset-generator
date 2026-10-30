@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-27.
+lives in the linked documents. Last updated 2026-10-30.
 
 ## Where the product is
 
@@ -150,19 +150,20 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        recorded amp-track stand-ins in 44% of the examples.
      - Step 4's page sent (2026-10-30, audited): 25 items on clean/crunch mixes, 266 renders. 13 of the 25 items
        come from one song. Its answers came the same day (audited; ledger `amendment_3_answers`): no pair heard as
-       clearly different, the four anchors included, so the page does not place tau by ear. A drive-pedal page with
-       an instant A/B switch (ledger `amendment_5`) was rendered, audited and sent 2026-10-30 (`amendment_5_outcome`:
-       96 renders, 17 items, about 8 min; answers pending); its checks, step 4's loudest
+       clearly different, the four anchors included, so the page does not place tau by ear. A drive-pedal page
+       with an instant A/B switch (ledger `amendment_5`) was rendered, audited and sent 2026-10-30
+       (`amendment_5_outcome`: 96 renders, 17 items, about 8 min; answers pending); its checks, step 4's loudest
        reverb and spring pairs, take the place of the replay of three items, which the author dropped (reported to
        the user 2026-10-30); step 4's item 4 (900215, the runaway delay) is not re-used, being a dirty (runaway)
        example. Its delay anchor is a runaway delay (a steady whine), and a zero-render scan found such targets in
        about 2% of both pools (D_CC 64 of 3,033, D_F5 87 of 4,189); excluded from the next build (F20's runaway
        check, to be declared and reviewed in the re-plan).
      - Next: the drive-pedal page's answers (`amendment_5`; sent 2026-10-30). Forkupines Sugar Faith ElecGtr8's
-       DI, 129.83 ms ahead of its amp track, joins the next build from a delayed copy if the alignment check on the copy reads about 0 ms
-       (`amendment_4` (c); it runs within that build, since it changes the verdicts). The size-matched top-up
-       (about 1,470 more examples, about 6.7k renders, about 3 h) stays unplanned. Then F20's re-plan on this pool,
-       with two new questions: how near-chance switches are read out, and the model beating its constant.
+       DI, 129.83 ms ahead of its amp track, joins the next build from a delayed copy if the alignment check on
+       the copy reads about 0 ms (`amendment_4` (c); it runs within that build, since it changes the verdicts).
+       The size-matched top-up (about 1,470 more examples, about 6.7k renders, about 3 h) stays unplanned. Then
+       F20's re-plan on this pool, with two new questions: how near-chance switches are read out, and the model
+       beating its constant.
    - **Learning every control is not yet shown to help.** T3's F5 gate, D_F5 (every control learned) − D_core5 (today's 25
      controls), reads +0.079 [−0.065, +0.224] on V-real-11 (7 bands): not shown. The user said yes to F20 (2026-10-27);
      (b) read 2026-10-28 (the stock stem stays F20's input). F20 is re-planned on the clean/crunch
