@@ -528,7 +528,8 @@ def cmd_page(args):
             off = AM.mix_with(z, oth, st, g, i, mst)
         first, second = (on, off) if it["first"] == "on" else (off, on)
         clips[it["id"] + "-1"], clips[it["id"] + "-2"] = AM.pair_clips(first, second, pd / "cache")
-        it.update(band=x["band"], cls=x.get("cls"), ratio_db=x["draw"]["ratio_db"], others=len(x["others"]))
+        it.update(band=x["band"], cls=x.get("cls"), ratio_db=x["draw"]["ratio_db"], others=len(x["others"]),
+                  stand_ins=len(x.get("amp_tracks") or []))
     build = hashlib.sha256(json.dumps(items, sort_keys=True).encode()).hexdigest()[:12]
     _save(kp, {"page": PAGE_NAME, "tau": AM.TAU, "seed": PAGE_SEED, "build": build, "items": items,
                "time": time.strftime("%Y-%m-%d %H:%M:%S")})

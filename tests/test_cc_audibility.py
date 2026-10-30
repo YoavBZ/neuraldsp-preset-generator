@@ -180,3 +180,12 @@ def test_render_opens_a_new_primed_process_per_job(tmp_path, monkeypatch):
         assert p.calls[1][("delay", "delayActive")] == ("false" if r["what"] == "delay" else "true")
         assert r["renders"] == 2 and r["primes"] == 1
     assert rows[1]["repeat_exact"] is True
+
+
+def test_a_new_process_waits_for_separations_before_opening(monkeypatch):
+    from learn import cc_build as CB
+
+    order = []
+    monkeypatch.setattr(C, "wait_no_separation", lambda: order.append("wait"))
+    monkeypatch.setattr(CB, "new_renderer", lambda: order.append("open") or "rr")
+    assert C.new_process() == "rr" and order == ["wait", "open"]
