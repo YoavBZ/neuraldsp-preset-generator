@@ -1,6 +1,6 @@
 # Clean/crunch-led training pool (plan, 2026-10-28)
 
-**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2 built and step 3's D_CC read 2026-10-30 (amendments 1 and 2 below): undecided, leaning worse. Step 4's page sent 2026-10-30; its answers came in the same day: no pair heard as clearly different, so the page does not place tau, and a replay of three items is asked. Runaway delays in about 2% of both pools, excluded from the next build. The user said yes to the two cheap D_CC follow-ups and the ElecGtr8 shift (2026-10-30): declared in amendment 4, they run once it is reviewed.**
+**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2 built and step 3's D_CC read 2026-10-30 (amendments 1 and 2 below): undecided, leaning worse. Step 4's page sent 2026-10-30; its answers came in the same day: no pair heard as clearly different, so the page does not place tau, and a replay of three items is asked. Runaway delays in about 2% of both pools, excluded from the next build. The user said yes to the two cheap D_CC follow-ups and the ElecGtr8 shift (2026-10-30): declared in amendment 4, they run once it is reviewed. A drive-pedal page with an instant A/B switch is declared (amendment 5, the user's yes 2026-10-30); its checks replace the replay of three items.**
 
 **Progress (2026-10-28 to 30):**
 - **Step 0 (intake checks, `~/ndsp-presets/learn/trusted-data/intake-2026-10-28/`):** 80 DI rows in 21 sessions (the
@@ -93,6 +93,13 @@
   D_CC against its own constant; that constant against D_F5's). (c) Forkupines Sugar Faith ElecGtr8's DI is read from
   a copy delayed by 129.83 ms (its amp track runs that far behind it) and joins the next build only if the alignment
   check on the copy reads about 0 ms. The size-matched top-up stays unplanned.
+- **The drive-pedal page (declared 2026-10-30, nothing rendered; ledger `amendment_5`, `learn/cc_drive_page.py`):**
+  the user said yes to a page with drive pedals on and off. Step 4's qualifying examples less the runaway-flagged
+  ones (43): drive pedal 1 on in 12, drive pedal 2 in 12 (24 pairs, 19 examples, 5 bands); step 4's r_on' reused for
+  14 examples, each checked by a bit-exact repeat; 96 new renders. A new player loops both mixes and switches between
+  A and B at once. At most 19 items (at most 14 pedal pairs, 3 catches, and step 4's loudest reverb and sw50r spring
+  pairs as checks), about 10 min. The checks replace the replay of three items: if they are heard here but were not
+  on step 4's page, the old format hid differences. Descriptive; decides nothing.
 
 Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
 draft takes in the findings: tiers by release status, set 5's
