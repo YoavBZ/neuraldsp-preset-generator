@@ -58,8 +58,8 @@ record. Code is cited as `file:line` at commit e124367.
    (steps 26 and 27).
    - Knobs are pulled toward that average, all the way for over a third of them.
    - A near-chance switch read at 0.5 flips a whole pedal.
-   - D_F5 − constant is −0.004 [−0.052, +0.043]. D_CC − its own constant is +0.103 [+0.051, +0.155]: worse than its own
-     average, through its pedal flips.
+   - D_F5 − constant is −0.004 [−0.052, +0.043].
+   - D_CC − its own constant is +0.103 [+0.051, +0.155]: worse than its own average, through its pedal flips.
 3. **On real songs that average leans worse than S** (step 37): constant − S +0.092 [−0.029, +0.213].
    - The interval holds 0, so this is undecided.
    - 5 of 7 bands and 9 of 11 parts are worse, and every leave-one-band-out mean is +0.042 to +0.123 (the lowest
