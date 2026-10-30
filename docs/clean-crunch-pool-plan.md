@@ -143,13 +143,14 @@
   the old sequential player and a repeat hearing; only part 1 against the drive page's in-mix answers (not asked for
   now) would isolate it. They cannot show whether a switch is heard in a song, nor tau (the items were picked by
   their in-mix A_e). Not built before review; decides nothing.
-- **Guitar-only pages sent (2026-10-30, audited; ledger `amendment_6_outcome`):** zero renders; part 1 (17 items) and
-  part 2 (25 items, 803054 in place of 900215) built from the hash-checked stored renders, the guitar alone in every
-  clip, each at −23.00 LUFS, catches byte-identical, the in-mix pages and keys unchanged. Smallest AAC margin 23.1 dB
-  in part 1 and 12.4 dB in part 2 (801921's reverb pair). Caveats: part 2 has back-to-back items on one excerpt
-  (10–11, 12–13, 24–25); 800877 and 802682 and their catches are in both parts (800877 with the same A/B order, so
-  not independent answers); levelling each clip on its own removes the switch's level drop (801895 5.9 dB, 800903's
-  pr12 spring 3.0 dB, 802200 2.0 dB). Answers pending; nothing decided.
+- **Guitar-only pages sent (2026-10-30, audited; ledger `clean-crunch-pool-dcc` `amendment_6_outcome`):** zero
+  renders; part 1 (17 items) and part 2 (25 items, 803054 in place of 900215) built from the hash-checked stored
+  renders, the guitar alone in every clip, each at −23.00 LUFS, catches byte-identical, the in-mix pages and keys
+  unchanged. Smallest AAC margin 23.1 dB in part 1 and 12.4 dB in part 2 (801921's reverb pair). Caveats: part 2 has
+  back-to-back items on one excerpt (10–11, 12–13, 24–25); 800877 (its pair and its catch) and 802682's sw50r spring
+  pair are in both parts (800877 with the same A/B order, so not independent answers); levelling each clip on its own
+  removes the switch's level drop (801895 5.9 dB, 800903's pr12 spring 3.0 dB, 802200 2.0 dB). Answers pending;
+  nothing decided.
 
 Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
 draft takes in the findings: tiers by release status, set 5's
