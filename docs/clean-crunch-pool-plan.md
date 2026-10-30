@@ -1,6 +1,6 @@
 # Clean/crunch-led training pool (plan, 2026-10-28)
 
-**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2 built and step 3's D_CC read 2026-10-30 (amendments 1 and 2 below): undecided, leaning worse. Step 4's page sent 2026-10-30; its answers came in the same day: no pair heard as clearly different, so the page does not place tau. Runaway delays in about 2% of both pools, excluded from the next build. The user said yes to the two cheap D_CC follow-ups and the ElecGtr8 shift (2026-10-30, amendment 4): the follow-ups ran the same day; D_CC's loss is mostly its pedal answers (in both seeds), and D_CC is worse than its own pool's constant; the shift waits for the next build. A drive-pedal page with an instant A/B switch is declared (amendment 5, the user's yes 2026-10-30); its checks take the place of the replay of three items, which the author dropped.**
+**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2 built and step 3's D_CC read 2026-10-30 (amendments 1 and 2 below): undecided, leaning worse. Step 4's page sent 2026-10-30; its answers came in the same day: no pair heard as clearly different, so the page does not place tau. Runaway delays in about 2% of both pools, excluded from the next build. The user said yes to the two cheap D_CC follow-ups and the ElecGtr8 shift (2026-10-30, amendment 4): the follow-ups ran the same day; D_CC's loss is mostly its pooled answer's pedals (both seeds' answers turn the drives off, answers only, not rendered), and D_CC is worse than its own pool's constant; the shift waits for the next build. A drive-pedal page with an instant A/B switch is declared (amendment 5, the user's yes 2026-10-30); its checks take the place of the replay of three items, which the author dropped.**
 
 **Progress (2026-10-28 to 30):**
 - **Step 0 (intake checks, `~/ndsp-presets/learn/trusted-data/intake-2026-10-28/`):** 80 DI rows in 21 sessions (the
@@ -94,15 +94,17 @@
   a copy delayed by 129.83 ms (its amp track runs that far behind it) and joins the next build only if the alignment
   check on the copy reads about 0 ms. The size-matched top-up stays unplanned.
 - **D_CC's follow-ups, read (2026-10-30, audited; ledger `amendment_4_outcome`):** (a) both seeds turn the pr12-crunch
-  drives off (drive2 on in 2 and 0 of 14 directions; D_F5 12 of 14), so seed 20261043 alone is not the cause. In D_CC's
-  labels drive2 is on in a bare majority of pr12 crunch (52.7%), and the model's drive2 probability there is
-  0.42-0.50: a switch near chance, read at 0.5, comes out off. (b) 165 renders. D_CC with its pedals at S - D_CC
-  -0.076 [-0.142, -0.011], better in all 7 bands; with the pedals at S, D_CC - D_F5 is +0.015 [-0.028, +0.057]
-  (undecided, about even). So D_CC's loss is mostly its pedal answers. D_CC - its own constant +0.103 [+0.051, +0.155],
-  worse in all 7 bands (not only the drives: pr12 and sw50r clean too): on V-real the model does not yet beat a
-  constant (D_F5 about equals its own). Descriptive. Two questions for F20's re-plan: how near-chance switches are
-  read out, and the model beating its constant. (c) not run: the shift and its alignment check change the verdicts,
-  so they run within the next build.
+  drives off (answers only, not rendered: drive2 on in 2 and 0 of 14 directions; D_F5 12 of 14), so seed 20261043
+  alone is not the cause. In D_CC's labels drive2 is on in a bare majority of pr12 crunch (52.7%), and the model's
+  drive2 probability there is 0.42–0.50: a switch near chance, read at 0.5, comes out off. inputGain's median there:
+  D_CC −1.39, its constant −0.16, D_F5 −0.49. (b) 165 renders; the sound rows are of D_CC's pooled answer only. D_CC
+  with its pedals at S − D_CC −0.076 [−0.142, −0.011], better in all 7 bands (V-real-10 −0.072 [−0.139, −0.005]);
+  with the pedals at S, D_CC − D_F5 is +0.015 [−0.028, +0.057] (undecided, about even; V-real-10 +0.017). So D_CC's
+  loss is mostly its pedal answers; with the Wall Of Death band left out, all of it (−0.045 against +0.044). D_CC −
+  its own constant +0.103 [+0.051, +0.155], worse in all 7 bands (V-real-10 +0.099; not only the drives: pr12 and
+  sw50r clean too): on V-real the model does not yet beat a constant (D_F5 about equals its own). Descriptive. Two
+  questions for F20's re-plan: how near-chance switches are read out, and the model beating its constant. (c) not
+  run: the shift and its alignment check change the verdicts, so they run within the next build.
 - **The drive-pedal page (declared 2026-10-30, nothing rendered; ledger `amendment_5`, `learn/cc_drive_page.py`):**
   the user said yes to a page with drive pedals on and off. Step 4's qualifying examples less the runaway-flagged
   ones (43): drive pedal 1 on in 12, drive pedal 2 in 12 (24 pairs, 19 examples, 5 bands; 11 of the 24 pairs from one
