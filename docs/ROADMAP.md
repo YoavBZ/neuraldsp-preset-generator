@@ -201,7 +201,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        page's in-mix version is not needed now. Both were built, audited and sent the same day
        (`clean-crunch-pool-dcc` `amendment_6_outcome`). Their answers came the same day (audited;
        `amendment_6_answers`): catches 8 of 8 right and 5 of 6 checks heard, so the format works on the guitar
-       alone; 25 of the 26 pairs near tau were mostly not heard (the one heard is a tremolo below tau); mostly only
+       alone; 25 of the 26 pairs near tau were not heard (the one heard is a tremolo below tau); mostly only
        the loudest pairs are. The listener noted that items with several effects are "harder to answer" (33 of 34
        pairs have another effect on in both clips, by design: the context the labels need).
      - Next: F20's re-plan on this pool, for the user's yes, with two new questions: how near-chance switches are
@@ -350,8 +350,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      the replay of three items, which the author dropped; step 4's runaway item 4 is not re-used) is followed, at the
      user's request, by guitar-only versions of it and of step 4's page (`amendment_6`, zero renders; sent
      2026-10-30; answered the same day, `amendment_6_answers`: the format works on the guitar alone, and pairs near
-     tau are mostly not heard). Next: F20's re-plan, for the user's yes, with the ElecGtr8 shift run within its build.
-   - (d) **F20:** re-planned on the clean/crunch pool. Step 4, the D_CC follow-ups and the guitar-only pages' answers (`amendment_6_answers`) are in; the re-plan is drafted for the user's yes ([F20 re-plan](f20-clean-crunch-plan.md), 2026-10-30: a zero-render learning curve first, then F20 in stages only if the curve still rises), and declares how, if at all, those answers are used for (c)'s audibility weight. Before that: the user said yes (2026-10-27); its plan is declared after (b) reads (read 2026-10-28: the stock stem stays its input). Its value now rests on (a)/(b) and on the new data. Its declared
+     tau are mostly not heard). Next: F20's re-plan ([draft](f20-clean-crunch-plan.md)), for the user's yes, with the ElecGtr8 shift run within its build.
+   - (d) **F20:** re-planned on the clean/crunch pool. Step 4, the D_CC follow-ups and the guitar-only pages' answers (`amendment_6_answers`) are in; the re-plan is drafted for the user's yes ([F20 re-plan](f20-clean-crunch-plan.md), 2026-10-30). It waits on the user's decisions on the [pipeline review](ml-pipeline-review.md)'s tests and on the re-plan: the review's P1, P2a and P4 first, then step 0 if P4 shows transfer (25% and 50% subsets of D_CC read on V-real-11, 165 renders), then F20 in stages read on V-real at each. The review's findings that touch F20 (steps 5, 12, 16, 22, 26–27, 29, 32, 37) are fixed or settled first. It also declares how, if at all, those answers are used for (c)'s audibility weight. Before that: the user said yes (2026-10-27); its plan is declared after (b) reads (read 2026-10-28: the stock stem stays its input). Its value now rests on (a)/(b) and on the new data. Its declared
      fixes: redraw near-silent draws (up to 5 tries; about 16% more target renders at F5's rate); an audio runaway
      check on targets (a self-oscillating delay, about 2% of both pools), refused and redrawn (to be declared and
      reviewed in the re-plan); keep each
@@ -359,8 +359,9 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      the method; an at-S read only beside it; D_CC's follow-ups add how near-chance switches are read out, since a
      0.5 readout turned D_CC's bare-majority drives off); the model beating its own constant (D_CC trails its own,
      D_F5 about equals its own); the ElecGtr8 shift and its alignment check (`amendment_4` (c)), run within the build; "unknown" DIs at most 25% of draws. Its plan must also settle
-     V-real-11 against V-real-12 (keeping V-real-11 needs a code change) and rebuild the DI inventory and pool. About
-     51k renders (T3's plan: about 58k renders and 32–42 h wall in all, most of it F20's).
+     V-real-11 against V-real-12 (keeping V-real-11 needs a code change) and rebuild the DI inventory and pool. T3's plan
+     costed it at about 51k renders for about 15.8k new examples; on the clean/crunch pool's own recipe the re-plan
+     costs about 35k renders for 10k examples (about 7k new) and about 85k for 20k (see the re-plan).
    - Not blocked by these: every-control stage 1 (can run, not run), the real-mix test and T4 (below).
 
    **Open decisions for the user (2026-10-27):**
