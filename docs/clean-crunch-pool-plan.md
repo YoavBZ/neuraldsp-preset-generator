@@ -1,6 +1,6 @@
 # Clean/crunch-led training pool (plan, 2026-10-28)
 
-**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2 built and step 3's D_CC read 2026-10-30 (amendments 1 and 2 below): undecided, leaning worse. Step 4's page sent 2026-10-30, answers pending; three follow-ups wait for the user.**
+**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2 built and step 3's D_CC read 2026-10-30 (amendments 1 and 2 below): undecided, leaning worse. Step 4's page sent 2026-10-30; its answers came in the same day: no pair heard as clearly different, so the page does not place tau, and a replay of three items is asked. Runaway delays in about 2% of both pools, excluded from the next build; three follow-ups wait for the user.**
 
 **Progress (2026-10-28 to 30):**
 - **Step 0 (intake checks, `~/ndsp-presets/learn/trusted-data/intake-2026-10-28/`):** 80 DI rows in 21 sessions (the
@@ -75,7 +75,14 @@
   V-real); and one part, Wall Of Death's femme ElecGtr5, gives +0.363 (without it +0.044). Confounds: fewer examples
   than D_F5, a small early-stopping set, and amp-track stand-ins in 44% of the examples.
 - **Step 4's page (2026-10-30, audited; ledger `amendment_3_outcome`):** 266 renders, 30 of 30 repeats bit-exact; 25
-  items (22 pairs, 3 catches) sent to the user. Caveat: 13 items come from one song. Answers pending; nothing decided.
+  items (22 pairs, 3 catches) sent to the user. Caveat: 13 items come from one song. Nothing decided by the page itself.
+- **Step 4's answers (2026-10-30, audited; ledger `amendment_3_answers`):** 21 same, 4 maybe, none different; all four
+  anchors answered same, one catch maybe. The page itself checked out (clips rebuilt, right order, catches identical).
+  Its own checks did not come out, so it does not place tau by ear; nothing suggests switches below tau are audible.
+  The delay anchor (900215) is a runaway delay: a steady whine, and its stored target too. The user is asked to replay
+  items 4, 13 and 17. A zero-render scan then found runaway delays (feedback 0.75 or more) in about 2% of both pools
+  (D_CC 64 of 3,034, D_F5 87 of 4,189); under the trusted-data rule an audio runaway check refuses (F20: redraws) them
+  in the next build. D_CC and D_F5 stand as read, with that caveat.
 
 Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
 draft takes in the findings: tiers by release status, set 5's

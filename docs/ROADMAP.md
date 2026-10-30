@@ -142,9 +142,12 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        one part (femme ElecGtr5) gives +0.363.
      - Confounds: fewer examples than D_F5 (2,699 + 334 against 3,467 + 722), a small early-stopping set, and
        recorded amp-track stand-ins in 44% of the examples.
-     - Step 4's page sent (2026-10-30, audited): 25 items on clean/crunch mixes, 266 renders; answers pending. 13
-       of the 25 items come from one song.
-     - Next: the page's answers, read under a reader declared first. Three follow-ups wait for the user: D_CC's
+     - Step 4's page sent (2026-10-30, audited): 25 items on clean/crunch mixes, 266 renders. 13 of the 25 items
+       come from one song. Its answers came the same day (audited; ledger `amendment_3_answers`): no pair heard as
+       clearly different, the four anchors included, so the page does not place tau by ear; the user is asked to
+       replay three items. Its delay anchor is a runaway delay (a steady whine), and a zero-render scan found such
+       targets in about 2% of both pools (D_CC 64, D_F5 87); excluded from the next build (F20's runaway check).
+     - Next: the replay. Three follow-ups wait for the user: D_CC's
        per-seed answers on V-real (zero renders); D_CC with the pedals at S, and its own constant (about 99 renders
        each); a size-matched top-up (about 1,470 more examples, about 6.7k renders, about 3 h; needs an amendment).
        Then F20's re-plan on this pool.
@@ -251,14 +254,17 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      in 4 dense rock songs, the guitar usually 5–19 dB under the rest. A second page, zero renders (PR #319,
      reviewed): the same selection over the 53 measured pairs whose guitar is exposed (at most 6 dB under the rest,
      no vocals, at most 2 other guitars), its own key; sent the same day; a third page on clean/crunch mixes (pool
-     step 4) sent 2026-10-30. Answers on the dense page still count: an
+     step 4) sent 2026-10-30. Its answers (2026-10-30, ledger `amendment_3_answers`): no pair heard as clearly
+     different, not even the four loudest; the page's own checks did not come out, so tau is not placed by ear
+     (nothing suggests it is too loose). Answers on the dense page still count: an
      effect not heard there is masked there. The user's direction the same day (below) points the rulings toward an audibility weight; its exact
      form is declared and reviewed before the relabel.*
    - **Clean/crunch-led pool** ([plan](clean-crunch-pool-plan.md), approved 2026-10-28): steps 0–3 done (D_F5bk and
-     D_CC read, both undecided; D_CC leans worse). Next: step 4's page was sent 2026-10-30 and its answers are pending
-     (read under a reader declared first); the three D_CC follow-ups wait for the user; then F20's re-plan.
+     D_CC read, both undecided; D_CC leans worse). Step 4's answers came 2026-10-30 (tau not placed by ear; a replay of
+     three items is asked). Next: the replay; the three D_CC follow-ups wait for the user; then F20's re-plan.
    - (d) **F20:** re-planned on the clean/crunch pool after step 4 and the user's call on the D_CC follow-ups. Before that: the user said yes (2026-10-27); its plan is declared after (b) reads (read 2026-10-28: the stock stem stays its input). Its value now rests on (a)/(b) and on the new data. Its declared
-     fixes: redraw near-silent draws (up to 5 tries; about 16% more target renders at F5's rate); keep each
+     fixes: redraw near-silent draws (up to 5 tries; about 16% more target renders at F5's rate); an audio runaway
+     check on targets (a self-oscillating delay, about 2% of both pools), refused and redrawn; keep each
      core/full pair on one separation device; the switch readout and prior (since 2026-10-27 the plain readout is
      the method; an at-S read only beside it); "unknown" DIs at most 25% of draws. Its plan must also settle
      V-real-11 against V-real-12 (keeping V-real-11 needs a code change) and rebuild the DI inventory and pool. About
@@ -1063,4 +1069,5 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-28 | Clean/crunch pool progress (zero renders): step 0's intake checks (80 DI rows in 21 sessions; most fail D2), set 5's backings re-downloaded, step 1's per-example leak rule merged (PR #323), step 2's groundwork merged after an independent review and re-check (PR #324): the 19 released sessions pass `refuse_held_out` under their band and are barred from every later test (`refuse_test`, `set3/set5.parts` by default); one pool entry point bars V-real's 7 bands; set-5 parts whose amp tracks are another part's (BKS "Too Much" 4a, "Bulldozer" 6a) are dropped; Fytakyte "Too Much" is spent for testing and never trains. Ear page part 11 (120 cards) sent | [plan](clean-crunch-pool-plan.md) |
 | 2026-10-30 | D_CC outcome, audited (clean/crunch pool step 3: 294 sections from 33 target DIs in 9 bands, 50 DIs passed the checks; 17,661 pool renders, 3,034 separations plus 1 redo, 165 V-real renders): D_CC − D_F5 +0.090 [−0.011, +0.191] on V-real-11, 1 band better and 6 worse, undecided and leaning worse (clean +0.015, crunch +0.120); part-weighted (descriptive) +0.090 [+0.006, +0.175], 9 of 11 parts worse; co-primary +0.094 [−0.014, +0.201]; also behind D_core5 (+0.169), S (+0.177) and D_F5's constant (+0.085) (descriptive). No bug; the loss is mostly (post hoc, descriptive) both drives off in all 14 pr12-crunch directions and one part (femme ElecGtr5, +0.363). Confounds: 2,699 + 334 examples against D_F5's 3,467 + 722, a seed whose best epoch was 9 of 14, amp-track stand-ins in 44%. Next: step 4's listening page; per-seed answers, pedals at S with D_CC's own constant, and a size-matched top-up wait for the user | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `outcome`, [plan](clean-crunch-pool-plan.md) |
 | 2026-10-30 | Step 4's listening page, audited and sent (clean/crunch pool; ROADMAP (c)'s ear check of tau on clean/crunch mixes): 71 pairs measured with the fresh-process recipe (266 renders, 30 of 30 repeats bit-exact); below tau delay 10 of 22, reverb 8 of 24, tremolo 1 of 10, pr12 spring 7 of 9, sw50r spring 1 of 6; the page holds 25 items (22 pairs, 3 catches), build a04ae2e282a3. Caveats: 13 items from one song, 4 songs in 3 bands. Nothing decided; the answers wait for a declared reader | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_3_outcome`, [plan](clean-crunch-pool-plan.md) |
+| 2026-10-30 | Step 4's answers, audited (read under amendment_3's declared reading, descriptive): 21 same, 4 maybe, none different; all four anchors same, one of 3 catches maybe. The page checked out (all 50 clips rebuilt). Its own checks did not come out, so tau is not placed by ear; nothing suggests switches below tau are audible. The delay anchor is a runaway delay (a steady whine, its stored target too); a zero-render scan finds runaway delay targets (feedback 0.75 or more) in about 2% of both pools (D_CC 64 of 3,034, D_F5 87 of 4,189). Under the trusted-data rule they are refused and redrawn in the next build (F20); D_CC and D_F5 stand as read, with that caveat. The user is asked to replay items 4, 13 and 17 | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_3_answers`, [plan](clean-crunch-pool-plan.md) |
 
