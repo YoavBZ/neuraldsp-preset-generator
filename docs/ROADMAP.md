@@ -351,7 +351,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      user's request, by guitar-only versions of it and of step 4's page (`amendment_6`, zero renders; sent
      2026-10-30; answered the same day, `amendment_6_answers`: the format works on the guitar alone, and pairs near
      tau are mostly not heard). Next: F20's re-plan, for the user's yes, with the ElecGtr8 shift run within its build.
-   - (d) **F20:** re-planned on the clean/crunch pool. Step 4, the D_CC follow-ups and the guitar-only pages' answers (`amendment_6_answers`) are in; the re-plan comes next, for the user's yes, and declares how, if at all, those answers are used for (c)'s audibility weight. Before that: the user said yes (2026-10-27); its plan is declared after (b) reads (read 2026-10-28: the stock stem stays its input). Its value now rests on (a)/(b) and on the new data. Its declared
+   - (d) **F20:** re-planned on the clean/crunch pool. Step 4, the D_CC follow-ups and the guitar-only pages' answers (`amendment_6_answers`) are in; the re-plan is drafted for the user's yes ([F20 re-plan](f20-clean-crunch-plan.md), 2026-10-30: a zero-render learning curve first, then F20 in stages only if the curve still rises), and declares how, if at all, those answers are used for (c)'s audibility weight. Before that: the user said yes (2026-10-27); its plan is declared after (b) reads (read 2026-10-28: the stock stem stays its input). Its value now rests on (a)/(b) and on the new data. Its declared
      fixes: redraw near-silent draws (up to 5 tries; about 16% more target renders at F5's rate); an audio runaway
      check on targets (a self-oscillating delay, about 2% of both pools), refused and redrawn (to be declared and
      reviewed in the re-plan); keep each

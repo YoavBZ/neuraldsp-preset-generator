@@ -435,4 +435,4 @@ Ledger first. The render recipe is the audibility page's.
 - **E. The ear sittings:** tier 1 DIs, the released DIs, and 5 backing clips.
 - **F. Step 3's training:** minutes per run, approved with the plan.
 
-F20 waits for step 3's reading and is re-planned on this pool.
+F20 waits for step 3's reading and is re-planned on this pool: [F20 re-plan](f20-clean-crunch-plan.md) (draft, 2026-10-30, for the user's yes).
