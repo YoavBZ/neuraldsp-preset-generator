@@ -253,3 +253,84 @@ def test_a_stale_alignment_file_refuses(tmp_path):
         C.load_alignment(tmp_path)
     (tmp_path / "alignment-0of1.json").write_text(json.dumps({"method": C.align_method(), "dis": {}}))
     assert C.load_alignment(tmp_path) == {}
+
+
+ELECGTR8 = "sets-1-2/Forkupines_SugarFaith_Full/38_ElecGtr8DI.wav"
+
+
+def test_the_shift_takes_align_dis_sign_a_positive_lag_delays_the_di():
+    np = pytest.importorskip("numpy")
+    from learn import verify_tracks as V
+
+    sr, lag = C.ALIGN_SR, C.shift_frames(C.DI_SHIFT_MS[ELECGTR8], C.ALIGN_SR)
+    rng = np.random.default_rng(8)
+    di = rng.standard_normal(sr * 10)
+    amp = C.delayed(di, lag)[:len(di)]                        # the amp track runs `lag` behind its DI
+    before, _ = V.gcc_lag_ms(di, amp, sr, max_ms=C.ALIGN_MAX_S * 1000.0)
+    assert before == pytest.approx(C.DI_SHIFT_MS[ELECGTR8], abs=0.05)   # positive: the amp track later
+    after, _ = V.gcc_lag_ms(C.delayed(di, lag)[:len(di)], amp, sr, max_ms=C.ALIGN_MAX_S * 1000.0)
+    assert after == 0.0                                       # the delayed copy reads in time
+
+
+def test_shift_frames_and_delay():
+    np = pytest.importorskip("numpy")
+    assert C.shift_frames(129.83, 44100) == 5726 and C.shift_frames(129.83, 48000) == 6232
+    y = C.delayed(np.ones((3, 2)), 2)
+    assert y.shape == (5, 2) and not y[:2].any() and y[2:].all()
+
+
+def test_a_shifted_di_reads_its_copy_and_a_wrong_source_refuses():
+    copies = {ELECGTR8: {"source": "/s/38_ElecGtr8DI.wav", "path": "/c/38_ElecGtr8DI+129.83ms.wav", "shift_ms": 129.83}}
+    inv = {ELECGTR8: {"path": "/s/38_ElecGtr8DI.wav", "part": "ElecGtr8"}, "x": {"path": "/s/x.wav"}}
+    out = C.apply_shifts(inv, copies)
+    assert out[ELECGTR8]["path"] == "/c/38_ElecGtr8DI+129.83ms.wav" and out[ELECGTR8]["shift_ms"] == 129.83
+    assert out[ELECGTR8]["path_original"] == "/s/38_ElecGtr8DI.wav" and out["x"] == inv["x"]
+    secs = {f"{ELECGTR8}@220.0": {"di": ELECGTR8, "path": "/s/38_ElecGtr8DI.wav", "start_s": 220.0}}
+    assert C.apply_shifts(secs, copies, di_of=lambda sid, s: s["di"])[f"{ELECGTR8}@220.0"]["path"].startswith("/c/")
+    with pytest.raises(SystemExit, match="made from"):
+        C.apply_shifts({ELECGTR8: {"path": "/elsewhere.wav"}}, copies)
+
+
+def test_a_copy_that_does_not_match_its_record_is_not_read(tmp_path, monkeypatch):
+    monkeypatch.setattr(C, "shift_dir", lambda: tmp_path)
+    assert C.shifted_copies() == {}
+    copy = tmp_path / "c.wav"
+    copy.write_bytes(b"audio")
+    rec = {"source": "/s.wav", "path": str(copy), "shift_ms": 129.83, "sha256": C._sha_file(copy)}
+    (tmp_path / "shifts.json").write_text(json.dumps({"dis": {ELECGTR8: rec}}))
+    assert set(C.shifted_copies()) == {ELECGTR8}
+    copy.write_bytes(b"changed")                               # the copy changed since `shift`
+    assert C.shifted_copies() == {}
+    (tmp_path / "shifts.json").write_text(json.dumps({"dis": {ELECGTR8: {**rec, "shift_ms": 100.0,
+                                                                         "sha256": C._sha_file(copy)}}}))
+    assert C.shifted_copies() == {}                           # made with another shift than today's
+
+
+def test_a_shifted_di_trains_only_when_its_copy_reads_about_zero():
+    def gate(a):
+        ver = {ELECGTR8: {"trains": True, "why": "heard clean"}}
+        C.gate_alignment(ver, {ELECGTR8: a})
+        return ver[ELECGTR8]
+    base = {"kind": "amp", "spread_ms": 0.0, "readings": 8}
+    v = gate({**base, "verdict": "offset", "lag_ms": 129.83})                     # read on the source: held
+    assert not v["trains"] and v["align_hold"] and "delayed copy" in v["why"]
+    v = gate({**base, "verdict": "outside A1's range", "lag_ms": 0.0, "shift_ms": 129.83})
+    assert v["trains"] and "in time after the declared +129.83 ms shift" in v["why"] and "heard clean" in v["why"]
+    assert gate({**base, "verdict": "aligned", "lag_ms": 0.5, "shift_ms": 129.83})["trains"]
+    assert not gate({**base, "verdict": "aligned", "lag_ms": 5.0, "shift_ms": 129.83})["trains"]      # not about 0
+    assert not gate({**base, "verdict": "drift", "lag_ms": 0.0, "shift_ms": 129.83})["trains"]
+    assert not gate({**base, "verdict": "outside A1's range", "lag_ms": 0.0, "shift_ms": 100.0})["trains"]
+
+
+def test_shift_refuses_smoke_and_an_undeclared_shift(monkeypatch):
+    import argparse
+
+    with pytest.raises(SystemExit, match="no smoke run"):
+        C.cmd_shift(argparse.Namespace(smoke=True, out="/tmp/x"))
+    monkeypatch.setattr(C, "ledger_declared", lambda *a, **k: False)
+    with pytest.raises(SystemExit, match="amendment_4"):
+        C.cmd_shift(argparse.Namespace(smoke=False, out=None))
+
+
+def test_the_ledger_declares_the_shift():
+    assert C.ledger_declared(key=C.SHIFT_KEY, mark=C.SHIFT_MARK)
