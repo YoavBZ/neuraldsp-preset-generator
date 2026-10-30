@@ -148,7 +148,8 @@ RENDERS = (r"-m learn\.song_relabel (render-new|probe)\b", r"-m learn\.ks_extend
            r"-m learn\.xlance_finetune vreal-render\b",           # the T3 design's D_F5ft (ROADMAP (b))
            r"-m learn\.audibility_measure render\b",               # the T3 design's audibility measurement (ROADMAP (c))
            r"-m learn\.cc_readout vreal-render\b",                # the clean/crunch pool's step-3 readout
-           r"-m learn\.cc_build render\b")                        # the clean/crunch pool's step-2 renders (D_CC)
+           r"-m learn\.cc_build render\b",                        # the clean/crunch pool's step-2 renders (D_CC)
+           r"-m learn\.cc_audibility render\b")                   # the clean/crunch pool's step-4 listening page
 # Separations that need the machine to themselves (amendment 3): no render starts beside one.
 SEPARATIONS = (r"-m learn\.local_objective_1c separate\b", r"-m learn\.separator_screen (separate|identity)\b",
                r"-m learn\.separate\b", r"-m learn\.known_answer separate\b",
