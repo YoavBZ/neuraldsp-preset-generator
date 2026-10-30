@@ -4,7 +4,7 @@ The review lists the direct model's pipeline as 38 small steps. Each check here 
 (no render, no separation, no training, no model load) and is named after the step it supports: s05 is
 step 5. A check that needs a file that is missing reports {"missing": path} and the others still run.
 
-Run with the main checkout's .venv (stdlib only, but some checks import learn modules lazily):
+Run with the main checkout's .venv (stdlib only; from a worktree, call the main checkout's .venv/bin/python):
 
     .venv/bin/python -m learn.pipeline_review                      # every check, JSON to stdout
     .venv/bin/python -m learn.pipeline_review --out docs/ml-pipeline-review.json
@@ -112,10 +112,13 @@ def band_weighted(rows):
     g = len(means)
     t = T_95.get(g - 1)
     half = t * statistics.stdev(means.values()) / math.sqrt(g) if t and g > 1 else None
+    parts = {p: statistics.fmean(vs) for (_, p), vs in sorted(by_part.items())}
+    lobo = {b: statistics.fmean(v for c, v in means.items() if c != b) for b in sorted(means)} if g > 1 else {}
     return {"band_weighted_mean": m, "lo90": None if half is None else m - half,
             "hi90": None if half is None else m + half, "bands": g,
             "bands_worse": sum(v > 0 for v in means.values()), "bands_better": sum(v < 0 for v in means.values()),
-            "per_part": {p: statistics.fmean(vs) for (_, p), vs in sorted(by_part.items())}}
+            "parts": len(parts), "parts_worse": sum(v > 0 for v in parts.values()),
+            "leave_one_band_out": lobo, "per_part": parts}
 
 
 def mismatch_share(pairs):
@@ -212,16 +215,23 @@ def s06_label_prior(d):
 
 def s07_silent_refusals(d):
     """Step 7: near-silent target refusals by draw mode (D_CC render rows)."""
-    rows = _jsonl((d.td / "cc/rows").glob("render-*.jsonl"))
+    files = list((d.td / "cc/rows").glob("render-*.jsonl"))
+    if not files:
+        raise FileNotFoundError(2, "no render rows", str(d.td / "cc/rows/render-*.jsonl"))
+    rows = _jsonl(files)
     out = {}
     for r in rows:
-        m = out.setdefault(r["mode"], {"rendered": 0, "target_near_silent": 0})
+        m = out.setdefault(r["mode"], {"rendered": 0, "target_near_silent": 0, "other_guitar_near_silent": 0})
+        why = str(r.get("refused") or "")
         m["rendered"] += 1
-        m["target_near_silent"] += str(r.get("refused") or "").startswith("target: near-silent")
+        m["target_near_silent"] += why.startswith("target: near-silent")
+        m["other_guitar_near_silent"] += bool(why) and not why.startswith("target:")
     for m in out.values():
         m["share"] = m["target_near_silent"] / m["rendered"]
     total = sum(m["rendered"] for m in out.values())
-    return {"by_mode": out, "all": sum(m["target_near_silent"] for m in out.values()) / total, "rendered": total}
+    built = _jsonl((d.td / "cc/rows").glob("build-*.jsonl"))
+    return {"by_mode": out, "all": sum(m["target_near_silent"] for m in out.values()) / total, "rendered": total,
+            "refused_in_all": len({r["i"] for r in built if r.get("refused")}), "kept": len(d.cc_built())}
 
 
 def s12_doubles(d):
@@ -250,7 +260,17 @@ def s14_level_draws(d):
     """Step 14: the drawn target-to-backing ratio (dB) and mastering, D_CC kept examples."""
     kept = list(d.cc_kept().values())
     r = [x["draw"]["ratio_db"] for x in kept]
-    return {"ratio_db": {**quantiles(r), "min": min(r), "max": max(r), "n": len(r)},
+    prior = {}                                         # pretrain_set.ratio_values' source: passing rows per file
+    for f in sorted((d.root / "learn/multi-section/sections").glob("*.json")):
+        m = _json(f)
+        n = sum(1 for x in m["rows"] if x.get("passes") and x.get("snr_db") is not None)
+        if n:
+            prior[f.stem] = (m.get("band") or f.stem, n)
+    vreal_bands = {b for b, _ in VREAL.values()}
+    return {"ratio_prior": {"bands": len({b for b, _ in prior.values()}), "values": sum(n for _, n in prior.values()),
+                            "vreal_bands_in_it": sorted({b for b, _ in prior.values() if b in vreal_bands}),
+                            "vreal_parts_in_it": {k: n for k, (_, n) in prior.items() if k in VREAL}},
+            "ratio_db": {**quantiles(r), "min": min(r), "max": max(r), "n": len(r)},
             "mastered_share": sum(bool(x["draw"].get("mastered")) for x in kept) / len(kept),
             "vocals_share": sum(bool(x["draw"].get("vocals_drawn")) for x in kept) / len(kept)}
 
@@ -284,7 +304,10 @@ def s19_tone_probe(d):
 def s22_training(d):
     """Steps 22-24: how much training each model got, from its run logs."""
     out = {}
-    for p in sorted(list((d.td / "cc/runs").glob("*.json")) + list((d.td / "t3/runs").glob("*.json"))):
+    runs = sorted(list((d.td / "cc/runs").glob("*.json")) + list((d.td / "t3/runs").glob("*.json")))
+    if not runs:
+        raise FileNotFoundError(2, "no run logs", str(d.td / "{cc,t3}/runs/*.json"))
+    for p in runs:
         r = _json(p)
         log = r["log"]
         steps = log[0].get("steps")
@@ -406,7 +429,8 @@ def s34_vreal(d):
                             ("D_F5:at-S:time effects and spring", "S", None), ("D_F5", "constant", "D_F5 - constant")):
         bw = band_weighted(rows(arm, base))
         key = f"{arm} - {base}"
-        out[key] = {k: bw[k] for k in ("band_weighted_mean", "lo90", "hi90", "bands", "bands_worse", "bands_better")}
+        out[key] = {k: bw[k] for k in ("band_weighted_mean", "lo90", "hi90", "bands", "bands_worse", "bands_better",
+                                       "parts", "parts_worse", "leave_one_band_out")}
         out[key]["per_part"] = {k: round(v, 4) for k, v in bw["per_part"].items()}
         if name:
             r = rep[name]["rows"]["all"]["all"]
@@ -418,9 +442,31 @@ def s34_vreal(d):
     return out
 
 
+def pick_start(files, parts, amp):
+    """A start rule (clean-baseline-plan.md, crunch-baseline-plan.md) on stored distances: the factory preset with
+    the lowest median, over the parts that have it on both halves, of the mean of its half-A and half-B `flat`
+    measure-DI distances (the first of each stored [distance, tonal, temporal]); ties by name.
+    files: [{slug: {key: {preset: [d, ...]}}}]. -> (preset, median, parts used)."""
+    rows = []
+    for p in parts:
+        src = next((f[p] for f in files if p in f), None)
+        if src is None:
+            continue
+        a, b = src.get(f"flat|{amp}|measfix_A", {}), src.get(f"flat|{amp}|measfix_B", {})
+        if a and b:
+            rows.append((a, b))
+    if not rows:
+        return None, None, 0
+    cands = set.intersection(*[{k for k in a if k.startswith("factory:") and k in b} for a, b in rows])
+    score = {c: statistics.median([(a[c][0] + b[c][0]) / 2 for a, b in rows]) for c in cands}
+    best = min(sorted(score), key=lambda c: score[c])
+    return best, score[best], len(rows)
+
+
 def s36_s_selection(d):
     """Step 36: were V-real's clips among those the start presets were chosen on, with the same judge?"""
-    choice = {c: _json(REPO / f"docs/{c}-baseline-choice.json")["presets"] for c in ("clean", "crunch")}
+    choice = {c: _json(REPO / f"docs/{c}-baseline-choice.json") for c in ("clean", "crunch")}
+    pinned = _json(REPO / "docs/sound-desc-test-parts.json")["parts"]
     files = {n: _json(d.root / f"learn/direc/{n}/distances.json") for n in ("rescore", "songs-check")}
     out = {}
     for slug, (_, cls) in VREAL.items():
@@ -431,13 +477,27 @@ def s36_s_selection(d):
             for amp in AMPS:
                 s = _json(d.root / f"learn/arm-a-mega53/F/S/{slug}/{amp}.json")["judge"]
                 for h in ("A", "B"):
-                    v = dist.get(f"flat|{amp}|measfix_{h}", {}).get(choice[cls][amp])
+                    v = dist.get(f"flat|{amp}|measfix_{h}", {}).get(choice[cls]["presets"][amp])
                     if v is not None:                            # [distance, tonal, temporal]: the first is the judge
                         devs.append(abs(v[0] - s[h]))
             row["S_stored_vs_vreal_max_abs_diff"] = max(devs) if devs else None
         out[slug] = row
-    return {"parts": out, "in_a_choice_file": sum(bool(v["in"]) for v in out.values()),
-            "rule": "clean: docs/clean-baseline-plan.md (rescore + songs-check); crunch: docs/crunch-baseline-plan.md"}
+    rules = {}
+    vreal_bands = {b for b, _ in VREAL.values()}
+    for cls in ("clean", "crunch"):
+        parts = sorted(p for p, v in pinned.items() if v["gain_class"] == cls)
+        per_amp = {}
+        for amp in AMPS:
+            best, med, n = pick_start(list(files.values()), parts, amp)
+            per_amp[amp] = {"picked": best, "median": med, "parts_used": n,
+                            "matches_choice": best == choice[cls]["presets"][amp]
+                            and n == choice[cls]["parts_used"][amp]}
+        rules[cls] = {"parts": len(parts), "vreal_clips_in_set": sorted(p for p in parts if p in VREAL),
+                      "parts_from_vreal_bands": sum(pinned[p]["band"] in vreal_bands for p in parts),
+                      "per_amp": per_amp}
+    return {"parts": out, "in_a_distance_file": sum(bool(v["in"]) for v in out.values()),
+            "rules_reproduced": rules,
+            "parts_list": "docs/sound-desc-test-parts.json (the pinned development clean and crunch parts)"}
 
 
 def s38_headroom(d):

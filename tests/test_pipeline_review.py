@@ -59,3 +59,27 @@ def test_every_check_is_named_after_its_step():
 def test_missing_data_is_reported_not_raised(tmp_path):
     out = P.run(tmp_path, only=["s16"])
     assert out["checks"]["s16_stem"]["step"] == 16 and "missing" in out["checks"]["s16_stem"]
+
+
+def test_every_check_reports_missing_on_an_empty_data_root(tmp_path):
+    out = P.run(tmp_path)["checks"]
+    assert len(out) == len(P.CHECKS)
+    assert all("missing" in v for v in out.values()), [k for k, v in out.items() if "missing" not in v]
+
+
+def test_band_weighted_reports_parts_and_leave_one_band_out():
+    r = P.band_weighted([("b1", "p1", 1.0), ("b1", "p2", -1.0), ("b2", "p3", 2.0), ("b3", "p4", 3.0)])
+    assert r["parts"] == 4 and r["parts_worse"] == 3
+    assert r["leave_one_band_out"] == {"b1": 2.5, "b2": 1.5, "b3": 1.0}
+
+
+def test_pick_start_takes_the_lowest_median_of_half_means_with_ties_by_name():
+    def part(a, b):
+        return {"flat|pr12|measfix_A": a, "flat|pr12|measfix_B": b}
+    files = [{"x": part({"factory:B": [2.0, 0, 0], "factory:A": [2.0, 0, 0], "template:T": [0.1, 0, 0]},
+                        {"factory:B": [4.0, 0, 0], "factory:A": [4.0, 0, 0], "template:T": [0.1, 0, 0]})},
+             {"y": part({"factory:B": [1.0, 0, 0], "factory:A": [1.0, 0, 0], "factory:C": [0.0, 0, 0]},
+                        {"factory:B": [1.0, 0, 0], "factory:A": [1.0, 0, 0], "factory:C": [0.0, 0, 0]})}]
+    best, med, n = P.pick_start(files, ["x", "y", "z"], "pr12")
+    assert (best, med, n) == ("factory:A", 2.0, 2)      # C lacks part x, the template is not a candidate, A < B by name
+    assert P.pick_start(files, ["z"], "pr12") == (None, None, 0)

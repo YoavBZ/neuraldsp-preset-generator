@@ -101,21 +101,26 @@
     "wide": {
      "rendered": 1557,
      "target_near_silent": 589,
+     "other_guitar_near_silent": 72,
      "share": 0.37829158638407195
     },
     "start": {
      "rendered": 768,
      "target_near_silent": 0,
+     "other_guitar_near_silent": 52,
      "share": 0.0
     },
     "factory": {
      "rendered": 1565,
      "target_near_silent": 25,
+     "other_guitar_near_silent": 118,
      "share": 0.01597444089456869
     }
    },
    "all": 0.15784061696658097,
-   "rendered": 3890
+   "rendered": 3890,
+   "refused_in_all": 857,
+   "kept": 3033
   },
   "s12_doubles": {
    "step": 12,
@@ -147,6 +152,21 @@
   "s14_level_draws": {
    "step": 14,
    "what": "Step 14: the drawn target-to-backing ratio (dB) and mastering, D_CC kept examples.",
+   "ratio_prior": {
+    "bands": 17,
+    "values": 971,
+    "vreal_bands_in_it": [
+     "Atlantis Bound",
+     "Diesel13",
+     "Eat The Feeder",
+     "Magician's Nephew",
+     "Wall Of Death",
+     "Zeno"
+    ],
+    "vreal_parts_in_it": {
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": 36
+    }
+   },
    "ratio_db": {
     "0.1": -17.98,
     "0.5": -9.063,
@@ -616,6 +636,17 @@
     "bands": 7,
     "bands_worse": 4,
     "bands_better": 3,
+    "parts": 11,
+    "parts_worse": 5,
+    "leave_one_band_out": {
+     "Atlantis Bound": 0.09276280125296399,
+     "Diesel13": 0.028170961956709043,
+     "Eat The Feeder": 0.10376020412469299,
+     "Magician's Nephew": 0.12060375172441096,
+     "Szymon Skiba": 0.07789647614219274,
+     "Wall Of Death": 0.08503883446134981,
+     "Zeno": 0.1064408187729433
+    },
     "per_part": {
      "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": 0.0645,
      "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": 0.0517,
@@ -643,6 +674,17 @@
     "bands": 7,
     "bands_worse": 5,
     "bands_better": 2,
+    "parts": 11,
+    "parts_worse": 9,
+    "leave_one_band_out": {
+     "Atlantis Bound": 0.09382054797129669,
+     "Diesel13": 0.04212003158242525,
+     "Eat The Feeder": 0.10386992015047475,
+     "Magician's Nephew": 0.11643563246352782,
+     "Szymon Skiba": 0.09335080469733108,
+     "Wall Of Death": 0.07348391282915356,
+     "Zeno": 0.12257743754698726
+    },
     "per_part": {
      "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": 0.0776,
      "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": 0.0879,
@@ -664,6 +706,17 @@
     "bands": 7,
     "bands_worse": 4,
     "bands_better": 3,
+    "parts": 11,
+    "parts_worse": 7,
+    "leave_one_band_out": {
+     "Atlantis Bound": 0.011902470656119565,
+     "Diesel13": 0.019103040066067344,
+     "Eat The Feeder": 0.0076780589788777226,
+     "Magician's Nephew": 0.008572870791624816,
+     "Szymon Skiba": -0.0020709769138442394,
+     "Wall Of Death": -0.004778058077166852,
+     "Zeno": 0.019697020911657096
+    },
     "per_part": {
      "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": -0.0288,
      "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": 0.0062,
@@ -691,6 +744,17 @@
     "bands": 7,
     "bands_worse": 3,
     "bands_better": 4,
+    "parts": 11,
+    "parts_worse": 5,
+    "leave_one_band_out": {
+     "Atlantis Bound": -0.005198820211820687,
+     "Diesel13": 0.026698495690381102,
+     "Eat The Feeder": 0.001974662865305166,
+     "Magician's Nephew": 0.019849077338674182,
+     "Szymon Skiba": -0.03092800339560653,
+     "Wall Of Death": -0.01039531460500591,
+     "Zeno": 0.005329172463364409
+    },
     "per_part": {
      "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": 0.0549,
      "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": 0.0221,
@@ -712,6 +776,17 @@
     "bands": 7,
     "bands_worse": 3,
     "bands_better": 4,
+    "parts": 11,
+    "parts_worse": 3,
+    "leave_one_band_out": {
+     "Atlantis Bound": -0.001057746718332684,
+     "Diesel13": -0.013949069625716194,
+     "Eat The Feeder": -0.00010971602578174523,
+     "Magician's Nephew": 0.004168119260883155,
+     "Szymon Skiba": -0.015454328555138308,
+     "Wall Of Death": 0.011554921632196279,
+     "Zeno": -0.016136618774043966
+    },
     "per_part": {
      "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": -0.0131,
      "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": -0.0362,
@@ -803,8 +878,71 @@
      ]
     }
    },
-   "in_a_choice_file": 9,
-   "rule": "clean: docs/clean-baseline-plan.md (rescore + songs-check); crunch: docs/crunch-baseline-plan.md"
+   "in_a_distance_file": 9,
+   "rules_reproduced": {
+    "clean": {
+     "parts": 22,
+     "vreal_clips_in_set": [
+      "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1",
+      "cambridge-colour-me-red-elecgtr02",
+      "cambridge-colour-me-red-elecgtr03"
+     ],
+     "parts_from_vreal_bands": 5,
+     "per_amp": {
+      "pr12": {
+       "picked": "factory:Artists/Mark Johnston/Royally Ambient",
+       "median": 4.291453291902213,
+       "parts_used": 22,
+       "matches_choice": true
+      },
+      "sw50r": {
+       "picked": "factory:Artists/Mark Johnston/Pedal Platform Clean",
+       "median": 4.274393601002084,
+       "parts_used": 22,
+       "matches_choice": true
+      },
+      "ac20": {
+       "picked": "factory:Artists/Royce Whittaker/Low-Watt Americana",
+       "median": 4.176159134498124,
+       "parts_used": 22,
+       "matches_choice": true
+      }
+     }
+    },
+    "crunch": {
+     "parts": 13,
+     "vreal_clips_in_set": [
+      "cambridge-femme-elecgtr5",
+      "cambridge-get-out-of-bed-elecgtr2",
+      "cambridge-let-s-dance-elecgtr3",
+      "cambridge-wickerman-elecgtr1",
+      "cambridge-wickerman-elecgtr2",
+      "cambridge-wickerman-elecgtr3"
+     ],
+     "parts_from_vreal_bands": 12,
+     "per_amp": {
+      "pr12": {
+       "picked": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+       "median": 4.442191568559641,
+       "parts_used": 13,
+       "matches_choice": true
+      },
+      "sw50r": {
+       "picked": "factory:Neural DSP/Hair Metal",
+       "median": 4.136912931090079,
+       "parts_used": 13,
+       "matches_choice": true
+      },
+      "ac20": {
+       "picked": "factory:Neural DSP/AC20 Mid-Gain Drive",
+       "median": 4.458075468201736,
+       "parts_used": 13,
+       "matches_choice": true
+      }
+     }
+    }
+   },
+   "parts_list": "docs/sound-desc-test-parts.json (the pinned development clean and crunch parts)"
   },
   "s38_headroom": {
    "step": 38,
@@ -825,5 +963,5 @@
    }
   }
  },
- "time": "2026-10-30 22:43:32"
+ "time": "2026-10-30 23:13:43"
 }

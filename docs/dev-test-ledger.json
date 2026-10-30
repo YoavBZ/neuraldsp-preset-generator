@@ -3189,7 +3189,8 @@
    "gate": "none: descriptive",
    "held_out": "none touched",
    "renders": 0,
-   "outcome": "38 steps, each with a status; the failure chain: D_F5 reads 5 of 85 knobs on FS5 (step 29), the readout falls back to the training average (steps 26-27), and that average scores worse than S on V-real, +0.092 [-0.029, +0.213] recomputed (step 37). Also: Wickerman ElecGtr2 and ElecGtr3 have byte-identical V-real inputs (step 32); S was chosen on 8 of V-real's 11 clips (step 36); the true-DI search on V-real-10's parts reaches -0.137 shrunk (step 38). Proposed tests P1-P7, none run"
+   "outcome": "38 steps, each with a status. The failure chain: on FS5, D_F5 reads 5 of 85 knobs (about chance), 14 of 28 switches weakly and the amp slightly (step 29); the readout scores about as well as the training average, or worse (steps 26-27); that average leans worse than S on V-real, +0.092 [-0.029, +0.213], undecided, 9 of 11 parts worse, recomputed (step 37). Also: Wickerman ElecGtr2 and ElecGtr3 have byte-identical V-real inputs (same window; step 32); both start rules re-derived exactly, and their choice sets hold 8 of V-real's 11 clips, all 6 crunch clips among them (step 36); the true-DI search on V-real-10's parts reaches -0.137 shrunk (step 38). Proposed tests P1-P7, none run. Reviewed: approve with required changes, all made",
+   "reviewed": "2026-10-30, independent review of PR #343: approve with required changes (8), all made, and the optional points folded in"
   }
  ]
 }
