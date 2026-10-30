@@ -258,18 +258,25 @@ def test_a_stale_alignment_file_refuses(tmp_path):
 ELECGTR8 = "sets-1-2/Forkupines_SugarFaith_Full/38_ElecGtr8DI.wav"
 
 
-def test_the_shift_takes_align_dis_sign_a_positive_lag_delays_the_di():
+def test_the_shift_takes_align_dis_sign_a_positive_lag_delays_the_di(tmp_path):
     np = pytest.importorskip("numpy")
-    from learn import verify_tracks as V
-
-    sr, lag = C.ALIGN_SR, C.shift_frames(C.DI_SHIFT_MS[ELECGTR8], C.ALIGN_SR)
+    sf = pytest.importorskip("soundfile")
+    sr, ms = 48000, C.DI_SHIFT_MS[ELECGTR8]
+    lag = C.shift_frames(ms, sr)
     rng = np.random.default_rng(8)
-    di = rng.standard_normal(sr * 10)
-    amp = C.delayed(di, lag)[:len(di)]                        # the amp track runs `lag` behind its DI
-    before, _ = V.gcc_lag_ms(di, amp, sr, max_ms=C.ALIGN_MAX_S * 1000.0)
-    assert before == pytest.approx(C.DI_SHIFT_MS[ELECGTR8], abs=0.05)   # positive: the amp track later
-    after, _ = V.gcc_lag_ms(C.delayed(di, lag)[:len(di)], amp, sr, max_ms=C.ALIGN_MAX_S * 1000.0)
-    assert after == 0.0                                       # the delayed copy reads in time
+    di = 0.1 * rng.standard_normal(sr * 40)
+    # the amp track: the DI through a soft clipper, plus its own noise, `lag` frames later (not the copy itself)
+    amp = 0.5 * np.tanh(3.0 * C.delayed(di, lag)[:len(di)]) + 0.003 * rng.standard_normal(len(di))
+    sf.write(str(tmp_path / "38_ElecGtr8DI.wav"), di, sr, subtype="PCM_24")
+    sf.write(str(tmp_path / "37_ElecGtr8.wav"), amp, sr, subtype="PCM_24")
+    sf.write(str(tmp_path / "copy.wav"), C.delayed(di, lag), sr, subtype="PCM_24")
+    rec = {"path": str(tmp_path / "38_ElecGtr8DI.wav"), "session_dir": str(tmp_path), "part": "ElecGtr8",
+           "own": ["37_ElecGtr8.wav"]}
+    files = sorted(p.name for p in tmp_path.glob("*.wav"))
+    src = C.align_di(rec, files)
+    assert src["verdict"] == "offset" and src["lag_ms"] == pytest.approx(ms, abs=0.05)   # positive: the amp later
+    cp = {**C.align_di({**rec, "path": str(tmp_path / "copy.wav")}, files), "shift_ms": ms}
+    assert abs(cp["lag_ms"]) <= C.SHIFT_TOL_MS and C.shifted_in_time(cp)                 # the delayed copy: in time
 
 
 def test_shift_frames_and_delay():
@@ -291,19 +298,33 @@ def test_a_shifted_di_reads_its_copy_and_a_wrong_source_refuses():
         C.apply_shifts({ELECGTR8: {"path": "/elsewhere.wav"}}, copies)
 
 
-def test_a_copy_that_does_not_match_its_record_is_not_read(tmp_path, monkeypatch):
-    monkeypatch.setattr(C, "shift_dir", lambda: tmp_path)
-    assert C.shifted_copies() == {}
-    copy = tmp_path / "c.wav"
-    copy.write_bytes(b"audio")
-    rec = {"source": "/s.wav", "path": str(copy), "shift_ms": 129.83, "sha256": C._sha_file(copy)}
-    (tmp_path / "shifts.json").write_text(json.dumps({"dis": {ELECGTR8: rec}}))
-    assert set(C.shifted_copies()) == {ELECGTR8}
+def _shift_record(root, src_bytes=b"source", copy_bytes=b"audio", ms=129.83):
+    sd = root / C.SHIFTED
+    sd.mkdir(parents=True, exist_ok=True)
+    src, copy = root / "s.wav", sd / "c.wav"
+    src.write_bytes(src_bytes)
+    copy.write_bytes(copy_bytes)
+    rec = {"source": str(src), "source_sha256": C._sha_file(src), "path": str(copy), "shift_ms": ms,
+           "sha256": C._sha_file(copy)}
+    (sd / "shifts.json").write_text(json.dumps({"dis": {ELECGTR8: rec}}))
+    return src, copy, rec
+
+
+def test_a_copy_that_does_not_match_its_record_is_not_read(tmp_path):
+    assert C.shifted_copies(tmp_path) == {}
+    src, copy, rec = _shift_record(tmp_path)
+    assert set(C.shifted_copies(tmp_path)) == {ELECGTR8}
     copy.write_bytes(b"changed")                               # the copy changed since `shift`
-    assert C.shifted_copies() == {}
-    (tmp_path / "shifts.json").write_text(json.dumps({"dis": {ELECGTR8: {**rec, "shift_ms": 100.0,
-                                                                         "sha256": C._sha_file(copy)}}}))
-    assert C.shifted_copies() == {}                           # made with another shift than today's
+    assert C.shifted_copies(tmp_path) == {}
+    _shift_record(tmp_path)
+    src.write_bytes(b"another source")                         # the source changed since `shift`
+    assert C.shifted_copies(tmp_path) == {}
+    _shift_record(tmp_path, ms=100.0)                           # made with another shift than today's
+    assert C.shifted_copies(tmp_path) == {}
+
+
+def _gcc_windows(fine, n):
+    return [{"t": 5.0 * k, "lag_ms": fine, "corr": 0.6, "fine_ms": fine, "prominence": 200.0} for k in range(n)]
 
 
 def test_a_shifted_di_trains_only_when_its_copy_reads_about_zero():
@@ -311,15 +332,56 @@ def test_a_shifted_di_trains_only_when_its_copy_reads_about_zero():
         ver = {ELECGTR8: {"trains": True, "why": "heard clean"}}
         C.gate_alignment(ver, {ELECGTR8: a})
         return ver[ELECGTR8]
-    base = {"kind": "amp", "spread_ms": 0.0, "readings": 8}
-    v = gate({**base, "verdict": "offset", "lag_ms": 129.83})                     # read on the source: held
-    assert not v["trains"] and v["align_hold"] and "delayed copy" in v["why"]
-    v = gate({**base, "verdict": "outside A1's range", "lag_ms": 0.0, "shift_ms": 129.83})
+
+    def reading(fine, n=8, **kw):
+        w = kw.pop("windows", None) or _gcc_windows(fine, n)
+        v, med, spread, k = C.align_verdict(w, "amp")
+        return {"kind": "amp", "windows": w, "verdict": v, "lag_ms": med, "spread_ms": spread, "readings": k, **kw}
+    v = gate(reading(129.83))                                  # the source's stored reading: as before, out
+    assert not v["trains"] and "align_hold" not in v
+    assert v["why"] == "alignment: offset (lag 129.83 ms, spread 0.0 ms, 8 readings vs amp)"
+    v = gate(reading(0.0, shift_ms=129.83))
     assert v["trains"] and "in time after the declared +129.83 ms shift" in v["why"] and "heard clean" in v["why"]
-    assert gate({**base, "verdict": "aligned", "lag_ms": 0.5, "shift_ms": 129.83})["trains"]
-    assert not gate({**base, "verdict": "aligned", "lag_ms": 5.0, "shift_ms": 129.83})["trains"]      # not about 0
-    assert not gate({**base, "verdict": "drift", "lag_ms": 0.0, "shift_ms": 129.83})["trains"]
-    assert not gate({**base, "verdict": "outside A1's range", "lag_ms": 0.0, "shift_ms": 100.0})["trains"]
+    assert gate(reading(0.5, shift_ms=129.83))["trains"]
+    assert not gate(reading(5.0, shift_ms=129.83))["trains"]                       # not about 0
+    assert not gate(reading(0.0, shift_ms=100.0))["trains"]                        # not the declared shift
+    assert not gate(reading(0.0, n=2, shift_ms=129.83))["trains"]                  # too few readings
+    env = [{"t": 5.0 * k, "lag_ms": 0.0, "corr": 0.9, "fine_ms": 0.0, "prominence": 5.0} for k in range(5)]
+    r = reading(0.0, windows=env, shift_ms=129.83)             # envelopes only (GCC not confident): not enough
+    assert r["readings"] == 5 and not C.shifted_in_time(r) and not gate(r)["trains"]
+    drift = _gcc_windows(0.0, 4) + _gcc_windows(15.0, 1)
+    assert not gate(reading(0.0, windows=drift, shift_ms=129.83))["trains"]
+
+
+def test_the_copys_reading_replaces_the_sources_only_while_the_copy_matches(tmp_path):
+    src, copy, rec = _shift_record(tmp_path)
+    method = C.align_method()
+    stored = {"kind": "amp", "windows": _gcc_windows(129.83, 8)}
+    (tmp_path / "alignment-0of1.json").write_text(json.dumps({"method": method, "dis": {ELECGTR8: stored}}))
+    assert C.load_alignment(tmp_path)[ELECGTR8]["verdict"] == "offset"            # no copy reading yet
+    shifted = {"kind": "amp", "windows": _gcc_windows(0.0, 8), "shift_ms": 129.83, "copy_sha256": rec["sha256"]}
+    sp = tmp_path / C.SHIFTED / "alignment.json"
+    sp.write_text(json.dumps({"method": method, "dis": {ELECGTR8: shifted}}))
+    a = C.load_alignment(tmp_path)[ELECGTR8]
+    assert a["shift_ms"] == 129.83 and a["lag_ms"] == 0.0
+    stored_file = json.loads((tmp_path / "alignment-0of1.json").read_text())
+    assert stored_file["dis"][ELECGTR8] == stored                                  # the align file is untouched
+    copy.write_bytes(b"changed")                                                  # the copy no longer matches
+    assert C.load_alignment(tmp_path)[ELECGTR8]["verdict"] == "offset"
+    sp.write_text(json.dumps({"method": "old", "dis": {}}))
+    with pytest.raises(SystemExit, match="align-shifted"):
+        C.load_alignment(tmp_path)
+
+
+def test_this_pr_leaves_the_stored_verdicts_as_they_are():
+    from learn import verify_tracks as V
+
+    root = V.OUT / C.STAGE
+    if not (root / "verdicts.json").exists():
+        pytest.skip("no stored D_CC verdicts on this machine")
+    stored = json.loads((root / "verdicts.json").read_text())["dis"]
+    assert json.loads(json.dumps(C.verdicts(root=root), default=float)) == stored    # `_ver` would not refuse
+    assert stored[ELECGTR8]["why"] == "alignment: offset (lag 129.83 ms, spread 0.0 ms, 8 readings vs amp)"
 
 
 def test_shift_refuses_smoke_and_an_undeclared_shift(monkeypatch):
@@ -327,9 +389,13 @@ def test_shift_refuses_smoke_and_an_undeclared_shift(monkeypatch):
 
     with pytest.raises(SystemExit, match="no smoke run"):
         C.cmd_shift(argparse.Namespace(smoke=True, out="/tmp/x"))
+    with pytest.raises(SystemExit, match="no smoke run"):
+        C.cmd_align_shifted(argparse.Namespace(smoke=True, out="/tmp/x"))
     monkeypatch.setattr(C, "ledger_declared", lambda *a, **k: False)
     with pytest.raises(SystemExit, match="amendment_4"):
         C.cmd_shift(argparse.Namespace(smoke=False, out=None))
+    with pytest.raises(SystemExit, match="amendment_4"):
+        C.cmd_align_shifted(argparse.Namespace(smoke=False, out=None))
 
 
 def test_the_ledger_declares_the_shift():

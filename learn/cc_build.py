@@ -8,6 +8,7 @@ recipe and is read by `learn.cc_readout`.
     MAIN=/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python
     MSST=~/ndsp-presets/tools/msst-venv/bin/python; TORCH_PY=~/ndsp-presets/tools/demucs-venv/bin/python
     $MAIN -m learn.cc_build shift                      # zero renders: the delayed copies of DI_SHIFT_MS's DIs
+    $MAIN -m learn.cc_build align-shifted              # zero renders: the alignment check on each copy
     $MAIN -m learn.cc_build verdicts                   # zero audio: the ear's and the measures' verdicts per DI
     $MAIN -u -m learn.cc_build checks --shard k/3      # zero renders: D2/D4 per window, each section's gain class
     $MAIN -u -m learn.cc_build stem-scan               # zero renders: T0's stem scan on the tier-1 sessions it lacks
@@ -28,7 +29,7 @@ answer replaces an earlier part's "not sure" on the same DI; any processed, not-
 the DI: amendment 1), and the alignment check reads it in time with its own amp track (`align`; amendment 2: an
 offset, a drift, too few readings or no amp track to time it against leave it out). A DI with a declared constant
 offset (`DI_SHIFT_MS`, amendment 4 (c); for the next build only) is read from a delayed copy (`shift`) and trains only
-when the check, rerun on that copy, reads it within SHIFT_TOL_MS of 0. Peter White stays out (the ear).
+when the check on that copy (`align-shifted`, kept apart from the `align` files) reads it within SHIFT_TOL_MS of 0. Peter White stays out (the ear).
 Tier 1: Adam Buckley's DIs as T0 verifies them (decision A); Quicksand ElecGtr1 (T0's measure DI, verified),
 ElecGtr2 (heard clean, held by D4 alone, which no longer holds a DI the ear heard clean) and ElecGtr3 (heard in part
 15). Turbosauro (no clean section in part A's manifest) and Starnes And Shah ElecGtr4
@@ -371,32 +372,33 @@ def verdicts(alignment=True, root=None):
         gate_alignment(out, load_alignment(root or V.OUT / STAGE))
     rel = {r["id"]: r for r in CP._inv()}
     CP.check_pool_rows([inv.get(d) or rel[d] for d, v in sorted(out.items()) if v["trains"]])
-    return apply_shifts(out, shifted_copies())
+    return apply_shifts(out, shifted_copies(root))
 
 
 def shifted_in_time(a):
-    """A shifted DI's check on its delayed copy: in time when its confident readings agree (no drift) and their median
-    sits within SHIFT_TOL_MS of 0 (A1's 0.1-30 ms floor does not apply: the shift took the mic's delay with it)."""
-    return (a["verdict"] in (ALIGNED, "outside A1's range") and a.get("lag_ms") is not None
-            and abs(a["lag_ms"]) <= SHIFT_TOL_MS)
+    """A shifted DI's check on its delayed copy: in time when at least ALIGN_MIN_WINDOWS confident GCC readings (not
+    the envelopes' 10-ms steps) agree (no drift) and their median sits within SHIFT_TOL_MS of 0 (A1's 0.1-30 ms floor
+    does not apply: the shift took the mic's delay with it)."""
+    gcc, _ = align_readings(a.get("windows") or [])
+    return (len(gcc) >= ALIGN_MIN_WINDOWS and a["verdict"] in (ALIGNED, "outside A1's range")
+            and a.get("lag_ms") is not None and abs(a["lag_ms"]) <= SHIFT_TOL_MS)
 
 
 def gate_alignment(ver, al):
     """In place: a DI the ear and the measures admit trains only when the alignment check reads it in time
-    (`align_verdict`); one it has not read is held (fails closed). A DI_SHIFT_MS DI is judged by its delayed copy's
-    reading (`shifted_in_time`); a reading not made on the copy holds it."""
+    (`align_verdict`); one it has not read is held (fails closed). A reading made on a DI_SHIFT_MS DI's delayed copy
+    (it carries "shift_ms"; `align-shifted`) is judged by `shifted_in_time`; any other reading as before."""
     for d, v in ver.items():
         if v["trains"]:
             a = al.get(d)
             if a is None:
                 v.update(trains=False, align_hold=True, why="the alignment check has not read it")
-            elif d in DI_SHIFT_MS:
-                ms = DI_SHIFT_MS[d]
+            elif a.get("shift_ms") is not None:
+                ms = a["shift_ms"]
                 said = f"lag {a['lag_ms']} ms, spread {a['spread_ms']} ms, {a['readings']} readings vs {a['kind']}"
-                if a.get("shift_ms") != ms:
-                    v.update(trains=False, align_hold=True,
-                             why=f"a declared +{ms} ms shift the alignment check has not read on the delayed copy "
-                                 "(`shift`, then `align`)")
+                if DI_SHIFT_MS.get(d) != ms:
+                    v.update(trains=False, why=f"alignment read on a copy shifted by {ms} ms, not the declared "
+                                               f"{DI_SHIFT_MS.get(d)}")
                 elif not shifted_in_time(a):
                     v.update(trains=False, why=f"alignment after the declared +{ms} ms shift: {a['verdict']} ({said})")
                 else:
@@ -1225,6 +1227,7 @@ def load_alignment(root):
         if d.get("method") != method:
             raise SystemExit(f"{f.name} was measured under another alignment method: rerun `align` (it redoes it)")
         out.update(d.get("dis", {}))
+    out.update(shifted_alignment(root, method))
     for a in out.values():
         v, med, spread, n = align_verdict(a["windows"], a["kind"])
         a.update(verdict=v, lag_ms=None if med is None else round(med, 2),
@@ -1232,8 +1235,22 @@ def load_alignment(root):
     return out
 
 
-def shift_dir():
-    return V.OUT / STAGE / SHIFTED
+def shifted_alignment(root, method):
+    """{DI id: its reading on its delayed copy} (`align-shifted`, <root>/shifted/alignment.json), for the copies that
+    still match their record (`shifted_copies`): it replaces the source's reading, which the `align` files keep."""
+    p = shift_dir(root) / "alignment.json"
+    d = _load(p) or {}
+    if not d:
+        return {}
+    if d.get("method") != method:
+        raise SystemExit(f"{p} was measured under another alignment method: rerun `align-shifted`")
+    copies = shifted_copies(root)
+    return {k: a for k, a in (d.get("dis") or {}).items()
+            if k in copies and a.get("shift_ms") == copies[k]["shift_ms"] and a.get("copy_sha256") == copies[k]["sha256"]}
+
+
+def shift_dir(root=None):
+    return pathlib.Path(root or V.OUT / STAGE) / SHIFTED
 
 
 def shift_frames(ms, sr):
@@ -1253,13 +1270,14 @@ def _sha_file(p):
     return hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
 
 
-def shifted_copies():
-    """{DI id: its `shift` record} for each DI_SHIFT_MS DI whose delayed copy exists, matches its record and was made
-    with today's shift; any other is read as not shifted (it stays out: the alignment gate fails closed)."""
+def shifted_copies(root=None):
+    """{DI id: its `shift` record} for each DI_SHIFT_MS DI whose delayed copy and source both exist and match the
+    record's hashes, the copy made with today's shift; any other is read as not shifted (it stays out: the alignment
+    gate fails closed)."""
     out = {}
-    for d, r in ((_load(shift_dir() / "shifts.json") or {}).get("dis") or {}).items():
-        if DI_SHIFT_MS.get(d) == r.get("shift_ms") and pathlib.Path(r["path"]).exists() and \
-                _sha_file(r["path"]) == r["sha256"]:
+    for d, r in ((_load(shift_dir(root) / "shifts.json") or {}).get("dis") or {}).items():
+        if DI_SHIFT_MS.get(d) == r.get("shift_ms") and all(pathlib.Path(r[k]).exists() for k in ("path", "source")) \
+                and _sha_file(r["path"]) == r["sha256"] and _sha_file(r["source"]) == r.get("source_sha256"):
             out[d] = r
     return out
 
@@ -1281,7 +1299,8 @@ def apply_shifts(rows, copies, di_of=lambda key, r: key):
 
 def cmd_shift(args):
     """Amendment 4 (c) (zero renders): each DI_SHIFT_MS DI delayed by its lag (silence before it, the source's rate and
-    sample format), to cc/shifted/; shifts.json records the source and copy hashes. `align` then reruns on the copy."""
+    sample format), to cc/shifted/; shifts.json records the source and copy hashes. `align-shifted` then reads the
+    copy."""
     if getattr(args, "smoke", False) or getattr(args, "out", None):
         raise SystemExit("`shift` has no smoke run: it writes the declared copies to cc/shifted/ only")
     if not ledger_declared(key=SHIFT_KEY, mark=SHIFT_MARK):
@@ -1302,16 +1321,41 @@ def cmd_shift(args):
                          "path": str(out), "sha256": _sha_file(out), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
         print(f"{d}: +{ms} ms ({n} frames at {sr} Hz) -> {out}", flush=True)
     _save(od / "shifts.json", {"plan": PLAN, "ledger": f"{LEDGER_ID} amendment_4", **rec})
-    print(f"SHIFT DONE: {len(DI_SHIFT_MS)} DIs; rerun `align` (it measures each copy) and `verdicts`")
+    print(f"SHIFT DONE: {len(DI_SHIFT_MS)} DIs; then `align-shifted` (it reads each copy) and `verdicts`")
+
+
+def cmd_align_shifted(args):
+    """Amendment 4 (c) (zero renders, CPU): the alignment check (`align_di`) on each DI_SHIFT_MS DI's delayed copy
+    (`shift` first), to cc/shifted/alignment.json; the `align` files keep the sources' readings as measured."""
+    if getattr(args, "smoke", False) or getattr(args, "out", None):
+        raise SystemExit("`align-shifted` has no smoke run")
+    if not ledger_declared(key=SHIFT_KEY, mark=SHIFT_MARK):
+        raise SystemExit(f"no `{SHIFT_KEY}` declaring {SHIFT_MARK!r} in the ledger's {LEDGER_ID!r} entry")
+    copies = shifted_copies()
+    missing = sorted(set(DI_SHIFT_MS) - set(copies))
+    if missing:
+        raise SystemExit(f"{missing}: no delayed copy matching its record: run `shift` first")
+    inv = cc_inventory()                                  # each shifted DI's row reads its copy
+    dis = {}
+    for d, c in sorted(copies.items()):
+        rec = inv[d]
+        files = sorted(f.name for f in pathlib.Path(rec["session_dir"]).glob("*.wav"))
+        a = {**align_di(rec, files), "shift_ms": c["shift_ms"], "copy_sha256": c["sha256"]}
+        dis[d] = a
+        print(f"{d[-55:]} (+{c['shift_ms']} ms): {a['verdict']} (lag {a['lag_ms']} ms, spread {a['spread_ms']}, "
+              f"{a['readings']}/{len(a['windows'])} readings vs {a['kind']}); in time: {shifted_in_time(a)}", flush=True)
+    _save(shift_dir() / "alignment.json", {"plan": PLAN, "ledger": f"{LEDGER_ID} {SHIFT_KEY}", "method": align_method(),
+                                            "dis": dis, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"ALIGN-SHIFTED DONE: {len(dis)} DIs; rerun `verdicts`")
 
 
 def cmd_align(args):
     """The alignment check (zero renders, CPU): every DI the ear and the measures admit, against its amp track or the
-    song, a shard of the DIs; results in cc/alignment-<k>of<n>.json. A DI_SHIFT_MS DI is measured on its delayed copy
-    (`shift` first) and its record carries the shift."""
+    song, a shard of the DIs; results in cc/alignment-<k>of<n>.json. Always on the source files (a delayed copy is
+    `align-shifted`'s)."""
     require(args)
     ver = verdicts_raw(args)
-    inv = cc_inventory()
+    inv = source_inventory()
     k, n = args.shard
     dis = [d for j, d in enumerate(sorted(d for d, v in ver.items() if v["trains"] or v.get("align_hold"))) if j % n == k]
     path = root_of(args) / f"alignment-{k}of{n}.json"
@@ -1320,15 +1364,11 @@ def cmd_align(args):
     done = prev.get("dis", {}) if prev.get("method") == method else {}      # a stale file is redone
     t0 = time.time()
     for m, d in enumerate(dis):
-        if d in DI_SHIFT_MS and not inv[d].get("shift_ms"):
-            raise SystemExit(f"{d}: a declared shift without its delayed copy: run `shift` first")
-        if d in done and done[d].get("shift_ms") == inv[d].get("shift_ms"):
+        if d in done:
             continue
         rec = inv[d]
         files = sorted(f.name for f in pathlib.Path(rec["session_dir"]).glob("*.wav"))
         done[d] = align_di(rec, files)
-        if rec.get("shift_ms"):
-            done[d]["shift_ms"] = rec["shift_ms"]
         _save(path, {"plan": PLAN, "shard": [k, n], "method": method, "dis": done,
                      "time": time.strftime("%Y-%m-%d %H:%M:%S")})
         r = done[d]
@@ -1953,7 +1993,8 @@ def cmd_train(args):
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="cc_build", description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for name, fn in (("shift", cmd_shift), ("verdicts", cmd_verdicts), ("checks", cmd_checks), ("stem-scan", cmd_stem_scan),
+    for name, fn in (("shift", cmd_shift), ("align-shifted", cmd_align_shifted), ("verdicts", cmd_verdicts),
+                     ("checks", cmd_checks), ("stem-scan", cmd_stem_scan),
                      ("amp-bleed", cmd_amp_bleed), ("cleaning-scan", cmd_cleaning_scan), ("ear-page", cmd_ear_page), ("ear-page-15", cmd_ear_page_15), ("align", cmd_align),
                      ("plan", cmd_plan),
                      ("render", cmd_render), ("build", cmd_build), ("check", cmd_check), ("train", cmd_train)):
