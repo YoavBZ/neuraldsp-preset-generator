@@ -61,6 +61,10 @@ lives in the linked documents. Last updated 2026-10-30.
   *2026-10-27:* learning every control (T3's F5) was not shown to help, and a zero-render probe finds the
   separator loses most of the tone the mix hides; the next steps start with a mix-aware input (step 0,
   "Where it stands, 2026-10-29").
+  *2026-10-30:* a step-by-step [pipeline review](ml-pipeline-review.md) (zero renders) finds that the model reads
+  almost none of the sound, even on its own made-up songs. With so little read, it scores about as well as its
+  training average, which leans worse than S on the real songs (undecided). Seven tests (P1–P7) are proposed to
+  find the failing step (step 0).
 - **The judge** ([measuring-closeness.md](measuring-closeness.md)) is how closeness is
   measured. It needs the DI of the same take, and listening validated it only for clear
   differences between clean-to-crunch PR12 renders
@@ -129,6 +133,37 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
    or stem.
 
    **Where it stands (2026-10-30).** Not ready to ship; the detail is in the trusted-data items below.
+   - **Pipeline review (2026-10-30, zero renders; [record](ml-pipeline-review.md), checks `learn/pipeline_review.py`).**
+     At the user's request, the direct model's whole process is listed as 38 small steps. Each step has its code, a
+     status, its evidence, a fix and a test.
+     - **The failure chain, each link measured:**
+       - On held-out sections of its own training songs, D_F5 reads 5 of 85 knobs (about chance), 14 of 28
+         switches weakly (AUC at most 0.67) and the amp slightly (step 29).
+       - With so little read, the readout scores about as well as the training average, or worse: the pull, and
+         the 0.5 switch cut that flips pedals (steps 26–27).
+       - That average leans worse than S on V-real: +0.092 [−0.029, +0.213], undecided, 9 of 11 parts worse,
+         recomputed (step 37).
+       - So "never beats S" is what steps 29, 26–27 and 36 together predict.
+     - **Leading suspects for step 29:**
+       - The stem holds every guitar in the mix: the target a median 6.2 dB under, alone in 78 of 3,033 examples.
+         On V-real, Wickerman ElecGtr2 and ElecGtr3 give byte-identical inputs (steps 16, 32).
+       - Very little training: 430–1,204 steps (step 22).
+       - Labels for inaudible and stereo-only controls (steps 8, 11).
+       - DT doubles rendered with different drive switches (34–35%; step 12).
+     - **New measurement caveats:**
+       - S was chosen with the same judge on choice sets that hold 8 of V-real's 11 clips, including all 6 crunch
+         clips; both start rules are re-derived exactly from stored distances (step 36).
+       - On V-real-10's own parts the true-DI search reaches −0.137 shrunk and −0.192 at its best, not the −0.293
+         measured on other parts (step 38).
+     - **Proposed, nothing run** (each needs a declaration and a review; P1 and P2 need the user's yes for
+       training):
+       - P5: re-pick S without V-real's clips;
+       - P6: flip the class input;
+       - P7: drive AUC with and without doubles;
+       - P1: a memorise check;
+       - P2: a model on the clean target renders, then one harder input at a time, read by knob and by sound;
+       - P3: fall back to S instead of the average;
+       - P4: real amp tracks as input.
    - **The clean/crunch pool is built and its first model read (2026-10-30)** ([plan](clean-crunch-pool-plan.md)):
      - The pool: 294 song sections from 33 target DIs in 9 bands (50 DIs passed the checks; 93 clean, 201 crunch;
        heavy 2%), after the data-checks audit (amendment 1, PR #329) and the user's decisions and ear pages 13–15

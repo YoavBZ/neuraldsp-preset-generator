@@ -1,0 +1,967 @@
+{
+ "design": "docs/ml-pipeline-review.md",
+ "status": "zero renders, zero separations, no training; reads stored files only",
+ "data_dir": "~/ndsp-presets",
+ "checks": {
+  "s04_pool": {
+   "step": 4,
+   "what": "Step 4: the pool's size (D_CC kept examples; F5's planned sections).",
+   "cc_train": {
+    "examples": 2699,
+    "sections": 262,
+    "dis": 32,
+    "bands": 9
+   },
+   "cc_fs": {
+    "examples": 334,
+    "sections": 32,
+    "dis": 23,
+    "bands": 8
+   },
+   "t3_f5_planned": {
+    "examples": 4129,
+    "sections": 59,
+    "bands": [
+     "Ale Lak",
+     "Death Of A Romantic",
+     "Hollow Ground",
+     "Storm Of Particles"
+    ]
+   },
+   "t3_fs5_planned": {
+    "examples": 845,
+    "sections": 12,
+    "bands": [
+     "Ale Lak",
+     "Death Of A Romantic",
+     "Hollow Ground",
+     "Storm Of Particles"
+    ]
+   }
+  },
+  "s05_class_input": {
+   "step": 5,
+   "what": "Step 5: the class fed to the network in training is the draw's base (a coin), not the section's class.",
+   "kept_examples": 3033,
+   "base_differs_from_section_class": 1512,
+   "share": 0.49851632047477745,
+   "direct_stems_lines_conditioning_on_base": [
+    700,
+    789,
+    857,
+    2386
+   ],
+   "vreal_conditioning": "trusted_data_t3.cmd_vreal_predict: cls from part_info (the part's real class)"
+  },
+  "s06_label_prior": {
+   "step": 6,
+   "what": "Step 6: what the training labels look like (D_CC kept training examples).",
+   "examples": 2699,
+   "modes": {
+    "factory": 1268,
+    "wide": 788,
+    "start": 643
+   },
+   "switch_on_rate": {
+    "drive1": 0.3605038903297518,
+    "drive2": 0.39310855872545386,
+    "compressor": 0.48944053353093736,
+    "reverb": 0.5242682474990737,
+    "delay": 0.4783253056687662,
+    "tremolo": 0.32123008521674695,
+    "doubler": 0.29381252315672474,
+    "gate": 0.5665061133753242
+   },
+   "reverb_delay_on_by_mode": {
+    "factory": {
+     "reverb": 0.7318611987381703,
+     "delay": 0.6159305993690851
+    },
+    "wide": {
+     "reverb": 0.49111675126903553,
+     "delay": 0.5139593908629442
+    },
+    "start": {
+     "reverb": 0.15552099533437014,
+     "delay": 0.16329704510108864
+    }
+   },
+   "delay_feedback_when_on": {
+    "0.1": 0.0797721,
+    "0.5": 0.333181,
+    "0.9": 0.752969,
+    "n": 1291,
+    "share_ge_0.75": 0.10224632068164213
+   }
+  },
+  "s07_silent_refusals": {
+   "step": 7,
+   "what": "Step 7: near-silent target refusals by draw mode (D_CC render rows).",
+   "by_mode": {
+    "wide": {
+     "rendered": 1557,
+     "target_near_silent": 589,
+     "other_guitar_near_silent": 72,
+     "share": 0.37829158638407195
+    },
+    "start": {
+     "rendered": 768,
+     "target_near_silent": 0,
+     "other_guitar_near_silent": 52,
+     "share": 0.0
+    },
+    "factory": {
+     "rendered": 1565,
+     "target_near_silent": 25,
+     "other_guitar_near_silent": 118,
+     "share": 0.01597444089456869
+    }
+   },
+   "all": 0.15784061696658097,
+   "rendered": 3890,
+   "refused_in_all": 857,
+   "kept": 3033
+  },
+  "s12_doubles": {
+   "step": 12,
+   "what": "Step 12: a DT double is rendered with the target's core setting (cc_build.py: `if o[\"dt\"]`), not its full",
+   "kept_with_dt_double": 606,
+   "kept": 3033,
+   "drive1_switch_differs": {
+    "count": 210,
+    "share": 0.3465346534653465
+   },
+   "drive2_switch_differs": {
+    "count": 209,
+    "share": 0.3448844884488449
+   },
+   "compressor_switch_differs": {
+    "count": 237,
+    "share": 0.3910891089108911
+   },
+   "target_time_effect_on_double_dry": 470,
+   "cc_build_line": 1761
+  },
+  "s13_stand_ins": {
+   "step": 13,
+   "what": "Step 13: kept examples that carry recorded amp-track stand-ins.",
+   "with_stand_ins": 1335,
+   "kept": 3033,
+   "share": 0.4401582591493571
+  },
+  "s14_level_draws": {
+   "step": 14,
+   "what": "Step 14: the drawn target-to-backing ratio (dB) and mastering, D_CC kept examples.",
+   "ratio_prior": {
+    "bands": 17,
+    "values": 971,
+    "vreal_bands_in_it": [
+     "Atlantis Bound",
+     "Diesel13",
+     "Eat The Feeder",
+     "Magician's Nephew",
+     "Wall Of Death",
+     "Zeno"
+    ],
+    "vreal_parts_in_it": {
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": 36
+    }
+   },
+   "ratio_db": {
+    "0.1": -17.98,
+    "0.5": -9.063,
+    "0.9": -4.414,
+    "min": -30.341,
+    "max": 19.088,
+    "n": 3033
+   },
+   "mastered_share": 0.5070886910649522,
+   "vocals_share": 0.49357072205736896
+  },
+  "s16_stem": {
+   "step": 16,
+   "what": "Step 16: what the separated stem holds. snr_audio_db is the target render against the stem (build rows).",
+   "cc": {
+    "n": 3033,
+    "median_db": -6.1910943987356895,
+    "share_below_0": 0.8740520936366634,
+    "share_below_-5": 0.5822617870095614
+   },
+   "cc_by_other_guitars": {
+    "0": {
+     "n": 78,
+     "median_db": 6.738529449657683
+    },
+    "1": {
+     "n": 551,
+     "median_db": -2.6920086963137653
+    },
+    "2": {
+     "n": 532,
+     "median_db": -5.653455816680839
+    },
+    "3": {
+     "n": 548,
+     "median_db": -5.742271295735129
+    },
+    "4": {
+     "n": 616,
+     "median_db": -7.729241010182166
+    },
+    "5": {
+     "n": 611,
+     "median_db": -8.04181833691284
+    },
+    "6+": {
+     "n": 97,
+     "median_db": -8.480326173611454
+    }
+   },
+   "cc_target_is_the_only_guitar": 78,
+   "f5": {
+    "n": 4189,
+    "median_db": -5.680994982408013
+   }
+  },
+  "s19_tone_probe": {
+   "step": 19,
+   "what": "Step 19: readable heads by input (the tone-information probe's stored output).",
+   "readable_of_116": {
+    "a": 86,
+    "b": 30,
+    "c": 20,
+    "d": 85,
+    "e": 87,
+    "n": 8
+   },
+   "inputs": {
+    "a": "target",
+    "b": "mix",
+    "c": "stem",
+    "d": "target + DI",
+    "e": "target, richer",
+    "n": "DI alone"
+   },
+   "where_lost": {
+    "mix": 55,
+    "not carried": 20,
+    "survives": 20,
+    "both": 12,
+    "richer features": 7,
+    "needs the DI": 2
+   }
+  },
+  "s22_training": {
+   "step": 22,
+   "what": "Steps 22-24: how much training each model got, from its run logs.",
+   "D_CC-20261042": {
+    "train": 2699,
+    "early_stop": 334,
+    "steps_per_epoch": 43,
+    "epochs_run": 32,
+    "best_epoch": 27,
+    "steps_to_best": 1204,
+    "minutes": 8.3,
+    "device": "mps",
+    "augmented": true,
+    "train_loss_first_last": [
+     5.8314409255981445,
+     5.050686536833298
+    ],
+    "early_stop_first_best": [
+     5.740121603012085,
+     5.3533250490824384
+    ],
+    "logged_per_epoch": [
+     "early_stop",
+     "epoch",
+     "mps_driver_gb",
+     "samples_per_s",
+     "seconds",
+     "skipped_steps",
+     "steps",
+     "train"
+    ]
+   },
+   "D_CC-20261043": {
+    "train": 2699,
+    "early_stop": 334,
+    "steps_per_epoch": 43,
+    "epochs_run": 14,
+    "best_epoch": 9,
+    "steps_to_best": 430,
+    "minutes": 3.6,
+    "device": "mps",
+    "augmented": true,
+    "train_loss_first_last": [
+     5.8264619028845495,
+     5.250616694605628
+    ],
+    "early_stop_first_best": [
+     5.744941155115764,
+     5.438890139261882
+    ],
+    "logged_per_epoch": [
+     "early_stop",
+     "epoch",
+     "mps_driver_gb",
+     "samples_per_s",
+     "seconds",
+     "skipped_steps",
+     "steps",
+     "train"
+    ]
+   },
+   "D_F5-20261042": {
+    "train": 3467,
+    "early_stop": 722,
+    "steps_per_epoch": 55,
+    "epochs_run": 25,
+    "best_epoch": 20,
+    "steps_to_best": 1155,
+    "minutes": 8.5,
+    "device": "mps",
+    "augmented": null,
+    "train_loss_first_last": [
+     5.8373081293973055,
+     5.197237985784358
+    ],
+    "early_stop_first_best": [
+     5.485037207603455,
+     5.187776446342468
+    ],
+    "logged_per_epoch": [
+     "early_stop",
+     "epoch",
+     "mps_driver_gb",
+     "samples_per_s",
+     "seconds",
+     "skipped_steps",
+     "steps",
+     "train"
+    ]
+   },
+   "D_F5-20261043": {
+    "train": 3467,
+    "early_stop": 722,
+    "steps_per_epoch": 55,
+    "epochs_run": 20,
+    "best_epoch": 15,
+    "steps_to_best": 880,
+    "minutes": 6.8,
+    "device": "mps",
+    "augmented": null,
+    "train_loss_first_last": [
+     5.827626089616255,
+     5.228059725327925
+    ],
+    "early_stop_first_best": [
+     5.508014798164368,
+     5.21812089284261
+    ],
+    "logged_per_epoch": [
+     "early_stop",
+     "epoch",
+     "mps_driver_gb",
+     "samples_per_s",
+     "seconds",
+     "skipped_steps",
+     "steps",
+     "train"
+    ]
+   },
+   "D_core5-20261042": {
+    "train": 3467,
+    "early_stop": 722,
+    "steps_per_epoch": 55,
+    "epochs_run": 25,
+    "best_epoch": 20,
+    "steps_to_best": 1155,
+    "minutes": 8.4,
+    "device": "mps",
+    "augmented": null,
+    "train_loss_first_last": [
+     4.76218768900091,
+     4.207506075772372
+    ],
+    "early_stop_first_best": [
+     4.499985257784526,
+     4.228549599647522
+    ],
+    "logged_per_epoch": [
+     "early_stop",
+     "epoch",
+     "mps_driver_gb",
+     "samples_per_s",
+     "seconds",
+     "skipped_steps",
+     "steps",
+     "train"
+    ]
+   },
+   "D_core5-20261043": {
+    "train": 3467,
+    "early_stop": 722,
+    "steps_per_epoch": 55,
+    "epochs_run": 37,
+    "best_epoch": 32,
+    "steps_to_best": 1815,
+    "minutes": 12.4,
+    "device": "mps",
+    "augmented": null,
+    "train_loss_first_last": [
+     4.7401396057822485,
+     4.127472418004817
+    ],
+    "early_stop_first_best": [
+     4.493133505185445,
+     4.20672607421875
+    ],
+    "logged_per_epoch": [
+     "early_stop",
+     "epoch",
+     "mps_driver_gb",
+     "samples_per_s",
+     "seconds",
+     "skipped_steps",
+     "steps",
+     "train"
+    ]
+   }
+  },
+  "s23_early_stop": {
+   "step": 23,
+   "what": "Step 23: how independent the early-stopping sections are from training.",
+   "cc": {
+    "es_sections": 32,
+    "share_session": 32,
+    "share_di": 30,
+    "overlap_in_time": 26
+   },
+   "f5": {
+    "es_sections": 12,
+    "share_session": 12,
+    "share_di": 12,
+    "overlap_in_time": 0
+   }
+  },
+  "s26_pull": {
+   "step": 26,
+   "what": "Step 26: how far the pull takes knobs to the training average (b = 0 is the average itself).",
+   "D_F5": {
+    "fitted": 322,
+    "median_b": 0.39155165858293833,
+    "share_b_0": 0.36335403726708076,
+    "share_b_1": 0.36335403726708076
+   },
+   "D_core5": {
+    "fitted": 58,
+    "median_b": 0.4070146381159249,
+    "share_b_0": 0.29310344827586204,
+    "share_b_1": 0.27586206896551724
+   },
+   "D_CC": {
+    "fitted": 322,
+    "median_b": 0.4955838580538521,
+    "share_b_0": 0.38198757763975155,
+    "share_b_1": 0.41304347826086957
+   },
+   "D_CC_folds_median_b": {
+    "0": 0.3151756758930322,
+    "1": 0.5054934194380352
+   }
+  },
+  "s27_switch_readout": {
+   "step": 27,
+   "what": "Step 27: drive switches written on (count of 14 pr12-crunch directions) and pedals at S.",
+   "pr12_crunch_drives_on": {
+    "D_CC": {
+     "directions": 14,
+     "drive1/drive1Active": 0,
+     "drive2/drive2Active": 0,
+     "input_gain_median": -1.39241
+    },
+    "D_CC:s20261042": {
+     "directions": 14,
+     "drive1/drive1Active": 0,
+     "drive2/drive2Active": 2,
+     "input_gain_median": -1.64916
+    },
+    "D_CC:s20261043": {
+     "directions": 14,
+     "drive1/drive1Active": 0,
+     "drive2/drive2Active": 0,
+     "input_gain_median": -1.13566
+    },
+    "D_CC:constant": {
+     "directions": 14,
+     "drive1/drive1Active": 0,
+     "drive2/drive2Active": 14,
+     "input_gain_median": -0.155983
+    },
+    "D_F5": {
+     "directions": 14,
+     "drive1/drive1Active": 5,
+     "drive2/drive2Active": 12,
+     "input_gain_median": -0.492851
+    },
+    "D_F5:s20261042": {
+     "directions": 14,
+     "drive1/drive1Active": 5,
+     "drive2/drive2Active": 11,
+     "input_gain_median": -0.492851
+    },
+    "D_F5:s20261043": {
+     "directions": 14,
+     "drive1/drive1Active": 4,
+     "drive2/drive2Active": 12,
+     "input_gain_median": -0.492851
+    },
+    "constant": {
+     "directions": 14,
+     "drive1/drive1Active": 14,
+     "drive2/drive2Active": 14,
+     "input_gain_median": -0.492851
+    }
+   },
+   "D_CC_pedals_at_S_minus_D_CC": {
+    "band_weighted_mean": -0.07649878570364674,
+    "lo90": -0.14196276124637333,
+    "hi90": -0.011034810160920144,
+    "bands_negative": 7
+   },
+   "D_CC_minus_its_constant": {
+    "band_weighted_mean": 0.10347864596540271,
+    "lo90": 0.05149122044084108,
+    "hi90": 0.15546607148996433,
+    "bands_positive": 7
+   }
+  },
+  "s29_fake_song_test": {
+   "step": 29,
+   "what": "Step 29: D_F5 on its own held-out fake songs (FS5), R0's stored rows.",
+   "by_kind": {
+    "continuous": {
+     "heads": 85,
+     "readable": 5
+    },
+    "switch": {
+     "heads": 28,
+     "readable": 14
+    },
+    "accuracy": {
+     "heads": 3,
+     "readable": 1
+    }
+   },
+   "by_family": {
+    "today": {
+     "heads": 25,
+     "readable": 5,
+     "unreadable": 20
+    },
+    "amp_choice": {
+     "heads": 1,
+     "readable": 1,
+     "unreadable": 0
+    },
+    "amp_eq": {
+     "heads": 36,
+     "readable": 4,
+     "unreadable": 32
+    },
+    "pedals": {
+     "heads": 14,
+     "readable": 4,
+     "unreadable": 10
+    },
+    "time_effects": {
+     "heads": 19,
+     "readable": 1,
+     "unreadable": 18
+    },
+    "spring": {
+     "heads": 5,
+     "readable": 0,
+     "unreadable": 5
+    },
+    "gate_doubler": {
+     "heads": 4,
+     "readable": 1,
+     "unreadable": 3
+    },
+    "cab_rest": {
+     "heads": 12,
+     "readable": 4,
+     "unreadable": 8
+    }
+   },
+   "knobs_median_error_model_vs_constant": [
+    0.17661213254325353,
+    0.17191921903276305
+   ],
+   "knobs_reliably_worse_than_constant": 9,
+   "switch_auc": {
+    "compressor/compressorActive": 0.594,
+    "drive1/drive1Active": 0.584,
+    "drive2/drive2Active": 0.672,
+    "reverb/reverbActive": 0.493,
+    "delay/delayActive": 0.557,
+    "tremolo/tremoloActive": 0.507,
+    "parameters/gateActive": 0.522,
+    "parameters/doublerActive": 0.585
+   }
+  },
+  "s32_vreal_inputs": {
+   "step": 32,
+   "what": "Step 32: V-real parts that hand the model the same input (identical stored stems) and get one answer.",
+   "stage_f_stems_checked": 10,
+   "identical_stem_groups": [
+    [
+     "cambridge-wickerman-elecgtr2",
+     "cambridge-wickerman-elecgtr3"
+    ]
+   ],
+   "D_F5_answers_identical": {
+    "cambridge-wickerman-elecgtr2 vs cambridge-wickerman-elecgtr3": true
+   }
+  },
+  "s34_vreal": {
+   "step": 34,
+   "what": "Steps 34, 35, 37: V-real rows recomputed from the stored judges (held half, ln ratio, band-weighted),",
+   "D_F5 - S": {
+    "band_weighted_mean": 0.08781054977646612,
+    "lo90": -0.04395265930215471,
+    "hi90": 0.21957375885508695,
+    "bands": 7,
+    "bands_worse": 4,
+    "bands_better": 3,
+    "parts": 11,
+    "parts_worse": 5,
+    "leave_one_band_out": {
+     "Atlantis Bound": 0.09276280125296399,
+     "Diesel13": 0.028170961956709043,
+     "Eat The Feeder": 0.10376020412469299,
+     "Magician's Nephew": 0.12060375172441096,
+     "Szymon Skiba": 0.07789647614219274,
+     "Wall Of Death": 0.08503883446134981,
+     "Zeno": 0.1064408187729433
+    },
+    "per_part": {
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": 0.0645,
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": 0.0517,
+     "cambridge-colour-me-red-elecgtr02": -0.1089,
+     "cambridge-colour-me-red-elecgtr03": 1.0002,
+     "cambridge-wickerman-elecgtr1": -0.0005,
+     "cambridge-wickerman-elecgtr2": -0.0065,
+     "cambridge-wickerman-elecgtr3": -0.0167,
+     "cambridge-get-out-of-bed-elecgtr2": -0.1089,
+     "cambridge-let-s-dance-elecgtr3": 0.1473,
+     "cambridge-femme-elecgtr5": 0.1044,
+     "cambridge-Signs-ElecGtr3": -0.024
+    },
+    "report": [
+     0.08781054977646612,
+     -0.04395265931046273,
+     0.21957375886339497
+    ],
+    "reproduces_report": true
+   },
+   "constant - S": {
+    "band_weighted_mean": 0.09223689817731377,
+    "lo90": -0.028561029244022415,
+    "hi90": 0.21303482559864995,
+    "bands": 7,
+    "bands_worse": 5,
+    "bands_better": 2,
+    "parts": 11,
+    "parts_worse": 9,
+    "leave_one_band_out": {
+     "Atlantis Bound": 0.09382054797129669,
+     "Diesel13": 0.04212003158242525,
+     "Eat The Feeder": 0.10386992015047475,
+     "Magician's Nephew": 0.11643563246352782,
+     "Szymon Skiba": 0.09335080469733108,
+     "Wall Of Death": 0.07348391282915356,
+     "Zeno": 0.12257743754698726
+    },
+    "per_part": {
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": 0.0776,
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": 0.0879,
+     "cambridge-colour-me-red-elecgtr02": 0.0417,
+     "cambridge-colour-me-red-elecgtr03": 0.7442,
+     "cambridge-wickerman-elecgtr1": 0.043,
+     "cambridge-wickerman-elecgtr2": 0.0191,
+     "cambridge-wickerman-elecgtr3": 0.0053,
+     "cambridge-get-out-of-bed-elecgtr2": -0.053,
+     "cambridge-let-s-dance-elecgtr3": 0.0856,
+     "cambridge-femme-elecgtr5": 0.2048,
+     "cambridge-Signs-ElecGtr3": -0.0898
+    }
+   },
+   "D_core5 - S": {
+    "band_weighted_mean": 0.008586346630476492,
+    "lo90": -0.03314412463325597,
+    "hi90": 0.05031681789420896,
+    "bands": 7,
+    "bands_worse": 4,
+    "bands_better": 3,
+    "parts": 11,
+    "parts_worse": 7,
+    "leave_one_band_out": {
+     "Atlantis Bound": 0.011902470656119565,
+     "Diesel13": 0.019103040066067344,
+     "Eat The Feeder": 0.0076780589788777226,
+     "Magician's Nephew": 0.008572870791624816,
+     "Szymon Skiba": -0.0020709769138442394,
+     "Wall Of Death": -0.004778058077166852,
+     "Zeno": 0.019697020911657096
+    },
+    "per_part": {
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": -0.0288,
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": 0.0062,
+     "cambridge-colour-me-red-elecgtr02": -0.0946,
+     "cambridge-colour-me-red-elecgtr03": -0.0145,
+     "cambridge-wickerman-elecgtr1": 0.0147,
+     "cambridge-wickerman-elecgtr2": 0.0235,
+     "cambridge-wickerman-elecgtr3": 0.0039,
+     "cambridge-get-out-of-bed-elecgtr2": 0.0087,
+     "cambridge-let-s-dance-elecgtr3": 0.0725,
+     "cambridge-femme-elecgtr5": 0.0888,
+     "cambridge-Signs-ElecGtr3": -0.0581
+    },
+    "report": [
+     0.008586346630476492,
+     -0.03314412463588719,
+     0.05031681789684017
+    ],
+    "reproduces_report": true
+   },
+   "D_F5:at-S:time effects and spring - S": {
+    "band_weighted_mean": 0.0010470385921845337,
+    "lo90": -0.08377614472570838,
+    "hi90": 0.08587022191007745,
+    "bands": 7,
+    "bands_worse": 3,
+    "bands_better": 4,
+    "parts": 11,
+    "parts_worse": 5,
+    "leave_one_band_out": {
+     "Atlantis Bound": -0.005198820211820687,
+     "Diesel13": 0.026698495690381102,
+     "Eat The Feeder": 0.001974662865305166,
+     "Magician's Nephew": 0.019849077338674182,
+     "Szymon Skiba": -0.03092800339560653,
+     "Wall Of Death": -0.01039531460500591,
+     "Zeno": 0.005329172463364409
+    },
+    "per_part": {
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": 0.0549,
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": 0.0221,
+     "cambridge-colour-me-red-elecgtr02": -0.1878,
+     "cambridge-colour-me-red-elecgtr03": -0.1179,
+     "cambridge-wickerman-elecgtr1": -0.0028,
+     "cambridge-wickerman-elecgtr2": 0.0037,
+     "cambridge-wickerman-elecgtr3": -0.0145,
+     "cambridge-get-out-of-bed-elecgtr2": -0.1118,
+     "cambridge-let-s-dance-elecgtr3": 0.1929,
+     "cambridge-femme-elecgtr5": 0.0697,
+     "cambridge-Signs-ElecGtr3": -0.0246
+    }
+   },
+   "D_F5 - constant": {
+    "band_weighted_mean": -0.004426348400847638,
+    "lo90": -0.05231840169667045,
+    "hi90": 0.04346570489497518,
+    "bands": 7,
+    "bands_worse": 3,
+    "bands_better": 4,
+    "parts": 11,
+    "parts_worse": 3,
+    "leave_one_band_out": {
+     "Atlantis Bound": -0.001057746718332684,
+     "Diesel13": -0.013949069625716194,
+     "Eat The Feeder": -0.00010971602578174523,
+     "Magician's Nephew": 0.004168119260883155,
+     "Szymon Skiba": -0.015454328555138308,
+     "Wall Of Death": 0.011554921632196279,
+     "Zeno": -0.016136618774043966
+    },
+    "per_part": {
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": -0.0131,
+     "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": -0.0362,
+     "cambridge-colour-me-red-elecgtr02": -0.1506,
+     "cambridge-colour-me-red-elecgtr03": 0.2561,
+     "cambridge-wickerman-elecgtr1": -0.0434,
+     "cambridge-wickerman-elecgtr2": -0.0256,
+     "cambridge-wickerman-elecgtr3": -0.022,
+     "cambridge-get-out-of-bed-elecgtr2": -0.056,
+     "cambridge-let-s-dance-elecgtr3": 0.0617,
+     "cambridge-femme-elecgtr5": -0.1003,
+     "cambridge-Signs-ElecGtr3": 0.0658
+    },
+    "report": [
+     -0.004426348400847638,
+     -0.052318401699690174,
+     0.0434657048979949
+    ],
+    "reproduces_report": true
+   },
+   "interval_widths": {
+    "D_F5 - D_core5 (the gate)": 0.28906531197876567,
+    "D_F5 - S": 0.2635264181738577,
+    "D_core5 - S": 0.08346094253272736,
+    "D_F5 - constant": 0.09578410659768508
+   }
+  },
+  "s36_s_selection": {
+   "step": 36,
+   "what": "Step 36: were V-real's clips among those the start presets were chosen on, with the same judge?",
+   "parts": {
+    "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr3": {
+     "in": []
+    },
+    "cambridge-Signs-ElecGtr3": {
+     "in": []
+    },
+    "cambridge-colour-me-red-elecgtr02": {
+     "in": [
+      "rescore"
+     ],
+     "S_stored_vs_vreal_max_abs_diff": 0.00041006057864034773
+    },
+    "cambridge-colour-me-red-elecgtr03": {
+     "in": [
+      "rescore"
+     ],
+     "S_stored_vs_vreal_max_abs_diff": 0.0003707303740512202
+    },
+    "cambridge-femme-elecgtr5": {
+     "in": [
+      "rescore"
+     ],
+     "S_stored_vs_vreal_max_abs_diff": 3.466061490975392e-05
+    },
+    "cambridge-get-out-of-bed-elecgtr2": {
+     "in": [
+      "rescore"
+     ],
+     "S_stored_vs_vreal_max_abs_diff": 0.00018116789330147043
+    },
+    "cambridge-let-s-dance-elecgtr3": {
+     "in": [
+      "rescore"
+     ],
+     "S_stored_vs_vreal_max_abs_diff": 0.0002213001874942222
+    },
+    "cambridge-wickerman-elecgtr1": {
+     "in": [
+      "rescore"
+     ],
+     "S_stored_vs_vreal_max_abs_diff": 0.00022732984819739954
+    },
+    "cambridge-wickerman-elecgtr2": {
+     "in": [
+      "rescore"
+     ],
+     "S_stored_vs_vreal_max_abs_diff": 0.00012446372541674577
+    },
+    "cambridge-wickerman-elecgtr3": {
+     "in": [
+      "rescore"
+     ],
+     "S_stored_vs_vreal_max_abs_diff": 0.00012556202633007274
+    },
+    "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1": {
+     "in": [
+      "songs-check"
+     ]
+    }
+   },
+   "in_a_distance_file": 9,
+   "rules_reproduced": {
+    "clean": {
+     "parts": 22,
+     "vreal_parts_in_set": [
+      "cambridge-It_Was_My_Fault_For_Waiting-ElecGtr1",
+      "cambridge-colour-me-red-elecgtr02",
+      "cambridge-colour-me-red-elecgtr03"
+     ],
+     "parts_from_vreal_bands": 5,
+     "per_amp": {
+      "pr12": {
+       "picked": "factory:Artists/Mark Johnston/Royally Ambient",
+       "median": 4.291453291902213,
+       "parts_used": 22,
+       "matches_choice": true
+      },
+      "sw50r": {
+       "picked": "factory:Artists/Mark Johnston/Pedal Platform Clean",
+       "median": 4.274393601002084,
+       "parts_used": 22,
+       "matches_choice": true
+      },
+      "ac20": {
+       "picked": "factory:Artists/Royce Whittaker/Low-Watt Americana",
+       "median": 4.176159134498124,
+       "parts_used": 22,
+       "matches_choice": true
+      }
+     }
+    },
+    "crunch": {
+     "parts": 13,
+     "vreal_parts_in_set": [
+      "cambridge-femme-elecgtr5",
+      "cambridge-get-out-of-bed-elecgtr2",
+      "cambridge-let-s-dance-elecgtr3",
+      "cambridge-wickerman-elecgtr1",
+      "cambridge-wickerman-elecgtr2",
+      "cambridge-wickerman-elecgtr3"
+     ],
+     "parts_from_vreal_bands": 12,
+     "per_amp": {
+      "pr12": {
+       "picked": "factory:Artists/Keyan Houshmand/Modern Metal (Pick Hard)",
+       "median": 4.442191568559641,
+       "parts_used": 13,
+       "matches_choice": true
+      },
+      "sw50r": {
+       "picked": "factory:Neural DSP/Hair Metal",
+       "median": 4.136912931090079,
+       "parts_used": 13,
+       "matches_choice": true
+      },
+      "ac20": {
+       "picked": "factory:Neural DSP/AC20 Mid-Gain Drive",
+       "median": 4.458075468201736,
+       "parts_used": 13,
+       "matches_choice": true
+      }
+     }
+    }
+   },
+   "parts_list": "docs/sound-desc-test-parts.json (the pinned development clean and crunch parts)"
+  },
+  "s38_headroom": {
+   "step": 38,
+   "what": "Step 38: the true-DI search on V-real-10's own parts (arm-a-mega53 stage F's ZT: 52 renders, the true DI,",
+   "judge_shrunk": {
+    "band_weighted_mean": -0.13739943952026298,
+    "lo90": -0.1704206622321053,
+    "hi90": -0.10437821680842066,
+    "bands": 7,
+    "bands_better": 7
+   },
+   "judge_best": {
+    "band_weighted_mean": -0.19217235077633293,
+    "lo90": -0.2390463747462831,
+    "hi90": -0.14529832680638277,
+    "bands": 7,
+    "bands_better": 7
+   }
+  }
+ },
+ "time": "2026-10-30 23:17:26"
+}
