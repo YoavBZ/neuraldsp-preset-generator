@@ -1,6 +1,6 @@
 # Clean/crunch-led training pool (plan, 2026-10-28)
 
-**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2 built and step 3's D_CC read 2026-10-30 (amendments 1 and 2 below): undecided, leaning worse. Step 4's page sent 2026-10-30; its answers came in the same day: no pair heard as clearly different, so the page does not place tau. Runaway delays in about 2% of both pools, excluded from the next build. The user said yes to the two cheap D_CC follow-ups and the ElecGtr8 shift (2026-10-30, amendment 4): the follow-ups ran the same day; D_CC's loss is mostly its pooled answer's pedals (both seeds' answers turn the drives off, answers only, not rendered), and D_CC is worse than its own pool's constant; the shift waits for the next build. A drive-pedal page with an instant A/B switch (amendment 5, the user's yes 2026-10-30) was rendered, audited and sent the same day (17 items); its answers are pending. Its checks take the place of the replay of three items, which the author dropped.**
+**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2 built and step 3's D_CC read 2026-10-30 (amendments 1 and 2 below): undecided, leaning worse. Step 4's page sent 2026-10-30; its answers came in the same day: no pair heard as clearly different, so the page does not place tau. Runaway delays in about 2% of both pools, excluded from the next build. The user said yes to the two cheap D_CC follow-ups and the ElecGtr8 shift (2026-10-30, amendment 4): the follow-ups ran the same day; D_CC's loss is mostly its pooled answer's pedals (both seeds' answers turn the drives off, answers only, not rendered), and D_CC is worse than its own pool's constant; the shift waits for the next build. A drive-pedal page with an instant A/B switch (amendment 5, the user's yes 2026-10-30) was rendered, audited and sent the same day (17 items). Its checks take the place of the replay of three items, which the author dropped. The user then asked for the guitar alone instead of mixes (2026-10-30): guitar-only versions of the drive page and step 4's page are declared (amendment 6, zero renders); their answers are next.**
 
 **Progress (2026-10-28 to 30):**
 - **Step 0 (intake checks, `~/ndsp-presets/learn/trusted-data/intake-2026-10-28/`):** 80 DI rows in 21 sessions (the
@@ -128,6 +128,16 @@
   the pairs near tau are not physically small (−15.0 to −20.5 dB, near the reverb check's −14.4 dB). Among all 24
   measured pairs, five others move the guitar 3.2–4.1 dB and five pedals have drive or gain at 0 (two on the page).
   Answers pending; nothing decided.
+- **Guitar-only pages (declared 2026-10-30; ledger `amendment_6`, `learn/cc_solo_pages.py`):** the user, the same
+  day: "The mixes make it harder to distinguish, please only the guitars if possible". Zero renders: the drive page's
+  17 items (part 1) and step 4's 25 (part 2) rebuilt from the stored renders as the guitar alone (no backing, no other
+  guitars, no stand-ins, no mastering), each clip at −23 LUFS, in the drive page's A/B player, with new ids, order and
+  A/B draw. Step 4's item 4 (900215, the runaway delay) is replaced by the loudest clean delay pair, 803054 (A_e 0.447).
+  Every item's guitar plays in 96–100% of its window; the solo clips differ more than the mixes did (part 1's drive
+  pairs −2.7 to −14.4 dB, part 2's pairs −5.9 to −29.0 dB). The answers show whether each switch is audible on the
+  guitar alone, an upper bound on its audibility in a song; read beside step 4's in-mix answers, heard alone but not
+  in the mix points at masking. The drive page's in-mix version is not needed now. Not built before review; decides
+  nothing.
 
 Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
 draft takes in the findings: tiers by release status, set 5's
