@@ -128,36 +128,28 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
    7 panel parts). It needs that list, not the rebuild: it is a true-DI oracle on amp-track targets, with no backing
    or stem.
 
-   **Where it stands (2026-10-29).** Not ready to ship; the detail is in the trusted-data items below.
-   - **The training pool is being rebuilt around clean and crunch songs** ([plan](clean-crunch-pool-plan.md), approved
-     2026-10-28). T2, F5 and FS5 came from 4 heavy bands only, and the stem leak check stripped drums or bass
-     from some backings. Done 2026-10-28, zero renders: step 0's DI checks, step 1's per-example leak rule (PR #323),
-     step 2's guards, metadata and stem scan for the 19 released sessions (PR #324). D_F5bk (the backing fix alone)
-     read 2026-10-29: −0.008 [−0.076, +0.061] against D_F5, undecided, two band swings cancelling.
-   - **The data checks were rejecting clean material (2026-10-29).** The pool's first dry run kept only 38 song
-     sections, 2 of them clean, with one band (BKS) making up 68% of training. The user doubted that so much could
-     fail, and an independent audit agreed:
-     - The amp-bleed check (other instruments leaking into a guitar's amp track) had never passed a track: 0 of 79.
-       Three logic bugs: a source silent where the guitar plays failed the track, so did a source playing under half
-       the time, and negative readings were turned into large leaks.
-     - Two DI checks were too strict: D4 overruled the ear on DIs heard clean, and step 0's D2 rejected a whole DI for
-       one bad window. Part A's hiss screen flagged about 270 sections.
-     - Amendment 1 (PR #329, independently reviewed) fixed the bleed verdict, D4 and D2. With the bleed check on, 89
-       sections remain (101 if small readings are summed by their lower bound); with it off, 161 (51 clean, 7 bands,
-       BKS 22% of training).
-     - The ear then backed the audit. Part 14 sampled 23 rejected items: 22 clean (10 of 10 bleed-rejected amp
-       tracks, 3 of 3 hiss-flagged sections, 4 of 5 hum-flagged DIs, 2 D4-held windows, 3 other-guitar windows).
-       Parts 12 and 13 were all clean (12 and 31 cards). Part 15 heard 15 of 17 DIs that D2 had rejected (mostly for
-       drop-outs) clean, and all 7 of its backing spot-checks.
-     - The user decided: other instruments' bleed no longer rules out a background guitar's amp track (the target
-       guitar's own checks stay), and the hiss screen no longer removes sections.
-     - Next: amendment 2 (those decisions, parts 13–15, and an alignment check on every pool DI after two timing
-       notes from the ear), reviewed before any render; then D_CC's renders, training (2 seeds) and readout on
-       V-real-11. F20 waits for step 3's reading.
+   **Where it stands (2026-10-30).** Not ready to ship; the detail is in the trusted-data items below.
+   - **The clean/crunch pool is built and its first model read (2026-10-30)** ([plan](clean-crunch-pool-plan.md)):
+     - The pool: 294 song sections from 33 target DIs in 9 bands (50 DIs passed the checks; 93 clean, 201 crunch;
+       heavy 2%), after the data-checks audit (amendment 1, PR #329) and the user's decisions and ear pages 13–15
+       (amendment 2, PR #332). D_F5bk (the
+       backing fix alone, 2026-10-29) read undecided.
+     - D_CC, trained on it, reads +0.090 [−0.011, +0.191] against D_F5 on V-real-11 (positive is worse; 1 band
+       better, 6 worse): undecided, leaning worse. Clean +0.015, crunch +0.120. Part-weighted (descriptive) +0.090
+       [+0.006, +0.175], 9 of 11 parts worse, which supports "leaning worse". It also trails D_core5, S and D_F5's
+       constant (descriptive). Audited: no bug. Most of the loss (post hoc, descriptive): both drives off in all 14
+       pr12-crunch directions, where D_F5 had drive2 on in 12 (likely the seed whose best epoch was 9 of 14), and
+       one part (femme ElecGtr5) gives +0.363.
+     - Confounds: fewer examples than D_F5 (2,699 + 334 against 3,467 + 722), a small early-stopping set, and
+       recorded amp-track stand-ins in 44% of the examples.
+     - Next: step 4's listening page (approved; ledger first). Three follow-ups wait for the user: D_CC's per-seed
+       answers on V-real (zero renders); D_CC with the pedals at S, and its own constant (about 99 renders each); a
+       size-matched top-up (about 1,470 more examples, about 6.7k renders, about 3 h; needs an amendment). Then F20's
+       re-plan on this pool.
    - **Learning every control is not yet shown to help.** T3's F5 gate, D_F5 (every control learned) − D_core5 (today's 25
      controls), reads +0.079 [−0.065, +0.224] on V-real-11 (7 bands): not shown. The user said yes to F20 (2026-10-27);
-     (b) read 2026-10-28 (the stock stem stays F20's input). F20 now waits for the clean/crunch pool's step 3 reading and is
-     re-planned on that pool.
+     (b) read 2026-10-28 (the stock stem stays F20's input). F20 is re-planned on the clean/crunch
+     pool, after step 4 and the user's call on the D_CC follow-ups.
    - **R1 (post hoc, descriptive, audited):** D_F5 with its 96 unreadable heads written at S still reads +0.062
      [−0.080, +0.204] against D_core5 (4 of 7 bands better; crunch −0.013). The delay, the one time effect still read
      (AUC 0.557, lower bound 0.505), stays on in 29 of 66 directions, and Colour Me Red ElecGtr03 drives the result
@@ -259,10 +251,10 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      no vocals, at most 2 other guitars), its own key; sent the same day. Answers on the dense page still count: an
      effect not heard there is masked there. The user's direction the same day (below) points the rulings toward an audibility weight; its exact
      form is declared and reviewed before the relabel.*
-   - **Clean/crunch-led pool** ([plan](clean-crunch-pool-plan.md), approved 2026-10-28): steps 0–3 come before F20.
-     Steps 0–1, step 2's groundwork (PRs #323, #324), D_F5bk (read, undecided) and the checks' audit (amendment 1,
-     PR #329) done; next, amendment 2 and the pool build (ledger first), D_CC (step 3), and step 4's listening page.
-   - (d) **F20:** re-planned on the clean/crunch pool after its step 3 reading. Before that: the user said yes (2026-10-27); its plan is declared after (b) reads (read 2026-10-28: the stock stem stays its input). Its value now rests on (a)/(b) and on the new data. Its declared
+   - **Clean/crunch-led pool** ([plan](clean-crunch-pool-plan.md), approved 2026-10-28): steps 0–3 done (D_F5bk and
+     D_CC read, both undecided; D_CC leans worse). Next, step 4's listening page; the three D_CC follow-ups wait for
+     the user; then F20's re-plan.
+   - (d) **F20:** re-planned on the clean/crunch pool after step 4 and the user's call on the D_CC follow-ups. Before that: the user said yes (2026-10-27); its plan is declared after (b) reads (read 2026-10-28: the stock stem stays its input). Its value now rests on (a)/(b) and on the new data. Its declared
      fixes: redraw near-silent draws (up to 5 tries; about 16% more target renders at F5's rate); keep each
      core/full pair on one separation device; the switch readout and prior (since 2026-10-27 the plain readout is
      the method; an at-S read only beside it); "unknown" DIs at most 25% of draws. Its plan must also settle
@@ -1066,4 +1058,5 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-29 | D_F5bk outcome, audited (clean/crunch pool step 3, the backing fix alone: F5's examples remixed under the per-example leak rule after the ear heard no guitar in its 5 backings): D_F5bk − D_F5 −0.008 [−0.076, +0.061] on V-real-11, 4 of 7 bands better, undecided; femme +0.157 and let-s-dance −0.162 cancel, the other 5 bands within ±0.03; co-primary (time effects and spring at S) −0.018 [−0.088, +0.051]; still behind S (+0.080). The per-example leak rule was already the pool's recipe (step 1); D_CC is the arm left | [ledger](dev-test-ledger.json) `trusted-data-t3` `amendment_6_outcome`, [plan](clean-crunch-pool-plan.md) |
 | 2026-10-29 | The pool's data checks audited (the user's doubt, an independent audit, reviewed fixes in amendment 1, PR #329): the amp-bleed check had passed 0 of 79 amp tracks (three logic bugs in its verdict), D4 overrode heard-clean DIs, step 0's D2 rejected whole DIs for one window, part A's hiss screen flagged about 270 sections. Amendment 1 fixed the bleed verdict, D4 and D2: 89 sections with the bleed check on, 161 (51 clean) with it off, against 38 before. The ear backed the audit: part 14, 22 of 23 rejected items clean; part 15, 15 of 17 D2-rejected DIs clean. User decisions: other instruments' bleed does not rule out a background amp track (target-guitar checks stay); hiss no longer screens sections; both go into amendment 2 | [plan](clean-crunch-pool-plan.md), [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` |
 | 2026-10-28 | Clean/crunch pool progress (zero renders): step 0's intake checks (80 DI rows in 21 sessions; most fail D2), set 5's backings re-downloaded, step 1's per-example leak rule merged (PR #323), step 2's groundwork merged after an independent review and re-check (PR #324): the 19 released sessions pass `refuse_held_out` under their band and are barred from every later test (`refuse_test`, `set3/set5.parts` by default); one pool entry point bars V-real's 7 bands; set-5 parts whose amp tracks are another part's (BKS "Too Much" 4a, "Bulldozer" 6a) are dropped; Fytakyte "Too Much" is spent for testing and never trains. Ear page part 11 (120 cards) sent | [plan](clean-crunch-pool-plan.md) |
+| 2026-10-30 | D_CC outcome, audited (clean/crunch pool step 3: 294 sections from 33 target DIs in 9 bands, 50 DIs passed the checks; 17,661 pool renders, 3,034 separations plus 1 redo, 165 V-real renders): D_CC − D_F5 +0.090 [−0.011, +0.191] on V-real-11, 1 band better and 6 worse, undecided and leaning worse (clean +0.015, crunch +0.120); part-weighted (descriptive) +0.090 [+0.006, +0.175], 9 of 11 parts worse; co-primary +0.094 [−0.014, +0.201]; also behind D_core5 (+0.169), S (+0.177) and D_F5's constant (+0.085) (descriptive). No bug; the loss is mostly (post hoc, descriptive) both drives off in all 14 pr12-crunch directions and one part (femme ElecGtr5, +0.363). Confounds: 2,699 + 334 examples against D_F5's 3,467 + 722, a seed whose best epoch was 9 of 14, amp-track stand-ins in 44%. Next: step 4's listening page; per-seed answers, pedals at S with D_CC's own constant, and a size-matched top-up wait for the user | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `outcome`, [plan](clean-crunch-pool-plan.md) |
 
