@@ -55,6 +55,10 @@ plan.**
      recordings at all, at one size?
 2. **Step 0 is the natural follow-up if P4 shows transfer.** None of P1–P7 asks whether more data helps on real
    songs, so step 0's V-real size curve stays.
+   - The review's step 22 test is "P1, then a learning curve inside P2a": an in-distribution curve on the clean
+     input.
+   - Step 0 differs: its sizes are read on V-real, real songs, with the input P2 picks.
+3. **If P4 is undecided or shows no transfer,** the plan goes back to the user, and step 0 does not run.
 
 **The review's findings that touch F20.** Each is fixed, or settled by its P-test, before step 0's training or
 any F20 build.
@@ -76,35 +80,41 @@ any F20 build.
   both crops cut the same window. Before step 0's read, the fix is declared: either one of the two parts is
   re-cropped at another window, or the two are counted as one input in V-real-11's count and weighting. The rows
   say which.
+  - Re-cropping voids the stored comparators for that part (D_CC's constant, D_CC and D_F5). They would be
+    re-rendered there, 6 directions each with priming.
 
 **Work merged with the review, not duplicated.**
 - Step 0's FS readout uses P2's code (by knob and by sound) instead of a separate R0 command.
 - The near-chance readout (former step 0b, decision C) moves into P3's readout test, read beside S's fallback, so
-  step 0 drops it.
+  step 0 drops it. That adds one answer to P3: 33 × (1 + 2 × 2) = 165 renders instead of about 99.
 
-## Step 0: the size points on real songs (165 renders; after P1, P2a and P4)
+## Step 0: the size points on real songs (231 renders; after P1, P2a and P4)
 
 **What runs.**
-- D_CC's recipe (`cc_build train`: same heads, loss, augmentation and early stopping on FS_CC), trained on nested
-  subsets of its 2,699 training examples.
-- Sizes: 25% and 50%, drawn within each section so every section keeps at least one example, and nested (the
-  25% set sits inside the 50% set). The draw's seed is declared in the ledger.
-- 2 seeds each (20261042 and 20261043, as D_CC). The 100% point is D_CC's two stored runs, not retrained.
-- 4 new runs, with the training length P1 sets (step 22) and per-head loss logs (step 24). D_CC took 15.6 s per
-  epoch, so at the 40-epoch cap a 50% run takes at most about 5 min and a 25% run about 2.5 min: under about
-  15 min on MPS. If P1 sets a longer run, this scales with it.
+- D_CC's recipe (`cc_build train`: same heads, loss, augmentation and early stopping on FS_CC), with the input P2
+  picks, P1's training length (step 22), the step-5 class fix and per-head loss logs (step 24).
+- Trained on nested subsets of D_CC's 2,699 training examples. Sizes: 25%, 50% and 100%, drawn within each section
+  so every section keeps at least one example, and nested (25% inside 50% inside 100%). The draw's seed is declared
+  in the ledger.
+- 2 seeds each (20261042 and 20261043, as D_CC).
+- The 100% point is retrained on the same recipe. D_CC's stored runs were trained the old way, so as the 100%
+  point they would confound the curve. They stay beside it as today's D_CC.
+- 6 new runs. D_CC took 15.6 s per epoch, so at the 40-epoch cap a run takes at most about 10, 5 and 2.5 min by
+  size: under about 40 min on MPS at today's length. If P1 sets a longer run, this scales with it.
 
 **The read on V-real-11** (frozen, held out; declared before any inference):
-- Two new answers:
+- Three new answers:
   - D_CC25, the 25% models' pooled answer;
-  - D_CC50, the 50% models' pooled answer.
-- Renders: 33 (part, amp) groups × (1 priming + 2 answers × 2 directions) = 165, about 10 min. The recipe is
+  - D_CC50, the 50% models' pooled answer;
+  - D_CC100, the retrained 100% models' pooled answer.
+- Renders: 33 (part, amp) groups × (1 priming + 3 answers × 2 directions) = 231, about 15 min. The recipe is
   `cc_readout`'s: isolate=True, one discarded priming render at S, 0.25 s trimmed, at most 3 render processes, the
   31 GB guard and `setopt no_bg_nice`.
 - Rows (band-weighted, 90% band-clustered t, 7 bands; part-weighted, V-real-10 and per class beside):
-  - each size against D_CC's own constant (its stored renders): D_CC25 − constant, D_CC50 − constant, and D_CC
-    (100%) − constant (+0.103, stored);
-  - the steps between sizes: D_CC50 − D_CC25 and D_CC − D_CC50.
+  - each size against D_CC's own constant (its stored renders): D_CC25, D_CC50 and D_CC100, each minus the
+    constant;
+  - the steps between sizes: D_CC50 − D_CC25 and D_CC100 − D_CC50;
+  - beside them, today's D_CC − constant (+0.103, stored) and D_CC100 − D_CC (the recipe's change at full size).
 - All are cross-process comparisons: the time effects' render-order noise applies (noise, not bias).
 
 **Beside it, on FS_CC** (334 examples, in distribution):
@@ -130,7 +140,7 @@ any F20 build.
 
 **Code needed.**
 - A subset option on `cc_build train`, writing to its own runs folder and never touching D_CC's runs.
-- A step-0 readout in `cc_readout` for the two answers, reusing `render_answers` and the follow-up report.
+- A step-0 readout in `cc_readout` for the three answers, reusing `render_answers` and the follow-up report.
 - P2's FS readout (by knob and by sound), with calibration added.
 - All are declared and reviewed first.
 
@@ -153,7 +163,9 @@ any F20 build.
   `align-shifted` run inside this build (`amendment_4` (c)).
 - The DI inventory and the pool are rebuilt first, with drift printed. D_CC's 3,033 kept examples, less the 64
   runaway ones, are reused toward the stages. Reused examples with a DT double (606 of 3,033, the review's step
-  12) have their doubles re-rendered with the target's full setting: about 1.2k renders with priming.
+  12) have their doubles re-rendered with the target's full setting: about 1.2k renders with priming. Their mixes
+  are then rebuilt and their stems re-separated: 606 separations, about 31 min at 51 min per 1,000, and about
+  1.1 GB at 1.8 GB per 1,000.
 - The costs below assume D_CC's recipe. If P2's rungs point F20 at another input (step 16), the build changes and
   is re-costed before the user's yes at B.
 
@@ -230,7 +242,7 @@ examples, 3,033 kept. Per 1,000 new kept examples:
 
 ## Decisions for the user
 
-- **A. The order:** the pipeline review's P1, P2a and P4 first. Then step 0 (4 short runs and 165 renders, under
+- **A. The order:** the pipeline review's P1, P2a and P4 first. Then step 0 (6 short runs and 231 renders, about
   an hour), if P4 shows transfer. *Recommended:* it reads the size points where it matters, on real songs, before
   F20's 10–85k renders.
 - **B. F20 on step 0's result.**
