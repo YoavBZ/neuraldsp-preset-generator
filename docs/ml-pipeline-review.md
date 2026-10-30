@@ -604,8 +604,8 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
   - The crunch choice set holds all 6 of V-real's crunch clips (femme ElecGtr5, get-out-of-bed ElecGtr2, let's
     dance ElecGtr3, Wickerman ElecGtr1–3). 12 of its 13 parts come from V-real's bands.
   - The clean choice set holds Colour Me Red ElecGtr02 and ElecGtr03, and It Was My Fault ElecGtr1 on another
-    clip (so `s36` lists 3 V-real parts in the clean set, 2 of them on V-real's own clips) (12.5–22.5 s in `validation-crops`; V-real's crop is 90–100 s, no overlap). 5 of its 22 parts come from
-    V-real's bands.
+    clip (12.5–22.5 s in `validation-crops`; V-real's crop is 90–100 s, no overlap). So `s36` lists 3 V-real parts
+    in the clean set, 2 of them on V-real's own clips. 5 of its 22 parts come from V-real's bands.
   - So 8 of the 11 V-real clips were in S's choice sets. Their stored S distances equal V-real's S values within
     4.1e-4. It Was My Fault ElecGtr3 and Signs ElecGtr3 are in neither set.
 - *Test:* P5.
