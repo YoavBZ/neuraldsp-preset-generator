@@ -266,6 +266,13 @@ def cmd_render(args):
     twin rebuilt and checked against its render row, then in a new plugin process primed once with it, r_on', a
     repeat (bit-identical to r_on') or r_off (the effect off, checked to encode off); 0.25 s trimmed; FLAC and a row."""
     require_declared()                              # before any import: the light CI has no numpy
+    render_shard(args, out_dir(V.out_root(args)))
+
+
+def render_shard(args, od, table=AM.EFFECTS, on_sha0=None, flac=None, label="CC AUDIBILITY"):
+    """`cmd_render`'s body on any step folder `od` (its plan.json's jobs), effects off from `table`. on_sha0: {i: the
+    audio sha256 of an r_on' rendered by an earlier step under the same recipe}, which that example's repeat must
+    then match bit for bit (its r_on' reused, not rendered again). flac(root, i, what): where each render is written."""
     import numpy as np
 
     from learn import direct_sound_gate as G
@@ -276,7 +283,7 @@ def cmd_render(args):
     from learn import song_bank as B
 
     root = V.out_root(args)
-    od = out_dir(root)
+    flac = flac or flac_of
     ap = _load(od / "plan.json")
     if not ap or ap.get("recipe") != AM.RECIPE:
         raise SystemExit("run `plan` first")
@@ -286,11 +293,11 @@ def cmd_render(args):
     if any(r["what"] == AM.REPEAT and not r.get("repeat_exact") for r in rows):
         raise SystemExit("a stored repeat is not bit-identical to its r_on': the recipe failed")
     done = {(r["i"], r["what"]) for r in rows}
-    on_sha = {r["i"]: r["audio_sha256"] for r in rows if r["what"] == AM.ON}
+    on_sha = {**(on_sha0 or {}), **{r["i"]: r["audio_sha256"] for r in rows if r["what"] == AM.ON}}
     shard = DS.shard_sections(ap["jobs"], n)
     todo = [j for j in ap["jobs"] if shard[j["section"]] == k and (j["i"], j["what"]) not in done]
     if not todo:
-        print(f"CC AUDIBILITY RENDER DONE {k}/{n} (nothing to do)")
+        print(f"{label} RENDER DONE {k}/{n} (nothing to do)")
         return
     if PS.free_gb() < T.DISK_GUARD_GB:
         raise SystemExit(f"free disk below {T.DISK_GUARD_GB:.0f} GB")
@@ -313,7 +320,7 @@ def cmd_render(args):
     t0, di_cache, renders = time.time(), {}, 0
     with open(rp, "a") as fh:
         for m, j in enumerate(todo):
-            g = DS._guards("cc-audibility-render", T.DISK_GUARD_GB, swap0)
+            g = DS._guards(f"{label.lower().replace(' ', '-')}-render", T.DISK_GUARD_GB, swap0)  # cc-audibility-render
             if g:
                 print(g[1], flush=True)
                 raise SystemExit(g[0])
@@ -331,18 +338,18 @@ def cmd_render(args):
             if j["what"] in (AM.ON, AM.REPEAT):
                 x = xf
             else:
-                x = AM.off_settings(xf, j["what"])
-                js = F.SW.index(AM.EFFECTS[j["what"]][0])
+                x = AM.off_settings(xf, j["what"], table)
+                js = F.SW.index(table[j["what"]][0])
                 e_on, e_off = F.encode(xf, amp), F.encode(x, amp)
                 if not (e_on[3][js] > 0 and e_on[2][js] > 0.5) or e_off[2][js] > 0.5:
                     raise SystemExit(f"{i}: {j['what']} does not encode on, then off")
-                row["off"] = {"path": "/".join(AM.EFFECTS[j["what"]][1][0]), "value": AM.EFFECTS[j["what"]][1][1]}
+                row["off"] = {"path": "/".join(table[j["what"]][1][0]), "value": table[j["what"]][1][1]}
             if j["what"] == AM.REPEAT and i not in on_sha:
                 raise SystemExit(f"{i}: the repeat comes before its r_on' (the plan's order)")
             y = AM.fresh_render(new_process, di_cache[sid], sel, xf, x)
             renders += 2
             y = np.ascontiguousarray((y.mean(axis=1) if y.ndim == 2 else y)[trim[0]:trim[1]])
-            sc, sha = G.write_flac(flac_of(root, i, j["what"]), y, PS.SR)
+            sc, sha = G.write_flac(flac(root, i, j["what"]), y, PS.SR)
             row.update(file={"scale": sc, "sha256": sha}, audio_sha256=AM.audio_sha(y), lufs=T.lufs_or_none(y),
                        renders=2, primes=1)
             if j["what"] == AM.ON:
@@ -356,7 +363,7 @@ def cmd_render(args):
             if (m + 1) % 25 == 0:
                 print(f"{m + 1}/{len(todo)} jobs; renders {renders}; {(time.time() - t0) / (m + 1):.1f} s per job",
                       flush=True)
-    print(f"CC AUDIBILITY RENDER DONE {k}/{n}: {renders} renders ({renders // 2} priming), "
+    print(f"{label} RENDER DONE {k}/{n}: {renders} renders ({renders // 2} priming), "
           f"{(time.time() - t0) / 60:.1f} min")
 
 
@@ -375,16 +382,17 @@ def backing(root, i, x, rend, stems):
     return np.asarray(y, np.float64), np.asarray(oth, np.float64), st
 
 
-def measure_example(root, i, x, rend, built, stems, di, renders):
+def measure_example(root, i, x, rend, built, stems, di, renders, flac=None):
     """One example (`audibility_measure._measure_section`'s steps): the stored mix rebuilt from the stored target and
     checked (features, gains, `mix_with`), then m' = r_on' in that backing, J(r_on', m'), and per render row J(r_off,
-    m') and J(r_off, r_on') (a repeat: J(repeat, m'))."""
+    m') and J(r_off, r_on') (a repeat: J(repeat, m')). flac(root, i, what): where each render is read."""
     import numpy as np
 
     from learn import direct_sound_gate as G
     from learn import direct_stems as DS
     from learn import knob_ceiling as K
 
+    flac = flac or flac_of
     y, oth, st = backing(root, i, x, rend, stems)
     m, gains, _ = T.self_built_mix(y, oth, st, x)
     mm, _, _ = DS.half_features(m)
@@ -401,7 +409,7 @@ def measure_example(root, i, x, rend, built, stems, di, renders):
     if len(on) != 1:
         return {**base, "refused": f"{len(on)} r_on' renders"}
     f = on[0]["file"]
-    r_on = np.asarray(G.read_flac(flac_of(root, i, AM.ON), f["scale"], f["sha256"]), np.float64)
+    r_on = np.asarray(G.read_flac(flac(root, i, AM.ON), f["scale"], f["sha256"]), np.float64)
     mp = AM.mix_with(r_on, oth, st, g, i, x["draw"]["mastered"])
     j_on = K.judge(mp, r_on, di, 0)
     rows = []
@@ -409,7 +417,7 @@ def measure_example(root, i, x, rend, built, stems, di, renders):
         if r["what"] == AM.ON:
             continue
         f = r["file"]
-        z = np.asarray(G.read_flac(flac_of(root, i, r["what"]), f["scale"], f["sha256"]), np.float64)
+        z = np.asarray(G.read_flac(flac(root, i, r["what"]), f["scale"], f["sha256"]), np.float64)
         j_m = K.judge(mp, z, di, 0)
         if r["what"] == AM.REPEAT:
             rows.append({"what": AM.REPEAT, "j_m": j_m, "floor": AM.a_e(j_on, j_m), "repeat_exact": r.get("repeat_exact")})
@@ -423,23 +431,30 @@ def cmd_measure(args):
     """Every rendered pair's A_e and solo, each group's repeat floor (every repeat must be bit-identical, or the step
     refuses before writing), to measure.json."""
     require_declared()                              # before any import: the light CI has no numpy
+    measure_step(args, out_dir(V.out_root(args)))
+
+
+def measure_step(args, od, table=AM.EFFECTS, reused=(), flac=None, ledger=f"{LEDGER_ID} {LEDGER_KEY}"):
+    """`cmd_measure`'s body on any step folder `od`, the summary per `table` entry. reused: render rows of r_on'
+    rendered by an earlier step (read through `flac`), measured beside this step's own rows; `renders` counts this
+    step's own only."""
     import numpy as np
 
     from learn import pretrain_set as PS
     from learn import song_bank as B
 
     root = V.out_root(args)
-    od = out_dir(root)
     ap = _load(od / "plan.json")
     if not ap:
         raise SystemExit("run `plan` first")
-    rows = render_rows(od)
-    if any(r["what"] == AM.REPEAT and not r.get("repeat_exact") for r in rows):
+    own = render_rows(od)
+    if any(r["what"] == AM.REPEAT and not r.get("repeat_exact") for r in own):
         raise SystemExit("a repeat is not bit-identical to its r_on': refused")
-    have = {(r["i"], r["what"]) for r in rows}
+    have = {(r["i"], r["what"]) for r in own}
     missing = [j for j in ap["jobs"] if (j["i"], j["what"]) not in have]
     if missing:
         raise SystemExit(f"{len(missing)} planned renders are missing (e.g. {missing[:3]})")
+    rows = own + [r for r in reused if (r["i"], r["what"]) not in have]
     plan = CB.load_plan(args)
     ex = {x["i"]: x for x in plan["examples"]}
     rend, built = T.rows_of(root, CB.STAGE, "render"), T.rows_of(root, CB.STAGE, "build")
@@ -454,7 +469,7 @@ def cmd_measure(args):
         sec = ctx.sections[sid]
         di = B.measure(PS.section_audio(sec["path"], sec["start_s"])).astype(np.float64)[trim[0]:trim[1]]
         for i, rs in sorted(exs.items()):
-            res.append(measure_example(root, i, ex[i], rend, built, stems, di, rs))
+            res.append(measure_example(root, i, ex[i], rend, built, stems, di, rs, flac))
     pairs, floors = [], []
     for r in res:
         for q in r.get("rows", []):
@@ -466,7 +481,7 @@ def cmd_measure(args):
                               "signed": a.get("signed"), "halves": a.get("halves"), "solo": q["solo"],
                               "clean": q["clean"]})
     summ = {}
-    for e in AM.EFFECTS:
+    for e in table:
         fin = [p["a_e"] for p in pairs if p["effect"] == e and p["a_e"] is not None]
         v = [p for p in pairs if p["effect"] == e]
         summ[e] = {"pairs": len(v), "measured": len(fin), "below_tau": sum(a < AM.TAU for a in fin),
@@ -474,9 +489,9 @@ def cmd_measure(args):
                    "negative_signed": sum(1 for p in v if p["signed"] is not None and p["signed"] < 0),
                    "a_e": AM.quantiles(fin), "solo": AM.quantiles([p["solo"] for p in v])}
     fl = [f["floor"]["a_e"] for f in floors if f["floor"]]
-    rec = {"plan": CB.PLAN, "ledger": f"{LEDGER_ID} {LEDGER_KEY}", "recipe": AM.RECIPE, "tau": AM.TAU,
+    rec = {"plan": CB.PLAN, "ledger": ledger, "recipe": AM.RECIPE, "tau": AM.TAU,
            "examples": len(res), "refused": [{"i": r["i"], "why": r["refused"]} for r in res if r.get("refused")],
-           "renders": AM.render_count(od), "rows": len(rows), "repeat_floor": {"groups": len(floors),
+           "renders": AM.render_count(od), "rows": len(own), "repeat_floor": {"groups": len(floors),
                                                "repeat_exact": sum(bool(f["repeat_exact"]) for f in floors),
                                                "a_e": AM.quantiles(fl)},
            "summary": summ, "pairs": pairs, "floors": floors, "examples_detail": res,
@@ -486,6 +501,7 @@ def cmd_measure(args):
         print(f"{e:13s} measured {s['measured']:3d}/{s['pairs']:3d}; below tau {s['below_tau']}; A_e {s['a_e']}")
     print(f"renders used: {rec['renders']}; repeat floor: {rec['repeat_floor']}; refused {len(rec['refused'])}")
     print(f"MEASURE DONE: {od / 'measure.json'}")
+    return rec
 
 
 def cmd_page(args):

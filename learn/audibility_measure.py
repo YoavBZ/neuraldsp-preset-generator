@@ -119,11 +119,11 @@ def repeats(chosen, group_of):
     return out
 
 
-def jobs_of(chosen, reps, group_of):
+def jobs_of(chosen, reps, group_of, table=EFFECTS):
     """The jobs, in (section, amp, id) order: each chosen id's r_on' first, then its repeat (if any), then its effects
-    off in EFFECTS order. Each job is one new process: a priming render, then the render kept.
+    off in `table` order. Each job is one new process: a priming render, then the render kept.
     -> [{"i", "section", "amp", "what"}]."""
-    rank = {ON: -2, REPEAT: -1, **{e: k for k, e in enumerate(EFFECTS)}}
+    rank = {ON: -2, REPEAT: -1, **{e: k for k, e in enumerate(table)}}
     ids = sorted({i for v in chosen.values() for i in v})
     out = [{"i": i, "section": group_of[i][0], "amp": group_of[i][1], "what": ON} for i in ids]
     out += [{"i": i, "section": g[0], "amp": g[1], "what": REPEAT} for g, i in reps.items()]
@@ -185,9 +185,10 @@ def consistency(old, new, clean, tau=TAU):
     return out
 
 
-def off_settings(x, effect):
-    """Setting x with `effect` switched off and nothing else changed. Refuses a setting where it is not on."""
-    _, (path, off), _ = EFFECTS[effect]
+def off_settings(x, effect, table=EFFECTS):
+    """Setting x with `effect` (a `table` entry) switched off and nothing else changed. Refuses a setting where it
+    is not on."""
+    _, (path, off), _ = table[effect]
     v = x.get(path)
     on = F._truthy(v) if off == "false" else (v is not None and float(v) > 0)
     if not on:
@@ -280,13 +281,13 @@ def item_id(effect, i, kind):
     return "aud-" + hashlib.sha256(f"{effect}|{i}|{kind}".encode()).hexdigest()[:12]
 
 
-def page_items(measured, tau=TAU, near=NEAR, n_catch=CATCH, seed=PAGE_SEED):
-    """The ear check's pairs: per effect the `near` measured pairs nearest tau below it and above it, and the
-    loudest (an anchor), then `n_catch` identical pairs (the mix against itself) from different effects; shuffled,
-    each pair's play order drawn. measured: [{"i", "effect", "a_e"}]. -> [item dicts]."""
+def page_items(measured, tau=TAU, near=NEAR, n_catch=CATCH, seed=PAGE_SEED, effects=EFFECTS):
+    """The ear check's pairs: per effect (in `effects`) the `near` measured pairs nearest tau below it and above it,
+    and the loudest (an anchor), then `n_catch` identical pairs (the mix against itself) from different effects;
+    shuffled, each pair's play order drawn. measured: [{"i", "effect", "a_e"}]. -> [item dicts]."""
     rng = random.Random(seed)
     out, used = [], set()
-    for e in EFFECTS:
+    for e in effects:
         rows = [m for m in measured if m["effect"] == e and m.get("a_e") is not None]
         below = sorted((m for m in rows if m["a_e"] < tau), key=lambda m: (-m["a_e"], m["i"]))[:near]
         above = sorted((m for m in rows if m["a_e"] >= tau), key=lambda m: (m["a_e"], m["i"]))[:near]

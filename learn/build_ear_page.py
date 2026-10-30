@@ -246,7 +246,10 @@ footer button.primary { background:var(--on); color:var(--on-fg); }
 #exp .row button { flex:1; min-height:48px; border-radius:10px; border:1px solid var(--line); background:var(--bg); }
 """
 
-JS = """
+# The page script in three parts: the answers store and the items (HEAD), the player (PLAYER: each Play button
+# plays its clips one after the other) and the verdicts, progress and export (ANSWERS). A page with another
+# player (`cc_drive_page`: an instant A/B switch) keeps HEAD and ANSWERS, so its export reads the same.
+JS_HEAD = """
 const DATA = JSON.parse(document.getElementById("data").textContent);
 const CLIPS = JSON.parse(document.getElementById("clips").textContent);
 const KEY = DATA.page + "/part" + DATA.part + "/" + DATA.build + "/answers";
@@ -255,7 +258,9 @@ let store = {};
 try { store = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) {}
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} };
 const items = [...document.querySelectorAll(".item")];
-const player = document.getElementById("player");
+"""
+
+JS_PLAYER = """const player = document.getElementById("player");
 const urls = {};
 let cur = null;           // {btn, seq, names, i}
 let gapTimer = null;
@@ -296,7 +301,9 @@ player.addEventListener("ended", () => {
   if (cur.i < cur.seq.length) { setNow(""); gapTimer = setTimeout(step, GAP_MS); } else stop();
 });
 document.querySelectorAll(".play").forEach(b => b.addEventListener("click", () => play(b)));
-function paint() {
+"""
+
+JS_ANSWERS = """function paint() {
   let n = 0, left_s = 0;
   items.forEach(it => {
     const a = store[it.dataset.id] || {};
@@ -367,6 +374,8 @@ document.getElementById("save").addEventListener("click", () => {
 });
 paint();
 """
+
+JS = JS_HEAD + JS_PLAYER + JS_ANSWERS
 
 
 def page_html(part, items, clips, build, n_parts, title=None):
