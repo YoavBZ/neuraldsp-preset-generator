@@ -187,7 +187,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        come from one song. Its answers came the same day (audited; ledger `amendment_3_answers`): no pair heard as
        clearly different, the four anchors included, so the page does not place tau by ear. A drive-pedal page
        with an instant A/B switch (ledger `amendment_5`) was rendered, audited and sent 2026-10-30
-       (`amendment_5_outcome`: 96 renders, 17 items, about 8 min; answers pending); its checks, step 4's loudest
+       (`amendment_5_outcome`: 96 renders, 17 items, about 8 min; its in-mix answers are not being asked for, the
+       guitar-only answers replace them); its checks, step 4's loudest
        reverb and spring pairs, take the place of the replay of three items, which the author dropped (reported to
        the user 2026-10-30); step 4's item 4 (900215, the runaway delay) is not re-used, being a dirty (runaway)
        example. Its delay anchor is a runaway delay (a steady whine), and a zero-render scan found such targets in
@@ -198,18 +199,21 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        drive page (17 items) and step 4's page (25 items, its runaway item 4 replaced by the loudest non-runaway
        delay pair, 803054) are declared (ledger `amendment_6`, zero renders, `learn/cc_solo_pages.py`); the drive
        page's in-mix version is not needed now. Both were built, audited and sent the same day
-       (`clean-crunch-pool-dcc` `amendment_6_outcome`).
-     - Next: the guitar-only pages' answers (`amendment_6`, sent 2026-10-30). Forkupines Sugar Faith ElecGtr8's
-       DI, 129.83 ms ahead of its amp track, joins the next build from a delayed copy if the alignment check on
-       the copy reads about 0 ms (`amendment_4` (c); it runs within that build, since it changes the verdicts).
-       The size-matched top-up (about 1,470 more examples, about 6.7k renders, about 3 h) stays unplanned. Then
-       F20's re-plan on this pool, with two new questions: how near-chance switches are read out, and the model
-       beating its constant.
+       (`clean-crunch-pool-dcc` `amendment_6_outcome`). Their answers came the same day (audited;
+       `amendment_6_answers`): catches 8 of 8 right and 5 of 6 checks heard, so the format works on the guitar
+       alone; 25 of the 26 pairs near tau were mostly not heard (the one heard is a tremolo below tau); mostly only
+       the loudest pairs are. The listener noted that items with several effects are "harder to answer" (33 of 34
+       pairs have another effect on in both clips, by design: the context the labels need).
+     - Next: F20's re-plan on this pool, for the user's yes, with two new questions: how near-chance switches are
+       read out, and the model beating its constant. Forkupines Sugar Faith ElecGtr8's DI, 129.83 ms ahead of its
+       amp track, joins that build from a delayed copy if the alignment check on the copy reads about 0 ms
+       (`amendment_4` (c); it runs within that build, since it changes the verdicts). The size-matched top-up
+       (about 1,470 more examples, about 6.7k renders, about 3 h) stays unplanned.
    - **Learning every control is not yet shown to help.** T3's F5 gate, D_F5 (every control learned) − D_core5 (today's 25
      controls), reads +0.079 [−0.065, +0.224] on V-real-11 (7 bands): not shown. The user said yes to F20 (2026-10-27);
      (b) read 2026-10-28 (the stock stem stays F20's input). F20 is re-planned on the clean/crunch
-     pool; step 4 and the D_CC follow-ups are done, and the re-plan now waits on the guitar-only pages' answers
-     (`amendment_6`, sent 2026-10-30, in place of the drive page's in-mix answers).
+     pool; step 4, the D_CC follow-ups and the guitar-only pages' answers (`amendment_6_answers`) are in, and the
+     re-plan comes next, for the user's yes.
    - **R1 (post hoc, descriptive, audited):** D_F5 with its 96 unreadable heads written at S still reads +0.062
      [−0.080, +0.204] against D_core5 (4 of 7 bands better; crunch −0.013). The delay, the one time effect still read
      (AUC 0.557, lower bound 0.505), stays on in 29 of 66 directions, and Colour Me Red ElecGtr03 drives the result
@@ -315,7 +319,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      show this); the relabel's reader is still unwritten. A fourth page, drive pedals on and off in the same
      clean/crunch mixes (ledger `clean-crunch-pool-dcc` `amendment_5`, declared 2026-10-30), plays each pair in a
      player that switches between A and B at once and re-checks step 4's loudest reverb and spring pairs there, each
-     beside a catch under its title (sent 2026-10-30, 17 items, answers pending; `amendment_5_outcome`). Heard
+     beside a catch under its title (sent 2026-10-30, 17 items; `amendment_5_outcome`; its in-mix answers are not being asked for, the guitar-only
+     answers below replace them). Heard
      means "They differ". A check heard there is consistent with step 4's
      format hiding differences, not proof of it: only the checks carry those titles, it is the listener's second
      hearing of those clips, and the listener may know which items are checks. The user then asked for the guitar
@@ -326,7 +331,15 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      confounded with the old sequential player and a repeat hearing; only the drive page's in-mix answers (same
      player, not asked for now) would isolate it. They cannot show whether a switch is heard in a song, nor tau (the
      items were picked by in-mix A_e). Both were built, audited and sent 2026-10-30 (`clean-crunch-pool-dcc` `amendment_6_outcome`: 17 and
-     25 items, the guitar alone in every clip); answers pending. Answers on the dense page still count: an
+     25 items, the guitar alone in every clip). Their answers (2026-10-30, audited; `amendment_6_answers`): catches
+     8 of 8 "same", 5 of the 6 distinct checks and anchors heard (not 802682's sw50r spring); 25 of the 26 pairs near
+     tau not heard (21 same, 4 maybe; the one heard is 802350's tremolo, A_e 0.0039); all 8 spring pairs same. The
+     heard pairs are the top solo-J pairs in each part, though no single solo-J cut works across effects and the edge
+     over A_e rests on one item (802350). So on the guitar alone the format works; most heard pairs sit well above
+     tau and one below it was heard, so, as declared, this does not place tau. F20's re-plan declares how, if at
+     all, these answers are used for the audibility weight. Caveats: part 1
+     was answered fast (8 of 16 answers under one 10-s loop after the previous one), repeats across the parts, small
+     n. Answers on the dense page still count: an
      effect not heard there is masked there. The user's direction the same day (below) points the rulings toward an audibility weight; its exact
      form is declared and reviewed before the relabel.*
    - **Clean/crunch-led pool** ([plan](clean-crunch-pool-plan.md), approved 2026-10-28): steps 0–3 done (D_F5bk and
@@ -336,8 +349,9 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      (`amendment_5`, sent 2026-10-30: 96 renders, 17 items with an instant A/B switch; its checks take the place of
      the replay of three items, which the author dropped; step 4's runaway item 4 is not re-used) is followed, at the
      user's request, by guitar-only versions of it and of step 4's page (`amendment_6`, zero renders; sent
-     2026-10-30). Next: their answers; then F20's re-plan, with the ElecGtr8 shift run within its build.
-   - (d) **F20:** re-planned on the clean/crunch pool. Step 4 and the D_CC follow-ups are done; the re-plan now waits on the guitar-only pages' answers (`amendment_6`, sent 2026-10-30, in place of the drive page's in-mix answers). Before that: the user said yes (2026-10-27); its plan is declared after (b) reads (read 2026-10-28: the stock stem stays its input). Its value now rests on (a)/(b) and on the new data. Its declared
+     2026-10-30; answered the same day, `amendment_6_answers`: the format works on the guitar alone, and pairs near
+     tau are mostly not heard). Next: F20's re-plan, for the user's yes, with the ElecGtr8 shift run within its build.
+   - (d) **F20:** re-planned on the clean/crunch pool. Step 4, the D_CC follow-ups and the guitar-only pages' answers (`amendment_6_answers`) are in; the re-plan comes next, for the user's yes, and declares how, if at all, those answers are used for (c)'s audibility weight. Before that: the user said yes (2026-10-27); its plan is declared after (b) reads (read 2026-10-28: the stock stem stays its input). Its value now rests on (a)/(b) and on the new data. Its declared
      fixes: redraw near-silent draws (up to 5 tries; about 16% more target renders at F5's rate); an audio runaway
      check on targets (a self-oscillating delay, about 2% of both pools), refused and redrawn (to be declared and
      reviewed in the re-plan); keep each
@@ -1154,4 +1168,5 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-30 | The drive-pedal page, rendered, audited and sent (ledger `amendment_5`): 96 renders (48 priming), 19 of 19 repeats bit-exact, none refused; median A_e drive pedal 1 0.081, drive pedal 2 0.093, one pair per pedal below tau. 17 items, about 8 min (10 pedal pairs, 3 catches, step 4's loudest reverb and sw50r spring pairs as checks, a catch under each check's title). Caveats: 10 of 17 items from one song ("Quicksand"); in drive pedal 2's loudest pair the guitar sits 5.9 dB lower with the pedal off; the pairs near tau are not physically small. Answers pending; F20's re-plan waits on them | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_5_outcome`, [plan](clean-crunch-pool-plan.md) |
 | 2026-10-30 | The user (in chat): "The mixes make it harder to distinguish, please only the guitars if possible", then "Same for the previous effects listening page". Guitar-only pages declared before any is built (ledger `amendment_6`, `learn/cc_solo_pages.py`, zero renders): part 1, the drive page's 17 items; part 2, step 4's 25 items with its runaway item 4 (900215) replaced by the loudest non-runaway delay pair (803054, A_e 0.447, its reverb on too); each clip the stored render alone (no backing, other guitars, stand-ins or mastering) at −23 LUFS, in the A/B player, new ids, order and A/B draw. The guitar plays in 96–100% of each on clip and 87–100% of each off clip; the solo clips differ more than the mixes did for 12 of 12 part-1 pairs and 21 of 22 part-2 pairs (drive pairs −2.7 to −14.4 dB, step 4's pairs −5.9 to −29.0 dB); the AAC coding error sits 12.4 dB under 801921's reverb pair difference. Heard means "They differ". The answers roughly bound audibility in a song from above, except where the switch changes the guitar's balance in the mix (levelling removes it); against step 4's in-mix answers masking is confounded with the old sequential player and a repeat hearing; they cannot show whether a switch is heard in a song, nor tau. The drive page's in-mix version is not needed now; F20's re-plan waits on these answers. Descriptive; decides nothing | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_6`, [plan](clean-crunch-pool-plan.md) |
 | 2026-10-30 | The guitar-only pages, built, audited and sent (zero renders): part 1, the drive page's 17 items; part 2, step 4's 25 items with 803054 in place of the runaway 900215. All 84 clips rebuilt from the hash-checked stored renders, the guitar alone in each, every clip at −23.00 LUFS, catches byte-identical, the in-mix pages and keys unchanged; smallest AAC margin 23.1 dB (part 1) and 12.4 dB (part 2, 801921's reverb pair). Caveats: back-to-back items on one excerpt in part 2; 800877 (its pair and its catch) and 802682's sw50r spring pair in both parts (800877 with the same A/B order); levelling removes the switch's level drop (801895 5.9 dB). Answers pending; F20's re-plan waits on them | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_6_outcome`, [plan](clean-crunch-pool-plan.md) |
+| 2026-10-30 | The guitar-only pages' answers, audited: catches 8 of 8 "same"; 5 of the 6 distinct checks and anchors heard (not 802682's sw50r spring: its long-term spectrum differs by about 1.1 dB, the heard 803054's by 1.2 dB, so that does not explain the miss); 25 of the 26 pairs near tau not heard (21 same, 4 maybe; the exception 802350's tremolo, A_e 0.0039, solo J 2.30); all 8 near-tau drive pairs and all 8 spring pairs same. The heard pairs are the top solo-J pairs in each part (AUC 1.00; A_e 1.00 and 0.81), but the edge over A_e rests on one item (802350) and no single solo-J cut works across effects. The listener's note: items with several effects are harder ("13 baseline is 12 with tremolo on so its delay is barely noticeable, if any"); 33 of 34 pairs have another effect on in both clips, by design (one effect switched in the full setting, the context the labels need; an isolated-effect page is not planned). Caveats: part 1 answered fast (8 of 16 under one 10-s loop), repeats across the parts, small n. Readings: the format works on the guitar alone; most heard pairs sit well above tau and one below it was heard (802350's tremolo, A_e 0.0039); as declared, this does not place tau. F20's re-plan comes next, for the user's yes, and declares how, if at all, these answers are used. Decides nothing | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_6_answers`, [plan](clean-crunch-pool-plan.md) |
 
