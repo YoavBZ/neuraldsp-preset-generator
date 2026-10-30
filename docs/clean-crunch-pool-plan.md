@@ -1,6 +1,6 @@
 # Clean/crunch-led training pool (plan, 2026-10-28)
 
-**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2 built and step 3's D_CC read 2026-10-30 (amendments 1 and 2 below): undecided, leaning worse. Step 4's page sent 2026-10-30; its answers came in the same day: no pair heard as clearly different, so the page does not place tau. Runaway delays in about 2% of both pools, excluded from the next build. The user said yes to the two cheap D_CC follow-ups and the ElecGtr8 shift (2026-10-30, amendment 4): the follow-ups ran the same day; D_CC's loss is mostly its pooled answer's pedals (both seeds' answers turn the drives off, answers only, not rendered), and D_CC is worse than its own pool's constant; the shift waits for the next build. A drive-pedal page with an instant A/B switch (amendment 5, the user's yes 2026-10-30) was rendered, audited and sent the same day (17 items). Its checks take the place of the replay of three items, which the author dropped. The user then asked for the guitar alone instead of mixes (2026-10-30): guitar-only versions of the drive page and step 4's page are declared (amendment 6, zero renders); their answers are next.**
+**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2 built and step 3's D_CC read 2026-10-30 (amendments 1 and 2 below): undecided, leaning worse. Step 4's page sent 2026-10-30; its answers came in the same day: no pair heard as clearly different, so the page does not place tau. Runaway delays in about 2% of both pools, excluded from the next build. The user said yes to the two cheap D_CC follow-ups and the ElecGtr8 shift (2026-10-30, amendment 4): the follow-ups ran the same day; D_CC's loss is mostly its pooled answer's pedals (both seeds' answers turn the drives off, answers only, not rendered), and D_CC is worse than its own pool's constant; the shift waits for the next build. A drive-pedal page with an instant A/B switch (amendment 5, the user's yes 2026-10-30) was rendered, audited and sent the same day (17 items). Its checks take the place of the replay of three items, which the author dropped. The user then asked for the guitar alone instead of mixes (2026-10-30): guitar-only versions of the drive page and step 4's page were declared (amendment 6, zero renders), then built, audited and sent the same day (17 and 25 items); their answers are next.**
 
 **Progress (2026-10-28 to 30):**
 - **Step 0 (intake checks, `~/ndsp-presets/learn/trusted-data/intake-2026-10-28/`):** 80 DI rows in 21 sessions (the
@@ -143,6 +143,14 @@
   the old sequential player and a repeat hearing; only part 1 against the drive page's in-mix answers (not asked for
   now) would isolate it. They cannot show whether a switch is heard in a song, nor tau (the items were picked by
   their in-mix A_e). Not built before review; decides nothing.
+- **Guitar-only pages sent (2026-10-30, audited; ledger `clean-crunch-pool-dcc` `amendment_6_outcome`):** zero
+  renders; part 1 (17 items) and part 2 (25 items, 803054 in place of 900215) built from the hash-checked stored
+  renders, the guitar alone in every clip, each at −23.00 LUFS, catches byte-identical, the in-mix pages and keys
+  unchanged. Smallest AAC margin 23.1 dB in part 1 and 12.4 dB in part 2 (801921's reverb pair). Caveats: part 2 has
+  back-to-back items on one excerpt (10–11, 12–13, 24–25); 800877 (its pair and its catch) and 802682's sw50r spring
+  pair are in both parts (800877 with the same A/B order, so not independent answers); levelling each clip on its own
+  removes the switch's level drop (801895 5.9 dB, 800903's pr12 spring 3.0 dB, 802200 2.0 dB). Answers pending;
+  nothing decided.
 
 Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
 draft takes in the findings: tiers by release status, set 5's
