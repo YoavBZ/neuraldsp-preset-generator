@@ -226,6 +226,20 @@ def render_rows(od, own=None):
     return AM.render_rows(od, own)
 
 
+def reader(root):
+    """read(i, what) -> this step's stored render as float64 (hash-checked)."""
+    import numpy as np
+
+    from learn import direct_sound_gate as G
+
+    rows = {(r["i"], r["what"]): r for r in render_rows(out_dir(root))}
+
+    def read(i, what):
+        f = rows[(i, what)]["file"]
+        return np.asarray(G.read_flac(flac_of(root, i, what), f["scale"], f["sha256"]), np.float64)
+    return read
+
+
 # --- commands ---------------------------------------------------------------------------------------------------------
 
 def cmd_plan(args):

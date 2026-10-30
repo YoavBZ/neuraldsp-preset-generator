@@ -158,7 +158,12 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        example. Its delay anchor is a runaway delay (a steady whine), and a zero-render scan found such targets in
        about 2% of both pools (D_CC 64 of 3,033, D_F5 87 of 4,189); excluded from the next build (F20's runaway
        check, to be declared and reviewed in the re-plan).
-     - Next: the drive-pedal page's answers (`amendment_5`; sent 2026-10-30). Forkupines Sugar Faith ElecGtr8's
+     - The user then asked for the guitar alone (2026-10-30: "The mixes make it harder to distinguish, please only
+       the guitars if possible", then "Same for the previous effects listening page"): guitar-only versions of the
+       drive page (17 items) and step 4's page (25 items, its runaway item 4 replaced by the loudest non-runaway
+       delay pair, 803054) are declared (ledger `amendment_6`, zero renders, `learn/cc_solo_pages.py`); the drive
+       page's in-mix version is not needed now.
+     - Next: the guitar-only pages' answers (`amendment_6`; built and sent after review). Forkupines Sugar Faith ElecGtr8's
        DI, 129.83 ms ahead of its amp track, joins the next build from a delayed copy if the alignment check on
        the copy reads about 0 ms (`amendment_4` (c); it runs within that build, since it changes the verdicts).
        The size-matched top-up (about 1,470 more examples, about 6.7k renders, about 3 h) stays unplanned. Then
@@ -167,8 +172,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
    - **Learning every control is not yet shown to help.** T3's F5 gate, D_F5 (every control learned) − D_core5 (today's 25
      controls), reads +0.079 [−0.065, +0.224] on V-real-11 (7 bands): not shown. The user said yes to F20 (2026-10-27);
      (b) read 2026-10-28 (the stock stem stays F20's input). F20 is re-planned on the clean/crunch
-     pool; step 4 and the D_CC follow-ups are done, and the re-plan now waits on the drive-pedal page's answers
-     (`amendment_5`; the page was sent 2026-10-30).
+     pool; step 4 and the D_CC follow-ups are done, and the re-plan now waits on the guitar-only pages' answers
+     (`amendment_6`, declared 2026-10-30, in place of the drive page's in-mix answers).
    - **R1 (post hoc, descriptive, audited):** D_F5 with its 96 unreadable heads written at S still reads +0.062
      [−0.080, +0.204] against D_core5 (4 of 7 bands better; crunch −0.013). The delay, the one time effect still read
      (AUC 0.557, lower bound 0.505), stays on in 29 of 66 directions, and Colour Me Red ElecGtr03 drives the result
@@ -277,17 +282,25 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      beside a catch under its title (sent 2026-10-30, 17 items, answers pending; `amendment_5_outcome`). Heard
      means "They differ". A check heard there is consistent with step 4's
      format hiding differences, not proof of it: only the checks carry those titles, it is the listener's second
-     hearing of those clips, and the listener may know which items are checks. Answers on the dense page still count: an
+     hearing of those clips, and the listener may know which items are checks. The user then asked for the guitar
+     alone (2026-10-30): guitar-only versions of the drive page and of step 4's page (`amendment_6`, zero renders,
+     the same items; step 4's runaway item 4 replaced) show whether each switch is audible on the guitar alone,
+     each clip levelled apart: roughly an upper bound on its audibility in a song, except where the switch changes
+     the guitar's balance in the mix (levelling removes it). Read against step 4's in-mix answers, masking is
+     confounded with the old sequential player and a repeat hearing; only the drive page's in-mix answers (same
+     player, not asked for now) would isolate it. They cannot show whether a switch is heard in a song, nor tau (the
+     items were picked by in-mix A_e). Answers on the dense page still count: an
      effect not heard there is masked there. The user's direction the same day (below) points the rulings toward an audibility weight; its exact
      form is declared and reviewed before the relabel.*
    - **Clean/crunch-led pool** ([plan](clean-crunch-pool-plan.md), approved 2026-10-28): steps 0–3 done (D_F5bk and
      D_CC read, both undecided; D_CC leans worse). Step 4's answers came 2026-10-30 (tau not placed by ear). The two
      cheap D_CC follow-ups were read 2026-10-30 (`amendment_4_outcome`: the loss is mostly the pooled answer's pedals,
-     and both seeds' answers turn the drives off, not rendered; D_CC trails its own constant). Next: the drive-pedal
-     page's answers (`amendment_5`, sent 2026-10-30: 96 renders, 17 items with an instant A/B switch; its checks take the
-     place of the replay of three items, which the author dropped; step 4's runaway item 4 is not re-used); then
-     F20's re-plan, with the ElecGtr8 shift run within its build.
-   - (d) **F20:** re-planned on the clean/crunch pool. Step 4 and the D_CC follow-ups are done; the re-plan now waits on the drive-pedal page's answers (`amendment_5`; the page was sent 2026-10-30). Before that: the user said yes (2026-10-27); its plan is declared after (b) reads (read 2026-10-28: the stock stem stays its input). Its value now rests on (a)/(b) and on the new data. Its declared
+     and both seeds' answers turn the drives off, not rendered; D_CC trails its own constant). The drive-pedal page
+     (`amendment_5`, sent 2026-10-30: 96 renders, 17 items with an instant A/B switch; its checks take the place of
+     the replay of three items, which the author dropped; step 4's runaway item 4 is not re-used) is followed, at the
+     user's request, by guitar-only versions of it and of step 4's page (`amendment_6`, zero renders). Next: their
+     answers; then F20's re-plan, with the ElecGtr8 shift run within its build.
+   - (d) **F20:** re-planned on the clean/crunch pool. Step 4 and the D_CC follow-ups are done; the re-plan now waits on the guitar-only pages' answers (`amendment_6`, declared 2026-10-30, in place of the drive page's in-mix answers). Before that: the user said yes (2026-10-27); its plan is declared after (b) reads (read 2026-10-28: the stock stem stays its input). Its value now rests on (a)/(b) and on the new data. Its declared
      fixes: redraw near-silent draws (up to 5 tries; about 16% more target renders at F5's rate); an audio runaway
      check on targets (a self-oscillating delay, about 2% of both pools), refused and redrawn (to be declared and
      reviewed in the re-plan); keep each
@@ -1102,4 +1115,5 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-30 | The user said yes (in chat, "Yes for all") to a drive-pedal listening page. Declared before any render (ledger `amendment_5`, `learn/cc_drive_page.py`): step 4's qualifying examples less the runaway-flagged (43), drive pedal 1 on in 12 and drive pedal 2 in 12 (24 pairs, 19 examples, 5 bands; 11 of the 24 pairs from one song, The Travelling Band's "Quicksand"); step 4's r_on' reused for 14, each checked by a bit-exact repeat; 96 new renders. A new player loops both mixes and switches between A and B at once; at most 21 items (about 10.5 min): at most 14 pedal pairs, 3 catches, step 4's loudest reverb and sw50r spring pairs as checks, and a catch under each check's title. Heard means "They differ" ("Maybe" reported beside). A check heard here but not on step 4's page is consistent with the old format hiding differences, not proof (only the checks carry those titles, it is a second hearing, the listener may know them). The author dropped the separate replay of items 4, 13 and 17 (reported to the user 2026-10-30); item 4 (900215) is a dirty (runaway) example and is not re-used. Descriptive; decides nothing | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_5`, [plan](clean-crunch-pool-plan.md) |
 | 2026-10-30 | D_CC's follow-ups read, audited (ledger `amendment_4`; zero renders for (a), 165 renders for (b)): both seeds' answers turn the pr12-crunch drives off (answers only, not rendered; drive2 on in 2 and 0 of 14 directions; D_F5 12), so seed 20261043 alone is not the cause; drive2 is on in 52.7% of D_CC's pr12-crunch labels and its probability there is 0.42–0.50, so a 0.5 readout turns it off. The sound rows are of the pooled answer: D_CC with its pedals at S − D_CC −0.076 [−0.142, −0.011], all 7 bands better (V-real-10 −0.072); pedals at S in both, D_CC − D_F5 +0.015 [−0.028, +0.057] (undecided): the loss is mostly the pedal answers (with the Wall Of Death band left out, all of it: −0.045 against +0.044). D_CC − its own constant +0.103 [+0.051, +0.155], all 7 bands worse; D_CC's constant − D_F5's −0.018 [−0.057, +0.021] (descriptive). For F20's re-plan: the readout of near-chance switches and beating the constant. The ElecGtr8 shift (c) runs within the next build | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_4_outcome`, [plan](clean-crunch-pool-plan.md) |
 | 2026-10-30 | The drive-pedal page, rendered, audited and sent (ledger `amendment_5`): 96 renders (48 priming), 19 of 19 repeats bit-exact, none refused; median A_e drive pedal 1 0.081, drive pedal 2 0.093, one pair per pedal below tau. 17 items, about 8 min (10 pedal pairs, 3 catches, step 4's loudest reverb and sw50r spring pairs as checks, a catch under each check's title). Caveats: 10 of 17 items from one song ("Quicksand"); in drive pedal 2's loudest pair the guitar sits 5.9 dB lower with the pedal off; the pairs near tau are not physically small. Answers pending; F20's re-plan waits on them | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_5_outcome`, [plan](clean-crunch-pool-plan.md) |
+| 2026-10-30 | The user (in chat): "The mixes make it harder to distinguish, please only the guitars if possible", then "Same for the previous effects listening page". Guitar-only pages declared before any is built (ledger `amendment_6`, `learn/cc_solo_pages.py`, zero renders): part 1, the drive page's 17 items; part 2, step 4's 25 items with its runaway item 4 (900215) replaced by the loudest non-runaway delay pair (803054, A_e 0.447, its reverb on too); each clip the stored render alone (no backing, other guitars, stand-ins or mastering) at −23 LUFS, in the A/B player, new ids, order and A/B draw. The guitar plays in 96–100% of each on clip and 87–100% of each off clip; the solo clips differ more than the mixes did for 12 of 12 part-1 pairs and 21 of 22 part-2 pairs (drive pairs −2.7 to −14.4 dB, step 4's pairs −5.9 to −29.0 dB); the AAC coding error sits 12.4 dB under 801921's reverb pair difference. Heard means "They differ". The answers roughly bound audibility in a song from above, except where the switch changes the guitar's balance in the mix (levelling removes it); against step 4's in-mix answers masking is confounded with the old sequential player and a repeat hearing; they cannot show whether a switch is heard in a song, nor tau. The drive page's in-mix version is not needed now; F20's re-plan waits on these answers. Descriptive; decides nothing | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_6`, [plan](clean-crunch-pool-plan.md) |
 

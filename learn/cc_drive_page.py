@@ -50,6 +50,13 @@ LEDGER_MARK = "The drive-pedal listening page"
 DRIVES = {"drive1": ("drive1/drive1Active", (("drive1", "drive1Active"), "false"), "drive1/drive1Drive"),
           "drive2": ("drive2/drive2Active", (("drive2", "drive2Active"), "false"), "drive2/drive2Gain")}
 LABEL = {"drive1": "drive pedal 1", "drive2": "drive pedal 2", "reverb": "reverb", "sw50r spring": "sw50r spring"}
+
+
+def label(effect):
+    """An item's title word: LABEL's, else the effect's own name (step 4's titles)."""
+    return LABEL.get(effect, effect)
+
+
 N_MAX = 30                                      # "on" examples per pedal: above both counts, so no draw
 SEED = 20261117                                 # the draw of N_MAX among more (none here)
 PAGE_SEED = 20261118                            # the page's order and each item's A/B order
@@ -170,6 +177,25 @@ def step4_on_rows(root):
     return {r["i"]: r for r in CA.render_rows(CA.out_dir(root)) if r["what"] == AM.ON}
 
 
+def reader(root, ap):
+    """read(i, what) -> the stored render as float64 (hash-checked): this step's renders, step 4's for a reused r_on'
+    and for the checks' pairs (`ap`: this step's plan.json)."""
+    import numpy as np
+
+    from learn import direct_sound_gate as G
+
+    reused = set(ap["reused_on"]) | {i for i, _ in CHECKS}       # the checks' r_on' are step 4's too
+    flac = flac_for(reused)
+    rows = {(r["i"], r["what"]): r for r in CA.render_rows(out_dir(root))}
+    rows.update({(i, AM.ON): r for i, r in step4_on_rows(root).items() if i in reused})
+    rows.update({(r["i"], r["what"]): r for r in CA.render_rows(CA.out_dir(root)) if (r["i"], r["what"]) in CHECKS})
+
+    def read(i, what):
+        f = rows[(i, what)]["file"]
+        return np.asarray(G.read_flac(flac(root, i, what), f["scale"], f["sha256"]), np.float64)
+    return read
+
+
 def ledger_declared(path=None):
     d = json.loads(pathlib.Path(path or V.PLUGIN_ROOT / "docs" / "dev-test-ledger.json").read_text())
     e = next((t for t in d["tests"] if t["test_id"] == LEDGER_ID), {})
@@ -252,9 +278,6 @@ def cmd_page(args):
     """The blind A/B page (`items_of`, the checks from step 4's measure.json), its key to page-key.json outside the
     listening folder."""
     require_declared()                              # before any import: the light CI has no numpy
-    import numpy as np
-
-    from learn import direct_sound_gate as G
     from learn import trusted_data as T
 
     root = V.out_root(args)
@@ -274,16 +297,7 @@ def cmd_page(args):
     ex = {x["i"]: x for x in plan["examples"]}
     rend, built = T.rows_of(root, CB.STAGE, "render"), T.rows_of(root, CB.STAGE, "build")
     stems = T.Stems(CB.ctx_for(args))
-    reused = set(ap["reused_on"]) | {i for i, _ in CHECKS}       # the checks' r_on' are step 4's too
-    flac = flac_for(reused)
-    rows = {(r["i"], r["what"]): r for r in CA.render_rows(od)}
-    rows.update({(i, AM.ON): r for i, r in step4_on_rows(root).items() if i in reused})
-    rows.update({(r["i"], r["what"]): r for r in CA.render_rows(CA.out_dir(root)) if (r["i"], r["what"]) in CHECKS})
-
-    def read(i, what):
-        f = rows[(i, what)]["file"]
-        return np.asarray(G.read_flac(flac(root, i, what), f["scale"], f["sha256"]), np.float64)
-
+    read = reader(root, ap)
     clips = {}
     for it in sorted(items, key=lambda it: it["i"]):
         i, x = it["i"], ex[it["i"]]
@@ -397,12 +411,25 @@ document.addEventListener("keydown", e => {
 """
 
 
-def page_html(items, clips, build, name=PAGE_NAME):
+SOLO_TEXT = {      # the guitar-only pages' wording (ledger amendment_6, `cc_solo_pages`)
+    "title": "Guitar-only check", "head": "Can you hear it on the guitar alone?",
+    "sub": "The same 10 s of a guitar part, alone, as A and B, looping",
+    "intro": "Each item is the same 10 seconds of a guitar part, played alone (no band), as A and B,\nlooping.",
+    "same": "clip"}
+MIX_TEXT = {
+    "title": "Drive pedal check", "head": "Can you hear the pedal in the song?",
+    "sub": "The same 10 s of a song as A and B, looping",
+    "intro": "Each item is the same 10 seconds of a song as A and B,\nlooping.", "same": "mix"}
+
+
+def page_html(items, clips, build, name=PAGE_NAME, part=1, solo=False):
     """The page: per item one looping pair, A and B switched at once (`PLAYER_JS`), "do A and B differ?"; the ear
-    page's style, answers store and export (`build_ear_page`), so an export reads as step 4's did."""
+    page's style, answers store and export (`build_ear_page`), so an export reads as step 4's did. `solo`: the
+    guitar-only pages' wording (`cc_solo_pages`); `part`: the export's part number."""
     from learn import build_ear_page as BEP
 
     e = html.escape
+    tx = SOLO_TEXT if solo else MIX_TEXT
     total = len(items)
     secs = {it["id"]: ITEM_S for it in items}
     cards = []
@@ -410,15 +437,15 @@ def page_html(items, clips, build, name=PAGE_NAME):
         vs = "".join(f'<button type="button" class="v" data-v="{v}">{e(t)}</button>' for v, t in AM.VERDICTS)
         cards.append(
             f'<article class="item" data-id="{it["id"]}" data-n="{n + 1}"><div class="num">{n + 1} / {total}</div>'
-            f'<h3>Listen for: {e(LABEL[it["effect"]])}</h3><p class="sub">The same 10 s of a song as A and B, looping</p>'
+            f'<h3>Listen for: {e(label(it["effect"]))}</h3><p class="sub">{tx["sub"]}</p>'
             f'<div class="plays"><button type="button" class="play main">&#9654; Play</button>'
             f'<button type="button" class="ab" data-side="0" aria-pressed="false">A</button>'
             f'<button type="button" class="ab" data-side="1" aria-pressed="false">B</button>'
             f'<button type="button" class="sw">Switch A/B (S)</button>'
             f'</div><p class="now"></p><div class="vs">{vs}</div>'
             f'<input class="note" type="text" placeholder="Note (optional)" aria-label="Note"></article>')
-    data = {"page": name, "part": 1, "build": build,
-            "items": [{"id": it["id"], "title": f"Listen for: {LABEL[it['effect']]}", "subtitle": ""} for it in items],
+    data = {"page": name, "part": part, "build": build,
+            "items": [{"id": it["id"], "title": f"Listen for: {label(it['effect'])}", "subtitle": ""} for it in items],
             "secs": secs}
     minutes = round(sum(secs.values()) / 60)
     js = BEP.JS_HEAD + PLAYER_JS.replace("XFADE_S", repr(XFADE_S)) + BEP.JS_ANSWERS
@@ -426,18 +453,17 @@ def page_html(items, clips, build, name=PAGE_NAME):
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Drive pedal check</title>
+<title>{tx["title"]}</title>
 <style>{BEP.CSS}{CSS}</style></head><body>
-<header><div class="hrow"><b>Can you hear the pedal in the song?</b><span id="count"></span></div>
+<header><div class="hrow"><b>{tx["head"]}</b><span id="count"></span></div>
 <div class="hrow"><label><input type="checkbox" id="auto"> Autoplay next</label>
 <span id="left" class="ask"></span></div><div class="prog"><div id="bar"></div></div></header>
 <main>
 <h1>Do A and B differ?</h1>
-<p class="intro">{total} items, about {minutes} minutes. Each item is the same 10 seconds of a song as A and B,
-looping. Press Play, then switch between A and B as often as you like: the Switch button, the A and B buttons, or
+<p class="intro">{total} items, about {minutes} minutes. {tx["intro"]} Press Play, then switch between A and B as often as you like: the Switch button, the A and B buttons, or
 the S, A and B keys. The switch is instant and lands at the same moment of the music. In one of A and B the named
 pedal or effect is on; in the other it is switched off, and nothing else changes. Which is which is random, and a few
-items are the very same mix as A and B. Answer whether you hear <b>any</b> difference, however small. A and B are set
+items are the very same {tx["same"]} as A and B. Answer whether you hear <b>any</b> difference, however small. A and B are set
 to the same loudness, so listen for the sound itself, not a volume change. Headphones help; on an iPhone, turn the
 silent switch off. Answers are saved in this browser as you go; tap <b>Export</b> any time, even halfway, and send
 the file.</p>
