@@ -318,6 +318,16 @@ justify spending it. A later confirmation needs fresh songs.
 
 Ledger first. The render recipe is the audibility page's.
 
+**As declared (2026-10-30; ledger `clean-crunch-pool-dcc` `amendment_3`; code `learn/cc_audibility.py`):**
+- **Pairs:** 129 examples from the D_CC pool qualify. The guitar is exposed (at most 6 dB under the rest, no vocals
+  drawn, at most 2 other guitars), the backing holds drums and bass, the band isn't heavy, and the tone is typical.
+  "Typical" is read as part C's factory or start draw, for the reviewer.
+- **Effects:** the audibility page's 5, at most 30 measured pairs each: 129 pairs.
+- **Recipe:** the fresh-process recipe with bit-exact repeats, 556 renders.
+- **Page:** about 28 blind pairs nearest tau, with anchors and 3 catch pairs.
+- **Decides:** nothing alone; the answers check tau by ear for the relabel's later declaration. Drive pedals are a
+  separate question for the user.
+
 ## Decisions for the user
 
 - **A. Use tier 1, including Adam Buckley.** Adam Buckley is one of K's 2 bands.

@@ -57,3 +57,7 @@ def test_flags_belong_to_their_commands():
         C.main(["plan", "--shard", "1/3"])
     with pytest.raises(SystemExit):
         C.main(["measure", "--force"])
+
+
+def test_the_ledger_declares_the_page_before_any_render():
+    assert C.ledger_declared()
