@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-27.
+lives in the linked documents. Last updated 2026-10-30.
 
 ## Where the product is
 
@@ -150,23 +150,25 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        recorded amp-track stand-ins in 44% of the examples.
      - Step 4's page sent (2026-10-30, audited): 25 items on clean/crunch mixes, 266 renders. 13 of the 25 items
        come from one song. Its answers came the same day (audited; ledger `amendment_3_answers`): no pair heard as
-       clearly different, the four anchors included, so the page does not place tau by ear. A drive-pedal page with
-       an instant A/B switch is declared (ledger `amendment_5`, nothing rendered); its checks, step 4's loudest
+       clearly different, the four anchors included, so the page does not place tau by ear. A drive-pedal page
+       with an instant A/B switch (ledger `amendment_5`) was rendered, audited and sent 2026-10-30
+       (`amendment_5_outcome`: 96 renders, 17 items, about 8 min; answers pending); its checks, step 4's loudest
        reverb and spring pairs, take the place of the replay of three items, which the author dropped (reported to
        the user 2026-10-30); step 4's item 4 (900215, the runaway delay) is not re-used, being a dirty (runaway)
        example. Its delay anchor is a runaway delay (a steady whine), and a zero-render scan found such targets in
        about 2% of both pools (D_CC 64 of 3,033, D_F5 87 of 4,189); excluded from the next build (F20's runaway
        check, to be declared and reviewed in the re-plan).
-     - Next: the drive-pedal page (`amendment_5`). Forkupines Sugar Faith ElecGtr8's DI, 129.83 ms ahead of its
-       amp track, joins the next build from a delayed copy if the alignment check on the copy reads about 0 ms
-       (`amendment_4` (c); it runs within that build, since it changes the verdicts). The size-matched top-up
-       (about 1,470 more examples, about 6.7k renders, about 3 h) stays unplanned. Then F20's re-plan on this pool,
-       with two new questions: how near-chance switches are read out, and the model beating its constant.
+     - Next: the drive-pedal page's answers (`amendment_5`; sent 2026-10-30). Forkupines Sugar Faith ElecGtr8's
+       DI, 129.83 ms ahead of its amp track, joins the next build from a delayed copy if the alignment check on
+       the copy reads about 0 ms (`amendment_4` (c); it runs within that build, since it changes the verdicts).
+       The size-matched top-up (about 1,470 more examples, about 6.7k renders, about 3 h) stays unplanned. Then
+       F20's re-plan on this pool, with two new questions: how near-chance switches are read out, and the model
+       beating its constant.
    - **Learning every control is not yet shown to help.** T3's F5 gate, D_F5 (every control learned) − D_core5 (today's 25
      controls), reads +0.079 [−0.065, +0.224] on V-real-11 (7 bands): not shown. The user said yes to F20 (2026-10-27);
      (b) read 2026-10-28 (the stock stem stays F20's input). F20 is re-planned on the clean/crunch
      pool; step 4 and the D_CC follow-ups are done, and the re-plan now waits on the drive-pedal page's answers
-     (`amendment_5`; the page is built and being audited).
+     (`amendment_5`; the page was sent 2026-10-30).
    - **R1 (post hoc, descriptive, audited):** D_F5 with its 96 unreadable heads written at S still reads +0.062
      [−0.080, +0.204] against D_core5 (4 of 7 bands better; crunch −0.013). The delay, the one time effect still read
      (AUC 0.557, lower bound 0.505), stays on in 29 of 66 directions, and Colour Me Red ElecGtr03 drives the result
@@ -272,7 +274,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      show this); the relabel's reader is still unwritten. A fourth page, drive pedals on and off in the same
      clean/crunch mixes (ledger `clean-crunch-pool-dcc` `amendment_5`, declared 2026-10-30), plays each pair in a
      player that switches between A and B at once and re-checks step 4's loudest reverb and spring pairs there, each
-     beside a catch under its title. Heard means "They differ". A check heard there is consistent with step 4's
+     beside a catch under its title (sent 2026-10-30, 17 items, answers pending; `amendment_5_outcome`). Heard
+     means "They differ". A check heard there is consistent with step 4's
      format hiding differences, not proof of it: only the checks carry those titles, it is the listener's second
      hearing of those clips, and the listener may know which items are checks. Answers on the dense page still count: an
      effect not heard there is masked there. The user's direction the same day (below) points the rulings toward an audibility weight; its exact
@@ -281,10 +284,10 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      D_CC read, both undecided; D_CC leans worse). Step 4's answers came 2026-10-30 (tau not placed by ear). The two
      cheap D_CC follow-ups were read 2026-10-30 (`amendment_4_outcome`: the loss is mostly the pooled answer's pedals,
      and both seeds' answers turn the drives off, not rendered; D_CC trails its own constant). Next: the drive-pedal
-     page's answers (`amendment_5`: 96 renders, at most 21 items with an instant A/B switch; its checks take the
+     page's answers (`amendment_5`, sent 2026-10-30: 96 renders, 17 items with an instant A/B switch; its checks take the
      place of the replay of three items, which the author dropped; step 4's runaway item 4 is not re-used); then
      F20's re-plan, with the ElecGtr8 shift run within its build.
-   - (d) **F20:** re-planned on the clean/crunch pool. Step 4 and the D_CC follow-ups are done; the re-plan now waits on the drive-pedal page's answers (`amendment_5`; the page is built and being audited). Before that: the user said yes (2026-10-27); its plan is declared after (b) reads (read 2026-10-28: the stock stem stays its input). Its value now rests on (a)/(b) and on the new data. Its declared
+   - (d) **F20:** re-planned on the clean/crunch pool. Step 4 and the D_CC follow-ups are done; the re-plan now waits on the drive-pedal page's answers (`amendment_5`; the page was sent 2026-10-30). Before that: the user said yes (2026-10-27); its plan is declared after (b) reads (read 2026-10-28: the stock stem stays its input). Its value now rests on (a)/(b) and on the new data. Its declared
      fixes: redraw near-silent draws (up to 5 tries; about 16% more target renders at F5's rate); an audio runaway
      check on targets (a self-oscillating delay, about 2% of both pools), refused and redrawn (to be declared and
      reviewed in the re-plan); keep each
@@ -1098,4 +1101,5 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-30 | The user said yes (in chat, "Yes for all") to D_CC's two cheap follow-ups and to the ElecGtr8 shift; declared before any run (ledger `amendment_4`, code `cc_readout` followup-*, `cc_build` shift), they run once reviewed: (a) each seed's own answer on V-real-11 (zero renders; drive switches, inputGain and amp head per seed against D_F5's stored per-seed answers); (b) D_CC with its pedals at S and D_CC's own constant (165 renders; four descriptive rows); (c) Forkupines Sugar Faith ElecGtr8's DI read from a copy delayed by 129.83 ms, in the next build only and only if the alignment check on the copy reads about 0 ms. The size-matched top-up stays unplanned | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_4`, [plan](clean-crunch-pool-plan.md) |
 | 2026-10-30 | The user said yes (in chat, "Yes for all") to a drive-pedal listening page. Declared before any render (ledger `amendment_5`, `learn/cc_drive_page.py`): step 4's qualifying examples less the runaway-flagged (43), drive pedal 1 on in 12 and drive pedal 2 in 12 (24 pairs, 19 examples, 5 bands; 11 of the 24 pairs from one song, The Travelling Band's "Quicksand"); step 4's r_on' reused for 14, each checked by a bit-exact repeat; 96 new renders. A new player loops both mixes and switches between A and B at once; at most 21 items (about 10.5 min): at most 14 pedal pairs, 3 catches, step 4's loudest reverb and sw50r spring pairs as checks, and a catch under each check's title. Heard means "They differ" ("Maybe" reported beside). A check heard here but not on step 4's page is consistent with the old format hiding differences, not proof (only the checks carry those titles, it is a second hearing, the listener may know them). The author dropped the separate replay of items 4, 13 and 17 (reported to the user 2026-10-30); item 4 (900215) is a dirty (runaway) example and is not re-used. Descriptive; decides nothing | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_5`, [plan](clean-crunch-pool-plan.md) |
 | 2026-10-30 | D_CC's follow-ups read, audited (ledger `amendment_4`; zero renders for (a), 165 renders for (b)): both seeds' answers turn the pr12-crunch drives off (answers only, not rendered; drive2 on in 2 and 0 of 14 directions; D_F5 12), so seed 20261043 alone is not the cause; drive2 is on in 52.7% of D_CC's pr12-crunch labels and its probability there is 0.42–0.50, so a 0.5 readout turns it off. The sound rows are of the pooled answer: D_CC with its pedals at S − D_CC −0.076 [−0.142, −0.011], all 7 bands better (V-real-10 −0.072); pedals at S in both, D_CC − D_F5 +0.015 [−0.028, +0.057] (undecided): the loss is mostly the pedal answers (with the Wall Of Death band left out, all of it: −0.045 against +0.044). D_CC − its own constant +0.103 [+0.051, +0.155], all 7 bands worse; D_CC's constant − D_F5's −0.018 [−0.057, +0.021] (descriptive). For F20's re-plan: the readout of near-chance switches and beating the constant. The ElecGtr8 shift (c) runs within the next build | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_4_outcome`, [plan](clean-crunch-pool-plan.md) |
+| 2026-10-30 | The drive-pedal page, rendered, audited and sent (ledger `amendment_5`): 96 renders (48 priming), 19 of 19 repeats bit-exact, none refused; median A_e drive pedal 1 0.081, drive pedal 2 0.093, one pair per pedal below tau. 17 items, about 8 min (10 pedal pairs, 3 catches, step 4's loudest reverb and sw50r spring pairs as checks, a catch under each check's title). Caveats: 10 of 17 items from one song ("Quicksand"); in drive pedal 2's loudest pair the guitar sits 5.9 dB lower with the pedal off; the pairs near tau are not physically small. Answers pending; F20's re-plan waits on them | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_5_outcome`, [plan](clean-crunch-pool-plan.md) |
 

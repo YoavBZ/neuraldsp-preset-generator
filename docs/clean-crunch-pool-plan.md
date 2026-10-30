@@ -1,6 +1,6 @@
 # Clean/crunch-led training pool (plan, 2026-10-28)
 
-**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2 built and step 3's D_CC read 2026-10-30 (amendments 1 and 2 below): undecided, leaning worse. Step 4's page sent 2026-10-30; its answers came in the same day: no pair heard as clearly different, so the page does not place tau. Runaway delays in about 2% of both pools, excluded from the next build. The user said yes to the two cheap D_CC follow-ups and the ElecGtr8 shift (2026-10-30, amendment 4): the follow-ups ran the same day; D_CC's loss is mostly its pooled answer's pedals (both seeds' answers turn the drives off, answers only, not rendered), and D_CC is worse than its own pool's constant; the shift waits for the next build. A drive-pedal page with an instant A/B switch is declared (amendment 5, the user's yes 2026-10-30); its checks take the place of the replay of three items, which the author dropped.**
+**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2 built and step 3's D_CC read 2026-10-30 (amendments 1 and 2 below): undecided, leaning worse. Step 4's page sent 2026-10-30; its answers came in the same day: no pair heard as clearly different, so the page does not place tau. Runaway delays in about 2% of both pools, excluded from the next build. The user said yes to the two cheap D_CC follow-ups and the ElecGtr8 shift (2026-10-30, amendment 4): the follow-ups ran the same day; D_CC's loss is mostly its pooled answer's pedals (both seeds' answers turn the drives off, answers only, not rendered), and D_CC is worse than its own pool's constant; the shift waits for the next build. A drive-pedal page with an instant A/B switch (amendment 5, the user's yes 2026-10-30) was rendered, audited and sent the same day (17 items); its answers are pending. Its checks take the place of the replay of three items, which the author dropped.**
 
 **Progress (2026-10-28 to 30):**
 - **Step 0 (intake checks, `~/ndsp-presets/learn/trusted-data/intake-2026-10-28/`):** 80 DI rows in 21 sessions (the
@@ -105,7 +105,7 @@
   sw50r clean too): on V-real the model does not yet beat a constant (D_F5 about equals its own). Descriptive. Two
   questions for F20's re-plan: how near-chance switches are read out, and the model beating its constant. (c) not
   run: the shift and its alignment check change the verdicts, so they run within the next build.
-- **The drive-pedal page (declared 2026-10-30, nothing rendered; ledger `amendment_5`, `learn/cc_drive_page.py`):**
+- **The drive-pedal page (declared 2026-10-30; ledger `amendment_5`, `learn/cc_drive_page.py`):**
   the user said yes to a page with drive pedals on and off. Step 4's qualifying examples less the runaway-flagged
   ones (43): drive pedal 1 on in 12, drive pedal 2 in 12 (24 pairs, 19 examples, 5 bands; 11 of the 24 pairs from one
   song, The Travelling Band's "Quicksand"); step 4's r_on' reused for 14 examples, each checked by a bit-exact
@@ -118,6 +118,16 @@
   the old format hiding differences, not proof of it: only the checks and their catches carry the titles reverb and
   sw50r spring, it is the listener's second hearing of those clips, and the listener may know which items are checks.
   Descriptive; decides nothing.
+- **The drive-pedal page, sent (2026-10-30, audited; ledger `amendment_5_outcome`):** 96 renders (48 priming), 19 of
+  19 repeats bit-exact, none refused. Median A_e: drive pedal 1 0.081, drive pedal 2 0.093; one pair per pedal below
+  tau. 17 items, about 8 min: 10 pedal pairs, 3 catches, the 2 checks and a catch under each check's title. Caveats:
+  10 of the 17 items come from one song ("Quicksand"); the 17 items use 10 distinct 10-s excerpts (803173's in items
+  2, 3 and 17, 2 and 3 back to back; 900339's in items 1, 7 and 12; 800877's, 802682's and 801895's twice each), and
+  neighbouring Quicksand windows overlap by 5 s (items 4, 13, 5, 10, 15; items 14, 2, 3, 17). On the page's pairs:
+  in drive pedal 2's loudest pair the guitar sits 5.9 dB lower with the pedal off (balance, which A_e cannot see);
+  the pairs near tau are not physically small (−15.0 to −20.5 dB, near the reverb check's −14.4 dB). Among all 24
+  measured pairs, five others move the guitar 3.2–4.1 dB and five pedals have drive or gain at 0 (two on the page).
+  Answers pending; nothing decided.
 
 Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
 draft takes in the findings: tiers by release status, set 5's
