@@ -1,6 +1,6 @@
 # Clean/crunch-led training pool (plan, 2026-10-28)
 
-**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2 built and step 3's D_CC read 2026-10-30 (amendments 1 and 2 below): undecided, leaning worse. Next: step 4's listening page; three follow-ups wait for the user.**
+**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2 built and step 3's D_CC read 2026-10-30 (amendments 1 and 2 below): undecided, leaning worse. Step 4's page sent 2026-10-30, answers pending; three follow-ups wait for the user.**
 
 **Progress (2026-10-28 to 30):**
 - **Step 0 (intake checks, `~/ndsp-presets/learn/trusted-data/intake-2026-10-28/`):** 80 DI rows in 21 sessions (the
@@ -74,6 +74,8 @@
   and D_F5 had drive2 on in 12 and drive1 in 5 (likely the seed whose best epoch was 9 of 14; not confirmed on
   V-real); and one part, Wall Of Death's femme ElecGtr5, gives +0.363 (without it +0.044). Confounds: fewer examples
   than D_F5, a small early-stopping set, and amp-track stand-ins in 44% of the examples.
+- **Step 4's page (2026-10-30, audited; ledger `amendment_3_outcome`):** 266 renders, 30 of 30 repeats bit-exact; 25
+  items (22 pairs, 3 catches) sent to the user. Caveat: 13 items come from one song. Answers pending; nothing decided.
 
 Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
 draft takes in the findings: tiers by release status, set 5's
