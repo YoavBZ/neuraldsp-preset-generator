@@ -78,11 +78,14 @@
   items (22 pairs, 3 catches) sent to the user. Caveat: 13 items come from one song. Nothing decided by the page itself.
 - **Step 4's answers (2026-10-30, audited; ledger `amendment_3_answers`):** 21 same, 4 maybe, none different; all four
   anchors answered same, one catch maybe. The page itself checked out (clips rebuilt, right order, catches identical).
-  Its own checks did not come out, so it does not place tau by ear; nothing suggests switches below tau are audible.
+  Its own checks did not come out, so it does not place tau by ear; nothing suggests switches below tau are audible
+  (the anchors were not heard either, so the sitting cannot show this). The relabel's reader is still unwritten.
   The delay anchor (900215) is a runaway delay: a steady whine, and its stored target too. The user is asked to replay
-  items 4, 13 and 17. A zero-render scan then found runaway delays (feedback 0.75 or more) in about 2% of both pools
-  (D_CC 64 of 3,034, D_F5 87 of 4,189); under the trusted-data rule an audio runaway check refuses (F20: redraws) them
-  in the next build. D_CC and D_F5 stand as read, with that caveat.
+  items 4, 13 and 17. A zero-render scan then found runaway delays (mostly feedback 0.75 or more) in about 2% of both
+  pools (D_CC 64 of 3,033 kept: training 58 of 2,699, FS_CC 6 of 334; D_F5 87 of 4,189: F5 70 of 3,467, FS5 17 of
+  722). Excluding them is the author's reading of the trusted-data rule (the labels are correct settings, the audio is
+  not a usable target), and it thins high-feedback delay draws: an audio runaway check refuses (F20: redraws) them in
+  the next build, to be declared and reviewed in F20's re-plan. D_CC and D_F5 stand as read, with that caveat.
 
 Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
 draft takes in the findings: tiers by release status, set 5's
