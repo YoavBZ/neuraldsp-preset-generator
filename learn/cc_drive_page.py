@@ -17,8 +17,11 @@ only; `cc/` and step 4's `cc-audibility/` are read, never written.
 flagged targets (`RUNAWAY`), with drive pedal 1 or 2 on (the tone probe's rule, `audibility_measure.on_effects`, on
 the pedals' switches); every one is measured (`N_MAX` is above both counts). Where step 4 rendered the example's r_on'
 it is reused, not rendered again: the example's repeat, rendered here, must match it bit for bit, else render refuses.
-**The checks.** Step 4's loudest reverb and sw50r spring pairs (`CHECKS`), re-cut from step 4's stored renders, and 3
-catch pairs (a mix against itself).
+**The checks.** Step 4's loudest reverb and sw50r spring pairs (`CHECKS`), re-cut from step 4's stored renders, each
+beside a catch under its title (its mix against itself), and 3 catch pairs on drive examples. Heard means the verdict
+"They differ". A check heard here but not on step 4's page is consistent with step 4's format hiding differences, not
+proof of it: only the checks carry those titles, it is the listener's second hearing of them, and the listener may
+know which items are checks. Step 4's item 4 (900215, the runaway delay) is a dirty example and is not re-used.
 """
 
 from __future__ import annotations
@@ -114,7 +117,8 @@ def jobs_for(chosen, group, reused):
 
 def items_of(measured, checks, near=NEAR, n_catch=CATCH, seed=PAGE_SEED):
     """The page's items: per pedal `audibility_measure.page_items`' pairs (the `near` nearest tau on each side, then
-    the loudest), `n_catch` catch pairs from different examples, and the `checks` [(i, effect, a_e)]; shuffled, each
+    the loudest), `n_catch` catch pairs from different examples, the `checks` [(i, effect, a_e)], and a catch under
+    each check's title (its mix against itself), so a check's title does not mark a real difference; shuffled, each
     item's A/B order drawn ("first": the mix on A)."""
     rng = random.Random(seed)
     picked = AM.page_items(measured, near=near, n_catch=0, seed=seed, effects=DRIVES)
@@ -126,6 +130,7 @@ def items_of(measured, checks, near=NEAR, n_catch=CATCH, seed=PAGE_SEED):
         out.append({"id": AM.item_id(e, i, "same"), "effect": e, "i": i, "kind": "same", "a_e": None})
     for i, e, a in checks:
         out.append({"id": AM.item_id(e, i, "check"), "effect": e, "i": i, "kind": "check (step 4's loudest)", "a_e": a})
+        out.append({"id": AM.item_id(e, i, "same"), "effect": e, "i": i, "kind": "same", "a_e": None})
     rng.shuffle(out)
     for it in out:
         it["first"] = rng.choice(("on", "off"))

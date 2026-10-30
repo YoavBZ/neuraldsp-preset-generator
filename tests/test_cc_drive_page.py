@@ -75,8 +75,11 @@ def test_the_page_rule():
     d1 = [it for it in items if it["effect"] == "drive1" and it["kind"] != "same"]
     assert len(d1) == 7                                                         # 3 below, 3 above, the loudest
     assert max(it["a_e"] for it in d1) == 0.5
-    assert kinds.count("same") == 3 and len({it["i"] for it in items if it["kind"] == "same"}) == 3
+    same = [it for it in items if it["kind"] == "same"]
+    assert len(same) == 5 and len({it["i"] for it in same}) == 5                # 3 drive catches, 2 under check titles
+    assert {(it["i"], it["effect"]) for it in same} >= {(800877, "reverb"), (802682, "sw50r spring")}
     assert kinds.count("check (step 4's loudest)") == 2
+    assert len(items) == 7 + 3 + 3 + 2 + 2                                     # drive2 has 3 measured pairs here
     assert len({it["id"] for it in items}) == len(items) and all(it["first"] in ("on", "off") for it in items)
     assert items == D.items_of(measured, [(800877, "reverb", 0.64), (802682, "sw50r spring", 0.03)])   # seeded
 
@@ -194,7 +197,7 @@ def _render(tmp_path, monkeypatch, step4_sha):
     monkeypatch.setattr(PS, "section_audio", lambda path, start: np.zeros(10))
     monkeypatch.setattr(B, "measure", lambda x: x)
     monkeypatch.setattr(DS, "swap_mb", lambda: 0)
-    monkeypatch.setattr(DS, "_guards", lambda *a: None)
+    monkeypatch.setattr(DS, "_guards", lambda name, *a: written.append(name) and None)
     monkeypatch.setattr(G, "write_flac", lambda path, y, sr: written.append(path) or (1.0, "sha"))
     D.main(["render", "--smoke", "--out", str(tmp_path)])
     rows = [json.loads(line) for line in (od / "rows" / "render-0of1.jsonl").read_text().splitlines()]
@@ -213,7 +216,10 @@ def test_render_checks_the_reused_r_on_bit_for_bit(tmp_path, monkeypatch):
     for p, r in zip(per_job, rows):
         assert len(p.calls) == 2 and p.calls[0] == on                          # primed with the example's own setting
         assert p.calls[1][("drive1", "drive1Active")] == ("false" if r["what"] == "drive1" else "true")
-    assert all(D.out_dir(tmp_path) in p.parents for p in written)              # nothing written into step 4's folder
+    guards = [w for w in written if isinstance(w, str)]
+    assert guards and set(guards) == {"cc-drive-page-render"}                  # the guard names this page's runs
+    files = [w for w in written if not isinstance(w, str)]
+    assert len(files) == 2 and all(D.out_dir(tmp_path) in p.parents for p in files)   # nothing into step 4's folder
 
 
 def test_render_refuses_when_the_reused_r_on_does_not_repeat(tmp_path, monkeypatch):

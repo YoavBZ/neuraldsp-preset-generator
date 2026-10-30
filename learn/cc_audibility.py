@@ -320,7 +320,7 @@ def render_shard(args, od, table=AM.EFFECTS, on_sha0=None, flac=None, label="CC 
     t0, di_cache, renders = time.time(), {}, 0
     with open(rp, "a") as fh:
         for m, j in enumerate(todo):
-            g = DS._guards("cc-audibility-render", T.DISK_GUARD_GB, swap0)
+            g = DS._guards(f"{label.lower().replace(' ', '-')}-render", T.DISK_GUARD_GB, swap0)  # cc-audibility-render
             if g:
                 print(g[1], flush=True)
                 raise SystemExit(g[0])
