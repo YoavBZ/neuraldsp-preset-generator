@@ -250,12 +250,13 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      answers and the three rulings.* *The user found that page's pairs too dense to hear (2026-10-27): FS5's mixes sit
      in 4 dense rock songs, the guitar usually 5–19 dB under the rest. A second page, zero renders (PR #319,
      reviewed): the same selection over the 53 measured pairs whose guitar is exposed (at most 6 dB under the rest,
-     no vocals, at most 2 other guitars), its own key; sent the same day. Answers on the dense page still count: an
+     no vocals, at most 2 other guitars), its own key; sent the same day; a third page on clean/crunch mixes (pool
+     step 4) sent 2026-10-30. Answers on the dense page still count: an
      effect not heard there is masked there. The user's direction the same day (below) points the rulings toward an audibility weight; its exact
      form is declared and reviewed before the relabel.*
    - **Clean/crunch-led pool** ([plan](clean-crunch-pool-plan.md), approved 2026-10-28): steps 0–3 done (D_F5bk and
-     D_CC read, both undecided; D_CC leans worse). Next, step 4's listening page; the three D_CC follow-ups wait for
-     the user; then F20's re-plan.
+     D_CC read, both undecided; D_CC leans worse). Next: step 4's page was sent 2026-10-30 and its answers are pending
+     (read under a reader declared first); the three D_CC follow-ups wait for the user; then F20's re-plan.
    - (d) **F20:** re-planned on the clean/crunch pool after step 4 and the user's call on the D_CC follow-ups. Before that: the user said yes (2026-10-27); its plan is declared after (b) reads (read 2026-10-28: the stock stem stays its input). Its value now rests on (a)/(b) and on the new data. Its declared
      fixes: redraw near-silent draws (up to 5 tries; about 16% more target renders at F5's rate); keep each
      core/full pair on one separation device; the switch readout and prior (since 2026-10-27 the plain readout is
