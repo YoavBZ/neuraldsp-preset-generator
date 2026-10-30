@@ -1,6 +1,6 @@
 # Clean/crunch-led training pool (plan, 2026-10-28)
 
-**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2: amendments 1 and 2 (below); ear pages 11–15 answered; the pool's renders wait for amendment 2's review.**
+**Status: approved by the user on 2026-10-28 ("Yes for all": decisions A–F below). D_F5bk read 2026-10-29 (165 renders). Step 2 built and step 3's D_CC read 2026-10-30 (amendments 1 and 2 below): undecided, leaning worse. Next: step 4's listening page; three follow-ups wait for the user.**
 
 **Progress (2026-10-28 and 29):**
 - **Step 0 (intake checks, `~/ndsp-presets/learn/trusted-data/intake-2026-10-28/`):** 80 DI rows in 21 sessions (the
@@ -61,6 +61,15 @@
   when no own amp track plays on 30% or more of the DI's playing frames in it (14 sections: Dunning Kruger EnDance
   Gtr6a 7, Hazael ElecGtr1 4 and ElecGtr3 3); Hannes Keseberg ElecGtr2 cannot be timed (no amp track; set 5 found
   none that passes its same-take tests) and is out.
+- **Step 2 built (2026-10-30, PR #332's plan):** 3,890 examples rendered (17,661 renders with priming) and separated
+  (3,033 kept examples; 856 near-silent renders and 1 with no backing refused by the declared rules, the targets'
+  15.8% as in F5's). D_CC trains on 2,699 examples with 334 for early stopping (D_F5: 3,467 and 722).
+- **Step 3's D_CC read (2026-10-30, audited; ledger `clean-crunch-pool-dcc` `outcome`):** D_CC − D_F5 +0.090
+  [−0.011, +0.191] on V-real-11, 1 band better and 6 worse: undecided, leaning worse. Clean +0.015, crunch +0.120. It
+  is also worse than D_core5 (+0.169), S (+0.177) and D_F5's constant (+0.085), each interval above 0. The audit found
+  no bug. Most of the loss is drive pedals turned off near the 0.5 threshold on pr12 crunch (likely the seed that
+  stopped at epoch 9; not confirmed on V-real), and one part, Wall Of Death's femme ElecGtr5, gives +0.363 (without it +0.044). Confounds: fewer examples
+  than D_F5, a small early-stopping set, and amp-track stand-ins in 44% of the examples.
 
 Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
 draft takes in the findings: tiers by release status, set 5's
