@@ -138,8 +138,13 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        better, 6 worse): undecided, leaning worse. Clean +0.015, crunch +0.120. Part-weighted (descriptive) +0.090
        [+0.006, +0.175], 9 of 11 parts worse, which supports "leaning worse". It also trails D_core5, S and D_F5's
        constant (descriptive). Audited: no bug. Most of the loss (post hoc, descriptive): both drives off in all 14
-       pr12-crunch directions, where D_F5 had drive2 on in 12 (likely the seed whose best epoch was 9 of 14), and
-       one part (femme ElecGtr5) gives +0.363.
+       pr12-crunch directions, where D_F5 had drive2 on in 12, and one part (femme ElecGtr5) gives +0.363.
+     - D_CC's follow-ups read (2026-10-30, audited; ledger `amendment_4_outcome`, 165 renders): both seeds turn
+       those drives off (not the early-stopped seed alone). With its pedals at S, D_CC gains −0.076 [−0.142, −0.011]
+       (all 7 bands) and is about even with D_F5 (pedals at S both: +0.015 [−0.028, +0.057], undecided), so the
+       loss is mostly its pedal answers: drive2 sits near chance (probability 0.42–0.50; on in 52.7% of the
+       labels) and a 0.5 readout turns it off. D_CC is worse than its own pool's constant, +0.103 [+0.051, +0.155]
+       in all 7 bands (descriptive): on V-real the model does not yet beat a constant.
      - Confounds: fewer examples than D_F5 (2,699 + 334 against 3,467 + 722), a small early-stopping set, and
        recorded amp-track stand-ins in 44% of the examples.
      - Step 4's page sent (2026-10-30, audited): 25 items on clean/crunch mixes, 266 renders. 13 of the 25 items
@@ -151,12 +156,11 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        example. Its delay anchor is a runaway delay (a steady whine), and a zero-render scan found such targets in
        about 2% of both pools (D_CC 64 of 3,033, D_F5 87 of 4,189); excluded from the next build (F20's runaway
        check, to be declared and reviewed in the re-plan).
-     - Next: the drive-pedal page (`amendment_5`, after its review), and D_CC's two cheap follow-ups, which the user
-       approved 2026-10-30 (ledger `amendment_4`, run once reviewed): each seed's own answer on V-real (zero
-       renders), and D_CC with the pedals at S plus its own constant (165 renders). Forkupines Sugar Faith
-       ElecGtr8's DI, 129.83 ms ahead of its amp track, joins the next build from a delayed copy if the alignment
-       check on the copy reads about 0 ms. The size-matched top-up (about 1,470 more examples, about 6.7k renders,
-       about 3 h) stays unplanned. Then F20's re-plan on this pool.
+     - Next: the drive-pedal page (`amendment_5`). Forkupines Sugar Faith ElecGtr8's DI, 129.83 ms ahead of its
+       amp track, joins the next build from a delayed copy if the alignment check on the copy reads about 0 ms
+       (`amendment_4` (c); it runs within that build, since it changes the verdicts). The size-matched top-up
+       (about 1,470 more examples, about 6.7k renders, about 3 h) stays unplanned. Then F20's re-plan on this pool,
+       with two new questions: how near-chance switches are read out, and the model beating its constant.
    - **Learning every control is not yet shown to help.** T3's F5 gate, D_F5 (every control learned) − D_core5 (today's 25
      controls), reads +0.079 [−0.065, +0.224] on V-real-11 (7 bands): not shown. The user said yes to F20 (2026-10-27);
      (b) read 2026-10-28 (the stock stem stays F20's input). F20 is re-planned on the clean/crunch
@@ -275,14 +279,16 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
      D_CC read, both undecided; D_CC leans worse). Step 4's answers came 2026-10-30 (tau not placed by ear). Next: the
      drive-pedal page (declared, `amendment_5`: 96 renders, at most 21 items with an instant A/B switch; its checks
      take the place of the replay of three items, which the author dropped; step 4's runaway item 4 is not re-used);
-     the two cheap D_CC follow-ups and the ElecGtr8 shift (approved 2026-10-30, ledger `amendment_4`, run once
-     reviewed); then F20's re-plan.
+     the two cheap D_CC follow-ups read 2026-10-30 (`amendment_4_outcome`: the loss is mostly D_CC's pedal answers,
+     in both seeds; D_CC trails its own constant); the ElecGtr8 shift waits for the next build; then F20's re-plan.
    - (d) **F20:** re-planned on the clean/crunch pool after step 4 and the user's call on the D_CC follow-ups. Before that: the user said yes (2026-10-27); its plan is declared after (b) reads (read 2026-10-28: the stock stem stays its input). Its value now rests on (a)/(b) and on the new data. Its declared
      fixes: redraw near-silent draws (up to 5 tries; about 16% more target renders at F5's rate); an audio runaway
      check on targets (a self-oscillating delay, about 2% of both pools), refused and redrawn (to be declared and
      reviewed in the re-plan); keep each
      core/full pair on one separation device; the switch readout and prior (since 2026-10-27 the plain readout is
-     the method; an at-S read only beside it); "unknown" DIs at most 25% of draws. Its plan must also settle
+     the method; an at-S read only beside it; D_CC's follow-ups add how near-chance switches are read out, since a
+     0.5 readout turned D_CC's bare-majority drives off); the model beating its own constant (D_CC trails its own,
+     D_F5 about equals its own); the ElecGtr8 shift and its alignment check (`amendment_4` (c)), run within the build; "unknown" DIs at most 25% of draws. Its plan must also settle
      V-real-11 against V-real-12 (keeping V-real-11 needs a code change) and rebuild the DI inventory and pool. About
      51k renders (T3's plan: about 58k renders and 32–42 h wall in all, most of it F20's).
    - Not blocked by these: every-control stage 1 (can run, not run), the real-mix test and T4 (below).
@@ -1088,4 +1094,5 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-30 | Step 4's answers, audited (read under amendment_3's declared reading, descriptive): 21 same, 4 maybe, none different; all four anchors same, one of 3 catches maybe. The page checked out (all 50 clips rebuilt). Its own checks did not come out, so tau is not placed by ear; nothing suggests switches below tau are audible (the anchors were not heard either, so the sitting cannot show this); the relabel's reader is still unwritten. The delay anchor is a runaway delay (a steady whine, its stored target too); a zero-render scan finds runaway delay targets (mostly feedback 0.75 or more) in about 2% of both pools (D_CC 64 of 3,033 kept: training 58 of 2,699, FS_CC 6 of 334; D_F5 87 of 4,189: F5 70 of 3,467, FS5 17 of 722); one delay-off target per pool is flagged (801570, 356). Excluding them is the author's reading of the trusted-data rule (the labels are correct settings, the audio is not a usable target) and thins high-feedback delay draws; they are refused and redrawn in the next build (F20, to be declared and reviewed in the re-plan); D_CC and D_F5 stand as read, with that caveat. The user is asked to replay items 4, 13 and 17 | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_3_answers`, [plan](clean-crunch-pool-plan.md) |
 | 2026-10-30 | The user said yes (in chat, "Yes for all") to D_CC's two cheap follow-ups and to the ElecGtr8 shift; declared before any run (ledger `amendment_4`, code `cc_readout` followup-*, `cc_build` shift), they run once reviewed: (a) each seed's own answer on V-real-11 (zero renders; drive switches, inputGain and amp head per seed against D_F5's stored per-seed answers); (b) D_CC with its pedals at S and D_CC's own constant (165 renders; four descriptive rows); (c) Forkupines Sugar Faith ElecGtr8's DI read from a copy delayed by 129.83 ms, in the next build only and only if the alignment check on the copy reads about 0 ms. The size-matched top-up stays unplanned | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_4`, [plan](clean-crunch-pool-plan.md) |
 | 2026-10-30 | The user said yes (in chat, "Yes for all") to a drive-pedal listening page. Declared before any render (ledger `amendment_5`, `learn/cc_drive_page.py`): step 4's qualifying examples less the runaway-flagged (43), drive pedal 1 on in 12 and drive pedal 2 in 12 (24 pairs, 19 examples, 5 bands; 11 of the 24 pairs from one song, The Travelling Band's "Quicksand"); step 4's r_on' reused for 14, each checked by a bit-exact repeat; 96 new renders. A new player loops both mixes and switches between A and B at once; at most 21 items (about 10.5 min): at most 14 pedal pairs, 3 catches, step 4's loudest reverb and sw50r spring pairs as checks, and a catch under each check's title. Heard means "They differ" ("Maybe" reported beside). A check heard here but not on step 4's page is consistent with the old format hiding differences, not proof (only the checks carry those titles, it is a second hearing, the listener may know them). The author dropped the separate replay of items 4, 13 and 17 (reported to the user 2026-10-30); item 4 (900215) is a dirty (runaway) example and is not re-used. Descriptive; decides nothing | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_5`, [plan](clean-crunch-pool-plan.md) |
+| 2026-10-30 | D_CC's follow-ups read, audited (ledger `amendment_4`; zero renders for (a), 165 renders for (b)): both seeds turn the pr12-crunch drives off (drive2 on in 2 and 0 of 14 directions; D_F5 12), so seed 20261043 alone is not the cause; drive2 is on in 52.7% of D_CC's pr12-crunch labels and its probability there is 0.42–0.50, so a 0.5 readout turns it off. D_CC with its pedals at S − D_CC −0.076 [−0.142, −0.011], all 7 bands better; pedals at S in both, D_CC − D_F5 +0.015 [−0.028, +0.057] (undecided): the loss is mostly the pedal answers. D_CC − its own constant +0.103 [+0.051, +0.155], all 7 bands worse; D_CC's constant − D_F5's −0.018 [−0.057, +0.021] (descriptive). For F20's re-plan: the readout of near-chance switches and beating the constant. The ElecGtr8 shift (c) runs within the next build | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_4_outcome`, [plan](clean-crunch-pool-plan.md) |
 
