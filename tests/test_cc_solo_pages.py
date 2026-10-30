@@ -152,7 +152,7 @@ def test_the_page_plays_the_renders_alone_and_writes_only_its_own_files(tmp_path
         off = on if it["kind"] == "same" else audio[(it["i"], it["effect"])]
         first, second = (on, off) if it["first"] == "on" else (off, on)
         assert np.array_equal(a, first) and np.array_equal(b, second)
-        assert it["playing"] == 1.0 and it["lufs_on"] < -10
+        assert it["playing_on"] == 1.0 and it["playing_off"] == 1.0 and it["lufs_on"] < -10 and it["lufs_off"] < -10
         if it["kind"] == "same":
             assert it["solo_j"] is None and it["spec_diff_db"] is None
         else:

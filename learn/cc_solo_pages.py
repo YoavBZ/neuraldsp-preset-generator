@@ -1,8 +1,8 @@
 """Guitar-only versions of the clean/crunch listening pages (`docs/clean-crunch-pool-plan.md`; ledger
 `clean-crunch-pool-dcc`, `amendment_6`). The user, 2026-10-30: "The mixes make it harder to distinguish, please only
-the guitars if possible". Part 1 is the drive page's items (`cc_drive_page`, amendment 5), part 2 step 4's
-(`cc_audibility`, amendment 3), each clip the rendered guitar alone: no backing, no other guitars, no stand-ins, no
-mastering. Zero renders: every clip is a stored r_on' or r_off, read hash-checked. Descriptive: it decides nothing and
+the guitars if possible", then "Same for the previous effects listening page". Part 1 is the drive page's items
+(`cc_drive_page`, amendment 5), part 2 step 4's (`cc_audibility`, amendment 3), each clip the rendered guitar alone:
+no backing, no other guitars, no stand-ins, no mastering. Zero renders: every clip is a stored r_on' or r_off, read hash-checked. Descriptive: it decides nothing and
 relabels nothing. Outputs: new keys beside the in-mix keys (`solo-page-key.json`) and new pages
 (`listening/cc-drive-solo/`, `listening/cc-audibility-solo/`); the in-mix pages, keys, plans and measurements are
 read, never written.
@@ -19,7 +19,7 @@ in-mix pages). Each clip is levelled to -23 LUFS on its own with 10-ms fades and
 (`audibility_measure.pair_clips`), in the drive page's A/B player (`cc_drive_page.page_html`, guitar-only wording).
 **Near silence.** A guitar-alone render below the pool's render floor (`trusted_data.near_silent`) stops the build,
 named; none is at the declaration. Gaps where the guitar does not play are kept (both clips share them): each item's
-key row records the share of its window where the guitar plays (`playing_share`), with its solo J (the measurement's
+key row records the share of its window where the guitar plays in each clip (`playing_share`), with its solo J (the measurement's
 J(r_off, r_on') on the guitar alone) and the clips' magnitude-spectrogram difference (`spec_diff_db`).
 """
 
@@ -200,7 +200,8 @@ def cmd_page(args):
         p = pairs.get((i, it["effect"]))
         it.update(solo_j=None if it["kind"] == "same" or p is None else p.get("solo"),
                   spec_diff_db=None if it["kind"] == "same" else round(spec_diff_db(lon, loff), 2),
-                  playing=round(playing_share(on, BDR.SR), 3), lufs_on=round(T.lufs_or_none(on), 2))
+                  playing_on=round(playing_share(on, BDR.SR), 3), playing_off=round(playing_share(off, BDR.SR), 3),
+                  lufs_on=round(T.lufs_or_none(on), 2), lufs_off=round(T.lufs_or_none(off), 2))
         clips[it["id"] + "-1"], clips[it["id"] + "-2"] = AM.pair_clips(a, b, pd / "cache")
     build = hashlib.sha256(json.dumps(items, sort_keys=True).encode()).hexdigest()[:12]
     _save(kp, {"page": PARTS[part]["name"], "part": part, "source": PARTS[part]["source"],

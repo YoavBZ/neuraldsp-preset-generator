@@ -129,15 +129,20 @@
   measured pairs, five others move the guitar 3.2–4.1 dB and five pedals have drive or gain at 0 (two on the page).
   Answers pending; nothing decided.
 - **Guitar-only pages (declared 2026-10-30; ledger `amendment_6`, `learn/cc_solo_pages.py`):** the user, the same
-  day: "The mixes make it harder to distinguish, please only the guitars if possible". Zero renders: the drive page's
-  17 items (part 1) and step 4's 25 (part 2) rebuilt from the stored renders as the guitar alone (no backing, no other
-  guitars, no stand-ins, no mastering), each clip at −23 LUFS, in the drive page's A/B player, with new ids, order and
-  A/B draw. Step 4's item 4 (900215, the runaway delay) is replaced by the loudest clean delay pair, 803054 (A_e 0.447).
-  Every item's guitar plays in 96–100% of its window; the solo clips differ more than the mixes did (part 1's drive
-  pairs −2.7 to −14.4 dB, part 2's pairs −5.9 to −29.0 dB). The answers show whether each switch is audible on the
-  guitar alone, an upper bound on its audibility in a song; read beside step 4's in-mix answers, heard alone but not
-  in the mix points at masking. The drive page's in-mix version is not needed now. Not built before review; decides
-  nothing.
+  day: "The mixes make it harder to distinguish, please only the guitars if possible", then "Same for the previous
+  effects listening page". Zero renders: the drive page's 17 items (part 1) and step 4's 25 (part 2) rebuilt from the
+  stored renders as the guitar alone (no backing, no other guitars, no stand-ins, no mastering), each clip at
+  −23 LUFS, in the drive page's A/B player, with new ids, order and A/B draw. Step 4's item 4 (900215, the runaway
+  delay) is replaced by the loudest non-runaway delay pair, 803054 (A_e 0.447; its reverb is on too). The guitar plays
+  in 96–100% of each on clip's window and 87–100% of each off clip's (803054's delay-off clip is about 1.3 s silent
+  where the on clip has echoes). The solo clips differ more than the mixes did for all 12 of part 1's pairs and 21
+  of part 2's 22 (part 1's drive pairs −2.7 to −14.4 dB, part 2's pairs −5.9 to −29.0 dB). The AAC coding error sits
+  12.4 dB under 801921's reverb pair difference. The answers show whether each switch is audible on the guitar
+  alone, levelled apart: roughly an upper bound on its audibility in a song, except that levelling removes a balance
+  change the switch makes in the mix (801895: 5.9 dB). Against step 4's in-mix answers, masking is confounded with
+  the old sequential player and a repeat hearing; only part 1 against the drive page's in-mix answers (not asked for
+  now) would isolate it. They cannot show whether a switch is heard in a song, nor tau (the items were picked by
+  their in-mix A_e). Not built before review; decides nothing.
 
 Draft 1 was reviewed independently on 2026-10-28, and the same reviewer re-checked draft 2 (no blockers left). This
 draft takes in the findings: tiers by release status, set 5's

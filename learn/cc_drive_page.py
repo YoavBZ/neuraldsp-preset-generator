@@ -55,6 +55,8 @@ LABEL = {"drive1": "drive pedal 1", "drive2": "drive pedal 2", "reverb": "reverb
 def label(effect):
     """An item's title word: LABEL's, else the effect's own name (step 4's titles)."""
     return LABEL.get(effect, effect)
+
+
 N_MAX = 30                                      # "on" examples per pedal: above both counts, so no draw
 SEED = 20261117                                 # the draw of N_MAX among more (none here)
 PAGE_SEED = 20261118                            # the page's order and each item's A/B order
