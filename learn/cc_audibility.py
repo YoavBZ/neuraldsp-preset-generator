@@ -159,6 +159,7 @@ def cmd_render(args):
     """One shard of whole sections (`audibility_measure.cmd_render`'s recipe on the pool): per job the example's full
     twin rebuilt and checked against its render row, then in a new plugin process primed once with it, r_on', a
     repeat (bit-identical to r_on') or r_off (the effect off, checked to encode off); 0.25 s trimmed; FLAC and a row."""
+    require_declared()                              # before any import: the light CI has no numpy
     import numpy as np
 
     from learn import direct_sound_gate as G
@@ -168,7 +169,6 @@ def cmd_render(args):
     from learn import pretrain_set as PS
     from learn import song_bank as B
 
-    require_declared()
     root = V.out_root(args)
     od = out_dir(root)
     ap = _load(od / "plan.json")
@@ -316,12 +316,12 @@ def measure_example(root, i, x, rend, built, stems, di, renders):
 def cmd_measure(args):
     """Every rendered pair's A_e and solo, each group's repeat floor (every repeat must be bit-identical, or the step
     refuses before writing), to measure.json."""
+    require_declared()                              # before any import: the light CI has no numpy
     import numpy as np
 
     from learn import pretrain_set as PS
     from learn import song_bank as B
 
-    require_declared()
     root = V.out_root(args)
     od = out_dir(root)
     ap = _load(od / "plan.json")
@@ -382,11 +382,11 @@ def cmd_measure(args):
 def cmd_page(args):
     """The blind page (`audibility_measure.page_items` with PAGE_SEED; the pairs as two mixes each, level-free, AAC at
     256 kbps) to listening/cc-audibility/, its key to trusted-data/cc-audibility/page-key.json."""
+    require_declared()                              # before any import: the light CI has no numpy
     import numpy as np
 
     from learn import direct_sound_gate as G
 
-    require_declared()
     root = V.out_root(args)
     od = out_dir(root)
     meas = _load(od / "measure.json")
