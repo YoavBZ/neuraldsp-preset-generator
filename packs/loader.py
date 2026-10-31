@@ -129,6 +129,12 @@ class Pack:
     display_name: str
     file_header: str
     parameters: Dict[str, ParamSpec] = field(default_factory=dict)
+    # Headers of a later edition of the same plugin whose presets hold the same
+    # controls (Morgan Amps Suite X saves "morgan-x"). Read as this pack. A file
+    # written from such a template keeps that edition's header and layout, so it
+    # is for that edition only; one written from an original template keeps
+    # `file_header`, which that edition also loads, as legacy.
+    other_file_headers: List[str] = field(default_factory=list)
     # The installed Audio Unit this pack describes, as a type/subtype/manufacturer
     # triple. Only scripts/audit_manifest.py uses it: it re-derives every declared
     # range and selector from the running plugin. Absent on a bootstrapped draft,
@@ -433,6 +439,7 @@ def load_pack(pack_id: str = "morgan") -> Pack:
         display_name=raw["display_name"],
         file_header=raw["file_header"],
         parameters=params,
+        other_file_headers=_other_headers(raw.get("other_file_headers")),
         audio_unit={
             k: v for k, v in raw.get("audio_unit", {}).items() if k != "note"
         },
@@ -441,6 +448,17 @@ def load_pack(pack_id: str = "morgan") -> Pack:
         search_conditions=raw.get("search_conditions", {}),
         custom_ir=list(raw.get("custom_ir", {}).get("slots", [])),
     )
+
+
+def _other_headers(entry) -> List[str]:
+    """`other_file_headers` as a list, whether the manifest gives a list or a noted object."""
+    if entry is None:
+        return []
+    headers = entry.get("headers") if isinstance(entry, dict) else entry
+    if not isinstance(headers, list) or not all(isinstance(h, str) for h in headers):
+        raise PackError("other_file_headers must be a list of header strings, "
+                        "or an object whose `headers` is one")
+    return headers
 
 
 def list_packs() -> List[str]:
@@ -456,6 +474,6 @@ def detect_pack(file_header: str) -> Optional[Pack]:
     """
     for pack_id in list_packs():
         pack = load_pack(pack_id)
-        if pack.file_header == file_header:
+        if file_header in (pack.file_header, *pack.other_file_headers):
             return pack
     return None

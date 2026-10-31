@@ -4,6 +4,10 @@
   "display_name": "Morgan Amps Suite",
   "vendor": "Neural DSP",
   "file_header": "morgan",
+  "other_file_headers": {
+    "note": "Morgan Amps Suite X (AU subtype MASX, installed beside this plugin) saves presets under these headers. Its presets hold the same controls at the same stored values, plus three cab flags this manifest does not declare (cabStereo, leftIsCustomIR, rightIsCustomIR) in place of leftCabStereo and rightCabStereo, and a `tags` node whose `tag` entries each read as a top-level `value` (browser tags, not controls). It loads files with this pack's own header as legacy presets (checked in both plugins by the user, 2026-10-31). A file written from an X template keeps X's header and layout; whether the original plugin loads it is unchecked.",
+    "headers": ["morgan-x"]
+  },
   "audio_unit": {
     "type": "aumf",
     "subtype": "NMAS",
