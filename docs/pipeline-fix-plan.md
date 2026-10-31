@@ -502,6 +502,28 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **Caveats.** One seed each; the ladder's set (F8); the targets are Morgan renders on the true amp.
 - **References.** `PF/sound/judge/P2d-best/`, `PF/sound/report.json`; `logs/pf-sound-d-*.log`.
 
+### F15. The skill dies at the mix, not at the separator (the locating rows a − c and c − d)
+- **Result.** P2c's answers (the self-built mix as input; best checkpoint) sound no closer than S. The stem (P2d)
+  sounds as close as the mix, or closer.
+- **Numbers.**
+
+  | Row | FS (60, 6 bands) | NS (60, 36 sections) |
+  |---|---|---|
+  | P2c − S | +0.059 [−0.070, +0.188], 2 of 6 better | −0.033 [−0.106, +0.039], 19 of 36 better |
+  | P2c − constant | +0.055 [−0.098, +0.208] | −0.039 [−0.078, −0.000] |
+  | P2a − P2c | −0.307 [−0.363, −0.251], 6 of 6 better | −0.208 [−0.265, −0.151], 29 of 36 better |
+  | P2c − P2d | +0.131 [+0.066, +0.197], 0 of 6 better | +0.009 [−0.033, +0.050] |
+
+- **Reading.**
+  - Nearly all of the clean input's skill is gone once the guitar sits in the mix.
+  - The separator does not lose it further; on FS the stem is reliably better than the raw mix.
+  - So the review's leading suspect, the separator (step 16), is cleared as the place of the loss. What kills the
+    skill is the guitar being in a mix: the other guitars, the backing, or both. P2b splits them.
+  - The earlier mix-input arm (D_F5mix, not shown better than the stem) agrees.
+- **Caveats.** One seed each; best checkpoints chosen on NS loss (P2c's at epoch 5).
+- **References.** `PF/sound/judge/P2c-best/`, `PF/reads/P2c-*.json`, `PF/runs/P2c-20261042.json`;
+  `logs/pf-sound-c-*.log`.
+
 ### F9. Process: removing a worktree crashed running jobs
 - **Result.** Removing the plan's worktree while the doubles render ran from it crashed its 3 shards at a lazy
   import. They resumed from their saved sections with no data lost.
