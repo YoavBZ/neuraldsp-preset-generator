@@ -9,6 +9,7 @@ after the review's (P1-P7), and the recipe every retrain in the plan shares. Out
     $MAIN -m learn.pipeline_fix p5                  # zero renders: S re-picked without V-real's parts
     $MAIN -m learn.pipeline_fix dirty-doubles       # zero renders: which DT doubles differ from their target's label
     $TORCH_PY -m learn.pipeline_fix p6              # inference only: D_CC on FS_CC, the coin against the class
+    $MAIN -u -m learn.pipeline_fix render-doubles --control     # phase 1b: the positive control first
     $MAIN -u -m learn.pipeline_fix render-doubles --shard k/3   # phase 1b: the doubles re-rendered (renders)
     $MSST -m learn.pipeline_fix build-doubles --device mps      # phase 1b: their mixes and stems
     $MAIN -m learn.pipeline_fix build-inputs --shard k/3        # P2a's and P2b's features (zero renders)
@@ -1078,7 +1079,8 @@ def cmd_render_doubles(args):
     """One shard of sections: for each kept example with a DT double, every other guitar re-rendered as `cc_build`
     rendered it, the DT doubles with the target's full setting, each in its own primed process; the others' sum
     written to cc-dt/. First, in shard 0, a positive control: CONTROL_N doubled examples re-rendered the old way
-    must reproduce their stored others to within the FLAC's quantisation."""
+    must reproduce their stored others to within the FLAC's quantisation (`--control`, run alone first; the shards
+    refuse until it passes)."""
     import numpy as np
 
     from learn import audibility_measure as AM
@@ -1167,7 +1169,11 @@ def cmd_render_doubles(args):
         return acc, rows
 
     control = []
-    if k == 0 and not (dt_root() / "control.json").exists():
+    cp = dt_root() / "control.json"
+    if not args.control:
+        if not cp.exists() or not all(c["ok"] for c in json.loads(cp.read_text())["examples"]):
+            raise SystemExit("run `render-doubles --control` first; the shards render only after it passes")
+    elif not cp.exists():
         pick = todo_ids[:: max(1, len(todo_ids) // CONTROL_N)][:CONTROL_N]
         for i in pick:
             x = ex[i]
@@ -1184,8 +1190,11 @@ def cmd_render_doubles(args):
                                           "time": time.strftime("%Y-%m-%d %H:%M:%S")})
         if not all(c["ok"] for c in control):
             raise SystemExit("the old render path does not reproduce the stored others: stop")
-    elif k == 0 and not all(c["ok"] for c in json.loads((dt_root() / "control.json").read_text())["examples"]):
-        raise SystemExit("the positive control failed: stop")
+        print("CONTROL PASSED")
+        return
+    else:
+        print(f"the control is stored: {cp}")
+        return
     rp.parent.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
     with open(rp, "a") as fh:
@@ -1692,6 +1701,7 @@ def main(argv=None):
     ap.add_argument("--name", default=None)
     ap.add_argument("--which", choices=("final", "best"), default="final")
     ap.add_argument("--names", default="")
+    ap.add_argument("--control", action="store_true")
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 
