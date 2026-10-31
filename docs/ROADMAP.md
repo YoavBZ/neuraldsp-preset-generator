@@ -1013,11 +1013,12 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 - **Done, 2026-10-31: the X editions.** Morgan Amps Suite X and Tone King Imperial MKII X
   install beside the originals, and both load the presets these tools write as legacy
   presets (the user checked both plugins). Morgan X's presets hold the same controls at
-  the same stored values. The only change is three cab flags that replace the two
-  per-side stereo switches. They are now read as the `morgan` pack: sections come from
+  the same stored values. The changes are three cab flags that replace the two
+  per-side stereo switches, and browser tags. They are now read as the `morgan` pack: sections come from
   the file's tree (`format/valuetree.py`), because X leaves out the empty markers that
   the old reading relied on. Generated presets go to both User folders when X is there
-  ([installing](../reference/installing.md)). Not done: Tone King X's own presets use a
+  ([installing](../reference/installing.md)), when made from an original template; one made
+  from an X template stays X's format and goes to X only. Not done: Tone King X's own presets use a
   new layout (104 entries against 259, renamed controls) that no pack reads; renders stay
   on the original plugins.
 - **Setting controls has real headroom** ([knob ceiling](knob-ceiling-results.md),

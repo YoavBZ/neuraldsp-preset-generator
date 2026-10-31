@@ -24,10 +24,12 @@ from __future__ import annotations
 from typing import Dict, Optional, Tuple
 
 SUBMODELS = "subModels"
-# A stored value is never empty: its first byte is a JUCE `var` type marker
-# (1 int, 2 true, 3 false, 4 double, 5 string, 6 int64, 7 array, 8 binary,
-# 9 undefined). Checking it is what stops a damaged file, one property cut out
-# without its count being lowered, from re-syncing into a whole but wrong tree.
+# A stored value starts with a JUCE `var` type marker (1 int, 2 true, 3 false,
+# 4 double, 5 string, 6 int64, 7 array, 8 binary, 9 undefined). Requiring one is
+# what stops a damaged file, one property cut out without its count being
+# lowered, from re-syncing into a whole but wrong tree. JUCE writes a void value
+# as size 0 with no marker; no preset seen so far holds one (983 files,
+# 2026-10-31), and a file that did would get the `subModels` reading whole.
 VAR_MARKERS = 9
 
 

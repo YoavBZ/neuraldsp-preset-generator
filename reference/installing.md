@@ -30,11 +30,13 @@ don't have to ask again.
 the original plugins, each with its own folder (`Morgan Amps Suite X`,
 `Tone King Imperial MKII X`). Both load the presets these tools write, as legacy
 presets. When an X folder exists, write the same file to its `User/` too, and tell
-the user it is in both. Take templates from the original plugin's folder when it
-is there. Morgan X's own presets also work as templates (the `morgan` pack reads
-them). Tone King X's own presets do not: they use a new layout that no pack reads
-yet. If only Tone King X is installed, say so and stop, rather than drafting a
-new pack.
+the user it is in both. That holds only for a file made from an original
+plugin's template, so take templates from the original folder whenever it is
+there. A file made from a Morgan X preset (the `morgan` pack reads them) keeps
+X's format, which nobody has checked the original plugin loads: write it to X's
+`User/` only. Tone King X's own presets cannot be templates: they use a new
+layout that no pack reads yet. If only Tone King X is installed, say so and stop,
+rather than drafting a new pack.
 
 `/Library/…` is owned by root but the Neural DSP installer leaves these folders
 world-writable, so writing there needs no `sudo`. If a write is refused, say so

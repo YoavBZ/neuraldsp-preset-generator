@@ -169,8 +169,12 @@ def build(tokens: List[Token]) -> Preset:
     tree = property_modules(b"".join(t.to_bytes() for t in tokens))
 
     def module_of(key_index: int) -> str:
-        if tree is not None and starts[key_index] in tree:
-            return tree[starts[key_index]]
+        if tree is not None:
+            # +1: a count byte in printable ASCII is glued to the front of the
+            # name that follows it (see `is_record_marker`).
+            for start in (starts[key_index], starts[key_index] + 1):
+                if start in tree:
+                    return tree[start]
         return ".".join(module_stack)
 
     i = 0
