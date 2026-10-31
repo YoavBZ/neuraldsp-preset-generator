@@ -326,6 +326,12 @@ instead of generating unrealistic presets our own?"):
     Two cautions kept: a community pack must never sit in the plugin's non-User preset folder, which the menus
     read as factory, and if Suite X installs as a separate plugin, the hard-coded preset paths and the pack identity
     need updating (builds already stop when `plugin_version` changes, `learn/pretrain_set.py:709–711`).
+  - Suite X installed by the user (2026-10-31), beside the old plugin rather than over it: a separate AU
+    (subtype `MASX`, 1.0.0) next to the one every render loads (`NMAS`, 1.1.1, unchanged since May 2025), so stored
+    renders and 5B.2 are unaffected and no parity check is needed while the renders stay on `NMAS`. Its bank is
+    the same 133 files (108 factory and artist, 25 user) under the same names, re-saved in a `morgan-x 0.1.0`
+    format: every stored value matches; the only change is five new cab keys (stereo cabs, custom-IR flags). It
+    brings no new tones for the draws. Tone King Imperial MKII X also installed; not used by the pipeline.
 
 *2026-10-31, after the user's "Continue":* the two blocker tests run, each declared and reviewed first.
 - **5A, backing variety at scale (blocker 1; ledger `phase_5a`; zero renders).**
