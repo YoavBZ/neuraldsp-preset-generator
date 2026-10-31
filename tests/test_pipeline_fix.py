@@ -337,3 +337,27 @@ def test_ceiling_rows_drop_a_refused_S_and_score_a_refused_answer_as_S():
     assert cnt == {"s_dropped": 1, "refused_as_S": 1}
     assert by_di["best"] == [("d", "u1", pytest.approx(math.log(0.5)))]
     assert by_di["shrunk"] == [("d", "u1", 0.0)] and by_rig["best"][0][0] == "r"
+
+
+def test_cycled_repeats_in_order_to_a_fixed_count():
+    assert P.cycled([1, 2, 3], 7) == [1, 2, 3, 1, 2, 3, 1] and P.cycled([], 5) == []
+
+
+def test_rc_setting_moves_S_by_the_mean_deviation_and_takes_the_majority_switch():
+    from learn import knob_ceiling as K
+
+    knob = next(d for d in K.space("pr12") if d.kind == "cont")
+    sw = next((d for d in K.space("pr12") if d.kind not in ("cont", "log", "cat")), None)
+    dims = [knob] + ([sw] if sw else [])
+    k = (knob.module, knob.key)
+    S = {k: K.fmt(knob.from_unit(0.5))}
+    labels = [{k: K.fmt(knob.from_unit(0.6))}, {k: K.fmt(knob.from_unit(0.8))}]
+    if sw:
+        ks = (sw.module, sw.key)
+        S[ks] = sw.values[0]
+        labels[0][ks] = labels[1][ks] = sw.values[1]
+    out = P.rc_setting(dims, S, labels)
+    assert knob.to_unit(out[k]) == pytest.approx(0.7, abs=1e-6)
+    if sw:
+        assert out[ks] == sw.values[1]
+    assert P.rc_setting(dims, S, []) == S
