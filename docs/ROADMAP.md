@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-30.
+lives in the linked documents. Last updated 2026-10-31.
 
 ## Where the product is
 
@@ -64,7 +64,8 @@ lives in the linked documents. Last updated 2026-10-30.
   *2026-10-30:* a step-by-step [pipeline review](ml-pipeline-review.md) (zero renders) finds that the model reads
   almost none of the sound, even on its own made-up songs. With so little read, it scores about as well as its
   training average, which leans worse than S on the real songs (undecided). Seven tests (P1–P7) are proposed to
-  find the failing step (step 0).
+  find the failing step (step 0). *2026-10-31:* a [fix plan](pipeline-fix-plan.md) runs them and fixes each finding,
+  in place of F20's draft (step 0).
 - **The judge** ([measuring-closeness.md](measuring-closeness.md)) is how closeness is
   measured. It needs the DI of the same take, and listening validated it only for clear
   differences between clean-to-crunch PR12 renders
@@ -132,7 +133,26 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
    7 panel parts). It needs that list, not the rebuild: it is a true-DI oracle on amp-track targets, with no backing
    or stem.
 
-   **Where it stands (2026-10-30).** Not ready to ship; the detail is in the trusted-data items below.
+   **Where it stands (2026-10-31).** Not ready to ship; the detail is in the trusted-data items below.
+   - **Pipeline fix plan (2026-10-31; [plan](pipeline-fix-plan.md), code `learn/pipeline_fix.py`, ledger
+     `pipeline-fix`).** At the user's request every finding of the pipeline review below is to be fixed and verified,
+     with none left open: each ends as Fixed, Ruled out, Limit, measured or User decision. It replaces F20's draft
+     (PR #345) as the next step. Reviewed (12 required changes, all made).
+     - **The order:** a fair yardstick (S's home advantage, Wickerman's duplicate input, render-order noise); the
+       wrong training data fixed (DT doubles, runaway targets); where the tone is lost (P1, then P2's ladder of inputs:
+       the clean target, the target in its backing, the mix, the stem, read by knob and by sound, on new settings and
+       new songs); the located fix and one model with every fix (D_fix), chosen without V-real; then V-real, with P3's
+       fallback to S as a measurement (the user's 2026-10-27 ruling stands) and P4 (real amp tracks as input). Scale
+       (F20) only if the learning curves rise.
+     - **Done so far (zero renders):**
+       - P5: without V-real's own clips the clean start presets stay and the crunch ones change on all 3 amps; the
+         new crunch picks read +0.038 [−0.010, +0.086] on V-real's crunch parts (6 of 7, 3 of 4 bands worse;
+         Signs ElecGtr3 needs renders): S's home advantage is small and undecided.
+       - P6 (FS half): telling D_CC the section's class instead of the coin it trained on worsens its knob error by
+         +0.0030 [+0.0019, +0.0042] (7 of 8 bands): the class input is used, and the mismatch costs a little. Every
+         retrain here conditions on the section's class.
+       - The doubles: all 606 kept examples with a DT double were rendered with a different setting from the target's
+         label (565 differ in a switch, a median 73 settings); they are re-rendered with the target's full setting.
    - **Pipeline review (2026-10-30, zero renders; [record](ml-pipeline-review.md), checks `learn/pipeline_review.py`).**
      At the user's request, the direct model's whole process is listed as 38 small steps. Each step has its code, a
      status, its evidence, a fix and a test.
@@ -155,8 +175,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          clips; both start rules are re-derived exactly from stored distances (step 36).
        - On V-real-10's own parts the true-DI search reaches −0.137 shrunk and −0.192 at its best, not the −0.293
          measured on other parts (step 38).
-     - **Proposed, nothing run** (each needs a declaration and a review; P1 and P2 need the user's yes for
-       training):
+     - **Proposed** (*2026-10-31: run under the [pipeline fix plan](pipeline-fix-plan.md); P7 dropped, its question
+       answered by fixing the doubles*):
        - P5: re-pick S without V-real's clips;
        - P6: flip the class input;
        - P7: drive AUC with and without doubles;
@@ -204,7 +224,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        alone; 25 of the 26 pairs near tau were mostly not heard (the one heard is a tremolo below tau); mostly only
        the loudest pairs are. The listener noted that items with several effects are "harder to answer" (33 of 34
        pairs have another effect on in both clips, by design: the context the labels need).
-     - Next: F20's re-plan on this pool, for the user's yes, with two new questions: how near-chance switches are
+     - *Superseded 2026-10-31 by the [pipeline fix plan](pipeline-fix-plan.md), which folds F20's draft in.* Next: F20's re-plan on this pool, for the user's yes, with two new questions: how near-chance switches are
        read out, and the model beating its constant. Forkupines Sugar Faith ElecGtr8's DI, 129.83 ms ahead of its
        amp track, joins that build from a delayed copy if the alignment check on the copy reads about 0 ms
        (`amendment_4` (c); it runs within that build, since it changes the verdicts). The size-matched top-up

@@ -245,6 +245,10 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
 - *Verify:* whether the trained network uses the input at all (P6).
 - *Fix:* condition on the section's class (as on V-real), or drop the input.
 - *Test:* P6.
+- *2026-10-31, P6 (FS half; [fix plan](pipeline-fix-plan.md), `p6.json`):* on FS_CC's 174 examples whose coin
+  differs from the section's class, telling D_CC the section's class instead of its coin worsens knob error by
+  +0.0030 [+0.0019, +0.0042] (unit range; 7 of 8 bands). The input is used, and the mismatch costs a little. The fix
+  plan's retrains condition on the section's class everywhere (the network, the constant, the pull, the merge pools).
 
 **Step 6. Draw the settings.**
 - *What happens:* 40% of draws are near a random factory preset (σ 0.1 in unit space), 20% near S, and 40% fully
@@ -328,6 +332,10 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
 - *Fix:* render a double with the target's full setting (a doubled part usually shares the rig), or leave
   doubles out.
 - *Test:* P7.
+- *2026-10-31, the fix plan's zero-render scan (`dirty-doubles.json`):* every one of the 606 differs from its
+  target's label in some sounding control; 565 in at least one of the eight switches (drive1 210, drive2 209,
+  compressor 237, reverb 322, delay 284, tremolo 206, doubler 188, gate 337), 424 in a pedal switch, and a median 73
+  stored settings. P7 is dropped: the doubles are re-rendered with the target's full setting instead (phase 1b).
 
 ### Building the fake song
 
@@ -609,6 +617,12 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
   - So 8 of the 11 V-real clips were in S's choice sets. Their stored S distances equal V-real's S values within
     4.1e-4. It Was My Fault ElecGtr3 and Signs ElecGtr3 are in neither set.
 - *Test:* P5.
+- *2026-10-31, P5 ([fix plan](pipeline-fix-plan.md), `p5.json`):* with V-real's 9 part slugs left out, the clean
+  rule re-picks the same three presets (19 parts); the crunch rule (7 parts left) picks Standout Thrash Rhythm (PR12),
+  Wall Of Doom (SW50R) and Dirty Coil Rhythm (AC20). On V-real's crunch parts with stored distances (6 of 7; Signs
+  ElecGtr3 needs renders), S' − S is +0.038 [−0.010, +0.086] (3 of 4 bands worse; part-weighted +0.054): S's home
+  advantage is small and undecided. Without V-real's bands the crunch rule keeps one part, so that version cannot be
+  read for crunch.
 
 **Step 37. The training average against S.**
 - *What happens:* the constant (per amp and class: knob medians, switch majorities, mic modes, from the
