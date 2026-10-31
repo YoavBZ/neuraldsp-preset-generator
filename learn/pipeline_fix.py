@@ -2877,8 +2877,12 @@ def cmd_real_search(args):
     s_judge = out_dir() / REAL_DIR / "judge" / "S"
     renders = 0
 
+    def sorted_x(x):                                   # edits in 5B.1's order (`sdict` sorts the keys)
+        return LO.tdict(LO.sdict(x))
+
     def fresh(di32, sel, x):
-        y = AM.fresh_render(CB.new_renderer, di32, sel, x, x)
+        xs = sorted_x(x)
+        y = AM.fresh_render(CB.new_renderer, di32, sel, xs, xs)
         return np.asarray(y, np.float64)[trim[0]:trim[1]]
 
     def fname(key):
@@ -2900,22 +2904,25 @@ def cmd_real_search(args):
             for amp in AMPS3:
                 g = json.loads((s_judge / f"{fname(real_key(prt, amp))}.json").read_text())
                 s_ref[amp] = (g["judge"][ANY_HALF], g["render_sha256"][ANY_HALF])
-        else:
-            if lp.exists():
-                raise SystemExit(f"{lp.name}: a stage 2 unit already has a lag")
-            ys = {}
-            for amp in AMPS3:
-                sel, S = ms[amp][prt["cls"]]
-                ys[amp] = fresh(di32, sel, S)
-                renders += 2
-            try:
-                lag = int(estimate_lag(ref, list(ys.values())))
-                save(lp, {"unit": prt["unit"], "lag": lag, "status": "ok", "phase": "phase_5b2"})
-            except ValueError as err:
-                save(lp, {"unit": prt["unit"], "lag": None, "status": f"no lag: {err}", "phase": "phase_5b2"})
-            lag = json.loads(lp.read_text())["lag"]
-            for amp in AMPS3:
-                s_ref[amp] = (None if lag is None else K.judge(ref, ys[amp], di, lag), AM.audio_sha(ys[amp]))
+        else:                                          # S's fresh renders give the lag, S's judge and its sha
+            rec = json.loads(lp.read_text()) if lp.exists() else None
+            if rec is not None and rec.get("phase") != "phase_5b2":
+                raise SystemExit(f"{lp.name}: a stage 2 unit has a lag from another phase")
+            if rec is None or "s" not in rec:
+                ys = {}
+                for amp in AMPS3:
+                    sel, S = ms[amp][prt["cls"]]
+                    ys[amp] = fresh(di32, sel, S)
+                    renders += 2
+                try:
+                    lag, status = int(estimate_lag(ref, list(ys.values()))), "ok"
+                except ValueError as err:
+                    lag, status = None, f"no lag: {err}"
+                save(lp, {"unit": prt["unit"], "lag": lag, "status": status, "phase": "phase_5b2",
+                          "s": {amp: {"judge": None if lag is None else K.judge(ref, ys[amp], di, lag),
+                                      "render_sha256": AM.audio_sha(ys[amp])} for amp in AMPS3}})
+            rec = json.loads(lp.read_text())
+            s_ref = {amp: (v["judge"], v["render_sha256"]) for amp, v in rec["s"].items()}
         lag = json.loads(lp.read_text())["lag"]
         if lag is None:
             print(f"{prt['unit'][-60:]}: no lag; not searched", flush=True)
@@ -2931,11 +2938,11 @@ def cmd_real_search(args):
             curve, first, seen = [], {}, {}
             rr = CB.new_renderer()
             try:
-                rr.render(di32, sel, S)                # the discarded priming render, as `fresh_render`'s
+                rr.render(di32, sel, sorted_x(S))      # the discarded priming render, as `fresh_render`'s
                 renders += 1
 
                 def f(x):
-                    y = np.asarray(rr.render(di32, sel, x), np.float64)[trim[0]:trim[1]]
+                    y = np.asarray(rr.render(di32, sel, sorted_x(x)), np.float64)[trim[0]:trim[1]]
                     j = K.judge(ref, y, di, lag)
                     if not curve:
                         first.update(sha=AM.audio_sha(y), value=j[search])

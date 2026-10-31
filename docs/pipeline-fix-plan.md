@@ -446,7 +446,11 @@ instead of generating unrealistic presets our own?"):
       primary, since a model never shown wide draws loses on them by construction.
     - Only if P − pcsz leans better on the real units: by sound on FS/NS (P and pcsz ensembles against the stored
       P2a ensemble, 480), split by draw mode; and P-Sc (480) to tell its centre from per-track change.
-  - **Readings, declared now** (gains under about 0.05 read undecided: F31/F32's by-DI half-widths are about 0.035).
+  - **Readings, declared now.** R − Rc is decided when its by-DI and its 4-cluster fold intervals both exclude 0 on
+    the same side (a fold's two DIs share models, so the DI interval alone misses training noise); otherwise it is
+    undecided. Arm P's rows are decided on the by-DI interval (one pair of models reads every unit; its per-seed head
+    losses show training noise beside). The expected detectable size is about 0.05 (F31/F32's by-DI half-widths are
+    about 0.035); it is not a bar.
     - R − Rc better: the model learns real-amp sound per track from real labels; real rows (and more bands' reamps)
       enter D_fix's build. Undecided: stage 2 runs. Worse: not adopted. Rc − S better: a real-amp centre is a
       candidate readout for D_fix, weighed with the S-centred one.
@@ -465,7 +469,9 @@ instead of generating unrealistic presets our own?"):
     the code's choices declared (bit-identical S, fresh best, section-matched size control, a seed of its own); and a
     fold interval beside the DI one. Adopted suggestions: stage 1's labels first and stage 2 only if undecided,
     stage 2 without fresh renders, zero-render head reads, a fixed real share per fold, DI 19 apart, the share of the
-    ceiling, and the stated power.
+    ceiling, and the stated power. Its re-check approved with three changes, made: every render sends its edits in
+    5B.1's sorted order (so the bit-identical S check compares like with like), stage 2 resumes (S's fresh judge
+    and sha saved with the lag), and the decision rule above.
 
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
