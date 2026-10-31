@@ -2570,8 +2570,9 @@ def cmd_real_render(args):
 
 def cmd_real_report(args):
     """5B.1's rows: for each pair in `--pairs`, ln(d_a / d_b) on the held half per (unit, amp, search), with S
-    refused dropping the direction and a refused answer scored as S (the V-real rule); clustered by rig (song and
-    reamp track), parts the units; part-weighted beside; the lag refusals counted. -> real/report-<label>.json."""
+    refused dropping the direction and a refused answer scored as S (the V-real rule); clustered by DI (the
+    performance: rigs sharing a DI share its sections and its S and constant renders), parts the units; by rig beside;
+    part-weighted beside; the lag refusals counted apart from the missing. -> real/report-<label>.json."""
     require("phase_5b1")
     tags = {t for pair in args.pairs.split(",") for t in pair.split(":")} | {"S"}
     parts = json.loads((out_dir() / REAL_DIR / "answers" / "S.json").read_text())["parts"]
@@ -2591,6 +2592,8 @@ def cmd_real_report(args):
         a, b = pair.split(":")
         rows, cnt = [], {"directions": len(units), "base_dropped": 0, "missing": 0, "refused_scored_as_S": 0}
         for u in units:
+            if u[0] in no_lag:
+                continue
             s_ = vreal_value(judge, "S", u)
             if s_ is None:
                 cnt["missing"] += 1
@@ -2609,15 +2612,16 @@ def cmd_real_report(args):
                     v = s_
                 vals.append(v)
             if len(vals) == 2:
-                rows.append((meta[u[0]]["rig"], u[0], math.log(vals[0] / vals[1])))
-        c = clustered(rows)
-        out["rows"][f"{a} - {b}"] = {**{q: c.get(q) for q in (
-            "mean", "lo90", "hi90", "clusters", "clusters_negative", "part_weighted", "parts", "parts_negative")},
-            **cnt}
+                rows.append((meta[u[0]]["di"], u[0], math.log(vals[0] / vals[1]), meta[u[0]]["rig"]))
+        keep = ("mean", "lo90", "hi90", "clusters", "clusters_negative", "part_weighted", "parts", "parts_negative")
+        c = clustered([r[:3] for r in rows])
+        by_rig = clustered([(r[3], r[1], r[2]) for r in rows])
+        out["rows"][f"{a} - {b}"] = {**{q: c.get(q) for q in keep}, **cnt,
+                                     "per_di": c.get("per_cluster"), "by_rig": {q: by_rig.get(q) for q in keep}}
         r_ = out["rows"][f"{a} - {b}"]
         if r_["mean"] is not None:
             iv = "" if r_["lo90"] is None else f" [{r_['lo90']:+.4f}, {r_['hi90']:+.4f}]"
-            print(f"{a} - {b}: {r_['mean']:+.4f}{iv} ({r_['clusters']} rigs, {r_['clusters_negative']} better; "
+            print(f"{a} - {b}: {r_['mean']:+.4f}{iv} ({r_['clusters']} DIs, {r_['clusters_negative']} better; "
                   f"{r_['parts_negative']} of {r_['parts']} units better); missing {cnt['missing']}, S dropped "
                   f"{cnt['base_dropped']}, refused {cnt['refused_scored_as_S']}")
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -2654,29 +2658,52 @@ def share_recovered(rows, n=4000, seed=20261036):
 
 
 def cmd_share(args):
-    """F24's share of P2a - P2b that a backing-trained P2b (`--name`, default P2b-bk8; phase 5A's P2b-wide24) recovers,
-    by sound on the sample, FS by band and NS by section (the log's rows), stored to sound/share-backings.json
-    (P2b-bk8) or sound/share-<name>.json. Zero renders."""
+    """F24's share of P2a - P2b that a backing-trained P2b recovers, by sound on the sample, FS by band and NS by
+    section (the log's rows). `--name` is the model (default P2b-bk8; phase 5A's P2b-wide24); `--seeds` lists answer
+    tags' seeds to pool (default its first seed alone): each example's log ratio against S is the mean over those
+    seeds' answers (phase_5a_seed2's pooling, no ensemble render). -> sound/share-backings.json (P2b-bk8) or
+    sound/share-<name>[-x<seeds>].json. Zero renders. With `--against` (a tag), also the per-seed and seed-pooled
+    paired rows <name> - <against>, clustered as the sound report."""
     from learn import cc_build as CB
 
     name = args.name or "P2b-bk8"
     require("phase_5a" if name == "P2b-wide24" else "phase_3_backings")
+    seeds = [int(z) for z in args.seeds.split(",")]
+    tags = [f"{name}-best" + ("" if sd == SEEDS[0] else f"-x{sd}") for sd in seeds]
+    if len(seeds) > 1:
+        require("phase_5a_seed2")
     ex = {x["i"]: x for x in CB.load_plan(argparse.Namespace(out=None, smoke=False))["examples"]}
     ids = sample_ids(SAMPLE_N)
 
     def j(t, i):
         return json.loads((out_dir() / SOUND_DIR / "judge" / t / f"{i}.json").read_text())["judge"]
-    out = {"model": name, "rule": "share = clustered(P2b - <model>) / clustered(P2b - P2a), each by sound against S per example; "
-                   "parts are sections, clusters bands (FS) or sections (NS); 90% interval by resampling clusters"}
+
+    def model(i, base="S"):
+        return statistics.fmean(log_ratio(j(t, i), j(base, i)) for t in tags)
+
+    out = {"model": name, "tags": tags, "rule": "share = clustered(P2b - <model>) / clustered(P2b - P2a), each by "
+           "sound against S per example (the model's value the mean over its seeds' answers); parts are sections, "
+           "clusters bands (FS) or sections (NS); 90% interval by resampling clusters"}
     for st, key in (("fs", "band"), ("ns", "section")):
         rows = []
         for i in ids[st]:
-            a, b, k = (log_ratio(j(t, i), j("S", i)) for t in ("P2a-best", "P2b-best", f"{name}-best"))
-            rows.append((ex[i][key], ex[i]["section"], b - k, b - a))
+            a, b = (log_ratio(j(t, i), j("S", i)) for t in ("P2a-best", "P2b-best"))
+            rows.append((ex[i][key], ex[i]["section"], b - model(i), b - a))
         pt, lo, hi = share_recovered(rows)
         out[st] = {"share": pt, "lo90": lo, "hi90": hi, "examples": len(rows)}
         print(f"{st}: share recovered {pt:.3f} [{lo:.3f}, {hi:.3f}]")
-    save(out_dir() / SOUND_DIR / ("share-backings.json" if name == "P2b-bk8" else f"share-{name}.json"), out)
+        if args.against:
+            for lab, ts in [(t, [t]) for t in tags] + ([("pooled", tags)] if len(tags) > 1 else []):
+                c = clustered([(ex[i][key], ex[i]["section"], statistics.fmean(
+                    log_ratio(j(t, i), j(args.against, i)) for t in ts)) for i in ids[st]])
+                out.setdefault("paired", {}).setdefault(f"{lab} - {args.against}", {})[st] = {
+                    q: c.get(q) for q in ("mean", "lo90", "hi90", "clusters", "clusters_negative", "parts",
+                                          "parts_negative", "part_weighted")}
+                print(f"  {lab} - {args.against} {st}: {c['mean']:+.4f} [{c['lo90']:+.4f}, {c['hi90']:+.4f}] "
+                      f"({c['clusters_negative']} of {c['clusters']} better)")
+    suffix = "" if len(seeds) == 1 and seeds[0] == SEEDS[0] else "-x" + "+".join(map(str, seeds))
+    save(out_dir() / SOUND_DIR / ("share-backings.json" if name == "P2b-bk8" and not suffix
+                                  else f"share-{name}{suffix}.json"), out)
 
 
 def cmd_prior_edges(args):
@@ -3158,6 +3185,7 @@ def main(argv=None):
     ap.add_argument("--amp-shift", type=int, choices=(0, 1, 2), default=0)
     ap.add_argument("--mastered", action="store_true")
     ap.add_argument("--seeds", default=str(SEEDS[0]))
+    ap.add_argument("--against", default="")
     ap.add_argument("--pairs", default="")
     ap.add_argument("--own-inputs", action="store_true")
     ap.add_argument("--label", default="")

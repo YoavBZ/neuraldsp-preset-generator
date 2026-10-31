@@ -333,20 +333,26 @@ instead of generating unrealistic presets our own?"):
 
 *2026-10-31, after 5A's first seed (F29) and the bleed finding (F30):*
 - **5A seed 2 (ledger `phase_5a_seed2`).** P2b-wide24 with seed 20261043 on the same build, read the same way
-  (240 renders, about 10 minutes of MPS). Rows per seed and pooled; F29's NS row is confirmed or not by it.
+  (240 renders, about 10 minutes of MPS). Rows per seed, and pooled as each example's mean of the two seeds' paired
+  log ratios (no ensemble render: an ensemble would also move the rows, by up to about 0.09 in the stored reads).
+  F29's NS row is confirmed or not by it.
 - **5B.1, transfer to real amps on reamped tracks (ledger `phase_5b1`, about 960 renders).**
   - Units: (section, reamped track) for every ladder training or FS section whose DI has a reamped track (BKS, both
     songs: 105 units, 14 rigs); 40 read, round-robin over the rigs.
   - P2a (both seeds, NS-best) reads each reamped track at its training inputs' median loudness, per forced amp and
     search half; judged by sound on the held half against S and the constant, with each unit's lag estimated from
-    its three S renders (`estimate_lag`). Clustered by rig.
+    its three S renders (`estimate_lag`). Clustered by DI (8 performances in the draw; rigs sharing a DI share
+    sections and S renders), by rig beside.
   - Isolation: no bleed check is relied on (bleed-free by construction); the performance is seen in training, so
     this reads real-amp sound alone, apart from new playing (which V-real covers, F20).
   - Reading: P2a better than S here says the clean-input model transfers to real amps on known playing, so F20's
-    gap sits in new performances or the V-real recordings; no gain says the real amp itself is the gap, and 5B.2
-    (pseudo-labels on reamped tracks) is the next fix.
-  - Caveats: one band (BKS, 2 songs); 14 rigs, several sharing a DI; the reamp chain (a real amp and mic) differs
-    from a mixed record.
+    gap sits in new performances or the V-real recordings. 38 of 40 units are training sections whose DI P2a saw
+    rendered by the plugin, so a gain is an upper bound for transfer. No gain says the gap already appears on a
+    real-amp recording of known playing (the amp, mic, room and cab chain, the reamps' noise or tails and the judge
+    on real recordings not separated), and 5B.2 (pseudo-labels on reamped tracks) is the next fix.
+  - Caveats: one band (BKS, 2 songs); 14 rigs on 8 DIs; the reamp chain (a real amp and mic) differs from a mixed
+    record; many reamps keep energy where their DI is more than 40 dB down (about −10 to −22 dB), likely amp noise
+    or tails.
 
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
@@ -977,32 +983,39 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   input or in 1 of 24 backings. The pool has 406 backings from 21 sessions: the training songs' 177 sections
   (P2b-bk8's pool) and 229 windows of 13 more songs whose stems were heard clean. Each backing is drawn
   session-first, never from the example's own song, and set at P2b's levels (42,888 inputs, zero renders; seed
-  20261042). Best checkpoint at epoch 50 of 60, against P2b-bk8's 15; its NS loss stays near 5.32–5.46 from epoch 20
-  instead of rising. It was read on P2b's own fixed inputs (240 renders).
+  20261042). Best checkpoint at epoch 50 of 60, against P2b-bk8's 15; its NS loss stays at 5.32–5.51 from epoch 20
+  instead of rising to about 5.9. It was read on P2b's own fixed inputs (240 renders).
 - **Numbers.**
 
   | Row | FS | NS |
   |---|---|---|
-  | P2b-wide24 − P2b-bk8 (primary) | −0.124 [−0.236, −0.012], 5 of 6 bands better | −0.046 [−0.091, −0.001], 22 of 36 sections better (Adam Buckley −0.112, The Maybe Next Years −0.032) |
+  | P2b-wide24 − P2b-bk8 (primary) | −0.124 [−0.236, −0.012], 5 of 6 bands better | −0.046 [−0.091, −0.001], 22 of 36 sections better (by song, example-weighted: Adam Buckley −0.112, The Maybe Next Years −0.032; section-weighted −0.104, −0.013) |
   | P2b-wide24 − S | −0.175 [−0.386, +0.035] | −0.127 [−0.213, −0.041] |
   | P2a − P2b-wide24 | −0.073 [−0.177, +0.032] | −0.115 [−0.178, −0.052] |
 
   - Share of P2a − P2b recovered (`share --name P2b-wide24`): NS 0.478 [0.274, 0.713], against P2b-bk8's 0.269;
     FS 0.738 [0.468, 1.021].
   - By knob: NS −0.0008 [−0.0027, +0.0011] against the constant (P2b-bk8 −0.0004); FS −0.0040 [−0.0060, −0.0020]
-    (P2b-bk8 −0.0023).
+    (P2b-bk8 −0.0023). On NS's factory-mode labels it reads worse than the constant (+0.0102, P2b-bk8 +0.0052): its
+    knob gain is on the wide draws.
 - **Reading.**
   - More backing variety keeps helping: about half of the backing's loss is recovered on NS, against about a quarter
-    with 8 backings from the training songs. The direction is the same on both sets and both NS songs.
-  - With 13 more songs the model also stops overfitting within 60 epochs. The backing is learnable to a large extent
-    from variety alone (zero renders), which points away from masking as the main cause.
+    with 8 backings from the training songs. The direction is the same on both sets; of the NS songs, Adam Buckley
+    carries it and The Maybe Next Years is near zero.
+  - With 13 more songs the model also overfits far less within 60 epochs. At least the recovered part of the loss is
+    learnable from variety alone (zero renders), not masked; whether the remaining half is masking or too little
+    variety is undecided.
   - Still about half of the loss remains on NS (P2a − P2b-wide24 −0.115).
 - **Caveats.**
   - One seed, NS-chosen checkpoint. NS's −0.046 is within the about 0.09 one seed can differ from the two-seed pool
     (the log's caveat), so it waits on a second seed (ledger `phase_5a_seed2`). FS's −0.124 is larger.
   - The variants (24 against 8), the sessions (21 against 8) and the own-input share (1 in 25 against 1 in 9) all
     change together, so which of them helps is not separated.
-  - Other-song backings are not in time or key with the performance; some extra backings are thin.
+  - Other-song backings are not in time or key with the performance. Some extra backings are thin: 64 of the 229
+    extra windows run past a stem's end (that instrument silent) and 12 have only one stem above −50 dBFS RMS (all
+    pass the −33 LUFS floor on the sum).
+  - The variants' schedule is seeded by the pool's seed, not the training seed, so a second training seed varies the
+    initialisation and batch order only.
 - **References.** `PF/inputs/backings-wide-pool.json`, `PF/inputs/*-mixbw-k*.npz`, `PF/runs/P2b-wide24-20261042.json`,
   `PF/reads/P2b-wide24-{best,final}.json`, `PF/sound/judge/P2b-wide24-best/`, `PF/sound/report-wide24.json`,
   `PF/sound/share-P2b-wide24.json`; `cmd_wide_pool`, `cmd_build_wide`, `WideData`; ledger `phase_5a`.
@@ -1014,24 +1027,35 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   (−5.5 to −15 dB through the Mellotron and Hammond). Over the ladder's training and FS DIs' 45 own tracks: 34
   fail, 5 unmeasurable, 6 pass (Forkupines' ElecGtr9, Ale Lak's Amp2, BKS Bulldozer's 4 ElecGtr7 tracks); all 8 of
   NS's fail.
-- **The flaw.** BKS's GR4 (software), Pod and reamped tracks are made from the DI after the session, so no other
-  instrument can be in them. Of the 24 measured, the stock check fails 17 (−21.9 to −28.1 dB, through the drum mics,
-  backing vocals, the synth and the Rhodes), leaves 3 unmeasurable and passes 4. The likely cause is the guitar
-  leaking into those instruments' mics during tracking (the room, headphones): the check cannot tell which way a
-  leak goes.
+- **The flaw.** BKS's GR4 (software), Pod and reamped tracks are, by their names and signal chain, made from the DI
+  after the session, so no other instrument should be in them (inferred: the session Readmes say nothing of it; each
+  reamped track's envelope best matches its own DI, r 0.53–1.0). Of the 24 measured, the stock check fails 17 (−21.9
+  to −28.1 dB), leaves 3 unmeasurable and passes 4.
+  - Every one of the 17 fails through the power-sum rule; no single source fails alone. 23_ElecGtr2bGR4's −21.9 dB
+    sums 13 sources, each between −29.8 and −39.1 dB, among them the kick and the line-level bass DI
+    (13_BassDIDist, −38.6 dB), which no guitar can leak into.
+  - So the main cause is a small positive per-source reading, likely from music played in time and in the same
+    harmony, summed over many sources. The guitar leaking into other mics (room, headphones) may add to it; it is
+    not shown.
+  - The NS songs' and The Travelling Band's fails are different: single sources at −6 to −16 dB. Those may be real
+    bleed or a leak the other way; undecided.
 - **A first fix, checked on controls.** The same estimator read only on frames where the amp track's own DI is silent
   (±0.5 s), the source playing, nulls rolled within those frames:
-  - negative control: 35_ElecGtr6bGR4 against the Rhodes, stock −23.9 dB (fail), gated nothing above chance on 718
-    frames (pass);
+  - negative control: 35_ElecGtr6bGR4 against the Rhodes, stock −23.9 dB (fail), gated nothing above the nulls' mean
+    on 718 frames (pass). A GR4 track is near silent where its DI is, so this barely tests the estimator; a mic'd
+    reamp negative control is still needed (24_ElecGtr2cReamp1 against a backing vocal had 101 frames, too few);
   - positive control: the Rhodes injected into 24_ElecGtr2cReamp1 at −25 dB reads −23.7 dB gated (stock −28.9);
   - its limit is coverage: The Travelling Band's DIs leave 1 such frame, and backing vocals 86–101 frames (under the
     200 asked), so those read nothing.
-- **Reading.** The stock check is too strict for amp tracks: it rejects bleed-free tracks, so "the pool's real amp
-  tracks are dirty" is not established. Since a recorded amp track can't be trusted by this check, 5B.1 now uses
-  reamped tracks, bleed-free by construction, and relies on no bleed check (the isolation rule). The gated check is a
-  candidate fix for rule 1's amp stand-ins and for later real-track data; it is not yet adopted.
-- **Caveats.** The direction claim (guitar into the other mics) is inferred, not shown: a DI's linear fit explains
-  only −29 to −39 dB of those sources, and a DI predicts an amp poorly. The gated check was tried on 5 cases only.
+- **Reading.** The stock check's power sum fails tracks that should hold no bleed, so it is unreliable on amp tracks
+  and "the pool's real amp tracks are dirty" is not established for the power-sum fails. Since no recorded amp track
+  can be trusted through this check, 5B.1 uses reamped tracks, bleed-free by their chain, and relies on no bleed
+  check (the isolation rule). Fixing the check (a per-source rule with intervals, or the gated read) is a candidate
+  for rule 1's amp stand-ins and later real-track data; it is not yet adopted.
+- **Caveats.** The gated check was tried on 5 cases, its "pass" is the real reading less the nulls' mean (no
+  interval), and its raw readings are not yet stored. A DI's linear fit explains only −29 to −39 dB of the
+  suspected sources, so a leak into the other mics is not shown either way. The inventory gives 35_ElecGtr6bGR4 to
+  DI 19, though it matches 34_ElecGtr6aDI (r 0.96 against 0.34); it counts under DI 19 in the 45.
 - **References.** `PF/real/bleed/*.json` (the stock readings), `PF/real/bleed/measure.log`; the gated trial
   `scratchpad gated.py` (to move into `pipeline_fix` with the fix's declaration); `trusted_data.measure_amp_bleed`,
   `source_raw`, `amp_status`.
