@@ -313,6 +313,12 @@ instead of generating unrealistic presets our own?"):
   - Community presets' licences are the user's to check; paid packs need the user's yes.
   - "Song tone" presets (a person's attempt at a record) could serve as a yardstick, not as ground truth.
 - **When:** with the next data build, after the two blocker tests.
+- **The user's decision (2026-10-31, "Sounds good" to the session's suggestion):**
+  - Community presets: yes, as centres for the next build's draws, a wide share of random draws kept, effects
+    dried, after a zero-render check that they sit nearer real tones (F27's rule). Each download is still asked for
+    with its file, source and size; licences stay the user's to check, paid packs need the user's yes.
+  - Morgan Amps Suite X: yes, after 5B.2. Update, then re-render stored settings and compare bit for bit; its
+    presets are used only if that parity check passes, otherwise the update is held.
 
 *2026-10-31, after the user's "Continue":* the two blocker tests run, each declared and reviewed first.
 - **5A, backing variety at scale (blocker 1; ledger `phase_5a`; zero renders).**
