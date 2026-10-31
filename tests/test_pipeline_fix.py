@@ -124,7 +124,7 @@ def test_nested_subset_keeps_one_per_section_and_nests():
 
 
 def test_gmm1d_fits_two_clusters_and_its_nll_is_lower_on_the_data():
-    import numpy as np
+    np = pytest.importorskip("numpy")
 
     rng = np.random.default_rng(0)
     x = np.concatenate([rng.normal(0.2, 0.02, 200), rng.normal(0.8, 0.02, 200)])
@@ -136,7 +136,7 @@ def test_gmm1d_fits_two_clusters_and_its_nll_is_lower_on_the_data():
 
 
 def test_baseline_switch_rate_and_amp_frequency():
-    import numpy as np
+    np = pytest.importorskip("numpy")
 
     from learn import full_space as F
 
@@ -188,7 +188,7 @@ def test_run_names():
 
 
 def test_rung_mixes_rebuild_the_mix_and_drop_every_other_guitar():
-    import numpy as np
+    np = pytest.importorskip("numpy")
 
     y, oth, stems = np.ones(4), np.full(4, 2.0), np.full(4, 3.0)
     gains = {"ga": 20 * math.log10(2), "gb": 20 * math.log10(0.5)}
