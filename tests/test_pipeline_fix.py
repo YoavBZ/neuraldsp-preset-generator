@@ -205,3 +205,61 @@ def test_every_run_and_read_conditions_on_the_section_class():
     assert 'r["cls"]' in src and 'r["base"]' not in src
     assert 'base=r["cls"]' in inspect.getsource(P.arm_data)
     assert 'base=r["cls"]' in inspect.getsource(P.constant_of)
+
+
+def test_vreal_rows_count_wickerman_2_and_3_as_one_input_and_use_any_half_comparators():
+    units = [("cambridge-wickerman-elecgtr2", "pr12", "A", "B"), ("cambridge-wickerman-elecgtr3", "pr12", "A", "B"),
+             ("cambridge-femme-elecgtr5", "pr12", "B", "A")]
+    judge = {"m": {"cambridge-wickerman-elecgtr2|pr12": {"A": {"B": 1.0}},
+                   "cambridge-wickerman-elecgtr3|pr12": {"A": {"B": 4.0}},
+                   "cambridge-femme-elecgtr5|pr12": {"B": {"A": 2.0}}},
+             "S": {"cambridge-wickerman-elecgtr2|pr12": {"*": {"A": 9.0, "B": 2.0}},
+                   "cambridge-wickerman-elecgtr3|pr12": {"*": {"A": 9.0, "B": 2.0}},
+                   "cambridge-femme-elecgtr5|pr12": {"*": {"A": 1.0, "B": 9.0}}}}
+    rows, cnt = P.vreal_rows(judge, "m", "S", units)
+    assert cnt["complete"] and cnt["missing"] == 0
+    assert {r[1] for r in rows} == {"cambridge-wickerman-elecgtr2+3", "cambridge-femme-elecgtr5"}
+    assert sorted(round(r[2], 6) for r in rows) == sorted([round(math.log(0.5), 6), round(math.log(2.0), 6),
+                                                           round(math.log(2.0), 6)])
+    own, _ = P.vreal_rows(judge, "m", "S", units, own_inputs=True)
+    assert {r[1] for r in own} == {"cambridge-wickerman-elecgtr2", "cambridge-wickerman-elecgtr3",
+                                   "cambridge-femme-elecgtr5"}
+    c = P.clustered(rows)
+    assert c["parts"] == 2 and c["clusters"] == 2
+    assert P.part_members("cambridge-wickerman-elecgtr2+3") == ["cambridge-wickerman-elecgtr2",
+                                                                "cambridge-wickerman-elecgtr3"]
+
+
+def test_vreal_rows_score_a_refused_answer_as_s_drop_s_refusals_and_flag_missing():
+    u1 = ("cambridge-femme-elecgtr5", "pr12", "A", "B")
+    u2 = ("cambridge-femme-elecgtr5", "ac20", "A", "B")
+    u3 = ("cambridge-femme-elecgtr5", "sw50r", "A", "B")
+    judge = {"m": {"cambridge-femme-elecgtr5|pr12": {"A": {"B": math.inf}},
+                   "cambridge-femme-elecgtr5|ac20": {"A": {"B": 1.0}}},
+             "S": {"cambridge-femme-elecgtr5|pr12": {"*": {"B": 2.0}},
+                   "cambridge-femme-elecgtr5|ac20": {"*": {"B": math.inf}},
+                   "cambridge-femme-elecgtr5|sw50r": {"*": {"B": 2.0}}}}
+    rows, cnt = P.vreal_rows(judge, "m", "S", [u1, u2, u3])
+    assert [round(r[2], 9) for r in rows] == [0.0]            # u1: refused, scored as S
+    assert cnt == {"directions": 3, "base_dropped": 1, "missing": 1, "refused_scored_as_S": 1, "complete": False}
+
+
+def test_backing_draws_never_use_the_examples_own_song():
+    kept = {1: {"section": "s/A_Full/a.wav@0.0"}, 2: {"section": "s/A_Full/b.wav@5.0"},
+            3: {"section": "s/B_Full/a.wav@0.0"}, 4: {"section": "s/C_Full/a.wav@0.0"}}
+    d = P.backing_draws([1, 2, 3, 4], kept, k=20)
+    for i, draws in d.items():
+        assert len(draws) == 20
+        assert all(P.session_of(sec) != P.session_of(kept[i]["section"]) for sec, _ in draws)
+    assert d == P.backing_draws([1, 2, 3, 4], kept, k=20)
+    only = P.backing_draws([1], kept, k=5, secs=["s/C_Full/a.wav@0.0"])
+    assert {sec for sec, _ in only[1]} == {"s/C_Full/a.wav@0.0"}
+
+
+def test_shifted_amp_cycles_through_the_other_amps():
+    from learn import full_space as F
+
+    for a in F.AMPS:
+        assert P.shifted_amp(a, 0) == a
+        assert {P.shifted_amp(a, 1), P.shifted_amp(a, 2)} == set(F.AMPS) - {a}
+    assert P.amp_tag(0) == "" and P.amp_tag(2) == "-amp+2"

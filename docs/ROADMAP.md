@@ -144,15 +144,33 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        new songs); the located fix and one model with every fix (D_fix), chosen without V-real; then V-real, with P3's
        fallback to S as a measurement (the user's 2026-10-27 ruling stands) and P4 (real amp tracks as input). Scale
        (F20) only if the learning curves rise.
-     - **Done so far (zero renders):**
-       - P5: without V-real's own clips the clean start presets stay and the crunch ones change on all 3 amps; the
-         new crunch picks read +0.038 [−0.010, +0.086] on V-real's crunch parts (6 of 7, 3 of 4 bands worse;
-         Signs ElecGtr3 needs renders): S's home advantage is small and undecided.
-       - P6 (FS half): telling D_CC the section's class instead of the coin it trained on worsens its knob error by
-         +0.0030 [+0.0019, +0.0042] (7 of 8 bands): the class input is used, and the mismatch costs a little. Every
-         retrain here conditions on the section's class.
-       - The doubles: all 606 kept examples with a DT double were rendered with a different setting from the target's
-         label (565 differ in a switch, a median 73 settings); they are re-rendered with the target's full setting.
+     - **Outcome (2026-10-31, audited; the plan's findings log F1–F28).** Each finding was fixed or tested on its
+       own, relying only on parts already verified (the user's rule).
+       - **The model can learn the tone.** Fed the clean guitar (a perfect separator), it sounds −0.241 [−0.318,
+         −0.165] closer than S on 2 held-out songs, also when told a wrong amp. Knob error badly understates this, so
+         every read is now by sound (F11, F19). By knob, a 5-fold new-song test reads every one of the 9 training bands
+         better than the constant, by about 1 point of a knob's range (F28).
+       - **Blocker 1, the mix:** any backing erases the skill. With only drums, bass and vocals it is even with S; the
+         other guitars and the separator add no further loss (F15, F17). Eight backings per target, from other songs'
+         stems (no new renders), recover 27% [13%, 42%] of it (F24).
+       - **Blocker 2, real recordings:** fed V-real's real amp tracks (the guitar alone), the model is +0.153 [+0.039,
+         +0.268] against S, and no transfer is detected: it is not shown better than its own training average (F20).
+         Its penalty is mainly the core tone; the time effects are a small, undecided part (F26). The presets that suit these real parts sit at the training prior's edges about 3× as often as its own labels
+         (F27).
+       - **Fixed or verified alone:** the doubles (F16), early stopping (F18), the class input (F2), the by-sound read
+         (F10).
+       - **Ruled out as blockers:** the network (F5), the readout's pull (F12), the switch readout for a model that
+         reads (F23, in distribution), and mastering for the guitar itself (F22).
+       - **Not shown to help:** augmentation on the clean input (F21; song-fed untested), and more of the same data
+         for the clean input's sound (F25: a 3.5× size increase bought about 0.04, undecided).
+       - S's home advantage on V-real is small (F1). The near-chance rule from the F20 build's draft costs sound and is
+         not recommended (F23).
+       - **Community presets** (the user's question, 2026-10-31; the session's recommendation, pending the user's
+         yes): as centres for the next build's draws, with a wide share kept and the effects dried, after the two
+         blocker tests. They may improve the prior's coverage (F27; a zero-render check first), not whether the model
+         reads real recordings (F20). Morgan Amps Suite X's presets need a plugin update: the user's yes and a parity
+         check first.
+       - **Next (phase 5):** fixes for the two blockers, for the user's decision.
    - **Pipeline review (2026-10-30, zero renders; [record](ml-pipeline-review.md), checks `learn/pipeline_review.py`).**
      At the user's request, the direct model's whole process is listed as 38 small steps. Each step has its code, a
      status, its evidence, a fix and a test.
@@ -1189,4 +1207,5 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-30 | The user (in chat): "The mixes make it harder to distinguish, please only the guitars if possible", then "Same for the previous effects listening page". Guitar-only pages declared before any is built (ledger `amendment_6`, `learn/cc_solo_pages.py`, zero renders): part 1, the drive page's 17 items; part 2, step 4's 25 items with its runaway item 4 (900215) replaced by the loudest non-runaway delay pair (803054, A_e 0.447, its reverb on too); each clip the stored render alone (no backing, other guitars, stand-ins or mastering) at −23 LUFS, in the A/B player, new ids, order and A/B draw. The guitar plays in 96–100% of each on clip and 87–100% of each off clip; the solo clips differ more than the mixes did for 12 of 12 part-1 pairs and 21 of 22 part-2 pairs (drive pairs −2.7 to −14.4 dB, step 4's pairs −5.9 to −29.0 dB); the AAC coding error sits 12.4 dB under 801921's reverb pair difference. Heard means "They differ". The answers roughly bound audibility in a song from above, except where the switch changes the guitar's balance in the mix (levelling removes it); against step 4's in-mix answers masking is confounded with the old sequential player and a repeat hearing; they cannot show whether a switch is heard in a song, nor tau. The drive page's in-mix version is not needed now; F20's re-plan waits on these answers. Descriptive; decides nothing | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_6`, [plan](clean-crunch-pool-plan.md) |
 | 2026-10-30 | The guitar-only pages, built, audited and sent (zero renders): part 1, the drive page's 17 items; part 2, step 4's 25 items with 803054 in place of the runaway 900215. All 84 clips rebuilt from the hash-checked stored renders, the guitar alone in each, every clip at −23.00 LUFS, catches byte-identical, the in-mix pages and keys unchanged; smallest AAC margin 23.1 dB (part 1) and 12.4 dB (part 2, 801921's reverb pair). Caveats: back-to-back items on one excerpt in part 2; 800877 (its pair and its catch) and 802682's sw50r spring pair in both parts (800877 with the same A/B order); levelling removes the switch's level drop (801895 5.9 dB). Answers pending; F20's re-plan waits on them | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_6_outcome`, [plan](clean-crunch-pool-plan.md) |
 | 2026-10-30 | The guitar-only pages' answers, audited: catches 8 of 8 "same"; 5 of the 6 distinct checks and anchors heard (not 802682's sw50r spring: its long-term spectrum differs by about 1.1 dB, the heard 803054's by 1.2 dB, so that does not explain the miss); 25 of the 26 pairs near tau not heard (21 same, 4 maybe; the exception 802350's tremolo, A_e 0.0039, solo J 2.30); all 8 near-tau drive pairs and all 8 spring pairs same. The heard pairs are the top solo-J pairs in each part (AUC 1.00; A_e 1.00 and 0.81), but the edge over A_e rests on one item (802350) and no single solo-J cut works across effects. The listener's note: items with several effects are harder ("13 baseline is 12 with tremolo on so its delay is barely noticeable, if any"); 33 of 34 pairs have another effect on in both clips, by design (one effect switched in the full setting, the context the labels need; an isolated-effect page is not planned). Caveats: part 1 answered fast (8 of 16 under one 10-s loop), repeats across the parts, small n. Readings: the format works on the guitar alone; most heard pairs sit well above tau and one below it was heard (802350's tremolo, A_e 0.0039); as declared, this does not place tau. F20's re-plan comes next, for the user's yes, and declares how, if at all, these answers are used. Decides nothing | [ledger](dev-test-ledger.json) `clean-crunch-pool-dcc` `amendment_6_answers`, [plan](clean-crunch-pool-plan.md) |
+| 2026-10-31 | The pipeline fix plan run (the user: fix and verify every finding of the pipeline review, each on its own, relying only on parts already verified). Reviewed four times, results audited three times. The model learns the tone from the clean guitar: −0.241 [−0.318, −0.165] against S by sound on 2 held-out songs, also told a wrong amp; by knob every one of 9 bands in a 5-fold new-song test. Two blockers located: any backing erases the skill (the other guitars and the separator add no further loss; more backing variety recovers 27% [13%, 42%]); on V-real's real amp tracks no transfer is detected (+0.153 [+0.039, +0.268] against S, mainly the core tone; real parts' presets sit at the training prior's edges about 3× as often as its labels). Fixed or verified alone: the doubles, early stopping, the class input, the by-sound read. Ruled out as blockers: the network, the pull, the switch readout for a model that reads, mastering for the guitar. About 9,010 renders, about 4 h of MPS. Community presets: recommended as draw centres for the next build, pending the user's yes. Phase 5 (the two blockers' fixes) waits on the user | [plan](pipeline-fix-plan.md) findings log F1–F28, [ledger](dev-test-ledger.json) `pipeline-fix` |
 
