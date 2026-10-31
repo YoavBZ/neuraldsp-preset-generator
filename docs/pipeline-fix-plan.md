@@ -361,6 +361,9 @@ instead of generating unrealistic presets our own?"):
     shift taken from the other DIs' units (240 renders; 720 in all).
   - Rows: S-shift − S (does the shared shift help?) and P2a-Sc − S-shift (does per-track skill transfer?); P2a-Sc −
     S beside. P2a-Sc − P2a is not a skill read. Ties are not evidence of no transfer.
+- **5B.1c, the S-centred readout on V-real (ledger `phase_5b1c`, about 132 renders; after F32).** P4's model and
+  inputs, re-centred on S as P2a-Sc, read on V-real-11 exactly as P4 (F20). A measurement of a readout chosen after
+  seeing F31 and F32: if it shapes D_fix's readout, D_fix's V-real read is labelled selection-contaminated.
 
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
@@ -1113,12 +1116,40 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   `PF/real/judge/{S,P2a,constant}/`, `PF/real/report-5b1.json`; `real_parts`, `cmd_real_predict`, `cmd_real_render`,
   `cmd_real_report`; ledger `phase_5b1`.
 
+### F32. Re-centred on S, the model's per-track readings lean better on real amps (5B.1b, exploratory)
+- **Result.** On F31's 40 reamped units, P2a's answers were re-centred on S (P2a-Sc: each of S's sounding continuous
+  controls at S's value plus P2a's deviation from its labels' constant; switches and mics at S's). Because that
+  move is mostly one shift shared by every track of an amp and class, a control was added before any render
+  (S-shift: S plus the shared shift taken from the other DIs' units). 720 renders; S, the lags and P2a reused.
+- **Numbers** (clustered by DI, 8; by rig beside, 14):
+
+  | Row | By DI | By rig | Units better |
+  |---|---|---|---|
+  | S-shift − S (the shared shift) | +0.002 [−0.030, +0.035], 2 of 8 better | −0.003 [−0.033, +0.028], 4 of 14 | 11 of 40 |
+  | P2a-Sc − S-shift (per-track skill) | −0.031 [−0.067, +0.005], 6 of 8 | −0.026 [−0.055, +0.002], 10 of 14 | 29 of 40 |
+  | P2a-Sc − S | −0.029 [−0.061, +0.004], 6 of 8 | −0.029 [−0.069, +0.011], 10 of 14 | 31 of 40 |
+  | P2a-Sc − P2a (not a skill read) | −0.095 [−0.148, −0.042], 7 of 8 | −0.103 [−0.143, −0.063], 13 of 14 | 35 of 40 |
+
+- **Reading.**
+  - The shared shift alone does nothing on these real amps. The model's per-track deviations, applied around S,
+    lean better than S and than the shift, by about 0.03; both rows are undecided (the intervals just include 0).
+  - Most of P2a's penalty on real amps (F31's +0.066) comes from its centre, the labels' average: re-centred on S
+    it is gone. What the model reads per track is small next to what a true-DI search finds on real amp tracks
+    (about −0.14 to −0.17 against S, the roadmap's arm A ZT and step 38).
+  - The direction it supports: a readout centred on S is a cheap candidate for real recordings (read next on V-real
+    as a measurement, 5B.1c), and labels that reach real-amp tones (5B.2) are still needed for a larger gain.
+- **Caveats.** Exploratory: the readout was designed after seeing F31. One band, 38 of 40 units seen in training;
+  switches and mics held at S's, so only the continuous controls are read; the per-track remainder (about 0.03 per
+  knob) is near the gap between a track's two halves.
+- **References.** `PF/real/answers/{P2a-Sc,S-shift}.json`, `PF/real/judge/{P2a-Sc,S-shift}/`,
+  `PF/real/report-5b1b.json`; `sc_cont`, `real_shift_answers`, `cmd_real_predict --names`; ledger `phase_5b1b`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
   2,160 (controls 480, S and the constant 480, four rungs 960, the pull 240); the isolated tests 3,600 (the amp mismatch
   960, mastering 240, the switch rules 480, augmentation 240, the size curve 1,440 with the pooled seeds, the backing
-  test 240); P4 438 and its dry readout 198; phase 5A 240 and its seed 2 240; 5B.1 960. About 10,450 in all. D_fix's reads are not yet spent.
+  test 240); P4 438 and its dry readout 198; phase 5A 240 and its seed 2 240; 5B.1 960, 5B.1b 720. About 11,170 in all. D_fix's reads are not yet spent.
 - **MPS used:** about 4 h (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and backing
   runs, the k-fold, phase 5A's two 10-minute seeds).
 - **Disk:** P2's inputs about 0.3 GB; phase 1b's audio and features about 1.2 GB; the 31 GB guard holds.

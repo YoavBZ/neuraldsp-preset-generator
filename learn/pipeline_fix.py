@@ -3030,6 +3030,59 @@ def cmd_p4_predict(args):
     print(f"P4 PREDICT DONE: {len(dirs)} directions; inputs at {target:.2f} LUFS; tags {list(out)}")
 
 
+def cmd_vreal_sc(args):
+    """5B.1c's answers on V-real-11 (zero renders): P4's own answers (P2a, both seeds, NS-best, the part's own amp
+    track) re-centred on S as 5B.1b's P2a-Sc (`sc_cont`: S's sounding continuous controls at S's value plus P2a's
+    deviation from its labels' constant, clipped; elsewhere P2a's value; switches and mics at S's). The model is
+    re-run on the same inputs; the stored P4 answers are not rewritten. -> vreal/answers/P4-P2a-best-sc.json."""
+    import numpy as np
+
+    from learn import direct_existing as DE
+    from learn import direct_stems as DS
+    from learn import full_space as F
+    from learn import local_objective as LO
+
+    e = require("phase_5b1c")
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    root, plan, drift, dirs, parts, ms = vreal_ctx()
+    nets, recs = [], []
+    for sd in SEEDS:
+        n, r_ = load_run("P2a", sd, "best")
+        nets.append(n)
+        recs.append(r_)
+    p4 = json.loads((out_dir() / VREAL_DIR / "answers" / "P4-P2a-best.json").read_text())
+    if p4["model_sha256"] != [r_["model_sha256"]["best"] for r_ in recs]:
+        raise SystemExit("P4's stored answers came from other models")
+    target = p2a_median_lufs(recs[0]["train_ids"])
+    const = constant_of(rung_rows(kept, rend, recs[0]["train_ids"]))
+    out, inputs, same = {}, {}, []
+    for slug, amp, search, _ in dirs:
+        cls = PR.VREAL[slug][1]
+        if slug not in inputs:
+            ref = amp_track(slug, parts[slug])
+            inputs[slug] = (ref, DE.inference_gain_db(ref, target))
+        ref, g = inputs[slug]
+        s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
+        x, c = DS.model_input(s8, s8, ls, ls, search, amp, cls, "Dstem")
+        r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
+        sel, S = ms[amp][cls]
+        key = f"{slug}|{amp}"
+        plain = LO.sdict(F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"]))
+        same.append(plain == p4["answers"][key][search]["settings"])
+        _, _, s_sw, s_swm, s_k, s_km, _ = F.encode(dict(S), amp)
+        sw = [float(v) if m else None for v, m in zip(s_sw, s_swm)]
+        mics = [int(v) if m else None for v, m in zip(s_k, s_km)]
+        out.setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(F.answer_settings(
+            amp, S, sc_cont(dict(S), amp, r["a2"], const[(amp, cls)]["cont"]), sw, mics))}
+    save(out_dir() / VREAL_DIR / "answers" / "P4-P2a-best-sc.json", {
+        "plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b1c", "tag": "P4-P2a-best-sc", "model": "P2a", "which": "best",
+        "seeds": [r_["seed"] for r_ in recs], "model_sha256": [r_["model_sha256"]["best"] for r_ in recs],
+        "input_lufs": target, "plain_reproduces_p4": f"{sum(same)} of {len(same)}", "answers": out,
+        "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"VREAL-SC DONE: {len(dirs)} directions; the plain readout reproduces P4's stored answers on {sum(same)} "
+          f"of {len(same)}")
+
+
 def cmd_vreal_comparators(args):
     """S and S' (P5's crunch picks without V-real's parts) as V-real answers (zero renders): S on every part, S' on
     the crunch parts, each on its amp's live menu entry."""
@@ -3083,6 +3136,8 @@ def cmd_vreal_render(args):
     bad = [t for t in args.names.split(",") if t not in P4_TAGS]
     if bad:
         raise SystemExit(f"phase 4 renders only its declared tags {P4_TAGS}; not {bad}")
+    if "P4-P2a-best-sc" in args.names.split(","):
+        require("phase_5b1c")
     LO._wait_cap()
     rr = CB.new_renderer()
     try:
@@ -3158,7 +3213,7 @@ def s_positive_control(sj):
 
 
 P4_TAGS = ("P4-P2a-best", "P4-P2a-best-pulled", "P4-P2a-best-constant", "S", "S-prime", "P4-P2a-best-dry",
-           "P4-P2a-best-constant-dry")
+           "P4-P2a-best-constant-dry", "P4-P2a-best-sc")             # the last: 5B.1c (ledger phase_5b1c)
 
 
 def answers_sha(ans):
@@ -3237,7 +3292,7 @@ COMMANDS = {"p5": cmd_p5, "dirty-doubles": cmd_dirty_doubles, "p6": cmd_p6,
             "build-backings": cmd_build_backings, "p4-predict": cmd_p4_predict, "share": cmd_share,
             "prior-edges": cmd_prior_edges, "kfold-report": cmd_kfold_report, "wide-pool": cmd_wide_pool,
             "build-wide": cmd_build_wide, "real-predict": cmd_real_predict, "real-render": cmd_real_render,
-            "real-report": cmd_real_report, "vreal-comparators": cmd_vreal_comparators,
+            "real-report": cmd_real_report, "vreal-sc": cmd_vreal_sc, "vreal-comparators": cmd_vreal_comparators,
             "vreal-render": cmd_vreal_render, "vreal-report": cmd_vreal_report}
 
 
