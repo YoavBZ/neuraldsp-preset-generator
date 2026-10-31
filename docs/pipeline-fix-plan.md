@@ -378,9 +378,9 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **Mastering (step 15).** The split by mastered is no different (NS best: −0.0088 unmastered, −0.0082 mastered).
   P2a's input is not mastered, so step 15 is read on P2c and P2d.
 - **References.** `PF/reads/P2a-*.json`, `e_minus_constant_by_mode` and `e_minus_constant_by_mastered`; `split_e`.
-- **Changes.** This is a candidate root blocker beside F6. The prior (step 6) trains mostly on unrealistic
-  settings, and the knob loss rewards telling them apart. Phase 5's candidates add a training prior centred on
-  realistic presets, and a per-mode by-sound read.
+- **Changes.** At first this looked like a root blocker: the prior (step 6) trains mostly on unrealistic settings,
+  and the knob loss rewards telling them apart. **F11 corrects it:** by sound, P2a's answers on factory draws are
+  among its best (NS −0.337). So the knob read misses skill there; it does not show that skill is absent.
 
 ### F8. Deviation: the ladder runs on the examples without DT doubles
 - **Result.** P2a trained before phase 1b finished, so the recipe used its fallback: every doubled example out.
@@ -397,6 +397,40 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **References.** `PF/sound/judge/truth/`; `cmd_answers --name truth`, `cmd_sound_render`; ledger `phase_3_sound`.
 - **Changes.** The by-sound path (DI, trim, select, judge) is sound. Its second control, the label on the class start
   preset's select (where answers are written), is rendering.
+
+### F11. By sound, the model fed the clean guitar gets much closer than S and the average preset (steps 21, 30)
+- **Result.** P2a's answers (NS-best checkpoint, one seed) were rendered for the first 60 FS and 60 NS sample
+  examples, each through the example's own measure DI. They sound much closer to the known target than S and than
+  the constant, on seen performances and on new songs alike.
+- **Numbers** (log distance ratio; −0.24 is about 21% closer).
+
+  | Row | FS (60, 6 bands) | NS (60, 36 sections) |
+  |---|---|---|
+  | P2a − S | −0.248 [−0.383, −0.114], 6 of 6 bands better | −0.241 [−0.318, −0.165], 29 of 36 better |
+  | P2a − constant | −0.252 [−0.372, −0.132], 5 of 6 better | −0.247 [−0.310, −0.185], 32 of 36 better |
+  | constant − S | +0.004 [−0.107, +0.115] | +0.006 [−0.066, +0.078] |
+
+  By draw mode, P2a − S:
+  - FS: wide −0.303 [−0.436, −0.171] (25); start −0.281 [−0.634, +0.073] (9); factory −0.170 [−0.289, −0.051] (26).
+  - NS: wide −0.254 [−0.355, −0.153] (15); start −0.033 [−0.216, +0.150] (14); factory −0.337 [−0.453, −0.220] (31).
+
+  S's median distance to the targets is 5.7 on both sets.
+- **Reading.**
+  - Fed the clean guitar, the model reads the tone well enough to sound clearly closer than S, even on new songs and
+    on realistic presets.
+  - Knob error badly understates this (F6, F7): many settings sound alike, so the right sound often sits on "wrong"
+    knobs (review step 21 confirmed).
+  - On the made-up songs the constant and S are about equally far from the targets, so the yardstick is fair.
+  - **A mechanism for "never beats S":** the readout's pull toward the constant is fitted on knob error (steps
+    26–27), so it may shrink away exactly this skill. P3 and D_fix read it by sound.
+- **Caveats.**
+  - The targets are Morgan renders on the true amp, an easier task than V-real's real amp tracks with no matching amp.
+  - The NS-best checkpoint is chosen on NS's loss (not its sound).
+  - One seed; the first 60 of each sample.
+- **References.** `PF/sound/judge/{P2a-best,S,constant}/`, `PF/sound/report.json`, `PF/sound/answers/P2a-best.json`;
+  `cmd_answers`, `cmd_sound_render`, `cmd_sound_report`, `log_ratio`; ledger `phase_3_sound`; `logs/pf-sound-*.log`.
+- **Changes.** The ladder's question is now sharp: how much of this survives the mix (P2c) and the stem (P2d)? Every
+  model and readout from here is read by sound, not only by knob.
 
 ### F9. Process: removing a worktree crashed running jobs
 - **Result.** Removing the plan's worktree while the doubles render ran from it crashed its 3 shards at a lazy

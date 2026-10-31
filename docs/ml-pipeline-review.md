@@ -447,6 +447,11 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
   over the constant, whose own error is about 17 points ([tone probe](tone-info-probe.md)).
 - *Fix:* audibility weights (step 8), or a loss that scores the sound.
 - *Test:* P2a's by-sound read against its by-knob read.
+- *2026-10-31, P2a by sound against by knob ([fix plan](pipeline-fix-plan.md) F6, F7, F11):* by knob the clean-input
+  model beats the constant by about 1 point of range, and by nothing on factory draws. By sound its answers are
+  −0.248 [−0.383, −0.114] closer than S on FS and −0.241 [−0.318, −0.165] on new songs, factory draws included
+  (NS −0.337). Knob error badly understates the skill: confirmed as a measurement problem. The readout's pull, fitted
+  on knob error (step 26), may discard this skill.
 
 **Step 22. How much training.**
 - *What happens:* Adam at lr 1e-3, batch 64, one random half per example per epoch, at most 40 epochs, with
@@ -551,6 +556,9 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
   targets, so knob error is the only in-distribution score.
 - *Status:* Unchecked.
 - *Test:* P2's by-sound read. It also covers the case where wrong knobs still give the right sound.
+- *2026-10-31 ([fix plan](pipeline-fix-plan.md) F10, F11):* the by-sound read is built and verified: each
+  example's own label reproduces its target (judge median 1.5e−6). P2a reads −0.248 against S on FS and −0.241 on new
+  songs; the constant is even with S (+0.004, +0.006).
 
 ### The real-song test (V-real-11)
 
