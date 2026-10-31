@@ -530,6 +530,28 @@ def nested_subset(ids, section_of, frac, seed=CURVE_SEED):
     return sorted(out)
 
 
+PC_MODES = ("factory", "start")      # 5B.2's arm P: the draws centred on a factory preset or on S
+PC_SEED = 20261039
+
+
+def preset_centred(ids, kept, sized=False, seed=PC_SEED):
+    """5B.2's arm P: the training examples drawn around a preset (`PC_MODES`; the uniform "wide" draws out). With
+    `sized`, its size control instead: in each section as many examples as arm P keeps there, drawn at random from all
+    of that section's examples (every mode), so the two sets match section by section."""
+    import random
+
+    if not sized:
+        return sorted(i for i in ids if kept[i]["mode"] in PC_MODES)
+    by = {}
+    for i in sorted(ids):
+        by.setdefault(kept[i]["section"], []).append(i)
+    out = []
+    for sec, xs in sorted(by.items()):
+        n = sum(kept[i]["mode"] in PC_MODES for i in xs)
+        out += random.Random(f"{seed}|{sec}").sample(xs, n)
+    return sorted(out)
+
+
 def gmm1d(x, k=4, iters=200, lo=math.exp(-6), hi=math.exp(1)):
     """A 1-D k-component Gaussian mixture fitted by EM, sigmas clamped to the network's range [e^-6, e^1]
     (`full_space.build_net`). Fewer than k points: one component per point. -> (weights, means, sigmas)."""
@@ -998,7 +1020,8 @@ def cmd_train(args):
     length = e["phase_3_length"]
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     name = run_name(args.rung, args.frac, args.aug, args.fold, args.sections) + ("-bk8" if args.backings else "") \
-        + ("-dd" if args.dd else "") + (f"-wide{WIDE_K}" if args.wide else "")
+        + ("-dd" if args.dd else "") + (f"-wide{WIDE_K}" if args.wide else "") + ("-pc" if args.pc else "") \
+        + ("-pcsz" if args.pcsz else "") + ("" if args.real_fold is None else f"-real{args.real_fold}")
     od = out_dir() / "runs"
     rp = od / f"{name}-{args.seed}.json"
     if rp.exists():
@@ -1016,6 +1039,11 @@ def cmd_train(args):
         tr = nested_subset(tr, sec, args.frac)
     if args.sections < 1.0:
         tr = section_share(tr, sec, args.sections)
+    if args.pc or args.pcsz:
+        if args.rung != "a" or args.fold is not None or args.frac < 1.0 or args.sections < 1.0 or args.aug:
+            raise SystemExit("--pc/--pcsz are 5B.2's arm P on P2a's own training set")
+        require("phase_5b2")
+        tr = preset_centred(tr, kept, sized=bool(args.pcsz))
     doubled = doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
     rows = rung_rows(kept, rend, tr) + [dict(r, held=True) for r in rung_rows(kept, rend, held)]
     if args.wide:
@@ -1033,6 +1061,16 @@ def cmd_train(args):
             raise SystemExit("--dd is step 18's isolated test on P2a")
         require("phase_3_isolated")
         data = RungData(rows, rung_path(croot, "a", doubled), aug=True)
+    elif args.real_fold is not None:
+        if args.rung != "a" or args.aug or args.fold is not None or args.frac < 1.0 or args.sections < 1.0:
+            raise SystemExit("--real-fold is 5B.2's arm R on P2a's own training set")
+        rrows, rpaths, real_fold_of = real_rows(args.real_fold, p2a_median_lufs(tr))
+        if not rrows:
+            raise SystemExit("no labelled real rows: run real-search first")
+        base_path = rung_path(croot, "a", doubled)
+        rows = rows[:len(tr)] + rrows + rows[len(tr):]
+        tr = tr + [r["i"] for r in rrows]
+        data = RungData(rows, lambda i: rpaths[i] if i in rpaths else base_path(i), aug=False)
     else:
         data = arm_data(rows, croot, args.rung, doubled, rend, args.aug)
     ti, hi = np.arange(len(tr)), np.arange(len(tr), len(rows))
@@ -1061,7 +1099,8 @@ def cmd_train(args):
               "epochs_run": log[-1]["epoch"] + 1, "best_epoch": best_ep, "best_held_loss": best,
               "steps": log[-1]["steps"], "minutes": round((time.time() - t0) / 60, 1), "device": str(dev),
               "length": length, "augmentations_applied": data.applied, "flags": {"dd": bool(args.dd),
-              "backings": bool(args.backings), "aug": bool(args.aug), "wide": bool(args.wide)},
+              "backings": bool(args.backings), "aug": bool(args.aug), "wide": bool(args.wide),
+              "pc": bool(args.pc), "pcsz": bool(args.pcsz), "real_fold": args.real_fold},
               "backing_variants": getattr(data, "counts", None),
               "baseline_families": {k: family_means(v) for k, v in bl.items()}, "heads": heads, "log": log,
               "models": {w: f"{name}-{args.seed}-{w}.pt" for w in ("final", "best")},
@@ -2499,6 +2538,8 @@ def cmd_real_predict(args):
     from learn import trusted_data_t3 as T3
 
     e = require("phase_5b1")
+    if args.names in ("P2a-pc", "P2a-real"):
+        return real_predict_5b2(args.names)
     if args.names == "S-shift":
         require("phase_5b1b")
         return real_shift_answers()
@@ -2553,6 +2594,67 @@ def cmd_real_predict(args):
             "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"REAL PREDICT DONE: {len(parts)} units on {len({p_['rig'] for p_ in parts})} rigs; inputs at "
           f"{target:.2f} LUFS")
+
+
+def real_predict_5b2(name):
+    """5B.2's answers on 5B.1's 40 units (zero renders), read exactly as P2a's in 5B.1 (plain readout, both seeds
+    NS-best pooled, the input at the model's own training inputs' median loudness): arm P's `P2a-pc` with its labels'
+    constant (`P2a-pc-constant`); arm R's `P2a-real`, each unit read by the fold models that never saw its DI's real
+    tracks. -> real/answers/<tag>.json."""
+    from learn import cc_build as CB
+    from learn import direct_existing as DE
+    from learn import direct_stems as DS
+    from learn import full_space as F
+    from learn import local_objective as LO
+    from learn import trusted_data_t3 as T3
+
+    e = require("phase_5b2")
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    inv = CB.cc_inventory()
+    parts = real_parts(kept, sp, inv)
+    if name == "P2a-real":
+        folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
+        names = {p_["unit"]: f"P2a-real{folds[p_['di']]}" for p_ in parts}
+    else:
+        names = {p_["unit"]: "P2a-pc" for p_ in parts}
+    models = {}
+    for nm in sorted(set(names.values())):
+        nets, recs = zip(*(load_run(nm, sd, "best") for sd in SEEDS))
+        own = [i for i in recs[0]["train_ids"] if i < REAL_ROW0]
+        if any([i for i in r_["train_ids"] if i < REAL_ROW0] != own for r_ in recs):
+            raise SystemExit(f"{nm}: the seeds trained on different sets")
+        models[nm] = (list(nets), [r_["model_sha256"]["best"] for r_ in recs], p2a_median_lufs(own),
+                      constant_of(rung_rows(kept, rend, own)))
+    ms = A_menu_S()
+    out = {name: {}} if name == "P2a-real" else {name: {}, f"{name}-constant": {}}
+    for prt in parts:
+        nets, _, target, const = models[names[prt["unit"]]]
+        ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
+        g = DE.inference_gain_db(ref, target)
+        for amp in AMPS3:
+            sel, S = ms[amp][prt["cls"]]
+            key = real_key(prt, amp)
+            for search in ("A", "B"):
+                s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
+                x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
+                r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
+                out[name].setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(
+                    F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"]))}
+            if name == "P2a-pc":
+                out[f"{name}-constant"][key] = {ANY_HALF: {"select": sel, "settings": LO.sdict(
+                    T3.constant_full(amp, S, const[(amp, prt["cls"])]))}}
+    for t, a in out.items():
+        save(out_dir() / REAL_DIR / "answers" / f"{t}.json", {
+            "plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b2", "tag": t, "parts": parts,
+            "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
+            "unit_model": names, "answers": a, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"REAL PREDICT 5B.2 DONE: {name} on {len(parts)} units")
+
+
+def A_menu_S():
+    from learn import arm_a_mega53 as A
+
+    return A.L.menu_S()
 
 
 def cmd_real_render(args):
@@ -2646,6 +2748,294 @@ def cmd_real_render(args):
     print(f"REAL-RENDER DONE {k}/{n}: {renders} renders")
 
 
+SEARCH_DIR = "search"               # 5B.2: real/search/<unit>|<amp>.json
+
+
+def search_halves(parts):
+    """5B.2: each unit's searched half, A and B alternating by unit order within each DI."""
+    out, seen = {}, {}
+    for p_ in parts:
+        j = seen.get(p_["di"], 0)
+        seen[p_["di"]] = j + 1
+        out[p_["unit"]] = "AB"[j % 2]
+    return out
+
+
+def stage_units(kept, sp, inv, stage):
+    """5B.2's units: stage 1 is 5B.1's 40 read units, stage 2 every other reamped unit (65)."""
+    read = real_parts(kept, sp, inv)
+    if stage == 1:
+        return read
+    ids = {p_["unit"] for p_ in read}
+    return [p_ for p_ in real_parts(kept, sp, inv, n=10 ** 6) if p_["unit"] not in ids]
+
+
+def cmd_real_search(args):
+    """5B.2's searches (stage `--stage`, one shard of units): per unit and forced amp, arm A's main stage (`K.space`,
+    52 evaluations, seed 20261013) from the class's S with the section's true (measure) DI, scored by the judge's
+    distance to the reamped track on the unit's search half at the unit's lag. Each direction in its own process: one
+    discarded priming render of S, then the search, so its first evaluation (S) sits where 5B.1's fresh S render sat
+    and must be bit-identical to it (stage 1; stage 2's S renders and lag are made here first, as 5B.1 made them).
+    The best setting and the setting shrunk 0.5 toward S are then each rendered fresh (5B.1's way) and judged on both
+    halves; the held half is the read. -> real/search/<unit>|<amp>.json."""
+    import numpy as np
+
+    from analysis.aligned import estimate_lag
+    from learn import arm_a_levers as L
+    from learn import arm_a_mega53 as A
+    from learn import audibility_measure as AM
+    from learn import cc_build as CB
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+    from learn import pretrain_set as PS
+    from learn import song_bank as B
+    from learn import trusted_data as T
+
+    e = require("phase_5b2")
+    if args.stage not in (1, 2):
+        raise SystemExit("--stage 1 or 2")
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    parts = stage_units(kept, sp, CB.cc_inventory(), args.stage)
+    halves = search_halves(parts)
+    k, n = args.shard
+    mine = [p_ for j, p_ in enumerate(parts) if j % n == k]
+    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
+    ms = L.menu_S()
+    LO._wait_cap()
+    rr = CB.new_renderer()
+    try:
+        menu = rr.menu()
+    finally:
+        rr.close()
+    for amp, by_cls in ms.items():
+        for cls, (_, S) in by_cls.items():
+            if K.key(dict(menu[amp][K.START[cls][amp]][1])) != K.key(S):
+                raise SystemExit(f"{amp} {cls}: the live S differs from the stored copy")
+    sdir, ldir = out_dir() / REAL_DIR / SEARCH_DIR, out_dir() / REAL_DIR / "lags"
+    s_judge = out_dir() / REAL_DIR / "judge" / "S"
+    renders = 0
+
+    def fresh(di32, sel, x):
+        y = AM.fresh_render(CB.new_renderer, di32, sel, x, x)
+        return np.asarray(y, np.float64)[trim[0]:trim[1]]
+
+    def fname(key):
+        return key.replace("/", "__")
+
+    for prt in mine:
+        if PS.free_gb() < T.DISK_GUARD_GB:
+            raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+        di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
+        di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
+        ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
+        search = halves[prt["unit"]]
+        held = "B" if search == "A" else "A"
+        lp = ldir / f"{fname(prt['unit'])}.json"
+        s_ref = {}                                     # amp -> (S's fresh judge, its render sha)
+        if args.stage == 1:
+            if not lp.exists():
+                raise SystemExit(f"{lp.name}: stage 1 reads 5B.1's stored lag")
+            for amp in AMPS3:
+                g = json.loads((s_judge / f"{fname(real_key(prt, amp))}.json").read_text())
+                s_ref[amp] = (g["judge"][ANY_HALF], g["render_sha256"][ANY_HALF])
+        else:
+            if lp.exists():
+                raise SystemExit(f"{lp.name}: a stage 2 unit already has a lag")
+            ys = {}
+            for amp in AMPS3:
+                sel, S = ms[amp][prt["cls"]]
+                ys[amp] = fresh(di32, sel, S)
+                renders += 2
+            try:
+                lag = int(estimate_lag(ref, list(ys.values())))
+                save(lp, {"unit": prt["unit"], "lag": lag, "status": "ok", "phase": "phase_5b2"})
+            except ValueError as err:
+                save(lp, {"unit": prt["unit"], "lag": None, "status": f"no lag: {err}", "phase": "phase_5b2"})
+            lag = json.loads(lp.read_text())["lag"]
+            for amp in AMPS3:
+                s_ref[amp] = (None if lag is None else K.judge(ref, ys[amp], di, lag), AM.audio_sha(ys[amp]))
+        lag = json.loads(lp.read_text())["lag"]
+        if lag is None:
+            print(f"{prt['unit'][-60:]}: no lag; not searched", flush=True)
+            continue
+        for amp in AMPS3:
+            key = real_key(prt, amp)
+            path = sdir / f"{fname(key)}.json"
+            if path.exists():
+                continue
+            sel, S = ms[amp][prt["cls"]]
+            dims = K.space(amp, S)
+            s_j, s_sha = s_ref[amp]
+            curve, first = [], {}
+            rr = CB.new_renderer()
+            try:
+                rr.render(di32, sel, S)                # the discarded priming render, as `fresh_render`'s
+                renders += 1
+
+                def f(x):
+                    y = np.asarray(rr.render(di32, sel, x), np.float64)[trim[0]:trim[1]]
+                    v = K.judge(ref, y, di, lag)[search]
+                    if not curve:
+                        first.update(sha=AM.audio_sha(y), value=v)
+                        if first["sha"] != s_sha:
+                            raise SystemExit(f"{key}: S's first evaluation is not bit-identical to its fresh render")
+                    curve.append(v)
+                    return v
+
+                best_x, best_v, evals = L.main_stage(dims, S, f, seed=L.SEED)
+                renders += evals
+            finally:
+                rr.close()
+            shrunk_x = L.shrink(dims, S, best_x, A.SHRINK)
+            out = {}
+            for name, x in (("best", best_x), ("shrunk", shrunk_x)):
+                y = fresh(di32, sel, x)
+                renders += 2
+                out[name] = {"judge": K.judge(ref, y, di, lag), "peak_dbfs": A.peak_dbfs(y, trim_s=0.0),
+                             "render_sha256": AM.audio_sha(y), "settings": LO.sdict(x)}
+                out[name]["fallback"] = A.fallback_reason(out[name]["peak_dbfs"], out[name]["judge"][search])
+            save(path, {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b2", "stage": args.stage, "unit": prt["unit"],
+                        "rig": prt["rig"], "di": prt["di"], "cls": prt["cls"], "amp": amp, "select": sel,
+                        "search": search, "held": held, "lag": lag, "s_judge": s_j, "s_render_sha256": s_sha,
+                        "s_first": first, "curve": curve, "evaluations": evals, "best_search_value": best_v,
+                        **out, "label": None if out["best"]["fallback"] else out["best"]["settings"],
+                        "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+            print(f"{key[-70:]}: {search}->{held} S {s_j[held]:.3f} best {out['best']['judge'][held]:.3f} shrunk "
+                  f"{out['shrunk']['judge'][held]:.3f}; renders so far {renders}", flush=True)
+    print(f"REAL-SEARCH DONE stage {args.stage} {k}/{n}: {renders} renders")
+
+
+REAL_ROW0 = 3_000_000               # 5B.2's real rows: ids from here (no D_CC example id reaches it)
+REAL_REPEAT = 3                     # each real row shown this many times per epoch
+REAL_FOLDS = 4
+REAL_FOLD_SEED = 20261039
+
+
+def real_folds(read_parts, all_parts, k=REAL_FOLDS, seed=REAL_FOLD_SEED):
+    """5B.2's folds: the DIs in pairs (k folds), the pairing that makes the folds' read-unit counts most equal (the
+    smallest range, then the smallest spread of all units), ties broken by a seeded order. -> {di: fold}."""
+    import itertools
+    import random
+
+    dis = sorted({p_["di"] for p_ in all_parts})
+    if len(dis) != 2 * k:
+        raise SystemExit(f"{len(dis)} DIs: 5B.2's folds pair 8")
+    nr = {d: sum(p_["di"] == d for p_ in read_parts) for d in dis}
+    na = {d: sum(p_["di"] == d for p_ in all_parts) for d in dis}
+
+    def pairings(xs):
+        if not xs:
+            yield []
+            return
+        a = xs[0]
+        for j in range(1, len(xs)):
+            for rest in pairings(xs[1:j] + xs[j + 1:]):
+                yield [(a, xs[j])] + rest
+
+    cands = list(pairings(dis))
+    random.Random(seed).shuffle(cands)
+
+    def score(pr):
+        r = [nr[a] + nr[b] for a, b in pr]
+        t = [na[a] + na[b] for a, b in pr]
+        return (max(r) - min(r), max(t) - min(t))
+
+    best = min(cands, key=score)
+    return {d: f for f, pr in enumerate(sorted(best)) for d in pr}
+
+
+def real_input_path(unit):
+    return out_dir() / REAL_DIR / "inputs" / f"{unit.replace('/', '__')}.npz"
+
+
+def real_rows(fold, target):
+    """5B.2's arm R training rows for fold `fold`: one row per labelled (unit, amp) whose DI is outside the fold, its
+    input the reamped section brought to `target` LUFS (5B.1's path, both halves; cached), its label the search's best
+    setting (`F.label_of`), each repeated REAL_REPEAT times. -> (rows, {id: input path}, {di: fold})."""
+    import numpy as np
+
+    from learn import cc_build as CB
+    from learn import direct_existing as DE
+    from learn import direct_stems as DS
+    from learn import full_space as F
+    from learn import local_objective as LO
+
+    e = require("phase_5b2")
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    inv = CB.cc_inventory()
+    allp = stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2)
+    folds = real_folds(stage_units(kept, sp, inv, 1), allp)
+    by_unit = {p_["unit"]: p_ for p_ in allp}
+    rows, paths, j = [], {}, 0
+    for sp_ in sorted((out_dir() / REAL_DIR / SEARCH_DIR).glob("*.json")):
+        rec = json.loads(sp_.read_text())
+        prt = by_unit[rec["unit"]]
+        if folds[prt["di"]] == fold or rec["label"] is None:
+            continue
+        ip = real_input_path(prt["unit"])
+        if not ip.exists():
+            ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
+            g = DE.inference_gain_db(ref, target)
+            (sa, _, la, _), (sb, _, lb, _) = (DS.step4_half(ref, ref, h, g) for h in ("A", "B"))
+            ip.parent.mkdir(parents=True, exist_ok=True)
+            np.savez(ip, sA=sa, sB=sb, lufs=np.array([la, lb], np.float32))
+        label = F.label_of(LO.tdict(rec["label"]), rec["amp"])
+        for _ in range(REAL_REPEAT):
+            i = REAL_ROW0 + j
+            j += 1
+            rows.append({"i": i, "section": prt["section"], "band": prt["band"], "amp": rec["amp"], "cls": prt["cls"],
+                         "base": prt["cls"], "label": label, "real": rec["unit"]})
+            paths[i] = ip
+    return rows, paths, folds
+
+
+def ceiling_rows(recs):
+    """5B.2's ceiling rows from stored search records: ln(d / d_S) on the held half for the best and the shrunk
+    setting, as 5B.1's rule (S refused drops the direction; a refused answer is scored as S). -> {name: [(di, unit,
+    v)]}, {name: [(rig, unit, v)]}, the counts."""
+    by_di, by_rig, cnt = {"best": [], "shrunk": []}, {"best": [], "shrunk": []}, {"s_dropped": 0, "refused_as_S": 0}
+    for r in recs:
+        s = r["s_judge"][r["held"]]
+        if not (s is not None and math.isfinite(s) and s > 0):
+            cnt["s_dropped"] += 1
+            continue
+        for nm in ("best", "shrunk"):
+            d = r[nm]["judge"][r["held"]]
+            if not (math.isfinite(d) and d > 0):
+                cnt["refused_as_S"] += 1
+                d = s
+            v = math.log(d / s)
+            by_di[nm].append((r["di"], r["unit"], v))
+            by_rig[nm].append((r["rig"], r["unit"], v))
+    return by_di, by_rig, cnt
+
+
+def cmd_real_ceiling(args):
+    """5B.2's ceiling read (zero renders): best - S and shrunk - S on the held half, clustered by DI, by rig beside,
+    part-weighted beside, for search stage `--stage` (stage 1 decides whether stage 2 runs). The search-half values are
+    reported apart (selected on, so optimistic). -> real/report-ceiling-<stage>.json."""
+    require("phase_5b2")
+    recs = [json.loads(p_.read_text()) for p_ in sorted((out_dir() / REAL_DIR / SEARCH_DIR).glob("*.json"))]
+    recs = [r for r in recs if r["stage"] == args.stage]
+    by_di, by_rig, cnt = ceiling_rows(recs)
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b2", "stage": args.stage, "directions": len(recs),
+           "units": len({r["unit"] for r in recs}), "counts": cnt,
+           "labels": sum(r["label"] is not None for r in recs),
+           "s_first_bit_identical": sum(bool(r["s_first"]) for r in recs),
+           "rows": {nm: {"by_di": clustered(by_di[nm]), "by_rig": clustered(by_rig[nm])} for nm in by_di},
+           "search_half_best_minus_S": statistics.fmean(
+               math.log(r["best_search_value"] / r["s_judge"][r["search"]]) for r in recs
+               if r["s_judge"][r["search"]] and math.isfinite(r["best_search_value"])) if recs else None,
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    save(out_dir() / REAL_DIR / f"report-ceiling-{args.stage}.json", out)
+    for nm, r_ in out["rows"].items():
+        d = r_["by_di"]
+        print(f"{nm} - S (held half): {d['mean']:+.3f} [{d['lo90']:+.3f}, {d['hi90']:+.3f}] by DI, "
+              f"{d['clusters_negative']} of {d['clusters']} better; by rig {r_['by_rig']['mean']:+.3f}; "
+              f"part-weighted {d['part_weighted']:+.3f}")
+    print(f"CEILING DONE stage {args.stage}: {out['directions']} directions, {out['labels']} labels, {cnt}")
+
+
 def cmd_real_report(args):
     """5B.1's rows: for each pair in `--pairs`, ln(d_a / d_b) on the held half per (unit, amp, search), with S
     refused dropping the direction and a refused answer scored as S (the V-real rule); clustered by DI (the
@@ -2664,7 +3054,8 @@ def cmd_real_report(args):
               .exists() and json.loads((out_dir() / REAL_DIR / "lags" / f"{p_['unit'].replace('/', '__')}.json")
                                        .read_text())["lag"] is None]
     meta = {p_["unit"]: p_ for p_ in parts}
-    phase = "phase_5b1b" if any(t in ("P2a-Sc", "S-shift") for t in tags) else "phase_5b1"
+    phase = ("phase_5b2" if any(t.startswith(("P2a-pc", "P2a-real")) for t in tags)
+             else "phase_5b1b" if any(t in ("P2a-Sc", "S-shift") for t in tags) else "phase_5b1")
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {phase}", "units": len(parts), "no_lag": no_lag, "rows": {}}
     units = [(p_["unit"], amp, sh, h) for p_ in parts for amp in AMPS3 for sh, h in (("A", "B"), ("B", "A"))]
     for pair in args.pairs.split(","):
@@ -3295,7 +3686,7 @@ COMMANDS = {"p5": cmd_p5, "dirty-doubles": cmd_dirty_doubles, "p6": cmd_p6,
             "build-backings": cmd_build_backings, "p4-predict": cmd_p4_predict, "share": cmd_share,
             "prior-edges": cmd_prior_edges, "kfold-report": cmd_kfold_report, "wide-pool": cmd_wide_pool,
             "build-wide": cmd_build_wide, "real-predict": cmd_real_predict, "real-render": cmd_real_render,
-            "real-report": cmd_real_report, "vreal-sc": cmd_vreal_sc, "vreal-comparators": cmd_vreal_comparators,
+            "real-report": cmd_real_report, "real-search": cmd_real_search, "real-ceiling": cmd_real_ceiling, "vreal-sc": cmd_vreal_sc, "vreal-comparators": cmd_vreal_comparators,
             "vreal-render": cmd_vreal_render, "vreal-report": cmd_vreal_report}
 
 
@@ -3330,6 +3721,10 @@ def main(argv=None):
     ap.add_argument("--dd", action="store_true")
     ap.add_argument("--levels-only", action="store_true")
     ap.add_argument("--wide", action="store_true")
+    ap.add_argument("--pc", action="store_true")
+    ap.add_argument("--stage", type=int, default=0)
+    ap.add_argument("--real-fold", type=int, choices=tuple(range(REAL_FOLDS)), default=None)
+    ap.add_argument("--pcsz", action="store_true")
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 

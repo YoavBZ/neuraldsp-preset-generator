@@ -298,3 +298,42 @@ def test_sc_cont_is_S_when_the_model_reads_its_constant(monkeypatch):
     nan_c = const.copy()
     nan_c[0] = np.nan
     assert P.sc_cont({}, "pr12", const + 0.05, nan_c)[0] == pytest.approx(0.15)   # no constant: the model's value
+
+
+def test_search_halves_alternate_within_each_di():
+    parts = [{"unit": f"u{j}", "di": d} for j, d in enumerate("aabab")]
+    assert P.search_halves(parts) == {"u0": "A", "u1": "B", "u2": "A", "u3": "A", "u4": "B"}
+
+
+def test_real_folds_pair_the_dis_and_balance_the_read_units():
+    counts = {"d1": 6, "d2": 3, "d3": 4, "d4": 7, "d5": 4, "d6": 3, "d7": 3, "d8": 10}
+    read = [{"di": d} for d, n in counts.items() for _ in range(n)]
+    folds = P.real_folds(read, read)
+    assert sorted(folds) == sorted(counts) and sorted(folds.values()) == [0, 0, 1, 1, 2, 2, 3, 3]
+    per = [sum(counts[d] for d in folds if folds[d] == f) for f in range(4)]
+    assert max(per) - min(per) == 5                     # d8 (10) pairs with a 3 at best: 13 against 8 at worst
+    assert folds == P.real_folds(read, read)            # deterministic
+    with pytest.raises(SystemExit):
+        P.real_folds(read[:3], read[:3])
+
+
+def test_preset_centred_drops_wide_draws_and_its_size_control_matches_by_section():
+    modes = ["factory", "wide", "start", "wide", "factory", "start", "wide", "factory"]
+    kept = {i: {"mode": m, "section": f"s{i % 3}"} for i, m in enumerate(modes)}
+    ids = sorted(kept)
+    pc = P.preset_centred(ids, kept)
+    assert pc == [i for i in ids if modes[i] != "wide"]
+    sz = P.preset_centred(ids, kept, sized=True)
+    by = lambda xs: sorted(kept[i]["section"] for i in xs)                       # noqa: E731
+    assert by(sz) == by(pc) and sz == P.preset_centred(ids, kept, sized=True)
+
+
+def test_ceiling_rows_drop_a_refused_S_and_score_a_refused_answer_as_S():
+    def rec(unit, s, best, shrunk):
+        return {"unit": unit, "di": "d", "rig": "r", "held": "B", "s_judge": {"A": 1.0, "B": s},
+                "best": {"judge": {"B": best}}, "shrunk": {"judge": {"B": shrunk}}}
+
+    by_di, by_rig, cnt = P.ceiling_rows([rec("u1", 2.0, 1.0, math.inf), rec("u2", math.inf, 1.0, 1.0)])
+    assert cnt == {"s_dropped": 1, "refused_as_S": 1}
+    assert by_di["best"] == [("d", "u1", pytest.approx(math.log(0.5)))]
+    assert by_di["shrunk"] == [("d", "u1", 0.0)] and by_rig["best"][0][0] == "r"
