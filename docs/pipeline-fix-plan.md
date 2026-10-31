@@ -996,7 +996,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   | Both seeds pooled per example − P2b-bk8 | −0.141 [−0.291, +0.009], 5 of 6 | −0.051 [−0.101, −0.001], 20 of 36 |
 
   - Share of P2a − P2b recovered (`share --name P2b-wide24`): NS 0.478 [0.274, 0.713], against P2b-bk8's 0.269;
-    FS 0.738 [0.468, 1.021]. Seed 2: NS 0.523 [0.234, 0.814]; both seeds pooled: NS 0.501 [0.289, 0.728], FS 0.798
+    FS 0.738 [0.468, 1.021]. Seed 2: NS 0.523 [0.234, 0.814], FS 0.857 [0.460, 1.332]; both seeds pooled: NS 0.501 [0.289, 0.728], FS 0.798
     [0.481, 1.155].
   - Seed 2's best checkpoint is at epoch 35. By knob, both seeds pooled: NS −0.0019 [−0.0032, −0.0005], FS −0.0041
     [−0.0058, −0.0025] against the constant.
@@ -1022,9 +1022,12 @@ what it changes. Each is audited before it is entered; the review's steps carry 
     pass the −33 LUFS floor on the sum).
   - The variants' schedule is seeded by the pool's seed, not the training seed, so a second training seed varies the
     initialisation and batch order only.
-- **References.** `PF/inputs/backings-wide-pool.json`, `PF/inputs/*-mixbw-k*.npz`, `PF/runs/P2b-wide24-20261042.json`,
-  `PF/reads/P2b-wide24-{best,final}.json`, `PF/sound/judge/P2b-wide24-best/`, `PF/sound/report-wide24.json`,
-  `PF/sound/share-P2b-wide24.json`; `cmd_wide_pool`, `cmd_build_wide`, `WideData`; ledger `phase_5a`.
+- **References.** `PF/inputs/backings-wide-pool.json`, `PF/inputs/*-mixbw-k*.npz`,
+  `PF/runs/P2b-wide24-{20261042,20261043}.json`, `PF/reads/P2b-wide24-{best,final}-x20261042.json` (seed 1) and
+  `PF/reads/P2b-wide24-best.json` (both seeds), `PF/sound/answers/P2b-wide24-best{,-x20261043}.json`,
+  `PF/sound/judge/P2b-wide24-best{,-x20261043}/`, `PF/sound/report-wide24.json`,
+  `PF/sound/share-P2b-wide24{,-x20261043,-x20261042+20261043}.json`; `cmd_wide_pool`, `cmd_build_wide`, `WideData`,
+  `cmd_share`; ledger `phase_5a`, `phase_5a_seed2`.
 
 ### F30. The amp-track bleed check fails tracks that cannot hold bleed (zero renders)
 - **Result.** 5B.1 was first designed on the pool's own recorded amp tracks. Measured with the stock check
@@ -1079,16 +1082,19 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   | P2a − constant | −0.053 [−0.125, +0.019], 5 of 8 better | −0.056 [−0.109, −0.004], 10 of 14 | 27 of 40 |
   | constant − S | +0.119 [+0.047, +0.192], 1 of 8 better | +0.130 [+0.086, +0.175], 2 of 14 | 7 of 40 |
 
-  - Per DI, P2a − S runs from −0.019 to +0.167; constant − S from −0.051 to +0.289.
-  - S sits as far from these tracks as from V-real's (median distance 4.6 against 4.3), so the read is on the same
-    footing as F20.
+  - Per DI, P2a − S runs from −0.019 to +0.167; constant − S from −0.051 to +0.289. Part-weighted: +0.067, −0.060,
+    +0.127.
+  - S sits at a similar distance from these tracks as from V-real's (median half distance 4.8 against 4.3).
 - **Reading.**
-  - The clean-input model, which reads new plugin renders (F11, F28), does worse than S on a real amp, even on
-    performances it trained on. F20's gap is therefore not mainly new playing or the V-real recordings: it already
-    appears on a real-amp recording of known playing.
-  - The model still beats the constant of its labels (undecided by DI, 10 of 14 rigs), and the constant is far worse
-    than S. The labels' centre lies far from what these real amps sound like, consistent with F27 (real parts' presets
-    at the prior's edges). The model reads some real-amp sound but starts from the wrong place.
+  - The clean-input model, which reads new plugin renders (F11, F28), does worse than S on BKS's reamped tracks, even
+    on performances it trained on. Part of F20's gap already appears on a real-amp recording of known playing: +0.07
+    here against +0.15 on V-real (unpaired, different bands). How much new playing or the V-real recordings add is
+    not measured.
+  - The model leans better than the constant of its labels (undecided by DI; 10 of 14 rigs). The constant roughly
+    ties S on the plugin's own held-out renders (P2a − S and P2a − constant differ by about 0.005 in the ladder's
+    read) but is +0.119 behind S here: on real amps the labels' average falls behind S, consistent with F27 (real
+    parts' presets at the prior's edges). The model may read some real-amp sound, from a centre that suits real amps
+    less than S does.
   - Not separated: the amp, the mic, room and cab chain, the reamps' noise or tails, and the judge on real
     recordings. How much better than S any preset could do here (the ceiling) is not measured.
   - The direction it supports: labels that reach real-amp tones (5B.2's pseudo-labels from a true-DI search on these
