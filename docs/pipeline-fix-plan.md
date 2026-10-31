@@ -318,7 +318,10 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - every one of the 85 knobs and 28 switches is below its baseline.
 - **Length.** The loss made 90% of its fall by 1,124 steps (epoch 280). By the plan's rule the ladder runs 60
   epochs with a checkpoint every 5.
-- **Caveat.** It memorises; it says nothing about generalising. P1 on the stem (P2d) is running.
+- **P1 on the stem (P2d):** it memorises as fully (knobs −2.50 against −0.84, switches 0.041 against 0.58, every head
+  below baseline), but more slowly: best checkpoint at epoch 1,070 against 770 on the clean input
+  (`PF/runs/P1-d.json`).
+- **Caveat.** It memorises; it says nothing about generalising.
 - **References.** `PF/runs/P1-a.json`; `cmd_p1`, `fit`, `head_losses`, `Baseline`; ledger `phase_2_outcome`,
   `phase_3_length`.
 
@@ -386,6 +389,14 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - The by-sound sample was drawn from it: 120 FS and 120 NS in a fixed order, the first 60 of each read first.
 - **References.** Ledger `phase_3_doubles`, `phase_3_doubles_why`; `PF/sound/sample.json`; `recipe_inputs(pin=...)`.
 - **Changes.** The re-rendered doubles (F3) enter D_fix, which verifies step 12.
+
+### F10. The by-sound read reproduces the truth (its positive control)
+- **Result.** Each of the 120 sampled examples' own label, on its own select, was rendered through its own measure DI
+  in a fresh primed process. Each one reproduces its stored target render: judge distance median 1.5e−6, at most
+  1.0e−4, against S's distances of a few dB. 240 renders.
+- **References.** `PF/sound/judge/truth/`; `cmd_answers --name truth`, `cmd_sound_render`; ledger `phase_3_sound`.
+- **Changes.** The by-sound path (DI, trim, select, judge) is sound. Its second control, the label on the class start
+  preset's select (where answers are written), is rendering.
 
 ### F9. Process: removing a worktree crashed running jobs
 - **Result.** Removing the plan's worktree while the doubles render ran from it crashed its 3 shards at a lazy

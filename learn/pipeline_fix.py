@@ -1282,7 +1282,7 @@ def cmd_build_doubles(args):
     built = set()
     for f in sorted((dt_root() / "rows").glob("build-*.jsonl")):
         built |= {r["i"] for r in DS.read_jsonl(f)}
-    todo = sorted((i for i in new if i not in built), key=lambda i: (ex[i]["section"], i))
+    todo = sorted((i for i in new if i not in built), key=lambda i: (ex[i]["section"], i), reverse=args.desc)
     print(f"build-doubles: {len(todo)} to build on {args.device}", flush=True)
     ctx = CB.ctx_for(a)
     sep = DS.stem_separator(T.SEP, args.device)
@@ -1757,6 +1757,7 @@ def main(argv=None):
     ap.add_argument("--names", default="")
     ap.add_argument("--control", action="store_true")
     ap.add_argument("--doubled", action="store_true")
+    ap.add_argument("--desc", action="store_true")
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 
