@@ -681,8 +681,11 @@ was declared, what was measured, and the research behind it.
 20. [morgan-community-presets-2026-10.md](research/morgan-community-presets-2026-10.md): where real
     Morgan Amps Suite presets can be found to centre the training draws on (October 2026; nothing
     downloaded). The plugin's own banks (108 installed: 44 SW50R, 34 PR12, 30 AC20; Suite X says
-    "more than 100", overlap unknown) are the only large source. Outside Neural DSP there are about
-    35–65 presets: one free 14-preset Gumroad pack, three paid or unclear packs of 15, a few unread
-    YouTube giveaways and PresetJunkie behind a login. The forum, Reddit, GitHub and Discord exports
-    hold no Morgan files. The only song-tone presets are three factory ones, already installed. Each
-    source is mapped onto the licence and cost rule. Research, not a declared plan.
+    "more than 100", overlap unknown) are the only large source. Outside Neural DSP about 65 presets
+    are known: one free 14-preset Gumroad pack (no licence stated), three paid or unclear packs of
+    15 and 5 in an unread YouTube giveaway, plus unknown counts on PresetJunkie (behind a login),
+    soundlearn and Discord. The forum, Reddit and GitHub hold no Morgan files; no Discord export was
+    found (Neural DSP's Discord reportedly has "a few", behind an expired invite). Song tones: two
+    factory presets named after songs and one artist tone, all installed; names in the unread
+    sources could add more. Each source is mapped onto the licence and cost rule, and community packs
+    must stay out of the factory folder. Research, not a declared plan.
