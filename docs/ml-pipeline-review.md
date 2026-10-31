@@ -92,45 +92,49 @@ record. Code is cited as `file:line` at commit e124367.
 
 ## Status at a glance
 
+*2026-10-31:* each status is followed (→) by its closure under the [fix plan](pipeline-fix-plan.md), whose findings
+log (F1–F25) holds the evidence. Every fix was checked on its own, relying only on parts already verified (the user's
+rule).
+
 | Step | What | Status | Evidence | Test |
 |---|---|---|---|---|
 | 1 | DIs from released sessions, test bands kept out | OK | pool plan, ear pages | |
 | 2 | Every DI timed against its own amp track | OK | pool amendment 2: 50 of 61 in time | |
-| 3 | 10-s sections every 5 s | Suspect (with 23) | `clean_di.py:48-53` | |
-| 4 | Section screens; pool size | Problem (size) | `s04`: 262 sections, 32 DIs, 9 bands | P2 |
-| 5 | Class input = a coin flip in training, the real class on songs | Suspect | `s05`: 1,512 of 3,033 differ | P6 |
-| 6 | Settings drawn: factory / start / wide | Suspect | `s06`: factory draws reverb 73%, delay 62% | P3 |
-| 7 | Near-silent draws refused | Problem | `s07`: wide 38%, factory 1.6%, start 0% | |
-| 8 | Labels count inaudible settings | Problem | audibility outcome; step 4's ear page | P2 |
+| 3 | 10-s sections every 5 s | Suspect (with 23) → **Fixed 2026-10-31 (fix plan F18)** | `clean_di.py:48-53` | |
+| 4 | Section screens; pool size | Problem (size) → **Limit, measured: the clean input's skill rises with size (F25 pending)** | `s04`: 262 sections, 32 DIs, 9 bands | P2 |
+| 5 | Class input = a coin flip in training, the real class on songs | Suspect → **Fixed (section's class everywhere; P6 F2)** | `s05`: 1,512 of 3,033 differ | P6 |
+| 6 | Settings drawn: factory / start / wide | Suspect → **Fixed (runaways out); prior: limit, measured (F7, F11, F20)** | `s06`: factory draws reverb 73%, delay 62% | P3 |
+| 7 | Near-silent draws refused | Problem → **Limit, measured (data)** | `s07`: wide 38%, factory 1.6%, start 0% | |
+| 8 | Labels count inaudible settings | Problem → **Limit, measured (F18)** | audibility outcome; step 4's ear page | P2 |
 | 9 | DI re-EQ'd to an average guitar, −22.9 LUFS | OK (consistent) | same in training and scoring | P4 |
 | 10 | Target render, fresh process, warm-up | OK | positive control 50 of 50 | |
-| 11 | Render folded to mono | Problem | tone probe: every render mono | P2, P4 |
-| 12 | Doubles rendered with the target's core setting | Suspect | `s12`: drive switches differ in 34–35% | P7 |
-| 13 | Recorded amp-track stand-ins | Suspect | `s13`: 44% of examples (F5: 0) | |
-| 14 | Target-to-backing level drawn from real songs | Suspect (minor) | `s14`: median −9.1 dB | |
-| 15 | Half the mixes mastered | Suspect (minor) | V-real mixes are raw sums | |
-| 16 | X-LANCE stem as the model's input | **Problem (leading)** | `s16`: median −6.2 dB; 78 alone | P2 |
+| 11 | Render folded to mono | Problem → **Limit, measured (F18; stereo input is the next build's)** | tone probe: every render mono | P2, P4 |
+| 12 | Doubles rendered with the target's core setting | Suspect → **Fixed (re-rendered; verified on the data alone, F16)** | `s12`: drive switches differ in 34–35% | P7 |
+| 13 | Recorded amp-track stand-ins | Suspect → **Ruled out as an error** | `s13`: 44% of examples (F5: 0) | |
+| 14 | Target-to-backing level drawn from real songs | Suspect (minor) → **Limit, measured (level statistics only)** | `s14`: median −9.1 dB | |
+| 15 | Half the mixes mastered | Suspect (minor) → **Ruled out (F22)** | V-real mixes are raw sums | |
+| 16 | X-LANCE stem as the model's input | **Problem (leading)** → **Located: the loss is at any backing, not the separator (F15, F17); backing variety recovers ~27% (F24)** | `s16`: median −6.2 dB; 78 alone | P2 |
 | 17 | Mel features, same code in training and on songs | OK | parity check | |
-| 18 | Augmentation (dropouts, darkening, merges) | Suspect (weak) | no-augmentation +0.051, undecided; leans towards it helping | |
-| 19 | How much tone survives to the input | Problem (located) | `s19`: 86 → 30 → 20 of 116 | P2 |
-| 20 | Network shape | Unchecked | can it fit at all? | P1 |
-| 21 | Loss in knob units | Suspect | probe: +3.1 points over a 17-point error | P2 |
-| 22 | Training size and length | **Problem (leading)** | `s22`: 430–1,204 steps | P1, P2 |
-| 23 | Early stopping on the same songs | Problem | `s23`: 26 of 32 overlap in time | |
-| 24 | Missing training diagnostics | Unchecked | `s22`: only total losses logged | P1 |
+| 18 | Augmentation (dropouts, darkening, merges) | Suspect (weak) → **Ruled out as a lever (F21)** | no-augmentation +0.051, undecided; leans towards it helping | |
+| 19 | How much tone survives to the input | Problem (located) → **Located (F13–F17)** | `s19`: 86 → 30 → 20 of 116 | P2 |
+| 20 | Network shape | Unchecked → **Ruled out (P1, F5)** | can it fit at all? | P1 |
+| 21 | Loss in knob units | Suspect → **Confirmed: knob error understates sound skill (F6, F11)** | probe: +3.1 points over a 17-point error | P2 |
+| 22 | Training size and length | **Problem (leading)** → **Fixed (length from P1; checkpoints)** | `s22`: 430–1,204 steps | P1, P2 |
+| 23 | Early stopping on the same songs | Problem → **Fixed (held-out songs; F18)** | `s23`: 26 of 32 overlap in time | |
+| 24 | Missing training diagnostics | Unchecked → **Fixed (per-head, eval-mode, baseline logs)** | `s22`: only total losses logged | P1 |
 | 25 | Each knob's mixture median, 2 seeds | OK | constant research | |
-| 26 | Knobs pulled toward the training average | Problem | `s26`: b = 0 for 36–38% | P3 |
-| 27 | Switches on above 0.5 | Problem | `s27`: pedals at S −0.076, 7 of 7 bands | P3 |
+| 26 | Knobs pulled toward the training average | Problem → **Measured: the pull costs little (F12)** | `s26`: b = 0 for 36–38% | P3 |
+| 27 | Switches on above 0.5 | Problem → **Measured: plain readout right, near-chance rule hurts (F23)** | `s27`: pedals at S −0.076, 7 of 7 bands | P3 |
 | 28 | Everything else at S | OK | | |
-| 29 | Fake-song test (FS5) | **Problem (central)** | `s29`: 5 of 85 knobs; switches weak | P1, P2 |
-| 30 | Fake-song test by sound | Unchecked | never run | P2 |
-| 31 | V-real: 11 parts in 7 bands | Problem (size) | 3 parts from one song | |
-| 32 | V-real input: the stem of a raw mix | Problem | `s32`: 2 parts, identical inputs | P4 |
-| 33 | Each answer forced onto 3 amps × 2 halves | OK (caveat) | render-order phase noise | |
+| 29 | Fake-song test (FS5) | **Problem (central)** → **Located: the model reads the clean guitar (F11) but not in a backing (F17) nor on real recordings (F20)** | `s29`: 5 of 85 knobs; switches weak | P1, P2 |
+| 30 | Fake-song test by sound | Unchecked → **Fixed: the by-sound read, verified (F10)** | never run | P2 |
+| 31 | V-real: 11 parts in 7 bands | Problem (size) → **Limit, measured** | 3 parts from one song | |
+| 32 | V-real input: the stem of a raw mix | Problem → **Fixed (rows count one input; P4 own inputs)** | `s32`: 2 parts, identical inputs | P4 |
+| 33 | Each answer forced onto 3 amps × 2 halves | OK (caveat) → **Fixed (fresh primed processes; F10, F20's S control)** | render-order phase noise | |
 | 34 | The judge scores 1.5 s tails | OK (explains the loss) | `s34`: time effects at S → +0.001 | |
-| 35 | Band-weighted log ratio, 90% interval | Problem (power) | `s34`: D_F5 − S width 0.26 | |
-| 36 | S chosen on most of the same clips | Problem (size unmeasured) | `s36`: rules re-derived; 8 of 11 clips in the choice sets | P5 |
-| 37 | The training average against S | **Problem (explains "never beats S", with 26–27 and 36)** | `s34`: +0.092, undecided; 9 of 11 parts worse | P3 |
+| 35 | Band-weighted log ratio, 90% interval | Problem (power) → **Limit, measured** | `s34`: D_F5 − S width 0.26 | |
+| 36 | S chosen on most of the same clips | Problem (size unmeasured) → **Measured: small, undecided (+0.038; F1, F20)** | `s36`: rules re-derived; 8 of 11 clips in the choice sets | P5 |
+| 37 | The training average against S | **Problem (explains "never beats S", with 26–27 and 36)** → **Measured: even with S in distribution (F11), +0.170 worse on V-real (F20)** | `s34`: +0.092, undecided; 9 of 11 parts worse | P3 |
 | 38 | Headroom with the true DI on these parts | OK | `s38`: −0.137 shrunk, −0.192 best | |
 
 ## The proposed tests (nothing run)
