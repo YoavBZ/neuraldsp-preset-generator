@@ -319,6 +319,13 @@ instead of generating unrealistic presets our own?"):
     with its file, source and size; licences stay the user's to check, paid packs need the user's yes.
   - Morgan Amps Suite X: yes, after 5B.2. Update, then re-render stored settings and compare bit for bit; its
     presets are used only if that parity check passes, otherwise the update is held.
+  - The sources (research PR #349, `docs/research/morgan-community-presets-2026-10.md`): outside the plugin's own
+    108 factory and artist presets, which the draws already centre on, the pool is small: about 15 per pack,
+    mostly paid, and the only free pack with clear terms (Omega Station, 14) is doom, outside the clean/crunch
+    scope. Nothing is downloaded for now; Suite X's bank ("more than 100 curated presets") is the larger source.
+    Two cautions kept: a community pack must never sit in the plugin's non-User preset folder, which the menus
+    read as factory, and if Suite X installs as a separate plugin, the hard-coded preset paths and the pack identity
+    need updating (builds already stop when `plugin_version` changes, `learn/pretrain_set.py:709–711`).
 
 *2026-10-31, after the user's "Continue":* the two blocker tests run, each declared and reviewed first.
 - **5A, backing variety at scale (blocker 1; ledger `phase_5a`; zero renders).**
