@@ -997,7 +997,8 @@ def cmd_train(args):
     e = require("phase_3")
     length = e["phase_3_length"]
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
-    name = run_name(args.rung, args.frac, args.aug, args.fold, args.sections)
+    name = run_name(args.rung, args.frac, args.aug, args.fold, args.sections) + ("-bk8" if args.backings else "") \
+        + ("-dd" if args.dd else "")
     od = out_dir() / "runs"
     rp = od / f"{name}-{args.seed}.json"
     if rp.exists():
@@ -1017,7 +1018,17 @@ def cmd_train(args):
         tr = section_share(tr, sec, args.sections)
     doubled = doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
     rows = rung_rows(kept, rend, tr) + [dict(r, held=True) for r in rung_rows(kept, rend, held)]
-    data = arm_data(rows, croot, args.rung, doubled, rend, args.aug)
+    if args.backings:
+        if args.rung != "b" or args.aug:
+            raise SystemExit("--backings is the backing-variety test on P2b")
+        require("phase_3_backings")
+        data = BackingData(rows, rung_path(croot, "b", doubled), set(tr))
+    elif args.dd:
+        if args.rung != "a":
+            raise SystemExit("--dd is step 18's isolated test on P2a")
+        data = RungData(rows, rung_path(croot, "a", doubled), aug=True)
+    else:
+        data = arm_data(rows, croot, args.rung, doubled, rend, args.aug)
     ti, hi = np.arange(len(tr)), np.arange(len(tr), len(rows))
     sub = np.sort(np.random.default_rng(SUBSET_SEED).choice(ti, min(SUBSET_N, len(ti)), replace=False))
     cells = [(r["amp"], r["cls"]) for r in rows]
@@ -1581,44 +1592,167 @@ def cmd_answers(args):
     elif args.name in ("S", "constant"):
         const = constant_of(rung_rows(kept, rend, sp["train"]))
         for r in rows:
-            sel, S = ms[r["amp"]][r["cls"]]
-            x = dict(S) if args.name == "S" else T3.constant_full(r["amp"], S, const[(r["amp"], r["cls"])])
+            amp = shifted_amp(r["amp"], args.amp_shift)
+            sel, S = ms[amp][r["cls"]]
+            x = dict(S) if args.name == "S" else T3.constant_full(amp, S, const[(amp, r["cls"])])
             out[str(r["i"])] = {"select": sel, "settings": LO.sdict(x)}
-        tag = args.name
+        tag = args.name + amp_tag(args.amp_shift)
     else:
         nets, rec = [], None
-        for sd in SEEDS:
-            if (out_dir() / "runs" / f"{args.name}-{sd}.json").exists():
-                n, rec = load_run(args.name, sd, args.which)
-                nets.append(n)
-        if not nets:
-            raise SystemExit(f"{args.name}: no run")
+        seeds = [int(z) for z in args.seeds.split(",")]
+        for sd in seeds:
+            if not (out_dir() / "runs" / f"{args.name}-{sd}.json").exists():
+                raise SystemExit(f"{args.name}-{sd}: no run")
+            n, rec = load_run(args.name, sd, args.which)
+            nets.append(n)
         doubled = doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
-        data = RungData(rows, rung_path(croot, rec["rung"], doubled), aug=False)
+        srows = [dict(r, amp=shifted_amp(r["amp"], args.amp_shift)) for r in rows]   # told (and rendered on) this amp
+        path_of = rung_path(croot, rec["rung"], doubled)
+        if args.mastered:
+            if rec["rung"] != "a":
+                raise SystemExit("--mastered is step 15's isolated test on P2a")
+            path_of = mastered_inputs(croot, kept, rend, ids)
+        data = RungData(srows, path_of, aug=False)
         X, C, who = read_inputs(data)
         outs = F.run_nets(nets, X, C)
         Y = [np.repeat(data.Y[q], 2, axis=0) for q in range(6)]
         ex = R.per_example(outs, who, Y)
-        pull = None
-        if args.readout == "pulled":
-            pull = fit_knob_pull(nets, croot, kept, rend, sp, rec)
-        for r in rows:
+        pull = fit_knob_pull(nets, croot, kept, rend, sp, rec) if args.readout == "pulled" else None
+        sw_rule = switch_rule(args, nets, croot, kept, rend, sp, rec) if args.readout in ("sws", "nc") else None
+        for r in srows:
             e = ex[r["i"]]
             sel, S = ms[r["amp"]][r["cls"]]
             mics = [int(np.argmax(m)) for m in e["mic_p"]]
-            cont = e["a2"]
+            cont, swp = e["a2"], np.array(e["sw_p"], np.float64)
             if pull is not None:                   # D_CC's readout: each knob pulled toward the constant
                 med, table = pull
                 cell = (r["amp"], r["cls"])
                 b, _ = DS.cell_b(table, cell, F.cell_masks(r["amp"])[0])
                 cont = DS.pull(e["a2"], med[cell], b)
-            x = F.answer_settings(r["amp"], S, cont, e["sw_p"], mics)
+            if sw_rule is not None:
+                swp = sw_rule(swp, r["amp"], r["cls"], S)
+            x = F.answer_settings(r["amp"], S, cont, swp, mics)
             out[str(r["i"])] = {"select": sel, "settings": LO.sdict(x)}
-        tag = f"{args.name}-{args.which}" + ("" if args.readout == "plain" else f"-{args.readout}")
+        tag = (f"{args.name}-{args.which}" + ("" if seeds == [SEEDS[0]] else "-x" + "+".join(map(str, seeds)))
+               + ("" if args.readout == "plain" else f"-{args.readout}") + ("-mast" if args.mastered else "")
+               + amp_tag(args.amp_shift))
     save(out_dir() / SOUND_DIR / "answers" / f"{tag}.json", {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_3",
                                                             "name": tag, "answers": out,
                                                             "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"ANSWERS DONE {tag}: {len(out)} examples")
+
+
+def shifted_amp(amp, k):
+    """The amp k places on in AMPS (the amp-mismatch test tells and renders a wrong amp)."""
+    from learn import full_space as F
+
+    return F.AMPS[(F.AMPS.index(amp) + int(k)) % len(F.AMPS)]
+
+
+def amp_tag(k):
+    return f"-amp+{k}" if k else ""
+
+
+def mastered_inputs(croot, kept, rend, ids):
+    """Step 15's isolated test: P2a's input (the target at its gain in its mix) through the mastering compressor with
+    each example's own drawn parameters, whether or not its mix was drawn mastered. Built in memory into
+    inputs/<i>-tgtl-mast.npz. -> i -> path."""
+    import numpy as np
+
+    from learn import cc_build as CB
+    from learn import direct_sound_gate as G
+    from learn import direct_stems as DS
+    from learn import song_aug as SA
+    from learn import trusted_data as T
+
+    built = T.rows_of(croot, CB.STAGE, "build")
+    for i in ids:
+        p = input_path(DATA, i, "tgtl-mast")
+        if p.exists():
+            continue
+        rw = rend[i]
+        y = np.asarray(G.read_flac(T.flac_path(croot, CB.STAGE, i, "target"), rw["target"]["scale"],
+                                   rw["target"]["sha256"]), np.float64) * 10 ** (built[i]["gains_db"]["ga"] / 20)
+        _, mrng = DS.master_draw(i)
+        f, lu, _ = DS.half_features(SA.compress(y, mrng))
+        DS._save_npz(p, sA=f["A"], sB=f["B"], lufs=[lu["A"], lu["B"]])
+    return lambda i: input_path(DATA, i, "tgtl-mast")
+
+
+def s_switch_state(S, amp, name):
+    """S's own on/off for one switch head (the springs' derived switch from S's level); None if S does not store it."""
+    from learn import full_space as F
+
+    d = F.by_name()[name]
+    if d.key == F.SPRING_KEY:
+        a = next(a for a, q in F.SPRING.items() if q[0] == d.module)
+        return F.spring_on(S, a) if a == amp else None
+    v = S.get((d.module, d.key))
+    return None if v is None else F._truthy(v)
+
+
+NC_DELTAS = (0.0, 0.05, 0.10, 0.15, 0.20)
+
+
+def switch_rule(args, nets, croot, kept, rend, sp, rec):
+    """Step 27's readouts, fitted on FS: "sws" keeps S's state for every switch R0 did not find readable on FS (the
+    model's own read, `reads/<name>-<which>.json`); "nc" (F20's near-chance rule) gives a switch whose probability
+    lies within δ of 0.5 the constant's majority, δ the candidate with the best FS switch agreement (ties to the
+    smaller). -> f(sw_p, amp, cls, S) -> sw_p."""
+    import numpy as np
+
+    from learn import full_space as F
+
+    if args.readout == "sws":
+        r0 = json.loads((out_dir() / "reads" / f"{args.name}-{args.which}.json").read_text())["sets"]["fs"]["rows"]
+        unread = {r["name"] for r in r0 if r["kind"] == "switch" and not r["readable"]}
+
+        def f(swp, amp, cls, S):
+            out = swp.copy()
+            for j, n in enumerate(F.SW):
+                if n in unread:
+                    st = s_switch_state(S, amp, n)
+                    if st is not None:
+                        out[j] = 1.0 if st else 0.0
+            return out
+        return f
+    const = constant_of(rung_rows(kept, rend, rec["train_ids"]))
+    ex, rows = fs_examples(nets, croot, kept, rend, sp, rec)
+    cell = {r["i"]: (r["amp"], r["cls"]) for r in rows}
+
+    def decide(p, maj, d):
+        return (bool(maj) if maj is not None and abs(p - 0.5) < d else p > 0.5)
+
+    best = None
+    for d in NC_DELTAS:
+        hits = n = 0
+        for i, e in ex.items():
+            maj = const[cell[i]]["sw"]
+            for j in np.flatnonzero(np.asarray(e["sm"]) > 0):
+                hits += decide(float(e["sw_p"][j]), maj[j], d) == (float(e["s"][j]) > 0.5)
+                n += 1
+        if best is None or hits / n > best[1] + 1e-12:
+            best = (d, hits / n)
+    delta = best[0]
+    print(f"near-chance rule: δ = {delta} (FS switch agreement {best[1]:.4f})", flush=True)
+
+    def g(swp, amp, cls, S):
+        maj = const[(amp, cls)]["sw"]
+        return np.array([(1.0 if decide(float(p), maj[j], delta) else 0.0) for j, p in enumerate(swp)])
+    return g
+
+
+def fs_examples(nets, croot, kept, rend, sp, rec):
+    """A ladder model's per-example readout on FS (`trusted_data_t3_r.per_example`) and FS's rows."""
+    import numpy as np
+
+    from learn import full_space as F
+    from learn import trusted_data_t3_r as R
+
+    rows = rung_rows(kept, rend, sp["fs"])
+    data = RungData(rows, rung_path(croot, rec["rung"]), aug=False)
+    X, C, who = read_inputs(data)
+    return R.per_example(F.run_nets(nets, X, C), who, [np.repeat(data.Y[q], 2, axis=0) for q in range(6)]), rows
 
 
 def fit_knob_pull(nets, croot, kept, rend, sp, rec):
@@ -1677,11 +1811,15 @@ def cmd_sound_render(args):
     LO._wait_cap()
     for tag in args.names.split(","):
         ans = json.loads((out_dir() / SOUND_DIR / "answers" / f"{tag}.json").read_text())["answers"]
+        asha = answers_sha(ans)
         gd = out_dir() / SOUND_DIR / "judge" / tag
         di_cache = {}
         for i in mine:
             gp = gd / f"{i}.json"
             if gp.exists():
+                old = json.loads(gp.read_text()).get("answers_sha256")
+                if old is not None and old != asha:
+                    raise SystemExit(f"{gp}: rendered from other answers; move sound/judge/{tag} aside first")
                 continue
             if PS.free_gb() < T.DISK_GUARD_GB:
                 raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
@@ -1699,7 +1837,8 @@ def cmd_sound_render(args):
             renders += 2
             y = (y.mean(axis=1) if y.ndim == 2 else y)[trim[0]:trim[1]]
             j = K.judge(tgt, np.asarray(y, np.float64), np.asarray(di, np.float64)[trim[0]:trim[1]], 0)
-            save(gp, {"i": i, "tag": tag, "judge": j, "render_sha256": AM.audio_sha(y)})
+            save(gp, {"i": i, "tag": tag, "judge": j, "render_sha256": AM.audio_sha(y), "answers_sha256": asha,
+                      "settings_sha256": answers_sha(ans[str(i)])})
         print(f"{tag}: shard {k}/{n} done; renders so far {renders}", flush=True)
     print(f"SOUND-RENDER DONE {k}/{n}: {renders} renders")
 
@@ -1765,6 +1904,130 @@ def cmd_sound_report(args):
     print("SOUND-REPORT DONE")
 
 
+# --- the backing-variety test (F17): the same targets in many backings, zero renders ----------------------------------
+
+BACKINGS_K = 8
+BACKINGS_SEED = 20261035
+
+
+def backing_draws(train_ids, kept, k=BACKINGS_K, seed=BACKINGS_SEED):
+    """For each training example, k backing sections drawn from training sections of other songs, each with a vocal
+    variant (p 0.5 where the section has one). -> {i: [(section, vocals)]}."""
+    import random
+
+    secs = sorted({kept[i]["section"] for i in train_ids})
+    by_song = {}
+    for x in secs:
+        by_song.setdefault(session_of(x), []).append(x)
+    out = {}
+    for i in sorted(train_ids):
+        rng = random.Random(f"{seed}|{i}")
+        own = session_of(kept[i]["section"])
+        pool = [x for x in secs if session_of(x) != own]
+        out[i] = [(rng.choice(pool), rng.random() < 0.5) for _ in range(k)]
+    return out
+
+
+def backing_path(i, k, root=DATA):
+    return input_path(root, i, f"mixb-k{k}")
+
+
+def cmd_build_backings(args):
+    """The backing-variety test's inputs (CPU, zero renders): each training example's stored target in BACKINGS_K
+    other songs' non-guitar backings (no other guitar, no stand-in), each at the example's own drawn ratio, leak and
+    loudness (`trusted_data.mix_gains`) and its own mastering draw, as P2b's mix is built. One shard of backing
+    sections; each backing section's audio is read once."""
+    import numpy as np
+
+    from learn import cc_build as CB
+    from learn import direct_sound_gate as G
+    from learn import direct_stems as DS
+    from learn import song_aug as SA
+    from learn import trusted_data as T
+
+    e = require("phase_3_backings")
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    a = argparse.Namespace(out=None, smoke=False)
+    ctx = CB.ctx_for(a)
+    stems = T.Stems(ctx)
+    draws = backing_draws(sp["train"], kept)
+    one = {}
+    for x in kept.values():
+        one.setdefault(x["section"], x)
+    jobs = {}
+    for i, ds_ in draws.items():
+        for k, (sec, voc) in enumerate(ds_):
+            jobs.setdefault(sec, []).append((i, k, voc))
+    kk, n = args.shard
+    mine = [x for j, x in enumerate(sorted(jobs)) if j % n == kk]
+    t0, done = time.time(), 0
+    for m, sec in enumerate(mine):
+        x0 = one[sec]
+        has_v = x0["stems"]["v"] != x0["stems"]["n"]
+        backs = {v: stems.get(sec, list(x0["stems"]["v" if (v and has_v) else "n"])) for v in (False, True)}
+        for i, k, voc in jobs[sec]:
+            p = backing_path(i, k)
+            if p.exists():
+                continue
+            x, rw = kept[i], rend[i]
+            y = np.asarray(G.read_flac(T.flac_path(croot, CB.STAGE, i, "target"), rw["target"]["scale"],
+                                       rw["target"]["sha256"]), np.float64)
+            b = backs[voc]
+            gb, ga = T.mix_gains(float(SA.lufs(y)), float(SA.lufs(b)), x["draw"])
+            mix = (y + b * 10 ** (gb / 20)) * 10 ** (ga / 20)
+            mastered, mrng = DS.master_draw(i)
+            if mastered:
+                mix = SA.compress(mix, mrng)
+            f, lu, _ = DS.half_features(mix)
+            DS._save_npz(p, sA=f["A"], sB=f["B"], lufs=[lu["A"], lu["B"]], backing=sec, vocals=bool(voc and has_v),
+                         gains=[gb, ga])
+            done += 1
+        if m % 10 == 0:
+            print(f"backing section {m + 1}/{len(mine)}: {done} built; {(time.time() - t0) / max(1, done):.2f} s each",
+                  flush=True)
+    print(f"BUILD-BACKINGS DONE {kk}/{n}: {done} built")
+
+
+class BackingData(RungData):
+    """P2b's data with the backing-variety test's variants: in training each example shows, per epoch, its own P2b
+    input or one of its BACKINGS_K variants (a seeded draw per (i, epoch)); eval reads its own P2b input."""
+
+    def __init__(self, rows, path_of, train_ids):
+        import numpy as np
+
+        super().__init__(rows, path_of, aug=False)
+        self.V = {}
+        for j, r in enumerate(rows):
+            if r["i"] in train_ids:
+                arr = np.zeros((BACKINGS_K, 2, 96, 446), np.uint8)
+                lu = np.zeros((BACKINGS_K, 2), np.float32)
+                for k in range(BACKINGS_K):
+                    d = np.load(backing_path(r["i"], k))
+                    arr[k, 0], arr[k, 1], lu[k] = d["sA"], d["sB"], d["lufs"]
+                self.V[j] = (arr, lu)
+
+    def batch(self, idx, epoch, dev):
+        import random
+
+        import numpy as np
+
+        if epoch < 0:
+            return super().batch(idx, epoch, dev)
+        saved = {}
+        for j in np.asarray(idx):
+            j = int(j)
+            if j in self.V:
+                v = random.Random(f"{BACKINGS_SEED}|{self.rows[j]['i']}|{epoch}").randrange(BACKINGS_K + 1)
+                if v:
+                    saved[j] = (self.X[j].copy(), self.L[j].copy())
+                    self.X[j], self.L[j] = self.V[j][0][v - 1], self.V[j][1][v - 1]
+        try:
+            return super().batch(idx, epoch, dev)
+        finally:
+            for j, (x, lu) in saved.items():
+                self.X[j], self.L[j] = x, lu
+
+
 # --- phase 4: V-real (P4: the clean-input model on real amp tracks; P3: the readouts), measurements only ------------
 
 VREAL_DIR = "vreal"
@@ -1784,20 +2047,44 @@ def part_members(key):
     return [m for m in PR.VREAL if m == key or vreal_part_key(m) == key]
 
 
-def vreal_rows(judge, a, b, units, own_inputs=False):
-    """[(band, part, ln(d_a / d_b))] per direction (slug, amp, search, held) where both are judged; an answer
-    stored for ANY_HALF serves every search half. judge: {tag: {"slug|amp": {"tag-key|search": {half: d}}}}."""
-    out = []
-    for slug, amp, search, held in units:
-        def d(tag):
-            g = judge.get(tag, {}).get(f"{slug}|{amp}") or {}
-            v = g.get(search) or g.get(ANY_HALF)
-            return None if v is None else v.get(held)
-        x, y = d(a), d(b)
-        if x is None or y is None or not (math.isfinite(x) and math.isfinite(y)) or x <= 0 or y <= 0:
+def vreal_value(judge, tag, unit):
+    """One answer's held-half distance on one direction: None (not rendered), "refused" (judged non-finite), or the
+    distance. An answer stored for ANY_HALF serves every search half."""
+    slug, amp, search, held = unit
+    g = judge.get(tag, {}).get(f"{slug}|{amp}") or {}
+    v = g.get(search) or g.get(ANY_HALF)
+    if v is None or v.get(held) is None:
+        return None
+    x = v[held]
+    return x if (isinstance(x, (int, float)) and math.isfinite(x) and x > 0) else "refused"
+
+
+def vreal_rows(judge, a, b, units, own_inputs=False, base="S"):
+    """[(band, part, ln(d_a / d_b))] on the common directions, with the established V-real rule
+    (`direct_stems.add_step4_arm`, `step4_contrast`): a direction where `base` (S) is not judged finite drops for every
+    row; a refused answer scores as S; a missing answer leaves the row incomplete. -> (rows, counts)."""
+    rows, cnt = [], {"directions": len(units), "base_dropped": 0, "missing": 0, "refused_scored_as_S": 0}
+    for u in units:
+        s_ = vreal_value(judge, base, u)
+        if not isinstance(s_, float):
+            cnt["base_dropped"] += 1
             continue
-        out.append((PR.VREAL[slug][0], slug if own_inputs else vreal_part_key(slug), math.log(x / y)))
-    return out
+        vals = []
+        for t in (a, b):
+            v = vreal_value(judge, t, u)
+            if v is None:
+                cnt["missing"] += 1
+                break
+            if v == "refused":
+                cnt["refused_scored_as_S"] += 1
+                v = s_
+            vals.append(v)
+        if len(vals) < 2:
+            continue
+        slug = u[0]
+        rows.append((PR.VREAL[slug][0], slug if own_inputs else vreal_part_key(slug), math.log(vals[0] / vals[1])))
+    cnt["complete"] = cnt["missing"] == 0 and cnt["base_dropped"] == 0
+    return rows, cnt
 
 
 def vreal_ctx():
@@ -1850,19 +2137,24 @@ def cmd_p4_predict(args):
     e = require("phase_4")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     root, plan, drift, dirs, parts, ms = vreal_ctx()
-    nets, rec = [], None
+    if args.which != "best":
+        raise SystemExit("P4 reads the NS-best checkpoints (the declaration)")
+    nets, recs = [], []
     for sd in SEEDS:
-        if (out_dir() / "runs" / f"{args.name}-{sd}.json").exists():
-            n, rec = load_run(args.name, sd, args.which)
-            nets.append(n)
-    if not nets or rec["rung"] != "a":
-        raise SystemExit("P4 reads a P2a model")
+        if not (out_dir() / "runs" / f"{args.name}-{sd}.json").exists():
+            raise SystemExit(f"P4 pools both seeds: {args.name}-{sd} has not run")
+        n, r_ = load_run(args.name, sd, args.which)
+        nets.append(n)
+        recs.append(r_)
+    rec = recs[0]
+    if rec["rung"] != "a" or any(r_["train_ids"] != rec["train_ids"] for r_ in recs):
+        raise SystemExit("P4 reads a P2a model, both seeds on one training set")
     target = p2a_median_lufs(rec["train_ids"])
     med, table = fit_knob_pull(nets, croot, kept, rend, sp, rec)
     const = constant_of(rung_rows(kept, rend, rec["train_ids"]))
     tag = f"P4-{args.name}-{args.which}"
     out = {tag: {}, f"{tag}-pulled": {}, f"{tag}-constant": {}}
-    inputs = {}
+    inputs, own, gaps, floor = {}, {}, {}, {}
     for slug, amp, search, _ in dirs:
         cls = PR.VREAL[slug][1]
         if slug not in inputs:
@@ -1870,11 +2162,15 @@ def cmd_p4_predict(args):
             inputs[slug] = (ref, DE.inference_gain_db(ref, target))
         ref, g = inputs[slug]
         s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
+        floor.setdefault(slug, {})[search] = float(np.mean(np.all(s8 == 0, axis=0)))   # frames all at the grid floor
         x, c = DS.model_input(s8, s8, ls, ls, search, amp, cls, "Dstem")
         r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
+        own[f"{slug}|{search}"] = {"amp": r["amp"], "p": r["amp_p"]}
         sel, S = ms[amp][cls]
         key = f"{slug}|{amp}"
-        b, _ = DS.cell_b(table, (amp, cls), F.cell_masks(amp)[0])
+        b, gap = DS.cell_b(table, (amp, cls), F.cell_masks(amp)[0])
+        if gap:
+            gaps[f"{amp}|{cls}"] = gap
         out[tag].setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(
             F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"]))}
         out[f"{tag}-pulled"].setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(
@@ -1884,9 +2180,10 @@ def cmd_p4_predict(args):
     for t, a in out.items():
         save(out_dir() / VREAL_DIR / "answers" / f"{t}.json", {
             "plan": PLAN, "ledger": f"{LEDGER_ID} phase_4", "tag": t, "model": args.name, "which": args.which,
-            "seeds": [r_["seed"] for r_ in [rec]], "input": "the part's own amp track (crop reference.wav)",
-            "input_lufs": target, "gains_db": {k: v[1] for k, v in inputs.items()}, "answers": a,
-            "drift": drift, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+            "seeds": [r_["seed"] for r_ in recs], "model_sha256": [r_["model_sha256"]["best"] for r_ in recs],
+            "input": "the part's own amp track (crop reference.wav)", "input_lufs": target,
+            "gains_db": {k: v[1] for k, v in inputs.items()}, "own_amp": own, "pull_gaps": gaps,
+            "floor_frame_share": floor, "answers": a, "drift": drift, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"P4 PREDICT DONE: {len(dirs)} directions; inputs at {target:.2f} LUFS; tags {list(out)}")
 
 
@@ -1940,37 +2237,84 @@ def cmd_vreal_render(args):
     groups = sorted({(s_, a) for s_, a, _, _ in dirs})
     k, n = args.shard
     mine = [g for j, g in enumerate(groups) if j % n == k]
-    rr = K.Renderer()
+    bad = [t for t in args.names.split(",") if t not in P4_TAGS]
+    if bad:
+        raise SystemExit(f"phase 4 renders only its declared tags {P4_TAGS}; not {bad}")
+    LO._wait_cap()
+    rr = CB.new_renderer()
     try:
         menu = rr.menu()
     finally:
         rr.close()
+    for amp, by_cls in ms.items():                 # the live S must equal the stored copy (cc_readout's check)
+        for cls, (_, S) in by_cls.items():
+            if K.key(dict(menu[amp][K.START[cls][amp]][1])) != K.key(S):
+                raise SystemExit(f"{amp} {cls}: the live S differs from the stored copy")
     renders = 0
-    LO._wait_cap()
     for tag in args.names.split(","):
-        ans = json.loads((out_dir() / VREAL_DIR / "answers" / f"{tag}.json").read_text())["answers"]
+        af = out_dir() / VREAL_DIR / "answers" / f"{tag}.json"
+        ans = json.loads(af.read_text())["answers"]
+        asha = answers_sha(ans)
         for slug, amp in mine:
             key = f"{slug}|{amp}"
             if key not in ans:
                 continue
             gp = out_dir() / VREAL_DIR / "judge" / tag / f"{key}.json"
             if gp.exists():
+                if json.loads(gp.read_text()).get("answers_sha256") != asha:
+                    raise SystemExit(f"{gp}: rendered from other answers; move vreal/judge/{tag} aside first")
                 continue
             if PS.free_gb() < T.DISK_GUARD_GB:
                 raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
             info = parts[slug]
             ctx = (A.group_ctx(menu, ms, "F", slug, amp) if info["kind"] == "stagef"
                    else T3.t3_group_ctx(menu, ms, info, amp))
-            rec = {"slug": slug, "amp": amp, "tag": tag, "judge": {}, "render_sha256": {}}
+            rec = {"slug": slug, "amp": amp, "tag": tag, "answers_sha256": asha, "judge": {}, "render_sha256": {}}
             for search, a in sorted(ans[key].items()):
                 st = LO.tdict(a["settings"])
                 y = AM.fresh_render(CB.new_renderer, ctx["di32"], a["select"], st, st)
                 renders += 2
                 rec["judge"][search] = K.judge(ctx["ref"], y, ctx["di"], ctx["part"]["judge_lag"])
                 rec["render_sha256"][search] = AM.audio_sha(y)
+            rec["renders"] = 2 * len(ans[key])
             save(gp, rec)
         print(f"{tag}: shard {k}/{n} done; renders so far {renders}", flush=True)
     print(f"VREAL-RENDER DONE {k}/{n}: {renders} renders")
+
+
+FLOOR_SIDE_ROW = 0.20
+
+
+def s_positive_control(sj):
+    """The fresh S renders against the label table's stored `flat` distances (stage F's parts): |ln ratio| per
+    (part, amp, half). It checks the render path and sizes the render-order effect (step 33) on V-real."""
+    from learn import knob_ceiling as K
+
+    vals = []
+    for key, rec in sj.items():
+        slug, amp = key.split("|")
+        p = K.HOME / "learn/label-table" / slug / "menu.json"
+        if not p.exists():
+            continue
+        st = json.loads(p.read_text()).get(amp, {})
+        cls = PR.VREAL[slug][1]
+        stored = (st.get(K.START[cls][amp]) or {}).get("flat") or {}
+        for h in ("A", "B"):
+            x, y = (rec.get(ANY_HALF) or {}).get(h), stored.get(h)
+            if x and y and math.isfinite(x) and math.isfinite(y) and x > 0 and y > 0:
+                vals.append(abs(math.log(x / y)))
+    vals.sort()
+    return {"n": len(vals), "max_abs_log": vals[-1] if vals else None,
+            "median_abs_log": vals[len(vals) // 2] if vals else None}
+
+
+P4_TAGS = ("P4-P2a-best", "P4-P2a-best-pulled", "P4-P2a-best-constant", "S", "S-prime")
+
+
+def answers_sha(ans):
+    import hashlib
+
+    return hashlib.sha256(json.dumps(ans, sort_keys=True).encode()).hexdigest()
 
 
 def cmd_vreal_report(args):
@@ -1989,10 +2333,25 @@ def cmd_vreal_report(args):
             r = json.loads(p.read_text())
             judge[t][f"{r['slug']}|{r['amp']}"] = r["judge"]
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_4", "rows": {}}
+    for t in tags:                                  # every judge record must come from today's answers
+        af = out_dir() / VREAL_DIR / "answers" / f"{t}.json"
+        asha = answers_sha(json.loads(af.read_text())["answers"])
+        stale = [p.name for p in (out_dir() / VREAL_DIR / "judge" / t).glob("*.json")
+                 if json.loads(p.read_text()).get("answers_sha256") != asha]
+        if stale:
+            raise SystemExit(f"{t}: {len(stale)} judge records come from other answers")
+    p4 = out_dir() / VREAL_DIR / "answers" / "P4-P2a-best.json"
+    floor = json.loads(p4.read_text()).get("floor_frame_share", {}) if p4.exists() else {}
+    quiet_inputs = sorted(sl for sl, v in floor.items() if max(v.values()) > FLOOR_SIDE_ROW)
+    out["side_row_without"] = {"rule": f"P4 inputs with more than {FLOOR_SIDE_ROW:.0%} of frames at the grid floor in "
+                                       "either half (declared before the read)", "parts": quiet_inputs}
+    out["positive_control_S"] = s_positive_control(judge.get("S", {}))
     for pair in args.pairs.split(","):
         a, b = pair.split(":")
-        rows = vreal_rows(judge, a, b, dirs, own_inputs=args.own_inputs)
-        res = {"all": clustered(rows), "directions": len(rows), "of": len(dirs)}
+        rows, cnt = vreal_rows(judge, a, b, dirs, own_inputs=args.own_inputs)
+        res = {"all": clustered(rows), **cnt}
+        side = [r for r in rows if not any(m in quiet_inputs for m in part_members(r[1]))]
+        res["without_quiet_inputs"] = clustered(side) if quiet_inputs else None
         for cls in ("clean", "crunch"):
             res[cls] = clustered([r for r in rows if all(PR.VREAL[m][1] == cls for m in part_members(r[1]))])
         res["v_real_10"] = clustered([r for r in rows if all(m in v10 for m in part_members(r[1]))])
@@ -2001,11 +2360,16 @@ def cmd_vreal_report(args):
         iv = "" if c["lo90"] is None else f" [{c['lo90']:+.4f}, {c['hi90']:+.4f}]"
         print(f"{a} - {b}: {c['mean']:+.4f}{iv} ({c['clusters']} bands, {c['clusters_negative']} better; part-weighted "
               f"{c['part_weighted']:+.4f}, {c['parts_negative']} of {c['parts']} parts better; {len(rows)} of "
-              f"{len(dirs)} directions)" if c["mean"] is not None else f"{a} - {b}: no rows")
+              f"{len(dirs)} directions; {'complete' if cnt['complete'] else 'INCOMPLETE'}, missing {cnt['missing']}, "
+              f"S dropped {cnt['base_dropped']}, refused as S {cnt['refused_scored_as_S']})"
+              if c["mean"] is not None else f"{a} - {b}: no rows ({cnt})")
         for cls in ("clean", "crunch"):
             z = res[cls]
             if z["mean"] is not None:
                 print(f"    {cls}: {z['mean']:+.4f} ({z['clusters']} bands, {z['clusters_negative']} better)")
+    pc = out["positive_control_S"]
+    print(f"positive control: the fresh S against the label table's stored flat distance on {pc['n']} (part, amp, "
+          f"half): max |ln ratio| {pc['max_abs_log']}, median {pc['median_abs_log']}")
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     save(out_dir() / VREAL_DIR / f"report-{args.label}.json", out)
     print("VREAL-REPORT DONE")
@@ -2017,7 +2381,7 @@ COMMANDS = {"p5": cmd_p5, "dirty-doubles": cmd_dirty_doubles, "p6": cmd_p6,
             "build-inputs": cmd_build_inputs, "p1": cmd_p1, "render-doubles": cmd_render_doubles,
             "build-doubles": cmd_build_doubles, "train": cmd_train, "read": cmd_read, "sample": cmd_sample,
             "answers": cmd_answers, "sound-render": cmd_sound_render, "sound-report": cmd_sound_report,
-            "p4-predict": cmd_p4_predict, "vreal-comparators": cmd_vreal_comparators,
+            "build-backings": cmd_build_backings, "p4-predict": cmd_p4_predict, "vreal-comparators": cmd_vreal_comparators,
             "vreal-render": cmd_vreal_render, "vreal-report": cmd_vreal_report}
 
 
@@ -2040,10 +2404,15 @@ def main(argv=None):
     ap.add_argument("--control", action="store_true")
     ap.add_argument("--doubled", action="store_true")
     ap.add_argument("--desc", action="store_true")
-    ap.add_argument("--readout", choices=("plain", "pulled"), default="plain")
+    ap.add_argument("--readout", choices=("plain", "pulled", "sws", "nc"), default="plain")
+    ap.add_argument("--amp-shift", type=int, choices=(0, 1, 2), default=0)
+    ap.add_argument("--mastered", action="store_true")
+    ap.add_argument("--seeds", default=str(SEEDS[0]))
     ap.add_argument("--pairs", default="")
     ap.add_argument("--own-inputs", action="store_true")
     ap.add_argument("--label", default="p4")
+    ap.add_argument("--backings", action="store_true")
+    ap.add_argument("--dd", action="store_true")
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 
