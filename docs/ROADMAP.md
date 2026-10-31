@@ -149,13 +149,14 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        - **The model can learn the tone.** Fed the clean guitar (a perfect separator), it sounds −0.241 [−0.318,
          −0.165] closer than S on 2 held-out songs, also when told a wrong amp. Knob error badly understates this, so
          every read is now by sound (F11, F19). By knob, a 5-fold new-song test reads every one of the 9 training bands
-         better than the constant (F28).
+         better than the constant, by about 1 point of a knob's range (F28).
        - **Blocker 1, the mix:** any backing erases the skill. With only drums, bass and vocals it is even with S; the
          other guitars and the separator add no further loss (F15, F17). Eight backings per target, from other songs'
          stems (no new renders), recover 27% [13%, 42%] of it (F24).
        - **Blocker 2, real recordings:** fed V-real's real amp tracks (the guitar alone), the model is +0.153 [+0.039,
          +0.268] against S, and no transfer is detected: it is not shown better than its own training average (F20).
-         Its penalty is mainly the core tone; the time effects are a small, undecided part (F26). The presets that suit these real parts sit at the training prior's edges (F27).
+         Its penalty is mainly the core tone; the time effects are a small, undecided part (F26). The presets that suit these real parts sit at the training prior's edges about 3× as often as its own labels
+         (F27).
        - **Fixed or verified alone:** the doubles (F16), early stopping (F18), the class input (F2), the by-sound read
          (F10).
        - **Ruled out as blockers:** the network (F5), the readout's pull (F12), the switch readout for a model that
@@ -164,10 +165,11 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          for the clean input's sound (F25: a 3.5× size increase bought about 0.04, undecided).
        - S's home advantage on V-real is small (F1). The near-chance rule from the F20 build's draft costs sound and is
          not recommended (F23).
-       - **Community presets** (the user's question, 2026-10-31): yes, as centres for the next build's draws with a
-         wide share kept and the effects dried, after the two blocker tests; they fix the prior's coverage (F27), not
-         whether the model reads real recordings (F20). Morgan Amps Suite X's presets need a plugin update: the user's
-         yes and a parity check first.
+       - **Community presets** (the user's question, 2026-10-31; the session's recommendation, pending the user's
+         yes): as centres for the next build's draws, with a wide share kept and the effects dried, after the two
+         blocker tests. They may improve the prior's coverage (F27; a zero-render check first), not whether the model
+         reads real recordings (F20). Morgan Amps Suite X's presets need a plugin update: the user's yes and a parity
+         check first.
        - **Next (phase 5):** fixes for the two blockers, for the user's decision.
    - **Pipeline review (2026-10-30, zero renders; [record](ml-pipeline-review.md), checks `learn/pipeline_review.py`).**
      At the user's request, the direct model's whole process is listed as 38 small steps. Each step has its code, a

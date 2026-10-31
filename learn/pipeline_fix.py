@@ -2206,8 +2206,12 @@ def cmd_prior_edges(args):
         v.sort()
 
     def pct(cell, j, val):
+        """Mid-rank percentile: the labels strictly below plus half the labels tied with the value, over all."""
         vals = train.get((*cell, j))
-        return None if not vals else bisect.bisect_left(vals, val) / len(vals)
+        if not vals:
+            return None
+        lo, hi = bisect.bisect_left(vals, val), bisect.bisect_right(vals, val)
+        return (lo + 0.5 * (hi - lo)) / len(vals)
 
     def summary(ps):
         ps = [q for q in ps if q is not None]
@@ -2238,8 +2242,9 @@ def cmd_prior_edges(args):
         for cls, (_, S) in by.items():
             c, cm, *_ = F.encode(S, amp)
             s_ += [pct((amp, cls), j, float(c[j])) for j in today if cm[j] > 0]
-    out = {"rule": "percentile of each sounding today's-space continuous control among the ladder's training labels of "
-                   "the same (amp, part class) where it sounds; outside = below the 5th or above the 95th",
+    out = {"rule": "mid-rank percentile (labels below plus half the tied ones) of each sounding today's-space continuous "
+                   "control among the ladder's training labels of the same (amp, part class) where it sounds; outside = "
+                   "below the 5th or above the 95th",
            "search_best": summary(found), "search_best_moved_off_S": summary(moved), "ns_labels": summary(ref),
            "S": summary(s_),
            "per_control": {k: {"values": len([q for q in v if q is not None]), **summary(v)}

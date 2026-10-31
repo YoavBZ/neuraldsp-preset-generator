@@ -287,22 +287,25 @@ its dry readout (F26).
 
 ### Phase 5: the located fix, D_fix, and scale
 
-*2026-10-31, the decision on community presets* (the user's question via the research session: "What do you think
-about downloading a bundle of community presets and use them for training instead of generating unrealistic presets
-our own?"):
-- **Yes, as centres for the next build's draws, not as the only labels**, alongside a smaller wide share for coverage
-  (every control is learned). Time effects are dried where the presets are wet (factory-centred draws are 73% reverb
-  on).
+*2026-10-31, the session's recommendation on community presets, pending the user's yes* (the user's question via the
+research session: "What do you think about downloading a bundle of community presets and use them for training
+instead of generating unrealistic presets our own?"):
+- **Recommended: as centres for the next build's draws, not as the only labels**, alongside a smaller wide share for
+  coverage (every control is learned). Time effects are dried where the presets are wet (factory-centred draws are 73%
+  reverb on).
 - **Why:**
-  - F27: the presets that suit real parts sit at the training prior's edges 30–40% of the time, against 12% for its own
-    labels.
+  - F27: the presets that suit real parts sit at the training prior's edges about 3× as often as its own labels
+    (0.27–0.35 against 0.09).
   - F26: on real recordings the penalty is mainly the core tone.
-  - Realistic centres move training toward where real tones are, and they also cut step 7's refusals and the runaway
-    targets.
-- **What it does not fix:** F20, that the model is not shown to read real recordings at all. A realistic prior also
-  lifts scores through the fallback even when nothing is read. So it is read only against a model with the same
-  prior, by sound, and only after the two blocker tests below.
-- **Supply and rules:**
+  - Realistic centres may improve coverage where real tones sit. That is untested: F27 shows where real parts' presets
+    sit, not that community presets sit there. A zero-render check first: place a community bundle against F27's
+    search presets with the same percentile rule.
+  - They would also be expected to cut step 7's refusals (s07: the refusals are mostly wide draws). The runaway
+    targets are unchecked.
+- **What it does not fix:** F20, that the model is not shown to read real recordings (the clean parts lean better,
+  −0.126, the crunch parts not). A realistic prior also lifts scores through the fallback even when nothing is read.
+  So it is read only against a model with the same prior, by sound, and only after the two blocker tests below.
+- **Supply and rules** (as reported by the research session, not verified here):
   - Community presets for Morgan Amps Suite are few (tens to hundreds; no bulk library found).
   - Morgan Amps Suite X (2026-10-28, free) adds 100+ curated presets. Updating the plugin needs the user's yes and a
     parity check first: re-render stored settings and compare bit for bit, as the positive controls do.
@@ -872,30 +875,33 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **References.** `PF/vreal/report-p4-dry.json`, `PF/vreal/answers/P4-P2a-best-{dry,constant-dry}.json`; ledger
   `phase_4_dry`.
 
-### F27. The presets that suit these real parts sit at the training prior's edges more often than its own labels do (zero renders)
+### F27. The presets that suit these real parts sit at the training prior's edges about 3× as often as its own labels do (zero renders)
 - **Result.** Arm A's true-DI search found, for V-real-10's parts, presets that beat S (−0.137 shrunk, −0.192 best;
-  review step 38). Their searched controls were placed within the training labels' distribution (same amp and section
-  class, the controls that sound).
+  review step 38). Their searched controls were placed within the training labels' distribution: the same amp and part
+  class, every today's-space continuous control that sounds, using mid-rank percentiles (ties count half).
 - **Numbers.** Share of values outside the training labels' 5–95% range:
 
-  | Set | Share outside | Below 5% | Above 95% |
-  |---|---|---|---|
-  | The search's best presets (550 values) | 0.30 | 0.20 | 0.10 |
-  | NS labels, the reference (3,289 values) | 0.12 | 0.07 | 0.05 |
-  | S presets (58 values) | 0.05 | 0.05 | 0.00 |
+  | Set | Values | Outside | Below 5% | Above 95% |
+  |---|---|---|---|---|
+  | The search's best presets | 550 | 0.27 | 0.12 | 0.15 |
+  | Only the controls the search moved off S | 388 | 0.35 | 0.17 | 0.18 |
+  | NS labels (the reference) | 3,289 | 0.09 | 0.04 | 0.05 |
+  | S presets | 58 | 0.03 | 0.02 | 0.02 |
 
-  Per control, most often outside: right cab position 0.66, left cab distance 0.52, PR12 bass 0.50 (median percentile
-  0.08), SW50R mid 0.45 (0.18), left cab position 0.43, right cab distance 0.32, input gain 0.25, AC20 power 0.25.
-- **Reading.** Real parts often want settings at or beyond the edges of what the model was trained on (low bass and
-  mids, unusual cab placement). This compounds the domain gap: the model is not shown to read the real recordings
-  (F20, F26), and even if it did, the targets lie where training is thin.
-- **Caveats.** The search's "best" is one 52-render search per half and can sit on controls the sound barely
-  constrains (cab placement); the shrunk version, halfway to S, is the robust one. These are descriptive, post hoc.
-- **Side row** (only the controls the search moved off S): 388 values, 0.40 outside (0.25 below, 0.14 above).
+  The controls most often outside: right cab position 0.66, SW50R treble 0.65, AC20 cut 0.50, PR12 bass 0.50, SW50R
+  mid 0.45, left cab position 0.42 (each from 20–60 values).
+- **Reading.** Real parts often want settings at or beyond the edges of what the model was trained on, at both ends,
+  about 3× as often as the training labels themselves sit there. This compounds F20: the model is not shown to read the
+  real recordings, and the targets also lie where training is thin.
+- **Caveats.**
+  - The search's "best" is one 52-render search per half and can sit on controls the sound barely constrains (cab
+    placement). The shrunk version, halfway to S, is the robust one.
+  - Descriptive and post hoc.
+  - Under the first tie rule (strictly below), the split read 0.20 below and 0.10 above; mid-rank removes that lean, so
+    no direction is claimed.
 - **References.** `PF/prior-edges.json` (`cmd_prior_edges`: its rule, the summaries and every control), from
   `~/ndsp-presets/learn/arm-a-mega53/F-perfect-sep/ZT/*/*/{A,B}.json` (`settings.best`) and the ladder's training
   labels; zero renders.
-
 
 ### F28. By knob, the clean-input model reads new songs in every band (the new-song k-fold)
 - **Result.** P2a (seed 20261042, the recipe, final checkpoints, so nothing is chosen on the held-out set) was
@@ -921,7 +927,11 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - Per band −0.0055 (Ale Lak) to −0.0112 (Storm Of Particles); leave one band out −0.0087 to −0.0094; part-weighted
     −0.0088.
 - **Reading.** The clean-input model's knob skill on new songs is general across every training band, not only the 2
-  NS songs. Its by-sound read (F11) still rests on those 2 songs.
+  NS songs. It is small, about 1 point of a knob's range (−0.009), in every band; what it is worth is read by sound
+  (F11), which still rests on the 2 NS songs.
+- **Single-run spread.** Fold 4 holds out exactly the NS examples. It reads −0.0105 (with 207 more training examples,
+  FS's), against −0.0053 for P2a seed 1 at its final checkpoint on the same 383 examples. One run varies a lot, so the
+  per-fold differences are not read. The 9-of-9-bands result is unaffected.
 - **Caveats.** By knob only; one seed per fold; fold sizes differ (1,626–2,053 training examples); the ladder's set (no
   DT doubles).
 - **References.** `PF/runs/P2a-k{0..4}-20261042.json`, `PF/reads/P2a-k{0..4}-final.json` (`per_example`),

@@ -103,7 +103,7 @@ rule).
 | 3 | 10-s sections every 5 s | Suspect (with 23) → **Fixed 2026-10-31 (fix plan F18)** | `clean_di.py:48-53` | |
 | 4 | Section screens; pool size | Problem (size) → **Limit, measured (F25): more of the same data not shown to be a strong lever for the sound; backing variety helped (F24); phase 5** | `s04`: 262 sections, 32 DIs, 9 bands | P2 |
 | 5 | Class input = a coin flip in training, the real class on songs | Suspect → **Fixed (section's class everywhere; P6 F2)** | `s05`: 1,512 of 3,033 differ | P6 |
-| 6 | Settings drawn: factory / start / wide | Suspect → **Fixed (runaways out); the prior: limit, measured (F26, F27: real parts' presets sit at its edges)** | `s06`: factory draws reverb 73%, delay 62% | P3 |
+| 6 | Settings drawn: factory / start / wide | Suspect → **Fixed (runaways out); the prior: limit, measured (F26, F27: real parts' presets sit at its edges about 3× as often)** | `s06`: factory draws reverb 73%, delay 62% | P3 |
 | 7 | Near-silent draws refused | Problem → **Limit, measured (data)** | `s07`: wide 38%, factory 1.6%, start 0% | |
 | 8 | Labels count inaudible settings | Problem → **Limit, measured (F18)** | audibility outcome; step 4's ear page | P2 |
 | 9 | DI re-EQ'd to an average guitar, −22.9 LUFS | OK (consistent) | same in training and scoring | P4 |
@@ -281,7 +281,7 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
   is reliably worse, +0.0074). The prior trains mostly on unrealistic settings: a candidate root blocker. *Corrected the
   same day (F11):* by sound, factory draws are among the best (NS −0.337), so the knob read missed the skill there. On
   V-real the training average's penalty is its core tone, not its wetness (F26), and the presets that suit real parts
-  sit at the prior's edges 30% of the time against 12% for its own labels (F27). Its penalty there is mainly the core
+  sit at the prior's edges 27% of the time against 9% for its own labels (F27, mid-rank). Its penalty there is mainly the core
   tone; wetness is a small, undecided part (F26).
 
 **Step 7. Throw away draws that render near-silent.**
