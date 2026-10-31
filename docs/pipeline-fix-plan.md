@@ -332,6 +332,9 @@ instead of generating unrealistic presets our own?"):
     the same 133 files (108 factory and artist, 25 user) under the same names, re-saved in a `morgan-x 0.1.0`
     format: every stored value matches; the only change is five new cab keys (stereo cabs, custom-IR flags). It
     brings no new tones for the draws. Tone King Imperial MKII X also installed; not used by the pipeline.
+    The product session's probes (no audio): X declares the old preset id as its legacy id and exposes the same
+    157 controls at the same defaults as `NMAS`. That suggests renders carry over, but is not a sound check:
+    moving the renders to X would still need the bit-exact parity check first.
 
 *2026-10-31, after the user's "Continue":* the two blocker tests run, each declared and reviewed first.
 - **5A, backing variety at scale (blocker 1; ledger `phase_5a`; zero renders).**
