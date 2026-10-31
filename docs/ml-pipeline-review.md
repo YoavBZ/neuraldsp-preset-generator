@@ -265,6 +265,10 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
 - *Fix:* centre draws on dried factory presets, or on real-song statistics. Or leave the time effects to
   `generate`'s song research (the ROADMAP's hybrid).
 - *Test:* P3 shows how much of the loss is the prior's average.
+- *2026-10-31, P2a's split by draw mode ([fix plan](pipeline-fix-plan.md) F7):* even fed the clean target, the
+  model's knob gain over the constant is all on wide (random) and start draws. On factory draws, the realistic kind, it
+  gains nothing (NS −0.0224 wide, −0.0116 start, +0.0014 [−0.0007, +0.0034] factory; at the final checkpoint factory
+  is reliably worse, +0.0074). The prior trains mostly on unrealistic settings: a candidate root blocker.
 
 **Step 7. Throw away draws that render near-silent.**
 - *What happens:* a target render below −50 LUFS, or silent, is refused.

@@ -238,19 +238,159 @@ In the lean order: each step runs only while the one before leaves the question 
 
 ## Findings log
 
-Every result of this plan, in the order it landed, with what it changes. Each is audited before it is entered; the
-review's steps carry the same results as dated lines. Numbers are band-weighted with 90% intervals unless said.
+Every result of this plan, in the order it landed: what was found, its numbers, its caveats, where it is stored and
+what it changes. Each is audited before it is entered; the review's steps carry the same results as dated lines.
 
-| # | Date | Finding | Evidence | What it changes |
-|---|---|---|---|---|
-| F1 | 2026-10-31 | S has only a small home advantage on V-real. Without V-real's clips the clean start presets stay; the crunch ones change on all 3 amps, but the new picks are only +0.038 [−0.010, +0.086] worse on V-real's crunch parts (undecided; Signs ElecGtr3 needs renders). | P5, `p5.json` | Step 36: the bar S sets is about fair; S' is read beside S in phase 4. |
-| F2 | 2026-10-31 | The network uses its class input, and the training/real-song mismatch costs a little: telling D_CC the section's class instead of its coin worsens knob error by +0.0030 [+0.0019, +0.0042], 7 of 8 bands. | P6, `p6.json` | Step 5: every retrain conditions on the section's class. |
-| F3 | 2026-10-31 | Every DT double in D_CC was rendered with a different preset from its target's label: all 606, a median 73 settings apart, 565 differing in a switch. | dirty-double scan, `dirty-doubles.json` | Step 12: re-rendered with the target's full setting (phase 1b); the positive control reproduced 46 of 46 replayed examples exactly; 604 of 606 re-rendered (2 refused: a near-silent double). |
-| F4 | 2026-10-31 | The clean target's raw level varies by about ±32 dB between examples, set by the settings themselves. A clean-input model fed it raw could read volume and gain from level, which a song never offers. | `build-inputs` | P2a is fed the target at its level in its own mix. The rebuilt mixes matched the stored ones exactly (0 grid steps, 3,033 examples). |
-| F5 | 2026-10-31 | The network, loss and labels can learn: on 200 examples of the clean input every head falls far below the label-only baseline (knobs −2.51 against −0.84, switches 0.037 against 0.58, mics and the amp near 0). | P1, `runs/P1-a.json` | Step 20 ruled out. The ladder's length: 60 epochs, a checkpoint every 5 (P1's 90% fall by 1,124 steps). |
-| F6 | 2026-10-31 | **Even a perfect separator barely helps the knobs.** P2a (the clean target) reads most switches and both mics, but its knob error beats the constant by only about 1 point of a knob's range (NS −0.0086 [−0.011, −0.007]; FS −0.0097), against a 17.5-point error. New songs read about like seen performances. By loss, its knobs on new songs stay worse than the label-only baseline, and the new-song loss is best at epoch 25 of 60, then rises while the training loss keeps falling. | P2a, `reads/P2a-*.json`, `runs/P2a-20261042.json` | The separator is not the first blocker for the knobs. The by-sound read decides whether knob error is the wrong yardstick (many settings sound alike, step 21) or the model truly reads little. |
-| F7 | 2026-10-31 | Process: removing a worktree while jobs ran from it crashed the doubles render's 3 shards; they resumed with no data lost. | logs | Long jobs run from the main checkout. |
-| F8 | 2026-10-31 | Deviation: the ladder (rungs, curves, k-fold, sample) is pinned to the examples without DT doubles (1,787 training), because P2a trained before the doubles were re-rendered. | ledger `phase_3_doubles` | The re-rendered doubles enter D_fix, which verifies step 12. |
+**Where things are.**
+- Data: `~/ndsp-presets/learn/trusted-data/pipeline-fix/` (below, `PF/`).
+- Code: `learn/pipeline_fix.py`.
+- Ledger: `docs/dev-test-ledger.json`, entry `pipeline-fix`.
+- Logs: `logs/pf-*.log` in the main checkout.
+- The plan and phase 1's code merged in PR #346 (merge commit c8d80ee); phase 2 onward on branch `ml/pipeline-fix-p2`.
+
+**How to read the numbers.**
+- "E − constant" is the mean absolute knob error, in a knob's unit range, minus the constant's. Negative is better;
+  0.01 is 1 point of a knob's range.
+- Intervals are 90%. By-knob reads are clustered by section (R0's rule, `trusted_data_t3_r.section_t`). FS spans
+  21 sections in 6 bands; NS spans 36 sections in 2 songs.
+- "Readable" is R0's rule: knobs whose error interval is below the constant's; switches whose AUC interval is above
+  0.5; mics and the amp whose accuracy interval is above the base rate.
+
+### F1. S has only a small home advantage on V-real (review step 36)
+- **Result.** The start rules were re-run on the pinned development parts without V-real's 9 part slugs.
+  - The clean picks stay (19 parts).
+  - The crunch picks (7 parts left) all change: Standout Thrash Rhythm (PR12), Wall Of Doom (SW50R) and Dirty Coil
+    Rhythm (AC20).
+- **Numbers.** On V-real, from stored distances:
+  - S′ − S on the crunch parts: +0.0380 [−0.0099, +0.0858], 6 parts, 4 bands, 3 worse; part-weighted +0.0542.
+  - All parts: +0.0253 [−0.0052, +0.0558].
+- **Caveats.**
+  - Signs ElecGtr3 has no stored distance; its 3 groups are rendered in phase 4.
+  - Without V-real's bands the crunch rule keeps 1 part, so that variant's +0.574 says nothing about home advantage.
+    The clean AC20 pick changes there (Gtr Lead FX).
+- **References.** `PF/p5.json`; `cmd_p5`, `start_rules`, `s_prime_rows`; `pipeline_review.pick_start` (re-derives both
+  stored choices exactly); ledger `phase_1_outcome`.
+- **Changes.** S is a roughly fair bar. S′ (crunch) is rendered and read beside S in phase 4.
+
+### F2. The class input is used, and its training/real-song mismatch costs a little (step 5)
+- **Result.** On FS_CC, D_CC was told the section's class instead of the coin it was trained on. This was tried on
+  the 174 of 334 examples where the two differ.
+- **Numbers.** Knob error +0.0030 [+0.0019, +0.0042], worse in 7 of 8 bands. Unpulled seed-mean medians, both halves.
+- **References.** `PF/p6.json`; `cmd_p6`; D_CC's runs `cc/runs/D_CC-2026104{2,3}.pt`; ledger `phase_1_outcome`.
+- **Changes.** Every retrain conditions on the section's class: the network, the constant, the pull cells and the
+  merge pools (`RungData`, `constant_of`, `arm_data`; tested in `test_every_run_and_read_conditions_on_the_section_class`).
+
+### F3. Every DT double in D_CC was rendered with a different preset from its target (step 12)
+- **Result.** All 606 kept examples with a DT double were affected. The double used the target's 25-control core on
+  a dried centre, not its full label.
+- **Numbers.**
+  - Every one differs in some sounding control; 565 differ in at least one of 8 switches.
+  - By switch: drive1 210, drive2 209, compressor 237, reverb 322, delay 284, tremolo 206, doubler 188, gate 337.
+  - A median 73 stored settings differ (10th–90th percentile 66–79).
+- **The fix (phase 1b).** The doubles were re-rendered with the target's full setting, each in its own primed
+  process.
+  - Positive control first: the original job lists of 4 sections were replayed. All 46 examples reproduced their
+    stored others to half a FLAC step (max 1.2e−7). That took 232 renders.
+  - Then 2,380 renders: 604 of 606 were re-rendered. Two were refused (802610, 802889: a near-silent double, the rule
+    of `trusted_data.near_silent`).
+  - Their mixes and X-LANCE stems are being built (`build-doubles`).
+- **References.** `PF/dirty-doubles.json`, `PF/cc-dt/control.json`, `PF/cc-dt/rows/`; `double_status`,
+  `cmd_render_doubles`, `other_jobs`; `cc_build.py` (`if o["dt"]:`, the original rule); ledger `phase_1b`.
+- **Changes.** The re-rendered doubles enter D_fix (see F8).
+
+### F4. A clean target's raw level would leak the settings (P2's design)
+- **Result.** A target render's level is set by its own settings. To sit at the drawn mix loudness it needs a gain of
+  −48.5 to +35.9 dB (10th–90th percentile −20 to +16, median −4.1; 3,034 build rows).
+  - A model fed the raw render could read volume and gain from level, which a song never offers.
+- **The fix.** P2a is fed the target times its mix's stored gain. P2b is P2c's mix without any other guitar, at the
+  stored gains and with the same mastering draw.
+  - The full mix rebuilt beside them matched every stored mix exactly: 0 grid steps on 3,033 examples.
+- **References.** `PF/inputs/`; `cmd_build_inputs`, `rung_mixes`; `logs/pf-inputs-*.log`; ledger `phase_2`.
+
+### F5. The network, loss and labels can learn (step 20 ruled out; step 24's logs in place)
+- **Result.** P1 trained on 200 fixed training examples without a DT double, on the clean input (P2a), with no
+  augmentation. It ran 871 epochs (3,484 steps, 16.2 min on MPS); the best checkpoint is at epoch 770.
+- **Numbers.** Eval-mode loss against the in-sample label-only baseline:
+  - knobs (joint) −2.51 against −0.84; knobs (marginal) −2.42 against −0.85;
+  - switches 0.037 against 0.58;
+  - mics 0.0016 against 1.73;
+  - amp 0.0005 against 1.09;
+  - every one of the 85 knobs and 28 switches is below its baseline.
+- **Length.** The loss made 90% of its fall by 1,124 steps (epoch 280). By the plan's rule the ladder runs 60
+  epochs with a checkpoint every 5.
+- **Caveat.** It memorises; it says nothing about generalising. P1 on the stem (P2d) is running.
+- **References.** `PF/runs/P1-a.json`; `cmd_p1`, `fit`, `head_losses`, `Baseline`; ledger `phase_2_outcome`,
+  `phase_3_length`.
+
+### F6. Even a perfect separator barely helps the knobs (steps 16, 19, 21, 29)
+- **Result.** P2a, the clean target at its in-mix level, was read at its NS-best checkpoint (epoch 25 of 60) and at
+  its final one. It reads most switches and both mics, but its knob error beats the constant by only about 1 point of
+  a knob's range. New songs read about like seen performances.
+- **Numbers** (by knob, R0's rule).
+
+  | Set | Checkpoint | Knobs readable | Switches readable | Mics and amp readable | Knobs worse | E − constant |
+  |---|---|---|---|---|---|---|
+  | NS (383) | best | 23 of 85 | 27 of 28 | 3 of 3 | 6 | −0.0086 [−0.0106, −0.0066] |
+  | FS (207) | best | 14 of 85 | 22 of 28 | 3 of 3 | 4 | −0.0097 [−0.0119, −0.0076] |
+  | NS (383) | final | 14 of 85 | 26 of 28 | 3 of 3 | 6 | −0.0053 [−0.0083, −0.0024] |
+  | FS (207) | final | 16 of 85 | 21 of 28 | 3 of 3 | 6 | −0.0101 [−0.0138, −0.0064] |
+
+  - The median knob error is 0.163 against the constant's 0.175 (NS, best).
+  - By loss, on NS its knobs stay worse than the label-only baseline (joint −0.24 against −0.33). Switches 0.592
+    against 0.617, mics 1.24 against 2.02, amp 1.0996 against 1.0992 (no better than chance).
+  - The NS loss is lowest at epoch 25 and rises after it, while the training loss keeps falling: it overfits the
+    training performances.
+- **Caveats.**
+  - The NS-best checkpoint is chosen on NS, so its NS read leans optimistic.
+  - NS is 2 songs (one clean, one crunch).
+  - One seed so far. Trained on 1,787 examples (F8).
+- **References.** `PF/runs/P2a-20261042.json` (curves in its `log`), `PF/reads/P2a-best.json`,
+  `PF/reads/P2a-final.json`; `cmd_train`, `cmd_read`; ledger `phase_3`.
+- **Changes.** The separator is not the first blocker for the knobs. Whether knob error is the wrong yardstick
+  (many settings sound alike, step 21) or the model truly reads little is decided by the by-sound read, which is
+  running.
+
+### F7. The knob skill is only on random settings, not on realistic presets (steps 6, 7, 21)
+- **Result.** P2a's E − constant was split by how each label was drawn.
+  - Fully random ("wide") settings carry the gain.
+  - Settings near S ("start") gain a little.
+  - Settings near a factory preset ("factory"), the most realistic kind, gain nothing; at the final checkpoint they
+    are reliably worse than the constant.
+- **Numbers** (E − constant, section-clustered).
+
+  | Set | Checkpoint | wide | start | factory |
+  |---|---|---|---|---|
+  | NS | best | −0.0224 [−0.0262, −0.0186] (117) | −0.0116 [−0.0155, −0.0077] (89) | +0.0014 [−0.0007, +0.0034] (177) |
+  | FS | best | −0.0243 [−0.0285, −0.0201] (65) | −0.0086 [−0.0139, −0.0033] (46) | −0.0002 [−0.0028, +0.0024] (96) |
+  | NS | final | −0.0286 [−0.0334, −0.0237] | −0.0047 [−0.0103, +0.0009] | +0.0074 [+0.0041, +0.0108] |
+  | FS | final | −0.0298 [−0.0353, −0.0242] | −0.0082 [−0.0184, +0.0020] | +0.0017 [−0.0024, +0.0058] |
+
+- **Reading.** The model learns to tell extreme random settings from the average. It does not tell realistic presets
+  apart, and real songs use realistic presets. Step 7's skew (wide draws refused most) is a second-order issue
+  beside this.
+- **Caveats.**
+  - "factory" labels sit nearer the constant, so the constant's own error is smaller there. That is part of why no
+    gain shows; the by-sound read and a per-mode constant check it.
+  - One seed.
+- **Mastering (step 15).** The split by mastered is no different (NS best: −0.0088 unmastered, −0.0082 mastered).
+  P2a's input is not mastered, so step 15 is read on P2c and P2d.
+- **References.** `PF/reads/P2a-*.json`, `e_minus_constant_by_mode` and `e_minus_constant_by_mastered`; `split_e`.
+- **Changes.** This is a candidate root blocker beside F6. The prior (step 6) trains mostly on unrealistic
+  settings, and the knob loss rewards telling them apart. Phase 5's candidates add a training prior centred on
+  realistic presets, and a per-mode by-sound read.
+
+### F8. Deviation: the ladder runs on the examples without DT doubles
+- **Result.** P2a trained before phase 1b finished, so the recipe used its fallback: every doubled example out.
+  - To keep every rung, curve, k-fold run and the by-sound sample on one set, the whole ladder is pinned to that set:
+    1,787 training, 207 FS and 383 NS (NS has no DT doubles).
+  - The by-sound sample was drawn from it: 120 FS and 120 NS in a fixed order, the first 60 of each read first.
+- **References.** Ledger `phase_3_doubles`, `phase_3_doubles_why`; `PF/sound/sample.json`; `recipe_inputs(pin=...)`.
+- **Changes.** The re-rendered doubles (F3) enter D_fix, which verifies step 12.
+
+### F9. Process: removing a worktree crashed running jobs
+- **Result.** Removing the plan's worktree while the doubles render ran from it crashed its 3 shards at a lazy
+  import. They resumed from their saved sections with no data lost.
+- **Changes.** Long jobs run from the main checkout (a memory note records the rule).
 
 ## Budget
 
