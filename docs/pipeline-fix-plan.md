@@ -47,6 +47,62 @@ these holds:
 The plan ends when every step reads OK, Fixed, Ruled out, Limit, measured or User decision. Which steps can end
 as a limit or a decision is said in the table.
 
+## Verifying each fix in isolation (the user, 2026-10-31)
+
+The user (2026-10-31), on the pipeline review: "make sure to fix and test each part separately ... fixing the
+dataset and evaluating the fix using the faulty training would still yield incorrect and untrustworthy results ...
+evaluate each fix without relying on other parts if possible."
+
+**The rule.** Each review finding's fix is checked by a test that relies only on parts already verified on their
+own. A model that reads little (the mix and stem models, D_CC) never serves as the instrument for another fix.
+
+**The verified base so far** (each verified without relying on the others):
+- the by-sound read: each example's own label reproduces its stored target (F10);
+- the training recipe: it can fit (P1, F5), and fed the clean guitar it learns the tone well enough to sound about
+  22% closer than S on new songs (P2a, F11);
+- the dataset's audio parts: the target, other-guitar and mix renders reproduce exactly (the positive control in F3,
+  the input parity in F4).
+
+**Each step's isolated check.**
+
+| Step | Fix | Isolated check | Relies on | Status |
+|---|---|---|---|---|
+| 3, 23 | Stop on held-out songs; checkpoints | Data check: NS shares no session, DI or time window with training (`s23` on the recipe's split) | nothing | to run (zero renders) |
+| 4 | Size | Learning curve on the clean input (P2a at 25% and 50%, and at 50% of sections), by NS loss and by sound | recipe, by-sound read | planned |
+| 5 | Class from the section | Structural: one field in every consumer (a test); the mismatch measured in D_CC itself, where it exists (P6) | nothing | fixed, measured (F2) |
+| 6 | Runaway targets out | Data check: the scan's rules hit 0–1 of the 2,645 examples that cannot self-oscillate (`cc_drive_page.RUNAWAY`) | nothing | fixed |
+| 6 | The wide, wet prior | Measured on P2a: by sound per draw mode (F11) | recipe, by-sound read | limit, measured |
+| 7 | Refusal skew | Data measurement (`s07`) | nothing | limit, measured |
+| 8 | Inaudible labels | P2a's per-head table: which heads read from the clean guitar | recipe | to read (stored) |
+| 11 | Stereo-only labels | The same table, the stereo-only heads | recipe | to read (stored) |
+| 12 | Doubles with the full setting | Data checks: the positive control (46 of 46 exact); every re-rendered double carries its target's exact label and amp (980 of 980); every other guitar unchanged (1,222 of 1,222); the new mixes rebuilt exactly (F16) | nothing | fixed |
+| 13 | Stand-ins | Not an error; their share is a data measurement | nothing | ruled out (as an error) |
+| 14 | Ratio prior | Data measurement; level statistics only | nothing | limit, measured |
+| 15 | Mastering | P2a reads its own NS inputs mastered with each example's draw against unmastered, by sound (zero training) | P2a, by-sound read | to run |
+| 16, 19 | Where the tone is lost | The ladder: every rung on the verified recipe; located at the mix (F15) | recipe, by-sound read | located |
+| 16 | The fix for the mix | Phase 5's fix, trained on the verified recipe and read against P2b and P2c on the same examples | recipe, by-sound read | phase 5 |
+| 18 | Augmentation | P2a with dropouts and darkening against P2a, by sound. Merge and separator failure are mix-specific and are tested only once a mix model reads | recipe, by-sound read | to run |
+| 20 | Network | P1 | nothing | ruled out (F5) |
+| 21 | Loss in knob units | P2a by sound against by knob | P2a, by-sound read | confirmed (F11) |
+| 22 | Length | P1, P2a's checkpoints | nothing | fixed |
+| 24 | Logs | A test; P1 | nothing | fixed |
+| 26 | Pull toward the average | On P2a in distribution, by sound (F12) | P2a, by-sound read | measured (F12) |
+| 27 | Near-chance switches | On P2a in distribution, by sound: unreadable switches at S, and the near-chance rule, against the plain readout | P2a, by-sound read | to run |
+| 29, 30 | Reads almost nothing | The ladder, by knob and by sound | recipe, by-sound read | located (F13–F15) |
+| 31, 35 | V-real's size | Limit; the rows' Wickerman rule unit-tested | nothing | limit, measured |
+| 32 | Wickerman's shared input | Unit test of the rows; P4 reads their own amp tracks | nothing | fixed (test) |
+| 33 | Render-order noise | Fresh primed processes reproduce the truth (F10); a repeated render in phase 4 must match bit for bit | nothing | fixed |
+| 36 | S's home advantage | Stored distances (P5) | nothing | measured (F1) |
+| 37 | The average against S | In distribution, the constant against S by sound (F11: even) | by-sound read | measured |
+| (P4) | Transfer to real recordings | First, alone: P2a told a wrong amp and rendered on it, by sound on NS (the amp mismatch, without real recordings). Then P4 on V-real's amp tracks | P2a, by-sound read | to run, in that order |
+
+**What this changes in the plan.**
+- Step 12 closes on its data checks (F16), not on D_fix.
+- Steps 15, 18 and 27 are tested on P2a in distribution, not on the mix and stem models.
+- P3 on D_CC is dropped: a readout test on a model that reads little shows nothing. V-real's readout rows ride on P4's
+  model instead.
+- The learning curves run on the clean input, where the training is verified.
+
 ## The common recipe for every retrain in this plan
 
 So that the ladder's rungs differ only in their input:
@@ -523,6 +579,15 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **Caveats.** One seed each; best checkpoints chosen on NS loss (P2c's at epoch 5).
 - **References.** `PF/sound/judge/P2c-best/`, `PF/reads/P2c-*.json`, `PF/runs/P2c-20261042.json`;
   `logs/pf-sound-c-*.log`.
+
+### F16. The doubles fix verified at the data level, on its own (step 12)
+- **Result.** In the 604 re-rendered examples, every DT double (980) now carries exactly its target's label (all
+  stored settings equal) and amp, and every other guitar (1,222) keeps exactly its original setting, amp and level.
+  With the positive control (46 of 46 replayed examples exact, F3), the new mixes' exact rebuild (P2b parity 0 grid
+  steps) and the unchanged stem SNR, the fix is verified without any model.
+- **References.** `PF/cc-dt/rows/render-*.jsonl` against `cc/rows/render-*.jsonl`; `PF/cc-dt/control.json`;
+  `logs/pf-inputs-dt-*.log`.
+- **Changes.** Step 12: fixed. Its effect on a model is read only by a model that reads (the rule above).
 
 ### F9. Process: removing a worktree crashed running jobs
 - **Result.** Removing the plan's worktree while the doubles render ran from it crashed its 3 shards at a lazy
