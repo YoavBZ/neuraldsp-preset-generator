@@ -280,17 +280,21 @@ def test_shifted_amp_cycles_through_the_other_amps():
     assert P.amp_tag(0) == "" and P.amp_tag(2) == "-amp+2"
 
 
-def test_sc_cont_is_S_when_the_model_reads_its_constant():
+def test_sc_cont_is_S_when_the_model_reads_its_constant(monkeypatch):
     np = pytest.importorskip("numpy")
-    from learn import arm_a_levers as L
     from learn import full_space as F
 
-    sel, S = L.menu_S()["pr12"]["clean"]
-    s_c, s_cm = F.encode(dict(S), "pr12")[:2]
-    const = np.linspace(0.1, 0.9, len(F.CONT))
-    out = P.sc_cont(dict(S), "pr12", const, const)
+    n = 6
+    s_c = np.array([0.2, 0.5, 0.98, 0.0, 0.7, 0.3])
+    s_cm = np.array([1.0, 1.0, 1.0, 1.0, 0.0, 0.0])                     # the last two do not sound in S
+    monkeypatch.setattr(F, "encode", lambda x, amp: (s_c, s_cm))
+    const = np.linspace(0.1, 0.9, n)
     on = s_cm > 0
-    assert np.allclose(out[on], s_c[on])
-    shifted = P.sc_cont(dict(S), "pr12", const + 0.05, const)
-    assert np.allclose(shifted[on], np.clip(s_c[on] + 0.05, 0, 1))
+    out = P.sc_cont({}, "pr12", const, const)
+    assert np.allclose(out[on], s_c[on]) and np.allclose(out[~on], const[~on])
+    shifted = P.sc_cont({}, "pr12", const + 0.05, const)
+    assert np.allclose(shifted[on], np.clip(s_c[on] + 0.05, 0, 1))      # 0.98 + 0.05 clips to 1
     assert np.allclose(shifted[~on], (const + 0.05)[~on])
+    nan_c = const.copy()
+    nan_c[0] = np.nan
+    assert P.sc_cont({}, "pr12", const + 0.05, nan_c)[0] == pytest.approx(0.15)   # no constant: the model's value
