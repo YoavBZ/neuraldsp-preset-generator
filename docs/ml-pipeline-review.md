@@ -93,7 +93,7 @@ record. Code is cited as `file:line` at commit e124367.
 ## Status at a glance
 
 *2026-10-31:* each status is followed (→) by its closure under the [fix plan](pipeline-fix-plan.md), whose findings
-log (F1–F25) holds the evidence. Every fix was checked on its own, relying only on parts already verified (the user's
+log (F1–F28) holds the evidence. "Open" marks the blockers located and left for phase 5's fixes. Every fix was checked on its own, relying only on parts already verified (the user's
 rule).
 
 | Step | What | Status | Evidence | Test |
@@ -101,40 +101,40 @@ rule).
 | 1 | DIs from released sessions, test bands kept out | OK | pool plan, ear pages | |
 | 2 | Every DI timed against its own amp track | OK | pool amendment 2: 50 of 61 in time | |
 | 3 | 10-s sections every 5 s | Suspect (with 23) → **Fixed 2026-10-31 (fix plan F18)** | `clean_di.py:48-53` | |
-| 4 | Section screens; pool size | Problem (size) → **Limit, measured: on the clean input size sharpens knobs, adds little sound (F25)** | `s04`: 262 sections, 32 DIs, 9 bands | P2 |
+| 4 | Section screens; pool size | Problem (size) → **Limit, measured (F25): more of the same data adds little sound; the levers are variety and real data (F24, F20), phase 5** | `s04`: 262 sections, 32 DIs, 9 bands | P2 |
 | 5 | Class input = a coin flip in training, the real class on songs | Suspect → **Fixed (section's class everywhere; P6 F2)** | `s05`: 1,512 of 3,033 differ | P6 |
-| 6 | Settings drawn: factory / start / wide | Suspect → **Fixed (runaways out); prior: limit, measured (F7, F11, F20)** | `s06`: factory draws reverb 73%, delay 62% | P3 |
+| 6 | Settings drawn: factory / start / wide | Suspect → **Fixed (runaways out); the prior: limit, measured (F26, F27: real parts' presets sit at its edges)** | `s06`: factory draws reverb 73%, delay 62% | P3 |
 | 7 | Near-silent draws refused | Problem → **Limit, measured (data)** | `s07`: wide 38%, factory 1.6%, start 0% | |
 | 8 | Labels count inaudible settings | Problem → **Limit, measured (F18)** | audibility outcome; step 4's ear page | P2 |
 | 9 | DI re-EQ'd to an average guitar, −22.9 LUFS | OK (consistent) | same in training and scoring | P4 |
 | 10 | Target render, fresh process, warm-up | OK | positive control 50 of 50 | |
 | 11 | Render folded to mono | Problem → **Limit, measured (F18; stereo input is the next build's)** | tone probe: every render mono | P2, P4 |
-| 12 | Doubles rendered with the target's core setting | Suspect → **Fixed (re-rendered; verified on the data alone, F16)** | `s12`: drive switches differ in 34–35% | P7 |
+| 12 | Doubles rendered with the target's core setting | Suspect → **Fix verified on the data alone (F16); enters D_fix in phase 5** | `s12`: drive switches differ in 34–35% | P7 |
 | 13 | Recorded amp-track stand-ins | Suspect → **Ruled out as an error** | `s13`: 44% of examples (F5: 0) | |
 | 14 | Target-to-backing level drawn from real songs | Suspect (minor) → **Limit, measured (level statistics only)** | `s14`: median −9.1 dB | |
-| 15 | Half the mixes mastered | Suspect (minor) → **Ruled out (F22)** | V-real mixes are raw sums | |
-| 16 | X-LANCE stem as the model's input | **Problem (leading)** → **Located: the loss is at any backing, not the separator (F15, F17); backing variety recovers ~27% (F24)** | `s16`: median −6.2 dB; 78 alone | P2 |
+| 15 | Half the mixes mastered | Suspect (minor) → **Ruled out for the guitar itself (F22)** | V-real mixes are raw sums | |
+| 16 | X-LANCE stem as the model's input | **Problem (leading)** → **Open, located: the loss is at any backing, not the separator (F15, F17); backing variety recovers 27% (F24); phase 5** | `s16`: median −6.2 dB; 78 alone | P2 |
 | 17 | Mel features, same code in training and on songs | OK | parity check | |
-| 18 | Augmentation (dropouts, darkening, merges) | Suspect (weak) → **Ruled out as a lever (F21)** | no-augmentation +0.051, undecided; leans towards it helping | |
-| 19 | How much tone survives to the input | Problem (located) → **Located (F13–F17)** | `s19`: 86 → 30 → 20 of 116 | P2 |
+| 18 | Augmentation (dropouts, darkening, merges) | Suspect (weak) → **Not shown to help the clean input in distribution (F21); song-fed untested** | no-augmentation +0.051, undecided; leans towards it helping | |
+| 19 | How much tone survives to the input | Problem (located) → **Open, located (F13–F17); phase 5** | `s19`: 86 → 30 → 20 of 116 | P2 |
 | 20 | Network shape | Unchecked → **Ruled out (P1, F5)** | can it fit at all? | P1 |
-| 21 | Loss in knob units | Suspect → **Confirmed: knob error understates sound skill (F6, F11)** | probe: +3.1 points over a 17-point error | P2 |
+| 21 | Loss in knob units | Suspect → **Ruled out as a blocker; knob error understates sound skill (F6, F11): reads are by sound** | probe: +3.1 points over a 17-point error | P2 |
 | 22 | Training size and length | **Problem (leading)** → **Fixed (length from P1; checkpoints)** | `s22`: 430–1,204 steps | P1, P2 |
 | 23 | Early stopping on the same songs | Problem → **Fixed (held-out songs; F18)** | `s23`: 26 of 32 overlap in time | |
 | 24 | Missing training diagnostics | Unchecked → **Fixed (per-head, eval-mode, baseline logs)** | `s22`: only total losses logged | P1 |
 | 25 | Each knob's mixture median, 2 seeds | OK | constant research | |
-| 26 | Knobs pulled toward the training average | Problem → **Measured: the pull costs little (F12)** | `s26`: b = 0 for 36–38% | P3 |
-| 27 | Switches on above 0.5 | Problem → **Measured: plain readout right, near-chance rule hurts (F23)** | `s27`: pedals at S −0.076, 7 of 7 bands | P3 |
+| 26 | Knobs pulled toward the training average | Problem → **Ruled out as the blocker: the pull costs little (F12)** | `s26`: b = 0 for 36–38% | P3 |
+| 27 | Switches on above 0.5 | Problem → **Ruled out for a model that reads, in distribution: the plain readout is right (F23)** | `s27`: pedals at S −0.076, 7 of 7 bands | P3 |
 | 28 | Everything else at S | OK | | |
-| 29 | Fake-song test (FS5) | **Problem (central)** → **Located: the model reads the clean guitar (F11) but not in a backing (F17) nor on real recordings (F20)** | `s29`: 5 of 85 knobs; switches weak | P1, P2 |
+| 29 | Fake-song test (FS5) | **Problem (central)** → **Open, located: the model reads the clean guitar (F11), not in a backing (F17), not on real recordings (F20, F26); phase 5** | `s29`: 5 of 85 knobs; switches weak | P1, P2 |
 | 30 | Fake-song test by sound | Unchecked → **Fixed: the by-sound read, verified (F10)** | never run | P2 |
 | 31 | V-real: 11 parts in 7 bands | Problem (size) → **Limit, measured** | 3 parts from one song | |
 | 32 | V-real input: the stem of a raw mix | Problem → **Fixed (rows count one input; P4 own inputs)** | `s32`: 2 parts, identical inputs | P4 |
 | 33 | Each answer forced onto 3 amps × 2 halves | OK (caveat) → **Fixed (fresh primed processes; F10, F20's S control)** | render-order phase noise | |
 | 34 | The judge scores 1.5 s tails | OK (explains the loss) | `s34`: time effects at S → +0.001 | |
 | 35 | Band-weighted log ratio, 90% interval | Problem (power) → **Limit, measured** | `s34`: D_F5 − S width 0.26 | |
-| 36 | S chosen on most of the same clips | Problem (size unmeasured) → **Measured: small, undecided (+0.038; F1, F20)** | `s36`: rules re-derived; 8 of 11 clips in the choice sets | P5 |
-| 37 | The training average against S | **Problem (explains "never beats S", with 26–27 and 36)** → **Measured: even with S in distribution (F11), +0.170 worse on V-real (F20)** | `s34`: +0.092, undecided; 9 of 11 parts worse | P3 |
+| 36 | S chosen on most of the same clips | Problem (size unmeasured) → **Limit, measured: small, undecided (+0.038, F1; +0.035 rendered, F20)** | `s36`: rules re-derived; 8 of 11 clips in the choice sets | P5 |
+| 37 | The training average against S | **Problem (explains "never beats S", with 26–27 and 36)** → **Limit, measured: even with S in distribution (F11), +0.170 worse on V-real, from the core tone (F20, F26)** | `s34`: +0.092, undecided; 9 of 11 parts worse | P3 |
 | 38 | Headroom with the true DI on these parts | OK | `s38`: −0.137 shrunk, −0.192 best | |
 
 ## The proposed tests (nothing run)
@@ -230,6 +230,9 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
     different settings.
 - *Fix:* more sections (the unplanned size-matched top-up, F20), or several settings per riff on purpose.
 - *Test:* P2 (if a clean-input model learns at this size, size is not the first problem).
+- *2026-10-31 ([fix plan](pipeline-fix-plan.md) F25):* on the clean input, 511 → 1,787 examples improved the knob read
+  a lot but the sound only −0.044 [−0.097, +0.010] on NS and nothing on FS. More of the same data is not the lever; the
+  backing-variety test (F24) and the real-recording test (F20) point at variety and real data.
 
 ### Making up a preset for each example
 
@@ -272,7 +275,10 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
 - *2026-10-31, P2a's split by draw mode ([fix plan](pipeline-fix-plan.md) F7):* even fed the clean target, the
   model's knob gain over the constant is all on wide (random) and start draws. On factory draws, the realistic kind, it
   gains nothing (NS −0.0224 wide, −0.0116 start, +0.0014 [−0.0007, +0.0034] factory; at the final checkpoint factory
-  is reliably worse, +0.0074). The prior trains mostly on unrealistic settings: a candidate root blocker.
+  is reliably worse, +0.0074). The prior trains mostly on unrealistic settings: a candidate root blocker. *Corrected the
+  same day (F11):* by sound, factory draws are among the best (NS −0.337), so the knob read missed the skill there. On
+  V-real the training average's penalty is its core tone, not its wetness (F26), and the presets that suit real parts
+  sit at the prior's edges 30% of the time against 12% for its own labels (F27).
 
 **Step 7. Throw away draws that render near-silent.**
 - *What happens:* a target render below −50 LUFS, or silent, is refused.
@@ -295,6 +301,8 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
   - Step 4's ear page: 21 of 25 pairs heard the same, 4 maybe, none different.
 - *Fix:* the audibility-weighted labels the user pointed to (ROADMAP (c)).
 - *Test:* P2a shows which heads are learnable even from the clean render.
+- *2026-10-31 ([fix plan](pipeline-fix-plan.md) F18):* on the clean-input model, 3 of 15 time-effect knobs but 3 of 4
+  of their switches beat the label-only baseline on new songs. Limit, measured.
 
 ### Rendering
 
@@ -325,6 +333,8 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
   unhearable in every input.
 - *Fix:* leave stereo-only heads out of the loss and write them at S, or render and feed stereo.
 - *Test:* P2a's per-head table.
+- *2026-10-31 ([fix plan](pipeline-fix-plan.md) F18):* every stereo-only head sits near the label-only baseline on the
+  clean-input model. Limit, measured; stereo input is the next build's.
 
 **Step 12. Render the section's other guitars.**
 - *What happens:* an ordinary other guitar gets a random dried factory preset (no delay, reverb, tremolo,
@@ -344,6 +354,9 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
   target's label in some sounding control; 565 in at least one of the eight switches (drive1 210, drive2 209,
   compressor 237, reverb 322, delay 284, tremolo 206, doubler 188, gate 337), 424 in a pedal switch, and a median 73
   stored settings. P7 is dropped: the doubles are re-rendered with the target's full setting instead (phase 1b).
+- *2026-10-31 ([fix plan](pipeline-fix-plan.md) F16):* re-rendered and verified on the data alone: all 980 doubles
+  carry their target's exact label and amp, all 1,222 other guitars are unchanged, the replayed control is exact. They
+  enter D_fix in phase 5.
 
 ### Building the fake song
 
@@ -375,6 +388,9 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
 - *Status:* Suspect (minor). V-real's mixes are unmastered unity sums of the session's tracks, so the mismatch
   runs the other way.
 - *Evidence:* `s14`: 51% mastered.
+- *2026-10-31 ([fix plan](pipeline-fix-plan.md) F22):* the clean-input model reads its inputs through the mastering
+  compressor as well as without it (NS −0.002 [−0.017, +0.013]). Ruled out for the guitar itself; mastering does not
+  drive the backing loss either (F17).
 
 **Step 16. Separate the guitar with X-LANCE.**
 - *What happens:* X-LANCE `gtr_mss` runs on the mono 10-s mix. Its output is every guitar in the mix, not the
@@ -396,6 +412,10 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
   - give the model a cue for which guitar the user means (the product's "time where the guitar plays" is not
     one when several play).
 - *Test:* P2b against P2c.
+- *2026-10-31 ([fix plan](pipeline-fix-plan.md) F13–F17, F24):* the ladder locates the loss. Fed the clean guitar,
+  the model sounds −0.241 closer than S on new songs. In its non-guitar backing alone (P2b) it is even with S
+  (−0.021); the other guitars (P2c) and the separator (P2d) add no further loss. More backing variety recovers 27%
+  [15%, 38%] of it (F24). Open: the fix is phase 5's.
 
 ### What the model sees
 
@@ -417,6 +437,8 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
 - *Evidence:* D_F5-noaug − D_F5 +0.051 [−0.049, +0.150], undecided
   ([D_F5mix outcome](trusted-data-t0-design.md#d_f5mix-outcome-2026-10-27-165-renders-audited)). It leans towards
   augmentation helping, against the suspicion.
+- *2026-10-31 ([fix plan](pipeline-fix-plan.md) F21):* on the clean input, dropouts and darkening do not help in
+  distribution (two-seed pool: +0.039 [−0.007, +0.085] on NS, undecided). Song-fed models untested.
 
 **Step 19. How much tone survives to the input.**
 - *What happens:* nothing here; this is a measurement of steps 13–18.
@@ -515,6 +537,8 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
   - D_CC: median b 0.50; b = 0 for 38%, 1 for 41%. Its two fit folds disagree (median b 0.32 and 0.51).
 - *Fix:* pull toward S instead.
 - *Test:* P3.
+- *2026-10-31 ([fix plan](pipeline-fix-plan.md) F12):* on the clean-input model, the knob pull costs only −0.006
+  [−0.016, +0.004] on new songs; on V-real (P4) +0.000. Not the blocker.
 
 **Step 27. Switch a feature on above 0.5.**
 - *What happens:* a switch is on when its seed-mean probability exceeds 0.5. Mics and the amp take the argmax.
@@ -529,6 +553,9 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
     `amendment_4_outcome`).
 - *Fix:* a switch whose head does not read on held-out data keeps S's state; or calibrate the threshold.
 - *Test:* P3.
+- *2026-10-31 ([fix plan](pipeline-fix-plan.md) F23):* on a model that reads, unreadable switches at S change
+  nothing (NS +0.001) and the near-chance rule costs −0.064 [−0.101, −0.027]. The plain readout is right for such a
+  model; D_CC's pedal loss (s27 above) belongs to a model that reads nothing.
 
 **Step 28. Everything else stays at S.**
 - *What happens:* only controls that can sound on the chosen amp are written; switched-off features are
@@ -587,6 +614,10 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
   - Step 16's density applies.
 - *Test:* P4 (the real guitar alone) separates "Morgan renders don't transfer" from "the stem is the wrong
   guitar".
+- *2026-10-31, P4 ([fix plan](pipeline-fix-plan.md) F20, F26):* fed V-real's own amp tracks (Wickerman ElecGtr2
+  and 3 now with their own inputs), the clean-input model is +0.153 [+0.039, +0.268] against S and not shown better
+  than its own average (−0.017 [−0.090, +0.057]); with its time effects dry it is unchanged (+0.156). Morgan-render
+  learning does not carry over to real recordings: open, phase 5.
 
 **Step 33. Render each answer.**
 - *What happens:* each answer is forced onto each of the 3 amps, for each half (66 directions), on S's factory
@@ -640,6 +671,8 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
   - So 8 of the 11 V-real clips were in S's choice sets. Their stored S distances equal V-real's S values within
     4.1e-4. It Was My Fault ElecGtr3 and Signs ElecGtr3 are in neither set.
 - *Test:* P5.
+- *2026-10-31 ([fix plan](pipeline-fix-plan.md) F20):* S′ rendered fresh on the crunch parts: +0.035 [−0.002, +0.071]
+  against S, agreeing with the stored-distance read.
 - *2026-10-31, P5 ([fix plan](pipeline-fix-plan.md), `p5.json`):* with V-real's 9 part slugs left out, the clean
   rule re-picks the same three presets (19 parts); the crunch rule (7 parts left) picks Standout Thrash Rhythm (PR12),
   Wall Of Doom (SW50R) and Dirty Coil Rhythm (AC20). On V-real's crunch parts with stored distances (6 of 7; Signs

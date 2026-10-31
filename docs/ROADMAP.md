@@ -144,15 +144,25 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        new songs); the located fix and one model with every fix (D_fix), chosen without V-real; then V-real, with P3's
        fallback to S as a measurement (the user's 2026-10-27 ruling stands) and P4 (real amp tracks as input). Scale
        (F20) only if the learning curves rise.
-     - **Done so far (zero renders):**
-       - P5: without V-real's own clips the clean start presets stay and the crunch ones change on all 3 amps; the
-         new crunch picks read +0.038 [−0.010, +0.086] on V-real's crunch parts (6 of 7, 3 of 4 bands worse;
-         Signs ElecGtr3 needs renders): S's home advantage is small and undecided.
-       - P6 (FS half): telling D_CC the section's class instead of the coin it trained on worsens its knob error by
-         +0.0030 [+0.0019, +0.0042] (7 of 8 bands): the class input is used, and the mismatch costs a little. Every
-         retrain here conditions on the section's class.
-       - The doubles: all 606 kept examples with a DT double were rendered with a different setting from the target's
-         label (565 differ in a switch, a median 73 settings); they are re-rendered with the target's full setting.
+     - **Outcome (2026-10-31, audited; the plan's findings log F1–F28).** Each finding was fixed or tested on its
+       own, relying only on parts already verified (the user's rule).
+       - **The model can learn the tone.** Fed the clean guitar (a perfect separator), it sounds −0.241 [−0.318,
+         −0.165] closer than S on 2 held-out songs, also when told a wrong amp. Knob error badly understates this, so
+         every read is now by sound (F11, F19).
+       - **Blocker 1, the mix:** any backing erases the skill. With only drums, bass and vocals it is even with S; the
+         other guitars and the separator add no further loss (F15, F17). Eight backings per target, from other songs'
+         stems (no new renders), recover 27% [15%, 38%] of it (F24).
+       - **Blocker 2, real recordings:** fed V-real's real amp tracks (the guitar alone), the model is +0.153 [+0.039,
+         +0.268] against S and not shown better than its own training average (F20). Its penalty is the core tone,
+         not the time effects (F26). The presets that suit these real parts sit at the training prior's edges (F27).
+       - **Fixed or verified alone:** the doubles (F16), early stopping (F18), the class input (F2), the by-sound read
+         (F10).
+       - **Ruled out as blockers:** the network (F5), the readout's pull (F12), the switch readout for a model that
+         reads (F23), mastering (F22), augmentation (F21), and more of the same data (F25: a 3.5× size increase bought
+         about 0.04).
+       - S's home advantage on V-real is small (F1). The near-chance rule from the F20 build's draft costs sound and is
+         not recommended (F23).
+       - **Next (phase 5):** fixes for the two blockers, for the user's decision.
    - **Pipeline review (2026-10-30, zero renders; [record](ml-pipeline-review.md), checks `learn/pipeline_review.py`).**
      At the user's request, the direct model's whole process is listed as 38 small steps. Each step has its code, a
      status, its evidence, a fix and a test.
