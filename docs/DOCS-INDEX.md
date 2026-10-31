@@ -678,3 +678,11 @@ was declared, what was measured, and the research behind it.
     wet-target fine-tune, audibility labels in the mix, an ideal-ratio-mask indicator (not a bound),
     a pooling check on D_F5mix, effective-drive and response-curve heads, then stereo. Research, not
     a declared plan.
+20. [morgan-community-presets-2026-10.md](research/morgan-community-presets-2026-10.md): where real
+    Morgan Amps Suite presets can be found to centre the training draws on (October 2026; nothing
+    downloaded). The plugin's own banks (108 installed: 44 SW50R, 34 PR12, 30 AC20; Suite X says
+    "more than 100", overlap unknown) are the only large source. Outside Neural DSP there are about
+    35–65 presets: one free 14-preset Gumroad pack, three paid or unclear packs of 15, a few unread
+    YouTube giveaways and PresetJunkie behind a login. The forum, Reddit, GitHub and Discord exports
+    hold no Morgan files. The only song-tone presets are three factory ones, already installed. Each
+    source is mapped onto the licence and cost rule. Research, not a declared plan.
