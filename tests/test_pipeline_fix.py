@@ -278,3 +278,19 @@ def test_shifted_amp_cycles_through_the_other_amps():
         assert P.shifted_amp(a, 0) == a
         assert {P.shifted_amp(a, 1), P.shifted_amp(a, 2)} == set(F.AMPS) - {a}
     assert P.amp_tag(0) == "" and P.amp_tag(2) == "-amp+2"
+
+
+def test_sc_cont_is_S_when_the_model_reads_its_constant():
+    np = pytest.importorskip("numpy")
+    from learn import arm_a_levers as L
+    from learn import full_space as F
+
+    sel, S = L.menu_S()["pr12"]["clean"]
+    s_c, s_cm = F.encode(dict(S), "pr12")[:2]
+    const = np.linspace(0.1, 0.9, len(F.CONT))
+    out = P.sc_cont(dict(S), "pr12", const, const)
+    on = s_cm > 0
+    assert np.allclose(out[on], s_c[on])
+    shifted = P.sc_cont(dict(S), "pr12", const + 0.05, const)
+    assert np.allclose(shifted[on], np.clip(s_c[on] + 0.05, 0, 1))
+    assert np.allclose(shifted[~on], (const + 0.05)[~on])

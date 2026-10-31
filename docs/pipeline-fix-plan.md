@@ -353,6 +353,11 @@ instead of generating unrealistic presets our own?"):
   - Caveats: one band (BKS, 2 songs); 14 rigs on 8 DIs; the reamp chain (a real amp and mic) differs from a mixed
     record; many reamps keep energy where their DI is more than 40 dB down (about −10 to −22 dB), likely amp noise
     or tails.
+- **5B.1b, the model's deviations around S (ledger `phase_5b1b`, 480 renders; after F31).** The same P2a answers
+  on the same 40 units, with each continuous control at S's value plus P2a's deviation from its labels' constant
+  (switches and mics at S's). Read as 5B.1, against S and P2a. A gain over S says the model's deviations carry
+  real-amp skill hidden by its centre; none says the labels themselves must reach real-amp tones (5B.2).
+  Exploratory: a readout tried after seeing F31.
 
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are

@@ -2422,6 +2422,21 @@ def real_parts(kept, sp, inv, n=REAL_N, seed=REAL_SEED):
     return [units[u] for u in order]
 
 
+def sc_cont(S, amp, a2, const):
+    """5B.1b's continuous readout: where S stores a sounding control and the constant is finite, S's unit value plus
+    the model's deviation from its labels' constant, clipped to [0, 1]; elsewhere the model's own value."""
+    import numpy as np
+
+    from learn import full_space as F
+
+    s_c, s_cm = F.encode(S, amp)[:2]
+    a2, const = np.asarray(a2, np.float64), np.asarray(const, np.float64)
+    out = a2.copy()
+    ok = (s_cm > 0) & np.isfinite(const) & np.isfinite(a2)
+    out[ok] = np.clip(s_c[ok] + a2[ok] - const[ok], 0.0, 1.0)
+    return out
+
+
 def real_key(prt, amp):
     return f"{prt['unit']}|{amp}"
 
@@ -2429,8 +2444,11 @@ def real_key(prt, amp):
 def cmd_real_predict(args):
     """5B.1's answers (zero renders): P2a (both seeds, NS-best, pooled) reads each unit's reamped amp track, brought
     to the median half loudness of its training inputs, on each search half, told the section's class and each
-    forced amp; the plain readout on the class's S. Beside it S and the constant of P2a's training labels.
-    -> real/answers/<tag>.json, keyed '<section>#<track>|<amp>' -> {half or ANY_HALF: {select, settings}}."""
+    forced amp; the plain readout on the class's S. Beside it S and the constant of P2a's training labels. With
+    `--names P2a-Sc` (5B.1b, ledger phase_5b1b) only the S-centred answer: each sounding continuous control of S at
+    S's value plus P2a's deviation from its labels' constant, clipped to the unit interval (`sc_cont`); switches and
+    mics at S's. -> real/answers/<tag>.json, keyed '<section>#<track>|<amp>' -> {half or ANY_HALF: {select,
+    settings}}."""
     from learn import arm_a_mega53 as A
     from learn import cc_build as CB
     from learn import direct_existing as DE
@@ -2440,6 +2458,11 @@ def cmd_real_predict(args):
     from learn import trusted_data_t3 as T3
 
     e = require("phase_5b1")
+    only_sc = args.names == "P2a-Sc"
+    if only_sc:
+        require("phase_5b1b")
+    elif args.names:
+        raise SystemExit("real-predict writes 5B.1's answers, or with --names P2a-Sc only 5B.1b's")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     parts = real_parts(kept, sp, CB.cc_inventory())
     nets, recs = [], []
@@ -2452,7 +2475,7 @@ def cmd_real_predict(args):
     target = p2a_median_lufs(recs[0]["train_ids"])
     const = constant_of(rung_rows(kept, rend, recs[0]["train_ids"]))
     ms = A.L.menu_S()
-    out = {"P2a": {}, "constant": {}, "S": {}}
+    out = {"P2a-Sc": {}} if only_sc else {"P2a": {}, "constant": {}, "S": {}}
     for prt in parts:
         ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
         g = DE.inference_gain_db(ref, target)
@@ -2463,8 +2486,18 @@ def cmd_real_predict(args):
                 s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
                 x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
                 r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
+                if only_sc:
+                    s_c, _, s_sw, s_swm, s_k, s_km, _ = F.encode(dict(S), amp)
+                    sw = [float(v) if m else None for v, m in zip(s_sw, s_swm)]
+                    mics = [int(v) if m else None for v, m in zip(s_k, s_km)]
+                    out["P2a-Sc"].setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(
+                        F.answer_settings(amp, S, sc_cont(dict(S), amp, r["a2"], const[(amp, prt["cls"])]["cont"]),
+                                          sw, mics))}
+                    continue
                 out["P2a"].setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(
                     F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"]))}
+            if only_sc:
+                continue
             out["constant"][key] = {ANY_HALF: {"select": sel, "settings": LO.sdict(
                 T3.constant_full(amp, S, const[(amp, prt["cls"])]))}}
             out["S"][key] = {ANY_HALF: {"select": sel, "settings": LO.sdict(S)}}
