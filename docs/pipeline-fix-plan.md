@@ -473,13 +473,34 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 
   By loss on NS (best): switches 0.617 against the baseline's 0.617, mics 1.99 against 2.02, amp 1.086 against 1.099,
   9 of 85 knobs below baseline.
+- **P2c (the mix), the same recipe** (best checkpoint epoch 5 of 60, 12.5 min): by knob NS +0.0014 [+0.0004,
+  +0.0024], FS +0.0010 [−0.0002, +0.0023] (best); 4–5 knobs and 2–4 switches readable; by loss on NS at the
+  baseline (switches 0.618 against 0.617). The mix reads no better than the stem by knob (`PF/reads/P2c-*.json`).
 - **Reading.** Between the clean guitar (P2a: 22–27 switches, both mics and the amp readable) and the stem, almost
-  everything is lost, on seen performances too. This is the review's step 16/19 suspicion, now measured with
+  everything is lost, on seen performances too; by knob it is already lost at the mix. This is the review's step 16/19 suspicion, now measured with
   trained models on one example set. P2c (the mix) says whether it is lost at the mix or at the separator; P2b
   whether at the other guitars or at the backing. P2d's by-sound read is rendering.
 - **Caveats.** One seed; the ladder's pinned set (F8); the stem of the old doubles is not in this set.
 - **References.** `PF/runs/P2d-20261042.json`, `PF/reads/P2d-best.json`, `PF/reads/P2d-final.json`;
   `logs/pf-P2d.log`.
+
+### F14. By sound, the stem keeps about a fifth of the clean input's skill (the locating row a − d)
+- **Result.** P2d's answers (best checkpoint), rendered on the same sample, lean only slightly closer than S. The
+  paired row against P2a is large and reliable.
+- **Numbers.**
+
+  | Row | FS (60, 6 bands) | NS (60, 36 sections) |
+  |---|---|---|
+  | P2d − S | −0.072 [−0.202, +0.058], 3 of 6 bands better | −0.042 [−0.125, +0.041], 19 of 36 better |
+  | P2d − constant | −0.076 [−0.198, +0.046] | −0.048 [−0.093, −0.003], 21 of 36 better |
+  | P2a − P2d | −0.176 [−0.222, −0.130], 6 of 6 better | −0.199 [−0.258, −0.141], 32 of 36 better |
+
+- **Reading.** Of P2a's −0.24 against S, the stem keeps −0.04 to −0.07: about 80% of the skill is lost between the
+  clean guitar and the stem, on new settings and new songs alike. This is the failure the review called central
+  (step 29), located at the input (steps 16, 19), not the model (F5, F11). P2c's and P2b's reads split it between
+  the other guitars, the backing and the separator.
+- **Caveats.** One seed each; the ladder's set (F8); the targets are Morgan renders on the true amp.
+- **References.** `PF/sound/judge/P2d-best/`, `PF/sound/report.json`; `logs/pf-sound-d-*.log`.
 
 ### F9. Process: removing a worktree crashed running jobs
 - **Result.** Removing the plan's worktree while the doubles render ran from it crashed its 3 shards at a lazy
