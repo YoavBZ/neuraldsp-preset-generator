@@ -2223,7 +2223,7 @@ def cmd_wide_pool(args):
         if len(nov) < WIDE_MIN_STEMS:
             skipped[name] = f"{len(nov)} heard-clean non-vocal stems (fewer than {WIDE_MIN_STEMS})"
             continue
-        dur = min(sf.info(str(pathlib.Path(sd) / t)).duration for t in nov)
+        dur = max(sf.info(str(pathlib.Path(sd) / t)).duration for t in nov)
         starts = [5.0 + 10.0 * k for k in range(int((dur - 16.0) // 10.0) + 1)]
         active = []
         for s0 in starts:
@@ -2233,8 +2233,8 @@ def cmd_wide_pool(args):
         if not active:
             skipped[name] = "no active window"
             continue
-        pick = [active[round(j * (len(active) - 1) / max(1, WIDE_WINDOWS - 1))] for j in range(min(WIDE_WINDOWS,
-                                                                                                    len(active)))]
+        m_ = min(WIDE_WINDOWS, len(active))             # every active window when there are at most WIDE_WINDOWS
+        pick = [active[round(j * (len(active) - 1) / max(1, m_ - 1))] for j in range(m_)]
         pick = sorted({p[0]: p for p in pick}.values())
         for s0, ln in pick:
             lv = ln if withv == nov else float(SA.lufs(bare_backing(sd, withv, s0)))
@@ -2674,27 +2674,29 @@ def share_recovered(rows, n=4000, seed=20261036):
 
 
 def cmd_share(args):
-    """F24's share of P2a - P2b that P2b-bk8 recovers, by sound on the sample, FS by band and NS by section (the log's
-    rows), stored to sound/share-backings.json. Zero renders."""
+    """F24's share of P2a - P2b that a backing-trained P2b (`--name`, default P2b-bk8; phase 5A's P2b-wide24) recovers,
+    by sound on the sample, FS by band and NS by section (the log's rows), stored to sound/share-backings.json
+    (P2b-bk8) or sound/share-<name>.json. Zero renders."""
     from learn import cc_build as CB
 
-    require("phase_3_backings")
+    name = args.name or "P2b-bk8"
+    require("phase_5a" if name == "P2b-wide24" else "phase_3_backings")
     ex = {x["i"]: x for x in CB.load_plan(argparse.Namespace(out=None, smoke=False))["examples"]}
     ids = sample_ids(SAMPLE_N)
 
     def j(t, i):
         return json.loads((out_dir() / SOUND_DIR / "judge" / t / f"{i}.json").read_text())["judge"]
-    out = {"rule": "share = clustered(P2b - P2b-bk8) / clustered(P2b - P2a), each by sound against S per example; "
+    out = {"model": name, "rule": "share = clustered(P2b - <model>) / clustered(P2b - P2a), each by sound against S per example; "
                    "parts are sections, clusters bands (FS) or sections (NS); 90% interval by resampling clusters"}
     for st, key in (("fs", "band"), ("ns", "section")):
         rows = []
         for i in ids[st]:
-            a, b, k = (log_ratio(j(t, i), j("S", i)) for t in ("P2a-best", "P2b-best", "P2b-bk8-best"))
+            a, b, k = (log_ratio(j(t, i), j("S", i)) for t in ("P2a-best", "P2b-best", f"{name}-best"))
             rows.append((ex[i][key], ex[i]["section"], b - k, b - a))
         pt, lo, hi = share_recovered(rows)
         out[st] = {"share": pt, "lo90": lo, "hi90": hi, "examples": len(rows)}
         print(f"{st}: share recovered {pt:.3f} [{lo:.3f}, {hi:.3f}]")
-    save(out_dir() / SOUND_DIR / "share-backings.json", out)
+    save(out_dir() / SOUND_DIR / ("share-backings.json" if name == "P2b-bk8" else f"share-{name}.json"), out)
 
 
 def cmd_prior_edges(args):
