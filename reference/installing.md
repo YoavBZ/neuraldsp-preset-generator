@@ -26,6 +26,16 @@ Pick the directory whose plugin name matches the pack you generated for
 their presets live rather than guessing — and if they tell you, note it so you
 don't have to ask again.
 
+**X editions.** Morgan Amps Suite X and Tone King Imperial MKII X install beside
+the original plugins, each with its own folder (`Morgan Amps Suite X`,
+`Tone King Imperial MKII X`). Both load the presets these tools write, as legacy
+presets. When an X folder exists, write the same file to its `User/` too, and tell
+the user it is in both. Take templates from the original plugin's folder when it
+is there. Morgan X's own presets also work as templates (the `morgan` pack reads
+them). Tone King X's own presets do not: they use a new layout that no pack reads
+yet. If only Tone King X is installed, say so and stop, rather than drafting a
+new pack.
+
 `/Library/…` is owned by root but the Neural DSP installer leaves these folders
 world-writable, so writing there needs no `sudo`. If a write is refused, say so
 and ask — do not reach for `sudo`.

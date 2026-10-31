@@ -30,6 +30,7 @@ from .markers import (
     is_value_prefix,
 )
 from .parser import Token, encode_payload
+from .valuetree import property_modules
 
 def is_value_token(tok: Token) -> bool:
     """True when this token is a VALUE rather than a key or structural marker.
@@ -157,6 +158,21 @@ def build(tokens: List[Token]) -> Preset:
     preset = Preset(tokens=tokens, parameters=parameters)
     preset.file_header = tokens[0].value if tokens else ""
 
+    # Where each token's text starts, so a key can be looked up in the file's
+    # tree (`valuetree`). When the bytes are not one complete tree, `tree` is
+    # None and the `subModels` reading below names every section, as it always did.
+    starts: List[int] = []
+    offset = 0
+    for t in tokens:
+        starts.append(offset + len(t.raw_prefix))
+        offset += len(t.to_bytes())
+    tree = property_modules(b"".join(t.to_bytes() for t in tokens))
+
+    def module_of(key_index: int) -> str:
+        if tree is not None and starts[key_index] in tree:
+            return tree[starts[key_index]]
+        return ".".join(module_stack)
+
     i = 0
     while i < len(tokens):
         tok = tokens[i]
@@ -171,7 +187,7 @@ def build(tokens: List[Token]) -> Preset:
             record = read_record(tokens, i)
             if record is not None:
                 name, value_index, end = record
-                module_path = ".".join(module_stack)
+                module_path = module_of(i + 1)    # the record's `id` property
                 if value_index is None:
                     # Named but valueless. There is nothing to read and nothing
                     # to write -- the writer clones a template and mutates
@@ -219,7 +235,7 @@ def build(tokens: List[Token]) -> Preset:
         # tok is a candidate KEY. Look ahead one token for its value.
         if i + 1 < len(tokens) and is_value_token(tokens[i + 1]):
             value_tok = tokens[i + 1]
-            module_path = ".".join(module_stack)
+            module_path = module_of(i)
             param = Parameter(
                 module_path=module_path,
                 key=tok.value,
