@@ -390,6 +390,48 @@ instead of generating unrealistic presets our own?"):
   spending a V-real exposure. Its answers were computed (the model run on V-real's inputs, zero renders, nothing
   judged). Whether D_fix uses an S-centred readout is decided from F32 and FS/NS only, and V-real is left for D_fix.
 
+*2026-10-31, after F32 and the user's question (are random training settings unrealistic?):*
+- **5B.2, labels that reach real-amp tones (ledger `phase_5b2`; about 18,900 renders, 12 short trainings).**
+  Question: trained with labels from a true-DI search on other performances' real amp tracks, does the clean-input
+  model read a held-out performance's real amp tracks better than S? Beside it, arm P (the user's question): trained
+  only on draws centred on presets (factory and S), without the uniform "wide" draws, does it?
+  - **Stage 1, the ceiling, run first (6,360 renders).** On 5B.1's 40 units, per forced amp: arm A's main stage
+    (`K.space`: input gain, the amp's knobs and switches, both mics; 52 renders, seed 20261013) from the class's S,
+    with the true DI, against the reamped track. Objective: the judge's distance on the search half at the unit's
+    stored lag (5B.1's `real/lags/`), every render over the full section as 5B.1. The search half alternates by
+    unit within each DI. Setup check: the first evaluation (S) must reproduce 5B.1's stored S distance on that half
+    within 0.005 |log|, or the stage stops. Read on the held half: the best setting (its held value from the same
+    render) and the setting shrunk 0.5 toward S (one render), each against S; by DI (8), by rig beside.
+    - It measures how far a label can move from S toward these tones. If the ceiling's interval sits at or above 0
+      (no setting better than S is reachable), labels cannot help: 5B.2 stops there and the gap is put to the chain
+      or the judge. Otherwise stage 2 runs.
+  - **Stage 2, labels for the other 65 units (about 10,340 renders).** The same recipe, with no stored S distance to
+    check against (its S judge is the first evaluation).
+  - **Labels.** Each direction's best setting, unshrunk (arm A's ZT found shrinking hurts with true inputs), as a
+    full setting: searched controls from the search, every other control from S (`F.label_of`). A direction that
+    falls back (silent or non-finite) gives no label.
+  - **Arm R, training.** P2a's recipe (rung a, same epochs, checkpoint rule and seeds) with real rows added: one row
+    per labelled (unit, amp), its input the reamped section's features as 5B.1 built them (training inputs' median
+    loudness), the section's class, both halves as usual. Four folds by DI: the 8 DIs in pairs, chosen to make the
+    folds' read-unit counts as equal as possible (ties by seed 20261039). A fold's model trains on the real rows of
+    the other three folds' DIs (all their units, read units included), never its own DIs' real tracks. Real rows are
+    repeated 3 times per epoch (about 160 rows among 1,787; repeated, about a fifth of each epoch). 8 trainings.
+  - **Arm R, read (480 renders).** Each read unit by its fold's two models (NS-best, pooled per example as 5A), per
+    forced amp and search half, judged as 5B.1. Rows: R − S (primary), R − P2a, the ceiling beside. A zero-render
+    guard: NS held-out head losses against P2a's, for any cost to plugin skill.
+  - **Arm P (1,680 renders, 4 trainings).** P2a's recipe on the 1,296 training examples drawn around presets or S
+    (864 factory, 432 start; the 491 wide draws out), and a size control, P2a-f73 (a nested random 72.5% share, the
+    same count). Read on the 40 units as 5B.1 (P's answers 480, its labels' constant 240) and by sound on FS/NS (P
+    and f73, 960). Rows: P − P2a on the real units (primary for this arm), P's constant − P2a's constant; on FS/NS
+    P − P2a, f73 − P2a (size alone) and P − f73 (dropping wide draws beyond size).
+  - Order: stage 1 and arm P together (arm P's trainings on MPS while stage 1 renders); stage 2 after stage 1's
+    read; arm R's trainings and read last. Held out throughout: V-real and the NS songs (BKS is a training band).
+  - **Caveats.** One band (BKS), 8 performances, 14 rigs; the physical amps and mics are probably shared across a
+    song's DIs, so a held DI is new playing on possibly familiar chains. 38 of 40 read units are sections whose
+    plugin renders P2a trained on (an upper bound for transfer, as 5B.1). Labels are selected on one half (noisy;
+    the held half is the honest read). The real rows' share is chosen, not tuned. Arm P reads one band for real
+    amps; its FS/NS reads are plugin renders.
+
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
   measurements; if they shape the choice, D_fix's V-real read is labelled selection-contaminated. The candidates by
