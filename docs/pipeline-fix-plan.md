@@ -87,7 +87,7 @@ own. A model that reads little (the mix and stem models, D_CC) never serves as t
 | 22 | Length | P1, P2a's checkpoints | nothing | fixed |
 | 24 | Logs | A test; P1 | nothing | fixed |
 | 26 | Pull toward the average | On P2a in distribution, by sound (F12) | P2a, by-sound read | measured (F12) |
-| 27 | Near-chance switches | On P2a in distribution, by sound: unreadable switches at S, and the near-chance rule, against the plain readout | P2a, by-sound read | to run |
+| 27 | Near-chance switches | On P2a in distribution, by sound: unreadable switches at S, and the near-chance rule, against the plain readout | P2a, by-sound read | measured: plain readout right; near-chance rule hurts (F23) |
 | 29, 30 | Reads almost nothing | The ladder, by knob and by sound | recipe, by-sound read | located (F13–F15) |
 | 31, 35 | V-real's size | Limit; the rows' Wickerman rule unit-tested | nothing | limit, measured |
 | 32 | Wickerman's shared input | Unit test of the rows; P4 reads their own amp tracks | nothing | fixed (test) |
@@ -738,6 +738,53 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   alone, not on a mix.
 - **References.** `PF/inputs/*-tgtl-mast.npz`, `PF/sound/judge/P2a-best-mast/`, `PF/sound/report-mastering.json`;
   `mastered_inputs`; ledger `phase_3_isolated` (b).
+
+### F23. On a model that reads, the plain 0.5 switch readout is right; the S-switch rule changes nothing and the near-chance rule hurts (step 27, alone)
+- **Result.** P2a's plain answers against two readouts fitted on FS.
+  - "sws": the 6 switches R0 did not find readable on FS kept at S's state: SW50R treble boost, compressor release,
+    tremolo, delay ping-pong, right room mic, SW50R spring.
+  - "nc": F20's near-chance rule, δ = 0.1 chosen by FS switch agreement (0.672); a switch within 0.1 of 0.5 takes the
+    constant's majority.
+- **Numbers** (NS primary; both are fitted on FS).
+
+  | Row | FS | NS |
+  |---|---|---|
+  | P2a − P2a(sws) | −0.021 [−0.066, +0.024] | +0.001 [−0.010, +0.011] |
+  | P2a − P2a(nc) | −0.024 [−0.110, +0.062] | −0.064 [−0.101, −0.027], 20 of 36 better |
+  | P2a(nc) − S | −0.224 [−0.331, −0.117] | −0.177 [−0.253, −0.101] |
+
+- **Reading.** When a model reads, flipping near-chance switches to the pool's majority costs sound (it flipped
+  answers the model had right), and keeping its unreadable switches at S changes nothing. D_CC's lost pedals (the
+  review's step 27) came from a model that read nothing, not from the 0.5 cut. Step 27: measured, no readout change
+  adopted. The near-chance rule (F20's decision C) is not recommended.
+- **References.** `PF/sound/judge/{P2a-best-sws,P2a-best-nc}/`, `PF/sound/answers/P2a-best-nc.json` (`nc_fit`),
+  `PF/sound/report-{sws,nc}.json`; `switch_rule`, `s_switch_state`; ledger `phase_3_isolated` (c).
+
+### F24. More backing variety recovers about a quarter of the skill the backing takes (the isolated learnability test)
+- **Result.** P2b-bk8 is P2b retrained with each training target shown in its own P2b input or in 8 other training
+  songs' non-guitar backings, at exactly P2b's levels (14,296 inputs, zero renders; seed 20261042, best checkpoint
+  epoch 15 of 60 against P2b's 5). It was read on P2b's own fixed inputs. It sounds reliably closer than P2b on new
+  songs.
+- **Numbers.**
+
+  | Row | FS (60, 6 bands) | NS (60, 36 sections) |
+  |---|---|---|
+  | P2b-bk8 − P2b (primary) | −0.081 [−0.195, +0.033], 5 of 6 better | −0.059 [−0.093, −0.025], 25 of 36 better |
+  | P2b-bk8 − S | −0.051 [−0.216, +0.113] | −0.081 [−0.162, +0.001], 21 of 36 better |
+  | P2a − P2b-bk8 | −0.197 [−0.280, −0.113] | −0.161 [−0.215, −0.106] |
+
+  By knob, NS −0.0004 against P2b's +0.0010 (13 switches readable against 5); FS −0.0023 [−0.0037, −0.0009].
+- **Reading.**
+  - Share of P2a − P2b recovered on NS: 0.059 of 0.220, about 27%.
+  - Part of the loss in the mix is learnability: more backing variety helps, and it stops the early overfitting.
+  - Most remains. Backings from the same 8 songs, with the same 27 DIs, do not restore it, so it is undecided
+    between masking and too few performances and backings.
+  - The fix direction this supports: far more backing variety (other songs' and sessions' stems, zero renders) and
+    more performances.
+- **Caveats.** One seed. The other-song backings are not in time or key with the performance.
+- **References.** `PF/inputs/*-mixb-k*.npz`, `PF/inputs/backings-levels.json`, `PF/inputs/backings-pool.json`,
+  `PF/runs/P2b-bk8-20261042.json`, `PF/sound/judge/P2b-bk8-best/`, `PF/sound/report-backings.json`;
+  `cmd_build_backings`, `BackingData`; ledger `phase_3_backings`.
 
 ### F9. Process: removing a worktree crashed running jobs
 - **Result.** Removing the plan's worktree while the doubles render ran from it crashed its 3 shards at a lazy
