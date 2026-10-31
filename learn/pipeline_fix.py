@@ -424,16 +424,31 @@ def cmd_build_inputs(args):
     stems = T.Stems(ctx)
     k, n = args.shard
     todo = sorted((i for i in tr + fs if i % n == k), key=lambda i: (ex[i]["section"], i))   # the stems cache by section
+    dt_rows, dt_new = {}, {}
+    if args.doubled:                               # after phase 1b: P2b of the doubled examples from their new mix
+        for f in sorted((dt_root() / "rows").glob("build-*.jsonl")):
+            dt_rows.update({r["i"]: r for r in DS.read_jsonl(f) if not r.get("refused")})
+        for f in sorted((dt_root() / "rows").glob("render-*.jsonl")):
+            dt_new.update({r["i"]: r for r in DS.read_jsonl(f)})
     parity = []
     t0 = time.time()
     for m, i in enumerate(todo):
         pa, pb = (input_path(DATA, i, RUNG_KINDS[r]) for r in OWN_KINDS)
-        if pa.exists() and pb.exists():
+        redo = args.doubled and i in dt_rows
+        if pa.exists() and pb.exists() and not redo:
+            continue
+        if args.doubled and not redo:
             continue
         x, rw, bw = ex[i], rend[i], built[i]
         y = G.read_flac(T.flac_path(root, CB.STAGE, i, "target"), rw["target"]["scale"], rw["target"]["sha256"])
-        oth = G.read_flac(T.flac_path(root, CB.STAGE, i, "others"), rw["others_file"]["scale"],
-                          rw["others_file"]["sha256"])
+        if redo:                                   # P2c's new mix: the re-rendered doubles and their recomputed gains
+            nw, bw = dt_new[i], dt_rows[i]
+            oth = G.read_flac(dt_flac(DATA, i), nw["others_file"]["scale"], nw["others_file"]["sha256"])
+            if abs(bw["gains_db"]["ga"] - built[i]["gains_db"]["ga"]) > 1e-9:
+                raise SystemExit(f"{i}: the overall gain changed with the new doubles")
+        else:
+            oth = G.read_flac(T.flac_path(root, CB.STAGE, i, "others"), rw["others_file"]["scale"],
+                              rw["others_file"]["sha256"])
         voc = x["draw"]["vocals_drawn"] and x["stems"]["v"] != x["stems"]["n"]
         full = stems.get(x["section"], T.backing_tracks(x, voc))
         bare = stems.get(x["section"], list(x["stems"]["v" if voc else "n"]))   # no recorded stand-in guitar
@@ -446,7 +461,7 @@ def cmd_build_inputs(args):
         sa, sb, sc = rung_mixes(np.asarray(y, np.float64), np.asarray(oth, np.float64) + standins, bare, x,
                                 bw["gains_db"], master)
         mm, ml, _ = DS.half_features(sc)
-        stored = np.load(T.ex_path(root, CB.STAGE, i, "mix-cc"))
+        stored = np.load(dt_ex(DATA, i, "mix-ccdt") if redo else T.ex_path(root, CB.STAGE, i, "mix-cc"))
         dev = max(int(np.max(np.abs(mm[h].astype(int) - stored[f"m{h}"].astype(int)))) for h in "AB")
         parity.append(dev)
         if dev > 1:
@@ -680,7 +695,7 @@ class RungData:
     input; in training one half per example per epoch with dropouts and darkening (D_stem's p 0.3 each, no merge and
     no separator failure, which need a second signal); eval reads the fixed half."""
 
-    def __init__(self, rows, path_of, aug=True):
+    def __init__(self, rows, path_of, aug=False):
         import numpy as np
 
         from learn import direct_stems as DS
@@ -1122,11 +1137,21 @@ def cmd_render_doubles(args):
     swap0 = DS.swap_mb()
     renders = 0
 
+    by_sec = {}
+    for x in plan["examples"]:
+        by_sec.setdefault(x["section"], []).append(x)
+
+    def rendered(sid):
+        """The section's examples `cc_build.cmd_render` rendered other guitars for (its target not refused)."""
+        return [x for x in by_sec[sid] if x["i"] in rend and not str(rend[x["i"]].get("refused") or "").startswith("target:")]
+
     def others_of(xs, sec, new):
-        """{i: (others sum, rows)} for the examples xs of one section."""
+        """{i: (others sum, rows)} for the examples xs of one section, `cc_build.cmd_render`'s job order (one shared
+        process, sorted by (DI, amp, i), primed on a (section|DI, amp) change; an example's jobs stop at its first
+        refusal); with `new`, each DT double with the full setting in its own primed process after them."""
         nonlocal renders
-        stems = sorted({s for x in xs for s in x["stems"]["v"]})
-        levels = T.section_levels(ctx, sec, [o for x in xs for o in x["others"]], stems)
+        stems = sorted({s for x in by_sec[sec["id"]] for s in x["stems"]["v"]})     # as the original render's
+        levels = T.section_levels(ctx, sec, [o for x in by_sec[sec["id"]] for o in x["others"]], stems)
         acc = {x["i"]: np.zeros(trim[1] - trim[0]) for x in xs}
         rows = {x["i"]: {"i": x["i"], "others": []} for x in xs}
         jobs = []
@@ -1147,6 +1172,8 @@ def cmd_render_doubles(args):
             try:
                 primer = DS.Primer(rr)
                 for di_id, amp, i, o, sel, st, _ in shared:
+                    if rows[i].get("refused"):
+                        continue
                     lv, src = levels[di_id]
                     if lv is None:
                         rows[i]["others"].append({"di": di_id, "left_out": "no level"})
@@ -1158,6 +1185,8 @@ def cmd_render_doubles(args):
             finally:
                 rr.close()
         for di_id, amp, i, o, sel, st, _ in (j for j in jobs if j[6]):
+            if rows[i].get("refused"):
+                continue
             lv, src = levels[di_id]
             if lv is None:
                 rows[i]["others"].append({"di": di_id, "left_out": "no level"})
@@ -1175,17 +1204,20 @@ def cmd_render_doubles(args):
             raise SystemExit("run `render-doubles --control` first; the shards render only after it passes")
     elif not cp.exists():
         pick = todo_ids[:: max(1, len(todo_ids) // CONTROL_N)][:CONTROL_N]
-        for i in pick:
-            x = ex[i]
-            sec = dict(ctx.sections[x["section"]], id=x["section"])
-            acc, rows = others_of([x], sec, new=False)
-            rw = rend[i]
-            old = G.read_flac(T.flac_path(croot, CB.STAGE, i, "others"), rw["others_file"]["scale"],
-                              rw["others_file"]["sha256"])
-            step = float(rw["others_file"]["scale"]) / 2 ** 23
-            dev = float(np.max(np.abs(acc[i] - old)))
-            control.append({"i": i, "max_abs_dev": dev, "flac_step": step, "ok": dev <= step})
-            print(f"control {i}: max |re-render - stored| {dev:.3g} (FLAC step {step:.3g})", flush=True)
+        for sid in sorted({ex[i]["section"] for i in pick}):
+            xs = rendered(sid)                                   # the section's whole original job list, replayed
+            sec = dict(ctx.sections[sid], id=sid)
+            acc, rows = others_of(xs, sec, new=False)
+            for x in xs:
+                rw = rend[x["i"]]
+                if rw.get("refused") or not rw.get("others_file"):
+                    continue
+                old = G.read_flac(T.flac_path(croot, CB.STAGE, x["i"], "others"), rw["others_file"]["scale"],
+                                  rw["others_file"]["sha256"])
+                step = float(rw["others_file"]["scale"]) / 2 ** 23
+                dev = float(np.max(np.abs(acc[x["i"]] - old)))
+                control.append({"i": x["i"], "section": sid, "max_abs_dev": dev, "flac_step": step, "ok": dev <= step})
+                print(f"control {x['i']}: max |re-render - stored| {dev:.3g} (FLAC step {step:.3g})", flush=True)
         save(dt_root() / "control.json", {"examples": control, "renders": renders,
                                           "time": time.strftime("%Y-%m-%d %H:%M:%S")})
         if not all(c["ok"] for c in control):
@@ -1529,7 +1561,21 @@ def cmd_answers(args):
     ms = A.L.menu_S()
     rows = rung_rows(kept, rend, ids)
     out = {}
-    if args.name in ("S", "constant"):
+    if args.name in ("truth", "truth-on-S-select"):
+        # positive controls: the label's own setting on its own select must reproduce the stored target render; on
+        # the class start preset's select (where answers are written) it must too, the full setting being written
+        menus = T3.Menus()
+        from learn import cc_build as CB
+
+        menus.gate_u = CB.load_plan(argparse.Namespace(out=None, smoke=False))["gate_cap"]["unit"]
+        for r in rows:
+            amp, _, _, sel_own, xf, _, _, _ = T3.full_twin(r["i"], menus)
+            if LO.sdict(xf) != rend[r["i"]]["settings"]:
+                raise SystemExit(f"{r['i']}: the full twin differs from the rendered label")
+            sel = sel_own if args.name == "truth" else ms[r["amp"]][r["cls"]][0]
+            out[str(r["i"])] = {"select": sel, "settings": rend[r["i"]]["settings"]}
+        tag = args.name
+    elif args.name in ("S", "constant"):
         const = constant_of(rung_rows(kept, rend, sp["train"]))
         for r in rows:
             sel, S = ms[r["amp"]][r["cls"]]
@@ -1653,12 +1699,16 @@ def cmd_sound_report(args):
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_3_sound", "sample_n": n_each, "rows": {}}
     for set_name, sids in ids.items():
         for ta, tb in pairs:
-            rows, missing = [], 0
+            rows, missing, refused = [], 0, 0
             for i in sids:
-                v = log_ratio(judge(ta, i), judge(tb, i))
-                if v is None:
+                ja, jb = judge(ta, i), judge(tb, i)
+                if ja is None or jb is None:
                     missing += 1
                     continue
+                if any(not math.isfinite(z[h]) for z in (ja, jb) for h in ("A", "B")):
+                    refused += 1                   # a judge refusal (a silent render): listed, never dropped quietly
+                    continue
+                v = log_ratio(ja, jb)
                 cl = ex[i]["band"] if set_name == "fs" else ex[i]["section"]
                 rows.append((cl, ex[i]["section"], v))
             c = clustered(rows)
@@ -1666,12 +1716,14 @@ def cmd_sound_report(args):
             out["rows"].setdefault(key, {})[set_name] = {
                 **{k: c.get(k) for k in ("mean", "lo90", "hi90", "clusters", "clusters_negative", "clusters_positive",
                                          "part_weighted", "parts")},
-                "clustered_by": "band" if set_name == "fs" else "section (NS is 2 bands)", "missing": missing}
+                "clustered_by": "band" if set_name == "fs" else "section (NS is 2 bands)", "missing": missing,
+                "judge_refused": refused}
             r = out["rows"][key][set_name]
             if r["mean"] is not None:
                 iv = "" if r["lo90"] is None else f" [{r['lo90']:+.4f}, {r['hi90']:+.4f}]"
                 print(f"  {key:40s} {set_name}: {r['mean']:+.4f}{iv} ({r['clusters']} {r['clustered_by'].split()[0]}s, "
-                      f"{r['clusters_negative']} better){' MISSING ' + str(missing) if missing else ''}")
+                      f"{r['clusters_negative']} better){' MISSING ' + str(missing) if missing else ''}"
+                      f"{' REFUSED ' + str(refused) if refused else ''}")
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     save(out_dir() / SOUND_DIR / "report.json", out)
     print("SOUND-REPORT DONE")
@@ -1702,6 +1754,7 @@ def main(argv=None):
     ap.add_argument("--which", choices=("final", "best"), default="final")
     ap.add_argument("--names", default="")
     ap.add_argument("--control", action="store_true")
+    ap.add_argument("--doubled", action="store_true")
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 

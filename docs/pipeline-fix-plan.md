@@ -1,7 +1,8 @@
 # Fixing the pipeline review's findings (plan, 2026-10-31)
 
-**Status: declared 2026-10-31; independently reviewed the same day (approve with required changes, all made, below).
-Nothing has run under it except the zero-render dirty-double scan of the training data.**
+**Status: declared 2026-10-31; independently reviewed and re-reviewed the same day (required changes all made,
+below). Phase 1 has run (P5, P6, the dirty-double scan; zero renders, audited): see the review's steps 5, 12 and 36
+and the ledger's `phase_1_outcome`.**
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -152,8 +153,13 @@ Steps 1, 2, 9, 10, 17, 25, 28, 34 and 38 are OK in the review and need nothing. 
 - For each of the 606 doubled examples, every other guitar re-rendered as `cc_build` rendered it, except that each
   DT double takes the target's full setting and renders in its own primed process (the target's time effects run on
   across renders in one process).
-- **Positive control first:** 4 doubled examples re-rendered the old way must reproduce their stored others within
-  one FLAC step. If not, phase 1b stops and the 606 are dropped from every rung instead.
+- **Positive control first:** the sections of 4 doubled examples are replayed exactly as `cc_build` rendered them
+  (each section's whole job list in one shared process, the same order and priming), and every example's sum must
+  reproduce its stored others within one FLAC step. If not, phase 1b stops and the 606 are dropped from every rung
+  instead.
+- The production re-render puts the ordinary other guitars in a new job order: valid renders, not necessarily
+  bit-identical to the stored ones. After it, P2b of the doubled examples is rebuilt from their new mix, at its
+  recomputed backing gain, with the same parity check.
 - Then their mixes and X-LANCE stems (`cc_build build`'s recipe), written to `pipeline-fix/cc-dt/`; D_CC's files are
   never written.
 - About 3,600 renders with priming and 606 separations, about 1.5–2 h.
@@ -180,6 +186,10 @@ In the lean order: each step runs only while the one before leaves the question 
      is rendered through the example's own measure DI in its own process, primed with the same setting (as the
      targets were), and judged against the stored target render on both halves (`knob_ceiling.judge`).
    - S (the `cls` start preset) and the constant (`cls`) are rendered once for the sample.
+   - **Positive control first:** each sampled example's own label on its own select ("truth") must reproduce its
+     stored target render (the judge at its floor), and on the class start preset's select, where answers are
+     written, too. At most 480 renders.
+   - A judge refusal (a silent render) is counted and shown per row, never dropped quietly.
    - **The locating rows:** a − b, b − c and c − d, paired on the same examples. Beside them, each rung − S and −
      constant. FS rows are band-clustered (6 bands); NS rows are section-clustered with the caveat that NS is one
      clean and one crunch song (2 bands).
@@ -251,6 +261,11 @@ An independent review approved with 12 required changes, all made above:
 10. curves on the stem too, and a fewer-performances point;
 11. V-real inputs per rung, and the amp mismatch;
 12. D_fix is chosen without V-real.
+
+**Re-review (2026-10-31)** of the revision and its code: approve with 4 required changes, all made: phase 1b's
+positive control replays the original job order; P2b of a doubled example uses its new mix's backing gain; the
+by-sound read gets a "truth" positive control; the bookkeeping (P5 and P6 entered, the ledger's held-out and band
+lines). It audited P5 and P6 and agrees with their readings.
 
 Its optional points are folded in: the lean order, P6's FS half only, a sample that grows on evidence, one
 Wickerman weighting for P3 and P4, the runaway list named, the by-sound protocol, step 23's unfinished second fix,
