@@ -316,9 +316,17 @@ instead of generating unrealistic presets our own?"):
 *2026-10-31, after the user's "Continue":* the two blocker tests run, each declared and reviewed first.
 - **5A, backing variety at scale (blocker 1; ledger `phase_5a`; zero renders).**
   - P2b retrained with 24 backings per training target, drawn session-first from the training songs' sections and
-    from up to 20 active windows of each of the 14 other sessions whose stems were heard clean. Only stems free of
-    guitar bleed are used; V-real's bands and the NS songs are kept out.
+    from up to 20 active windows of each other session whose stems were heard clean. V-real's bands and the NS
+    songs are kept out.
+  - Stems: an extra session gives only its heard-clean session-wide list. The training sections keep P2b's own
+    stems, as P2b-bk8 does, which may carry that song's other guitars.
   - Built exactly as P2b-bk8's variants, and read on P2b's own fixed inputs against P2b-bk8 and P2b.
+  - Caveats: variants and sessions both grow; the own input is shown 1 epoch in 25, not 1 in 9; about two-thirds of
+    draws come from new sessions; some extra backings are thin. One seed, NS-best: a difference under about 0.09 by
+    sound is within one run's spread.
+  - *Review (2026-10-31):* approved with required changes, all made. The first stem rule let guitar-bleed stems in
+    (it was the loosest, not the strictest); fixed to the heard list. Also adopted: windows from −33 LUFS (the
+    training backings' range), at least 2 non-vocal stems, a pool hash in every variant, a draw test.
 - **5B, real recordings (blocker 2), designed next and reviewed on its own.** Pseudo-labels for the ladder's
   training sections from arm A's true-DI search against each DI's own recorded amp track. The clean-input model is
   then trained on the real amp tracks with those labels, and P4 is re-read on V-real.

@@ -2135,7 +2135,9 @@ class BackingData(RungData):
 WIDE_K = 24
 WIDE_SEED = 20261037
 WIDE_WINDOWS = 20                   # at most this many active windows per extra session
-WIDE_ACTIVE_LUFS = -40.0            # a window's bare backing (no vocals) must be at least this loud
+WIDE_ACTIVE_LUFS = -33.0            # a window's bare backing (no vocals) must be at least this loud (the training
+                                    # sections' bare backings span -32.8 to -12.7: the review, 2026-10-31)
+WIDE_MIN_STEMS = 2                  # a session gives backings only with at least this many non-vocal stems
 WIDE_EXCLUDE_BANDS = frozenset(b for b, _ in PR.VREAL.values())
 
 
@@ -2163,9 +2165,11 @@ def wide_pool_path():
 def cmd_wide_pool(args):
     """Phase 5A's backing pool (zero renders): the ladder's training sections' bare backings, plus up to WIDE_WINDOWS
     active 10-s windows (bare backing at least WIDE_ACTIVE_LUFS) from every other session whose stems were heard clean,
-    outside V-real's bands and the two NS songs. Each session's stems are those that pass the per-example leak rule
-    with no guitar source replaced (`trusted_data.stems_for`), so no stem carries guitar bleed. Every entry's bare
-    loudness is measured for both vocal variants. -> inputs/backings-wide-pool.json."""
+    outside V-real's bands and the two NS songs, with at least WIDE_MIN_STEMS non-vocal stems. An extra session's stems
+    are its heard-clean session-wide list (`trusted_data.stems_for` without takes: the stems the spot-check covered,
+    the strictest rule). The training sections keep P2b's own stems, as P2b-bk8 does, which may carry that song's
+    other guitars. Every entry's bare loudness is measured for both vocal variants. A pool is never overwritten once
+    variants are built from it. -> inputs/backings-wide-pool.json."""
     import numpy as np
     import soundfile as sf
 
@@ -2174,6 +2178,8 @@ def cmd_wide_pool(args):
     from learn import trusted_data as T
 
     e = require("phase_5a")
+    if wide_pool_path().exists() and any((DATA / "inputs").glob("*-mixbw-k*.npz")):
+        raise SystemExit("variants are built from the stored pool: move them aside before rebuilding it")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     a = argparse.Namespace(out=None, smoke=False)
     plan = CB.load_plan(a)
@@ -2213,9 +2219,9 @@ def cmd_wide_pool(args):
         if not st:
             skipped[name] = "no stem scan"
             continue
-        withv, nov = T.stems_for(rec, verified, sd, st, set(), floor)
-        if not nov:
-            skipped[name] = "no stem passes the leak rule with no guitar replaced"
+        withv, nov = T.stems_for(rec, verified, sd)
+        if len(nov) < WIDE_MIN_STEMS:
+            skipped[name] = f"{len(nov)} heard-clean non-vocal stems (fewer than {WIDE_MIN_STEMS})"
             continue
         dur = min(sf.info(str(pathlib.Path(sd) / t)).duration for t in nov)
         starts = [5.0 + 10.0 * k for k in range(int((dur - 16.0) // 10.0) + 1)]
@@ -2237,7 +2243,7 @@ def cmd_wide_pool(args):
                             "lufs": {"False": ln, "True": lv}})
         print(f"{name}: {len(pick)} windows ({len(active)} active); {len(nov)} stems, vocals "
               f"{len(withv) - len(nov)}", flush=True)
-    save(wide_pool_path(), {"rule": cmd_wide_pool.__doc__, "entries": entries, "skipped": skipped,
+    save(wide_pool_path(), {"rule": cmd_wide_pool.__doc__, "entries": entries, "sha256": pool_sha(entries), "skipped": skipped,
                             "sessions": sorted({e_["session"] for e_ in entries}),
                             "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"WIDE POOL DONE: {len(entries)} entries from {len({e_['session'] for e_ in entries})} sessions; "
@@ -2259,6 +2265,12 @@ def wide_draws(train_ids, kept, entries, k=WIDE_K, seed=WIDE_SEED):
         sess = sorted(x for x in by_s if x != own and x != session_of(kept[i]["section"]))
         out[i] = [(rng.choice(by_s[rng.choice(sess)]), rng.random() < 0.5) for _ in range(k)]
     return out
+
+
+def pool_sha(entries):
+    import hashlib
+
+    return hashlib.sha256(json.dumps(entries, sort_keys=True).encode()).hexdigest()
 
 
 def wide_path(i, k, root=DATA):
@@ -2285,6 +2297,7 @@ def cmd_build_wide(args):
     stems = T.Stems(ctx)
     built = T.rows_of(croot, CB.STAGE, "build")
     pool = json.loads(wide_pool_path().read_text())["entries"]
+    psha = pool_sha(pool)
     own_lv = json.loads((out_dir() / "inputs" / "backings-levels.json").read_text())["levels"]
     draws = wide_draws(sp["train"], kept, pool)
     jobs = {}
@@ -2305,6 +2318,8 @@ def cmd_build_wide(args):
         for i, k, voc in jobs[j]:
             p = wide_path(i, k)
             if p.exists():
+                if str(np.load(p)["pool_sha256"]) != psha:
+                    raise SystemExit(f"{p}: built from another pool")
                 continue
             x, rw, bw = kept[i], rend[i], built[i]
             own_voc = bool(x["draw"]["vocals_drawn"] and x["stems"]["v"] != x["stems"]["n"])
@@ -2318,7 +2333,7 @@ def cmd_build_wide(args):
                 mix = SA.compress(mix, mrng)
             f, lu, _ = DS.half_features(mix)
             DS._save_npz(p, sA=f["A"], sB=f["B"], lufs=[lu["A"], lu["B"]], backing=ent["id"], vocals=bool(voc),
-                         gains=[gb, ga])
+                         gains=[gb, ga], pool_sha256=psha)
             done += 1
         if m % 20 == 0:
             print(f"pool entry {m + 1}/{len(mine)}: {done} built; {(time.time() - t0) / max(1, done):.2f} s each",
@@ -2337,6 +2352,7 @@ class WideData(RungData):
         missing = [i for i in train_ids if not all(wide_path(i, k).exists() for k in range(WIDE_K))]
         if missing:
             raise SystemExit(f"phase 5A's build is incomplete: {len(missing)} training examples lack variants")
+        psha = pool_sha(json.loads(wide_pool_path().read_text())["entries"])
         self.V = {}
         for j, r in enumerate(rows):
             if r["i"] in train_ids:
@@ -2344,6 +2360,8 @@ class WideData(RungData):
                 lu = np.zeros((WIDE_K, 2), np.float32)
                 for k in range(WIDE_K):
                     d = np.load(wide_path(r["i"], k))
+                    if str(d["pool_sha256"]) != psha:
+                        raise SystemExit(f"{wide_path(r['i'], k)}: built from another pool")
                     arr[k, 0], arr[k, 1], lu[k] = d["sA"], d["sB"], d["lufs"]
                 self.V[j] = (arr, lu)
         self.counts = {"with_variants": len(self.V), "variants": WIDE_K}
@@ -2368,6 +2386,263 @@ class WideData(RungData):
         finally:
             for j, (x, lu) in saved.items():
                 self.X[j], self.L[j] = x, lu
+
+
+# --- phase 5B.1: the clean-input model on the pool's own real amp tracks (a well-powered transfer read) -----------------
+
+REAL_DIR = "real"
+REAL_TRAIN_N = 36
+REAL_SEED = 20261038
+AMPS3 = ("pr12", "sw50r", "ac20")
+
+
+def real_amp_track(sd, own, start_s):
+    """A section of a DI's own recorded amp track(s): the unity sum of its own tracks folded to mono as centred
+    sources, trimmed as the sections are (`bare_backing`'s rule)."""
+    return bare_backing(sd, own, start_s)
+
+
+def real_parts(kept, sp, inv):
+    """5B.1's sections: every NS section (new performances), and REAL_TRAIN_N training sections spread over the
+    training DIs (seen performances, real rig), each with its DI's own amp tracks. -> [{...}]."""
+    secs = {}
+    for i in sp["ns"] + sp["train"]:
+        x = kept[i]
+        secs.setdefault(x["section"], x)
+    ns = sorted({kept[i]["section"] for i in sp["ns"]})
+    tr_secs = sorted({kept[i]["section"] for i in sp["train"]})
+    by_di = {}
+    for sec in tr_secs:
+        by_di.setdefault(secs[sec]["di"], []).append(sec)
+    order = draw_order(tr_secs, {sec: secs[sec]["di"] for sec in tr_secs}, n=REAL_TRAIN_N, seed=REAL_SEED)
+    out = []
+    for sec, kind in [(x, "ns") for x in ns] + [(x, "train") for x in order]:
+        x = secs[sec]
+        own = inv[x["di"]].get("own") or []
+        if not own:
+            continue
+        out.append({"section": sec, "set": kind, "di": x["di"], "band": x["band"], "cls": x["cls"],
+                    "sd": x["session_dir"], "start_s": float(sec.split("@")[1]), "own": own,
+                    "di_path": inv[x["di"]]["path"]})
+    return out
+
+
+def cmd_real_predict(args):
+    """5B.1's answers (zero renders): P2a (both seeds, NS-best, pooled) reads each section's own amp track, brought to
+    the median half loudness of its training inputs, on each search half, told the section's class and each forced
+    amp; the plain readout on the class's S; and the constant of P2a's training labels. -> real/answers/<tag>.json,
+    keyed '<section>|<amp>' -> {half or ANY_HALF: {select, settings}}."""
+    from learn import arm_a_mega53 as A
+    from learn import cc_build as CB
+    from learn import direct_existing as DE
+    from learn import direct_stems as DS
+    from learn import full_space as F
+    from learn import local_objective as LO
+    from learn import trusted_data_t3 as T3
+
+    e = require("phase_5b1")
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    inv = CB.cc_inventory()
+    parts = real_parts(kept, sp, inv)
+    nets, recs = [], []
+    for sd in SEEDS:
+        n, r_ = load_run("P2a", sd, "best")
+        nets.append(n)
+        recs.append(r_)
+    target = p2a_median_lufs(recs[0]["train_ids"])
+    const = constant_of(rung_rows(kept, rend, recs[0]["train_ids"]))
+    ms = A.L.menu_S()
+    out = {"P2a": {}, "constant": {}, "S": {}}
+    for prt in parts:
+        ref = real_amp_track(prt["sd"], prt["own"], prt["start_s"])
+        g = DE.inference_gain_db(ref, target)
+        for amp in AMPS3:
+            sel, S = ms[amp][prt["cls"]]
+            key = f"{prt['section']}|{amp}"
+            for search in ("A", "B"):
+                s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
+                x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
+                r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
+                out["P2a"].setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(
+                    F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"]))}
+            out["constant"][key] = {ANY_HALF: {"select": sel, "settings": LO.sdict(
+                T3.constant_full(amp, S, const[(amp, prt["cls"])]))}}
+            out["S"][key] = {ANY_HALF: {"select": sel, "settings": LO.sdict(S)}}
+    for t, a in out.items():
+        save(out_dir() / REAL_DIR / "answers" / f"{t}.json", {
+            "plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b1", "tag": t, "parts": parts, "input_lufs": target,
+            "models": [r_["model_sha256"]["best"] for r_ in recs], "answers": a,
+            "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"REAL PREDICT DONE: {len(parts)} sections ({sum(p_['set'] == 'ns' for p_ in parts)} NS); inputs at "
+          f"{target:.2f} LUFS")
+
+
+def real_bleed(parts):
+    """Each 5B.1 section's own-amp-track bleed verdict (`trusted_data.amp_status`, A6's line): 'pass' when every own
+    track passes, 'fail' when any fails or is unmeasurable, 'not measured' when a reading is missing."""
+    from learn import cc_build as CB
+    from learn import trusted_data as T
+
+    croot = CB.V.out_root(argparse.Namespace(out=None, smoke=False))
+    out, cache = {}, {}
+    for prt in parts:
+        sd = prt["sd"]
+        if sd not in cache:
+            bp = T.amp_bleed_path(croot, sd)
+            cache[sd] = (json.loads(bp.read_text()).get("tracks") or {}) if bp.exists() else {}
+        st = [T.amp_status(cache[sd].get(t)) for t in prt["own"]]
+        out[prt["section"]] = ("not measured" if "not measured" in st else
+                               "pass" if all(z == "pass" for z in st) else "fail")
+    return out
+
+
+def cmd_real_render(args):
+    """5B.1's renders for one shard of sections: S on each amp first (each in its own primed process; the stored S
+    must equal the live menu's), the judge lag estimated once per section from those three renders pooled
+    (`analysis.aligned.estimate_lag`: samples the recording lags the render, the judge's own convention), then every
+    answer of `--names` through the section's measure DI in its own primed process, rendered over the whole section
+    and trimmed as the by-sound read trims, judged against the section's own amp track on both halves. Sections whose
+    own amp tracks fail the bleed check, or have no reading, are not rendered (trusted data only).
+    -> real/judge/<tag>/<section>|<amp>.json."""
+    import numpy as np
+
+    from analysis.aligned import estimate_lag
+    from learn import arm_a_mega53 as A
+    from learn import audibility_measure as AM
+    from learn import cc_build as CB
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+    from learn import pretrain_set as PS
+    from learn import song_bank as B
+    from learn import trusted_data as T
+
+    require("phase_5b1")
+    tags = ["S"] + [t for t in args.names.split(",") if t and t != "S"]
+    ans = {t: json.loads((out_dir() / REAL_DIR / "answers" / f"{t}.json").read_text()) for t in tags}
+    parts = ans["S"]["parts"]
+    bleed = real_bleed(parts)
+    k, n = args.shard
+    mine = [p_ for j, p_ in enumerate(parts) if j % n == k and bleed[p_["section"]] == "pass"]
+    lag_dir = out_dir() / REAL_DIR / "lags"
+    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
+    LO._wait_cap()
+    rr = CB.new_renderer()
+    try:
+        menu = rr.menu()
+    finally:
+        rr.close()
+    for amp, by_cls in A.L.menu_S().items():          # the stored S must equal the live one (cc_readout's check)
+        for cls, (_, S) in by_cls.items():
+            if K.key(dict(menu[amp][K.START[cls][amp]][1])) != K.key(S):
+                raise SystemExit(f"{amp} {cls}: the live S differs from the stored copy")
+    renders = 0
+
+    def render(di32, a):
+        st = LO.tdict(a["settings"])
+        y = AM.fresh_render(CB.new_renderer, di32, a["select"], st, st)
+        return np.asarray(y, np.float64)[trim[0]:trim[1]]
+
+    for prt in mine:
+        if PS.free_gb() < T.DISK_GUARD_GB:
+            raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+        sec = prt["section"]
+        di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
+        di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
+        ref = real_amp_track(prt["sd"], prt["own"], prt["start_s"])
+        lp = lag_dir / f"{sec.replace('/', '__')}.json"
+        s_y = {}
+        if not lp.exists():
+            for amp in AMPS3:
+                s_y[amp] = render(di32, ans["S"]["answers"][f"{sec}|{amp}"][ANY_HALF])
+                renders += 2
+            try:
+                save(lp, {"section": sec, "lag": int(estimate_lag(ref, list(s_y.values()))), "status": "ok"})
+            except ValueError as err:
+                save(lp, {"section": sec, "lag": None, "status": f"no lag: {err}"})
+        lag = json.loads(lp.read_text())["lag"]
+        if lag is None:
+            print(f"{sec[-50:]}: no lag; not read", flush=True)
+            continue
+        for t in tags:
+            asha = answers_sha(ans[t]["answers"])
+            for amp in AMPS3:
+                key = f"{sec}|{amp}"
+                gp = out_dir() / REAL_DIR / "judge" / t / f"{key.replace('/', '__')}.json"
+                if gp.exists():
+                    if json.loads(gp.read_text()).get("answers_sha256") != asha:
+                        raise SystemExit(f"{gp}: rendered from other answers")
+                    continue
+                rec = {"section": sec, "amp": amp, "tag": t, "lag": lag, "answers_sha256": asha, "judge": {},
+                       "render_sha256": {}}
+                for search, a in sorted(ans[t]["answers"][key].items()):
+                    if t == "S" and amp in s_y:
+                        y = s_y[amp]
+                    else:
+                        y = render(di32, a)
+                        renders += 2
+                    rec["judge"][search] = K.judge(ref, y, di, lag)
+                    rec["render_sha256"][search] = AM.audio_sha(y)
+                save(gp, rec)
+        print(f"{sec[-50:]}: lag {lag}; renders so far {renders}", flush=True)
+    print(f"REAL-RENDER DONE {k}/{n}: {renders} renders")
+
+
+def cmd_real_report(args):
+    """5B.1's rows: for each pair in `--pairs`, ln(d_a / d_b) on the held half per (section, amp, search), with S
+    refused dropping the direction and a refused answer scored as S (the V-real rule); NS sections clustered by section
+    (2 songs), training sections by band; part-weighted beside. Only sections whose own amp tracks pass the bleed
+    check are read (`real_bleed`); the count excluded is reported."""
+    require("phase_5b1")
+    tags = {t for pair in args.pairs.split(",") for t in pair.split(":")} | {"S"}
+    parts = json.loads((out_dir() / REAL_DIR / "answers" / "S.json").read_text())["parts"]
+    judge = {}
+    for t in tags:
+        judge[t] = {}
+        for p_ in (out_dir() / REAL_DIR / "judge" / t).glob("*.json"):
+            r = json.loads(p_.read_text())
+            judge[t][f"{r['section']}|{r['amp']}"] = r["judge"]
+    bleed = real_bleed(parts)
+    parts = [p_ for p_ in parts if bleed[p_["section"]] == "pass"]
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b1", "bleed": bleed, "rows": {},
+           "excluded": sorted(s_ for s_, v in bleed.items() if v != "pass")}
+    for pair in args.pairs.split(","):
+        a, b = pair.split(":")
+        for kind in ("ns", "train"):
+            units = [(prt["section"], amp, sh, h) for prt in parts if prt["set"] == kind
+                     for amp in AMPS3 for sh, h in (("A", "B"), ("B", "A"))]
+            meta = {prt["section"]: prt for prt in parts}
+            rows, cnt = [], {"directions": len(units), "base_dropped": 0, "missing": 0, "refused_scored_as_S": 0}
+            for u in units:
+                s_ = vreal_value(judge, "S", u)
+                if not isinstance(s_, float):
+                    cnt["base_dropped"] += 1
+                    continue
+                vals = []
+                for t in (a, b):
+                    v = vreal_value(judge, t, u)
+                    if v is None:
+                        cnt["missing"] += 1
+                        break
+                    if v == "refused":
+                        cnt["refused_scored_as_S"] += 1
+                        v = s_
+                    vals.append(v)
+                if len(vals) == 2:
+                    m = meta[u[0]]
+                    rows.append((u[0] if kind == "ns" else m["band"], u[0], math.log(vals[0] / vals[1])))
+            c = clustered(rows)
+            out["rows"].setdefault(f"{a} - {b}", {})[kind] = {**{q: c.get(q) for q in (
+                "mean", "lo90", "hi90", "clusters", "clusters_negative", "part_weighted", "parts", "parts_negative")},
+                **cnt}
+            r_ = out["rows"][f"{a} - {b}"][kind]
+            if r_["mean"] is not None:
+                iv = "" if r_["lo90"] is None else f" [{r_['lo90']:+.4f}, {r_['hi90']:+.4f}]"
+                print(f"{a} - {b} {kind}: {r_['mean']:+.4f}{iv} ({r_['clusters']} clusters, {r_['clusters_negative']} "
+                      f"better; {r_['parts_negative']} of {r_['parts']} sections better); missing {cnt['missing']}, "
+                      f"S dropped {cnt['base_dropped']}, refused {cnt['refused_scored_as_S']}")
+    out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    save(out_dir() / REAL_DIR / f"report-{args.label or 'real'}.json", out)
+    print("REAL-REPORT DONE")
 
 
 # --- stored derived reads (the audit: every quoted number reproducible) ---------------------------------------------
@@ -2873,7 +3148,8 @@ COMMANDS = {"p5": cmd_p5, "dirty-doubles": cmd_dirty_doubles, "p6": cmd_p6,
             "answers": cmd_answers, "sound-render": cmd_sound_render, "sound-report": cmd_sound_report,
             "build-backings": cmd_build_backings, "p4-predict": cmd_p4_predict, "share": cmd_share,
             "prior-edges": cmd_prior_edges, "kfold-report": cmd_kfold_report, "wide-pool": cmd_wide_pool,
-            "build-wide": cmd_build_wide, "vreal-comparators": cmd_vreal_comparators,
+            "build-wide": cmd_build_wide, "real-predict": cmd_real_predict, "real-render": cmd_real_render,
+            "real-report": cmd_real_report, "vreal-comparators": cmd_vreal_comparators,
             "vreal-render": cmd_vreal_render, "vreal-report": cmd_vreal_report}
 
 

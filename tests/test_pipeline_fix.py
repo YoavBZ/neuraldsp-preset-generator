@@ -256,6 +256,21 @@ def test_backing_draws_never_use_the_examples_own_song():
     assert {sec for sec, _ in only[1]} == {"s/C_Full/a.wav@0.0"}
 
 
+def test_wide_draws_never_use_the_examples_own_song():
+    kept = {1: {"section": "s/A_Full/a.wav@0.0"}, 2: {"section": "s/B_Full/x/a.wav@5.0"}}
+    entries = [{"session": "s/A_Full"}, {"session": "s/B_Full/x"}, {"session": "A_Full"}, {"session": "C_Full"},
+               {"session": "D_Full"}]
+    d = P.wide_draws([1, 2], kept, entries, k=30, seed=7)
+    for i, draws in d.items():
+        assert len(draws) == 30
+        own = P.session_of(kept[i]["section"])
+        for j, _ in draws:
+            assert entries[j]["session"] not in (own, own.split("/")[-1])
+    assert {entries[j]["session"] for j, _ in d[1]} <= {"s/B_Full/x", "C_Full", "D_Full"}
+    assert "s/B_Full/x" not in {entries[j]["session"] for j, _ in d[2]}
+    assert d == P.wide_draws([1, 2], kept, entries, k=30, seed=7)
+
+
 def test_shifted_amp_cycles_through_the_other_amps():
     from learn import full_space as F
 
