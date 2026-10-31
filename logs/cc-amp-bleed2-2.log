@@ -1,0 +1,40 @@
+amp-bleed: 60 amp tracks in 12 sessions; shard 2/3
+  BKS_Bulldozer_Full 16_SynthGtr.wav: pass
+  BKS_Bulldozer_Full 20_ElecGtr1bGR4.wav: fail
+  BKS_Bulldozer_Full 21_ElecGtr1cReamp.wav: fail
+  RonnieJones_WhyDontYouStay_Full: source 1/20 01_Drums Kick.wav (27 s)
+  RonnieJones_WhyDontYouStay_Full: source 2/20 02_Drums Snare.wav (55 s)
+  RonnieJones_WhyDontYouStay_Full: source 3/20 03_Overheads.wav (87 s)
+  RonnieJones_WhyDontYouStay_Full: source 4/20 04_Tambourine.wav (117 s)
+  RonnieJones_WhyDontYouStay_Full: source 5/20 05_BassDI.wav (145 s)
+  RonnieJones_WhyDontYouStay_Full: source 6/20 06_BassAmp.wav (178 s)
+  RonnieJones_WhyDontYouStay_Full: source 7/20 32_Hammond.wav (214 s)
+  RonnieJones_WhyDontYouStay_Full: source 8/20 33_HammondRaw.wav (250 s)
+  RonnieJones_WhyDontYouStay_Full: source 9/20 34_Rhodes.wav (285 s)
+  RonnieJones_WhyDontYouStay_Full: source 10/20 35_RhodesDry.wav (316 s)
+  RonnieJones_WhyDontYouStay_Full: source 11/20 36_RhodesRaw.wav (343 s)
+  RonnieJones_WhyDontYouStay_Full: source 12/20 37_LeadVoxTapeEffect.wav (371 s)
+  RonnieJones_WhyDontYouStay_Full: source 13/20 38_LeadVoxRaw.wav (398 s)
+  RonnieJones_WhyDontYouStay_Full: source 14/20 39_LeadVoxDT1.wav (425 s)
+  RonnieJones_WhyDontYouStay_Full: source 15/20 40_LeadVoxDT2.wav (453 s)
+  RonnieJones_WhyDontYouStay_Full: source 16/20 41_BackingVox01.wav (480 s)
+  RonnieJones_WhyDontYouStay_Full: source 17/20 42_BackingVox01DT1.wav (504 s)
+  RonnieJones_WhyDontYouStay_Full: source 18/20 43_BackingVox01DT2.wav (531 s)
+  RonnieJones_WhyDontYouStay_Full: source 19/20 44_BackingVox01DT3.wav (558 s)
+  RonnieJones_WhyDontYouStay_Full: source 20/20 45_BackingVox02.wav (586 s)
+  RonnieJones_WhyDontYouStay_Full 07_AcousticGtr.wav: fail
+  RonnieJones_WhyDontYouStay_Full 08_AcousticGtrDT.wav: fail
+  RonnieJones_WhyDontYouStay_Full 09_ElecGtr01.wav: fail
+  RonnieJones_WhyDontYouStay_Full 11_ElecGtr02.wav: fail
+  RonnieJones_WhyDontYouStay_Full 13_ElecGtr03.wav: fail
+  RonnieJones_WhyDontYouStay_Full 14_ElecGtr03Dry.wav: fail
+  RonnieJones_WhyDontYouStay_Full 16_ElecGtr04.wav: fail
+  RonnieJones_WhyDontYouStay_Full 18_ElecGtr05.wav: fail
+  RonnieJones_WhyDontYouStay_Full 22_ElecGtr07.wav: pass
+  RonnieJones_WhyDontYouStay_Full 23_ElecGtr07Dry.wav: pass
+  RonnieJones_WhyDontYouStay_Full 25_ElecGtr08.wav: pass
+  RonnieJones_WhyDontYouStay_Full 26_ElecGtr08Dry.wav: pass
+  RonnieJones_WhyDontYouStay_Full 28_ElecGtr09.wav: fail
+  AleLak_NossoMundoDeixouDeExistir_Full 14_ElecGtr02DT.wav: fail
+  TheTravellingBand_Quicksand_Full 20_ElecGtr3Close.wav: fail
+AMP-BLEED DONE 2/3

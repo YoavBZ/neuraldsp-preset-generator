@@ -1,0 +1,10 @@
+cleaning scan 1/3: 4 DIs, 12 sections (of 80 without a row)
+  set3/DunningKruger_EnDance_Full/12_Gtr4aDI.wav: 20 tracks, source 13_Gtr4bAmp.wav; session takes >= -40 dB: {'20_LeadVox.wav': -27.6, '22_BackingVox1.wav': -30.2}
+  1/4 DIs (153 s)
+  set5/Hazael_AMiLado_Full/18_ElecGtr2DI.wav: 30 tracks, source 17_ElecGtr2.wav; session takes >= -40 dB: {'07_Congas.wav': -26.7, '13_Llamador.wav': -35.0}
+  2/4 DIs (373 s)
+  turnSyndicate_NeverLeaveTheNightAlone_Full/28_ElecGtr3DI.wav: 37 tracks, source 27_ElecGtr3.wav; session takes >= -40 dB: {'17_BassSynth1.wav': -35.4, '21_ElecGtr1.wav': -32.1, '23_ElecGtr1DT.wav': -30.3, '25_ElecGtr2.wav': -34.6, '33_ElecPiano1.wav': -23.9, '36_Synth1.wav': -28.1, '43_BackingVox.wav': -27.6, '44_BackingVoxDT.wav': -24.8}
+  3/4 DIs (614 s)
+  sets-1-2/TimTaler_Stalker_Full/31_ElecGtr04a_DI.wav: 39 tracks, source 32_ElecGtr04b_Fuzz.wav; session takes >= -40 dB: {'39_SampleBrass03.wav': -32.5}
+  4/4 DIs (776 s)
+CLEANING SCAN DONE 1/3

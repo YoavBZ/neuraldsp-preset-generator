@@ -1,0 +1,20 @@
+D_CC seed 20261043: 2699 train, 334 early stopping (FS_CC); mps
+/Users/yoavbz/projects/neuraldsp-preset-generator/learn/direct_stems.py:2542: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+  tl.append(float(loss))
+{'epoch': 0, 'train': 5.8264619028845495, 'early_stop': 5.744941155115764, 'seconds': 16.1, 'samples_per_s': 167.3, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 2.42}
+{'epoch': 1, 'train': 5.49609545774238, 'early_stop': 5.656915585199992, 'seconds': 15.5, 'samples_per_s': 174.2, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 2, 'train': 5.481099738631138, 'early_stop': 5.61398188273112, 'seconds': 15.5, 'samples_per_s': 174.1, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 3, 'train': 5.4568638690682345, 'early_stop': 5.590352773666382, 'seconds': 15.5, 'samples_per_s': 174.4, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 4, 'train': 5.438641182211942, 'early_stop': 5.542986790339152, 'seconds': 15.5, 'samples_per_s': 174.1, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 5, 'train': 5.4142620286276175, 'early_stop': 5.541327873865764, 'seconds': 15.5, 'samples_per_s': 174.0, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 6, 'train': 5.397091787914897, 'early_stop': 5.578667402267456, 'seconds': 15.5, 'samples_per_s': 173.8, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 7, 'train': 5.347197432850683, 'early_stop': 5.570362647374471, 'seconds': 15.5, 'samples_per_s': 173.7, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 8, 'train': 5.328854571941287, 'early_stop': 5.500906149546306, 'seconds': 15.6, 'samples_per_s': 173.3, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 9, 'train': 5.336924286775811, 'early_stop': 5.438890139261882, 'seconds': 15.5, 'samples_per_s': 174.3, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 10, 'train': 5.2766028115915695, 'early_stop': 5.483661651611328, 'seconds': 15.5, 'samples_per_s': 174.2, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 11, 'train': 5.300603644792424, 'early_stop': 5.514959255854289, 'seconds': 15.5, 'samples_per_s': 174.2, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 12, 'train': 5.276404513869175, 'early_stop': 5.4447712898254395, 'seconds': 15.5, 'samples_per_s': 174.2, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 13, 'train': 5.250616694605628, 'early_stop': 5.466084400812785, 'seconds': 15.5, 'samples_per_s': 174.1, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+TRAIN DONE D_CC 20261043: best epoch 9 of 14
+CC-TRAIN-CHAIN-DONE

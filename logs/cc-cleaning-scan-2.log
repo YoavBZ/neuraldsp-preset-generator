@@ -1,0 +1,18 @@
+cleaning scan 2/3: 8 DIs, 37 sections (of 163 without a row)
+  dge/AleLak_NossoMundoDeixouDeExistir_Full/20_ElecGtr04DI.wav: 16 tracks, source 19_ElecGtr04.wav; session takes >= -40 dB: {'08_ElecGtr01.wav': -29.5, '10_ElecGtr01DT.wav': -28.7, '12_ElecGtr02.wav': -32.6, '14_ElecGtr02DT.wav': -35.4, '26_BackingVox.wav': -35.6}
+  1/8 DIs (58 s)
+  cambridge/TheTravellingBand_Quicksand_Full/19_ElecGtr2DI.wav: 28 tracks, source 18_ElecGtr2Far.wav; session takes >= -40 dB: {'11_Room.wav': -29.0, '24_HammondLeslieHi.wav': -33.1}
+  2/8 DIs (181 s)
+  set5/BKS_Bulldozer_Full/28_ElecGtr4aDI.wav: 41 tracks, source 29_ElecGtr4bGR4.wav; session takes >= -40 dB: {}
+  3/8 DIs (547 s)
+  set5/BKS_TooMuch_Full/16_ElecGtr1aDI.wav: 42 tracks, source 18_ElecGtr1cReamp1.wav; session takes >= -40 dB: {'25_ElecGtr3bPod.wav': -37.9, '27_ElecGtr3dReamp2.wav': -36.4, '30_ElecGtr4cReamp1.wav': -19.6, '31_ElecGtr4dReamp2.wav': -8.3}
+  4/8 DIs (870 s)
+  turnSyndicate_NeverLeaveTheNightAlone_Full/32_ElecGtr4DI.wav: 37 tracks, source 31_ElecGtr4.wav; session takes >= -40 dB: {'07_Snare3.wav': -39.9, '17_BassSynth1.wav': -23.6, '27_ElecGtr3.wav': -17.4, '29_ElecGtr3DT.wav': -26.3, '33_ElecPiano1.wav': -20.1, '38_Synth3.wav': -27.0, '39_Synth4.wav': -35.4, '43_BackingVox.wav': -21.1, '44_BackingVoxDT.wav': -20.5}
+  5/8 DIs (1084 s)
+  sets-1-2/Forkupines_SugarFaith_Full/28_ElecGtr3DI.wav: 35 tracks, source 27_ElecGtr3.wav; session takes >= -40 dB: {}
+  6/8 DIs (1583 s)
+  sets-1-2/Forkupines_SugarFaith_Full/34_ElecGtr6DI.wav: 35 tracks, source 33_ElecGtr6.wav; session takes >= -40 dB: {}
+  7/8 DIs (2032 s)
+  ets-1-2/TheMaybeNextYears_OneFlipFlop_Full/29_ElecGtr3DI.wav: 30 tracks, source 28_ElecGtr3Mic2.wav; session takes >= -40 dB: {'32_LeadVox1.wav': -28.8, '35_BackingVox2.wav': -18.9, '36_BackingVox2DT.wav': -23.3, '37_BackingVox3.wav': -26.3, '38_BackingVox3DT.wav': -25.2, '39_BackingVox4.wav': -27.4, '40_BackingVox4DT.wav': -25.9}
+  8/8 DIs (2133 s)
+CLEANING SCAN DONE 2/3

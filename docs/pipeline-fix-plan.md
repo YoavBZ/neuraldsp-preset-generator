@@ -313,6 +313,16 @@ instead of generating unrealistic presets our own?"):
   - "Song tone" presets (a person's attempt at a record) could serve as a yardstick, not as ground truth.
 - **When:** with the next data build, after the two blocker tests.
 
+*2026-10-31, after the user's "Continue":* the two blocker tests run, each declared and reviewed first.
+- **5A, backing variety at scale (blocker 1; ledger `phase_5a`; zero renders).**
+  - P2b retrained with 24 backings per training target, drawn session-first from the training songs' sections and
+    from up to 20 active windows of each of the 14 other sessions whose stems were heard clean. Only stems free of
+    guitar bleed are used; V-real's bands and the NS songs are kept out.
+  - Built exactly as P2b-bk8's variants, and read on P2b's own fixed inputs against P2b-bk8 and P2b.
+- **5B, real recordings (blocker 2), designed next and reviewed on its own.** Pseudo-labels for the ladder's
+  training sections from arm A's true-DI search against each DI's own recorded amp track. The clean-input model is
+  then trained on the real amp tracks with those labels, and P4 is re-read on V-real.
+
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
   measurements; if they shape the choice, D_fix's V-real read is labelled selection-contaminated. The candidates by

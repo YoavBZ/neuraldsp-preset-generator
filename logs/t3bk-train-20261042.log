@@ -1,0 +1,32 @@
+T3's frozen plan: V-real-11 frozen 2026-10-26 10:35:58; T0's lists fac903559adb then, 6ac6a335d1ad now; 3467 F5 + 722 FS5 examples checked
+  today's lists would add cambridge-Signs-ElecGtr6: kept out (V-real is frozen)
+T3 D_F5bk seed 20261042: 3467 train, 722 early stopping (FS5), 2479 with a new backing; mps
+/Users/yoavbz/projects/neuraldsp-preset-generator/learn/direct_stems.py:2542: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+  tl.append(float(loss))
+{'epoch': 0, 'train': 5.8307732408696955, 'early_stop': 5.50705103079478, 'seconds': 21.1, 'samples_per_s': 164.2, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 2.42}
+{'epoch': 1, 'train': 5.562001323699951, 'early_stop': 5.447223782539368, 'seconds': 20.2, 'samples_per_s': 171.6, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 2, 'train': 5.521191293543035, 'early_stop': 5.4452490011851, 'seconds': 20.1, 'samples_per_s': 172.1, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 3, 'train': 5.506613618677313, 'early_stop': 5.424564917882283, 'seconds': 20.2, 'samples_per_s': 171.8, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 4, 'train': 5.490358526056463, 'early_stop': 5.41221809387207, 'seconds': 20.2, 'samples_per_s': 171.9, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 5, 'train': 5.44618705402721, 'early_stop': 5.362298091252645, 'seconds': 20.1, 'samples_per_s': 172.1, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 6, 'train': 5.4244879549199885, 'early_stop': 5.366439302762349, 'seconds': 20.2, 'samples_per_s': 172.0, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 7, 'train': 5.390079082142223, 'early_stop': 5.316378911336263, 'seconds': 20.2, 'samples_per_s': 172.0, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 8, 'train': 5.36455000964078, 'early_stop': 5.292753497759501, 'seconds': 20.2, 'samples_per_s': 171.7, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 9, 'train': 5.333681141246449, 'early_stop': 5.323486804962158, 'seconds': 20.2, 'samples_per_s': 171.5, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 10, 'train': 5.329013824462891, 'early_stop': 5.276937325795491, 'seconds': 20.2, 'samples_per_s': 171.7, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 11, 'train': 5.314042100039395, 'early_stop': 5.26681645711263, 'seconds': 20.1, 'samples_per_s': 172.1, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 12, 'train': 5.302872839840975, 'early_stop': 5.2538061539332075, 'seconds': 20.2, 'samples_per_s': 171.8, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 13, 'train': 5.277566354924982, 'early_stop': 5.248743732770284, 'seconds': 20.2, 'samples_per_s': 171.7, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 14, 'train': 5.276418755271218, 'early_stop': 5.251184781392415, 'seconds': 20.2, 'samples_per_s': 171.9, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 15, 'train': 5.240848940069025, 'early_stop': 5.216426849365234, 'seconds': 20.2, 'samples_per_s': 172.0, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 16, 'train': 5.229307521473277, 'early_stop': 5.243797500928243, 'seconds': 20.1, 'samples_per_s': 172.2, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 17, 'train': 5.214625419269908, 'early_stop': 5.205635070800781, 'seconds': 20.2, 'samples_per_s': 171.9, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 18, 'train': 5.199277999184348, 'early_stop': 5.2272102038065595, 'seconds': 20.1, 'samples_per_s': 172.1, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 19, 'train': 5.1857686042785645, 'early_stop': 5.193605860074361, 'seconds': 20.1, 'samples_per_s': 172.1, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 20, 'train': 5.1626865473660555, 'early_stop': 5.164281566937764, 'seconds': 20.2, 'samples_per_s': 172.0, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 21, 'train': 5.170751285552979, 'early_stop': 5.195711016654968, 'seconds': 20.1, 'samples_per_s': 172.1, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 22, 'train': 5.136973086270419, 'early_stop': 5.236523270606995, 'seconds': 20.1, 'samples_per_s': 172.2, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 23, 'train': 5.131776055422696, 'early_stop': 5.193000594774882, 'seconds': 20.1, 'samples_per_s': 172.3, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 24, 'train': 5.108720198544589, 'early_stop': 5.178107102711995, 'seconds': 20.2, 'samples_per_s': 172.0, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+TRAIN DONE D_F5bk 20261042: best epoch 20 of 25

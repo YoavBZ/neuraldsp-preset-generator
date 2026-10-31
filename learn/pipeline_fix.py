@@ -998,7 +998,7 @@ def cmd_train(args):
     length = e["phase_3_length"]
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     name = run_name(args.rung, args.frac, args.aug, args.fold, args.sections) + ("-bk8" if args.backings else "") \
-        + ("-dd" if args.dd else "")
+        + ("-dd" if args.dd else "") + (f"-wide{WIDE_K}" if args.wide else "")
     od = out_dir() / "runs"
     rp = od / f"{name}-{args.seed}.json"
     if rp.exists():
@@ -1018,7 +1018,12 @@ def cmd_train(args):
         tr = section_share(tr, sec, args.sections)
     doubled = doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
     rows = rung_rows(kept, rend, tr) + [dict(r, held=True) for r in rung_rows(kept, rend, held)]
-    if args.backings:
+    if args.wide:
+        if args.rung != "b" or args.aug or args.backings:
+            raise SystemExit("--wide is phase 5A's test on P2b")
+        require("phase_5a")
+        data = WideData(rows, rung_path(croot, "b", doubled), set(tr))
+    elif args.backings:
         if args.rung != "b" or args.aug:
             raise SystemExit("--backings is the backing-variety test on P2b")
         require("phase_3_backings")
@@ -1056,7 +1061,7 @@ def cmd_train(args):
               "epochs_run": log[-1]["epoch"] + 1, "best_epoch": best_ep, "best_held_loss": best,
               "steps": log[-1]["steps"], "minutes": round((time.time() - t0) / 60, 1), "device": str(dev),
               "length": length, "augmentations_applied": data.applied, "flags": {"dd": bool(args.dd),
-              "backings": bool(args.backings), "aug": bool(args.aug)},
+              "backings": bool(args.backings), "aug": bool(args.aug), "wide": bool(args.wide)},
               "backing_variants": getattr(data, "counts", None),
               "baseline_families": {k: family_means(v) for k, v in bl.items()}, "heads": heads, "log": log,
               "models": {w: f"{name}-{args.seed}-{w}.pt" for w in ("final", "best")},
@@ -2125,6 +2130,246 @@ class BackingData(RungData):
                 self.X[j], self.L[j] = x, lu
 
 
+# --- phase 5A: backing variety at scale (zero renders) ----------------------------------------------------------------
+
+WIDE_K = 24
+WIDE_SEED = 20261037
+WIDE_WINDOWS = 20                   # at most this many active windows per extra session
+WIDE_ACTIVE_LUFS = -40.0            # a window's bare backing (no vocals) must be at least this loud
+WIDE_EXCLUDE_BANDS = frozenset(b for b, _ in PR.VREAL.values())
+
+
+def bare_backing(sd, tracks, start_s):
+    """A session's tracks summed at its balance at `start_s`, folded to mono as a centred source and trimmed as the
+    sections are (`trusted_data.Stems.get`'s rule)."""
+    import numpy as np
+    import soundfile as sf
+
+    from learn import pretrain_set as PS
+    from learn import trusted_data as T
+
+    sess = pathlib.Path(sd)
+    b = np.zeros(int(round((PS.SEC_S + PS.TRIM_S) * PS.SR)))
+    for t in tracks:
+        fold = T.pan_fold(0.0) if sf.info(str(sess / t)).channels == 1 else 1.0
+        b += PS.section_audio(sess / t, start_s) * fold
+    return b[int(PS.TRIM_S * PS.SR):]
+
+
+def wide_pool_path():
+    return out_dir() / "inputs" / "backings-wide-pool.json"
+
+
+def cmd_wide_pool(args):
+    """Phase 5A's backing pool (zero renders): the ladder's training sections' bare backings, plus up to WIDE_WINDOWS
+    active 10-s windows (bare backing at least WIDE_ACTIVE_LUFS) from every other session whose stems were heard clean,
+    outside V-real's bands and the two NS songs. Each session's stems are those that pass the per-example leak rule
+    with no guitar source replaced (`trusted_data.stems_for`), so no stem carries guitar bleed. Every entry's bare
+    loudness is measured for both vocal variants. -> inputs/backings-wide-pool.json."""
+    import numpy as np
+    import soundfile as sf
+
+    from learn import cc_build as CB
+    from learn import song_aug as SA
+    from learn import trusted_data as T
+
+    e = require("phase_5a")
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    a = argparse.Namespace(out=None, smoke=False)
+    plan = CB.load_plan(a)
+    inv = CB.cc_inventory()
+    tr = T.load_lists(croot)
+    ver = CB._ver(a)
+    verified = CB.verified_stems(tr, ver, inv)
+    scan, floor = CB.merged_takes()
+    levels = json.loads((out_dir() / "inputs" / "backings-levels.json").read_text())["levels"]
+    one = {}
+    for x in kept.values():
+        one.setdefault(x["section"], x)
+    entries = []
+    for sec in sorted(levels):                               # the training sections (P2b-bk8's pool)
+        x = one[sec]
+        has_v = x["stems"]["v"] != x["stems"]["n"]
+        entries.append({"id": sec, "session": session_of(sec), "sd": None, "kind": "training",
+                        "tracks": {"n": list(x["stems"]["n"]), "v": list(x["stems"]["v" if has_v else "n"])},
+                        "start_s": None, "lufs": levels[sec]})
+    used = {pathlib.Path(x["session_dir"]).name for x in kept.values()}
+    ns = {s_.split("/")[-1] for s_ in NS_SESSIONS}
+    by_sd = {}
+    for r in inv.values():
+        if r.get("session_dir"):
+            by_sd.setdefault(r["session_dir"], r)
+    skipped = {}
+    for sd in plan["verified_stems_sessions"]:
+        name = pathlib.Path(sd).name
+        rec = by_sd.get(sd)
+        if name in used or name in ns or rec is None:
+            skipped[name] = "a ladder song or NS" if rec is not None else "no inventory record"
+            continue
+        if rec.get("band") in WIDE_EXCLUDE_BANDS:
+            skipped[name] = "a V-real band"
+            continue
+        st = scan.get(sd)
+        if not st:
+            skipped[name] = "no stem scan"
+            continue
+        withv, nov = T.stems_for(rec, verified, sd, st, set(), floor)
+        if not nov:
+            skipped[name] = "no stem passes the leak rule with no guitar replaced"
+            continue
+        dur = min(sf.info(str(pathlib.Path(sd) / t)).duration for t in nov)
+        starts = [5.0 + 10.0 * k for k in range(int((dur - 16.0) // 10.0) + 1)]
+        active = []
+        for s0 in starts:
+            ln = float(SA.lufs(bare_backing(sd, nov, s0)))
+            if ln >= WIDE_ACTIVE_LUFS:
+                active.append((s0, ln))
+        if not active:
+            skipped[name] = "no active window"
+            continue
+        pick = [active[round(j * (len(active) - 1) / max(1, WIDE_WINDOWS - 1))] for j in range(min(WIDE_WINDOWS,
+                                                                                                    len(active)))]
+        pick = sorted({p[0]: p for p in pick}.values())
+        for s0, ln in pick:
+            lv = ln if withv == nov else float(SA.lufs(bare_backing(sd, withv, s0)))
+            entries.append({"id": f"{name}@{s0:.1f}", "session": name, "sd": sd, "kind": "extra",
+                            "tracks": {"n": nov, "v": withv}, "start_s": s0,
+                            "lufs": {"False": ln, "True": lv}})
+        print(f"{name}: {len(pick)} windows ({len(active)} active); {len(nov)} stems, vocals "
+              f"{len(withv) - len(nov)}", flush=True)
+    save(wide_pool_path(), {"rule": cmd_wide_pool.__doc__, "entries": entries, "skipped": skipped,
+                            "sessions": sorted({e_["session"] for e_ in entries}),
+                            "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"WIDE POOL DONE: {len(entries)} entries from {len({e_['session'] for e_ in entries})} sessions; "
+          f"skipped {skipped}")
+
+
+def wide_draws(train_ids, kept, entries, k=WIDE_K, seed=WIDE_SEED):
+    """For each training example, k pool entries: a session drawn uniformly among the pool's sessions other than the
+    example's own song, then one of its entries, and a vocal flag (p 0.5). -> {i: [(entry index, vocals)]}."""
+    import random
+
+    by_s = {}
+    for j, e_ in enumerate(entries):
+        by_s.setdefault(e_["session"], []).append(j)
+    out = {}
+    for i in sorted(train_ids):
+        rng = random.Random(f"{seed}|{i}")
+        own = pathlib.Path(session_of(kept[i]["section"])).name
+        sess = sorted(x for x in by_s if x != own and x != session_of(kept[i]["section"]))
+        out[i] = [(rng.choice(by_s[rng.choice(sess)]), rng.random() < 0.5) for _ in range(k)]
+    return out
+
+
+def wide_path(i, k, root=DATA):
+    return input_path(root, i, f"mixbw-k{k}")
+
+
+def cmd_build_wide(args):
+    """Phase 5A's inputs (CPU, zero renders): each training example's stored target in WIDE_K pool backings, exactly as
+    `build-backings` builds its variants (P2b's own overall gain; a backing gain that gives the new bare backing its own
+    bare backing's P2b loudness; its own mastering draw). One shard of pool entries, each entry's audio read once."""
+    import numpy as np
+
+    from learn import cc_build as CB
+    from learn import direct_sound_gate as G
+    from learn import direct_stems as DS
+    from learn import pretrain_set as PS
+    from learn import song_aug as SA
+    from learn import trusted_data as T
+
+    e = require("phase_5a")
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    a = argparse.Namespace(out=None, smoke=False)
+    ctx = CB.ctx_for(a)
+    stems = T.Stems(ctx)
+    built = T.rows_of(croot, CB.STAGE, "build")
+    pool = json.loads(wide_pool_path().read_text())["entries"]
+    own_lv = json.loads((out_dir() / "inputs" / "backings-levels.json").read_text())["levels"]
+    draws = wide_draws(sp["train"], kept, pool)
+    jobs = {}
+    for i, ds_ in draws.items():
+        for k, (j, voc) in enumerate(ds_):
+            jobs.setdefault(j, []).append((i, k, voc))
+    kk, n = args.shard
+    mine = [j for q, j in enumerate(sorted(jobs)) if q % n == kk]
+    t0, done = time.time(), 0
+    for m, j in enumerate(mine):
+        if PS.free_gb() < T.DISK_GUARD_GB:
+            raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+        ent = pool[j]
+        if ent["kind"] == "training":
+            backs = {v: stems.get(ent["id"], ent["tracks"]["v" if v else "n"]) for v in (False, True)}
+        else:
+            backs = {v: bare_backing(ent["sd"], ent["tracks"]["v" if v else "n"], ent["start_s"]) for v in (False, True)}
+        for i, k, voc in jobs[j]:
+            p = wide_path(i, k)
+            if p.exists():
+                continue
+            x, rw, bw = kept[i], rend[i], built[i]
+            own_voc = bool(x["draw"]["vocals_drawn"] and x["stems"]["v"] != x["stems"]["n"])
+            y = np.asarray(G.read_flac(T.flac_path(croot, CB.STAGE, i, "target"), rw["target"]["scale"],
+                                       rw["target"]["sha256"]), np.float64)
+            gb = bw["gains_db"]["gb"] + own_lv[x["section"]][str(own_voc)] - ent["lufs"][str(bool(voc))]
+            ga = bw["gains_db"]["ga"]
+            mix = (y + backs[bool(voc)] * 10 ** (gb / 20)) * 10 ** (ga / 20)
+            mastered, mrng = DS.master_draw(i)
+            if mastered:
+                mix = SA.compress(mix, mrng)
+            f, lu, _ = DS.half_features(mix)
+            DS._save_npz(p, sA=f["A"], sB=f["B"], lufs=[lu["A"], lu["B"]], backing=ent["id"], vocals=bool(voc),
+                         gains=[gb, ga])
+            done += 1
+        if m % 20 == 0:
+            print(f"pool entry {m + 1}/{len(mine)}: {done} built; {(time.time() - t0) / max(1, done):.2f} s each",
+                  flush=True)
+    print(f"BUILD-WIDE DONE {kk}/{n}: {done} built")
+
+
+class WideData(RungData):
+    """P2b's data with phase 5A's variants: per epoch each training example shows its own P2b input or one of its
+    WIDE_K pool variants (a seeded draw per (i, epoch)); eval reads its own P2b input. Refuses an incomplete build."""
+
+    def __init__(self, rows, path_of, train_ids):
+        import numpy as np
+
+        super().__init__(rows, path_of, aug=False)
+        missing = [i for i in train_ids if not all(wide_path(i, k).exists() for k in range(WIDE_K))]
+        if missing:
+            raise SystemExit(f"phase 5A's build is incomplete: {len(missing)} training examples lack variants")
+        self.V = {}
+        for j, r in enumerate(rows):
+            if r["i"] in train_ids:
+                arr = np.zeros((WIDE_K, 2, 96, 446), np.uint8)
+                lu = np.zeros((WIDE_K, 2), np.float32)
+                for k in range(WIDE_K):
+                    d = np.load(wide_path(r["i"], k))
+                    arr[k, 0], arr[k, 1], lu[k] = d["sA"], d["sB"], d["lufs"]
+                self.V[j] = (arr, lu)
+        self.counts = {"with_variants": len(self.V), "variants": WIDE_K}
+
+    def batch(self, idx, epoch, dev):
+        import random
+
+        import numpy as np
+
+        if epoch < 0:
+            return super().batch(idx, epoch, dev)
+        saved = {}
+        for j in np.asarray(idx):
+            j = int(j)
+            if j in self.V:
+                v = random.Random(f"{WIDE_SEED}|{self.rows[j]['i']}|{epoch}").randrange(WIDE_K + 1)
+                if v:
+                    saved[j] = (self.X[j].copy(), self.L[j].copy())
+                    self.X[j], self.L[j] = self.V[j][0][v - 1], self.V[j][1][v - 1]
+        try:
+            return RungData.batch(self, idx, epoch, dev)
+        finally:
+            for j, (x, lu) in saved.items():
+                self.X[j], self.L[j] = x, lu
+
+
 # --- stored derived reads (the audit: every quoted number reproducible) ---------------------------------------------
 
 def share_recovered(rows, n=4000, seed=20261036):
@@ -2627,7 +2872,8 @@ COMMANDS = {"p5": cmd_p5, "dirty-doubles": cmd_dirty_doubles, "p6": cmd_p6,
             "build-doubles": cmd_build_doubles, "train": cmd_train, "read": cmd_read, "sample": cmd_sample,
             "answers": cmd_answers, "sound-render": cmd_sound_render, "sound-report": cmd_sound_report,
             "build-backings": cmd_build_backings, "p4-predict": cmd_p4_predict, "share": cmd_share,
-            "prior-edges": cmd_prior_edges, "kfold-report": cmd_kfold_report, "vreal-comparators": cmd_vreal_comparators,
+            "prior-edges": cmd_prior_edges, "kfold-report": cmd_kfold_report, "wide-pool": cmd_wide_pool,
+            "build-wide": cmd_build_wide, "vreal-comparators": cmd_vreal_comparators,
             "vreal-render": cmd_vreal_render, "vreal-report": cmd_vreal_report}
 
 
@@ -2660,6 +2906,7 @@ def main(argv=None):
     ap.add_argument("--backings", action="store_true")
     ap.add_argument("--dd", action="store_true")
     ap.add_argument("--levels-only", action="store_true")
+    ap.add_argument("--wide", action="store_true")
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 

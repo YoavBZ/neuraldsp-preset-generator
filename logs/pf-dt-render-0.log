@@ -1,0 +1,47 @@
+section 1/20: 12 examples; renders 69; 126 s per section
+section 2/20: 7 examples; renders 92; 88 s per section
+section 3/20: 9 examples; renders 134; 86 s per section
+section 4/20: 13 examples; renders 160; 80 s per section
+section 5/20: 11 examples; renders 232; 94 s per section
+section 6/20: 9 examples; renders 286; 94 s per section
+section 7/20: 9 examples; renders 340; 94 s per section
+section 8/20: 11 examples; renders 404; 97 s per section
+Traceback (most recent call last):
+  File "/Users/yoavbz/projects/npg-fix/match/renderer_au.py", line 706, in _renderer_build
+  File "/Users/yoavbz/.pyenv/versions/3.14.6/lib/python3.14/pathlib/__init__.py", line 777, in read_bytes
+    with self.open(mode='rb', buffering=0) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yoavbz/.pyenv/versions/3.14.6/lib/python3.14/pathlib/__init__.py", line 771, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/yoavbz/projects/npg-fix/match/renderer_au.py'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/yoavbz/projects/npg-fix/learn/pipeline_fix.py", line 1763, in <module>
+  File "/Users/yoavbz/projects/npg-fix/learn/pipeline_fix.py", line 1759, in main
+  File "/Users/yoavbz/projects/npg-fix/learn/pipeline_fix.py", line 1242, in cmd_render_doubles
+  File "/Users/yoavbz/projects/npg-fix/learn/pipeline_fix.py", line 1194, in others_of
+  File "/Users/yoavbz/projects/npg-fix/learn/audibility_measure.py", line 149, in fresh_render
+  File "/Users/yoavbz/projects/npg-fix/learn/knob_ceiling.py", line 475, in render
+  File "/Users/yoavbz/projects/npg-fix/match/renderer.py", line 187, in render
+  File "/Users/yoavbz/projects/npg-fix/match/renderer_au.py", line 217, in metadata
+  File "/Users/yoavbz/projects/npg-fix/match/renderer_au.py", line 708, in _renderer_build
+match.renderer_au.AudioUnitError: could not identify renderer build from /Users/yoavbz/projects/npg-fix/match/renderer_au.py: [Errno 2] No such file or directory: '/Users/yoavbz/projects/npg-fix/match/renderer_au.py'
+section 9/20: 12 examples; renders 87; 21 s per section
+section 10/20: 11 examples; renders 151; 31 s per section
+section 11/20: 8 examples; renders 200; 36 s per section
+section 12/20: 12 examples; renders 278; 46 s per section
+section 13/20: 9 examples; renders 338; 53 s per section
+section 14/20: 10 examples; renders 391; 58 s per section
+section 15/20: 9 examples; renders 444; 60 s per section
+section 16/20: 12 examples; renders 512; 64 s per section
+section 17/20: 12 examples; renders 590; 70 s per section
+section 18/20: 12 examples; renders 677; 78 s per section
+section 19/20: 6 examples; renders 722; 79 s per section
+waiting for a render slot
+section 20/20: 12 examples; renders 800; 86 s per section
+RENDER-DOUBLES DONE 0/3: 800 renders

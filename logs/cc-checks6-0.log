@@ -1,0 +1,30 @@
+windows 1/17 idge/AdamBuckley_DragMeDown_Full/27_ElecGtr2DI.wav: 7 (0 s)
+windows 2/17 idge/AdamBuckley_DragMeDown_Full/33_ElecGtr4DI.wav: 7 (0 s)
+windows 3/17 _NossoMundoDeixouDeExistir_Full/13_ElecGtr02DI.wav: 11 (3 s)
+windows 4/17 _NossoMundoDeixouDeExistir_Full/20_ElecGtr04DI.wav: 11 (4 s)
+windows 5/17 icles_OfIceAndHopelessFate_Full/15_ElecGtr04DI.wav: 18 (5 s)
+windows 6/17 icles_OfIceAndHopelessFate_Full/21_ElecGtr07DI.wav: 18 (7 s)
+windows 7/17 TheTravellingBand_Quicksand_Full/22_ElecGtr3DI.wav: 22 (9 s)
+windows 8/17 set5/BKS_Bulldozer_Full/19_ElecGtr1aDI.wav: 48 (13 s)
+windows 9/17 set5/BKS_Bulldozer_Full/28_ElecGtr4aDI.wav: 48 (18 s)
+windows 10/17 set5/BKS_TooMuch_Full/16_ElecGtr1aDI.wav: 15 (18 s)
+windows 11/17 set5/Hazael_AMiLado_Full/16_ElecGtr1DI.wav: 27 (18 s)
+windows 12/17 RonnieJones_WhyDontYouStay_Full/10_ElecGtr01DI.wav: 33 (19 s)
+windows 13/17 e_NeverLeaveTheNightAlone_Full/24_ElecGtr1DTDI.wav: 15 (20 s)
+windows 14/17 s-1-2/Forkupines_SugarFaith_Full/24_ElecGtr1DI.wav: 67 (20 s)
+windows 15/17 s-1-2/Forkupines_SugarFaith_Full/30_ElecGtr4DI.wav: 67 (20 s)
+windows 16/17 s-1-2/Forkupines_SugarFaith_Full/40_ElecGtr9DI.wav: 67 (23 s)
+windows 17/17 eMaybeNextYears_OneFlipFlop_Full/29_ElecGtr3DI.wav: 36 (23 s)
+classes 26/298 (23 s)
+classes 51/298 (24 s)
+classes 76/298 (25 s)
+/Users/yoavbz/ndsp-presets/references/datasets-set3/_tools/gainmeasure.py:27: RuntimeWarning: invalid value encountered in scalar divide
+  eta = float(explained / Syy[band].sum())
+/Users/yoavbz/ndsp-presets/references/datasets-set3/_tools/gainmeasure.py:30: RuntimeWarning: divide by zero encountered in log10
+  crest_d = np.median(20 * np.log10(pk_d / rd[act])); crest_a = np.median(20 * np.log10(pk_a / ra[act]))
+/Users/yoavbz/ndsp-presets/references/datasets-set3/_tools/gainmeasure.py:41: RuntimeWarning: divide by zero encountered in log10
+  ca1.append(20 * np.log10(np.max(np.abs(y)) / (np.sqrt(np.mean(y ** 2)) + 1e-12)))
+/Users/yoavbz/ndsp-presets/references/datasets-set3/_tools/gainmeasure.py:45: RuntimeWarning: invalid value encountered in scalar divide
+  hf_gain = 10 * np.log10(Syy[hi].sum() / Syy[lo].sum()) - 10 * np.log10(Sxx[hi].sum() / Sxx[lo].sum())
+classes 101/298 (26 s)
+CHECKS DONE 0/3: 1414 windows, 718 sections classed

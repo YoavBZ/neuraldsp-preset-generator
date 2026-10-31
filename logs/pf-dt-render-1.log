@@ -1,0 +1,34 @@
+section 1/20: 12 examples; renders 69; 125 s per section
+section 2/20: 10 examples; renders 128; 117 s per section
+section 3/20: 9 examples; renders 158; 99 s per section
+section 4/20: 9 examples; renders 188; 90 s per section
+section 5/20: 6 examples; renders 230; 90 s per section
+section 6/20: 12 examples; renders 308; 101 s per section
+section 7/20: 11 examples; renders 380; 108 s per section
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/yoavbz/projects/npg-fix/learn/pipeline_fix.py", line 1763, in <module>
+  File "/Users/yoavbz/projects/npg-fix/learn/pipeline_fix.py", line 1759, in main
+  File "/Users/yoavbz/projects/npg-fix/learn/pipeline_fix.py", line 1242, in cmd_render_doubles
+  File "/Users/yoavbz/projects/npg-fix/learn/pipeline_fix.py", line 1194, in others_of
+  File "/Users/yoavbz/projects/npg-fix/learn/audibility_measure.py", line 146, in fresh_render
+  File "/Users/yoavbz/projects/npg-fix/learn/cc_build.py", line 1658, in new_renderer
+  File "/Users/yoavbz/projects/npg-fix/learn/knob_ceiling.py", line 447, in __init__
+  File "/Users/yoavbz/projects/npg-fix/packs/loader.py", line 392, in load_pack
+packs.loader.PackError: No pack for 'morgan' (looked for /Users/yoavbz/projects/npg-fix/packs/morgan/manifest.json).
+  Available: none
+section 8/20: 10 examples; renders 66; 17 s per section
+section 9/20: 12 examples; renders 138; 33 s per section
+section 10/20: 10 examples; renders 196; 40 s per section
+section 11/20: 8 examples; renders 250; 47 s per section
+section 12/20: 12 examples; renders 337; 60 s per section
+section 13/20: 8 examples; renders 396; 66 s per section
+section 14/20: 9 examples; renders 455; 70 s per section
+section 15/20: 9 examples; renders 508; 73 s per section
+section 16/20: 6 examples; renders 529; 71 s per section
+section 17/20: 10 examples; renders 587; 73 s per section
+section 18/20: 12 examples; renders 674; 80 s per section
+section 19/20: 10 examples; renders 733; 82 s per section
+section 20/20: 10 examples; renders 792; 83 s per section
+RENDER-DOUBLES DONE 1/3: 792 renders

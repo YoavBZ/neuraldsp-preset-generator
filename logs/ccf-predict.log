@@ -1,0 +1,14 @@
+T3's frozen plan: V-real-11 frozen 2026-10-26 10:35:58; T0's lists fac903559adb then, 6ac6a335d1ad now; 3467 F5 + 722 FS5 examples checked
+  today's lists would add cambridge-Signs-ElecGtr6: kept out (V-real is frozen)
+  D_CC                         pr12 crunch: drive1 0/14, drive2 0/14, inputGain -1.39241; crunch: drive1 0/42, drive2 9/42, inputGain -0.489221; all: drive1 0/66, drive2 9/66, inputGain -0.9013804999999999
+  D_CC:s20261042               pr12 crunch: drive1 0/14, drive2 2/14, inputGain -1.64916; crunch: drive1 0/42, drive2 15/42, inputGain -0.366023; all: drive1 0/66, drive2 15/66, inputGain -0.7022225
+  D_CC:s20261043               pr12 crunch: drive1 0/14, drive2 0/14, inputGain -1.13566; crunch: drive1 0/42, drive2 2/42, inputGain -0.6075615; all: drive1 0/66, drive2 6/66, inputGain -0.7304275
+  D_CC:constant                pr12 crunch: drive1 0/14, drive2 14/14, inputGain -0.155983; crunch: drive1 0/42, drive2 28/42, inputGain -0.366023; all: drive1 0/66, drive2 28/66, inputGain -0.366023
+  D_F5                         pr12 crunch: drive1 5/14, drive2 12/14, inputGain -0.492851; crunch: drive1 5/42, drive2 26/42, inputGain -0.492851; all: drive1 5/66, drive2 26/66, inputGain -0.492851
+  D_F5:s20261042               pr12 crunch: drive1 5/14, drive2 11/14, inputGain -0.492851; crunch: drive1 5/42, drive2 25/42, inputGain -0.492851; all: drive1 5/66, drive2 25/66, inputGain -0.492851
+  D_F5:s20261043               pr12 crunch: drive1 4/14, drive2 12/14, inputGain -0.492851; crunch: drive1 4/42, drive2 26/42, inputGain -0.492851; all: drive1 4/66, drive2 27/66, inputGain -0.492851
+  constant                     pr12 crunch: drive1 14/14, drive2 14/14, inputGain -0.492851; crunch: drive1 14/42, drive2 28/42, inputGain -0.492851; all: drive1 14/66, drive2 28/66, inputGain -0.361238
+  delay on with feedback >= 0.75: D_CC:at-S:pedals 0/66, D_CC:constant 0/66, D_CC:s20261042 0/66, D_CC:s20261043 0/66
+  D_CC:s20261042: its amp head agrees with the pooled one on 21 of 22 (part, half)s
+  D_CC:s20261043: its amp head agrees with the pooled one on 10 of 22 (part, half)s
+FOLLOWUP PREDICT DONE D_CC: 66 directions; step 3's answers recomputed equal; 33 groups, 165 renders to come

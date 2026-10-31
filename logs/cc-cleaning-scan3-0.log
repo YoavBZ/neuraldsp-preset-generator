@@ -1,0 +1,10 @@
+cleaning scan 0/3: 4 DIs, 29 sections (of 80 without a row)
+  cambridge/TheTravellingBand_Quicksand_Full/22_ElecGtr3DI.wav: 28 tracks, source 20_ElecGtr3Close.wav; session takes >= -40 dB: {'23_HammondLeslieLo.wav': -38.5}
+  1/4 DIs (89 s)
+  set5/Hazael_AMiLado_Full/16_ElecGtr1DI.wav: 30 tracks, source 15_ElecGtr1.wav; session takes >= -40 dB: {'01_Kick.wav': -35.9, '06_Cowbell.wav': -18.3, '09_Guaracha.wav': -39.4, '23_ElecGtr6.wav': -29.8, '26_Vox1.wav': -34.9, '27_Vox2.wav': -23.3, '31_Vox6.wav': -29.0, '34_Vox9.wav': -31.7}
+  2/4 DIs (308 s)
+  set5/RonnieJones_WhyDontYouStay_Full/12_ElecGtr02DI.wav: 34 tracks, source 11_ElecGtr02.wav; session takes >= -40 dB: {'07_AcousticGtr.wav': -26.0, '08_AcousticGtrDT.wav': -21.0, '09_ElecGtr01.wav': -13.7, '18_ElecGtr05.wav': -38.7, '34_Rhodes.wav': -15.9, '35_RhodesDry.wav': -18.1, '36_RhodesRaw.wav': -19.0, '41_BackingVox01.wav': -26.3, '42_BackingVox01DT1.wav': -24.4, '43_BackingVox01DT2.wav': -24.2, '44_BackingVox01DT3.wav': -27.4}
+  3/4 DIs (625 s)
+  ets-1-2/TheMaybeNextYears_OneFlipFlop_Full/25_ElecGtr2DI.wav: 30 tracks, source 23_ElecGtr2Mic1.wav; session takes >= -40 dB: {}
+  4/4 DIs (844 s)
+CLEANING SCAN DONE 0/3

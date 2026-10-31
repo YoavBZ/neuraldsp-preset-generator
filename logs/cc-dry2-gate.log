@@ -1,0 +1,12 @@
+YIELD (sections; zero renders)
+  candidate sections of training DIs: 644; out before rule 1: part A's screen flags the section 301, high gain 166, a heavy band's unclassed section 1
+  eligible 176; rule 1 and the cap leave out 87: an active guitar has no usable amp track 84, more active guitars than the cap 3
+  Ale Lak                     5 sections: {'crunch': 5}
+  BKS                        32 sections: {'crunch': 25, 'clean': 7}
+  Forkupines                 31 sections: {'crunch': 31}
+  Storm Of Particles          3 sections: {'crunch': 3}
+  The Travelling Band        18 sections: {'clean': 18}
+  kept 89 sections in 5 bands
+  FS_CC 14 sections (647 examples); training 75 sections (3467 examples, 46.2 per section); heavy 232/3467 (7%), 0 heavy sections dropped for the cap
+  training examples by band: Ale Lak 139, BKS 1293, Forkupines 1250, Storm Of Particles 93, The Travelling Band 692
+PLAN DRY: nothing written
