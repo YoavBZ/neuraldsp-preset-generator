@@ -1255,6 +1255,44 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **References.** `PF/real/answers/{P2a-Sc,S-shift}.json`, `PF/real/judge/{P2a-Sc,S-shift}/`,
   `PF/real/report-5b1b.json`; `sc_cont`, `real_shift_answers`, `cmd_real_predict --names`; ledger `phase_5b1b`.
 
+### F33. Without the uniform draws the model is sharper near presets, but not on real amps (5B.2 arm P)
+- **Result.** P2a retrained on its 1,296 preset-centred draws (factory and S; the 491 wide draws out), against a
+  size control drawing the same count per section from all modes (both 2 seeds, NS-best, read as ensembles). Read on
+  5B.1's 40 reamped units (1,200 renders), and, because P − pcsz leaned better there, S-centred (P-Sc, 480) and by
+  sound on FS/NS split by draw mode (480). Zero-render head losses by draw mode beside.
+- **Numbers** (real units clustered by DI, 8; by rig beside; FS by band, NS by section):
+
+  | Row | Result | Better |
+  |---|---|---|
+  | P − pcsz, real units (primary) | −0.019 [−0.057, +0.020]; by rig −0.024 [−0.053, +0.005] | 5 of 8 DIs, 28 of 40 |
+  | P-Sc − P2a-Sc, real units (centre removed) | −0.004 [−0.022, +0.015] | 4 of 8, 24 of 40 |
+  | P's constant − P2a's constant, real units | +0.018 [−0.005, +0.041] | 3 of 8, 15 of 40 |
+  | P − pcsz, FS / NS by sound | −0.029 [−0.082, +0.024] / +0.014 [−0.040, +0.068] | 4 of 6 bands / 18 of 36 |
+  | the same on preset-centred examples, FS factory / start | −0.091 [−0.198, +0.017] / −0.128 [−0.314, +0.058] | 4 of 6 / 3 of 5 |
+  | the same, NS factory / start | +0.002 [−0.069, +0.073] / +0.089 [−0.039, +0.218] | 14 of 24 / 6 of 13 |
+  | the same on wide examples, FS / NS | +0.039 [+0.012, +0.065] / −0.004 [−0.109, +0.102] | 1 of 6 / 8 of 15 |
+  | pcsz − P2a (size alone), FS / NS | +0.049 [−0.006, +0.103] / +0.027 [−0.010, +0.065] | 1 of 6 / 14 of 36 |
+
+  - By head (zero renders, P − pcsz, both seeds): on preset-centred FS and NS examples lower knob NLL (−0.015 to
+    −0.123) and mic CE (−0.002 to −0.230) for every seed; on wide examples far higher (+0.63 to +1.10), as expected.
+  - P2a − S on these units reproduces F31 exactly (+0.066 [+0.030, +0.102]).
+- **Reading.**
+  - Dropping the uniform draws leaves real-amp reads undecided: the lean (−0.019) is gone once both models are
+    re-centred on S (−0.004), and P's labels' constant is not nearer these tones (+0.018). Whatever the drop changes
+    on real amps sits in the centre, not in per-track reading. By the declared reading the training mix stays.
+  - Near presets, on plugin renders, the model trained without uniform draws leans sharper (by head on every seed; by
+    sound on FS, undecided, mixed on NS), and it loses on the wide examples it never saw. Fewer examples alone cost
+    about +0.03 to +0.05 by sound (pcsz − P2a), consistent with F25's size curve; the sharper reads near presets
+    bear on F7 (knob skill mostly on random settings).
+  - The user's question (do unrealistic random settings hurt?): not on real amps, by this test. What real amps need is
+    a centre that suits them (F34).
+- **Caveats.** One band for real amps (BKS, 8 performances); one model pair reads every unit, so the by-DI interval
+  carries no training noise (the heads read shows both seeds agree); FS/NS strata are small (5–24 clusters).
+- **References.** `PF/runs/P2a-pc-*`, `P2a-pcsz-*`; `PF/real/answers/{P2a-pc,P2a-pcsz,P2a-pc-constant,P2a-pc-Sc}.json`,
+  `PF/real/report-5b2-armP.json`, `report-5b2-armP-sc.json`, `PF/real/heads-P.json`, `PF/sound/report-5b2-armP.json`,
+  `report-5b2-armP-vsP2a.json`; `preset_centred`, `real_predict_5b2`, `cmd_real_heads`, `cmd_sound_report --by-mode`;
+  ledger `phase_5b2`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
