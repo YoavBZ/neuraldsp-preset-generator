@@ -428,6 +428,9 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
   `learn/song_model.py:31` (`K_MIX`).
 - *Status:* Unchecked. Nobody has shown it can fit even its training set.
 - *Test:* P1.
+- *2026-10-31, P1 ([fix plan](pipeline-fix-plan.md) F5):* on 200 examples of the clean input every head falls far
+  below the label-only baseline (knobs −2.51 against −0.84, switches 0.037 against 0.58). The network can fit:
+  ruled out as the blocker.
 
 **Step 21. The loss.**
 - *What happens:* an unweighted sum of four terms: the mixture's negative log-likelihood over sounding knobs
@@ -534,6 +537,10 @@ independent review and a ledger entry before it runs. P1 and P2 train, so they a
     0.56, gate 0.52, tremolo 0.51, reverb 0.49.
   - Amp choice: accuracy 0.40 against a base rate of 0.33, readable: +0.069 [+0.033, +0.105].
 - *Test:* P1 and P2 say whether it is the model (20–24) or the input (13–19).
+- *2026-10-31, P2a ([fix plan](pipeline-fix-plan.md) F6):* fed the clean target (a perfect separator), the model
+  still beats the constant's knob error by only about 1 point of range (NS −0.0086 [−0.011, −0.007], FS −0.0097),
+  while reading 27 of 28 switches and both mics by AUC/accuracy on new songs. The input is not the first limit for
+  the knobs; the by-sound read is next.
 
 **Step 30. The fake-song test by sound.**
 - *What happens:* never done. The model's answers on FS have not been rendered and judged against their known

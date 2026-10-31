@@ -850,7 +850,7 @@ def doubles_mode(root=DATA):
     return ("fixed" if want <= seen else "dropped"), want
 
 
-def recipe_inputs(root=DATA):
+def recipe_inputs(root=DATA, pin=None):
     """D_CC's kept examples, render rows and the recipe's split, the same examples for every rung: the runaway
     examples out; the doubled examples kept with their re-rendered doubles (phase 1b) or, failing that, out."""
     from learn import cc_build as CB
@@ -865,6 +865,8 @@ def recipe_inputs(root=DATA):
     kept = {x["i"]: x for x in plan["examples"] if x["i"] in set(tr) | set(fs)}
     rend = T.rows_of(croot, CB.STAGE, "render")
     mode, doubled = doubles_mode(root)
+    if pin is not None:                            # the ledger pins the ladder's example set (phase_3_doubles)
+        mode = pin
     refused_dt = doubled - doubled_ids(root) if mode == "fixed" else set()
     drop = runaway_ids() | (doubled if mode == "dropped" else refused_dt)
     return croot, kept, rend, recipe_split(kept, tr, fs, drop), {
@@ -994,7 +996,7 @@ def cmd_train(args):
 
     e = require("phase_3")
     length = e["phase_3_length"]
-    croot, kept, rend, sp, dropped = recipe_inputs()
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     name = run_name(args.rung, args.frac, args.aug, args.fold, args.sections)
     od = out_dir() / "runs"
     rp = od / f"{name}-{args.seed}.json"
@@ -1436,8 +1438,8 @@ def cmd_read(args):
     from learn import full_space as F
     from learn import trusted_data_t3_r as R
 
-    require("phase_3")
-    croot, kept, rend, sp, dropped = recipe_inputs()
+    e = require("phase_3")
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     nets, recs = [], []
     for sd in SEEDS:
         if (out_dir() / "runs" / f"{args.name}-{sd}.json").exists():
@@ -1504,8 +1506,8 @@ SOUND_DIR = "sound"
 def cmd_sample(args):
     """The by-sound sample (zero renders): for FS and NS each, 120 examples in a fixed order spread over sections
     (`draw_sample`); the read uses the first 60 and grows to 120 while the locating rows stay undecided."""
-    require("phase_3")
-    croot, kept, rend, sp, dropped = recipe_inputs()
+    e = require("phase_3")
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     sec = {i: kept[i]["section"] for i in kept}
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_3", "seed": SAMPLE_SEED, "first": SAMPLE_N,
            "order": {k: draw_order(sp[k], sec) for k in ("fs", "ns")}, "doubles": dropped["doubles"],
@@ -1555,8 +1557,8 @@ def cmd_answers(args):
     from learn import trusted_data_t3 as T3
     from learn import trusted_data_t3_r as R
 
-    require("phase_3")
-    croot, kept, rend, sp, dropped = recipe_inputs()
+    e = require("phase_3")
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     ids = sorted(set(sum(sample_ids(2 * SAMPLE_N).values(), [])))
     ms = A.L.menu_S()
     rows = rung_rows(kept, rend, ids)
