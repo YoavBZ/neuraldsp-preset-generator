@@ -94,7 +94,7 @@ own. A model that reads little (the mix and stem models, D_CC) never serves as t
 | 33 | Render-order noise | Fresh primed processes reproduce the truth (F10); in phase 4 every fresh S render must sit within 0.005 (log) of the label table's stored distance on stage F's parts, or the read stops | nothing | fixed |
 | 36 | S's home advantage | Stored distances (P5) | nothing | measured (F1) |
 | 37 | The average against S | In distribution, the constant against S by sound (F11: even) | by-sound read | measured |
-| (P4) | Transfer to real recordings | First, alone: P2a told a wrong amp and rendered on it, by sound on NS (the amp mismatch, without real recordings): it keeps most of its skill (F19). Then P4 on V-real's amp tracks | P2a, by-sound read | amp mismatch measured (F19); P4 running |
+| (P4) | Transfer to real recordings | First, alone: P2a told a wrong amp and rendered on it, by sound on NS (the amp mismatch, without real recordings): it keeps most of its skill (F19). Then P4 on V-real's amp tracks: no transfer, +0.153 against S, about its own constant (F20) | P2a, by-sound read | measured: a second blocker (F20) |
 
 **What this changes in the plan.**
 - Step 12 closes on its data checks (F16), not on D_fix.
@@ -658,6 +658,50 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **References.** `PF/sound/judge/{P2a-best-amp+1,P2a-best-amp+2,S-amp+1,S-amp+2}/`,
   `PF/sound/report-{ampmismatch,ampmismatch2,ampvsown,ampvsown2,samps}.json`; `cmd_answers --amp-shift`; ledger
   `phase_3_isolated` (a).
+
+### F20. On real recordings, even the real guitar alone, the clean-input model does not transfer (P4)
+- **Result.** P2a (both seeds, NS-best, pooled) read each V-real-11 part's own recorded amp track (the real guitar
+  alone, at the median loudness of its training inputs, −21.84 LUFS). It was told the part's class and each forced
+  amp, and its answers were rendered through the measure DI in fresh primed processes (438 renders).
+  - Its answers sound clearly worse than S.
+  - They are about as far as its own training average (the constant), which is itself clearly worse than S on real
+    songs, though even with S on the made-up songs (F11).
+- **Numbers** (band-weighted, 7 bands; Wickerman ElecGtr2 and 3 as one part; all 66 directions; none refused).
+
+  | Row | All | Without the 2 quiet inputs | Clean | Crunch |
+  |---|---|---|---|---|
+  | P4 − S | +0.153 [+0.039, +0.268], 1 of 7 bands better; part-weighted +0.129, 1 of 10 parts better | +0.148 [+0.015, +0.281] | +0.028 (2 bands) | +0.203 (5 bands, 0 better) |
+  | constant − S | +0.170 [+0.056, +0.284], 1 of 7 better | +0.142 [+0.020, +0.264] | +0.154 | +0.177 |
+  | P4 − constant | −0.017 [−0.090, +0.057], 4 of 7 better | +0.006 [−0.054, +0.067] | −0.126 | +0.027 |
+  | P4 − P4 pulled | +0.000 [−0.016, +0.017] | | | |
+  | S′ − S (crunch parts only) | +0.035 [−0.002, +0.071], 1 of 5 better | | | |
+
+  - P4 − S per part: Colour Me Red ElecGtr02 −0.147 (the only part better), Signs ElecGtr3 +0.008, Colour Me Red
+    ElecGtr03 +0.078, It Was My Fault ElecGtr1 +0.167, Wickerman ElecGtr1 +0.167, Wickerman ElecGtr2+3 +0.162, Get Out
+    Of Bed ElecGtr2 +0.180, Let's Dance ElecGtr3 +0.229, Femme ElecGtr5 +0.435.
+  - Leave one band out: +0.106 to +0.185.
+- **Checks.**
+  - The positive control passes: the fresh S renders match the label table's stored distances on all 60 (part, amp,
+    half), at most 1.0e−4 against the 0.005 tolerance. So render order (step 33) does not move V-real's S.
+  - The side row declared before the read (inputs with over 20% of frames at the grid floor: Colour Me Red ElecGtr03
+    and It Was My Fault ElecGtr1) changes nothing.
+  - The S′ row covers only the crunch parts by design; it agrees with P5's stored-distance read (+0.038).
+  - The model's own amp guesses on the real tracks: SW50R 13, AC20 7, PR12 2 (of 22 halves).
+- **Reading.**
+  - The amp mismatch alone costs about 0.06 (F19), so it does not explain +0.15.
+  - On real recordings the model adds nothing over its own average, and that average is far from what real songs
+    need: the training prior (random, factory-centred and S-centred settings, wet) does not look like real tones.
+  - Two gaps, each with its own check: (1) the prior (what the answers fall back to) and (2) the domain (Morgan renders
+    against real recorded amps; the measure DI caps even the truth at about 0.55 of S's distance, step 9).
+  - The roadmap's long-run observation, that in-distribution gains never carried over, is now located: even a perfect
+    separator would not carry the skill to real songs with this training data.
+- **Caveats.**
+  - 11 parts in 7 bands.
+  - The amp track as input is not what the product gets (a song). It is the best case for the input, used here to
+    isolate transfer.
+- **References.** `PF/vreal/report-p4.json`, `PF/vreal/answers/{P4-P2a-best,P4-P2a-best-pulled,P4-P2a-best-constant,
+  S,S-prime}.json`, `PF/vreal/judge/*/`; `cmd_p4_predict`, `cmd_vreal_comparators`, `cmd_vreal_render`,
+  `cmd_vreal_report`; ledger `phase_4`, `phase_4_revised`; `logs/pf-p4-*.log`.
 
 ### F9. Process: removing a worktree crashed running jobs
 - **Result.** Removing the plan's worktree while the doubles render ran from it crashed its 3 shards at a lazy
