@@ -81,7 +81,7 @@ own. A model that reads little (the mix and stem models, D_CC) never serves as t
 | 15 | Mastering | P2a reads its own NS inputs mastered with each example's draw against unmastered, by sound (zero training) | P2a, by-sound read | to run |
 | 16, 19 | Where the tone is lost | The ladder: every rung on the verified recipe; located at the mix (F15) | recipe, by-sound read | located |
 | 16 | The fix for the mix | Phase 5's fix, trained on the verified recipe and read against P2b and P2c on the same examples | recipe, by-sound read | phase 5 |
-| 18 | Augmentation | P2a with dropouts and darkening against P2a, by sound. Merge and separator failure are mix-specific and are tested only once a mix model reads | recipe, by-sound read | to run |
+| 18 | Augmentation | P2a with dropouts and darkening against P2a, by sound. Merge and separator failure are mix-specific and are tested only once a mix model reads | recipe, by-sound read | ruled out as a lever (F21) |
 | 20 | Network | P1 | nothing | ruled out (F5) |
 | 21 | Loss in knob units | P2a by sound against by knob | P2a, by-sound read | confirmed (F11) |
 | 22 | Length | P1, P2a's checkpoints | nothing | fixed |
@@ -702,6 +702,25 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **References.** `PF/vreal/report-p4.json`, `PF/vreal/answers/{P4-P2a-best,P4-P2a-best-pulled,P4-P2a-best-constant,
   S,S-prime}.json`, `PF/vreal/judge/*/`; `cmd_p4_predict`, `cmd_vreal_comparators`, `cmd_vreal_render`,
   `cmd_vreal_report`; ledger `phase_4`, `phase_4_revised`; `logs/pf-p4-*.log`.
+
+### F21. Dropout and darkening augmentation does not help the clean input; it costs a little (step 18, alone)
+- **Result.** P2a-dd is the recipe with D_stem's dropouts and darkening (p 0.3 each) on the clean input (seed
+  20261042, best checkpoint epoch 25 of 60, 10.3 min). By knob it reads the same as P2a: NS −0.0087 [−0.0110,
+  −0.0063] against −0.0086, with 19 knobs and 23 switches readable. By sound it is a little less close.
+- **Numbers** (by sound).
+
+  | Row | FS | NS |
+  |---|---|---|
+  | P2a-dd − S | −0.224 [−0.372, −0.077], 6 of 6 better | −0.197 [−0.274, −0.121], 28 of 36 better |
+  | P2a − P2a-dd | −0.024 [−0.058, +0.011] | −0.044 [−0.087, −0.001], 25 of 36 better |
+
+- **Reading.** Tested alone on a model that reads, these augmentations do not hide the treble cues badly, but they
+  do not help either: they cost about 0.04 on new songs. The ladder's choice of no augmentation stands. Step 18 is
+  ruled out as a lever. The merge and separator-failure augmentations are mix-specific and wait for a mix model that
+  reads.
+- **Caveat.** One seed each.
+- **References.** `PF/runs/P2a-dd-20261042.json`, `PF/reads/P2a-dd-best.json`, `PF/sound/judge/P2a-dd-best/`,
+  `PF/sound/report-dd.json`.
 
 ### F9. Process: removing a worktree crashed running jobs
 - **Result.** Removing the plan's worktree while the doubles render ran from it crashed its 3 shards at a lazy
