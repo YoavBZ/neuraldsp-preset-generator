@@ -78,7 +78,7 @@ own. A model that reads little (the mix and stem models, D_CC) never serves as t
 | 12 | Doubles with the full setting | Data checks: the positive control (46 of 46 exact); every re-rendered double carries its target's exact label and amp (980 of 980); every other guitar unchanged (1,222 of 1,222); the new mixes rebuilt exactly (F16) | nothing | fixed |
 | 13 | Stand-ins | Not an error; their share is a data measurement | nothing | ruled out (as an error) |
 | 14 | Ratio prior | Data measurement; level statistics only | nothing | limit, measured |
-| 15 | Mastering | P2a reads its own NS inputs mastered with each example's draw against unmastered, by sound (zero training) | P2a, by-sound read | to run |
+| 15 | Mastering | P2a reads its own NS inputs mastered with each example's draw against unmastered, by sound (zero training) | P2a, by-sound read | ruled out (F22) |
 | 16, 19 | Where the tone is lost | The ladder: every rung on the verified recipe; located at the mix (F15) | recipe, by-sound read | located |
 | 16 | The fix for the mix | Phase 5's fix, trained on the verified recipe and read against P2b and P2c on the same examples | recipe, by-sound read | phase 5 |
 | 18 | Augmentation | P2a with dropouts and darkening against P2a, by sound. Merge and separator failure are mix-specific and are tested only once a mix model reads | recipe, by-sound read | ruled out as a lever (F21) |
@@ -721,6 +721,23 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **Caveat.** One seed each.
 - **References.** `PF/runs/P2a-dd-20261042.json`, `PF/reads/P2a-dd-best.json`, `PF/sound/judge/P2a-dd-best/`,
   `PF/sound/report-dd.json`.
+
+### F22. Mastering does not affect reading the tone (step 15, alone)
+- **Result.** P2a (seed 20261042, NS-best) read its own inputs passed through the mastering compressor with each
+  example's own drawn parameters (an RMS compressor, ratio 2–4, then a clip at −1 dBFS), whether or not that example's
+  mix was drawn mastered. Its answers sound as close as on the unmastered inputs.
+- **Numbers.**
+
+  | Row | FS | NS |
+  |---|---|---|
+  | P2a − P2a(mastered input) | −0.003 [−0.009, +0.003] | −0.002 [−0.017, +0.013] |
+  | P2a(mastered input) − S | −0.245 [−0.377, −0.113], 6 of 6 better | −0.240 [−0.313, −0.166], 30 of 36 better |
+
+- **Reading.** P2a never saw a compressed input, so a loss would have been an upper bound. A null on that upper bound
+  rules step 15 out: mastering neither hides the tone nor confuses the model. The compressor here keys on the guitar
+  alone, not on a mix.
+- **References.** `PF/inputs/*-tgtl-mast.npz`, `PF/sound/judge/P2a-best-mast/`, `PF/sound/report-mastering.json`;
+  `mastered_inputs`; ledger `phase_3_isolated` (b).
 
 ### F9. Process: removing a worktree crashed running jobs
 - **Result.** Removing the plan's worktree while the doubles render ran from it crashed its 3 shards at a lazy
