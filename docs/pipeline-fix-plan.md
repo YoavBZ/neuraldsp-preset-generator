@@ -59,7 +59,7 @@ own. A model that reads little (the mix and stem models, D_CC) never serves as t
 **The verified base so far** (each verified without relying on the others):
 - the by-sound read: each example's own label reproduces its stored target (F10);
 - the training recipe: it can fit (P1, F5), and fed the clean guitar it learns the tone well enough to sound about
-  22% closer than S on new songs (P2a, F11);
+  21% closer than S on 2 held-out songs (P2a, F11);
 - the dataset's audio parts: the target, other-guitar and mix renders reproduce exactly (the positive control in F3,
   the input parity in F4).
 
@@ -81,20 +81,20 @@ own. A model that reads little (the mix and stem models, D_CC) never serves as t
 | 15 | Mastering | P2a reads its own NS inputs mastered with each example's draw against unmastered, by sound (zero training) | P2a, by-sound read | ruled out (F22) |
 | 16, 19 | Where the tone is lost | The ladder: every rung on the verified recipe; located at the mix (F15) | recipe, by-sound read | open, located at the backing (F15, F17) |
 | 16 | The fix for the mix | Phase 5's fix, trained on the verified recipe and read against P2b and P2c on the same examples | recipe, by-sound read | phase 5 (backing variety recovers 27%, F24) |
-| 18 | Augmentation | P2a with dropouts and darkening against P2a, by sound. Merge and separator failure are mix-specific and are tested only once a mix model reads | recipe, by-sound read | ruled out as a lever (F21) |
+| 18 | Augmentation | P2a with dropouts and darkening against P2a, by sound. Merge and separator failure are mix-specific and are tested only once a mix model reads | recipe, by-sound read | not shown to help the clean input in distribution; song-fed untested (F21) |
 | 20 | Network | P1 | nothing | ruled out (F5) |
 | 21 | Loss in knob units | P2a by sound against by knob | P2a, by-sound read | ruled out as a blocker; reads are by sound (F11) |
 | 22 | Length | P1, P2a's checkpoints | nothing | fixed |
 | 24 | Logs | A test; P1 | nothing | fixed |
 | 26 | Pull toward the average | On P2a in distribution, by sound (F12) | P2a, by-sound read | ruled out as the blocker (F12) |
-| 27 | Near-chance switches | On P2a in distribution, by sound: unreadable switches at S, and the near-chance rule, against the plain readout | P2a, by-sound read | measured: plain readout right; near-chance rule hurts (F23) |
+| 27 | Near-chance switches | On P2a in distribution, by sound: unreadable switches at S, and the near-chance rule, against the plain readout | P2a, by-sound read | for a model that reads, in distribution: plain readout right; near-chance rule hurts (F23) |
 | 29, 30 | Reads almost nothing | The ladder, by knob and by sound | recipe, by-sound read | 29 open, located (F13–F17, F20); 30 fixed (F10) |
 | 31, 35 | V-real's size | Limit; the rows' Wickerman rule unit-tested | nothing | limit, measured |
 | 32 | Wickerman's shared input | Unit test of the rows; P4 reads their own amp tracks | nothing | fixed (test) |
 | 33 | Render-order noise | Fresh primed processes reproduce the truth (F10); in phase 4 every fresh S render must sit within 0.005 (log) of the label table's stored distance on stage F's parts, or the read stops | nothing | fixed |
 | 36 | S's home advantage | Stored distances (P5) | nothing | limit, measured (F1, F20) |
 | 37 | The average against S | In distribution, the constant against S by sound (F11: even) | by-sound read | limit, measured (F11, F20, F26) |
-| (P4) | Transfer to real recordings | First, alone: P2a told a wrong amp and rendered on it, by sound on NS (the amp mismatch, without real recordings): it keeps most of its skill (F19). Then P4 on V-real's amp tracks: no transfer, +0.153 against S, about its own constant (F20) | P2a, by-sound read | measured: a second blocker (F20) |
+| (P4) | Transfer to real recordings | First, alone: P2a told a wrong amp and rendered on it, by sound on NS (the amp mismatch, without real recordings): it keeps most of its skill (F19). Then P4 on V-real's amp tracks: no transfer detected, +0.153 against S, not shown better than its own constant (F20) | P2a, by-sound read | measured: a second blocker (F20) |
 
 **What this changes in the plan.**
 - Step 12 closes on its data checks (F16), not on D_fix.
@@ -316,7 +316,8 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **Caveats that apply to every by-sound row** (the audit, 2026-10-31):
   - NS rows use checkpoints chosen on NS's loss, and NS is 2 songs: section-clustered intervals understate
     between-song variance.
-  - Intervals cover sample variance, not training variance: one seed against another differs by up to about 0.08.
+  - Intervals cover sample variance, not training variance: one seed against the two-seed pool differs by up to
+    about 0.09 (NS, P2a-f50); seed against seed was not measured and is likely larger.
   - About 10 isolated rows are each read at 90%: a row whose interval end sits near 0 carries no verdict.
 - "E − constant" is the mean absolute knob error, in a knob's unit range, minus the constant's. Negative is better;
   0.01 is 1 point of a knob's range.
@@ -503,7 +504,8 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - The targets are Morgan renders on the true amp: an easier task than V-real.
   - The NS-best checkpoint is chosen on NS's loss; NS is 2 songs, and section-clustered intervals understate
     between-song variance.
-  - Intervals cover sample variance, not training variance. Seed-to-seed differences reach about 0.08 (F25).
+  - Intervals cover sample variance, not training variance: one seed against the two-seed pool differs by up to
+    about 0.09 (F25).
 - **References.** `PF/sound/judge/{P2a-best,S,constant}/`, `PF/sound/report.json`; `cmd_answers`,
   `cmd_sound_render`, `cmd_sound_report`, `log_ratio`; ledger `phase_3_sound`.
 - **Changes.** Every model from here is read by sound, not only by knob.
@@ -567,8 +569,8 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **Reading.** Nearly all of the clean input's skill is gone once the guitar sits in the mix. The separator does not
   lose it further; on FS the stem is better than the raw mix. The separator (the review's leading suspect, step 16) is
   cleared as the place of the loss.
-- **Caveats.** One seed each; best checkpoints chosen on NS loss. Seed-to-seed differences of about 0.08 (F25) are as
-  large as some of these rows.
+- **Caveats.** One seed each; best checkpoints chosen on NS loss. One seed against the two-seed pool differs by up to
+  about 0.09 (F25), as large as some of these rows.
 - **References.** `PF/sound/judge/P2c-best/`, `PF/runs/P2c-20261042.json`.
 
 ### F16. The doubles fix verified on the data alone (step 12)
@@ -769,17 +771,18 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 
   - By knob: NS −0.0004 against P2b's +0.0010 (13 switches readable against 5); FS −0.0023 [−0.0037, −0.0009]. At the
     final checkpoint NS +0.0026, worse than the constant.
-  - Share of P2a − P2b recovered (the ratio of cluster means, 2,000 cluster bootstraps): NS 0.27 [0.15, 0.38], FS 0.31
-    [0.09, 0.53].
+  - Share of P2a − P2b recovered (`share`: the ratio of the log's clustered means, 4,000 cluster bootstraps): NS
+    0.269 [0.131, 0.423], FS 0.291 [−0.025, 0.527] (FS includes 0, as its numerator row does).
 - **Reading.**
-  - More backing variety helps a song-fed model and delays and softens its overfitting. This is consistent with
+  - More backing variety helps a backing-fed model (P2b) and delays and softens its overfitting. This is consistent with
     learnability; the variety also acts as a regulariser, so learnability is not isolated by it.
   - Most of the loss remains. Backings from these 7 other songs, with the same 25 DIs, do not restore it, so it is
     undecided between masking and too few performances and backings.
   - The direction it supports: far more backing variety (zero renders) and more performances.
 - **Caveats.** One seed, with NS-chosen checkpoints; the FS row is undecided. The other-song backings are not in time or
   key with the performance.
-- **References.** `PF/inputs/*-mixb-k*.npz`, `PF/inputs/backings-{levels,pool}.json`, `PF/runs/P2b-bk8-20261042.json`,
+- **References.** `PF/sound/share-backings.json` (`cmd_share`), `PF/inputs/*-mixb-k*.npz`,
+  `PF/inputs/backings-{levels,pool}.json`, `PF/runs/P2b-bk8-20261042.json`,
   `PF/sound/judge/P2b-bk8-best/`, `PF/sound/report-backings.json`; `cmd_build_backings`, `BackingData`; ledger
   `phase_3_backings`.
 
@@ -801,15 +804,17 @@ what it changes. Each is audited before it is entered; the review's steps carry 
     - NS: 511 → 935 −0.012 [−0.068, +0.044]; 935 → 1,787 −0.031 [−0.080, +0.017]; 511 → 1,787
       −0.044 [−0.097, +0.010].
     - FS: 511 → 935 +0.123 [+0.033, +0.213] (worse, 6 of 6 bands); 935 → 1,787 −0.095 [−0.149, −0.041]; 511 → 1,787
-      +0.028 [−0.043, +0.099]. Non-monotone: run-to-run noise.
-  - At the final checkpoint (both seeds), NS by knob: 511 −0.0060, 935 −0.0075.
+      +0.028 [−0.043, +0.099]. Non-monotone: run-to-run noise. (Steps are the stored pooled pairs, negated where the
+      report stores the reverse pair; 511 → 1,787 is `report-curve-ends.json`.)
+  - At the final checkpoint (both seeds pooled), NS by knob: 511 −0.0060, 935 −0.0075, 1,787 −0.0116 [−0.0138,
+    −0.0093] (26 knobs readable): the knob read climbs with size at both checkpoints.
   - The fewer-performances point, 50% of the sections with all their examples (905, one seed): NS by knob −0.0061
     (final −0.0066), by sound −0.201 [−0.284, −0.117].
   - Single seeds swing: seed 1 alone gives 511 −0.198, 935 −0.117, 1,787 −0.241 on NS; one seed against the two-seed
     pool differs by up to NS +0.089 (P2a-f50).
 - **Reading.** In distribution on the clean input, a 3.5× size increase bought about 0.04 on NS (undecided) and
-  nothing on FS, while the knob read improved a lot. Song-fed curves were not run. Scaling more of the same data is not
-  supported as the next lever by this evidence alone.
+  nothing on FS, while the knob read improved at both checkpoints. Song-fed curves were not run. More of the same data
+  is not shown to be a strong lever for the clean input's sound.
 - **References.** `PF/runs/P2a-{f25,f50,s50}-2026104{2,3}.json`, `PF/reads/P2a-{f25,f50,s50}-{best,final}.json` (the
   final reads of f25 and f50 pool both seeds; their best reads are seed 1),
   `PF/sound/judge/P2a-*-x20261042+20261043/`, `PF/sound/report-{curve,curve-pooled,s50,seedcheck}.json`; ledger `phase_3_isolated`
@@ -833,8 +838,8 @@ what it changes. Each is audited before it is entered; the review's steps carry 
     My Fault ElecGtr1 +0.016, It Was My Fault ElecGtr3 +0.159, Let's Dance ElecGtr3 +0.229, Wickerman ElecGtr1 +0.237,
     Get Out Of Bed ElecGtr2 +0.243, Wickerman ElecGtr2+3 +0.277, Femme ElecGtr5 +0.431.
   - Leave one band out: +0.110 to +0.204. The S positive control passed again.
-- **Reading.** F20's penalty is not the training prior's wetness (unlike D_F5's on V-real, step 34). It is the core
-  tone, mostly on crunch.
+- **Reading.** F20's penalty is mainly the core tone, mostly on crunch; the training prior's wetness is a small,
+  undecided part (constant − constant-dry +0.033 [−0.021, +0.086]), unlike D_F5's on V-real (step 34).
 - **References.** `PF/vreal/report-p4-dry.json`, `PF/vreal/answers/P4-P2a-best-{dry,constant-dry}.json`; ledger
   `phase_4_dry`.
 
@@ -853,20 +858,22 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   Per control, most often outside: right cab position 0.66, left cab distance 0.52, PR12 bass 0.50 (median percentile
   0.08), SW50R mid 0.45 (0.18), left cab position 0.43, right cab distance 0.32, input gain 0.25, AC20 power 0.25.
 - **Reading.** Real parts often want settings at or beyond the edges of what the model was trained on (low bass and
-  mids, unusual cab placement). This compounds the domain gap: F26 shows the model does not read the real recordings
-  at all, and even if it did, the targets lie where training is thin.
+  mids, unusual cab placement). This compounds the domain gap: the model is not shown to read the real recordings
+  (F20, F26), and even if it did, the targets lie where training is thin.
 - **Caveats.** The search's "best" is one 52-render search per half and can sit on controls the sound barely
   constrains (cab placement); the shrunk version, halfway to S, is the robust one. These are descriptive, post hoc.
-- **References.** `~/ndsp-presets/learn/arm-a-mega53/F-perfect-sep/ZT/*/*/{A,B}.json` (`settings.best`), the
-  ladder's training labels; computed in this session (zero renders).
+- **Side row** (only the controls the search moved off S): 388 values, 0.40 outside (0.25 below, 0.14 above).
+- **References.** `PF/prior-edges.json` (`cmd_prior_edges`: its rule, the summaries and every control), from
+  `~/ndsp-presets/learn/arm-a-mega53/F-perfect-sep/ZT/*/*/{A,B}.json` (`settings.best`) and the ladder's training
+  labels; zero renders.
 
 
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
-  2,160 (controls 480, S and the constant 480, four rungs 960, the pull 240); the isolated tests 3,840 (the amp mismatch
+  2,160 (controls 480, S and the constant 480, four rungs 960, the pull 240); the isolated tests 3,600 (the amp mismatch
   960, mastering 240, the switch rules 480, augmentation 240, the size curve 1,440 with the pooled seeds, the backing
-  test 240); P4 438 and its dry readout 198. About 9,250 in all. D_fix's reads are not yet spent.
+  test 240); P4 438 and its dry readout 198. About 9,010 in all. D_fix's reads are not yet spent.
 - **MPS used:** about 4 h (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and backing
   runs, the k-fold).
 - **Disk:** P2's inputs about 0.3 GB; phase 1b's audio and features about 1.2 GB; the 31 GB guard holds.

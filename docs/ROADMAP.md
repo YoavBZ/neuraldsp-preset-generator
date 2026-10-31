@@ -151,15 +151,16 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          every read is now by sound (F11, F19).
        - **Blocker 1, the mix:** any backing erases the skill. With only drums, bass and vocals it is even with S; the
          other guitars and the separator add no further loss (F15, F17). Eight backings per target, from other songs'
-         stems (no new renders), recover 27% [15%, 38%] of it (F24).
+         stems (no new renders), recover 27% [13%, 42%] of it (F24).
        - **Blocker 2, real recordings:** fed V-real's real amp tracks (the guitar alone), the model is +0.153 [+0.039,
-         +0.268] against S and not shown better than its own training average (F20). Its penalty is the core tone,
-         not the time effects (F26). The presets that suit these real parts sit at the training prior's edges (F27).
+         +0.268] against S, and no transfer is detected: it is not shown better than its own training average (F20).
+         Its penalty is mainly the core tone; the time effects are a small, undecided part (F26). The presets that suit these real parts sit at the training prior's edges (F27).
        - **Fixed or verified alone:** the doubles (F16), early stopping (F18), the class input (F2), the by-sound read
          (F10).
        - **Ruled out as blockers:** the network (F5), the readout's pull (F12), the switch readout for a model that
-         reads (F23), mastering (F22), augmentation (F21), and more of the same data (F25: a 3.5× size increase bought
-         about 0.04).
+         reads (F23, in distribution), and mastering for the guitar itself (F22).
+       - **Not shown to help:** augmentation on the clean input (F21; song-fed untested), and more of the same data
+         for the clean input's sound (F25: a 3.5× size increase bought about 0.04, undecided).
        - S's home advantage on V-real is small (F1). The near-chance rule from the F20 build's draft costs sound and is
          not recommended (F23).
        - **Next (phase 5):** fixes for the two blockers, for the user's decision.

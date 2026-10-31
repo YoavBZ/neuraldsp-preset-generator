@@ -2083,6 +2083,132 @@ class BackingData(RungData):
                 self.X[j], self.L[j] = x, lu
 
 
+# --- stored derived reads (the audit: every quoted number reproducible) ---------------------------------------------
+
+def share_recovered(rows, n=4000, seed=20261036):
+    """The share of a loss a fix recovers: rows [(cluster, part, recovered, lost)] per example (recovered = before -
+    after, lost = before - reference). Each is averaged by the log's `clustered` rule (parts within clusters, then
+    clusters) and the share is their ratio; its 90% interval resamples whole clusters. -> (share, lo, hi)."""
+    import random
+
+    def ratio(rs):
+        a = clustered([(c, p, x) for c, p, x, _ in rs])["mean"]
+        b = clustered([(c, p, y) for c, p, _, y in rs])["mean"]
+        return a / b
+    pt = ratio(rows)
+    cl = sorted({r[0] for r in rows})
+    rng = random.Random(seed)
+    bs = []
+    for _ in range(n):
+        pick = []
+        for k, c in enumerate(rng.choice(cl) for _ in cl):
+            pick += [(f"{c}#{k}", p, x, y) for cc, p, x, y in rows if cc == c]
+        try:
+            bs.append(ratio(pick))
+        except ZeroDivisionError:
+            pass
+    bs.sort()
+    return pt, bs[int(0.05 * (len(bs) - 1))], bs[int(0.95 * (len(bs) - 1))]
+
+
+def cmd_share(args):
+    """F24's share of P2a - P2b that P2b-bk8 recovers, by sound on the sample, FS by band and NS by section (the log's
+    rows), stored to sound/share-backings.json. Zero renders."""
+    from learn import cc_build as CB
+
+    require("phase_3_backings")
+    ex = {x["i"]: x for x in CB.load_plan(argparse.Namespace(out=None, smoke=False))["examples"]}
+    ids = sample_ids(SAMPLE_N)
+
+    def j(t, i):
+        return json.loads((out_dir() / SOUND_DIR / "judge" / t / f"{i}.json").read_text())["judge"]
+    out = {"rule": "share = clustered(P2b - P2b-bk8) / clustered(P2b - P2a), each by sound against S per example; "
+                   "parts are sections, clusters bands (FS) or sections (NS); 90% interval by resampling clusters"}
+    for st, key in (("fs", "band"), ("ns", "section")):
+        rows = []
+        for i in ids[st]:
+            a, b, k = (log_ratio(j(t, i), j("S", i)) for t in ("P2a-best", "P2b-best", "P2b-bk8-best"))
+            rows.append((ex[i][key], ex[i]["section"], b - k, b - a))
+        pt, lo, hi = share_recovered(rows)
+        out[st] = {"share": pt, "lo90": lo, "hi90": hi, "examples": len(rows)}
+        print(f"{st}: share recovered {pt:.3f} [{lo:.3f}, {hi:.3f}]")
+    save(out_dir() / SOUND_DIR / "share-backings.json", out)
+
+
+def cmd_prior_edges(args):
+    """F27: where the presets the true-DI search found for V-real-10's parts (arm A's ZT `settings.best`, both halves)
+    sit within the ladder's training labels: for every today's-space continuous control that sounds in the searched
+    preset, its percentile among the training labels of the same (amp, part class) where it sounds; beside it the same
+    for the NS labels (the reference) and for S. Stored to prior-edges.json. Zero renders."""
+    import bisect
+    import glob
+
+    from learn import arm_a_mega53 as A
+    from learn import full_space as F
+
+    e = require("phase_4")
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    today = [j for j, nme in enumerate(F.CONT) if nme in F.TODAY]
+
+    def enc(settings, amp):
+        x = {tuple(k.rsplit("/", 1)): v for k, v in settings.items()}
+        c, cm, *_ = F.encode(x, amp)
+        return c, cm
+    train = {}
+    for i in sp["train"]:
+        c, cm = enc(rend[i]["settings"], kept[i]["amp"])
+        for j in today:
+            if cm[j] > 0:
+                train.setdefault((kept[i]["amp"], kept[i]["cls"], j), []).append(float(c[j]))
+    for v in train.values():
+        v.sort()
+
+    def pct(cell, j, val):
+        vals = train.get((*cell, j))
+        return None if not vals else bisect.bisect_left(vals, val) / len(vals)
+
+    def summary(ps):
+        ps = [q for q in ps if q is not None]
+        return {"values": len(ps), "outside_5_95": sum(q < 0.05 or q > 0.95 for q in ps) / len(ps),
+                "below_5": sum(q < 0.05 for q in ps) / len(ps), "above_95": sum(q > 0.95 for q in ps) / len(ps)}
+    ref = []
+    for i in sp["ns"]:
+        c, cm = enc(rend[i]["settings"], kept[i]["amp"])
+        ref += [pct((kept[i]["amp"], kept[i]["cls"]), j, float(c[j])) for j in today if cm[j] > 0]
+    found, moved, per = [], [], {}
+    ms = A.L.menu_S()
+    for p in sorted(glob.glob(str(DATA / "learn/arm-a-mega53/F-perfect-sep/ZT/*/*/[AB].json"))):
+        d = json.loads(pathlib.Path(p).read_text())
+        if d["slug"] not in PR.VREAL:
+            continue
+        cell = (d["amp"], PR.VREAL[d["slug"]][1])
+        c, cm = enc(d["settings"]["best"], d["amp"])
+        s0, _, *_ = F.encode(ms[d["amp"]][cell[1]][1], d["amp"])
+        for j in today:
+            if cm[j] > 0:
+                q = pct(cell, j, float(c[j]))
+                found.append(q)
+                per.setdefault(F.CONT[j], []).append(q)
+                if abs(float(c[j]) - float(s0[j])) > 1e-6:          # the search moved it off S
+                    moved.append(q)
+    s_ = []
+    for amp, by in ms.items():
+        for cls, (_, S) in by.items():
+            c, cm, *_ = F.encode(S, amp)
+            s_ += [pct((amp, cls), j, float(c[j])) for j in today if cm[j] > 0]
+    out = {"rule": "percentile of each sounding today's-space continuous control among the ladder's training labels of "
+                   "the same (amp, part class) where it sounds; outside = below the 5th or above the 95th",
+           "search_best": summary(found), "search_best_moved_off_S": summary(moved), "ns_labels": summary(ref),
+           "S": summary(s_),
+           "per_control": {k: {"values": len([q for q in v if q is not None]), **summary(v)}
+                           for k, v in sorted(per.items())}}
+    save(out_dir() / "prior-edges.json", out)
+    for k in ("search_best", "search_best_moved_off_S", "ns_labels", "S"):
+        print(k, out[k])
+    for k, v in sorted(out["per_control"].items(), key=lambda kv: -kv[1]["outside_5_95"])[:10]:
+        print(f"  {k:32s} {v['outside_5_95']:.2f} (n {v['values']})")
+
+
 # --- phase 4: V-real (P4: the clean-input model on real amp tracks; P3: the readouts), measurements only ------------
 
 VREAL_DIR = "vreal"
@@ -2453,7 +2579,8 @@ COMMANDS = {"p5": cmd_p5, "dirty-doubles": cmd_dirty_doubles, "p6": cmd_p6,
             "build-inputs": cmd_build_inputs, "p1": cmd_p1, "render-doubles": cmd_render_doubles,
             "build-doubles": cmd_build_doubles, "train": cmd_train, "read": cmd_read, "sample": cmd_sample,
             "answers": cmd_answers, "sound-render": cmd_sound_render, "sound-report": cmd_sound_report,
-            "build-backings": cmd_build_backings, "p4-predict": cmd_p4_predict, "vreal-comparators": cmd_vreal_comparators,
+            "build-backings": cmd_build_backings, "p4-predict": cmd_p4_predict, "share": cmd_share,
+            "prior-edges": cmd_prior_edges, "vreal-comparators": cmd_vreal_comparators,
             "vreal-render": cmd_vreal_render, "vreal-report": cmd_vreal_report}
 
 
