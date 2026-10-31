@@ -331,6 +331,23 @@ instead of generating unrealistic presets our own?"):
   training sections from arm A's true-DI search against each DI's own recorded amp track. The clean-input model is
   then trained on the real amp tracks with those labels, and P4 is re-read on V-real.
 
+*2026-10-31, after 5A's first seed (F29) and the bleed finding (F30):*
+- **5A seed 2 (ledger `phase_5a_seed2`).** P2b-wide24 with seed 20261043 on the same build, read the same way
+  (240 renders, about 10 minutes of MPS). Rows per seed and pooled; F29's NS row is confirmed or not by it.
+- **5B.1, transfer to real amps on reamped tracks (ledger `phase_5b1`, about 960 renders).**
+  - Units: (section, reamped track) for every ladder training or FS section whose DI has a reamped track (BKS, both
+    songs: 105 units, 14 rigs); 40 read, round-robin over the rigs.
+  - P2a (both seeds, NS-best) reads each reamped track at its training inputs' median loudness, per forced amp and
+    search half; judged by sound on the held half against S and the constant, with each unit's lag estimated from
+    its three S renders (`estimate_lag`). Clustered by rig.
+  - Isolation: no bleed check is relied on (bleed-free by construction); the performance is seen in training, so
+    this reads real-amp sound alone, apart from new playing (which V-real covers, F20).
+  - Reading: P2a better than S here says the clean-input model transfers to real amps on known playing, so F20's
+    gap sits in new performances or the V-real recordings; no gain says the real amp itself is the gap, and 5B.2
+    (pseudo-labels on reamped tracks) is the next fix.
+  - Caveats: one band (BKS, 2 songs); 14 rigs, several sharing a DI; the reamp chain (a real amp and mic) differs
+    from a mixed record.
+
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
   measurements; if they shape the choice, D_fix's V-real read is labelled selection-contaminated. The candidates by
@@ -955,14 +972,78 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **References.** `PF/runs/P2a-k{0..4}-20261042.json`, `PF/reads/P2a-k{0..4}-final.json` (`per_example`),
   `PF/reads/kfold-P2a.json`; `cmd_kfold_report`; ledger `phase_3`.
 
+### F29. Backings from 13 more songs recover about half of the skill the backing takes (phase 5A)
+- **Result.** P2b-wide24 is P2b retrained with each of its 1,787 training targets shown per epoch in its own P2b
+  input or in 1 of 24 backings. The pool has 406 backings from 21 sessions: the training songs' 177 sections
+  (P2b-bk8's pool) and 229 windows of 13 more songs whose stems were heard clean. Each backing is drawn
+  session-first, never from the example's own song, and set at P2b's levels (42,888 inputs, zero renders; seed
+  20261042). Best checkpoint at epoch 50 of 60, against P2b-bk8's 15; its NS loss stays near 5.32–5.46 from epoch 20
+  instead of rising. It was read on P2b's own fixed inputs (240 renders).
+- **Numbers.**
+
+  | Row | FS | NS |
+  |---|---|---|
+  | P2b-wide24 − P2b-bk8 (primary) | −0.124 [−0.236, −0.012], 5 of 6 bands better | −0.046 [−0.091, −0.001], 22 of 36 sections better (Adam Buckley −0.112, The Maybe Next Years −0.032) |
+  | P2b-wide24 − S | −0.175 [−0.386, +0.035] | −0.127 [−0.213, −0.041] |
+  | P2a − P2b-wide24 | −0.073 [−0.177, +0.032] | −0.115 [−0.178, −0.052] |
+
+  - Share of P2a − P2b recovered (`share --name P2b-wide24`): NS 0.478 [0.274, 0.713], against P2b-bk8's 0.269;
+    FS 0.738 [0.468, 1.021].
+  - By knob: NS −0.0008 [−0.0027, +0.0011] against the constant (P2b-bk8 −0.0004); FS −0.0040 [−0.0060, −0.0020]
+    (P2b-bk8 −0.0023).
+- **Reading.**
+  - More backing variety keeps helping: about half of the backing's loss is recovered on NS, against about a quarter
+    with 8 backings from the training songs. The direction is the same on both sets and both NS songs.
+  - With 13 more songs the model also stops overfitting within 60 epochs. The backing is learnable to a large extent
+    from variety alone (zero renders), which points away from masking as the main cause.
+  - Still about half of the loss remains on NS (P2a − P2b-wide24 −0.115).
+- **Caveats.**
+  - One seed, NS-chosen checkpoint. NS's −0.046 is within the about 0.09 one seed can differ from the two-seed pool
+    (the log's caveat), so it waits on a second seed (ledger `phase_5a_seed2`). FS's −0.124 is larger.
+  - The variants (24 against 8), the sessions (21 against 8) and the own-input share (1 in 25 against 1 in 9) all
+    change together, so which of them helps is not separated.
+  - Other-song backings are not in time or key with the performance; some extra backings are thin.
+- **References.** `PF/inputs/backings-wide-pool.json`, `PF/inputs/*-mixbw-k*.npz`, `PF/runs/P2b-wide24-20261042.json`,
+  `PF/reads/P2b-wide24-{best,final}.json`, `PF/sound/judge/P2b-wide24-best/`, `PF/sound/report-wide24.json`,
+  `PF/sound/share-P2b-wide24.json`; `cmd_wide_pool`, `cmd_build_wide`, `WideData`; ledger `phase_5a`.
+
+### F30. The amp-track bleed check fails tracks that cannot hold bleed (zero renders)
+- **Result.** 5B.1 was first designed on the pool's own recorded amp tracks. Measured with the stock check
+  (`trusted_data.amp_status`, the −30 dB line), they nearly all fail. Every own amp track of both NS songs fails
+  (The Maybe Next Years −10 to −14 dB through a backing vocal; Adam Buckley's too), as does The Travelling Band
+  (−5.5 to −15 dB through the Mellotron and Hammond). Over the ladder's training and FS DIs' 45 own tracks: 34
+  fail, 5 unmeasurable, 6 pass (Forkupines' ElecGtr9, Ale Lak's Amp2, BKS Bulldozer's 4 ElecGtr7 tracks); all 8 of
+  NS's fail.
+- **The flaw.** BKS's GR4 (software), Pod and reamped tracks are made from the DI after the session, so no other
+  instrument can be in them. Of the 24 measured, the stock check fails 17 (−21.9 to −28.1 dB, through the drum mics,
+  backing vocals, the synth and the Rhodes), leaves 3 unmeasurable and passes 4. The likely cause is the guitar
+  leaking into those instruments' mics during tracking (the room, headphones): the check cannot tell which way a
+  leak goes.
+- **A first fix, checked on controls.** The same estimator read only on frames where the amp track's own DI is silent
+  (±0.5 s), the source playing, nulls rolled within those frames:
+  - negative control: 35_ElecGtr6bGR4 against the Rhodes, stock −23.9 dB (fail), gated nothing above chance on 718
+    frames (pass);
+  - positive control: the Rhodes injected into 24_ElecGtr2cReamp1 at −25 dB reads −23.7 dB gated (stock −28.9);
+  - its limit is coverage: The Travelling Band's DIs leave 1 such frame, and backing vocals 86–101 frames (under the
+    200 asked), so those read nothing.
+- **Reading.** The stock check is too strict for amp tracks: it rejects bleed-free tracks, so "the pool's real amp
+  tracks are dirty" is not established. Since a recorded amp track can't be trusted by this check, 5B.1 now uses
+  reamped tracks, bleed-free by construction, and relies on no bleed check (the isolation rule). The gated check is a
+  candidate fix for rule 1's amp stand-ins and for later real-track data; it is not yet adopted.
+- **Caveats.** The direction claim (guitar into the other mics) is inferred, not shown: a DI's linear fit explains
+  only −29 to −39 dB of those sources, and a DI predicts an amp poorly. The gated check was tried on 5 cases only.
+- **References.** `PF/real/bleed/*.json` (the stock readings), `PF/real/bleed/measure.log`; the gated trial
+  `scratchpad gated.py` (to move into `pipeline_fix` with the fix's declaration); `trusted_data.measure_amp_bleed`,
+  `source_raw`, `amp_status`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
   2,160 (controls 480, S and the constant 480, four rungs 960, the pull 240); the isolated tests 3,600 (the amp mismatch
   960, mastering 240, the switch rules 480, augmentation 240, the size curve 1,440 with the pooled seeds, the backing
-  test 240); P4 438 and its dry readout 198. About 9,010 in all. D_fix's reads are not yet spent.
+  test 240); P4 438 and its dry readout 198; phase 5A 240. About 9,250 in all. D_fix's reads are not yet spent.
 - **MPS used:** about 4 h (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and backing
-  runs, the k-fold).
+  runs, the k-fold, phase 5A's 10 minutes).
 - **Disk:** P2's inputs about 0.3 GB; phase 1b's audio and features about 1.2 GB; the 31 GB guard holds.
 - Every render: isolate=True, a discarded priming render, 0.25 s trimmed, at most 3 render processes,
   `setopt no_bg_nice`. V-real is read only in P5's stored distances, phase 4 and D_fix's declared read.

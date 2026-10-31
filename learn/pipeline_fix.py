@@ -2388,50 +2388,49 @@ class WideData(RungData):
                 self.X[j], self.L[j] = x, lu
 
 
-# --- phase 5B.1: the clean-input model on the pool's own real amp tracks (a well-powered transfer read) -----------------
+# --- phase 5B.1: the clean-input model on real reamped amp tracks (an isolated transfer read) ------------------------
 
 REAL_DIR = "real"
-REAL_TRAIN_N = 36
+REAL_N = 40                         # (section, reamp track) units read, round-robin over the reamp rigs
 REAL_SEED = 20261038
 AMPS3 = ("pr12", "sw50r", "ac20")
 
 
-def real_amp_track(sd, own, start_s):
-    """A section of a DI's own recorded amp track(s): the unity sum of its own tracks folded to mono as centred
-    sources, trimmed as the sections are (`bare_backing`'s rule)."""
-    return bare_backing(sd, own, start_s)
+def real_amp_track(sd, track, start_s):
+    """A section of one reamped amp track, folded to mono as a centred source, trimmed as the sections are
+    (`bare_backing`'s rule)."""
+    return bare_backing(sd, [track], start_s)
 
 
-def real_parts(kept, sp, inv):
-    """5B.1's sections: every NS section (new performances), and REAL_TRAIN_N training sections spread over the
-    training DIs (seen performances, real rig), each with its DI's own amp tracks. -> [{...}]."""
-    secs = {}
-    for i in sp["ns"] + sp["train"]:
-        x = kept[i]
-        secs.setdefault(x["section"], x)
-    ns = sorted({kept[i]["section"] for i in sp["ns"]})
-    tr_secs = sorted({kept[i]["section"] for i in sp["train"]})
-    by_di = {}
-    for sec in tr_secs:
-        by_di.setdefault(secs[sec]["di"], []).append(sec)
-    order = draw_order(tr_secs, {sec: secs[sec]["di"] for sec in tr_secs}, n=REAL_TRAIN_N, seed=REAL_SEED)
-    out = []
-    for sec, kind in [(x, "ns") for x in ns] + [(x, "train") for x in order]:
-        x = secs[sec]
-        own = inv[x["di"]].get("own") or []
-        if not own:
-            continue
-        out.append({"section": sec, "set": kind, "di": x["di"], "band": x["band"], "cls": x["cls"],
-                    "sd": x["session_dir"], "start_s": float(sec.split("@")[1]), "own": own,
-                    "di_path": inv[x["di"]]["path"]})
-    return out
+def real_parts(kept, sp, inv, n=REAL_N, seed=REAL_SEED):
+    """5B.1's units: (section, reamp track) for every ladder training or FS section whose DI has reamped amp tracks
+    among its own tracks ('Reamp' in the name: the DI re-played through a real amp and mic after the session, so no
+    other instrument can be in it). n of them in round-robin order over the rigs (song and track), each rig's own
+    units shuffled. -> [{unit, section, track, rig, set, di, band, cls, sd, start_s, di_path}]."""
+    units = {}
+    for kind in ("train", "fs"):
+        for i in sp[kind]:
+            x = kept[i]
+            for t in inv[x["di"]].get("own") or []:
+                if "Reamp" in t:
+                    u = f"{x['section']}#{t}"
+                    units.setdefault(u, {
+                        "unit": u, "section": x["section"], "track": t, "rig": f"{session_of(x['section'])}/{t}",
+                        "set": kind, "di": x["di"], "band": x["band"], "cls": x["cls"], "sd": x["session_dir"],
+                        "start_s": float(x["section"].split("@")[1]), "di_path": inv[x["di"]]["path"]})
+    order = draw_order(sorted(units), {u: units[u]["rig"] for u in units}, n=n, seed=seed)
+    return [units[u] for u in order]
+
+
+def real_key(prt, amp):
+    return f"{prt['unit']}|{amp}"
 
 
 def cmd_real_predict(args):
-    """5B.1's answers (zero renders): P2a (both seeds, NS-best, pooled) reads each section's own amp track, brought to
-    the median half loudness of its training inputs, on each search half, told the section's class and each forced
-    amp; the plain readout on the class's S; and the constant of P2a's training labels. -> real/answers/<tag>.json,
-    keyed '<section>|<amp>' -> {half or ANY_HALF: {select, settings}}."""
+    """5B.1's answers (zero renders): P2a (both seeds, NS-best, pooled) reads each unit's reamped amp track, brought
+    to the median half loudness of its training inputs, on each search half, told the section's class and each
+    forced amp; the plain readout on the class's S. Beside it S and the constant of P2a's training labels.
+    -> real/answers/<tag>.json, keyed '<section>#<track>|<amp>' -> {half or ANY_HALF: {select, settings}}."""
     from learn import arm_a_mega53 as A
     from learn import cc_build as CB
     from learn import direct_existing as DE
@@ -2442,23 +2441,24 @@ def cmd_real_predict(args):
 
     e = require("phase_5b1")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
-    inv = CB.cc_inventory()
-    parts = real_parts(kept, sp, inv)
+    parts = real_parts(kept, sp, CB.cc_inventory())
     nets, recs = [], []
     for sd in SEEDS:
         n, r_ = load_run("P2a", sd, "best")
         nets.append(n)
         recs.append(r_)
+    if any(r_["train_ids"] != recs[0]["train_ids"] for r_ in recs):
+        raise SystemExit("5B.1 reads P2a, both seeds on one training set")
     target = p2a_median_lufs(recs[0]["train_ids"])
     const = constant_of(rung_rows(kept, rend, recs[0]["train_ids"]))
     ms = A.L.menu_S()
     out = {"P2a": {}, "constant": {}, "S": {}}
     for prt in parts:
-        ref = real_amp_track(prt["sd"], prt["own"], prt["start_s"])
+        ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
         g = DE.inference_gain_db(ref, target)
         for amp in AMPS3:
             sel, S = ms[amp][prt["cls"]]
-            key = f"{prt['section']}|{amp}"
+            key = real_key(prt, amp)
             for search in ("A", "B"):
                 s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
                 x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
@@ -2473,37 +2473,17 @@ def cmd_real_predict(args):
             "plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b1", "tag": t, "parts": parts, "input_lufs": target,
             "models": [r_["model_sha256"]["best"] for r_ in recs], "answers": a,
             "time": time.strftime("%Y-%m-%d %H:%M:%S")})
-    print(f"REAL PREDICT DONE: {len(parts)} sections ({sum(p_['set'] == 'ns' for p_ in parts)} NS); inputs at "
+    print(f"REAL PREDICT DONE: {len(parts)} units on {len({p_['rig'] for p_ in parts})} rigs; inputs at "
           f"{target:.2f} LUFS")
 
 
-def real_bleed(parts):
-    """Each 5B.1 section's own-amp-track bleed verdict (`trusted_data.amp_status`, A6's line): 'pass' when every own
-    track passes, 'fail' when any fails or is unmeasurable, 'not measured' when a reading is missing."""
-    from learn import cc_build as CB
-    from learn import trusted_data as T
-
-    croot = CB.V.out_root(argparse.Namespace(out=None, smoke=False))
-    out, cache = {}, {}
-    for prt in parts:
-        sd = prt["sd"]
-        if sd not in cache:
-            bp = T.amp_bleed_path(croot, sd)
-            cache[sd] = (json.loads(bp.read_text()).get("tracks") or {}) if bp.exists() else {}
-        st = [T.amp_status(cache[sd].get(t)) for t in prt["own"]]
-        out[prt["section"]] = ("not measured" if "not measured" in st else
-                               "pass" if all(z == "pass" for z in st) else "fail")
-    return out
-
-
 def cmd_real_render(args):
-    """5B.1's renders for one shard of sections: S on each amp first (each in its own primed process; the stored S
-    must equal the live menu's), the judge lag estimated once per section from those three renders pooled
+    """5B.1's renders for one shard of units: S on each amp first (each in its own primed process; the stored S must
+    equal the live menu's), the judge lag estimated once per unit from those three renders pooled
     (`analysis.aligned.estimate_lag`: samples the recording lags the render, the judge's own convention), then every
     answer of `--names` through the section's measure DI in its own primed process, rendered over the whole section
-    and trimmed as the by-sound read trims, judged against the section's own amp track on both halves. Sections whose
-    own amp tracks fail the bleed check, or have no reading, are not rendered (trusted data only).
-    -> real/judge/<tag>/<section>|<amp>.json."""
+    and trimmed as the by-sound read trims, judged against the unit's reamped track on both halves.
+    -> real/judge/<tag>/<unit>|<amp>.json."""
     import numpy as np
 
     from analysis.aligned import estimate_lag
@@ -2520,9 +2500,8 @@ def cmd_real_render(args):
     tags = ["S"] + [t for t in args.names.split(",") if t and t != "S"]
     ans = {t: json.loads((out_dir() / REAL_DIR / "answers" / f"{t}.json").read_text()) for t in tags}
     parts = ans["S"]["parts"]
-    bleed = real_bleed(parts)
     k, n = args.shard
-    mine = [p_ for j, p_ in enumerate(parts) if j % n == k and bleed[p_["section"]] == "pass"]
+    mine = [p_ for j, p_ in enumerate(parts) if j % n == k]
     lag_dir = out_dir() / REAL_DIR / "lags"
     trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
     LO._wait_cap()
@@ -2542,37 +2521,39 @@ def cmd_real_render(args):
         y = AM.fresh_render(CB.new_renderer, di32, a["select"], st, st)
         return np.asarray(y, np.float64)[trim[0]:trim[1]]
 
+    def fname(key):
+        return key.replace("/", "__")
+
     for prt in mine:
         if PS.free_gb() < T.DISK_GUARD_GB:
             raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
-        sec = prt["section"]
         di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
         di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
-        ref = real_amp_track(prt["sd"], prt["own"], prt["start_s"])
-        lp = lag_dir / f"{sec.replace('/', '__')}.json"
+        ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
+        lp = lag_dir / f"{fname(prt['unit'])}.json"
         s_y = {}
         if not lp.exists():
             for amp in AMPS3:
-                s_y[amp] = render(di32, ans["S"]["answers"][f"{sec}|{amp}"][ANY_HALF])
+                s_y[amp] = render(di32, ans["S"]["answers"][real_key(prt, amp)][ANY_HALF])
                 renders += 2
             try:
-                save(lp, {"section": sec, "lag": int(estimate_lag(ref, list(s_y.values()))), "status": "ok"})
+                save(lp, {"unit": prt["unit"], "lag": int(estimate_lag(ref, list(s_y.values()))), "status": "ok"})
             except ValueError as err:
-                save(lp, {"section": sec, "lag": None, "status": f"no lag: {err}"})
+                save(lp, {"unit": prt["unit"], "lag": None, "status": f"no lag: {err}"})
         lag = json.loads(lp.read_text())["lag"]
         if lag is None:
-            print(f"{sec[-50:]}: no lag; not read", flush=True)
+            print(f"{prt['unit'][-60:]}: no lag; not read", flush=True)
             continue
         for t in tags:
             asha = answers_sha(ans[t]["answers"])
             for amp in AMPS3:
-                key = f"{sec}|{amp}"
-                gp = out_dir() / REAL_DIR / "judge" / t / f"{key.replace('/', '__')}.json"
+                key = real_key(prt, amp)
+                gp = out_dir() / REAL_DIR / "judge" / t / f"{fname(key)}.json"
                 if gp.exists():
                     if json.loads(gp.read_text()).get("answers_sha256") != asha:
                         raise SystemExit(f"{gp}: rendered from other answers")
                     continue
-                rec = {"section": sec, "amp": amp, "tag": t, "lag": lag, "answers_sha256": asha, "judge": {},
+                rec = {"unit": prt["unit"], "amp": amp, "tag": t, "lag": lag, "answers_sha256": asha, "judge": {},
                        "render_sha256": {}}
                 for search, a in sorted(ans[t]["answers"][key].items()):
                     if t == "S" and amp in s_y:
@@ -2583,15 +2564,14 @@ def cmd_real_render(args):
                     rec["judge"][search] = K.judge(ref, y, di, lag)
                     rec["render_sha256"][search] = AM.audio_sha(y)
                 save(gp, rec)
-        print(f"{sec[-50:]}: lag {lag}; renders so far {renders}", flush=True)
+        print(f"{prt['unit'][-60:]}: lag {lag}; renders so far {renders}", flush=True)
     print(f"REAL-RENDER DONE {k}/{n}: {renders} renders")
 
 
 def cmd_real_report(args):
-    """5B.1's rows: for each pair in `--pairs`, ln(d_a / d_b) on the held half per (section, amp, search), with S
-    refused dropping the direction and a refused answer scored as S (the V-real rule); NS sections clustered by section
-    (2 songs), training sections by band; part-weighted beside. Only sections whose own amp tracks pass the bleed
-    check are read (`real_bleed`); the count excluded is reported."""
+    """5B.1's rows: for each pair in `--pairs`, ln(d_a / d_b) on the held half per (unit, amp, search), with S
+    refused dropping the direction and a refused answer scored as S (the V-real rule); clustered by rig (song and
+    reamp track), parts the units; part-weighted beside; the lag refusals counted. -> real/report-<label>.json."""
     require("phase_5b1")
     tags = {t for pair in args.pairs.split(",") for t in pair.split(":")} | {"S"}
     parts = json.loads((out_dir() / REAL_DIR / "answers" / "S.json").read_text())["parts"]
@@ -2600,46 +2580,46 @@ def cmd_real_report(args):
         judge[t] = {}
         for p_ in (out_dir() / REAL_DIR / "judge" / t).glob("*.json"):
             r = json.loads(p_.read_text())
-            judge[t][f"{r['section']}|{r['amp']}"] = r["judge"]
-    bleed = real_bleed(parts)
-    parts = [p_ for p_ in parts if bleed[p_["section"]] == "pass"]
-    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b1", "bleed": bleed, "rows": {},
-           "excluded": sorted(s_ for s_, v in bleed.items() if v != "pass")}
+            judge[t][f"{r['unit']}|{r['amp']}"] = r["judge"]
+    no_lag = [p_["unit"] for p_ in parts if (out_dir() / REAL_DIR / "lags" / f"{p_['unit'].replace('/', '__')}.json")
+              .exists() and json.loads((out_dir() / REAL_DIR / "lags" / f"{p_['unit'].replace('/', '__')}.json")
+                                       .read_text())["lag"] is None]
+    meta = {p_["unit"]: p_ for p_ in parts}
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b1", "units": len(parts), "no_lag": no_lag, "rows": {}}
+    units = [(p_["unit"], amp, sh, h) for p_ in parts for amp in AMPS3 for sh, h in (("A", "B"), ("B", "A"))]
     for pair in args.pairs.split(","):
         a, b = pair.split(":")
-        for kind in ("ns", "train"):
-            units = [(prt["section"], amp, sh, h) for prt in parts if prt["set"] == kind
-                     for amp in AMPS3 for sh, h in (("A", "B"), ("B", "A"))]
-            meta = {prt["section"]: prt for prt in parts}
-            rows, cnt = [], {"directions": len(units), "base_dropped": 0, "missing": 0, "refused_scored_as_S": 0}
-            for u in units:
-                s_ = vreal_value(judge, "S", u)
-                if not isinstance(s_, float):
-                    cnt["base_dropped"] += 1
-                    continue
-                vals = []
-                for t in (a, b):
-                    v = vreal_value(judge, t, u)
-                    if v is None:
-                        cnt["missing"] += 1
-                        break
-                    if v == "refused":
-                        cnt["refused_scored_as_S"] += 1
-                        v = s_
-                    vals.append(v)
-                if len(vals) == 2:
-                    m = meta[u[0]]
-                    rows.append((u[0] if kind == "ns" else m["band"], u[0], math.log(vals[0] / vals[1])))
-            c = clustered(rows)
-            out["rows"].setdefault(f"{a} - {b}", {})[kind] = {**{q: c.get(q) for q in (
-                "mean", "lo90", "hi90", "clusters", "clusters_negative", "part_weighted", "parts", "parts_negative")},
-                **cnt}
-            r_ = out["rows"][f"{a} - {b}"][kind]
-            if r_["mean"] is not None:
-                iv = "" if r_["lo90"] is None else f" [{r_['lo90']:+.4f}, {r_['hi90']:+.4f}]"
-                print(f"{a} - {b} {kind}: {r_['mean']:+.4f}{iv} ({r_['clusters']} clusters, {r_['clusters_negative']} "
-                      f"better; {r_['parts_negative']} of {r_['parts']} sections better); missing {cnt['missing']}, "
-                      f"S dropped {cnt['base_dropped']}, refused {cnt['refused_scored_as_S']}")
+        rows, cnt = [], {"directions": len(units), "base_dropped": 0, "missing": 0, "refused_scored_as_S": 0}
+        for u in units:
+            s_ = vreal_value(judge, "S", u)
+            if s_ is None:
+                cnt["missing"] += 1
+                continue
+            if s_ == "refused":
+                cnt["base_dropped"] += 1
+                continue
+            vals = []
+            for t in (a, b):
+                v = vreal_value(judge, t, u)
+                if v is None:
+                    cnt["missing"] += 1
+                    break
+                if v == "refused":
+                    cnt["refused_scored_as_S"] += 1
+                    v = s_
+                vals.append(v)
+            if len(vals) == 2:
+                rows.append((meta[u[0]]["rig"], u[0], math.log(vals[0] / vals[1])))
+        c = clustered(rows)
+        out["rows"][f"{a} - {b}"] = {**{q: c.get(q) for q in (
+            "mean", "lo90", "hi90", "clusters", "clusters_negative", "part_weighted", "parts", "parts_negative")},
+            **cnt}
+        r_ = out["rows"][f"{a} - {b}"]
+        if r_["mean"] is not None:
+            iv = "" if r_["lo90"] is None else f" [{r_['lo90']:+.4f}, {r_['hi90']:+.4f}]"
+            print(f"{a} - {b}: {r_['mean']:+.4f}{iv} ({r_['clusters']} rigs, {r_['clusters_negative']} better; "
+                  f"{r_['parts_negative']} of {r_['parts']} units better); missing {cnt['missing']}, S dropped "
+                  f"{cnt['base_dropped']}, refused {cnt['refused_scored_as_S']}")
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     save(out_dir() / REAL_DIR / f"report-{args.label or 'real'}.json", out)
     print("REAL-REPORT DONE")
