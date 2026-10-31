@@ -148,7 +148,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        own, relying only on parts already verified (the user's rule).
        - **The model can learn the tone.** Fed the clean guitar (a perfect separator), it sounds −0.241 [−0.318,
          −0.165] closer than S on 2 held-out songs, also when told a wrong amp. Knob error badly understates this, so
-         every read is now by sound (F11, F19).
+         every read is now by sound (F11, F19). By knob, a 5-fold new-song test reads every one of the 9 training bands
+         better than the constant (F28).
        - **Blocker 1, the mix:** any backing erases the skill. With only drums, bass and vocals it is even with S; the
          other guitars and the separator add no further loss (F15, F17). Eight backings per target, from other songs'
          stems (no new renders), recover 27% [13%, 42%] of it (F24).
@@ -163,6 +164,10 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          for the clean input's sound (F25: a 3.5× size increase bought about 0.04, undecided).
        - S's home advantage on V-real is small (F1). The near-chance rule from the F20 build's draft costs sound and is
          not recommended (F23).
+       - **Community presets** (the user's question, 2026-10-31): yes, as centres for the next build's draws with a
+         wide share kept and the effects dried, after the two blocker tests; they fix the prior's coverage (F27), not
+         whether the model reads real recordings (F20). Morgan Amps Suite X's presets need a plugin update: the user's
+         yes and a parity check first.
        - **Next (phase 5):** fixes for the two blockers, for the user's decision.
    - **Pipeline review (2026-10-30, zero renders; [record](ml-pipeline-review.md), checks `learn/pipeline_review.py`).**
      At the user's request, the direct model's whole process is listed as 38 small steps. Each step has its code, a

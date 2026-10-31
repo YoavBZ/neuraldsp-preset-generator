@@ -1443,6 +1443,47 @@ def split_e(ex, info, const, key_of):
     return out
 
 
+def per_example_e(ex, info, const, kx):
+    """{i: [band, section, E - constant]} over each example's sounding knobs (the k-fold's pooled row)."""
+    import numpy as np
+
+    out = {}
+    for i, e in ex.items():
+        c0 = np.asarray(const[info[i]["cell"]]["cont"], np.float64)
+        m = (np.asarray(e["cm"]) > 0) & np.isfinite(c0)
+        if m.any():
+            y = np.asarray(e["c"], np.float64)
+            out[str(i)] = [kx[i]["band"], kx[i]["section"],
+                           float(np.mean(np.abs(e["a2"] - y)[m]) - np.mean(np.abs(c0 - y)[m]))]
+    return out
+
+
+def cmd_kfold_report(args):
+    """The new-song k-fold (P2a, final checkpoints): every kept example read by the fold that held its band out; the
+    pooled E - constant clustered by band (9 bands), each fold's training and held-out size and readable heads.
+    Zero renders. -> reads/kfold-<name>.json."""
+    e = require("phase_3")
+    rows, folds = [], {}
+    for f in sorted(FOLDS):
+        rd = json.loads((out_dir() / "reads" / f"{args.name}-k{f}-final.json").read_text())
+        run = json.loads((out_dir() / "runs" / f"{args.name}-k{f}-{SEEDS[0]}.json").read_text())
+        st = rd["sets"][f"fold{f}"]
+        folds[f] = {"bands": list(FOLDS[f]), "train": run["train"], "held": run["held_n"],
+                    "readable": st["readable"], "e_minus_constant": st["e_minus_constant_all"]}
+        rows += [(b, sec, v) for b, sec, v in st["per_example"].values()]
+    c = clustered(rows)
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_3", "name": args.name, "folds": folds,
+           "pooled": {k: c.get(k) for k in ("mean", "lo90", "hi90", "clusters", "clusters_negative", "per_cluster",
+                                            "leave_one_out", "part_weighted", "parts")},
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    save(out_dir() / "reads" / f"kfold-{args.name}.json", out)
+    print(f"pooled over {c['clusters']} bands: E - constant {c['mean']:+.4f} [{c['lo90']:+.4f}, {c['hi90']:+.4f}], "
+          f"{c['clusters_negative']} of {c['clusters']} bands better")
+    for f, v in folds.items():
+        print(f"  fold {f} {v['bands']}: train {v['train']}, held {v['held']}, readable {v['readable']}, "
+              f"E - constant {v['e_minus_constant']['mean']:+.4f}")
+
+
 def cmd_read(args):
     """The by-knob read of one model (`--name`, both seeds where both ran, `--which` final|best): R0's rule on FS and
     the held-out set (NS or the fold), against the constant of its own training labels; the family table; E split by
@@ -1497,7 +1538,8 @@ def cmd_read(args):
             "families": fam, "rows": r0,
             "e_minus_constant_by_mode": split_e(ex, info, const, lambda i: kx[i]["mode"]),
             "e_minus_constant_by_mastered": split_e(ex, info, const, lambda i: kx[i]["draw"]["mastered"]),
-            "e_minus_constant_all": split_e(ex, info, const, lambda i: "all")["all"]}
+            "e_minus_constant_all": split_e(ex, info, const, lambda i: "all")["all"],
+            "per_example": per_example_e(ex, info, const, kx)}
         s_ = out["sets"][set_name]
         print(f"{args.name} ({args.which}, seeds {out['seeds']}) on {set_name} ({len(rows)} examples): readable "
               f"{s_['readable']} of {s_['heads']}; knobs worse {s_['worse_knobs']}; knob E median model "
@@ -2580,7 +2622,7 @@ COMMANDS = {"p5": cmd_p5, "dirty-doubles": cmd_dirty_doubles, "p6": cmd_p6,
             "build-doubles": cmd_build_doubles, "train": cmd_train, "read": cmd_read, "sample": cmd_sample,
             "answers": cmd_answers, "sound-render": cmd_sound_render, "sound-report": cmd_sound_report,
             "build-backings": cmd_build_backings, "p4-predict": cmd_p4_predict, "share": cmd_share,
-            "prior-edges": cmd_prior_edges, "vreal-comparators": cmd_vreal_comparators,
+            "prior-edges": cmd_prior_edges, "kfold-report": cmd_kfold_report, "vreal-comparators": cmd_vreal_comparators,
             "vreal-render": cmd_vreal_render, "vreal-report": cmd_vreal_report}
 
 

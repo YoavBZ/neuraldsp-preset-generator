@@ -287,6 +287,30 @@ its dry readout (F26).
 
 ### Phase 5: the located fix, D_fix, and scale
 
+*2026-10-31, the decision on community presets* (the user's question via the research session: "What do you think
+about downloading a bundle of community presets and use them for training instead of generating unrealistic presets
+our own?"):
+- **Yes, as centres for the next build's draws, not as the only labels**, alongside a smaller wide share for coverage
+  (every control is learned). Time effects are dried where the presets are wet (factory-centred draws are 73% reverb
+  on).
+- **Why:**
+  - F27: the presets that suit real parts sit at the training prior's edges 30–40% of the time, against 12% for its own
+    labels.
+  - F26: on real recordings the penalty is mainly the core tone.
+  - Realistic centres move training toward where real tones are, and they also cut step 7's refusals and the runaway
+    targets.
+- **What it does not fix:** F20, that the model is not shown to read real recordings at all. A realistic prior also
+  lifts scores through the fallback even when nothing is read. So it is read only against a model with the same
+  prior, by sound, and only after the two blocker tests below.
+- **Supply and rules:**
+  - Community presets for Morgan Amps Suite are few (tens to hundreds; no bulk library found).
+  - Morgan Amps Suite X (2026-10-28, free) adds 100+ curated presets. Updating the plugin needs the user's yes and a
+    parity check first: re-render stored settings and compare bit for bit, as the positive controls do.
+  - Community presets' licences are the user's to check; paid packs need the user's yes.
+  - "Song tone" presets (a person's attempt at a record) could serve as a yardstick, not as ground truth.
+- **When:** with the next data build, after the two blocker tests.
+
+
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
   measurements; if they shape the choice, D_fix's V-real read is labelled selection-contaminated. The candidates by
   outcome:
@@ -872,6 +896,36 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   `~/ndsp-presets/learn/arm-a-mega53/F-perfect-sep/ZT/*/*/{A,B}.json` (`settings.best`) and the ladder's training
   labels; zero renders.
 
+
+### F28. By knob, the clean-input model reads new songs in every band (the new-song k-fold)
+- **Result.** P2a (seed 20261042, the recipe, final checkpoints, so nothing is chosen on the held-out set) was
+  retrained 5 times, each holding out whole bands:
+  - Forkupines;
+  - BKS (2 songs);
+  - The Travelling Band, Ale Lak and Dunning Kruger;
+  - Hazael and Storm Of Particles;
+  - The Maybe Next Years and Adam Buckley.
+  Each read every kept example of its held-out bands by knob (R0's rule). By sound it was not read.
+- **Numbers.**
+
+  | Fold (held out) | Training | Held out | Knobs readable | Switches readable | E − constant |
+  |---|---|---|---|---|---|
+  | Forkupines | 1,863 | 514 | 24 | 25 | −0.0092 [−0.0109, −0.0075] |
+  | BKS | 1,626 | 751 | 25 | 28 | −0.0073 [−0.0091, −0.0055] |
+  | Travelling Band, Ale Lak, Dunning Kruger | 1,972 | 405 | 16 | 27 | −0.0092 [−0.0118, −0.0066] |
+  | Hazael, Storm Of Particles | 2,053 | 324 | 21 | 25 | −0.0098 [−0.0133, −0.0063] |
+  | The Maybe Next Years, Adam Buckley | 1,994 | 383 | 21 | 27 | −0.0105 [−0.0130, −0.0079] |
+
+  - Pooled over the 9 bands (each example read by the fold that held its band out): −0.0090 [−0.0101, −0.0079], 9 of
+    9 bands better.
+  - Per band −0.0055 (Ale Lak) to −0.0112 (Storm Of Particles); leave one band out −0.0087 to −0.0094; part-weighted
+    −0.0088.
+- **Reading.** The clean-input model's knob skill on new songs is general across every training band, not only the 2
+  NS songs. Its by-sound read (F11) still rests on those 2 songs.
+- **Caveats.** By knob only; one seed per fold; fold sizes differ (1,626–2,053 training examples); the ladder's set (no
+  DT doubles).
+- **References.** `PF/runs/P2a-k{0..4}-20261042.json`, `PF/reads/P2a-k{0..4}-final.json` (`per_example`),
+  `PF/reads/kfold-P2a.json`; `cmd_kfold_report`; ledger `phase_3`.
 
 ## Budget
 
