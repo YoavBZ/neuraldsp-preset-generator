@@ -1967,8 +1967,13 @@ def cmd_sound_report(args):
         return json.loads(p.read_text())["judge"] if p.exists() else None
 
     pairs = [(t, "S") for t in tags] + [(t, "constant") for t in tags] + list(zip(tags, tags[1:]))
-    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_3_sound", "sample_n": n_each, "rows": {}}
-    for set_name, sids in ids.items():
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {'phase_5b2' if args.by_mode else 'phase_3_sound'}", "sample_n": n_each,
+           "rows": {}}
+    groups = [(set_name, None, sids) for set_name, sids in ids.items()]
+    if args.by_mode:                                   # 5B.2's arm P: each set split by the example's draw mode
+        groups += [(f"{set_name}-{m}", m, [i for i in sids if ex[i]["mode"] == m])
+                   for set_name, sids in ids.items() for m in ("factory", "start", "wide")]
+    for set_name, mode, sids in groups:
         for ta, tb in pairs:
             rows, missing, refused = [], 0, 0
             for i in sids:
@@ -1980,14 +1985,14 @@ def cmd_sound_report(args):
                     refused += 1                   # a judge refusal (a silent render): listed, never dropped quietly
                     continue
                 v = log_ratio(ja, jb)
-                cl = ex[i]["band"] if set_name == "fs" else ex[i]["section"]
+                cl = ex[i]["band"] if set_name.startswith("fs") else ex[i]["section"]
                 rows.append((cl, ex[i]["section"], v))
             c = clustered(rows)
             key = f"{ta} - {tb}"
             out["rows"].setdefault(key, {})[set_name] = {
                 **{k: c.get(k) for k in ("mean", "lo90", "hi90", "clusters", "clusters_negative", "clusters_positive",
                                          "part_weighted", "parts")},
-                "clustered_by": "band" if set_name == "fs" else "section (NS is 2 bands)", "missing": missing,
+                "clustered_by": "band" if set_name.startswith("fs") else "section (NS is 2 bands)", "missing": missing,
                 "judge_refused": refused}
             r = out["rows"][key][set_name]
             if r["mean"] is not None:
@@ -2540,7 +2545,7 @@ def cmd_real_predict(args):
     e = require("phase_5b1")
     if args.names in ("Rc", "Rcs2"):
         return real_rc_answers(2 if args.names == "Rcs2" else 1)
-    if args.names in ("P2a-pc", "P2a-pcsz", "P2a-real", "P2a-reals2"):
+    if args.names in ("P2a-pc", "P2a-pcsz", "P2a-real", "P2a-reals2", "P2a-pc-Sc"):
         return real_predict_5b2(args.names)
     if args.names == "S-shift":
         require("phase_5b1b")
@@ -2619,7 +2624,7 @@ def real_predict_5b2(name):
         sfx = "s2" if name.endswith("s2") else ""
         names = {p_["unit"]: f"P2a-real{folds[p_['di']]}{sfx}" for p_ in parts}
     else:
-        names = {p_["unit"]: name for p_ in parts}
+        names = {p_["unit"]: name.removesuffix("-Sc") for p_ in parts}
     models = {}
     for nm in sorted(set(names.values())):
         nets, recs = zip(*(load_run(nm, sd, "best") for sd in SEEDS))
@@ -2641,8 +2646,15 @@ def real_predict_5b2(name):
                 s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
                 x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
                 r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
-                out[name].setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(
-                    F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"]))}
+                if name.endswith("-Sc"):                 # 5B.1b's S-centred readout on this model's own constant
+                    s_c, _, s_sw, s_swm, s_k, s_km, _ = F.encode(dict(S), amp)
+                    sw = [float(v) if m else None for v, m in zip(s_sw, s_swm)]
+                    mics = [int(v) if m else None for v, m in zip(s_k, s_km)]
+                    st = F.answer_settings(amp, S, sc_cont(dict(S), amp, r["a2"], const[(amp, prt["cls"])]["cont"]),
+                                           sw, mics)
+                else:
+                    st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
+                out[name].setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(st)}
             if name == "P2a-pc":
                 out[f"{name}-constant"][key] = {ANY_HALF: {"select": sel, "settings": LO.sdict(
                     T3.constant_full(amp, S, const[(amp, prt["cls"])]))}}
@@ -3914,6 +3926,7 @@ def main(argv=None):
     ap.add_argument("--stage", type=int, default=0)
     ap.add_argument("--real-fold", type=int, choices=tuple(range(REAL_FOLDS)), default=None)
     ap.add_argument("--pcsz", action="store_true")
+    ap.add_argument("--by-mode", action="store_true")
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 
