@@ -94,7 +94,7 @@ own. A model that reads little (the mix and stem models, D_CC) never serves as t
 | 33 | Render-order noise | Fresh primed processes reproduce the truth (F10); in phase 4 every fresh S render must sit within 0.005 (log) of the label table's stored distance on stage F's parts, or the read stops | nothing | fixed |
 | 36 | S's home advantage | Stored distances (P5) | nothing | measured (F1) |
 | 37 | The average against S | In distribution, the constant against S by sound (F11: even) | by-sound read | measured |
-| (P4) | Transfer to real recordings | First, alone: P2a told a wrong amp and rendered on it, by sound on NS (the amp mismatch, without real recordings). Then P4 on V-real's amp tracks | P2a, by-sound read | to run, in that order |
+| (P4) | Transfer to real recordings | First, alone: P2a told a wrong amp and rendered on it, by sound on NS (the amp mismatch, without real recordings): it keeps most of its skill (F19). Then P4 on V-real's amp tracks | P2a, by-sound read | amp mismatch measured (F19); P4 running |
 
 **What this changes in the plan.**
 - Step 12 closes on its data checks (F16), not on D_fix.
@@ -637,6 +637,27 @@ what it changes. Each is audited before it is entered; the review's steps carry 
     inaudible-value problem, measured on a working model. By sound the answers still beat S (F11), so these knobs
     matter little to the sound: limit, measured.
 - **References.** `PF/runs/P2a-20261042.json` (`heads.best.ns`).
+
+### F19. Told a wrong amp, the clean-input model keeps most of its skill (the amp mismatch, alone)
+- **Result.** P2a (seed 20261042, NS-best) was told, and rendered on, each of the two wrong amps, and judged against
+  the target rendered on the true amp. It still sounds much closer than S on that same wrong amp; the mismatch costs
+  about a quarter of the skill.
+- **Numbers.**
+
+  | Row | FS (60, 6 bands) | NS (60, 36 sections) |
+  |---|---|---|
+  | P2a(amp+1) − S(amp+1) | −0.197 [−0.306, −0.089], 6 of 6 better | −0.223 [−0.295, −0.150], 28 of 36 better |
+  | P2a(amp+2) − S(amp+2) | −0.209 [−0.373, −0.045], 5 of 6 better | −0.217 [−0.283, −0.151], 30 of 36 better |
+  | P2a − P2a(amp+1) | −0.065 [−0.108, −0.022] | −0.057 [−0.119, +0.006] |
+  | P2a − P2a(amp+2) | −0.071 [−0.114, −0.029] | −0.047 [−0.107, +0.014] |
+  | S(amp+1) − S | +0.015 [−0.027, +0.056] | +0.038 [+0.009, +0.067] |
+  | S(amp+2) − S | +0.032 [+0.006, +0.059] | +0.022 [−0.014, +0.059] |
+
+- **Reading.** The amp mismatch V-real imposes (no Morgan amp is the real one) costs a little, not the skill. A null
+  P4 could not be put down to the mismatch. P4 runs next.
+- **References.** `PF/sound/judge/{P2a-best-amp+1,P2a-best-amp+2,S-amp+1,S-amp+2}/`,
+  `PF/sound/report-{ampmismatch,ampmismatch2,ampvsown,ampvsown2,samps}.json`; `cmd_answers --amp-shift`; ledger
+  `phase_3_isolated` (a).
 
 ### F9. Process: removing a worktree crashed running jobs
 - **Result.** Removing the plan's worktree while the doubles render ran from it crashed its 3 shards at a lazy
