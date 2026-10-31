@@ -256,6 +256,21 @@ def test_backing_draws_never_use_the_examples_own_song():
     assert {sec for sec, _ in only[1]} == {"s/C_Full/a.wav@0.0"}
 
 
+def test_wide_draws_never_use_the_examples_own_song():
+    kept = {1: {"section": "s/A_Full/a.wav@0.0"}, 2: {"section": "s/B_Full/x/a.wav@5.0"}}
+    entries = [{"session": "s/A_Full"}, {"session": "s/B_Full/x"}, {"session": "A_Full"}, {"session": "C_Full"},
+               {"session": "D_Full"}]
+    d = P.wide_draws([1, 2], kept, entries, k=30, seed=7)
+    for i, draws in d.items():
+        assert len(draws) == 30
+        own = P.session_of(kept[i]["section"])
+        for j, _ in draws:
+            assert entries[j]["session"] not in (own, own.split("/")[-1])
+    assert {entries[j]["session"] for j, _ in d[1]} <= {"s/B_Full/x", "C_Full", "D_Full"}
+    assert "s/B_Full/x" not in {entries[j]["session"] for j, _ in d[2]}
+    assert d == P.wide_draws([1, 2], kept, entries, k=30, seed=7)
+
+
 def test_shifted_amp_cycles_through_the_other_amps():
     from learn import full_space as F
 
@@ -263,3 +278,23 @@ def test_shifted_amp_cycles_through_the_other_amps():
         assert P.shifted_amp(a, 0) == a
         assert {P.shifted_amp(a, 1), P.shifted_amp(a, 2)} == set(F.AMPS) - {a}
     assert P.amp_tag(0) == "" and P.amp_tag(2) == "-amp+2"
+
+
+def test_sc_cont_is_S_when_the_model_reads_its_constant(monkeypatch):
+    np = pytest.importorskip("numpy")
+    from learn import full_space as F
+
+    n = 6
+    s_c = np.array([0.2, 0.5, 0.98, 0.0, 0.7, 0.3])
+    s_cm = np.array([1.0, 1.0, 1.0, 1.0, 0.0, 0.0])                     # the last two do not sound in S
+    monkeypatch.setattr(F, "encode", lambda x, amp: (s_c, s_cm))
+    const = np.linspace(0.1, 0.9, n)
+    on = s_cm > 0
+    out = P.sc_cont({}, "pr12", const, const)
+    assert np.allclose(out[on], s_c[on]) and np.allclose(out[~on], const[~on])
+    shifted = P.sc_cont({}, "pr12", const + 0.05, const)
+    assert np.allclose(shifted[on], np.clip(s_c[on] + 0.05, 0, 1))      # 0.98 + 0.05 clips to 1
+    assert np.allclose(shifted[~on], (const + 0.05)[~on])
+    nan_c = const.copy()
+    nan_c[0] = np.nan
+    assert P.sc_cont({}, "pr12", const + 0.05, nan_c)[0] == pytest.approx(0.15)   # no constant: the model's value

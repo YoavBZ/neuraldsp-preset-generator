@@ -1,0 +1,18 @@
+cleaning scan 1/3: 8 DIs, 75 sections (of 163 without a row)
+  cambridge/AdamBuckley_DragMeDown_Full/35_ElecGtr5DI.wav: 44 tracks, source 34_ElecGtr5.wav; session takes >= -40 dB: {'01_Kick1.wav': -38.0, '02_Kick2.wav': -32.8, '04_SnareUp.wav': -20.1, '05_SnareDown.wav': -27.6, '06_SnareSample1.wav': -35.5, '08_HiHat.wav': -34.5, '16_Overheads.wav': -33.6, '17_DrumsRoom.wav': -33.8, '18_BassDI.wav': -14.6, '19_BassOverdrive.wav': -29.5, '20_BassFuzz.wav': -22.4, '22_AcousticGtr1.wav': -39.7, '30_ElecGtr3.wav': -27.1, '32_ElecGtr4.wav': -23.0, '37_Synth2.wav': -29.9, '40_Piano.wav': -15.7, '43_LeadVox1.wav': -13.5, '44_LeadVox1Harm.wav': -10.7, '46_BackingVox1.wav': -26.2, '47_BackingVox1DT.wav': -28.5, '48_BackingVox2.wav': -25.3, '49_BackingVox2DT.wav': -27.8}
+  1/8 DIs (100 s)
+  cambridge/TheTravellingBand_Quicksand_Full/16_ElecGtr1DI.wav: 28 tracks, source 14_ElecGtr1Close.wav; session takes >= -40 dB: {'26_MellotronFlute.wav': -33.6, '27_LeadVox.wav': -39.4, '28_LeadVoxFX.wav': -34.6}
+  2/8 DIs (248 s)
+  set5/BKS_Bulldozer_Full/26_ElecGtr3aDI.wav: 42 tracks, source 27_ElecGtr3bPod.wav; session takes >= -40 dB: {'45_BackingVox04.wav': -39.9}
+  3/8 DIs (576 s)
+  set5/BKS_Bulldozer_Full/36_ElecGtr7aDI.wav: 39 tracks, source 37_ElecGtr7bGR4.wav; session takes >= -40 dB: {'14_Piano.wav': -33.1, '41_LeadVox.wav': -34.3}
+  4/8 DIs (795 s)
+  set5/BKS_TooMuch_Full/24_ElecGtr3aDI.wav: 42 tracks, source 27_ElecGtr3dReamp2.wav; session takes >= -40 dB: {'17_ElecGtr1bPod.wav': -32.8, '18_ElecGtr1cReamp1.wav': -38.2, '31_ElecGtr4dReamp2.wav': -27.2}
+  5/8 DIs (959 s)
+  sets-1-2/Forkupines_SugarFaith_Full/26_ElecGtr2DI.wav: 35 tracks, source 25_ElecGtr2.wav; session takes >= -40 dB: {}
+  6/8 DIs (1500 s)
+  sets-1-2/Forkupines_SugarFaith_Full/32_ElecGtr5DI.wav: 35 tracks, source 31_ElecGtr5.wav; session takes >= -40 dB: {'33_ElecGtr6.wav': -35.9}
+  7/8 DIs (2011 s)
+  ets-1-2/TheMaybeNextYears_OneFlipFlop_Full/21_ElecGtr1DI.wav: 30 tracks, source 19_ElecGtr1Mic1.wav; session takes >= -40 dB: {'32_LeadVox1.wav': -39.0}
+  8/8 DIs (2231 s)
+CLEANING SCAN DONE 1/3

@@ -1,0 +1,17 @@
+YIELD (sections; zero renders)
+  candidate sections of training DIs: 892; out before rule 1: high gain 325, part A's screen flags the section 196, the DI plays where its own amp track is silent (a passage the song does not hold) 8
+  eligible 363; rule 1 and the cap leave out 64: an active guitar has no usable amp track 29, an added amp track is in the cleaning scan's removed or same-part tracks 23, an added amp track doubles the target's part (it would carry the target's own tone) 8, more active guitars than the cap 4
+  Adam Buckley               13 sections: {'clean': 13}
+  Ale Lak                     6 sections: {'crunch': 6}
+  BKS                        80 sections: {'clean': 15, 'crunch': 65}
+  Dunning Kruger              2 sections: {'clean': 2}
+  Forkupines                101 sections: {'crunch': 100, 'clean': 1}
+  Hazael                     33 sections: {'clean': 33}
+  Storm Of Particles          4 sections: {'crunch': 4}
+  The Maybe Next Years       23 sections: {'crunch': 23}
+  The Travelling Band        36 sections: {'clean': 33, 'crunch': 3}
+  Tim Taler                   1 sections: {'crunch': 1}
+  kept 299 sections in 10 bands
+  FS_CC 33 sections (430 examples); training 266 sections (3467 examples, 13.0 per section); heavy 65/3467 (2%), 0 heavy sections dropped for the cap
+  training examples by band: Adam Buckley 130, Ale Lak 39, BKS 966, Dunning Kruger 13, Forkupines 1225, Hazael 377, Storm Of Particles 26, The Maybe Next Years 261, The Travelling Band 417, Tim Taler 13
+PLAN DRY: nothing written

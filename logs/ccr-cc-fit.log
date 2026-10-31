@@ -1,0 +1,4 @@
+T3's frozen plan: V-real-11 frozen 2026-10-26 10:35:58; T0's lists fac903559adb then, 6ac6a335d1ad now; 3467 F5 + 722 FS5 examples checked
+  today's lists would add cambridge-Signs-ElecGtr6: kept out (V-real is frozen)
+D_CC: pull {'fitted': 322, 'median_b': 0.4955838580538521, 'share_b_0': 0.38198757763975155, 'share_b_1': 0.41304347826086957, 'unconstrained_above_1': 133, 'unconstrained_below_0': 123, 'median_unconstrained': 0.4955838580538521}; folds {'0': {'fitted': 322, 'median_b': 0.3151756758930322, 'share_b_0': 0.43788819875776397, 'share_b_1': 0.3695652173913043, 'unconstrained_above_1': 119, 'unconstrained_below_0': 141, 'median_unconstrained': 0.3151756758930322}, '1': {'fitted': 322, 'median_b': 0.5054934194380352, 'share_b_0': 0.40062111801242234, 'share_b_1': 0.42857142857142855, 'unconstrained_above_1': 138, 'unconstrained_below_0': 129, 'median_unconstrained': 0.5054934194380352}}; amp head accuracy 0.3772455089820359
+FIT DONE D_CC

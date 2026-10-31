@@ -1,0 +1,37 @@
+D_CC seed 20261042: 2699 train, 334 early stopping (FS_CC); mps
+/Users/yoavbz/projects/neuraldsp-preset-generator/learn/direct_stems.py:2542: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+  tl.append(float(loss))
+{'epoch': 0, 'train': 5.8314409255981445, 'early_stop': 5.740121603012085, 'seconds': 16.7, 'samples_per_s': 161.6, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 2.42}
+{'epoch': 1, 'train': 5.484018880267476, 'early_stop': 5.631411234537761, 'seconds': 15.5, 'samples_per_s': 173.8, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 2, 'train': 5.4979437229245205, 'early_stop': 5.5961372057596845, 'seconds': 15.5, 'samples_per_s': 173.7, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 3, 'train': 5.4472811721092045, 'early_stop': 5.579954783121745, 'seconds': 15.6, 'samples_per_s': 172.8, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 4, 'train': 5.439584621163302, 'early_stop': 5.5679060618082685, 'seconds': 15.5, 'samples_per_s': 173.7, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 5, 'train': 5.42877919174904, 'early_stop': 5.574355840682983, 'seconds': 15.5, 'samples_per_s': 173.7, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 6, 'train': 5.411538778349411, 'early_stop': 5.564052661259969, 'seconds': 15.6, 'samples_per_s': 173.5, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 7, 'train': 5.408220657082492, 'early_stop': 5.593719561894734, 'seconds': 15.5, 'samples_per_s': 174.2, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 8, 'train': 5.357883564261503, 'early_stop': 5.524067322413127, 'seconds': 15.5, 'samples_per_s': 173.7, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 9, 'train': 5.341236402822095, 'early_stop': 5.469475825627645, 'seconds': 15.5, 'samples_per_s': 174.3, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 10, 'train': 5.335500894590866, 'early_stop': 5.517962058385213, 'seconds': 15.5, 'samples_per_s': 174.1, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 11, 'train': 5.335273853568143, 'early_stop': 5.514416535695394, 'seconds': 15.5, 'samples_per_s': 173.9, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 12, 'train': 5.295610483302626, 'early_stop': 5.436444441477458, 'seconds': 15.5, 'samples_per_s': 173.9, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 13, 'train': 5.286729369052621, 'early_stop': 5.5011961460113525, 'seconds': 15.5, 'samples_per_s': 174.1, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 14, 'train': 5.282303543977959, 'early_stop': 5.483543078104655, 'seconds': 15.5, 'samples_per_s': 174.0, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 15, 'train': 5.249058911966723, 'early_stop': 5.412719090779622, 'seconds': 15.5, 'samples_per_s': 173.9, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 16, 'train': 5.262405262436977, 'early_stop': 5.4167741139729815, 'seconds': 15.5, 'samples_per_s': 173.7, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 17, 'train': 5.226097761198532, 'early_stop': 5.425791263580322, 'seconds': 15.5, 'samples_per_s': 174.2, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 18, 'train': 5.20074230016664, 'early_stop': 5.411108493804932, 'seconds': 15.5, 'samples_per_s': 174.2, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 19, 'train': 5.238266789635946, 'early_stop': 5.421778440475464, 'seconds': 15.6, 'samples_per_s': 173.4, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 20, 'train': 5.22130177741827, 'early_stop': 5.397868553797404, 'seconds': 15.5, 'samples_per_s': 173.9, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 21, 'train': 5.205010624819024, 'early_stop': 5.562424739201863, 'seconds': 15.5, 'samples_per_s': 174.1, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 22, 'train': 5.177236812059269, 'early_stop': 5.37957763671875, 'seconds': 15.5, 'samples_per_s': 173.9, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 23, 'train': 5.1515328274216765, 'early_stop': 5.359298308690389, 'seconds': 15.5, 'samples_per_s': 174.0, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 24, 'train': 5.129458028216694, 'early_stop': 5.426122268040975, 'seconds': 15.5, 'samples_per_s': 174.2, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 25, 'train': 5.122155899225279, 'early_stop': 5.400682290395101, 'seconds': 15.5, 'samples_per_s': 173.9, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 26, 'train': 5.13276558144148, 'early_stop': 5.441705862681071, 'seconds': 15.5, 'samples_per_s': 174.4, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 27, 'train': 5.091375594915346, 'early_stop': 5.3533250490824384, 'seconds': 15.5, 'samples_per_s': 173.7, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 28, 'train': 5.068657908328744, 'early_stop': 5.389577945073445, 'seconds': 15.5, 'samples_per_s': 174.5, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 29, 'train': 5.066216058509294, 'early_stop': 5.406975269317627, 'seconds': 15.5, 'samples_per_s': 174.2, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 30, 'train': 5.063287391219029, 'early_stop': 5.389763514200847, 'seconds': 15.5, 'samples_per_s': 173.9, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+{'epoch': 31, 'train': 5.050686536833298, 'early_stop': 5.406875928243001, 'seconds': 15.5, 'samples_per_s': 174.1, 'skipped_steps': 0, 'steps': 43, 'mps_driver_gb': 3.49}
+TRAIN DONE D_CC 20261042: best epoch 27 of 32

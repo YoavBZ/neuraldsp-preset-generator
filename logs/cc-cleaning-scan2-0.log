@@ -1,0 +1,16 @@
+cleaning scan 0/3: 7 DIs, 37 sections (of 125 without a row)
+  dge/AleLak_NossoMundoDeixouDeExistir_Full/18_ElecGtr03DI.wav: 16 tracks, source 17_ElecGtr03Amp2.wav; session takes >= -40 dB: {'10_ElecGtr01DT.wav': -39.0, '12_ElecGtr02.wav': -26.7, '14_ElecGtr02DT.wav': -29.4}
+  1/7 DIs (61 s)
+  cambridge/TheTravellingBand_Quicksand_Full/16_ElecGtr1DI.wav: 28 tracks, source 14_ElecGtr1Close.wav; session takes >= -40 dB: {'26_MellotronFlute.wav': -33.6, '27_LeadVox.wav': -39.4, '28_LeadVoxFX.wav': -34.6}
+  2/7 DIs (204 s)
+  set5/BKS_Bulldozer_Full/22_ElecGtr2aDI.wav: 40 tracks, source 23_ElecGtr2bGR4.wav; session takes >= -40 dB: {'51_BackingVox10.wav': -38.6}
+  3/7 DIs (542 s)
+  set5/BKS_Bulldozer_Full/31_ElecGtr5aDI.wav: 41 tracks, source 32_ElecGtr5bGR4.wav; session takes >= -40 dB: {}
+  4/7 DIs (889 s)
+  sets-1-2/Forkupines_SugarFaith_Full/26_ElecGtr2DI.wav: 35 tracks, source 25_ElecGtr2.wav; session takes >= -40 dB: {}
+  5/7 DIs (1420 s)
+  sets-1-2/Forkupines_SugarFaith_Full/32_ElecGtr5DI.wav: 35 tracks, source 31_ElecGtr5.wav; session takes >= -40 dB: {'33_ElecGtr6.wav': -35.9}
+  6/7 DIs (1911 s)
+  ets-1-2/TheMaybeNextYears_OneFlipFlop_Full/21_ElecGtr1DI.wav: 30 tracks, source 19_ElecGtr1Mic1.wav; session takes >= -40 dB: {'32_LeadVox1.wav': -39.0}
+  7/7 DIs (2107 s)
+CLEANING SCAN DONE 0/3

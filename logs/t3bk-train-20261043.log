@@ -1,0 +1,28 @@
+T3's frozen plan: V-real-11 frozen 2026-10-26 10:35:58; T0's lists fac903559adb then, 6ac6a335d1ad now; 3467 F5 + 722 FS5 examples checked
+  today's lists would add cambridge-Signs-ElecGtr6: kept out (V-real is frozen)
+T3 D_F5bk seed 20261043: 3467 train, 722 early stopping (FS5), 2479 with a new backing; mps
+/Users/yoavbz/projects/neuraldsp-preset-generator/learn/direct_stems.py:2542: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+  tl.append(float(loss))
+{'epoch': 0, 'train': 5.822682025215842, 'early_stop': 5.478159944216411, 'seconds': 20.9, 'samples_per_s': 165.9, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 2.42}
+{'epoch': 1, 'train': 5.544916768507524, 'early_stop': 5.4525779485702515, 'seconds': 20.2, 'samples_per_s': 171.8, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 2, 'train': 5.531169657273726, 'early_stop': 5.4400196472803755, 'seconds': 20.2, 'samples_per_s': 171.9, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 3, 'train': 5.506024733456698, 'early_stop': 5.429121057192485, 'seconds': 20.2, 'samples_per_s': 171.6, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 4, 'train': 5.498397653753107, 'early_stop': 5.413742621739705, 'seconds': 20.2, 'samples_per_s': 171.9, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 5, 'train': 5.478070189736107, 'early_stop': 5.406121452649434, 'seconds': 20.2, 'samples_per_s': 171.9, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 6, 'train': 5.440963918512518, 'early_stop': 5.32623287041982, 'seconds': 20.2, 'samples_per_s': 171.6, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 7, 'train': 5.394302220778032, 'early_stop': 5.345168153444926, 'seconds': 20.2, 'samples_per_s': 171.8, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 8, 'train': 5.361387590928511, 'early_stop': 5.276110927263896, 'seconds': 20.2, 'samples_per_s': 171.8, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 9, 'train': 5.346937205574729, 'early_stop': 5.297005891799927, 'seconds': 20.2, 'samples_per_s': 171.6, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 10, 'train': 5.308923556587913, 'early_stop': 5.235339442888896, 'seconds': 20.2, 'samples_per_s': 171.6, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 11, 'train': 5.309838815168901, 'early_stop': 5.278361916542053, 'seconds': 20.1, 'samples_per_s': 172.1, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 12, 'train': 5.288123078779741, 'early_stop': 5.242345889409383, 'seconds': 20.2, 'samples_per_s': 171.5, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 13, 'train': 5.277500369332054, 'early_stop': 5.203977902730306, 'seconds': 20.2, 'samples_per_s': 171.7, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 14, 'train': 5.247761474956166, 'early_stop': 5.188329219818115, 'seconds': 20.2, 'samples_per_s': 172.0, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 15, 'train': 5.236436514420943, 'early_stop': 5.161040027936299, 'seconds': 20.2, 'samples_per_s': 171.8, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 16, 'train': 5.211361182819713, 'early_stop': 5.211845755577087, 'seconds': 20.1, 'samples_per_s': 172.2, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 17, 'train': 5.221802078593861, 'early_stop': 5.1725887854894, 'seconds': 20.1, 'samples_per_s': 172.3, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 18, 'train': 5.200645125995983, 'early_stop': 5.168144424756368, 'seconds': 20.2, 'samples_per_s': 171.8, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+{'epoch': 19, 'train': 5.171219088814476, 'early_stop': 5.183087150255839, 'seconds': 20.2, 'samples_per_s': 172.0, 'skipped_steps': 0, 'steps': 55, 'mps_driver_gb': 3.49}
+TRAIN DONE D_F5bk 20261043: best epoch 15 of 20
+TRAIN-CHAIN-DONE

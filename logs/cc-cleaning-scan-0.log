@@ -1,0 +1,18 @@
+cleaning scan 0/3: 8 DIs, 51 sections (of 163 without a row)
+  cambridge/AdamBuckley_DragMeDown_Full/31_ElecGtr3DI.wav: 44 tracks, source 30_ElecGtr3.wav; session takes >= -40 dB: {'32_ElecGtr4.wav': -30.0}
+  1/8 DIs (210 s)
+  tormOfParticles_OfIceAndHopelessFate_Full/15_ElecGtr04DI.wav: 20 tracks, source 14_ElecGtr04.wav; session takes >= -40 dB: {}
+  2/8 DIs (373 s)
+  set5/BKS_Bulldozer_Full/22_ElecGtr2aDI.wav: 40 tracks, source 23_ElecGtr2bGR4.wav; session takes >= -40 dB: {'51_BackingVox10.wav': -38.6}
+  3/8 DIs (700 s)
+  set5/BKS_Bulldozer_Full/31_ElecGtr5aDI.wav: 41 tracks, source 32_ElecGtr5bGR4.wav; session takes >= -40 dB: {}
+  4/8 DIs (1060 s)
+  set5/BKS_TooMuch_Full/20_ElecGtr2aDI.wav: 42 tracks, source 22_ElecGtr2cReamp1.wav; session takes >= -40 dB: {'27_ElecGtr3dReamp2.wav': -38.7, '29_ElecGtr4bPod.wav': -10.9}
+  5/8 DIs (1347 s)
+  sets-1-2/Forkupines_Semantics_Full/23_ElecGtr03DI.wav: 43 tracks, source 24_ElecGtr03Amp.wav; session takes >= -40 dB: {'36_ElecGtr11.wav': -39.7, '47_BackingVox3.wav': -38.5}
+  6/8 DIs (1637 s)
+  sets-1-2/Forkupines_SugarFaith_Full/30_ElecGtr4DI.wav: 35 tracks, source 29_ElecGtr4.wav; session takes >= -40 dB: {'23_ElecGtr1.wav': -38.5}
+  7/8 DIs (2176 s)
+  sets-1-2/Forkupines_SugarFaith_Full/40_ElecGtr9DI.wav: 35 tracks, source 39_ElecGtr9.wav; session takes >= -40 dB: {'27_ElecGtr3.wav': -32.9, '31_ElecGtr5.wav': -31.9, '33_ElecGtr6.wav': -28.5}
+  8/8 DIs (2382 s)
+CLEANING SCAN DONE 0/3

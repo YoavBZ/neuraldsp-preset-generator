@@ -1,0 +1,12 @@
+inputs 1/1015: 1.52 s per example; parity max 0 grid steps
+inputs 101/1015: 0.36 s per example; parity max 0 grid steps
+inputs 201/1015: 0.33 s per example; parity max 0 grid steps
+inputs 301/1015: 0.32 s per example; parity max 0 grid steps
+inputs 401/1015: 0.32 s per example; parity max 0 grid steps
+inputs 501/1015: 0.33 s per example; parity max 0 grid steps
+inputs 601/1015: 0.32 s per example; parity max 0 grid steps
+inputs 701/1015: 0.33 s per example; parity max 0 grid steps
+inputs 801/1015: 0.34 s per example; parity max 0 grid steps
+inputs 901/1015: 0.35 s per example; parity max 0 grid steps
+inputs 1001/1015: 0.36 s per example; parity max 0 grid steps
+BUILD-INPUTS DONE 0/3: 1015 built; the rebuilt mix within 0 grid steps of the stored one

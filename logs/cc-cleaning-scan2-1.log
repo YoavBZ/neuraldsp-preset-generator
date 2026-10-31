@@ -1,0 +1,14 @@
+cleaning scan 1/3: 6 DIs, 38 sections (of 125 without a row)
+  tormOfParticles_OfIceAndHopelessFate_Full/15_ElecGtr04DI.wav: 20 tracks, source 14_ElecGtr04.wav; session takes >= -40 dB: {}
+  1/6 DIs (171 s)
+  cambridge/TheTravellingBand_Quicksand_Full/19_ElecGtr2DI.wav: 28 tracks, source 18_ElecGtr2Far.wav; session takes >= -40 dB: {'11_Room.wav': -29.0, '24_HammondLeslieHi.wav': -33.1}
+  2/6 DIs (299 s)
+  set5/BKS_Bulldozer_Full/26_ElecGtr3aDI.wav: 42 tracks, source 27_ElecGtr3bPod.wav; session takes >= -40 dB: {'45_BackingVox04.wav': -39.9}
+  3/6 DIs (636 s)
+  set5/BKS_Bulldozer_Full/36_ElecGtr7aDI.wav: 39 tracks, source 37_ElecGtr7bGR4.wav; session takes >= -40 dB: {'14_Piano.wav': -33.1, '41_LeadVox.wav': -34.3}
+  4/6 DIs (832 s)
+  sets-1-2/Forkupines_SugarFaith_Full/28_ElecGtr3DI.wav: 35 tracks, source 27_ElecGtr3.wav; session takes >= -40 dB: {}
+  5/6 DIs (1322 s)
+  sets-1-2/Forkupines_SugarFaith_Full/34_ElecGtr6DI.wav: 35 tracks, source 33_ElecGtr6.wav; session takes >= -40 dB: {}
+  6/6 DIs (1775 s)
+CLEANING SCAN DONE 1/3

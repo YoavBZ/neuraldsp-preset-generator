@@ -1,0 +1,74 @@
+amp-bleed: 60 amp tracks in 12 sessions; shard 0/3
+  DunningKruger_EnDance_Full: source 1/16 01_Kick.wav (28 s)
+  DunningKruger_EnDance_Full: source 2/16 02_Snare.wav (57 s)
+  DunningKruger_EnDance_Full: source 3/16 03_TomHi.wav (90 s)
+  DunningKruger_EnDance_Full: source 4/16 04_TomLo.wav (120 s)
+  DunningKruger_EnDance_Full: source 5/16 05_Overheads.wav (150 s)
+  DunningKruger_EnDance_Full: source 6/16 06_Room.wav (186 s)
+  DunningKruger_EnDance_Full: source 7/16 07_Claps.wav (223 s)
+  DunningKruger_EnDance_Full: source 8/16 08_BassDI.wav (260 s)
+  DunningKruger_EnDance_Full: source 9/16 18_Synth1.wav (296 s)
+  DunningKruger_EnDance_Full: source 10/16 19_Synth2.wav (326 s)
+  DunningKruger_EnDance_Full: source 11/16 20_LeadVox.wav (353 s)
+  DunningKruger_EnDance_Full: source 12/16 21_LeadVoxDT.wav (382 s)
+  DunningKruger_EnDance_Full: source 13/16 22_BackingVox1.wav (409 s)
+  DunningKruger_EnDance_Full: source 14/16 23_BackingVox2.wav (437 s)
+  DunningKruger_EnDance_Full: source 15/16 24_BackingVox3.wav (465 s)
+  DunningKruger_EnDance_Full: source 16/16 25_BackingVox4.wav (489 s)
+  DunningKruger_EnDance_Full 09_Gtr1.wav: fail
+  DunningKruger_EnDance_Full 10_Gtr2.wav: fail
+  DunningKruger_EnDance_Full 11_Gtr3.wav: pass
+  DunningKruger_EnDance_Full 13_Gtr4bAmp.wav: fail
+  DunningKruger_EnDance_Full 16_Gtr6bAmp1.wav: unmeasurable
+  BKS_TooMuch_Full 17_ElecGtr1bPod.wav: fail
+  BKS_TooMuch_Full 18_ElecGtr1cReamp1.wav: fail
+  BKS_TooMuch_Full 19_ElecGtr1dReamp2.wav: fail
+  BKS_TooMuch_Full 29_ElecGtr4bPod.wav: unmeasurable
+  BKS_TooMuch_Full 30_ElecGtr4cReamp1.wav: unmeasurable
+  BKS_TooMuch_Full 31_ElecGtr4dReamp2.wav: unmeasurable
+  BKS_TooMuch_Full 33_ElecGtr5bGR4.wav: fail
+  BKS_TooMuch_Full 34_ElecGtr5cReamp1.wav: fail
+  BKS_TooMuch_Full 35_ElecGtr5dReamp2.wav: fail
+  BKS_TooMuch_Full 36_ElecGtr5eReamp3.wav: fail
+  BKS_TooMuch_Full 37_ElecGtr5fReamp4.wav: fail
+  BKS_TooMuch_Full 38_ElecGtrRevFX.wav: unmeasurable
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 1/32 01_Kick1.wav (18 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 2/32 02_Kick2.wav (37 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 3/32 03_Kick3.wav (55 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 4/32 04_Ride.wav (74 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 5/32 05_Snare1.wav (94 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 6/32 06_Snare2.wav (112 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 7/32 07_Snare3.wav (130 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 8/32 08_Snare4.wav (149 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 9/32 09_HiHat1.wav (167 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 10/32 10_HiHat2.wav (186 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 11/32 11_HiHat3.wav (204 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 12/32 12_Claps2.wav (222 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 13/32 12_Toms.wav (241 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 14/32 13_Claps1.wav (260 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 15/32 15_Cymbal.wav (278 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 16/32 16_SFX.wav (296 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 17/32 17_BassSynth1.wav (315 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 18/32 18_BassSynth2.wav (333 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 19/32 19_BassSynth3.wav (352 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 20/32 20_BassSynth4.wav (370 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 21/32 33_ElecPiano1.wav (388 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 22/32 34_ElecPiano2.wav (407 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 23/32 35_ElecPiano3.wav (426 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 24/32 36_Synth1.wav (444 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 25/32 37_Synth2.wav (463 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 26/32 38_Synth3.wav (482 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 27/32 39_Synth4.wav (500 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 28/32 40_Synth5.wav (519 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 29/32 41_Synth6.wav (536 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 30/32 42_LeadVox.wav (553 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 31/32 43_BackingVox.wav (569 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_: source 32/32 44_BackingVoxDT.wav (586 s)
+  SaturnSyndicate_NeverLeaveTheNightAlone_ 21_ElecGtr1.wav: pass
+  SaturnSyndicate_NeverLeaveTheNightAlone_ 23_ElecGtr1DT.wav: pass
+  SaturnSyndicate_NeverLeaveTheNightAlone_ 25_ElecGtr2.wav: pass
+  SaturnSyndicate_NeverLeaveTheNightAlone_ 29_ElecGtr3DT.wav: unmeasurable
+  Forkupines_SugarFaith_Full 23_ElecGtr1.wav: fail
+  Forkupines_SugarFaith_Full 35_ElecGtr7.wav: pass
+  Forkupines_SugarFaith_Full 37_ElecGtr8.wav: pass
+AMP-BLEED DONE 0/3
