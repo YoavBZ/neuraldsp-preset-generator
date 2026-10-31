@@ -1,8 +1,9 @@
 # Fixing the pipeline review's findings (plan, 2026-10-31)
 
 **Status (2026-10-31):** declared and reviewed (the plan, its revision, phase 4 and the isolated tests, each with
-required changes, all made). Phases 1–4 and the isolated tests have run; the findings log (F1–F28) holds every
-result, audited. Phase 5 (the fixes for the two blockers located, F17 and F20) waits on the user's decision.
+required changes, all made). Phases 1–4, the isolated tests and phase 5's tests (5A, 5B.1, 5B.1b) have run; the
+findings log (F1–F32) holds every result, audited. Next: 5B.2 (labels that reach real-amp tones), declared and
+reviewed before it runs; 5B.1c was withdrawn before any render.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -361,9 +362,11 @@ instead of generating unrealistic presets our own?"):
     shift taken from the other DIs' units (240 renders; 720 in all).
   - Rows: S-shift − S (does the shared shift help?) and P2a-Sc − S-shift (does per-track skill transfer?); P2a-Sc −
     S beside. P2a-Sc − P2a is not a skill read. Ties are not evidence of no transfer.
-- **5B.1c, the S-centred readout on V-real (ledger `phase_5b1c`, about 132 renders; after F32).** P4's model and
-  inputs, re-centred on S as P2a-Sc, read on V-real-11 exactly as P4 (F20). A measurement of a readout chosen after
-  seeing F31 and F32: if it shapes D_fix's readout, D_fix's V-real read is labelled selection-contaminated.
+- **5B.1c, the S-centred readout on V-real (ledger `phase_5b1c`): withdrawn before any render.** Declared as a
+  measurement; the review found its outcome largely predictable from stored reads (P4 − constant −0.017 [−0.090,
+  +0.057] on V-real; on BKS P2a − constant ≈ P2a-Sc − S), so on 7 bands it would very likely be undecided while
+  spending a V-real exposure. Its answers were computed (the model run on V-real's inputs, zero renders, nothing
+  judged). Whether D_fix uses an S-centred readout is decided from F32 and FS/NS only, and V-real is left for D_fix.
 
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
@@ -1131,16 +1134,19 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   | P2a-Sc − P2a (not a skill read) | −0.095 [−0.148, −0.042], 7 of 8 | −0.103 [−0.143, −0.063], 13 of 14 | 35 of 40 |
 
 - **Reading.**
-  - The shared shift alone does nothing on these real amps. The model's per-track deviations, applied around S,
+  - The shared shift alone is not seen to help (undecided). The model's per-track deviations, applied around S,
     lean better than S and than the shift, by about 0.03; both rows are undecided (the intervals just include 0).
-  - Most of P2a's penalty on real amps (F31's +0.066) comes from its centre, the labels' average: re-centred on S
-    it is gone. What the model reads per track is small next to what a true-DI search finds on real amp tracks
-    (about −0.14 to −0.17 against S, the roadmap's arm A ZT and step 38).
-  - The direction it supports: a readout centred on S is a cheap candidate for real recordings (read next on V-real
-    as a measurement, 5B.1c), and labels that reach real-amp tones (5B.2) are still needed for a larger gain.
+  - Re-centred on S, P2a's penalty on real amps (F31's +0.066) is gone (P2a-Sc − S −0.029, paired). What re-centring
+    changes is the continuous centre (the labels' average) and the switches and mics, set to S's (P2a's differ from
+    S's in all 240 answers: gate 219, right mic 207, left mic 164, compressor 155, reverb 101); the two are not
+    separated. What the model reads per track is small next to what a true-DI search finds on real amp tracks
+    (about −0.14 to −0.17 against S; unpaired, other parts: the roadmap's arm A ZT and step 38).
+  - The direction it supports: an S-centred readout is a cheap candidate for real recordings, to be weighed for
+    D_fix on FS and NS (5B.1c on V-real was withdrawn), and labels that reach real-amp tones (5B.2) are still needed
+    for a larger gain.
 - **Caveats.** Exploratory: the readout was designed after seeing F31. One band, 38 of 40 units seen in training;
-  switches and mics held at S's, so only the continuous controls are read; the per-track remainder (about 0.03 per
-  knob) is near the gap between a track's two halves.
+  switches and mics held at S's, so only the continuous controls are read; the per-track remainder (0.02–0.03 per
+  knob) is near the gap between a track's two halves (0.013–0.025).
 - **References.** `PF/real/answers/{P2a-Sc,S-shift}.json`, `PF/real/judge/{P2a-Sc,S-shift}/`,
   `PF/real/report-5b1b.json`; `sc_cont`, `real_shift_answers`, `cmd_real_predict --names`; ledger `phase_5b1b`.
 
@@ -1154,7 +1160,8 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   runs, the k-fold, phase 5A's two 10-minute seeds).
 - **Disk:** P2's inputs about 0.3 GB; phase 1b's audio and features about 1.2 GB; the 31 GB guard holds.
 - Every render: isolate=True, a discarded priming render, 0.25 s trimmed, at most 3 render processes,
-  `setopt no_bg_nice`. V-real is read only in P5's stored distances, phase 4 and D_fix's declared read.
+  `setopt no_bg_nice`. V-real is read only in P5's stored distances, phase 4 and D_fix's declared read. (5B.1c
+  ran the model on V-real's inputs, zero renders and nothing judged, before it was withdrawn.)
 
 ## Review (2026-10-31)
 

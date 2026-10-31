@@ -3279,7 +3279,10 @@ def cmd_vreal_report(args):
     print(f"positive control: the fresh S against the label table's stored flat distance on {pc['n']} (part, amp, "
           f"half): max |ln ratio| {pc['max_abs_log']}, median {pc['median_abs_log']}")
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
-    save(out_dir() / VREAL_DIR / f"report-{args.label or 'p4'}.json", out)
+    rp = out_dir() / VREAL_DIR / f"report-{args.label or 'p4'}.json"
+    if rp.exists() and not args.label:
+        raise SystemExit(f"{rp.name} exists (F20 cites it): name a new report with --label")
+    save(rp, out)
     print("VREAL-REPORT DONE")
 
 
