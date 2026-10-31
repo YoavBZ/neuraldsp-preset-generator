@@ -409,8 +409,13 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   |---|---|---|---|---|---|---|
   | NS (383) | best | 23 of 85 | 27 of 28 | 3 of 3 | 6 | −0.0086 [−0.0106, −0.0066] |
   | FS (207) | best | 14 of 85 | 22 of 28 | 3 of 3 | 4 | −0.0097 [−0.0119, −0.0076] |
-  | NS (383) | final | 14 of 85 | 26 of 28 | 3 of 3 | 6 | −0.0053 [−0.0083, −0.0024] |
-  | FS (207) | final | 16 of 85 | 21 of 28 | 3 of 3 | 6 | −0.0101 [−0.0138, −0.0064] |
+  | NS (383) | final (seed 1) | 14 of 85 | 26 of 28 | 3 of 3 | 6 | −0.0053 [−0.0083, −0.0024] |
+  | FS (207) | final (seed 1) | 16 of 85 | 21 of 28 | 3 of 3 | 6 | −0.0101 [−0.0138, −0.0064] |
+  | NS (383) | final (both seeds) | 26 of 85 | 26 of 28 | 3 of 3 | 4 | −0.0116 [−0.0138, −0.0093] |
+  | FS (207) | final (both seeds) | 23 of 85 | 26 of 28 | 3 of 3 | 4 | −0.0145 [−0.0173, −0.0118] |
+
+  The stored `reads/P2a-final.json` now holds the two-seed read (re-read for F25); the seed-1 final rows above are from
+  its first read. `reads/P2a-best.json` stays seed 1 (the answers and the switch rule use it).
 
   - The median knob error is 0.163 against the constant's 0.175 (NS, best).
   - By loss, on NS its knobs stay worse than the label-only baseline (joint −0.24 against −0.33). Switches 0.592
