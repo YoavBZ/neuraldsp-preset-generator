@@ -293,7 +293,11 @@ what it changes. Each is audited before it is entered; the review's steps carry 
     stored others to half a FLAC step (max 1.2e−7). That took 232 renders.
   - Then 2,380 renders: 604 of 606 were re-rendered. Two were refused (802610, 802889: a near-silent double, the rule
     of `trusted_data.near_silent`).
-  - Their mixes and X-LANCE stems are being built (`build-doubles`).
+  - Their mixes and X-LANCE stems were built for all 604 (`build-doubles`, an MPS and a CPU worker; 26 examples were
+    built by both, with identical files). The stem's SNR against the target is unchanged: a median change of
+    +0.01 dB (10th–90th percentile −0.3 to +0.3; median −7.9 dB new, −8.1 dB old). The doubles now match the label;
+    the separator recovers the target no better or worse.
+  - P2b's input for these examples is rebuilt from their new mix (`build-inputs --doubled`).
 - **References.** `PF/dirty-doubles.json`, `PF/cc-dt/control.json`, `PF/cc-dt/rows/`; `double_status`,
   `cmd_render_doubles`, `other_jobs`; `cc_build.py` (`if o["dt"]:`, the original rule); ledger `phase_1b`.
 - **Changes.** The re-rendered doubles enter D_fix (see F8).
@@ -454,6 +458,28 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   `cmd_answers --readout pulled`; ledger `phase_3_readout`; `logs/pf-sound-pull-*.log`.
 - **Changes.** Step 26: the pull is ruled out as the main loss (a small cost, measured). Step 27's switch rule is
   still read in P3.
+
+### F13. Fed the stem, the model reads almost nothing, even on seen performances (steps 16, 19, 29)
+- **Result.** P2d is the same recipe as P2a on D_CC's stored X-LANCE stem (one seed, best checkpoint epoch 20 of
+  60, 30.6 min). Its knob error equals the constant's, and it reads few switches.
+- **Numbers** (by knob, R0's rule).
+
+  | Set | Checkpoint | Knobs readable | Switches readable | Mics and amp readable | Knobs worse | E − constant |
+  |---|---|---|---|---|---|---|
+  | NS | best | 6 of 85 | 4 of 28 | 1 of 3 | 4 | +0.0004 [−0.0004, +0.0013] |
+  | FS | best | 4 of 85 | 6 of 28 | 2 of 3 | 8 | +0.0000 [−0.0011, +0.0012] |
+  | NS | final | 4 of 85 | 5 of 28 | 0 of 3 | 30 | +0.0055 [+0.0040, +0.0070] |
+  | FS | final | 1 of 85 | 7 of 28 | 0 of 3 | 11 | +0.0031 [+0.0009, +0.0053] |
+
+  By loss on NS (best): switches 0.617 against the baseline's 0.617, mics 1.99 against 2.02, amp 1.086 against 1.099,
+  9 of 85 knobs below baseline.
+- **Reading.** Between the clean guitar (P2a: 22–27 switches, both mics and the amp readable) and the stem, almost
+  everything is lost, on seen performances too. This is the review's step 16/19 suspicion, now measured with
+  trained models on one example set. P2c (the mix) says whether it is lost at the mix or at the separator; P2b
+  whether at the other guitars or at the backing. P2d's by-sound read is rendering.
+- **Caveats.** One seed; the ladder's pinned set (F8); the stem of the old doubles is not in this set.
+- **References.** `PF/runs/P2d-20261042.json`, `PF/reads/P2d-best.json`, `PF/reads/P2d-final.json`;
+  `logs/pf-P2d.log`.
 
 ### F9. Process: removing a worktree crashed running jobs
 - **Result.** Removing the plan's worktree while the doubles render ran from it crashed its 3 shards at a lazy
