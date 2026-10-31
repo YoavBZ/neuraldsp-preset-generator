@@ -1552,6 +1552,7 @@ def cmd_answers(args):
     import numpy as np
 
     from learn import arm_a_mega53 as A
+    from learn import direct_stems as DS
     from learn import full_space as F
     from learn import local_objective as LO
     from learn import trusted_data_t3 as T3
@@ -1598,17 +1599,50 @@ def cmd_answers(args):
         outs = F.run_nets(nets, X, C)
         Y = [np.repeat(data.Y[q], 2, axis=0) for q in range(6)]
         ex = R.per_example(outs, who, Y)
+        pull = None
+        if args.readout == "pulled":
+            pull = fit_knob_pull(nets, croot, kept, rend, sp, rec)
         for r in rows:
             e = ex[r["i"]]
             sel, S = ms[r["amp"]][r["cls"]]
             mics = [int(np.argmax(m)) for m in e["mic_p"]]
-            x = F.answer_settings(r["amp"], S, e["a2"], e["sw_p"], mics)
+            cont = e["a2"]
+            if pull is not None:                   # D_CC's readout: each knob pulled toward the constant
+                med, table = pull
+                cell = (r["amp"], r["cls"])
+                b, _ = DS.cell_b(table, cell, F.cell_masks(r["amp"])[0])
+                cont = DS.pull(e["a2"], med[cell], b)
+            x = F.answer_settings(r["amp"], S, cont, e["sw_p"], mics)
             out[str(r["i"])] = {"select": sel, "settings": LO.sdict(x)}
-        tag = f"{args.name}-{args.which}"
+        tag = f"{args.name}-{args.which}" + ("" if args.readout == "plain" else f"-{args.readout}")
     save(out_dir() / SOUND_DIR / "answers" / f"{tag}.json", {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_3",
                                                             "name": tag, "answers": out,
                                                             "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"ANSWERS DONE {tag}: {len(out)} examples")
+
+
+def fit_knob_pull(nets, croot, kept, rend, sp, rec):
+    """D_CC's readout pull (`direct_stems.fit_pull_table`, as `cc_readout.cmd_fit`) fitted on FS for a ladder model:
+    per (amp, section class) and knob, b in [0, 1] minimising the knob error of constant + b (answer - constant),
+    the constant being the run's own training labels' medians. -> (medians, table)."""
+    import numpy as np
+
+    from learn import direct_stems as DS
+    from learn import full_space as F
+    from learn import trusted_data_t3 as T3
+    from learn import trusted_data_t3_r as R
+
+    enc = T3.encode_for(T3.FULL)
+    med = DS.label_medians([dict(r, base=r["cls"]) for r in rung_rows(kept, rend, rec["train_ids"])],
+                           lambda lab: enc(lab)[:6])
+    rows = rung_rows(kept, rend, sp["fs"])
+    data = RungData(rows, rung_path(croot, rec["rung"]), aug=False)
+    X, C, who = read_inputs(data)
+    ex = R.per_example(F.run_nets(nets, X, C), who, [np.repeat(data.Y[q], 2, axis=0) for q in range(6)])
+    ans = {i: e["a2"] for i, e in ex.items()}
+    lab = {i: (e["c"], e["cm"]) for i, e in ex.items()}
+    cell_of = {r["i"]: (r["amp"], r["cls"]) for r in rows}
+    return med, DS.fit_pull_table(ans, lab, cell_of, med)
 
 
 def cmd_sound_render(args):
@@ -1758,6 +1792,7 @@ def main(argv=None):
     ap.add_argument("--control", action="store_true")
     ap.add_argument("--doubled", action="store_true")
     ap.add_argument("--desc", action="store_true")
+    ap.add_argument("--readout", choices=("plain", "pulled"), default="plain")
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 
