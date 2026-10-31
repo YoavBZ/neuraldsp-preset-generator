@@ -355,9 +355,12 @@ instead of generating unrealistic presets our own?"):
     or tails.
 - **5B.1b, the model's deviations around S (ledger `phase_5b1b`, 480 renders; after F31).** The same P2a answers
   on the same 40 units, with each continuous control at S's value plus P2a's deviation from its labels' constant
-  (switches and mics at S's). Read as 5B.1, against S and P2a. A gain over S says the model's deviations carry
-  real-amp skill hidden by its centre; none says the labels themselves must reach real-amp tones (5B.2).
-  Exploratory: a readout tried after seeing F31.
+  (switches and mics at S's). Exploratory: a readout tried after seeing F31.
+  - The review found the move from S is mostly one shift shared by every track of an amp and class (per-track
+    remainder near the gap between a track's two halves). So a control is read too: S-shift, S plus that shared
+    shift taken from the other DIs' units (240 renders; 720 in all).
+  - Rows: S-shift − S (does the shared shift help?) and P2a-Sc − S-shift (does per-track skill transfer?); P2a-Sc −
+    S beside. P2a-Sc − P2a is not a skill read. Ties are not evidence of no transfer.
 
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are

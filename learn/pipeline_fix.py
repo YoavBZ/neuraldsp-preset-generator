@@ -2437,6 +2437,47 @@ def sc_cont(S, amp, a2, const):
     return out
 
 
+def real_shift_answers():
+    """5B.1b's control (zero renders): S plus the shared shift, one answer per (unit, amp) for both halves. The shift
+    is the mean of P2a-Sc - S in unit space on S's sounding continuous controls, over both halves of every unit of
+    the same (amp, class) from other DIs (leave-own-DI-out), added to S, clipped to [0, 1]; switches and mics at S's.
+    -> real/answers/S-shift.json."""
+    import numpy as np
+
+    from learn import full_space as F
+    from learn import local_objective as LO
+
+    d = out_dir() / REAL_DIR / "answers"
+    sc = json.loads((d / "P2a-Sc.json").read_text())
+    s_ans = json.loads((d / "S.json").read_text())["answers"]
+    parts = sc["parts"]
+    dev = {}
+    for prt in parts:
+        for amp in AMPS3:
+            key = real_key(prt, amp)
+            s_c, s_cm = F.encode(LO.tdict(s_ans[key][ANY_HALF]["settings"]), amp)[:2]
+            for half in ("A", "B"):
+                q = F.encode(LO.tdict(sc["answers"][key][half]["settings"]), amp)[0]
+                dev.setdefault((amp, prt["cls"]), []).append((prt["di"], np.where(s_cm > 0, q - s_c, np.nan)))
+    out = {}
+    for prt in parts:
+        for amp in AMPS3:
+            key = real_key(prt, amp)
+            S = LO.tdict(s_ans[key][ANY_HALF]["settings"])
+            s_c, s_cm, s_sw, s_swm, s_k, s_km, _ = F.encode(S, amp)
+            others = [v for di, v in dev[(amp, prt["cls"])] if di != prt["di"]]
+            shift = np.nanmean(np.stack(others), axis=0)
+            c = np.where((s_cm > 0) & np.isfinite(shift), np.clip(s_c + shift, 0.0, 1.0), np.nan)
+            sw = [float(v) if m else None for v, m in zip(s_sw, s_swm)]
+            mics = [int(v) if m else None for v, m in zip(s_k, s_km)]
+            out[key] = {ANY_HALF: {"select": s_ans[key][ANY_HALF]["select"],
+                                   "settings": LO.sdict(F.answer_settings(amp, S, c, sw, mics))}}
+    save(d / "S-shift.json", {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b1b", "tag": "S-shift", "parts": parts,
+                              "rule": real_shift_answers.__doc__, "answers": out,
+                              "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"S-SHIFT DONE: {len(out)} answers")
+
+
 def real_key(prt, amp):
     return f"{prt['unit']}|{amp}"
 
@@ -2458,11 +2499,14 @@ def cmd_real_predict(args):
     from learn import trusted_data_t3 as T3
 
     e = require("phase_5b1")
+    if args.names == "S-shift":
+        require("phase_5b1b")
+        return real_shift_answers()
     only_sc = args.names == "P2a-Sc"
     if only_sc:
         require("phase_5b1b")
     elif args.names:
-        raise SystemExit("real-predict writes 5B.1's answers, or with --names P2a-Sc only 5B.1b's")
+        raise SystemExit("real-predict writes 5B.1's answers, or with --names P2a-Sc / S-shift only 5B.1b's")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     parts = real_parts(kept, sp, CB.cc_inventory())
     nets, recs = [], []
@@ -2503,7 +2547,8 @@ def cmd_real_predict(args):
             out["S"][key] = {ANY_HALF: {"select": sel, "settings": LO.sdict(S)}}
     for t, a in out.items():
         save(out_dir() / REAL_DIR / "answers" / f"{t}.json", {
-            "plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b1", "tag": t, "parts": parts, "input_lufs": target,
+            "plan": PLAN, "ledger": f"{LEDGER_ID} {'phase_5b1b' if only_sc else 'phase_5b1'}", "tag": t,
+            "parts": parts, "input_lufs": target,
             "models": [r_["model_sha256"]["best"] for r_ in recs], "answers": a,
             "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"REAL PREDICT DONE: {len(parts)} units on {len({p_['rig'] for p_ in parts})} rigs; inputs at "
@@ -2619,7 +2664,8 @@ def cmd_real_report(args):
               .exists() and json.loads((out_dir() / REAL_DIR / "lags" / f"{p_['unit'].replace('/', '__')}.json")
                                        .read_text())["lag"] is None]
     meta = {p_["unit"]: p_ for p_ in parts}
-    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b1", "units": len(parts), "no_lag": no_lag, "rows": {}}
+    phase = "phase_5b1b" if any(t in ("P2a-Sc", "S-shift") for t in tags) else "phase_5b1"
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {phase}", "units": len(parts), "no_lag": no_lag, "rows": {}}
     units = [(p_["unit"], amp, sh, h) for p_ in parts for amp in AMPS3 for sh, h in (("A", "B"), ("B", "A"))]
     for pair in args.pairs.split(","):
         a, b = pair.split(":")
