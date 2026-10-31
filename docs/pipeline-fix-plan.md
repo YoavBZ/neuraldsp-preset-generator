@@ -421,8 +421,8 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - Knob error badly understates this (F6, F7): many settings sound alike, so the right sound often sits on "wrong"
     knobs (review step 21 confirmed).
   - On the made-up songs the constant and S are about equally far from the targets, so the yardstick is fair.
-  - **A mechanism for "never beats S":** the readout's pull toward the constant is fitted on knob error (steps
-    26–27), so it may shrink away exactly this skill. P3 and D_fix read it by sound.
+  - A suspected mechanism for "never beats S", that the readout's knob-fitted pull shrinks this skill away, was
+    tested at once and is refuted (F12).
 - **Caveats.**
   - The targets are Morgan renders on the true amp, an easier task than V-real's real amp tracks with no matching amp.
   - The NS-best checkpoint is chosen on NS's loss (not its sound).
@@ -431,6 +431,29 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   `cmd_answers`, `cmd_sound_render`, `cmd_sound_report`, `log_ratio`; ledger `phase_3_sound`; `logs/pf-sound-*.log`.
 - **Changes.** The ladder's question is now sharp: how much of this survives the mix (P2c) and the stem (P2d)? Every
   model and readout from here is read by sound, not only by knob.
+
+### F12. The readout's pull toward the average costs only a little sound skill (steps 26, 27)
+- **Result.** P2a's answers were pulled toward the constant exactly as D_CC's readout does, then rendered on the same
+  sample. The pull is `direct_stems.fit_pull_table`, fitted on FS by knob error per (amp, section class); switches and
+  mics stay plain. It changes a median 17 settings per answer (at most 30). The pulled answers sound only slightly
+  less close.
+- **Numbers.**
+
+  | Row | FS (the pull's fit set) | NS (primary) |
+  |---|---|---|
+  | plain − pulled | −0.012 [−0.022, −0.001], 5 of 6 bands | −0.006 [−0.016, +0.004], 20 of 36 sections |
+  | pulled − S | −0.236 [−0.373, −0.100] | −0.236 [−0.311, −0.160] |
+  | pulled − constant | −0.240 [−0.370, −0.111] | −0.242 [−0.302, −0.181] |
+
+- **Reading.** The suspected mechanism (F11), that a knob-fitted pull discards the sound skill, is refuted in
+  distribution. The pull is a small cost, not the reason the old models never beat S. The loss must come later: the
+  mix and stem input (P2c, P2d) or the step to real songs (P3, P4).
+- **Caveats.** One model and seed; in distribution. Switches are not pulled here; step 27's switch readout is read in
+  P3.
+- **References.** `PF/sound/answers/P2a-best-pulled.json`, `PF/sound/judge/P2a-best-pulled/`; `fit_knob_pull`,
+  `cmd_answers --readout pulled`; ledger `phase_3_readout`; `logs/pf-sound-pull-*.log`.
+- **Changes.** Step 26: the pull is ruled out as the main loss (a small cost, measured). Step 27's switch rule is
+  still read in P3.
 
 ### F9. Process: removing a worktree crashed running jobs
 - **Result.** Removing the plan's worktree while the doubles render ran from it crashed its 3 shards at a lazy
