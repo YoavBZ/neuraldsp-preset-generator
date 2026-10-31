@@ -1765,12 +1765,260 @@ def cmd_sound_report(args):
     print("SOUND-REPORT DONE")
 
 
+# --- phase 4: V-real (P4: the clean-input model on real amp tracks; P3: the readouts), measurements only ------------
+
+VREAL_DIR = "vreal"
+SAME_INPUT = {"cambridge-wickerman-elecgtr2": "cambridge-wickerman-elecgtr2+3",
+              "cambridge-wickerman-elecgtr3": "cambridge-wickerman-elecgtr2+3"}   # one input (review step 32)
+ANY_HALF = "*"                      # an answer that does not depend on the search half (S, S', the constant)
+
+
+def vreal_part_key(slug):
+    """The unit a part's rows average into: Wickerman ElecGtr2 and 3 share one stem input, so in a stem or mix read
+    they count as one (step 32); with `own_inputs` (P4: each its own amp track) they stay two."""
+    return SAME_INPUT.get(slug, slug)
+
+
+def part_members(key):
+    """The V-real slugs a row's part key stands for."""
+    return [m for m in PR.VREAL if m == key or vreal_part_key(m) == key]
+
+
+def vreal_rows(judge, a, b, units, own_inputs=False):
+    """[(band, part, ln(d_a / d_b))] per direction (slug, amp, search, held) where both are judged; an answer
+    stored for ANY_HALF serves every search half. judge: {tag: {"slug|amp": {"tag-key|search": {half: d}}}}."""
+    out = []
+    for slug, amp, search, held in units:
+        def d(tag):
+            g = judge.get(tag, {}).get(f"{slug}|{amp}") or {}
+            v = g.get(search) or g.get(ANY_HALF)
+            return None if v is None else v.get(held)
+        x, y = d(a), d(b)
+        if x is None or y is None or not (math.isfinite(x) and math.isfinite(y)) or x <= 0 or y <= 0:
+            continue
+        out.append((PR.VREAL[slug][0], slug if own_inputs else vreal_part_key(slug), math.log(x / y)))
+    return out
+
+
+def vreal_ctx():
+    """V-real-11's frozen plan, directions and parts (T3's), and the stored S copies."""
+    from learn import arm_a_mega53 as A
+    from learn import trusted_data_t3 as T3
+    from learn import trusted_data_t3_mix as TM
+    from learn import verify_tracks as V
+
+    root = V.out_root(argparse.Namespace(out=None, smoke=False))
+    plan, drift = TM.load_frozen(root, False)
+    dirs, parts, dropped = T3.vreal_dirs(root, plan, False)
+    if dropped:
+        raise SystemExit(f"V-real members dropped: {dropped}")
+    return root, plan, drift, dirs, parts, A.L.menu_S()
+
+
+def amp_track(slug, info):
+    """A V-real part's recorded amp track (the crop's reference.wav), mono."""
+    from learn import arm_a_mega53 as A
+    from learn import confirm_run as CR
+
+    crop = A.f_part(slug)["crop"] if info["kind"] == "stagef" else pathlib.Path(info["crop"])
+    return CR.mono(crop / "reference.wav")
+
+
+def p2a_median_lufs(ids):
+    """The median half loudness of P2a's training inputs (the level a P4 input is brought to)."""
+    import numpy as np
+
+    v = []
+    for i in ids:
+        v += [float(z) for z in np.load(input_path(DATA, i, RUNG_KINDS["a"]))["lufs"]]
+    return float(np.median(v))
+
+
+def cmd_p4_predict(args):
+    """P4's answers on V-real-11 (zero renders): the ladder model `--name` (P2a; its seeds pooled) reads each part's
+    own amp track, brought to the median loudness of its training inputs, on the search half, told the part's class
+    and each forced amp; the plain readout on the class's S. Beside it the same answer pulled as D_CC's readout
+    (`fit_knob_pull`), and the constant of the model's training labels. -> vreal/answers/<tag>.json."""
+    import numpy as np
+
+    from learn import direct_existing as DE
+    from learn import direct_stems as DS
+    from learn import full_space as F
+    from learn import local_objective as LO
+    from learn import trusted_data_t3 as T3
+
+    e = require("phase_4")
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    root, plan, drift, dirs, parts, ms = vreal_ctx()
+    nets, rec = [], None
+    for sd in SEEDS:
+        if (out_dir() / "runs" / f"{args.name}-{sd}.json").exists():
+            n, rec = load_run(args.name, sd, args.which)
+            nets.append(n)
+    if not nets or rec["rung"] != "a":
+        raise SystemExit("P4 reads a P2a model")
+    target = p2a_median_lufs(rec["train_ids"])
+    med, table = fit_knob_pull(nets, croot, kept, rend, sp, rec)
+    const = constant_of(rung_rows(kept, rend, rec["train_ids"]))
+    tag = f"P4-{args.name}-{args.which}"
+    out = {tag: {}, f"{tag}-pulled": {}, f"{tag}-constant": {}}
+    inputs = {}
+    for slug, amp, search, _ in dirs:
+        cls = PR.VREAL[slug][1]
+        if slug not in inputs:
+            ref = amp_track(slug, parts[slug])
+            inputs[slug] = (ref, DE.inference_gain_db(ref, target))
+        ref, g = inputs[slug]
+        s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
+        x, c = DS.model_input(s8, s8, ls, ls, search, amp, cls, "Dstem")
+        r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
+        sel, S = ms[amp][cls]
+        key = f"{slug}|{amp}"
+        b, _ = DS.cell_b(table, (amp, cls), F.cell_masks(amp)[0])
+        out[tag].setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(
+            F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"]))}
+        out[f"{tag}-pulled"].setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(
+            F.answer_settings(amp, S, DS.pull(r["a2"], med[(amp, cls)], b), r["sw_p"], r["mics"]))}
+        out[f"{tag}-constant"].setdefault(key, {})[ANY_HALF] = {"select": sel, "settings": LO.sdict(
+            T3.constant_full(amp, S, const[(amp, cls)]))}
+    for t, a in out.items():
+        save(out_dir() / VREAL_DIR / "answers" / f"{t}.json", {
+            "plan": PLAN, "ledger": f"{LEDGER_ID} phase_4", "tag": t, "model": args.name, "which": args.which,
+            "seeds": [r_["seed"] for r_ in [rec]], "input": "the part's own amp track (crop reference.wav)",
+            "input_lufs": target, "gains_db": {k: v[1] for k, v in inputs.items()}, "answers": a,
+            "drift": drift, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"P4 PREDICT DONE: {len(dirs)} directions; inputs at {target:.2f} LUFS; tags {list(out)}")
+
+
+def cmd_vreal_comparators(args):
+    """S and S' (P5's crunch picks without V-real's parts) as V-real answers (zero renders): S on every part, S' on
+    the crunch parts, each on its amp's live menu entry."""
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+
+    require("phase_4")
+    root, plan, drift, dirs, parts, ms = vreal_ctx()
+    p5 = json.loads((out_dir() / "p5.json").read_text())["variants"]["without V-real's parts"]["picks"]
+    rr = K.Renderer()
+    try:
+        menu = rr.menu()
+    finally:
+        rr.close()
+    out = {"S": {}, "S-prime": {}}
+    for slug, amp, _, _ in dirs:
+        cls = PR.VREAL[slug][1]
+        sel, S = ms[amp][cls]
+        out["S"][f"{slug}|{amp}"] = {ANY_HALF: {"select": sel, "settings": LO.sdict(S)}}
+        pick = p5[cls]["per_amp"][amp]
+        if pick["changed"]:
+            sel2, S2 = menu[amp][pick["picked"]]
+            out["S-prime"][f"{slug}|{amp}"] = {ANY_HALF: {"select": sel2, "settings": LO.sdict(S2),
+                                                          "preset": pick["picked"]}}
+    for t, a in out.items():
+        save(out_dir() / VREAL_DIR / "answers" / f"{t}.json", {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_4",
+                                                              "tag": t, "answers": a,
+                                                              "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"COMPARATORS DONE: S on {len(out['S'])} groups, S' on {len(out['S-prime'])}")
+
+
+def cmd_vreal_render(args):
+    """One shard of V-real (part, amp) groups for the answer sets `--names`: every answer, comparators included,
+    through the part's measure DI in its own process primed with the same setting (step 33), judged against the
+    part's amp track at its judge lag on both halves. isolate=True; at most 3 render processes; the 31 GB guard.
+    -> vreal/judge/<tag>/<slug>|<amp>.json (a done group is kept)."""
+    from learn import arm_a_mega53 as A
+    from learn import audibility_measure as AM
+    from learn import cc_build as CB
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+    from learn import pretrain_set as PS
+    from learn import trusted_data as T
+    from learn import trusted_data_t3 as T3
+
+    require("phase_4")
+    root, plan, drift, dirs, parts, ms = vreal_ctx()
+    groups = sorted({(s_, a) for s_, a, _, _ in dirs})
+    k, n = args.shard
+    mine = [g for j, g in enumerate(groups) if j % n == k]
+    rr = K.Renderer()
+    try:
+        menu = rr.menu()
+    finally:
+        rr.close()
+    renders = 0
+    LO._wait_cap()
+    for tag in args.names.split(","):
+        ans = json.loads((out_dir() / VREAL_DIR / "answers" / f"{tag}.json").read_text())["answers"]
+        for slug, amp in mine:
+            key = f"{slug}|{amp}"
+            if key not in ans:
+                continue
+            gp = out_dir() / VREAL_DIR / "judge" / tag / f"{key}.json"
+            if gp.exists():
+                continue
+            if PS.free_gb() < T.DISK_GUARD_GB:
+                raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+            info = parts[slug]
+            ctx = (A.group_ctx(menu, ms, "F", slug, amp) if info["kind"] == "stagef"
+                   else T3.t3_group_ctx(menu, ms, info, amp))
+            rec = {"slug": slug, "amp": amp, "tag": tag, "judge": {}, "render_sha256": {}}
+            for search, a in sorted(ans[key].items()):
+                st = LO.tdict(a["settings"])
+                y = AM.fresh_render(CB.new_renderer, ctx["di32"], a["select"], st, st)
+                renders += 2
+                rec["judge"][search] = K.judge(ctx["ref"], y, ctx["di"], ctx["part"]["judge_lag"])
+                rec["render_sha256"][search] = AM.audio_sha(y)
+            save(gp, rec)
+        print(f"{tag}: shard {k}/{n} done; renders so far {renders}", flush=True)
+    print(f"VREAL-RENDER DONE {k}/{n}: {renders} renders")
+
+
+def cmd_vreal_report(args):
+    """Phase 4's rows: for each pair in `--pairs` ("a:b,a:b"), band-weighted ln(d_a / d_b) on the held half per
+    direction, 90% band-clustered t (7 bands), per class, part-weighted, V-real-10 and leave-one-band-out beside.
+    Wickerman ElecGtr2 and 3 count as one part unless both answers read their own amp tracks (`--own-inputs`)."""
+    e = require("phase_4")
+    root, plan, drift, dirs, parts, ms = vreal_ctx()
+    v10 = set(plan["vreal"]["v_real_10"])
+    judge = {}
+    tags = {t for pair in args.pairs.split(",") for t in pair.split(":")}
+    for t in tags:
+        d = out_dir() / VREAL_DIR / "judge" / t
+        judge[t] = {}
+        for p in d.glob("*.json"):
+            r = json.loads(p.read_text())
+            judge[t][f"{r['slug']}|{r['amp']}"] = r["judge"]
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_4", "rows": {}}
+    for pair in args.pairs.split(","):
+        a, b = pair.split(":")
+        rows = vreal_rows(judge, a, b, dirs, own_inputs=args.own_inputs)
+        res = {"all": clustered(rows), "directions": len(rows), "of": len(dirs)}
+        for cls in ("clean", "crunch"):
+            res[cls] = clustered([r for r in rows if all(PR.VREAL[m][1] == cls for m in part_members(r[1]))])
+        res["v_real_10"] = clustered([r for r in rows if all(m in v10 for m in part_members(r[1]))])
+        out["rows"][f"{a} - {b}"] = res
+        c = res["all"]
+        iv = "" if c["lo90"] is None else f" [{c['lo90']:+.4f}, {c['hi90']:+.4f}]"
+        print(f"{a} - {b}: {c['mean']:+.4f}{iv} ({c['clusters']} bands, {c['clusters_negative']} better; part-weighted "
+              f"{c['part_weighted']:+.4f}, {c['parts_negative']} of {c['parts']} parts better; {len(rows)} of "
+              f"{len(dirs)} directions)" if c["mean"] is not None else f"{a} - {b}: no rows")
+        for cls in ("clean", "crunch"):
+            z = res[cls]
+            if z["mean"] is not None:
+                print(f"    {cls}: {z['mean']:+.4f} ({z['clusters']} bands, {z['clusters_negative']} better)")
+    out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    save(out_dir() / VREAL_DIR / f"report-{args.label}.json", out)
+    print("VREAL-REPORT DONE")
+
+
 # --- main ------------------------------------------------------------------------------------------------------------
 
 COMMANDS = {"p5": cmd_p5, "dirty-doubles": cmd_dirty_doubles, "p6": cmd_p6,
             "build-inputs": cmd_build_inputs, "p1": cmd_p1, "render-doubles": cmd_render_doubles,
             "build-doubles": cmd_build_doubles, "train": cmd_train, "read": cmd_read, "sample": cmd_sample,
-            "answers": cmd_answers, "sound-render": cmd_sound_render, "sound-report": cmd_sound_report}
+            "answers": cmd_answers, "sound-render": cmd_sound_render, "sound-report": cmd_sound_report,
+            "p4-predict": cmd_p4_predict, "vreal-comparators": cmd_vreal_comparators,
+            "vreal-render": cmd_vreal_render, "vreal-report": cmd_vreal_report}
 
 
 def main(argv=None):
@@ -1793,6 +2041,9 @@ def main(argv=None):
     ap.add_argument("--doubled", action="store_true")
     ap.add_argument("--desc", action="store_true")
     ap.add_argument("--readout", choices=("plain", "pulled"), default="plain")
+    ap.add_argument("--pairs", default="")
+    ap.add_argument("--own-inputs", action="store_true")
+    ap.add_argument("--label", default="p4")
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 

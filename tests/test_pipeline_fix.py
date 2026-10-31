@@ -205,3 +205,25 @@ def test_every_run_and_read_conditions_on_the_section_class():
     assert 'r["cls"]' in src and 'r["base"]' not in src
     assert 'base=r["cls"]' in inspect.getsource(P.arm_data)
     assert 'base=r["cls"]' in inspect.getsource(P.constant_of)
+
+
+def test_vreal_rows_count_wickerman_2_and_3_as_one_input_and_use_any_half_comparators():
+    units = [("cambridge-wickerman-elecgtr2", "pr12", "A", "B"), ("cambridge-wickerman-elecgtr3", "pr12", "A", "B"),
+             ("cambridge-femme-elecgtr5", "pr12", "B", "A")]
+    judge = {"m": {"cambridge-wickerman-elecgtr2|pr12": {"A": {"B": 1.0}},
+                   "cambridge-wickerman-elecgtr3|pr12": {"A": {"B": 4.0}},
+                   "cambridge-femme-elecgtr5|pr12": {"B": {"A": 2.0}}},
+             "S": {"cambridge-wickerman-elecgtr2|pr12": {"*": {"A": 9.0, "B": 2.0}},
+                   "cambridge-wickerman-elecgtr3|pr12": {"*": {"A": 9.0, "B": 2.0}},
+                   "cambridge-femme-elecgtr5|pr12": {"*": {"A": 1.0, "B": 9.0}}}}
+    rows = P.vreal_rows(judge, "m", "S", units)
+    assert {r[1] for r in rows} == {"cambridge-wickerman-elecgtr2+3", "cambridge-femme-elecgtr5"}
+    assert sorted(round(r[2], 6) for r in rows) == sorted([round(math.log(0.5), 6), round(math.log(2.0), 6),
+                                                           round(math.log(2.0), 6)])
+    own = P.vreal_rows(judge, "m", "S", units, own_inputs=True)
+    assert {r[1] for r in own} == {"cambridge-wickerman-elecgtr2", "cambridge-wickerman-elecgtr3",
+                                   "cambridge-femme-elecgtr5"}
+    c = P.clustered(rows)
+    assert c["parts"] == 2 and c["clusters"] == 2
+    assert P.part_members("cambridge-wickerman-elecgtr2+3") == ["cambridge-wickerman-elecgtr2",
+                                                                "cambridge-wickerman-elecgtr3"]
