@@ -68,7 +68,7 @@ own. A model that reads little (the mix and stem models, D_CC) never serves as t
 | Step | Fix | Isolated check | Relies on | Status |
 |---|---|---|---|---|
 | 3, 23 | Stop on held-out songs; checkpoints | Data check: NS shares no session, DI or time window with training (`s23` on the recipe's split) | nothing | fixed (F18) |
-| 4 | Size | Learning curve on the clean input (P2a at 25% and 50%, and at 50% of sections), by NS loss and by sound | recipe, by-sound read | planned |
+| 4 | Size | Learning curve on the clean input (P2a at 25% and 50%, and at 50% of sections), by NS loss and by sound | recipe, by-sound read | limit, measured (F25) |
 | 5 | Class from the section | Structural: one field in every consumer (a test); the mismatch measured in D_CC itself, where it exists (P6) | nothing | fixed, measured (F2) |
 | 6 | Runaway targets out | Data check: the scan's rules hit 0–1 of the 2,645 examples that cannot self-oscillate (`cc_drive_page.RUNAWAY`) | nothing | fixed |
 | 6 | The wide, wet prior | Measured on P2a: by sound per draw mode (F11) | recipe, by-sound read | limit, measured |
@@ -785,6 +785,34 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **References.** `PF/inputs/*-mixb-k*.npz`, `PF/inputs/backings-levels.json`, `PF/inputs/backings-pool.json`,
   `PF/runs/P2b-bk8-20261042.json`, `PF/sound/judge/P2b-bk8-best/`, `PF/sound/report-backings.json`;
   `cmd_build_backings`, `BackingData`; ledger `phase_3_backings`.
+
+### F25. On the clean input, more of the same data sharpens the knobs but adds little sound (step 4, alone)
+- **Result.** P2a was trained at 25% and 50% of its training examples (nested within sections) and at 100%, each with
+  both seeds and the answers pooled. Read by knob, skill climbs steeply with size; by sound, most of the gain over S is
+  already there at 25%.
+- **Numbers.**
+
+  | Size | Training examples | NS by knob, E − constant (seed 1) | Switches readable (NS) | By sound, − S, NS (pooled) | By sound, − S, FS (pooled) |
+  |---|---|---|---|---|---|
+  | 25% | 447 | −0.0006 [−0.0023, +0.0011] | 15 | −0.193 [−0.275, −0.111] | −0.223 [−0.405, −0.041] |
+  | 50% | about 894 | −0.0049 [−0.0067, −0.0031] | 23 | −0.205 [−0.290, −0.120] | −0.100 [−0.217, +0.018] |
+  | 100% | 1,787 | −0.0086 [−0.0106, −0.0066] | 27 | −0.237 [−0.313, −0.161] | −0.195 [−0.321, −0.069] |
+
+  - Steps by sound on NS (pooled, paired): 25% → 50% −0.012 [−0.068, +0.044]; 50% → 100% −0.031 [−0.080, +0.017].
+  - The fewer-performances point, 50% of the sections with all their examples (905, one seed): NS by knob −0.0061, by
+    sound −0.201 [−0.284, −0.117]. That is at least as good as 50% of the examples over every section; one seed.
+  - Single seeds swing (seed 1 alone: 25% −0.198, 50% −0.117, 100% −0.241 on NS), so only the pooled points are read.
+- **Reading.**
+  - With the clean input, size improves the knob read a lot and the sound a little, leaning but undecided at this
+    sample.
+  - The sound gain comes early, from what little data teaches (the main switches and gains). Scaling the same kind of
+    data is not the lever for the clean input's sound.
+  - For the mix, variety mattered more (F24): more backings recovered about 27% with no new targets.
+  - Step 4: limit, measured. F20's re-plan (scale) is not supported as the next step by itself.
+- **Caveats.** In distribution only; 60 + 60 sample; FS has 6 bands.
+- **References.** `PF/runs/P2a-{f25,f50,s50}-2026104{2,3}.json`, `PF/reads/P2a-{f25,f50,s50}-best.json`,
+  `PF/sound/judge/P2a-*-x20261042+20261043/`, `PF/sound/report-{curve,curve-pooled,s50,seedcheck}.json`; ledger
+  `phase_3_isolated` (e).
 
 ### F9. Process: removing a worktree crashed running jobs
 - **Result.** Removing the plan's worktree while the doubles render ran from it crashed its 3 shards at a lazy

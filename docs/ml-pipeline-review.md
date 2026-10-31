@@ -101,7 +101,7 @@ rule).
 | 1 | DIs from released sessions, test bands kept out | OK | pool plan, ear pages | |
 | 2 | Every DI timed against its own amp track | OK | pool amendment 2: 50 of 61 in time | |
 | 3 | 10-s sections every 5 s | Suspect (with 23) → **Fixed 2026-10-31 (fix plan F18)** | `clean_di.py:48-53` | |
-| 4 | Section screens; pool size | Problem (size) → **Limit, measured: the clean input's skill rises with size (F25 pending)** | `s04`: 262 sections, 32 DIs, 9 bands | P2 |
+| 4 | Section screens; pool size | Problem (size) → **Limit, measured: on the clean input size sharpens knobs, adds little sound (F25)** | `s04`: 262 sections, 32 DIs, 9 bands | P2 |
 | 5 | Class input = a coin flip in training, the real class on songs | Suspect → **Fixed (section's class everywhere; P6 F2)** | `s05`: 1,512 of 3,033 differ | P6 |
 | 6 | Settings drawn: factory / start / wide | Suspect → **Fixed (runaways out); prior: limit, measured (F7, F11, F20)** | `s06`: factory draws reverb 73%, delay 62% | P3 |
 | 7 | Near-silent draws refused | Problem → **Limit, measured (data)** | `s07`: wide 38%, factory 1.6%, start 0% | |
