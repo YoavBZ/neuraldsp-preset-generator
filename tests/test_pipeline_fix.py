@@ -152,3 +152,56 @@ def test_baseline_switch_rate_and_amp_frequency():
     assert out["amp_n"] == 4 and out["sw_n"][0] == 4 and out["knob_n"].sum() == 0
     fam = P.family_means(out)
     assert fam["knob_marginal"] is None and fam["switch"] > 0
+
+
+def test_draw_order_spreads_over_sections_and_is_stable():
+    sec = {i: f"s{i % 3}" for i in range(9)}
+    o = P.draw_order(list(range(9)), sec, n=6)
+    assert len(o) == 6 and len(set(o)) == 6
+    assert sorted(sec[i] for i in o[:3]) == ["s0", "s1", "s2"]          # one per section per round
+    assert o == P.draw_order(list(range(9)), sec, n=6)
+    assert P.draw_order(list(range(9)), sec, n=20)[:6] == o              # growing keeps the first ones
+
+
+def test_log_ratio_averages_halves_and_refuses_missing():
+    assert P.log_ratio({"A": 2.0, "B": 2.0}, {"A": 1.0, "B": 1.0}) == pytest.approx(math.log(2))
+    assert P.log_ratio({"A": 2.0, "B": math.inf}, {"A": 1.0, "B": 1.0}) is None
+    assert P.log_ratio(None, {"A": 1.0, "B": 1.0}) is None
+
+
+def test_fold_split_and_section_share():
+    kept = {1: {"band": "Forkupines"}, 2: {"band": "BKS"}, 3: {"band": "Hazael"}}
+    assert P.fold_split(kept, [1, 2, 3], 0) == ([2, 3], [1])
+    assert set().union(*(set(v) for v in P.FOLDS.values())) >= {"Forkupines", "BKS", "Hazael", "Adam Buckley"}
+    sec = {i: f"s{i // 2}" for i in range(10)}
+    half = P.section_share(list(range(10)), sec, 0.4)
+    assert len({sec[i] for i in half}) == 2 and all(sec[j] in {sec[i] for i in half} for j in half)
+    assert all(sum(1 for j in half if sec[j] == sec[i]) == 2 for i in half)   # every example of a kept section
+
+
+def test_run_names():
+    assert P.run_name("a") == "P2a"
+    assert P.run_name("d", aug=True) == "P2d-aug"
+    assert P.run_name("a", frac=0.25) == "P2a-f25"
+    assert P.run_name("d", sections=0.5) == "P2d-s50"
+    assert P.run_name("a", fold=3) == "P2a-k3"
+
+
+def test_rung_mixes_rebuild_the_mix_and_drop_every_other_guitar():
+    import numpy as np
+
+    y, oth, stems = np.ones(4), np.full(4, 2.0), np.full(4, 3.0)
+    gains = {"ga": 20 * math.log10(2), "gb": 20 * math.log10(0.5)}
+    a, b, c = P.rung_mixes(y, oth, stems, {}, gains, lambda z: z)
+    assert np.allclose(a, 2.0)                          # the target at its gain in the mix
+    assert np.allclose(b, (1 + 3 * 0.5) * 2)            # no other guitar, the same gains
+    assert np.allclose(c, (1 + 5 * 0.5) * 2)            # the full mix
+
+
+def test_every_run_and_read_conditions_on_the_section_class():
+    import inspect
+
+    src = inspect.getsource(P.RungData.batch) + inspect.getsource(P.read_inputs)
+    assert 'r["cls"]' in src and 'r["base"]' not in src
+    assert 'base=r["cls"]' in inspect.getsource(P.arm_data)
+    assert 'base=r["cls"]' in inspect.getsource(P.constant_of)

@@ -161,6 +161,8 @@ def cmd_p5(args):
         rules = start_rules(files, pinned, excl)
         rows, missing = s_prime_rows(files, PR.VREAL, choice, rules)
         per_class = {cls: clustered([r for r in rows if PR.VREAL[r[1]][1] == cls]) for cls in ("clean", "crunch")}
+        miss = set(missing)
+        stored = [r for r in rows if not any((r[1], a) in miss for a in PR.AMPS)]
         v = {"excluded": len(excl & set(pinned)),
              "picks": {cls: {"parts": r["parts"], "per_amp": {
                  amp: {"S": choice[cls]["presets"][amp], "picked": b, "median": m, "parts_used": n,
@@ -168,7 +170,11 @@ def cmd_p5(args):
                  for amp, (b, m, n) in r["per_amp"].items()}} for cls, r in rules.items()},
              "s_prime_minus_s_on_vreal": clustered(rows) if not missing else None,
              "per_class": per_class if not missing else None,
-             "missing_need_renders": [f"{s}|{a}" for s, a in missing]}
+             "missing_need_renders": [f"{s}|{a}" for s, a in missing],
+             "partial_without_missing_parts": {
+                 "parts_left_out": sorted({sl for sl, _ in missing}), "all": clustered(stored),
+                 "per_class": {cls: clustered([r for r in stored if PR.VREAL[r[1]][1] == cls])
+                               for cls in ("clean", "crunch")}} if missing else None}
         out["variants"][name] = v
         print(f"== {name}: {v['excluded']} pinned parts left out")
         for cls, r in v["picks"].items():
@@ -177,6 +183,13 @@ def cmd_p5(args):
                       f"{p['picked']}")
         if missing:
             print(f"  S' - S cannot be read from stored distances for {len(missing)} (part, amp): {missing}")
+            pp = v["partial_without_missing_parts"]
+            for nm, c in [("all", pp["all"])] + sorted(pp["per_class"].items()):
+                if c["mean"] is not None:
+                    iv = "" if c["lo90"] is None else f" [{c['lo90']:+.4f}, {c['hi90']:+.4f}]"
+                    print(f"  partial S' - S ({nm}, without {pp['parts_left_out']}): {c['mean']:+.4f}{iv} "
+                          f"({c['clusters']} bands, {c['clusters_positive']} worse; part-weighted "
+                          f"{c['part_weighted']:+.4f}, {c['parts']} parts)")
         else:
             c = v["s_prime_minus_s_on_vreal"]
             print(f"  S' - S on V-real-11: {c['mean']:+.4f} [{c['lo90']:+.4f}, {c['hi90']:+.4f}] "
@@ -312,7 +325,7 @@ def cmd_p6(args):
 
     require("phase_1")
     root, spec, fit_, nets, recs, tr_rows, fs_rows, files = _dcc()
-    ex = {x["i"]: x for x in json.loads((root / "learn/trusted-data/cc/plan.json").read_text())["examples"]}
+    ex = {x["i"]: x for x in json.loads((root / "cc/plan.json").read_text())["examples"]}
     fs = [dict(r, cls=ex[r["i"]]["cls"]) for r in fs_rows]
     per_b, lab = fs_readouts(nets, fs, files, "base")
     per_c, _ = fs_readouts(nets, fs, files, "cls")
@@ -353,11 +366,21 @@ RUNG_KINDS = {"a": "tgtl-cc", "b": "mixb-cc", "c": "mix-cc", "d": "xlance_g-cc"}
 DT_KINDS = {"c": "mix-ccdt", "d": "xlance_g-ccdt"}  # rungs c and d of a doubled example: its re-rendered doubles
 
 
+OWN_KINDS = ("a", "b")                              # rungs whose features this plan builds (pipeline-fix/inputs/)
+
+
+def input_path(root, i, kind):
+    return out_dir(root) / "inputs" / f"{i // 1000:04d}" / f"{i:07d}-{kind}.npz"
+
+
 def rung_path(croot, rung, doubled=frozenset(), root=DATA):
-    """i -> the feature file rung `rung` reads for example i (the doubles fix's files for a doubled example)."""
+    """i -> the feature file rung `rung` reads for example i: this plan's own inputs for P2a and P2b, D_CC's stored
+    mix and stem for P2c and P2d, the doubles fix's files for a doubled example."""
     from learn import trusted_data as T
 
     def f(i):
+        if rung in OWN_KINDS:
+            return input_path(root, i, RUNG_KINDS[rung])
         if rung in DT_KINDS and i in doubled:
             return dt_ex(root, i, DT_KINDS[rung])
         return T.ex_path(croot, "cc", i, RUNG_KINDS[rung])
@@ -387,7 +410,7 @@ def cmd_build_inputs(args):
     from learn import song_aug as SA
     from learn import trusted_data as T
 
-    require("phase_3")
+    require("phase_2")
     a = argparse.Namespace(out=None, smoke=False)
     root = CB.V.out_root(a)
     plan = CB.load_plan(a)
@@ -403,7 +426,7 @@ def cmd_build_inputs(args):
     parity = []
     t0 = time.time()
     for m, i in enumerate(todo):
-        pa, pb = (T.ex_path(root, CB.STAGE, i, RUNG_KINDS[r]) for r in "ab")
+        pa, pb = (input_path(DATA, i, RUNG_KINDS[r]) for r in OWN_KINDS)
         if pa.exists() and pb.exists():
             continue
         x, rw, bw = ex[i], rend[i], built[i]
@@ -1267,27 +1290,6 @@ SAMPLE_N = 60                      # per read set (FS, NS)
 SAMPLE_SEED = 20261033
 
 
-def draw_sample(ids, section_of, n=SAMPLE_N, seed=SAMPLE_SEED):
-    """n ids spread over sections: the sections in a seeded order, one example from each in turn (each section's own
-    seeded order), until n are drawn or none is left."""
-    import random
-
-    by = {}
-    for i in sorted(ids):
-        by.setdefault(section_of[i], []).append(i)
-    rng = random.Random(seed)
-    secs = sorted(by)
-    rng.shuffle(secs)
-    for s in secs:
-        random.Random(f"{seed}|{s}").shuffle(by[s])
-    out = []
-    while len(out) < n and any(by[s] for s in secs):
-        for s in secs:
-            if by[s] and len(out) < n:
-                out.append(by[s].pop(0))
-    return sorted(out)
-
-
 def knob_rows(ans, lab, const, cell_of):
     """Per knob: the error of the answer and of the constant on every example where it sounds (unit range).
     ans {i: unit vector}; lab {i: (cont, mask)}; const {cell: unit vector}. -> {j: [(i, err_model, err_const)]}."""
@@ -1311,11 +1313,367 @@ def readable(rows, cluster_of):
     return {k: c[k] for k in ("mean", "lo90", "hi90", "clusters", "readable", "worse")}
 
 
+def read_inputs(data):
+    """Both halves of every row of a `RungData` as model inputs (eval: no augmentation), D_stem's layout.
+    -> (X [2n, 2, 96, frames], C [2n, ...], who [2n] example ids)."""
+    import numpy as np
+
+    from learn import direct_stems as DS
+    from learn import pretrain_set as PS
+    from learn import song_model as SM
+
+    X, C, H, who = [], [], [], []
+    for j, r in enumerate(data.rows):
+        for h in (0, 1):
+            x = PS.dequant(data.X[j, h])
+            X.append(np.stack([x, x]))
+            C.append(SM.cond_vec(r["amp"], r["cls"], [float(data.L[j, h]), 0.0]))
+            H.append(h == 0)
+            who.append(r["i"])
+    x = SM.norm_feat(np.stack(X))
+    PS.mask_half_a(x, np.array(H))
+    c = np.stack(C)
+    DS.zero_inputs(x, c, "Dstem")
+    return x.astype(np.float32), c, who
+
+
+def load_run(name, seed, which):
+    import torch
+
+    from learn import direct_stems as DS
+    from learn import full_space as F
+
+    rec = json.loads((out_dir() / "runs" / f"{name}-{seed}.json").read_text())
+    p = out_dir() / "runs" / rec["models"][which]
+    if DS.hashlib_file(p) != rec["model_sha256"][which]:
+        raise SystemExit(f"{p.name}: the model changed since its run")
+    net = F.build_net()
+    net.load_state_dict(torch.load(p, map_location="cpu"))
+    net.eval()
+    return net, rec
+
+
+def constant_of(rows):
+    """The constant per (amp, section class) from training rows' labels (`direct_sound_gate.constant_answers`, its
+    cell key set to the section's class)."""
+    from learn import direct_sound_gate as G
+    from learn import full_space as F
+    from learn import trusted_data_t3 as T3
+
+    enc = T3.encode_for(T3.FULL)
+    return G.constant_answers([dict(r, base=r["cls"]) for r in rows], lambda lab: enc(lab)[:6], len(F.CONT),
+                              len(F.SW), len(F.CAT))
+
+
+def split_e(ex, info, const, key_of):
+    """The by-knob E (mean |error| over the sounding knobs) of the model minus the constant's, per group of
+    `key_of(i)`, clustered by section (zero renders; steps 7 and 15)."""
+    import numpy as np
+
+    out = {}
+    for g in sorted({key_of(i) for i in ex}, key=str):
+        d = {}
+        for i, e in ex.items():
+            if key_of(i) != g:
+                continue
+            c0 = np.asarray(const[info[i]["cell"]]["cont"], np.float64)
+            m = (np.asarray(e["cm"]) > 0) & np.isfinite(c0)
+            if m.any():
+                y = np.asarray(e["c"], np.float64)
+                d[i] = float(np.mean(np.abs(e["a2"] - y)[m]) - np.mean(np.abs(c0 - y)[m]))
+        out[str(g)] = clustered([(info[i]["section"], str(i), v) for i, v in d.items()])
+        out[str(g)] = {k: out[str(g)][k] for k in ("mean", "lo90", "hi90", "clusters", "parts")}
+    return out
+
+
+def cmd_read(args):
+    """The by-knob read of one model (`--name`, both seeds where both ran, `--which` final|best): R0's rule on FS and
+    the held-out set (NS or the fold), against the constant of its own training labels; the family table; E split by
+    draw mode and by mastering. Zero renders. -> reads/<name>-<which>.json."""
+    import numpy as np
+
+    from learn import full_space as F
+    from learn import trusted_data_t3_r as R
+
+    require("phase_3")
+    croot, kept, rend, sp, dropped = recipe_inputs()
+    nets, recs = [], []
+    for sd in SEEDS:
+        if (out_dir() / "runs" / f"{args.name}-{sd}.json").exists():
+            n, r = load_run(args.name, sd, args.which)
+            nets.append(n)
+            recs.append(r)
+    if not nets:
+        raise SystemExit(f"{args.name}: no run")
+    rec = recs[0]
+    tr_rows = rung_rows(kept, rend, rec["train_ids"])
+    const = constant_of(tr_rows)
+    train_rates = {}
+    doubled = doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
+    sets = {rec["held"]: rec["held_ids"]}
+    if rec["fold"] is None:
+        sets["fs"] = sp["fs"]
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_3", "name": args.name, "which": args.which,
+           "seeds": [r["seed"] for r in recs], "sets": {}}
+    amps = [r["amp"] for r in tr_rows]
+    majority_amp = max(F.AMPS, key=lambda a: (amps.count(a), a))
+    for set_name, ids in sets.items():
+        rows = rung_rows(kept, rend, ids)
+        data = RungData(rows, rung_path(croot, rec["rung"], doubled), aug=False)
+        X, C, who = read_inputs(data)
+        outs = F.run_nets(nets, X, C)
+        Y = [np.repeat(data.Y[q], 2, axis=0) for q in range(6)]            # each row's two halves, as `who`
+        ex = R.per_example(outs, who, Y)
+        info = {r["i"]: {"section": r["section"], "cell": (r["amp"], r["cls"]), "amp": r["amp"]} for r in rows}
+        r0 = R.r0_rows(ex, info, const, train_rates, majority_amp)
+        fam = R.by_family(r0)
+        kx = {r["i"]: kept[r["i"]] for r in rows}
+        out["sets"][set_name] = {
+            "examples": len(rows), "sections": len({r["section"] for r in rows}),
+            "readable": {k: sum(1 for z in r0 if z["kind"] == k and z["readable"]) for k in CHANCE_KINDS},
+            "heads": {k: sum(1 for z in r0 if z["kind"] == k) for k in CHANCE_KINDS},
+            "worse_knobs": sum(1 for z in r0 if z["kind"] == "continuous" and z["lo"] is not None and z["lo"] > 0),
+            "knob_e_median": {"model": float(np.median([z["e_model"] for z in r0 if z["kind"] == "continuous"
+                                                         and z["e_model"] is not None])),
+                              "constant": float(np.median([z["e_constant"] for z in r0 if z["kind"] == "continuous"
+                                                            and z["e_constant"] is not None]))},
+            "families": fam, "rows": r0,
+            "e_minus_constant_by_mode": split_e(ex, info, const, lambda i: kx[i]["mode"]),
+            "e_minus_constant_by_mastered": split_e(ex, info, const, lambda i: kx[i]["draw"]["mastered"]),
+            "e_minus_constant_all": split_e(ex, info, const, lambda i: "all")["all"]}
+        s_ = out["sets"][set_name]
+        print(f"{args.name} ({args.which}, seeds {out['seeds']}) on {set_name} ({len(rows)} examples): readable "
+              f"{s_['readable']} of {s_['heads']}; knobs worse {s_['worse_knobs']}; knob E median model "
+              f"{s_['knob_e_median']['model']:.4f} vs constant {s_['knob_e_median']['constant']:.4f}; E - constant "
+              f"{s_['e_minus_constant_all']['mean']:+.4f} [{s_['e_minus_constant_all']['lo90']}, "
+              f"{s_['e_minus_constant_all']['hi90']}]", flush=True)
+    out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    save(out_dir() / "reads" / f"{args.name}-{args.which}.json", out)
+    print("READ DONE")
+
+
+CHANCE_KINDS = ("continuous", "switch", "accuracy")
+
+
+# --- P2's by-sound read: answers rendered through each example's own measure DI, judged against its target ----------
+
+SOUND_DIR = "sound"
+
+
+def cmd_sample(args):
+    """The by-sound sample (zero renders): for FS and NS each, 120 examples in a fixed order spread over sections
+    (`draw_sample`); the read uses the first 60 and grows to 120 while the locating rows stay undecided."""
+    require("phase_3")
+    croot, kept, rend, sp, dropped = recipe_inputs()
+    sec = {i: kept[i]["section"] for i in kept}
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_3", "seed": SAMPLE_SEED, "first": SAMPLE_N,
+           "order": {k: draw_order(sp[k], sec) for k in ("fs", "ns")}, "doubles": dropped["doubles"],
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    p = out_dir() / SOUND_DIR / "sample.json"
+    if p.exists() and json.loads(p.read_text())["order"] != out["order"]:
+        raise SystemExit("a different sample is already stored: the sample is drawn once")
+    save(p, out)
+    print({k: len(v) for k, v in out["order"].items()}, "SAMPLE DONE")
+
+
+def draw_order(ids, section_of, n=2 * SAMPLE_N, seed=SAMPLE_SEED):
+    """`draw_sample`'s round-robin order, kept in draw order (the first SAMPLE_N are the first read)."""
+    import random
+
+    by = {}
+    for i in sorted(ids):
+        by.setdefault(section_of[i], []).append(i)
+    rng = random.Random(seed)
+    secs = sorted(by)
+    rng.shuffle(secs)
+    for x in secs:
+        random.Random(f"{seed}|{x}").shuffle(by[x])
+    out = []
+    while len(out) < n and any(by[x] for x in secs):
+        for x in secs:
+            if by[x] and len(out) < n:
+                out.append(by[x].pop(0))
+    return out
+
+
+def sample_ids(n_each):
+    d = json.loads((out_dir() / SOUND_DIR / "sample.json").read_text())
+    return {k: v[:n_each] for k, v in d["order"].items()}
+
+
+def cmd_answers(args):
+    """One model's plain answers on the sample (zero renders): seeds and halves pooled (`trusted_data_t3_r.
+    per_example`), each knob its median, a switch on above 0.5, each mic its argmax (`full_space.answer_settings`), on
+    the example's own amp and the section class's S. With `--name S` or `--name constant`, those answers (the
+    constant from the ladder's training labels). -> sound/answers/<name>-<which>.json."""
+    import numpy as np
+
+    from learn import arm_a_mega53 as A
+    from learn import full_space as F
+    from learn import local_objective as LO
+    from learn import trusted_data_t3 as T3
+    from learn import trusted_data_t3_r as R
+
+    require("phase_3")
+    croot, kept, rend, sp, dropped = recipe_inputs()
+    ids = sorted(set(sum(sample_ids(2 * SAMPLE_N).values(), [])))
+    ms = A.L.menu_S()
+    rows = rung_rows(kept, rend, ids)
+    out = {}
+    if args.name in ("S", "constant"):
+        const = constant_of(rung_rows(kept, rend, sp["train"]))
+        for r in rows:
+            sel, S = ms[r["amp"]][r["cls"]]
+            x = dict(S) if args.name == "S" else T3.constant_full(r["amp"], S, const[(r["amp"], r["cls"])])
+            out[str(r["i"])] = {"select": sel, "settings": LO.sdict(x)}
+        tag = args.name
+    else:
+        nets, rec = [], None
+        for sd in SEEDS:
+            if (out_dir() / "runs" / f"{args.name}-{sd}.json").exists():
+                n, rec = load_run(args.name, sd, args.which)
+                nets.append(n)
+        if not nets:
+            raise SystemExit(f"{args.name}: no run")
+        doubled = doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
+        data = RungData(rows, rung_path(croot, rec["rung"], doubled), aug=False)
+        X, C, who = read_inputs(data)
+        outs = F.run_nets(nets, X, C)
+        Y = [np.repeat(data.Y[q], 2, axis=0) for q in range(6)]
+        ex = R.per_example(outs, who, Y)
+        for r in rows:
+            e = ex[r["i"]]
+            sel, S = ms[r["amp"]][r["cls"]]
+            mics = [int(np.argmax(m)) for m in e["mic_p"]]
+            x = F.answer_settings(r["amp"], S, e["a2"], e["sw_p"], mics)
+            out[str(r["i"])] = {"select": sel, "settings": LO.sdict(x)}
+        tag = f"{args.name}-{args.which}"
+    save(out_dir() / SOUND_DIR / "answers" / f"{tag}.json", {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_3",
+                                                            "name": tag, "answers": out,
+                                                            "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"ANSWERS DONE {tag}: {len(out)} examples")
+
+
+def cmd_sound_render(args):
+    """One shard of the sample's renders for the answer sets named in `--names` (comma-separated tags): each answer
+    through the example's own measure DI in its own primed process (`audibility_measure.fresh_render`, as the targets
+    were rendered), trimmed as the targets, judged against the stored target render on both halves. isolate=True; at
+    most 3 render processes; the 31 GB guard. -> sound/judge/<tag>/<i>.json (a done example is kept)."""
+    import numpy as np
+
+    from learn import audibility_measure as AM
+    from learn import cc_build as CB
+    from learn import direct_sound_gate as G
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+    from learn import pretrain_set as PS
+    from learn import song_bank as B
+    from learn import trusted_data as T
+
+    e = require("phase_3_sound")
+    a = argparse.Namespace(out=None, smoke=False)
+    croot = CB.V.out_root(a)
+    plan = CB.load_plan(a)
+    ex = {x["i"]: x for x in plan["examples"]}
+    rend = T.rows_of(croot, CB.STAGE, "render")
+    ctx = CB.ctx_for(a)
+    n_each = int(e.get("sample_n", SAMPLE_N))
+    ids = sorted(set(sum(sample_ids(n_each).values(), [])))
+    k, n = args.shard
+    mine = [i for j, i in enumerate(sorted(ids, key=lambda i: (ex[i]["section"], i))) if j % n == k]
+    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
+    renders = 0
+    LO._wait_cap()
+    for tag in args.names.split(","):
+        ans = json.loads((out_dir() / SOUND_DIR / "answers" / f"{tag}.json").read_text())["answers"]
+        gd = out_dir() / SOUND_DIR / "judge" / tag
+        di_cache = {}
+        for i in mine:
+            gp = gd / f"{i}.json"
+            if gp.exists():
+                continue
+            if PS.free_gb() < T.DISK_GUARD_GB:
+                raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+            x = ex[i]
+            if x["section"] not in di_cache:
+                sec = ctx.sections[x["section"]]
+                d = B.measure(PS.section_audio(sec["path"], sec["start_s"])).astype(np.float32)
+                di_cache = {x["section"]: d}
+            di = di_cache[x["section"]]
+            rw = rend[i]
+            tgt = np.asarray(G.read_flac(T.flac_path(croot, CB.STAGE, i, "target"), rw["target"]["scale"],
+                                         rw["target"]["sha256"]), np.float64)
+            st = LO.tdict(ans[str(i)]["settings"])
+            y = AM.fresh_render(CB.new_renderer, di, ans[str(i)]["select"], st, st)
+            renders += 2
+            y = (y.mean(axis=1) if y.ndim == 2 else y)[trim[0]:trim[1]]
+            j = K.judge(tgt, np.asarray(y, np.float64), np.asarray(di, np.float64)[trim[0]:trim[1]], 0)
+            save(gp, {"i": i, "tag": tag, "judge": j, "render_sha256": AM.audio_sha(y)})
+        print(f"{tag}: shard {k}/{n} done; renders so far {renders}", flush=True)
+    print(f"SOUND-RENDER DONE {k}/{n}: {renders} renders")
+
+
+def log_ratio(ja, jb):
+    """The mean over both halves of ln(d_a / d_b); None when either is missing or not finite."""
+    v = []
+    for h in ("A", "B"):
+        x, y = (ja or {}).get(h), (jb or {}).get(h)
+        if x is None or y is None or not (math.isfinite(x) and math.isfinite(y)) or x <= 0 or y <= 0:
+            return None
+        v.append(math.log(x / y))
+    return sum(v) / len(v)
+
+
+def cmd_sound_report(args):
+    """The by-sound rows on the sample: each tag in `--names` against S and the constant, and the paired locating rows
+    between consecutive tags (`--names` in ladder order). FS band-clustered; NS section-clustered (2 bands)."""
+    from learn import cc_build as CB
+
+    e = require("phase_3_sound")
+    a = argparse.Namespace(out=None, smoke=False)
+    ex = {x["i"]: x for x in CB.load_plan(a)["examples"]}
+    n_each = int(e.get("sample_n", SAMPLE_N))
+    ids = sample_ids(n_each)
+    tags = args.names.split(",")
+
+    def judge(tag, i):
+        p = out_dir() / SOUND_DIR / "judge" / tag / f"{i}.json"
+        return json.loads(p.read_text())["judge"] if p.exists() else None
+
+    pairs = [(t, "S") for t in tags] + [(t, "constant") for t in tags] + list(zip(tags, tags[1:]))
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_3_sound", "sample_n": n_each, "rows": {}}
+    for set_name, sids in ids.items():
+        for ta, tb in pairs:
+            rows, missing = [], 0
+            for i in sids:
+                v = log_ratio(judge(ta, i), judge(tb, i))
+                if v is None:
+                    missing += 1
+                    continue
+                cl = ex[i]["band"] if set_name == "fs" else ex[i]["section"]
+                rows.append((cl, ex[i]["section"], v))
+            c = clustered(rows)
+            key = f"{ta} - {tb}"
+            out["rows"].setdefault(key, {})[set_name] = {
+                **{k: c.get(k) for k in ("mean", "lo90", "hi90", "clusters", "clusters_negative", "clusters_positive",
+                                         "part_weighted", "parts")},
+                "clustered_by": "band" if set_name == "fs" else "section (NS is 2 bands)", "missing": missing}
+            r = out["rows"][key][set_name]
+            if r["mean"] is not None:
+                iv = "" if r["lo90"] is None else f" [{r['lo90']:+.4f}, {r['hi90']:+.4f}]"
+                print(f"  {key:40s} {set_name}: {r['mean']:+.4f}{iv} ({r['clusters']} {r['clustered_by'].split()[0]}s, "
+                      f"{r['clusters_negative']} better){' MISSING ' + str(missing) if missing else ''}")
+    out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    save(out_dir() / SOUND_DIR / "report.json", out)
+    print("SOUND-REPORT DONE")
+
+
 # --- main ------------------------------------------------------------------------------------------------------------
 
 COMMANDS = {"p5": cmd_p5, "dirty-doubles": cmd_dirty_doubles, "p6": cmd_p6,
             "build-inputs": cmd_build_inputs, "p1": cmd_p1, "render-doubles": cmd_render_doubles,
-            "build-doubles": cmd_build_doubles, "train": cmd_train}
+            "build-doubles": cmd_build_doubles, "train": cmd_train, "read": cmd_read, "sample": cmd_sample,
+            "answers": cmd_answers, "sound-render": cmd_sound_render, "sound-report": cmd_sound_report}
 
 
 def main(argv=None):
@@ -1331,6 +1689,9 @@ def main(argv=None):
     ap.add_argument("--sections", type=float, default=1.0)
     ap.add_argument("--fold", type=int, choices=tuple(FOLDS), default=None)
     ap.add_argument("--aug", action="store_true")
+    ap.add_argument("--name", default=None)
+    ap.add_argument("--which", choices=("final", "best"), default="final")
+    ap.add_argument("--names", default="")
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 
