@@ -67,14 +67,14 @@ own. A model that reads little (the mix and stem models, D_CC) never serves as t
 
 | Step | Fix | Isolated check | Relies on | Status |
 |---|---|---|---|---|
-| 3, 23 | Stop on held-out songs; checkpoints | Data check: NS shares no session, DI or time window with training (`s23` on the recipe's split) | nothing | to run (zero renders) |
+| 3, 23 | Stop on held-out songs; checkpoints | Data check: NS shares no session, DI or time window with training (`s23` on the recipe's split) | nothing | fixed (F18) |
 | 4 | Size | Learning curve on the clean input (P2a at 25% and 50%, and at 50% of sections), by NS loss and by sound | recipe, by-sound read | planned |
 | 5 | Class from the section | Structural: one field in every consumer (a test); the mismatch measured in D_CC itself, where it exists (P6) | nothing | fixed, measured (F2) |
 | 6 | Runaway targets out | Data check: the scan's rules hit 0–1 of the 2,645 examples that cannot self-oscillate (`cc_drive_page.RUNAWAY`) | nothing | fixed |
 | 6 | The wide, wet prior | Measured on P2a: by sound per draw mode (F11) | recipe, by-sound read | limit, measured |
 | 7 | Refusal skew | Data measurement (`s07`) | nothing | limit, measured |
-| 8 | Inaudible labels | P2a's per-head table: which heads read from the clean guitar | recipe | to read (stored) |
-| 11 | Stereo-only labels | The same table, the stereo-only heads | recipe | to read (stored) |
+| 8 | Inaudible labels | P2a's per-head table: which heads read from the clean guitar | recipe | limit, measured (F18) |
+| 11 | Stereo-only labels | The same table, the stereo-only heads | recipe | limit, measured (F18) |
 | 12 | Doubles with the full setting | Data checks: the positive control (46 of 46 exact); every re-rendered double carries its target's exact label and amp (980 of 980); every other guitar unchanged (1,222 of 1,222); the new mixes rebuilt exactly (F16) | nothing | fixed |
 | 13 | Stand-ins | Not an error; their share is a data measurement | nothing | ruled out (as an error) |
 | 14 | Ratio prior | Data measurement; level statistics only | nothing | limit, measured |
@@ -588,6 +588,55 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **References.** `PF/cc-dt/rows/render-*.jsonl` against `cc/rows/render-*.jsonl`; `PF/cc-dt/control.json`;
   `logs/pf-inputs-dt-*.log`.
 - **Changes.** Step 12: fixed. Its effect on a model is read only by a model that reads (the rule above).
+
+### F17. The backing alone kills the skill; it is not only level (the locating rows a − b, b − c)
+- **Result.** P2b, the target in its non-guitar backing with no other guitar at all (best checkpoint epoch 5 of 60,
+  9.8 min), sounds no closer than S. Adding the other guitars (P2c) changes nothing further.
+- **Numbers.**
+
+  | Row | FS (60, 6 bands) | NS (60, 36 sections) |
+  |---|---|---|
+  | P2b − S | +0.029 [−0.094, +0.152] | −0.021 [−0.099, +0.056] |
+  | P2a − P2b | −0.277 [−0.323, −0.232], 6 of 6 better | −0.220 [−0.278, −0.162], 32 of 36 better |
+  | P2b − P2c | −0.030 [−0.122, +0.063] | +0.012 [−0.010, +0.034] |
+
+  By knob: NS +0.0010 [−0.0001, +0.0021], 8 knobs and 5 switches readable (`PF/reads/P2b-*.json`).
+- **By drawn level** (P2x − S, all 120 sample examples, terciles of the drawn guitar-to-backing ratio, cuts −10.6 and
+  −6.5 dB):
+
+  | Rung | quiet | mid | loud |
+  |---|---|---|---|
+  | P2a | −0.217 [−0.449, +0.015] | −0.254 [−0.371, −0.137] | −0.306 [−0.415, −0.198] |
+  | P2b | +0.121 [−0.047, +0.289] | −0.062 [−0.225, +0.101] | −0.039 [−0.140, +0.062] |
+  | P2c | +0.121 [−0.091, +0.334] | −0.022 [−0.139, +0.095] | −0.021 [−0.103, +0.061] |
+  | P2d | −0.028 [−0.182, +0.126] | −0.104 [−0.262, +0.055] | −0.115 [−0.239, +0.009] |
+
+- **Reading.**
+  - The loss happens when the guitar is put in any backing, even a guitar loud against drums, bass and vocals.
+  - Such a guitar is clearly audible, and a linear probe still reads 30 heads from the mix (the tone probe). So the
+    information is likely there but not learned.
+  - Every backing model peaks by epoch 5 and then overfits: about 1,800 examples from 8 training songs are too few to
+    learn to ignore the backing.
+  - Learnability, not masking, is the leading hypothesis. Its isolated test is P2b retrained on the same targets with
+    many backings (no new renders), read on P2b's own fixed inputs.
+- **Caveats.** One seed; 40 examples per tercile; the drawn ratio is against the full backing including other guitars.
+- **References.** `PF/runs/P2b-20261042.json`, `PF/sound/judge/P2b-best/`; the split from `plan.json`'s
+  `draw.ratio_db`.
+
+### F18. Steps 3, 23, 8 and 11 checked on their own
+- **Steps 3 and 23 (data check).** The held-out songs (NS) share no session, DI or time window with the training
+  sections: 0 of 36 sections (`pipeline_review.es_overlap` on the recipe's split). FS, by contrast, shares all three,
+  16 of 21 sections overlapping in time. Fixed.
+- **Steps 8 and 11** (P2a's per-head losses on NS against the label-only baseline, best checkpoint):
+  - The stereo-only heads sit at the baseline or above: delay width +0.684, ping-pong +0.002, cab pans +0.033 and
+    −0.001, cab stereo −0.030 and −0.020, doubler spread −0.036. They cannot be read from a mono input: limit,
+    measured. Stereo input is the next build's.
+  - Time effects: 3 of their 15 knobs but 3 of 4 switches are below the baseline. Pedals: 1 of 10 knobs, 2 of 4
+    switches. Springs: 0 of 3 knobs.
+  - Even from the clean guitar most effect knob values do not read, while their switches do. That is step 8's
+    inaudible-value problem, measured on a working model. By sound the answers still beat S (F11), so these knobs
+    matter little to the sound: limit, measured.
+- **References.** `PF/runs/P2a-20261042.json` (`heads.best.ns`).
 
 ### F9. Process: removing a worktree crashed running jobs
 - **Result.** Removing the plan's worktree while the doubles render ran from it crashed its 3 shards at a lazy
