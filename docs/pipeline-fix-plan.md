@@ -814,6 +814,50 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   `PF/sound/judge/P2a-*-x20261042+20261043/`, `PF/sound/report-{curve,curve-pooled,s50,seedcheck}.json`; ledger
   `phase_3_isolated` (e).
 
+### F26. P4's penalty is the core tone, not the wet time effects (P4 dry, isolating F20)
+- **Result.** P4's answers and its constant were re-rendered with the time-effect and spring family at S's values
+  (198 renders). Drying them changes nothing: the model's core tone (amp, gain, EQ, cab, pedals) is what sits far
+  from the real parts, and the model still adds nothing over its own average.
+- **Numbers.**
+
+  | Row | All (7 bands) | Clean | Crunch |
+  |---|---|---|---|
+  | P4-dry − S | +0.156 [+0.016, +0.296], 2 of 7 better | −0.023 | +0.228 |
+  | constant-dry − S | +0.137 [+0.019, +0.255], 2 of 7 better | +0.054 | +0.170 |
+  | P4-dry − constant-dry | +0.019 [−0.051, +0.089], 3 of 7 better | −0.077 | +0.058 |
+  | P4 − P4-dry | −0.003 [−0.049, +0.043] | +0.051 | −0.024 |
+
+  - P4-dry − S per part: Colour Me Red ElecGtr02 −0.263, Signs ElecGtr3 −0.021, Colour Me Red ElecGtr03 −0.006; the
+    rest +0.159 to +0.431.
+  - Leave one band out: +0.110 to +0.204.
+  - The S positive control passed again.
+- **Reading.** F20's penalty is not the training prior's wetness (unlike D_F5's on V-real, step 34). It is the core
+  tone, mostly on crunch, and the model does not move its answers toward the real parts.
+- **References.** `PF/vreal/report-p4-dry.json`, `PF/vreal/answers/P4-P2a-best-{dry,constant-dry}.json`; ledger
+  `phase_4_dry`.
+
+### F27. The presets that suit these real parts sit at the training prior's edges more often than its own labels do (zero renders)
+- **Result.** Arm A's true-DI search found, for V-real-10's parts, presets that beat S (−0.137 shrunk, −0.192 best;
+  review step 38). Their searched controls were placed within the training labels' distribution (same amp and section
+  class, the controls that sound).
+- **Numbers.** Share of values outside the training labels' 5–95% range:
+
+  | Set | Share outside | Below 5% | Above 95% |
+  |---|---|---|---|
+  | The search's best presets (550 values) | 0.30 | 0.20 | 0.10 |
+  | NS labels, the reference (3,289 values) | 0.12 | 0.07 | 0.05 |
+  | S presets (58 values) | 0.05 | 0.05 | 0.00 |
+
+  Per control, most often outside: right cab position 0.66, left cab distance 0.52, PR12 bass 0.50 (median percentile
+  0.08), SW50R mid 0.45 (0.18), left cab position 0.43, right cab distance 0.32, input gain 0.25, AC20 power 0.25.
+- **Reading.** Real parts often want settings at or beyond the edges of what the model was trained on (low bass and
+  mids, unusual cab placement). This compounds the domain gap: F26 shows the model does not read the real recordings
+  at all, and even if it did, the targets lie where training is thin.
+- **Caveats.** The search's "best" is one 52-render search per half and can sit on controls the sound barely
+  constrains (cab placement); the shrunk version, halfway to S, is the robust one. These are descriptive, post hoc.
+- **References.** `~/ndsp-presets/learn/arm-a-mega53/F-perfect-sep/ZT/*/*/{A,B}.json` (`settings.best`), the
+  ladder's training labels; computed in this session (zero renders).
+
 ### F9. Process: removing a worktree crashed running jobs
 - **Result.** Removing the plan's worktree while the doubles render ran from it crashed its 3 shards at a lazy
   import. They resumed from their saved sections with no data lost.
