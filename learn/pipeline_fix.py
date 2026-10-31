@@ -2208,7 +2208,8 @@ def cmd_p4_predict(args):
     med, table = fit_knob_pull(nets, croot, kept, rend, sp, rec)
     const = constant_of(rung_rows(kept, rend, rec["train_ids"]))
     tag = f"P4-{args.name}-{args.which}"
-    out = {tag: {}, f"{tag}-pulled": {}, f"{tag}-constant": {}}
+    out = {tag: {}, f"{tag}-pulled": {}, f"{tag}-constant": {}, f"{tag}-dry": {}, f"{tag}-constant-dry": {}}
+    dry = ("time effects and spring",)              # the family at S's values (cc_readout's co-primary readout)
     inputs, own, gaps, floor = {}, {}, {}, {}
     for slug, amp, search, _ in dirs:
         cls = PR.VREAL[slug][1]
@@ -2232,6 +2233,12 @@ def cmd_p4_predict(args):
             F.answer_settings(amp, S, DS.pull(r["a2"], med[(amp, cls)], b), r["sw_p"], r["mics"]))}
         out[f"{tag}-constant"].setdefault(key, {})[ANY_HALF] = {"select": sel, "settings": LO.sdict(
             T3.constant_full(amp, S, const[(amp, cls)]))}
+        out[f"{tag}-dry"].setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(
+            F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"], at_S=dry))}
+        cst = const[(amp, cls)]
+        out[f"{tag}-constant-dry"].setdefault(key, {})[ANY_HALF] = {"select": sel, "settings": LO.sdict(
+            F.answer_settings(amp, S, cst["cont"], [None if v is None else (1.0 if v else 0.0) for v in cst["sw"]],
+                              cst["mics"], at_S=dry))}
     for t, a in out.items():
         save(out_dir() / VREAL_DIR / "answers" / f"{t}.json", {
             "plan": PLAN, "ledger": f"{LEDGER_ID} phase_4", "tag": t, "model": args.name, "which": args.which,
@@ -2369,7 +2376,8 @@ def s_positive_control(sj):
             "passes": bool(vals) and vals[-1] <= K.REPEAT_TOL}
 
 
-P4_TAGS = ("P4-P2a-best", "P4-P2a-best-pulled", "P4-P2a-best-constant", "S", "S-prime")
+P4_TAGS = ("P4-P2a-best", "P4-P2a-best-pulled", "P4-P2a-best-constant", "S", "S-prime", "P4-P2a-best-dry",
+           "P4-P2a-best-constant-dry")
 
 
 def answers_sha(ans):
