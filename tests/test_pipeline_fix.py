@@ -242,3 +242,24 @@ def test_vreal_rows_score_a_refused_answer_as_s_drop_s_refusals_and_flag_missing
     rows, cnt = P.vreal_rows(judge, "m", "S", [u1, u2, u3])
     assert [round(r[2], 9) for r in rows] == [0.0]            # u1: refused, scored as S
     assert cnt == {"directions": 3, "base_dropped": 1, "missing": 1, "refused_scored_as_S": 1, "complete": False}
+
+
+def test_backing_draws_never_use_the_examples_own_song():
+    kept = {1: {"section": "s/A_Full/a.wav@0.0"}, 2: {"section": "s/A_Full/b.wav@5.0"},
+            3: {"section": "s/B_Full/a.wav@0.0"}, 4: {"section": "s/C_Full/a.wav@0.0"}}
+    d = P.backing_draws([1, 2, 3, 4], kept, k=20)
+    for i, draws in d.items():
+        assert len(draws) == 20
+        assert all(P.session_of(sec) != P.session_of(kept[i]["section"]) for sec, _ in draws)
+    assert d == P.backing_draws([1, 2, 3, 4], kept, k=20)
+    only = P.backing_draws([1], kept, k=5, secs=["s/C_Full/a.wav@0.0"])
+    assert {sec for sec, _ in only[1]} == {"s/C_Full/a.wav@0.0"}
+
+
+def test_shifted_amp_cycles_through_the_other_amps():
+    from learn import full_space as F
+
+    for a in F.AMPS:
+        assert P.shifted_amp(a, 0) == a
+        assert {P.shifted_amp(a, 1), P.shifted_amp(a, 2)} == set(F.AMPS) - {a}
+    assert P.amp_tag(0) == "" and P.amp_tag(2) == "-amp+2"

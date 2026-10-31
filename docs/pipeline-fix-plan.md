@@ -91,7 +91,7 @@ own. A model that reads little (the mix and stem models, D_CC) never serves as t
 | 29, 30 | Reads almost nothing | The ladder, by knob and by sound | recipe, by-sound read | located (F13–F15) |
 | 31, 35 | V-real's size | Limit; the rows' Wickerman rule unit-tested | nothing | limit, measured |
 | 32 | Wickerman's shared input | Unit test of the rows; P4 reads their own amp tracks | nothing | fixed (test) |
-| 33 | Render-order noise | Fresh primed processes reproduce the truth (F10); a repeated render in phase 4 must match bit for bit | nothing | fixed |
+| 33 | Render-order noise | Fresh primed processes reproduce the truth (F10); in phase 4 every fresh S render must sit within 0.005 (log) of the label table's stored distance on stage F's parts, or the read stops | nothing | fixed |
 | 36 | S's home advantage | Stored distances (P5) | nothing | measured (F1) |
 | 37 | The average against S | In distribution, the constant against S by sound (F11: even) | by-sound read | measured |
 | (P4) | Transfer to real recordings | First, alone: P2a told a wrong amp and rendered on it, by sound on NS (the amp mismatch, without real recordings). Then P4 on V-real's amp tracks | P2a, by-sound read | to run, in that order |
@@ -645,8 +645,10 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 
 ## Budget
 
-- **Renders:** about 3,600 for phase 1b; about 2,200 for P2's by-sound read; about 1,600 for phase 4; about 1,000
-  for D_fix's reads. About 8,400 in all, roughly 3–4 h of render time at 3 processes.
+- **Renders:** about 3,600 for phase 1b (2,612 used); about 2,200 for P2's by-sound read; about 1,600 for phase 4
+  (P4: 438); about 1,000 for D_fix's reads; and, added 2026-10-31 under the isolation rule, about 2,880 for the
+  isolated tests on P2a and the backing-variety test. About 11,700 in all, roughly 5 h of render time at
+  3 processes.
 - **MPS:** about 12 h at a 100-epoch cap (P1, the ladder with second seeds where needed, P2d-aug, 6 curve points,
   10 k-fold runs, D_fix). A cap from P1 that goes past it comes back to the user.
 - **Disk:** P2's inputs about 0.3 GB; phase 1b's audio and features about 1.2 GB; the 31 GB guard holds.

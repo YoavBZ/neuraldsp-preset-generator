@@ -1026,6 +1026,7 @@ def cmd_train(args):
     elif args.dd:
         if args.rung != "a":
             raise SystemExit("--dd is step 18's isolated test on P2a")
+        require("phase_3_isolated")
         data = RungData(rows, rung_path(croot, "a", doubled), aug=True)
     else:
         data = arm_data(rows, croot, args.rung, doubled, rend, args.aug)
@@ -1054,7 +1055,8 @@ def cmd_train(args):
               "train_ids": tr, "held_ids": held, "dropped": dropped, "split_dropped": sp["dropped"],
               "epochs_run": log[-1]["epoch"] + 1, "best_epoch": best_ep, "best_held_loss": best,
               "steps": log[-1]["steps"], "minutes": round((time.time() - t0) / 60, 1), "device": str(dev),
-              "length": length, "augmentations_applied": data.applied,
+              "length": length, "augmentations_applied": data.applied, "flags": {"dd": bool(args.dd),
+              "backings": bool(args.backings), "aug": bool(args.aug)},
               "baseline_families": {k: family_means(v) for k, v in bl.items()}, "heads": heads, "log": log,
               "models": {w: f"{name}-{args.seed}-{w}.pt" for w in ("final", "best")},
               "model_sha256": {w: DS.hashlib_file(od / f"{name}-{args.seed}-{w}.pt") for w in ("final", "best")},
@@ -1570,6 +1572,8 @@ def cmd_answers(args):
     from learn import trusted_data_t3_r as R
 
     e = require("phase_3")
+    if args.amp_shift or args.mastered or args.readout in ("sws", "nc"):
+        require("phase_3_isolated")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     ids = sorted(set(sum(sample_ids(2 * SAMPLE_N).values(), [])))
     ms = A.L.menu_S()
@@ -1704,7 +1708,10 @@ def switch_rule(args, nets, croot, kept, rend, sp, rec):
     from learn import full_space as F
 
     if args.readout == "sws":
-        r0 = json.loads((out_dir() / "reads" / f"{args.name}-{args.which}.json").read_text())["sets"]["fs"]["rows"]
+        rd = json.loads((out_dir() / "reads" / f"{args.name}-{args.which}.json").read_text())
+        if rd["seeds"] != [int(z) for z in args.seeds.split(",")]:
+            raise SystemExit(f"the stored read is of seeds {rd['seeds']}, the answers of {args.seeds}: re-read first")
+        r0 = rd["sets"]["fs"]["rows"]
         unread = {r["name"] for r in r0 if r["kind"] == "switch" and not r["readable"]}
 
         def f(swp, amp, cls, S):
@@ -1900,7 +1907,9 @@ def cmd_sound_report(args):
                       f"{r['clusters_negative']} better){' MISSING ' + str(missing) if missing else ''}"
                       f"{' REFUSED ' + str(refused) if refused else ''}")
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
-    save(out_dir() / SOUND_DIR / "report.json", out)
+    if not args.label or args.label == "p4":
+        raise SystemExit("--label names the sound report (report-<label>.json); report.json is the ladder's, kept")
+    save(out_dir() / SOUND_DIR / f"report-{args.label}.json", out)
     print("SOUND-REPORT DONE")
 
 
@@ -1910,12 +1919,13 @@ BACKINGS_K = 8
 BACKINGS_SEED = 20261035
 
 
-def backing_draws(train_ids, kept, k=BACKINGS_K, seed=BACKINGS_SEED):
-    """For each training example, k backing sections drawn from training sections of other songs, each with a vocal
-    variant (p 0.5 where the section has one). -> {i: [(section, vocals)]}."""
+def backing_draws(train_ids, kept, k=BACKINGS_K, seed=BACKINGS_SEED, secs=None):
+    """For each training example, k backing sections drawn from `secs` (default: the training examples' sections) of
+    other songs, each with a vocal flag (p 0.5; it selects the vocal stems where the section has them).
+    -> {i: [(section, vocals)]}."""
     import random
 
-    secs = sorted({kept[i]["section"] for i in train_ids})
+    secs = sorted(secs if secs is not None else {kept[i]["section"] for i in train_ids})
     by_song = {}
     for x in secs:
         by_song.setdefault(session_of(x), []).append(x)
@@ -1932,16 +1942,30 @@ def backing_path(i, k, root=DATA):
     return input_path(root, i, f"mixb-k{k}")
 
 
+BACKING_FLOOR_LUFS = -50.0           # a bare backing quieter than this is silent: out of the pool, no variants
+
+
+def bare_tracks(x, vocals):
+    """A section's non-guitar stems (no stand-in) in one vocal variant (`trusted_data.backing_tracks` less the amp
+    tracks)."""
+    has_v = x["stems"]["v"] != x["stems"]["n"]
+    return list(x["stems"]["v" if (vocals and has_v) else "n"])
+
+
 def cmd_build_backings(args):
-    """The backing-variety test's inputs (CPU, zero renders): each training example's stored target in BACKINGS_K
-    other songs' non-guitar backings (no other guitar, no stand-in), each at the example's own drawn ratio, leak and
-    loudness (`trusted_data.mix_gains`) and its own mastering draw, as P2b's mix is built. One shard of backing
-    sections; each backing section's audio is read once."""
+    """The backing-variety test's inputs (CPU, zero renders). Each training example's stored target in BACKINGS_K other
+    songs' non-guitar backings, built so that only the backing's source changes from its P2b input: P2b's own overall
+    gain (stored `ga`), and a backing gain that gives the new bare backing the loudness its own bare backing had in P2b
+    (stored `gb` + LUFS(own bare backing) - LUFS(new bare backing)); its own mastering draw. Sections whose bare backing
+    is silent (below BACKING_FLOOR_LUFS) leave the pool, and an example whose own bare backing is silent gets no
+    variant (both counted). A first pass measures every training section's bare-backing loudness once
+    (`backings/levels.json`); then one shard of backing sections, each section's audio read once."""
     import numpy as np
 
     from learn import cc_build as CB
     from learn import direct_sound_gate as G
     from learn import direct_stems as DS
+    from learn import pretrain_set as PS
     from learn import song_aug as SA
     from learn import trusted_data as T
 
@@ -1950,10 +1974,27 @@ def cmd_build_backings(args):
     a = argparse.Namespace(out=None, smoke=False)
     ctx = CB.ctx_for(a)
     stems = T.Stems(ctx)
-    draws = backing_draws(sp["train"], kept)
+    built = T.rows_of(croot, CB.STAGE, "build")
     one = {}
     for x in kept.values():
         one.setdefault(x["section"], x)
+    lp = out_dir() / "inputs" / "backings-levels.json"
+    if not lp.exists():
+        if args.shard != (0, 1):
+            raise SystemExit("run build-backings --shard 0/1 --levels-only first")
+        lv = {}
+        for sec in sorted({kept[i]["section"] for i in sp["train"]}):
+            lv[sec] = {str(v): float(SA.lufs(stems.get(sec, bare_tracks(one[sec], v)))) for v in (False, True)}
+        save(lp, {"rule": f"bare backing LUFS per vocal variant; below {BACKING_FLOOR_LUFS} is silent", "levels": lv})
+        if args.levels_only:
+            print(f"LEVELS DONE: {len(lv)} sections")
+            return
+    lv = json.loads(lp.read_text())["levels"]
+    silent = sorted(x for x, v in lv.items() if min(v.values()) < BACKING_FLOOR_LUFS)
+    train = [i for i in sp["train"] if kept[i]["section"] not in silent]
+    no_var = sorted(set(sp["train"]) - set(train))
+    pool_secs = [x for x in sorted(lv) if x not in silent]
+    draws = backing_draws(train, kept, secs=pool_secs)
     jobs = {}
     for i, ds_ in draws.items():
         for k, (sec, voc) in enumerate(ds_):
@@ -1962,30 +2003,34 @@ def cmd_build_backings(args):
     mine = [x for j, x in enumerate(sorted(jobs)) if j % n == kk]
     t0, done = time.time(), 0
     for m, sec in enumerate(mine):
-        x0 = one[sec]
-        has_v = x0["stems"]["v"] != x0["stems"]["n"]
-        backs = {v: stems.get(sec, list(x0["stems"]["v" if (v and has_v) else "n"])) for v in (False, True)}
+        if PS.free_gb() < T.DISK_GUARD_GB:
+            raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+        backs = {v: stems.get(sec, bare_tracks(one[sec], v)) for v in (False, True)}
         for i, k, voc in jobs[sec]:
             p = backing_path(i, k)
             if p.exists():
                 continue
-            x, rw = kept[i], rend[i]
+            x, rw, bw = kept[i], rend[i], built[i]
+            own_voc = bool(x["draw"]["vocals_drawn"] and x["stems"]["v"] != x["stems"]["n"])
             y = np.asarray(G.read_flac(T.flac_path(croot, CB.STAGE, i, "target"), rw["target"]["scale"],
                                        rw["target"]["sha256"]), np.float64)
-            b = backs[voc]
-            gb, ga = T.mix_gains(float(SA.lufs(y)), float(SA.lufs(b)), x["draw"])
-            mix = (y + b * 10 ** (gb / 20)) * 10 ** (ga / 20)
+            gb = bw["gains_db"]["gb"] + lv[x["section"]][str(own_voc)] - lv[sec][str(voc)]
+            ga = bw["gains_db"]["ga"]
+            mix = (y + backs[voc] * 10 ** (gb / 20)) * 10 ** (ga / 20)
             mastered, mrng = DS.master_draw(i)
             if mastered:
                 mix = SA.compress(mix, mrng)
             f, lu, _ = DS.half_features(mix)
-            DS._save_npz(p, sA=f["A"], sB=f["B"], lufs=[lu["A"], lu["B"]], backing=sec, vocals=bool(voc and has_v),
+            DS._save_npz(p, sA=f["A"], sB=f["B"], lufs=[lu["A"], lu["B"]], backing=sec, vocals=bool(voc),
                          gains=[gb, ga])
             done += 1
         if m % 10 == 0:
             print(f"backing section {m + 1}/{len(mine)}: {done} built; {(time.time() - t0) / max(1, done):.2f} s each",
                   flush=True)
-    print(f"BUILD-BACKINGS DONE {kk}/{n}: {done} built")
+    save(out_dir() / "inputs" / "backings-pool.json", {"silent_sections": silent, "examples_without_variants": no_var,
+                                                       "pool_sections": len(pool_secs), "train": len(sp["train"])})
+    print(f"BUILD-BACKINGS DONE {kk}/{n}: {done} built; {len(silent)} silent sections out of the pool; "
+          f"{len(no_var)} examples without variants")
 
 
 class BackingData(RungData):
@@ -1998,7 +2043,7 @@ class BackingData(RungData):
         super().__init__(rows, path_of, aug=False)
         self.V = {}
         for j, r in enumerate(rows):
-            if r["i"] in train_ids:
+            if r["i"] in train_ids and backing_path(r["i"], 0).exists():
                 arr = np.zeros((BACKINGS_K, 2, 96, 446), np.uint8)
                 lu = np.zeros((BACKINGS_K, 2), np.float32)
                 for k in range(BACKINGS_K):
@@ -2294,7 +2339,7 @@ def s_positive_control(sj):
     for key, rec in sj.items():
         slug, amp = key.split("|")
         p = K.HOME / "learn/label-table" / slug / "menu.json"
-        if not p.exists():
+        if slug in PR.IN_GROUP_S or not p.exists():      # T3's own crop: its label-table clip is another window
             continue
         st = json.loads(p.read_text()).get(amp, {})
         cls = PR.VREAL[slug][1]
@@ -2305,7 +2350,9 @@ def s_positive_control(sj):
                 vals.append(abs(math.log(x / y)))
     vals.sort()
     return {"n": len(vals), "max_abs_log": vals[-1] if vals else None,
-            "median_abs_log": vals[len(vals) // 2] if vals else None}
+            "median_abs_log": vals[len(vals) // 2] if vals else None, "tolerance": K.REPEAT_TOL,
+            "within_tolerance": sum(v <= K.REPEAT_TOL for v in vals),
+            "passes": bool(vals) and vals[-1] <= K.REPEAT_TOL}
 
 
 P4_TAGS = ("P4-P2a-best", "P4-P2a-best-pulled", "P4-P2a-best-constant", "S", "S-prime")
@@ -2371,7 +2418,7 @@ def cmd_vreal_report(args):
     print(f"positive control: the fresh S against the label table's stored flat distance on {pc['n']} (part, amp, "
           f"half): max |ln ratio| {pc['max_abs_log']}, median {pc['median_abs_log']}")
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
-    save(out_dir() / VREAL_DIR / f"report-{args.label}.json", out)
+    save(out_dir() / VREAL_DIR / f"report-{args.label or 'p4'}.json", out)
     print("VREAL-REPORT DONE")
 
 
@@ -2410,9 +2457,10 @@ def main(argv=None):
     ap.add_argument("--seeds", default=str(SEEDS[0]))
     ap.add_argument("--pairs", default="")
     ap.add_argument("--own-inputs", action="store_true")
-    ap.add_argument("--label", default="p4")
+    ap.add_argument("--label", default="")
     ap.add_argument("--backings", action="store_true")
     ap.add_argument("--dd", action="store_true")
+    ap.add_argument("--levels-only", action="store_true")
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 
