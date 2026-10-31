@@ -1057,6 +1057,7 @@ def cmd_train(args):
               "steps": log[-1]["steps"], "minutes": round((time.time() - t0) / 60, 1), "device": str(dev),
               "length": length, "augmentations_applied": data.applied, "flags": {"dd": bool(args.dd),
               "backings": bool(args.backings), "aug": bool(args.aug)},
+              "backing_variants": getattr(data, "counts", None),
               "baseline_families": {k: family_means(v) for k, v in bl.items()}, "heads": heads, "log": log,
               "models": {w: f"{name}-{args.seed}-{w}.pt" for w in ("final", "best")},
               "model_sha256": {w: DS.hashlib_file(od / f"{name}-{args.seed}-{w}.pt") for w in ("final", "best")},
@@ -1641,7 +1642,7 @@ def cmd_answers(args):
                + ("" if args.readout == "plain" else f"-{args.readout}") + ("-mast" if args.mastered else "")
                + amp_tag(args.amp_shift))
     save(out_dir() / SOUND_DIR / "answers" / f"{tag}.json", {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_3",
-                                                            "name": tag, "answers": out,
+                                                            "name": tag, "answers": out, "nc_fit": dict(NC_FIT),
                                                             "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"ANSWERS DONE {tag}: {len(out)} examples")
 
@@ -1696,6 +1697,7 @@ def s_switch_state(S, amp, name):
 
 
 NC_DELTAS = (0.0, 0.05, 0.10, 0.15, 0.20)
+NC_FIT = {}                         # the near-chance rule's fitted delta, saved with its answers
 
 
 def switch_rule(args, nets, croot, kept, rend, sp, rec):
@@ -1709,7 +1711,7 @@ def switch_rule(args, nets, croot, kept, rend, sp, rec):
 
     if args.readout == "sws":
         rd = json.loads((out_dir() / "reads" / f"{args.name}-{args.which}.json").read_text())
-        if rd["seeds"] != [int(z) for z in args.seeds.split(",")]:
+        if sorted(rd["seeds"]) != sorted(int(z) for z in args.seeds.split(",")):
             raise SystemExit(f"the stored read is of seeds {rd['seeds']}, the answers of {args.seeds}: re-read first")
         r0 = rd["sets"]["fs"]["rows"]
         unread = {r["name"] for r in r0 if r["kind"] == "switch" and not r["readable"]}
@@ -1742,6 +1744,7 @@ def switch_rule(args, nets, croot, kept, rend, sp, rec):
             best = (d, hits / n)
     delta = best[0]
     print(f"near-chance rule: δ = {delta} (FS switch agreement {best[1]:.4f})", flush=True)
+    NC_FIT.update(delta=delta, fs_agreement=best[1])
 
     def g(swp, amp, cls, S):
         maj = const[(amp, cls)]["sw"]
@@ -2041,9 +2044,16 @@ class BackingData(RungData):
         import numpy as np
 
         super().__init__(rows, path_of, aug=False)
+        pool = json.loads((out_dir() / "inputs" / "backings-pool.json").read_text())
+        without = set(pool["examples_without_variants"])
+        complete = {i for i in train_ids if all(backing_path(i, k).exists() for k in range(BACKINGS_K))}
+        if set(train_ids) - complete != without & set(train_ids):
+            raise SystemExit(f"the backing build is incomplete: {len(set(train_ids) - complete - without)} training "
+                             "examples lack variant files")
+        self.counts = {"with_variants": len(complete), "without_variants": len(without & set(train_ids))}
         self.V = {}
         for j, r in enumerate(rows):
-            if r["i"] in train_ids and backing_path(r["i"], 0).exists():
+            if r["i"] in complete:
                 arr = np.zeros((BACKINGS_K, 2, 96, 446), np.uint8)
                 lu = np.zeros((BACKINGS_K, 2), np.float32)
                 for k in range(BACKINGS_K):
@@ -2328,6 +2338,7 @@ def cmd_vreal_render(args):
 
 
 FLOOR_SIDE_ROW = 0.20
+S_CONTROL_N = 60                    # stage F's 10 parts x 3 amps x 2 halves
 
 
 def s_positive_control(sj):
@@ -2346,8 +2357,11 @@ def s_positive_control(sj):
         stored = (st.get(K.START[cls][amp]) or {}).get("flat") or {}
         for h in ("A", "B"):
             x, y = (rec.get(ANY_HALF) or {}).get(h), stored.get(h)
-            if x and y and math.isfinite(x) and math.isfinite(y) and x > 0 and y > 0:
+            ok = [z is not None and math.isfinite(z) and z > 0 for z in (x, y)]
+            if all(ok):
                 vals.append(abs(math.log(x / y)))
+            elif any(ok):                                 # one side finite: a miss (`local_objective.deviation`)
+                vals.append(math.inf)
     vals.sort()
     return {"n": len(vals), "max_abs_log": vals[-1] if vals else None,
             "median_abs_log": vals[len(vals) // 2] if vals else None, "tolerance": K.REPEAT_TOL,
@@ -2372,7 +2386,7 @@ def cmd_vreal_report(args):
     root, plan, drift, dirs, parts, ms = vreal_ctx()
     v10 = set(plan["vreal"]["v_real_10"])
     judge = {}
-    tags = {t for pair in args.pairs.split(",") for t in pair.split(":")}
+    tags = {t for pair in args.pairs.split(",") for t in pair.split(":")} | {"S"}
     for t in tags:
         d = out_dir() / VREAL_DIR / "judge" / t
         judge[t] = {}
@@ -2393,6 +2407,9 @@ def cmd_vreal_report(args):
     out["side_row_without"] = {"rule": f"P4 inputs with more than {FLOOR_SIDE_ROW:.0%} of frames at the grid floor in "
                                        "either half (declared before the read)", "parts": quiet_inputs}
     out["positive_control_S"] = s_positive_control(judge.get("S", {}))
+    pc0 = out["positive_control_S"]
+    if not pc0["passes"] or pc0["n"] != S_CONTROL_N:
+        raise SystemExit(f"the S positive control fails ({pc0}): no rows are read")
     for pair in args.pairs.split(","):
         a, b = pair.split(":")
         rows, cnt = vreal_rows(judge, a, b, dirs, own_inputs=args.own_inputs)
