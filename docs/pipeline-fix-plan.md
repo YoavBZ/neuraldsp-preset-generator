@@ -6,8 +6,9 @@ stage 1, arm P, Rc and arm R, its stage 2 and its recording oracle) have run; th
 every result, audited. 5B.1c was withdrawn before any render. Declared next, at the user's choice of more real
 recordings: 5C, many recordings from GOAT's capture renders (pilot), has run (F37): the model learns a per-track
 reading in domain (better than the matched centre and than its shuffled-label control on held recordings), not
-shown on BKS's real reamps; the next step is the user's choice. A lag check across earlier reads found none
-affected. Findings F1–F37.
+shown on BKS's real reamps. 5D, a real-amp panel across 7 bands (F38, a strong hint): the per-track reading is not
+shown there, but a centre from GOAT's many capture labels beats S across the bands; the next step is the user's
+choice (domain work or more real chains), then D_fix with that centre as a readout candidate. Findings F1–F38.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -1995,6 +1996,55 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   shuffle-before-cycle and run-flag notes. It recomputed RG − RGshuf, RGshuf − RcGk and A's rows from the judge files
   (within 0.0003) and found the reading on the declared branch.
 
+### F38. Across 7 real-amp bands, a centre learned from many capture recordings beats S; the per-track reading is not shown (5D panel, strong hint)
+- **Result.** 5D's panel as declared and amended, read as a strong hint (effective N 14.4 against the minimum's 20;
+  the user's choice): 44 units from 16 DIs in 7 new bands (one unit out on the lag cross-check: Jen Hartswick & Nick
+  Cassarino's Novacaine, judge lag −171 against −52), every new DI read by its fold's models and centres, as F37;
+  2,489 renders (lags 270, reads 1,848, the ceiling 371), every direction scored.
+- **Numbers** (held half; capped band weights, DI-clustered 90% interval; equal band weights and band-clustered
+  beside):
+
+  | Row | Capped (primary rule) | Equal bands | Band-clustered | Bands reversed |
+  |---|---|---|---|---|
+  | RG − RcBG_k (primary) | +0.035 [−0.046, +0.116] | −0.013 [−0.099, +0.073] | −0.013 [−0.127, +0.102] | 1 (Aimee Norwich) |
+  | RG − Rcs2_k (adoption) | −0.014 [−0.120, +0.092] | −0.078 [−0.192, +0.036] | −0.078 [−0.236, +0.080] | 1 (The Laminar Flow) |
+  | RG − S | −0.033 [−0.126, +0.060] | −0.073 [−0.163, +0.018] | −0.073 [−0.193, +0.047] | 0 |
+  | P2a-reals2 − Rcs2_k | +0.039 [−0.112, +0.190] | −0.034 [−0.221, +0.153] | −0.034 [−0.279, +0.211] | 3 |
+  | RcG − S | −0.069 [−0.114, −0.025] | −0.065 [−0.101, −0.029] | −0.065 [−0.116, −0.015] | 0 |
+  | RcBG_k − S | −0.068 [−0.118, −0.019] | −0.060 [−0.101, −0.019] | −0.060 [−0.113, −0.008] | 0 |
+  | Rcs2_k − S | −0.019 [−0.091, +0.052] | +0.005 [−0.078, +0.089] | +0.005 [−0.096, +0.107] | 2 |
+
+  - RcG − S and RcBG_k − S pass every declared check: the capped interval excludes 0, no band's own interval is
+    reversed, and with any band removed the mean keeps its sign and more than half its size (RcG −0.044 to −0.088,
+    RcBG −0.045 to −0.093). Without the high-bleed units RcG − S is −0.118 [−0.179, −0.057]; without the hum-passed
+    ones −0.075 [−0.130, −0.021].
+  - RG − RcBG_k by class (confounded with band): clean −0.093 [−0.148, −0.038] (Aimee Norwich, Jen Hartswick & Nick
+    Cassarino, Port St Willow), crunch +0.099 [−0.009, +0.207], where The Laminar Flow (8 DIs, +0.189) carries it;
+    without it −0.042; without the hum-passed units −0.027, without the high-bleed ones −0.007. RG − Rcs2_k on
+    clean −0.246 [−0.353, −0.139].
+  - The ceiling (one seeded unit per band, one amp, 52 evaluations): the true-DI search beats S by −0.339 on average
+    (−0.028 to −0.584), as on BKS (−0.349). On those 7 units RcBG reaches 35% of it, RcG 31%, Rcs2 30%, RG −2%.
+- **Reading** (as declared, a strong hint, not a verdict).
+  - The primary row is undecided and leans the wrong way under the capped weights: the per-track reading F37 found
+    on capture recordings is not shown on real amps across these bands; it leans better on the clean bands and worse
+    on crunch, where one band with hum and bleed dominates. By the map: not shown across bands; the user chooses
+    between domain work and more real chains.
+  - The clearest result is the centres': Rc's rule on GOAT's labels (RcG) or on BKS's and GOAT's (RcBG) beats S across
+    the 7 bands by about 0.07 and survives every band check, while BKS's own centre (Rcs2) does not (−0.019, two
+    bands reversed). F34 found a real-amp centre beats S on BKS's own band; this says a centre from many varied
+    chains carries to new bands and one from a single band does not. The headroom stays large (the ceiling −0.34),
+    and a centre reaches about a third of it.
+  - For D_fix: RcG (or RcBG) is the readout candidate the panel favours, to be confirmed on V-real (a panel read
+    never picks a recipe alone).
+- **Caveats.** Underpowered (effective N 14.4): an undecided row says little. Class and band are confounded. The
+    Laminar Flow, the largest band, is a live room with 3 mics per DI, and 12 of its units carry DI hum; live tracks'
+    bleed and room reach RG's input but not the centres'. The ceiling is 7 units, one amp each. The panel's bands are
+    rock-leaning with one jazz/soul band; Guitar-TECHS and Dahka Band left on measurement (their amp tracks near
+    copies of the DI). The read answers for these bands' performances.
+- **References.** `PF/panel/units.json`, `ear.json`, `recheck.json`, `lags/`, `answers/`, `judge/`, `ceiling/`,
+  `report-5d.json`; `panel-*` in `learn/pipeline_fix.py`, `learn/panel_ear_page.py`, `docs/panel-v1-pairs.json`;
+  ledger `phase_5d*`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
@@ -2006,7 +2056,8 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   about 32,340 in all. RigO and RcM 432: about 32,770 in all. **5C (2026-11-01):** the lag pass 1,398, the lag
   diagnostic 24, the search 11,395 (12,793 label renders against the declared about 15,600: 215 trusted units
   against about 264), the centres' reads 1,340 and RG's 1,340, the lag scans 504 (24 + 480): about 16,000, about
-  48,770 in all; RGshuf's reads 1,340, about 50,110 in all. D_fix's reads are not yet spent.
+  48,770 in all; RGshuf's reads 1,340, about 50,110 in all. **5D (2026-11-01/02):** the lags 270, the reads 1,848,
+  the ceiling 371: 2,489, about 52,600 in all. D_fix's reads are not yet spent.
 - **MPS used:** about 4 h before 5B.2 (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and
   backing runs, the k-fold, phase 5A's two 10-minute seeds); 5B.2's 12 trainings about 2 h more (arm P 4 × 7.2–8.4 min,
   arm R 8 × 11.4 min); stage 2's 8 trainings 1.5 h more (8 × 11.4 min); 5C's RG 8 trainings 1.75 h more (8 × 13.0–13.3
