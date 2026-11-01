@@ -3641,6 +3641,14 @@ def goat_read_units(tol=None):
     return [dict(units[u], lag=lags[u]) for u in sorted(heard) if u not in off]
 
 
+def centre_records(brecs, by_unit, folds, grecs, gunits, k):
+    """5C's centres' labels for model k: RcBG on exactly the lists model k trains on (`real_rows`' `fold_records`
+    and `goat_rows`' `goat_fold_records`, each cycled to its rows per epoch), RcGk on its GOAT list alone, RcG on every
+    GOAT label."""
+    gk = goat_fold_records(grecs, gunits, k)
+    return {"RcBG": fold_records(brecs, by_unit, folds, k) + gk, "RcGk": gk, "RcG": grecs}
+
+
 def cmd_goat_centres(args):
     """5C's centres (zero renders), each by Rc's rule (`rc_setting`) on the class's S. RcBG: on exactly model k's
     training labels, BKS's (`fold_records`) and GOAT's (`goat_fold_records`), each cycled to its rows per epoch, so
@@ -3657,8 +3665,7 @@ def cmd_goat_centres(args):
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     parts = real_parts(kept, sp, CB.cc_inventory())
     ms = A_menu_S()
-    bk = {k: fold_records(brecs, by_unit, folds, k) for k in range(REAL_FOLDS)}
-    gk = {k: goat_fold_records(grecs, gunits, k) for k in range(REAL_FOLDS)}
+    src = {k: centre_records(brecs, by_unit, folds, grecs, gunits, k) for k in range(REAL_FOLDS)}
 
     def cls_of(r):
         return (by_unit[r["unit"]] if r["unit"] in by_unit else gunits[r["unit"]])["cls"]
@@ -3674,7 +3681,8 @@ def cmd_goat_centres(args):
         for amp in AMPS3:
             sel, S = ms[amp][prt["cls"]]
             key = real_key(prt, amp)
-            for t, recs in (("RcBG", bk[k] + gk[k]), ("RcG", grecs)):
+            for t in ("RcBG", "RcG"):
+                recs = src[k][t]
                 st, n = centre(recs, amp, prt["cls"], S)
                 out["bks"][t][key] = {ANY_HALF: {"select": sel, "settings": st}}
                 used[t][key] = n
@@ -3682,7 +3690,8 @@ def cmd_goat_centres(args):
         k, amp = prt["fold"], prt["amp"]
         sel, S = ms[amp][prt["cls"]]
         key = real_key(prt, amp)
-        for t, recs in (("RcBG", bk[k] + gk[k]), ("RcGk", gk[k])):
+        for t in ("RcBG", "RcGk"):
+            recs = src[k][t]
             st, n = centre(recs, amp, prt["cls"], S)
             out["goat"][t][key] = {ANY_HALF: {"select": sel, "settings": st}}
             used[f"goat-{t}"][key] = n
@@ -4109,6 +4118,17 @@ def cmd_real_heads(args):
     print("REAL-HEADS DONE")
 
 
+ARM_FOLD_PHASES = ("phase_5b2", "phase_5c")    # real-report's phases whose models share 5B.2's DI folds
+
+
+def report_phase(tags):
+    """real-report's ledger phase for the tags it reads."""
+    return ("phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
+            else "phase_5b2_rigo" if tags & {"RigO", "RcM"}
+            else "phase_5b2" if any(t.startswith(("P2a-pc", "P2a-real", "Rc")) for t in tags)
+            else "phase_5b1b" if any(t in ("P2a-Sc", "S-shift") for t in tags) else "phase_5b1")
+
+
 def cmd_real_report(args):
     """5B.1's rows: for each pair in `--pairs`, ln(d_a / d_b) on the held half per (unit, amp, search), with S
     refused dropping the direction and a refused answer scored as S (the V-real rule); clustered by DI (the
@@ -4128,10 +4148,7 @@ def cmd_real_report(args):
               .exists() and json.loads((out_dir() / REAL_DIR / "lags" / f"{p_['unit'].replace('/', '__')}.json")
                                        .read_text())["lag"] is None]
     meta = {p_["unit"]: p_ for p_ in parts}
-    phase = ("phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
-             else "phase_5b2_rigo" if tags & {"RigO", "RcM"}
-             else "phase_5b2" if any(t.startswith(("P2a-pc", "P2a-real", "Rc")) for t in tags)
-             else "phase_5b1b" if any(t in ("P2a-Sc", "S-shift") for t in tags) else "phase_5b1")
+    phase = report_phase(tags)
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {phase}", "units": len(parts), "no_lag": no_lag, "rows": {}}
     units = [(p_["unit"], amp, sh, h) for p_ in parts for amp in AMPS3 for sh, h in (("A", "B"), ("B", "A"))]
     if args.within:                                    # only the directions `--within`'s answers cover (RigO's)
@@ -4139,7 +4156,7 @@ def cmd_real_report(args):
         units = [u for u in units if f"{u[0]}|{u[1]}" in cover]
         out["within"] = args.within
     fold_of = None
-    if phase.startswith(("phase_5b2", "phase_5c")):    # arm R's (and RG's) folds: the DIs that share a pair of models
+    if phase.startswith(ARM_FOLD_PHASES):              # arm R's (and RG's) folds: the DIs that share a pair of models
         from learn import cc_build as CB
 
         e = require("phase_5b2")
