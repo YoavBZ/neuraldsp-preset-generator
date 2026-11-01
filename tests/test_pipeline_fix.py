@@ -620,7 +620,7 @@ def test_panel_folds_balance_across_bands():
 
 
 def test_panel_bleed_reads_the_amp_where_the_di_is_silent():
-    import numpy as np
+    np = pytest.importorskip("numpy")
     sr = 48000
     di = np.concatenate([np.sin(np.arange(sr) * 0.05), np.zeros(sr)])
     clean = np.concatenate([np.sin(np.arange(sr) * 0.05), np.zeros(sr) + 1e-6])
@@ -678,7 +678,7 @@ def test_panel_read_units_wait_for_the_ear(tmp_path, monkeypatch):
 
 
 def test_panel_cut_lines_the_amp_window_up_with_the_di_for_either_sign():
-    import numpy as np
+    np = pytest.importorskip("numpy")
     rng = np.random.default_rng(0)
     di = rng.standard_normal(5000)
     for lag in (37, -23):
