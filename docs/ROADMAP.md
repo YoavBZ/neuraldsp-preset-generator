@@ -184,7 +184,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          - Re-centred on S (F32, exploratory), the model's real-amp penalty is gone and its per-track readings lean
            better than S, by about 0.03 (undecided); the shared shift alone is not seen to help. A V-real read of this
            readout (5B.1c) was withdrawn before rendering: likely undecided on 7 bands; V-real is left for D_fix.
-       - **5B.2 (2026-10-31 to 2026-11-01; F33–F34): labels that reach real-amp tones.**
+       - **5B.2 (2026-10-31 to 2026-11-01; F33–F36): labels that reach real-amp tones.**
          - The ceiling: a true-DI search on the same 40 reamped units finds a setting better than S on all 40, by
            0.35 on average (−0.349 [−0.437, −0.261] by DI, on the held half; 0.04 to 0.76 per unit), within input
            gain, the amp's controls and the mics, as the judge measures it. Those controls reach a large part of the
@@ -192,15 +192,24 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          - A real-amp centre helps: S moved by the other performances' search labels wins −0.133 [−0.229, −0.037]
            (Rc, decided), 38% of the ceiling. Trained with those labels as real rows, the model reaches the
            same place (−0.120 against S, −0.186 against P2a), so F31's real-amp penalty is fixed by real labels; it
-           reads nothing further per track (against Rc +0.014 [−0.035, +0.062], undecided). Stage 2 (65 more
+           is not shown to read further per track (against Rc +0.014 [−0.035, +0.062], undecided). Stage 2 (65 more
            units' labels) runs by the declared rule.
          - Arm P, the user's question (do the uniform random draws hurt?): not shown on real amps (against its size
            control −0.019, undecided; against P2a −0.012, becoming −0.004 once both are re-centred on S). Without
            them the model's heads are sharper near presets, but by sound it is not better than P2a, and it is worse
            on random settings. The training mix stays.
-       - **Next:** 5B.2's stage 2 (running), then Rc and arm R on both stages' labels; then D_fix, with a real-amp
-         centre as a readout candidate for real recordings. Community presets and Suite X's parity check follow
-         5B.2.
+         - Stage 2 (F35): 65 more units' labels (3 refused by a lag check), 306 in all. The centre on both stages'
+           labels beats S by −0.158 [−0.260, −0.057] by DI (52% of the ceiling; no longer decided by fold); the
+           model retrained on them is still not shown to read further per track (+0.029 [−0.011, +0.068] against
+           it, undecided), so arm R is not adopted over the centre. In setting space (a post-hoc look), a
+           recording's own other labels sit nearer each unit's label than any centre does.
+         - The recording oracle (F36): a setting averaged from the same recording's other windows beats the centre
+           by −0.145 [−0.206, −0.083] (7 of 7 DIs, 36 of 36 units) and reaches 97% of the ceiling; a centre built
+           from as many other recordings' labels does not (+0.006). So the per-track gap is not the labels'
+           per-recording content but the model's reading of the track or the 10–11 recordings it learns from.
+       - **Next:** a plan for the model's reading of the track (more recordings, what its input keeps), for the user
+         to approve; then D_fix, with a real-amp centre as a readout candidate. Community presets and Suite X's
+         parity check follow 5B.2.
    - **Pipeline review (2026-10-30, zero renders; [record](ml-pipeline-review.md), checks `learn/pipeline_review.py`).**
      At the user's request, the direct model's whole process is listed as 38 small steps. Each step has its code, a
      status, its evidence, a fix and a test.
@@ -1253,3 +1262,5 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-31 | The user approved community presets as draw centres for the next build (after a zero-render placement check; each download asked first; licences the user's) and the Morgan Amps Suite X update after 5B.2, behind a bit-exact parity check | [plan](pipeline-fix-plan.md) phase 5 |
 | 2026-10-31 | Morgan Amps Suite X and Tone King Imperial MKII X (user-installed, both checked by the user to load the presets these tools write): generated presets also go to the X User folders; Morgan X presets are read as the `morgan` pack, with sections from the file's tree; Tone King X's own layout is not read yet | [installing](../reference/installing.md), 0.7.120 |
 | 2026-11-01 | Pipeline fix 5B.2, audited (labels that reach real-amp tones; the user's question on random draws). On BKS's 40 reamped units a true-DI search finds a setting better than S on all 40, by 0.35 on average (−0.349 [−0.437, −0.261] by DI). S moved by the other performances' search labels wins −0.133 [−0.229, −0.037]; the model trained with those labels as real rows reaches the same place (−0.120 against S, −0.186 against P2a) but reads nothing further per track (+0.014 [−0.035, +0.062] against the shift, undecided), so stage 2 (65 more units) runs. Dropping the uniform random draws is not shown to help on real amps (−0.019, undecided); the training mix stays. 9,720 renders, about 2 h of MPS. Next: stage 2, then D_fix with a real-amp centre as a readout candidate | [plan](pipeline-fix-plan.md) F33–F34, [ledger](dev-test-ledger.json) `pipeline-fix` `phase_5b2*` |
+| 2026-11-01 | Pipeline fix 5B.2 stage 2, audited. 65 more reamped units searched (10,725 renders); a lag check refused 3 before their labels were used. On 306 labels the real-amp centre beats S by −0.158 [−0.260, −0.057] by DI; the model retrained on them is not shown to read further per track (+0.029 [−0.011, +0.068] against the centre, undecided), so 5B.2's declared steps end with the centre as the candidate. The labels of a recording's own other windows sit nearer each unit's label (0.193) than the centre (0.263; setting space, post hoc), so the recording oracle (RigO with a count-matched control, 432 renders) is declared to tell whether the next fix goes to the model or the labels. 11,445 renders, 1.5 h of MPS | [plan](pipeline-fix-plan.md) F35, [ledger](dev-test-ledger.json) `pipeline-fix` `phase_5b2*` |
+| 2026-11-01 | Pipeline fix 5B.2 recording oracle, audited. A setting averaged from the same recording's other windows (no shared audio) beats the real-amp centre by −0.145 [−0.206, −0.083] by DI (7 of 7 DIs, 36 of 36 units) and reaches 97% of the true-DI search ceiling; a centre from as many other recordings' labels does not (+0.006). So the search labels hold the recording's chain (with its performance and guitar), and the per-track gap is the model's reading or the number of recordings it learns from (the model retrained on them: +0.042 against the centre). 432 renders. Next: a plan for the model's reading of the track, for the user to approve | [plan](pipeline-fix-plan.md) F36, [ledger](dev-test-ledger.json) `pipeline-fix` `phase_5b2_rigo*` |

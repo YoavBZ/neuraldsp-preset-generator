@@ -2546,6 +2546,10 @@ def cmd_real_predict(args):
     e = require("phase_5b1")
     if args.names in ("Rc", "Rcs2"):
         return real_rc_answers(2 if args.names == "Rcs2" else 1)
+    if args.names == "RigO":
+        return real_rigo_answers()
+    if args.names == "RcM":
+        return real_rcm_answers()
     if args.names in ("P2a-pc", "P2a-pcsz", "P2a-real", "P2a-reals2", "P2a-pc-Sc"):
         return real_predict_5b2(args.names)
     if args.names == "S-shift":
@@ -2730,6 +2734,84 @@ def real_rc_answers(stage=1):
     print(f"REAL RC DONE: {tag} on {len(parts)} units; labels per answer {min(used.values())}-{max(used.values())}")
 
 
+def rigo_records(recs, by_unit, prt, amp):
+    """The labelled records RigO averages for unit `prt` on `amp`: the same rig (one reamp track of one DI, so one real
+    amp setting) and amp, from windows that do not overlap the unit's section (sections are 10 s and start 5 s apart,
+    so a neighbour's search half can hold this unit's held half)."""
+    from learn import pretrain_set as PS
+
+    return [r for r in recs if r["amp"] == amp and r["rig"] == prt["rig"]
+            and abs(by_unit[r["unit"]]["start_s"] - prt["start_s"]) >= PS.SEC_S]
+
+
+def real_rigo_answers():
+    """5B.2's recording oracle on 5B.1's 40 units (zero renders): per unit and amp, `rc_setting` from the labels of
+    the unit's own recording's other windows (`rigo_records`, search stages 1 and 2). It knows the real amp's answers
+    on the same track, which no product can, so it bounds what reading a track can add over a centre. A unit with no
+    such window gets no answer. -> real/answers/RigO.json."""
+    from learn import cc_build as CB
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+
+    e = require("phase_5b2_rigo")
+    recs, by_unit, folds = real_labels(2)
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    parts = real_parts(kept, sp, CB.cc_inventory())
+    ms = A_menu_S()
+    out, used = {}, {}
+    for prt in parts:
+        for amp in AMPS3:
+            sel, S = ms[amp][prt["cls"]]
+            labels = [LO.tdict(r["label"]) for r in rigo_records(recs, by_unit, prt, amp)]
+            if labels:
+                key = real_key(prt, amp)
+                out[key] = {ANY_HALF: {"select": sel, "settings": LO.sdict(rc_setting(K.space(amp, S), S, labels))}}
+                used[key] = len(labels)
+    save(out_dir() / REAL_DIR / "answers" / "RigO.json", {
+        "plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b2_rigo", "tag": "RigO", "parts": parts, "labels_used": used,
+        "answers": out, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"REAL RIGO DONE: {len(out)} of {3 * len(parts)} directions; labels per answer "
+          f"{min(used.values())}-{max(used.values())}")
+
+
+RCM_SEED = 20261046                 # RcM's draws
+
+
+def real_rcm_answers():
+    """RigO's count-matched control (zero renders): on each direction RigO answers, Rc's rule on as many labels as
+    RigO used, drawn at random (seeded per direction) from Rcs2's pool for that unit (the other folds' DIs, same amp
+    and class), so a RigO gain is not just a noisier centre's luck. -> real/answers/RcM.json."""
+    import random
+
+    from learn import cc_build as CB
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+
+    e = require("phase_5b2_rigo")
+    recs, by_unit, folds = real_labels(2)
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    parts = real_parts(kept, sp, CB.cc_inventory())
+    rigo = json.loads((out_dir() / REAL_DIR / "answers" / "RigO.json").read_text())["labels_used"]
+    ms = A_menu_S()
+    out, used = {}, {}
+    for prt in parts:
+        for amp in AMPS3:
+            key = real_key(prt, amp)
+            if key not in rigo:
+                continue
+            sel, S = ms[amp][prt["cls"]]
+            pool = rc_records(recs, by_unit, folds, prt, amp)
+            pick = random.Random(f"{RCM_SEED}|{key}").sample(pool, min(rigo[key], len(pool)))
+            labels = [LO.tdict(r["label"]) for r in pick]
+            out[key] = {ANY_HALF: {"select": sel, "settings": LO.sdict(rc_setting(K.space(amp, S), S, labels))}}
+            used[key] = len(labels)
+    save(out_dir() / REAL_DIR / "answers" / "RcM.json", {
+        "plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b2_rigo", "tag": "RcM", "parts": parts, "labels_used": used,
+        "answers": out, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"REAL RCM DONE: {len(out)} directions; labels per answer {min(used.values())}-{max(used.values())}; "
+          f"matched {sum(used[k] == rigo[k] for k in used)} of {len(used)}")
+
+
 def A_menu_S():
     from learn import arm_a_mega53 as A
 
@@ -2773,7 +2855,7 @@ def cmd_real_render(args):
         for cls, (_, S) in by_cls.items():
             if K.key(dict(menu[amp][K.START[cls][amp]][1])) != K.key(S):
                 raise SystemExit(f"{amp} {cls}: the live S differs from the stored copy")
-    renders = 0
+    renders, skipped = 0, 0
 
     def render(di32, a):
         st = LO.tdict(a["settings"])
@@ -2807,6 +2889,9 @@ def cmd_real_render(args):
             asha = answers_sha(ans[t]["answers"])
             for amp in AMPS3:
                 key = real_key(prt, amp)
+                if key not in ans[t]["answers"]:          # RigO, RcM: no window of its own recording outside the unit
+                    skipped += 1
+                    continue
                 gp = out_dir() / REAL_DIR / "judge" / t / f"{fname(key)}.json"
                 if gp.exists():
                     if json.loads(gp.read_text()).get("answers_sha256") != asha:
@@ -2824,7 +2909,7 @@ def cmd_real_render(args):
                     rec["render_sha256"][search] = AM.audio_sha(y)
                 save(gp, rec)
         print(f"{prt['unit'][-60:]}: lag {lag}; renders so far {renders}", flush=True)
-    print(f"REAL-RENDER DONE {k}/{n}: {renders} renders")
+    print(f"REAL-RENDER DONE {k}/{n}: {renders} renders" + (f"; {skipped} directions with no answer" if skipped else ""))
 
 
 SEARCH_DIR = "search"               # 5B.2: real/search/<unit>|<amp>.json
@@ -3056,7 +3141,26 @@ def real_labels(stage):
     allp = stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2)
     folds = real_folds(stage_units(kept, sp, inv, 1), allp)
     recs = [json.loads(p_.read_text()) for p_ in sorted((out_dir() / REAL_DIR / SEARCH_DIR).glob("*.json"))]
-    return [r for r in recs if r["stage"] <= stage and r["label"] is not None], {p_["unit"]: p_ for p_ in allp}, folds
+    off = lag_refused(recs)
+    return ([r for r in recs if r["stage"] <= stage and r["label"] is not None and r["unit"] not in off],
+            {p_["unit"]: p_ for p_ in allp}, folds)
+
+
+LAG_TOL = 14                        # samples (0.3 ms at 48 kHz: pooled renders' agreement, `estimate_lag`)
+
+
+def lag_refused(recs):
+    """Units whose judge lag is more than LAG_TOL samples from the median lag of their recording's windows (one rig,
+    every search stage): either the estimate locked onto another peak or the track's alignment changes within that
+    window, so the unit's lag is not trusted and its labels are refused. -> set of units."""
+    import statistics
+
+    lags = {}
+    for r in recs:
+        if r["lag"] is not None:
+            lags.setdefault(r["rig"], {})[r["unit"]] = r["lag"]
+    return {u for units in lags.values() for u, lag in units.items()
+            if abs(lag - statistics.median(units.values())) > LAG_TOL}
 
 
 def cycled(items, n):
@@ -3134,10 +3238,15 @@ def ceiling_rows(recs):
 def cmd_real_ceiling(args):
     """5B.2's ceiling read (zero renders): best - S and shrunk - S on the held half, clustered by DI, by rig beside,
     part-weighted beside, for search stage `--stage` (stage 1 decides whether stage 2 runs). The search-half values are
-    reported apart (selected on, so optimistic). -> real/report-ceiling-<stage>.json."""
+    reported apart (selected on, so optimistic). Each `--names` tag's share of the ceiling, paired on its directions,
+    with a 90% interval resampling DIs and its distance from the best beside; with `--within` only the directions
+    that tag's answers cover. -> real/report-ceiling-<stage>[-within-<tag>].json."""
     require("phase_5b2")
     recs = [json.loads(p_.read_text()) for p_ in sorted((out_dir() / REAL_DIR / SEARCH_DIR).glob("*.json"))]
     recs = [r for r in recs if r["stage"] == args.stage]
+    if args.within:
+        cover = json.loads((out_dir() / REAL_DIR / "answers" / f"{args.within}.json").read_text())["answers"]
+        recs = [r for r in recs if f"{r['unit']}|{r['amp']}" in cover]
     by_di, by_rig, cnt = ceiling_rows(recs)
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b2", "stage": args.stage, "directions": len(recs),
            "units": len({r["unit"] for r in recs}), "counts": cnt,
@@ -3167,11 +3276,17 @@ def cmd_real_ceiling(args):
             best_rows.append((r["di"], r["unit"], math.log(b_ / s_)))
         if rows:
             c, cb = clustered(rows), clustered(best_rows)
+            sh = share_recovered([(a[0], a[1], -a[2], -b[2]) for a, b in zip(rows, best_rows)])
+            tb = clustered([(a[0], a[1], a[2] - b[2]) for a, b in zip(rows, best_rows)])
             out.setdefault("share_of_ceiling", {})[t] = {
                 "tag_minus_S": {q: c.get(q) for q in ("mean", "lo90", "hi90", "clusters")},
                 "best_minus_S": cb["mean"], "share": c["mean"] / cb["mean"] if cb["mean"] else None,
-                "directions": len(rows)}
-    save(out_dir() / REAL_DIR / f"report-ceiling-{args.stage}.json", out)
+                "share_lo90": sh[1], "share_hi90": sh[2],
+                "tag_minus_best": {q: tb.get(q) for q in ("mean", "lo90", "hi90")}, "directions": len(rows)}
+    if args.within:
+        out["within"] = args.within
+    tail = f"-within-{args.within}" if args.within else ""
+    save(out_dir() / REAL_DIR / f"report-ceiling-{args.stage}{tail}.json", out)
     for nm, r_ in out["rows"].items():
         d = r_["by_di"]
         print(f"{nm} - S (held half): {d['mean']:+.3f} [{d['lo90']:+.3f}, {d['hi90']:+.3f}] by DI, "
@@ -3241,7 +3356,8 @@ def cmd_real_report(args):
     """5B.1's rows: for each pair in `--pairs`, ln(d_a / d_b) on the held half per (unit, amp, search), with S
     refused dropping the direction and a refused answer scored as S (the V-real rule); clustered by DI (the
     performance: rigs sharing a DI share its sections and its S and constant renders), parts the units; by rig beside;
-    part-weighted beside; the lag refusals counted apart from the missing. -> real/report-<label>.json."""
+    part-weighted beside; the lag refusals counted apart from the missing; with `--within` only the directions that
+    tag's answers cover. -> real/report-<label>.json."""
     require("phase_5b1")
     tags = {t for pair in args.pairs.split(",") for t in pair.split(":")} | {"S"}
     parts = json.loads((out_dir() / REAL_DIR / "answers" / "S.json").read_text())["parts"]
@@ -3255,12 +3371,17 @@ def cmd_real_report(args):
               .exists() and json.loads((out_dir() / REAL_DIR / "lags" / f"{p_['unit'].replace('/', '__')}.json")
                                        .read_text())["lag"] is None]
     meta = {p_["unit"]: p_ for p_ in parts}
-    phase = ("phase_5b2" if any(t.startswith(("P2a-pc", "P2a-real", "Rc")) for t in tags)
+    phase = ("phase_5b2_rigo" if tags & {"RigO", "RcM"}
+             else "phase_5b2" if any(t.startswith(("P2a-pc", "P2a-real", "Rc")) for t in tags)
              else "phase_5b1b" if any(t in ("P2a-Sc", "S-shift") for t in tags) else "phase_5b1")
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {phase}", "units": len(parts), "no_lag": no_lag, "rows": {}}
     units = [(p_["unit"], amp, sh, h) for p_ in parts for amp in AMPS3 for sh, h in (("A", "B"), ("B", "A"))]
+    if args.within:                                    # only the directions `--within`'s answers cover (RigO's)
+        cover = json.loads((out_dir() / REAL_DIR / "answers" / f"{args.within}.json").read_text())["answers"]
+        units = [u for u in units if f"{u[0]}|{u[1]}" in cover]
+        out["within"] = args.within
     fold_of = None
-    if phase == "phase_5b2":                           # arm R's folds: the DIs that share a pair of models
+    if phase.startswith("phase_5b2"):                  # arm R's folds: the DIs that share a pair of models
         from learn import cc_build as CB
 
         e = require("phase_5b2")
@@ -3404,7 +3525,8 @@ def cmd_real_setting_audit(args):
     answer of `--names` (each half's answer where a model reads per half; S and Rc answer once) against the unit's own
     label: the rms unit distance over `K.space`'s continuous dims and the share of its switches and mics that agree,
     averaged over answers; beside, each name's distance from Rc's answer (does it move off the centre?). Labels of
-    search stages up to `--stage`. -> real/setting-audit[-s2].json."""
+    search stages up to `--stage`; with `--within` only the (unit, amp) that tag's answers cover.
+    -> real/setting-audit[-s2][-within-<tag>].json."""
     from learn import knob_ceiling as K
     from learn import local_objective as LO
 
@@ -3417,12 +3539,13 @@ def cmd_real_setting_audit(args):
     rc = "Rc" + sfx
     d = out_dir() / REAL_DIR / "answers"
     ans = {t: json.loads((d / f"{t}.json").read_text())["answers"] for t in set(names) | {rc}}
+    cover = json.loads((d / f"{args.within}.json").read_text())["answers"] if args.within else None
     ms = A_menu_S()
     gaps = {t: [] for t in names + ["S"]}
     to_rc = {t: [] for t in names}
     for key in sorted(ans[rc]):
         unit, amp = key.rsplit("|", 1)
-        if (unit, amp) not in lab:
+        if (unit, amp) not in lab or (cover is not None and key not in cover):
             continue
         y = lab[(unit, amp)]
         S = ms[amp][by_unit[unit]["cls"]][1]
@@ -3438,11 +3561,12 @@ def cmd_real_setting_audit(args):
     def mean(v):
         v = [z for z in v if z is not None]
         return statistics.fmean(v) if v else None
-    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b2", "stage": stage, "labels": len(lab),
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b2", "stage": stage, "labels": len(lab), "within": args.within,
            "to_own_label": {t: {"answers": len(g), "rms_unit": mean([a for a, _ in g]),
                                 "switch_mic_agree": mean([b for _, b in g])} for t, g in gaps.items()},
            "to_rc_rms_unit": {t: mean(v) for t, v in to_rc.items()}, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
-    save(out_dir() / REAL_DIR / f"setting-audit{'-s2' if sfx else ''}.json", out)
+    tail = ("-s2" if sfx else "") + (f"-within-{args.within}" if args.within else "")
+    save(out_dir() / REAL_DIR / f"setting-audit{tail}.json", out)
     for t, g in out["to_own_label"].items():
         print(f"{t}: to its own label rms {g['rms_unit']:.3f}, switches and mics agree {g['switch_mic_agree']:.3f}"
               + (f"; from {rc} {out['to_rc_rms_unit'][t]:.3f}" if t in out["to_rc_rms_unit"] else ""))
@@ -4001,6 +4125,7 @@ def main(argv=None):
     ap.add_argument("--real-fold", type=int, choices=tuple(range(REAL_FOLDS)), default=None)
     ap.add_argument("--pcsz", action="store_true")
     ap.add_argument("--by-mode", action="store_true")
+    ap.add_argument("--within", default="")
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 
