@@ -4070,9 +4070,10 @@ def cmd_real_heads(args):
         with torch.no_grad():
             return family_means(head_losses(net, data, np.asarray(idx), dev))
 
-    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b2", "names": args.names, "rows": {}}
-    if args.names == "R":
-        stage = max(1, args.stage)
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {'phase_5c' if args.names == 'G' else 'phase_5b2'}",
+           "names": args.names, "rows": {}}
+    if args.names in ("R", "G"):                       # G: 5C's RG against P2a-reals2 and P2a (its guard)
+        stage = 2 if args.names == "G" else max(1, args.stage)
         recs, by_unit, folds = real_labels(stage)
         sfx = "s2" if stage == 2 else ""
         plug = {k: rung_rows(kept, rend, sp[k]) for k in ("ns", "fs")}
@@ -4084,12 +4085,13 @@ def cmd_real_heads(args):
             data = RungData(rows, lambda i: paths[i])
             for sd in SEEDS:
                 row = {"fold": k, "seed": sd, "real_rows": len(rows)}
-                for nm in (f"P2a-real{k}{sfx}", "P2a"):
+                names = (f"P2a-goat{k}", f"P2a-real{k}s2", "P2a") if args.names == "G" else (f"P2a-real{k}{sfx}", "P2a")
+                for nm in names:
                     row[nm] = {"real": fam(nm, sd, data, range(len(rows))),
                                **{q: fam(nm, sd, plug_data[q], range(len(plug[q]))) for q in plug}}
                 out["rows"][f"fold{k}-{sd}"] = row
-                kj = {nm: row[nm]["real"]["knob_joint"] for nm in (f"P2a-real{k}{sfx}", "P2a")}
-                print(f"fold {k} seed {sd}: knob joint on its own DIs' real labels {kj}", flush=True)
+                kj = {nm: {q: round(row[nm][q]["knob_joint"], 4) for q in ("real", "ns", "fs")} for nm in names}
+                print(f"fold {k} seed {sd}: knob joint (own DIs' real labels, NS, FS) {kj}", flush=True)
     elif args.names == "P":
         for q in ("ns", "fs"):
             for mode in ("factory", "start", "wide"):
@@ -4101,9 +4103,9 @@ def cmd_real_heads(args):
                                                       for nm in ("P2a-pc", "P2a-pcsz", "P2a")}
                 print(f"{q} {mode}: done", flush=True)
     else:
-        raise SystemExit("--names R or P")
+        raise SystemExit("--names R, G or P")
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
-    save(out_dir() / REAL_DIR / f"heads-{args.names}{'s2' if args.stage == 2 else ''}.json", out)
+    save(out_dir() / REAL_DIR / f"heads-{args.names}{'s2' if args.stage == 2 and args.names != 'G' else ''}.json", out)
     print("REAL-HEADS DONE")
 
 
