@@ -2548,6 +2548,8 @@ def cmd_real_predict(args):
         return real_rc_answers(2 if args.names == "Rcs2" else 1)
     if args.names == "RigO":
         return real_rigo_answers()
+    if args.names == "RcM":
+        return real_rcm_answers()
     if args.names in ("P2a-pc", "P2a-pcsz", "P2a-real", "P2a-reals2", "P2a-pc-Sc"):
         return real_predict_5b2(args.names)
     if args.names == "S-shift":
@@ -2772,6 +2774,44 @@ def real_rigo_answers():
           f"{min(used.values())}-{max(used.values())}")
 
 
+RCM_SEED = 20261046                 # RcM's draws
+
+
+def real_rcm_answers():
+    """RigO's count-matched control (zero renders): on each direction RigO answers, Rc's rule on as many labels as
+    RigO used, drawn at random (seeded per direction) from Rcs2's pool for that unit (the other folds' DIs, same amp
+    and class), so a RigO gain is not just a noisier centre's luck. -> real/answers/RcM.json."""
+    import random
+
+    from learn import cc_build as CB
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+
+    e = require("phase_5b2_rigo")
+    recs, by_unit, folds = real_labels(2)
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    parts = real_parts(kept, sp, CB.cc_inventory())
+    rigo = json.loads((out_dir() / REAL_DIR / "answers" / "RigO.json").read_text())["labels_used"]
+    ms = A_menu_S()
+    out, used = {}, {}
+    for prt in parts:
+        for amp in AMPS3:
+            key = real_key(prt, amp)
+            if key not in rigo:
+                continue
+            sel, S = ms[amp][prt["cls"]]
+            pool = rc_records(recs, by_unit, folds, prt, amp)
+            pick = random.Random(f"{RCM_SEED}|{key}").sample(pool, min(rigo[key], len(pool)))
+            labels = [LO.tdict(r["label"]) for r in pick]
+            out[key] = {ANY_HALF: {"select": sel, "settings": LO.sdict(rc_setting(K.space(amp, S), S, labels))}}
+            used[key] = len(labels)
+    save(out_dir() / REAL_DIR / "answers" / "RcM.json", {
+        "plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b2_rigo", "tag": "RcM", "parts": parts, "labels_used": used,
+        "answers": out, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"REAL RCM DONE: {len(out)} directions; labels per answer {min(used.values())}-{max(used.values())}; "
+          f"matched {sum(used[k] == rigo[k] for k in used)} of {len(used)}")
+
+
 def A_menu_S():
     from learn import arm_a_mega53 as A
 
@@ -2815,7 +2855,7 @@ def cmd_real_render(args):
         for cls, (_, S) in by_cls.items():
             if K.key(dict(menu[amp][K.START[cls][amp]][1])) != K.key(S):
                 raise SystemExit(f"{amp} {cls}: the live S differs from the stored copy")
-    renders = 0
+    renders, skipped = 0, 0
 
     def render(di32, a):
         st = LO.tdict(a["settings"])
@@ -2849,7 +2889,8 @@ def cmd_real_render(args):
             asha = answers_sha(ans[t]["answers"])
             for amp in AMPS3:
                 key = real_key(prt, amp)
-                if key not in ans[t]["answers"]:          # RigO: no window of its own recording outside the unit
+                if key not in ans[t]["answers"]:          # RigO, RcM: no window of its own recording outside the unit
+                    skipped += 1
                     continue
                 gp = out_dir() / REAL_DIR / "judge" / t / f"{fname(key)}.json"
                 if gp.exists():
@@ -2868,7 +2909,7 @@ def cmd_real_render(args):
                     rec["render_sha256"][search] = AM.audio_sha(y)
                 save(gp, rec)
         print(f"{prt['unit'][-60:]}: lag {lag}; renders so far {renders}", flush=True)
-    print(f"REAL-RENDER DONE {k}/{n}: {renders} renders")
+    print(f"REAL-RENDER DONE {k}/{n}: {renders} renders" + (f"; {skipped} directions with no answer" if skipped else ""))
 
 
 SEARCH_DIR = "search"               # 5B.2: real/search/<unit>|<amp>.json
@@ -3319,7 +3360,7 @@ def cmd_real_report(args):
               .exists() and json.loads((out_dir() / REAL_DIR / "lags" / f"{p_['unit'].replace('/', '__')}.json")
                                        .read_text())["lag"] is None]
     meta = {p_["unit"]: p_ for p_ in parts}
-    phase = ("phase_5b2_rigo" if "RigO" in tags
+    phase = ("phase_5b2_rigo" if tags & {"RigO", "RcM"}
              else "phase_5b2" if any(t.startswith(("P2a-pc", "P2a-real", "Rc")) for t in tags)
              else "phase_5b1b" if any(t in ("P2a-Sc", "S-shift") for t in tags) else "phase_5b1")
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {phase}", "units": len(parts), "no_lag": no_lag, "rows": {}}
