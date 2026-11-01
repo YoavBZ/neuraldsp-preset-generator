@@ -158,6 +158,7 @@ def page_html(items, clips, build, part, n_parts, start_n, spec=EAR):
     js = BEP.JS_HEAD + CDP.PLAYER_JS.replace("XFADE_S", repr(CDP.XFADE_S)) + BEP.JS_ANSWERS
     body = "".join(card(it, start_n + j, start_n + total - 1, spec["verdicts"]) for j, it in enumerate(items))
     minutes = round(sum(secs.values()) / 60)
+    data_json = json.dumps(data).replace("</", "<\\/")      # no backslash inside an f-string before Python 3.12
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -178,7 +179,7 @@ Answers are saved in this browser as you go; tap <b>Export</b> any time, even ha
 <textarea id="out" readonly></textarea>
 <div class="row"><button type="button" id="copy">Copy</button><button type="button" id="save">Save file</button>
 <button type="button" id="close">Close</button></div></div>
-<script id="data" type="application/json">{json.dumps(data).replace("</", "<\\/")}</script>
+<script id="data" type="application/json">{data_json}</script>
 <script id="clips" type="application/json">{json.dumps(clips)}</script>
 <script>{js}</script></body></html>"""
 

@@ -3632,7 +3632,7 @@ def goat_lags_refused(units, heard, tol=None):
     return lags, goat_lag_refused(lags, {u: units[u]["item_lag"] for u in heard}, tol)
 
 
-def goat_trusted_units(tol=None):
+def goat_read_units(tol=None):
     """5C's read units: the GOAT units the ear passed with a lag the one-window rule keeps (goat/lags); `tol` other
     than GOAT_LAG_TOL only to report a read on a narrower set (the main-mode units at 14)."""
     units = {p_["unit"]: p_ for p_ in goat_units()}
@@ -3678,7 +3678,7 @@ def cmd_goat_centres(args):
                 st, n = centre(recs, amp, prt["cls"], S)
                 out["bks"][t][key] = {ANY_HALF: {"select": sel, "settings": st}}
                 used[t][key] = n
-    for prt in goat_trusted_units():
+    for prt in goat_read_units():
         k, amp = prt["fold"], prt["amp"]
         sel, S = ms[amp][prt["cls"]]
         key = real_key(prt, amp)
@@ -3709,7 +3709,7 @@ def goat_predict(name):
 
     e = require("phase_5c")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
-    units = goat_trusted_units()
+    units = goat_read_units()
     models = {}
     for k in sorted({p_["fold"] for p_ in units}):
         nets, recs = zip(*(load_run(f"{name}{k}", sd, "best") for sd in SEEDS))
@@ -3759,7 +3759,7 @@ def cmd_goat_render(args):
     require("phase_5c")
     tags = [t for t in args.names.split(",") if t]
     ans = {t: json.loads((out_dir() / GOAT_DIR / "answers" / f"{t}.json").read_text())["answers"] for t in tags}
-    units = goat_trusted_units()
+    units = goat_read_units()
     k, n = args.shard
     mine = [p_ for j, p_ in enumerate(units) if j % n == k]
     trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
@@ -3800,7 +3800,7 @@ def cmd_goat_report(args):
     judge drops the direction, counted), clustered by item (an item's renders share its playing), with the 4-fold
     interval beside (a fold's units share models). -> goat/report-<label>.json."""
     require("phase_5c")
-    units = {p_["unit"]: p_ for p_ in goat_trusted_units(args.lag_tol)}
+    units = {p_["unit"]: p_ for p_ in goat_read_units(args.lag_tol)}
     tags = {t for pair in args.pairs.split(",") for t in pair.split(":")}
     judge = {}
     for t in tags:
