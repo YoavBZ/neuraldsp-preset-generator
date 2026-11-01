@@ -4989,17 +4989,26 @@ def panel_heard(units, verdicts):
     return ok, [u for u in units if u not in verdicts]
 
 
+PANEL_DI_LIKE = {"Guitar-TECHS P3", "Dahka Band"}   # 5D's ear check: their amp tracks measure as near copies of the
+                                                    # DI (1/3-octave difference SD about 3 dB), out whatever the verdict
+
+
 def panel_read_units():
-    """5D's units for reads and renders: every panel unit heard, and only those that passed; refuses while any is
-    unheard."""
+    """5D's units for reads and renders: every panel unit heard, and only those that passed (the re-check's verdict,
+    panel/recheck.json, replacing the first for the units it covers); bands in PANEL_DI_LIKE out; refuses while any
+    unit is unheard."""
     units = panel_units()
     ep = out_dir() / PANEL_DIR / "ear.json"
     if not ep.exists():
         raise SystemExit("panel units not yet heard: the ear page comes before any panel render")
-    ok, missing = panel_heard([u["unit"] for u in units], json.loads(ep.read_text())["verdicts"])
+    verdicts = json.loads(ep.read_text())["verdicts"]
+    rp = out_dir() / PANEL_DIR / "recheck.json"
+    if rp.exists():
+        verdicts = {**verdicts, **json.loads(rp.read_text())["verdicts"]}
+    ok, missing = panel_heard([u["unit"] for u in units], verdicts)
     if missing:
         raise SystemExit(f"{len(missing)} panel units not yet heard")
-    return [u for u in units if u["unit"] in ok]
+    return [u for u in units if u["unit"] in ok and u["band"] not in PANEL_DI_LIKE]
 
 
 def cmd_panel_sections(args):

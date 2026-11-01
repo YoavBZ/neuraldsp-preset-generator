@@ -890,6 +890,23 @@ instead of generating unrealistic presets our own?"):
     - Adopted from its suggestions: Guitar-TECHS P3's track lags (40–232 samples across one rig's excerpts) are
       reported with the judge-lag check; `panel_leaks` checks the pool's DI inventory, which every training list
       draws from (with BKS's set 5 and the GOAT zip, neither of which holds a panel file).
+  - *The ear (2026-11-01) and the read's status.* The user heard all 62 units (40 "amp", 15 "DI bad", 6 "not sure",
+    1 "odd") and asked for a check of the very clean ones ("maybe there were DIs that are actually clean amp tracks").
+    Measured (zero renders): Guitar-TECHS P3's and Dahka Band's amp tracks are near copies of their DIs (1/3-octave
+    difference SD about 3 dB, 12–15 dB range; elsewhere 4–13 dB SD), confirming the user's "both are the DI"; both
+    bands are out (`PANEL_DI_LIKE`), the 2 units passed there included. Jen Hartswick & Nick Cassarino's, Port St
+    Willow's and Aimee Norwich's pairs measure as a bright DI and a coloured amp, so their 9 doubtful units were heard
+    again with that stated (panel/recheck.json: 7 "amp", 1 "DI bad", 1 "not sure"); the re-check's verdict replaces
+    the first. Sonnet & Alcohol's DIs measure as compressed (crest 9–12 dB, below their amp tracks'), so "DI bad"
+    stands. Passed: 45 units, 17 DIs, 7 bands (The Laminar Flow 8 DIs / 28 units, Jen Hartswick & Nick Cassarino
+    3 / 6, Big Troubles 2 / 2, and one DI each from Aimee Norwich, Port St Willow, Blue Manic and Little Tybee);
+    crunch 33, clean 12; hum-passed 13, high bleed 22. Effective N 15.4 under the capped weights, below the minimum
+    (20): power about 0.65 at −0.05.
+  - **By the minimum the panel cannot decide.** The user chose (2026-11-01) to read it anyway as a strong hint, not a
+    verdict: every row is computed and reported as declared, its decision rules applied and labelled underpowered
+    (effective N 15.4); a "better" there is a hint that the reading carries over across these bands, not grounds for
+    adoption; an undecided read says nothing beyond its numbers. Nothing in the reading map is acted on from it
+    alone. The panel is frozen; its reads are counted.
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
   measurements; if they shape the choice, D_fix's V-real read is labelled selection-contaminated. The candidates by

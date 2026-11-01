@@ -663,7 +663,7 @@ def test_panel_heard_passes_only_amp_verdicts():
 def test_panel_read_units_wait_for_the_ear(tmp_path, monkeypatch):
     monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
     (tmp_path / P.PANEL_DIR).mkdir()
-    (tmp_path / P.PANEL_DIR / "units.json").write_text(json.dumps({"units": [{"unit": "x"}, {"unit": "y"}]}))
+    (tmp_path / P.PANEL_DIR / "units.json").write_text(json.dumps({"units": [{"unit": "x", "band": "A"}, {"unit": "y", "band": "B"}]}))
     with pytest.raises(SystemExit):
         P.panel_read_units()
     (tmp_path / P.PANEL_DIR / "ear.json").write_text(json.dumps({"verdicts": {"x": {"verdict": "amp"}}}))
@@ -672,6 +672,9 @@ def test_panel_read_units_wait_for_the_ear(tmp_path, monkeypatch):
     (tmp_path / P.PANEL_DIR / "ear.json").write_text(json.dumps({"verdicts": {"x": {"verdict": "amp"},
                                                                               "y": {"verdict": "bleed"}}}))
     assert [u["unit"] for u in P.panel_read_units()] == ["x"]
+    (tmp_path / P.PANEL_DIR / "recheck.json").write_text(json.dumps({"verdicts": {"y": {"verdict": "amp"},
+                                                                                  "x": {"verdict": "unsure"}}}))
+    assert [u["unit"] for u in P.panel_read_units()] == ["y"]
 
 
 def test_panel_cut_lines_the_amp_window_up_with_the_di_for_either_sign():
