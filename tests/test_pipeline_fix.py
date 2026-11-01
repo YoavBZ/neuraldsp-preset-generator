@@ -600,3 +600,54 @@ def test_goat_lags_refused_reads_every_heard_unit_and_takes_a_narrower_tolerance
     assert P.goat_lags_refused(units, list(offs), 14)[1] == {"g/d", "g/e", "g/f"}
     # a subset (as after a third of the searches) would centre elsewhere; the rule never sees one
     assert P.goat_lag_refused({u: offs[u] for u in ("g/d", "g/e", "g/a")}, {u: 0 for u in offs}, 14) == {"g/a"}
+
+
+def test_panel_windows_are_seeded_apart_and_capped():
+    rows = [{"start_s": float(s), "passes_activity": True} for s in range(0, 200, 5)]
+    a = P.panel_windows(rows, {}, "band|part")
+    assert a == P.panel_windows(rows, {}, "band|part") and len(a) == P.PANEL_WINDOWS
+    assert all(abs(x - y) >= 10 + P.PANEL_GAP_S for x in a for y in a if x != y) and min(a) >= 1.0
+    assert P.panel_windows(rows, {}, "band|part", k=1) != [] and len(P.panel_windows(rows[:3], {}, "b|p")) == 1
+
+
+def test_panel_folds_balance_across_bands():
+    dis = {"A": {f"a{j}" for j in range(5)}, "B": {"b0", "b1"}, "C": {"c0"}}
+    f = P.panel_folds(dis)
+    assert f == P.panel_folds(dis) and set(f) == set().union(*dis.values())
+    counts = [list(f.values()).count(k) for k in range(P.REAL_FOLDS)]
+    assert max(counts) - min(counts) <= 1
+
+
+def test_panel_bleed_reads_the_amp_where_the_di_is_silent():
+    import numpy as np
+    sr = 48000
+    di = np.concatenate([np.sin(np.arange(sr) * 0.05), np.zeros(sr)])
+    clean = np.concatenate([np.sin(np.arange(sr) * 0.05), np.zeros(sr) + 1e-6])
+    bleed = clean + np.concatenate([np.zeros(sr), 0.1 * np.sin(np.arange(sr) * 0.3)])
+    assert P.panel_bleed_db(bleed, di, sr) > P.panel_bleed_db(clean, di, sr) + 40
+
+
+def test_panel_pairs_are_the_declared_sources_and_never_training_or_v_real():
+    pairs = P.panel_pairs()
+    assert {p["band"] for p in pairs} == {"Blue Manic", "Sonnet & Alcohol", "The Laminar Flow", "Little Tybee",
+                                          "Port St Willow", "Big Troubles", "Guitar-TECHS P3", "Aimee Norwich",
+                                          "Dahka Band", "Jen Hartswick & Nick Cassarino"}
+    import json
+    files = {a["path"] for p in pairs for a in p["amps"]} | {p["di"]["path"] for p in pairs}
+    assert not any("v-real" in f.lower() or "datasets-set5" in f for f in files)
+
+
+def test_panel_leaks_catch_a_pool_copy_and_an_out_band(tmp_path):
+    a, b, c = tmp_path / "di.wav", tmp_path / "amp.wav", tmp_path / "copy.wav"
+    a.write_bytes(b"x" * 5000), b.write_bytes(b"y" * 5000), c.write_bytes(b"x" * 5000)
+    pairs = [{"band": "New", "di": {"path": str(a)}, "amps": [{"path": str(b)}]}]
+    assert P.panel_leaks(pairs, [], set()) == []
+    assert any("pool file" in x for x in P.panel_leaks(pairs, [str(c)], set()))
+    assert P.panel_leaks(pairs, [str(a)], set()) and P.panel_leaks(pairs, [], {"New"}) == ["band New is out"]
+
+
+def test_panel_lets_di_hum_through_and_nothing_else(monkeypatch):
+    from learn import clean_di as CD
+    monkeypatch.setattr(CD, "section_flags", lambda r, t: (r["f"], []))
+    assert not P.panel_di_flagged({"f": ["hum"]}, {}) and not P.panel_di_flagged({"f": []}, {})
+    assert P.panel_di_flagged({"f": ["hum", "hiss"]}, {}) and P.panel_di_flagged({"f": ["clipping"]}, {})

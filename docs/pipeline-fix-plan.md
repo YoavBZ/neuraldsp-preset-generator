@@ -849,6 +849,32 @@ instead of generating unrealistic presets our own?"):
     rests on one amp chain and one player (independent playing, not independent chains); the read answers for these
     panel bands; and the effective N and power are recomputed from the units that pass the ear, lags and class, and
     stated before any render.
+  - *Amendment (2026-11-01, after the data step, before the ear and any render): more sources, DI hum allowed.*
+    `panel-sections` as declared gave 40 units from 15 DIs, and only The Laminar Flow (25 units) and Sonnet &
+    Alcohol (4) reached 4 units: most spare material reads high gain (Blue Manic 7 of 10 units, Big Troubles, Laminar
+    Flow ElecGtr05), and 11 of Guitar-TECHS P3's 12 excerpts fail only the DI hum screen. The minimum fails, so the
+    panel is revised before the ear, at the user's word ("whatever you recommend") on the options put to them:
+    - a DI's hum flag passes for the panel only (`PANEL_DI_NOISE_OK`): the amp heard the same hum, so render and
+      recording share it and the comparison stays fair; every other screen stays;
+    - two MedleyDB clean bands join, Aimee Norwich "Flying" (RAW_05_02 → 05_01, polarity −1) and Dahka Band "Soldier
+      Man" (RAW_04_01 → 04_02, MedleyDB marks bleed), whose DI roles set 6 labelled by ear: the ear decides each;
+    - Jen Hartswick & Nick Cassarino (4 songs, one amp mic each; jazz/soul, a style the panel lacked) joins, taken
+      from V-real's reserve; V-real itself stays the 11 clips;
+    - windows per DI stay 3 (more windows of one performance add little evidence).
+    The rerun (zero renders): 62 units from 26 DIs in 10 new bands — The Laminar Flow 8 DIs / 28 units, Jen Hartswick
+    & Nick Cassarino 4 / 8, Sonnet & Alcohol 2 / 6, Guitar-TECHS P3 5 / 5, Big Troubles 2 / 2, and one DI each from
+    Aimee Norwich (3 units), Dahka Band (3), Port St Willow (3), Blue Manic (2) and Little Tybee (2); clean 30,
+    crunch 32; folds 18, 13, 12, 19 units; one far-mic track. Out: 18 windows high gain, 13 on the lag rule, 8 DIs
+    with no window. Effective N under the capped weights 24.2 (equal band weights 15.2): power about 0.83 at −0.05
+    and 0.47 at −0.03.
+    - The minimum is restated on what it was for (power, not units per band): after the ear, an effective N of at
+      least 20 under the capped weights, from at least 6 new bands; below it the panel is revised before any read.
+      (As first written, at least 5 bands with 4 units each, only 4 bands would qualify, though the power is near
+      what was declared.) Bands with one DI are read per band by window, as declared, and their own intervals are
+      reported, not used alone.
+    - "High bleed" is fixed now, before any read: a unit whose bleed residual exceeds the largest among BKS's 40
+      reamped units (no other instrument can be in a reamp; their residual is the amp's own tail and noise, measured
+      the same way, zero renders) is reported apart, as declared.
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
   measurements; if they shape the choice, D_fix's V-real read is labelled selection-contaminated. The candidates by

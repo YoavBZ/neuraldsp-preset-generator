@@ -4851,7 +4851,235 @@ def cmd_vreal_report(args):
 
 # --- main ------------------------------------------------------------------------------------------------------------
 
-COMMANDS = {"goat-sections": cmd_goat_sections, "goat-search": cmd_goat_search,
+PANEL_DIR = "panel"                  # 5D's real-amp test panel (v1): PF/panel/
+PANEL_PAIRS = REPO / "docs" / "panel-v1-pairs.json"
+PANEL_SEED = 20261101
+PANEL_WINDOWS = 3                    # windows per DI (shared by its amp tracks)
+PANEL_GAP_S = 10.0                   # at least this much between a DI's windows
+PANEL_WIDE_S = 1.5                   # the whole-track lag's search (Blue Manic's amp tracks run up to 1.2 s long)
+PANEL_FAR = 240                      # a DI-to-track lag above this (5 ms at 48 kHz) flags a far mic
+PANEL_LAG_TOL = 72                   # a window's lag this far from its track's is out (5C's tolerance)
+PANEL_DI_NOISE_OK = {"hum"}         # 5D's amendment: a DI's hum flag passes (the amp heard it too, so the comparison
+                                    # stays fair; for the test panel only)
+PANEL_SILENT_DB, PANEL_PLAY_DB = 40.0, 20.0   # the bleed residual's DI frames: silent below the window's DI peak
+                                              # by this much, playing within this much of it
+
+
+def panel_pairs():
+    """5D's (DI, amp tracks) pairs, fixed with the declaration (`docs/panel-v1-pairs.json`, paths under ~). ->
+    [{source, band, song, part, di, amps}]."""
+    import os
+
+    d = json.loads(PANEL_PAIRS.read_text())
+    return [{"source": src["source"], "band": src["band"], "song": src.get("song"), **pr,
+             "di": {**pr["di"], "path": os.path.expanduser(pr["di"]["path"])},
+             "amps": [{**a, "path": os.path.expanduser(a["path"])} for a in pr["amps"]]}
+            for src in d["sources"] for pr in src["pairs"]]
+
+
+def panel_di_flagged(row, track):
+    """The pool's DI screens (`clean_di.section_flags`) less the flags PANEL_DI_NOISE_OK lets through."""
+    from learn import clean_di as CD
+
+    flags, _ = CD.section_flags(row, track or {})
+    return bool(set(flags) - PANEL_DI_NOISE_OK)
+
+
+def panel_windows(rows, track, key, k=PANEL_WINDOWS, gap=PANEL_GAP_S, min_start_s=1.0):
+    """5D's windows for one DI: its 10-s grid sections that pass the pool's activity rule and screens (as
+    `goat_window`, with DI hum and slight hiss let through: `panel_di_flagged`), in a seeded order (PANEL_SEED with `key`), kept greedily while each starts at least `gap` s
+    after the end of every kept one; up to k. -> sorted starts."""
+    import random
+
+    from learn import clean_di as CD
+    from learn import pretrain_set as PS
+
+    ok = [r["start_s"] for r in rows if r["passes_activity"] and r["start_s"] >= min_start_s
+          and not (r.get("clip_runs") or r.get("dropouts") or r.get("hard_cuts"))
+          and not panel_di_flagged(r, track)]
+    order = sorted(ok)
+    random.Random(f"{PANEL_SEED}|{key}").shuffle(order)
+    kept = []
+    for st in order:
+        if all(abs(st - q) >= PS.SEC_S + gap for q in kept):
+            kept.append(st)
+        if len(kept) == k:
+            break
+    return sorted(kept)
+
+
+def panel_bleed_db(amp, di, sr):
+    """5D's bleed residual on one aligned window (zero renders): the amp track's level on frames where its DI is
+    silent (PANEL_SILENT_DB under the window's DI peak) against its level where the DI plays (within PANEL_PLAY_DB
+    of it), in dB; None with fewer than 4 frames of either."""
+    import numpy as np
+
+    from learn import clean_di as CD
+
+    dd, ad = CD.frame_db(di), CD.frame_db(amp)
+    n = min(len(dd), len(ad))
+    dd, ad = dd[:n], ad[:n]
+    top = float(np.max(dd)) if n else -300.0
+    silent, play = dd < top - PANEL_SILENT_DB, dd > top - PANEL_PLAY_DB
+    if silent.sum() < 4 or play.sum() < 4:
+        return None
+    p = lambda m: 10 * np.log10(np.mean(10 ** (ad[m] / 10)) + 1e-30)
+    return float(p(silent) - p(play))
+
+
+def panel_folds(dis_by_band):
+    """5D's folds: each new DI a fold, seeded (PANEL_SEED), dealt round-robin within each band from a running start
+    so the folds stay balanced across bands. -> {di: fold}."""
+    import random
+
+    out, at = {}, 0
+    for band in sorted(dis_by_band):
+        dis = sorted(dis_by_band[band])
+        random.Random(f"{PANEL_SEED}|folds|{band}").shuffle(dis)
+        for d in dis:
+            out[d] = at % REAL_FOLDS
+            at += 1
+    return out
+
+
+def file_key(path):
+    """A file's size and the sha256 of its first MiB: a cheap identity that survives copies and renames."""
+    import hashlib
+
+    path = pathlib.Path(path)
+    with open(path, "rb") as fh:
+        return path.stat().st_size, hashlib.sha256(fh.read(1 << 20)).hexdigest()
+
+
+def panel_leaks(pairs, pool_paths, bands_out):
+    """5D's leakage guard: panel files that are, by name or content (`file_key`), any pool DI (training's
+    inventory, every session), and panel bands among `bands_out` (V-real's, training's). -> [problems]."""
+    import os
+
+    files = {p["di"]["path"] for p in pairs} | {a["path"] for p in pairs for a in p["amps"]}
+    keys = {file_key(f): f for f in files}
+    bad = [f for f in files if os.path.realpath(f) in {os.path.realpath(q) for q in pool_paths}]
+    for q in pool_paths:
+        if os.path.exists(q) and file_key(q) in keys:
+            bad.append(f"{keys[file_key(q)]} = pool file {q}")
+    bad += [f"band {p['band']} is out" for p in pairs if p["band"] in bands_out]
+    return sorted(set(bad))
+
+
+def cmd_panel_sections(args):
+    """5D's data (zero renders): per DI of the fixed pairs (`panel_pairs`), the pool's DI measures and up to
+    PANEL_WINDOWS windows (`panel_windows`; Guitar-TECHS P3's excerpts one each), shared by its amp tracks. Per amp
+    track, its DI-to-track lag over the whole track (`estimate_lag`, the DI as the render, ±PANEL_WIDE_S) and per
+    window, with that as the hint; a window more than PANEL_LAG_TOL from its track's lag is out; a track lag above
+    PANEL_FAR flags a far mic. The amp window is cut at the window plus the track lag (so the judge's residual lag is
+    small), checked for clipping, classed against its DI (`classify` on `gainmeasure`; high gain out) and given its
+    bleed residual (`panel_bleed_db`). Everything at 48 kHz. -> panel/sections/*.wav, panel/units.json."""
+    import sys
+
+    import numpy as np
+    import soundfile as sf
+
+    from analysis.aligned import estimate_lag
+    from learn import clean_di as CD
+    from learn import pretrain_set as PS
+
+    require("phase_5d")
+    from learn import cc_build as CB
+
+    inv = CB.cc_inventory()
+    pool_bands = {r.get("band") for r in inv.values()}
+    leaks = panel_leaks(panel_pairs(), [r["path"] for r in inv.values() if r.get("path")], VREAL_BANDS | pool_bands)
+    if leaks:
+        raise SystemExit(f"panel leakage: {leaks}")
+    sys.path.insert(0, str(PS.HOME / "references/datasets-set3/_tools"))
+    import classify as C
+    import gainmeasure as GM
+
+    pd = out_dir() / PANEL_DIR
+    sec = pd / "sections"
+    sec.mkdir(parents=True, exist_ok=True)
+    n = int(round((PS.SEC_S + PS.TRIM_S) * PS.SR))
+    trim = int(PS.TRIM_S * PS.SR)
+    units, dis, notes = [], {}, []
+
+    def read(path):
+        x, sr = sf.read(path, dtype="float64", always_2d=True)
+        return CD.resample(x.mean(1), sr, PS.SR), sr
+
+    for pr in panel_pairs():
+        band, key = pr["band"], f"{pr['band']}|{pr['part']}"
+        x, sr = read(pr["di"]["path"])
+        f, fs = CD.floor_spectrum(x)
+        votes = {k: [v] for k, v in ({mm: CD.line_count(f, fs, mm) for mm in CD.MAINS} if fs is not None
+                                     else {}).items()}
+        track, rows = CD.measure_di(x, PS.SR, CD.session_mains(votes))
+        k = 1 if pr["source"].startswith("Guitar-TECHS") else PANEL_WINDOWS
+        starts = panel_windows(rows, track, key, k=k)
+        if track["near_fs"] or not starts:
+            notes.append({"di": key, "out": "DI near full scale" if track["near_fs"] else "no window"})
+            print(f"{key}: {notes[-1]['out']}", flush=True)
+            continue
+        di_id = f"panel/{band}/{pr['part']}"
+        for a in pr["amps"]:
+            y, _ = read(a["path"])
+            tname = pathlib.Path(a["path"]).name
+            try:
+                tlag = int(estimate_lag(y, [x], max_lag_s=PANEL_WIDE_S))
+            except ValueError as err:
+                notes.append({"di": key, "track": tname, "out": f"no track lag: {err}"})
+                continue
+            for st in starts:
+                lo = int(round((st - PS.TRIM_S) * PS.SR))
+                dsec = x[lo:lo + n]
+                asec = y[lo + tlag:lo + tlag + n] if lo + tlag >= 0 else np.zeros(0)
+                u = f"{di_id}@{st:.1f}#{tname}"
+                if len(dsec) < n or len(asec) < n:
+                    notes.append({"unit": u, "out": "window runs past an end"})
+                    continue
+                try:
+                    wlag = int(estimate_lag(asec, [dsec], hint=0)) + tlag
+                except ValueError as err:
+                    notes.append({"unit": u, "out": f"no window lag: {err}"})
+                    continue
+                rec = {"unit": u, "out": None}
+                if abs(wlag - tlag) > PANEL_LAG_TOL:
+                    rec["out"] = f"window lag {wlag} off the track's {tlag}"
+                elif len(CD.clip_runs(asec, peak=float(np.max(np.abs(y))))):
+                    rec["out"] = "the amp track clips in the window"
+                gm = GM.measures(np.asarray(asec[trim:], np.float64), np.asarray(dsec[trim:], np.float64), PS.SR)
+                cls = C.classify(gm)[0] if gm else None
+                if rec["out"] is None and cls not in ("clean", "crunch"):
+                    rec["out"] = f"class {cls}"
+                if rec["out"]:
+                    notes.append({**rec, "class": cls, "track_lag": tlag, "window_lag": wlag})
+                    continue
+                stem = u.replace("/", "__").replace("#", "__").replace(" ", "_")
+                dp, ap = sec / f"{stem}.di.wav", sec / f"{stem}.amp.wav"
+                if not dp.exists():
+                    sf.write(dp, dsec.astype(np.float32), PS.SR, subtype="FLOAT")
+                sf.write(ap, asec.astype(np.float32), PS.SR, subtype="FLOAT")
+                units.append({"unit": u, "section": f"{di_id}@{st:.1f}", "track": ap.name, "rig": f"{di_id}#{tname}",
+                              "set": "panel", "di": di_id, "band": band, "source": pr["source"], "cls": cls,
+                              "sd": str(sec), "start_s": PS.TRIM_S, "di_path": str(dp), "window_s": st,
+                              "track_lag": tlag, "window_lag": wlag, "far": abs(tlag) > PANEL_FAR,
+                              "bleed_db": panel_bleed_db(asec[trim:], dsec[trim:], PS.SR), "gain_measures": gm,
+                              "di_file": pr["di"]["path"], "amp_file": a["path"], "mic": a.get("mic")})
+                dis.setdefault(band, set()).add(di_id)
+        print(f"{key}: windows {starts}; units so far {len(units)}", flush=True)
+    fold = panel_folds(dis)
+    for u in units:
+        u["fold"] = fold[u["di"]]
+    save(pd / "units.json", {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5d", "pairs": str(PANEL_PAIRS),
+                             "units": units, "out": notes, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    cnt = {}
+    for u in units:
+        cnt.setdefault(u["band"], {}).setdefault(u["cls"], set()).add(u["di"])
+    print("PANEL-SECTIONS DONE: " + "; ".join(
+        f"{b}: " + ", ".join(f"{c} {len(v)} DIs/{sum(1 for u in units if u['band'] == b and u['cls'] == c)} units"
+                             for c, v in sorted(cs.items())) for b, cs in sorted(cnt.items())))
+
+
+COMMANDS = {"panel-sections": cmd_panel_sections, "goat-sections": cmd_goat_sections, "goat-search": cmd_goat_search,
             "goat-stage-check": cmd_goat_stage_check, "goat-centres": cmd_goat_centres,
             "goat-predict": cmd_goat_predict, "goat-render": cmd_goat_render, "goat-report": cmd_goat_report,
             "p5": cmd_p5, "dirty-doubles": cmd_dirty_doubles, "p6": cmd_p6,
