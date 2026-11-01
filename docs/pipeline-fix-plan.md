@@ -656,6 +656,9 @@ instead of generating unrealistic presets our own?"):
     stands and is now in code: `goat-search`'s main stage refuses to start if any amp and class falls below it
     (`goat_short_cells`), and the pilot stops at the data stage for a revision (a third render per item, or a
     seeded rebalance of the forced amps). Label renders fall by about 13% if all 34 go.
+    *Outcome (2026-11-01, user's answers exported 14:28, page build 6abd26d193e0; ledger
+    `phase_5c_heavy_outcome`):* of the 34 candidates the user kept 12 and marked 22 heavy (none unsure); 233 heard
+    units pass the ear and the heavy check, from 135 items, every amp and class 35–45, before the lag rule.
   - *Review of the amendment (2026-11-01, independent):* approved with required changes, all made: the stop rule
     on any amp and class, not pr12 crunch alone; the minimum enforced in code before the main stage, with a test;
     a test of the gate itself (`goat_ear_passed`). Adopted from its suggestions: the heavy answers' build and the
@@ -706,16 +709,34 @@ instead of generating unrealistic presets our own?"):
     - Read A (215 units, 130 items): RG − RcGk −0.053 [−0.077, −0.029] by item (83 of 130 better), by fold −0.043
       [−0.063, −0.023], every fold negative: decided better. RG − RcBG −0.064 [−0.089, −0.039], by fold −0.052
       [−0.075, −0.030]. On the main-mode units alone (`--lag-tol 14`, 94 items) RG − RcGk −0.057 [−0.086, −0.028].
-      In setting space RG's answers sit 0.127 from RcGk's but no nearer the units' labels (rms 0.259 against
-      0.259; S 0.294), as on BKS (F35). Audit: no model sees its held GOAT items (0 item overlap per fold).
+      Beside (zero renders; `goat/read-a-beside.py` and `.json`):
+      - In setting space RG's answers sit 0.127 from RcGk's but no nearer the units' labels (rms 0.259 against
+        0.259; RcBG 0.264, S 0.294; switches and mics agree 0.624 against 0.632), as on BKS (F35).
+      - No model sees its held GOAT items (0 item overlap in each fold).
+      - Units whose whole-item lag exceeds 300 samples, apart: 6 items, 12 directions, RG − RcGk −0.142 [−0.275,
+        −0.008]; without them −0.052 [−0.076, −0.028] (129 items).
+      - `inputGain` (unit scale of its searched range): GOAT labels mean 0.50, sd 0.30, at a bound 19%; BKS's stage 1
+        and 2 labels mean 0.39, sd 0.26, at a bound 21%.
+      - Heads on each fold's held GOAT labels (46–59 per fold, both seeds): RG's knob NLL is 0.59 to 0.95 below
+        P2a-reals2's, its switch CE 0.16 to 0.25 and its mic CE 0.44 to 1.07 lower (P2a-reals2 never saw a capture
+        render; these held-label NLLs include the centre, so they do not by themselves show a per-track reading).
+        RGshuf's heads follow with F37 (one of its runs had finished when this ran and is in the file).
+      - Not yet run: nothing else declared for read A.
     - Read B (BKS, 40 units): RG − RcBG −0.052 [−0.115, +0.011] by DI (7 of 8 better), by fold −0.047 [−0.104,
       +0.010]; RG − Rcs2 −0.035 [−0.102, +0.032], by fold −0.036 [−0.091, +0.020]: both undecided. Beside: RG − S
       −0.193 [−0.292, −0.094]; RcG − S −0.106 [−0.168, −0.045] (a capture centre moves toward real amps), RcG −
-      Rcs2 +0.052 [−0.026, +0.130]. (`real-report` now gives 5C's rows their fold interval, as declared.)
+      Rcs2 +0.052 [−0.026, +0.130] (both by DI; the centres have no models, so their fold interval is not read).
+      RG − P2a-reals2 −0.064 [−0.130, +0.002] by DI, by fold −0.053 [−0.115, +0.010]: undecided (the GOAT rows'
+      own effect on BKS, beside). (`real-report` now gives 5C's rows their fold interval, as declared.)
     - Guard (`real-heads --names G`): knob NLL rise RG − P2a-reals2 on FS or NS above +0.027 in one seed of one
       fold only (fold 2, +0.034 on both): no fold damaged in both seeds. On each fold's held BKS labels RG's knob
       NLL is below P2a-reals2's in 7 of 8 runs.
     - As declared, read A better means RGshuf runs before any reading is acted on (launched 19:10).
+    - Notes for F37: RGshuf permutes the training labels before they are cycled to 300 rows per epoch, so which labels
+      get a second copy in an epoch differs from RG's (same inputs, a near-identical label multiset). `goat-report`
+      drops a refused or non-finite direction, where `real-report` scores a refused answer as S; none was refused
+      (missing 0 in every row). The run files mark RG and RGshuf by name only (`--goat` and `--goat-shuffle` are
+      not in their `flags`).
   - *Lag check across earlier reads (2026-11-01, at the user's question whether the lag issue hurt earlier tests;
     ledger `phase_5c_lag_scan_10ms`, `phase_5c_lag_scan_bks`, each declared before its run).* The ±72-sample
     diagnostic did not reach `estimate_lag`'s known failure, a lock onto another pitch period (about 6 ms). Two
@@ -1768,10 +1789,14 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   test 240); P4 438 and its dry readout 198; phase 5A 240 and its seed 2 240; 5B.1 960, 5B.1b 720. About 11,170 in all
   before 5B.2. **5B.2 (2026-11-01):** the stage 1 ceiling 6,840; arm P 1,200, its P-Sc 480 and its FS/NS read 480;
   Rc 240; arm R 480: 9,720, about 20,890 in all. Stage 2: its search 10,725, Rcs2 240, arm R's read 480: 11,445,
-  about 32,340 in all. RigO and RcM 432: about 32,770 in all. D_fix's reads are not yet spent.
+  about 32,340 in all. RigO and RcM 432: about 32,770 in all. **5C (2026-11-01):** the lag pass 1,398, the lag
+  diagnostic 24, the search 11,395 (12,793 label renders against the declared about 15,600: 215 trusted units
+  against about 264), the centres' reads 1,340 and RG's 1,340, the lag scans 504 (24 + 480): about 16,000, about
+  48,770 in all. RGshuf's reads (about 1,340) and D_fix's are not yet spent.
 - **MPS used:** about 4 h before 5B.2 (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and
   backing runs, the k-fold, phase 5A's two 10-minute seeds); 5B.2's 12 trainings about 2 h more (arm P 4 × 7.2–8.4 min,
-  arm R 8 × 11.4 min); stage 2's 8 trainings 1.5 h more (8 × 11.4 min).
+  arm R 8 × 11.4 min); stage 2's 8 trainings 1.5 h more (8 × 11.4 min); 5C's RG 8 trainings 1.75 h more (8 × 13.0–13.3
+  min), RGshuf's 8 running.
 - **Disk:** P2's inputs about 0.3 GB; phase 1b's audio and features about 1.2 GB; the 31 GB guard holds.
 - Every render: isolate=True, a discarded priming render, 0.25 s trimmed, at most 3 render processes,
   `setopt no_bg_nice`. V-real is read only in P5's stored distances, phase 4 and D_fix's declared read. (5B.1c
