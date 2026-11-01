@@ -212,7 +212,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          a mostly distinct amp chain. The user hears every one first. The pilot searches their labels, retrains
          with them, and reads per-track reading against matched centres, first on held GOAT recordings, then on
          BKS's reamps, with a shuffled-label control. About 18,000 renders, 1.7 h of MPS.
-         *Result (2026-11-01, F37):* trained on about 160 recordings per fold, the model learns a per-track reading:
+         *Result (2026-11-01, F37):* trained on about 160 recordings per fold, the model learns a per-track reading in domain:
          on held GOAT recordings it beats the matched centre by −0.053 [−0.077, −0.029] and its shuffled-label
          control by −0.041 [−0.056, −0.026]. On BKS's real reamps it leans better (6–7 of 8 DIs) but is undecided.
          A lag check found no earlier read affected.

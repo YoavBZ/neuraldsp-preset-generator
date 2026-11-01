@@ -771,52 +771,6 @@ instead of generating unrealistic presets our own?"):
 
 ## Findings log
 
-### F37. Trained on many recordings, the model learns a per-track reading in domain; on real reamps it is not shown (5C pilot)
-- **Result.** 5C's pilot as declared and amended (`phase_5c`; the heavy check and the lag tolerance, each
-  reviewed before any search render): 215 trusted GOAT units from 130 items searched (11,395 renders), RG trained on
-  BKS's and the other GOAT folds' labels (4 folds × 2 seeds), RGshuf with each fold's training GOAT labels permuted
-  within amp and class, the centres RcGk, RcBG and RcG; 4,020 read renders, every direction scored (none missing).
-- **Numbers** (held half; GOAT by item, 130, with the 4-fold interval; BKS by DI, 8, with the fold interval):
-
-  | Row | Primary interval | Fold interval | Better |
-  |---|---|---|---|
-  | A: RG − RcGk (GOAT, primary) | −0.053 [−0.077, −0.029] | −0.043 [−0.063, −0.023] | 83 of 130 items |
-  | A: RG − RcBG (GOAT) | −0.064 [−0.089, −0.039] | −0.052 [−0.075, −0.030] | 92 of 130 |
-  | RG − RGshuf (GOAT) | −0.041 [−0.056, −0.026] | −0.035 [−0.060, −0.010] | 86 of 130 |
-  | RGshuf − RcGk (GOAT) | −0.012 [−0.033, +0.010] | −0.009 [−0.051, +0.034] | 75 of 130 |
-  | B: RG − RcBG (BKS) | −0.052 [−0.115, +0.011] | −0.047 [−0.104, +0.010] | 7 of 8 DIs |
-  | B: RG − Rcs2 (BKS, adoption row) | −0.035 [−0.102, +0.032] | −0.036 [−0.091, +0.020] | 6 of 8 |
-  | RG − RGshuf (BKS) | −0.040 [−0.116, +0.037] | −0.026 [−0.085, +0.033] | 6 of 8 |
-  | RG − P2a-reals2 (BKS, beside) | −0.064 [−0.130, +0.002] | −0.053 [−0.115, +0.010] | 6 of 8 |
-  | RcG − S (BKS, beside) | −0.106 [−0.168, −0.045] | (no models) | 7 of 8 |
-  | RcG − Rcs2 (BKS, beside) | +0.052 [−0.026, +0.130] | (no models) | 2 of 8 |
-
-  - Every fold reads RG better than RcGk and than RGshuf on GOAT. On the main-mode lag units alone (`--lag-tol 14`,
-    94 items) RG − RcGk is −0.057 [−0.086, −0.028]; on the 6 items with a whole-item lag over 300 samples −0.142
-    [−0.275, −0.008].
-  - Setting space: RG's answers sit 0.127 from RcGk's and no nearer the units' labels (rms 0.259 against 0.259; S
-    0.294). Heads on held GOAT labels: RG's knob NLL is 0.59–0.95 below P2a-reals2's but does not separate RG from
-    RGshuf (−0.150 to +0.196, median +0.020); the sound read decides. Guard: no fold's FS or NS knob NLL rises past
-    +0.027 in both seeds (one seed of fold 2, +0.034).
-  - Lags: every stored lag checked by scan sits at the judge's minimum (12 GOAT and all 40 BKS units); see the lag
-    check in 5C's block.
-- **Reading** (as declared). A is better and RG − RGshuf is better: a per-track reading is learned in domain, and it
-  is the GOAT recordings' own labels that teach it (with the labels permuted the model reads like the centre). It is
-  the first per-track reading this plan has shown: F35's arm R, from 10–11 recordings per fold, took none of F36's
-  headroom; RG, from about 160 GOAT recordings per fold, beats the matched centre by 0.053 on held capture renders.
-  B is undecided: on BKS's real reamps RG leans better than both centres and than RGshuf (6–7 of 8 DIs), but no
-  interval excludes 0, so transfer to real amps is not shown. By the map: the full GOAT set does not run; the user
-  decides between more real chains and domain work, with A, B and RcG − S as evidence. A capture centre does move
-  toward real amps (RcG − S −0.106), though not past BKS's own centre.
-- **Caveats.** Capture renders are not real rigs (a capture at one setting with a borrowed IR); 132 of GOAT's 172 DIs
-  are one player, mostly on a Strat; the forced amps are a third each by design. BKS is one band, 8 DIs: B's intervals
-  are wide (a test panel across bands is proposed). The lag tolerance (72) was chosen after the counts at 14 were
-  known; read A holds on the main-mode units alone. In setting space the reading is not nearer the labels, so the gain
-  is in how the answers sound, not in knob distance.
-- **References.** `PF/goat/report-5c-A.json`, `report-5c-A-lag14.json`, `report-5c-shuf.json`, `read-a-beside.py` and
-  `.json`; `PF/real/report-5c-B.json`, `report-5c-shuf.json`, `report-5c-centres.json`, `heads-G.json`; runs
-  `P2a-goat{k}`, `P2a-goatshuf{k}`; ledger `phase_5c_reads_AB`, `phase_5c_rgshuf_outcome`.
-
 Every result of this plan, in the order it landed: what was found, its numbers, its caveats, where it is stored and
 what it changes. Each is audited before it is entered; the review's steps carry the same results as dated lines.
 
@@ -1827,6 +1781,67 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   narrowed to their per-recording content with the number of recordings named, the headroom stated as at most
   about 0.15 by a true-DI search, and the clean/crunch remark restated on RigO − S. It found no leakage (no label
   within 10 s, RigO never equal to the unit's label, no judged value or render equal to a stored best).
+
+### F37. Trained on many recordings, the model learns a per-track reading in domain; on real reamps it is not shown (5C pilot)
+- **Result.** 5C's pilot as declared and amended (`phase_5c`; the heavy check and the lag tolerance, each
+  reviewed before any search render): 215 trusted GOAT units from 130 items searched (11,395 renders), RG trained on
+  BKS's and the other GOAT folds' labels (4 folds × 2 seeds), RGshuf with each fold's training GOAT labels permuted
+  within amp and class, the centres RcGk, RcBG and RcG; 4,020 read renders, every direction scored (none missing).
+- **Numbers** (held half; GOAT by item, 130, with the 4-fold interval; BKS by DI, 8, with the fold interval):
+
+  | Row | Primary interval | Fold interval | Better |
+  |---|---|---|---|
+  | A: RG − RcGk (GOAT, primary) | −0.053 [−0.077, −0.029] | −0.043 [−0.063, −0.023] | 83 of 130 items |
+  | A: RG − RcBG (GOAT) | −0.064 [−0.089, −0.039] | −0.052 [−0.075, −0.030] | 92 of 130 |
+  | RG − RGshuf (GOAT) | −0.041 [−0.056, −0.026] | −0.035 [−0.060, −0.010] | 86 of 130 |
+  | RGshuf − RcGk (GOAT) | −0.012 [−0.033, +0.010] | −0.009 [−0.051, +0.034] | 75 of 130 |
+  | B: RG − RcBG (BKS) | −0.052 [−0.115, +0.011] | −0.047 [−0.104, +0.010] | 7 of 8 DIs |
+  | B: RG − Rcs2 (BKS, adoption row) | −0.035 [−0.102, +0.032] | −0.036 [−0.091, +0.020] | 6 of 8 |
+  | RG − RGshuf (BKS) | −0.040 [−0.116, +0.037] | −0.026 [−0.085, +0.033] | 6 of 8 |
+  | RG − P2a-reals2 (BKS, beside) | −0.064 [−0.130, +0.002] | −0.053 [−0.115, +0.010] | 6 of 8 |
+  | RcG − S (BKS, beside) | −0.106 [−0.168, −0.045] | (no models) | 7 of 8 |
+  | RcG − Rcs2 (BKS, beside) | +0.052 [−0.026, +0.130] | (no models) | 2 of 8 |
+
+  - Every fold reads RG better than RcGk and than RGshuf on GOAT. On the main-mode lag units alone (`--lag-tol 14`,
+    94 items) RG − RcGk is −0.057 [−0.086, −0.028]; on the 6 items with a whole-item lag over 300 samples −0.142
+    [−0.275, −0.008].
+  - Setting space: RG's answers sit 0.127 from RcGk's and no nearer the units' labels (rms 0.259 against 0.259; S
+    0.294). Heads on held GOAT labels: RG's knob NLL is 0.59–0.95 below P2a-reals2's but does not separate RG from
+    RGshuf (−0.150 to +0.196, median +0.020); the sound read decides. Guard: no fold's FS or NS knob NLL rises past
+    +0.027 in both seeds (one seed of fold 2, +0.034).
+  - Lags: every stored lag checked by scan sits at or near the judge's minimum (all 40 BKS units under 0.01 to gain;
+    11 of 12 GOAT units under 0.002, one 0.013); see the lag check in 5C's block.
+- **Reading** (as declared). A is better and RG − RGshuf is better: a per-track reading is learned in domain, and it
+  is the GOAT recordings' own labels that teach it (with the labels permuted the model reads like the centre). It is
+  the first per-track reading this plan has shown on amp chains other than the plugin's own renders (F11 and F28
+  showed one on plugin renders). RG, from about 160 GOAT recordings per fold, beats the matched centre by 0.053 on
+  held capture renders, where F35's arm R, from 10–11 BKS recordings per fold, took none of F36's headroom; this is
+  not a like-for-like curve over the number of recordings, since the domain and the chains' spread differ too
+  (GOAT's random draw from about 7,000 captures may leave a weaker centre and more headroom), and on BKS RG −
+  P2a-reals2 is itself undecided.
+  B is undecided: on BKS's real reamps RG leans better than both centres and than RGshuf (6–7 of 8 DIs), but no
+  interval excludes 0, so transfer to real amps is not shown. By the map: the full GOAT set does not run; the user
+  decides between more real chains and domain work, with A, B and RcG − S as evidence. A capture centre does move
+  toward real amps (RcG − S −0.106), though not past BKS's own centre.
+- **Caveats.** Capture renders are not real rigs (a capture at one setting with a borrowed IR); 132 of GOAT's 172 DIs
+  are one player, mostly on a Strat; the forced amps are a third each by design. BKS is one band, 8 DIs: B's intervals
+  are wide (a test panel across bands is proposed). The lag tolerance (72) was chosen after the counts at 14 were
+  known; read A holds on the main-mode units alone. Neither label measure shows what RG reads: its answers are no
+  nearer the labels in setting space, and the heads do not separate it from RGshuf. So the in-domain gain may rest
+  on cues specific to the captures (their level calibration or IR, say), which would fit the missing transfer. Held
+  items share the player and guitar with training items (132 of 172 DIs are one player). About 50 capture profiles
+  repeat among GOAT's 860 draws, so about 2 repeats are expected among the 215 kept units across folds (negligible).
+  RGshuf permutes the training labels before they are cycled to 300 rows per epoch, so its doubled labels in an
+  epoch differ from RG's (same inputs, a near-identical label multiset); the run files mark RG and RGshuf by name
+  only (`--goat` and `--goat-shuffle` are not in their `flags`).
+- **References.** `PF/goat/report-5c-A.json`, `report-5c-A-lag14.json`, `report-5c-shuf.json`, `read-a-beside.py` and
+  `.json`; `PF/real/report-5c-B.json`, `report-5c-shuf.json`, `report-5c-centres.json`, `heads-G.json`; runs
+  `P2a-goat{k}`, `P2a-goatshuf{k}`; ledger `phase_5c_reads_AB`, `phase_5c_rgshuf_outcome`.
+- *Results review (2026-11-01, PR #356, independent):* approved with required changes, all made: "first per-track
+  reading" narrowed to chains other than the plugin's own renders; the comparison with F35 stated as not like for
+  like; the caveats that neither label measure shows what RG reads (so capture-specific cues are possible), and the
+  shuffle-before-cycle and run-flag notes. It recomputed RG − RGshuf, RGshuf − RcGk and A's rows from the judge files
+  (within 0.0003) and found the reading on the declared branch.
 
 ## Budget
 
