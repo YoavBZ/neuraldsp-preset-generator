@@ -3304,6 +3304,20 @@ def goat_heard(units, verdicts):
     return {u for u in units if (verdicts.get(u) or {}).get("verdict") == "amp"}, missing
 
 
+GOAT_MIN_PER_CELL = 30             # trusted units per amp and class, or the pilot stops at the data stage
+
+
+def goat_short_cells(parts, minimum=None):
+    """5C's minimum: amp-and-class cells with fewer than `minimum` units among `parts` (the trusted units: ear-passed,
+    less the heavy check, less the lag rule). parts: [{amp, cls}]. -> {(amp, cls): count} of the short cells, every
+    amp and class of AMPS3 x (clean, crunch) counted."""
+    minimum = GOAT_MIN_PER_CELL if minimum is None else minimum
+    n = {(a, c): 0 for a in AMPS3 for c in ("clean", "crunch")}
+    for p_ in parts:
+        n[(p_["amp"], p_["cls"])] += 1
+    return {k: v for k, v in n.items() if v < minimum}
+
+
 def goat_heavy_out(candidates, verdicts):
     """5C's heavy check (amendment of 2026-11-01): the firmly driven units the ear passed are heard again against the
     pool's clean/crunch scope; only "keep" stays in. candidates: the units on the heavy page (goat/heavy-key.json);
@@ -3323,9 +3337,17 @@ def goat_ear_passed(units):
     k = gd / "heavy-key.json"
     if not k.exists():
         raise SystemExit("the heavy check is not built yet (`learn.goat_ear_page heavy`)")
+    from learn import goat_ear_page as G
+
+    key = json.loads(k.read_text())
+    cand = [it["unit"] for it in key["items"]]
+    if sorted(cand) != G.heavy_candidates():
+        raise SystemExit("the heavy page's units are not the current firmly driven passed units: rebuild it")
     h = gd / "heavy.json"
-    cand = [it["unit"] for it in json.loads(k.read_text())["items"]]
-    out, missing = goat_heavy_out(cand, json.loads(h.read_text())["verdicts"] if h.exists() else {})
+    hv = json.loads(h.read_text()) if h.exists() else {"build": key["build"], "verdicts": {}}
+    if hv.get("build") != key["build"]:
+        raise SystemExit("goat/heavy.json is not from the heavy page's build")
+    out, missing = goat_heavy_out(cand, hv["verdicts"])
     if missing:
         raise SystemExit(f"{len(missing)} heavy-check units are not yet heard")
     return ok - out
@@ -3478,6 +3500,9 @@ def cmd_goat_search(args):
             raise SystemExit(f"{len(missing)} units have no lag: run goat-search --lags-only first")
         refused = goat_lag_refused({u: json.loads(q.read_text())["lag"] for u, q in lp_.items()},
                                    {p_["unit"]: p_["item_lag"] for p_ in parts})
+        short = goat_short_cells([p_ for p_ in parts if p_["unit"] not in refused])
+        if short:
+            raise SystemExit(f"under {GOAT_MIN_PER_CELL} trusted units in {short}: the pilot stops at the data stage")
 
     for prt in mine:
         if PS.free_gb() < T.DISK_GUARD_GB:

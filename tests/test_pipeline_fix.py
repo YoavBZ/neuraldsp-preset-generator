@@ -516,3 +516,43 @@ def test_goat_heavy_out_keeps_only_keep_verdicts_and_lists_the_unheard():
     v = {"a": {"verdict": "keep"}, "b": {"verdict": "heavy"}, "c": {"verdict": "unsure"}}
     out, missing = P.goat_heavy_out(["a", "b", "c", "d"], v)
     assert out == {"b", "c", "d"} and missing == ["d"]
+
+
+def test_goat_short_cells_counts_every_amp_and_class():
+    parts = [{"amp": a, "cls": c} for a in P.AMPS3 for c in ("clean", "crunch") for _ in range(30)]
+    assert P.goat_short_cells(parts) == {}
+    assert P.goat_short_cells(parts[1:]) == {("pr12", "clean"): 29}
+    assert P.goat_short_cells([]) == {(a, c): 0 for a in P.AMPS3 for c in ("clean", "crunch")}
+
+
+def test_goat_ear_passed_waits_for_the_heavy_check(tmp_path, monkeypatch):
+    import json
+
+    import pytest
+
+    from learn import goat_ear_page as G
+
+    gd = tmp_path / P.GOAT_DIR
+    gd.mkdir()
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    monkeypatch.setattr(G, "heavy_candidates", lambda: ["b", "c"])
+    (gd / "ear.json").write_text(json.dumps({"verdicts": {u: {"verdict": "amp"} for u in "abc"} |
+                                             {"d": {"verdict": "odd"}}}))
+    with pytest.raises(SystemExit, match="not built"):
+        P.goat_ear_passed(["a", "b", "c", "d"])
+    (gd / "heavy-key.json").write_text(json.dumps({"build": "k1", "items": [{"unit": "b"}, {"unit": "c"}]}))
+    with pytest.raises(SystemExit, match="not yet heard"):
+        P.goat_ear_passed(["a", "b", "c", "d"])
+    (gd / "heavy.json").write_text(json.dumps({"build": "k1", "verdicts": {"b": {"verdict": "keep"}}}))
+    with pytest.raises(SystemExit, match="not yet heard"):
+        P.goat_ear_passed(["a", "b", "c", "d"])
+    (gd / "heavy.json").write_text(json.dumps({"build": "k0", "verdicts": {"b": {"verdict": "keep"},
+                                                                          "c": {"verdict": "heavy"}}}))
+    with pytest.raises(SystemExit, match="build"):
+        P.goat_ear_passed(["a", "b", "c", "d"])
+    (gd / "heavy.json").write_text(json.dumps({"build": "k1", "verdicts": {"b": {"verdict": "keep"},
+                                                                          "c": {"verdict": "heavy"}}}))
+    assert P.goat_ear_passed(["a", "b", "c", "d"]) == {"a", "b"}
+    monkeypatch.setattr(G, "heavy_candidates", lambda: ["b", "c", "e"])
+    with pytest.raises(SystemExit, match="rebuild"):
+        P.goat_ear_passed(["a", "b", "c", "d"])

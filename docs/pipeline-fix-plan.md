@@ -638,16 +638,27 @@ instead of generating unrealistic presets our own?"):
     passed crunch units' (median non-linear share −2.7 dB against −1.8), so no measure reproduces that verdict;
     the candidates are named by the pool's own classifier instead: passed units whose `classify` clean_vs_driven
     split is "driven" (non-linear share at or above 0 dB and level slope at or below 0.3, its firm-driven margin).
-    That is 34 units, all crunch (pr12 16, ac20 10, sw50r 8; 2 with whole-item lag above 300). The user hears
+    That is 34 units, all crunch (by the unit's forced plugin amp, not GOAT's capture amp: pr12 16, ac20 10,
+    sw50r 8; 2 with whole-item lag above 300). The user hears
     them again on their own page (`learn/goat_ear_page.py heavy`, shuffled, blind to the measure, same A/B player)
     against the scope: "keep", "too heavy or fizzy" or "not sure"; only "keep" stays in. The code enforces it:
     `goat_ear_passed` subtracts `goat_heavy_out` and refuses until every candidate has a verdict, so
-    `goat-search` (and `--lags-only`) cannot start before. Units not on the page are not re-heard: the check is
-    on the measure's side only, a choice (the ear already passed them; a heavy unit below the margin stays in).
-    If all 34 go: 221 units from 135 items, by amp and class ac20 37 clean / 37 crunch, pr12 38 / 31, sw50r 45 /
-    33. The minimum (30 per amp and class after the lag rule and the ear) stands; if pr12 crunch falls below it,
-    the pilot stops at the data stage and the plan is revised (for example a third render per item). Label renders
-    fall by up to 13%.
+    `goat-search` (and `--lags-only`) cannot start before; it also refuses a heavy page whose units are no longer
+    the current firmly driven passed units, or answers from another build. Units not on the page are not re-heard:
+    the check is on the measure's side only, a choice (the ear already passed them; 22 passed units sit just below
+    the margin, non-linear share at or above −1.5 dB and slope at or below 0.4, and stay in). Known biases: the
+    page has no filler units, so every card is a candidate, which may lean verdicts toward "heavy"; and a
+    narrower crunch may shrink the per-track spread read A can show. If all 34 go: 221 units from 135 items (4
+    items lose every unit), by forced amp and class ac20 37 clean / 37 crunch, pr12 38 / 31, sw50r 45 / 33; folds
+    52–59. The minimum (30 trusted units per amp and class after the ear, the heavy check and the lag rule)
+    stands and is now in code: `goat-search`'s main stage refuses to start if any amp and class falls below it
+    (`goat_short_cells`), and the pilot stops at the data stage for a revision (a third render per item, or a
+    seeded rebalance of the forced amps). Label renders fall by about 13% if all 34 go.
+  - *Review of the amendment (2026-11-01, independent):* approved with required changes, all made: the stop rule
+    on any amp and class, not pr12 crunch alone; the minimum enforced in code before the main stage, with a test;
+    a test of the gate itself (`goat_ear_passed`). Adopted from its suggestions: the heavy answers' build and the
+    candidate set checked in the gate, a test of `firmly_driven`, the two known biases, the forced-amp naming and
+    the rebalance named as an alternative.
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
   measurements; if they shape the choice, D_fix's V-real read is labelled selection-contaminated. The candidates by
