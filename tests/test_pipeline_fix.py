@@ -401,6 +401,15 @@ def test_lag_refused_takes_only_windows_off_their_recordings_lag():
     assert got == {"a@3", "b@0", "b@1", "e@0", "e@1"}
 
 
+def test_rigo_records_take_only_the_recordings_windows_clear_of_the_unit():
+    starts = {"u0": 200.0, "u1": 205.0, "u2": 210.0, "u3": 215.0, "v0": 200.0}
+    by_unit = {u: {"unit": u, "start_s": s} for u, s in starts.items()}
+    recs = [{"unit": u, "rig": u[0], "amp": amp} for u in starts for amp in ("pr12", "ac20")]
+    got = P.rigo_records(recs, by_unit, {"unit": "u1", "rig": "u", "start_s": 205.0}, "pr12")
+    assert [(r["unit"], r["amp"]) for r in got] == [("u3", "pr12")]
+    assert P.rigo_records(recs, by_unit, {"unit": "v0", "rig": "v", "start_s": 200.0}, "pr12") == []
+
+
 def test_setting_gap_is_zero_on_itself_and_counts_switch_agreement():
     from learn import knob_ceiling as K
 

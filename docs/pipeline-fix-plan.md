@@ -2,9 +2,9 @@
 
 **Status (2026-11-01):** declared and reviewed (the plan, its revision, phase 4, the isolated tests and 5B.2, each
 with required changes, all made). Phases 1–4, the isolated tests and phase 5's tests (5A, 5B.1, 5B.1b, and 5B.2's
-stage 1, arm P, Rc and arm R) have run; the findings log (F1–F34) holds every result, audited. Running: 5B.2's
-stage 2 (65 more units' labels), since arm R's per-track read was undecided; then Rc and arm R on both stages'
-labels. 5B.1c was withdrawn before any render.
+stage 1, arm P, Rc and arm R, then its stage 2) have run; the findings log (F1–F35) holds every result, audited.
+Declared next: 5B.2's recording oracle (RigO), which asks whether the labels' per-recording differences show by
+sound. 5B.1c was withdrawn before any render.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -452,6 +452,27 @@ instead of generating unrealistic presets our own?"):
         already in Rc and R) put the amp's Volume at its floor, with best renders peaking at −37 to −59 dBFS. The
         judge compares level-normalised sound, so these are valid answers to its question but unusable as presets
         as they stand; output level is a product step D_fix has to settle.
+  - **Recording oracle, RigO (declared 2026-11-01 after stage 2's read, F35, before any of its renders; ledger
+    `phase_5b2_rigo`; 216 renders).** Question: do the labels' per-recording differences show by sound beyond the
+    centre? Arm R read no further than Rc on either stage, yet in setting space the labels of a unit's own
+    recording sit nearer its label than Rc does (F35). This bounds what any per-track reading of these labels can
+    add, so it says whether the next fix goes to the model's reading or to the labels.
+    - Answers (zero renders): per read unit and amp, Rc's rule (`rc_setting`) on the labels of the same recording
+      (rig) and amp, stages 1 and 2, lag-trusted, from windows whose sections do not overlap the unit's (starts at
+      least 10 s apart; sections are 10 s and start 5 s apart, so a neighbour's search half can hold this unit's
+      held half). 1 to 16 labels per answer (mean 6.4). 108 of 120 directions (36 units): DI 20's two recordings
+      have no clear window, so DI 20 drops out (7 DIs). Read as 5B.1 (one render per answer, judged on both halves).
+    - Rows, on RigO's 108 directions (`real-report --within RigO`): RigO − Rcs2 (primary), arm R's P2a-reals2 −
+      Rcs2 and RigO − S beside.
+    - Reading, declared now, on the by-DI interval (no models, so no training noise to cluster by fold). Better: the
+      labels' per-recording differences are audible beyond the centre, so a reading of the track has headroom and
+      arm R's failure to take it is the model's (its inputs or training): the next fix works on the model's
+      reading. Undecided or worse: those differences do not show by sound beyond the centre at this label noise;
+      the next fix works on the labels (more evaluations, windows averaged, a wider search space) before the model.
+    - Caveats: an oracle (it knows the real amp's answers on the same track; no product can); fewer labels per
+      answer than Rc's 13–62, so noisier, which works against it; a recording's other windows share the
+      performance, so its playing may help as well as its amp; it bounds a per-recording reading, not a per-window
+      one.
   - **Arm P (4 trainings, 1,200 renders; up to 960 more).**
     - Training: P2a's recipe on the 1,296 training examples drawn around presets or S (864 factory, 432 start; the
       491 wide draws out). Its size control, P2a-pcsz: in each section as many examples as arm P keeps there, drawn
@@ -1395,6 +1416,71 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   `cmd_real_search`, `cmd_real_ceiling`, `real_folds`, `real_rows`, `fold_records`, `rc_records`, `rc_setting`,
   `real_rc_answers`, `real_predict_5b2`, `cmd_real_heads`, `cmd_real_setting_audit`; ledger `phase_5b2`.
 
+### F35. Two and a half times the real-amp labels move the centre a little; the model still reads no further per track (5B.2 stage 2)
+- **Result.** Stage 2 ran since R − Rc was undecided (F34): the same search on the other 65 reamped units (195
+  directions, 10,725 renders, labels only, the best's in-process render). All 195 first evaluations of S were
+  bit-identical to the unit's fresh S render; every unit got a lag; no fallbacks. Before any of its labels was
+  used, the lag check refused 3 units (9 labels; the amendment above), leaving 186: 306 with stage 1's 120. On the
+  held half the in-process best beat S in 192 of 195 directions (mean log ratio −0.380; search half −0.398). Then
+  Rcs2 (Rc's rule on both stages' labels, 13–62 per answer; 240 renders) and arm R retrained on them (P2a-reals2:
+  4 folds × 2 seeds, each fold's 300 real rows per epoch now 192–282 distinct labels, none from its own DIs or the
+  refused units; best epochs 15–30; 480 renders), read on the same 40 units as declared.
+- **Numbers** (held half; by DI, 8; fold, 4, and rig, 14, beside):
+
+  | Row | By DI | By fold | By rig | Better |
+  |---|---|---|---|---|
+  | R2 − Rc2 (per-track reading; primary) | +0.029 [−0.011, +0.068] | +0.017 [−0.030, +0.064] | +0.019 [−0.013, +0.050] | 3 of 8 DIs, 16 of 40 units |
+  | Rc2 − S (the centre) | −0.158 [−0.260, −0.057] | −0.140 [−0.285, +0.004] | −0.129 [−0.214, −0.045] | 7 of 8, 33 of 40 |
+  | R2 − S | −0.129 [−0.212, −0.046] | −0.123 [−0.254, +0.008] | −0.111 [−0.186, −0.036] | 7 of 8, 28 of 40 |
+  | R2 − P2a | −0.195 [−0.274, −0.117] | −0.192 [−0.293, −0.091] | −0.185 [−0.250, −0.119] | 8 of 8, 37 of 40 |
+  | R2 − P2a-Sc | −0.101 [−0.174, −0.027] | −0.090 [−0.199, +0.019] | −0.082 [−0.140, −0.024] | 7 of 8, 28 of 40 |
+  | Rc2 − Rc (descriptive: stage 2's labels on the centre) | −0.025 [−0.067, +0.017] | −0.024 [−0.059, +0.011] | −0.019 [−0.048, +0.010] | 5 of 8, 25 of 40 |
+  | R2 − R (descriptive: on the model) | −0.009 [−0.054, +0.036] | −0.017 [−0.089, +0.056] | −0.014 [−0.048, +0.021] | 5 of 8, 23 of 40 |
+
+  R2 is P2a-reals2, Rc2 is Rcs2. The two descriptive rows compare stage 1's and stage 2's versions on the same
+  units; they were not declared, so they read nothing on their own.
+  - Share of the ceiling, paired on its 120 directions (`real-ceiling --stage 1`): Rc2 0.517 (Rc2 − S −0.181
+    there), R2 0.401; stage 1's Rc 0.445 and R 0.434 reproduce.
+  - Per fold, R2 − Rc2: +0.020, +0.014, +0.067, −0.031; Rc2 − S: −0.305, −0.118, −0.130, −0.008. Fold 2 (Bulldozer
+    31 and 36, crunch), which gains the most stage 2 labels, is where R2 trails the centre most. DI 19 apart: Rc2 −
+    S −0.198, R2 − S −0.118, R2 − Rc2 +0.079.
+  - By head (zero renders, every fold and seed; `real-heads --stage 2`, `PF/real/heads-Rs2.json`): on its own DIs'
+    real labels (24–114 per fold, both stages) R2's knob NLL is 0.67 to 1.46 below P2a's and its switch CE 0.20 to
+    0.41 below; its mic CE is 0.79 to 2.47 lower in folds 0–2 and about level in fold 3 (+0.03, −0.05; stage 1's
+    was +0.22). On FS and NS its knob NLL is unchanged (−0.016 to +0.027) and its NS mic CE a little higher (−0.03
+    to +0.17).
+  - In setting space (`real-setting-audit --stage 2`, `PF/real/setting-audit-s2.json`): R2's answers sit 0.159 from
+    Rc2's but no nearer the units' labels (0.269 against Rc2's 0.260; S 0.288); switches and mics agree 0.615
+    against 0.626.
+  - Beside, added after the read (zero renders, `--within RigO`, `PF/real/setting-audit-s2-within-RigO.json`): on
+    the 108 directions whose recording has another window clear of the unit's section, Rc's rule applied to that
+    recording's own labels (RigO, 1–16 per answer) sits 0.193 from the unit's label, against Rc2's 0.263 and R2's
+    0.273; switches and mics agree 0.739 against 0.641 and 0.621.
+  - Checks: no fold's real rows include its own DIs or a refused unit (re-derived with `fold_records`); Rc − S and
+    stage 1's shares reproduce F34's exactly; the 8 runs hold 2,087 training ids each, 300 of them
+    real, ledger `phase_5b2`.
+- **Reading.**
+  - Per-track reading is not shown: R2 − Rc2 is undecided by the declared rule (+0.029 by DI, +0.017 by fold),
+    leaning the wrong way, and R2's moves off the centre do not head toward the labels. With stage 2 run, 5B.2's
+    declared steps end here: arm R is not adopted over the centre.
+  - The centre holds: Rc2 beats S by 0.158 by DI and 0.129 by rig, both decided (its fold interval reaches
+    +0.004); 52% of the ceiling paired. Stage 2's labels may move it a little further than stage 1's (−0.025, undecided, descriptive).
+  - R2 still beats P2a (−0.195, decided by DI, fold and rig) and the free S-centred readout (−0.101, by DI and rig;
+    its fold interval reaches +0.019): trained with real rows, the model learns the real-amp centre, as in F34.
+  - The bottleneck is now the per-track step: the labels hold per-recording information (a recording's own labels
+    sit nearer each unit's label than any centre), yet a model trained on 2.5 times the labels reads none of it.
+    Whether that information is worth reading by sound is untested; the recording oracle (RigO, declared above)
+    tests it, and says whether the next fix goes to the model's reading or to the labels.
+- **Caveats.** As F34's: one band, 8 performances, 14 rigs, held tracks not held playing, labels selected on one
+  half. Stage 2 adds mostly Bulldozer crunch (59 of 62 kept units), nothing for DIs 20 and 24, so the fold read
+  units and the new labels are unbalanced. 20 of stage 2's 65 pr12 labels (10 of stage 1's 40) set Volume at its
+  floor; the judge compares level-normalised sound, so these are valid answers but not presets as they stand.
+- **References.** `PF/real/search/` (stage 2's 195 records), `PF/real/answers/{Rcs2,P2a-reals2,RigO}.json`,
+  `PF/real/judge/{Rcs2,P2a-reals2}/`, `PF/real/report-5b2-rcs2.json`, `report-5b2-armR-s2.json`,
+  `report-ceiling-1.json`, `heads-Rs2.json`, `setting-audit-s2.json`, `setting-audit-s2-within-RigO.json`,
+  `PF/runs/P2a-real?s2-*`; `lag_refused`, `real_labels`, `rigo_records`, `real_rigo_answers`; ledger `phase_5b2`,
+  `phase_5b2_rigo`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
@@ -1402,10 +1488,11 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   960, mastering 240, the switch rules 480, augmentation 240, the size curve 1,440 with the pooled seeds, the backing
   test 240); P4 438 and its dry readout 198; phase 5A 240 and its seed 2 240; 5B.1 960, 5B.1b 720. About 11,170 in all
   before 5B.2. **5B.2 (2026-11-01):** the stage 1 ceiling 6,840; arm P 1,200, its P-Sc 480 and its FS/NS read 480;
-  Rc 240; arm R 480: 9,720, about 20,890 in all. D_fix's reads are not yet spent.
+  Rc 240; arm R 480: 9,720, about 20,890 in all. Stage 2: its search 10,725, Rcs2 240, arm R's read 480: 11,445,
+  about 32,340 in all. Declared next: RigO 216. D_fix's reads are not yet spent.
 - **MPS used:** about 4 h before 5B.2 (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and
   backing runs, the k-fold, phase 5A's two 10-minute seeds); 5B.2's 12 trainings about 2 h more (arm P 4 × 7.2–8.4 min,
-  arm R 8 × 11.4 min).
+  arm R 8 × 11.4 min); stage 2's 8 trainings 1.5 h more (8 × 11.4 min).
 - **Disk:** P2's inputs about 0.3 GB; phase 1b's audio and features about 1.2 GB; the 31 GB guard holds.
 - Every render: isolate=True, a discarded priming render, 0.25 s trimmed, at most 3 render processes,
   `setopt no_bg_nice`. V-real is read only in P5's stored distances, phase 4 and D_fix's declared read. (5B.1c

@@ -2546,6 +2546,8 @@ def cmd_real_predict(args):
     e = require("phase_5b1")
     if args.names in ("Rc", "Rcs2"):
         return real_rc_answers(2 if args.names == "Rcs2" else 1)
+    if args.names == "RigO":
+        return real_rigo_answers()
     if args.names in ("P2a-pc", "P2a-pcsz", "P2a-real", "P2a-reals2", "P2a-pc-Sc"):
         return real_predict_5b2(args.names)
     if args.names == "S-shift":
@@ -2730,6 +2732,46 @@ def real_rc_answers(stage=1):
     print(f"REAL RC DONE: {tag} on {len(parts)} units; labels per answer {min(used.values())}-{max(used.values())}")
 
 
+def rigo_records(recs, by_unit, prt, amp):
+    """The labelled records RigO averages for unit `prt` on `amp`: the same rig (one reamp track of one DI, so one real
+    amp setting) and amp, from windows that do not overlap the unit's section (sections are 10 s and start 5 s apart,
+    so a neighbour's search half can hold this unit's held half)."""
+    from learn import pretrain_set as PS
+
+    return [r for r in recs if r["amp"] == amp and r["rig"] == prt["rig"]
+            and abs(by_unit[r["unit"]]["start_s"] - prt["start_s"]) >= PS.SEC_S]
+
+
+def real_rigo_answers():
+    """5B.2's recording oracle on 5B.1's 40 units (zero renders): per unit and amp, `rc_setting` from the labels of
+    the unit's own recording's other windows (`rigo_records`, search stages 1 and 2). It knows the real amp's answers
+    on the same track, which no product can, so it bounds what reading a track can add over a centre. A unit with no
+    such window gets no answer. -> real/answers/RigO.json."""
+    from learn import cc_build as CB
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+
+    e = require("phase_5b2_rigo")
+    recs, by_unit, folds = real_labels(2)
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    parts = real_parts(kept, sp, CB.cc_inventory())
+    ms = A_menu_S()
+    out, used = {}, {}
+    for prt in parts:
+        for amp in AMPS3:
+            sel, S = ms[amp][prt["cls"]]
+            labels = [LO.tdict(r["label"]) for r in rigo_records(recs, by_unit, prt, amp)]
+            if labels:
+                key = real_key(prt, amp)
+                out[key] = {ANY_HALF: {"select": sel, "settings": LO.sdict(rc_setting(K.space(amp, S), S, labels))}}
+                used[key] = len(labels)
+    save(out_dir() / REAL_DIR / "answers" / "RigO.json", {
+        "plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b2_rigo", "tag": "RigO", "parts": parts, "labels_used": used,
+        "answers": out, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"REAL RIGO DONE: {len(out)} of {3 * len(parts)} directions; labels per answer "
+          f"{min(used.values())}-{max(used.values())}")
+
+
 def A_menu_S():
     from learn import arm_a_mega53 as A
 
@@ -2807,6 +2849,8 @@ def cmd_real_render(args):
             asha = answers_sha(ans[t]["answers"])
             for amp in AMPS3:
                 key = real_key(prt, amp)
+                if key not in ans[t]["answers"]:          # RigO: no window of its own recording outside the unit
+                    continue
                 gp = out_dir() / REAL_DIR / "judge" / t / f"{fname(key)}.json"
                 if gp.exists():
                     if json.loads(gp.read_text()).get("answers_sha256") != asha:
@@ -3260,7 +3304,8 @@ def cmd_real_report(args):
     """5B.1's rows: for each pair in `--pairs`, ln(d_a / d_b) on the held half per (unit, amp, search), with S
     refused dropping the direction and a refused answer scored as S (the V-real rule); clustered by DI (the
     performance: rigs sharing a DI share its sections and its S and constant renders), parts the units; by rig beside;
-    part-weighted beside; the lag refusals counted apart from the missing. -> real/report-<label>.json."""
+    part-weighted beside; the lag refusals counted apart from the missing; with `--within` only the directions that
+    tag's answers cover. -> real/report-<label>.json."""
     require("phase_5b1")
     tags = {t for pair in args.pairs.split(",") for t in pair.split(":")} | {"S"}
     parts = json.loads((out_dir() / REAL_DIR / "answers" / "S.json").read_text())["parts"]
@@ -3274,12 +3319,17 @@ def cmd_real_report(args):
               .exists() and json.loads((out_dir() / REAL_DIR / "lags" / f"{p_['unit'].replace('/', '__')}.json")
                                        .read_text())["lag"] is None]
     meta = {p_["unit"]: p_ for p_ in parts}
-    phase = ("phase_5b2" if any(t.startswith(("P2a-pc", "P2a-real", "Rc")) for t in tags)
+    phase = ("phase_5b2_rigo" if "RigO" in tags
+             else "phase_5b2" if any(t.startswith(("P2a-pc", "P2a-real", "Rc")) for t in tags)
              else "phase_5b1b" if any(t in ("P2a-Sc", "S-shift") for t in tags) else "phase_5b1")
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {phase}", "units": len(parts), "no_lag": no_lag, "rows": {}}
     units = [(p_["unit"], amp, sh, h) for p_ in parts for amp in AMPS3 for sh, h in (("A", "B"), ("B", "A"))]
+    if args.within:                                    # only the directions `--within`'s answers cover (RigO's)
+        cover = json.loads((out_dir() / REAL_DIR / "answers" / f"{args.within}.json").read_text())["answers"]
+        units = [u for u in units if f"{u[0]}|{u[1]}" in cover]
+        out["within"] = args.within
     fold_of = None
-    if phase == "phase_5b2":                           # arm R's folds: the DIs that share a pair of models
+    if phase.startswith("phase_5b2"):                  # arm R's folds: the DIs that share a pair of models
         from learn import cc_build as CB
 
         e = require("phase_5b2")
@@ -3423,7 +3473,8 @@ def cmd_real_setting_audit(args):
     answer of `--names` (each half's answer where a model reads per half; S and Rc answer once) against the unit's own
     label: the rms unit distance over `K.space`'s continuous dims and the share of its switches and mics that agree,
     averaged over answers; beside, each name's distance from Rc's answer (does it move off the centre?). Labels of
-    search stages up to `--stage`. -> real/setting-audit[-s2].json."""
+    search stages up to `--stage`; with `--within` only the (unit, amp) that tag's answers cover.
+    -> real/setting-audit[-s2][-within-<tag>].json."""
     from learn import knob_ceiling as K
     from learn import local_objective as LO
 
@@ -3436,12 +3487,13 @@ def cmd_real_setting_audit(args):
     rc = "Rc" + sfx
     d = out_dir() / REAL_DIR / "answers"
     ans = {t: json.loads((d / f"{t}.json").read_text())["answers"] for t in set(names) | {rc}}
+    cover = json.loads((d / f"{args.within}.json").read_text())["answers"] if args.within else None
     ms = A_menu_S()
     gaps = {t: [] for t in names + ["S"]}
     to_rc = {t: [] for t in names}
     for key in sorted(ans[rc]):
         unit, amp = key.rsplit("|", 1)
-        if (unit, amp) not in lab:
+        if (unit, amp) not in lab or (cover is not None and key not in cover):
             continue
         y = lab[(unit, amp)]
         S = ms[amp][by_unit[unit]["cls"]][1]
@@ -3457,11 +3509,12 @@ def cmd_real_setting_audit(args):
     def mean(v):
         v = [z for z in v if z is not None]
         return statistics.fmean(v) if v else None
-    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b2", "stage": stage, "labels": len(lab),
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b2", "stage": stage, "labels": len(lab), "within": args.within,
            "to_own_label": {t: {"answers": len(g), "rms_unit": mean([a for a, _ in g]),
                                 "switch_mic_agree": mean([b for _, b in g])} for t, g in gaps.items()},
            "to_rc_rms_unit": {t: mean(v) for t, v in to_rc.items()}, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
-    save(out_dir() / REAL_DIR / f"setting-audit{'-s2' if sfx else ''}.json", out)
+    tail = ("-s2" if sfx else "") + (f"-within-{args.within}" if args.within else "")
+    save(out_dir() / REAL_DIR / f"setting-audit{tail}.json", out)
     for t, g in out["to_own_label"].items():
         print(f"{t}: to its own label rms {g['rms_unit']:.3f}, switches and mics agree {g['switch_mic_agree']:.3f}"
               + (f"; from {rc} {out['to_rc_rms_unit'][t]:.3f}" if t in out["to_rc_rms_unit"] else ""))
@@ -4020,6 +4073,7 @@ def main(argv=None):
     ap.add_argument("--real-fold", type=int, choices=tuple(range(REAL_FOLDS)), default=None)
     ap.add_argument("--pcsz", action="store_true")
     ap.add_argument("--by-mode", action="store_true")
+    ap.add_argument("--within", default="")
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 
