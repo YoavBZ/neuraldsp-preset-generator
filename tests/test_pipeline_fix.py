@@ -455,6 +455,26 @@ def test_goat_fold_records_never_hold_the_folds_own_items_and_fill_an_epoch():
         assert len(rows) == P.GOAT_PER_EPOCH and all(units[r["unit"]]["fold"] != f for r in rows)
 
 
+def test_goat_centres_use_exactly_model_ks_training_lists():
+    grecs, gunits = _goat_records()
+    by_unit = {f"b{j}": {"unit": f"b{j}", "di": f"d{j % 8}", "cls": "clean"} for j in range(16)}
+    brecs = [{"unit": u, "amp": "pr12", "label": {"k": u}} for u in sorted(by_unit)]
+    folds = {f"d{j}": j // 2 for j in range(8)}
+    for k in range(4):
+        src = P.centre_records(brecs, by_unit, folds, grecs, gunits, k)
+        assert src["RcBG"] == P.fold_records(brecs, by_unit, folds, k) + P.goat_fold_records(grecs, gunits, k)
+        assert src["RcGk"] == P.goat_fold_records(grecs, gunits, k) and src["RcG"] == grecs
+        assert all(folds[by_unit[r["unit"]]["di"]] != k for r in src["RcBG"] if r["unit"] in by_unit)
+        assert all(gunits[r["unit"]]["fold"] != k for r in src["RcGk"])
+
+
+def test_real_report_reads_5c_with_5b2s_folds():
+    for tags in ({"P2a-goat", "S"}, {"P2a-goatshuf", "RcBG", "S"}, {"RcG", "S"}):
+        assert P.report_phase(tags) == "phase_5c" and P.report_phase(tags).startswith(P.ARM_FOLD_PHASES)
+    assert P.report_phase({"Rcs2", "S"}) == "phase_5b2" and P.report_phase({"RigO", "S"}).startswith(P.ARM_FOLD_PHASES)
+    assert not P.report_phase({"P2a-Sc", "S"}).startswith(P.ARM_FOLD_PHASES)
+
+
 def test_goat_shuffle_stays_inside_each_folds_training_units():
     recs, units = _goat_records()
     for f in range(4):
