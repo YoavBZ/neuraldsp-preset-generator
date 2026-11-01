@@ -1502,7 +1502,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   `PF/runs/P2a-real?s2-*`; `lag_refused`, `real_labels`, `rigo_records`, `real_rigo_answers`, `real_rcm_answers`;
   ledger `phase_5b2`, `phase_5b2_rigo`.
 
-### F36. A recording's own other labels reach almost the whole ceiling: the per-track gap is the model's reading, not the labels (5B.2 recording oracle)
+### F36. A recording's own other labels reach almost the whole ceiling: the per-track gap is not the labels' per-recording content but the model's reading or the number of recordings (5B.2 recording oracle)
 - **Result.** RigO and its count-matched control RcM, as declared (`phase_5b2_rigo`, reviewed and re-checked
   before any render): 108 directions each (36 units, 7 DIs), 432 renders, every unit's stored lag, no refusals.
 - **Numbers** (on RigO's 108 directions, both halves; by DI, 7; fold, 4, and rig, 12, beside):
@@ -1516,11 +1516,16 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   | P2a-reals2 − Rcs2 (beside; descriptive) | +0.042 [+0.006, +0.078] | +0.026 [−0.008, +0.059] | +0.033 [+0.001, +0.064] | 2 of 7, 12 of 36 |
   | Rcs2 − S (descriptive) | −0.194 [−0.284, −0.104] | −0.165 [−0.275, −0.055] | −0.166 [−0.245, −0.087] | 7 of 7, 31 of 36 |
 
-  - Against the ceiling on the same 108 directions (`real-ceiling --stage 1 --names …,RigO,RcM`): RigO − S −0.360,
-    the per-window best − S −0.371, a share of 0.97; RcM 0.57; Rcs2 0.52 and P2a-reals2 0.40 on all 120.
+  - Against the ceiling on the same 108 directions, held half (`real-ceiling --stage 1 --within RigO`,
+    `PF/real/report-ceiling-1-within-RigO.json`): RigO − S −0.360 against the per-window best's −0.371, a share of
+    0.97 [0.94, 1.00] (RigO − best +0.011 [−0.001, +0.024]); RcM 0.57 [0.41, 0.71], Rcs2 0.59 [0.43, 0.73],
+    P2a-reals2 0.45 [0.30, 0.59]. On all 120 directions Rcs2's share is 0.52 [0.30, 0.68]; dropping DI 20, where the
+    centre is worse than S, favours the centre here (as declared).
   - Per DI, RigO − Rcs2: Bulldozer 19 −0.124, 22 −0.097, 28 −0.029, 31 −0.111, 36 −0.141; Too Much 16 −0.240, 24
-    −0.271. Crunch DIs −0.094, clean −0.212 (the declared split, descriptive). The clean DIs, with 1 to 4 labels
-    per answer, gain the most, so RigO's few labels do not hold it back.
+    −0.271. Crunch DIs −0.094, clean −0.212 (the declared split, descriptive). The clean DIs' larger gain is mostly
+    the centre's weakness there (Rcs2 − S −0.125 on clean, −0.245 on crunch); RigO − S is the same on both (clean
+    −0.337, crunch −0.340), although clean DIs have 1 to 4 labels per answer and crunch 3 to 16, so RigO's few
+    labels do not seem to hold it back (descriptive, 3 DIs against 4).
   - Audit: no RigO label comes from the unit itself or from a window starting less than 10 s from it (re-derived,
     0 of 108); RcM's 108 answers use exactly RigO's label counts; Rcs2 − S and P2a-reals2 − Rcs2 on these
     directions reproduce the pre-render report (`report-5b2-rigo-pre.json`).
@@ -1530,21 +1535,30 @@ what it changes. Each is audited before it is entered; the review's steps carry 
     recording, not a smaller centre's luck (RcM ≈ Rcs2). A setting taken from the same recording's other windows
     reaches 97% of the per-window best, so nearly all of what the search finds on one window is the recording's
     chain, constant across it.
-  - So the per-track gap is not the labels: a reading of the track has headroom of about 0.15 beyond the centre,
-    and arm R takes none of it (P2a-reals2 − Rcs2 +0.042 here). By the declared reading the next fix works on the
-    model's reading of the track and on more recordings: arm R learned from 10–11 recordings per fold, each giving
-    one setting, which may be too few to learn a track-to-setting map, or its input may not carry what tells
-    recordings apart.
+  - So the per-track gap is not the labels' per-recording content: a reading of the track has headroom of at most
+    about 0.15 beyond the centre, measured with a true-DI search, and arm R takes none of it (P2a-reals2 − Rcs2
+    +0.042 here). By the declared reading the next fix works on the model's reading of the track and on more
+    recordings: arm R learned from 10–11 recordings per fold, each giving one setting, which may be too few to learn
+    a track-to-setting map (more recordings means more labelled data), or its input may not carry what tells
+    recordings apart. Whether a song-only input carries that information is untested.
   - For the product this is an upper bound, not a method: RigO needs the true DI and a search on the same
     recording, which a song-only user does not have.
 - **Caveats.** An oracle; one band (BKS), 7 DIs, 12 rigs; a recording's other windows share its performance and
-  guitar as well as its amp and mic, so RigO's gain is the whole recording chain's, not the amp's alone (a
-  same-DI, other-recording centre would separate them; not run). The ceiling's best is searched on the unit's own
+  guitar as well as its amp and mic, so RigO's gain is the whole recording chain's, not the amp's alone. A post-hoc
+  look in setting space (the review's) found the same DI's other recording as near the unit's label as RigO on two
+  DIs and much farther on two; three DIs have one recording each, so recording and performance are not separated
+  (not read by sound). The ceiling's best is searched on the unit's own
   other half, RigO on other windows, so the share compares like with like on the held half only. DI 20 is not
   read here.
 - **References.** `PF/real/answers/{RigO,RcM}.json`, `PF/real/judge/{RigO,RcM}/`, `PF/real/report-5b2-rigo.json`,
-  `report-5b2-rigo-pre.json`, `report-ceiling-1.json`; `rigo_records`, `real_rigo_answers`, `real_rcm_answers`,
-  `cmd_real_report --within`; ledger `phase_5b2_rigo`.
+  `report-5b2-rigo-pre.json`, `report-ceiling-1.json`, `report-ceiling-1-within-RigO.json`; `rigo_records`,
+  `real_rigo_answers`, `real_rcm_answers`, `cmd_real_report --within`, `cmd_real_ceiling --within` (the share's
+  interval by `share_recovered`); ledger `phase_5b2_rigo`, `phase_5b2_rigo_outcome`.
+- *Results review (2026-11-01, PR #352, independent):* approved with required changes, all made: the ledger's share
+  on one basis (held half), shares compared on the same directions with the share's interval, "not the labels"
+  narrowed to their per-recording content with the number of recordings named, the headroom stated as at most
+  about 0.15 by a true-DI search, and the clean/crunch remark restated on RigO − S. It found no leakage (no label
+  within 10 s, RigO never equal to the unit's label, no judged value or render equal to a stored best).
 
 ## Budget
 

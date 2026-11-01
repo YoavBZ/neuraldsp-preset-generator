@@ -3238,10 +3238,15 @@ def ceiling_rows(recs):
 def cmd_real_ceiling(args):
     """5B.2's ceiling read (zero renders): best - S and shrunk - S on the held half, clustered by DI, by rig beside,
     part-weighted beside, for search stage `--stage` (stage 1 decides whether stage 2 runs). The search-half values are
-    reported apart (selected on, so optimistic). -> real/report-ceiling-<stage>.json."""
+    reported apart (selected on, so optimistic). Each `--names` tag's share of the ceiling, paired on its directions,
+    with a 90% interval resampling DIs and its distance from the best beside; with `--within` only the directions
+    that tag's answers cover. -> real/report-ceiling-<stage>[-within-<tag>].json."""
     require("phase_5b2")
     recs = [json.loads(p_.read_text()) for p_ in sorted((out_dir() / REAL_DIR / SEARCH_DIR).glob("*.json"))]
     recs = [r for r in recs if r["stage"] == args.stage]
+    if args.within:
+        cover = json.loads((out_dir() / REAL_DIR / "answers" / f"{args.within}.json").read_text())["answers"]
+        recs = [r for r in recs if f"{r['unit']}|{r['amp']}" in cover]
     by_di, by_rig, cnt = ceiling_rows(recs)
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b2", "stage": args.stage, "directions": len(recs),
            "units": len({r["unit"] for r in recs}), "counts": cnt,
@@ -3271,11 +3276,17 @@ def cmd_real_ceiling(args):
             best_rows.append((r["di"], r["unit"], math.log(b_ / s_)))
         if rows:
             c, cb = clustered(rows), clustered(best_rows)
+            sh = share_recovered([(a[0], a[1], -a[2], -b[2]) for a, b in zip(rows, best_rows)])
+            tb = clustered([(a[0], a[1], a[2] - b[2]) for a, b in zip(rows, best_rows)])
             out.setdefault("share_of_ceiling", {})[t] = {
                 "tag_minus_S": {q: c.get(q) for q in ("mean", "lo90", "hi90", "clusters")},
                 "best_minus_S": cb["mean"], "share": c["mean"] / cb["mean"] if cb["mean"] else None,
-                "directions": len(rows)}
-    save(out_dir() / REAL_DIR / f"report-ceiling-{args.stage}.json", out)
+                "share_lo90": sh[1], "share_hi90": sh[2],
+                "tag_minus_best": {q: tb.get(q) for q in ("mean", "lo90", "hi90")}, "directions": len(rows)}
+    if args.within:
+        out["within"] = args.within
+    tail = f"-within-{args.within}" if args.within else ""
+    save(out_dir() / REAL_DIR / f"report-ceiling-{args.stage}{tail}.json", out)
     for nm, r_ in out["rows"].items():
         d = r_["by_di"]
         print(f"{nm} - S (held half): {d['mean']:+.3f} [{d['lo90']:+.3f}, {d['hi90']:+.3f}] by DI, "
