@@ -755,7 +755,7 @@ instead of generating unrealistic presets our own?"):
       BKS's 40 units and 12 GOAT units; 5B.2's stage 2 units by `lag_refused` (agreement across windows of one
       recording within 14 samples, which a pitch-period lock would break); GOAT's other units by agreement with
       the independent item lag within 72 samples. No earlier read is found affected.
-- **5D, a real-amp test panel across bands (v1; ledger `phase_5d`; zero training, about 3,400 renders).** Question:
+- **5D, a real-amp test panel across bands (v1; ledger `phase_5d`; zero training; renders stated after its data step).** Question:
   does F37's per-track reading carry over to real amps when the read set is many bands, not one? The user asked
   (2026-11-01) whether the tests are broad enough; they are not: BKS, the only real read set, is one band, 8 DIs and
   mostly two songs, so read B's intervals are wide and a result there may not hold for other players, guitars or
@@ -768,40 +768,73 @@ instead of generating unrealistic presets our own?"):
     Guitar-TECHS P3 (12 clean solo excerpts, an Orange CR-12, mic'd). BKS's 40 units join as they are. Out: V-real
     and its bands, every training band, and Jen Hartswick & Nick Cassarino (reserved for V-real's growth, the final
     exam).
-  - **Units (zero renders, `panel-sections`).** Per (DI, amp track): up to 3 windows of 10 s, at least 10 s apart,
-    where the DI passes the pool's activity rule and screens (`clean_di.section_flags`), seeded (20261101); each
-    classed against its DI (`classify`, high gain out: the clean/crunch scope); the DI-to-track lag measured on the
-    window (`estimate_lag`, the DI as the render) and the whole track (a window whose lag sits more than 72 samples
-    from its track's is out, as 5C's rule); clipping and level checked. Guitar-TECHS P3's excerpts give one window
-    each. Expected about 60–80 units from 8 new bands.
+  - **Units (zero renders, `panel-sections`).** Per DI: up to 3 windows of 10 s, at least 10 s apart, where the DI
+    passes the pool's activity rule and screens (`clean_di.section_flags`), seeded (20261101); a DI's windows are
+    shared by all its amp tracks (as BKS's rigs share sections), each (window, amp track) a unit. Each unit is classed
+    against its DI (`classify`, high gain out: the clean/crunch scope). Guitar-TECHS P3's excerpts give one window
+    each. 44.1 kHz sources are resampled to 48 kHz first; every lag below is in 48 kHz samples. The DI-to-track lag:
+    first over the whole track with a wide search (±1.5 s; Blue Manic's amp tracks run 0.4–1.2 s longer than its
+    DIs), then on the window with that as the hint (`estimate_lag`, the DI as the render); a window whose lag sits
+    more than 72 samples from its track's is out. A track whose DI-to-track lag exceeds 5 ms (MedleyDB's far-mic
+    rule) is flagged far. Each unit's bleed residual: the amp track's level on frames where its DI is silent,
+    against its level where the DI plays (F30's gated read; zero renders). Clipping and level checked. Each new DI
+    gets a fold (seeded, balanced within its band), so new units are read exactly as BKS's and GOAT's are. The counts
+    by band, class and fold are stated, and this block amended with them, before the ear and before any render.
   - **The ear, before any render.** The user hears every unit's amp-track window with its DI on an instant switch
     and answers "a real amp, the guitar alone", "other instruments audible in the amp track", "odd or processed",
     "the DI sounds processed or noisy" or "not sure". Only the first passes, enforced in code before any render.
     Minimum: at least 5 new bands with at least 4 passed units each, or the panel is revised before any read.
-  - **Lags.** Each unit's judge lag from its three S renders pooled (5B.1's rule); a unit whose judge lag differs from
-    its DI-to-track lag less the plugin's latency by more than 72 samples (two independent estimates disagreeing,
-    as a pitch-period lock would) is out and reported.
-  - **Answers (zero training; zero renders to make).** New-band units: RG and P2a-reals2 as ensembles of all 8 runs
-    each (the panel is outside every fold), at their training inputs' median loudness, per search half; centres by
-    Rc's rule on all labels: RcBG-all (every BKS stage 1–2 and every GOAT label, each source cycled to its rows per
-    epoch), Rcs2-all (every BKS label), RcG (every GOAT label), and S. BKS units keep their stored fold-wise answers
-    and judges (F35, F37). Every answer on each of the three amps, as 5B.1.
-  - **Reads** (held half; each unit's search halves alternating as 5B.2's):
-    - Primary: RG − RcBG-all on the whole panel (new bands and BKS), clustered by DI (the performance), with the
-      band-clustered interval beside; decided when both exclude 0 on the same side.
-    - RG − Rcs2-all (adoption row), RG − S, P2a-reals2 − Rcs2-all, RcG − S, each by the same rule.
-    - Every row also per band (means and the share of a band's units better) and on new bands alone.
+  - **Lags.** Each unit's judge lag from its three S renders pooled (5B.1's rule), searched around its DI-to-track
+    lag less the plugin's latency; a unit whose two estimates differ by more than 72 samples is out and reported.
+  - **Answers (zero training; zero renders to make).** Each new unit is read by its fold's models and centres, as
+    F37: RG = `P2a-goat{k}` and P2a-reals2 = `P2a-real{k}s2` (both seeds pooled, at their training inputs' median
+    loudness, per search half); RcBG_k on exactly model k's training lists (`centre_records`), Rcs2_k on model k's BKS
+    list, RcG on every GOAT label, and S. Every answer on each of the three amps, as 5B.1. BKS's units keep their
+    stored answers and judges.
+  - **Reads** (held half; search halves alternating within each DI, as 5B.2's):
+    - Primary: RG − RcBG_k on the new bands only, band-weighted (bands equal, DIs equal within a band), with its 90%
+      interval clustered by DI; beside it the DI-weighted mean and the band-clustered interval. BKS's own rows (F37)
+      sit beside, never pooled into the primary.
+    - Adoption row: RG − Rcs2_k. Beside (descriptive): RG − S, P2a-reals2 − Rcs2_k, RcG − S.
+    - Sanity rows (zero extra renders): RcBG_k − S and Rcs2_k − S per band (does the real-amp centre still beat S
+      off BKS?), and S's held-half judge distance per band against BKS's range.
+    - Every row per band (mean, interval clustered by DI within the band, or by unit where a band has one DI), per
+      class (clean, crunch; class is confounded with band: Guitar-TECHS P3 and Sonnet & Alcohol are clean, The
+      Laminar Flow and MedleyDB crunch), leave-one-band-out, and with far-mic and high-bleed units apart (bleed and
+      room reach RG's input but not the centres', so they bias the read against RG).
+    - A true-DI ceiling (about 370 renders): one window per new band, on one amp, searched as 5B.2's stage 2, so an
+      undecided result can be told from "nothing to read here".
   - **Reading, declared now.**
-    - RG − RcBG-all better: the per-track reading transfers to real amps; with RG − Rcs2-all better too, the full GOAT
-      set follows in its own amendment and RG is D_fix's readout candidate.
-    - Undecided: not shown across bands; the user chooses between domain work and more real chains with the per-band
-      rows as evidence. Worse: GOAT rows are not adopted for reading real recordings.
-    - A row decided on the whole panel but reversed in more than a third of bands is reported as band-dependent, not
-      adopted as is.
-  - **Rules.** No training and no tuning on the panel: it is a test set from now on (results on it never pick a
-    model's settings or recipe without a fresh panel or V-real read). V-real untouched. Renders as always (isolate,
-    one priming render, 0.25 s trim, at most 3 processes, the 31 GB guard). Downloaded audio read with `python -I`.
-    Budget: lags about 420; reads about 840 for each model tag and 420 for each centre: about 3,400.
+    - Decided on the primary row when its DI-clustered interval excludes 0, no band's own interval excludes 0 on the
+      other side, and leave-one-band-out keeps the sign; the band-clustered interval is reported, not required.
+      Power (from BKS's per-DI SD of 0.094, about 31 new DIs, t-intervals): about 0.9 for an effect of −0.05 and 0.55
+      for −0.03 by DI; by band (about 7 clusters) about 0.4–0.5 and 0.2. An undecided read is underpowered, not a
+      failure.
+    - Primary better and the adoption row better: the per-track reading transfers across bands; the full GOAT set
+      follows in its own amendment and RG is D_fix's readout candidate.
+    - Primary better, adoption row undecided or worse: the reading transfers beyond the matched centre but RG is not
+      adopted over the real-amp centre; the full GOAT set may follow (its own amendment), the readout stays Rcs2.
+    - Primary undecided: not shown across bands; the user chooses between domain work and more real chains with the
+      per-band rows and the ceiling as evidence.
+    - Primary worse (only if it holds without the far-mic and high-bleed units): GOAT rows are not adopted for
+      reading real recordings.
+  - **Guards (code, with tests).** No panel file or hash appears in any of the 16 runs' training lists, in BKS's or
+    GOAT's labels, or in any centre's inputs; panel reads refuse without the ear's verdicts.
+  - **Rules.** No training and no tuning on the panel: it is a test set from now on. The ledger counts its reads
+    (`phase_5d_panel_reads`); each later model read on it is declared and counted, and a panel read never picks a
+    recipe without a fresh panel or V-real read. V-real untouched. Renders as always (isolate, one priming render,
+    0.25 s trim, at most 3 processes, the 31 GB guard). Downloaded audio read with `python -I`. Caveat: Guitar-TECHS
+    P1/P2 DIs are in the older DI pool (perhaps the same player and guitar as P3, not the same amp chain).
+    Budget (counts stated after `panel-sections`): lags about 3 renders a unit, reads about 12 a unit for each model
+    tag and 6 for each centre, the ceiling about 370.
+  - *Review (2026-11-01, independent, before any code or render):* approved with required changes, all made: the
+    primary row on new bands only, BKS beside; each new DI read fold-wise against its exactly matched centre; the
+    counts fixed before the ear, with a band-weighted headline; a band counted reversed only when its own interval
+    says so, leave-one-band-out beside; the power stated and an undecided read mapped as underpowered; bleed and
+    far mics reported apart, with "worse" acted on only without them; lags searched wide and the 44.1 kHz sources
+    resampled; a leakage guard with a test; the reading map closed; sanity rows. Adopted from its suggestions: a
+    small true-DI ceiling, shared windows across a DI's mic tracks, and a count of the panel's reads. Not adopted: a
+    mic-swap check on The Laminar Flow (extra renders; later if the primary is decided).
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
   measurements; if they shape the choice, D_fix's V-real read is labelled selection-contaminated. The candidates by
