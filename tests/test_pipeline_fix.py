@@ -882,3 +882,19 @@ def test_dfix_real_rows_keep_every_label_and_hold_only_the_folds_own():
         assert bh and all(folds[by_unit[r["real"]]["di"]] == k for r in bh)
         assert all(gunits[r["real"]]["fold"] == k for r in held if r["i"] >= P.GOAT_ROW0)
         assert {r["real"] for r in bt} == {u for u, p in by_unit.items() if folds[p["di"]] != k}
+
+
+def test_dfix_reads_are_fold_wise_and_reported_with_5b2s_folds():
+    assert P.DFIX_READS == {"P2b-dfix", "P2b-dfix-clean"}
+    for t in P.DFIX_READS:
+        assert P.report_phase({t, "Rcs2", "S"}) == "phase_dfix"
+        assert P.report_phase({t, "S"}).startswith(P.ARM_FOLD_PHASES)
+
+
+def test_model_input_lufs_reads_the_runs_own_rung(monkeypatch):
+    seen = []
+    monkeypatch.setattr(P, "rung_median_lufs", lambda ids, rung: seen.append((tuple(ids), rung)) or -13.7)
+    assert P.model_input_lufs({"train_ids": [1, 2, P.REAL_ROW0 + 1], "rung": "b"}) == -13.7
+    assert seen == [((1, 2), "b")]
+    P.model_input_lufs({"train_ids": [3]})
+    assert seen[-1] == ((3,), "a")

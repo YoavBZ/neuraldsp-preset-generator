@@ -1746,7 +1746,7 @@ def cmd_answers(args):
             nets.append(n)
         doubled = doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
         srows = [dict(r, amp=shifted_amp(r["amp"], args.amp_shift)) for r in rows]   # told (and rendered on) this amp
-        path_of = rung_path(croot, rec["rung"], doubled)
+        path_of = rung_path(croot, args.input_rung or rec["rung"], doubled)   # D_fix: the stems beside (`--input-rung d`)
         if args.mastered:
             if rec["rung"] != "a":
                 raise SystemExit("--mastered is step 15's isolated test on P2a")
@@ -1774,7 +1774,7 @@ def cmd_answers(args):
             out[str(r["i"])] = {"select": sel, "settings": LO.sdict(x)}
         tag = (f"{args.name}-{args.which}" + ("" if seeds == [SEEDS[0]] else "-x" + "+".join(map(str, seeds)))
                + ("" if args.readout == "plain" else f"-{args.readout}") + ("-mast" if args.mastered else "")
-               + amp_tag(args.amp_shift))
+               + amp_tag(args.amp_shift) + (f"-on{args.input_rung}" if args.input_rung else ""))
     save(out_dir() / SOUND_DIR / "answers" / f"{tag}.json", {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_3",
                                                             "name": tag, "answers": out, "nc_fit": dict(NC_FIT),
                                                             "time": time.strftime("%Y-%m-%d %H:%M:%S")})
@@ -2597,7 +2597,8 @@ def cmd_real_predict(args):
         return real_rigo_answers()
     if args.names == "RcM":
         return real_rcm_answers()
-    if args.names in ("P2a-pc", "P2a-pcsz", "P2a-real", "P2a-reals2", "P2a-pc-Sc", "P2a-goat", "P2a-goatshuf"):
+    if args.names in ("P2a-pc", "P2a-pcsz", "P2a-real", "P2a-reals2", "P2a-pc-Sc", "P2a-goat", "P2a-goatshuf") \
+            or args.names in DFIX_READS:
         return real_predict_5b2(args.names)
     if args.names == "S-shift":
         require("phase_5b1b")
@@ -2667,7 +2668,8 @@ def real_predict_5b2(name):
     from learn import local_objective as LO
     from learn import trusted_data_t3 as T3
 
-    e = require("phase_5c" if name.startswith("P2a-goat") else "phase_5b2")
+    e = require("phase_dfix" if name.startswith("P2b-dfix") else "phase_5c" if name.startswith("P2a-goat")
+                else "phase_5b2")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     inv = CB.cc_inventory()
     parts = real_parts(kept, sp, inv)
@@ -2678,6 +2680,11 @@ def real_predict_5b2(name):
     elif name.startswith("P2a-goat"):                   # 5C: RG and RGshuf, each BKS unit by its DI's fold model
         folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
         names = {p_["unit"]: f"{name}{folds[p_['di']]}" for p_ in parts}
+    elif name.startswith("P2b-dfix"):                   # D_fix's read 2: each BKS unit by its DI's fold model only
+        if name not in DFIX_READS:
+            raise SystemExit(f"--names {sorted(DFIX_READS)} (P2b-dfix, all labels, saw every BKS unit)")
+        folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
+        names = {p_["unit"]: f"P2b-dfix{folds[p_['di']]}" for p_ in parts}
     else:
         names = {p_["unit"]: name.removesuffix("-Sc") for p_ in parts}
     models = {}
@@ -2686,7 +2693,7 @@ def real_predict_5b2(name):
         own = [i for i in recs[0]["train_ids"] if i < REAL_ROW0]
         if any([i for i in r_["train_ids"] if i < REAL_ROW0] != own for r_ in recs):
             raise SystemExit(f"{nm}: the seeds trained on different sets")
-        models[nm] = (list(nets), [r_["model_sha256"]["best"] for r_ in recs], p2a_median_lufs(own),
+        models[nm] = (list(nets), [r_["model_sha256"]["best"] for r_ in recs], model_input_lufs(recs[0]),
                       constant_of(rung_rows(kept, rend, own)))
     ms = A_menu_S()
     out = {name: {}, f"{name}-constant": {}} if name == "P2a-pc" else {name: {}}
@@ -2694,11 +2701,15 @@ def real_predict_5b2(name):
         nets, _, target, const = models[names[prt["unit"]]]
         ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
         g = DE.inference_gain_db(ref, target)
+        backed = dfix_backed(prt["unit"]) if name == "P2b-dfix" else None
         for amp in AMPS3:
             sel, S = ms[amp][prt["cls"]]
             key = real_key(prt, amp)
             for search in ("A", "B"):
-                s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
+                if backed is not None:                   # D_fix's primary: the unit's own section's backed input
+                    s8, ls = backed[search]
+                else:
+                    s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
                 x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
                 r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
                 if name.endswith("-Sc"):                 # 5B.1b's S-centred readout on this model's own constant
@@ -2715,8 +2726,8 @@ def real_predict_5b2(name):
                     T3.constant_full(amp, S, const[(amp, prt["cls"])]))}}
     for t, a in out.items():
         save(out_dir() / REAL_DIR / "answers" / f"{t}.json", {
-            "plan": PLAN, "ledger": f"{LEDGER_ID} {'phase_5c' if name.startswith('P2a-goat') else 'phase_5b2'}",
-            "tag": t, "parts": parts, "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
+            "plan": PLAN, "ledger": f"{LEDGER_ID} {'phase_dfix' if name.startswith('P2b-dfix') else 'phase_5c' if name.startswith('P2a-goat') else 'phase_5b2'}",
+            "tag": t, "parts": parts, "input": "backed (variant 0)" if name == "P2b-dfix" else "clean", "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
             "unit_model": names, "answers": a, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"REAL PREDICT 5B.2 DONE: {name} on {len(parts)} units")
 
@@ -3752,14 +3763,13 @@ def goat_predict(name):
     from learn import full_space as F
     from learn import local_objective as LO
 
-    e = require("phase_5c")
+    e = require("phase_dfix" if name == "P2b-dfix" else "phase_5c")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     units = goat_read_units()
     models = {}
     for k in sorted({p_["fold"] for p_ in units}):
         nets, recs = zip(*(load_run(f"{name}{k}", sd, "best") for sd in SEEDS))
-        own = [i for i in recs[0]["train_ids"] if i < REAL_ROW0]
-        models[k] = (list(nets), [r_["model_sha256"]["best"] for r_ in recs], p2a_median_lufs(own))
+        models[k] = (list(nets), [r_["model_sha256"]["best"] for r_ in recs], model_input_lufs(recs[0]))
     ms = A_menu_S()
     out = {}
     for prt in units:
@@ -3768,8 +3778,12 @@ def goat_predict(name):
         g = DE.inference_gain_db(ref, target)
         amp = prt["amp"]
         sel, S = ms[amp][prt["cls"]]
+        backed = dfix_backed(prt["unit"]) if name == "P2b-dfix" else None   # D_fix: a pool-backed variant
         for search in ("A", "B"):
-            s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
+            if backed is not None:
+                s8, ls = backed[search]
+            else:
+                s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
             x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
             r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
             st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
@@ -3782,8 +3796,8 @@ def goat_predict(name):
 
 
 def cmd_goat_predict(args):
-    if args.names not in ("P2a-goat", "P2a-goatshuf"):
-        raise SystemExit("--names P2a-goat or P2a-goatshuf")
+    if args.names not in ("P2a-goat", "P2a-goatshuf", "P2b-dfix"):
+        raise SystemExit("--names P2a-goat, P2a-goatshuf or P2b-dfix (D_fix's fold models)")
     goat_predict(args.names)
 
 
@@ -4154,12 +4168,12 @@ def cmd_real_heads(args):
     print("REAL-HEADS DONE")
 
 
-ARM_FOLD_PHASES = ("phase_5b2", "phase_5c")    # real-report's phases whose models share 5B.2's DI folds
+ARM_FOLD_PHASES = ("phase_5b2", "phase_5c", "phase_dfix")    # real-report's phases whose models share 5B.2's DI folds
 
 
 def report_phase(tags):
     """real-report's ledger phase for the tags it reads."""
-    return ("phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
+    return ("phase_dfix" if tags & DFIX_READS else "phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
             else "phase_5b2_rigo" if tags & {"RigO", "RcM"}
             else "phase_5b2" if any(t.startswith(("P2a-pc", "P2a-real", "Rc")) for t in tags)
             else "phase_5b1b" if any(t in ("P2a-Sc", "S-shift") for t in tags) else "phase_5b1")
@@ -4544,6 +4558,23 @@ def amp_track(slug, info):
 
     crop = A.f_part(slug)["crop"] if info["kind"] == "stagef" else pathlib.Path(info["crop"])
     return CR.mono(crop / "reference.wav")
+
+
+def rung_median_lufs(ids, rung):
+    """The median half loudness of rung `rung`'s training inputs (the level a model's input is brought to); D_fix's
+    rung-b models read at P2b's (about -13.7 LUFS), not P2a's (about -21.5)."""
+    import numpy as np
+
+    v = []
+    for i in ids:
+        v += [float(z) for z in np.load(input_path(DATA, i, RUNG_KINDS[rung]))["lufs"]]
+    return float(np.median(v))
+
+
+def model_input_lufs(rec):
+    """A run's own training inputs' median loudness, by its rung (P2a's rule for rung a)."""
+    own = [i for i in rec["train_ids"] if i < REAL_ROW0]
+    return rung_median_lufs(own, rec.get("rung", "a"))
 
 
 def p2a_median_lufs(ids):
@@ -5589,6 +5620,18 @@ DFIX_DIR = "dfix"                    # under out_dir(): inputs/, lends-k-of-n.js
 DFIX_HELD0 = 500_000                 # the held fold's real rows (the diagnostic): ids REAL_ROW0 or GOAT_ROW0 + this + j
 
 
+DFIX_READS = {"P2b-dfix", "P2b-dfix-clean"}   # read 2's BKS tags: fold models on the backed (own section) input, and on
+                                             # the clean amp track beside
+
+
+def dfix_backed(unit, v=0):
+    """A real unit's D_fix input variant v (0: a BKS unit's own section's backing) as {half: (uint8 mel, LUFS)}."""
+    import numpy as np
+
+    d = np.load(dfix_input_path(unit, v))
+    return {"A": (d["sA"], float(d["lufs"][0])), "B": (d["sB"], float(d["lufs"][1]))}
+
+
 def dfix_input_path(unit, v):
     return out_dir() / DFIX_DIR / "inputs" / f"{unit.replace('/', '__')}-v{v:02d}.npz"
 
@@ -5940,6 +5983,7 @@ def main(argv=None):
     ap.add_argument("--desc", action="store_true")
     ap.add_argument("--readout", choices=("plain", "pulled", "sws", "nc"), default="plain")
     ap.add_argument("--amp-shift", type=int, choices=(0, 1, 2), default=0)
+    ap.add_argument("--input-rung", choices=("b", "c", "d"), default=None)   # answers: read another rung's stored inputs
     ap.add_argument("--mastered", action="store_true")
     ap.add_argument("--seeds", default=str(SEEDS[0]))
     ap.add_argument("--against", default="")
