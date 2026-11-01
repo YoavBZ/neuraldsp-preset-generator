@@ -192,7 +192,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          - A real-amp centre helps: S moved by the other performances' search labels wins −0.133 [−0.229, −0.037]
            (Rc, decided), 38% of the ceiling. Trained with those labels as real rows, the model reaches the
            same place (−0.120 against S, −0.186 against P2a), so F31's real-amp penalty is fixed by real labels; it
-           reads nothing further per track (against Rc +0.014 [−0.035, +0.062], undecided). Stage 2 (65 more
+           is not shown to read further per track (against Rc +0.014 [−0.035, +0.062], undecided). Stage 2 (65 more
            units' labels) runs by the declared rule.
          - Arm P, the user's question (do the uniform random draws hurt?): not shown on real amps (against its size
            control −0.019, undecided; against P2a −0.012, becoming −0.004 once both are re-centred on S). Without

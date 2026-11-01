@@ -484,7 +484,8 @@ instead of generating unrealistic presets our own?"):
         centre but not yet against the full one; the labels are too few or too noisy per recording, so the next fix
         works on the labels (more evaluations, windows averaged) first.
       - Undecided or worse, with RigO − RcM undecided or worse: those differences do not show by sound at this label
-        noise; the next fix works on the labels' search space (the unsearched controls) before the model.
+        noise (weak evidence where a DI has 5 labels or fewer); the next fix works on the labels, their search space
+        (the unsearched controls) and their evaluations, before the model.
     - Caveats: an oracle (it knows the real amp's answers on the same track; no product can); fewer labels per
       answer than Rc's 13–62, so noisier, which works against it (RcM shares that noise); a recording's other
       windows share the performance and probably the song's chain, so its playing and the song's rig may help as
