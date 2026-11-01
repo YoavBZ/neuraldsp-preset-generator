@@ -659,6 +659,25 @@ instead of generating unrealistic presets our own?"):
     a test of the gate itself (`goat_ear_passed`). Adopted from its suggestions: the heavy answers' build and the
     candidate set checked in the gate, a test of `firmly_driven`, the two known biases, the forced-amp naming and
     the rebalance named as an alternative.
+  - *Amendment (2026-11-01 15:10, after the lag pass, before any search render): the lag rule's tolerance.* The
+    lag pass ran (1,398 renders; 231 of 233 units lagged, 2 gave none). With the one-window rule at 14 samples the
+    main stage refused to start, as the minimum requires: 131 units left, 19–25 per amp and class. Finding: judge
+    lag minus whole-item lag is bimodal (a main mode at −90 samples, 131 units within 14; a second near −45, about
+    65 units), while each unit's window DI-to-render lag equals its whole-item lag (median difference 0 in both
+    modes, 80 units checked), so the window is not shifted; the second mode lies between the plugin's S render and
+    the capture render (a capture's or IR's phase, not the playing). The rule assumed one constant offset, true on
+    BKS (one chain per recording, compared with its own windows) and not across GOAT's 233 chains. Diagnostic
+    (ledger `phase_5c_lag_diagnostic`, declared before its 24 renders): 12 units, 6 per mode, S re-rendered as the
+    lag pass did (all 12 bit-identical to the stored renders), the S judge scanned over ±72 samples of the stored
+    lag in 3-sample steps. In both modes the judge is flat: its range over the scan is at most 2.2% of its value
+    (median 0.4%), and the best lag beats the stored one by at most 0.9% (11 of 12 under 0.15%); the search's
+    gains on BKS were about 30% (log ratio −0.35). So a lag in either mode scores a render as the right lag would,
+    and the 14-sample rule refuses units the judge cannot tell apart. Revised: `GOAT_LAG_TOL` = 72 samples (the
+    scan's span, where the judge was shown flat), which still refuses the gross failures (judge lag hundreds of
+    samples off; 16 units with the 2 unlagged). Honest note: 72 was the span declared for the scan, and it also
+    clears the minimum (215 units; ac20 34 clean / 36 crunch, pr12 33 / 36, sw50r 43 / 33); 48 would leave pr12 at
+    28 / 28. The units 14–72 samples off are marked in the records (`lag`, `item_lag`) and read A and B are also
+    reported on the main-mode units alone, so the choice can be checked.
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
   measurements; if they shape the choice, D_fix's V-real read is labelled selection-contaminated. The candidates by
