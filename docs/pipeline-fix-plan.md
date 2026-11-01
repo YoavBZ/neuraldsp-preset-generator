@@ -3,8 +3,10 @@
 **Status (2026-11-01):** declared and reviewed (the plan, its revision, phase 4, the isolated tests and 5B.2, each
 with required changes, all made). Phases 1–4, the isolated tests and phase 5's tests (5A, 5B.1, 5B.1b, and 5B.2's
 stage 1, arm P, Rc and arm R, its stage 2 and its recording oracle) have run; the findings log (F1–F36) holds
-every result, audited. 5B.1c was withdrawn before any render. Next: a plan for the model's reading of the track
-(F36), for the user to approve.
+every result, audited. 5B.1c was withdrawn before any render. Declared next, at the user's choice of more real
+recordings: 5C, many recordings from GOAT's capture renders (pilot), now running: the search and RG are done,
+read A is better (RG beats the matched GOAT centre on held recordings), read B is undecided, and the shuffled-label
+control RGshuf runs before any reading is acted on. A lag check across earlier reads found none affected.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -533,6 +535,225 @@ instead of generating unrealistic presets our own?"):
     setting-space audit stored (`real-setting-audit`); the held-tracks-not-playing caveat; last-digit fixes; and
     tests that a fold's real rows and Rc's labels never come from its own DIs (`fold_records`, `rc_records`).
 
+
+
+*2026-11-01, after F36 and the user's choice ("More real recordings"):*
+- **5C, many recordings from GOAT's capture renders (ledger `phase_5c`; pilot about 15,600 label renders, about
+  2,600 read renders and 1.7 h of MPS).** Question: trained with search labels from many mostly distinct
+  amp chains, each with its own DI, does the model learn to read a track per track beyond the centre of its own
+  labels, first on held capture recordings (in domain), then on BKS's real reamps (transfer)? F36 put the headroom
+  on BKS at up to about 0.15; arm R, learning from 10–11 recordings per fold, took none of it.
+  - **Why GOAT.** No open source has 100+ real recorded amp chains with their DI; real-hardware sets total about 15
+    chains (`docs/research/real-amp-chains-2026-11.md`, PR #353, and this session's search). GOAT (Zenodo
+    15690894, CC BY-NC 4.0, research use on request, granted to the user and downloaded 2026-11-01, md5 checked)
+    holds 172 real DI recordings, each rendered through 5 Neural Amp Modeler captures drawn from about 7,000
+    profiles of over 1,000 amps, each with a random Archetype Nolly cab IR: 860 recordings whose chain is fixed
+    within the recording and mostly distinct across them (about 50 repeated profiles are expected among 860 draws;
+    which capture and IR is not recorded). Bleed-free and same-take by construction (the render is the DI's).
+    Caveats: a capture is a model of one amp at one setting and the IR comes from another rig, so no recording is
+    one real rig; 132 of the 172 DIs are one player, mostly on a Strat; BKS's 40 units are read again.
+  - **Data (zero renders, run; `goat-sections`).** Read from the zip without extracting it. Per item: the pool's DI
+    measures (`clean_di.measure_di`); one 10-s window where the DI passes the pool's activity rule and its screens
+    (`clean_di.section_flags`: hum, hiss, clipping, drop-outs) with no clip run or hard cut, from 1 s in (seed
+    20261047); a DI near full scale is out. Each of its 5 renders is checked
+    for length, rate and clipping in the window, classed against the DI on the window by the pool's classifier
+    (`classify` on `gainmeasure`; high gain is out, the clean/crunch scope) and given its whole-item lag to the DI
+    (`estimate_lag`). Up to 2 clean/crunch renders per item are kept (seeded; two chains on the same playing), folds
+    by item (4; an item's renders share one) and one forced amp per unit (a third each), both seeded. Result:
+    264 units from 139 of 172 items (25 had no window that passed the screens, 6 a DI near full scale, 2 no
+    clean/crunch render; of 705 renders classed, 259 were high gain); by amp and class 37–51 each (pr12 38 clean,
+    50 crunch; sw50r 45, 43; ac20 37, 51); folds 63–68 units; players 200, 56 and 8 units; whole-item lags −1 to
+    1,233 samples, 10 units above 300 (2 renders gave none and were out). Minimum: 30 labelled units per amp and class after the lag rule and the ear, or the
+    pilot stops at the data stage and the plan is revised.
+  - **Trusted data, before any GOAT render.** The user hears every kept unit's window (the render, with its DI on an
+    instant switch; `learn/goat_ear_page.py`, 4 parts) and answers "a believable amp tone", "odd amp sound", "the DI
+    itself sounds processed or noisy" or "not sure"; only the first passes ("not sure" is out). The code enforces
+    it: `goat-search` (with `--lags-only` too) refuses to start until every kept unit has a verdict, and searches
+    and trains on passed units only (`goat_heard`). Flagged for that hearing: renders whose cab
+    roll-off (A2's 6–10 kHz against 1–3 kHz) or low end sits outside BKS's reamps' range (a doubled cab from an
+    amp-and-cab capture plus the Nolly IR, a preamp- or pedal-only capture).
+  - **Labels.** First every unit's three fresh S renders (the class's S on each amp; 6 renders a unit) give its
+    judge lag (`goat-search --lags-only`). One-window lag rule: a unit whose judge lag minus its whole-item lag sits
+    more than 14 samples from the median of that difference over all units gives no label, and is not searched (14 until the lag amendment below; 72 since).
+    Then arm A's main stage as 5B.2's stage 2 (`K.space`, 52 evaluations, seed 20261013, from the class's S; labels
+    only, the best's in-process render; 53 renders a unit) on the unit's forced amp. `inputGain` stays searched, as
+    on BKS, and its spread is reported beside BKS's. Units whose whole-item lag exceeds 300 samples (possibly
+    far-mic IRs the plugin's close mics cannot reach) are reported apart as well as in the whole.
+  - **Code guards.** GOAT records live under `goat/` (never `real/search/`, so no BKS reader, `lag_refused`, Rc or
+    RigO sees them); GOAT training rows take ids from 4,000,000 (apart from BKS's 3,000,000 rows, and above the
+    `own` filter); runs are named `P2a-goat{k}` and `P2a-goatshuf{k}`. Each has a test.
+  - **Models.** RG: P2a-reals2's recipe and BKS rows unchanged (fold k's DIs out, both stages' labels, 300 per
+    epoch), plus 300 GOAT rows per epoch from the other GOAT folds (fold k's items out), 4 folds × 2 seeds. Model k
+    reads BKS fold k's units and GOAT fold k's units, as ensembles.
+  - **Controls (zero renders to make).** RcBG: Rc's rule on exactly model k's training labels, BKS and GOAT, each
+    label weighted by its share of an epoch (the matched centre; 5B.2's principle). RcGk: Rc's rule on model k's
+    training GOAT labels alone (the model can tell a capture render from a band reamp and keep a centre for each,
+    so on GOAT units this is the matched centre). RGshuf: RG with each fold's training GOAT labels permuted among
+    that fold's training units within amp and class (seeded per fold; a held fold's labels never enter), same rows,
+    share and steps; run if read A's per-track row reads better, before any reading is acted on (8 trainings, about
+    1,700 renders).
+  - **Reads.**
+    - A, in domain (isolation first): on each held GOAT unit, RG − RcGk (primary) and RG − RcBG by sound (the
+      unit's forced amp, read as 5B.1 on both halves), clustered by item with the fold interval beside, each decided
+      by 5B.2's rule (both intervals exclude 0 on the same side); heads and setting space beside (zero renders).
+    - B, transfer, on BKS's 40 units as 5B.2: RG − RcBG and RG − Rcs2, both by 5B.2's DI-and-fold rule; a per-track
+      reading on BKS needs RG better than both (RG − Rcs2 alone is the adoption row). RcG − S and RcG − Rcs2 (Rc's
+      rule on all GOAT labels; by-DI rule) beside: does a capture centre move toward real amps?
+    - RGshuf, if it runs: RG − RGshuf on held GOAT units (item-and-fold rule) and on BKS (DI-and-fold rule).
+    - Guards: FS/NS heads against P2a-reals2's; damage is a knob NLL rise outside the range arm R's 8 runs showed
+      (−0.016 to +0.027) in both seeds of a fold.
+  - **Reading, declared now.**
+    - A better (RG − RcGk): RGshuf runs. If RG − RGshuf on GOAT units is undecided or worse, the gain is not credited
+      to the GOAT recordings' own labels (more rows or a bigger real share would do it), and the full set does not
+      run; the user decides the next step with this evidence.
+    - A better and RG − RGshuf better: a per-track reading is learned in domain from the recordings. With B's RG
+      better than both RcBG and Rcs2 too, it transfers: the full GOAT set (about 450 clean/crunch recordings)
+      follows in its own amendment, and RG is a readout candidate for D_fix.
+    - A better, B's undecided or worse: learned in domain, not transferred to real reamps. The user decides between
+      more real chains (TONE3000's amp-and-cab captures by research request) and domain work, with A, B and RcG − S
+      as evidence; the full GOAT set does not run.
+    - A undecided or worse: the model does not learn a per-track reading from the pilot's captures (the realised N
+      stated). The user decides
+      between the full GOAT set (the curve's next point) and model changes, with A's heads and setting space as
+      evidence.
+    - RG − Rcs2 decided worse on BKS, or FS/NS damaged: GOAT rows are not adopted for reading real recordings.
+  - **Rules.** BKS is the only real read set; V-real and the NS songs untouched. Every render: isolate=True, one
+    priming render, 0.25 s trim, at most 3 processes, the 31 GB guard (the user frees space first). GOAT's audio is
+    read with `python -I` from its own folder. A staged stop (`goat-stage-check`), once a third of the trusted units
+    are searched: stop if the in-process best's held-half log ratio to S, clustered by item, has its 90% interval's
+    upper end at or above 0 (the searches do not decidedly beat S where they did not search), or if more than half
+    of the labels put `inputGain` at a bound (the captures' calibration would set the labels). Two renders per item
+    rather than one is a choice: it doubles the label renders to give about 45 units per amp and class.
+  - *Review (2026-11-01, independent, before any render):* approved with required changes, all made: the matched
+    centre RcBG as the per-track control (Rcs2 kept as the adoption row); RGshuf against "more rows and a bigger
+    share"; GOAT held out by fold and read in domain first (isolation); a one-window lag rule; the data step run
+    and N stated; the ear before any GOAT render, on the renders, with outlier flags; code guards with tests; and
+    a closed reading map. Its re-check asked for four more, all made: read A against the GOAT-only centre RcGk (a
+    model can keep one centre for captures and one for reamps) and a BKS per-track claim against both centres;
+    RGshuf permuted within each fold's training units, with its rule and outcome mapped; the staged stop's
+    thresholds; and the pool's hum and hiss screens on the window. Adopted from its suggestions: every unit's lag
+    first, the search only on trusted units, and the large-lag units reported apart. Its second re-check asked for
+    one more, made: the ear's verdicts applied in code before any GOAT render (`goat_heard`), with "not sure" out.
+  - *Amendment (2026-11-01, after the ear, before any GOAT render): the heavy check.* The ear passed 255 of 264
+    units ("odd" 9, all crunch); the user then said they may have been too permissive with heavy, fizzy ones. The
+    pool's scope is clean/crunch-led, heavy tones a small minority. The 9 odd units' gain measures sit within the
+    passed crunch units' (median non-linear share −2.7 dB against −1.8), so no measure reproduces that verdict;
+    the candidates are named by the pool's own classifier instead: passed units whose `classify` clean_vs_driven
+    split is "driven" (non-linear share at or above 0 dB and level slope at or below 0.3, its firm-driven margin).
+    That is 34 units, all crunch (by the unit's forced plugin amp, not GOAT's capture amp: pr12 16, ac20 10,
+    sw50r 8; 2 with whole-item lag above 300). The user hears
+    them again on their own page (`learn/goat_ear_page.py heavy`, shuffled, blind to the measure, same A/B player)
+    against the scope: "keep", "too heavy or fizzy" or "not sure"; only "keep" stays in. The code enforces it:
+    `goat_ear_passed` subtracts `goat_heavy_out` and refuses until every candidate has a verdict, so
+    `goat-search` (and `--lags-only`) cannot start before; it also refuses a heavy page whose units are no longer
+    the current firmly driven passed units, or answers from another build. Units not on the page are not re-heard:
+    the check is on the measure's side only, a choice (the ear already passed them; 22 passed units sit just below
+    the margin, non-linear share at or above −1.5 dB and slope at or below 0.4, and stay in). Known biases: the
+    page has no filler units, so every card is a candidate, which may lean verdicts toward "heavy"; and a
+    narrower crunch may shrink the per-track spread read A can show. If all 34 go: 221 units from 135 items (4
+    items lose every unit), by forced amp and class ac20 37 clean / 37 crunch, pr12 38 / 31, sw50r 45 / 33; folds
+    52–59. The minimum (30 trusted units per amp and class after the ear, the heavy check and the lag rule)
+    stands and is now in code: `goat-search`'s main stage refuses to start if any amp and class falls below it
+    (`goat_short_cells`), and the pilot stops at the data stage for a revision (a third render per item, or a
+    seeded rebalance of the forced amps). Label renders fall by about 13% if all 34 go.
+    *Outcome (2026-11-01, user's answers exported 14:28, page build 6abd26d193e0; ledger
+    `phase_5c_heavy_outcome`):* of the 34 candidates the user kept 12 and marked 22 heavy (none unsure); 233 heard
+    units pass the ear and the heavy check, from 135 items, every amp and class 35–45, before the lag rule.
+  - *Review of the amendment (2026-11-01, independent):* approved with required changes, all made: the stop rule
+    on any amp and class, not pr12 crunch alone; the minimum enforced in code before the main stage, with a test;
+    a test of the gate itself (`goat_ear_passed`). Adopted from its suggestions: the heavy answers' build and the
+    candidate set checked in the gate, a test of `firmly_driven`, the two known biases, the forced-amp naming and
+    the rebalance named as an alternative.
+  - *Amendment (2026-11-01, after the lag pass, before any search render): the lag rule's tolerance.* The lag pass
+    ran (1,398 renders; 231 of 233 units lagged, 2 gave none). With the one-window rule at 14 samples the main
+    stage refused to start, as the minimum requires: 131 units left, 19–25 per amp and class. Finding: judge lag
+    minus whole-item lag is bimodal (a main mode at −90 samples, 131 units within 14; a second near −45, 66
+    units). Each unit's window DI-to-render lag matches its whole-item lag (median difference 0 in both modes; within
+    3 samples for 93 of 131 main-mode and 56 of 66 second-mode units; all 231 checked, zero renders,
+    goat/window-lag-check.py and .json), so the second mode is not a shifted window; it lies between the plugin's
+    S render and the capture render. It clusters partly by item (18 items have both units in it, about 9 by
+    chance), so the DI or the item-lag estimate takes part: a phase, not the playing. The rule assumed one
+    constant offset, true on BKS (one chain per recording, compared with its own windows), not across GOAT's
+    chains. Diagnostic (ledger `phase_5c_lag_diagnostic`; written to the ledger file in the same command, seconds
+    before the run, and committed after it, at 14:59): 12 units, 6 per mode (seed 20261049), S re-rendered as the
+    lag pass did (all 12 bit-identical to the stored renders), the S judge scanned over ±72 samples of the stored
+    lag in 3-sample steps; run 14:55:47–14:57:54, 24 renders (goat/lag-diagnostic.py and .json). The judge is
+    insensitive to the lag in both modes: its log changes by at most 0.022 over the whole scan (per unit, the larger
+    change at −45 or +45: median 0.002), against search gains of about 0.35 on BKS and read effects of 0.04–0.15, and the reads are paired at the
+    same unit and lag; the label is the in-process render and uses no lag. (The declared reading, where the minimum
+    sits, cannot decide on a curve this flat: the best offsets scatter from −48 to +72.) So the 14-sample rule
+    refuses units the judge cannot tell apart. Revised: `GOAT_LAG_TOL` = 72 samples, the scan's span, where the
+    judge was shown insensitive. It refuses 18 units: 7 whose lag is 809–2,069 samples off the median (gross
+    failures), 9 at 93–134 off (outside the scan, not shown to matter, refused to stay within what was shown) and
+    the 2 with no lag. Honest note: 72 was chosen after the counts at 14 were known, and it clears the minimum
+    (215 units; ac20 34 clean / 36 crunch, pr12 33 / 36, sw50r 43 / 33; 48 would leave pr12 at 28 / 28); every
+    tolerance from 71 to 92 gives the identical set (the nearest kept units sit −70 and +67 from the median, the
+    nearest refused −93 and +106). The rule now reads every heard unit's lag from goat/lags in one place
+    (`goat_lags_refused`), so the search, the labels, the staged stop check and the reads refuse the same units
+    whatever has been searched (the median of a two-mode set taken over a third of the records would move). Read A
+    is also reported on the main-mode units alone (`goat-report --lag-tol 14`: the same models, the held units
+    narrowed); read B has no such variant (it would need models trained on main-mode labels only, not run).
+  - *Review of the lag amendment (2026-11-01, independent):* approved with required changes, all made: the
+    diagnostic's timeline stated as it happened; the refused units described by distance (7 gross, 9 at 93–134)
+    and the 71–92 invariance stated; read A's main-mode variant in code (`--lag-tol`), read B dropped from that
+    promise; one lag rule for every caller, with a test; the window check saved with one count. Adopted from its
+    suggestions: flatness in log-judge units, "insensitive" rather than "the stored lag is right", the item
+    clustering, and a pointer from the main 5C block.
+  - *Progress (2026-11-01, interim; the finding, F37, follows RGshuf).*
+    - Search: 215 trusted units searched (11,395 renders, 15:08–16:55, three shards, no errors); one unit's best was
+      silent (`goat/item_68@35.0#amp_5`), so it gives no label but is still read. Staged stop at 102 units
+      (ledger `phase_5c_stage_check`): held-half best − S −0.336 [−0.393, −0.280], `inputGain` at a bound in 18% of
+      labels; neither stop condition held.
+    - Centres (`goat-centres`, zero renders) and RG's 8 trainings (16:57–18:50, best epochs 15–30 of 60), then RG's and
+      the centres' read renders (860 on GOAT and 480 on BKS each).
+    - Read A (215 units, 130 items): RG − RcGk −0.053 [−0.077, −0.029] by item (83 of 130 better), by fold −0.043
+      [−0.063, −0.023], every fold negative: decided better. RG − RcBG −0.064 [−0.089, −0.039], by fold −0.052
+      [−0.075, −0.030]. On the main-mode units alone (`--lag-tol 14`, 94 items) RG − RcGk −0.057 [−0.086, −0.028].
+      Beside (zero renders; `goat/read-a-beside.py` and `.json`):
+      - In setting space RG's answers sit 0.127 from RcGk's but no nearer the units' labels (rms 0.259 against
+        0.259; RcBG 0.264, S 0.294; switches and mics agree 0.624 against 0.632), as on BKS (F35).
+      - No model sees its held GOAT items (0 item overlap in each fold).
+      - Units whose whole-item lag exceeds 300 samples, apart: 6 items, 12 directions, RG − RcGk −0.142 [−0.275,
+        −0.008]; without them −0.052 [−0.076, −0.028] (129 items).
+      - `inputGain` (unit scale of its searched range): GOAT labels mean 0.50, sd 0.30, at a bound 19%; BKS's stage 1
+        and 2 labels mean 0.39, sd 0.26, at a bound 21%.
+      - Heads on each fold's held GOAT labels (46–59 per fold, both seeds): RG's knob NLL is 0.59 to 0.95 below
+        P2a-reals2's, its switch CE 0.16 to 0.25 and its mic CE 0.44 to 1.07 lower (P2a-reals2 never saw a capture
+        render; these held-label NLLs include the centre, so they do not by themselves show a per-track reading).
+        RGshuf's heads follow with F37 (one of its runs had finished when this ran and is in the file).
+      - Not yet run: nothing else declared for read A.
+    - Read B (BKS, 40 units): RG − RcBG −0.052 [−0.115, +0.011] by DI (7 of 8 better), by fold −0.047 [−0.104,
+      +0.010]; RG − Rcs2 −0.035 [−0.102, +0.032], by fold −0.036 [−0.091, +0.020]: both undecided. Beside: RG − S
+      −0.193 [−0.292, −0.094]; RcG − S −0.106 [−0.168, −0.045] (a capture centre moves toward real amps), RcG −
+      Rcs2 +0.052 [−0.026, +0.130] (both by DI; the centres have no models, so their fold interval is not read).
+      RG − P2a-reals2 −0.064 [−0.130, +0.002] by DI, by fold −0.053 [−0.115, +0.010]: undecided (the GOAT rows'
+      own effect on BKS, beside). (`real-report` now gives 5C's rows their fold interval, as declared.)
+    - Guard (`real-heads --names G`): knob NLL rise RG − P2a-reals2 on FS or NS above +0.027 in one seed of one
+      fold only (fold 2, +0.034 on both): no fold damaged in both seeds. On each fold's held BKS labels RG's knob
+      NLL is below P2a-reals2's in 7 of 8 runs.
+    - As declared, read A better means RGshuf runs before any reading is acted on (launched 19:10).
+    - Notes for F37: RGshuf permutes the training labels before they are cycled to 300 rows per epoch, so which labels
+      get a second copy in an epoch differs from RG's (same inputs, a near-identical label multiset). `goat-report`
+      drops a refused or non-finite direction, where `real-report` scores a refused answer as S; none was refused
+      (missing 0 in every row). The run files mark RG and RGshuf by name only (`--goat` and `--goat-shuffle` are
+      not in their `flags`).
+  - *Lag check across earlier reads (2026-11-01, at the user's question whether the lag issue hurt earlier tests;
+    ledger `phase_5c_lag_scan_10ms`, `phase_5c_lag_scan_bks`, each declared before its run).* The ±72-sample
+    diagnostic did not reach `estimate_lag`'s known failure, a lock onto another pitch period (about 6 ms). Two
+    scans did:
+    - The same 12 GOAT units over ±10 ms (24 renders): the S judge's log moves by a median 0.031 (90th percentile
+      0.061) within ±6 ms, so a 6 ms error is not negligible for one score; every unit's stored lag sits at the
+      judge's minimum (at most 0.013 to gain, one unit).
+    - BKS's 40 units, S and Rcs2 on each amp over ±10 ms (480 renders): no unit's stored lag is off the judge's
+      minimum by 0.01 or more (median 0.0002, max 0.0075), so 5B.1, 5B.2's stage 1 and 5C's read B stand on right
+      lags. A 6 ms error would move a paired read, ln(Rcs2/S), by a median 0.021 (90th percentile 0.059), so lags
+      stay checked.
+    - An inventory of every judge call: every read is paired at one lag per unit. Earlier validation reads use
+      catalogued lags (many pooled renders with stability and onset checks, `research/record_part_lags.py`) or
+      the DI-to-track waveform lag. The 3-render lags of 5B.1, 5B.2 and 5C are the risky ones: covered above for
+      BKS's 40 units and 12 GOAT units; 5B.2's stage 2 units by `lag_refused` (agreement across windows of one
+      recording within 14 samples, which a pitch-period lock would break); GOAT's other units by agreement with
+      the independent item lag within 72 samples. No earlier read is found affected.
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
   measurements; if they shape the choice, D_fix's V-real read is labelled selection-contaminated. The candidates by
@@ -1568,10 +1789,14 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   test 240); P4 438 and its dry readout 198; phase 5A 240 and its seed 2 240; 5B.1 960, 5B.1b 720. About 11,170 in all
   before 5B.2. **5B.2 (2026-11-01):** the stage 1 ceiling 6,840; arm P 1,200, its P-Sc 480 and its FS/NS read 480;
   Rc 240; arm R 480: 9,720, about 20,890 in all. Stage 2: its search 10,725, Rcs2 240, arm R's read 480: 11,445,
-  about 32,340 in all. RigO and RcM 432: about 32,770 in all. D_fix's reads are not yet spent.
+  about 32,340 in all. RigO and RcM 432: about 32,770 in all. **5C (2026-11-01):** the lag pass 1,398, the lag
+  diagnostic 24, the search 11,395 (12,793 label renders against the declared about 15,600: 215 trusted units
+  against about 264), the centres' reads 1,340 and RG's 1,340, the lag scans 504 (24 + 480): about 16,000, about
+  48,770 in all. RGshuf's reads (about 1,340) and D_fix's are not yet spent.
 - **MPS used:** about 4 h before 5B.2 (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and
   backing runs, the k-fold, phase 5A's two 10-minute seeds); 5B.2's 12 trainings about 2 h more (arm P 4 × 7.2–8.4 min,
-  arm R 8 × 11.4 min); stage 2's 8 trainings 1.5 h more (8 × 11.4 min).
+  arm R 8 × 11.4 min); stage 2's 8 trainings 1.5 h more (8 × 11.4 min); 5C's RG 8 trainings 1.75 h more (8 × 13.0–13.3
+  min), RGshuf's 8 running.
 - **Disk:** P2's inputs about 0.3 GB; phase 1b's audio and features about 1.2 GB; the 31 GB guard holds.
 - Every render: isolate=True, a discarded priming render, 0.25 s trimmed, at most 3 render processes,
   `setopt no_bg_nice`. V-real is read only in P5's stored distances, phase 4 and D_fix's declared read. (5B.1c

@@ -410,6 +410,90 @@ def test_rigo_records_take_only_the_recordings_windows_clear_of_the_unit():
     assert P.rigo_records(recs, by_unit, {"unit": "v0", "rig": "v", "start_s": 200.0}, "pr12") == []
 
 
+def test_goat_window_takes_only_clean_active_windows_and_is_seeded():
+    rows = [{"start_s": 0.0, "passes_activity": True}, {"start_s": 5.0, "passes_activity": True, "clip_runs": 1},
+            {"start_s": 10.0, "passes_activity": False}, {"start_s": 15.0, "passes_activity": True, "dropouts": 0},
+            {"start_s": 20.0, "passes_activity": True, "hard_cuts": 2}, {"start_s": 25.0, "passes_activity": True},
+            {"start_s": 30.0, "passes_activity": True, "hum_rel_db": -50.0},
+            {"start_s": 35.0, "passes_activity": True, "hiss_rel_db": -60.0}]
+    got = {P.goat_window(rows, f"item_{k}") for k in range(40)}
+    assert got <= {15.0, 25.0} and len(got) == 2
+    assert P.goat_window(rows, "item_3") == P.goat_window(rows, "item_3")
+    assert P.goat_window(rows[:3], "item_1") is None
+    assert P.goat_renders("item_1", [1, 3, 4]) == P.goat_renders("item_1", [4, 1, 3])
+    assert len(P.goat_renders("item_1", [1, 3, 4])) == 2 and P.goat_renders("item_2", [5]) == [5]
+    assert P.goat_renders("item_2", []) == []
+
+
+def test_goat_assign_keeps_an_items_renders_in_one_fold_and_balances_amps():
+    items = {f"item_{k}": [f"u{k}a", f"u{k}b"] if k % 3 else [f"u{k}a"] for k in range(30)}
+    fold, amp = P.goat_assign(items)
+    assert set(fold) == set(items) and set(fold.values()) == {0, 1, 2, 3}
+    units = [u for us in items.values() for u in us]
+    counts = [sum(amp[u] == a for u in units) for a in P.AMPS3]
+    assert max(counts) - min(counts) <= 1 and set(amp) == set(units)
+    assert P.goat_assign(items) == (fold, amp)
+
+
+def test_goat_lag_refused_keeps_units_whose_lag_follows_their_item_lag():
+    item = {"a": 10, "b": 40, "c": 0, "d": 25, "e": 5}
+    lags = {"a": 60, "b": 91, "c": 49, "d": 150, "e": None}       # offsets 50, 51, 49, 125, none
+    assert P.goat_lag_refused(lags, item) == {"d", "e"}
+    assert P.goat_lag_refused({"a": 60}, {"a": None}) == {"a"}
+
+
+def _goat_records():
+    units = {f"g{j}": {"unit": f"g{j}", "fold": j % 4, "cls": "clean" if j % 2 else "crunch"} for j in range(24)}
+    recs = [{"unit": u, "amp": ("pr12", "ac20")[j % 2], "label": {"k": str(j)}} for j, u in enumerate(sorted(units))]
+    return recs, units
+
+
+def test_goat_fold_records_never_hold_the_folds_own_items_and_fill_an_epoch():
+    recs, units = _goat_records()
+    for f in range(4):
+        rows = P.goat_fold_records(recs, units, f)
+        assert len(rows) == P.GOAT_PER_EPOCH and all(units[r["unit"]]["fold"] != f for r in rows)
+
+
+def test_goat_shuffle_stays_inside_each_folds_training_units():
+    recs, units = _goat_records()
+    for f in range(4):
+        rows = P.goat_fold_records(recs, units, f, n=1000, shuffle=True)
+        own = {r["label"]["k"] for r in recs if units[r["unit"]]["fold"] == f}
+        assert all(units[r["unit"]]["fold"] != f and r["label"]["k"] not in own for r in rows)
+
+
+def test_goat_shuffled_permutes_labels_only_within_amp_and_class():
+    recs, units = _goat_records()
+    sh = P.goat_shuffled(recs, units)
+    assert sh == P.goat_shuffled(recs, units) and sh != recs
+    for r, s in zip(recs, sh):
+        assert {k: v for k, v in r.items() if k != "label"} == {k: v for k, v in s.items() if k != "label"}
+    group = lambda rs: sorted((r["amp"], units[r["unit"]]["cls"], r["label"]["k"]) for r in rs)
+    assert group(recs) == group(sh)
+
+
+def test_goat_heard_passes_only_amp_verdicts_and_lists_the_unheard():
+    v = {"a": {"verdict": "amp"}, "b": {"verdict": "unsure"}, "c": {"verdict": "odd"}, "d": {"verdict": "di_bad"}}
+    ok, missing = P.goat_heard(["a", "b", "c", "d", "e"], v)
+    assert ok == {"a"} and missing == ["e"]
+
+
+def test_goat_run_name_takes_only_reals2s_recipe():
+    import pytest
+
+    assert P.goat_run_name("P2a-real2s2", 2, 2, False) == "P2a-goat2"
+    assert P.goat_run_name("P2a-real0s2", 0, 2, True) == "P2a-goatshuf0"
+    for base, k, st in (("P2a-real2", 2, 1), ("P2a-real2s2-pc", 2, 2), ("P2a", None, 0)):
+        with pytest.raises(SystemExit):
+            P.goat_run_name(base, k, st, False)
+
+
+def test_goat_rows_and_records_stay_apart_from_bks():
+    assert P.GOAT_ROW0 >= P.REAL_ROW0 + 10 * P.REAL_PER_EPOCH and P.GOAT_ROW0 + 10 * P.GOAT_PER_EPOCH < 10 ** 7
+    assert P.GOAT_DIR != P.REAL_DIR
+
+
 def test_setting_gap_is_zero_on_itself_and_counts_switch_agreement():
     from learn import knob_ceiling as K
 
@@ -426,3 +510,73 @@ def test_setting_gap_is_zero_on_itself_and_counts_switch_agreement():
     rms, agree = P.setting_gap(dims, x, y)
     assert rms == pytest.approx(0.3, abs=1e-6)
     assert agree == (0.0 if sw else None)
+
+
+def test_goat_heavy_out_keeps_only_keep_verdicts_and_lists_the_unheard():
+    v = {"a": {"verdict": "keep"}, "b": {"verdict": "heavy"}, "c": {"verdict": "unsure"}}
+    out, missing = P.goat_heavy_out(["a", "b", "c", "d"], v)
+    assert out == {"b", "c", "d"} and missing == ["d"]
+
+
+def test_goat_short_cells_counts_every_amp_and_class():
+    parts = [{"amp": a, "cls": c} for a in P.AMPS3 for c in ("clean", "crunch") for _ in range(30)]
+    assert P.goat_short_cells(parts) == {}
+    assert P.goat_short_cells(parts[1:]) == {("pr12", "clean"): 29}
+    assert P.goat_short_cells([]) == {(a, c): 0 for a in P.AMPS3 for c in ("clean", "crunch")}
+
+
+def test_goat_ear_passed_waits_for_the_heavy_check(tmp_path, monkeypatch):
+    import json
+
+    import pytest
+
+    from learn import goat_ear_page as G
+
+    gd = tmp_path / P.GOAT_DIR
+    gd.mkdir()
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    monkeypatch.setattr(G, "heavy_candidates", lambda: ["b", "c"])
+    (gd / "ear.json").write_text(json.dumps({"verdicts": {u: {"verdict": "amp"} for u in "abc"} |
+                                             {"d": {"verdict": "odd"}}}))
+    with pytest.raises(SystemExit, match="not built"):
+        P.goat_ear_passed(["a", "b", "c", "d"])
+    (gd / "heavy-key.json").write_text(json.dumps({"build": "k1", "items": [{"unit": "b"}, {"unit": "c"}]}))
+    with pytest.raises(SystemExit, match="not yet heard"):
+        P.goat_ear_passed(["a", "b", "c", "d"])
+    (gd / "heavy.json").write_text(json.dumps({"build": "k1", "verdicts": {"b": {"verdict": "keep"}}}))
+    with pytest.raises(SystemExit, match="not yet heard"):
+        P.goat_ear_passed(["a", "b", "c", "d"])
+    (gd / "heavy.json").write_text(json.dumps({"build": "k0", "verdicts": {"b": {"verdict": "keep"},
+                                                                          "c": {"verdict": "heavy"}}}))
+    with pytest.raises(SystemExit, match="build"):
+        P.goat_ear_passed(["a", "b", "c", "d"])
+    (gd / "heavy.json").write_text(json.dumps({"build": "k1", "verdicts": {"b": {"verdict": "keep"},
+                                                                          "c": {"verdict": "heavy"}}}))
+    assert P.goat_ear_passed(["a", "b", "c", "d"]) == {"a", "b"}
+    monkeypatch.setattr(G, "heavy_candidates", lambda: ["b", "c", "e"])
+    with pytest.raises(SystemExit, match="rebuild"):
+        P.goat_ear_passed(["a", "b", "c", "d"])
+
+
+def test_goat_lag_rule_tolerance_is_the_diagnostic_span():
+    lags = {"a": -90, "b": -90 + 72, "c": -90 - 73, "d": -90}
+    item = {u: 0 for u in lags}
+    assert P.GOAT_LAG_TOL == 72
+    assert P.goat_lag_refused(lags, item) == {"c"}
+
+
+def test_goat_lags_refused_reads_every_heard_unit_and_takes_a_narrower_tolerance(tmp_path, monkeypatch):
+    import json
+
+    ld = tmp_path / P.GOAT_DIR / "lags"
+    ld.mkdir(parents=True)
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    offs = {"g/a": -90, "g/b": -90, "g/c": -88, "g/g": -91, "g/d": -45, "g/e": -45, "g/f": 800}
+    for u, o in offs.items():
+        (ld / f"{u.replace('/', '__')}.json").write_text(json.dumps({"lag": o, "item_lag": 0}))
+    units = {u: {"item_lag": 0} for u in offs}
+    lags, off = P.goat_lags_refused(units, list(offs))
+    assert lags == offs and off == {"g/f"}                      # the median (-88) from every heard unit
+    assert P.goat_lags_refused(units, list(offs), 14)[1] == {"g/d", "g/e", "g/f"}
+    # a subset (as after a third of the searches) would centre elsewhere; the rule never sees one
+    assert P.goat_lag_refused({u: offs[u] for u in ("g/d", "g/e", "g/a")}, {u: 0 for u in offs}, 14) == {"g/a"}
