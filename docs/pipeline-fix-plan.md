@@ -7,8 +7,8 @@ every result, audited. 5B.1c was withdrawn before any render. Declared next, at 
 recordings: 5C, many recordings from GOAT's capture renders (pilot), has run (F37): the model learns a per-track
 reading in domain (better than the matched centre and than its shuffled-label control on held recordings), not
 shown on BKS's real reamps. 5D, a real-amp panel across 7 bands (F38, a strong hint): the per-track reading is not
-shown there, but a centre from GOAT's many capture labels beats S across the bands; the next step is the user's
-choice (domain work or more real chains), then D_fix with that centre as a readout candidate. Findings F1–F38.
+shown there, and a centre from GOAT's many capture labels leans better than S across the bands (descriptive); the
+next step is the user's choice (domain work or more real chains), then D_fix. Findings F1–F38.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -2014,36 +2014,53 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   | RcBG_k − S | −0.068 [−0.118, −0.019] | −0.060 [−0.101, −0.019] | −0.060 [−0.113, −0.008] | 0 |
   | Rcs2_k − S | −0.019 [−0.091, +0.052] | +0.005 [−0.078, +0.089] | +0.005 [−0.096, +0.107] | 2 |
 
-  - RcG − S and RcBG_k − S pass every declared check: the capped interval excludes 0, no band's own interval is
-    reversed, and with any band removed the mean keeps its sign and more than half its size (RcG −0.044 to −0.088,
-    RcBG −0.045 to −0.093). Without the high-bleed units RcG − S is −0.118 [−0.179, −0.057]; without the hum-passed
+  - Seven rows were read; the decision checks were declared for the primary only. As descriptive rows, RcG − S and
+    RcBG_k − S would pass the primary's checks: the capped interval excludes 0, no band's own interval is reversed,
+    and with any band removed the mean keeps its sign and more than half its size (RcG −0.044 to −0.088, RcBG −0.045
+    to −0.093). Beside them (undeclared, descriptive, recomputed by the review): RcG − Rcs2_k −0.050 [−0.114,
+    +0.014], undecided; RcBG_k − Rcs2_k −0.049 [−0.092, −0.006]. Equal band weights give an effective N of 9.6. Without the high-bleed units RcG − S is −0.118 [−0.179, −0.057]; without the hum-passed
     ones −0.075 [−0.130, −0.021].
   - RG − RcBG_k by class (confounded with band): clean −0.093 [−0.148, −0.038] (Aimee Norwich, Jen Hartswick & Nick
     Cassarino, Port St Willow), crunch +0.099 [−0.009, +0.207], where The Laminar Flow (8 DIs, +0.189) carries it;
     without it −0.042; without the hum-passed units −0.027, without the high-bleed ones −0.007. RG − Rcs2_k on
-    clean −0.246 [−0.353, −0.139].
+    clean −0.246 [−0.353, −0.139]. Without all three apart groups (hum-passed, far-mic, high-bleed) RG − S is −0.125.
   - The ceiling (one seeded unit per band, one amp, 52 evaluations): the true-DI search beats S by −0.339 on average
-    (−0.028 to −0.584), as on BKS (−0.349). On those 7 units RcBG reaches 35% of it, RcG 31%, Rcs2 30%, RG −2%.
+    (−0.028 to −0.584), as on BKS (−0.349). On those 7 units, as a ratio of the summed effects, RcBG reaches 35% of
+    it, RcG 31%, Rcs2 30%, RG −2% (the mean of per-unit ratios differs widely: RcBG 10%, Rcs2 5%, RG −69%; Big
+    Troubles' ceiling is only −0.028).
 - **Reading** (as declared, a strong hint, not a verdict).
   - The primary row is undecided and leans the wrong way under the capped weights: the per-track reading F37 found
     on capture recordings is not shown on real amps across these bands; it leans better on the clean bands and worse
     on crunch, where one band with hum and bleed dominates. By the map: not shown across bands; the user chooses
     between domain work and more real chains.
-  - The clearest result is the centres': Rc's rule on GOAT's labels (RcG) or on BKS's and GOAT's (RcBG) beats S across
-    the 7 bands by about 0.07 and survives every band check, while BKS's own centre (Rcs2) does not (−0.019, two
-    bands reversed). F34 found a real-amp centre beats S on BKS's own band; this says a centre from many varied
-    chains carries to new bands and one from a single band does not. The headroom stays large (the ceiling −0.34),
-    and a centre reaches about a third of it.
-  - For D_fix: RcG (or RcBG) is the readout candidate the panel favours, to be confirmed on V-real (a panel read
-    never picks a recipe alone).
+  - The clearest pattern is the centres' (descriptive): Rc's rule on GOAT's labels (RcG) or on BKS's and GOAT's (RcBG)
+    beats S across the 7 bands by about 0.07 and would pass the band checks; BKS's own centre (Rcs2) is not shown to
+    (−0.019, undecided, two bands reversed), and RcG − Rcs2_k is undecided. F34 found a real-amp centre beats S on
+    BKS's own band; this hints that a centre from many varied chains carries to new bands. The headroom stays large
+    (the ceiling −0.34).
+  - For D_fix: a lean from a strong hint, not a choice. The declared map for an undecided primary does not make a
+    centre a readout candidate, and nothing is acted on from the panel alone. D_fix is chosen on FS, NS and the
+    k-fold reads before any V-real read; if V-real were to choose between readouts, that read is labelled
+    selection-contaminated.
 - **Caveats.** Underpowered (effective N 14.4): an undecided row says little. Class and band are confounded. The
     Laminar Flow, the largest band, is a live room with 3 mics per DI, and 12 of its units carry DI hum; live tracks'
     bleed and room reach RG's input but not the centres'. The ceiling is 7 units, one amp each. The panel's bands are
-    rock-leaning with one jazz/soul band; Guitar-TECHS and Dahka Band left on measurement (their amp tracks near
-    copies of the DI). The read answers for these bands' performances.
+    rock-leaning with one jazz/soul band. The read answers for these bands' performances.
+  - The ear-stage changes were revisions made after the user heard the clips (though before any render), where the
+    block had said the panel was frozen after the ear except for failing the minimum: Guitar-TECHS P3 and Dahka Band
+    were dropped on measurement (their amp tracks near copies of the DI), and 9 units were heard again with the
+    measurement stated beforehand, offered only in bands whose measurement favoured passing; all 7 it passed are
+    clean, the class where RG leans better. The read does not depend on it: on the first verdicts alone, RG − RcBG_k
+    is +0.036 and RcG − S −0.062 [−0.107, −0.017] (the review's recompute).
 - **References.** `PF/panel/units.json`, `ear.json`, `recheck.json`, `lags/`, `answers/`, `judge/`, `ceiling/`,
   `report-5d.json`; `panel-*` in `learn/pipeline_fix.py`, `learn/panel_ear_page.py`, `docs/panel-v1-pairs.json`;
   ledger `phase_5d*`.
+- *Results review (2026-11-02, PR #357, independent):* approved with required changes, all made: the centres'
+  contrast narrowed to "not shown" with the direct centre rows added as descriptive; the band checks stated as
+  declared for the primary only; the D_fix readout made a lean, not a choice, with V-real's selection rule; the
+  ear-stage revisions stated as made after the ear, with the first-verdict sensitivity; the ledger's times corrected
+  from the commits and files; "45 passed, 44 read". It recomputed every row from the judge files and found no code
+  error.
 
 ## Budget
 

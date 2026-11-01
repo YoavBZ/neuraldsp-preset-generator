@@ -723,3 +723,13 @@ def test_panel_ceiling_takes_one_seeded_unit_per_band():
     c = P.panel_ceiling_units(units)
     assert c == P.panel_ceiling_units(units) and [p["band"] for p, _ in c] == ["x", "y", "z"]
     assert all(a in P.AMPS3 for _, a in c)
+
+
+def test_panel_read_units_drop_the_di_like_bands(tmp_path, monkeypatch):
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    (tmp_path / P.PANEL_DIR).mkdir()
+    units = [{"unit": "x", "band": "Dahka Band"}, {"unit": "y", "band": "Other"}]
+    (tmp_path / P.PANEL_DIR / "units.json").write_text(json.dumps({"units": units}))
+    (tmp_path / P.PANEL_DIR / "ear.json").write_text(json.dumps({"verdicts": {u["unit"]: {"verdict": "amp"}
+                                                                              for u in units}}))
+    assert "Dahka Band" in P.PANEL_DI_LIKE and [u["unit"] for u in P.panel_read_units()] == ["y"]

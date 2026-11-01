@@ -5535,7 +5535,7 @@ def cmd_panel_report(args):
         row["apart"]["without_all"] = summary([r for r in rows if not any(f(r[0]) for f in groups.values())])
         rep["rows"][f"{a} - {b}"] = row
         c = row["all"]["capped"] if row["all"] else None
-        if c:
+        if c and c["lo90"] is not None:
             print(f"{a} - {b}: capped {c['mean']:+.4f} [{c['lo90']:+.4f}, {c['hi90']:+.4f}] (n_eff {c['n_eff']:.1f}, "
                   f"{c['clusters_negative']} of {c['clusters']} DIs better); band-clustered "
                   f"{row['all']['band_clustered']['mean']:+.4f} [{row['all']['band_clustered']['lo90']:+.4f}, "
