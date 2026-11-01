@@ -3112,14 +3112,18 @@ def goat_member(item, name):
     return f"GOAT/data/{item}/{name.rsplit('/', 1)[-1]}"
 
 
-def goat_window(rows, item, min_start_s=1.0):
+def goat_window(rows, item, track=None, min_start_s=1.0):
     """5C's window for one GOAT item: among the DI's 10-s grid sections that pass the pool's activity rule
-    (`clean_di.passes`) with no clip run, drop-out or hard cut, from `min_start_s` on, one drawn at random
-    (seed GOAT_SEED with the item). -> start in seconds, or None."""
+    (`clean_di.passes`) and its screens (`clean_di.section_flags`: hum, hiss, clipping, drop-outs) with no clip run or
+    hard cut either, from `min_start_s` on, one drawn at random (seed GOAT_SEED with the item). -> start in seconds,
+    or None."""
     import random
 
+    from learn import clean_di as CD
+
     ok = [r["start_s"] for r in rows if r["passes_activity"] and r["start_s"] >= min_start_s
-          and not (r.get("clip_runs") or r.get("dropouts") or r.get("hard_cuts"))]
+          and not (r.get("clip_runs") or r.get("dropouts") or r.get("hard_cuts"))
+          and not CD.section_flags(r, track or {})[0]]
     return random.Random(f"{GOAT_SEED}|{item}").choice(sorted(ok)) if ok else None
 
 
@@ -3190,7 +3194,7 @@ def cmd_goat_sections(args):
             votes = {k: [v] for k, v in ({mm: CD.line_count(f, fs, mm) for mm in CD.MAINS} if fs is not None
                                          else {}).items()}
             track, rows = CD.measure_di(x, sr, CD.session_mains(votes))
-            start = goat_window(rows, item)
+            start = goat_window(rows, item, track)
             rec = {"item": item, "player": m["player"], "guitar": m["guitar_brand"], "tuning": m["tuning_class"],
                    "seconds": track["seconds"], "start_s": start, "di_near_fs": track["near_fs"],
                    "hum_rel_db": track["hum_rel_db"], "renders": {}}
@@ -3299,10 +3303,14 @@ def goat_labels():
     return [r for r in recs if r["label"] is not None and r["unit"] not in off], units, off
 
 
-def goat_fold_records(recs, units, fold, n=None):
-    """5C's GOAT training records for model `fold`: the labelled units of the other GOAT folds, cycled to
-    GOAT_PER_EPOCH (a fold's models never see their own GOAT items)."""
-    return cycled([r for r in recs if units[r["unit"]]["fold"] != fold], GOAT_PER_EPOCH if n is None else n)
+def goat_fold_records(recs, units, fold, n=None, shuffle=False):
+    """5C's GOAT training records for model `fold`: the labelled units of the other GOAT folds (with `shuffle`,
+    RGshuf's: their labels permuted among those units only, `goat_shuffled`), cycled to GOAT_PER_EPOCH (a fold's
+    models never see their own GOAT items or their labels)."""
+    tr = [r for r in recs if units[r["unit"]]["fold"] != fold]
+    if shuffle:
+        tr = goat_shuffled(tr, units, seed=f"{GOAT_SEED}|{fold}")
+    return cycled(tr, GOAT_PER_EPOCH if n is None else n)
 
 
 def goat_shuffled(recs, units, seed=GOAT_SEED):
@@ -3341,10 +3349,8 @@ def goat_rows(fold, target, shuffle=False):
     from learn import local_objective as LO
 
     recs, units, _ = goat_labels()
-    if shuffle:
-        recs = goat_shuffled(recs, units)
     rows, paths = [], {}
-    for j, rec in enumerate(goat_fold_records(recs, units, fold)):
+    for j, rec in enumerate(goat_fold_records(recs, units, fold, shuffle=shuffle)):
         prt = units[rec["unit"]]
         ip = goat_input_path(prt["unit"])
         if not ip.exists():
@@ -3368,7 +3374,9 @@ def cmd_goat_search(args):
     search resumes); then one discarded priming render and arm A's main stage (`K.space`, 52 evaluations, seed
     20261013) from S with the unit's DI, scored by the judge's distance to the render on the unit's search half
     (`goat_halves`); S's first evaluation must be bit-identical to its fresh render; the label is the best's
-    in-process render. -> goat/search/<unit>|<amp>.json, goat/lags/<unit>.json."""
+    in-process render. With `--lags-only` (run first, over every shard): the S renders and lags alone; the search
+    pass then refuses, before searching, the units the one-window lag rule (`goat_lag_refused`) refuses.
+    -> goat/search/<unit>|<amp>.json, goat/lags/<unit>.json."""
     import numpy as np
 
     from analysis.aligned import estimate_lag
@@ -3413,13 +3421,22 @@ def cmd_goat_search(args):
     def fname(key):
         return key.replace("/", "__")
 
+    refused = set()
+    if not args.lags_only:                             # the lag rule over every unit, before any search
+        lp_ = {p_["unit"]: ldir / f"{fname(p_['unit'])}.json" for p_ in parts}
+        missing = [u for u, q in lp_.items() if not q.exists()]
+        if missing:
+            raise SystemExit(f"{len(missing)} units have no lag: run goat-search --lags-only first")
+        refused = goat_lag_refused({u: json.loads(q.read_text())["lag"] for u, q in lp_.items()},
+                                   {p_["unit"]: p_["item_lag"] for p_ in parts})
+
     for prt in mine:
         if PS.free_gb() < T.DISK_GUARD_GB:
             raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
         amp = prt["amp"]
         key = real_key(prt, amp)
         path = sdir / f"{fname(key)}.json"
-        if path.exists():
+        if path.exists() or (args.lags_only and (ldir / f"{fname(prt['unit'])}.json").exists()):
             continue
         di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
         di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
@@ -3446,11 +3463,17 @@ def cmd_goat_search(args):
                                 "render_sha256": AM.audio_sha(ys[a])} for a in AMPS3}})
             rec = json.loads(lp.read_text())
         lag = rec["lag"]
-        if lag is None:
+        if args.lags_only:
+            print(f"{prt['unit'][-60:]}: lag {lag} (item {prt['item_lag']}); renders so far {renders}", flush=True)
+            continue
+        if lag is None or prt["unit"] in refused:
             save(path, {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "unit": prt["unit"], "rig": prt["rig"],
-                        "di": prt["di"], "cls": prt["cls"], "amp": amp, "lag": None, "label": None,
-                        "why": rec["status"], "time": time.strftime("%Y-%m-%d %H:%M:%S")})
-            print(f"{prt['unit'][-60:]}: no lag; not searched", flush=True)
+                        "di": prt["di"], "item": prt["item"], "fold": prt["fold"], "cls": prt["cls"], "amp": amp,
+                        "lag": lag, "item_lag": prt["item_lag"], "label": None,
+                        "why": rec["status"] if lag is None else "the one-window lag rule",
+                        "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+            print(f"{prt['unit'][-60:]}: refused ({'no lag' if lag is None else 'lag rule'}); not searched",
+                  flush=True)
             continue
         s_j, s_sha = rec["s"][amp]["judge"], rec["s"][amp]["render_sha256"]
         sel, S = ms[amp][prt["cls"]]
@@ -3487,7 +3510,43 @@ def cmd_goat_search(args):
                     "label": None if best["fallback"] else best["settings"], "time": time.strftime("%Y-%m-%d %H:%M:%S")})
         print(f"{key[-70:]}: {search}->{held} S {s_j[held]:.3f} best {best['judge'][held]:.3f}; renders so far "
               f"{renders}", flush=True)
-    print(f"GOAT-SEARCH DONE {k}/{n}: {renders} renders")
+    print(f"GOAT-SEARCH{' LAGS' if args.lags_only else ''} DONE {k}/{n}: {renders} renders")
+
+
+GOAT_STOP_BOUND_SHARE = 0.5         # the staged stop: more than this share of labels with inputGain at a bound
+
+
+def cmd_goat_stage_check(args):
+    """5C's staged stop (zero renders), run once a third of the trusted units are searched: the in-process best's
+    held-half log ratio to S, clustered by item (`clustered`), and the share of labels whose inputGain sits at a bound
+    of `K.space`. Stop when the held-half interval's upper end is at or above 0 (the searches do not decidedly beat
+    S where they did not search) or the bound share exceeds GOAT_STOP_BOUND_SHARE (the captures' input calibration
+    would set the labels). -> goat/stage-check.json."""
+    from learn import arm_a_levers as L
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+
+    require("phase_5c")
+    ms = L.menu_S()
+    recs = [json.loads(p_.read_text()) for p_ in sorted((out_dir() / GOAT_DIR / SEARCH_DIR).glob("*.json"))]
+    lab = [r for r in recs if r["label"] is not None]
+    rows = [(r["item"], r["unit"], math.log(r["best"]["judge"][r["held"]] / r["s_judge"][r["held"]])) for r in lab
+            if r["s_judge"][r["held"]] and r["best"]["judge"][r["held"]] > 0]
+    at = []
+    for r in lab:
+        S = ms[r["amp"]][r["cls"]][1]
+        d = next(d for d in K.space(r["amp"], S) if d.key == "inputGain")
+        u = L.unit(d, LO.tdict(r["label"]))
+        at.append(u <= 1e-6 or u >= 1 - 1e-6)
+    c = clustered(rows) if rows else {}
+    share = sum(at) / len(at) if at else None
+    stop = bool(rows) and (c["hi90"] >= 0 or share > GOAT_STOP_BOUND_SHARE)
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "searched": len(recs), "labelled": len(lab),
+           "held_best_minus_S": {q: c.get(q) for q in ("mean", "lo90", "hi90", "clusters")},
+           "input_gain_at_bound_share": share, "stop": stop, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    save(out_dir() / GOAT_DIR / "stage-check.json", out)
+    print(f"GOAT STAGE CHECK: {len(lab)} labels; held best - S {c.get('mean')} [{c.get('lo90')}, {c.get('hi90')}];"
+          f" inputGain at a bound {share}; {'STOP' if stop else 'go on'}")
 
 
 def goat_items_from(z):
@@ -4487,6 +4546,7 @@ def cmd_vreal_report(args):
 # --- main ------------------------------------------------------------------------------------------------------------
 
 COMMANDS = {"goat-sections": cmd_goat_sections, "goat-search": cmd_goat_search,
+            "goat-stage-check": cmd_goat_stage_check,
             "p5": cmd_p5, "dirty-doubles": cmd_dirty_doubles, "p6": cmd_p6,
             "build-inputs": cmd_build_inputs, "p1": cmd_p1, "render-doubles": cmd_render_doubles,
             "build-doubles": cmd_build_doubles, "train": cmd_train, "read": cmd_read, "sample": cmd_sample,
@@ -4539,6 +4599,7 @@ def main(argv=None):
     ap.add_argument("--within", default="")
     ap.add_argument("--goat", action="store_true")
     ap.add_argument("--goat-shuffle", action="store_true")
+    ap.add_argument("--lags-only", action="store_true")
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 

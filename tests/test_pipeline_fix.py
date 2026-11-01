@@ -413,7 +413,9 @@ def test_rigo_records_take_only_the_recordings_windows_clear_of_the_unit():
 def test_goat_window_takes_only_clean_active_windows_and_is_seeded():
     rows = [{"start_s": 0.0, "passes_activity": True}, {"start_s": 5.0, "passes_activity": True, "clip_runs": 1},
             {"start_s": 10.0, "passes_activity": False}, {"start_s": 15.0, "passes_activity": True, "dropouts": 0},
-            {"start_s": 20.0, "passes_activity": True, "hard_cuts": 2}, {"start_s": 25.0, "passes_activity": True}]
+            {"start_s": 20.0, "passes_activity": True, "hard_cuts": 2}, {"start_s": 25.0, "passes_activity": True},
+            {"start_s": 30.0, "passes_activity": True, "hum_rel_db": -50.0},
+            {"start_s": 35.0, "passes_activity": True, "hiss_rel_db": -60.0}]
     got = {P.goat_window(rows, f"item_{k}") for k in range(40)}
     assert got <= {15.0, 25.0} and len(got) == 2
     assert P.goat_window(rows, "item_3") == P.goat_window(rows, "item_3")
@@ -451,6 +453,14 @@ def test_goat_fold_records_never_hold_the_folds_own_items_and_fill_an_epoch():
     for f in range(4):
         rows = P.goat_fold_records(recs, units, f)
         assert len(rows) == P.GOAT_PER_EPOCH and all(units[r["unit"]]["fold"] != f for r in rows)
+
+
+def test_goat_shuffle_stays_inside_each_folds_training_units():
+    recs, units = _goat_records()
+    for f in range(4):
+        rows = P.goat_fold_records(recs, units, f, n=1000, shuffle=True)
+        own = {r["label"]["k"] for r in recs if units[r["unit"]]["fold"] == f}
+        assert all(units[r["unit"]]["fold"] != f and r["label"]["k"] not in own for r in rows)
 
 
 def test_goat_shuffled_permutes_labels_only_within_amp_and_class():
