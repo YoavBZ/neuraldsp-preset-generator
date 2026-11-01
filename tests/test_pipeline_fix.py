@@ -437,7 +437,7 @@ def test_goat_assign_keeps_an_items_renders_in_one_fold_and_balances_amps():
 
 def test_goat_lag_refused_keeps_units_whose_lag_follows_their_item_lag():
     item = {"a": 10, "b": 40, "c": 0, "d": 25, "e": 5}
-    lags = {"a": 60, "b": 91, "c": 49, "d": 140, "e": None}       # offsets 50, 51, 49, 115, none
+    lags = {"a": 60, "b": 91, "c": 49, "d": 150, "e": None}       # offsets 50, 51, 49, 125, none
     assert P.goat_lag_refused(lags, item) == {"d", "e"}
     assert P.goat_lag_refused({"a": 60}, {"a": None}) == {"a"}
 
@@ -556,3 +556,10 @@ def test_goat_ear_passed_waits_for_the_heavy_check(tmp_path, monkeypatch):
     monkeypatch.setattr(G, "heavy_candidates", lambda: ["b", "c", "e"])
     with pytest.raises(SystemExit, match="rebuild"):
         P.goat_ear_passed(["a", "b", "c", "d"])
+
+
+def test_goat_lag_rule_tolerance_is_the_diagnostic_span():
+    lags = {"a": -90, "b": -90 + 72, "c": -90 - 73, "d": -90}
+    item = {u: 0 for u in lags}
+    assert P.GOAT_LAG_TOL == 72
+    assert P.goat_lag_refused(lags, item) == {"c"}

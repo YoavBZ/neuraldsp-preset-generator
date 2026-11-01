@@ -3268,7 +3268,7 @@ def cmd_goat_sections(args):
 
 GOAT_ROW0 = 4_000_000               # 5C's GOAT training rows: ids from here (apart from BKS's REAL_ROW0 rows)
 GOAT_PER_EPOCH = 300                # GOAT rows per epoch in every fold (its labelled units cycled)
-GOAT_LAG_TOL = 14                    # the one-window lag rule's tolerance (samples; 5B.2's LAG_TOL)
+GOAT_LAG_TOL = 72                    # the one-window lag rule's tolerance (samples; 14, 5B.2's LAG_TOL, until the lag diagnostic)
 
 
 def goat_units():
