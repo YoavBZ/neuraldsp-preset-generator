@@ -298,3 +298,112 @@ def test_sc_cont_is_S_when_the_model_reads_its_constant(monkeypatch):
     nan_c = const.copy()
     nan_c[0] = np.nan
     assert P.sc_cont({}, "pr12", const + 0.05, nan_c)[0] == pytest.approx(0.15)   # no constant: the model's value
+
+
+def test_search_halves_alternate_within_each_di():
+    parts = [{"unit": f"u{j}", "di": d} for j, d in enumerate("aabab")]
+    assert P.search_halves(parts) == {"u0": "A", "u1": "B", "u2": "A", "u3": "A", "u4": "B"}
+
+
+def test_real_folds_pair_the_dis_and_balance_the_read_units():
+    counts = {"d1": 6, "d2": 3, "d3": 4, "d4": 7, "d5": 4, "d6": 3, "d7": 3, "d8": 10}
+    read = [{"di": d} for d, n in counts.items() for _ in range(n)]
+    folds = P.real_folds(read, read)
+    assert sorted(folds) == sorted(counts) and sorted(folds.values()) == [0, 0, 1, 1, 2, 2, 3, 3]
+    per = [sum(counts[d] for d in folds if folds[d] == f) for f in range(4)]
+    assert max(per) - min(per) == 5                     # d8 (10) pairs with a 3 at best: 13 against 8 at worst
+    assert folds == P.real_folds(read, read)            # deterministic
+    with pytest.raises(SystemExit):
+        P.real_folds(read[:3], read[:3])
+
+
+def test_preset_centred_drops_wide_draws_and_its_size_control_matches_by_section():
+    modes = ["factory", "wide", "start", "wide", "factory", "start", "wide", "factory"]
+    kept = {i: {"mode": m, "section": f"s{i % 3}"} for i, m in enumerate(modes)}
+    ids = sorted(kept)
+    pc = P.preset_centred(ids, kept)
+    assert pc == [i for i in ids if modes[i] != "wide"]
+    sz = P.preset_centred(ids, kept, sized=True)
+    by = lambda xs: sorted(kept[i]["section"] for i in xs)                       # noqa: E731
+    assert by(sz) == by(pc) and sz == P.preset_centred(ids, kept, sized=True)
+
+
+def test_ceiling_rows_drop_a_refused_S_and_score_a_refused_answer_as_S():
+    def rec(unit, s, best, shrunk):
+        return {"unit": unit, "di": "d", "rig": "r", "held": "B", "s_judge": {"A": 1.0, "B": s},
+                "best": {"judge": {"B": best}}, "shrunk": {"judge": {"B": shrunk}}}
+
+    by_di, by_rig, cnt = P.ceiling_rows([rec("u1", 2.0, 1.0, math.inf), rec("u2", math.inf, 1.0, 1.0)])
+    assert cnt == {"s_dropped": 1, "refused_as_S": 1}
+    assert by_di["best"] == [("d", "u1", pytest.approx(math.log(0.5)))]
+    assert by_di["shrunk"] == [("d", "u1", 0.0)] and by_rig["best"][0][0] == "r"
+
+
+def test_cycled_repeats_in_order_to_a_fixed_count():
+    assert P.cycled([1, 2, 3], 7) == [1, 2, 3, 1, 2, 3, 1] and P.cycled([], 5) == []
+
+
+def test_rc_setting_moves_S_by_the_mean_deviation_and_takes_the_majority_switch():
+    from learn import knob_ceiling as K
+
+    knob = next(d for d in K.space("pr12") if d.kind == "cont")
+    sw = next((d for d in K.space("pr12") if d.kind not in ("cont", "log", "cat")), None)
+    dims = [knob] + ([sw] if sw else [])
+    k = (knob.module, knob.key)
+    S = {k: K.fmt(knob.from_unit(0.5))}
+    labels = [{k: K.fmt(knob.from_unit(0.6))}, {k: K.fmt(knob.from_unit(0.8))}]
+    if sw:
+        ks = (sw.module, sw.key)
+        S[ks] = sw.values[0]
+        labels[0][ks] = labels[1][ks] = sw.values[1]
+    out = P.rc_setting(dims, S, labels)
+    assert knob.to_unit(out[k]) == pytest.approx(0.7, abs=1e-6)
+    if sw:
+        assert out[ks] == sw.values[1]
+    assert P.rc_setting(dims, S, []) == S
+
+
+def _real_records():
+    """Four DIs in two folds, two classes, two amps: one labelled record per (unit, amp)."""
+    by_unit = {f"u{j}": {"unit": f"u{j}", "di": f"d{j % 4}", "cls": "clean" if j % 2 else "crunch"} for j in range(8)}
+    folds = {"d0": 0, "d1": 0, "d2": 1, "d3": 1}
+    recs = [{"unit": u, "amp": amp, "label": {}} for u in by_unit for amp in ("pr12", "ac20")]
+    return recs, by_unit, folds
+
+
+def test_fold_records_never_hold_the_folds_own_dis_and_always_fill_an_epoch():
+    recs, by_unit, folds = _real_records()
+    for f in (0, 1):
+        rows = P.fold_records(recs, by_unit, folds, f)
+        assert len(rows) == P.REAL_PER_EPOCH
+        assert all(folds[by_unit[r["unit"]]["di"]] != f for r in rows)
+        assert {r["unit"] for r in rows} == {u for u, p in by_unit.items() if folds[p["di"]] != f}
+
+
+def test_rc_records_take_only_other_fold_labels_of_the_same_amp_and_class():
+    recs, by_unit, folds = _real_records()
+    for prt in by_unit.values():
+        for amp in ("pr12", "ac20"):
+            got = P.rc_records(recs, by_unit, folds, prt, amp)
+            assert got and all(r["amp"] == amp and by_unit[r["unit"]]["cls"] == prt["cls"]
+                               and folds[by_unit[r["unit"]]["di"]] != folds[prt["di"]] for r in got)
+            assert len(got) == sum(r["amp"] == amp and by_unit[r["unit"]]["cls"] == prt["cls"]
+                                   and folds[by_unit[r["unit"]]["di"]] != folds[prt["di"]] for r in recs)
+
+
+def test_setting_gap_is_zero_on_itself_and_counts_switch_agreement():
+    from learn import knob_ceiling as K
+
+    knob = next(d for d in K.space("pr12") if d.kind == "cont")
+    sw = next((d for d in K.space("pr12") if d.kind not in ("cont", "log")), None)
+    dims = [knob] + ([sw] if sw else [])
+    k = (knob.module, knob.key)
+    x = {k: K.fmt(knob.from_unit(0.2))}
+    y = {k: K.fmt(knob.from_unit(0.5))}
+    if sw:
+        ks = (sw.module, sw.key)
+        x[ks], y[ks] = sw.values[0], sw.values[1]
+    assert P.setting_gap(dims, x, x) == (0.0, 1.0 if sw else None)
+    rms, agree = P.setting_gap(dims, x, y)
+    assert rms == pytest.approx(0.3, abs=1e-6)
+    assert agree == (0.0 if sw else None)

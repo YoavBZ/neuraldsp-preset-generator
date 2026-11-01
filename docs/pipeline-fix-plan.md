@@ -1,9 +1,10 @@
 # Fixing the pipeline review's findings (plan, 2026-10-31)
 
-**Status (2026-10-31):** declared and reviewed (the plan, its revision, phase 4 and the isolated tests, each with
-required changes, all made). Phases 1–4, the isolated tests and phase 5's tests (5A, 5B.1, 5B.1b) have run; the
-findings log (F1–F32) holds every result, audited. Next: 5B.2 (labels that reach real-amp tones), declared and
-reviewed before it runs; 5B.1c was withdrawn before any render.
+**Status (2026-11-01):** declared and reviewed (the plan, its revision, phase 4, the isolated tests and 5B.2, each
+with required changes, all made). Phases 1–4, the isolated tests and phase 5's tests (5A, 5B.1, 5B.1b, and 5B.2's
+stage 1, arm P, Rc and arm R) have run; the findings log (F1–F34) holds every result, audited. Running: 5B.2's
+stage 2 (65 more units' labels), since arm R's per-track read was undecided; then Rc and arm R on both stages'
+labels. 5B.1c was withdrawn before any render.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -313,6 +314,28 @@ instead of generating unrealistic presets our own?"):
   - Community presets' licences are the user's to check; paid packs need the user's yes.
   - "Song tone" presets (a person's attempt at a record) could serve as a yardstick, not as ground truth.
 - **When:** with the next data build, after the two blocker tests.
+- **The user's decision (2026-10-31, "Sounds good" to the session's suggestion):**
+  - Community presets: yes, as centres for the next build's draws, a wide share of random draws kept, effects
+    dried, after a zero-render check that they sit nearer real tones (F27's rule). Each download is still asked for
+    with its file, source and size; licences stay the user's to check, paid packs need the user's yes.
+  - Morgan Amps Suite X: yes, after 5B.2. Update, then re-render stored settings and compare bit for bit; its
+    presets are used only if that parity check passes, otherwise the update is held.
+  - The sources (research PR #349, `docs/research/morgan-community-presets-2026-10.md`): outside the plugin's own
+    108 factory and artist presets, which the draws already centre on, the pool is small: about 15 per pack,
+    mostly paid, and the only free pack with clear terms (Omega Station, 14) is doom, outside the clean/crunch
+    scope. Nothing is downloaded for now; Suite X's bank ("more than 100 curated presets") is the larger source.
+    Two cautions kept: a community pack must never sit in the plugin's non-User preset folder, which the menus
+    read as factory, and if Suite X installs as a separate plugin, the hard-coded preset paths and the pack identity
+    need updating (builds already stop when `plugin_version` changes, `learn/pretrain_set.py:709–711`).
+  - Suite X installed by the user (2026-10-31), beside the old plugin rather than over it: a separate AU
+    (subtype `MASX`, 1.0.0) next to the one every render loads (`NMAS`, 1.1.1, unchanged since May 2025), so stored
+    renders and 5B.2 are unaffected and no parity check is needed while the renders stay on `NMAS`. Its bank is
+    the same 133 files (108 factory and artist, 25 user) under the same names, re-saved in a `morgan-x 0.1.0`
+    format: every stored value matches; the only change is five new cab keys (stereo cabs, custom-IR flags). It
+    brings no new tones for the draws. Tone King Imperial MKII X also installed; not used by the pipeline.
+    The product session's probes (no audio): X declares the old preset id as its legacy id and exposes the same
+    157 controls at the same defaults as `NMAS`. That suggests renders carry over, but is not a sound check:
+    moving the renders to X would still need the bit-exact parity check first.
 
 *2026-10-31, after the user's "Continue":* the two blocker tests run, each declared and reviewed first.
 - **5A, backing variety at scale (blocker 1; ledger `phase_5a`; zero renders).**
@@ -367,6 +390,95 @@ instead of generating unrealistic presets our own?"):
   +0.057] on V-real; on BKS P2a − constant ≈ P2a-Sc − S), so on 7 bands it would very likely be undecided while
   spending a V-real exposure. Its answers were computed (the model run on V-real's inputs, zero renders, nothing
   judged). Whether D_fix uses an S-centred readout is decided from F32 and FS/NS only, and V-real is left for D_fix.
+
+*2026-10-31, after F32 and the user's question (are random training settings unrealistic?):*
+- **5B.2, labels that reach real-amp tones (ledger `phase_5b2`; about 8,760 renders first, up to about 21,200 if
+  every conditional step runs).** Question: trained with labels from a true-DI search on other performances' real
+  amp tracks, does the clean-input model read held-out real amp tracks better than S? (Held out are the tracks, not
+  the playing: 38 of 40 read units' sections were trained on as plugin renders.) Beside it, arm P (the user's
+  question): trained only on draws centred on presets (factory and S), without the uniform "wide" draws, does it?
+  - **Stage 1, the ceiling, run first (6,840 renders).** On 5B.1's 40 units, per forced amp (120 directions):
+    arm A's main stage (`K.space`: input gain, the amp's knobs and switches, both mics; 52 evaluations, seed
+    20261013) from the class's S, with the true DI, against the reamped track. Objective: the judge's distance on the
+    search half at the unit's stored lag (5B.1's `real/lags/`), every render over the full section as 5B.1. The
+    search half alternates by unit within each DI. Each direction runs in its own process after one priming render
+    of S, so its first evaluation (S) sits where 5B.1's fresh S render sat: it must be bit-identical to it, or the
+    stage stops. The best setting and the setting shrunk 0.5 toward S are each rendered fresh (5B.1's way) and
+    judged; the held half is the read (57 renders per direction). The best's in-process held value is kept beside,
+    to check that in-process values match fresh ones.
+    - **Stop rule:** on the unshrunk best's held − S row by DI. If its interval lies wholly at or above 0, no setting
+      in this search space beats S on these tracks, so this search's labels cannot help (`K.space` has no EQ,
+      pedals or effects): arm R stops and the gap is put to the chain, the judge or the unsearched controls. An
+      undecided or better row continues. Arm P runs either way.
+  - **Labels.** Each direction's best setting, unshrunk (arm A's ZT found shrinking hurts with true inputs), as a
+    full setting: searched controls from the search, every other from S (`F.label_of`). A direction whose best
+    falls back (silent or non-finite) gives no label.
+  - **Arm R, on stage 1's labels first (8 trainings, 720 renders).**
+    - Training: P2a's recipe (rung a, same epochs, checkpoint rule and seeds) with real rows added. Rows are the
+      labelled (unit, amp) of the other folds' DIs, cycled to 300 per epoch in every fold (about 14% of an epoch,
+      each row 3–4 times), with input the reamped section's features as 5B.1 built them (training inputs' median
+      loudness) and the section's class.
+    - Folds: four by DI, the 8 DIs in pairs making the folds' read-unit counts most equal (10, 9, 13, 8; seed
+      20261039 for ties). A fold's models never see their own DIs' real tracks. Fold 2 is all crunch and fold 3 all
+      clean (stated, not balanced).
+    - Rc, the control for the centre (240 renders): S moved by the mean unit deviation of exactly the labels that
+      unit's fold model trained on (same amp and class), switches and mics at their most common value.
+    - Read: R (both seeds as an ensemble, as 5B.1's P2a) per forced amp and search half (480 renders), judged as
+      5B.1.
+    - Rows: R − Rc (does it read real tones per track? primary), Rc − S (does a real-amp centre help?), R − S,
+      R − P2a, and R − P2a-Sc from stored judges (do the renders beat the free S-centred readout?).
+    - Reported by DI (8) with a 4-cluster fold interval beside (a fold's two DIs share models and their training
+      noise), per fold, by rig, DI 19 (Bulldozer clean, whose fold trains on Too Much's clean rows only) apart, and
+      R's share of the ceiling paired on its directions.
+    - Zero-render reads beside: each fold's head losses on its own DIs' real labels, R against P2a, per seed; and
+      NS and FS head losses against P2a's as the guard for plugin skill.
+  - **Stage 2, only if R − Rc is undecided (about 11,450 renders).** The same search on the other 65 units: 390
+    renders for S and the lag (three fresh S renders, as 5B.1; a unit with no lag gets no label), then 53 per
+    direction with no fresh renders (labels only, the best's in-process render), checked on stage 1's fresh against
+    in-process values. Then Rc and R retrained and read on stages 1 and 2's labels (720 renders). Stage 2 adds
+    mostly Bulldozer crunch (59 of 65 units) and nothing for DIs 20 and 24.
+  - **Arm P (4 trainings, 1,200 renders; up to 960 more).**
+    - Training: P2a's recipe on the 1,296 training examples drawn around presets or S (864 factory, 432 start; the
+      491 wide draws out). Its size control, P2a-pcsz: in each section as many examples as arm P keeps there, drawn
+      at random from all modes (seed 20261045).
+    - Read on the 40 units as 5B.1, ensembles: P (480), P2a-pcsz (480), P's labels' constant (240).
+    - Rows: P − P2a-pcsz (primary: dropping wide draws beyond size), P − P2a, and P's constant − P2a's constant.
+    - Zero-render: FS and NS head losses by the example's draw mode (P, pcsz, P2a); preset-centred examples are
+      primary, since a model never shown wide draws loses on them by construction.
+    - Only if P − pcsz leans better on the real units: by sound on FS/NS (P and pcsz ensembles against the stored
+      P2a ensemble, 480), split by draw mode; and P-Sc (480) to tell its centre from per-track change.
+  - **Readings, declared now.** R − Rc is decided when its by-DI and its 4-cluster fold intervals both exclude 0 on
+    the same side (a fold's two DIs share models, so the DI interval alone misses training noise); otherwise it is
+    undecided. Arm P's rows are decided on the by-DI interval (one pair of models reads every unit; its per-seed head
+    losses show training noise beside). The expected detectable size is about 0.05 (F31/F32's by-DI half-widths are
+    about 0.035); it is not a bar.
+    - R − Rc better: the model learns real-amp sound per track from real labels; real rows (and more bands' reamps)
+      enter D_fix's build. Undecided: stage 2 runs. Worse: not adopted. Rc − S better: a real-amp centre is a
+      candidate readout for D_fix, weighed with the S-centred one.
+    - P − pcsz better on real units: the wide draws hurt real-amp reads; the next build cuts or shrinks their share,
+      weighed against the FS/NS cost on preset-centred examples. Tie or worse: no evidence they hurt; the mix stays.
+  - Order: stage 1 and arm P together (arm P's trainings on MPS while stage 1 renders); then Rc and arm R; then
+    stage 2 if called for. Held out throughout: V-real and the NS songs (BKS is a training band).
+  - **Caveats.** One band (BKS), 8 performances, 14 rigs; the physical amps and mics are probably shared across a
+    song's DIs, so a held DI is a new real track on possibly familiar chains. Labels are selected on one half (noisy;
+    the held half is the honest read). The real rows' share is chosen, not tuned. Arm P reads one band for real
+    amps; its FS/NS reads are plugin renders.
+  - *Review (2026-10-31, independent, before any render):* approved with required changes, all made. It asked for:
+    the Rc control (the labels sit near S on every unsearched control, and F32 showed re-centring alone moves a lot);
+    ensembles throughout to match 5B.1's P2a; arm P read against its size control on the real units, and by draw
+    mode on FS/NS; the readings declared; the arithmetic corrected (priming and lag renders, real-row counts);
+    the code's choices declared (bit-identical S, fresh best, section-matched size control, a seed of its own); and a
+    fold interval beside the DI one. Adopted suggestions: stage 1's labels first and stage 2 only if undecided,
+    stage 2 without fresh renders, zero-render head reads, a fixed real share per fold, DI 19 apart, the share of the
+    ceiling, and the stated power. Its re-check approved with three changes, made: every render sends its edits in
+    5B.1's sorted order (so the bit-identical S check compares like with like), stage 2 resumes (S's fresh judge
+    and sha saved with the lag), and the decision rule above.
+  - *Results review (2026-11-01, PR #351, independent):* approved with required changes, all made. It recomputed
+    every number and found no code bug or leakage. It asked for: readings no stronger than their intervals (arm P
+    "not shown", the size rows "lean"); the declared P − P2a rows in F33; the ceiling's share by DI (38%) apart from
+    its paired share; the ceiling as a mean with its per-unit range; F32's shift described as it was built; the
+    setting-space audit stored (`real-setting-audit`); the held-tracks-not-playing caveat; last-digit fixes; and
+    tests that a fold's real rows and Rc's labels never come from its own DIs (`fold_records`, `rc_records`).
 
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
@@ -1150,14 +1262,135 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **References.** `PF/real/answers/{P2a-Sc,S-shift}.json`, `PF/real/judge/{P2a-Sc,S-shift}/`,
   `PF/real/report-5b1b.json`; `sc_cont`, `real_shift_answers`, `cmd_real_predict --names`; ledger `phase_5b1b`.
 
+### F33. Without the uniform draws the model reads sharper near presets by head; not shown better on real amps (5B.2 arm P)
+- **Result.** P2a retrained on its 1,296 preset-centred draws (factory and S; the 491 wide draws out), against a
+  size control drawing the same count per section from all modes (each on 2 seeds, NS-best, read as ensembles). Read
+  on 5B.1's 40 reamped units (1,200 renders), and, because P − pcsz leaned better there, S-centred (P-Sc, 480) and by
+  sound on FS/NS split by draw mode (480). Zero-render head losses by draw mode beside.
+- **Numbers** (real units clustered by DI, 8; by rig beside; FS by band, NS by section):
+
+  | Row | Result | Better |
+  |---|---|---|
+  | P − pcsz, real units (primary) | −0.019 [−0.057, +0.020]; by rig −0.024 [−0.053, +0.005] | 5 of 8 DIs, 28 of 40 |
+  | P − P2a, real units | −0.012 [−0.053, +0.030]; by rig −0.011 [−0.044, +0.023] | 5 of 8, 26 of 40 |
+  | P-Sc − P2a-Sc, real units (centre removed) | −0.004 [−0.022, +0.015] | 4 of 8, 24 of 40 |
+  | P's constant − P2a's constant, real units | +0.018 [−0.005, +0.041] | 3 of 8, 15 of 40 |
+  | P − pcsz, FS / NS by sound | −0.029 [−0.082, +0.024] / +0.014 [−0.039, +0.068] | 4 of 6 bands / 18 of 36 |
+  | the same on preset-centred examples, FS factory / start | −0.091 [−0.198, +0.016] / −0.128 [−0.314, +0.058] | 4 of 6 / 3 of 5 |
+  | the same, NS factory / start | +0.002 [−0.069, +0.073] / +0.089 [−0.039, +0.218] | 14 of 24 / 6 of 13 |
+  | the same on wide examples, FS / NS | +0.039 [+0.012, +0.065] / −0.003 [−0.109, +0.102] | 1 of 6 / 8 of 15 |
+  | P − P2a, FS / NS by sound | +0.020 [−0.028, +0.067] / +0.042 [+0.005, +0.079] | 3 of 6 / 14 of 36 |
+  | the same on preset-centred examples, FS factory / start | −0.045 [−0.182, +0.091] / −0.100 [−0.372, +0.172] | 3 of 6 / 4 of 5 |
+  | the same, NS factory / start | +0.061 [−0.001, +0.124] / +0.007 [−0.070, +0.083] | 10 of 24 / 6 of 13 |
+  | pcsz − P2a (size alone), FS / NS | +0.049 [−0.006, +0.103] / +0.027 [−0.010, +0.065] | 1 of 6 / 14 of 36 |
+
+  - By head (zero renders, P − pcsz, both seeds): on preset-centred FS and NS examples lower knob NLL (−0.015 to
+    −0.123) and mic CE (−0.002 to −0.230) for every seed; on wide examples far higher (+0.63 to +1.10), as expected.
+  - P2a − S on these units reproduces F31 exactly (+0.066 [+0.030, +0.102]). P-Sc − S is −0.032 [−0.060, −0.005]
+    (6 of 8 DIs; by fold −0.039 [−0.053, −0.025]), beside F32's P2a-Sc − S −0.029 [−0.061, +0.004].
+- **Reading.**
+  - Dropping the uniform draws is not shown to help on real amps (undecided). P − P2a, −0.012, becomes −0.004 once
+    both are re-centred on S (P-Sc − P2a-Sc), and P's labels' constant is not nearer these tones (+0.018). The lean
+    against the size control (−0.019) reaches the expected detectable size at its lower end, so a small gain is not
+    ruled out. Per-track reading is not seen to change. By the declared reading (a tie: no evidence that the wide
+    draws hurt), the training mix stays.
+  - Near presets, on plugin renders, the model trained without uniform draws reads sharper by head (every seed). By
+    sound it leans better than its size control on FS (undecided) and is mixed on NS; against full P2a it is not
+    better by sound (NS +0.042, decided worse; NS factory +0.061, undecided). It loses on the wide examples it never
+    saw. Fewer examples alone lean worse by about 0.03–0.05 by sound (pcsz − P2a, both undecided), in line with F25's
+    size curve; the sharper heads near presets bear on F7 (knob skill mostly on random settings).
+  - The user's question (do unrealistic random settings hurt?): not shown on real amps by this test (undecided).
+    What real amps need is a centre that suits them (F34).
+- **Caveats.** One band for real amps (BKS, 8 performances); 38 of 40 read units' sections (the playing) were
+  trained on as plugin renders by every model here, so held out are the tracks, not the playing. One model pair reads
+  every unit, so the by-DI interval carries no training noise (the heads read shows both seeds agree). P's checkpoint
+  is chosen on NS loss that includes wide draws it never trained on; pcsz is one random draw. FS/NS strata are small
+  (5–24 clusters).
+- **References.** `PF/runs/P2a-pc-*`, `P2a-pcsz-*`; `PF/real/answers/{P2a-pc,P2a-pcsz,P2a-pc-constant,P2a-pc-Sc}.json`,
+  `PF/real/report-5b2-armP.json`, `report-5b2-armP-sc.json`, `PF/real/heads-P.json`, `PF/sound/report-5b2-armP.json`,
+  `report-5b2-armP-vsP2a.json`; `preset_centred`, `real_predict_5b2`, `cmd_real_heads`, `cmd_sound_report --by-mode`;
+  ledger `phase_5b2`.
+
+### F34. A real-amp centre beats S by about 0.13; trained on real-amp answers, the model reaches it but reads no further per track (5B.2 stage 1, Rc, arm R)
+- **Result.** Stage 1, the ceiling: arm A's main stage with the true DI on 5B.1's 40 reamped units, per forced amp
+  (120 directions, 6,840 renders). All 120 first evaluations of S were bit-identical to 5B.1's fresh S renders;
+  120 labels, no fallbacks. Then Rc (S moved by the mean unit deviation of the labels the unit's fold model trained
+  on; 9–20 labels per answer; 240 renders) and arm R (P2a's recipe plus 300 real rows per epoch from the other
+  folds' DIs, 4 folds × 2 seeds, read as each fold's ensemble; 480 renders), read as declared.
+- **Numbers** (held half; by DI, 8; the fold, 4, and rig, 14, beside):
+
+  | Row | By DI | By fold | By rig | Better |
+  |---|---|---|---|---|
+  | best − S (the ceiling) | −0.349 [−0.437, −0.261] | | −0.335 [−0.417, −0.254] | 8 of 8 DIs, 40 of 40 units |
+  | shrunk 0.5 − S | −0.211 [−0.249, −0.173] | | −0.201 [−0.238, −0.165] | 8 of 8, 40 of 40 |
+  | Rc − S (a real-amp centre) | −0.133 [−0.229, −0.037] | −0.116 [−0.227, −0.006] | −0.110 [−0.188, −0.033] | 7 of 8, 34 of 40 |
+  | R − Rc (per-track reading; primary) | +0.014 [−0.035, +0.062] | +0.010 [−0.068, +0.088] | +0.013 [−0.021, +0.048] | 3 of 8, 15 of 40 |
+  | R − S | −0.120 [−0.188, −0.051] | −0.106 [−0.206, −0.007] | −0.097 [−0.162, −0.032] | 6 of 8, 29 of 40 |
+  | R − P2a | −0.186 [−0.252, −0.120] | −0.175 [−0.238, −0.112] | −0.171 [−0.230, −0.112] | 8 of 8, 38 of 40 |
+  | R − P2a-Sc (against the free readout) | −0.091 [−0.151, −0.032] | −0.074 [−0.146, −0.001] | −0.068 [−0.116, −0.020] | 6 of 8, 29 of 40 |
+
+  - The ceiling is better than S on all 40 units, by 0.35 on average (0.04 to 0.76 per unit); per DI from −0.194
+    (Too Much 20) to −0.533 (Bulldozer 31); per amp −0.32 to −0.36. On the search half it is −0.344 by DI against
+    the held half's −0.349 (plain means −0.340 and −0.339), so the held half's gain is not the search fitting its
+    own half.
+  - Share of the ceiling, paired on its 120 directions: Rc 0.445 (Rc − S is −0.155 there), R 0.434, P2a-Sc 0.103,
+    P2a −0.221 (arm P's P −0.153, its size control −0.203).
+  - Per fold, R − Rc: +0.043, −0.064, +0.083, −0.023; Rc − S: −0.238, −0.099, −0.117, −0.010. DI 19 apart
+    (Bulldozer clean, whose fold's clean labels all come from Too Much): Rc − S −0.171, R − S −0.153, R − Rc +0.019.
+    Rc − P2a-Sc is −0.105 [−0.190, −0.019] by DI, but −0.083 [−0.173, +0.007] by fold.
+  - By head (zero renders, every fold and seed): on its own DIs' real labels R's knob NLL is 0.54 to 1.25 below
+    P2a's and its switch CE 0.16 to 0.33 below; its mic CE is lower in folds 0–2 but about 0.22 higher in fold 3
+    on both seeds. On FS and NS its knob NLL is unchanged (−0.045 to +0.035) and its mic CE a little higher on NS
+    (+0.03 to +0.17).
+  - In setting space (zero renders, the audit; stored by `real-setting-audit` in `PF/real/setting-audit.json`): R's
+    continuous answers sit 0.178 (mean per-answer rms over `K.space`'s continuous controls, unit scale) from Rc's, but
+    no nearer the units' own labels: 0.270 against Rc's 0.260 (S 0.288, P2a 0.315). Their switches and mics agree
+    with the labels 0.603 of the time, against Rc's 0.639 and S's 0.596, so no better than S's.
+  - Checks: no fold's real rows include its own DIs, and each Rc answer used exactly its fold's labels (both
+    re-derived from the stored records); Rc − S reproduces its first report exactly. The best's fresh and in-process
+    renders agree to a |log ratio| of at most 6.1e-5 (an absolute judge difference of at most 3.0e-4; bit-identical
+    in 36 of 120), so stage 2's in-process labels stand in for fresh ones.
+- **Reading.**
+  - The ceiling: within the searched controls (input gain, the amp's knobs and switches, both mics), a setting
+    better than S by 0.35 on average exists on every one of the 40 units, as the judge measures it (the ceiling is
+    scored by the judge it was searched on, so it does not test the judge). The searched controls reach a large part
+    of the real-amp gap; the unsearched ones are not measured. By the stop rule, arm R went on.
+  - A real-amp centre helps (decided on DI and fold): S moved by the other performances' labels wins 0.13 by DI,
+    38% of the ceiling's 0.349 (0.445 paired on the ceiling's own directions), and on DI 19 the centre came from the
+    other song. F32's shared shift, the mean of P2a-Sc's moves from S on the other DIs' units (a model trained on
+    plugin labels), was not seen to help (+0.002 [−0.030, +0.035], undecided); labels from a search on the real amp
+    tracks are what move it.
+  - Trained with real rows, the model reaches the same place (R − S −0.12 and R − P2a −0.19, both decided): F31's
+    real-amp penalty is fixed by real labels. Per-track reading beyond the centre is not seen: R − Rc is undecided
+    (+0.014), and R's own moves away from Rc do not head toward each unit's label. By the declared rule, stage 2 runs
+    (65 more units' labels).
+  - About 0.2 per unit is left between Rc and the ceiling for a per-track reading to take.
+  - The direction it supports: a real-amp centre (Rc's way, or a model trained with real rows) is a candidate
+    readout for real recordings in D_fix, weighed with the S-centred one; more bands' reamped tracks are needed to
+    tell a real-amp centre from BKS's own chain.
+- **Caveats.** One band (BKS), 8 performances, 14 rigs; the physical amps and mics are probably shared within a
+  song, so a held DI's centre may partly be learned on its own rig (DI 19's is from the other song). 38 of 40 read
+  units' sections (the playing) were trained on as plugin renders by P2a and every R model, so held out are the
+  tracks, not the playing. Fold 3 (Too Much 20 and 24, clean) gains little from Rc (−0.010). Labels are selected on
+  one half; the ceiling's held half is the same section's other half, so it bounds a per-section reading, not a
+  new-performance one. One ensemble per fold reads its units, so the fold interval (4 clusters) is wide.
+- **References.** `PF/real/search/` (stage 1's 120 records), `PF/real/report-ceiling-1.json`,
+  `PF/real/answers/{Rc,P2a-real}.json`, `PF/real/judge/{Rc,P2a-real}/`, `PF/real/report-5b2-rc.json`,
+  `report-5b2-armR.json`, `PF/real/heads-R.json`, `PF/real/setting-audit.json`, `PF/runs/P2a-real*`;
+  `cmd_real_search`, `cmd_real_ceiling`, `real_folds`, `real_rows`, `fold_records`, `rc_records`, `rc_setting`,
+  `real_rc_answers`, `real_predict_5b2`, `cmd_real_heads`, `cmd_real_setting_audit`; ledger `phase_5b2`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
   2,160 (controls 480, S and the constant 480, four rungs 960, the pull 240); the isolated tests 3,600 (the amp mismatch
   960, mastering 240, the switch rules 480, augmentation 240, the size curve 1,440 with the pooled seeds, the backing
-  test 240); P4 438 and its dry readout 198; phase 5A 240 and its seed 2 240; 5B.1 960, 5B.1b 720. About 11,170 in all. D_fix's reads are not yet spent.
-- **MPS used:** about 4 h (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and backing
-  runs, the k-fold, phase 5A's two 10-minute seeds).
+  test 240); P4 438 and its dry readout 198; phase 5A 240 and its seed 2 240; 5B.1 960, 5B.1b 720. About 11,170 in all
+  before 5B.2. **5B.2 (2026-11-01):** the stage 1 ceiling 6,840; arm P 1,200, its P-Sc 480 and its FS/NS read 480;
+  Rc 240; arm R 480: 9,720, about 20,890 in all. D_fix's reads are not yet spent.
+- **MPS used:** about 4 h before 5B.2 (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and
+  backing runs, the k-fold, phase 5A's two 10-minute seeds); 5B.2's 12 trainings about 2 h more (arm P 4 × 7.2–8.4 min,
+  arm R 8 × 11.4 min).
 - **Disk:** P2's inputs about 0.3 GB; phase 1b's audio and features about 1.2 GB; the 31 GB guard holds.
 - Every render: isolate=True, a discarded priming render, 0.25 s trimmed, at most 3 render processes,
   `setopt no_bg_nice`. V-real is read only in P5's stored distances, phase 4 and D_fix's declared read. (5B.1c
