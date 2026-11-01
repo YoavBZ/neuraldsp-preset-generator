@@ -673,8 +673,8 @@ instead of generating unrealistic presets our own?"):
     before the run, and committed after it, at 14:59): 12 units, 6 per mode (seed 20261049), S re-rendered as the
     lag pass did (all 12 bit-identical to the stored renders), the S judge scanned over ±72 samples of the stored
     lag in 3-sample steps; run 14:55:47–14:57:54, 24 renders (goat/lag-diagnostic.py and .json). The judge is
-    insensitive to the lag in both modes: its log changes by at most 0.022 over the whole scan (median 0.002 at
-    ±45), against search gains of about 0.35 on BKS and read effects of 0.04–0.15, and the reads are paired at the
+    insensitive to the lag in both modes: its log changes by at most 0.022 over the whole scan (per unit, the larger
+    change at −45 or +45: median 0.002), against search gains of about 0.35 on BKS and read effects of 0.04–0.15, and the reads are paired at the
     same unit and lag; the label is the in-process render and uses no lag. (The declared reading, where the minimum
     sits, cannot decide on a curve this flat: the best offsets scatter from −48 to +72.) So the 14-sample rule
     refuses units the judge cannot tell apart. Revised: `GOAT_LAG_TOL` = 72 samples, the scan's span, where the
