@@ -3066,8 +3066,8 @@ LAG_TOL = 14                        # samples (0.3 ms at 48 kHz: pooled renders'
 
 def lag_refused(recs):
     """Units whose judge lag is more than LAG_TOL samples from the median lag of their recording's windows (one rig,
-    every search stage): one recording keeps one lag, so such an estimate locked onto another peak and that unit's
-    search aimed at a misaligned track. Its labels are refused. -> set of units."""
+    every search stage): either the estimate locked onto another peak or the track's alignment changes within that
+    window, so the unit's lag is not trusted and its labels are refused. -> set of units."""
     import statistics
 
     lags = {}

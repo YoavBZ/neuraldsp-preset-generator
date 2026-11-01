@@ -397,8 +397,8 @@ def test_lag_refused_takes_only_windows_off_their_recordings_lag():
                 for j, lag in enumerate(lags) for amp in ("pr12", "ac20")]
 
     got = P.lag_refused(recs("a", [93, 96, 91, 498, 93]) + recs("b", [-21, -94, -57, -57, -56, -56, -56, -57])
-                        + recs("c", [84, 84]) + recs("d", [111, None, 109]))
-    assert got == {"a@3", "b@0", "b@1"}
+                        + recs("c", [84, 84]) + recs("d", [111, None, 109]) + recs("e", [87, 120]))
+    assert got == {"a@3", "b@0", "b@1", "e@0", "e@1"}
 
 
 def test_setting_gap_is_zero_on_itself_and_counts_switch_agreement():

@@ -439,11 +439,19 @@ instead of generating unrealistic presets our own?"):
     mostly Bulldozer crunch (59 of 65 units) and nothing for DIs 20 and 24.
     - *Amendment (2026-11-01, after stage 2's search, before any of its labels is used):* a unit whose lag is more
       than 14 samples (0.3 ms, the agreement `estimate_lag` reports for pooled renders) from the median lag of its
-      recording's windows gives no label (`lag_refused`): one recording keeps one lag, so that estimate locked onto
-      another peak and the unit's search aimed at a misaligned track. Stage 1's 40 units all sit within 3 samples,
-      so nothing read so far changes. Three stage 2 units are refused (9 labels): Bulldozer 36 Reamp1 at 200 s
-      (−21 against the recording's −56/−57) and 205 s (−94), and Too Much 16 Reamp1 at 205 s (498 against 91–96).
+      recording's windows gives no label (`lag_refused`): either the estimate locked onto another peak or the
+      track's alignment changes within that window, so its lag, and the search aimed by it, is not trusted. Stage
+      1's 40 units all sit within 3 samples, so nothing read so far changes. Three stage 2 units are refused (9
+      labels): Bulldozer 36 Reamp1 at 200 s (−21 against the recording's −56/−57) and 205 s (−94), and Too Much 16
+      Reamp1 at 205 s (498 against 91–96). The review found the raw DI against Bulldozer 36 Reamp1 steady from 196
+      to 207 s and about 35 samples away from 208 s on, so that track may step in alignment near 208 s; Too Much 16's
+      shows no step, so its 498 is an estimator error. Any tolerance from 3 to 35 samples refuses the same three.
       Stage 2 keeps 62 units (186 labels); stages 1 and 2 give 306.
+      - *Review (2026-11-01, independent):* approved with one required change, made: the reason above, which first
+        said only "another peak". Noted for the write-up: 20 of stage 2's 65 pr12 labels (and 10 of stage 1's 40,
+        already in Rc and R) put the amp's Volume at its floor, with best renders peaking at −37 to −59 dBFS. The
+        judge compares level-normalised sound, so these are valid answers to its question but unusable as presets
+        as they stand; output level is a product step D_fix has to settle.
   - **Arm P (4 trainings, 1,200 renders; up to 960 more).**
     - Training: P2a's recipe on the 1,296 training examples drawn around presets or S (864 factory, 432 start; the
       491 wide draws out). Its size control, P2a-pcsz: in each section as many examples as arm P keeps there, drawn
