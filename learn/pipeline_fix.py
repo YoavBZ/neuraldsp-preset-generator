@@ -5348,6 +5348,87 @@ def cmd_panel_render(args):
     print(f"PANEL-RENDER DONE {k}/{n}: {renders} renders")
 
 
+def panel_ceiling_units(units):
+    """5D's ceiling units: one per band, seeded (PANEL_SEED), each on one seeded amp. -> [(unit, amp)]."""
+    import random
+
+    out = []
+    for band in sorted({p_["band"] for p_ in units}):
+        rng = random.Random(f"{PANEL_SEED}|ceiling|{band}")
+        prt = rng.choice(sorted((p_ for p_ in units if p_["band"] == band), key=lambda p_: p_["unit"]))
+        out.append((prt, rng.choice(AMPS3)))
+    return out
+
+
+def cmd_panel_ceiling(args):
+    """5D's true-DI ceiling (one shard): on each ceiling unit and amp, arm A's main stage (`K.space`, 52 evaluations,
+    seed `L.SEED`) from the class's S, scored by the judge on the unit's search half at its lag, as 5B.2's stage 2;
+    its best judged on both halves. -> panel/ceiling/<unit>|<amp>.json."""
+    import numpy as np
+
+    from learn import arm_a_levers as L
+    from learn import arm_a_mega53 as A
+    from learn import audibility_measure as AM
+    from learn import cc_build as CB
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+    from learn import pretrain_set as PS
+    from learn import song_bank as B
+    from learn import trusted_data as T
+
+    require("phase_5d")
+    units, recs = panel_lagged_units()
+    halves = panel_halves(units)
+    k, n = args.shard
+    mine = [x for j, x in enumerate(panel_ceiling_units(units)) if j % n == k]
+    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
+    ms = L.menu_S()
+    LO._wait_cap()
+    renders = 0
+    for prt, amp in mine:
+        if PS.free_gb() < T.DISK_GUARD_GB:
+            raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+        key = real_key(prt, amp)
+        path = out_dir() / PANEL_DIR / "ceiling" / f"{panel_fname(key)}.json"
+        if path.exists():
+            continue
+        di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
+        di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
+        ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
+        search = halves[prt["unit"]]
+        held = "B" if search == "A" else "A"
+        sel, S = ms[amp][prt["cls"]]
+        dims = K.space(amp, S)
+        seen, first = {}, {}
+        rr = CB.new_renderer()
+        try:
+            rr.render(di32, sel, LO.tdict(LO.sdict(S)))
+            renders += 1
+
+            def f(x):
+                y = np.asarray(rr.render(di32, sel, LO.tdict(LO.sdict(x))), np.float64)[trim[0]:trim[1]]
+                j = K.judge(ref, y, di, prt["lag"])
+                if not first:
+                    first.update(sha=AM.audio_sha(y))
+                    if first["sha"] != recs[prt["unit"]]["s"][amp]["render_sha256"]:
+                        raise SystemExit(f"{key}: S's first evaluation is not bit-identical to its fresh render")
+                seen[K.key(x)] = {"judge": j, "peak_dbfs": A.peak_dbfs(y, trim_s=0.0)}
+                return j[search]
+
+            best_x, best_v, evals = L.main_stage(dims, S, f, seed=L.SEED)
+            renders += evals
+        finally:
+            rr.close()
+        best = dict(seen[K.key(best_x)], settings=LO.sdict(best_x))
+        s_j = recs[prt["unit"]]["s"][amp]["judge"]
+        save(path, {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5d", "unit": prt["unit"], "band": prt["band"],
+                    "amp": amp, "search": search, "held": held, "lag": prt["lag"], "s_judge": s_j,
+                    "best": best, "evaluations": evals, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+        print(f"{key[-70:]}: {search}->{held} S {s_j[held]:.3f} best {best['judge'][held]:.3f}; renders so far "
+              f"{renders}", flush=True)
+    print(f"PANEL-CEILING DONE {k}/{n}: {renders} renders")
+
+
 def weighted_clustered(rows, weight_of):
     """rows: [(cluster, value)]; weight_of: {cluster: weight}. The weighted mean of cluster means and its 90% interval
     clustered by cluster (sandwich variance with the small-sample factor, t with clusters - 1 df); the effective
@@ -5463,7 +5544,7 @@ def cmd_panel_report(args):
     print("PANEL-REPORT DONE")
 
 
-COMMANDS = {"panel-sections": cmd_panel_sections, "panel-lags": cmd_panel_lags, "panel-centres": cmd_panel_centres, "panel-predict": cmd_panel_predict, "panel-render": cmd_panel_render, "panel-report": cmd_panel_report, "goat-sections": cmd_goat_sections, "goat-search": cmd_goat_search,
+COMMANDS = {"panel-sections": cmd_panel_sections, "panel-lags": cmd_panel_lags, "panel-centres": cmd_panel_centres, "panel-predict": cmd_panel_predict, "panel-render": cmd_panel_render, "panel-report": cmd_panel_report, "panel-ceiling": cmd_panel_ceiling, "goat-sections": cmd_goat_sections, "goat-search": cmd_goat_search,
             "goat-stage-check": cmd_goat_stage_check, "goat-centres": cmd_goat_centres,
             "goat-predict": cmd_goat_predict, "goat-render": cmd_goat_render, "goat-report": cmd_goat_report,
             "p5": cmd_p5, "dirty-doubles": cmd_dirty_doubles, "p6": cmd_p6,

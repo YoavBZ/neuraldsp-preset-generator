@@ -716,3 +716,10 @@ def test_panel_rows_read_the_held_half_and_drop_missing():
              "C": {f"u|{a}": {P.ANY_HALF: {"A": 9.0, "B": 4.0}} for a in P.AMPS3[:2]}}
     rows, dropped = P.panel_rows("M", "C", units, {"u": "A"}, judge)
     assert dropped == 1 and all(abs(v - math.log(2.0 / 4.0)) < 1e-12 for _, _, v in rows) and len(rows) == 2
+
+
+def test_panel_ceiling_takes_one_seeded_unit_per_band():
+    units = [{"unit": f"{b}{j}", "band": b} for b in "xyz" for j in range(4)]
+    c = P.panel_ceiling_units(units)
+    assert c == P.panel_ceiling_units(units) and [p["band"] for p, _ in c] == ["x", "y", "z"]
+    assert all(a in P.AMPS3 for _, a in c)
