@@ -792,25 +792,30 @@ instead of generating unrealistic presets our own?"):
     list, RcG on every GOAT label, and S. Every answer on each of the three amps, as 5B.1. BKS's units keep their
     stored answers and judges.
   - **Reads** (held half; search halves alternating within each DI, as 5B.2's):
-    - Primary: RG − RcBG_k on the new bands only, band-weighted (bands equal, DIs equal within a band), with its 90%
-      interval clustered by DI; beside it the DI-weighted mean and the band-clustered interval. BKS's own rows (F37)
-      sit beside, never pooled into the primary.
+    - Primary: RG − RcBG_k on the new bands only, with capped band weights: each band weighs as the smaller of its
+      DIs and 4, its DIs equal within it (more performances carry more evidence, but no band more than about a
+      quarter; Guitar-TECHS P3's 12 excerpts are one amp chain, so the cap matters there). Its 90% interval is the
+      weighted one, clustered by DI. Beside: equal band weights, the DI-weighted mean and the band-clustered
+      interval (the population-level read). BKS's own rows (F37) sit beside, never pooled into the primary.
     - Adoption row: RG − Rcs2_k. Beside (descriptive): RG − S, P2a-reals2 − Rcs2_k, RcG − S.
     - Sanity rows (zero extra renders): RcBG_k − S and Rcs2_k − S per band (does the real-amp centre still beat S
       off BKS?), and S's held-half judge distance per band against BKS's range.
-    - Every row per band (mean, interval clustered by DI within the band, or by unit where a band has one DI), per
+    - Every row per band (mean, interval clustered by DI within the band, or by window where a band has one DI), per
       class (clean, crunch; class is confounded with band: Guitar-TECHS P3 and Sonnet & Alcohol are clean, The
       Laminar Flow and MedleyDB crunch), leave-one-band-out, and with far-mic and high-bleed units apart (bleed and
       room reach RG's input but not the centres', so they bias the read against RG).
     - A true-DI ceiling (about 370 renders): one window per new band, on one amp, searched as 5B.2's stage 2, so an
       undecided result can be told from "nothing to read here".
   - **Reading, declared now.**
-    - Decided on the primary row when its DI-clustered interval excludes 0, no band's own interval excludes 0 on the
-      other side, and leave-one-band-out keeps the sign; the band-clustered interval is reported, not required.
-      Power (from BKS's per-DI SD of 0.094, about 31 new DIs, t-intervals): about 0.9 for an effect of −0.05 and 0.55
-      for −0.03 by DI; by band (about 7 clusters) about 0.4–0.5 and 0.2. An undecided read is underpowered, not a
-      failure.
-    - Primary better and the adoption row better: the per-track reading transfers across bands; the full GOAT set
+    - Decided on the primary row when its weighted DI-clustered interval excludes 0, no band's own interval excludes
+      0 on the other side, and with any one band removed the weighted mean keeps its sign and at least half its size
+      (no band supplies more than half the effect; the band whose removal moves it most is reported). The
+      band-clustered interval is reported, not required, so a decided read speaks for these panel bands'
+      performances, not for bands in general. Power (from BKS's per-DI SD of 0.094, t-intervals; the effective
+      number of DIs, 1/Σw², is stated with the counts, expected about 25 under the capped weights): about 0.85 for an
+      effect of −0.05 and 0.5 for −0.03 (equal band weights, about 13 effective DIs: about 0.6 and 0.3; by band, about
+      7 clusters: 0.4–0.5 and 0.2). An undecided read is underpowered, not a failure.
+    - Primary better and the adoption row better: the per-track reading transfers across these bands; the full GOAT set
       follows in its own amendment and RG is D_fix's readout candidate.
     - Primary better, adoption row undecided or worse: the reading transfers beyond the matched centre but RG is not
       adopted over the real-amp centre; the full GOAT set may follow (its own amendment), the readout stays Rcs2.
@@ -834,7 +839,11 @@ instead of generating unrealistic presets our own?"):
     far mics reported apart, with "worse" acted on only without them; lags searched wide and the 44.1 kHz sources
     resampled; a leakage guard with a test; the reading map closed; sanity rows. Adopted from its suggestions: a
     small true-DI ceiling, shared windows across a DI's mic tracks, and a count of the panel's reads. Not adopted: a
-    mic-swap check on The Laminar Flow (extra renders; later if the primary is decided).
+    mic-swap check on The Laminar Flow (extra renders; later if the primary is decided). Its re-check asked for two
+    more, made, and a third adopted: the interval weighted as the headline, with the effective N and the power
+    restated; leave-one-band-out as an anti-dominance rule (no band more than half the effect); and single-DI bands
+    clustered by window. The headline's weights were then capped (each band as the smaller of its DIs and 4) to keep
+    the power near 0.85 at −0.05 while no band weighs more than about a quarter; equal band weights stay beside.
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
   measurements; if they shape the choice, D_fix's V-real read is labelled selection-contaminated. The candidates by
