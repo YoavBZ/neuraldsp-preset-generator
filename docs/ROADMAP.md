@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-10-31.
+lives in the linked documents. Last updated 2026-11-01.
 
 ## Where the product is
 
@@ -214,6 +214,16 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          BKS's reamps, with a shuffled-label control. About 18,000 renders, 1.7 h of MPS.
        - **Next:** 5C's listening pass (the user), then its pilot; then D_fix, with a real-amp centre as a readout
          candidate. Community presets and Suite X's parity check follow.
+       - **TONE3000 downloads: approved by the user (2026-11-01)**, after the [real-amp
+         research](research/real-amp-chains-2026-11.md). TONE3000's own terms still apply: the site Terms forbid
+         scripted or systematic download of large quantities, and any download of a substantial portion; the API
+         Terms forbid bulk download, scraping, mirroring or caching the catalogue. So downloads go through routes
+         they allow: research access TONE3000 grants on request, or downloads a person makes by hand, at a normal
+         browsing pace and well short of a substantial portion of the catalogue (the terms set no number; the user
+         checks the limit). The account and any request to TONE3000 are the user's. Downloaded `.nam` files stay out
+         of git: the repo is public and redistribution is forbidden (the T3K licence allows publishing renders). The
+         report's first choice (not yet a plan): `amp-cab` NAM packs whose description names a mic; if too few store
+         their input level, the level is fixed by a declared rule.
    - **Pipeline review (2026-10-30, zero renders; [record](ml-pipeline-review.md), checks `learn/pipeline_review.py`).**
      At the user's request, the direct model's whole process is listed as 38 small steps. Each step has its code, a
      status, its evidence, a fix and a test.
@@ -1269,3 +1279,4 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-11-01 | Pipeline fix 5B.2 stage 2, audited. 65 more reamped units searched (10,725 renders); a lag check refused 3 before their labels were used. On 306 labels the real-amp centre beats S by −0.158 [−0.260, −0.057] by DI; the model retrained on them is not shown to read further per track (+0.029 [−0.011, +0.068] against the centre, undecided), so 5B.2's declared steps end with the centre as the candidate. The labels of a recording's own other windows sit nearer each unit's label (0.193) than the centre (0.263; setting space, post hoc), so the recording oracle (RigO with a count-matched control, 432 renders) is declared to tell whether the next fix goes to the model or the labels. 11,445 renders, 1.5 h of MPS | [plan](pipeline-fix-plan.md) F35, [ledger](dev-test-ledger.json) `pipeline-fix` `phase_5b2*` |
 | 2026-11-01 | Pipeline fix 5B.2 recording oracle, audited. A setting averaged from the same recording's other windows (no shared audio) beats the real-amp centre by −0.145 [−0.206, −0.083] by DI (7 of 7 DIs, 36 of 36 units) and reaches 97% of the true-DI search ceiling; a centre from as many other recordings' labels does not (+0.006). So the search labels hold the recording's chain (with its performance and guitar), and the per-track gap is the model's reading or the number of recordings it learns from (the model retrained on them: +0.042 against the centre). 432 renders. Next: a plan for the model's reading of the track, for the user to approve | [plan](pipeline-fix-plan.md) F36, [ledger](dev-test-ledger.json) `pipeline-fix` `phase_5b2_rigo*` |
 | 2026-11-01 | Pipeline fix 5C declared (the user chose more real recordings). No open source has 100+ real amp chains with their DI (two research passes, PR #353); GOAT, granted on request and downloaded (11.6 GB, md5 checked), gives 264 clean/crunch capture renders of 139 DIs after the pool's screens. Reviewed twice before any render: matched centres, an in-domain read first, a shuffled-label control, a one-window lag rule, the user's ear on every recording first | [plan](pipeline-fix-plan.md) 5C, [ledger](dev-test-ledger.json) `pipeline-fix` `phase_5c` |
+| 2026-11-01 | The user approved downloading from TONE3000 ("Downloading from TONE3000 is approved, you are allowed to freely download tones from there"), after the real-amp research. TONE3000's own terms still apply: the site Terms (2025-03-12) forbid scripted or systematic download of large quantities, and any download of a substantial portion; the API Terms (2026-07-07) forbid bulk download, scraping, mirroring or caching the catalogue. So downloads go through routes they allow: research access TONE3000 grants on request, or downloads a person makes by hand, at a normal browsing pace and well short of a substantial portion (no number set; the user checks the limit). The account and any request to TONE3000 are the user's; downloaded files stay out of git. The report's first choice: `amp-cab` NAM packs whose description names a mic | [research](research/real-amp-chains-2026-11.md), [ML plan](research/ml-plan-2026-10.md) §7 |
