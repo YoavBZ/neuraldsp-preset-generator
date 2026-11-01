@@ -674,7 +674,7 @@ instead of generating unrealistic presets our own?"):
     gains on BKS were about 30% (log ratio −0.35). So a lag in either mode scores a render as the right lag would,
     and the 14-sample rule refuses units the judge cannot tell apart. Revised: `GOAT_LAG_TOL` = 72 samples (the
     scan's span, where the judge was shown flat), which still refuses the gross failures (judge lag hundreds of
-    samples off; 16 units with the 2 unlagged). Honest note: 72 was the span declared for the scan, and it also
+    samples off: 16 units, plus the 2 that gave no lag). Honest note: 72 was the span declared for the scan, and it also
     clears the minimum (215 units; ac20 34 clean / 36 crunch, pr12 33 / 36, sw50r 43 / 33); 48 would leave pr12 at
     28 / 28. The units 14–72 samples off are marked in the records (`lag`, `item_lag`) and read A and B are also
     reported on the main-mode units alone, so the choice can be checked.
