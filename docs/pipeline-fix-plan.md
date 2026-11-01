@@ -564,7 +564,10 @@ instead of generating unrealistic presets our own?"):
     1,233 samples, 10 units above 300 (2 renders gave none and were out). Minimum: 30 labelled units per amp and class after the lag rule and the ear, or the
     pilot stops at the data stage and the plan is revised.
   - **Trusted data, before any GOAT render.** The user hears every kept unit's window (the render, with its DI on an
-    instant switch) and answers clean amp tone or not; a "no" is out. Flagged for that hearing: renders whose cab
+    instant switch; `learn/goat_ear_page.py`, 4 parts) and answers "a believable amp tone", "odd amp sound", "the DI
+    itself sounds processed or noisy" or "not sure"; only the first passes ("not sure" is out). The code enforces
+    it: `goat-search` (with `--lags-only` too) refuses to start until every kept unit has a verdict, and searches
+    and trains on passed units only (`goat_heard`). Flagged for that hearing: renders whose cab
     roll-off (A2's 6–10 kHz against 1–3 kHz) or low end sits outside BKS's reamps' range (a doubled cab from an
     amp-and-cab capture plus the Nolly IR, a preamp- or pedal-only capture).
   - **Labels.** First every unit's three fresh S renders (the class's S on each amp; 6 renders a unit) give its
@@ -627,7 +630,8 @@ instead of generating unrealistic presets our own?"):
     model can keep one centre for captures and one for reamps) and a BKS per-track claim against both centres;
     RGshuf permuted within each fold's training units, with its rule and outcome mapped; the staged stop's
     thresholds; and the pool's hum and hiss screens on the window. Adopted from its suggestions: every unit's lag
-    first, the search only on trusted units, and the large-lag units reported apart.
+    first, the search only on trusted units, and the large-lag units reported apart. Its second re-check asked for
+    one more, made: the ear's verdicts applied in code before any GOAT render (`goat_heard`), with "not sure" out.
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
   measurements; if they shape the choice, D_fix's V-real read is labelled selection-contaminated. The candidates by

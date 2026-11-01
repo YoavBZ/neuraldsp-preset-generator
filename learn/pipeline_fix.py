@@ -1023,9 +1023,7 @@ def cmd_train(args):
         + ("-dd" if args.dd else "") + (f"-wide{WIDE_K}" if args.wide else "") + ("-pc" if args.pc else "") \
         + ("-pcsz" if args.pcsz else "") + ("" if args.real_fold is None else f"-real{args.real_fold}" + ("s2" if args.stage == 2 else ""))
     if args.goat or args.goat_shuffle:                 # 5C: its own names, so no 5B.2 run is ever taken for one
-        if args.real_fold is None or args.stage != 2 or name != f"P2a-real{args.real_fold}s2":
-            raise SystemExit("--goat is 5C's RG: P2a-reals2's recipe (--rung a --real-fold k --stage 2) plus GOAT rows")
-        name = f"P2a-goat{'shuf' if args.goat_shuffle else ''}{args.real_fold}"
+        name = goat_run_name(name, args.real_fold, args.stage, args.goat_shuffle)
     od = out_dir() / "runs"
     rp = od / f"{name}-{args.seed}.json"
     if rp.exists():
@@ -3294,12 +3292,31 @@ def goat_lag_refused(lags, item_lags, tol=None):
     return {u for u in lags if u not in d or abs(d[u] - m) > tol}
 
 
+def goat_heard(units, verdicts):
+    """5C's ear gate: every kept unit must have the user's verdict before any GOAT render; only "amp" passes
+    ("unsure" and every other verdict are out). verdicts: {unit: {"verdict": ...}} (goat/ear.json).
+    -> (units passed, units without a verdict)."""
+    missing = [u for u in units if u not in verdicts]
+    return {u for u in units if (verdicts.get(u) or {}).get("verdict") == "amp"}, missing
+
+
+def goat_ear_passed(units):
+    """`goat_heard` on goat/ear.json; refuses while any kept unit is unheard. -> set of units passed."""
+    p = out_dir() / GOAT_DIR / "ear.json"
+    ok, missing = goat_heard(units, json.loads(p.read_text())["verdicts"] if p.exists() else {})
+    if missing:
+        raise SystemExit(f"{len(missing)} GOAT units are not yet heard: every kept unit is heard before any render")
+    return ok
+
+
 def goat_labels():
-    """5C's labelled GOAT records (goat/search) after the one-window lag rule, with their units. -> (records,
-    {unit: unit record}, refused units)."""
+    """5C's labelled GOAT records (goat/search) of the units the ear passed, after the one-window lag rule, with
+    their units. -> (records, {unit: unit record}, refused units)."""
     units = {p_["unit"]: p_ for p_ in goat_units()}
+    heard = goat_ear_passed(units)
     recs = [json.loads(p_.read_text()) for p_ in sorted((out_dir() / GOAT_DIR / SEARCH_DIR).glob("*.json"))]
-    off = goat_lag_refused({r["unit"]: r["lag"] for r in recs}, {u: units[u]["item_lag"] for u in units})
+    recs = [r for r in recs if r["unit"] in heard]
+    off = goat_lag_refused({r["unit"]: r["lag"] for r in recs}, {u: units[u]["item_lag"] for u in heard})
     return [r for r in recs if r["label"] is not None and r["unit"] not in off], units, off
 
 
@@ -3331,6 +3348,14 @@ def goat_shuffled(recs, units, seed=GOAT_SEED):
         for j, lab in zip(idx, labels):
             out[j]["label"] = lab
     return out
+
+
+def goat_run_name(base, real_fold, stage, shuffle):
+    """5C's run names: RG `P2a-goat{k}`, RGshuf `P2a-goatshuf{k}`, only on P2a-reals2's own recipe (the base name it
+    would otherwise take), so no 5B.2 run is ever reused for one."""
+    if real_fold is None or stage != 2 or base != f"P2a-real{real_fold}s2":
+        raise SystemExit("--goat is 5C's RG: P2a-reals2's recipe (--rung a --real-fold k --stage 2) plus GOAT rows")
+    return f"P2a-goat{'shuf' if shuffle else ''}{real_fold}"
 
 
 def goat_input_path(unit):
@@ -3393,6 +3418,8 @@ def cmd_goat_search(args):
     require("phase_5c")
     parts = sorted(goat_units(), key=lambda p_: p_["unit"])
     halves = goat_halves(parts)
+    heard = goat_ear_passed([p_["unit"] for p_ in parts])     # before any render; only "amp" units go on
+    parts = [p_ for p_ in parts if p_["unit"] in heard]
     k, n = args.shard
     mine = [p_ for j, p_ in enumerate(parts) if j % n == k]
     trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))

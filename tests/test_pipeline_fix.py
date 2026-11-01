@@ -473,6 +473,22 @@ def test_goat_shuffled_permutes_labels_only_within_amp_and_class():
     assert group(recs) == group(sh)
 
 
+def test_goat_heard_passes_only_amp_verdicts_and_lists_the_unheard():
+    v = {"a": {"verdict": "amp"}, "b": {"verdict": "unsure"}, "c": {"verdict": "odd"}, "d": {"verdict": "di_bad"}}
+    ok, missing = P.goat_heard(["a", "b", "c", "d", "e"], v)
+    assert ok == {"a"} and missing == ["e"]
+
+
+def test_goat_run_name_takes_only_reals2s_recipe():
+    import pytest
+
+    assert P.goat_run_name("P2a-real2s2", 2, 2, False) == "P2a-goat2"
+    assert P.goat_run_name("P2a-real0s2", 0, 2, True) == "P2a-goatshuf0"
+    for base, k, st in (("P2a-real2", 2, 1), ("P2a-real2s2-pc", 2, 2), ("P2a", None, 0)):
+        with pytest.raises(SystemExit):
+            P.goat_run_name(base, k, st, False)
+
+
 def test_goat_rows_and_records_stay_apart_from_bks():
     assert P.GOAT_ROW0 >= P.REAL_ROW0 + 10 * P.REAL_PER_EPOCH and P.GOAT_ROW0 + 10 * P.GOAT_PER_EPOCH < 10 ** 7
     assert P.GOAT_DIR != P.REAL_DIR

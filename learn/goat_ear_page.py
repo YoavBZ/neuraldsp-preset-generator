@@ -25,7 +25,8 @@ if str(PLUGIN_ROOT) not in sys.path:
 
 PAGE_NAME = "goat-ear"
 SEED = 20261048
-PART_ITEMS = 75                     # cards per page file (phone-sized)
+PART_ITEMS = 75                     # cards per page file
+KBPS = 96                           # AAC: an amp-tone check, not a near-threshold one (about 21 MB a part)
 ITEM_S = 15.0                       # listening time per card (the page's estimate)
 BANDS = {"hi": (6000.0, 10000.0), "mid": (1000.0, 3000.0), "lo": (60.0, 150.0)}
 VERDICTS = [("amp", "A believable amp tone"), ("odd", "Odd amp sound (muffled, fizzy, artifacts)"),
@@ -76,6 +77,26 @@ def bks_ref():
         for k in vals:
             vals[k].append(t[k])
     return {k: (min(v), max(v)) for k, v in vals.items()}, len(vals["hi_db"])
+
+
+def pair_clips(a, b, cache_dir, kbps=KBPS):
+    """`audibility_measure.pair_clips` at KBPS: both clips at -23 LUFS, 10-ms fades, AAC, base64."""
+    import numpy as np
+    import soundfile as sf
+
+    from learn import audibility_measure as AM
+    from learn import build_data_review as BDR
+
+    out = []
+    for v in AM.level_free(np.asarray(a, np.float64), np.asarray(b, np.float64)):
+        y = BDR.fade(v)
+        h = hashlib.sha256(y.astype(np.float32).tobytes()).hexdigest()[:16]
+        flac = pathlib.Path(cache_dir) / f"{h}.flac"
+        flac.parent.mkdir(parents=True, exist_ok=True)
+        if not flac.exists():
+            sf.write(str(flac), y, BDR.SR, subtype="PCM_24")
+        out.append(AM.aac_b64(flac, cache_dir, kbps))
+    return out
 
 
 def card(it, n, total):
@@ -133,7 +154,6 @@ Answers are saved in this browser as you go; tap <b>Export</b> any time, even ha
 
 
 def cmd_build(args):
-    from learn import audibility_measure as AM
     from learn import pipeline_fix as P
     from learn import pretrain_set as PS
 
@@ -160,7 +180,7 @@ def cmd_build(args):
             prt = units[it["unit"]]
             di = PS.section_audio(prt["di_path"], prt["start_s"])[trim:]
             amp = P.real_amp_track(prt["sd"], prt["track"], prt["start_s"])
-            clips[it["id"] + "-1"], clips[it["id"] + "-2"] = AM.pair_clips(di, amp, out / "cache")
+            clips[it["id"] + "-1"], clips[it["id"] + "-2"] = pair_clips(di, amp, out / "cache")
         p = out / f"part-{k}.html"
         p.write_text(page_html(its, clips, build, k, len(parts), 1 + (k - 1) * PART_ITEMS))
         print(f"part {k}: {len(its)} cards, {p.stat().st_size / 1e6:.1f} MB -> {p}")
