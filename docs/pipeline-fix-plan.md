@@ -919,39 +919,68 @@ instead of generating unrealistic presets our own?"):
   - the curves still rise at full size: scale (the F20 build's staged plan), read on V-real at each stage, in its own plan.
 - **D_fix:** the recipe plus every adopted fix, 2 seeds, read by sound on FS and NS, with the amp mismatched (about
   480 renders), and on V-real with the plain readout as primary and P3's readouts beside.
-  - *D_fix declared (2026-11-02, after F38, before any D_fix code or render; ledger `phase_dfix`).*
+  - *D_fix declared (2026-11-02, after F38, before any D_fix code or render; ledger `phase_dfix`; revised after its
+    review the same night, before any code).*
     - **What is adopted, and why.** The backing fix: P2b-wide24's recipe (the target in its own backing or 1 of 24
-      pool backings per epoch; F29: about half of the backing's loss recovered, both seeds, NS and FS), the closest
-      trained input to a song's (F15, F17: the other guitars and the separator add no further loss). The fixes every
+      pool backings per epoch; F29: about half of the backing's loss recovered, both seeds, NS and FS). The fixes every
       run already carries: the class input (F2), early stopping on NS (F18), runaways out, the doubles pinned as
       every run (rung b has no re-rendered doubles; their re-render served rungs c and d only, F16), the by-sound read
-      (F10). The real-amp fix: real rows, which fixed F31's real-amp penalty on k-fold reads (F34: −0.186 against
-      P2a on BKS): BKS's stage 1–2 labels and GOAT's labels, 300 rows each per epoch, as RG (F37), their inputs the
-      amp track alone at P2b-wide24's training inputs' median loudness (a cache of their own). GOAT rows are kept
-      because they do not hurt where read (F37's guard; F38 RG − Rcs2_k −0.014, P2a-reals2 − Rcs2_k +0.039) and their
-      centre leans better on new bands (F38, descriptive); the per-track reading is not claimed. The readout is plain
-      (F23, F12); S-centred and real-amp-centred readouts stay beside, not chosen (F32 undecided; F38 a lean only).
-      Not adopted: the near-chance rule (F23), the S fallback (the user's 2026-10-27 ruling), audibility weights
-      (unbuilt), more size (F25).
-    - **Models.** D_fix = P2b-wide24's recipe plus all real rows (BKS and GOAT), 2 seeds (20261042, 20261043), for FS,
-      NS and V-real. D_fix_k = the same with fold k's BKS DIs and GOAT items out, 4 folds × 2 seeds, for the k-fold
-      reads. 10 trainings, about 2.5 h of MPS. Run names `P2b-dfix` and `P2b-dfix{k}`.
-    - **Reads, in order; D_fix is chosen on 1 and 2 only.**
-      1. FS and NS by sound with the amp mismatched, as F19 (about 480 renders for D_fix, P2b-wide24's stored rows
-         beside): D_fix − P2b-wide24 must not be decided worse on either set (the real rows must not cost the plugin
-         skill); D_fix − S reported.
-      2. k-fold, as F35/F37: on BKS's 40 units by the DI-and-fold rule, D_fix_k − Rcs2 (adoption) and D_fix_k − S
-         (about 480 renders); on GOAT's held units by item and fold, D_fix_k − RcGk (about 430 renders).
-      3. V-real (the final exam, read once): D_fix's plain readout − S primary, with P2b-wide24, RcG and the S-centred
-         readout beside; the V-real read decides nothing about the recipe (it was chosen on 1 and 2); were it used to
-         choose, it is labelled selection-contaminated. About 600 renders.
-    - **Reading, declared now.** Read 1 worse on either set: D_fix is not built as is; the real rows' share is the
-      suspect (the user is told). Read 1 not worse and read 2's D_fix_k − Rcs2 not decided worse: D_fix stands and
-      read 3 runs. On V-real, D_fix − S better: the pipeline beats the plugin's own start on held-out real songs for
-      the first time, the scale step's plan follows; undecided or worse: the user decides between scale, domain work
-      and more real chains with every read as evidence.
-    - **Rules.** No V-real read before reads 1 and 2 are written up and reviewed. Renders as always; training runs in
-      this approved plan (about 2.5 h).
+      (F10). The real-amp fix: real rows, which fixed F31's real-amp penalty on k-fold reads (F34/F35: −0.19 against
+      P2a on BKS, decided): BKS's stage 1–2 labels and GOAT's labels, 300 rows each per epoch, as RG (F37). GOAT rows
+      are kept on a lean: neither 5C's nor 5D's adopt or reject branch fired (F37's B undecided; F38 a strong hint,
+      RG − Rcs2_k −0.014, P2a-reals2 − Rcs2_k +0.039); they are part of the recipe read 2 tests, and the per-track
+      reading is not claimed. The readout is plain (F23, F12); S-centred and real-amp-centred readouts stay beside,
+      not chosen. Not adopted: the near-chance rule (F23), the S fallback (the user's 2026-10-27 ruling), audibility
+      weights (unbuilt), more size (F25).
+    - **The real rows in backings.** Plugin rows sit in a backing in 24 of 25 epochs, so clean real rows would mark
+      "real-amp label" by the missing backing. Each real row is therefore built as WideData's variants are (zero
+      renders): its amp track brought to P2a's training-input median (−21.5 LUFS, the guitar's level in training),
+      then mixed with 1 of 25 backings per epoch — BKS rows' own session backing (its other stems at the section) and
+      24 pool backings, GOAT rows 25 pool backings — never from the row's own session, with the backing and overall
+      gains of a seeded training example of the same class and its seeded mastering draw (`build-dfix-real`). Their
+      level then follows P2b's inputs (median about −13.7 LUFS) as the mix's does.
+    - **Models.** D_fix = P2b-wide24's recipe plus all real rows, 2 seeds (20261042, 20261043), for FS, NS and V-real.
+      D_fix_k = the same with fold k's BKS DIs and GOAT items out, 4 folds × 2 seeds, for the k-fold reads. 10
+      trainings, about 3 h of MPS. Run names `P2b-dfix` and `P2b-dfix{k}`. The backing schedule is seeded by the
+      pool's seed, so the two training seeds differ in initialisation and batch order only. The held-fold real loss
+      is logged per checkpoint as a diagnostic, never for choosing.
+    - **Reads, in order; D_fix is chosen on 1 and 2 only.** Every model answered the same way (`answers --seeds`,
+      the two-seed ensemble).
+      1. FS and NS by sound on P2b's inputs, at the true amp and both mismatched amps, as F19, for D_fix and for
+         P2b-wide24 answered alike (about 1,440 renders): D_fix − P2b-wide24 must not be decided worse on either set
+         at any amp. D_fix − S reported. Beside, the input the product sees: D_fix and P2b-wide24 on FS's and NS's
+         stored P2d stems (P2c's mix beside), at the true amp (about 480 renders), reported against S.
+      2. k-fold on BKS's 40 units (DI-and-fold rule): D_fix_k − Rcs2 (adoption), with D_fix_k − RG (the cost of the
+         rung-b base) and D_fix_k − S beside; inputs the units' own backed sections (primary, as the product hears a
+         song), their clean amp tracks beside (about 960 renders). On GOAT's held units, D_fix_k − RcGk by item and
+         fold, beside (about 430 renders); BKS governs.
+      3. V-real (the final exam, read once): its input the X-LANCE stem of each part's mix, as the product reads a
+         song; D_fix's plain readout − S primary, with P2b-wide24, RcG and the S-centred readout beside (about 600
+         renders). It decides nothing about the recipe; were it used to choose, it is labelled
+         selection-contaminated. It is also the fresh read the GOAT rows' lean (from the panel) needs.
+    - **Reading, declared now.**
+      - Read 1 decided worse on either set at any amp: D_fix is not built as is; no V-real read happens until a new
+        declaration is reviewed (the real rows' share is the suspect).
+      - Read 2's BKS row: D_fix_k − Rcs2 decided worse: as read 1 (no V-real until a new declaration). Undecided or
+        better: D_fix stands. GOAT's row is reported; if it is better or undecided while BKS is worse, BKS governs.
+      - Read 1 and 2 passed: read 3 runs. On V-real, D_fix − S better: the pipeline beats the plugin's own start on
+        held-out real songs for the first time, and the scale step's plan follows; undecided or worse: the user
+        decides between scale, domain work and more real chains with every read as evidence.
+    - **Guards (code, with tests).** A combined `--wide --real-fold` run gets its own branch, and any other combination
+      refuses; WideData's variant check takes plugin ids only; the real-row inputs live in their own cache directory
+      (`dfix/inputs`), the run file stores their target loudness, and every predict path asserts it; `real-predict`
+      refuses `P2b-dfix` (all labels) on BKS by name. Known-answer checks: with the real rows off the new path
+      reproduces P2b-wide24's training ids and rows hash; one stored RG BKS answer reproduces exactly.
+    - **Rules.** No V-real read before reads 1 and 2 are written up and reviewed. The user's choice from F37/F38
+      (domain work or more real chains) stays open; D_fix uses only the evidence so far and does not wait on it.
+      Budget: about 3,900 renders (read 1 1,920, read 2 1,390, read 3 600) and about 3 h of MPS, within this
+      approved plan.
+    - *Review (2026-11-02, independent, before any code):* approved with required changes, all made above: V-real's
+      input declared (the stem) and the stem tested on FS/NS first; the real rows in backings (no domain marker; their
+      level follows); read 1 computable and like for like (both models answered and rendered alike at every amp); the
+      map closed (read 2 worse, BKS governs, no V-real without a new declaration; D_fix_k − RG beside); the code traps
+      as guards with tests; the GOAT rows' status and the user's open choice recorded. Adopted from its suggestions:
+      known-answer checks, the held-fold real loss as a diagnostic, the seeds' meaning and the budget.
 - **Decisions for the user, with the evidence:** whether to adopt the S fallback or the near-chance rule
   (steps 26, 27, 37), and whether to scale.
 
