@@ -3360,7 +3360,7 @@ def goat_labels():
     heard = goat_ear_passed(units)
     recs = [json.loads(p_.read_text()) for p_ in sorted((out_dir() / GOAT_DIR / SEARCH_DIR).glob("*.json"))]
     recs = [r for r in recs if r["unit"] in heard]
-    off = goat_lag_refused({r["unit"]: r["lag"] for r in recs}, {u: units[u]["item_lag"] for u in heard})
+    _, off = goat_lags_refused(units, heard)
     return [r for r in recs if r["label"] is not None and r["unit"] not in off], units, off
 
 
@@ -3498,8 +3498,7 @@ def cmd_goat_search(args):
         missing = [u for u, q in lp_.items() if not q.exists()]
         if missing:
             raise SystemExit(f"{len(missing)} units have no lag: run goat-search --lags-only first")
-        refused = goat_lag_refused({u: json.loads(q.read_text())["lag"] for u, q in lp_.items()},
-                                   {p_["unit"]: p_["item_lag"] for p_ in parts})
+        _, refused = goat_lags_refused({p_["unit"]: p_ for p_ in parts}, [p_["unit"] for p_ in parts])
         short = goat_short_cells([p_ for p_ in parts if p_["unit"] not in refused])
         if short:
             raise SystemExit(f"under {GOAT_MIN_PER_CELL} trusted units in {short}: the pilot stops at the data stage")
@@ -3624,13 +3623,21 @@ def cmd_goat_stage_check(args):
           f" inputGain at a bound {share}; {'STOP' if stop else 'go on'}")
 
 
-def goat_trusted_units():
-    """5C's read units: the GOAT units the ear passed with a lag the one-window rule keeps (goat/lags)."""
-    units = {p_["unit"]: p_ for p_ in goat_units()}
-    heard = goat_ear_passed(units)
+def goat_lags_refused(units, heard, tol=None):
+    """The one-window lag rule over every heard unit's lag (goat/lags), so every caller (the search, the labels, the
+    stage check, the reads) refuses the same units whatever has been searched yet. units: {unit: unit record}.
+    -> ({unit: lag}, refused units)."""
     ldir = out_dir() / GOAT_DIR / "lags"
     lags = {u: json.loads((ldir / f"{u.replace('/', '__')}.json").read_text())["lag"] for u in heard}
-    off = goat_lag_refused(lags, {u: units[u]["item_lag"] for u in heard})
+    return lags, goat_lag_refused(lags, {u: units[u]["item_lag"] for u in heard}, tol)
+
+
+def goat_trusted_units(tol=None):
+    """5C's read units: the GOAT units the ear passed with a lag the one-window rule keeps (goat/lags); `tol` other
+    than GOAT_LAG_TOL only to report a read on a narrower set (the main-mode units at 14)."""
+    units = {p_["unit"]: p_ for p_ in goat_units()}
+    heard = goat_ear_passed(units)
+    lags, off = goat_lags_refused(units, heard, tol)
     return [dict(units[u], lag=lags[u]) for u in sorted(heard) if u not in off]
 
 
@@ -3793,7 +3800,7 @@ def cmd_goat_report(args):
     judge drops the direction, counted), clustered by item (an item's renders share its playing), with the 4-fold
     interval beside (a fold's units share models). -> goat/report-<label>.json."""
     require("phase_5c")
-    units = {p_["unit"]: p_ for p_ in goat_trusted_units()}
+    units = {p_["unit"]: p_ for p_ in goat_trusted_units(args.lag_tol)}
     tags = {t for pair in args.pairs.split(",") for t in pair.split(":")}
     judge = {}
     for t in tags:
@@ -3801,7 +3808,8 @@ def cmd_goat_report(args):
         for p_ in (out_dir() / GOAT_DIR / "judge" / t).glob("*.json"):
             r = json.loads(p_.read_text())
             judge[t][f"{r['unit']}|{r['amp']}"] = r["judge"]
-    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "units": len(units), "rows": {}}
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "units": len(units),
+           "lag_tol": GOAT_LAG_TOL if args.lag_tol is None else args.lag_tol, "rows": {}}
     keep = ("mean", "lo90", "hi90", "clusters", "clusters_negative", "part_weighted", "parts", "parts_negative")
     for pair in args.pairs.split(","):
         a, b = pair.split(":")
@@ -4880,6 +4888,7 @@ def main(argv=None):
     ap.add_argument("--goat", action="store_true")
     ap.add_argument("--goat-shuffle", action="store_true")
     ap.add_argument("--lags-only", action="store_true")
+    ap.add_argument("--lag-tol", type=int, default=None)       # goat-report: read A on a narrower lag set
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 

@@ -572,7 +572,7 @@ instead of generating unrealistic presets our own?"):
     amp-and-cab capture plus the Nolly IR, a preamp- or pedal-only capture).
   - **Labels.** First every unit's three fresh S renders (the class's S on each amp; 6 renders a unit) give its
     judge lag (`goat-search --lags-only`). One-window lag rule: a unit whose judge lag minus its whole-item lag sits
-    more than 14 samples from the median of that difference over all units gives no label, and is not searched.
+    more than 14 samples from the median of that difference over all units gives no label, and is not searched (14 until the lag amendment below; 72 since).
     Then arm A's main stage as 5B.2's stage 2 (`K.space`, 52 evaluations, seed 20261013, from the class's S; labels
     only, the best's in-process render; 53 renders a unit) on the unit's forced amp. `inputGain` stays searched, as
     on BKS, and its spread is reported beside BKS's. Units whose whole-item lag exceeds 300 samples (possibly
@@ -659,25 +659,41 @@ instead of generating unrealistic presets our own?"):
     a test of the gate itself (`goat_ear_passed`). Adopted from its suggestions: the heavy answers' build and the
     candidate set checked in the gate, a test of `firmly_driven`, the two known biases, the forced-amp naming and
     the rebalance named as an alternative.
-  - *Amendment (2026-11-01 15:10, after the lag pass, before any search render): the lag rule's tolerance.* The
-    lag pass ran (1,398 renders; 231 of 233 units lagged, 2 gave none). With the one-window rule at 14 samples the
-    main stage refused to start, as the minimum requires: 131 units left, 19–25 per amp and class. Finding: judge
-    lag minus whole-item lag is bimodal (a main mode at −90 samples, 131 units within 14; a second near −45, about
-    65 units), while each unit's window DI-to-render lag equals its whole-item lag (median difference 0 in both
-    modes, 80 units checked), so the window is not shifted; the second mode lies between the plugin's S render and
-    the capture render (a capture's or IR's phase, not the playing). The rule assumed one constant offset, true on
-    BKS (one chain per recording, compared with its own windows) and not across GOAT's 233 chains. Diagnostic
-    (ledger `phase_5c_lag_diagnostic`, declared before its 24 renders): 12 units, 6 per mode, S re-rendered as the
+  - *Amendment (2026-11-01, after the lag pass, before any search render): the lag rule's tolerance.* The lag pass
+    ran (1,398 renders; 231 of 233 units lagged, 2 gave none). With the one-window rule at 14 samples the main
+    stage refused to start, as the minimum requires: 131 units left, 19–25 per amp and class. Finding: judge lag
+    minus whole-item lag is bimodal (a main mode at −90 samples, 131 units within 14; a second near −45, 66
+    units). Each unit's window DI-to-render lag matches its whole-item lag (median difference 0 in both modes; within
+    3 samples for 93 of 131 main-mode and 56 of 66 second-mode units; all 231 checked, zero renders,
+    goat/window-lag-check.py and .json), so the second mode is not a shifted window; it lies between the plugin's
+    S render and the capture render. It clusters partly by item (18 items have both units in it, about 9 by
+    chance), so the DI or the item-lag estimate takes part: a phase, not the playing. The rule assumed one
+    constant offset, true on BKS (one chain per recording, compared with its own windows), not across GOAT's
+    chains. Diagnostic (ledger `phase_5c_lag_diagnostic`; written to the ledger file in the same command, seconds
+    before the run, and committed after it, at 14:59): 12 units, 6 per mode (seed 20261049), S re-rendered as the
     lag pass did (all 12 bit-identical to the stored renders), the S judge scanned over ±72 samples of the stored
-    lag in 3-sample steps. In both modes the judge is flat: its range over the scan is at most 2.2% of its value
-    (median 0.4%), and the best lag beats the stored one by at most 0.9% (11 of 12 under 0.15%); the search's
-    gains on BKS were about 30% (log ratio −0.35). So a lag in either mode scores a render as the right lag would,
-    and the 14-sample rule refuses units the judge cannot tell apart. Revised: `GOAT_LAG_TOL` = 72 samples (the
-    scan's span, where the judge was shown flat), which still refuses the gross failures (judge lag hundreds of
-    samples off: 16 units, plus the 2 that gave no lag). Honest note: 72 was the span declared for the scan, and it also
-    clears the minimum (215 units; ac20 34 clean / 36 crunch, pr12 33 / 36, sw50r 43 / 33); 48 would leave pr12 at
-    28 / 28. The units 14–72 samples off are marked in the records (`lag`, `item_lag`) and read A and B are also
-    reported on the main-mode units alone, so the choice can be checked.
+    lag in 3-sample steps; run 14:55:47–14:57:54, 24 renders (goat/lag-diagnostic.py and .json). The judge is
+    insensitive to the lag in both modes: its log changes by at most 0.022 over the whole scan (median 0.002 at
+    ±45), against search gains of about 0.35 on BKS and read effects of 0.04–0.15, and the reads are paired at the
+    same unit and lag; the label is the in-process render and uses no lag. (The declared reading, where the minimum
+    sits, cannot decide on a curve this flat: the best offsets scatter from −48 to +72.) So the 14-sample rule
+    refuses units the judge cannot tell apart. Revised: `GOAT_LAG_TOL` = 72 samples, the scan's span, where the
+    judge was shown insensitive. It refuses 18 units: 7 whose lag is 809–2,069 samples off the median (gross
+    failures), 9 at 93–134 off (outside the scan, not shown to matter, refused to stay within what was shown) and
+    the 2 with no lag. Honest note: 72 was chosen after the counts at 14 were known, and it clears the minimum
+    (215 units; ac20 34 clean / 36 crunch, pr12 33 / 36, sw50r 43 / 33; 48 would leave pr12 at 28 / 28); every
+    tolerance from 71 to 92 gives the identical set (the nearest kept units sit −70 and +67 from the median, the
+    nearest refused −93 and +106). The rule now reads every heard unit's lag from goat/lags in one place
+    (`goat_lags_refused`), so the search, the labels, the staged stop check and the reads refuse the same units
+    whatever has been searched (the median of a two-mode set taken over a third of the records would move). Read A
+    is also reported on the main-mode units alone (`goat-report --lag-tol 14`: the same models, the held units
+    narrowed); read B has no such variant (it would need models trained on main-mode labels only, not run).
+  - *Review of the lag amendment (2026-11-01, independent):* approved with required changes, all made: the
+    diagnostic's timeline stated as it happened; the refused units described by distance (7 gross, 9 at 93–134)
+    and the 71–92 invariance stated; read A's main-mode variant in code (`--lag-tol`), read B dropped from that
+    promise; one lag rule for every caller, with a test; the window check saved with one count. Adopted from its
+    suggestions: flatness in log-judge units, "insensitive" rather than "the stored lag is right", the item
+    clustering, and a pointer from the main 5C block.
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
   measurements; if they shape the choice, D_fix's V-real read is labelled selection-contaminated. The candidates by

@@ -563,3 +563,20 @@ def test_goat_lag_rule_tolerance_is_the_diagnostic_span():
     item = {u: 0 for u in lags}
     assert P.GOAT_LAG_TOL == 72
     assert P.goat_lag_refused(lags, item) == {"c"}
+
+
+def test_goat_lags_refused_reads_every_heard_unit_and_takes_a_narrower_tolerance(tmp_path, monkeypatch):
+    import json
+
+    ld = tmp_path / P.GOAT_DIR / "lags"
+    ld.mkdir(parents=True)
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    offs = {"g/a": -90, "g/b": -90, "g/c": -88, "g/g": -91, "g/d": -45, "g/e": -45, "g/f": 800}
+    for u, o in offs.items():
+        (ld / f"{u.replace('/', '__')}.json").write_text(json.dumps({"lag": o, "item_lag": 0}))
+    units = {u: {"item_lag": 0} for u in offs}
+    lags, off = P.goat_lags_refused(units, list(offs))
+    assert lags == offs and off == {"g/f"}                      # the median (-88) from every heard unit
+    assert P.goat_lags_refused(units, list(offs), 14)[1] == {"g/d", "g/e", "g/f"}
+    # a subset (as after a third of the searches) would centre elsewhere; the rule never sees one
+    assert P.goat_lag_refused({u: offs[u] for u in ("g/d", "g/e", "g/a")}, {u: 0 for u in offs}, 14) == {"g/a"}
