@@ -1,3 +1,4 @@
+import json
 import math
 
 import pytest
@@ -600,3 +601,135 @@ def test_goat_lags_refused_reads_every_heard_unit_and_takes_a_narrower_tolerance
     assert P.goat_lags_refused(units, list(offs), 14)[1] == {"g/d", "g/e", "g/f"}
     # a subset (as after a third of the searches) would centre elsewhere; the rule never sees one
     assert P.goat_lag_refused({u: offs[u] for u in ("g/d", "g/e", "g/a")}, {u: 0 for u in offs}, 14) == {"g/a"}
+
+
+def test_panel_windows_are_seeded_apart_and_capped():
+    rows = [{"start_s": float(s), "passes_activity": True} for s in range(0, 200, 5)]
+    a = P.panel_windows(rows, {}, "band|part")
+    assert a == P.panel_windows(rows, {}, "band|part") and len(a) == P.PANEL_WINDOWS
+    assert all(abs(x - y) >= 10 + P.PANEL_GAP_S for x in a for y in a if x != y) and min(a) >= 1.0
+    assert P.panel_windows(rows, {}, "band|part", k=1) != [] and len(P.panel_windows(rows[:3], {}, "b|p")) == 1
+
+
+def test_panel_folds_balance_across_bands():
+    dis = {"A": {f"a{j}" for j in range(5)}, "B": {"b0", "b1"}, "C": {"c0"}}
+    f = P.panel_folds(dis)
+    assert f == P.panel_folds(dis) and set(f) == set().union(*dis.values())
+    counts = [list(f.values()).count(k) for k in range(P.REAL_FOLDS)]
+    assert max(counts) - min(counts) <= 1
+
+
+def test_panel_bleed_reads_the_amp_where_the_di_is_silent():
+    np = pytest.importorskip("numpy")
+    sr = 48000
+    di = np.concatenate([np.sin(np.arange(sr) * 0.05), np.zeros(sr)])
+    clean = np.concatenate([np.sin(np.arange(sr) * 0.05), np.zeros(sr) + 1e-6])
+    bleed = clean + np.concatenate([np.zeros(sr), 0.1 * np.sin(np.arange(sr) * 0.3)])
+    assert P.panel_bleed_db(bleed, di, sr) > P.panel_bleed_db(clean, di, sr) + 40
+
+
+def test_panel_pairs_are_the_declared_sources_and_never_training_or_v_real():
+    pairs = P.panel_pairs()
+    assert {p["band"] for p in pairs} == {"Blue Manic", "Sonnet & Alcohol", "The Laminar Flow", "Little Tybee",
+                                          "Port St Willow", "Big Troubles", "Guitar-TECHS P3", "Aimee Norwich",
+                                          "Dahka Band", "Jen Hartswick & Nick Cassarino"}
+    import json
+    files = {a["path"] for p in pairs for a in p["amps"]} | {p["di"]["path"] for p in pairs}
+    assert not any("v-real" in f.lower() or "datasets-set5" in f for f in files)
+
+
+def test_panel_leaks_catch_a_pool_copy_and_an_out_band(tmp_path):
+    a, b, c = tmp_path / "di.wav", tmp_path / "amp.wav", tmp_path / "copy.wav"
+    a.write_bytes(b"x" * 5000), b.write_bytes(b"y" * 5000), c.write_bytes(b"x" * 5000)
+    pairs = [{"band": "New", "di": {"path": str(a)}, "amps": [{"path": str(b)}]}]
+    assert P.panel_leaks(pairs, [], set()) == []
+    assert any("pool file" in x for x in P.panel_leaks(pairs, [str(c)], set()))
+    assert P.panel_leaks(pairs, [str(a)], set()) and P.panel_leaks(pairs, [], {"New"}) == ["band New is out"]
+
+
+def test_panel_lets_di_hum_through_and_nothing_else(monkeypatch):
+    from learn import clean_di as CD
+    monkeypatch.setattr(CD, "section_flags", lambda r, t: (r["f"], []))
+    assert not P.panel_di_flagged({"f": ["hum"]}, {}) and not P.panel_di_flagged({"f": []}, {})
+    assert P.panel_di_flagged({"f": ["hum", "hiss"]}, {}) and P.panel_di_flagged({"f": ["clipping"]}, {})
+
+
+def test_panel_heard_passes_only_amp_verdicts():
+    v = {"a": {"verdict": "amp"}, "b": {"verdict": "bleed"}, "c": {"verdict": "unsure"}, "d": {"verdict": "odd"}}
+    ok, missing = P.panel_heard(["a", "b", "c", "d", "e"], v)
+    assert ok == {"a"} and missing == ["e"]
+
+
+def test_panel_read_units_wait_for_the_ear(tmp_path, monkeypatch):
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    (tmp_path / P.PANEL_DIR).mkdir()
+    (tmp_path / P.PANEL_DIR / "units.json").write_text(json.dumps({"units": [{"unit": "x", "band": "A"}, {"unit": "y", "band": "B"}]}))
+    with pytest.raises(SystemExit):
+        P.panel_read_units()
+    (tmp_path / P.PANEL_DIR / "ear.json").write_text(json.dumps({"verdicts": {"x": {"verdict": "amp"}}}))
+    with pytest.raises(SystemExit):
+        P.panel_read_units()
+    (tmp_path / P.PANEL_DIR / "ear.json").write_text(json.dumps({"verdicts": {"x": {"verdict": "amp"},
+                                                                              "y": {"verdict": "bleed"}}}))
+    assert [u["unit"] for u in P.panel_read_units()] == ["x"]
+    (tmp_path / P.PANEL_DIR / "recheck.json").write_text(json.dumps({"verdicts": {"y": {"verdict": "amp"},
+                                                                                  "x": {"verdict": "unsure"}}}))
+    assert [u["unit"] for u in P.panel_read_units()] == ["y"]
+
+
+def test_panel_cut_lines_the_amp_window_up_with_the_di_for_either_sign():
+    np = pytest.importorskip("numpy")
+    rng = np.random.default_rng(0)
+    di = rng.standard_normal(5000)
+    for lag in (37, -23):
+        amp = np.roll(di, lag)                              # amp[t] = di[t - lag]
+        d, a = P.panel_cut(di, amp, 1000, 2000, lag)
+        assert len(d) == len(a) == 2000 and np.allclose(d, a)
+    assert len(P.panel_cut(di, di, 10, 100, -50)[1]) == 0
+
+
+def test_panel_halves_alternate_within_each_di():
+    units = [{"unit": f"d{j % 2}@{j}", "di": f"d{j % 2}"} for j in range(6)]
+    h = P.panel_halves(units)
+    for d in ("d0", "d1"):
+        assert [h[u["unit"]] for u in sorted(units, key=lambda u: u["unit"]) if u["di"] == d] == ["A", "B", "A"]
+
+
+def test_weighted_clustered_matches_the_plain_mean_and_counts_effective_clusters():
+    rows = [("a", -0.1), ("a", -0.3), ("b", 0.0), ("c", -0.1)]
+    eq = P.weighted_clustered(rows, {"a": 1, "b": 1, "c": 1})
+    assert abs(eq["mean"] - (-0.2 + 0.0 - 0.1) / 3) < 1e-12 and abs(eq["n_eff"] - 3) < 1e-12
+    sk = P.weighted_clustered(rows, {"a": 2, "b": 1, "c": 1})
+    assert abs(sk["mean"] - (2 * -0.2 + 0 - 0.1) / 4) < 1e-12 and sk["n_eff"] < 3 and sk["lo90"] < sk["mean"] < sk["hi90"]
+
+
+def test_panel_weights_cap_a_band_at_four_dis():
+    units = [{"band": "big", "di": f"b{j}"} for j in range(8)] + [{"band": "one", "di": "o"}]
+    w = P.panel_weights(units)
+    assert abs(sum(v for d, v in w.items() if d.startswith("b")) - 4) < 1e-12 and w["o"] == 1
+    assert abs(sum(v for d, v in P.panel_weights(units, capped=False).items() if d.startswith("b")) - 1) < 1e-12
+
+
+def test_panel_rows_read_the_held_half_and_drop_missing():
+    units = [{"unit": "u", "di": "d"}]
+    judge = {"M": {f"u|{a}": {"A": {"A": 1.0, "B": 2.0}} for a in P.AMPS3},
+             "C": {f"u|{a}": {P.ANY_HALF: {"A": 9.0, "B": 4.0}} for a in P.AMPS3[:2]}}
+    rows, dropped = P.panel_rows("M", "C", units, {"u": "A"}, judge)
+    assert dropped == 1 and all(abs(v - math.log(2.0 / 4.0)) < 1e-12 for _, _, v in rows) and len(rows) == 2
+
+
+def test_panel_ceiling_takes_one_seeded_unit_per_band():
+    units = [{"unit": f"{b}{j}", "band": b} for b in "xyz" for j in range(4)]
+    c = P.panel_ceiling_units(units)
+    assert c == P.panel_ceiling_units(units) and [p["band"] for p, _ in c] == ["x", "y", "z"]
+    assert all(a in P.AMPS3 for _, a in c)
+
+
+def test_panel_read_units_drop_the_di_like_bands(tmp_path, monkeypatch):
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    (tmp_path / P.PANEL_DIR).mkdir()
+    units = [{"unit": "x", "band": "Dahka Band"}, {"unit": "y", "band": "Other"}]
+    (tmp_path / P.PANEL_DIR / "units.json").write_text(json.dumps({"units": units}))
+    (tmp_path / P.PANEL_DIR / "ear.json").write_text(json.dumps({"verdicts": {u["unit"]: {"verdict": "amp"}
+                                                                              for u in units}}))
+    assert "Dahka Band" in P.PANEL_DI_LIKE and [u["unit"] for u in P.panel_read_units()] == ["y"]

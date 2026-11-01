@@ -216,9 +216,13 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          on held GOAT recordings it beats the matched centre by −0.053 [−0.077, −0.029] and its shuffled-label
          control by −0.041 [−0.056, −0.026]. On BKS's real reamps it leans better (6–7 of 8 DIs) but is undecided.
          A lag check found no earlier read affected.
-       - **Next:** the user's choice from F37 (more real chains, or domain work), and a real-amp test panel across
-         bands (proposed: about 6 more bands, verified and heard, so transfer can be decided); then D_fix, with a
-         real-amp centre as a readout
+       - **5D, a real-amp test panel across 7 bands (2026-11-01/02, F38; a strong hint, underpowered):** the user
+         heard 62 clips; 45 passed the ear, 44 were read, from 7 bands. The per-track reading is not shown on real
+         amps (+0.035 against its matched centre; better on clean, worse on crunch). Descriptively, a centre from
+         GOAT's many capture labels beats S across all 7 bands, −0.069 [−0.114, −0.025]; BKS's own centre is not
+         shown to (−0.019, undecided).
+       - **Next:** the user's choice (domain work, or more real chains), then D_fix, chosen on FS, NS and the k-fold
+         reads, with the real-amp centres a lean, not a choice, and V-real as its
          candidate. Community presets and Suite X's parity check follow.
        - **TONE3000 downloads: approved by the user (2026-11-01)**, after the [real-amp
          research](research/real-amp-chains-2026-11.md). TONE3000's own terms still apply: the site Terms forbid

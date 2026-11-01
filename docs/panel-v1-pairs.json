@@ -1,0 +1,1722 @@
+{
+ "generated": "2026-11-01",
+ "lag_sign": "positive = amp track later than the DI",
+ "header_source": "soundfile.info on each file",
+ "sources": [
+  {
+   "source": "Cambridge-MT (datasets-cambridge-new), reserved test band (ledger cambridge-new-test-band-bluemanic)",
+   "band": "Blue Manic",
+   "song": "Acomatay",
+   "readme": "Raw multitrack, educational use only; 32 WAV files at 24-bit/44.1 kHz. No track notes, tempo or gear.",
+   "pairs": [
+    {
+     "part": "ElecGtr1",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-cambridge-new/BlueManic_Acomatay_Full/15_ElecGtr1DI.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 298.7944
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-cambridge-new/BlueManic_Acomatay_Full/13_ElecGtr1Amp1.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 299.1894,
+       "mic": "Amp1",
+       "len_minus_di_s": 0.395
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-cambridge-new/BlueManic_Acomatay_Full/14_ElecGtr1Amp2.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 299.3278,
+       "mic": "Amp2",
+       "len_minus_di_s": 0.5334
+      }
+     ],
+     "gain_class": null,
+     "notes": "paired by name/number (Readme gives no track notes); not in any catalogue, so no measured lag or same-take test yet; amp track(s) longer than the DI by 0.395, 0.5334 s (start offset unknown: needs the wide lag search the 5D plan describes); two amp tracks of one DI ('Amp1', 'Amp2': two amps or two mics, Readme does not say)"
+    },
+    {
+     "part": "ElecGtr2",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-cambridge-new/BlueManic_Acomatay_Full/17_ElecGtr2DI.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 298.7944
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-cambridge-new/BlueManic_Acomatay_Full/16_ElecGtr2.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 298.7944,
+       "mic": null,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": null,
+     "notes": "paired by name/number (Readme gives no track notes); not in any catalogue, so no measured lag or same-take test yet"
+    },
+    {
+     "part": "ElecGtr6",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-cambridge-new/BlueManic_Acomatay_Full/22_ElecGtr6DI.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 174.4894
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-cambridge-new/BlueManic_Acomatay_Full/21_ElecGtr6.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 174.4894,
+       "mic": null,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": null,
+     "notes": "paired by name/number (Readme gives no track notes); not in any catalogue, so no measured lag or same-take test yet"
+    },
+    {
+     "part": "ElecGtr7",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-cambridge-new/BlueManic_Acomatay_Full/24_ElecGtr7DI.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 174.4894
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-cambridge-new/BlueManic_Acomatay_Full/23_ElecGtr7.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 174.4894,
+       "mic": null,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": null,
+     "notes": "paired by name/number (Readme gives no track notes); not in any catalogue, so no measured lag or same-take test yet"
+    },
+    {
+     "part": "ElecGtr8",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-cambridge-new/BlueManic_Acomatay_Full/26_ElecGtr8DI.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 266.9917
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-cambridge-new/BlueManic_Acomatay_Full/25_ElecGtr8.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 268.1943,
+       "mic": null,
+       "len_minus_di_s": 1.2026
+      }
+     ],
+     "gain_class": null,
+     "notes": "paired by name/number (Readme gives no track notes); not in any catalogue, so no measured lag or same-take test yet; amp track(s) longer than the DI by 1.2026 s (start offset unknown: needs the wide lag search the 5D plan describes)"
+    }
+   ],
+   "unpaired_guitar_tracks_no_di": [
+    {
+     "path": "~/ndsp-presets/references/datasets-cambridge-new/BlueManic_Acomatay_Full/18_ElecGtr3.wav",
+     "sr": 44100,
+     "ch": 1,
+     "dur": 288.0952
+    },
+    {
+     "path": "~/ndsp-presets/references/datasets-cambridge-new/BlueManic_Acomatay_Full/19_ElecGtr4.wav",
+     "sr": 44100,
+     "ch": 1,
+     "dur": 288.0952
+    },
+    {
+     "path": "~/ndsp-presets/references/datasets-cambridge-new/BlueManic_Acomatay_Full/20_ElecGtr5.wav",
+     "sr": 44100,
+     "ch": 1,
+     "dur": 288.0952
+    },
+    {
+     "path": "~/ndsp-presets/references/datasets-cambridge-new/BlueManic_Acomatay_Full/27_ElecGtr9.wav",
+     "sr": 44100,
+     "ch": 1,
+     "dur": 266.9917
+    }
+   ],
+   "excluded_non_guitar": [
+    "09_BassDI.wav",
+    "10_BassAmp1.wav",
+    "11_BasAmp2.wav",
+    "12_AcousticGtr.wav",
+    "28_Synth.wav",
+    "29_Saxophone.wav",
+    "drums, vocals"
+   ]
+  },
+  {
+   "source": "Cambridge-MT via Wayback (set 4, held out)",
+   "band": "Sonnet & Alcohol",
+   "song": "Back To The Nineties",
+   "readme": "Raw multitrack from Sonnet & Alcohol's 'Back To The Nineties'. These files are provided for educational purposes only, and the material contained in them should not be used for any commercial purpose without the express permission of the copyright holders. Please refer to www.cambridge-mt.com for further details.  Comprises 13 WAV files at 24-bit/44.1kHz resolution.  Tempo: approx 98bpm",
+   "pairs": [
+    {
+     "part": "ElecGtr1",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-set4/Sonnet & Alcohol - Back To The Nineties/SonnetAndAlcohol_BackToTheNineties_Full/09_ElecGtr1DI.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 286.6771
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/Sonnet & Alcohol - Back To The Nineties/SonnetAndAlcohol_BackToTheNineties_Full/08_ElecGtr1.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 286.6771,
+       "mic": null,
+       "role": "reference",
+       "lag_samples_native_44k1": 37,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": true,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": "clean",
+     "gain_confidence": "normal",
+     "gain_confidence_reasons": [],
+     "catalog_lag_samples_native_44k1": 37,
+     "catalog_lag_ms": 0.839,
+     "polarity": -1,
+     "waveform_windows": 27,
+     "catalog_flags": [
+      "amp track polarity inverted relative to the DI"
+     ],
+     "set4_status": "kept",
+     "set4_lag_samples_48k": 40,
+     "set4_judge_lag_samples_48k": -12,
+     "gain_class_crop": "clean",
+     "set4_crop_start_s": 177.5,
+     "notes": "catalogue gain class is per part (session-level read, whole tracks); lag sign: positive = amp later than DI"
+    },
+    {
+     "part": "ElecGtr2",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-set4/Sonnet & Alcohol - Back To The Nineties/SonnetAndAlcohol_BackToTheNineties_Full/11_ElecGtr2DI.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 286.6771
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/Sonnet & Alcohol - Back To The Nineties/SonnetAndAlcohol_BackToTheNineties_Full/10_ElecGtr2.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 286.6771,
+       "mic": null,
+       "role": "reference",
+       "lag_samples_native_44k1": 22,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": true,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": "clean",
+     "gain_confidence": "normal",
+     "gain_confidence_reasons": [],
+     "catalog_lag_samples_native_44k1": 22,
+     "catalog_lag_ms": 0.499,
+     "polarity": 1,
+     "waveform_windows": 27,
+     "catalog_flags": [],
+     "set4_status": "kept",
+     "set4_lag_samples_48k": 24,
+     "set4_judge_lag_samples_48k": -28,
+     "gain_class_crop": "clean",
+     "set4_crop_start_s": 241.5,
+     "notes": "catalogue gain class is per part (session-level read, whole tracks); lag sign: positive = amp later than DI"
+    }
+   ],
+   "excluded_non_guitar": [
+    "07_BassDI.wav",
+    "drums, vocals"
+   ]
+  },
+  {
+   "source": "Cambridge-MT via Wayback (set 4, held out)",
+   "band": "The Laminar Flow",
+   "song": "Headspace",
+   "readme": "Raw multitrack from The Laminar Flow's 'Headspace'. These files are provided for educational purposes only, and the material contained in them should not be used for any commercial purpose without the express permission of the copyright holders. Please refer to www.cambridge-mt.com for further details.  Comprises 91 WAV files at 24-bit/44.1kHz resolution.  Tempo: 170bpm",
+   "pairs": [
+    {
+     "part": "ElecGtr01",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/30_ElecGtr01DI.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 247.5583
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/27_ElecGtr01Mic1.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 247.5583,
+       "mic": "Mic1",
+       "role": "reference",
+       "lag_samples_native_44k1": 27,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/28_ElecGtr01Mic2.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 247.5583,
+       "mic": "Mic2",
+       "role": "alternate",
+       "lag_samples_native_44k1": 31,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/29_ElecGtr01Mic3.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 247.5583,
+       "mic": "Mic3",
+       "role": "alternate",
+       "lag_samples_native_44k1": 29,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": "crunch",
+     "gain_confidence": "low",
+     "gain_confidence_reasons": [
+      "outside the firm clean / driven margins"
+     ],
+     "catalog_lag_samples_native_44k1": 27,
+     "catalog_lag_ms": 0.612,
+     "polarity": -1,
+     "waveform_windows": 23,
+     "catalog_flags": [
+      "amp track polarity inverted relative to the DI"
+     ],
+     "set4_status": "kept",
+     "set4_lag_samples_48k": 29,
+     "set4_judge_lag_samples_48k": -23,
+     "gain_class_crop": "crunch",
+     "set4_crop_start_s": 139.0,
+     "notes": "catalogue gain class is per part (session-level read, whole tracks); lag sign: positive = amp later than DI; 31-33_ElecGtr01DT Mic1-3 are a double-track with no DI (set 4 'unpaired'); not this DI's amps"
+    },
+    {
+     "part": "ElecGtr02",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/37_ElecGtr02DI.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 86.825
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/34_ElecGtr02Mic1.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 86.825,
+       "mic": "Mic1",
+       "role": "alternate",
+       "lag_samples_native_44k1": 28,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/35_ElecGtr02Mic2.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 86.825,
+       "mic": "Mic2",
+       "role": "reference",
+       "lag_samples_native_44k1": 34,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": true,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/36_ElecGtr02Mic3.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 86.825,
+       "mic": "Mic3",
+       "role": "alternate",
+       "lag_samples_native_44k1": 31,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": "crunch",
+     "gain_confidence": "low",
+     "gain_confidence_reasons": [
+      "outside the firm clean / driven margins"
+     ],
+     "catalog_lag_samples_native_44k1": 34,
+     "catalog_lag_ms": 0.771,
+     "polarity": -1,
+     "waveform_windows": 1,
+     "catalog_flags": [
+      "amp track polarity inverted relative to the DI"
+     ],
+     "set4_status": "excluded",
+     "set4_exclusion_reasons": [
+      "waveform same-take test passes on 1 window(s), fewer than 3"
+     ],
+     "notes": "catalogue gain class is per part (session-level read, whole tracks); lag sign: positive = amp later than DI; excluded by set 4: waveform same-take test passes on 1 window(s), fewer than 3"
+    },
+    {
+     "part": "ElecGtr03",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/41_ElecGtr03DI.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 86.3743
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/38_ElecGtr03Mic1.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 86.3743,
+       "mic": "Mic1",
+       "role": "reference",
+       "lag_samples_native_44k1": 30,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/39_ElecGtr03Mic2.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 86.3743,
+       "mic": "Mic2",
+       "role": "alternate",
+       "lag_samples_native_44k1": 36,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/40_ElecGtr03Mic3.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 86.3743,
+       "mic": "Mic3",
+       "role": "alternate",
+       "lag_samples_native_44k1": 33,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": "crunch",
+     "gain_confidence": "low",
+     "gain_confidence_reasons": [
+      "outside the firm clean / driven margins"
+     ],
+     "catalog_lag_samples_native_44k1": 30,
+     "catalog_lag_ms": 0.68,
+     "polarity": -1,
+     "waveform_windows": 1,
+     "catalog_flags": [
+      "waveform evidence from 1 window(s) only",
+      "amp track polarity inverted relative to the DI"
+     ],
+     "set4_status": "excluded",
+     "set4_exclusion_reasons": [
+      "waveform same-take test passes on 1 window(s), fewer than 3"
+     ],
+     "notes": "catalogue gain class is per part (session-level read, whole tracks); lag sign: positive = amp later than DI; excluded by set 4: waveform same-take test passes on 1 window(s), fewer than 3"
+    },
+    {
+     "part": "ElecGtr04",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/45_ElecGtr04DI.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 156.2878
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/42_ElecGtr04Mic1.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 156.2878,
+       "mic": "Mic1",
+       "role": "reference",
+       "lag_samples_native_44k1": 26,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/43_ElecGtr04Mic2.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 156.2878,
+       "mic": "Mic2",
+       "role": "alternate",
+       "lag_samples_native_44k1": 38,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/44_ElecGtr04Mic3.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 156.2878,
+       "mic": "Mic3",
+       "role": "alternate",
+       "lag_samples_native_44k1": 28,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": "crunch",
+     "gain_confidence": "low",
+     "gain_confidence_reasons": [
+      "level slope near a class boundary"
+     ],
+     "catalog_lag_samples_native_44k1": 26,
+     "catalog_lag_ms": 0.59,
+     "polarity": -1,
+     "waveform_windows": 2,
+     "catalog_flags": [
+      "waveform evidence from 2 window(s) only",
+      "amp track polarity inverted relative to the DI"
+     ],
+     "set4_status": "excluded",
+     "set4_exclusion_reasons": [
+      "waveform same-take test passes on 2 window(s), fewer than 3"
+     ],
+     "notes": "catalogue gain class is per part (session-level read, whole tracks); lag sign: positive = amp later than DI; excluded by set 4: waveform same-take test passes on 2 window(s), fewer than 3"
+    },
+    {
+     "part": "ElecGtr05",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/49_ElecGtr05DI.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 156.7028
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/46_ElecGtr05Mic1.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 156.7028,
+       "mic": "Mic1",
+       "role": "reference",
+       "lag_samples_native_44k1": 25,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/47_ElecGtr05Mic2.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 156.7028,
+       "mic": "Mic2",
+       "role": "alternate",
+       "lag_samples_native_44k1": 40,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/48_ElecGtr05Mic3.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 156.7028,
+       "mic": "Mic3",
+       "role": "alternate",
+       "lag_samples_native_44k1": 28,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": "crunch",
+     "gain_confidence": "low",
+     "gain_confidence_reasons": [
+      "outside the firm clean / driven margins"
+     ],
+     "catalog_lag_samples_native_44k1": 25,
+     "catalog_lag_ms": 0.567,
+     "polarity": -1,
+     "waveform_windows": 2,
+     "catalog_flags": [
+      "waveform evidence from 2 window(s) only",
+      "amp track polarity inverted relative to the DI"
+     ],
+     "set4_status": "excluded",
+     "set4_exclusion_reasons": [
+      "waveform same-take test passes on 2 window(s), fewer than 3"
+     ],
+     "notes": "catalogue gain class is per part (session-level read, whole tracks); lag sign: positive = amp later than DI; excluded by set 4: waveform same-take test passes on 2 window(s), fewer than 3"
+    },
+    {
+     "part": "ElecGtr06",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/53_ElecGtr06DI.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 156.4329
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/50_ElecGtr06Mic1.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 156.4329,
+       "mic": "Mic1",
+       "role": "reference",
+       "lag_samples_native_44k1": 30,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": true,
+       "same_take": false,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/51_ElecGtr06Mic2.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 156.4329,
+       "mic": "Mic2",
+       "role": "alternate",
+       "lag_samples_native_44k1": 39,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": true,
+       "same_take": false,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/52_ElecGtr06Mic3.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 156.4329,
+       "mic": "Mic3",
+       "role": "alternate",
+       "lag_samples_native_44k1": 39,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": true,
+       "same_take": false,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": "crunch",
+     "gain_confidence": "low",
+     "gain_confidence_reasons": [
+      "outside the firm clean / driven margins"
+     ],
+     "catalog_lag_samples_native_44k1": null,
+     "catalog_lag_ms": null,
+     "polarity": null,
+     "waveform_windows": 1,
+     "catalog_flags": [
+      "passes the repo's envelope tests but not the waveform test: possibly a tightly edited double, not the same take"
+     ],
+     "set4_status": "excluded",
+     "set4_exclusion_reasons": [
+      "fails the waveform same-take test"
+     ],
+     "notes": "catalogue gain class is per part (session-level read, whole tracks); lag sign: positive = amp later than DI; excluded by set 4: fails the waveform same-take test; CAUTION: catalogue says envelope tests pass but waveform test fails on all mics: possibly a tightly edited double, not the same take; no catalogue lag"
+    },
+    {
+     "part": "ElecGtr07",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/57_ElecGtr07DI.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 180.5806
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/54_ElecGtr07Mic1.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 180.5806,
+       "mic": "Mic1",
+       "role": "reference",
+       "lag_samples_native_44k1": 27,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/55_ElecGtr07Mic2.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 180.5806,
+       "mic": "Mic2",
+       "role": "alternate",
+       "lag_samples_native_44k1": 31,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/56_ElecGtr07Mic3.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 180.5806,
+       "mic": "Mic3",
+       "role": "alternate",
+       "lag_samples_native_44k1": 29,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": "high-gain",
+     "gain_confidence": "low",
+     "gain_confidence_reasons": [
+      "level slope near a class boundary"
+     ],
+     "catalog_lag_samples_native_44k1": 27,
+     "catalog_lag_ms": 0.612,
+     "polarity": -1,
+     "waveform_windows": 3,
+     "catalog_flags": [
+      "amp track polarity inverted relative to the DI"
+     ],
+     "set4_status": "kept",
+     "set4_lag_samples_48k": 29,
+     "set4_judge_lag_samples_48k": -23,
+     "gain_class_crop": "high-gain",
+     "set4_crop_start_s": 167.0,
+     "notes": "catalogue gain class is per part (session-level read, whole tracks); lag sign: positive = amp later than DI"
+    },
+    {
+     "part": "ElecGtr08",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/61_ElecGtr08DI.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 201.4206
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/58_ElecGtr08Mic1.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 201.4206,
+       "mic": "Mic1",
+       "role": "reference",
+       "lag_samples_native_44k1": 24,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/59_ElecGtr08Mic2.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 201.4206,
+       "mic": "Mic2",
+       "role": "alternate",
+       "lag_samples_native_44k1": 30,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/60_ElecGtr08Mic3.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 201.4206,
+       "mic": "Mic3",
+       "role": "alternate",
+       "lag_samples_native_44k1": 28,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": "high-gain",
+     "gain_confidence": "low",
+     "gain_confidence_reasons": [
+      "level slope near a class boundary"
+     ],
+     "catalog_lag_samples_native_44k1": 24,
+     "catalog_lag_ms": 0.544,
+     "polarity": -1,
+     "waveform_windows": 3,
+     "catalog_flags": [
+      "amp track polarity inverted relative to the DI"
+     ],
+     "set4_status": "kept",
+     "set4_lag_samples_48k": 26,
+     "set4_judge_lag_samples_48k": -26,
+     "gain_class_crop": "crunch",
+     "set4_crop_start_s": 183.5,
+     "notes": "catalogue gain class is per part (session-level read, whole tracks); lag sign: positive = amp later than DI"
+    },
+    {
+     "part": "ElecGtr09",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/65_ElecGtr09DI.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 245.7441
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/62_ElecGtr09Mic1.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 245.7441,
+       "mic": "Mic1",
+       "role": "reference",
+       "lag_samples_native_44k1": 29,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": true,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/63_ElecGtr09Mic2.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 245.7441,
+       "mic": "Mic2",
+       "role": "alternate",
+       "lag_samples_native_44k1": 35,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": true,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/64_ElecGtr09Mic3.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 245.7441,
+       "mic": "Mic3",
+       "role": "alternate",
+       "lag_samples_native_44k1": 32,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": "crunch",
+     "gain_confidence": "low",
+     "gain_confidence_reasons": [
+      "level slope near a class boundary",
+      "non-linear share within 2 dB of the clean boundary"
+     ],
+     "catalog_lag_samples_native_44k1": 29,
+     "catalog_lag_ms": 0.658,
+     "polarity": -1,
+     "waveform_windows": 2,
+     "catalog_flags": [
+      "amp track polarity inverted relative to the DI"
+     ],
+     "set4_status": "excluded",
+     "set4_exclusion_reasons": [
+      "waveform same-take test passes on 2 window(s), fewer than 3"
+     ],
+     "notes": "catalogue gain class is per part (session-level read, whole tracks); lag sign: positive = amp later than DI; excluded by set 4: waveform same-take test passes on 2 window(s), fewer than 3"
+    },
+    {
+     "part": "ElecGtr10",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/69_ElecGtr10DI.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 245.8167
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/66_ElecGtr10Mic1.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 245.8167,
+       "mic": "Mic1",
+       "role": "reference",
+       "lag_samples_native_44k1": 29,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": true,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/67_ElecGtr10Mic2.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 245.8167,
+       "mic": "Mic2",
+       "role": "alternate",
+       "lag_samples_native_44k1": 35,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": true,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/68_ElecGtr10Mic3.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 245.8167,
+       "mic": "Mic3",
+       "role": "alternate",
+       "lag_samples_native_44k1": 32,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": true,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": "crunch",
+     "gain_confidence": "low",
+     "gain_confidence_reasons": [
+      "non-linear share within 2 dB of the clean boundary"
+     ],
+     "catalog_lag_samples_native_44k1": 29,
+     "catalog_lag_ms": 0.658,
+     "polarity": -1,
+     "waveform_windows": 2,
+     "catalog_flags": [
+      "amp track polarity inverted relative to the DI"
+     ],
+     "set4_status": "excluded",
+     "set4_exclusion_reasons": [
+      "waveform same-take test passes on 2 window(s), fewer than 3"
+     ],
+     "notes": "catalogue gain class is per part (session-level read, whole tracks); lag sign: positive = amp later than DI; excluded by set 4: waveform same-take test passes on 2 window(s), fewer than 3"
+    },
+    {
+     "part": "ElecGtr11",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/73_ElecGtr11DI.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 245.3398
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/70_ElecGtr11Mic1.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 245.3398,
+       "mic": "Mic1",
+       "role": "reference",
+       "lag_samples_native_44k1": 26,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": true,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/71_ElecGtr11Mic2.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 245.3398,
+       "mic": "Mic2",
+       "role": "alternate",
+       "lag_samples_native_44k1": 32,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": true,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/72_ElecGtr11Mic3.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 245.3398,
+       "mic": "Mic3",
+       "role": "alternate",
+       "lag_samples_native_44k1": 29,
+       "waveform_in_step_fraction": 1.0,
+       "repo_usable": false,
+       "same_take": true,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": "crunch",
+     "gain_confidence": "low",
+     "gain_confidence_reasons": [
+      "outside the firm clean / driven margins"
+     ],
+     "catalog_lag_samples_native_44k1": 26,
+     "catalog_lag_ms": 0.59,
+     "polarity": -1,
+     "waveform_windows": 1,
+     "catalog_flags": [
+      "amp track polarity inverted relative to the DI"
+     ],
+     "set4_status": "excluded",
+     "set4_exclusion_reasons": [
+      "waveform same-take test passes on 1 window(s), fewer than 3"
+     ],
+     "notes": "catalogue gain class is per part (session-level read, whole tracks); lag sign: positive = amp later than DI; excluded by set 4: waveform same-take test passes on 1 window(s), fewer than 3"
+    }
+   ],
+   "unpaired_guitar_tracks_no_di": [
+    {
+     "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/31_ElecGtr01DTMic1.wav",
+     "sr": 44100,
+     "ch": 1,
+     "dur": 246.5679
+    },
+    {
+     "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/32_ElecGtr01DTMic2.wav",
+     "sr": 44100,
+     "ch": 1,
+     "dur": 246.5679
+    },
+    {
+     "path": "~/ndsp-presets/references/datasets-set4/The Laminar Flow - Headspace/TheLaminarFlow_Headspace_Full/33_ElecGtr01DTMic3.wav",
+     "sr": 44100,
+     "ch": 1,
+     "dur": 246.5679
+    }
+   ],
+   "excluded_non_guitar": [
+    "26_BassDI.wav",
+    "drums, vocals, VoxFX"
+   ],
+   "set4_rule": "Laminar Flow keeps only crunch/high-gain parts (amendment 1); kept 3 of 11 (01, 07, 08)"
+  },
+  {
+   "source": "MedleyDB (set 6, held out)",
+   "band": "Little Tybee",
+   "song": "The Alchemist",
+   "pairs": [
+    {
+     "part": "RAW_08_02",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-medleydb/audio/V2/LittleTybee_TheAlchemist/LittleTybee_TheAlchemist_RAW/LittleTybee_TheAlchemist_RAW_08_02.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 201.3634,
+      "medleydb_label": "clean electric guitar"
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-medleydb/audio/V2/LittleTybee_TheAlchemist/LittleTybee_TheAlchemist_RAW/LittleTybee_TheAlchemist_RAW_08_03.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 201.3634,
+       "mic": null,
+       "role": "reference",
+       "medleydb_label": "clean electric guitar",
+       "lag_samples_native_44k1": 211,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-medleydb/audio/V2/LittleTybee_TheAlchemist/LittleTybee_TheAlchemist_RAW/LittleTybee_TheAlchemist_RAW_08_04.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 201.3634,
+       "mic": null,
+       "role": "alternate",
+       "medleydb_label": "clean electric guitar",
+       "lag_samples_native_44k1": 211,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": "crunch",
+     "medleydb_has_bleed": "no",
+     "set6_status": "kept",
+     "gain_class_crop": "crunch",
+     "gain_confidence": "normal",
+     "set6_scope": "in_scope",
+     "set6_lag_samples_48k": 230,
+     "set6_judge_lag_samples_48k": 178,
+     "polarity": -1,
+     "waveform_windows": 4,
+     "set6_marks": [
+      "polarity_inverted"
+     ],
+     "separator_trained_on_musdb18": false,
+     "notes": "files are MedleyDB RAW tracks (not STEM mixes); DI labelled by ear (set 6 amendment 2); amp 211 samples (4.8 ms) after the DI, just under the 5 ms far-mic rule; waveform test on 4 windows only; alternate 08_04 at the same lag. 08_01 (same stem) is not same-take with 08_02"
+    }
+   ]
+  },
+  {
+   "source": "MedleyDB (set 6, held out)",
+   "band": "Port St Willow",
+   "song": "Stay Even",
+   "pairs": [
+    {
+     "part": "RAW_05_01",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-medleydb/audio/V1/PortStWillow_StayEven/PortStWillow_StayEven_RAW/PortStWillow_StayEven_RAW_05_01.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 317.0148,
+      "medleydb_label": "clean electric guitar"
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-medleydb/audio/V1/PortStWillow_StayEven/PortStWillow_StayEven_RAW/PortStWillow_StayEven_RAW_05_02.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 317.0148,
+       "mic": null,
+       "role": "reference",
+       "medleydb_label": "distorted electric guitar",
+       "lag_samples_native_44k1": -1,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": "crunch",
+     "medleydb_has_bleed": "no",
+     "set6_status": "kept",
+     "gain_class_crop": "clean",
+     "gain_confidence": "low",
+     "set6_scope": "in_scope",
+     "set6_lag_samples_48k": -1,
+     "set6_judge_lag_samples_48k": -53,
+     "polarity": 1,
+     "waveform_windows": 23,
+     "set6_marks": [
+      "amp_earlier_than_di"
+     ],
+     "separator_trained_on_musdb18": true,
+     "notes": "files are MedleyDB RAW tracks (not STEM mixes); DI labelled by ear (set 6 amendment 2); amp track 1-3 samples EARLIER than the labelled DI (no acoustic path); session class crunch with low confidence, crop reads clean; both parts one band/one song; MedleyDB labels the amp track 'distorted electric guitar', the DI 'clean'"
+    },
+    {
+     "part": "RAW_06_01",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-medleydb/audio/V1/PortStWillow_StayEven/PortStWillow_StayEven_RAW/PortStWillow_StayEven_RAW_06_01.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 317.0148,
+      "medleydb_label": "clean electric guitar"
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-medleydb/audio/V1/PortStWillow_StayEven/PortStWillow_StayEven_RAW/PortStWillow_StayEven_RAW_06_02.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 317.0148,
+       "mic": null,
+       "role": "reference",
+       "medleydb_label": "clean electric guitar",
+       "lag_samples_native_44k1": -3,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": "crunch",
+     "medleydb_has_bleed": "no",
+     "set6_status": "kept",
+     "gain_class_crop": "clean",
+     "gain_confidence": "low",
+     "set6_scope": "in_scope",
+     "set6_lag_samples_48k": -3,
+     "set6_judge_lag_samples_48k": -55,
+     "polarity": -1,
+     "waveform_windows": 18,
+     "set6_marks": [
+      "effects_or_bleed",
+      "amp_earlier_than_di",
+      "polarity_inverted",
+      "polarity_uncertain"
+     ],
+     "separator_trained_on_musdb18": true,
+     "notes": "files are MedleyDB RAW tracks (not STEM mixes); DI labelled by ear (set 6 amendment 2); amp track 1-3 samples EARLIER than the labelled DI (no acoustic path); session class crunch with low confidence, crop reads clean; both parts one band/one song; effects_or_bleed mark; polarity uncertain (22% of windows agree)"
+    }
+   ]
+  },
+  {
+   "source": "MedleyDB (set 6, held out)",
+   "band": "Big Troubles",
+   "song": "Phantom",
+   "pairs": [
+    {
+     "part": "RAW_05_01",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-medleydb/audio/V1/BigTroubles_Phantom/BigTroubles_Phantom_RAW/BigTroubles_Phantom_RAW_05_01.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 146.9359,
+      "medleydb_label": "distorted electric guitar"
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-medleydb/audio/V1/BigTroubles_Phantom/BigTroubles_Phantom_RAW/BigTroubles_Phantom_RAW_05_02.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 146.9359,
+       "mic": null,
+       "role": "reference",
+       "medleydb_label": "distorted electric guitar",
+       "lag_samples_native_44k1": 62,
+       "len_minus_di_s": 0.0
+      },
+      {
+       "path": "~/ndsp-presets/references/datasets-medleydb/audio/V1/BigTroubles_Phantom/BigTroubles_Phantom_RAW/BigTroubles_Phantom_RAW_05_04.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 146.9359,
+       "mic": null,
+       "role": "alternate",
+       "medleydb_label": "distorted electric guitar",
+       "lag_samples_native_44k1": 112,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": "high-gain",
+     "medleydb_has_bleed": "no",
+     "set6_status": "kept",
+     "gain_class_crop": "high-gain",
+     "gain_confidence": "normal",
+     "set6_scope": "report_only",
+     "set6_lag_samples_48k": 67,
+     "set6_judge_lag_samples_48k": 15,
+     "polarity": 1,
+     "waveform_windows": 13,
+     "set6_marks": [],
+     "separator_trained_on_musdb18": true,
+     "notes": "files are MedleyDB RAW tracks (not STEM mixes); DI labelled by ear (set 6 amendment 2); CAUTION: set 6 classes this part HIGH-GAIN (report-only), not crunch; 5D lists Big Troubles among MedleyDB's 'crunch pairs' but scopes high gain out; onset cross-check unclear; MedleyDB labels the DI 'distorted electric guitar'; alternate 05_04 at 112 samples"
+    },
+    {
+     "part": "RAW_03_08",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-medleydb/audio/V1/BigTroubles_Phantom/BigTroubles_Phantom_RAW/BigTroubles_Phantom_RAW_03_08.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 146.9359,
+      "medleydb_label": "clean electric guitar"
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-medleydb/audio/V1/BigTroubles_Phantom/BigTroubles_Phantom_RAW/BigTroubles_Phantom_RAW_03_09.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 146.9359,
+       "mic": null,
+       "role": "reference",
+       "medleydb_label": "clean electric guitar",
+       "lag_samples_native_44k1": 31,
+       "len_minus_di_s": 0.0
+      }
+     ],
+     "gain_class": "high-gain",
+     "medleydb_has_bleed": "no",
+     "set6_status": "excluded",
+     "set6_exclusion_reasons": [
+      "two lag clusters"
+     ],
+     "notes": "files are MedleyDB RAW tracks (not STEM mixes); DI labelled by ear (set 6 amendment 2); CAUTION: set 6 classes this part HIGH-GAIN (report-only), not crunch; 5D lists Big Troubles among MedleyDB's 'crunch pairs' but scopes high gain out; excluded by set 6: two lag clusters (60% of windows within 0.25 ms; polarity agrees on 60%); lag 31 samples from the pair scan"
+    }
+   ]
+  },
+  {
+   "source": "Guitar-TECHS P3 (Zenodo, CC BY 4.0)",
+   "band": "Guitar-TECHS P3",
+   "song": "P3_music (12 excerpts)",
+   "hardware": {
+    "guitar": "Sire T7 (Tele type), middle position",
+    "amp": "Orange Crush 12",
+    "mic": "Behringer ECM8000 omni",
+    "interface": "Behringer UMC202HD",
+    "room": "dining room",
+    "source": "P2-catalog.json hardware.P3"
+   },
+   "spent_excerpts": [
+    "02",
+    "06",
+    "10",
+    "11"
+   ],
+   "pairs": [
+    {
+     "part": "01",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/directinput/directinput_01.wav",
+      "sr": 48000,
+      "ch": 2,
+      "dur": 72.5
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/micamp/micamp_01.wav",
+       "sr": 48000,
+       "ch": 2,
+       "dur": 72.5014,
+       "mic": "Behringer ECM8000 omni on Orange Crush 12",
+       "len_minus_di_s": 0.0014
+      }
+     ],
+     "gain_class": "clean",
+     "split": "development",
+     "spent": false,
+     "gain_class_source": "not measured per excerpt; clean per the 5D plan and P3's clean-amp description",
+     "notes": "both files are 2-channel with bit-identical channels (dual mono); DI PCM_24, micamp PCM_16; native 48 kHz; development split in validation-datasets.json (not held out)"
+    },
+    {
+     "part": "02",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/directinput/directinput_02.wav",
+      "sr": 48000,
+      "ch": 2,
+      "dur": 37.3333
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/micamp/micamp_02.wav",
+       "sr": 48000,
+       "ch": 2,
+       "dur": 37.3357,
+       "mic": "Behringer ECM8000 omni on Orange Crush 12",
+       "len_minus_di_s": 0.0024
+      }
+     ],
+     "gain_class": "clean",
+     "split": "held_out",
+     "spent": true,
+     "gain_class_source": "confirm prep.json (measured)",
+     "lag_samples_48k": 163,
+     "judge_lag_samples_48k": 111,
+     "waveform_windows": 2,
+     "waveform_pass": false,
+     "notes": "both files are 2-channel with bit-identical channels (dual mono); DI PCM_24, micamp PCM_16; native 48 kHz; SPENT: held-out excerpt used in heldout-sw50r (2026-09-28) and the set-4 confirmation test"
+    },
+    {
+     "part": "03",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/directinput/directinput_03.wav",
+      "sr": 48000,
+      "ch": 2,
+      "dur": 29.2917
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/micamp/micamp_03.wav",
+       "sr": 48000,
+       "ch": 2,
+       "dur": 29.2928,
+       "mic": "Behringer ECM8000 omni on Orange Crush 12",
+       "len_minus_di_s": 0.0011
+      }
+     ],
+     "gain_class": "clean",
+     "split": "development",
+     "spent": false,
+     "gain_class_source": "not measured per excerpt; clean per the 5D plan and P3's clean-amp description",
+     "notes": "both files are 2-channel with bit-identical channels (dual mono); DI PCM_24, micamp PCM_16; native 48 kHz; development split in validation-datasets.json (not held out)"
+    },
+    {
+     "part": "04",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/directinput/directinput_04.wav",
+      "sr": 48000,
+      "ch": 2,
+      "dur": 37.0833
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/micamp/micamp_04.wav",
+       "sr": 48000,
+       "ch": 2,
+       "dur": 37.0847,
+       "mic": "Behringer ECM8000 omni on Orange Crush 12",
+       "len_minus_di_s": 0.0014
+      }
+     ],
+     "gain_class": "clean",
+     "split": "development",
+     "spent": false,
+     "gain_class_source": "not measured per excerpt; clean per the 5D plan and P3's clean-amp description",
+     "notes": "both files are 2-channel with bit-identical channels (dual mono); DI PCM_24, micamp PCM_16; native 48 kHz; development split in validation-datasets.json (not held out)"
+    },
+    {
+     "part": "05",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/directinput/directinput_05.wav",
+      "sr": 48000,
+      "ch": 2,
+      "dur": 55.0
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/micamp/micamp_05.wav",
+       "sr": 48000,
+       "ch": 2,
+       "dur": 55.0015,
+       "mic": "Behringer ECM8000 omni on Orange Crush 12",
+       "len_minus_di_s": 0.0015
+      }
+     ],
+     "gain_class": "clean",
+     "split": "development",
+     "spent": false,
+     "gain_class_source": "not measured per excerpt; clean per the 5D plan and P3's clean-amp description",
+     "notes": "both files are 2-channel with bit-identical channels (dual mono); DI PCM_24, micamp PCM_16; native 48 kHz; development split in validation-datasets.json (not held out)"
+    },
+    {
+     "part": "06",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/directinput/directinput_06.wav",
+      "sr": 48000,
+      "ch": 2,
+      "dur": 32.0
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/micamp/micamp_06.wav",
+       "sr": 48000,
+       "ch": 2,
+       "dur": 32.0015,
+       "mic": "Behringer ECM8000 omni on Orange Crush 12",
+       "len_minus_di_s": 0.0015
+      }
+     ],
+     "gain_class": "clean",
+     "split": "held_out",
+     "spent": true,
+     "gain_class_source": "confirm prep.json (measured)",
+     "lag_samples_48k": 96,
+     "judge_lag_samples_48k": 44,
+     "waveform_windows": 2,
+     "waveform_pass": false,
+     "notes": "both files are 2-channel with bit-identical channels (dual mono); DI PCM_24, micamp PCM_16; native 48 kHz; SPENT: held-out excerpt used in heldout-sw50r (2026-09-28) and the set-4 confirmation test"
+    },
+    {
+     "part": "07",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/directinput/directinput_07.wav",
+      "sr": 48000,
+      "ch": 2,
+      "dur": 37.0
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/micamp/micamp_07.wav",
+       "sr": 48000,
+       "ch": 2,
+       "dur": 37.0019,
+       "mic": "Behringer ECM8000 omni on Orange Crush 12",
+       "len_minus_di_s": 0.0019
+      }
+     ],
+     "gain_class": "clean",
+     "split": "development",
+     "spent": false,
+     "gain_class_source": "not measured per excerpt; clean per the 5D plan and P3's clean-amp description",
+     "notes": "both files are 2-channel with bit-identical channels (dual mono); DI PCM_24, micamp PCM_16; native 48 kHz; development split in validation-datasets.json (not held out)"
+    },
+    {
+     "part": "08",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/directinput/directinput_08.wav",
+      "sr": 48000,
+      "ch": 2,
+      "dur": 27.3333
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/micamp/micamp_08.wav",
+       "sr": 48000,
+       "ch": 2,
+       "dur": 27.3344,
+       "mic": "Behringer ECM8000 omni on Orange Crush 12",
+       "len_minus_di_s": 0.0011
+      }
+     ],
+     "gain_class": "clean",
+     "split": "development",
+     "spent": false,
+     "gain_class_source": "not measured per excerpt; clean per the 5D plan and P3's clean-amp description",
+     "notes": "both files are 2-channel with bit-identical channels (dual mono); DI PCM_24, micamp PCM_16; native 48 kHz; development split in validation-datasets.json (not held out)"
+    },
+    {
+     "part": "09",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/directinput/directinput_09.wav",
+      "sr": 48000,
+      "ch": 2,
+      "dur": 39.0
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/micamp/micamp_09.wav",
+       "sr": 48000,
+       "ch": 2,
+       "dur": 39.0004,
+       "mic": "Behringer ECM8000 omni on Orange Crush 12",
+       "len_minus_di_s": 0.0004
+      }
+     ],
+     "gain_class": "clean",
+     "split": "development",
+     "spent": false,
+     "gain_class_source": "not measured per excerpt; clean per the 5D plan and P3's clean-amp description",
+     "notes": "both files are 2-channel with bit-identical channels (dual mono); DI PCM_24, micamp PCM_16; native 48 kHz; development split in validation-datasets.json (not held out)"
+    },
+    {
+     "part": "10",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/directinput/directinput_10.wav",
+      "sr": 48000,
+      "ch": 2,
+      "dur": 51.5
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/micamp/micamp_10.wav",
+       "sr": 48000,
+       "ch": 2,
+       "dur": 51.5011,
+       "mic": "Behringer ECM8000 omni on Orange Crush 12",
+       "len_minus_di_s": 0.0011
+      }
+     ],
+     "gain_class": "clean",
+     "split": "held_out",
+     "spent": true,
+     "gain_class_source": "confirm prep.json (measured)",
+     "lag_samples_48k": 118,
+     "judge_lag_samples_48k": 66,
+     "waveform_windows": 4,
+     "waveform_pass": true,
+     "notes": "both files are 2-channel with bit-identical channels (dual mono); DI PCM_24, micamp PCM_16; native 48 kHz; SPENT: held-out excerpt used in heldout-sw50r (2026-09-28) and the set-4 confirmation test, plus clean-baseline and toneking-baseline"
+    },
+    {
+     "part": "11",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/directinput/directinput_11.wav",
+      "sr": 48000,
+      "ch": 2,
+      "dur": 21.125
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/micamp/micamp_11.wav",
+       "sr": 48000,
+       "ch": 2,
+       "dur": 21.1266,
+       "mic": "Behringer ECM8000 omni on Orange Crush 12",
+       "len_minus_di_s": 0.0016
+      }
+     ],
+     "gain_class": "clean",
+     "split": "held_out",
+     "spent": true,
+     "gain_class_source": "confirm prep.json (measured)",
+     "lag_samples_48k": 123,
+     "judge_lag_samples_48k": 71,
+     "waveform_windows": 1,
+     "waveform_pass": false,
+     "notes": "both files are 2-channel with bit-identical channels (dual mono); DI PCM_24, micamp PCM_16; native 48 kHz; SPENT: held-out excerpt used in heldout-sw50r (2026-09-28) and the set-4 confirmation test"
+    },
+    {
+     "part": "12",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/directinput/directinput_12.wav",
+      "sr": 48000,
+      "ch": 2,
+      "dur": 42.9583
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets/guitar-techs/P3_music/audio/micamp/micamp_12.wav",
+       "sr": 48000,
+       "ch": 2,
+       "dur": 42.9593,
+       "mic": "Behringer ECM8000 omni on Orange Crush 12",
+       "len_minus_di_s": 0.001
+      }
+     ],
+     "gain_class": "clean",
+     "split": "development",
+     "spent": false,
+     "gain_class_source": "not measured per excerpt; clean per the 5D plan and P3's clean-amp description",
+     "notes": "both files are 2-channel with bit-identical channels (dual mono); DI PCM_24, micamp PCM_16; native 48 kHz; development split in validation-datasets.json (not held out)"
+    }
+   ]
+  },
+  {
+   "source": "MedleyDB (set 6, held out; added by 5D's amendment)",
+   "band": "Aimee Norwich",
+   "song": "Flying",
+   "pairs": [
+    {
+     "part": "RAW_05_02",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-medleydb/audio/V1/AimeeNorwich_Flying/AimeeNorwich_Flying_RAW/AimeeNorwich_Flying_RAW_05_02.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 217.8031
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-medleydb/audio/V1/AimeeNorwich_Flying/AimeeNorwich_Flying_RAW/AimeeNorwich_Flying_RAW_05_01.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 217.8031,
+       "mic": null
+      }
+     ],
+     "gain_class": "clean",
+     "notes": "set 6: DI by ear, polarity -1; DI crest not above the amp track's (-0.1 dB)"
+    }
+   ]
+  },
+  {
+   "source": "MedleyDB (set 6, held out; added by 5D's amendment)",
+   "band": "Dahka Band",
+   "song": "Soldier Man",
+   "pairs": [
+    {
+     "part": "RAW_04_01",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-medleydb/audio/V2/DahkaBand_SoldierMan/DahkaBand_SoldierMan_RAW/DahkaBand_SoldierMan_RAW_04_01.wav",
+      "sr": 44100,
+      "ch": 1,
+      "dur": 328.9307
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-medleydb/audio/V2/DahkaBand_SoldierMan/DahkaBand_SoldierMan_RAW/DahkaBand_SoldierMan_RAW_04_02.wav",
+       "sr": 44100,
+       "ch": 1,
+       "dur": 328.9307,
+       "mic": null
+      }
+     ],
+     "gain_class": "clean",
+     "notes": "set 6: DI by ear; MedleyDB has_bleed; HF margin 0.2 dB"
+    }
+   ]
+  },
+  {
+   "source": "Telefunken LFTL (reserved band; added by 5D's amendment)",
+   "band": "Jen Hartswick & Nick Cassarino",
+   "song": "4 songs",
+   "pairs": [
+    {
+     "part": "Drowning",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-telefunken-new/telefunken/Jen Hartswick & Nick Cassarino - Drowning/Jen Hartswick & Nick Cassarino_Drowning/Guitar-Passive DI.wav",
+      "sr": 48000,
+      "ch": 1,
+      "dur": 215.7979
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-telefunken-new/telefunken/Jen Hartswick & Nick Cassarino - Drowning/Jen Hartswick & Nick Cassarino_Drowning/Guitar-Amp-M81.wav",
+       "sr": 48000,
+       "ch": 1,
+       "dur": 215.7979,
+       "mic": "M81"
+      }
+     ],
+     "gain_class": null,
+     "notes": "Telefunken live room; one amp mic per song"
+    },
+    {
+     "part": "Novacaine",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-telefunken-new/telefunken/Jen Hartswick & Nick Cassarino - Numb/Jen Hartswick & Nick Cassarino_Novacaine/Guitar-Passive Di.wav",
+      "sr": 48000,
+      "ch": 1,
+      "dur": 327.6442
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-telefunken-new/telefunken/Jen Hartswick & Nick Cassarino - Numb/Jen Hartswick & Nick Cassarino_Novacaine/Guitar-Amp-M81.wav",
+       "sr": 48000,
+       "ch": 1,
+       "dur": 327.6442,
+       "mic": "M81"
+      }
+     ],
+     "gain_class": null,
+     "notes": "Telefunken live room; one amp mic per song"
+    },
+    {
+     "part": "Silent Waves",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-telefunken-new/telefunken/Jen Hartswick & Nick Cassarino - Silent Waves/Jen Hartswick & Nick Cassarino_Silent Waves/Guitar-Passive DI.wav",
+      "sr": 48000,
+      "ch": 1,
+      "dur": 318.4764
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-telefunken-new/telefunken/Jen Hartswick & Nick Cassarino - Silent Waves/Jen Hartswick & Nick Cassarino_Silent Waves/Guitar-Amp-M81.wav",
+       "sr": 48000,
+       "ch": 1,
+       "dur": 318.4764,
+       "mic": "M81"
+      }
+     ],
+     "gain_class": null,
+     "notes": "Telefunken live room; one amp mic per song"
+    },
+    {
+     "part": "You Cant Take It Back",
+     "di": {
+      "path": "~/ndsp-presets/references/datasets-telefunken-new/telefunken/Jen Hartswick & Nick Cassarino - You Cant Take It Back/Jen Hartswick & Nick Cassarino_You Cant Take It Back/Guitar-Passive DI.wav",
+      "sr": 48000,
+      "ch": 1,
+      "dur": 359.7196
+     },
+     "amps": [
+      {
+       "path": "~/ndsp-presets/references/datasets-telefunken-new/telefunken/Jen Hartswick & Nick Cassarino - You Cant Take It Back/Jen Hartswick & Nick Cassarino_You Cant Take It Back/Guitar-Amp-M81.wav",
+       "sr": 48000,
+       "ch": 1,
+       "dur": 359.7196,
+       "mic": "M81"
+      }
+     ],
+     "gain_class": null,
+     "notes": "Telefunken live room; one amp mic per song"
+    }
+   ]
+  }
+ ]
+}

@@ -4851,7 +4851,700 @@ def cmd_vreal_report(args):
 
 # --- main ------------------------------------------------------------------------------------------------------------
 
-COMMANDS = {"goat-sections": cmd_goat_sections, "goat-search": cmd_goat_search,
+PANEL_DIR = "panel"                  # 5D's real-amp test panel (v1): PF/panel/
+PANEL_PAIRS = REPO / "docs" / "panel-v1-pairs.json"
+PANEL_SEED = 20261101
+PANEL_WINDOWS = 3                    # windows per DI (shared by its amp tracks)
+PANEL_GAP_S = 10.0                   # at least this much between a DI's windows
+PANEL_WIDE_S = 1.5                   # the whole-track lag's search (Blue Manic's amp tracks run up to 1.2 s long)
+PANEL_FAR = 240                      # a DI-to-track lag above this (5 ms at 48 kHz) flags a far mic
+PANEL_LAG_TOL = 72                   # a window's lag this far from its track's is out (5C's tolerance)
+PANEL_DI_NOISE_OK = {"hum"}         # 5D's amendment: a DI's hum flag passes (the amp heard it too, so the comparison
+                                    # stays fair; for the test panel only)
+PANEL_SILENT_DB, PANEL_PLAY_DB = 40.0, 20.0
+PANEL_BLEED_MAX_DB = -18.35          # the largest bleed residual among BKS's reamps (22 of 40 measured; 2026-11-01):
+                                     # a panel unit above it is "high bleed" (the residual holds amp and room tails too)   # the bleed residual's DI frames: silent below the window's DI peak
+                                              # by this much, playing within this much of it
+
+
+def panel_pairs():
+    """5D's (DI, amp tracks) pairs, fixed with the declaration (`docs/panel-v1-pairs.json`, paths under ~). ->
+    [{source, band, song, part, di, amps}]."""
+    import os
+
+    d = json.loads(PANEL_PAIRS.read_text())
+    return [{"source": src["source"], "band": src["band"], "song": src.get("song"), **pr,
+             "di": {**pr["di"], "path": os.path.expanduser(pr["di"]["path"])},
+             "amps": [{**a, "path": os.path.expanduser(a["path"])} for a in pr["amps"]]}
+            for src in d["sources"] for pr in src["pairs"]]
+
+
+def panel_di_flagged(row, track):
+    """The pool's DI screens (`clean_di.section_flags`) less the flags PANEL_DI_NOISE_OK lets through."""
+    from learn import clean_di as CD
+
+    flags, _ = CD.section_flags(row, track or {})
+    return bool(set(flags) - PANEL_DI_NOISE_OK)
+
+
+def panel_windows(rows, track, key, k=PANEL_WINDOWS, gap=PANEL_GAP_S, min_start_s=1.0):
+    """5D's windows for one DI: its 10-s grid sections that pass the pool's activity rule and screens (as
+    `goat_window`, with DI hum and slight hiss let through: `panel_di_flagged`), in a seeded order (PANEL_SEED with `key`), kept greedily while each starts at least `gap` s
+    after the end of every kept one; up to k. -> sorted starts."""
+    import random
+
+    from learn import clean_di as CD
+    from learn import pretrain_set as PS
+
+    ok = [r["start_s"] for r in rows if r["passes_activity"] and r["start_s"] >= min_start_s
+          and not (r.get("clip_runs") or r.get("dropouts") or r.get("hard_cuts"))
+          and not panel_di_flagged(r, track)]
+    order = sorted(ok)
+    random.Random(f"{PANEL_SEED}|{key}").shuffle(order)
+    kept = []
+    for st in order:
+        if all(abs(st - q) >= PS.SEC_S + gap for q in kept):
+            kept.append(st)
+        if len(kept) == k:
+            break
+    return sorted(kept)
+
+
+def panel_bleed_db(amp, di, sr):
+    """5D's bleed residual on one aligned window (zero renders): the amp track's level on frames where its DI is
+    silent (PANEL_SILENT_DB under the window's DI peak) against its level where the DI plays (within PANEL_PLAY_DB
+    of it), in dB; None with fewer than 4 frames of either."""
+    import numpy as np
+
+    from learn import clean_di as CD
+
+    dd, ad = CD.frame_db(di), CD.frame_db(amp)
+    n = min(len(dd), len(ad))
+    dd, ad = dd[:n], ad[:n]
+    top = float(np.max(dd)) if n else -300.0
+    silent, play = dd < top - PANEL_SILENT_DB, dd > top - PANEL_PLAY_DB
+    if silent.sum() < 4 or play.sum() < 4:
+        return None
+    p = lambda m: 10 * np.log10(np.mean(10 ** (ad[m] / 10)) + 1e-30)
+    return float(p(silent) - p(play))
+
+
+def panel_cut(di, amp, lo, n, track_lag):
+    """5D's aligned windows: the DI's n samples from lo and the amp track's from lo + track_lag (amp[t] ~ DI[t - lag],
+    `estimate_lag`'s convention), so the two line up; empty when the amp window would start before 0."""
+    import numpy as np
+
+    a0 = lo + track_lag
+    return di[lo:lo + n], (amp[a0:a0 + n] if a0 >= 0 else np.zeros(0))
+
+
+def panel_folds(dis_by_band):
+    """5D's folds: each new DI a fold, seeded (PANEL_SEED), dealt round-robin within each band from a running start
+    so the folds stay balanced across bands. -> {di: fold}."""
+    import random
+
+    out, at = {}, 0
+    for band in sorted(dis_by_band):
+        dis = sorted(dis_by_band[band])
+        random.Random(f"{PANEL_SEED}|folds|{band}").shuffle(dis)
+        for d in dis:
+            out[d] = at % REAL_FOLDS
+            at += 1
+    return out
+
+
+def file_key(path):
+    """A file's size and the sha256 of its first MiB: a cheap identity that survives copies and renames."""
+    import hashlib
+
+    path = pathlib.Path(path)
+    with open(path, "rb") as fh:
+        return path.stat().st_size, hashlib.sha256(fh.read(1 << 20)).hexdigest()
+
+
+def panel_leaks(pairs, pool_paths, bands_out):
+    """5D's leakage guard: panel files that are, by name or content (`file_key`), any pool DI (training's
+    inventory, every session), and panel bands among `bands_out` (V-real's, training's). -> [problems]."""
+    import os
+
+    files = {p["di"]["path"] for p in pairs} | {a["path"] for p in pairs for a in p["amps"]}
+    keys = {file_key(f): f for f in files}
+    bad = [f for f in files if os.path.realpath(f) in {os.path.realpath(q) for q in pool_paths}]
+    for q in pool_paths:
+        if os.path.exists(q) and file_key(q) in keys:
+            bad.append(f"{keys[file_key(q)]} = pool file {q}")
+    bad += [f"band {p['band']} is out" for p in pairs if p["band"] in bands_out]
+    return sorted(set(bad))
+
+
+def panel_units():
+    """5D's panel units (panel/units.json, from `panel-sections`)."""
+    return json.loads((out_dir() / PANEL_DIR / "units.json").read_text())["units"]
+
+
+def panel_heard(units, verdicts):
+    """5D's ear gate: the units the listener answered "amp" ("a real amp, the guitar alone"); every other verdict,
+    "not sure" included, is out. -> (passed set, unheard list)."""
+    ok = {u for u in units if (verdicts.get(u) or {}).get("verdict") == "amp"}
+    return ok, [u for u in units if u not in verdicts]
+
+
+PANEL_DI_LIKE = {"Guitar-TECHS P3", "Dahka Band"}   # 5D's ear check: their amp tracks measure as near copies of the
+                                                    # DI (1/3-octave difference SD about 3 dB), out whatever the verdict
+
+
+def panel_read_units():
+    """5D's units for reads and renders: every panel unit heard, and only those that passed (the re-check's verdict,
+    panel/recheck.json, replacing the first for the units it covers); bands in PANEL_DI_LIKE out; refuses while any
+    unit is unheard."""
+    units = panel_units()
+    ep = out_dir() / PANEL_DIR / "ear.json"
+    if not ep.exists():
+        raise SystemExit("panel units not yet heard: the ear page comes before any panel render")
+    verdicts = json.loads(ep.read_text())["verdicts"]
+    rp = out_dir() / PANEL_DIR / "recheck.json"
+    if rp.exists():
+        verdicts = {**verdicts, **json.loads(rp.read_text())["verdicts"]}
+    ok, missing = panel_heard([u["unit"] for u in units], verdicts)
+    if missing:
+        raise SystemExit(f"{len(missing)} panel units not yet heard")
+    return [u for u in units if u["unit"] in ok and u["band"] not in PANEL_DI_LIKE]
+
+
+def cmd_panel_sections(args):
+    """5D's data (zero renders): per DI of the fixed pairs (`panel_pairs`), the pool's DI measures and up to
+    PANEL_WINDOWS windows (`panel_windows`; Guitar-TECHS P3's excerpts one each), shared by its amp tracks. Per amp
+    track, its DI-to-track lag over the whole track (`estimate_lag`, the DI as the render, ±PANEL_WIDE_S) and per
+    window, with that as the hint; a window more than PANEL_LAG_TOL from its track's lag is out; a track lag above
+    PANEL_FAR flags a far mic. The amp window is cut at the window plus the track lag (so the judge's residual lag is
+    small), checked for clipping, classed against its DI (`classify` on `gainmeasure`; high gain out) and given its
+    bleed residual (`panel_bleed_db`). Everything at 48 kHz. -> panel/sections/*.wav, panel/units.json."""
+    import sys
+
+    import numpy as np
+    import soundfile as sf
+
+    from analysis.aligned import estimate_lag
+    from learn import clean_di as CD
+    from learn import pretrain_set as PS
+
+    require("phase_5d")
+    from learn import cc_build as CB
+
+    inv = CB.cc_inventory()
+    pool_bands = {r.get("band") for r in inv.values()}
+    leaks = panel_leaks(panel_pairs(), [r["path"] for r in inv.values() if r.get("path")], VREAL_BANDS | pool_bands)
+    if leaks:
+        raise SystemExit(f"panel leakage: {leaks}")
+    sys.path.insert(0, str(PS.HOME / "references/datasets-set3/_tools"))
+    import classify as C
+    import gainmeasure as GM
+
+    pd = out_dir() / PANEL_DIR
+    sec = pd / "sections"
+    sec.mkdir(parents=True, exist_ok=True)
+    n = int(round((PS.SEC_S + PS.TRIM_S) * PS.SR))
+    trim = int(PS.TRIM_S * PS.SR)
+    units, dis, notes = [], {}, []
+
+    def read(path):
+        x, sr = sf.read(path, dtype="float64", always_2d=True)
+        return CD.resample(x.mean(1), sr, PS.SR), sr
+
+    for pr in panel_pairs():
+        band, key = pr["band"], f"{pr['band']}|{pr['part']}"
+        x, sr = read(pr["di"]["path"])
+        f, fs = CD.floor_spectrum(x)
+        votes = {k: [v] for k, v in ({mm: CD.line_count(f, fs, mm) for mm in CD.MAINS} if fs is not None
+                                     else {}).items()}
+        track, rows = CD.measure_di(x, PS.SR, CD.session_mains(votes))
+        k = 1 if pr["source"].startswith("Guitar-TECHS") else PANEL_WINDOWS
+        starts = panel_windows(rows, track, key, k=k)
+        row_at = {r["start_s"]: r for r in rows}
+        if track["near_fs"] or not starts:
+            notes.append({"di": key, "out": "DI near full scale" if track["near_fs"] else "no window"})
+            print(f"{key}: {notes[-1]['out']}", flush=True)
+            continue
+        di_id = f"panel/{band}/{pr['part']}"
+        for a in pr["amps"]:
+            y, _ = read(a["path"])
+            tname = pathlib.Path(a["path"]).name
+            try:
+                tlag = int(estimate_lag(y, [x], max_lag_s=PANEL_WIDE_S))
+            except ValueError as err:
+                notes.append({"di": key, "track": tname, "out": f"no track lag: {err}"})
+                continue
+            for st in starts:
+                lo = int(round((st - PS.TRIM_S) * PS.SR))
+                dsec, asec = panel_cut(x, y, lo, n, tlag)
+                u = f"{di_id}@{st:.1f}#{tname}"
+                if len(dsec) < n or len(asec) < n:
+                    notes.append({"unit": u, "out": "window runs past an end"})
+                    continue
+                try:
+                    wlag = int(estimate_lag(asec, [dsec], hint=0)) + tlag
+                except ValueError as err:
+                    notes.append({"unit": u, "out": f"no window lag: {err}"})
+                    continue
+                rec = {"unit": u, "out": None}
+                if abs(wlag - tlag) > PANEL_LAG_TOL:
+                    rec["out"] = f"window lag {wlag} off the track's {tlag}"
+                elif len(CD.clip_runs(asec, peak=float(np.max(np.abs(y))))):
+                    rec["out"] = "the amp track clips in the window"
+                gm = GM.measures(np.asarray(asec[trim:], np.float64), np.asarray(dsec[trim:], np.float64), PS.SR)
+                cls = C.classify(gm)[0] if gm else None
+                if rec["out"] is None and cls not in ("clean", "crunch"):
+                    rec["out"] = f"class {cls}"
+                if rec["out"]:
+                    notes.append({**rec, "class": cls, "track_lag": tlag, "window_lag": wlag})
+                    continue
+                stem = u.replace("/", "__").replace("#", "__").replace(" ", "_")
+                dp, ap = sec / f"{stem}.di.wav", sec / f"{stem}.amp.wav"
+                if not dp.exists():
+                    sf.write(dp, dsec.astype(np.float32), PS.SR, subtype="FLOAT")
+                sf.write(ap, asec.astype(np.float32), PS.SR, subtype="FLOAT")
+                units.append({"unit": u, "section": f"{di_id}@{st:.1f}", "track": ap.name, "rig": f"{di_id}#{tname}",
+                              "set": "panel", "di": di_id, "band": band, "source": pr["source"], "cls": cls,
+                              "sd": str(sec), "start_s": PS.TRIM_S, "di_path": str(dp), "window_s": st,
+                              "track_lag": tlag, "window_lag": wlag, "far": abs(tlag) > PANEL_FAR,
+                              "bleed_db": panel_bleed_db(asec[trim:], dsec[trim:], PS.SR), "gain_measures": gm,
+                              "di_flags": CD.section_flags(row_at[st], track)[0],
+                              "di_file": pr["di"]["path"], "amp_file": a["path"], "mic": a.get("mic")})
+                dis.setdefault(band, set()).add(di_id)
+        print(f"{key}: windows {starts}; units so far {len(units)}", flush=True)
+    fold = panel_folds(dis)
+    for u in units:
+        u["fold"] = fold[u["di"]]
+    save(pd / "units.json", {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5d", "pairs": str(PANEL_PAIRS),
+                             "units": units, "out": notes, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    cnt = {}
+    for u in units:
+        cnt.setdefault(u["band"], {}).setdefault(u["cls"], set()).add(u["di"])
+    print("PANEL-SECTIONS DONE: " + "; ".join(
+        f"{b}: " + ", ".join(f"{c} {len(v)} DIs/{sum(1 for u in units if u['band'] == b and u['cls'] == c)} units"
+                             for c, v in sorted(cs.items())) for b, cs in sorted(cnt.items())))
+
+
+PANEL_LATENCY = 52                   # the plugin's render latency (samples), as `aligned_distance`'s default
+
+
+def panel_halves(units):
+    """5D's search halves: A and B alternating over each DI's units in sorted order (5B.2's per-DI rule)."""
+    out, by = {}, {}
+    for u in sorted(units, key=lambda p_: p_["unit"]):
+        j = by.setdefault(u["di"], 0)
+        out[u["unit"]] = "AB"[j % 2]
+        by[u["di"]] += 1
+    return out
+
+
+def panel_fname(key):
+    return key.replace("/", "__").replace(" ", "_")
+
+
+def cmd_panel_lags(args):
+    """5D's lags (one shard of the passed units): S (the class's, on each amp) rendered fresh, the judge lag pooled
+    over the three (`estimate_lag`, searched around the window's residual lag less the plugin's latency), the unit out
+    if the two differ by more than PANEL_LAG_TOL; S's judges and shas stored. -> panel/lags/<unit>.json."""
+    import numpy as np
+
+    from analysis.aligned import estimate_lag
+    from learn import arm_a_levers as L
+    from learn import audibility_measure as AM
+    from learn import cc_build as CB
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+    from learn import pretrain_set as PS
+    from learn import song_bank as B
+    from learn import trusted_data as T
+
+    require("phase_5d")
+    units = sorted(panel_read_units(), key=lambda p_: p_["unit"])
+    k, n = args.shard
+    mine = [p_ for j, p_ in enumerate(units) if j % n == k]
+    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
+    ms = L.menu_S()
+    LO._wait_cap()
+    ldir = out_dir() / PANEL_DIR / "lags"
+    renders = 0
+    for prt in mine:
+        if PS.free_gb() < T.DISK_GUARD_GB:
+            raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+        lp = ldir / f"{panel_fname(prt['unit'])}.json"
+        if lp.exists():
+            continue
+        di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
+        di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
+        ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
+        ys = {}
+        for a in AMPS3:
+            sel, S = ms[a][prt["cls"]]
+            xs = LO.tdict(LO.sdict(S))
+            ys[a] = np.asarray(AM.fresh_render(CB.new_renderer, di32, sel, xs, xs), np.float64)[trim[0]:trim[1]]
+            renders += 2
+        expect = prt["window_lag"] - prt["track_lag"] - PANEL_LATENCY
+        try:
+            lag, status = int(estimate_lag(ref, list(ys.values()), hint=expect)), "ok"
+        except ValueError as err:
+            lag, status = None, f"no lag: {err}"
+        if lag is not None and abs(lag - expect) > PANEL_LAG_TOL:
+            status = f"judge lag {lag} off the DI-to-track estimate {expect}"
+        save(lp, {"unit": prt["unit"], "lag": lag, "expect": expect, "status": status, "phase": "phase_5d",
+                  "s": {a: {"judge": None if lag is None else K.judge(ref, ys[a], di, lag),
+                            "render_sha256": AM.audio_sha(ys[a])} for a in AMPS3}})
+        print(f"{prt['unit'][-60:]}: lag {lag} (expect {expect}) {status}; renders so far {renders}", flush=True)
+    print(f"PANEL-LAGS DONE {k}/{n}: {renders} renders")
+
+
+def panel_lagged_units():
+    """5D's units with a usable lag (panel/lags status "ok"); refuses while any passed unit has no lag record."""
+    units = panel_read_units()
+    ldir = out_dir() / PANEL_DIR / "lags"
+    recs = {}
+    for p_ in units:
+        lp = ldir / f"{panel_fname(p_['unit'])}.json"
+        if not lp.exists():
+            raise SystemExit(f"{p_['unit']}: no lag yet (panel-lags first)")
+        recs[p_["unit"]] = json.loads(lp.read_text())
+    return [dict(p_, lag=recs[p_["unit"]]["lag"]) for p_ in units if recs[p_["unit"]]["status"] == "ok"], recs
+
+
+def cmd_panel_centres(args):
+    """5D's centres and S (zero renders), each new unit by its fold, as F37's: RcBG_k on exactly model k's training
+    lists, Rcs2_k on model k's BKS list, RcG on every GOAT label (`centre_records`), by Rc's rule on the class's S;
+    S itself. Every answer on each of the three amps. -> panel/answers/{RcBG,Rcs2,RcG,S}.json."""
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+
+    require("phase_5d")
+    units, _ = panel_lagged_units()
+    brecs, by_unit, folds = real_labels(2)
+    grecs, gunits, _ = goat_labels()
+    ms = A_menu_S()
+    src = {}
+    for k in range(REAL_FOLDS):
+        src[k] = centre_records(brecs, by_unit, folds, grecs, gunits, k)
+        src[k]["Rcs2"] = fold_records(brecs, by_unit, folds, k)
+
+    def cls_of(r):
+        return (by_unit[r["unit"]] if r["unit"] in by_unit else gunits[r["unit"]])["cls"]
+
+    out = {t: {} for t in ("RcBG", "Rcs2", "RcG", "S")}
+    used = {t: {} for t in ("RcBG", "Rcs2", "RcG")}
+    for prt in units:
+        for amp in AMPS3:
+            sel, S = ms[amp][prt["cls"]]
+            key = real_key(prt, amp)
+            out["S"][key] = {ANY_HALF: {"select": sel, "settings": LO.sdict(S)}}
+            for t in ("RcBG", "Rcs2", "RcG"):
+                labels = [LO.tdict(r["label"]) for r in src[prt["fold"]][t]
+                          if r["amp"] == amp and cls_of(r) == prt["cls"]]
+                out[t][key] = {ANY_HALF: {"select": sel, "settings": LO.sdict(rc_setting(K.space(amp, S), S, labels))}}
+                used[t][key] = len(labels)
+    for t, a in out.items():
+        save(out_dir() / PANEL_DIR / "answers" / f"{t}.json", {
+            "plan": PLAN, "ledger": f"{LEDGER_ID} phase_5d", "tag": t, "labels_used": used.get(t), "answers": a,
+            "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"PANEL CENTRES DONE: {len(units)} units x {len(AMPS3)} amps; " + "; ".join(
+        f"{t} labels {min(v.values())}-{max(v.values())}" for t, v in used.items()))
+
+
+PANEL_MODELS = {"P2a-goat": "P2a-goat{k}", "P2a-reals2": "P2a-real{k}s2"}
+
+
+def cmd_panel_predict(args):
+    """5D's model answers (torch, zero renders): each new unit read by its fold's runs (both seeds pooled, at their
+    training inputs' median loudness, per search half) on each of the three amps, as `goat_predict`.
+    -> panel/answers/<name>.json."""
+    from learn import direct_existing as DE
+    from learn import direct_stems as DS
+    from learn import full_space as F
+    from learn import local_objective as LO
+
+    require("phase_5d")
+    if args.names not in PANEL_MODELS:
+        raise SystemExit(f"--names one of {sorted(PANEL_MODELS)}")
+    units, _ = panel_lagged_units()
+    models = {}
+    for k in sorted({p_["fold"] for p_ in units}):
+        nets, recs = zip(*(load_run(PANEL_MODELS[args.names].format(k=k), sd, "best") for sd in SEEDS))
+        own = [i for i in recs[0]["train_ids"] if i < REAL_ROW0]
+        models[k] = (list(nets), [r_["model_sha256"]["best"] for r_ in recs], p2a_median_lufs(own))
+    ms = A_menu_S()
+    out = {}
+    for prt in units:
+        nets, _, target = models[prt["fold"]]
+        ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
+        g = DE.inference_gain_db(ref, target)
+        for search in ("A", "B"):
+            s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
+            for amp in AMPS3:
+                sel, S = ms[amp][prt["cls"]]
+                x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
+                r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
+                st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
+                out.setdefault(real_key(prt, amp), {})[search] = {"select": sel, "settings": LO.sdict(st)}
+    save(out_dir() / PANEL_DIR / "answers" / f"{args.names}.json", {
+        "plan": PLAN, "ledger": f"{LEDGER_ID} phase_5d", "tag": args.names,
+        "models": {k: {"sha256": m[1], "input_lufs": m[2]} for k, m in models.items()}, "answers": out,
+        "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"PANEL PREDICT DONE: {args.names} on {len(units)} units")
+
+
+def cmd_panel_render(args):
+    """5D's read renders (one shard): each answer of `--names` through the unit's DI in its own primed process, judged
+    against the amp track on both halves at the unit's lag; S's judges come from its lag record (the same renders).
+    -> panel/judge/<tag>/<unit>|<amp>.json."""
+    import numpy as np
+
+    from learn import audibility_measure as AM
+    from learn import cc_build as CB
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+    from learn import pretrain_set as PS
+    from learn import song_bank as B
+    from learn import trusted_data as T
+
+    require("phase_5d")
+    tags = [t for t in args.names.split(",") if t and t != "S"]
+    ans = {t: json.loads((out_dir() / PANEL_DIR / "answers" / f"{t}.json").read_text())["answers"] for t in tags}
+    units, recs = panel_lagged_units()
+    k, n = args.shard
+    mine = [p_ for j, p_ in enumerate(units) if j % n == k]
+    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
+    LO._wait_cap()
+    renders = 0
+    for prt in mine:
+        if PS.free_gb() < T.DISK_GUARD_GB:
+            raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+        di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
+        di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
+        ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
+        for amp in AMPS3:
+            key = real_key(prt, amp)
+            sp = out_dir() / PANEL_DIR / "judge" / "S" / f"{panel_fname(key)}.json"
+            if not sp.exists():
+                save(sp, {"unit": prt["unit"], "amp": amp, "tag": "S", "lag": prt["lag"],
+                          "judge": {ANY_HALF: recs[prt["unit"]]["s"][amp]["judge"]},
+                          "render_sha256": {ANY_HALF: recs[prt["unit"]]["s"][amp]["render_sha256"]}})
+            for t in tags:
+                gp = out_dir() / PANEL_DIR / "judge" / t / f"{panel_fname(key)}.json"
+                asha = answers_sha({key: ans[t][key]})
+                if gp.exists():
+                    if json.loads(gp.read_text()).get("answers_sha256") != asha:
+                        raise SystemExit(f"{gp}: rendered from other answers")
+                    continue
+                rec = {"unit": prt["unit"], "amp": amp, "tag": t, "lag": prt["lag"], "answers_sha256": asha,
+                       "judge": {}, "render_sha256": {}}
+                for search, a in sorted(ans[t][key].items()):
+                    st = LO.tdict(a["settings"])
+                    y = np.asarray(AM.fresh_render(CB.new_renderer, di32, a["select"], st, st),
+                                   np.float64)[trim[0]:trim[1]]
+                    renders += 2
+                    rec["judge"][search] = K.judge(ref, y, di, prt["lag"])
+                    rec["render_sha256"][search] = AM.audio_sha(y)
+                save(gp, rec)
+        print(f"{prt['unit'][-60:]}: renders so far {renders}", flush=True)
+    print(f"PANEL-RENDER DONE {k}/{n}: {renders} renders")
+
+
+def panel_ceiling_units(units):
+    """5D's ceiling units: one per band, seeded (PANEL_SEED), each on one seeded amp. -> [(unit, amp)]."""
+    import random
+
+    out = []
+    for band in sorted({p_["band"] for p_ in units}):
+        rng = random.Random(f"{PANEL_SEED}|ceiling|{band}")
+        prt = rng.choice(sorted((p_ for p_ in units if p_["band"] == band), key=lambda p_: p_["unit"]))
+        out.append((prt, rng.choice(AMPS3)))
+    return out
+
+
+def cmd_panel_ceiling(args):
+    """5D's true-DI ceiling (one shard): on each ceiling unit and amp, arm A's main stage (`K.space`, 52 evaluations,
+    seed `L.SEED`) from the class's S, scored by the judge on the unit's search half at its lag, as 5B.2's stage 2;
+    its best judged on both halves. -> panel/ceiling/<unit>|<amp>.json."""
+    import numpy as np
+
+    from learn import arm_a_levers as L
+    from learn import arm_a_mega53 as A
+    from learn import audibility_measure as AM
+    from learn import cc_build as CB
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+    from learn import pretrain_set as PS
+    from learn import song_bank as B
+    from learn import trusted_data as T
+
+    require("phase_5d")
+    units, recs = panel_lagged_units()
+    halves = panel_halves(units)
+    k, n = args.shard
+    mine = [x for j, x in enumerate(panel_ceiling_units(units)) if j % n == k]
+    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
+    ms = L.menu_S()
+    LO._wait_cap()
+    renders = 0
+    for prt, amp in mine:
+        if PS.free_gb() < T.DISK_GUARD_GB:
+            raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+        key = real_key(prt, amp)
+        path = out_dir() / PANEL_DIR / "ceiling" / f"{panel_fname(key)}.json"
+        if path.exists():
+            continue
+        di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
+        di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
+        ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
+        search = halves[prt["unit"]]
+        held = "B" if search == "A" else "A"
+        sel, S = ms[amp][prt["cls"]]
+        dims = K.space(amp, S)
+        seen, first = {}, {}
+        rr = CB.new_renderer()
+        try:
+            rr.render(di32, sel, LO.tdict(LO.sdict(S)))
+            renders += 1
+
+            def f(x):
+                y = np.asarray(rr.render(di32, sel, LO.tdict(LO.sdict(x))), np.float64)[trim[0]:trim[1]]
+                j = K.judge(ref, y, di, prt["lag"])
+                if not first:
+                    first.update(sha=AM.audio_sha(y))
+                    if first["sha"] != recs[prt["unit"]]["s"][amp]["render_sha256"]:
+                        raise SystemExit(f"{key}: S's first evaluation is not bit-identical to its fresh render")
+                seen[K.key(x)] = {"judge": j, "peak_dbfs": A.peak_dbfs(y, trim_s=0.0)}
+                return j[search]
+
+            best_x, best_v, evals = L.main_stage(dims, S, f, seed=L.SEED)
+            renders += evals
+        finally:
+            rr.close()
+        best = dict(seen[K.key(best_x)], settings=LO.sdict(best_x))
+        s_j = recs[prt["unit"]]["s"][amp]["judge"]
+        save(path, {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5d", "unit": prt["unit"], "band": prt["band"],
+                    "amp": amp, "search": search, "held": held, "lag": prt["lag"], "s_judge": s_j,
+                    "best": best, "evaluations": evals, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+        print(f"{key[-70:]}: {search}->{held} S {s_j[held]:.3f} best {best['judge'][held]:.3f}; renders so far "
+              f"{renders}", flush=True)
+    print(f"PANEL-CEILING DONE {k}/{n}: {renders} renders")
+
+
+def weighted_clustered(rows, weight_of):
+    """rows: [(cluster, value)]; weight_of: {cluster: weight}. The weighted mean of cluster means and its 90% interval
+    clustered by cluster (sandwich variance with the small-sample factor, t with clusters - 1 df); the effective
+    number of clusters 1/sum(w^2) over the normalised weights."""
+    import statistics
+
+    by = {}
+    for c, v in rows:
+        by.setdefault(c, []).append(v)
+    means = {c: statistics.fmean(v) for c, v in by.items()}
+    w = {c: weight_of[c] for c in means}
+    tot = sum(w.values())
+    w = {c: x / tot for c, x in w.items()}
+    m = sum(w[c] * means[c] for c in means)
+    g = len(means)
+    if g < 2:
+        return {"mean": m, "lo90": None, "hi90": None, "clusters": g, "n_eff": 1.0}
+    var = g / (g - 1) * sum(w[c] ** 2 * (means[c] - m) ** 2 for c in means)
+    half = t95(g - 1) * math.sqrt(var)
+    return {"mean": m, "lo90": m - half, "hi90": m + half, "clusters": g,
+            "n_eff": 1 / sum(x * x for x in w.values()), "clusters_negative": sum(v < 0 for v in means.values())}
+
+
+def panel_rows(a, b, units, halves, judge):
+    """ln(d_a / d_b) on the held half per (unit, amp, search): a model answers for its search half, a centre or S
+    for any half; a missing or non-finite judge drops the direction. -> [(unit, amp, value)], dropped."""
+    rows, dropped = [], 0
+    for p_ in units:
+        sh = halves[p_["unit"]]
+        held = "B" if sh == "A" else "A"
+        for amp in AMPS3:
+            key = real_key(p_, amp)
+            vals = []
+            for t in (a, b):
+                j = judge[t].get(key)
+                x = None if j is None else (j.get(sh) or j.get(ANY_HALF) or {}).get(held)
+                vals.append(x)
+            if all(x is not None and math.isfinite(x) and x > 0 for x in vals):
+                rows.append((p_, amp, math.log(vals[0] / vals[1])))
+            else:
+                dropped += 1
+    return rows, dropped
+
+
+def panel_weights(units, capped=True):
+    """5D's DI weights: each band weighs as min(its DIs, 4) (capped) or 1 (equal), its DIs equal within it."""
+    by = {}
+    for p_ in units:
+        by.setdefault(p_["band"], set()).add(p_["di"])
+    return {d: (min(len(ds), 4) if capped else 1) / len(ds) for b, ds in by.items() for d in ds}
+
+
+def cmd_panel_report(args):
+    """5D's rows (zero renders): for each pair in `--pairs`, ln(d_a / d_b) on the held half, the capped band-weighted
+    mean with its DI-clustered interval (primary), equal band weights, DI-weighted and band-clustered beside; per
+    band (clustered by DI, or by window where a band has one DI), per class, leave-one-band-out, and with the
+    hum-passed, far-mic, high-bleed and unmeasured units apart. -> panel/report-<label>.json."""
+    require("phase_5d")
+    units, _ = panel_lagged_units()
+    halves = panel_halves(units)
+    tags = {t for pair in args.pairs.split(",") for t in pair.split(":")}
+    judge = {}
+    for t in tags:
+        judge[t] = {}
+        for f in (out_dir() / PANEL_DIR / "judge" / t).glob("*.json"):
+            r = json.loads(f.read_text())
+            judge[t][f"{r['unit']}|{r['amp']}"] = r["judge"]
+    wc, we = panel_weights(units), panel_weights(units, capped=False)
+
+    def summary(rows):
+        if not rows:
+            return None
+        di_rows = [(p_["di"], v) for p_, _, v in rows]
+        dis = {p_["di"] for p_, _, _ in rows}
+        out = {"capped": weighted_clustered(di_rows, {d: wc[d] for d in dis}),
+               "equal_bands": weighted_clustered(di_rows, {d: we[d] for d in dis}),
+               "di_weighted": weighted_clustered(di_rows, {d: 1.0 for d in dis}),
+               "band_clustered": clustered([(p_["band"], p_["di"], v) for p_, _, v in rows]),
+               "directions": len(rows)}
+        return out
+
+    rep = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5d", "status": "strong hint (effective N below the minimum)",
+           "units": len(units), "rows": {}}
+    for pair in args.pairs.split(","):
+        a, b = pair.split(":")
+        rows, dropped = panel_rows(a, b, units, halves, judge)
+        row = {"all": summary(rows), "dropped": dropped, "per_band": {}, "per_class": {}, "leave_one_band_out": {},
+               "apart": {}}
+        for band in sorted({p_["band"] for p_ in units}):
+            br = [r for r in rows if r[0]["band"] == band]
+            one = len({p_["di"] for p_, _, _ in br}) == 1
+            cl = clustered([((p_["section"] if one else p_["di"]), p_["unit"], v) for p_, _, v in br]) if br else None
+            row["per_band"][band] = cl and {q: cl.get(q) for q in ("mean", "lo90", "hi90", "clusters", "parts")}
+            rest = [r for r in rows if r[0]["band"] != band]
+            row["leave_one_band_out"][band] = summary(rest)["capped"]["mean"] if rest else None
+        for cls in ("clean", "crunch"):
+            row["per_class"][cls] = summary([r for r in rows if r[0]["cls"] == cls])
+        groups = {"hum": lambda p_: "hum" in p_.get("di_flags", []), "far": lambda p_: p_.get("far"),
+                  "high_bleed": lambda p_: p_["bleed_db"] is not None and p_["bleed_db"] > PANEL_BLEED_MAX_DB,
+                  "unmeasured_bleed": lambda p_: p_["bleed_db"] is None}
+        for g, f in groups.items():
+            row["apart"][g] = {"with": summary([r for r in rows if f(r[0])]),
+                               "without": summary([r for r in rows if not f(r[0])])}
+        row["apart"]["without_all"] = summary([r for r in rows if not any(f(r[0]) for f in groups.values())])
+        rep["rows"][f"{a} - {b}"] = row
+        c = row["all"]["capped"] if row["all"] else None
+        if c and c["lo90"] is not None:
+            print(f"{a} - {b}: capped {c['mean']:+.4f} [{c['lo90']:+.4f}, {c['hi90']:+.4f}] (n_eff {c['n_eff']:.1f}, "
+                  f"{c['clusters_negative']} of {c['clusters']} DIs better); band-clustered "
+                  f"{row['all']['band_clustered']['mean']:+.4f} [{row['all']['band_clustered']['lo90']:+.4f}, "
+                  f"{row['all']['band_clustered']['hi90']:+.4f}]; dropped {dropped}")
+    save(out_dir() / PANEL_DIR / f"report-{args.label or 'panel'}.json", rep)
+    print("PANEL-REPORT DONE")
+
+
+COMMANDS = {"panel-sections": cmd_panel_sections, "panel-lags": cmd_panel_lags, "panel-centres": cmd_panel_centres, "panel-predict": cmd_panel_predict, "panel-render": cmd_panel_render, "panel-report": cmd_panel_report, "panel-ceiling": cmd_panel_ceiling, "goat-sections": cmd_goat_sections, "goat-search": cmd_goat_search,
             "goat-stage-check": cmd_goat_stage_check, "goat-centres": cmd_goat_centres,
             "goat-predict": cmd_goat_predict, "goat-render": cmd_goat_render, "goat-report": cmd_goat_report,
             "p5": cmd_p5, "dirty-doubles": cmd_dirty_doubles, "p6": cmd_p6,
