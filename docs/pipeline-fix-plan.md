@@ -844,6 +844,11 @@ instead of generating unrealistic presets our own?"):
     restated; leave-one-band-out as an anti-dominance rule (no band more than half the effect); and single-DI bands
     clustered by window. The headline's weights were then capped (each band as the smaller of its DIs and 4) to keep
     the power near 0.85 at −0.05 while no band weighs more than about a quarter; equal band weights stay beside.
+    Its second re-check approved the cap (effective N about 25.5, power about 0.84 at −0.05 and 0.45 at −0.03) with
+    caveats now stated: Blue Manic, The Laminar Flow and Guitar-TECHS P3 carry about 71% of the weight; P3's share
+    rests on one amp chain and one player (independent playing, not independent chains); the read answers for these
+    panel bands; and the effective N and power are recomputed from the units that pass the ear, lags and class, and
+    stated before any render.
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
   measurements; if they shape the choice, D_fix's V-real read is labelled selection-contaminated. The candidates by
