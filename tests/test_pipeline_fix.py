@@ -510,3 +510,9 @@ def test_setting_gap_is_zero_on_itself_and_counts_switch_agreement():
     rms, agree = P.setting_gap(dims, x, y)
     assert rms == pytest.approx(0.3, abs=1e-6)
     assert agree == (0.0 if sw else None)
+
+
+def test_goat_heavy_out_keeps_only_keep_verdicts_and_lists_the_unheard():
+    v = {"a": {"verdict": "keep"}, "b": {"verdict": "heavy"}, "c": {"verdict": "unsure"}}
+    out, missing = P.goat_heavy_out(["a", "b", "c", "d"], v)
+    assert out == {"b", "c", "d"} and missing == ["d"]

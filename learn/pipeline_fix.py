@@ -3304,13 +3304,31 @@ def goat_heard(units, verdicts):
     return {u for u in units if (verdicts.get(u) or {}).get("verdict") == "amp"}, missing
 
 
+def goat_heavy_out(candidates, verdicts):
+    """5C's heavy check (amendment of 2026-11-01): the firmly driven units the ear passed are heard again against the
+    pool's clean/crunch scope; only "keep" stays in. candidates: the units on the heavy page (goat/heavy-key.json);
+    verdicts: goat/heavy.json's. -> (units out, candidates without a verdict)."""
+    missing = [u for u in candidates if u not in verdicts]
+    return {u for u in candidates if (verdicts.get(u) or {}).get("verdict") != "keep"}, missing
+
+
 def goat_ear_passed(units):
-    """`goat_heard` on goat/ear.json; refuses while any kept unit is unheard. -> set of units passed."""
-    p = out_dir() / GOAT_DIR / "ear.json"
+    """`goat_heard` on goat/ear.json, less `goat_heavy_out` on goat/heavy.json; refuses while any kept unit is
+    unheard on either page. -> set of units passed."""
+    gd = out_dir() / GOAT_DIR
+    p = gd / "ear.json"
     ok, missing = goat_heard(units, json.loads(p.read_text())["verdicts"] if p.exists() else {})
     if missing:
         raise SystemExit(f"{len(missing)} GOAT units are not yet heard: every kept unit is heard before any render")
-    return ok
+    k = gd / "heavy-key.json"
+    if not k.exists():
+        raise SystemExit("the heavy check is not built yet (`learn.goat_ear_page heavy`)")
+    h = gd / "heavy.json"
+    cand = [it["unit"] for it in json.loads(k.read_text())["items"]]
+    out, missing = goat_heavy_out(cand, json.loads(h.read_text())["verdicts"] if h.exists() else {})
+    if missing:
+        raise SystemExit(f"{len(missing)} heavy-check units are not yet heard")
+    return ok - out
 
 
 def goat_labels():

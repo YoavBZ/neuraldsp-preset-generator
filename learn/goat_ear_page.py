@@ -7,6 +7,13 @@ never marked as flagged. With `--sample N`, the flagged units plus a seeded samp
 
     $MAIN -m learn.goat_ear_page build [--sample N]   # -> ~/ndsp-presets/listening/goat-ear/part-<k>.html
     $MAIN -m learn.goat_ear_page answers EXPORT.json ...   # -> goat/ear.json (the verdicts by unit)
+
+The heavy check (amendment of 2026-11-01): the units the ear passed that the pool's classifier calls firmly driven
+(`classify`'s clean_vs_driven split "driven": non-linear share >= 0 dB and level slope <= 0.3) are heard again,
+blind to the measure, against the pool's clean/crunch scope; only "keep" stays in (`pipeline_fix.goat_heavy_out`).
+
+    $MAIN -m learn.goat_ear_page heavy                     # -> ~/ndsp-presets/listening/goat-heavy/part-1.html
+    $MAIN -m learn.goat_ear_page heavy-answers EXPORT.json  # -> goat/heavy.json
 """
 from __future__ import annotations
 
@@ -24,6 +31,7 @@ if str(PLUGIN_ROOT) not in sys.path:
     sys.path.insert(0, str(PLUGIN_ROOT))
 
 PAGE_NAME = "goat-ear"
+HEAVY_PAGE = "goat-heavy"
 SEED = 20261048
 PART_ITEMS = 75                     # cards per page file
 KBPS = 96                           # AAC: an amp-tone check, not a near-threshold one (about 21 MB a part)
@@ -31,6 +39,21 @@ ITEM_S = 15.0                       # listening time per card (the page's estima
 BANDS = {"hi": (6000.0, 10000.0), "mid": (1000.0, 3000.0), "lo": (60.0, 150.0)}
 VERDICTS = [("amp", "A believable amp tone"), ("odd", "Odd amp sound (muffled, fizzy, artifacts)"),
             ("di_bad", "The DI itself sounds processed or noisy"), ("unsure", "Not sure")]
+HEAVY_VERDICTS = [("keep", "Keep: clean or crunch, within our scope"), ("heavy", "Too heavy or fizzy"),
+                  ("unsure", "Not sure")]
+EAR = {"page": PAGE_NAME, "verdicts": VERDICTS, "title": "GOAT ear", "head": "GOAT amp recordings",
+       "h1": "A believable amp tone, from a clean DI?",
+       "ask": """A is a guitar DI, B is the same performance played
+through a captured amp and cab (a neural capture, not our plugin). Press Play and switch between A and B as often as
+you like: the Switch button, the A and B buttons, or the S, A and B keys; the switch is instant. Judge B: does it sound
+like a believable guitar amp and cab, not muffled as if through two cabs, not fizzy as if through none, with no
+artifacts? And if A, the DI, already sounds processed, noisy or hummy, say so."""}
+HEAVY = {"page": HEAVY_PAGE, "verdicts": HEAVY_VERDICTS, "title": "GOAT heavy check",
+         "head": "GOAT heavy check", "h1": "Too heavy or fizzy for our clean/crunch scope?",
+         "ask": """You passed all of these as believable amps. This time judge only how
+heavy B is: the presets we build are clean and crunch, with heavy tones a small minority and never very heavy. Keep a
+recording if B is clean or crunch you would want the model to learn from; mark it too heavy or fizzy if it is beyond
+that. A is the DI, B the captured amp; switch with the buttons or the S, A and B keys."""}
 
 
 def band_db(x, sr, band):
@@ -99,9 +122,20 @@ def pair_clips(a, b, cache_dir, kbps=KBPS):
     return out
 
 
-def card(it, n, total):
+def firmly_driven(gm):
+    """The heavy check's candidates: `classify`'s clean_vs_driven split is "driven" (gm: `gainmeasure.measures`)."""
+    from learn import pretrain_set as PS
+
+    if str(PS.HOME / "references/datasets-set3/_tools") not in sys.path:
+        sys.path.insert(0, str(PS.HOME / "references/datasets-set3/_tools"))
+    import classify as C
+
+    return bool(gm) and C.classify(gm)[3] == "driven"
+
+
+def card(it, n, total, verdicts=VERDICTS):
     e = html.escape
-    vs = "".join(f'<button type="button" class="v" data-v="{v}">{e(t)}</button>' for v, t in VERDICTS)
+    vs = "".join(f'<button type="button" class="v" data-v="{v}">{e(t)}</button>' for v, t in verdicts)
     return (f'<article class="item" data-id="{it["id"]}" data-n="{n}"><div class="num">{n} / {total}</div>'
             f'<h3>Recording {n}</h3><p class="sub">A: the DI · B: the amp recording</p>'
             f'<div class="plays"><button type="button" class="play main">&#9654; Play</button>'
@@ -112,33 +146,29 @@ def card(it, n, total):
             f'<input class="note" type="text" placeholder="Note (optional)" aria-label="Note"></article>')
 
 
-def page_html(items, clips, build, part, n_parts, start_n):
+def page_html(items, clips, build, part, n_parts, start_n, spec=EAR):
     from learn import build_ear_page as BEP
     from learn import cc_drive_page as CDP
 
     total = len(items)
     secs = {it["id"]: ITEM_S for it in items}
-    data = {"page": PAGE_NAME, "part": part, "build": build,
+    data = {"page": spec["page"], "part": part, "build": build,
             "items": [{"id": it["id"], "title": f"Recording {start_n + j}", "subtitle": ""}
                       for j, it in enumerate(items)], "secs": secs}
     js = BEP.JS_HEAD + CDP.PLAYER_JS.replace("XFADE_S", repr(CDP.XFADE_S)) + BEP.JS_ANSWERS
-    body = "".join(card(it, start_n + j, start_n + total - 1) for j, it in enumerate(items))
+    body = "".join(card(it, start_n + j, start_n + total - 1, spec["verdicts"]) for j, it in enumerate(items))
     minutes = round(sum(secs.values()) / 60)
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>GOAT ear {part}</title>
+<title>{spec["title"]} {part}</title>
 <style>{BEP.CSS}{CDP.CSS}</style></head><body>
-<header><div class="hrow"><b>Part {part} of {n_parts}: GOAT amp recordings</b><span id="count"></span></div>
+<header><div class="hrow"><b>Part {part} of {n_parts}: {spec["head"]}</b><span id="count"></span></div>
 <div class="hrow"><label><input type="checkbox" id="auto"> Autoplay next</label>
 <span id="left" class="ask"></span></div><div class="prog"><div id="bar"></div></div></header>
 <main>
-<h1>A believable amp tone, from a clean DI?</h1>
-<p class="intro">{total} recordings, about {minutes} minutes. A is a guitar DI, B is the same performance played
-through a captured amp and cab (a neural capture, not our plugin). Press Play and switch between A and B as often as
-you like: the Switch button, the A and B buttons, or the S, A and B keys; the switch is instant. Judge B: does it sound
-like a believable guitar amp and cab, not muffled as if through two cabs, not fizzy as if through none, with no
-artifacts? And if A, the DI, already sounds processed, noisy or hummy, say so. Both are set to the same loudness.
+<h1>{spec["h1"]}</h1>
+<p class="intro">{total} recordings, about {minutes} minutes. {spec["ask"]} Both are set to the same loudness.
 Answers are saved in this browser as you go; tap <b>Export</b> any time, even halfway, and send the file.</p>
 {body}
 </main>
@@ -190,25 +220,81 @@ def cmd_build(args):
     print(f"GOAT EAR PAGE DONE: {len(items)} cards ({sum(flags[u] for u in chosen)} flagged), {len(parts)} parts")
 
 
-def cmd_answers(args):
+def heavy_candidates():
+    """The units the ear passed whose render the pool's classifier calls firmly driven (goat/units.json's
+    gain measures), sorted. Reads goat/ear.json directly: the gate itself waits for the heavy check."""
     from learn import pipeline_fix as P
 
-    key = json.loads((P.out_dir() / P.GOAT_DIR / "ear-key.json").read_text())
+    gd = P.out_dir() / P.GOAT_DIR
+    items = json.loads((gd / "units.json").read_text())["items"]
+    ok, missing = P.goat_heard([u["unit"] for u in P.goat_units()],
+                               json.loads((gd / "ear.json").read_text())["verdicts"])
+    if missing:
+        raise SystemExit(f"{len(missing)} units not yet heard on the ear page")
+    return sorted(u["unit"] for u in P.goat_units()
+                  if u["unit"] in ok and firmly_driven(items[u["item"]]["renders"][str(u["render"])]["gain_measures"]))
+
+
+def cmd_heavy(args):
+    from learn import pipeline_fix as P
+    from learn import pretrain_set as PS
+
+    P.require("phase_5c")
+    units = {u["unit"]: u for u in P.goat_units()}
+    chosen = heavy_candidates()
+    random.Random(f"{SEED}|heavy").shuffle(chosen)
+    key_path = P.out_dir() / P.GOAT_DIR / "heavy-key.json"
+    if key_path.exists() and not args.force:
+        raise SystemExit(f"{key_path} exists: a rebuild hides the listener's stored answers (--force)")
+    items = [{"id": "heavy-" + hashlib.sha256(f"{SEED}|heavy|{u}".encode()).hexdigest()[:12], "unit": u}
+             for u in chosen]
+    build = hashlib.sha256(json.dumps(items, sort_keys=True).encode()).hexdigest()[:12]
+    out = PS.HOME / "listening" / HEAVY_PAGE
+    out.mkdir(parents=True, exist_ok=True)
+    trim = int(PS.TRIM_S * PS.SR)
+    clips = {}
+    for it in items:
+        prt = units[it["unit"]]
+        di = PS.section_audio(prt["di_path"], prt["start_s"])[trim:]
+        amp = P.real_amp_track(prt["sd"], prt["track"], prt["start_s"])
+        clips[it["id"] + "-1"], clips[it["id"] + "-2"] = pair_clips(di, amp, PS.HOME / "listening" / PAGE_NAME / "cache")
+    p = out / "part-1.html"
+    p.write_text(page_html(items, clips, build, 1, 1, 1, HEAVY))
+    P.save(key_path, {"page": HEAVY_PAGE, "seed": SEED, "build": build, "rule": "classify clean_vs_driven == driven",
+                      "items": items, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"GOAT HEAVY PAGE DONE: {len(items)} cards, {p.stat().st_size / 1e6:.1f} MB -> {p}")
+
+
+def read_answers(exports, key_name, page, out_name):
+    """Exports -> {unit: {verdict, note}}, saved as goat/<out_name>; refuses another page's or build's export."""
+    from learn import pipeline_fix as P
+
+    key = json.loads((P.out_dir() / P.GOAT_DIR / key_name).read_text())
     unit_of = {it["id"]: it["unit"] for it in key["items"]}
     got = {}
-    for f in args.exports:
+    for f in exports:
         ex = json.loads(pathlib.Path(f).read_text())
-        if ex.get("page") != PAGE_NAME or ex.get("build") != key["build"]:
+        if ex.get("page") != page or ex.get("build") != key["build"]:
             raise SystemExit(f"{f}: not this page's export (page {ex.get('page')}, build {ex.get('build')})")
         for a in ex.get("answers", []):
             if a["id"] in unit_of and a.get("verdict"):
                 got[unit_of[a["id"]]] = {"verdict": a["verdict"], "note": a.get("note") or ""}
-    P.save(P.out_dir() / P.GOAT_DIR / "ear.json", {"page": PAGE_NAME, "build": key["build"], "exports": args.exports,
-                                                   "verdicts": got, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    P.save(P.out_dir() / P.GOAT_DIR / out_name, {"page": page, "build": key["build"], "exports": exports,
+                                                 "verdicts": got, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     c = {}
     for v in got.values():
         c[v["verdict"]] = c.get(v["verdict"], 0) + 1
-    print(f"GOAT EAR ANSWERS: {len(got)} of {len(unit_of)} heard; {c}")
+    return got, len(unit_of), c
+
+
+def cmd_heavy_answers(args):
+    got, n, c = read_answers(args.exports, "heavy-key.json", HEAVY_PAGE, "heavy.json")
+    print(f"GOAT HEAVY ANSWERS: {len(got)} of {n} heard; {c}")
+
+
+def cmd_answers(args):
+    got, n, c = read_answers(args.exports, "ear-key.json", PAGE_NAME, "ear.json")
+    print(f"GOAT EAR ANSWERS: {len(got)} of {n} heard; {c}")
 
 
 def main(argv=None):
@@ -219,8 +305,12 @@ def main(argv=None):
     b.add_argument("--force", action="store_true")
     a = sub.add_parser("answers")
     a.add_argument("exports", nargs="+")
+    h = sub.add_parser("heavy")
+    h.add_argument("--force", action="store_true")
+    ha = sub.add_parser("heavy-answers")
+    ha.add_argument("exports", nargs="+")
     args = ap.parse_args(argv)
-    {"build": cmd_build, "answers": cmd_answers}[args.cmd](args)
+    {"build": cmd_build, "answers": cmd_answers, "heavy": cmd_heavy, "heavy-answers": cmd_heavy_answers}[args.cmd](args)
 
 
 if __name__ == "__main__":

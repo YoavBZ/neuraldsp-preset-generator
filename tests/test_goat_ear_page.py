@@ -16,3 +16,12 @@ def test_pick_keeps_every_flagged_unit_and_fills_the_sample():
     assert len(got) == 12 and {u for u in units if flags[u]} <= set(got)
     assert G.pick(units, flags, 12) == got
     assert sorted(G.pick(units, flags)) == sorted(units)
+
+
+def test_heavy_page_asks_the_heavy_question_and_exports_as_its_own_page():
+    items = [{"id": "heavy-a", "unit": "u"}]
+    page = G.page_html(items, {"heavy-a-1": "", "heavy-a-2": ""}, "b1", 1, 1, 1, G.HEAVY)
+    assert '"page": "goat-heavy"' in page and 'data-v="keep"' in page and 'data-v="heavy"' in page
+    assert 'data-v="amp"' not in page
+    ear = G.page_html(items, {"heavy-a-1": "", "heavy-a-2": ""}, "b1", 1, 1, 1)
+    assert '"page": "goat-ear"' in ear and 'data-v="amp"' in ear

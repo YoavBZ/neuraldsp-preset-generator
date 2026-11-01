@@ -632,6 +632,22 @@ instead of generating unrealistic presets our own?"):
     thresholds; and the pool's hum and hiss screens on the window. Adopted from its suggestions: every unit's lag
     first, the search only on trusted units, and the large-lag units reported apart. Its second re-check asked for
     one more, made: the ear's verdicts applied in code before any GOAT render (`goat_heard`), with "not sure" out.
+  - *Amendment (2026-11-01, after the ear, before any GOAT render): the heavy check.* The ear passed 255 of 264
+    units ("odd" 9, all crunch); the user then said they may have been too permissive with heavy, fizzy ones. The
+    pool's scope is clean/crunch-led, heavy tones a small minority. The 9 odd units' gain measures sit within the
+    passed crunch units' (median non-linear share −2.7 dB against −1.8), so no measure reproduces that verdict;
+    the candidates are named by the pool's own classifier instead: passed units whose `classify` clean_vs_driven
+    split is "driven" (non-linear share at or above 0 dB and level slope at or below 0.3, its firm-driven margin).
+    That is 34 units, all crunch (pr12 16, ac20 10, sw50r 8; 2 with whole-item lag above 300). The user hears
+    them again on their own page (`learn/goat_ear_page.py heavy`, shuffled, blind to the measure, same A/B player)
+    against the scope: "keep", "too heavy or fizzy" or "not sure"; only "keep" stays in. The code enforces it:
+    `goat_ear_passed` subtracts `goat_heavy_out` and refuses until every candidate has a verdict, so
+    `goat-search` (and `--lags-only`) cannot start before. Units not on the page are not re-heard: the check is
+    on the measure's side only, a choice (the ear already passed them; a heavy unit below the margin stays in).
+    If all 34 go: 221 units from 135 items, by amp and class ac20 37 clean / 37 crunch, pr12 38 / 31, sw50r 45 /
+    33. The minimum (30 per amp and class after the lag rule and the ear) stands; if pr12 crunch falls below it,
+    the pilot stops at the data stage and the plan is revised (for example a third render per item). Label renders
+    fall by up to 13%.
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
   measurements; if they shape the choice, D_fix's V-real read is labelled selection-contaminated. The candidates by
