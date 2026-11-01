@@ -2561,7 +2561,7 @@ def cmd_real_predict(args):
         return real_rigo_answers()
     if args.names == "RcM":
         return real_rcm_answers()
-    if args.names in ("P2a-pc", "P2a-pcsz", "P2a-real", "P2a-reals2", "P2a-pc-Sc"):
+    if args.names in ("P2a-pc", "P2a-pcsz", "P2a-real", "P2a-reals2", "P2a-pc-Sc", "P2a-goat", "P2a-goatshuf"):
         return real_predict_5b2(args.names)
     if args.names == "S-shift":
         require("phase_5b1b")
@@ -2631,7 +2631,7 @@ def real_predict_5b2(name):
     from learn import local_objective as LO
     from learn import trusted_data_t3 as T3
 
-    e = require("phase_5b2")
+    e = require("phase_5c" if name.startswith("P2a-goat") else "phase_5b2")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     inv = CB.cc_inventory()
     parts = real_parts(kept, sp, inv)
@@ -2639,6 +2639,9 @@ def real_predict_5b2(name):
         folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
         sfx = "s2" if name.endswith("s2") else ""
         names = {p_["unit"]: f"P2a-real{folds[p_['di']]}{sfx}" for p_ in parts}
+    elif name.startswith("P2a-goat"):                   # 5C: RG and RGshuf, each BKS unit by its DI's fold model
+        folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
+        names = {p_["unit"]: f"{name}{folds[p_['di']]}" for p_ in parts}
     else:
         names = {p_["unit"]: name.removesuffix("-Sc") for p_ in parts}
     models = {}
@@ -2676,8 +2679,8 @@ def real_predict_5b2(name):
                     T3.constant_full(amp, S, const[(amp, prt["cls"])]))}}
     for t, a in out.items():
         save(out_dir() / REAL_DIR / "answers" / f"{t}.json", {
-            "plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b2", "tag": t, "parts": parts,
-            "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
+            "plan": PLAN, "ledger": f"{LEDGER_ID} {'phase_5c' if name.startswith('P2a-goat') else 'phase_5b2'}",
+            "tag": t, "parts": parts, "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
             "unit_model": names, "answers": a, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"REAL PREDICT 5B.2 DONE: {name} on {len(parts)} units")
 
@@ -2920,7 +2923,8 @@ def cmd_real_render(args):
                     rec["render_sha256"][search] = AM.audio_sha(y)
                 save(gp, rec)
         print(f"{prt['unit'][-60:]}: lag {lag}; renders so far {renders}", flush=True)
-    print(f"REAL-RENDER DONE {k}/{n}: {renders} renders" + (f"; {skipped} directions with no answer" if skipped else ""))
+    print(f"REAL-RENDER DONE {k}/{n}: {renders} renders"
+          + (f"; {skipped} directions with no answer" if skipped else ""))
 
 
 SEARCH_DIR = "search"               # 5B.2: real/search/<unit>|<amp>.json
@@ -3534,7 +3538,8 @@ def cmd_goat_search(args):
                     "select": sel, "search": search, "held": held, "lag": lag, "item_lag": prt["item_lag"],
                     "s_judge": s_j, "s_render_sha256": s_sha, "s_first": first, "curve": curve, "evaluations": evals,
                     "best_search_value": best_v, "best": best,
-                    "label": None if best["fallback"] else best["settings"], "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+                    "label": None if best["fallback"] else best["settings"],
+                    "time": time.strftime("%Y-%m-%d %H:%M:%S")})
         print(f"{key[-70:]}: {search}->{held} S {s_j[held]:.3f} best {best['judge'][held]:.3f}; renders so far "
               f"{renders}", flush=True)
     print(f"GOAT-SEARCH{' LAGS' if args.lags_only else ''} DONE {k}/{n}: {renders} renders")
@@ -3574,6 +3579,209 @@ def cmd_goat_stage_check(args):
     save(out_dir() / GOAT_DIR / "stage-check.json", out)
     print(f"GOAT STAGE CHECK: {len(lab)} labels; held best - S {c.get('mean')} [{c.get('lo90')}, {c.get('hi90')}];"
           f" inputGain at a bound {share}; {'STOP' if stop else 'go on'}")
+
+
+def goat_trusted_units():
+    """5C's read units: the GOAT units the ear passed with a lag the one-window rule keeps (goat/lags)."""
+    units = {p_["unit"]: p_ for p_ in goat_units()}
+    heard = goat_ear_passed(units)
+    ldir = out_dir() / GOAT_DIR / "lags"
+    lags = {u: json.loads((ldir / f"{u.replace('/', '__')}.json").read_text())["lag"] for u in heard}
+    off = goat_lag_refused(lags, {u: units[u]["item_lag"] for u in heard})
+    return [dict(units[u], lag=lags[u]) for u in sorted(heard) if u not in off]
+
+
+def cmd_goat_centres(args):
+    """5C's centres (zero renders), each by Rc's rule (`rc_setting`) on the class's S. RcBG: on exactly model k's
+    training labels, BKS's (`fold_records`) and GOAT's (`goat_fold_records`), each cycled to its rows per epoch, so
+    each label weighs by its share of an epoch; same amp and class. RcGk: model k's training GOAT labels alone. RcG:
+    every GOAT label (BKS units only). Model k is the BKS unit's DI fold, or the GOAT unit's item fold.
+    -> real/answers/{RcBG,RcG}.json (BKS's 40 units), goat/answers/{RcBG,RcGk}.json (the trusted GOAT units)."""
+    from learn import cc_build as CB
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+
+    e = require("phase_5c")
+    brecs, by_unit, folds = real_labels(2)
+    grecs, gunits, _ = goat_labels()
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    parts = real_parts(kept, sp, CB.cc_inventory())
+    ms = A_menu_S()
+    bk = {k: fold_records(brecs, by_unit, folds, k) for k in range(REAL_FOLDS)}
+    gk = {k: goat_fold_records(grecs, gunits, k) for k in range(REAL_FOLDS)}
+
+    def cls_of(r):
+        return (by_unit[r["unit"]] if r["unit"] in by_unit else gunits[r["unit"]])["cls"]
+
+    def centre(recs, amp, cls, S):
+        labels = [LO.tdict(r["label"]) for r in recs if r["amp"] == amp and cls_of(r) == cls]
+        return LO.sdict(rc_setting(K.space(amp, S), S, labels)), len(labels)
+
+    out = {"bks": {"RcBG": {}, "RcG": {}}, "goat": {"RcBG": {}, "RcGk": {}}}
+    used = {t: {} for t in ("RcBG", "RcG", "goat-RcBG", "goat-RcGk")}
+    for prt in parts:
+        k = folds[prt["di"]]
+        for amp in AMPS3:
+            sel, S = ms[amp][prt["cls"]]
+            key = real_key(prt, amp)
+            for t, recs in (("RcBG", bk[k] + gk[k]), ("RcG", grecs)):
+                st, n = centre(recs, amp, prt["cls"], S)
+                out["bks"][t][key] = {ANY_HALF: {"select": sel, "settings": st}}
+                used[t][key] = n
+    for prt in goat_trusted_units():
+        k, amp = prt["fold"], prt["amp"]
+        sel, S = ms[amp][prt["cls"]]
+        key = real_key(prt, amp)
+        for t, recs in (("RcBG", bk[k] + gk[k]), ("RcGk", gk[k])):
+            st, n = centre(recs, amp, prt["cls"], S)
+            out["goat"][t][key] = {ANY_HALF: {"select": sel, "settings": st}}
+            used[f"goat-{t}"][key] = n
+    for t, a in out["bks"].items():
+        save(out_dir() / REAL_DIR / "answers" / f"{t}.json", {
+            "plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "tag": t, "parts": parts, "labels_used": used[t],
+            "answers": a, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    for t, a in out["goat"].items():
+        save(out_dir() / GOAT_DIR / "answers" / f"{t}.json", {
+            "plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "tag": t, "labels_used": used[f"goat-{t}"],
+            "answers": a, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print("GOAT CENTRES DONE: " + "; ".join(f"{t} {len(v)} answers, labels {min(v.values())}-{max(v.values())}"
+                                            for t, v in used.items() if v))
+
+
+def goat_predict(name):
+    """RG's (or RGshuf's) answers on the trusted GOAT units (zero renders): each unit read by model `name` + its
+    item fold, both seeds pooled at the models' own training inputs' median loudness, per search half, on its
+    forced amp, as `real_predict_5b2` reads BKS's units. -> goat/answers/<name>.json."""
+    from learn import direct_existing as DE
+    from learn import direct_stems as DS
+    from learn import full_space as F
+    from learn import local_objective as LO
+
+    e = require("phase_5c")
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    units = goat_trusted_units()
+    models = {}
+    for k in sorted({p_["fold"] for p_ in units}):
+        nets, recs = zip(*(load_run(f"{name}{k}", sd, "best") for sd in SEEDS))
+        own = [i for i in recs[0]["train_ids"] if i < REAL_ROW0]
+        models[k] = (list(nets), [r_["model_sha256"]["best"] for r_ in recs], p2a_median_lufs(own))
+    ms = A_menu_S()
+    out = {}
+    for prt in units:
+        nets, _, target = models[prt["fold"]]
+        ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
+        g = DE.inference_gain_db(ref, target)
+        amp = prt["amp"]
+        sel, S = ms[amp][prt["cls"]]
+        for search in ("A", "B"):
+            s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
+            x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
+            r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
+            st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
+            out.setdefault(real_key(prt, amp), {})[search] = {"select": sel, "settings": LO.sdict(st)}
+    save(out_dir() / GOAT_DIR / "answers" / f"{name}.json", {
+        "plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "tag": name,
+        "models": {k: {"sha256": m[1], "input_lufs": m[2]} for k, m in models.items()}, "answers": out,
+        "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"GOAT PREDICT DONE: {name} on {len(units)} units")
+
+
+def cmd_goat_predict(args):
+    if args.names not in ("P2a-goat", "P2a-goatshuf"):
+        raise SystemExit("--names P2a-goat or P2a-goatshuf")
+    goat_predict(args.names)
+
+
+def cmd_goat_render(args):
+    """5C's read renders on the trusted GOAT units (one shard): each answer of `--names` (goat/answers) through the
+    unit's DI in its own primed process (`fresh_render`), over the whole section, trimmed, judged against the render
+    on both halves at the unit's lag. -> goat/judge/<tag>/<unit>|<amp>.json."""
+    import numpy as np
+
+    from learn import audibility_measure as AM
+    from learn import cc_build as CB
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+    from learn import pretrain_set as PS
+    from learn import song_bank as B
+    from learn import trusted_data as T
+
+    require("phase_5c")
+    tags = [t for t in args.names.split(",") if t]
+    ans = {t: json.loads((out_dir() / GOAT_DIR / "answers" / f"{t}.json").read_text())["answers"] for t in tags}
+    units = goat_trusted_units()
+    k, n = args.shard
+    mine = [p_ for j, p_ in enumerate(units) if j % n == k]
+    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
+    LO._wait_cap()
+    renders = 0
+    for prt in mine:
+        if PS.free_gb() < T.DISK_GUARD_GB:
+            raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+        di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
+        di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
+        ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
+        key = real_key(prt, prt["amp"])
+        for t in tags:
+            if key not in ans[t]:
+                continue
+            gp = out_dir() / GOAT_DIR / "judge" / t / f"{key.replace('/', '__')}.json"
+            asha = answers_sha({key: ans[t][key]})
+            if gp.exists():
+                if json.loads(gp.read_text()).get("answers_sha256") != asha:
+                    raise SystemExit(f"{gp}: rendered from other answers")
+                continue
+            rec = {"unit": prt["unit"], "amp": prt["amp"], "tag": t, "lag": prt["lag"], "answers_sha256": asha,
+                   "judge": {}, "render_sha256": {}}
+            for search, a in sorted(ans[t][key].items()):
+                st = LO.tdict(a["settings"])
+                y = np.asarray(AM.fresh_render(CB.new_renderer, di32, a["select"], st, st), np.float64)[trim[0]:trim[1]]
+                renders += 2
+                rec["judge"][search] = K.judge(ref, y, di, prt["lag"])
+                rec["render_sha256"][search] = AM.audio_sha(y)
+            save(gp, rec)
+        print(f"{prt['unit'][-60:]}: renders so far {renders}", flush=True)
+    print(f"GOAT-RENDER DONE {k}/{n}: {renders} renders")
+
+
+def cmd_goat_report(args):
+    """5C's read A (zero renders): for each pair in `--pairs`, ln(d_a / d_b) on the held half per (unit, search half)
+    on the trusted GOAT units (a model's answer for the search half, a centre's for any half; a missing or non-finite
+    judge drops the direction, counted), clustered by item (an item's renders share its playing), with the 4-fold
+    interval beside (a fold's units share models). -> goat/report-<label>.json."""
+    require("phase_5c")
+    units = {p_["unit"]: p_ for p_ in goat_trusted_units()}
+    tags = {t for pair in args.pairs.split(",") for t in pair.split(":")}
+    judge = {}
+    for t in tags:
+        judge[t] = {}
+        for p_ in (out_dir() / GOAT_DIR / "judge" / t).glob("*.json"):
+            r = json.loads(p_.read_text())
+            judge[t][f"{r['unit']}|{r['amp']}"] = r["judge"]
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "units": len(units), "rows": {}}
+    keep = ("mean", "lo90", "hi90", "clusters", "clusters_negative", "part_weighted", "parts", "parts_negative")
+    for pair in args.pairs.split(","):
+        a, b = pair.split(":")
+        rows, missing = [], 0
+        for u, prt in sorted(units.items()):
+            for sh, h in (("A", "B"), ("B", "A")):
+                vals = [vreal_value(judge, t, (u, prt["amp"], sh, h)) for t in (a, b)]
+                if any(v is None or v == "refused" for v in vals):
+                    missing += 1
+                    continue
+                rows.append((prt["item"], u, math.log(vals[0] / vals[1]), prt["fold"]))
+        c = clustered([r[:3] for r in rows])
+        f = clustered([(r[3], r[1], r[2]) for r in rows])
+        out["rows"][f"{a} - {b}"] = {**{q: c.get(q) for q in keep}, "missing": missing,
+                                     "per_item": c.get("per_cluster"),
+                                     "by_fold": {q: f.get(q) for q in keep + ("per_cluster",)}}
+        if c["mean"] is not None:
+            print(f"{a} - {b}: {c['mean']:+.4f} [{c['lo90']:+.4f}, {c['hi90']:+.4f}] by item ({c['clusters']} items, "
+                  f"{c['clusters_negative']} better); by fold {f['mean']:+.4f} [{f['lo90']:+.4f}, {f['hi90']:+.4f}]; "
+                  f"missing {missing}")
+    out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    save(out_dir() / GOAT_DIR / f"report-{args.label or 'goat'}.json", out)
+    print("GOAT-REPORT DONE")
 
 
 def goat_items_from(z):
@@ -3867,7 +4075,8 @@ def cmd_real_report(args):
               .exists() and json.loads((out_dir() / REAL_DIR / "lags" / f"{p_['unit'].replace('/', '__')}.json")
                                        .read_text())["lag"] is None]
     meta = {p_["unit"]: p_ for p_ in parts}
-    phase = ("phase_5b2_rigo" if tags & {"RigO", "RcM"}
+    phase = ("phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
+             else "phase_5b2_rigo" if tags & {"RigO", "RcM"}
              else "phase_5b2" if any(t.startswith(("P2a-pc", "P2a-real", "Rc")) for t in tags)
              else "phase_5b1b" if any(t in ("P2a-Sc", "S-shift") for t in tags) else "phase_5b1")
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {phase}", "units": len(parts), "no_lag": no_lag, "rows": {}}
@@ -4573,7 +4782,8 @@ def cmd_vreal_report(args):
 # --- main ------------------------------------------------------------------------------------------------------------
 
 COMMANDS = {"goat-sections": cmd_goat_sections, "goat-search": cmd_goat_search,
-            "goat-stage-check": cmd_goat_stage_check,
+            "goat-stage-check": cmd_goat_stage_check, "goat-centres": cmd_goat_centres,
+            "goat-predict": cmd_goat_predict, "goat-render": cmd_goat_render, "goat-report": cmd_goat_report,
             "p5": cmd_p5, "dirty-doubles": cmd_dirty_doubles, "p6": cmd_p6,
             "build-inputs": cmd_build_inputs, "p1": cmd_p1, "render-doubles": cmd_render_doubles,
             "build-doubles": cmd_build_doubles, "train": cmd_train, "read": cmd_read, "sample": cmd_sample,
