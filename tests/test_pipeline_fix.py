@@ -1,3 +1,4 @@
+import json
 import math
 
 import pytest
@@ -651,3 +652,34 @@ def test_panel_lets_di_hum_through_and_nothing_else(monkeypatch):
     monkeypatch.setattr(CD, "section_flags", lambda r, t: (r["f"], []))
     assert not P.panel_di_flagged({"f": ["hum"]}, {}) and not P.panel_di_flagged({"f": []}, {})
     assert P.panel_di_flagged({"f": ["hum", "hiss"]}, {}) and P.panel_di_flagged({"f": ["clipping"]}, {})
+
+
+def test_panel_heard_passes_only_amp_verdicts():
+    v = {"a": {"verdict": "amp"}, "b": {"verdict": "bleed"}, "c": {"verdict": "unsure"}, "d": {"verdict": "odd"}}
+    ok, missing = P.panel_heard(["a", "b", "c", "d", "e"], v)
+    assert ok == {"a"} and missing == ["e"]
+
+
+def test_panel_read_units_wait_for_the_ear(tmp_path, monkeypatch):
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    (tmp_path / P.PANEL_DIR).mkdir()
+    (tmp_path / P.PANEL_DIR / "units.json").write_text(json.dumps({"units": [{"unit": "x"}, {"unit": "y"}]}))
+    with pytest.raises(SystemExit):
+        P.panel_read_units()
+    (tmp_path / P.PANEL_DIR / "ear.json").write_text(json.dumps({"verdicts": {"x": {"verdict": "amp"}}}))
+    with pytest.raises(SystemExit):
+        P.panel_read_units()
+    (tmp_path / P.PANEL_DIR / "ear.json").write_text(json.dumps({"verdicts": {"x": {"verdict": "amp"},
+                                                                              "y": {"verdict": "bleed"}}}))
+    assert [u["unit"] for u in P.panel_read_units()] == ["x"]
+
+
+def test_panel_cut_lines_the_amp_window_up_with_the_di_for_either_sign():
+    import numpy as np
+    rng = np.random.default_rng(0)
+    di = rng.standard_normal(5000)
+    for lag in (37, -23):
+        amp = np.roll(di, lag)                              # amp[t] = di[t - lag]
+        d, a = P.panel_cut(di, amp, 1000, 2000, lag)
+        assert len(d) == len(a) == 2000 and np.allclose(d, a)
+    assert len(P.panel_cut(di, di, 10, 100, -50)[1]) == 0

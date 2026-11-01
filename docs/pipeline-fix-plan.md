@@ -875,6 +875,21 @@ instead of generating unrealistic presets our own?"):
     - "High bleed" is fixed now, before any read: a unit whose bleed residual exceeds the largest among BKS's 40
       reamped units (no other instrument can be in a reamp; their residual is the amp's own tail and noise, measured
       the same way, zero renders) is reported apart, as declared.
+  - *Review of the amendment (2026-11-01, independent):* approved with required changes, all made:
+    - The panel is frozen: after the ear it may only fail the minimum, not be revised again.
+    - Hum-passed units (the DI's window carries the hum flag: 20 units, The Laminar Flow 12, Guitar-TECHS P3 4,
+      Sonnet & Alcohol 3, Blue Manic 1; `di_flags` in units.json) are reported apart, as far-mic and high-bleed units
+      are: RG's training inputs were screened hum-free, so hum biases the read against RG; "worse" is acted on only
+      if it holds without all three groups.
+    - The amp window is cut pre-shifted by the track lag (`panel_cut`, tested on both signs), so each unit's judge
+      lag is searched around its window's residual lag (window lag − track lag) less the plugin's latency (52).
+    - The BKS reamps' largest residual is fixed: −18.35 dB (`PANEL_BLEED_MAX_DB`; 22 of their 40 units measurable,
+      median −36.4). On the panel 23 units are above it and 24 unmeasured (too few DI-silent frames), reported apart
+      as "unmeasured". The residual holds amp and room tails too, not only other instruments.
+    - Jen Hartswick & Nick Cassarino are no longer an unseen candidate for V-real's growth (ledger).
+    - Adopted from its suggestions: Guitar-TECHS P3's track lags (40–232 samples across one rig's excerpts) are
+      reported with the judge-lag check; `panel_leaks` checks the pool's DI inventory, which every training list
+      draws from (with BKS's set 5 and the GOAT zip, neither of which holds a panel file).
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
   measurements; if they shape the choice, D_fix's V-real read is labelled selection-contaminated. The candidates by

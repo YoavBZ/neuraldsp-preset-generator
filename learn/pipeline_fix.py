@@ -4861,7 +4861,9 @@ PANEL_FAR = 240                      # a DI-to-track lag above this (5 ms at 48 
 PANEL_LAG_TOL = 72                   # a window's lag this far from its track's is out (5C's tolerance)
 PANEL_DI_NOISE_OK = {"hum"}         # 5D's amendment: a DI's hum flag passes (the amp heard it too, so the comparison
                                     # stays fair; for the test panel only)
-PANEL_SILENT_DB, PANEL_PLAY_DB = 40.0, 20.0   # the bleed residual's DI frames: silent below the window's DI peak
+PANEL_SILENT_DB, PANEL_PLAY_DB = 40.0, 20.0
+PANEL_BLEED_MAX_DB = -18.35          # the largest bleed residual among BKS's reamps (22 of 40 measured; 2026-11-01):
+                                     # a panel unit above it is "high bleed" (the residual holds amp and room tails too)   # the bleed residual's DI frames: silent below the window's DI peak
                                               # by this much, playing within this much of it
 
 
@@ -4927,6 +4929,15 @@ def panel_bleed_db(amp, di, sr):
     return float(p(silent) - p(play))
 
 
+def panel_cut(di, amp, lo, n, track_lag):
+    """5D's aligned windows: the DI's n samples from lo and the amp track's from lo + track_lag (amp[t] ~ DI[t - lag],
+    `estimate_lag`'s convention), so the two line up; empty when the amp window would start before 0."""
+    import numpy as np
+
+    a0 = lo + track_lag
+    return di[lo:lo + n], (amp[a0:a0 + n] if a0 >= 0 else np.zeros(0))
+
+
 def panel_folds(dis_by_band):
     """5D's folds: each new DI a fold, seeded (PANEL_SEED), dealt round-robin within each band from a running start
     so the folds stay balanced across bands. -> {di: fold}."""
@@ -4964,6 +4975,31 @@ def panel_leaks(pairs, pool_paths, bands_out):
             bad.append(f"{keys[file_key(q)]} = pool file {q}")
     bad += [f"band {p['band']} is out" for p in pairs if p["band"] in bands_out]
     return sorted(set(bad))
+
+
+def panel_units():
+    """5D's panel units (panel/units.json, from `panel-sections`)."""
+    return json.loads((out_dir() / PANEL_DIR / "units.json").read_text())["units"]
+
+
+def panel_heard(units, verdicts):
+    """5D's ear gate: the units the listener answered "amp" ("a real amp, the guitar alone"); every other verdict,
+    "not sure" included, is out. -> (passed set, unheard list)."""
+    ok = {u for u in units if (verdicts.get(u) or {}).get("verdict") == "amp"}
+    return ok, [u for u in units if u not in verdicts]
+
+
+def panel_read_units():
+    """5D's units for reads and renders: every panel unit heard, and only those that passed; refuses while any is
+    unheard."""
+    units = panel_units()
+    ep = out_dir() / PANEL_DIR / "ear.json"
+    if not ep.exists():
+        raise SystemExit("panel units not yet heard: the ear page comes before any panel render")
+    ok, missing = panel_heard([u["unit"] for u in units], json.loads(ep.read_text())["verdicts"])
+    if missing:
+        raise SystemExit(f"{len(missing)} panel units not yet heard")
+    return [u for u in units if u["unit"] in ok]
 
 
 def cmd_panel_sections(args):
@@ -5015,6 +5051,7 @@ def cmd_panel_sections(args):
         track, rows = CD.measure_di(x, PS.SR, CD.session_mains(votes))
         k = 1 if pr["source"].startswith("Guitar-TECHS") else PANEL_WINDOWS
         starts = panel_windows(rows, track, key, k=k)
+        row_at = {r["start_s"]: r for r in rows}
         if track["near_fs"] or not starts:
             notes.append({"di": key, "out": "DI near full scale" if track["near_fs"] else "no window"})
             print(f"{key}: {notes[-1]['out']}", flush=True)
@@ -5030,8 +5067,7 @@ def cmd_panel_sections(args):
                 continue
             for st in starts:
                 lo = int(round((st - PS.TRIM_S) * PS.SR))
-                dsec = x[lo:lo + n]
-                asec = y[lo + tlag:lo + tlag + n] if lo + tlag >= 0 else np.zeros(0)
+                dsec, asec = panel_cut(x, y, lo, n, tlag)
                 u = f"{di_id}@{st:.1f}#{tname}"
                 if len(dsec) < n or len(asec) < n:
                     notes.append({"unit": u, "out": "window runs past an end"})
@@ -5063,6 +5099,7 @@ def cmd_panel_sections(args):
                               "sd": str(sec), "start_s": PS.TRIM_S, "di_path": str(dp), "window_s": st,
                               "track_lag": tlag, "window_lag": wlag, "far": abs(tlag) > PANEL_FAR,
                               "bleed_db": panel_bleed_db(asec[trim:], dsec[trim:], PS.SR), "gain_measures": gm,
+                              "di_flags": CD.section_flags(row_at[st], track)[0],
                               "di_file": pr["di"]["path"], "amp_file": a["path"], "mic": a.get("mic")})
                 dis.setdefault(band, set()).add(di_id)
         print(f"{key}: windows {starts}; units so far {len(units)}", flush=True)
