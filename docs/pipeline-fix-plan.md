@@ -3,8 +3,8 @@
 **Status (2026-11-01):** declared and reviewed (the plan, its revision, phase 4, the isolated tests and 5B.2, each
 with required changes, all made). Phases 1–4, the isolated tests and phase 5's tests (5A, 5B.1, 5B.1b, and 5B.2's
 stage 1, arm P, Rc and arm R, its stage 2 and its recording oracle) have run; the findings log (F1–F36) holds
-every result, audited. 5B.1c was withdrawn before any render. Next: a plan for the model's reading of the track
-(F36), for the user to approve.
+every result, audited. 5B.1c was withdrawn before any render. Declared next, at the user's choice of more real
+recordings: 5C, many recordings from GOAT's capture renders (pilot).
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -533,6 +533,54 @@ instead of generating unrealistic presets our own?"):
     setting-space audit stored (`real-setting-audit`); the held-tracks-not-playing caveat; last-digit fixes; and
     tests that a fold's real rows and Rc's labels never come from its own DIs (`fold_records`, `rc_records`).
 
+
+
+*2026-11-01, after F36 and the user's choice ("More real recordings"):*
+- **5C, many recordings from GOAT's capture renders (ledger `phase_5c`; pilot about 9,800 renders and 1.7 h of
+  MPS).** Question: trained with search labels from many distinct amp chains, each with its own DI, does the model
+  read a held real track per track, beyond the real-amp centre? F36 put the headroom at up to about 0.15 on BKS,
+  and arm R, learning from 10–11 recordings per fold, took none of it.
+  - **Why GOAT.** No open source has 100+ real recorded amp chains with their DI; real-hardware sets total about 15
+    chains (`docs/research/real-amp-chains-2026-11.md`, PR #353, and this session's search). GOAT (Zenodo
+    15690894, CC BY-NC 4.0, research use on request, granted to the user and downloaded 2026-11-01, md5 checked)
+    holds 172 real DI recordings, each rendered through 5 Neural Amp Modeler captures drawn from about 7,000
+    profiles of over 1,000 amps, each with a random Archetype Nolly cab IR: 860 recordings whose chain is fixed
+    within the recording and distinct across them (which capture and IR is not recorded). Bleed-free and same-take
+    by construction (the render is the DI's). Caveats: a capture is a model of one amp at one setting, the IR comes
+    from another rig, so no recording is one real rig; 132 of the 172 DIs are one player, mostly on a Strat.
+  - **Data (zero renders).** Read from the zip without extracting it (disk). Mono 44.1 kHz, DI 24-bit, renders
+    16-bit, equal length. Per item, one render chosen at random (seed 20261047) and one 10-s window where the DI
+    plays (both halves' DI play share at least 0.5, `verify_tracks.same_take`'s measure; windows from 1 s in;
+    seeded), cut to a section file (the DI and the render, resampled as every section). Items too short for a
+    window are out. Class by the pool's classifier on the render against its DI (`classify` on `gainmeasure`, as
+    `trusted_data_t3._amp_track_class`): high gain is out (the clean/crunch scope), clean and crunch pick S. A
+    render whose DI or render clips, drops out or is silent in a half is out (part A's D2 flags).
+  - **Labels (about 9,000 renders).** Arm A's main stage as 5B.2's stage 2 (`K.space`, 52 evaluations, seed
+    20261013, from the class's S; three fresh S renders give the judge lag; labels only, the best's in-process
+    render), one forced amp per recording, assigned so each amp gets a third (seeded). The input level is not
+    fixed: `inputGain` stays searched, as on BKS, so GOAT and BKS labels are comparable; its spread is reported
+    beside BKS's (the research's caution: a searched level can absorb the capture's calibration).
+  - **Reads on BKS's 40 units, as 5B.2 (by DI, fold and rig).**
+    - RcG (240 renders): S moved by the mean unit deviation of the GOAT labels of the same amp and class (Rc's
+      rule). Rows: RcG − S (does a centre from capture chains move toward real amps?), RcG − Rcs2.
+    - RG (8 trainings, 480 renders): P2a-reals2's recipe and BKS rows unchanged (300 per epoch from the other folds'
+      DIs, stages 1–2), plus 300 GOAT rows per epoch (all GOAT labels, cycled). Rows: RG − Rcs2 (primary: per-track
+      reading beyond the centre, 5B.2's DI-and-fold rule), RG − P2a-reals2 (do GOAT rows help?), RG − S.
+    - Beside, zero renders: heads on each fold's own DIs' real labels (RG against P2a-reals2), FS/NS heads as the
+      plugin-skill guard, the setting audit (`--within RigO`: RG's distance to the labels against Rcs2's and RigO's).
+  - **Reading, declared now.** RG − Rcs2 better: many recordings teach a per-track reading that transfers to real
+    reamps; the full GOAT set (the other 4 renders per item, about 640 recordings, about 35,000 renders) is the next
+    step, in its own amendment. RG − Rcs2 undecided with RG − P2a-reals2 better: GOAT rows help but not yet past the
+    centre; the full set is the next step, as the learning curve's second point. Both undecided or worse: capture
+    chains do not teach this reading at pilot size; RcG − S tells whether they carry real-amp information at all, and
+    the next step weighs the full set against real chains (TONE3000's amp-and-cab captures by research request, the
+    user's call).
+  - **Rules.** BKS stays the only read set; V-real and the NS songs untouched. Every render: isolate=True, one
+    priming render, 0.25 s trim, at most 3 processes, the 31 GB guard (the user frees space first). GOAT's audio is
+    read with `python -I` from its own folder.
+  - **Asked of the user before any GOAT label is used:** whether the trusted-data rule's ear check applies to GOAT
+    pairs. Proposed: no per-pair ear (the render is computed from the DI, so take and bleed cannot be wrong), and a
+    seeded 10-item ear sample of DIs (is the DI clean and unprocessed?).
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
   measurements; if they shape the choice, D_fix's V-real read is labelled selection-contaminated. The candidates by
