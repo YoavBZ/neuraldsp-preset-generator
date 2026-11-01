@@ -185,17 +185,19 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
            better than S, by about 0.03 (undecided); the shared shift alone is not seen to help. A V-real read of this
            readout (5B.1c) was withdrawn before rendering: likely undecided on 7 bands; V-real is left for D_fix.
        - **5B.2 (2026-10-31 to 2026-11-01; F33–F34): labels that reach real-amp tones.**
-         - The ceiling: a true-DI search on the same 40 reamped units finds a setting 0.35 better than S on every one
-           (−0.349 [−0.437, −0.261] by DI, on the held half), within input gain, the amp's controls and the mics. The
-           real-amp gap is reachable by those controls.
+         - The ceiling: a true-DI search on the same 40 reamped units finds a setting better than S on all 40, by
+           0.35 on average (−0.349 [−0.437, −0.261] by DI, on the held half; 0.04 to 0.76 per unit), within input
+           gain, the amp's controls and the mics, as the judge measures it. Those controls reach a large part of the
+           real-amp gap.
          - A real-amp centre helps: S moved by the other performances' search labels wins −0.133 [−0.229, −0.037]
-           (Rc, decided), about 44% of the ceiling. Trained with those labels as real rows, the model reaches the
+           (Rc, decided), 38% of the ceiling. Trained with those labels as real rows, the model reaches the
            same place (−0.120 against S, −0.186 against P2a), so F31's real-amp penalty is fixed by real labels; it
            reads nothing further per track (against Rc +0.014 [−0.035, +0.062], undecided). Stage 2 (65 more
            units' labels) runs by the declared rule.
-         - Arm P, the user's question (do the uniform random draws hurt?): not on real amps (−0.019, undecided, gone
-           once re-centred); without them the model is sharper near presets and worse on random settings. The
-           training mix stays.
+         - Arm P, the user's question (do the uniform random draws hurt?): not shown on real amps (against its size
+           control −0.019, undecided; against P2a −0.012, becoming −0.004 once both are re-centred on S). Without
+           them the model's heads are sharper near presets, but by sound it is not better than P2a, and it is worse
+           on random settings. The training mix stays.
        - **Next:** 5B.2's stage 2 (running), then Rc and arm R on both stages' labels; then D_fix, with a real-amp
          centre as a readout candidate for real recordings. Community presets and Suite X's parity check follow
          5B.2.
@@ -1250,4 +1252,4 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-10-31 | Pipeline fix phase 5 (the user's "Continue"). Blocker 1: backings from 13 more songs recover about half of the backing's loss on the held-out songs (0.50 [0.29, 0.73], two seeds; 8 backings recovered a quarter). Blocker 2: the stock amp-track bleed check fails bleed-free reamped tracks through its power sum, so the pool's recorded amp tracks were not used; on BKS's reamped tracks (real amps, known playing) the clean-input model is +0.066 [+0.030, +0.102] against S, so part of the real-amp gap is there even with known playing. Re-centred on S, the model's real-amp penalty is gone and its per-track readings lean better (−0.029, undecided). About 2,160 renders, 20 min of MPS. Next: 5B.2, labels that reach real-amp tones | [plan](pipeline-fix-plan.md) F29–F31, [ledger](dev-test-ledger.json) `pipeline-fix` `phase_5a*`, `phase_5b1*` |
 | 2026-10-31 | The user approved community presets as draw centres for the next build (after a zero-render placement check; each download asked first; licences the user's) and the Morgan Amps Suite X update after 5B.2, behind a bit-exact parity check | [plan](pipeline-fix-plan.md) phase 5 |
 | 2026-10-31 | Morgan Amps Suite X and Tone King Imperial MKII X (user-installed, both checked by the user to load the presets these tools write): generated presets also go to the X User folders; Morgan X presets are read as the `morgan` pack, with sections from the file's tree; Tone King X's own layout is not read yet | [installing](../reference/installing.md), 0.7.120 |
-| 2026-11-01 | Pipeline fix 5B.2, audited (labels that reach real-amp tones; the user's question on random draws). On BKS's 40 reamped units a true-DI search finds a setting 0.35 better than S on every unit (−0.349 [−0.437, −0.261] by DI). S moved by the other performances' search labels wins −0.133 [−0.229, −0.037]; the model trained with those labels as real rows reaches the same place (−0.120 against S, −0.186 against P2a) but reads nothing further per track (+0.014 [−0.035, +0.062] against the shift, undecided), so stage 2 (65 more units) runs. Dropping the uniform random draws does not help on real amps (−0.019, undecided); the training mix stays. 9,720 renders, about 2 h of MPS. Next: stage 2, then D_fix with a real-amp centre as a readout candidate | [plan](pipeline-fix-plan.md) F33–F34, [ledger](dev-test-ledger.json) `pipeline-fix` `phase_5b2*` |
+| 2026-11-01 | Pipeline fix 5B.2, audited (labels that reach real-amp tones; the user's question on random draws). On BKS's 40 reamped units a true-DI search finds a setting better than S on all 40, by 0.35 on average (−0.349 [−0.437, −0.261] by DI). S moved by the other performances' search labels wins −0.133 [−0.229, −0.037]; the model trained with those labels as real rows reaches the same place (−0.120 against S, −0.186 against P2a) but reads nothing further per track (+0.014 [−0.035, +0.062] against the shift, undecided), so stage 2 (65 more units) runs. Dropping the uniform random draws is not shown to help on real amps (−0.019, undecided); the training mix stays. 9,720 renders, about 2 h of MPS. Next: stage 2, then D_fix with a real-amp centre as a readout candidate | [plan](pipeline-fix-plan.md) F33–F34, [ledger](dev-test-ledger.json) `pipeline-fix` `phase_5b2*` |

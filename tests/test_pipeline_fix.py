@@ -361,3 +361,49 @@ def test_rc_setting_moves_S_by_the_mean_deviation_and_takes_the_majority_switch(
     if sw:
         assert out[ks] == sw.values[1]
     assert P.rc_setting(dims, S, []) == S
+
+
+def _real_records():
+    """Four DIs in two folds, two classes, two amps: one labelled record per (unit, amp)."""
+    by_unit = {f"u{j}": {"unit": f"u{j}", "di": f"d{j % 4}", "cls": "clean" if j % 2 else "crunch"} for j in range(8)}
+    folds = {"d0": 0, "d1": 0, "d2": 1, "d3": 1}
+    recs = [{"unit": u, "amp": amp, "label": {}} for u in by_unit for amp in ("pr12", "ac20")]
+    return recs, by_unit, folds
+
+
+def test_fold_records_never_hold_the_folds_own_dis_and_always_fill_an_epoch():
+    recs, by_unit, folds = _real_records()
+    for f in (0, 1):
+        rows = P.fold_records(recs, by_unit, folds, f)
+        assert len(rows) == P.REAL_PER_EPOCH
+        assert all(folds[by_unit[r["unit"]]["di"]] != f for r in rows)
+        assert {r["unit"] for r in rows} == {u for u, p in by_unit.items() if folds[p["di"]] != f}
+
+
+def test_rc_records_take_only_other_fold_labels_of_the_same_amp_and_class():
+    recs, by_unit, folds = _real_records()
+    for prt in by_unit.values():
+        for amp in ("pr12", "ac20"):
+            got = P.rc_records(recs, by_unit, folds, prt, amp)
+            assert got and all(r["amp"] == amp and by_unit[r["unit"]]["cls"] == prt["cls"]
+                               and folds[by_unit[r["unit"]]["di"]] != folds[prt["di"]] for r in got)
+            assert len(got) == sum(r["amp"] == amp and by_unit[r["unit"]]["cls"] == prt["cls"]
+                                   and folds[by_unit[r["unit"]]["di"]] != folds[prt["di"]] for r in recs)
+
+
+def test_setting_gap_is_zero_on_itself_and_counts_switch_agreement():
+    from learn import knob_ceiling as K
+
+    knob = next(d for d in K.space("pr12") if d.kind == "cont")
+    sw = next((d for d in K.space("pr12") if d.kind not in ("cont", "log")), None)
+    dims = [knob] + ([sw] if sw else [])
+    k = (knob.module, knob.key)
+    x = {k: K.fmt(knob.from_unit(0.2))}
+    y = {k: K.fmt(knob.from_unit(0.5))}
+    if sw:
+        ks = (sw.module, sw.key)
+        x[ks], y[ks] = sw.values[0], sw.values[1]
+    assert P.setting_gap(dims, x, x) == (0.0, 1.0 if sw else None)
+    rms, agree = P.setting_gap(dims, x, y)
+    assert rms == pytest.approx(0.3, abs=1e-6)
+    assert agree == (0.0 if sw else None)

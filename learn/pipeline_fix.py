@@ -1092,7 +1092,8 @@ def cmd_train(args):
         heads[which] = {k: head_table(head_losses(net, data, idx, dev), bl[k])
                         for k, idx in (("train_subset", sub), (held_name, hi))}
         torch.save(st, od / f"{name}-{args.seed}-{which}.pt")
-    save(rp, {"plan": PLAN, "test": name, "ledger": f"{LEDGER_ID} phase_3", "rung": args.rung,
+    phase = "phase_5b2" if (args.pc or args.pcsz or args.real_fold is not None) else "phase_3"
+    save(rp, {"plan": PLAN, "test": name, "ledger": f"{LEDGER_ID} {phase}", "rung": args.rung,
               "input": RUNG_KINDS[args.rung], "aug": bool(args.aug), "frac": args.frac, "sections": args.sections,
               "fold": args.fold, "held": held_name, "seed": args.seed, "train": len(tr), "held_n": len(held),
               "train_ids": tr, "held_ids": held, "dropped": dropped, "split_dropped": sp["dropped"],
@@ -2693,6 +2694,14 @@ def rc_setting(dims, S, labels):
     return L.build(dims, S, cont, cats, cats)
 
 
+def rc_records(recs, by_unit, folds, prt, amp):
+    """The labelled records Rc averages for unit `prt` on `amp`: same amp and class, DI outside the unit's fold
+    (exactly the labels its fold's models trained on)."""
+    f = folds[prt["di"]]
+    return [r for r in recs if r["amp"] == amp and by_unit[r["unit"]]["cls"] == prt["cls"]
+            and folds[by_unit[r["unit"]]["di"]] != f]
+
+
 def real_rc_answers(stage=1):
     """5B.2's Rc on 5B.1's 40 units (zero renders): per unit and amp, `rc_setting` from the labels arm R's fold model
     for that unit trained on (labels of search stages up to `stage` from the other folds' DIs, same amp and class).
@@ -2709,11 +2718,9 @@ def real_rc_answers(stage=1):
     tag = "Rc" + ("s2" if stage == 2 else "")
     out, used = {}, {}
     for prt in parts:
-        f = folds[prt["di"]]
         for amp in AMPS3:
             sel, S = ms[amp][prt["cls"]]
-            labels = [LO.tdict(r["label"]) for r in recs if r["amp"] == amp and by_unit[r["unit"]]["cls"] == prt["cls"]
-                      and folds[by_unit[r["unit"]]["di"]] != f]
+            labels = [LO.tdict(r["label"]) for r in rc_records(recs, by_unit, folds, prt, amp)]
             key = real_key(prt, amp)
             out[key] = {ANY_HALF: {"select": sel, "settings": LO.sdict(rc_setting(K.space(amp, S), S, labels))}}
             used[key] = len(labels)
@@ -2849,8 +2856,8 @@ def cmd_real_search(args):
     discarded priming render of S, then the search, so its first evaluation (S) sits where 5B.1's fresh S render sat
     and must be bit-identical to it (stage 1; stage 2's S renders and lag are made here first, as 5B.1 made them).
     Stage 1 (read): the best setting and the setting shrunk 0.5 toward S are then each rendered fresh (5B.1's way) and
-    judged on both halves; the held half is the read. Stage 2 (labels only): the best's in-process render. Every
-    evaluation's held-half value is kept for the record; the search sees the search half alone.
+    judged on both halves; the held half is the read. Stage 2 (labels only): the best's in-process render. The
+    best's in-process judge (both halves) is saved beside; the search sees the search half alone.
     -> real/search/<unit>|<amp>.json."""
     import numpy as np
 
@@ -3063,9 +3070,14 @@ def real_rows(fold, target, stage=1):
     section brought to `target` LUFS (5B.1's path, both halves; cached), label the search's best setting
     (`F.label_of`). -> (rows, {id: input path}, {di: fold})."""
     recs, by_unit, folds = real_labels(stage)
-    rows, paths = real_rows_for(cycled([r for r in recs if folds[by_unit[r["unit"]]["di"]] != fold], REAL_PER_EPOCH),
-                                by_unit, target)
+    rows, paths = real_rows_for(fold_records(recs, by_unit, folds, fold), by_unit, target)
     return rows, paths, folds
+
+
+def fold_records(recs, by_unit, folds, fold):
+    """Arm R's training records for fold `fold`: the labelled records whose DI is outside the fold, cycled to
+    REAL_PER_EPOCH (a fold's models never see their own DIs' real tracks)."""
+    return cycled([r for r in recs if folds[by_unit[r["unit"]]["di"]] != fold], REAL_PER_EPOCH)
 
 
 def real_rows_for(recs, by_unit, target):
@@ -3130,7 +3142,8 @@ def cmd_real_ceiling(args):
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b2", "stage": args.stage, "directions": len(recs),
            "units": len({r["unit"] for r in recs}), "counts": cnt,
            "labels": sum(r["label"] is not None for r in recs),
-           "s_first_bit_identical": sum(bool(r["s_first"]) for r in recs),
+           "s_first_bit_identical": sum(bool(r["s_first"]) and r["s_first"]["sha"] == r["s_render_sha256"]
+                                        for r in recs),
            "rows": {nm: {"by_di": clustered(by_di[nm]), "by_rig": clustered(by_rig[nm])} for nm in by_di},
            "search_half_best_minus_S": statistics.fmean(
                math.log(r["best_search_value"] / r["s_judge"][r["search"]]) for r in recs
@@ -3374,6 +3387,66 @@ def cmd_share(args):
     suffix = "" if len(seeds) == 1 and seeds[0] == SEEDS[0] else "-x" + "+".join(map(str, seeds))
     save(out_dir() / SOUND_DIR / ("share-backings.json" if name == "P2b-bk8" and not suffix
                                   else f"share-{name}{suffix}.json"), out)
+
+
+def setting_gap(dims, x, y):
+    """How far setting x sits from setting y over `dims`: the rms of their unit differences on the continuous (and
+    log) dims, and the share of the other dims (switches, mics) on which they agree (None with none). -> (rms, share)."""
+    from learn import arm_a_levers as L
+
+    cont = [(L.unit(d, x) - L.unit(d, y)) ** 2 for d in dims if d.kind in ("cont", "log")]
+    cats = [x.get((d.module, d.key)) == y.get((d.module, d.key)) for d in dims if d.kind not in ("cont", "log")]
+    return (statistics.fmean(cont) ** 0.5 if cont else None), (statistics.fmean(cats) if cats else None)
+
+
+def cmd_real_setting_audit(args):
+    """F34's setting-space audit (zero renders): on every (unit, amp) of 5B.1's units with a search label, each
+    answer of `--names` (each half's answer where a model reads per half; S and Rc answer once) against the unit's own
+    label: the rms unit distance over `K.space`'s continuous dims and the share of its switches and mics that agree,
+    averaged over answers; beside, each name's distance from Rc's answer (does it move off the centre?). Labels of
+    search stages up to `--stage`. -> real/setting-audit[-s2].json."""
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+
+    require("phase_5b2")
+    stage = max(1, args.stage)
+    sfx = "s2" if stage == 2 else ""
+    recs, by_unit, folds = real_labels(stage)
+    lab = {(r["unit"], r["amp"]): LO.tdict(r["label"]) for r in recs}
+    names = [t for t in (args.names or "P2a-real,Rc,P2a,P2a-Sc").split(",") if t]
+    rc = "Rc" + sfx
+    d = out_dir() / REAL_DIR / "answers"
+    ans = {t: json.loads((d / f"{t}.json").read_text())["answers"] for t in set(names) | {rc}}
+    ms = A_menu_S()
+    gaps = {t: [] for t in names + ["S"]}
+    to_rc = {t: [] for t in names}
+    for key in sorted(ans[rc]):
+        unit, amp = key.rsplit("|", 1)
+        if (unit, amp) not in lab:
+            continue
+        y = lab[(unit, amp)]
+        S = ms[amp][by_unit[unit]["cls"]][1]
+        dims = K.space(amp, S)
+        c = LO.tdict(ans[rc][key][ANY_HALF]["settings"])
+        for t in names:
+            for a in ans[t][key].values():
+                x = LO.tdict(a["settings"])
+                gaps[t].append(setting_gap(dims, x, y))
+                to_rc[t].append(setting_gap(dims, x, c)[0])
+        gaps["S"].append(setting_gap(dims, S, y))
+
+    def mean(v):
+        v = [z for z in v if z is not None]
+        return statistics.fmean(v) if v else None
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5b2", "stage": stage, "labels": len(lab),
+           "to_own_label": {t: {"answers": len(g), "rms_unit": mean([a for a, _ in g]),
+                                "switch_mic_agree": mean([b for _, b in g])} for t, g in gaps.items()},
+           "to_rc_rms_unit": {t: mean(v) for t, v in to_rc.items()}, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    save(out_dir() / REAL_DIR / f"setting-audit{'-s2' if sfx else ''}.json", out)
+    for t, g in out["to_own_label"].items():
+        print(f"{t}: to its own label rms {g['rms_unit']:.3f}, switches and mics agree {g['switch_mic_agree']:.3f}"
+              + (f"; from {rc} {out['to_rc_rms_unit'][t]:.3f}" if t in out["to_rc_rms_unit"] else ""))
+    print("REAL-SETTING-AUDIT DONE")
 
 
 def cmd_prior_edges(args):
@@ -3887,7 +3960,8 @@ COMMANDS = {"p5": cmd_p5, "dirty-doubles": cmd_dirty_doubles, "p6": cmd_p6,
             "prior-edges": cmd_prior_edges, "kfold-report": cmd_kfold_report, "wide-pool": cmd_wide_pool,
             "build-wide": cmd_build_wide, "real-predict": cmd_real_predict, "real-render": cmd_real_render,
             "real-report": cmd_real_report, "real-search": cmd_real_search, "real-ceiling": cmd_real_ceiling,
-            "real-heads": cmd_real_heads, "vreal-sc": cmd_vreal_sc, "vreal-comparators": cmd_vreal_comparators,
+            "real-heads": cmd_real_heads, "real-setting-audit": cmd_real_setting_audit,
+            "vreal-sc": cmd_vreal_sc, "vreal-comparators": cmd_vreal_comparators,
             "vreal-render": cmd_vreal_render, "vreal-report": cmd_vreal_report}
 
 
