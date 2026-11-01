@@ -3087,6 +3087,173 @@ def cmd_real_search(args):
     print(f"REAL-SEARCH DONE stage {args.stage} {k}/{n}: {renders} renders")
 
 
+# --- 5C: GOAT's capture renders (phase_5c) ----------------------------------------------------------------------------
+
+GOAT_ZIP = pathlib.Path("~/ndsp-presets/references/datasets-goat/_zips/GOAT.zip").expanduser()
+GOAT_DIR = "goat"                   # under out_dir(): sections/, units.json, search/, lags/
+GOAT_SEED = 20261047                # the render and window draws
+
+
+def goat_member(item, name):
+    """A metadata path ('GOAT/item_0/item_0.wav') as the zip stores it ('GOAT/data/item_0/item_0.wav')."""
+    return f"GOAT/data/{item}/{name.rsplit('/', 1)[-1]}"
+
+
+def goat_window(rows, item, min_start_s=1.0):
+    """5C's window for one GOAT item: among the DI's 10-s grid sections that pass the pool's activity rule
+    (`clean_di.passes`) with no clip run, drop-out or hard cut, from `min_start_s` on, one drawn at random
+    (seed GOAT_SEED with the item). -> start in seconds, or None."""
+    import random
+
+    ok = [r["start_s"] for r in rows if r["passes_activity"] and r["start_s"] >= min_start_s
+          and not (r.get("clip_runs") or r.get("dropouts") or r.get("hard_cuts"))]
+    return random.Random(f"{GOAT_SEED}|{item}").choice(sorted(ok)) if ok else None
+
+
+def goat_renders(item, ok, k=None):
+    """5C's renders for one GOAT item: of its clean/crunch renders `ok`, up to k (GOAT_PER_ITEM) in a seeded order
+    (seed GOAT_SEED with the item). -> sorted render numbers."""
+    import random
+
+    k = GOAT_PER_ITEM if k is None else k
+    return sorted(random.Random(f"{GOAT_SEED}|renders|{item}").sample(sorted(ok), min(k, len(ok))))
+
+
+def goat_assign(items, folds=None):
+    """5C's folds (by item: an item's renders share a fold) and forced amps (by unit, a third each), both from a
+    seeded order. items: {item: [unit, ...]}. -> ({item: fold}, {unit: amp})."""
+    import random
+
+    folds = REAL_FOLDS if folds is None else folds
+    order = sorted(items)
+    random.Random(f"{GOAT_SEED}|folds").shuffle(order)
+    fold = {it: j % folds for j, it in enumerate(order)}
+    units = sorted(u for us in items.values() for u in us)
+    random.Random(f"{GOAT_SEED}|amps").shuffle(units)
+    return fold, {u: AMPS3[j % len(AMPS3)] for j, u in enumerate(units)}
+
+
+GOAT_PER_ITEM = 2                   # the pilot's renders per item (clean/crunch only)
+
+
+def cmd_goat_sections(args):
+    """5C's data (zero renders): per GOAT item, the pool's DI measures (`clean_di.measure_di`, the item's own mains
+    vote) and one window (`goat_window`); each of its 5 renders checked for length, rate and clipping in the window,
+    classed by the pool's classifier against the DI on the window (`classify` on `gainmeasure`, as
+    `trusted_data_t3._amp_track_class`; high gain is out) and its whole-item lag to the DI measured
+    (`estimate_lag`, the render against the DI); up to GOAT_PER_ITEM clean/crunch renders kept (`goat_renders`);
+    folds by item and forced amps by unit (`goat_assign`). The window cut from the DI and each kept render, as
+    section files (TRIM_S lead, the pipeline's rate), read straight from the zip. -> goat/sections/*.wav,
+    goat/units.json."""
+    import io
+    import sys
+    import zipfile
+
+    import numpy as np
+    import soundfile as sf
+
+    from analysis.aligned import estimate_lag
+    from learn import clean_di as CD
+    from learn import pretrain_set as PS
+
+    require("phase_5c")
+    sys.path.insert(0, str(PS.HOME / "references/datasets-set3/_tools"))
+    import classify as C
+    import gainmeasure as GM
+
+    gd = out_dir() / GOAT_DIR
+    sec = gd / "sections"
+    sec.mkdir(parents=True, exist_ok=True)
+    n = int(round((PS.SEC_S + PS.TRIM_S) * PS.SR))
+    trim = int(PS.TRIM_S * PS.SR)
+    units, out, by_item = [], {}, {}
+    with zipfile.ZipFile(GOAT_ZIP) as z:
+        meta = goat_items_from(z)
+        for m in meta:
+            item = m["item"]
+            x, sr = sf.read(io.BytesIO(z.read(goat_member(item, m["di_audio_path"]))), dtype="float64", always_2d=True)
+            x = x.mean(1)
+            f, fs = CD.floor_spectrum(CD.resample(x, sr, CD.SR))
+            votes = {k: [v] for k, v in ({mm: CD.line_count(f, fs, mm) for mm in CD.MAINS} if fs is not None
+                                         else {}).items()}
+            track, rows = CD.measure_di(x, sr, CD.session_mains(votes))
+            start = goat_window(rows, item)
+            rec = {"item": item, "player": m["player"], "guitar": m["guitar_brand"], "tuning": m["tuning_class"],
+                   "seconds": track["seconds"], "start_s": start, "di_near_fs": track["near_fs"],
+                   "hum_rel_db": track["hum_rel_db"], "renders": {}}
+            out[item] = rec
+            if start is None or track["near_fs"]:
+                rec["out"] = "no window" if start is None else "DI near full scale"
+                print(f"{item}: {rec['out']}", flush=True)
+                continue
+            lo, hi = max(0, int(round((start - PS.TRIM_S) * sr))), int(round((start + PS.SEC_S) * sr))
+            dsec = CD.resample(x[lo:hi], sr, PS.SR)[:n]
+            if len(dsec) < n:
+                rec["out"] = "window runs past the end"
+                continue
+            d48 = CD.resample(x, sr, PS.SR)
+            secs, ok = {}, []
+            for j in range(1, 6):
+                a, sra = sf.read(io.BytesIO(z.read(goat_member(item, m[f"amp_audio_path_{j}"]))), dtype="float64",
+                                 always_2d=True)
+                a = a.mean(1)
+                r = rec["renders"][j] = {}
+                if sra != sr or len(a) != len(x):
+                    r["out"] = "not the DI's length and rate"
+                    continue
+                if len(CD.clip_runs(a[lo:hi], peak=float(np.max(np.abs(a))))):  # flat tops at the render's own peak
+                    r["out"] = "clips in the window"
+                    continue
+                asec = CD.resample(a[lo:hi], sr, PS.SR)[:n]
+                gm = GM.measures(np.asarray(asec[trim:], np.float64), np.asarray(dsec[trim:], np.float64), PS.SR)
+                r["class"] = C.classify(gm)[0] if gm else None
+                r["gain_measures"] = gm
+                try:
+                    r["item_lag"] = int(estimate_lag(CD.resample(a, sr, PS.SR), [d48]))
+                except ValueError as err:
+                    r["item_lag"], r["out"] = None, f"no item lag: {err}"
+                    continue
+                if r["class"] in ("clean", "crunch"):
+                    ok.append(j)
+                    secs[j] = asec
+                else:
+                    r["out"] = f"class {r['class']}"
+            keep = goat_renders(item, ok)
+            if not keep:
+                rec["out"] = "no clean/crunch render"
+                print(f"{item}: {rec['out']}", flush=True)
+                continue
+            dp = sec / f"{item}.di.wav"
+            sf.write(dp, dsec.astype(np.float32), PS.SR, subtype="FLOAT")
+            for j in keep:
+                ap = sec / f"{item}.amp{j}.wav"
+                sf.write(ap, secs[j].astype(np.float32), PS.SR, subtype="FLOAT")
+                u = f"goat/{item}@{start}#amp_{j}"
+                units.append({"unit": u, "section": f"goat/{item}@{start}", "track": ap.name,
+                              "rig": f"goat/{item}#amp_{j}", "set": "goat", "di": f"goat/{item}",
+                              "band": f"GOAT {m['player']}", "cls": rec["renders"][j]["class"], "sd": str(sec),
+                              "start_s": PS.TRIM_S, "di_path": str(dp), "item": item, "render": j, "window_s": start,
+                              "item_lag": rec["renders"][j]["item_lag"]})
+                by_item.setdefault(item, []).append(u)
+            print(f"{item}: window {start}; kept {keep} of clean/crunch {ok}", flush=True)
+    fold, amp = goat_assign(by_item)
+    for u in units:
+        u["fold"], u["amp"] = fold[u["item"]], amp[u["unit"]]
+    save(gd / "units.json", {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "zip": str(GOAT_ZIP), "units": units,
+                             "items": out, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    cnt = {}
+    for u in units:
+        cnt[(u["amp"], u["cls"])] = cnt.get((u["amp"], u["cls"]), 0) + 1
+    print(f"GOAT-SECTIONS DONE: {len(units)} units from {len(by_item)} of {len(meta)} items; by amp and class {cnt}")
+
+
+def goat_items_from(z):
+    import csv
+    import io
+
+    return list(csv.DictReader(io.StringIO(z.read("GOAT/metadata.csv").decode())))
+
+
 REAL_ROW0 = 3_000_000               # 5B.2's real rows: ids from here (no D_CC example id reaches it)
 REAL_PER_EPOCH = 300                # every fold shows this many real rows per epoch (its labelled rows cycled)
 REAL_FOLDS = 4
@@ -4076,7 +4243,7 @@ def cmd_vreal_report(args):
 
 # --- main ------------------------------------------------------------------------------------------------------------
 
-COMMANDS = {"p5": cmd_p5, "dirty-doubles": cmd_dirty_doubles, "p6": cmd_p6,
+COMMANDS = {"goat-sections": cmd_goat_sections, "p5": cmd_p5, "dirty-doubles": cmd_dirty_doubles, "p6": cmd_p6,
             "build-inputs": cmd_build_inputs, "p1": cmd_p1, "render-doubles": cmd_render_doubles,
             "build-doubles": cmd_build_doubles, "train": cmd_train, "read": cmd_read, "sample": cmd_sample,
             "answers": cmd_answers, "sound-render": cmd_sound_render, "sound-report": cmd_sound_report,

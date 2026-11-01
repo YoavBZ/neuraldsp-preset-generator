@@ -410,6 +410,29 @@ def test_rigo_records_take_only_the_recordings_windows_clear_of_the_unit():
     assert P.rigo_records(recs, by_unit, {"unit": "v0", "rig": "v", "start_s": 200.0}, "pr12") == []
 
 
+def test_goat_window_takes_only_clean_active_windows_and_is_seeded():
+    rows = [{"start_s": 0.0, "passes_activity": True}, {"start_s": 5.0, "passes_activity": True, "clip_runs": 1},
+            {"start_s": 10.0, "passes_activity": False}, {"start_s": 15.0, "passes_activity": True, "dropouts": 0},
+            {"start_s": 20.0, "passes_activity": True, "hard_cuts": 2}, {"start_s": 25.0, "passes_activity": True}]
+    got = {P.goat_window(rows, f"item_{k}") for k in range(40)}
+    assert got <= {15.0, 25.0} and len(got) == 2
+    assert P.goat_window(rows, "item_3") == P.goat_window(rows, "item_3")
+    assert P.goat_window(rows[:3], "item_1") is None
+    assert P.goat_renders("item_1", [1, 3, 4]) == P.goat_renders("item_1", [4, 1, 3])
+    assert len(P.goat_renders("item_1", [1, 3, 4])) == 2 and P.goat_renders("item_2", [5]) == [5]
+    assert P.goat_renders("item_2", []) == []
+
+
+def test_goat_assign_keeps_an_items_renders_in_one_fold_and_balances_amps():
+    items = {f"item_{k}": [f"u{k}a", f"u{k}b"] if k % 3 else [f"u{k}a"] for k in range(30)}
+    fold, amp = P.goat_assign(items)
+    assert set(fold) == set(items) and set(fold.values()) == {0, 1, 2, 3}
+    units = [u for us in items.values() for u in us]
+    counts = [sum(amp[u] == a for u in units) for a in P.AMPS3]
+    assert max(counts) - min(counts) <= 1 and set(amp) == set(units)
+    assert P.goat_assign(items) == (fold, amp)
+
+
 def test_setting_gap_is_zero_on_itself_and_counts_switch_agreement():
     from learn import knob_ceiling as K
 
