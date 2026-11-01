@@ -689,3 +689,13 @@ was declared, what was measured, and the research behind it.
     factory presets named after songs and one artist tone, all installed; names in the unread
     sources could add more. Each source is mapped onto the licence and cost rule, and community packs
     must stay out of the factory folder. Research, not a declared plan.
+21. [real-amp-chains-2026-11.md](research/real-amp-chains-2026-11.md): where to get 100+ distinct
+    real amp chains with a matched DI for the real-amp centre (November 2026; nothing downloaded).
+    Recorded DI + real-amp datasets add up to about 12 physical amps, only 3 mic'd (Guitar-TECHS,
+    already held); band multitracks are nearly all in use or held out. Only NAM captures on TONE3000
+    reach thousands of distinct chains, and only its `amp-cab` packs are real mic'd chains; each
+    pack's licence fits, but its site and API terms forbid bulk download, so the plan's "don't" line
+    holds (refined wording given). Ranked: `amp-cab` packs through a research-access request to
+    TONE3000 (the user's call), then GOAT's renders (access requested; plugin cab IRs; its "8.5 TB"
+    is a download counter, not its size). The main catch for captures is input level. Research, not
+    a declared plan.
