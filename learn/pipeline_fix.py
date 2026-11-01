@@ -3056,7 +3056,26 @@ def real_labels(stage):
     allp = stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2)
     folds = real_folds(stage_units(kept, sp, inv, 1), allp)
     recs = [json.loads(p_.read_text()) for p_ in sorted((out_dir() / REAL_DIR / SEARCH_DIR).glob("*.json"))]
-    return [r for r in recs if r["stage"] <= stage and r["label"] is not None], {p_["unit"]: p_ for p_ in allp}, folds
+    off = lag_refused(recs)
+    return ([r for r in recs if r["stage"] <= stage and r["label"] is not None and r["unit"] not in off],
+            {p_["unit"]: p_ for p_ in allp}, folds)
+
+
+LAG_TOL = 14                        # samples (0.3 ms at 48 kHz: pooled renders' agreement, `estimate_lag`)
+
+
+def lag_refused(recs):
+    """Units whose judge lag is more than LAG_TOL samples from the median lag of their recording's windows (one rig,
+    every search stage): one recording keeps one lag, so such an estimate locked onto another peak and that unit's
+    search aimed at a misaligned track. Its labels are refused. -> set of units."""
+    import statistics
+
+    lags = {}
+    for r in recs:
+        if r["lag"] is not None:
+            lags.setdefault(r["rig"], {})[r["unit"]] = r["lag"]
+    return {u for units in lags.values() for u, lag in units.items()
+            if abs(lag - statistics.median(units.values())) > LAG_TOL}
 
 
 def cycled(items, n):

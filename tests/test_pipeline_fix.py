@@ -391,6 +391,16 @@ def test_rc_records_take_only_other_fold_labels_of_the_same_amp_and_class():
                                    and folds[by_unit[r["unit"]]["di"]] != folds[prt["di"]] for r in recs)
 
 
+def test_lag_refused_takes_only_windows_off_their_recordings_lag():
+    def recs(rig, lags):
+        return [{"unit": f"{rig}@{j}", "rig": rig, "amp": amp, "lag": lag}
+                for j, lag in enumerate(lags) for amp in ("pr12", "ac20")]
+
+    got = P.lag_refused(recs("a", [93, 96, 91, 498, 93]) + recs("b", [-21, -94, -57, -57, -56, -56, -56, -57])
+                        + recs("c", [84, 84]) + recs("d", [111, None, 109]))
+    assert got == {"a@3", "b@0", "b@1"}
+
+
 def test_setting_gap_is_zero_on_itself_and_counts_switch_agreement():
     from learn import knob_ceiling as K
 

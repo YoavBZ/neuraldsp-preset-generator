@@ -437,6 +437,13 @@ instead of generating unrealistic presets our own?"):
     direction with no fresh renders (labels only, the best's in-process render), checked on stage 1's fresh against
     in-process values. Then Rc and R retrained and read on stages 1 and 2's labels (720 renders). Stage 2 adds
     mostly Bulldozer crunch (59 of 65 units) and nothing for DIs 20 and 24.
+    - *Amendment (2026-11-01, after stage 2's search, before any of its labels is used):* a unit whose lag is more
+      than 14 samples (0.3 ms, the agreement `estimate_lag` reports for pooled renders) from the median lag of its
+      recording's windows gives no label (`lag_refused`): one recording keeps one lag, so that estimate locked onto
+      another peak and the unit's search aimed at a misaligned track. Stage 1's 40 units all sit within 3 samples,
+      so nothing read so far changes. Three stage 2 units are refused (9 labels): Bulldozer 36 Reamp1 at 200 s
+      (−21 against the recording's −56/−57) and 205 s (−94), and Too Much 16 Reamp1 at 205 s (498 against 91–96).
+      Stage 2 keeps 62 units (186 labels); stages 1 and 2 give 306.
   - **Arm P (4 trainings, 1,200 renders; up to 960 more).**
     - Training: P2a's recipe on the 1,296 training examples drawn around presets or S (864 factory, 432 start; the
       491 wide draws out). Its size control, P2a-pcsz: in each section as many examples as arm P keeps there, drawn
