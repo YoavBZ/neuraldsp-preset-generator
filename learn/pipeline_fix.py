@@ -1022,6 +1022,10 @@ def cmd_train(args):
     name = run_name(args.rung, args.frac, args.aug, args.fold, args.sections) + ("-bk8" if args.backings else "") \
         + ("-dd" if args.dd else "") + (f"-wide{WIDE_K}" if args.wide else "") + ("-pc" if args.pc else "") \
         + ("-pcsz" if args.pcsz else "") + ("" if args.real_fold is None else f"-real{args.real_fold}" + ("s2" if args.stage == 2 else ""))
+    if args.goat or args.goat_shuffle:                 # 5C: its own names, so no 5B.2 run is ever taken for one
+        if args.real_fold is None or args.stage != 2 or name != f"P2a-real{args.real_fold}s2":
+            raise SystemExit("--goat is 5C's RG: P2a-reals2's recipe (--rung a --real-fold k --stage 2) plus GOAT rows")
+        name = f"P2a-goat{'shuf' if args.goat_shuffle else ''}{args.real_fold}"
     od = out_dir() / "runs"
     rp = od / f"{name}-{args.seed}.json"
     if rp.exists():
@@ -1067,6 +1071,14 @@ def cmd_train(args):
         rrows, rpaths, real_fold_of = real_rows(args.real_fold, p2a_median_lufs(tr), stage=max(1, args.stage))
         if not rrows:
             raise SystemExit("no labelled real rows: run real-search first")
+        if args.goat or args.goat_shuffle:
+            require("phase_5c")
+            grows, gpaths = goat_rows(args.real_fold, p2a_median_lufs(tr), shuffle=args.goat_shuffle)
+            if not grows:
+                raise SystemExit("no labelled GOAT rows: run goat-search first")
+            if set(gpaths) & set(rpaths):
+                raise SystemExit("GOAT and BKS row ids collide")
+            rrows, rpaths = rrows + grows, {**rpaths, **gpaths}
         base_path = rung_path(croot, "a", doubled)
         rows = rows[:len(tr)] + rrows + rows[len(tr):]
         tr = tr + [r["i"] for r in rrows]
@@ -1092,7 +1104,8 @@ def cmd_train(args):
         heads[which] = {k: head_table(head_losses(net, data, idx, dev), bl[k])
                         for k, idx in (("train_subset", sub), (held_name, hi))}
         torch.save(st, od / f"{name}-{args.seed}-{which}.pt")
-    phase = "phase_5b2" if (args.pc or args.pcsz or args.real_fold is not None) else "phase_3"
+    phase = ("phase_5c" if (args.goat or args.goat_shuffle)
+             else "phase_5b2" if (args.pc or args.pcsz or args.real_fold is not None) else "phase_3")
     save(rp, {"plan": PLAN, "test": name, "ledger": f"{LEDGER_ID} {phase}", "rung": args.rung,
               "input": RUNG_KINDS[args.rung], "aug": bool(args.aug), "frac": args.frac, "sections": args.sections,
               "fold": args.fold, "held": held_name, "seed": args.seed, "train": len(tr), "held_n": len(held),
@@ -3247,6 +3260,236 @@ def cmd_goat_sections(args):
     print(f"GOAT-SECTIONS DONE: {len(units)} units from {len(by_item)} of {len(meta)} items; by amp and class {cnt}")
 
 
+GOAT_ROW0 = 4_000_000               # 5C's GOAT training rows: ids from here (apart from BKS's REAL_ROW0 rows)
+GOAT_PER_EPOCH = 300                # GOAT rows per epoch in every fold (its labelled units cycled)
+GOAT_LAG_TOL = 14                    # the one-window lag rule's tolerance (samples; 5B.2's LAG_TOL)
+
+
+def goat_units():
+    """5C's units (`goat-sections`): [{unit, item, render, rig, di, cls, amp, fold, item_lag, sd, track, ...}]."""
+    return json.loads((out_dir() / GOAT_DIR / "units.json").read_text())["units"]
+
+
+def goat_halves(units):
+    """5C: each unit's searched half, A and B alternating over the units in sorted order (most items give one or two
+    units, so 5B.2's per-DI alternation would search half A almost everywhere)."""
+    return {u: "AB"[j % 2] for j, u in enumerate(sorted(p_["unit"] for p_ in units))}
+
+
+def goat_lag_refused(lags, item_lags, tol=None):
+    """5C's one-window lag rule: units whose judge lag minus their whole-item DI-to-render lag sits more than `tol`
+    samples from the median of that difference over all units. lags, item_lags: {unit: samples or None}.
+    -> set of units (a unit with no lag is refused too)."""
+    import statistics
+
+    tol = GOAT_LAG_TOL if tol is None else tol
+    d = {u: lags[u] - item_lags[u] for u in lags if lags[u] is not None and item_lags.get(u) is not None}
+    if not d:
+        return set(lags)
+    m = statistics.median(d.values())
+    return {u for u in lags if u not in d or abs(d[u] - m) > tol}
+
+
+def goat_labels():
+    """5C's labelled GOAT records (goat/search) after the one-window lag rule, with their units. -> (records,
+    {unit: unit record}, refused units)."""
+    units = {p_["unit"]: p_ for p_ in goat_units()}
+    recs = [json.loads(p_.read_text()) for p_ in sorted((out_dir() / GOAT_DIR / SEARCH_DIR).glob("*.json"))]
+    off = goat_lag_refused({r["unit"]: r["lag"] for r in recs}, {u: units[u]["item_lag"] for u in units})
+    return [r for r in recs if r["label"] is not None and r["unit"] not in off], units, off
+
+
+def goat_fold_records(recs, units, fold, n=None):
+    """5C's GOAT training records for model `fold`: the labelled units of the other GOAT folds, cycled to
+    GOAT_PER_EPOCH (a fold's models never see their own GOAT items)."""
+    return cycled([r for r in recs if units[r["unit"]]["fold"] != fold], GOAT_PER_EPOCH if n is None else n)
+
+
+def goat_shuffled(recs, units, seed=GOAT_SEED):
+    """RGshuf's records: the GOAT labels permuted across units within amp and class (seeded), every other field
+    kept. -> new records."""
+    import random
+
+    out = [dict(r) for r in recs]
+    groups = {}
+    for j, r in enumerate(out):
+        groups.setdefault((r["amp"], units[r["unit"]]["cls"]), []).append(j)
+    rng = random.Random(f"{seed}|shuffle")
+    for key in sorted(groups):
+        idx = groups[key]
+        perm = idx[:]
+        rng.shuffle(perm)
+        labels = [recs[j]["label"] for j in perm]
+        for j, lab in zip(idx, labels):
+            out[j]["label"] = lab
+    return out
+
+
+def goat_input_path(unit):
+    return out_dir() / GOAT_DIR / "inputs" / f"{unit.replace('/', '__')}.npz"
+
+
+def goat_rows(fold, target, shuffle=False):
+    """5C's GOAT training rows for model `fold` (`goat_fold_records`; RGshuf's labels with `shuffle`): input the
+    render's section at `target` LUFS (5B.1's path, both halves; cached), label the search's best setting
+    (`F.label_of`); ids from GOAT_ROW0. -> (rows, {id: input path})."""
+    import numpy as np
+
+    from learn import direct_existing as DE
+    from learn import direct_stems as DS
+    from learn import full_space as F
+    from learn import local_objective as LO
+
+    recs, units, _ = goat_labels()
+    if shuffle:
+        recs = goat_shuffled(recs, units)
+    rows, paths = [], {}
+    for j, rec in enumerate(goat_fold_records(recs, units, fold)):
+        prt = units[rec["unit"]]
+        ip = goat_input_path(prt["unit"])
+        if not ip.exists():
+            ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
+            g = DE.inference_gain_db(ref, target)
+            (sa, _, la, _), (sb, _, lb, _) = (DS.step4_half(ref, ref, h, g) for h in ("A", "B"))
+            ip.parent.mkdir(parents=True, exist_ok=True)
+            np.savez(ip, sA=sa, sB=sb, lufs=np.array([la, lb], np.float32), target=np.float64(target))
+        if float(np.load(ip)["target"]) != float(target):
+            raise SystemExit(f"{ip.name}: built for another input loudness")
+        i = GOAT_ROW0 + j
+        rows.append({"i": i, "section": prt["section"], "band": prt["band"], "amp": rec["amp"], "cls": prt["cls"],
+                     "base": prt["cls"], "label": F.label_of(LO.tdict(rec["label"]), rec["amp"]), "real": rec["unit"]})
+        paths[i] = ip
+    return rows, paths
+
+
+def cmd_goat_search(args):
+    """5C's label searches (one shard of GOAT units): as 5B.2's stage 2 (`cmd_real_search`), per unit on its forced amp
+    only: three fresh S renders (one per amp, the class's S) give the judge lag, S's judge and its sha (saved, so the
+    search resumes); then one discarded priming render and arm A's main stage (`K.space`, 52 evaluations, seed
+    20261013) from S with the unit's DI, scored by the judge's distance to the render on the unit's search half
+    (`goat_halves`); S's first evaluation must be bit-identical to its fresh render; the label is the best's
+    in-process render. -> goat/search/<unit>|<amp>.json, goat/lags/<unit>.json."""
+    import numpy as np
+
+    from analysis.aligned import estimate_lag
+    from learn import arm_a_levers as L
+    from learn import arm_a_mega53 as A
+    from learn import audibility_measure as AM
+    from learn import cc_build as CB
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+    from learn import pretrain_set as PS
+    from learn import song_bank as B
+    from learn import trusted_data as T
+
+    require("phase_5c")
+    parts = sorted(goat_units(), key=lambda p_: p_["unit"])
+    halves = goat_halves(parts)
+    k, n = args.shard
+    mine = [p_ for j, p_ in enumerate(parts) if j % n == k]
+    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
+    ms = L.menu_S()
+    LO._wait_cap()
+    rr = CB.new_renderer()
+    try:
+        menu = rr.menu()
+    finally:
+        rr.close()
+    for amp, by_cls in ms.items():
+        for cls, (_, S) in by_cls.items():
+            if K.key(dict(menu[amp][K.START[cls][amp]][1])) != K.key(S):
+                raise SystemExit(f"{amp} {cls}: the live S differs from the stored copy")
+    sdir, ldir = out_dir() / GOAT_DIR / SEARCH_DIR, out_dir() / GOAT_DIR / "lags"
+    renders = 0
+
+    def sorted_x(x):                                   # edits in 5B.1's order (`sdict` sorts the keys)
+        return LO.tdict(LO.sdict(x))
+
+    def fresh(di32, sel, x):
+        xs = sorted_x(x)
+        y = AM.fresh_render(CB.new_renderer, di32, sel, xs, xs)
+        return np.asarray(y, np.float64)[trim[0]:trim[1]]
+
+    def fname(key):
+        return key.replace("/", "__")
+
+    for prt in mine:
+        if PS.free_gb() < T.DISK_GUARD_GB:
+            raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+        amp = prt["amp"]
+        key = real_key(prt, amp)
+        path = sdir / f"{fname(key)}.json"
+        if path.exists():
+            continue
+        di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
+        di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
+        ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
+        search = halves[prt["unit"]]
+        held = "B" if search == "A" else "A"
+        lp = ldir / f"{fname(prt['unit'])}.json"
+        rec = json.loads(lp.read_text()) if lp.exists() else None
+        if rec is not None and rec.get("phase") != "phase_5c":
+            raise SystemExit(f"{lp.name}: a GOAT unit has a lag from another phase")
+        if rec is None:
+            ys = {}
+            for a in AMPS3:
+                sel_a, S_a = ms[a][prt["cls"]]
+                ys[a] = fresh(di32, sel_a, S_a)
+                renders += 2
+            try:
+                lag, status = int(estimate_lag(ref, list(ys.values()))), "ok"
+            except ValueError as err:
+                lag, status = None, f"no lag: {err}"
+            save(lp, {"unit": prt["unit"], "lag": lag, "status": status, "phase": "phase_5c",
+                      "item_lag": prt["item_lag"],
+                      "s": {a: {"judge": None if lag is None else K.judge(ref, ys[a], di, lag),
+                                "render_sha256": AM.audio_sha(ys[a])} for a in AMPS3}})
+            rec = json.loads(lp.read_text())
+        lag = rec["lag"]
+        if lag is None:
+            save(path, {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "unit": prt["unit"], "rig": prt["rig"],
+                        "di": prt["di"], "cls": prt["cls"], "amp": amp, "lag": None, "label": None,
+                        "why": rec["status"], "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+            print(f"{prt['unit'][-60:]}: no lag; not searched", flush=True)
+            continue
+        s_j, s_sha = rec["s"][amp]["judge"], rec["s"][amp]["render_sha256"]
+        sel, S = ms[amp][prt["cls"]]
+        dims = K.space(amp, S)
+        curve, first, seen = [], {}, {}
+        rr = CB.new_renderer()
+        try:
+            rr.render(di32, sel, sorted_x(S))          # the discarded priming render, as `fresh_render`'s
+            renders += 1
+
+            def f(x):
+                y = np.asarray(rr.render(di32, sel, sorted_x(x)), np.float64)[trim[0]:trim[1]]
+                j = K.judge(ref, y, di, lag)
+                if not curve:
+                    first.update(sha=AM.audio_sha(y), value=j[search])
+                    if first["sha"] != s_sha:
+                        raise SystemExit(f"{key}: S's first evaluation is not bit-identical to its fresh render")
+                seen[K.key(x)] = {"judge": j, "peak_dbfs": A.peak_dbfs(y, trim_s=0.0), "render_sha256":
+                                  AM.audio_sha(y)}
+                curve.append(j[search])
+                return j[search]
+
+            best_x, best_v, evals = L.main_stage(dims, S, f, seed=L.SEED)
+            renders += evals
+        finally:
+            rr.close()
+        best = dict(seen[K.key(best_x)], settings=LO.sdict(best_x))
+        best["fallback"] = A.fallback_reason(best["peak_dbfs"], best["judge"][search])
+        save(path, {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "unit": prt["unit"], "rig": prt["rig"],
+                    "di": prt["di"], "item": prt["item"], "fold": prt["fold"], "cls": prt["cls"], "amp": amp,
+                    "select": sel, "search": search, "held": held, "lag": lag, "item_lag": prt["item_lag"],
+                    "s_judge": s_j, "s_render_sha256": s_sha, "s_first": first, "curve": curve, "evaluations": evals,
+                    "best_search_value": best_v, "best": best,
+                    "label": None if best["fallback"] else best["settings"], "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+        print(f"{key[-70:]}: {search}->{held} S {s_j[held]:.3f} best {best['judge'][held]:.3f}; renders so far "
+              f"{renders}", flush=True)
+    print(f"GOAT-SEARCH DONE {k}/{n}: {renders} renders")
+
+
 def goat_items_from(z):
     import csv
     import io
@@ -4243,7 +4486,8 @@ def cmd_vreal_report(args):
 
 # --- main ------------------------------------------------------------------------------------------------------------
 
-COMMANDS = {"goat-sections": cmd_goat_sections, "p5": cmd_p5, "dirty-doubles": cmd_dirty_doubles, "p6": cmd_p6,
+COMMANDS = {"goat-sections": cmd_goat_sections, "goat-search": cmd_goat_search,
+            "p5": cmd_p5, "dirty-doubles": cmd_dirty_doubles, "p6": cmd_p6,
             "build-inputs": cmd_build_inputs, "p1": cmd_p1, "render-doubles": cmd_render_doubles,
             "build-doubles": cmd_build_doubles, "train": cmd_train, "read": cmd_read, "sample": cmd_sample,
             "answers": cmd_answers, "sound-render": cmd_sound_render, "sound-report": cmd_sound_report,
@@ -4293,6 +4537,8 @@ def main(argv=None):
     ap.add_argument("--pcsz", action="store_true")
     ap.add_argument("--by-mode", action="store_true")
     ap.add_argument("--within", default="")
+    ap.add_argument("--goat", action="store_true")
+    ap.add_argument("--goat-shuffle", action="store_true")
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 

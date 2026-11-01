@@ -433,6 +433,41 @@ def test_goat_assign_keeps_an_items_renders_in_one_fold_and_balances_amps():
     assert P.goat_assign(items) == (fold, amp)
 
 
+def test_goat_lag_refused_keeps_units_whose_lag_follows_their_item_lag():
+    item = {"a": 10, "b": 40, "c": 0, "d": 25, "e": 5}
+    lags = {"a": 60, "b": 91, "c": 49, "d": 140, "e": None}       # offsets 50, 51, 49, 115, none
+    assert P.goat_lag_refused(lags, item) == {"d", "e"}
+    assert P.goat_lag_refused({"a": 60}, {"a": None}) == {"a"}
+
+
+def _goat_records():
+    units = {f"g{j}": {"unit": f"g{j}", "fold": j % 4, "cls": "clean" if j % 2 else "crunch"} for j in range(24)}
+    recs = [{"unit": u, "amp": ("pr12", "ac20")[j % 2], "label": {"k": str(j)}} for j, u in enumerate(sorted(units))]
+    return recs, units
+
+
+def test_goat_fold_records_never_hold_the_folds_own_items_and_fill_an_epoch():
+    recs, units = _goat_records()
+    for f in range(4):
+        rows = P.goat_fold_records(recs, units, f)
+        assert len(rows) == P.GOAT_PER_EPOCH and all(units[r["unit"]]["fold"] != f for r in rows)
+
+
+def test_goat_shuffled_permutes_labels_only_within_amp_and_class():
+    recs, units = _goat_records()
+    sh = P.goat_shuffled(recs, units)
+    assert sh == P.goat_shuffled(recs, units) and sh != recs
+    for r, s in zip(recs, sh):
+        assert {k: v for k, v in r.items() if k != "label"} == {k: v for k, v in s.items() if k != "label"}
+    group = lambda rs: sorted((r["amp"], units[r["unit"]]["cls"], r["label"]["k"]) for r in rs)
+    assert group(recs) == group(sh)
+
+
+def test_goat_rows_and_records_stay_apart_from_bks():
+    assert P.GOAT_ROW0 >= P.REAL_ROW0 + 10 * P.REAL_PER_EPOCH and P.GOAT_ROW0 + 10 * P.GOAT_PER_EPOCH < 10 ** 7
+    assert P.GOAT_DIR != P.REAL_DIR
+
+
 def test_setting_gap_is_zero_on_itself_and_counts_switch_agreement():
     from learn import knob_ceiling as K
 
