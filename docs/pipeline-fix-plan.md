@@ -4,7 +4,9 @@
 with required changes, all made). Phases 1–4, the isolated tests and phase 5's tests (5A, 5B.1, 5B.1b, and 5B.2's
 stage 1, arm P, Rc and arm R, its stage 2 and its recording oracle) have run; the findings log (F1–F36) holds
 every result, audited. 5B.1c was withdrawn before any render. Declared next, at the user's choice of more real
-recordings: 5C, many recordings from GOAT's capture renders (pilot).
+recordings: 5C, many recordings from GOAT's capture renders (pilot), now running: the search and RG are done,
+read A is better (RG beats the matched GOAT centre on held recordings), read B is undecided, and the shuffled-label
+control RGshuf runs before any reading is acted on. A lag check across earlier reads found none affected.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -694,6 +696,43 @@ instead of generating unrealistic presets our own?"):
     promise; one lag rule for every caller, with a test; the window check saved with one count. Adopted from its
     suggestions: flatness in log-judge units, "insensitive" rather than "the stored lag is right", the item
     clustering, and a pointer from the main 5C block.
+  - *Progress (2026-11-01, interim; the finding, F37, follows RGshuf).*
+    - Search: 215 trusted units searched (11,395 renders, 15:08–16:55, three shards, no errors); one unit's best was
+      silent (`goat/item_68@35.0#amp_5`), so it gives no label but is still read. Staged stop at 102 units
+      (ledger `phase_5c_stage_check`): held-half best − S −0.336 [−0.393, −0.280], `inputGain` at a bound in 18% of
+      labels; neither stop condition held.
+    - Centres (`goat-centres`, zero renders) and RG's 8 trainings (16:57–18:50, best epochs 15–30 of 60), then RG's and
+      the centres' read renders (860 on GOAT and 480 on BKS each).
+    - Read A (215 units, 130 items): RG − RcGk −0.053 [−0.077, −0.029] by item (83 of 130 better), by fold −0.043
+      [−0.063, −0.023], every fold negative: decided better. RG − RcBG −0.064 [−0.089, −0.039], by fold −0.052
+      [−0.075, −0.030]. On the main-mode units alone (`--lag-tol 14`, 94 items) RG − RcGk −0.057 [−0.086, −0.028].
+      In setting space RG's answers sit 0.127 from RcGk's but no nearer the units' labels (rms 0.259 against
+      0.259; S 0.294), as on BKS (F35). Audit: no model sees its held GOAT items (0 item overlap per fold).
+    - Read B (BKS, 40 units): RG − RcBG −0.052 [−0.115, +0.011] by DI (7 of 8 better), by fold −0.047 [−0.104,
+      +0.010]; RG − Rcs2 −0.035 [−0.102, +0.032], by fold −0.036 [−0.091, +0.020]: both undecided. Beside: RG − S
+      −0.193 [−0.292, −0.094]; RcG − S −0.106 [−0.168, −0.045] (a capture centre moves toward real amps), RcG −
+      Rcs2 +0.052 [−0.026, +0.130]. (`real-report` now gives 5C's rows their fold interval, as declared.)
+    - Guard (`real-heads --names G`): knob NLL rise RG − P2a-reals2 on FS or NS above +0.027 in one seed of one
+      fold only (fold 2, +0.034 on both): no fold damaged in both seeds. On each fold's held BKS labels RG's knob
+      NLL is below P2a-reals2's in 7 of 8 runs.
+    - As declared, read A better means RGshuf runs before any reading is acted on (launched 19:10).
+  - *Lag check across earlier reads (2026-11-01, at the user's question whether the lag issue hurt earlier tests;
+    ledger `phase_5c_lag_scan_10ms`, `phase_5c_lag_scan_bks`, each declared before its run).* The ±72-sample
+    diagnostic did not reach `estimate_lag`'s known failure, a lock onto another pitch period (about 6 ms). Two
+    scans did:
+    - The same 12 GOAT units over ±10 ms (24 renders): the S judge's log moves by a median 0.031 (90th percentile
+      0.061) within ±6 ms, so a 6 ms error is not negligible for one score; every unit's stored lag sits at the
+      judge's minimum (at most 0.013 to gain, one unit).
+    - BKS's 40 units, S and Rcs2 on each amp over ±10 ms (480 renders): no unit's stored lag is off the judge's
+      minimum by 0.01 or more (median 0.0002, max 0.0075), so 5B.1, 5B.2's stage 1 and 5C's read B stand on right
+      lags. A 6 ms error would move a paired read, ln(Rcs2/S), by a median 0.021 (90th percentile 0.059), so lags
+      stay checked.
+    - An inventory of every judge call: every read is paired at one lag per unit. Earlier validation reads use
+      catalogued lags (many pooled renders with stability and onset checks, `research/record_part_lags.py`) or
+      the DI-to-track waveform lag. The 3-render lags of 5B.1, 5B.2 and 5C are the risky ones: covered above for
+      BKS's 40 units and 12 GOAT units; 5B.2's stage 2 units by `lag_refused` (agreement across windows of one
+      recording within 14 samples, which a pitch-period lock would break); GOAT's other units by agreement with
+      the independent item lag within 72 samples. No earlier read is found affected.
 
 - **Chosen on FS, NS and the k-fold reads only**, before any V-real read of D_fix. Phase 4's V-real reads are
   measurements; if they shape the choice, D_fix's V-real read is labelled selection-contaminated. The candidates by

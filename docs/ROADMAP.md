@@ -212,7 +212,12 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          a mostly distinct amp chain. The user hears every one first. The pilot searches their labels, retrains
          with them, and reads per-track reading against matched centres, first on held GOAT recordings, then on
          BKS's reamps, with a shuffled-label control. About 18,000 renders, 1.7 h of MPS.
-       - **Next:** 5C's listening pass (the user), then its pilot; then D_fix, with a real-amp centre as a readout
+         *Running (2026-11-01):* the user heard all 264 (255 passed; 22 firmly driven ones dropped on a second
+         listen), a lag amendment left 215 trusted units, all searched. Read A: RG beats the matched GOAT centre
+         on held recordings, −0.053 [−0.077, −0.029] (all 4 folds). Read B on BKS: −0.035 against Rcs2, undecided.
+         RGshuf (the shuffled-label control) runs before any reading is acted on. A lag check (±10 ms scans on 12
+         GOAT and all 40 BKS units, and an inventory of every judge call) found no earlier read affected.
+       - **Next:** RGshuf, then F37 and the declared reading; then D_fix, with a real-amp centre as a readout
          candidate. Community presets and Suite X's parity check follow.
        - **TONE3000 downloads: approved by the user (2026-11-01)**, after the [real-amp
          research](research/real-amp-chains-2026-11.md). TONE3000's own terms still apply: the site Terms forbid
