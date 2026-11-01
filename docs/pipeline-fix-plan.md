@@ -1,9 +1,10 @@
 # Fixing the pipeline review's findings (plan, 2026-10-31)
 
-**Status (2026-10-31):** declared and reviewed (the plan, its revision, phase 4 and the isolated tests, each with
-required changes, all made). Phases 1–4, the isolated tests and phase 5's tests (5A, 5B.1, 5B.1b) have run; the
-findings log (F1–F32) holds every result, audited. Next: 5B.2 (labels that reach real-amp tones), declared and
-reviewed before it runs; 5B.1c was withdrawn before any render.
+**Status (2026-11-01):** declared and reviewed (the plan, its revision, phase 4, the isolated tests and 5B.2, each
+with required changes, all made). Phases 1–4, the isolated tests and phase 5's tests (5A, 5B.1, 5B.1b, and 5B.2's
+stage 1, arm P, Rc and arm R) have run; the findings log (F1–F34) holds every result, audited. Running: 5B.2's
+stage 2 (65 more units' labels), since arm R's per-track read was undecided; then Rc and arm R on both stages'
+labels. 5B.1c was withdrawn before any render.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -1293,14 +1294,75 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   `report-5b2-armP-vsP2a.json`; `preset_centred`, `real_predict_5b2`, `cmd_real_heads`, `cmd_sound_report --by-mode`;
   ledger `phase_5b2`.
 
+### F34. A real-amp centre beats S by about 0.13; trained on real-amp answers, the model reaches it but reads no further per track (5B.2 stage 1, Rc, arm R)
+- **Result.** Stage 1, the ceiling: arm A's main stage with the true DI on 5B.1's 40 reamped units, per forced amp
+  (120 directions, 6,840 renders). All 120 first evaluations of S were bit-identical to 5B.1's fresh S renders;
+  120 labels, no fallbacks. Then Rc (S moved by the mean unit deviation of the labels the unit's fold model trained
+  on; 9–20 labels per answer; 240 renders) and arm R (P2a's recipe plus 300 real rows per epoch from the other
+  folds' DIs, 4 folds × 2 seeds, read as each fold's ensemble; 480 renders), read as declared.
+- **Numbers** (held half; by DI, 8; the fold, 4, and rig, 14, beside):
+
+  | Row | By DI | By fold | By rig | Better |
+  |---|---|---|---|---|
+  | best − S (the ceiling) | −0.349 [−0.437, −0.261] | | −0.335 [−0.417, −0.254] | 8 of 8 DIs, 40 of 40 units |
+  | shrunk 0.5 − S | −0.211 [−0.249, −0.173] | | −0.201 [−0.238, −0.165] | 8 of 8, 40 of 40 |
+  | Rc − S (a real-amp centre) | −0.133 [−0.229, −0.037] | −0.116 [−0.227, −0.006] | −0.110 [−0.188, −0.033] | 7 of 8, 34 of 40 |
+  | R − Rc (per-track reading; primary) | +0.014 [−0.035, +0.062] | +0.010 [−0.068, +0.088] | +0.013 [−0.022, +0.048] | 3 of 8, 15 of 40 |
+  | R − S | −0.120 [−0.188, −0.051] | −0.106 [−0.206, −0.007] | −0.097 [−0.162, −0.032] | 6 of 8, 29 of 40 |
+  | R − P2a | −0.186 [−0.252, −0.120] | −0.175 [−0.238, −0.112] | −0.171 [−0.230, −0.112] | 8 of 8, 38 of 40 |
+  | R − P2a-Sc (against the free readout) | −0.091 [−0.151, −0.032] | −0.074 [−0.146, −0.001] | −0.068 [−0.116, −0.021] | 6 of 8, 29 of 40 |
+
+  - The ceiling per DI runs from −0.194 (Too Much 20) to −0.533 (Bulldozer 31); per amp −0.32 to −0.36. On the
+    search half it is −0.340, so the held half's gain is not the search fitting its own half.
+  - Share of the ceiling, paired on its 120 directions: Rc 0.445, R 0.434, P2a-Sc 0.103, P2a −0.221 (arm P's P
+    −0.153, its size control −0.203).
+  - Per fold, R − Rc: +0.043, −0.064, +0.083, −0.023; Rc − S: −0.238, −0.099, −0.117, −0.010. DI 19 apart
+    (Bulldozer clean, whose fold's clean labels all come from Too Much): Rc − S −0.171, R − S −0.153, R − Rc +0.019.
+  - By head (zero renders, every fold and seed): on its own DIs' real labels R's knob NLL is 0.54 to 1.25 below
+    P2a's and its switch CE 0.16 to 0.33 below; on FS and NS its knob NLL is unchanged (−0.045 to +0.035) and its
+    mic CE a little higher on NS (+0.03 to +0.17).
+  - In setting space (zero renders, the audit): R's continuous answers sit 0.178 (rms, unit scale) from Rc's, but
+    no nearer the units' own labels: 0.270 against Rc's 0.260 (S 0.288, P2a 0.315); switches and mics agree with
+    the labels 0.60 against Rc's 0.64. No fold's real rows include its own DIs. Rc − S reproduces its first report
+    exactly; the best's fresh and in-process renders agree to a judge difference of at most 6e-5 (bit-identical in
+    36 of 120), so stage 2's in-process labels stand in for fresh ones.
+- **Reading.**
+  - The ceiling: within the searched controls (input gain, the amp's knobs and switches, both mics), a setting about
+    0.35 better than S exists on every one of the 40 units. The real-amp gap is therefore not the chain or the judge
+    alone; the searched controls reach much of it. By the stop rule, arm R went on.
+  - A real-amp centre helps (decided on DI and fold): S moved by the other performances' labels wins 0.13, about
+    44% of the ceiling, and on DI 19 the centre came from the other song. F32's shared shift, taken from P2a's
+    plugin labels, did not help (+0.002); the labels that reach real tones are what moves it.
+  - Trained with real rows, the model reaches the same place (R − S −0.12 and R − P2a −0.19, both decided): F31's
+    real-amp penalty is fixed by real labels. Per-track reading beyond the centre is not seen: R − Rc is undecided
+    (+0.014), and R's own moves away from Rc do not head toward each unit's label. By the declared rule, stage 2 runs
+    (65 more units' labels).
+  - About 0.2 per unit is left between Rc and the ceiling for a per-track reading to take.
+  - The direction it supports: a real-amp centre (Rc's way, or a model trained with real rows) is a candidate
+    readout for real recordings in D_fix, weighed with the S-centred one; more bands' reamped tracks are needed to
+    tell a real-amp centre from BKS's own chain.
+- **Caveats.** One band (BKS), 8 performances, 14 rigs; the physical amps and mics are probably shared within a
+  song, so a held DI's centre may partly be learned on its own rig (DI 19's is from the other song). Fold 3 (Too
+  Much 20 and 24, clean) gains little from Rc (−0.010). Labels are selected on one half; the ceiling's held half
+  is the same section's other half, so it bounds a per-section reading, not a new-performance one. One ensemble
+  per fold reads its units, so the fold interval (4 clusters) is wide.
+- **References.** `PF/real/search/` (stage 1's 120 records), `PF/real/report-ceiling-1.json`,
+  `PF/real/answers/{Rc,P2a-real}.json`, `PF/real/judge/{Rc,P2a-real}/`, `PF/real/report-5b2-rc.json`,
+  `report-5b2-armR.json`, `PF/real/heads-R.json`, `PF/runs/P2a-real*`; `cmd_real_search`, `cmd_real_ceiling`,
+  `real_folds`, `real_rows`, `rc_setting`, `real_rc_answers`, `real_predict_5b2`, `cmd_real_heads`; ledger
+  `phase_5b2`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
   2,160 (controls 480, S and the constant 480, four rungs 960, the pull 240); the isolated tests 3,600 (the amp mismatch
   960, mastering 240, the switch rules 480, augmentation 240, the size curve 1,440 with the pooled seeds, the backing
-  test 240); P4 438 and its dry readout 198; phase 5A 240 and its seed 2 240; 5B.1 960, 5B.1b 720. About 11,170 in all. D_fix's reads are not yet spent.
-- **MPS used:** about 4 h (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and backing
-  runs, the k-fold, phase 5A's two 10-minute seeds).
+  test 240); P4 438 and its dry readout 198; phase 5A 240 and its seed 2 240; 5B.1 960, 5B.1b 720. About 11,170 in all
+  before 5B.2. **5B.2 (2026-11-01):** the stage 1 ceiling 6,840; arm P 1,200, its P-Sc 480 and its FS/NS read 480;
+  Rc 240; arm R 480: 9,720, about 20,890 in all. D_fix's reads are not yet spent.
+- **MPS used:** about 4 h before 5B.2 (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and
+  backing runs, the k-fold, phase 5A's two 10-minute seeds); 5B.2's 12 trainings about 2 h more (arm P 4 × 7–8 min,
+  arm R 8 × 11.4 min).
 - **Disk:** P2's inputs about 0.3 GB; phase 1b's audio and features about 1.2 GB; the 31 GB guard holds.
 - Every render: isolate=True, a discarded priming render, 0.25 s trimmed, at most 3 render processes,
   `setopt no_bg_nice`. V-real is read only in P5's stored distances, phase 4 and D_fix's declared read. (5B.1c
