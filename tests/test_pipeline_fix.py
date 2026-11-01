@@ -686,3 +686,33 @@ def test_panel_cut_lines_the_amp_window_up_with_the_di_for_either_sign():
         d, a = P.panel_cut(di, amp, 1000, 2000, lag)
         assert len(d) == len(a) == 2000 and np.allclose(d, a)
     assert len(P.panel_cut(di, di, 10, 100, -50)[1]) == 0
+
+
+def test_panel_halves_alternate_within_each_di():
+    units = [{"unit": f"d{j % 2}@{j}", "di": f"d{j % 2}"} for j in range(6)]
+    h = P.panel_halves(units)
+    for d in ("d0", "d1"):
+        assert [h[u["unit"]] for u in sorted(units, key=lambda u: u["unit"]) if u["di"] == d] == ["A", "B", "A"]
+
+
+def test_weighted_clustered_matches_the_plain_mean_and_counts_effective_clusters():
+    rows = [("a", -0.1), ("a", -0.3), ("b", 0.0), ("c", -0.1)]
+    eq = P.weighted_clustered(rows, {"a": 1, "b": 1, "c": 1})
+    assert abs(eq["mean"] - (-0.2 + 0.0 - 0.1) / 3) < 1e-12 and abs(eq["n_eff"] - 3) < 1e-12
+    sk = P.weighted_clustered(rows, {"a": 2, "b": 1, "c": 1})
+    assert abs(sk["mean"] - (2 * -0.2 + 0 - 0.1) / 4) < 1e-12 and sk["n_eff"] < 3 and sk["lo90"] < sk["mean"] < sk["hi90"]
+
+
+def test_panel_weights_cap_a_band_at_four_dis():
+    units = [{"band": "big", "di": f"b{j}"} for j in range(8)] + [{"band": "one", "di": "o"}]
+    w = P.panel_weights(units)
+    assert abs(sum(v for d, v in w.items() if d.startswith("b")) - 4) < 1e-12 and w["o"] == 1
+    assert abs(sum(v for d, v in P.panel_weights(units, capped=False).items() if d.startswith("b")) - 1) < 1e-12
+
+
+def test_panel_rows_read_the_held_half_and_drop_missing():
+    units = [{"unit": "u", "di": "d"}]
+    judge = {"M": {f"u|{a}": {"A": {"A": 1.0, "B": 2.0}} for a in P.AMPS3},
+             "C": {f"u|{a}": {P.ANY_HALF: {"A": 9.0, "B": 4.0}} for a in P.AMPS3[:2]}}
+    rows, dropped = P.panel_rows("M", "C", units, {"u": "A"}, judge)
+    assert dropped == 1 and all(abs(v - math.log(2.0 / 4.0)) < 1e-12 for _, _, v in rows) and len(rows) == 2
