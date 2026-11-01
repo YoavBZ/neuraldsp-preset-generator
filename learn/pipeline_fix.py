@@ -4137,7 +4137,7 @@ def cmd_real_report(args):
         units = [u for u in units if f"{u[0]}|{u[1]}" in cover]
         out["within"] = args.within
     fold_of = None
-    if phase.startswith("phase_5b2"):                  # arm R's folds: the DIs that share a pair of models
+    if phase.startswith(("phase_5b2", "phase_5c")):    # arm R's (and RG's) folds: the DIs that share a pair of models
         from learn import cc_build as CB
 
         e = require("phase_5b2")
