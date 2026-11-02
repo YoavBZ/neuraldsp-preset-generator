@@ -1424,6 +1424,7 @@ def test_ft_rate_takes_only_the_declared_values_and_a_fallback_needs_the_ledger(
 
 
 def test_ft_layout_takes_only_the_real_training_rows():
+    pytest.importorskip("numpy")
     ti, hi, rh = P.ft_layout(10, 4, 20, 3)
     assert list(ti) == [10, 11, 12, 13] and list(hi) == list(range(14, 17)) and list(rh) == [17, 18, 19]
     ti, hi, rh = P.ft_layout(10, 4, 17, 0)
@@ -1648,6 +1649,7 @@ def test_ft_vreal_load_refuses_inner_fold_and_split_runs(monkeypatch):
 
 
 def test_ft_vreal_report_reads_synthetic_judges_and_stops_on_the_recheck(tmp_path, monkeypatch):
+    pytest.importorskip("scipy")
     from learn import direct_stems as DS
 
     monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
