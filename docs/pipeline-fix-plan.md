@@ -10,8 +10,8 @@ shown on BKS's real reamps. 5D, a real-amp panel across 7 bands (F38, a strong h
 shown there, and a centre from GOAT's many capture labels leans better than S across the bands (descriptive); the
 user's choice between domain work and more real chains stays open. D_fix (F39): its real rows, a quarter of each
 epoch, cost the plugin read (FS and NS worse than P2b-wide24), so it is not built as is. Its amendment (F40): at a
-third of that share the plugin read is still lost; at a tenth it is kept, but BKS's real amps read as a model
-without real rows (+0.207 against Rcs2), so D_p is not built as is either and V-real waits: no share in this joint
+third of that share the plugin read is still lost; at a tenth it is not shown worse (FS leans worse at every amp),
+but BKS's real amps read about where P2a, a model without real rows, does (+0.207 against Rcs2), so D_p is not built as is either and V-real waits: no share in this joint
 recipe gives the real-amp gain without the plugin cost. The next step is the user's choice (domain work, more real
 chains, or real-amp reading kept out of the mix model). Findings F1–F40.
 
@@ -2246,7 +2246,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   the judge files and checked read 2, the render counts, the row counts and the budget; the read-only unit's inputs
   changed nothing trained or read.
 
-### F40. No real-row share in the joint recipe keeps the plugin read and gains the real-amp read: a third costs the plugin read, a tenth reads real amps as a model without real rows (D_fix's amendment, stages A and B)
+### F40. No real-row share in the joint recipe keeps the plugin read and gains the real-amp read: a third costs the plugin read, a tenth reads real amps about where a model without real rows does (D_fix's amendment, stages A and B)
 - **Result.** The amendment as declared (each training real row shown per epoch with probability p; everything else
   as D_fix). Stage A: P2b-dfixp33 and P2b-dfixp10, 2 seeds each (4 trainings, 10.4–11.5 min), 960 renders and W's
   recheck (20 of 20 stored renders identical). Stage B, p10 only: its 8 fold trainings (P2b-dfixp10-k0..k3 × 2
@@ -2273,6 +2273,8 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   | D_p_k − RG | **+0.242 [+0.158, +0.326]** | 0 of 8, 0 of 40 |
   | D_p_k − S | +0.049 [−0.003, +0.100] | 2 of 8, 12 of 40 |
   | D_p_k − D_fix_k (beside) | **+0.170 [+0.088, +0.253]** | 0 of 8, 3 of 40 |
+  | D_p_k − P2a (beside; P2a has no real rows) | −0.018 [−0.086, +0.050] | 5 of 8, 19 of 40 |
+  | P2a − Rcs2 (beside, the reference) | **+0.224 [+0.133, +0.315]** | 0 of 8, 4 of 40 |
   | D_p_k clean − Rcs2 (beside) | **+0.190 [+0.116, +0.263]** | 0 of 8, 4 of 40 |
   | D_p_k clean − S (beside) | +0.032 [−0.038, +0.101] | 4 of 8, 16 of 40 |
   | D_p_k clean − D_fix_k clean (beside) | **+0.212 [+0.157, +0.267]** | 0 of 8, 0 of 40 |
@@ -2283,26 +2285,38 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - Stage A: p33 is decided worse than W on both sets and fails; p10 passes (undecided on both) and was carried on.
   - Stage B: read 1 is not decided worse at either mismatched amp (FS at amp +2 leans worse, +0.084, 0 of 6 bands
     better), but read 2's adoption row is decided worse: **D_p is not built as is; no V-real read, and no fallback
-    to p33 (it failed stage A).** By the amendment's rule the user decides the next step.
+    to p33 (it failed stage A).** By stage B's map a new declaration is needed; which one is the user's choice (the
+    options stage A's stop rule named: domain work, more real chains, real-amp reading kept out of the mix model).
   - What the shares show together: at a quarter (D_fix) the real rows bring BKS level with Rcs2 (+0.036) and cost
-    the plugin read; at a third they still cost it; at a tenth the plugin read is kept but the real-amp read is
-    lost: D_p10 reads BKS about where models without real rows do (+0.207 against Rcs2; the declaration's
-    note put models without real rows about 0.2 behind it), no better than S, and behind D_fix on every BKS and
-    GOAT row. In this joint recipe the real rows' gain and their cost to the plugin read move together; no share
+    the plugin read; at a third they still cost it; at a tenth the plugin read is not shown worse (undecided; FS
+    leans worse at every amp, +0.04 to +0.08) but the real-amp read is lost: D_p10 reads BKS about where P2a,
+    trained without real rows, does (+0.207 against Rcs2, where P2a reads +0.224 on the same units; D_p10 − P2a
+    −0.018 [−0.086, +0.050], undecided), no better than S, and behind D_fix on every BKS and GOAT row. In this joint recipe the real rows' gain and their cost to the plugin read move together; no share
     tried gives the gain without the cost.
   - This is a statement about one recipe (one shared model, real rows mixed into the epoch, early stopping on
-    NS), not about the real labels: D_fix shows they carry a real-amp reading (−0.122 against S on BKS, GOAT level
-    with RcGk).
+    NS), not about the real labels: D_fix shows they carry a real-amp reading (−0.122 against S on BKS; GOAT level
+    with RcGk by item, by fold narrowly worse, F39).
 - **Caveats.** The intervals cover test sections and units, not training seeds. Stage A chose p10 on read 1's
   true-amp rows (two candidates), so those rows are optimistic for it; stage B's rows are not selected on. The
   early stopping reads NS (plugin) loss only, so a checkpoint is never chosen for the real-amp read; p10's best
-  epochs range 15–59. Read 2's units are BKS's 8 DIs (one band). The launcher's real-report step stopped on a
-  shell quirk (zsh read `$M:P2a-goat` as a path modifier); the first row had printed, and both real and GOAT
-  reports were re-run with the pairs quoted, zero renders, after the renders had finished.
+  epochs range 15–59. Read 2's units are BKS's 8 DIs (one band). A pass by "not decided worse" on 6 FS bands is
+  weak and the intervals exclude seed variance (the declaration's note): p10's plugin pass may be seed noise either
+  way. The NS intervals use the normal quantile for 35 df (`t95`'s fallback), as in F39; no gate flips. Beside,
+  p33 − D_fix NS −0.034 [−0.068, −0.0004] is decided only under that fallback (undecided at the exact t), so it is
+  left unbolded. The launcher's real-report step stopped on a shell quirk (zsh read `$M:P2a-goat` as a path
+  modifier); the first row had printed, and both real and GOAT reports were re-run with the pairs quoted, zero
+  renders: every judge file predates both report runs, and the re-run's first row reproduces the launcher's exactly.
+  The first p33 run (seed 20261042) ran on the code before 7605d2a (ledger names, guards and the recheck only, not
+  training), so its run file names ledger `phase_dfix`; it records share 1/3 and the same inputs hash.
 - **References.** `PF/runs/P2b-dfixp*.json`, `PF/sound/report-dshare-p{33,10}*.json`,
-  `PF/real/report-dshare-p10.json`, `PF/goat/report-dshare-p10.json`, `PF/real/answers/P2b-dfixp10*.json`,
+  `PF/real/report-dshare-p10.json`, `report-dshare-p10-vsP2a.json`, `PF/goat/report-dshare-p10.json`, `PF/real/answers/P2b-dfixp10*.json`,
   `PF/goat/answers/P2b-dfixp10.json`, `PF/logs/dshare-{a,b}-*.log`, `PF/logs/dshare-b-report2.log`; ledger
   `phase_dfix_share`, `phase_dfix_share_a_outcome`, `phase_dfix_share_b`, `phase_dfix_share_b_outcome`.
+- *Results review (2026-11-02, independent):* approved with required changes, all made: p10's plugin read stated as
+  not shown worse (FS leaning worse at every amp), not as kept; the "model without real rows" reading given its
+  reference (P2a − Rcs2 and D_p10 − P2a, zero renders, saved); the next step attributed to stage B's map. It
+  recomputed all 24 read 1 rows from the judge files, re-ran read 2's reports from the stored judge files, and
+  checked the render, training and budget counts. Adopted from its suggestions: the interval, re-run and p33-seed caveats.
 
 ## Budget
 
