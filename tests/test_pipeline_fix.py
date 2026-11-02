@@ -885,7 +885,7 @@ def test_dfix_real_rows_keep_every_label_and_hold_only_the_folds_own():
 
 
 def test_dfix_reads_are_fold_wise_and_reported_with_5b2s_folds():
-    assert P.DFIX_READS == {"P2b-dfix", "P2b-dfix-clean"}
+    assert {"P2b-dfix", "P2b-dfix-clean"} <= P.DFIX_READS and len(P.DFIX_READS) == 2 * len(P.DFIX_BASES)
     for t in P.DFIX_READS:
         assert P.report_phase({t, "Rcs2", "S"}) == "phase_dfix"
         assert P.report_phase({t, "S"}).startswith(P.ARM_FOLD_PHASES)
@@ -905,3 +905,67 @@ def test_dfix_read_only_units_are_the_read_units_with_no_row():
     read = [{"unit": "goat/c#amp_5", "fold": 1}, {"unit": "goat/a#amp_1", "fold": 0}]
     assert P.dfix_read_only(units, read) == [("goat/c#amp_5", "goat", {"unit": "goat/c#amp_5", "fold": 1})]
     assert P.dfix_read_only(units, read[1:]) == []
+
+
+def test_dfix_share_names_never_collide_and_map_to_their_folds():
+    names = [P.dfix_run_name(k, s) for s in (None, *P.DFIX_SHARES) for k in (None, 0, 1, 2, 3)]
+    assert len(set(names)) == len(names)
+    assert P.dfix_run_name(0, "p10") == "P2b-dfixp10-k0" and P.dfix_run_name(None, "p33") == "P2b-dfixp33"
+    assert P.dfix_run_name(2) == "P2b-dfix2"
+    assert P.dfix_fold_name("P2b-dfixp33-clean", 1) == "P2b-dfixp33-k1"
+    assert P.dfix_fold_name("P2b-dfix-clean", 1) == "P2b-dfix1"
+    assert P.dfix_share_of("P2b-dfix") == 1.0 and P.dfix_share_of("P2b-dfixp10-clean") == 0.1
+    with pytest.raises(SystemExit):
+        P.dfix_fold_name("P2b-dfixp50", 0)
+    with pytest.raises(SystemExit):
+        P.dfix_run_name(None, "p50")
+    for b in P.DFIX_BASES:
+        assert {b, f"{b}-clean"} <= P.DFIX_READS and P.report_phase({b, "Rcs2"}) == "phase_dfix"
+
+
+def test_dfix_share_refuses_without_dfix_and_unknown_shares():
+    a = _train_args(dfix=False, dfix_share="p33")
+    assert "--dfix-share" in P.dfix_refusal(a)
+    assert P.dfix_refusal(_train_args(dfix=True, rung="b", dfix_share="p33")) is None
+    assert "--dfix-share in" in P.dfix_refusal(_train_args(dfix=True, rung="b", dfix_share="p50"))
+
+
+def test_dfix_shown_is_seeded_at_rate_p_and_independent_of_the_variant():
+    import random
+
+    assert all(P.dfix_shown(i, e, 1.0) for i in range(50) for e in range(5))
+    draws = [(i, e) for i in range(4000) for e in range(5)]
+    shown = [P.dfix_shown(i, e, 1 / 3) for i, e in draws]
+    assert shown == [P.dfix_shown(i, e, 1 / 3) for i, e in draws]
+    assert abs(sum(shown) / len(shown) - 1 / 3) < 0.01
+    var0 = [P.dfix_variant(i, e) == 0 for i, e in draws]
+    a = sum(v for v, s in zip(var0, shown) if s) / sum(shown)
+    b = sum(v for v, s in zip(var0, shown) if not s) / (len(shown) - sum(shown))
+    assert abs(a - b) < 0.015 and abs(a - 1 / P.DFIX_K) < 0.015
+    assert random.Random(f"{P.DFIX_SEED}|show|7|3").random() != random.Random(f"{P.DFIX_SEED}|7|3").random()
+
+
+def test_epoch_order_keeps_the_rng_stream_and_at_p1_the_batches():
+    np = pytest.importorskip("numpy")
+
+    class Plain:
+        pass
+
+    class Share:
+        def __init__(self, rj, rows, p):
+            self.RJ, self.rows, self.share = rj, rows, p
+
+        def epoch_keep(self, order, epoch):
+            return P.DfixData._epoch_keep(self, order, epoch)
+
+    tr = np.arange(40)
+    rows = [{"i": 1000 + j} for j in range(40)]
+    rj = {j: "u" for j in range(30, 40)}
+    r0, r1, r2 = (np.random.default_rng(5) for _ in range(3))
+    for e in range(4):
+        base = P.epoch_order(r0, tr, Plain(), e)
+        full = P.epoch_order(r1, tr, Share(rj, rows, 1.0), e)
+        part = P.epoch_order(r2, tr, Share(rj, rows, 0.3), e)
+        assert list(full) == list(base)
+        assert [j for j in part] == [j for j in base if j not in rj or P.dfix_shown(rows[j]["i"], e, 0.3)]
+        assert all(j in part for j in base if j not in rj)

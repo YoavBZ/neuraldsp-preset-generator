@@ -18,6 +18,8 @@ after the review's (P1-P7), and the recipe every retrain in the plan shares. Out
     $MAIN -m learn.pipeline_fix build-dfix-real --shard k/n     # D_fix: the real rows in backings (zero renders)
     $MAIN -m learn.pipeline_fix build-dfix-real --reads-only    # ... and the read units with no row (read 2's inputs)
     $TORCH_PY -m learn.pipeline_fix train --dfix --rung b [--real-fold k] --seed S      # D_fix, D_fix_k
+    $TORCH_PY -m learn.pipeline_fix train --dfix --dfix-share p33 --rung b [--real-fold k] --seed S   # D_p (F39)
+    $MAIN -m learn.pipeline_fix sound-recheck --names TAG [--n 20]   # stored renders rendered again, hashes compared
 """
 
 from __future__ import annotations
@@ -772,6 +774,14 @@ class RungData:
         return torch.tensor(x, device=dev), torch.tensor(c, device=dev), y
 
 
+def epoch_order(rng, tr, data, epoch):
+    """`fit`'s epoch order: the seeded permutation of `tr`, then the data's own per-epoch filter if it has one (the
+    share amendment's `DfixData.epoch_keep`), so the RNG stream is the same with or without the filter."""
+    order = rng.permutation(tr)
+    keep = getattr(data, "epoch_keep", None)
+    return order if keep is None else keep(order, epoch)
+
+
 def fit(data, tr, watch, track, seed, dev, log, epochs, every=1, patience=None, min_gain=1e-4):
     """D_CC's optimiser (Adam 1e-3, batch 64, gradients scaled to norm 5; `direct_stems.train_arm`) with the eval-mode
     diagnostics: every `every` epochs (and at the last) the summed loss on each `watch` set {name: idx} and its family
@@ -793,7 +803,7 @@ def fit(data, tr, watch, track, seed, dev, log, epochs, every=1, patience=None, 
     for epoch in range(epochs):
         net.train()
         t0 = time.time()
-        order = rng.permutation(tr)
+        order = epoch_order(rng, tr, data, epoch)
         tl, skipped = [], 0
         for j in range(0, len(order), PS.BATCH):
             x, c, y = data.batch(order[j:j + PS.BATCH], epoch, dev)
@@ -1060,7 +1070,7 @@ def cmd_train(args):
     if args.goat or args.goat_shuffle:                 # 5C: its own names, so no 5B.2 run is ever taken for one
         name = goat_run_name(name, args.real_fold, args.stage, args.goat_shuffle)
     if args.dfix:                                      # D_fix: its own names (`dfix_refusal` took every other flag)
-        name = dfix_run_name(args.real_fold)
+        name = dfix_run_name(args.real_fold, args.dfix_share)
     od = out_dir() / "runs"
     rp = od / f"{name}-{args.seed}.json"
     if rp.exists():
@@ -1073,13 +1083,22 @@ def cmd_train(args):
     real_held, dfix_info = [], None
     if args.dfix:
         require("phase_dfix")
+        share = dfix_share_of(name)
+        if share < 1:
+            require("phase_dfix_share")
         rrows, real_held, dfix_info = dfix_real_rows(args.real_fold)
         plugin_tr = tr
         tr, rows = with_rows(tr, rows, rrows)
         rows = rows + [dict(r, held=True) for r in real_held]     # the held fold's real rows: a diagnostic, last
-        data = DfixData(rows, rung_path(croot, "b", doubled), set(plugin_tr), {r["i"] for r in rrows})
+        data = DfixData(rows, rung_path(croot, "b", doubled), set(plugin_tr), {r["i"] for r in rrows}, share)
+        if share < 1:                                  # the known answer: D_fix's own inputs, by its stored hash
+            ref = dfix_run_name(args.real_fold)
+            want = json.loads((od / f"{ref}-{args.seed}.json").read_text())["dfix"]["inputs_sha256"]
+            if data.inputs_sha256 != want:
+                raise SystemExit(f"{name}: real-row inputs differ from {ref}'s "
+                                 f"({data.inputs_sha256[:8]} vs {want[:8]})")
         dfix_info.update(fold=args.real_fold, plugin_train=len(plugin_tr), inputs_sha256=data.inputs_sha256,
-                         target_lufs=data.target_lufs)
+                         target_lufs=data.target_lufs, share=share)
     elif args.wide:
         if args.rung != "b" or args.aug or args.backings:
             raise SystemExit("--wide is phase 5A's test on P2b")
@@ -1129,6 +1148,13 @@ def cmd_train(args):
     watch = {"train_subset": sub, held_name: hi}
     if len(rh):                                        # D_fix_k: the held fold's real loss, logged, never for choosing
         watch["real_held"] = rh
+    if args.dfix and dfix_share_of(name) < 1:          # the share amendment: plugin and real training rows' loss apart
+        rset = {r["i"] for r in rows if "real" in r and not r.get("held")}
+        rt = np.array([j for j in ti if rows[j]["i"] in rset])
+        pt = np.array([j for j in ti if rows[j]["i"] not in rset])
+        g = np.random.default_rng(SUBSET_SEED)
+        watch["train_plugin"] = np.sort(g.choice(pt, min(SUBSET_N, len(pt)), replace=False))
+        watch["train_real"] = np.sort(g.choice(rt, min(SUBSET_N, len(rt)), replace=False))
     net, final, best_state, best_ep, best = fit(data, ti, watch, held_name, args.seed,
                                                 dev, log, epochs=int(length["epochs"]), every=int(length["every"]))
     heads = {}
@@ -1149,6 +1175,7 @@ def cmd_train(args):
               "length": length, "augmentations_applied": data.applied, "flags": {"dd": bool(args.dd),
               "backings": bool(args.backings), "aug": bool(args.aug), "wide": bool(args.wide),
               "pc": bool(args.pc), "pcsz": bool(args.pcsz), "real_fold": args.real_fold, "dfix": bool(args.dfix),
+              "dfix_share": args.dfix_share,
               "goat": bool(args.goat), "stage": args.stage},
               "dfix": dfix_info, "backing_variants": getattr(data, "counts", None),
               "baseline_families": {k: family_means(v) for k, v in bl.items()}, "heads": heads, "log": log,
@@ -1988,6 +2015,57 @@ def cmd_sound_render(args):
     print(f"SOUND-RENDER DONE {k}/{n}: {renders} renders")
 
 
+def cmd_sound_recheck(args):
+    """The share amendment's check on stored renders (`phase_dfix_share`): `--n` seeded judged examples of each tag in
+    `--names` rendered again exactly as `sound-render` renders them, their audio hashes compared with the stored ones.
+    -> sound/recheck-<tag>.json; refuses (after saving) on any mismatch."""
+    import random
+
+    import numpy as np
+
+    from learn import audibility_measure as AM
+    from learn import cc_build as CB
+    from learn import local_objective as LO
+    from learn import pretrain_set as PS
+    from learn import song_bank as B
+    from learn import trusted_data as T
+
+    require("phase_dfix_share")
+    a = argparse.Namespace(out=None, smoke=False)
+    plan = CB.load_plan(a)
+    ex = {x["i"]: x for x in plan["examples"]}
+    ctx = CB.ctx_for(a)
+    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
+    LO._wait_cap()
+    bad = 0
+    for tag in args.names.split(","):
+        ans = json.loads((out_dir() / SOUND_DIR / "answers" / f"{tag}.json").read_text())["answers"]
+        gd = out_dir() / SOUND_DIR / "judge" / tag
+        done = sorted(int(q.stem) for q in gd.glob("*.json"))
+        pick = sorted(random.Random(f"{DFIX_SEED}|recheck|{tag}").sample(done, min(args.n, len(done))))
+        rows = []
+        for i in pick:
+            if PS.free_gb() < T.DISK_GUARD_GB:
+                raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+            old = json.loads((gd / f"{i}.json").read_text())
+            sec = ctx.sections[ex[i]["section"]]
+            di = B.measure(PS.section_audio(sec["path"], sec["start_s"])).astype(np.float32)
+            st = LO.tdict(ans[str(i)]["settings"])
+            y = AM.fresh_render(CB.new_renderer, di, ans[str(i)]["select"], st, st)
+            y = (y.mean(axis=1) if y.ndim == 2 else y)[trim[0]:trim[1]]
+            new = AM.audio_sha(y)
+            rows.append({"i": i, "stored": old["render_sha256"], "new": new, "same": new == old["render_sha256"]})
+        miss = [r_["i"] for r_ in rows if not r_["same"]]
+        bad += len(miss)
+        save(out_dir() / SOUND_DIR / f"recheck-{tag}.json", {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_dfix_share",
+                                                              "tag": tag, "rows": rows, "mismatched": miss,
+                                                              "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+        print(f"SOUND-RECHECK {tag}: {len(rows) - len(miss)} of {len(rows)} renders identical", flush=True)
+    if bad:
+        raise SystemExit(f"SOUND-RECHECK: {bad} renders differ from the stored ones")
+    print("SOUND-RECHECK DONE")
+
+
 def log_ratio(ja, jb):
     """The mean over both halves of ln(d_a / d_b); None when either is missing or not finite."""
     v = []
@@ -2683,9 +2761,10 @@ def real_predict_5b2(name):
         names = {p_["unit"]: f"{name}{folds[p_['di']]}" for p_ in parts}
     elif name.startswith("P2b-dfix"):                   # D_fix's read 2: each BKS unit by its DI's fold model only
         if name not in DFIX_READS:
-            raise SystemExit(f"--names {sorted(DFIX_READS)} (P2b-dfix, all labels, saw every BKS unit)")
+            raise SystemExit(f"--names {sorted(DFIX_READS)} (each read by its fold models: an all-labels run saw every"
+                         " BKS unit)")
         folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
-        names = {p_["unit"]: f"P2b-dfix{folds[p_['di']]}" for p_ in parts}
+        names = {p_["unit"]: dfix_fold_name(name, folds[p_["di"]]) for p_ in parts}
     else:
         names = {p_["unit"]: name.removesuffix("-Sc") for p_ in parts}
     models = {}
@@ -2702,7 +2781,7 @@ def real_predict_5b2(name):
         nets, _, target, const = models[names[prt["unit"]]]
         ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
         g = DE.inference_gain_db(ref, target)
-        backed = dfix_backed(prt["unit"]) if name == "P2b-dfix" else None
+        backed = dfix_backed(prt["unit"]) if name in DFIX_BASES else None
         for amp in AMPS3:
             sel, S = ms[amp][prt["cls"]]
             key = real_key(prt, amp)
@@ -2728,7 +2807,7 @@ def real_predict_5b2(name):
     for t, a in out.items():
         save(out_dir() / REAL_DIR / "answers" / f"{t}.json", {
             "plan": PLAN, "ledger": f"{LEDGER_ID} {'phase_dfix' if name.startswith('P2b-dfix') else 'phase_5c' if name.startswith('P2a-goat') else 'phase_5b2'}",
-            "tag": t, "parts": parts, "input": "backed (variant 0)" if name == "P2b-dfix" else "clean", "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
+            "tag": t, "parts": parts, "input": "backed (variant 0)" if name in DFIX_BASES else "clean", "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
             "unit_model": names, "answers": a, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"REAL PREDICT 5B.2 DONE: {name} on {len(parts)} units")
 
@@ -3764,12 +3843,13 @@ def goat_predict(name):
     from learn import full_space as F
     from learn import local_objective as LO
 
-    e = require("phase_dfix" if name == "P2b-dfix" else "phase_5c")
+    e = require("phase_dfix" if name in DFIX_BASES else "phase_5c")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     units = goat_read_units()
     models = {}
     for k in sorted({p_["fold"] for p_ in units}):
-        nets, recs = zip(*(load_run(f"{name}{k}", sd, "best") for sd in SEEDS))
+        nm = dfix_fold_name(name, k) if name in DFIX_BASES else f"{name}{k}"
+        nets, recs = zip(*(load_run(nm, sd, "best") for sd in SEEDS))
         models[k] = (list(nets), [r_["model_sha256"]["best"] for r_ in recs], model_input_lufs(recs[0]))
     ms = A_menu_S()
     out = {}
@@ -3779,7 +3859,7 @@ def goat_predict(name):
         g = DE.inference_gain_db(ref, target)
         amp = prt["amp"]
         sel, S = ms[amp][prt["cls"]]
-        backed = dfix_backed(prt["unit"]) if name == "P2b-dfix" else None   # D_fix: a pool-backed variant
+        backed = dfix_backed(prt["unit"]) if name in DFIX_BASES else None   # D_fix: a pool-backed variant
         for search in ("A", "B"):
             if backed is not None:
                 s8, ls = backed[search]
@@ -3797,8 +3877,8 @@ def goat_predict(name):
 
 
 def cmd_goat_predict(args):
-    if args.names not in ("P2a-goat", "P2a-goatshuf", "P2b-dfix"):
-        raise SystemExit("--names P2a-goat, P2a-goatshuf or P2b-dfix (D_fix's fold models)")
+    if args.names not in ("P2a-goat", "P2a-goatshuf", *DFIX_BASES):
+        raise SystemExit(f"--names P2a-goat, P2a-goatshuf or one of {', '.join(DFIX_BASES)} (D_fix's fold models)")
     goat_predict(args.names)
 
 
@@ -5621,8 +5701,13 @@ DFIX_DIR = "dfix"                    # under out_dir(): inputs/, lends-k-of-n.js
 DFIX_HELD0 = 500_000                 # the held fold's real rows (the diagnostic): ids REAL_ROW0 or GOAT_ROW0 + this + j
 
 
-DFIX_READS = {"P2b-dfix", "P2b-dfix-clean"}   # read 2's BKS tags: fold models on the backed (own section) input, and on
-                                             # the clean amp track beside
+DFIX_SHARES = {"p33": 1 / 3, "p10": 1 / 10}      # the share amendment (F39, `phase_dfix_share`): a training real row is
+                                                # shown in an epoch with probability p (`dfix_shown`)
+DFIX_BASES = ("P2b-dfix",) + tuple(f"P2b-dfix{t}" for t in DFIX_SHARES)   # the all-labels runs, D_fix's and each D_p
+
+
+DFIX_READS = {t for b in DFIX_BASES for t in (b, f"{b}-clean")}   # read 2's BKS tags: fold models on the backed (own
+                                                                   # section) input, and on the clean amp track beside
 
 
 def dfix_backed(unit, v=0):
@@ -5815,10 +5900,37 @@ def cmd_build_dfix_real(args):
           f"example in their section): {len(fb)} {fb}")
 
 
-def dfix_run_name(real_fold):
-    """D_fix's run names: `P2b-dfix` (every real label) and `P2b-dfix{k}` (fold k's BKS DIs and GOAT items out); no
-    other run takes these names."""
-    return "P2b-dfix" + ("" if real_fold is None else str(real_fold))
+def dfix_run_name(real_fold, share=None):
+    """D_fix's run names: `P2b-dfix` (every real label) and `P2b-dfix{k}` (fold k's BKS DIs and GOAT items out); a
+    share's `P2b-dfix{share}` and `P2b-dfix{share}-k{k}` (the `-k` keeps p10's fold 0 apart from a p100); no other run
+    takes these names."""
+    if share is not None and share not in DFIX_SHARES:
+        raise SystemExit(f"--dfix-share in {sorted(DFIX_SHARES)}")
+    return dfix_fold_name(f"P2b-dfix{share or ''}", real_fold)
+
+
+def dfix_fold_name(base, k):
+    """The run of D_fix family member `base` (an all-labels name, or its `-clean` read tag) for fold k (None: base)."""
+    base = base.removesuffix("-clean")
+    if base not in DFIX_BASES:
+        raise SystemExit(f"{base}: not a D_fix run ({', '.join(DFIX_BASES)})")
+    if k is None:
+        return base
+    return f"{base}{k}" if base == "P2b-dfix" else f"{base}-k{k}"
+
+
+def dfix_share_of(name):
+    """A D_fix family name's p (1.0 for D_fix itself)."""
+    base = name.removesuffix("-clean")
+    return 1.0 if base == "P2b-dfix" else DFIX_SHARES[base.removeprefix("P2b-dfix")]
+
+
+def dfix_shown(i, epoch, p):
+    """Whether training real row i is shown in `epoch` at share p: a seeded draw on its own key, independent of
+    `dfix_variant`'s; p = 1 shows every row."""
+    import random
+
+    return p >= 1 or random.Random(f"{DFIX_SEED}|show|{i}|{epoch}").random() < p
 
 
 def dfix_refusal(args):
@@ -5827,7 +5939,11 @@ def dfix_refusal(args):
     if not getattr(args, "dfix", False):
         if getattr(args, "wide", False) and args.real_fold is not None:
             return "--wide --real-fold is D_fix's run: train --dfix --rung b [--real-fold k]"
+        if getattr(args, "dfix_share", None) is not None:
+            return "--dfix-share is the share amendment's D_fix: train --dfix --dfix-share p33|p10"
         return None
+    if getattr(args, "dfix_share", None) not in (None, *DFIX_SHARES):
+        return f"--dfix-share in {sorted(DFIX_SHARES)}"
     if args.rung != "b":
         return "--dfix is P2b-wide24's recipe plus the real rows: --rung b"
     bad = [f"--{f.replace('_', '-')}" for f in ("aug", "backings", "dd", "pc", "pcsz", "wide", "goat", "goat_shuffle")
@@ -5900,7 +6016,7 @@ class DfixData(WideData):
     eval reads variant 0 (a BKS unit's own section's backing). Refuses a real unit lacking any variant or built from
     another pool."""
 
-    def __init__(self, rows, path_of, plugin_ids, real_train_ids):
+    def __init__(self, rows, path_of, plugin_ids, real_train_ids, share=1.0):
         import hashlib
 
         import numpy as np
@@ -5934,6 +6050,17 @@ class DfixData(WideData):
         self.inputs_sha256 = h.hexdigest()
         self.RJ = {j: r["real"] for j, r in enumerate(rows) if r["i"] in real_train_ids}
         self.counts = dict(self.counts, real_rows=len(self.RJ), real_units=len(train_units), real_variants=DFIX_K)
+        self.share = float(share)
+        if self.share < 1:
+            self.epoch_keep = self._epoch_keep
+
+    def _epoch_keep(self, order, epoch):
+        """The share amendment's filter on `fit`'s permuted order: plugin rows all kept, each training real row kept
+        by `dfix_shown` (order kept)."""
+        import numpy as np
+
+        return np.asarray([j for j in order if int(j) not in self.RJ
+                           or dfix_shown(self.rows[int(j)]["i"], epoch, self.share)], dtype=np.asarray(order).dtype)
 
     def real_choices(self, idx, epoch):
         """{row index: (unit, variant)} for a batch's training real rows at `epoch`."""
@@ -5971,7 +6098,7 @@ COMMANDS = {"panel-sections": cmd_panel_sections, "panel-lags": cmd_panel_lags, 
             "real-heads": cmd_real_heads, "real-setting-audit": cmd_real_setting_audit,
             "vreal-sc": cmd_vreal_sc, "vreal-comparators": cmd_vreal_comparators,
             "vreal-render": cmd_vreal_render, "vreal-report": cmd_vreal_report,
-            "build-dfix-real": cmd_build_dfix_real}
+            "build-dfix-real": cmd_build_dfix_real, "sound-recheck": cmd_sound_recheck}
 
 
 def main(argv=None):
@@ -6016,6 +6143,8 @@ def main(argv=None):
     ap.add_argument("--goat", action="store_true")
     ap.add_argument("--goat-shuffle", action="store_true")
     ap.add_argument("--dfix", action="store_true")
+    ap.add_argument("--dfix-share", choices=tuple(DFIX_SHARES), default=None)
+    ap.add_argument("--n", type=int, default=20, help="sound-recheck: stored renders per tag rendered again")
     ap.add_argument("--lags-only", action="store_true")
     ap.add_argument("--lag-tol", type=int, default=None)       # goat-report: read A on a narrower lag set
     args = ap.parse_args(argv)
