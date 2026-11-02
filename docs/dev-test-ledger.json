@@ -3288,7 +3288,8 @@
    "phase_ft_vreal_answers": {
     "FV-P2b-ft-stem": "0264afbac7e80ae23b6c0ce79f45221f8173f3ecd8bc6ba3ff31cbbb3538aba3",
     "S-recheck-ft": "42ef1bff10ae12e65be8a77be840b3aaa131037499b33ae774e0df10881c9931"
-   }
+   },
+   "phase_ft_outcome": "Run 2026-11-02 21:24-21:26 (after the hash commit d49bc5c): 152 renders (FT 132; 10 S groups re-rendered, identical to phase 4's); S positive control passed; F41's D_fix - S and D_fix - RcG reproduced to 1e-12; leakage guard clean; no direction dropped or refused. FT - S (primary) +0.0221 [-0.0506, +0.0948] (2 of 7 bands better; two-look 95% [-0.0695, +0.1137]) undecided -> by the map the user's choice; FT does not replace D_fix. Beside: FT - D_fix -0.0134 [-0.0893, +0.0624] (5 of 7; selection-contaminated for any choice), FT - RcG -0.0028 [-0.0514, +0.0459]. Without Wall Of Death FT - S -0.008. In all FT: 1,512 renders (recheck 20, read 2 1,340, V-real 152), about 61,790 in the plan. Written up as F42."
   }
  ]
 }

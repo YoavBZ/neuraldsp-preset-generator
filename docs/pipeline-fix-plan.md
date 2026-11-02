@@ -16,7 +16,11 @@ recipe gives the real-amp gain without the plugin cost. At the user's direction 
 amps) D_fix itself was read on V-real with the plugin read as a cost beside (F41): it reads level with S on held-out
 real songs (+0.036, undecided) and clearly better than the same recipe without real rows (−0.192, 7 of 7 bands),
 which reads clearly worse than S (+0.228); level with a real-amp centre, so no per-track reading is shown. Proposed
-next: domain work (a per-row input saying plugin render or real amp); the user's choice stays open. Findings F1–F41.
+next: domain work (a per-row input saying plugin render or real amp); the user's choice stays open. At the user's
+suggestion FT (F42) used the plugin renders as pretraining and tuned on the real rows alone: better than D_fix on
+real reamps (BKS −0.055), level with S, D_fix and RcG on held-out real songs (FT − S +0.022, undecided). Proposed
+next: the per-recording reading on many more real-amp recordings and a fresh real-song test; the user's choice.
+Findings F1–F42.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -2531,6 +2535,64 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   script and checked the hashes, S's renders, the counts and the budget. Adopted from its suggestions: the separator
   remark on the declared pattern, the F20 input note, the level, RcG-count and measure-DI caveats.
 
+### F42. Fine-tuning from plugin pretraining beats the joint recipe on real reamps; on held-out real songs it is not shown different from S or from D_fix (FT, read 2 and V-real)
+- **Result.** FT (`phase_ft`): P2b-wide24's best state (W) tuned on D_fix's 606 real rows alone (lr 1e-4), the
+  epoch count chosen on held real rows. All 8 inner runs at cap 100 ended at the cap (fold j's real loss from W's
+  5.97–6.57 still falling at 1.22–3.05), so the declared cap fallback (300) ran (`phase_ft_fallback`); every
+  cap-300 inner run stopped on its own, E 159–208. FT_k trained for its inner run's E; the all-labels FT for the
+  median, 192 epochs (both seeds). Read 2: 1,340 renders after the 20-render recheck (20 of 20 identical); missing
+  0, S dropped 0, refused 0. Read 2's map carried FT to V-real (`phase_ft_carry`): 152 renders (FT 132, 10 S groups
+  re-rendered, identical to phase 4's), read 3's exact inputs (asserted equal to F41's recorded ones), F41's stored
+  S, D_fix and RcG renders as comparators (F41's rows reproduced to 1e-12 before any row), S's positive control
+  passed, the leakage guard clean (FT's 2,170 plugin and 606 real rows, 316 units, 7,900 backings, 406 pool entries).
+- **Read 2** (BKS by DI, 8 DIs; GOAT by item, 130 items, the fold interval beside; 90%; lower is closer):
+
+  | Row | BKS | GOAT |
+  |---|---|---|
+  | **FT_k − D_fix_k (primary)** | **−0.055 [−0.084, −0.027]**, 7 of 8 DIs, 31 of 40 units | +0.001 [−0.016, +0.018], 70 of 130 items (fold −0.008 [−0.035, +0.020]) |
+  | FT_k − Rcs2 / RcGk (beside) | −0.019 [−0.062, +0.025], 4 of 8 | +0.012 [−0.011, +0.034], 68 of 130 (fold +0.008) |
+  | FT_k − S (beside) | **−0.177 [−0.256, −0.098]**, 7 of 8, 33 of 40 | (no S on GOAT) |
+  | FT_k − RG (beside) | +0.016 [−0.027, +0.060], 3 of 8 | |
+
+- **V-real-11** (band-weighted, 7 bands, 90% band-clustered; Wickerman ElecGtr2 and 3 one part):
+
+  | Row | All | Bands better | Part-weighted | Clean (2) | Crunch (5) |
+  |---|---|---|---|---|---|
+  | **FT − S (primary)** | +0.022 [−0.051, +0.095]; two-look 95% [−0.069, +0.114] | 2 of 7 | +0.019, 3 of 10 | +0.033 | +0.018 |
+  | FT − D_fix (beside; selection-contaminated) | −0.013 [−0.089, +0.062] | 5 of 7 | −0.019, 7 of 10 | −0.028 | −0.008 |
+  | FT − RcG (beside) | −0.003 [−0.051, +0.046] | 4 of 7 | −0.020, 6 of 10 | −0.057 | +0.019 |
+
+  - FT − S by band: Magician's Nephew −0.127, Eat The Feeder −0.030, Szymon Skiba +0.005, Diesel13 +0.015, Zeno
+    +0.038, Atlantis Bound +0.051, Wall Of Death +0.202. Leave one band out: −0.008 to +0.047 (without Wall Of
+    Death −0.008).
+  - FT − D_fix by band: Szymon Skiba −0.181, Magician's Nephew −0.049, Eat The Feeder −0.037, Atlantis Bound −0.036,
+    Diesel13 −0.019, Wall Of Death +0.095, Zeno +0.133.
+- **Reading, by the declared map.**
+  - Read 2: neither primary row worse and BKS decided better, so FT was carried (two chances at 90%: up to about
+    10% false carries under the null). On BKS FT closes D_fix's gap to the real-amp centre (FT − Rcs2 −0.019,
+    undecided; D_fix − Rcs2 was +0.036) and widens the lead over S (−0.177 against D_fix's −0.122); on GOAT it is
+    level with D_fix and with RcGk. FT changed two things at once (sequential tuning, and an epoch count chosen on
+    a real loss instead of NS): it beats the joint recipe on BKS, not shown to be pretraining alone.
+  - V-real, the primary: FT − S is undecided (+0.022, 2 of 7 bands better). By the map: the user's choice; FT does
+    not replace D_fix on this read. FT − D_fix leans better (5 of 7 bands, 7 of 10 parts) but is undecided, and any
+    choice between them made from this row is selection-contaminated. FT reads level with RcG: on real songs, as
+    D_fix, no per-track reading beyond a real-amp centre is shown.
+  - Across this plan's three real sets the models now sit at the real-amp centres (BKS Rcs2, GOAT RcGk, V-real
+    RcG), and on V-real the centres sit at S. The independent audit of the scoring (2026-11-02, zero renders)
+    found no calculation error; it found S chosen partly on V-real's parts (S re-picked without them, S′: S′ − S
+    +0.025 [−0.002, +0.051], so FT − S′ is about −0.003, descriptive) and S within 0.000–0.087 of the best of 31–45
+    factory presets per amp and class on these clips. A per-track factory pick with the true target beats S by
+    −0.118 [−0.167, −0.069] on V-real's parts, so per-recording headroom exists that no model here reads.
+- **Caveats.** V-real's interval is ±0.073: effects under about 0.07 are not resolved. Wall Of Death carries FT − S
+  (+0.202; without it −0.008). V-real has now been read for two candidates (D_fix, F41; FT, here), and the write-up
+  says so. The plugin read of FT was logged (NS loss), never used to choose. The all-labels FT's first launch
+  refused before any training (a start check compared all eight inner runs with one seed's W; fixed, tested, the
+  code re-reviewed). The listening page on 4 non-V-real songs (S, D_fix, W) is with the user, unanswered.
+- **References.** `PF/runs/P2b-ft-*.json`, `PF/real/answers/P2b-ft.json`, `PF/goat/answers/P2b-ft.json`,
+  `PF/real/recheck-ft.json`, `PF/vreal/answers/FV-P2b-ft-stem.json`, `S-recheck-ft.json`,
+  `PF/vreal/report-ft-vreal.json`, `PF/logs/ft-*.log`; ledger `phase_ft`, `phase_ft_fallback`, `phase_ft_answers`,
+  `phase_ft_carry`, `phase_ft_vreal_review`, `phase_ft_vreal_answers`, `phase_ft_outcome`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
@@ -2546,7 +2608,8 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   the ceiling 371: 2,489, about 52,600 in all. **D_fix (2026-11-02):** read 1 1,920, read 2 1,820 (BKS 960, GOAT
   860): 3,740, about 56,340 in all. **D_fix's amendment (2026-11-02):** stage A 960 and W's recheck 20, stage B
   2,300 (read 1 480, BKS 960, GOAT 860): 3,280, about 59,620 in all. **D_fix's V-real read (2026-11-02):** 660,
-  about 60,280 in all.
+  about 60,280 in all **FT (2026-11-02):** the recheck 20, read 2 1,340, V-real 152: 1,512, about
+  61,790 in all.
 - **MPS used:** about 4 h before 5B.2 (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and
   backing runs, the k-fold, phase 5A's two 10-minute seeds); 5B.2's 12 trainings about 2 h more (arm P 4 × 7.2–8.4 min,
   arm R 8 × 11.4 min); stage 2's 8 trainings 1.5 h more (8 × 11.4 min); 5C's RG 8 trainings 1.75 h more (8 × 13.0–13.3
