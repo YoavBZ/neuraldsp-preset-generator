@@ -15,8 +15,9 @@ S rendered again). Per pair the judge's distance and a blind A/B rating from the
 **The pairs (as declared).** S: `arm_a_mega53.L.menu_S()`, clean on PR12 and crunch on SW50R. Steps:
 - drive: `parameters/inputGain` +4 and +10 dB (clipped to `full_space`'s range, -20..12 dB);
 - tone: the amp's treble (`pr12Amp/pr12Treble`, `sw50rAmp/sw50rTreble`) +0.15 and +0.35 in unit range
-  (`Dim.to_unit` / `Dim.from_unit`), clipped. **A clipped step can equal S** (SW50R crunch's S has treble at 1.0, so
-  both of its tone pairs are S against S): the plan marks such a pair `null` and keeps it, as declared;
+  (`Dim.to_unit` / `Dim.from_unit`); where the step up would pass the top of the range it goes down by the same
+  amount instead (`phase_judge_ear_amendment`: SW50R crunch's S has treble at 1.0, so as first declared both of its
+  tone pairs were S against S);
 - cab: small, `cabParameters/leftCabDistance` +0.25 in unit range, clipped; large, `cabParameters/leftMicType` the
   next mic in `knob_ceiling.MICS` order (wrapping from 9 to 0);
 - reverb: `reverb/reverbActive` on, `reverb/reverbMix` 0.15 and 0.40, the reverb's other controls at the plugin's
@@ -97,7 +98,7 @@ CHOICES = [
     "plugin defaults = Default.xml (the plugin's own factory default preset), its reverb and delay values",
     "delay written free-running (delaySync 0, full_space.FREE) at Default.xml's delayTime 500 ms; Default.xml's "
     "delaySync is 1 (DAW, 1/4 at 120 BPM = 500 ms), which needs a host tempo the offline renderer lacks",
-    "a clipped step that equals S is kept as declared and marked null (SW50R crunch: treble at 1.0)",
+    "a tone step that would pass the top of the treble's range goes down instead (amendment; SW50R crunch: treble at 1.0)",
     "cab large = the left mic type moved to the next mic in knob_ceiling.MICS order (wrapping 9 -> 0)",
     "DI: 109.75-120 s, mono, soxr VHQ 44.1 -> 48 kHz, one gain putting 110-120 s at -22.9 LUFS "
     "(direc_check.to_lufs); no average-guitar EQ (song_bank.measure is not used)",
@@ -160,9 +161,10 @@ def step_settings(amp, S, group, size, defaults):
         p = ("parameters", "inputGain")
         d = _dim(p)
         x[p] = K.fmt(min(max(float(S[p]) + v, d.lo), d.hi))
-    elif group == "tone":
+    elif group == "tone":                             # amendment (2026-11-02): down where up would clip at the top
         p = treble(amp)
-        x[p] = unit_step(_dim(p), S[p], v)
+        d = _dim(p)
+        x[p] = unit_step(d, S[p], v if d.to_unit(S[p]) + v <= 1.0 else -v)
     elif group == "cab" and size == "small":
         p = ("cabParameters", "leftCabDistance")
         x[p] = unit_step(_dim(p), S[p], v)

@@ -74,9 +74,9 @@ def test_step_values_and_sizes_ordered():
 
 def test_steps_clip_to_the_range():
     S = _S("sw50r", treble="1", gain="8", dist="0.9", mic="9")
-    for s in J.SIZES:
-        x, ch = J.step_settings("sw50r", S, "tone", s, DEFAULTS)
-        assert x == S and ch == {}                                       # clipped at 1: the step equals S
+    tone = [J.step_settings("sw50r", S, "tone", s, DEFAULTS)[0][("sw50rAmp", "sw50rTreble")] for s in J.SIZES]
+    d = J._dim(("sw50rAmp", "sw50rTreble"))
+    assert [round(d.to_unit(v), 6) for v in tone] == [0.85, 0.65]          # treble at 1: the amendment steps down
     x, _ = J.step_settings("sw50r", S, "drive", "large", DEFAULTS)
     assert x[("parameters", "inputGain")] == "12"                        # 8 + 10 clipped to full_space's 12 dB
     x, _ = J.step_settings("sw50r", S, "drive", "small", DEFAULTS)
@@ -86,8 +86,7 @@ def test_steps_clip_to_the_range():
     x, _ = J.step_settings("sw50r", S, "cab", "large", DEFAULTS)
     assert x[("cabParameters", "leftMicType")] == K.MICS[0]             # 9 wraps to 0
     pairs = J.preset_pairs("crunch", "sw50r", S, DEFAULTS)
-    assert [p["pair"] for p in pairs if p["null"] and p["group"] != J.CATCH] == ["crunch-tone-small",
-                                                                                   "crunch-tone-large"]
+    assert [p["pair"] for p in pairs if p["null"] and p["group"] != J.CATCH] == []
 
 
 def test_render_jobs_and_the_catch():
