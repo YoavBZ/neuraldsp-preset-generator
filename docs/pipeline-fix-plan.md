@@ -2670,6 +2670,39 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   suggestions: "not shown different from" the centres, the ROADMAP's basis for FT's recipe, the E-bias caveat, the
   run-order note and the outcome's start time.
 
+### F43. Drive carries most of FT's score over S on real reamps; tone and cab carry a little, and the parts add up (phase_ft_groups, descriptive)
+- **Result.** FT's BKS read 2 answers split by control group (`phase_ft_groups`): rev-g (FT with g at S) and
+  add-g (S with g from FT) for drive, tone and cab, 2,880 renders after the answers' hashes were in the ledger;
+  S's stored renders and lags reused; missing 0, S dropped 0, refused 0. Effects and the gate are off in S and FT
+  on every answer, so they are not in this read. By DI (8 DIs, 90%; lower is closer):
+
+  | Row | All | DIs better | Units better | Group's mean unit move |
+  |---|---|---|---|---|
+  | FT − S (total; read 2's, reproduced) | **−0.177 [−0.256, −0.098]** | 7 of 8 | 33 of 40 | |
+  | add-drive − S | **−0.143 [−0.206, −0.079]** | 8 of 8 | 35 of 40 | 0.120 |
+  | add-tone − S | **−0.021 [−0.042, −0.000]** | 7 of 8 | 26 of 40 | 0.033 |
+  | add-cab − S | −0.019 [−0.055, +0.017] | 5 of 8 | 27 of 40 | 0.101 |
+  | FT − rev-drive | **−0.135 [−0.200, −0.070]** | 8 of 8 | 35 of 40 | |
+  | FT − rev-tone | +0.004 [−0.026, +0.033] | 4 of 8 | 15 of 40 | |
+  | FT − rev-cab | −0.034 [−0.073, +0.005] | 6 of 8 | 30 of 40 | |
+  | FT − S − Σ(add-g − S) (the interaction) | +0.006 [−0.014, +0.026] | | | |
+
+  Per amp (add-g − S): PR12 drive −0.121, tone +0.002, cab −0.014 (FT − S −0.154); SW50R drive −0.166, tone
+  −0.036, cab −0.034 (FT − S −0.209); AC20 drive −0.141, tone −0.029, cab −0.010 (FT − S −0.167).
+- **Reading.** About 80% of FT's gain over S on real reamps is its drive (input gain, the amp's volume and power,
+  the pedals): moving only those from S to FT's values gives −0.143 of the −0.177, on all 8 DIs and every amp, and
+  taking them back loses −0.135. Tone gives a small gain (−0.021, just decided) and cab none that is decided
+  (−0.019). The parts add up (interaction +0.006, undecided), so FT's changes act mostly independently in the score.
+  Per unit of knob move the score credits drive most (about 1.2 per unit), tone next (about 0.6) and cab least
+  (about 0.2). This agrees with the user's expectation that drive matters most; whether the judge's weights match
+  the ear's per kind of change, effects included, is `phase_judge_ear`'s question.
+- **Caveats.** BKS only (one band of real reamps, 8 DIs); FT's answers, not a controlled step per group, so the
+  groups' moves differ in size and direction; unit moves are in the model's ranges, not in audible units. The
+  compressor (34 PR12 answers) counts as drive. `pr12Dwell` counts as silent with the spring at 0 (an assumption;
+  no render depends on it).
+- **References.** `PF/real/answers/FTg-*.json`, `PF/real/judge/FTg-*/`, `PF/real/report-ftg.json`, `PF/logs/ftg-*.log`;
+  ledger `phase_ft_groups`, `phase_ft_groups_answers`, `phase_ft_groups_outcome`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
@@ -2686,7 +2719,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   860): 3,740, about 56,340 in all. **D_fix's amendment (2026-11-02):** stage A 960 and W's recheck 20, stage B
   2,300 (read 1 480, BKS 960, GOAT 860): 3,280, about 59,620 in all. **D_fix's V-real read (2026-11-02):** 660,
   about 60,280 in all. **FT (2026-11-02):** the recheck 20, read 2 1,340, V-real 152: 1,512, about
-  61,790 in all.
+  61,790 in all **FT's control groups (2026-11-02):** 2,880, about 64,670 in all.
 - **MPS used:** about 4 h before 5B.2 (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and
   backing runs, the k-fold, phase 5A's two 10-minute seeds); 5B.2's 12 trainings about 2 h more (arm P 4 × 7.2–8.4 min,
   arm R 8 × 11.4 min); stage 2's 8 trainings 1.5 h more (8 × 11.4 min); 5C's RG 8 trainings 1.75 h more (8 × 13.0–13.3
