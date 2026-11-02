@@ -1137,7 +1137,9 @@ instead of generating unrealistic presets our own?"):
       other than k for exactly E(k, s) epochs and the state after E(k, s) epochs is the model read; no choice is made
       on fold k. The all-labels FT (V-real's) trains on every label for the median of the eight E(k, s), rounded half
       up. **Fallbacks, declared now, on inner validation only and before any FT_k is trained (recorded):** if 4 or
-      more of the 8 inner runs end at the cap, the cap is raised to 300 and the inner runs continued; if 4 or more
+      more of the 8 inner runs end at the cap, the cap is raised to 300 and the inner runs continued (re-run
+      from W with cap 300 on the same seeded stream, under their own names; the code review's reading, since an inner
+      run keeps no state); if 4 or more
       have E ≤ 2, the rate is lowered to 3e-5 and the inner runs repeated; the rate rule is checked first, then
       the cap, each applied at most once. Logged in FT_k's run, never for choosing
       and never `fit`'s tracked set: NS loss (the plugin cost) and fold k's real-row loss every 5 epochs. Trainings:

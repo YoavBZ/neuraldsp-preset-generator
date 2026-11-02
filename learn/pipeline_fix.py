@@ -839,14 +839,15 @@ def fit(data, tr, watch, track, seed, dev, log, epochs, every=1, patience=None, 
         for name, idx in watch.items():
             h = head_losses(net, data, idx, dev)
             rec[name] = {"total": h["total"], **family_means(h)}
+        if track is not None:
+            seen.append(rec[track]["total"])
+            v = sum(seen[-smooth:]) / len(seen[-smooth:])
+            if smooth > 1:
+                rec[f"{track}_smoothed"] = v
         log.append(rec)
         print(json.dumps(rec), flush=True)
         if track is None:
             continue
-        seen.append(rec[track]["total"])
-        v = sum(seen[-smooth:]) / len(seen[-smooth:])
-        if smooth > 1:
-            rec[f"{track}_smoothed"] = v
         if math.isfinite(v) and v < best - min_gain:
             best, bad, best_ep = v, 0, epoch
             best_state = {k: t.detach().cpu().clone() for k, t in net.state_dict().items()}
@@ -6601,15 +6602,18 @@ FT_PATIENCE, FT_MIN_FALL, FT_SMOOTH, FT_EVERY = 15, 1e-3, 3, 5
 FT_PRETRAIN = "P2b-wide24"           # W: its NS-best checkpoint per seed is FT's start
 
 
-def ft_name(k, inner=False):
-    """FT's run names: `P2b-ft` (every label), `P2b-ft-k{k}` (fold k out), `P2b-ft-k{k}-inner` (k's epoch choice)."""
+def ft_name(k, inner=False, lr=FT_LR, cap=FT_CAP):
+    """FT's run names: `P2b-ft` (every label), `P2b-ft-k{k}` (fold k out), `P2b-ft-k{k}-inner` (k's epoch choice;
+    a fallback's inner runs `-lr3e-05` and/or `-cap300` after it, so the declared ones are kept)."""
     if k is None:
         if inner:
             raise SystemExit("an inner run needs --real-fold")
         return FT_BASE
     if k not in range(REAL_FOLDS):
         raise SystemExit(f"--real-fold in 0..{REAL_FOLDS - 1}")
-    return f"{FT_BASE}-k{k}" + ("-inner" if inner else "")
+    if not inner:
+        return f"{FT_BASE}-k{k}"
+    return f"{FT_BASE}-k{k}-inner" + ("" if lr == FT_LR else f"-lr{lr:g}") + ("" if cap == FT_CAP else f"-cap{cap}")
 
 
 def ft_rows_of(brecs, by_unit, folds, grecs, gunits, k, inner, label_of=None):
@@ -6628,9 +6632,47 @@ def ft_real_rows(k, inner):
     return ft_rows_of(brecs, by_unit, folds, grecs, gunits, k, inner)
 
 
+def ft_inner_E(log, track="real_val"):
+    """An inner run's E as declared: the first argmin of the trailing moving average of `track` over the logged
+    epochs (finite values only), + 1. (`fit`'s own best only moves on a fall of FT_MIN_FALL: the stop rule.)"""
+    v = [(r_[f"{track}_smoothed"], r_["epoch"]) for r_ in log
+         if f"{track}_smoothed" in r_ and math.isfinite(r_[f"{track}_smoothed"])]
+    if not v:
+        raise SystemExit("no finite smoothed validation loss")
+    return min(v)[1] + 1                               # ties: the first epoch
+
+
+def ft_fallback_refusal(get, lr, cap):
+    """Why FT_k may not train at (lr, cap) yet, or None. `get(lr, cap)` -> that setting's 8 inner records or None.
+    The declared order: at the base rate the rate rule (4+ of 8 with E <= 2) first, then the cap rule (4+ of 8 at the
+    cap 100); each fallback at most once and only when its rule fired on the setting before it."""
+    def fired(recs, rule):
+        return sum(1 for r_ in recs if (ft_inner_E(r_["log"]) <= 2 if rule == "rate" else r_["at_cap"])) >= 4
+
+    steps = [(FT_LR, FT_CAP)]
+    base = get(FT_LR, FT_CAP)
+    if base is None:
+        return "the 8 inner runs at the declared rate and cap are not all done"
+    cur = (FT_LR, FT_CAP)
+    if fired(base, "rate"):
+        cur = (FT_FALLBACK_LR, FT_CAP)
+        steps.append(cur)
+        if get(*cur) is None:
+            return f"the rate rule fired: the 8 inner runs at lr {FT_FALLBACK_LR:g} are not all done"
+    if fired(get(*cur), "cap"):
+        cur = (cur[0], FT_FALLBACK_CAP)
+        steps.append(cur)
+        if get(*cur) is None:
+            return f"the cap rule fired: the 8 inner runs at cap {FT_FALLBACK_CAP} are not all done"
+    if (lr, cap) != cur:
+        return f"the settled setting is lr {cur[0]:g}, cap {cur[1]} (steps {steps}), not lr {lr:g}, cap {cap}"
+    return None
+
+
 def ft_epoch_of(inner_recs):
-    """The epoch count FT trains for: one inner run's E, or the median of several, rounded half up."""
-    es = sorted(int(r["E"]) for r in inner_recs)
+    """The epoch count FT trains for: one inner run's E (from its log, `ft_inner_E`), or the median of several,
+    rounded half up."""
+    es = sorted(ft_inner_E(r["log"]) for r in inner_recs)
     if not es:
         raise SystemExit("no inner runs")
     m = (es[(len(es) - 1) // 2] + es[len(es) // 2]) / 2
@@ -6675,12 +6717,12 @@ def cmd_train_ft(args):
 
     require("phase_ft")
     k, inner, seed = args.real_fold, bool(args.inner), args.seed
-    name = ft_name(k, inner)
     if k is None:
         require("phase_ft_carry")
     if seed not in SEEDS:
         raise SystemExit(f"--seed in {SEEDS}")
     lr, cap = ft_rate(args)
+    name = ft_name(k, inner, lr, cap)                  # FT_k's name is one at any setting; its (lr, cap) recorded
     od = out_dir() / "runs"
     rp = od / f"{name}-{seed}.json"
     if rp.exists():
@@ -6689,14 +6731,23 @@ def cmd_train_ft(args):
     if inner:
         epochs = cap
     else:
-        inners = [json.loads((od / f"{ft_name(q, True)}-{sd}.json").read_text())
-                  for q, sd in ([(k, seed)] if k is not None else [(q, sd) for q in range(REAL_FOLDS) for sd in SEEDS])]
-        if any(r_["lr"] != lr for r_ in inners):
-            raise SystemExit("the inner runs used another rate")
+        def inner_set(lr_, cap_):
+            ps = [od / f"{ft_name(q, True, lr_, cap_)}-{sd}.json" for q in range(REAL_FOLDS) for sd in SEEDS]
+            return [json.loads(q.read_text()) for q in ps] if all(q.exists() for q in ps) else None
+
+        why = ft_fallback_refusal(inner_set, lr, cap)
+        if why:
+            raise SystemExit(f"{name}: {why}")
+        allin = inner_set(lr, cap)
+        if any(r_["lr"] != lr or r_["cap"] != cap for r_ in allin):
+            raise SystemExit("the inner runs used another rate or cap")
+        inners = [r_ for r_ in allin if k is None or (r_["real_fold"], r_["seed"]) == (k, seed)]
         epochs = ft_epoch_of(inners)
     e = require("phase_3")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     init, wrec = ft_start_state(seed)
+    if not inner and any(r_["init"]["sha256"] != wrec["model_sha256"]["best"] for r_ in inners):
+        raise SystemExit("an inner run started from another W state")
     pa = argparse.Namespace(rung="b", fold=None, frac=1.0, sections=1.0, pc=False, pcsz=False, aug=False)
     tr, held, held_name, rows = plugin_rows(kept, sp, pa, lambda ids: rung_rows(kept, rend, ids))
     if tr != [i for i in wrec["train_ids"] if i < REAL_ROW0]:
@@ -6718,6 +6769,16 @@ def cmd_train_ft(args):
     held_units = {r["real"] for r in real_held}
     if held_units & {r["real"] for r in rrows}:
         raise SystemExit("a held unit among the training rows")
+    if inner:                                          # no fold-k unit anywhere; every held unit is fold j's
+        brecs, by_unit, folds = real_labels(2)
+        _, gunits, _ = goat_labels()
+
+        def fold_of(u):
+            return gunits[u]["fold"] if u in gunits else folds[by_unit[u]["di"]]
+
+        if any(fold_of(r["real"]) == k for r in rrows + real_held) \
+                or any(fold_of(u) != (k + 1) % REAL_FOLDS for u in held_units):
+            raise SystemExit(f"{name}: fold {k} in its rows, or a held row outside fold {(k + 1) % REAL_FOLDS}")
     sub = np.sort(np.random.default_rng(SUBSET_SEED).choice(ti, min(SUBSET_N, len(ti)), replace=False))
     dev = device()
     torch.set_num_threads(2)
@@ -6751,9 +6812,12 @@ def cmd_train_ft(args):
            "minutes": round((time.time() - t0) / 60, 1), "device": str(dev), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     od.mkdir(parents=True, exist_ok=True)
     if inner:
-        out.update(E=best_ep + 1, best_epoch=best_ep, best_smoothed_val=best, start_real_val=start,
+        out["dfix"]["val_fold"] = (k + 1) % REAL_FOLDS
+        out.update(E=ft_inner_E(log), stop_best_epoch=best_ep, best_smoothed_val=best, start_real_val=start,
                    at_cap=log[-1]["epoch"] + 1 == cap and best_ep >= cap - FT_PATIENCE)
     else:
+        if not math.isfinite(log[-1]["train_real"]["total"]):
+            raise SystemExit(f"{name}: a non-finite training loss at its last epoch")
         mp = od / f"{name}-{seed}-final.pt"
         torch.save(final, mp)
         sha = DS.hashlib_file(mp)
@@ -6807,6 +6871,8 @@ def cmd_ft_recheck(args):
             if PS.free_gb() < T.DISK_GUARD_GB:
                 raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
             old = json.loads((jd / f).read_text())
+            if old["unit"] not in by:
+                raise SystemExit(f"{jd / f}: its unit is no longer a read unit")
             prt = by[old["unit"]]
             key = real_key(prt, old["amp"])
             if old["answers_sha256"] != answers_sha(ans if kind == "bks" else {key: ans[key]}):

@@ -1404,7 +1404,7 @@ def test_ft_k_rows_are_dfix_ks_and_the_inner_run_never_holds_fold_k():
 
 
 def test_ft_epochs_median_rounds_half_up():
-    E = lambda *es: P.ft_epoch_of([{"E": e} for e in es])           # noqa: E731
+    E = lambda *es: P.ft_epoch_of([{"log": _inner_log([1.0] * (e - 1) + [0.5])} for e in es])   # noqa: E731
     assert E(7) == 7 and E(3, 4) == 4 and E(1, 2, 3, 4, 5, 6, 7, 8) == 5 and E(2, 9, 9, 30) == 9
     assert E(10, 11, 12, 13, 14, 15, 16, 17) == 14
     with pytest.raises(SystemExit):
@@ -1439,3 +1439,46 @@ def test_ft_read_check_takes_only_the_state_after_e_epochs():
                 {"model_sha256": {"final": "h", "best": "g"}}, {"epochs_run": 13}):
         with pytest.raises(SystemExit):
             P.ft_read_check({**ok, **bad})
+
+
+def _inner_log(vals):
+    return [{"epoch": e, "real_val_smoothed": v} for e, v in enumerate(vals)]
+
+
+def test_ft_inner_e_is_the_first_argmin_of_the_smoothed_loss_not_the_stop_rules():
+    assert P.ft_inner_E(_inner_log([3.0, 2.0, 1.0, 0.9995, 1.2])) == 4        # a dip below 1e-3 still counts
+    assert P.ft_inner_E(_inner_log([3.0, 1.0, 2.0, 1.0])) == 2                # ties: the first
+    assert P.ft_inner_E(_inner_log([float("nan"), 2.0, 1.5])) == 3
+    assert P.ft_inner_E(_inner_log([0.5, 1.0])) == 1
+    with pytest.raises(SystemExit):
+        P.ft_inner_E([{"epoch": 0, "real_val": {"total": 1.0}}])
+
+
+def test_ft_fallbacks_settle_in_the_declared_order():
+    def recs(E, at_cap, n=8):
+        return [{"log": _inner_log([1.0] * (E - 1) + [0.5] + [0.6]), "at_cap": a} for a in [at_cap] * n]
+
+    def getter(table):
+        return lambda lr, cap: table.get((lr, cap))
+
+    lo, hi, slow, long = P.FT_LR, P.FT_FALLBACK_LR, P.FT_CAP, P.FT_FALLBACK_CAP
+    plain = recs(40, False)
+    assert "not all done" in P.ft_fallback_refusal(getter({}), lo, slow)
+    assert P.ft_fallback_refusal(getter({(lo, slow): plain}), lo, slow) is None
+    assert "settled" in P.ft_fallback_refusal(getter({(lo, slow): plain}), lo, long)    # no unprompted fallback
+    capped = recs(97, True)
+    assert "cap rule fired" in P.ft_fallback_refusal(getter({(lo, slow): capped}), lo, slow)
+    assert P.ft_fallback_refusal(getter({(lo, slow): capped, (lo, long): plain}), lo, long) is None
+    fast = recs(1, False)
+    t = {(lo, slow): fast}
+    assert "rate rule fired" in P.ft_fallback_refusal(getter(t), lo, slow)
+    t[(hi, slow)] = capped                                                   # rate first, then the cap at the new rate
+    assert "cap rule fired" in P.ft_fallback_refusal(getter(t), hi, slow)
+    t[(hi, long)] = capped                                                   # each at most once: no third step
+    assert P.ft_fallback_refusal(getter(t), hi, long) is None
+    assert P.ft_name(0, True, hi, long) == "P2b-ft-k0-inner-lr3e-05-cap300"
+    assert P.ft_name(0, True) == "P2b-ft-k0-inner" and P.ft_name(0, False, hi, long) == "P2b-ft-k0"
+
+
+def test_ft_epochs_come_from_the_inner_logs():
+    assert P.ft_epoch_of([{"log": _inner_log([2.0, 1.0, 1.5]), "E": 99}]) == 2
