@@ -5018,8 +5018,8 @@ def cmd_vreal_report(args):
           f"half): max |ln ratio| {pc['max_abs_log']}, median {pc['median_abs_log']}")
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     rp = out_dir() / VREAL_DIR / f"report-{args.label or 'p4'}.json"
-    if rp.exists() and not args.label:
-        raise SystemExit(f"{rp.name} exists (F20 cites it): name a new report with --label")
+    if rp.exists():
+        raise SystemExit(f"{rp.name} exists (a V-real report is never overwritten): name a new report with --label")
     save(rp, out)
     print("VREAL-REPORT DONE")
 
@@ -6161,7 +6161,8 @@ def dfix_vreal_load(name):
     if name not in DFIX_VREAL_MODELS:
         raise SystemExit(f"D_fix to V-real reads only {DFIX_VREAL_MODELS}; not {name}")
     nets, recs = zip(*(load_run(name, sd, "best") for sd in SEEDS))
-    if any(r_["train_ids"] != recs[0]["train_ids"] for r_ in recs) or recs[0]["rung"] != "b":
+    if any(r_["train_ids"] != recs[0]["train_ids"] or r_["held_ids"] != recs[0]["held_ids"] or r_["rung"] != "b"
+           for r_ in recs):
         raise SystemExit(f"{name}: both seeds of one rung-b training set")
     return list(nets), list(recs)
 
@@ -6207,9 +6208,10 @@ def vreal_songs(inv):
 
 
 def leaks_of(sources, bands, songs):
-    """sources [(what, band, [song names])] -> the problems: a source of a band in `bands`, or of a song whose
-    `song_key` is in `songs`."""
-    return sorted({f"{w}: band {b}" for w, b, _ in sources if b in bands}
+    """sources [(what, band, [song names])] -> the problems: a source with no band, of a band in `bands`, or of a song
+    whose `song_key` is in `songs`."""
+    return sorted({f"{w}: no band" for w, b, _ in sources if b is None}
+                  | {f"{w}: band {b}" for w, b, _ in sources if b in bands}
                   | {f"{w}: song {s}" for w, _, ss in sources for s in ss if s and song_key(s) in songs})
 
 
@@ -6341,9 +6343,9 @@ def cmd_dfix_vreal_predict(args):
     root, plan, drift, dirs, parts, ms = vreal_ctx()
     models = {m: dfix_vreal_load(m) for m in sorted({DFIX_VREAL_TAGS[t][0] for t in tags} - {None})}
     plugin = [i for i in models["P2b-dfix"][1][0]["train_ids"] if i < REAL_ROW0] if "P2b-dfix" in models else None
-    if plugin is not None and plugin != json.loads((out_dir() / "runs" / f"P2b-wide24-{SEEDS[0]}.json")
-                                                   .read_text())["train_ids"]:
-        raise SystemExit("D_fix's plugin rows are not P2b-wide24's")
+    if plugin is not None and any(plugin != json.loads((out_dir() / "runs" / f"P2b-wide24-{sd}.json").read_text())
+                                  ["train_ids"] for sd in SEEDS):
+        raise SystemExit("D_fix's plugin rows are not P2b-wide24's (both seeds)")
     const = constant_of(rung_rows(kept, rend, plugin)) if "DV-P2b-dfix-stem-sc" in tags else None
     target = vreal_mix_target()
     amp_level = model_input_lufs(models["P2b-dfix"][1][0]) if "DV-P2b-dfix-amp" in tags else None

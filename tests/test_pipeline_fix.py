@@ -1050,9 +1050,9 @@ def test_leakage_guard_flags_a_v_real_band_or_song_and_nothing_else():
            ("real unit u", "Diesel13", ["x"]),
            ("pool entry b", "Someone", ["Band3_Song3_Full"]),
            ("own backing", "BKS", ["Song 4"])]
-    assert P.leaks_of(src, P.VREAL_BANDS, songs) == ["own backing: song Song 4", "pool entry b: song Band3_Song3_Full",
-                                                     "real unit u: band Diesel13"]
-    assert P.leaks_of(src[:2], P.VREAL_BANDS, songs) == []
+    assert P.leaks_of(src, P.VREAL_BANDS, songs) == ["own backing: song Song 4", "pool entry a: no band",
+                                                     "pool entry b: song Band3_Song3_Full", "real unit u: band Diesel13"]
+    assert P.leaks_of(src[:1], P.VREAL_BANDS, songs) == []
     with pytest.raises(SystemExit):
         P.vreal_songs({k: v for k, v in inv.items() if k != "di0"})
 
@@ -1086,7 +1086,7 @@ def test_leakage_guard_reads_every_training_input_of_both_runs(tmp_path, monkeyp
     src, cnt = P.dfix_training_sources(kept, inv)
     assert cnt == {"plugin_rows": 2, "real_rows": 2, "real_units": 2, "unit_backings": 4, "pool_entries": 2}
     assert ("pool entry Pool_Full@5.0", "PoolBand", ["Pool_Full", "Real"]) in src
-    assert P.leaks_of(src, {"PoolBand"}, set())[0].startswith("bks/u v1 backing Pool_Full@5.0: band PoolBand")
+    assert any(x.startswith("bks/u v1 backing Pool_Full@5.0: band PoolBand") for x in P.leaks_of(src, {"PoolBand"}, set()))
     np.savez(P.dfix_input_path("g/u", 1), backing="Elsewhere@1.0")
     with pytest.raises(SystemExit, match="neither a pool entry"):
         P.dfix_training_sources(kept, inv)
@@ -1255,7 +1255,8 @@ def test_dfix_vreal_predict_end_to_end_on_synthetic_audio(tmp_path, monkeypatch,
             for sd in P.SEEDS]
     monkeypatch.setattr(P, "dfix_vreal_load", lambda m: ([m], recs))
     (tmp_path / "runs").mkdir()
-    (tmp_path / "runs" / f"P2b-wide24-{P.SEEDS[0]}.json").write_text(json.dumps({"train_ids": [1, 2]}))
+    for sd in P.SEEDS:
+        (tmp_path / "runs" / f"P2b-wide24-{sd}.json").write_text(json.dumps({"train_ids": [1, 2]}))
     monkeypatch.setattr(P, "rung_rows", lambda kept, rend, ids: ids)
     enc = {(a, c): F.encode(dict(ms[a][c][1]), a) for a in PR.AMPS for c in ("clean", "crunch")}
     monkeypatch.setattr(P, "constant_of", lambda rows: {k: {"cont": v[0]} for k, v in enc.items()})
