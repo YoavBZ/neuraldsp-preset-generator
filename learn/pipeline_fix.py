@@ -6927,6 +6927,8 @@ FT_VREAL_PAIRS = (                                  # (row, a, b): every row's b
     ("FT - RcG", FT_VREAL_TAG, "DV-RcG"),
 )
 FT_VREAL_INPUT_KEYS = ("input_lufs", "gains_db", "input_hashes", "floor_frame_share", "stem_half_lufs")
+FT_VREAL_F41 = ("report-dfix-vreal.json", (("D_fix - S (primary)", "DV-P2b-dfix-stem", DFIX_VREAL_BASE),
+                                           ("D_fix - RcG", "DV-P2b-dfix-stem", "DV-RcG")))   # F41's rows, recomputed
 
 
 def ft_vreal_recheck_groups(groups):
@@ -6971,19 +6973,45 @@ def ft_vreal_load():
         recs.append(rec)
     if any(r_["train_ids"] != recs[0]["train_ids"] or r_["held_ids"] != recs[0]["held_ids"] for r_ in recs):
         raise SystemExit(f"{FT_BASE}: both seeds of one training set")
-    inners = [json.loads((od / f"{ft_name(k, True, r_['lr'], r_['cap'])}-{sd}.json").read_text())
-              for r_ in recs[:1] for k in range(REAL_FOLDS) for sd in SEEDS]
+    if any((r_["lr"], r_["cap"]) != (recs[0]["lr"], recs[0]["cap"]) for r_ in recs):
+        raise SystemExit(f"{FT_BASE}: both seeds at one rate and cap")
+    def inner_set(lr_, cap_):
+        ps = [od / f"{ft_name(k, True, lr_, cap_)}-{sd}.json" for k in range(REAL_FOLDS) for sd in SEEDS]
+        return [json.loads(q.read_text()) for q in ps] if all(q.exists() for q in ps) else None
+
+    return nets, ft_vreal_provenance(recs, inner_set, lambda sd: json.loads((od / f"{FT_PRETRAIN}-{sd}.json")
+                                                                            .read_text()),
+                                     lambda sd: json.loads((od / f"{dfix_run_name(None)}-{sd}.json").read_text()))
+
+
+def ft_vreal_provenance(recs, inner_set, w_of, d_of):
+    """The all-labels FT runs' declared provenance (refuses on any miss): their (lr, cap) the settled one
+    (`ft_fallback_refusal` on inner_set(lr, cap) -> the 8 inner records or None) and each inner run started from its
+    own seed's W; E the inner median; each run started from its seed's W best, on W's plugin and NS-held ids, and on
+    exactly D_fix's training labels and real-row inputs (plugin + BKS + GOAT). w_of(seed), d_of(seed) -> run
+    records. -> recs."""
+    lr, cap = recs[0]["lr"], recs[0]["cap"]
+    why = ft_fallback_refusal(inner_set, lr, cap)
+    if why:
+        raise SystemExit(f"{FT_BASE}: {why}")
+    inners = inner_set(lr, cap)
+    if ft_inner_init_refusal(inners, lambda sd: w_of(sd)["model_sha256"]["best"]):
+        raise SystemExit(f"{FT_BASE}: the inner runs are not all eight, each from its own seed's W")
     want = ft_epoch_of(inners)
     for r_ in recs:
-        d = json.loads((od / f"{dfix_run_name(None)}-{r_['seed']}.json").read_text())
-        w = json.loads((od / f"{FT_PRETRAIN}-{r_['seed']}.json").read_text())
+        sd = r_["seed"]
+        w, d = w_of(sd), d_of(sd)
         if r_["E"] != want:
-            raise SystemExit(f"{FT_BASE}-{r_['seed']}: trained {r_['E']} epochs, not the inner median {want}")
+            raise SystemExit(f"{FT_BASE}-{sd}: trained {r_['E']} epochs, not the inner median {want}")
         if r_["init"]["sha256"] != w["model_sha256"]["best"]:
-            raise SystemExit(f"{FT_BASE}-{r_['seed']}: not started from {FT_PRETRAIN}'s best")
-        if set(r_["train_ids"]) - set(d["train_ids"]) or r_["dfix"]["inputs_sha256"] != d["dfix"]["inputs_sha256"]:
-            raise SystemExit(f"{FT_BASE}-{r_['seed']}: training rows or inputs outside D_fix's")
-    return nets, recs
+            raise SystemExit(f"{FT_BASE}-{sd}: not started from {FT_PRETRAIN}'s best")
+        if [i for i in r_["train_ids"] if i < REAL_ROW0] != w["train_ids"] or r_["held_ids"] != w["held_ids"]:
+            raise SystemExit(f"{FT_BASE}-{sd}: plugin or held rows other than {FT_PRETRAIN}'s")
+        if set(r_["train_ids"]) != set(d["train_ids"]) or r_["held_ids"] != d["held_ids"] \
+                or set(r_["ft_train_ids"]) != {i for i in d["train_ids"] if i >= REAL_ROW0} \
+                or r_["dfix"]["inputs_sha256"] != d["dfix"]["inputs_sha256"]:
+            raise SystemExit(f"{FT_BASE}-{sd}: not D_fix's training labels and inputs")
+    return recs
 
 
 def ft_vreal_unhashed(entry):
@@ -7043,7 +7071,7 @@ def cmd_ft_vreal_predict(args):
             "gains_db": {s_: v[2] for s_, v in stems.items()}, "input_hashes": {s_: v[3] for s_, v in stems.items()},
             "floor_frame_share": floor, "stem_half_lufs": lufs}
     f41 = json.loads(vreal_answers_path("DV-P2b-dfix-stem").read_text())
-    drift_keys = ft_vreal_input_drift(json.loads(json.dumps(meta)), f41)
+    drift_keys = ft_vreal_input_drift(json.loads(json.dumps(meta, default=str)), f41)
     if drift_keys:
         raise SystemExit(f"FT's V-real inputs differ from read 3's in {drift_keys}: not the declared inputs")
     s_ans = json.loads(vreal_answers_path("S").read_text())["answers"]
@@ -7117,6 +7145,15 @@ def cmd_ft_vreal_report(args):
     if sorted(raw[FT_VREAL_RECHECK]) != want or differ:
         raise SystemExit(f"the recheck's S renders: {len(raw[FT_VREAL_RECHECK])} of {len(want)} groups, differing "
                          f"from phase 4's in {differ}; no row is read")
+    pc = s_positive_control(judge[DFIX_VREAL_BASE])
+    if not pc["passes"] or pc["n"] != S_CONTROL_N:
+        raise SystemExit(f"the S positive control fails ({pc}): no rows are read")
+    f41p = out_dir() / VREAL_DIR / FT_VREAL_F41[0]
+    f41 = json.loads(f41p.read_text())["rows"] if f41p.exists() else {}
+    for name, a, b in FT_VREAL_F41[1]:                 # the comparators are F41's stored renders: its rows again
+        m = clustered(vreal_rows(judge, a, b, dirs, base=DFIX_VREAL_BASE)[0])["mean"]
+        if name not in f41 or m is None or not math.isclose(m, f41[name]["all"]["mean"], abs_tol=1e-12):
+            raise SystemExit(f"{name}: {m} from today's judge files is not F41's {f41p.name}; no row is read")
     stem = json.loads(vreal_answers_path(FT_VREAL_TAG).read_text())
     quiet = sorted(s_ for s_, v in stem["floor_frame_share"].items() if max(v.values()) > FLOOR_SIDE_ROW)
     rows_out = {}
@@ -7134,6 +7171,7 @@ def cmd_ft_vreal_report(args):
            "answers_sha256": {**(e.get(FT_VREAL_HASHES) or {}),
                               **{t: (e.get(DFIX_VREAL_HASHES) or {}).get(t) for t in FT_VREAL_STORED}},
            "s_recheck_groups_identical": len(want),
+           "positive_control_S": pc,
            "side_row_without": {"rule": f"stem inputs with more than {FLOOR_SIDE_ROW:.0%} of frames at the grid floor "
                                         "in either half (read 3's rule)", "parts": quiet},
            "selection": "the second candidate read on V-real (D_fix was the first, F41); any choice between FT and "

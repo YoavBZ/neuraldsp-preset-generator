@@ -1582,3 +1582,175 @@ def test_ft_inner_runs_are_checked_against_their_own_seeds_w():
     assert P.ft_inner_init_refusal(inners, w.get) == []                     # both seeds, as the all-labels FT takes
     inners[3]["init"]["sha256"] = "w1"
     assert P.ft_inner_init_refusal(inners, w.get) == [(1, 2)]
+
+
+def _ft_world(cap300=False):
+    """Synthetic W, D_fix, inner and all-labels FT records for `ft_vreal_provenance`."""
+    r0 = P.REAL_ROW0
+    w = {sd: {"model_sha256": {"best": f"w{sd}"}, "train_ids": [1, 2], "held_ids": [9]} for sd in P.SEEDS}
+    d = {sd: {"train_ids": [1, 2, r0, r0 + 1], "held_ids": [9], "dfix": {"inputs_sha256": "x"}} for sd in P.SEEDS}
+    es = [10, 12, 14, 16, 18, 20, 22, 24]                                    # median 17
+    inner = [{"real_fold": k, "seed": sd, "init": {"sha256": f"w{sd}"}, "at_cap": False,
+              "log": _inner_log([1.0] * (es[2 * k + j] - 1) + [0.5, 0.6])}
+             for k in range(P.REAL_FOLDS) for j, sd in enumerate(P.SEEDS)]
+    capped = [dict(r_, at_cap=True) for r_ in inner]
+    cap = P.FT_FALLBACK_CAP if cap300 else P.FT_CAP
+    sets = {(P.FT_LR, P.FT_CAP): capped if cap300 else inner}
+    if cap300:
+        sets[(P.FT_LR, P.FT_FALLBACK_CAP)] = inner
+    recs = [{"seed": sd, "lr": P.FT_LR, "cap": cap, "E": 17, "init": {"sha256": f"w{sd}"},
+             "train_ids": [1, 2, r0, r0 + 1], "held_ids": [9], "ft_train_ids": [r0, r0 + 1],
+             "dfix": {"inputs_sha256": "x"}} for sd in P.SEEDS]
+    return recs, sets.get, lambda lr, cap_: sets.get((lr, cap_)), w.get, d.get
+
+
+def test_ft_vreal_provenance_takes_only_the_declared_all_labels_runs():
+    for cap300 in (False, True):
+        recs, _, get, w_of, d_of = _ft_world(cap300)
+        assert P.ft_vreal_provenance(recs, get, w_of, d_of) == recs
+    recs, _, get, w_of, d_of = _ft_world(True)
+    bad_cap = [dict(r_, cap=P.FT_CAP) for r_ in recs]                        # the cap rule fired: 100 is not settled
+    with pytest.raises(SystemExit, match="settled"):
+        P.ft_vreal_provenance(bad_cap, get, w_of, d_of)
+    recs, _, get, w_of, d_of = _ft_world()
+    r0 = P.REAL_ROW0
+    for change, why in (({"E": 18}, "inner median"), ({"init": {"sha256": "other"}}, "best"),
+                        ({"train_ids": [1, 2, r0]}, "D_fix's training labels"),          # a subset is not enough
+                        ({"ft_train_ids": [r0]}, "D_fix's training labels"),
+                        ({"held_ids": [8]}, "held rows"),
+                        ({"train_ids": [1, 3, r0, r0 + 1]}, "plugin or held rows"),
+                        ({"dfix": {"inputs_sha256": "y"}}, "D_fix's training labels")):
+        with pytest.raises(SystemExit, match=why):
+            P.ft_vreal_provenance([dict(recs[0], **change), recs[1]], get, w_of, d_of)
+    moved = get(P.FT_LR, P.FT_CAP)
+    moved[1]["init"] = {"sha256": "w-other"}
+    with pytest.raises(SystemExit, match="own seed's W"):
+        P.ft_vreal_provenance(recs, lambda lr, cap: moved if (lr, cap) == (P.FT_LR, P.FT_CAP) else None, w_of, d_of)
+
+
+def test_ft_vreal_load_refuses_inner_fold_and_split_runs(monkeypatch):
+    recs, _, _, _, _ = _ft_world()
+    ok = {"test": P.FT_BASE, "inner": False, "real_fold": None, "epochs_run": 17,
+          "models": {"final": "m.pt", "best": "m.pt"}, "model_sha256": {"final": "h", "best": "h"}}
+    runs = {sd: dict(r_, **ok) for sd, r_ in zip(P.SEEDS, recs)}
+    monkeypatch.setattr(P, "load_run", lambda name, sd, which: (None, runs[sd]))
+    monkeypatch.setattr(P, "ft_vreal_provenance", lambda recs_, *a: recs_)
+    assert len(P.ft_vreal_load()[1]) == 2
+    sd = P.SEEDS[1]
+    for change, why in (({"inner": True}, "read checkpoint"), ({"real_fold": 2}, "all-labels"),
+                        ({"held_ids": [7]}, "one training set"), ({"cap": P.FT_FALLBACK_CAP}, "rate and cap"),
+                        ({"models": {"final": "m.pt", "best": "b.pt"}}, "read checkpoint")):
+        old = runs[sd]
+        runs[sd] = dict(old, **change)
+        with pytest.raises(SystemExit, match=why):
+            P.ft_vreal_load()
+        runs[sd] = old
+
+
+def test_ft_vreal_report_reads_synthetic_judges_and_stops_on_the_recheck(tmp_path, monkeypatch):
+    from learn import direct_stems as DS
+
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    dirs = _vreal_dirs()
+    monkeypatch.setattr(P, "vreal_ctx", lambda: (None, None, None, dirs, None, None))
+    monkeypatch.setattr(P, "s_positive_control", lambda sj: {"n": P.S_CONTROL_N, "passes": True, "max_abs_log": 0.0})
+    pick = P.ft_vreal_recheck_groups({f"{s}|{a}" for s, a, _, _ in dirs})
+    per_half = {P.FT_VREAL_TAG, "DV-P2b-dfix-stem"}
+    dval = {P.FT_VREAL_TAG: 0.8, "DV-P2b-dfix-stem": 0.9}
+    tags = [*P.FT_VREAL_TAGS, *P.FT_VREAL_STORED, "S"]
+    d = tmp_path / P.VREAL_DIR / "answers"
+    d.mkdir(parents=True)
+    quiet = "cambridge-Signs-ElecGtr3"
+    for t in tags:
+        extra = {"floor_frame_share": {s: {"A": 0.3 if s == quiet else 0.0, "B": 0.0} for s in PR.VREAL}} \
+            if t == P.FT_VREAL_TAG else {}
+        (d / f"{t}.json").write_text(json.dumps({"tag": t, "answers": {"t": t}, **extra}))
+        for s, a, sh, h in dirs:
+            key = f"{s}|{a}"
+            if t == P.FT_VREAL_RECHECK and key not in pick:
+                continue
+            p = tmp_path / P.VREAL_DIR / "judge" / t / f"{key}.json"
+            p.parent.mkdir(parents=True, exist_ok=True)
+            rec = json.loads(p.read_text()) if p.exists() else {
+                "slug": s, "amp": a, "judge": {}, "render_sha256": {"*": key}, "answers_sha256": P.answers_sha({"t": t})}
+            rec["judge"].setdefault(sh if t in per_half else P.ANY_HALF, {})[h] = dval.get(t, 1.0)
+            p.write_text(json.dumps(rec))
+    ft_sha = {t: DS.hashlib_file(d / f"{t}.json") for t in P.FT_VREAL_TAGS}
+    st_sha = {t: DS.hashlib_file(d / f"{t}.json") for t in P.FT_VREAL_STORED}
+    monkeypatch.setattr(P, "require", lambda k: {P.FT_VREAL_HASHES: ft_sha, P.DFIX_VREAL_HASHES: st_sha})
+    args = argparse.Namespace(label="t")
+    rp = tmp_path / P.VREAL_DIR / "report-t.json"
+    f41 = tmp_path / P.VREAL_DIR / P.FT_VREAL_F41[0]
+    f41.write_text(json.dumps({"rows": {"D_fix - S (primary)": {"all": {"mean": math.log(0.9)}},
+                                        "D_fix - RcG": {"all": {"mean": math.log(0.9) + 0.01}}}}))
+    with pytest.raises(SystemExit, match="D_fix - RcG"):                    # comparators must reproduce F41's rows
+        P.cmd_ft_vreal_report(args)
+    f41.write_text(json.dumps({"rows": {"D_fix - S (primary)": {"all": {"mean": math.log(0.9)}},
+                                        "D_fix - RcG": {"all": {"mean": math.log(0.9)}}}}))
+    jd = tmp_path / P.VREAL_DIR / "judge" / P.FT_VREAL_RECHECK
+    one = jd / f"{pick[0]}.json"
+    rec = json.loads(one.read_text())
+    one.write_text(json.dumps(dict(rec, render_sha256={"*": "other"})))
+    with pytest.raises(SystemExit, match="recheck"):
+        P.cmd_ft_vreal_report(args)
+    one.unlink()
+    with pytest.raises(SystemExit, match="recheck"):
+        P.cmd_ft_vreal_report(args)
+    extra_g = sorted({f"{s}|{a}" for s, a, _, _ in dirs} - set(pick))[0]
+    (jd / f"{extra_g}.json").write_text(json.dumps(dict(rec, slug=extra_g.split("|")[0], amp=extra_g.split("|")[1],
+                                                        render_sha256={"*": extra_g})))
+    one.write_text(json.dumps(rec))
+    with pytest.raises(SystemExit, match="recheck"):
+        P.cmd_ft_vreal_report(args)
+    (jd / f"{extra_g}.json").unlink()
+    monkeypatch.setattr(P, "s_positive_control", lambda sj: {"n": P.S_CONTROL_N, "passes": False})
+    with pytest.raises(SystemExit, match="positive control"):
+        P.cmd_ft_vreal_report(args)
+    assert not rp.exists()
+    monkeypatch.setattr(P, "s_positive_control", lambda sj: {"n": P.S_CONTROL_N, "passes": True, "max_abs_log": 0.0})
+    P.cmd_ft_vreal_report(args)
+    out = json.loads(rp.read_text())
+    rows = out["rows"]
+    assert rows["FT - S (primary)"]["all"]["mean"] == pytest.approx(math.log(0.8))
+    assert rows["FT - D_fix"]["all"]["mean"] == pytest.approx(math.log(0.8 / 0.9))
+    assert rows["FT - RcG"]["all"]["mean"] == pytest.approx(math.log(0.8))
+    assert rows["FT - S (primary)"]["base_dropped"] == 0 and rows["FT - S (primary)"]["missing"] == 0
+    lo, hi = rows["FT - S (primary)"]["two_look_95"]
+    assert (lo + hi) / 2 == pytest.approx(math.log(0.8))
+    assert out["side_row_without"]["parts"] == [quiet] and out["positive_control_S"]["passes"]
+    with pytest.raises(SystemExit, match="read once"):
+        P.cmd_ft_vreal_report(args)
+
+
+def test_leakage_guard_reads_the_all_labels_ft_run(tmp_path, monkeypatch):
+    np = pytest.importorskip("numpy")
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    monkeypatch.setattr(P, "DFIX_K", 1)
+    (tmp_path / "runs").mkdir()
+    for sd in P.SEEDS:                                       # shaped as cmd_train_ft's all-labels output
+        (tmp_path / "runs" / f"{P.FT_BASE}-{sd}.json").write_text(json.dumps({
+            "train_ids": [1, P.REAL_ROW0, P.GOAT_ROW0], "held_ids": [2], "ft_train_ids": [P.REAL_ROW0, P.GOAT_ROW0],
+            "real_fold": None, "inner": False, "dfix": {"target_lufs": {"bks/u": 0, "g/u": 0}}}))
+    kept = {1: {"section": "s1/Band1_Song_Full/di.wav@5.0", "band": "B1", "session_dir": "/d/Band1_Song_Full", "di": "d1"},
+            2: {"section": "s1/NS_Full/di.wav@5.0", "band": "NS", "session_dir": "/d/NS_Full", "di": "d2"},
+            3: {"section": "s1/BKS_Full/di.wav@1.0", "band": "BKS", "session_dir": "/d/BKS_Full", "di": "d3"}}
+    inv = {"d1": {"song": "Song"}, "d2": {"song": "NS"}, "d3": {"song": "Real"}}
+    monkeypatch.setattr(P, "dfix_real_rows", lambda k: ([{"i": P.REAL_ROW0, "real": "bks/u"},
+                                                         {"i": P.GOAT_ROW0, "real": "g/u"}], [], {}))
+    units = [("bks/u", "bks", {"band": "BKS", "section": "s1/BKS_Full/di.wav@1.0", "sd": "/d/BKS_Full", "di": "d3"}),
+             ("g/u", "goat", {"band": "GOAT player1", "item": "item_0"})]
+    monkeypatch.setattr(P, "dfix_units", lambda: units)
+    (tmp_path / "inputs").mkdir()
+    (tmp_path / "inputs" / "backings-wide-pool.json").write_text(json.dumps({"entries": [
+        {"id": "s1/Band1_Song_Full/di.wav@5.0", "kind": "training", "session": "s1/Band1_Song_Full"}]}))
+    for u, b in (("bks/u", "s1/BKS_Full/di.wav@1.0"), ("g/u", "s1/Band1_Song_Full/di.wav@5.0")):
+        p = P.dfix_input_path(u, 0)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        np.savez(p, backing=b)
+    src, cnt = P.dfix_training_sources(kept, inv, P.FT_BASE)
+    assert cnt["plugin_rows"] == 2 and cnt["real_rows"] == 2 and cnt["real_units"] == 2
+    monkeypatch.setattr(P, "vreal_songs", lambda inv_: set())
+    assert P.dfix_vreal_leaks(kept, inv, P.FT_BASE) == cnt
+    units[0][2]["band"] = sorted(P.VREAL_BANDS)[0]          # a V-real band among FT's real units
+    with pytest.raises(SystemExit, match=f"V-real in {P.FT_BASE}"):
+        P.dfix_vreal_leaks(kept, inv, P.FT_BASE)
