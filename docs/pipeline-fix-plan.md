@@ -2570,28 +2570,41 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **Reading, by the declared map.**
   - Read 2: neither primary row worse and BKS decided better, so FT was carried (two chances at 90%: up to about
     10% false carries under the null). On BKS FT closes D_fix's gap to the real-amp centre (FT − Rcs2 −0.019,
-    undecided; D_fix − Rcs2 was +0.036) and widens the lead over S (−0.177 against D_fix's −0.122); on GOAT it is
-    level with D_fix and with RcGk. FT changed two things at once (sequential tuning, and an epoch count chosen on
+    undecided; D_fix − Rcs2 read +0.036, also undecided) and widens the lead over S (−0.177 against D_fix's
+    −0.122); on GOAT it is level with D_fix and with RcGk. FT changed two things at once (sequential tuning, and an epoch count chosen on
     a real loss instead of NS): it beats the joint recipe on BKS, not shown to be pretraining alone.
   - V-real, the primary: FT − S is undecided (+0.022, 2 of 7 bands better). By the map: the user's choice; FT does
     not replace D_fix on this read. FT − D_fix leans better (5 of 7 bands, 7 of 10 parts) but is undecided, and any
     choice between them made from this row is selection-contaminated. FT reads level with RcG: on real songs, as
     D_fix, no per-track reading beyond a real-amp centre is shown.
-  - Across this plan's three real sets the models now sit at the real-amp centres (BKS Rcs2, GOAT RcGk, V-real
-    RcG), and on V-real the centres sit at S. The independent audit of the scoring (2026-11-02, zero renders)
+  - Across this plan's three real sets the models are not shown different from the real-amp centres (BKS Rcs2,
+    GOAT RcGk, V-real RcG), and on V-real the centres are not shown different from S. The independent audit of the scoring (2026-11-02, zero renders)
     found no calculation error; it found S chosen partly on V-real's parts (S re-picked without them, S′: S′ − S
     +0.025 [−0.002, +0.051], so FT − S′ is about −0.003, descriptive) and S within 0.000–0.087 of the best of 31–45
-    factory presets per amp and class on these clips. A per-track factory pick with the true target beats S by
-    −0.118 [−0.167, −0.069] on V-real's parts, so per-recording headroom exists that no model here reads.
+    factory presets per amp and class on these clips. A per-track factory pick using the true target and its DI
+    (stored label-table distances; 10 of V-real's 11 parts, picked on the search half, scored on the held half)
+    beats S by −0.118 [−0.167, −0.069] (descriptive), so per-recording headroom exists that no model here reads.
+    The audit's report and scripts: `PF/audit-2026-11-02/` (ledger `phase_ft_audit`).
 - **Caveats.** V-real's interval is ±0.073: effects under about 0.07 are not resolved. Wall Of Death carries FT − S
   (+0.202; without it −0.008). V-real has now been read for two candidates (D_fix, F41; FT, here), and the write-up
-  says so. The plugin read of FT was logged (NS loss), never used to choose. The all-labels FT's first launch
+  says so (FT is the second candidate on V-real; D_fix was the first, F41). The plugin cost, logged and never used
+  to choose: FT_k's NS loss rose from W's 5.38–5.48 to 9.3–20.4 at the read state (seed 20261042 12.6–20.4, seed
+  20261043 9.3–10.0), while fold k's real loss fell from 5.6–5.8 to 0.91–2.29. E is likely biased low (the inner
+  runs repeat each row more often per epoch, as declared). The cap-100 inner runs and the D_fix_k recheck started
+  at 15:41–15:43, minutes before the FT code commit and its review changes; the cap-100 runs only decided the
+  fallback (all hit the cap) and were superseded, and the render code did not change after the recheck. The all-labels FT's first launch
   refused before any training (a start check compared all eight inner runs with one seed's W; fixed, tested, the
   code re-reviewed). The listening page on 4 non-V-real songs (S, D_fix, W) is with the user, unanswered.
 - **References.** `PF/runs/P2b-ft-*.json`, `PF/real/answers/P2b-ft.json`, `PF/goat/answers/P2b-ft.json`,
   `PF/real/recheck-ft.json`, `PF/vreal/answers/FV-P2b-ft-stem.json`, `S-recheck-ft.json`,
   `PF/vreal/report-ft-vreal.json`, `PF/logs/ft-*.log`; ledger `phase_ft`, `phase_ft_fallback`, `phase_ft_answers`,
-  `phase_ft_carry`, `phase_ft_vreal_review`, `phase_ft_vreal_answers`, `phase_ft_outcome`.
+  `phase_ft_carry`, `phase_ft_vreal_review`, `phase_ft_vreal_answers`, `phase_ft_outcome`, `phase_ft_audit`.
+- *Results review (2026-11-02, independent):* approved with required changes, all made: the answers' hash time
+  (20:30), the plugin cost stated from the logs, the per-track factory pick qualified and the audit kept with the
+  data, D_fix − Rcs2's own interval named, the budget's punctuation and FT's MPS line. It recomputed every read 2
+  and V-real row, the epochs, the provenance and the hash-before-render order with its own scripts. Adopted from its
+  suggestions: "not shown different from" the centres, the ROADMAP's basis for FT's recipe, the E-bias caveat, the
+  run-order note and the outcome's start time.
 
 ## Budget
 
@@ -2608,16 +2621,18 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   the ceiling 371: 2,489, about 52,600 in all. **D_fix (2026-11-02):** read 1 1,920, read 2 1,820 (BKS 960, GOAT
   860): 3,740, about 56,340 in all. **D_fix's amendment (2026-11-02):** stage A 960 and W's recheck 20, stage B
   2,300 (read 1 480, BKS 960, GOAT 860): 3,280, about 59,620 in all. **D_fix's V-real read (2026-11-02):** 660,
-  about 60,280 in all **FT (2026-11-02):** the recheck 20, read 2 1,340, V-real 152: 1,512, about
+  about 60,280 in all. **FT (2026-11-02):** the recheck 20, read 2 1,340, V-real 152: 1,512, about
   61,790 in all.
 - **MPS used:** about 4 h before 5B.2 (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and
   backing runs, the k-fold, phase 5A's two 10-minute seeds); 5B.2's 12 trainings about 2 h more (arm P 4 × 7.2–8.4 min,
   arm R 8 × 11.4 min); stage 2's 8 trainings 1.5 h more (8 × 11.4 min); 5C's RG 8 trainings 1.75 h more (8 × 13.0–13.3
   min), RGshuf's 8 1.75 h more (8 × 13.0–13.1 min); D_fix's 10 2.2 h more (10 × 13.2 min); its amendment's 12 2.1 h
-  more (stage A 4 × 10.4–11.5 min, stage B 8 × 10.4–10.5 min).
+  more (stage A 4 × 10.4–11.5 min, stage B 8 × 10.4–10.5 min); FT's 26 trainings about 4.9 h more (8 cap-100 inner
+  runs 51 min, 8 cap-300 inner 136 min (one 46.7 min), 8 FT_k 85 min, 2 all-labels 22 min), against the declared
+  about 1 h before the fallback.
 - **Disk:** P2's inputs about 0.3 GB; phase 1b's audio and features about 1.2 GB; the 31 GB guard holds.
 - Every render: isolate=True, a discarded priming render, 0.25 s trimmed, at most 3 render processes,
-  `setopt no_bg_nice`. V-real is read only in P5's stored distances, phase 4 and D_fix's declared read (F41). (5B.1c
+  `setopt no_bg_nice`. V-real is read only in P5's stored distances, phase 4, D_fix's declared read (F41) and FT's (F42). (5B.1c
   ran the model on V-real's inputs, zero renders and nothing judged, before it was withdrawn.)
 
 ## Review (2026-10-31)

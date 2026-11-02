@@ -244,11 +244,12 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          the epoch count chosen on held real rows. On real reamps it beats D_fix (BKS −0.055 [−0.084, −0.027], 7 of
          8 DIs; GOAT level) and leads S by −0.177; carried to V-real, it reads level with S (+0.022 [−0.051,
          +0.095], undecided), with D_fix (−0.013, 5 of 7 bands, selection-contaminated) and with RcG. On every
-         real set the models now sit at the real-amp centres; a scoring audit found no calculation error, S chosen
-         partly on V-real (worth about 0.025), and per-recording headroom no model reads (a per-track factory pick
-         with the true target beats S by −0.118 on V-real's parts).
+         real set the models are not shown different from the real-amp centres; a scoring audit found no
+         calculation error, S chosen partly on V-real (worth about 0.025), and per-recording headroom no model
+         reads (a per-track factory pick using the true target and its DI beats S by −0.118 on 10 of V-real's
+         parts, descriptive).
        - **Next:** the user's choice, with F37–F42 as evidence. Proposed: the per-recording reading, with FT's
-         recipe as the base: many more real-amp labelled recordings (captures on verified DIs, as GOAT) and a fresh,
+         recipe as the base (chosen on read 2, BKS −0.055; on V-real FT is not shown different from D_fix): many more real-amp labelled recordings (captures on verified DIs, as GOAT) and a fresh,
          larger real-song test (V-real-11 is ±0.07 and now read for two candidates). Domain work and community
          presets stay open.
        - **TONE3000 downloads: approved by the user (2026-11-01)**, after the [real-amp
