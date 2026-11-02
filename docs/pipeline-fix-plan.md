@@ -12,8 +12,11 @@ user's choice between domain work and more real chains stays open. D_fix (F39): 
 epoch, cost the plugin read (FS and NS worse than P2b-wide24), so it is not built as is. Its amendment (F40): at a
 third of that share the plugin read is still lost; at a tenth it is not shown worse (FS leans worse at every amp),
 but BKS's real amps read about where P2a, a model without real rows, does (+0.207 against Rcs2), so D_p is not built as is either and V-real waits: no share in this joint
-recipe gives the real-amp gain without the plugin cost. The next step is the user's choice (domain work, more real
-chains, or real-amp reading kept out of the mix model). Findings F1–F40.
+recipe gives the real-amp gain without the plugin cost. At the user's direction (the product always reads real
+amps) D_fix itself was read on V-real with the plugin read as a cost beside (F41): it reads level with S on held-out
+real songs (+0.036, undecided) and clearly better than the same recipe without real rows (−0.192, 7 of 7 bands),
+which reads clearly worse than S (+0.228); level with a real-amp centre, so no per-track reading is shown. Proposed
+next: domain work (a per-row input saying plugin render or real amp); the user's choice stays open. Findings F1–F41.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -2380,6 +2383,54 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   recomputed all 24 read 1 rows from the judge files, re-ran read 2's reports from the stored judge files, and
   checked the render, training and budget counts. Adopted from its suggestions: the interval, re-run and p33-seed caveats.
 
+### F41. On held-out real songs the real rows close the plain model's gap to S: D_fix reads level with S and clearly better than P2b-wide24 (D_fix (read 1 failed; gate relaxed at the user's direction), read 3 on V-real-11)
+- **Result.** D_fix as built (`P2b-dfix`, both seeds pooled, NS-best) read each V-real-11 part's X-LANCE crop stem,
+  the crop's mix brought to −12.25 LUFS and the stem given the same gain (the stems' halves −13.7 to −24.3 LUFS,
+  beside P2d's stored stems' median −14.7), told the part's class and each forced amp; P2b-wide24 (W) alike; the
+  S-centred readout, RcG and D_fix on the parts' own amp tracks (−13.7 LUFS) beside. 660 renders as declared;
+  the answers' hashes were in the ledger before any render; S's 66 fresh renders were identical to phase 4's (33
+  of 33 groups) and its positive control passed (max |ln ratio| 0.0001 on 60). The leakage guard found no V-real
+  band or song in any of D_fix's 10,792 training sources. No direction dropped, none refused, no quiet input.
+- **Numbers** (band-weighted, 7 bands, 90% band-clustered; Wickerman ElecGtr2 and 3 one part on the stems; lower
+  is closer):
+
+  | Row | All | Bands better | Part-weighted | Clean (2, descriptive) | Crunch (5, descriptive) |
+  |---|---|---|---|---|---|
+  | **D_fix − S (primary)** | +0.036 [−0.039, +0.110] | 2 of 7 | +0.038, 4 of 10 parts | +0.061 | +0.025 |
+  | W − S (beside) | **+0.228 [+0.065, +0.391]** | 0 of 7 | +0.243, 0 of 10 | +0.369 | +0.171 |
+  | D_fix − W (beside) | **−0.192 [−0.348, −0.037]** | 7 of 7 | −0.205, 9 of 10 | −0.309 | −0.146 |
+  | D_fix − RcG (beside) | +0.011 [−0.053, +0.074] | 5 of 7 | −0.002, 7 of 10 | −0.029 | +0.027 |
+  | RcG − S (beside) | +0.025 [−0.040, +0.090] | 3 of 7 | +0.039, 4 of 10 | +0.090 | −0.001 |
+  | S-centred − S (beside) | +0.041 [−0.036, +0.117] | 4 of 7 | +0.028, 6 of 10 | +0.026 | +0.047 |
+  | D_fix on the amp track − S (beside; Wickerman 2 and 3 apart) | +0.093 [−0.053, +0.240] | 2 of 7 | +0.118, 2 of 11 | +0.026 | +0.121 |
+  | D_fix on the amp track − P4 (beside) | −0.060 [−0.197, +0.078] | 4 of 7 | −0.014, 4 of 11 | −0.002 | −0.083 |
+
+  - D_fix − S by band: Zeno −0.096, Magician's Nephew −0.078, Eat The Feeder +0.007, Diesel13 +0.034, Atlantis
+    Bound +0.087, Wall Of Death +0.107, Szymon Skiba +0.187. Leave one band out: +0.010 to +0.057.
+  - D_fix − W by band: Diesel13 −0.606, Wall Of Death −0.320, Magician's Nephew −0.182, Zeno −0.135, Eat The
+    Feeder −0.088, Atlantis Bound −0.012, Szymon Skiba −0.005. Leave one band out: −0.124 to −0.224.
+- **Reading, by the declared map.**
+  - The primary is undecided: D_fix does not beat S on held-out real songs. By the map, domain work is proposed
+    next (first proposal: a per-row input saying plugin render or real amp), every read as evidence; the user's
+    choice stays open.
+  - Beside, and the largest real-song movement in this plan: the plain model without real rows (W) reads clearly
+    worse than S on V-real (+0.228, 0 of 7 bands better), as P4's clean-input model did (F20, +0.153); D_fix,
+    the same recipe with the real rows, reads clearly better than W (−0.192, 7 of 7 bands, 9 of 10 parts) and
+    level with S. The real rows close the gap to S on real songs; they do not yet open a lead.
+  - D_fix reads level with RcG, the real-amp centre of GOAT's labels (+0.011), and RcG level with S (+0.025): what
+    D_fix gives on V-real is not shown to be more than a real-amp centre's. A per-track reading on real songs is
+    not shown (as F37–F38 found on real reamps).
+  - On the amp tracks D_fix is not shown better than S (+0.093) nor than P4 (−0.060). Descriptively the stem row
+    (+0.036) sits no worse than the amp-track row, so the separator is not pointed at as the bottleneck here.
+- **Caveats.** V-real-11 is 7 bands and 10 parts; the primary's interval is ±0.074, so an effect under about 0.07 is
+  not resolved. D_fix − W is carried by two bands (Diesel13 −0.61 and Wall Of Death −0.32; W's worst bands),
+  though every band and leave-one-out row points the same way. D_fix was chosen on reads 1–2 only; its read 1
+  failed and the gate was relaxed at the user's direction before this read (`phase_dfix_vreal`). The plugin cost
+  (F39) stands. Wickerman ElecGtr2 and 3 have identical stored stems and identical answers. V-real has now been
+  read once more; any later choice that uses this read is selection-contaminated.
+- **References.** `PF/vreal/answers/DV-*.json`, `S-recheck-dfix.json`, `PF/vreal/judge/`, `PF/vreal/report-dfix-vreal.json`,
+  `PF/logs/dvreal-*.log`; ledger `phase_dfix_vreal`, `phase_dfix_vreal_answers`, `phase_dfix_vreal_outcome`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
@@ -2394,7 +2445,8 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   48,770 in all; RGshuf's reads 1,340, about 50,110 in all. **5D (2026-11-01/02):** the lags 270, the reads 1,848,
   the ceiling 371: 2,489, about 52,600 in all. **D_fix (2026-11-02):** read 1 1,920, read 2 1,820 (BKS 960, GOAT
   860): 3,740, about 56,340 in all. **D_fix's amendment (2026-11-02):** stage A 960 and W's recheck 20, stage B
-  2,300 (read 1 480, BKS 960, GOAT 860): 3,280, about 59,620 in all.
+  2,300 (read 1 480, BKS 960, GOAT 860): 3,280, about 59,620 in all. **D_fix's V-real read (2026-11-02):** 660,
+  about 60,280 in all.
 - **MPS used:** about 4 h before 5B.2 (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and
   backing runs, the k-fold, phase 5A's two 10-minute seeds); 5B.2's 12 trainings about 2 h more (arm P 4 × 7.2–8.4 min,
   arm R 8 × 11.4 min); stage 2's 8 trainings 1.5 h more (8 × 11.4 min); 5C's RG 8 trainings 1.75 h more (8 × 13.0–13.3
@@ -2402,7 +2454,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   more (stage A 4 × 10.4–11.5 min, stage B 8 × 10.4–10.5 min).
 - **Disk:** P2's inputs about 0.3 GB; phase 1b's audio and features about 1.2 GB; the 31 GB guard holds.
 - Every render: isolate=True, a discarded priming render, 0.25 s trimmed, at most 3 render processes,
-  `setopt no_bg_nice`. V-real is read only in P5's stored distances, phase 4 and D_fix's declared read. (5B.1c
+  `setopt no_bg_nice`. V-real is read only in P5's stored distances, phase 4 and D_fix's declared read (F41). (5B.1c
   ran the model on V-real's inputs, zero renders and nothing judged, before it was withdrawn.)
 
 ## Review (2026-10-31)

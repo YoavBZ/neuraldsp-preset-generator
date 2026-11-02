@@ -3278,7 +3278,8 @@
     "DV-P2b-dfix-amp": "311af6147b908fa3fc011bdcbe0a917564910e7745c86c221d21cec89c9d2578",
     "DV-RcG": "5127754893733c2baf1dce5f309c816ea83bd4a67d52f823256cab0b55c9432f",
     "S-recheck-dfix": "842d51fceff600a383a9cd71013d3a9a1b47e8b276a7754c1e259a7e8f611227"
-   }
+   },
+   "phase_dfix_vreal_outcome": "Run 2026-11-02 08:33-09:12: 660 renders; S's 66 fresh renders identical to phase 4's (33 groups), positive control max |ln| 0.0001 on 60; leakage guard 0 of 10,792 sources; none dropped, refused or quiet. Primary D_fix - S +0.036 [-0.039, +0.110] (2 of 7 bands, 4 of 10 parts): undecided. Beside: W - S +0.228 [+0.065, +0.391] (0 of 7); D_fix - W -0.192 [-0.348, -0.037] (7 of 7, 9 of 10 parts); D_fix - RcG +0.011 [-0.053, +0.074]; RcG - S +0.025; S-centred - S +0.041; amp track - S +0.093 [-0.053, +0.240]; amp track - P4 -0.060. By the map: no win; domain work (a per-row plugin/real input) proposed next, the user's choice open. Report vreal/report-dfix-vreal.json. Written up as F41."
   }
  ]
 }
