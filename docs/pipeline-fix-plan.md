@@ -1110,6 +1110,88 @@ instead of generating unrealistic presets our own?"):
       guard over every training input and backing. Adopted from its suggestions: D_fix on the amp track − P4, the
       write-up's label, the separator reading, the power note. Its re-check approved (2026-11-02), with the S-mismatch
       rule adopted.
+  - *Fine-tuning on the real rows (2026-11-02, after F41, before any code or render of it; ledger `phase_ft`).*
+    - **Why.** The user (2026-11-02), on the per-row plugin/real input proposed after F41: "Why should the model
+      distinguish between plugin renders and real-amp recording? Plugin renders will never be its input on actual
+      use, can't we use them as pre training for higher accuracy instead?" The product never reads a plugin render,
+      so the plugin read is not a goal in itself; in the joint recipe the real rows and the plugin rows compete (F39,
+      F40), and every D_fix checkpoint was chosen on NS, a plugin loss, never on real amps (F40's caveat). Here the
+      plugin renders are pretraining only: P2b-wide24 (W), trained on plugin renders alone, is the starting point,
+      and the real rows alone tune it, with the checkpoint chosen on held real rows.
+    - **The one candidate, FT.** For seed s, W's NS-best checkpoint (`P2b-wide24-{s}-best.pt`, its hash checked
+      against its run file), then D_fix's real rows only: the same labels (BKS stage 1–2 and GOAT), the same inputs
+      (`build-dfix-real`'s 25 backing variants per unit, one drawn per epoch by `dfix_variant`; the inputs hash
+      asserted equal to D_fix's), the same per-epoch counts (as `dfix_records`: BKS cycled to 300, GOAT to 300, an all-labels list
+      longer than that kept whole), and no plugin rows in
+      training. A fresh Adam at 1e-4 (a tenth of the pretraining's 1e-3, the one tuning choice, fixed now), batch 64,
+      gradients scaled to norm 5, as `fit`; the training RNG (torch and the permutation) seeded with s. Nothing else
+      changes: the network, the input, the readout. The network's BatchNorm statistics move toward the real rows too;
+      that is part of the tuning, and the NS log shows its plugin cost.
+    - **The epoch count, chosen without the read fold (nested).** FT_k (read on fold k) never sees fold k's real rows,
+      in training or in choosing. Its inner run does not load fold k's rows at all; it trains from W on the folds
+      other than k and j = (k + 1) mod 4 and computes, every epoch, fold j's real-row loss: `head_losses`' total
+      (`F.loss_fn`) on variant 0, pooled by row over fold j's BKS and GOAT rows (W's start state's value logged as the
+      reference). Up to 100 epochs, stopping after 15 epochs without a fall of 0.001 in the trailing 3-epoch moving
+      average (epochs e−2..e; epochs 0–1 average what exists); E(k, s) = e + 1 for the e where that average is
+      lowest. FT_k is then trained from W on the three folds
+      other than k for exactly E(k, s) epochs and the state after E(k, s) epochs is the model read; no choice is made
+      on fold k. The all-labels FT (V-real's) trains on every label for the median of the eight E(k, s), rounded half
+      up. **Fallbacks, declared now, on inner validation only and before any FT_k is trained (recorded):** if 4 or
+      more of the 8 inner runs end at the cap, the cap is raised to 300 and the inner runs continued; if 4 or more
+      have E ≤ 2, the rate is lowered to 3e-5 and the inner runs repeated; the rate rule is checked first, then
+      the cap, each applied at most once. Logged in FT_k's run, never for choosing
+      and never `fit`'s tracked set: NS loss (the plugin cost) and fold k's real-row loss every 5 epochs. Trainings:
+      8 inner + 8 FT_k, and 2 all-labels only if V-real is reached; about 1 h of MPS in all (more if a fallback is
+      taken). Caveats, stated now: with two folds out the inner run repeats each row more often per epoch (about 2.7
+      times against FT_k's 1.4–1.9), so E is likely biased low (conservative); fold 3 holds only 24 BKS rows, so the
+      inner validation for k = 2 is mostly GOAT.
+    - **Read 2, as D_fix's (F39), each BKS unit by its DI's fold model and each GOAT unit by its item's, both seeds
+      pooled, plain readout, the backed input (variant 0, a BKS unit's own section's backing):** primary, FT_k −
+      D_fix_k on BKS's 40 units (by DI, 8 DIs) and on GOAT's 215 (by item, the fold interval beside): does tuning
+      from plugin pretraining beat the joint recipe? GOAT is co-primary here, where in D_fix's map it was beside:
+      D_fix's question was BKS adoption against Rcs2 with the plugin read as the gate, while this one is the recipe
+      against the recipe, and GOAT's 130 items (capture renders, not real rigs) are the larger and tighter of the two
+      sets; BKS is real amps but one band. Two chances at "decided better" at 90% give up to about 10% false carries
+      under the null; the write-up says so. Beside: FT_k − Rcs2, FT_k − S, FT_k − RG, GOAT FT_k − RcGk (a
+      per-track reading if decided better), better counts by DI, unit and item. The clean amp-track read is not run
+      (the product reads songs). "Decided" means the 90% interval excludes 0.
+    - **Renders:** BKS 480, GOAT 860; 20 of D_fix_k's stored read 2 renders re-rendered and asserted identical
+      before any row is read: 1,360. If V-real is reached: FT on V-real-11's stems, 132, and 20 of phase 4's S renders
+      re-rendered and asserted identical: 152. At most 1,512, as every Morgan render.
+    - **Map, declared now.** Neither primary row decided worse and at least one decided better: FT is carried to
+      V-real, one read, exactly F41's read 3 input and rules (the X-LANCE crop stems, the crop mix at −12.25 LUFS and
+      the stem given the same gain, band-weighted over 7 bands, Wickerman ElecGtr2 and 3 one part, `vreal_rows`'
+      drop and refusal rules); FT − S primary, FT − D_fix and FT − RcG beside from F41's stored renders (zero new);
+      written up as "FT (second candidate on V-real; D_fix was the first, F41)". Otherwise FT is not read on V-real;
+      the result is written up and the next step proposed for the user (for example a share of plugin rows kept in
+      the tuning, or a different rate, each a new declaration). On V-real, FT − S decided better at 90% is reported
+      as a win on the second candidate read, with the two-look (Bonferroni) 95% interval beside. Then: FT − S better:
+      FT replaces D_fix as the model carried forward, and the scale step or domain work is proposed; undecided or
+      worse: the user's choice. FT − D_fix is reported beside either way; any choice between FT and D_fix made from
+      V-real's FT − D_fix row is labelled selection-contaminated. If FT wins, the write-up says it changed two things
+      at once (sequential tuning, and an epoch count chosen on a real loss instead of NS): it beats the joint recipe,
+      not shown to be pretraining alone.
+    - **Selection.** FT is chosen on read 2 only. The idea came after F41 (the user's question on the recipe, not on
+      F41's numbers per band), so V-real is fresh for FT as a model but no longer for the plan: two candidates will
+      have been read on it, and the write-up says so.
+    - **Power.** Read 2's BKS rows had intervals of about ±0.05 (D_fix_k − Rcs2), GOAT's about ±0.02 by item; a
+      difference from D_fix_k below those may stay undecided, reported as undecided, not failed. V-real's as F41
+      (about ±0.07).
+    - **Guards (code, with tests).** FT_k's training rows and its inner run's rows hold no fold-k real row (asserted
+      from the run files); the inner run's training rows hold no fold-j row; FT_k's and the all-labels FT's run files store the state after exactly E epochs as the read checkpoint,
+      every read path (BKS, GOAT, V-real) loads that state, and a test asserts the loaded model's sha256 equals the
+      final state's; the start state's tensors equal W's stored best (loaded through FT's build path, a test); no plugin row in any FT training order; the inputs hash equals D_fix's on the FT_k and all-labels runs (all units
+      loaded), and the inner runs' over their own unit set is recorded; the answers refuse any model but the declared ones; the answers' hashes are in the ledger
+      before any render; the V-real leakage guard as D_fix's (FT's sources are W's plugin sources and D_fix's real
+      rows, a subset of D_fix's).
+    - *Review (2026-11-02, independent, before any code):* approved with required changes, all made: the read
+      checkpoint fixed as the state after E epochs on every read path (a leakage trap in the read code's "best"
+      load), the cap and rate fallbacks on inner validation only, what the inner run loads and its loss, GOAT's
+      co-primary status with the gate's multiplicity, and the V-real map closed (a win on the second candidate read,
+      the two-look interval, what follows each outcome). Adopted from its suggestions: the moving-average argmin and
+      W's start reference, the E-bias and fold-3 caveats, the seed, the rounding, the per-epoch counts as
+      `dfix_records`, and the two-change interpretation. Its re-check approved (2026-11-02) with the
+      moving-average wording fix, made; the fallbacks' order and the guard's wording adopted.
 - **Decisions for the user, with the evidence:** whether to adopt the S fallback or the near-chance rule
   (steps 26, 27, 37), and whether to scale.
 
