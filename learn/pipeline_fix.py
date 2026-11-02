@@ -23,6 +23,9 @@ after the review's (P1-P7), and the recipe every retrain in the plan shares. Out
     $TORCH_PY -m learn.pipeline_fix dfix-vreal-predict --which best      # read 3's answers on V-real (zero renders)
     $MAIN -u -m learn.pipeline_fix dfix-vreal-render --shard k/3         # read 3's renders (hashes in the ledger first)
     $MAIN -m learn.pipeline_fix dfix-vreal-report --label dfix-vreal     # read 3's rows (zero renders)
+    $TORCH_PY -m learn.pipeline_fix ft-vreal-predict          # FT on V-real (after phase_ft_carry; zero renders)
+    $MAIN -u -m learn.pipeline_fix ft-vreal-render --shard k/3    # FT's V-real renders (hashes in the ledger first)
+    $MAIN -m learn.pipeline_fix ft-vreal-report --label ft-vreal  # FT's V-real rows (zero renders)
 """
 
 from __future__ import annotations
@@ -785,11 +788,14 @@ def epoch_order(rng, tr, data, epoch):
     return order if keep is None else keep(order, epoch)
 
 
-def fit(data, tr, watch, track, seed, dev, log, epochs, every=1, patience=None, min_gain=1e-4):
+def fit(data, tr, watch, track, seed, dev, log, epochs, every=1, patience=None, min_gain=1e-4, init=None, lr=None,
+        smooth=1):
     """D_CC's optimiser (Adam 1e-3, batch 64, gradients scaled to norm 5; `direct_stems.train_arm`) with the eval-mode
     diagnostics: every `every` epochs (and at the last) the summed loss on each `watch` set {name: idx} and its family
-    means. The checkpoint with the lowest `track` loss is kept beside the final one. With `patience` (P1 only) it stops
-    once `track` has not improved by min_gain for that many checks; otherwise it runs the full `epochs`.
+    means. The checkpoint with the lowest `track` loss is kept beside the final one. With `patience` (P1 and FT's inner
+    run) it stops once `track` has not improved by min_gain for that many checks; otherwise it runs the full `epochs`.
+    FT: `init` a start state, `lr` the rate, `smooth` the trailing moving average of `track` over that many checks
+    (the first checks average what exists), and `track` None keeps no best (the final state is returned as best).
     -> (net at its final state, final state, best state, best epoch, best value)."""
     import numpy as np
     import torch
@@ -799,10 +805,13 @@ def fit(data, tr, watch, track, seed, dev, log, epochs, every=1, patience=None, 
     from learn import pretrain_set as PS
 
     torch.manual_seed(seed)
-    net = F.build_net().to(dev)
-    opt = torch.optim.Adam(net.parameters(), lr=PS.LR)
+    net = F.build_net()
+    if init is not None:
+        net.load_state_dict(init)
+    net = net.to(dev)
+    opt = torch.optim.Adam(net.parameters(), lr=PS.LR if lr is None else lr)
     rng = np.random.default_rng(seed)
-    best, bad, best_state, best_ep, steps = math.inf, 0, None, None, 0
+    best, bad, best_state, best_ep, steps, seen = math.inf, 0, None, None, 0, []
     for epoch in range(epochs):
         net.train()
         t0 = time.time()
@@ -833,9 +842,15 @@ def fit(data, tr, watch, track, seed, dev, log, epochs, every=1, patience=None, 
         for name, idx in watch.items():
             h = head_losses(net, data, idx, dev)
             rec[name] = {"total": h["total"], **family_means(h)}
+        if track is not None:
+            seen.append(rec[track]["total"])
+            v = sum(seen[-smooth:]) / len(seen[-smooth:])
+            if smooth > 1:
+                rec[f"{track}_smoothed"] = v
         log.append(rec)
         print(json.dumps(rec), flush=True)
-        v = rec[track]["total"]
+        if track is None:
+            continue
         if math.isfinite(v) and v < best - min_gain:
             best, bad, best_ep = v, 0, epoch
             best_state = {k: t.detach().cpu().clone() for k, t in net.state_dict().items()}
@@ -843,9 +858,12 @@ def fit(data, tr, watch, track, seed, dev, log, epochs, every=1, patience=None, 
             bad += 1
             if patience is not None and bad >= patience:
                 break
+    final = {k: t.detach().cpu().clone() for k, t in net.state_dict().items()}
+    if track is None:
+        net.eval()
+        return net, final, final, log[-1]["epoch"], None
     if best_state is None:
         raise PS.StepsSkipped("no finite watched loss")
-    final = {k: t.detach().cpu().clone() for k, t in net.state_dict().items()}
     net.eval()
     return net, final, best_state, best_ep, best
 
@@ -2682,7 +2700,7 @@ def cmd_real_predict(args):
     if args.names == "RcM":
         return real_rcm_answers()
     if args.names in ("P2a-pc", "P2a-pcsz", "P2a-real", "P2a-reals2", "P2a-pc-Sc", "P2a-goat", "P2a-goatshuf") \
-            or args.names in DFIX_READS:
+            or args.names in DFIX_READS or args.names == FT_BASE:
         return real_predict_5b2(args.names)
     if args.names == "S-shift":
         require("phase_5b1b")
@@ -2740,6 +2758,15 @@ def cmd_real_predict(args):
           f"{target:.2f} LUFS")
 
 
+def read_phase(name):
+    """The ledger phase a read-2 model tag answers under: FT's, a D_fix family member's, 5C's or 5B.2's."""
+    if name == FT_BASE:
+        return "phase_ft"
+    if name.startswith("P2b-dfix"):
+        return dfix_phase(name)
+    return "phase_5c" if name.startswith("P2a-goat") else "phase_5b2"
+
+
 def real_predict_5b2(name):
     """5B.2's answers on 5B.1's 40 units (zero renders), read exactly as P2a's in 5B.1 (plain readout, both seeds
     NS-best pooled, the input at the model's own training inputs' median loudness): arm P's `P2a-pc` with its labels'
@@ -2752,8 +2779,7 @@ def real_predict_5b2(name):
     from learn import local_objective as LO
     from learn import trusted_data_t3 as T3
 
-    e = require(dfix_phase(name) if name.startswith("P2b-dfix") else "phase_5c" if name.startswith("P2a-goat")
-                else "phase_5b2")
+    e = require(read_phase(name))
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     inv = CB.cc_inventory()
     parts = real_parts(kept, sp, inv)
@@ -2764,6 +2790,9 @@ def real_predict_5b2(name):
     elif name.startswith("P2a-goat"):                   # 5C: RG and RGshuf, each BKS unit by its DI's fold model
         folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
         names = {p_["unit"]: f"{name}{folds[p_['di']]}" for p_ in parts}
+    elif name == FT_BASE:                               # FT's read 2: each BKS unit by its DI's FT_k
+        folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
+        names = {p_["unit"]: ft_name(folds[p_["di"]]) for p_ in parts}
     elif name.startswith("P2b-dfix"):                   # D_fix's read 2: each BKS unit by its DI's fold model only
         if name not in DFIX_READS:
             raise SystemExit(f"--names {sorted(DFIX_READS)} (each read by its fold models: an all-labels run saw every"
@@ -2775,6 +2804,8 @@ def real_predict_5b2(name):
     models = {}
     for nm in sorted(set(names.values())):
         nets, recs = zip(*(load_run(nm, sd, "best") for sd in SEEDS))
+        for r_ in recs:
+            ft_read_check(r_)
         own = [i for i in recs[0]["train_ids"] if i < REAL_ROW0]
         if any([i for i in r_["train_ids"] if i < REAL_ROW0] != own for r_ in recs):
             raise SystemExit(f"{nm}: the seeds trained on different sets")
@@ -2786,7 +2817,7 @@ def real_predict_5b2(name):
         nets, _, target, const = models[names[prt["unit"]]]
         ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
         g = DE.inference_gain_db(ref, target)
-        backed = dfix_backed(prt["unit"]) if name in DFIX_BASES else None
+        backed = dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE) else None
         for amp in AMPS3:
             sel, S = ms[amp][prt["cls"]]
             key = real_key(prt, amp)
@@ -2811,8 +2842,8 @@ def real_predict_5b2(name):
                     T3.constant_full(amp, S, const[(amp, prt["cls"])]))}}
     for t, a in out.items():
         save(out_dir() / REAL_DIR / "answers" / f"{t}.json", {
-            "plan": PLAN, "ledger": f"{LEDGER_ID} {dfix_phase(name) if name.startswith('P2b-dfix') else 'phase_5c' if name.startswith('P2a-goat') else 'phase_5b2'}",
-            "tag": t, "parts": parts, "input": "backed (variant 0)" if name in DFIX_BASES else "clean", "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
+            "plan": PLAN, "ledger": f"{LEDGER_ID} {read_phase(name)}",
+            "tag": t, "parts": parts, "input": "backed (variant 0)" if name in (*DFIX_BASES, FT_BASE) else "clean", "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
             "unit_model": names, "answers": a, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"REAL PREDICT 5B.2 DONE: {name} on {len(parts)} units")
 
@@ -3848,13 +3879,16 @@ def goat_predict(name):
     from learn import full_space as F
     from learn import local_objective as LO
 
-    e = require(dfix_phase(name) if name in DFIX_BASES else "phase_5c")
+    e = require(read_phase(name))
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     units = goat_read_units()
     models = {}
     for k in sorted({p_["fold"] for p_ in units}):
-        nm = dfix_fold_name(name, k) if name in DFIX_BASES else f"{name}{k}"
+        nm = (ft_name(k) if name == FT_BASE else dfix_fold_name(name, k) if name in DFIX_BASES
+              else f"{name}{k}")
         nets, recs = zip(*(load_run(nm, sd, "best") for sd in SEEDS))
+        for r_ in recs:
+            ft_read_check(r_)
         models[k] = (list(nets), [r_["model_sha256"]["best"] for r_ in recs], model_input_lufs(recs[0]))
     ms = A_menu_S()
     out = {}
@@ -3864,7 +3898,7 @@ def goat_predict(name):
         g = DE.inference_gain_db(ref, target)
         amp = prt["amp"]
         sel, S = ms[amp][prt["cls"]]
-        backed = dfix_backed(prt["unit"]) if name in DFIX_BASES else None   # D_fix: a pool-backed variant
+        backed = dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE) else None   # D_fix, FT: pool-backed
         for search in ("A", "B"):
             if backed is not None:
                 s8, ls = backed[search]
@@ -3875,7 +3909,7 @@ def goat_predict(name):
             st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
             out.setdefault(real_key(prt, amp), {})[search] = {"select": sel, "settings": LO.sdict(st)}
     save(out_dir() / GOAT_DIR / "answers" / f"{name}.json", {
-        "plan": PLAN, "ledger": f"{LEDGER_ID} {dfix_phase(name) if name in DFIX_BASES else 'phase_5c'}",
+        "plan": PLAN, "ledger": f"{LEDGER_ID} {read_phase(name)}",
         "tag": name,
         "models": {k: {"sha256": m[1], "input_lufs": m[2]} for k, m in models.items()}, "answers": out,
         "time": time.strftime("%Y-%m-%d %H:%M:%S")})
@@ -3883,8 +3917,8 @@ def goat_predict(name):
 
 
 def cmd_goat_predict(args):
-    if args.names not in ("P2a-goat", "P2a-goatshuf", *DFIX_BASES):
-        raise SystemExit(f"--names P2a-goat, P2a-goatshuf or one of {', '.join(DFIX_BASES)} (D_fix's fold models)")
+    if args.names not in ("P2a-goat", "P2a-goatshuf", *DFIX_BASES, FT_BASE):
+        raise SystemExit(f"--names P2a-goat, P2a-goatshuf, {FT_BASE} or one of {', '.join(DFIX_BASES)} (fold models)")
     goat_predict(args.names)
 
 
@@ -4255,12 +4289,12 @@ def cmd_real_heads(args):
     print("REAL-HEADS DONE")
 
 
-ARM_FOLD_PHASES = ("phase_5b2", "phase_5c", "phase_dfix")    # real-report's phases whose models share 5B.2's DI folds
+ARM_FOLD_PHASES = ("phase_5b2", "phase_5c", "phase_dfix", "phase_ft")    # real-report's phases whose models share 5B.2's DI folds
 
 
 def report_phase(tags):
     """real-report's ledger phase for the tags it reads."""
-    return ("phase_dfix" if tags & DFIX_READS else "phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
+    return ("phase_ft" if FT_BASE in tags else "phase_dfix" if tags & DFIX_READS else "phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
             else "phase_5b2_rigo" if tags & {"RigO", "RcM"}
             else "phase_5b2" if any(t.startswith(("P2a-pc", "P2a-real", "Rc")) for t in tags)
             else "phase_5b1b" if any(t in ("P2a-Sc", "S-shift") for t in tags) else "phase_5b1")
@@ -6279,14 +6313,36 @@ def dfix_training_sources(kept, inv, name="P2b-dfix"):
     return src, cnt
 
 
-def dfix_vreal_leaks(kept, inv):
-    """The leakage guard: no V-real band (VREAL_BANDS) or song (`vreal_songs`) in any of D_fix's training inputs
-    (`dfix_training_sources`). Refuses on any. -> counts checked."""
-    src, cnt = dfix_training_sources(kept, inv)
+def dfix_vreal_leaks(kept, inv, name="P2b-dfix"):
+    """The leakage guard: no V-real band (VREAL_BANDS) or song (`vreal_songs`) in any of run `name`'s training inputs
+    (`dfix_training_sources`; D_fix's, or FT's all-labels run). Refuses on any. -> counts checked."""
+    src, cnt = dfix_training_sources(kept, inv, name)
     bad = leaks_of(src, VREAL_BANDS, vreal_songs(inv))
     if bad:
-        raise SystemExit(f"V-real in D_fix's training inputs ({len(bad)}): {bad[:20]}")
+        raise SystemExit(f"V-real in {name}'s training inputs ({len(bad)}): {bad[:20]}")
     return cnt
+
+
+def vreal_stem_input(man, slug, info, target):
+    """A V-real part's model input source (read 3's rule): its X-LANCE crop stem (stage F's stored one, or T3's
+    crop-only stem) and its crop mix, with the gain that brings the mix to `target` LUFS.
+    -> (stem, mix, gain_db, input hashes)."""
+    from learn import confirm_run as CR
+    from learn import direct_existing as DE
+    from learn import direct_stems as DS
+    from learn import trusted_data_t3 as T3
+
+    if info["kind"] == "stagef":
+        mix, _, hs = DE.f_inputs(slug, "mega53")
+        stem = DS.stored_stem(man, f"stagef/{slug}")
+        if stem is None:
+            raise SystemExit(f"{slug}: no stored X-LANCE stem")
+        hashes = {"context": hs["context"], "stem": man["stems"][f"stagef/{slug}"]["sha256"]}
+    else:                                                # T3's own crop: its mix.wav and crop-only stem
+        mix = CR.mono(pathlib.Path(info["crop"]) / "mix.wav")
+        stem = T3.crop_stem(info)
+        hashes = {"crop_record": info["record_sha256"], "stem": info["stem"]["sha256"]}
+    return stem, mix, DE.inference_gain_db(mix, target), hashes
 
 
 def vreal_answers_path(tag):
@@ -6321,14 +6377,12 @@ def cmd_dfix_vreal_predict(args):
     import numpy as np
 
     from learn import cc_build as CB
-    from learn import confirm_run as CR
     from learn import direct_existing as DE
     from learn import direct_stems as DS
     from learn import full_space as F
     from learn import knob_ceiling as K
     from learn import local_objective as LO
     from learn import trusted_data as T
-    from learn import trusted_data_t3 as T3
 
     e = require("phase_dfix_vreal")
     tags = dfix_vreal_tags(args.names)
@@ -6356,17 +6410,7 @@ def cmd_dfix_vreal_predict(args):
     stems, amps, rcg = {}, {}, {}
     for slug in sorted({d[0] for d in dirs}):
         info = parts[slug]
-        if info["kind"] == "stagef":
-            mix, _, hs = DE.f_inputs(slug, "mega53")
-            stem = DS.stored_stem(man, f"stagef/{slug}")
-            if stem is None:
-                raise SystemExit(f"{slug}: no stored X-LANCE stem")
-            hashes = {"context": hs["context"], "stem": man["stems"][f"stagef/{slug}"]["sha256"]}
-        else:                                            # T3's own crop: its mix.wav and crop-only stem
-            mix = CR.mono(pathlib.Path(info["crop"]) / "mix.wav")
-            stem = T3.crop_stem(info)
-            hashes = {"crop_record": info["record_sha256"], "stem": info["stem"]["sha256"]}
-        stems[slug] = (stem, mix, DE.inference_gain_db(mix, target), hashes)
+        stems[slug] = vreal_stem_input(man, slug, info, target)
         if amp_level is not None:
             ref = amp_track(slug, info)
             amps[slug] = (ref, DE.inference_gain_db(ref, amp_level))
@@ -6562,6 +6606,602 @@ def cmd_dfix_vreal_report(args):
     print("DFIX-VREAL-REPORT DONE")
 
 
+# --- FT (declared 2026-11-02, ledger phase_ft): P2b-wide24 as pretraining, D_fix's real rows alone tune it ----------
+
+FT_BASE = "P2b-ft"                   # the all-labels FT (V-real's, only after read 2's carry); FT_k `P2b-ft-k{k}`
+FT_LR, FT_CAP = 1e-4, 100            # the declared rate and epoch cap; the fallbacks (`phase_ft_fallback`) below
+FT_FALLBACK_LR, FT_FALLBACK_CAP = 3e-5, 300
+FT_PATIENCE, FT_MIN_FALL, FT_SMOOTH, FT_EVERY = 15, 1e-3, 3, 5
+FT_PRETRAIN = "P2b-wide24"           # W: its NS-best checkpoint per seed is FT's start
+
+
+def ft_name(k, inner=False, lr=FT_LR, cap=FT_CAP):
+    """FT's run names: `P2b-ft` (every label), `P2b-ft-k{k}` (fold k out), `P2b-ft-k{k}-inner` (k's epoch choice;
+    a fallback's inner runs `-lr3e-05` and/or `-cap300` after it, so the declared ones are kept)."""
+    if k is None:
+        if inner:
+            raise SystemExit("an inner run needs --real-fold")
+        return FT_BASE
+    if k not in range(REAL_FOLDS):
+        raise SystemExit(f"--real-fold in 0..{REAL_FOLDS - 1}")
+    if not inner:
+        return f"{FT_BASE}-k{k}"
+    return f"{FT_BASE}-k{k}-inner" + ("" if lr == FT_LR else f"-lr{lr:g}") + ("" if cap == FT_CAP else f"-cap{cap}")
+
+
+def ft_rows_of(brecs, by_unit, folds, grecs, gunits, k, inner, label_of=None):
+    """FT's real rows (`dfix_rows_of`): FT_k's are D_fix_k's (fold k held, logged only); k's inner run drops fold k's
+    records entirely and holds fold j = (k + 1) mod 4 (its validation). -> (training rows, held rows, counts)."""
+    if not inner:
+        return dfix_rows_of(brecs, by_unit, folds, grecs, gunits, k, label_of)
+    b = [r for r in brecs if folds[by_unit[r["unit"]]["di"]] != k]
+    g = [r for r in grecs if gunits[r["unit"]]["fold"] != k]
+    return dfix_rows_of(b, by_unit, folds, g, gunits, (k + 1) % REAL_FOLDS, label_of)
+
+
+def ft_real_rows(k, inner):
+    brecs, by_unit, folds = real_labels(2)
+    grecs, gunits, _ = goat_labels()
+    return ft_rows_of(brecs, by_unit, folds, grecs, gunits, k, inner)
+
+
+def ft_inner_E(log, track="real_val"):
+    """An inner run's E as declared: the first argmin of the trailing moving average of `track` over the logged
+    epochs (finite values only), + 1. (`fit`'s own best only moves on a fall of FT_MIN_FALL: the stop rule.)"""
+    v = [(r_[f"{track}_smoothed"], r_["epoch"]) for r_ in log
+         if f"{track}_smoothed" in r_ and math.isfinite(r_[f"{track}_smoothed"])]
+    if not v:
+        raise SystemExit("no finite smoothed validation loss")
+    return min(v)[1] + 1                               # ties: the first epoch
+
+
+def ft_fallback_refusal(get, lr, cap):
+    """Why FT_k may not train at (lr, cap) yet, or None. `get(lr, cap)` -> that setting's 8 inner records or None.
+    The declared order: at the base rate the rate rule (4+ of 8 with E <= 2) first, then the cap rule (4+ of 8 at the
+    cap 100); each fallback at most once and only when its rule fired on the setting before it."""
+    def fired(recs, rule):
+        return sum(1 for r_ in recs if (ft_inner_E(r_["log"]) <= 2 if rule == "rate" else r_["at_cap"])) >= 4
+
+    steps = [(FT_LR, FT_CAP)]
+    base = get(FT_LR, FT_CAP)
+    if base is None:
+        return "the 8 inner runs at the declared rate and cap are not all done"
+    cur = (FT_LR, FT_CAP)
+    if fired(base, "rate"):
+        cur = (FT_FALLBACK_LR, FT_CAP)
+        steps.append(cur)
+        if get(*cur) is None:
+            return f"the rate rule fired: the 8 inner runs at lr {FT_FALLBACK_LR:g} are not all done"
+    if fired(get(*cur), "cap"):
+        cur = (cur[0], FT_FALLBACK_CAP)
+        steps.append(cur)
+        if get(*cur) is None:
+            return f"the cap rule fired: the 8 inner runs at cap {FT_FALLBACK_CAP} are not all done"
+    if (lr, cap) != cur:
+        return f"the settled setting is lr {cur[0]:g}, cap {cur[1]} (steps {steps}), not lr {lr:g}, cap {cap}"
+    return None
+
+
+def ft_epoch_of(inner_recs):
+    """The epoch count FT trains for: one inner run's E (from its log, `ft_inner_E`), or the median of several,
+    rounded half up."""
+    es = sorted(ft_inner_E(r["log"]) for r in inner_recs)
+    if not es:
+        raise SystemExit("no inner runs")
+    m = (es[(len(es) - 1) // 2] + es[len(es) // 2]) / 2
+    return int(math.floor(m + 0.5))
+
+
+def ft_rate(args):
+    """The declared rate and cap, or a fallback's once `phase_ft_fallback` records it. -> (lr, cap)."""
+    lr = FT_LR if args.ft_lr is None else args.ft_lr
+    cap = FT_CAP if args.ft_cap is None else args.ft_cap
+    if lr not in (FT_LR, FT_FALLBACK_LR) or cap not in (FT_CAP, FT_FALLBACK_CAP):
+        raise SystemExit(f"--ft-lr in {(FT_LR, FT_FALLBACK_LR)}, --ft-cap in {(FT_CAP, FT_FALLBACK_CAP)}")
+    if (lr, cap) != (FT_LR, FT_CAP):
+        require("phase_ft_fallback")
+    return lr, cap
+
+
+def ft_layout(n_plugin_tr, n_real, n_rows, n_real_held):
+    """FT's index sets in `with_rows`' layout (plugin training, real training, plugin held, real held).
+    -> (real training, plugin held (NS), real held)."""
+    import numpy as np
+
+    return (np.arange(n_plugin_tr, n_plugin_tr + n_real), np.arange(n_plugin_tr + n_real, n_rows - n_real_held),
+            np.arange(n_rows - n_real_held, n_rows))
+
+
+def ft_start_state(seed):
+    """W's NS-best state for `seed` (hash checked by `load_run`). -> (state, W's run record)."""
+    net, rec = load_run(FT_PRETRAIN, seed, "best")
+    return {k: t.detach().cpu().clone() for k, t in net.state_dict().items()}, rec
+
+
+def ft_inner_init_refusal(inners, w_best_of):
+    """The inner runs whose start state is not their own seed's W best (`w_best_of(seed)` -> sha256); the all-labels
+    FT takes all eight inner runs, both seeds. -> [(fold, seed)]."""
+    return [(r_["real_fold"], r_["seed"]) for r_ in inners if r_["init"]["sha256"] != w_best_of(r_["seed"])]
+
+
+def cmd_train_ft(args):
+    """One FT run (demucs-venv): `--inner --real-fold k` (k's epoch choice: from W on the folds other than k and j,
+    fold j's real loss each epoch, the trailing 3-epoch average's argmin + 1 = E, patience 15); `--real-fold k`
+    (FT_k: from W on the folds other than k for its inner run's E, the state after E epochs read); neither (the
+    all-labels FT, the median of the eight inner E's; only after `phase_ft_carry`)."""
+    import numpy as np
+    import torch
+
+    from learn import direct_stems as DS
+
+    require("phase_ft")
+    k, inner, seed = args.real_fold, bool(args.inner), args.seed
+    if k is None:
+        require("phase_ft_carry")
+    if seed not in SEEDS:
+        raise SystemExit(f"--seed in {SEEDS}")
+    lr, cap = ft_rate(args)
+    name = ft_name(k, inner, lr, cap)                  # FT_k's name is one at any setting; its (lr, cap) recorded
+    od = out_dir() / "runs"
+    rp = od / f"{name}-{seed}.json"
+    if rp.exists():
+        print(f"{rp.name} exists: nothing to do")
+        return
+    if inner:
+        epochs = cap
+    else:
+        def inner_set(lr_, cap_):
+            ps = [od / f"{ft_name(q, True, lr_, cap_)}-{sd}.json" for q in range(REAL_FOLDS) for sd in SEEDS]
+            return [json.loads(q.read_text()) for q in ps] if all(q.exists() for q in ps) else None
+
+        why = ft_fallback_refusal(inner_set, lr, cap)
+        if why:
+            raise SystemExit(f"{name}: {why}")
+        allin = inner_set(lr, cap)
+        if any(r_["lr"] != lr or r_["cap"] != cap for r_ in allin):
+            raise SystemExit("the inner runs used another rate or cap")
+        inners = [r_ for r_ in allin if k is None or (r_["real_fold"], r_["seed"]) == (k, seed)]
+        epochs = ft_epoch_of(inners)
+    e = require("phase_3")
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    init, wrec = ft_start_state(seed)
+    if not inner and ft_inner_init_refusal(inners, lambda sd: json.loads((od / f"{FT_PRETRAIN}-{sd}.json")
+                                                                         .read_text())["model_sha256"]["best"]):
+        raise SystemExit("an inner run started from another W state than its seed's")
+    pa = argparse.Namespace(rung="b", fold=None, frac=1.0, sections=1.0, pc=False, pcsz=False, aug=False)
+    tr, held, held_name, rows = plugin_rows(kept, sp, pa, lambda ids: rung_rows(kept, rend, ids))
+    if tr != [i for i in wrec["train_ids"] if i < REAL_ROW0]:
+        raise SystemExit(f"{FT_PRETRAIN}-{seed}: trained on other plugin rows than FT's")
+    doubled = doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
+    rrows, real_held, info = ft_real_rows(k, inner)
+    plugin_tr = tr
+    tr, rows = with_rows(tr, rows, rrows)
+    rows = rows + [dict(r, held=True) for r in real_held]
+    data = DfixData(rows, rung_path(croot, "b", doubled), set(plugin_tr), {r["i"] for r in rrows}, 1.0)
+    if not inner:                                      # every unit loaded: D_fix_k's (or D_fix's) inputs exactly
+        ref = dfix_run_name(k)
+        want = json.loads((od / f"{ref}-{seed}.json").read_text())["dfix"]["inputs_sha256"]
+        if data.inputs_sha256 != want:
+            raise SystemExit(f"{name}: real-row inputs differ from {ref}'s ({data.inputs_sha256[:8]} vs {want[:8]})")
+    ti, hi, rh = ft_layout(len(plugin_tr), len(rrows), len(rows), len(real_held))
+    if not all("real" in rows[j] and not rows[j].get("held") for j in ti):
+        raise SystemExit("a plugin or held row in FT's training rows")
+    held_units = {r["real"] for r in real_held}
+    if held_units & {r["real"] for r in rrows}:
+        raise SystemExit("a held unit among the training rows")
+    if inner:                                          # no fold-k unit anywhere; every held unit is fold j's
+        brecs, by_unit, folds = real_labels(2)
+        _, gunits, _ = goat_labels()
+
+        def fold_of(u):
+            return gunits[u]["fold"] if u in gunits else folds[by_unit[u]["di"]]
+
+        if any(fold_of(r["real"]) == k for r in rrows + real_held) \
+                or any(fold_of(u) != (k + 1) % REAL_FOLDS for u in held_units):
+            raise SystemExit(f"{name}: fold {k} in its rows, or a held row outside fold {(k + 1) % REAL_FOLDS}")
+    sub = np.sort(np.random.default_rng(SUBSET_SEED).choice(ti, min(SUBSET_N, len(ti)), replace=False))
+    dev = device()
+    torch.set_num_threads(2)
+    log, t0 = [], time.time()
+    start = None
+    if inner:
+        from learn import full_space as F
+
+        net0 = F.build_net()
+        net0.load_state_dict(init)
+        start = head_losses(net0.to(dev), data, rh, dev)["total"]
+        watch = {"train_real": sub, "real_val": rh}
+        net, final, best_state, best_ep, best = fit(data, ti, watch, "real_val", seed, dev, log, epochs, every=1,
+                                                    patience=FT_PATIENCE, min_gain=FT_MIN_FALL, init=init, lr=lr,
+                                                    smooth=FT_SMOOTH)
+    else:
+        watch = {"train_real": sub, held_name: hi}
+        if len(rh):                                    # fold k's real loss: logged, never `fit`'s tracked set
+            watch["real_held"] = rh
+        net, final, best_state, best_ep, best = fit(data, ti, watch, None, seed, dev, log, epochs, every=FT_EVERY,
+                                                    init=init, lr=lr)
+    out = {"plan": PLAN, "test": name, "ledger": f"{LEDGER_ID} phase_ft", "rung": "b", "seed": seed, "real_fold": k,
+           "inner": inner, "lr": lr, "cap": cap, "init": {"run": f"{FT_PRETRAIN}-{seed}", "which": "best",
+                                                          "sha256": wrec["model_sha256"]["best"]},
+           "train_ids": plugin_tr + [r["i"] for r in rrows], "ft_train_ids": [r["i"] for r in rrows],
+           "held": held_name, "held_ids": held, "real_held_ids": [r["i"] for r in real_held],
+           "real_held_units": sorted(held_units), "epochs_run": log[-1]["epoch"] + 1, "steps": log[-1]["steps"],
+           "dfix": dict(info, fold=k, inner=inner, plugin_train=len(plugin_tr), inputs_sha256=data.inputs_sha256,
+                        target_lufs=data.target_lufs, share=1.0),
+           "backing_variants": getattr(data, "counts", None), "log": log,
+           "minutes": round((time.time() - t0) / 60, 1), "device": str(dev), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    od.mkdir(parents=True, exist_ok=True)
+    if inner:
+        out["dfix"]["val_fold"] = (k + 1) % REAL_FOLDS
+        out.update(E=ft_inner_E(log), stop_best_epoch=best_ep, best_smoothed_val=best, start_real_val=start,
+                   at_cap=log[-1]["epoch"] + 1 == cap and best_ep >= cap - FT_PATIENCE)
+    else:
+        if not math.isfinite(log[-1]["train_real"]["total"]):
+            raise SystemExit(f"{name}: a non-finite training loss at its last epoch")
+        mp = od / f"{name}-{seed}-final.pt"
+        torch.save(final, mp)
+        sha = DS.hashlib_file(mp)
+        out.update(E=epochs, read_checkpoint=f"the state after {epochs} epochs (final)",
+                   models={"final": mp.name, "best": mp.name}, model_sha256={"final": sha, "best": sha})
+    save(rp, out)
+    print(f"TRAIN-FT DONE {name} {seed}: {out['epochs_run']} epochs, E {out['E']}; {out['minutes']} min")
+
+
+def ft_read_check(rec):
+    """FT's read guard: a read FT model is an FT_k or all-labels run (never an inner run) whose read checkpoint is the
+    state after its E epochs: `load_run`'s "best" must be that same file and hash."""
+    if not rec["test"].startswith(FT_BASE):
+        return
+    if rec.get("inner") or rec["models"]["best"] != rec["models"]["final"] \
+            or rec["model_sha256"]["best"] != rec["model_sha256"]["final"] or rec.get("E") != rec.get("epochs_run"):
+        raise SystemExit(f"{rec['test']}-{rec['seed']}: not FT's read checkpoint (the state after E epochs)")
+
+
+def ft_recheck_pick(files, n, key):
+    """The recheck's seeded pick of n stored judge files."""
+    import random
+
+    return sorted(random.Random(f"{DFIX_SEED}|ft-recheck|{key}").sample(sorted(files), min(n, len(files))))
+
+
+def cmd_ft_recheck(args):
+    """FT's render check before read 2 (`phase_ft`): 5 stored D_fix BKS judge files and 5 GOAT ones (both halves:
+    20 renders) rendered again exactly as `real-render` and `goat-render` render them, the hashes compared.
+    -> real/recheck-ft.json; refuses (after saving) on any mismatch."""
+    import numpy as np
+
+    from learn import audibility_measure as AM
+    from learn import cc_build as CB
+    from learn import local_objective as LO
+    from learn import pretrain_set as PS
+    from learn import song_bank as B
+    from learn import trusted_data as T
+
+    require("phase_ft")
+    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
+    LO._wait_cap()
+    bans = json.loads((out_dir() / REAL_DIR / "answers" / "P2b-dfix.json").read_text())
+    gans = json.loads((out_dir() / GOAT_DIR / "answers" / "P2b-dfix.json").read_text())["answers"]
+    parts = {p_["unit"]: p_ for p_ in bans["parts"]}
+    gunits = {p_["unit"]: p_ for p_ in goat_read_units()}
+    rows = []
+    for kind, jd, ans, by in (("bks", out_dir() / REAL_DIR / "judge" / "P2b-dfix", bans["answers"], parts),
+                              ("goat", out_dir() / GOAT_DIR / "judge" / "P2b-dfix", gans, gunits)):
+        for f in ft_recheck_pick([q.name for q in jd.glob("*.json")], 5, kind):
+            if PS.free_gb() < T.DISK_GUARD_GB:
+                raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+            old = json.loads((jd / f).read_text())
+            if old["unit"] not in by:
+                raise SystemExit(f"{jd / f}: its unit is no longer a read unit")
+            prt = by[old["unit"]]
+            key = real_key(prt, old["amp"])
+            if old["answers_sha256"] != answers_sha(ans if kind == "bks" else {key: ans[key]}):
+                raise SystemExit(f"{jd / f}: rendered from other answers than the stored file holds now")
+            di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
+            for search, a in sorted(ans[key].items()):
+                st = LO.tdict(a["settings"])
+                y = np.asarray(AM.fresh_render(CB.new_renderer, di32, a["select"], st, st), np.float64)[trim[0]:trim[1]]
+                new = AM.audio_sha(y)
+                rows.append({"kind": kind, "file": f, "half": search, "stored": old["render_sha256"][search],
+                             "new": new, "same": new == old["render_sha256"][search]})
+    miss = [r_ for r_ in rows if not r_["same"]]
+    save(out_dir() / REAL_DIR / "recheck-ft.json", {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_ft", "rows": rows,
+                                                     "mismatched": len(miss), "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"FT-RECHECK: {len(rows) - len(miss)} of {len(rows)} renders identical", flush=True)
+    if miss:
+        raise SystemExit(f"FT-RECHECK: {len(miss)} renders differ from the stored ones")
+    print("FT-RECHECK DONE")
+
+
+# --- FT to V-real (phase_ft's map, carried by phase_ft_carry): the second candidate on V-real-11, read 3's rules ----
+
+FT_VREAL_TAG = "FV-P2b-ft-stem"     # the all-labels FT (both seeds pooled, its read checkpoint) on read 3's stems
+FT_VREAL_RECHECK = "S-recheck-ft"   # FT_VREAL_RECHECK_N of phase 4's S groups rendered again, asserted identical
+FT_VREAL_RECHECK_N = 10             # 10 groups x 2 renders (one priming each) = the declared 20
+FT_VREAL_HASHES = "phase_ft_vreal_answers"          # the ledger key: {tag: sha256 of vreal/answers/<tag>.json}
+FT_VREAL_TAGS = (FT_VREAL_TAG, FT_VREAL_RECHECK)
+FT_VREAL_STORED = (DFIX_VREAL_BASE, "DV-P2b-dfix-stem", "DV-RcG")   # F41's stored renders: zero new
+FT_VREAL_PAIRS = (                                  # (row, a, b): every row's base is DFIX_VREAL_BASE (F41's S)
+    ("FT - S (primary)", FT_VREAL_TAG, DFIX_VREAL_BASE),
+    ("FT - D_fix", FT_VREAL_TAG, "DV-P2b-dfix-stem"),
+    ("FT - RcG", FT_VREAL_TAG, "DV-RcG"),
+)
+FT_VREAL_INPUT_KEYS = ("input_lufs", "gains_db", "input_hashes", "floor_frame_share", "stem_half_lufs")
+FT_VREAL_F41 = ("report-dfix-vreal.json", (("D_fix - S (primary)", "DV-P2b-dfix-stem", DFIX_VREAL_BASE),
+                                           ("D_fix - RcG", "DV-P2b-dfix-stem", "DV-RcG")))   # F41's rows, recomputed
+
+
+def ft_vreal_recheck_groups(groups):
+    """The seeded FT_VREAL_RECHECK_N of V-real's (part, amp) S groups rendered again before FT's rows are read."""
+    import random
+
+    return sorted(random.Random(f"{DFIX_SEED}|ft-vreal-recheck").sample(sorted(groups),
+                                                                         min(FT_VREAL_RECHECK_N, len(groups))))
+
+
+def ft_vreal_input_drift(mine, stored):
+    """FT's stem inputs against read 3's (F41's DV-P2b-dfix-stem answers file): the declared same inputs, so every
+    FT_VREAL_INPUT_KEYS value must be equal. -> [keys that differ]."""
+    return [k for k in FT_VREAL_INPUT_KEYS if mine.get(k) != stored.get(k)]
+
+
+def two_look_interval(per_cluster, looks=2, level=0.90):
+    """The Bonferroni interval for a row read on the `looks`-th candidate: the cluster t interval at 1 - (1 - level)
+    / looks (two looks at 90%: 95%), df = clusters - 1. -> (lo, hi) or (None, None)."""
+    from scipy import stats
+
+    v = list(per_cluster.values())
+    if len(v) < 2:
+        return None, None
+    m = statistics.fmean(v)
+    half = stats.t.ppf(1 - (1 - level) / looks / 2, len(v) - 1) * statistics.stdev(v) / math.sqrt(len(v))
+    return m - half, m + half
+
+
+def ft_vreal_load():
+    """The all-labels FT, both seeds, at its read checkpoint (`ft_read_check`), with its declared provenance: one
+    training set; trained for the median inner E (cap-300 inner runs); started from W's best; its training ids a
+    subset of D_fix's and its real-row inputs D_fix's. -> (nets, run records)."""
+    od = out_dir() / "runs"
+    nets, recs = [], []
+    for sd in SEEDS:
+        net, rec = load_run(FT_BASE, sd, "best")
+        ft_read_check(rec)
+        if rec.get("inner") or rec.get("real_fold") is not None:
+            raise SystemExit(f"{FT_BASE}-{sd}: not the all-labels run")
+        nets.append(net)
+        recs.append(rec)
+    if any(r_["train_ids"] != recs[0]["train_ids"] or r_["held_ids"] != recs[0]["held_ids"] for r_ in recs):
+        raise SystemExit(f"{FT_BASE}: both seeds of one training set")
+    if any((r_["lr"], r_["cap"]) != (recs[0]["lr"], recs[0]["cap"]) for r_ in recs):
+        raise SystemExit(f"{FT_BASE}: both seeds at one rate and cap")
+
+    def inner_set(lr_, cap_):
+        ps = [od / f"{ft_name(k, True, lr_, cap_)}-{sd}.json" for k in range(REAL_FOLDS) for sd in SEEDS]
+        return [json.loads(q.read_text()) for q in ps] if all(q.exists() for q in ps) else None
+
+    return nets, ft_vreal_provenance(recs, inner_set, lambda sd: json.loads((od / f"{FT_PRETRAIN}-{sd}.json")
+                                                                            .read_text()),
+                                     lambda sd: json.loads((od / f"{dfix_run_name(None)}-{sd}.json").read_text()))
+
+
+def ft_vreal_provenance(recs, inner_set, w_of, d_of):
+    """The all-labels FT runs' declared provenance (refuses on any miss): their (lr, cap) the settled one
+    (`ft_fallback_refusal` on inner_set(lr, cap) -> the 8 inner records or None) and each inner run started from its
+    own seed's W; E the inner median; each run started from its seed's W best, on W's plugin and NS-held ids, and on
+    exactly D_fix's training labels and real-row inputs (plugin + BKS + GOAT). w_of(seed), d_of(seed) -> run
+    records. -> recs."""
+    lr, cap = recs[0]["lr"], recs[0]["cap"]
+    why = ft_fallback_refusal(inner_set, lr, cap)
+    if why:
+        raise SystemExit(f"{FT_BASE}: {why}")
+    inners = inner_set(lr, cap)
+    if ft_inner_init_refusal(inners, lambda sd: w_of(sd)["model_sha256"]["best"]):
+        raise SystemExit(f"{FT_BASE}: the inner runs are not all eight, each from its own seed's W")
+    want = ft_epoch_of(inners)
+    for r_ in recs:
+        sd = r_["seed"]
+        w, d = w_of(sd), d_of(sd)
+        if r_["E"] != want:
+            raise SystemExit(f"{FT_BASE}-{sd}: trained {r_['E']} epochs, not the inner median {want}")
+        if r_["init"]["sha256"] != w["model_sha256"]["best"]:
+            raise SystemExit(f"{FT_BASE}-{sd}: not started from {FT_PRETRAIN}'s best")
+        if [i for i in r_["train_ids"] if i < REAL_ROW0] != w["train_ids"] or r_["held_ids"] != w["held_ids"]:
+            raise SystemExit(f"{FT_BASE}-{sd}: plugin or held rows other than {FT_PRETRAIN}'s")
+        if set(r_["train_ids"]) != set(d["train_ids"]) or r_["held_ids"] != d["held_ids"] \
+                or set(r_["ft_train_ids"]) != {i for i in d["train_ids"] if i >= REAL_ROW0} \
+                or r_["dfix"]["inputs_sha256"] != d["dfix"]["inputs_sha256"]:
+            raise SystemExit(f"{FT_BASE}-{sd}: not D_fix's training labels and inputs")
+    return recs
+
+
+def ft_vreal_unhashed(entry):
+    """FT's answers files and F41's stored ones whose sha256 is not the ledger's (FT_VREAL_HASHES, DFIX_VREAL_HASHES).
+    -> [problems]."""
+    from learn import direct_stems as DS
+
+    out = dfix_vreal_unhashed(list(FT_VREAL_STORED), entry)
+    want = (entry or {}).get(FT_VREAL_HASHES) or {}
+    for t in FT_VREAL_TAGS:
+        p = vreal_answers_path(t)
+        if not p.exists():
+            out.append(f"{t}: no answers file")
+        elif want.get(t) != DS.hashlib_file(p):
+            out.append(f"{t}: sha256 {DS.hashlib_file(p)[:12]} not recorded under {FT_VREAL_HASHES}")
+    return out
+
+
+def cmd_ft_vreal_predict(args):
+    """FT's answers on V-real-11 (zero renders; demucs-venv), after the leakage guard on FT's own training inputs:
+    the all-labels FT (`ft_vreal_load`) per search half on the class's S (`F.answer_settings`, plain readout) on read
+    3's exact inputs (`vreal_stem_input`, `step4_half`, `vreal_model_input`; asserted equal to F41's recorded ones),
+    and FT_VREAL_RECHECK: phase 4's S answers on the seeded recheck groups (asserted the live menu's S). Answers
+    already in the ledger are never rewritten. -> vreal/answers/<tag>.json; prints the sha256s for FT_VREAL_HASHES."""
+    from learn import cc_build as CB
+    from learn import direct_stems as DS
+    from learn import full_space as F
+    from learn import local_objective as LO
+    from learn import trusted_data as T
+
+    require("phase_ft")
+    e = require("phase_ft_carry")
+    if any(t in (e.get(FT_VREAL_HASHES) or {}) for t in FT_VREAL_TAGS):
+        raise SystemExit("FT's V-real answers are already recorded in the ledger (V-real is read once)")
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    inv = CB.cc_inventory()
+    guard = dfix_vreal_leaks(kept, inv, FT_BASE)
+    root, plan, drift, dirs, parts, ms = vreal_ctx()
+    nets, recs = ft_vreal_load()
+    target = vreal_mix_target()
+    man = DS._load(DS.stems_manifest_path(DS.ROOT, T.SEP))
+    stems = {slug: vreal_stem_input(man, slug, parts[slug], target) for slug in sorted({d[0] for d in dirs})}
+    out, floor, lufs = {}, {}, {}
+    for slug, amp, search, _ in dirs:
+        cls = PR.VREAL[slug][1]
+        sel, S = ms[amp][cls]
+        stem, mix, g, _ = stems[slug]
+        s8, _, ls, _ = DS.step4_half(stem, mix, search, g)
+        floor.setdefault(slug, {})[search] = floor_share(s8)
+        lufs.setdefault(slug, {})[search] = ls
+        x, c = vreal_model_input(s8, ls, search, amp, cls)
+        r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
+        st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
+        out.setdefault(f"{slug}|{amp}", {})[search] = {"select": sel, "settings": LO.sdict(st)}
+    meta = {"input": "read 3's: the part's X-LANCE crop stem, the crop's mix brought to levels.json "
+                     "eval_mix_lufs_median and the stem given the same gain (step4_half)", "input_lufs": target,
+            "gains_db": {s_: v[2] for s_, v in stems.items()}, "input_hashes": {s_: v[3] for s_, v in stems.items()},
+            "floor_frame_share": floor, "stem_half_lufs": lufs}
+    f41 = json.loads(vreal_answers_path("DV-P2b-dfix-stem").read_text())
+    drift_keys = ft_vreal_input_drift(json.loads(json.dumps(meta, default=str)), f41)
+    if drift_keys:
+        raise SystemExit(f"FT's V-real inputs differ from read 3's in {drift_keys}: not the declared inputs")
+    s_ans = json.loads(vreal_answers_path("S").read_text())["answers"]
+    pick = ft_vreal_recheck_groups({f"{s_}|{a}" for s_, a, _, _ in dirs})
+    recheck = {}
+    for key in pick:
+        slug, amp = key.split("|")
+        sel, S = ms[amp][PR.VREAL[slug][1]]
+        if answers_sha(s_ans[key][ANY_HALF]) != answers_sha({"select": sel, "settings": LO.sdict(S)}):
+            raise SystemExit(f"{key}: phase 4's stored S is not the live menu's S")
+        recheck[key] = {ANY_HALF: s_ans[key][ANY_HALF]}
+    common = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_ft_carry", "drift": drift, "leakage_guard": guard}
+    save(vreal_answers_path(FT_VREAL_TAG), {
+        **common, "tag": FT_VREAL_TAG, **meta, "model": FT_BASE, "which": "the state after E epochs",
+        "E": recs[0]["E"], "seeds": [r_["seed"] for r_ in recs],
+        "model_sha256": [r_["model_sha256"]["best"] for r_ in recs], "readout": "plain", "answers": out,
+        "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    save(vreal_answers_path(FT_VREAL_RECHECK), {
+        **common, "tag": FT_VREAL_RECHECK, "input": "none (S)",
+        "from": "vreal/answers/S.json (phase 4) on the seeded recheck groups, asserted the live menu's S",
+        "answers": recheck, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    shas = {t: DS.hashlib_file(vreal_answers_path(t)) for t in FT_VREAL_TAGS}
+    print(f"FT-VREAL PREDICT DONE: {len(dirs)} directions; inputs identical to read 3's; recheck groups {pick}; "
+          f"guard {guard}")
+    print(f"record in the ledger's pipeline-fix entry before rendering: \"{FT_VREAL_HASHES}\": "
+          + json.dumps(shas, indent=1))
+
+
+def cmd_ft_vreal_render(args):
+    """FT's V-real renders, one shard (`vreal_render`): FT on every direction (132) and FT_VREAL_RECHECK's groups
+    (20), hashes recorded beside phase 4's stored S; every answers file's sha256 in the ledger first."""
+    e = require("phase_ft_carry")
+    bad = ft_vreal_unhashed(e)
+    if bad:
+        raise SystemExit(f"renders refuse until the answers' hashes are in the ledger: {bad}")
+    vreal_render(list(FT_VREAL_TAGS), args.shard, recheck={FT_VREAL_RECHECK: "S"})
+
+
+def cmd_ft_vreal_report(args):
+    """FT's V-real report (zero renders), saved by `--label`, never overwritten. In order, each a stop: every answers
+    hash the ledger's (FT's and F41's stored tags); every judge record from today's answers; every declared direction
+    judged; the recheck's groups all rendered and identical to phase 4's. Then FT_VREAL_PAIRS by `vreal_rows` (base
+    F41's S, band-clustered, part-weighted, leave-one-band-out, clean and crunch apart, the quiet-input side row as
+    read 3's), the primary with its two-look 95% interval beside. -> vreal/report-<label>.json."""
+    e = require("phase_ft_carry")
+    if not args.label:
+        raise SystemExit("name the report with --label")
+    rp = out_dir() / VREAL_DIR / f"report-{args.label}.json"
+    if rp.exists():
+        raise SystemExit(f"{rp.name} exists: V-real is read once")
+    bad = ft_vreal_unhashed(e)
+    if bad:
+        raise SystemExit(f"the answers' hashes are not the ledger's: {bad}")
+    root, plan, drift, dirs, parts, ms = vreal_ctx()
+    raw = {}
+    for t in (*FT_VREAL_TAGS, *FT_VREAL_STORED, "S"):
+        raw[t] = {}
+        for p in (out_dir() / VREAL_DIR / "judge" / t).glob("*.json"):
+            r_ = json.loads(p.read_text())
+            raw[t][f"{r_['slug']}|{r_['amp']}"] = r_
+        asha = answers_sha(json.loads(vreal_answers_path(t).read_text())["answers"])
+        stale = sorted(k for k, r_ in raw[t].items() if r_.get("answers_sha256") != asha)
+        if stale:
+            raise SystemExit(f"{t}: {len(stale)} judge records come from other answers")
+    judge = {t: {k: r_["judge"] for k, r_ in v.items()} for t, v in raw.items()}
+    miss = dfix_vreal_missing(judge, dirs, [FT_VREAL_TAG, *FT_VREAL_STORED])
+    if miss:
+        raise SystemExit(f"incomplete: directions without a judge {miss}; no row is read")
+    want = ft_vreal_recheck_groups({f"{s_}|{a}" for s_, a, _, _ in dirs})
+    differ = dfix_vreal_recheck(raw[FT_VREAL_RECHECK], raw["S"])
+    if sorted(raw[FT_VREAL_RECHECK]) != want or differ:
+        raise SystemExit(f"the recheck's S renders: {len(raw[FT_VREAL_RECHECK])} of {len(want)} groups, differing "
+                         f"from phase 4's in {differ}; no row is read")
+    pc = s_positive_control(judge[DFIX_VREAL_BASE])
+    if not pc["passes"] or pc["n"] != S_CONTROL_N:
+        raise SystemExit(f"the S positive control fails ({pc}): no rows are read")
+    f41p = out_dir() / VREAL_DIR / FT_VREAL_F41[0]
+    f41 = json.loads(f41p.read_text())["rows"] if f41p.exists() else {}
+    for name, a, b in FT_VREAL_F41[1]:                 # the comparators are F41's stored renders: its rows again
+        m = clustered(vreal_rows(judge, a, b, dirs, base=DFIX_VREAL_BASE)[0])["mean"]
+        if name not in f41 or m is None or not math.isclose(m, f41[name]["all"]["mean"], abs_tol=1e-12):
+            raise SystemExit(f"{name}: {m} from today's judge files is not F41's {f41p.name}; no row is read")
+    stem = json.loads(vreal_answers_path(FT_VREAL_TAG).read_text())
+    quiet = sorted(s_ for s_, v in stem["floor_frame_share"].items() if max(v.values()) > FLOOR_SIDE_ROW)
+    rows_out = {}
+    for name, a, b in FT_VREAL_PAIRS:
+        rows, cnt = vreal_rows(judge, a, b, dirs, base=DFIX_VREAL_BASE)
+        res = {"a": a, "b": b, "all": clustered(rows), **cnt}
+        res["without_quiet_inputs"] = clustered([r for r in rows if not any(m in quiet for m in part_members(r[1]))
+                                                 ]) if quiet else None
+        for cls in ("clean", "crunch"):
+            res[cls] = clustered([r for r in rows if all(PR.VREAL[m][1] == cls for m in part_members(r[1]))])
+        rows_out[name] = res
+    prim = rows_out[FT_VREAL_PAIRS[0][0]]
+    prim["two_look_95"] = two_look_interval(prim["all"]["per_cluster"])
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_ft_carry", "label": args.label,
+           "answers_sha256": {**(e.get(FT_VREAL_HASHES) or {}),
+                              **{t: (e.get(DFIX_VREAL_HASHES) or {}).get(t) for t in FT_VREAL_STORED}},
+           "s_recheck_groups_identical": len(want),
+           "positive_control_S": pc,
+           "side_row_without": {"rule": f"stem inputs with more than {FLOOR_SIDE_ROW:.0%} of frames at the grid floor "
+                                        "in either half (read 3's rule)", "parts": quiet},
+           "selection": "the second candidate read on V-real (D_fix was the first, F41); any choice between FT and "
+                        "D_fix from FT - D_fix here is selection-contaminated",
+           "rows": rows_out}
+    for name, res in rows_out.items():
+        c = res["all"]
+        iv = "" if c["lo90"] is None else f" [{c['lo90']:+.4f}, {c['hi90']:+.4f}]"
+        print(f"{name}: {c['mean']:+.4f}{iv} ({c['clusters']} bands, {c['clusters_negative']} better; part-weighted "
+              f"{c['part_weighted']:+.4f}, {c['parts_negative']} of {c['parts']} parts better; S dropped "
+              f"{res['base_dropped']}, refused as S {res['refused_scored_as_S']})" if c["mean"] is not None
+              else f"{name}: no rows")
+        if "two_look_95" in res and res["two_look_95"][0] is not None:
+            lo, hi = res["two_look_95"]
+            print(f"    two-look (Bonferroni) 95%: [{lo:+.4f}, {hi:+.4f}]")
+        for cls in ("clean", "crunch"):
+            z = res[cls]
+            if z["mean"] is not None:
+                print(f"    {cls}: {z['mean']:+.4f} ({z['clusters']} bands, {z['clusters_negative']} better; descriptive)")
+        if res["without_quiet_inputs"] and res["without_quiet_inputs"]["mean"] is not None:
+            print(f"    without quiet inputs {quiet}: {res['without_quiet_inputs']['mean']:+.4f}")
+        if c["leave_one_out"]:
+            print("    leave one band out: " + ", ".join(f"{b} {v:+.4f}" for b, v in c["leave_one_out"].items()))
+    print(f"S: {len(want)} recheck groups' renders identical to phase 4's; quiet inputs {quiet}")
+    out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    save(rp, out)
+    print("FT-VREAL-REPORT DONE")
+
+
 COMMANDS = {"panel-sections": cmd_panel_sections, "panel-lags": cmd_panel_lags, "panel-centres": cmd_panel_centres, "panel-predict": cmd_panel_predict, "panel-render": cmd_panel_render, "panel-report": cmd_panel_report, "panel-ceiling": cmd_panel_ceiling, "goat-sections": cmd_goat_sections, "goat-search": cmd_goat_search,
             "goat-stage-check": cmd_goat_stage_check, "goat-centres": cmd_goat_centres,
             "goat-predict": cmd_goat_predict, "goat-render": cmd_goat_render, "goat-report": cmd_goat_report,
@@ -6578,7 +7218,9 @@ COMMANDS = {"panel-sections": cmd_panel_sections, "panel-lags": cmd_panel_lags, 
             "vreal-render": cmd_vreal_render, "vreal-report": cmd_vreal_report,
             "build-dfix-real": cmd_build_dfix_real, "sound-recheck": cmd_sound_recheck,
             "dfix-vreal-predict": cmd_dfix_vreal_predict, "dfix-vreal-render": cmd_dfix_vreal_render,
-            "dfix-vreal-report": cmd_dfix_vreal_report}
+            "dfix-vreal-report": cmd_dfix_vreal_report, "train-ft": cmd_train_ft, "ft-recheck": cmd_ft_recheck,
+            "ft-vreal-predict": cmd_ft_vreal_predict, "ft-vreal-render": cmd_ft_vreal_render,
+            "ft-vreal-report": cmd_ft_vreal_report}
 
 
 def main(argv=None):
@@ -6627,6 +7269,9 @@ def main(argv=None):
     ap.add_argument("--n", type=int, default=20, help="sound-recheck: stored renders per tag rendered again")
     ap.add_argument("--lags-only", action="store_true")
     ap.add_argument("--lag-tol", type=int, default=None)       # goat-report: read A on a narrower lag set
+    ap.add_argument("--inner", action="store_true", help="train-ft: fold k's epoch-choice run")
+    ap.add_argument("--ft-lr", type=float, default=None)       # train-ft: a declared fallback only
+    ap.add_argument("--ft-cap", type=int, default=None)
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 

@@ -239,9 +239,19 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          −0.037], 7 of 7 bands), which reads clearly worse than S (+0.228). With the real rows the model moves
          most of the way to the plugin's own start in point estimate, though up to +0.110 worse than S is not
          excluded; no lead is shown, and no per-track reading beyond a real-amp centre (D_fix − RcG +0.011).
-       - **Next:** the user's choice, with F37–F41 as evidence: domain work (for example a model told which rows
-         are plugin renders and which real amps, to test whether real rows can stay at full share without pulling
-         the plugin fit), more real chains, or real-amp reading kept out of the mix model. Community presets follow.
+       - **Fine-tuning from plugin pretraining (2026-11-02, F42):** at the user's suggestion (plugin renders are
+         never the product's input, so use them as pretraining), FT tunes P2b-wide24 on D_fix's real rows alone,
+         the epoch count chosen on held real rows. On real reamps it beats D_fix (BKS −0.055 [−0.084, −0.027], 7 of
+         8 DIs; GOAT level) and leads S by −0.177; carried to V-real, it reads level with S (+0.022 [−0.051,
+         +0.095], undecided), with D_fix (−0.013, 5 of 7 bands, selection-contaminated) and with RcG. On every
+         real set the models are not shown different from the real-amp centres; a scoring audit found no
+         calculation error, S chosen partly on V-real (worth about 0.025), and per-recording headroom no model
+         reads (a per-track factory pick using the true target and its DI beats S by −0.118 on 10 of V-real's
+         parts, descriptive).
+       - **Next:** the user's choice, with F37–F42 as evidence. Proposed: the per-recording reading, with FT's
+         recipe as the base (chosen on read 2, BKS −0.055; on V-real FT is not shown different from D_fix): many more real-amp labelled recordings (captures on verified DIs, as GOAT) and a fresh,
+         larger real-song test (V-real-11 is ±0.07 and now read for two candidates). Domain work and community
+         presets stay open.
        - **TONE3000 downloads: approved by the user (2026-11-01)**, after the [real-amp
          research](research/real-amp-chains-2026-11.md). TONE3000's own terms still apply: the site Terms forbid
          scripted or systematic download of large quantities, and any download of a substantial portion; the API
@@ -1311,3 +1321,4 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-11-02 | Pipeline fix D_fix, audited. The recipe plus every real-amp label as real rows in backings (10 trainings, 3,740 renders): with the real rows a quarter of each epoch it reads the plugin test songs worse than P2b-wide24 (FS +0.062 [+0.009, +0.115], NS +0.123 [+0.074, +0.171]), so it is not built as is and V-real waits; on BKS's real amps it is level with the real-amp centre (+0.036, undecided) and ahead of S (−0.122 [−0.222, −0.021]); on the stems it reads NS better than P2b-wide24 (−0.051). Next: the real rows at a third and a tenth of the share | [plan](pipeline-fix-plan.md) F39, [ledger](dev-test-ledger.json) `pipeline-fix` `phase_dfix*` |
 | 2026-11-02 | Pipeline fix D_fix's amendment, audited: the real rows shown less often (12 trainings, 3,280 renders). At a third of the share the plugin test songs still read worse than P2b-wide24 (FS +0.078 [+0.025, +0.131], NS +0.088 [+0.029, +0.148]); at a tenth they are not shown worse, but BKS's real amps read about where P2a, a model without real rows, does (+0.207 [+0.106, +0.307] against Rcs2). Not built as is; V-real waits; no share in the joint recipe gives the real-amp gain without the plugin cost. Next: the user's choice (domain work, more real chains, or real-amp reading kept out of the mix model) | [plan](pipeline-fix-plan.md) F40, [ledger](dev-test-ledger.json) `pipeline-fix` `phase_dfix_share*` |
 | 2026-11-02 | Pipeline fix D_fix on V-real, audited (the user: the product always reads real amps, so the plugin read became a cost beside; declared and reviewed before the read; 660 renders). On held-out real songs D_fix reads level with S (+0.036 [−0.039, +0.110], undecided) and clearly better than P2b-wide24, the same recipe without real rows (−0.192 [−0.348, −0.037], 7 of 7 bands), which reads clearly worse than S (+0.228). Level with a real-amp centre (+0.011). Next proposed: domain work (a per-row plugin/real input); the user's choice stays open | [plan](pipeline-fix-plan.md) F41, [ledger](dev-test-ledger.json) `pipeline-fix` `phase_dfix_vreal*` |
+| 2026-11-02 | Pipeline fix FT, audited (the user: plugin renders as pretraining; declared and reviewed, the cap-300 fallback taken as declared; 1,512 renders). FT − D_fix on real reamps −0.055 [−0.084, −0.027] (BKS, 7 of 8 DIs; GOAT level), carried to V-real: FT − S +0.022 [−0.051, +0.095] undecided, FT − D_fix −0.013 (selection-contaminated), level with RcG. A scoring audit found no calculation error. Next proposed: per-recording reading on many more real-amp recordings and a fresh real-song test; the user's choice | [plan](pipeline-fix-plan.md) F42, [ledger](dev-test-ledger.json) `pipeline-fix` `phase_ft*` |

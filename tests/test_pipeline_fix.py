@@ -1353,3 +1353,406 @@ def test_vreal_render_records_s_render_hashes_beside_phase_4s(tmp_path, monkeypa
     assert got[slugs[0]]["identical"] and not got[slugs[1]]["identical"]
     assert got[slugs[1]]["recheck_sha256"] == {P.ANY_HALF: "other"} and got[slugs[1]]["renders"] == 2
     assert "RECHECK: 1 groups" in capsys.readouterr().out
+
+
+# --- FT (phase_ft): plugin pretraining, the real rows alone tune it -------------------------------------------------
+
+def _ft_records():
+    by_unit = {f"b{j}": {"unit": f"b{j}", "di": f"d{j % 8}", "cls": "clean", "section": f"s{j}", "band": "BKS"}
+               for j in range(16)}
+    brecs = [{"unit": u, "amp": amp, "label": {}} for u in sorted(by_unit) for amp in ("pr12", "ac20")] * 10
+    folds = {f"d{j}": j // 2 for j in range(8)}
+    grecs, gunits = _goat_records()
+    for u in gunits.values():
+        u.update(section=u["unit"], band="GOAT")
+    return brecs, by_unit, folds, grecs, gunits
+
+
+def test_ft_names_are_their_own():
+    assert [P.ft_name(k) for k in (None, 0, 3)] == ["P2b-ft", "P2b-ft-k0", "P2b-ft-k3"]
+    assert P.ft_name(1, inner=True) == "P2b-ft-k1-inner"
+    with pytest.raises(SystemExit):
+        P.ft_name(None, inner=True)
+    with pytest.raises(SystemExit):
+        P.ft_name(4)
+    ft = {P.ft_name(k, i) for k in range(4) for i in (False, True)} | {P.FT_BASE}
+    assert not ft & ({P.dfix_run_name(k) for k in (None, 0, 1, 2, 3)} | set(P.DFIX_READS))
+    assert P.read_phase("P2b-ft") == "phase_ft" and P.read_phase("P2b-dfix") == "phase_dfix"
+    assert P.read_phase("P2b-dfixp10") == "phase_dfix_share" and P.read_phase("P2a-goat") == "phase_5c"
+    assert P.report_phase({"P2b-ft", "P2b-dfix", "S"}) == "phase_ft"
+    assert P.report_phase({"P2b-dfix", "S"}) == "phase_dfix"
+    assert "phase_ft" in P.ARM_FOLD_PHASES
+
+
+def test_ft_k_rows_are_dfix_ks_and_the_inner_run_never_holds_fold_k():
+    brecs, by_unit, folds, grecs, gunits = _ft_records()
+    lab = lambda rec: rec["amp"]                                     # noqa: E731
+    bfold = lambda r: folds[by_unit[r["real"]]["di"]]                # noqa: E731
+    gfold = lambda r: gunits[r["real"]]["fold"]                      # noqa: E731
+    for k in range(4):
+        assert P.ft_rows_of(brecs, by_unit, folds, grecs, gunits, k, False, lab) == \
+            P.dfix_rows_of(brecs, by_unit, folds, grecs, gunits, k, lab)
+        j = (k + 1) % 4
+        tr, held, n = P.ft_rows_of(brecs, by_unit, folds, grecs, gunits, k, True, lab)
+        fold_of = lambda r: bfold(r) if r["i"] < P.GOAT_ROW0 else gfold(r)   # noqa: E731
+        assert tr and held and n["real_rows"] == P.REAL_PER_EPOCH and n["goat_rows"] == P.GOAT_PER_EPOCH
+        assert all(fold_of(r) not in (k, j) for r in tr)
+        assert all(fold_of(r) == j for r in held)
+        assert {r["real"] for r in held if r["i"] < P.GOAT_ROW0} == \
+            {u for u, p in by_unit.items() if folds[p["di"]] == j}
+        assert not {r["real"] for r in tr} & {r["real"] for r in held}
+
+
+def test_ft_epochs_median_rounds_half_up():
+    E = lambda *es: P.ft_epoch_of([{"log": _inner_log([1.0] * (e - 1) + [0.5])} for e in es])   # noqa: E731
+    assert E(7) == 7 and E(3, 4) == 4 and E(1, 2, 3, 4, 5, 6, 7, 8) == 5 and E(2, 9, 9, 30) == 9
+    assert E(10, 11, 12, 13, 14, 15, 16, 17) == 14
+    with pytest.raises(SystemExit):
+        E()
+
+
+def test_ft_rate_takes_only_the_declared_values_and_a_fallback_needs_the_ledger(monkeypatch):
+    a = lambda lr=None, cap=None: argparse.Namespace(ft_lr=lr, ft_cap=cap)   # noqa: E731
+    seen = []
+    monkeypatch.setattr(P, "require", lambda key: seen.append(key) or {})
+    assert P.ft_rate(a()) == (1e-4, 100) and seen == []
+    assert P.ft_rate(a(3e-5)) == (3e-5, 100) and seen == ["phase_ft_fallback"]
+    assert P.ft_rate(a(cap=300)) == (1e-4, 300)
+    for bad in (a(1e-3), a(cap=200)):
+        with pytest.raises(SystemExit):
+            P.ft_rate(bad)
+
+
+def test_ft_layout_takes_only_the_real_training_rows():
+    pytest.importorskip("numpy")
+    ti, hi, rh = P.ft_layout(10, 4, 20, 3)
+    assert list(ti) == [10, 11, 12, 13] and list(hi) == list(range(14, 17)) and list(rh) == [17, 18, 19]
+    ti, hi, rh = P.ft_layout(10, 4, 17, 0)
+    assert len(rh) == 0 and list(hi) == [14, 15, 16]
+
+
+def test_ft_read_check_takes_only_the_state_after_e_epochs():
+    ok = {"test": "P2b-ft-k1", "seed": 1, "inner": False, "E": 12, "epochs_run": 12,
+          "models": {"final": "m.pt", "best": "m.pt"}, "model_sha256": {"final": "h", "best": "h"}}
+    P.ft_read_check(ok)
+    P.ft_read_check({"test": "P2b-dfix1"})                       # not FT: untouched
+    for bad in ({"inner": True}, {"models": {"final": "m.pt", "best": "b.pt"}},
+                {"model_sha256": {"final": "h", "best": "g"}}, {"epochs_run": 13}):
+        with pytest.raises(SystemExit):
+            P.ft_read_check({**ok, **bad})
+
+
+def _inner_log(vals):
+    return [{"epoch": e, "real_val_smoothed": v} for e, v in enumerate(vals)]
+
+
+def test_ft_inner_e_is_the_first_argmin_of_the_smoothed_loss_not_the_stop_rules():
+    assert P.ft_inner_E(_inner_log([3.0, 2.0, 1.0, 0.9995, 1.2])) == 4        # a dip below 1e-3 still counts
+    assert P.ft_inner_E(_inner_log([3.0, 1.0, 2.0, 1.0])) == 2                # ties: the first
+    assert P.ft_inner_E(_inner_log([float("nan"), 2.0, 1.5])) == 3
+    assert P.ft_inner_E(_inner_log([0.5, 1.0])) == 1
+    with pytest.raises(SystemExit):
+        P.ft_inner_E([{"epoch": 0, "real_val": {"total": 1.0}}])
+
+
+def test_ft_fallbacks_settle_in_the_declared_order():
+    def recs(E, at_cap, n=8):
+        return [{"log": _inner_log([1.0] * (E - 1) + [0.5] + [0.6]), "at_cap": a} for a in [at_cap] * n]
+
+    def getter(table):
+        return lambda lr, cap: table.get((lr, cap))
+
+    lo, hi, slow, long = P.FT_LR, P.FT_FALLBACK_LR, P.FT_CAP, P.FT_FALLBACK_CAP
+    plain = recs(40, False)
+    assert "not all done" in P.ft_fallback_refusal(getter({}), lo, slow)
+    assert P.ft_fallback_refusal(getter({(lo, slow): plain}), lo, slow) is None
+    assert "settled" in P.ft_fallback_refusal(getter({(lo, slow): plain}), lo, long)    # no unprompted fallback
+    capped = recs(97, True)
+    assert "cap rule fired" in P.ft_fallback_refusal(getter({(lo, slow): capped}), lo, slow)
+    assert P.ft_fallback_refusal(getter({(lo, slow): capped, (lo, long): plain}), lo, long) is None
+    fast = recs(1, False)
+    t = {(lo, slow): fast}
+    assert "rate rule fired" in P.ft_fallback_refusal(getter(t), lo, slow)
+    t[(hi, slow)] = capped                                                   # rate first, then the cap at the new rate
+    assert "cap rule fired" in P.ft_fallback_refusal(getter(t), hi, slow)
+    t[(hi, long)] = capped                                                   # each at most once: no third step
+    assert P.ft_fallback_refusal(getter(t), hi, long) is None
+    assert P.ft_name(0, True, hi, long) == "P2b-ft-k0-inner-lr3e-05-cap300"
+    assert P.ft_name(0, True) == "P2b-ft-k0-inner" and P.ft_name(0, False, hi, long) == "P2b-ft-k0"
+
+
+def test_ft_epochs_come_from_the_inner_logs():
+    assert P.ft_epoch_of([{"log": _inner_log([2.0, 1.0, 1.5]), "E": 99}]) == 2
+
+
+# --- FT to V-real (phase_ft's map, after phase_ft_carry) -------------------------------------------------------------
+
+def test_ft_vreal_reads_ft_against_f41s_stored_tags_with_s_as_base():
+    assert P.FT_VREAL_PAIRS[0] == ("FT - S (primary)", P.FT_VREAL_TAG, P.DFIX_VREAL_BASE)
+    assert {b for _, a, b in P.FT_VREAL_PAIRS} == set(P.FT_VREAL_STORED)
+    assert all(a == P.FT_VREAL_TAG for _, a, _ in P.FT_VREAL_PAIRS)
+    assert set(P.FT_VREAL_STORED) <= set(P.DFIX_VREAL_TAGS)                  # zero new renders for the comparators
+    assert not set(P.FT_VREAL_TAGS) & (set(P.DFIX_VREAL_TAGS) | {"S"})       # FT's own tags never overwrite F41's
+    assert P.FT_VREAL_RECHECK_N * 2 == 20                                    # the declared 20 recheck renders
+
+
+def test_ft_vreal_recheck_groups_are_a_fixed_seeded_ten():
+    groups = {f"part{i}|{a}" for i in range(11) for a in ("pr12", "sw50r", "ac20")}
+    pick = P.ft_vreal_recheck_groups(groups)
+    assert len(pick) == 10 and set(pick) <= groups and pick == sorted(pick)
+    assert P.ft_vreal_recheck_groups(set(sorted(groups, reverse=True))) == pick
+    assert P.ft_vreal_recheck_groups({"a|pr12", "b|pr12"}) == ["a|pr12", "b|pr12"]
+
+
+def test_ft_vreal_inputs_must_equal_read_3s():
+    f41 = {"input_lufs": -12.25, "gains_db": {"p": 1.5}, "input_hashes": {"p": {"stem": "h"}},
+           "floor_frame_share": {"p": {"A": 0.0, "B": 0.1}}, "stem_half_lufs": {"p": {"A": -14.0, "B": -15.0}},
+           "answers": {"other": 1}}
+    mine = {k: v for k, v in f41.items() if k != "answers"}
+    assert P.ft_vreal_input_drift(mine, f41) == []
+    assert P.ft_vreal_input_drift({**mine, "gains_db": {"p": 1.6}}, f41) == ["gains_db"]
+    assert P.ft_vreal_input_drift({**mine, "input_hashes": {"p": {"stem": "g"}}}, f41) == ["input_hashes"]
+    assert P.ft_vreal_input_drift({k: v for k, v in mine.items() if k != "stem_half_lufs"}, f41) == ["stem_half_lufs"]
+
+
+def test_two_look_interval_is_the_95_percent_cluster_t_interval():
+    pytest.importorskip("scipy")
+    per = {"b1": -0.1, "b2": 0.05, "b3": -0.2, "b4": 0.0, "b5": -0.05, "b6": -0.12, "b7": 0.02}
+    lo, hi = P.two_look_interval(per)
+    c = P.clustered([(b, b, v) for b, v in per.items()])
+    assert (lo + hi) / 2 == pytest.approx(c["mean"])
+    assert lo < c["lo90"] and hi > c["hi90"]                                   # wider than the 90% interval
+    half90 = c["hi90"] - c["mean"]
+    assert (hi - c["mean"]) / half90 == pytest.approx(2.4469 / 1.9432, abs=1e-3)   # t(0.975, 6) / t(0.95, 6)
+    assert P.two_look_interval({"b1": 0.1}) == (None, None)
+
+
+def test_ft_vreal_predict_refuses_before_the_carry_and_once_recorded(monkeypatch):
+    def ledger(entry):
+        def req(k):
+            if k not in entry:
+                raise SystemExit(f"no {k}")
+            return entry
+        return req
+
+    monkeypatch.setattr(P, "recipe_inputs", lambda **kw: pytest.fail("refusals come before any data is read"))
+    monkeypatch.setattr(P, "require", ledger({"phase_ft": "x"}))
+    with pytest.raises(SystemExit, match="phase_ft_carry"):
+        P.cmd_ft_vreal_predict(argparse.Namespace())
+    monkeypatch.setattr(P, "require", ledger({"phase_ft": "x", "phase_ft_carry": "x",
+                                              P.FT_VREAL_HASHES: {P.FT_VREAL_TAG: "h"}}))
+    with pytest.raises(SystemExit, match="read once"):
+        P.cmd_ft_vreal_predict(argparse.Namespace())
+
+
+def test_ft_vreal_unhashed_checks_fts_and_f41s_answers(tmp_path, monkeypatch):
+    from learn import direct_stems as DS
+
+    monkeypatch.setattr(P, "out_dir", lambda: tmp_path)
+    d = tmp_path / P.VREAL_DIR / "answers"
+    d.mkdir(parents=True)
+    for t in (*P.FT_VREAL_TAGS, *P.FT_VREAL_STORED):
+        (d / f"{t}.json").write_text(json.dumps({"tag": t}))
+    sha = {t: DS.hashlib_file(d / f"{t}.json") for t in (*P.FT_VREAL_TAGS, *P.FT_VREAL_STORED)}
+    entry = {P.FT_VREAL_HASHES: {t: sha[t] for t in P.FT_VREAL_TAGS},
+             P.DFIX_VREAL_HASHES: {t: sha[t] for t in P.FT_VREAL_STORED}}
+    assert P.ft_vreal_unhashed(entry) == []
+    (d / f"{P.FT_VREAL_TAG}.json").write_text(json.dumps({"tag": "changed"}))
+    assert [p.split(":")[0] for p in P.ft_vreal_unhashed(entry)] == [P.FT_VREAL_TAG]
+    (d / "DV-RcG.json").unlink()
+    assert len(P.ft_vreal_unhashed(entry)) == 2
+    assert P.ft_vreal_unhashed({}) and len(P.ft_vreal_unhashed({})) == 5
+
+
+def test_ft_vreal_render_and_report_refuse_before_the_hashes(monkeypatch):
+    monkeypatch.setattr(P, "require", lambda k: {})
+    monkeypatch.setattr(P, "ft_vreal_unhashed", lambda e: ["x: not recorded"])
+    monkeypatch.setattr(P, "vreal_render", lambda *a, **k: pytest.fail("no render before the hashes"))
+    with pytest.raises(SystemExit, match="hashes"):
+        P.cmd_ft_vreal_render(argparse.Namespace(shard=(0, 3)))
+    monkeypatch.setattr(P, "out_dir", lambda: __import__("pathlib").Path("/nonexistent-ft-vreal"))
+    with pytest.raises(SystemExit, match="hashes"):
+        P.cmd_ft_vreal_report(argparse.Namespace(label="t"))
+    with pytest.raises(SystemExit, match="label"):
+        P.cmd_ft_vreal_report(argparse.Namespace(label=""))
+
+
+def test_ft_inner_runs_are_checked_against_their_own_seeds_w():
+    w = {1: "w1", 2: "w2"}
+    inners = [{"real_fold": k, "seed": sd, "init": {"sha256": w[sd]}} for k in range(4) for sd in (1, 2)]
+    assert P.ft_inner_init_refusal(inners, w.get) == []                     # both seeds, as the all-labels FT takes
+    inners[3]["init"]["sha256"] = "w1"
+    assert P.ft_inner_init_refusal(inners, w.get) == [(1, 2)]
+
+
+def _ft_world(cap300=False):
+    """Synthetic W, D_fix, inner and all-labels FT records for `ft_vreal_provenance`."""
+    r0 = P.REAL_ROW0
+    w = {sd: {"model_sha256": {"best": f"w{sd}"}, "train_ids": [1, 2], "held_ids": [9]} for sd in P.SEEDS}
+    d = {sd: {"train_ids": [1, 2, r0, r0 + 1], "held_ids": [9], "dfix": {"inputs_sha256": "x"}} for sd in P.SEEDS}
+    es = [10, 12, 14, 16, 18, 20, 22, 24]                                    # median 17
+    inner = [{"real_fold": k, "seed": sd, "init": {"sha256": f"w{sd}"}, "at_cap": False,
+              "log": _inner_log([1.0] * (es[2 * k + j] - 1) + [0.5, 0.6])}
+             for k in range(P.REAL_FOLDS) for j, sd in enumerate(P.SEEDS)]
+    capped = [dict(r_, at_cap=True) for r_ in inner]
+    cap = P.FT_FALLBACK_CAP if cap300 else P.FT_CAP
+    sets = {(P.FT_LR, P.FT_CAP): capped if cap300 else inner}
+    if cap300:
+        sets[(P.FT_LR, P.FT_FALLBACK_CAP)] = inner
+    recs = [{"seed": sd, "lr": P.FT_LR, "cap": cap, "E": 17, "init": {"sha256": f"w{sd}"},
+             "train_ids": [1, 2, r0, r0 + 1], "held_ids": [9], "ft_train_ids": [r0, r0 + 1],
+             "dfix": {"inputs_sha256": "x"}} for sd in P.SEEDS]
+    return recs, sets.get, lambda lr, cap_: sets.get((lr, cap_)), w.get, d.get
+
+
+def test_ft_vreal_provenance_takes_only_the_declared_all_labels_runs():
+    for cap300 in (False, True):
+        recs, _, get, w_of, d_of = _ft_world(cap300)
+        assert P.ft_vreal_provenance(recs, get, w_of, d_of) == recs
+    recs, _, get, w_of, d_of = _ft_world(True)
+    bad_cap = [dict(r_, cap=P.FT_CAP) for r_ in recs]                        # the cap rule fired: 100 is not settled
+    with pytest.raises(SystemExit, match="settled"):
+        P.ft_vreal_provenance(bad_cap, get, w_of, d_of)
+    recs, _, get, w_of, d_of = _ft_world()
+    r0 = P.REAL_ROW0
+    for change, why in (({"E": 18}, "inner median"), ({"init": {"sha256": "other"}}, "best"),
+                        ({"train_ids": [1, 2, r0]}, "D_fix's training labels"),          # a subset is not enough
+                        ({"ft_train_ids": [r0]}, "D_fix's training labels"),
+                        ({"held_ids": [8]}, "held rows"),
+                        ({"train_ids": [1, 3, r0, r0 + 1]}, "plugin or held rows"),
+                        ({"dfix": {"inputs_sha256": "y"}}, "D_fix's training labels")):
+        with pytest.raises(SystemExit, match=why):
+            P.ft_vreal_provenance([dict(recs[0], **change), recs[1]], get, w_of, d_of)
+    moved = get(P.FT_LR, P.FT_CAP)
+    moved[1]["init"] = {"sha256": "w-other"}
+    with pytest.raises(SystemExit, match="own seed's W"):
+        P.ft_vreal_provenance(recs, lambda lr, cap: moved if (lr, cap) == (P.FT_LR, P.FT_CAP) else None, w_of, d_of)
+
+
+def test_ft_vreal_load_refuses_inner_fold_and_split_runs(monkeypatch):
+    recs, _, _, _, _ = _ft_world()
+    ok = {"test": P.FT_BASE, "inner": False, "real_fold": None, "epochs_run": 17,
+          "models": {"final": "m.pt", "best": "m.pt"}, "model_sha256": {"final": "h", "best": "h"}}
+    runs = {sd: dict(r_, **ok) for sd, r_ in zip(P.SEEDS, recs)}
+    monkeypatch.setattr(P, "load_run", lambda name, sd, which: (None, runs[sd]))
+    monkeypatch.setattr(P, "ft_vreal_provenance", lambda recs_, *a: recs_)
+    assert len(P.ft_vreal_load()[1]) == 2
+    sd = P.SEEDS[1]
+    for change, why in (({"inner": True}, "read checkpoint"), ({"real_fold": 2}, "all-labels"),
+                        ({"held_ids": [7]}, "one training set"), ({"cap": P.FT_FALLBACK_CAP}, "rate and cap"),
+                        ({"models": {"final": "m.pt", "best": "b.pt"}}, "read checkpoint")):
+        old = runs[sd]
+        runs[sd] = dict(old, **change)
+        with pytest.raises(SystemExit, match=why):
+            P.ft_vreal_load()
+        runs[sd] = old
+
+
+def test_ft_vreal_report_reads_synthetic_judges_and_stops_on_the_recheck(tmp_path, monkeypatch):
+    pytest.importorskip("scipy")
+    from learn import direct_stems as DS
+
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    dirs = _vreal_dirs()
+    monkeypatch.setattr(P, "vreal_ctx", lambda: (None, None, None, dirs, None, None))
+    monkeypatch.setattr(P, "s_positive_control", lambda sj: {"n": P.S_CONTROL_N, "passes": True, "max_abs_log": 0.0})
+    pick = P.ft_vreal_recheck_groups({f"{s}|{a}" for s, a, _, _ in dirs})
+    per_half = {P.FT_VREAL_TAG, "DV-P2b-dfix-stem"}
+    dval = {P.FT_VREAL_TAG: 0.8, "DV-P2b-dfix-stem": 0.9}
+    tags = [*P.FT_VREAL_TAGS, *P.FT_VREAL_STORED, "S"]
+    d = tmp_path / P.VREAL_DIR / "answers"
+    d.mkdir(parents=True)
+    quiet = "cambridge-Signs-ElecGtr3"
+    for t in tags:
+        extra = {"floor_frame_share": {s: {"A": 0.3 if s == quiet else 0.0, "B": 0.0} for s in PR.VREAL}} \
+            if t == P.FT_VREAL_TAG else {}
+        (d / f"{t}.json").write_text(json.dumps({"tag": t, "answers": {"t": t}, **extra}))
+        for s, a, sh, h in dirs:
+            key = f"{s}|{a}"
+            if t == P.FT_VREAL_RECHECK and key not in pick:
+                continue
+            p = tmp_path / P.VREAL_DIR / "judge" / t / f"{key}.json"
+            p.parent.mkdir(parents=True, exist_ok=True)
+            rec = json.loads(p.read_text()) if p.exists() else {
+                "slug": s, "amp": a, "judge": {}, "render_sha256": {"*": key}, "answers_sha256": P.answers_sha({"t": t})}
+            rec["judge"].setdefault(sh if t in per_half else P.ANY_HALF, {})[h] = dval.get(t, 1.0)
+            p.write_text(json.dumps(rec))
+    ft_sha = {t: DS.hashlib_file(d / f"{t}.json") for t in P.FT_VREAL_TAGS}
+    st_sha = {t: DS.hashlib_file(d / f"{t}.json") for t in P.FT_VREAL_STORED}
+    monkeypatch.setattr(P, "require", lambda k: {P.FT_VREAL_HASHES: ft_sha, P.DFIX_VREAL_HASHES: st_sha})
+    args = argparse.Namespace(label="t")
+    rp = tmp_path / P.VREAL_DIR / "report-t.json"
+    f41 = tmp_path / P.VREAL_DIR / P.FT_VREAL_F41[0]
+    f41.write_text(json.dumps({"rows": {"D_fix - S (primary)": {"all": {"mean": math.log(0.9)}},
+                                        "D_fix - RcG": {"all": {"mean": math.log(0.9) + 0.01}}}}))
+    with pytest.raises(SystemExit, match="D_fix - RcG"):                    # comparators must reproduce F41's rows
+        P.cmd_ft_vreal_report(args)
+    f41.write_text(json.dumps({"rows": {"D_fix - S (primary)": {"all": {"mean": math.log(0.9)}},
+                                        "D_fix - RcG": {"all": {"mean": math.log(0.9)}}}}))
+    jd = tmp_path / P.VREAL_DIR / "judge" / P.FT_VREAL_RECHECK
+    one = jd / f"{pick[0]}.json"
+    rec = json.loads(one.read_text())
+    one.write_text(json.dumps(dict(rec, render_sha256={"*": "other"})))
+    with pytest.raises(SystemExit, match="recheck"):
+        P.cmd_ft_vreal_report(args)
+    one.unlink()
+    with pytest.raises(SystemExit, match="recheck"):
+        P.cmd_ft_vreal_report(args)
+    extra_g = sorted({f"{s}|{a}" for s, a, _, _ in dirs} - set(pick))[0]
+    (jd / f"{extra_g}.json").write_text(json.dumps(dict(rec, slug=extra_g.split("|")[0], amp=extra_g.split("|")[1],
+                                                        render_sha256={"*": extra_g})))
+    one.write_text(json.dumps(rec))
+    with pytest.raises(SystemExit, match="recheck"):
+        P.cmd_ft_vreal_report(args)
+    (jd / f"{extra_g}.json").unlink()
+    monkeypatch.setattr(P, "s_positive_control", lambda sj: {"n": P.S_CONTROL_N, "passes": False})
+    with pytest.raises(SystemExit, match="positive control"):
+        P.cmd_ft_vreal_report(args)
+    assert not rp.exists()
+    monkeypatch.setattr(P, "s_positive_control", lambda sj: {"n": P.S_CONTROL_N, "passes": True, "max_abs_log": 0.0})
+    P.cmd_ft_vreal_report(args)
+    out = json.loads(rp.read_text())
+    rows = out["rows"]
+    assert rows["FT - S (primary)"]["all"]["mean"] == pytest.approx(math.log(0.8))
+    assert rows["FT - D_fix"]["all"]["mean"] == pytest.approx(math.log(0.8 / 0.9))
+    assert rows["FT - RcG"]["all"]["mean"] == pytest.approx(math.log(0.8))
+    assert rows["FT - S (primary)"]["base_dropped"] == 0 and rows["FT - S (primary)"]["missing"] == 0
+    lo, hi = rows["FT - S (primary)"]["two_look_95"]
+    assert (lo + hi) / 2 == pytest.approx(math.log(0.8))
+    assert out["side_row_without"]["parts"] == [quiet] and out["positive_control_S"]["passes"]
+    with pytest.raises(SystemExit, match="read once"):
+        P.cmd_ft_vreal_report(args)
+
+
+def test_leakage_guard_reads_the_all_labels_ft_run(tmp_path, monkeypatch):
+    np = pytest.importorskip("numpy")
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    monkeypatch.setattr(P, "DFIX_K", 1)
+    (tmp_path / "runs").mkdir()
+    for sd in P.SEEDS:                                       # shaped as cmd_train_ft's all-labels output
+        (tmp_path / "runs" / f"{P.FT_BASE}-{sd}.json").write_text(json.dumps({
+            "train_ids": [1, P.REAL_ROW0, P.GOAT_ROW0], "held_ids": [2], "ft_train_ids": [P.REAL_ROW0, P.GOAT_ROW0],
+            "real_fold": None, "inner": False, "dfix": {"target_lufs": {"bks/u": 0, "g/u": 0}}}))
+    kept = {1: {"section": "s1/Band1_Song_Full/di.wav@5.0", "band": "B1", "session_dir": "/d/Band1_Song_Full", "di": "d1"},
+            2: {"section": "s1/NS_Full/di.wav@5.0", "band": "NS", "session_dir": "/d/NS_Full", "di": "d2"},
+            3: {"section": "s1/BKS_Full/di.wav@1.0", "band": "BKS", "session_dir": "/d/BKS_Full", "di": "d3"}}
+    inv = {"d1": {"song": "Song"}, "d2": {"song": "NS"}, "d3": {"song": "Real"}}
+    monkeypatch.setattr(P, "dfix_real_rows", lambda k: ([{"i": P.REAL_ROW0, "real": "bks/u"},
+                                                         {"i": P.GOAT_ROW0, "real": "g/u"}], [], {}))
+    units = [("bks/u", "bks", {"band": "BKS", "section": "s1/BKS_Full/di.wav@1.0", "sd": "/d/BKS_Full", "di": "d3"}),
+             ("g/u", "goat", {"band": "GOAT player1", "item": "item_0"})]
+    monkeypatch.setattr(P, "dfix_units", lambda: units)
+    (tmp_path / "inputs").mkdir()
+    (tmp_path / "inputs" / "backings-wide-pool.json").write_text(json.dumps({"entries": [
+        {"id": "s1/Band1_Song_Full/di.wav@5.0", "kind": "training", "session": "s1/Band1_Song_Full"}]}))
+    for u, b in (("bks/u", "s1/BKS_Full/di.wav@1.0"), ("g/u", "s1/Band1_Song_Full/di.wav@5.0")):
+        p = P.dfix_input_path(u, 0)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        np.savez(p, backing=b)
+    src, cnt = P.dfix_training_sources(kept, inv, P.FT_BASE)
+    assert cnt["plugin_rows"] == 2 and cnt["real_rows"] == 2 and cnt["real_units"] == 2
+    monkeypatch.setattr(P, "vreal_songs", lambda inv_: set())
+    assert P.dfix_vreal_leaks(kept, inv, P.FT_BASE) == cnt
+    units[0][2]["band"] = sorted(P.VREAL_BANDS)[0]          # a V-real band among FT's real units
+    with pytest.raises(SystemExit, match=f"V-real in {P.FT_BASE}"):
+        P.dfix_vreal_leaks(kept, inv, P.FT_BASE)
