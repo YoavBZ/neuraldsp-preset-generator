@@ -6975,6 +6975,7 @@ def ft_vreal_load():
         raise SystemExit(f"{FT_BASE}: both seeds of one training set")
     if any((r_["lr"], r_["cap"]) != (recs[0]["lr"], recs[0]["cap"]) for r_ in recs):
         raise SystemExit(f"{FT_BASE}: both seeds at one rate and cap")
+
     def inner_set(lr_, cap_):
         ps = [od / f"{ft_name(k, True, lr_, cap_)}-{sd}.json" for k in range(REAL_FOLDS) for sd in SEEDS]
         return [json.loads(q.read_text()) for q in ps] if all(q.exists() for q in ps) else None
