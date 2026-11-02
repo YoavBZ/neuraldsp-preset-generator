@@ -898,3 +898,10 @@ def test_model_input_lufs_reads_the_runs_own_rung(monkeypatch):
     assert seen == [((1, 2), "b")]
     P.model_input_lufs({"train_ids": [3]})
     assert seen[-1] == ((3,), "a")
+
+
+def test_dfix_read_only_units_are_the_read_units_with_no_row():
+    units = [("goat/a#amp_1", "goat", {"unit": "goat/a#amp_1"}), ("bks/b", "bks", {"unit": "bks/b"})]
+    read = [{"unit": "goat/c#amp_5", "fold": 1}, {"unit": "goat/a#amp_1", "fold": 0}]
+    assert P.dfix_read_only(units, read) == [("goat/c#amp_5", "goat", {"unit": "goat/c#amp_5", "fold": 1})]
+    assert P.dfix_read_only(units, read[1:]) == []
