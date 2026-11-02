@@ -64,6 +64,7 @@ import re
 import time
 
 LEDGER_KEY = "phase_judge_ear"
+AMENDMENT_KEY = "phase_judge_ear_amendment"
 DATA = pathlib.Path("~/ndsp-presets").expanduser()
 OUT = "learn/trusted-data/judge-ear"
 PAGE = "listening/judge-ear"
@@ -288,7 +289,7 @@ def parse_answers(text, build=None):
     return out
 
 
-def score_rows(items, judged, answers):
+def score_rows(items, judged, answers, halves=None):
     """items: the key's [{page_id, pair, cls, group, size, null}]; judged: {pair: mean distance}; answers: from
     `parse_answers`. -> rows in group, size, preset order, unanswered pairs with rating None."""
     rows = []
@@ -296,6 +297,7 @@ def score_rows(items, judged, answers):
         a = answers.get(it["page_id"], {})
         rows.append({"pair": it["pair"], "page_id": it["page_id"], "cls": it["cls"], "group": it["group"],
                      "size": it["size"], "null": it.get("null", False), "judge": judged.get(it["pair"]),
+                     "halves": (halves or {}).get(it["pair"]),
                      "rating": a.get("rating"), "conf": a.get("conf"), "note": a.get("note", "")})
     gi = {g: i for i, g in enumerate(GROUPS + (CATCH,))}
     return sorted(rows, key=lambda r: (gi[r["group"]], SIZES.index(r["size"]) if r["size"] else 9, r["cls"]))
@@ -315,9 +317,12 @@ def misweights(rows):
     for p in loud:
         for q in quiet:
             if p["group"] != q["group"] and p["judge"] < q["judge"]:
+                hp, hq = p.get("halves") or {}, q.get("halves") or {}
                 inv.append({"heard": p["pair"], "heard_rating": p["rating"], "heard_judge": p["judge"],
                             "quiet": q["pair"], "quiet_rating": q["rating"], "quiet_judge": q["judge"],
-                            "unsure": "unsure" in (p["conf"], q["conf"])})
+                            "unsure": "unsure" in (p["conf"], q["conf"]), "same_preset": p.get("cls") == q.get("cls"),
+                            "both_halves": bool(hp and hq) and all(hp[h] < hq[h] for h in hp if h in hq),
+                            "ratio": q["judge"] / p["judge"] if p["judge"] > 0 else math.inf})
                 by.setdefault(p["group"], {"under": set(), "over": set()})["under"].add(p["pair"])
                 by.setdefault(q["group"], {"under": set(), "over": set()})["over"].add(q["pair"])
     return inv, {g: {k: sorted(v) for k, v in d.items()} for g, d in by.items()}
@@ -361,9 +366,11 @@ def load(path):
 
 
 def require():
-    """Real runs refuse unless the ledger's `pipeline-fix` entry declares `phase_judge_ear`."""
+    """Real runs refuse unless the ledger's `pipeline-fix` entry declares `phase_judge_ear` and its amendment (the tone
+    step's rule)."""
     from learn import pipeline_fix as P
 
+    P.require(AMENDMENT_KEY)
     return P.require(LEDGER_KEY)
 
 
@@ -446,7 +453,8 @@ def cmd_plan(args):
                 if mute:
                     raise SystemExit(f"{q['pair']}: stepped controls that do not sound: {mute}")
             pairs.append(q)
-    plan = {"page": PAGE_NAME, "ledger": {"test_id": "pipeline-fix", "key": LEDGER_KEY, "text": e[LEDGER_KEY]},
+    plan = {"page": PAGE_NAME, "ledger": {"test_id": "pipeline-fix", "key": LEDGER_KEY, "text": e[LEDGER_KEY],
+                                          "amendment": {"key": AMENDMENT_KEY, "text": e[AMENDMENT_KEY]}},
             "time": time.strftime("%Y-%m-%d %H:%M:%S"), "presets": presets, "pairs": pairs,
             "defaults": {"file": str(DEFAULT_PRESET), "sha256": file_sha256(DEFAULT_PRESET),
                          "values": sdict(defaults)},
@@ -608,6 +616,9 @@ def cmd_page(args):
         p = by[it["pair"]]
         s = np.load(render_path(DATA, f"{p['cls']}-S"))
         o = np.load(render_path(DATA, job_of(p)))
+        for job, y in ((f"{p['cls']}-S", s), (job_of(p), o)):   # the audio must be what `measure` judged
+            if AM.audio_sha(y) != meas["render_sha256"][job]:
+                raise SystemExit(f"{job}: its render is not the one `measure` judged; run `measure` first")
         a, b = (s, o) if it["a"] == "S" else (o, s)
         clips[it["page_id"] + "-1"], clips[it["page_id"] + "-2"] = AM.pair_clips(a, b, out_dir() / "page-cache")
         key_items.append({**it, "cls": p["cls"], "amp": p["amp"], "group": p["group"], "size": p["size"],
@@ -642,7 +653,10 @@ def cmd_score(args):
         raise SystemExit("run `page` first")
     ans = parse_answers(pathlib.Path(args.answers).read_text(), key["build"])
     judged = {k: v["mean"] for k, v in meas["pairs"].items()}
-    rows = score_rows(key["items"], judged, ans)
+    rows = score_rows(key["items"], judged, ans, {k: v["judge"] for k, v in meas["pairs"].items()})
+    for r in rows:                                       # a catch heard as different: a listener-reliability caveat
+        if r["group"] == CATCH and r["rating"] in LOUD:
+            print(f"CAVEAT: the catch {r['pair']} (identical audio) was rated {r['rating']}")
     inv, by = misweights(rows)
     print(f"{'group':8s} {'size':6s} {'preset':7s} {'judge':>8s}  ear")
     for r in rows:
@@ -657,7 +671,10 @@ def cmd_score(args):
               f"pair heard same/barely):")
         for x in inv:
             print(f"  {x['heard']} ({x['heard_rating']}, {x['heard_judge']:.4f}) < {x['quiet']} "
-                  f"({x['quiet_rating']}, {x['quiet_judge']:.4f}){'  [an unsure answer]' if x['unsure'] else ''}")
+                  f"({x['quiet_rating']}, {x['quiet_judge']:.4f}); ratio {x['ratio']:.2f}"
+                  f"{'; on both halves' if x['both_halves'] else '; not on both halves'}"
+                  f"{'; same preset' if x['same_preset'] else '; across presets'}"
+                  f"{'  [an unsure answer]' if x['unsure'] else ''}")
         for g, d in sorted(by.items()):
             print(f"  {g}: judged below the ear {d['under'] or '-'}; judged above the ear {d['over'] or '-'}")
     else:

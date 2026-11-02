@@ -190,3 +190,26 @@ def test_misweights_ignores_same_group_ties_catches_and_gaps():
             _row("s3", "spring", float("inf"), "same")]                                    # a refusal: outside
     assert J.misweights(rows) == ([], {})
 
+
+
+def test_misweights_flags_halves_preset_and_ratio():
+    def row(pair, g, cls, rating, j, halves):
+        return {"pair": pair, "group": g, "cls": cls, "rating": rating, "conf": "sure", "judge": j, "halves": halves}
+
+    heard = row("clean-reverb-small", "reverb", "clean", "clearly", 0.3, {"A": 0.4, "B": 0.2})
+    quiet = row("crunch-tone-small", "tone", "crunch", "barely", 0.6, {"A": 0.3, "B": 0.9})
+    inv, by = J.misweights([heard, quiet])
+    assert len(inv) == 1 and not inv[0]["both_halves"] and not inv[0]["same_preset"]
+    assert inv[0]["ratio"] == pytest.approx(2.0) and by["reverb"]["under"] == ["clean-reverb-small"]
+    quiet2 = row("clean-tone-small", "tone", "clean", "same", 0.6, {"A": 0.5, "B": 0.7})
+    inv, _ = J.misweights([heard, quiet2])
+    assert inv[0]["both_halves"] and inv[0]["same_preset"]
+
+
+def test_tone_steps_down_only_where_up_would_pass_the_top():
+    S = _S("sw50r", treble="1", gain="0", dist="0.5", mic="0")
+    d = J._dim(("sw50rAmp", "sw50rTreble"))
+    S[("sw50rAmp", "sw50rTreble")] = K.fmt(d.from_unit(0.7))
+    small, large = (d.to_unit(J.step_settings("sw50r", S, "tone", s, DEFAULTS)[0][("sw50rAmp", "sw50rTreble")])
+                    for s in J.SIZES)
+    assert small == pytest.approx(0.85, abs=1e-4) and large == pytest.approx(0.35, abs=1e-4)   # as amended: per step

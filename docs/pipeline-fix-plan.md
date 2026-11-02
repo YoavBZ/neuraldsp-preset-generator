@@ -1245,8 +1245,8 @@ instead of generating unrealistic presets our own?"):
       ElecGtr05, 110–120 s, the v2 listening page's stand-in; neither V-real nor NS), at −22.9 LUFS, through two
       starting presets: S clean on PR12 and S crunch on SW50R. On each, six groups moved from S one at a time,
       two step sizes each (small, large): *drive* (input gain +4 and +10 dB); *tone* (the amp's treble +0.15 and
-      +0.35 in unit range; amended before any measure or answer: down by the same where up would pass the top,
-      as on SW50R crunch, whose treble sits at 1.0); *cab* (the left mic's distance +0.25 in unit range; the left mic type
+      +0.35 in unit range; amended after the first measure, where both crunch tone pairs equalled S, and before
+      any ear answer: down by the same where up would pass the top, as on SW50R crunch, whose treble sits at 1.0); *cab* (the left mic's distance +0.25 in unit range; the left mic type
       changed); *reverb* (the reverb module on, mix 0.15 and 0.40, its other controls at the plugin's
       defaults); *delay* (the delay on, mix 0.15 and 0.40, defaults otherwise); *spring* (the amp's spring
       reverb 0.2 and 0.5). 24 pairs (S against S + step) and 2 catches (S against itself, rendered again).
@@ -1262,6 +1262,13 @@ instead of generating unrealistic presets our own?"):
     - **Renders** 2 × (13 + 1 repeat of S) kept renders, each in its own fresh primed process: 56 with priming.
       Every render as declared for Morgan. Code `learn/judge_ear.py`; page `~/ndsp-presets/listening/judge-ear/`,
       its key outside the page.
+    - *Review (2026-11-02, independent, after the amendment and before any answer):* approved with required
+      changes, all made: the page rebuilt after the final measure and refusing audio `measure` did not judge; the
+      amendment's order stated; the amendment required and recorded in the plan. It recomputed all 24 distances
+      (identical), checked the catches bit-identical, lag ±4 samples (≤0.2%), the reference swap (≤4% but one
+      pair, no order change) and the page's blindness and levels. Adopted: per-half, same-preset and ratio flags on
+      each inversion, a catch heard as different flagged. Caveats for the write-up: "reverb" is the plugin's
+      default 1.48 s room; a cab step moves the left of two blended mics; the judge skips the first second.
 
 - **Decisions for the user, with the evidence:** whether to adopt the S fallback or the near-chance rule
   (steps 26, 27, 37), and whether to scale.
