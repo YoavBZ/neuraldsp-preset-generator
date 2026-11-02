@@ -1206,22 +1206,34 @@ instead of generating unrealistic presets our own?"):
       power controls, SW50R's master and input mode, both drive pedals, the compressor, the pedal section);
       *tone* (the amps' bass, mid, treble, cut, bright and treble-boost controls, the graphic EQs, the EQ
       section); *cab* (every cab, mic and room control); *effects* (reverb, delay, tremolo, doubler, the amps'
-      springs and the FX section); *other* (the gate, output gain, transpose, the amp section; only the gate
-      threshold differs from S, in 126 of FT's 240 answers).
+      springs and the FX section); *other* (the gate, output gain, transpose, the amp section).
+    - **What can be measured here** (`ftg_change`: only what can sound, the selected amp's keys and switched-on
+      modules, a gate threshold only with the gate on): FT moves drive, tone and cab in all 240 answers (mean unit
+      move 0.120, 0.033 and 0.101). Effects and other are null by construction: delay, reverb and tremolo are off
+      and the amps' springs at 0 in both S and FT on every answer, and the gate is off on every answer (its
+      threshold differs in 126, inaudibly). So only drive, tone and cab are swapped, and **this study cannot say
+      how the score weighs reverb or other effects**; that question goes to a matched-step probe on S with an ear
+      page on the same pairs (each group moved by an ear-sized step, the judge's change beside the ear's), declared
+      after these rows. The compressor (34 PR12 answers) is counted in drive.
     - **Hybrids, on FT's BKS read 2 answers** (each unit by its DI's FT_k, 40 units, 3 amps, 2 halves): for each
       group g, *rev-g* is FT's answer with g's keys set to S's (the unit's class S) and *add-g* is S with g's keys
-      from FT's answer; select is S's and FT's (asserted equal). 10 tags × 240 answers, 4,800 renders with their
+      from FT's answer; select is S's and FT's (asserted equal). 6 tags × 240 answers, 2,880 renders with their
       priming renders, through `real-render` as read 2 (S's stored renders and lags reused); the answers'
-      hashes in the ledger before any render.
+      hashes in the ledger before any render, enforced in `real-render` and `real-report` (`ftg_unhashed`).
     - **Rows** (`real-report`, by DI, 8 DIs, 90%): FT − S (the total, read 2's −0.177, reproduced); per group
       FT − rev-g (negative: the group's change from S helps the score) and add-g − S (negative: that change alone
-      helps); the sum of the five add-g − S beside FT − S (the interaction). Per group, the share of answers
-      whose g-keys differ from S's.
+      helps); FT − S minus the sum of the three add-g − S (the interaction), clustered the same way, beside;
+      per amp beside (read 2's FT − S: PR12 −0.154, SW50R −0.209, AC20 −0.167). Per group, the share of
+      answers it changes and its mean unit move, so the score's effect is read per amount of change.
     - **Reading.** Descriptive; no gate. It says which groups the score credits FT for, and by how much. A
       group that carries much of the score while its change is small to the ear, or the reverse, is a candidate
       for judge mis-weighting; the second half is a short ear page on the largest-effect pairs per group (the
       same unit, S against add-g), declared with its reader after these rows. V-real is not read.
-    - **Renders** 4,800 (about 1 h, 3 processes); every render as declared for Morgan.
+    - **Renders** 2,880 (about 35 min, 3 processes); every render as declared for Morgan.
+    - *Review (2026-11-02, independent, before any render):* approved with required changes, all made: count only
+      what can sound and report each group's unit move; state that effects and the gate are null here and what
+      this cannot answer; drop the two null groups (1,920 renders); enforce the ledger hashes in code. Adopted:
+      per-amp rows, the interaction row with its own interval, the phase listed explicitly, the tests.
 
 - **Decisions for the user, with the evidence:** whether to adopt the S fallback or the near-chance rule
   (steps 26, 27, 37), and whether to scale.
