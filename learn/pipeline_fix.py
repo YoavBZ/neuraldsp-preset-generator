@@ -15,6 +15,11 @@ after the review's (P1-P7), and the recipe every retrain in the plan shares. Out
     $MAIN -m learn.pipeline_fix build-inputs --shard k/3        # P2a's and P2b's features (zero renders)
     $TORCH_PY -m learn.pipeline_fix p1 --rung a|d               # P1: memorise 200 examples (minutes of MPS)
     $TORCH_PY -m learn.pipeline_fix train --rung a [--frac F | --sections F | --fold k | --aug]   # the ladder
+    $MAIN -m learn.pipeline_fix build-dfix-real --shard k/n     # D_fix: the real rows in backings (zero renders)
+    $MAIN -m learn.pipeline_fix build-dfix-real --reads-only    # ... and the read units with no row (read 2's inputs)
+    $TORCH_PY -m learn.pipeline_fix train --dfix --rung b [--real-fold k] --seed S      # D_fix, D_fix_k
+    $TORCH_PY -m learn.pipeline_fix train --dfix --dfix-share p33 --rung b [--real-fold k] --seed S   # D_p (F39)
+    $MAIN -m learn.pipeline_fix sound-recheck --names TAG [--n 20]   # stored renders rendered again, hashes compared
 """
 
 from __future__ import annotations
@@ -769,6 +774,14 @@ class RungData:
         return torch.tensor(x, device=dev), torch.tensor(c, device=dev), y
 
 
+def epoch_order(rng, tr, data, epoch):
+    """`fit`'s epoch order: the seeded permutation of `tr`, then the data's own per-epoch filter if it has one (the
+    share amendment's `DfixData.epoch_keep`), so the RNG stream is the same with or without the filter."""
+    order = rng.permutation(tr)
+    keep = getattr(data, "epoch_keep", None)
+    return order if keep is None else keep(order, epoch)
+
+
 def fit(data, tr, watch, track, seed, dev, log, epochs, every=1, patience=None, min_gain=1e-4):
     """D_CC's optimiser (Adam 1e-3, batch 64, gradients scaled to norm 5; `direct_stems.train_arm`) with the eval-mode
     diagnostics: every `every` epochs (and at the last) the summed loss on each `watch` set {name: idx} and its family
@@ -790,7 +803,7 @@ def fit(data, tr, watch, track, seed, dev, log, epochs, every=1, patience=None, 
     for epoch in range(epochs):
         net.train()
         t0 = time.time()
-        order = rng.permutation(tr)
+        order = epoch_order(rng, tr, data, epoch)
         tl, skipped = [], 0
         for j in range(0, len(order), PS.BATCH):
             x, c, y = data.batch(order[j:j + PS.BATCH], epoch, dev)
@@ -1004,33 +1017,10 @@ def arm_data(rows, croot, rung, doubled, rend, aug):
     return T.ArmData(rr, files, aug=True, encode=T3.encode_for(T3.FULL), partner_path=lambda i: CB.tgt_path(croot, i))
 
 
-def cmd_train(args):
-    """One model of the ladder (demucs-venv): the common recipe on rung `--rung`'s input for the declared number of
-    epochs, the eval-mode diagnostics at every checkpoint (a fixed training subset and the held-out set, per family),
-    the final and the held-out-best checkpoints kept, each with its per-head table against the label-marginal
-    baseline. `--frac`: a nested share of the training examples within sections; `--sections`: a share of the
-    sections with all their examples; `--fold k`: new songs by k-fold (all kept examples of the other folds' bands;
-    the final checkpoint is the one read); `--aug`: P2d-aug."""
-    import numpy as np
-    import torch
-
-    from learn import direct_stems as DS
-
-    e = require("phase_3")
-    length = e["phase_3_length"]
-    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
-    name = run_name(args.rung, args.frac, args.aug, args.fold, args.sections) + ("-bk8" if args.backings else "") \
-        + ("-dd" if args.dd else "") + (f"-wide{WIDE_K}" if args.wide else "") + ("-pc" if args.pc else "") \
-        + ("-pcsz" if args.pcsz else "") + ("" if args.real_fold is None else f"-real{args.real_fold}" + ("s2" if args.stage == 2 else ""))
-    if args.goat or args.goat_shuffle:                 # 5C: its own names, so no 5B.2 run is ever taken for one
-        name = goat_run_name(name, args.real_fold, args.stage, args.goat_shuffle)
-    od = out_dir() / "runs"
-    rp = od / f"{name}-{args.seed}.json"
-    if rp.exists():
-        print(f"{rp.name} exists: nothing to do")
-        return
-    if args.seed not in SEEDS:
-        raise SystemExit(f"--seed in {SEEDS}")
+def plugin_rows(kept, sp, args, rows_of):
+    """`cmd_train`'s plugin rows before any real row: the training ids (k-fold, nested fraction, section share, arm P
+    as flagged), the held set and its name, and their rows (`rows_of(ids)`; training first, then held, flagged
+    `held`). -> (tr, held, held_name, rows)."""
     sec = {i: kept[i]["section"] for i in kept}
     if args.fold is not None:
         tr, held = fold_split(kept, sp["train"] + sp["fs"] + sp["ns"], args.fold)
@@ -1046,9 +1036,70 @@ def cmd_train(args):
             raise SystemExit("--pc/--pcsz are 5B.2's arm P on P2a's own training set")
         require("phase_5b2")
         tr = preset_centred(tr, kept, sized=bool(args.pcsz))
+    return tr, held, held_name, rows_of(tr) + [dict(r, held=True) for r in rows_of(held)]
+
+
+def with_rows(tr, rows, extra):
+    """Training rows `extra` placed after the training rows and before the held ones (`--real-fold`'s layout).
+    -> (training ids, rows)."""
+    return tr + [r["i"] for r in extra], rows[:len(tr)] + list(extra) + rows[len(tr):]
+
+
+def cmd_train(args):
+    """One model of the ladder (demucs-venv): the common recipe on rung `--rung`'s input for the declared number of
+    epochs, the eval-mode diagnostics at every checkpoint (a fixed training subset and the held-out set, per family),
+    the final and the held-out-best checkpoints kept, each with its per-head table against the label-marginal
+    baseline. `--frac`: a nested share of the training examples within sections; `--sections`: a share of the
+    sections with all their examples; `--fold k`: new songs by k-fold (all kept examples of the other folds' bands;
+    the final checkpoint is the one read); `--aug`: P2d-aug; `--dfix [--real-fold k]`: D_fix (P2b-wide24's recipe
+    plus the real rows in backings, `DfixData`; `dfix_refusal` takes every other combination)."""
+    why = dfix_refusal(args)
+    if why:
+        raise SystemExit(why)
+    import numpy as np
+    import torch
+
+    from learn import direct_stems as DS
+
+    e = require("phase_3")
+    length = e["phase_3_length"]
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    name = run_name(args.rung, args.frac, args.aug, args.fold, args.sections) + ("-bk8" if args.backings else "") \
+        + ("-dd" if args.dd else "") + (f"-wide{WIDE_K}" if args.wide else "") + ("-pc" if args.pc else "") \
+        + ("-pcsz" if args.pcsz else "") + ("" if args.real_fold is None else f"-real{args.real_fold}" + ("s2" if args.stage == 2 else ""))
+    if args.goat or args.goat_shuffle:                 # 5C: its own names, so no 5B.2 run is ever taken for one
+        name = goat_run_name(name, args.real_fold, args.stage, args.goat_shuffle)
+    if args.dfix:                                      # D_fix: its own names (`dfix_refusal` took every other flag)
+        name = dfix_run_name(args.real_fold, args.dfix_share)
+    od = out_dir() / "runs"
+    rp = od / f"{name}-{args.seed}.json"
+    if rp.exists():
+        print(f"{rp.name} exists: nothing to do")
+        return
+    if args.seed not in SEEDS:
+        raise SystemExit(f"--seed in {SEEDS}")
+    tr, held, held_name, rows = plugin_rows(kept, sp, args, lambda ids: rung_rows(kept, rend, ids))
     doubled = doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
-    rows = rung_rows(kept, rend, tr) + [dict(r, held=True) for r in rung_rows(kept, rend, held)]
-    if args.wide:
+    real_held, dfix_info = [], None
+    if args.dfix:
+        require("phase_dfix")
+        share = dfix_share_of(name)
+        if share < 1:
+            require("phase_dfix_share")
+        rrows, real_held, dfix_info = dfix_real_rows(args.real_fold)
+        plugin_tr = tr
+        tr, rows = with_rows(tr, rows, rrows)
+        rows = rows + [dict(r, held=True) for r in real_held]     # the held fold's real rows: a diagnostic, last
+        data = DfixData(rows, rung_path(croot, "b", doubled), set(plugin_tr), {r["i"] for r in rrows}, share)
+        if share < 1:                                  # the known answer: D_fix's own inputs, by its stored hash
+            ref = dfix_run_name(args.real_fold)
+            want = json.loads((od / f"{ref}-{args.seed}.json").read_text())["dfix"]["inputs_sha256"]
+            if data.inputs_sha256 != want:
+                raise SystemExit(f"{name}: real-row inputs differ from {ref}'s "
+                                 f"({data.inputs_sha256[:8]} vs {want[:8]})")
+        dfix_info.update(fold=args.real_fold, plugin_train=len(plugin_tr), inputs_sha256=data.inputs_sha256,
+                         target_lufs=data.target_lufs, share=share)
+    elif args.wide:
         if args.rung != "b" or args.aug or args.backings:
             raise SystemExit("--wide is phase 5A's test on P2b")
         require("phase_5a")
@@ -1083,7 +1134,8 @@ def cmd_train(args):
         data = RungData(rows, lambda i: rpaths[i] if i in rpaths else base_path(i), aug=False)
     else:
         data = arm_data(rows, croot, args.rung, doubled, rend, args.aug)
-    ti, hi = np.arange(len(tr)), np.arange(len(tr), len(rows))
+    ti, hi = np.arange(len(tr)), np.arange(len(tr), len(rows) - len(real_held))
+    rh = np.arange(len(rows) - len(real_held), len(rows))
     sub = np.sort(np.random.default_rng(SUBSET_SEED).choice(ti, min(SUBSET_N, len(ti)), replace=False))
     cells = [(r["amp"], r["cls"]) for r in rows]
     base = Baseline([z[ti] for z in data.Y], [cells[j] for j in ti])
@@ -1093,7 +1145,17 @@ def cmd_train(args):
     torch.set_num_threads(2)
     log = []
     t0 = time.time()
-    net, final, best_state, best_ep, best = fit(data, ti, {"train_subset": sub, held_name: hi}, held_name, args.seed,
+    watch = {"train_subset": sub, held_name: hi}
+    if len(rh):                                        # D_fix_k: the held fold's real loss, logged, never for choosing
+        watch["real_held"] = rh
+    if args.dfix and dfix_share_of(name) < 1:          # the share amendment: plugin and real training rows' loss apart
+        rset = {r["i"] for r in rows if "real" in r and not r.get("held")}
+        rt = np.array([j for j in ti if rows[j]["i"] in rset])
+        pt = np.array([j for j in ti if rows[j]["i"] not in rset])
+        g = np.random.default_rng(SUBSET_SEED)
+        watch["train_plugin"] = np.sort(g.choice(pt, min(SUBSET_N, len(pt)), replace=False))
+        watch["train_real"] = np.sort(g.choice(rt, min(SUBSET_N, len(rt)), replace=False))
+    net, final, best_state, best_ep, best = fit(data, ti, watch, held_name, args.seed,
                                                 dev, log, epochs=int(length["epochs"]), every=int(length["every"]))
     heads = {}
     od.mkdir(parents=True, exist_ok=True)
@@ -1102,7 +1164,7 @@ def cmd_train(args):
         heads[which] = {k: head_table(head_losses(net, data, idx, dev), bl[k])
                         for k, idx in (("train_subset", sub), (held_name, hi))}
         torch.save(st, od / f"{name}-{args.seed}-{which}.pt")
-    phase = ("phase_5c" if (args.goat or args.goat_shuffle)
+    phase = (dfix_phase(name) if args.dfix else "phase_5c" if (args.goat or args.goat_shuffle)
              else "phase_5b2" if (args.pc or args.pcsz or args.real_fold is not None) else "phase_3")
     save(rp, {"plan": PLAN, "test": name, "ledger": f"{LEDGER_ID} {phase}", "rung": args.rung,
               "input": RUNG_KINDS[args.rung], "aug": bool(args.aug), "frac": args.frac, "sections": args.sections,
@@ -1112,8 +1174,10 @@ def cmd_train(args):
               "steps": log[-1]["steps"], "minutes": round((time.time() - t0) / 60, 1), "device": str(dev),
               "length": length, "augmentations_applied": data.applied, "flags": {"dd": bool(args.dd),
               "backings": bool(args.backings), "aug": bool(args.aug), "wide": bool(args.wide),
-              "pc": bool(args.pc), "pcsz": bool(args.pcsz), "real_fold": args.real_fold},
-              "backing_variants": getattr(data, "counts", None),
+              "pc": bool(args.pc), "pcsz": bool(args.pcsz), "real_fold": args.real_fold, "dfix": bool(args.dfix),
+              "dfix_share": args.dfix_share,
+              "goat": bool(args.goat), "stage": args.stage},
+              "dfix": dfix_info, "backing_variants": getattr(data, "counts", None),
               "baseline_families": {k: family_means(v) for k, v in bl.items()}, "heads": heads, "log": log,
               "models": {w: f"{name}-{args.seed}-{w}.pt" for w in ("final", "best")},
               "model_sha256": {w: DS.hashlib_file(od / f"{name}-{args.seed}-{w}.pt") for w in ("final", "best")},
@@ -1710,7 +1774,7 @@ def cmd_answers(args):
             nets.append(n)
         doubled = doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
         srows = [dict(r, amp=shifted_amp(r["amp"], args.amp_shift)) for r in rows]   # told (and rendered on) this amp
-        path_of = rung_path(croot, rec["rung"], doubled)
+        path_of = rung_path(croot, args.input_rung or rec["rung"], doubled)   # D_fix: the stems beside (`--input-rung d`)
         if args.mastered:
             if rec["rung"] != "a":
                 raise SystemExit("--mastered is step 15's isolated test on P2a")
@@ -1738,7 +1802,7 @@ def cmd_answers(args):
             out[str(r["i"])] = {"select": sel, "settings": LO.sdict(x)}
         tag = (f"{args.name}-{args.which}" + ("" if seeds == [SEEDS[0]] else "-x" + "+".join(map(str, seeds)))
                + ("" if args.readout == "plain" else f"-{args.readout}") + ("-mast" if args.mastered else "")
-               + amp_tag(args.amp_shift))
+               + amp_tag(args.amp_shift) + (f"-on{args.input_rung}" if args.input_rung else ""))
     save(out_dir() / SOUND_DIR / "answers" / f"{tag}.json", {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_3",
                                                             "name": tag, "answers": out, "nc_fit": dict(NC_FIT),
                                                             "time": time.strftime("%Y-%m-%d %H:%M:%S")})
@@ -1949,6 +2013,59 @@ def cmd_sound_render(args):
                       "settings_sha256": answers_sha(ans[str(i)])})
         print(f"{tag}: shard {k}/{n} done; renders so far {renders}", flush=True)
     print(f"SOUND-RENDER DONE {k}/{n}: {renders} renders")
+
+
+def cmd_sound_recheck(args):
+    """The share amendment's check on stored renders (`phase_dfix_share`): `--n` seeded judged examples of each tag in
+    `--names` rendered again exactly as `sound-render` renders them, their audio hashes compared with the stored ones.
+    -> sound/recheck-<tag>.json; refuses (after saving) on any mismatch."""
+    import random
+
+    import numpy as np
+
+    from learn import audibility_measure as AM
+    from learn import cc_build as CB
+    from learn import local_objective as LO
+    from learn import pretrain_set as PS
+    from learn import song_bank as B
+    from learn import trusted_data as T
+
+    require("phase_dfix_share")
+    a = argparse.Namespace(out=None, smoke=False)
+    plan = CB.load_plan(a)
+    ex = {x["i"]: x for x in plan["examples"]}
+    ctx = CB.ctx_for(a)
+    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
+    LO._wait_cap()
+    bad = 0
+    for tag in args.names.split(","):
+        ans = json.loads((out_dir() / SOUND_DIR / "answers" / f"{tag}.json").read_text())["answers"]
+        gd = out_dir() / SOUND_DIR / "judge" / tag
+        done = sorted(int(q.stem) for q in gd.glob("*.json"))
+        pick = sorted(random.Random(f"{DFIX_SEED}|recheck|{tag}").sample(done, min(args.n, len(done))))
+        rows = []
+        for i in pick:
+            if PS.free_gb() < T.DISK_GUARD_GB:
+                raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+            old = json.loads((gd / f"{i}.json").read_text())
+            if old.get("answers_sha256") != answers_sha(ans):
+                raise SystemExit(f"{gd / f'{i}.json'}: rendered from other answers than {tag}.json holds now")
+            sec = ctx.sections[ex[i]["section"]]
+            di = B.measure(PS.section_audio(sec["path"], sec["start_s"])).astype(np.float32)
+            st = LO.tdict(ans[str(i)]["settings"])
+            y = AM.fresh_render(CB.new_renderer, di, ans[str(i)]["select"], st, st)
+            y = (y.mean(axis=1) if y.ndim == 2 else y)[trim[0]:trim[1]]
+            new = AM.audio_sha(y)
+            rows.append({"i": i, "stored": old["render_sha256"], "new": new, "same": new == old["render_sha256"]})
+        miss = [r_["i"] for r_ in rows if not r_["same"]]
+        bad += len(miss)
+        save(out_dir() / SOUND_DIR / f"recheck-{tag}.json", {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_dfix_share",
+                                                              "tag": tag, "rows": rows, "mismatched": miss,
+                                                              "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+        print(f"SOUND-RECHECK {tag}: {len(rows) - len(miss)} of {len(rows)} renders identical", flush=True)
+    if bad:
+        raise SystemExit(f"SOUND-RECHECK: {bad} renders differ from the stored ones")
+    print("SOUND-RECHECK DONE")
 
 
 def log_ratio(ja, jb):
@@ -2561,7 +2678,8 @@ def cmd_real_predict(args):
         return real_rigo_answers()
     if args.names == "RcM":
         return real_rcm_answers()
-    if args.names in ("P2a-pc", "P2a-pcsz", "P2a-real", "P2a-reals2", "P2a-pc-Sc", "P2a-goat", "P2a-goatshuf"):
+    if args.names in ("P2a-pc", "P2a-pcsz", "P2a-real", "P2a-reals2", "P2a-pc-Sc", "P2a-goat", "P2a-goatshuf") \
+            or args.names in DFIX_READS:
         return real_predict_5b2(args.names)
     if args.names == "S-shift":
         require("phase_5b1b")
@@ -2631,7 +2749,8 @@ def real_predict_5b2(name):
     from learn import local_objective as LO
     from learn import trusted_data_t3 as T3
 
-    e = require("phase_5c" if name.startswith("P2a-goat") else "phase_5b2")
+    e = require(dfix_phase(name) if name.startswith("P2b-dfix") else "phase_5c" if name.startswith("P2a-goat")
+                else "phase_5b2")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     inv = CB.cc_inventory()
     parts = real_parts(kept, sp, inv)
@@ -2642,6 +2761,12 @@ def real_predict_5b2(name):
     elif name.startswith("P2a-goat"):                   # 5C: RG and RGshuf, each BKS unit by its DI's fold model
         folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
         names = {p_["unit"]: f"{name}{folds[p_['di']]}" for p_ in parts}
+    elif name.startswith("P2b-dfix"):                   # D_fix's read 2: each BKS unit by its DI's fold model only
+        if name not in DFIX_READS:
+            raise SystemExit(f"--names {sorted(DFIX_READS)} (each read by its fold models: an all-labels run saw every"
+                         " BKS unit)")
+        folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
+        names = {p_["unit"]: dfix_fold_name(name, folds[p_["di"]]) for p_ in parts}
     else:
         names = {p_["unit"]: name.removesuffix("-Sc") for p_ in parts}
     models = {}
@@ -2650,7 +2775,7 @@ def real_predict_5b2(name):
         own = [i for i in recs[0]["train_ids"] if i < REAL_ROW0]
         if any([i for i in r_["train_ids"] if i < REAL_ROW0] != own for r_ in recs):
             raise SystemExit(f"{nm}: the seeds trained on different sets")
-        models[nm] = (list(nets), [r_["model_sha256"]["best"] for r_ in recs], p2a_median_lufs(own),
+        models[nm] = (list(nets), [r_["model_sha256"]["best"] for r_ in recs], model_input_lufs(recs[0]),
                       constant_of(rung_rows(kept, rend, own)))
     ms = A_menu_S()
     out = {name: {}, f"{name}-constant": {}} if name == "P2a-pc" else {name: {}}
@@ -2658,11 +2783,15 @@ def real_predict_5b2(name):
         nets, _, target, const = models[names[prt["unit"]]]
         ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
         g = DE.inference_gain_db(ref, target)
+        backed = dfix_backed(prt["unit"]) if name in DFIX_BASES else None
         for amp in AMPS3:
             sel, S = ms[amp][prt["cls"]]
             key = real_key(prt, amp)
             for search in ("A", "B"):
-                s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
+                if backed is not None:                   # D_fix's primary: the unit's own section's backed input
+                    s8, ls = backed[search]
+                else:
+                    s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
                 x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
                 r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
                 if name.endswith("-Sc"):                 # 5B.1b's S-centred readout on this model's own constant
@@ -2679,8 +2808,8 @@ def real_predict_5b2(name):
                     T3.constant_full(amp, S, const[(amp, prt["cls"])]))}}
     for t, a in out.items():
         save(out_dir() / REAL_DIR / "answers" / f"{t}.json", {
-            "plan": PLAN, "ledger": f"{LEDGER_ID} {'phase_5c' if name.startswith('P2a-goat') else 'phase_5b2'}",
-            "tag": t, "parts": parts, "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
+            "plan": PLAN, "ledger": f"{LEDGER_ID} {dfix_phase(name) if name.startswith('P2b-dfix') else 'phase_5c' if name.startswith('P2a-goat') else 'phase_5b2'}",
+            "tag": t, "parts": parts, "input": "backed (variant 0)" if name in DFIX_BASES else "clean", "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
             "unit_model": names, "answers": a, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"REAL PREDICT 5B.2 DONE: {name} on {len(parts)} units")
 
@@ -3716,14 +3845,14 @@ def goat_predict(name):
     from learn import full_space as F
     from learn import local_objective as LO
 
-    e = require("phase_5c")
+    e = require(dfix_phase(name) if name in DFIX_BASES else "phase_5c")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     units = goat_read_units()
     models = {}
     for k in sorted({p_["fold"] for p_ in units}):
-        nets, recs = zip(*(load_run(f"{name}{k}", sd, "best") for sd in SEEDS))
-        own = [i for i in recs[0]["train_ids"] if i < REAL_ROW0]
-        models[k] = (list(nets), [r_["model_sha256"]["best"] for r_ in recs], p2a_median_lufs(own))
+        nm = dfix_fold_name(name, k) if name in DFIX_BASES else f"{name}{k}"
+        nets, recs = zip(*(load_run(nm, sd, "best") for sd in SEEDS))
+        models[k] = (list(nets), [r_["model_sha256"]["best"] for r_ in recs], model_input_lufs(recs[0]))
     ms = A_menu_S()
     out = {}
     for prt in units:
@@ -3732,22 +3861,27 @@ def goat_predict(name):
         g = DE.inference_gain_db(ref, target)
         amp = prt["amp"]
         sel, S = ms[amp][prt["cls"]]
+        backed = dfix_backed(prt["unit"]) if name in DFIX_BASES else None   # D_fix: a pool-backed variant
         for search in ("A", "B"):
-            s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
+            if backed is not None:
+                s8, ls = backed[search]
+            else:
+                s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
             x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
             r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
             st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
             out.setdefault(real_key(prt, amp), {})[search] = {"select": sel, "settings": LO.sdict(st)}
     save(out_dir() / GOAT_DIR / "answers" / f"{name}.json", {
-        "plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "tag": name,
+        "plan": PLAN, "ledger": f"{LEDGER_ID} {dfix_phase(name) if name in DFIX_BASES else 'phase_5c'}",
+        "tag": name,
         "models": {k: {"sha256": m[1], "input_lufs": m[2]} for k, m in models.items()}, "answers": out,
         "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"GOAT PREDICT DONE: {name} on {len(units)} units")
 
 
 def cmd_goat_predict(args):
-    if args.names not in ("P2a-goat", "P2a-goatshuf"):
-        raise SystemExit("--names P2a-goat or P2a-goatshuf")
+    if args.names not in ("P2a-goat", "P2a-goatshuf", *DFIX_BASES):
+        raise SystemExit(f"--names P2a-goat, P2a-goatshuf or one of {', '.join(DFIX_BASES)} (D_fix's fold models)")
     goat_predict(args.names)
 
 
@@ -4118,12 +4252,12 @@ def cmd_real_heads(args):
     print("REAL-HEADS DONE")
 
 
-ARM_FOLD_PHASES = ("phase_5b2", "phase_5c")    # real-report's phases whose models share 5B.2's DI folds
+ARM_FOLD_PHASES = ("phase_5b2", "phase_5c", "phase_dfix")    # real-report's phases whose models share 5B.2's DI folds
 
 
 def report_phase(tags):
     """real-report's ledger phase for the tags it reads."""
-    return ("phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
+    return ("phase_dfix" if tags & DFIX_READS else "phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
             else "phase_5b2_rigo" if tags & {"RigO", "RcM"}
             else "phase_5b2" if any(t.startswith(("P2a-pc", "P2a-real", "Rc")) for t in tags)
             else "phase_5b1b" if any(t in ("P2a-Sc", "S-shift") for t in tags) else "phase_5b1")
@@ -4508,6 +4642,23 @@ def amp_track(slug, info):
 
     crop = A.f_part(slug)["crop"] if info["kind"] == "stagef" else pathlib.Path(info["crop"])
     return CR.mono(crop / "reference.wav")
+
+
+def rung_median_lufs(ids, rung):
+    """The median half loudness of rung `rung`'s training inputs (the level a model's input is brought to); D_fix's
+    rung-b models read at P2b's (about -13.7 LUFS), not P2a's (about -21.5)."""
+    import numpy as np
+
+    v = []
+    for i in ids:
+        v += [float(z) for z in np.load(input_path(DATA, i, RUNG_KINDS[rung]))["lufs"]]
+    return float(np.median(v))
+
+
+def model_input_lufs(rec):
+    """A run's own training inputs' median loudness, by its rung (P2a's rule for rung a)."""
+    own = [i for i in rec["train_ids"] if i < REAL_ROW0]
+    return rung_median_lufs(own, rec.get("rung", "a"))
 
 
 def p2a_median_lufs(ids):
@@ -5544,6 +5695,406 @@ def cmd_panel_report(args):
     print("PANEL-REPORT DONE")
 
 
+# --- D_fix (declared 2026-11-02, ledger phase_dfix): the real rows in backings and their training mode ----------------
+
+DFIX_SEED = 20261102
+DFIX_K = 25                          # variants per real unit: a BKS unit's own section's backing and 24 pool backings,
+                                     # a GOAT unit's 25 pool backings
+DFIX_DIR = "dfix"                    # under out_dir(): inputs/, lends-k-of-n.json
+DFIX_HELD0 = 500_000                 # the held fold's real rows (the diagnostic): ids REAL_ROW0 or GOAT_ROW0 + this + j
+
+
+DFIX_SHARES = {"p33": 1 / 3, "p10": 1 / 10}      # the share amendment (F39, `phase_dfix_share`): a training real row is
+                                                # shown in an epoch with probability p (`dfix_shown`)
+DFIX_BASES = ("P2b-dfix",) + tuple(f"P2b-dfix{t}" for t in DFIX_SHARES)   # the all-labels runs, D_fix's and each D_p
+
+
+DFIX_READS = {t for b in DFIX_BASES for t in (b, f"{b}-clean")}   # read 2's BKS tags: fold models on the backed (own
+                                                                   # section) input, and on the clean amp track beside
+
+
+def dfix_backed(unit, v=0):
+    """A real unit's D_fix input variant v (0: a BKS unit's own section's backing) as {half: (uint8 mel, LUFS)}."""
+    import numpy as np
+
+    d = np.load(dfix_input_path(unit, v))
+    return {"A": (d["sA"], float(d["lufs"][0])), "B": (d["sB"], float(d["lufs"][1]))}
+
+
+def dfix_input_path(unit, v):
+    return out_dir() / DFIX_DIR / "inputs" / f"{unit.replace('/', '__')}-v{v:02d}.npz"
+
+
+def dfix_units():
+    """D_fix's real units: every unit with a labelled record, BKS's stage 1-2 (`real_labels(2)`) and GOAT's
+    (`goat_labels`); a unit's records (one per amp) share its audio. -> [(unit, "bks" | "goat", part)], sorted."""
+    brecs, by_unit, _ = real_labels(2)
+    grecs, gunits, _ = goat_labels()
+    out = {r["unit"]: (r["unit"], "bks", by_unit[r["unit"]]) for r in brecs}
+    for r in grecs:
+        if r["unit"] in out and out[r["unit"]][1] == "bks":
+            raise SystemExit(f"{r['unit']}: both a BKS and a GOAT unit")
+        out[r["unit"]] = (r["unit"], "goat", gunits[r["unit"]])
+    return [out[u] for u in sorted(out)]
+
+
+def dfix_read_only(units, read_units):
+    """The GOAT read units with no D_fix row (a unit the ear passed whose search gave no label, read all the same):
+    they need their inputs for read 2 (variant 0 at least) but are never trained on. -> [(unit, "goat", part)]."""
+    have = {u for u, _, _ in units}
+    return [(p_["unit"], "goat", p_) for p_ in sorted(read_units, key=lambda q: q["unit"]) if p_["unit"] not in have]
+
+
+def dfix_lend(unit, cls, train_ids, kept, section=None, seed=DFIX_SEED):
+    """The training example that lends a real unit its levels: a seeded choice among P2b-wide24's training examples of
+    the unit's own section (a BKS unit), else (a GOAT unit, or a BKS section with no training example: recorded) of
+    its class. -> (example id, "section" | "class")."""
+    import random
+
+    rng = random.Random(f"{seed}|lend|{unit}")
+    own = sorted(i for i in train_ids if section is not None and kept[i]["section"] == section)
+    if own:
+        return rng.choice(own), "section"
+    same = sorted(i for i in train_ids if kept[i]["cls"] == cls)
+    if not same:
+        raise SystemExit(f"{unit}: no training example of class {cls}")
+    return rng.choice(same), "class"
+
+
+def dfix_draws(unit, section, entries, own=True, k=DFIX_K, seed=DFIX_SEED):
+    """A real unit's k backings: with `own` (a BKS unit) variant 0 is its own section's backing (None), then pool
+    entries drawn as `wide_draws` draws them (a session uniformly among the pool's sessions other than the unit's own,
+    then one of its entries, and a vocal flag p 0.5), seeded by the unit. -> [(entry index or None, vocals or None)]."""
+    import random
+
+    by_s = {}
+    for j, e_ in enumerate(entries):
+        by_s.setdefault(e_["session"], []).append(j)
+    s_ = session_of(section)
+    sess = sorted(x for x in by_s if x not in (s_, pathlib.Path(s_).name))
+    rng = random.Random(f"{seed}|{unit}")
+    out = [(None, None)] if own else []
+    return out + [(rng.choice(by_s[rng.choice(sess)]), rng.random() < 0.5) for _ in range(k - len(out))]
+
+
+def dfix_level(y, target_lufs, lufs):
+    """A real amp track brought to the lending example's stored target loudness (its `y`, before the overall gain),
+    measured by `lufs` (`song_aug.lufs`, the pipeline's). -> (scaled track, gain dB)."""
+    lr = float(lufs(y))
+    if lr <= -69.9:
+        raise SystemExit("a silent amp track")
+    g = float(target_lufs) - lr
+    return y * 10 ** (g / 20), g
+
+
+def dfix_backing_gain(e_gb, e_own_lv, ent_lv):
+    """`cmd_build_wide`'s backing gain: the lending example's stored gb plus its own bare backing's level (in its own
+    vocal variant) less the new backing's."""
+    return e_gb + e_own_lv - ent_lv
+
+
+def dfix_mix(guitar, back, gb, ga):
+    """`cmd_build_wide`'s mix before the mastering draw: (guitar + backing at gb) at the overall gain ga (dB)."""
+    return (guitar + back * 10 ** (gb / 20)) * 10 ** (ga / 20)
+
+
+def dfix_di_tracks(prt, inv):
+    """Every track of a BKS unit's DI (the DI file, its amp track, its other reamps: one performance), which its own
+    section's backing must not hold."""
+    return set(inv[prt["di"]].get("own") or []) | {prt["di"].rsplit("/", 1)[-1], prt["track"]}
+
+
+def cmd_build_dfix_real(args):
+    """D_fix's real rows' inputs (CPU, zero renders). Each labelled real unit's amp section (`real_amp_track`: the
+    10-s trimmed section a D_CC target is, length asserted) in DFIX_K backings, levelled by a lending training example
+    (`dfix_lend`) exactly as `cmd_build_wide` levels that example's own variants: the track brought to the example's
+    stored target loudness, each backing at the example's gb plus its own bare level less the backing's, the sum at the
+    example's ga, then the example's mastering draw. A BKS unit's variant 0 is its own section's backing: the section's
+    non-guitar stems in the lending example's own vocal variant (exactly its P2b backing when it lends from the
+    section), asserted free of every track of the unit's DI; its other 24 and all of a GOAT unit's 25 are pool
+    backings (`dfix_draws`, never the unit's own session). One shard of units; an existing file is kept after its pool
+    check. -> dfix/inputs/<unit>-vNN.npz and dfix/lends-k-of-n.json (each unit's lender and rule)."""
+    import numpy as np
+
+    from learn import cc_build as CB
+    from learn import direct_sound_gate as G
+    from learn import direct_stems as DS
+    from learn import pretrain_set as PS
+    from learn import song_aug as SA
+    from learn import trusted_data as T
+
+    e = require("phase_dfix")
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    a = argparse.Namespace(out=None, smoke=False)
+    stems = T.Stems(CB.ctx_for(a))
+    built = T.rows_of(croot, CB.STAGE, "build")
+    inv = CB.cc_inventory()
+    pool = json.loads(wide_pool_path().read_text())["entries"]
+    psha = pool_sha(pool)
+    own_lv = json.loads((out_dir() / "inputs" / "backings-levels.json").read_text())["levels"]
+    kk, n = args.shard
+    units = dfix_units()
+    if args.reads_only:                            # read 2's GOAT units with no row (`dfix_read_only`)
+        units = dfix_read_only(units, goat_read_units())
+    mine = [u for q, u in enumerate(units) if q % n == kk]
+    lends, t0, done = {}, time.time(), 0
+    for m, (unit, kind, prt) in enumerate(mine):
+        if PS.free_gb() < T.DISK_GUARD_GB:
+            raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+        bks = kind == "bks"
+        i, rule = dfix_lend(unit, prt["cls"], sp["train"], kept, prt["section"] if bks else None)
+        x, rw, bw = kept[i], rend[i], built[i]
+        e_voc = bool(x["draw"]["vocals_drawn"] and x["stems"]["v"] != x["stems"]["n"])
+        draws = dfix_draws(unit, prt["section"], pool, own=bks)
+        paths = [dfix_input_path(unit, v) for v in range(DFIX_K)]
+        for p in paths:
+            if p.exists() and str(np.load(p)["pool_sha256"]) != psha:
+                raise SystemExit(f"{p}: built from another pool")
+        lends[unit] = {"kind": kind, "lend": i, "rule": rule, "lend_section": x["section"]}
+        todo = [v for v, p in enumerate(paths) if not p.exists()]
+        if not todo:
+            lends[unit]["target_lufs"] = float(np.load(paths[0])["target_lufs"])
+            continue
+        y = np.asarray(G.read_flac(T.flac_path(croot, CB.STAGE, i, "target"), rw["target"]["scale"],
+                                   rw["target"]["sha256"]), np.float64)
+        tl = float(SA.lufs(y))
+        ref = np.asarray(real_amp_track(prt["sd"], prt["track"], prt["start_s"]), np.float64)
+        if len(ref) != len(y):
+            raise SystemExit(f"{unit}: {len(ref)} samples against the lending target's {len(y)}")
+        gtr, g = dfix_level(ref, tl, SA.lufs)
+        lends[unit].update(target_lufs=tl, guitar_gain_db=g)
+        e_lv = own_lv[x["section"]][str(e_voc)]
+        for v in todo:
+            j, voc = draws[v]
+            if j is None:                          # a BKS unit's own section's backing (non-guitar stems only)
+                own_x = x if rule == "section" else kept[min(q for q in kept if kept[q]["section"] == prt["section"])]
+                tracks = bare_tracks(own_x, e_voc)
+                if dfix_di_tracks(prt, inv) & set(tracks):
+                    raise SystemExit(f"{unit}: its own backing holds a track of its DI")
+                voc = bool(e_voc and own_x["stems"]["v"] != own_x["stems"]["n"])
+                back = np.asarray(stems.get(prt["section"], tracks), np.float64)
+                lv = own_lv[prt["section"]][str(voc)] if rule == "section" else float(SA.lufs(back))
+                if lv < BACKING_FLOOR_LUFS:
+                    raise SystemExit(f"{unit}: its own backing is silent ({lv:.1f} LUFS)")
+                bid = prt["section"]
+            else:
+                ent = pool[j]
+                tracks = ent["tracks"]["v" if voc else "n"]
+                back = np.asarray(stems.get(ent["id"], tracks) if ent["kind"] == "training"
+                                  else bare_backing(ent["sd"], tracks, ent["start_s"]), np.float64)
+                lv, bid = ent["lufs"][str(bool(voc))], ent["id"]
+            gb, ga = dfix_backing_gain(bw["gains_db"]["gb"], e_lv, lv), bw["gains_db"]["ga"]
+            mix = dfix_mix(gtr, back, gb, ga)
+            mastered, mrng = DS.master_draw(i)
+            if mastered:
+                mix = SA.compress(mix, mrng)
+            f, lu, _ = DS.half_features(mix)
+            DS._save_npz(paths[v], sA=f["A"], sB=f["B"], lufs=[lu["A"], lu["B"]], lend=i, lend_rule=rule,
+                         backing=bid, vocals=bool(voc), gains=[gb, ga], guitar_gain_db=g, target_lufs=tl,
+                         pool_sha256=psha)
+            done += 1
+        if m % 10 == 0:
+            print(f"unit {m + 1}/{len(mine)}: {done} built; {(time.time() - t0) / max(1, done):.2f} s each", flush=True)
+    tag = "reads-" if args.reads_only else ""
+    save(out_dir() / DFIX_DIR / f"lends-{tag}{kk}-of-{n}.json",
+         {"rule": cmd_build_dfix_real.__doc__, "pool_sha256": psha, "units": lends})
+    fb = sorted(u for u, r in lends.items() if r["kind"] == "bks" and r["rule"] == "class")
+    print(f"BUILD-DFIX-REAL DONE {kk}/{n}: {done} built for {len(mine)} units; BKS units lent by class (no training "
+          f"example in their section): {len(fb)} {fb}")
+
+
+def dfix_run_name(real_fold, share=None):
+    """D_fix's run names: `P2b-dfix` (every real label) and `P2b-dfix{k}` (fold k's BKS DIs and GOAT items out); a
+    share's `P2b-dfix{share}` and `P2b-dfix{share}-k{k}` (the `-k` keeps p10's fold 0 apart from a p100); no other run
+    takes these names."""
+    if share is not None and share not in DFIX_SHARES:
+        raise SystemExit(f"--dfix-share in {sorted(DFIX_SHARES)}")
+    return dfix_fold_name(f"P2b-dfix{share or ''}", real_fold)
+
+
+def dfix_fold_name(base, k):
+    """The run of D_fix family member `base` (an all-labels name, or its `-clean` read tag) for fold k (None: base)."""
+    base = base.removesuffix("-clean")
+    if base not in DFIX_BASES:
+        raise SystemExit(f"{base}: not a D_fix run ({', '.join(DFIX_BASES)})")
+    if k is None:
+        return base
+    return f"{base}{k}" if base == "P2b-dfix" else f"{base}-k{k}"
+
+
+def dfix_share_of(name):
+    """A D_fix family name's p (1.0 for D_fix itself), all-labels, fold (`P2b-dfix{k}`, `P2b-dfix{share}-k{k}`) or
+    read tag."""
+    import re
+
+    tag = re.sub(r"-k\d+$", "", name.removesuffix("-clean")).removeprefix("P2b-dfix")
+    return 1.0 if tag == "" or tag.isdigit() else DFIX_SHARES[tag]
+
+
+def dfix_phase(name):
+    """A D_fix family name's ledger phase: the share amendment's for a D_p, D_fix's otherwise."""
+    return "phase_dfix_share" if dfix_share_of(name) < 1 else "phase_dfix"
+
+
+def dfix_shown(i, epoch, p):
+    """Whether training real row i is shown in `epoch` at share p: a seeded draw on its own key, independent of
+    `dfix_variant`'s; p = 1 shows every row."""
+    import random
+
+    return p >= 1 or random.Random(f"{DFIX_SEED}|show|{i}|{epoch}").random() < p
+
+
+def dfix_refusal(args):
+    """The training flags' guard: why `--dfix` with anything but `--rung b [--real-fold k] [--stage 2] [--seed s]` is
+    refused, or why `--wide --real-fold` without `--dfix` is (D_fix's own branch); None when allowed."""
+    if not getattr(args, "dfix", False):
+        if getattr(args, "wide", False) and args.real_fold is not None:
+            return "--wide --real-fold is D_fix's run: train --dfix --rung b [--real-fold k]"
+        if getattr(args, "dfix_share", None) is not None:
+            return "--dfix-share is the share amendment's D_fix: train --dfix --dfix-share p33|p10"
+        return None
+    if getattr(args, "dfix_share", None) not in (None, *DFIX_SHARES):
+        return f"--dfix-share in {sorted(DFIX_SHARES)}"
+    if args.rung != "b":
+        return "--dfix is P2b-wide24's recipe plus the real rows: --rung b"
+    bad = [f"--{f.replace('_', '-')}" for f in ("aug", "backings", "dd", "pc", "pcsz", "wide", "goat", "goat_shuffle")
+           if getattr(args, f, False)]
+    bad += ["--fold"] * (args.fold is not None) + ["--frac"] * (args.frac != 1.0) \
+        + ["--sections"] * (args.sections != 1.0) + ["--stage"] * (args.stage not in (0, 2))
+    return f"--dfix takes only --real-fold, --stage 2 and --seed: {' '.join(bad)} refused" if bad else None
+
+
+def dfix_records(brecs, by_unit, folds, grecs, gunits, k):
+    """D_fix's real records for model k: training BKS `fold_records` and GOAT `goat_fold_records`, each cycled to its
+    rows per epoch, and the held fold's records once each (the diagnostic). k None (D_fix) takes every label and holds
+    none; a list longer than its rows per epoch is kept whole (BKS has 306 labels: cycling to 300 would drop six).
+    -> (bks, goat, bks held, goat held)."""
+    if k is None:
+        return (cycled(brecs, max(REAL_PER_EPOCH, len(brecs))), cycled(grecs, max(GOAT_PER_EPOCH, len(grecs))), [], [])
+    return (fold_records(brecs, by_unit, folds, k), goat_fold_records(grecs, gunits, k),
+            [r for r in brecs if folds[by_unit[r["unit"]]["di"]] == k],
+            [r for r in grecs if gunits[r["unit"]]["fold"] == k])
+
+
+def record_rows(recs, by_unit, row0, label_of=None):
+    """Rows of labelled real records, one per record with ids from row0, as `real_rows_for` and `goat_rows` build
+    them (the label `F.label_of` of the search's best setting) but without their 5B.1-path inputs."""
+    if label_of is None:
+        from learn import full_space as F
+        from learn import local_objective as LO
+
+        def label_of(rec):
+            return F.label_of(LO.tdict(rec["label"]), rec["amp"])
+    out = []
+    for j, rec in enumerate(recs):
+        prt = by_unit[rec["unit"]]
+        out.append({"i": row0 + j, "section": prt["section"], "band": prt["band"], "amp": rec["amp"],
+                    "cls": prt["cls"], "base": prt["cls"], "label": label_of(rec), "real": rec["unit"]})
+    return out
+
+
+def dfix_rows_of(brecs, by_unit, folds, grecs, gunits, k, label_of=None):
+    """D_fix's real rows for model k (`dfix_records`): training rows with BKS ids from REAL_ROW0 and GOAT's from
+    GOAT_ROW0 (as `real_rows_for` and `goat_rows` number them), the held fold's from those + DFIX_HELD0.
+    -> (training rows, held rows, counts)."""
+    b, g, bh, gh = dfix_records(brecs, by_unit, folds, grecs, gunits, k)
+    if max(len(b), len(bh)) >= DFIX_HELD0 or REAL_ROW0 + DFIX_HELD0 + len(bh) > GOAT_ROW0:
+        raise SystemExit("D_fix's real row ids would collide")
+    train = record_rows(b, by_unit, REAL_ROW0, label_of) + record_rows(g, gunits, GOAT_ROW0, label_of)
+    held = (record_rows(bh, by_unit, REAL_ROW0 + DFIX_HELD0, label_of)
+            + record_rows(gh, gunits, GOAT_ROW0 + DFIX_HELD0, label_of))
+    return train, held, {"real_rows": len(b), "goat_rows": len(g), "held_real_rows": len(bh),
+                         "held_goat_rows": len(gh)}
+
+
+def dfix_real_rows(k):
+    """`dfix_rows_of` on the stored labels: BKS stage 1-2 (`real_labels(2)`) and GOAT's (`goat_labels`)."""
+    brecs, by_unit, folds = real_labels(2)
+    grecs, gunits, _ = goat_labels()
+    return dfix_rows_of(brecs, by_unit, folds, grecs, gunits, k)
+
+
+def dfix_variant(i, epoch):
+    """The variant real row `i` shows at `epoch`: a seeded draw of DFIX_K in training, variant 0 at eval (epoch < 0)."""
+    import random
+
+    return 0 if epoch < 0 else random.Random(f"{DFIX_SEED}|{i}|{epoch}").randrange(DFIX_K)
+
+
+class DfixData(WideData):
+    """D_fix's data: P2b-wide24's plugin rows exactly as WideData (its variant check on the plugin training ids only),
+    and real rows reading `build-dfix-real`'s variants: in training a real row shows `dfix_variant(row id, epoch)`;
+    eval reads variant 0 (a BKS unit's own section's backing). Refuses a real unit lacking any variant or built from
+    another pool."""
+
+    def __init__(self, rows, path_of, plugin_ids, real_train_ids, share=1.0):
+        import hashlib
+
+        import numpy as np
+
+        from learn import direct_stems as DS
+
+        unit = {r["i"]: r["real"] for r in rows if "real" in r}
+        units = sorted(set(unit.values()))
+        missing = [u for u in units if not all(dfix_input_path(u, v).exists() for v in range(DFIX_K))]
+        if missing:
+            raise SystemExit(f"build-dfix-real is incomplete: {len(missing)} real units lack variants")
+        super().__init__(rows, lambda i: dfix_input_path(unit[i], 0) if i in unit else path_of(i), plugin_ids)
+        psha = pool_sha(json.loads(wide_pool_path().read_text())["entries"])
+        train_units = {unit[i] for i in real_train_ids}
+        h = hashlib.sha256()
+        self.RV, self.target_lufs = {}, {}
+        for u in units:
+            arr = np.zeros((DFIX_K, 2, 96, 446), np.uint8)
+            lu = np.zeros((DFIX_K, 2), np.float32)
+            for v in range(DFIX_K):
+                p = dfix_input_path(u, v)
+                d = np.load(p)
+                if str(d["pool_sha256"]) != psha:
+                    raise SystemExit(f"{p}: built from another pool")
+                if u in train_units:
+                    arr[v, 0], arr[v, 1], lu[v] = d["sA"], d["sB"], d["lufs"]
+                h.update(f"{p.name} {DS.hashlib_file(p)}\n".encode())
+            self.target_lufs[u] = float(np.load(dfix_input_path(u, 0))["target_lufs"])
+            if u in train_units:
+                self.RV[u] = (arr, lu)
+        self.inputs_sha256 = h.hexdigest()
+        self.RJ = {j: r["real"] for j, r in enumerate(rows) if r["i"] in real_train_ids}
+        self.counts = dict(self.counts, real_rows=len(self.RJ), real_units=len(train_units), real_variants=DFIX_K)
+        self.share = float(share)
+        if self.share < 1:
+            self.epoch_keep = self._epoch_keep
+
+    def _epoch_keep(self, order, epoch):
+        """The share amendment's filter on `fit`'s permuted order: plugin rows all kept, each training real row kept
+        by `dfix_shown` (order kept)."""
+        import numpy as np
+
+        return np.asarray([j for j in order if int(j) not in self.RJ
+                           or dfix_shown(self.rows[int(j)]["i"], epoch, self.share)], dtype=np.asarray(order).dtype)
+
+    def real_choices(self, idx, epoch):
+        """{row index: (unit, variant)} for a batch's training real rows at `epoch`."""
+        return {int(j): (self.RJ[int(j)], dfix_variant(self.rows[int(j)]["i"], epoch)) for j in idx
+                if int(j) in self.RJ}
+
+    def batch(self, idx, epoch, dev):
+        import numpy as np
+
+        saved = {}
+        if epoch >= 0:
+            for j, (u, v) in self.real_choices(np.asarray(idx), epoch).items():
+                if v:
+                    saved[j] = (self.X[j].copy(), self.L[j].copy())
+                    self.X[j], self.L[j] = self.RV[u][0][v], self.RV[u][1][v]
+        try:
+            return WideData.batch(self, idx, epoch, dev)
+        finally:
+            for j, (x, lu) in saved.items():
+                self.X[j], self.L[j] = x, lu
+
+
+
 COMMANDS = {"panel-sections": cmd_panel_sections, "panel-lags": cmd_panel_lags, "panel-centres": cmd_panel_centres, "panel-predict": cmd_panel_predict, "panel-render": cmd_panel_render, "panel-report": cmd_panel_report, "panel-ceiling": cmd_panel_ceiling, "goat-sections": cmd_goat_sections, "goat-search": cmd_goat_search,
             "goat-stage-check": cmd_goat_stage_check, "goat-centres": cmd_goat_centres,
             "goat-predict": cmd_goat_predict, "goat-render": cmd_goat_render, "goat-report": cmd_goat_report,
@@ -5557,7 +6108,8 @@ COMMANDS = {"panel-sections": cmd_panel_sections, "panel-lags": cmd_panel_lags, 
             "real-report": cmd_real_report, "real-search": cmd_real_search, "real-ceiling": cmd_real_ceiling,
             "real-heads": cmd_real_heads, "real-setting-audit": cmd_real_setting_audit,
             "vreal-sc": cmd_vreal_sc, "vreal-comparators": cmd_vreal_comparators,
-            "vreal-render": cmd_vreal_render, "vreal-report": cmd_vreal_report}
+            "vreal-render": cmd_vreal_render, "vreal-report": cmd_vreal_report,
+            "build-dfix-real": cmd_build_dfix_real, "sound-recheck": cmd_sound_recheck}
 
 
 def main(argv=None):
@@ -5565,6 +6117,7 @@ def main(argv=None):
     ap.add_argument("cmd", choices=tuple(COMMANDS))
     ap.add_argument("--data-dir", default=str(DATA))
     ap.add_argument("--shard", type=lambda v: tuple(int(z) for z in v.split("/")), default=(0, 1))
+    ap.add_argument("--reads-only", action="store_true", help="build-dfix-real: only the read units with no row")
     ap.add_argument("--rung", choices=tuple(RUNG_KINDS), default="a")
     ap.add_argument("--epochs", type=int, default=1500)
     ap.add_argument("--device", choices=("mps", "cpu"), default="mps")
@@ -5581,6 +6134,7 @@ def main(argv=None):
     ap.add_argument("--desc", action="store_true")
     ap.add_argument("--readout", choices=("plain", "pulled", "sws", "nc"), default="plain")
     ap.add_argument("--amp-shift", type=int, choices=(0, 1, 2), default=0)
+    ap.add_argument("--input-rung", choices=("b", "c", "d"), default=None)   # answers: read another rung's stored inputs
     ap.add_argument("--mastered", action="store_true")
     ap.add_argument("--seeds", default=str(SEEDS[0]))
     ap.add_argument("--against", default="")
@@ -5599,6 +6153,9 @@ def main(argv=None):
     ap.add_argument("--within", default="")
     ap.add_argument("--goat", action="store_true")
     ap.add_argument("--goat-shuffle", action="store_true")
+    ap.add_argument("--dfix", action="store_true")
+    ap.add_argument("--dfix-share", choices=tuple(DFIX_SHARES), default=None)
+    ap.add_argument("--n", type=int, default=20, help="sound-recheck: stored renders per tag rendered again")
     ap.add_argument("--lags-only", action="store_true")
     ap.add_argument("--lag-tol", type=int, default=None)       # goat-report: read A on a narrower lag set
     args = ap.parse_args(argv)

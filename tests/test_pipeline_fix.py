@@ -733,3 +733,243 @@ def test_panel_read_units_drop_the_di_like_bands(tmp_path, monkeypatch):
     (tmp_path / P.PANEL_DIR / "ear.json").write_text(json.dumps({"verdicts": {u["unit"]: {"verdict": "amp"}
                                                                               for u in units}}))
     assert "Dahka Band" in P.PANEL_DI_LIKE and [u["unit"] for u in P.panel_read_units()] == ["y"]
+
+
+# --- D_fix -----------------------------------------------------------------------------------------------------------
+
+def _train_args(**kw):
+    import argparse
+
+    base = dict(rung="b", aug=False, backings=False, dd=False, pc=False, pcsz=False, wide=False, goat=False,
+                goat_shuffle=False, fold=None, frac=1.0, sections=1.0, stage=0, real_fold=None, dfix=False,
+                seed=P.SEEDS[0])
+    base.update(kw)
+    return argparse.Namespace(**base)
+
+
+def _dfix_kept():
+    secs = ["s/A_Full/di.wav@0.0", "s/A_Full/di.wav@10.0", "s/B_Full/x.wav@5.0", "s/C_Full/y.wav@0.0"]
+    return {i: {"section": secs[i % 4], "cls": "clean" if i % 3 else "crunch", "band": f"b{i % 4}"}
+            for i in range(40)}
+
+
+def test_dfix_lend_is_seeded_and_same_section_else_same_class():
+    kept = _dfix_kept()
+    tr = [i for i in kept if i != 3 and i % 4 != 1]            # no training example of section 1
+    for u in ("u0", "u1", "u2"):
+        i, rule = P.dfix_lend(u, "clean", tr, kept, section="s/A_Full/di.wav@0.0")
+        assert rule == "section" and kept[i]["section"] == "s/A_Full/di.wav@0.0" and i in tr
+        assert P.dfix_lend(u, "clean", tr, kept, section="s/A_Full/di.wav@0.0") == (i, rule)
+        j, rule = P.dfix_lend(u, "crunch", tr, kept, section="s/A_Full/di.wav@10.0")
+        assert rule == "class" and kept[j]["cls"] == "crunch" and j in tr
+        g, rule = P.dfix_lend(u, "crunch", tr, kept)                 # GOAT: class always
+        assert rule == "class" and kept[g]["cls"] == "crunch"
+    assert len({P.dfix_lend(f"u{k}", "clean", tr, kept)[0] for k in range(30)}) > 1
+    with pytest.raises(SystemExit):
+        P.dfix_lend("u", "heavy", tr, kept)
+
+
+def test_dfix_draws_never_pick_the_units_own_session_and_lead_with_the_own_backing():
+    entries = [{"session": "s/A_Full"}, {"session": "A_Full"}, {"session": "s/B_Full"}, {"session": "C_Full"},
+               {"session": "D_Full"}, {"session": "D_Full"}]
+    d = P.dfix_draws("s/A_Full/di.wav@0.0#amp.wav", "s/A_Full/di.wav@0.0", entries, own=True, k=P.DFIX_K)
+    assert len(d) == P.DFIX_K and d[0] == (None, None)
+    assert all(j is not None and entries[j]["session"] not in ("s/A_Full", "A_Full") for j, _ in d[1:])
+    assert {entries[j]["session"] for j, _ in d[1:]} == {"s/B_Full", "C_Full", "D_Full"}
+    assert d == P.dfix_draws("s/A_Full/di.wav@0.0#amp.wav", "s/A_Full/di.wav@0.0", entries, own=True)
+    g = P.dfix_draws("goat/item_0@140.0#amp_3", "goat/item_0@140.0", entries, own=False)
+    assert len(g) == P.DFIX_K and all(j is not None for j, _ in g)
+    assert {v for _, v in g} == {True, False}
+
+
+def test_dfix_mix_brings_the_guitar_to_the_lenders_target_and_the_backing_to_its_own_level():
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("pyloudnorm")
+    from learn import song_aug as SA
+
+    rng = np.random.default_rng(0)
+    y_e = 0.05 * rng.standard_normal(48000 * 4)            # the lending example's stored target
+    real = 0.4 * rng.standard_normal(48000 * 4)            # the real amp track, far louder
+    back = 0.2 * rng.standard_normal(48000 * 4)            # a pool backing
+    gtr, g = P.dfix_level(real, SA.lufs(y_e), SA.lufs)
+    assert SA.lufs(gtr) == pytest.approx(SA.lufs(y_e), abs=0.01) and g < 0
+    e_gb, e_own, ga = -3.0, -20.0, -6.0
+    gb = P.dfix_backing_gain(e_gb, e_own, SA.lufs(back))
+    assert SA.lufs(back * 10 ** (gb / 20)) == pytest.approx(e_own + e_gb, abs=0.01)
+    assert P.dfix_backing_gain(e_gb, e_own, e_own) == e_gb        # its own backing: the lender's gb exactly
+    mix = P.dfix_mix(gtr, back, gb, ga)
+    assert np.allclose(mix * 10 ** (-ga / 20) - back * 10 ** (gb / 20), gtr)
+    with pytest.raises(SystemExit):
+        P.dfix_level(np.zeros(48000), -20.0, SA.lufs)
+
+
+def test_dfix_own_backing_guard_lists_every_track_of_the_di():
+    inv = {"s/A_Full/19_Gtr1aDI.wav": {"own": ["21_Gtr1cReamp.wav", "20_Gtr1bGR4.wav"]}}
+    prt = {"di": "s/A_Full/19_Gtr1aDI.wav", "track": "21_Gtr1cReamp.wav"}
+    assert P.dfix_di_tracks(prt, inv) == {"19_Gtr1aDI.wav", "21_Gtr1cReamp.wav", "20_Gtr1bGR4.wav"}
+
+
+def test_dfix_variant_is_seeded_per_row_and_epoch_and_variant_0_at_eval():
+    assert all(P.dfix_variant(i, -1) == 0 for i in range(50))
+    v = [P.dfix_variant(P.REAL_ROW0 + 7, ep) for ep in range(200)]
+    assert v == [P.dfix_variant(P.REAL_ROW0 + 7, ep) for ep in range(200)]
+    assert set(v) == set(range(P.DFIX_K))
+    assert v != [P.dfix_variant(P.REAL_ROW0 + 8, ep) for ep in range(200)]
+    d = object.__new__(P.DfixData)
+    d.rows = [{"i": 5}, {"i": P.REAL_ROW0, "real": "u"}, {"i": P.GOAT_ROW0 + 1, "real": "g"}]
+    d.RJ = {1: "u", 2: "g"}
+    assert d.real_choices([0, 1, 2], 3) == {1: ("u", P.dfix_variant(P.REAL_ROW0, 3)),
+                                            2: ("g", P.dfix_variant(P.GOAT_ROW0 + 1, 3))}
+    assert d.real_choices([0, 1, 2], -1) == {1: ("u", 0), 2: ("g", 0)}
+
+
+def test_dfix_refuses_every_other_flag_and_wide_with_a_real_fold():
+    assert P.dfix_refusal(_train_args(dfix=True)) is None
+    assert P.dfix_refusal(_train_args(dfix=True, real_fold=2, stage=2)) is None
+    for kw in ({"rung": "a"}, {"aug": True}, {"backings": True}, {"dd": True}, {"pc": True}, {"pcsz": True},
+               {"wide": True}, {"goat": True}, {"goat_shuffle": True}, {"fold": 1}, {"frac": 0.5},
+               {"sections": 0.5}, {"stage": 1}):
+        assert P.dfix_refusal(_train_args(dfix=True, **kw)), kw
+    assert P.dfix_refusal(_train_args(wide=True, real_fold=0))
+    assert P.dfix_refusal(_train_args(wide=True)) is None and P.dfix_refusal(_train_args(rung="a", real_fold=1)) is None
+
+
+def test_dfix_run_names_take_no_other_runs_name():
+    assert P.dfix_run_name(None) == "P2b-dfix" and P.dfix_run_name(3) == "P2b-dfix3"
+    others = {P.run_name(r, f, a, k, s) for r in "abcd" for f in (1.0, 0.5) for a in (False, True)
+              for k in (None, *P.FOLDS) for s in (1.0, 0.5)}
+    others |= {f"P2b-wide{P.WIDE_K}", "P2a-goat0", "P2a-real0s2"}
+    assert not {P.dfix_run_name(k) for k in (None, 0, 1, 2, 3)} & others
+
+
+def test_dfix_plugin_rows_with_the_real_rows_off_are_wides():
+    kept = _dfix_kept()
+    sp = {"train": list(range(0, 30)), "fs": list(range(30, 35)), "ns": list(range(35, 40))}
+    rows_of = lambda ids: [{"i": i, "section": kept[i]["section"]} for i in ids]   # noqa: E731
+    wide = P.plugin_rows(kept, sp, _train_args(wide=True), rows_of)
+    tr, held, held_name, rows = P.plugin_rows(kept, sp, _train_args(dfix=True), rows_of)
+    assert (tr, held, held_name, rows) == wide and tr == sp["train"] and held_name == "ns"
+    assert P.with_rows(tr, rows, []) == (wide[0], wide[3])
+    extra = [{"i": P.REAL_ROW0, "real": "u"}]
+    t2, r2 = P.with_rows(tr, rows, extra)
+    assert t2 == tr + [P.REAL_ROW0] and r2[len(tr)] == extra[0] and r2[:len(tr)] == rows[:len(tr)]
+    assert r2[len(tr) + 1:] == rows[len(tr):] and all(r.get("held") for r in r2[len(tr) + 1:])
+
+
+def test_dfix_real_rows_keep_every_label_and_hold_only_the_folds_own():
+    by_unit = {f"b{j}": {"unit": f"b{j}", "di": f"d{j % 8}", "cls": "clean", "section": f"s{j}", "band": "BKS"}
+               for j in range(16)}
+    brecs = [{"unit": u, "amp": amp, "label": {}} for u in sorted(by_unit) for amp in ("pr12", "ac20")] * 10
+    folds = {f"d{j}": j // 2 for j in range(8)}
+    grecs, gunits = _goat_records()
+    for u in gunits.values():
+        u.update(section=u["unit"], band="GOAT")
+    lab = lambda rec: rec["amp"]                                     # noqa: E731
+    tr, held, n = P.dfix_rows_of(brecs, by_unit, folds, grecs, gunits, None, label_of=lab)
+    assert len(brecs) > P.REAL_PER_EPOCH and n["real_rows"] == len(brecs) and held == []
+    assert n["goat_rows"] == P.GOAT_PER_EPOCH
+    for k in range(4):
+        tr, held, n = P.dfix_rows_of(brecs, by_unit, folds, grecs, gunits, k, label_of=lab)
+        assert n["real_rows"] == P.REAL_PER_EPOCH and n["goat_rows"] == P.GOAT_PER_EPOCH
+        ids = [r["i"] for r in tr + held]
+        assert len(set(ids)) == len(ids)
+        assert all(r["i"] < P.REAL_ROW0 + P.DFIX_HELD0 or P.GOAT_ROW0 <= r["i"] < P.GOAT_ROW0 + P.DFIX_HELD0
+                   for r in tr)
+        bt = [r for r in tr if r["i"] < P.GOAT_ROW0]
+        assert all(folds[by_unit[r["real"]]["di"]] != k for r in bt)
+        assert all(gunits[r["real"]]["fold"] != k for r in tr if r["i"] >= P.GOAT_ROW0)
+        bh = [r for r in held if r["i"] < P.GOAT_ROW0]
+        assert bh and all(folds[by_unit[r["real"]]["di"]] == k for r in bh)
+        assert all(gunits[r["real"]]["fold"] == k for r in held if r["i"] >= P.GOAT_ROW0)
+        assert {r["real"] for r in bt} == {u for u, p in by_unit.items() if folds[p["di"]] != k}
+
+
+def test_dfix_reads_are_fold_wise_and_reported_with_5b2s_folds():
+    assert {"P2b-dfix", "P2b-dfix-clean"} <= P.DFIX_READS and len(P.DFIX_READS) == 2 * len(P.DFIX_BASES)
+    for t in P.DFIX_READS:
+        assert P.report_phase({t, "Rcs2", "S"}) == "phase_dfix"
+        assert P.report_phase({t, "S"}).startswith(P.ARM_FOLD_PHASES)
+
+
+def test_model_input_lufs_reads_the_runs_own_rung(monkeypatch):
+    seen = []
+    monkeypatch.setattr(P, "rung_median_lufs", lambda ids, rung: seen.append((tuple(ids), rung)) or -13.7)
+    assert P.model_input_lufs({"train_ids": [1, 2, P.REAL_ROW0 + 1], "rung": "b"}) == -13.7
+    assert seen == [((1, 2), "b")]
+    P.model_input_lufs({"train_ids": [3]})
+    assert seen[-1] == ((3,), "a")
+
+
+def test_dfix_read_only_units_are_the_read_units_with_no_row():
+    units = [("goat/a#amp_1", "goat", {"unit": "goat/a#amp_1"}), ("bks/b", "bks", {"unit": "bks/b"})]
+    read = [{"unit": "goat/c#amp_5", "fold": 1}, {"unit": "goat/a#amp_1", "fold": 0}]
+    assert P.dfix_read_only(units, read) == [("goat/c#amp_5", "goat", {"unit": "goat/c#amp_5", "fold": 1})]
+    assert P.dfix_read_only(units, read[1:]) == []
+
+
+def test_dfix_share_names_never_collide_and_map_to_their_folds():
+    names = [P.dfix_run_name(k, s) for s in (None, *P.DFIX_SHARES) for k in (None, 0, 1, 2, 3)]
+    assert len(set(names)) == len(names)
+    assert P.dfix_run_name(0, "p10") == "P2b-dfixp10-k0" and P.dfix_run_name(None, "p33") == "P2b-dfixp33"
+    assert P.dfix_run_name(2) == "P2b-dfix2"
+    assert P.dfix_fold_name("P2b-dfixp33-clean", 1) == "P2b-dfixp33-k1"
+    assert P.dfix_fold_name("P2b-dfix-clean", 1) == "P2b-dfix1"
+    assert P.dfix_share_of("P2b-dfix") == 1.0 and P.dfix_share_of("P2b-dfixp10-clean") == 0.1
+    for s, p in ((None, 1.0), *P.DFIX_SHARES.items()):
+        for k in (None, 0, 1, 2, 3):
+            assert P.dfix_share_of(P.dfix_run_name(k, s)) == p
+            assert P.dfix_phase(P.dfix_run_name(k, s)) == ("phase_dfix" if p == 1 else "phase_dfix_share")
+    with pytest.raises(SystemExit):
+        P.dfix_fold_name("P2b-dfixp50", 0)
+    with pytest.raises(SystemExit):
+        P.dfix_run_name(None, "p50")
+    for b in P.DFIX_BASES:
+        assert {b, f"{b}-clean"} <= P.DFIX_READS and P.report_phase({b, "Rcs2"}) == "phase_dfix"
+
+
+def test_dfix_share_refuses_without_dfix_and_unknown_shares():
+    a = _train_args(dfix=False, dfix_share="p33")
+    assert "--dfix-share" in P.dfix_refusal(a)
+    assert P.dfix_refusal(_train_args(dfix=True, rung="b", dfix_share="p33")) is None
+    assert "--dfix-share in" in P.dfix_refusal(_train_args(dfix=True, rung="b", dfix_share="p50"))
+
+
+def test_dfix_shown_is_seeded_at_rate_p_and_independent_of_the_variant():
+    import random
+
+    assert all(P.dfix_shown(i, e, 1.0) for i in range(50) for e in range(5))
+    draws = [(i, e) for i in range(4000) for e in range(5)]
+    shown = [P.dfix_shown(i, e, 1 / 3) for i, e in draws]
+    assert shown == [P.dfix_shown(i, e, 1 / 3) for i, e in draws]
+    assert abs(sum(shown) / len(shown) - 1 / 3) < 0.01
+    var0 = [P.dfix_variant(i, e) == 0 for i, e in draws]
+    a = sum(v for v, s in zip(var0, shown) if s) / sum(shown)
+    b = sum(v for v, s in zip(var0, shown) if not s) / (len(shown) - sum(shown))
+    assert abs(a - b) < 0.015 and abs(a - 1 / P.DFIX_K) < 0.015
+    assert random.Random(f"{P.DFIX_SEED}|show|7|3").random() != random.Random(f"{P.DFIX_SEED}|7|3").random()
+
+
+def test_epoch_order_keeps_the_rng_stream_and_at_p1_the_batches():
+    np = pytest.importorskip("numpy")
+
+    class Plain:
+        pass
+
+    class Share:
+        def __init__(self, rj, rows, p):
+            self.RJ, self.rows, self.share = rj, rows, p
+
+        def epoch_keep(self, order, epoch):
+            return P.DfixData._epoch_keep(self, order, epoch)
+
+    tr = np.arange(40)
+    rows = [{"i": 1000 + j} for j in range(40)]
+    rj = {j: "u" for j in range(30, 40)}
+    r0, r1, r2 = (np.random.default_rng(5) for _ in range(3))
+    for e in range(4):
+        base = P.epoch_order(r0, tr, Plain(), e)
+        full = P.epoch_order(r1, tr, Share(rj, rows, 1.0), e)
+        part = P.epoch_order(r2, tr, Share(rj, rows, 0.3), e)
+        assert list(full) == list(base)
+        assert [j for j in part] == [j for j in base if j not in rj or P.dfix_shown(rows[j]["i"], e, 0.3)]
+        assert all(j in part for j in base if j not in rj)
