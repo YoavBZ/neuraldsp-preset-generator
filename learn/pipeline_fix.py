@@ -1164,7 +1164,7 @@ def cmd_train(args):
         heads[which] = {k: head_table(head_losses(net, data, idx, dev), bl[k])
                         for k, idx in (("train_subset", sub), (held_name, hi))}
         torch.save(st, od / f"{name}-{args.seed}-{which}.pt")
-    phase = ("phase_dfix" if args.dfix else "phase_5c" if (args.goat or args.goat_shuffle)
+    phase = (dfix_phase(name) if args.dfix else "phase_5c" if (args.goat or args.goat_shuffle)
              else "phase_5b2" if (args.pc or args.pcsz or args.real_fold is not None) else "phase_3")
     save(rp, {"plan": PLAN, "test": name, "ledger": f"{LEDGER_ID} {phase}", "rung": args.rung,
               "input": RUNG_KINDS[args.rung], "aug": bool(args.aug), "frac": args.frac, "sections": args.sections,
@@ -2048,6 +2048,8 @@ def cmd_sound_recheck(args):
             if PS.free_gb() < T.DISK_GUARD_GB:
                 raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
             old = json.loads((gd / f"{i}.json").read_text())
+            if old.get("answers_sha256") != answers_sha(ans):
+                raise SystemExit(f"{gd / f'{i}.json'}: rendered from other answers than {tag}.json holds now")
             sec = ctx.sections[ex[i]["section"]]
             di = B.measure(PS.section_audio(sec["path"], sec["start_s"])).astype(np.float32)
             st = LO.tdict(ans[str(i)]["settings"])
@@ -2747,7 +2749,7 @@ def real_predict_5b2(name):
     from learn import local_objective as LO
     from learn import trusted_data_t3 as T3
 
-    e = require("phase_dfix" if name.startswith("P2b-dfix") else "phase_5c" if name.startswith("P2a-goat")
+    e = require(dfix_phase(name) if name.startswith("P2b-dfix") else "phase_5c" if name.startswith("P2a-goat")
                 else "phase_5b2")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     inv = CB.cc_inventory()
@@ -2806,7 +2808,7 @@ def real_predict_5b2(name):
                     T3.constant_full(amp, S, const[(amp, prt["cls"])]))}}
     for t, a in out.items():
         save(out_dir() / REAL_DIR / "answers" / f"{t}.json", {
-            "plan": PLAN, "ledger": f"{LEDGER_ID} {'phase_dfix' if name.startswith('P2b-dfix') else 'phase_5c' if name.startswith('P2a-goat') else 'phase_5b2'}",
+            "plan": PLAN, "ledger": f"{LEDGER_ID} {dfix_phase(name) if name.startswith('P2b-dfix') else 'phase_5c' if name.startswith('P2a-goat') else 'phase_5b2'}",
             "tag": t, "parts": parts, "input": "backed (variant 0)" if name in DFIX_BASES else "clean", "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
             "unit_model": names, "answers": a, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"REAL PREDICT 5B.2 DONE: {name} on {len(parts)} units")
@@ -3843,7 +3845,7 @@ def goat_predict(name):
     from learn import full_space as F
     from learn import local_objective as LO
 
-    e = require("phase_dfix" if name in DFIX_BASES else "phase_5c")
+    e = require(dfix_phase(name) if name in DFIX_BASES else "phase_5c")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     units = goat_read_units()
     models = {}
@@ -3870,7 +3872,8 @@ def goat_predict(name):
             st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
             out.setdefault(real_key(prt, amp), {})[search] = {"select": sel, "settings": LO.sdict(st)}
     save(out_dir() / GOAT_DIR / "answers" / f"{name}.json", {
-        "plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "tag": name,
+        "plan": PLAN, "ledger": f"{LEDGER_ID} {dfix_phase(name) if name in DFIX_BASES else 'phase_5c'}",
+        "tag": name,
         "models": {k: {"sha256": m[1], "input_lufs": m[2]} for k, m in models.items()}, "answers": out,
         "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"GOAT PREDICT DONE: {name} on {len(units)} units")
@@ -5920,9 +5923,17 @@ def dfix_fold_name(base, k):
 
 
 def dfix_share_of(name):
-    """A D_fix family name's p (1.0 for D_fix itself)."""
-    base = name.removesuffix("-clean")
-    return 1.0 if base == "P2b-dfix" else DFIX_SHARES[base.removeprefix("P2b-dfix")]
+    """A D_fix family name's p (1.0 for D_fix itself), all-labels, fold (`P2b-dfix{k}`, `P2b-dfix{share}-k{k}`) or
+    read tag."""
+    import re
+
+    tag = re.sub(r"-k\d+$", "", name.removesuffix("-clean")).removeprefix("P2b-dfix")
+    return 1.0 if tag == "" or tag.isdigit() else DFIX_SHARES[tag]
+
+
+def dfix_phase(name):
+    """A D_fix family name's ledger phase: the share amendment's for a D_p, D_fix's otherwise."""
+    return "phase_dfix_share" if dfix_share_of(name) < 1 else "phase_dfix"
 
 
 def dfix_shown(i, epoch, p):

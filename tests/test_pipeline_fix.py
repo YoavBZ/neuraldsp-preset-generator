@@ -915,6 +915,10 @@ def test_dfix_share_names_never_collide_and_map_to_their_folds():
     assert P.dfix_fold_name("P2b-dfixp33-clean", 1) == "P2b-dfixp33-k1"
     assert P.dfix_fold_name("P2b-dfix-clean", 1) == "P2b-dfix1"
     assert P.dfix_share_of("P2b-dfix") == 1.0 and P.dfix_share_of("P2b-dfixp10-clean") == 0.1
+    for s, p in ((None, 1.0), *P.DFIX_SHARES.items()):
+        for k in (None, 0, 1, 2, 3):
+            assert P.dfix_share_of(P.dfix_run_name(k, s)) == p
+            assert P.dfix_phase(P.dfix_run_name(k, s)) == ("phase_dfix" if p == 1 else "phase_dfix_share")
     with pytest.raises(SystemExit):
         P.dfix_fold_name("P2b-dfixp50", 0)
     with pytest.raises(SystemExit):
