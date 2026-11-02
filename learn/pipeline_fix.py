@@ -26,6 +26,7 @@ after the review's (P1-P7), and the recipe every retrain in the plan shares. Out
     $TORCH_PY -m learn.pipeline_fix ft-vreal-predict          # FT on V-real (after phase_ft_carry; zero renders)
     $MAIN -u -m learn.pipeline_fix ft-vreal-render --shard k/3    # FT's V-real renders (hashes in the ledger first)
     $MAIN -m learn.pipeline_fix ft-vreal-report --label ft-vreal  # FT's V-real rows (zero renders)
+    $MAIN -m learn.pipeline_fix ft-groups                     # FT's BKS answers split by control group (zero renders)
 """
 
 from __future__ import annotations
@@ -4294,7 +4295,7 @@ ARM_FOLD_PHASES = ("phase_5b2", "phase_5c", "phase_dfix", "phase_ft")    # real-
 
 def report_phase(tags):
     """real-report's ledger phase for the tags it reads."""
-    return ("phase_ft" if FT_BASE in tags else "phase_dfix" if tags & DFIX_READS else "phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
+    return ("phase_ft_groups" if any(t.startswith("FTg-") for t in tags) else "phase_ft" if FT_BASE in tags else "phase_dfix" if tags & DFIX_READS else "phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
             else "phase_5b2_rigo" if tags & {"RigO", "RcM"}
             else "phase_5b2" if any(t.startswith(("P2a-pc", "P2a-real", "Rc")) for t in tags)
             else "phase_5b1b" if any(t in ("P2a-Sc", "S-shift") for t in tags) else "phase_5b1")
@@ -7202,6 +7203,89 @@ def cmd_ft_vreal_report(args):
     print("FT-VREAL-REPORT DONE")
 
 
+# --- FT's score by control group (ledger phase_ft_groups; descriptive, BKS only) -----------------------------------
+
+FTG_GROUPS = ("drive", "tone", "cab", "effects", "other")   # other: gate, output gain, transpose, the amp section
+FTG_WAYS = ("rev", "add")                           # rev-g: FT with g at S; add-g: S with g from FT
+FTG_DRIVE = {"parameters/inputGain", "pedalParameters/sectionActive", "pr12Amp/pr12Volume", "sw50rAmp/sw50rVolume",
+             "sw50rAmp/sw50rLevel", "sw50rAmp/sw50rInputMode", "ac20Amp/ac20Volume", "ac20Amp/ac20Power"}
+FTG_TONE = {"pr12Amp/pr12Treble", "pr12Amp/pr12Bass", "sw50rAmp/sw50rTreble", "sw50rAmp/sw50rMid", "sw50rAmp/sw50rBass",
+            "sw50rAmp/sw50rBright", "sw50rAmp/sw50rTrebleBoost", "ac20Amp/ac20Cut", "ac20Amp/ac20Bright",
+            "ac20Amp/ac20BassTreble", "eqParameters/sectionActive"}
+FTG_EFFECTS = {"pr12Amp/pr12Reverb", "pr12Amp/pr12Dwell", "sw50rAmp/sw50rReverb", "pr12Amp/springOn",
+               "sw50rAmp/springOn", "fxParameters/sectionActive", "parameters/doublerActive", "parameters/doublerSpread"}
+
+
+def ftg_tag(way, group):
+    return f"FTg-{way}-{group}"
+
+
+def ftg_group(key):
+    """A settings key's control group (`phase_ft_groups`): drive, tone, cab, effects or other."""
+    mod = key.split("/", 1)[0]
+    if key in FTG_DRIVE or mod in ("drive1", "drive2", "compressor"):
+        return "drive"
+    if key in FTG_EFFECTS or mod in ("reverb", "delay", "tremolo"):
+        return "effects"
+    if key in FTG_TONE or mod in ("pr12EQ", "sw50rEQ", "ac20EQ"):
+        return "tone"
+    if mod == "cabParameters":
+        return "cab"
+    return "other"
+
+
+def ftg_mix(base, donor, group):
+    """`base`'s settings with `group`'s keys taken from `donor` (both full settings dicts on one key set)."""
+    if set(base) != set(donor):
+        raise SystemExit("ftg_mix: the two settings hold different keys")
+    return {k: (donor[k] if ftg_group(k) == group else v) for k, v in base.items()}
+
+
+def ftg_answers(ft, s_ans):
+    """The hybrids of `phase_ft_groups` from FT's BKS answers {key: {half: answer}} and S's {key: {ANY_HALF: answer}}:
+    {tag: {key: {half: answer}}} and per group the count of answers whose g-keys differ from S's."""
+    out = {ftg_tag(w, g): {} for w in FTG_WAYS for g in FTG_GROUPS}
+    differ = {g: 0 for g in FTG_GROUPS}
+    for key, halves in ft.items():
+        s = s_ans[key][ANY_HALF]
+        for half, a in halves.items():
+            if a["select"] != s["select"]:
+                raise SystemExit(f"{key} {half}: FT's select is not S's")
+            for g in differ:
+                differ[g] += any(a["settings"][k] != s["settings"][k] for k in a["settings"] if ftg_group(k) == g)
+            for g in FTG_GROUPS:
+                out[ftg_tag("rev", g)].setdefault(key, {})[half] = {
+                    "select": a["select"], "settings": ftg_mix(a["settings"], s["settings"], g)}
+                out[ftg_tag("add", g)].setdefault(key, {})[half] = {
+                    "select": s["select"], "settings": ftg_mix(s["settings"], a["settings"], g)}
+    return out, differ
+
+
+def cmd_ft_groups(args):
+    """`phase_ft_groups`' answers (zero renders): FT's BKS read 2 answers split by control group into rev-g and add-g
+    (`ftg_answers`), saved as real/answers/FTg-*.json for `real-render`; prints each file's sha256 for the ledger."""
+    from learn import direct_stems as DS
+
+    require("phase_ft_groups")
+    ad = out_dir() / REAL_DIR / "answers"
+    ft = json.loads((ad / f"{FT_BASE}.json").read_text())
+    s_ans = json.loads((ad / "S.json").read_text())["answers"]
+    out, differ = ftg_answers(ft["answers"], s_ans)
+    shas = {}
+    for tag, ans in out.items():
+        p = ad / f"{tag}.json"
+        if p.exists():
+            raise SystemExit(f"{p.name} exists: the hybrids are written once")
+        save(p, {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_ft_groups", "tag": tag, "from": f"{FT_BASE}.json and S.json",
+                 "ft_answers_sha256": answers_sha(ft["answers"]), "differ_from_S": differ, "answers": ans,
+                 "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+        shas[tag] = DS.hashlib_file(p)
+    n = sum(len(h) for h in ft["answers"].values())
+    print(f"FT-GROUPS DONE: {len(out)} tags x {n} answers; answers whose group differs from S: {differ}")
+    print("record in the ledger's pipeline-fix entry before rendering: \"phase_ft_groups_answers\": "
+          + json.dumps(shas, indent=1))
+
+
 COMMANDS = {"panel-sections": cmd_panel_sections, "panel-lags": cmd_panel_lags, "panel-centres": cmd_panel_centres, "panel-predict": cmd_panel_predict, "panel-render": cmd_panel_render, "panel-report": cmd_panel_report, "panel-ceiling": cmd_panel_ceiling, "goat-sections": cmd_goat_sections, "goat-search": cmd_goat_search,
             "goat-stage-check": cmd_goat_stage_check, "goat-centres": cmd_goat_centres,
             "goat-predict": cmd_goat_predict, "goat-render": cmd_goat_render, "goat-report": cmd_goat_report,
@@ -7220,7 +7304,7 @@ COMMANDS = {"panel-sections": cmd_panel_sections, "panel-lags": cmd_panel_lags, 
             "dfix-vreal-predict": cmd_dfix_vreal_predict, "dfix-vreal-render": cmd_dfix_vreal_render,
             "dfix-vreal-report": cmd_dfix_vreal_report, "train-ft": cmd_train_ft, "ft-recheck": cmd_ft_recheck,
             "ft-vreal-predict": cmd_ft_vreal_predict, "ft-vreal-render": cmd_ft_vreal_render,
-            "ft-vreal-report": cmd_ft_vreal_report}
+            "ft-vreal-report": cmd_ft_vreal_report, "ft-groups": cmd_ft_groups}
 
 
 def main(argv=None):

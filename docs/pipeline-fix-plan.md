@@ -1198,6 +1198,31 @@ instead of generating unrealistic presets our own?"):
       W's start reference, the E-bias and fold-3 caveats, the seed, the rounding, the per-epoch counts as
       `dfix_records`, and the two-change interpretation. Its re-check approved (2026-11-02) with the
       moving-average wording fix, made; the fallbacks' order and the guard's wording adopted.
+  - *FT's score by control group (2026-11-02, after F42, at the user's request; ledger `phase_ft_groups`;
+    descriptive).* The user asked whether the score weighs controls sensibly ("drive probably matters much more
+    than reverb"). The score is by sound, so a control counts only by what it changes in the audio; this measures
+    how much of FT's BKS score each group of controls carries, as the first half of a judge-against-ear check.
+    - **Groups** (every settings key in exactly one, by `ftg_group`): *drive* (input gain, the amps' volume and
+      power controls, SW50R's master and input mode, both drive pedals, the compressor, the pedal section);
+      *tone* (the amps' bass, mid, treble, cut, bright and treble-boost controls, the graphic EQs, the EQ
+      section); *cab* (every cab, mic and room control); *effects* (reverb, delay, tremolo, doubler, the amps'
+      springs and the FX section); *other* (the gate, output gain, transpose, the amp section; only the gate
+      threshold differs from S, in 126 of FT's 240 answers).
+    - **Hybrids, on FT's BKS read 2 answers** (each unit by its DI's FT_k, 40 units, 3 amps, 2 halves): for each
+      group g, *rev-g* is FT's answer with g's keys set to S's (the unit's class S) and *add-g* is S with g's keys
+      from FT's answer; select is S's and FT's (asserted equal). 10 tags × 240 answers, 4,800 renders with their
+      priming renders, through `real-render` as read 2 (S's stored renders and lags reused); the answers'
+      hashes in the ledger before any render.
+    - **Rows** (`real-report`, by DI, 8 DIs, 90%): FT − S (the total, read 2's −0.177, reproduced); per group
+      FT − rev-g (negative: the group's change from S helps the score) and add-g − S (negative: that change alone
+      helps); the sum of the five add-g − S beside FT − S (the interaction). Per group, the share of answers
+      whose g-keys differ from S's.
+    - **Reading.** Descriptive; no gate. It says which groups the score credits FT for, and by how much. A
+      group that carries much of the score while its change is small to the ear, or the reverse, is a candidate
+      for judge mis-weighting; the second half is a short ear page on the largest-effect pairs per group (the
+      same unit, S against add-g), declared with its reader after these rows. V-real is not read.
+    - **Renders** 4,800 (about 1 h, 3 processes); every render as declared for Morgan.
+
 - **Decisions for the user, with the evidence:** whether to adopt the S fallback or the near-chance rule
   (steps 26, 27, 37), and whether to scale.
 
