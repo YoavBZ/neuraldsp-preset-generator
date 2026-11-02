@@ -1,3 +1,4 @@
+import argparse
 import json
 import math
 
@@ -973,3 +974,378 @@ def test_epoch_order_keeps_the_rng_stream_and_at_p1_the_batches():
         assert list(full) == list(base)
         assert [j for j in part] == [j for j in base if j not in rj or P.dfix_shown(rows[j]["i"], e, 0.3)]
         assert all(j in part for j in base if j not in rj)
+
+
+# --- D_fix to V-real (phase_dfix_vreal) ---------------------------------------------------------------------------
+
+def test_dfix_vreal_takes_only_the_declared_tags_and_models():
+    assert P.dfix_vreal_tags("") == list(P.DFIX_VREAL_TAGS) and len(P.DFIX_VREAL_TAGS) == 6
+    assert P.dfix_vreal_tags("DV-RcG,S-recheck-dfix") == ["DV-RcG", "S-recheck-dfix"]
+    for bad in ("S", "P4-P2a-best", "DV-P2b-dfixp10-stem", "DV-RcG,P2b-dfix"):
+        with pytest.raises(SystemExit):
+            P.dfix_vreal_tags(bad)
+    assert {m for m, _, _ in P.DFIX_VREAL_TAGS.values()} - {None} == set(P.DFIX_VREAL_MODELS)
+    for name in ("P2b-dfixp10", "P2b-dfixp33", "P2b-dfix0", "P2a", "P2d", "P2b"):
+        with pytest.raises(SystemExit, match="reads only"):
+            P.dfix_vreal_load(name)
+    assert P.DFIX_VREAL_BASE != "S"         # phase 4's S groups are kept, so S is rendered again under its own tag
+
+
+def test_dfix_vreal_predict_refuses_other_tags_and_checkpoints(monkeypatch):
+    monkeypatch.setattr(P, "require", lambda k: {})
+    monkeypatch.setattr(P, "recipe_inputs", lambda **kw: pytest.fail("refusals come before any data is read"))
+    with pytest.raises(SystemExit, match="declares only"):
+        P.cmd_dfix_vreal_predict(argparse.Namespace(names="P4-P2a-best", which="best"))
+    with pytest.raises(SystemExit, match="NS-best"):
+        P.cmd_dfix_vreal_predict(argparse.Namespace(names="", which="final"))
+
+
+def test_vreal_mix_target_is_asserted_the_declared_level(tmp_path):
+    p = tmp_path / "levels.json"
+    p.write_text(json.dumps({"summary": {"eval_mix_lufs_median": -12.250616791893322}}))
+    assert P.vreal_mix_target(p) == pytest.approx(-12.2506, abs=1e-4)
+    p.write_text(json.dumps({"summary": {"eval_mix_lufs_median": -12.26}}))
+    with pytest.raises(SystemExit):
+        P.vreal_mix_target(p)
+
+
+def test_vreal_input_path_reads_a_stored_fs_stem_half_exactly_as_rungdata():
+    """The known answer: an FS example's stored xlance_g-cc halves through the V-real input path give exactly the
+    X and C `RungData` (`read_inputs`) gives; and audio through `step4_half` at 0 dB gives exactly the build's
+    `half_features` (the stems' audio is not stored, so the FS example's target stands in for the signal)."""
+    np = pytest.importorskip("numpy")
+    try:
+        croot, kept, rend, sp, _ = P.recipe_inputs(pin=P.ledger_entry().get("phase_3_doubles"))
+    except (SystemExit, OSError):
+        pytest.skip("no D_CC data here")
+    from learn import cc_build as CB
+    from learn import direct_sound_gate as G
+    from learn import direct_stems as DS
+    from learn import trusted_data as T
+
+    i = sp["fs"][0]
+    path_of = P.rung_path(croot, "d")
+    row = P.rung_rows(kept, rend, [i])
+    X, C, who = P.read_inputs(P.RungData(row, path_of))
+    d = np.load(path_of(i))
+    assert who == [i, i]
+    for k, h in enumerate("AB"):
+        x, c = P.vreal_model_input(d[f"s{h}"], float(d["lufs"][k]), h, row[0]["amp"], row[0]["cls"])
+        assert np.array_equal(np.asarray(x, np.float32), X[k]) and np.array_equal(c, C[k])
+    y = np.asarray(G.read_flac(T.flac_path(croot, CB.STAGE, i, "target"), rend[i]["target"]["scale"],
+                               rend[i]["target"]["sha256"]), np.float64)
+    mels, lu, _ = DS.half_features(y)
+    for h in "AB":
+        s8, _, ls, _ = DS.step4_half(y, y, h, 0.0)
+        assert np.array_equal(s8, mels[h]) and ls == lu[h]
+
+
+def test_leakage_guard_flags_a_v_real_band_or_song_and_nothing_else():
+    inv = {f"di{j}": {"slug": s, "song": f"Song {j}", "session_dir": f"/x/Band{j}_Song{j}_Full"}
+           for j, s in enumerate(PR.VREAL)}
+    songs = P.vreal_songs(inv)
+    assert "song0" in songs and "band0song0full" in songs
+    src = [("plugin row 1", "Forkupines", ["Forkupines_SugarFaith_Full", "Sugar Faith"]),
+           ("pool entry a", None, ["Other_Session", None]),
+           ("real unit u", "Diesel13", ["x"]),
+           ("pool entry b", "Someone", ["Band3_Song3_Full"]),
+           ("own backing", "BKS", ["Song 4"])]
+    assert P.leaks_of(src, P.VREAL_BANDS, songs) == ["own backing: song Song 4", "pool entry b: song Band3_Song3_Full",
+                                                     "real unit u: band Diesel13"]
+    assert P.leaks_of(src[:2], P.VREAL_BANDS, songs) == []
+    with pytest.raises(SystemExit):
+        P.vreal_songs({k: v for k, v in inv.items() if k != "di0"})
+
+
+def test_leakage_guard_reads_every_training_input_of_both_runs(tmp_path, monkeypatch):
+    np = pytest.importorskip("numpy")
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    monkeypatch.setattr(P, "DFIX_K", 2)
+    (tmp_path / "runs").mkdir()
+    for sd in P.SEEDS:
+        (tmp_path / "runs" / f"P2b-dfix-{sd}.json").write_text(json.dumps({
+            "train_ids": [1, P.REAL_ROW0, P.GOAT_ROW0], "held_ids": [2], "dfix": {"target_lufs": {"bks/u": 0, "g/u": 0}}}))
+    kept = {1: {"section": "s1/Band1_Song_Full/di.wav@5.0", "band": "B1", "session_dir": "/d/Band1_Song_Full", "di": "d1"},
+            2: {"section": "s1/NS_Full/di.wav@5.0", "band": "NS", "session_dir": "/d/NS_Full", "di": "d2"}}
+    inv = {"d1": {"song": "Song"}, "d2": {"song": "NS"}, "d3": {"song": "Real", "session_dir": "/e/Pool_Full",
+                                                              "band": "PoolBand"}}
+    monkeypatch.setattr(P, "dfix_real_rows", lambda k: ([{"i": P.REAL_ROW0, "real": "bks/u"},
+                                                         {"i": P.GOAT_ROW0, "real": "g/u"}], [], {}))
+    monkeypatch.setattr(P, "dfix_units", lambda: [
+        ("bks/u", "bks", {"band": "BKS", "section": "s1/BKS_Full/di.wav@1.0", "sd": "/d/BKS_Full", "di": "d3"}),
+        ("g/u", "goat", {"band": "GOAT player1", "item": "item_0"})])
+    (tmp_path / "inputs").mkdir()
+    pool = [{"id": "s1/Band1_Song_Full/di.wav@5.0", "kind": "training", "session": "s1/Band1_Song_Full"},
+            {"id": "Pool_Full@5.0", "kind": "extra", "session": "Pool_Full", "sd": "/e/Pool_Full"}]
+    (tmp_path / "inputs" / "backings-wide-pool.json").write_text(json.dumps({"entries": pool}))
+    for u, bids in (("bks/u", ["s1/BKS_Full/di.wav@1.0", "Pool_Full@5.0"]), ("g/u", ["Pool_Full@5.0"] * 2)):
+        for v, b in enumerate(bids):
+            p = P.dfix_input_path(u, v)
+            p.parent.mkdir(parents=True, exist_ok=True)
+            np.savez(p, backing=b)
+    src, cnt = P.dfix_training_sources(kept, inv)
+    assert cnt == {"plugin_rows": 2, "real_rows": 2, "real_units": 2, "unit_backings": 4, "pool_entries": 2}
+    assert ("pool entry Pool_Full@5.0", "PoolBand", ["Pool_Full", "Real"]) in src
+    assert P.leaks_of(src, {"PoolBand"}, set())[0].startswith("bks/u v1 backing Pool_Full@5.0: band PoolBand")
+    np.savez(P.dfix_input_path("g/u", 1), backing="Elsewhere@1.0")
+    with pytest.raises(SystemExit, match="neither a pool entry"):
+        P.dfix_training_sources(kept, inv)
+
+
+def _answers(tmp_path, tags):
+    d = tmp_path / P.VREAL_DIR / "answers"
+    d.mkdir(parents=True, exist_ok=True)
+    for t in tags:
+        (d / f"{t}.json").write_text(json.dumps({"tag": t, "answers": {"k": t}}))
+
+
+def test_dfix_vreal_render_refuses_until_every_answers_hash_is_in_the_ledger(tmp_path, monkeypatch):
+    from learn import direct_stems as DS
+
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    tags = list(P.DFIX_VREAL_TAGS)
+    _answers(tmp_path, tags)
+    shas = {t: DS.hashlib_file(P.vreal_answers_path(t)) for t in tags}
+    calls = []
+    monkeypatch.setattr(P, "vreal_render", lambda tags, shard, recheck=None: calls.append((tags, shard, recheck)))
+    args = argparse.Namespace(names="", shard=(0, 3))
+    for entry in ({}, {P.DFIX_VREAL_HASHES: {t: s for t, s in shas.items() if t != "DV-RcG"}},
+                  {P.DFIX_VREAL_HASHES: dict(shas, **{"DV-P2b-dfix-stem": "0" * 64})}):
+        monkeypatch.setattr(P, "require", lambda k, entry=entry: entry)
+        with pytest.raises(SystemExit, match="ledger"):
+            P.cmd_dfix_vreal_render(args)
+    assert not calls
+    monkeypatch.setattr(P, "require", lambda k: {P.DFIX_VREAL_HASHES: shas})
+    P.cmd_dfix_vreal_render(args)
+    assert calls == [(tags, (0, 3), {P.DFIX_VREAL_BASE: "S"})]
+    with pytest.raises(SystemExit, match="declares only"):
+        P.cmd_dfix_vreal_render(argparse.Namespace(names="S", shard=(0, 1)))
+
+
+def _vreal_dirs():
+    return [(s, a, sh, h) for s in sorted(PR.VREAL) for a in PR.AMPS for sh, h in (("A", "B"), ("B", "A"))]
+
+
+def _vreal_judge(dirs, d_of):
+    """{tag: {slug|amp: {half: {held: d}}}} with d = d_of(tag, slug) (ANY_HALF for S, RcG and the base)."""
+    judge = {}
+    for t in list(P.DFIX_VREAL_TAGS) + [P.DFIX_VREAL_P4]:
+        for s, a, sh, h in dirs:
+            half = P.ANY_HALF if P.DFIX_VREAL_TAGS.get(t, ("m",))[0] is None else sh
+            judge.setdefault(t, {}).setdefault(f"{s}|{a}", {}).setdefault(half, {})[h] = d_of(t, s)
+    return judge
+
+
+def test_dfix_vreal_read_rows_on_synthetic_judges():
+    dirs = _vreal_dirs()
+    wick = {"cambridge-wickerman-elecgtr2": 0.5, "cambridge-wickerman-elecgtr3": 2.0}
+
+    def d_of(t, s):
+        if t == "DV-P2b-dfix-stem":
+            return 0.5
+        if t == "DV-P2b-dfix-amp":
+            return wick.get(s, 1.0)
+        if t == "DV-P2b-wide24-stem" and s == "cambridge-femme-elecgtr5":
+            return float("nan")                 # refused: scored as S
+        return 1.0
+    judge = _vreal_judge(dirs, d_of)
+    rows = P.dfix_vreal_read(judge, dirs, quiet=["cambridge-femme-elecgtr5"])
+    assert list(rows) == [r[0] for r in P.DFIX_VREAL_PAIRS]
+    prim = rows["D_fix - S (primary)"]
+    assert prim["all"]["mean"] == pytest.approx(math.log(0.5)) and prim["all"]["clusters"] == 7
+    assert prim["all"]["parts"] == 10 and prim["base_dropped"] == 0 and prim["complete"]
+    assert prim["clean"]["clusters"] == 2 and prim["crunch"]["clusters"] == 5
+    assert prim["without_quiet_inputs"]["parts"] == 9
+    assert set(prim["all"]["leave_one_out"]) == set(P.VREAL_BANDS)
+    assert rows["W - S"]["refused_scored_as_S"] == 6 and rows["W - S"]["all"]["mean"] == 0.0
+    apart = rows["amp track - S (Wickerman 2 and 3 apart)"]["all"]
+    one = rows["amp track - S (Wickerman 2 and 3 one part)"]["all"]
+    assert apart["parts"] == 11 and one["parts"] == 10
+    assert one["per_part"]["cambridge-wickerman-elecgtr2+3"] == pytest.approx(0.0)
+    assert rows["amp track - P4"]["b"] == P.DFIX_VREAL_P4
+    del judge["DV-RcG"]["cambridge-Signs-ElecGtr3|ac20"]
+    with pytest.raises(SystemExit, match="incomplete"):
+        P.dfix_vreal_read(judge, dirs, [])
+
+
+def test_dfix_vreal_recheck_lists_groups_whose_s_render_differs():
+    stored = {"a|pr12": {"render_sha256": {"*": "x"}}, "b|pr12": {"render_sha256": {"*": "y"}}}
+    assert P.dfix_vreal_recheck({"a|pr12": {"render_sha256": {"*": "x"}}}, stored) == []
+    assert P.dfix_vreal_recheck({"a|pr12": {"render_sha256": {"*": "z"}}, "c|pr12": {"render_sha256": {"*": "x"}}},
+                                stored) == ["a|pr12", "c|pr12"]
+
+
+def test_dfix_vreal_report_stops_on_a_changed_s_render_and_reads_synthetic_judges(tmp_path, monkeypatch):
+    from learn import direct_stems as DS
+
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    dirs = _vreal_dirs()
+    monkeypatch.setattr(P, "vreal_ctx", lambda: (None, None, None, dirs, None, None))
+    monkeypatch.setattr(P, "s_positive_control", lambda sj: {"n": P.S_CONTROL_N, "passes": True, "max_abs_log": 0.0})
+    judge = _vreal_judge(dirs, lambda t, s: 0.8 if t == "DV-P2b-dfix-stem" else 1.0)
+    judge["S"] = judge[P.DFIX_VREAL_BASE]
+    tags = list(P.DFIX_VREAL_TAGS) + [P.DFIX_VREAL_P4, "S"]
+    d = tmp_path / P.VREAL_DIR / "answers"
+    d.mkdir(parents=True)
+    for t in tags:
+        extra = {"floor_frame_share": {s: {"A": 0.3 if s == "cambridge-Signs-ElecGtr3" else 0.0, "B": 0.0}
+                                       for s in PR.VREAL}, "stem_half_lufs": {}, "p2d_stems_median_lufs": -14.7} \
+            if t == "DV-P2b-dfix-stem" else {"labels_used": {}} if t == "DV-RcG" else {}
+        (d / f"{t}.json").write_text(json.dumps({"tag": t, "answers": {"t": t}, **extra}))
+        for key, j in judge[t].items():
+            slug, amp = key.split("|")
+            p = tmp_path / P.VREAL_DIR / "judge" / t / f"{key}.json"
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(json.dumps({"slug": slug, "amp": amp, "judge": j, "render_sha256": {"*": key},
+                                     "answers_sha256": P.answers_sha({"t": t})}))
+    shas = {t: DS.hashlib_file(d / f"{t}.json") for t in P.DFIX_VREAL_TAGS}
+    monkeypatch.setattr(P, "require", lambda k: {P.DFIX_VREAL_HASHES: shas})
+    args = argparse.Namespace(label="t")
+    bad = tmp_path / P.VREAL_DIR / "judge" / P.DFIX_VREAL_BASE / "cambridge-Signs-ElecGtr3|ac20.json"
+    rec = json.loads(bad.read_text())
+    bad.write_text(json.dumps(dict(rec, render_sha256={"*": "other"})))
+    with pytest.raises(SystemExit, match="cambridge-Signs-ElecGtr3\\|ac20"):
+        P.cmd_dfix_vreal_report(args)
+    assert not (tmp_path / P.VREAL_DIR / "report-t.json").exists()
+    bad.write_text(json.dumps(rec))
+    P.cmd_dfix_vreal_report(args)
+    out = json.loads((tmp_path / P.VREAL_DIR / "report-t.json").read_text())
+    assert out["rows"]["D_fix - S (primary)"]["all"]["mean"] == pytest.approx(math.log(0.8))
+    assert out["side_row_without"]["parts"] == ["cambridge-Signs-ElecGtr3"]
+    with pytest.raises(SystemExit, match="read once"):
+        P.cmd_dfix_vreal_report(args)
+
+
+def test_dfix_vreal_predict_end_to_end_on_synthetic_audio(tmp_path, monkeypatch, capsys):
+    """The answers command with stand-ins for the models, the V-real context and its audio (noise): every declared
+    tag written per half (models) or for any half (RcG, S again), S copied from phase 4's answers, the stem input at
+    the mix's gain, the amp track at D_fix's input level, the per-tag records."""
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("pyloudnorm")
+    from learn import arm_a_mega53 as A
+    from learn import cc_build as CB
+    from learn import direct_existing as DE
+    from learn import direct_stems as DS
+    from learn import full_space as F
+    from learn import local_objective as LO
+    from learn import song_aug as SA
+    from learn import song_model as SM
+
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    ms = A.L.menu_S()
+    slugs = ["cambridge-Signs-ElecGtr3", "cambridge-wickerman-elecgtr2"]
+    dirs = [(s, a, sh, h) for s in slugs for a in PR.AMPS for sh, h in (("A", "B"), ("B", "A"))]
+    monkeypatch.setattr(P, "vreal_ctx", lambda: (None, None, "drift", dirs, {s: {"kind": "stagef"} for s in slugs}, ms))
+    rng = np.random.default_rng(0)
+    audio = {s: rng.normal(0, 0.05, 480_000) for s in slugs}
+    mixes = {s: 2 * a for s, a in audio.items()}
+    monkeypatch.setattr(DE, "f_inputs", lambda slug, sep=None: (mixes[slug], None, {"context": "c"}))
+    monkeypatch.setattr(DS, "_load", lambda p: {"stems": {f"stagef/{s}": {"sha256": s} for s in slugs}})
+    monkeypatch.setattr(DS, "stored_stem", lambda man, key: audio[key.split("/")[1]])
+    monkeypatch.setattr(P, "amp_track", lambda slug, info: 0.5 * audio[slug])
+    monkeypatch.setattr(P, "require", lambda k: {})
+    monkeypatch.setattr(P, "recipe_inputs", lambda **kw: (None, {}, {}, {}, {"doubles": "dropped"}))
+    monkeypatch.setattr(CB, "cc_inventory", lambda: {})
+    monkeypatch.setattr(P, "dfix_vreal_leaks", lambda kept, inv: {"checked": 1})
+    monkeypatch.setattr(P, "vreal_mix_target", lambda: -12.25)
+    monkeypatch.setattr(P, "model_input_lufs", lambda rec: -13.7)
+    np.savez(tmp_path / "d.npz", lufs=[-15.0, -14.0])
+    monkeypatch.setattr(P, "rung_path", lambda croot, rung, doubled=frozenset(): lambda i: tmp_path / "d.npz")
+    recs = [{"train_ids": [1, 2, P.REAL_ROW0], "seed": sd, "model_sha256": {"best": f"m{sd}"}, "rung": "b"}
+            for sd in P.SEEDS]
+    monkeypatch.setattr(P, "dfix_vreal_load", lambda m: ([m], recs))
+    (tmp_path / "runs").mkdir()
+    (tmp_path / "runs" / f"P2b-wide24-{P.SEEDS[0]}.json").write_text(json.dumps({"train_ids": [1, 2]}))
+    monkeypatch.setattr(P, "rung_rows", lambda kept, rend, ids: ids)
+    enc = {(a, c): F.encode(dict(ms[a][c][1]), a) for a in PR.AMPS for c in ("clean", "crunch")}
+    monkeypatch.setattr(P, "constant_of", lambda rows: {k: {"cont": v[0]} for k, v in enc.items()})
+    monkeypatch.setattr(P, "goat_labels", lambda: ([], {}, set()))
+    seen, cell = [], []
+    real_input = P.vreal_model_input
+    monkeypatch.setattr(P, "vreal_model_input", lambda s8, lu, h, amp, cls: cell.append((amp, cls)) or real_input(
+        s8, lu, h, amp, cls))
+    monkeypatch.setattr(F, "run_nets", lambda nets, X, C: seen.append((nets[0], X[0], C[0])) or [[None]])
+    monkeypatch.setattr(F, "readout", lambda outs: {"a2": enc[cell[-1]][0], "mics": [int(v) for v in enc[cell[-1]][4]],
+                                                    "sw_p": [float(v) for v in enc[cell[-1]][2]]})
+    s_ans = {f"{s}|{a}": {P.ANY_HALF: {"select": ms[a][PR.VREAL[s][1]][0],
+                                       "settings": LO.sdict(ms[a][PR.VREAL[s][1]][1])}} for s in slugs for a in PR.AMPS}
+    (tmp_path / P.VREAL_DIR / "answers").mkdir(parents=True)
+    P.vreal_answers_path("S").write_text(json.dumps({"answers": s_ans}))
+    P.cmd_dfix_vreal_predict(argparse.Namespace(names="", which="best"))
+    out = {t: json.loads(P.vreal_answers_path(t).read_text()) for t in P.DFIX_VREAL_TAGS}
+    for t, (m, kind, ro) in P.DFIX_VREAL_TAGS.items():
+        a = out[t]["answers"]
+        assert len(a) == 6 and all(set(v) == ({"A", "B"} if m else {P.ANY_HALF}) for v in a.values())
+        if m:
+            assert out[t]["model"] == m and out[t]["model_sha256"] == [f"m{sd}" for sd in P.SEEDS]
+    assert out[P.DFIX_VREAL_BASE]["answers"] == s_ans
+    assert out["DV-RcG"]["labels_used"] == {k: 0 for k in s_ans} and out["DV-RcG"]["answers"] == s_ans
+    st = out["DV-P2b-dfix-stem"]
+    assert st["input_lufs"] == -12.25 and st["p2d_stems_median_lufs"] == -14.5
+    w = "cambridge-Signs-ElecGtr3"
+    g = st["gains_db"][w]
+    assert g == pytest.approx(-12.25 - SA.lufs(mixes[w]))
+    lu = st["stem_half_lufs"][w]["A"]
+    assert lu == pytest.approx(DS.step4_half(audio[w], mixes[w], "A", g)[2]) and lu == pytest.approx(
+        -12.25 - 6.02, abs=0.2)                          # the stem is the mix less 6 dB, at the mix's gain
+    amp = out["DV-P2b-dfix-amp"]
+    assert amp["input_lufs"] == -13.7 and amp["amp_half_lufs"][w]["A"] == pytest.approx(-13.7, abs=0.2)
+    assert set(amp["gains_db"]) == set(slugs)          # Wickerman ElecGtr2 read from its own amp track
+    assert len(seen) == 3 * len(dirs)                    # D_fix on the stem and the amp track, W on the stem
+    assert sorted({round(float(c[-2]), 6) for m_, x, c in seen if m_ == "P2b-wide24"}) == sorted(
+        {round(float(SM.cond_vec("pr12", "clean", [v, 0.0])[-2]), 6) for s in slugs
+         for v in st["stem_half_lufs"][s].values()})            # W read the stems at their recorded loudness
+    assert all(float(c[-1]) == 0.0 for _, _, c in seen)
+    assert P.DFIX_VREAL_HASHES in capsys.readouterr().out
+    monkeypatch.setattr(P, "require", lambda k: {P.DFIX_VREAL_HASHES: {"DV-RcG": "x"}})
+    with pytest.raises(SystemExit, match="read once"):
+        P.cmd_dfix_vreal_predict(argparse.Namespace(names="", which="best"))
+
+
+def test_vreal_render_records_s_render_hashes_beside_phase_4s(tmp_path, monkeypatch, capsys):
+    from learn import arm_a_mega53 as A
+    from learn import audibility_measure as AM
+    from learn import cc_build as CB
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+    from learn import pretrain_set as PS
+
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    slugs = ["cambridge-Signs-ElecGtr3", "cambridge-femme-elecgtr5"]
+    dirs = [(s, "pr12", sh, h) for s in slugs for sh, h in (("A", "B"), ("B", "A"))]
+    monkeypatch.setattr(P, "vreal_ctx", lambda: (None, None, None, dirs, {s: {"kind": "stagef"} for s in slugs},
+                                                 {"pr12": {"crunch": (0, {})}}))
+
+    class Menu(dict):
+        def __missing__(self, k):
+            return (0, {})
+
+    class R:
+        def menu(self):
+            return {"pr12": Menu()}
+
+        def close(self):
+            pass
+    monkeypatch.setattr(LO, "_wait_cap", lambda *a: None)
+    monkeypatch.setattr(CB, "new_renderer", lambda: R())
+    monkeypatch.setattr(K, "key", lambda st: 0)
+    monkeypatch.setattr(PS, "free_gb", lambda: 1e9)
+    monkeypatch.setattr(A, "group_ctx", lambda *a: {"di32": None, "ref": None, "di": None, "part": {"judge_lag": 0}})
+    monkeypatch.setattr(AM, "fresh_render", lambda *a: "y")
+    monkeypatch.setattr(AM, "audio_sha", lambda y: "h")
+    monkeypatch.setattr(K, "judge", lambda *a: {"A": 1.0, "B": 1.0})
+    _answers(tmp_path, [])
+    ans = {f"{s}|pr12": {P.ANY_HALF: {"select": 0, "settings": {}}} for s in slugs}
+    P.vreal_answers_path(P.DFIX_VREAL_BASE).write_text(json.dumps({"answers": ans}))
+    with pytest.raises(SystemExit, match="no stored S render"):
+        P.vreal_render([P.DFIX_VREAL_BASE], (0, 1), recheck={P.DFIX_VREAL_BASE: "S"})
+    for s, h in zip(slugs, ("h", "other")):
+        p = tmp_path / P.VREAL_DIR / "judge" / "S" / f"{s}|pr12.json"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"render_sha256": {P.ANY_HALF: h}}))
+    P.vreal_render([P.DFIX_VREAL_BASE], (0, 1), recheck={P.DFIX_VREAL_BASE: "S"})
+    got = {s: json.loads((tmp_path / P.VREAL_DIR / "judge" / P.DFIX_VREAL_BASE / f"{s}|pr12.json").read_text())
+           for s in slugs}
+    assert got[slugs[0]]["identical"] and not got[slugs[1]]["identical"]
+    assert got[slugs[1]]["recheck_sha256"] == {P.ANY_HALF: "other"} and got[slugs[1]]["renders"] == 2
+    assert "RECHECK: 1 groups" in capsys.readouterr().out

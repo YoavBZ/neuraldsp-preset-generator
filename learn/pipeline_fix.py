@@ -20,6 +20,9 @@ after the review's (P1-P7), and the recipe every retrain in the plan shares. Out
     $TORCH_PY -m learn.pipeline_fix train --dfix --rung b [--real-fold k] --seed S      # D_fix, D_fix_k
     $TORCH_PY -m learn.pipeline_fix train --dfix --dfix-share p33 --rung b [--real-fold k] --seed S   # D_p (F39)
     $MAIN -m learn.pipeline_fix sound-recheck --names TAG [--n 20]   # stored renders rendered again, hashes compared
+    $TORCH_PY -m learn.pipeline_fix dfix-vreal-predict --which best      # read 3's answers on V-real (zero renders)
+    $MAIN -u -m learn.pipeline_fix dfix-vreal-render --shard k/3         # read 3's renders (hashes in the ledger first)
+    $MAIN -m learn.pipeline_fix dfix-vreal-report --label dfix-vreal     # read 3's rows (zero renders)
 """
 
 from __future__ import annotations
@@ -4833,6 +4836,20 @@ def cmd_vreal_render(args):
     through the part's measure DI in its own process primed with the same setting (step 33), judged against the
     part's amp track at its judge lag on both halves. isolate=True; at most 3 render processes; the 31 GB guard.
     -> vreal/judge/<tag>/<slug>|<amp>.json (a done group is kept)."""
+    require("phase_4")
+    tags = args.names.split(",")
+    bad = [t for t in tags if t not in P4_TAGS]
+    if bad:
+        raise SystemExit(f"phase 4 renders only its declared tags {P4_TAGS}; not {bad}")
+    if "P4-P2a-best-sc" in tags:
+        require("phase_5b1c")
+    vreal_render(tags, args.shard)
+
+
+def vreal_render(tags, shard, recheck=None):
+    """`vreal-render`'s loop on V-real (part, amp) groups of shard (k, n) for answer sets `tags`, every refusal its
+    caller's. `recheck` {tag: stored tag}: each group's fresh render hashes recorded beside the stored tag's
+    (`recheck_sha256`, `identical`), the stored group required before rendering."""
     from learn import arm_a_mega53 as A
     from learn import audibility_measure as AM
     from learn import cc_build as CB
@@ -4842,16 +4859,11 @@ def cmd_vreal_render(args):
     from learn import trusted_data as T
     from learn import trusted_data_t3 as T3
 
-    require("phase_4")
+    recheck = recheck or {}
     root, plan, drift, dirs, parts, ms = vreal_ctx()
     groups = sorted({(s_, a) for s_, a, _, _ in dirs})
-    k, n = args.shard
+    k, n = shard
     mine = [g for j, g in enumerate(groups) if j % n == k]
-    bad = [t for t in args.names.split(",") if t not in P4_TAGS]
-    if bad:
-        raise SystemExit(f"phase 4 renders only its declared tags {P4_TAGS}; not {bad}")
-    if "P4-P2a-best-sc" in args.names.split(","):
-        require("phase_5b1c")
     LO._wait_cap()
     rr = CB.new_renderer()
     try:
@@ -4862,8 +4874,8 @@ def cmd_vreal_render(args):
         for cls, (_, S) in by_cls.items():
             if K.key(dict(menu[amp][K.START[cls][amp]][1])) != K.key(S):
                 raise SystemExit(f"{amp} {cls}: the live S differs from the stored copy")
-    renders = 0
-    for tag in args.names.split(","):
+    renders, differ = 0, []
+    for tag in tags:
         af = out_dir() / VREAL_DIR / "answers" / f"{tag}.json"
         ans = json.loads(af.read_text())["answers"]
         asha = answers_sha(ans)
@@ -4878,6 +4890,12 @@ def cmd_vreal_render(args):
                 continue
             if PS.free_gb() < T.DISK_GUARD_GB:
                 raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+            old = None
+            if tag in recheck:
+                op = out_dir() / VREAL_DIR / "judge" / recheck[tag] / f"{key}.json"
+                if not op.exists():
+                    raise SystemExit(f"{op}: no stored {recheck[tag]} render to check {tag} against")
+                old = json.loads(op.read_text())["render_sha256"]
             info = parts[slug]
             ctx = (A.group_ctx(menu, ms, "F", slug, amp) if info["kind"] == "stagef"
                    else T3.t3_group_ctx(menu, ms, info, amp))
@@ -4889,8 +4907,14 @@ def cmd_vreal_render(args):
                 rec["judge"][search] = K.judge(ctx["ref"], y, ctx["di"], ctx["part"]["judge_lag"])
                 rec["render_sha256"][search] = AM.audio_sha(y)
             rec["renders"] = 2 * len(ans[key])
+            if old is not None:
+                rec.update(recheck_of=recheck[tag], recheck_sha256=old, identical=old == rec["render_sha256"])
+                if not rec["identical"]:
+                    differ.append(f"{tag} {key}")
             save(gp, rec)
         print(f"{tag}: shard {k}/{n} done; renders so far {renders}", flush=True)
+    if differ:
+        print(f"RECHECK: {len(differ)} groups' renders differ from the stored ones: {differ}", flush=True)
     print(f"VREAL-RENDER DONE {k}/{n}: {renders} renders")
 
 
@@ -6094,6 +6118,447 @@ class DfixData(WideData):
                 self.X[j], self.L[j] = x, lu
 
 
+# --- D_fix to V-real (declared 2026-11-02 after F40, ledger phase_dfix_vreal): read 3 on the X-LANCE crop stems -------
+
+DFIX_VREAL_MODELS = ("P2b-dfix", "P2b-wide24")     # the declared models: D_fix, and W beside
+DFIX_VREAL_BASE = "S-recheck-dfix"                  # S re-rendered under its own tag (phase 4's S groups are kept)
+DFIX_VREAL_TAGS = {                                 # tag: (model, input, readout); per search half unless ANY_HALF
+    "DV-P2b-dfix-stem": ("P2b-dfix", "stem", "plain"),          # the primary
+    "DV-P2b-wide24-stem": ("P2b-wide24", "stem", "plain"),
+    "DV-P2b-dfix-stem-sc": ("P2b-dfix", "stem", "sc"),          # re-centred on S (`sc_cont`)
+    "DV-P2b-dfix-amp": ("P2b-dfix", "amp", "plain"),            # the part's own amp track at D_fix's input level
+    "DV-RcG": (None, None, "RcG"),
+    DFIX_VREAL_BASE: (None, None, "S"),
+}
+DFIX_VREAL_LEVEL = -12.25           # levels.json's eval_mix_lufs_median to 2 decimals (step4_half's rule)
+DFIX_VREAL_HASHES = "phase_dfix_vreal_answers"      # the ledger key: {tag: sha256 of vreal/answers/<tag>.json}
+DFIX_VREAL_P4 = "P4-P2a-best"                       # F20's stored P4 answers (amp track - P4, zero renders)
+DFIX_VREAL_PAIRS = (                                # (row, a, b, own inputs): every row's base is DFIX_VREAL_BASE
+    ("D_fix - S (primary)", "DV-P2b-dfix-stem", DFIX_VREAL_BASE, False),
+    ("W - S", "DV-P2b-wide24-stem", DFIX_VREAL_BASE, False),
+    ("D_fix - W", "DV-P2b-dfix-stem", "DV-P2b-wide24-stem", False),
+    ("D_fix - RcG", "DV-P2b-dfix-stem", "DV-RcG", False),
+    ("RcG - S", "DV-RcG", DFIX_VREAL_BASE, False),
+    ("S-centred - S", "DV-P2b-dfix-stem-sc", DFIX_VREAL_BASE, False),
+    ("amp track - S (Wickerman 2 and 3 apart)", "DV-P2b-dfix-amp", DFIX_VREAL_BASE, True),
+    ("amp track - S (Wickerman 2 and 3 one part)", "DV-P2b-dfix-amp", DFIX_VREAL_BASE, False),
+    ("amp track - P4", "DV-P2b-dfix-amp", DFIX_VREAL_P4, True),
+)
+
+
+def dfix_vreal_tags(names):
+    """`--names` as declared tags (empty: every one); any other tag is refused."""
+    tags = [t for t in names.split(",") if t] or list(DFIX_VREAL_TAGS)
+    bad = [t for t in tags if t not in DFIX_VREAL_TAGS]
+    if bad:
+        raise SystemExit(f"D_fix to V-real declares only {sorted(DFIX_VREAL_TAGS)}; not {bad}")
+    return tags
+
+
+def dfix_vreal_load(name):
+    """A declared model's NS-best checkpoints, both seeds pooled on one training set; any other model is refused.
+    -> (nets, run records)."""
+    if name not in DFIX_VREAL_MODELS:
+        raise SystemExit(f"D_fix to V-real reads only {DFIX_VREAL_MODELS}; not {name}")
+    nets, recs = zip(*(load_run(name, sd, "best") for sd in SEEDS))
+    if any(r_["train_ids"] != recs[0]["train_ids"] for r_ in recs) or recs[0]["rung"] != "b":
+        raise SystemExit(f"{name}: both seeds of one rung-b training set")
+    return list(nets), list(recs)
+
+
+def vreal_mix_target(levels=None):
+    """The level a V-real crop's mix is brought to: levels.json's `eval_mix_lufs_median`, asserted -12.25 to 2
+    decimals (the declaration's)."""
+    from learn import direct_existing as DE
+
+    v = json.loads(pathlib.Path(levels or DE.LEVELS).read_text())["summary"]["eval_mix_lufs_median"]
+    if round(v, 2) != DFIX_VREAL_LEVEL:
+        raise SystemExit(f"levels.json's eval_mix_lufs_median is {v}, not the declared {DFIX_VREAL_LEVEL}")
+    return float(v)
+
+
+def vreal_model_input(s8, lufs, half, amp, cls):
+    """One half's input as every rung reads it (`RungData`: the signal in channel 0, the other channel and its
+    loudness slot zeroed): `model_input` on (s8, s8), D_stem's zeroing."""
+    from learn import direct_stems as DS
+
+    return DS.model_input(s8, s8, lufs, lufs, half, amp, cls, "Dstem")
+
+
+def floor_share(s8):
+    """The share of a half's frames all at the grid floor (P4's quiet-input measure)."""
+    import numpy as np
+
+    return float(np.mean(np.all(np.asarray(s8) == 0, axis=0)))
+
+
+def song_key(s):
+    import re
+
+    return re.sub(r"[^a-z0-9]", "", str(s).lower())
+
+
+def vreal_songs(inv):
+    """V-real's songs as `song_key`s: every part's session folder and song title (the inventory's)."""
+    recs = [r for r in inv.values() if r.get("slug") in PR.VREAL]
+    if {r["slug"] for r in recs} != set(PR.VREAL):
+        raise SystemExit(f"V-real parts missing from the inventory: {sorted(set(PR.VREAL) - {r['slug'] for r in recs})}")
+    return {song_key(pathlib.Path(r["session_dir"]).name) for r in recs} | {song_key(r["song"]) for r in recs}
+
+
+def leaks_of(sources, bands, songs):
+    """sources [(what, band, [song names])] -> the problems: a source of a band in `bands`, or of a song whose
+    `song_key` is in `songs`."""
+    return sorted({f"{w}: band {b}" for w, b, _ in sources if b in bands}
+                  | {f"{w}: song {s}" for w, _, ss in sources for s in ss if s and song_key(s) in songs})
+
+
+def dfix_training_sources(kept, inv, name="P2b-dfix"):
+    """Every training input of D_fix's run `name` (both seeds' run files) as (what, band, [songs]): its plugin rows
+    and NS rows (the NS-best choice); its BKS and GOAT real rows' units (`dfix_real_rows`, by the run's ids); each real
+    unit's DFIX_K backings by `dfix/inputs`'s records (a BKS unit's own section, pool entries); and every entry of the
+    backing pool (the plugin rows' 24 draws and the real units' come from it). -> (sources, counts)."""
+    import numpy as np
+
+    recs = [json.loads((out_dir() / "runs" / f"{name}-{sd}.json").read_text()) for sd in SEEDS]
+    ids = sorted({i for r_ in recs for i in r_["train_ids"] + r_["held_ids"]})
+    by_sec, by_sd = {}, {}
+    for x in kept.values():
+        by_sec.setdefault(x["section"], x)
+    for r_ in inv.values():
+        if r_.get("session_dir"):
+            by_sd.setdefault(r_["session_dir"], r_)
+
+    def of_section(sec):
+        x = by_sec.get(sec)
+        names = [pathlib.Path(session_of(sec)).name]
+        return (None, names) if x is None else (x["band"], names + [pathlib.Path(x["session_dir"]).name,
+                                                                    inv[x["di"]].get("song")])
+    src, cnt = [], {"plugin_rows": 0, "real_rows": 0, "real_units": 0, "unit_backings": 0, "pool_entries": 0}
+    for i in ids:
+        if i < REAL_ROW0:
+            src.append((f"plugin row {i}", *of_section(kept[i]["section"])))
+            cnt["plugin_rows"] += 1
+    rows = {r_["i"]: r_ for r_ in dfix_real_rows(None)[0]}
+    real = [i for i in ids if i >= REAL_ROW0]
+    if set(real) - set(rows):
+        raise SystemExit(f"{name}: {len(set(real) - set(rows))} real row ids not among D_fix's labelled rows")
+    units = {u: (k, p_) for u, k, p_ in dfix_units()}
+    used = sorted({rows[i]["real"] for i in real})
+    if any(set(r_["dfix"]["target_lufs"]) != set(used) for r_ in recs):
+        raise SystemExit(f"{name}: the run's real units are not its rows' units")
+    pool = json.loads(wide_pool_path().read_text())["entries"]
+    by_id = {e_["id"]: e_ for e_ in pool}
+
+    def of_entry(e_):
+        if e_["kind"] == "training":
+            return of_section(e_["id"])
+        r_ = by_sd.get(e_["sd"]) or {}
+        return r_.get("band"), [e_["session"], r_.get("song")]
+    for u in used:
+        kind, prt = units[u]
+        songs = ([pathlib.Path(session_of(prt["section"])).name, pathlib.Path(prt["sd"]).name,
+                  inv[prt["di"]].get("song")] if kind == "bks" else [prt.get("item")])
+        src.append((f"real unit {u}", prt["band"], songs))
+        cnt["real_units"] += 1
+        for v in range(DFIX_K):
+            bid = str(np.load(dfix_input_path(u, v))["backing"])
+            if bid in by_id:
+                src.append((f"{u} v{v} backing {bid}", *of_entry(by_id[bid])))
+            elif v == 0 and kind == "bks" and bid == prt["section"]:
+                src.append((f"{u} v0 own backing", *of_section(bid)))
+            else:
+                raise SystemExit(f"{u} v{v}: backing {bid} is neither a pool entry nor its own section")
+            cnt["unit_backings"] += 1
+    cnt["real_rows"] = len(real)
+    for e_ in pool:
+        src.append((f"pool entry {e_['id']}", *of_entry(e_)))
+        cnt["pool_entries"] += 1
+    return src, cnt
+
+
+def dfix_vreal_leaks(kept, inv):
+    """The leakage guard: no V-real band (VREAL_BANDS) or song (`vreal_songs`) in any of D_fix's training inputs
+    (`dfix_training_sources`). Refuses on any. -> counts checked."""
+    src, cnt = dfix_training_sources(kept, inv)
+    bad = leaks_of(src, VREAL_BANDS, vreal_songs(inv))
+    if bad:
+        raise SystemExit(f"V-real in D_fix's training inputs ({len(bad)}): {bad[:20]}")
+    return cnt
+
+
+def vreal_answers_path(tag):
+    return out_dir() / VREAL_DIR / "answers" / f"{tag}.json"
+
+
+def dfix_vreal_unhashed(tags, entry):
+    """The answers files of `tags` whose sha256 is not the one the ledger's DFIX_VREAL_HASHES records ({tag: sha256}):
+    renders and the report refuse on any. -> [problems]."""
+    from learn import direct_stems as DS
+
+    want = (entry or {}).get(DFIX_VREAL_HASHES) or {}
+    out = []
+    for t in tags:
+        p = vreal_answers_path(t)
+        if not p.exists():
+            out.append(f"{t}: no answers file")
+        elif want.get(t) != DS.hashlib_file(p):
+            out.append(f"{t}: sha256 {DS.hashlib_file(p)[:12]} not recorded under {DFIX_VREAL_HASHES}")
+    return out
+
+
+def cmd_dfix_vreal_predict(args):
+    """Read 3's answers on V-real-11 (zero renders; `phase_dfix_vreal`), after the leakage guard. Models (both seeds
+    pooled, NS-best) per search half on the class's S (`F.answer_settings`): D_fix and W on each part's X-LANCE crop
+    stem, the crop's mix brought to levels.json's eval_mix_lufs_median (-12.25, asserted) and the stem given the same
+    gain (`step4_half`, T3's V-real rule); D_fix's stem answer re-centred on S (`sc_cont` on the constant of D_fix's
+    plugin training labels, P2b-wide24's ids); D_fix on the part's own amp track at its training inputs' median
+    (`model_input_lufs`, rung b). For any half: RcG (`rc_setting` on every GOAT label of the amp and class; S where
+    none) and S again (phase 4's S answers, under DFIX_VREAL_BASE). A tag whose answers hash is in the ledger is not
+    rewritten. -> vreal/answers/<tag>.json; prints each file's sha256 for the ledger's DFIX_VREAL_HASHES."""
+    import numpy as np
+
+    from learn import cc_build as CB
+    from learn import confirm_run as CR
+    from learn import direct_existing as DE
+    from learn import direct_stems as DS
+    from learn import full_space as F
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+    from learn import trusted_data as T
+    from learn import trusted_data_t3 as T3
+
+    e = require("phase_dfix_vreal")
+    tags = dfix_vreal_tags(args.names)
+    if args.which != "best":
+        raise SystemExit("read 3 reads the NS-best checkpoints (the declaration): --which best")
+    fixed = [t for t in tags if t in (e.get(DFIX_VREAL_HASHES) or {}) and vreal_answers_path(t).exists()]
+    if fixed:
+        raise SystemExit(f"{fixed}: answers already recorded in the ledger (V-real is read once)")
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    inv = CB.cc_inventory()
+    guard = dfix_vreal_leaks(kept, inv)
+    root, plan, drift, dirs, parts, ms = vreal_ctx()
+    models = {m: dfix_vreal_load(m) for m in sorted({DFIX_VREAL_TAGS[t][0] for t in tags} - {None})}
+    plugin = [i for i in models["P2b-dfix"][1][0]["train_ids"] if i < REAL_ROW0] if "P2b-dfix" in models else None
+    if plugin is not None and plugin != json.loads((out_dir() / "runs" / f"P2b-wide24-{SEEDS[0]}.json")
+                                                   .read_text())["train_ids"]:
+        raise SystemExit("D_fix's plugin rows are not P2b-wide24's")
+    const = constant_of(rung_rows(kept, rend, plugin)) if "DV-P2b-dfix-stem-sc" in tags else None
+    target = vreal_mix_target()
+    amp_level = model_input_lufs(models["P2b-dfix"][1][0]) if "DV-P2b-dfix-amp" in tags else None
+    doubled = doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
+    stem_of = rung_path(croot, "d", doubled)
+    p2d = float(np.median([float(z) for i in (plugin or []) for z in np.load(stem_of(i))["lufs"]])) if plugin else None
+    man = DS._load(DS.stems_manifest_path(DS.ROOT, T.SEP))
+    stems, amps, rcg = {}, {}, {}
+    for slug in sorted({d[0] for d in dirs}):
+        info = parts[slug]
+        if info["kind"] == "stagef":
+            mix, _, hs = DE.f_inputs(slug, "mega53")
+            stem = DS.stored_stem(man, f"stagef/{slug}")
+            if stem is None:
+                raise SystemExit(f"{slug}: no stored X-LANCE stem")
+            hashes = {"context": hs["context"], "stem": man["stems"][f"stagef/{slug}"]["sha256"]}
+        else:                                            # T3's own crop: its mix.wav and crop-only stem
+            mix = CR.mono(pathlib.Path(info["crop"]) / "mix.wav")
+            stem = T3.crop_stem(info)
+            hashes = {"crop_record": info["record_sha256"], "stem": info["stem"]["sha256"]}
+        stems[slug] = (stem, mix, DE.inference_gain_db(mix, target), hashes)
+        if amp_level is not None:
+            ref = amp_track(slug, info)
+            amps[slug] = (ref, DE.inference_gain_db(ref, amp_level))
+    if "DV-RcG" in tags:
+        grecs, gunits, _ = goat_labels()
+    s_ans = json.loads(vreal_answers_path("S").read_text())["answers"] if DFIX_VREAL_BASE in tags else None
+    out = {t: {} for t in tags}
+    floor, lufs, rcg_n = {"stem": {}, "amp": {}}, {"stem": {}, "amp": {}}, {}
+    for slug, amp, search, _ in dirs:
+        cls = PR.VREAL[slug][1]
+        sel, S = ms[amp][cls]
+        key = f"{slug}|{amp}"
+        inp = {}
+        stem, mix, g, _ = stems[slug]
+        s8, _, ls, _ = DS.step4_half(stem, mix, search, g)
+        inp["stem"] = (s8, ls)
+        if slug in amps:
+            ref, ga = amps[slug]
+            inp["amp"] = DS.step4_half(ref, ref, search, ga)[0::2]
+        for kind, (q8, lq) in inp.items():
+            floor[kind].setdefault(slug, {})[search] = floor_share(q8)
+            lufs[kind].setdefault(slug, {})[search] = lq
+        reads = {}
+        for t in tags:
+            m, kind, ro = DFIX_VREAL_TAGS[t]
+            if m is not None:
+                if (m, kind) not in reads:
+                    x, c = vreal_model_input(*inp[kind], search, amp, cls)
+                    reads[(m, kind)] = F.readout([o[0] for o in F.run_nets(models[m][0], [x], [c])])
+                r = reads[(m, kind)]
+                if ro == "sc":
+                    _, _, s_sw, s_swm, s_k, s_km, _ = F.encode(dict(S), amp)
+                    st = F.answer_settings(amp, S, sc_cont(dict(S), amp, r["a2"], const[(amp, cls)]["cont"]),
+                                           [float(v) if mk else None for v, mk in zip(s_sw, s_swm)],
+                                           [int(v) if mk else None for v, mk in zip(s_k, s_km)])
+                else:
+                    st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
+                out[t].setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(st)}
+            elif ro == "RcG" and key not in out[t]:
+                labels = [LO.tdict(q["label"]) for q in grecs if q["amp"] == amp and gunits[q["unit"]]["cls"] == cls]
+                rcg_n[key] = len(labels)
+                out[t][key] = {ANY_HALF: {"select": sel, "settings": LO.sdict(rc_setting(K.space(amp, S), S,
+                                                                                         labels))}}
+            elif ro == "S" and key not in out[t]:
+                a = s_ans[key][ANY_HALF]
+                if answers_sha(a) != answers_sha({"select": sel, "settings": LO.sdict(S)}):
+                    raise SystemExit(f"{key}: phase 4's stored S is not the live menu's S")
+                out[t][key] = {ANY_HALF: a}
+    common = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_dfix_vreal", "drift": drift, "leakage_guard": guard}
+    stem_meta = {"input": "the part's X-LANCE crop stem (xlance_g, crop-only), the crop's mix brought to levels.json "
+                          "eval_mix_lufs_median and the stem given the same gain (step4_half)", "input_lufs": target,
+                 "gains_db": {s_: v[2] for s_, v in stems.items()}, "input_hashes": {s_: v[3] for s_, v in stems.items()},
+                 "floor_frame_share": floor["stem"], "stem_half_lufs": lufs["stem"],
+                 "p2d_stems_median_lufs": p2d}
+    amp_meta = {"input": "the part's own amp track (crop reference.wav), Wickerman ElecGtr2 and 3 each its own",
+                "input_lufs": amp_level, "gains_db": {s_: v[1] for s_, v in amps.items()},
+                "floor_frame_share": floor["amp"], "amp_half_lufs": lufs["amp"]}
+    shas = {}
+    for t in tags:
+        m, kind, ro = DFIX_VREAL_TAGS[t]
+        meta = {"stem": stem_meta, "amp": amp_meta}.get(kind, {})
+        if m is not None:
+            recs = models[m][1]
+            meta = dict(meta, model=m, which="best", seeds=[r_["seed"] for r_ in recs],
+                        model_sha256=[r_["model_sha256"]["best"] for r_ in recs], readout=ro)
+        if ro == "sc":
+            meta["constant"] = "D_fix's plugin training labels (P2b-wide24's ids), by (amp, class)"
+        if ro == "RcG":
+            meta = {"input": "none (a centre)", "rule": "rc_setting on every GOAT label of the amp and class; S where "
+                                                         "none", "labels_used": rcg_n}
+        if ro == "S":
+            meta = {"input": "none (S)", "from": "vreal/answers/S.json (phase 4), asserted the live menu's S"}
+        save(vreal_answers_path(t), {**common, "tag": t, **meta, "answers": out[t],
+                                     "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+        shas[t] = DS.hashlib_file(vreal_answers_path(t))
+    st = {s_: round(statistics.fmean(v.values()), 2) for s_, v in lufs["stem"].items()}
+    print(f"DFIX-VREAL PREDICT DONE: {len(dirs)} directions; mix target {target:.2f} LUFS; stems' half LUFS {st} "
+          f"beside P2d's stored stems' median {p2d}; amp tracks at {amp_level}; RcG labels {rcg_n or '-'}; "
+          f"guard {guard}")
+    print(f"record in the ledger's pipeline-fix entry before rendering: \"{DFIX_VREAL_HASHES}\": "
+          + json.dumps(shas, indent=1))
+
+
+def cmd_dfix_vreal_render(args):
+    """Read 3's renders, one shard (`vreal_render`): the declared tags only (`--names`, default all: four per-half
+    tags x 132, RcG 66, S again 66 = 660), each answers file's sha256 first recorded in the ledger's DFIX_VREAL_HASHES;
+    S's fresh renders recorded beside phase 4's stored render hashes."""
+    e = require("phase_dfix_vreal")
+    tags = dfix_vreal_tags(args.names)
+    bad = dfix_vreal_unhashed(tags, e)
+    if bad:
+        raise SystemExit(f"renders refuse until the answers' hashes are in the ledger: {bad}")
+    vreal_render(tags, args.shard, recheck={DFIX_VREAL_BASE: "S"})
+
+
+def dfix_vreal_recheck(raw, stored):
+    """S's fresh render hashes against phase 4's stored ones, per group. raw, stored {slug|amp: judge record}.
+    -> [groups that differ or lack a stored hash]."""
+    return sorted(k for k, r_ in raw.items() if (stored.get(k) or {}).get("render_sha256") != r_.get("render_sha256"))
+
+
+def dfix_vreal_missing(judge, dirs, tags):
+    """{tag: directions with no judge} over every declared direction (an incomplete row is not read)."""
+    out = {t: sum(vreal_value(judge, t, u) is None for u in dirs) for t in tags}
+    return {t: n for t, n in out.items() if n}
+
+
+def dfix_vreal_read(judge, dirs, quiet):
+    """Read 3's rows (zero renders) from judge {tag: {slug|amp: {half: {held: d}}}}: DFIX_VREAL_PAIRS by `vreal_rows`
+    (base DFIX_VREAL_BASE: S not finite drops, a refusal scores as S), each band-clustered (7 bands) with its
+    part-weighted mean and leave-one-band-out, clean and crunch apart, and without the `quiet` parts (the quiet-input
+    side row). Refuses if any declared direction lacks a judge."""
+    miss = dfix_vreal_missing(judge, dirs, sorted({t for _, a, b, _ in DFIX_VREAL_PAIRS for t in (a, b)}))
+    if miss:
+        raise SystemExit(f"incomplete: directions without a judge {miss}; no row is read")
+    rows_out = {}
+    for name, a, b, own in DFIX_VREAL_PAIRS:
+        rows, cnt = vreal_rows(judge, a, b, dirs, own_inputs=own, base=DFIX_VREAL_BASE)
+        res = {"a": a, "b": b, "own_inputs": own, "all": clustered(rows), **cnt}
+        res["without_quiet_inputs"] = clustered([r for r in rows if not any(m in quiet for m in part_members(r[1]))
+                                                 ]) if quiet else None
+        for cls in ("clean", "crunch"):
+            res[cls] = clustered([r for r in rows if all(PR.VREAL[m][1] == cls for m in part_members(r[1]))])
+        rows_out[name] = res
+    return rows_out
+
+
+def cmd_dfix_vreal_report(args):
+    """Read 3's report (zero renders), saved by `--label` (never overwritten: V-real is read once). In order, each a
+    stop: the answers' hashes in the ledger; every judge record from today's answers; every declared direction
+    judged; S's fresh renders identical to phase 4's (the differing groups printed); S's positive control on those
+    renders (`s_positive_control`, as phase 4's report). Then DFIX_VREAL_PAIRS (`dfix_vreal_read`); the quiet-input
+    side row from the stem inputs' floor-frame share (over FLOOR_SIDE_ROW in either half).
+    -> vreal/report-<label>.json."""
+    e = require("phase_dfix_vreal")
+    if not args.label:
+        raise SystemExit("name the report with --label")
+    rp = out_dir() / VREAL_DIR / f"report-{args.label}.json"
+    if rp.exists():
+        raise SystemExit(f"{rp.name} exists: V-real is read once")
+    bad = dfix_vreal_unhashed(list(DFIX_VREAL_TAGS), e)
+    if bad:
+        raise SystemExit(f"the answers' hashes are not the ledger's: {bad}")
+    root, plan, drift, dirs, parts, ms = vreal_ctx()
+    raw = {}
+    for t in list(DFIX_VREAL_TAGS) + [DFIX_VREAL_P4, "S"]:
+        raw[t] = {}
+        for p in (out_dir() / VREAL_DIR / "judge" / t).glob("*.json"):
+            r_ = json.loads(p.read_text())
+            raw[t][f"{r_['slug']}|{r_['amp']}"] = r_
+        asha = answers_sha(json.loads(vreal_answers_path(t).read_text())["answers"])
+        stale = sorted(k for k, r_ in raw[t].items() if r_.get("answers_sha256") != asha)
+        if stale:
+            raise SystemExit(f"{t}: {len(stale)} judge records come from other answers")
+    judge = {t: {k: r_["judge"] for k, r_ in v.items()} for t, v in raw.items()}
+    miss = dfix_vreal_missing(judge, dirs, list(DFIX_VREAL_TAGS) + [DFIX_VREAL_P4])
+    if miss:
+        raise SystemExit(f"incomplete: directions without a judge {miss}; no row is read")
+    differ = dfix_vreal_recheck(raw[DFIX_VREAL_BASE], raw["S"])
+    if differ or len(raw[DFIX_VREAL_BASE]) != len(raw["S"]):
+        raise SystemExit(f"S's fresh renders differ from phase 4's stored ones in {len(differ)} groups "
+                         f"({len(raw[DFIX_VREAL_BASE])} fresh, {len(raw['S'])} stored): {differ}; no row is read")
+    pc = s_positive_control(judge[DFIX_VREAL_BASE])
+    if not pc["passes"] or pc["n"] != S_CONTROL_N:
+        raise SystemExit(f"the S positive control fails ({pc}): no rows are read")
+    stem = json.loads(vreal_answers_path("DV-P2b-dfix-stem").read_text())
+    quiet = sorted(s_ for s_, v in stem["floor_frame_share"].items() if max(v.values()) > FLOOR_SIDE_ROW)
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_dfix_vreal", "label": args.label,
+           "answers_sha256": (e.get(DFIX_VREAL_HASHES) or {}), "s_renders_identical_to_phase_4": len(raw["S"]),
+           "positive_control_S": pc,
+           "side_row_without": {"rule": f"stem inputs with more than {FLOOR_SIDE_ROW:.0%} of frames at the grid floor "
+                                        "in either half (declared before the read)", "parts": quiet},
+           "stem_half_lufs": stem["stem_half_lufs"], "p2d_stems_median_lufs": stem["p2d_stems_median_lufs"],
+           "rcg_labels_used": json.loads(vreal_answers_path("DV-RcG").read_text())["labels_used"],
+           "rows": dfix_vreal_read(judge, dirs, quiet)}
+    for name, res in out["rows"].items():
+        c = res["all"]
+        iv = "" if c["lo90"] is None else f" [{c['lo90']:+.4f}, {c['hi90']:+.4f}]"
+        print(f"{name}: {c['mean']:+.4f}{iv} ({c['clusters']} bands, {c['clusters_negative']} better; part-weighted "
+              f"{c['part_weighted']:+.4f}, {c['parts_negative']} of {c['parts']} parts better; S dropped "
+              f"{res['base_dropped']}, refused as S {res['refused_scored_as_S']})" if c["mean"] is not None
+              else f"{name}: no rows")
+        for cls in ("clean", "crunch"):
+            z = res[cls]
+            if z["mean"] is not None:
+                print(f"    {cls}: {z['mean']:+.4f} ({z['clusters']} bands, {z['clusters_negative']} better; descriptive)")
+        if c["leave_one_out"]:
+            print("    leave one band out: " + ", ".join(f"{b} {v:+.4f}" for b, v in c["leave_one_out"].items()))
+    print(f"S: {len(raw['S'])} groups' fresh renders identical to phase 4's; positive control max |ln ratio| "
+          f"{pc['max_abs_log']} on {pc['n']}; quiet inputs {quiet}")
+    out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    save(rp, out)
+    print("DFIX-VREAL-REPORT DONE")
+
 
 COMMANDS = {"panel-sections": cmd_panel_sections, "panel-lags": cmd_panel_lags, "panel-centres": cmd_panel_centres, "panel-predict": cmd_panel_predict, "panel-render": cmd_panel_render, "panel-report": cmd_panel_report, "panel-ceiling": cmd_panel_ceiling, "goat-sections": cmd_goat_sections, "goat-search": cmd_goat_search,
             "goat-stage-check": cmd_goat_stage_check, "goat-centres": cmd_goat_centres,
@@ -6109,7 +6574,9 @@ COMMANDS = {"panel-sections": cmd_panel_sections, "panel-lags": cmd_panel_lags, 
             "real-heads": cmd_real_heads, "real-setting-audit": cmd_real_setting_audit,
             "vreal-sc": cmd_vreal_sc, "vreal-comparators": cmd_vreal_comparators,
             "vreal-render": cmd_vreal_render, "vreal-report": cmd_vreal_report,
-            "build-dfix-real": cmd_build_dfix_real, "sound-recheck": cmd_sound_recheck}
+            "build-dfix-real": cmd_build_dfix_real, "sound-recheck": cmd_sound_recheck,
+            "dfix-vreal-predict": cmd_dfix_vreal_predict, "dfix-vreal-render": cmd_dfix_vreal_render,
+            "dfix-vreal-report": cmd_dfix_vreal_report}
 
 
 def main(argv=None):
