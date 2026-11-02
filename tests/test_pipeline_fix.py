@@ -1353,3 +1353,89 @@ def test_vreal_render_records_s_render_hashes_beside_phase_4s(tmp_path, monkeypa
     assert got[slugs[0]]["identical"] and not got[slugs[1]]["identical"]
     assert got[slugs[1]]["recheck_sha256"] == {P.ANY_HALF: "other"} and got[slugs[1]]["renders"] == 2
     assert "RECHECK: 1 groups" in capsys.readouterr().out
+
+
+# --- FT (phase_ft): plugin pretraining, the real rows alone tune it -------------------------------------------------
+
+def _ft_records():
+    by_unit = {f"b{j}": {"unit": f"b{j}", "di": f"d{j % 8}", "cls": "clean", "section": f"s{j}", "band": "BKS"}
+               for j in range(16)}
+    brecs = [{"unit": u, "amp": amp, "label": {}} for u in sorted(by_unit) for amp in ("pr12", "ac20")] * 10
+    folds = {f"d{j}": j // 2 for j in range(8)}
+    grecs, gunits = _goat_records()
+    for u in gunits.values():
+        u.update(section=u["unit"], band="GOAT")
+    return brecs, by_unit, folds, grecs, gunits
+
+
+def test_ft_names_are_their_own():
+    assert [P.ft_name(k) for k in (None, 0, 3)] == ["P2b-ft", "P2b-ft-k0", "P2b-ft-k3"]
+    assert P.ft_name(1, inner=True) == "P2b-ft-k1-inner"
+    with pytest.raises(SystemExit):
+        P.ft_name(None, inner=True)
+    with pytest.raises(SystemExit):
+        P.ft_name(4)
+    ft = {P.ft_name(k, i) for k in range(4) for i in (False, True)} | {P.FT_BASE}
+    assert not ft & ({P.dfix_run_name(k) for k in (None, 0, 1, 2, 3)} | set(P.DFIX_READS))
+    assert P.read_phase("P2b-ft") == "phase_ft" and P.read_phase("P2b-dfix") == "phase_dfix"
+    assert P.read_phase("P2b-dfixp10") == "phase_dfix_share" and P.read_phase("P2a-goat") == "phase_5c"
+    assert P.report_phase({"P2b-ft", "P2b-dfix", "S"}) == "phase_ft"
+    assert P.report_phase({"P2b-dfix", "S"}) == "phase_dfix"
+    assert "phase_ft" in P.ARM_FOLD_PHASES
+
+
+def test_ft_k_rows_are_dfix_ks_and_the_inner_run_never_holds_fold_k():
+    brecs, by_unit, folds, grecs, gunits = _ft_records()
+    lab = lambda rec: rec["amp"]                                     # noqa: E731
+    bfold = lambda r: folds[by_unit[r["real"]]["di"]]                # noqa: E731
+    gfold = lambda r: gunits[r["real"]]["fold"]                      # noqa: E731
+    for k in range(4):
+        assert P.ft_rows_of(brecs, by_unit, folds, grecs, gunits, k, False, lab) == \
+            P.dfix_rows_of(brecs, by_unit, folds, grecs, gunits, k, lab)
+        j = (k + 1) % 4
+        tr, held, n = P.ft_rows_of(brecs, by_unit, folds, grecs, gunits, k, True, lab)
+        fold_of = lambda r: bfold(r) if r["i"] < P.GOAT_ROW0 else gfold(r)   # noqa: E731
+        assert tr and held and n["real_rows"] == P.REAL_PER_EPOCH and n["goat_rows"] == P.GOAT_PER_EPOCH
+        assert all(fold_of(r) not in (k, j) for r in tr)
+        assert all(fold_of(r) == j for r in held)
+        assert {r["real"] for r in held if r["i"] < P.GOAT_ROW0} == \
+            {u for u, p in by_unit.items() if folds[p["di"]] == j}
+        assert not {r["real"] for r in tr} & {r["real"] for r in held}
+
+
+def test_ft_epochs_median_rounds_half_up():
+    E = lambda *es: P.ft_epoch_of([{"E": e} for e in es])           # noqa: E731
+    assert E(7) == 7 and E(3, 4) == 4 and E(1, 2, 3, 4, 5, 6, 7, 8) == 5 and E(2, 9, 9, 30) == 9
+    assert E(10, 11, 12, 13, 14, 15, 16, 17) == 14
+    with pytest.raises(SystemExit):
+        E()
+
+
+def test_ft_rate_takes_only_the_declared_values_and_a_fallback_needs_the_ledger(monkeypatch):
+    a = lambda lr=None, cap=None: argparse.Namespace(ft_lr=lr, ft_cap=cap)   # noqa: E731
+    seen = []
+    monkeypatch.setattr(P, "require", lambda key: seen.append(key) or {})
+    assert P.ft_rate(a()) == (1e-4, 100) and seen == []
+    assert P.ft_rate(a(3e-5)) == (3e-5, 100) and seen == ["phase_ft_fallback"]
+    assert P.ft_rate(a(cap=300)) == (1e-4, 300)
+    for bad in (a(1e-3), a(cap=200)):
+        with pytest.raises(SystemExit):
+            P.ft_rate(bad)
+
+
+def test_ft_layout_takes_only_the_real_training_rows():
+    ti, hi, rh = P.ft_layout(10, 4, 20, 3)
+    assert list(ti) == [10, 11, 12, 13] and list(hi) == list(range(14, 17)) and list(rh) == [17, 18, 19]
+    ti, hi, rh = P.ft_layout(10, 4, 17, 0)
+    assert len(rh) == 0 and list(hi) == [14, 15, 16]
+
+
+def test_ft_read_check_takes_only_the_state_after_e_epochs():
+    ok = {"test": "P2b-ft-k1", "seed": 1, "inner": False, "E": 12, "epochs_run": 12,
+          "models": {"final": "m.pt", "best": "m.pt"}, "model_sha256": {"final": "h", "best": "h"}}
+    P.ft_read_check(ok)
+    P.ft_read_check({"test": "P2b-dfix1"})                       # not FT: untouched
+    for bad in ({"inner": True}, {"models": {"final": "m.pt", "best": "b.pt"}},
+                {"model_sha256": {"final": "h", "best": "g"}}, {"epochs_run": 13}):
+        with pytest.raises(SystemExit):
+            P.ft_read_check({**ok, **bad})

@@ -785,11 +785,14 @@ def epoch_order(rng, tr, data, epoch):
     return order if keep is None else keep(order, epoch)
 
 
-def fit(data, tr, watch, track, seed, dev, log, epochs, every=1, patience=None, min_gain=1e-4):
+def fit(data, tr, watch, track, seed, dev, log, epochs, every=1, patience=None, min_gain=1e-4, init=None, lr=None,
+        smooth=1):
     """D_CC's optimiser (Adam 1e-3, batch 64, gradients scaled to norm 5; `direct_stems.train_arm`) with the eval-mode
     diagnostics: every `every` epochs (and at the last) the summed loss on each `watch` set {name: idx} and its family
-    means. The checkpoint with the lowest `track` loss is kept beside the final one. With `patience` (P1 only) it stops
-    once `track` has not improved by min_gain for that many checks; otherwise it runs the full `epochs`.
+    means. The checkpoint with the lowest `track` loss is kept beside the final one. With `patience` (P1 and FT's inner
+    run) it stops once `track` has not improved by min_gain for that many checks; otherwise it runs the full `epochs`.
+    FT: `init` a start state, `lr` the rate, `smooth` the trailing moving average of `track` over that many checks
+    (the first checks average what exists), and `track` None keeps no best (the final state is returned as best).
     -> (net at its final state, final state, best state, best epoch, best value)."""
     import numpy as np
     import torch
@@ -799,10 +802,13 @@ def fit(data, tr, watch, track, seed, dev, log, epochs, every=1, patience=None, 
     from learn import pretrain_set as PS
 
     torch.manual_seed(seed)
-    net = F.build_net().to(dev)
-    opt = torch.optim.Adam(net.parameters(), lr=PS.LR)
+    net = F.build_net()
+    if init is not None:
+        net.load_state_dict(init)
+    net = net.to(dev)
+    opt = torch.optim.Adam(net.parameters(), lr=PS.LR if lr is None else lr)
     rng = np.random.default_rng(seed)
-    best, bad, best_state, best_ep, steps = math.inf, 0, None, None, 0
+    best, bad, best_state, best_ep, steps, seen = math.inf, 0, None, None, 0, []
     for epoch in range(epochs):
         net.train()
         t0 = time.time()
@@ -835,7 +841,12 @@ def fit(data, tr, watch, track, seed, dev, log, epochs, every=1, patience=None, 
             rec[name] = {"total": h["total"], **family_means(h)}
         log.append(rec)
         print(json.dumps(rec), flush=True)
-        v = rec[track]["total"]
+        if track is None:
+            continue
+        seen.append(rec[track]["total"])
+        v = sum(seen[-smooth:]) / len(seen[-smooth:])
+        if smooth > 1:
+            rec[f"{track}_smoothed"] = v
         if math.isfinite(v) and v < best - min_gain:
             best, bad, best_ep = v, 0, epoch
             best_state = {k: t.detach().cpu().clone() for k, t in net.state_dict().items()}
@@ -843,9 +854,12 @@ def fit(data, tr, watch, track, seed, dev, log, epochs, every=1, patience=None, 
             bad += 1
             if patience is not None and bad >= patience:
                 break
+    final = {k: t.detach().cpu().clone() for k, t in net.state_dict().items()}
+    if track is None:
+        net.eval()
+        return net, final, final, log[-1]["epoch"], None
     if best_state is None:
         raise PS.StepsSkipped("no finite watched loss")
-    final = {k: t.detach().cpu().clone() for k, t in net.state_dict().items()}
     net.eval()
     return net, final, best_state, best_ep, best
 
@@ -2682,7 +2696,7 @@ def cmd_real_predict(args):
     if args.names == "RcM":
         return real_rcm_answers()
     if args.names in ("P2a-pc", "P2a-pcsz", "P2a-real", "P2a-reals2", "P2a-pc-Sc", "P2a-goat", "P2a-goatshuf") \
-            or args.names in DFIX_READS:
+            or args.names in DFIX_READS or args.names == FT_BASE:
         return real_predict_5b2(args.names)
     if args.names == "S-shift":
         require("phase_5b1b")
@@ -2740,6 +2754,15 @@ def cmd_real_predict(args):
           f"{target:.2f} LUFS")
 
 
+def read_phase(name):
+    """The ledger phase a read-2 model tag answers under: FT's, a D_fix family member's, 5C's or 5B.2's."""
+    if name == FT_BASE:
+        return "phase_ft"
+    if name.startswith("P2b-dfix"):
+        return dfix_phase(name)
+    return "phase_5c" if name.startswith("P2a-goat") else "phase_5b2"
+
+
 def real_predict_5b2(name):
     """5B.2's answers on 5B.1's 40 units (zero renders), read exactly as P2a's in 5B.1 (plain readout, both seeds
     NS-best pooled, the input at the model's own training inputs' median loudness): arm P's `P2a-pc` with its labels'
@@ -2752,8 +2775,7 @@ def real_predict_5b2(name):
     from learn import local_objective as LO
     from learn import trusted_data_t3 as T3
 
-    e = require(dfix_phase(name) if name.startswith("P2b-dfix") else "phase_5c" if name.startswith("P2a-goat")
-                else "phase_5b2")
+    e = require(read_phase(name))
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     inv = CB.cc_inventory()
     parts = real_parts(kept, sp, inv)
@@ -2764,6 +2786,9 @@ def real_predict_5b2(name):
     elif name.startswith("P2a-goat"):                   # 5C: RG and RGshuf, each BKS unit by its DI's fold model
         folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
         names = {p_["unit"]: f"{name}{folds[p_['di']]}" for p_ in parts}
+    elif name == FT_BASE:                               # FT's read 2: each BKS unit by its DI's FT_k
+        folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
+        names = {p_["unit"]: ft_name(folds[p_["di"]]) for p_ in parts}
     elif name.startswith("P2b-dfix"):                   # D_fix's read 2: each BKS unit by its DI's fold model only
         if name not in DFIX_READS:
             raise SystemExit(f"--names {sorted(DFIX_READS)} (each read by its fold models: an all-labels run saw every"
@@ -2775,6 +2800,8 @@ def real_predict_5b2(name):
     models = {}
     for nm in sorted(set(names.values())):
         nets, recs = zip(*(load_run(nm, sd, "best") for sd in SEEDS))
+        for r_ in recs:
+            ft_read_check(r_)
         own = [i for i in recs[0]["train_ids"] if i < REAL_ROW0]
         if any([i for i in r_["train_ids"] if i < REAL_ROW0] != own for r_ in recs):
             raise SystemExit(f"{nm}: the seeds trained on different sets")
@@ -2786,7 +2813,7 @@ def real_predict_5b2(name):
         nets, _, target, const = models[names[prt["unit"]]]
         ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
         g = DE.inference_gain_db(ref, target)
-        backed = dfix_backed(prt["unit"]) if name in DFIX_BASES else None
+        backed = dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE) else None
         for amp in AMPS3:
             sel, S = ms[amp][prt["cls"]]
             key = real_key(prt, amp)
@@ -2811,8 +2838,8 @@ def real_predict_5b2(name):
                     T3.constant_full(amp, S, const[(amp, prt["cls"])]))}}
     for t, a in out.items():
         save(out_dir() / REAL_DIR / "answers" / f"{t}.json", {
-            "plan": PLAN, "ledger": f"{LEDGER_ID} {dfix_phase(name) if name.startswith('P2b-dfix') else 'phase_5c' if name.startswith('P2a-goat') else 'phase_5b2'}",
-            "tag": t, "parts": parts, "input": "backed (variant 0)" if name in DFIX_BASES else "clean", "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
+            "plan": PLAN, "ledger": f"{LEDGER_ID} {read_phase(name)}",
+            "tag": t, "parts": parts, "input": "backed (variant 0)" if name in (*DFIX_BASES, FT_BASE) else "clean", "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
             "unit_model": names, "answers": a, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"REAL PREDICT 5B.2 DONE: {name} on {len(parts)} units")
 
@@ -3848,13 +3875,16 @@ def goat_predict(name):
     from learn import full_space as F
     from learn import local_objective as LO
 
-    e = require(dfix_phase(name) if name in DFIX_BASES else "phase_5c")
+    e = require(read_phase(name))
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     units = goat_read_units()
     models = {}
     for k in sorted({p_["fold"] for p_ in units}):
-        nm = dfix_fold_name(name, k) if name in DFIX_BASES else f"{name}{k}"
+        nm = (ft_name(k) if name == FT_BASE else dfix_fold_name(name, k) if name in DFIX_BASES
+              else f"{name}{k}")
         nets, recs = zip(*(load_run(nm, sd, "best") for sd in SEEDS))
+        for r_ in recs:
+            ft_read_check(r_)
         models[k] = (list(nets), [r_["model_sha256"]["best"] for r_ in recs], model_input_lufs(recs[0]))
     ms = A_menu_S()
     out = {}
@@ -3864,7 +3894,7 @@ def goat_predict(name):
         g = DE.inference_gain_db(ref, target)
         amp = prt["amp"]
         sel, S = ms[amp][prt["cls"]]
-        backed = dfix_backed(prt["unit"]) if name in DFIX_BASES else None   # D_fix: a pool-backed variant
+        backed = dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE) else None   # D_fix, FT: pool-backed
         for search in ("A", "B"):
             if backed is not None:
                 s8, ls = backed[search]
@@ -3875,7 +3905,7 @@ def goat_predict(name):
             st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
             out.setdefault(real_key(prt, amp), {})[search] = {"select": sel, "settings": LO.sdict(st)}
     save(out_dir() / GOAT_DIR / "answers" / f"{name}.json", {
-        "plan": PLAN, "ledger": f"{LEDGER_ID} {dfix_phase(name) if name in DFIX_BASES else 'phase_5c'}",
+        "plan": PLAN, "ledger": f"{LEDGER_ID} {read_phase(name)}",
         "tag": name,
         "models": {k: {"sha256": m[1], "input_lufs": m[2]} for k, m in models.items()}, "answers": out,
         "time": time.strftime("%Y-%m-%d %H:%M:%S")})
@@ -3883,8 +3913,8 @@ def goat_predict(name):
 
 
 def cmd_goat_predict(args):
-    if args.names not in ("P2a-goat", "P2a-goatshuf", *DFIX_BASES):
-        raise SystemExit(f"--names P2a-goat, P2a-goatshuf or one of {', '.join(DFIX_BASES)} (D_fix's fold models)")
+    if args.names not in ("P2a-goat", "P2a-goatshuf", *DFIX_BASES, FT_BASE):
+        raise SystemExit(f"--names P2a-goat, P2a-goatshuf, {FT_BASE} or one of {', '.join(DFIX_BASES)} (fold models)")
     goat_predict(args.names)
 
 
@@ -4255,12 +4285,12 @@ def cmd_real_heads(args):
     print("REAL-HEADS DONE")
 
 
-ARM_FOLD_PHASES = ("phase_5b2", "phase_5c", "phase_dfix")    # real-report's phases whose models share 5B.2's DI folds
+ARM_FOLD_PHASES = ("phase_5b2", "phase_5c", "phase_dfix", "phase_ft")    # real-report's phases whose models share 5B.2's DI folds
 
 
 def report_phase(tags):
     """real-report's ledger phase for the tags it reads."""
-    return ("phase_dfix" if tags & DFIX_READS else "phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
+    return ("phase_ft" if FT_BASE in tags else "phase_dfix" if tags & DFIX_READS else "phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
             else "phase_5b2_rigo" if tags & {"RigO", "RcM"}
             else "phase_5b2" if any(t.startswith(("P2a-pc", "P2a-real", "Rc")) for t in tags)
             else "phase_5b1b" if any(t in ("P2a-Sc", "S-shift") for t in tags) else "phase_5b1")
@@ -6562,6 +6592,241 @@ def cmd_dfix_vreal_report(args):
     print("DFIX-VREAL-REPORT DONE")
 
 
+# --- FT (declared 2026-11-02, ledger phase_ft): P2b-wide24 as pretraining, D_fix's real rows alone tune it ----------
+
+FT_BASE = "P2b-ft"                   # the all-labels FT (V-real's, only after read 2's carry); FT_k `P2b-ft-k{k}`
+FT_LR, FT_CAP = 1e-4, 100            # the declared rate and epoch cap; the fallbacks (`phase_ft_fallback`) below
+FT_FALLBACK_LR, FT_FALLBACK_CAP = 3e-5, 300
+FT_PATIENCE, FT_MIN_FALL, FT_SMOOTH, FT_EVERY = 15, 1e-3, 3, 5
+FT_PRETRAIN = "P2b-wide24"           # W: its NS-best checkpoint per seed is FT's start
+
+
+def ft_name(k, inner=False):
+    """FT's run names: `P2b-ft` (every label), `P2b-ft-k{k}` (fold k out), `P2b-ft-k{k}-inner` (k's epoch choice)."""
+    if k is None:
+        if inner:
+            raise SystemExit("an inner run needs --real-fold")
+        return FT_BASE
+    if k not in range(REAL_FOLDS):
+        raise SystemExit(f"--real-fold in 0..{REAL_FOLDS - 1}")
+    return f"{FT_BASE}-k{k}" + ("-inner" if inner else "")
+
+
+def ft_rows_of(brecs, by_unit, folds, grecs, gunits, k, inner, label_of=None):
+    """FT's real rows (`dfix_rows_of`): FT_k's are D_fix_k's (fold k held, logged only); k's inner run drops fold k's
+    records entirely and holds fold j = (k + 1) mod 4 (its validation). -> (training rows, held rows, counts)."""
+    if not inner:
+        return dfix_rows_of(brecs, by_unit, folds, grecs, gunits, k, label_of)
+    b = [r for r in brecs if folds[by_unit[r["unit"]]["di"]] != k]
+    g = [r for r in grecs if gunits[r["unit"]]["fold"] != k]
+    return dfix_rows_of(b, by_unit, folds, g, gunits, (k + 1) % REAL_FOLDS, label_of)
+
+
+def ft_real_rows(k, inner):
+    brecs, by_unit, folds = real_labels(2)
+    grecs, gunits, _ = goat_labels()
+    return ft_rows_of(brecs, by_unit, folds, grecs, gunits, k, inner)
+
+
+def ft_epoch_of(inner_recs):
+    """The epoch count FT trains for: one inner run's E, or the median of several, rounded half up."""
+    es = sorted(int(r["E"]) for r in inner_recs)
+    if not es:
+        raise SystemExit("no inner runs")
+    m = (es[(len(es) - 1) // 2] + es[len(es) // 2]) / 2
+    return int(math.floor(m + 0.5))
+
+
+def ft_rate(args):
+    """The declared rate and cap, or a fallback's once `phase_ft_fallback` records it. -> (lr, cap)."""
+    lr = FT_LR if args.ft_lr is None else args.ft_lr
+    cap = FT_CAP if args.ft_cap is None else args.ft_cap
+    if lr not in (FT_LR, FT_FALLBACK_LR) or cap not in (FT_CAP, FT_FALLBACK_CAP):
+        raise SystemExit(f"--ft-lr in {(FT_LR, FT_FALLBACK_LR)}, --ft-cap in {(FT_CAP, FT_FALLBACK_CAP)}")
+    if (lr, cap) != (FT_LR, FT_CAP):
+        require("phase_ft_fallback")
+    return lr, cap
+
+
+def ft_layout(n_plugin_tr, n_real, n_rows, n_real_held):
+    """FT's index sets in `with_rows`' layout (plugin training, real training, plugin held, real held).
+    -> (real training, plugin held (NS), real held)."""
+    import numpy as np
+
+    return (np.arange(n_plugin_tr, n_plugin_tr + n_real), np.arange(n_plugin_tr + n_real, n_rows - n_real_held),
+            np.arange(n_rows - n_real_held, n_rows))
+
+
+def ft_start_state(seed):
+    """W's NS-best state for `seed` (hash checked by `load_run`). -> (state, W's run record)."""
+    net, rec = load_run(FT_PRETRAIN, seed, "best")
+    return {k: t.detach().cpu().clone() for k, t in net.state_dict().items()}, rec
+
+
+def cmd_train_ft(args):
+    """One FT run (demucs-venv): `--inner --real-fold k` (k's epoch choice: from W on the folds other than k and j,
+    fold j's real loss each epoch, the trailing 3-epoch average's argmin + 1 = E, patience 15); `--real-fold k`
+    (FT_k: from W on the folds other than k for its inner run's E, the state after E epochs read); neither (the
+    all-labels FT, the median of the eight inner E's; only after `phase_ft_carry`)."""
+    import numpy as np
+    import torch
+
+    from learn import direct_stems as DS
+
+    require("phase_ft")
+    k, inner, seed = args.real_fold, bool(args.inner), args.seed
+    name = ft_name(k, inner)
+    if k is None:
+        require("phase_ft_carry")
+    if seed not in SEEDS:
+        raise SystemExit(f"--seed in {SEEDS}")
+    lr, cap = ft_rate(args)
+    od = out_dir() / "runs"
+    rp = od / f"{name}-{seed}.json"
+    if rp.exists():
+        print(f"{rp.name} exists: nothing to do")
+        return
+    if inner:
+        epochs = cap
+    else:
+        inners = [json.loads((od / f"{ft_name(q, True)}-{sd}.json").read_text())
+                  for q, sd in ([(k, seed)] if k is not None else [(q, sd) for q in range(REAL_FOLDS) for sd in SEEDS])]
+        if any(r_["lr"] != lr for r_ in inners):
+            raise SystemExit("the inner runs used another rate")
+        epochs = ft_epoch_of(inners)
+    e = require("phase_3")
+    croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
+    init, wrec = ft_start_state(seed)
+    pa = argparse.Namespace(rung="b", fold=None, frac=1.0, sections=1.0, pc=False, pcsz=False, aug=False)
+    tr, held, held_name, rows = plugin_rows(kept, sp, pa, lambda ids: rung_rows(kept, rend, ids))
+    if tr != [i for i in wrec["train_ids"] if i < REAL_ROW0]:
+        raise SystemExit(f"{FT_PRETRAIN}-{seed}: trained on other plugin rows than FT's")
+    doubled = doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
+    rrows, real_held, info = ft_real_rows(k, inner)
+    plugin_tr = tr
+    tr, rows = with_rows(tr, rows, rrows)
+    rows = rows + [dict(r, held=True) for r in real_held]
+    data = DfixData(rows, rung_path(croot, "b", doubled), set(plugin_tr), {r["i"] for r in rrows}, 1.0)
+    if not inner:                                      # every unit loaded: D_fix_k's (or D_fix's) inputs exactly
+        ref = dfix_run_name(k)
+        want = json.loads((od / f"{ref}-{seed}.json").read_text())["dfix"]["inputs_sha256"]
+        if data.inputs_sha256 != want:
+            raise SystemExit(f"{name}: real-row inputs differ from {ref}'s ({data.inputs_sha256[:8]} vs {want[:8]})")
+    ti, hi, rh = ft_layout(len(plugin_tr), len(rrows), len(rows), len(real_held))
+    if not all("real" in rows[j] and not rows[j].get("held") for j in ti):
+        raise SystemExit("a plugin or held row in FT's training rows")
+    held_units = {r["real"] for r in real_held}
+    if held_units & {r["real"] for r in rrows}:
+        raise SystemExit("a held unit among the training rows")
+    sub = np.sort(np.random.default_rng(SUBSET_SEED).choice(ti, min(SUBSET_N, len(ti)), replace=False))
+    dev = device()
+    torch.set_num_threads(2)
+    log, t0 = [], time.time()
+    start = None
+    if inner:
+        from learn import full_space as F
+
+        net0 = F.build_net()
+        net0.load_state_dict(init)
+        start = head_losses(net0.to(dev), data, rh, dev)["total"]
+        watch = {"train_real": sub, "real_val": rh}
+        net, final, best_state, best_ep, best = fit(data, ti, watch, "real_val", seed, dev, log, epochs, every=1,
+                                                    patience=FT_PATIENCE, min_gain=FT_MIN_FALL, init=init, lr=lr,
+                                                    smooth=FT_SMOOTH)
+    else:
+        watch = {"train_real": sub, held_name: hi}
+        if len(rh):                                    # fold k's real loss: logged, never `fit`'s tracked set
+            watch["real_held"] = rh
+        net, final, best_state, best_ep, best = fit(data, ti, watch, None, seed, dev, log, epochs, every=FT_EVERY,
+                                                    init=init, lr=lr)
+    out = {"plan": PLAN, "test": name, "ledger": f"{LEDGER_ID} phase_ft", "rung": "b", "seed": seed, "real_fold": k,
+           "inner": inner, "lr": lr, "cap": cap, "init": {"run": f"{FT_PRETRAIN}-{seed}", "which": "best",
+                                                          "sha256": wrec["model_sha256"]["best"]},
+           "train_ids": plugin_tr + [r["i"] for r in rrows], "ft_train_ids": [r["i"] for r in rrows],
+           "held": held_name, "held_ids": held, "real_held_ids": [r["i"] for r in real_held],
+           "real_held_units": sorted(held_units), "epochs_run": log[-1]["epoch"] + 1, "steps": log[-1]["steps"],
+           "dfix": dict(info, fold=k, inner=inner, plugin_train=len(plugin_tr), inputs_sha256=data.inputs_sha256,
+                        target_lufs=data.target_lufs, share=1.0),
+           "backing_variants": getattr(data, "counts", None), "log": log,
+           "minutes": round((time.time() - t0) / 60, 1), "device": str(dev), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    od.mkdir(parents=True, exist_ok=True)
+    if inner:
+        out.update(E=best_ep + 1, best_epoch=best_ep, best_smoothed_val=best, start_real_val=start,
+                   at_cap=log[-1]["epoch"] + 1 == cap and best_ep >= cap - FT_PATIENCE)
+    else:
+        mp = od / f"{name}-{seed}-final.pt"
+        torch.save(final, mp)
+        sha = DS.hashlib_file(mp)
+        out.update(E=epochs, read_checkpoint=f"the state after {epochs} epochs (final)",
+                   models={"final": mp.name, "best": mp.name}, model_sha256={"final": sha, "best": sha})
+    save(rp, out)
+    print(f"TRAIN-FT DONE {name} {seed}: {out['epochs_run']} epochs, E {out['E']}; {out['minutes']} min")
+
+
+def ft_read_check(rec):
+    """FT's read guard: a read FT model is an FT_k or all-labels run (never an inner run) whose read checkpoint is the
+    state after its E epochs: `load_run`'s "best" must be that same file and hash."""
+    if not rec["test"].startswith(FT_BASE):
+        return
+    if rec.get("inner") or rec["models"]["best"] != rec["models"]["final"] \
+            or rec["model_sha256"]["best"] != rec["model_sha256"]["final"] or rec.get("E") != rec.get("epochs_run"):
+        raise SystemExit(f"{rec['test']}-{rec['seed']}: not FT's read checkpoint (the state after E epochs)")
+
+
+def ft_recheck_pick(files, n, key):
+    """The recheck's seeded pick of n stored judge files."""
+    import random
+
+    return sorted(random.Random(f"{DFIX_SEED}|ft-recheck|{key}").sample(sorted(files), min(n, len(files))))
+
+
+def cmd_ft_recheck(args):
+    """FT's render check before read 2 (`phase_ft`): 5 stored D_fix BKS judge files and 5 GOAT ones (both halves:
+    20 renders) rendered again exactly as `real-render` and `goat-render` render them, the hashes compared.
+    -> real/recheck-ft.json; refuses (after saving) on any mismatch."""
+    import numpy as np
+
+    from learn import audibility_measure as AM
+    from learn import cc_build as CB
+    from learn import local_objective as LO
+    from learn import pretrain_set as PS
+    from learn import song_bank as B
+    from learn import trusted_data as T
+
+    require("phase_ft")
+    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
+    LO._wait_cap()
+    bans = json.loads((out_dir() / REAL_DIR / "answers" / "P2b-dfix.json").read_text())
+    gans = json.loads((out_dir() / GOAT_DIR / "answers" / "P2b-dfix.json").read_text())["answers"]
+    parts = {p_["unit"]: p_ for p_ in bans["parts"]}
+    gunits = {p_["unit"]: p_ for p_ in goat_read_units()}
+    rows = []
+    for kind, jd, ans, by in (("bks", out_dir() / REAL_DIR / "judge" / "P2b-dfix", bans["answers"], parts),
+                              ("goat", out_dir() / GOAT_DIR / "judge" / "P2b-dfix", gans, gunits)):
+        for f in ft_recheck_pick([q.name for q in jd.glob("*.json")], 5, kind):
+            if PS.free_gb() < T.DISK_GUARD_GB:
+                raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+            old = json.loads((jd / f).read_text())
+            prt = by[old["unit"]]
+            key = real_key(prt, old["amp"])
+            if old["answers_sha256"] != answers_sha(ans if kind == "bks" else {key: ans[key]}):
+                raise SystemExit(f"{jd / f}: rendered from other answers than the stored file holds now")
+            di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
+            for search, a in sorted(ans[key].items()):
+                st = LO.tdict(a["settings"])
+                y = np.asarray(AM.fresh_render(CB.new_renderer, di32, a["select"], st, st), np.float64)[trim[0]:trim[1]]
+                new = AM.audio_sha(y)
+                rows.append({"kind": kind, "file": f, "half": search, "stored": old["render_sha256"][search],
+                             "new": new, "same": new == old["render_sha256"][search]})
+    miss = [r_ for r_ in rows if not r_["same"]]
+    save(out_dir() / REAL_DIR / "recheck-ft.json", {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_ft", "rows": rows,
+                                                     "mismatched": len(miss), "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"FT-RECHECK: {len(rows) - len(miss)} of {len(rows)} renders identical", flush=True)
+    if miss:
+        raise SystemExit(f"FT-RECHECK: {len(miss)} renders differ from the stored ones")
+    print("FT-RECHECK DONE")
+
+
 COMMANDS = {"panel-sections": cmd_panel_sections, "panel-lags": cmd_panel_lags, "panel-centres": cmd_panel_centres, "panel-predict": cmd_panel_predict, "panel-render": cmd_panel_render, "panel-report": cmd_panel_report, "panel-ceiling": cmd_panel_ceiling, "goat-sections": cmd_goat_sections, "goat-search": cmd_goat_search,
             "goat-stage-check": cmd_goat_stage_check, "goat-centres": cmd_goat_centres,
             "goat-predict": cmd_goat_predict, "goat-render": cmd_goat_render, "goat-report": cmd_goat_report,
@@ -6578,7 +6843,7 @@ COMMANDS = {"panel-sections": cmd_panel_sections, "panel-lags": cmd_panel_lags, 
             "vreal-render": cmd_vreal_render, "vreal-report": cmd_vreal_report,
             "build-dfix-real": cmd_build_dfix_real, "sound-recheck": cmd_sound_recheck,
             "dfix-vreal-predict": cmd_dfix_vreal_predict, "dfix-vreal-render": cmd_dfix_vreal_render,
-            "dfix-vreal-report": cmd_dfix_vreal_report}
+            "dfix-vreal-report": cmd_dfix_vreal_report, "train-ft": cmd_train_ft, "ft-recheck": cmd_ft_recheck}
 
 
 def main(argv=None):
@@ -6627,6 +6892,9 @@ def main(argv=None):
     ap.add_argument("--n", type=int, default=20, help="sound-recheck: stored renders per tag rendered again")
     ap.add_argument("--lags-only", action="store_true")
     ap.add_argument("--lag-tol", type=int, default=None)       # goat-report: read A on a narrower lag set
+    ap.add_argument("--inner", action="store_true", help="train-ft: fold k's epoch-choice run")
+    ap.add_argument("--ft-lr", type=float, default=None)       # train-ft: a declared fallback only
+    ap.add_argument("--ft-cap", type=int, default=None)
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 
