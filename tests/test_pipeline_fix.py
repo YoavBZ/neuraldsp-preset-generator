@@ -1482,3 +1482,103 @@ def test_ft_fallbacks_settle_in_the_declared_order():
 
 def test_ft_epochs_come_from_the_inner_logs():
     assert P.ft_epoch_of([{"log": _inner_log([2.0, 1.0, 1.5]), "E": 99}]) == 2
+
+
+# --- FT to V-real (phase_ft's map, after phase_ft_carry) -------------------------------------------------------------
+
+def test_ft_vreal_reads_ft_against_f41s_stored_tags_with_s_as_base():
+    assert P.FT_VREAL_PAIRS[0] == ("FT - S (primary)", P.FT_VREAL_TAG, P.DFIX_VREAL_BASE)
+    assert {b for _, a, b in P.FT_VREAL_PAIRS} == set(P.FT_VREAL_STORED)
+    assert all(a == P.FT_VREAL_TAG for _, a, _ in P.FT_VREAL_PAIRS)
+    assert set(P.FT_VREAL_STORED) <= set(P.DFIX_VREAL_TAGS)                  # zero new renders for the comparators
+    assert not set(P.FT_VREAL_TAGS) & (set(P.DFIX_VREAL_TAGS) | {"S"})       # FT's own tags never overwrite F41's
+    assert P.FT_VREAL_RECHECK_N * 2 == 20                                    # the declared 20 recheck renders
+
+
+def test_ft_vreal_recheck_groups_are_a_fixed_seeded_ten():
+    groups = {f"part{i}|{a}" for i in range(11) for a in ("pr12", "sw50r", "ac20")}
+    pick = P.ft_vreal_recheck_groups(groups)
+    assert len(pick) == 10 and set(pick) <= groups and pick == sorted(pick)
+    assert P.ft_vreal_recheck_groups(set(sorted(groups, reverse=True))) == pick
+    assert P.ft_vreal_recheck_groups({"a|pr12", "b|pr12"}) == ["a|pr12", "b|pr12"]
+
+
+def test_ft_vreal_inputs_must_equal_read_3s():
+    f41 = {"input_lufs": -12.25, "gains_db": {"p": 1.5}, "input_hashes": {"p": {"stem": "h"}},
+           "floor_frame_share": {"p": {"A": 0.0, "B": 0.1}}, "stem_half_lufs": {"p": {"A": -14.0, "B": -15.0}},
+           "answers": {"other": 1}}
+    mine = {k: v for k, v in f41.items() if k != "answers"}
+    assert P.ft_vreal_input_drift(mine, f41) == []
+    assert P.ft_vreal_input_drift({**mine, "gains_db": {"p": 1.6}}, f41) == ["gains_db"]
+    assert P.ft_vreal_input_drift({**mine, "input_hashes": {"p": {"stem": "g"}}}, f41) == ["input_hashes"]
+    assert P.ft_vreal_input_drift({k: v for k, v in mine.items() if k != "stem_half_lufs"}, f41) == ["stem_half_lufs"]
+
+
+def test_two_look_interval_is_the_95_percent_cluster_t_interval():
+    pytest.importorskip("scipy")
+    per = {"b1": -0.1, "b2": 0.05, "b3": -0.2, "b4": 0.0, "b5": -0.05, "b6": -0.12, "b7": 0.02}
+    lo, hi = P.two_look_interval(per)
+    c = P.clustered([(b, b, v) for b, v in per.items()])
+    assert (lo + hi) / 2 == pytest.approx(c["mean"])
+    assert lo < c["lo90"] and hi > c["hi90"]                                   # wider than the 90% interval
+    half90 = c["hi90"] - c["mean"]
+    assert (hi - c["mean"]) / half90 == pytest.approx(2.4469 / 1.9432, abs=1e-3)   # t(0.975, 6) / t(0.95, 6)
+    assert P.two_look_interval({"b1": 0.1}) == (None, None)
+
+
+def test_ft_vreal_predict_refuses_before_the_carry_and_once_recorded(monkeypatch):
+    def ledger(entry):
+        def req(k):
+            if k not in entry:
+                raise SystemExit(f"no {k}")
+            return entry
+        return req
+
+    monkeypatch.setattr(P, "recipe_inputs", lambda **kw: pytest.fail("refusals come before any data is read"))
+    monkeypatch.setattr(P, "require", ledger({"phase_ft": "x"}))
+    with pytest.raises(SystemExit, match="phase_ft_carry"):
+        P.cmd_ft_vreal_predict(argparse.Namespace())
+    monkeypatch.setattr(P, "require", ledger({"phase_ft": "x", "phase_ft_carry": "x",
+                                              P.FT_VREAL_HASHES: {P.FT_VREAL_TAG: "h"}}))
+    with pytest.raises(SystemExit, match="read once"):
+        P.cmd_ft_vreal_predict(argparse.Namespace())
+
+
+def test_ft_vreal_unhashed_checks_fts_and_f41s_answers(tmp_path, monkeypatch):
+    from learn import direct_stems as DS
+
+    monkeypatch.setattr(P, "out_dir", lambda: tmp_path)
+    d = tmp_path / P.VREAL_DIR / "answers"
+    d.mkdir(parents=True)
+    for t in (*P.FT_VREAL_TAGS, *P.FT_VREAL_STORED):
+        (d / f"{t}.json").write_text(json.dumps({"tag": t}))
+    sha = {t: DS.hashlib_file(d / f"{t}.json") for t in (*P.FT_VREAL_TAGS, *P.FT_VREAL_STORED)}
+    entry = {P.FT_VREAL_HASHES: {t: sha[t] for t in P.FT_VREAL_TAGS},
+             P.DFIX_VREAL_HASHES: {t: sha[t] for t in P.FT_VREAL_STORED}}
+    assert P.ft_vreal_unhashed(entry) == []
+    (d / f"{P.FT_VREAL_TAG}.json").write_text(json.dumps({"tag": "changed"}))
+    assert [p.split(":")[0] for p in P.ft_vreal_unhashed(entry)] == [P.FT_VREAL_TAG]
+    (d / "DV-RcG.json").unlink()
+    assert len(P.ft_vreal_unhashed(entry)) == 2
+    assert P.ft_vreal_unhashed({}) and len(P.ft_vreal_unhashed({})) == 5
+
+
+def test_ft_vreal_render_and_report_refuse_before_the_hashes(monkeypatch):
+    monkeypatch.setattr(P, "require", lambda k: {})
+    monkeypatch.setattr(P, "ft_vreal_unhashed", lambda e: ["x: not recorded"])
+    monkeypatch.setattr(P, "vreal_render", lambda *a, **k: pytest.fail("no render before the hashes"))
+    with pytest.raises(SystemExit, match="hashes"):
+        P.cmd_ft_vreal_render(argparse.Namespace(shard=(0, 3)))
+    monkeypatch.setattr(P, "out_dir", lambda: __import__("pathlib").Path("/nonexistent-ft-vreal"))
+    with pytest.raises(SystemExit, match="hashes"):
+        P.cmd_ft_vreal_report(argparse.Namespace(label="t"))
+    with pytest.raises(SystemExit, match="label"):
+        P.cmd_ft_vreal_report(argparse.Namespace(label=""))
+
+
+def test_ft_inner_runs_are_checked_against_their_own_seeds_w():
+    w = {1: "w1", 2: "w2"}
+    inners = [{"real_fold": k, "seed": sd, "init": {"sha256": w[sd]}} for k in range(4) for sd in (1, 2)]
+    assert P.ft_inner_init_refusal(inners, w.get) == []                     # both seeds, as the all-labels FT takes
+    inners[3]["init"]["sha256"] = "w1"
+    assert P.ft_inner_init_refusal(inners, w.get) == [(1, 2)]
