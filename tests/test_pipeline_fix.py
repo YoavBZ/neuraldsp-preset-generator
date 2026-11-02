@@ -992,6 +992,7 @@ def test_dfix_vreal_takes_only_the_declared_tags_and_models():
 
 
 def test_dfix_vreal_predict_refuses_other_tags_and_checkpoints(monkeypatch):
+    pytest.importorskip("numpy")
     monkeypatch.setattr(P, "require", lambda k: {})
     monkeypatch.setattr(P, "recipe_inputs", lambda **kw: pytest.fail("refusals come before any data is read"))
     with pytest.raises(SystemExit, match="declares only"):
@@ -1231,6 +1232,8 @@ def test_dfix_vreal_predict_end_to_end_on_synthetic_audio(tmp_path, monkeypatch,
     from learn import song_aug as SA
     from learn import song_model as SM
 
+    if not (A.L.SS_OUT / "armB" / "menu-S.json").exists():
+        pytest.skip("needs the local data root's stored menu S")
     monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
     ms = A.L.menu_S()
     slugs = ["cambridge-Signs-ElecGtr3", "cambridge-wickerman-elecgtr2"]
