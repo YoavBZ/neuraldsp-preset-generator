@@ -9,8 +9,11 @@ reading in domain (better than the matched centre and than its shuffled-label co
 shown on BKS's real reamps. 5D, a real-amp panel across 7 bands (F38, a strong hint): the per-track reading is not
 shown there, and a centre from GOAT's many capture labels leans better than S across the bands (descriptive); the
 user's choice between domain work and more real chains stays open. D_fix (F39): its real rows, a quarter of each
-epoch, cost the plugin read (FS and NS worse than P2b-wide24), so it is not built as is; declared next, the same
-recipe at two lower real shares (stage A, the cheapest deciding read). Findings F1–F39.
+epoch, cost the plugin read (FS and NS worse than P2b-wide24), so it is not built as is. Its amendment (F40): at a
+third of that share the plugin read is still lost; at a tenth it is kept, but BKS's real amps read as a model
+without real rows (+0.207 against Rcs2), so D_p is not built as is either and V-real waits: no share in this joint
+recipe gives the real-amp gain without the plugin cost. The next step is the user's choice (domain work, more real
+chains, or real-amp reading kept out of the mix model). Findings F1–F40.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -2243,6 +2246,64 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   the judge files and checked read 2, the render counts, the row counts and the budget; the read-only unit's inputs
   changed nothing trained or read.
 
+### F40. No real-row share in the joint recipe keeps the plugin read and gains the real-amp read: a third costs the plugin read, a tenth reads real amps as a model without real rows (D_fix's amendment, stages A and B)
+- **Result.** The amendment as declared (each training real row shown per epoch with probability p; everything else
+  as D_fix). Stage A: P2b-dfixp33 and P2b-dfixp10, 2 seeds each (4 trainings, 10.4–11.5 min), 960 renders and W's
+  recheck (20 of 20 stored renders identical). Stage B, p10 only: its 8 fold trainings (P2b-dfixp10-k0..k3 × 2
+  seeds, 10.4–10.5 min, best epochs 15–59), 2,300 renders (read 1's mismatched amps 480, BKS 960, GOAT 860).
+  Every model answered with both seeds pooled. About 3,280 renders and 2.1 h of MPS in all, as declared. The real
+  rows were trained on: the training log's real-row loss falls (6.12 at epoch 0 to 4.25 at epoch 55, fold 0
+  seed 20261042) and so does the held fold's (6.29 to 4.34).
+- **Read 1** (FS by band, NS by section; D_p − W, W = P2b-wide24; lower is closer; 90% clustered intervals):
+
+  | Model, input, amp | D_p − W FS | D_p − W NS | D_p − D_fix NS |
+  |---|---|---|---|
+  | p33, P2b's, true amp (A) | **+0.078 [+0.025, +0.131]** | **+0.088 [+0.029, +0.148]** | −0.034 |
+  | p10, P2b's, true amp (A) | +0.042 [−0.006, +0.090] | +0.002 [−0.049, +0.053] | **−0.121 [−0.171, −0.070]** |
+  | p10, P2b's, amp +1 (B) | +0.041 [−0.022, +0.104] | +0.006 [−0.041, +0.052] | **−0.089 [−0.132, −0.046]** |
+  | p10, P2b's, amp +2 (B) | +0.084 [−0.010, +0.177] | +0.025 [−0.025, +0.075] | **−0.052 [−0.085, −0.019]** |
+  | p10, P2d's stems, true amp (A, beside) | −0.003 | −0.027 | |
+  | p33, P2d's stems, true amp (A, beside) | **+0.110** | +0.036 | |
+
+- **Read 2, p10** (by DI on BKS's 40 units, 8 DIs; by item and fold on GOAT's 215):
+
+  | Row | Mean [90%] | Better |
+  |---|---|---|
+  | D_p_k − Rcs2 (adoption; backed, own section) | **+0.207 [+0.106, +0.307]** | 1 of 8 DIs, 5 of 40 units |
+  | D_p_k − RG | **+0.242 [+0.158, +0.326]** | 0 of 8, 0 of 40 |
+  | D_p_k − S | +0.049 [−0.003, +0.100] | 2 of 8, 12 of 40 |
+  | D_p_k − D_fix_k (beside) | **+0.170 [+0.088, +0.253]** | 0 of 8, 3 of 40 |
+  | D_p_k clean − Rcs2 (beside) | **+0.190 [+0.116, +0.263]** | 0 of 8, 4 of 40 |
+  | D_p_k clean − S (beside) | +0.032 [−0.038, +0.101] | 4 of 8, 16 of 40 |
+  | D_p_k clean − D_fix_k clean (beside) | **+0.212 [+0.157, +0.267]** | 0 of 8, 0 of 40 |
+  | GOAT D_p_k − RcGk (beside) | **+0.091 [+0.061, +0.121]** by item; +0.093 [+0.055, +0.131] by fold | 43 of 130 items |
+  | GOAT D_p_k − D_fix_k (beside) | **+0.081 [+0.056, +0.106]** by item; +0.077 [+0.041, +0.114] by fold | 37 of 130 items |
+
+- **Reading, by the declared map.**
+  - Stage A: p33 is decided worse than W on both sets and fails; p10 passes (undecided on both) and was carried on.
+  - Stage B: read 1 is not decided worse at either mismatched amp (FS at amp +2 leans worse, +0.084, 0 of 6 bands
+    better), but read 2's adoption row is decided worse: **D_p is not built as is; no V-real read, and no fallback
+    to p33 (it failed stage A).** By the amendment's rule the user decides the next step.
+  - What the shares show together: at a quarter (D_fix) the real rows bring BKS level with Rcs2 (+0.036) and cost
+    the plugin read; at a third they still cost it; at a tenth the plugin read is kept but the real-amp read is
+    lost: D_p10 reads BKS about where models without real rows do (+0.207 against Rcs2; the declaration's
+    note put models without real rows about 0.2 behind it), no better than S, and behind D_fix on every BKS and
+    GOAT row. In this joint recipe the real rows' gain and their cost to the plugin read move together; no share
+    tried gives the gain without the cost.
+  - This is a statement about one recipe (one shared model, real rows mixed into the epoch, early stopping on
+    NS), not about the real labels: D_fix shows they carry a real-amp reading (−0.122 against S on BKS, GOAT level
+    with RcGk).
+- **Caveats.** The intervals cover test sections and units, not training seeds. Stage A chose p10 on read 1's
+  true-amp rows (two candidates), so those rows are optimistic for it; stage B's rows are not selected on. The
+  early stopping reads NS (plugin) loss only, so a checkpoint is never chosen for the real-amp read; p10's best
+  epochs range 15–59. Read 2's units are BKS's 8 DIs (one band). The launcher's real-report step stopped on a
+  shell quirk (zsh read `$M:P2a-goat` as a path modifier); the first row had printed, and both real and GOAT
+  reports were re-run with the pairs quoted, zero renders, after the renders had finished.
+- **References.** `PF/runs/P2b-dfixp*.json`, `PF/sound/report-dshare-p{33,10}*.json`,
+  `PF/real/report-dshare-p10.json`, `PF/goat/report-dshare-p10.json`, `PF/real/answers/P2b-dfixp10*.json`,
+  `PF/goat/answers/P2b-dfixp10.json`, `PF/logs/dshare-{a,b}-*.log`, `PF/logs/dshare-b-report2.log`; ledger
+  `phase_dfix_share`, `phase_dfix_share_a_outcome`, `phase_dfix_share_b`, `phase_dfix_share_b_outcome`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
@@ -2256,11 +2317,13 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   against about 264), the centres' reads 1,340 and RG's 1,340, the lag scans 504 (24 + 480): about 16,000, about
   48,770 in all; RGshuf's reads 1,340, about 50,110 in all. **5D (2026-11-01/02):** the lags 270, the reads 1,848,
   the ceiling 371: 2,489, about 52,600 in all. **D_fix (2026-11-02):** read 1 1,920, read 2 1,820 (BKS 960, GOAT
-  860): 3,740, about 56,340 in all.
+  860): 3,740, about 56,340 in all. **D_fix's amendment (2026-11-02):** stage A 960 and W's recheck 20, stage B
+  2,300 (read 1 480, BKS 960, GOAT 860): 3,280, about 59,620 in all.
 - **MPS used:** about 4 h before 5B.2 (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and
   backing runs, the k-fold, phase 5A's two 10-minute seeds); 5B.2's 12 trainings about 2 h more (arm P 4 × 7.2–8.4 min,
   arm R 8 × 11.4 min); stage 2's 8 trainings 1.5 h more (8 × 11.4 min); 5C's RG 8 trainings 1.75 h more (8 × 13.0–13.3
-  min), RGshuf's 8 1.75 h more (8 × 13.0–13.1 min); D_fix's 10 2.2 h more (10 × 13.2 min).
+  min), RGshuf's 8 1.75 h more (8 × 13.0–13.1 min); D_fix's 10 2.2 h more (10 × 13.2 min); its amendment's 12 2.1 h
+  more (stage A 4 × 10.4–11.5 min, stage B 8 × 10.4–10.5 min).
 - **Disk:** P2's inputs about 0.3 GB; phase 1b's audio and features about 1.2 GB; the 31 GB guard holds.
 - Every render: isolate=True, a discarded priming render, 0.25 s trimmed, at most 3 render processes,
   `setopt no_bg_nice`. V-real is read only in P5's stored distances, phase 4 and D_fix's declared read. (5B.1c
