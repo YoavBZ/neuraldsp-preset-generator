@@ -3299,7 +3299,8 @@
     "FTg-add-drive": "6182e119c6183660994075c28e15e01def2fe4694be126c25bbc5a6878088f53",
     "FTg-add-tone": "449cf40b84116fdc6ab86983dc09cef23dad36fd8c483e8e168c0cc3374768c5",
     "FTg-add-cab": "a5cc510872ba786b4fd764c18e8d283c1a3b22641d586753ff397405a72da86f"
-   }
+   },
+   "phase_judge_ear": "Declared 2026-11-02, at the user's request (drive vs reverb: does the score weigh each kind of change as the ear does?), before any code or render: one verified clean lead DI (Ale Lak ElecGtr05 110-120 s) through S clean PR12 and S crunch SW50R; six groups moved one at a time, two sizes (drive input gain +4/+10 dB; tone amp treble +0.15/+0.35 unit; cab left mic distance +0.25 unit / mic type changed; reverb on mix 0.15/0.40; delay on mix 0.15/0.40; spring 0.2/0.5): 24 pairs + 2 catches; judge distance S render vs step render; blind guitar-only ear page (same/barely/clearly/very); descriptive; a mis-weighted group is proposed for change as a new declaration. 56 renders."
   }
  ]
 }

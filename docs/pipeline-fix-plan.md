@@ -1235,6 +1235,33 @@ instead of generating unrealistic presets our own?"):
       this cannot answer; drop the two null groups (1,920 renders); enforce the ledger hashes in code. Adopted:
       per-amp rows, the interaction row with its own interval, the phase listed explicitly, the tests.
 
+  - *The judge against the ear, control by control (2026-11-02, at the user's request; ledger `phase_judge_ear`;
+    descriptive).* The user: "some effects, like drive, probably matter much more than others, like reverb; same
+    for any control". The score is by sound, but whether it weighs each kind of change as the ear does was never
+    measured: the judge spec checks that each change costs more as it grows, and the ear agreed with the judge on
+    differences of 0.05 and more between presets, not per kind of change. `phase_ft_groups` cannot answer it for
+    effects (off in S and FT on every BKS answer).
+    - **Pairs.** One verified clean DI of single-note lead playing (Ale Lak "Nosso Mundo Deixou De Existir"
+      ElecGtr05, 110–120 s, the v2 listening page's stand-in; neither V-real nor NS), at −22.9 LUFS, through two
+      starting presets: S clean on PR12 and S crunch on SW50R. On each, six groups moved from S one at a time,
+      two step sizes each (small, large): *drive* (input gain +4 and +10 dB); *tone* (the amp's treble +0.15 and
+      +0.35 in unit range, clipped); *cab* (the left mic's distance +0.25 in unit range; the left mic type
+      changed); *reverb* (the reverb module on, mix 0.15 and 0.40, its other controls at the plugin's
+      defaults); *delay* (the delay on, mix 0.15 and 0.40, defaults otherwise); *spring* (the amp's spring
+      reverb 0.2 and 0.5). 24 pairs (S against S + step) and 2 catches (S against itself, rendered again).
+    - **Measures.** The judge's distance between the two renders of each pair (S's render as the reference, the
+      same DI, `aligned_distance` as the read uses it, both halves averaged); a catch must score 0 (the renders
+      bit-identical). The ear: a blind, guitar-only page with an instant A/B switch, each pair played in seeded
+      order, the question "how different do these sound?" (same / barely / clearly / very), sure or unsure.
+    - **Reading.** Per group, the ear's rating beside the judge's distance. The judge mis-weights a group if its
+      pairs that the ear calls clearly or very different sit at judge distances below another group's pairs the
+      ear calls same or barely (or the reverse): that group's weight is then proposed for change, as a new
+      declaration with its own check. Otherwise the judge's weighting stands, and the per-control question is
+      closed on these two presets. One listener, one DI, two presets: descriptive.
+    - **Renders** 2 × (13 + 1 repeat of S) kept renders, each in its own fresh primed process: 56 with priming.
+      Every render as declared for Morgan. Code `learn/judge_ear.py`; page `~/ndsp-presets/listening/judge-ear/`,
+      its key outside the page.
+
 - **Decisions for the user, with the evidence:** whether to adopt the S fallback or the near-chance rule
   (steps 26, 27, 37), and whether to scale.
 
