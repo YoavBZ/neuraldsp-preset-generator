@@ -1756,3 +1756,98 @@ def test_leakage_guard_reads_the_all_labels_ft_run(tmp_path, monkeypatch):
     units[0][2]["band"] = sorted(P.VREAL_BANDS)[0]          # a V-real band among FT's real units
     with pytest.raises(SystemExit, match=f"V-real in {P.FT_BASE}"):
         P.dfix_vreal_leaks(kept, inv, P.FT_BASE)
+
+
+# --- FT's score by control group (phase_ft_groups) ---------------------------------------------------------------------
+
+def test_ftg_groups_cover_every_model_key_in_the_declared_groups():
+    from learn import full_space as F
+
+    keys = list(F.CONT) + list(F.SW) + list(F.CAT)
+    got = {k: P.ftg_group(k) for k in keys}
+    assert set(got.values()) <= set(P.FTG_ALL) and set(P.FTG_GROUPS) == {"drive", "tone", "cab"}
+    for k, g in (("parameters/inputGain", "drive"), ("drive2/drive2Gain", "drive"), ("sw50rAmp/sw50rLevel", "drive"),
+                 ("ac20Amp/ac20Power", "drive"), ("compressor/compressorMix", "drive"),
+                 ("pr12Amp/pr12Treble", "tone"), ("sw50rEQ/sw50rEQBand4", "tone"), ("ac20Amp/ac20Cut", "tone"),
+                 ("cabParameters/leftMicType", "cab"), ("cabParameters/rightRoomMicLevel", "cab"),
+                 ("reverb/reverbMix", "effects"), ("pr12Amp/pr12Reverb", "effects"), ("pr12Amp/springOn", "effects"),
+                 ("parameters/doublerSpread", "effects"), ("tremolo/tremoloDepth", "effects"),
+                 ("parameters/outputGain", "other"), ("parameters/gateThreshold", "other")):
+        assert P.ftg_group(k) == g, k
+    assert all(got[k] != "other" for k in keys if not k.startswith("parameters/gate"))
+
+
+def test_ftg_hybrids_swap_exactly_one_group():
+    pytest.importorskip("numpy")
+    s = {"select": 1, "settings": {"parameters/inputGain": 0.0, "pr12Amp/pr12Treble": 0.5, "reverb/reverbMix": 0.1,
+                                   "cabParameters/leftCabDistance": 0.3, "parameters/outputGain": 0.0}}
+    a = {"select": 1, "settings": {"parameters/inputGain": 3.0, "pr12Amp/pr12Treble": 0.7, "reverb/reverbMix": 0.1,
+                                   "cabParameters/leftCabDistance": 0.4, "parameters/outputGain": 0.0}}
+    out, differ = P.ftg_answers({"u|pr12": {"A": a, "B": a}}, {"u|pr12": {P.ANY_HALF: s}})
+    assert set(out) == {P.ftg_tag(w, g) for w in P.FTG_WAYS for g in P.FTG_GROUPS}
+    assert {g: r["any_key"] for g, r in differ.items()} == {"drive": 2, "tone": 2, "cab": 2, "effects": 0, "other": 0}
+    rev = out["FTg-rev-drive"]["u|pr12"]["A"]["settings"]
+    add = out["FTg-add-drive"]["u|pr12"]["B"]["settings"]
+    assert rev == dict(a["settings"], **{"parameters/inputGain": 0.0})
+    assert add == dict(s["settings"], **{"parameters/inputGain": 3.0})
+    assert out["FTg-rev-cab"]["u|pr12"]["A"]["settings"] == dict(a["settings"], **{"cabParameters/leftCabDistance": 0.3})
+    with pytest.raises(SystemExit, match="select"):
+        P.ftg_answers({"u|pr12": {"A": dict(a, select=2)}}, {"u|pr12": {P.ANY_HALF: s}})
+    with pytest.raises(SystemExit, match="different keys"):
+        P.ftg_mix(a["settings"], {"x": 1}, "drive")
+
+
+def test_ftg_reads_under_their_own_phase_and_need_the_ledger(monkeypatch):
+    assert P.report_phase({"P2b-ft", "FTg-rev-drive"}) == "phase_ft_groups"
+    assert P.report_phase({"FTg-add-cab", "S"}) == "phase_ft_groups"
+    assert P.report_phase({"P2b-ft", "S"}) == "phase_ft"
+
+    def req(k):
+        raise SystemExit(f"no {k}")
+    monkeypatch.setattr(P, "require", req)
+    with pytest.raises(SystemExit, match="phase_ft_groups"):
+        P.cmd_ft_groups(argparse.Namespace())
+
+
+def _stored_pair():
+    ad = P.out_dir() / P.REAL_DIR / "answers"
+    if not (ad / "P2b-ft.json").exists():
+        pytest.skip("needs the stored BKS answers")
+    ft = json.loads((ad / "P2b-ft.json").read_text())["answers"]
+    s = json.loads((ad / "S.json").read_text())["answers"]
+    key = next(k for k in ft if k.endswith("|pr12"))
+    return ft[key]["A"]["settings"], s[key][P.ANY_HALF]["settings"]
+
+
+def test_ftg_change_counts_only_what_can_sound():
+    pytest.importorskip("numpy")
+    a, s = _stored_pair()
+    same = P.ftg_change(s, s, "pr12")
+    assert all(not c and (m is None or m == 0) for c, m in same.values())
+    off_amp = dict(s, **{"ac20Amp/ac20Cut": 0.123, "sw50rEQ/sw50rEQBand3": 0.9})          # other amps' keys
+    assert not any(c for c, _ in P.ftg_change(off_amp, s, "pr12").values())
+    assert s["reverb/reverbActive"] in (False, "false", 0, "0")
+    assert not P.ftg_change(dict(s, **{"reverb/reverbMix": 0.9}), s, "pr12")["effects"][0]   # reverb off
+    assert s["parameters/gateActive"] in (False, "false", 0, "0")
+    assert not P.ftg_change(dict(s, **{"parameters/gateThreshold": -10.0}), s, "pr12")["other"][0]   # gate off
+    moved = P.ftg_change(dict(s, **{"parameters/inputGain": float(s["parameters/inputGain"]) + 6.0}), s, "pr12")
+    assert moved["drive"][0] and moved["drive"][1] > 0 and not moved["tone"][0]
+
+
+def test_ftg_renders_and_reports_refuse_until_the_hashes_are_in_the_ledger(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")
+    from learn import direct_stems as DS
+
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    d = tmp_path / P.REAL_DIR / "answers"
+    d.mkdir(parents=True)
+    tag = P.ftg_tag("add", "drive")
+    (d / f"{tag}.json").write_text(json.dumps({"answers": {}}))
+    assert P.ftg_unhashed(["S", "P2b-ft", tag], {}) == [f"{tag}: sha256 not recorded under {P.FTG_HASHES}"]
+    assert P.ftg_unhashed([tag], {P.FTG_HASHES: {tag: DS.hashlib_file(d / f"{tag}.json")}}) == []
+    assert P.ftg_unhashed(["FTg-rev-cab"], {}) == ["FTg-rev-cab: no answers file"]
+    monkeypatch.setattr(P, "require", lambda k: {})
+    with pytest.raises(SystemExit, match="hashes"):
+        P.cmd_real_render(argparse.Namespace(names=tag, shard=(0, 3)))
+    with pytest.raises(SystemExit, match="hashes"):
+        P.cmd_real_report(argparse.Namespace(pairs=f"{tag}:S", label="t", within=""))

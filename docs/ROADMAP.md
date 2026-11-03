@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-11-01.
+lives in the linked documents. Last updated 2026-11-03.
 
 ## Where the product is
 
@@ -248,7 +248,16 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          calculation error, S chosen partly on V-real (worth about 0.025), and per-recording headroom no model
          reads (a per-track factory pick using the true target and its DI beats S by −0.118 on 10 of V-real's
          parts, descriptive).
-       - **Next:** the user's choice, with F37–F42 as evidence. Proposed: the per-recording reading, with FT's
+       - **Where FT's lead comes from, and the judge against the ear (2026-11-02/03, F43, F44):** about 80% of
+         FT's lead over S on real reamps is its drive (BKS −0.143 of −0.177; tone −0.021, cab undecided). At the
+         user's question whether the score weighs each kind of change as the ear does, a blind page of 26 pairs
+         (one DI, S clean and S crunch, one group moved per pair) found it does not: the crunch amp's large treble step
+         (2.79) and +10 dB of drive score high and are heard as the same or barely different, while large reverb
+         (1.59–2.10) is heard clearly (14 inversions; treble well above the ear, drive above it; one listener, one
+         single-note DI; descriptive). So how much of FT's lead is audible is not
+         known, and no read has scored the effects (off in S and FT).
+       - **Next (2026-11-03):** before more recordings are scored, a revised judge, declared and reviewed, checked
+         on a fresh blind page not used to build it. Then, as the user chose, the per-recording reading, with FT's
          recipe as the base (chosen on read 2, BKS −0.055; on V-real FT is not shown different from D_fix): many more real-amp labelled recordings (captures on verified DIs, as GOAT) and a fresh,
          larger real-song test (V-real-11 is ±0.07 and now read for two candidates). Domain work and community
          presets stay open.
@@ -1322,3 +1331,5 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-11-02 | Pipeline fix D_fix's amendment, audited: the real rows shown less often (12 trainings, 3,280 renders). At a third of the share the plugin test songs still read worse than P2b-wide24 (FS +0.078 [+0.025, +0.131], NS +0.088 [+0.029, +0.148]); at a tenth they are not shown worse, but BKS's real amps read about where P2a, a model without real rows, does (+0.207 [+0.106, +0.307] against Rcs2). Not built as is; V-real waits; no share in the joint recipe gives the real-amp gain without the plugin cost. Next: the user's choice (domain work, more real chains, or real-amp reading kept out of the mix model) | [plan](pipeline-fix-plan.md) F40, [ledger](dev-test-ledger.json) `pipeline-fix` `phase_dfix_share*` |
 | 2026-11-02 | Pipeline fix D_fix on V-real, audited (the user: the product always reads real amps, so the plugin read became a cost beside; declared and reviewed before the read; 660 renders). On held-out real songs D_fix reads level with S (+0.036 [−0.039, +0.110], undecided) and clearly better than P2b-wide24, the same recipe without real rows (−0.192 [−0.348, −0.037], 7 of 7 bands), which reads clearly worse than S (+0.228). Level with a real-amp centre (+0.011). Next proposed: domain work (a per-row plugin/real input); the user's choice stays open | [plan](pipeline-fix-plan.md) F41, [ledger](dev-test-ledger.json) `pipeline-fix` `phase_dfix_vreal*` |
 | 2026-11-02 | Pipeline fix FT, audited (the user: plugin renders as pretraining; declared and reviewed, the cap-300 fallback taken as declared; 1,512 renders). FT − D_fix on real reamps −0.055 [−0.084, −0.027] (BKS, 7 of 8 DIs; GOAT level), carried to V-real: FT − S +0.022 [−0.051, +0.095] undecided, FT − D_fix −0.013 (selection-contaminated), level with RcG. A scoring audit found no calculation error. Next proposed: per-recording reading on many more real-amp recordings and a fresh real-song test; the user's choice | [plan](pipeline-fix-plan.md) F42, [ledger](dev-test-ledger.json) `pipeline-fix` `phase_ft*` |
+| 2026-11-02 | Pipeline fix F43, FT's score by control group (declared and reviewed; 2,880 renders): on real reamps drive carries about 80% of FT's lead over S (add-drive − S −0.143 [−0.206, −0.079], 8 of 8 DIs), tone a little (−0.021), cab undecided; the parts add up | [plan](pipeline-fix-plan.md) F43, [ledger](dev-test-ledger.json) `phase_ft_groups*` |
+| 2026-11-03 | Pipeline fix F44, the judge against the ear (the user asked whether drive and reverb weigh as they sound; declared, amended before any answer, reviewed; 60 renders, 26 blind pairs): the judge weighs treble well above the ear, drive above it and reverb below it (14 inversions; Spearman 0.43; descriptive). Next proposed: a revised judge checked on a fresh blind page before more recordings are scored | [plan](pipeline-fix-plan.md) F44, [ledger](dev-test-ledger.json) `phase_judge_ear*` |
