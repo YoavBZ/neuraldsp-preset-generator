@@ -1272,6 +1272,27 @@ instead of generating unrealistic presets our own?"):
       pair, no order change) and the page's blindness and levels. Adopted: per-half, same-preset and ratio flags on
       each inversion, a catch heard as different flagged. Caveats for the write-up: "reverb" is the plugin's
       default 1.48 s room; a cab step moves the left of two blended mics; the judge skips the first second.
+    - *Recheck on headphones (2026-11-03, after F44, ledger `phase_judge_ear_recheck`; descriptive).* The user
+      heard the first page on phone speakers, which reproduce little of the low and low-mid range where drive and
+      the amp's tone act, while reverb tails stay audible. Three measures tried since (the judge, CDPAM and Zwicker
+      loudness, exploratory, `judge-ear/explore/`) all put the treble steps among the largest changes on the page,
+      against the ear. Before a judge revision is built on F44, the ear half is re-heard on headphones.
+      - **Pairs.** The same renders and clip rule, 13 items in a new seeded order (`RECHECK_SEED`): every pair in
+        one of F44's inversions (clean treble +0.35, twice as a consistency check, and +0.15; crunch treble −0.35;
+        drive +10 dB on both presets; reverb 0.40 on both; delay 0.40 on both; clean spring 0.5), clean drive +4 dB
+        as a low comparator, and the clean catch. The page asks for headphones at a comfortable level.
+      - **Reading.** Per pair, the headphone rating beside the phone one, and the declared mis-weighting rule rerun
+        on the recheck's rows. If no pair heard clearly or very different sits below another group's pair heard
+        the same or barely, F44's inversions are put down to playback and no judge revision is proposed on them;
+        if they persist, F44 stands and the revision goes ahead (declared and reviewed). Both of the repeat's rows
+        enter the rule; if they differ, that is reported as a reliability caveat beside the result, and the catch
+        likewise. "None left" clears only the pairs re-heard; pairs not re-heard could form new inversions. One listener, one sitting: descriptive. Bias caveat:
+        the listener was told, before this page, that the measures rank the treble steps large.
+      - *Review (2026-11-03, independent, before the page was sent):* approved with one required change, made:
+        the two effect pairs in F44's inversions (crunch delay 0.40, clean spring 0.5) added; the repeat's place
+        in the rule declared. Adopted: the low comparator, the subset caveat, the seed's name in the key.
+      - **Renders** 0. Code `learn/judge_ear.py` (`page --recheck`, `score --recheck`); page
+        `~/ndsp-presets/listening/judge-ear-recheck/`, its key outside the page.
 
 - **Decisions for the user, with the evidence:** whether to adopt the S fallback or the near-chance rule
   (steps 26, 27, 37), and whether to scale.

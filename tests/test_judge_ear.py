@@ -213,3 +213,39 @@ def test_tone_steps_down_only_where_up_would_pass_the_top():
     small, large = (d.to_unit(J.step_settings("sw50r", S, "tone", s, DEFAULTS)[0][("sw50rAmp", "sw50rTreble")])
                     for s in J.SIZES)
     assert small == pytest.approx(0.85, abs=1e-4) and large == pytest.approx(0.35, abs=1e-4)   # as amended: per step
+
+
+def test_recheck_pairs_and_order():
+    pairs = {J.pair_id(c, g, s) for c in ("clean", "crunch") for g in J.GROUPS for s in J.SIZES}
+    pairs |= {J.pair_id(c, J.CATCH) for c in ("clean", "crunch")}
+    assert set(J.RECHECK_PAIRS) <= pairs                                  # only pairs the first page judged
+    assert len(J.RECHECK_PAIRS) == len(set(J.RECHECK_PAIRS)) + 1          # exactly one pair twice
+    a = J.page_order(list(J.RECHECK_PAIRS), J.RECHECK_SEED)
+    assert sorted(it["pair"] for it in a) == sorted(J.RECHECK_PAIRS)
+    assert len({it["page_id"] for it in a}) == len(J.RECHECK_PAIRS)
+    assert a == J.page_order(list(reversed(J.RECHECK_PAIRS)), J.RECHECK_SEED)
+    assert J.key_path("/r", recheck=True) != J.key_path("/r")             # the first sitting's key is kept
+
+
+def test_the_recheck_page_asks_for_headphones_and_stays_blind():
+    clips = {"p01-1": "AAAA", "p01-2": "AAAA"}
+    html = J.page_html(["p01"], clips, "b1", J.RECHECK_NOTE)
+    assert J.RECHECK_NOTE in html and J.leaks(html) == []
+    assert J.RECHECK_NOTE not in J.page_html(["p01"], clips, "b1")
+
+
+def test_the_recheck_refuses_without_its_ledger_key(monkeypatch):
+    from learn import pipeline_fix as P
+
+    seen = []
+
+    def fake(key):
+        seen.append(key)
+        if key == J.RECHECK_KEY:
+            raise SystemExit("not declared")
+        return {}
+
+    monkeypatch.setattr(P, "require", fake)
+    with pytest.raises(SystemExit):
+        J.require_recheck()
+    assert J.LEDGER_KEY in seen and J.AMENDMENT_KEY in seen

@@ -11,6 +11,8 @@ S rendered again). Per pair the judge's distance and a blind A/B rating from the
     $MAIN -m learn.judge_ear measure                # zero renders: the judge's distance per pair, the catches
     $MAIN -m learn.judge_ear page                   # the blind A/B page and its key (private/, outside the page)
     $MAIN -m learn.judge_ear score --answers FILE   # the ear beside the judge, and the mis-weighting reading
+    $MAIN -m learn.judge_ear page --recheck         # the headphone recheck page (`phase_judge_ear_recheck`)
+    $MAIN -m learn.judge_ear score --recheck --answers FILE
 
 **The pairs (as declared).** S: `arm_a_mega53.L.menu_S()`, clean on PR12 and crunch on SW50R. Steps:
 - drive: `parameters/inputGain` +4 and +10 dB (clipped to `full_space`'s range, -20..12 dB);
@@ -68,6 +70,7 @@ AMENDMENT_KEY = "phase_judge_ear_amendment"
 DATA = pathlib.Path("~/ndsp-presets").expanduser()
 OUT = "learn/trusted-data/judge-ear"
 PAGE = "listening/judge-ear"
+RECHECK_PAGE = "listening/judge-ear-recheck"
 PAGE_NAME = "judge-ear"
 DI_REL = "references/datasets/cambridge/AleLak_NossoMundoDeixouDeExistir_Full/24_ElecGtr05DI.wav"
 DI_START_S = 110.0
@@ -85,6 +88,15 @@ EFFECT_SWITCH = {"reverb": ("reverb", "reverbActive"), "delay": ("delay", "delay
 FREE_DELAY = {("delay", "delaySync"): "0"}          # full_space.FREE's delay half: syncMode 0 is Free
 CATCH = "catch"
 PAGE_SEED = 20261120
+# The headphone recheck (`phase_judge_ear_recheck`): the first sitting was heard on phone speakers. The pairs where the
+# ear and every measure tried disagreed most, every pair in one of F44's inversions, one small drive step as a low
+# comparator, one catch, and one pair twice.
+RECHECK_KEY = "phase_judge_ear_recheck"
+RECHECK_SEED = 20261103
+RECHECK_PAIRS = ("clean-tone-large", "clean-tone-small", "crunch-tone-large", "clean-drive-large",
+                 "crunch-drive-large", "clean-reverb-large", "crunch-reverb-large", "clean-delay-large",
+                 "crunch-delay-large", "clean-spring-large", "clean-drive-small", "clean-catch", "clean-tone-large")
+RECHECK_NOTE = "Please listen on headphones (not phone or laptop speakers), at a comfortable level."
 RATINGS = ("same", "barely", "clearly", "very")
 RATING_TEXT = {"same": "Same", "barely": "Barely different", "clearly": "Clearly different", "very": "Very different"}
 CONFS = ("sure", "unsure")
@@ -334,12 +346,12 @@ def out_dir(root=DATA):
     return pathlib.Path(root) / OUT
 
 
-def page_dir(root=DATA):
-    return pathlib.Path(root) / PAGE
+def page_dir(root=DATA, recheck=False):
+    return pathlib.Path(root) / (RECHECK_PAGE if recheck else PAGE)
 
 
-def key_path(root=DATA):
-    return page_dir(root) / "private" / "page-key.json"
+def key_path(root=DATA, recheck=False):
+    return page_dir(root, recheck) / "private" / "page-key.json"
 
 
 def save(path, obj):
@@ -372,6 +384,14 @@ def require():
 
     P.require(AMENDMENT_KEY)
     return P.require(LEDGER_KEY)
+
+
+def require_recheck():
+    """The recheck page and its score refuse unless the ledger also declares `phase_judge_ear_recheck`."""
+    from learn import pipeline_fix as P
+
+    require()
+    return P.require(RECHECK_KEY)
 
 
 def file_sha256(path):
@@ -596,8 +616,10 @@ def cmd_measure(args):
 
 
 def cmd_page(args):
-    """The blind A/B page and its key (private/page-key.json, outside the page's audio and HTML)."""
-    require()
+    """The blind A/B page and its key (private/page-key.json, outside the page's audio and HTML); with --recheck, the
+    headphone recheck's page from the same renders."""
+    recheck = getattr(args, "recheck", False)
+    require_recheck() if recheck else require()
     import numpy as np
 
     from learn import audibility_measure as AM
@@ -606,11 +628,11 @@ def cmd_page(args):
     meas = load(out_dir() / "measure.json")
     if not meas:
         raise SystemExit("run `measure` first")
-    kp = key_path()
+    kp = key_path(recheck=recheck)
     if kp.exists() and not args.force:
         raise SystemExit(f"{kp} exists: a rebuild hides the listener's stored answers (--force)")
     by = {p["pair"]: p for p in plan["pairs"]}
-    items = page_order(list(by))
+    items = page_order(list(RECHECK_PAIRS), RECHECK_SEED) if recheck else page_order(list(by))
     clips, key_items = {}, []
     for it in items:
         p = by[it["pair"]]
@@ -625,19 +647,20 @@ def cmd_page(args):
                           "null": p["null"], "changes": p["changes"], "b": "step" if it["a"] == "S" else "S",
                           "render_a": f"{p['cls']}-S" if it["a"] == "S" else job_of(p),
                           "render_b": job_of(p) if it["a"] == "S" else f"{p['cls']}-S"})
-    build = hashlib.sha256((json.dumps(key_items, sort_keys=True) + str(PAGE_SEED)).encode()).hexdigest()[:12]
-    page = page_html([it["page_id"] for it in items], clips, build)
+    seed = RECHECK_SEED if recheck else PAGE_SEED
+    build = hashlib.sha256((json.dumps(key_items, sort_keys=True) + str(seed)).encode()).hexdigest()[:12]
+    page = page_html([it["page_id"] for it in items], clips, build, RECHECK_NOTE if recheck else None)
     bad = leaks(page)
     if bad:
         raise SystemExit(f"the page names {bad}: not blind")
-    save(kp, {"page": PAGE_NAME, "build": build, "seed": PAGE_SEED, "time": time.strftime("%Y-%m-%d %H:%M:%S"),
-              "shuffle_rule": "random.Random(PAGE_SEED).shuffle of the sorted pair ids, then one choice of A's side "
+    save(kp, {"page": PAGE_NAME + ("-recheck" if recheck else ""), "build": build, "seed": seed, "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+              "shuffle_rule": f"random.Random({'RECHECK_SEED' if recheck else 'PAGE_SEED'}).shuffle of the sorted pair ids, then one choice of A's side "
                               "per item in page order",
               "clip_rule": "mono; 0.25 s trimmed; each clip -23 LUFS on its own (build_data_review.level_clip), the "
                            "pair's larger true-peak cut on both; 10-ms fades; AAC 256 kbps (audibility_measure."
                            "pair_clips)",
               "render_sha256": meas["render_sha256"], "choices": CHOICES, "items": key_items})
-    pd = page_dir()
+    pd = page_dir(recheck=recheck)
     pd.mkdir(parents=True, exist_ok=True)
     out = pd / "index.html"
     out.write_text(page)
@@ -647,7 +670,10 @@ def cmd_page(args):
 
 def cmd_score(args):
     """The ear's rating beside the judge's distance per group and size, and the declared mis-weighting reading."""
-    key = load(key_path())
+    recheck = getattr(args, "recheck", False)
+    if recheck:
+        require_recheck()
+    key = load(key_path(recheck=recheck))
     meas = load(out_dir() / "measure.json")
     if not key or not meas:
         raise SystemExit("run `page` first")
@@ -680,8 +706,15 @@ def cmd_score(args):
     else:
         print("NO MIS-WEIGHTING: no pair heard clearly/very different sits below another group's pair heard "
               "same/barely; the judge's weighting stands on these two presets.")
-    save(out_dir() / "score.json", {"time": time.strftime("%Y-%m-%d %H:%M:%S"), "answers_file": str(args.answers),
-                                    "build": key["build"], "rows": rows, "inversions": inv, "by_group": by})
+    out = {"time": time.strftime("%Y-%m-%d %H:%M:%S"), "answers_file": str(args.answers), "build": key["build"],
+           "rows": rows, "inversions": inv, "by_group": by}
+    if recheck:                                          # each pair beside the first sitting's (phone speakers) answer
+        first = {r["pair"]: r["rating"] for r in (load(out_dir() / "score.json") or {}).get("rows", [])}
+        out["first_sitting"] = first
+        print("\nRECHECK (headphones) beside the first sitting (phone speakers):")
+        for r in rows:
+            print(f"  {r['page_id']} {r['pair']:22s} now {r['rating'] or '-':8s} first {first.get(r['pair']) or '-'}")
+    save(out_dir() / ("score-recheck.json" if recheck else "score.json"), out)
 
 
 # --- the page -------------------------------------------------------------------------------------------------------
@@ -852,7 +885,7 @@ paint();
 """
 
 
-def page_html(ids, clips, build):
+def page_html(ids, clips, build, note=None):
     """The page: per item A and B looping together with an instant switch, "How different do these sound?" (same /
     barely / clearly / very) and sure or unsure; answers in localStorage, Export as text or a file."""
     e = html.escape
@@ -890,6 +923,7 @@ or Switch, or press A, B or S (Space stops). Switch as often as you like.</p>
 different, then whether you are sure. Some pairs may be the very same sound twice. A and B are set to the same
 loudness, so listen for the sound itself, not a volume change. Headphones help. Answers are saved in this browser as
 you go; tap <b>Export</b> any time, even halfway, and send the text or the file.</p>
+{f'<p class="intro"><b>{e(note)}</b></p>' if note else ""}
 {"".join(cards)}
 </main>
 <footer><span id="count" style="align-self:center;color:var(--mute)"></span>
@@ -913,11 +947,14 @@ def main(argv=None):
     ap.add_argument("--shard", type=parse_shard, default=(0, 1))
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--answers", default=None)
+    ap.add_argument("--recheck", action="store_true")
     args = ap.parse_args(argv)
     if args.shard != (0, 1) and args.cmd != "render":
         raise SystemExit("--shard is for render")
     if args.force and args.cmd not in ("plan", "page"):
         raise SystemExit("--force is for plan and page")
+    if args.recheck and args.cmd not in ("page", "score"):
+        raise SystemExit("--recheck is for page and score")
     if args.cmd == "score" and not args.answers:
         raise SystemExit("score needs --answers FILE")
     COMMANDS[args.cmd](args)
