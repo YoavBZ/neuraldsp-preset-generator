@@ -1644,7 +1644,7 @@ instead of generating unrealistic presets our own?"):
       repetition, where the audit dropped missing neighbours), then a 1-D convolution over lags applied to each half
       with shared weights (1→16→16 channels, kernel 5, ReLU, then 16→1), the halves' logits summed, and lags outside
       6–80 (the draw's 60–800 ms, a range the product can be given) masked: 75 logits. It trains on delay-on items
-      by cross-entropy against a Gaussian of one lag around the set lag (under 100 ms ±10% is less than a lag, so
+      by cross-entropy against a Gaussian of one lag around the set lag, cut to lags 6–80 and renormalised (under 100 ms ±10% is less than a lag, so
       only the exact lag counts there). It reads only the autocorrelation, so it is a separate model trained on
       E1a's batches: its weights are drawn on a forked random stream and its epoch is kept by its own inner
       cross-entropy, so the trunk, its on/off and regression heads and their epoch choice repeat E1a's (up to MPS
@@ -1662,8 +1662,8 @@ instead of generating unrealistic presets our own?"):
       *Rule:* time *reads* on an arm if, on the wide delay-ons, the head's within-±10% difference against the
       wide-draw median has its interval above 0 and its log2 MAE difference has its interval below 0; the head
       *improves on the picker* if its within-±10% difference against the picker has its interval above 0.
-      *What follows:* if the head does not read on the target, or falls below the picker there, the head is
-      broken and is fixed before its stem result counts. Time reads on the stem → E1b is declared for delay
+      *What follows:* if the head does not read on the target, or its within-±10% difference against the picker
+      there has its interval below 0, the head is broken and is fixed before its stem result counts. Time reads on the stem → E1b is declared for delay
       (on/off and time) with renders, reviewed first. It does not: if the mix reads, time is lost to the separator
       (fine-tuning only); if neither reads, to the backing's masking, which E1b's renders then aim at (a backing
       split); either way a research target, not a verdict. Reverb decay is not in E1c: no cue for it is shown in

@@ -406,12 +406,13 @@ def cmd_e1c_train(args):
 
 
 def lag_target(t_log2):
-    """Soft lag targets (n, LAGS) for set times (log2 ms): lag k (k = 1..LAGS, 10 ms each) at index k - 1."""
+    """Soft lag targets (n, LAGS) for set times (log2 ms): lag k (k = 1..LAGS, 10 ms each) at index k - 1, within
+    LAG_RANGE (the head's unmasked lags) and renormalised there."""
     import numpy as np
 
     k = np.arange(1, LAGS + 1)
     c = 2.0 ** np.asarray(t_log2, np.float64)[:, None] / 10.0
-    g = np.exp(-0.5 * ((k[None] - c) / LAG_SIGMA) ** 2)
+    g = np.exp(-0.5 * ((k[None] - c) / LAG_SIGMA) ** 2) * ((k >= LAG_RANGE[0]) & (k <= LAG_RANGE[1]))[None]
     return (g / g.sum(1, keepdims=True)).astype(np.float32)
 
 
