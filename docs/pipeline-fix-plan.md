@@ -1499,6 +1499,16 @@ instead of generating unrealistic presets our own?"):
       and on real material it also reads tone, compression, room and bleed. The product's search does not move to
       J5 as built; the page still answers whether adding an effect part fixes the judge's weighting in the plugin
       domain, and a more robust effect part is the next research target either way.
+    - *Separator check (2026-11-03, exploratory, at the user's question, zero plugin renders;
+      `judge-v5/separator-check/`):* the fresh page's dry and wet renders mixed into 3 phase-5A backings by the
+      project's mix rule (−12.25 LUFS, median and upper-quartile guitar ratios, no mastering), separated by htdemucs
+      and X-LANCE (xlance_g) as the project runs them. The wet energy survives in the guitar stem: about 75% on
+      X-LANCE and 55% on htdemucs (about 90% with a sparse backing, 35–58% on htdemucs against keys or organ); the
+      rest goes to the backing's sustained-instrument stem, not lost. But the stem's own error (J0 against the clean
+      render: X-LANCE 2.14, htdemucs 3.55) exceeds every effect's clean J0, so J0 barely sees effects through a
+      stem; C on X-LANCE stems picks the wet render for mix 0.40, the 3 s decay and delay time in 21 of 24 cases, and
+      not the mix 0.15 effects (0–3 of 6), whose size equals X-LANCE's own slight tail trim (C −0.04). One DI, two
+      presets, 3 backings, plugin-rendered guitar: descriptive. The robust effect part must be read through stems.
 
 - **Decisions for the user, with the evidence:** whether to adopt the S fallback or the near-chance rule
   (steps 26, 27, 37), and whether to scale.
