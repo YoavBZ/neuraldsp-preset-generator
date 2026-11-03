@@ -1486,6 +1486,19 @@ instead of generating unrealistic presets our own?"):
       (6–18%); a zero-render product check of C on real references with a bar; the tone values listed; C's frames,
       |C| in the docstring and J5's refusal rule; a decidable tonal trigger; the bias caveat; the bootstrap's
       details. Adopted: w_c's weak identification, the delay-time expectation, the shared audio, C's DI use.
+    - *Product check's outcome (2026-11-03, zero renders, before the page's answers;
+      `judge-v5/product-check/product-check.json`):* 579 pairs from 52 development parts in 19 bands (no V-real or
+      NS): real amp-track references against dry plugin renders (K1's searched presets, SET3's template and S), every
+      effect off on the render side, aligned as each read did (J0 reproduces the stored values within 4.4e-6). Median
+      |C| 0.063 by pair, 0.081 by part, against the bar 0.064 (the fresh page's mean |C| at reverb mix 0.15): a
+      nominal pass by pair by 0.001 and a fail by part, so not a pass in substance. The diagnostics say why: |C|
+      grows with J0 (Spearman 0.43); two dry renders differing in tone or compressor give |C| 0.02–0.08; the halves
+      agree in sign on only 45% of pairs; live-room parts with bleed and parts whose real amp rings on read as
+      large; and on the fresh page itself every effect's C sits near 0 on half A (strummed without a fall) and
+      shows only on half B (clean reverb 0.15: 0.007 and 0.237). C finds time effects only where the playing falls,
+      and on real material it also reads tone, compression, room and bleed. The product's search does not move to
+      J5 as built; the page still answers whether adding an effect part fixes the judge's weighting in the plugin
+      domain, and a more robust effect part is the next research target either way.
 
 - **Decisions for the user, with the evidence:** whether to adopt the S fallback or the near-chance rule
   (steps 26, 27, 37), and whether to scale.
