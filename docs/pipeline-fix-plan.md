@@ -32,11 +32,15 @@ go-ahead for a combined, automatic judge. Declared next: J5, the judge plus a ca
 add (in-sample it removes most effect inversions, not the treble steps), checked on a fresh blind page with a
 chord DI and two other presets.
 The fresh page (F47): J5 − J0 −0.224 [−0.351, −0.063] (−0.135 [−0.259, +0.031] without the offline anchors); by
-the declared rule J5 is not adopted, and J0 stays. On this chord DI the effects were barely heard. A second pooled
-page or a stop is the user's choice (recommended: stop); effects follow song research in the product for now, and a
+the declared rule J5 is not adopted, and J0 stays. On this chord DI the effects were barely heard. Effects follow song research in the product for now, and a
 robust effect part stays a research target. Next: the approved real-amp recordings and a fresh real-song test,
 scored with J0.
-Findings F1–F47.
+The user chose to stop on J5 and take an effects route: a blind reader of reverb and delay on the separated stem.
+Its zero-render first test (F48): on the chord DI the product's own measures read neither effect, even without a
+backing (the echo detector abstains on strummed chords; the reverb rule fires rarely, and more often without a
+reverb). The echo leaves a trace at the known lag; whether a reader can find it blind is untested. The reader (E1)
+learns both, declared next.
+Findings F1–F48.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -1518,8 +1522,69 @@ instead of generating unrealistic presets our own?"):
     - *The page's outcome (2026-11-03, F47):* J5 − J0 −0.224 [−0.351, −0.063]: undecided by the declared rule and
       not adopted; wholly below 0 with the anchors, −0.135 [−0.259, +0.031] on the plugin controls alone. On this
       chord DI the effects were barely heard (clean reverb and delay 0.40 barely, the rest the same). The tonal
-      revision is not triggered. Adoption or a second pooled page is the user's choice (recommended: stop); J0
-      stays meanwhile.
+      revision is not triggered. The user chose to stop here (2026-11-03) and take the effects route below; J0
+      stays.
+  - *The effects route (2026-11-03, after F47, at the user's go-ahead; ledger `phase_fx_reader`).* The product
+    receives only the song (no DI), so a part that compares a render with the reference cannot set effects there;
+    and F44–F47 show J0's weighting of effects against tone does not hold across pages, and J5's carry-over part
+    did not fix it (undecided, leaning worse). So effects get their own step: a blind reader that measures reverb
+    and delay in the separated guitar stem and sets those controls. (Where the judge then compares tone, drive and
+    cab with effects matched on both sides is in evaluation, which has the DI; the song-only product has no J0.)
+    What the code has today, the rules in `match/invert.py`, used when match runs (a song or stem without a DI is
+    refused, `NO_DI_REFUSAL`, unless `--search-without-di`; on the song-only path effects follow song research):
+    a delay time and a feedback (from the repeat ratio, × 100) from the fingerprint's echo detector
+    (`analysis/features.time_effects`), below its confidence floor 0.15 the delay switched off, its mix left to
+    the search; the reverb left as the template has it on any played material, because the RT60 estimate follows
+    the notes' sustain (`research/study_rt60.py --switches`, on SW50R through two passages: on for 4 and 5 of 12
+    targets with a reverb, and for 5 and 4 of 12 without).
+    - **E0 (zero renders, exploratory, before any reader is built).** Do the product's own blind measures read the
+      effects through X-LANCE? *Data:* the separator check's stems (`judge-v5/separator-check/stems/xlance_g`, 84:
+      2 presets × 3 phase-5A backings × 2 guitar ratios × 7 renders: S; reverb mix 0.15 and 0.40 at decay 1.48,
+      reverb 0.40 at decay 3.0; delay mix 0.15 and 0.40 at 500 ms, delay 0.40 at 300 ms); htdemucs's 84 beside in
+      the same tables; the 14 renders without backing as the ceiling, and the S2 repeat renders as a second dry
+      case. All mono (channel-averaged renders), 48 kHz, 10 s, no mastering. Settings: delay sync off, feedback
+      0.30, ping-pong on, width 1, tape drive 0, band 132–2218 Hz; reverb pre-delay 60 ms, high cut 3,996 Hz, low
+      cut 161 Hz; the decay is the plugin's 1–60 scale, not checked to equal an RT60. *Call:*
+      `analysis.fingerprint.fingerprint(io.from_samples(stem, 48000), regime="separated_stem")` with the default
+      20 s excerpt (so the whole 10 s stem; loudness-normalised, a gain only), `time_fx` read. Against the
+      product: 10 s of a mono-summed render, where the product measures up to 20 s of a stereo song. The readout
+      script and the hash of `analysis/features.py` are committed before the run.
+      *Delay* (every stem's `delay_ms`, confidence, feedback estimate and `bpm_est` reported, whatever the floor):
+      per kind (12 stems), four outcomes: (a) reported at confidence ≥ 0.15 within ±5% of the set time (a
+      declared tolerance; the code's own is 1% in `fundamental()`; 285–315 and 475–525 ms do not overlap); (b)
+      within ±5% at confidence 0.14, the comb cap; (c) at 2× or ½× the set time; (d) none or elsewhere. A 500 ms
+      hit counts only where S of the same preset × backing × ratio does not report within ±5% of 500 ms (500 ms is
+      a quarter note at 120 BPM; if it is a whole number of the part's beats, the decay gate, repeat ratio ≥ 0.80,
+      can reject a real echo, so the 300 ms kind is the cleaner time test). False reports on S and the reverb stems
+      (48). The confidence by mix 0.15 against 0.40 in the 12 matched pairs; the feedback estimate against the set
+      0.30, by mix (it grows with the wet level by construction, so a rise is not skill).
+      *Reverb:* `rt60_s` and its confidence by kind; in matched pairs, how often it rises from S to reverb 0.40
+      and from decay 1.48 to 3.0. `reverb_from_rt60`'s decision applied counterfactually, as `study_rt60` does (the
+      product never applies it to a stem: `RT60_REGIMES = ("probe",)`): truth on = the 36 reverb stems, off = the
+      12 S stems and the 36 delay stems; its four outcomes (no tail; confidence < 0.3; RT60 below the 1 s floor;
+      on with a decay) by kind.
+      Every count also by preset × backing × ratio (a kind's 12 stems are 2 renders × 6 mixes, not 12 independent
+      readings). Secondary, not as the product runs it: the same on 0–5 s and 5–10 s separately (the DI falls
+      only in its second half; both detectors fit in 5 s). Counts reported, no bar (one DI, two presets, three
+      backings, plugin guitar, no mastering: descriptive). What it informs: which measures are candidates for E1
+      to test beside the learned reader, and which it must learn; one DI can show where a measure fails, not that
+      it works.
+    - *E0's outcome (2026-11-03, F48):* on this chord DI neither measure reads its effect, before or after
+      separation: the echo detector reports nothing on any of the 36 delay stems or the 6 delay renders on the
+      whole stem (the chords comb its band; at the known lag the echo leaves a trace, 2–3 times the dry level at
+      mix 0.40), and the reverb rule fires on 3 of 36 X-LANCE reverb stems and 10 of 48 without. E1 learns both.
+    - **E1 (outline; declared on its own after E0, reviewed before any render):** a blind reader trained on
+      self-built mixes across many verified DIs (renders with reverb and delay on or off at random mix, decay,
+      time and feedback, in phase-5A backings by the mix rule, stereo and mastered as the product's songs are,
+      separated by X-LANCE), predicting on/off, mix, decay, time and feedback. Held out by song/DI and by backing;
+      E0's Quicksand DI out of training; verified DIs only. Confounders varied in the training renders: the amps'
+      springs (whether the amp spring is in scope is stated), drive and compressor sustain, cab and room; tremolo,
+      chorus and doubler; delays synced to the part's beat; playing (sustained chords, single notes, with and
+      without falls). Labels: decay on the plugin's 1–60 scale, mix and feedback as the plugin's rotations; knob
+      error per control, with how an off item counts. Comparators: the no-skill reader (the training prior) and
+      the current measures (`time_effects` with `delay_settings`, and `reverb_from_rt60` counterfactually).
+      Effect sizes with intervals clustered by DI, then a few real songs by ear; what result puts the reader into
+      the product is stated in the declaration, with its renders and training time.
 
 - **Decisions for the user, with the evidence:** whether to adopt the S fallback or the near-chance rule
   (steps 26, 27, 37), and whether to scale.
@@ -3210,6 +3275,63 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   the masking mechanism stated as unseparated (C reads large where the ear heard the same); J0's limit stated as
   not holding across pages; the tone and effect comparisons with F44–F46 made precise; the follow-up left to the
   user; the effect part kept as a research target; J0 through stems stated fully; the 8 heard items; the budget.
+
+### F48. On this chord DI the product's blind measures read neither effect, before or after separation: the echo detector abstains, and the reverb rule fires rarely and more often without a reverb than with one (phase_fx_reader E0, exploratory)
+- **Result.** `learn/fx_reader.py e0` (zero renders; `analysis/features.py` sha256 e3da64ab…, unchanged before the
+  run; 184 items × 3 windows). *Delay:* on the whole stem the echo detector reports no delay at any confidence on
+  any of the 36 delay stems of either separator, nor on the 6 delay renders without backing, nor on the 48 S and
+  reverb stems: outcomes (a)–(c) are empty, the comb cap (b) never applies, and the detector abstains outright. So
+  the declared confidence-by-mix and feedback-against-0.30 readouts are empty (0 against 0). On the 5 s halves (not
+  as the product runs it) it reports 12 times, all at the comb cap 0.14 and all at wrong lags (72–240 ms): 3 on
+  X-LANCE and 5 on htdemucs reverb stems, 3 on one X-LANCE cell's delay stems, and one htdemucs delay stem at half
+  the set 500 ms. Why (`fx-reader/e0-delay-diagnostic.txt` on the 6 renders, and the results review's trace of the
+  detector's own gates on those and 6 X-LANCE stems; exploratory): the echo leaves a trace at the set time
+  (correlation prominence 0.20 at 500 ms and 0.24 at 300 ms at mix 0.40, against 0.07–0.12 on S; about 0.12 at mix
+  0.15; repeat ratio 0.62–0.69 there, under the 0.80 gate). But the chords comb the band (112–172 strong peaks on
+  the delay renders, 51–58 on S, against the cap of 12), the chord's own periodicity peaks at 42–73 ms are about
+  2.5 times taller, `fundamental()` walks the set-time candidate down to a shorter strong peak (about 150 ms for 300,
+  126 or 252 ms for 500), where the repeat ratio is mostly ≥ 0.80, and the envelope, which may veto on combed
+  material (and on crunch's flat envelope, 1.7–2.8 dB, anyway), shows no prominence at either set lag. In the trace
+  two X-LANCE cells keep the mix-0.40 trace at the set lag (0.16–0.19 at 500 ms, 0.20–0.23 at 300 ms, against
+  0.056–0.084 on S stems).
+  *Reverb:* `reverb_from_rt60`, counterfactually, on the whole stem: X-LANCE on for 3 of 36 reverb stems (8%) and
+  10 of 48 without (21%: S 2 of 12, delay 8 of 36); htdemucs 12 of 36 (33%) and 25 of 48 (52%); the renders
+  without backing 0 of 6 and 0 of 8 (confidence ≤ 0.29 against the rule's 0.3). All 13 X-LANCE fires are on the
+  clean preset with the eggy and starnes backings; crunch's whole-stem confidence is 0.2 (one release segment), so
+  on crunch the rule cannot fire; htdemucs's 37 are 28 clean, 9 crunch. When it fires on X-LANCE the RT60 is
+  7–12 s; the whole-stem median falls from 5.8 s on S to 3.5 s at reverb 0.40, and it rises from S to reverb 0.40
+  in 6 of 12 X-LANCE pairs (htdemucs 7, the renders 2 of 2). On the second half, which has one fall (confidence
+  0.2 is the code's value for a single release segment), the slope rises with decay (1.48 → 3.0 in 12 of 12
+  X-LANCE pairs; medians 0.80 → 1.17 s) and is higher at mix 0.40 than on S (0.80 against 0.52 s, 7 of 12 pairs),
+  but not at 0.15 (0.49), and delay 0.40 reads higher still (1.39 s; delay time 1.11), so it does not single out
+  reverb; htdemucs beside: S 1.59, 0.15 1.66, 0.40 5.31, decay 3.0 5.52 s (S → 0.40 10 of 12, 1.48 → 3.0 8 of 12);
+  the renders without backing 0.40, 0.42, 0.83, 1.06 s. `bpm_est` reads about 73–82 on the renders and 176–201 on
+  the reverb-decay stems. The repeat render S2 is bit-identical to S, so it adds no repeat-noise check.
+- **Reading.** Neither existing measure is a candidate as it stands on chord material. The delay detector abstains
+  by design: a ringing chord comb-fills its band, and its gates prefer no answer to a wrong one. The whole-stem
+  RT60 does not track the reverb (5.8 s on S, 3.5 s at reverb 0.40), consistent with `study_rt60`'s finding on
+  played passages. The failures are already there without a backing, so they start in the measures; with nothing
+  to lose, E0 cannot show what separation costs, though both separators add false reverb fires (X-LANCE 10 of 48,
+  htdemucs 25 of 48, against 0 of 8 without backing). The echo leaves a trace at the known lag: 2–3 times the dry
+  render's correlation at mix 0.40 without a backing (about 1.6 times at 0.15), kept in two X-LANCE cells.
+  Whether a reader can find it blind among the chord's peaks, at low mix and through a separator, is untested. One
+  DI shows where these measures fail, not where a better one would work.
+- **What it changes.** E1 must learn both effects rather than take either measure as given; the correlation at
+  candidate lags and release slopes on falls are candidate inputs beside the learned reader's own, and the current
+  measures stay its comparators. E1 is declared next, reviewed before any render.
+- **Caveats.** One chord DI, two presets, three backings, plugin guitar, 10 s mono-summed stems, no mastering:
+  descriptive. The diagnostic and the trace are on 6 renders and 6 stems, exploratory. A kind's 12 stems are 2
+  renders × 6 mixes. The script labels a reading within ±5% at a confidence neither ≥ 0.15 nor 0.14 as (d); it never
+  happens here.
+- **References.** `~/ndsp-presets/learn/trusted-data/judge-v5/fx-reader/e0.json` (every row and the summaries),
+  `e0-delay-diagnostic.py` and `.txt`, the review's trace `fx-reader/e0-review-trace.py`; code `learn/fx_reader.py`;
+  ledger `phase_fx_reader`, `phase_fx_reader_e0`.
+- *Results review (2026-11-03, independent):* approved with nine required changes, all made. It reproduced the
+  counts, medians, pair rises and the diagnostic, checked the run followed the committed script, and traced the
+  detector's gates. Required: the halves' reports and the htdemucs ½× stated correctly; the mechanism completed;
+  the delay trace's scope (known lag, mix 0.40, no backing); the release slope's limits; "fires more often without"
+  and the RT60 numbers; what E0 can say about separation; the by-cell breakdown and the empty readouts; a ROADMAP
+  typo.
 
 ## Budget
 

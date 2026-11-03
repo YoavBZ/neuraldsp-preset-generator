@@ -274,8 +274,14 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          −0.063]; −0.135 [−0.259, +0.031] without the offline shelf anchors), so it is not adopted and J0 stays.
          J0's weighting of effects against tone does not hold across pages (it under-counts effects on the
          single-note DI and over-counts large clean effects against +6 dB high shelves here). Effects follow song
-         research in the product for now; a robust effect part, read through stems, stays a research target. A
-         second pooled page or a stop is the user's choice (recommended: stop).
+         research in the product for now; a robust effect part, read through stems, stays a research target.
+         The user chose to stop there (2026-11-03).
+       - **The effects route (2026-11-03, F48):** a blind reader of reverb and delay on the separated guitar stem.
+         Its zero-render first test: on the chord DI the product's own measures read neither effect, even without
+         a backing (the echo detector abstains on strummed chords; the reverb rule fires rarely, and more often
+         without a reverb). The echo leaves a trace at the known lag; whether a reader finds it blind is untested.
+         Next: E1, a reader learned on self-built mixes across many DIs, declared and reviewed
+         before any render.
        - **Next (2026-11-03):** the approved real-amp recordings, scored with J0, and, as the user chose, the per-recording reading, with FT's
          recipe as the base (chosen on read 2, BKS −0.055; on V-real FT is not shown different from D_fix): many more real-amp labelled recordings (captures on verified DIs, as GOAT) and a fresh,
          larger real-song test (V-real-11 is ±0.07 and now read for two candidates). Domain work and community
@@ -1355,3 +1361,4 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-11-03 | Pipeline fix F45, the headphone recheck (the first page was heard on phone speakers; declared and reviewed; 0 renders, 13 items): the mis-weighting holds and grows (21 distinct inversions against 14); every large effect re-heard (5 of 6) heard clearly or very, the treble steps and clean drive same or barely. The judge revision goes ahead | [plan](pipeline-fix-plan.md) F45, [ledger](dev-test-ledger.json) `phase_judge_ear_recheck*` |
 | 2026-11-03 | Pipeline fix F46, the judge revision's zero-render stage (declared and reviewed): tone shelves of 6 dB mostly barely heard on headphones (1 of 6 clearly; +12 dB very); neither candidate (loudness-weighted bands; a decay part, untested on this DI) removes any of the 8 within-preset mismatches, so neither is built and the decisive page is not run. The judge stays with its limit stated; next is the user's choice | [plan](pipeline-fix-plan.md) F46, [ledger](dev-test-ledger.json) `phase_judge_ear_v4*` |
 | 2026-11-03 | Pipeline fix F47, the combined judge J5 on a fresh blind page (declared, frozen and reviewed before any render; 28 kept renders, 30 items, headphones): J5 − J0 −0.224 [−0.351, −0.063] (plugin controls alone −0.135 [−0.259, +0.031]), undecided by the rule and not adopted. On this chord DI the effects were barely heard. Beside: C misreads real references (product check); through X-LANCE stems the wet signal mostly survives but the stem's error dominates the judge (separator check). J0 stays; a second page or a stop is the user's choice. Next: the real-amp recordings and a fresh real-song test | [plan](pipeline-fix-plan.md) F47, [ledger](dev-test-ledger.json) `phase_judge_v5*` |
+| 2026-11-03 | Pipeline fix F48, the effects route's first test (zero renders, exploratory; declared and reviewed): the product's blind measures on the separator check's stems. The echo detector reports no delay on any of the 36 delay stems or the 6 delay renders without backing (strummed chords comb its band); the reverb rule fires on 3 of 36 X-LANCE reverb stems and 10 of 48 without. The echo leaves a trace at the known lag (2–3× dry at mix 0.40, no backing); whether a reader finds it blind is untested. The reader learns both. Next: E1 | [plan](pipeline-fix-plan.md) F48, [ledger](dev-test-ledger.json) `phase_fx_reader*` |
