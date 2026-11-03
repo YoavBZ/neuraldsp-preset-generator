@@ -702,9 +702,10 @@ was declared, what was measured, and the research behind it.
     statistic, not its size). The main catch for captures is input level. Research, not a declared
     plan.
 22. [perceptual-measures-2026-11.md](research/perceptual-measures-2026-11.md): which open
-    perceptual difference measures could rate two guitar renders as the ear does, after F44 found
-    the judge weighs treble and drive above the ear and reverb below it (November 2026; nothing
-    installed or run). No open measure has been tested against listeners on guitar setting
+    perceptual difference measures could rate two guitar renders as the ear does, after F44 and
+    F45 (headphones) found the judge weighs treble above the ear and the effects below it
+    (November 2026; nothing installed or run). The project's exploratory Zwicker loudness and
+    CDPAM rows already put the treble steps top 3 (F45). No open measure has been tested against listeners on guitar setting
     changes, so the ranking is a prediction: HAAQI (pyclarity, MIT; read its sub-terms, may
     over-score input gain), PEAQ's separate outputs (GstPEAQ, the only open advanced version), and
     reverb cues (an impulse response estimated between the two renders, in just-noticeable
@@ -712,5 +713,5 @@ was declared, what was measured, and the research behind it.
     one kind of change against another as the ear does is untested. Corrects two claims in round
     4's A-closeness (MoSQITo has no fluctuation strength; HAAQI's bands stop at 8 kHz) and narrows
     its sharpness term to recordings. Checks: ODAQ for the code, Osses's reverberance set and
-    TONE3000's A2 ratings for the answer; F44's 24 pairs only screen, the test is a fresh blind
-    page. Research, not a declared plan.
+    TONE3000's A2 ratings for the answer; F44's and F45's answers only screen, the test is a
+    fresh blind page. Research, not a declared plan.
