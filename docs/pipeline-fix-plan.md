@@ -56,7 +56,12 @@ picker (57% within ±10%, 84% on the strongest third; on the faintest third its 
 tells delay on from off at 0.92 there; E0's stems mostly tested their chord DI, on which it fails even without a
 backing. Next, E1e: the wide draws' mixes rebuilt and
 re-separated (zero renders), the cepstrum read on their stems.
-Findings F1–F51.
+E1e (F52): on those stems the cepstrum hits the delay time 22% of the time (the picker 14%), but its error is
+worse than a guess's and a confident peak does not say when it is right: delay time does not read on the stem.
+The loss is the backing's. By the declared branch the masking renders are proposed, not run; the choice between
+them and the main line (the approved real-amp recordings and a fresh real-song test) is the user's. Effects follow
+song research in the product meanwhile.
+Findings F1–F52.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -1759,6 +1764,9 @@ instead of generating unrealistic presets our own?"):
       *Review (2026-11-03, independent, before scoring):* three required changes, all made: failed rebuilds dropped
       in the scorer, not only counted; "step 2 tested the DI" softened (the crunch 300 ms cell); F51's weak third
       and secondary range errors added. Also adopted: the arm-sensitive reading, the picker-pairing caveat.
+    - *E1e's outcome (2026-11-03, F52):* time does not read on the stem (the primary arm's hits +0.085 [+0.029,
+      +0.157] over the picker, its error +0.309 [+0.210, +0.383] over the prior) nor on the mix: masking (declared
+      branch). The masking renders are proposed, not run; the user chooses between them and the main line.
     - **E1b (outline; declared on its own after E1a, reviewed before any render):** what E1a leaves open, with
       renders: stereo and mastered mixes as the product's songs are (new work: the self-built mixes are mono),
       more verified DIs (E0's Quicksand DI out of training), a backing split, the confounders varied (the amps'
@@ -3693,6 +3701,45 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   as `score-as-run.json`; the refactored scorer reproduces it exactly); code `learn/fx_reader.py` (`cepstrum`,
   `cep_pick`, `cep_readouts`, `cmd_e1d`); research `docs/research/blind-reverb-delay-2026-11.md`; ledger
   `phase_fx_reader_e1d`, `phase_fx_reader_e1d_outcome`.
+
+### F52. On the rebuilt, re-separated stems the cepstrum hits the delay time more often than the picker (22% against 14%) but its error stays worse than a guess's, and a confident peak does not help: delay time does not read on the stem (phase_fx_reader E1e)
+- **Result.** `learn/fx_reader.py e1e-build`, `e1e-score` (zero renders; 770 wide draws rebuilt by D_CC's recipe,
+  every mix's stored features reproduced exactly, the re-separated stems' features within 0.01 of the stored ones;
+  about 60 minutes of X-LANCE). Wide delay-ons (402; the wide median 7.2% within ±10%, log2 MAE the reference):
+  | wide delay-ons | stem, minus the delay-off mean (primary) | stem, plain | mix, minus the mean | mix, plain |
+  |---|---|---|---|---|
+  | within ±10% (picker) | 22.1% (13.7%) | 19.4% | 12.7% (6.7%) | 16.4% |
+  | minus the picker [90%] | +0.085 [+0.029, +0.157] | +0.057 [+0.018, +0.115] | +0.060 [+0.019, +0.118] | +0.097 [+0.026, +0.146] |
+  | log2 MAE minus the prior | +0.309 [+0.210, +0.383] | +0.335 [+0.246, +0.383] | +0.304 [+0.235, +0.364] | +0.314 [+0.215, +0.432] |
+  | Spearman | 0.04 | 0.04 | 0.18 | 0.07 |
+  | strong third: within ±10% (prior 4.5%) | 28.4% | 26.9% | 18.7% | 24.6% |
+  | peak-height AUC, strong third (E1a's reader 0.614) | 0.589 [0.509, 0.635] | 0.574 | 0.548 | 0.583 |
+  The weak third is not shown above the prior (primary 13.4% against 10.4%, +0.030 [−0.010, +0.055]); on the strong
+  third the primary arm's error against the prior is undecided (+0.200 [−0.019, +0.310]). *Audit (exploratory, post hoc;
+  `e1e/audit/confidence.py`):* by quartile of the stem's peak height the hits run 8%, 20%, 34%, 27%, while 21% of
+  the delay-offs reach the top quartile's height; the mix 14%, 12%, 9%, 16%.
+- **Reading.** By the declared rule time does not read on the stem (hits beat the picker, +0.085, but the error is
+  worse than the prior's, +0.309) nor on the mix: on these stems the cepstrum is right about one time in five and
+  far off otherwise, and its peak height does not pick out the hits (at most 34% in any quartile; 21% of the offs
+  reach the top quartile; post hoc). Its on/off height (0.59) is not better than E1a's learned reader (0.614, the
+  same mask, unpaired). The clean targets read (57%, F51), so
+  the loss is the backing's (the declared branch: masking). Separation adds a few hits on the primary arm (stem minus mix +0.095 [+0.067,
+  +0.141], paired, band bootstrap); on the plain arm it is undecided (+0.030 [−0.010, +0.128]; the review's
+  `e1e/audit/sep.py`). Delay time joins reverb decay and the knobs: no blind reading
+  from the separated stem yet, by a learned reader, a lag picker or the cepstrum.
+- **What it changes.** By the declared branch the masking renders (E1b with a backing split, stem and mix audio
+  stored) are proposed, not run: they cost renders and separation, and after F49–F52 the effects route's best
+  result on the stem is on/off at about 0.6. Effects follow song research in the product meanwhile (as since F47).
+  The choice between them and the main line (the approved real-amp recordings and a fresh real-song test) is the
+  user's.
+- **Caveats.** The wide draws only; mono 10 s mixes; one separator; the primary arm chosen after F51; the audit's
+  quartiles are post hoc.
+- **References.** `~/ndsp-presets/learn/trusted-data/judge-v5/fx-reader/e1e/score.json`, `build-rows.jsonl`,
+  `audit/confidence.py` and `.json`, audio `e1e/audio/` (770 mixes and stems, kept for later tests); code
+  `learn/fx_reader.py`; ledger `phase_fx_reader_e1e`, `phase_fx_reader_e1e_outcome`.
+- *Results review (2026-11-03, independent):* approved with four required changes, all made: the weak third not
+  shown above the prior; the gate claim narrowed to what the audit measured; separation's share with its paired
+  intervals; the build time. Also adopted: the strong third's undecided error, "not better" for the AUC.
 
 ## Budget
 
