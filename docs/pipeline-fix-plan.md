@@ -1703,15 +1703,25 @@ instead of generating unrealistic presets our own?"):
       difference against the picker has its interval wholly below 0. *Step 2,* E0's 84 stored X-LANCE stems (one
       chord DI, 2 renders × 6 mixes per kind): on each delay set (300 ms at mix 0.40, 500 ms at 0.40, 500 ms at
       0.15; 12 stems each) the hits within ±10% of the set time, against the 12 S stems' picks at that lag and
-      chance (about 8% for a log-uniform guess over 60–800 ms); the subtraction arm takes E0's 48 S and reverb
-      stems as its offs (in-sample, stated). *Clearly* (declared before reading): at least 4 of 12 hits on a mix-0.40
-      set (4× chance; about 1.5% by chance alone) with the S stems hitting that lag at most once. *What follows:*
-      step 1 stopping, or step 2 not clearly → F50's verdict extends to the cepstrum on these stems, and the
-      deferred masking renders (E1b, storing stem and mix audio) are proposed next. Step 2 clearly → E1e is
+      chance (about 8% for a log-uniform guess over 60–800 ms). The subtraction arm takes E0's 48 S and reverb
+      stems as its offs, which hold the S stems themselves and share the DI, presets and backings (a reference the
+      product never has), so on step 2 it is descriptive only. *Positive control:* the same plain pick on E0's
+      stored renders without backing (`judge-v5/renders/{clean,crunch}-{S,delay-time,delay-large,delay-small}.npy`),
+      so a step-2 failure can be laid on separation and backing rather than on this chord DI and the Morgan delay;
+      if the control misses the set time on both mix-0.40 renders of both classes, step 2 says nothing about
+      separation. *Clearly* (declared before reading; the plain arm, counted only if it did not stop in step 1): at
+      least 4 of 12 hits on either mix-0.40 set (two chances; about 1.1% a set by chance alone, under a binomial
+      the 12 stems, sharing one DI, do not strictly meet) with the S stems hitting that lag at most once. *What
+      follows:* step 1 stopping, or step 2 not clearly → F50's verdict extends to the cepstrum on these stems, and
+      the deferred masking renders (E1b, storing stem and mix audio) are proposed next. Step 2 clearly → E1e is
       declared: the 770 wide draws' mixes rebuilt on CPU (`trusted_data.self_built_mix`, zero renders) and
-      re-separated (X-LANCE about 55 minutes on MPS), passing if the stem's hits beat the picker's 13.7% with a log2
-      MAE below the prior's; then the feedback readout. *Caveats:* the method is demonstrated (one vocal echo), not
+      re-separated (X-LANCE about 55 minutes on MPS), passing if on the stem the cepstrum's hits beat the picker's
+      on the same items (paired interval above 0) with a log2 MAE below the prior's; then the feedback readout. *Caveats:* the method is demonstrated (one vocal echo), not
       proven; step 2 is one chord DI, two presets, three backings, with the mix law of the Morgan delay unknown.
+      *Review (2026-11-03, independent, before any run):* three required changes, all made: the subtraction arm
+      descriptive on step 2 (its offs hold the S stems); how arms and sets combine, and the chance level per set; a
+      positive control on the renders without backing. Also adopted: an interval on the all-draw height AUC, and
+      E1e's pass rule paired against the picker.
     - **E1b (outline; declared on its own after E1a, reviewed before any render):** what E1a leaves open, with
       renders: stereo and mastered mixes as the product's songs are (new work: the self-built mixes are mono),
       more verified DIs (E0's Quicksand DI out of training), a backing split, the confounders varied (the amps'

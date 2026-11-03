@@ -873,6 +873,7 @@ def cmd_e1d(args):
         s_ = hgt[a]
         offs = wide & ~don
         out["targets"][a]["height_auc_all"] = auc(don[wide], s_[wide])
+        out["targets"][a]["height_auc_all_ci"] = ci(lambda b: auc(don[b][wide[b]], s_[b][wide[b]]))
         m = offs | parts["strong_third"]
         out["targets"][a]["height_auc_strong"] = auc(don[m], s_[m])
         out["targets"][a]["height_auc_strong_ci"] = ci(lambda b: auc(don[b][m[b]], s_[b][m[b]]))
@@ -897,9 +898,16 @@ def cmd_e1d(args):
             d[a] = {"n": len(dl), "hits": int(sum(abs(t / ms - 1) <= 0.10 for t in dl)),
                     "s_hits_at_lag": int(sum(abs(t / ms - 1) <= 0.10 for t in sl)), "n_s": len(sl),
                     "times_ms": [round(t, 1) for t in dl], "s_times_ms": [round(t, 1) for t in sl]}
-            d[a]["clearly"] = bool(d[a]["hits"] >= E1D_CLEAR[0] and d[a]["s_hits_at_lag"] <= E1D_CLEAR[1])
+            if a == "plain":     # the subtraction arm's offs hold these S stems themselves: descriptive only
+                d[a]["clearly"] = bool(d[a]["hits"] >= E1D_CLEAR[0] and d[a]["s_hits_at_lag"] <= E1D_CLEAR[1])
         stems[setname] = d
     out["e0_stems"] = stems
+    # positive control: E0's renders without backing (one per class), the plain pick
+    ctrl = {}
+    for c in CLASSES:
+        for k in ("S", "delay-time", "delay-large", "delay-small"):
+            ctrl[f"{c}-{k}"] = round(cep_pick(cepstrum(np.load(ROOT / "renders" / f"{c}-{k}.npy")))[0], 1)
+    out["e0_renders_no_backing"] = ctrl
     (E1D / "score.json").write_text(json.dumps(out, indent=1))
     print(json.dumps(out, indent=1)[:6000])
 
