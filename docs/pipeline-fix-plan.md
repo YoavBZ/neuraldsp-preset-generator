@@ -50,7 +50,13 @@ few hits on the strongest delays); on the clean target the head matches the pick
 the stored features the echo's time is lost when the backing is added, and E1b is not declared. Next: the cloud
 researcher's survey of proven blind effect-estimation tools (asked at the user's prompt) decides whether an
 existing estimator is tested on rebuilt, re-separated stems (zero renders), or finer features are built.
-Findings F1–F50.
+The survey found no proven tool (none reads guitar effect settings from chords in a mix). Its cheapest idea, a
+long-window cepstrum (F51, zero renders, no training): on the clean targets it reads delay time better than the
+picker (57% within ±10%, 84% on the strongest third; on the faintest third its error is worse than a guess's) and
+tells delay on from off at 0.92 there; E0's stems mostly tested their chord DI, on which it fails even without a
+backing. Next, E1e: the wide draws' mixes rebuilt and
+re-separated (zero renders), the cepstrum read on their stems.
+Findings F1–F51.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -1689,6 +1695,70 @@ instead of generating unrealistic presets our own?"):
       loss: for these readers on the stored features the time is lost when the backing is added, separation
       recovering a few hits. E1b is not declared; the declared masking branch is deferred until the survey of
       proven blind estimators is in.
+    - **E1d (2026-11-03, zero renders, no training, no download; declared after the cloud researcher's survey,
+      `docs/research/blind-reverb-delay-2026-11.md`, which found no proven blind estimator; ledger
+      `phase_fx_reader_e1d`).** Does an audio-domain, finer-resolution measure read delay time where the stored
+      log-mels did not? `learn/fx_reader.py e1d`: the real cepstrum averaged over Hann-windowed 2^17-sample frames
+      (2.7 s, 0.5 s hop), lags under 40 ms dropped (the chord's pitch), the highest peak in 60–800 ms (the draw's
+      range; 40–1,500 ms secondary) is the time, its height the on/off score; a second arm subtracts the mean
+      cepstrum of the training songs' wide delay-offs (leave one song out). *Step 1,* the stored clean targets of the
+      770 wide draws (CPU minutes): on the 402 delay-ons, within ±10% (±3% secondary), log2 MAE and Spearman, each
+      paired against F49's picker on the same items and against the training songs' wide-draw median, overall and
+      by thirds of delay mix; double and half lags apart; peak-height AUC on all wide draws and on the strong third
+      against all wide offs; 90% intervals from 2,000 band resamples (seed 20261108). The arm stops if its hits'
+      difference against the picker has its interval wholly below 0. *Step 2,* E0's 84 stored X-LANCE stems (one
+      chord DI, 2 renders × 6 mixes per kind): on each delay set (300 ms at mix 0.40, 500 ms at 0.40, 500 ms at
+      0.15; 12 stems each) the hits within ±10% of the set time, against the 12 S stems' picks at that lag and
+      chance (about 8% for a log-uniform guess over 60–800 ms). The subtraction arm takes E0's 48 S and reverb
+      stems as its offs, which hold the S stems themselves and share the DI, presets and backings (a reference the
+      product never has), so on step 2 it is descriptive only. *Positive control:* the same plain pick on E0's
+      stored renders without backing (`judge-v5/renders/{clean,crunch}-{S,delay-time,delay-large,delay-small}.npy`),
+      so a step-2 failure can be laid on separation and backing rather than on this chord DI and the Morgan delay;
+      if the control misses the set time on both mix-0.40 renders of both classes, step 2 says nothing about
+      separation. *Clearly* (declared before reading; the plain arm, counted only if it did not stop in step 1): at
+      least 4 of 12 hits on either mix-0.40 set (two chances; about 1.1% a set by chance alone, under a binomial
+      the 12 stems, sharing one DI, do not strictly meet) with the S stems hitting that lag at most once. *What
+      follows:* step 1 stopping, or step 2 not clearly → F50's verdict extends to the cepstrum on these stems, and
+      the deferred masking renders (E1b, storing stem and mix audio) are proposed next. Step 2 clearly → E1e is
+      declared: the 770 wide draws' mixes rebuilt on CPU (`trusted_data.self_built_mix`, zero renders) and
+      re-separated (X-LANCE about 55 minutes on MPS), passing if on the stem the cepstrum's hits beat the picker's
+      on the same items (paired interval above 0) with a log2 MAE below the prior's; then the feedback readout. *Caveats:* the method is demonstrated (one vocal echo), not
+      proven; step 2 is one chord DI, two presets, three backings, with the mix law of the Morgan delay unknown.
+      *Review (2026-11-03, independent, before any run):* three required changes, all made: the subtraction arm
+      descriptive on step 2 (its offs hold the S stems); how arms and sets combine, and the chance level per set; a
+      positive control on the renders without backing. Also adopted: an interval on the all-draw height AUC, and
+      E1e's pass rule paired against the picker.
+    - *E1d's outcome (2026-11-03, F51):* on the clean targets the cepstrum reads time (57.2% within ±10% with the
+      delay-off subtraction, +0.137 [+0.086, +0.166] over the picker, error below the prior and the picker), so it
+      does not stop; on E0's stems not clearly (0 of 12 on every set), but its positive control misses 3 of 4
+      mix-0.40 renders without backing (the chord DI's own 72.8 ms peak), so step 2 mostly tested the DI (where the
+      control reads, crunch at 300 ms, the stems hit 0 of 6: weak evidence in F50's direction).
+      Amended (post hoc): E1e before the masking renders.
+    - **E1e (2026-11-03, zero renders, an amendment after F51; ledger `phase_fx_reader_e1e`).** Does the cepstrum
+      read delay time on the D_CC stems where it reads on their targets? `learn/fx_reader.py e1e-build`
+      (msst-venv): the 770 wide draws' mixes rebuilt by D_CC's own build recipe (the stored target and other
+      guitars, the section's stems, `trusted_data.self_built_mix` with its seeded mastering) and re-separated by
+      X-LANCE on MPS, mix and stem saved as audio (about 3 GB). Each rebuild is checked: the mix's uint8 half
+      log-mels must equal the stored ones (an item that does not is dropped and counted); the stem's feature
+      difference is logged (both were exact on a two-item smoke run). The build only writes audio and runs before
+      this declaration's review; scoring waits for it. `e1e-score`: E1d's step-1 readouts on the stem and the mix
+      (both arms; the subtraction arm's offs are the training songs' wide delay-offs of the same input, leave one
+      song out), paired against F49's picker on that input (stem 13.7%, mix 6.7%) and the wide-draw median.
+      *Primary:* the subtraction arm (the better on the targets, chosen after F51), the plain arm beside. *Rule:*
+      time reads on the stem if the primary arm's within-±10% difference against the picker has its interval
+      above 0 and its log2 MAE difference against the wide-draw median has its interval below 0. *What follows:*
+      it reads → the feedback readout (the doubled real cepstrum at twice the time) is tested next on the same
+      audio, and E1b is declared for the product's case (renders: stereo and mastered mixes, more DIs, synced
+      delays, the confounders; stem and mix audio stored). It does not, but the mix does by the same rule → the
+      separator's share (fine-tuning only). Neither → the backing's masking, and E1b's masking renders (a backing
+      split, audio stored) are proposed. If the primary arm passes and the plain arm's hit interval reaches 0, it is
+      reported as "reads, arm-sensitive". Peak-height AUC on the stem, descriptive, beside E1a's 0.614 (the same
+      mask). *Caveats:* F51's; the primary arm chosen after seeing the targets; one separator; mono mixes; the
+      picker reads the stored features of the original separation, the cepstrum the re-separated stem (their
+      feature difference is logged per item); the scorer refuses to run if any wide item lacks its row or audio.
+      *Review (2026-11-03, independent, before scoring):* three required changes, all made: failed rebuilds dropped
+      in the scorer, not only counted; "step 2 tested the DI" softened (the crunch 300 ms cell); F51's weak third
+      and secondary range errors added. Also adopted: the arm-sensitive reading, the picker-pairing caveat.
     - **E1b (outline; declared on its own after E1a, reviewed before any render):** what E1a leaves open, with
       renders: stereo and mastered mixes as the product's songs are (new work: the self-built mixes are mono),
       more verified DIs (E0's Quicksand DI out of training), a backing split, the confounders varied (the amps'
@@ -3581,6 +3651,48 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   branch labelled as post hoc, with the head's loss curves and argmax errors that support it; "the separator does
   not recover it" corrected (the stem's picker beats the mix's); the ROADMAP's "matches the picker" narrowed to
   hits; "stored stems" corrected (only log-mels are stored for stems and mixes); the strong third's chance level.
+
+### F51. A long-window cepstrum reads delay time on the clean targets, better than the picker (57% within ±10% on the wide delay-ons, 84% on the strong third); E0's stems mostly test that chord DI, on which the method fails even without a backing (phase_fx_reader E1d)
+- **Result.** `learn/fx_reader.py e1d` (zero renders, no training; under a minute on CPU). *Step 1,* the stored
+  clean targets, 402 wide delay-ons (the wide median 7.2% within ±10%, the picker 43.5%):
+  | targets, wide delay-ons | plain | minus the training songs' delay-off mean |
+  |---|---|---|
+  | within ±10% (±3%) | 53.7% (51.7%) | 57.2% (55.0%) |
+  | minus the picker [90%] | +0.102 [+0.057, +0.128] | +0.137 [+0.086, +0.166] |
+  | log2 MAE minus the prior | −0.236 [−0.303, −0.170] | −0.305 [−0.391, −0.243] |
+  | log2 MAE minus the picker | −0.097 [−0.177, −0.004] | −0.166 [−0.229, −0.095] |
+  | Spearman (picker 0.41) | 0.38 | 0.46 |
+  | strong third: within ±10%, Spearman (picker 65.7%, 0.66) | 80.6%, 0.72 | 83.6%, 0.81 |
+  | weak third: within ±10% (picker 21.6%) | 19.4% | 23.9% |
+  | peak height AUC, all wide draws; strong third | 0.763 [0.732, 0.797]; 0.910 [0.884, 0.934] | 0.777 [0.747, 0.813]; 0.920 [0.896, 0.944] |
+  Double lags 8%, half lags 3–4%. On the weak third the error is worse than the prior's (log2 MAE +0.358 [+0.236,
+  +0.487] plain, +0.277 [+0.160, +0.355] minus the mean): where the echo is faint the pick lands far off. Over
+  40–1,500 ms (secondary) 47.3% and 49.8%, the plain arm's error there worse than the picker's (+0.153 [+0.061,
+  +0.255]). The arm does not stop. *Step 2,* E0's
+  84 X-LANCE stems (one chord DI): the plain pick hits the set time on 0 of 12 stems in every delay set (300 ms and
+  500 ms at mix 0.40, 500 ms at 0.15); delay and S stems alike pick 60.8–84.9 ms, the chord's own peaks just above
+  the 40 ms floor; not *clearly*. Descriptive, the subtraction arm (its offs hold these S stems): 2 of 12 at 300 ms
+  (300.1, 299.8 ms), 0 at 500 ms. *Positive control,* the renders without backing: only crunch's 300 ms render
+  hits (299.9 ms); the other three mix-0.40 renders, the mix-0.15 ones and both S pick 72.8 ms.
+- **Reading.** On the clean targets the cepstrum reads delay time, clearly better than the picker on hits and
+  error, and its peak height tells delay on from off better than any reader so far (0.92 on the strong third,
+  against E1a's learned target reader's 0.80). Subtracting the training songs' delay-off mean helps (it removes
+  the guitar's own cepstral peaks shared across songs). By the declared rule step 2 is not clearly, and since the
+  control hit one of its four mix-0.40 renders, step 2 formally counts, which by the declared branch would extend
+  F50's verdict and propose the masking renders. But the control shows the method failing on E0's chord DI without
+  any backing (1 of 4; the DI's 72.8 ms peak wins), so step 2 mostly tested the DI. In the one cell where the
+  control reads (crunch, 300 ms) the stems hit 0 of 6 (the subtraction arm 1 of 6): weak evidence in F50's
+  direction, from one DI and one preset.
+  *Amendment (post hoc, reviewed before scoring):* E1e, the stem test on the D_CC wide draws themselves, where the
+  cepstrum reads on the targets, comes before the masking renders; it costs zero renders and about 75 minutes of
+  X-LANCE.
+- **Caveats.** Thirds and arms chosen as declared; the subtraction arm's gain is in-sample in its choice (both
+  arms were declared, the primary for E1e is picked after this result). Mono 10 s targets; the wide draws only.
+  The E0 control is two renders per kind.
+- **References.** `~/ndsp-presets/learn/trusted-data/judge-v5/fx-reader/e1d/score.json` (the run's own output kept
+  as `score-as-run.json`; the refactored scorer reproduces it exactly); code `learn/fx_reader.py` (`cepstrum`,
+  `cep_pick`, `cep_readouts`, `cmd_e1d`); research `docs/research/blind-reverb-delay-2026-11.md`; ledger
+  `phase_fx_reader_e1d`, `phase_fx_reader_e1d_outcome`.
 
 ## Budget
 
