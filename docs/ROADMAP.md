@@ -267,12 +267,16 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          mismatches, so neither is built. The judge stays, with its limit stated: on single-control changes it
          ranks tone changes this listener barely hears above effects heard clearly, and the reads never scored
          effects (off in S and the models).
-       - **Next (2026-11-03):** the product must reach the most accurate preset with no human in the loop (the
-         user), so the judge cannot keep F46's limit; ear pages are for development only. Declared: J5, the judge
-         plus a carry-over part for what time effects add (in-sample it removes 14 of 18 effect-below-tone/drive
-         inversions, not the treble steps or crunch drive; a decided result on one page is unlikely, about 15–30%), checked on a fresh blind page (a chord DI, AC20 clean and PR12 crunch); a tonal revision follows
-         if that page still shows tone mis-weighted. Then the approved real-amp recordings, scored with the adopted
-         judge, and, as the user chose, the per-recording reading, with FT's
+       - **The combined judge (2026-11-03, F47):** the product must reach the most accurate preset with no human
+         in the loop (the user), so J5 was tried: the judge plus a carry-over part for what time effects add,
+         fitted on the single-note pages and checked on a fresh blind page (a chord DI, AC20 clean and PR12
+         crunch). On these chords the effects were barely heard; J5 ranked the page worse than J0 (−0.224 [−0.351,
+         −0.063]; −0.135 [−0.259, +0.031] without the offline shelf anchors), so it is not adopted and J0 stays.
+         J0's weighting of effects against tone does not hold across pages (it under-counts effects on the
+         single-note DI and over-counts large clean effects against +6 dB high shelves here). Effects follow song
+         research in the product for now; a robust effect part, read through stems, stays a research target. A
+         second pooled page or a stop is the user's choice (recommended: stop).
+       - **Next (2026-11-03):** the approved real-amp recordings, scored with J0, and, as the user chose, the per-recording reading, with FT's
          recipe as the base (chosen on read 2, BKS −0.055; on V-real FT is not shown different from D_fix): many more real-amp labelled recordings (captures on verified DIs, as GOAT) and a fresh,
          larger real-song test (V-real-11 is ±0.07 and now read for two candidates). Domain work and community
          presets stay open.
@@ -1350,3 +1354,4 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-11-03 | Pipeline fix F44, the judge against the ear (the user asked whether drive and reverb weigh as they sound; declared, amended before any answer, reviewed; 60 renders, 26 blind pairs): the judge weighs treble well above the ear, drive above it and reverb below it (14 inversions; Spearman 0.43; descriptive). Next proposed: a revised judge checked on a fresh blind page before more recordings are scored | [plan](pipeline-fix-plan.md) F44, [ledger](dev-test-ledger.json) `phase_judge_ear*` |
 | 2026-11-03 | Pipeline fix F45, the headphone recheck (the first page was heard on phone speakers; declared and reviewed; 0 renders, 13 items): the mis-weighting holds and grows (21 distinct inversions against 14); every large effect re-heard (5 of 6) heard clearly or very, the treble steps and clean drive same or barely. The judge revision goes ahead | [plan](pipeline-fix-plan.md) F45, [ledger](dev-test-ledger.json) `phase_judge_ear_recheck*` |
 | 2026-11-03 | Pipeline fix F46, the judge revision's zero-render stage (declared and reviewed): tone shelves of 6 dB mostly barely heard on headphones (1 of 6 clearly; +12 dB very); neither candidate (loudness-weighted bands; a decay part, untested on this DI) removes any of the 8 within-preset mismatches, so neither is built and the decisive page is not run. The judge stays with its limit stated; next is the user's choice | [plan](pipeline-fix-plan.md) F46, [ledger](dev-test-ledger.json) `phase_judge_ear_v4*` |
+| 2026-11-03 | Pipeline fix F47, the combined judge J5 on a fresh blind page (declared, frozen and reviewed before any render; 28 kept renders, 30 items, headphones): J5 − J0 −0.224 [−0.351, −0.063] (plugin controls alone −0.135 [−0.259, +0.031]), undecided by the rule and not adopted. On this chord DI the effects were barely heard. Beside: C misreads real references (product check); through X-LANCE stems the wet signal mostly survives but the stem's error dominates the judge (separator check). J0 stays; a second page or a stop is the user's choice. Next: the real-amp recordings and a fresh real-song test | [plan](pipeline-fix-plan.md) F47, [ledger](dev-test-ledger.json) `phase_judge_v5*` |
