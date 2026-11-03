@@ -249,3 +249,24 @@ def test_the_recheck_refuses_without_its_ledger_key(monkeypatch):
     with pytest.raises(SystemExit):
         J.require_recheck()
     assert J.LEDGER_KEY in seen and J.AMENDMENT_KEY in seen
+
+
+@pytest.mark.parametrize("kind,db", [("low", -6), ("low", 6), ("high", 6), ("high", 12), ("high", -3)])
+def test_rbj_shelves_have_their_declared_gain(kind, db):
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("scipy")
+    from scipy.signal import freqz
+
+    b, a = J.rbj_shelf(kind, J.SHELF_HZ[kind], db)
+    w, h = freqz(b, a, worN=[20.0, 23900.0], fs=48000)
+    lo, hi = 20 * np.log10(np.abs(h))
+    shelf, flat = (lo, hi) if kind == "low" else (hi, lo)
+    assert abs(shelf - db) < 0.3 and abs(flat) < 0.3
+
+
+def test_anchor_items_are_declared():
+    assert len(J.ANCHORS) == 9 and len(J.ANCHOR_PAIRS) == 2
+    six = [a for a in J.ANCHORS if abs(a[2]) == 6]
+    assert len(six) == 6 and ("clean", "high", 12) in J.ANCHORS
+    assert J.anchor_id("crunch", "low", 6) == "crunch-anchor-low+6"
+    assert J.key_path("/r", anchors=True) not in (J.key_path("/r"), J.key_path("/r", recheck=True))

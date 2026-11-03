@@ -13,6 +13,8 @@ S rendered again). Per pair the judge's distance and a blind A/B rating from the
     $MAIN -m learn.judge_ear score --answers FILE   # the ear beside the judge, and the mis-weighting reading
     $MAIN -m learn.judge_ear page --recheck         # the headphone recheck page (`phase_judge_ear_recheck`)
     $MAIN -m learn.judge_ear score --recheck --answers FILE
+    $MAIN -m learn.judge_ear anchors                # `phase_judge_ear_v4` stage A: the tonal-anchor page (0 renders)
+    $MAIN -m learn.judge_ear anchors-score --answers FILE
 
 **The pairs (as declared).** S: `arm_a_mega53.L.menu_S()`, clean on PR12 and crunch on SW50R. Steps:
 - drive: `parameters/inputGain` +4 and +10 dB (clipped to `full_space`'s range, -20..12 dB);
@@ -71,6 +73,7 @@ DATA = pathlib.Path("~/ndsp-presets").expanduser()
 OUT = "learn/trusted-data/judge-ear"
 PAGE = "listening/judge-ear"
 RECHECK_PAGE = "listening/judge-ear-recheck"
+ANCHOR_PAGE = "listening/judge-ear-anchors"
 PAGE_NAME = "judge-ear"
 DI_REL = "references/datasets/cambridge/AleLak_NossoMundoDeixouDeExistir_Full/24_ElecGtr05DI.wav"
 DI_START_S = 110.0
@@ -97,6 +100,16 @@ RECHECK_PAIRS = ("clean-tone-large", "clean-tone-small", "crunch-tone-large", "c
                  "crunch-drive-large", "clean-reverb-large", "crunch-reverb-large", "clean-delay-large",
                  "crunch-delay-large", "clean-spring-large", "clean-drive-small", "clean-catch", "clean-tone-large")
 RECHECK_NOTE = "Please listen on headphones (not phone or laptop speakers), at a comfortable level."
+# `phase_judge_ear_v4` stage A: S's stored render against itself through an RBJ shelf (slope 1) of known gain,
+# applied before the page's clip rule sets each clip to -23 LUFS. (preset, shelf, dB); with a known-heard pair and a
+# catch from the first page.
+V4_KEY = "phase_judge_ear_v4"
+ANCHOR_SEED = 20261104
+SHELF_HZ = {"low": 250.0, "high": 3000.0}
+ANCHORS = (("clean", "high", 3), ("clean", "high", 6), ("clean", "high", -6), ("clean", "low", -6),
+           ("clean", "high", 12), ("crunch", "high", 6), ("crunch", "low", -6), ("crunch", "low", 6),
+           ("crunch", "high", -3))
+ANCHOR_PAIRS = ("clean-reverb-large", "clean-catch")
 RATINGS = ("same", "barely", "clearly", "very")
 RATING_TEXT = {"same": "Same", "barely": "Barely different", "clearly": "Clearly different", "very": "Very different"}
 CONFS = ("sure", "unsure")
@@ -250,6 +263,37 @@ def parse_shard(s):
     return k, n
 
 
+# --- pure: the anchors -----------------------------------------------------------------------------------------------
+
+def anchor_id(cls, shelf, db):
+    return f"{cls}-anchor-{shelf}{db:+d}"
+
+
+def rbj_shelf(kind, f0, gain_db, sr=48000):
+    """RBJ Audio EQ Cookbook shelf, slope S = 1 -> (b, a) normalised by a0."""
+    import math
+    A = 10 ** (gain_db / 40)
+    w0 = 2 * math.pi * f0 / sr
+    c, alpha = math.cos(w0), math.sin(w0) / 2 * math.sqrt(2)
+    r = 2 * math.sqrt(A) * alpha
+    if kind == "low":
+        b = [A * ((A + 1) - (A - 1) * c + r), 2 * A * ((A - 1) - (A + 1) * c), A * ((A + 1) - (A - 1) * c - r)]
+        a = [(A + 1) + (A - 1) * c + r, -2 * ((A - 1) + (A + 1) * c), (A + 1) + (A - 1) * c - r]
+    elif kind == "high":
+        b = [A * ((A + 1) + (A - 1) * c + r), -2 * A * ((A - 1) + (A + 1) * c), A * ((A + 1) + (A - 1) * c - r)]
+        a = [(A + 1) - (A - 1) * c + r, 2 * ((A - 1) - (A + 1) * c), (A + 1) - (A - 1) * c - r]
+    else:
+        raise ValueError(kind)
+    return [x / a[0] for x in b], [x / a[0] for x in a]
+
+
+def shelve(y, kind, gain_db, sr=48000):
+    from scipy.signal import lfilter
+
+    b, a = rbj_shelf(kind, SHELF_HZ[kind], gain_db, sr)
+    return lfilter(b, a, y)
+
+
 # --- pure: the page, the answers, the score --------------------------------------------------------------------------
 
 def page_order(pairs, seed=PAGE_SEED):
@@ -346,12 +390,12 @@ def out_dir(root=DATA):
     return pathlib.Path(root) / OUT
 
 
-def page_dir(root=DATA, recheck=False):
-    return pathlib.Path(root) / (RECHECK_PAGE if recheck else PAGE)
+def page_dir(root=DATA, recheck=False, anchors=False):
+    return pathlib.Path(root) / (ANCHOR_PAGE if anchors else RECHECK_PAGE if recheck else PAGE)
 
 
-def key_path(root=DATA, recheck=False):
-    return page_dir(root, recheck) / "private" / "page-key.json"
+def key_path(root=DATA, recheck=False, anchors=False):
+    return page_dir(root, recheck, anchors) / "private" / "page-key.json"
 
 
 def save(path, obj):
@@ -384,6 +428,14 @@ def require():
 
     P.require(AMENDMENT_KEY)
     return P.require(LEDGER_KEY)
+
+
+def require_v4():
+    """Stage A refuses unless the ledger also declares `phase_judge_ear_v4`."""
+    from learn import pipeline_fix as P
+
+    require()
+    return P.require(V4_KEY)
 
 
 def require_recheck():
@@ -938,7 +990,106 @@ you go; tap <b>Export</b> any time, even halfway, and send the text or the file.
 <script>{js}</script></body></html>"""
 
 
-COMMANDS = {"plan": cmd_plan, "render": cmd_render, "measure": cmd_measure, "page": cmd_page, "score": cmd_score}
+def anchor_audio():
+    """{item: (S render, the other side)} for stage A: each anchor from S's stored render, the two first-page pairs."""
+    import numpy as np
+
+    plan = load(out_dir() / "plan.json")
+    meas = load(out_dir() / "measure.json")
+    from learn import audibility_measure as AM
+
+    S = {}
+    for cls in ("clean", "crunch"):
+        S[cls] = np.load(render_path(DATA, f"{cls}-S"))
+        if AM.audio_sha(S[cls]) != meas["render_sha256"][f"{cls}-S"]:
+            raise SystemExit(f"{cls}-S: not the render `measure` judged")
+    out = {anchor_id(c, k, d): (S[c], shelve(np.asarray(S[c], np.float64), k, d)) for c, k, d in ANCHORS}
+    by = {p["pair"]: p for p in plan["pairs"]}
+    for pid in ANCHOR_PAIRS:
+        p = by[pid]
+        out[pid] = (S[p["cls"]], np.load(render_path(DATA, job_of(p))))
+    return out
+
+
+def cmd_anchors(args):
+    """Stage A's tonal-anchor page and key, and J0's distance per item (anchors.json); zero plugin renders."""
+    require_v4()
+    import numpy as np
+
+    from learn import audibility_measure as AM
+    from learn import knob_ceiling as K
+
+    kp = key_path(anchors=True)
+    if kp.exists() and not args.force:
+        raise SystemExit(f"{kp} exists: a rebuild hides the listener's stored answers (--force)")
+    audio = anchor_audio()
+    di = np.asarray(np.load(out_dir() / "di.npy"), np.float64)
+    lo, hi = trim()
+    di = di[lo:hi]
+    judged = {}
+    for item, (s, o) in audio.items():
+        h = K.judge(s, o, di, 0)
+        judged[item] = {"judge": h, "mean": (h["A"] + h["B"]) / 2}
+    items = page_order(list(audio), ANCHOR_SEED)
+    clips, key_items = {}, []
+    for it in items:
+        s, o = audio[it["pair"]]
+        a, b = (s, o) if it["a"] == "S" else (o, s)
+        clips[it["page_id"] + "-1"], clips[it["page_id"] + "-2"] = AM.pair_clips(a, b, out_dir() / "page-cache")
+        cls = it["pair"].split("-")[0]
+        key_items.append({**it, "cls": cls, "group": "anchor" if "-anchor-" in it["pair"] else it["pair"].split("-")[1],
+                          "b": "step" if it["a"] == "S" else "S"})
+    build = hashlib.sha256((json.dumps(key_items, sort_keys=True) + str(ANCHOR_SEED)).encode()).hexdigest()[:12]
+    page = page_html([it["page_id"] for it in items], clips, build, RECHECK_NOTE)
+    bad = leaks(page)
+    if bad:
+        raise SystemExit(f"the page names {bad}: not blind")
+    save(kp, {"page": PAGE_NAME + "-anchors", "build": build, "seed": ANCHOR_SEED,
+              "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+              "shuffle_rule": "random.Random(ANCHOR_SEED).shuffle of the sorted item ids, then one choice of A's side",
+              "anchor_rule": "RBJ shelf slope 1 at SHELF_HZ on S's stored render (scipy lfilter), before the clip rule",
+              "items": key_items})
+    save(out_dir() / "anchors.json", {"time": time.strftime("%Y-%m-%d %H:%M:%S"), "build": build, "items": judged})
+    pd = page_dir(anchors=True)
+    pd.mkdir(parents=True, exist_ok=True)
+    (pd / "index.html").write_text(page)
+    print(f"ANCHORS PAGE DONE: {len(items)} items -> {pd / 'index.html'}; build {build}; key {kp}")
+
+
+def cmd_anchors_score(args):
+    """Each anchor's rating beside J0's distance, and the declared outcome."""
+    require_v4()
+    key = load(key_path(anchors=True))
+    judged = load(out_dir() / "anchors.json")
+    if not key or not judged:
+        raise SystemExit("run `anchors` first")
+    ans = parse_answers(pathlib.Path(args.answers).read_text(), key["build"])
+    rows = []
+    for it in key["items"]:
+        a = ans.get(it["page_id"], {})
+        rows.append({"item": it["pair"], "page_id": it["page_id"], "judge": judged["items"][it["pair"]]["mean"],
+                     "rating": a.get("rating"), "conf": a.get("conf")})
+    for r in sorted(rows, key=lambda r: r["item"]):
+        print(f"  {r['page_id']} {r['item']:24s} J0 {r['judge']:.3f}  {r['rating'] or '-'}")
+    by = {r["item"]: r["rating"] for r in rows}
+    six = [i for i in by if "-anchor-" in i and i.endswith(("+6", "-6"))]
+    heard = sum(by[i] in LOUD for i in six)
+    ctl = by[anchor_id("clean", "high", 12)]
+    if ctl in QUIET:
+        outcome = "the +12 dB control heard as same/barely: the page or the bias is the problem; stage B waits"
+    elif heard >= 4:
+        outcome = f"{heard} of {len(six)} 6-dB anchors heard: steady tilts heard; stage B keeps F44's tone sizes"
+    elif heard <= 2:
+        outcome = f"{heard} of {len(six)} 6-dB anchors heard: not heard on this page; stage B's tone steps doubled"
+    else:
+        outcome = f"{heard} of {len(six)} 6-dB anchors heard: mixed; F44's sizes kept, the split reported"
+    print("OUTCOME:", outcome)
+    save(out_dir() / "anchors-score.json", {"time": time.strftime("%Y-%m-%d %H:%M:%S"), "build": key["build"],
+                                            "answers_file": str(args.answers), "rows": rows, "outcome": outcome})
+
+
+COMMANDS = {"plan": cmd_plan, "render": cmd_render, "measure": cmd_measure, "page": cmd_page, "score": cmd_score,
+            "anchors": cmd_anchors, "anchors-score": cmd_anchors_score}
 
 
 def main(argv=None):
@@ -951,11 +1102,11 @@ def main(argv=None):
     args = ap.parse_args(argv)
     if args.shard != (0, 1) and args.cmd != "render":
         raise SystemExit("--shard is for render")
-    if args.force and args.cmd not in ("plan", "page"):
+    if args.force and args.cmd not in ("plan", "page", "anchors"):
         raise SystemExit("--force is for plan and page")
     if args.recheck and args.cmd not in ("page", "score"):
         raise SystemExit("--recheck is for page and score")
-    if args.cmd == "score" and not args.answers:
+    if args.cmd in ("score", "anchors-score") and not args.answers:
         raise SystemExit("score needs --answers FILE")
     COMMANDS[args.cmd](args)
 
