@@ -26,7 +26,11 @@ it, reverb below it. On headphones (F45) it holds and grows: every large effect 
 the treble steps are not. Next, before more recordings are scored: a revised judge with a term for what time
 effects add and less weight on steady treble, declared, reviewed and checked on a fresh blind page. Its first, zero-render stage (F46): steady 6 dB tilts are barely heard on
 this page, and neither revision removes a within-preset inversion (loudness-weighted bands; J2 ran without its
-decay part, which finds no note end on this DI, so the decay idea is untested), so neither is built; the judge stays, with that limit stated. How to proceed is the user's decision.
+decay part, which finds no note end on this DI, so the decay idea is untested), so neither is built. The user: the
+product must reach the most accurate preset with no human in the loop, so the judge cannot keep that limit; a strong
+go-ahead for a combined, automatic judge. Declared next: J5, the judge plus a carry-over part for what time effects
+add (in-sample it removes most effect inversions, not the treble steps), checked on a fresh blind page with a
+chord DI and two other presets.
 Findings F1–F46.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
@@ -1380,9 +1384,110 @@ instead of generating unrealistic presets our own?"):
       positive control and darker anchors; J1, J2 and J2-fallback specified; the render count.
     - *Stage A's outcome (2026-11-03, F46):* steady 6 dB tilts not heard on this page (1 of 6); J1 and J2 leave
       all 8 within-preset inversions, so both are reported controls and stage B is not run as declared.
+  - *The combined judge (2026-11-03, after F46; ledger `phase_judge_v5`; for one listener, checked on a fresh
+    page).* The user: the goal is the most accurate preset with no human in the loop, so the judge cannot stay with
+    F46's limit and ear checks are for development only; a strong go-ahead for an automatic judge that adds a part
+    for what time effects add. **What the stored renders already show** (exploratory, zero renders, in-sample on the
+    33 rated items, `judge-ear/explore/`): a DI-to-output envelope response and band coherence do not separate the
+    effects from the clean treble steps (both score the treble steps at or above reverb); a smoothed spectrum (DCT 2–8
+    across the bands) leaves the treble steps' tonal size at that of a 9–12 dB shelf; but a *carry-over* measure
+    separates them by sign: per band, the render's excess over the reference regressed on how far the reference has
+    fallen below its own recent peak, level partialled out. In its declared, antisymmetric form (below) it scores
+    reverb, delay and spring +0.02 to +0.24 (all positive) and the treble steps, drive, cab and every shelf −0.06 to
+    +0.003; one-way, swapped (the wet side as reference), it flips sign at about two thirds the size. The declared
+    fit (`judge_v5 screen`, `judge-ear/v5-screen.json`, run with this declaration) gives w_c 8: in-sample gamma
+    +0.519 (J0 +0.449), 3 of the 8 within-preset inversions left (J0: 8) and 7 of F45's 21; of the 18 inversions
+    with an effect heard above a tone or drive pair, 14 are removed, the 4 left all below clean treble +0.35, and all
+    3 with crunch drive +10 dB (heard clearly) stay. J5 uses |C|, so the sign's separation is lost in part: |C| on the
+    tone and drive items (0.01–0.07) overlaps the small effects' (crunch reverb 0.15 0.020, crunch spring 0.2 0.022),
+    and clean treble +0.35's |C| 0.058 adds 0.46 to its score, which keeps 2 of the 3 within-preset inversions left.
+    w_c is weakly identified: gamma stays within 0.02 of its best for w_c 4–13, and leaving one group out gives w_c
+    from 3 (tone) to 20 (anchor, spring). In-sample, the declared bootstrap below (14 clusters) gives J5 − J0 +0.07
+    [−0.037, +0.217]: by this page's own rule even the fitted J5 would be undecided here. The treble steps and clean
+    drive (scored high, heard same) are not fixed. A loudness-matched
+    third-octave look says the clean treble step is not a steady tilt: a 5–7.5 dB dip at 200–315 Hz and a 2–5 dB
+    lift above 3 kHz, with a frame-wise part 4–10 times a shelf's of the same tonal size. Long-term Zwicker
+    specific loudness and DIN sharpness (mosqito) also put clean treble +0.35 between the +6 and +12 dB high shelves
+    (11.3 sone L1 against 8.7 and 17.9; sharpness 0.20 against 0.15 and 0.30 acum), so no standard model tried
+    explains why this listener hears it as the same or barely different.
+    - **J5** = J0 + w_c × |C|. C, per window: on J0's own cells at the middle frame size (2048; the floored,
+      level-matched log-mel levels it scores, its scored bands), per band, the render's excess over the reference
+      (dB) and the reference's decay depth (its peak over the last 1.5 s minus its level now, dB), each with the
+      reference's level partialled out (its mean in 12 quantile bins of the reference's level taken away); the
+      band's slope of excess on depth; the slopes averaged with weights by the reference's mean power per band.
+      C is the antisymmetric mean of that slope with reference and render swapped, (C(ref→ren) − C(ren→ref)) / 2,
+      so a swap only flips its sign. C uses every frame of the window (not only J0's scored frames; the depth needs
+      the frames between notes), and needs the DI only through J0's masks. J5 averages the two halves as J0 does,
+      and refuses where J0 refuses in either direction on either half. w_c: the highest in-sample cross-group
+      gamma over the 33 rated items (`judge_v4.screen_items`) on the grid 0–40 in steps of 1, ties to the smaller;
+      fitted, frozen and hashed in the ledger before any fresh render. Code `learn/judge_v5.py` (tested: C is 0 on
+      a repeat, flips sign on a swap, sees a synthetic reverb, a static tilt scores under a quarter of it, and J5
+      refuses where a half refuses). Synthetic checks by the review: stationary noise in the reference at −60 to −30
+      dB re its RMS moves C by at most 0.01, a −20 dB swelling pad by 0.016; a delay of 500 against 300 ms gives C
+      −0.07 against +0.16 for a 1.5 against 3.0 s decay, so the delay-time pair is expected to rest mostly on J0.
+    - **The fresh page (the verdict).** A verified clean chord DI from the trusted set, neither V-real nor NS nor
+      F44's DI: The Travelling Band "Quicksand" ElecGtr1 DI (`cambridge/TheTravellingBand_Quicksand_Full/
+      16_ElecGtr1DI.wav`), 125–135 s. T0 verified the DI file and part (`verified.json`
+      `targets["cambridge-Quicksand-ElecGtr1"]`, verified and heard by ear, on its 120.5–130.5 s crop; not in its
+      `v_real` list; `clean_di.refuse_held_out` passes), not this window; the window is one section of the clean-DI
+      manifest (`~/ndsp-presets/learn/clean-di/manifest.json`, 125–135 s: clean, no flags, hiss −90 dB; the 120 and
+      140 s sections are flagged hiss). Chords, by a listen-free count to be confirmed on the page: median 10
+      spectral peaks between 70 and 700 Hz (8192-sample frames, within 30 dB of the frame's top, 10 dB prominence)
+      in the loudest quarter of frames, against 2 on F44's single-note DI. 1 note end by F46's detector (C needs
+      none), 10 s at −22.9 LUFS with F44's DI rule (mono, soxr VHQ to 48 kHz), through two starting presets other than F44's: S clean on AC20 and S crunch on
+      PR12 (`arm_a_mega53.L.menu_S()`). Per preset, each against S unless stated (15 items, 30 in all):
+      *drive* input gain +4 and +10 dB; *tone* the amp's main tone control by 0.30 and 0.70 in unit range (F44's
+      sizes doubled, as F46's outcome set), up, or down where up would pass the top, clipped to the range: AC20
+      `ac20Cut` 0.759 → 0.459 and 0.059 (both down, less cut); PR12 `pr12Treble` 0.535 → 0.835 (up) and 0.0 (down,
+      clipped, so the large step is 0.535 and opposite in direction to the small one); *cab* the left mic type to the next (F44's rule); *reverb* on, mix 0.15 and 0.40,
+      Default.xml's other values; *reverb decay* reverb on at mix 0.40, decay 1.48 s (default) against 3.0 s;
+      *delay* on, mix 0.15 and 0.40, free-running at 500 ms, Default.xml's other values; *delay time* delay on at
+      mix 0.40, 500 against 300 ms; *combined* S against S with drive +4 dB, tone 0.30 and reverb mix 0.15 together;
+      *anchors* (offline, zero renders) S's render through RBJ shelves, high +6 at 3 kHz and low −6 at 250 Hz; and a
+      catch (S rendered again). No spring (AC20 has none; PR12 crunch's spring level and dwell are both 0). The reverb-decay and delay-time
+      items reuse the reverb 0.40 and delay 0.40 renders, so some audio is shared across clusters. Groups for the statistic:
+      drive, tone, cab, reverb, reverb decay, delay, delay time, combined, anchor. The same blind page, headphones
+      asked for, seeded order, nothing naming a control; about 12 minutes. Bias caveat: the listener knows the
+      hypothesis (the judge under-counts effects and over-counts treble) and that the judge is being revised toward
+      effects; the page names nothing.
+    - **Reading.** Primary: gamma(J5) − gamma(J0), cross-group gamma over the fresh page's rated items (catches out;
+      the two halves averaged per item), with a 90% percentile interval from 2,000 resamples (`BOOT_SEED` 20261106) of
+      the group × preset clusters (18; the percentile interval may under-cover with this few, stated). A resampled
+      cluster keeps its group, so pairs between its copies, and between clusters of one group, stay excluded;
+      resamples where either gamma is undefined are dropped and counted. J5 is adopted if the interval's lower end
+      is above 0; otherwise undecided (not failed), its effect size reported. Power: with about 18 clusters a
+      decided gain needs roughly +0.11 or more, and the in-sample gain is +0.07 (above); the review puts the chance
+      of a decided gain at roughly 15–30%, so undecided is the likely outcome. Then the user chooses between adopting
+      on the evidence and a second page of the same design with a new DI and new presets, pooled with this one over
+      page × group × preset clusters by the same statistic, and then a stop. Reported beside: F44's inversion rule on the fresh page for J0 and J5; the effect groups' and
+      the tone and drive groups' gammas separately (cab and anchors reported apart); the ratings of the doubled tone steps and the anchors on chords.
+      If one or more effect items (reverb, reverb decay, delay, delay time) heard clearly or very sit strictly
+      below a tone or drive item heard same or barely on J5's half-averaged scores, a tonal revision is proposed next (declared on its own, fitted on these and the stored ratings, checked
+      on another fresh page), since the in-sample work leaves the treble steps as they were.
+    - **Before adoption:** the judge spec's tests pass for J5 (a repeat scores 0, distance grows with step size,
+      alignment and level handling, refusals), and its agreement with the ear on whole-preset differences (the
+      stored listening answers of `docs/measuring-closeness.md`, zero renders, each study's own statistic) minus
+      J0's has a 90% interval not wholly below 0. Adoption makes J5 the default with J0 kept by name. Effects off on
+      both sides do not make w_c|C| negligible: in-sample it is 0.07–0.53, 6–18% of J0 (clean drive +10 dB: 0.40 on
+      2.15), so past reads can move; re-scoring them is declared on its own. *Product check (zero renders), before
+      the product's preset search moves to J5:* real references bring room sound and song-stem bleed that moves with
+      the playing, which C could read as a missing effect. C is reported on real references with effects off on
+      both sides: the `measuring-closeness` trials' amp tracks against their template renders, and T0's dry amp
+      tracks against S. Bar: their median |C| below the fresh page's mean |C| of reverb mix 0.15 over its two
+      presets; failing it blocks the move.
+    - **Renders** per preset S, S again, 2 drive, 2 tone, cab, reverb 0.15 and 0.40, reverb decay 3.0 s, delay 0.15
+      and 0.40, delay 300 ms, combined: 14 kept, 28 for both presets, 56 with priming. Every render as declared for
+      Morgan (isolate, one priming render, 0.25 s trim, at most 3 processes, the disk guard).
+    - *Review (2026-11-03, independent, before any render):* approved with required changes, all made. It
+      reproduced the screen (w_c 8, gammas, inversions), C's ranges, the counts and the defaults, and checked the
+      code against the text. Required: the DI window moved inside a clean manifest section (131 s overlapped a
+      hiss-flagged one) with the verification stated as of the file and part; the power stated (undecided likely)
+      and the second page specified; "separates" and "fixes" replaced by the |C| numbers; past reads can move
+      (6–18%); a zero-render product check of C on real references with a bar; the tone values listed; C's frames,
+      |C| in the docstring and J5's refusal rule; a decidable tonal trigger; the bias caveat; the bootstrap's
+      details. Adopted: w_c's weak identification, the delay-time expectation, the shared audio, C's DI use.
 
-- **Decisions for the user, with the evidence:** how to proceed with the judge after F44–F46 (keep it with its
-  stated limit and treat effects separately, or keep revising it); whether to adopt the S fallback or the near-chance rule
+- **Decisions for the user, with the evidence:** whether to adopt the S fallback or the near-chance rule
   (steps 26, 27, 37), and whether to scale.
 
 ## Findings log

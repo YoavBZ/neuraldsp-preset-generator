@@ -267,9 +267,12 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          mismatches, so neither is built. The judge stays, with its limit stated: on single-control changes it
          ranks tone changes this listener barely hears above effects heard clearly, and the reads never scored
          effects (off in S and the models).
-       - **Next (2026-11-03):** the user's choice: keep the judge with that limit and treat effects separately
-         (suggested by song research, confirmed by ear), then the approved real-amp recordings; or keep revising
-         the judge. Then, as the user chose, the per-recording reading, with FT's
+       - **Next (2026-11-03):** the product must reach the most accurate preset with no human in the loop (the
+         user), so the judge cannot keep F46's limit; ear pages are for development only. Declared: J5, the judge
+         plus a carry-over part for what time effects add (in-sample it removes 14 of 18 effect-below-tone/drive
+         inversions, not the treble steps or crunch drive; a decided result on one page is unlikely, about 15–30%), checked on a fresh blind page (a chord DI, AC20 clean and PR12 crunch); a tonal revision follows
+         if that page still shows tone mis-weighted. Then the approved real-amp recordings, scored with the adopted
+         judge, and, as the user chose, the per-recording reading, with FT's
          recipe as the base (chosen on read 2, BKS −0.055; on V-real FT is not shown different from D_fix): many more real-amp labelled recordings (captures on verified DIs, as GOAT) and a fresh,
          larger real-song test (V-real-11 is ±0.07 and now read for two candidates). Domain work and community
          presets stay open.
