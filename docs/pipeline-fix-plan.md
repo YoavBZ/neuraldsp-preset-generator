@@ -1573,18 +1573,46 @@ instead of generating unrealistic presets our own?"):
       separation: the echo detector reports nothing on any of the 36 delay stems or the 6 delay renders on the
       whole stem (the chords comb its band; at the known lag the echo leaves a trace, 2–3 times the dry level at
       mix 0.40), and the reverb rule fires on 3 of 36 X-LANCE reverb stems and 10 of 48 without. E1 learns both.
-    - **E1 (outline; declared on its own after E0, reviewed before any render):** a blind reader trained on
-      self-built mixes across many verified DIs (renders with reverb and delay on or off at random mix, decay,
-      time and feedback, in phase-5A backings by the mix rule, stereo and mastered as the product's songs are,
-      separated by X-LANCE), predicting on/off, mix, decay, time and feedback. Held out by song/DI and by backing;
-      E0's Quicksand DI out of training; verified DIs only. Confounders varied in the training renders: the amps'
-      springs (whether the amp spring is in scope is stated), drive and compressor sustain, cab and room; tremolo,
-      chorus and doubler; delays synced to the part's beat; playing (sustained chords, single notes, with and
-      without falls). Labels: decay on the plugin's 1–60 scale, mix and feedback as the plugin's rotations; knob
-      error per control, with how an off item counts. Comparators: the no-skill reader (the training prior) and
-      the current measures (`time_effects` with `delay_settings`, and `reverb_from_rt60` counterfactually).
-      Effect sizes with intervals clustered by DI, then a few real songs by ear; what result puts the reader into
-      the product is stated in the declaration, with its renders and training time.
+    - **E1a (2026-11-03, zero renders, declared after F48; ledger `phase_fx_reader_e1a`).** Stored data already
+      holds what E1 needs for a first read: D_CC (`trusted-data/cc`, F-series pool) rendered every target from the
+      full space with the rack reverb and the delay on or off at random (reverb on 2,027 of 3,890, mix p10–p90
+      0.08–0.79, decay 1.1–5.3 s; delay on 1,844, mix 0.07–0.80, time 95–674 ms, feedback 0.08–0.76; sync off),
+      each in a fresh process with a priming render of its own setting (the carry-over rule), mixed with the song's
+      other guitars and backing by the mix rule (half mastered), and separated by X-LANCE; the uint8 half log-mels
+      of the stem, the mix and the clean target are stored. *Examples:* every D_CC example with all three stored
+      inputs, NS's two songs left out entirely (held out), no V-real (none in D_CC). *Reader* (`learn/fx_reader.py`
+      `e1a-*`): a small CNN on the two halves' log-mels (4 conv blocks 16–96, mean and max pooled) plus the
+      mel-envelope autocorrelation at lags 10–1,500 ms per half (where an echo shows), heads for reverb on, delay
+      on (logits) and reverb mix, log2 decay, delay mix, log2 time and feedback (on items only); Adam 1e-3, batch
+      64, 40 epochs, the epoch kept by loss on 15% of the training songs' sections, seed 20261107, MPS (inputs
+      precomputed, no STFT on the device). *Read:* leave one song out (the D_CC songs left after NS; each fold's
+      test song is unseen in DI and backing), three inputs: the X-LANCE stem (primary), the mix, the clean target
+      (the ceiling; the drop from target to mix to stem is the masking and the separator's share).
+      *Readouts* (90% intervals from 2,000 resamples of songs, seed 20261108; few clusters, so they may
+      under-cover, stated): on/off AUC for each effect, overall, for the top and bottom third of on-mixes (each
+      against all offs), and by song; reverb AUC with the offs split by the amp spring on or off (the spring is a
+      reverb the label does not count); per knob on true-on items, mean absolute error against a no-skill prior
+      (the training songs' median) and the difference with its interval; delay time within ±10%, reader against
+      prior. Comparators beside: the product's own measures (`time_effects`, `delay_settings`' floor, the
+      counterfactual `reverb_from_rt60`) on the clean target audio, where stored: delay hits within ±10% among ons,
+      fires among offs, reverb on among ons and offs. External, descriptive: the fold that holds out Quicksand (E0's
+      song) read on E0's 84 X-LANCE stems (median on-probabilities, decay and time by kind). Training time per fold
+      is measured and reported. No bar: effect sizes against the prior and the measures, undecided not failed.
+      *What follows:* if the stem reader beats the prior on the strong third of either effect (AUC interval above
+      0.5) and on that effect's knobs, E1b (renders: stereo and mastered mixes, more DIs and confounders, a
+      backing split) is declared to build the product's reader, then real songs by ear; if only the target reads,
+      the loss is the mix's masking (as `docs/tone-info-probe.md` found for linear probes: AUC 0.75 target, 0.60
+      mix, 0.58 stem for reverb), and E1b is aimed at that. *Caveats:* mono mixes (no stereo pipeline exists), one
+      separator, the songs' own backings (so DI and backing are held out together, never apart), 8 songs at most,
+      `mode` draws from the full space (the other controls vary too), a fixed seed.
+    - **E1b (outline; declared on its own after E1a, reviewed before any render):** what E1a leaves open, with
+      renders: stereo and mastered mixes as the product's songs are (new work: the self-built mixes are mono),
+      more verified DIs (E0's Quicksand DI out of training), a backing split, the confounders varied (the amps'
+      springs, drive and compressor sustain, cab and room; tremolo, chorus and doubler; delays synced to the part's
+      beat; playing with and without falls). Each time-effect render needs its own fresh process with a priming
+      render (about 2,100 kept renders an hour measured), and separation (X-LANCE about 4.3 s a clip on MPS) cannot
+      run beside renders. Comparators: the prior, the current measures, E1a's reader. Effect sizes with intervals
+      clustered by DI, then a few real songs by ear; what result puts the reader into the product is stated there.
 
 - **Decisions for the user, with the evidence:** whether to adopt the S fallback or the near-chance rule
   (steps 26, 27, 37), and whether to scale.
