@@ -798,7 +798,7 @@ def _score(root, dest, lag):
     print(json.dumps(out, indent=1)[:8000])
 
 
-def cep_readouts(load, acf_arm):
+def cep_readouts(load, acf_arm, keep=None):
     """The cepstrum's time readouts on the wide draws (F49's conventions): load(i) -> audio of example index i;
     plain, and minus the training songs' mean wide delay-off cepstrum of the same input (leave one song out); paired
     against F49's picker on `acf-{acf_arm}` and the training songs' wide-draw median."""
@@ -809,6 +809,8 @@ def cep_readouts(load, acf_arm):
     songs = np.array([m["song"] for m in meta])
     bands = np.array([m["band"] for m in meta])
     wide = np.array([m["mode"] == "wide" for m in meta])
+    if keep is not None:      # E1e: items whose rebuild did not match the stored mix are dropped
+        wide &= np.asarray(keep, bool)
     L = np.load(E1A / "labels.npy")
     don = L[:, 1] == 1
     y = L[:, 2 + KNOBS.index("dtime")]
@@ -990,12 +992,18 @@ def cmd_e1e_score(args):
     import numpy as np
 
     meta = json.loads((E1A / "meta.json").read_text())["examples"]
-    rows = [json.loads(line) for line in open(E1E / "build-rows.jsonl")]
+    rows = {r["i"]: r for r in (json.loads(line) for line in open(E1E / "build-rows.jsonl"))}
+    wide_i = [m["i"] for m in meta if m["mode"] == "wide"]
+    miss = [i for i in wide_i if i not in rows or not e1e_audio(i).exists()]
+    if miss:
+        raise SystemExit(f"e1e: {len(miss)} wide items without a build row or audio (e.g. {miss[:3]})")
+    keep = np.array([m["mode"] == "wide" and rows[m["i"]]["mix_features_identical"] for m in meta])
+    rows = list(rows.values())
     out = {"build": {"n": len(rows), "mix_identical": sum(r["mix_features_identical"] for r in rows),
                      "stem_diff_median": float(np.median([r["stem_feature_mean_abs_diff"] for r in rows])),
                      "stem_diff_max": float(np.max([r["stem_feature_mean_abs_diff"] for r in rows]))}}
     for arm in ("stem", "mix"):
-        out[arm] = cep_readouts(lambda j: np.load(e1e_audio(meta[j]["i"]))[arm], arm)["arms"]
+        out[arm] = cep_readouts(lambda j: np.load(e1e_audio(meta[j]["i"]))[arm], arm, keep)["arms"]
     (E1E / "score.json").write_text(json.dumps(out, indent=1))
     print(json.dumps(out, indent=1)[:6000])
 
