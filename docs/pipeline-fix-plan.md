@@ -22,8 +22,10 @@ real reamps (BKS −0.055), level with S, D_fix and RcG on held-out real songs (
 next: the per-recording reading on many more real-amp recordings and a fresh real-song test; the user's choice.
 About 80% of FT's lead over S on real reamps is its drive (F43). At the user's question whether the score weighs each
 kind of change as the ear does, a blind page (F44) found it does not: treble counts well above the ear, drive above
-it, reverb below it. Proposed next, before more recordings are scored: a revised judge, checked on a fresh blind page.
-Findings F1–F44.
+it, reverb below it. On headphones (F45) it holds and grows: every large effect re-heard is heard clearly or very,
+the treble steps are not. Next, before more recordings are scored: a revised judge with a term for what time
+effects add and less weight on steady treble, declared, reviewed and checked on a fresh blind page.
+Findings F1–F45.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -2795,6 +2797,59 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   only above it (drive's clean +10 dB inversion fails on one half); input gain is the only drive control tested;
   the inversions rest on 3 answers; agreement by preset; the page loops with a free switch; a v2-page claim with no
   record dropped; F43's per-unit ordering the judge's; F43's derived rows stored; the budget.
+
+### F45. On headphones the mis-weighting holds and grows: every large effect re-heard is heard clearly, the treble steps are not (phase_judge_ear_recheck, descriptive)
+- **Result.** The user had heard F44's page on phone speakers. 13 items re-heard on headphones (build
+  061051010403, answered 2026-11-03), the same renders and clips: every pair in one of F44's inversions, clean drive
+  +4 dB as a low comparator, the clean catch, clean treble +0.35 twice. Judge distance; phone rating → headphones:
+
+  | Pair | Judge | Phone | Headphones |
+  |---|---|---|---|
+  | clean drive +4 dB | 0.84 | same | same |
+  | clean drive +10 dB | 2.15 | same | same |
+  | crunch drive +10 dB | 2.53 | barely | **clearly** |
+  | clean treble +0.15 | 2.62 | barely | same |
+  | clean treble +0.35 (twice) | 3.91 | barely | same; barely |
+  | crunch treble −0.35 | 2.79 | same | barely |
+  | clean reverb 0.40 | 2.10 | clearly | **clearly** |
+  | crunch reverb 0.40 | 1.59 | clearly | **clearly** |
+  | clean delay 0.40 | 2.78 | clearly | **very** |
+  | crunch delay 0.40 | 2.02 | barely | **very** |
+  | clean spring 0.5 | 1.90 | barely | **clearly** |
+  | clean catch | 0 | same | same |
+
+  27 inversions by the declared rule, the repeat's two rows both counted (21 distinct pairs; 17 on both halves, 8
+  of those within one preset), against 14 on the phone, 10 of which persist; the other 4 dissolved because their
+  quiet pair (crunch drive +10 dB, crunch delay 0.40, clean spring 0.5) is now heard clearly or very.
+- **Reading.** By the declared rule the inversions persist, so the judge revision goes ahead (declared and
+  reviewed). F44's treble and reverb readings stand; its drive reading holds on the clean amp only: crunch drive
+  +10 dB is now heard clearly and the judge puts it below the treble steps. On headphones the ear hears every large
+  effect re-heard clearly or very (5 of the first page's 6; crunch spring 0.5, same on the phone, not re-heard) and
+  crunch drive +10 dB clearly, while it hears the three treble steps and clean drive at both steps as the same or
+  barely different; the three treble steps are the pairs the judge (1st, 2nd and 4th of 24), CDPAM and Zwicker
+  loudness (top 3 each, `judge-ear/explore/`) score highest. Neither of the judge's parts alone tracks the ear here
+  (tonal −0.23, frame-by-frame −0.14 over these items; both put clean treble +0.35 first). This suggests the
+  revision needs a term for what time effects add (energy and decay after notes, repeats) and less weight on
+  steady treble against drive; reweighting the present two parts cannot do it, as both put the treble steps on
+  top. What it changes: the reads' scores have weighed steady treble changes the ear barely hears above effects it
+  hears clearly; S and FT have every effect off, so the effects, which the ear hears most, were never scored; and a
+  +10 dB input-gain step is heard clearly on SW50R crunch and not on PR12 clean (one single-note DI), while whether
+  FT's own drive moves are audible is still not known.
+- **Caveats.** One listener, one sitting, one single-note DI, two presets: descriptive. The 11 pairs (12 items with
+  the repeat) were chosen for their inversions, so rank agreement on them is not the judge's agreement in general:
+  judge vs headphones −0.21 with the repeat's two rows, −0.08 with it averaged (the phone ratings on the same
+  items −0.03). Pairs not re-heard (crunch spring 0.5, the small steps but clean drive +4 dB, the cab steps, the
+  crunch catch) could form new inversions. The repeat split mildly (same, barely); the catch was heard as the same.
+  The clips were heard a second time, so familiarity may play a part. The listener knew, before this page, that the
+  measures rank the treble steps large. Headphones: the user agreed to them and the page asked for them.
+- **References.** `~/ndsp-presets/learn/trusted-data/judge-ear/score-recheck.json`; the answers
+  `~/ndsp-presets/listening/judge-ear-recheck/private/answers-061051010403.txt`; ledger `phase_judge_ear_recheck`,
+  `phase_judge_ear_recheck_outcome`.
+- *Results review (2026-11-03, independent):* approved with required changes, all made. It reproduced the table, the
+  counts and the sha from the key, the answers and the stored scores. Required: 5 of 6 large effects re-heard, not
+  all; the "scores highest" claim kept to the treble steps; the repeat made explicit in the counts (21 distinct);
+  F44's drive reading kept to the clean amp; the revision also needs less weight on steady treble; F43's drive left
+  open; the repeat, familiarity and the pairs not re-heard as caveats.
 
 ## Budget
 
