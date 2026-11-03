@@ -717,12 +717,15 @@ was declared, what was measured, and the research behind it.
     screen, the test is a fresh blind page. Research, not a declared plan.
 23. [blind-reverb-delay-2026-11.md](research/blind-reverb-delay-2026-11.md): proven tools that
     read a guitar's reverb (on/off, mix, decay) and delay (on/off, mix, time, feedback) blind
-    from a song or a stem (November 2026; nothing downloaded or run). None exists: published
-    results stop at single held notes in synthetic mixes (Hinrichs 2022), isolated tracks
-    (AFx-Rep, RemFX) and reverb on a whole mix (CLAP), and none estimates delay feedback blind.
-    Encoders read reverb well and delay poorly. Ranked shortlist of seven, each with a cheap
-    test on stored data: a long-window cepstrum for delay time (no download; the first test,
-    against 44% and 14% time hits and the 0.61 stem AUC), AFx-Rep, Fx-Encoder++ and CLAP probes
-    for reverb (downloads, the ML session's and user's call), a Hinrichs-style cepstral CNN
-    arm, the RemFX detector, and speech room estimators as a negative control. Effect removers
-    and dereverb models need the user's separator ruling. Research, not a declared plan.
+    from a song or a stem, the survey F50 deferred the masking renders for (November 2026;
+    nothing downloaded or run). None exists: published results stop at single held notes in
+    synthetic mixes (Hinrichs 2022), isolated tracks (RemFX) and reverb on a whole mix (CLAP);
+    no method reports a feedback-specific error; encoder probes read reverb and delay knobs
+    about equally poorly (RLAT). Nothing found replaces the deferred renders. Ranked shortlist
+    of seven, with real costs (only the clean targets are stored as audio): a long-window
+    cepstrum for delay time (no download; the first test, an arm beside E1c on the targets, then
+    E0's 84 stored stems, paired against F49's picker), a cepstral-input arm on the stored
+    log-mels (hours of approved training), AFx-Rep, Fx-Encoder++ and CLAP probes (downloads, the
+    ML session's and user's call, plus rebuilt mixes and re-separated stems), the RemFX
+    detector, and speech room estimators as a negative control. Effect removers and dereverb
+    models need the user's separator ruling. Research, not a declared plan.
