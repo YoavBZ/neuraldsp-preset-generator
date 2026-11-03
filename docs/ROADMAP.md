@@ -256,8 +256,13 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          (1.59–2.10) is heard clearly (14 inversions; treble well above the ear, drive above it; one listener, one
          single-note DI; descriptive). So how much of FT's lead is audible is not
          known, and no read has scored the effects (off in S and FT).
-       - **Next (2026-11-03):** before more recordings are scored, a revised judge, declared and reviewed, checked
-         on a fresh blind page not used to build it. Then, as the user chose, the per-recording reading, with FT's
+       - **On headphones (2026-11-03, F45):** the first page was heard on phone speakers; re-heard on headphones
+         the mismatch holds and grows (21 distinct inversions against 14): every large reverb, delay and spring
+         change re-heard (5 of 6) is heard clearly or very, crunch drive +10 dB clearly, while the treble steps and
+         clean drive are heard as the same or barely; the treble steps are the pairs the judge (and two
+         off-the-shelf measures) score highest.
+       - **Next (2026-11-03):** before more recordings are scored, a revised judge with a term for what time effects
+         add and less weight on steady treble, declared and reviewed, checked on a fresh blind page not used to build it. Then, as the user chose, the per-recording reading, with FT's
          recipe as the base (chosen on read 2, BKS −0.055; on V-real FT is not shown different from D_fix): many more real-amp labelled recordings (captures on verified DIs, as GOAT) and a fresh,
          larger real-song test (V-real-11 is ±0.07 and now read for two candidates). Domain work and community
          presets stay open.
@@ -1333,3 +1338,4 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-11-02 | Pipeline fix FT, audited (the user: plugin renders as pretraining; declared and reviewed, the cap-300 fallback taken as declared; 1,512 renders). FT − D_fix on real reamps −0.055 [−0.084, −0.027] (BKS, 7 of 8 DIs; GOAT level), carried to V-real: FT − S +0.022 [−0.051, +0.095] undecided, FT − D_fix −0.013 (selection-contaminated), level with RcG. A scoring audit found no calculation error. Next proposed: per-recording reading on many more real-amp recordings and a fresh real-song test; the user's choice | [plan](pipeline-fix-plan.md) F42, [ledger](dev-test-ledger.json) `pipeline-fix` `phase_ft*` |
 | 2026-11-02 | Pipeline fix F43, FT's score by control group (declared and reviewed; 2,880 renders): on real reamps drive carries about 80% of FT's lead over S (add-drive − S −0.143 [−0.206, −0.079], 8 of 8 DIs), tone a little (−0.021), cab undecided; the parts add up | [plan](pipeline-fix-plan.md) F43, [ledger](dev-test-ledger.json) `phase_ft_groups*` |
 | 2026-11-03 | Pipeline fix F44, the judge against the ear (the user asked whether drive and reverb weigh as they sound; declared, amended before any answer, reviewed; 60 renders, 26 blind pairs): the judge weighs treble well above the ear, drive above it and reverb below it (14 inversions; Spearman 0.43; descriptive). Next proposed: a revised judge checked on a fresh blind page before more recordings are scored | [plan](pipeline-fix-plan.md) F44, [ledger](dev-test-ledger.json) `phase_judge_ear*` |
+| 2026-11-03 | Pipeline fix F45, the headphone recheck (the first page was heard on phone speakers; declared and reviewed; 0 renders, 13 items): the mis-weighting holds and grows (21 distinct inversions against 14); every large effect re-heard (5 of 6) heard clearly or very, the treble steps and clean drive same or barely. The judge revision goes ahead | [plan](pipeline-fix-plan.md) F45, [ledger](dev-test-ledger.json) `phase_judge_ear_recheck*` |
