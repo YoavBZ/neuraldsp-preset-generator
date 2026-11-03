@@ -701,3 +701,14 @@ was declared, what was measured, and the research behind it.
     capture plus a random Nolly cab IR, so no render is one real rig; its "8.5 TB" is a download
     statistic, not its size). The main catch for captures is input level. Research, not a declared
     plan.
+22. [perceptual-measures-2026-11.md](research/perceptual-measures-2026-11.md): which open
+    perceptual difference measures could rate two guitar renders as the ear does, after F44 found
+    the judge weighs treble and drive above the ear and reverb below it (November 2026; nothing
+    installed or run). No open measure has been tested against listeners on guitar setting
+    changes, so the ranking is a prediction: HAAQI (pyclarity, MIT; read its sub-terms, may
+    over-score input gain), PEAQ's separate outputs (GstPEAQ, the only open advanced version), and
+    reverb cues from an impulse response estimated between the two renders, in just-noticeable
+    differences; embeddings (AFx-Rep, MERT, CLAP) track treble and drive too. Corrects two claims
+    in round 4's A-closeness (MoSQITo has no fluctuation strength; HAAQI's bands stop at 8 kHz).
+    Checks: ODAQ for the code, Osses's reverberance set and TONE3000's A2 ratings for the answer;
+    F44's 24 pairs only screen, the test is a fresh blind page. Research, not a declared plan.
