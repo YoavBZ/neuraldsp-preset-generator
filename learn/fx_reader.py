@@ -205,6 +205,8 @@ INNER_SHARE = 0.15                                 # the training songs' section
 SPRING_MIN = 1e-3
 SPRING_LEVEL = {"pr12": "pr12Amp/pr12Reverb", "sw50r": "sw50rAmp/sw50rReverb"}   # the AC20 has none
 KNOBS = ("rmix", "rdecay", "dmix", "dtime", "dfb")  # rmix/dmix/dfb rotations; rdecay, dtime log2
+E1C = OUT / "e1c"                                  # E1a plus a lag head for delay time (same data build)
+LAG_SIGMA = 1.0                                    # soft target: a Gaussian of one lag around the set lag
 
 
 def labels(settings, amp):
@@ -332,12 +334,24 @@ def folds():
     return sorted({m["song"] for m in meta})
 
 
-def net(torch):
+def prominence(torch, a):
+    """Each half's autocorrelation minus its local mean (lags 3-6 frames either side): (B, 2*LAGS) -> (B, 2, LAGS)."""
+    x = a.view(a.shape[0], 2, LAGS)
+    k = torch.tensor([1.0] * 4 + [0.0] * 5 + [1.0] * 4, device=a.device) / 8.0     # offsets -6..-3 and +3..+6
+    pad = torch.nn.functional.pad(x, (6, 6), mode="replicate")
+    nb = torch.nn.functional.conv1d(pad.reshape(-1, 1, LAGS + 12), k.view(1, 1, -1)).view_as(x)
+    return x - nb
+
+
+def net(torch, lag=False):
     nn = torch.nn
 
     class Reader(nn.Module):
         def __init__(self):
             super().__init__()
+            if lag:          # E1c: logits over lags from the prominence curve, shared over halves (slides over lags)
+                self.lag = nn.Sequential(nn.Conv1d(1, 16, 5, padding=2), nn.ReLU(),
+                                         nn.Conv1d(16, 16, 5, padding=2), nn.ReLU(), nn.Conv1d(16, 1, 1))
             layers, c = [], 2
             for w in (16, 32, 64, 96):
                 layers += [nn.Conv2d(c, w, 3, padding=1), nn.BatchNorm2d(w), nn.ReLU(), nn.AvgPool2d(2)]
@@ -350,7 +364,12 @@ def net(torch):
         def forward(self, x, a):
             h = self.conv(x)
             h = torch.cat([h.mean(dim=(2, 3)), h.amax(dim=(2, 3))], 1)
-            return self.head(self.fc(torch.cat([h, self.acf(a)], 1)))
+            out = self.head(self.fc(torch.cat([h, self.acf(a)], 1)))
+            if lag:
+                p = prominence(torch, a)
+                g = self.lag(p.reshape(-1, 1, LAGS)).view(a.shape[0], 2, LAGS).sum(1)
+                out = torch.cat([out, g], 1)
+            return out
 
     return Reader()
 
@@ -375,6 +394,24 @@ def denorm(z):
 
 
 def cmd_e1a_train(args):
+    _train(args, E1A / "runs", lag=False)
+
+
+def cmd_e1c_train(args):
+    _train(args, E1C / "runs", lag=True)
+
+
+def lag_target(t_log2):
+    """Soft lag targets (n, LAGS) for set times (log2 ms): lag k (k = 1..LAGS, 10 ms each) at index k - 1."""
+    import numpy as np
+
+    k = np.arange(1, LAGS + 1)
+    c = 2.0 ** np.asarray(t_log2, np.float64)[:, None] / 10.0
+    g = np.exp(-0.5 * ((k[None] - c) / LAG_SIGMA) ** 2)
+    return (g / g.sum(1, keepdims=True)).astype(np.float32)
+
+
+def _train(args, root, lag):
     import numpy as np
     import torch
 
@@ -385,6 +422,12 @@ def cmd_e1a_train(args):
     songs = np.array([m["song"] for m in meta])
     sections = np.array([m["section"] for m in meta])
     Y = norm_knobs(np.load(E1A / "labels.npy")[:, :2 + len(KNOBS)])
+    if lag:              # lag targets appended; NaN rows (delay off) carry no lag loss
+        tl = np.load(E1A / "labels.npy")[:, 2 + KNOBS.index("dtime")]
+        T = np.full((len(Y), LAGS), np.nan, np.float32)
+        T[~np.isnan(tl)] = lag_target(tl[~np.isnan(tl)])
+        Y = np.concatenate([Y, T], 1)
+    nk = 2 + len(KNOBS)
     dev = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
     todo = [args.fold] if args.fold else folds()
     arms = [args.arm] if args.arm else list(ARMS)
@@ -393,7 +436,7 @@ def cmd_e1a_train(args):
         Ac = np.load(E1A / f"acf-{arm}.npy")
         ext = arm == "stem"
         for song in todo:
-            out = E1A / "runs" / arm / f"{song}.npz"
+            out = root / arm / f"{song}.npz"
             if out.exists() and not args.force:
                 continue
             t0 = time.time()
@@ -405,7 +448,7 @@ def cmd_e1a_train(args):
             inner = np.array([i for i in tr if sections[i] in inner_secs])
             fit = np.array([i for i in tr if sections[i] not in inner_secs])
             te = np.where(songs == song)[0]
-            model = net(torch).to(dev)
+            model = net(torch, lag=lag).to(dev)
             opt = torch.optim.Adam(model.parameters(), lr=LR)
 
             def batch(idx):
@@ -416,10 +459,14 @@ def cmd_e1a_train(args):
             def loss_fn(out, y):
                 y = torch.tensor(y, device=dev)
                 bce = torch.nn.functional.binary_cross_entropy_with_logits(out[:, :2], y[:, :2])
-                k, t = out[:, 2:], y[:, 2:]
+                k, t = out[:, 2:nk], y[:, 2:nk]
                 m = ~torch.isnan(t)
                 mse = ((k - torch.nan_to_num(t)) ** 2)[m].mean() if m.any() else out.sum() * 0
-                return bce + mse
+                if not lag:
+                    return bce + mse
+                on = ~torch.isnan(y[:, nk])
+                ce = (-(y[on, nk:] * torch.log_softmax(out[on, nk:], 1)).sum(1)).mean() if on.any() else out.sum() * 0
+                return bce + mse + ce
 
             def predict(idx_or_x, a=None):
                 model.eval()
@@ -466,6 +513,14 @@ def cmd_e1a_train(args):
                   f"{res['minutes']:.1f} min", flush=True)
 
 
+def spearman(a, b):
+    import numpy as np
+    from scipy.stats import spearmanr
+
+    a, b = np.asarray(a), np.asarray(b)
+    return float(spearmanr(a, b)[0]) if len(a) > 2 else float("nan")
+
+
 def auc(y, s):
     import numpy as np
 
@@ -480,8 +535,17 @@ def auc(y, s):
 
 
 def cmd_e1a_score(args):
+    _score(E1A / "runs", E1A / "score.json", lag=False)
+
+
+def cmd_e1c_score(args):
+    _score(E1C / "runs", E1C / "score.json", lag=True)
+
+
+def _score(root, dest, lag):
     """Every readout on all items and on the wide draws (every switch a fair coin, every knob uniform and independent
-    of the other controls): the reader, the draw-only comparator, the median prior, the product's measures."""
+    of the other controls): the reader, the draw-only comparator, the median priors (all draws; and, draw-aware, the
+    wide-draw median and the amp x draw x class cell median), the product's measures; with lag, E1c's time readouts."""
     import hashlib as H
 
     import numpy as np
@@ -508,14 +572,19 @@ def cmd_e1a_score(args):
 
     # comparators that use no audio
     prior = np.full_like(Yk, np.nan, dtype=np.float64)
+    pw = np.full_like(Yk, np.nan, dtype=np.float64)       # draw-aware: the training songs' wide-draw median
+    pc = np.full_like(Yk, np.nan, dtype=np.float64)       # draw-aware: the amp x draw x class cell median
     cell = np.array(["|".join((m["amp"], m["mode"], m["base"])) for m in meta])
     draw = np.full((n, 2), np.nan)
     for song in folds():
         te, tr = songs == song, songs != song
         prior[te] = np.nanmedian(Yk[tr], axis=0)
+        pw[te] = np.nanmedian(Yk[tr & wide], axis=0)
         for c in set(cell[te]):
             mt = tr & (cell == c)
             draw[te & (cell == c)] = (L[mt, :2].sum(0) + 2 * L[tr, :2].mean(0)) / (mt.sum() + 2)
+            v = np.nanmedian(Yk[mt], axis=0) if mt.any() else prior[te][0]
+            pc[te & (cell == c)] = np.where(np.isnan(v), prior[te][0], v)
 
     def readouts(P, K, mask):
         r = {"n": int(mask.sum())}
@@ -551,19 +620,55 @@ def cmd_e1a_score(args):
             kn[k] = {"n_on": int(on.sum()), "mae_reader": float(np.mean(err[on])), "mae_prior": float(np.mean(perr[on])),
                      "diff": float(np.mean(err[on]) - np.mean(perr[on])),
                      "diff_ci": ci(lambda b: float(np.mean(err[b][on[b]]) - np.mean(perr[b][on[b]])))}
+            for nm, pv in (("wide_median", pw), ("cell_median", pc)):
+                qerr = np.abs(pv[:, j] - Yk[:, j])
+                kn[k][f"mae_{nm}"] = float(np.mean(qerr[on]))
+                kn[k][f"diff_vs_{nm}"] = float(np.mean(err[on]) - np.mean(qerr[on]))
+                kn[k][f"diff_vs_{nm}_ci"] = ci(lambda b: float(np.mean(err[b][on[b]]) - np.mean(qerr[b][on[b]])))
+            kn[k]["spearman"] = spearman(K[on, j], Yk[on, j])
             if k == "dtime":
                 kn[k]["within_10pct_reader"] = float(np.mean(np.abs(2 ** (K[on, j] - Yk[on, j]) - 1) <= 0.10))
                 kn[k]["within_10pct_prior"] = float(np.mean(np.abs(2 ** (prior[on, j] - Yk[on, j]) - 1) <= 0.10))
         r["knobs"] = kn
+        if lag:
+            r["time"] = time_readouts(mask)
         return r
+
+    def time_readouts(mask):
+        """E1c: the lag head's time (argmax lag; expectation beside) on delay-ons, against the draw-aware priors."""
+        j = KNOBS.index("dtime")
+        y = Yk[:, j]
+        ons = mask & ~np.isnan(y)
+        hi, lo = np.nanpercentile(Yk[ons, 2], 100 * 2 / 3), np.nanpercentile(Yk[ons, 2], 100 / 3)
+        within = lambda est: np.abs(2 ** (est - y) - 1) <= 0.10
+        cand = {"lag_argmax": T_arg, "lag_expect": T_exp, "regression": K[:, j]}
+        res = {}
+        for part, m in (("all", ons), ("strong_third", ons & (Yk[:, 2] >= hi)), ("weak_third", ons & (Yk[:, 2] < lo))):
+            d = {"n": int(m.sum())}
+            for nm, est in cand.items():
+                w, e = within(est), np.abs(est - y)
+                d[nm] = {"within_10pct": float(w[m].mean()), "mae_log2": float(e[m].mean()),
+                         "spearman": spearman(est[m], y[m])}
+                for pn, pv in (("wide_median", pw[:, j]), ("cell_median", pc[:, j]), ("all_median", prior[:, j])):
+                    pw_, pe = within(pv), np.abs(pv - y)
+                    d[nm][f"within_diff_vs_{pn}"] = float(w[m].mean() - pw_[m].mean())
+                    d[nm][f"within_diff_vs_{pn}_ci"] = ci(lambda b: float(w[b][m[b]].mean() - pw_[b][m[b]].mean()))
+                    d[nm][f"mae_diff_vs_{pn}"] = float(e[m].mean() - pe[m].mean())
+                    d[nm][f"mae_diff_vs_{pn}_ci"] = ci(lambda b: float(e[b][m[b]].mean() - pe[b][m[b]].mean()))
+            for pn, pv in (("wide_median", pw[:, j]), ("cell_median", pc[:, j]), ("all_median", prior[:, j])):
+                d[f"prior_{pn}"] = {"within_10pct": float(within(pv)[m].mean()),
+                                    "mae_log2": float(np.abs(pv - y)[m].mean())}
+            res[part] = d
+        return res
 
     out = {"n": n, "songs": sorted(set(songs)), "bands": cl, "n_wide": int(wide.sum()), "meta_sha256": meta_sha,
            "arms": {}}
+    nk = 2 + len(KNOBS)
     for arm in ARMS:
-        P = np.full((n, 2 + len(KNOBS)), np.nan)
+        P = np.full((n, nk + (LAGS if lag else 0)), np.nan)
         minutes, epochs = {}, {}
         for song in folds():
-            f = E1A / "runs" / arm / f"{song}.npz"
+            f = root / arm / f"{song}.npz"
             if not f.exists():
                 continue
             z = np.load(f)
@@ -575,15 +680,22 @@ def cmd_e1a_score(args):
         if np.isnan(P[:, 0]).any():
             out["arms"][arm] = {"missing": int(np.isnan(P[:, 0]).sum())}
             continue
-        K = denorm(P)[:, 2:]
+        K = denorm(P[:, :nk])[:, 2:]
+        if lag:
+            g = P[:, nk:]
+            pr_ = np.exp(g - g.max(1, keepdims=True))
+            pr_ /= pr_.sum(1, keepdims=True)
+            lags = np.arange(1, LAGS + 1)
+            T_arg = np.log2(10.0 * (np.argmax(g, 1) + 1))
+            T_exp = np.log2(10.0 * (pr_ * lags).sum(1))
         out["arms"][arm] = {"train_minutes": minutes, "best_epochs": epochs,
                             "all": readouts(P, K, np.ones(n, bool)), "wide": readouts(P, K, wide)}
         if arm == "stem":
-            f = E1A / "runs" / "stem" / f"{E0_SONG}.npz"
+            f = root / "stem" / f"{E0_SONG}.npz"
             if f.exists() and "ext_pred" in np.load(f).files:
                 ep = np.load(f)["ext_pred"]
                 pr = 1 / (1 + np.exp(-ep[:, :2]))
-                ek = denorm(ep)[:, 2:]
+                ek = denorm(ep[:, :nk])[:, 2:]
                 by = {}
                 for j, x in enumerate(mj["ext"]):
                     by.setdefault(x["kind"], []).append((pr[j, 0], pr[j, 1], 2 ** ek[j, 1], 2 ** ek[j, 3]))
@@ -608,7 +720,8 @@ def cmd_e1a_score(args):
             "n": len(ok), "delay_hit_within_10pct_of_ons": float(hit[don].mean()),
             "delay_fired_on_offs": float(fired[~don].mean()), "delay_fired_on_ons": float(fired[don].mean()),
             "reverb_rule_on_of_ons": float(rv[ron].mean()), "reverb_rule_on_of_offs": float(rv[~ron].mean())}
-    (E1A / "score.json").write_text(json.dumps(out, indent=1))
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps(out, indent=1))
     print(json.dumps(out, indent=1)[:8000])
 
 
@@ -623,6 +736,12 @@ def main(argv=None):
     t.add_argument("--force", action="store_true")
     t.set_defaults(fn=cmd_e1a_train)
     sub.add_parser("e1a-score").set_defaults(fn=cmd_e1a_score)
+    t = sub.add_parser("e1c-train")
+    t.add_argument("--fold")
+    t.add_argument("--arm", choices=list(ARMS))
+    t.add_argument("--force", action="store_true")
+    t.set_defaults(fn=cmd_e1c_train)
+    sub.add_parser("e1c-score").set_defaults(fn=cmd_e1c_score)
     args = ap.parse_args(argv)
     args.fn(args)
 

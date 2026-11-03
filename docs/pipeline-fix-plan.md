@@ -40,7 +40,11 @@ Its zero-render first test (F48): on the chord DI the product's own measures rea
 backing (the echo detector abstains on strummed chords; the reverb rule fires rarely, and more often without a
 reverb). The echo leaves a trace at the known lag; whether a reader can find it blind is untested. The reader (E1)
 learns both, declared next.
-Findings F1–F48.
+The learned reader (F49, zero renders): on the separated stem it hears that reverb or delay is on, a little (AUC
+0.61 for the stronger third of each, where the preset cannot give it away); it reads no knob beyond knowing the
+preset draw, and even on the clean target it reads neither reverb decay nor delay time, though the time is in its
+input there. Next, E1c (zero renders): a reader head that finds the echo's lag, the clean target first.
+Findings F1–F49.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -1623,6 +1627,37 @@ instead of generating unrealistic presets our own?"):
       draw comparator. *Caveats:* mono mixes (no stereo pipeline exists), one separator, the songs' own backings (DI
       and backing held out together, never apart), 8 songs in 7 bands, outside the wide draws the reader can score
       by recognising the preset, a fixed seed.
+    - *E1a's outcome (2026-11-03, F49):* on the wide draws the stem reader hears that an effect is on, modestly
+      (strong thirds 0.614 [0.591, 0.648] reverb, 0.614 [0.584, 0.640] delay), the target much better (0.767,
+      0.801). By the rule's letter delay passes, but its knob half used a prior blind to the draw: against the
+      training songs' wide-draw median the stem reads no knob, and even the target reads neither decay nor time,
+      though the time shows at the set lag in the target's envelope autocorrelation (83% of wide delay-ons). So
+      E1b is not declared; the reader is the bottleneck for time (declared branch), and E1c fixes it.
+    - **E1c (2026-11-03, zero renders, declared after F49; ledger `phase_fx_reader_e1c`).** Can a head built to find
+      a lag read delay time? Same data build (meta sha256 7ec72295…), examples, folds, seed, optimiser, epochs and
+      inner split as E1a; one change to the reader: a *lag head* on the stored envelope autocorrelation (2 halves ×
+      150 lags of 10 ms). Each half's curve minus its local mean (lags ±3–6 frames, the audit's prominence), then a
+      1-D convolution over lags shared by both halves (2→16→16 channels, kernel 5, ReLU, then 16→1), the halves'
+      logits summed: 150 logits, one per lag. It trains on delay-on items by cross-entropy against a Gaussian of
+      one lag (10 ms) around the set lag, added to E1a's loss with weight 1 (set times 60–800 ms, lags 6–80; under
+      100 ms ±10% is less than a lag, so only the exact lag counts there). Its time is the argmax lag (the expectation reported beside). The convolution slides over lags, so it
+      learns the peak's shape, not where the preset draw puts it. The regression heads stay as in E1a. Arms: the
+      clean target first (the ceiling), then the stem, then the mix; 24 fold-arms, about an hour (E1a measured 20
+      minutes an arm). *Comparators,* no audio, from the training songs: the wide-draw median and the amp × draw ×
+      class cell median (draw-aware, as E1a's audit found the prior must be); the all-draw median beside. *Readouts*
+      on the wide delay-ons (402), overall and by the strong and weak third of delay mix, with 90% intervals from
+      2,000 band resamples (7 clusters, seed 20261108): time within ±10% for the lag head and each prior and the
+      difference; log2-time MAE and the difference; Spearman reader–truth; the regression time head beside. Also on
+      all delay-ons, and for every regression knob against both draw-aware priors (E1a's audit made formal);
+      on/off AUC and the draw comparator as in E1a, descriptive. *Rule:* time *reads* on an arm if, on the wide
+      delay-ons, its within-±10% difference against the wide-draw median has its interval above 0 and its log2 MAE
+      difference has its interval below 0. *What follows:* target and stem read → E1b is declared for delay (on/off
+      and time) with renders, reviewed first; the target reads but the stem does not → time is lost to masking or
+      the separator (the mix arm says which), and E1b aims there; the target does not read → the stored envelope
+      (10 ms frames, band-weighted dB) is the limit, and finer features from the stored target audio are the next
+      research target. Reverb decay is not in E1c: no cue for it is shown in the input yet. *Caveats:* E1a's (two
+      songs hold 66% of the wide draws; 7 band clusters may under-cover; mono mixes; one separator; one seed); the
+      lag head is chosen after seeing E1a's audit, which E1c's held-out folds do not undo for the ACF check itself.
     - **E1b (outline; declared on its own after E1a, reviewed before any render):** what E1a leaves open, with
       renders: stereo and mastered mixes as the product's songs are (new work: the self-built mixes are mono),
       more verified DIs (E0's Quicksand DI out of training), a backing split, the confounders varied (the amps'
@@ -3378,6 +3413,70 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   the delay trace's scope (known lag, mix 0.40, no backing); the release slope's limits; "fires more often without"
   and the RT60 numbers; what E0 can say about separation; the by-cell breakdown and the empty readouts; a ROADMAP
   typo.
+
+### F49. On the stem the learned reader hears whether reverb or delay is on, a little; it reads no knob beyond knowing the preset draw, and even on the clean target it reads neither reverb decay nor delay time (phase_fx_reader E1a)
+- **Result.** `learn/fx_reader.py e1a-*` (zero renders; 2,640 examples, 8 songs in 7 bands, leave one song out; 24
+  fold-arms, about 20 minutes an arm on MPS; every run file carries the data build's hash, checked at scoring).
+  Decision subset, the 770 wide draws (every switch a fair coin, so on/off cannot be scored by knowing the preset):
+  | wide draws, AUC [90%] | stem | mix | target |
+  |---|---|---|---|
+  | reverb, strong third | 0.614 [0.591, 0.648] | 0.552 [0.478, 0.649] | 0.767 [0.733, 0.809] |
+  | reverb, all | 0.559 [0.538, 0.588] | 0.516 [0.492, 0.554] | 0.676 [0.646, 0.725] |
+  | reverb, weak third | 0.477 [0.454, 0.533] | 0.488 [0.470, 0.526] | 0.574 [0.538, 0.629] |
+  | delay, strong third | 0.614 [0.584, 0.640] | 0.609 [0.524, 0.719] | 0.801 [0.781, 0.841] |
+  | delay, all | 0.573 [0.552, 0.611] | 0.582 [0.497, 0.675] | 0.726 [0.703, 0.758] |
+  | delay, weak third | 0.514 [0.453, 0.604] | 0.543 [0.463, 0.623] | 0.624 [0.588, 0.676] |
+  The draw-only comparator sits at 0.44–0.51 on the wide draws, as it should; the reader minus it, strong thirds:
+  stem +0.105 [+0.068, +0.147] reverb, +0.165 [+0.132, +0.223] delay. Song-weighted means (stem): reverb 0.523,
+  delay 0.579; Storm Of Particles reads reverb at 0.20 on its 15 wide items. Reverb with the offs split by the
+  selected amp's spring (stem, wide): 0.524 against spring-on offs, 0.580 against spring-off offs (target 0.641,
+  0.696): the spring is read as reverb. *Knobs, wide true-ons, MAE against the declared prior (the training songs'
+  median over all draws):* stem reverb mix −0.036 [−0.041, −0.020], decay −0.001 [−0.013, +0.009], delay mix
+  −0.044 [−0.052, −0.033], time (log2) −0.202 [−0.250, −0.125], feedback −0.022 [−0.032, −0.015]. *On all items*
+  the reader sits below the draw comparator for on/off (stem reverb 0.566 against 0.746) and its knobs are not
+  better than the prior (time worse, +0.136 log2): there knowing the preset does better than listening.
+  *The product's measures on the clean targets (wide):* the echo detector lands within 10% of the set time on 2.2%
+  of delay-ons and fires on 8.7% of offs against 6.0% of ons; the reverb rule fires on 38% of reverb-ons and 42% of
+  offs. *External* (the Quicksand-out stem fold on E0's 84 X-LANCE stems, descriptive): median delay probability
+  0.29 on S, 0.44–0.56 on delay stems and 0.55–0.59 on large-reverb stems, so it rises with any effect but does not
+  tell them apart; median time 275–326 ms against the set 300 and 500 ms; E0's stems are about 6.6 LU quieter than
+  D_CC's (−21.0 against −14.4 LUFS).
+- **Audit (before the write-up, exploratory; `fx-reader/e1a/audit/`).** (1) *The knob gains are the draw, not
+  the sound.* The declared prior is the median over all draws, but wide knobs are uniform, so a reader that knows
+  an item is a wide draw beats that prior without hearing the effect. Against a draw-aware prior (the training
+  songs' median over wide draws; and the amp × draw × class cell median) the stem reader is worse, not better:
+  reverb mix +0.019 [+0.006, +0.032], delay mix +0.017 [−0.001, +0.035], time +0.103 [+0.029, +0.249] log2,
+  feedback +0.004 [−0.003, +0.011], decay +0.001 [−0.019, +0.013] (cell median alike). Spearman reader–truth on
+  wide stem ons: reverb mix 0.22, delay mix 0.16, feedback 0.11, decay 0.01, time 0.04; time within ±10% 8.5%
+  against the wide median's 7.2%. The clean target reads the mixes and feedback past the draw-aware prior (reverb
+  mix −0.022 [−0.031, −0.016], delay mix −0.016 [−0.027, −0.008], feedback −0.032 [−0.045, −0.023]; Spearman
+  0.34, 0.33, 0.39), but not decay (Spearman 0.02) or time (0.07; within ±10% 6.7%). (2) *The time is in the
+  input on the target.* On the first half's stored envelope autocorrelation of the 402 wide delay-ons, the local
+  prominence at the set lag beats the same lag on wide delay-offs on 83% of clean targets (98.5% of the strong
+  third), 60% (69%) of stems and 51% (59%) of mixes; its plain argmax hits the set time on 1% (the playing's own
+  rhythm is taller). So on the target the reader fails to use a time cue its input carries.
+- **Reading.** By the declared rule's letter, delay passes (the stem's strong-third AUC interval is above 0.5;
+  delay mix and time MAE against the median prior below 0). The audit voids its knob half: against a prior that
+  knows the draw, the stem reads no knob, so E1b is **not** declared on this result; the rule's prior should have
+  been draw-aware, as its AUC comparator was. What stands: on the stem the reader hears that an effect is on,
+  modestly (strong thirds 0.61 for both; near chance on weak ones), genuinely (the wide switches are coin flips).
+  The stem reads on/off about as well as the mix or better (separation does not cost it; the mix arm's Forkupines
+  fold, 40% of the wide draws, kept epoch 1, so the mix figures may understate), and the clean target reads much better (0.77, 0.80): the main loss for on/off is the
+  backing's masking, not the separator, as `docs/tone-info-probe.md` found with linear probes. For the knobs the
+  declared branch "the target does not read: the reader or its features are the bottleneck" applies to decay and
+  time; for time the audit points at the reader (the cue is in its input on the target), for decay nothing yet
+  shows the cue is there. The product's own measures do no better on the clean targets than chance.
+- **What it changes.** E1c (zero renders, declared in the effects route above, reviewed before it runs) fixes the reader where the
+  cue is shown: a lag head for delay time on the envelope autocorrelation, knob readouts against the draw-aware
+  prior, the target read first as the ceiling. Decay waits for a cue shown in the input. E1b stays the route to
+  the product once a knob reads on the stem.
+- **Caveats.** Two songs hold 66% of the wide draws (Forkupines 306, BKS Bulldozer 205; Dunning Kruger 5), so
+  per-song figures are thin and the 7-band intervals may under-cover; mono mixes; one separator; one seed; the
+  reader trained on all draws (where knowing the preset pays), read on wide ones. The audit's priors and the ACF
+  check are post hoc.
+- **References.** `~/ndsp-presets/learn/trusted-data/judge-v5/fx-reader/e1a/score.json`, `score-stdout.txt`,
+  `audit/knob_prior_audit.py` and `.json`, `audit/acf_time_audit.py` and `.json`, run files `e1a/runs/{arm}/`;
+  code `learn/fx_reader.py`; ledger `phase_fx_reader_e1a`, `phase_fx_reader_e1a_outcome`.
 
 ## Budget
 
