@@ -705,8 +705,8 @@ was declared, what was measured, and the research behind it.
     perceptual difference measures could rate two guitar renders as the ear does, after F44 and
     F45 (headphones) found the judge weighs treble above the ear and the effects below it
     (November 2026; nothing installed or run). The project's exploratory Zwicker loudness and
-    CDPAM rows already put the treble steps top 3 (F45). No open measure has been tested against listeners on guitar setting
-    changes, so the ranking is a prediction: HAAQI (pyclarity, MIT; read its sub-terms, may
+    CDPAM rows already put the treble steps top 3 (F45). No open measure has been tested against
+    listeners on guitar setting changes, so the ranking is a prediction: HAAQI (pyclarity, MIT; read its sub-terms, may
     over-score input gain), PEAQ's separate outputs (GstPEAQ, the only open advanced version), and
     reverb cues (an impulse response estimated between the two renders, in just-noticeable
     differences, or the PREV model); whether embeddings (AFx-Rep, MERT, CLAP) weigh
