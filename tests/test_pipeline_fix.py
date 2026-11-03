@@ -1778,6 +1778,7 @@ def test_ftg_groups_cover_every_model_key_in_the_declared_groups():
 
 
 def test_ftg_hybrids_swap_exactly_one_group():
+    pytest.importorskip("numpy")
     s = {"select": 1, "settings": {"parameters/inputGain": 0.0, "pr12Amp/pr12Treble": 0.5, "reverb/reverbMix": 0.1,
                                    "cabParameters/leftCabDistance": 0.3, "parameters/outputGain": 0.0}}
     a = {"select": 1, "settings": {"parameters/inputGain": 3.0, "pr12Amp/pr12Treble": 0.7, "reverb/reverbMix": 0.1,
@@ -1834,6 +1835,7 @@ def test_ftg_change_counts_only_what_can_sound():
 
 
 def test_ftg_renders_and_reports_refuse_until_the_hashes_are_in_the_ledger(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")
     from learn import direct_stems as DS
 
     monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
