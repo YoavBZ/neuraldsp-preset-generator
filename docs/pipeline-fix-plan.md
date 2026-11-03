@@ -45,7 +45,12 @@ The learned reader (F49, zero renders): on the separated stem it hears that reve
 preset draw, and even on the clean target it reads neither reverb decay nor delay time, though a simple peak picker
 with no training finds the echo's time there (44% within ±10%, against 7% for a guess). Next, E1c (zero renders): a
 learned head that finds the echo's lag, on the stem, against that picker.
-Findings F1–F49.
+E1c (F50, zero renders): delay time does not read on the stem or the mix, by the learned head or by the picker (a
+few hits on the strongest delays); on the clean target the head matches the picker's hits. So on the stored
+features the echo's time is lost to the backing's masking, and E1b is not declared. Next: the cloud researcher's
+survey of proven blind effect-estimation tools (asked at the user's prompt) decides whether an existing estimator
+is tested on the stored stems, or finer features from re-separated stem audio are built.
+Findings F1–F50.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -1675,6 +1680,13 @@ instead of generating unrealistic presets our own?"):
       the comparator to beat, with branches restated around the stem (the target branch is already answered by
       the picker); the convolution described as built (1→16→16→1 per half); the trunk kept as E1a's (a forked
       random stream and the lag head's own epoch).
+    - *E1c's outcome (2026-11-03, F50):* time does not read on any arm by the declared rule. On the wide
+      delay-ons the stem's head lands within ±10% on 10.7% (the wide median 7.2%; the picker 13.7%), with its error
+      worse than the prior's (+0.251 [+0.195, +0.348]) and Spearman −0.02; the mix alike. On the target the head's
+      hits equal the picker's (46.0% against 43.5%) but its posterior-median error is not better than the prior's
+      (+0.034 [−0.030, +0.099]). The picker, which reads on the target, fails on the stem too, so the stem verdict
+      stands without the head: masking (declared branch). E1b is not declared; the next step waits on the survey of
+      proven blind estimators.
     - **E1b (outline; declared on its own after E1a, reviewed before any render):** what E1a leaves open, with
       renders: stereo and mastered mixes as the product's songs are (new work: the self-built mixes are mono),
       more verified DIs (E0's Quicksand DI out of training), a backing split, the confounders varied (the amps'
@@ -3511,6 +3523,46 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   against mix undecided (the mix's Forkupines fold); "no knob's error beats a draw-aware prior" with the weak
   ranks, not "reads no knob"; small figures (feedback Spearman 0.38, the external range, the trivial decay gain
   on all items, epoch index 1). The other four amended E1c before any run.
+
+### F50. Delay time does not read on the stem or the mix, by a learned lag head or by the training-free picker; on the clean target the head matches the picker's hits but not, by the declared estimator, its error (phase_fx_reader E1c)
+- **Result.** `learn/fx_reader.py e1c-*` (zero renders; 24 fold-arms, about 21 minutes an arm; the trunk's best
+  epochs and the on/off AUCs repeat E1a's exactly, as intended). Wide delay-ons (402), against the training songs'
+  wide-draw median (within ±10% 7.2%, log2 MAE 0.953):
+  | wide delay-ons | stem | mix | target |
+  |---|---|---|---|
+  | head, within ±10% | 10.7% | 9.5% | 46.0% |
+  | difference [90%] | +0.035 [+0.019, +0.078] | +0.022 [+0.002, +0.060] | +0.388 [+0.343, +0.451] |
+  | head, log2 MAE diff (posterior median) | +0.251 [+0.195, +0.348] | +0.248 [+0.191, +0.339] | +0.034 [−0.030, +0.099] |
+  | head − picker, within ±10% | −0.030 [−0.074, +0.036] | +0.027 [−0.008, +0.090] | +0.025 [−0.006, +0.048] |
+  | Spearman, head (picker) | −0.02 (0.02) | −0.07 (0.00) | 0.39 (0.41) |
+  Strong third of delay mix (134): stem head 17.2% against the prior's 4.5% (+0.127 [+0.069, +0.281]), picker
+  14.2%, MAE still worse (+0.224 [+0.129, +0.412]); target head 67.9%, picker 65.7%, Spearman 0.66 both; weak
+  third: stem head 7.5% (below the prior's 10.4%), target 24.6%. E1a's regression time head stays at the prior
+  everywhere (stem 8.5%, target 6.7%). Descriptive: the head's own argmax gives log2 MAE 0.789 on the target
+  (prior 0.953), 1.314 on the stem; the lag head's best epochs were 38–39 of 40 on every target fold (still
+  improving), 12–39 on the stem.
+- **Reading.** By the declared rule time does not read on any arm. On the target the head passes the hit half
+  (+0.388) but not the error half: its posterior median falls between candidate lags when it is unsure, so its
+  error is no better than the prior's, while its hits equal the picker's (+0.025 [−0.006, +0.048]); by the declared
+  branch the head is not shown working on the target, so its stem result cannot stand alone. The stem verdict does
+  not rest on the head, though: the training-free picker, which reads time on the target on both halves of the
+  rule (F49's audit: +0.363 and −0.138), also fails on the stem (hits +0.065 [+0.019, +0.104], error +0.350, Spearman
+  0.02), as on the mix. So on the stored envelope features the echo's time does not survive into the stem or the
+  mix at a usable rate: a few hits on the strongest delays (17% against 4.5%), wrong by large factors elsewhere.
+  Neither the stem nor the mix reads, so by the declared branch the loss is the backing's masking (the separator
+  does not recover it), and E1b's renders would aim there. Fixing the head (its estimator, more epochs) could
+  close its gap to the picker on the target, not the stem's gap.
+- **What it changes.** E1b is not declared. Delay time from the stem, like reverb decay, has no shown route on the
+  stored features (uint8 half log-mels at 10 ms, band-weighted envelope autocorrelation); on/off reads modestly
+  (F49). Before building further, the cloud researcher's survey of proven blind effect-estimation methods and tools
+  (requested at the user's prompt, 2026-11-03) decides the next step: an existing estimator tested on the stored
+  stems and targets with known settings, zero renders, or finer features from re-separated stem audio.
+- **Caveats.** E1a's (two songs hold 66% of the wide draws; 7 band clusters; mono mixes; one separator; one seed).
+  The head and the picker were chosen after seeing E1a's audit. The posterior median as the error estimator was
+  declared before the run; the argmax's error is descriptive.
+- **References.** `~/ndsp-presets/learn/trusted-data/judge-v5/fx-reader/e1c/score.json`, `score-stdout.txt`, run
+  files `e1c/runs/{arm}/` (with `lag_curve`, `lag_best_epoch`); code `learn/fx_reader.py`; ledger
+  `phase_fx_reader_e1c`, `phase_fx_reader_e1c_outcome`.
 
 ## Budget
 
