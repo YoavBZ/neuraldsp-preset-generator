@@ -207,6 +207,7 @@ SPRING_LEVEL = {"pr12": "pr12Amp/pr12Reverb", "sw50r": "sw50rAmp/sw50rReverb"}  
 KNOBS = ("rmix", "rdecay", "dmix", "dtime", "dfb")  # rmix/dmix/dfb rotations; rdecay, dtime log2
 E1C = OUT / "e1c"                                  # E1a plus a lag head for delay time (same data build)
 LAG_SIGMA = 1.0                                    # soft target: a Gaussian of one lag around the set lag
+LAG_RANGE = (6, 80)                                # lags searched: the draw's 60-800 ms (a range the product can be given)
 
 
 def labels(settings, amp):
@@ -349,9 +350,10 @@ def net(torch, lag=False):
     class Reader(nn.Module):
         def __init__(self):
             super().__init__()
-            if lag:          # E1c: logits over lags from the prominence curve, shared over halves (slides over lags)
-                self.lag = nn.Sequential(nn.Conv1d(1, 16, 5, padding=2), nn.ReLU(),
-                                         nn.Conv1d(16, 16, 5, padding=2), nn.ReLU(), nn.Conv1d(16, 1, 1))
+            if lag:          # E1c: logits over lags from the prominence curve, shared over halves (slides over lags);
+                with torch.random.fork_rng(devices=[]):     # drawn on a forked stream: the trunk's weights stay E1a's
+                    self.lag = nn.Sequential(nn.Conv1d(1, 16, 5, padding=2), nn.ReLU(),
+                                             nn.Conv1d(16, 16, 5, padding=2), nn.ReLU(), nn.Conv1d(16, 1, 1))
             layers, c = [], 2
             for w in (16, 32, 64, 96):
                 layers += [nn.Conv2d(c, w, 3, padding=1), nn.BatchNorm2d(w), nn.ReLU(), nn.AvgPool2d(2)]
@@ -368,6 +370,8 @@ def net(torch, lag=False):
             if lag:
                 p = prominence(torch, a)
                 g = self.lag(p.reshape(-1, 1, LAGS)).view(a.shape[0], 2, LAGS).sum(1)
+                k = torch.arange(1, LAGS + 1, device=a.device)
+                g = g.masked_fill((k < LAG_RANGE[0]) | (k > LAG_RANGE[1]), -1e4)
                 out = torch.cat([out, g], 1)
             return out
 
@@ -456,17 +460,20 @@ def _train(args, root, lag):
                 a = torch.tensor(Ac[idx], device=dev)
                 return x, a
 
-            def loss_fn(out, y):
-                y = torch.tensor(y, device=dev)
+            def main_loss(out, y):     # E1a's loss (y a tensor); the trunk's epoch choice, unchanged by a lag head
                 bce = torch.nn.functional.binary_cross_entropy_with_logits(out[:, :2], y[:, :2])
                 k, t = out[:, 2:nk], y[:, 2:nk]
                 m = ~torch.isnan(t)
                 mse = ((k - torch.nan_to_num(t)) ** 2)[m].mean() if m.any() else out.sum() * 0
-                if not lag:
-                    return bce + mse
+                return bce + mse
+
+            def lag_ce(out, y):
                 on = ~torch.isnan(y[:, nk])
-                ce = (-(y[on, nk:] * torch.log_softmax(out[on, nk:], 1)).sum(1)).mean() if on.any() else out.sum() * 0
-                return bce + mse + ce
+                return (-(y[on, nk:] * torch.log_softmax(out[on, nk:], 1)).sum(1)).mean() if on.any() else out.sum() * 0
+
+            def loss_fn(out, y):
+                y = torch.tensor(y, device=dev)
+                return main_loss(out, y) + lag_ce(out, y) if lag else main_loss(out, y)
 
             def predict(idx_or_x, a=None):
                 model.eval()
@@ -483,6 +490,7 @@ def _train(args, root, lag):
                 return np.concatenate(res)
 
             best, best_state, best_ep, curve = None, None, -1, []
+            lbest, lbest_state, lbest_ep, lcurve = None, None, -1, []
             for ep in range(EPOCHS):
                 model.train()
                 perm = rng.permutation(fit)
@@ -496,21 +504,47 @@ def _train(args, root, lag):
                 model.eval()
                 with torch.no_grad():
                     pv = torch.tensor(predict(inner), device=dev)
-                    vl = float(loss_fn(pv, Y[inner]))
+                    yi = torch.tensor(Y[inner], device=dev)
+                    vl = float(main_loss(pv, yi))
+                    if lag:
+                        cl = float(lag_ce(pv, yi))
                 curve.append(vl)
                 if best is None or vl < best:
                     best, best_ep = vl, ep
                     best_state = {k: v.detach().clone() for k, v in model.state_dict().items()}
+                if lag:
+                    lcurve.append(cl)
+                    if lbest is None or cl < lbest:     # the lag head's own epoch, by its inner cross-entropy
+                        lbest, lbest_ep = cl, ep
+                        lbest_state = {k: v.detach().clone() for k, v in model.lag.state_dict().items()}
             model.load_state_dict(best_state)
+            if lag:
+                model.lag.load_state_dict(lbest_state)
             pred = predict(te)
             res = {"idx": te, "pred": pred, "curve": np.array(curve), "best_epoch": best_ep,
                    "minutes": (time.time() - t0) / 60, "meta_sha256": meta_sha}
+            if lag:
+                res.update(lag_curve=np.array(lcurve), lag_best_epoch=lbest_ep)
             if ext and song == E0_SONG:
                 res["ext_pred"] = predict(np.load(E1A / "x-ext.npy"), np.load(E1A / "acf-ext.npy"))
             out.parent.mkdir(parents=True, exist_ok=True)
             np.savez(out, **res)
             print(f"{arm} {song}: {len(fit)} fit, {len(inner)} inner, {len(te)} test; best epoch {best_ep}; "
                   f"{res['minutes']:.1f} min", flush=True)
+
+
+def picker(A):
+    """F49's training-free time picker: per half, each lag's autocorrelation minus the mean of lags +-3..6 (missing
+    neighbours dropped at the edges), summed over halves; the argmax within LAG_RANGE, as log2 ms."""
+    import numpy as np
+
+    x = np.asarray(A, np.float64).reshape(len(A), 2, LAGS)
+    p = np.empty_like(x)
+    for k in range(LAGS):
+        nb = [j for j in list(range(k - 6, k - 2)) + list(range(k + 3, k + 7)) if 0 <= j < LAGS]
+        p[:, :, k] = x[:, :, k] - x[:, :, nb].mean(2)
+    s = p.sum(1)[:, LAG_RANGE[0] - 1:LAG_RANGE[1]]
+    return np.log2(10.0 * (np.argmax(s, 1) + LAG_RANGE[0]))
 
 
 def spearman(a, b):
@@ -635,27 +669,33 @@ def _score(root, dest, lag):
         return r
 
     def time_readouts(mask):
-        """E1c: the lag head's time (argmax lag; expectation beside) on delay-ons, against the draw-aware priors."""
+        """E1c on delay-ons: the lag head (within +-10% from its argmax lag; MAE and Spearman from its posterior
+        median), the training-free picker (argmax of the summed prominence), E1a's regression head, against the
+        draw-aware priors and, for the head, against the picker."""
         j = KNOBS.index("dtime")
         y = Yk[:, j]
         ons = mask & ~np.isnan(y)
         hi, lo = np.nanpercentile(Yk[ons, 2], 100 * 2 / 3), np.nanpercentile(Yk[ons, 2], 100 / 3)
         within = lambda est: np.abs(2 ** (est - y) - 1) <= 0.10
-        cand = {"lag_argmax": T_arg, "lag_expect": T_exp, "regression": K[:, j]}
+        cand = {"lag_head": (T_arg, T_med), "picker": (T_pick, T_pick), "regression": (K[:, j], K[:, j])}
+        priors = (("wide_median", pw[:, j]), ("cell_median", pc[:, j]), ("all_median", prior[:, j]))
         res = {}
         for part, m in (("all", ons), ("strong_third", ons & (Yk[:, 2] >= hi)), ("weak_third", ons & (Yk[:, 2] < lo))):
             d = {"n": int(m.sum())}
-            for nm, est in cand.items():
-                w, e = within(est), np.abs(est - y)
+            for nm, (hit_est, pt_est) in cand.items():
+                w, e = within(hit_est), np.abs(pt_est - y)
                 d[nm] = {"within_10pct": float(w[m].mean()), "mae_log2": float(e[m].mean()),
-                         "spearman": spearman(est[m], y[m])}
-                for pn, pv in (("wide_median", pw[:, j]), ("cell_median", pc[:, j]), ("all_median", prior[:, j])):
+                         "spearman": spearman(pt_est[m], y[m]),
+                         "spearman_ci": ci(lambda b: spearman(pt_est[b][m[b]], y[b][m[b]])),
+                         "double_lag_share": float((np.abs(2 ** (hit_est - y) - 2) <= 0.2)[m].mean())}
+                others = priors + ((("picker", T_pick),) if nm == "lag_head" else ())
+                for pn, pv in others:
                     pw_, pe = within(pv), np.abs(pv - y)
                     d[nm][f"within_diff_vs_{pn}"] = float(w[m].mean() - pw_[m].mean())
                     d[nm][f"within_diff_vs_{pn}_ci"] = ci(lambda b: float(w[b][m[b]].mean() - pw_[b][m[b]].mean()))
                     d[nm][f"mae_diff_vs_{pn}"] = float(e[m].mean() - pe[m].mean())
                     d[nm][f"mae_diff_vs_{pn}_ci"] = ci(lambda b: float(e[b][m[b]].mean() - pe[b][m[b]].mean()))
-            for pn, pv in (("wide_median", pw[:, j]), ("cell_median", pc[:, j]), ("all_median", prior[:, j])):
+            for pn, pv in priors:
                 d[f"prior_{pn}"] = {"within_10pct": float(within(pv)[m].mean()),
                                     "mae_log2": float(np.abs(pv - y)[m].mean())}
             res[part] = d
@@ -685,9 +725,9 @@ def _score(root, dest, lag):
             g = P[:, nk:]
             pr_ = np.exp(g - g.max(1, keepdims=True))
             pr_ /= pr_.sum(1, keepdims=True)
-            lags = np.arange(1, LAGS + 1)
             T_arg = np.log2(10.0 * (np.argmax(g, 1) + 1))
-            T_exp = np.log2(10.0 * (pr_ * lags).sum(1))
+            T_med = np.log2(10.0 * (np.argmax(np.cumsum(pr_, 1) >= 0.5, 1) + 1))    # posterior median lag
+            T_pick = picker(np.load(E1A / f"acf-{arm}.npy"))
         out["arms"][arm] = {"train_minutes": minutes, "best_epochs": epochs,
                             "all": readouts(P, K, np.ones(n, bool)), "wide": readouts(P, K, wide)}
         if arm == "stem":
