@@ -31,7 +31,10 @@ product must reach the most accurate preset with no human in the loop, so the ju
 go-ahead for a combined, automatic judge. Declared next: J5, the judge plus a carry-over part for what time effects
 add (in-sample it removes most effect inversions, not the treble steps), checked on a fresh blind page with a
 chord DI and two other presets.
-Findings F1–F46.
+The fresh page (F47): J5 ranks it worse than J0 (−0.224 [−0.351, −0.063]): on strummed chords the effects were
+barely heard, and J0 already ranks that page well (+0.863), so J5 is not adopted and J0 stays; effects follow
+song research. Next: the approved real-amp recordings and a fresh real-song test, scored with J0.
+Findings F1–F47.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -1509,6 +1512,10 @@ instead of generating unrealistic presets our own?"):
       stem; C on X-LANCE stems picks the wet render for mix 0.40, the 3 s decay and delay time in 21 of 24 cases, and
       not the mix 0.15 effects (0–3 of 6), whose size equals X-LANCE's own slight tail trim (C −0.04). One DI, two
       presets, 3 backings, plugin-rendered guitar: descriptive. The robust effect part must be read through stems.
+    - *The page's outcome (2026-11-03, F47):* J5 − J0 −0.224 [−0.351, −0.063]: undecided by the declared rule and
+      not adopted, the interval wholly below 0. On this chord DI the effects were barely heard (clean reverb and delay
+      0.40 barely, the rest the same) while the tone steps and high shelves were heard clearly or very; J0 ranks the
+      page well (+0.863). No second page, no tonal revision (not triggered); J0 stays.
 
 - **Decisions for the user, with the evidence:** whether to adopt the S fallback or the near-chance rule
   (steps 26, 27, 37), and whether to scale.
@@ -3122,6 +3129,66 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   set of 8, checked that the DI really has no note end by the declared detector (its notes decay 20–30 dB, never
   40), and that the code follows the declaration. Required: J1's change stated by item, the anchors' order, the
   decay part untested in the header, the bias caveat and the decision's place.
+
+### F47. On a chord DI the carry-over part makes the judge worse: effects are heard far less than on single notes, and J0 already ranks the page well (phase_judge_v5, the fresh page)
+- **Result.** The fresh blind page (headphones, build 9140fa6a723e, 2026-11-03; 30 items, every answer marked
+  sure; both catches heard as the same). Before scoring, the page's 60 clips were decoded and matched to the key by
+  correlation against the intended level-matched audio: 0 mismatches (`judge-v5/page-audit.txt`). J0 / J5 (w_c 8,
+  frozen) and the rating, per item against S unless stated:
+
+  | Item | AC20 clean J0 / J5 | Ear | PR12 crunch J0 / J5 | Ear |
+  |---|---|---|---|---|
+  | drive +4 dB | 1.23 / 1.30 | same | 0.66 / 0.91 | same |
+  | drive +10 dB | 2.93 / 2.99 | very | 1.45 / 1.86 | same |
+  | tone 0.30 | 1.93 / 1.98 | clearly | 0.97 / 1.38 | same |
+  | tone 0.70 | 2.98 / 3.03 | very | 1.74 / 2.01 | barely |
+  | cab (next mic) | 0.55 / 0.56 | same | 0.46 / 0.46 | same |
+  | reverb mix 0.15 | 0.48 / 1.45 | same | 0.11 / 0.16 | same |
+  | reverb mix 0.40 | 1.77 / 3.70 | barely | 0.80 / 1.40 | same |
+  | reverb decay 1.48 vs 3.0 s | 0.62 / 1.09 | same | 0.37 / 0.66 | same |
+  | delay mix 0.15 | 1.10 / 2.58 | same | 0.26 / 0.55 | same |
+  | delay mix 0.40 | 2.05 / 3.45 | barely | 0.70 / 1.38 | same |
+  | delay time 500 vs 300 ms | 1.22 / 1.49 | same | 0.79 / 0.89 | same |
+  | combined | 1.91 / 2.78 | same | 0.85 / 1.34 | same |
+  | anchor high +6 dB | 1.31 / 1.31 | clearly | 1.83 / 1.84 | very |
+  | anchor low −6 dB | 0.97 / 1.00 | same | 0.95 / 0.96 | same |
+  | catch | 0 / 0 | same | 0 / 0 | same |
+
+  Primary (declared): cross-group gamma J0 +0.863, J5 +0.640; J5 − J0 −0.224 [−0.351, −0.063] (18 clusters, 2,000
+  resamples kept). Within the effect groups and within tone and drive both judges order the items as the ear does
+  (gamma 1.0 each); the whole loss is J5 lifting effects above tone and drive steps heard more. F44's inversion rule:
+  J0 8 (7 of them a +6 dB high-shelf anchor heard clearly or very scored below a large clean effect heard barely;
+  the eighth clean tone 0.30 below clean delay 0.40), J5 26. Tonal trigger: none (no effect was heard clearly or
+  very). Reported beside: without the anchors J0 +0.942, J5 +0.808, J5 − J0 −0.135 [−0.259, +0.031]; clean alone
+  −0.327 [−0.532, 0.000], crunch alone −0.174 [−0.400, 0.000] (9 clusters each).
+- **Reading.** By the declared rule J5 is undecided and not adopted; the effect size says more: the interval lies
+  wholly below 0, so on this page the carry-over part makes the judge's ranking worse. On this chord DI this listener
+  barely hears the effects: of the 12 effect items (reverb, reverb decay, delay, delay time, each preset) only clean
+  reverb and delay at mix 0.40 were heard, and barely; on F44/F45's single-note DI, reverb, delay and spring of
+  the same mix were heard clearly or very. The strummed chords ring into each other and cover what the effects add,
+  as the product check already saw in C (near 0 on half A, which has no fall). Tone moves the other way: the AC20
+  cut steps and the +6 dB high shelves were heard clearly or very, where F44–F46's PR12 clean treble step and
+  6 dB shelves were mostly the same or barely. J0, built without either page, ranks this page well (+0.863; +0.942
+  without anchors); its misses are the high shelves scored below large clean effects. So the weight of an effect
+  against a tone change depends on the playing (and perhaps the preset; the two pages differ in both), and a fixed
+  weight fitted on single notes over-counts effects on chords. Real songs hold both kinds of playing, so a fixed
+  weight would fit neither. The declared next steps fall away: adoption on this evidence and a second pooled
+  page both have nothing to rest on (a pooled gain would need the second page to reverse this one), and the tonal
+  revision is not triggered.
+- **What it changes.** J5 is not adopted; J0 stays the judge, with F44–F46's limit narrowed: J0 under-counts
+  effects on sparse single-note playing and does not on strummed chords. With the product check (C reads tone,
+  compression, room and bleed on real references) and the separator check (J0 barely sees effects through a stem),
+  an effect part in the closeness judge is not the route for now; effects follow song research (the user,
+  2026-10-27: sound-alike presets are fine, faint effects barely matter). Next on the plan: the approved real-amp recordings and a fresh real-song test, scored with J0.
+- **Caveats.** One listener, one sitting, one chord DI, two presets (both different from F44's): descriptive; the DI
+  and the presets change together, so playing and preset are not separated. The percentile interval may
+  under-cover with 18 clusters (stated in the declaration). The reverb-decay and delay-time items share renders
+  with the mix-0.40 items, so their clusters are not fully independent. The page asks "how different", not "which
+  is closer to a target", and level-matches every clip. Bias: the listener knew the hypothesis (effects
+  under-counted) and rated against it.
+- **References.** `~/ndsp-presets/learn/trusted-data/judge-v5/score.json`, `measure.json`, `page-audit.txt`
+  (`page-audit.py`); the answers `~/ndsp-presets/listening/judge-v5/private/answers-9140fa6a723e.txt`; code
+  `learn/judge_v5.py` (`score`); ledger `phase_judge_v5`, `phase_judge_v5_frozen`, `phase_judge_v5_outcome`.
 
 ## Budget
 
