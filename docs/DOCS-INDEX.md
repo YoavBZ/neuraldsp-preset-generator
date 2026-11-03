@@ -708,7 +708,7 @@ was declared, what was measured, and the research behind it.
     changes, so the ranking is a prediction: HAAQI (pyclarity, MIT; read its sub-terms, may
     over-score input gain), PEAQ's separate outputs (GstPEAQ, the only open advanced version), and
     reverb cues (an impulse response estimated between the two renders, in just-noticeable
-    differences, or the PREV and EDTN models); whether embeddings (AFx-Rep, MERT, CLAP) weigh
+    differences, or the PREV model); whether embeddings (AFx-Rep, MERT, CLAP) weigh
     one kind of change against another as the ear does is untested. Corrects two claims in round
     4's A-closeness (MoSQITo has no fluctuation strength; HAAQI's bands stop at 8 kHz) and narrows
     its sharpness term to recordings. Checks: ODAQ for the code, Osses's reverberance set and
