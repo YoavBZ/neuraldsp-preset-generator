@@ -1295,6 +1295,87 @@ instead of generating unrealistic presets our own?"):
         in the rule declared. Adopted: the low comparator, the subset caveat, the seed's name in the key.
       - **Renders** 0. Code `learn/judge_ear.py` (`page --recheck`, `score --recheck`); page
         `~/ndsp-presets/listening/judge-ear-recheck/`, its key outside the page.
+  - *The judge revised to weigh changes as the ear does (2026-11-03, after F44 and F45; ledger `phase_judge_ear_v4`;
+    descriptive, for this one listener).* F44 and F45: the judge scores the treble steps, which the ear hears as the
+    same or barely different on headphones, above reverb, delay and spring changes it hears clearly; CDPAM and
+    Zwicker loudness rank the treble steps the same way, and a first modulation-spectrum try did not help
+    (exploratory, `judge-ear/explore/`). What the treble step does, measured on F44's clips (exploratory; the
+    judge scores only bands within 30 dB of the reference's long-term peak, which stops near 6 kHz on these
+    clips): once level is matched, as on the page and in the judge, it is a tilt in the loud bands (clean +0.35:
+    about −5 dB near 350 Hz and +4.5 dB near 5 kHz per mel band), not a change in quiet bands. Reverb leaves the
+    long-term spectrum within 0.2 dB and acts over time. So either this listener, on this page, hears
+    loudness-matched tilts of that size as about the same, or the judge misses what time effects add, or both. The
+    stages below take the cheapest decisive step first.
+    - **Stage A (zero plugin renders).**
+      - *Tonal anchors (an ear page, about 5 minutes, headphones).* S's stored F44 renders with a plain offline
+        EQ of known size: RBJ shelves (Audio EQ Cookbook, slope S = 1) at 250 Hz (low) and 3 kHz (high), applied
+        to S's render before each clip is set to −23 LUFS on its own (the page's clip rule). PR12 clean: high +3,
+        high +6, high −6 (darker), low −6, and high +12 (a positive control that should be heard); SW50R crunch:
+        high +6, low −6, low +6 (darker), high −3. Each against S; with the clean reverb 0.40 pair (known heard)
+        and one catch: 11 items, seeded order, the same blind page, nothing naming a control. J0's distance on
+        each anchor is reported beside its rating (zero renders), to place the anchors against the treble steps on
+        the judge's own scale. Reading, per item and summarised per shelf type and preset: (a) if the +12 dB
+        control is heard as the same or barely, the page or the bias, not the judge, is the problem: stage B
+        waits and the user is asked; (b) otherwise the anchors' ratings join the rated items J2 is fitted on (all
+        outcomes), so the fit reflects how this listener hears steady tonal changes of known size; and the count
+        of 6 dB anchors heard clearly or very (of 6) is reported: 4 or more, steady tilts of that size are heard
+        and the treble steps' "same" is specific to them (stage B keeps F44's tone sizes); 2 or fewer, they are
+        not heard on this page (stage B's tone steps doubled in unit size, so a tone pair can be heard); 3, mixed,
+        F44's sizes kept and the split reported. Bias caveat: the listener knows the hypothesis (the judge
+        over-counts treble; effects are heard); the page names nothing.
+      - *Candidates screened in-sample* on F44's and F45's stored renders and the anchors (F45's 12 re-heard
+        items count once each, with their headphone rating; F44's others with their phone rating, flagged).
+        - J1: J0 (the default judge: its frame sizes, floors and band set unchanged) with each scored mel band's
+          |ΔdB| weighted by the reference's loudness share in it: Zwicker time-varying loudness (`mosqito`
+          `loudness_zwtv`, free field) on the reference only, scaled so its RMS is 70 dB SPL (re 20 µPa); the
+          time-averaged specific loudness per 0.1 Bark bin summed over the bins whose centre frequency falls in
+          each mel band, normalised over the scored bands. The reference only: excess a render adds in a band
+          quiet in the reference counts little (an asymmetry, stated).
+        - J2: w_t × J1's tonal part + J1-weighted frame-wise residual (weight fixed at 1) + w_d × a decay part.
+          Note ends: the judge's DI playing mask (DI frames within 40 dB of its peak, the middle frame size) going
+          from playing to not playing. The decay window: min(1.5 s, time to the next onset). The decay part, per
+          band: the render's energy in the window over the note's own, against the reference's, in dB, mean |Δ|.
+          Two weights (w_t, w_d), fitted by grid (w_t 0–1 in 0.1, w_d 0–2 in 0.1) to the highest in-sample
+          cross-group gamma, ties to the larger w_t and the smaller w_d. J2-fallback: the decay part dropped and
+          w_t refitted alone, frozen as well; used when the stage B DI has fewer than 8 note ends with a window
+          of at least 0.3 s, counted on the DI before any render. A strummed chord DI will likely trigger it.
+        - Reported per candidate: in-sample cross-group gamma, the distinct inversions left of F45's 21, and of
+          the 8 within one preset on both halves. A candidate stays one for stage B if it leaves fewer of those 8
+          than J0; otherwise it is a reported control. In-sample results carry no verdict.
+    - **Stage B (the fresh page, the verdict; declared as its own amendment after stage A, with the exact pair
+      list, before any render).** A verified clean chord DI from the trusted set (neither V-real nor NS; named
+      with its verification in the amendment), two starting presets other than F44's (AC20 clean, PR12 crunch).
+      Each pair, its settings and its step size listed; sizes from plugin units or F44's sizes, never from any
+      candidate's distances; any amendment only on a rule that does not depend on the candidates (as F44's: a
+      render equal to S). Effect parameters (reverb decay, delay time) compared against the module on at its
+      default, so a pair changes one thing. S's effect and spring states stated. The page fits about 10 minutes;
+      the anchors repeated there. Code and parameters of every candidate hashed in the ledger before any fresh
+      render is measured.
+    - **Reading (stage B).** Primary: cross-group concordance with the ear (Goodman–Kruskal gamma over item pairs
+      from different groups with different ratings; it generalises the inversion rule), per candidate, with a 90%
+      interval from resampling clusters of group × preset (about 14–18; the percentile interval may under-cover
+      with this few, stated). Pooled Spearman and Kendall's tau-b reported beside; catches left out; a repeat's
+      two ratings averaged. J2 (or J2-fallback) is the primary candidate, J1 secondary, J0 the control; CDPAM (J3) a reported
+      control only (torch, 22 kHz, trained on speech). J2 is adopted if its gain over J0 has an interval above 0;
+      else J1 by the same rule; otherwise undecided. A rough power check gives about a 50–55% chance of a decided
+      gain if J0's mis-weight per group equals the spread of group audibility: undecided is a likely outcome. If
+      undecided: one more page of the same design with a new DI and presets, pooled with this one by the same
+      statistic over both pages' clusters, and then a stop (two pages at most) with the effect sizes reported.
+    - **Before any adoption:** the new judge passes the judge spec's tests (catches 0, distance grows with step
+      size, alignment and level handling, refusals), and its agreement with the ear on whole-preset differences
+      (the stored listening answers, zero renders, each study's own statistic) minus J0's has a 90% interval not
+      wholly below 0. Adoption changes the default with the old judge
+      kept by name. Re-scoring past reads, and re-checking the starting presets and the models under it, are each
+      declared on their own with render budgets.
+    - **Renders** stage A 0 (the anchors are offline EQ of stored renders). Stage B: 2 presets × (about 17 steps + S + S again) about 38 kept renders, about 76
+      with priming, plus the reverb-on and delay-on default references (about 2 per preset); recounted in its
+      amendment. Every render as declared for Morgan.
+    - *Review (2026-11-03, independent, two passes, before anything ran):* approved after required changes, all
+      made: the mechanism corrected against J0's own bands and level matching (the first draft's "quiet bands"
+      reading was wrong); a zero-render stage A first (the anchors and an in-sample screen); the statistic
+      (cross-group gamma, group × preset clusters), power and the two-page cap; J2 primary, CDPAM a control only;
+      the spec tests and the whole-preset agreement before adoption; every anchor outcome's consequence; a
+      positive control and darker anchors; J1, J2 and J2-fallback specified; the render count.
 
 - **Decisions for the user, with the evidence:** whether to adopt the S fallback or the near-chance rule
   (steps 26, 27, 37), and whether to scale.
