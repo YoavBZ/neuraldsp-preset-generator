@@ -214,6 +214,7 @@ CEP_MIN_MS = 40.0                                  # lags below: the chord's pit
 CEP_RANGE = (60.0, 800.0)                          # the draw's delay times; (40, 1500) secondary
 CEP_RANGE2 = (40.0, 1500.0)
 E1D_CLEAR = (4, 1)                                 # E0 stems "clearly": >= 4 of 12 hits on a mix-0.40 set, S <= 1 of 12
+E1E = OUT / "e1e"                                  # the wide draws' mixes rebuilt and re-separated, as audio
 
 
 def labels(settings, amp):
@@ -797,14 +798,12 @@ def _score(root, dest, lag):
     print(json.dumps(out, indent=1)[:8000])
 
 
-def cmd_e1d(args):
-    """E1d (zero renders, no training): a long-window real cepstrum for delay time. Step 1 on the stored clean
-    targets of the wide draws (plain, and minus the training songs' mean wide delay-off cepstrum, leave one song out),
-    paired against F49's picker; step 2 on E0's 84 stored X-LANCE stems against the S stems at the same lags."""
+def cep_readouts(load, acf_arm):
+    """The cepstrum's time readouts on the wide draws (F49's conventions): load(i) -> audio of example index i;
+    plain, and minus the training songs' mean wide delay-off cepstrum of the same input (leave one song out); paired
+    against F49's picker on `acf-{acf_arm}` and the training songs' wide-draw median."""
     import numpy as np
-    import soundfile as sf
 
-    E1D.mkdir(parents=True, exist_ok=True)
     meta = json.loads((E1A / "meta.json").read_text())["examples"]
     n = len(meta)
     songs = np.array([m["song"] for m in meta])
@@ -815,10 +814,7 @@ def cmd_e1d(args):
     y = L[:, 2 + KNOBS.index("dtime")]
     dmix = L[:, 2 + KNOBS.index("dmix")]
     idx = np.where(wide)[0]
-    C = {}
-    for i in idx:
-        f = CC / "audio" / f"{meta[i]['i']:07d}"[:4] / f"{meta[i]['i']:07d}-target.flac"
-        C[i] = cepstrum(sf.read(str(f))[0])
+    C = {i: cepstrum(load(i)) for i in idx}
     off_mean = {}
     for s in folds():
         tr = [i for i in idx if songs[i] != s and not don[i]]
@@ -830,7 +826,7 @@ def cmd_e1d(args):
             t_ms, h = cep_pick(c)
             est[a][i], hgt[a][i] = np.log2(t_ms), h
             est[a + "_wide"][i] = np.log2(cep_pick(c, CEP_RANGE2)[0])
-    pick = picker(np.load(E1A / "acf-target.npy"))
+    pick = picker(np.load(E1A / f"acf-{acf_arm}.npy"))
     pw = np.full(n, np.nan)
     for s in folds():
         pw[songs == s] = np.nanmedian(y[(songs != s) & wide])
@@ -848,7 +844,7 @@ def cmd_e1d(args):
     hi = np.nanpercentile(dmix[on], 200 / 3)
     parts = {"all": on, "strong_third": on & (dmix >= hi), "weak_third": on & (dmix < np.nanpercentile(dmix[on], 100 / 3))}
     hit = lambda e, tol=0.10: np.abs(2 ** (e - y) - 1) <= tol
-    out = {"n_wide": int(wide.sum()), "n_on": int(on.sum()), "targets": {}}
+    out = {"n_wide": int(wide.sum()), "n_on": int(on.sum()), "arms": {}}
     for a in ("plain", "sub", "plain_wide", "sub_wide"):
         e = est[a]
         r = {}
@@ -868,15 +864,30 @@ def cmd_e1d(args):
                      "spearman": spearman(e[m], y[m]), "spearman_picker": spearman(pick[m], y[m]),
                      "double_share": float((np.abs(2 ** (e - y) - 2) <= 0.2)[m].mean()),
                      "half_share": float((np.abs(2 ** (e - y) - 0.5) <= 0.05)[m].mean())}
-        out["targets"][a] = r
+        out["arms"][a] = r
     for a in ("plain", "sub"):
         s_ = hgt[a]
         offs = wide & ~don
-        out["targets"][a]["height_auc_all"] = auc(don[wide], s_[wide])
-        out["targets"][a]["height_auc_all_ci"] = ci(lambda b: auc(don[b][wide[b]], s_[b][wide[b]]))
+        out["arms"][a]["height_auc_all"] = auc(don[wide], s_[wide])
+        out["arms"][a]["height_auc_all_ci"] = ci(lambda b: auc(don[b][wide[b]], s_[b][wide[b]]))
         m = offs | parts["strong_third"]
-        out["targets"][a]["height_auc_strong"] = auc(don[m], s_[m])
-        out["targets"][a]["height_auc_strong_ci"] = ci(lambda b: auc(don[b][m[b]], s_[b][m[b]]))
+        out["arms"][a]["height_auc_strong"] = auc(don[m], s_[m])
+        out["arms"][a]["height_auc_strong_ci"] = ci(lambda b: auc(don[b][m[b]], s_[b][m[b]]))
+    return out
+
+
+def cmd_e1d(args):
+    """E1d (zero renders, no training): a long-window real cepstrum for delay time. Step 1 on the stored clean
+    targets of the wide draws (plain, and minus the training songs' mean wide delay-off cepstrum, leave one song out),
+    paired against F49's picker; step 2 on E0's 84 stored X-LANCE stems against the S stems at the same lags."""
+    import numpy as np
+    import soundfile as sf
+
+    E1D.mkdir(parents=True, exist_ok=True)
+    meta = json.loads((E1A / "meta.json").read_text())["examples"]
+    tg = lambda i: sf.read(str(CC / "audio" / f"{meta[i]['i']:07d}"[:4] / f"{meta[i]['i']:07d}-target.flac"))[0]
+    r = cep_readouts(tg, "target")
+    out = {"n_wide": r["n_wide"], "n_on": r["n_on"], "targets": r["arms"]}
     # step 2: E0's stored X-LANCE stems (the subtraction arm's offs: E0's 48 S and reverb stems, in-sample)
     rows = []
     for c in CLASSES:
@@ -912,6 +923,83 @@ def cmd_e1d(args):
     print(json.dumps(out, indent=1)[:6000])
 
 
+def e1e_audio(i):
+    return E1E / "audio" / f"{i:07d}.npz"
+
+
+def cmd_e1e_build(args):
+    """E1e, zero renders (msst-venv): the wide draws' mixes rebuilt by D_CC's own build recipe (`cc_build build`:
+    the stored target and other guitars, the section's stems, `trusted_data.self_built_mix` with its seeded
+    mastering) and re-separated by X-LANCE; mix and stem saved as audio. Each rebuild is checked against the stored
+    features: the mix's uint8 half log-mels must match exactly; the stem's difference is logged (MPS)."""
+    import numpy as np
+
+    from learn import cc_build as CB
+    from learn import direct_sound_gate as G
+    from learn import direct_stems as DS
+    from learn import trusted_data as T
+
+    ns = argparse.Namespace(out=None, smoke=False)
+    root = CB.V.out_root(ns)
+    plan = {x["i"]: x for x in CB.load_plan(ns)["examples"]}
+    rend = T.rows_of(root, CB.STAGE, "render")
+    meta = json.loads((E1A / "meta.json").read_text())["examples"]
+    todo = [m["i"] for m in meta if m["mode"] == "wide" and not e1e_audio(m["i"]).exists()]
+    todo = todo[: args.limit or None]
+    print(f"e1e build: {len(todo)} to build on {args.device}", flush=True)
+    if not todo:
+        return
+    sep = DS.stem_separator(T.SEP, args.device)
+    stems = T.Stems(CB.ctx_for(ns))
+    swap0 = DS.swap_mb()
+    (E1E / "audio").mkdir(parents=True, exist_ok=True)
+    t0 = time.time()
+    with open(E1E / "build-rows.jsonl", "a") as fh:
+        for m, i in enumerate(todo):
+            g = DS._guards("e1e-build", T.DISK_GUARD_GB, swap0)
+            if g:
+                print(g[1], flush=True)
+                raise SystemExit(g[0])
+            x, rw = plan[i], rend[i]
+            y = G.read_flac(T.flac_path(root, CB.STAGE, i, "target"), rw["target"]["scale"], rw["target"]["sha256"])
+            oth = G.read_flac(T.flac_path(root, CB.STAGE, i, "others"), rw["others_file"]["scale"],
+                              rw["others_file"]["sha256"])
+            voc = x["draw"]["vocals_drawn"] and x["stems"]["v"] != x["stems"]["n"]
+            st = stems.get(x["section"], T.backing_tracks(x, voc))
+            mix, _, _ = T.self_built_mix(np.asarray(y, np.float64), np.asarray(oth, np.float64), st, x)
+            mm, _, _ = DS.half_features(mix)
+            zm = np.load(T.ex_path(root, CB.STAGE, i, f"mix-{CB.STAGE}"))
+            mix_same = bool(np.array_equal(mm["A"], zm["mA"]) and np.array_equal(mm["B"], zm["mB"]))
+            s_ = np.asarray(sep(mix), np.float64)
+            if len(s_) != len(mix) or not np.isfinite(s_).all():
+                raise SystemExit(f"{i}: bad stem")
+            sm, _, _ = DS.half_features(s_)
+            zs = np.load(T.ex_path(root, CB.STAGE, i, f"{T.SEP}-{CB.STAGE}"))
+            sdiff = float(np.mean([np.abs(sm[h].astype(float) - zs["s" + h].astype(float)).mean() for h in "AB"]))
+            np.savez(e1e_audio(i), mix=mix.astype(np.float32), stem=s_.astype(np.float32))
+            fh.write(json.dumps({"i": i, "mix_features_identical": mix_same, "stem_feature_mean_abs_diff": sdiff}) + "\n")
+            fh.flush()
+            if m % 25 == 0:
+                print(f"e1e build {m + 1}/{len(todo)}: {(time.time() - t0) / (m + 1):.1f} s each; mix identical "
+                      f"{mix_same}, stem diff {sdiff:.3f}", flush=True)
+    print("E1E BUILD DONE", flush=True)
+
+
+def cmd_e1e_score(args):
+    """E1e: the cepstrum on the rebuilt mixes and re-separated stems of the wide draws, E1d's step-1 readouts."""
+    import numpy as np
+
+    meta = json.loads((E1A / "meta.json").read_text())["examples"]
+    rows = [json.loads(line) for line in open(E1E / "build-rows.jsonl")]
+    out = {"build": {"n": len(rows), "mix_identical": sum(r["mix_features_identical"] for r in rows),
+                     "stem_diff_median": float(np.median([r["stem_feature_mean_abs_diff"] for r in rows])),
+                     "stem_diff_max": float(np.max([r["stem_feature_mean_abs_diff"] for r in rows]))}}
+    for arm in ("stem", "mix"):
+        out[arm] = cep_readouts(lambda j: np.load(e1e_audio(meta[j]["i"]))[arm], arm)["arms"]
+    (E1E / "score.json").write_text(json.dumps(out, indent=1))
+    print(json.dumps(out, indent=1)[:6000])
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -930,6 +1018,11 @@ def main(argv=None):
     t.set_defaults(fn=cmd_e1c_train)
     sub.add_parser("e1c-score").set_defaults(fn=cmd_e1c_score)
     sub.add_parser("e1d").set_defaults(fn=cmd_e1d)
+    t = sub.add_parser("e1e-build")
+    t.add_argument("--device", choices=("mps", "cpu"), default="mps")
+    t.add_argument("--limit", type=int, default=0)
+    t.set_defaults(fn=cmd_e1e_build)
+    sub.add_parser("e1e-score").set_defaults(fn=cmd_e1e_score)
     args = ap.parse_args(argv)
     args.fn(args)
 
