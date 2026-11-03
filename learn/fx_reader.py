@@ -208,6 +208,12 @@ KNOBS = ("rmix", "rdecay", "dmix", "dtime", "dfb")  # rmix/dmix/dfb rotations; r
 E1C = OUT / "e1c"                                  # E1a plus a lag head for delay time (same data build)
 LAG_SIGMA = 1.0                                    # soft target: a Gaussian of one lag around the set lag
 LAG_RANGE = (6, 80)                                # lags searched: the draw's 60-800 ms (a range the product can be given)
+E1D = OUT / "e1d"                                  # long-window real cepstrum for delay time (training-free)
+CEP_N, CEP_HOP = 2 ** 17, SR // 2                  # 2.7 s frames, 0.5 s hop
+CEP_MIN_MS = 40.0                                  # lags below: the chord's pitch
+CEP_RANGE = (60.0, 800.0)                          # the draw's delay times; (40, 1500) secondary
+CEP_RANGE2 = (40.0, 1500.0)
+E1D_CLEAR = (4, 1)                                 # E0 stems "clearly": >= 4 of 12 hits on a mix-0.40 set, S <= 1 of 12
 
 
 def labels(settings, amp):
@@ -548,6 +554,31 @@ def picker(A):
     return np.log2(10.0 * (np.argmax(s, 1) + LAG_RANGE[0]))
 
 
+def cepstrum(y):
+    """The real cepstrum averaged over Hann-windowed CEP_N-sample frames (CEP_HOP apart), lags 0..CEP_N/2 in samples."""
+    import numpy as np
+
+    y = mono(y)
+    if len(y) < CEP_N:
+        y = np.pad(y, (0, CEP_N - len(y)))
+    w = np.hanning(CEP_N)
+    starts = range(0, len(y) - CEP_N + 1, CEP_HOP)
+    acc = np.zeros(CEP_N // 2 + 1)
+    for s in starts:
+        X = np.abs(np.fft.rfft(w * y[s:s + CEP_N]))
+        acc += np.fft.irfft(np.log(X + 1e-9 * (X.max() + 1e-12)), CEP_N)[: CEP_N // 2 + 1]
+    return acc / len(starts)
+
+
+def cep_pick(c, rng=CEP_RANGE):
+    """(time ms, peak height) of the highest cepstral peak within rng ms (lags under CEP_MIN_MS never considered)."""
+    import numpy as np
+
+    lo, hi = int(max(rng[0], CEP_MIN_MS) * SR / 1000), int(rng[1] * SR / 1000)
+    k = lo + int(np.argmax(c[lo:hi + 1]))
+    return 1000.0 * k / SR, float(c[k])
+
+
 def spearman(a, b):
     import numpy as np
     from scipy.stats import spearmanr
@@ -766,6 +797,113 @@ def _score(root, dest, lag):
     print(json.dumps(out, indent=1)[:8000])
 
 
+def cmd_e1d(args):
+    """E1d (zero renders, no training): a long-window real cepstrum for delay time. Step 1 on the stored clean
+    targets of the wide draws (plain, and minus the training songs' mean wide delay-off cepstrum, leave one song out),
+    paired against F49's picker; step 2 on E0's 84 stored X-LANCE stems against the S stems at the same lags."""
+    import numpy as np
+    import soundfile as sf
+
+    E1D.mkdir(parents=True, exist_ok=True)
+    meta = json.loads((E1A / "meta.json").read_text())["examples"]
+    n = len(meta)
+    songs = np.array([m["song"] for m in meta])
+    bands = np.array([m["band"] for m in meta])
+    wide = np.array([m["mode"] == "wide" for m in meta])
+    L = np.load(E1A / "labels.npy")
+    don = L[:, 1] == 1
+    y = L[:, 2 + KNOBS.index("dtime")]
+    dmix = L[:, 2 + KNOBS.index("dmix")]
+    idx = np.where(wide)[0]
+    C = {}
+    for i in idx:
+        f = CC / "audio" / f"{meta[i]['i']:07d}"[:4] / f"{meta[i]['i']:07d}-target.flac"
+        C[i] = cepstrum(sf.read(str(f))[0])
+    off_mean = {}
+    for s in folds():
+        tr = [i for i in idx if songs[i] != s and not don[i]]
+        off_mean[s] = np.mean([C[i] for i in tr], axis=0)
+    est = {a: np.full(n, np.nan) for a in ("plain", "sub", "plain_wide", "sub_wide")}
+    hgt = {a: np.full(n, np.nan) for a in ("plain", "sub")}
+    for i in idx:
+        for a, c in (("plain", C[i]), ("sub", C[i] - off_mean[songs[i]])):
+            t_ms, h = cep_pick(c)
+            est[a][i], hgt[a][i] = np.log2(t_ms), h
+            est[a + "_wide"][i] = np.log2(cep_pick(c, CEP_RANGE2)[0])
+    pick = picker(np.load(E1A / "acf-target.npy"))
+    pw = np.full(n, np.nan)
+    for s in folds():
+        pw[songs == s] = np.nanmedian(y[(songs != s) & wide])
+    cl = sorted(set(bands))
+    rng = np.random.default_rng(BOOT_SEED)
+    boots = [np.concatenate([np.where(bands == cl[j])[0] for j in rng.integers(0, len(cl), len(cl))])
+             for _ in range(BOOT_N)]
+
+    def ci(fn):
+        v = [fn(b) for b in boots]
+        v = [x for x in v if x == x]
+        return [float(np.percentile(v, 5)), float(np.percentile(v, 95))] if v else [None, None]
+
+    on = wide & don
+    hi = np.nanpercentile(dmix[on], 200 / 3)
+    parts = {"all": on, "strong_third": on & (dmix >= hi), "weak_third": on & (dmix < np.nanpercentile(dmix[on], 100 / 3))}
+    hit = lambda e, tol=0.10: np.abs(2 ** (e - y) - 1) <= tol
+    out = {"n_wide": int(wide.sum()), "n_on": int(on.sum()), "targets": {}}
+    for a in ("plain", "sub", "plain_wide", "sub_wide"):
+        e = est[a]
+        r = {}
+        for pn, m in parts.items():
+            h, hp, h3 = hit(e), hit(pick), hit(e, 0.03)
+            err, perr, prerr = np.abs(e - y), np.abs(pick - y), np.abs(pw - y)
+            r[pn] = {"n": int(m.sum()), "within_10pct": float(h[m].mean()), "within_3pct": float(h3[m].mean()),
+                     "picker_within_10pct": float(hp[m].mean()), "prior_within_10pct": float(hit(pw)[m].mean()),
+                     "diff_vs_picker": float(h[m].mean() - hp[m].mean()),
+                     "diff_vs_picker_ci": ci(lambda b: float(h[b][m[b]].mean() - hp[b][m[b]].mean())),
+                     "diff_vs_prior": float(h[m].mean() - hit(pw)[m].mean()),
+                     "diff_vs_prior_ci": ci(lambda b: float(h[b][m[b]].mean() - hit(pw)[b][m[b]].mean())),
+                     "mae_log2": float(err[m].mean()), "mae_diff_vs_picker": float(err[m].mean() - perr[m].mean()),
+                     "mae_diff_vs_picker_ci": ci(lambda b: float(err[b][m[b]].mean() - perr[b][m[b]].mean())),
+                     "mae_diff_vs_prior": float(err[m].mean() - prerr[m].mean()),
+                     "mae_diff_vs_prior_ci": ci(lambda b: float(err[b][m[b]].mean() - prerr[b][m[b]].mean())),
+                     "spearman": spearman(e[m], y[m]), "spearman_picker": spearman(pick[m], y[m]),
+                     "double_share": float((np.abs(2 ** (e - y) - 2) <= 0.2)[m].mean()),
+                     "half_share": float((np.abs(2 ** (e - y) - 0.5) <= 0.05)[m].mean())}
+        out["targets"][a] = r
+    for a in ("plain", "sub"):
+        s_ = hgt[a]
+        offs = wide & ~don
+        out["targets"][a]["height_auc_all"] = auc(don[wide], s_[wide])
+        m = offs | parts["strong_third"]
+        out["targets"][a]["height_auc_strong"] = auc(don[m], s_[m])
+        out["targets"][a]["height_auc_strong_ci"] = ci(lambda b: auc(don[b][m[b]], s_[b][m[b]]))
+    # step 2: E0's stored X-LANCE stems (the subtraction arm's offs: E0's 48 S and reverb stems, in-sample)
+    rows = []
+    for c in CLASSES:
+        for b in BACKINGS:
+            for r_ in RATIOS:
+                for k in TRUTH:
+                    f = SEP / "stems" / "xlance_g" / f"{c}-{b}-{r_}-{k}.npy"
+                    if f.exists():
+                        rows.append({"cls": c, "backing": b, "ratio": r_, "kind": k, "c": cepstrum(np.load(f))})
+    offs = np.mean([q["c"] for q in rows if TRUTH[q["kind"]][0] is None], axis=0)
+    stems = {}
+    for setname, (kind, ms) in {"300ms_mix0.40": ("delay-time", 300.0), "500ms_mix0.40": ("delay-large", 500.0),
+                                "500ms_mix0.15": ("delay-small", 500.0)}.items():
+        d = {}
+        for a in ("plain", "sub"):
+            cc = lambda q: q["c"] - offs if a == "sub" else q["c"]
+            dl = [cep_pick(cc(q))[0] for q in rows if q["kind"] == kind]
+            sl = [cep_pick(cc(q))[0] for q in rows if q["kind"] == "S"]
+            d[a] = {"n": len(dl), "hits": int(sum(abs(t / ms - 1) <= 0.10 for t in dl)),
+                    "s_hits_at_lag": int(sum(abs(t / ms - 1) <= 0.10 for t in sl)), "n_s": len(sl),
+                    "times_ms": [round(t, 1) for t in dl], "s_times_ms": [round(t, 1) for t in sl]}
+            d[a]["clearly"] = bool(d[a]["hits"] >= E1D_CLEAR[0] and d[a]["s_hits_at_lag"] <= E1D_CLEAR[1])
+        stems[setname] = d
+    out["e0_stems"] = stems
+    (E1D / "score.json").write_text(json.dumps(out, indent=1))
+    print(json.dumps(out, indent=1)[:6000])
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -783,6 +921,7 @@ def main(argv=None):
     t.add_argument("--force", action="store_true")
     t.set_defaults(fn=cmd_e1c_train)
     sub.add_parser("e1c-score").set_defaults(fn=cmd_e1c_score)
+    sub.add_parser("e1d").set_defaults(fn=cmd_e1d)
     args = ap.parse_args(argv)
     args.fn(args)
 

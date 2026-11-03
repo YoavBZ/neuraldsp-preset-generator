@@ -1689,6 +1689,29 @@ instead of generating unrealistic presets our own?"):
       loss: for these readers on the stored features the time is lost when the backing is added, separation
       recovering a few hits. E1b is not declared; the declared masking branch is deferred until the survey of
       proven blind estimators is in.
+    - **E1d (2026-11-03, zero renders, no training, no download; declared after the cloud researcher's survey,
+      `docs/research/blind-reverb-delay-2026-11.md`, which found no proven blind estimator; ledger
+      `phase_fx_reader_e1d`).** Does an audio-domain, finer-resolution measure read delay time where the stored
+      log-mels did not? `learn/fx_reader.py e1d`: the real cepstrum averaged over Hann-windowed 2^17-sample frames
+      (2.7 s, 0.5 s hop), lags under 40 ms dropped (the chord's pitch), the highest peak in 60–800 ms (the draw's
+      range; 40–1,500 ms secondary) is the time, its height the on/off score; a second arm subtracts the mean
+      cepstrum of the training songs' wide delay-offs (leave one song out). *Step 1,* the stored clean targets of the
+      770 wide draws (CPU minutes): on the 402 delay-ons, within ±10% (±3% secondary), log2 MAE and Spearman, each
+      paired against F49's picker on the same items and against the training songs' wide-draw median, overall and
+      by thirds of delay mix; double and half lags apart; peak-height AUC on all wide draws and on the strong third
+      against all wide offs; 90% intervals from 2,000 band resamples (seed 20261108). The arm stops if its hits'
+      difference against the picker has its interval wholly below 0. *Step 2,* E0's 84 stored X-LANCE stems (one
+      chord DI, 2 renders × 6 mixes per kind): on each delay set (300 ms at mix 0.40, 500 ms at 0.40, 500 ms at
+      0.15; 12 stems each) the hits within ±10% of the set time, against the 12 S stems' picks at that lag and
+      chance (about 8% for a log-uniform guess over 60–800 ms); the subtraction arm takes E0's 48 S and reverb
+      stems as its offs (in-sample, stated). *Clearly* (declared before reading): at least 4 of 12 hits on a mix-0.40
+      set (4× chance; about 1.5% by chance alone) with the S stems hitting that lag at most once. *What follows:*
+      step 1 stopping, or step 2 not clearly → F50's verdict extends to the cepstrum on these stems, and the
+      deferred masking renders (E1b, storing stem and mix audio) are proposed next. Step 2 clearly → E1e is
+      declared: the 770 wide draws' mixes rebuilt on CPU (`trusted_data.self_built_mix`, zero renders) and
+      re-separated (X-LANCE about 55 minutes on MPS), passing if the stem's hits beat the picker's 13.7% with a log2
+      MAE below the prior's; then the feedback readout. *Caveats:* the method is demonstrated (one vocal echo), not
+      proven; step 2 is one chord DI, two presets, three backings, with the mix law of the Morgan delay unknown.
     - **E1b (outline; declared on its own after E1a, reviewed before any render):** what E1a leaves open, with
       renders: stereo and mastered mixes as the product's songs are (new work: the self-built mixes are mono),
       more verified DIs (E0's Quicksand DI out of training), a backing split, the confounders varied (the amps'

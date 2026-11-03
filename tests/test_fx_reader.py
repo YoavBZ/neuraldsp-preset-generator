@@ -43,3 +43,16 @@ def test_lag_head_keeps_the_trunk_and_its_range():
     out = F.net(torch, lag=True).eval()(torch.zeros(4, 2, 96, 446), torch.randn(4, 2 * F.LAGS))
     k = out[:, 2 + len(F.KNOBS):].argmax(1) + 1
     assert bool(((k >= F.LAG_RANGE[0]) & (k <= F.LAG_RANGE[1])).all())
+
+
+def test_cepstrum_finds_an_echo():
+    np = pytest.importorskip("numpy")
+    rng = np.random.default_rng(3)
+    x = rng.standard_normal(10 * F.SR)
+    d = int(0.3 * F.SR)
+    y = x.copy()
+    y[d:] += 0.4 * x[:-d]
+    t, h = F.cep_pick(F.cepstrum(y))
+    assert abs(t - 300.0) < 1.0
+    t0, h0 = F.cep_pick(F.cepstrum(x))
+    assert h > 5 * abs(h0)
