@@ -36,7 +36,11 @@ the declared rule J5 is not adopted, and J0 stays. On this chord DI the effects 
 page or a stop is the user's choice (recommended: stop); effects follow song research in the product for now, and a
 robust effect part stays a research target. Next: the approved real-amp recordings and a fresh real-song test,
 scored with J0.
-Findings F1–F47.
+The user chose to stop on J5 and take an effects route: a blind reader of reverb and delay on the separated stem.
+Its zero-render first test (F48): on the chord DI the product's own measures read neither effect, even without a
+backing (the echo detector abstains on strummed chords; the reverb rule follows the playing); the information is
+there, so the reader (E1) learns both, declared next.
+Findings F1–F48.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -1565,6 +1569,10 @@ instead of generating unrealistic presets our own?"):
       backings, plugin guitar, no mastering: descriptive). What it informs: which measures are candidates for E1
       to test beside the learned reader, and which it must learn; one DI can show where a measure fails, not that
       it works.
+    - *E0's outcome (2026-11-03, F48):* on this chord DI neither measure reads its effect, before or after
+      separation: the echo detector reports nothing on any of the 36 delay stems or the 6 delay renders (the chords
+      comb its band; the echo is there in the correlation, 2–3 times the dry level at the set time), and the reverb
+      rule fires on 3 of 36 X-LANCE reverb stems and 10 of 48 without. E1 learns both.
     - **E1 (outline; declared on its own after E0, reviewed before any render):** a blind reader trained on
       self-built mixes across many verified DIs (renders with reverb and delay on or off at random mix, decay,
       time and feedback, in phase-5A backings by the mix rule, stereo and mastered as the product's songs are,
@@ -3267,6 +3275,41 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   the masking mechanism stated as unseparated (C reads large where the ear heard the same); J0's limit stated as
   not holding across pages; the tone and effect comparisons with F44–F46 made precise; the follow-up left to the
   user; the effect part kept as a research target; J0 through stems stated fully; the 8 heard items; the budget.
+
+### F48. On this chord DI the product's blind measures read neither effect, before or after separation: the echo detector abstains and the reverb rule fires about as often without a reverb (phase_fx_reader E0, exploratory)
+- **Result.** `learn/fx_reader.py e0` (zero renders; `analysis/features.py` sha256 e3da64ab…; 184 items × 3
+  windows). *Delay:* across the 36 delay stems of each separator, the echo detector reports no delay at any
+  confidence (outcome d in 36 of 36 on X-LANCE, 35 of 36 on htdemucs, one at twice the time), and none on the 6
+  delay renders without backing either; no false report on the 48 S and reverb stems (one at any confidence on an
+  htdemucs half). So outcomes (a)–(c) are empty and the comb cap (b) never applies: the detector abstains outright.
+  A diagnostic on the renders without backing (`fx-reader/e0-delay-diagnostic.txt`, exploratory) shows why: the
+  echo is in the waveform's correlation at the set time (prominence 0.20 at 500 ms and 0.24 at 300 ms on the delay
+  renders, against 0.07–0.12 on S, repeat ratio 0.46–0.69, under the 0.80 gate), but the chords comb the search
+  band (51–172 strong peaks against the cap of 12), the pitch-period peaks at 42–73 ms are 2–2.5 times taller, and
+  on combed material the envelope regains its veto. *Reverb:* `reverb_from_rt60`, counterfactually, on the whole
+  stem: X-LANCE on for 3 of 36 reverb stems and 10 of 48 without (S 2 of 12, delay 8 of 36); htdemucs 12 of 36 and
+  25 of 48; the renders without backing 0 of 6 and 0 of 8 (confidence ≤ 0.29 against the rule's 0.3). The RT60
+  estimate rises from S to reverb 0.40 in 6 of 12 X-LANCE pairs (htdemucs 7, the renders 2 of 2). On the second
+  half alone (the fall; not as the product runs it) it orders the reverbs as set on X-LANCE (median 0.52 s on S,
+  0.49 at mix 0.15, 0.80 at 0.40, 1.17 at decay 3.0; decay 1.48 → 3.0 rises in 12 of 12 pairs, S → 0.40 in 7 of 12;
+  the renders without backing 0.40, 0.42, 0.83 and 1.06), but its confidence stays at 0.2 (few segments), and the
+  delay stems read as high (delay 0.40: 1.39 s). The repeat render S2 reads exactly as S (its audio is
+  identical), so it adds no repeat-noise check.
+- **Reading.** Neither existing measure is a candidate as it stands on chord material: the delay detector abstains
+  by design (a pitched part that rings comb-fills the band, and it prefers no answer to a wrong one), and the
+  whole-stem RT60 follows the playing, not the reverb, as `study_rt60` found on played single-note passages. The
+  failures are already there without a backing, so they are the measures', not the separator's. The information
+  is present: the echo's correlation peak at the set time stands 2–3 times above the dry render's, and on a fall
+  the release slope orders the reverb's mix and decay, on X-LANCE stems as on the renders. One DI shows where these
+  measures fail, not where a better one would work.
+- **What it changes.** E1 must learn both effects rather than take either measure as given; the echo's
+  correlation at candidate lags and release slopes on falls are candidate inputs beside the learned reader's own,
+  and the current measures stay its comparators. E1 is declared next, reviewed before any render.
+- **Caveats.** One chord DI, two presets, three backings, plugin guitar, 10 s mono-summed stems, no mastering:
+  descriptive. The diagnostic is on 6 renders, exploratory. A kind's 12 stems are 2 renders × 6 mixes.
+- **References.** `~/ndsp-presets/learn/trusted-data/judge-v5/fx-reader/e0.json` (every row and the summaries),
+  `e0-delay-diagnostic.py` and `.txt`; code `learn/fx_reader.py`; ledger `phase_fx_reader`,
+  `phase_fx_reader_e0`.
 
 ## Budget
 
