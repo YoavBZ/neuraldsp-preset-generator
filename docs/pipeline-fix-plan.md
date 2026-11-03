@@ -3705,7 +3705,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 ### F52. On the rebuilt, re-separated stems the cepstrum hits the delay time more often than the picker (22% against 14%) but its error stays worse than a guess's, and a confident peak does not help: delay time does not read on the stem (phase_fx_reader E1e)
 - **Result.** `learn/fx_reader.py e1e-build`, `e1e-score` (zero renders; 770 wide draws rebuilt by D_CC's recipe,
   every mix's stored features reproduced exactly, the re-separated stems' features within 0.01 of the stored ones;
-  about 75 minutes of X-LANCE). Wide delay-ons (402; the wide median 7.2% within ±10%, log2 MAE the reference):
+  about 60 minutes of X-LANCE). Wide delay-ons (402; the wide median 7.2% within ±10%, log2 MAE the reference):
   | wide delay-ons | stem, minus the delay-off mean (primary) | stem, plain | mix, minus the mean | mix, plain |
   |---|---|---|---|---|
   | within ±10% (picker) | 22.1% (13.7%) | 19.4% | 12.7% (6.7%) | 16.4% |
@@ -3714,15 +3714,18 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   | Spearman | 0.04 | 0.04 | 0.18 | 0.07 |
   | strong third: within ±10% (prior 4.5%) | 28.4% | 26.9% | 18.7% | 24.6% |
   | peak-height AUC, strong third (E1a's reader 0.614) | 0.589 [0.509, 0.635] | 0.574 | 0.548 | 0.583 |
-  The weak third is at or below the prior (stem 13.4%, 10.4%). *Audit (exploratory, post hoc;
+  The weak third is not shown above the prior (primary 13.4% against 10.4%, +0.030 [−0.010, +0.055]); on the strong
+  third the primary arm's error against the prior is undecided (+0.200 [−0.019, +0.310]). *Audit (exploratory, post hoc;
   `e1e/audit/confidence.py`):* by quartile of the stem's peak height the hits run 8%, 20%, 34%, 27%, while 21% of
   the delay-offs reach the top quartile's height; the mix 14%, 12%, 9%, 16%.
 - **Reading.** By the declared rule time does not read on the stem (hits beat the picker, +0.085, but the error is
   worse than the prior's, +0.309) nor on the mix: on these stems the cepstrum is right about one time in five and
-  far off otherwise, and its peak height does not say when it is right, so no gate turns it into a usable reading.
-  Its on/off height (0.59) is no better than E1a's learned reader (0.614). The clean targets read (57%, F51), so
-  the loss is the backing's (the declared branch: masking), with separation adding a little (stem 22% against mix
-  13% on the primary arm; the plain arms 19% and 16%). Delay time joins reverb decay and the knobs: no blind reading
+  far off otherwise, and its peak height does not pick out the hits (at most 34% in any quartile; 21% of the offs
+  reach the top quartile; post hoc). Its on/off height (0.59) is not better than E1a's learned reader (0.614, the
+  same mask, unpaired). The clean targets read (57%, F51), so
+  the loss is the backing's (the declared branch: masking). Separation adds a few hits on the primary arm (stem minus mix +0.095 [+0.067,
+  +0.141], paired, band bootstrap); on the plain arm it is undecided (+0.030 [−0.010, +0.128]; the review's
+  `e1e/audit/sep.py`). Delay time joins reverb decay and the knobs: no blind reading
   from the separated stem yet, by a learned reader, a lag picker or the cepstrum.
 - **What it changes.** By the declared branch the masking renders (E1b with a backing split, stem and mix audio
   stored) are proposed, not run: they cost renders and separation, and after F49–F52 the effects route's best
@@ -3734,6 +3737,9 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **References.** `~/ndsp-presets/learn/trusted-data/judge-v5/fx-reader/e1e/score.json`, `build-rows.jsonl`,
   `audit/confidence.py` and `.json`, audio `e1e/audio/` (770 mixes and stems, kept for later tests); code
   `learn/fx_reader.py`; ledger `phase_fx_reader_e1e`, `phase_fx_reader_e1e_outcome`.
+- *Results review (2026-11-03, independent):* approved with four required changes, all made: the weak third not
+  shown above the prior; the gate claim narrowed to what the audit measured; separation's share with its paired
+  intervals; the build time. Also adopted: the strong third's undecided error, "not better" for the AUC.
 
 ## Budget
 
