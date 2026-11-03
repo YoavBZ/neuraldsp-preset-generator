@@ -1,6 +1,6 @@
 # Fixing the pipeline review's findings (plan, 2026-10-31)
 
-**Status (2026-11-02):** declared and reviewed (the plan, its revision, phase 4, the isolated tests and 5B.2, each
+**Status (2026-11-03):** declared and reviewed (the plan, its revision, phase 4, the isolated tests and 5B.2, each
 with required changes, all made). Phases 1–4, the isolated tests and phase 5's tests (5A, 5B.1, 5B.1b, and 5B.2's
 stage 1, arm P, Rc and arm R, its stage 2 and its recording oracle) have run; the findings log (F1–F36) holds
 every result, audited. 5B.1c was withdrawn before any render. Declared next, at the user's choice of more real
@@ -20,7 +20,10 @@ next: domain work (a per-row input saying plugin render or real amp); the user's
 suggestion FT (F42) used the plugin renders as pretraining and tuned on the real rows alone: better than D_fix on
 real reamps (BKS −0.055), level with S, D_fix and RcG on held-out real songs (FT − S +0.022, undecided). Proposed
 next: the per-recording reading on many more real-amp recordings and a fresh real-song test; the user's choice.
-Findings F1–F42.
+About 80% of FT's lead over S on real reamps is its drive (F43). At the user's question whether the score weighs each
+kind of change as the ear does, a blind page (F44) found it does not: treble counts well above the ear, drive above
+it, reverb below it. Proposed next, before more recordings are scored: a revised judge, checked on a fresh blind page.
+Findings F1–F44.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -2695,21 +2698,82 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   | FT − rev-cab | −0.034 [−0.073, +0.005] | 6 of 8 | 30 of 40 | |
   | FT − S − Σ(add-g − S) (the interaction) | +0.006 [−0.014, +0.026] | | | |
 
-  Per amp (add-g − S): PR12 drive −0.121, tone +0.002, cab −0.014 (FT − S −0.154); SW50R drive −0.166, tone
+  Per amp (add-g − S; PR12's drive better on 7 of 8 DIs): PR12 drive −0.121, tone +0.002, cab −0.014 (FT − S −0.154); SW50R drive −0.166, tone
   −0.036, cab −0.034 (FT − S −0.209); AC20 drive −0.141, tone −0.029, cab −0.010 (FT − S −0.167).
 - **Reading.** About 80% of FT's gain over S on real reamps is its drive (input gain, the amp's volume and power,
   the pedals): moving only those from S to FT's values gives −0.143 of the −0.177, on all 8 DIs and every amp, and
   taking them back loses −0.135. Tone gives a small gain (−0.021, just decided) and cab none that is decided
   (−0.019). The parts add up (interaction +0.006, undecided), so FT's changes act mostly independently in the score.
-  Per unit of knob move the score credits drive most (about 1.2 per unit), tone next (about 0.6) and cab least
-  (about 0.2). This agrees with the user's expectation that drive matters most; whether the judge's weights match
-  the ear's per kind of change, effects included, is `phase_judge_ear`'s question.
+  Tone is not consistent between the two ways: adding FT's tone to S gains −0.021, taking it back from FT costs
+  nothing (+0.004, 4 of 8 DIs); the interaction's interval (±0.02) is as wide as tone's or cab's whole share, so
+  "the parts add up" does not mean no interaction. Per unit of knob move the score credits drive most (about 1.2
+  per unit), tone next (about 0.6) and cab least (about 0.2); this mixes how right FT's moves were with how
+  sensitive the judge is, and leaves out switches and choices (mic type, pedals on or off). F44 found the judge
+  weighs input gain above the ear, so this ordering is the judge's, not shown to be the ear's.
 - **Caveats.** BKS only (one band of real reamps, 8 DIs); FT's answers, not a controlled step per group, so the
   groups' moves differ in size and direction; unit moves are in the model's ranges, not in audible units. The
   compressor (34 PR12 answers) counts as drive. `pr12Dwell` counts as silent with the spring at 0 (an assumption;
   no render depends on it).
 - **References.** `PF/real/answers/FTg-*.json`, `PF/real/judge/FTg-*/`, `PF/real/report-ftg.json`, `PF/logs/ftg-*.log`;
+  the interaction and per-amp rows from `PF/real/ftg-derived.py` (the results review's script; output `ftg-derived.txt`);
   ledger `phase_ft_groups`, `phase_ft_groups_answers`, `phase_ft_groups_outcome`.
+
+### F44. The judge weighs treble well above the ear, drive above it, and reverb below it (phase_judge_ear, descriptive)
+- **Result.** The user rated 26 blind, level-matched pairs (build 55d54a4994d2, answered 2026-11-03): one verified
+  clean single-note DI through S clean (PR12) and S crunch (SW50R), one group moved from S per pair. The judge's
+  distance (both halves averaged) and the ear's rating:
+
+  | Group (step) | Clean, small | Clean, large | Crunch, small | Crunch, large |
+  |---|---|---|---|---|
+  | drive (+4, +10 dB) | 0.84 same | 2.15 same | 1.17 same | 2.53 barely |
+  | tone (treble ±0.15, ±0.35) | 2.62 barely | 3.91 barely | 0.65 same | 2.79 same |
+  | cab (mic distance; mic type) | 0.20 same | 0.40 same | 0.21 barely | 0.51 same |
+  | reverb (mix 0.15, 0.40) | 0.30 same | **2.10 clearly** | 0.17 barely | **1.59 clearly** |
+  | delay (mix 0.15, 0.40) | 1.18 barely | **2.78 clearly** | 0.80 same | 2.02 barely |
+  | spring (0.2, 0.5) | 0.87 same | 1.90 barely | 0.38 same | 0.95 same |
+
+  Both catches (S against itself) scored 0 and were heard as the same. 14 inversions by the declared rule (a pair
+  heard clearly different that the judge scores below another group's pair heard same or barely), 10 of them on
+  both halves and 5 of those within one preset: on PR12 clean, treble +0.35 (3.91, barely) above reverb 0.40 and
+  delay 0.40 (2.10 and 2.78, clearly); on SW50R crunch, drive +10 dB, treble −0.35 and delay 0.40 (2.53, 2.79,
+  2.02; barely, same, barely) above reverb 0.40 (1.59, clearly). Rank agreement between the judge and the ear over
+  the 24 pairs: Spearman 0.43; within the effects (reverb, delay, spring) 0.72; within drive, tone and cab 0.36.
+- **Reading.** By the declared rule the judge mis-weights. It scores treble and drive changes the ear calls the
+  same or barely different above reverb changes the ear calls clearly different (on SW50R crunch, +10 dB of input
+  2.53, barely, and treble −0.35 2.79, same, above reverb 0.40 1.59, clearly; on PR12 clean, treble +0.35 3.91,
+  barely, above reverb 0.40 2.10, clearly): treble weighs well above the ear (ratios 1.4–2.5 on both halves), drive
+  above it (two inversions on both halves, 1.35 and 1.60), reverb less (and clean delay 0.40, but only against
+  treble +0.35). Within the effects the judge orders the pairs much as the ear does, though crunch reverb 0.40 still
+  sits below crunch delay 0.40 and clean spring 0.5; cab steps are small to both. What it changes: every by-sound
+  read so far (F1–F43) is scored by this judge. F43's drive share includes input gain, which this page found the
+  judge weighs above the ear (one single-note DI); its other drive controls were not tested. So how much of FT's
+  lead is audible is not known; and S and FT have every effect off, so no read has scored the effects. The judge's
+  own options do not fix it (exploratory, on these same answers, no renders): the Bark floor (judge v3), hearing
+  weighting, union bands, 3 s tails and a 60 dB floor give Spearman 0.43–0.50 (the 60 dB floor cuts the inversions
+  from 14 to 11; 3 s tails equal the default on every pair and union bands move them by at most 0.03, as the DI
+  plays throughout, so those two are not really tested here), and the tonal and frame-by-frame parts alone 0.47
+  and 0.44. The treble steps stay high in both parts, drive in the frame-by-frame part (in the tonal part only
+  clean +10 dB), which suggests a different kind of measure, not a setting. Proposed next, before more recordings
+  are scored: a revised judge, declared and reviewed, checked on a fresh blind page (another DI and other presets)
+  that was not used to build it.
+- **Caveats.** One listener, one DI, two presets: descriptive. The DI is single-note lead playing; the user noted
+  that chords and single notes respond differently to distortion, so drive may be more audible on chords. The ear's
+  question was how different two clips sound, not which is closer to a target. "Reverb" is the plugin's default
+  1.48 s room; a cab step moves the left of two blended mics; the judge skips the first second; the page
+  level-matched each pair, as the judge takes out level. Each pair appeared once (no repeat to check consistency),
+  in seeded order, both clips looping with an instant switch. Only 3 of 24 pairs were heard clearly different and
+  none very, so all 14 inversions rest on those 3 answers (7 on crunch reverb 0.40 alone); no answer carries a
+  sure/unsure mark. Agreement differs by preset: Spearman 0.71 on PR12 clean, 0.07 on SW50R crunch. Nothing here
+  fits a new weight, which needs its own check.
+- **References.** `~/ndsp-presets/learn/trusted-data/judge-ear/` (plan.json, measure.json, score.json, renders/, explore/ for the options screen);
+  the answers `~/ndsp-presets/listening/judge-ear/private/answers-55d54a4994d2.txt`; code `learn/judge_ear.py`;
+  ledger `phase_judge_ear`, `phase_judge_ear_amendment`, `phase_judge_ear_outcome`.
+- *Results review (2026-11-03, independent, of F43 and F44):* approved with required changes, all made. It rebuilt
+  the blind order from the seed, recomputed every distance, rating, inversion, Spearman figure and the options
+  screen, and every F43 row (interaction and per-amp rows included). Required: treble well above the ear and drive
+  only above it (drive's clean +10 dB inversion fails on one half); input gain is the only drive control tested;
+  the inversions rest on 3 answers; agreement by preset; the page loops with a free switch; a v2-page claim with no
+  record dropped; F43's per-unit ordering the judge's; F43's derived rows stored; the budget.
 
 ## Budget
 
@@ -2727,7 +2791,8 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   860): 3,740, about 56,340 in all. **D_fix's amendment (2026-11-02):** stage A 960 and W's recheck 20, stage B
   2,300 (read 1 480, BKS 960, GOAT 860): 3,280, about 59,620 in all. **D_fix's V-real read (2026-11-02):** 660,
   about 60,280 in all. **FT (2026-11-02):** the recheck 20, read 2 1,340, V-real 152: 1,512, about
-  61,790 in all **FT's control groups (2026-11-02):** 2,880, about 64,670 in all.
+  61,790 in all. **FT's control groups (2026-11-02):** 2,880, about 64,670 in all. **The judge against the ear
+  (2026-11-02):** 60 (56, and 4 after the amendment), about 64,730 in all.
 - **MPS used:** about 4 h before 5B.2 (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and
   backing runs, the k-fold, phase 5A's two 10-minute seeds); 5B.2's 12 trainings about 2 h more (arm P 4 × 7.2–8.4 min,
   arm R 8 × 11.4 min); stage 2's 8 trainings 1.5 h more (8 × 11.4 min); 5C's RG 8 trainings 1.75 h more (8 × 13.0–13.3
