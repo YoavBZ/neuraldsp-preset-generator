@@ -203,16 +203,18 @@ BATCH = 64
 LR = 1e-3
 INNER_SHARE = 0.15                                 # the training songs' sections held for early stopping
 SPRING_MIN = 1e-3
+SPRING_LEVEL = {"pr12": "pr12Amp/pr12Reverb", "sw50r": "sw50rAmp/sw50rReverb"}   # the AC20 has none
 KNOBS = ("rmix", "rdecay", "dmix", "dtime", "dfb")  # rmix/dmix/dfb rotations; rdecay, dtime log2
 
 
-def labels(settings):
+def labels(settings, amp):
     import math
 
     s = settings
     ron = s.get("reverb/reverbActive") == "true"
     don = s.get("delay/delayActive") == "true"
-    spring = max(float(s.get("pr12Amp/pr12Reverb", 0) or 0), float(s.get("sw50rAmp/sw50rReverb", 0) or 0))
+    k = SPRING_LEVEL.get(amp)
+    spring = float(s.get(k, 0) or 0) if k else 0.0          # only the selected amp's spring sounds
     return {"ron": float(ron), "don": float(don),
             "rmix": float(s["reverb/reverbMix"]) if ron else float("nan"),
             "rdecay": math.log2(float(s["reverb/reverbDecay"])) if ron else float("nan"),
@@ -277,8 +279,9 @@ def cmd_e1a_data(args):
             ha, hb = (z[k] for k in HALF_KEYS[a])
             X[a].append(np.stack([ha, hb]))
             A[a].append(np.concatenate([env_acf(ha), env_acf(hb)]))
-        L.append(labels(rows[i]["settings"]))
-        meta.append({"i": i, "song": song, "section": e["section"], "amp": e["amp"], "base": e["base"]})
+        L.append(labels(rows[i]["settings"], e["amp"]))
+        meta.append({"i": i, "song": song, "band": e["band"], "section": e["section"], "amp": e["amp"],
+                     "base": e["base"], "mode": rows[i].get("mode"), "centre": rows[i].get("centre")})
     for a in ARMS:
         np.save(E1A / f"x-{a}.npy", np.stack(X[a]))
         np.save(E1A / f"acf-{a}.npy", np.stack(A[a]).astype(np.float32))
@@ -296,20 +299,30 @@ def cmd_e1a_data(args):
                      "rt60_s": fx.get("rt60_s"), "rt60_confidence": float(fx.get("rt60_confidence") or 0),
                      "reverb_rule": reverb_outcome(fx)})
     # external: E0's X-LANCE stems
-    ext, extx, exta = [], [], []
+    ext, extx, exta, extl = [], [], [], []
     for c in CLASSES:
         for b in BACKINGS:
             for r in RATIOS:
                 for k in TRUTH:
                     y = np.load(SEP / "stems" / "xlance_g" / f"{c}-{b}-{r}-{k}.npy")
+                    from learn import song_aug as SA
+
                     ha, hb = stem_feats(mono(y))
+                    extl.append(float(SA.lufs(mono(y))))
                     extx.append(np.stack([ha, hb]))
                     exta.append(np.concatenate([env_acf(ha), env_acf(hb)]))
                     ext.append({"cls": c, "backing": b, "ratio": r, "kind": k})
     np.save(E1A / "x-ext.npy", np.stack(extx))
     np.save(E1A / "acf-ext.npy", np.stack(exta).astype(np.float32))
-    (E1A / "meta.json").write_text(json.dumps({"examples": meta, "skipped": skipped, "measures": meas, "ext": ext,
-                                               "label_cols": ["ron", "don", *KNOBS, "spring"]}, indent=0))
+    stem_lufs = []
+    for m in meta:
+        z = np.load(CC / "build" / "ex" / f"{m['i']:07d}"[:4] / f"{m['i']:07d}-xlance_g-cc.npz")
+        stem_lufs.append(float(np.mean(z["lufs"])))
+    (E1A / "meta.json").write_text(json.dumps({
+        "examples": meta, "skipped": skipped, "measures": meas, "ext": ext,
+        "label_cols": ["ron", "don", *KNOBS, "spring"],
+        "ext_lufs_summary": {"e0_stems_median": float(np.median(extl)),
+                             "dcc_stems_half_mean_median": float(np.median(stem_lufs))}}, indent=0))
     print(f"E1a data: {len(meta)} examples ({skipped}), {len(set(m['song'] for m in meta))} songs; "
           f"{sum(x is not None for x in meas)} with measures; {len(ext)} external stems")
 
@@ -347,7 +360,7 @@ def norm_knobs(y):
     import numpy as np
 
     z = np.array(y, np.float32)
-    z[:, 3] = (z[:, 3] - 1.0) / 2.0          # log2 decay 1..6 s -> about 0..1.3
+    z[:, 3] = (z[:, 3] - 1.0) / 2.0          # log2 decay value 1..6 -> -0.5..0.79
     z[:, 5] = (z[:, 5] - 6.0) / 4.0          # log2 time 60..800 ms -> about -0.03..0.9
     return z
 
@@ -365,7 +378,10 @@ def cmd_e1a_train(args):
     import numpy as np
     import torch
 
+    import hashlib as H
+
     meta = json.loads((E1A / "meta.json").read_text())["examples"]
+    meta_sha = H.sha256((E1A / "meta.json").read_bytes()).hexdigest()
     songs = np.array([m["song"] for m in meta])
     sections = np.array([m["section"] for m in meta])
     Y = norm_knobs(np.load(E1A / "labels.npy")[:, :2 + len(KNOBS)])
@@ -441,7 +457,7 @@ def cmd_e1a_train(args):
             model.load_state_dict(best_state)
             pred = predict(te)
             res = {"idx": te, "pred": pred, "curve": np.array(curve), "best_epoch": best_ep,
-                   "minutes": (time.time() - t0) / 60}
+                   "minutes": (time.time() - t0) / 60, "meta_sha256": meta_sha}
             if ext and song == E0_SONG:
                 res["ext_pred"] = predict(np.load(E1A / "x-ext.npy"), np.load(E1A / "acf-ext.npy"))
             out.parent.mkdir(parents=True, exist_ok=True)
@@ -464,66 +480,72 @@ def auc(y, s):
 
 
 def cmd_e1a_score(args):
+    """Every readout on all items and on the wide draws (every switch a fair coin, every knob uniform and independent
+    of the other controls): the reader, the draw-only comparator, the median prior, the product's measures."""
+    import hashlib as H
+
     import numpy as np
 
     mj = json.loads((E1A / "meta.json").read_text())
+    meta_sha = H.sha256((E1A / "meta.json").read_bytes()).hexdigest()
     meta = mj["examples"]
     n = len(meta)
     songs = np.array([m["song"] for m in meta])
+    bands = np.array([m["band"] for m in meta])
+    wide = np.array([m["mode"] == "wide" for m in meta])
     L = np.load(E1A / "labels.npy")
     Yk = L[:, 2:2 + len(KNOBS)]
     spring = L[:, -1]
-    out = {"n": n, "songs": sorted(set(songs)), "arms": {}}
-    rng_seed = BOOT_SEED
-    for arm in ARMS:
-        P = np.full((n, 2 + len(KNOBS)), np.nan)
-        minutes, epochs = [], []
-        for song in folds():
-            f = E1A / "runs" / arm / f"{song}.npz"
-            if not f.exists():
-                continue
-            z = np.load(f)
-            P[z["idx"]] = z["pred"]
-            minutes.append(float(z["minutes"]))
-            epochs.append(int(z["best_epoch"]))
-        if np.isnan(P[:, 0]).any():
-            out["arms"][arm] = {"missing": int(np.isnan(P[:, 0]).sum())}
-            continue
-        K = denorm(np.concatenate([P[:, :2], P[:, 2:]], 1))[:, 2:]
-        r = {"train_minutes": minutes, "best_epochs": epochs}
-        # priors: per fold, the training songs' median of each knob among ons
-        prior = np.full_like(Yk, np.nan, dtype=np.float64)
-        for song in folds():
-            te, tr = songs == song, songs != song
-            prior[te] = np.nanmedian(Yk[tr], axis=0)
-        cl = sorted(set(songs))
-        rng = np.random.default_rng(rng_seed)
-        boots = [np.concatenate([np.where(songs == cl[j])[0] for j in rng.integers(0, len(cl), len(cl))])
-                 for _ in range(BOOT_N)]
+    cl = sorted(set(bands))
+    rng = np.random.default_rng(BOOT_SEED)
+    boots = [np.concatenate([np.where(bands == cl[j])[0] for j in rng.integers(0, len(cl), len(cl))])
+             for _ in range(BOOT_N)]
 
-        def ci(fn):
-            v = [fn(b) for b in boots]
-            v = [x for x in v if x == x]
-            return [float(np.percentile(v, 5)), float(np.percentile(v, 95))] if v else [None, None]
+    def ci(fn):
+        v = [fn(b) for b in boots]
+        v = [x for x in v if x == x]
+        return [float(np.percentile(v, 5)), float(np.percentile(v, 95))] if v else [None, None]
 
+    # comparators that use no audio
+    prior = np.full_like(Yk, np.nan, dtype=np.float64)
+    cell = np.array(["|".join((m["amp"], m["mode"], m["base"])) for m in meta])
+    draw = np.full((n, 2), np.nan)
+    for song in folds():
+        te, tr = songs == song, songs != song
+        prior[te] = np.nanmedian(Yk[tr], axis=0)
+        for c in set(cell[te]):
+            mt = tr & (cell == c)
+            draw[te & (cell == c)] = (L[mt, :2].sum(0) + 2 * L[tr, :2].mean(0)) / (mt.sum() + 2)
+
+    def readouts(P, K, mask):
+        r = {"n": int(mask.sum())}
         for e, (col, mixcol) in {"reverb": (0, 0), "delay": (1, 2)}.items():
-            y, s = L[:, col], P[:, col]
+            y, s, dr = L[:, col], P[:, col], draw[:, col]
             on_mix = Yk[:, mixcol]
-            q = np.nanpercentile(on_mix[y == 1], 100 * 2 / 3)
-            strong = (y == 0) | ((y == 1) & (on_mix >= q))
-            weak = (y == 0) | ((y == 1) & (on_mix < np.nanpercentile(on_mix[y == 1], 100 / 3)))
-            d = {"auc": auc(y, s), "auc_ci": ci(lambda b: auc(y[b], s[b])),
-                 "auc_strong_third": auc(y[strong], s[strong]),
-                 "auc_strong_ci": ci(lambda b: auc(y[b][strong[b]], s[b][strong[b]])),
-                 "auc_weak_third": auc(y[weak], s[weak]), "strong_mix_from": float(q),
-                 "auc_by_song": {c: auc(y[songs == c], s[songs == c]) for c in cl}}
+            ons = mask & (y == 1)
+            hi, lo = np.nanpercentile(on_mix[ons], 100 * 2 / 3), np.nanpercentile(on_mix[ons], 100 / 3)
+            m_all = mask
+            m_strong = mask & ((y == 0) | ((y == 1) & (on_mix >= hi)))
+            m_weak = mask & ((y == 0) | ((y == 1) & (on_mix < lo)))
+            d = {"strong_mix_from": float(hi), "weak_mix_below": float(lo)}
+            for name, m in (("all", m_all), ("strong_third", m_strong), ("weak_third", m_weak)):
+                d[name] = {"auc": auc(y[m], s[m]), "auc_ci": ci(lambda b: auc(y[b][m[b]], s[b][m[b]])),
+                           "auc_draw": auc(y[m], dr[m]),
+                           "reader_minus_draw": auc(y[m], s[m]) - auc(y[m], dr[m]),
+                           "reader_minus_draw_ci": ci(lambda b: auc(y[b][m[b]], s[b][m[b]]) - auc(y[b][m[b]], dr[b][m[b]]))}
+            bs = {c: auc(y[mask & (songs == c)], s[mask & (songs == c)]) for c in sorted(set(songs))}
+            d["auc_by_song"] = bs
+            v = [x for x in bs.values() if x == x]
+            d["auc_song_mean"] = float(np.mean(v)) if v else None
             if e == "reverb":
-                d["auc_spring_on_offs"] = auc(y[(y == 1) | (spring == 1)], s[(y == 1) | (spring == 1)])
-                d["auc_spring_off_offs"] = auc(y[(y == 1) | (spring == 0)], s[(y == 1) | (spring == 0)])
+                for nm, sp in (("spring_on_offs", 1), ("spring_off_offs", 0)):
+                    m = mask & ((y == 1) | ((y == 0) & (spring == sp)))
+                    d[nm] = {"auc": auc(y[m], s[m]), "auc_ci": ci(lambda b: auc(y[b][m[b]], s[b][m[b]])),
+                             "n_offs": int((m & (y == 0)).sum())}
             r[e] = d
         kn = {}
         for j, k in enumerate(KNOBS):
-            on = ~np.isnan(Yk[:, j])
+            on = mask & ~np.isnan(Yk[:, j])
             err = np.abs(K[:, j] - Yk[:, j])
             perr = np.abs(prior[:, j] - Yk[:, j])
             kn[k] = {"n_on": int(on.sum()), "mae_reader": float(np.mean(err[on])), "mae_prior": float(np.mean(perr[on])),
@@ -533,7 +555,29 @@ def cmd_e1a_score(args):
                 kn[k]["within_10pct_reader"] = float(np.mean(np.abs(2 ** (K[on, j] - Yk[on, j]) - 1) <= 0.10))
                 kn[k]["within_10pct_prior"] = float(np.mean(np.abs(2 ** (prior[on, j] - Yk[on, j]) - 1) <= 0.10))
         r["knobs"] = kn
-        out["arms"][arm] = r
+        return r
+
+    out = {"n": n, "songs": sorted(set(songs)), "bands": cl, "n_wide": int(wide.sum()), "meta_sha256": meta_sha,
+           "arms": {}}
+    for arm in ARMS:
+        P = np.full((n, 2 + len(KNOBS)), np.nan)
+        minutes, epochs = {}, {}
+        for song in folds():
+            f = E1A / "runs" / arm / f"{song}.npz"
+            if not f.exists():
+                continue
+            z = np.load(f)
+            if str(z["meta_sha256"]) != meta_sha:
+                raise SystemExit(f"{f}: trained on another data build")
+            P[z["idx"]] = z["pred"]
+            minutes[song] = float(z["minutes"])
+            epochs[song] = int(z["best_epoch"])
+        if np.isnan(P[:, 0]).any():
+            out["arms"][arm] = {"missing": int(np.isnan(P[:, 0]).sum())}
+            continue
+        K = denorm(P)[:, 2:]
+        out["arms"][arm] = {"train_minutes": minutes, "best_epochs": epochs,
+                            "all": readouts(P, K, np.ones(n, bool)), "wide": readouts(P, K, wide)}
         if arm == "stem":
             f = E1A / "runs" / "stem" / f"{E0_SONG}.npz"
             if f.exists() and "ext_pred" in np.load(f).files:
@@ -548,23 +592,24 @@ def cmd_e1a_score(args):
                                        "reverb_decay_median": float(np.median([v[2] for v in vs])),
                                        "delay_time_ms_median": float(np.median([v[3] for v in vs]))}
                                    for k, vs in by.items()}
-    # the product's own measures on the clean targets
+                out["external_lufs"] = mj.get("ext_lufs_summary")
+    # the product's own measures on the clean targets (a ceiling for them, not like for like with the stem reader)
     ms = mj["measures"]
-    ok = [j for j, m in enumerate(ms) if m is not None]
-    if ok:
-        don = L[ok, 1] == 1
-        hit = np.array([ms[j]["delay_ms"] is not None and ms[j]["delay_confidence"] >= FLOOR
-                        and abs(ms[j]["delay_ms"] - 2 ** Yk[j, 3]) <= 0.10 * 2 ** Yk[j, 3] if L[j, 1] == 1 else False
-                        for j in ok])
+    for name, mask in (("all", np.ones(n, bool)), ("wide", wide)):
+        ok = np.array([j for j, m in enumerate(ms) if m is not None and mask[j]])
+        if not len(ok):
+            continue
+        don, ron = L[ok, 1] == 1, L[ok, 0] == 1
+        hit = np.array([L[j, 1] == 1 and ms[j]["delay_ms"] is not None and ms[j]["delay_confidence"] >= FLOOR
+                        and abs(ms[j]["delay_ms"] - 2 ** Yk[j, 3]) <= 0.10 * 2 ** Yk[j, 3] for j in ok])
         fired = np.array([ms[j]["delay_ms"] is not None and ms[j]["delay_confidence"] >= FLOOR for j in ok])
-        ron = L[ok, 0] == 1
         rv = np.array([ms[j]["reverb_rule"] == "on" for j in ok])
-        out["measures_on_targets"] = {"n": len(ok), "delay_hit_within_10pct_of_ons": float(hit[don].mean()),
-                                      "delay_fired_on_offs": float(fired[~don].mean()),
-                                      "reverb_rule_on_of_ons": float(rv[ron].mean()),
-                                      "reverb_rule_on_of_offs": float(rv[~ron].mean())}
+        out.setdefault("measures_on_targets", {})[name] = {
+            "n": len(ok), "delay_hit_within_10pct_of_ons": float(hit[don].mean()),
+            "delay_fired_on_offs": float(fired[~don].mean()), "delay_fired_on_ons": float(fired[don].mean()),
+            "reverb_rule_on_of_ons": float(rv[ron].mean()), "reverb_rule_on_of_offs": float(rv[~ron].mean())}
     (E1A / "score.json").write_text(json.dumps(out, indent=1))
-    print(json.dumps(out, indent=1)[:6000])
+    print(json.dumps(out, indent=1)[:8000])
 
 
 def main(argv=None):
