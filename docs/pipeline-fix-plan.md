@@ -70,7 +70,7 @@ rank gap is −0.07 [−0.86, +0.71], D_fix's −0.43 [−1.00, +0.21]. Beside t
 parts, FT and D_fix are heard far closer on two of them (picked after the answers) while the score barely moves, and
 crunch leans to S; class, amp and S's setting cannot be pulled apart here. The ear-score check is not triggered, but
 W carries the agreement: among S, FT and D_fix, agreement is not shown (+0.04 [−0.29, +0.39]; wide, so weak agreement
-is not ruled out). L1a, declared next: the first 50 captures, the ear gate, a blind check of search labels against S
+is not ruled out). The ML review of 2026-11-05 adds N1 to N3, masked FT and a better search, on trusted data. L1a, declared next: the first 50 captures, the ear gate, a blind check of search labels against S
 and a placebo before the rest of the labels, then their centre against GOAT's at the same count.
 Findings F1–F54.
 
@@ -1854,9 +1854,10 @@ instead of generating unrealistic presets our own?"):
     effects, and F44 found reverb heard above its score. colour-me-red ElecGtr03's held half is only 57% active (record
     match wanted 0.8). The listener has heard these records before (T0's ear), and S on two of them: Signs ElecGtr3 and
     get-out-of-bed ElecGtr2 were on record match's page, the second at this same amp and half, through the raw DI.
-  - *A read with no result (2026-11-05):* a read-only review session's loader opened two V-real parts' stored clips (It Was
-    My Fault ElecGtr1 and 3) before it had the limits. It computed only one DI level and deleted the files. No judge, feature or
-    ear figure came of it, and nothing here uses it.
+  - *Reads with no result (2026-11-05):* before they had the limits, a read-only review session's loader opened two V-real
+    parts' stored clips (It Was My Fault ElecGtr1 and 3), computed only one DI level and deleted the files; and one of its
+    reviewers opened `ear-vreal/plan.json`, one unit's stored record, and the opening 2,500 characters of two V-real reports,
+    dropping the one value it took. No judge, feature or ear figure came of either, and nothing here uses them.
   - *L0's outcome (2026-11-04, F54):* W is heard below S on rank and closeness, one listener, and the score agrees. FT and D_fix are
     not known by ear (rank −0.07 [−0.86, +0.71], −0.43 [−1.00, +0.21]). The ear-score Spearman is +0.50 [+0.31, +0.67],
     so the declared check is not triggered; the audit finds W carries it (among the other three, agreement is not
@@ -2015,6 +2016,39 @@ instead of generating unrealistic presets our own?"):
       was read.
     - *Review (2026-11-05, independent):* changes required and made: the items after the ear, the placebos drawn only from
       trusted units, the stage check's figures unread before it, and the guards above.
+- **N1 to N3, the model's real-amp training and the labels' search (2026-11-05, ledger `phase_night2`; `learn/night2.py`).** An
+  independent ML review of the labels and data (2026-11-05, read-only, BKS and GOAT only) found three things. Real rows label
+  every unsearched control as S: of a real label's sounding heads, 64% of knobs and 85% of switches are S's constants, so FT's
+  held loss, and the epoch count it chose, are mostly those. A no-audio table beats FT on that loss on all 4 folds (audited);
+  F42's fall from 5.7 is not evidence of reading. Held-fold answers barely track the labels (within-cell r 0.07, −0.03 and 0.09
+  for drive, tone and cab on GOAT, against about 0.77 reachable), and label noise is not why (being audited). And the search
+  is about one and a half sweeps at a fixed step of 0.25: 52 evaluations, 8 dB input-gain resolution, 18 of them on mics
+  for 11% of the gain. The user asked: "Keep working as much as possible without me, do what's needed to make a good progress."
+  These runs use trusted data only, need no listener and bear on the main bet more directly than L1a's labels do. They are taken as
+  covered by that request, an unplanned training that the rules otherwise ask about, and the first message to the user says so.
+  - **N1, masked FT.** FT's recipe unchanged (W's best state, the same real rows, lr 1e-4, cap 300, patience 15, 4 folds × 2 seeds,
+    the 8 inner runs, then 8 FT_k), except that on every real row, training or held, the heads outside `K.space(amp, S)` and the
+    amp head leave the loss, so E is chosen on searched heads alone. The readout holds every control outside `K.space` at S:
+    those heads stay W's, and F54 heard W's effects. Runs `P2b-ftm*`, about 12 min each on MPS, two at a time, about 2 h.
+    - *Reads on held folds.* (a) Zero renders: within-cell r of answer and label for drive, tone and cab, on GOAT and BKS,
+      beside FT's. (b) By the score, on read 2's units and rules, about 1,340 renders: FTm − FT and FTm − S on BKS and
+      GOAT. No panel, no V-real, no ear. The held loss is not a read of skill (it depends on the comparator).
+    - *Reading.* Effect sizes. A within-cell r that rises shows a reading the old loss hid; a flat r with the score holding says
+      the constants were not what blocked it. A win here is a lead for L2, and any choice from BKS stays a dev choice.
+  - **N2, the search.** v2 runs from S: drive and tone at step 0.25, then up to 4 mics per side (each amp's commonest in
+    GOAT's labels), then drive and tone at 0.125, then cab at 0.25, to 40 evaluations; a move stays only on a log gain of 0.005
+    or more. Test: 16 BKS near-replicate section pairs, one amp each, balanced, about 1,300 renders. Reads: replicate rms by
+    group and held-half gain against the stored labels on the same directions, clustered by recording. Adopted for the capture
+    labels if replicate rms falls for drive and tone and the held gain's difference does not clear zero below. Otherwise the
+    capture labels keep GOAT's recipe. Either way they run by amendment of L1a's `phase_l1a_night`, this batch only.
+  - **N3, the learning curve.** On the better of FT and FTm by within-cell r: 25%, 50% and 100% of the training real rows, seeded,
+    and 100% with labels shuffled within amp and class, 4 folds, one seed, within-cell r on held GOAT against the shuffle.
+    About 16 runs, zero plugin renders. It runs only if N1 and the labels leave MPS time tonight, and it is declared in
+    its own block before it runs.
+  - **Rules.** BKS and GOAT only. V-real, the NS songs, the panel and the captures stay out. The capture page and its labels are
+    untouched by these reads. Runs saved apart (`P2b-ftm*`, `night2/`), FT and its answers unchanged.
+  - **Caveats.** The review's figures on sound are unmeasured. BKS is 8 DIs in 2 songs, and its performances sit in W's plugin rows, so held
+    means held tracks, not held playing. Nothing here is a real song.
 
 ## Findings log
 

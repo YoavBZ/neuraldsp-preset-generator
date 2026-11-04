@@ -450,7 +450,8 @@ def loss_fn(out, c, cm, s, sm, k, km, a):
     bce = (F.binary_cross_entropy_with_logits(swl, s, reduction="none") * sm).sum() / sm.sum().clamp(min=1)
     ce = sum((F.cross_entropy(catl[j], k[:, j], reduction="none") * km[:, j]).sum() / km[:, j].sum().clamp(min=1)
              for j in range(len(catl)))
-    return nll + bce + ce + F.cross_entropy(ampl, a)
+    keep = a >= 0                                       # N1: real rows carry no amp label (-100)
+    return nll + bce + ce + (F.cross_entropy(ampl[keep], a[keep]) if keep.any() else ampl.sum() * 0.0)
 
 
 # --- the readout (amendment 5's, extended) -------------------------------------------------------------------
