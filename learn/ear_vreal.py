@@ -1,4 +1,4 @@
-"""M0, the ear on held-out real songs (`docs/pipeline-fix-plan.md`, ledger `phase_ear_vreal`): does "level with S by
+"""L0, the ear on held-out real songs (`docs/pipeline-fix-plan.md`, ledger `phase_ear_vreal`): does "level with S by
 the score" hold by ear when the models play the song's own performance? Development only; descriptive.
 
     .venv/bin/python -m learn.ear_vreal plan                                # zero renders: the 10 items
@@ -7,8 +7,9 @@ the score" hold by ear when the models play the song's own performance? Developm
     .venv/bin/python -m learn.ear_vreal score --answers FILE
 
 One direction per V-real part, chosen from the record's activity and S's stored distances alone. S, FT, D_fix and W,
-each from its stored V-real answer, are re-rendered through the part's true DI (each hash must equal the stored
-render's, so the audio is exactly what the score read) and played on the held half, sample-aligned with the amp track.
+each from its stored V-real answer, are re-rendered through the part's measure DI, its own performance at the level
+and average-guitar EQ every V-real read used (each hash must equal the stored render's, so the audio is exactly what
+the score read), and played on the held half, sample-aligned with the amp track.
 The listener ranks them and rates each one's closeness; `score` unblinds and sets the ear beside the stored scores.
 """
 
@@ -29,7 +30,7 @@ PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 if str(PLUGIN_ROOT) not in sys.path:
     sys.path.insert(0, str(PLUGIN_ROOT))
 
-from learn.record_match_listening import ranks, spearman  # noqa: E402
+from learn.record_match_listening import spearman  # noqa: E402
 
 PHASE = "phase_ear_vreal"
 CANDS = {"S": "S", "FT": "FV-P2b-ft-stem", "D_fix": "DV-P2b-dfix-stem", "W": "DV-P2b-wide24-stem"}
@@ -39,9 +40,9 @@ CLOSE = (("very", "Very close"), ("close", "Close"), ("some", "Somewhat"), ("far
 CLOSE_VALUE = {"very": 3, "close": 2, "some": 1, "far": 0}
 ACTIVE_DB = 25.0
 REPEATS = 2
+REPEAT_GAP = 4                        # items from a first hearing to its repeat, at least
 PAGE_SEED = 20261104
 BOOT_SEED, BOOT_N = 20261105, 20000
-TRIM_S = 0.25
 SR = 48000
 
 
@@ -63,18 +64,34 @@ def choose(rows):
     return [out[k] for k in sorted(out)]
 
 
-def draw(units, seed, repeats=REPEATS):
-    """The page's items: every unit once and `repeats` of them twice, in a seeded order with no repeat beside its first
-    hearing, letters a distinct permutation per item. -> [{**unit, id, n, letters: {letter: cand}, repeat_of}]."""
+def balanced(rng, rows=12):
+    """`rows` distinct permutations of the candidates, each candidate on each letter equally often (Latin squares)."""
+    while True:
+        out = []
+        for _ in range(rows // len(LETTERS)):
+            base = rng.sample(list(CANDS), len(CANDS))
+            out += [tuple(base[i:] + base[:i]) for i in range(len(CANDS))]
+        if len(set(out)) == rows:
+            rng.shuffle(out)
+            return out
+
+
+def draw(units, seed, repeats=REPEATS, gap=REPEAT_GAP):
+    """The page's items: every unit once and `repeats` of them twice, in a seeded order with a repeat at least `gap`
+    items after its first hearing, letters balanced and every candidate on another letter in a repeat.
+    -> [{**unit, id, n, letters: {letter: cand}, repeat_of}]."""
     rng = random.Random(seed)
     twice = [u["slug"] for u in rng.sample(sorted(units, key=lambda u: u["slug"]), repeats)]
     by = {u["slug"]: u for u in units}
     seq = sorted(by) + twice
     while True:
         rng.shuffle(seq)
-        if all(a != b for a, b in zip(seq, seq[1:])):
+        if all(seq.index(t) + gap <= len(seq) - 1 - seq[::-1].index(t) for t in twice):
             break
-    perms = rng.sample(list(itertools.permutations(CANDS)), len(seq))
+    while True:
+        perms = balanced(rng, len(seq))
+        if all(all(x != y for x, y in zip(perms[seq.index(t)], perms[len(seq) - 1 - seq[::-1].index(t)])) for t in twice):
+            break
     items, first = [], {}
     for n, (slug, order) in enumerate(zip(seq, perms), 1):
         items.append({**by[slug], "id": f"i{n}", "n": n, "letters": dict(zip(LETTERS, order)),
@@ -83,10 +100,16 @@ def draw(units, seed, repeats=REPEATS):
     return items
 
 
+def window(a, b, n_ref, n_ren, lag):
+    """The judge's window (`analysis.aligned`) for half [a, b) in samples: record[s0:s1] lines up with
+    render[s0 - lag:s1 - lag]; it stops where either side ends."""
+    return max(a, lag if lag > 0 else 0), min(b, n_ref, n_ren + lag)
+
+
 def unblind(item, ans):
     """One item's answer -> {cand: {rank, close}}, or None unless all four ranks and ratings are there."""
     r, c = ans.get("rank") or {}, ans.get("close") or {}
-    if sorted(r.get(L, 0) for L in LETTERS) != [1, 2, 3, 4] or any(c.get(L) not in CLOSE_VALUE for L in LETTERS):
+    if sorted(r.get(L) or 0 for L in LETTERS) != [1, 2, 3, 4] or any(c.get(L) not in CLOSE_VALUE for L in LETTERS):
         return None
     return {item["letters"][L]: {"rank": r[L], "close": CLOSE_VALUE[c[L]]} for L in LETTERS}
 
@@ -124,7 +147,7 @@ def pair_row(rows):
 def report(items, heard):
     """items: the key's; heard: {item id: unblind's result}. First hearings make the rows, repeats the consistency."""
     first = [it for it in items if it["repeat_of"] is None and heard.get(it["id"])]
-    rows = {"parts": len(first), "candidates": {}, "against_S": {}, "ear_vs_score": {}, "repeats": []}
+    rows = {"parts": len(first), "candidates": {}, "against_S": {}, "by_class": {}, "ear_vs_score": {}, "repeats": []}
     for c in CANDS:
         rows["candidates"][c] = {
             "mean_rank": band_mean([(it["band"], heard[it["id"]][c]["rank"]) for it in first]),
@@ -136,6 +159,15 @@ def report(items, heard):
             "rank": pair_row([(it["band"], heard[it["id"]]["S"]["rank"] - heard[it["id"]][m]["rank"]) for it in first]),
             "close": pair_row([(it["band"], heard[it["id"]][m]["close"] - heard[it["id"]]["S"]["close"])
                                for it in first])}
+    rows["score_on_items"] = {m: pair_row([(it["band"], math.log(it["judge"]["S"] / it["judge"][m])) for it in first])
+                              for m in MODELS}
+    for cls in sorted({it["cls"] for it in first}):
+        sub = [it for it in first if it["cls"] == cls]
+        rows["by_class"][cls] = {"parts": len(sub), **{m: {
+            "rank": band_mean([(it["band"], heard[it["id"]]["S"]["rank"] - heard[it["id"]][m]["rank"]) for it in sub]),
+            "close": band_mean([(it["band"], heard[it["id"]][m]["close"] - heard[it["id"]]["S"]["close"]) for it in sub]),
+            "parts_above": sum(heard[it["id"]][m]["rank"] < heard[it["id"]]["S"]["rank"] for it in sub)}
+            for m in MODELS}}
     per = [(it["band"], spearman([heard[it["id"]][c]["rank"] for c in CANDS], [it["judge"][c] for c in CANDS]))
            for it in first]
     per = [(b, r) for b, r in per if r is not None]
@@ -269,7 +301,7 @@ function paint() {
   let n = 0;
   items.forEach(it => {
     const a = ans[it.dataset.id] || {}, r = a.rank || {};
-    it.querySelectorAll(".rank button").forEach(b => b.setAttribute("aria-pressed",
+    it.querySelectorAll(".rank:not(.close) button").forEach(b => b.setAttribute("aria-pressed",
       String(r[b.dataset.l] === Number(b.dataset.r))));
     it.querySelectorAll(".conf button").forEach(b => b.setAttribute("aria-pressed", String(a.conf === b.dataset.c)));
     const cl = a.close || {};
@@ -285,7 +317,7 @@ items.forEach(it => {
   const id = it.dataset.id;
   it.querySelectorAll(".src").forEach(b => b.addEventListener("click", () => pick(it, b.dataset.k)));
   it.querySelector(".stop").addEventListener("click", stop);
-  it.querySelectorAll(".rank button").forEach(b => b.addEventListener("click", () => {
+  it.querySelectorAll(".rank:not(.close) button").forEach(b => b.addEventListener("click", () => {
     const a = ans[id] = ans[id] || {}; const r = a.rank = a.rank || {};
     const l = b.dataset.l, v = Number(b.dataset.r);
     Object.keys(r).forEach(o => { if (o !== l && r[o] === v) delete r[o]; });   // a rank is held by one letter
@@ -423,8 +455,8 @@ def cmd_plan(_args):
 
 
 def cmd_render(args):
-    """Every candidate on every unit through the part's true DI, in `vreal_render`'s recipe; a kept render whose hash
-    differs from the stored one stops the shard. The held window, aligned to the record, is kept."""
+    """Every candidate on every unit through the part's measure DI, in `vreal_render`'s recipe; a kept render whose
+    hash differs from the stored one stops the shard. The held window, aligned to the record, is kept."""
     import numpy as np
 
     from learn import arm_a_mega53 as A
@@ -441,6 +473,8 @@ def cmd_render(args):
     P.require(PHASE)
     k, n = (int(x) for x in args.shard.split("/"))
     units = json.loads((data_dir() / "plan.json").read_text())["units"]
+    if args.only:
+        units = [u for u in units if u["slug"] == args.only]
     root, plan, drift, dirs, parts, ms = P.vreal_ctx()
     LO._wait_cap()
     rr = CB.new_renderer()
@@ -471,7 +505,7 @@ def cmd_render(args):
             if AM.audio_sha(y) != sha:
                 raise SystemExit(f"{slug} {amp} {c}: the render differs from the stored one; stop")
             mono = y.mean(axis=1) if y.ndim == 2 else y
-            s0, s1 = max(a, lag if lag > 0 else 0), b
+            s0, s1 = window(a, b, len(ctx["ref"]), len(mono), lag)
             clips[c] = mono[s0 - lag:s1 - lag].astype(np.float32)
             rec["judge"][c], rec["sha"][c] = d, sha
         rec["window"] = [s0, s1]
@@ -561,8 +595,6 @@ def cmd_page(args):
         kept.append({**it, "judge": rec["judge"], "sha": rec["sha"], "levels": info, "window": rec["window"]})
     salt = secrets.token_hex(8)
     build = hashlib.sha256((json.dumps([k["letters"] for k in kept]) + salt).encode()).hexdigest()[:12]
-    P.save(key_path, {"page": "ear-vreal", "build": build, "phase": PHASE, "items": kept,
-                      "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     body = cards(kept)
     data = json.dumps({"build": build, "items": [{"id": it["id"], "n": it["n"]} for it in kept]})
     page = PAGE.replace("@@COUNT@@", str(len(kept))).replace("@@CARDS@@", body).replace("@@CSS@@", CSS) \
@@ -571,6 +603,8 @@ def cmd_page(args):
              if len(w) > 2 and w in body + data]
     if leaks:
         raise SystemExit(f"the page names {leaks}")
+    P.save(key_path, {"page": "ear-vreal", "build": build, "phase": PHASE, "items": kept,
+                      "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     (od / "index.html").write_text(page)
     print(f"EAR-VREAL PAGE DONE: {len(kept)} items, {(od / 'index.html').stat().st_size / 1e6:.1f} MB -> "
           f"{od / 'index.html'}; build {build}")
@@ -593,7 +627,8 @@ def cmd_score(args):
                           "repeat_of": it["repeat_of"], "judge": it["judge"], "heard": heard[it["id"]],
                           "note": (ex["answers"].get(it["id"]) or {}).get("note")} for it in key["items"]])
     P.save(data_dir() / "score.json", rep)
-    print(json.dumps({k: rep[k] for k in ("answered", "items", "candidates", "against_S", "ear_vs_score", "repeats")},
+    print(json.dumps({k: rep[k] for k in ("answered", "items", "candidates", "against_S", "by_class", "score_on_items",
+                                          "ear_vs_score", "repeats")},
                      indent=1))
 
 
@@ -603,6 +638,7 @@ def main(argv=None):
     sub.add_parser("plan")
     r = sub.add_parser("render")
     r.add_argument("--shard", default="0/1")
+    r.add_argument("--only", help="one part's slug (the first run: an effects-on W)")
     p = sub.add_parser("page")
     p.add_argument("--force", action="store_true")
     s = sub.add_parser("score")

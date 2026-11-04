@@ -21,7 +21,12 @@ def test_draw_repeats_apart_and_hides_order():
     units = [{"slug": f"p{i}", "band": "b", "cls": "clean"} for i in range(10)]
     items = E.draw(units, 7)
     assert len(items) == 12 and sum(it["repeat_of"] is not None for it in items) == 2
-    assert all(a["slug"] != b["slug"] for a, b in zip(items, items[1:]))
+    for it in items:
+        if it["repeat_of"]:
+            first = next(x for x in items if x["id"] == it["repeat_of"])
+            assert it["n"] - first["n"] >= E.REPEAT_GAP
+            assert all(first["letters"][L] != it["letters"][L] for L in E.LETTERS)
+    assert all(sum(it["letters"][L] == c for it in items) == 3 for L in E.LETTERS for c in E.CANDS)
     assert all(sorted(it["letters"].values()) == sorted(E.CANDS) for it in items)
     assert len({tuple(it["letters"].values()) for it in items}) == 12
     assert E.draw(units, 7) == items
@@ -47,9 +52,30 @@ def test_report_weights_bands_and_keeps_repeats_out():
              {"id": "i2", "band": "x", "slug": "b", "repeat_of": None, "judge": judge},
              {"id": "i3", "band": "y", "slug": "c", "repeat_of": None, "judge": judge},
              {"id": "i4", "band": "y", "slug": "c", "repeat_of": "i3", "judge": judge}]
+    for it, c in zip(items, ("clean", "clean", "crunch", "crunch")):
+        it["cls"] = c
     rep = E.report(items, {"i1": good, "i2": good, "i3": bad, "i4": bad})
+    assert rep["by_class"]["clean"]["FT"] == {"rank": 1, "close": 2, "parts_above": 2}
+    assert rep["score_on_items"]["FT"]["parts_above"] == 3                           # FT closer by J0 on all three
+    assert rep["score_on_items"]["W"]["parts_below"] == 3
     assert rep["parts"] == 3
     assert rep["against_S"]["FT"]["rank"]["mean"] == pytest.approx((1 - 3) / 2)      # bands count once each
     assert rep["against_S"]["FT"]["rank"]["parts_above"] == 2
     assert rep["ear_vs_score"]["pairs"] == 9 and rep["ear_vs_score"]["same_side_of_S"] == 2 * 3 + 2
     assert rep["repeats"] == [{"slug": "c", "spearman": pytest.approx(1.0), "same_top": True}]
+
+
+def test_window_stops_where_either_side_ends():
+    assert E.window(264000, 480000, 480000, 480000, 30) == (264000, 480000)
+    assert E.window(264000, 480000, 480000, 480000, -8) == (264000, 479992)      # the render ends first
+    assert E.window(48000, 264000, 480000, 480000, 60000) == (60000, 264000)     # a long lag: the record starts later
+
+
+def test_rank_handlers_leave_the_closeness_grid_alone():
+    assert E.JS.count('".rank:not(.close) button"') == 2 and '".rank button"' not in E.JS
+
+
+def test_unblind_treats_a_cleared_rank_as_missing():
+    it = {"letters": {"A": "W", "B": "S", "C": "FT", "D": "D_fix"}}
+    close = {"A": "very", "B": "close", "C": "some", "D": "far"}
+    assert E.unblind(it, {"rank": {"A": None, "B": 2, "C": 3, "D": 4}, "close": close}) is None
