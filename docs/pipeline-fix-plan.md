@@ -61,7 +61,11 @@ worse than a guess's and a confident peak does not say when it is right: delay t
 The loss is the backing's. By the declared branch the masking renders are proposed, not run; the choice between
 them and the main line (the approved real-amp recordings and a fresh real-song test) is the user's. Effects follow
 song research in the product meanwhile.
-Findings F1–F52.
+The user chose the main line, neither fallback rule and no scale for now (2026-11-04), and corrected the reading:
+"level with S" is the score's, not the sound's. The ear so far (F53) has heard real room above S, but no current model
+on a song's own performance. So the main line starts with M0, a blind ear read of S, FT, D_fix and W on V-real's parts
+through their true DIs; then the recordings (M1) and the fresh real-song test (M2), scored with J0 and the ear.
+Findings F1–F53.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -1776,8 +1780,56 @@ instead of generating unrealistic presets our own?"):
       run beside renders. Comparators: the prior, the current measures, E1a's reader. Effect sizes with intervals
       clustered by DI, then a few real songs by ear; what result puts the reader into the product is stated there.
 
-- **Decisions for the user, with the evidence:** whether to adopt the S fallback or the near-chance rule
-  (steps 26, 27, 37), and whether to scale.
+- **The user's decisions (2026-11-04, "I'd go with your recommendations"):** the main line, not the masking renders
+  (they are not run); neither the S fallback nor the near-chance rule (steps 26, 27 and 37 close as User decision:
+  F23, the 2026-10-27 ruling; the readout stays plain; pedals held at S, which helped a weak model, is measured again
+  on the next model, a check and not a rule); no scale for now (F25; it comes back only if results keep rising as real
+  recordings are added).
+- **The user's correction, the same day:** "level with S" is the score's reading, not the sound's. The score is
+  imperfect (F44–F47), and listening has heard generated presets well above S (F53). From here a real-song verdict
+  says "by the score", and no real-song verdict on a model stands on the score alone: a blind ear read sits beside
+  J0, declared before the read. The ear stays a development tool; the product still runs with no human.
+- **M0, the ear on held-out real songs (ledger `phase_ear_vreal`; `learn/ear_vreal.py`; 80 renders, 40 kept).**
+  - **Question.** Does "level with S by the score" hold by ear when the models play the song's own performance? No
+    current model has been heard that way: F53's model pages used a stand-in guitar. It comes first because it is
+    the cheapest thing that can change how the main line is read, and because the main line's labels come from J0.
+  - **Items.** V-real-11's 10 parts in 7 bands, one direction each, chosen from the record's activity and S's stored
+    distances alone, before any model's answer or score is opened (`choose`): the held half is the more active half
+    (share of 100-ms frames within 25 dB of the crop's loudest), the amp the one whose S is closest on the search
+    half (record match's rule); of Wickerman ElecGtr2 and 3, which share one input, the one with the more active held
+    half. Choosing the amp by S's closeness leans toward S. Two items are repeated (seeded), never beside their first
+    hearing; only first hearings make the rows.
+  - **Candidates.** S, FT, D_fix and W, each from its stored V-real answer on that direction (X-LANCE stem input, the
+    product's path). W is there because the score puts it clearly below S on V-real (+0.228) while the stand-in pages
+    put it above S on 5 of 8 rankings. Each is re-rendered through the part's true DI in `vreal_render`'s recipe (a
+    fresh process, one priming render); a hash that differs from the stored render stops the shard, so the audio is
+    exactly what the score read. Disk guard and the 3-process limit as ever; nothing else runs beside it.
+  - **The page.** The held half (4.5 s), looped; mono; the 0.25 s trim falls outside it; every clip -23 LUFS on its
+    own and the item's largest peak cut applied to all; renders sample-aligned to the amp track by the judge's lag,
+    instant switch, letters a distinct seeded permutation per item, no song or band named, headphones. The listener
+    ranks the four (forced) and rates each one against the record (very close, close, somewhat, not close; ties
+    allowed, so "cannot tell them apart" can be said). Guitar only, per the listening rule.
+  - **Reads (descriptive, band-weighted, 90% band-clustered bootstrap; the interval may under-cover with 7 bands).**
+    Each candidate's mean rank, mean closeness, first and last places. FT, D_fix and W against S on rank and on
+    closeness, with parts and bands above S, 50% by chance. The ear against the score: per item the Spearman of ear
+    rank and held-half J0 over the four candidates, and how often the ear and J0 put a model on the same side of S.
+    Repeats: rank agreement and the same top. Clean and crunch beside, and any note the listener leaves.
+  - **Map, declared now.** No bar decides a route; effect sizes and intervals are reported either way.
+    - A model above S with the rank interval clear of zero: "level with S" is withdrawn for that model on these
+      songs, and the score is shown to under-read it there.
+    - S above a model the same way: the score's reading stands by ear for that model.
+    - Undecided: the record says not known by ear; underpowered is not failed.
+    - Whatever the rows: the main line goes on, and its fresh real-song test (M2) carries a blind ear read beside J0,
+      sized from what this page shows.
+    - If the ear-score Spearman's interval reaches zero, J0's labels are treated as unverified on real material, and
+      the recordings step (M1) starts with a small blind check that search labels beat S by ear on real amps before
+      any large spend.
+  - **V-real.** This is V-real's third look and its first by ear. It chooses no model: any choice made from it is
+    labelled selection-contaminated, and the fresh test is what decides. V-real's answers stay as stored. Two of the
+    parts (Signs ElecGtr3, get-out-of-bed ElecGtr2) were on record match's page with other candidates.
+  - **Caveats.** One listener; 10 items; the held half is short; S and FT have every effect off, so an amp track with
+    room or reverb may favour neither; the listener has heard these records before (T0's ear), though not these
+    candidates.
 
 ## Findings log
 
@@ -3740,6 +3792,38 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - *Results review (2026-11-03, independent):* approved with four required changes, all made: the weak third not
   shown above the prior; the gate claim narrowed to what the audit measured; separation's share with its paired
   intervals; the build time. Also adopted: the strong third's undecided error, "not better" for the AUC.
+
+
+### F53. The ear so far: real room above S, and no current model heard on the song's own performance (zero renders, descriptive)
+- **Why now.** The user (2026-11-04) doubted "level with S": the score is imperfect, listening heard generated presets
+  much closer to the original than S, and a similar score does not mean the same sound. The two real-song pages of
+  2026-11-02 had no write-up; this is it, with record match beside them. Rankings from the stored answers and keys.
+- **Own performance, true DI (record match, 2026-10-19, 5 parts):** the best-search ceiling C above S on 5 of 5, the
+  closest preset heard "very close" on 3 and "somewhat" on 2; the older models H and D above S on 4 of 5 each. Mean
+  ranks C 1.2, H 2.4, D 2.8, S 3.6. There the ear broadly followed the judge (Spearman mean 0.8; 0.6 without C).
+- **Stand-in guitar, the current models (`listening/real-song-check` and `-2`, 2026-11-02, blind, 4 songs):**
+
+  | Song | Page 1, chord DI | Page 2, single-note DI |
+  |---|---|---|
+  | Autumn Leaves | D_fix > S > W | W > D_fix > S > FT |
+  | Hotel California | W > D_fix > S | W > FT > S > D_fix |
+  | Still Got The Blues | D_fix > W > S | FT > S > D_fix > W |
+  | Cut It Out | W > D_fix > S (unsure) | S > W > D_fix > FT |
+
+  Some model sits above S on 7 of 8 rankings (5.7 by chance). Above S: D_fix 5 of 8, W 5 of 8, FT 2 of 4. S's mean
+  rank 2.75 of 3 on page 1 (chance 2), 2.25 of 4 on page 2 (chance 2.5). W, which the score puts clearly below S on
+  V-real (+0.228), is first on 4 of the 8.
+- **Reading.** The user's point stands: "level with S" is the score's, and F44–F47 show the score and the ear part
+  ways. The ear has heard large room above S (record match). On the current models it is not yet shown either way:
+  the stand-in rankings are near what chance gives, 4 songs twice are not 8 independent answers, and which model leads
+  changes from song to song. Nothing here shows a current model level with S by ear, or above it. M0 is the test.
+- **Caveats.** One listener. Page 1 played chords against lead songs at crunch settings on songs heard as clean (the
+  user's notes; item 3's reference also held a backing guitar); both pages are tone-only, the notes differ. Two
+  files are karaoke-style re-recordings. On page 2 items 1 and 2 share one S render. Neither page key stores a score
+  per item, so the earlier remark that the ranks did not follow the judge compares with aggregates only. Record
+  match's H and D are older models, not the current ones; its C is a search through the true DI, not a product arm.
+- **References.** `~/ndsp-presets/listening/real-song-check{,-2}/private/`, `listening/record-match-1/private/score.json`,
+  [record match's results](record-match-listening-results.md).
 
 ## Budget
 
