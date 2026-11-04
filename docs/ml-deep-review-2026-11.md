@@ -12,6 +12,8 @@ features and feature extraction, kept in sync with the ML session.
 - **[code]**: confirmed by reading the code.
 - **[reviewer]**: measured by one independent reviewer, not recomputed.
 
+Line numbers are at commit d1cef7d.
+
 **Data.** BKS and GOAT labels and inputs; W's training-row features and stems, and FS rows without the NS sessions, by the
 features reviewer; 33 `ks-ceiling-extend` directions on non-V-real parts; the `judge-ear` and `judge-v5` ear pages. W's `best`
 checkpoint was chosen on NS loss, which every read of W inherits. Not read: V-real, the NS songs, the panel, the captures or
@@ -21,17 +23,18 @@ record match, except as listed under "Data touched outside the limits".
 
 | Part | Best known now | What is wrong | Next test |
 |---|---|---|---|
-| **Scoring** | J0 stays. No candidate beats it on both ear pages. | Close to blind near real distances: removing a 6 dB bell reads about −0.03 to −0.04 at d 4. | Report `tonal` beside `distance`, stratified by d_S, on stored judged rows. |
+| **Scoring** | J0 stays. No candidate beats it on both ear pages. | Weak near real distances: removing a 6 dB bell reads about −0.03 to −0.04 at d 4, at the edge of what is read as meaningful. | Report `tonal` beside `distance`, stratified by d_S, on stored judged rows. |
 | **Reading skill** | Own-against-swap and fold-demeaned, recording-level r. | Loss against a lookup flips with the comparator; pooled r is biased down; BKS's rows are weak (below). | In N1 already. |
 | **Model** | FT stands until tested. Next candidate: FT corrected to searched heads, with S written on the rest. A ridge on pooled mel statistics is the baseline any network must beat; state its input. | Unsearched heads are labelled as S, mics dominate the loss at FT's start, and the amp head fits noise. | N1 (masked FT). Ridge by sound, about 670 renders. |
 | **Features** | 96-band log-mel is enough for tone. For drive nothing is shown better where drive actually varies. | W's skill rests on long-term colour, which transfers worst. | Tone from the long-term spectrum; a drive read on crunch before splitting inputs. |
 | **Feature extraction** | None is good on stems yet. | Models train on P2b and read X-LANCE stems (domain AUC 0.997). A lead: stems may lean toward the dominant other guitar. | Train or align on real stems; test the lead by labelling the dominant guitar. |
-| **Labels** | Search v2, once N1's R2 test decides. | 52 evaluations, step stuck at 0.25, 8 dB input-gain resolution. | R2, about 1,300 renders. |
+| **Labels** | Search v2 (N2): adopted by its declared rule, about 30% fewer renders, not shown more reliable. | v1: 52 evaluations, step stuck at 0.25, 8 dB input-gain resolution. | Reliability of the capture labels. |
 | **Evaluation** | t intervals, 20+ bands, an answer-swap placebo. | Percentile bootstrap covers 82%, not 90%, on 7 clusters. L2's sizing gives about 56% power. | Swap the interval (no render). Resize L2. |
 
-**FT reads per track, weakly, and robustly only on GOAT cab, which is mostly mic distance.** On held GOAT rows its answers follow
-labels beyond their cell, but its drive read separates extremes rather than grading them, its tone read does not survive removing
-range-limit labels, and BKS cannot decide it. Answers vary 10–30% as much as labels. Whether any of it can be heard is unknown.
+**FT reads per track, weakly, most robustly on GOAT's cab, from mic position and distance about equally.** On held GOAT rows its answers
+follow labels beyond their cell. On raw units its drive read separates extremes rather than grading them, and its tone read does not
+survive removing range-limit labels. Head-standardised and without those labels, drive (+0.111, p .012) and cab (+0.097, p .026) hold and
+tone does not (+0.059, p .144). BKS cannot decide it. Answers vary 10–30% as much as labels. Whether any of it can be heard is unknown.
 FT's fall in real-row loss was not evidence of reading.
 
 ## 1. Scoring
@@ -68,7 +71,7 @@ Spearman with the ear:
 | M2, DI-free spectral valley-to-peak | +0.54 | +0.49 | +0.63 | +0.49 |
 | M3, long-term spectrum only | +0.12 | +0.57 | −0.10 | +0.45 |
 
-- A distortion measure does not explain the ear here. M1 passes its control (linear filter −42.9 dB, clipper −13.2 to −2.5 dB).
+- A distortion measure does not explain the ear here. M1 passes its control (linear filter −42.9 dB, clipper −13.2 to −2.5 dB; the control was not recomputed).
   The declared prediction failed: it moves 2.14 on clean against 0.67 on crunch on the judge-ear page, the reverse of what was
   heard, and agrees on judge-v5.
 - M2 is unfitted and leads on judge-ear (+0.14 [−0.05, +0.36]) but trails on judge-v5 (−0.24 [−0.45, −0.05]).
@@ -85,7 +88,7 @@ band-aligned (`knob_ceiling.py:374`, `direc_check.py:52`). Its effect on renders
 
 - **Held-fold r must be demeaned within fold** [audited]. Pooling held folds shifts r down, since each fold's centre comes from the
   other folds. FT's real shift, pooled to demeaned at row level: GOAT +0.015, +0.147, +0.100; BKS +0.026, +0.280, +0.205. W, with no
-  fold dependence: −0.012 to +0.060. The worst case is an answer that hears nothing, which scores −0.13 to −0.51 pooled. On pooled terms
+  fold dependence: −0.019 to +0.060. The worst case is an answer that hears nothing, which scores −0.13 to −0.51 pooled. On pooled terms
   this review reproduces the labels reviewer's GOAT tone −0.027, so that choice explains the difference. The model reviewer's
   "within-cell-and-dataset" r looks pooled the same way (not re-run), so its +0.27 must not be a gate.
 - **Searched-head NLL against a lookup decides nothing** [audited]. FT beats a single Gaussian (BKS −0.064 [−0.124, −0.003];
@@ -108,13 +111,16 @@ recording, upper-tail p. GOAT: 2,000 permutations, 90% item bootstrap. BKS: exac
   figure cannot be read as reading a new rig. GOAT's +0.19 is the size to quote.
 - **BKS own − swap is undecided:** by pair −0.728 and −0.251, t(1) [−1.99, +1.02]. Two pairs are all there is.
 - **GOAT, without the 17–38% of labels at a range limit:** FT drive +0.035 (.21), tone +0.045 (.23), cab +0.113 (.016); W tone +0.232
-  (<.001). Truncating on the label lowers r, so this is not "no read": FT's GOAT drive separates extremes rather than grading them.
+  (<.001). Truncating on the label lowers r, so this is not "no read": on raw units FT's GOAT drive separates extremes rather than grading them.
   W's tone survives and FT's does not. BKS does not share this (+0.28, +0.22, +0.53).
 - **Head-standardised GOAT** (r pools raw units, so AC20 Power and Volume carry drive): FT +0.19, +0.14, +0.15; W +0.13, +0.22, −0.05.
+  Without range-limit labels as well: FT +0.111 (.012), +0.059 (.144), +0.097 (.026); W +0.103 (.024), +0.248 (<.001), −0.032. So FT's drive and cab
+  hold on this basis, and part of the raw figure's weakness is pooling heads of very different spread.
 - Most of GOAT's own − swap is mics; knobs alone −0.021 [−0.032, −0.009].
 - **FT − W on GOAT:** drive −0.007 [−0.089, +0.071], tone −0.102 [−0.215, +0.020], cab +0.277 [+0.195, +0.367]. W, with no real rows,
   reads tone about as well as FT, so plugin training may already carry tone to real amps; that tuning gives tone back is not shown.
-  FT's gain is cab, and that is distance (left +0.57 [+0.42, +0.73], right +0.27 [+0.09, +0.47]), heads W reads backwards.
+  FT's gain over W is cab, and that is distance (left +0.57 [+0.42, +0.73], right +0.27 [+0.09, +0.47]), heads W reads backwards. FT's own cab
+  read is position 54%, distance 47% of its covariance [audited, recomputed from the cached rows].
   On BKS, 4 blocks from 2 songs allow no decision, so BKS intervals stay descriptive.
 - GOAT is capture renders, 76% of labels one player. Its cab holds within player (+0.184) and with any head dropped.
 
@@ -200,7 +206,7 @@ Correct [reviewer]: 520 labels replay exactly; FT − S −0.177 reproduced; fol
 
 ## Recommended order
 
-Already running (ML session): N1 (masked FT, read with these measures, beside the rig table), R2 (search v2), the learning curve.
+ML session: N1 (masked FT, read with these measures, beside the rig table) is running. N2 (search v2) is adopted by its declared rule after 1,207 renders, and is not shown more reliable. N3 (the learning curve) runs if time allows.
 
 1. Zero renders: swap percentile bootstraps for t; report `tonal` beside `distance`, stratified by d_S, on stored judged rows.
 2. Ridge by sound against the centres, about 670 renders, with its input stated: is its knob gain audible, and does any survive the backing?
@@ -219,6 +225,8 @@ Each is corrected above, and the independent audit caught the last group.
 - Caught by the audit: wrong BKS p values and a false 4 clusters; the lookup totals (a mic-term bug, first sent as 0.34–1.20); BKS cab read as reading;
   "tuning gives tone back"; a pooled drive figure of +0.64 and dynamics AUCs of 0.58–0.70 reported on a biased basis. The scratch scripts
   `final.py` and `bias.py` keep their bugs and are superseded.
+- Caught by the PR's review: "mostly mic distance" for FT's cab read (only FT − W is distance), which had already reached the ML session's plan;
+  "robustly only", which held on raw units alone; and stale lines on N2 and N3.
 - The audited read as first adopted (`reads_v2.py`) lacked three things it was declared to do: the exact permutation, the item intervals and
   the paired differences. `reads_v3.py` adds them, passed a separate code review and reproduces the audit's table on FT and W. It is the only
   script proposed for the repo.

@@ -317,11 +317,11 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          amp and class, of whether J0's search labels sound closer than S and than another capture's label, before the rest of the labels. Then their
          centre against GOAT's at the same count. About 2,900 renders before the listener hears a label, about 8,800 to 9,300 if everything runs.
        - **Deep review of the ML flow (2026-11-05; [record](ml-deep-review-2026-11.md), zero renders, independently audited, nothing adopted):**
-         J0 has no arithmetic error and no candidate beat it on both ear pages, but near real distances it barely moves for a 6 dB tone error, so "level
-         with S" says little there. FT reads per track only weakly, robustly on GOAT's cab (mostly mic distance); BKS's cab figure matches a no-audio
-         table, because rigs recur across DIs. FT's fall in real-row loss was not evidence of reading: real rows label unsearched controls as S. The
+         J0 has no arithmetic error in its main path and no candidate beat it on both ear pages, but near real distances removing a 6 dB tone error moves it only about
+         −0.03 to −0.04, so "level with S" says little there. FT reads per track only weakly, most robustly on GOAT's cab (mic position and distance about equally); BKS's
+         cab figure matches a no-audio table, because rigs recur across DIs. FT's fall in real-row loss was not evidence of reading: real rows label unsearched controls as S. The
          search takes 52 evaluations at a step stuck at 0.25. Models train on P2b and read stems (domain AUC 0.997), a lead says stems may lean toward
-         another guitar, and L2 needs at least 18 bands. The ML session took these up as N1 (masked FT), search v2 and a learning curve.
+         another guitar, and L2 needs 18 bands for 80% power.
        - **Next (2026-11-03, after L0):** the approved real-amp recordings, scored with J0, and, as the user chose, the per-recording reading, with FT's
          recipe as the base (chosen on read 2, BKS −0.055; on V-real FT is not shown different from D_fix): many more real-amp labelled recordings (captures on verified DIs, as GOAT) and a fresh,
          larger real-song test (V-real-11 is ±0.07 and now read for two candidates). Domain work and community
