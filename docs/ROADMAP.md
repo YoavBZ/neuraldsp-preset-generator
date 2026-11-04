@@ -234,7 +234,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          it is not built as is and V-real waits: in one shared model the real rows' gain and their cost to the
          plugin read move together.
        - **D_fix on held-out real songs (2026-11-02, F41):** the user pointed out the product always reads real
-         amps, so the plugin read became a cost beside and D_fix was read on V-real. It reads level with S (+0.036
+         amps, so the plugin read became a cost beside and D_fix was read on V-real. By the score it reads level with S (+0.036
          [−0.039, +0.110], undecided) and clearly better than the same recipe without real rows (−0.192 [−0.348,
          −0.037], 7 of 7 bands), which reads clearly worse than S (+0.228). With the real rows the model moves
          most of the way to the plugin's own start in point estimate, though up to +0.110 worse than S is not
@@ -242,7 +242,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        - **Fine-tuning from plugin pretraining (2026-11-02, F42):** at the user's suggestion (plugin renders are
          never the product's input, so use them as pretraining), FT tunes P2b-wide24 on D_fix's real rows alone,
          the epoch count chosen on held real rows. On real reamps it beats D_fix (BKS −0.055 [−0.084, −0.027], 7 of
-         8 DIs; GOAT level) and leads S by −0.177; carried to V-real, it reads level with S (+0.022 [−0.051,
+         8 DIs; GOAT level) and leads S by −0.177; carried to V-real, by the score it reads level with S (+0.022 [−0.051,
          +0.095], undecided), with D_fix (−0.013, 5 of 7 bands, selection-contaminated) and with RcG. On every
          real set the models are not shown different from the real-amp centres; a scoring audit found no
          calculation error, S chosen partly on V-real (worth about 0.025), and per-recording headroom no model
@@ -298,7 +298,15 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          22% (the picker 14%) but its error stays worse than a guess's, so delay time does not read on the stem
          either; the loss is the backing's. The masking renders are proposed, not run: the user chooses between
          them and the main line. Effects follow song research in the product meanwhile.
-       - **Next (2026-11-03):** the approved real-amp recordings, scored with J0, and, as the user chose, the per-recording reading, with FT's
+       - **The user's decisions and correction (2026-11-04):** the main line, not the masking renders; neither the S
+         fallback nor the near-chance rule; no scale for now. "Level with S" is the score's reading, not the sound's: the
+         score parts from the ear (F44–F47), and real-song verdicts now carry a blind ear read beside J0. The ear so far
+         (F53) has put presets above S on their own performance (record match: the search ceiling on 5 of 5 parts, older
+         models on 4 of 5), but the current models only through a stand-in guitar, where the rankings sit near chance and
+         which model leads changes by song; they are not shown level, or above, by ear.
+       - **L0 declared (2026-11-04):** a blind ear read of S, FT, D_fix and W on V-real's 10 parts, each in its own
+         performance beside the record (80 renders), then L1, the recordings, and L2, the fresh real-song test.
+       - **Next (2026-11-03, after L0):** the approved real-amp recordings, scored with J0, and, as the user chose, the per-recording reading, with FT's
          recipe as the base (chosen on read 2, BKS −0.055; on V-real FT is not shown different from D_fix): many more real-amp labelled recordings (captures on verified DIs, as GOAT) and a fresh,
          larger real-song test (V-real-11 is ±0.07 and now read for two candidates). Domain work and community
          presets stay open.
@@ -1382,3 +1390,4 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-11-03 | Pipeline fix F50, the effects route's E1c (zero renders; declared and reviewed): a learned lag head on the envelope autocorrelation. Delay time does not read on the stem or the mix (head 10.7% and 9.5% within ±10% against 7.2% for the draw-aware prior, errors worse; Spearman about 0), nor does the training-free picker there; on the clean target the head matches the picker's hits (46% against 43.5%). For these readers on the stored features the time is lost when the backing is added (separation recovers a few hits). E1b not declared; next waits on a survey of proven blind effect estimators | [plan](pipeline-fix-plan.md) F50, [ledger](dev-test-ledger.json) `phase_fx_reader_e1c*` |
 | 2026-11-03 | Pipeline fix F51, E1d (zero renders, no training; from the cloud researcher's survey, which found no proven blind estimator): a long-window real cepstrum reads delay time on the clean targets, 57.2% within ±10% on the wide delay-ons against the picker's 43.5% (+0.137 [+0.086, +0.166]), 84% on the strongest third, peak-height AUC 0.92 there; on the faintest third its error is worse than the prior's. E0's stems mostly tested their chord DI, on which it fails even without a backing. Amended: E1e, the wide draws rebuilt and re-separated, before the masking renders | [plan](pipeline-fix-plan.md) F51, [ledger](dev-test-ledger.json) `phase_fx_reader_e1d*`, `phase_fx_reader_e1e` |
 | 2026-11-03 | Pipeline fix F52, E1e (zero renders): the 770 wide draws rebuilt exactly and re-separated; the cepstrum hits the delay time on 22% of the stems' wide delay-ons (the picker 14%, a guess 7%) but its error is worse than a guess's (+0.309 [+0.210, +0.383] log2) and its peak height does not flag the hits: delay time does not read on the stem or the mix. The loss is the backing's. Masking renders proposed, not run; the user's choice against the main line | [plan](pipeline-fix-plan.md) F52, [ledger](dev-test-ledger.json) `phase_fx_reader_e1e*` |
+| 2026-11-04 | The user chose the main line, neither fallback rule and no scale for now, and corrected the reading: "level with S" is the score's, not the sound's. F53 (zero renders): the two real-song pages of 2026-11-02 written up beside record match; the ear has put presets above S on their own performance, but no current model has been heard that way, and the stand-in rankings sit near chance (7 of 8 with some model above S, 5.7 expected). L0 declared and reviewed: a blind ear read of S, FT, D_fix and W on V-real's 10 parts | [plan](pipeline-fix-plan.md) |
