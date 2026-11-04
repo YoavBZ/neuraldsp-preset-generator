@@ -110,3 +110,11 @@ def test_the_plan_holds_the_label_page_on_a_stage_stop(tmp_path, monkeypatch):
     (tmp_path / "stage-check.json").write_text(json.dumps({"stop": True}))
     with pytest.raises(SystemExit, match="held"):
         C.cmd_plan(None)
+
+
+def test_render_and_page_use_their_guards():
+    import inspect
+
+    assert "check_fresh(c, AM.audio_sha(y), j, rec)" in inspect.getsource(C.cmd_render)
+    src = inspect.getsource(C.cmd_page)
+    assert "page_leaks(kept, body, data)" in src and "if leaks:" in src

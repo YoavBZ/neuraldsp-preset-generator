@@ -135,10 +135,11 @@ def test_pick_items_crosses_amp_and_class_and_draws_placebos_blind():
     assert max(made.count(c) for c in made) <= 2
     few = [dict(u, creator=f"k{j % 6}") for j, u in enumerate(us)]        # creators must repeat, and placebos must avoid them
     who = {u["unit"]: u["creator"] for u in few}
-    got = L.pick_items(few, active, fallbacks=0)
-    assert all(who[p] != who[it["unit"]] for it in got for p in it["placebos"])
-    made = [who[it["unit"]] for it in got]
-    assert max(made.count(c) for c in made) <= 2
+    for seed in range(30):
+        got = L.pick_items(few, active, seed=seed, fallbacks=0)
+        assert all(who[p] != who[it["unit"]] for it in got for p in it["placebos"])
+        made = [who[it["unit"]] for it in got]
+        assert max(made.count(c) for c in made) <= 2
     held = [it["unit"] for it in items] + [p for it in items for p in it["placebos"]]
     assert len(set(held)) == len(held)                            # a placebo is no item and serves one part
     assert list(inspect.signature(L.pick_items).parameters)[:2] == ["units", "active"]   # no search record comes in
@@ -397,6 +398,8 @@ def test_the_night_path_searches_every_unit_quietly_in_the_seeded_order(tmp_path
     L.cmd_search(args(stage="third"))
     assert calls[0][1:] == (set(), True, True) and sorted(calls[0][0]) == sorted(u["unit"] for u in us)
     assert calls[1][1:] == (set(), False, True) and calls[1][0] == L.stage_set(L.night_order(us), 0, "third")
+    s = [f"u{j:03d}" for j in range(30)]
+    assert L.night_order([{"unit": u} for u in s]) == L.search_order(s, []) != s
 
 
 def test_the_night_path_refuses_a_later_batch_before_any_search(tmp_path, monkeypatch):
@@ -473,4 +476,4 @@ def test_the_quiet_search_prints_no_judge_figure():
     import inspect
 
     src = inspect.getsource(P.search_units)
-    assert 'if quiet else f"{key[-70:]}: {search}->{held} S' in src
+    assert 'print(f"{key[-70:]}: renders so far {renders}" if quiet else f"{key[-70:]}: {search}->{held} S' in src
