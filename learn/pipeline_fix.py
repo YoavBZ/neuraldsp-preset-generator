@@ -4018,6 +4018,8 @@ def cmd_goat_report(args):
         for p_ in (out_dir() / GOAT_DIR / "judge" / t).glob("*.json"):
             r = json.loads(p_.read_text())
             judge[t][f"{r['unit']}|{r['amp']}"] = r["judge"]
+    if "S" in tags:                                    # S's judges live in the search records
+        judge["S"] = {f"{r['unit']}|{r['amp']}": {ANY_HALF: r["s_judge"]} for r in goat_labels()[0]}
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "units": len(units),
            "lag_tol": GOAT_LAG_TOL if args.lag_tol is None else args.lag_tol, "rows": {}}
     keep = ("mean", "lo90", "hi90", "clusters", "clusters_negative", "part_weighted", "parts", "parts_negative")
@@ -4319,12 +4321,12 @@ def cmd_real_heads(args):
     print("REAL-HEADS DONE")
 
 
-ARM_FOLD_PHASES = ("phase_5b2", "phase_5c", "phase_dfix", "phase_ft", "phase_ft_groups")    # real-report's phases whose models share 5B.2's DI folds
+ARM_FOLD_PHASES = ("phase_5b2", "phase_5c", "phase_dfix", "phase_ft", "phase_ft_groups", "phase_night2")    # real-report's phases whose models share 5B.2's DI folds
 
 
 def report_phase(tags):
     """real-report's ledger phase for the tags it reads."""
-    return ("phase_ft_groups" if any(t.startswith("FTg-") for t in tags) else "phase_ft" if FT_BASE in tags else "phase_night2" if FTM_BASE in tags else "phase_dfix" if tags & DFIX_READS else "phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
+    return ("phase_ft_groups" if any(t.startswith("FTg-") for t in tags) else "phase_night2" if tags & {FTM_BASE, FTH_TAG} else "phase_ft" if FT_BASE in tags else "phase_dfix" if tags & DFIX_READS else "phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
             else "phase_5b2_rigo" if tags & {"RigO", "RcM"}
             else "phase_5b2" if any(t.startswith(("P2a-pc", "P2a-real", "Rc")) for t in tags)
             else "phase_5b1b" if any(t in ("P2a-Sc", "S-shift") for t in tags) else "phase_5b1")
@@ -6647,6 +6649,7 @@ FT_FALLBACK_LR, FT_FALLBACK_CAP = 3e-5, 300
 FT_PATIENCE, FT_MIN_FALL, FT_SMOOTH, FT_EVERY = 15, 1e-3, 3, 5
 FT_PRETRAIN = "P2b-wide24"           # W: its NS-best checkpoint per seed is FT's start
 FTM_BASE = "P2b-ftm"                 # N1: FT with the heads outside the search masked on real rows
+FTH_TAG = "P2b-fth"                  # N1's isolation: FT's stored answers, controls outside the search at S
 
 
 def searched_heads(amp, S):

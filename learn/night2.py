@@ -1,8 +1,8 @@
-"""N1 to N3 (`docs/pipeline-fix-plan.md`, ledger `phase_night2`): the reads of masked FT, and search v2.
+"""N2 (`docs/pipeline-fix-plan.md`, ledger `phase_night2`): search v2 on the BKS replicate pairs.
 
-    $MAIN -m learn.night2 within --tags P2b-ft,P2b-ftm      # N1a: within-cell r of answer and label on held units (zero renders)
-    $MAIN -m learn.night2 search --shard k/n                # N2: v2 on the BKS replicate pairs, one amp each
-    $MAIN -m learn.night2 report                            # N2: replicate rms and held gain, v2 against the stored labels
+    $MAIN -m learn.night2 search --shard k/n                # v2 on the replicate pairs, one amp each
+    $MAIN -m learn.night2 report                            # replicate rms and held gain, v2 against the stored labels
+    $MAIN -m learn.night2 hold                              # N1's FTh: FT's answers, controls outside the search at S
 """
 from __future__ import annotations
 
@@ -22,12 +22,11 @@ if str(PLUGIN_ROOT) not in sys.path:
 PHASE = "phase_night2"
 OUT = "night2"
 SEED = 20261108
-LIMIT = 40                            # evaluations a search, S included
+LIMIT = 44                            # evaluations a search at most, S included
 FLOOR = 0.005                         # the least log gain a move must bring
 STEPS = (0.25, 0.125)
 MICS_KEPT = 4                         # candidate mics per side, each amp's commonest in GOAT's labels
 BOOT_N = 5000
-MIN_CELL = 8                          # labels a cell needs to count in a within-cell r
 DRIVE = ("inputGain", "pr12Volume", "sw50rVolume", "sw50rLevel", "ac20Volume", "ac20Power")
 
 
@@ -82,9 +81,10 @@ def order_dims(dims):
 
 
 def search_v2(dims, x0, f, mics, fmt, limit=LIMIT, floor=FLOOR, steps=STEPS):
-    """Search v2: from x0, drive and tone at the first step, then a short mic list, drive and tone at the finer step, then cab
-    at the first step, until `limit` evaluations. A move stays only if it brings a log gain of `floor` or more. f(x) ->
-    distance. mics: {key: [candidate values]}. -> (best x, best value, evaluations)."""
+    """Search v2: from x0, drive and tone at the first step, then a short mic list, the knobs of drive and tone at the finer
+    step, then cab at the first step, until `limit` evaluations. A move stays only if it brings a log gain of `floor` or
+    more; a silent render never does. f(x) -> distance, inf when silent. mics: {key: [candidate values]}.
+    -> (best x, best value, evaluations)."""
     main, mic = order_dims(dims)
     x, best, n = dict(x0), f(dict(x0)), 1
     seen = {tuple(sorted(x.items()))}
@@ -99,14 +99,14 @@ def search_v2(dims, x0, f, mics, fmt, limit=LIMIT, floor=FLOOR, steps=STEPS):
         seen.add(t)
         val = f(y)
         n += 1
-        if val > 0 and math.log(best / val) >= floor:
+        if math.isfinite(val) and val > 0 and math.log(best / val) >= floor:
             x, best = y, val
 
-    def sweep(ds, step):
+    def sweep(ds, step, switches=True):
         for d in ds:
             k = (d.module, d.key)
             if d.kind == "switch":
-                for v in d.values:
+                for v in d.values if switches else ():
                     if v != x.get(k):
                         trial(k, v)
                 continue
@@ -124,7 +124,7 @@ def search_v2(dims, x0, f, mics, fmt, limit=LIMIT, floor=FLOOR, steps=STEPS):
         for v in mics.get(d.key, []):
             if v != x.get(k):
                 trial(k, v)
-    sweep(near, steps[1])
+    sweep(near, steps[1], False)
     sweep(cab, steps[0])
     return x, best, n
 
@@ -138,23 +138,6 @@ def boot_mean(rows, n=BOOT_N, seed=SEED):
     rng = random.Random(f"{seed}|boot")
     d = sorted(sum(rng.choices(means, k=len(means))) / len(means) for _ in range(n))
     return {"mean": sum(means) / len(means), "lo90": d[int(0.05 * n)], "hi90": d[int(0.95 * n) - 1], "clusters": len(means)}
-
-
-def within_r(points, min_cell=MIN_CELL):
-    """Within-cell correlation of answer and label. points: {cell: [(answer, label)]}, cells below `min_cell` left out.
-    -> (r, n)."""
-    xs, ys = [], []
-    for v in points.values():
-        if len(v) < min_cell:
-            continue
-        ma, ml = sum(a for a, _ in v) / len(v), sum(b for _, b in v) / len(v)
-        xs += [a - ma for a, _ in v]
-        ys += [b - ml for _, b in v]
-    if not xs:
-        return None, 0
-    sxy = sum(a * b for a, b in zip(xs, ys))
-    den = math.sqrt(sum(a * a for a in xs) * sum(b * b for b in ys))
-    return (sxy / den if den else None), len(xs)
 
 
 # --- the commands ----------------------------------------------------------------------------------------------------
@@ -261,6 +244,9 @@ def cmd_report(_args):
     for q in (root() / "search").glob("*.json"):
         d = json.loads(q.read_text())
         v2[(d["unit"], d["amp"])] = d
+    want = {(r["unit"], r["amp"]) for p in pairs for r in p}
+    if want - set(v2):
+        raise SystemExit(f"{len(want - set(v2))} of {len(want)} directions have no v2 search yet")
     diffs = {"v1": {}, "v2": {}}
     for a, b in pairs:
         if (a["unit"], a["amp"]) not in v2 or (b["unit"], b["amp"]) not in v2:
@@ -274,76 +260,69 @@ def cmd_report(_args):
                 if k in x and k in y:
                     diffs[tag].setdefault(group(d.key), []).append(unit_of(d, x[k]) - unit_of(d, y[k]))
     gain = {"v1": [], "v2": [], "v2_minus_v1": []}
+    silent, moved = 0, {"v1": [], "v2": []}
     for a, b in pairs:
         for r in (a, b):
-            d = v2.get((r["unit"], r["amp"]))
-            if d is None:
-                continue
+            d = v2[(r["unit"], r["amp"])]
+            S = ms[r["amp"]][r["cls"]][1]
+            for dim in K.space(r["amp"], S):
+                k = (dim.module, dim.key)
+                if dim.kind in ("cont", "log") and k in S:
+                    q = f"{dim.module}/{dim.key}"
+                    u0 = unit_of(dim, S[k])
+                    moved["v1"].append((unit_of(dim, r["label"][q]) - u0) ** 2)
+                    moved["v2"].append((unit_of(dim, d["label"][q]) - u0) ** 2)
             s = r["s_judge"][r["held"]]
+            if not (math.isfinite(r["best"]["judge"][r["held"]]) and math.isfinite(d["judge"][r["held"]])):
+                silent += 1
+                continue
             g1, g2 = math.log(s / r["best"]["judge"][r["held"]]), math.log(s / d["judge"][r["held"]])
             gain["v1"].append((r["rig"], g1))
             gain["v2"].append((r["rig"], g2))
             gain["v2_minus_v1"].append((r["rig"], g2 - g1))
+    adopted = (rms(diffs["v2"]["drive"]) < rms(diffs["v1"]["drive"]) and rms(diffs["v2"]["tone"]) < rms(diffs["v1"]["tone"])
+               and boot_mean(gain["v2_minus_v1"])["hi90"] >= 0)
     out = {"replicate_rms": {t: {g: rms(v) for g, v in d.items()} for t, d in diffs.items()},
-           "held_gain": {t: boot_mean(v) for t, v in gain.items() if v}, "pairs": len(pairs),
+           "held_gain": {t: boot_mean(v) for t, v in gain.items() if v}, "pairs": len(pairs), "silent_held": silent,
+           "moved_from_S_rms": {t: rms(v) for t, v in moved.items()}, "adopted": adopted,
            "evaluations": sum(d["evaluations"] for d in v2.values()) / max(1, len(v2)),
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     P.save(root() / "report.json", out)
     print(json.dumps(out, indent=1))
 
 
-def within_points(tag, answers, recs, ms):
-    """{group: {cell: [(answer, label)]}} of the held units' searched continuous dims, in unit space, each answer the mean of
-    its halves. recs: search records."""
-    from learn import knob_ceiling as K
-
-    pts = {}
-    for r in recs:
-        key = f"{r['unit']}|{r['amp']}"
-        if key not in answers:
-            continue
-        S = ms[r["amp"]][r["cls"]][1]
-        for d in K.space(r["amp"], S):
-            if d.kind not in ("cont", "log"):
-                continue
-            k = f"{d.module}/{d.key}"
-            vals = [unit_of(d, a["settings"][k]) for a in answers[key].values() if k in a["settings"]]
-            if vals and k in r["label"]:
-                pts.setdefault(group(d.key), {}).setdefault((r["amp"], r["cls"], d.key), []).append(
-                    (sum(vals) / len(vals), unit_of(d, r["label"][k])))
-    return pts
-
-
-def cmd_within(args):
-    """N1a (zero renders): within-cell r of answer and label by group on held BKS and GOAT units, for each of `--tags`."""
+def cmd_hold(_args):
+    """FTh, N1's isolation: FT's stored answers with every control outside `K.space` held at S (no training, no audio read).
+    -> {real,goat}/answers/P2b-fth.json."""
     from learn import arm_a_levers as L
+    from learn import local_objective as LO
     from learn import pipeline_fix as P
 
     P.require(PHASE)
-    brecs, _, _ = P.real_labels(2)
-    grecs, _, _ = P.goat_labels()
     ms = L.menu_S()
-    out = {}
-    for tag in args.tags.split(","):
-        out[tag] = {}
-        for name, d, recs in (("goat", P.GOAT_DIR, grecs), ("bks", P.REAL_DIR, brecs)):
-            ans = json.loads((P.out_dir() / d / "answers" / f"{tag}.json").read_text())["answers"]
-            pts = within_points(tag, ans, recs, ms)
-            out[tag][name] = {g: dict(zip(("r", "n"), within_r(cells))) for g, cells in pts.items()}
-    P.save(root() / "within.json", {"tags": out, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
-    print(json.dumps(out, indent=1))
+    for d in (P.REAL_DIR, P.GOAT_DIR):
+        a = json.loads((P.out_dir() / d / "answers" / f"{P.FT_BASE}.json").read_text())
+        cls = ({p["unit"]: p["cls"] for p in a["parts"]} if d == P.REAL_DIR else {u["unit"]: u["cls"] for u in P.goat_units()})
+        out = {}
+        for key, by in a["answers"].items():
+            unit, amp = key.rsplit("|", 1)
+            S = ms[amp][cls[unit]][1]
+            out[key] = {h: {"select": v["select"], "settings": LO.sdict(P.hold_outside_space(LO.tdict(v["settings"]), S, amp))}
+                        for h, v in by.items()}
+        P.save(P.out_dir() / d / "answers" / f"{P.FTH_TAG}.json", {**a, "ledger": f"{P.LEDGER_ID} {PHASE}", "tag": P.FTH_TAG, "answers": out,
+                                                                 "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+        print(f"{d}: {len(out)} answers held")
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
-    w = sub.add_parser("within")
-    w.add_argument("--tags", required=True)
     s = sub.add_parser("search")
     s.add_argument("--shard", default="0/1")
     sub.add_parser("report")
+    sub.add_parser("hold")
     args = ap.parse_args(argv)
-    {"within": cmd_within, "search": cmd_search, "report": cmd_report}[args.cmd](args)
+    {"search": cmd_search, "report": cmd_report, "hold": cmd_hold}[args.cmd](args)
 
 
 if __name__ == "__main__":

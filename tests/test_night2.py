@@ -40,11 +40,24 @@ def test_search_v2_keeps_only_real_gains_and_its_budget():
     assert x[("m", "ac20Cut")] == "0.5"                      # a gain under the floor does not stay
 
 
-def test_within_r_centres_each_cell_and_skips_small_ones():
-    a = [(float(j), float(j)) for j in range(8)]
-    b = [(float(j) + 100, 50.0 - j) for j in range(3)]
-    assert N.within_r({"a": a, "b": b})[1] == 8 and N.within_r({"a": a})[0] == 1.0
-    assert N.within_r({"b": b}) == (None, 0)
+def test_search_v2_survives_a_silent_render():
+    x0 = {("m", "inputGain"): "0.5"}
+    vals = iter([2.0, float("inf"), 1.5, 1.4, 1.3, 1.2])
+    x, best, n = N.search_v2([D("inputGain")], x0, lambda x: next(vals), {}, lambda v: f"{v:.6g}", limit=3)
+    assert best == 1.5 and n == 3
+
+
+def test_search_v2_skips_switches_in_the_fine_sweep():
+    dims = [D("sw50rBright", kind="switch", values=("false", "true")), D("inputGain")]
+    x0 = {("m", "sw50rBright"): "false", ("m", "inputGain"): "0.5"}
+    seen = []
+
+    def f(x):
+        seen.append(x[("m", "sw50rBright")])
+        return 1.0
+
+    N.search_v2(dims, x0, f, {}, lambda v: f"{v:.6g}")
+    assert seen.count("true") == 1
 
 
 def test_boot_mean_weights_clusters_equally():
