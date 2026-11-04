@@ -4,7 +4,7 @@ The pure rules run anywhere; the worker runs in `tools/nam-venv` and reads the c
 
     ~/ndsp-presets/tools/nam-venv/bin/python -I ~/ndsp-presets/tools/nam-tools/nam_notk.py learn/capture_units.py PLAN OUT
 
-PLAN (`capture_labels dis`): {seed, plan: [{capture, path, level_dbu}], players: {player: [item]}, dis: npz}. Each
+PLAN (`capture_labels dis`): {seed, plan: [{capture, path, sha256, level_dbu}], players: {player: [item]}, dis: npz}. Each
 capture's candidates go through the level rule and the pool's classifier, and each amp takes its DI (`walk`). -> OUT:
 units.json (every candidate's class and gain, the units taken), renders.npz (the units' audio).
 """
@@ -41,11 +41,12 @@ def seeded(xs, seed):
     return xs
 
 
-def walk(captures, players, class_of, seed, amps=AMPS, cap=DI_CAP, tries=TRIES):
+def walk(captures, players, class_of, seed, amps=AMPS, cap=DI_CAP, tries=TRIES, after=None):
     """The DI walk. Captures run in a seeded order, each with a seeded amp order and first player; its `tries` candidates
     take the players in turn, items cycling within a player, skipping a DI at the cap or already this capture's. Each amp
     takes the next candidate giving crunch if there is one, otherwise the next giving clean; other classes play nothing.
-    class_of(capture, item) -> class. players: {player: [item]}. -> ({capture: {amp: item}}, {capture: [item]})."""
+    class_of(capture, item) -> class. players: {player: [item]}. `after(capture, {amp: item})` runs after each capture.
+    -> ({capture: {amp: item}}, {capture: [item]})."""
     order = {p: seeded(v, f"{seed}|{p}") for p, v in players.items()}
     pos, used, taken, tried = {p: 0 for p in order}, {}, {}, {}
     names = sorted(order)
@@ -81,11 +82,20 @@ def walk(captures, players, class_of, seed, amps=AMPS, cap=DI_CAP, tries=TRIES):
             if pick is not None:
                 taken[c][amp] = pick
                 used[pick] = used.get(pick, 0) + 1
+        if after:
+            after(c, taken[c])
     return taken, tried
 
 
 def sha256_file(path):
     return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
+
+
+def checked(c):
+    """A plan row's path, once the file on disk is the one the manifest names. c: {path, sha256}."""
+    if sha256_file(c["path"]) != c["sha256"]:
+        raise SystemExit(f"{c['path']}: not the manifest's file")
+    return c["path"]
 
 
 def worker(plan_path, out_dir):
@@ -120,15 +130,19 @@ def worker(plan_path, out_dir):
         if (name, item) not in done:
             if name not in models:
                 models.clear()                          # one capture in memory at a time
-                models[name] = load(byname[name]["path"])[0]
+                models[name] = load(checked(byname[name]))[0]
             audio[(name, item)], done[(name, item)] = play(models[name], byname[name]["level_dbu"], item)
         return done[(name, item)]["class"]
 
-    taken, tried = walk(sorted(byname), spec["players"], class_of, spec["seed"])
     kept = {}
-    for name, amps in taken.items():
+
+    def keep_units(name, amps):                         # the units' audio stays, the other candidates' goes
         for amp, item in amps.items():
             kept[f"{name}|{amp}"] = audio[(name, item)].astype(np.float32)
+        for k in [k for k in audio if k[0] == name]:
+            del audio[k]
+
+    taken, tried = walk(sorted(byname), spec["players"], class_of, spec["seed"], after=keep_units)
     out = pathlib.Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     np.savez(out / "renders.npz", **kept)

@@ -3769,18 +3769,20 @@ def cmd_goat_stage_check(args):
     stage_check(out_dir() / GOAT_DIR, "phase_5c")
 
 
-def stage_check(root, phase):
-    """5C's staged stop, for GOAT and L1a alike (zero renders), run once a third of the trusted units are searched: the in-process best's
-    held-half log ratio to S, clustered by item (`clustered`), and the share of labels whose inputGain sits at a bound
-    of `K.space`. Stop when the held-half interval's upper end is at or above 0 (the searches do not decidedly beat
-    S where they did not search) or the bound share exceeds GOAT_STOP_BOUND_SHARE (the captures' input calibration
-    would set the labels). -> goat/stage-check.json."""
+def stage_read(root, phase, keep=None):
+    """5C's staged stop, for GOAT and L1a alike (zero renders): the in-process best's held-half log ratio to S, clustered
+    by each record's `item` (L1a's are creators; `clustered`), and the share of labels whose inputGain sits at a bound of `K.space`, over the search records
+    (of the units in `keep`, if given). Stop when the held-half interval's upper end is at or above 0 (the searches do
+    not decidedly beat S where they did not search) or the bound share exceeds GOAT_STOP_BOUND_SHARE (the captures' input
+    calibration would set the labels). -> the record."""
     from learn import arm_a_levers as L
     from learn import knob_ceiling as K
     from learn import local_objective as LO
 
     ms = L.menu_S()
     recs = [json.loads(p_.read_text()) for p_ in sorted((root / SEARCH_DIR).glob("*.json"))]
+    if keep is not None:
+        recs = [r for r in recs if r["unit"] in keep]
     lab = [r for r in recs if r["label"] is not None]
     rows = [(r["item"], r["unit"], math.log(r["best"]["judge"][r["held"]] / r["s_judge"][r["held"]])) for r in lab
             if r["s_judge"][r["held"]] and r["best"]["judge"][r["held"]] > 0]
@@ -3793,12 +3795,19 @@ def stage_check(root, phase):
     c = clustered(rows) if rows else {}
     share = sum(at) / len(at) if at else None
     stop = bool(rows) and (c["hi90"] >= 0 or share > GOAT_STOP_BOUND_SHARE)
-    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {phase}", "searched": len(recs), "labelled": len(lab),
-           "held_best_minus_S": {q: c.get(q) for q in ("mean", "lo90", "hi90", "clusters")},
-           "input_gain_at_bound_share": share, "stop": stop, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    return {"plan": PLAN, "ledger": f"{LEDGER_ID} {phase}", "searched": len(recs), "labelled": len(lab),
+            "held_best_minus_S": {q: c.get(q) for q in ("mean", "lo90", "hi90", "clusters")},
+            "input_gain_at_bound_share": share, "stop": stop, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+
+
+def stage_check(root, phase, keep=None):
+    """`stage_read`, saved and printed. -> root/stage-check.json."""
+    out = stage_read(root, phase, keep)
     save(root / "stage-check.json", out)
-    print(f"STAGE CHECK: {len(lab)} labels; held best - S {c.get('mean')} [{c.get('lo90')}, {c.get('hi90')}];"
-          f" inputGain at a bound {share}; {'STOP' if stop else 'go on'}")
+    h = out["held_best_minus_S"]
+    print(f"STAGE CHECK: {out['labelled']} labels; held best - S {h['mean']} [{h['lo90']}, {h['hi90']}];"
+          f" inputGain at a bound {out['input_gain_at_bound_share']}; {'STOP' if out['stop'] else 'go on'}")
+    return out
 
 
 def goat_lags_refused(units, heard, tol=None):

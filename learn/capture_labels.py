@@ -6,10 +6,12 @@ a real amp sound closer than S, before more captures are asked for?
     $MAIN -m learn.capture_labels units                   # sections, folds, lags to the DI, the counts -> captures/units.json
     $MAIN -m learn.capture_labels page / answers EXPORT   # one card per capture
     $MAIN -m learn.capture_labels heavy / heavy-answers EXPORT
-    $MAIN -m learn.capture_labels search --lags-only --shard k/n
-    $MAIN -m learn.capture_labels items                   # the 12 ear items, from unit metadata alone
-    $MAIN -m learn.capture_labels search --stage third --shard k/n
-    $MAIN -m learn.capture_labels stage-check
+    $MAIN -m learn.capture_labels search --lags-only --before-ear --shard k/n    # the night's path, nothing read
+    $MAIN -m learn.capture_labels search --stage third --before-ear --shard k/n
+    $MAIN -m learn.capture_labels night-check             # go or stop, no figure
+    $MAIN -m learn.capture_labels search --stage all --before-ear --shard k/n
+    $MAIN -m learn.capture_labels stage-check             # after the ear, on the trusted units
+    $MAIN -m learn.capture_labels items                   # after both gates, once
 """
 from __future__ import annotations
 
@@ -17,6 +19,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 import pathlib
 import random
 import sys
@@ -26,7 +29,7 @@ PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 if str(PLUGIN_ROOT) not in sys.path:
     sys.path.insert(0, str(PLUGIN_ROOT))
 
-PHASE = "phase_l1a"
+PHASE, NIGHT = "phase_l1a", "phase_l1a_night"
 CAPTURE_DIR = "captures"             # under out_dir(), apart from goat/ and real/
 SEED = 20261105
 CAPTURES = 50
@@ -137,17 +140,72 @@ def pick_items(units, active, seed=SEED, per_cell=CELL_ITEMS, fallbacks=PLACEBO_
             chosen += [got[h] for h in sorted(got)]
         else:
             taken = {u["unit"] for u in chosen}
-            out = []
-            for it in sorted(chosen, key=lambda u: u["unit"]):
-                cand = [u for u in pool if u["amp"] == it["amp"] and u["cls"] == it["cls"] and u["unit"] not in taken
-                        and u["creator"] != it["creator"]][:1 + fallbacks]
-                if not cand:
-                    break
-                taken |= {u["unit"] for u in cand}
-                out.append({"unit": it["unit"], "placebos": [u["unit"] for u in cand]})
-            else:
-                return out
+            out = {it["unit"]: [] for it in chosen}
+            for turn in range(1 + fallbacks):                  # every part's first placebo before any fallback
+                for it in sorted(chosen, key=lambda u: u["unit"]):
+                    cand = [u for u in pool if u["amp"] == it["amp"] and u["cls"] == it["cls"] and u["unit"] not in taken
+                            and u["creator"] != it["creator"]]
+                    if cand:
+                        taken.add(cand[0]["unit"])
+                        out[it["unit"]].append(cand[0]["unit"])
+            if all(out.values()):
+                return [{"unit": u, "placebos": v} for u, v in sorted(out.items())]
     raise SystemExit("no draw of the ear items and placebos fits the declared rules: the batch stops; revise the block")
+
+
+def fallbacks_due(items, labels):
+    """The next placebo of each part whose earlier ones all gave no label. labels: {unit: label or None}, searched units."""
+    out = []
+    for it in items:
+        for u in it["placebos"]:
+            if u not in labels:
+                out.append(u)
+                break
+            if labels[u] is not None:
+                break
+    return out
+
+
+def input_gain(label):
+    return float(label["parameters/inputGain"])
+
+
+def search_row(recs):
+    """Mean S held-half distance and mean search gain, ln(d_S / d_best) on the held half, of search records."""
+    rows = [(r["s_judge"][r["held"]], r["best"]["judge"][r["held"]]) for r in recs if r["label"] is not None
+            and r["s_judge"][r["held"]] and r["best"]["judge"][r["held"]] > 0]
+    if not rows:
+        return None
+    return {"n": len(rows), "s_held": sum(s for s, _ in rows) / len(rows),
+            "search_gain": sum(math.log(s / b) for s, b in rows) / len(rows)}
+
+
+def stage_beside(recs, units):
+    """The rows beside the stage check (zero renders): the label's inputGain against the unit's capture gain, by creator; S's
+    held-half distance and the search gain on captures against GOAT's and BKS's. recs: search records; units: {unit: record}."""
+    from learn import ear_vreal as E
+    from learn import pipeline_fix as P
+
+    lab = [r for r in recs if r["label"] is not None]
+    pairs = [(units[r["unit"]]["creator"], units[r["unit"]]["gain_db"], input_gain(r["label"])) for r in lab]
+    by = {}
+    for c, x, y in pairs:
+        by.setdefault(c, []).append((x, y))
+    rng, groups, boots = random.Random(f"{SEED}|beside"), list(by.values()), []
+    for _ in range(2000):
+        pool = [q for g in rng.choices(groups, k=len(groups)) for q in g]
+        r = E.spearman([q[0] for q in pool], [q[1] for q in pool])
+        if r is not None:
+            boots.append(r)
+    boots.sort()
+
+    def stored(d):
+        return search_row([json.loads(q.read_text()) for q in sorted((P.out_dir() / d / P.SEARCH_DIR).glob("*.json"))])
+
+    return {"input_gain_vs_capture_gain": {
+        "spearman": E.spearman([q[1] for q in pairs], [q[2] for q in pairs]) if pairs else None,
+        "lo90": boots[int(0.05 * len(boots))] if boots else None, "hi90": boots[int(0.95 * len(boots)) - 1] if boots else None},
+        "captures": search_row(lab), "goat": stored(P.GOAT_DIR), "bks": stored(P.REAL_DIR)}
 
 
 def placebo_units(items):
@@ -188,7 +246,11 @@ def tone3000():
 
 
 def units_of():
-    return json.loads((root() / "units.json").read_text())["units"]
+    """The batch's units; refuses while the first minimum is short."""
+    d = json.loads((root() / "units.json").read_text())
+    if d.get("short"):
+        raise SystemExit(f"under {MIN_PER_CELL} units in {d['short']}: the batch stopped at the data stage")
+    return d["units"]
 
 
 def check_files():
@@ -280,7 +342,7 @@ def cmd_units(_args):
     stated = counts(units)
     short = P.goat_short_cells(units, MIN_PER_CELL)
     P.save(root() / "units.json", {"plan": P.PLAN, "ledger": f"{P.LEDGER_ID} {PHASE}", "units": units, "stated": stated,
-                                   "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+                                   "short": {str(k): v for k, v in short.items()}, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(json.dumps(stated, indent=1))
     if short:
         raise SystemExit(f"under {MIN_PER_CELL} units in {short}: the batch stops at the data stage")
@@ -324,7 +386,7 @@ def cmd_page(_args):
     cards = card_units(units)
     random.Random(f"{SEED}|page").shuffle(cards)
     items = [{"id": "cap-" + hashlib.sha256(f"{SEED}|{u['capture']}".encode()).hexdigest()[:12], "unit": u["unit"],
-              "capture": u["capture"]} for u in cards]
+              "capture": u["capture"], "render_sha256": u["render_sha256"]} for u in cards]
     ref = json.loads((P.out_dir() / P.GOAT_DIR / "ear-key.json").read_text())["bks_range"]
     tilts = {it["unit"]: G.tilt(P.real_amp_track(by_unit[it["unit"]]["sd"], by_unit[it["unit"]]["track"],
                                                  by_unit[it["unit"]]["start_s"]), PS.SR) for it in items}
@@ -334,7 +396,7 @@ def cmd_page(_args):
 
 
 def read_export(exports, key_name, page):
-    """Exports -> {key unit: {verdict, note}}; refuses another page's or build's export."""
+    """Exports -> (the page's key, {item id: item}, {item id: {verdict, note}}); refuses another page's or build's export."""
     key = json.loads((root() / key_name).read_text())
     unit_of = {it["id"]: it for it in key["items"]}
     got = {}
@@ -351,6 +413,7 @@ def read_export(exports, key_name, page):
 def cmd_answers(args):
     from learn import pipeline_fix as P
 
+    P.require(PHASE)
     key, unit_of, got = read_export(args.exports, "ear-key.json", PAGE_NAME)
     P.save(root() / "ear.json", {"page": PAGE_NAME, "build": key["build"], "exports": args.exports,
                                  "verdicts": {unit_of[i]["capture"]: v for i, v in got.items()},
@@ -379,13 +442,16 @@ def cmd_heavy(_args):
         raise SystemExit(f"{len(miss)} captures not yet heard on the ear page")
     chosen = heavy_candidates(units, ear)
     random.Random(f"{SEED}|heavy").shuffle(chosen)
-    items = [{"id": "capheavy-" + hashlib.sha256(f"{SEED}|{u}".encode()).hexdigest()[:12], "unit": u} for u in chosen]
-    build_page(items, HEAVY_SPEC, "heavy-key.json", {u["unit"]: u for u in units})
+    by_unit = {u["unit"]: u for u in units}
+    items = [{"id": "capheavy-" + hashlib.sha256(f"{SEED}|{u}".encode()).hexdigest()[:12], "unit": u,
+              "render_sha256": by_unit[u]["render_sha256"]} for u in chosen]
+    build_page(items, HEAVY_SPEC, "heavy-key.json", by_unit)
 
 
 def cmd_heavy_answers(args):
     from learn import pipeline_fix as P
 
+    P.require(PHASE)
     key, unit_of, got = read_export(args.exports, "heavy-key.json", HEAVY_PAGE)
     P.save(root() / "heavy.json", {"page": HEAVY_PAGE, "build": key["build"], "exports": args.exports,
                                    "verdicts": {unit_of[i]["unit"]: v for i, v in got.items()},
@@ -394,8 +460,11 @@ def cmd_heavy_answers(args):
 
 
 def trusted(units):
-    """`passed` on the stored verdicts; refuses while anything is unheard or the heavy page is not the current one."""
+    """`passed` on the stored verdicts; refuses while anything is unheard or either page is not the current one."""
     ear = ear_verdicts()
+    ek = root() / "ear-key.json"
+    if ear and (not ek.exists() or json.loads((root() / "ear.json").read_text())["build"] != json.loads(ek.read_text())["build"]):
+        raise SystemExit("captures/ear.json is not from the ear page's build")
     kp = root() / "heavy-key.json"
     if not kp.exists():
         raise SystemExit("the heavy check is not built yet")
@@ -414,27 +483,44 @@ def trusted(units):
 
 
 def lags_of(units):
-    """{unit: lag} of every unit with a stored lag; the one-window rule's refused units (`goat_lag_refused`)."""
+    """{unit: lag} of `units` and the one-window rule's refused units (`goat_lag_refused`), its median over them."""
     from learn import pipeline_fix as P
 
     ldir = root() / "lags"
+    missing = [u["unit"] for u in units if not (ldir / f"{u['unit'].replace('/', '__')}.json").exists()]
+    if missing:
+        raise SystemExit(f"{len(missing)} units have no lag: run the lag pass first")
     lags = {u["unit"]: json.loads((ldir / f"{u['unit'].replace('/', '__')}.json").read_text())["lag"] for u in units}
     return lags, P.goat_lag_refused(lags, {u["unit"]: u["item_lag"] for u in units})
 
 
+def trusted_units():
+    """The units both gates passed and the lag rule keeps, the lag median taken over them alone. -> (units, {unit: lag})."""
+    units = units_of()
+    ok = trusted(units)
+    tr = [u for u in units if u["unit"] in ok]
+    lags, off = lags_of(tr)
+    return [u for u in tr if u["unit"] not in off], lags
+
+
+def search_records():
+    """The one loader of the search records: every reader goes through `trusted_units`. -> {unit: record}."""
+    from learn import pipeline_fix as P
+
+    keep = {u["unit"] for u in trusted_units()[0]}
+    recs = [json.loads(q.read_text()) for q in sorted((root() / P.SEARCH_DIR).glob("*.json"))]
+    return {r["unit"]: r for r in recs if r["unit"] in keep}
+
+
 def cmd_items(_args):
-    """The 12 ear items, from unit metadata alone, on the trusted units; refuses once any search record exists."""
+    """The 12 ear items and their placebos, after both gates, from unit metadata alone; written once."""
     from learn import ear_vreal as E
     from learn import pipeline_fix as P
 
     P.require(PHASE)
-    if any((root() / P.SEARCH_DIR).glob("*.json")):
-        raise SystemExit("search records exist: the items are drawn before any search")
-    units = units_of()
-    ok = trusted(units)
-    tr = [u for u in units if u["unit"] in ok]
-    _, off = lags_of(tr)
-    tr = [u for u in tr if u["unit"] not in off]
+    if (root() / "items.json").exists():
+        raise SystemExit("captures/items.json exists: the items are drawn once")
+    tr, _ = trusted_units()
     short = P.goat_short_cells(tr, MIN_PER_CELL)
     if short:
         raise SystemExit(f"under {MIN_PER_CELL} trusted units in {short}: the batch stops at the data stage")
@@ -445,20 +531,47 @@ def cmd_items(_args):
     print("CAPTURE ITEMS DONE: " + ", ".join(it["unit"][-24:] for it in items))
 
 
+def batch_digest(units):
+    """One hash of a batch's captures: the sorted sha256 of its files."""
+    return hashlib.sha256("".join(sorted({u["capture_sha256"] for u in units})).encode()).hexdigest()
+
+
+def night_guard(units):
+    """The pre-ear path (`phase_l1a_night`): this batch's 50 files only. -> the ledger entry."""
+    from learn import pipeline_fix as P
+
+    e = P.require(NIGHT)
+    if batch_digest(units) != e.get("phase_l1a_night_batch"):
+        raise SystemExit("--before-ear covers the first batch's 50 files only")
+    return e
+
+
 def cmd_search(args):
-    """The lag pass, then the labels (`pipeline_fix.search_units`, GOAT's recipe), in `search_order`."""
+    """The lag pass, then the labels (`pipeline_fix.search_units`, GOAT's recipe), in `search_order`. By default only
+    after both gates. `--before-ear` (`phase_l1a_night`): every unit of the first batch in the seeded order, nothing read."""
     from learn import pipeline_fix as P
 
     P.require(PHASE)
     units = units_of()
+    k, n = args.shard
+    if args.before_ear:
+        night_guard(units)
+        halves = {u["unit"]: u["search"] for u in units}
+        if args.lags_only:
+            mine = [u for j, u in enumerate(sorted(units, key=lambda u: u["unit"])) if j % n == k]
+            print(f"CAPTURE-SEARCH LAGS DONE {k}/{n}: {P.search_units(mine, root(), PHASE, halves, set(), True)} renders")
+            return
+        by = {u["unit"]: u for u in units}
+        order = search_order(sorted(by), [])
+        mine = [by[u] for j, u in enumerate(stage_set(order, 0, args.stage)) if j % n == k]
+        print(f"CAPTURE-SEARCH DONE {k}/{n} ({args.stage}): {P.search_units(mine, root(), PHASE, halves, set(), False)} renders")
+        return
     ok = trusted(units)
     tr = [u for u in units if u["unit"] in ok]
     halves = {u["unit"]: u["search"] for u in tr}
-    k, n = args.shard
     if args.lags_only:
         mine = [u for j, u in enumerate(sorted(tr, key=lambda u: u["unit"])) if j % n == k]
-        renders = P.search_units(mine, root(), PHASE, halves, set(), True)
-        print(f"CAPTURE-SEARCH LAGS DONE {k}/{n}: {renders} renders")
+        print(f"CAPTURE-SEARCH LAGS DONE {k}/{n}: {P.search_units(mine, root(), PHASE, halves, set(), True)} renders")
         return
     lags, off = lags_of(tr)
     items = json.loads((root() / "items.json").read_text())["items"]
@@ -467,19 +580,49 @@ def cmd_search(args):
     order = search_order([u for u in sorted(by) if u not in off], first)
     todo = stage_set(order, len(first), args.stage)
     if args.stage == "all":
-        gate = root() / "ear-check.json"
-        if not gate.exists() or json.loads(gate.read_text()).get("branch") == "clear below":
-            raise SystemExit("the remaining labels wait for the label page, and do not run on \"clear below\"")
-    mine = [dict(by[u], lag=lags[u]) for j, u in enumerate(todo) if j % n == k]
-    renders = P.search_units(mine, root(), PHASE, halves, off, False)
-    print(f"CAPTURE-SEARCH DONE {k}/{n} ({args.stage}): {renders} renders")
+        rest_may_run()
+    recs = {u: json.loads(q.read_text())["label"] for u, q in ((u, root() / P.SEARCH_DIR / f"{u.replace('/', '__')}|{by[u]['amp']}.json")
+                                                               for u in by) if q.exists()}
+    todo += [u for u in fallbacks_due(items, recs) if u not in todo and u in by]
+    mine = [by[u] for j, u in enumerate(todo) if j % n == k]
+    print(f"CAPTURE-SEARCH DONE {k}/{n} ({args.stage}): {P.search_units(mine, root(), PHASE, halves, off, False)} renders")
+
+
+def rest_may_run():
+    """The remaining labels and the centre read: only after the label page, and never on the primary share clear below."""
+    gate, stage = root() / "ear-check.json", root() / "stage-check.json"
+    if not gate.exists() or json.loads(gate.read_text()).get("branch") not in ("clear above", "reaching one half"):
+        raise SystemExit("the rest waits for the label page, and does not run if the primary share is clear below")
+    if not stage.exists() or json.loads(stage.read_text()).get("stop") is not False:
+        raise SystemExit("the rest waits for the stage check, and does not run on its stop")
+
+
+def cmd_night_check(_args):
+    """The pre-ear fault check at a third: stores and prints only go or stop; its figures stay unread."""
+    from learn import pipeline_fix as P
+
+    night_guard(units_of())
+    stop = bool(P.stage_read(root(), PHASE)["stop"])
+    P.save(root() / "night-check.json", {"stop": stop, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print("STOP" if stop else "GO")
+    if stop:
+        raise SystemExit(1)
 
 
 def cmd_stage_check(_args):
+    """The declared check, after the ear, on the trusted units alone; its stop holds the label page."""
     from learn import pipeline_fix as P
 
     P.require(PHASE)
-    P.stage_check(root(), PHASE)
+    tr, _ = trusted_units()
+    keep = {u["unit"] for u in tr}
+    have = [q for q in (root() / P.SEARCH_DIR).glob("*.json") if json.loads(q.read_text())["unit"] in keep]
+    if 3 * len(have) < len(tr):
+        raise SystemExit(f"{len(have)} of {len(tr)} trusted units searched: the check reads at a third")
+    out = P.stage_check(root(), PHASE, keep)
+    out["beside"] = stage_beside(list(search_records().values()), {u["unit"]: u for u in tr})
+    P.save(root() / "stage-check.json", out)
+    print(json.dumps(out["beside"], indent=1))
 
 
 def shard(s):
@@ -490,18 +633,19 @@ def shard(s):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for c in ("dis", "units", "page", "heavy", "items", "stage-check"):
+    for c in ("dis", "units", "page", "heavy", "items", "stage-check", "night-check"):
         sub.add_parser(c)
     for c in ("answers", "heavy-answers"):
         sub.add_parser(c).add_argument("exports", nargs="+")
     s = sub.add_parser("search")
     s.add_argument("--lags-only", action="store_true")
+    s.add_argument("--before-ear", action="store_true")
     s.add_argument("--stage", default="third")
     s.add_argument("--shard", type=shard, default=(0, 1))
     args = ap.parse_args(argv)
     {"dis": cmd_dis, "units": cmd_units, "page": cmd_page, "answers": cmd_answers, "heavy": cmd_heavy,
      "heavy-answers": cmd_heavy_answers, "items": cmd_items, "search": cmd_search,
-     "stage-check": cmd_stage_check}[args.cmd](args)
+     "stage-check": cmd_stage_check, "night-check": cmd_night_check}[args.cmd](args)
 
 
 if __name__ == "__main__":

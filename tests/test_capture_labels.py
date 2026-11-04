@@ -37,22 +37,46 @@ def test_walk_is_seeded_keeps_the_di_cap_and_never_repeats_a_di():
 
 
 def test_walk_prefers_crunch_then_clean_and_plays_nothing_else():
+    crunchy = set()
+
     def cls(c, it):
-        return {"all-heavy": "high-gain", "all-clean": "clean"}.get(c) or ("crunch" if it in ("a1", "b1") else "clean")
+        if c == "all-heavy":
+            return "high-gain"
+        if c == "all-clean":
+            return "clean"
+        return "crunch" if it in crunchy else "clean"
+    _, tried = U.walk(["all-heavy", "all-clean", "mixed"], players(), lambda c, it: "clean", 3)
+    crunchy.update(tried["mixed"][-2:])                                 # two late candidates: the walk must reach them
     taken, _ = U.walk(["all-heavy", "all-clean", "mixed"], players(), cls, 3)
     assert taken["all-heavy"] == {}
     assert len(taken["all-clean"]) == 3
-    assert {"crunch" if v in ("a1", "b1") else "clean" for v in taken["mixed"].values()} >= {"clean"}
+    assert crunchy <= set(taken["mixed"].values()) and len(taken["mixed"]) == 3
 
 
-def test_walk_seeds_amp_order_and_first_player_per_capture():
+def test_walk_seeds_capture_order_amp_order_and_first_player():
     caps = [f"cap{j}" for j in range(40)]
-    taken, _ = U.walk(caps, players(), lambda c, it: "clean", 11)
-    firsts = {}
-    for amps in taken.values():
-        for amp, it in amps.items():
-            firsts.setdefault(amp, set()).add(it[0])
-    assert all(len(v) >= 2 for v in firsts.values())              # no amp stuck on one player
+    a, ta = U.walk(caps, players(), lambda c, it: "clean", 11)
+    b, _ = U.walk(caps, players(), lambda c, it: "clean", 12)
+    assert a != b
+    firsts = {it[0] for v in ta.values() for it in v[:1]}
+    assert len(firsts) >= 2                                             # the first player is not one player
+    orders = {tuple(amps) for amps in a.values()}
+    assert len(orders) >= 2                                             # amp order changes by capture
+    assert list(a) != sorted(a)                                         # captures run in a seeded order
+
+
+def test_walk_tells_after_each_capture():
+    seen = []
+    U.walk(["c1", "c2"], players(), lambda c, it: "clean", 3, after=lambda c, amps: seen.append((c, len(amps))))
+    assert sorted(seen) == [("c1", 3), ("c2", 3)]
+
+
+def test_worker_refuses_a_file_that_is_not_the_manifests(tmp_path):
+    f = tmp_path / "x.nam"
+    f.write_text("{}")
+    assert U.checked({"path": str(f), "sha256": U.sha256_file(f)}) == str(f)
+    with pytest.raises(SystemExit):
+        U.checked({"path": str(f), "sha256": "00"})
 
 
 def test_folds_keep_a_creator_together_and_balance():
@@ -60,6 +84,8 @@ def test_folds_keep_a_creator_together_and_balance():
     fold = L.folds_by_creator(units)
     assert set(fold) == {f"c{j}" for j in range(7)} and set(fold.values()) <= set(range(L.FOLDS))
     assert L.folds_by_creator(units) == fold
+    size = [sum(f == k for f in fold.values()) for k in range(L.FOLDS)]
+    assert max(size) - min(size) <= 1
 
 
 def units(n=8):
@@ -105,6 +131,8 @@ def test_pick_items_crosses_amp_and_class_and_draws_placebos_blind():
     assert all(sorted(v) == ["A", "B"] for v in cells.values()) and len(cells) == 6
     packs = [by[it["unit"]]["pack"] for it in items]
     assert len(set(packs)) == 12
+    made = [by[it["unit"]]["creator"] for it in items]
+    assert max(made.count(c) for c in made) <= 2
     held = [it["unit"] for it in items] + [p for it in items for p in it["placebos"]]
     assert len(set(held)) == len(held)                            # a placebo is no item and serves one part
     assert list(inspect.signature(L.pick_items).parameters)[:2] == ["units", "active"]   # no search record comes in
@@ -125,13 +153,31 @@ def test_search_order_puts_the_items_first_and_stages_cut_it():
     assert order[2:] != sorted(order[2:])
     assert L.stage_set(order, 2, "first") == order[:2]
     assert len(L.stage_set(order, 2, "third")) == 40 and L.stage_set(order, 2, "all") == order
+    assert len(L.stage_set(list(range(121)), 2, "third")) == 41         # a third, rounded up
+    assert len(L.stage_set(order, 60, "third")) == 60                   # never fewer than the items and placebos
     with pytest.raises(SystemExit):
         L.stage_set(order, 2, "rest")
 
 
-def test_records_stay_apart_from_bks_and_goat():
+def test_no_bks_or_goat_reader_sees_a_capture_record(tmp_path, monkeypatch):
+    from learn import cc_build as CB
+
     assert L.CAPTURE_DIR not in (P.GOAT_DIR, P.REAL_DIR, P.PANEL_DIR, P.VREAL_DIR)
-    assert all(not u.startswith(("goat/", "real/")) for u in ("cap/x#pr12",))
+    monkeypatch.setattr(P, "out_dir", lambda *a: tmp_path)
+    d = tmp_path / L.CAPTURE_DIR / P.SEARCH_DIR
+    d.mkdir(parents=True)
+    (d / "cap.json").write_text(json.dumps({"unit": "cap/x#a", "label": {"a": 1}, "stage": 1}))
+    monkeypatch.setattr(P, "goat_units", lambda: [])
+    monkeypatch.setattr(P, "goat_ear_passed", lambda u: set())
+    monkeypatch.setattr(P, "goat_lags_refused", lambda u, h, tol=None: ({}, set()))
+    assert P.goat_labels()[0] == []
+    monkeypatch.setattr(P, "require", lambda k: {})
+    monkeypatch.setattr(P, "recipe_inputs", lambda pin=None: (0, 0, 0, 0, 0))
+    monkeypatch.setattr(CB, "cc_inventory", lambda: None)
+    monkeypatch.setattr(P, "stage_units", lambda *a: [])
+    monkeypatch.setattr(P, "real_folds", lambda *a: {})
+    monkeypatch.setattr(P, "lag_refused", lambda r: set())
+    assert P.real_labels(2)[0] == []
 
 
 def test_a1_translator_and_container():
@@ -157,3 +203,169 @@ def test_check_files_refuses_a_file_that_is_not_the_manifests(tmp_path, monkeypa
     monkeypatch.setattr(L, "CAPTURES", 1)
     with pytest.raises(SystemExit):
         L.check_files()
+
+
+def layout(tmp_path, monkeypatch, verdicts=True):
+    """Two units on disk, as `units`, with both gates' files if `verdicts`."""
+    us = [{"unit": "cap/x#a", "capture": "x", "split": "uncertain", "capture_sha256": "aa", "item_lag": 0, "search": "A"},
+          {"unit": "cap/y#a", "capture": "y", "split": "driven", "capture_sha256": "bb", "item_lag": 0, "search": "B"}]
+    (tmp_path / "units.json").write_text(json.dumps({"units": us}))
+    (tmp_path / "heavy-key.json").write_text(json.dumps({"build": "b", "items": [{"unit": "cap/y#a"}]}))
+    if verdicts:
+        (tmp_path / "ear-key.json").write_text(json.dumps({"build": "e"}))
+        (tmp_path / "ear.json").write_text(json.dumps({"build": "e", "verdicts": {"x": {"verdict": "amp"}, "y": {"verdict": "amp"}}}))
+        (tmp_path / "heavy.json").write_text(json.dumps({"build": "b", "verdicts": {"cap/y#a": {"verdict": "heavy"}}}))
+    monkeypatch.setattr(L, "root", lambda: tmp_path)
+    return us
+
+
+def test_search_and_items_refuse_before_both_gates_by_default(tmp_path, monkeypatch):
+    import argparse
+
+    layout(tmp_path, monkeypatch, verdicts=False)
+    monkeypatch.setattr(P, "require", lambda k: {})
+    args = argparse.Namespace(before_ear=False, lags_only=True, shard=(0, 1), stage="third")
+    with pytest.raises(SystemExit):
+        L.cmd_search(args)
+    with pytest.raises(SystemExit):
+        L.cmd_items(args)
+
+
+def test_the_pre_ear_path_covers_this_batch_only(tmp_path, monkeypatch):
+    us = layout(tmp_path, monkeypatch)
+    monkeypatch.setattr(P, "require", lambda k: {"phase_l1a_night_batch": L.batch_digest(us)})
+    assert L.night_guard(us)
+    with pytest.raises(SystemExit):
+        L.night_guard(us + [dict(us[0], capture_sha256="cc")])
+
+
+def test_items_are_drawn_once(tmp_path, monkeypatch):
+    layout(tmp_path, monkeypatch)
+    monkeypatch.setattr(P, "require", lambda k: {})
+    (tmp_path / "items.json").write_text("{}")
+    with pytest.raises(SystemExit):
+        L.cmd_items(None)
+
+
+def test_every_reader_of_the_records_passes_the_gates(tmp_path, monkeypatch):
+    layout(tmp_path, monkeypatch)
+    (tmp_path / "lags").mkdir()
+    (tmp_path / P.SEARCH_DIR).mkdir()
+    for u in ("cap/x#a", "cap/y#a"):
+        (tmp_path / "lags" / f"{u.replace('/', '__')}.json").write_text(json.dumps({"lag": 0}))
+        (tmp_path / P.SEARCH_DIR / f"{u.replace('/', '__')}.json").write_text(json.dumps({"unit": u, "label": {"a": 1}}))
+    assert set(L.search_records()) == {"cap/x#a"}                 # y's unit is out on the heavy page
+
+
+def test_night_check_says_go_or_stop_and_stores_no_figure(tmp_path, monkeypatch, capsys):
+    us = layout(tmp_path, monkeypatch)
+    monkeypatch.setattr(P, "require", lambda k: {"phase_l1a_night_batch": L.batch_digest(us)})
+    monkeypatch.setattr(P, "stage_read", lambda r, ph: {"stop": False, "held_best_minus_S": {"mean": -0.5}})
+    L.cmd_night_check(None)
+    assert capsys.readouterr().out.strip() == "GO"
+    stored = json.loads((tmp_path / "night-check.json").read_text())
+    assert set(stored) == {"stop", "time"}
+    monkeypatch.setattr(P, "stage_read", lambda r, ph: {"stop": True, "held_best_minus_S": {"mean": 0.5}})
+    with pytest.raises(SystemExit):
+        L.cmd_night_check(None)
+    assert capsys.readouterr().out.strip() == "STOP"
+
+
+def test_commands_refuse_without_the_ledgers_phase(tmp_path, monkeypatch):
+    import argparse
+
+    layout(tmp_path, monkeypatch)
+
+    def no(k):
+        raise SystemExit(f"no {k}")
+    monkeypatch.setattr(P, "require", no)
+    a = argparse.Namespace(before_ear=False, lags_only=True, shard=(0, 1), stage="third", exports=[])
+    for cmd in (L.cmd_search, L.cmd_items, L.cmd_answers, L.cmd_heavy_answers, L.cmd_stage_check, L.cmd_page, L.cmd_heavy):
+        with pytest.raises(SystemExit, match="no phase_l1a"):
+            cmd(a)
+
+
+def test_a_short_batch_stops_at_the_data_stage(tmp_path, monkeypatch):
+    monkeypatch.setattr(L, "root", lambda: tmp_path)
+    (tmp_path / "units.json").write_text(json.dumps({"units": [], "short": {"(pr12, clean)": 3}}))
+    with pytest.raises(SystemExit, match="data stage"):
+        L.units_of()
+
+
+def test_items_stop_when_the_trusted_cells_are_short(tmp_path, monkeypatch):
+    layout(tmp_path, monkeypatch)
+    monkeypatch.setattr(P, "require", lambda k: {})
+    monkeypatch.setattr(L, "trusted_units", lambda: ([{"amp": "pr12", "cls": "clean"}], {}))
+    with pytest.raises(SystemExit, match="under 10"):
+        L.cmd_items(None)
+
+
+def test_trusted_refuses_until_both_pages_are_current(tmp_path, monkeypatch):
+    us = layout(tmp_path, monkeypatch, verdicts=False)
+    with pytest.raises(SystemExit):                                # nothing heard
+        L.trusted(us)
+    (tmp_path / "ear-key.json").write_text(json.dumps({"build": "e"}))
+    (tmp_path / "ear.json").write_text(json.dumps({"build": "other", "verdicts": {"x": {"verdict": "amp"}, "y": {"verdict": "amp"}}}))
+    with pytest.raises(SystemExit, match="ear page's build"):
+        L.trusted(us)
+    (tmp_path / "ear.json").write_text(json.dumps({"build": "e", "verdicts": {"x": {"verdict": "amp"}, "y": {"verdict": "amp"}}}))
+    with pytest.raises(SystemExit, match="still unheard"):          # the heavy card
+        L.trusted(us)
+    (tmp_path / "heavy.json").write_text(json.dumps({"build": "other", "verdicts": {}}))
+    with pytest.raises(SystemExit, match="heavy page's build"):
+        L.trusted(us)
+    (tmp_path / "heavy.json").write_text(json.dumps({"build": "b", "verdicts": {"cap/y#a": {"verdict": "keep"}}}))
+    assert L.trusted(us) == {"cap/x#a", "cap/y#a"}
+    (tmp_path / "ear.json").write_text(json.dumps({"build": "e", "verdicts": {"x": {"verdict": "amp"}, "y": {"verdict": "odd"}}}))
+    with pytest.raises(SystemExit, match="not the current"):        # y's unit is on the page but its capture failed
+        L.trusted(us)
+
+
+def test_heavy_candidates_are_the_driven_units_of_passed_captures():
+    us = [{"unit": "a", "capture": "x", "split": "driven"}, {"unit": "b", "capture": "y", "split": "driven"},
+          {"unit": "c", "capture": "x", "split": "uncertain"}]
+    assert L.heavy_candidates(us, {"x": {"verdict": "amp"}, "y": {"verdict": "odd"}}) == ["a"]
+
+
+def test_the_rest_needs_the_page_and_a_clean_stage_check(tmp_path, monkeypatch):
+    monkeypatch.setattr(L, "root", lambda: tmp_path)
+    with pytest.raises(SystemExit):
+        L.rest_may_run()
+    (tmp_path / "stage-check.json").write_text(json.dumps({"stop": False}))
+    (tmp_path / "ear-check.json").write_text(json.dumps({}))        # no branch fails closed
+    with pytest.raises(SystemExit):
+        L.rest_may_run()
+    (tmp_path / "ear-check.json").write_text(json.dumps({"branch": "clear below"}))
+    with pytest.raises(SystemExit):
+        L.rest_may_run()
+    (tmp_path / "ear-check.json").write_text(json.dumps({"branch": "reaching one half"}))
+    L.rest_may_run()
+    (tmp_path / "stage-check.json").write_text(json.dumps({"stop": True}))
+    with pytest.raises(SystemExit):
+        L.rest_may_run()
+
+
+def test_a_fallback_comes_due_only_when_the_placebo_gave_no_label():
+    items = [{"unit": "i", "placebos": ["p1", "p2", "p3"]}]
+    assert L.fallbacks_due(items, {}) == ["p1"]
+    assert L.fallbacks_due(items, {"p1": {"a": 1}}) == []
+    assert L.fallbacks_due(items, {"p1": None}) == ["p2"]
+    assert L.fallbacks_due(items, {"p1": None, "p2": None, "p3": None}) == []
+
+
+def test_pick_items_gives_every_part_a_placebo_before_any_fallback():
+    us = units(n=4)                                                 # 2 items and 2 others a cell: no room for fallbacks
+    for u in us:
+        u["creator"] = u["pack"]                                    # all different
+    got = L.pick_items(us, {u["unit"]: {"A": 1.0, "B": 1.0} for u in us})
+    assert len(got) == 12 and all(it["placebos"] for it in got)
+
+
+def test_stage_beside_reads_gain_against_input_gain(tmp_path, monkeypatch):
+    monkeypatch.setattr(P, "out_dir", lambda *a: tmp_path)
+    recs = [{"unit": f"u{j}", "held": "A", "label": {"parameters/inputGain": str(j)}, "s_judge": {"A": 5.0},
+             "best": {"judge": {"A": 4.0}}} for j in range(6)]
+    us = {f"u{j}": {"creator": f"k{j % 3}", "gain_db": float(j)} for j in range(6)}
+    out = L.stage_beside(recs, us)
+    assert out["input_gain_vs_capture_gain"]["spearman"] == 1.0
+    assert out["captures"]["n"] == 6 and out["captures"]["search_gain"] > 0 and out["goat"] is None
