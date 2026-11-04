@@ -1861,7 +1861,7 @@ instead of generating unrealistic presets our own?"):
     The main line goes on, and L1's declaration takes up the check on its own evidence.
 - **L1a, the first capture batch (ledger `phase_l1a`; `learn/capture_labels.py`, `learn/nam_load.py`; about 2,900
   renders before the listener hears a label, about 8,800 to 9,300 if everything runs, about 2,000 of them the centre
-  read; about 1.5 to 1.6 h in all, about 30 min of it before the page).** Before anyone asks TONE3000 for more, the
+  read; about 1.5 to 1.7 h in all, about 30 min of it before the page).** Before anyone asks TONE3000 for more, the
   first 50 captures settle what more would rest on: whether they sound like amps, whether J0's search labels on them
   sound closer than S, and whether their centre moves against GOAT's at the same count.
   - **Why the label check is here.** F54: the declared ear-score check was not triggered, but W carried the agreement,
@@ -1896,7 +1896,8 @@ instead of generating unrealistic presets our own?"):
       gives clean. The walk selects on the classifier's reading. Class is partly the DI (trial crunch counts of 50:
       player1's DI 18, player2's 4, player4's 19 plus 9 high gain), and a marginal capture gets up to 9 chances to read
       crunch. Before the walk about a quarter of the trial's units read crunch (41 of 150); modelled from 3 DIs, one per
-      player, the walk gives about 70 clean and 75 crunch.
+      player, the walk with its cap gives about 75 to 90 clean and 60 to 70 crunch, and a smallest cell after the ear
+      and the lag rule of about 14 to 16 (lowest modelled 9), so the minimum can fire but rarely will.
     - *Folds, for later.* 4, by creator: a pack here is one amp, so a creator's rig and mics stay together.
     - *Stated before the ear:* units by amp and class, by player and class, the makers' label against the class, the
       most-used DIs, held units and uncalibrated units. Minimum 10 per amp and class (the centre's error is about half
@@ -1924,30 +1925,40 @@ instead of generating unrealistic presets our own?"):
   - **The ear check of the labels (blind; `learn/capture_ear.py`).**
     - *Items.* 12 units, 2 per amp and class, one held A and one held B in each cell, held half at least 0.8 active; no
       two from one pack and at most 2 from one creator; drawn by seed from unit metadata alone, before any search has
-      run. The picker takes no search record, with a test. Amp and class are crossed; S's setting cannot be told from
-      the amp-by-class cell. 2 repeats, on other letters, at least 4 items after the first hearing; letters balanced.
+      run. The picker, placebos included, takes no search record, with a test. Amp and class are crossed; S's setting
+      cannot be told from the amp-by-class cell. 2 repeats, at least 4 items after the first hearing. Letters balanced
+      over the 12 first hearings, each candidate on each letter 4 times; on a repeat every candidate moves letter.
     - *Candidates.* S; the label; the placebo, the label of another capture of the same amp and class from another
-      creator, seeded. The placebo tells "J0 fit this capture" from "S is off", which F54's two sw50r parts could not.
+      creator. Each part's placebo unit is drawn with the items, by seed, from unit metadata before any search, with a
+      seeded fallback list, and searched with them. A placebo unit is not an item and serves one part. A fallback is
+      taken only when a unit gives no label. A cell that cannot supply its 2 items and 2 placebos under these limits
+      stops the batch, as the minimum does. The 24 units sit inside the third, so this adds no renders. The placebo
+      tells "J0 fit this unit" from "S is off", which F54's two sw50r parts could not.
     - *Page.* As L0's: the held half looped, mono, −23 LUFS each, sample-aligned by the judge's lag, instant switch. The
       capture's render is the Record. Each candidate is rendered fresh in its own process through the unit's measure DI:
       72 renders. S's fresh render must equal the lag pass's hash. The label's is checked by judge (|ln ratio| against
       the in-process value within 1e-3; F34 found 36 of 120 bit-identical, largest gap 6.1e-5). The scored gaps use the
       fresh renders. Rank forced, a closeness rating each (ties allowed), sure or unsure, a note.
-    - *Reads (descriptive, 90% creator-clustered bootstrap).* Primary: the share of parts with the label ranked above S,
-      then the closeness gap, with the score's gap beside. The same for the label against the placebo. By class and by
-      amp (means and counts, no intervals), a leave-one-cell-out row, and a row with unsure parts out. The ear against
-      the score: the Spearman over the 12 parts of the closeness gap against ln(d_label / d_S), with its interval.
-      Repeats.
-    - *Map, declared now.* Share's interval clear above one half: "heard closer than S on these captures of real amps,
-      one listener", J0's search stands by ear this far. That does not show the fit is capture-specific: the placebo row
-      says that, and S may simply be far off (F54). Reaching one half: not known by ear; underpowered is not failed; the
-      closeness row and its ties are the user's evidence on whether to go on. Clear below: the labels are not what the
-      ear wants, the remaining labels and the centre read do not run, and the judge's use for labels is reviewed before
-      any next batch.
+    - *Reads (descriptive, 90% creator-clustered bootstrap).* Primary, read pairwise from the forced rank (chance one
+      half): the share of parts with the label ranked above S, then the closeness gap, with the score's gap beside.
+      Beside, the same for the label against the placebo and the placebo against S. By class and by amp (means and
+      counts, no intervals), a leave-one-cell-out row, and a row with unsure parts out. The ear against the score: the
+      Spearman over the 12 parts of the closeness gap against ln(d_S / d_label), plus meaning the score also puts the
+      label closer, with its interval. Repeats.
+    - *Map, declared now.* The primary share's interval clear above one half: "heard closer than S on these captures of
+      real amps, one listener", J0's search stands by ear this far. That does not show the fit is unit-specific: S may
+      simply be far off (F54). Label against placebo clear above: heard closer than another capture's label, so the fit
+      is specific to this unit. Clear below: another capture's label is heard closer, and J0's fit is not what the ear
+      hears. Reaching one half: not known; with placebo against S clear above, S being off is the likelier reading. The
+      primary share reaching one half: not known by ear; underpowered is not failed; the closeness row and its ties are
+      the user's evidence on whether to go on. The primary share clear below: the labels are not what the ear wants, the
+      remaining labels and the centre read do not run, and the judge's use for labels is reviewed before any next batch.
     - *What the design can bear, simulated now* (12 parts, 8 to 12 creators, this bootstrap): a true 75% clears one half
       on about 48 to 57% of pages, a true 85% on about 80 to 87%, a true 50% on about 4 to 7.5% each way. 10 of 12
-      always clears, 9 on about 30 to 75% of layouts, 8 almost never. A shared effect of S's setting lowers this. So
-      undecided is a likely outcome even if the labels are better, and a clear row is a lead, not a verdict.
+      always clears, 9 on about 30 to 75% of layouts, 8 almost never. A shared effect of S's setting lowers this. Label
+      over S or label over placebo clears by chance on about 9% of pages. A true 65% clears on about a quarter, so the
+      placebo row is often undecided even if the fit is real. So undecided is a likely outcome even if the labels are
+      better, and a clear row is a lead, not a verdict.
   - **The centre read, by the score.** RcT, Rc's rule on the trusted capture labels; RcG_n, Rc's rule on GOAT labels
     drawn to the same count per amp and class, 3 seeded draws. Each on BKS's 40 units and the panel's 44, on all 3 amps,
     as before (504 renders a centre, about 2,000). Rows: RcT − RcG_n (mean of the draws, and each) and RcT − S, with RcG
@@ -1956,8 +1967,9 @@ instead of generating unrealistic presets our own?"):
     Past centre-against-centre half-widths were about 0.08 on BKS and 0.06 on the panel, so a smaller gap is undecided,
     the likely outcome. The intervals treat a centre as fixed, and its error at 10 to 12 labels is about 0.06 to 0.09
     rms against shifts of 0.13 to 0.22, so a zero-render row sits beside: RcT's setting distance from RcG, against 200
-    seeded RcG_n draws and a creator bootstrap of RcT. No row reads as moved unless RcT beats all 3 draws on the same
-    side. This is a panel read: counted in `phase_5d_panel_reads`, and it picks no recipe. V-real stays unread.
+    seeded RcG_n draws and a creator bootstrap of RcT. No row reads as moved unless its interval clears zero and RcT −
+    RcG_n has the same sign on all 3 draws. This is a panel read: counted in `phase_5d_panel_reads`, and it picks no
+    recipe. V-real stays unread.
   - **Reading.** No bar decides it, except that "clear below" holds the next batch until the judge's use for labels is
     reviewed. Otherwise the reads go to the user beside the yield and the cost of the next batch, which is the user's
     yes on the route and a fresh key. The working size stays 250 captures in all, about 100 labels per amp and class;
@@ -1973,6 +1985,9 @@ instead of generating unrealistic presets our own?"):
     player's. The labels fit the measure DI, so F20's cap applies, though the Record here plays the same performance.
     One listener, 12 parts, and the listener will have heard each capture on the ear gate. Nothing here is a real song:
     a label heard closer on a capture does not show a model reading a song.
+  - *Review (2026-11-04, independent, before any render):* 12 required changes, then 7 on its re-check, all made: the
+    check before the spend, the DI cap, the heavy page, the minimum at both points, the judge check on the label's render,
+    the placebo drawn blind with its own rows, the ear-score row, the centre read's limits, and the seeded search order.
 
 ## Findings log
 
