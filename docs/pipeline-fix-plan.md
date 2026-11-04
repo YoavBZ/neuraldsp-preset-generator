@@ -2038,7 +2038,7 @@ instead of generating unrealistic presets our own?"):
   independent ML review of the labels and data (2026-11-05, read-only, BKS and GOAT only) found three things. Real rows label
   every unsearched control as S: of a real label's sounding heads, 64% of knobs and 85% of switches are S's constants, so FT's
   held loss, and the epoch count it chose, are mostly those. A no-audio table beats FT on that loss on all 4 folds (audited);
-  F42's fall from 5.7 is not evidence of reading. Its audit then found FT reads per track, weakly, and robustly only on GOAT's cab, mostly mic distance (fold-demeaned,
+  F42's fall from 5.7 is not evidence of reading. Its audit then found FT reads per track, weakly, most robustly on GOAT's cab, from mic position and distance about equally (fold-demeaned,
   one value per recording, 90% item intervals: GOAT drive +0.088 [+0.015, +0.159], tone +0.121 [+0.028, +0.224], cab +0.191 [+0.126,
   +0.263]; own output against another recording's −0.185 [−0.236, −0.134]). W, with no real rows, reads tone about as well (FT − W −0.102
   [−0.215, +0.020]) and cab backwards. BKS's cab is not a read of skill: a no-audio table of the same rigs' labels matches it. Earlier pooled
