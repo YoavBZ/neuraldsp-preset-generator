@@ -1956,9 +1956,8 @@ instead of generating unrealistic presets our own?"):
       primary share reaching one half: not known by ear; underpowered is not failed; the closeness row and its ties are
       the user's evidence on whether to go on. The primary share clear below: the labels are not what the ear wants, the
       remaining labels and the centre read do not run, and the judge's use for labels is reviewed before any next batch.
-    - *What the design can bear, simulated now* (12 parts, 8 to 12 creators, this bootstrap): a true 75% clears one half
-      on about 48 to 57% of pages, a true 85% on about 80 to 87%, a true 50% on about 4 to 7.5% each way. 10 of 12
-      always clears, 9 on about 30 to 75% of layouts, 8 almost never. A shared effect of S's setting lowers this. Label
+    - *What the design can bear, simulated now* (12 parts, 8 to 12 creators, this bootstrap): a true 75% clears one half on about 40 to 57% of pages, a true 85% on about 74 to 87%, a true 50% on about 4 to 7.5% each way. 10 of 12
+      always clears, 9 on up to about 75% of layouts and about none at 12 creators, 8 almost never. A shared effect of S's setting lowers this. Label
       over S or label over placebo clears by chance on about 9% of pages. A true 65% clears on about a quarter, so the
       placebo row is often undecided even if the fit is real. So undecided is a likely outcome even if the labels are
       better, and a clear row is a lead, not a verdict.
@@ -2002,8 +2001,7 @@ instead of generating unrealistic presets our own?"):
       check; a stop pauses the run, and its figures and the rows beside it stay unread. After the ear the lag rule and the
       stage check, with those rows, run on the trusted units alone. That is the declared check, and its stop holds the
       label page. Every unit with a lag is searched at night, whatever the lag rule later says, so the rule only ever drops a
-      label. No score figure reaches the listener before the label page's answers. Every reader of the search records
-      goes through one loader that applies `trusted`. The minimum after the ear and the lag rule stands, as do the capture
+      label. No score figure reaches the listener before the label page's answers. Every reader of the search records runs behind `trusted`. The minimum after the ear and the lag rule stands, as do the capture
       page, the heavy page and the label page in that order. The centre read still waits for the primary share and stays a
       counted panel read. No training before the ear.
     - *Guards, each with a test.* `search` refuses before both gates by default. The pre-ear path needs an explicit flag,

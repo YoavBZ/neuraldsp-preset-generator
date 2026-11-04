@@ -1,5 +1,8 @@
 """L1a's ear check (`learn/capture_ear.py`): pure parts."""
+import json
 import random
+
+import pytest
 
 from learn import capture_ear as C
 
@@ -70,3 +73,40 @@ def test_chance_clears_rarely_at_the_declared_size():
 def test_page_js_has_three_letters_only():
     js = C.page_js()
     assert '"D"' not in js and 'ear-vreal' not in js and 'KEYS = ["ref", "A", "B", "C"]' in js
+
+
+def test_a_partial_answer_file_decides_nothing():
+    items, heard = fake(p=1.0)
+    for it in items[3:]:
+        heard[it["id"]] = None
+    assert C.report(items, heard)["branch"] is None
+
+
+def test_page_leaks_takes_whole_words_only():
+    kept = [{"unit": "cap/x#a", "creator": "someone", "n": 1, "id": "i1"}]
+    body = C.cards(kept)
+    assert "aria-label" in body and C.page_leaks(kept, body, "") == []
+    assert C.page_leaks(kept, body + " placebo ", "") == ["placebo"]
+    assert C.page_leaks(kept, body, "someone") == ["someone"]
+
+
+def test_a_fresh_render_must_match_the_search():
+    rec = {"unit": "u", "held": "A", "s_render_sha256": "abc", "best": {"judge": {"A": 4.0}}}
+    C.check_fresh("S", "abc", {}, rec)
+    with pytest.raises(SystemExit):
+        C.check_fresh("S", "other", {}, rec)
+    C.check_fresh("label", "x", {"A": 4.0 * 1.0009}, rec)
+    with pytest.raises(SystemExit):
+        C.check_fresh("label", "x", {"A": 4.0 * 1.0012}, rec)
+    C.check_fresh("placebo", "x", {"A": 9.0}, rec)
+
+
+def test_the_plan_holds_the_label_page_on_a_stage_stop(tmp_path, monkeypatch):
+    from learn import capture_labels as L
+    from learn import pipeline_fix as P
+
+    monkeypatch.setattr(L, "root", lambda: tmp_path)
+    monkeypatch.setattr(P, "require", lambda k: {})
+    (tmp_path / "stage-check.json").write_text(json.dumps({"stop": True}))
+    with pytest.raises(SystemExit, match="held"):
+        C.cmd_plan(None)

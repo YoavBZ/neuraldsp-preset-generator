@@ -18,6 +18,7 @@ import json
 import math
 import pathlib
 import random
+import re
 import secrets
 import sys
 import time
@@ -166,7 +167,8 @@ def report(items, heard, unsure=()):
             a, b = heard[it["repeat_of"]], heard[it["id"]]
             rows["repeats"].append({"unit": it["unit"], "same_order": all(a[c]["rank"] == b[c]["rank"] for c in CANDS),
                                     "same_top": min(a, key=lambda c: a[c]["rank"]) == min(b, key=lambda c: b[c]["rank"])})
-    rows["branch"] = rows["primary"]["rank"]["reads"]
+    whole = len(first) == sum(it["repeat_of"] is None for it in items)    # a partial answer file decides nothing
+    rows["branch"] = rows["primary"]["rank"]["reads"] if whole else None
     return rows
 
 
@@ -182,6 +184,21 @@ def page_js():
             raise SystemExit(f"ear_vreal's player changed: {old}")
         js = js.replace(old, new)
     return js.replace("ear-vreal", "capture-labels")
+
+
+def page_leaks(kept, body, data):
+    """Whole words on the page that would give a candidate, a unit or a creator away (`aria-label` is not one)."""
+    return [w for w in (*CANDS, *{it["unit"] for it in kept}, *{it["creator"] for it in kept})
+            if len(w) > 2 and re.search(rf"(?<![\w-]){re.escape(w)}(?![\w-])", body + data)]
+
+
+def check_fresh(c, sha, judge, rec):
+    """A fresh render against the search's record: S's hash must equal the lag pass's, the label's held-half judge must
+    sit within JUDGE_TOL of its in-process value. c: the candidate; judge: the fresh {half: distance}."""
+    if c == "S" and sha != rec["s_render_sha256"]:
+        raise SystemExit(f"{rec['unit']}: S's fresh render is not the lag pass's")
+    if c == "label" and abs(math.log(judge[rec["held"]] / rec["best"]["judge"][rec["held"]])) > JUDGE_TOL:
+        raise SystemExit(f"{rec['unit']}: the label's fresh judge is off its in-process value")
 
 
 def cards(items):
@@ -305,10 +322,7 @@ def cmd_render(args):
             y = np.asarray(AM.fresh_render(CB.new_renderer, di32, sel, st, st), np.float64)[trim[0]:trim[1]]
             renders += 2
             j = K.judge(ref, y, di, lag)
-            if c == "S" and AM.audio_sha(y) != rec["s_render_sha256"]:
-                raise SystemExit(f"{it['unit']}: S's fresh render is not the lag pass's")
-            if c == "label" and abs(math.log(j[rec["held"]] / rec["best"]["judge"][rec["held"]])) > JUDGE_TOL:
-                raise SystemExit(f"{it['unit']}: the label's fresh judge is off its in-process value")
+            check_fresh(c, AM.audio_sha(y), j, rec)
             mono = y.mean(axis=1) if y.ndim == 2 else y
             s0, s1 = E.window(a, b, len(ref), len(mono), lag)
             clips[c] = mono[s0 - lag:s1 - lag].astype(np.float32)
@@ -357,8 +371,7 @@ def cmd_page(_args):
     page = (E.PAGE[:a] + INTRO + "\n" + E.PAGE[b:]).replace("@@COUNT@@", str(len(kept))).replace("@@CARDS@@", body) \
         .replace("@@CSS@@", E.CSS + ".rank.three { grid-template-columns:auto repeat(3, 1fr); }") \
         .replace("@@DATA@@", data).replace("@@CLIPS@@", json.dumps(clips)).replace("@@JS@@", page_js())
-    leaks = [w for w in (*CANDS, *{it["unit"] for it in kept}, *{it["creator"] for it in kept})
-             if len(w) > 2 and w in body + data]
+    leaks = page_leaks(kept, body, data)
     if leaks:
         raise SystemExit(f"the page names {leaks}")
     P.save(key_path, {"page": "capture-labels", "build": build, "phase": L.PHASE, "items": kept,

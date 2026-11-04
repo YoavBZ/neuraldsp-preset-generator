@@ -133,6 +133,12 @@ def test_pick_items_crosses_amp_and_class_and_draws_placebos_blind():
     assert len(set(packs)) == 12
     made = [by[it["unit"]]["creator"] for it in items]
     assert max(made.count(c) for c in made) <= 2
+    few = [dict(u, creator=f"k{j % 6}") for j, u in enumerate(us)]        # creators must repeat, and placebos must avoid them
+    who = {u["unit"]: u["creator"] for u in few}
+    got = L.pick_items(few, active, fallbacks=0)
+    assert all(who[p] != who[it["unit"]] for it in got for p in it["placebos"])
+    made = [who[it["unit"]] for it in got]
+    assert max(made.count(c) for c in made) <= 2
     held = [it["unit"] for it in items] + [p for it in items for p in it["placebos"]]
     assert len(set(held)) == len(held)                            # a placebo is no item and serves one part
     assert list(inspect.signature(L.pick_items).parameters)[:2] == ["units", "active"]   # no search record comes in
@@ -207,8 +213,8 @@ def test_check_files_refuses_a_file_that_is_not_the_manifests(tmp_path, monkeypa
 
 def layout(tmp_path, monkeypatch, verdicts=True):
     """Two units on disk, as `units`, with both gates' files if `verdicts`."""
-    us = [{"unit": "cap/x#a", "capture": "x", "split": "uncertain", "capture_sha256": "aa", "item_lag": 0, "search": "A"},
-          {"unit": "cap/y#a", "capture": "y", "split": "driven", "capture_sha256": "bb", "item_lag": 0, "search": "B"}]
+    us = [{"unit": "cap/x#a", "capture": "x", "split": "uncertain", "capture_sha256": "aa", "item_lag": 0, "search": "A", "amp": "a"},
+          {"unit": "cap/y#a", "capture": "y", "split": "driven", "capture_sha256": "bb", "item_lag": 0, "search": "B", "amp": "a"}]
     (tmp_path / "units.json").write_text(json.dumps({"units": us}))
     (tmp_path / "heavy-key.json").write_text(json.dumps({"build": "b", "items": [{"unit": "cap/y#a"}]}))
     if verdicts:
@@ -225,9 +231,9 @@ def test_search_and_items_refuse_before_both_gates_by_default(tmp_path, monkeypa
     layout(tmp_path, monkeypatch, verdicts=False)
     monkeypatch.setattr(P, "require", lambda k: {})
     args = argparse.Namespace(before_ear=False, lags_only=True, shard=(0, 1), stage="third")
-    with pytest.raises(SystemExit):
+    with pytest.raises(SystemExit, match="not the current"):
         L.cmd_search(args)
-    with pytest.raises(SystemExit):
+    with pytest.raises(SystemExit, match="not the current"):
         L.cmd_items(args)
 
 
@@ -243,7 +249,7 @@ def test_items_are_drawn_once(tmp_path, monkeypatch):
     layout(tmp_path, monkeypatch)
     monkeypatch.setattr(P, "require", lambda k: {})
     (tmp_path / "items.json").write_text("{}")
-    with pytest.raises(SystemExit):
+    with pytest.raises(SystemExit, match="drawn once"):
         L.cmd_items(None)
 
 
@@ -260,12 +266,15 @@ def test_every_reader_of_the_records_passes_the_gates(tmp_path, monkeypatch):
 def test_night_check_says_go_or_stop_and_stores_no_figure(tmp_path, monkeypatch, capsys):
     us = layout(tmp_path, monkeypatch)
     monkeypatch.setattr(P, "require", lambda k: {"phase_l1a_night_batch": L.batch_digest(us)})
-    monkeypatch.setattr(P, "stage_read", lambda r, ph: {"stop": False, "held_best_minus_S": {"mean": -0.5}})
+    (tmp_path / P.SEARCH_DIR).mkdir()
+    for u in ("cap__x#a|a.json", "cap__y#a|a.json"):
+        (tmp_path / P.SEARCH_DIR / u).write_text("{}")
+    monkeypatch.setattr(P, "stage_read", lambda r, ph: {"stop": False, "labelled": 2, "held_best_minus_S": {"mean": -0.5}})
     L.cmd_night_check(None)
     assert capsys.readouterr().out.strip() == "GO"
     stored = json.loads((tmp_path / "night-check.json").read_text())
     assert set(stored) == {"stop", "time"}
-    monkeypatch.setattr(P, "stage_read", lambda r, ph: {"stop": True, "held_best_minus_S": {"mean": 0.5}})
+    monkeypatch.setattr(P, "stage_read", lambda r, ph: {"stop": True, "labelled": 2, "held_best_minus_S": {"mean": 0.5}})
     with pytest.raises(SystemExit):
         L.cmd_night_check(None)
     assert capsys.readouterr().out.strip() == "STOP"
@@ -369,3 +378,99 @@ def test_stage_beside_reads_gain_against_input_gain(tmp_path, monkeypatch):
     out = L.stage_beside(recs, us)
     assert out["input_gain_vs_capture_gain"]["spearman"] == 1.0
     assert out["captures"]["n"] == 6 and out["captures"]["search_gain"] > 0 and out["goat"] is None
+
+
+def night_setup(tmp_path, monkeypatch):
+    import argparse
+
+    us = layout(tmp_path, monkeypatch, verdicts=False)
+    monkeypatch.setattr(P, "require", lambda k: {"phase_l1a_night_batch": L.batch_digest(us)})
+    calls = []
+    monkeypatch.setattr(P, "search_units", lambda mine, root, ph, halves, refused, lags, quiet=False:
+                        calls.append(([u["unit"] for u in mine], refused, lags, quiet)) or 0)
+    return us, calls, lambda **k: argparse.Namespace(**{"before_ear": True, "lags_only": False, "shard": (0, 1), "stage": "third", **k})
+
+
+def test_the_night_path_searches_every_unit_quietly_in_the_seeded_order(tmp_path, monkeypatch):
+    us, calls, args = night_setup(tmp_path, monkeypatch)
+    L.cmd_search(args(lags_only=True))
+    L.cmd_search(args(stage="third"))
+    assert calls[0][1:] == (set(), True, True) and sorted(calls[0][0]) == sorted(u["unit"] for u in us)
+    assert calls[1][1:] == (set(), False, True) and calls[1][0] == L.stage_set(L.night_order(us), 0, "third")
+
+
+def test_the_night_path_refuses_a_later_batch_before_any_search(tmp_path, monkeypatch):
+    us, calls, args = night_setup(tmp_path, monkeypatch)
+    monkeypatch.setattr(P, "require", lambda k: {"phase_l1a_night_batch": "other"})
+    with pytest.raises(SystemExit, match="first batch"):
+        L.cmd_search(args())
+    with pytest.raises(SystemExit, match="first batch"):
+        L.cmd_night_check(None)
+    assert calls == []
+
+
+def test_the_rest_of_the_night_waits_for_a_clean_fault_check(tmp_path, monkeypatch):
+    us, calls, args = night_setup(tmp_path, monkeypatch)
+    with pytest.raises(SystemExit, match="fault check"):
+        L.cmd_search(args(stage="all"))
+    (tmp_path / "night-check.json").write_text(json.dumps({"stop": True}))
+    with pytest.raises(SystemExit, match="fault check"):
+        L.cmd_search(args(stage="all"))
+    assert calls == []
+    (tmp_path / "night-check.json").write_text(json.dumps({"stop": False}))
+    L.cmd_search(args(stage="all"))
+    assert len(calls[0][0]) == len(us)
+
+
+def test_night_check_waits_for_the_third_and_stops_on_no_label(tmp_path, monkeypatch, capsys):
+    us, _, _ = night_setup(tmp_path, monkeypatch)
+    with pytest.raises(SystemExit, match="no record yet"):
+        L.cmd_night_check(None)
+    d = tmp_path / P.SEARCH_DIR
+    d.mkdir()
+    for u in L.stage_set(L.night_order(us), 0, "third"):
+        (d / f"{u.replace('/', '__')}|a.json").write_text("{}")
+    monkeypatch.setattr(P, "stage_read", lambda r, ph: {"stop": False, "labelled": 0})
+    with pytest.raises(SystemExit):
+        L.cmd_night_check(None)
+    assert capsys.readouterr().out.strip() == "STOP"
+
+
+def test_stage_check_reads_the_trusted_units_at_a_third(tmp_path, monkeypatch):
+    us = layout(tmp_path, monkeypatch)
+    monkeypatch.setattr(P, "require", lambda k: {})
+    d = tmp_path / P.SEARCH_DIR
+    d.mkdir()
+    tr = [dict(us[0], gain_db=0.0, creator="k")] + [{"unit": f"cap/t{j}#a"} for j in range(3)]
+    monkeypatch.setattr(L, "trusted_units", lambda: (tr, {}))
+    monkeypatch.setattr(L, "search_records", lambda: {})
+    with pytest.raises(SystemExit, match="at a third"):
+        L.cmd_stage_check(None)
+    (d / "x.json").write_text(json.dumps({"unit": "cap/x#a"}))
+    (d / "y.json").write_text(json.dumps({"unit": "cap/y#a"}))           # not trusted: does not count
+    with pytest.raises(SystemExit, match="at a third"):
+        L.cmd_stage_check(None)
+    (d / "t.json").write_text(json.dumps({"unit": "cap/t0#a"}))
+    seen = {}
+
+    def fake(r, ph, keep):
+        seen["keep"] = keep
+        return {"stop": False}
+    monkeypatch.setattr(P, "stage_check", fake)
+    monkeypatch.setattr(L, "stage_beside", lambda r, u: {})
+    monkeypatch.setattr(P, "save", lambda *a: None)
+    L.cmd_stage_check(None)
+    assert seen["keep"] == {u["unit"] for u in tr}
+
+
+def test_the_worker_loads_only_a_checked_file():
+    import inspect
+
+    assert "load(checked(" in inspect.getsource(U.worker)
+
+
+def test_the_quiet_search_prints_no_judge_figure():
+    import inspect
+
+    src = inspect.getsource(P.search_units)
+    assert 'if quiet else f"{key[-70:]}: {search}->{held} S' in src

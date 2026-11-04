@@ -546,6 +546,11 @@ def night_guard(units):
     return e
 
 
+def night_order(units):
+    """The night's order: every unit, seeded, no items first."""
+    return search_order(sorted(u["unit"] for u in units), [])
+
+
 def cmd_search(args):
     """The lag pass, then the labels (`pipeline_fix.search_units`, GOAT's recipe), in `search_order`. By default only
     after both gates. `--before-ear` (`phase_l1a_night`): every unit of the first batch in the seeded order, nothing read."""
@@ -559,12 +564,15 @@ def cmd_search(args):
         halves = {u["unit"]: u["search"] for u in units}
         if args.lags_only:
             mine = [u for j, u in enumerate(sorted(units, key=lambda u: u["unit"])) if j % n == k]
-            print(f"CAPTURE-SEARCH LAGS DONE {k}/{n}: {P.search_units(mine, root(), PHASE, halves, set(), True)} renders")
+            print(f"CAPTURE-SEARCH LAGS DONE {k}/{n}: {P.search_units(mine, root(), PHASE, halves, set(), True, quiet=True)} renders")
             return
+        if args.stage == "all":
+            gate = root() / "night-check.json"
+            if not gate.exists() or json.loads(gate.read_text()).get("stop") is not False:
+                raise SystemExit("the rest of the night's labels wait for the fault check, and do not run on its stop")
         by = {u["unit"]: u for u in units}
-        order = search_order(sorted(by), [])
-        mine = [by[u] for j, u in enumerate(stage_set(order, 0, args.stage)) if j % n == k]
-        print(f"CAPTURE-SEARCH DONE {k}/{n} ({args.stage}): {P.search_units(mine, root(), PHASE, halves, set(), False)} renders")
+        mine = [by[u] for j, u in enumerate(stage_set(night_order(units), 0, args.stage)) if j % n == k]
+        print(f"CAPTURE-SEARCH DONE {k}/{n} ({args.stage}): {P.search_units(mine, root(), PHASE, halves, set(), False, quiet=True)} renders")
         return
     ok = trusted(units)
     tr = [u for u in units if u["unit"] in ok]
@@ -601,8 +609,15 @@ def cmd_night_check(_args):
     """The pre-ear fault check at a third: stores and prints only go or stop; its figures stay unread."""
     from learn import pipeline_fix as P
 
-    night_guard(units_of())
-    stop = bool(P.stage_read(root(), PHASE)["stop"])
+    units = units_of()
+    night_guard(units)
+    by = {u["unit"]: u for u in units}
+    third = stage_set(night_order(units), 0, "third")
+    missing = [u for u in third if not (root() / P.SEARCH_DIR / f"{u.replace('/', '__')}|{by[u]['amp']}.json").exists()]
+    if missing:
+        raise SystemExit(f"{len(missing)} of the third have no record yet")
+    read = P.stage_read(root(), PHASE)
+    stop = bool(read["stop"]) or not read["labelled"]
     P.save(root() / "night-check.json", {"stop": stop, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print("STOP" if stop else "GO")
     if stop:
