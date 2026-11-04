@@ -1819,8 +1819,8 @@ instead of generating unrealistic presets our own?"):
   - **Reads (descriptive, band-weighted, 90% band-clustered bootstrap).** Each candidate's mean rank, mean closeness,
     first and last places. FT, D_fix and W against S on rank and on closeness, with parts and bands above S, parts
     rated level, and clean and crunch beside (means and counts; clean is 2 bands, so no interval). The score on these
-    same 10 directions, band-mean ln(d_S / d_model) with its interval: V-real's rows average every direction, and this
-    page holds S's closest amp. The ear against the score: per item the Spearman of ear rank and held-half J0 over the
+    same 10 directions, band-mean ln(d_S / d_model) with its interval (plus means the model is closer, the opposite sign
+    to the V-real figures quoted here): V-real's rows average every direction, and this page holds S's closest amp. The ear against the score: per item the Spearman of ear rank and held-half J0 over the
     four candidates, and how often the two put a model on the same side of S. Repeats: rank agreement and the same
     top. Any note the listener leaves.
   - **Map, per model, declared now.** No bar decides a route; effect sizes and intervals are reported either way.
@@ -3837,8 +3837,8 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   is not yet shown either way: pooled, the stand-in rankings are near what chance gives, 4 songs twice are not 8
   independent answers, and which model leads changes from song to song. Nothing here shows a current model level with S
   by ear, or above it. L0 is the test.
-- **Caveats.** One listener. Page 1 played chords against lead songs, and every preset there sounded distorted to the
-  user on songs heard as clean (the user's notes; item 3's reference also held a backing guitar); both pages are tone-only, the notes differ. Two
+- **Caveats.** One listener. Page 1 played chords against lead songs, and on its first 3 items every preset sounded
+  distorted to the user on songs heard as clean (the user's notes; item 3's reference also held a backing guitar); both pages are tone-only, the notes differ. Two
   files are karaoke-style re-recordings. On page 2 items 1 and 2 share one S render. Neither page key stores a score
   per item, so the earlier remark that the ranks did not follow the judge compares with aggregates only. Record
   match's H and D are older models, not the current ones; its C is a search through the true DI, not a product arm.
