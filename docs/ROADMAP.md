@@ -316,6 +316,9 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        - **L1a declared (2026-11-04):** the first 50 captures get a fixed level rule and an ear gate. Then a blind check, on 12 units crossed by
          amp and class, of whether J0's search labels sound closer than S and than another capture's label, before the rest of the labels. Then their
          centre against GOAT's at the same count. About 2,900 renders before the listener hears a label, about 8,800 to 9,300 if everything runs.
+       - **The ML review and N1 to N3 (2026-11-05):** an independent review found real rows teach mostly S's constants on
+         unsearched controls, so FT's training loss says little, FT's per-track reading is real but weak, and the search is coarse. Declared on trusted
+         data: FT retrained on searched heads alone, a finer search tested on BKS, and a learning curve if time allows.
        - **Next (2026-11-03, after L0):** the approved real-amp recordings, scored with J0, and, as the user chose, the per-recording reading, with FT's
          recipe as the base (chosen on read 2, BKS −0.055; on V-real FT is not shown different from D_fix): many more real-amp labelled recordings (captures on verified DIs, as GOAT) and a fresh,
          larger real-song test (V-real-11 is ±0.07 and now read for two candidates). Domain work and community

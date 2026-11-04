@@ -70,7 +70,7 @@ rank gap is −0.07 [−0.86, +0.71], D_fix's −0.43 [−1.00, +0.21]. Beside t
 parts, FT and D_fix are heard far closer on two of them (picked after the answers) while the score barely moves, and
 crunch leans to S; class, amp and S's setting cannot be pulled apart here. The ear-score check is not triggered, but
 W carries the agreement: among S, FT and D_fix, agreement is not shown (+0.04 [−0.29, +0.39]; wide, so weak agreement
-is not ruled out). L1a, declared next: the first 50 captures, the ear gate, a blind check of search labels against S
+is not ruled out). The ML review of 2026-11-05 adds N1 to N3, masked FT and a better search, on trusted data. L1a, declared next: the first 50 captures, the ear gate, a blind check of search labels against S
 and a placebo before the rest of the labels, then their centre against GOAT's at the same count.
 Findings F1–F54.
 
@@ -1854,9 +1854,11 @@ instead of generating unrealistic presets our own?"):
     effects, and F44 found reverb heard above its score. colour-me-red ElecGtr03's held half is only 57% active (record
     match wanted 0.8). The listener has heard these records before (T0's ear), and S on two of them: Signs ElecGtr3 and
     get-out-of-bed ElecGtr2 were on record match's page, the second at this same amp and half, through the raw DI.
-  - *A read with no result (2026-11-05):* a read-only review session's loader opened two V-real parts' stored clips (It Was
-    My Fault ElecGtr1 and 3) before it had the limits. It computed only one DI level and deleted the files. No judge, feature or
-    ear figure came of it, and nothing here uses it.
+  - *Reads with no result (2026-11-05):* before they had the limits, a read-only review session's loader opened two V-real
+    parts' stored clips (It Was My Fault ElecGtr1 and 3), computed only one DI level and deleted the files; and one of its
+    reviewers opened `ear-vreal/plan.json`, 800 characters of one unit's stored record, and the opening 2,500 characters of two
+    V-real reports (per-part FT − S among them), dropping the one value it took. Two others saw NS loss fields in run logs. Nothing
+    new was computed on V-real or NS, and nothing here uses any of it.
   - *L0's outcome (2026-11-04, F54):* W is heard below S on rank and closeness, one listener, and the score agrees. FT and D_fix are
     not known by ear (rank −0.07 [−0.86, +0.71], −0.43 [−1.00, +0.21]). The ear-score Spearman is +0.50 [+0.31, +0.67],
     so the declared check is not triggered; the audit finds W carries it (among the other three, agreement is not
@@ -2015,6 +2017,74 @@ instead of generating unrealistic presets our own?"):
       was read.
     - *Review (2026-11-05, independent):* changes required and made: the items after the ear, the placebos drawn only from
       trusted units, the stage check's figures unread before it, and the guards above.
+- **L1b, the second capture batch (ledger `phase_l1b`; 2026-11-05).** The user allowed more TONE3000 downloads the night L1a was
+  declared, and signed the fetch in. 150 more named captures (`manifest-batch2.csv`): 108 packs, 79 creators (11 also in the first
+  batch), 8 families, 91 crunch and 59 clean by the makers' words and the fetcher's guess on 17, 50 calibrated, 137 A2 and
+  13 A1 Standard. The aim of 200 stopped at 150 because the caps (2 a pack, 5 a creator) and the named-mic rule thinned the picks.
+  - **What stays as L1a.** The loader, the level rule, the walk's crunch-then-clean, the DI cap, the ear page's one card per capture on
+    its most driven unit (here its only unit), the heavy page, the minimum, the gates in code.
+  - **What differs.** One forced amp per capture, balanced and seeded: three amps on one recording are worth about 1.4 rows
+    (the ML review's ICC of 0.55), and distinct chains are what the bet needs. DIs from the clean-DI library rather than GOAT's: its trusted, clean,
+    disjoint sections, at most 40 a band, leaving out V-real's 7 bands, the NS bands, the panel's bands, Jen Hartswick & Nick
+    Cassarino, and BKS. 391 sections from 19 bands, far more players and guitars than GOAT's, and the DI's section is written beside the
+    render. The bands take turns as the players did, so a band of one section gives at most 3 units.
+  - **Files.** `manifest.csv` is not touched. Records under `captures2/`, pages `capture-ear-2`, `capture-heavy-2`. Uncalibrated files (100 of
+    150) play at 0 dB; their stored-level gap is reported apart, as is any file that will not load or does not read 48 kHz (2 A1 files, `b70728aebf23d74b` and `dcd7d0be7df79ce8`, store no rate: `.nam` 0.5.1 of May 2023, every later A1 file stores 48000 and NAM's loader allows old files without the field, so they are kept at 48 kHz, inferred and not measured).
+  - **Labels ahead of the ear, nothing read (`phase_l1b_night`, digest `phase_l1b_night_batch`).** As L1a's amendment, on this batch's own files, on the same request.
+    The recipe is N2's outcome: v2 if the report adopts it, otherwise GOAT's. No use of any label before both gates. 147 units (3 captures read high gain on every candidate: an Orange OR60, a Vox VBM1 and a Marshall DSL1), about 6,500 renders on v2.
+  - **The ear.** The listener hears the first batch, then this one: 147 more cards in 2 parts. Dropping a capture needs no more than that verdict, as in the first batch.
+  - **Use.** With the first batch, these labels feed the training declaration after L1a's label page. This batch holds no ear items of its own.
+- **N1 to N3, the model's real-amp training and the labels' search (2026-11-05, ledger `phase_night2`; `learn/night2.py`).** An
+  independent ML review of the labels and data (2026-11-05, read-only, BKS and GOAT only) found three things. Real rows label
+  every unsearched control as S: of a real label's sounding heads, 64% of knobs and 85% of switches are S's constants, so FT's
+  held loss, and the epoch count it chose, are mostly those. A no-audio table beats FT on that loss on all 4 folds (audited);
+  F42's fall from 5.7 is not evidence of reading. Its audit then found FT reads per track, weakly, and robustly only on GOAT's cab, mostly mic distance (fold-demeaned,
+  one value per recording, 90% item intervals: GOAT drive +0.088 [+0.015, +0.159], tone +0.121 [+0.028, +0.224], cab +0.191 [+0.126,
+  +0.263]; own output against another recording's −0.185 [−0.236, −0.134]). W, with no real rows, reads tone about as well (FT − W −0.102
+  [−0.215, +0.020]) and cab backwards. BKS's cab is not a read of skill: a no-audio table of the same rigs' labels matches it. Earlier pooled
+  figures are withdrawn. And the search
+  is about one and a half sweeps at a fixed step of 0.25: 52 evaluations, 8 dB input-gain resolution, 18 of them on mics
+  for 11% of the gain. The user asked: "Keep working as much as possible without me, do what's needed to make a good progress."
+  These runs use trusted data only, need no listener and bear on the main bet more directly than L1a's labels do. They are taken as
+  covered by that request, an unplanned training that the rules otherwise ask about, and the first message to the user says so.
+  - **N1, masked FT.** FT's recipe unchanged (W's best state, the same real rows, lr 1e-4, cap 300, patience 15, 4 folds × 2 seeds,
+    the 8 inner runs, then 8 FT_k), except that on every real row, training or held, the heads outside `K.space(amp, S)` and the
+    amp head leave the loss, so E is chosen on searched heads alone. The readout holds every control outside `K.space` at S:
+    those heads stay W's, and F54 heard W's effects. Runs `P2b-ftm*`, about 12 min each on MPS, two at a time, about 2 h.
+    - *Reads on held folds.* (a) Zero renders, the audited reads (`reads_v2.py`, declared now, before any FTm read; moved into the repo at the
+      write-up), for FTm, FT and W: r demeaned within fold, amp, class and head, one value per recording, by drive, tone and cab, with
+      90% item intervals on GOAT and exact permutation p on BKS, head-standardised, and without range-limit labels; FTm − FT and FTm − W
+      paired; own output against another recording's; on BKS beside the no-audio rig table, whose r is the bar for cab. No pooled r. (b) By the score, on read 2's units and rules, about 1,340 renders each: FTh, FT's stored answers with every
+      control outside `K.space` held at S (no training), and FTm. FTh − FT reads the hold alone, FTm − FTh the mask alone, and FTm − S
+      stands beside. 238 of FT's 670 stored answers have `drive2` on and 92 `drive1`, against S, so without FTh the two changes
+      could not be told apart. No panel, no V-real, no ear. The held loss is not a read of skill: it flips with the comparator. The masked path has no fallback, so E is taken as it comes,
+      and it now rests mostly on mic cross-entropy, the noisiest labels; the argmin of the held knob loss is reported beside E and not acted on.
+    - *Reading.* Effect sizes, by group: a rise shows a reading the constants hid, a flat row with the score holding says they were
+      not what blocked it, and tone is watched apart, since W reads it without real rows. A win here is a lead for L2, and any choice from BKS stays a dev choice.
+  - **N2, the search.** v2 runs from S: drive and tone at step 0.25, then up to 4 mics per side (each amp's commonest in
+    GOAT's labels), then the knobs of drive and tone at 0.125, then cab at 0.25; a move stays only on a log gain of 0.005 or more, at most 44 evaluations; the fine sweep skips switches, so every cab control is reached on
+    each amp. Test: 16 BKS near-replicate section pairs, one amp each, balanced, about 1,250 renders. Reads: replicate rms by
+    group and held-half gain against the stored labels on the same directions, clustered by recording. The report's rms is the root mean squared
+    difference, √2 above the review's table, so v1 and v2 compare only within this report. Adopted for the capture labels, by the report's own fields, if v2's replicate rms is below v1's on drive and on tone and the
+    held gain's v2 − v1 interval has its upper end at or above 0 (plus is v2 better). The distance moved from S sits beside, since labels that
+    move less shrink rms trivially. The rule has no margin, its bootstrap runs on 8 recordings (coverage about 83%), and the 16 pairs sit on 5 DIs of
+    one song. The capture labels wait for this report. Adopted or not, they run by amendment of L1a's `phase_l1a_night`, this batch only; if
+    adopted, they keep `A.fallback_reason`, which v2 does not apply. `_wait_cap` counts neither of these searches, so the 3-process limit is held by hand.
+  - *N2's outcome (2026-11-05, 1,207 renders, 37 evaluations on average):* adopted by the declared rule. Replicate rms (root mean squared
+    difference) v1 to v2: drive 0.131 to 0.103, tone 0.126 to 0.105, cab 0.189 to 0.130; held gain 0.328 [0.276, 0.387] to 0.296 [0.228, 0.373], v2 − v1
+    −0.032 [−0.082, +0.014]. The row beside says much of that fall is smaller moves: distance moved from S, drive 0.306 to 0.266, tone 0.284 to 0.192,
+    cab 0.306 to 0.124, so noise against shift is about level on drive (0.43, 0.39) and worse on tone (0.44, 0.55) and cab (0.62, 1.04). It fits
+    F-C's finding that most cab moves bring next to no gain, but v2 is not shown more reliable, only coarser moves dropped; the rule held no margin for this, and it is
+    followed as declared. Capture labels run on v2 (`--recipe v2`), which saves about 30% of the renders and mixes recipes in training with BKS's and GOAT's. If the labels
+    matter more than that, v1 on the captures is about 1.2 h a batch.
+  - **N3, the learning curve.** On the better of FT and FTm by those reads: 25%, 50% and 100% of the training real rows, seeded,
+    and 100% with labels shuffled within amp and class, 4 folds, one seed, the same reads on held GOAT against the shuffle.
+    About 16 runs, zero plugin renders. It runs only if N1 and the labels leave MPS time tonight, and it is declared in
+    its own block before it runs.
+  - **Rules.** BKS and GOAT only. V-real, the NS songs, the panel and the captures stay out. The capture page and its labels are
+    untouched by these reads. Runs saved apart (`P2b-ftm*`, `night2/`), FT and its answers unchanged.
+  - **Caveats.** The review's figures on sound are unmeasured. BKS is 8 DIs in 2 songs (the replicate pairs 5 DIs of one), and its performances sit in W's plugin rows, so held
+    means held tracks, not held playing. Nothing here is a real song.
 
 ## Findings log
 
