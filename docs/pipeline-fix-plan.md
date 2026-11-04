@@ -2051,10 +2051,12 @@ instead of generating unrealistic presets our own?"):
     the 8 inner runs, then 8 FT_k), except that on every real row, training or held, the heads outside `K.space(amp, S)` and the
     amp head leave the loss, so E is chosen on searched heads alone. The readout holds every control outside `K.space` at S:
     those heads stay W's, and F54 heard W's effects. Runs `P2b-ftm*`, about 12 min each on MPS, two at a time, about 2 h.
-    - *Reads on held folds.* (a) Zero renders, the audited reads (`reads_v2.py`, declared now, before any FTm read; moved into the repo at the
+    - *Reads on held folds.* (a) Zero renders, the audited reads (`reads_v3.py`, sha256 a04785f3a4838ae2, adopted 2026-11-05 in place of v2 before any FTm read, since v2
+      lacks BKS's exact permutation, GOAT's item intervals and the paired rows; independently reviewed; moved into the repo at the
       write-up), for FTm, FT and W: r demeaned within fold, amp, class and head, one value per recording, by drive, tone and cab, with
       90% item intervals on GOAT and exact permutation p on BKS, head-standardised, and without range-limit labels; FTm − FT and FTm − W
-      paired; own output against another recording's; on BKS beside the no-audio rig table, whose r is the bar for cab. No pooled r. (b) By the score, on read 2's units and rules, about 1,340 renders each: FTh, FT's stored answers with every
+      paired; own output against another recording's; on BKS beside the no-audio rig table, whose r is the bar for cab. BKS's 4 blocks are 2 songs, so its intervals stay
+      descriptive. No pooled r. (b) By the score, on read 2's units and rules, about 1,340 renders each: FTh, FT's stored answers with every
       control outside `K.space` held at S (no training), and FTm. FTh − FT reads the hold alone, FTm − FTh the mask alone, and FTm − S
       stands beside. 238 of FT's 670 stored answers have `drive2` on and 92 `drive1`, against S, so without FTh the two changes
       could not be told apart. No panel, no V-real, no ear. The held loss is not a read of skill: it flips with the comparator. The masked path has no fallback, so E is taken as it comes,
