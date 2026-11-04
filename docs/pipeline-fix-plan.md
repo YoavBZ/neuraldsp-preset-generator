@@ -2070,6 +2070,13 @@ instead of generating unrealistic presets our own?"):
     move less shrink rms trivially. The rule has no margin, its bootstrap runs on 8 recordings (coverage about 83%), and the 16 pairs sit on 5 DIs of
     one song. The capture labels wait for this report. Adopted or not, they run by amendment of L1a's `phase_l1a_night`, this batch only; if
     adopted, they keep `A.fallback_reason`, which v2 does not apply. `_wait_cap` counts neither of these searches, so the 3-process limit is held by hand.
+  - *N2's outcome (2026-11-05, 1,207 renders, 37 evaluations on average):* adopted by the declared rule. Replicate rms (root mean squared
+    difference) v1 to v2: drive 0.131 to 0.103, tone 0.126 to 0.105, cab 0.189 to 0.130; held gain 0.328 [0.276, 0.387] to 0.296 [0.228, 0.373], v2 − v1
+    −0.032 [−0.082, +0.014]. The row beside says much of that fall is smaller moves: distance moved from S, drive 0.306 to 0.266, tone 0.284 to 0.192,
+    cab 0.306 to 0.124, so noise against shift is about level on drive (0.43, 0.39) and worse on tone (0.44, 0.55) and cab (0.62, 1.04). It fits
+    F-C's finding that most cab moves bring next to no gain, but v2 is not shown more reliable, only coarser moves dropped; the rule held no margin for this, and it is
+    followed as declared. Capture labels run on v2 (`--recipe v2`), which saves about 30% of the renders and mixes recipes in training with BKS's and GOAT's. If the labels
+    matter more than that, v1 on the captures is about 1.2 h a batch.
   - **N3, the learning curve.** On the better of FT and FTm by those reads: 25%, 50% and 100% of the training real rows, seeded,
     and 100% with labels shuffled within amp and class, 4 folds, one seed, the same reads on held GOAT against the shuffle.
     About 16 runs, zero plugin renders. It runs only if N1 and the labels leave MPS time tonight, and it is declared in

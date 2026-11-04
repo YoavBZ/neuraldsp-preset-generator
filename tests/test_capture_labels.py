@@ -387,9 +387,9 @@ def night_setup(tmp_path, monkeypatch):
     us = layout(tmp_path, monkeypatch, verdicts=False)
     monkeypatch.setattr(P, "require", lambda k: {"phase_l1a_night_batch": L.batch_digest(us)})
     calls = []
-    monkeypatch.setattr(P, "search_units", lambda mine, root, ph, halves, refused, lags, quiet=False:
+    monkeypatch.setattr(P, "search_units", lambda mine, root, ph, halves, refused, lags, quiet=False, searcher=None:
                         calls.append(([u["unit"] for u in mine], refused, lags, quiet)) or 0)
-    return us, calls, lambda **k: argparse.Namespace(**{"before_ear": True, "lags_only": False, "shard": (0, 1), "stage": "third", **k})
+    return us, calls, lambda **k: argparse.Namespace(**{"before_ear": True, "lags_only": False, "shard": (0, 1), "stage": "third", "recipe": "goat", **k})
 
 
 def test_the_night_path_searches_every_unit_quietly_in_the_seeded_order(tmp_path, monkeypatch):

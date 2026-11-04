@@ -605,6 +605,16 @@ def night_guard(units):
     return e
 
 
+def v2_searcher():
+    """N2's search for the capture labels, the short mic lists from GOAT's labels."""
+    from learn import knob_ceiling as K
+    from learn import night2 as N
+    from learn import pipeline_fix as P
+
+    mics = N.mic_lists(P.goat_labels()[0])
+    return lambda dims, S, f, amp: N.search_v2(dims, S, f, mics[amp], K.fmt)
+
+
 def night_order(units):
     """The night's order: every unit, seeded, no items first."""
     return search_order(sorted(u["unit"] for u in units), [])
@@ -623,7 +633,7 @@ def cmd_search(args):
         halves = {u["unit"]: u["search"] for u in units}
         if args.lags_only:
             mine = [u for j, u in enumerate(sorted(units, key=lambda u: u["unit"])) if j % n == k]
-            print(f"CAPTURE-SEARCH LAGS DONE {k}/{n}: {P.search_units(mine, root(), BATCH["phase"], halves, set(), True, quiet=True)} renders")
+            print(f"CAPTURE-SEARCH LAGS DONE {k}/{n}: {P.search_units(mine, root(), BATCH['phase'], halves, set(), True, quiet=True)} renders")
             return
         if args.stage == "all":
             gate = root() / "night-check.json"
@@ -631,14 +641,16 @@ def cmd_search(args):
                 raise SystemExit("the rest of the night's labels wait for the fault check, and do not run on its stop")
         by = {u["unit"]: u for u in units}
         mine = [by[u] for j, u in enumerate(stage_set(night_order(units), 0, args.stage)) if j % n == k]
-        print(f"CAPTURE-SEARCH DONE {k}/{n} ({args.stage}): {P.search_units(mine, root(), BATCH["phase"], halves, set(), False, quiet=True)} renders")
+        how = v2_searcher() if args.recipe == "v2" else None
+        print(f"CAPTURE-SEARCH DONE {k}/{n} ({args.stage}, {args.recipe}): "
+              f"{P.search_units(mine, root(), BATCH['phase'], halves, set(), False, quiet=True, searcher=how)} renders")
         return
     ok = trusted(units)
     tr = [u for u in units if u["unit"] in ok]
     halves = {u["unit"]: u["search"] for u in tr}
     if args.lags_only:
         mine = [u for j, u in enumerate(sorted(tr, key=lambda u: u["unit"])) if j % n == k]
-        print(f"CAPTURE-SEARCH LAGS DONE {k}/{n}: {P.search_units(mine, root(), BATCH["phase"], halves, set(), True)} renders")
+        print(f"CAPTURE-SEARCH LAGS DONE {k}/{n}: {P.search_units(mine, root(), BATCH['phase'], halves, set(), True)} renders")
         return
     lags, off = lags_of(tr)
     items = json.loads((root() / "items.json").read_text())["items"]
@@ -652,7 +664,7 @@ def cmd_search(args):
                                                                for u in by) if q.exists()}
     todo += [u for u in fallbacks_due(items, recs) if u not in todo and u in by]
     mine = [by[u] for j, u in enumerate(todo) if j % n == k]
-    print(f"CAPTURE-SEARCH DONE {k}/{n} ({args.stage}): {P.search_units(mine, root(), BATCH["phase"], halves, off, False)} renders")
+    print(f"CAPTURE-SEARCH DONE {k}/{n} ({args.stage}): {P.search_units(mine, root(), BATCH['phase'], halves, off, False)} renders")
 
 
 def rest_may_run():
@@ -716,6 +728,7 @@ def main(argv=None):
     s = sub.add_parser("search")
     s.add_argument("--lags-only", action="store_true")
     s.add_argument("--before-ear", action="store_true")
+    s.add_argument("--recipe", choices=("goat", "v2"), default="goat")
     s.add_argument("--stage", default="third")
     s.add_argument("--shard", type=shard, default=(0, 1))
     args = ap.parse_args(argv)

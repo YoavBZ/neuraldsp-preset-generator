@@ -3634,14 +3634,15 @@ def cmd_goat_search(args):
     print(f"GOAT-SEARCH{' LAGS' if args.lags_only else ''} DONE {k}/{n}: {renders} renders")
 
 
-def search_units(mine, root, phase, halves, refused, lags_only, quiet=False):
+def search_units(mine, root, phase, halves, refused, lags_only, quiet=False, searcher=None):
     """5C's labels, for GOAT's units and L1a's captures alike (`root` holds search/ and lags/), as 5B.2's stage 2
     (`cmd_real_search`), per unit on its forced amp only: three fresh S renders (one per amp, the class's S) give the
     judge lag, S's judge and its sha (saved, so the search resumes); then one discarded priming render and arm A's main
     stage (`K.space`, 52 evaluations, seed 20261013) from S with the unit's DI, scored by the judge's distance to the
     render on the unit's search half (`halves`); S's first evaluation must be bit-identical to its fresh render; the
     label is the best's in-process render. With `lags_only`, the S renders and lags alone. Units in `refused` are
-    recorded, not searched. With `quiet`, the log names units and render counts only, no judge figure. -> renders made."""
+    recorded, not searched. With `quiet`, the log names units and render counts only, no judge figure. `searcher(dims, S, f,
+    amp)` -> (best x, best value, evaluations) replaces the main stage (N2's v2). -> renders made."""
     import numpy as np
 
     from analysis.aligned import estimate_lag
@@ -3747,7 +3748,7 @@ def search_units(mine, root, phase, halves, refused, lags_only, quiet=False):
                 curve.append(j[search])
                 return j[search]
 
-            best_x, best_v, evals = L.main_stage(dims, S, f, seed=L.SEED)
+            best_x, best_v, evals = (searcher(dims, S, f, amp) if searcher else L.main_stage(dims, S, f, seed=L.SEED))
             renders += evals
         finally:
             rr.close()
