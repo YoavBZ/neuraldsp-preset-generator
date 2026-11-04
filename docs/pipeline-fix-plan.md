@@ -65,7 +65,13 @@ The user chose the main line, neither fallback rule and no scale for now (2026-1
 "level with S" is the score's, not the sound's. The ear so far (F53) has heard real room above S, but no current model
 on a song's own performance. So the main line starts with L0, a blind ear read of S, FT, D_fix and W on V-real's parts
 in their own performances; then the recordings (L1) and the fresh real-song test (L2), scored with J0 and the ear.
-Findings F1–F53.
+L0 (F54, one listener, 10 parts): W is heard below S, and the score agrees. FT and D_fix are not known by ear: FT's
+rank gap is −0.07 [−0.86, +0.71], D_fix's −0.43 [−1.00, +0.21]. Beside that, S is rated "not close" on 3 of 4 clean
+parts, FT and D_fix are heard far closer on two of them (picked after the answers) while the score barely moves, and
+crunch leans to S; class, amp and S's setting cannot be pulled apart here. The ear-score check is not triggered, but
+W carries the agreement: among S, FT and D_fix, agreement is not shown (+0.04 [−0.29, +0.39]; wide, so weak agreement
+is not ruled out).
+Findings F1–F54.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -1847,6 +1853,11 @@ instead of generating unrealistic presets our own?"):
     effects, and F44 found reverb heard above its score. colour-me-red ElecGtr03's held half is only 57% active (record
     match wanted 0.8). The listener has heard these records before (T0's ear), and S on two of them: Signs ElecGtr3 and
     get-out-of-bed ElecGtr2 were on record match's page, the second at this same amp and half, through the raw DI.
+  - *L0's outcome (2026-11-04, F54):* W is heard below S on rank and closeness, one listener, and the score agrees. FT and D_fix are
+    not known by ear (rank −0.07 [−0.86, +0.71], −0.43 [−1.00, +0.21]). The ear-score Spearman is +0.50 [+0.31, +0.67],
+    so the declared check is not triggered; the audit finds W carries it (among the other three, agreement is not
+    shown: +0.04 [−0.29, +0.39]).
+    The main line goes on, and L1's declaration takes up the check on its own evidence.
 
 ## Findings log
 
@@ -3845,6 +3856,93 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **References.** `~/ndsp-presets/listening/real-song-check{,-2}/private/`, `listening/record-match-1/private/score.json`,
   [record match's results](record-match-listening-results.md).
 
+### F54. L0, the first ear read of the current models on songs' own performances: W heard below S; FT and D_fix not known by ear, and heard far above S on two clean parts where the score barely moves (those two picked after the answers) (phase_ear_vreal, 80 renders, one listener)
+- **Run.** As declared; all 40 renders' hashes equal the stored ones, the page's build `490e19bda8cb`. All 12 items answered,
+  10 first hearings in 7 bands make the rows; one (Wickerman ElecGtr1) marked unsure; no notes.
+
+  | Candidate | Mean rank | Mean closeness | First / last | Rank against S | Closeness against S | Above S by rank | Rated above S | Equal rating | The score, these directions |
+  |---|---|---|---|---|---|---|---|---|---|
+  | S | 1.93 | 1.36 | 4 / 1 | | | | | | |
+  | FT | 2.00 | 1.57 | 3 / 0 | −0.07 [−0.86, +0.71] | +0.21 [−0.29, +0.79] | 5 of 10, 4 of 7 bands | 2 of 10, 2 bands | 6 of 10 | −0.080 [−0.172, +0.001] |
+  | D_fix | 2.36 | 1.36 | 2 / 1 | −0.43 [−1.00, +0.21] | 0.00 [−0.50, +0.50] | 3 of 10, 2 of 7 bands | 2 of 10, 2 bands | 5 of 10 | −0.052 [−0.110, +0.001] |
+  | W | 3.71 | 0.07 | 1 / 8 | −1.79 [−2.57, −0.79] | −1.29 [−1.93, −0.64] | 2 of 10, 1 of 7 bands | 1 of 10, 1 band | 2 of 10 | −0.359 [−0.490, −0.237] |
+
+  Band-weighted, 90% band-clustered intervals. Against S, plus is above S; the score's row is ln(d_S / d_model), so plus is
+  closer. Closeness: very 3, close 2, somewhat 1, not close 0.
+- **By the declared map.** W: "heard below S on these songs, one listener", on rank and closeness, and the score agrees.
+  W's effects, on in 8 of the 10, cannot be all of it: it is last and "not close" on both parts with them off, though
+  that is two parts. FT and D_fix: the rank intervals reach zero, so not known by ear, not level. FT's ratings are equal
+  to S's on 6 of 10, which the map reads as the ear's own level on most parts; its other four are +3, +3, −1, −1, and one
+  of the six (femme ElecGtr5) broke on its repeat, to FT above S, so level is not the whole of it. D_fix's are equal on 5
+  of 10, half, not most. The chance simulation holds: a clear row is a lead for L2, not a verdict.
+- **Clean and crunch (declared beside; clean is 2 bands, so no interval).** Rank / closeness:
+
+  | Class | Parts | S | FT | D_fix | W |
+  |---|---|---|---|---|---|
+  | Clean | 4 (2 bands) | 2.75 / 0.25 | 1.75 / 1.75 | 2.50 / 1.25 | 3.00 / 0.25 |
+  | Crunch | 6 (5 bands) | 1.60 / 1.80 | 2.10 / 1.50 | 2.30 / 1.40 | 4.00 / 0.00 |
+
+  FT is above S on 3 of 4 clean parts and 2 of 6 crunch, D_fix on 2 of 4 and 1 of 6, W on 2 of 4 and 0 of 6. S is "not
+  close" on 3 of 4 clean parts and on no crunch part; FT and D_fix gain in rating only on the two sw50r clean parts, and
+  neither is rated above S on any crunch part. On crunch (post hoc, 5 bands) the rank gaps lean below S: FT −0.50
+  [−1.40, +0.50], D_fix −0.70 [−1.20, +0.10]; all these intervals reach zero.
+- **Class, amp and S's setting cannot be pulled apart here (post hoc).** S is one setting per class and amp, so the 10 parts
+  hold 5 S settings: clean sw50r 2 parts, clean ac20 2, crunch ac20 4, crunch sw50r 1, crunch pr12 1. By amp the split is
+  sharper than by class: FT is above S on 4 of 4 parts off the ac20 and 1 of 6 on it (D_fix 2 of 4, 1 of 6), and S's mean
+  rank is 3.00 on the sw50r and 1.50 on the ac20. Within clean, the amp and the held half split the result exactly: the
+  gain is on the two sw50r parts (held A), and on the two ac20 parts (held B) FT's ratings equal S's. So the row near zero
+  is not one result, but which of class, amp or S's setting moves it is not known.
+- **Where the score misses it (picked after the answers).** On It Was My Fault ElecGtr3 and colour-me-red ElecGtr02,
+  both clean and on the sw50r, S is "not close", FT "very close" on both, D_fix "very close" and "close". The score
+  sits within 8% of S on all four pairs, and on three of them it puts S closer: FT −0.069 and +0.055, D_fix −0.074 and
+  −0.063. colour-me-red's repeat came back with the same ranks and ratings. For one listener that is the user's point on a
+  song's own performance: a similar score did not mean a similar sound. Two limits. Both parts play the same S setting,
+  and FT's amp knobs on them are nearly one setting (Volume 0.356 and 0.360, Treble 0.744 and 0.789, Mid 0.423 and 0.401,
+  Bass 0.302 and 0.263), so the two are not independent: one S setting on both and FT's amp side nearly the same, though its
+  mics differ and its curve against S differs between them (correlation 0.61, 2.7 dB rms, post hoc, from the stored clips).
+  They show this S setting is far off on these parts; they do not show that FT read the song. And colour-me-red ElecGtr02 is D_fix's only
+  effects-on part (reverb, delay, compressor); F44 already has reverb heard above its score, so that "close" and its −0.063
+  are partly a known mismatch. The third clean part with S "not close" (It Was My Fault ElecGtr1, ac20) does not repeat it:
+  only W rises, to "somewhat", with its reverb on.
+- **The ear against the score.** Spearman +0.50 [+0.31, +0.67], clear of zero, so L1's declared check is not triggered.
+  Audit (post hoc): W carries that, and the rule could hardly fire once W was heard last. With W's rank held and the other three
+  shuffled the Spearman stays near it (mean +0.46, 5–95% +0.27 to +0.64). Without W it is +0.04 [−0.29, +0.39], what shuffled
+  answers give (0.47 reach it). On the same side of S: W 8 of 10, D_fix 6, FT 5. So among S, FT and D_fix agreement is not
+  shown, and the page is wide: an ear truly following the score at +0.5 lands this low on about 1.5% of pages, at +0.27 on
+  about 16% (the review's simulation), so strong agreement is unlikely and weak agreement stays open. The large gaps may
+  agree where the small ones show no agreement: same side on 3 of 4 pairs at gaps of 10% or more (only 4 pairs), 8 of 16
+  below.
+  Record match's 0.6 without C (F53) came through the true DI on older models, so it is not comparable. L1's labels ask
+  something else of J0, a search rather than a ranking of near answers, and record match's search was heard above S on 5 of
+  5; that was through the true DI.
+- **How close, plainly.** The best rating on a part is "very close" on 3, "close" on 2 and "somewhat" on 5. The measure DI
+  limits this (F20).
+- **Repeats.** Rank Spearman 1.0 and 0.8, the same top both times. Ratings match on 6 of 8; on femme ElecGtr5 S moved from
+  "very" to "somewhat" and FT from "very" to "close". Ranks held better than ratings, on two repeats.
+- **Audit.** The rows re-derived from the raw export and the key match the scorer's to three decimals. Without the
+  unsure item: FT 0.00 [−0.79, +0.71], D_fix −0.50 [−1.14, +0.14], W unchanged. First place by letter over the 12 items: A
+  4, B 3, C 2, D 3, no leaning. S is first on 4 of 10 (2.5 by chance), and some model is above S on 6 of 10 (7.5 by
+  chance), so pooled, the models do not beat chance here; the rated gain sits on the two parts named above. The group
+  peak cut is 0.0 on all ten parts, so level matching took nothing from any clip.
+- **L2's size, as L0 asked.** The spread of the band rank gaps (standard deviation FT 1.40, D_fix 1.02, from 7 values, so
+  rough) puts a 90% half-width of 0.75 of a rank at about 5 to 10 bands and of 0.5 at about 12 to 22 (about 7 to 12 and 14 to
+  24 with a t-based figure). Clean has to be there in its own right: two bands here cannot size it. L2 should vary S's
+  setting and the amp too, not only the class.
+- **What it changes.** The main line goes on. Nothing here picks a model: FT's lead over D_fix and the class and amp splits
+  are this fourth read's and selection-contaminated, leads for L2. L1 now has two reasons to be shaped by this: agreement
+  is not shown among the near candidates (a small blind check of search labels is cheap, and the first batch's labels are
+  needed anyway), and crunch leans below S by ear.
+- **Caveats.** As declared: one listener, 10 parts, a short window, the measure DI (F20 caps even the truth), the amp chosen
+  by S's closeness by the score (which leans toward S; the ear put S "not close" on the two sw50r clean parts chosen that way),
+  W recognisable across items, and these records heard before, S itself on two of them (Signs ElecGtr3, get-out-of-bed
+  ElecGtr2): both crunch on the ac20, S ranked 1st and 2nd there, so this bears on the crunch lean. Added by the audit: the band
+  intervals treat S as independent across bands, though bands share its setting; and the measure DI moves crunch parts
+  further than clean (crunch +15.6, +12.1, +10.6, +3.8, +1.9, −4.4 dB, mean +6.6; clean +6.6, 0.0, −1.0, −2.4, mean +0.8), so
+  three of the six crunch parts are pushed 10 dB or more past their recorded DI level. It Was My Fault ElecGtr3 moved 0.0 dB, so that hit is not a level
+  artefact; colour-me-red ElecGtr02 moved +6.6.
+- **References.** `~/ndsp-presets/learn/trusted-data/pipeline-fix/ear-vreal/{key,score}.json`, ledger
+  `phase_ear_vreal_outcome`. Results review: 14 required changes, all made.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
@@ -3863,7 +3961,8 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   about 60,280 in all. **FT (2026-11-02):** the recheck 20, read 2 1,340, V-real 152: 1,512, about
   61,790 in all. **FT's control groups (2026-11-02):** 2,880, about 64,670 in all. **The judge against the ear
   (2026-11-02):** 60 (56, and 4 after the amendment), about 64,730 in all. **J5's fresh page (2026-11-03):** 56
-  (28 kept, each with its priming render), about 64,790 in all.
+  (28 kept, each with its priming render), about 64,790 in all. **L0 (2026-11-04):** 80 (40 kept, each with its
+  priming render), about 64,870 in all.
 - **MPS used:** about 4 h before 5B.2 (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and
   backing runs, the k-fold, phase 5A's two 10-minute seeds); 5B.2's 12 trainings about 2 h more (arm P 4 × 7.2–8.4 min,
   arm R 8 × 11.4 min); stage 2's 8 trainings 1.5 h more (8 × 11.4 min); 5C's RG 8 trainings 1.75 h more (8 × 13.0–13.3
