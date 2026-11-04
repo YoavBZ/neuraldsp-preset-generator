@@ -1870,8 +1870,7 @@ instead of generating unrealistic presets our own?"):
     L0's map put such a check before any large spend, and the cheapest test comes first, so it comes first here.
   - **Order.** Units; the ear gate; the lag pass on every passed unit; the 12 ear items, drawn by seed from unit
     metadata before any search has run; those units searched first, then units in a seeded order up to a third of them;
-    the stage check; the label page. Only then the remaining labels and the centre read, and neither runs on "clear
-    below".
+    the stage check; the label page. Only then the remaining labels and the centre read, and neither runs if the primary share is clear below.
   - **Data (zero plugin renders; `units`).** All 50 captures (31 packs, 20 creators), by the one loader (`nam_load`,
     moved into `learn/`, its A1 translator tested). The render is `m(x, pad_start=True)` at 48 kHz on CPU, stored with
     its sha256 and the `.nam` file's, which must equal the manifest's. None is added or dropped by name.
@@ -1970,7 +1969,7 @@ instead of generating unrealistic presets our own?"):
     seeded RcG_n draws and a creator bootstrap of RcT. No row reads as moved unless its interval clears zero and RcT −
     RcG_n has the same sign on all 3 draws. This is a panel read: counted in `phase_5d_panel_reads`, and it picks no
     recipe. V-real stays unread.
-  - **Reading.** No bar decides it, except that "clear below" holds the next batch until the judge's use for labels is
+  - **Reading.** No bar decides it, except that the primary share clear below holds the next batch until the judge's use for labels is
     reviewed. Otherwise the reads go to the user beside the yield and the cost of the next batch, which is the user's
     yes on the route and a fresh key. The working size stays 250 captures in all, about 100 labels per amp and class;
     this batch's yield replaces GOAT's 81% in that sum. Training comes after that, on FT's recipe, in its own
@@ -1978,8 +1977,7 @@ instead of generating unrealistic presets our own?"):
   - **Rules and guards.** Renders as ever (isolate=True, one priming render, 0.25 s trim, at most 3 processes, the 31 GB
     guard). Captures run in `tools/nam-venv` with `python -I`, read as data from their own folder; `.nam` files stay out
     of git. No TONE3000 fetch. V-real and the NS songs untouched. Records under `captures/`, apart from `goat/` and
-    `real/`. In code, each with a test: `require("phase_l1a")`; the `.nam` sha against the manifest; the DI cap; the
-    blind item picker; the ear and heavy gates; the minimum at both points; the seeded search order; no BKS, GOAT or
+    `real/`. In code, each with a test: `require("phase_l1a")`; the `.nam` sha against the manifest; the DI cap; the blind item picker; the letter balance; the ear and heavy gates; the minimum at both points; the seeded search order; no BKS, GOAT or
     V-real reader sees a capture record.
   - **Caveats.** A capture is one setting of one amp, its mic not ours to choose. All DIs are GOAT's, most items one
     player's. The labels fit the measure DI, so F20's cap applies, though the Record here plays the same performance.
