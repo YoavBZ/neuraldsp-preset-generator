@@ -320,6 +320,17 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          of git: the repo is public and redistribution is forbidden (the T3K licence allows publishing renders). The
          report's first choice (not yet a plan): `amp-cab` NAM packs whose description names a mic; if too few store
          their input level, the level is fixed by a declared rule.
+       - **TONE3000 first batch (2026-11-04):** the user chose the official API for this batch ("Go with API, use the
+         official tones API"), in place of hand downloads. That route sits outside the two above, and the terms question
+         on it is the user's: the API Terms forbid bulk download, scraping, mirroring or caching the catalogue, and
+         keeping the files may count as that cache. The fetch took only 50 named captures from 31 packs, with a
+         publishable key that the user is deleting. Any later batch needs the user's yes on this route again and a new
+         key. The files sit outside the repo. All 50 are T3K-licensed `amp-cab` picks at 48 kHz (3 files store
+         `gear_type` `amp`, though their packs name a mic), and all load and play: 47 A2 and 3 A1 Standard, 39 with a
+         stored input level. Open for L1's declaration: the stored loudness and gain do not match the NAM calculation
+         together on any of these files (loudness off by a median 4.6 dB), though they do on the NAM engine's A2 and
+         WaveNet example models, so they are not used; and the DI's reference level, where 12 dBu (the first default)
+         leans hot but is undecided, and 5 files store negative levels.
    - **Pipeline review (2026-10-30, zero renders; [record](ml-pipeline-review.md), checks `learn/pipeline_review.py`).**
      At the user's request, the direct model's whole process is listed as 38 small steps. Each step has its code, a
      status, its evidence, a fix and a test.
@@ -1391,3 +1402,4 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-11-03 | Pipeline fix F51, E1d (zero renders, no training; from the cloud researcher's survey, which found no proven blind estimator): a long-window real cepstrum reads delay time on the clean targets, 57.2% within ±10% on the wide delay-ons against the picker's 43.5% (+0.137 [+0.086, +0.166]), 84% on the strongest third, peak-height AUC 0.92 there; on the faintest third its error is worse than the prior's. E0's stems mostly tested their chord DI, on which it fails even without a backing. Amended: E1e, the wide draws rebuilt and re-separated, before the masking renders | [plan](pipeline-fix-plan.md) F51, [ledger](dev-test-ledger.json) `phase_fx_reader_e1d*`, `phase_fx_reader_e1e` |
 | 2026-11-03 | Pipeline fix F52, E1e (zero renders): the 770 wide draws rebuilt exactly and re-separated; the cepstrum hits the delay time on 22% of the stems' wide delay-ons (the picker 14%, a guess 7%) but its error is worse than a guess's (+0.309 [+0.210, +0.383] log2) and its peak height does not flag the hits: delay time does not read on the stem or the mix. The loss is the backing's. Masking renders proposed, not run; the user's choice against the main line | [plan](pipeline-fix-plan.md) F52, [ledger](dev-test-ledger.json) `phase_fx_reader_e1e*` |
 | 2026-11-04 | The user chose the main line, neither fallback rule and no scale for now, and corrected the reading: "level with S" is the score's, not the sound's. F53 (zero renders): the two real-song pages of 2026-11-02 written up beside record match; the ear has put presets above S on their own performance, but no current model has been heard that way, and the stand-in rankings sit near chance (7 of 8 with some model above S, 5.7 expected). L0 declared and reviewed: a blind ear read of S, FT, D_fix and W on V-real's 10 parts | [plan](pipeline-fix-plan.md) |
+| 2026-11-04 | L1's first capture batch in place, zero plugin renders: 50 named TONE3000 captures from 31 packs, by the official API, the user's choice for this batch (a later batch needs their yes again). All 50 load and play at 48 kHz; 39 store an input level. L1 is not declared yet and waits on L0's answers | [research](research/real-amp-chains-2026-11.md) |
