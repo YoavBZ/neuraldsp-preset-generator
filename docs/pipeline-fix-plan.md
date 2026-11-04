@@ -3898,8 +3898,9 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   −0.063. colour-me-red's repeat came back with the same ranks and ratings. For one listener that is the user's point on a
   song's own performance: a similar score did not mean a similar sound. Two limits. Both parts play the same S setting,
   and FT's amp knobs on them are nearly one setting (Volume 0.356 and 0.360, Treble 0.744 and 0.789, Mid 0.423 and 0.401,
-  Bass 0.302 and 0.263, no switch changed, the mics differ), so for FT this is close to one comparison on two performances:
-  it shows this S setting is far off on these parts, not that FT read the song. And colour-me-red ElecGtr02 is D_fix's only
+  Bass 0.302 and 0.263), so the two are not independent: one S setting on both and FT's amp side nearly the same, though its
+  mics differ and its curve against S differs between them (correlation 0.61, 2.7 dB rms, post hoc, from the stored clips).
+  They show this S setting is far off on these parts; they do not show that FT read the song. And colour-me-red ElecGtr02 is D_fix's only
   effects-on part (reverb, delay, compressor); F44 already has reverb heard above its score, so that "close" and its −0.063
   are partly a known mismatch. The third clean part with S "not close" (It Was My Fault ElecGtr1, ac20) does not repeat it:
   only W rises, to "somewhat", with its reverb on.
@@ -3909,7 +3910,8 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   answers give (0.47 reach it). On the same side of S: W 8 of 10, D_fix 6, FT 5. So among S, FT and D_fix agreement is not
   shown, and the page is wide: an ear truly following the score at +0.5 lands this low on about 1.5% of pages, at +0.27 on
   about 16% (the review's simulation), so strong agreement is unlikely and weak agreement stays open. The large gaps may
-  agree where the small ones carry nothing: same side on 3 of 4 pairs at gaps of 10% or more, 8 of 16 below, on 4 pairs.
+  agree where the small ones show no agreement: same side on 3 of 4 pairs at gaps of 10% or more (only 4 pairs), 8 of 16
+  below.
   Record match's 0.6 without C (F53) came through the true DI on older models, so it is not comparable. L1's labels ask
   something else of J0, a search rather than a ranking of near answers, and record match's search was heard above S on 5 of
   5; that was through the true DI.
@@ -3936,10 +3938,10 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   ElecGtr2): both crunch on the ac20, S ranked 1st and 2nd there, so this bears on the crunch lean. Added by the audit: the band
   intervals treat S as independent across bands, though bands share its setting; and the measure DI moves crunch parts
   further than clean (crunch +15.6, +12.1, +10.6, +3.8, +1.9, −4.4 dB, mean +6.6; clean +6.6, 0.0, −1.0, −2.4, mean +0.8), so
-  crunch parts are pushed well past their recorded level. It Was My Fault ElecGtr3 moved 0.0 dB, so that hit is not a level
+  three of the six crunch parts are pushed 10 dB or more past their recorded DI level. It Was My Fault ElecGtr3 moved 0.0 dB, so that hit is not a level
   artefact; colour-me-red ElecGtr02 moved +6.6.
 - **References.** `~/ndsp-presets/learn/trusted-data/pipeline-fix/ear-vreal/{key,score}.json`, ledger
-  `phase_ear_vreal_outcome`. Results review: 11 required changes, all made.
+  `phase_ear_vreal_outcome`. Results review: 14 required changes, all made.
 
 ## Budget
 
