@@ -2017,6 +2017,25 @@ instead of generating unrealistic presets our own?"):
       was read.
     - *Review (2026-11-05, independent):* changes required and made: the items after the ear, the placebos drawn only from
       trusted units, the stage check's figures unread before it, and the guards above.
+- **L1b, the second capture batch (ledger `phase_l1b`; 2026-11-05).** The user allowed more TONE3000 downloads the night L1a was
+  declared, and signed the fetch in. 150 more named captures (`manifest-batch2.csv`): 108 packs, 79 creators (11 also in the first
+  batch), 8 families, 91 crunch and 59 clean by the makers' words and the fetcher's guess on 17, 50 calibrated, 137 A2 and
+  13 A1 Standard. The aim of 200 stopped at 150 because the caps (2 a pack, 5 a creator) and the named-mic rule thinned the picks.
+  - **What stays as L1a.** The loader, the level rule, the walk's crunch-then-clean, the DI cap, the ear page's one card per capture on
+    its most driven unit (here its only unit), the heavy page, the minimum, the gates in code.
+  - **What differs.** One forced amp per capture, balanced and seeded: three amps on one recording are worth about 1.4 rows
+    (the ML review's ICC of 0.55), and distinct chains are what the bet needs. DIs from the clean-DI library rather than GOAT's: its trusted, clean,
+    disjoint sections, at most 40 a band, leaving out V-real's 7 bands, the NS bands, the panel's bands, Jen Hartswick & Nick
+    Cassarino, and BKS. 391 sections from 19 bands, far more players and guitars than GOAT's, and the DI's section is written beside the
+    render. The bands take turns as the players did, so a band of one section gives at most 3 units.
+  - **Files.** `manifest.csv` is not touched. Records under `captures2/`, pages `capture-ear-2`, `capture-heavy-2`. Uncalibrated files (100 of
+    150) play at 0 dB; their stored-level gap is reported apart, as is any file that will not load or does not read 48 kHz (2 A1 files
+    store no rate, and they are checked before use).
+  - **Labels ahead of the ear, nothing read (`phase_l1b_night`, digest `phase_l1b_night_batch`).** As L1a's amendment, on this batch's own files, on the same request.
+    The recipe is N2's outcome: v2 if the report adopts it, otherwise GOAT's. No use of any label before both gates. About 150 units,
+    about 8,000 to 9,000 renders.
+  - **The ear.** The listener hears the first batch, then this one: 150 more cards in parts. Dropping a capture needs no more than that verdict, as in the first batch.
+  - **Use.** With the first batch, these labels feed the training declaration after L1a's label page. This batch holds no ear items of its own.
 - **N1 to N3, the model's real-amp training and the labels' search (2026-11-05, ledger `phase_night2`; `learn/night2.py`).** An
   independent ML review of the labels and data (2026-11-05, read-only, BKS and GOAT only) found three things. Real rows label
   every unsearched control as S: of a real label's sounding heads, 64% of knobs and 85% of switches are S's constants, so FT's
@@ -2045,7 +2064,8 @@ instead of generating unrealistic presets our own?"):
   - **N2, the search.** v2 runs from S: drive and tone at step 0.25, then up to 4 mics per side (each amp's commonest in
     GOAT's labels), then the knobs of drive and tone at 0.125, then cab at 0.25; a move stays only on a log gain of 0.005 or more, at most 44 evaluations; the fine sweep skips switches, so every cab control is reached on
     each amp. Test: 16 BKS near-replicate section pairs, one amp each, balanced, about 1,250 renders. Reads: replicate rms by
-    group and held-half gain against the stored labels on the same directions, clustered by recording. Adopted for the capture labels, by the report's own fields, if v2's replicate rms is below v1's on drive and on tone and the
+    group and held-half gain against the stored labels on the same directions, clustered by recording. The report's rms is the root mean squared
+    difference, √2 above the review's table, so v1 and v2 compare only within this report. Adopted for the capture labels, by the report's own fields, if v2's replicate rms is below v1's on drive and on tone and the
     held gain's v2 − v1 interval has its upper end at or above 0 (plus is v2 better). The distance moved from S sits beside, since labels that
     move less shrink rms trivially. The rule has no margin, its bootstrap runs on 8 recordings (coverage about 83%), and the 16 pairs sit on 5 DIs of
     one song. The capture labels wait for this report. Adopted or not, they run by amendment of L1a's `phase_l1a_night`, this batch only; if

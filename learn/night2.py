@@ -270,8 +270,8 @@ def cmd_report(_args):
                 if dim.kind in ("cont", "log") and k in S:
                     q = f"{dim.module}/{dim.key}"
                     u0 = unit_of(dim, S[k])
-                    moved["v1"].append((unit_of(dim, r["label"][q]) - u0) ** 2)
-                    moved["v2"].append((unit_of(dim, d["label"][q]) - u0) ** 2)
+                    moved["v1"].append(unit_of(dim, r["label"][q]) - u0)
+                    moved["v2"].append(unit_of(dim, d["label"][q]) - u0)
             s = r["s_judge"][r["held"]]
             if not (math.isfinite(r["best"]["judge"][r["held"]]) and math.isfinite(d["judge"][r["held"]])):
                 silent += 1

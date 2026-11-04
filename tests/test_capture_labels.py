@@ -477,3 +477,29 @@ def test_the_quiet_search_prints_no_judge_figure():
 
     src = inspect.getsource(P.search_units)
     assert 'print(f"{key[-70:]}: renders so far {renders}" if quiet else f"{key[-70:]}: {search}->{held} S' in src
+
+
+def test_the_library_dis_leave_out_every_held_band():
+    def row(band, j=0, **k):
+        return {"di": f"{band}/{j}.wav", "start_s": float(j), "band": band, "training_ok": True, "clean": True, "disjoint": True, **k}
+
+    rows = [row("Eggy", j) for j in range(60)] + [row("Zeno"), row("BKS"), row("Adam Buckley"), row("Blue Manic"),
+                                                  row("Ale Lak", training_ok=False), row("Dom McLennon", clean=False)]
+    got = L.library_dis(rows)
+    assert set(got) == {"Eggy"} and len(got["Eggy"]) == L.BAND_SECTIONS
+    assert got == L.library_dis(rows)
+
+
+def test_each_second_batch_capture_plays_one_balanced_amp():
+    caps = [f"c{j}" for j in range(30)]
+    amp = U.amps_balanced(caps, "s")
+    assert amp == U.amps_balanced(caps, "s") and sorted(amp) == sorted(caps)
+    n = [list(amp.values()).count(a) for a in U.AMPS]
+    assert max(n) - min(n) <= 1
+    taken, _ = U.walk(caps, players(), lambda c, it: "clean", 5, amp_of=amp)
+    assert all(list(v) == [amp[c]] for c, v in taken.items())
+
+
+def test_the_second_batch_has_its_own_folder_phase_and_pages():
+    assert L.BATCH2["dir"] != L.CAPTURE_DIR and L.BATCH2["phase"] != L.PHASE and L.BATCH2["page"]
+    assert L.BATCH2["night"] != L.NIGHT
