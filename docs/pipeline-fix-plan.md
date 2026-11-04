@@ -1854,12 +1854,16 @@ instead of generating unrealistic presets our own?"):
     effects, and F44 found reverb heard above its score. colour-me-red ElecGtr03's held half is only 57% active (record
     match wanted 0.8). The listener has heard these records before (T0's ear), and S on two of them: Signs ElecGtr3 and
     get-out-of-bed ElecGtr2 were on record match's page, the second at this same amp and half, through the raw DI.
+  - *A read with no result (2026-11-05):* a read-only review session's loader opened two V-real parts' stored clips (It Was
+    My Fault ElecGtr1 and 3) before it had the limits. It computed only one DI level and deleted the files. No judge, feature or
+    ear figure came of it, and nothing here uses it.
   - *L0's outcome (2026-11-04, F54):* W is heard below S on rank and closeness, one listener, and the score agrees. FT and D_fix are
     not known by ear (rank −0.07 [−0.86, +0.71], −0.43 [−1.00, +0.21]). The ear-score Spearman is +0.50 [+0.31, +0.67],
     so the declared check is not triggered; the audit finds W carries it (among the other three, agreement is not
     shown: +0.04 [−0.29, +0.39]).
     The main line goes on, and L1's declaration takes up the check on its own evidence.
-- **L1a, the first capture batch (ledger `phase_l1a`; `learn/capture_labels.py`, `learn/nam_load.py`; about 2,900
+- **L1a, the first capture batch (ledger `phase_l1a`; `learn/capture_labels.py`, `learn/capture_units.py`,
+  `learn/capture_ear.py`, `learn/nam_load.py`; about 2,900
   renders before the listener hears a label, about 8,800 to 9,300 if everything runs, about 2,000 of them the centre
   read; about 1.5 to 1.7 h in all, about 30 min of it before the page).** Before anyone asks TONE3000 for more, the
   first 50 captures settle what more would rest on: whether they sound like amps, whether J0's search labels on them
@@ -1868,7 +1872,7 @@ instead of generating unrealistic presets our own?"):
     and among S, FT and D_fix agreement is not shown. L1's labels ask J0 to search, not to rank near answers, and record
     match's search was heard above S on 5 of 5, through the true DI, on real records. Neither settles it for captures.
     L0's map put such a check before any large spend, and the cheapest test comes first, so it comes first here.
-  - **Order.** Units; the ear gate; the lag pass on every passed unit; the 12 ear items, drawn by seed from unit
+  - **Order (amended below: `phase_l1a_night`).** Units; the ear gate; the lag pass on every passed unit; the 12 ear items, drawn by seed from unit
     metadata before any search has run; those units searched first, then units in a seeded order up to a third of them;
     the stage check; the label page. Only then the remaining labels and the centre read, and neither runs if the primary share is clear below.
   - **Data (zero plugin renders; `units`).** All 50 captures (31 packs, 20 creators), by the one loader (`nam_load`,
@@ -1952,9 +1956,8 @@ instead of generating unrealistic presets our own?"):
       primary share reaching one half: not known by ear; underpowered is not failed; the closeness row and its ties are
       the user's evidence on whether to go on. The primary share clear below: the labels are not what the ear wants, the
       remaining labels and the centre read do not run, and the judge's use for labels is reviewed before any next batch.
-    - *What the design can bear, simulated now* (12 parts, 8 to 12 creators, this bootstrap): a true 75% clears one half
-      on about 48 to 57% of pages, a true 85% on about 80 to 87%, a true 50% on about 4 to 7.5% each way. 10 of 12
-      always clears, 9 on about 30 to 75% of layouts, 8 almost never. A shared effect of S's setting lowers this. Label
+    - *What the design can bear, simulated now* (12 parts, 8 to 12 creators, this bootstrap): a true 75% clears one half on about 40 to 57% of pages, a true 85% on about 74 to 87%, a true 50% on about 2 to 7.5% each way. 10 of 12
+      always clears, 9 on up to about 75% of layouts and about none at 12 creators, 8 almost never. A shared effect of S's setting lowers this. Label
       over S or label over placebo clears by chance on about 9% of pages. A true 65% clears on about a quarter, so the
       placebo row is often undecided even if the fit is real. So undecided is a likely outcome even if the labels are
       better, and a clear row is a lead, not a verdict.
@@ -1986,6 +1989,32 @@ instead of generating unrealistic presets our own?"):
   - *Review (2026-11-04, independent, before any render):* 12 required changes, then 7 on its re-check, all made: the
     check before the spend, the DI cap, the heavy page, the minimum at both points, the judge check on the label's render,
     the placebo drawn blind with its own rows, the ear-score row, the centre read's limits, and the seeded search order.
+  - *Amendment (2026-11-05, before any plugin render on a capture; ledger `phase_l1a_night`):* the labels run ahead of
+    the ear. The user asked, going to sleep: "Keep working as much as possible without me, do what's needed to make a
+    good progress." The ear gate needs the listener, so as declared the machine would stand idle all night.
+    - *What moves.* Plugin renders run before the ear gate, on the 150 units of this batch only: the lag pass, then the
+      labels in the seeded order. About 8,850 renders, about 1.4 h. The items and placebos, the label page's 72 renders and
+      the page all wait for the ear.
+    - *What does not move.* After both gates the items and placebos are drawn by the declared rules and seed from the
+      trusted, lag-kept units. The picker reads no search record, and `items.json` is written once. No label, score, centre
+      or judge figure is read before the ear. At a third of the units the machine stores only go or stop, as a fault
+      check; a stop pauses the run, and its figures and the rows beside it stay unread. After the ear the lag rule and the
+      stage check, with those rows, run on the trusted units alone. That is the declared check, and its stop holds the
+      label page. Every unit with a lag is searched at night, whatever the lag rule later says, so the rule only ever drops a
+      label. No score figure reaches the listener before the label page's answers. Apart from the go-or-stop, every reader of the search records runs behind `trusted`. The minimum after the ear and the lag rule stands, as do the capture
+      page, the heavy page and the label page in that order. The centre read still waits for the primary share and stays a
+      counted panel read. No training before the ear.
+    - *Guards, each with a test.* `search` refuses before both gates by default. The pre-ear path needs an explicit flag,
+      `phase_l1a_night` and this batch's 50 sha256s (`phase_l1a_night_batch`), and refuses any later batch. `items` refuses
+      before both gates and refuses a second run. `stage-check` takes the trusted set; the pre-ear go-or-stop prints no
+      figure.
+    - *What it costs.* The order put the check before the spend because L0's map asked for it "before any large spend". On
+      an idle night the spend is machine time alone. On "the primary share clear below" the labels go unused, and the map
+      stands. The listener waits a few minutes between the heavy page and the label page. This reverses a declared rule on
+      a general request, so the first message to the user says plainly that the labels ran before the ear and that nothing
+      was read.
+    - *Review (2026-11-05, independent):* changes required and made: the items after the ear, the placebos drawn only from
+      trusted units, the stage check's figures unread before it, and the guards above.
 
 ## Findings log
 

@@ -3605,14 +3605,39 @@ def goat_rows(fold, target, shuffle=False):
 
 
 def cmd_goat_search(args):
-    """5C's label searches (one shard of GOAT units): as 5B.2's stage 2 (`cmd_real_search`), per unit on its forced amp
-    only: three fresh S renders (one per amp, the class's S) give the judge lag, S's judge and its sha (saved, so the
-    search resumes); then one discarded priming render and arm A's main stage (`K.space`, 52 evaluations, seed
-    20261013) from S with the unit's DI, scored by the judge's distance to the render on the unit's search half
-    (`goat_halves`); S's first evaluation must be bit-identical to its fresh render; the label is the best's
-    in-process render. With `--lags-only` (run first, over every shard): the S renders and lags alone; the search
-    pass then refuses, before searching, the units the one-window lag rule (`goat_lag_refused`) refuses.
-    -> goat/search/<unit>|<amp>.json, goat/lags/<unit>.json."""
+    """5C's label searches (one shard of GOAT units): `search_units` on the units the ear passed. With `--lags-only`
+    (run first, over every shard) the S renders and lags alone; the search pass then refuses, before searching, the
+    units the one-window lag rule (`goat_lag_refused`) refuses. -> goat/search/<unit>|<amp>.json, goat/lags/<unit>.json."""
+    require("phase_5c")
+    parts = sorted(goat_units(), key=lambda p_: p_["unit"])
+    halves = goat_halves(parts)
+    heard = goat_ear_passed([p_["unit"] for p_ in parts])     # before any render; only "amp" units go on
+    parts = [p_ for p_ in parts if p_["unit"] in heard]
+    k, n = args.shard
+    mine = [p_ for j, p_ in enumerate(parts) if j % n == k]
+    refused = set()
+    if not args.lags_only:                             # the lag rule over every unit, before any search
+        ldir = out_dir() / GOAT_DIR / "lags"
+        lp_ = {p_["unit"]: ldir / f"{p_['unit'].replace('/', '__')}.json" for p_ in parts}
+        missing = [u for u, q in lp_.items() if not q.exists()]
+        if missing:
+            raise SystemExit(f"{len(missing)} units have no lag: run goat-search --lags-only first")
+        _, refused = goat_lags_refused({p_["unit"]: p_ for p_ in parts}, [p_["unit"] for p_ in parts])
+        short = goat_short_cells([p_ for p_ in parts if p_["unit"] not in refused])
+        if short:
+            raise SystemExit(f"under {GOAT_MIN_PER_CELL} trusted units in {short}: the pilot stops at the data stage")
+    renders = search_units(mine, out_dir() / GOAT_DIR, "phase_5c", halves, refused, args.lags_only)
+    print(f"GOAT-SEARCH{' LAGS' if args.lags_only else ''} DONE {k}/{n}: {renders} renders")
+
+
+def search_units(mine, root, phase, halves, refused, lags_only, quiet=False):
+    """5C's labels, for GOAT's units and L1a's captures alike (`root` holds search/ and lags/), as 5B.2's stage 2
+    (`cmd_real_search`), per unit on its forced amp only: three fresh S renders (one per amp, the class's S) give the
+    judge lag, S's judge and its sha (saved, so the search resumes); then one discarded priming render and arm A's main
+    stage (`K.space`, 52 evaluations, seed 20261013) from S with the unit's DI, scored by the judge's distance to the
+    render on the unit's search half (`halves`); S's first evaluation must be bit-identical to its fresh render; the
+    label is the best's in-process render. With `lags_only`, the S renders and lags alone. Units in `refused` are
+    recorded, not searched. With `quiet`, the log names units and render counts only, no judge figure. -> renders made."""
     import numpy as np
 
     from analysis.aligned import estimate_lag
@@ -3626,13 +3651,6 @@ def cmd_goat_search(args):
     from learn import song_bank as B
     from learn import trusted_data as T
 
-    require("phase_5c")
-    parts = sorted(goat_units(), key=lambda p_: p_["unit"])
-    halves = goat_halves(parts)
-    heard = goat_ear_passed([p_["unit"] for p_ in parts])     # before any render; only "amp" units go on
-    parts = [p_ for p_ in parts if p_["unit"] in heard]
-    k, n = args.shard
-    mine = [p_ for j, p_ in enumerate(parts) if j % n == k]
     trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
     ms = L.menu_S()
     LO._wait_cap()
@@ -3645,7 +3663,7 @@ def cmd_goat_search(args):
         for cls, (_, S) in by_cls.items():
             if K.key(dict(menu[amp][K.START[cls][amp]][1])) != K.key(S):
                 raise SystemExit(f"{amp} {cls}: the live S differs from the stored copy")
-    sdir, ldir = out_dir() / GOAT_DIR / SEARCH_DIR, out_dir() / GOAT_DIR / "lags"
+    sdir, ldir = root / SEARCH_DIR, root / "lags"
     renders = 0
 
     def sorted_x(x):                                   # edits in 5B.1's order (`sdict` sorts the keys)
@@ -3659,24 +3677,13 @@ def cmd_goat_search(args):
     def fname(key):
         return key.replace("/", "__")
 
-    refused = set()
-    if not args.lags_only:                             # the lag rule over every unit, before any search
-        lp_ = {p_["unit"]: ldir / f"{fname(p_['unit'])}.json" for p_ in parts}
-        missing = [u for u, q in lp_.items() if not q.exists()]
-        if missing:
-            raise SystemExit(f"{len(missing)} units have no lag: run goat-search --lags-only first")
-        _, refused = goat_lags_refused({p_["unit"]: p_ for p_ in parts}, [p_["unit"] for p_ in parts])
-        short = goat_short_cells([p_ for p_ in parts if p_["unit"] not in refused])
-        if short:
-            raise SystemExit(f"under {GOAT_MIN_PER_CELL} trusted units in {short}: the pilot stops at the data stage")
-
     for prt in mine:
         if PS.free_gb() < T.DISK_GUARD_GB:
             raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
         amp = prt["amp"]
         key = real_key(prt, amp)
         path = sdir / f"{fname(key)}.json"
-        if path.exists() or (args.lags_only and (ldir / f"{fname(prt['unit'])}.json").exists()):
+        if path.exists() or (lags_only and (ldir / f"{fname(prt['unit'])}.json").exists()):
             continue
         di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
         di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
@@ -3685,8 +3692,8 @@ def cmd_goat_search(args):
         held = "B" if search == "A" else "A"
         lp = ldir / f"{fname(prt['unit'])}.json"
         rec = json.loads(lp.read_text()) if lp.exists() else None
-        if rec is not None and rec.get("phase") != "phase_5c":
-            raise SystemExit(f"{lp.name}: a GOAT unit has a lag from another phase")
+        if rec is not None and rec.get("phase") != phase:
+            raise SystemExit(f"{lp.name}: a unit has a lag from another phase")
         if rec is None:
             ys = {}
             for a in AMPS3:
@@ -3697,17 +3704,17 @@ def cmd_goat_search(args):
                 lag, status = int(estimate_lag(ref, list(ys.values()))), "ok"
             except ValueError as err:
                 lag, status = None, f"no lag: {err}"
-            save(lp, {"unit": prt["unit"], "lag": lag, "status": status, "phase": "phase_5c",
+            save(lp, {"unit": prt["unit"], "lag": lag, "status": status, "phase": phase,
                       "item_lag": prt["item_lag"],
                       "s": {a: {"judge": None if lag is None else K.judge(ref, ys[a], di, lag),
                                 "render_sha256": AM.audio_sha(ys[a])} for a in AMPS3}})
             rec = json.loads(lp.read_text())
         lag = rec["lag"]
-        if args.lags_only:
+        if lags_only:
             print(f"{prt['unit'][-60:]}: lag {lag} (item {prt['item_lag']}); renders so far {renders}", flush=True)
             continue
         if lag is None or prt["unit"] in refused:
-            save(path, {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "unit": prt["unit"], "rig": prt["rig"],
+            save(path, {"plan": PLAN, "ledger": f"{LEDGER_ID} {phase}", "unit": prt["unit"], "rig": prt["rig"],
                         "di": prt["di"], "item": prt["item"], "fold": prt["fold"], "cls": prt["cls"], "amp": amp,
                         "lag": lag, "item_lag": prt["item_lag"], "label": None,
                         "why": rec["status"] if lag is None else "the one-window lag rule",
@@ -3742,34 +3749,40 @@ def cmd_goat_search(args):
             rr.close()
         best = dict(seen[K.key(best_x)], settings=LO.sdict(best_x))
         best["fallback"] = A.fallback_reason(best["peak_dbfs"], best["judge"][search])
-        save(path, {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "unit": prt["unit"], "rig": prt["rig"],
+        save(path, {"plan": PLAN, "ledger": f"{LEDGER_ID} {phase}", "unit": prt["unit"], "rig": prt["rig"],
                     "di": prt["di"], "item": prt["item"], "fold": prt["fold"], "cls": prt["cls"], "amp": amp,
                     "select": sel, "search": search, "held": held, "lag": lag, "item_lag": prt["item_lag"],
                     "s_judge": s_j, "s_render_sha256": s_sha, "s_first": first, "curve": curve, "evaluations": evals,
                     "best_search_value": best_v, "best": best,
                     "label": None if best["fallback"] else best["settings"],
                     "time": time.strftime("%Y-%m-%d %H:%M:%S")})
-        print(f"{key[-70:]}: {search}->{held} S {s_j[held]:.3f} best {best['judge'][held]:.3f}; renders so far "
-              f"{renders}", flush=True)
-    print(f"GOAT-SEARCH{' LAGS' if args.lags_only else ''} DONE {k}/{n}: {renders} renders")
+        print(f"{key[-70:]}: renders so far {renders}" if quiet else f"{key[-70:]}: {search}->{held} S {s_j[held]:.3f} best "
+              f"{best['judge'][held]:.3f}; renders so far {renders}", flush=True)
+    return renders
 
 
 GOAT_STOP_BOUND_SHARE = 0.5         # the staged stop: more than this share of labels with inputGain at a bound
 
 
 def cmd_goat_stage_check(args):
-    """5C's staged stop (zero renders), run once a third of the trusted units are searched: the in-process best's
-    held-half log ratio to S, clustered by item (`clustered`), and the share of labels whose inputGain sits at a bound
-    of `K.space`. Stop when the held-half interval's upper end is at or above 0 (the searches do not decidedly beat
-    S where they did not search) or the bound share exceeds GOAT_STOP_BOUND_SHARE (the captures' input calibration
-    would set the labels). -> goat/stage-check.json."""
+    require("phase_5c")
+    stage_check(out_dir() / GOAT_DIR, "phase_5c")
+
+
+def stage_read(root, phase, keep=None):
+    """5C's staged stop, for GOAT and L1a alike (zero renders): the in-process best's held-half log ratio to S, clustered
+    by each record's `item` (L1a's are creators; `clustered`), and the share of labels whose inputGain sits at a bound of `K.space`, over the search records
+    (of the units in `keep`, if given). Stop when the held-half interval's upper end is at or above 0 (the searches do
+    not decidedly beat S where they did not search) or the bound share exceeds GOAT_STOP_BOUND_SHARE (the captures' input
+    calibration would set the labels). -> the record."""
     from learn import arm_a_levers as L
     from learn import knob_ceiling as K
     from learn import local_objective as LO
 
-    require("phase_5c")
     ms = L.menu_S()
-    recs = [json.loads(p_.read_text()) for p_ in sorted((out_dir() / GOAT_DIR / SEARCH_DIR).glob("*.json"))]
+    recs = [json.loads(p_.read_text()) for p_ in sorted((root / SEARCH_DIR).glob("*.json"))]
+    if keep is not None:
+        recs = [r for r in recs if r["unit"] in keep]
     lab = [r for r in recs if r["label"] is not None]
     rows = [(r["item"], r["unit"], math.log(r["best"]["judge"][r["held"]] / r["s_judge"][r["held"]])) for r in lab
             if r["s_judge"][r["held"]] and r["best"]["judge"][r["held"]] > 0]
@@ -3782,12 +3795,19 @@ def cmd_goat_stage_check(args):
     c = clustered(rows) if rows else {}
     share = sum(at) / len(at) if at else None
     stop = bool(rows) and (c["hi90"] >= 0 or share > GOAT_STOP_BOUND_SHARE)
-    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "searched": len(recs), "labelled": len(lab),
-           "held_best_minus_S": {q: c.get(q) for q in ("mean", "lo90", "hi90", "clusters")},
-           "input_gain_at_bound_share": share, "stop": stop, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
-    save(out_dir() / GOAT_DIR / "stage-check.json", out)
-    print(f"GOAT STAGE CHECK: {len(lab)} labels; held best - S {c.get('mean')} [{c.get('lo90')}, {c.get('hi90')}];"
-          f" inputGain at a bound {share}; {'STOP' if stop else 'go on'}")
+    return {"plan": PLAN, "ledger": f"{LEDGER_ID} {phase}", "searched": len(recs), "labelled": len(lab),
+            "held_best_minus_S": {q: c.get(q) for q in ("mean", "lo90", "hi90", "clusters")},
+            "input_gain_at_bound_share": share, "stop": stop, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+
+
+def stage_check(root, phase, keep=None):
+    """`stage_read`, saved and printed. -> root/stage-check.json."""
+    out = stage_read(root, phase, keep)
+    save(root / "stage-check.json", out)
+    h = out["held_best_minus_S"]
+    print(f"STAGE CHECK: {out['labelled']} labels; held best - S {h['mean']} [{h['lo90']}, {h['hi90']}];"
+          f" inputGain at a bound {out['input_gain_at_bound_share']}; {'STOP' if out['stop'] else 'go on'}")
+    return out
 
 
 def goat_lags_refused(units, heard, tol=None):
