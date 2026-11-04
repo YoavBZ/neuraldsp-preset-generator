@@ -1,5 +1,16 @@
 """N1 to N3's pure parts (`learn/night2.py`)."""
+import pytest
+
 from learn import night2 as N
+
+
+def menu_s():
+    from learn import arm_a_levers as L
+
+    try:
+        return L.menu_S()
+    except FileNotFoundError:
+        pytest.skip("needs the local S menu")
 
 
 class D:
@@ -66,12 +77,11 @@ def test_boot_mean_weights_clusters_equally():
 
 
 def test_searched_heads_cover_only_the_space_and_stay_inside_the_heads():
-    from learn import arm_a_levers as L
     from learn import full_space as F
     from learn import knob_ceiling as K
     from learn import pipeline_fix as P
 
-    ms = L.menu_S()
+    ms = menu_s()
     for amp in P.AMPS3:
         S = ms[amp]["clean"][1]
         c, s, k = P.searched_heads(amp, S)
@@ -83,13 +93,12 @@ def test_searched_heads_cover_only_the_space_and_stay_inside_the_heads():
 
 
 def test_mask_leaves_plugin_rows_alone_and_drops_the_amp_label_on_real_rows():
-    import numpy as np
+    np = pytest.importorskip("numpy")
 
-    from learn import arm_a_levers as L
     from learn import full_space as F
     from learn import pipeline_fix as P
 
-    ms = L.menu_S()
+    ms = menu_s()
     n = 2
     Y = [np.ones((n, len(F.CONT))), np.ones((n, len(F.CONT))), np.ones((n, len(F.SW))), np.ones((n, len(F.SW))),
          np.ones((n, len(F.CAT))), np.ones((n, len(F.CAT))), np.array([1, 1])]
@@ -101,11 +110,10 @@ def test_mask_leaves_plugin_rows_alone_and_drops_the_amp_label_on_real_rows():
 
 
 def test_the_hold_takes_only_searched_controls_from_the_answer():
-    from learn import arm_a_levers as L
     from learn import knob_ceiling as K
     from learn import pipeline_fix as P
 
-    S = L.menu_S()["ac20"]["crunch"][1]
+    S = menu_s()["ac20"]["crunch"][1]
     x = dict(S)
     x[("reverb", "reverbActive")] = "true"
     x[("parameters", "inputGain")] = "-3"
@@ -124,8 +132,6 @@ def test_masked_runs_have_their_own_names():
 
 
 def test_the_amp_loss_skips_rows_without_an_amp_label():
-    import pytest
-
     torch = pytest.importorskip("torch")
 
     from learn import full_space as F
