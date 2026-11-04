@@ -2029,12 +2029,10 @@ instead of generating unrealistic presets our own?"):
     Cassarino, and BKS. 391 sections from 19 bands, far more players and guitars than GOAT's, and the DI's section is written beside the
     render. The bands take turns as the players did, so a band of one section gives at most 3 units.
   - **Files.** `manifest.csv` is not touched. Records under `captures2/`, pages `capture-ear-2`, `capture-heavy-2`. Uncalibrated files (100 of
-    150) play at 0 dB; their stored-level gap is reported apart, as is any file that will not load or does not read 48 kHz (2 A1 files
-    store no rate, and they are checked before use).
+    150) play at 0 dB; their stored-level gap is reported apart, as is any file that will not load or does not read 48 kHz (2 A1 files, `b70728aebf23d74b` and `dcd7d0be7df79ce8`, store no rate: `.nam` 0.5.1 of May 2023, every later A1 file stores 48000 and NAM's loader allows old files without the field, so they are kept at 48 kHz, inferred and not measured).
   - **Labels ahead of the ear, nothing read (`phase_l1b_night`, digest `phase_l1b_night_batch`).** As L1a's amendment, on this batch's own files, on the same request.
-    The recipe is N2's outcome: v2 if the report adopts it, otherwise GOAT's. No use of any label before both gates. About 150 units,
-    about 8,000 to 9,000 renders.
-  - **The ear.** The listener hears the first batch, then this one: 150 more cards in parts. Dropping a capture needs no more than that verdict, as in the first batch.
+    The recipe is N2's outcome: v2 if the report adopts it, otherwise GOAT's. No use of any label before both gates. 147 units (3 captures read high gain on every candidate: an Orange OR60, a Vox VBM1 and a Marshall DSL1), about 6,500 renders on v2.
+  - **The ear.** The listener hears the first batch, then this one: 147 more cards in 2 parts. Dropping a capture needs no more than that verdict, as in the first batch.
   - **Use.** With the first batch, these labels feed the training declaration after L1a's label page. This batch holds no ear items of its own.
 - **N1 to N3, the model's real-amp training and the labels' search (2026-11-05, ledger `phase_night2`; `learn/night2.py`).** An
   independent ML review of the labels and data (2026-11-05, read-only, BKS and GOAT only) found three things. Real rows label

@@ -503,3 +503,15 @@ def test_each_second_batch_capture_plays_one_balanced_amp():
 def test_the_second_batch_has_its_own_folder_phase_and_pages():
     assert L.BATCH2["dir"] != L.CAPTURE_DIR and L.BATCH2["phase"] != L.PHASE and L.BATCH2["page"]
     assert L.BATCH2["night"] != L.NIGHT
+
+
+def test_the_second_batch_guard_reads_its_own_digest(tmp_path, monkeypatch):
+    us = layout(tmp_path, monkeypatch)
+    monkeypatch.setattr(L, "BATCH", L.BATCH2)
+    d = L.batch_digest(us)
+    monkeypatch.setattr(P, "require", lambda k: {"phase_l1b_night_batch": d})
+    assert L.night_guard(us)
+    monkeypatch.setattr(P, "require", lambda k: {"phase_l1a_night_batch": d})
+    with pytest.raises(SystemExit, match="second batch"):
+        L.night_guard(us)
+    assert L.BATCH2["night"] + "_batch" in P.ledger_entry()
