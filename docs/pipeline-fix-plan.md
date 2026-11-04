@@ -70,7 +70,8 @@ rank gap is −0.07 [−0.86, +0.71], D_fix's −0.43 [−1.00, +0.21]. Beside t
 parts, FT and D_fix are heard far closer on two of them (picked after the answers) while the score barely moves, and
 crunch leans to S; class, amp and S's setting cannot be pulled apart here. The ear-score check is not triggered, but
 W carries the agreement: among S, FT and D_fix, agreement is not shown (+0.04 [−0.29, +0.39]; wide, so weak agreement
-is not ruled out).
+is not ruled out). L1a, declared next: the first 50 captures, the ear gate, a blind check of search labels against S
+and a placebo before the rest of the labels, then their centre against GOAT's at the same count.
 Findings F1–F54.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
@@ -1858,6 +1859,133 @@ instead of generating unrealistic presets our own?"):
     so the declared check is not triggered; the audit finds W carries it (among the other three, agreement is not
     shown: +0.04 [−0.29, +0.39]).
     The main line goes on, and L1's declaration takes up the check on its own evidence.
+- **L1a, the first capture batch (ledger `phase_l1a`; `learn/capture_labels.py`, `learn/nam_load.py`; about 2,900
+  renders before the listener hears a label, about 8,800 to 9,300 if everything runs, about 2,000 of them the centre
+  read; about 1.5 to 1.7 h in all, about 30 min of it before the page).** Before anyone asks TONE3000 for more, the
+  first 50 captures settle what more would rest on: whether they sound like amps, whether J0's search labels on them
+  sound closer than S, and whether their centre moves against GOAT's at the same count.
+  - **Why the label check is here.** F54: the declared ear-score check was not triggered, but W carried the agreement,
+    and among S, FT and D_fix agreement is not shown. L1's labels ask J0 to search, not to rank near answers, and record
+    match's search was heard above S on 5 of 5, through the true DI, on real records. Neither settles it for captures.
+    L0's map put such a check before any large spend, and the cheapest test comes first, so it comes first here.
+  - **Order.** Units; the ear gate; the lag pass on every passed unit; the 12 ear items, drawn by seed from unit
+    metadata before any search has run; those units searched first, then units in a seeded order up to a third of them;
+    the stage check; the label page. Only then the remaining labels and the centre read, and neither runs if the primary share is clear below.
+  - **Data (zero plugin renders; `units`).** All 50 captures (31 packs, 20 creators), by the one loader (`nam_load`,
+    moved into `learn/`, its A1 translator tested). The render is `m(x, pad_start=True)` at 48 kHz on CPU, stored with
+    its sha256 and the `.nam` file's, which must equal the manifest's. None is added or dropped by name.
+    - *DIs.* GOAT's 139 section DIs, already screened and heard (`goat/sections/item_*.di.wav`). None is V-real's, the
+      NS songs', the panel's, or Jen Hartswick & Nick Cassarino's. Captures run in a seeded order (seed 20261105). Each
+      capture's amp order and first player are seeded; its candidates take the players in turn, items cycling within a
+      player. No DI plays more than 3 units in the batch, and a capture never plays one DI twice, so player4's 4 items
+      give at most 12 units. The capture plays the DI levelled to −22.9 LUFS, the plugin the measure DI, as for GOAT and
+      BKS.
+    - *Level rule, one for all 50.* Gain in dB = 9 − the stored `input_level_dbu`, 0 dB where none is stored (11 files),
+      and the input's peak is held at 1.0, the top of the range the capture was trained on. Each unit stores its gain
+      and whether it was held. 9 is a free choice the data do not determine: on 3 trial DIs the references 3 to 12
+      cannot be told apart on the makers' labels (12 − 3 agreement −0.068 [−0.154, +0.017]; by creator [−0.153,
+      +0.020]), and 7 captures reach the hold at 9 (5 at 6, 13 at 12). The hold keeps the 5 files with negative stored
+      levels inside their range rather than excluding them or extrapolating, at the price that one sample sets their
+      level. Reported apart: held units (4 of the 5 negative files are one creator's) and the 11 uncalibrated files,
+      which play 2.5 dB hotter than the median calibrated file (stored 11.5) and gave 6 of the trial's 11 high-gain
+      units. The makers' labels are a guide.
+    - *Units.* Each capture on each of the 3 plugin amps, one DI per amp, 150 units before the class. Classed against
+      its DI by the pool's classifier (`classify` on `gainmeasure`); high gain is out. Each capture walks its
+      candidates, up to 9 DIs, and each amp takes the next DI that gives crunch if there is one, otherwise the next that
+      gives clean. The walk selects on the classifier's reading. Class is partly the DI (trial crunch counts of 50:
+      player1's DI 18, player2's 4, player4's 19 plus 9 high gain), and a marginal capture gets up to 9 chances to read
+      crunch. Before the walk about a quarter of the trial's units read crunch (41 of 150); modelled from 3 DIs, one per
+      player, the walk with its cap gives about 75 to 90 clean and 60 to 70 crunch, and a smallest cell after the ear
+      and the lag rule of about 14 to 16 (lowest modelled 9), so the minimum can fire but rarely will.
+    - *Folds, for later.* 4, by creator: a pack here is one amp, so a creator's rig and mics stay together.
+    - *Stated before the ear:* units by amp and class, by player and class, the makers' label against the class, the
+      most-used DIs, held units and uncalibrated units. Minimum 10 per amp and class (the centre's error is about half
+      its shift there, resampling GOAT's labels), before the ear and again after the ear and the lag rule, in code;
+      under it the batch stops and this block is revised.
+  - **Trusted data, before any plugin render.** One card per capture on its most driven unit (highest non-linear share),
+    on `goat_ear_page`'s instant A/B against its DI, blind to the measures and to any flag: "a believable amp tone",
+    "odd amp sound", "the DI itself sounds processed or noisy", "not sure". Only the first passes, and "odd" drops the
+    capture. Then every firmly driven unit (`classify`'s "driven") of a passed capture is heard on 5C's heavy page:
+    "keep", "too heavy or fizzy", "not sure"; only "keep" stays, and it drops that unit alone. One clip cannot stand for
+    a capture's heaviest unit (25 of 50 gave 2 or more classes across 3 DIs), and GOAT's heavy page removed 22 of 34
+    units the first ear had passed. Both gates in code before any plugin render, with tests. The share outside BKS's cab
+    range is stated on the page's own clips.
+  - **Labels, GOAT's recipe, unchanged.** Each unit's three S renders give the judge lag (6 renders); the one-window lag
+    rule refuses a unit more than 72 samples from the median. A whole-render lag above 240 samples is flagged and
+    reported apart; NAM's own alignment may hide mic distance, so the flag proves nothing about a mic. Then arm A's main
+    stage (`K.space`, 52 evaluations, seed 20261013, from the class's S, 53 renders) on the unit's amp and search half.
+    `inputGain` stays searched. The capture's own level is fixed above: the search never sees it. About 113 to 121
+    units, about 6,700 to 7,200 renders.
+  - **Stops (the stage check, GOAT's, at a third of the units in the seeded order).** The search does not decidedly beat
+    S where it did not search (held-half log ratio, clustered by creator, 90% interval's upper end at or above 0), or
+    more than half of the labels have `inputGain` at a bound. Beside them, zero renders: label `inputGain` against the
+    unit's capture gain, by creator (the bound stop cannot see the level rule setting labels inside the range), and S's
+    held-half distance and the search gain on captures against GOAT's and BKS's.
+  - **The ear check of the labels (blind; `learn/capture_ear.py`).**
+    - *Items.* 12 units, 2 per amp and class, one held A and one held B in each cell, held half at least 0.8 active; no
+      two from one pack and at most 2 from one creator; drawn by seed from unit metadata alone, before any search has
+      run. The picker, placebos included, takes no search record, with a test. Amp and class are crossed; S's setting
+      cannot be told from the amp-by-class cell. 2 repeats, at least 4 items after the first hearing. Letters balanced
+      over the 12 first hearings, each candidate on each letter 4 times; on a repeat every candidate moves letter.
+    - *Candidates.* S; the label; the placebo, the label of another capture of the same amp and class from another
+      creator. Each part's placebo unit is drawn with the items, by seed, from unit metadata before any search, with a
+      seeded fallback list, and searched with them. A placebo unit is not an item and serves one part. A fallback is
+      taken only when a unit gives no label. A cell that cannot supply its 2 items and 2 placebos under these limits
+      stops the batch, as the minimum does. The 24 units sit inside the third, so this adds no renders. The placebo
+      tells "J0 fit this unit" from "S is off", which F54's two sw50r parts could not.
+    - *Page.* As L0's: the held half looped, mono, −23 LUFS each, sample-aligned by the judge's lag, instant switch. The
+      capture's render is the Record. Each candidate is rendered fresh in its own process through the unit's measure DI:
+      72 renders. S's fresh render must equal the lag pass's hash. The label's is checked by judge (|ln ratio| against
+      the in-process value within 1e-3; F34 found 36 of 120 bit-identical, largest gap 6.1e-5). The scored gaps use the
+      fresh renders. Rank forced, a closeness rating each (ties allowed), sure or unsure, a note.
+    - *Reads (descriptive, 90% creator-clustered bootstrap).* Primary, read pairwise from the forced rank (chance one
+      half): the share of parts with the label ranked above S, then the closeness gap, with the score's gap beside.
+      Beside, the same for the label against the placebo and the placebo against S. By class and by amp (means and
+      counts, no intervals), a leave-one-cell-out row, and a row with unsure parts out. The ear against the score: the
+      Spearman over the 12 parts of the closeness gap against ln(d_S / d_label), plus meaning the score also puts the
+      label closer, with its interval. Repeats.
+    - *Map, declared now.* The primary share's interval clear above one half: "heard closer than S on these captures of
+      real amps, one listener", J0's search stands by ear this far. That does not show the fit is unit-specific: S may
+      simply be far off (F54). Label against placebo clear above: heard closer than another capture's label, so the fit
+      is specific to this unit. Clear below: another capture's label is heard closer, and J0's fit is not what the ear
+      hears. Reaching one half: not known; with placebo against S clear above, S being off is the likelier reading. The
+      primary share reaching one half: not known by ear; underpowered is not failed; the closeness row and its ties are
+      the user's evidence on whether to go on. The primary share clear below: the labels are not what the ear wants, the
+      remaining labels and the centre read do not run, and the judge's use for labels is reviewed before any next batch.
+    - *What the design can bear, simulated now* (12 parts, 8 to 12 creators, this bootstrap): a true 75% clears one half
+      on about 48 to 57% of pages, a true 85% on about 80 to 87%, a true 50% on about 4 to 7.5% each way. 10 of 12
+      always clears, 9 on about 30 to 75% of layouts, 8 almost never. A shared effect of S's setting lowers this. Label
+      over S or label over placebo clears by chance on about 9% of pages. A true 65% clears on about a quarter, so the
+      placebo row is often undecided even if the fit is real. So undecided is a likely outcome even if the labels are
+      better, and a clear row is a lead, not a verdict.
+  - **The centre read, by the score.** RcT, Rc's rule on the trusted capture labels; RcG_n, Rc's rule on GOAT labels
+    drawn to the same count per amp and class, 3 seeded draws. Each on BKS's 40 units and the panel's 44, on all 3 amps,
+    as before (504 renders a centre, about 2,000). Rows: RcT − RcG_n (mean of the draws, and each) and RcT − S, with RcG
+    − S (stored) beside; BKS by DI, the panel by capped band weights. It says whether this batch's labels move the
+    centre, by the score only: the gap also carries the level rule, the DI mix, the crunch preference and 20 creators.
+    Past centre-against-centre half-widths were about 0.08 on BKS and 0.06 on the panel, so a smaller gap is undecided,
+    the likely outcome. The intervals treat a centre as fixed, and its error at 10 to 12 labels is about 0.06 to 0.09
+    rms against shifts of 0.13 to 0.22, so a zero-render row sits beside: RcT's setting distance from RcG, against 200
+    seeded RcG_n draws and a creator bootstrap of RcT. No row reads as moved unless its interval clears zero and RcT −
+    RcG_n has the same sign on all 3 draws. This is a panel read: counted in `phase_5d_panel_reads`, and it picks no
+    recipe. V-real stays unread.
+  - **Reading.** No bar decides it, except that the primary share clear below holds the next batch until the judge's use for labels is
+    reviewed. Otherwise the reads go to the user beside the yield and the cost of the next batch, which is the user's
+    yes on the route and a fresh key. The working size stays 250 captures in all, about 100 labels per amp and class;
+    this batch's yield replaces GOAT's 81% in that sum. Training comes after that, on FT's recipe, in its own
+    declaration. L2 follows.
+  - **Rules and guards.** Renders as ever (isolate=True, one priming render, 0.25 s trim, at most 3 processes, the 31 GB
+    guard). Captures run in `tools/nam-venv` with `python -I`, read as data from their own folder; `.nam` files stay out
+    of git. No TONE3000 fetch. V-real and the NS songs untouched. Records under `captures/`, apart from `goat/` and
+    `real/`. In code, each with a test: `require("phase_l1a")`; the `.nam` sha against the manifest; the DI cap; the blind item picker; the letter balance; the ear and heavy gates; the minimum at both points; the seeded search order; no BKS, GOAT or
+    V-real reader sees a capture record.
+  - **Caveats.** A capture is one setting of one amp, its mic not ours to choose. All DIs are GOAT's, most items one
+    player's. The labels fit the measure DI, so F20's cap applies, though the Record here plays the same performance.
+    One listener, 12 parts, and the listener will have heard each capture on the ear gate. Nothing here is a real song:
+    a label heard closer on a capture does not show a model reading a song.
+  - *Review (2026-11-04, independent, before any render):* 12 required changes, then 7 on its re-check, all made: the
+    check before the spend, the DI cap, the heavy page, the minimum at both points, the judge check on the label's render,
+    the placebo drawn blind with its own rows, the ear-score row, the centre read's limits, and the seeded search order.
 
 ## Findings log
 
