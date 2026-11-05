@@ -51,6 +51,7 @@ PLACEBO_FALLBACKS = 2                # fallbacks per part, taken only when a pla
 SCOPE_DB = -3.0                      # undriven crunch units at or above this nonlinear share go on the scope page (F57)
 LABEL_PAGE_OUT = ("cap/ca2a7be3-377d-48e8-94b1-d3cb5f47b32e#sw50r",   # "Too distorted, out of scope" on the label page (F57)
                   "cap/npd1zhu905b#pr12")
+HELD_OUT_READ = {"04cf993bee72": "reaching one half"}   # a part held out of scope, not a partial file: either answer reaches (F57)
 PAGE_NAME, HEAVY_PAGE, SCOPE_PAGE = "capture-ear", "capture-heavy", "capture-scope"
 EAR_SPEC = {"page": PAGE_NAME, "title": "Capture ear", "head": "Amp captures", "h1": "A believable amp tone, from a clean DI?",
             "ask": """A is a guitar DI, B is the same performance played through a captured amp and cab (a neural
@@ -507,6 +508,9 @@ def cmd_scope(_args):
     from learn import pipeline_fix as P
 
     P.require(BATCH["phase"])
+    P.require("phase_l1a_scope")
+    if BATCH["dir"] != CAPTURE_DIR:
+        raise SystemExit("the scope page is the first batch's: on the second, the ear card is the unit itself")
     units = trusted_units()[0]
     heard = {it["unit"] for it in json.loads((root() / "ear-check" / "key.json").read_text())["items"]}
     chosen = scope_cards(units, heard)
@@ -557,10 +561,22 @@ def cmd_heavy_answers(args):
 
 
 def scope_out():
-    """Units out of scope by ear after the gates: the label page's two, and any the scope page did not keep."""
+    """Units out of scope by ear after the gates: the label page's two, and any card of the scope page not kept.
+    Refuses while a card is unheard or the answers are another build's, as the heavy page does."""
+    out = set(LABEL_PAGE_OUT)
+    kp = root() / "scope-key.json"
+    if not kp.exists():
+        return out
+    key = json.loads(kp.read_text())
     p = root() / "scope.json"
-    heard = json.loads(p.read_text())["verdicts"] if p.exists() else {}
-    return set(LABEL_PAGE_OUT) | {u for u, v in heard.items() if v["verdict"] != "keep"}
+    got = json.loads(p.read_text()) if p.exists() else {"build": key["build"], "verdicts": {}}
+    if got["build"] != key["build"]:
+        raise SystemExit("captures/scope.json is not from the scope page's build")
+    cards = [it["unit"] for it in key["items"]]
+    unheard = [u for u in cards if u not in got["verdicts"]]
+    if unheard:
+        raise SystemExit(f"{len(unheard)} scope cards still unheard")
+    return out | {u for u in cards if got["verdicts"][u]["verdict"] != "keep"}
 
 
 def trusted(units):
@@ -700,8 +716,8 @@ def cmd_search(args):
         return
     lags, off = lags_of(tr)
     items = json.loads((root() / "items.json").read_text())["items"]
-    first = [it["unit"] for it in items] + placebo_units(items)
     by = {u["unit"]: u for u in tr}
+    first = [u for u in [it["unit"] for it in items] + placebo_units(items) if u in by]
     order = search_order([u for u in sorted(by) if u not in off], first)
     todo = stage_set(order, len(first), args.stage)
     if args.stage == "all":
@@ -714,12 +730,16 @@ def cmd_search(args):
 
 
 def rest_may_run():
-    """The remaining labels and the centre read: only after the label page, and never on the primary share clear below."""
+    """The remaining labels and the centre read: only after the label page and the scope page, and never on the primary
+    share clear below."""
     gate, stage = root() / "ear-check.json", root() / "stage-check.json"
-    if not gate.exists() or json.loads(gate.read_text()).get("branch") not in ("clear above", "reaching one half"):
+    rep = json.loads(gate.read_text()) if gate.exists() else {}
+    if (rep.get("branch") or HELD_OUT_READ.get(rep.get("build"))) not in ("clear above", "reaching one half"):
         raise SystemExit("the rest waits for the label page, and does not run if the primary share is clear below")
     if not stage.exists() or json.loads(stage.read_text()).get("stop") is not False:
         raise SystemExit("the rest waits for the stage check, and does not run on its stop")
+    if not (root() / "scope.json").exists():
+        raise SystemExit("the rest waits for the scope page")
 
 
 def cmd_night_check(_args):

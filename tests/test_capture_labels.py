@@ -290,7 +290,8 @@ def test_commands_refuse_without_the_ledgers_phase(tmp_path, monkeypatch):
         raise SystemExit(f"no {k}")
     monkeypatch.setattr(P, "require", no)
     a = argparse.Namespace(before_ear=False, lags_only=True, shard=(0, 1), stage="third", exports=[])
-    for cmd in (L.cmd_search, L.cmd_items, L.cmd_answers, L.cmd_heavy_answers, L.cmd_stage_check, L.cmd_page, L.cmd_heavy):
+    for cmd in (L.cmd_search, L.cmd_items, L.cmd_answers, L.cmd_heavy_answers, L.cmd_stage_check, L.cmd_page, L.cmd_heavy,
+                L.cmd_scope, L.cmd_scope_answers):
         with pytest.raises(SystemExit, match="no phase_l1a"):
             cmd(a)
 
@@ -357,7 +358,17 @@ def test_scope_out_drops_the_label_pages_two_and_what_the_scope_page_did_not_kee
     monkeypatch.setattr(L, "LABEL_PAGE_OUT", ("cap/x#a",))
     assert L.trusted(us) == {"cap/y#a"}
     monkeypatch.setattr(L, "LABEL_PAGE_OUT", ())
-    (tmp_path / "scope.json").write_text(json.dumps({"verdicts": {"cap/x#a": {"verdict": "keep"}, "cap/y#a": {"verdict": "heavy"}}}))
+    (tmp_path / "scope-key.json").write_text(json.dumps({"build": "s", "items": [{"unit": "cap/x#a"}, {"unit": "cap/y#a"}]}))
+    with pytest.raises(SystemExit, match="2 scope cards still unheard"):      # the page built, nothing answered
+        L.trusted(us)
+    (tmp_path / "scope.json").write_text(json.dumps({"build": "s", "verdicts": {"cap/x#a": {"verdict": "keep"}}}))
+    with pytest.raises(SystemExit, match="1 scope cards still unheard"):
+        L.trusted(us)
+    (tmp_path / "scope.json").write_text(json.dumps({"build": "other", "verdicts": {}}))
+    with pytest.raises(SystemExit, match="scope page's build"):
+        L.trusted(us)
+    (tmp_path / "scope.json").write_text(json.dumps({"build": "s", "verdicts": {"cap/x#a": {"verdict": "keep"},
+                                                                                "cap/y#a": {"verdict": "heavy"}}}))
     assert L.scope_out() == {"cap/y#a"}                            # only "keep" stays, and it drops that unit alone
     assert L.trusted(us) == {"cap/x#a"}
 
@@ -374,10 +385,32 @@ def test_the_rest_needs_the_page_and_a_clean_stage_check(tmp_path, monkeypatch):
     with pytest.raises(SystemExit):
         L.rest_may_run()
     (tmp_path / "ear-check.json").write_text(json.dumps({"branch": "reaching one half"}))
+    with pytest.raises(SystemExit, match="scope page"):
+        L.rest_may_run()
+    (tmp_path / "scope.json").write_text(json.dumps({"build": "s", "verdicts": {}}))
     L.rest_may_run()
+    (tmp_path / "ear-check.json").write_text(json.dumps({"branch": None, "build": "04cf993bee72"}))    # F57's held-out part
+    L.rest_may_run()
+    (tmp_path / "ear-check.json").write_text(json.dumps({"branch": None, "build": "other"}))           # a truly partial file
+    with pytest.raises(SystemExit, match="label page"):
+        L.rest_may_run()
+    (tmp_path / "ear-check.json").write_text(json.dumps({"branch": "reaching one half"}))
     (tmp_path / "stage-check.json").write_text(json.dumps({"stop": True}))
     with pytest.raises(SystemExit):
         L.rest_may_run()
+
+
+def test_the_default_search_skips_an_item_outside_the_trusted_units(tmp_path, monkeypatch):
+    import argparse
+
+    layout(tmp_path, monkeypatch)                                  # cap/y#a went out on the heavy page
+    monkeypatch.setattr(P, "require", lambda k: {})
+    monkeypatch.setattr(L, "lags_of", lambda tr: ({u["unit"]: 0 for u in tr}, set()))
+    (tmp_path / "items.json").write_text(json.dumps({"items": [{"unit": "cap/y#a", "placebos": ["cap/x#a", "p2", "p3"]}]}))
+    calls = []
+    monkeypatch.setattr(P, "search_units", lambda mine, *a, **k: calls.append([u["unit"] for u in mine]) or 0)
+    L.cmd_search(argparse.Namespace(before_ear=False, lags_only=False, shard=(0, 1), stage="third", recipe="goat"))
+    assert calls == [["cap/x#a"]]
 
 
 def test_a_fallback_comes_due_only_when_the_placebo_gave_no_label():
