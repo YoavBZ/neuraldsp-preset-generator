@@ -20,8 +20,8 @@ Read this block first after any compaction, then the task list, then the finding
 - **Now:** T2.1, this plan, with the report's citations being checked by a subagent.
 - **Next:** T2.2, an independent review of this plan, then T2.3 and Phase 3.
 - **Running jobs and PIDs:** none.
-- **Render or MPS use announced to the ML session:** none. Hold: no renders from this session until the ML session messages
-  that N6 and its centre read (about 2,016 renders) are done. CPU work on stored inputs is fine.
+- **Render or MPS use announced to the ML session:** none. The ML session's renders are finished and the 3 slots are free; it plans
+  none tonight and will say first if an audit asks. Disk 36 GB free, floor 33 GB: outputs stay small.
 - **Blocked on the user:** nothing yet. The user went to sleep at about 22:40 on 2026-11-05 (controller): carry on as far as the
   rules allow, and when finished send the controller two or three plain lines on what was found, checked and left open.
 
