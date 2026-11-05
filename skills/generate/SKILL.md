@@ -346,8 +346,8 @@ Tone King recipes use its verified sync-note selectors. See
     documented value in the spec instead.
     Above all, don't apply an `amp/*` recipe: every one sets the channel and the amp's
     controls, which undoes what was measured (on Squishy Lead it removes the crunch).
-  - **If the file is missing,** say so and ask for one of the user's own Tone King
-    presets.
+  - **If the file is missing,** use the same path under `Tone King Imperial MKII X/`
+    ([installing](../../reference/installing.md)); failing that, ask for one of the user's presets.
 - For a heavier Tone King part, there is no measured baseline: use one of the user's
   own presets, and if they have none, say so rather than stretching a clean or crunch
   one.

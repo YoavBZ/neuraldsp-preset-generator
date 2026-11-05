@@ -142,6 +142,10 @@ out of recipes until its write path and meaning are established.
 
 ## Verify ranges and selector members
 
+Tone King Imperial MKII X sometimes crashes the probe (signal 11) in `values` mode, on
+values that answer on the next run. On 2026-11-05 a wrapper that retried a crashed run
+through `--binary` let the whole audit finish.
+
 Run the pack audit:
 
 ```bash

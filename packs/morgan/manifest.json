@@ -20,17 +20,19 @@
     "SW50R": "sw50r"
   },
   "custom_ir": {
-    "note": "What --strip-irs clears. A cab plays the file named by `path` only while `selector` holds `custom`, so clearing the path alone leaves the plugin showing Custom IR / No File. The selector goes back to `default`, the plugin's own choice for that side (Dynamic 57 left, Condenser 184 right).",
+    "note": "What --strip-irs clears. A cab plays the file named by `path` only while `selector` holds `custom`, so clearing the path alone leaves the plugin showing Custom IR / No File. The selector goes back to `default`, the plugin's own choice for that side (Dynamic 57 left, Condenser 184 right). `flag` is Morgan X's own switch for the same thing, cleared with them; it is not a declared parameter and files in the original layout do not have it.",
     "slots": [
       {
         "path": "cabParameters/leftChosenIRFilePath",
         "selector": "cabParameters/leftMicType",
+        "flag": "cabParameters/leftIsCustomIR",
         "custom": "10",
         "default": "0"
       },
       {
         "path": "cabParameters/rightChosenIRFilePath",
         "selector": "cabParameters/rightMicType",
+        "flag": "cabParameters/rightIsCustomIR",
         "custom": "10",
         "default": "4"
       }

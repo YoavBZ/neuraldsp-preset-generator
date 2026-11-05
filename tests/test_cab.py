@@ -210,6 +210,34 @@ def test_strip_irs_also_moves_the_mic_off_custom_ir():
         )
 
 
+def test_strip_irs_clears_morgan_x_custom_ir_flags():
+    """Morgan X says a side plays a file in its own flag; a stripped file must not
+    keep it. No X preset that uses an IR was at hand, so this one is built: the
+    sample in the X layout with both flags set, as they read on IR-free files."""
+    from scripts.apply_spec import strip_custom_irs
+    from tests.test_valuetree import _read, _write
+
+    def with_flags(node):
+        kind, props, children = node
+        if kind == "cabParameters":
+            props = props + [(f"{side}IsCustomIR", b"\x01\x06\x05true\x00")
+                             for side in ("left", "right")]
+        return kind, props, [with_flags(c) for c in children]
+
+    tree = with_flags(_read(EXAMPLE_PRESET.read_bytes())[0])
+    preset = build(parse(b"morgan-x" + _write(tree)[len(b"morgan"):]))
+    set_parameter(preset, "cabParameters", "leftChosenIRFilePath", "/tmp/x.wav")
+    set_parameter(preset, "cabParameters", "leftMicType", "10")
+
+    changed = {key: (before, after)
+               for _, key, before, after in strip_custom_irs(preset)}
+    assert changed["leftIsCustomIR"] == ("true", "false")
+    assert changed["rightIsCustomIR"] == ("true", "false")
+    after = build(parse(write(preset.tokens)))
+    assert after.by_path[("cabParameters", "leftIsCustomIR")].value == "false"
+    assert after.by_path[("cabParameters", "rightIsCustomIR")].value == "false"
+
+
 def test_strip_irs_leaves_a_real_mic_alone():
     """Only a selector actually pointing at the file may be moved.
 

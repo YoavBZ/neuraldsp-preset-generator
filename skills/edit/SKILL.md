@@ -33,8 +33,8 @@ that belong to it.
 
 `${CLAUDE_PLUGIN_ROOT}/packs/<id>/tone.md` has the pack-specific adjustment
 vocabulary and recipes. Use its exact parameter names and value convention;
-Morgan rotation controls use 0–100 while Tone King fraction controls use
-0.0–1.0. Typical translations are:
+Morgan and Tone King X rotation controls use 0–100 while Tone King fraction controls
+use 0.0–1.0. Typical translations are:
 
 - **"more reverb"** → raise the post-reverb mix modestly, or the live amp's own
   reverb control for a spring-tank character
