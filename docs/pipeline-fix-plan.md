@@ -73,7 +73,10 @@ W carries the agreement: among S, FT and D_fix, agreement is not shown (+0.04 [�
 is not ruled out). The ML review of 2026-11-05 adds N1 to N3, masked FT and a better search, on trusted data. L1a, declared next: the first 50 captures, the ear gate, a blind check of search labels against S
 and a placebo before the rest of the labels, then their centre against GOAT's at the same count.
 Overnight (F55): masked FT reads tone better on GOAT and holds cab; by the score it is closer there by item, not shown by fold, and worse on BKS; the learning curve is undecided.
-Findings F1–F55.
+N4 (F56, one listener, the same 10 parts): FTm is not known by ear. It is above S on 4 of 10 parts (0.40 [0.11, 0.69]), level with FT on
+closeness, and by the score S is closer on 8 of these 10 parts, the reverse of the two development sets (the pooled row on t reaches zero). S and FT repeat L0's split on the same clips:
+the models lead on clean parts and off the ac20, S on crunch and on the ac20, and class, amp and S's setting still cannot be pulled apart.
+Findings F1–F56.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -2018,6 +2021,7 @@ instead of generating unrealistic presets our own?"):
       was read.
     - *Review (2026-11-05, independent):* changes required and made: the items after the ear, the placebos drawn only from
       trusted units, the stage check's figures unread before it, and the guards above.
+  - **L1a's gates (2026-11-05).** First batch's ear gate: 49 of 50 passed, 1 unsure (Recording 28), which the gate drops, 3 units. Heavy check: 4 cards, 2 kept, 2 out. 145 units pass both gates; the lag rule keeps 132, from 49 captures and 20 creators, 20 to 27 per amp and class. Stage check on those: held best − S −0.356 [−0.389, −0.323] by creator (20 clusters), `inputGain` at a bound on 8%, go on; search gain 0.365 beside BKS's 0.364 and GOAT's 0.307. Label page built, 72 renders, every fresh render within its checks, build 04cf993bee72, 14 items, answers pending.
 - **L1b, the second capture batch (ledger `phase_l1b`; 2026-11-05).** The user allowed more TONE3000 downloads the night L1a was
   declared, and signed the fetch in. 150 more named captures (`manifest-batch2.csv`): 108 packs, 79 creators (11 also in the first
   batch), 8 families, 91 crunch and 59 clean by the makers' words and the fetcher's guess on 17, 50 calibrated, 137 A2 and
@@ -2100,6 +2104,8 @@ instead of generating unrealistic presets our own?"):
     ranked before. A clear row is a lead for L2. A row reaching one half is not known by ear. On these 10 parts in 7 bands a true 75% clears about half the time (52%), a true 60%
     clears 20%, chance 4% (simulated on `boot_share`). L0 chose each amp by S's closeness, so FTm − S leans toward S. FT's clips carry no hold, so FTm − FT mixes the hold and the
     mask. One listener, on parts heard before. FTm's stored judges stay unread until the page is scored. No other V-real direction is read.
+    - *Outcome (2026-11-05, F56):* every row reaches one half, so FTm is not known by ear, against S or FT. It picks nothing and adds no ear lead for L2 by the declared map; F55's lead on GOAT, by knob and score, stands as it was.
+      By the score S is closer on these parts (ln(d_S/d_FTm) −0.107 [−0.198, −0.021]).
   - **N5, does the reading survive the stem? (declared 2026-11-05 after F55; ledger `phase_n5`; `learn/night3.py`).** Every model above trains and reads a real unit in a
     backing; the product reads an X-LANCE stem, and the ML review found the two inputs far apart (domain AUC 0.997). V-real is the only stem read so far. So each labelled BKS
     and GOAT unit's variant 0 mix is rebuilt (its features must equal the stored ones exactly), separated by X-LANCE, and brought to the product's level (the mix at −12.25 LUFS,
@@ -4236,6 +4242,37 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **Caveats.** Knob reads are agreement with search labels, not sound. Masked heads stay W's and are held at S at the readout, so nothing here tests those controls. One training recipe, both seeds pooled, the paired GOAT rows uncorrected (six knob, six score, N3's nine). FTm was chosen on the reads N3 repeats. Nothing here went through a stem.
 - **References.** `learn/reads_v3.py` (verbatim, sha256 a04785f3a4838ae2), `night2/reads-v3-ftm.json`, `night2/reads-v3-n3.json`, `real/report-night2.json`, `goat/report-night2.json`, `night2/report.json`, ledger `phase_night2`, `phase_n1_first_read`, `phase_n1_score_read`, `phase_n3`, `phase_n3_outcome`; the ML review's document. Results review: 13 required changes, all made.
 
+### F56. N4, masked FT by ear on L0's parts: not known by ear, level with FT on closeness, behind S by the score; S and FT repeat L0's split on the same clips (phase_n4, 40 renders, one listener)
+- **What was heard.** 12 of 12 answered, all marked sure, 10 first hearings, 7 bands, build d1197bc57c3f. Band-weighted mean rank / closeness (0 far, 1 somewhat, 2 close, 3 very close): S 1.86/0.71, FT 1.93/0.71, FTm 2.21/0.64.
+
+  | Row | Above, rank share | Rank gap | Closeness gap | Score, ln(d_b / d_a) |
+  |---|---|---|---|---|
+  | FTm over S | 4 of 10, 0.40 [0.11, 0.69] | −0.36 [−1.29, +0.64] | −0.07 [−0.71, +0.57] | −0.107 [−0.198, −0.021] |
+  | FTm over FT | 4 of 10, 0.40 [0.10, 0.75] | −0.29 [−1.00, +0.43] | −0.07 [−0.36, +0.14] | −0.051 [−0.120, +0.010] |
+  | FT over S | 5 of 10, 0.50 [0.20, 0.78] | −0.07 [−0.79, +0.64] | 0.00 [−0.57, +0.57] | −0.056 [−0.144, +0.005] |
+
+  Share and score are pooled over parts, clustered by band; the gaps are band-weighted. Above zero favours the first candidate, so the score's sign here is the reverse of F55's table. FTm and FT get equal ratings on 8 of 10 parts, though 5 of those 8 are both far, a floor, and FT ranks above FTm on 4 of the 5; their clips correlate above 0.96 on 6 of 10 parts.
+
+  Other weighting: closeness pooled FTm over S +0.10 [−0.71, +0.82], FTm over FT 0.00 [−0.25, +0.20], FT over S +0.10 [−0.56, +0.69]; score band-weighted −0.117 [−0.200, −0.038], −0.037 [−0.097, +0.014], −0.080 [−0.173, +0.001], the last with F54's mean on the same clips. No row changes its reading. FTm over S leaving one cell out: ac20/clean 0.38 [0.11, 0.71], ac20/crunch 0.67 [0.33, 1.00], pr12/crunch 0.33 [0.00, 0.64], sw50r/clean 0.25 [0.00, 0.57], sw50r/crunch 0.44 [0.12, 0.75]; all reach one half.
+- **By the declared map.** All three rows reach one half: not known by ear, and FTm picks nothing. A true 75% clears about half the time on this page, so this does not rule the model out, though the primary row's upper end sits below 0.75 on the declared bootstrap (0.69; pooled cluster t 0.76) and its point estimate below one half. FTm's better reading of tone (F55) is not shown by ear against FT on these parts (0.40 [0.10, 0.75]).
+- **Where the answers split (counts and means, no declared intervals).**
+
+  | Parts | S | FT | FTm | FT above S | FTm above S |
+  |---|---|---|---|---|---|
+  | Clean (4 parts, 2 bands) | 2.50/0.00 | 1.75/1.00 | 1.75/1.25 | 3 of 4 | 3 of 4 |
+  | Crunch (6, 5) | 1.60/1.00 | 2.00/0.60 | 2.40/0.40 | 2 of 6 | 1 of 6 |
+  | ac20 (6, 5) | 1.40/0.60 | 2.20/0.00 | 2.40/0.20 | 1 of 6 | 1 of 6 |
+  | Off the ac20 (4, 4) | 2.75/0.50 | 1.50/1.75 | 1.75/1.50 | 4 of 4 | 3 of 4 |
+
+  Rank / closeness, band-weighted within each row. Class, amp and S's setting stay confounded. L0 chose every part's amp by S's closeness by the score, off the ac20 as on it, so the whole page leans toward S; that does not explain why S leads on the ac20 and trails off it. Crunch rank gaps (5 bands, t) FTm −0.80 [−2.37, +0.77], FT −0.40 [−1.68, +0.88].
+- **The same clips twice.** S's and FT's clips are L0's stored renders. FT against S keeps its order on 8 of 10 parts between the pages, the closeness gaps correlate 0.88, and the amp split repeats in count (4 of 4 and 1 of 6; the one ac20 part differs). Repeats on this page: same top on 2 of 2, same order on 1. That is the listener's consistency, not a second sample: the parts, clips and listener are the same. Ratings do not carry across pages: the same clips scored S 1.36 and FT 1.57 on L0, with W on the page, and 0.71 each here.
+- **Absolute closeness.** The best rating on a part was close on 3, somewhat on 6, far on 1, and very close on none. None of the three was rated very close on this page, but ratings move between pages: on L0 the same clips got very close on 3 of these parts (FT on femme ElecGtr5, colour-me-red ElecGtr02 and It Was My Fault ElecGtr3, S on femme ElecGtr5).
+- **The score.** FTm is further than S on 8 of 10 parts (ln(d_FTm/d_S) median +0.066, mean without the largest part +0.070), so one part does not carry the row. On F55's development sets it goes the other way (FTm − S −0.123 and −0.094; FT − S −0.177 and −0.073), so those gains by the score did not reach these parts. The causes are not separated: amp chosen by S, other guitars in the mix, rigs outside training, the measure DI. Ear-score Spearman, FTm against S, one closeness gap and one ln(d_S/d_FTm) a part: +0.57 [−0.02, +0.93], reaching zero. On clean parts the ear moves a long way (S 0.00 to FTm 1.25) while the score stays level (ln(d_FTm/d_S) mean −0.004, FT's −0.013), as in F54.
+- **The review's first step, beside (zero renders).** F55's and N5b's BKS and fold rows are t already; GOAT's item rows use the normal 1.6449 at df 129, within 0.0002 of t. Two rows change in the third place, FTm − FT −0.037 to −0.038 and FT − S −0.094 to −0.095, and no reading moves. F54 on t keeps every conclusion (W − S rank −1.79 [−2.90, −0.67]; FT and D_fix reach zero). N4's band-weighted rows on t: FTm over S rank −0.36 [−1.61, +0.89], closeness −0.07 [−0.93, +0.79], score −0.12 [−0.22, −0.02]. The pooled row on t (`rescore.clustered`) reaches zero: −0.107 [−0.220, +0.006], band sign flip p 0.11. So "behind S by the score" holds band-weighted, on 6 of 7 bands and 8 of 10 parts, not on every interval. `tonal` is not in this plan's judged rows, because `knob_ceiling.judge` keeps `distance` alone. The older factory-menu stores (`direc/rescore`, `songs-check`, `confirm`) keep it but hold no model answers, so for models that half of the step needs re-judged audio. Three more bootstrap sites were not redone: `direct_stems.py:268`, `pipeline_fix.py:4391`, `fx_reader.py:632`.
+- **What it changes.** No base moves, and the answers do not choose between FT and FTm. What can separate class from amp is a crossed design: the capture label check's items, and L2 if it randomises the amp as the ML review proposes. S is one setting per amp and class, so S's setting stays tied to the cell unless L2 varies it (F54).
+- **Caveats.** One listener, 10 parts, all heard before. L0's amp choice leans FTm − S toward S. FT's clips carry no hold, so FTm − FT mixes the hold and the mask. At least V-real's fifth read. Nothing here is a verdict on a real song in general.
+- **References.** `learn/ear_ftm.py`, `ear-ftm/key.json`, `ear-ftm/score.json`, ledger `phase_n4`, `phase_n4_outcome`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
@@ -4255,7 +4292,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   61,790 in all. **FT's control groups (2026-11-02):** 2,880, about 64,670 in all. **The judge against the ear
   (2026-11-02):** 60 (56, and 4 after the amendment), about 64,730 in all. **J5's fresh page (2026-11-03):** 56
   (28 kept, each with its priming render), about 64,790 in all. **L0 (2026-11-04):** 80 (40 kept, each with its
-  priming render), about 64,870 in all. **The night of 2026-11-05 (labels ahead of the ear, nothing read from them):** L1a's lags 900 and labels 5,602 on v2, L1b's lags 882 and labels 5,539, N2 1,207, FTh and FTm's reads 2,680, N4's 40: 16,850, N5b's 1,336: about 83,000 in all.
+  priming render), about 64,870 in all. **The night of 2026-11-05 (labels ahead of the ear, nothing read from them):** L1a's lags 900 and labels 5,602 on v2, L1b's lags 882 and labels 5,539, N2 1,207, FTh and FTm's reads 2,680, N4's 40: 16,850, N5b's 1,336, L1a's label page 72: about 83,000 in all.
 - **MPS used:** about 4 h before 5B.2 (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and
   backing runs, the k-fold, phase 5A's two 10-minute seeds); 5B.2's 12 trainings about 2 h more (arm P 4 × 7.2–8.4 min,
   arm R 8 × 11.4 min); stage 2's 8 trainings 1.5 h more (8 × 11.4 min); 5C's RG 8 trainings 1.75 h more (8 × 13.0–13.3
