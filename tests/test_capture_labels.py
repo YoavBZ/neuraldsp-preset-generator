@@ -337,6 +337,31 @@ def test_heavy_candidates_are_the_driven_units_of_passed_captures():
     assert L.heavy_candidates(us, {"x": {"verdict": "amp"}, "y": {"verdict": "odd"}}) == ["a"]
 
 
+def test_scope_cards_are_undriven_crunch_at_the_line_and_not_yet_heard():
+    us = [{"unit": "a", "cls": "crunch", "split": "uncertain", "nonlinear_db": -1.0},
+          {"unit": "b", "cls": "crunch", "split": "uncertain", "nonlinear_db": L.SCOPE_DB},
+          {"unit": "c", "cls": "crunch", "split": "uncertain", "nonlinear_db": L.SCOPE_DB - 0.01},    # under the line
+          {"unit": "d", "cls": "crunch", "split": "driven", "nonlinear_db": 2.0},                     # had the heavy page
+          {"unit": "e", "cls": "clean", "split": "uncertain", "nonlinear_db": -1.0},
+          {"unit": "f", "cls": "crunch", "split": "uncertain", "nonlinear_db": -2.0}]                 # on the label page
+    assert L.scope_cards(us, {"f"}) == ["a", "b"]
+
+
+def test_scope_out_drops_the_label_pages_two_and_what_the_scope_page_did_not_keep(tmp_path, monkeypatch):
+    us = layout(tmp_path, monkeypatch, verdicts=False)
+    (tmp_path / "ear-key.json").write_text(json.dumps({"build": "e"}))
+    (tmp_path / "ear.json").write_text(json.dumps({"build": "e", "verdicts": {"x": {"verdict": "amp"}, "y": {"verdict": "amp"}}}))
+    (tmp_path / "heavy.json").write_text(json.dumps({"build": "b", "verdicts": {"cap/y#a": {"verdict": "keep"}}}))
+    assert L.scope_out() == set(L.LABEL_PAGE_OUT)                  # no scope page yet: the label page's two alone
+    assert L.trusted(us) == {"cap/x#a", "cap/y#a"}
+    monkeypatch.setattr(L, "LABEL_PAGE_OUT", ("cap/x#a",))
+    assert L.trusted(us) == {"cap/y#a"}
+    monkeypatch.setattr(L, "LABEL_PAGE_OUT", ())
+    (tmp_path / "scope.json").write_text(json.dumps({"verdicts": {"cap/x#a": {"verdict": "keep"}, "cap/y#a": {"verdict": "heavy"}}}))
+    assert L.scope_out() == {"cap/y#a"}                            # only "keep" stays, and it drops that unit alone
+    assert L.trusted(us) == {"cap/x#a"}
+
+
 def test_the_rest_needs_the_page_and_a_clean_stage_check(tmp_path, monkeypatch):
     monkeypatch.setattr(L, "root", lambda: tmp_path)
     with pytest.raises(SystemExit):
