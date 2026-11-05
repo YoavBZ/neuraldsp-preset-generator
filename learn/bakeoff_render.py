@@ -1,0 +1,417 @@
+"""Model comparison, by the score (`docs/model-comparison-plan.md`, Phase 5), on read 2's units.
+
+    $TORCH_PY -m learn.bakeoff_render predict --tag M-ridge               # answers, CPU, zero renders
+    $MAIN -m learn.bakeoff_render render --tags S,RcBG,P2b-ftm,M-ridge --shard 0/3
+    $MAIN -m learn.bakeoff_render report OUT.json --tags M-ridge          # zero renders
+
+A ridge candidate reads each direction from its search half. It copies stored `RcBG`'s settings for the direction, overwrites
+only the searched knobs, and fits residuals around RcBG's own values, so `ridge - centre` reads only the knob gain. Each direction
+is judged on both halves with `distance`, `tonal` and the cross-fitted term; no audio is kept. A re-rendered stored tag is held
+to its stored judge and render hash. Shards resume, and stop between units if PF/bakeoff/STOP exists. S, RcBG and FTm are
+rendered again because stored judges hold `distance` only.
+"""
+from __future__ import annotations
+
+import argparse
+import collections
+import json
+import math
+import pathlib
+import sys
+import time
+
+import numpy as np
+
+PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
+if str(PLUGIN_ROOT) not in sys.path:
+    sys.path.insert(0, str(PLUGIN_ROOT))
+
+ANY = "*"
+FLOOR_GB = 33
+SETS = ("goat", "bks")
+TERMS = ("distance", "tonal", "cross")
+FTM = "P2b-ftm"
+
+
+# --- pure functions (unit-tested) ------------------------------------------------------------------------------------
+
+def overwrite(settings, dims, base, residual):
+    """`settings` {(module, key): stored} with each searched knob at its centre value plus the residual, clipped.
+    dims: [(dim, head)]; base, residual: per head. -> a new dict."""
+    from learn import knob_ceiling as K
+
+    out = dict(settings)
+    for d, j in dims:
+        out[(d.module, d.key)] = K.fmt(d.from_unit(min(max(float(base[j] + residual[j]), 0.0), 1.0)))
+    return out
+
+
+def direction_rows(units):
+    """[(key, search, held)]: each key's answer for a search half is scored on the other."""
+    return [(k, s, h) for k in units for s, h in (("A", "B"), ("B", "A"))]
+
+
+def value(judge, tag, key, search, held, term):
+    """One direction's term: None (not rendered), "refused", or a finite value."""
+    g = judge.get(tag, {}).get(key) or {}
+    v = g.get(search) or g.get(ANY)
+    if v is None or held not in v:
+        return None
+    x = v[held] and v[held].get(term)
+    return x if isinstance(x, (int, float)) and math.isfinite(x) else "refused"
+
+
+def contrast(a, b, s, term):
+    """A direction's contrast of a on b, for its three stored values: ln ratio, or the plain difference for `cross`, which can
+    be negative; a refused answer scores as S; S refused or a value missing gives None."""
+    if s is None or s == "refused" or a is None or b is None:
+        return None
+    a, b = (s if a == "refused" else a), (s if b == "refused" else b)
+    if term == "cross":
+        return a - b
+    return math.log(a / b) if a > 0 and b > 0 else None
+
+
+def t_interval(pairs, t90):
+    """[(cluster, value)] -> the mean of cluster means with its 90% t interval and the count below zero."""
+    g = collections.defaultdict(list)
+    for c, v in pairs:
+        g[c].append(v)
+    m = np.array([np.mean(v) for v in g.values()])
+    n = len(m)
+    if n < 2:
+        return {"mean": float(m.mean()) if n else None, "clusters": n}
+    h = t90(n - 1) * m.std(ddof=1) / math.sqrt(n)
+    return {"mean": float(m.mean()), "lo90": float(m.mean() - h), "hi90": float(m.mean() + h), "closer": int((m < 0).sum()), "clusters": n}
+
+
+def strata(values, n=3):
+    """{key: stratum 0..n-1} by rank of a value."""
+    keys = sorted(values, key=values.get)
+    return {k: min(i * n // max(len(keys), 1), n - 1) for i, k in enumerate(keys)}
+
+
+# --- paths and units -------------------------------------------------------------------------------------------------
+
+def root():
+    from learn import pipeline_fix as P
+
+    return P.out_dir() / "bakeoff"
+
+
+def answers_path(which, tag):
+    return root() / "score-answers" / which / f"{tag}.json"
+
+
+def judge_path(which, tag, key):
+    return root() / "score-judge" / which / tag / f"{key.replace('/', '__')}.json"
+
+
+def stored_dir(which):
+    from learn import pipeline_fix as P
+
+    return P.out_dir() / (P.GOAT_DIR if which == "goat" else P.REAL_DIR)
+
+
+def read_units():
+    """[(set, unit record with fold)]: BKS's 40 read units on all three amps' keys, then GOAT's trusted units."""
+    from learn import pipeline_fix as P
+
+    folds = P.real_labels(2)[2]
+    bks = json.loads((P.out_dir() / P.REAL_DIR / "answers" / "RcBG.json").read_text())["parts"]
+    return [("bks", dict(p_, fold=folds[p_["di"]])) for p_ in bks] + [("goat", p_) for p_ in P.goat_read_units()]
+
+
+def keys_of(which, prt):
+    from learn import pipeline_fix as P
+
+    return [P.real_key(prt, a) for a in P.AMPS3] if which == "bks" else [P.real_key(prt, prt["amp"])]
+
+
+def stored_answers(which, tag):
+    """A tag's {key: {search or "*": {select, settings}}}: this plan's own, then the stored read's."""
+    from learn import local_objective as LO
+    from learn import pipeline_fix as P
+
+    own = answers_path(which, tag)
+    if own.exists():
+        return json.loads(own.read_text())["answers"]
+    if tag == "S" and which == "goat":
+        ms = P.A_menu_S()
+        out = {}
+        for p_ in P.goat_read_units():
+            sel, S = ms[p_["amp"]][p_["cls"]]
+            out[P.real_key(p_, p_["amp"])] = {ANY: {"select": sel, "settings": LO.sdict(S)}}
+        return out
+    return json.loads((stored_dir(which) / "answers" / f"{tag}.json").read_text())["answers"]
+
+
+# --- answers ---------------------------------------------------------------------------------------------------------
+
+def fit_fold(k, name, fit, data, centres):
+    """A ridge-family candidate on fold k's training records, residuals about the fold's centres.
+    -> predict(features [m, d], cells) -> residuals [m, knobs]."""
+    from learn import bakeoff as B
+    from learn import reads_v3 as R
+    from learn import trusted_data_t3 as T3
+
+    rows_tr, clusters, files = B.training_set("real", k, data)
+    enc = T3.encode_for(T3.FULL)
+    Y = [np.stack(z) for z in zip(*(enc(h["label"]) for h in rows_tr))]
+    c, cm = Y[0].astype(float), Y[1].astype(float)
+    cells = [(h["amp"], h["cls"]) for h in rows_tr]
+    mask = cm * np.stack([R.searched(*q)[0] for q in cells])
+    resid = (c - np.stack([centres[(k, *q)] for q in cells])) * mask
+    X = np.stack([[B.feature(name, None, f, h["amp"], h["cls"]) for f in fs] for h, fs in zip(rows_tr, files)])
+    n, v, h_, d = X.shape
+    rep = np.repeat(np.arange(n), v * h_)
+    flat, means = B.centre_within(X.reshape(-1, d), [cells[i] for i in rep])
+    m, comp = B.pca(flat)
+    Z = (flat - m) @ comp.T
+    heads = {}
+    for j in np.nonzero(mask.sum(0))[0]:
+        keep = mask[rep, j] > 0
+        if keep.sum() >= 2 * v:
+            heads[int(j)] = B.FITS[fit](Z[keep], resid[rep, j][keep], [clusters[i] for i, w in zip(rep, keep) if w])
+
+    def predict(x, cell):
+        q = (B.centre_within(x, cell, means)[0] - m) @ comp.T
+        out = np.zeros((len(x), c.shape[1]))
+        for j, f in heads.items():
+            out[:, j] = f(q)
+        return out
+    return predict
+
+
+def cmd_predict(a):
+    from learn import bakeoff as B
+    from learn import full_space as F
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+    from learn import pipeline_fix as P
+    from learn import trusted_data_t3 as T3
+
+    if a.tag not in B.CANDIDATES or B.CANDIDATES[a.tag][1] != "ridge" or B.CANDIDATES[a.tag][2] != "real":
+        raise SystemExit("predict takes a real-trained ridge candidate; arms have their own answers")
+    name, fit, _ = B.CANDIDATES[a.tag]
+    brecs, by_unit, folds = P.real_labels(2)
+    grecs, gunits, _ = P.goat_labels()
+    data = (brecs, by_unit, folds, grecs, gunits)
+    ms = P.A_menu_S()
+    enc = T3.encode_for(T3.FULL)
+    D = F.by_name()
+    stored = {w: stored_answers(w, "RcBG") for w in SETS}
+    units = read_units()
+    centres = {}
+    for which, prt in units:                            # RcBG holds one setting per (fold, amp, class): take it from the store
+        for key in keys_of(which, prt):
+            amp = key.rsplit("|", 1)[1]
+            st = LO.tdict(stored[which][key][ANY]["settings"])
+            v = enc(F.label_of(st, amp))[0].astype(float)
+            q = (prt["fold"], amp, prt["cls"])
+            if q in centres and not np.allclose(centres[q], v):
+                raise SystemExit(f"{q}: RcBG differs within a cell")
+            centres[q] = v
+    # A training cell of a fold with no read unit gets its centre the way RcBG was built.
+    src = {k: P.centre_records(brecs, by_unit, folds, grecs, gunits, k) for k in range(P.REAL_FOLDS)}
+
+    def cls_of(r):
+        return (by_unit[r["unit"]] if r["unit"] in by_unit else gunits[r["unit"]])["cls"]
+
+    for k in range(P.REAL_FOLDS):
+        for amp in P.AMPS3:
+            for cls in ("clean", "crunch"):
+                if (k, amp, cls) not in centres:
+                    sel, S = ms[amp][cls]
+                    labels = [LO.tdict(r["label"]) for r in src[k]["RcBG"] if r["amp"] == amp and cls_of(r) == cls]
+                    centres[(k, amp, cls)] = enc(F.label_of(P.rc_setting(K.space(amp, S), S, labels), amp))[0].astype(float)
+    models = {k: fit_fold(k, name, fit, data, centres) for k in range(P.REAL_FOLDS)}
+    out = {w: {} for w in SETS}
+    for which, prt in units:
+        for key in keys_of(which, prt):
+            amp = key.rsplit("|", 1)[1]
+            cell = (amp, prt["cls"])
+            sel, S = ms[amp][prt["cls"]]
+            base = LO.tdict(stored[which][key][ANY]["settings"])
+            dims = [(D[n], j) for j, n in enumerate(F.CONT) if (D[n].module, D[n].key) in {(d.module, d.key) for d in K.space(amp, S)}]
+            x = B.feature(name, None, str(P.dfix_input_path(prt["unit"], 0)), amp, prt["cls"])
+            res = models[prt["fold"]](x, [cell, cell])
+            c = centres[(prt["fold"], *cell)]
+            out[which][key] = {h: {"select": stored[which][key][ANY]["select"], "settings": LO.sdict(overwrite(base, dims, c, res[i]))}
+                               for i, h in enumerate("AB")}
+    for which, ans in out.items():
+        p = answers_path(which, a.tag)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"tag": a.tag, "code_key": B.code_key(), "time": time.strftime("%Y-%m-%d %H:%M:%S"), "answers": ans}))
+        print(a.tag, which, len(ans), "keys", flush=True)
+
+
+# --- renders ---------------------------------------------------------------------------------------------------------
+
+def scored(ref, y, di, lag):
+    """{half: {term: value}} or a half's None on refusal; `band_errors`' distance is held to J0's."""
+    from analysis.aligned import aligned_distance
+
+    from learn import bakeoff_judge as BJ
+    from learn import knob_ceiling as K
+
+    out = {}
+    for h, (a, b) in K.R.HALVES.items():
+        r = aligned_distance(ref, y, di, lag=lag, render_latency=K.P.LATENCY, start_s=a, end_s=b)
+        if r.distance is None:
+            out[h] = None
+            continue
+        t = BJ.terms_of(BJ.band_errors(ref, y, di, K.P.LATENCY, a, b, lag=lag))
+        if abs(t["distance"] - r.distance) > 1e-9:
+            raise SystemExit(f"band_errors left J0: {t['distance']} against {r.distance}")
+        out[h] = {"distance": r.distance, "tonal": r.tonal, "cross": t["cross"]}
+    return out
+
+
+def stored_record(which, tag, key):
+    from learn import pipeline_fix as P
+
+    p = stored_dir(which) / "judge" / tag / f"{key.replace('/', '__')}.json"
+    return json.loads(p.read_text()) if p.exists() else None
+
+
+def cmd_render(a):
+    from learn import audibility_measure as AM
+    from learn import cc_build as CB
+    from learn import local_objective as LO
+    from learn import pipeline_fix as P
+    from learn import pretrain_set as PS
+    from learn import song_bank as B
+
+    tags = [t for t in a.tags.split(",") if t]
+    ans = {w: {t: stored_answers(w, t) for t in tags} for w in SETS}
+    k, n = a.shard
+    units = read_units()
+    mine = [q for j, q in enumerate(units) if j % n == k]
+    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
+    LO._wait_cap()
+    renders = 0
+    for which, prt in mine:
+        if (root() / "STOP").exists():
+            print("STOPPED between units", flush=True)
+            return
+        if PS.free_gb() < FLOOR_GB:
+            raise SystemExit(f"DISK GUARD: free disk below {FLOOR_GB} GB")
+        if which == "goat":
+            lag = prt["lag"]
+        else:
+            lag = json.loads((P.out_dir() / P.REAL_DIR / "lags" / f"{prt['unit'].replace('/', '__')}.json").read_text())["lag"]
+            if lag is None:
+                continue
+        di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
+        di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
+        ref = P.real_amp_track(prt["sd"], prt["track"], prt["start_s"])
+        for key in keys_of(which, prt):
+            amp = key.rsplit("|", 1)[1]
+            for t in tags:
+                if key not in ans[which][t]:
+                    continue
+                out = judge_path(which, t, key)
+                if out.exists():
+                    continue
+                rec = {"unit": prt["unit"], "amp": amp, "tag": t, "lag": lag, "judge": {}, "render_sha256": {}}
+                for search, ask in sorted(ans[which][t][key].items()):
+                    st = LO.tdict(ask["settings"])
+                    y = np.asarray(AM.fresh_render(CB.new_renderer, di32, ask["select"], st, st), np.float64)[trim[0]:trim[1]]
+                    renders += 2
+                    rec["judge"][search] = scored(ref, y, di, lag)
+                    rec["render_sha256"][search] = AM.audio_sha(y)
+                old = stored_record(which, t, key)
+                if old is not None:                     # a stored tag must come back the same
+                    for search, v in rec["judge"].items():
+                        same = old["render_sha256"].get(search) == rec["render_sha256"][search]
+                        close = all(old["judge"][search][h] == (v[h] or {}).get("distance") or
+                                    abs(old["judge"][search][h] - v[h]["distance"]) < 1e-9 for h in v if v[h])
+                        if not (same and close):
+                            raise SystemExit(f"{t} {key} {search}: differs from its stored render or judge")
+                out.parent.mkdir(parents=True, exist_ok=True)
+                tmp = out.with_suffix(".tmp")
+                tmp.write_text(json.dumps(rec))
+                tmp.replace(out)
+        print(f"{which} {prt['unit'][-50:]}: renders so far {renders}", flush=True)
+    print(f"BAKEOFF-RENDER DONE {k}/{n}: {renders} renders", flush=True)
+
+
+# --- the report ------------------------------------------------------------------------------------------------------
+
+def cmd_report(a):
+    from learn import pretrain_set as PS
+
+    tags = [t for t in a.tags.split(",") if t]
+    base = ("RcBG", FTM, "S")
+    out = {}
+    for which in SETS:
+        judge = {}
+        for t in {*tags, *base}:
+            judge[t] = {}
+            for p in (root() / "score-judge" / which / t).glob("*.json"):
+                r = json.loads(p.read_text())
+                judge[t][f"{r['unit']}|{r['amp']}"] = r["judge"]
+        keys = sorted(judge["S"])
+        folds = {f"{prt['unit']}|{key.rsplit('|', 1)[1]}": prt for w, prt in read_units() if w == which for key in keys_of(w, prt)}
+        d_s = {}
+        for key in keys:
+            vals = [value(judge, "S", key, s, h, "distance") for _, s, h in direction_rows([key])]
+            vals = [v for v in vals if isinstance(v, float)]
+            if vals:
+                d_s[key] = float(np.mean(vals))
+        band = strata(d_s)
+        rows = {}
+        for x, y in ([(t, b) for t in tags for b in base] + [(FTM, "RcBG"), (FTM, "S"), ("RcBG", "S")]):
+            for term in TERMS:
+                pts, by_stratum, cnt = [], collections.defaultdict(list), collections.Counter()
+                for key, s, h in direction_rows(keys):
+                    c = contrast(value(judge, x, key, s, h, term), value(judge, y, key, s, h, term),
+                                 value(judge, "S", key, s, h, term), term)
+                    if c is None:
+                        cnt["dropped"] += 1
+                        continue
+                    prt = folds[key]
+                    pts.append((prt, c, key))
+                    if key in band:
+                        by_stratum[band[key]].append((prt["unit"].split("@")[0] if which == "goat" else prt["di"], c))
+                cluster = (lambda q: q["unit"].split("@")[0]) if which == "goat" else (lambda q: q["di"])
+                rows[f"{x} - {y} | {term}"] = {
+                    "directions": len(pts), **cnt,
+                    "by_cluster": t_interval([(cluster(p), c) for p, c, _ in pts], PS.t90),
+                    "by_fold": t_interval([(p["fold"], c) for p, c, _ in pts], PS.t90),
+                    "by_d_S": {str(q): t_interval(v, PS.t90) for q, v in sorted(by_stratum.items())}}
+        out[which] = rows
+    pathlib.Path(a.out).write_text(json.dumps(out, indent=1))
+    for which in SETS:
+        for name, r in out[which].items():
+            if name.endswith("distance"):
+                c = r["by_cluster"]
+                print(which, name, f"{c.get('mean', float('nan')):+.3f} [{c.get('lo90', float('nan')):+.3f}, {c.get('hi90', float('nan')):+.3f}] n {r['directions']}", flush=True)
+
+
+def shard(s):
+    k, n = s.split("/")
+    return int(k), int(n)
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    p = sub.add_parser("predict")
+    p.add_argument("--tag", required=True)
+    p.set_defaults(fn=cmd_predict)
+    p = sub.add_parser("render")
+    p.add_argument("--tags", required=True)
+    p.add_argument("--shard", type=shard, default=(0, 1))
+    p.set_defaults(fn=cmd_render)
+    p = sub.add_parser("report")
+    p.add_argument("out")
+    p.add_argument("--tags", required=True)
+    p.set_defaults(fn=cmd_report)
+    a = ap.parse_args(argv)
+    a.fn(a)
+
+
+if __name__ == "__main__":
+    main()

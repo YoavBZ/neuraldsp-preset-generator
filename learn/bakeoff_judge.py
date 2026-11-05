@@ -120,14 +120,14 @@ def shelf_gain(fc, db, width=0.5):
 
 # --- J0's path -------------------------------------------------------------------------------------------------------
 
-def band_errors(recording, render, di, render_latency, start_s, end_s, tail_s=1.5, floor_db=30.0, mask_db=40.0, di_floor_db=40.0):
-    """`aligned_distance`'s default path at lag 0 up to its D, one per frame size: [(D less its mean, each frame's block)]."""
+def band_errors(recording, render, di, render_latency, start_s, end_s, lag=0, tail_s=1.5, floor_db=30.0, mask_db=40.0, di_floor_db=40.0):
+    """`aligned_distance`'s default path up to its D, one per frame size: [(D less its mean, each frame's block)]."""
     import analysis.aligned as A
 
-    end = min(len(recording), len(render), int(end_s * SR))
-    start = int(start_s * SR)
-    ref, ren = recording[start:end], render[start:end]
-    di_start = start - render_latency
+    end = min(len(recording), len(render) + lag, int(end_s * SR))
+    start = max(int(start_s * SR), lag if lag > 0 else 0)
+    ref, ren = recording[start:end], render[start - lag: end - lag]
+    di_start = start - lag - render_latency
     ref_n, ren_n = A._normalise(ref, SR), A._normalise(ren, SR)
     out = []
     for n_fft in A.FRAME_SIZES:
