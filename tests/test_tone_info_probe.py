@@ -119,6 +119,34 @@ def test_the_maps():
     assert P.map_top(mix, stem, 0.01).sum() == 1
 
 
+def test_top_ties_go_to_the_louder_mix_then_a_seeded_draw():
+    mix = np.array([[-60.0, -50.0, -40.0, -30.0]])
+    assert P.map_top(mix, mix, 0.5).tolist() == [[False, False, True, True]]
+    flat = np.full((8, 50), -30.0)
+    a, b = P.map_top(flat, flat, 0.1), P.map_top(flat, flat, 0.1)
+    assert a.sum() == 40 and np.array_equal(a, b)
+    assert a[:, 0].sum() < 8 and a.sum(1).min() > 0                       # not the lowest bands, or the first frames
+    gap = np.array([[-1.0, 0.0, 0.0, -1.0]])
+    assert P.map_top(mix, mix + gap, 0.5).tolist() == [[False, True, True, False]]
+
+
+def test_the_true_gain_follows_the_mastering():
+    assert P.true_gain_db(5.0, False, -10.0, -20.0, -30.0, 2.0) == 5.0
+    from learn import pretrain_set as PS
+    want = -10.0 - PS.db_sum(-20.0, -28.0)
+    assert P.true_gain_db(5.0, True, -10.0, -20.0, -30.0, 2.0) == pytest.approx(want)
+
+
+def test_a_lag_with_too_few_pairs_has_no_value():
+    x = np.random.default_rng(6).normal(size=60)
+    have = np.zeros(60, bool)
+    have[:30] = True
+    v = P.autocorr_on(x, have, (1, 12))
+    assert np.isfinite(v[0]) and np.isnan(v[1])
+    assert np.isnan(P.autocorr_on(x, np.zeros(60, bool), (1, 2))).all()
+    assert (P.autocorr_on(np.ones(60), np.ones(60, bool), (1, 2)) == 0).all()
+
+
 def test_means_for_the_gaps_come_from_their_own_column():
     X = np.array([[1.0, np.nan, np.nan], [3.0, 5.0, np.nan]])
     assert P.fill_means(X).tolist() == [2.0, 5.0, 0.0]
@@ -140,4 +168,57 @@ def test_the_sign_test():
 
 
 def test_the_placebo_inputs_follow_the_maps():
-    assert set(P.MASK) == {"b", "o", "g", "t", "po", "pg", "pt"}
+    assert set(P.MASK) == {"b", "o", "g", "t", "po", "pg", "pt", "xo"}
+
+
+def _row(better=0, worse=0):
+    return {"better": better, "worse": worse, "sign_p": P.sign_p(better, worse)}
+
+
+def _pairs(**ahead):
+    keys = ("o-b", "g-b", "t-b", "po-b", "pg-b", "pt-b", "o-po", "g-pg", "t-pt", "o-xo")
+    return {k: _row(9, 0) if ahead.get(k.replace("-", "_")) else _row(2, 2) for k in keys}
+
+
+def test_ahead_needs_the_sign_test_and_more_than_chance():
+    assert not P.is_ahead(_row(5, 0)) and P.is_ahead(_row(7, 0))
+    assert not P.is_ahead(_row(8, 3)) and not P.is_ahead(_row(0, 9))
+
+
+def test_the_reading_map_takes_the_first_match():
+    assert P.reading(_pairs()) == ("no gain shown, stop", None)
+    assert P.reading(_pairs(t_b=True, t_pt=True)) == ("stem map earns a step", "t")
+    assert P.reading(_pairs(g_b=True, g_pg=True, t_b=True, t_pt=True))[1] == "g"
+    assert P.reading(_pairs(g_b=True))[0] == "not credited to the map, stop"  # ahead of (b), not of its placebo
+    assert P.reading(_pairs(o_b=True, o_po=True, o_xo=True)) == ("better map next", None)
+    assert P.reading(_pairs(o_po=True, o_xo=True)) == ("denser read next", None)
+    assert P.reading(_pairs(o_b=True)) == ("not credited to the map, stop", None)
+    assert P.reading(_pairs(o_b=True, o_po=True)) == ("not credited to the map, stop", None)
+
+
+def test_the_placebo_is_the_own_mix_over_the_partners_map(monkeypatch):
+    def fake(root, i, lb, gb):
+        out = {}
+        for h, frames in (("A", 346), ("B", 446)):
+            r = np.random.default_rng([i, frames])
+            M = r.normal(-40, 5, (96, frames))
+            out[h] = (M, {k: r.random(M.shape) < 0.4 for k in P.MAPS})
+        return out
+    monkeypatch.setattr(P, "example_maps", fake)
+    i, d, q = P._mask_feats((None, 1, 2, (0.0, 0.0), (0.0, 0.0)))
+    own, other = fake(None, 1, 0, 0), fake(None, 2, 0, 0)
+    want = P.mean_halves(*(P.masked_summary(own[h][0], other[h][1]["t"]) for h in "AB"))
+    assert np.allclose(d["pt"], want, equal_nan=True)
+    want = P.mean_halves(*(P.masked_summary(other[h][0], own[h][1]["o"]) for h in "AB"))
+    assert np.allclose(d["xo"], want, equal_nan=True)
+    want = P.mean_halves(*(P.masked_summary(own[h][0], own[h][1]["g"]) for h in "AB"))
+    assert np.allclose(d["g"], want, equal_nan=True)
+    assert set(d) == set(P.MASK) - {"b"} | {"all"} and i == 1 and 0.3 < q["g"][0] < 0.5
+
+
+def test_pair_counts_read_each_direction():
+    heads = [("a", "today", "continuous", 0), ("b", "today", "switch", 1), ("c", "pedals", "mic", 2)]
+    wins = {("p", "q", 0), ("q", "p", 1)}
+    c = P.pair_counts(heads, "p", "q", lambda k2, p, q, j: {"reliable": (p, q, j) in wins})
+    assert (c["better"], c["worse"]) == (1, 1) and c["better_heads"] == ["a"] and c["worse_heads"] == ["b"]
+    assert c["family"]["today"] == {"better": 1, "worse": 1}

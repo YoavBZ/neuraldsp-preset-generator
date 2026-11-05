@@ -35,11 +35,15 @@ STEPS = {"mix": ("a", "b"), "separator": ("b", "c"), "DI": ("d", "a"), "represen
 WORKERS = 4
 LISTS = {}
 MAPS = {"o": "true map", "g": "stem map, 3 dB", "t": "stem map, top tenth"}
-MASK = {"b": INPUTS["b"], **MAPS, **{f"p{k}": f"another example's {v}" for k, v in MAPS.items()}}
+MASK = {"b": INPUTS["b"], **MAPS, **{f"p{k}": f"another example's {v}" for k, v in MAPS.items()},
+        "xo": "true map over another example's mix"}
 MAP_DB = 3.0
 MAP_TOP = 0.10
 MIN_CELLS = 20
+MIN_PAIRS = 20
+CHANCE_HEADS = 6                     # heads reliably better by chance at 90% two-sided, of 116
 MAP_SEED = 20261105
+MASK_STATUS = "descriptive, zero renders and zero separations; its reading stops mask pooling or earns one declared step"
 TODAY = "today"
 
 
@@ -123,20 +127,31 @@ def map_stem(mix, stem, db=MAP_DB):
     return np.asarray(stem, np.float64) >= np.asarray(mix, np.float64) - db
 
 
-def map_top(mix, stem, share=MAP_TOP):
-    """The `share` of cells where the stem sits highest against the mix, ties by cell order."""
-    gap = (np.asarray(stem, np.float64) - np.asarray(mix, np.float64)).ravel()
+def map_top(mix, stem, share=MAP_TOP, seed=MAP_SEED):
+    """The `share` of cells where the stem sits highest against the mix. Stem minus mix ties on the half-dB grid, so
+    ties go to the louder mix cell, then to a seeded draw."""
+    m = np.asarray(mix, np.float64).ravel()
+    gap = np.asarray(stem, np.float64).ravel() - m
     keep = np.zeros(gap.size, bool)
-    keep[np.argsort(-gap, kind="stable")[:max(1, int(round(share * gap.size)))]] = True
+    order = np.lexsort((np.random.default_rng(seed).random(gap.size), -m, -gap))
+    keep[order[:max(1, int(round(share * gap.size)))]] = True
     return keep.reshape(np.shape(mix))
 
 
-def autocorr_on(x, have, lags):
+def true_gain_db(ga, mastered, lufs_mix, lufs_target, lufs_backing, gb):
+    """The target's gain in one half of a mix: `ga`, and on a mastered mix what the mastering added, from the stored
+    loudness of the mix against the target and backing's power sum at their gains."""
+    from learn import pretrain_set as PS
+
+    return lufs_mix - PS.db_sum(lufs_target, lufs_backing + gb) if mastered else ga
+
+
+def autocorr_on(x, have, lags, min_pairs=MIN_PAIRS):
     """`autocorr` of an envelope held only on the frames `have`: mean and variance over those frames, each lag over
-    the pairs held (0 where there are none)."""
+    the pairs held, NaN where there are under `min_pairs` (0 for a flat envelope, as `autocorr`)."""
     x, have = np.asarray(x, np.float64), np.asarray(have, bool)
     if not have.any():
-        return np.zeros(len(lags))
+        return np.full(len(lags), np.nan)
     c = x - float(x[have].mean())
     v = float((c[have] ** 2).mean())
     if v <= 0:
@@ -144,13 +159,14 @@ def autocorr_on(x, have, lags):
     out = []
     for k in lags:
         m = have[:-k] & have[k:] if k < len(x) else np.zeros(0, bool)
-        out.append(float((c[:-k][m] * c[k:][m]).mean()) / v if m.any() else 0.0)
+        out.append(float((c[:-k][m] * c[k:][m]).mean()) / v if m.sum() >= min_pairs else np.nan)
     return np.array(out)
 
 
 def masked_summary(db, keep, lags=LAGS, groups=GROUPS, min_cells=MIN_CELLS):
-    """`summary` from the cells `keep` marks: frame changes and lags over pairs of kept frames, NaN where a band or a
-    group holds under `min_cells`. With every cell kept it is `summary`."""
+    """`summary` from the cells `keep` marks: frame changes and lags over pairs of kept frames, NaN where a band holds
+    under `min_cells` cells or a group or the broadband envelope under `min_cells` frames. With every cell kept it is
+    `summary`. An envelope averages the bands kept in each frame, so which cells are kept moves it."""
     db, keep = np.asarray(db, np.float64), np.asarray(keep, bool)
     bands, frames = db.shape
     per_band = np.full((6, bands), np.nan)
@@ -217,6 +233,26 @@ def sign_p(better, worse):
     """One-sided sign test among the heads with a reliable step: P(at least `better` of them go better) at one half."""
     n = better + worse
     return sum(math.comb(n, k) for k in range(better, n + 1)) / 2 ** n if n else 1.0
+
+
+def is_ahead(c, chance=CHANCE_HEADS):
+    """The declared "ahead": more heads reliably better than worse by the sign test at 5%, and more than chance gives."""
+    return c["better"] > chance and c["sign_p"] < 0.05
+
+
+def reading(pairs):
+    """The declared map, first match wins, on `pair_counts` rows. -> (branch, the stem map that earned it or None)."""
+    ahead = {k: is_ahead(c) for k, c in pairs.items()}
+    earned = [k for k in ("g", "t") if ahead[f"{k}-b"] and ahead[f"{k}-p{k}"]]
+    if earned:
+        return "stem map earns a step", earned[0]
+    if ahead["o-b"] and ahead["o-po"] and ahead["o-xo"]:
+        return "better map next", None
+    if ahead["o-po"] and ahead["o-xo"]:
+        return "denser read next", None
+    if ahead["o-b"] or ahead["g-b"] or ahead["t-b"]:
+        return "not credited to the map, stop", None
+    return "no gain shown, stop", None
 
 
 # --- pure: the ridge probe ----------------------------------------------------------------------------------------
@@ -893,24 +929,27 @@ def cmd_mixstem(args):
     print(f"MIXSTEM DONE: {od / 'mixstem.json'}")
 
 
-def example_maps(root, i):
+def example_maps(root, i, lufs_backing, gb):
     """One example's cut half mels and maps: {half: (mix dB, {map: keep})}, half A's first second dropped."""
     from learn import pretrain_set as PS
     from learn import trusted_data as T
 
     m, s, g = (np.load(T.ex_path(root, "t3", i, k)) for k in ("mix-t3", "xlance_g-t3", "tgt-t3"))
     out = {}
-    for h in "AB":
+    for n, h in enumerate("AB"):
         cut = PS.MASK_A_FRAMES if h == "A" else 0
         M, S, G = (PS.dequant(z[f"{p}{h}"])[:, cut:] for z, p in ((m, "m"), (s, "s"), (g, "g")))
-        out[h] = (M, {"o": map_true(M, G, float(m["gain_db"])), "g": map_stem(M, S), "t": map_top(M, S)})
+        gain = true_gain_db(float(m["gain_db"]), bool(m["mastered"]), float(m["lufs"][n]), float(g["lufs"][n]),
+                            lufs_backing, gb)
+        out[h] = (M, {"o": map_true(M, G, gain), "g": map_stem(M, S), "t": map_top(M, S)})
     return out
 
 
 def _mask_feats(job):
-    """One example's summaries through its own maps and its partner's, the every-cell control, and the maps' shares."""
-    root, i, j = job
-    own, other = example_maps(root, i), example_maps(root, j)
+    """One example's summaries through its own maps and its partner's, its true map over the partner's mix, the
+    every-cell control, and the maps' shares."""
+    root, i, j, bi, bj = job
+    own, other = example_maps(root, i, *bi), example_maps(root, j, *bj)
     d, q = {}, {}
     for k in MAPS:
         d[k] = mean_halves(*(masked_summary(own[h][0], own[h][1][k]) for h in "AB"))
@@ -919,6 +958,7 @@ def _mask_feats(job):
         hit = sum(int((own[h][1][k] & own[h][1]["o"]).sum()) for h in "AB")
         q[k] = (kept / sum(own[h][0].size for h in "AB"), hit / max(kept, 1),
                 hit / max(sum(int(own[h][1]["o"].sum()) for h in "AB"), 1))
+    d["xo"] = mean_halves(*(masked_summary(other[h][0], own[h][1]["o"]) for h in "AB"))
     d["all"] = mean_halves(*(masked_summary(own[h][0], np.ones_like(own[h][1]["o"])) for h in "AB"))
     return i, d, q
 
@@ -928,6 +968,7 @@ def cmd_mask_features(args):
     from multiprocessing import Pool
 
     from learn import pipeline_fix as PF
+    from learn import trusted_data as T
     from learn import verify_tracks as V
 
     PF.require("phase_mask_read")
@@ -935,10 +976,13 @@ def cmd_mask_features(args):
     od = out_dir(root)
     z = np.load(od / "features.npz")
     pos = {int(i): n for n, i in enumerate(z["ids"])}
+    stored = z["b"]
+    built = T.rows_of(root, "t3", "build")
+    level = {i: (float(r["lufs_backing"]), float(r["gains_db"]["gb"])) for i, r in built.items() if "gains_db" in r}
     jobs = []
     for rows in (tr, fs):
         pair = partners([r["i"] for r in rows], [r["section"] for r in rows])
-        jobs += [(root, r["i"], pair[r["i"]]) for r in rows]
+        jobs += [(root, r["i"], pair[r["i"]], level[r["i"]], level[pair[r["i"]]]) for r in rows]
     t0 = time.time()
     feats, shares = {}, {}
     with Pool(WORKERS) as pool:
@@ -947,7 +991,7 @@ def cmd_mask_features(args):
             if (n + 1) % 500 == 0:
                 print(f"{n + 1}/{len(jobs)} examples, {time.time() - t0:.0f} s", flush=True)
     ids = [j[1] for j in jobs]
-    worst = max(float(np.abs(feats[i]["all"] - z["b"][pos[i]]).max()) for i in ids)
+    worst = max(float(np.abs(feats[i]["all"] - stored[pos[i]]).max()) for i in ids)
     if worst > 1e-5:
         raise SystemExit(f"the every-cell summary is {worst} from the stored (b)")
     np.savez(od / "mask-features.npz", ids=np.array(ids),
@@ -955,7 +999,7 @@ def cmd_mask_features(args):
     fs_ids = [r["i"] for r in fs]
     med = lambda m, c: float(np.median([shares[i][m][c] for i in fs_ids]))  # noqa: E731
     V._save(od / "mask-features.json", {
-        "design": DESIGN, "status": STATUS, "examples": len(ids), "control_every_cell_worst": worst,
+        "design": DESIGN, "status": MASK_STATUS, "examples": len(ids), "control_every_cell_worst": worst,
         "fs5_median": {m: {"share": med(m, 0), "precision": med(m, 1), "recall": med(m, 2)} for m in MAPS},
         "minutes": round((time.time() - t0) / 60, 1), "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"MASK FEATURES DONE: {len(ids)} examples, control {worst:.2e}, {time.time() - t0:.0f} s")
@@ -1033,8 +1077,10 @@ def cmd_mask(args):
     pairs = {f"{k}-b": pair_counts(heads, k, "b", step_of) for k in MAPS}
     pairs.update({f"p{k}-b": pair_counts(heads, f"p{k}", "b", step_of) for k in MAPS})
     pairs.update({f"{k}-p{k}": pair_counts(heads, k, f"p{k}", step_of) for k in MAPS})
+    pairs["o-xo"] = pair_counts(heads, "o", "xo", step_of)
+    branch, earned = reading(pairs)
     rec = {"design": DESIGN + "#addition-the-mix-on-its-dominant-cells-declared-2026-11-05-before-it-is-computed",
-           "status": STATUS, "inputs": MASK, "lists_check": LISTS.get("check"),
+           "status": MASK_STATUS, "inputs": MASK, "lists_check": LISTS.get("check"), "branch": branch, "earned": earned,
            "readable": {k: sum(r["readable"] for r in rows_by[k]) for k in MASK},
            "knobs": {k: sum(r["readable"] for r in rows_by[k] if r["kind"] == "continuous") for k in MASK},
            "switches": {k: sum(r["readable"] for r in rows_by[k] if r["kind"] == "switch") for k in MASK},
@@ -1044,8 +1090,9 @@ def cmd_mask(args):
     print({k: rec[k] for k in ("readable", "knobs", "switches")})
     for name, c in pairs.items():
         t = c["family"].get(TODAY, {"better": 0, "worse": 0})
-        print(f"  {name:6s} better {c['better']:3d} worse {c['worse']:3d} sign p {c['sign_p']:.3f}; "
+        print(f"  {name:6s} {'ahead' if is_ahead(c) else '     '} better {c['better']:3d} worse {c['worse']:3d} sign p {c['sign_p']:.3f}; "
               f"{TODAY} {t['better']}/{t['worse']}")
+    print(f"BRANCH: {branch} {earned or ''}")
     print(f"MASK DONE: {od / 'mask.json'}")
 
 
