@@ -136,6 +136,7 @@ def test_match_refuses_a_pack_it_cannot_render(tmp_path):
     import subprocess
     import sys
 
+    pytest.importorskip("numpy")                  # without it, match stops earlier
     template = tmp_path / "x.xml"
     template.write_bytes(_preset())
     riff = ROOT / "samples" / "riffs" / "line.flac"
