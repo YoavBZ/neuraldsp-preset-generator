@@ -122,6 +122,7 @@ Newest last. Each entry: date, task, result, output path and sha256, audited by 
   to the input read +0.95 to +1.00 on both sets, so rows and labels line up. Neither reads a candidate. The harness is not yet
   independently reviewed.
 - 2026-11-05, input from the ML session (N7, F58, audited, branch `mask-read`, not recomputed here): a linear probe on FS5, readable
-  heads of 116: plain mix 30, true-map cells 35, stem maps 19 (matching random cells). Post hoc: clean target on all cells 91, random
-  cells at the true map's density 71, the true map's own cells 38. Mask pooling on summaries is parked; it does not test a trained
-  model's use of a map. For T2.1: expect no gain from pooling summaries over mask cells.
+  heads of 116: plain mix 30, true-map cells 35, stem maps 19 (matching random cells). Corrected by the ML session (PR #393): the limit at this margin is band coverage, not dominance. Clean target, post hoc: all cells 91,
+  cells under the backing 87, random cells at the true map's density 71, another example's true map 43, the true map's per-band layout
+  with random frames 42, its own cells 38. The stem's 3 dB map is no better than random cells. No other margin or floor was tried. It does
+  not test a trained model's use of a map. For T2.1: any map must be per-band, so coverage holds.
