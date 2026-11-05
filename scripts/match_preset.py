@@ -1268,10 +1268,12 @@ def _require_signal_paths(pack_id: str) -> None:
     pack = load_pack(pack_id)
     try:
         signal_paths(pack)
-    except CalibrationError:
-        die(f"{pack.display_name} presets cannot be matched: renders run on the original "
-            f"plugin, and this pack has no measured signal paths.\n"
-            f"  Give --template a preset from the original plugin.")
+    except CalibrationError as e:
+        if pack.calibration or pack.amp_modules:
+            die(str(e))
+        die(f"{pack.display_name} presets cannot be matched: this pack has no measured "
+            f"signal paths.\n"
+            f"  Give --template a preset from the original plugin, without --pack.")
 
 
 def _pack_of(template: pathlib.Path) -> str:

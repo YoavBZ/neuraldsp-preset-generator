@@ -111,10 +111,12 @@ def test_recipe_conversions():
 
 def test_chorus_recipes_follow_the_plugin_s_labels():
     """Factory presets hold depth and rate crossed between editions, but each key moves
-    its own named control in both, so "subtle" must stay low depth."""
-    entries = load_recipes("toneking_x")["chorus"]["subtle-width"].parameters
-    values = {e["key"]: e["value"] for e in entries}
-    assert values["chorusDepth"] == 20.0 and values["chorusRate"] == 50.0
+    its own named control in both, so the recipes keep the original's values by label."""
+    def values(rid):
+        return {e["key"]: e["value"] for e in load_recipes("toneking_x")["chorus"][rid].parameters}
+
+    assert values("subtle-width")["chorusDepth"] == 20.0 and values("subtle-width")["chorusRate"] == 50.0
+    assert values("deep-vintage")["chorusDepth"] == 70.0 and values("deep-vintage")["chorusRate"] == 42.0
 
 
 def test_a_wrong_label_lists_the_right_ones():
