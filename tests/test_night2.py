@@ -143,3 +143,32 @@ def test_the_amp_loss_skips_rows_without_an_amp_label():
     every = F.loss_fn(out, *y, torch.tensor([0, 1, 2, 0]))
     none = F.loss_fn(out, *y, torch.tensor([-100, -100, -100, -100]))
     assert torch.isfinite(none) and float(every - none) > 1.0        # ln 3 of amp loss goes
+
+
+def real_rows():
+    return [{"i": j, "real": f"u{j}", "amp": "ab"[j % 2], "cls": ("clean", "crunch")[j // 2 % 2], "label": j} for j in range(40)]
+
+
+def test_the_curve_keeps_the_share_of_each_cell_seeded():
+    from learn import pipeline_fix as P
+
+    rows = real_rows()
+    got = P.curve_rows(rows, frac=0.25)
+    assert got == P.curve_rows(rows, frac=0.25) and len(got) == 8            # 2 of each cell's 10
+    n = {}
+    for r in got:
+        n[(r["amp"], r["cls"])] = n.get((r["amp"], r["cls"]), 0) + 1
+    assert set(n.values()) <= {2, 3} and len(n) == 4
+    half = P.curve_rows(rows, frac=0.5)
+    assert len(half) == 20
+
+
+def test_the_shuffle_stays_inside_each_cell():
+    from learn import pipeline_fix as P
+
+    rows = real_rows()
+    got = P.curve_rows(rows, shuffle=True)
+    assert [r["i"] for r in got] == [r["i"] for r in rows]
+    assert any(r["label"] != r["i"] for r in got)
+    by = {r["i"]: r for r in rows}
+    assert all((by[r["label"]]["amp"], by[r["label"]]["cls"]) == (r["amp"], r["cls"]) for r in got)

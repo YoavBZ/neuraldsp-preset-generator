@@ -6665,6 +6665,27 @@ def searched_heads(amp, S):
     return tuple(np.array([(D[n].module, D[n].key) in keys for n in names], np.float32) for names in (F.CONT, F.SW, F.CAT))
 
 
+def curve_rows(rows, frac=1.0, shuffle=False, seed=20261109):
+    """N3: the training real rows at `frac` of each amp-and-class cell's units, seeded, or with `shuffle` their labels permuted
+    within the cell. rows: real training rows; a row's masks follow its amp and class, so they survive the permutation."""
+    import random
+
+    cells = {}
+    for r in rows:
+        cells.setdefault((r["amp"], r["cls"]), []).append(r)
+    rng, out = random.Random(f"{seed}|{frac}|{shuffle}"), []
+    for key in sorted(cells):
+        v = sorted(cells[key], key=lambda r: r["real"])
+        if shuffle:
+            labels = [r["label"] for r in v]
+            rng.shuffle(labels)
+            out += [dict(r, label=x) for r, x in zip(v, labels)]
+        else:
+            rng.shuffle(v)
+            out += v[:max(1, round(frac * len(v)))]
+    return sorted(out, key=lambda r: r["i"])
+
+
 def mask_searched(Y, rows, ms):
     """N1: on every real row (training or held), the heads the search did not move leave the loss, and the amp head too.
     Y: the data's encoded labels (`c, cm, s, sm, k, km, a`), changed in place; ms: `menu_S`."""
@@ -6812,17 +6833,25 @@ def cmd_train_ft(args):
     require("phase_ft")
     k, inner, seed = args.real_fold, bool(args.inner), args.seed
     masked = bool(getattr(args, "masked", False))
+    frac, shuf = float(getattr(args, "real_frac", 1.0)), bool(getattr(args, "shuffle_real", False))
+    curve = frac < 1 or shuf
     base = FTM_BASE if masked else FT_BASE
     if masked:
         require("phase_night2")
         if k is None:
             raise SystemExit("N1 runs FT_k and its inner runs only")
+    if curve:                                          # N3: FTm's E, as many updates, on fewer rows or shuffled labels
+        require("phase_n3")
+        if not masked or inner:
+            raise SystemExit("N3 runs masked FT_k only")
     if k is None:
         require("phase_ft_carry")
     if seed not in SEEDS:
         raise SystemExit(f"--seed in {SEEDS}")
     lr, cap = ft_rate(args)
     name = ft_name(k, inner, lr, cap, base)            # FT_k's name is one at any setting; its (lr, cap) recorded
+    if curve:
+        name = f"{base}{'s' if shuf else f'f{round(frac * 100)}'}-k{k}"
     od = out_dir() / "runs"
     rp = od / f"{name}-{seed}.json"
     if rp.exists():
@@ -6843,7 +6872,7 @@ def cmd_train_ft(args):
         if any(r_["lr"] != lr or r_["cap"] != cap for r_ in allin):
             raise SystemExit("the inner runs used another rate or cap")
         inners = [r_ for r_ in allin if k is None or (r_["real_fold"], r_["seed"]) == (k, seed)]
-        epochs = ft_epoch_of(inners)
+        epochs = int(round(ft_epoch_of(inners) / frac))
     e = require("phase_3")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     init, wrec = ft_start_state(seed)
@@ -6856,13 +6885,15 @@ def cmd_train_ft(args):
         raise SystemExit(f"{FT_PRETRAIN}-{seed}: trained on other plugin rows than FT's")
     doubled = doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
     rrows, real_held, info = ft_real_rows(k, inner)
+    if curve:
+        rrows = curve_rows(rrows, frac, shuf)
     plugin_tr = tr
     tr, rows = with_rows(tr, rows, rrows)
     rows = rows + [dict(r, held=True) for r in real_held]
     data = DfixData(rows, rung_path(croot, "b", doubled), set(plugin_tr), {r["i"] for r in rrows}, 1.0)
     if masked:
         mask_searched(data.Y, rows, A_menu_S())
-    if not inner:                                      # every unit loaded: D_fix_k's (or D_fix's) inputs exactly
+    if not inner and frac == 1:                        # every unit loaded: D_fix_k's (or D_fix's) inputs exactly
         ref = dfix_run_name(k)
         want = json.loads((od / f"{ref}-{seed}.json").read_text())["dfix"]["inputs_sha256"]
         if data.inputs_sha256 != want:
@@ -6905,7 +6936,7 @@ def cmd_train_ft(args):
         net, final, best_state, best_ep, best = fit(data, ti, watch, None, seed, dev, log, epochs, every=FT_EVERY,
                                                     init=init, lr=lr)
     out = {"plan": PLAN, "test": name, "ledger": f"{LEDGER_ID} {'phase_night2' if masked else 'phase_ft'}", "rung": "b",
-           "seed": seed, "real_fold": k, "masked": masked, "inner": inner, "lr": lr, "cap": cap, "init": {"run": f"{FT_PRETRAIN}-{seed}", "which": "best",
+           "seed": seed, "real_fold": k, "masked": masked, "real_frac": frac, "shuffle_real": shuf, "inner": inner, "lr": lr, "cap": cap, "init": {"run": f"{FT_PRETRAIN}-{seed}", "which": "best",
                                                           "sha256": wrec["model_sha256"]["best"]},
            "train_ids": plugin_tr + [r["i"] for r in rrows], "ft_train_ids": [r["i"] for r in rrows],
            "held": held_name, "held_ids": held, "real_held_ids": [r["i"] for r in real_held],
@@ -7490,6 +7521,8 @@ def main(argv=None):
     ap.add_argument("--lag-tol", type=int, default=None)       # goat-report: read A on a narrower lag set
     ap.add_argument("--inner", action="store_true", help="train-ft: fold k's epoch-choice run")
     ap.add_argument("--masked", action="store_true", help="train-ft: N1, heads outside the search masked on real rows")
+    ap.add_argument("--real-frac", type=float, default=1.0, help="train-ft: N3, this share of the training real rows")
+    ap.add_argument("--shuffle-real", action="store_true", help="train-ft: N3, labels shuffled within amp and class")
     ap.add_argument("--ft-lr", type=float, default=None)       # train-ft: a declared fallback only
     ap.add_argument("--ft-cap", type=int, default=None)
     args = ap.parse_args(argv)
