@@ -281,12 +281,11 @@ def scored(ref, y, di, lag):
 
 
 def stored_record(which, tag, key):
-    """A stored tag's judge and hashes for a key; GOAT's S lives in the search records, keyed by unit."""
+    """A stored tag's judge and hashes for a key; GOAT's S lives in the search records."""
     from learn import pipeline_fix as P
 
     if which == "goat" and tag == "S":
-        unit = key.rsplit("|", 1)[0]
-        p = stored_dir(which) / P.SEARCH_DIR / f"{unit.replace('/', '__')}.json"
+        p = stored_dir(which) / P.SEARCH_DIR / f"{key.replace('/', '__')}.json"
         if not p.exists():
             return None
         r = json.loads(p.read_text())
