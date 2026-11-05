@@ -1,7 +1,7 @@
 # Deep review of the ML flow (2026-11-05)
 
 **Status: review only.** Zero renders, zero training. CPU inference on stored checkpoints and analysis of stored files.
-Nothing here is adopted: the ML session owns `learn/`, the judge and the datasets, and declares what it takes. Figures are
+This review adopts nothing: the ML session owns `learn/`, the judge and the datasets, and declares what it takes. So far it has taken the audited read (`learn/reads_v3.py`) and, by N2's declared rule, search v2. Figures are
 in knob units or linear probes unless marked; none is a read of sound on a real song.
 
 **Why.** The user asked for a deep review of every fundamental part of the flow, to find the best model, scoring system,
@@ -25,8 +25,8 @@ record match, except as listed under "Data touched outside the limits".
 |---|---|---|---|
 | **Scoring** | J0 stays. No candidate beats it on both ear pages. | Weak near real distances: removing a 6 dB bell reads about −0.03 to −0.04 at d 4, at the edge of what is read as meaningful. | Report `tonal` beside `distance`, stratified by d_S, on stored judged rows. |
 | **Reading skill** | Own-against-swap and fold-demeaned, recording-level r. | Loss against a lookup flips with the comparator; pooled r is biased down; BKS's rows are weak (below). | In N1 already. |
-| **Model** | FT stands until the ear. Next candidate: FT corrected to searched heads, with S written on the rest (FTm, F55: ahead on GOAT's tone by knob, closer there by the score by item, worse on BKS). A ridge on pooled mel statistics is the baseline any network must beat; state its input. | Unsearched heads are labelled as S, mics dominate the loss at FT's start, and the amp head fits noise. | N4's blind page, FTm by ear. Ridge by sound, about 670 renders. |
-| **Features** | 96-band log-mel is enough for tone. For drive nothing is shown better where drive actually varies. | W's skill rests on long-term colour, which transfers worst. | Tone from the long-term spectrum; a drive read on crunch before splitting inputs. |
+| **Model** | FT stands until the ear. Next candidate: FT corrected to searched heads, with S written on the rest (FTm, F55: ahead on GOAT's tone by knob, closer there by the score by item, worse on BKS). A ridge on pooled mel statistics is the baseline any network must beat; state its input. | Unsearched heads are labelled as S, mics dominate the loss at FT's start, and the amp head fits noise. | N4's blind page, FTm by ear. Ridge by the score, about 670 renders. |
+| **Features** | Finer mels add nothing for tone over 96 bands. For drive nothing is shown better where drive actually varies. | W's skill rests on long-term colour, which transfers worst. | Tone from the long-term spectrum; a drive read on crunch before splitting inputs. |
 | **Feature extraction** | None is shown good on real songs' stems yet. With no other guitars in the mix, FTm shows no stem cost by knob or score (N5, N5b). | Models train on P2b and read X-LANCE stems (domain AUC 0.997). A lead: stems may lean toward the dominant other guitar. | Test the lead by labelling the dominant guitar; train or align on real stems if it holds. |
 | **Labels** | Search v2 (N2): adopted by its declared rule, about 30% fewer renders, not shown more reliable. | v1: 52 evaluations, step stuck at 0.25, 8 dB input-gain resolution. | Reliability of the capture labels. |
 | **Evaluation** | t intervals, 20+ bands, an answer-swap placebo. | Percentile bootstrap covers 82%, not 90%, on 7 clusters. L2's sizing gives about 56% power. | Swap the interval (no render). Resize L2. |
@@ -144,7 +144,7 @@ recording, upper-tail p. GOAT: 2,000 permutations, 90% item bootstrap. BKS: exac
 - **Not levers** (each at most 0.005 in E) [reviewer]: AdaBN, seeds, window or backing averaging, denoised targets, top-component readout.
 
 **A small model** [reviewer, not recomputed]. Ridge on 24 PCs of pooled mel statistics, **on the clean track**: rms −0.020 / −0.021 against
-the centre, still rising at 137 recordings. On the backed input, the only one FT reads, about −0.004 / −0.004. With a whole BKS song held
+the centre, still rising at 137 recordings. On the backed input, the one section 2's reads use, about −0.004 / −0.004. With a whole BKS song held
 out, +0.002 [−0.013, +0.017]. So it reads in domain with no backing; transfer is not shown. By rms, FT is level with the centre (+0.005, +0.003).
 
 **Target form.** With hundreds of labels, parameter regression in a much smaller shape looks the right form: searched controls, residual
@@ -186,7 +186,7 @@ nothing lost above 16 kHz.
 - **The searched-head definition is complete** [audited]. Across 520 labels, 0 settings differ from S outside `K.space`, and every dim has a head.
 - **Noise** [reviewer; 16 near-replicate pairs, one band]: search 21%, 16%, 32% of drive, tone and cab variance. Window adds to 43%, 34%, 44%.
   It comes from the search's path; J0's slopes are stable.
-- **Dimension** [reviewer]: 2–4 by sound, 4–6 by label, against 12–17 searched.
+- **Dimension** [reviewer]: 2–4 by J0's slopes, 4–6 by label, against 12–17 searched.
 - **Prior** [reviewer]: 22% of real labels sit outside the plugin labels' 5–95% range, against 8.5%. Drive leans low. This reproduces F27
   without V-real.
 - **Measure DI level** explains at most 2.3% of inputGain variance, so the feared incoherence is not supported [reviewer]. 19% of labelled
@@ -206,17 +206,17 @@ Correct [reviewer]: 520 labels replay exactly; FT − S −0.177 reproduced; fol
 
 ## Recommended order
 
-ML session, recorded as F55, N5 and N5b: N1 took masked FT (FTm) through these measures, beside the rig table. On GOAT it follows recordings better than FT on tone (+0.258 against +0.121; FTm − FT +0.137 [+0.065, +0.207]) and keeps cab; by knob BKS stays undecided. By the score it is closer than FT on GOAT by item (−0.021 [−0.037, −0.005]; by fold −0.016 [−0.035, +0.003], reaching zero) and worse on BKS (+0.054 [+0.018, +0.090]). N2 (search v2) is adopted by its declared rule after 1,207 renders, and is not shown more reliable. N3 (the learning curve): no group rises by its declared rule. FTm − FTm at 25% of its rows on GOAT is +0.001 [−0.040, +0.039] on drive, +0.055 [−0.015, +0.123] on tone and +0.023 [−0.014, +0.061] on cab, while FTm − its shuffled control clears zero in all three. That is undecided and says nothing against more rows; tone is the one group where more rows may still help. N5 (the same read on X-LANCE stems of the labelled mixes, its loader independently checked): on GOAT neither FT nor FTm shows a stem cost in any group (FTm stem − backed +0.008 [−0.033, +0.052] on drive, +0.054 [−0.010, +0.120] on tone, −0.004 [−0.044, +0.037] on cab); only W's drive falls (−0.079 [−0.145, −0.010]). N5b finds no cost by the score (+0.013 [−0.008, +0.033] on BKS, +0.003 [−0.009, +0.015] on GOAT). This is the kindest stem: these mixes hold no other guitars, so neither read says anything about the lead on real songs.
+ML session, recorded as F55, N5 and N5b: N1 took masked FT (FTm) through these measures, beside the rig table. On GOAT it follows the search labels better than FT on tone (+0.258 against +0.121; FTm − FT +0.137 [+0.065, +0.207]) and keeps cab; by knob BKS stays undecided. By the score it is closer than FT on GOAT by item (−0.021 [−0.037, −0.005]; by fold −0.016 [−0.035, +0.003], reaching zero) and worse on BKS by DI (+0.054 [+0.018, +0.090]; by fold +0.050 [−0.019, +0.119], reaching zero). N2 (search v2) is adopted by its declared rule after 1,207 renders, and is not shown more reliable. N3 (the learning curve): no group rises by its declared rule. FTm − FTm at 25% of its records on GOAT is +0.001 [−0.040, +0.039] on drive, +0.055 [−0.015, +0.123] on tone and +0.023 [−0.014, +0.061] on cab, while FTm − its shuffled control clears zero in all three. That is undecided and says nothing against more rows. Drive and cab show no trend and tone rises a little at each step, but the upper ends allow a rise in any group. N5 (the same read on X-LANCE stems of the labelled mixes, its loader independently checked): on GOAT neither FT nor FTm shows a stem cost in any group (FTm stem − backed +0.008 [−0.033, +0.052] on drive, +0.054 [−0.010, +0.120] on tone, −0.004 [−0.044, +0.037] on cab); only W's drive falls (−0.079 [−0.145, −0.010]). N5b shows no cost by the score (+0.013 [−0.008, +0.033] on BKS, +0.003 [−0.009, +0.015] on GOAT). This is the kindest stem: these mixes hold no other guitars, so neither read says anything about the lead on real songs.
 
 1. Zero renders: swap percentile bootstraps for t; report `tonal` beside `distance`, stratified by d_S, on stored judged rows.
-2. Ridge by sound against the centres, about 670 renders, with its input stated: is its knob gain audible, and does any survive the backing?
+2. Ridge by the score against the centres, about 670 renders, with its input stated: does its knob gain move the score, and does any survive the backing? Whether it is heard needs the ear.
 3. Drive on crunch: which representation reads it, before any split of inputs.
-4. The stem: test the lead by labelling the dominant guitar, since N5 and N5b show no cost without other guitars; align or train on real stems (about 19 h, needs the user's yes) if it holds.
+4. The stem: test the lead by labelling the dominant guitar, since N5 and N5b show no cost without other guitars; align or train on real stems (the stems alone about 19 h at the measured rate, training on top, needs the user's yes) if it holds.
 5. Resize L2.
 
 ## Errors made in this review
 
-Each is corrected above, and the independent audit caught the last group.
+Each is corrected above. The bullets say which the independent audit and the PR's review caught.
 - A first run of M1 was void (lag search missed the DI's 0.25 s offset). Fixed, with a control.
 - The first lookup collapsed onto the label grid (52% of components under 0.01 sd). Voided.
 - The row-level null for r was too narrow. Replaced by recording-level permutation.
@@ -228,8 +228,7 @@ Each is corrected above, and the independent audit caught the last group.
 - Caught by the PR's review: "mostly mic distance" for FT's cab read (only FT − W is distance), which had already reached the ML session's plan;
   "robustly only", which held on raw units alone; and stale lines on N2 and N3.
 - The audited read as first adopted (`reads_v2.py`) lacked three things it was declared to do: the exact permutation, the item intervals and
-  the paired differences. `reads_v3.py` adds them, passed a separate code review and reproduces the audit's table on FT and W. It is the only
-  script proposed for the repo.
+  the paired differences. `reads_v3.py` adds them, passed a separate code review and reproduces the audit's table on FT and W. It is now in the repo as `learn/reads_v3.py`.
 
 ## Limits
 

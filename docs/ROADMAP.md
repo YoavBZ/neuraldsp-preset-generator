@@ -316,12 +316,12 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        - **L1a declared (2026-11-04):** the first 50 captures get a fixed level rule and an ear gate. Then a blind check, on 12 units crossed by
          amp and class, of whether J0's search labels sound closer than S and than another capture's label, before the rest of the labels. Then their
          centre against GOAT's at the same count. About 2,900 renders before the listener hears a label, about 8,800 to 9,300 if everything runs.
-       - **Deep review of the ML flow (2026-11-05; [record](ml-deep-review-2026-11.md), zero renders, independently audited, nothing adopted):**
-         J0 has no arithmetic error in its main path and no candidate beat it on both ear pages, but near real distances removing a 6 dB tone error moves it only about
+       - **Deep review of the ML flow (2026-11-05; [record](ml-deep-review-2026-11.md), zero renders, independently audited, adopts nothing itself):**
+         J0 has no arithmetic error in its main path and no candidate beat it on both ear pages, but near real distances removing a 6 dB bell moves it only about
          −0.03 to −0.04, so "level with S" says little there. FT reads per track only weakly, most robustly on GOAT's cab (mic position and distance about equally); BKS's
          cab figure matches a no-audio table, because rigs recur across DIs. FT's fall in real-row loss was not evidence of reading: real rows label unsearched controls as S. The
-         search takes 52 evaluations at a step stuck at 0.25. Models train on P2b and read stems (domain AUC 0.997), a lead says stems may lean toward
-         another guitar, and L2 needs 18 bands for 80% power.
+         first search took 52 evaluations at a step stuck at 0.25. Models train on P2b and read stems (domain AUC 0.997), a lead says stems may lean toward
+         another guitar, and L2 needs 18 bands for 80% power at a rank gap of 0.75, 38 at 0.5.
        - **The ML review and N1 to N3 (2026-11-05):** an independent review found real rows teach mostly S's constants on
          unsearched controls, so FT's training loss says little, FT's per-track reading is real but weak, and the search is coarse. Declared on trusted
          data: FT retrained on searched heads alone, a finer search tested on BKS, and a learning curve if time allows.
