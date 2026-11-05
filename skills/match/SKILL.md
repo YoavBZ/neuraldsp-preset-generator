@@ -231,6 +231,9 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/match_preset.py" \
 When the user named a time, add the `--excerpt-start SECONDS` you fingerprinted with;
 otherwise the match measures its own automatic window, which may be another one.
 
+Tone King X presets are not matched: renders run on the original plugin, so ask for a
+template from it (`match_preset.py` refuses a `toneking_x` template).
+
 `--amp` names the signal path being matched: a Morgan amp (`sw50r`) or a Tone
 King channel (`lead`, `rhythm`), with the plugin's own display label accepted
 too. It is applied to the template before the first render, so the path it names

@@ -282,6 +282,7 @@ def main() -> None:
 
     if args.pack is None:
         args.pack = _pack_of(args.template)
+    _require_signal_paths(args.pack)
 
     signal_path_arg = None
     pairing_document = None
@@ -1257,6 +1258,23 @@ def _renderer(name: str, pack_id: str = "morgan", process_policy: str = "reuse")
         return renderer
     die(f"unknown renderer {name!r}: use swift for the real plugin, or synthetic, "
         f"a Python approximation of the chain's topology")
+
+
+def _require_signal_paths(pack_id: str) -> None:
+    """Stop before anything renders on a pack read and edited, but never measured."""
+    from packs.calibration import CalibrationError, signal_paths
+    from packs.loader import load_pack
+
+    pack = load_pack(pack_id)
+    try:
+        signal_paths(pack)
+    except CalibrationError as e:
+        if pack.calibration or pack.amp_modules:
+            die(str(e))
+        die(f"{pack.display_name} presets cannot be matched: this pack has no measured "
+            f"signal paths.\n"
+            f"  For an X edition, give --template a preset from the original plugin, "
+            f"without --pack.")
 
 
 def _pack_of(template: pathlib.Path) -> str:

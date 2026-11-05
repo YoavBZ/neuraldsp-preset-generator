@@ -94,10 +94,11 @@ def test_anything_but_one_whole_tree_is_left_to_the_old_reading():
     assert property_modules(damaged) is None      # its count still says one more property
 
 
-def test_morgan_x_presets_are_morgan_and_tone_king_x_is_not_yet():
+def test_each_edition_finds_its_pack():
     assert detect_pack("morgan-x").pack_id == "morgan"
     assert detect_pack("morgan").pack_id == "morgan"
-    assert detect_pack("toneking") is None        # Tone King X: a new layout, no pack reads it
+    assert detect_pack("toneking").pack_id == "toneking_x"
+    assert detect_pack("neural_dsp_toneking").pack_id == "toneking"
 
 
 @pytest.mark.parametrize("damage", [

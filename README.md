@@ -14,8 +14,10 @@ at a preset and describe a change in plain English.
 > audition page (`samples/riffs/`); everything else you'd want as a template comes
 > from your own library.
 
-Production packs target **Morgan Amps Suite** and **Tone King Imperial MKII**.
-Both packs have verified writable Audio Unit mappings, ranges, selector tables,
+Production packs target **Morgan Amps Suite** and **Tone King Imperial MKII**;
+Morgan Amps Suite X is read by the first, and Tone King Imperial MKII X has its own
+pack (`toneking_x`) for reading and editing, not rendering.
+Both production packs have verified writable Audio Unit mappings, ranges, selector tables,
 tone guidance, and composable recipes. Both Neural DSP preset encodings are
 handled. Other plugins are supported by adding a pack — see [Packs](#packs).
 
@@ -296,8 +298,8 @@ The human value depends on the manifest kind:
 - **Fraction controls** use their normalized value directly, `0.0–1.0`.
 - **Metered controls** (gate, EQ, cutoffs, delay/reverb times, tempo, transpose,
   cab pans) use their **native unit** (dB / Hz / ms / s / BPM / semitones / pan).
-  **`pan` is signed and its scale differs per pack** — Morgan stores −50..50 and
-  Tone King −1..1, while both *display* a position out of 50. Read the manifest.
+  **`pan` is signed and its scale differs per pack** — Morgan and Tone King X store
+  −50..50 and Tone King −1..1, while both *display* a position out of 50. Read the manifest.
 - **Switches** are `true`/`false`, or the plugin's own label where the pack
   declares one (`"Active"`, `"Off"`); **selectors** take a member name
   (`"PR12"`, `"Ribbon 121"`) or an integer.
