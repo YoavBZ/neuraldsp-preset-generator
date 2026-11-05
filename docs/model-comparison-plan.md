@@ -116,3 +116,7 @@ Newest last. Each entry: date, task, result, output path and sha256, audited by 
   labels shuffled within cell read GOAT −0.029, −0.012, −0.033 and BKS +0.114, −0.106, +0.063 on drive, tone, cab; labels joined
   to the input read +0.95 to +1.00 on both sets, so rows and labels line up. Neither reads a candidate. The harness is not yet
   independently reviewed.
+- 2026-11-05, input from the ML session (N7, F58, audited, branch `mask-read`, not recomputed here): a linear probe on FS5, readable
+  heads of 116: plain mix 30, true-map cells 35, stem maps 19 (matching random cells). Post hoc: clean target on all cells 91, random
+  cells at the true map's density 71, the true map's own cells 38. Mask pooling on summaries is parked; it does not test a trained
+  model's use of a map. For T2.1: expect no gain from pooling summaries over mask cells.
