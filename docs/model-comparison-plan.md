@@ -23,7 +23,8 @@ Read this block first after any compaction, then the task list, then the finding
 - **Beside it:** the harness `learn/bakeoff.py` is done (T1.3). It may not read any candidate before T2.3.
 - **Next:** T2.1, set the candidate list from that report.
 - **Running jobs and PIDs:** none.
-- **Render or MPS use announced to the ML session:** none.
+- **Render or MPS use announced to the ML session:** none. Hold: no renders from this session until the ML session messages
+  that N6 and its centre read (about 2,016 renders) are done. CPU work on stored inputs is fine.
 - **Blocked on the user:** nothing yet. The user went to sleep at about 22:40 on 2026-11-05 (controller): carry on as far as the
   rules allow, and when finished send the controller two or three plain lines on what was found, checked and left open.
 
