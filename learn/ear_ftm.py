@@ -56,6 +56,9 @@ def load_nets():
         P.ft_read_check(rec)
         if rec["real_fold"] is not None or not rec.get("masked"):
             raise SystemExit(f"{P.FTM_BASE}-{sd}: not the all-labels masked run")
+        ft = json.loads((P.out_dir() / "runs" / f"{P.FT_BASE}-{sd}.json").read_text())
+        if set(rec["train_ids"]) != set(ft["train_ids"]) or rec["dfix"]["inputs_sha256"] != ft["dfix"]["inputs_sha256"]:
+            raise SystemExit(f"{P.FTM_BASE}-{sd}: not the all-labels FT's rows")
         nets.append(net)
         recs.append(rec)
     if recs[0]["train_ids"] != recs[1]["train_ids"]:
@@ -76,13 +79,17 @@ def cmd_answers(_args):
     nets, recs = load_nets()
     target = P.vreal_mix_target()
     man = DS._load(DS.stems_manifest_path(DS.ROOT, T.SEP))
+    ft = json.loads(P.vreal_answers_path(P.FT_VREAL_TAG).read_text())     # its input record only, as read 3's proof
     out = {}
     for u in units():
         slug, amp, search = u["slug"], u["amp"], u["search"]
         cls = PR.VREAL[slug][1]
         sel, S = ms[amp][cls]
-        stem, mix, g, _ = P.vreal_stem_input(man, slug, parts[slug], target)
+        stem, mix, g, hs = P.vreal_stem_input(man, slug, parts[slug], target)
         s8, _, ls, _ = DS.step4_half(stem, mix, search, g)
+        if json.loads(json.dumps([g, hs, ls], default=str)) != [ft["gains_db"][slug], ft["input_hashes"][slug],
+                                                               ft["stem_half_lufs"][slug][search]]:
+            raise SystemExit(f"{slug}: not read 3's input")
         x, c = P.vreal_model_input(s8, ls, search, amp, cls)
         r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
         st = P.hold_outside_space(F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"]), S, amp)
@@ -130,18 +137,24 @@ def cmd_render(args):
         ctx = (A.group_ctx(menu, ms, "F", slug, amp) if info["kind"] == "stagef" else T3.t3_group_ctx(menu, ms, info, amp))
         lag = ctx["part"]["judge_lag"]
         a, b = (int(x * E.SR) for x in R.HALVES[held])
+        s_ans, _, s_sha = E.stored("S", u)
+        s_st = LO.tdict(s_ans["settings"])
+        if AM.audio_sha(AM.fresh_render(CB.new_renderer, ctx["di32"], s_ans["select"], s_st, s_st)) != s_sha:
+            raise SystemExit(f"{slug} {amp}: S's render differs from L0's")
         got = ans[f"{slug}|{amp}"]
         st = LO.tdict(got["settings"])
         y = AM.fresh_render(CB.new_renderer, ctx["di32"], got["select"], st, st)
-        renders += 2
+        renders += 4
         mono = y.mean(axis=1) if y.ndim == 2 else y
         rec0 = json.loads((E.data_dir() / "renders" / slug / "rec.json").read_text())
         s0, s1 = rec0["window"]
-        d = K.judge(ctx["ref"], np.asarray(mono, np.float64), np.asarray(ctx["di32"], np.float64)[:len(mono)], lag)
+        if list(E.window(a, b, len(ctx["ref"]), len(mono), lag)) != [s0, s1]:
+            raise SystemExit(f"{slug}: the window moved")
+        d = K.judge(ctx["ref"], y, ctx["di"], lag)
         out.mkdir(parents=True, exist_ok=True)
         np.savez(out / "clips.npz", FTm=mono[s0 - lag:s1 - lag].astype(np.float32))
         P.save(out / "rec.json", {"slug": slug, "amp": amp, "held": held, "lag": lag, "window": [s0, s1], "judge": d[held],
-                                  "sha": AM.audio_sha(y), "window_check": list(E.window(a, b, len(ctx["ref"]), len(mono), lag))})
+                                  "sha": AM.audio_sha(y)})
         print(f"{slug} {amp}: renders so far {renders}", flush=True)
     print(f"EAR-FTM RENDER DONE {k}/{n}: {renders} renders")
 
@@ -206,6 +219,11 @@ def cmd_score(args):
     unsure = [it["id"] for it in key["items"] if (ex["answers"].get(it["id"]) or {}).get("conf") == "unsure"]
     rep = C.report(key["items"], heard, unsure)
     rep.update(build=key["build"], roles=ROLE, answered=sum(v is not None for v in heard.values()), items=len(key["items"]), unsure=unsure)
+    first = [it for it in key["items"] if it["repeat_of"] is None and heard.get(it["id"])]
+    rep["band_weighted"] = {f"{a} over {b}": {
+        "rank": E.pair_row([(it["band"], heard[it["id"]][b]["rank"] - heard[it["id"]][a]["rank"]) for it in first]),
+        "close": E.pair_row([(it["band"], heard[it["id"]][a]["close"] - heard[it["id"]][b]["close"]) for it in first])}
+        for a, b in (("label", "S"), ("label", "placebo"), ("placebo", "S"))}
     P.save(data_dir() / "score.json", rep)
     print(json.dumps(rep, indent=1))
 

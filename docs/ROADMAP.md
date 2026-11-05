@@ -319,6 +319,10 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        - **The ML review and N1 to N3 (2026-11-05):** an independent review found real rows teach mostly S's constants on
          unsearched controls, so FT's training loss says little, FT's per-track reading is real but weak, and the search is coarse. Declared on trusted
          data: FT retrained on searched heads alone, a finer search tested on BKS, and a learning curve if time allows.
+       - **The night's results (2026-11-05, F55, no ear yet):** FT retrained on searched heads alone (FTm) reads tone clearly better on GOAT's held chains (+0.137 [+0.065, +0.207]) and keeps
+         FT's cab; by the score it beats FT there (−0.021 [−0.037, −0.005]) and falls behind on BKS (+0.054 [+0.018, +0.090]), where songs repeat in training. Neither set shows it past its centre. The learning
+         curve does not rise: flat from about 150 rows, undecided. Search v2 was adopted by the declared rule, though much of its gain is smaller moves. All 197 capture units are labelled ahead of the ear, nothing read.
+         N4's blind page on L0's parts is ready: S, FT and FTm by ear.
        - **Next (2026-11-03, after L0):** the approved real-amp recordings, scored with J0, and, as the user chose, the per-recording reading, with FT's
          recipe as the base (chosen on read 2, BKS −0.055; on V-real FT is not shown different from D_fix): many more real-amp labelled recordings (captures on verified DIs, as GOAT) and a fresh,
          larger real-song test (V-real-11 is ±0.07 and now read for two candidates). Domain work and community
@@ -1418,3 +1422,4 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-11-04 | L1's first capture batch in place, zero plugin renders: 50 named TONE3000 captures from 31 packs, by the official API, the user's choice for this batch (a later batch needs their yes again). All 50 load and play at 48 kHz; 39 store an input level. L1 is not declared yet and waits on L0's answers | [research](research/real-amp-chains-2026-11.md) |
 | 2026-11-04 | L0's outcome (F54, 80 renders, one listener, 10 parts): W heard below S, and the score agrees; FT and D_fix not known by ear. S is rated "not close" on 3 of 4 clean parts; FT and D_fix are heard far closer on two of them (picked after the answers) where the score barely moves, and crunch leans to S. Class, amp and S's setting cannot be pulled apart. The ear-score check is not triggered, but W carries the agreement: among the other three, agreement is not shown, and the interval is wide | [plan](pipeline-fix-plan.md) |
 | 2026-11-04 | L1a declared: the first 50 captures, an ear gate, a blind check of search labels against S and a placebo before the rest of the labels, then their centre against GOAT's at the same count | [plan](pipeline-fix-plan.md) |
+| 2026-11-05 | The night's runs (F55, N1 to N4, L1a and L1b labels ahead of the ear): masked FT reads tone better on GOAT and improves there by the score, falls behind on BKS, and the learning curve does not rise. 150 more captures fetched on the user's yes | [plan](pipeline-fix-plan.md) |
