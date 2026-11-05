@@ -403,6 +403,8 @@ def strip_custom_irs(preset, pack=None) -> list:
     IR holds it at "Custom IR". Clear only the path and the plugin is left
     showing `Custom IR / No File` — so the selector is moved back to the
     plugin's own default for that side whenever it was pointing at the file.
+    The X editions store a third field, `flag`, saying the side plays a file: it
+    goes to "false", which is how every IR-free X preset holds it.
     """
     if pack is None:
         from packs.loader import detect_pack
@@ -425,6 +427,12 @@ def strip_custom_irs(preset, pack=None) -> list:
             before = mic.value
             set_parameter(preset, module, key, slot["default"])
             changed.append((module, key, before, slot["default"]))
+
+        module, _, key = slot.get("flag", "").rpartition("/")
+        flag = preset.by_path.get((module, key))
+        if flag is not None and flag.value == "true":
+            set_parameter(preset, module, key, "false")
+            changed.append((module, key, "true", "false"))
     return changed
 
 

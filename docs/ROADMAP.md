@@ -1194,8 +1194,19 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
   the old reading relied on. Generated presets go to both User folders when X is there
   ([installing](../reference/installing.md)), when made from an original template; one made
   from an X template stays X's format and goes to X only. Not done: Tone King X's own presets use a
-  new layout (104 entries against 259, renamed controls) that no pack reads; renders stay
+  new layout (104 entries against 259, renamed controls) that no pack read until the entry below; renders stay
   on the original plugins.
+- **Done, 2026-11-05: Tone King X's presets.** A new pack, `toneking_x`, reads and edits them:
+  Morgan-style text values in named sections. All 97 published controls were mapped against the
+  running plugin, the audit agrees apart from two labelling points (X drops the mic list's E33/H30
+  and shows the low-pass top as OFF), and 111 factory presets held by both editions gave the
+  conversions. The recipes carry over in X's units, so `generate` works with only X
+  installed. `--strip-irs` now also clears X's own custom-IR flags. Not done: a file written in
+  X's layout has not been opened in the plugin, and `match` and the listening page still render the
+  original only. Starting presets were measured on the original; on the two baselines every amp
+  control matches. Two oddities are disclosed in the pack's tone notes: Output Gain has no fixed
+  conversion, and factory presets hold chorus depth and rate crossed although each key moves its
+  own named control in both plugins. The chorus recipes follow the labels.
 - **Setting controls has real headroom** ([knob ceiling](knob-ceiling-results.md),
   2026-10-14): with the take's true DI, on development, a knob search got about 22%
   closer by the judge than `generate`'s starting preset (−0.253) and 19% closer than
@@ -1438,4 +1449,5 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-11-05 | The night's runs (F55, N1 to N4, L1a and L1b labels ahead of the ear): masked FT reads tone better on GOAT, is closer there by the score by item and worse on BKS, and the learning curve is undecided. 150 more captures fetched on the user's yes | [plan](pipeline-fix-plan.md) |
 | 2026-11-05 | FTm by ear (F56): not known by ear, level with FT on closeness, behind S by the score on L0's parts; picks nothing. First capture batch through both ear gates, 132 trusted labels, label page with the listener | [plan](pipeline-fix-plan.md) |
 | 2026-11-05 | The label check by ear (F57): labels heard closer than S on closeness (+1.45 [+0.91, +2.00]), rank share reaching one half (8 of 11), neither of F56's splits shows for the labels; 2 units out of scope, 130 trusted labels, a scope check declared | [plan](pipeline-fix-plan.md) |
+| 2026-11-05 | Tone King X gets its own pack, `toneking_x`, for reading and editing: 97 published controls mapped against the running plugin, 111 shared factory presets gave the conversions, recipes carried over in X's units so `generate` works with only X installed, `--strip-irs` clears X's flags. Renders stay on the original; output in X's layout not yet opened in the plugin | [installing](../reference/installing.md), [tone notes](../packs/toneking_x/tone.md) |
 | 2026-11-05 | Reading only the guitar's dominant spots (N7, F58): a true map 35 of 116 against the mix's 30, stem maps no better than random spots; at this margin clean values on those spots read 38 because they cover too few bands, so the idea is parked with no better map declared. Item 8 corrected by the listener, a post hoc row (9 of 11 [0.64, 1.00]). | [plan](pipeline-fix-plan.md) |
