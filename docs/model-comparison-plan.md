@@ -217,3 +217,8 @@ Newest last. Each entry: date, task, result, output path and sha256, audited by 
   cells under the backing 87, random cells at the true map's density 71, another example's true map 43, the true map's per-band layout
   with random frames 42, its own cells 38. The stem's 3 dB map is no better than random cells. No other margin or floor was tried. It does
   not test a trained model's use of a map. For T2.1: any map must be per-band, so coverage holds.
+- 2026-11-05, T1.2: the report's citations checked by a subagent on 12 sources (some through page summaries, not full text). Figures
+  mostly hold. Readings corrected and sent to the researcher: DX7's 17.1 to 12.2 is one-hot extended to discrete numeric controls, not
+  one-hot against regression, and Num-only is 16.1, so the case for `A-cat` is weaker than the report says; Comunità's 0.040 is an average
+  over 8 configurations (0.017–0.064); Bruford's 3x is an MSE ratio at the only size trained; the 61.5 and 73.8 are softened centring. The
+  report's direction stands. It is a judgement, and the plan's reads test it.
