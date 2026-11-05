@@ -135,7 +135,7 @@ come from the stored mels, so nothing here needs audio. An FTm-features arm was 
   candidate under shuffled labels, and the spike on `M-ridge`, `W-ridge` and `P-ridge`.
 - [x] T3.2 `bakeoff read`, output `PF/bakeoff/read-a.json` and its `.rows.pkl`. Each candidate's answers are cached per fold in
   `PF/bakeoff/answers/`, so a rerun resumes there; the report step reruns whole.
-- [~] T3.3 Independent audit of T3.2 by recomputation, before any result is built on.
+- [x] T3.3 Independent audit of T3.2 by recomputation, before any result is built on.
 - [x] T3.4 `learn/bakeoff_judge.py`, the judge battery, CPU, nothing installed. Terms: J0 `distance`, `tonal`, and a cross-fitted per-band
   term: the band's mean dB error on odd 1 s blocks times that on even blocks, averaged over scored bands, signed square root. Data:
   `learn/trusted-data/judge-ear/` and `judge-v5/`. Control: the recomputed `distance` matches stored values within 1e-6. Checks: (a) Spearman
@@ -260,3 +260,7 @@ Newest last. Each entry: date, task, result, output path and sha256, audited by 
 - 2026-11-06, T5.2, not yet audited (`PF/bakeoff/score-a.json`, 4,020 renders; every stored FTm, RcBG and S record came back with the same hash and judge, GOAT's S held on 215 keys; FTm − S reproduces F55's −0.094 and −0.123): by the score, minus is closer,
   GOAT by item, BKS by DI. `M-ridge − RcBG` −0.020 [−0.028, −0.012] and −0.021 [−0.041, −0.001], closer than the centre on both sets. `M-ridge − FTm` +0.001 [−0.016, +0.019] and −0.039 [−0.084, +0.005], undecided on both. `FTm − RcBG` −0.021 [−0.040, −0.002] and +0.018 [−0.027, +0.064].
   `tonal` reads the same way: `M-ridge − RcBG` −0.036 and −0.024. Development sets, chosen on many times; none of this is sound.
+- 2026-11-06, T3.3, audit of T3.2 by a subagent with its own code: `W-ridge` and `M-ridge` reproduced to 2.5e-7 on all 4 folds with the same inner folds (.225, .244, .291 and .223, .216, .149 with its own folds and alphas); the bound and BKS's pairs reproduced exactly; no held DI, item or unit reaches a fit. `P-ridge` was not refitted. `W-ridge` moves on by the letter,
+  marginally: over 20 inner-fold salts the bound's mean is −.003 (range −.035 to +.018, 10 of 20 above zero); the plain interval clears zero in all 20. What the drive gain is: FTm puts 68% of its answer variance on ac20Power, which holds 8% of label variance, and 3.4% on inputGain, which holds 59%; `W-ridge` puts 2% and 60%. Paired head-standardised it is undecided (−.011 [−.090, +.067]); with both answers' spreads set
+  proportional to the labels', +.100 [+.005, +.194]. So about a third is FTm's misplaced spread and two thirds reading. On same-DI, two-chain pairs inputGain reads `W-ridge` +.326 [+.163, +.475], FTm +.144, `M-ridge` +.133. Without limit labels the gain is +.062 [−.044, +.157]. It rests on pr12's inputGain, and BKS does not repeat it (−.020 [−.402, +.362]). `W-ridge − M-ridge`: drive +.022 [−.051, +.095], cab +.136 [+.080, +.191], so W's
+  body adds on cab, not drive. Artefact attempts failed: distinct files, no shared DI, LUFS, player, backing and seed noise (A-ctl +.006) do not explain it. Do not write "reads drive better". Scripts: scratchpad `mcmp/audit/`, not kept.
