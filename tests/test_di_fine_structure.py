@@ -234,6 +234,7 @@ def test_control_search_writes_only_to_the_arm_folder(tmp_path, monkeypatch):
     from learn import song_settings as SS
 
     monkeypatch.setattr(F, "HOME", tmp_path)
+    monkeypatch.setattr(F, "disk_ok", lambda: True)    # CI runners sit near the guard, and nothing here renders
     ctrl = F.control_dir()
     ctrl.mkdir(parents=True)
     tag, key = "s-pr12", "s|pr12"
