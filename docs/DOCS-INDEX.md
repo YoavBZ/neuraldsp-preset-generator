@@ -754,8 +754,8 @@ was declared, what was measured, and the research behind it.
     switches first; a frozen EfficientAT screen), features (onset-split statistics and flatness
     for drive, a band-limited long-term spectrum for tone and cab; per-clip normalisation only
     on a drive branch) and judging (J0's tonal and a split-half term beside J0; a zero-render
-    flip check on the stored ear pages; one fitted weight at most; no song-only measure
-    validated), each with evidence, licence, Mac cost, cheapest test and rule-out result.
-    Selection: the winner's curse exceeds the effects chosen on, so BKS vetoes and a finalist
-    needs about 27-45 bands. Corrects the methods report on encoders and level. Ends with a plan
-    order. Research, not a declared plan.
+    flip screen on the stored ear pages, confounded by amp and DI; one fitted weight at most; no
+    song-only measure validated), each with evidence, licence, Mac cost, cheapest test and
+    rule-out result. Selection: the winner's curse exceeds the effects chosen on, so BKS vetoes
+    and a finalist needs about 27-45 bands. Corrects the methods report on encoders and level.
+    Ends with a plan order. Research, not a declared plan.
