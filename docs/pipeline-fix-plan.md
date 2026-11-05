@@ -2021,7 +2021,7 @@ instead of generating unrealistic presets our own?"):
       was read.
     - *Review (2026-11-05, independent):* changes required and made: the items after the ear, the placebos drawn only from
       trusted units, the stage check's figures unread before it, and the guards above.
-  - **L1a's gates (2026-11-05).** First batch's ear gate: 49 of 50 passed, 1 unsure (Recording 28), which the gate drops, 3 units. Heavy check: 4 cards, 2 kept, 2 out. 145 units pass both gates; the lag rule keeps 132, from 49 captures and 20 creators, 20 to 27 per amp and class. Stage check on those: held best − S −0.356 [−0.389, −0.323] by capture cluster, `inputGain` at a bound on 8%, go on; search gain 0.365 beside BKS's 0.364 and GOAT's 0.307. Label page built, 72 renders, every fresh render within its checks, build 04cf993bee72, 14 items, answers pending.
+  - **L1a's gates (2026-11-05).** First batch's ear gate: 49 of 50 passed, 1 unsure (Recording 28), which the gate drops, 3 units. Heavy check: 4 cards, 2 kept, 2 out. 145 units pass both gates; the lag rule keeps 132, from 49 captures and 20 creators, 20 to 27 per amp and class. Stage check on those: held best − S −0.356 [−0.389, −0.323] by creator (20 clusters), `inputGain` at a bound on 8%, go on; search gain 0.365 beside BKS's 0.364 and GOAT's 0.307. Label page built, 72 renders, every fresh render within its checks, build 04cf993bee72, 14 items, answers pending.
 - **L1b, the second capture batch (ledger `phase_l1b`; 2026-11-05).** The user allowed more TONE3000 downloads the night L1a was
   declared, and signed the fetch in. 150 more named captures (`manifest-batch2.csv`): 108 packs, 79 creators (11 also in the first
   batch), 8 families, 91 crunch and 59 clean by the makers' words and the fetcher's guess on 17, 50 calibrated, 137 A2 and
@@ -4253,7 +4253,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 
   Share and score are pooled over parts, clustered by band; the gaps are band-weighted. Above zero favours the first candidate, so the score's sign here is the reverse of F55's table. FTm and FT get equal ratings on 8 of 10 parts, though 5 of those 8 are both far, a floor, and FT ranks above FTm on 4 of the 5; their clips correlate above 0.96 on 6 of 10 parts.
 
-  Other weighting: closeness pooled FTm over S +0.10 [−0.71, +0.82], FTm over FT 0.00 [−0.25, +0.20], FT over S +0.10 [−0.56, +0.69]; score band-weighted −0.117 [−0.200, −0.038], −0.037 [−0.097, +0.014], −0.080 [−0.173, +0.001], the last being F54's figure on the same clips. No row changes its reading. FTm over S leaving one cell out: ac20/clean 0.38 [0.11, 0.71], ac20/crunch 0.67 [0.33, 1.00], pr12/crunch 0.33 [0.00, 0.64], sw50r/clean 0.25 [0.00, 0.57], sw50r/crunch 0.44 [0.12, 0.75]; all reach one half.
+  Other weighting: closeness pooled FTm over S +0.10 [−0.71, +0.82], FTm over FT 0.00 [−0.25, +0.20], FT over S +0.10 [−0.56, +0.69]; score band-weighted −0.117 [−0.200, −0.038], −0.037 [−0.097, +0.014], −0.080 [−0.173, +0.001], the last with F54's mean on the same clips. No row changes its reading. FTm over S leaving one cell out: ac20/clean 0.38 [0.11, 0.71], ac20/crunch 0.67 [0.33, 1.00], pr12/crunch 0.33 [0.00, 0.64], sw50r/clean 0.25 [0.00, 0.57], sw50r/crunch 0.44 [0.12, 0.75]; all reach one half.
 - **By the declared map.** All three rows reach one half: not known by ear, and FTm picks nothing. A true 75% clears about half the time on this page, so this does not rule the model out, though the primary row's upper end sits below 0.75 on the declared bootstrap (0.69; pooled cluster t 0.76) and its point estimate below one half. FTm's better reading of tone (F55) is not shown by ear against FT on these parts (0.40 [0.10, 0.75]).
 - **Where the answers split (counts and means, no declared intervals).**
 
@@ -4292,7 +4292,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   61,790 in all. **FT's control groups (2026-11-02):** 2,880, about 64,670 in all. **The judge against the ear
   (2026-11-02):** 60 (56, and 4 after the amendment), about 64,730 in all. **J5's fresh page (2026-11-03):** 56
   (28 kept, each with its priming render), about 64,790 in all. **L0 (2026-11-04):** 80 (40 kept, each with its
-  priming render), about 64,870 in all. **The night of 2026-11-05 (labels ahead of the ear, nothing read from them):** L1a's lags 900 and labels 5,602 on v2, L1b's lags 882 and labels 5,539, N2 1,207, FTh and FTm's reads 2,680, N4's 40: 16,850, N5b's 1,336: about 83,000 in all.
+  priming render), about 64,870 in all. **The night of 2026-11-05 (labels ahead of the ear, nothing read from them):** L1a's lags 900 and labels 5,602 on v2, L1b's lags 882 and labels 5,539, N2 1,207, FTh and FTm's reads 2,680, N4's 40: 16,850, N5b's 1,336, L1a's label page 72: about 83,000 in all.
 - **MPS used:** about 4 h before 5B.2 (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and
   backing runs, the k-fold, phase 5A's two 10-minute seeds); 5B.2's 12 trainings about 2 h more (arm P 4 × 7.2–8.4 min,
   arm R 8 × 11.4 min); stage 2's 8 trainings 1.5 h more (8 × 11.4 min); 5C's RG 8 trainings 1.75 h more (8 × 13.0–13.3
