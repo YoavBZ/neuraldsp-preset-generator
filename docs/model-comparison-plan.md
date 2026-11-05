@@ -21,9 +21,10 @@ Read this block first after any compaction, then the task list, then the finding
 - **Run from the worktree root:** `TORCH_PY=~/ndsp-presets/tools/demucs-venv/bin/python`; `$TORCH_PY -m learn.bakeoff ...`. Tests:
   `/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python -m pytest tests/test_bakeoff.py tests/test_bakeoff_inputs.py -q -n0`.
 - **Peers:** SendMessage to "NeuralDSP preset generator (ML)", "(executor)", "(controller)", "(cloud researcher)". The researcher's PR is #394.
-- **Now:** T3.1, rerunning `control` and `check` on the reviewed code.
-- **Next:** T2.3, ledger and PR, then T3.2.
-- **Running jobs and PIDs:** `bakeoff control`, PID 91963, CPU, log `PF/bakeoff/control.log`.
+- **Now:** T2.3 and T4.3. The reviewer is checking the fixes; `check` is running on CPU; `A-ctl` is training, as it changes nothing.
+- **Next:** on the reviewer's OK, `bakeoff read` (T3.2), and the review of `learn/bakeoff_train.py` before `A-cat`.
+- **Running jobs and PIDs:** `bakeoff check` PID 95505; training chain PID 97624, script `PF/bakeoff/chain.zsh`, log `PF/bakeoff/logs/chain-ctl.log`. To stop the chain after the
+  process in hand: `touch PF/bakeoff/STOP`. Finished runs are skipped on a relaunch.
 - **Render or MPS use announced to the ML session:** none. Holds lifted so far: the ML session's renders finished at about 23:20 on 2026-11-05 and the 3 slots are free;
   it plans none tonight and will say first if an audit asks. A new hold, or its end, is recorded on this line.
 - **Disk:** about 36–39 GB free, floor 33 GB: stop new builds under it and tell the executor.
@@ -135,7 +136,7 @@ come from the stored mels, so nothing here needs audio. An FTm-features arm was 
 - [ ] T3.2 `bakeoff read`, output `PF/bakeoff/read-a.json` and its `.rows.pkl`. Each candidate's answers are cached per fold in
   `PF/bakeoff/answers/`, so a rerun resumes there; the report step reruns whole.
 - [ ] T3.3 Independent audit of T3.2 by recomputation, before any result is built on.
-- [ ] T3.4 `learn/bakeoff_judge.py`, the judge battery, CPU, nothing installed. Terms: J0 `distance`, `tonal`, and a cross-fitted per-band
+- [x] T3.4 `learn/bakeoff_judge.py`, the judge battery, CPU, nothing installed. Terms: J0 `distance`, `tonal`, and a cross-fitted per-band
   term: the band's mean dB error on odd 1 s blocks times that on even blocks, averaged over scored bands, signed square root. Data:
   `learn/trusted-data/judge-ear/` and `judge-v5/`. Control: the recomputed `distance` matches stored values within 1e-6. Checks: (a) Spearman
   and gamma with the ear on each page; (b) the flip, reverb and delay against the +6 dB shelf on the clean amp on both DIs, 4 orders, J0 right on
@@ -179,10 +180,10 @@ the eight FTm_k sum to 54.0 min. The ML session gets each arm's size and PIDs be
 | 5 | `A-mic` | The mic loss weight, 0.1 | W's stored state | 54 min |
 | 6 | `A-in` | The best input from Phase 3 as a second branch, if any moves on or leads | Fresh, as `A-cnn` | 74 min |
 
-- [ ] T4.1 Read `P.cmd_train`, `P.cmd_train_ft` and `P.fit`; write `learn/bakeoff_train.py`, a new file, nothing in `pipeline_fix` changed. Any recipe
+- [x] T4.1 Read `P.cmd_train`, `P.cmd_train_ft` and `P.fit`; write `learn/bakeoff_train.py`, a new file, nothing in `pipeline_fix` changed. Any recipe
   takes extra rows later, with the mask and a drop key on `di`.
-- [ ] T4.2 Control: one fold and seed of `A-ctl` on FTm's own seed; its last logged real loss within 5% of FTm's. About 6 min.
-- [ ] T4.3 Run the arms in order, in resumable pieces, one `run.json` each with command, seed, git sha, PID, minutes. The executor watches from launch.
+- [x] T4.2 Control: one fold and seed of `A-ctl` on FTm's own seed; its last logged real loss within 5% of FTm's. About 6 min.
+- [~] T4.3 Run the arms in order, in resumable pieces, one `run.json` each with command, seed, git sha, PID, minutes. The executor watches from launch.
 - [ ] T4.4 Each arm's answers fill `_ans` and `_swap` directly (`read_fold` cannot load these nets), read through `reads_v3`, paired against FTm. Audit. Log.
 
 **Declared rule for Phase 4.** An arm moves on if `arm − FTm` clears zero on GOAT by the max-t bound over all arms' groups, beats `A-ctl − FTm`'s size in that
@@ -245,3 +246,7 @@ Newest last. Each entry: date, task, result, output path and sha256, audited by 
 - 2026-11-05, T2.2: an independent review of this plan and harness found that `bakeoff read` did not compute the declared contrasts, that its family correction tested the wrong thing,
   that FTm features would leak unseen, that LUFS was unscaled (46% of `mel`'s variance), that "level" conclusions broke the plan's own rule, and that Phases 4 and 5 misstated sizes and
   centres. Centring, PCA, inner folds, the caches, `trunk_of` and the use of `read_fold` were clean. All are fixed here or in the code; the first `check` ran on the old code and is superseded.
+- 2026-11-05, T4.2: `A-ctl` on fold 0 with FTm's own seed, through `learn/bakeoff_train.py`: last training loss 2.8125 against FTm's stored 2.8125, in 4 min on MPS. The loop reproduces the recipe.
+- 2026-11-05, T3.4, not yet audited (`PF/bakeoff/judge.json`): the copy of J0's path matches every stored value with a worst gap of 0.0. No term passes the declared rule: flip 2 of 4 for `distance`, `tonal` and the
+  cross-fitted term alike. Spearman with the ear, judge-ear then judge-v5: `distance` +0.48, +0.74; `tonal` +0.53, +0.70; cross +0.40, +0.58. `tonal` and cross fill the top three with tone steps on judge-ear,
+  `distance` does not. For a 6 dB bell from d 2.73 to 6.05 the fall is 3.2× for `distance`, 2.6× for `tonal`, 1.6× for cross, so the sensitivity mechanism is real but it does not track this ear better. In-sample, one listener.
