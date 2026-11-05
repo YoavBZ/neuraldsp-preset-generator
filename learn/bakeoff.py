@@ -3,6 +3,7 @@
     $TORCH_PY -m learn.bakeoff control                 # FTm, FT and W, cached, against N1's stored r (CPU)
     $TORCH_PY -m learn.bakeoff check                   # the harness: shuffled labels read near zero, spiked labels read high
     $TORCH_PY -m learn.bakeoff read OUT.json           # the declared candidates, read as `reads_v3` reads a model (CPU)
+    $TORCH_PY -m learn.bakeoff arms OUT.json ARM ...   # Phase 4's arms from their stored answers (CPU)
 
 Candidates answer each held real record from what a fold's model may see. A real-trained candidate fits the fold's training
 records (`dfix_rows_of`, each record once, all its backing variants). A plugin-trained candidate fits W's stored `train_ids`
@@ -122,6 +123,16 @@ def choose_alpha(X, y, clusters, alphas=ALPHAS):
     def err(a):
         return sum(((y[folds == f] - X[folds == f] @ ridge(X[folds != f], y[folds != f], a)) ** 2).sum() for f in set(folds))
     return min(alphas, key=err)
+
+
+def residual_sd(c, cm, rows, searched):
+    """Each head's sd about its (amp, class) centre on training rows where it was searched, 0.25 where too few."""
+    c, cm = np.asarray(c, float), np.asarray(cm, float)
+    cells = [(h["amp"], h["cls"]) for h in rows]
+    mask = cm * np.stack([searched(*q)[0] for q in cells])
+    centre = cell_centres(c, mask, cells)
+    resid = (c - np.stack([centre[q] for q in cells])) * mask
+    return np.array([resid[mask[:, j] > 0, j].std() if mask[:, j].sum() > 1 else 0.25 for j in range(c.shape[1])])
 
 
 def rrr_fit(Z, Y, clusters, rank=RANK):
@@ -334,7 +345,7 @@ def candidate_answers(spec, rows_tr, clusters, files, rows_te, files_te, Y_tr, s
     fallback = np.mean(list(centre.values()), 0)
     base_te = np.stack([centre.get(q, fallback) for q in cells_te])
     resid = (c - np.stack([centre[q] for q in cells_tr])) * mask
-    sd = np.array([resid[mask[:, j] > 0, j].std() if mask[:, j].sum() > 1 else 0.25 for j in range(c.shape[1])])
+    sd = residual_sd(c, cm, rows_tr, searched)
     answers = []
     for seed in seeds:
         Xtr = np.stack([[feature(name, seed, f, h["amp"], h["cls"]) for f in fs] for h, fs in zip(rows_tr, files)])  # [n, v, 2, d]
@@ -555,7 +566,7 @@ def contrast_draws(S, a, b, g, W, of, standard):
     return whole, np.array([R.wr(xa, y, w[pt].astype(float), C, n) - R.wr(xb, y, w[pt].astype(float), C, n) for w in W])
 
 
-def bounds(rows):
+def bounds(rows, family_=BOUND):
     """Every contrast that can move a candidate on, with its plain 90% interval and a simultaneous 95% lower bound over all
     of them, on one set of GOAT item weights. Drive on crunch pairs head-standardised: inputGain alone carries 56% of its
     label variance."""
@@ -565,7 +576,7 @@ def bounds(rows):
     items = {u: i for i, u in enumerate(sorted({r["cluster"] for r in G}))}
     W = np.random.default_rng(R.RNG_SEED + 1).multinomial(len(items), np.ones(len(items)) / len(items), size=R.BOOT_DRAWS)
     out, draws, whole = [], [], []
-    for a, b, g, crunch in BOUND:
+    for a, b, g, crunch in family_:
         S = [r for r in G if r["cls"] == "crunch"] if crunch else G
         of = np.array([items[r["cluster"]] for r in S])
         d, q = contrast_draws(S, a, b, g, W, of, crunch)
@@ -605,6 +616,28 @@ def player_read(rows, labels, gunits):
     return out
 
 
+def cmd_arms(args):
+    """Phase 4's arms, read from their stored answers beside FTm: `reads_v3`'s report, and the max-t bound over each arm's
+    groups against FTm."""
+    from learn import reads_v3 as R
+
+    sha_ok()
+    arms = {a: ("arm", "arm", "real") for a in args.arms}
+    rows, data = base_rows()
+    by_fold = collections.defaultdict(list)
+    for r in rows:
+        by_fold[r["fold"]].append(r)
+    for k in range(4):
+        add_candidates(by_fold[k], k, arms, data)
+    rows = [r for k in range(4) for r in by_fold[k]]
+    pathlib.Path(args.out + ".rows.pkl").write_bytes(pickle.dumps(rows))
+    labels = [*BASE, *arms]
+    res = R.report(rows, labels, pairs=[(a, "FTM") for a in arms])
+    res["bounds"] = bounds(rows, tuple((a, "FTM", g, False) for a in arms for g in ("drive", "tone", "cab")))
+    res["player"] = player_read(rows, labels, data[4])
+    pathlib.Path(args.out).write_text(json.dumps(res, indent=1, default=float))
+
+
 def cmd_read(args):
     from learn import reads_v3 as R
 
@@ -638,6 +671,10 @@ def main(argv=None):
     r = sub.add_parser("read")
     r.add_argument("out")
     r.set_defaults(fn=cmd_read)
+    r = sub.add_parser("arms")
+    r.add_argument("out")
+    r.add_argument("arms", nargs="+")
+    r.set_defaults(fn=cmd_arms)
     a = ap.parse_args(argv)
     a.fn(a)
 
