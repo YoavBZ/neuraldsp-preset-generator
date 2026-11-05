@@ -25,7 +25,7 @@ record match, except as listed under "Data touched outside the limits".
 |---|---|---|---|
 | **Scoring** | J0 stays. No candidate beats it on both ear pages. | Weak near real distances: removing a 6 dB bell reads about −0.03 to −0.04 at d 4, at the edge of what is read as meaningful. | Report `tonal` beside `distance`, stratified by d_S, on stored judged rows. |
 | **Reading skill** | Own-against-swap and fold-demeaned, recording-level r. | Loss against a lookup flips with the comparator; pooled r is biased down; BKS's rows are weak (below). | In N1 already. |
-| **Model** | FT stands until tested. Next candidate: FT corrected to searched heads, with S written on the rest. A ridge on pooled mel statistics is the baseline any network must beat; state its input. | Unsearched heads are labelled as S, mics dominate the loss at FT's start, and the amp head fits noise. | N1 (masked FT). Ridge by sound, about 670 renders. |
+| **Model** | FT stands until a read by score. Next candidate: FT corrected to searched heads, with S written on the rest (N1's first read, F55 pending, is ahead by knob on GOAT). A ridge on pooled mel statistics is the baseline any network must beat; state its input. | Unsearched heads are labelled as S, mics dominate the loss at FT's start, and the amp head fits noise. | N1's read by score. Ridge by sound, about 670 renders. |
 | **Features** | 96-band log-mel is enough for tone. For drive nothing is shown better where drive actually varies. | W's skill rests on long-term colour, which transfers worst. | Tone from the long-term spectrum; a drive read on crunch before splitting inputs. |
 | **Feature extraction** | None is good on stems yet. | Models train on P2b and read X-LANCE stems (domain AUC 0.997). A lead: stems may lean toward the dominant other guitar. | Train or align on real stems; test the lead by labelling the dominant guitar. |
 | **Labels** | Search v2 (N2): adopted by its declared rule, about 30% fewer renders, not shown more reliable. | v1: 52 evaluations, step stuck at 0.25, 8 dB input-gain resolution. | Reliability of the capture labels. |
@@ -206,7 +206,7 @@ Correct [reviewer]: 520 labels replay exactly; FT − S −0.177 reproduced; fol
 
 ## Recommended order
 
-ML session: N1 (masked FT, read with these measures, beside the rig table) is running. N2 (search v2) is adopted by its declared rule after 1,207 renders, and is not shown more reliable. N3 (the learning curve) runs if time allows.
+ML session: N1's first read (F55 pending) took masked FT through these measures, beside the rig table. On GOAT it follows recordings better than FT on tone (+0.258 against +0.121; FTM − FT +0.137 [+0.065, +0.207]) and keeps cab, and BKS stays undecided; this is by knob, with no score read yet. N2 (search v2) is adopted by its declared rule after 1,207 renders, and is not shown more reliable. N3 (the learning curve) runs if time allows.
 
 1. Zero renders: swap percentile bootstraps for t; report `tonal` beside `distance`, stratified by d_S, on stored judged rows.
 2. Ridge by sound against the centres, about 670 renders, with its input stated: is its knob gain audible, and does any survive the backing?
