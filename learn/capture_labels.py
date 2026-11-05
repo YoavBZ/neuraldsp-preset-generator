@@ -580,7 +580,7 @@ def scope_out():
 
 
 def trusted(units):
-    """`passed` on the stored verdicts, less `scope_out`; refuses while anything is unheard or either page is not the
+    """`passed` on the stored verdicts, less `scope_out`; refuses while anything is unheard or any page is not the
     current one."""
     ear = ear_verdicts()
     ek = root() / "ear-key.json"
@@ -740,6 +740,7 @@ def rest_may_run():
         raise SystemExit("the rest waits for the stage check, and does not run on its stop")
     if not (root() / "scope.json").exists():
         raise SystemExit("the rest waits for the scope page")
+    scope_out()                                        # refuses a partial or stale scope page
 
 
 def cmd_night_check(_args):

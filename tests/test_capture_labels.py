@@ -348,6 +348,22 @@ def test_scope_cards_are_undriven_crunch_at_the_line_and_not_yet_heard():
     assert L.scope_cards(us, {"f"}) == ["a", "b"]
 
 
+def test_the_scope_page_builds_its_cards_and_refuses_the_second_batch(tmp_path, monkeypatch):
+    monkeypatch.setattr(P, "require", lambda k: {})
+    monkeypatch.setattr(L, "root", lambda: tmp_path)
+    us = [{"unit": "u", "cls": "crunch", "split": "uncertain", "nonlinear_db": -1.0, "render_sha256": "r"}]
+    monkeypatch.setattr(L, "trusted_units", lambda: (us, {}))
+    (tmp_path / "ear-check").mkdir()
+    (tmp_path / "ear-check" / "key.json").write_text(json.dumps({"items": []}))
+    got = {}
+    monkeypatch.setattr(L, "build_page", lambda items, spec, key, by: got.update(items=items, spec=spec, key=key))
+    L.cmd_scope(None)
+    assert [it["unit"] for it in got["items"]] == ["u"] and got["spec"] is L.SCOPE_SPEC and got["key"] == "scope-key.json"
+    monkeypatch.setattr(L, "BATCH", L.BATCH2)
+    with pytest.raises(SystemExit, match="first batch"):
+        L.cmd_scope(None)
+
+
 def test_scope_out_drops_the_label_pages_two_and_what_the_scope_page_did_not_keep(tmp_path, monkeypatch):
     us = layout(tmp_path, monkeypatch, verdicts=False)
     (tmp_path / "ear-key.json").write_text(json.dumps({"build": "e"}))
@@ -388,6 +404,11 @@ def test_the_rest_needs_the_page_and_a_clean_stage_check(tmp_path, monkeypatch):
     with pytest.raises(SystemExit, match="scope page"):
         L.rest_may_run()
     (tmp_path / "scope.json").write_text(json.dumps({"build": "s", "verdicts": {}}))
+    L.rest_may_run()
+    (tmp_path / "scope-key.json").write_text(json.dumps({"build": "s", "items": [{"unit": "u"}]}))
+    with pytest.raises(SystemExit, match="1 scope cards still unheard"):
+        L.rest_may_run()
+    (tmp_path / "scope.json").write_text(json.dumps({"build": "s", "verdicts": {"u": {"verdict": "keep"}}}))
     L.rest_may_run()
     (tmp_path / "ear-check.json").write_text(json.dumps({"branch": None, "build": "04cf993bee72"}))    # F57's held-out part
     L.rest_may_run()
