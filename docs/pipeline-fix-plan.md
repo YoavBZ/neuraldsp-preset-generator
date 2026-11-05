@@ -2100,6 +2100,12 @@ instead of generating unrealistic presets our own?"):
     ranked before. A clear row is a lead for L2. A row reaching one half is not known by ear. On these 10 parts in 7 bands a true 75% clears about half the time (52%), a true 60%
     clears 20%, chance 4% (simulated on `boot_share`). L0 chose each amp by S's closeness, so FTm − S leans toward S. FT's clips carry no hold, so FTm − FT mixes the hold and the
     mask. One listener, on parts heard before. FTm's stored judges stay unread until the page is scored. No other V-real direction is read.
+  - **N5, does the reading survive the stem? (declared 2026-11-05 after F55; ledger `phase_n5`; `learn/night3.py`).** Every model above trains and reads a real unit in a
+    backing; the product reads an X-LANCE stem, and the ML review found the two inputs far apart (domain AUC 0.997). V-real is the only stem read so far. So each labelled BKS
+    and GOAT unit's variant 0 mix is rebuilt (its features must equal the stored ones exactly), separated by X-LANCE, and brought to the product's level (the mix at −12.25 LUFS,
+    the stem at the same gain). Zero plugin renders, about 25 min on MPS. Reads, reads_v3 on held GOAT with the stem in place of the backed input: FTm, FT and W by group, stem
+    against backed paired, and own against another recording's. BKS beside, deciding nothing. Reading: an interval clear of zero below says the separator costs that group's reading, and the next fix is
+    on the input (fine-tuning on stems) rather than on more rows; reaching zero is undecided. Knob units, no sound. A pool backing is not a song: no other guitars here, so this is the kindest stem.
   - **Rules.** Apart from N4's declared page, BKS and GOAT only. V-real, the NS songs, the panel and the captures stay out. The capture page and its labels are
     untouched by these reads. Runs saved apart (`P2b-ftm*`, `night2/`), FT and its answers unchanged.
   - **Caveats.** The review's figures on sound are unmeasured. BKS is 8 DIs in 2 songs (the replicate pairs 5 DIs of one), and its performances sit in W's plugin rows, so held
