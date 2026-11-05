@@ -24,7 +24,8 @@ Read this block first after any compaction, then the task list, then the finding
 - **Next:** T2.1, set the candidate list from that report.
 - **Running jobs and PIDs:** none.
 - **Render or MPS use announced to the ML session:** none.
-- **Blocked on the user:** nothing yet.
+- **Blocked on the user:** nothing yet. The user went to sleep at about 22:40 on 2026-11-05 (controller): carry on as far as the
+  rules allow, and when finished send the controller two or three plain lines on what was found, checked and left open.
 
 ## Rules for this work
 
@@ -36,8 +37,8 @@ Set by the ML session on 2026-11-05 unless marked. They hold for the whole plan.
 - Renders run as resumable shards. When the ML session says its centre read is about to start, finish the process in hand,
   start no other, and resume when it says.
 - Before each render batch or MPS run, tell the ML session its size and PIDs.
-- MPS is ours while the ML session is not training: at most 2 runs at a time, un-niced (`setopt no_bg_nice`), loss on CPU
-  (the stft gradient bug).
+- MPS is ours while the ML session is not training: one run at a time (the ML session allows 2, the controller's rule of
+  2026-11-05 says one GPU job, so the stricter holds), un-niced (`setopt no_bg_nice`), loss on CPU (the stft gradient bug).
 - Disk guard 31 GB, 39 GB free at the start: keep outputs small, store no audio or feature dumps.
 - Morgan rules: `isolate=True`, one priming render, 0.25 s trim, a fresh process for time effects.
 - Kill only PIDs this session launched. Leave render processes of others and anything PACE-related alone.
