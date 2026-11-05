@@ -45,9 +45,15 @@ def other_rows(rows, render, plan_others):
         o = dominant(render[r["i"]]["others"])
         if o is None:
             continue
-        base = next(p["draw"]["base"] for p in plan_others[r["i"]] if p["di"] == o["di"] and isinstance(p["draw"], dict))
-        pairs.append((r, {**r, "amp": o["amp"], "base": base, "label": {"amp": o["amp"], "settings": o["settings"]}}))
+        draw = next(p["draw"] for p in plan_others[r["i"]] if p["di"] == o["di"] and isinstance(p["draw"], dict))
+        pairs.append((r, {**r, "amp": o["amp"], "base": draw["base"], "mode": draw["mode"], "settings": o["settings"],
+                          "label": {"amp": o["amp"], "settings": o["settings"]}}))
     return pairs
+
+
+def core_rows(rows):
+    """`rows` labelled by their full settings: a core row's own `label` is today's, unit-scaled, and `encode` needs these."""
+    return [{**r, "label": {"amp": r["amp"], "settings": r["settings"]}} for r in rows]
 
 
 def hits(prob, amps, names):
@@ -97,13 +103,16 @@ def clear(row, above):
     return row["lo"] > 0 if above else row["hi"] < 0
 
 
-def reading(lean_stem, follow_stem, lean_mix, control_holds):
-    """The declared map, first match: `lean_*` O's amp hits less T's, `follow_stem` T's answers on the target's amp less
-    the other's on rows whose amps differ; `control_holds`, on the clean target T's amp head reads and O's does not."""
+def reading(lean_stem, follow_stem, lean_mix, stem_minus_mix, control_holds):
+    """The declared map, first match: `lean_*` O's amp hits less T's; `stem_minus_mix` that lean on the stem less on the
+    mix, paired by example; `follow_stem` T's answers on the target's amp less the other's on rows whose amps differ;
+    `control_holds`, on the clean target T's amp head reads and O's does not."""
     if not control_holds:
         return "void"
     if clear(lean_stem, True):
-        return "already in the mix" if clear(lean_mix, True) else "the lead holds"
+        if clear(stem_minus_mix, True):
+            return "the lead holds"
+        return "already in the mix" if clear(lean_mix, True) else "not shown"
     if clear(lean_stem, False) and clear(follow_stem, True):
         return "the lead does not hold"
     return "not shown"
@@ -210,8 +219,7 @@ def main(argv=None):
         raise SystemExit("the training and FS5 sections overlap")
     render = T.rows_of(root, "t2", "render")
     plan_others = {x["i"]: x["others"] for x in V._load(T.plan_path(root, "t2"))["examples"]}
-    core = lambda rows: [{**r, "label": {"amp": r["amp"], "settings": r["settings"]}} for r in rows]  # noqa: E731
-    ptr, pfs = other_rows(core(tr), render, plan_others), other_rows(core(fs), render, plan_others)
+    ptr, pfs = other_rows(core_rows(tr), render, plan_others), other_rows(core_rows(fs), render, plan_others)
     tr_t, tr_o = [p[0] for p in ptr], [p[1] for p in ptr]
     fs_t, fs_o = [p[0] for p in pfs], [p[1] for p in pfs]
     arrays, pos = features(root, tr_t + fs_t)
@@ -220,6 +228,9 @@ def main(argv=None):
     amps_t, amps_o = [r["amp"] for r in fs_t], [r["amp"] for r in fs_o]
     cell_t = [f"{r['amp']}|{r['base']}" for r in fs_t]
     differ = np.array([x != y for x, y in zip(amps_t, amps_o)])
+    no_wide = np.array([t["mode"] != "wide" and o["mode"] != "wide" for t, o in zip(fs_t, fs_o)])
+    by_id = dict(enumerate(sec.tolist()))
+    lean_of = {}
     t0 = time.time()
     rec = {"design": "docs/stem-lean-plan.md", "train": len(tr_t), "fs5": len(fs_t), "fs5_of": len(fs), "train_of": len(tr),
            "amps_differ": int(differ.sum()), "sections": len(set(sec.tolist())), "inputs": {}}
@@ -254,19 +265,24 @@ def main(argv=None):
             "majority_share_T": float(np.mean([x == ST["majority"] for x in amps_t])),
             "majority_share_O": float(np.mean([x == SO["majority"] for x in amps_o])),
             "amp_readable": {w: bool(r["readable"]) for w, r in amp.items()},
-            "lean_O_minus_T": R.section_t(dict(enumerate((ho - ht).tolist())), dict(enumerate(sec.tolist()))),
+            "lean_O_minus_T": R.section_t(dict(enumerate((ho - ht).tolist())), by_id),
+            "lean_neither_wide": R.section_t({n: float(v) for n, v in enumerate(ho - ht) if no_wide[n]}, by_id),
             "follow_target_minus_other": R.section_t(dict(enumerate((on_t - on_o).tolist())),
                                                      dict(enumerate(sec[differ].tolist()))),
             "readable_T": sum(r["readable"] for r in rt), "readable_O": sum(r["readable"] for r in ro),
             "today_readable_T": sum(r["readable"] for r in today(rt)), "today_readable_O": sum(r["readable"] for r in today(ro)),
             "groups": groups}
+        lean_of[key] = ho - ht
         x = rec["inputs"][key]
         print(f"({key}) {name}: amp hit T {x['amp_hit_T']:.3f} O {x['amp_hit_O']:.3f}, lean {x['lean_O_minus_T']}, follow "
               f"{x['follow_target_minus_other']}, today readable T {x['today_readable_T']} O {x['today_readable_O']} "
               f"({time.time() - t0:.0f} s)", flush=True)
     c, b, t = (rec["inputs"][k] for k in "cba")
     rec["control_holds"] = t["amp_readable"]["T"] and not t["amp_readable"]["O"]
-    rec["branch"] = reading(c["lean_O_minus_T"], c["follow_target_minus_other"], b["lean_O_minus_T"], rec["control_holds"])
+    rec["neither_wide"] = int(no_wide.sum())
+    rec["stem_minus_mix"] = R.section_t(dict(enumerate((lean_of["c"] - lean_of["b"]).tolist())), by_id)
+    rec["branch"] = reading(c["lean_O_minus_T"], c["follow_target_minus_other"], b["lean_O_minus_T"], rec["stem_minus_mix"],
+                            rec["control_holds"])
     rec["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     V._save(od / OUT, rec)
     print(f"BRANCH: {rec['branch']}\nLEAN DONE: {od / OUT}")
