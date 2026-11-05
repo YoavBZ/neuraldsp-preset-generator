@@ -2701,7 +2701,7 @@ def cmd_real_predict(args):
     if args.names == "RcM":
         return real_rcm_answers()
     if args.names in ("P2a-pc", "P2a-pcsz", "P2a-real", "P2a-reals2", "P2a-pc-Sc", "P2a-goat", "P2a-goatshuf") \
-            or args.names in DFIX_READS or args.names in (FT_BASE, FTM_BASE):
+            or args.names in DFIX_READS or args.names in (FT_BASE, FTM_BASE, FTS_TAG):
         return real_predict_5b2(args.names)
     if args.names == "S-shift":
         require("phase_5b1b")
@@ -2763,7 +2763,7 @@ def read_phase(name):
     """The ledger phase a read-2 model tag answers under: FT's, a D_fix family member's, 5C's or 5B.2's."""
     if name == FT_BASE:
         return "phase_ft"
-    if name == FTM_BASE:
+    if name in (FTM_BASE, FTS_TAG):
         return "phase_night2"
     if name.startswith("P2b-dfix"):
         return dfix_phase(name)
@@ -2793,9 +2793,9 @@ def real_predict_5b2(name):
     elif name.startswith("P2a-goat"):                   # 5C: RG and RGshuf, each BKS unit by its DI's fold model
         folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
         names = {p_["unit"]: f"{name}{folds[p_['di']]}" for p_ in parts}
-    elif name in (FT_BASE, FTM_BASE):                   # FT's read 2: each BKS unit by its DI's FT_k
+    elif name in (FT_BASE, FTM_BASE, FTS_TAG):          # FT's read 2: each BKS unit by its DI's FT_k
         folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
-        names = {p_["unit"]: ft_name(folds[p_["di"]], base=name) for p_ in parts}
+        names = {p_["unit"]: ft_name(folds[p_["di"]], base=FTM_BASE if name == FTS_TAG else name) for p_ in parts}
     elif name.startswith("P2b-dfix"):                   # D_fix's read 2: each BKS unit by its DI's fold model only
         if name not in DFIX_READS:
             raise SystemExit(f"--names {sorted(DFIX_READS)} (each read by its fold models: an all-labels run saw every"
@@ -2820,7 +2820,9 @@ def real_predict_5b2(name):
         nets, _, target, const = models[names[prt["unit"]]]
         ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
         g = DE.inference_gain_db(ref, target)
-        backed = dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE, FTM_BASE) else None
+        backed = stem_backed(prt["unit"]) if name == FTS_TAG else dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE, FTM_BASE) else None
+        if name == FTS_TAG and backed is None:
+            continue
         for amp in AMPS3:
             sel, S = ms[amp][prt["cls"]]
             key = real_key(prt, amp)
@@ -2839,7 +2841,7 @@ def real_predict_5b2(name):
                                            sw, mics)
                 else:
                     st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
-                    if name == FTM_BASE:
+                    if name in (FTM_BASE, FTS_TAG):
                         st = hold_outside_space(st, S, amp)
                 out[name].setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(st)}
             if name == "P2a-pc":
@@ -2848,7 +2850,7 @@ def real_predict_5b2(name):
     for t, a in out.items():
         save(out_dir() / REAL_DIR / "answers" / f"{t}.json", {
             "plan": PLAN, "ledger": f"{LEDGER_ID} {read_phase(name)}",
-            "tag": t, "parts": parts, "input": "backed (variant 0)" if name in (*DFIX_BASES, FT_BASE, FTM_BASE) else "clean", "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
+            "tag": t, "parts": parts, "input": "X-LANCE stem" if name == FTS_TAG else "backed (variant 0)" if name in (*DFIX_BASES, FT_BASE, FTM_BASE) else "clean", "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
             "unit_model": names, "answers": a, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"REAL PREDICT 5B.2 DONE: {name} on {len(parts)} units")
 
@@ -3913,7 +3915,7 @@ def goat_predict(name):
     units = goat_read_units()
     models = {}
     for k in sorted({p_["fold"] for p_ in units}):
-        nm = (ft_name(k, base=name) if name in (FT_BASE, FTM_BASE) else dfix_fold_name(name, k) if name in DFIX_BASES
+        nm = (ft_name(k, base=FTM_BASE if name == FTS_TAG else name) if name in (FT_BASE, FTM_BASE, FTS_TAG) else dfix_fold_name(name, k) if name in DFIX_BASES
               else f"{name}{k}")
         nets, recs = zip(*(load_run(nm, sd, "best") for sd in SEEDS))
         for r_ in recs:
@@ -3927,7 +3929,9 @@ def goat_predict(name):
         g = DE.inference_gain_db(ref, target)
         amp = prt["amp"]
         sel, S = ms[amp][prt["cls"]]
-        backed = dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE, FTM_BASE) else None   # D_fix, FT: pool-backed
+        backed = stem_backed(prt["unit"]) if name == FTS_TAG else dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE, FTM_BASE) else None   # D_fix, FT: pool-backed
+        if name == FTS_TAG and backed is None:
+            continue
         for search in ("A", "B"):
             if backed is not None:
                 s8, ls = backed[search]
@@ -3936,7 +3940,7 @@ def goat_predict(name):
             x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
             r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
             st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
-            if name == FTM_BASE:
+            if name in (FTM_BASE, FTS_TAG):
                 st = hold_outside_space(st, S, amp)
             out.setdefault(real_key(prt, amp), {})[search] = {"select": sel, "settings": LO.sdict(st)}
     save(out_dir() / GOAT_DIR / "answers" / f"{name}.json", {
@@ -3948,7 +3952,7 @@ def goat_predict(name):
 
 
 def cmd_goat_predict(args):
-    if args.names not in ("P2a-goat", "P2a-goatshuf", *DFIX_BASES, FT_BASE, FTM_BASE):
+    if args.names not in ("P2a-goat", "P2a-goatshuf", *DFIX_BASES, FT_BASE, FTM_BASE, FTS_TAG):
         raise SystemExit(f"--names P2a-goat, P2a-goatshuf, {FT_BASE} or one of {', '.join(DFIX_BASES)} (fold models)")
     goat_predict(args.names)
 
@@ -4327,7 +4331,7 @@ ARM_FOLD_PHASES = ("phase_5b2", "phase_5c", "phase_dfix", "phase_ft", "phase_ft_
 
 def report_phase(tags):
     """real-report's ledger phase for the tags it reads."""
-    return ("phase_ft_groups" if any(t.startswith("FTg-") for t in tags) else "phase_night2" if tags & {FTM_BASE, FTH_TAG} else "phase_ft" if FT_BASE in tags else "phase_dfix" if tags & DFIX_READS else "phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
+    return ("phase_ft_groups" if any(t.startswith("FTg-") for t in tags) else "phase_night2" if tags & {FTM_BASE, FTH_TAG, FTS_TAG} else "phase_ft" if FT_BASE in tags else "phase_dfix" if tags & DFIX_READS else "phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
             else "phase_5b2_rigo" if tags & {"RigO", "RcM"}
             else "phase_5b2" if any(t.startswith(("P2a-pc", "P2a-real", "Rc")) for t in tags)
             else "phase_5b1b" if any(t in ("P2a-Sc", "S-shift") for t in tags) else "phase_5b1")
@@ -6651,6 +6655,7 @@ FT_PATIENCE, FT_MIN_FALL, FT_SMOOTH, FT_EVERY = 15, 1e-3, 3, 5
 FT_PRETRAIN = "P2b-wide24"           # W: its NS-best checkpoint per seed is FT's start
 FTM_BASE = "P2b-ftm"                 # N1: FT with the heads outside the search masked on real rows
 FTH_TAG = "P2b-fth"                  # N1's isolation: FT's stored answers, controls outside the search at S
+FTS_TAG = "P2b-ftm-stem"             # N5's score read: FTm_k on the units' X-LANCE stems (`night3`)
 
 
 def searched_heads(amp, S):
@@ -6697,6 +6702,17 @@ def mask_searched(Y, rows, ms):
             Y[3][j] *= s
             Y[5][j] *= k
             Y[6][j] = -100                     # a forced amp is no label for the amp head
+
+
+def stem_backed(unit):
+    """N5: a real unit's X-LANCE stem input (`night3`), as `dfix_backed`'s {half: (uint8 mel, LUFS)}; None if it has none."""
+    import numpy as np
+
+    p = out_dir() / "night3" / "inputs" / f"{unit.replace('/', '__')}.npz"
+    if not p.exists():
+        return None
+    d = np.load(p)
+    return {"A": (d["sA"], float(d["lufs"][0])), "B": (d["sB"], float(d["lufs"][1]))}
 
 
 def hold_outside_space(x, S, amp):
