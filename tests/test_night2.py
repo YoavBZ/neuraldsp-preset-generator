@@ -143,3 +143,37 @@ def test_the_amp_loss_skips_rows_without_an_amp_label():
     every = F.loss_fn(out, *y, torch.tensor([0, 1, 2, 0]))
     none = F.loss_fn(out, *y, torch.tensor([-100, -100, -100, -100]))
     assert torch.isfinite(none) and float(every - none) > 1.0        # ln 3 of amp loss goes
+
+
+def real_rows():
+    """Cycled copies: 40 records, each row twice."""
+    out = []
+    for j in range(40):
+        for c in (0, 1):
+            out.append({"i": 2 * j + c, "real": f"u{j:02d}", "amp": "ab"[j % 2], "cls": ("clean", "crunch")[j // 2 % 2], "label": j})
+    return out
+
+
+def test_the_curve_keeps_whole_records_nested_and_seeded():
+    from learn import pipeline_fix as P
+
+    rows = real_rows()
+    q = P.curve_rows(rows, frac=0.25)
+    h = P.curve_rows(rows, frac=0.5)
+    units = lambda v: {r["real"] for r in v}
+    assert q == P.curve_rows(rows, frac=0.25) and len(units(q)) == 8 and len(units(h)) == 20
+    assert units(q) <= units(h)
+    assert all(sum(r["real"] == u for r in q) == 2 for u in units(q))     # a record's copies stay together
+
+
+def test_the_shuffle_gives_each_record_one_label_inside_its_cell():
+    from learn import pipeline_fix as P
+
+    rows = real_rows()
+    got = P.curve_rows(rows, shuffle=True)
+    assert [r["i"] for r in got] == [r["i"] for r in rows]
+    per = {}
+    for r in got:
+        per.setdefault(r["real"], set()).add(r["label"])
+    assert all(len(v) == 1 for v in per.values()) and any(r["label"] != int(r["real"][1:]) for r in got)
+    assert all((r["label"] % 2, r["label"] // 2 % 2) == (int(r["real"][1:]) % 2, int(r["real"][1:]) // 2 % 2) for r in got)
