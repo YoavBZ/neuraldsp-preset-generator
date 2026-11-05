@@ -214,6 +214,8 @@ ML session, recorded as F55, N5 and N5b: N1 took masked FT (FTm) through these m
 4. The stem: test the lead by labelling the dominant guitar, since N5 and N5b show no cost without other guitars; align or train on real stems (the stems alone about 19 h at the measured rate, training on top, needs the user's yes) if it holds.
 5. Resize L2.
 
+The cloud researcher's ranked methods ([report](research/proven-methods-preset-recovery-2026-11.md); nothing run, written before N1 to N5) give a cheapest deciding test for each. Three fit this order. Drive as a breakup class plus an effective drive, with a nonlinear term in the score, is decided by a gain sweep of about 130 renders and the stored ear pages (step 3 and the scoring row). Light-touch adaptation asks whether real labels add more than an offset, by bias-only and head-only arms (the model row). Song-level pooling and mask pooling have zero-render screens (the extraction row). Its finding that the backing costs most of the tone reading stands beside N5: N5 compares the stem with the mix, not with the isolated render, so neither contradicts the other.
+
 ## Errors made in this review
 
 Each is corrected above. The bullets say which the independent audit and the PR's review caught.
