@@ -1273,7 +1273,8 @@ def _require_signal_paths(pack_id: str) -> None:
             die(str(e))
         die(f"{pack.display_name} presets cannot be matched: this pack has no measured "
             f"signal paths.\n"
-            f"  Give --template a preset from the original plugin, without --pack.")
+            f"  For an X edition, give --template a preset from the original plugin, "
+            f"without --pack.")
 
 
 def _pack_of(template: pathlib.Path) -> str:
