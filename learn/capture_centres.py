@@ -10,7 +10,8 @@ trusted capture labels move the centre? Reads BKS and the panel, so a counted pa
 RcT: Rc's rule on the trusted capture labels. RcG_n: Rc's rule on GOAT labels drawn to RcT's count per amp and class,
 3 seeded draws. Each is one setting per amp and class, on all 3 amps. Rows RcT - RcG_n (the mean of the draws, and each),
 RcT - S and RcG - S (stored); BKS by DI, the panel by capped band weights. No row reads as moved unless its interval
-clears zero and RcT - RcG_n has the same sign on all 3 draws.
+clears zero and RcT - RcG_n has the same sign on all 3 draws. The draws overlap, so that sign adds little. A gap between
+RcT and GOAT's labels also carries the search recipe: RcT's labels are search v2's, RcG_n's v1's.
 """
 
 from __future__ import annotations
@@ -29,6 +30,8 @@ RCT = "RcT"
 GOAT_TAGS = tuple(f"RcGn{n}" for n in range(DRAWS))
 TAGS = (RCT, *GOAT_TAGS)
 OUT = "centre-read.json"
+CONFOUNDS = ("the search recipe (RcT v2, RcG_n v1; v2's moves from S are smaller)", "the level rule", "the DI mix",
+             "the crunch preference", "19 creators at most")
 
 
 # --- pure ----------------------------------------------------------------------------------------------------------
@@ -58,19 +61,29 @@ def creator_draw(cells, creator_of, draw, seed=SEED):
     return {c: [r for n in picks for r in rs if creator_of(r) == n] for c, rs in cells.items()}
 
 
+def replace_draw(rs, n, name, seed=SEED):
+    """`n` records of `rs`, drawn with replacement under `name`."""
+    return random.Random(f"{seed}|{name}").choices(rs, k=n)
+
+
 def direction_value(judge, a, b, u, value):
-    """ln(d_a / d_b) on one BKS direction by `real-report`'s rule, None where it drops: `value(judge, tag, u)` gives
-    None (not rendered), "refused" or the distance; S missing or refused drops it, a refused answer scores as S."""
+    """(ln(d_a / d_b), status) on one BKS direction by `real-report`'s rule: `value(judge, tag, u)` gives None (not
+    rendered), "refused" or the distance; a missing render is "missing", S refused drops it ("base_dropped"), a refused
+    answer scores as S ("refused", beside its value)."""
     s_ = value(judge, "S", u)
-    if s_ is None or s_ == "refused":
-        return None
-    vals = []
+    if s_ is None:
+        return None, "missing"
+    if s_ == "refused":
+        return None, "base_dropped"
+    vals, status = [], "ok"
     for t in (a, b):
         v = value(judge, t, u)
         if v is None:
-            return None
-        vals.append(s_ if v == "refused" else v)
-    return math.log(vals[0] / vals[1])
+            return None, "missing"
+        if v == "refused":
+            v, status = s_, "refused"
+        vals.append(v)
+    return math.log(vals[0] / vals[1]), status
 
 
 def moved(row, each):
@@ -81,8 +94,9 @@ def moved(row, each):
 
 
 def panel_counted(entry, need=2):
-    """True once the ledger counts this panel read (`phase_5d_panel_reads` opens with the count)."""
-    return int(str(entry.get("phase_5d_panel_reads", "0")).split()[0]) >= need
+    """True once the ledger counts this panel read: `phase_5d_panel_reads` opens with the count and names RcT."""
+    v = str(entry.get("phase_5d_panel_reads", "0"))
+    return int(v.split()[0]) >= need and RCT in v
 
 
 def quantiles(v, qs=(0.05, 0.5, 0.95)):
@@ -95,6 +109,11 @@ def cell_rms(dims, a, b, unit):
     """The rms gap between two settings over the continuous searched dims, in unit space."""
     gaps = [unit(d, a) - unit(d, b) for d in dims if d.kind in ("cont", "log")]
     return math.sqrt(statistics.fmean(x * x for x in gaps))
+
+
+def cell_cats(dims, a, b):
+    """How many switches and mics differ between two settings."""
+    return sum(a.get((d.module, d.key)) != b.get((d.module, d.key)) for d in dims if d.kind not in ("cont", "log"))
 
 
 # --- the stored data ------------------------------------------------------------------------------------------------
@@ -162,12 +181,14 @@ def cmd_answers(_args):
     panel, _ = P.panel_lagged_units()
     cells, counts = tag_cells()
     ms = P.A_menu_S()
+    for t in cells:
+        for sub in (P.REAL_DIR, P.PANEL_DIR):
+            if (P.out_dir() / sub / "answers" / f"{t}.json").exists():
+                raise SystemExit(f"{sub}/answers/{t}.json exists: the answers are written once")
     for t, by in cells.items():
         made = {c: centre(c, rs, ms) for c, rs in by.items()}
         for sub, units in ((P.REAL_DIR, bks), (P.PANEL_DIR, panel)):
             p = P.out_dir() / sub / "answers" / f"{t}.json"
-            if p.exists():
-                raise SystemExit(f"{p} exists: the answers are written once")
             answers = {}
             for prt in units:
                 for amp in P.AMPS3:
@@ -180,8 +201,11 @@ def cmd_answers(_args):
 
 
 def cmd_distance(_args):
-    """The zero-render row: per cell, RcT's rms gap from RcG (every GOAT label), against RcG_n's own gap over
-    DISTANCE_DRAWS draws, and a creator bootstrap of RcT. -> captures/centre-distance.json."""
+    """The zero-render row: per cell, RcT's rms gap from RcG (every GOAT label), against the gap two draws from GOAT
+    alone would show: a centre on RcT's count and one on GOAT's count, each drawn with replacement, over DISTANCE_DRAWS
+    draws (RcT shares no label with RcG, so a subset of RcG's own labels would read too near). Beside, a creator
+    bootstrap of RcT, biased upward as any bootstrap of a distance, so a spread, not a test, and how many switches and
+    mics differ, which the rms leaves out. -> captures/centre-distance.json."""
     from learn import arm_a_levers as L
     from learn import capture_labels as CL
     from learn import knob_ceiling as K
@@ -202,14 +226,25 @@ def cmd_distance(_args):
         dims = K.space(c[0], ms[c[0]][c[1]][1])
         rcg = centre(c, goat[c], ms)[1]
         gap = lambda st: cell_rms(dims, st, rcg, L.unit)  # noqa: E731
-        null = [gap(centre(c, draw_cells({c: goat[c]}, counts, n + DRAWS)[c], ms)[1]) for n in range(DISTANCE_DRAWS)]
+        null = []
+        for n in null_draws():
+            a = centre(c, replace_draw(goat[c], counts[c], f"null-a|{n}|{c[0]}|{c[1]}"), ms)[1]
+            b = centre(c, replace_draw(goat[c], len(goat[c]), f"null-b|{n}|{c[0]}|{c[1]}"), ms)[1]
+            null.append(cell_rms(dims, a, b, L.unit))
         boot = [gap(centre(c, b[c], ms)[1]) for b in boots if b[c]]
-        rows[f"{c[0]}|{c[1]}"] = {"labels": len(rs), "RcT": gap(centre(c, rs, ms)[1]), "RcGn_q05_50_95": quantiles(null),
+        rct = centre(c, rs, ms)[1]
+        rows[f"{c[0]}|{c[1]}"] = {"labels": len(rs), "goat_labels": len(goat[c]), "RcT": gap(rct),
+                                  "cats_differ": cell_cats(dims, rct, rcg), "goat_null_q05_50_95": quantiles(null),
                                   "creator_boot_q05_50_95": quantiles(boot), "boot_draws": len(boot)}
         print(c, {k: (round(v, 4) if isinstance(v, float) else v) for k, v in rows[f"{c[0]}|{c[1]}"].items()}, flush=True)
     P.save(CL.root() / "centre-distance.json", {"plan": P.PLAN, "ledger": f"{P.LEDGER_ID} phase_l1a", "rows": rows,
                                                 "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print("DISTANCE DONE")
+
+
+def null_draws():
+    """The distance row's draw numbers, apart from the read's 0 to DRAWS - 1."""
+    return range(DRAWS, DRAWS + DISTANCE_DRAWS)
 
 
 def judges(sub, tags):
@@ -225,7 +260,7 @@ def judges(sub, tags):
 
 
 def bks_reader(tags):
-    """(rows of a, b -> [(DI, unit, value)]) on BKS's directions, `real-report`'s rule."""
+    """(rows of a, b -> ({direction: (DI, unit, value)}, counts)) on BKS's directions, `real-report`'s rule."""
     from learn import pipeline_fix as P
 
     parts = json.loads((P.out_dir() / P.REAL_DIR / "answers" / "S.json").read_text())["parts"]
@@ -240,13 +275,19 @@ def bks_reader(tags):
             for sh, h in (("A", "B"), ("B", "A"))]
 
     def rows(a, b):
-        return {u: (p_["di"], u[0], v) for p_, u in dirs
-                if (v := direction_value(judge, a, b, u, P.vreal_value)) is not None}
+        out, cnt = {}, {"directions": len(dirs), "missing": 0, "base_dropped": 0, "refused": 0}
+        for p_, u in dirs:
+            v, status = direction_value(judge, a, b, u, P.vreal_value)
+            if v is not None:
+                out[u] = (p_["di"], u[0], v)
+            if status != "ok":
+                cnt[status] += 1
+        return out, cnt
     return rows
 
 
 def panel_reader(tags):
-    """(rows of a, b -> [(DI, unit, value)]) on the panel's directions, and the capped DI weights."""
+    """(rows of a, b -> ({direction: (DI, unit, value)}, counts)) on the panel's directions, and the capped DI weights."""
     from learn import pipeline_fix as P
 
     units, _ = P.panel_lagged_units()
@@ -254,8 +295,10 @@ def panel_reader(tags):
     judge = judges(P.PANEL_DIR, set(tags))
 
     def rows(a, b):
-        got, _ = P.panel_rows(a, b, units, halves, judge)
-        return {(p_["unit"], amp): (p_["di"], p_["unit"], v) for p_, amp, v in got}
+        got, dropped = P.panel_rows(a, b, units, halves, judge)
+        missing = sum(P.real_key(p_, amp) not in judge[t] for p_ in units for amp in P.AMPS3 for t in (a, b))
+        return ({(p_["unit"], amp): (p_["di"], p_["unit"], v) for p_, amp, v in got},
+                {"directions": len(units) * len(P.AMPS3), "missing": missing, "base_dropped": dropped - missing, "refused": 0})
     return rows, P.panel_weights(units)
 
 
@@ -263,6 +306,14 @@ def mean_rows(per_draw):
     """Per direction, the mean over the draws, on the directions every draw holds."""
     keys = set.intersection(*(set(d) for d in per_draw))
     return {k: (per_draw[0][k][0], per_draw[0][k][1], statistics.fmean(d[k][2] for d in per_draw)) for k in keys}
+
+
+def counted(read, a, b):
+    """`read(a, b)` refused while a render is missing, so a dead shard cannot pass as a smaller read."""
+    rows, cnt = read(a, b)
+    if cnt["missing"]:
+        raise SystemExit(f"{a} - {b}: {cnt['missing']} renders missing")
+    return rows, cnt
 
 
 def cmd_report(_args):
@@ -283,14 +334,19 @@ def cmd_report(_args):
         di = [(d, v) for d, _, v in rows.values()]
         return P.weighted_clustered(di, {d: weights[d] for d, _ in di})
 
-    rep = {"plan": P.PLAN, "ledger": f"{P.LEDGER_ID} phase_l1a", "sets": {}}
+    rep = {"plan": P.PLAN, "ledger": f"{P.LEDGER_ID} phase_l1a", "confounds": CONFOUNDS, "sets": {}}
     for name, read, stat in (("bks", bks, stat_bks), ("panel", pan, stat_panel)):
-        draws = [read(RCT, t) for t in GOAT_TAGS]
-        each = [stat(d) for d in draws]
+        drawn = [counted(read, RCT, t) for t in GOAT_TAGS]
+        draws = [d for d, _ in drawn]
+        each = [{**stat(d), **c} for d, c in drawn]
+        means = [e["mean"] for e in each]
         row = stat(mean_rows(draws))
-        rep["sets"][name] = {"RcT - RcG_n": {**row, "moved": moved(row, [e["mean"] for e in each])},
+        rct_s, c_rct = counted(read, RCT, "S")
+        rcg_s, c_rcg = counted(read, "RcG", "S")
+        st = stat(rct_s)
+        rep["sets"][name] = {"RcT - RcG_n": {**row, "directions_held": len(mean_rows(draws)), "moved": moved(row, means)},
                              "each_draw": dict(zip(GOAT_TAGS, each)),
-                             "RcT - S": stat(read(RCT, "S")), "RcG - S": stat(read("RcG", "S"))}
+                             "RcT - S": {**st, **c_rct, "moved": moved(st, means)}, "RcG - S": {**stat(rcg_s), **c_rcg}}
         for k, v in rep["sets"][name].items():
             if k != "each_draw":
                 print(name, k, {q: (round(x, 4) if isinstance(x, float) else x) for q, x in v.items()}, flush=True)
