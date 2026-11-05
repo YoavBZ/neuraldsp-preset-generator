@@ -746,3 +746,16 @@ was declared, what was measured, and the research behind it.
     nonlinear) score. Downloads and installs are the ML session's and the user's call. Corrects
     round 2's reading of Yu et al., round 3 on PNP and SynthRL, and the proxy rule. Research,
     not a declared plan.
+25. [model-features-judge-fit-2026-11.md](research/model-features-judge-fit-2026-11.md): whether
+    the model family, the input features and the judge fit the project, for the ML models and
+    scoring review session (November 2026; nothing downloaded or run). The small CNN family is
+    about right; the heads, the inputs' invariance and the judge are not. Ranked shortlists of
+    five for network type (categorical knob heads on the 0.25 lattice conditioned on amp and
+    switches first; a frozen EfficientAT screen), features (onset-split statistics and flatness
+    for drive, a band-limited long-term spectrum for tone and cab; per-clip normalisation only
+    on a drive branch) and judging (J0's tonal and a split-half term beside J0; a zero-render
+    flip screen on the stored ear pages, confounded by amp and DI; one fitted weight at most; no
+    song-only measure validated), each with evidence, licence, Mac cost, cheapest test and
+    rule-out result. Selection: the winner's curse exceeds the effects chosen on, so BKS vetoes
+    and a finalist needs about 27-45 bands. Corrects the methods report on encoders and level.
+    Ends with a plan order. Research, not a declared plan.
