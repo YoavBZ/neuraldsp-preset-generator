@@ -1,6 +1,6 @@
 # Model comparison plan
 
-**Status: draft, waiting on the research report (T1.2). Nothing has run.**
+**Status: draft under review. The research report is in (PR #394). No candidate has been read, and nothing has rendered or trained.**
 
 **The user's request (2026-11-05):** "Yes, but first research about neutral networks and which kind fits our use case best,
 same for feature extraction and scoring/judging. Finally write a detailed plan/tasks for easier and more organized process
@@ -17,11 +17,8 @@ residual CNN.
 Read this block first after any compaction, then the task list, then the findings log.
 
 - **Session:** "ML models and scoring review", branch `claude/model-comparison`, this worktree only.
-- **Now:** T1.2, waiting for the cloud researcher's PR, which adds `docs/research/model-features-judge-fit-2026-11.md`. The
-  executor watches for it and messages this session; the researcher also sends a message once it is merged. Five tracks:
-  encoders and non-neural readouts, architectures and output forms, features, judging, selection.
-- **Beside it:** the harness `learn/bakeoff.py` is done (T1.3). It may not read any candidate before T2.3.
-- **Next:** T2.1, set the candidate list from that report.
+- **Now:** T2.1, this plan, with the report's citations being checked by a subagent.
+- **Next:** T2.2, an independent review of this plan, then T2.3 and Phase 3.
 - **Running jobs and PIDs:** none.
 - **Render or MPS use announced to the ML session:** none. Hold: no renders from this session until the ML session messages
   that N6 and its centre read (about 2,016 renders) are done. CPU work on stored inputs is fine.
@@ -88,28 +85,122 @@ Legend: `[ ]` to do, `[~]` in progress, `[x]` done.
 
 ### Phase 1, sync and research
 - [x] T1.1 Sync with the ML session: terms above.
-- [~] T1.2 The cloud researcher's report on network types, features and judging (brief sent 2026-11-05). Done when its PR is
-  read and its key claims checked against sources.
+- [~] T1.2 The cloud researcher's report on network types, features and judging, PR #394, read. Key claims being checked.
 
 - [x] T1.3 Harness `learn/bakeoff.py`, with `tests/test_bakeoff.py`: candidates go through `reads_v3.report` unchanged.
   Done when `control` reproduces N1's stored r and swap totals within 1e-6 on BKS and GOAT, and a shuffled-label placebo
   reads near zero. Reads no candidate.
 
 ### Phase 2, plan
-- [ ] T2.1 Set candidates, features and judge measures from the report and write each read's declared rule here.
+- [~] T2.1 Set candidates, features and judge measures from the report and write each read's declared rule here.
+  The report: PR #394, `docs/research/model-features-judge-fit-2026-11.md`. Its key citations are being checked against sources.
 - [ ] T2.2 Independent review of this plan; fix what it finds.
-- [ ] T2.3 Ledger entry `model-comparison` and memory pointer; PR with this plan; merge after review and CI.
+- [ ] T2.3 Ledger entry `model-comparison` listing the candidates; PR with this plan; merge after review and CI.
 
-### Later phases
-Written in T2.1, once the report sets the order. Known so far:
-- A no-render comparison on the audited read: ridge, boosted trees, nearest neighbours, and W's frozen network with a ridge on
-  top, beside FTm.
-- Ridge by the score (the review's step 2, about 670 renders, handed over by the ML session), with its input stated and
-  `tonal` beside `distance`.
-- Candidate networks and features chosen by the report.
-- Drive on crunch, which representation reads it (the review's step 3): this plan owns it, by agreement with the ML session, which
-  has taken step 4, the other-guitar lead.
-- Judge measures on the stored ear pages.
+### Phase 3, reads without renders or training (CPU, `learn/bakeoff.py`)
+
+All on BKS and GOAT through `reads_v3`, on real rows held by fold. Family: the 13 candidates below, with FTm, FT and W beside.
+Everything is reported, dropped arms included, each with `p_family` (the largest r of any candidate under one label permutation).
+
+| Label | Input | Reader | Trained on | Asks |
+|---|---|---|---|---|
+| `M-ridge` | `mel`: band means, stds, LUFS | ridge on 24 PCs | real rows | The reference, and the review's small model |
+| `M-rrr` | `mel` | reduced rank 4, per amp | real rows | Does the labels' low dimension help? |
+| `M-knn` | `mel` | k nearest | real rows | Retrieval by mel statistics |
+| `M-trees` | `mel` | boosted trees | real rows | Named in the user's yes; the report expects overfitting |
+| `W-ridge` | W's last hidden layer | ridge | real rows | Are W's features better than its heads? |
+| `FTm-ridge` | FTm_k's last hidden layer | ridge | real rows | The same for FTm, the fold's own model |
+| `P-ridge` | `mel` | ridge on 24 PCs | plugin rows only | Is the CNN needed for what W reads with no real rows? |
+| `ltas` | band means, 80 Hz–5 kHz, floor −45 dB, LUFS | ridge | real rows | Tone and cab, report B2 |
+| `ceps-lo` | DCT orders 1–20 of band means, LUFS | ridge | real rows | Tone and cab, report B4 |
+| `onset` | band means and stds on attacks and sustains apart, LUFS | ridge | real rows | Drive, report B1 |
+| `flat` | spectral flatness mean and std, in all and in 8 coarse bands, LUFS | ridge | real rows | Drive, report B1 |
+| `hpss` | means and stds of the percussive residue, LUFS | ridge | real rows | Drive, report B1 |
+| `ceps-hi` | DCT orders 21–60 per frame, mean and std, LUFS | ridge | real rows | Drive, report B4 |
+
+Fixed choices: attacks are the 60 ms after peaks in positive spectral flux, sustains the other frames; ridge's alpha and k come from
+inner folds on whole clusters; the 24 PCs are fitted inside each training fold, after centring within cell. Inputs come from the stored
+mels, so nothing here needs audio. Readings for drive also run on crunch alone, the review's step 3.
+
+- [ ] T3.1 Add the inputs and readers, with unit tests, to `learn/bakeoff.py`. Rerun `control` and `check` on the final code.
+- [ ] T3.2 `bakeoff read`, output `PF/bakeoff/read-a.json`. Measured so far: the base rows 3 min, `check` under 2 min.
+- [ ] T3.3 Independent audit of T3.2 by recomputation, before any result is built on.
+- [ ] T3.4 Judge battery on stored pages, CPU, nothing installed. Terms: J0 `distance`, `tonal`, and a cross-fitted per-band term
+  (the band's mean dB error on odd 1 s blocks times that on even blocks, averaged over scored bands, signed square root). Data:
+  `learn/trusted-data/judge-ear/` and `judge-v5/` renders with `score.json`, and the review's known-error renders. Checks, from the
+  report: the flip between single-note and chord DIs, treble steps not filling the top three, heard drive steps above unheard, and the
+  effect size against d in split-half SDs. No weight is fitted unless a term passes the flip and the sensitivity check.
+- [ ] T3.5 Audit T3.4. Log both results. Choose what moves on by the rules below.
+
+**Declared rules for Phase 3.** Effect sizes first; no pass bars beyond these.
+- A reader or frozen network moves on if `candidate − FTm` clears zero on GOAT in any group.
+- An input moves on if `input − M-ridge` clears zero on GOAT in its target group: drive on crunch for `onset`, `flat`, `hpss`,
+  `ceps-hi`, and tone or cab for `ltas`, `ceps-lo`.
+- `P-ridge` is read against W on GOAT; level or better means the plugin read needs no CNN.
+- `M-ridge` goes to Phase 5 regardless: the ML session handed over the review's step 2.
+- BKS never selects. It can flag a candidate, in its own row. An interval reaching zero is undecided, not failed.
+- If two candidates move on for the same group, both are reported and the one with the simpler input goes first.
+
+### Phase 4, training arms (MPS, one job at a time, `learn/bakeoff_train.py`)
+
+Each arm keeps W's data and FTm's recipe (`P.fit`, `P.WideData`, `P.DfixData`, the searched-head mask, lr 1e-4) and changes one thing.
+As a screen, each FT_k takes FTm's stored E(k, s), chosen without fold k, so no inner runs. Measured: W 10.0 min, FTm_k 5.8 min, so an
+arm with a new W is 2 × 10 + 8 × 6, about 68 min, and one on W's stored state about 48 min. The ML session is told before each arm, with its
+size and PIDs. This plan declares these runs, as the controller's note of 2026-11-05 requires. Outputs and checkpoints stay in `PF/bakeoff/runs/`,
+kept under 1 GB.
+
+| Arm | Change | W retrained? | Order |
+|---|---|---|---|
+| `A-cat` | Knobs as 21 smoothed bins, median readout, on the masked heads; each family's loss in one unit, fixed weight 1 | Yes | 1 |
+| `A-cnn` | A Comunità-size body: 2 conv layers, dense 120 and 60, same heads | Yes | 2 |
+| `A-k1` | The mixture with K = 1 and an sd floor of 0.07 | Yes | 3 |
+| `A-mic` | FTm with the mic loss weighted 0.1 | No | 4 |
+| `A-in` | Surviving inputs from Phase 3 as a second branch, only if any survive | Yes | 5 |
+
+- [ ] T4.1 Read `P.cmd_train`, `P.cmd_train_ft` and `P.fit`; write `learn/bakeoff_train.py`, new file, nothing in `pipeline_fix` changed.
+  Any recipe takes extra rows later, with the mask and a drop key on `di`.
+- [ ] T4.2 Control: an unchanged arm on one fold and seed must follow FTm's logged losses. Size about 16 min.
+- [ ] T4.3 Run the arms in order. Each `run.json` records command, seed, git sha, PID, minutes. Hand the watch to the executor at launch.
+- [ ] T4.4 Each arm through `reads_v3`, paired against FTm. Audit. Log.
+
+**Declared rule for Phase 4.** An arm moves on if `arm − FTm` clears zero on GOAT in a group while no group's interval sits wholly below
+zero. `A-cnn` level with FTm in all groups means network size is not the lever; spend no more on backbones. `A-k1` level with FTm means
+the mixture adds nothing. An arm that moves on gets the full nested recipe (8 inner runs) before Phase 5.
+
+### Phase 5, by the score (renders, after the ML session's hold lifts)
+
+- [ ] T5.1 `learn/bakeoff_render.py`: answers in `goat/answers` and `real/answers`' shape, each direction read from its search half,
+  on read 2's units; judged by `analysis.aligned`, storing `distance`, `tonal` and the cross-fitted term on the held half. New output
+  directory, no audio kept. `M-ridge` and any ridge are centre plus predicted residual on searched knobs; switches and mics stay the
+  centre's, every other control S, so `ridge − centre` reads only the knob gain. Check: FTm's stored answers rendered through it reproduce
+  10 stored judge values exactly, the ML session's 20-render recheck in small.
+- [ ] T5.2 `M-ridge`, then at most two finalists from Phases 3 and 4. About 1,340 renders each (670 answers, 2 renders each; the deep
+  review's "about 670" counted answers), about 12 min on 3 processes at 1.6 s. Shards resumable; announce size and PIDs; stop when the
+  ML session asks.
+- [ ] T5.3 Report `candidate − centre`, `candidate − FTm`, `candidate − S`, by item on GOAT and by DI on BKS, by fold beside, with t
+  intervals, `tonal` beside `distance`, and d_S strata. Audit. Log.
+
+**Declared rule for Phase 5.** Nothing is adopted here. BKS and GOAT are development sets, chosen on many times. A finalist closer than FTm
+on GOAT by item, by the score, is a lead, stated with the search labels' limits and the count of candidates tried. Which model goes to L2,
+or to an ear page, is for the ML session and the user.
+
+### Phase 6, write-up
+
+- [ ] T6.1 `docs/model-comparison-results.md`: answers on network, features and judge, with every candidate's row and what was not tested.
+- [ ] T6.2 Small dated lines in ROADMAP and DOCS-INDEX. Correct the deep review's "about 670 renders".
+- [ ] T6.3 PR, independent review, CI, merge. Update memory `model-comparison-state`.
+- [ ] T6.4 Plain report to the user, and two or three lines to the controller.
+
+### Waiting for the user's yes
+
+Not run tonight: each needs a download, or more than this plan declares.
+- Downloads: EfficientAT mn10 weights, AFx-Rep weights, HAAQI or GstPEAQ, kadtk. None is on disk. These would add report steps 0d, 0e and
+  0f: frozen encoders on rebuilt audio, and auditory measures in the judge battery.
+- Fine-tuning a pretrained encoder (report 1d, tens of minutes).
+- An ear page for finalists, and anything on L2 or N6's set.
+
+Out of scope, by the report and the review: wider or deeper CNNs, from-scratch transformers, CRNN or TCN in place of pooling, flow,
+diffusion or posterior heads, unsupervised alignment, per-clip band normalisation on tone and cab inputs, finer mels, CQT, scattering.
 
 ## Findings log
 
