@@ -21,8 +21,8 @@ Read this block first after any compaction, then the task list, then the finding
 - **Run from the worktree root:** `TORCH_PY=~/ndsp-presets/tools/demucs-venv/bin/python`; `$TORCH_PY -m learn.bakeoff ...`. Tests:
   `/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python -m pytest tests/test_bakeoff.py tests/test_bakeoff_inputs.py -q -n0`.
 - **Peers:** SendMessage to "NeuralDSP preset generator (ML)", "(executor)", "(controller)", "(cloud researcher)". The researcher's PR is #394.
-- **Now:** T3.2 `bakeoff read`, and T4.3 `A-ctl`. PR #396 holds the plan; the executor reports its CI.
-- **Next:** T3.3's audit, then `A-cat`, `A-cnn`, `A-k1`, `A-mic` through the same chain, and T5.1.
+- **Now:** T3.3 audit of `read-a` by a subagent; T4.3 arms chain; T5.2 renders; PR #396's CI.
+- **Next:** if `W-ridge` stands, its per-half answers and 1,340 renders; then `bakeoff arms` once over all arms.
 - **Running jobs and PIDs:** see `PF/bakeoff/logs/`. Training chain PID 97624, script `PF/bakeoff/chain.zsh`. To stop it after the process in hand: `touch PF/bakeoff/STOP`. Finished runs are
   skipped on a relaunch.
 - **Render or MPS use announced to the ML session:** none. Holds lifted so far: the ML session's renders finished at about 23:20 on 2026-11-05 and the 3 slots are free;
@@ -133,9 +133,9 @@ come from the stored mels, so nothing here needs audio. An FTm-features arm was 
 
 - [x] T3.1 Inputs and readers in `learn/bakeoff.py`, with unit tests. Rerun `control` and `check` on the final code; `check` runs every
   candidate under shuffled labels, and the spike on `M-ridge`, `W-ridge` and `P-ridge`.
-- [ ] T3.2 `bakeoff read`, output `PF/bakeoff/read-a.json` and its `.rows.pkl`. Each candidate's answers are cached per fold in
+- [x] T3.2 `bakeoff read`, output `PF/bakeoff/read-a.json` and its `.rows.pkl`. Each candidate's answers are cached per fold in
   `PF/bakeoff/answers/`, so a rerun resumes there; the report step reruns whole.
-- [ ] T3.3 Independent audit of T3.2 by recomputation, before any result is built on.
+- [~] T3.3 Independent audit of T3.2 by recomputation, before any result is built on.
 - [x] T3.4 `learn/bakeoff_judge.py`, the judge battery, CPU, nothing installed. Terms: J0 `distance`, `tonal`, and a cross-fitted per-band
   term: the band's mean dB error on odd 1 s blocks times that on even blocks, averaged over scored bands, signed square root. Data:
   `learn/trusted-data/judge-ear/` and `judge-v5/`. Control: the recomputed `distance` matches stored values within 1e-6. Checks: (a) Spearman
@@ -254,3 +254,6 @@ Newest last. Each entry: date, task, result, output path and sha256, audited by 
   on BKS's few recordings (−0.35 to +0.27); with labels joined to the input `M-ridge` and `W-ridge` read +0.95 to +1.00 and `P-ridge`, trained on plugin labels only, +0.48 to +0.86. The second review confirmed the harness and the training code after its
   fixes; `plugin_set` and `ids is sp["train"]` rest on reading the code, and `check` has now run the first of them.
 - 2026-11-06, T5.1: 16 renders of FTm's stored answers on 2 units through `learn/bakeoff_render.py` matched every stored judge and render hash. `M-ridge`'s answers are built on RcBG's settings, 9 knobs moved on the first key. The review's "about 670" for this read is corrected in the plan: 1,340 renders each.
+- 2026-11-06, T3.2, not yet audited (`PF/bakeoff/read-a.json`, GOAT r on drive, tone, cab): FTm +0.082, +0.258, +0.218. `W-ridge`, a ridge on W's frozen last layer fitted on real rows, +0.234, +0.251, +0.283: `W-ridge − FTm` drive +0.153
+  [+0.063, +0.235], simultaneous bound +0.003, the only contrast of 30 to clear it; cab +0.065 [+0.007, +0.119], bound −0.032; tone −0.008 [−0.089, +0.079]. `M-ridge` +0.212, +0.201, +0.147. `P-ridge`, plugin rows only, +0.140, +0.207, −0.038, against W's +0.096,
+  +0.222, −0.086: undecided on all three. No tone input beats `M-ridge`. No drive input beats it on crunch: the best is `hpss` +0.020 [−0.062, +0.113], which is not worth `A-in`'s 74 min. Head-standardised drive is about level (FTm +0.14, `W-ridge` +0.13), so the raw gain needs explaining before anything is built on it.
