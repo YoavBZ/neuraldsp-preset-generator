@@ -6,6 +6,7 @@ a real amp sound closer than S, before more captures are asked for?
     $MAIN -m learn.capture_labels units                   # sections, folds, lags to the DI, the counts -> captures/units.json
     $MAIN -m learn.capture_labels page / answers EXPORT   # one card per capture
     $MAIN -m learn.capture_labels heavy / heavy-answers EXPORT
+    $MAIN -m learn.capture_labels scope / scope-answers EXPORT
     $MAIN -m learn.capture_labels search --lags-only --before-ear --shard k/n    # the night's path, nothing read
     $MAIN -m learn.capture_labels search --stage third --before-ear --shard k/n
     $MAIN -m learn.capture_labels night-check             # go or stop, no figure
@@ -47,7 +48,11 @@ MIN_PER_CELL = 10                    # units per amp and class, before the ear a
 CELL_ITEMS = 2                       # ear items per amp and class
 ITEM_ACTIVE = 0.8                    # the held half's activity, at least
 PLACEBO_FALLBACKS = 2                # fallbacks per part, taken only when a placebo unit gives no label
-PAGE_NAME, HEAVY_PAGE = "capture-ear", "capture-heavy"
+SCOPE_DB = -3.0                      # undriven crunch units at or above this nonlinear share go on the scope page (F57)
+LABEL_PAGE_OUT = ("cap/ca2a7be3-377d-48e8-94b1-d3cb5f47b32e#sw50r",   # "Too distorted, out of scope" on the label page (F57)
+                  "cap/npd1zhu905b#pr12")
+HELD_OUT_READ = {"04cf993bee72": "reaching one half"}   # a part held out of scope, not a partial file: either answer reaches (F57)
+PAGE_NAME, HEAVY_PAGE, SCOPE_PAGE = "capture-ear", "capture-heavy", "capture-scope"
 EAR_SPEC = {"page": PAGE_NAME, "title": "Capture ear", "head": "Amp captures", "h1": "A believable amp tone, from a clean DI?",
             "ask": """A is a guitar DI, B is the same performance played through a captured amp and cab (a neural
 capture, not our plugin). Press Play and switch between A and B as often as you like: the Switch button, the A and B
@@ -59,6 +64,8 @@ HEAVY_SPEC = {"page": HEAVY_PAGE, "title": "Capture heavy check", "head": "Captu
 is: the presets we build are clean and crunch, with heavy tones a small minority and never very heavy. Keep a recording
 if B is clean or crunch you would want the model to learn from; mark it too heavy or fizzy if it is beyond that. A is
 the DI, B the captured amp; switch with the buttons or the S, A and B keys."""}
+SCOPE_SPEC = dict(HEAVY_SPEC, page=SCOPE_PAGE, title="Capture scope check", head="Capture scope check",
+                  h1="Too distorted for our clean/crunch scope?")
 
 
 # --- pure functions (unit-tested) ------------------------------------------------------------------------------------
@@ -490,6 +497,41 @@ def heavy_candidates(units, ear):
     return sorted(u["unit"] for u in units if u["split"] == "driven" and (ear.get(u["capture"]) or {}).get("verdict") == "amp")
 
 
+def scope_cards(units, heard):
+    """The undriven crunch units at or above SCOPE_DB that no question on scope has reached, sorted. units: the trusted
+    ones; heard: the label page's units. The firmly driven had the heavy page."""
+    return sorted(u["unit"] for u in units if u["cls"] == "crunch" and u["split"] != "driven"
+                  and u["nonlinear_db"] >= SCOPE_DB and u["unit"] not in heard)
+
+
+def cmd_scope(_args):
+    from learn import pipeline_fix as P
+
+    P.require(BATCH["phase"])
+    P.require("phase_l1a_scope")
+    if BATCH["dir"] != CAPTURE_DIR:
+        raise SystemExit("the scope page is the first batch's: on the second, the ear card is the unit itself")
+    units = trusted_units()[0]
+    heard = {it["unit"] for it in json.loads((root() / "ear-check" / "key.json").read_text())["items"]}
+    chosen = scope_cards(units, heard)
+    random.Random(f"{SEED}|scope").shuffle(chosen)
+    by_unit = {u["unit"]: u for u in units}
+    items = [{"id": "capscope-" + hashlib.sha256(f"{SEED}|{u}".encode()).hexdigest()[:12], "unit": u,
+              "render_sha256": by_unit[u]["render_sha256"]} for u in chosen]
+    build_page(items, SCOPE_SPEC, "scope-key.json", by_unit)
+
+
+def cmd_scope_answers(args):
+    from learn import pipeline_fix as P
+
+    P.require(BATCH["phase"])
+    key, unit_of, got = read_export(args.exports, "scope-key.json", SCOPE_PAGE + BATCH["page"])
+    P.save(root() / "scope.json", {"page": SCOPE_PAGE + BATCH["page"], "build": key["build"], "exports": args.exports,
+                                   "verdicts": {unit_of[i]["unit"]: v for i, v in got.items()},
+                                   "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"CAPTURE SCOPE ANSWERS: {len(got)} of {len(unit_of)} heard")
+
+
 def cmd_heavy(_args):
     from learn import pipeline_fix as P
 
@@ -518,8 +560,28 @@ def cmd_heavy_answers(args):
     print(f"CAPTURE HEAVY ANSWERS: {len(got)} of {len(unit_of)} heard")
 
 
+def scope_out():
+    """Units out of scope by ear after the gates: the label page's two, and any card of the scope page not kept.
+    Refuses while a card is unheard or the answers are another build's, as the heavy page does."""
+    out = set(LABEL_PAGE_OUT)
+    kp = root() / "scope-key.json"
+    if not kp.exists():
+        return out
+    key = json.loads(kp.read_text())
+    p = root() / "scope.json"
+    got = json.loads(p.read_text()) if p.exists() else {"build": key["build"], "verdicts": {}}
+    if got["build"] != key["build"]:
+        raise SystemExit("captures/scope.json is not from the scope page's build")
+    cards = [it["unit"] for it in key["items"]]
+    unheard = [u for u in cards if u not in got["verdicts"]]
+    if unheard:
+        raise SystemExit(f"{len(unheard)} scope cards still unheard")
+    return out | {u for u in cards if got["verdicts"][u]["verdict"] != "keep"}
+
+
 def trusted(units):
-    """`passed` on the stored verdicts; refuses while anything is unheard or either page is not the current one."""
+    """`passed` on the stored verdicts, less `scope_out`; refuses while anything is unheard or any page is not the
+    current one."""
     ear = ear_verdicts()
     ek = root() / "ear-key.json"
     if ear and (not ek.exists() or json.loads((root() / "ear.json").read_text())["build"] != json.loads(ek.read_text())["build"]):
@@ -538,7 +600,7 @@ def trusted(units):
     ok, miss = passed(units, ear, cards, hv["verdicts"])
     if miss:
         raise SystemExit(f"{len(miss)} still unheard: both pages come before any plugin render")
-    return ok
+    return ok - scope_out()
 
 
 def lags_of(units):
@@ -654,8 +716,8 @@ def cmd_search(args):
         return
     lags, off = lags_of(tr)
     items = json.loads((root() / "items.json").read_text())["items"]
-    first = [it["unit"] for it in items] + placebo_units(items)
     by = {u["unit"]: u for u in tr}
+    first = [u for u in [it["unit"] for it in items] + placebo_units(items) if u in by]
     order = search_order([u for u in sorted(by) if u not in off], first)
     todo = stage_set(order, len(first), args.stage)
     if args.stage == "all":
@@ -668,12 +730,17 @@ def cmd_search(args):
 
 
 def rest_may_run():
-    """The remaining labels and the centre read: only after the label page, and never on the primary share clear below."""
+    """The remaining labels and the centre read: only after the label page and the scope page, and never on the primary
+    share clear below."""
     gate, stage = root() / "ear-check.json", root() / "stage-check.json"
-    if not gate.exists() or json.loads(gate.read_text()).get("branch") not in ("clear above", "reaching one half"):
+    rep = json.loads(gate.read_text()) if gate.exists() else {}
+    if (rep.get("branch") or HELD_OUT_READ.get(rep.get("build"))) not in ("clear above", "reaching one half"):
         raise SystemExit("the rest waits for the label page, and does not run if the primary share is clear below")
     if not stage.exists() or json.loads(stage.read_text()).get("stop") is not False:
         raise SystemExit("the rest waits for the stage check, and does not run on its stop")
+    if not (root() / "scope.json").exists():
+        raise SystemExit("the rest waits for the scope page")
+    scope_out()                                        # refuses a partial or stale scope page
 
 
 def cmd_night_check(_args):
@@ -721,9 +788,9 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--batch", type=int, choices=(1, 2), default=1)
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for c in ("dis", "units", "page", "heavy", "items", "stage-check", "night-check"):
+    for c in ("dis", "units", "page", "heavy", "scope", "items", "stage-check", "night-check"):
         sub.add_parser(c)
-    for c in ("answers", "heavy-answers"):
+    for c in ("answers", "heavy-answers", "scope-answers"):
         sub.add_parser(c).add_argument("exports", nargs="+")
     s = sub.add_parser("search")
     s.add_argument("--lags-only", action="store_true")
@@ -735,7 +802,8 @@ def main(argv=None):
     if args.batch == 2:
         BATCH = BATCH2
     {"dis": cmd_dis, "units": cmd_units, "page": cmd_page, "answers": cmd_answers, "heavy": cmd_heavy,
-     "heavy-answers": cmd_heavy_answers, "items": cmd_items, "search": cmd_search,
+     "heavy-answers": cmd_heavy_answers, "scope": cmd_scope, "scope-answers": cmd_scope_answers, "items": cmd_items,
+     "search": cmd_search,
      "stage-check": cmd_stage_check, "night-check": cmd_night_check}[args.cmd](args)
 
 
