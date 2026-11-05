@@ -4,14 +4,17 @@
     $TORCH_PY -m learn.bakeoff check                   # the harness: shuffled labels read near zero, spiked labels read high
     $TORCH_PY -m learn.bakeoff read OUT.json           # the declared candidates, read as `reads_v3` reads a model (CPU)
 
-Candidates answer each held real record from what a fold's model may see: the fold's training records (`dfix_rows_of`,
-each record once, all its backing variants) and nothing else. Each head fits the label's distance from its (amp, class)
-centre, on records where the head was searched, with the regularisation chosen by inner folds on clusters. A held record
-is read through variant 0, both halves, as `reads_v3.read_fold` reads it, and goes through `reads_v3`'s own `report`.
+Candidates answer each held real record from what a fold's model may see. A real-trained candidate fits the fold's training
+records (`dfix_rows_of`, each record once, all its backing variants). A plugin-trained candidate fits W's stored `train_ids`
+and no real row, the same model on every fold; no NS row enters a fit, a choice or a printout. Each head fits the label's
+distance from its (amp, class) centre, on records where the head was searched, with the regularisation chosen by inner
+folds on clusters. A held record is read through variant 0, both halves, as `reads_v3.read_fold` reads it, and goes through
+`reads_v3`'s own `report`.
 
 Own against swap needs an output shape, so a candidate's knobs are a single Gaussian at its answer, sd the head's training
-residual; its switches and mics are flat, which puts their own-against-swap at zero. Nothing is read from plugin rows, NS,
-V-real, the panel or captures. Any extra rows come through `extra` and leave by `di`, which holds out more than `di_item`.
+residual; its switches and mics are flat, which puts their own-against-swap at zero, so compare `knob` only. Nothing is read
+from V-real, the panel or captures. Any extra rows come through `extra` and leave by `di`, which holds out more than
+`di_item`. W's stored body was chosen on NS loss, which `W-ridge` inherits.
 """
 from __future__ import annotations
 
@@ -34,13 +37,31 @@ if str(PLUGIN_ROOT) not in sys.path:
 READS_V3_SHA = "a04785f3a4838ae2"
 LEDGER_ID = "model-comparison"
 OUT = "bakeoff"
-BASE = {"FTM": ("P2b-ftm-k{k}", "final"), "FT": ("P2b-ft-k{k}", "final"), "W": ("P2b-wide24", "best")}
+BASE = {"FTM": ("P2b-ftm-k{k}", "final"), "FT": ("P2b-ft-k{k}", "final"), "W": ("P2b-wide24", "best"),
+        "WF": ("P2b-wide24", "final")}
+READERS = ("M-ridge", "M-rrr", "M-knn", "M-trees", "W-ridge")
+TONE_INPUTS = ("ltas", "ceps-lo")
+DRIVE_INPUTS = ("onset", "flat", "hpss", "ceps-hi")
+CANDIDATES = {"M-ridge": ("mel", "ridge", "real"), "M-rrr": ("mel", "rrr", "real"), "M-knn": ("mel", "knn", "real"),
+              "M-trees": ("mel", "trees", "real"), "W-ridge": ("W", "ridge", "real"),
+              **{n: (n, "ridge", "real") for n in (*TONE_INPUTS, *DRIVE_INPUTS)},
+              "P-ridge": ("mel", "ridge", "plugin"), **{f"P-{n}": (n, "ridge", "plugin") for n in DRIVE_INPUTS}}
+PAIRS = (*((c, "FTM") for c in READERS), *((c, "M-ridge") for c in (*TONE_INPUTS, *DRIVE_INPUTS)), ("P-ridge", "W"),
+         *((f"P-{c}", "P-ridge") for c in DRIVE_INPUTS), ("WF", "W"))
+BOUND = (*((c, "FTM", g, False) for c in READERS for g in ("drive", "tone", "cab")),            # (a, b, group, crunch only)
+         *((c, "M-ridge", g, False) for c in TONE_INPUTS for g in ("tone", "cab")),
+         *((c, "M-ridge", "drive", True) for c in DRIVE_INPUTS),
+         *((f"P-{c}", "P-ridge", "drive", True) for c in DRIVE_INPUTS),
+         *(("P-ridge", "W", g, False) for g in ("drive", "tone", "cab")))
 ALPHAS = tuple(10.0 ** e for e in range(-2, 6))
 INNER = 4
 PCS = 24
+RANK = 4
 SD_FLOOR = 0.02
 SPIKE = 30.0
-VARIANTS = 25
+VARIANTS = 25                                           # a real unit's inputs
+BOUND_SEED = 20261042                                   # both W seeds train on the same plugin ids
+PLUGIN_VARIANTS = 5                                     # a plugin row's own input and its first 4 backings
 
 
 # --- pure functions (unit-tested) ------------------------------------------------------------------------------------
@@ -103,12 +124,32 @@ def choose_alpha(X, y, clusters, alphas=ALPHAS):
     return min(alphas, key=err)
 
 
+def rrr_fit(Z, Y, clusters, rank=RANK):
+    """Reduced rank: Y [n, heads], with unsearched cells 0, onto its top `rank` directions, a ridge per direction, alpha by
+    inner folds. -> predict(Z) -> [m, heads]."""
+    _, _, vt = np.linalg.svd(Y, full_matrices=False)
+    comp = vt[:min(rank, len(vt))]
+    scores = Y @ comp.T
+    w = np.stack([ridge(Z, scores[:, j], choose_alpha(Z, scores[:, j], clusters)) for j in range(len(comp))], 1)
+    return lambda Q: Q @ w @ comp
+
+
 def gaussian_output(mu, sd, switches, mics):
     """A candidate's knobs as `reads_v3.loss` reads a model's: [logpi, mu, log sd, switch logits, mic logits], one
     component, switches and mics flat. mu [n, knobs], sd [knobs]."""
     n = len(mu)
     ls = np.broadcast_to(np.log(np.maximum(sd, SD_FLOOR)), mu.shape)
     return [np.zeros((n, 1)), mu[:, None], ls[:, None], np.zeros((n, switches)), np.zeros((n, *mics))]
+
+
+def max_t_lower(draws, whole, tail=0.95):
+    """Simultaneous lower bounds on contrasts from bootstrap draws [n, contrasts] on one set of weights: each contrast's
+    estimate less q standard errors, q the `tail` quantile of the largest standardised deviation over the contrasts.
+    -> (lower bounds, q)."""
+    draws, whole = np.asarray(draws, float), np.asarray(whole, float)
+    se = draws.std(0, ddof=1)
+    q = float(np.quantile(((draws - whole) / np.maximum(se, 1e-12)).max(1), tail))
+    return whole - q * se, q
 
 
 def family_null(max_by_draw):
@@ -127,38 +168,45 @@ def unique_rows(rows, recs):
     return [q[0] for q in seen.values()], [q[1] for q in seen.values()]
 
 
-def halves(unit, v):
-    """(2, bands, frames) uint8 input of a unit's backing variant v, and its two LUFS."""
-    from learn import pipeline_fix as P
-
-    z = np.load(P.dfix_input_path(unit, v))
+def halves(path):
+    """(2, bands, frames) uint8 input of a stored file, and its two LUFS."""
+    z = np.load(path)
     a, b = ("mA", "mB") if "mA" in z.files else ("sA", "sB")
     return np.stack([z[a], z[b]]), z["lufs"]
 
 
-def stats_of(unit, v):
-    """(2, 193): each half's band means and stds, normalised as the network's input, without the frames half A masks,
-    and the half's LUFS."""
+@functools.lru_cache(maxsize=1)
+def centres():
+    from learn import direct_stems as DS
+
+    return DS.mel_centres_hz()
+
+
+def summary_of(name, path):
+    """(2, d + 1): a declared input on each half, normalised as the network's input, without the frames half A masks, and
+    the half's LUFS scaled as `cond_vec` scales it."""
+    from learn import bakeoff_inputs as BI
     from learn import pretrain_set as PS
     from learn import song_model as SM
 
-    q, lu = halves(unit, v)
+    q, lu = halves(path)
     out = []
     for h in (0, 1):
         x = SM.norm_feat(PS.dequant(q[h]))
-        out.append(np.append(pooled((x[:, PS.MASK_A_FRAMES:] if h == 0 else x)[None])[0], float(lu[h])))
-    return np.stack(out)
+        v = BI.INPUTS[name](x[:, PS.MASK_A_FRAMES:] if h == 0 else x, centres())
+        out.append(np.append(v, (float(lu[h]) + 20.0) / 10.0))
+    return np.stack(out).astype(np.float32)
 
 
-def trunk_of(net, unit, v, amp, cls):
-    """(2, 256): W's last hidden layer on a unit's two halves, fed as `RungData.batch` feeds it."""
+def trunk_of(net, path, amp, cls):
+    """(2, 256): W's last hidden layer on a file's two halves, fed as `RungData.batch` feeds it."""
     import torch
 
     from learn import direct_stems as DS
     from learn import pretrain_set as PS
     from learn import song_model as SM
 
-    q, lu = halves(unit, v)
+    q, lu = halves(path)
     x = SM.norm_feat(np.stack([np.stack([PS.dequant(q[h])] * 2) for h in (0, 1)]))
     c = np.stack([SM.cond_vec(amp, cls, [float(lu[h]), 0.0]) for h in (0, 1)])
     PS.mask_half_a(x, np.array([True, False]))
@@ -185,15 +233,50 @@ def net_w(seed):
 
 
 @functools.lru_cache(maxsize=None)
-def feature(name, seed, unit, v, amp, cls):
-    """(2, d) of a declared input; a record's input does not depend on the fold, so each is built once."""
-    if name == "mel":
-        return stats_of(unit, v).astype(np.float32)
-    if name == "ltas":
-        return stats_of(unit, v)[:, list(range(96)) + [192]].astype(np.float32)
+def feature(name, seed, path, amp, cls):
+    """(2, d) of a declared input; a file's input does not depend on the fold, so each is built once. W's features depend
+    on (seed, file, amp, class) and on no fold: W holds no real row."""
     if name == "W":
-        return trunk_of(net_w(seed), unit, v, amp, cls)
-    raise SystemExit(f"{name}: no such input")
+        return trunk_of(net_w(seed), path, amp, cls)
+    return summary_of(name, path)
+
+
+@functools.lru_cache(maxsize=1)
+def plugin_set():
+    """W's training rows and each row's input files: its own and its first backings. Refuses unless the ids are W's."""
+    import argparse as AP
+
+    from learn import pipeline_fix as P
+
+    e = P.require("phase_3")
+    croot, kept, rend, sp, dropped = P.recipe_inputs(pin=e.get("phase_3_doubles"))
+    wrec = json.loads((P.out_dir() / "runs" / f"{BASE['W'][0]}-{BOUND_SEED}.json").read_text())
+    ids = [i for i in wrec["train_ids"] if i < P.REAL_ROW0]
+    pa = AP.Namespace(rung="b", fold=None, frac=1.0, sections=1.0, pc=False, pcsz=False, aug=False)
+    tr, *_ = P.plugin_rows(kept, sp, pa, lambda q: [])
+    if tr != ids:
+        raise SystemExit("the plugin training ids differ from W's")
+    rows = P.rung_rows(kept, rend, ids)
+    doubled = P.doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
+    own = P.rung_path(croot, "b", doubled)
+    files = [[str(own(r["i"])), *(str(P.wide_path(r["i"], v)) for v in range(PLUGIN_VARIANTS - 1))] for r in rows]
+    return rows, files
+
+
+def training_set(src, k, data):
+    """(rows, clusters, each row's files) a candidate fits on fold k. Real: the fold's training records once each, no held
+    DI. Plugin: W's rows, clusters by section."""
+    from learn import pipeline_fix as P
+
+    if src == "plugin":
+        rows, files = plugin_set()
+        return rows, [r["section"] for r in rows], files
+    train, _, _ = P.dfix_rows_of(*data, k)
+    b, g, bh, gh = P.dfix_records(*data, k)
+    rows, recs = unique_rows(train, b + g)
+    if {r["di"] for r in bh + gh} & {r["di"] for r in recs}:
+        raise SystemExit(f"fold {k}: a held DI in the training records")
+    return rows, [r["di"] for r in recs], [[str(P.dfix_input_path(h["real"], v)) for v in range(VARIANTS)] for h in rows]
 
 
 # --- the candidates --------------------------------------------------------------------------------------------------
@@ -226,7 +309,6 @@ def fit_knn(X, y, clusters):
 
 
 FITS = {"ridge": fit_ridge, "trees": fit_trees, "knn": fit_knn}
-CANDIDATES = {}                                         # set by the plan's declaration, T2.1: {label: (input, fit)}
 
 
 def shuffled_within(c, cm, cells, seed):
@@ -239,9 +321,10 @@ def shuffled_within(c, cm, cells, seed):
     return c[order], cm[order]
 
 
-def candidate_answers(name, fit, recs_tr, rows_tr, rows_te, Y_tr, searched, seeds=(None,), spike=None):
+def candidate_answers(spec, rows_tr, clusters, files, rows_te, files_te, Y_tr, searched, seeds, spike=None):
     """A candidate's held answers on one fold, seeds averaged. `spike` (train labels, held labels) joins the labels to the
     input, the harness's positive control. -> (mu [n, knobs], sd [knobs])."""
+    name, fit, _ = spec
     c, cm = Y_tr[0].astype(float), Y_tr[1].astype(float)
     cells_tr = [(h["amp"], h["cls"]) for h in rows_tr]
     cells_te = [(h["amp"], h["cls"]) for h in rows_te]
@@ -250,12 +333,12 @@ def candidate_answers(name, fit, recs_tr, rows_tr, rows_te, Y_tr, searched, seed
     centre = cell_centres(c, mask, cells_tr)
     fallback = np.mean(list(centre.values()), 0)
     base_te = np.stack([centre.get(q, fallback) for q in cells_te])
-    resid = c - np.stack([centre[q] for q in cells_tr])
+    resid = (c - np.stack([centre[q] for q in cells_tr])) * mask
     sd = np.array([resid[mask[:, j] > 0, j].std() if mask[:, j].sum() > 1 else 0.25 for j in range(c.shape[1])])
     answers = []
     for seed in seeds:
-        Xtr = np.stack([[feature(name, seed, h["real"], v, h["amp"], h["cls"]) for v in range(VARIANTS)] for h in rows_tr])   # [n, v, 2, d]
-        Xte = np.stack([feature(name, seed, h["real"], 0, h["amp"], h["cls"]) for h in rows_te])                               # [m, 2, d]
+        Xtr = np.stack([[feature(name, seed, f, h["amp"], h["cls"]) for f in fs] for h, fs in zip(rows_tr, files)])  # [n, v, 2, d]
+        Xte = np.stack([feature(name, seed, f, h["amp"], h["cls"]) for h, f in zip(rows_te, files_te)])              # [m, 2, d]
         if spike is not None:
             Xtr = np.concatenate([Xtr, np.broadcast_to(SPIKE * spike[0][:, None, None], (*Xtr.shape[:3], spike[0].shape[1]))], -1)
             Xte = np.concatenate([Xte, np.broadcast_to(SPIKE * spike[1][:, None], (*Xte.shape[:2], spike[1].shape[1]))], -1)
@@ -263,49 +346,66 @@ def candidate_answers(name, fit, recs_tr, rows_tr, rows_te, Y_tr, searched, seed
         rep = np.repeat(np.arange(n), v * h_)
         flat = Xtr.reshape(-1, d)
         cells = [cells_tr[i] for i in rep]
-        cl = [recs_tr[i]["di"] for i in rep]
+        cl = [clusters[i] for i in rep]
         flat, means = centre_within(flat, cells)
         m, comp = pca(flat)
         Ztr = (flat - m) @ comp.T
         pred = np.zeros((len(rows_te), c.shape[1]))
         for half in (0, 1):
             Z = (centre_within(Xte[:, half], cells_te, means)[0] - m) @ comp.T
+            if fit == "rrr":
+                for amp in sorted({q[0] for q in cells_te}):
+                    tr_i = np.array([q[0] == amp for q in cells_tr])[rep]
+                    te_i = np.array([q[0] == amp for q in cells_te])
+                    heads = np.nonzero(mask[np.array([q[0] == amp for q in cells_tr])].sum(0))[0]
+                    keep = [q for q, w in zip(cl, tr_i) if w]
+                    pred[np.ix_(te_i, heads)] += 0.5 * rrr_fit(Ztr[tr_i], resid[rep][tr_i][:, heads], keep)(Z[te_i])
+                continue
             for j in use:
                 rows_j = mask[rep, j] > 0
-                if rows_j.sum() >= 2 * VARIANTS:
+                if rows_j.sum() >= 2 * v:
                     pred[:, j] += 0.5 * FITS[fit](Ztr[rows_j], resid[rep, j][rows_j], [q for q, w in zip(cl, rows_j) if w])(Z)
         answers.append(np.clip(base_te + pred, 0, 1))
     return np.mean(answers, 0), sd
 
 
-def add_candidates(rows, k, cands, brecs, by_unit, folds, grecs, gunits, extra=(), check=None):
-    """Each candidate's `_ans` and `_swap` on one fold's `read_fold` rows, in their order. `extra`: more training rows
-    as (row, record) pairs, any on a held DI left out. `check`: "shuffle" or "spike", the harness's own controls."""
+def add_candidates(rows, k, cands, data, extra=(), check=None):
+    """Each candidate's `_ans` and `_swap` on one fold's `read_fold` rows, in their order, cached per fold unless `check`.
+    `extra`: more real training rows as (row, record) pairs, any on a held DI left out. `check`: "shuffle" or "spike", the
+    harness's own controls."""
+    from learn import full_space as F
     from learn import pipeline_fix as P
     from learn import reads_v3 as R
-    from learn import full_space as F
     from learn import trusted_data_t3 as T3
 
-    train, held, _ = P.dfix_rows_of(brecs, by_unit, folds, grecs, gunits, k)
-    b, g, bh, gh = P.dfix_records(brecs, by_unit, folds, grecs, gunits, k)
-    rows_tr, recs_tr = unique_rows(train, b + g)
-    held_dis = {r["di"] for r in bh + gh}
-    for row, rec in extra:
-        if rec["di"] not in held_dis:
-            rows_tr.append(row)
-            recs_tr.append(rec)
-    assert not held_dis & {r["di"] for r in recs_tr}, "a held DI in the training records"
-    enc = T3.encode_for(T3.FULL)
-    Y_tr = [np.stack(z) for z in zip(*(enc(h["label"]) for h in rows_tr))]
-    Y_te = [np.stack(z) for z in zip(*(enc(h["label"]) for h in held))]
+    _, held, _ = P.dfix_rows_of(*data, k)
     assert [(h["amp"], h["cls"]) for h in held] == [(q["amp"], q["cls"]) for q in rows]
+    enc = T3.encode_for(T3.FULL)
+    Y_te = [np.stack(z) for z in zip(*(enc(h["label"]) for h in held))]
     c, cm, s, sm, kk, km, _ = Y_te
-    spike = (Y_tr[0], Y_te[0]) if check == "spike" else None
-    if check == "shuffle":
-        Y_tr[0], Y_tr[1] = shuffled_within(Y_tr[0], Y_tr[1], [(h["amp"], h["cls"]) for h in rows_tr], R.RNG_SEED + k)
-    for label, (name, fit) in cands.items():
-        seeds = R.SEEDS if name == "W" else (None,)
-        mu, sd = candidate_answers(name, fit, recs_tr, rows_tr, held, Y_tr, R.searched, seeds, spike)
+    files_te = [str(P.dfix_input_path(h["real"], 0)) for h in held]
+    held_dis = {q["cluster"] for q in rows}
+    for label, spec in cands.items():
+        store = root() / "answers" / f"{label}-k{k}.npz"
+        if check is None and store.exists():
+            z = np.load(store)
+            mu, sd = z["mu"], z["sd"]
+        else:
+            rows_tr, clusters, files = training_set(spec[2], k, data)
+            if spec[2] == "real":
+                keep = [(row, rec) for row, rec in extra if rec["di"] not in held_dis]
+                rows_tr = rows_tr + [q[0] for q in keep]
+                clusters = clusters + [q[1]["di"] for q in keep]
+                files = files + [[str(P.dfix_input_path(q[0]["real"], v)) for v in range(VARIANTS)] for q in keep]
+            Y_tr = [np.stack(z) for z in zip(*(enc(h["label"]) for h in rows_tr))]
+            spike = (Y_tr[0], Y_te[0]) if check == "spike" else None
+            if check == "shuffle":
+                Y_tr[0], Y_tr[1] = shuffled_within(Y_tr[0], Y_tr[1], [(h["amp"], h["cls"]) for h in rows_tr], R.RNG_SEED + k)
+            seeds = R.SEEDS if spec[0] == "W" else (None,)
+            mu, sd = candidate_answers(spec, rows_tr, clusters, files, held, files_te, Y_tr, R.searched, seeds, spike)
+            if check is None:
+                store.parent.mkdir(parents=True, exist_ok=True)
+                np.savez(store, mu=mu, sd=sd)
         o = gaussian_output(mu, sd, len(F.SW), (len(F.CAT), len(F.MICS)))
         for j, row in enumerate(rows):
             sk, ss, sc = R.searched(row["amp"], row["cls"])
@@ -314,6 +414,7 @@ def add_candidates(rows, k, cands, brecs, by_unit, folds, grecs, gunits, extra=(
                       and q["cluster"] != row["cluster"]]
             row[f"{label}_ans"] = mu[j]
             row[f"{label}_swap"] = (R.loss(o, j, *args) - np.mean([R.loss(o, i, *args) for i in others], 0)) if others else None
+        print(k, label, "done", flush=True)
     return rows
 
 
@@ -362,7 +463,7 @@ def cmd_control(_args):
     stored = json.loads((P.out_dir() / "night2" / "reads-v3-ftm.json").read_text())
     for st, unit in (("BKS", lambda r: r["fold"]), ("GOAT", lambda r: r["cluster"])):
         S = [r for r in rows if r["set"] == st]
-        for label in BASE:
+        for label in ("FTM", "FT", "W"):
             got = R.corr(R.blocks(S, label))
             for g in R.GROUPS:
                 want = stored[f"{st}/{label}"]["r"][g]["r"]
@@ -376,30 +477,29 @@ def cmd_control(_args):
 
 
 def cmd_check(_args):
-    """Two controls on the mel ridge's plumbing, reading no candidate: labels shuffled within cell in training must read
-    near zero, or the harness leaks; labels joined to the input must read high, or rows and labels are misaligned."""
+    """The harness's controls, reading no candidate: every candidate with labels shuffled within cell in training must read
+    near zero, or it leaks; labels joined to the input must read high, or rows and labels are misaligned."""
     from learn import reads_v3 as R
 
     sha_ok()
     rows, data = base_rows()
     res = {}
-    for check in ("shuffle", "spike"):
+    for check, cands in (("spike", {k: CANDIDATES[k] for k in ("M-ridge", "W-ridge", "P-ridge")}), ("shuffle", CANDIDATES)):
         by_fold = collections.defaultdict(list)
         for r in rows:
             by_fold[r["fold"]].append(dict(r))
         for k in range(4):
-            add_candidates(by_fold[k], k, {"C": ("mel", "ridge")}, *data, check=check)
-            print(check, "fold", k, "done", flush=True)
+            add_candidates(by_fold[k], k, cands, data, check=check)
         done = [r for k in range(4) for r in by_fold[k]]
-        res[check] = {st: {g: R.corr(R.blocks([r for r in done if r["set"] == st], "C")).get(g, (None,))[0] for g in R.GROUPS}
-                      for st in ("BKS", "GOAT")}
-        print(check, res[check], flush=True)
+        res[check] = {c: {st: {g: R.corr(R.blocks([r for r in done if r["set"] == st], c)).get(g, (None,))[0] for g in R.GROUPS}
+                          for st in ("BKS", "GOAT")} for c in cands}
+        print(check, json.dumps(res[check]), flush=True)
     (root() / "check.json").write_text(json.dumps(res, indent=1))
 
 
 def family(rows, labels, perms=2000):
-    """Selection across candidates: under one label permutation per draw, the largest r of any candidate, by set and
-    group, and each candidate's p against it."""
+    """How large a read one candidate of this family reaches by chance: under one label permutation per draw, the largest r
+    of any label, by set and group, and each label's p against it."""
     from learn import reads_v3 as R
 
     out = {}
@@ -420,28 +520,114 @@ def family(rows, labels, perms=2000):
     return out
 
 
+def standardised(S, g, label):
+    """x and y of group g's flat points, each within-cell-demeaned value's scale set by its (amp, head) sd, and the flat
+    index, as `reads_v3.corr`'s r_std pools them."""
+    from learn import reads_v3 as R
+
+    I, J, C, n = R.flat(S, g)
+    y = np.array([S[i]["c"][j] for i, j in zip(I, J)], float)
+    x = np.array([S[i][f"{label}_ans"][j] for i, j in zip(I, J)], float)
+    keys = [(S[i]["amp"], j) for i, j in zip(I, J)]
+    for key in set(keys):
+        q = np.array([z == key for z in keys])
+        cells = C[q]
+        for arr in (x, y):
+            d = arr[q] - (np.bincount(cells, arr[q], n) / np.maximum(np.bincount(cells, minlength=n), 1))[cells]
+            arr[q] = arr[q] / max(d.std(), 1e-12)
+    return I, x, y, C, n
+
+
+def contrast_draws(S, a, b, g, W, of, standard):
+    """One paired contrast of r on GOAT rows S: (whole, draws) on the shared item weights W."""
+    from learn import reads_v3 as R
+
+    if standard:
+        I, xa, y, C, n = standardised(S, g, a)
+        _, xb, _, _, _ = standardised(S, g, b)
+    else:
+        I, J, C, n = R.flat(S, g)
+        y = np.array([S[i]["c"][j] for i, j in zip(I, J)], float)
+        xa = np.array([S[i][f"{a}_ans"][j] for i, j in zip(I, J)], float)
+        xb = np.array([S[i][f"{b}_ans"][j] for i, j in zip(I, J)], float)
+    pt = of[I]
+    whole = R.wr(xa, y, np.ones(len(y)), C, n) - R.wr(xb, y, np.ones(len(y)), C, n)
+    return whole, np.array([R.wr(xa, y, w[pt].astype(float), C, n) - R.wr(xb, y, w[pt].astype(float), C, n) for w in W])
+
+
+def bounds(rows):
+    """Every contrast that can move a candidate on, with its plain 90% interval and a simultaneous 95% lower bound over all
+    of them, on one set of GOAT item weights. Drive on crunch pairs head-standardised: inputGain alone carries 56% of its
+    label variance."""
+    from learn import reads_v3 as R
+
+    G = [r for r in rows if r["set"] == "GOAT"]
+    items = {u: i for i, u in enumerate(sorted({r["cluster"] for r in G}))}
+    W = np.random.default_rng(R.RNG_SEED + 1).multinomial(len(items), np.ones(len(items)) / len(items), size=R.BOOT_DRAWS)
+    out, draws, whole = [], [], []
+    for a, b, g, crunch in BOUND:
+        S = [r for r in G if r["cls"] == "crunch"] if crunch else G
+        of = np.array([items[r["cluster"]] for r in S])
+        d, q = contrast_draws(S, a, b, g, W, of, crunch)
+        whole.append(d)
+        draws.append(q)
+        out.append({"a": a, "b": b, "group": g, "crunch": crunch, "diff": float(d), "lo90": float(np.percentile(q, 5)),
+                    "hi90": float(np.percentile(q, 95))})
+    low, q = max_t_lower(np.stack(draws, 1), np.array(whole))
+    for row, x in zip(out, low):
+        row["simultaneous_lower"] = float(x)
+    return {"q": q, "contrasts": out}
+
+
+def crunch_read(rows, labels):
+    """Drive on GOAT's crunch rows alone, the review's step 3: raw and head-standardised, beside the row count."""
+    from learn import reads_v3 as R
+
+    S = [r for r in rows if r["set"] == "GOAT" and r["cls"] == "crunch"]
+    iv = R.goat_intervals(S, labels, ())
+    out = {"rows": len(S), "items": len({r["cluster"] for r in S})}
+    for m in labels:
+        v = R.corr(R.blocks(S, m))["drive"]
+        out[m] = {"r": v[0], "r_std": v[3], "n": v[1], "boot90": iv[(m, "drive")]}
+    return out
+
+
+def player_read(rows, labels, gunits):
+    """GOAT is about 76% one player: each label's r on that player's items and on the rest."""
+    from learn import reads_v3 as R
+
+    player = {u["unit"].split("@")[0]: u["band"] for u in gunits.values()}
+    G = [r for r in rows if r["set"] == "GOAT"]
+    top = collections.Counter(player[r["cluster"]] for r in G).most_common(1)[0][0]
+    out = {"main_share": sum(player[r["cluster"]] == top for r in G) / len(G)}
+    for name, S in (("main", [r for r in G if player[r["cluster"]] == top]), ("rest", [r for r in G if player[r["cluster"]] != top])):
+        out[name] = {m: {g: v[0] for g, v in R.corr(R.blocks(S, m)).items()} for m in labels}
+    return out
+
+
 def cmd_read(args):
-    from learn import pipeline_fix as P
     from learn import reads_v3 as R
 
     sha_ok()
     ledger = json.loads((PLUGIN_ROOT / "docs" / "dev-test-ledger.json").read_text())
     entry = next((t for t in ledger["tests"] if t.get("test_id") == LEDGER_ID), None)
-    if entry is None or not CANDIDATES or sorted(entry.get("candidates", ())) != sorted(CANDIDATES):
+    if entry is None or sorted(entry.get("candidates", ())) != sorted(CANDIDATES):
         raise SystemExit(f"no declared read: ledger {LEDGER_ID!r} must list the candidates in CANDIDATES")
     rows, data = base_rows()
     by_fold = collections.defaultdict(list)
     for r in rows:
         by_fold[r["fold"]].append(r)
     for k in range(4):
-        add_candidates(by_fold[k], k, CANDIDATES, *data)
-        print("fold", k, "candidates done", flush=True)
+        add_candidates(by_fold[k], k, CANDIDATES, data)
     rows = [r for k in range(4) for r in by_fold[k]]
-    pickle.dump(rows, open(args.out + ".rows.pkl", "wb"))
+    pathlib.Path(args.out + ".rows.pkl").write_bytes(pickle.dumps(rows))
     labels = [*BASE, *CANDIDATES]
-    res = R.report(rows, labels, pairs=[(c, "FTM") for c in CANDIDATES])
+    res = R.report(rows, labels, pairs=list(PAIRS))
+    res["crunch"] = crunch_read(rows, labels)
+    res["bounds"] = bounds(rows)
+    res["player"] = player_read(rows, labels, data[4])
     res["family"] = family(rows, labels)
-    json.dump(res, open(args.out, "w"), indent=1)
+    pathlib.Path(args.out).write_text(json.dumps(res, indent=1, default=float))
 
 
 def main(argv=None):

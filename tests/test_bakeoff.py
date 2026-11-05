@@ -1,5 +1,6 @@
 """The model comparison's pure functions (`learn/bakeoff.py`); no audio, no models."""
 import numpy as np
+import pytest
 
 from learn import bakeoff as B
 
@@ -77,3 +78,29 @@ def test_shuffled_within_stays_inside_its_cell():
     got, _ = B.shuffled_within(c, cm, ["x", "x", "x", "y", "y", "y"], 3)
     assert sorted(got[:3].ravel().tolist()) == [0.0, 1.0, 2.0]
     assert sorted(got[3:].ravel().tolist()) == [3.0, 4.0, 5.0]
+
+
+def test_rrr_recovers_a_rank_two_map_and_keeps_its_shape():
+    rng = np.random.default_rng(4)
+    Z = rng.normal(size=(300, 6))
+    Y = Z[:, :2] @ rng.normal(size=(2, 9))
+    clusters = [str(i // 10) for i in range(300)]
+    got = B.rrr_fit(Z, Y, clusters, rank=2)(Z)
+    assert got.shape == Y.shape and np.corrcoef(got.ravel(), Y.ravel())[0, 1] > 0.99
+
+
+def test_max_t_lower_widens_as_contrasts_join():
+    rng = np.random.default_rng(5)
+    one = rng.normal(size=(4000, 1))
+    many = rng.normal(size=(4000, 30))
+    low1, q1 = B.max_t_lower(one, np.zeros(1))
+    lowN, qN = B.max_t_lower(many, np.zeros(30))
+    assert q1 == pytest.approx(1.645, abs=0.1)
+    assert qN > 2.5 and lowN[0] < low1[0]
+
+
+def test_declared_bound_uses_only_declared_labels():
+    known = {*B.BASE, *B.CANDIDATES}
+    assert all(a in known and b in known for a, b, _, _ in B.BOUND)
+    assert all(a in known and b in known for a, b in B.PAIRS)
+    assert len(B.CANDIDATES) == 16 and len(B.BOUND) == 30
