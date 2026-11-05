@@ -171,6 +171,22 @@ def family_null(max_by_draw):
 
 # --- the data --------------------------------------------------------------------------------------------------------
 
+def code_key():
+    """A hash of the code that makes a candidate's answers: a cached answer from other code is not reused."""
+    h = hashlib.sha256()
+    for name in ("bakeoff.py", "bakeoff_inputs.py"):
+        h.update((PLUGIN_ROOT / "learn" / name).read_bytes())
+    return h.hexdigest()[:16]
+
+
+def save_answers(path, **arrays):
+    """An answers file written whole: to a temporary name, then moved."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp.npz")
+    np.savez(tmp, **arrays)
+    tmp.replace(path)
+
+
 def unique_rows(rows, recs):
     """Each training record once: `dfix_rows_of` cycles them to a rows-per-epoch count. -> (rows, records)."""
     seen = {}
@@ -398,9 +414,14 @@ def add_candidates(rows, k, cands, data, extra=(), check=None):
     held_dis = {q["cluster"] for q in rows}
     for label, spec in cands.items():
         store = root() / "answers" / f"{label}-k{k}.npz"
-        if check is None and store.exists():
+        stored = None
+        if spec[0] == "arm":
+            stored = np.load(store)
+        elif check is None and store.exists():
             z = np.load(store)
-            mu, sd = z["mu"], z["sd"]
+            stored = z if str(z["key"]) == code_key() else None
+        if stored is not None:
+            mu, sd = stored["mu"], stored["sd"]
         else:
             rows_tr, clusters, files = training_set(spec[2], k, data)
             if spec[2] == "real":
@@ -415,15 +436,19 @@ def add_candidates(rows, k, cands, data, extra=(), check=None):
             seeds = R.SEEDS if spec[0] == "W" else (None,)
             mu, sd = candidate_answers(spec, rows_tr, clusters, files, held, files_te, Y_tr, R.searched, seeds, spike)
             if check is None:
-                store.parent.mkdir(parents=True, exist_ok=True)
-                np.savez(store, mu=mu, sd=sd)
+                save_answers(store, mu=mu, sd=sd, key=code_key())
         o = gaussian_output(mu, sd, len(F.SW), (len(F.CAT), len(F.MICS)))
+        for j, row in enumerate(rows):
+            row[f"{label}_ans"] = mu[j]
+        if stored is not None and "swap" in stored.files:              # an arm's own switch and mic output
+            for j, row in enumerate(rows):
+                row[f"{label}_swap"] = None if np.isnan(stored["swap"][j]).any() else stored["swap"][j]
+            continue
         for j, row in enumerate(rows):
             sk, ss, sc = R.searched(row["amp"], row["cls"])
             args = (c[j], cm[j] * sk, s[j], sm[j] * ss, kk[j], km[j] * sc)
             others = [i for i, q in enumerate(rows) if i != j and (q["amp"], q["cls"], q["set"]) == (row["amp"], row["cls"], row["set"])
                       and q["cluster"] != row["cluster"]]
-            row[f"{label}_ans"] = mu[j]
             row[f"{label}_swap"] = (R.loss(o, j, *args) - np.mean([R.loss(o, i, *args) for i in others], 0)) if others else None
         print(k, label, "done", flush=True)
     return rows
@@ -616,6 +641,19 @@ def player_read(rows, labels, gunits):
     return out
 
 
+def swap_pairs(rows, arms):
+    """Each arm's switch and mic own-against-swap less FTm's on GOAT, by item, 90% t. An interval wholly above zero says the
+    arm's switches or mics lost reading. Knobs are left out: an arm's knob output can have another form."""
+    from learn import reads_v3 as R
+
+    G = [r for r in rows if r["set"] == "GOAT" and r["FTM_swap"] is not None]
+    out = {}
+    for a in arms:
+        P_ = [r for r in G if r[f"{a}_swap"] is not None]
+        out[a] = {q: R.t_row([(r["cluster"], float(r[f"{a}_swap"][i] - r["FTM_swap"][i])) for r in P_]) for i, q in ((1, "switch"), (2, "mic"))}
+    return out
+
+
 def cmd_arms(args):
     """Phase 4's arms, read from their stored answers beside FTm: `reads_v3`'s report, and the max-t bound over each arm's
     groups against FTm."""
@@ -634,6 +672,7 @@ def cmd_arms(args):
     labels = [*BASE, *arms]
     res = R.report(rows, labels, pairs=[(a, "FTM") for a in arms])
     res["bounds"] = bounds(rows, tuple((a, "FTM", g, False) for a in arms for g in ("drive", "tone", "cab")))
+    res["swap_pairs"] = swap_pairs(rows, arms)
     res["player"] = player_read(rows, labels, data[4])
     pathlib.Path(args.out).write_text(json.dumps(res, indent=1, default=float))
 

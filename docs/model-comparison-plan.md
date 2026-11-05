@@ -174,20 +174,20 @@ the eight FTm_k sum to 54.0 min. The ML session gets each arm's size and PIDs be
 | Order | Arm | What changes | Start | Size |
 |---|---|---|---|---|
 | 1 | `A-ctl` | Nothing: FTm's recipe on other training seeds, so its distance from FTm shows the seed noise the bootstrap cannot see. W's seed noise stays unseen | W's stored state | 54 min |
-| 2 | `A-cat` | Knob heads, loss and readout: 21 bins on 0–1, each label split between its two nearest bins, cross-entropy, interpolated median. The mixture's family weight changes with it | W's body frozen, new heads fitted on plugin rows, then FTm's recipe | 54 min plus the head fit |
+| 2 | `A-cat` | Knob heads, loss and readout: 21 bins on 0–1, each label split between its two nearest bins, cross-entropy, interpolated median. The mixture's family weight changes with it | W's body frozen, new heads fitted on plugin rows for 30 epochs at 1e-3 (about 840 steps; frozen features and a linear head need far fewer steps than W's 1,680, and the loss is logged to show it flattened), then FTm's recipe | 54 min plus about 5 min |
 | 3 | `A-cnn` | The body: 2 conv layers of 6 and 12, dense 120 and 60, same heads | Fresh, W's fixed 60 epochs, `final` state, then FTm's recipe; `P2b-wide24:final` read beside | 74 min |
-| 4 | `A-k1` | Mixture K and sd floor: K = 1, floor 0.07 | As `A-cat` | 54 min plus the head fit |
+| 4 | `A-k1` | Mixture K and sd floor: K = 1, floor 0.07 | As `A-cat` | 54 min plus about 5 min |
 | 5 | `A-mic` | The mic loss weight, 0.1 | W's stored state | 54 min |
 | 6 | `A-in` | The best input from Phase 3 as a second branch, if any moves on or leads | Fresh, as `A-cnn` | 74 min |
 
 - [x] T4.1 Read `P.cmd_train`, `P.cmd_train_ft` and `P.fit`; write `learn/bakeoff_train.py`, a new file, nothing in `pipeline_fix` changed. Any recipe
   takes extra rows later, with the mask and a drop key on `di`.
 - [x] T4.2 Control: one fold and seed of `A-ctl` on FTm's own seed; its last logged real loss within 5% of FTm's. About 6 min.
-- [~] T4.3 Run the arms in order, in resumable pieces, one `run.json` each with command, seed, git sha, PID, minutes. The executor watches from launch.
-- [ ] T4.4 Each arm's answers fill `_ans` and `_swap` directly (`read_fold` cannot load these nets), read through `reads_v3`, paired against FTm. Audit. Log.
+- [~] T4.3 Run the arms in order, in resumable pieces, one record each with command, seed, git sha, PID, minutes. The executor watches from launch.
+- [ ] T4.4 Each arm's answers fill `_ans` and `_swap` directly (`read_fold` cannot load these nets), read through `reads_v3`, paired against FTm. `bakeoff arms` runs once over all arms, so the bound holds. Audit. Log.
 
 **Declared rule for Phase 4.** An arm moves on if `arm − FTm` clears zero on GOAT by the max-t bound over all arms' groups, beats `A-ctl − FTm`'s size in that
-group, and no group's plain interval sits wholly below zero. An interval holding zero is undecided: `A-cnn` undecided means network size is not shown to
+group, no group's plain interval sits wholly below zero, and its switch or mic own-against-swap less FTm's has no interval wholly above zero on GOAT. Knob swap is not compared: an arm's knob output can have another form. An interval holding zero is undecided: `A-cnn` undecided means network size is not shown to
 matter, not that it doesn't. An arm that moves on gets the full nested recipe (8 inner runs, 70 min) before Phase 5.
 
 ### Phase 5, by the score (renders, 3 slots shared with the ML session)
@@ -197,7 +197,7 @@ matter, not that it doesn't. An arm that moves on gets the full nested recipe (8
   reads only the knob gain; `cell_centres` is not RcBG's centre (mean gap 0.022 on GOAT). Judged by `analysis.aligned` on the held half, storing `distance`, `tonal`
   and the cross-fitted term. No audio kept. Check: 10 of FTm's stored answers rendered through it match the stored judge values and `render_sha256`.
 - [ ] T5.2 Renders: `M-ridge`, then at most two finalists, ranked by their simultaneous lower bound. 1,340 each by the code (335 keys × 2 × 2). Stored judges hold `distance`
-  only, so `tonal` beside needs FTm, RcBG and S rendered again: about 2,700 more. FTm's own batch took 19 min for 1,340 on 3 processes. Shards resumable; announce size and PIDs;
+  only, so `tonal` beside needs FTm, RcBG and S rendered again: about 2,700 more. FTm's own batch spanned 19 min for 1,340 by its files' times. Shards resumable; announce size and PIDs;
   stop when the ML session asks.
 - [ ] T5.3 Report `candidate − centre`, `candidate − FTm`, `candidate − S`, by item on GOAT and by DI on BKS, by fold beside, with t intervals, `tonal` beside `distance`, and
   d_S strata. Audit. Log.

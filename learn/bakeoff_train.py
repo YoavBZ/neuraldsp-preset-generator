@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import pathlib
 import subprocess
 import sys
@@ -29,13 +30,13 @@ if str(PLUGIN_ROOT) not in sys.path:
 SEEDS = (20261042, 20261043)
 CTL_OFFSET = 2                          # A-ctl's training seeds: 20261044 and 20261045
 BINS = 21
-HEAD_EPOCHS = 10
+HEAD_EPOCHS = 30
 BODY_EPOCHS = 60
 PLUGIN_LR, TUNE_LR = 1e-3, 1e-4
 SD_FLOOR = 0.07
 MIC_WEIGHT = 0.1
 ARMS = {"A-ctl": {"start": "W"}, "A-cat": {"start": "head"}, "A-k1": {"start": "head"}, "A-mic": {"start": "W"},
-        "A-cnn": {"start": "body"}}
+        "A-cnn": {"start": "body"}}                     # A-in joins if an input from Phase 3 moves on or leads
 
 
 # --- pure functions (unit-tested) ------------------------------------------------------------------------------------
@@ -192,6 +193,7 @@ def train(net, data, tr, loss, seed, dev, epochs, lr, params=None, label=""):
 
     torch.manual_seed(seed)
     net = net.to(dev)
+    params = None if params is None else list(params)
     opt = torch.optim.Adam(net.parameters() if params is None else params, lr=lr)
     rng = np.random.default_rng(seed)
     last = math.nan
@@ -199,7 +201,7 @@ def train(net, data, tr, loss, seed, dev, epochs, lr, params=None, label=""):
         if params is None:
             net.train()
         order = P.epoch_order(rng, tr, data, epoch)
-        tl = []
+        tl, skipped = [], 0
         for j in range(0, len(order), PS.BATCH):
             x, c, y = data.batch(order[j:j + PS.BATCH], epoch, dev)
             v = loss(net(x, c), *y)
@@ -212,6 +214,10 @@ def train(net, data, tr, loss, seed, dev, epochs, lr, params=None, label=""):
                         q.grad.mul_(min(1.0, 5.0 / (float(g) + 1e-9)))
                 opt.step()
                 tl.append(float(v.detach()))
+            else:
+                skipped += 1
+        if skipped > PS.MAX_SKIP_SHARE * max(1, -(-len(order) // PS.BATCH)):
+            raise PS.StepsSkipped(f"{label} epoch {epoch}: {skipped} steps non-finite")
         last = sum(tl) / max(1, len(tl))
         if epoch % 5 == 0 or epoch == epochs - 1:
             print(f"{label} epoch {epoch} loss {last:.4f}", flush=True)
@@ -254,7 +260,16 @@ def real_data(k):
 
 def run_record(path, **kw):
     git = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=PLUGIN_ROOT).stdout.strip()
-    path.write_text(json.dumps({"git": git, "command": " ".join(sys.argv), "time": time.strftime("%Y-%m-%d %H:%M:%S"), **kw}, indent=1))
+    path.write_text(json.dumps({"git": git, "command": " ".join(sys.argv), "pid": os.getpid(), "time": time.strftime("%Y-%m-%d %H:%M:%S"), **kw}, indent=1))
+
+
+def save_state(net, out):
+    """A checkpoint written whole, so `out.exists()` means a finished run."""
+    import torch
+
+    tmp = out.with_suffix(".tmp")
+    torch.save({k: v.detach().cpu() for k, v in net.state_dict().items()}, tmp)
+    tmp.replace(out)
 
 
 def start_net(arm, seed):
@@ -281,6 +296,7 @@ def cmd_head(a):
         return print(out.name, "exists")
     data, tr = plugin_data(a.seed)
     torch.set_num_threads(2)
+    torch.manual_seed(a.seed)                           # the new heads' first weights
     net = start_net(a.arm, a.seed).to(P.device())
     net.eval()
     for q in net.base.parameters():
@@ -288,7 +304,7 @@ def cmd_head(a):
     params = [q for q in net.parameters() if q.requires_grad]
     t0 = time.time()
     last = train(net, data, tr, loss_of(a.arm), a.seed, P.device(), HEAD_EPOCHS, PLUGIN_LR, params, f"{a.arm} head {a.seed}")
-    torch.save({k: v.cpu() for k, v in net.state_dict().items()}, out)
+    save_state(net, out)
     run_record(out.with_suffix(".json"), arm=a.arm, seed=a.seed, stage="head", epochs=HEAD_EPOCHS, loss=last, minutes=(time.time() - t0) / 60)
 
 
@@ -304,10 +320,11 @@ def cmd_body(a):
         return print(out.name, "exists")
     data, tr = plugin_data(a.seed)
     torch.set_num_threads(2)
+    torch.manual_seed(a.seed)                           # the new body's first weights
     net = start_net(a.arm, a.seed)
     t0 = time.time()
     last = train(net, data, tr, loss_of("A-ctl"), a.seed, P.device(), BODY_EPOCHS, PLUGIN_LR, None, f"{a.arm} body {a.seed}")
-    torch.save({k: v.cpu() for k, v in net.state_dict().items()}, out)
+    save_state(net, out)
     run_record(out.with_suffix(".json"), arm=a.arm, seed=a.seed, stage="body", epochs=BODY_EPOCHS, loss=last, minutes=(time.time() - t0) / 60)
 
 
@@ -341,36 +358,59 @@ def cmd_tune(a):
     net = arm_start(a.arm, a.seed)
     last = train(net, data, tr, loss_of(a.arm), train_seed, P.device(), e, TUNE_LR, None, f"{a.arm} k{a.fold} {a.seed}")
     want = rec["log"][-1]["train_mode_loss"]
-    torch.save({k: v.cpu() for k, v in net.state_dict().items()}, out)
+    save_state(net, out)
     run_record(out.with_suffix(".json"), arm=a.arm, seed=a.seed, train_seed=train_seed, fold=a.fold, E=e, loss=last, ftm_loss=want, minutes=(time.time() - t0) / 60)
     print(f"{a.arm} k{a.fold} {a.seed}: last loss {last:.4f}, FTm's {want:.4f}", flush=True)
 
 
-def read_outputs(net, d, arm):
-    """Knob answers for a read's rows on both halves. -> [n, knobs], the halves' mean."""
+def read_outputs(net, d, arm, sd):
+    """A net on a read's rows. -> per half (A, B as `both_halves`): (knob answers [n, knobs], `reads_v3.loss`'s output list).
+    A-cat's knobs enter that list as one Gaussian at its median, sd the head's residual: its knob swap is another form."""
     import torch
 
     from learn import direct_stems as DS
-    from learn import reads_v3 as R
 
     def one():
-        out = []
+        ans, o = [], [[] for _ in range(5)]
         with torch.no_grad():
             for j in range(0, len(d.rows), 64):
                 x, c, _ = d.batch(np.arange(j, min(j + 64, len(d.rows))), -1, "cpu")
                 r = net(x, c)
                 if arm == "A-cat":
-                    out.append(bin_median(torch.softmax(r[0], -1).numpy()))
+                    m = bin_median(torch.softmax(r[0], -1).numpy())
+                    head = (np.zeros((len(m), 1)), m[:, None], np.log(np.maximum(sd, 0.02))[None, None] * np.ones_like(m[:, None]))
                 else:
-                    out.append(DS.mixture_median(r[0].numpy(), r[1].numpy(), r[2].numpy()))
-        return np.concatenate(out)
+                    head = (r[0].numpy(), r[1].numpy(), r[2].numpy())
+                    m = DS.mixture_median(*head)
+                ans.append(m)
+                for q, v in enumerate((*head, r[3].numpy(), np.stack([z.numpy() for z in r[4]], 1))):
+                    o[q].append(v)
+        return np.concatenate(ans), [np.concatenate(z) for z in o]
 
-    orig, a = DS.half_of, one()
+    orig, a_ = DS.half_of, one()
     DS.half_of = lambda i, e: 1 - orig(i, e)
     try:
-        return (a + one()) / 2
+        return a_, one()
     finally:
         DS.half_of = orig
+
+
+def own_swap(rows, outs, Y):
+    """`reads_v3.read_fold`'s own against swap on rows {amp, cls, set, cluster}. outs: per seed, per half, a `read_outputs` list.
+    -> [n, 3], NaN where no row can be swapped."""
+    from learn import reads_v3 as R
+
+    c, cm, s, sm, kk, km, _ = Y
+    out = np.full((len(rows), 3), np.nan)
+    for j, row in enumerate(rows):
+        sk, ss, sc = R.searched(row["amp"], row["cls"])
+        args = (c[j], cm[j] * sk, s[j], sm[j] * ss, kk[j], km[j] * sc)
+        others = [i for i, q in enumerate(rows) if i != j and (q["amp"], q["cls"], q["set"]) == (row["amp"], row["cls"], row["set"])
+                  and q["cluster"] != row["cluster"]]
+        if others:
+            mine = np.mean([[R.loss(h, j, *args) for h in o] for o in outs], (0, 1))
+            out[j] = mine - np.mean([[[R.loss(h, i, *args) for h in o] for o in outs] for i in others], (0, 1, 2))
+    return out
 
 
 def load_arm(arm, k, seed):
@@ -384,23 +424,26 @@ def load_arm(arm, k, seed):
 
 
 def cmd_answers(a):
-    """Each fold's held answers, seeds averaged, into `bakeoff`'s answer store; sd the head's training residual."""
+    """Each fold's held answers and own against swap, seeds averaged, into `bakeoff`'s answer store."""
     from learn import bakeoff as B
     from learn import pipeline_fix as P
     from learn import reads_v3 as R
     from learn import trusted_data_t3 as T3
 
-    data = (*P.real_labels(2), *P.goat_labels()[:2])
+    rows, data = B.base_rows()
     enc = T3.encode_for(T3.FULL)
     for k in range(4):
         _, held, _ = P.dfix_rows_of(*data, k)
+        mine = [r for r in rows if r["fold"] == k]
+        assert [(h["amp"], h["cls"]) for h in held] == [(q["amp"], q["cls"]) for q in mine]
         d = R.make(held)
-        mu = np.mean([read_outputs(load_arm(a.arm, k, sd), d, a.arm) for sd in SEEDS], 0)
         rows_tr = B.training_set("real", k, data)[0]
-        Y = [np.stack(z) for z in zip(*(enc(h["label"]) for h in rows_tr))]
-        store = B.root() / "answers" / f"{a.arm}-k{k}.npz"
-        store.parent.mkdir(parents=True, exist_ok=True)
-        np.savez(store, mu=np.clip(mu, 0, 1), sd=B.residual_sd(Y[0], Y[1], rows_tr, R.searched))
+        Y_tr = [np.stack(z) for z in zip(*(enc(h["label"]) for h in rows_tr))]
+        sd = B.residual_sd(Y_tr[0], Y_tr[1], rows_tr, R.searched)
+        outs = [read_outputs(load_arm(a.arm, k, s), d, a.arm, sd) for s in SEEDS]
+        mu = np.mean([[h[0] for h in o] for o in outs], (0, 1))
+        swap = own_swap(mine, [[h[1] for h in o] for o in outs], d.Y)
+        B.save_answers(B.root() / "answers" / f"{a.arm}-k{k}.npz", mu=np.clip(mu, 0, 1), sd=sd, swap=swap)
         print(a.arm, "fold", k, "answers done", flush=True)
 
 
