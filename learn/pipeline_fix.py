@@ -6666,23 +6666,24 @@ def searched_heads(amp, S):
 
 
 def curve_rows(rows, frac=1.0, shuffle=False, seed=20261109):
-    """N3: the training real rows at `frac` of each amp-and-class cell's units, seeded, or with `shuffle` their labels permuted
-    within the cell. rows: real training rows; a row's masks follow its amp and class, so they survive the permutation."""
+    """N3: the training real rows at `frac` of each amp-and-class cell's records, seeded and nested across shares, or with
+    `shuffle` the records' labels permuted within the cell. Real rows are cycled copies: a record's copies stay together
+    and keep one label. A row's masks follow its amp and class, and the sounding masks travel with the label."""
     import random
 
     cells = {}
     for r in rows:
-        cells.setdefault((r["amp"], r["cls"]), []).append(r)
-    rng, out = random.Random(f"{seed}|{frac}|{shuffle}"), []
+        cells.setdefault((r["amp"], r["cls"]), {}).setdefault(r["real"], []).append(r)
+    rng, out = random.Random(f"{seed}|{shuffle}"), []
     for key in sorted(cells):
-        v = sorted(cells[key], key=lambda r: r["real"])
+        units = sorted(cells[key])
         if shuffle:
-            labels = [r["label"] for r in v]
+            labels = [cells[key][u][0]["label"] for u in units]
             rng.shuffle(labels)
-            out += [dict(r, label=x) for r, x in zip(v, labels)]
+            out += [dict(r, label=x) for u, x in zip(units, labels) for r in cells[key][u]]
         else:
-            rng.shuffle(v)
-            out += v[:max(1, round(frac * len(v)))]
+            rng.shuffle(units)
+            out += [r for u in units[:max(1, round(frac * len(units)))] for r in cells[key][u]]
     return sorted(out, key=lambda r: r["i"])
 
 
@@ -6872,7 +6873,7 @@ def cmd_train_ft(args):
         if any(r_["lr"] != lr or r_["cap"] != cap for r_ in allin):
             raise SystemExit("the inner runs used another rate or cap")
         inners = [r_ for r_ in allin if k is None or (r_["real_fold"], r_["seed"]) == (k, seed)]
-        epochs = int(round(ft_epoch_of(inners) / frac))
+        epochs = ft_epoch_of(inners)
     e = require("phase_3")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     init, wrec = ft_start_state(seed)
@@ -6885,8 +6886,11 @@ def cmd_train_ft(args):
         raise SystemExit(f"{FT_PRETRAIN}-{seed}: trained on other plugin rows than FT's")
     doubled = doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
     rrows, real_held, info = ft_real_rows(k, inner)
-    if curve:
-        rrows = curve_rows(rrows, frac, shuf)
+    if curve:                                          # as many updates as FTm: the kept rows' batches fix the epochs
+        from learn import pretrain_set as PS
+
+        n0, rrows = len(rrows), curve_rows(rrows, frac, shuf)
+        epochs = int(round(epochs * math.ceil(n0 / PS.BATCH) / math.ceil(len(rrows) / PS.BATCH)))
     plugin_tr = tr
     tr, rows = with_rows(tr, rows, rrows)
     rows = rows + [dict(r, held=True) for r in real_held]

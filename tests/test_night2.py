@@ -146,29 +146,34 @@ def test_the_amp_loss_skips_rows_without_an_amp_label():
 
 
 def real_rows():
-    return [{"i": j, "real": f"u{j}", "amp": "ab"[j % 2], "cls": ("clean", "crunch")[j // 2 % 2], "label": j} for j in range(40)]
+    """Cycled copies: 40 records, each row twice."""
+    out = []
+    for j in range(40):
+        for c in (0, 1):
+            out.append({"i": 2 * j + c, "real": f"u{j:02d}", "amp": "ab"[j % 2], "cls": ("clean", "crunch")[j // 2 % 2], "label": j})
+    return out
 
 
-def test_the_curve_keeps_the_share_of_each_cell_seeded():
+def test_the_curve_keeps_whole_records_nested_and_seeded():
     from learn import pipeline_fix as P
 
     rows = real_rows()
-    got = P.curve_rows(rows, frac=0.25)
-    assert got == P.curve_rows(rows, frac=0.25) and len(got) == 8            # 2 of each cell's 10
-    n = {}
-    for r in got:
-        n[(r["amp"], r["cls"])] = n.get((r["amp"], r["cls"]), 0) + 1
-    assert set(n.values()) <= {2, 3} and len(n) == 4
-    half = P.curve_rows(rows, frac=0.5)
-    assert len(half) == 20
+    q = P.curve_rows(rows, frac=0.25)
+    h = P.curve_rows(rows, frac=0.5)
+    units = lambda v: {r["real"] for r in v}
+    assert q == P.curve_rows(rows, frac=0.25) and len(units(q)) == 8 and len(units(h)) == 20
+    assert units(q) <= units(h)
+    assert all(sum(r["real"] == u for r in q) == 2 for u in units(q))     # a record's copies stay together
 
 
-def test_the_shuffle_stays_inside_each_cell():
+def test_the_shuffle_gives_each_record_one_label_inside_its_cell():
     from learn import pipeline_fix as P
 
     rows = real_rows()
     got = P.curve_rows(rows, shuffle=True)
     assert [r["i"] for r in got] == [r["i"] for r in rows]
-    assert any(r["label"] != r["i"] for r in got)
-    by = {r["i"]: r for r in rows}
-    assert all((by[r["label"]]["amp"], by[r["label"]]["cls"]) == (r["amp"], r["cls"]) for r in got)
+    per = {}
+    for r in got:
+        per.setdefault(r["real"], set()).add(r["label"])
+    assert all(len(v) == 1 for v in per.values()) and any(r["label"] != int(r["real"][1:]) for r in got)
+    assert all((r["label"] % 2, r["label"] // 2 % 2) == (int(r["real"][1:]) % 2, int(r["real"][1:]) // 2 % 2) for r in got)

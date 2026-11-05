@@ -2082,13 +2082,14 @@ instead of generating unrealistic presets our own?"):
   - *N1's first read (2026-11-05, zero renders, knob units, reads_v3 as declared, by the review session):* on GOAT FTm reads tone clearly better
     than FT (FTm − FT +0.137 [+0.065, +0.207]) and now holds W's tone with FT's cab (FTm − W tone +0.036 [−0.060, +0.127], cab +0.303 [+0.219,
     +0.390]); drive is unchanged. FTm: drive +0.082 [+0.019, +0.144], tone +0.258 [+0.174, +0.338], cab +0.218 [+0.155, +0.284]; own − swap −0.294
-    [−0.377, −0.210]. Without range-limit labels tone holds (+0.176). E fell from about 190 to about 60. BKS is undecided on every paired row and its
-    cab sits where the no-audio table does. Nothing here is sound, and nothing is through a stem. The score read follows.
-  - **N3, the learning curve (declared 2026-11-05 after N1's first read; ledger `phase_n3`).** On FTm, the better by those reads: 25% and 50% of each amp-and-class
-    cell's training real rows, seeded, and 100% with labels shuffled within amp and class, 4 folds × 2 seeds, FT_k's only, at FTm's E
-    scaled to as many updates (E / share). 24 runs, zero plugin renders, about 1.5 h on MPS. Reads: reads_v3 on held GOAT and BKS, FTM25, FTM50, FTM and FTMs, by group,
-    FTM − FTM25 and FTM − FTMs paired. It says whether more real rows raise the reading: a rise from 25% to 100% above the shuffle is the case for training on the captures; a flat
-    curve says more rows of this kind will not buy it. Undecided is the likely outcome at the small end. The held rows are the same at every share.
+    [−0.377, −0.210]. Without range-limit labels tone holds (+0.176). E fell from about 190 to about 60. BKS's paired rows decide nothing by the read's rule (four blocks): FTM − FT reaches zero on all three groups, and FTM − W is +0.574 on drive and +0.694 on cab, 4 of 4 blocks, tone −0.016. Its cab sits where the no-audio table does. Nothing here is sound, and nothing is through a stem. The score read follows.
+  - **N3, the learning curve (declared 2026-11-05 after N1's first read; ledger `phase_n3`).** On FTm, the better by those reads: 25% and 50% of each
+    amp-and-class cell's training records, a record's copies kept together, nested and seeded, and 100% with labels shuffled within amp and class, 4 folds × 2
+    seeds, FT_k's only, at FTm's E in as many updates. 24 runs, zero plugin renders, about 1.5 h on MPS. A first start sampled rows, not records, and was stopped before any run
+    finished. Reads on held GOAT, FTM25, FTM50, FTM, FTMs and W beside, pairs FTM−FTM25, FTM−FTM50, FTM−FTMs and FTM−W, by group. BKS stands beside and decides nothing (four
+    blocks, the read's rule). A group rises if FTM−FTM25 and FTM−FTMs both clear zero above. An interval reaching zero is undecided and says nothing against more rows.
+    FTMs is not chance: it starts from W, which reads tone without real rows (+0.222). E is not re-chosen at smaller shares, and FTm was picked on these same reads, so both
+    lean toward a rise. r is agreement with search labels, not sound, so a rise is a case for trying captures, and the sound read stays L2's.
   - **Rules.** BKS and GOAT only. V-real, the NS songs, the panel and the captures stay out. The capture page and its labels are
     untouched by these reads. Runs saved apart (`P2b-ftm*`, `night2/`), FT and its answers unchanged.
   - **Caveats.** The review's figures on sound are unmeasured. BKS is 8 DIs in 2 songs (the replicate pairs 5 DIs of one), and its performances sit in W's plugin rows, so held
