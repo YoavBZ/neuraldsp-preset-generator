@@ -72,7 +72,7 @@ crunch leans to S; class, amp and S's setting cannot be pulled apart here. The e
 W carries the agreement: among S, FT and D_fix, agreement is not shown (+0.04 [−0.29, +0.39]; wide, so weak agreement
 is not ruled out). The ML review of 2026-11-05 adds N1 to N3, masked FT and a better search, on trusted data. L1a, declared next: the first 50 captures, the ear gate, a blind check of search labels against S
 and a placebo before the rest of the labels, then their centre against GOAT's at the same count.
-Overnight (F55): masked FT reads tone better on GOAT and holds cab, the score improves there and falls on BKS, and the learning curve does not rise.
+Overnight (F55): masked FT reads tone better on GOAT and holds cab; by the score it is closer there by item, not shown by fold, and worse on BKS; the learning curve is undecided.
 Findings F1–F55.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
@@ -4195,8 +4195,8 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **References.** `~/ndsp-presets/learn/trusted-data/pipeline-fix/ear-vreal/{key,score}.json`, ledger
   `phase_ear_vreal_outcome`. Results review: 14 required changes, all made.
 
-### F55. Masking FT's unsearched heads and its amp head: on GOAT the reading of tone rises and the score improves; on BKS the score goes the other way; the learning curve does not rise (N1, N3, phase_night2, phase_n3; 2,680 read renders, no V-real, no ear)
-- **What changed.** FT's real rows taught mostly S's constants on unsearched controls. N1 took those heads and the amp head out of the real rows' loss and held every control outside the search at S at the readout; E fell from about 190 to about 60 (48–104). The reads below are the declared ones, run by the review session's `reads_v3.py` (sha256 a04785f3a4838ae2) and the stored reports.
+### F55. Masking FT's unsearched heads and its amp head: on GOAT the reading of tone rises and the score improves; on BKS the score goes the other way; the learning curve is undecided (N1, N3, phase_night2, phase_n3; 2,680 read renders, no V-real, no ear)
+- **What changed.** FT's real rows taught mostly S's constants on unsearched controls. N1 took those heads and the amp head out of the real rows' loss and held every control outside the search at S at the readout; E fell from about 190 to about 60 (48–104). The held knob loss's argmin, not acted on: 42–116, median 64 (knob_joint, unsmoothed; E's median 59). The reads below are the declared ones, run by the review session's `reads_v3.py` (sha256 a04785f3a4838ae2) and the stored reports.
 - **The reading, knob units, held GOAT items** (r demeaned within fold, amp, class and head, one value per recording; 90% item intervals):
 
   | | Drive | Tone | Cab |
@@ -4207,7 +4207,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   | FTm − FT | −0.007 [−0.050, +0.039] | +0.137 [+0.065, +0.207] | +0.026 [−0.020, +0.068] |
   | FTm − W | −0.014 [−0.090, +0.059] | +0.036 [−0.060, +0.127] | +0.303 [+0.219, +0.390] |
 
-  Own output against another recording's: FTm −0.294 [−0.377, −0.210], FT −0.185 [−0.236, −0.134], W −0.061 [−0.125, +0.004] (no paired interval declared). Without range-limit labels FTm's tone holds (+0.176; FT +0.045). So FTm carries W's tone and FT's cab together, which neither had. BKS decides nothing here (four blocks from two songs, and its cab sits at a no-audio table's level).
+  Own output against another recording's: FTm −0.294 [−0.377, −0.210], FT −0.185 [−0.236, −0.134], W −0.061 [−0.125, +0.004] (no paired interval declared). Without range-limit labels FTm's tone is +0.176, FT's +0.045 and W's +0.232 (no paired interval). So FTm has FT's cab with a tone read not shown below W's. BKS decides nothing here (four blocks from two songs, and its cab sits at a no-audio table's level). BKS r, exact p: FTm drive +0.306 (0.025), tone +0.203 (0.072), cab +0.562 (0.0009); FT +0.149, +0.215, +0.510; no-audio table +0.014, −0.197, +0.507. Head-standardised GOAT FTm +0.139, +0.272, +0.149.
 - **By the score, on read 2's units** (held half; minus is closer; BKS by DI, GOAT by item):
 
   | Row | BKS (8 DIs) | GOAT (130 items) |
@@ -4219,11 +4219,13 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   | FT − S | −0.177 [−0.256, −0.098] | −0.073 [−0.094, −0.052] |
   | FTm − centre (Rcs2; RcGk) | +0.035 [−0.022, +0.093] | −0.010 [−0.030, +0.010] |
 
-  The two sets disagree on the mask. GOAT's held items are new chains and a cleaner read of a new recording; BKS shares songs and rig letters with training, and its playing sits in W's rows, so FT's longer tuning may be memory there, though nothing here shows it. Both beat S by the score. Neither beats its centre by the score.
-- **N3, the learning curve (held GOAT).** FTm at 25%, 50% and 100% of records: drive +0.080, +0.092, +0.082; tone +0.203, +0.242, +0.258; cab +0.195, +0.224, +0.218; labels shuffled +0.025, +0.096, +0.017. FTm − FTm25: +0.001 [−0.040, +0.039], +0.055 [−0.015, +0.123], +0.023 [−0.014, +0.061]. FTm − shuffled clears zero above on all three. By the declared rule no group rises: undecided, and that says nothing against more rows. In plain description the curve is flat from about 150 rows, with tone the one group that may still move; the reading is real (above the shuffle) and small rows already carry most of it.
-- **What it changes.** FTm is the better base on new chains in knobs and by the score, at the price of the BKS row. Scale alone is not shown to buy reading, so the captures' value is more likely variety than count; their labels are in hand either way. Sound on a real song is N4's page, by ear.
-- **Caveats.** Knob reads are agreement with search labels, not sound. Masked heads stay W's and are held at S at the readout, so nothing here tests those controls. One training recipe, both seeds pooled, six paired GOAT rows uncorrected. FTm was chosen on the reads N3 repeats. Nothing here went through a stem.
-- **References.** `night2/`, `real/report-night2.json`, `goat/report-night2.json`, ledger `phase_night2`, `phase_n1_first_read`, `phase_n3`, `phase_n3_outcome`; the ML review's document.
+  By fold: GOAT FTm − FT −0.016 [−0.035, +0.003], 4 of 4 folds, reaching zero; FTm − FTh −0.017 [−0.029, −0.005]. BKS FTm − FT +0.050 [−0.019, +0.119], FTm − FTh +0.038 [−0.008, +0.084], 3 of 4 folds, both reaching zero. FTm − FT counts: GOAT 68 of 130 items, median −0.004, so the mean rests on a few large items; BKS 1 of 8 DIs, 13 of 40 units. GOAT's S rows have 2 missing.
+
+  The two sets disagree on the mask. GOAT's held items are new playing on mostly new chains, but capture renders, not real rigs, and 132 of its 172 DIs are one player. BKS is real amps, but shares songs and rig letters with training, its playing sits in W's rows, and FT was chosen on this row (read 2). FT's longer tuning may be memory there, though nothing here shows it, and the mask and the epoch count are not separated. On both sets FTm and FT are closer than S by the score. Against its centre FTm is undecided on both sets, by the score.
+- **N3, the learning curve (held GOAT).** FTm at 25%, 50% and 100% of records: drive +0.080, +0.092, +0.082; tone +0.203, +0.242, +0.258; cab +0.195, +0.224, +0.218; labels shuffled at 100%: drive +0.025, tone +0.096, cab +0.017. FTm − FTm25: +0.001 [−0.040, +0.039], +0.055 [−0.015, +0.123], +0.023 [−0.014, +0.061]. FTm − FTm50: −0.010 [−0.041, +0.023], +0.016 [−0.041, +0.072], −0.006 [−0.034, +0.023]. FTm − shuffled clears zero above on all three. By the declared rule no group rises: undecided, and that says nothing against more rows. Point estimates: drive and cab show no trend, tone rises a little at each step; the upper ends (+0.039, +0.123, +0.061) allow a rise in any group. The reading is above the shuffle, and 25% of records (about 150 rows, cycled copies: about 85 distinct units, about 40 of them GOAT's) already carries most of the point estimate. BKS beside, deciding nothing, 25/50/100%: drive +0.377, +0.338, +0.306; tone +0.407, +0.247, +0.203; cab +0.505, +0.530, +0.562.
+- **What it changes.** On held GOAT capture renders FTm is a lead for L2: tone reads better than FT's, drive and cab level, and by the score it is closer by item, with the fold interval reaching zero. On BKS it gives back about the lead that carried FT (read 2's −0.055). This moves no base. N3 says nothing for or against more rows; the captures' labels are in hand either way. Sound on a real song is N4's page, by ear.
+- **Caveats.** Knob reads are agreement with search labels, not sound. Masked heads stay W's and are held at S at the readout, so nothing here tests those controls. One training recipe, both seeds pooled, the paired GOAT rows uncorrected (six knob, six score, N3's nine). FTm was chosen on the reads N3 repeats. Nothing here went through a stem.
+- **References.** `learn/reads_v3.py` (verbatim, sha256 a04785f3a4838ae2), `night2/reads-v3-ftm.json`, `night2/reads-v3-n3.json`, `real/report-night2.json`, `goat/report-night2.json`, `night2/report.json`, ledger `phase_night2`, `phase_n1_first_read`, `phase_n1_score_read`, `phase_n3`, `phase_n3_outcome`; the ML review's document. Results review: 13 required changes, all made.
 
 ## Budget
 
@@ -4244,8 +4246,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   61,790 in all. **FT's control groups (2026-11-02):** 2,880, about 64,670 in all. **The judge against the ear
   (2026-11-02):** 60 (56, and 4 after the amendment), about 64,730 in all. **J5's fresh page (2026-11-03):** 56
   (28 kept, each with its priming render), about 64,790 in all. **L0 (2026-11-04):** 80 (40 kept, each with its
-  priming render), about 64,870 in all. **The night of 2026-11-05 (labels ahead of the ear, nothing read from them):** L1a's lags 900 and labels about 4,600 on v2, L1b's lags and labels about
-  5,000, N2 1,207, FTh and FTm's reads 2,680, N4's 40: about 14,400, about 79,300 in all.
+  priming render), about 64,870 in all. **The night of 2026-11-05 (labels ahead of the ear, nothing read from them):** L1a's lags 900 and labels 5,602 on v2, L1b's lags 882 and labels 5,539, N2 1,207, FTh and FTm's reads 2,680, N4's 40: 16,850, about 81,700 in all.
 - **MPS used:** about 4 h before 5B.2 (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and
   backing runs, the k-fold, phase 5A's two 10-minute seeds); 5B.2's 12 trainings about 2 h more (arm P 4 × 7.2–8.4 min,
   arm R 8 × 11.4 min); stage 2's 8 trainings 1.5 h more (8 × 11.4 min); 5C's RG 8 trainings 1.75 h more (8 × 13.0–13.3
