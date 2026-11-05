@@ -129,12 +129,10 @@ def map_stem(mix, stem, db=MAP_DB):
 
 def map_top(mix, stem, share=MAP_TOP, seed=MAP_SEED):
     """The `share` of cells where the stem sits highest against the mix. Stem minus mix ties on the half-dB grid, so
-    ties go to the louder mix cell, then to a seeded draw."""
-    m = np.asarray(mix, np.float64).ravel()
-    gap = np.asarray(stem, np.float64).ravel() - m
+    ties go to a seeded draw, not to cell order or the mix's level, which a placebo map could not copy."""
+    gap = (np.asarray(stem, np.float64) - np.asarray(mix, np.float64)).ravel()
     keep = np.zeros(gap.size, bool)
-    order = np.lexsort((np.random.default_rng(seed).random(gap.size), -m, -gap))
-    keep[order[:max(1, int(round(share * gap.size)))]] = True
+    keep[np.lexsort((np.random.default_rng(seed).random(gap.size), -gap))[:max(1, int(round(share * gap.size)))]] = True
     return keep.reshape(np.shape(mix))
 
 
@@ -246,9 +244,9 @@ def reading(pairs):
     earned = [k for k in ("g", "t") if ahead[f"{k}-b"] and ahead[f"{k}-p{k}"]]
     if earned:
         return "stem map earns a step", earned[0]
-    if ahead["o-b"] and ahead["o-po"] and ahead["o-xo"]:
+    if ahead["o-b|x"] and ahead["o-po|x"]:
         return "better map next", None
-    if ahead["o-po"] and ahead["o-xo"]:
+    if ahead["o-po|x"]:
         return "denser read next", None
     if ahead["o-b"] or ahead["g-b"] or ahead["t-b"]:
         return "not credited to the map, stop", None
@@ -941,7 +939,7 @@ def example_maps(root, i, lufs_backing, gb):
         M, S, G = (PS.dequant(z[f"{p}{h}"])[:, cut:] for z, p in ((m, "m"), (s, "s"), (g, "g")))
         gain = true_gain_db(float(m["gain_db"]), bool(m["mastered"]), float(m["lufs"][n]), float(g["lufs"][n]),
                             lufs_backing, gb)
-        out[h] = (M, {"o": map_true(M, G, gain), "g": map_stem(M, S), "t": map_top(M, S)})
+        out[h] = (M, {"o": map_true(M, G, gain), "g": map_stem(M, S), "t": map_top(M, S, seed=(MAP_SEED, i, n))})
     return out
 
 
@@ -1078,6 +1076,10 @@ def cmd_mask(args):
     pairs.update({f"p{k}-b": pair_counts(heads, f"p{k}", "b", step_of) for k in MAPS})
     pairs.update({f"{k}-p{k}": pair_counts(heads, k, f"p{k}", step_of) for k in MAPS})
     pairs["o-xo"] = pair_counts(heads, "o", "xo", step_of)
+    pairs.update({f"xo-{q}": pair_counts(heads, "xo", q, step_of) for q in ("b", "po")})
+    for q in ("b", "po"):                              # (o) on the heads the map's shape does not win by itself
+        rest = [h for h in heads if h[0] not in pairs[f"xo-{q}"]["better_heads"]]
+        pairs[f"o-{q}|x"] = pair_counts(rest, "o", q, step_of)
     branch, earned = reading(pairs)
     rec = {"design": DESIGN + "#addition-the-mix-on-its-dominant-cells-declared-2026-11-05-before-it-is-computed",
            "status": MASK_STATUS, "inputs": MASK, "lists_check": LISTS.get("check"), "branch": branch, "earned": earned,

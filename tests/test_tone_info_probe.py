@@ -119,14 +119,16 @@ def test_the_maps():
     assert P.map_top(mix, stem, 0.01).sum() == 1
 
 
-def test_top_ties_go_to_the_louder_mix_then_a_seeded_draw():
-    mix = np.array([[-60.0, -50.0, -40.0, -30.0]])
-    assert P.map_top(mix, mix, 0.5).tolist() == [[False, False, True, True]]
+def test_top_ties_go_to_a_seeded_draw():
     flat = np.full((8, 50), -30.0)
-    a, b = P.map_top(flat, flat, 0.1), P.map_top(flat, flat, 0.1)
-    assert a.sum() == 40 and np.array_equal(a, b)
+    a, b, c = P.map_top(flat, flat, 0.1), P.map_top(flat, flat, 0.1), P.map_top(flat, flat, 0.1, seed=(1, 2, 0))
+    assert a.sum() == 40 and np.array_equal(a, b) and not np.array_equal(a, c)
     assert a[:, 0].sum() < 8 and a.sum(1).min() > 0                       # not the lowest bands, or the first frames
+    loud = flat + np.arange(50.0)
+    picks = [P.map_top(loud, loud, 0.1, seed=(1, n, 0)) for n in range(40)]
+    assert np.abs(np.mean(picks, 0).mean(0)[:25].mean() - np.mean(picks, 0).mean(0)[25:].mean()) < 0.03   # not by mix level
     gap = np.array([[-1.0, 0.0, 0.0, -1.0]])
+    mix = np.array([[-60.0, -50.0, -40.0, -30.0]])
     assert P.map_top(mix, mix + gap, 0.5).tolist() == [[False, True, True, False]]
 
 
@@ -176,8 +178,8 @@ def _row(better=0, worse=0):
 
 
 def _pairs(**ahead):
-    keys = ("o-b", "g-b", "t-b", "po-b", "pg-b", "pt-b", "o-po", "g-pg", "t-pt", "o-xo")
-    return {k: _row(9, 0) if ahead.get(k.replace("-", "_")) else _row(2, 2) for k in keys}
+    keys = ("o-b", "g-b", "t-b", "po-b", "pg-b", "pt-b", "o-po", "g-pg", "t-pt", "o-xo", "xo-b", "xo-po", "o-b|x", "o-po|x")
+    return {k: _row(9, 0) if ahead.get(k.replace("-", "_").replace("|", "_")) else _row(2, 2) for k in keys}
 
 
 def test_ahead_needs_the_sign_test_and_more_than_chance():
@@ -190,10 +192,11 @@ def test_the_reading_map_takes_the_first_match():
     assert P.reading(_pairs(t_b=True, t_pt=True)) == ("stem map earns a step", "t")
     assert P.reading(_pairs(g_b=True, g_pg=True, t_b=True, t_pt=True))[1] == "g"
     assert P.reading(_pairs(g_b=True))[0] == "not credited to the map, stop"  # ahead of (b), not of its placebo
-    assert P.reading(_pairs(o_b=True, o_po=True, o_xo=True)) == ("better map next", None)
-    assert P.reading(_pairs(o_po=True, o_xo=True)) == ("denser read next", None)
+    assert P.reading(_pairs(o_b_x=True, o_po_x=True, o_b=True)) == ("better map next", None)
+    assert P.reading(_pairs(o_po_x=True)) == ("denser read next", None)
     assert P.reading(_pairs(o_b=True)) == ("not credited to the map, stop", None)
-    assert P.reading(_pairs(o_b=True, o_po=True)) == ("not credited to the map, stop", None)
+    # all of (o)'s lead is on heads the map's shape wins alone: not credited, however (o) reads against (xo)
+    assert P.reading(_pairs(o_b=True, o_po=True, o_xo=True)) == ("not credited to the map, stop", None)
 
 
 def test_the_placebo_is_the_own_mix_over_the_partners_map(monkeypatch):
