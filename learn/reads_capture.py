@@ -7,15 +7,17 @@ the backed input, both halves, one value per unit, demeaned within (fold, amp, c
 model that held out its DI (GOAT's fold of the DI's item), so neither the capture nor the performance was in that model's
 real rows; W has no real rows. Clusters are creators: own against swap by t, r by the same bootstrap as GOAT's items, the
 permutation among units within cells. All, crunch and clean. Nothing is read from V-real, the NS songs or the panel.
-Control first: `read_fold` on GOAT's held records must give N1's stored r (`night2/reads-v3-ftm.json`) within 1e-6.
+Control first: `read_fold` on GOAT's held records must give N1's stored r and swap total (`night2/reads-v3-ftm.json`)
+within 1e-6, and `reads_v3.py` its sha.
 """
-import json, pickle, sys
+import hashlib, json, pathlib, pickle, sys
 import numpy as np
 sys.path.insert(0, '.')
 from learn import capture_labels as L, direct_stems as DS, pipeline_fix as P, reads_v3 as R
 
 MODELS = {'FTM': ('P2b-ftm-k{k}', 'final'), 'FT': ('P2b-ft-k{k}', 'final'), 'W': ('P2b-wide24', 'best')}
 PAIRS = (('FTM', 'W'), ('FTM', 'FT'))
+READS_V3_SHA = 'a04785f3a4838ae2'
 CLASSES = ('all', 'crunch', 'clean')
 
 
@@ -46,6 +48,8 @@ def read_fold(k, recs, by_unit):
 
 def control(grecs, gunits):
     """The copied loop must give N1's stored r on GOAT's held records."""
+    if hashlib.sha256(pathlib.Path(R.__file__).read_bytes()).hexdigest()[:16] != READS_V3_SHA:
+        raise SystemExit('control: reads_v3.py is not the file the plan states')
     rows = []
     for k in range(4):
         rows += read_fold(k, [r for r in grecs if gunits[r['unit']]['fold'] == k], gunits)
@@ -56,6 +60,10 @@ def control(grecs, gunits):
             want = stored[f'GOAT/{label}']['r'][g]['r']
             if abs(got[g][0] - want) > 1e-6:
                 raise SystemExit(f'control: {label} {g} {got[g][0]:+.6f} against stored {want:+.6f}')
+        swap = R.t_row([(r['cluster'], float(r[f'{label}_swap'].sum())) for r in rows if r[f'{label}_swap'] is not None])
+        want = stored[f'GOAT/{label}']['swap']['total']['mean']
+        if abs(swap['mean'] - want) > 1e-6:
+            raise SystemExit(f"control: {label} swap {swap['mean']:+.6f} against stored {want:+.6f}")
     print('CONTROL OK', flush=True)
 
 
@@ -73,6 +81,8 @@ def report(rows, perms=R.PERMS):
             swap = [r for r in S if r[f'{label}_swap'] is not None]
             res[f'{cls}/{label}'] = {'r': r_, 'r_no_limit_labels': R.read_r(S, label, perms, rng, drop_limits=True)[0],
                                      'swap_total': R.t_row([(r['cluster'], float(r[f'{label}_swap'].sum())) for r in swap]),
+                                     'swap': {q: R.t_row([(r['cluster'], float(r[f'{label}_swap'][i])) for r in swap])
+                                              for i, q in enumerate(('knob', 'switch', 'mic'))},
                                      'parts': len(S), 'creators': len({r['cluster'] for r in S})}
         res[f'{cls}/pairs'] = {f'{a}-{b}': {g: iv[(f'{a}-{b}', g)] for g in R.GROUPS} for a, b in PAIRS}
     return res
