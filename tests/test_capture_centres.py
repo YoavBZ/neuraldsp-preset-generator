@@ -53,6 +53,7 @@ def test_a_row_moves_only_when_it_clears_zero_and_the_draws_agree():
     assert not C.moved({"mean": -0.1, "lo90": -0.2, "hi90": 0.01}, [-0.1, -0.2, -0.05])
     assert not C.moved({"mean": -0.1, "lo90": None, "hi90": None}, [-0.1, -0.2, -0.05])
     assert C.moved({"mean": 0.1, "lo90": 0.01, "hi90": 0.2}, [0.1, 0.2, 0.05])
+    assert C.moved({"mean": -0.15, "lo90": -0.2, "hi90": -0.1}, [0.02, 0.03, 0.01])   # RcT - S beside draws of the other sign
 
 
 def test_the_mean_row_keeps_directions_every_draw_holds():
@@ -209,3 +210,104 @@ def test_the_panel_reader_keeps_the_sign_and_counts_a_missing_render(world, monk
     assert cnt["missing"] == 1 and cnt["directions"] == 6 and cnt["base_dropped"] == 0
     assert len(rows) == 5 and all(v[2] == pytest.approx(math.log(0.25)) for v in rows.values())
     assert set(weights) == {"pd0", "pd1"}
+
+
+def _judge_all(world, values):
+    """Every tag judged on both sets: {tag: distance}."""
+    P, root = world["P"], world["root"]
+    for t, d in values.items():
+        for amp in P.AMPS3:
+            for u in world["bks"]:
+                _judged(root, "real", t, u["unit"], amp, {P.ANY_HALF: {"A": d, "B": d}})
+            if t != "S":
+                for u in world["panel"]:
+                    _judged(root, "panel", t, u["unit"], amp, {P.ANY_HALF: {"B": d}})
+    for u in world["panel"]:
+        for amp in P.AMPS3:
+            _judged(root, "panel", "S", u["unit"], amp, {P.ANY_HALF: {"B": values["S"]}})
+
+
+VALUES = {"S": 2.0, "RcG": 3.0, "RcT": 1.0, "RcGn0": 4.0, "RcGn1": 4.0, "RcGn2": 4.0}
+
+
+def test_the_report_reads_every_row_with_its_sign(world, monkeypatch):
+    import json
+
+    P, root = world["P"], world["root"]
+    monkeypatch.setattr(P, "panel_halves", lambda us: {u["unit"]: "A" for u in us})
+    _judge_all(world, VALUES)
+    C.cmd_report(None)
+    rep = json.loads((root / "captures" / C.OUT).read_text())
+    assert "search recipe" in rep["confounds"][0]
+    for name, directions in (("bks", 12), ("panel", 6)):
+        r = rep["sets"][name]
+        assert r["RcT - RcG_n"]["mean"] == pytest.approx(math.log(0.25))
+        assert r["RcT - RcG_n"]["moved"] and r["RcT - RcG_n"]["directions_held"] == directions
+        assert r["RcT - S"]["mean"] == pytest.approx(math.log(0.5)) and r["RcT - S"]["directions"] == directions
+        assert r["RcG - S"]["mean"] == pytest.approx(math.log(1.5))
+        assert r["each_draw"]["RcGn1"]["mean"] == pytest.approx(math.log(0.25))
+
+
+def test_a_dead_shard_stops_the_report(world, monkeypatch):
+    P, root = world["P"], world["root"]
+    monkeypatch.setattr(P, "panel_halves", lambda us: {u["unit"]: "A" for u in us})
+    _judge_all(world, VALUES)
+    gone = next((root / "panel/judge/RcGn2").glob("*.json"))
+    gone.unlink()
+    with pytest.raises(SystemExit, match="renders missing"):
+        C.cmd_report(None)
+    assert not (root / "captures" / C.OUT).exists()
+
+
+def test_a_unit_with_no_lag_stays_out_of_the_bks_directions(world):
+    import json
+
+    P, root = world["P"], world["root"]
+    _judge_all(world, VALUES)
+    d = root / "real/lags"
+    d.mkdir()
+    (d / f"{world['bks'][0]['unit'].replace('/', '__')}.json").write_text(json.dumps({"lag": None}))
+    rows, cnt = C.bks_reader(("RcT", "RcG"))("RcT", "RcG")
+    assert cnt["directions"] == 6 and cnt["missing"] == 0 and len(rows) == 6
+
+
+def test_the_panel_row_uses_the_capped_weights(world, monkeypatch):
+    import json
+
+    P, root = world["P"], world["root"]
+    monkeypatch.setattr(P, "panel_halves", lambda us: {u["unit"]: "A" for u in us})
+    monkeypatch.setattr(P, "panel_weights", lambda us: {"pd0": 3.0, "pd1": 1.0})
+    _judge_all(world, VALUES)
+    for f in (root / "panel/judge/RcT").glob("pan__u1*.json"):
+        r = json.loads(f.read_text())
+        r["judge"][P.ANY_HALF]["B"] = 2.0
+        f.write_text(json.dumps(r))
+    C.cmd_report(None)
+    rep = json.loads((root / "captures" / C.OUT).read_text())
+    want = (3 * math.log(0.5) + 1 * math.log(1.0)) / 4
+    assert rep["sets"]["panel"]["RcT - S"]["mean"] == pytest.approx(want)
+
+
+def test_the_distance_null_is_two_separate_draws_on_their_own_counts(world, monkeypatch):
+    import json
+
+    from learn import arm_a_levers as L
+    from learn import knob_ceiling as K
+
+    P, root = world["P"], world["root"]
+    monkeypatch.setattr(C, "DISTANCE_DRAWS", 5)
+    monkeypatch.setattr(K, "space", lambda amp, S: [_Dim("m", "a", "cont")])
+    monkeypatch.setattr(L, "unit", lambda d, x: x["v"])
+    monkeypatch.setattr(P, "rc_setting", lambda dims, S, labels: {
+        "v": sum(x["i"] for x in labels) / len(labels) / 10 if labels else 0.0})
+    cap, _ = C.capture_cells()
+    monkeypatch.setattr(C, "capture_cells", lambda: (cap, {r["unit"]: {"creator": r["unit"][-1]} for rs in cap.values() for r in rs}))
+    calls, real = [], C.replace_draw
+    monkeypatch.setattr(C, "replace_draw", lambda rs, n, name, seed=C.SEED: calls.append((n, name)) or real(rs, n, name, seed))
+    C.cmd_distance(None)
+    rep = json.loads((root / "captures/centre-distance.json").read_text())
+    assert len(rep["rows"]) == 3 and all(len(r["goat_null_q05_50_95"]) == 3 for r in rep["rows"].values())
+    assert len(calls) == 3 * 5 * 2 and len({n for _, n in calls}) == len(calls)
+    assert {n for n, name in calls if name.startswith("null-a")} == {4}
+    assert {n for n, name in calls if name.startswith("null-b")} == {9}
+    assert {int(name.split("|")[1]) for _, name in calls} == set(range(C.DRAWS, C.DRAWS + 5))

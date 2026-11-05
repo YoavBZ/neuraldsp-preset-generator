@@ -87,10 +87,10 @@ def direction_value(judge, a, b, u, value):
 
 
 def moved(row, each):
-    """The plan's rule: a row reads as moved only if its interval clears zero and the draws' means share its sign."""
+    """The plan's rule: a row reads as moved only if its interval clears zero and RcT - RcG_n's draws share one sign."""
     if row.get("lo90") is None or (row["lo90"] <= 0 <= row["hi90"]):
         return False
-    return all((m > 0) == (row["mean"] > 0) and m != 0 for m in each)
+    return all(m > 0 for m in each) or all(m < 0 for m in each)
 
 
 def panel_counted(entry, need=2):
