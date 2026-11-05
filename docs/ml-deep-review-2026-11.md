@@ -206,7 +206,7 @@ Correct [reviewer]: 520 labels replay exactly; FT − S −0.177 reproduced; fol
 
 ## Recommended order
 
-ML session: N1's first read (F55 pending) took masked FT through these measures, beside the rig table. On GOAT it follows recordings better than FT on tone (+0.258 against +0.121; FTM − FT +0.137 [+0.065, +0.207]) and keeps cab, and BKS stays undecided; this is by knob, with no score read yet. N2 (search v2) is adopted by its declared rule after 1,207 renders, and is not shown more reliable. N3 (the learning curve) runs if time allows.
+ML session: N1's first read (F55 pending) took masked FT through these measures, beside the rig table. On GOAT it follows recordings better than FT on tone (+0.258 against +0.121; FTM − FT +0.137 [+0.065, +0.207]) and keeps cab, and BKS stays undecided; this is by knob, with no score read yet. N2 (search v2) is adopted by its declared rule after 1,207 renders, and is not shown more reliable. N3 (the learning curve; first read, recomputed by separate code, the ML session's record pending): no group rises by its declared rule. FTM − FTM25 on GOAT is +0.001 [−0.040, +0.039] on drive, +0.055 [−0.015, +0.123] on tone and +0.023 [−0.014, +0.061] on cab, while FTM − FTMs clears zero in all three. That is undecided and says nothing against more rows; tone is the one group where more rows may still help. It is by knob, not by sound.
 
 1. Zero renders: swap percentile bootstraps for t; report `tonal` beside `distance`, stratified by d_S, on stored judged rows.
 2. Ridge by sound against the centres, about 670 renders, with its input stated: is its knob gain audible, and does any survive the backing?
