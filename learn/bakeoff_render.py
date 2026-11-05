@@ -158,9 +158,9 @@ def stored_answers(which, tag):
 
 # --- answers ---------------------------------------------------------------------------------------------------------
 
-def fit_fold(k, name, fit, data, centres):
-    """A ridge-family candidate on fold k's training records, residuals about the fold's centres.
-    -> predict(features [m, d], cells) -> residuals [m, knobs]."""
+def fit_fold(k, name, fit, data, centres, seed=None):
+    """A ridge-family candidate on fold k's training records, residuals about the fold's centres; `seed` picks W's seed for
+    W's features. -> predict(features [m, d], cells) -> residuals [m, knobs]."""
     from learn import bakeoff as B
     from learn import reads_v3 as R
     from learn import trusted_data_t3 as T3
@@ -172,7 +172,7 @@ def fit_fold(k, name, fit, data, centres):
     cells = [(h["amp"], h["cls"]) for h in rows_tr]
     mask = cm * np.stack([R.searched(*q)[0] for q in cells])
     resid = (c - np.stack([centres[(k, *q)] for q in cells])) * mask
-    X = np.stack([[B.feature(name, None, f, h["amp"], h["cls"]) for f in fs] for h, fs in zip(rows_tr, files)])
+    X = np.stack([[B.feature(name, seed, f, h["amp"], h["cls"]) for f in fs] for h, fs in zip(rows_tr, files)])
     n, v, h_, d = X.shape
     rep = np.repeat(np.arange(n), v * h_)
     flat, means = B.centre_within(X.reshape(-1, d), [cells[i] for i in rep])
@@ -199,10 +199,11 @@ def cmd_predict(a):
     from learn import knob_ceiling as K
     from learn import local_objective as LO
     from learn import pipeline_fix as P
+    from learn import reads_v3 as R
     from learn import trusted_data_t3 as T3
 
-    if a.tag not in B.CANDIDATES or B.CANDIDATES[a.tag][1] != "ridge" or B.CANDIDATES[a.tag][2] != "real" or B.CANDIDATES[a.tag][0] == "W":
-        raise SystemExit("predict takes a real-trained ridge on a stored input; arms and W-ridge need per-half answers of their own")
+    if a.tag not in B.CANDIDATES or B.CANDIDATES[a.tag][1] != "ridge" or B.CANDIDATES[a.tag][2] != "real":
+        raise SystemExit("predict takes a real-trained ridge; arms need per-half answers of their own")
     if any((root() / "score-judge" / w / a.tag).exists() for w in SETS):
         raise SystemExit(f"{a.tag}: judges exist, and new answers would sit under old judges; move them aside first")
     name, fit, _ = B.CANDIDATES[a.tag]
@@ -237,7 +238,8 @@ def cmd_predict(a):
                     sel, S = ms[amp][cls]
                     labels = [LO.tdict(r["label"]) for r in src[k]["RcBG"] if r["amp"] == amp and cls_of(r) == cls]
                     centres[(k, amp, cls)] = enc(F.label_of(P.rc_setting(K.space(amp, S), S, labels), amp))[0].astype(float)
-    models = {k: fit_fold(k, name, fit, data, centres) for k in range(P.REAL_FOLDS)}
+    seeds = R.SEEDS if name == "W" else (None,)
+    models = {k: [(sd, fit_fold(k, name, fit, data, centres, sd)) for sd in seeds] for k in range(P.REAL_FOLDS)}
     out = {w: {} for w in SETS}
     for which, prt in units:
         for key in keys_of(which, prt):
@@ -246,8 +248,8 @@ def cmd_predict(a):
             sel, S = ms[amp][prt["cls"]]
             base = LO.tdict(stored[which][key][ANY]["settings"])
             dims = [(D[n], j) for j, n in enumerate(F.CONT) if (D[n].module, D[n].key) in {(d.module, d.key) for d in K.space(amp, S)}]
-            x = B.feature(name, None, str(P.dfix_input_path(prt["unit"], 0)), amp, prt["cls"])
-            res = models[prt["fold"]](x, [cell, cell])
+            res = np.mean([f(B.feature(name, sd, str(P.dfix_input_path(prt["unit"], 0)), amp, prt["cls"]), [cell, cell])
+                           for sd, f in models[prt["fold"]]], 0)
             c = centres[(prt["fold"], *cell)]
             out[which][key] = {h: {"select": stored[which][key][ANY]["select"], "settings": LO.sdict(overwrite(base, dims, c, res[i]))}
                                for i, h in enumerate("AB")}
