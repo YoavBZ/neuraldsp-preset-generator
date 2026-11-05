@@ -44,11 +44,11 @@ CELLS = ("amp", "cls")
 def balanced(rng, rows=12):
     """`rows` permutations of the candidates, each candidate on each letter equally often (Latin squares)."""
     out = []
-    for _ in range(rows // len(LETTERS)):
+    for _ in range(-(-rows // len(LETTERS))):
         base = rng.sample(list(CANDS), len(CANDS))
         out += [tuple(base[i:] + base[:i]) for i in range(len(CANDS))]
     rng.shuffle(out)
-    return out
+    return out[:rows]
 
 
 def draw(units, seed=PAGE_SEED, repeats=REPEATS, gap=REPEAT_GAP):
