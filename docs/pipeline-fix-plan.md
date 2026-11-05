@@ -2090,7 +2090,13 @@ instead of generating unrealistic presets our own?"):
     blocks, the read's rule). A group rises if FTM−FTM25 and FTM−FTMs both clear zero above. An interval reaching zero is undecided and says nothing against more rows.
     FTMs is not chance: it starts from W, which reads tone without real rows (+0.222). E is not re-chosen at smaller shares, and FTm was picked on these same reads, so both
     lean toward a rise. r is agreement with search labels, not sound, so a rise is a case for trying captures, and the sound read stays L2's.
-  - **Rules.** BKS and GOAT only. V-real, the NS songs, the panel and the captures stay out. The capture page and its labels are
+  - **N4, FTm by ear (declared 2026-11-05 after N1's score read; ledger `phase_n4`; `learn/ear_ftm.py`).** N1 and N3 read knobs and the score, and the
+    user's yardstick is the ear on real songs, through the stem. So a blind page on L0's 10 parts, in L0's recipe: same directions, measure DI, held windows,
+    with S, FT and FTm, S's and FT's clips being L0's stored renders. FTm is the all-labels run (both seeds, the median inner E, about 20 min on MPS), read on
+    the X-LANCE stem as read 3, controls outside `K.space` held at S, 20 renders, 2 repeats, letters as L1a's page. Reads as L1a's page, by band: FTm above S and above FT from
+    the forced rank, closeness, the score beside; clean and crunch beside. It picks nothing: this is V-real's fifth read at least, and the first with parts the listener has
+    ranked before. A clear row is a lead for L2. No other V-real direction is read.
+  - **Rules.** Apart from N4's declared page, BKS and GOAT only. V-real, the NS songs, the panel and the captures stay out. The capture page and its labels are
     untouched by these reads. Runs saved apart (`P2b-ftm*`, `night2/`), FT and its answers unchanged.
   - **Caveats.** The review's figures on sound are unmeasured. BKS is 8 DIs in 2 songs (the replicate pairs 5 DIs of one), and its performances sit in W's plugin rows, so held
     means held tracks, not held playing. Nothing here is a real song.

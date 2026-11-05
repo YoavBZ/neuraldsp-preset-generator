@@ -6840,7 +6840,7 @@ def cmd_train_ft(args):
     if masked:
         require("phase_night2")
         if k is None:
-            raise SystemExit("N1 runs FT_k and its inner runs only")
+            require("phase_n4")                        # the all-labels FTm, for N4's ear read only
     if curve:                                          # N3: FTm's E, as many updates, on fewer rows or shuffled labels
         require("phase_n3")
         if not masked or inner:
