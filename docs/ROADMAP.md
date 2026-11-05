@@ -321,7 +321,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          −0.03 to −0.04, so "level with S" says little there. FT reads per track only weakly, most robustly on GOAT's cab (mic position and distance about equally); BKS's
          cab figure matches a no-audio table, because rigs recur across DIs. FT's fall in real-row loss was not evidence of reading: real rows label unsearched controls as S. The
          first search took 52 evaluations at a step stuck at 0.25. Models train on P2b and read stems (domain AUC 0.997), a lead says stems may lean toward
-         another guitar, and L2 needs 18 bands for 80% power at a rank gap of 0.75, 38 at 0.5. The cloud researcher's [ranked methods](research/proven-methods-preset-recovery-2026-11.md) give a cheapest test for each; none is run.
+         another guitar, and L2 needs 18 bands for 80% power at a rank gap of 0.75, 38 at 0.5. The cloud researcher's [report](research/proven-methods-preset-recovery-2026-11.md) ranks 13 methods, each with a proposed cheapest test; none is run as designed, and the review already speaks against some.
        - **The ML review and N1 to N3 (2026-11-05):** an independent review found real rows teach mostly S's constants on
          unsearched controls, so FT's training loss says little, FT's per-track reading is real but weak, and the search is coarse. Declared on trusted
          data: FT retrained on searched heads alone, a finer search tested on BKS, and a learning curve if time allows.
