@@ -2106,6 +2106,15 @@ instead of generating unrealistic presets our own?"):
     the stem at the same gain). Zero plugin renders, about 25 min on MPS. Reads, reads_v3 on held GOAT with the stem in place of the backed input: FTm, FT and W by group, stem
     against backed paired, and own against another recording's. BKS beside, deciding nothing. Reading: an interval clear of zero below says the separator costs that group's reading, and the next fix is
     on the input (fine-tuning on stems) rather than on more rows; reaching zero is undecided. Knob units, no sound. A pool backing is not a song: no other guitars here, so this is the kindest stem.
+  - *N5's outcome (2026-11-05, 316 units, every rebuilt mix equal to its stored features; reads_v3s, sha256 f9beeed5f3396097, independently checked; zero plugin renders; in `night2/reads-v3-n5.json`):* on held GOAT neither FT nor FTm shows a stem cost
+    in any group. Stem − backed: FTm drive +0.008 [−0.033, +0.052], tone +0.054 [−0.010, +0.120], cab −0.004 [−0.044, +0.037]; FT +0.004 [−0.037, +0.048], +0.050 [−0.025, +0.131], +0.002 [−0.054, +0.053]; W −0.079 [−0.145, −0.010], +0.056 [−0.029, +0.143],
+    −0.011 [−0.062, +0.034], W's drive the one clear cost of nine rows. FTm on the stem: drive +0.090 [+0.023, +0.157], tone +0.312 [+0.235, +0.383], cab +0.214 [+0.157, +0.277]; own − swap −0.322 [−0.406, −0.237]. By the declared reading these are undecided, and the
+    plan's branch to fix the input has no support here for the tuned models. BKS beside, deciding nothing: all its stem − backed intervals reach zero, and FT's and FTm's six point estimates sit below zero. This is the kindest stem: no other guitars in these mixes,
+    the stems sit a median 6 to 8 dB below their mixes (61 units below −12 dB, 25 below −20 dB, 2 with a silent half). Knob units, no sound.
+  - **N5b, by the score through the stem (declared 2026-11-05 after N5's outcome; ledger `phase_n5b`).** FTm_k on the same stems, `P2b-ftm-stem`, controls outside `K.space` held at S, rendered on read 2's units, about 1,340 renders, the unit with no stem counted out. Rows
+    by read 2's rules: FTm-stem − FTm, FTm-stem − S, FTm-stem − FT. It says what the stem costs by the score on held units, with no other guitars; it is not a song and picks nothing.
+  - *N5b's outcome (2026-11-05, 1,336 renders, `real/report-n5b.json`, `goat/report-n5b.json`):* by the score on held units the stem shows no cost: FTm-stem − FTm +0.013 [−0.008, +0.033] on BKS, +0.003 [−0.009, +0.015] on GOAT.
+    FTm-stem − S −0.110 [−0.190, −0.030] by DI (by fold −0.10 [−0.22, +0.03]) and −0.091 [−0.114, −0.068]; FTm-stem − FT +0.067 [+0.035, +0.098] and −0.018 [−0.038, +0.002], the same split between the sets as F55. No other guitars in these mixes, and 2 GOAT units with a silent stem half stay in, as the product would read them.
   - **Rules.** Apart from N4's declared page, BKS and GOAT only. V-real, the NS songs, the panel and the captures stay out. The capture page and its labels are
     untouched by these reads. Runs saved apart (`P2b-ftm*`, `night2/`), FT and its answers unchanged.
   - **Caveats.** The review's figures on sound are unmeasured. BKS is 8 DIs in 2 songs (the replicate pairs 5 DIs of one), and its performances sit in W's plugin rows, so held
@@ -4246,7 +4255,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   61,790 in all. **FT's control groups (2026-11-02):** 2,880, about 64,670 in all. **The judge against the ear
   (2026-11-02):** 60 (56, and 4 after the amendment), about 64,730 in all. **J5's fresh page (2026-11-03):** 56
   (28 kept, each with its priming render), about 64,790 in all. **L0 (2026-11-04):** 80 (40 kept, each with its
-  priming render), about 64,870 in all. **The night of 2026-11-05 (labels ahead of the ear, nothing read from them):** L1a's lags 900 and labels 5,602 on v2, L1b's lags 882 and labels 5,539, N2 1,207, FTh and FTm's reads 2,680, N4's 40: 16,850, about 81,700 in all.
+  priming render), about 64,870 in all. **The night of 2026-11-05 (labels ahead of the ear, nothing read from them):** L1a's lags 900 and labels 5,602 on v2, L1b's lags 882 and labels 5,539, N2 1,207, FTh and FTm's reads 2,680, N4's 40: 16,850, N5b's 1,336: about 83,000 in all.
 - **MPS used:** about 4 h before 5B.2 (P1 two inputs, the four rungs, P2a's second seed, the augmentation, size and
   backing runs, the k-fold, phase 5A's two 10-minute seeds); 5B.2's 12 trainings about 2 h more (arm P 4 × 7.2–8.4 min,
   arm R 8 × 11.4 min); stage 2's 8 trainings 1.5 h more (8 × 11.4 min); 5C's RG 8 trainings 1.75 h more (8 × 13.0–13.3

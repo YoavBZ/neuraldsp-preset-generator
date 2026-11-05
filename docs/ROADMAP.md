@@ -322,7 +322,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        - **The night's results (2026-11-05, F55, no ear yet):** FT retrained on searched heads alone (FTm) reads tone clearly better on GOAT's held chains (+0.137 [+0.065, +0.207]) and keeps
          FT's cab; by the score it is closer than FT there by item (−0.021 [−0.037, −0.005]; by fold −0.016 [−0.035, +0.003], reaching zero) and worse on BKS (+0.054 [+0.018, +0.090]), where songs repeat in training. Against its centre it is undecided on both sets. The learning
          curve is undecided, which says nothing against more rows. Search v2 was adopted by the declared rule, though much of its gain is smaller moves. All 296 capture units with a lag (197 captures) are labelled ahead of the ear, nothing read.
-         N4's blind page on L0's parts is ready: S, FT and FTm by ear.
+         N4's blind page on L0's parts is ready: S, FT and FTm by ear. N5: through X-LANCE stems of mixes with no other guitars, neither FTm's reading nor its score shows a cost (stem − backed by the score, lower is closer, +0.013 [−0.008, +0.033] on BKS, +0.003 [−0.009, +0.015] on GOAT).
        - **Next (2026-11-03, after L0):** the approved real-amp recordings, scored with J0, and, as the user chose, the per-recording reading, with FT's
          recipe as the base (chosen on read 2, BKS −0.055; on V-real FT is not shown different from D_fix): many more real-amp labelled recordings (captures on verified DIs, as GOAT) and a fresh,
          larger real-song test (V-real-11 is ±0.07 and now read for two candidates). Domain work and community
