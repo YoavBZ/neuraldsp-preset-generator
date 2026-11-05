@@ -322,6 +322,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          cab figure matches a no-audio table, because rigs recur across DIs. FT's fall in real-row loss was not evidence of reading: real rows label unsearched controls as S. The
          first search took 52 evaluations at a step stuck at 0.25. Models train on P2b and read stems (domain AUC 0.997), a lead says stems may lean toward
          another guitar, and L2 needs 18 bands for 80% power at a rank gap of 0.75, 38 at 0.5. The cloud researcher's [report](research/proven-methods-preset-recovery-2026-11.md) ranks 13 methods, each with a proposed cheapest test; none is run as designed, and the review already speaks against some.
+       - **Model comparison (2026-11-05; [plan](model-comparison-plan.md), declared before any read, adopts nothing):** the review compared versions of one network, so the user asked for research on
+         network types, features and judging, then a comparison. Masked FT against 16 smaller readers and inputs without renders, then training arms, then by the score on the development sets.
        - **The ML review and N1 to N3 (2026-11-05):** an independent review found real rows teach mostly S's constants on
          unsearched controls, so FT's training loss says little, FT's per-track reading is real but weak, and the search is coarse. Declared on trusted
          data: FT retrained on searched heads alone, a finer search tested on BKS, and a learning curve if time allows.
