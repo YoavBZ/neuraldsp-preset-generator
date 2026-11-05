@@ -417,9 +417,11 @@ def add_candidates(rows, k, cands, data, extra=(), check=None):
         stored = None
         if spec[0] == "arm":
             stored = np.load(store)
+            if "swap" not in stored.files:
+                raise SystemExit(f"{store.name}: an arm's answers need its own switch and mic swap")
         elif check is None and store.exists():
             z = np.load(store)
-            stored = z if str(z["key"]) == code_key() else None
+            stored = z if "key" in z.files and str(z["key"]) == code_key() else None
         if stored is not None:
             mu, sd = stored["mu"], stored["sd"]
         else:

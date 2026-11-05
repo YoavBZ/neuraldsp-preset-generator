@@ -52,3 +52,10 @@ def test_overwrite_touches_only_named_knobs_and_clips():
     got = R.overwrite({("m", "k"): "1", ("m", "other"): "2"}, [(D(), 0)], np.array([0.9]), np.array([0.5]))
     assert got[("m", "other")] == "2"
     assert float(got[("m", "k")]) == 10.0
+
+
+def test_judges_match_compares_every_half_and_catches_a_new_refusal():
+    assert R.judges_match({"A": 2.0, "B": 3.0}, {"A": {"distance": 2.0}, "B": {"distance": 3.0}})
+    assert not R.judges_match({"A": 2.0, "B": 3.0}, {"A": {"distance": 2.0}, "B": {"distance": 3.1}})
+    assert not R.judges_match({"A": 2.0, "B": 3.0}, {"A": None, "B": None})
+    assert R.judges_match({"A": math.inf, "B": 3.0}, {"A": None, "B": {"distance": 3.0}})

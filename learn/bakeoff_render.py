@@ -61,6 +61,16 @@ def value(judge, tag, key, search, held, term):
     return x if isinstance(x, (int, float)) and math.isfinite(x) else "refused"
 
 
+def judges_match(old, new, tol=1e-9):
+    """Stored {half: distance} against new {half: {term: value} or None}, every half compared; a refusal counts as inf, and a
+    refusal against a finite value is a mismatch."""
+    for h, x in old.items():
+        y = new[h]["distance"] if new.get(h) else math.inf
+        if not (x == y or abs(x - y) < tol):
+            return False
+    return True
+
+
 def contrast(a, b, s, term):
     """A direction's contrast of a on b, for its three stored values: ln ratio, or the plain difference for `cross`, which can
     be negative; a refused answer scores as S; S refused or a value missing gives None."""
@@ -191,8 +201,10 @@ def cmd_predict(a):
     from learn import pipeline_fix as P
     from learn import trusted_data_t3 as T3
 
-    if a.tag not in B.CANDIDATES or B.CANDIDATES[a.tag][1] != "ridge" or B.CANDIDATES[a.tag][2] != "real":
-        raise SystemExit("predict takes a real-trained ridge candidate; arms have their own answers")
+    if a.tag not in B.CANDIDATES or B.CANDIDATES[a.tag][1] != "ridge" or B.CANDIDATES[a.tag][2] != "real" or B.CANDIDATES[a.tag][0] == "W":
+        raise SystemExit("predict takes a real-trained ridge on a stored input; arms and W-ridge need per-half answers of their own")
+    if any((root() / "score-judge" / w / a.tag).exists() for w in SETS):
+        raise SystemExit(f"{a.tag}: judges exist, and new answers would sit under old judges; move them aside first")
     name, fit, _ = B.CANDIDATES[a.tag]
     brecs, by_unit, folds = P.real_labels(2)
     grecs, gunits, _ = P.goat_labels()
@@ -269,8 +281,16 @@ def scored(ref, y, di, lag):
 
 
 def stored_record(which, tag, key):
+    """A stored tag's judge and hashes for a key; GOAT's S lives in the search records, keyed by unit."""
     from learn import pipeline_fix as P
 
+    if which == "goat" and tag == "S":
+        unit = key.rsplit("|", 1)[0]
+        p = stored_dir(which) / P.SEARCH_DIR / f"{unit.replace('/', '__')}.json"
+        if not p.exists():
+            return None
+        r = json.loads(p.read_text())
+        return {"judge": {ANY: r["s_judge"]}, "render_sha256": {ANY: r["s_render_sha256"]}}
     p = stored_dir(which) / "judge" / tag / f"{key.replace('/', '__')}.json"
     return json.loads(p.read_text()) if p.exists() else None
 
@@ -325,9 +345,7 @@ def cmd_render(a):
                 if old is not None:                     # a stored tag must come back the same
                     for search, v in rec["judge"].items():
                         same = old["render_sha256"].get(search) == rec["render_sha256"][search]
-                        close = all(old["judge"][search][h] == (v[h] or {}).get("distance") or
-                                    abs(old["judge"][search][h] - v[h]["distance"]) < 1e-9 for h in v if v[h])
-                        if not (same and close):
+                        if not (same and judges_match(old["judge"][search], v)):
                             raise SystemExit(f"{t} {key} {search}: differs from its stored render or judge")
                 out.parent.mkdir(parents=True, exist_ok=True)
                 tmp = out.with_suffix(".tmp")
@@ -339,12 +357,27 @@ def cmd_render(a):
 
 # --- the report ------------------------------------------------------------------------------------------------------
 
+def check_goat_s(judge):
+    """GOAT's S, rendered again, against the search records' judges and hashes. -> keys compared."""
+    n = 0
+    for p in (root() / "score-judge" / "goat" / "S").glob("*.json"):
+        r = json.loads(p.read_text())
+        old = stored_record("goat", "S", f"{r['unit']}|{r['amp']}")
+        if old is None:
+            continue
+        if r["render_sha256"][ANY] != old["render_sha256"][ANY] or not judges_match(old["judge"][ANY], r["judge"][ANY]):
+            raise SystemExit(f"GOAT S {r['unit']}: differs from its search record")
+        n += 1
+    return n
+
+
 def cmd_report(a):
     from learn import pretrain_set as PS
 
     tags = [t for t in a.tags.split(",") if t]
     base = ("RcBG", FTM, "S")
     out = {}
+    units = read_units()
     for which in SETS:
         judge = {}
         for t in {*tags, *base}:
@@ -352,8 +385,10 @@ def cmd_report(a):
             for p in (root() / "score-judge" / which / t).glob("*.json"):
                 r = json.loads(p.read_text())
                 judge[t][f"{r['unit']}|{r['amp']}"] = r["judge"]
-        keys = sorted(judge["S"])
-        folds = {f"{prt['unit']}|{key.rsplit('|', 1)[1]}": prt for w, prt in read_units() if w == which for key in keys_of(w, prt)}
+        if which == "goat":
+            out["goat_s_held"] = check_goat_s(judge)
+        folds = {key: prt for w, prt in units if w == which for key in keys_of(w, prt)}
+        keys = sorted(folds)
         d_s = {}
         for key in keys:
             vals = [value(judge, "S", key, s, h, "distance") for _, s, h in direction_rows([key])]
@@ -361,33 +396,42 @@ def cmd_report(a):
             if vals:
                 d_s[key] = float(np.mean(vals))
         band = strata(d_s)
+        cluster = (lambda q: q["unit"].split("@")[0]) if which == "goat" else (lambda q: q["di"])
         rows = {}
         for x, y in ([(t, b) for t in tags for b in base] + [(FTM, "RcBG"), (FTM, "S"), ("RcBG", "S")]):
             for term in TERMS:
                 pts, by_stratum, cnt = [], collections.defaultdict(list), collections.Counter()
                 for key, s, h in direction_rows(keys):
-                    c = contrast(value(judge, x, key, s, h, term), value(judge, y, key, s, h, term),
-                                 value(judge, "S", key, s, h, term), term)
+                    vx, vy, vs = (value(judge, t, key, s, h, term) for t in (x, y, "S"))
+                    if vs == "refused":
+                        cnt["s_refused"] += 1
+                    elif vx is None or vy is None or vs is None:
+                        cnt["missing"] += 1
+                    cnt["refused_scored_as_S"] += ("refused" in (vx, vy)) and vs not in (None, "refused")
+                    c = contrast(vx, vy, vs, term)
                     if c is None:
-                        cnt["dropped"] += 1
                         continue
                     prt = folds[key]
                     pts.append((prt, c, key))
                     if key in band:
-                        by_stratum[band[key]].append((prt["unit"].split("@")[0] if which == "goat" else prt["di"], c))
-                cluster = (lambda q: q["unit"].split("@")[0]) if which == "goat" else (lambda q: q["di"])
+                        by_stratum[band[key]].append((cluster(prt), c))
+                parts = collections.defaultdict(list)
+                for p, c, _ in pts:
+                    parts[(cluster(p), p["unit"])].append(c)
                 rows[f"{x} - {y} | {term}"] = {
                     "directions": len(pts), **cnt,
                     "by_cluster": t_interval([(cluster(p), c) for p, c, _ in pts], PS.t90),
                     "by_fold": t_interval([(p["fold"], c) for p, c, _ in pts], PS.t90),
+                    "part_weighted": t_interval([(q[0], float(np.mean(v))) for q, v in parts.items()], PS.t90),
                     "by_d_S": {str(q): t_interval(v, PS.t90) for q, v in sorted(by_stratum.items())}}
         out[which] = rows
     pathlib.Path(a.out).write_text(json.dumps(out, indent=1))
+    print("GOAT S held to the search records:", out["goat_s_held"], flush=True)
     for which in SETS:
         for name, r in out[which].items():
-            if name.endswith("distance"):
-                c = r["by_cluster"]
-                print(which, name, f"{c.get('mean', float('nan')):+.3f} [{c.get('lo90', float('nan')):+.3f}, {c.get('hi90', float('nan')):+.3f}] n {r['directions']}", flush=True)
+            c = r["by_cluster"]
+            if name.endswith("distance") and "lo90" in c:
+                print(which, name, f"{c['mean']:+.3f} [{c['lo90']:+.3f}, {c['hi90']:+.3f}] n {r['directions']}", flush=True)
 
 
 def shard(s):
