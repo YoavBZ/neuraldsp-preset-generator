@@ -9,7 +9,7 @@ import pytest
 from format.parser import parse
 from format.structured import build, set_parameter
 from format.writer import write
-from packs.loader import detect_pack, load_pack
+from packs.loader import PackError, detect_pack, load_pack
 from packs.recipes import load_recipes
 from scripts.apply_spec import strip_custom_irs
 from tests.test_valuetree import _write
@@ -109,6 +109,45 @@ def test_recipe_conversions():
     assert values("dry/toneking")["gateThreshold"] == -96
 
 
+def test_chorus_recipes_follow_the_plugin_s_labels():
+    """Factory presets hold depth and rate crossed between editions, but each key moves
+    its own named control in both, so "subtle" must stay low depth."""
+    entries = load_recipes("toneking_x")["chorus"]["subtle-width"].parameters
+    values = {e["key"]: e["value"] for e in entries}
+    assert values["chorusDepth"] == 20.0 and values["chorusRate"] == 50.0
+
+
+def test_a_wrong_label_lists_the_right_ones():
+    pack = load_pack("toneking_x")
+    spec = pack.parameters["ampParameters/ampChannel"]
+    with pytest.raises(PackError, match="Rhythm"):
+        pack.to_stored(spec, "Clean", warnings=[])
+    delay = pack.parameters["delay/delaySync"]
+    with pytest.raises(PackError, match="Tap"):
+        pack.to_stored(delay, "Sometimes", warnings=[])
+
+
+def test_the_fall_back_mics_are_what_a_fresh_plugin_holds():
+    slots = load_pack("toneking_x").custom_ir
+    assert [(s["custom"], s["default"]) for s in slots] == [("16", "0"), ("16", "6")]
+
+
+def test_match_refuses_a_pack_it_cannot_render(tmp_path):
+    import subprocess
+    import sys
+
+    template = tmp_path / "x.xml"
+    template.write_bytes(_preset())
+    riff = ROOT / "samples" / "riffs" / "line.flac"
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "match_preset.py"), "--template", str(template),
+         "--reference", str(riff), "--reference-mode", "paired_di", "--probe-di", str(riff),
+         "--renderer", "synthetic", "--out-dir", str(tmp_path / "out")],
+        capture_output=True, text=True)
+    assert result.returncode != 0
+    assert "original plugin" in result.stderr and "Traceback" not in result.stderr
+
+
 def test_strip_irs_clears_all_three_fields_and_only_the_side_that_used_a_file():
     preset = build(parse(_preset()))
     changed = {key: (before, after) for _, key, before, after in strip_custom_irs(preset)}
@@ -141,6 +180,8 @@ SAME = {
     ("drive1", "drive1Drive"): "drive1Overdrive",
     ("toneKingEQ", "toneKingEQBand5"): "eqBand5",
     ("cabParameters", "rightMicType"): "cab2MicIR",
+    ("chorus", "chorusRate"): "chorusDepth",       # crossed: see the pack's tone notes
+    ("chorus", "chorusDepth"): "chorusRate",
 }
 
 

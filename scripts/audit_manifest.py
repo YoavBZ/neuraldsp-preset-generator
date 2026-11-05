@@ -470,7 +470,7 @@ def published_members(spec, control):
         return ("unchecked", [])
     actual = {str(i): label for i, label in enumerate(labels)}
     wrong = []
-    for index in sorted(set(spec.members) | set(actual), key=int):
+    for index in sorted(set(spec.members) | set(actual), key=str):
         declared = spec.members.get(index)
         published = actual.get(index)
         if declared != published:

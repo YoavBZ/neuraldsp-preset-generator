@@ -11,7 +11,7 @@
     "note": "`scripts/audit_manifest.py --pack toneking_x` reads the plugin's XML state; 97 keys reach the 97 published controls, the other two being host-only Preset Previous/Next actions. EQ HPF and Reverb Pre-Delay sit at their floor in the default state, so `values` probes settled them. Presets are not rendered through this edition: renders stay on the original plugin."
   },
   "custom_ir": {
-    "note": "What --strip-irs clears. The path is the file, `selector` at `custom` makes the cab play it and `flag` says the side uses a file. The selector goes back to `default`, the plugin's published default for that side (Dynamic 57 E33 left, Condenser 414 E33 right).",
+    "note": "What --strip-irs clears. The path is the file, `selector` at `custom` makes the cab play it and `flag` says the side uses a file. The selector goes back to `default`, what a fresh plugin and Default.xml hold on that side (Dynamic 57 E33 left, Ribbon 121 E33 right). No X factory preset uses an IR, so `custom` comes from probing the selector and `flag` from X's key name; neither has been seen on a real file.",
     "slots": [
       {
         "path": "cabParameters/leftChosenIRFilePath",
@@ -25,7 +25,7 @@
         "selector": "cabParameters/rightMicType",
         "flag": "cabParameters/rightIsCustomIR",
         "custom": "16",
-        "default": "4"
+        "default": "6"
       }
     ]
   },
@@ -294,7 +294,8 @@
     },
     "chorus/chorusDepth": {
       "kind": "rotation",
-      "ui": "Chorus Depth"
+      "ui": "Chorus Depth",
+      "note": "Each chorus key moves the control of its own name in both editions (probed 2026-11-05), yet on every factory preset both hold, X's rate holds the original's depth and X's depth the original's rate. The reason is not known. Recipes follow the plugin's labels."
     },
     "chorus/chorusMix": {
       "kind": "rotation",
@@ -302,7 +303,8 @@
     },
     "chorus/chorusRate": {
       "kind": "rotation",
-      "ui": "Chorus Rate"
+      "ui": "Chorus Rate",
+      "note": "Each chorus key moves the control of its own name in both editions (probed 2026-11-05), yet on every factory preset both hold, X's rate holds the original's depth and X's depth the original's rate. The reason is not known. Recipes follow the plugin's labels."
     },
     "compressor/compressorActive": {
       "kind": "switch",

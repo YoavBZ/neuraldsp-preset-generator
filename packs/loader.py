@@ -383,7 +383,7 @@ def _find_member(members: Dict[str, str], name: str) -> Optional[str]:
 
 
 def _render_members(members: Dict[str, str]) -> str:
-    return ", ".join(f"{k}={v}" for k, v in sorted(members.items(), key=lambda kv: int(kv[0])))
+    return ", ".join(f"{k}={v}" for k, v in members.items())
 
 
 def _num(x: float) -> str:

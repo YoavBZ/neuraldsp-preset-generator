@@ -1202,7 +1202,9 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
   installed. `--strip-irs` now also clears X's own custom-IR flags. Not done: a file written in
   X's layout has not been opened in the plugin, and `match` and the listening page still render the
   original only. Starting presets were measured on the original; on the two baselines every amp
-  control matches, but X stores a higher Output Gain.
+  control matches. Two oddities are disclosed in the pack's tone notes: Output Gain has no fixed
+  conversion, and factory presets hold chorus depth and rate crossed although each key moves its
+  own named control in both plugins. The chorus recipes follow the labels.
 - **Setting controls has real headroom** ([knob ceiling](knob-ceiling-results.md),
   2026-10-14): with the take's true DI, on development, a knob search got about 22%
   closer by the judge than `generate`'s starting preset (−0.253) and 19% closer than

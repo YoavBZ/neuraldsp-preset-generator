@@ -232,7 +232,7 @@ When the user named a time, add the `--excerpt-start SECONDS` you fingerprinted 
 otherwise the match measures its own automatic window, which may be another one.
 
 Tone King X presets are not matched: renders run on the original plugin, so ask for a
-template from it (the `toneking_x` pack reports no signal path).
+template from it (`match_preset.py` refuses a `toneking_x` template).
 
 `--amp` names the signal path being matched: a Morgan amp (`sw50r`) or a Tone
 King channel (`lead`, `rhythm`), with the plugin's own display label accepted

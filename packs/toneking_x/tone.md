@@ -19,8 +19,17 @@ the amp, the channels and the pedals. Recipe ids are the same, so anything it sa
 
 - **Measurements were made on the original plugin.** The starting presets, drive curve
   and EQ basis have not been measured here. Every amp control on Vintage Trem and Squishy
-  Lead holds the same value in both editions, but both presets store a higher Output
-  Gain in X (9.9 and 4.7 dB against 0), so level match by ear.
+  Lead holds the same value in both editions.
+- **Output Gain has no fixed conversion.** X's value differs from the original's on all
+  124 factory presets both editions hold: 4.8 dB higher on average, from 0.8 lower to
+  13.8 higher (9.9 and 4.7 against 0 on the two baselines). The `output/*` recipes write
+  the original's numbers, so `output/unity` on Vintage Trem is about 10 dB under the
+  factory level. Level match by ear.
+- **Chorus depth and rate look crossed.** Each key moves the control of its own name in
+  both plugins, yet those 124 presets hold X's rate at the original's depth and X's depth
+  at the original's rate. Nobody knows why, and it has not been rendered. The `chorus/*`
+  recipes follow the plugin's labels, so "subtle" stays low depth. Copying a chorus from
+  an original preset by hand may need the swap.
 - **`match` and the listening page do not render this edition.** They need a preset for
   the original plugin; a preset made here can be read, edited and written only.
 - **The EQ's on/off is `eqParameters/sectionActive`.** X has no second EQ switch, so the
