@@ -69,3 +69,11 @@ def test_unique_rows_keeps_each_record_once():
     recs = [{"di": 1}, {"di": 2}, {"di": 3}]
     r, q = B.unique_rows(rows, recs)
     assert len(r) == 2 and [x["di"] for x in q] == [1, 3]
+
+
+def test_shuffled_within_stays_inside_its_cell():
+    c = np.arange(6.0)[:, None]
+    cm = np.ones((6, 1))
+    got, _ = B.shuffled_within(c, cm, ["x", "x", "x", "y", "y", "y"], 3)
+    assert sorted(got[:3].ravel().tolist()) == [0.0, 1.0, 2.0]
+    assert sorted(got[3:].ravel().tolist()) == [3.0, 4.0, 5.0]

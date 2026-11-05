@@ -20,9 +20,9 @@ Read this block first after any compaction, then the task list, then the finding
 - **Now:** T1.2, waiting for the cloud researcher's PR, which adds `docs/research/model-features-judge-fit-2026-11.md`. The
   executor watches for it and messages this session; the researcher also sends a message once it is merged. Five tracks:
   encoders and non-neural readouts, architectures and output forms, features, judging, selection.
-- **Beside it:** T1.3, the harness `learn/bakeoff.py`. It may not read any candidate before T2.3.
+- **Beside it:** the harness `learn/bakeoff.py` is done (T1.3). It may not read any candidate before T2.3.
 - **Next:** T2.1, set the candidate list from that report.
-- **Running jobs and PIDs:** `bakeoff control`, PID 61470, CPU, log `PF/bakeoff/control.log`.
+- **Running jobs and PIDs:** none.
 - **Render or MPS use announced to the ML session:** none.
 - **Blocked on the user:** nothing yet.
 
@@ -88,7 +88,7 @@ Legend: `[ ]` to do, `[~]` in progress, `[x]` done.
 - [~] T1.2 The cloud researcher's report on network types, features and judging (brief sent 2026-11-05). Done when its PR is
   read and its key claims checked against sources.
 
-- [~] T1.3 Harness `learn/bakeoff.py`, with `tests/test_bakeoff.py`: candidates go through `reads_v3.report` unchanged.
+- [x] T1.3 Harness `learn/bakeoff.py`, with `tests/test_bakeoff.py`: candidates go through `reads_v3.report` unchanged.
   Done when `control` reproduces N1's stored r and swap totals within 1e-6 on BKS and GOAT, and a shuffled-label placebo
   reads near zero. Reads no candidate.
 
@@ -111,3 +111,8 @@ Written in T2.1, once the report sets the order. Known so far:
 Newest last. Each entry: date, task, result, output path and sha256, audited by whom.
 
 - 2026-11-05, T1.1: nothing yet to report; the ML session's terms are in the rules above.
+- 2026-11-05, T1.3: `bakeoff control` passed: cached FTm, FT and W rows give N1's stored r and swap totals within 1e-6 on both
+  sets (`PF/bakeoff/base.rows.pkl`, about 3 min on one CPU). `bakeoff check` on the mel ridge's plumbing (`PF/bakeoff/check.json`):
+  labels shuffled within cell read GOAT −0.029, −0.012, −0.033 and BKS +0.114, −0.106, +0.063 on drive, tone, cab; labels joined
+  to the input read +0.95 to +1.00 on both sets, so rows and labels line up. Neither reads a candidate. The harness is not yet
+  independently reviewed.

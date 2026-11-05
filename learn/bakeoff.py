@@ -1,6 +1,7 @@
 """Model comparison, the read without renders (`docs/model-comparison-plan.md`, ledger `model-comparison`).
 
     $TORCH_PY -m learn.bakeoff control                 # FTm, FT and W, cached, against N1's stored r (CPU)
+    $TORCH_PY -m learn.bakeoff check                   # the harness: shuffled labels read near zero, spiked labels read high
     $TORCH_PY -m learn.bakeoff read OUT.json           # the declared candidates, read as `reads_v3` reads a model (CPU)
 
 Candidates answer each held real record from what a fold's model may see: the fold's training records (`dfix_rows_of`,
@@ -38,6 +39,7 @@ ALPHAS = tuple(10.0 ** e for e in range(-2, 6))
 INNER = 4
 PCS = 24
 SD_FLOOR = 0.02
+SPIKE = 30.0
 VARIANTS = 25
 
 
@@ -227,8 +229,19 @@ FITS = {"ridge": fit_ridge, "trees": fit_trees, "knn": fit_knn}
 CANDIDATES = {}                                         # set by the plan's declaration, T2.1: {label: (input, fit)}
 
 
-def candidate_answers(name, fit, recs_tr, rows_tr, rows_te, Y_tr, searched, seeds=(None,)):
-    """A candidate's held answers on one fold, seeds averaged. -> (mu [n, knobs], sd [knobs])."""
+def shuffled_within(c, cm, cells, seed):
+    """Labels and their masks moved between a cell's rows: the placebo. -> (c, cm)."""
+    rng, order = np.random.default_rng(seed), np.arange(len(c))
+    cells = list(cells)
+    for q in set(cells):
+        i = np.array([j for j, z in enumerate(cells) if z == q])
+        order[i] = rng.permutation(i)
+    return c[order], cm[order]
+
+
+def candidate_answers(name, fit, recs_tr, rows_tr, rows_te, Y_tr, searched, seeds=(None,), spike=None):
+    """A candidate's held answers on one fold, seeds averaged. `spike` (train labels, held labels) joins the labels to the
+    input, the harness's positive control. -> (mu [n, knobs], sd [knobs])."""
     c, cm = Y_tr[0].astype(float), Y_tr[1].astype(float)
     cells_tr = [(h["amp"], h["cls"]) for h in rows_tr]
     cells_te = [(h["amp"], h["cls"]) for h in rows_te]
@@ -243,6 +256,9 @@ def candidate_answers(name, fit, recs_tr, rows_tr, rows_te, Y_tr, searched, seed
     for seed in seeds:
         Xtr = np.stack([[feature(name, seed, h["real"], v, h["amp"], h["cls"]) for v in range(VARIANTS)] for h in rows_tr])   # [n, v, 2, d]
         Xte = np.stack([feature(name, seed, h["real"], 0, h["amp"], h["cls"]) for h in rows_te])                               # [m, 2, d]
+        if spike is not None:
+            Xtr = np.concatenate([Xtr, np.broadcast_to(SPIKE * spike[0][:, None, None], (*Xtr.shape[:3], spike[0].shape[1]))], -1)
+            Xte = np.concatenate([Xte, np.broadcast_to(SPIKE * spike[1][:, None], (*Xte.shape[:2], spike[1].shape[1]))], -1)
         n, v, h_, d = Xtr.shape
         rep = np.repeat(np.arange(n), v * h_)
         flat = Xtr.reshape(-1, d)
@@ -262,9 +278,9 @@ def candidate_answers(name, fit, recs_tr, rows_tr, rows_te, Y_tr, searched, seed
     return np.mean(answers, 0), sd
 
 
-def add_candidates(rows, k, cands, brecs, by_unit, folds, grecs, gunits, extra=()):
+def add_candidates(rows, k, cands, brecs, by_unit, folds, grecs, gunits, extra=(), check=None):
     """Each candidate's `_ans` and `_swap` on one fold's `read_fold` rows, in their order. `extra`: more training rows
-    as (row, record) pairs, any on a held DI left out."""
+    as (row, record) pairs, any on a held DI left out. `check`: "shuffle" or "spike", the harness's own controls."""
     from learn import pipeline_fix as P
     from learn import reads_v3 as R
     from learn import full_space as F
@@ -284,9 +300,12 @@ def add_candidates(rows, k, cands, brecs, by_unit, folds, grecs, gunits, extra=(
     Y_te = [np.stack(z) for z in zip(*(enc(h["label"]) for h in held))]
     assert [(h["amp"], h["cls"]) for h in held] == [(q["amp"], q["cls"]) for q in rows]
     c, cm, s, sm, kk, km, _ = Y_te
+    spike = (Y_tr[0], Y_te[0]) if check == "spike" else None
+    if check == "shuffle":
+        Y_tr[0], Y_tr[1] = shuffled_within(Y_tr[0], Y_tr[1], [(h["amp"], h["cls"]) for h in rows_tr], R.RNG_SEED + k)
     for label, (name, fit) in cands.items():
         seeds = R.SEEDS if name == "W" else (None,)
-        mu, sd = candidate_answers(name, fit, recs_tr, rows_tr, held, Y_tr, R.searched, seeds)
+        mu, sd = candidate_answers(name, fit, recs_tr, rows_tr, held, Y_tr, R.searched, seeds, spike)
         o = gaussian_output(mu, sd, len(F.SW), (len(F.CAT), len(F.MICS)))
         for j, row in enumerate(rows):
             sk, ss, sc = R.searched(row["amp"], row["cls"])
@@ -356,6 +375,28 @@ def cmd_control(_args):
     print("CONTROL OK", flush=True)
 
 
+def cmd_check(_args):
+    """Two controls on the mel ridge's plumbing, reading no candidate: labels shuffled within cell in training must read
+    near zero, or the harness leaks; labels joined to the input must read high, or rows and labels are misaligned."""
+    from learn import reads_v3 as R
+
+    sha_ok()
+    rows, data = base_rows()
+    res = {}
+    for check in ("shuffle", "spike"):
+        by_fold = collections.defaultdict(list)
+        for r in rows:
+            by_fold[r["fold"]].append(dict(r))
+        for k in range(4):
+            add_candidates(by_fold[k], k, {"C": ("mel", "ridge")}, *data, check=check)
+            print(check, "fold", k, "done", flush=True)
+        done = [r for k in range(4) for r in by_fold[k]]
+        res[check] = {st: {g: R.corr(R.blocks([r for r in done if r["set"] == st], "C")).get(g, (None,))[0] for g in R.GROUPS}
+                      for st in ("BKS", "GOAT")}
+        print(check, res[check], flush=True)
+    (root() / "check.json").write_text(json.dumps(res, indent=1))
+
+
 def family(rows, labels, perms=2000):
     """Selection across candidates: under one label permutation per draw, the largest r of any candidate, by set and
     group, and each candidate's p against it."""
@@ -407,6 +448,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("control").set_defaults(fn=cmd_control)
+    sub.add_parser("check").set_defaults(fn=cmd_check)
     r = sub.add_parser("read")
     r.add_argument("out")
     r.set_defaults(fn=cmd_read)
