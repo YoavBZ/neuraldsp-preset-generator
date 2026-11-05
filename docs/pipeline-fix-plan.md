@@ -73,7 +73,10 @@ W carries the agreement: among S, FT and D_fix, agreement is not shown (+0.04 [�
 is not ruled out). The ML review of 2026-11-05 adds N1 to N3, masked FT and a better search, on trusted data. L1a, declared next: the first 50 captures, the ear gate, a blind check of search labels against S
 and a placebo before the rest of the labels, then their centre against GOAT's at the same count.
 Overnight (F55): masked FT reads tone better on GOAT and holds cab; by the score it is closer there by item, not shown by fold, and worse on BKS; the learning curve is undecided.
-Findings F1–F55.
+N4 (F56, one listener, the same 10 parts): FTm is not known by ear. It is above S on 4 of 10 parts (0.40 [0.11, 0.69]), level with FT on
+closeness, and by the score S is closer on these parts, the reverse of the two development sets. S and FT repeat L0's split on the same clips:
+the models lead on clean parts and off the ac20, S on crunch and on the ac20, and class, amp and S's setting still cannot be pulled apart.
+Findings F1–F56.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -2100,6 +2103,8 @@ instead of generating unrealistic presets our own?"):
     ranked before. A clear row is a lead for L2. A row reaching one half is not known by ear. On these 10 parts in 7 bands a true 75% clears about half the time (52%), a true 60%
     clears 20%, chance 4% (simulated on `boot_share`). L0 chose each amp by S's closeness, so FTm − S leans toward S. FT's clips carry no hold, so FTm − FT mixes the hold and the
     mask. One listener, on parts heard before. FTm's stored judges stay unread until the page is scored. No other V-real direction is read.
+    - *Outcome (2026-11-05, F56):* every row reaches one half, so FTm is not known by ear, against S or FT. It picks nothing and is no lead for L2 by the declared map.
+      By the score S is closer on these parts (ln(d_S/d_FTm) −0.107 [−0.198, −0.021]).
   - **N5, does the reading survive the stem? (declared 2026-11-05 after F55; ledger `phase_n5`; `learn/night3.py`).** Every model above trains and reads a real unit in a
     backing; the product reads an X-LANCE stem, and the ML review found the two inputs far apart (domain AUC 0.997). V-real is the only stem read so far. So each labelled BKS
     and GOAT unit's variant 0 mix is rebuilt (its features must equal the stored ones exactly), separated by X-LANCE, and brought to the product's level (the mix at −12.25 LUFS,
@@ -4235,6 +4240,35 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **What it changes.** On held GOAT capture renders FTm is a lead for L2: tone reads better than FT's, drive and cab level, and by the score it is closer by item, with the fold interval reaching zero. On BKS it gives back about the lead that carried FT (read 2's −0.055). This moves no base. N3 says nothing for or against more rows; the captures' labels are in hand either way. Sound on a real song is N4's page, by ear.
 - **Caveats.** Knob reads are agreement with search labels, not sound. Masked heads stay W's and are held at S at the readout, so nothing here tests those controls. One training recipe, both seeds pooled, the paired GOAT rows uncorrected (six knob, six score, N3's nine). FTm was chosen on the reads N3 repeats. Nothing here went through a stem.
 - **References.** `learn/reads_v3.py` (verbatim, sha256 a04785f3a4838ae2), `night2/reads-v3-ftm.json`, `night2/reads-v3-n3.json`, `real/report-night2.json`, `goat/report-night2.json`, `night2/report.json`, ledger `phase_night2`, `phase_n1_first_read`, `phase_n1_score_read`, `phase_n3`, `phase_n3_outcome`; the ML review's document. Results review: 13 required changes, all made.
+
+### F56. N4, masked FT by ear on L0's parts: not known by ear, level with FT on closeness, behind S by the score; S and FT repeat L0's split on the same clips (phase_n4, 40 renders, one listener)
+- **What was heard.** 12 of 12 answered, all marked sure, 10 first hearings, 7 bands, build d1197bc57c3f. Band-weighted mean rank / closeness (0 far, 1 somewhat, 2 close, 3 very close): S 1.86/0.71, FT 1.93/0.71, FTm 2.21/0.64.
+
+  | Row | Above, rank share | Rank gap | Closeness gap | Score, ln(d_b / d_a) |
+  |---|---|---|---|---|
+  | FTm over S | 4 of 10, 0.40 [0.11, 0.69] | −0.36 [−1.29, +0.64] | −0.07 [−0.71, +0.57] | −0.107 [−0.198, −0.021] |
+  | FTm over FT | 4 of 10, 0.40 [0.10, 0.75] | −0.29 [−1.00, +0.43] | −0.07 [−0.36, +0.14] | −0.051 [−0.120, +0.010] |
+  | FT over S | 5 of 10, 0.50 [0.20, 0.78] | −0.07 [−0.79, +0.64] | 0.00 [−0.57, +0.57] | −0.056 [−0.144, +0.005] |
+
+  Share and score are pooled over parts, clustered by band; the gaps are band-weighted. Above zero favours the first candidate, so the score's sign here is the reverse of F55's table. FTm and FT get equal ratings on 8 of 10 parts.
+- **By the declared map.** All three rows reach one half: not known by ear, and FTm picks nothing. A true 75% clears about half the time on this page, so this does not rule the model out, though the primary row's upper end sits below 0.75 and its point estimate below one half. FTm's better reading of tone (F55) is not heard on these parts, in either direction, against FT.
+- **Where the answers split (counts and means, no declared intervals).**
+
+  | Parts | S | FT | FTm | FT above S | FTm above S |
+  |---|---|---|---|---|---|
+  | Clean (4 parts, 2 bands) | 2.50/0.00 | 1.75/1.00 | 1.75/1.25 | 3 of 4 | 3 of 4 |
+  | Crunch (6, 5) | 1.60/1.00 | 2.00/0.60 | 2.40/0.40 | 2 of 6 | 1 of 6 |
+  | ac20 (6, 5) | 1.40/0.60 | 2.20/0.00 | 2.40/0.20 | 1 of 6 | 1 of 6 |
+  | Off the ac20 (4, 4) | 2.75/0.50 | 1.50/1.75 | 1.75/1.50 | 4 of 4 | 3 of 4 |
+
+  Rank / closeness, band-weighted within each row. Class, amp and S's setting stay confounded, and L0 chose each amp by S's closeness, so S's lead on the ac20 is at least partly built in. Crunch rank gaps (5 bands, t) FTm −0.80 [−2.37, +0.77], FT −0.40 [−1.68, +0.88].
+- **The same clips twice.** S's and FT's clips are L0's stored renders. FT against S keeps its order on 8 of 10 parts between the pages, the closeness gaps correlate 0.88, and the amp split repeats exactly (4 of 4 and 1 of 6). Repeats on this page: same top on 2 of 2, same order on 1. That is the listener's consistency, not a second sample: the parts, clips and listener are the same. Ratings do not carry across pages: the same clips scored S 1.36 and FT 1.57 on L0, with W on the page, and 0.71 each here.
+- **Absolute closeness.** The best rating on a part was close on 3, somewhat on 6, far on 1, and very close on none. On these parts none of the three is near the record.
+- **The score.** FTm is further than S on 8 of 10 parts (ln(d_FTm/d_S) median +0.066, mean without the largest part +0.069), so one part does not carry the row. On F55's development sets it goes the other way (FTm − S −0.123 and −0.094; FT − S −0.177 and −0.073), so those gains by the score did not reach these parts. The causes are not separated: amp chosen by S, other guitars in the mix, rigs outside training, the measure DI. Ear-score Spearman +0.57 [−0.02, +0.93], three candidates a part. On clean parts the ear moves a long way (S 0.00 to FTm 1.25) while the score stays level (ln(d_FTm/d_S) mean −0.004, FT's −0.013), as in F54.
+- **The review's first step, beside (zero renders).** F55's and N5b's score rows already equal t intervals to three places. F54 on t keeps every conclusion (W − S rank −1.79 [−2.91, −0.67]; FT and D_fix reach zero). N4's band-weighted rows on t: FTm over S rank −0.36 [−1.61, +0.89], closeness −0.07 [−0.93, +0.79], score −0.12 [−0.22, −0.02]. `tonal` is not in the stored judged rows, because `knob_ceiling.judge` keeps `distance` alone, so that half of the step needs re-judged audio, not a stored read.
+- **What it changes.** No base moves, and the answers do not choose between FT and FTm. What separates class, amp and S's setting is a design with the amp randomised (L2) and the capture label check, whose items are crossed by design.
+- **Caveats.** One listener, 10 parts, all heard before. L0's amp choice leans FTm − S toward S. FT's clips carry no hold, so FTm − FT mixes the hold and the mask. At least V-real's fifth read. Nothing here is a verdict on a real song in general.
+- **References.** `learn/ear_ftm.py`, `ear-ftm/key.json`, `ear-ftm/score.json`, ledger `phase_n4`, `phase_n4_outcome`.
 
 ## Budget
 
