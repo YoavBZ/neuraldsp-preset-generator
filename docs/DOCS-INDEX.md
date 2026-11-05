@@ -730,3 +730,19 @@ was declared, what was measured, and the research behind it.
     ML session's and user's call, plus rebuilt mixes and re-separated stems), the RemFX
     detector, and speech room estimators as a negative control. Effect removers and dereverb
     models need the user's separator ruling. Research, not a declared plan.
+24. [proven-methods-preset-recovery-2026-11.md](research/proven-methods-preset-recovery-2026-11.md):
+    which methods the field has proven for recovering effect settings from audio, for the ML
+    models and scoring review session (November 2026; nothing downloaded or run). Five topics:
+    matching through a non-differentiable plugin, blind drive estimation, few-label adaptation,
+    listener-validated timbre measures, and reading one instrument in a mix. Nothing is proven
+    on this problem. The closest real-recording study (Yu et al. 2025, vocals) rated plain
+    regression lowest; MFCC nearest-neighbour retrieval tied a prior-regularised search, which
+    was gradient-based (untested gradient-free). Ranked thirteen, each with its change to the
+    flow, evidence size, licence, Mac cost and cheapest decisive test: first a light-touch
+    real-amp adaptation (W/FT weight interpolation with no training; bias-, head- or
+    first-block-only tuning in minutes) and frozen-trunk readouts shrunk to the centre, then
+    drive recast as breakup plus effective drive at a fixed input level (a gain sweep of about
+    130 renders), song-level pooling, source-informed mix reading and a two-part (linear plus
+    nonlinear) score. Downloads and installs are the ML session's and the user's call. Corrects
+    round 2's reading of Yu et al., round 3 on PNP and SynthRL, and the proxy rule. Research,
+    not a declared plan.
