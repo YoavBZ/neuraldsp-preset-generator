@@ -39,21 +39,43 @@ def test_hits_read_the_top_answer():
 def test_demeaning_and_the_two_correlations():
     assert L.demean([1.0, 3.0, 5.0, 9.0], ["x", "x", "y", "y"]).tolist() == [-1.0, 1.0, -2.0, 2.0]
     a = np.array([1.0, -1.0, 2.0, -2.0])
-    assert L.group_rows(a, a, -a, None) == pytest.approx((1.0, -1.0))
+    assert L.group_rows(a, a, -a) == pytest.approx((1.0, -1.0))
 
 
-def test_the_jackknife_is_zero_for_a_constant_and_keeps_its_point():
+def test_an_answer_that_only_knows_its_cell_reads_nothing():
+    rng = np.random.default_rng(1)
+    n = 3000
+    cell = rng.integers(0, 6, n)
+    sec = rng.integers(0, 12, n)
+    level = rng.normal(0, 1, 6)
+    answer = level[cell]                                     # no audio: the constant of T's own cell
+    y_t = level[cell] + rng.normal(0, 1, n)
+    y_o = rng.normal(0, 1, n)
+    tc, sc = [str(c) for c in cell], [str(s) for s in sec]
+    biased = L.group_rows(*(L.demean(v, sc) for v in (answer, y_t, y_o)))
+    fair = L.group_rows(*(L.clean_of_cells(v, tc, sc) for v in (answer, y_t, y_o)))
+    assert biased[0] - biased[1] > 0.4
+    assert abs(fair[0] - fair[1]) < 0.1 or np.isnan(fair[0])
+
+
+def test_the_jackknife_widens_with_the_sections_spread():
     s = np.repeat(np.arange(6), 3)
     r = L.jackknife(lambda k: 0.25, s, lambda df: 2.0)
     assert r["point"] == 0.25 and r["lo"] == r["hi"] == 0.25 and r["sections"] == 6
+    v = np.repeat(np.array([0.0, 1.0, 0.0, 1.0, 0.0, 1.0]), 3)
+    w = L.jackknife(lambda k: float(v[k].mean()), s, lambda df: 2.0)
+    assert w["point"] == 0.5 and w["lo"] < 0.2 and w["hi"] > 0.8
 
 
 def test_the_reading():
     up = {"lo": 0.01, "hi": 0.2}
     span = {"lo": -0.1, "hi": 0.1}
     down = {"lo": -0.2, "hi": -0.01}
-    assert L.reading(up, span) == "the lead holds"
-    assert L.reading(span, up) == "not shown"
-    assert L.reading(down, up) == "the lead does not hold"
-    assert L.reading(down, span) == "not shown"
-    assert L.reading({"lo": None, "hi": None}, up) == "not shown"
+    none = {"lo": None, "hi": None}
+    assert L.reading(up, span, span, True) == "the lead holds"
+    assert L.reading(up, span, up, True) == "already in the mix"
+    assert L.reading(up, span, span, False) == "void"
+    assert L.reading(span, up, span, True) == "not shown"
+    assert L.reading(down, up, span, True) == "the lead does not hold"
+    assert L.reading(down, span, span, True) == "not shown"
+    assert L.reading(none, up, none, True) == "not shown"
