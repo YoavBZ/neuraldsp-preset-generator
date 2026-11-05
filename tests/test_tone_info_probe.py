@@ -182,6 +182,13 @@ def _pairs(**ahead):
     return {k: _row(9, 0) if ahead.get(k.replace("-", "_").replace("|", "_")) else _row(2, 2) for k in keys}
 
 
+def test_past_shape_keeps_the_true_maps_losses():
+    heads = [(n, "today", "continuous", j) for j, n in enumerate("abcd")]
+    o = {"better_heads": ["a", "b"], "worse_heads": ["c"]}
+    xo = {"better_heads": ["b", "c"], "worse_heads": []}
+    assert [h[0] for h in P.past_shape(heads, o, xo)] == ["a", "c", "d"]
+
+
 def test_ahead_needs_the_sign_test_and_more_than_chance():
     assert not P.is_ahead(_row(5, 0)) and P.is_ahead(_row(7, 0))
     assert not P.is_ahead(_row(8, 3)) and not P.is_ahead(_row(0, 9))

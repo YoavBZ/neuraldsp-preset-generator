@@ -233,6 +233,13 @@ def sign_p(better, worse):
     return sum(math.comb(n, k) for k in range(better, n + 1)) / 2 ** n if n else 1.0
 
 
+def past_shape(heads, o_row, xo_row):
+    """`heads` less those (o) and (xo) both win against one comparator, wins the map's shape can take by itself. (o)'s
+    losses stay."""
+    both = set(o_row["better_heads"]) & set(xo_row["better_heads"])
+    return [h for h in heads if h[0] not in both]
+
+
 def is_ahead(c, chance=CHANCE_HEADS):
     """The declared "ahead": more heads reliably better than worse by the sign test at 5%, and more than chance gives."""
     return c["better"] > chance and c["sign_p"] < 0.05
@@ -1077,9 +1084,8 @@ def cmd_mask(args):
     pairs.update({f"{k}-p{k}": pair_counts(heads, k, f"p{k}", step_of) for k in MAPS})
     pairs["o-xo"] = pair_counts(heads, "o", "xo", step_of)
     pairs.update({f"xo-{q}": pair_counts(heads, "xo", q, step_of) for q in ("b", "po")})
-    for q in ("b", "po"):                              # (o) on the heads the map's shape does not win by itself
-        rest = [h for h in heads if h[0] not in pairs[f"xo-{q}"]["better_heads"]]
-        pairs[f"o-{q}|x"] = pair_counts(rest, "o", q, step_of)
+    for q in ("b", "po"):
+        pairs[f"o-{q}|x"] = pair_counts(past_shape(heads, pairs[f"o-{q}"], pairs[f"xo-{q}"]), "o", q, step_of)
     branch, earned = reading(pairs)
     rec = {"design": DESIGN + "#addition-the-mix-on-its-dominant-cells-declared-2026-11-05-before-it-is-computed",
            "status": MASK_STATUS, "inputs": MASK, "lists_check": LISTS.get("check"), "branch": branch, "earned": earned,
