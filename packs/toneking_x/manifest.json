@@ -1,0 +1,713 @@
+{
+  "manifest_version": 1,
+  "pack_id": "toneking_x",
+  "display_name": "Tone King Imperial MKII X",
+  "vendor": "Neural DSP",
+  "file_header": "toneking",
+  "audio_unit": {
+    "type": "aumf",
+    "subtype": "NTKX",
+    "manufacturer": "NDSP",
+    "note": "`scripts/audit_manifest.py --pack toneking_x` reads the plugin's XML state; 97 keys reach the 97 published controls, the other two being host-only Preset Previous/Next actions. EQ HPF and Reverb Pre-Delay sit at their floor in the default state, so `values` probes settled them. Presets are not rendered through this edition: renders stay on the original plugin."
+  },
+  "custom_ir": {
+    "note": "What --strip-irs clears. The path is the file, `selector` at `custom` makes the cab play it and `flag` says the side uses a file. The selector goes back to `default`, the plugin's published default for that side (Dynamic 57 E33 left, Condenser 414 E33 right).",
+    "slots": [
+      {
+        "path": "cabParameters/leftChosenIRFilePath",
+        "selector": "cabParameters/leftMicType",
+        "flag": "cabParameters/leftIsCustomIR",
+        "custom": "16",
+        "default": "0"
+      },
+      {
+        "path": "cabParameters/rightChosenIRFilePath",
+        "selector": "cabParameters/rightMicType",
+        "flag": "cabParameters/rightIsCustomIR",
+        "custom": "16",
+        "default": "4"
+      }
+    ]
+  },
+  "description": "Parameter facts for Neural DSP Tone King Imperial MKII X, whose presets are Morgan-style text values in named sections, not the original's binary records. It contains no Neural DSP code, audio or preset content. Controls here were mapped against the running plugin, and every factory preset held by both editions supplied the conversions in the notes.",
+  "enums": {
+    "cab_mics": {
+      "0": "Dynamic 57 E33",
+      "1": "Dynamic 409 E33",
+      "2": "Dynamic 421 E33",
+      "3": "Condenser 184 E33",
+      "4": "Condenser 414 E33",
+      "5": "Condenser U47 E33",
+      "6": "Ribbon 121 E33",
+      "7": "Ribbon 160 E33",
+      "8": "Dynamic 57 H30",
+      "9": "Dynamic 409 H30",
+      "10": "Dynamic 421 H30",
+      "11": "Condenser 184 H30",
+      "12": "Condenser 414 H30",
+      "13": "Condenser U47 H30",
+      "14": "Ribbon 121 H30",
+      "15": "Ribbon 160 H30",
+      "16": "Custom IR"
+    },
+    "delay_notes": {
+      "0": "1/64T",
+      "1": "1/64",
+      "2": "1/32T",
+      "3": "1/64D",
+      "4": "1/32",
+      "5": "1/16T",
+      "6": "1/32D",
+      "7": "1/16",
+      "8": "1/8T",
+      "9": "1/16D",
+      "10": "1/8",
+      "11": "1/4T",
+      "12": "1/8D",
+      "13": "1/4",
+      "14": "1/2T",
+      "15": "1/4D",
+      "16": "1/2",
+      "17": "1/1T",
+      "18": "1/2D",
+      "19": "1/1",
+      "20": "1/1D"
+    }
+  },
+  "parameters": {
+    "/name": {
+      "kind": "string"
+    },
+    "/selectedAmp": {
+      "kind": "internal",
+      "writable": false,
+      "note": "Moves no published control; the channel is ampParameters/ampChannel."
+    },
+    "/version": {
+      "kind": "string",
+      "writable": false
+    },
+    "ampParameters/ampAttenuation": {
+      "kind": "enum",
+      "members": {
+        "0": "-36 dB",
+        "1": "-24 dB",
+        "2": "-15 dB",
+        "3": "-9 dB",
+        "4": "-3 dB",
+        "5": "0 dB"
+      },
+      "ui": "Amp Attenuation"
+    },
+    "ampParameters/ampChannel": {
+      "kind": "switch",
+      "members": {
+        "false": "Rhythm",
+        "true": "Lead"
+      },
+      "ui": "Amp Channel Select"
+    },
+    "ampParameters/hfComp": {
+      "kind": "switch",
+      "members": {
+        "false": "NORMAL",
+        "true": "MAX"
+      },
+      "ui": "Amp HF Comp"
+    },
+    "ampParameters/leadMidBite": {
+      "kind": "rotation",
+      "ui": "Lead Channel Mid Bite"
+    },
+    "ampParameters/leadTone": {
+      "kind": "rotation",
+      "ui": "Lead Channel Tone"
+    },
+    "ampParameters/leadVolume": {
+      "kind": "rotation",
+      "ui": "Lead Channel Volume"
+    },
+    "ampParameters/reverb": {
+      "kind": "rotation",
+      "ui": "Amp Reverb"
+    },
+    "ampParameters/rhythmBass": {
+      "kind": "rotation",
+      "ui": "Rhythm Channel Bass"
+    },
+    "ampParameters/rhythmChannelAttenuationBypass": {
+      "kind": "switch",
+      "ui": "Rhythm Channel Attenuation Bypass"
+    },
+    "ampParameters/rhythmTreble": {
+      "kind": "rotation",
+      "ui": "Rhythm Channel Treble"
+    },
+    "ampParameters/rhythmVolume": {
+      "kind": "rotation",
+      "ui": "Rhythm Channel Volume"
+    },
+    "ampParameters/sectionActive": {
+      "kind": "switch",
+      "ui": "Amp Section Active"
+    },
+    "ampParameters/tremoloDepth": {
+      "kind": "rotation",
+      "ui": "Amp Tremolo Depth"
+    },
+    "ampParameters/tremoloSpeed": {
+      "kind": "rotation",
+      "ui": "Amp Tremolo Speed"
+    },
+    "cabParameters/cabStereo": {
+      "kind": "internal",
+      "writable": false,
+      "note": "Moves no published control."
+    },
+    "cabParameters/leftCabActive": {
+      "kind": "switch",
+      "ui": "Cab L Mic Active"
+    },
+    "cabParameters/leftCabDistance": {
+      "kind": "fraction",
+      "ui": "Cab L Mic Distance"
+    },
+    "cabParameters/leftCabMicLevel": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -40,
+      "max": 6,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Cab L Mic Level",
+      "note": "On the factory presets both editions hold, this is the original level + 12 dB, clamped to +6."
+    },
+    "cabParameters/leftCabPan": {
+      "kind": "metered",
+      "unit": "pan",
+      "min": -50,
+      "max": 50,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Cab L Mic Pan"
+    },
+    "cabParameters/leftCabPhase": {
+      "kind": "switch",
+      "ui": "Cab L Mic Phase"
+    },
+    "cabParameters/leftCabPosition": {
+      "kind": "fraction",
+      "ui": "Cab L Mic Position"
+    },
+    "cabParameters/leftChosenIRFilePath": {
+      "kind": "path",
+      "ui": "Left custom IR"
+    },
+    "cabParameters/leftIsCustomIR": {
+      "kind": "internal",
+      "writable": false,
+      "note": "Moves no published control. `--strip-irs` clears it with the path."
+    },
+    "cabParameters/leftMicType": {
+      "kind": "enum",
+      "enum": "cab_mics",
+      "ui": "Cab L Mic Type",
+      "note": "The plugin labels 0–7 and 8–15 with the same mic names; the E33/H30 cab in these member names is the original's, and the two editions hold the same index on every factory preset compared."
+    },
+    "cabParameters/leftRoomActive": {
+      "kind": "switch",
+      "ui": "Room L Active"
+    },
+    "cabParameters/leftRoomMicLevel": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -40,
+      "max": 6,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Room L Level"
+    },
+    "cabParameters/rightCabActive": {
+      "kind": "switch",
+      "ui": "Cab R Mic Active"
+    },
+    "cabParameters/rightCabDistance": {
+      "kind": "fraction",
+      "ui": "Cab R Mic Distance"
+    },
+    "cabParameters/rightCabMicLevel": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -40,
+      "max": 6,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Cab R Mic Level",
+      "note": "On the factory presets both editions hold, this is the original level + 12 dB, clamped to +6."
+    },
+    "cabParameters/rightCabPan": {
+      "kind": "metered",
+      "unit": "pan",
+      "min": -50,
+      "max": 50,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Cab R Mic Pan"
+    },
+    "cabParameters/rightCabPhase": {
+      "kind": "switch",
+      "ui": "Cab R Mic Phase"
+    },
+    "cabParameters/rightCabPosition": {
+      "kind": "fraction",
+      "ui": "Cab R Mic Position"
+    },
+    "cabParameters/rightChosenIRFilePath": {
+      "kind": "path",
+      "ui": "Right custom IR"
+    },
+    "cabParameters/rightIsCustomIR": {
+      "kind": "internal",
+      "writable": false,
+      "note": "Moves no published control. `--strip-irs` clears it with the path."
+    },
+    "cabParameters/rightMicType": {
+      "kind": "enum",
+      "enum": "cab_mics",
+      "ui": "Cab R Mic Type",
+      "note": "The plugin labels 0–7 and 8–15 with the same mic names; the E33/H30 cab in these member names is the original's, and the two editions hold the same index on every factory preset compared."
+    },
+    "cabParameters/rightRoomActive": {
+      "kind": "switch",
+      "ui": "Room R Active"
+    },
+    "cabParameters/rightRoomMicLevel": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -40,
+      "max": 6,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Room R Level"
+    },
+    "cabParameters/sectionActive": {
+      "kind": "switch",
+      "ui": "Cab Section Active"
+    },
+    "chorus/chorusActive": {
+      "kind": "switch",
+      "ui": "Chorus Active"
+    },
+    "chorus/chorusDepth": {
+      "kind": "rotation",
+      "ui": "Chorus Depth"
+    },
+    "chorus/chorusMix": {
+      "kind": "rotation",
+      "ui": "Chorus Mix"
+    },
+    "chorus/chorusRate": {
+      "kind": "rotation",
+      "ui": "Chorus Rate"
+    },
+    "compressor/compressorActive": {
+      "kind": "switch",
+      "ui": "Compressor Active"
+    },
+    "compressor/compressorBlend": {
+      "kind": "rotation",
+      "ui": "Compressor Blend"
+    },
+    "compressor/compressorCompression": {
+      "kind": "rotation",
+      "ui": "Compressor Compression"
+    },
+    "compressor/compressorSpeed": {
+      "kind": "switch",
+      "members": {
+        "false": "Slow",
+        "true": "Fast"
+      },
+      "ui": "Compressor Speed"
+    },
+    "compressor/compressorVolume": {
+      "kind": "rotation",
+      "ui": "Compressor Volume",
+      "note": "The original stores −12..+12 dB; this is the same control as 0..1 stored, shown 0–100."
+    },
+    "delay/delayActive": {
+      "kind": "switch",
+      "ui": "Delay Active"
+    },
+    "delay/delayFeedback": {
+      "kind": "rotation",
+      "ui": "Delay Feedback",
+      "note": "Twice the original's stored value (0..1 stored here, 0..0.5 there)."
+    },
+    "delay/delayHighPass": {
+      "kind": "metered",
+      "unit": "hz",
+      "min": 20,
+      "max": 800,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Delay HPF"
+    },
+    "delay/delayLowPass": {
+      "kind": "metered",
+      "unit": "hz",
+      "min": 1000,
+      "max": 16000,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Delay LPF"
+    },
+    "delay/delayMix": {
+      "kind": "rotation",
+      "ui": "Delay Mix"
+    },
+    "delay/delayMode": {
+      "kind": "switch",
+      "members": {
+        "false": "Single",
+        "true": "Dual"
+      },
+      "ui": "Delay Stereo Mode"
+    },
+    "delay/delayNoteL": {
+      "kind": "enum",
+      "enum": "delay_notes",
+      "ui": "Delay Sync Note L"
+    },
+    "delay/delayNoteR": {
+      "kind": "enum",
+      "enum": "delay_notes",
+      "ui": "Delay Sync Note R"
+    },
+    "delay/delaySync": {
+      "kind": "enum",
+      "members": {
+        "0": "Free",
+        "1": "DAW",
+        "2": "Tap"
+      },
+      "ui": "Delay Sync",
+      "note": "Takes over from the original's two controls, Delay Sync and the Note/ms display: `Free` uses delayTimeL/R, `DAW` follows the host tempo through the sync notes, `Tap` waits for a tap tempo."
+    },
+    "delay/delayTempo": {
+      "kind": "metered",
+      "unit": "bpm",
+      "min": 40,
+      "max": 240,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Delay Tempo"
+    },
+    "delay/delayTimeL": {
+      "kind": "metered",
+      "unit": "ms",
+      "min": 100,
+      "max": 1100,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Delay Time L"
+    },
+    "delay/delayTimeR": {
+      "kind": "metered",
+      "unit": "ms",
+      "min": 100,
+      "max": 1100,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Delay Time R"
+    },
+    "drive1/drive1Active": {
+      "kind": "switch",
+      "ui": "Overdrive 1 Active"
+    },
+    "drive1/drive1Bass": {
+      "kind": "rotation",
+      "ui": "Overdrive 1 Bass"
+    },
+    "drive1/drive1Drive": {
+      "kind": "rotation",
+      "ui": "Overdrive 1 Drive"
+    },
+    "drive1/drive1Level": {
+      "kind": "rotation",
+      "ui": "Overdrive 1 Level"
+    },
+    "drive1/drive1Treble": {
+      "kind": "rotation",
+      "ui": "Overdrive 1 Treble"
+    },
+    "drive2/drive2Active": {
+      "kind": "switch",
+      "ui": "Overdrive 2 Active"
+    },
+    "drive2/drive2Bass": {
+      "kind": "rotation",
+      "ui": "Overdrive 2 Bass"
+    },
+    "drive2/drive2Drive": {
+      "kind": "rotation",
+      "ui": "Overdrive 2 Drive"
+    },
+    "drive2/drive2Level": {
+      "kind": "rotation",
+      "ui": "Overdrive 2 Level"
+    },
+    "drive2/drive2Treble": {
+      "kind": "rotation",
+      "ui": "Overdrive 2 Treble"
+    },
+    "eqParameters/sectionActive": {
+      "kind": "switch",
+      "ui": "EQ Section Active"
+    },
+    "parameters/doublerActive": {
+      "kind": "switch",
+      "ui": "Doubler Active"
+    },
+    "parameters/doublerSpread": {
+      "kind": "metered",
+      "unit": "ms",
+      "min": 3,
+      "max": 20,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Doubler Spread"
+    },
+    "parameters/doublerSpreadLocked": {
+      "kind": "internal",
+      "writable": false,
+      "note": "Moves no published control."
+    },
+    "parameters/gateActive": {
+      "kind": "switch",
+      "ui": "Gate Active"
+    },
+    "parameters/gateLocked": {
+      "kind": "internal",
+      "writable": false,
+      "note": "Moves no published control."
+    },
+    "parameters/gateThreshold": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -96,
+      "max": 0,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Gate Threshold"
+    },
+    "parameters/inputGain": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -24,
+      "max": 24,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Input Gain"
+    },
+    "parameters/inputLocked": {
+      "kind": "internal",
+      "writable": false,
+      "note": "Moves no published control."
+    },
+    "parameters/outputGain": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -24,
+      "max": 24,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Output Gain"
+    },
+    "parameters/outputLocked": {
+      "kind": "internal",
+      "writable": false,
+      "note": "Moves no published control."
+    },
+    "parameters/transpose": {
+      "kind": "metered",
+      "unit": "semitones",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Transpose"
+    },
+    "parameters/transposeLocked": {
+      "kind": "internal",
+      "writable": false,
+      "note": "Moves no published control."
+    },
+    "postFXParameters/sectionActive": {
+      "kind": "switch",
+      "ui": "Post FX Section Active"
+    },
+    "preFXParameters/sectionActive": {
+      "kind": "switch",
+      "ui": "Pre FX Section Active"
+    },
+    "reverb/reverbActive": {
+      "kind": "switch",
+      "ui": "Reverb Active"
+    },
+    "reverb/reverbDecay": {
+      "kind": "rotation",
+      "ui": "Reverb Decay",
+      "note": "A percentage here. The original stores 0.5 to 8 s; X stores (s − 0.5) / 7.5 as 0..1."
+    },
+    "reverb/reverbHighCut": {
+      "kind": "metered",
+      "unit": "hz",
+      "min": 800,
+      "max": 12000,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Reverb High Cut"
+    },
+    "reverb/reverbLowCut": {
+      "kind": "metered",
+      "unit": "hz",
+      "min": 20,
+      "max": 800,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Reverb Low Cut"
+    },
+    "reverb/reverbMix": {
+      "kind": "rotation",
+      "ui": "Reverb Mix"
+    },
+    "reverb/reverbPreDelay": {
+      "kind": "metered",
+      "unit": "ms",
+      "min": 1,
+      "max": 200,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Reverb Pre-Delay"
+    },
+    "toneKingEQ/toneKingEQActive": {
+      "kind": "internal",
+      "writable": false,
+      "note": "Moves no published control; the EQ is switched by eqParameters/sectionActive."
+    },
+    "toneKingEQ/toneKingEQBand1": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "centre_hz": 65,
+      "ui": "EQ 65 Hz"
+    },
+    "toneKingEQ/toneKingEQBand2": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "centre_hz": 125,
+      "ui": "EQ 125 Hz"
+    },
+    "toneKingEQ/toneKingEQBand3": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "centre_hz": 250,
+      "ui": "EQ 250 Hz"
+    },
+    "toneKingEQ/toneKingEQBand4": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "centre_hz": 500,
+      "ui": "EQ 500 Hz"
+    },
+    "toneKingEQ/toneKingEQBand5": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "centre_hz": 1000,
+      "ui": "EQ 1 kHz"
+    },
+    "toneKingEQ/toneKingEQBand6": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "centre_hz": 2000,
+      "ui": "EQ 2 kHz"
+    },
+    "toneKingEQ/toneKingEQBand7": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "centre_hz": 4000,
+      "ui": "EQ 4 kHz"
+    },
+    "toneKingEQ/toneKingEQBand8": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "centre_hz": 8000,
+      "ui": "EQ 8 kHz"
+    },
+    "toneKingEQ/toneKingEQBand9": {
+      "kind": "metered",
+      "unit": "db",
+      "min": -12,
+      "max": 12,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "centre_hz": 16000,
+      "ui": "EQ 16 kHz"
+    },
+    "toneKingEQ/toneKingEQHpf": {
+      "kind": "metered",
+      "unit": "hz",
+      "min": 20,
+      "max": 500,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "EQ HPF"
+    },
+    "toneKingEQ/toneKingEQLpf": {
+      "kind": "metered",
+      "unit": "hz",
+      "min": 1000,
+      "max": 20000,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "EQ LPF",
+      "note": "20000 is the plugin's OFF."
+    },
+    "wah/wahAttack": {
+      "kind": "metered",
+      "unit": "ms",
+      "min": 10,
+      "max": 1000,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Auto-Wah Attack"
+    },
+    "wah/wahAutoWah": {
+      "kind": "switch",
+      "ui": "Auto-Wah Active"
+    },
+    "wah/wahPosition": {
+      "kind": "rotation",
+      "ui": "Wah Position"
+    },
+    "wah/wahRelease": {
+      "kind": "metered",
+      "unit": "ms",
+      "min": 10,
+      "max": 1000,
+      "range_source": "docs/measuring-against-the-plugin.md (au_probe revmap, params and values on Tone King Imperial MKII X, 2026-11-05)",
+      "ui": "Auto-Wah Release"
+    },
+    "wah/wahSensitivity": {
+      "kind": "rotation",
+      "ui": "Auto-Wah Sensitivity",
+      "note": "0..1 stored; the original stores 0..100."
+    },
+    "wahParameters/sectionActive": {
+      "kind": "switch",
+      "ui": "Wah Section Active"
+    }
+  },
+  "see_also": "packs/toneking/tone.md"
+}

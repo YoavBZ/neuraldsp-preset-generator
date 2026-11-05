@@ -1,0 +1,1810 @@
+{
+  "recipes_version": 1,
+  "pack_id": "toneking_x",
+  "description": "Composable Tone King Imperial MKII X starting points. Stack one recipe per useful layer, then adapt the result to the guitar, arrangement, and input level. Translated from packs/toneking/recipes.json: same controls, X's section names and stored units.",
+  "layers": {
+    "amp": {
+      "rhythm-clean": {
+        "title": "Balanced rhythm clean",
+        "use_when": "clear clean rhythm, arpeggios, and pedal-platform parts",
+        "parameters": [
+          {
+            "module": "ampParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "ampParameters",
+            "key": "ampChannel",
+            "value": "Rhythm"
+          },
+          {
+            "module": "ampParameters",
+            "key": "rhythmVolume",
+            "value": 38.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "rhythmBass",
+            "value": 34.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "rhythmTreble",
+            "value": 55.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "ampAttenuation",
+            "value": "0 dB"
+          },
+          {
+            "module": "ampParameters",
+            "key": "hfComp",
+            "value": "NORMAL"
+          },
+          {
+            "module": "ampParameters",
+            "key": "reverb",
+            "value": 8.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "tremoloDepth",
+            "value": 0.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "rhythm-edge": {
+        "title": "Rhythm edge of breakup",
+        "use_when": "touch-sensitive rhythm that should clean up from the guitar",
+        "parameters": [
+          {
+            "module": "ampParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "ampParameters",
+            "key": "ampChannel",
+            "value": "Rhythm"
+          },
+          {
+            "module": "ampParameters",
+            "key": "rhythmVolume",
+            "value": 63.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "rhythmBass",
+            "value": 30.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "rhythmTreble",
+            "value": 52.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "ampAttenuation",
+            "value": "0 dB"
+          },
+          {
+            "module": "ampParameters",
+            "key": "hfComp",
+            "value": "NORMAL"
+          },
+          {
+            "module": "ampParameters",
+            "key": "reverb",
+            "value": 6.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "tremoloDepth",
+            "value": 0.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "lead-crunch": {
+        "title": "Focused lead-channel crunch",
+        "use_when": "blues and classic-rock rhythm or a restrained lead",
+        "parameters": [
+          {
+            "module": "ampParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "ampParameters",
+            "key": "ampChannel",
+            "value": "Lead"
+          },
+          {
+            "module": "ampParameters",
+            "key": "leadVolume",
+            "value": 57.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "leadTone",
+            "value": 56.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "leadMidBite",
+            "value": 64.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "ampAttenuation",
+            "value": "0 dB"
+          },
+          {
+            "module": "ampParameters",
+            "key": "hfComp",
+            "value": "NORMAL"
+          },
+          {
+            "module": "ampParameters",
+            "key": "reverb",
+            "value": 0.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "tremoloDepth",
+            "value": 0.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "lead-saturated": {
+        "title": "Saturated vintage lead",
+        "use_when": "singing lead and heavier classic-rock parts driven by the amp",
+        "parameters": [
+          {
+            "module": "ampParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "ampParameters",
+            "key": "ampChannel",
+            "value": "Lead"
+          },
+          {
+            "module": "ampParameters",
+            "key": "leadVolume",
+            "value": 74.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "leadTone",
+            "value": 52.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "leadMidBite",
+            "value": 75.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "ampAttenuation",
+            "value": "0 dB"
+          },
+          {
+            "module": "ampParameters",
+            "key": "hfComp",
+            "value": "NORMAL"
+          },
+          {
+            "module": "ampParameters",
+            "key": "reverb",
+            "value": 0.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "tremoloDepth",
+            "value": 0.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "attenuated-lead": {
+        "title": "Attenuated lead with high-frequency compensation",
+        "use_when": "a driven lead should retain brightness while the virtual attenuator is engaged",
+        "parameters": [
+          {
+            "module": "ampParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "ampParameters",
+            "key": "ampChannel",
+            "value": "Lead"
+          },
+          {
+            "module": "ampParameters",
+            "key": "leadVolume",
+            "value": 74.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "leadTone",
+            "value": 50.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "leadMidBite",
+            "value": 70.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "ampAttenuation",
+            "value": "-9 dB"
+          },
+          {
+            "module": "ampParameters",
+            "key": "hfComp",
+            "value": "MAX"
+          },
+          {
+            "module": "ampParameters",
+            "key": "reverb",
+            "value": 0.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "tremoloDepth",
+            "value": 0.0
+          }
+        ],
+        "note": "HFC compensates high-frequency loss from attenuation and has no effect at 0 dB attenuation.",
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "tremolo-clean": {
+        "title": "Spring-and-tremolo clean",
+        "use_when": "vintage clean rhythm with audible but controlled amp tremolo",
+        "parameters": [
+          {
+            "module": "ampParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "ampParameters",
+            "key": "ampChannel",
+            "value": "Rhythm"
+          },
+          {
+            "module": "ampParameters",
+            "key": "rhythmVolume",
+            "value": 37.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "rhythmBass",
+            "value": 34.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "rhythmTreble",
+            "value": 55.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "reverb",
+            "value": 18.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "tremoloSpeed",
+            "value": 73.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "tremoloDepth",
+            "value": 35.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      }
+    },
+    "compressor": {
+      "gentle-glue": {
+        "title": "Gentle clean glue",
+        "use_when": "clean rhythm needs steadier pick attack without losing much dynamics",
+        "parameters": [
+          {
+            "module": "preFXParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "compressor",
+            "key": "compressorActive",
+            "value": true
+          },
+          {
+            "module": "compressor",
+            "key": "compressorCompression",
+            "value": 39.0
+          },
+          {
+            "module": "compressor",
+            "key": "compressorBlend",
+            "value": 62.0
+          },
+          {
+            "module": "compressor",
+            "key": "compressorSpeed",
+            "value": "Slow"
+          },
+          {
+            "module": "compressor",
+            "key": "compressorVolume",
+            "value": 50.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "fast-snap": {
+        "title": "Fast country and funk snap",
+        "use_when": "tight clean picking needs firm transient control",
+        "parameters": [
+          {
+            "module": "preFXParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "compressor",
+            "key": "compressorActive",
+            "value": true
+          },
+          {
+            "module": "compressor",
+            "key": "compressorCompression",
+            "value": 50.0
+          },
+          {
+            "module": "compressor",
+            "key": "compressorBlend",
+            "value": 87.0
+          },
+          {
+            "module": "compressor",
+            "key": "compressorSpeed",
+            "value": "Fast"
+          },
+          {
+            "module": "compressor",
+            "key": "compressorVolume",
+            "value": 50.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "sustain": {
+        "title": "Sustained clean lead",
+        "use_when": "a clean or lightly driven lead needs more sustain",
+        "parameters": [
+          {
+            "module": "preFXParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "compressor",
+            "key": "compressorActive",
+            "value": true
+          },
+          {
+            "module": "compressor",
+            "key": "compressorCompression",
+            "value": 63.0
+          },
+          {
+            "module": "compressor",
+            "key": "compressorBlend",
+            "value": 100.0
+          },
+          {
+            "module": "compressor",
+            "key": "compressorSpeed",
+            "value": "Fast"
+          },
+          {
+            "module": "compressor",
+            "key": "compressorVolume",
+            "value": 56.25
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "off": {
+        "title": "Compressor off",
+        "use_when": "the amp or drive already supplies enough compression",
+        "parameters": [
+          {
+            "module": "compressor",
+            "key": "compressorActive",
+            "value": false
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      }
+    },
+    "drive1": {
+      "clean-push": {
+        "title": "Low-gain level push",
+        "use_when": "push the amp harder while keeping pedal distortion restrained",
+        "parameters": [
+          {
+            "module": "preFXParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Active",
+            "value": true
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Drive",
+            "value": 20.0
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Level",
+            "value": 63.0
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Bass",
+            "value": 42.0
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Treble",
+            "value": 52.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "vintage-crunch": {
+        "title": "Vintage overdrive crunch",
+        "use_when": "an edge-of-breakup amp needs a fuller crunch layer",
+        "parameters": [
+          {
+            "module": "preFXParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Active",
+            "value": true
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Drive",
+            "value": 42.0
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Level",
+            "value": 50.0
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Bass",
+            "value": 49.0
+          },
+          {
+            "module": "drive1",
+            "key": "drive1Treble",
+            "value": 55.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "off": {
+        "title": "Overdrive 1 off",
+        "use_when": "the amp or second drive should provide all of the gain",
+        "parameters": [
+          {
+            "module": "drive1",
+            "key": "drive1Active",
+            "value": false
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      }
+    },
+    "drive2": {
+      "warm-boost": {
+        "title": "Warm second-stage boost",
+        "use_when": "a lead needs body and sustain without extreme pedal gain",
+        "parameters": [
+          {
+            "module": "preFXParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Active",
+            "value": true
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Drive",
+            "value": 20.0
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Level",
+            "value": 57.0
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Bass",
+            "value": 56.0
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Treble",
+            "value": 44.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "saturated-lead": {
+        "title": "Saturated second-stage lead",
+        "use_when": "a vintage lead needs more gain than the amp alone supplies",
+        "parameters": [
+          {
+            "module": "preFXParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Active",
+            "value": true
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Drive",
+            "value": 50.0
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Level",
+            "value": 50.0
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Bass",
+            "value": 48.0
+          },
+          {
+            "module": "drive2",
+            "key": "drive2Treble",
+            "value": 55.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "off": {
+        "title": "Overdrive 2 off",
+        "use_when": "the amp or first drive should provide all of the gain",
+        "parameters": [
+          {
+            "module": "drive2",
+            "key": "drive2Active",
+            "value": false
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      }
+    },
+    "eq": {
+      "flat": {
+        "title": "Flat graphic EQ",
+        "use_when": "the amp and cab already sit correctly in the arrangement",
+        "parameters": [
+          {
+            "module": "eqParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand1",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand2",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand3",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand4",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand5",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand6",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand7",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand8",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand9",
+            "value": 0.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "tight-low-end": {
+        "title": "Tighter low end",
+        "use_when": "the guitar masks bass or kick and needs less rumble",
+        "parameters": [
+          {
+            "module": "eqParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand1",
+            "value": -6.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand2",
+            "value": -2.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand3",
+            "value": -1.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand4",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand5",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand6",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand7",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand8",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand9",
+            "value": 0.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "lead-focus": {
+        "title": "Lead focus",
+        "use_when": "a lead needs more mid presence and less extreme low end",
+        "parameters": [
+          {
+            "module": "eqParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand1",
+            "value": -6.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand2",
+            "value": -2.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand3",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand4",
+            "value": 1.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand5",
+            "value": 1.5
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand6",
+            "value": 2.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand7",
+            "value": 1.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand8",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand9",
+            "value": -1.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "soft-top": {
+        "title": "Softer top end",
+        "use_when": "a bright pickup or close dynamic mic sounds sharp",
+        "parameters": [
+          {
+            "module": "eqParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand1",
+            "value": -3.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand2",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand3",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand4",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand5",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand6",
+            "value": 0.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand7",
+            "value": -1.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand8",
+            "value": -2.0
+          },
+          {
+            "module": "toneKingEQ",
+            "key": "toneKingEQBand9",
+            "value": -3.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      }
+    },
+    "cab": {
+      "balanced-57-ribbon": {
+        "title": "Balanced dynamic and ribbon pair",
+        "use_when": "a dependable starting point that balances attack and body",
+        "parameters": [
+          {
+            "module": "cabParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftMicType",
+            "value": "Dynamic 57 E33"
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabPosition",
+            "value": 0.5
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabDistance",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabMicLevel",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabPan",
+            "value": -10.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightMicType",
+            "value": "Ribbon 121 E33"
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabPosition",
+            "value": 0.5
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabDistance",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabMicLevel",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabPan",
+            "value": 10.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "bright-dynamics": {
+        "title": "Bright dynamic pair",
+        "use_when": "clean rhythm needs more attack and articulation",
+        "parameters": [
+          {
+            "module": "cabParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftMicType",
+            "value": "Dynamic 57 E33"
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabPosition",
+            "value": 0.42
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabDistance",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabMicLevel",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabPan",
+            "value": -8.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightMicType",
+            "value": "Dynamic 421 E33"
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabPosition",
+            "value": 0.55
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabDistance",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabMicLevel",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabPan",
+            "value": 8.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "warm-ribbons": {
+        "title": "Warm ribbon pair",
+        "use_when": "a lead or bright guitar needs a rounder cabinet balance",
+        "parameters": [
+          {
+            "module": "cabParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftMicType",
+            "value": "Ribbon 121 E33"
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabPosition",
+            "value": 0.55
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabDistance",
+            "value": 0.05
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabMicLevel",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabPan",
+            "value": -8.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightMicType",
+            "value": "Ribbon 160 E33"
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabPosition",
+            "value": 0.55
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabDistance",
+            "value": 0.05
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabMicLevel",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabPan",
+            "value": 8.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "single-57": {
+        "title": "Single close dynamic 57",
+        "use_when": "a centered, direct cabinet sound should leave stereo space elsewhere",
+        "parameters": [
+          {
+            "module": "cabParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabActive",
+            "value": true
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftMicType",
+            "value": "Dynamic 57 E33"
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabPosition",
+            "value": 0.5
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabDistance",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabMicLevel",
+            "value": 6.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "leftCabPan",
+            "value": 0.0
+          },
+          {
+            "module": "cabParameters",
+            "key": "rightCabActive",
+            "value": false
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      }
+    },
+    "chorus": {
+      "subtle-width": {
+        "title": "Subtle chorus width",
+        "use_when": "research documents a subtle chorus or width on a clean rhythm part",
+        "parameters": [
+          {
+            "module": "postFXParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "chorus",
+            "key": "chorusActive",
+            "value": true
+          },
+          {
+            "module": "chorus",
+            "key": "chorusRate",
+            "value": 50.0
+          },
+          {
+            "module": "chorus",
+            "key": "chorusDepth",
+            "value": 20.0
+          },
+          {
+            "module": "chorus",
+            "key": "chorusMix",
+            "value": 25.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "deep-vintage": {
+        "title": "Deep vintage chorus",
+        "use_when": "an exposed clean part should have obvious slow movement",
+        "parameters": [
+          {
+            "module": "postFXParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "chorus",
+            "key": "chorusActive",
+            "value": true
+          },
+          {
+            "module": "chorus",
+            "key": "chorusRate",
+            "value": 42.0
+          },
+          {
+            "module": "chorus",
+            "key": "chorusDepth",
+            "value": 70.0
+          },
+          {
+            "module": "chorus",
+            "key": "chorusMix",
+            "value": 52.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "off": {
+        "title": "Chorus off",
+        "use_when": "the part needs a stable center or another modulation source",
+        "parameters": [
+          {
+            "module": "chorus",
+            "key": "chorusActive",
+            "value": false
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      }
+    },
+    "delay": {
+      "mono-quarter": {
+        "title": "Mono quarter-note delay",
+        "use_when": "lead phrases need a conventional tempo-synced echo",
+        "parameters": [
+          {
+            "module": "postFXParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "delay",
+            "key": "delayActive",
+            "value": true
+          },
+          {
+            "module": "delay",
+            "key": "delayMode",
+            "value": "Single"
+          },
+          {
+            "module": "delay",
+            "key": "delayNoteL",
+            "value": "1/4"
+          },
+          {
+            "module": "delay",
+            "key": "delayNoteR",
+            "value": "1/4"
+          },
+          {
+            "module": "delay",
+            "key": "delayFeedback",
+            "value": 32.0
+          },
+          {
+            "module": "delay",
+            "key": "delayMix",
+            "value": 14.0
+          },
+          {
+            "module": "delay",
+            "key": "delayHighPass",
+            "value": 125.0
+          },
+          {
+            "module": "delay",
+            "key": "delayLowPass",
+            "value": 6882.0
+          },
+          {
+            "module": "delay",
+            "key": "delaySync",
+            "value": "DAW"
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "stereo-dotted-eighth": {
+        "title": "Stereo dotted-eighth delay",
+        "use_when": "clean or lead parts need rhythmic stereo motion",
+        "parameters": [
+          {
+            "module": "postFXParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "delay",
+            "key": "delayActive",
+            "value": true
+          },
+          {
+            "module": "delay",
+            "key": "delayMode",
+            "value": "Dual"
+          },
+          {
+            "module": "delay",
+            "key": "delayNoteL",
+            "value": "1/8D"
+          },
+          {
+            "module": "delay",
+            "key": "delayNoteR",
+            "value": "1/4"
+          },
+          {
+            "module": "delay",
+            "key": "delayFeedback",
+            "value": 40.0
+          },
+          {
+            "module": "delay",
+            "key": "delayMix",
+            "value": 20.0
+          },
+          {
+            "module": "delay",
+            "key": "delayHighPass",
+            "value": 158.0
+          },
+          {
+            "module": "delay",
+            "key": "delayLowPass",
+            "value": 5983.0
+          },
+          {
+            "module": "delay",
+            "key": "delaySync",
+            "value": "DAW"
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "short-slap": {
+        "title": "Short fixed-time slap",
+        "use_when": "country, rockabilly, or vintage lead needs one compact echo",
+        "parameters": [
+          {
+            "module": "postFXParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "delay",
+            "key": "delayActive",
+            "value": true
+          },
+          {
+            "module": "delay",
+            "key": "delayMode",
+            "value": "Single"
+          },
+          {
+            "module": "delay",
+            "key": "delayTimeL",
+            "value": 120.0
+          },
+          {
+            "module": "delay",
+            "key": "delayTimeR",
+            "value": 120.0
+          },
+          {
+            "module": "delay",
+            "key": "delayFeedback",
+            "value": 10.0
+          },
+          {
+            "module": "delay",
+            "key": "delayMix",
+            "value": 12.0
+          },
+          {
+            "module": "delay",
+            "key": "delayHighPass",
+            "value": 125.0
+          },
+          {
+            "module": "delay",
+            "key": "delayLowPass",
+            "value": 5627.0
+          },
+          {
+            "module": "delay",
+            "key": "delaySync",
+            "value": "Free"
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "off": {
+        "title": "Delay off",
+        "use_when": "the arrangement supplies ambience or the part must stay dry",
+        "parameters": [
+          {
+            "module": "delay",
+            "key": "delayActive",
+            "value": false
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      }
+    },
+    "reverb": {
+      "compact-room": {
+        "title": "Compact filtered room",
+        "use_when": "research documents a light room or reverb on a rhythm part; not a default",
+        "parameters": [
+          {
+            "module": "postFXParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "reverb",
+            "key": "reverbActive",
+            "value": true
+          },
+          {
+            "module": "reverb",
+            "key": "reverbMix",
+            "value": 14.0
+          },
+          {
+            "module": "reverb",
+            "key": "reverbDecay",
+            "value": 12.0
+          },
+          {
+            "module": "reverb",
+            "key": "reverbPreDelay",
+            "value": 3.0
+          },
+          {
+            "module": "reverb",
+            "key": "reverbLowCut",
+            "value": 240.0
+          },
+          {
+            "module": "reverb",
+            "key": "reverbHighCut",
+            "value": 2944.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "lead-space": {
+        "title": "Lead space",
+        "use_when": "a lead needs a clear tail without washing out the attack",
+        "parameters": [
+          {
+            "module": "postFXParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "reverb",
+            "key": "reverbActive",
+            "value": true
+          },
+          {
+            "module": "reverb",
+            "key": "reverbMix",
+            "value": 21.0
+          },
+          {
+            "module": "reverb",
+            "key": "reverbDecay",
+            "value": 22.67
+          },
+          {
+            "module": "reverb",
+            "key": "reverbPreDelay",
+            "value": 14.6
+          },
+          {
+            "module": "reverb",
+            "key": "reverbLowCut",
+            "value": 240.0
+          },
+          {
+            "module": "reverb",
+            "key": "reverbHighCut",
+            "value": 2944.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "ambient": {
+        "title": "Ambient wash",
+        "use_when": "research documents a long, prominent reverb tail on a sparse clean part",
+        "parameters": [
+          {
+            "module": "postFXParameters",
+            "key": "sectionActive",
+            "value": true
+          },
+          {
+            "module": "reverb",
+            "key": "reverbActive",
+            "value": true
+          },
+          {
+            "module": "reverb",
+            "key": "reverbMix",
+            "value": 34.0
+          },
+          {
+            "module": "reverb",
+            "key": "reverbDecay",
+            "value": 46.67
+          },
+          {
+            "module": "reverb",
+            "key": "reverbPreDelay",
+            "value": 24.9
+          },
+          {
+            "module": "reverb",
+            "key": "reverbLowCut",
+            "value": 287.0
+          },
+          {
+            "module": "reverb",
+            "key": "reverbHighCut",
+            "value": 2944.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "off": {
+        "title": "Post reverb off",
+        "use_when": "using only the amp spring reverb or keeping the part dry",
+        "parameters": [
+          {
+            "module": "reverb",
+            "key": "reverbActive",
+            "value": false
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      }
+    },
+    "output": {
+      "unity": {
+        "title": "Unity input and output",
+        "use_when": "start gain staging from neutral trims",
+        "parameters": [
+          {
+            "module": "parameters",
+            "key": "inputGain",
+            "value": 0.0
+          },
+          {
+            "module": "parameters",
+            "key": "outputGain",
+            "value": 0.0
+          },
+          {
+            "module": "parameters",
+            "key": "gateThreshold",
+            "value": -80.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "hot-pickup-pad": {
+        "title": "Hot-pickup input pad",
+        "use_when": "high-output pickups drive every recipe harder than intended",
+        "parameters": [
+          {
+            "module": "parameters",
+            "key": "inputGain",
+            "value": -4.0
+          },
+          {
+            "module": "parameters",
+            "key": "outputGain",
+            "value": 0.0
+          },
+          {
+            "module": "parameters",
+            "key": "gateThreshold",
+            "value": -72.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "low-output-lift": {
+        "title": "Low-output pickup lift",
+        "use_when": "a quiet vintage pickup needs a small level lift into the preset",
+        "parameters": [
+          {
+            "module": "parameters",
+            "key": "inputGain",
+            "value": 3.0
+          },
+          {
+            "module": "parameters",
+            "key": "outputGain",
+            "value": -1.5
+          },
+          {
+            "module": "parameters",
+            "key": "gateThreshold",
+            "value": -80.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      },
+      "headroom": {
+        "title": "Output headroom",
+        "use_when": "several gain or ambience layers make the result clip or jump in level",
+        "parameters": [
+          {
+            "module": "parameters",
+            "key": "outputGain",
+            "value": -6.0
+          },
+          {
+            "module": "parameters",
+            "key": "gateThreshold",
+            "value": -80.0
+          }
+        ],
+        "evidence": {
+          "class": "factory-corpus",
+          "source": "packs/toneking/tone.md#anchors",
+          "note": "Control roles from the plugin manual; numeric anchors from the distribution across the installed factory preset library. The values themselves are not acoustic measurements; the EQ bands (65 Hz to 16 kHz, low to high) and the drive curve were later measured by rendering, in eq_basis.json and drive_curve.json."
+        }
+      }
+    },
+    "dry": {
+      "toneking": {
+        "title": "Dry Tone King factory baseline",
+        "use_when": "starting from one of generate's Tone King factory baselines (clean or crunch): makes it dry, as it was measured",
+        "parameters": [
+          {
+            "module": "reverb",
+            "key": "reverbActive",
+            "value": false
+          },
+          {
+            "module": "delay",
+            "key": "delayActive",
+            "value": false
+          },
+          {
+            "module": "chorus",
+            "key": "chorusActive",
+            "value": false
+          },
+          {
+            "module": "ampParameters",
+            "key": "reverb",
+            "value": 0.0
+          },
+          {
+            "module": "ampParameters",
+            "key": "tremoloDepth",
+            "value": 0.0
+          },
+          {
+            "module": "parameters",
+            "key": "gateThreshold",
+            "value": -96
+          },
+          {
+            "module": "wahParameters",
+            "key": "sectionActive",
+            "value": false
+          },
+          {
+            "module": "postFXParameters",
+            "key": "sectionActive",
+            "value": true
+          }
+        ],
+        "note": "Reverb, delay, chorus and wah off, the amp's own reverb and tremolo depth at 0, the gate fully open (-96 dB), with the time-effects section itself on (so an effect turned back on is heard). The channel, amp, pedals, compressor, EQ, cab and rooms are kept. Stack it first; turn an effect back on afterwards only with its parameters set explicitly.",
+        "evidence": {
+          "class": "measured",
+          "source": "docs/toneking-baseline-results.md: the Tone King factory baselines were measured dry"
+        }
+      }
+    }
+  }
+}

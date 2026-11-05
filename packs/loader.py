@@ -120,7 +120,8 @@ class ParamSpec:
         try:
             return self.members.get(str(int(float(stored))))
         except (TypeError, ValueError):
-            return None
+            # Two-state controls stored as words: `true` / `false` in Tone King X.
+            return self.members.get(stored)
 
 
 @dataclass

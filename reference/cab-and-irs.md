@@ -81,9 +81,10 @@ to keep IR-based, and always say what you did.
 
 The fields come from the pack manifest's `custom_ir` slots: for each cab, the
 path, the selector, its "Custom IR" value, and the default to fall back to.
-Morgan declares them. Tone King does not — its fall-back mics have not been
-established — so `--strip-irs` on a Tone King preset changes nothing and warns,
-listing every file path and every mic still on `Custom IR`.
+Morgan and Tone King X declare them. The original Tone King does not — its fall-back
+mics have not been established — so `--strip-irs` on one of its presets changes
+nothing and warns, listing every file path and every mic still on `Custom IR`. The X
+editions add a per-side `leftIsCustomIR` / `rightIsCustomIR` flag, cleared with the rest.
 
 `samples/Example_Clean_PR12.xml` is already IR-free, so `--strip-irs` is a
 harmless no-op there.

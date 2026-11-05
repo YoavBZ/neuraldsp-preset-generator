@@ -518,7 +518,7 @@ def check_members(checker, lookup, spec):
         # selector and is checked as one. Morgan declares none today, so this
         # only bites a future pack.
         return None
-    indices = sorted(spec.members, key=int)
+    indices = list(spec.members)
     try:
         rows = run_probe(
             checker.binary, checker.au, "values", lookup, ",".join(indices)
