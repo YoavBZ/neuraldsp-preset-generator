@@ -192,11 +192,11 @@ matter, not that it doesn't. An arm that moves on gets the full nested recipe (8
 
 ### Phase 5, by the score (renders, 3 slots shared with the ML session)
 
-- [ ] T5.1 `learn/bakeoff_render.py`: answers in `goat/answers` and `real/answers`' shape, on read 2's units, each direction read from its search half. `M-ridge`
+- [x] T5.1 `learn/bakeoff_render.py`: answers in `goat/answers` and `real/answers`' shape, on read 2's units, each direction read from its search half. `M-ridge`
   and any ridge copy stored `RcBG`'s settings for the direction, overwrite only searched knobs, and fit residuals around RcBG's own values, so `ridge − centre`
   reads only the knob gain; `cell_centres` is not RcBG's centre (mean gap 0.022 on GOAT). Judged by `analysis.aligned` on the held half, storing `distance`, `tonal`
   and the cross-fitted term. No audio kept. Check: 10 of FTm's stored answers rendered through it match the stored judge values and `render_sha256`.
-- [ ] T5.2 Renders: `M-ridge`, then at most two finalists, ranked by their simultaneous lower bound. 1,340 each by the code (335 keys × 2 × 2). Stored judges hold `distance`
+- [~] T5.2 Renders: `M-ridge`, then at most two finalists, ranked by their simultaneous lower bound. 1,340 each by the code (335 keys × 2 × 2). Stored judges hold `distance`
   only, so `tonal` beside needs FTm, RcBG and S rendered again: about 2,700 more. FTm's own batch spanned 19 min for 1,340 by its files' times. Shards resumable; announce size and PIDs;
   stop when the ML session asks.
 - [ ] T5.3 Report `candidate − centre`, `candidate − FTm`, `candidate − S`, by item on GOAT and by DI on BKS, by fold beside, with t intervals, `tonal` beside `distance`, and
@@ -253,3 +253,4 @@ Newest last. Each entry: date, task, result, output path and sha256, audited by 
 - 2026-11-06, T3.1: `control` passed on the final base rows. `check` (`PF/bakeoff/check.json`): with labels shuffled within cell all 16 candidates read within ±0.13 on GOAT, expected for about 0.07 of noise over 48 values, and wider
   on BKS's few recordings (−0.35 to +0.27); with labels joined to the input `M-ridge` and `W-ridge` read +0.95 to +1.00 and `P-ridge`, trained on plugin labels only, +0.48 to +0.86. The second review confirmed the harness and the training code after its
   fixes; `plugin_set` and `ids is sp["train"]` rest on reading the code, and `check` has now run the first of them.
+- 2026-11-06, T5.1: 16 renders of FTm's stored answers on 2 units through `learn/bakeoff_render.py` matched every stored judge and render hash. `M-ridge`'s answers are built on RcBG's settings, 9 knobs moved on the first key. The review's "about 670" for this read is corrected in the plan: 1,340 renders each.
