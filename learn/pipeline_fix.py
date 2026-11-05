@@ -17,6 +17,7 @@ after the review's (P1-P7), and the recipe every retrain in the plan shares. Out
     $TORCH_PY -m learn.pipeline_fix train --rung a [--frac F | --sections F | --fold k | --aug]   # the ladder
     $MAIN -m learn.pipeline_fix build-dfix-real --shard k/n     # D_fix: the real rows in backings (zero renders)
     $MAIN -m learn.pipeline_fix build-dfix-real --reads-only    # ... and the read units with no row (read 2's inputs)
+    $MAIN -m learn.pipeline_fix build-dfix-real --captures      # ... and the first capture batch's units (N6)
     $TORCH_PY -m learn.pipeline_fix train --dfix --rung b [--real-fold k] --seed S      # D_fix, D_fix_k
     $TORCH_PY -m learn.pipeline_fix train --dfix --dfix-share p33 --rung b [--real-fold k] --seed S   # D_p (F39)
     $MAIN -m learn.pipeline_fix sound-recheck --names TAG [--n 20]   # stored renders rendered again, hashes compared
@@ -5934,6 +5935,11 @@ def cmd_build_dfix_real(args):
     units = dfix_units()
     if args.reads_only:                            # read 2's GOAT units with no row (`dfix_read_only`)
         units = dfix_read_only(units, goat_read_units())
+    if args.captures:                              # N6: a capture unit reads as a GOAT unit does, pool backings, lent by class
+        from learn import capture_labels as CL
+
+        require("phase_n6")
+        units = [(u["unit"], "goat", u) for u in sorted(CL.units_of(), key=lambda u: u["unit"])]
     mine = [u for q, u in enumerate(units) if q % n == kk]
     lends, t0, done = {}, time.time(), 0
     for m, (unit, kind, prt) in enumerate(mine):
@@ -5993,7 +5999,7 @@ def cmd_build_dfix_real(args):
             done += 1
         if m % 10 == 0:
             print(f"unit {m + 1}/{len(mine)}: {done} built; {(time.time() - t0) / max(1, done):.2f} s each", flush=True)
-    tag = "reads-" if args.reads_only else ""
+    tag = "captures-" if args.captures else "reads-" if args.reads_only else ""
     save(out_dir() / DFIX_DIR / f"lends-{tag}{kk}-of-{n}.json",
          {"rule": cmd_build_dfix_real.__doc__, "pool_sha256": psha, "units": lends})
     fb = sorted(u for u, r in lends.items() if r["kind"] == "bks" and r["rule"] == "class")
@@ -7499,6 +7505,7 @@ def main(argv=None):
     ap.add_argument("--data-dir", default=str(DATA))
     ap.add_argument("--shard", type=lambda v: tuple(int(z) for z in v.split("/")), default=(0, 1))
     ap.add_argument("--reads-only", action="store_true", help="build-dfix-real: only the read units with no row")
+    ap.add_argument("--captures", action="store_true", help="build-dfix-real: the first capture batch's units (N6)")
     ap.add_argument("--rung", choices=tuple(RUNG_KINDS), default="a")
     ap.add_argument("--epochs", type=int, default=1500)
     ap.add_argument("--device", choices=("mps", "cpu"), default="mps")
