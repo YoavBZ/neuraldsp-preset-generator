@@ -41,11 +41,18 @@ def seeded(xs, seed):
     return xs
 
 
-def walk(captures, players, class_of, seed, amps=AMPS, cap=DI_CAP, tries=TRIES, after=None):
+def amps_balanced(captures, seed, amps=AMPS):
+    """L1b: one forced amp per capture, balanced and seeded. -> {capture: amp}."""
+    order = seeded(captures, f"{seed}|amps")
+    return {c: amps[j % len(amps)] for j, c in enumerate(order)}
+
+
+def walk(captures, players, class_of, seed, amps=AMPS, cap=DI_CAP, tries=TRIES, after=None, amp_of=None):
     """The DI walk. Captures run in a seeded order, each with a seeded amp order and first player; its `tries` candidates
     take the players in turn, items cycling within a player, skipping a DI at the cap or already this capture's. Each amp
     takes the next candidate giving crunch if there is one, otherwise the next giving clean; other classes play nothing.
     class_of(capture, item) -> class. players: {player: [item]}. `after(capture, {amp: item})` runs after each capture.
+    `amp_of`, {capture: amp}: that capture plays that amp alone (L1b).
     -> ({capture: {amp: item}}, {capture: [item]})."""
     order = {p: seeded(v, f"{seed}|{p}") for p, v in players.items()}
     pos, used, taken, tried = {p: 0 for p in order}, {}, {}, {}
@@ -63,6 +70,8 @@ def walk(captures, players, class_of, seed, amps=AMPS, cap=DI_CAP, tries=TRIES, 
         rng = random.Random(f"{seed}|{c}")
         amp_order = list(amps)
         rng.shuffle(amp_order)
+        if amp_of:
+            amp_order = [amp_of[c]]
         start = rng.randrange(len(names))
         turn, own, dry = names[start:] + names[:start], [], set()
         while len(own) < tries and len(dry) < len(turn):
@@ -142,7 +151,7 @@ def worker(plan_path, out_dir):
         for k in [k for k in audio if k[0] == name]:
             del audio[k]
 
-    taken, tried = walk(sorted(byname), spec["players"], class_of, spec["seed"], after=keep_units)
+    taken, tried = walk(sorted(byname), spec["players"], class_of, spec["seed"], after=keep_units, amp_of=spec.get("amp_of"))
     out = pathlib.Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     np.savez(out / "renders.npz", **kept)

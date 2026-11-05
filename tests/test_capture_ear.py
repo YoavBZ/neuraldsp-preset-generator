@@ -118,3 +118,16 @@ def test_render_and_page_use_their_guards():
     assert "check_fresh(c, AM.audio_sha(y), j, rec)" in inspect.getsource(C.cmd_render)
     src = inspect.getsource(C.cmd_page)
     assert "page_leaks(kept, body, data)" in src and "if leaks:" in src
+
+
+def test_the_ear_ftm_page_maps_its_candidates_onto_the_report():
+    from learn import ear_ftm as F
+
+    assert set(F.ROLE.values()) == set(C.CANDS) and F.ROLE["FTm"] == "label" and F.ROLE["FT"] == "placebo"
+
+
+def test_draw_takes_any_part_count():
+    us = units()[:10]
+    items = C.draw(us)
+    assert len(items) == 12 and sum(it["repeat_of"] is None for it in items) == 10
+    assert len(C.draw(units())) == 14
