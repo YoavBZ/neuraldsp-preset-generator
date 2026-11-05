@@ -2701,7 +2701,7 @@ def cmd_real_predict(args):
     if args.names == "RcM":
         return real_rcm_answers()
     if args.names in ("P2a-pc", "P2a-pcsz", "P2a-real", "P2a-reals2", "P2a-pc-Sc", "P2a-goat", "P2a-goatshuf") \
-            or args.names in DFIX_READS or args.names == FT_BASE:
+            or args.names in DFIX_READS or args.names in (FT_BASE, FTM_BASE, FTS_TAG):
         return real_predict_5b2(args.names)
     if args.names == "S-shift":
         require("phase_5b1b")
@@ -2763,6 +2763,8 @@ def read_phase(name):
     """The ledger phase a read-2 model tag answers under: FT's, a D_fix family member's, 5C's or 5B.2's."""
     if name == FT_BASE:
         return "phase_ft"
+    if name in (FTM_BASE, FTS_TAG):
+        return "phase_night2"
     if name.startswith("P2b-dfix"):
         return dfix_phase(name)
     return "phase_5c" if name.startswith("P2a-goat") else "phase_5b2"
@@ -2791,9 +2793,9 @@ def real_predict_5b2(name):
     elif name.startswith("P2a-goat"):                   # 5C: RG and RGshuf, each BKS unit by its DI's fold model
         folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
         names = {p_["unit"]: f"{name}{folds[p_['di']]}" for p_ in parts}
-    elif name == FT_BASE:                               # FT's read 2: each BKS unit by its DI's FT_k
+    elif name in (FT_BASE, FTM_BASE, FTS_TAG):          # FT's read 2: each BKS unit by its DI's FT_k
         folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
-        names = {p_["unit"]: ft_name(folds[p_["di"]]) for p_ in parts}
+        names = {p_["unit"]: ft_name(folds[p_["di"]], base=FTM_BASE if name == FTS_TAG else name) for p_ in parts}
     elif name.startswith("P2b-dfix"):                   # D_fix's read 2: each BKS unit by its DI's fold model only
         if name not in DFIX_READS:
             raise SystemExit(f"--names {sorted(DFIX_READS)} (each read by its fold models: an all-labels run saw every"
@@ -2818,7 +2820,9 @@ def real_predict_5b2(name):
         nets, _, target, const = models[names[prt["unit"]]]
         ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
         g = DE.inference_gain_db(ref, target)
-        backed = dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE) else None
+        backed = stem_backed(prt["unit"]) if name == FTS_TAG else dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE, FTM_BASE) else None
+        if name == FTS_TAG and backed is None:
+            continue
         for amp in AMPS3:
             sel, S = ms[amp][prt["cls"]]
             key = real_key(prt, amp)
@@ -2837,6 +2841,8 @@ def real_predict_5b2(name):
                                            sw, mics)
                 else:
                     st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
+                    if name in (FTM_BASE, FTS_TAG):
+                        st = hold_outside_space(st, S, amp)
                 out[name].setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(st)}
             if name == "P2a-pc":
                 out[f"{name}-constant"][key] = {ANY_HALF: {"select": sel, "settings": LO.sdict(
@@ -2844,7 +2850,7 @@ def real_predict_5b2(name):
     for t, a in out.items():
         save(out_dir() / REAL_DIR / "answers" / f"{t}.json", {
             "plan": PLAN, "ledger": f"{LEDGER_ID} {read_phase(name)}",
-            "tag": t, "parts": parts, "input": "backed (variant 0)" if name in (*DFIX_BASES, FT_BASE) else "clean", "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
+            "tag": t, "parts": parts, "input": "X-LANCE stem" if name == FTS_TAG else "backed (variant 0)" if name in (*DFIX_BASES, FT_BASE, FTM_BASE) else "clean", "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
             "unit_model": names, "answers": a, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"REAL PREDICT 5B.2 DONE: {name} on {len(parts)} units")
 
@@ -3605,14 +3611,40 @@ def goat_rows(fold, target, shuffle=False):
 
 
 def cmd_goat_search(args):
-    """5C's label searches (one shard of GOAT units): as 5B.2's stage 2 (`cmd_real_search`), per unit on its forced amp
-    only: three fresh S renders (one per amp, the class's S) give the judge lag, S's judge and its sha (saved, so the
-    search resumes); then one discarded priming render and arm A's main stage (`K.space`, 52 evaluations, seed
-    20261013) from S with the unit's DI, scored by the judge's distance to the render on the unit's search half
-    (`goat_halves`); S's first evaluation must be bit-identical to its fresh render; the label is the best's
-    in-process render. With `--lags-only` (run first, over every shard): the S renders and lags alone; the search
-    pass then refuses, before searching, the units the one-window lag rule (`goat_lag_refused`) refuses.
-    -> goat/search/<unit>|<amp>.json, goat/lags/<unit>.json."""
+    """5C's label searches (one shard of GOAT units): `search_units` on the units the ear passed. With `--lags-only`
+    (run first, over every shard) the S renders and lags alone; the search pass then refuses, before searching, the
+    units the one-window lag rule (`goat_lag_refused`) refuses. -> goat/search/<unit>|<amp>.json, goat/lags/<unit>.json."""
+    require("phase_5c")
+    parts = sorted(goat_units(), key=lambda p_: p_["unit"])
+    halves = goat_halves(parts)
+    heard = goat_ear_passed([p_["unit"] for p_ in parts])     # before any render; only "amp" units go on
+    parts = [p_ for p_ in parts if p_["unit"] in heard]
+    k, n = args.shard
+    mine = [p_ for j, p_ in enumerate(parts) if j % n == k]
+    refused = set()
+    if not args.lags_only:                             # the lag rule over every unit, before any search
+        ldir = out_dir() / GOAT_DIR / "lags"
+        lp_ = {p_["unit"]: ldir / f"{p_['unit'].replace('/', '__')}.json" for p_ in parts}
+        missing = [u for u, q in lp_.items() if not q.exists()]
+        if missing:
+            raise SystemExit(f"{len(missing)} units have no lag: run goat-search --lags-only first")
+        _, refused = goat_lags_refused({p_["unit"]: p_ for p_ in parts}, [p_["unit"] for p_ in parts])
+        short = goat_short_cells([p_ for p_ in parts if p_["unit"] not in refused])
+        if short:
+            raise SystemExit(f"under {GOAT_MIN_PER_CELL} trusted units in {short}: the pilot stops at the data stage")
+    renders = search_units(mine, out_dir() / GOAT_DIR, "phase_5c", halves, refused, args.lags_only)
+    print(f"GOAT-SEARCH{' LAGS' if args.lags_only else ''} DONE {k}/{n}: {renders} renders")
+
+
+def search_units(mine, root, phase, halves, refused, lags_only, quiet=False, searcher=None):
+    """5C's labels, for GOAT's units and L1a's captures alike (`root` holds search/ and lags/), as 5B.2's stage 2
+    (`cmd_real_search`), per unit on its forced amp only: three fresh S renders (one per amp, the class's S) give the
+    judge lag, S's judge and its sha (saved, so the search resumes); then one discarded priming render and arm A's main
+    stage (`K.space`, 52 evaluations, seed 20261013) from S with the unit's DI, scored by the judge's distance to the
+    render on the unit's search half (`halves`); S's first evaluation must be bit-identical to its fresh render; the
+    label is the best's in-process render. With `lags_only`, the S renders and lags alone. Units in `refused` are
+    recorded, not searched. With `quiet`, the log names units and render counts only, no judge figure. `searcher(dims, S, f,
+    amp)` -> (best x, best value, evaluations) replaces the main stage (N2's v2). -> renders made."""
     import numpy as np
 
     from analysis.aligned import estimate_lag
@@ -3626,13 +3658,6 @@ def cmd_goat_search(args):
     from learn import song_bank as B
     from learn import trusted_data as T
 
-    require("phase_5c")
-    parts = sorted(goat_units(), key=lambda p_: p_["unit"])
-    halves = goat_halves(parts)
-    heard = goat_ear_passed([p_["unit"] for p_ in parts])     # before any render; only "amp" units go on
-    parts = [p_ for p_ in parts if p_["unit"] in heard]
-    k, n = args.shard
-    mine = [p_ for j, p_ in enumerate(parts) if j % n == k]
     trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
     ms = L.menu_S()
     LO._wait_cap()
@@ -3645,7 +3670,7 @@ def cmd_goat_search(args):
         for cls, (_, S) in by_cls.items():
             if K.key(dict(menu[amp][K.START[cls][amp]][1])) != K.key(S):
                 raise SystemExit(f"{amp} {cls}: the live S differs from the stored copy")
-    sdir, ldir = out_dir() / GOAT_DIR / SEARCH_DIR, out_dir() / GOAT_DIR / "lags"
+    sdir, ldir = root / SEARCH_DIR, root / "lags"
     renders = 0
 
     def sorted_x(x):                                   # edits in 5B.1's order (`sdict` sorts the keys)
@@ -3659,24 +3684,13 @@ def cmd_goat_search(args):
     def fname(key):
         return key.replace("/", "__")
 
-    refused = set()
-    if not args.lags_only:                             # the lag rule over every unit, before any search
-        lp_ = {p_["unit"]: ldir / f"{fname(p_['unit'])}.json" for p_ in parts}
-        missing = [u for u, q in lp_.items() if not q.exists()]
-        if missing:
-            raise SystemExit(f"{len(missing)} units have no lag: run goat-search --lags-only first")
-        _, refused = goat_lags_refused({p_["unit"]: p_ for p_ in parts}, [p_["unit"] for p_ in parts])
-        short = goat_short_cells([p_ for p_ in parts if p_["unit"] not in refused])
-        if short:
-            raise SystemExit(f"under {GOAT_MIN_PER_CELL} trusted units in {short}: the pilot stops at the data stage")
-
     for prt in mine:
         if PS.free_gb() < T.DISK_GUARD_GB:
             raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
         amp = prt["amp"]
         key = real_key(prt, amp)
         path = sdir / f"{fname(key)}.json"
-        if path.exists() or (args.lags_only and (ldir / f"{fname(prt['unit'])}.json").exists()):
+        if path.exists() or (lags_only and (ldir / f"{fname(prt['unit'])}.json").exists()):
             continue
         di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
         di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
@@ -3685,8 +3699,8 @@ def cmd_goat_search(args):
         held = "B" if search == "A" else "A"
         lp = ldir / f"{fname(prt['unit'])}.json"
         rec = json.loads(lp.read_text()) if lp.exists() else None
-        if rec is not None and rec.get("phase") != "phase_5c":
-            raise SystemExit(f"{lp.name}: a GOAT unit has a lag from another phase")
+        if rec is not None and rec.get("phase") != phase:
+            raise SystemExit(f"{lp.name}: a unit has a lag from another phase")
         if rec is None:
             ys = {}
             for a in AMPS3:
@@ -3697,17 +3711,17 @@ def cmd_goat_search(args):
                 lag, status = int(estimate_lag(ref, list(ys.values()))), "ok"
             except ValueError as err:
                 lag, status = None, f"no lag: {err}"
-            save(lp, {"unit": prt["unit"], "lag": lag, "status": status, "phase": "phase_5c",
+            save(lp, {"unit": prt["unit"], "lag": lag, "status": status, "phase": phase,
                       "item_lag": prt["item_lag"],
                       "s": {a: {"judge": None if lag is None else K.judge(ref, ys[a], di, lag),
                                 "render_sha256": AM.audio_sha(ys[a])} for a in AMPS3}})
             rec = json.loads(lp.read_text())
         lag = rec["lag"]
-        if args.lags_only:
+        if lags_only:
             print(f"{prt['unit'][-60:]}: lag {lag} (item {prt['item_lag']}); renders so far {renders}", flush=True)
             continue
         if lag is None or prt["unit"] in refused:
-            save(path, {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "unit": prt["unit"], "rig": prt["rig"],
+            save(path, {"plan": PLAN, "ledger": f"{LEDGER_ID} {phase}", "unit": prt["unit"], "rig": prt["rig"],
                         "di": prt["di"], "item": prt["item"], "fold": prt["fold"], "cls": prt["cls"], "amp": amp,
                         "lag": lag, "item_lag": prt["item_lag"], "label": None,
                         "why": rec["status"] if lag is None else "the one-window lag rule",
@@ -3736,40 +3750,46 @@ def cmd_goat_search(args):
                 curve.append(j[search])
                 return j[search]
 
-            best_x, best_v, evals = L.main_stage(dims, S, f, seed=L.SEED)
+            best_x, best_v, evals = (searcher(dims, S, f, amp) if searcher else L.main_stage(dims, S, f, seed=L.SEED))
             renders += evals
         finally:
             rr.close()
         best = dict(seen[K.key(best_x)], settings=LO.sdict(best_x))
         best["fallback"] = A.fallback_reason(best["peak_dbfs"], best["judge"][search])
-        save(path, {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "unit": prt["unit"], "rig": prt["rig"],
+        save(path, {"plan": PLAN, "ledger": f"{LEDGER_ID} {phase}", "unit": prt["unit"], "rig": prt["rig"],
                     "di": prt["di"], "item": prt["item"], "fold": prt["fold"], "cls": prt["cls"], "amp": amp,
                     "select": sel, "search": search, "held": held, "lag": lag, "item_lag": prt["item_lag"],
                     "s_judge": s_j, "s_render_sha256": s_sha, "s_first": first, "curve": curve, "evaluations": evals,
                     "best_search_value": best_v, "best": best,
                     "label": None if best["fallback"] else best["settings"],
                     "time": time.strftime("%Y-%m-%d %H:%M:%S")})
-        print(f"{key[-70:]}: {search}->{held} S {s_j[held]:.3f} best {best['judge'][held]:.3f}; renders so far "
-              f"{renders}", flush=True)
-    print(f"GOAT-SEARCH{' LAGS' if args.lags_only else ''} DONE {k}/{n}: {renders} renders")
+        print(f"{key[-70:]}: renders so far {renders}" if quiet else f"{key[-70:]}: {search}->{held} S {s_j[held]:.3f} best "
+              f"{best['judge'][held]:.3f}; renders so far {renders}", flush=True)
+    return renders
 
 
 GOAT_STOP_BOUND_SHARE = 0.5         # the staged stop: more than this share of labels with inputGain at a bound
 
 
 def cmd_goat_stage_check(args):
-    """5C's staged stop (zero renders), run once a third of the trusted units are searched: the in-process best's
-    held-half log ratio to S, clustered by item (`clustered`), and the share of labels whose inputGain sits at a bound
-    of `K.space`. Stop when the held-half interval's upper end is at or above 0 (the searches do not decidedly beat
-    S where they did not search) or the bound share exceeds GOAT_STOP_BOUND_SHARE (the captures' input calibration
-    would set the labels). -> goat/stage-check.json."""
+    require("phase_5c")
+    stage_check(out_dir() / GOAT_DIR, "phase_5c")
+
+
+def stage_read(root, phase, keep=None):
+    """5C's staged stop, for GOAT and L1a alike (zero renders): the in-process best's held-half log ratio to S, clustered
+    by each record's `item` (L1a's are creators; `clustered`), and the share of labels whose inputGain sits at a bound of `K.space`, over the search records
+    (of the units in `keep`, if given). Stop when the held-half interval's upper end is at or above 0 (the searches do
+    not decidedly beat S where they did not search) or the bound share exceeds GOAT_STOP_BOUND_SHARE (the captures' input
+    calibration would set the labels). -> the record."""
     from learn import arm_a_levers as L
     from learn import knob_ceiling as K
     from learn import local_objective as LO
 
-    require("phase_5c")
     ms = L.menu_S()
-    recs = [json.loads(p_.read_text()) for p_ in sorted((out_dir() / GOAT_DIR / SEARCH_DIR).glob("*.json"))]
+    recs = [json.loads(p_.read_text()) for p_ in sorted((root / SEARCH_DIR).glob("*.json"))]
+    if keep is not None:
+        recs = [r for r in recs if r["unit"] in keep]
     lab = [r for r in recs if r["label"] is not None]
     rows = [(r["item"], r["unit"], math.log(r["best"]["judge"][r["held"]] / r["s_judge"][r["held"]])) for r in lab
             if r["s_judge"][r["held"]] and r["best"]["judge"][r["held"]] > 0]
@@ -3782,12 +3802,19 @@ def cmd_goat_stage_check(args):
     c = clustered(rows) if rows else {}
     share = sum(at) / len(at) if at else None
     stop = bool(rows) and (c["hi90"] >= 0 or share > GOAT_STOP_BOUND_SHARE)
-    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "searched": len(recs), "labelled": len(lab),
-           "held_best_minus_S": {q: c.get(q) for q in ("mean", "lo90", "hi90", "clusters")},
-           "input_gain_at_bound_share": share, "stop": stop, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
-    save(out_dir() / GOAT_DIR / "stage-check.json", out)
-    print(f"GOAT STAGE CHECK: {len(lab)} labels; held best - S {c.get('mean')} [{c.get('lo90')}, {c.get('hi90')}];"
-          f" inputGain at a bound {share}; {'STOP' if stop else 'go on'}")
+    return {"plan": PLAN, "ledger": f"{LEDGER_ID} {phase}", "searched": len(recs), "labelled": len(lab),
+            "held_best_minus_S": {q: c.get(q) for q in ("mean", "lo90", "hi90", "clusters")},
+            "input_gain_at_bound_share": share, "stop": stop, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+
+
+def stage_check(root, phase, keep=None):
+    """`stage_read`, saved and printed. -> root/stage-check.json."""
+    out = stage_read(root, phase, keep)
+    save(root / "stage-check.json", out)
+    h = out["held_best_minus_S"]
+    print(f"STAGE CHECK: {out['labelled']} labels; held best - S {h['mean']} [{h['lo90']}, {h['hi90']}];"
+          f" inputGain at a bound {out['input_gain_at_bound_share']}; {'STOP' if out['stop'] else 'go on'}")
+    return out
 
 
 def goat_lags_refused(units, heard, tol=None):
@@ -3888,7 +3915,7 @@ def goat_predict(name):
     units = goat_read_units()
     models = {}
     for k in sorted({p_["fold"] for p_ in units}):
-        nm = (ft_name(k) if name == FT_BASE else dfix_fold_name(name, k) if name in DFIX_BASES
+        nm = (ft_name(k, base=FTM_BASE if name == FTS_TAG else name) if name in (FT_BASE, FTM_BASE, FTS_TAG) else dfix_fold_name(name, k) if name in DFIX_BASES
               else f"{name}{k}")
         nets, recs = zip(*(load_run(nm, sd, "best") for sd in SEEDS))
         for r_ in recs:
@@ -3902,7 +3929,9 @@ def goat_predict(name):
         g = DE.inference_gain_db(ref, target)
         amp = prt["amp"]
         sel, S = ms[amp][prt["cls"]]
-        backed = dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE) else None   # D_fix, FT: pool-backed
+        backed = stem_backed(prt["unit"]) if name == FTS_TAG else dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE, FTM_BASE) else None   # D_fix, FT: pool-backed
+        if name == FTS_TAG and backed is None:
+            continue
         for search in ("A", "B"):
             if backed is not None:
                 s8, ls = backed[search]
@@ -3911,6 +3940,8 @@ def goat_predict(name):
             x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
             r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
             st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
+            if name in (FTM_BASE, FTS_TAG):
+                st = hold_outside_space(st, S, amp)
             out.setdefault(real_key(prt, amp), {})[search] = {"select": sel, "settings": LO.sdict(st)}
     save(out_dir() / GOAT_DIR / "answers" / f"{name}.json", {
         "plan": PLAN, "ledger": f"{LEDGER_ID} {read_phase(name)}",
@@ -3921,7 +3952,7 @@ def goat_predict(name):
 
 
 def cmd_goat_predict(args):
-    if args.names not in ("P2a-goat", "P2a-goatshuf", *DFIX_BASES, FT_BASE):
+    if args.names not in ("P2a-goat", "P2a-goatshuf", *DFIX_BASES, FT_BASE, FTM_BASE, FTS_TAG):
         raise SystemExit(f"--names P2a-goat, P2a-goatshuf, {FT_BASE} or one of {', '.join(DFIX_BASES)} (fold models)")
     goat_predict(args.names)
 
@@ -3992,6 +4023,8 @@ def cmd_goat_report(args):
         for p_ in (out_dir() / GOAT_DIR / "judge" / t).glob("*.json"):
             r = json.loads(p_.read_text())
             judge[t][f"{r['unit']}|{r['amp']}"] = r["judge"]
+    if "S" in tags:                                    # S's judges live in the search records
+        judge["S"] = {f"{r['unit']}|{r['amp']}": {ANY_HALF: r["s_judge"]} for r in goat_labels()[0]}
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "units": len(units),
            "lag_tol": GOAT_LAG_TOL if args.lag_tol is None else args.lag_tol, "rows": {}}
     keep = ("mean", "lo90", "hi90", "clusters", "clusters_negative", "part_weighted", "parts", "parts_negative")
@@ -4293,12 +4326,12 @@ def cmd_real_heads(args):
     print("REAL-HEADS DONE")
 
 
-ARM_FOLD_PHASES = ("phase_5b2", "phase_5c", "phase_dfix", "phase_ft", "phase_ft_groups")    # real-report's phases whose models share 5B.2's DI folds
+ARM_FOLD_PHASES = ("phase_5b2", "phase_5c", "phase_dfix", "phase_ft", "phase_ft_groups", "phase_night2")    # real-report's phases whose models share 5B.2's DI folds
 
 
 def report_phase(tags):
     """real-report's ledger phase for the tags it reads."""
-    return ("phase_ft_groups" if any(t.startswith("FTg-") for t in tags) else "phase_ft" if FT_BASE in tags else "phase_dfix" if tags & DFIX_READS else "phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
+    return ("phase_ft_groups" if any(t.startswith("FTg-") for t in tags) else "phase_night2" if tags & {FTM_BASE, FTH_TAG, FTS_TAG} else "phase_ft" if FT_BASE in tags else "phase_dfix" if tags & DFIX_READS else "phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
             else "phase_5b2_rigo" if tags & {"RigO", "RcM"}
             else "phase_5b2" if any(t.startswith(("P2a-pc", "P2a-real", "Rc")) for t in tags)
             else "phase_5b1b" if any(t in ("P2a-Sc", "S-shift") for t in tags) else "phase_5b1")
@@ -6620,20 +6653,93 @@ FT_LR, FT_CAP = 1e-4, 100            # the declared rate and epoch cap; the fall
 FT_FALLBACK_LR, FT_FALLBACK_CAP = 3e-5, 300
 FT_PATIENCE, FT_MIN_FALL, FT_SMOOTH, FT_EVERY = 15, 1e-3, 3, 5
 FT_PRETRAIN = "P2b-wide24"           # W: its NS-best checkpoint per seed is FT's start
+FTM_BASE = "P2b-ftm"                 # N1: FT with the heads outside the search masked on real rows
+FTH_TAG = "P2b-fth"                  # N1's isolation: FT's stored answers, controls outside the search at S
+FTS_TAG = "P2b-ftm-stem"             # N5's score read: FTm_k on the units' X-LANCE stems (`night3`)
 
 
-def ft_name(k, inner=False, lr=FT_LR, cap=FT_CAP):
+def searched_heads(amp, S):
+    """N1: the (continuous, switch, mic) masks of the heads `K.space(amp, S)` searches."""
+    import numpy as np
+
+    from learn import full_space as F
+    from learn import knob_ceiling as K
+
+    keys = {(d.module, d.key) for d in K.space(amp, S)}
+    D = F.by_name()
+    return tuple(np.array([(D[n].module, D[n].key) in keys for n in names], np.float32) for names in (F.CONT, F.SW, F.CAT))
+
+
+def curve_rows(rows, frac=1.0, shuffle=False, seed=20261109):
+    """N3: the training real rows at `frac` of each amp-and-class cell's records, seeded and nested across shares, or with
+    `shuffle` the records' labels permuted within the cell. Real rows are cycled copies: a record's copies stay together
+    and keep one label. A row's masks follow its amp and class, and the sounding masks travel with the label."""
+    import random
+
+    cells = {}
+    for r in rows:
+        cells.setdefault((r["amp"], r["cls"]), {}).setdefault(r["real"], []).append(r)
+    rng, out = random.Random(f"{seed}|{shuffle}"), []
+    for key in sorted(cells):
+        units = sorted(cells[key])
+        if shuffle:
+            labels = [cells[key][u][0]["label"] for u in units]
+            rng.shuffle(labels)
+            out += [dict(r, label=x) for u, x in zip(units, labels) for r in cells[key][u]]
+        else:
+            rng.shuffle(units)
+            out += [r for u in units[:max(1, round(frac * len(units)))] for r in cells[key][u]]
+    return sorted(out, key=lambda r: r["i"])
+
+
+def mask_searched(Y, rows, ms):
+    """N1: on every real row (training or held), the heads the search did not move leave the loss, and the amp head too.
+    Y: the data's encoded labels (`c, cm, s, sm, k, km, a`), changed in place; ms: `menu_S`."""
+    for j, r in enumerate(rows):
+        if "real" in r:
+            c, s, k = searched_heads(r["amp"], ms[r["amp"]][r["cls"]][1])
+            Y[1][j] *= c
+            Y[3][j] *= s
+            Y[5][j] *= k
+            Y[6][j] = -100                     # a forced amp is no label for the amp head
+
+
+def stem_backed(unit):
+    """N5: a real unit's X-LANCE stem input (`night3`), as `dfix_backed`'s {half: (uint8 mel, LUFS)}; None if it has none."""
+    import numpy as np
+
+    p = out_dir() / "night3" / "inputs" / f"{unit.replace('/', '__')}.npz"
+    if not p.exists():
+        return None
+    d = np.load(p)
+    return {"A": (d["sA"], float(d["lufs"][0])), "B": (d["sB"], float(d["lufs"][1]))}
+
+
+def hold_outside_space(x, S, amp):
+    """N1's readout: the searched controls from the answer, every other control at S (those heads keep W's training)."""
+    from learn import full_space as F
+    from learn import knob_ceiling as K
+
+    y = F.sections_on(dict(S))
+    for d in K.space(amp, S):
+        k = (d.module, d.key)
+        if k in x:
+            y[k] = x[k]
+    return y
+
+
+def ft_name(k, inner=False, lr=FT_LR, cap=FT_CAP, base=FT_BASE):
     """FT's run names: `P2b-ft` (every label), `P2b-ft-k{k}` (fold k out), `P2b-ft-k{k}-inner` (k's epoch choice;
-    a fallback's inner runs `-lr3e-05` and/or `-cap300` after it, so the declared ones are kept)."""
+    a fallback's inner runs `-lr3e-05` and/or `-cap300` after it, so the declared ones are kept). `base` N1's."""
     if k is None:
         if inner:
             raise SystemExit("an inner run needs --real-fold")
-        return FT_BASE
+        return base
     if k not in range(REAL_FOLDS):
         raise SystemExit(f"--real-fold in 0..{REAL_FOLDS - 1}")
     if not inner:
-        return f"{FT_BASE}-k{k}"
-    return f"{FT_BASE}-k{k}-inner" + ("" if lr == FT_LR else f"-lr{lr:g}") + ("" if cap == FT_CAP else f"-cap{cap}")
+        return f"{base}-k{k}"
+    return f"{base}-k{k}-inner" + ("" if lr == FT_LR else f"-lr{lr:g}") + ("" if cap == FT_CAP else f"-cap{cap}")
 
 
 def ft_rows_of(brecs, by_unit, folds, grecs, gunits, k, inner, label_of=None):
@@ -6743,12 +6849,26 @@ def cmd_train_ft(args):
 
     require("phase_ft")
     k, inner, seed = args.real_fold, bool(args.inner), args.seed
+    masked = bool(getattr(args, "masked", False))
+    frac, shuf = float(getattr(args, "real_frac", 1.0)), bool(getattr(args, "shuffle_real", False))
+    curve = frac < 1 or shuf
+    base = FTM_BASE if masked else FT_BASE
+    if masked:
+        require("phase_night2")
+        if k is None:
+            require("phase_n4")                        # the all-labels FTm, for N4's ear read only
+    if curve:                                          # N3: FTm's E, as many updates, on fewer rows or shuffled labels
+        require("phase_n3")
+        if not masked or inner:
+            raise SystemExit("N3 runs masked FT_k only")
     if k is None:
         require("phase_ft_carry")
     if seed not in SEEDS:
         raise SystemExit(f"--seed in {SEEDS}")
     lr, cap = ft_rate(args)
-    name = ft_name(k, inner, lr, cap)                  # FT_k's name is one at any setting; its (lr, cap) recorded
+    name = ft_name(k, inner, lr, cap, base)            # FT_k's name is one at any setting; its (lr, cap) recorded
+    if curve:
+        name = f"{base}{'s' if shuf else f'f{round(frac * 100)}'}-k{k}"
     od = out_dir() / "runs"
     rp = od / f"{name}-{seed}.json"
     if rp.exists():
@@ -6758,10 +6878,11 @@ def cmd_train_ft(args):
         epochs = cap
     else:
         def inner_set(lr_, cap_):
-            ps = [od / f"{ft_name(q, True, lr_, cap_)}-{sd}.json" for q in range(REAL_FOLDS) for sd in SEEDS]
+            ps = [od / f"{ft_name(q, True, lr_, cap_, base)}-{sd}.json" for q in range(REAL_FOLDS) for sd in SEEDS]
             return [json.loads(q.read_text()) for q in ps] if all(q.exists() for q in ps) else None
 
-        why = ft_fallback_refusal(inner_set, lr, cap)
+        why = ("the 8 inner runs are not all done" if inner_set(lr, cap) is None else None) if masked \
+            else ft_fallback_refusal(inner_set, lr, cap)
         if why:
             raise SystemExit(f"{name}: {why}")
         allin = inner_set(lr, cap)
@@ -6781,11 +6902,18 @@ def cmd_train_ft(args):
         raise SystemExit(f"{FT_PRETRAIN}-{seed}: trained on other plugin rows than FT's")
     doubled = doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
     rrows, real_held, info = ft_real_rows(k, inner)
+    if curve:                                          # as many updates as FTm: the kept rows' batches fix the epochs
+        from learn import pretrain_set as PS
+
+        n0, rrows = len(rrows), curve_rows(rrows, frac, shuf)
+        epochs = int(round(epochs * math.ceil(n0 / PS.BATCH) / math.ceil(len(rrows) / PS.BATCH)))
     plugin_tr = tr
     tr, rows = with_rows(tr, rows, rrows)
     rows = rows + [dict(r, held=True) for r in real_held]
     data = DfixData(rows, rung_path(croot, "b", doubled), set(plugin_tr), {r["i"] for r in rrows}, 1.0)
-    if not inner:                                      # every unit loaded: D_fix_k's (or D_fix's) inputs exactly
+    if masked:
+        mask_searched(data.Y, rows, A_menu_S())
+    if not inner and frac == 1:                        # every unit loaded: D_fix_k's (or D_fix's) inputs exactly
         ref = dfix_run_name(k)
         want = json.loads((od / f"{ref}-{seed}.json").read_text())["dfix"]["inputs_sha256"]
         if data.inputs_sha256 != want:
@@ -6827,8 +6955,8 @@ def cmd_train_ft(args):
             watch["real_held"] = rh
         net, final, best_state, best_ep, best = fit(data, ti, watch, None, seed, dev, log, epochs, every=FT_EVERY,
                                                     init=init, lr=lr)
-    out = {"plan": PLAN, "test": name, "ledger": f"{LEDGER_ID} phase_ft", "rung": "b", "seed": seed, "real_fold": k,
-           "inner": inner, "lr": lr, "cap": cap, "init": {"run": f"{FT_PRETRAIN}-{seed}", "which": "best",
+    out = {"plan": PLAN, "test": name, "ledger": f"{LEDGER_ID} {'phase_night2' if masked else 'phase_ft'}", "rung": "b",
+           "seed": seed, "real_fold": k, "masked": masked, "real_frac": frac, "shuffle_real": shuf, "inner": inner, "lr": lr, "cap": cap, "init": {"run": f"{FT_PRETRAIN}-{seed}", "which": "best",
                                                           "sha256": wrec["model_sha256"]["best"]},
            "train_ids": plugin_tr + [r["i"] for r in rrows], "ft_train_ids": [r["i"] for r in rrows],
            "held": held_name, "held_ids": held, "real_held_ids": [r["i"] for r in real_held],
@@ -7412,6 +7540,9 @@ def main(argv=None):
     ap.add_argument("--lags-only", action="store_true")
     ap.add_argument("--lag-tol", type=int, default=None)       # goat-report: read A on a narrower lag set
     ap.add_argument("--inner", action="store_true", help="train-ft: fold k's epoch-choice run")
+    ap.add_argument("--masked", action="store_true", help="train-ft: N1, heads outside the search masked on real rows")
+    ap.add_argument("--real-frac", type=float, default=1.0, help="train-ft: N3, this share of the training real rows")
+    ap.add_argument("--shuffle-real", action="store_true", help="train-ft: N3, labels shuffled within amp and class")
     ap.add_argument("--ft-lr", type=float, default=None)       # train-ft: a declared fallback only
     ap.add_argument("--ft-cap", type=int, default=None)
     args = ap.parse_args(argv)
