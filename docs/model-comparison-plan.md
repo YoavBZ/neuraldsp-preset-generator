@@ -37,9 +37,10 @@ Set by the ML session on 2026-11-05 unless marked. They hold for the whole plan.
 - Renders run as resumable shards. When the ML session says its centre read is about to start, finish the process in hand,
   start no other, and resume when it says.
 - Before each render batch or MPS run, tell the ML session its size and PIDs.
-- MPS is ours while the ML session is not training: one run at a time (the ML session allows 2, the controller's rule of
-  2026-11-05 says one GPU job, so the stricter holds), un-niced (`setopt no_bg_nice`), loss on CPU (the stft gradient bug).
-- Disk guard 31 GB, 39 GB free at the start: keep outputs small, store no audio or feature dumps.
+- MPS is ours while the ML session is not training: one GPU job at a time on the whole Mac (the controller's rule of 2026-11-05,
+  which replaces the ML session's 2), un-niced (`setopt no_bg_nice`), loss on CPU (the stft gradient bug).
+- Disk guard 31 GB, 39 GB free at the start: stop new builds under 33 GB free and tell the executor (controller, 2026-11-05).
+  Keep outputs small, store no audio or feature dumps.
 - Morgan rules: `isolate=True`, one priming render, 0.25 s trim, a fresh process for time effects.
 - Kill only PIDs this session launched. Leave render processes of others and anything PACE-related alone.
 
@@ -105,6 +106,8 @@ Written in T2.1, once the report sets the order. Known so far:
 - Ridge by the score (the review's step 2, about 670 renders, handed over by the ML session), with its input stated and
   `tonal` beside `distance`.
 - Candidate networks and features chosen by the report.
+- Drive on crunch, which representation reads it (the review's step 3): this plan owns it, by agreement with the ML session, which
+  has taken step 4, the other-guitar lead.
 - Judge measures on the stored ear pages.
 
 ## Findings log
