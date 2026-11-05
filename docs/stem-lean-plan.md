@@ -15,7 +15,7 @@
 **Reading, first match** (`reading`):
 1. The control fails: void.
 2. O − T clear above zero on the stem, and the stem's lean clear above the mix's, paired by example: the lead holds. Training or aligning on real stems becomes a proposal for the user, about 19 h for the stems alone, and it does not start without their yes.
-3. O − T clear above zero on the stem and on the mix, the paired row not clear: the mix already carries the other guitar more than the target (it is louder on 75% of rows, median +5.0 dB), so this is no lean of the separator's. No step follows.
+3. O − T clear above zero on the stem and on the mix, the paired row not clear: the mix already carries the other guitar more than the target (it is louder on 75% of rows, median +5.1 dB; +5.0 on the rows read), so this is no lean of the separator's. No step follows.
 4. O − T clear below zero on the stem, with T's follow clear above zero: the lead does not hold on this set, and F15 and F17 stand.
 5. Otherwise not shown: undecided, and no step follows from it. T's follow is read beside.
 
@@ -23,7 +23,7 @@
 
 **Limits.** A linear probe on summaries; 12 sections from 9 tracks, all of them also in training; self-built mixes, with presets independent by design. The review's figure was from another reader, so a gap between the two is not a contradiction. The core twins read a smaller space than the product's full one. The two draws are not identical: on training rows T's modes are 48% factory, 23% start, 29% wide, and O's 39%, 21%, 40%, the raw draw, since T's rows passed part C's rules, and O's today's knobs spread a little wider (within-cell sd 0.250 against 0.233). The direction of any bias is unknown, so O − T is read beside the same row on rows where neither draw is wide (276 of 623, all 12 sections).
 
-**Outcome (2026-11-05, F61 in the [plan](pipeline-fix-plan.md)).** The control held. O − T on the stem +0.025 [−0.118, +0.169], not shown; stem less mix −0.029 [−0.107, +0.049]. Beside, audited: T's knob answers follow the louder guitar on drive and cab, in the mix as much as on the stem; post hoc, drive reads the target where the target is louder (+0.297 against +0.042) and the other where it is (−0.026 against +0.255). No training on real stems is proposed.
+**Outcome (2026-11-05, F61 in the [plan](pipeline-fix-plan.md)).** The control held. O − T on the stem +0.025 [−0.118, +0.169], not shown; stem less mix −0.029 [−0.107, +0.049]. Beside, audited: T's knob answers lean toward the other guitar on drive and cab, in the mix as much as on the stem. Post hoc, the stem's drive gap between target and other is +0.255 [−0.232, +0.742] where the target is louder and −0.281 [−0.436, −0.126] where the other is, and cab is level where the target is louder. No training on real stems is proposed.
 
 **Cost.** Zero renders and zero separations; CPU, about 2 minutes of summaries, then 8 fits at about 40 s each. Code `learn/stem_lean.py`, on the torch interpreter since `reads_v3` imports torch, `tests/test_stem_lean.py`; ledger `pipeline-fix`, `phase_stem_lean`; output `tone-probe/stem-lean.json`, read once.
 
