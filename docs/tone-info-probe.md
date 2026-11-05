@@ -263,6 +263,37 @@ whether the two together carry more than the mix alone. Post hoc and descriptive
   does not rule out a trained model using the two together; it says the stem holds no tone the mix lacks that a
   linear probe can find.
 
+## Addition: the mix on its dominant cells (declared 2026-11-05, before it is computed)
+
+**Why.** This probe's main finding is the loss between the target and the mix: 86 heads, then 30. Models, labels and scores have changed since, and that loss has not been tested at the mix's own cells. The researchers' report ranks mask-weighted pooling as its row 5 with a zero-render screen ([report](research/proven-methods-preset-recovery-2026-11.md)); the deep review keeps it as the extraction row's screen. The user said go on 2026-11-05 after the plan below was explained in plain words. It differs from (f): (f) laid the stem beside the mix and every cell still counted; here the stem only picks cells, and every value read comes from the mix. It differs from averaging windows (no lever in the deep review), which weighs every moment alike.
+
+**Seen before this declaration: map shares only, no settings label and no probe.** On 46 FS5 examples and 84 F5 training examples, half mels, the cells the maps below mark:
+
+| | Median share of cells | 10th to 90th percentile |
+|---|---|---|
+| True map, training sample (FS5 sample) | 8.4% (5.2%) | 0.9% to 34.5% |
+| Stem map at 3 dB, training sample (FS5 sample) | 56.5% (61.0%) | 22.8% to 97.8% |
+
+Against the true map, the stem map's median precision is 15% on the training sample (8% on the FS5 sample) and its recall 94% on the FS5 sample; stem minus mix ranks true cells at a median AUC of 0.70 within an example, on the training sample. So the 3 dB rule, the researchers' untested proposal, marks far more than the guitar. That is why the true map reads first, and why a top-tenth stem map stands beside the rule. Marked cells are not near silence: their median sits about 29 dB under the half's peak, and under 2% of them more than 50 dB under it, so no level gate is added.
+
+- **Maps,** per half on the stored half mels, half A's first second dropped as in training:
+  - **(o) true map:** cells where `tgt-t3` plus the mix's stored `gain_db` is within 3 dB of `mix-t3`. The product cannot have it. It bounds the idea.
+  - **(g) stem map:** cells where `xlance_g-t3` is within 3 dB of `mix-t3`.
+  - **(t) top tenth:** the 10% of an example's half cells with the highest stem minus mix.
+  - **(po), (pg), (pt) placebos:** the same rule's map from a seeded partner example in another section of the same set (seed 20261105), read over this example's mix. Same shape of selection, wrong cells.
+- **The summary:** `masked_summary`, the same 740 entries as (b) from the mix's dB in marked cells only. Frame changes and lags run over pairs of marked frames. A band or group with under 20 cells has no value there. The two halves average, one half standing in where the other has no value. Gaps take the probe-training rows' column mean, standardised as usual. No count or share of marked cells enters the features, so the map's own coverage is not read directly.
+- **Read:** the same probe, split (F5's training examples, FS5) and readable rule as (a) to (f), through `fit_input`, one run. Steps per head by `step_row`, both ways: each map against (b), each placebo against (b), each map against its placebo. Reliable means a 90% section-clustered interval, jackknife for AUC, excluding 0.
+- **Controls, each stopping the run:** the every-cell summary equals the stored (b) for every example within 1e-5; (b) read through this code reproduces `probe.json`'s (b) points within 1e-9.
+- **Beside:** readable counts against (b)'s 30 and the researchers' 37, about one count's noise; family counts, with today's space (25 heads) printed apart; share, precision and recall of each map on FS5.
+- **Reading, no effect-size bar.** "Ahead" means more heads reliably better than worse by the researchers' one-sided sign test at 5%, nominal since heads are correlated, and about 6 heads each way are expected by chance.
+  - (o) not ahead of (b): this reader gets nothing from the guitar's own cells of the mix, even with a perfect map. Mask pooling stops.
+  - (o) ahead, neither stem map ahead: the idea holds and the map fails. The question moves to a better map from the stems we have, with no new separator, in its own declaration.
+  - A stem map ahead of (b) and ahead of its placebo: it earns one step, that input for a model on real labels, in its own declaration.
+  - A stem map ahead of (b) but not of its placebo: the change is from pooling fewer cells, not from the map, and is not credited to it.
+- **Limits.** The probe's Limits below apply: a linear probe, FS5's self-built mixes with plugin renders, no read of sound or of a real song. (o)'s margin is generous: which cells it keeps depends on the target, so it can carry the target's shape as well as the mix's values, and a placebo cannot separate that. On mixes with the mastering draw (p 0.5) the target's level in the mix is approximate, so (o) is too. The 3 dB line and the top tenth are one setting each; no setting is searched.
+- **Cost.** Zero renders, zero separations, no training beyond the linear probes. CPU, at most 4 processes; the main read took 2 minutes of features and 8 of probes on 6 inputs.
+- **Code.** `$MAIN -m learn.tone_info_probe mask-features`, then `mask` (`tone-probe/mask.json`, read once). Ledger: `pipeline-fix`, `phase_mask_read`.
+
 ## Limits
 
 - **A linear probe on summaries is a lower bound** on what an input carries. "Not carried" means not by these

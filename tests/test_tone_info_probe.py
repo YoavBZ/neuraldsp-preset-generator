@@ -75,3 +75,69 @@ def test_level_removed_shifts_only_the_level_entries():
     moved = np.where(~np.isclose(An, A).all(0))[0].tolist()
     assert moved == list(P.LEVEL_IX)
     assert np.allclose(A[:, 736] - An[:, 736], [1, 2, 3, 4])
+
+
+def _db(seed=3, bands=96, frames=346):
+    return np.random.default_rng(seed).normal(-60, 6, (bands, frames))
+
+
+def test_every_cell_kept_is_the_plain_summary():
+    db = _db()
+    assert np.allclose(P.masked_summary(db, np.ones_like(db, bool)), P.summary(db))
+    e = np.random.default_rng(4).normal(size=300)
+    assert np.allclose(P.autocorr_on(e, np.ones(300, bool), P.LAGS), P.autocorr(e, P.LAGS))
+
+
+def test_cells_outside_the_map_do_not_move_the_summary():
+    db = _db()
+    keep = np.random.default_rng(5).random(db.shape) < 0.3
+    moved = np.where(keep, db, db + 40.0)
+    a, b = P.masked_summary(db, keep), P.masked_summary(moved, keep)
+    assert np.array_equal(np.isnan(a), np.isnan(b)) and np.allclose(a, b, equal_nan=True)
+
+
+def test_a_thin_band_or_group_has_no_value_and_a_half_fills_the_other():
+    db = _db(bands=8, frames=200)
+    keep = np.zeros_like(db, bool)
+    keep[0, :P.MIN_CELLS] = True
+    keep[1, :P.MIN_CELLS - 1] = True
+    s = P.masked_summary(db, keep, groups=2)
+    assert np.isfinite(s[0]) and np.isnan(s[1]) and np.isnan(s[2:8]).all()
+    none = P.masked_summary(db, np.zeros_like(db, bool), groups=2)
+    assert np.isnan(none).all()
+    assert P.mean_halves(s, none)[0] == s[0]
+    m = P.mean_halves(np.array([1.0, np.nan, np.nan]), np.array([3.0, 5.0, np.nan]))
+    assert m[0] == 2.0 and m[1] == 5.0 and np.isnan(m[2])
+
+
+def test_the_maps():
+    mix = np.array([[-20.0, -20.0], [-20.0, -20.0]])
+    stem = np.array([[-20.0, -23.0], [-23.5, -60.0]])
+    assert P.map_stem(mix, stem).tolist() == [[True, True], [False, False]]
+    assert P.map_true(mix, stem - 6.0, 6.0).tolist() == [[True, True], [False, False]]
+    assert P.map_top(mix, stem, 0.5).tolist() == [[True, True], [False, False]]
+    assert P.map_top(mix, stem, 0.01).sum() == 1
+
+
+def test_means_for_the_gaps_come_from_their_own_column():
+    X = np.array([[1.0, np.nan, np.nan], [3.0, 5.0, np.nan]])
+    assert P.fill_means(X).tolist() == [2.0, 5.0, 0.0]
+
+
+def test_a_partner_is_seeded_and_from_another_section():
+    ids = list(range(40))
+    secs = [i // 7 for i in ids]
+    a, b = P.partners(ids, secs), P.partners(ids, secs)
+    assert a == b and set(a) == set(ids)
+    assert all(secs[a[i]] != secs[i] for i in ids)
+    assert P.partners(ids, secs, seed=1) != a
+
+
+def test_the_sign_test():
+    assert P.sign_p(0, 0) == 1.0
+    assert P.sign_p(5, 0) == 1 / 32
+    assert P.sign_p(3, 3) == pytest.approx(21 / 32)
+
+
+def test_the_placebo_inputs_follow_the_maps():
+    assert set(P.MASK) == {"b", "o", "g", "t", "po", "pg", "pt"}
