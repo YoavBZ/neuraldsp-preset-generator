@@ -1,6 +1,7 @@
 """The model comparison's pure functions (`learn/bakeoff.py`); no audio, no models."""
-import numpy as np
 import pytest
+
+np = pytest.importorskip("numpy")
 
 from learn import bakeoff as B
 

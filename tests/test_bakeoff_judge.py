@@ -1,8 +1,9 @@
 """The judge battery's pure functions (`learn/bakeoff_judge.py`)."""
 import math
 
-import numpy as np
 import pytest
+
+np = pytest.importorskip("numpy")
 
 from learn import bakeoff_judge as J
 

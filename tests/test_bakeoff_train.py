@@ -1,6 +1,7 @@
 """The training arms' pure functions (`learn/bakeoff_train.py`)."""
-import numpy as np
 import pytest
+
+np = pytest.importorskip("numpy")
 
 from learn import bakeoff_train as T
 

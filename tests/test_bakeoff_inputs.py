@@ -1,6 +1,7 @@
 """The model comparison's inputs (`learn/bakeoff_inputs.py`), on small made-up mels."""
-import numpy as np
 import pytest
+
+np = pytest.importorskip("numpy")
 
 from learn import bakeoff_inputs as I
 
