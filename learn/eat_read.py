@@ -155,7 +155,7 @@ class Features:
             return W_FEATURE(name, seed, f, amp, cls)
         kind, key = self.paths[f] if isinstance(f, str) else f
         if kind == "avg":                               # a linear reader on mean features is the mean of its answers
-            return np.mean([self(name, seed, ("real", (key[0], v)), amp, cls) for v in range(key[1])], 0)
+            return np.mean([self(name, seed, (key[0], (key[1], v)), amp, cls) for v in range(key[2])], 0)
         q = (name, kind, key, amp, cls) if name.startswith("mix3:") else (name, kind, key)
         if q in self.cache:
             return self.cache[q]
@@ -365,7 +365,7 @@ def fit_predict(rows_tr, clusters, units_tr, rows_te, units_te, Y_tr, rep="mix:p
     try:
         kind_of = lambda u: kind.get(u, kinds[0])       # noqa: E731    `mel` needs no embedded set
         files = [[(kind_of(u), (u, v)) for v in range(P.DFIX_K)] for u in units_tr]
-        te = [(kind_of(u), (u, 0)) if held == 1 else ("avg", (u, held)) for u in units_te]
+        te = [(kind_of(u), (u, 0)) if held == 1 else ("avg", (kind_of(u), u, held)) for u in units_te]
         return B.candidate_answers((rep, "ridge", "x"), rows_tr, clusters, files, rows_te, te, Y_tr, R.searched, (None,))
     finally:
         B.feature, B.pca = keep_feature, keep_pca
@@ -530,6 +530,8 @@ def cmd_curve(a):
     from learn import reads_v3 as R
     from learn import trusted_data_t3 as T3
 
+    B.sha_ok()
+    declared(candidates(a.mid), a)
     rows, data = B.base_rows()
     enc = T3.encode_for(T3.FULL)
     res, cases = {}, [("held1", 1, 1.0, 0), ("held5", 5, 1.0, 0), ("held25", 25, 1.0, 0)]
@@ -544,7 +546,7 @@ def cmd_curve(a):
             use = [r for r, w in zip(rows_tr, keep) if w]
             Y = [np.stack(z) for z in zip(*(enc(h["label"]) for h in use))]
             mu, _ = fit_predict(use, [c for c, w in zip(clusters, keep) if w], [h["real"] for h in use], te, [h["real"] for h in te], Y[:2],
-                                rep=f"mix:{a.mid}", pcs=a.pcs, held=held)
+                                rep=f"mix:{a.mid}", net=a.net, pcs=a.pcs, held=held)
             for r, m in zip(fold, mu):
                 r["X_ans"] = m
             S += fold

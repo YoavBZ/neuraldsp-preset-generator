@@ -139,3 +139,28 @@ def test_subset_keeps_whole_clusters_and_about_its_share():
     assert all(len(v) == 1 for v in by.values())
     assert 0.25 < keep.mean() < 0.75
     assert (R.subset_of(clusters, 0.5, 1) != keep).any()
+
+
+def test_avg_is_the_mean_of_a_units_variants_of_its_own_kind():
+    class Stub(R.Features):
+        def __init__(self):
+            self.paths, self.seen = {}, []
+
+        def vector(self, kind, key):
+            self.seen.append((kind, key))
+            return np.full((2, 3), float(key[1]))
+
+    f = Stub()
+    keep = R.Features.__call__
+
+    def call(self, name, seed, g, amp, cls):
+        kind, key = g
+        return self.vector(kind, key) if kind != "avg" else keep(self, name, seed, g, amp, cls)
+
+    R.Features.__call__ = call
+    try:
+        got = f("x", None, ("avg", ("captures", "u", 3)), "ac20", "clean")
+    finally:
+        R.Features.__call__ = keep
+    assert np.allclose(got, 1.0)
+    assert f.seen == [("captures", ("u", v)) for v in range(3)]

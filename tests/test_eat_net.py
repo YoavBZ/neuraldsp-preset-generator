@@ -83,3 +83,18 @@ def test_variants_are_stable_and_in_range():
     v = [ET.variant_of(800001, e) for e in range(60)]
     assert v == [ET.variant_of(800001, e) for e in range(60)]
     assert set(v) == set(range(EB.WIDE_K))
+
+
+def test_seeded_reads_each_seed_through_its_own_bank_and_joins_their_cuts():
+    from learn import eat_render as ER
+
+    class Bank:
+        def __init__(self, n):
+            self.n, self.mix_cut = n, {n: (n,)}
+
+        def __call__(self, rep, seed, f, amp, cls):
+            return (self.n, rep, seed, f, amp, cls)
+
+    s = ER.Seeded({1: Bank(10), 2: Bank(20)}, "mix:pub")
+    assert s("W", 2, "path", "ac20", "clean") == (20, "mix:pub", None, "path", "ac20", "clean")
+    assert s.mix_cut == {10: (10,), 20: (20,)}
