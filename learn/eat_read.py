@@ -147,9 +147,8 @@ class Features:
             units = P.dfix_units()[:MEL_SD_ROWS]
             a = np.stack([np.concatenate([W_FEATURE("W", sd, str(P.dfix_input_path(u, 0)), "pr12", prt["cls"]) for sd in R.SEEDS], 1)
                           for u, _, prt in units])
-            self.w_scale = a.reshape(-1, a.shape[-1]).std(0)
-        v = np.concatenate([W_FEATURE("W", sd, f, amp, cls) for sd in R.SEEDS], 1)
-        return scaled(v, self.w_scale) / np.sqrt(v.shape[1])
+            self.w_scale = float(np.sqrt((a.reshape(-1, a.shape[-1]).var(0)).sum()))     # one scale: a unit dead on one amp is alive on another
+        return np.concatenate([W_FEATURE("W", sd, f, amp, cls) for sd in R.SEEDS], 1) / self.w_scale
 
     def __call__(self, name, seed, f, amp, cls):
         if name == "W":
@@ -625,6 +624,25 @@ def cmd_tuned(a):
     pathlib.Path(a.out).write_text(json.dumps(res, indent=1, default=float))
 
 
+def cmd_ew(a):
+    """S8.3b again after a scaling fix: `EW-mix` alone, a post hoc lead, with plain rows against `E-mix` and `W-pcs`."""
+    from learn import reads_v3 as R
+
+    B.sha_ok()
+    declared(["EW-mix"], a)
+    rows, data, _ = real_setup(a)
+    for label in ("E-mix", "W-pcs"):
+        add_prior(rows, EE.embed_root().parent / "read.json.rows.pkl", label)
+    B.OUT = f"{B.OUT}/ew"
+    by_fold = {k: [r for r in rows if r["fold"] == k] for k in range(FOLDS)}
+    for k in range(FOLDS):
+        B.add_candidates(by_fold[k], k, {"EW-mix": (f"mix3:{a.mid}", "ridge", "real")}, data)
+    rows = [r for k in range(FOLDS) for r in by_fold[k]]
+    res = R.report(rows, ["FTM", "W-pcs", "E-mix", "EW-mix"], pairs=[("EW-mix", "E-mix"), ("EW-mix", "W-pcs"), ("EW-mix", "FTM")])
+    pathlib.Path(a.out).write_text(json.dumps(res, indent=1, default=float))
+    print(json.dumps({g: round(v["r"], 3) for g, v in res["GOAT/EW-mix"]["r"].items()}, default=float), flush=True)
+
+
 def cmd_exposure(a):
     """S3.6, no real label: do its guitar outputs follow how exposed the guitar is? Plugin rows in backing 0 to 3 against each
     row's drawn guitar-over-backing ratio, and how often Guitar or Electric guitar is in the top 5 on clean targets and amp tracks."""
@@ -771,6 +789,10 @@ def main(argv=None):
     v.add_argument("out")
     v.add_argument("--mid", required=True)
     v.set_defaults(fn=cmd_curve)
+    w = sub.add_parser("ew")
+    w.add_argument("out")
+    w.add_argument("--mid", required=True)
+    w.set_defaults(fn=cmd_ew)
     x = sub.add_parser("exposure")
     x.add_argument("out")
     x.set_defaults(fn=cmd_exposure)
@@ -778,7 +800,7 @@ def main(argv=None):
     d.add_argument("out")
     d.add_argument("--reps", nargs="+", required=True)
     d.set_defaults(fn=cmd_domain)
-    for q in (p, c, d, x, *(sub.choices[n] for n in ("amp", "real", "tags", "tuned", "curve"))):
+    for q in (p, c, d, x, *(sub.choices[n] for n in ("amp", "real", "tags", "tuned", "curve", "ew"))):
         q.add_argument("--net", default="mn10_as")
         q.add_argument("--pcs", type=int, default=24)
     args = ap.parse_args(argv)

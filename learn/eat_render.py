@@ -22,6 +22,7 @@ if str(PLUGIN_ROOT) not in sys.path:
 from learn import bakeoff_render as BR  # noqa: E402
 
 STORED = ("S", "RcBG", BR.FTM, "M-ridge")
+TUNED = {"TE-mix": "mix:{mid}", "TE-mid": "{mid}"}
 KEEP_ROOT = BR.root
 
 
@@ -41,10 +42,33 @@ def linked():
                 (d / tag).symlink_to(KEEP_ROOT() / "score-judge" / which / tag)
 
 
+class Seeded:
+    """`bakeoff.feature` for a tuned candidate: `bakeoff_render` averages seeds only for a feature named "W", so a tuned body reads
+    under that name, each seed through its own bank."""
+
+    def __init__(self, by_seed, rep):
+        self.by_seed, self.rep = by_seed, rep
+
+    @property
+    def mix_cut(self):
+        return {k: v for f in self.by_seed.values() for k, v in f.mix_cut.items()}
+
+    def __call__(self, _name, seed, f, amp, cls):
+        return self.by_seed[seed](self.rep, None, f, amp, cls)
+
+
 def cmd_predict(a):
     from learn import bakeoff as B
     from learn import eat_read as ER
 
+    if a.tag in TUNED:
+        ER.declared([a.tag], a)
+        ER.real_setup(a)
+        paths = B.feature.paths
+        B.feature = Seeded({s: ER.Features(ER.Bank(f"body-{s}"), paths) for s in ER.ET_SEEDS}, TUNED[a.tag].format(mid=a.mid))
+        B.CANDIDATES = {**B.CANDIDATES, a.tag: ("W", "ridge", "real")}
+        BR.root = score_root
+        return BR.cmd_predict(a)
     cands = {**ER.candidates(a.mid), **ER.SAME_COUNT}
     if a.tag not in cands or cands[a.tag][2] != "real":
         raise SystemExit("predict takes a real-trained candidate of this study")
