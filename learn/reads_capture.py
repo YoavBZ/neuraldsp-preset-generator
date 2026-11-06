@@ -26,14 +26,16 @@ def fold_of(unit, item_fold):
     return item_fold[unit['di_item']]
 
 
-def read_fold(k, recs, by_unit):
+def read_fold(k, recs, by_unit, models=None, load=None):
+    """Each model's answers on fold k's held records. `models` and `load` (name, seed, which -> net) default to N6's."""
+    load = load or (lambda run, sd, which: P.load_run(run, sd, which)[0])
     held = P.record_rows(recs, by_unit, 0)
     d = R.make(held)
     c, cm, s, sm, kk, km, _ = d.Y
     rows = [{'fold': k, 'set': 'CAP', 'cluster': by_unit[r['unit']].get('creator') or r['di'], 'rec': r['rig'], 'amp': h['amp'],
              'cls': h['cls'], 'c': c[j], 'cm': cm[j]} for j, (h, r) in enumerate(zip(held, recs))]
-    for label, (run, which) in MODELS.items():
-        outs = [R.both_halves(P.load_run(run.format(k=k), sd, which)[0], d) for sd in R.SEEDS]
+    for label, (run, which) in (models or MODELS).items():
+        outs = [R.both_halves(load(run.format(k=k), sd, which), d) for sd in R.SEEDS]
         med = np.mean([np.mean([DS.mixture_median(*h[:3]) for h in o], 0) for o in outs], 0)
         for j, row in enumerate(rows):
             sk, ss, sc = R.searched(row['amp'], row['cls'])
