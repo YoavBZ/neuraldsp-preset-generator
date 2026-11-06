@@ -33,4 +33,20 @@ The second batch follows on 2, 4 and 5 once it is heard, and is the test with mo
 
 *Review (2026-11-06, independent, before any run; a second pass during it on the read and the wording):* eight required changes, all made. No leakage found on all 4 folds, and the data path ran on real rows. The main ones: the pair is not capture rows on top, so C-c39 joins; the chance rate of a clear row; the control now covers this step's nets; the standardised pair; the recipe's limit on cab.
 
+## N9b: does a ridge gain from capture rows? (declared 2026-11-06, before it is computed)
+
+**Why.** N9 tested capture rows in place of updates. It could not test them on top, because a network's epoch has a fixed budget. A ridge takes each unit once, so capture rows simply join. The review session's `M-pcs`, the mel ridge at 64 PCs, needs no training, no GPU and no download, and it reads about as well as FTm on the development sets by the score. `E-mix` reads a little better on GOAT, but needs 3,750 more embedded inputs for a gain of −0.006, so it waits on this read. This was told to the user on 2026-11-06.
+
+**Arms.** `M-ctl`, fitted per capture fold on C-ctl's rows, each unit once. `M-cap`, on C-cap's rows, each unit once. The same folds, DI drops and holds as N9, through `capture_train.rows_of`. Read on variant 0, as N9. Capture rows are about 13 to 15% of a fit's units.
+
+**Read.** N9's rows, joined by recording and amp, so `M-*` sit beside C-ctl and C-cap on the same 121 units. **Primary: M-cap − M-ctl on drive, tone and cab, all classes, delete-one-creator t,** with the head-standardised pair. Beside: M-cap − C-cap and M-ctl − C-ctl, ridge against network on one set; crunch and clean; per-head spread and squared error against the cell mean, because N9's answers lose to it.
+
+**Control, stopping the run.** `fit_predict` at these settings reproduces the stored `M-pcs` answers on BKS's and GOAT's fold 0 within 1e-6 (worst 0.0 when checked before this declaration, on no capture row).
+
+**Reading.** N9's map, first match: mixed; a row clear above with its standardised pair above zero is a lead, then labels shuffled within cells, then the score, each declared; a row clear below is a cost to review; a clear raw row with its standardised pair at or below zero is moved spread; otherwise undecided. About the chance rate, N9's figures are the guide: at least one of three rows clears above on 11 to 17% of tries with no gain.
+
+**Limits.** N9's, and these: every answer rests on backing variant 0, and the review found `E-mix`'s drive reading ranks 23 of 25 backings, so a single variant may flatter it; 64 PCs and the ridge's inner choices were set on BKS and GOAT, not here. This is agreement with search labels, not sound.
+
+**Cost.** Zero renders, zero training, no GPU, no new files but the read; the control's fit took 5 s, so 8 fits take minutes. Code `learn/capture_ridge.py`; ledger `phase_n9b`.
+
 **Code.** `learn/capture_train.py`, `tests/test_capture_train.py`; ledger `pipeline-fix`, `phase_n9`; outputs `PF/captrain/`.
