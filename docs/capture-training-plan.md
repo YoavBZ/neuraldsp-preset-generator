@@ -35,6 +35,24 @@ The second batch follows on 2, 4 and 5 once it is heard, and is the test with mo
 
 *Review (2026-11-06, independent, before any run; a second pass during it on the read and the wording):* eight required changes, all made. No leakage found on all 4 folds, and the data path ran on real rows. The main ones: the pair is not capture rows on top, so C-c39 joins; the chance rate of a clear row; the control now covers this step's nets; the standardised pair; the recipe's limit on cab.
 
+## N10: the trained models on the second batch (declared 2026-11-06, before it is computed)
+
+**Why.** The second batch's 47 trusted units are new captures, new creators (11 of the batch's 79 also sit in the first) and library DIs, with far more players than GOAT's. No model trained on them or was chosen on them, so reading what exists is a fresher test than N6 or N9, and it costs no training. A further network training on both batches would add 47 units, 38 of them clean, for about 8 more minutes of the Mac per model, and is not declared here; this read says whether it is worth it.
+
+**Rows.** The 47 units, inputs built for them by `build-dfix-real --captures --capture-batch 2`, 1,175 files, audio and pool backings only, no label; backings never from the DI's own session, which this batch's units need said explicitly since their section is the capture.
+
+**Readers.** FTm, C-ctl, C-cap and C-mic, each by the mean of its 8 fold-and-seed models, since no fold held these units. `M-ctl`, the mel ridge on all of BKS's and GOAT's records, and `M-cap`, with the first batch's trusted records too.
+
+**Read.** N6's rows, r by drive, tone and cab, demeaned within (amp, class, head), one value per recording, permutation p, own against swap, clusters by creator. All and clean; crunch holds 9 units, so no crunch row. **Primary: C-cap − C-ctl and M-cap − M-ctl, drive, tone and cab, all classes, delete-one-creator t,** each with its head-standardised pair. Beside: C-mic − C-cap, M-ctl − C-ctl, C-ctl − FTm; per-head spread; squared error against the cell mean.
+
+**Controls, stopping the run.** N6's control and N9b's.
+
+**Reading.** N9's map on each primary pair, in turn. Beyond that map, each arm's r against zero says whether the models' reading reaches players and captures no recipe saw.
+
+**Limits.** r is agreement with search labels, not sound. These DIs are library sections, and W's plugin rows and the backing pool read that library, so a performance may sit in every model's plugin start; this is new to the real rows only. All these labels are search v2's, which C-cap and M-cap saw and C-ctl and M-ctl did not, so a capture-row gain here may be the recipe's. Cells hold 2 to 16 units, so demeaning costs much. Answers by a mean of 8 models are steadier than one model's, so they do not compare with N6's or N9's r.
+
+**Cost.** Zero renders, zero training, no GPU, about 280 MB of inputs at N6's measured 0.21 s each, CPU for the read. Code `learn/reads_fresh.py`, `tests/test_reads_fresh.py`; ledger `phase_n10`.
+
 ## N9b: does a ridge gain from capture rows? (declared 2026-11-06, before it is computed)
 
 **Why.** N9 tested capture rows in place of updates. It could not test them on top, because a network's epoch has a fixed budget. A ridge takes each labelled record once, so capture rows simply join. The review session's `M-pcs`, the mel ridge at 64 PCs, needs no training, no GPU and no download, and it reads about as well as FTm on the development sets by the score. `E-mix` reads a little better on GOAT, but needs 3,750 more embedded inputs (3,025 for the 121 trusted units) for a gain of −0.006, so it waits on this read. This was told to the user on 2026-11-06.
