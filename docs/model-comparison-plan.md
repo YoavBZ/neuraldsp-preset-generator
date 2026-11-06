@@ -1,6 +1,6 @@
 # Model comparison plan
 
-**Status: reviewed; the harness fixes are being checked. No candidate has been read, and nothing has rendered or trained.**
+**Status: done; the results are in [model-comparison-results.md](model-comparison-results.md). The task list and log below are the record of how it ran.**
 
 **The user's request (2026-11-05):** "Yes, but first research about neutral networks and which kind fits our use case best,
 same for feature extraction and scoring/judging. Finally write a detailed plan/tasks for easier and more organized process
@@ -21,9 +21,9 @@ Read this block first after any compaction, then the task list, then the finding
 - **Run from the worktree root:** `TORCH_PY=~/ndsp-presets/tools/demucs-venv/bin/python`; `$TORCH_PY -m learn.bakeoff ...`. Tests:
   `/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python -m pytest tests/test_bakeoff.py tests/test_bakeoff_inputs.py -q -n0`.
 - **Peers:** SendMessage to "NeuralDSP preset generator (ML)", "(executor)", "(controller)", "(cloud researcher)". The researcher's PR is #394.
-- **Now:** an audit of the arms, score and judge results; T6.1, the results doc.
-- **Next:** PR with the results, independent review, CI, merge, then the report to the user and the controller.
-- **Running jobs and PIDs:** none. Total renders so far: 16 + 4,004 + 1,340 + 1,340 = 6,700.
+- **Now:** T6.3, the results PR.
+- **Next:** T6.4, the report to the user and the controller.
+- **Running jobs and PIDs:** none. Total renders 6,700; training 139 min.
 - **Render or MPS use announced to the ML session:** none. Holds lifted so far: the ML session's renders finished at about 23:20 on 2026-11-05 and the 3 slots are free;
   it plans none tonight and will say first if an audit asks. A new hold, or its end, is recorded on this line.
 - **Disk:** about 36–39 GB free, floor 33 GB: stop new builds under it and tell the executor.
@@ -102,7 +102,7 @@ Legend: `[ ]` to do, `[~]` in progress, `[x]` done.
 - [x] T2.1 Candidates, features and judge measures set from the report (PR #394), each read's rule declared here.
 - [x] T2.2 Independent review of this plan, by a reviewer who saw the code. It found 16 issues; all are fixed below or in
   `learn/bakeoff.py`, and the ML session answered the three that were its call.
-- [~] T2.3 Ledger entry `model-comparison` listing the candidates; PR with this plan; merge after review and CI.
+- [x] T2.3 Ledger entry `model-comparison` listing the candidates; PR with this plan; merge after review and CI.
 
 ### Phase 3, reads without renders or training (CPU, `learn/bakeoff.py`, `learn/bakeoff_inputs.py`)
 
@@ -141,7 +141,7 @@ come from the stored mels, so nothing here needs audio. An FTm-features arm was 
   and gamma with the ear on each page; (b) the flip, reverb and delay against the +6 dB shelf on the clean amp on both DIs, 4 orders, J0 right on
   2; (c) treble steps not filling the top three; (d) heard drive steps above unheard; (e) the sensitivity table's known-error protocol (the
   review's `bench.py`, moved to this file), effect in split-half SDs against d.
-- [ ] T3.5 Audit T3.4. Log both results. Choose what moves on by the rules below.
+- [x] T3.5 Audit T3.4. Log both results. Choose what moves on by the rules below.
 
 **Declared rules for Phase 3.** Effect sizes first. Selection is on a simultaneous 95% lower bound over all 30 contrasts in `bakeoff.BOUND`
 (max-t on one set of GOAT item weights), with the plain 90% interval beside. A plain clear that the bound does not hold is a lead, not a move.
@@ -183,7 +183,7 @@ the eight FTm_k sum to 54.0 min. The ML session gets each arm's size and PIDs be
   takes extra rows later, with the mask and a drop key on `di`.
 - [x] T4.2 Control: one fold and seed of `A-ctl` on FTm's own seed; its last logged real loss within 5% of FTm's. About 6 min.
 - [x] T4.3 Run the arms in order, in resumable pieces, one record each with command, seed, git sha, PID, minutes. The executor watches from launch.
-- [~] T4.4 Each arm's answers fill `_ans` and `_swap` directly (`read_fold` cannot load these nets), read through `reads_v3`, paired against FTm. `bakeoff arms` runs once over all arms, so the bound holds. Audit. Log.
+- [x] T4.4 Each arm's answers fill `_ans` and `_swap` directly (`read_fold` cannot load these nets), read through `reads_v3`, paired against FTm. `bakeoff arms` runs once over all arms, so the bound holds. Audit. Log.
 
 **Declared rule for Phase 4.** An arm moves on if `arm − FTm` clears zero on GOAT by the max-t bound over all arms' groups, beats `A-ctl − FTm`'s size in that
 group, no group's plain interval sits wholly below zero, and its switch or mic own-against-swap less FTm's has no interval wholly above zero on GOAT. Knob swap is not compared: an arm's knob output can have another form. An interval holding zero is undecided: `A-cnn` undecided means network size is not shown to
@@ -195,10 +195,10 @@ matter, not that it doesn't. An arm that moves on gets the full nested recipe (8
   and any ridge copy stored `RcBG`'s settings for the direction, overwrite only searched knobs, and fit residuals around RcBG's own values, so `ridge − centre`
   reads only the knob gain; `cell_centres` is not RcBG's centre (mean gap 0.022 on GOAT). Judged by `analysis.aligned` on the held half, storing `distance`, `tonal`
   and the cross-fitted term. No audio kept. Check: 10 of FTm's stored answers rendered through it match the stored judge values and `render_sha256`.
-- [~] T5.2 Renders: `M-ridge`, then at most two finalists, ranked by their simultaneous lower bound. 1,340 each by the code (335 keys × 2 × 2). Stored judges hold `distance`
+- [x] T5.2 Renders: `M-ridge`, then at most two finalists, ranked by their simultaneous lower bound. 1,340 each by the code (335 keys × 2 × 2). Stored judges hold `distance`
   only, so `tonal` beside needs FTm, RcBG and S rendered again: about 2,700 more. FTm's own batch spanned 19 min for 1,340 by its files' times. Shards resumable; announce size and PIDs;
   stop when the ML session asks.
-- [ ] T5.3 Report `candidate − centre`, `candidate − FTm`, `candidate − S`, by item on GOAT and by DI on BKS, by fold beside, with t intervals, `tonal` beside `distance`, and
+- [x] T5.3 Report `candidate − centre`, `candidate − FTm`, `candidate − S`, by item on GOAT and by DI on BKS, by fold beside, with t intervals, `tonal` beside `distance`, and
   d_S strata. Audit. Log.
 
 **Declared rule for Phase 5.** Nothing is adopted here. BKS and GOAT are development sets, chosen on many times. A finalist closer than FTm on GOAT by item, by the score, is a lead,
@@ -208,12 +208,12 @@ stated with the search labels' limits and the count of candidates tried. Which m
 read can give, and its only cost is the mics, which the score can weigh and the knob read cannot. So one post hoc read: `A-mic` by the score, FTm's readout on its nets (controls outside `K.space` at S), 1,340 renders. It is a lead, never a move: it adopts nothing, it is counted as the 22nd candidate tried, and it stays outside the rule above.
 The renders fall under the user's "render whatever needed". Control: the same predict code on FTm's own nets must reproduce the stored `P2b-ftm` answers exactly.
 
-- [~] T5.4 The amendment's read: `predict-arm`, its control, the renders, the report. Audit with T5.3.
+- [x] T5.4 The amendment's read: `predict-arm`, its control, the renders, the report. Audit with T5.3.
 
 ### Phase 6, write-up
 
-- [ ] T6.1 `docs/model-comparison-results.md`: answers on network, features and judge, with every candidate's row and what was not tested.
-- [ ] T6.2 Small dated lines in ROADMAP and DOCS-INDEX. Correct the deep review's "about 670 renders" to 1,340.
+- [x] T6.1 `docs/model-comparison-results.md`: answers on network, features and judge, with every candidate's row and what was not tested.
+- [x] T6.2 Small dated lines in ROADMAP and DOCS-INDEX. Correct the deep review's "about 670 renders" to 1,340.
 - [ ] T6.3 PR, independent review, CI, merge. Update memory `model-comparison-state`.
 - [ ] T6.4 Plain report to the user, and two or three lines to the controller.
 
@@ -273,3 +273,4 @@ Newest last. Each entry: date, task, result, output path and sha256, audited by 
   [−0.012, +0.032]. `A-mic` +0.037 [+0.013, +0.063], +0.065 [+0.012, +0.119], +0.043 [+0.014, +0.068], bounds −0.005, −0.022, −0.001; mic swap +0.057 [+0.029, +0.085] worse, switch −0.015 better. No arm moves on by the declared rule. Measured: `A-cat` 33 min, `A-cnn` 13 min, `A-k1` 31 min, `A-mic` 30 min, `A-ctl` 32 min. W's stored body, chosen on NS loss, underlies `A-ctl`, `A-cat`, `A-k1` and `A-mic`; `P2b-wide24:final` reads +0.075, +0.148, −0.076 against `best`'s +0.096, +0.222, −0.086, so `A-cnn`'s `final` start costs it something on tone.
 - 2026-11-06, T5.2, not yet audited (`PF/bakeoff/score-b.json`), by the score, GOAT by item, BKS by DI: `W-ridge − RcBG` −0.023 [−0.032, −0.015] and −0.007 [−0.035, +0.021]; `W-ridge − FTm` −0.002 [−0.018, +0.013] and −0.025 [−0.074, +0.024], undecided on both.
 - 2026-11-06, T5.4, not yet audited (`PF/bakeoff/score-c.json`, 1,340 renders; the predict code on FTm's nets reproduced its stored answers exactly), by the score, GOAT by item, BKS by DI: `A-mic − FTm` −0.006 [−0.013, +0.002] and +0.004 [−0.008, +0.017]; `A-mic − RcBG` −0.027 [−0.045, −0.008] and +0.023 [−0.030, +0.075]. Its knob gain does not show by the score.
+- 2026-11-06, audit of T3.5, T4.4, T5.3 and T5.4 by a subagent with its own code: every stored figure reproduced (score contrasts within 2.4e-5, arms exactly, folds 0 and 3 regenerated within 9e-6). Readings it corrected are in the results doc: `A-mic` by the score is undecided below resolution, not "no gain"; no contrast with the centre clears on BKS by fold; FTm and `A-mic` mix a per-cell shift, mics and switches with knobs; `A-cat` and `A-cnn` lost in these runs only; the judge's 48 items are the main pages, and any fixed order scores 2 of 4 on the flip.
