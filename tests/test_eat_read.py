@@ -109,3 +109,58 @@ def test_block_pca_keeps_each_blocks_own_components():
     assert np.allclose(c[:2, 3:], 0.0) and np.allclose(c[2:, :3], 0.0)
     assert np.allclose(np.linalg.norm(c, axis=1), 1.0)
     assert np.allclose(m, x.mean(0))
+
+
+def test_block_pca_takes_several_blocks():
+    x = np.random.default_rng(1).normal(size=(40, 9))
+    _, c = R.block_pca(x, (3, 6), 2)
+    assert c.shape == (6, 9)
+    assert np.allclose(c[:2, 3:], 0.0) and np.allclose(c[2:4, :3], 0.0) and np.allclose(c[2:4, 6:], 0.0) and np.allclose(c[4:, :6], 0.0)
+
+
+def test_tuned_family_is_18_contrasts():
+    f = R.tuned_family()
+    assert len(f) == 18 and len(set(f)) == 18
+    assert {q[1] for q in f} == {"E-mix", "W-pcs"}
+
+
+def test_by_seed_averages_answers_and_passes_a_missing_swap_on():
+    rows = [{"X-1_ans": np.array([1.0]), "X-2_ans": np.array([3.0]), "X-1_swap": np.array([0.0]), "X-2_swap": None}]
+    R.by_seed(rows, ["X"], (1, 2), lambda q: q)
+    assert rows[0]["X_ans"][0] == 2.0 and rows[0]["X_swap"] is None
+
+
+def test_subset_keeps_whole_clusters_and_about_its_share():
+    clusters = [f"di{i % 40}" for i in range(400)]
+    keep = R.subset_of(clusters, 0.5, 0)
+    by = {}
+    for c, w in zip(clusters, keep):
+        by.setdefault(c, set()).add(bool(w))
+    assert all(len(v) == 1 for v in by.values())
+    assert 0.25 < keep.mean() < 0.75
+    assert (R.subset_of(clusters, 0.5, 1) != keep).any()
+
+
+def test_avg_is_the_mean_of_a_units_variants_of_its_own_kind():
+    class Stub(R.Features):
+        def __init__(self):
+            self.paths, self.seen = {}, []
+
+        def vector(self, kind, key):
+            self.seen.append((kind, key))
+            return np.full((2, 3), float(key[1]))
+
+    f = Stub()
+    keep = R.Features.__call__
+
+    def call(self, name, seed, g, amp, cls):
+        kind, key = g
+        return self.vector(kind, key) if kind != "avg" else keep(self, name, seed, g, amp, cls)
+
+    R.Features.__call__ = call
+    try:
+        got = f("x", None, ("avg", ("captures", "u", 3)), "ac20", "clean")
+    finally:
+        R.Features.__call__ = keep
+    assert np.allclose(got, 1.0)
+    assert f.seen == [("captures", ("u", v)) for v in range(3)]

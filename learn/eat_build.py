@@ -169,8 +169,8 @@ def cmd_real(a):
     P.dfix_input_path = path
     P.save = lambda *_q, **_kw: None                    # `lends-*.json` stay the ML session's
     try:
-        run(lambda: P.cmd_build_dfix_real(argparse.Namespace(shard=a.shard, reads_only=a.reads_only, captures=False)),
-            lambda p: stored[str(p)], a.shard, kind="real", reads_only=a.reads_only)
+        run(lambda: P.cmd_build_dfix_real(argparse.Namespace(shard=a.shard, reads_only=a.reads_only, captures=a.captures)),
+            lambda p: stored[str(p)], a.shard, kind="captures" if a.captures else "real", reads_only=a.reads_only)
     finally:
         P.dfix_input_path, P.save = keep
 
@@ -240,6 +240,7 @@ def main(argv=None):
         s.add_argument("--shard", type=shard, default=(0, 1))
         if name == "real":
             s.add_argument("--reads-only", action="store_true")
+            s.add_argument("--captures", action="store_true", help="the ML session's: audio only, no label; requires its phase_n6")
         s.set_defaults(fn=fn)
     args = ap.parse_args(argv)
     args.fn(args)
