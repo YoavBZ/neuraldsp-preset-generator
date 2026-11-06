@@ -31,7 +31,7 @@ def test_a_fit_gets_one_row_per_record_and_no_held_unit(monkeypatch):
 
     def fit(rows_tr, clusters, units_tr, rows_te, units_te, Y, rep, pcs, held=1):
         seen.append((list(units_tr), list(clusters), list(units_te), rep, pcs, held))
-        return np.zeros((len(rows_te), 3)), None
+        return np.arange(len(rows_te))[:, None] * np.ones((1, 3)), None
 
     monkeypatch.setattr(P, "record_rows", rows)
     monkeypatch.setattr(P, "REAL_PER_EPOCH", 6)
@@ -45,6 +45,9 @@ def test_a_fit_gets_one_row_per_record_and_no_held_unit(monkeypatch):
     assert len(got) == len(held) and all({"M-ctl_ans", "M-cap_ans", "M-ctl-25_ans", "M-cap-25_ans"} <= set(v) for v in got.values())
     assert [s_[5] for s_ in seen] == [1, 25, 1, 25] and all(s_[3:5] == ("mel", C.PCS) for s_ in seen)
     assert seen[0][0].count("b0") == 2                      # both of a BKS unit's amps
+    assert not any(u.startswith("c") for u in seen[0][0]) and any(u.startswith("c") for u in seen[2][0])
+    for j, r in enumerate(held):                            # each recording keeps its own answer
+        assert (got[(r["rig"], "ac20")]["M-cap_ans"] == j).all()
     assert not set(seen[2][0]) & {r["unit"] for r in held}
     assert not set(seen[2][1]) & {cu[r["unit"]]["di"] for r in held}
 
