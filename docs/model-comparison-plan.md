@@ -21,9 +21,9 @@ Read this block first after any compaction, then the task list, then the finding
 - **Run from the worktree root:** `TORCH_PY=~/ndsp-presets/tools/demucs-venv/bin/python`; `$TORCH_PY -m learn.bakeoff ...`. Tests:
   `/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python -m pytest tests/test_bakeoff.py tests/test_bakeoff_inputs.py -q -n0`.
 - **Peers:** SendMessage to "NeuralDSP preset generator (ML)", "(executor)", "(controller)", "(cloud researcher)". The researcher's PR is #394.
-- **Now:** T5.4, `A-mic`'s post hoc score read.
-- **Next:** audit of the arms and score reads; T6, the write-up.
-- **Running jobs and PIDs:** none so far.
+- **Now:** an audit of the arms, score and judge results; T6.1, the results doc.
+- **Next:** PR with the results, independent review, CI, merge, then the report to the user and the controller.
+- **Running jobs and PIDs:** none. Total renders so far: 16 + 4,004 + 1,340 + 1,340 = 6,700.
 - **Render or MPS use announced to the ML session:** none. Holds lifted so far: the ML session's renders finished at about 23:20 on 2026-11-05 and the 3 slots are free;
   it plans none tonight and will say first if an audit asks. A new hold, or its end, is recorded on this line.
 - **Disk:** about 36–39 GB free, floor 33 GB: stop new builds under it and tell the executor.
@@ -208,7 +208,7 @@ stated with the search labels' limits and the count of candidates tried. Which m
 read can give, and its only cost is the mics, which the score can weigh and the knob read cannot. So one post hoc read: `A-mic` by the score, FTm's readout on its nets (controls outside `K.space` at S), 1,340 renders. It is a lead, never a move: it adopts nothing, it is counted as the 22nd candidate tried, and it stays outside the rule above.
 The renders fall under the user's "render whatever needed". Control: the same predict code on FTm's own nets must reproduce the stored `P2b-ftm` answers exactly.
 
-- [ ] T5.4 The amendment's read: `predict-arm`, its control, the renders, the report. Audit with T5.3.
+- [~] T5.4 The amendment's read: `predict-arm`, its control, the renders, the report. Audit with T5.3.
 
 ### Phase 6, write-up
 
@@ -272,3 +272,4 @@ Newest last. Each entry: date, task, result, output path and sha256, audited by 
 - 2026-11-06, T4.3 and T4.4, not yet audited (`PF/bakeoff/read-arms.json`), GOAT, arm − FTm on drive, tone, cab, 90%: `A-ctl` +0.006, −0.014, −0.000, the seed noise. `A-cat` +0.025 [−0.023, +0.075], −0.092 [−0.169, −0.012], −0.062 [−0.103, −0.018]. `A-cnn` −0.039 [−0.098, +0.016], −0.138 [−0.212, −0.053], −0.114 [−0.184, −0.047], mic swap +0.099 [+0.042, +0.157] worse. `A-k1` +0.026 [−0.003, +0.052], +0.020 [−0.024, +0.062], +0.009
   [−0.012, +0.032]. `A-mic` +0.037 [+0.013, +0.063], +0.065 [+0.012, +0.119], +0.043 [+0.014, +0.068], bounds −0.005, −0.022, −0.001; mic swap +0.057 [+0.029, +0.085] worse, switch −0.015 better. No arm moves on by the declared rule. Measured: `A-cat` 33 min, `A-cnn` 13 min, `A-k1` 31 min, `A-mic` 30 min, `A-ctl` 32 min. W's stored body, chosen on NS loss, underlies `A-ctl`, `A-cat`, `A-k1` and `A-mic`; `P2b-wide24:final` reads +0.075, +0.148, −0.076 against `best`'s +0.096, +0.222, −0.086, so `A-cnn`'s `final` start costs it something on tone.
 - 2026-11-06, T5.2, not yet audited (`PF/bakeoff/score-b.json`), by the score, GOAT by item, BKS by DI: `W-ridge − RcBG` −0.023 [−0.032, −0.015] and −0.007 [−0.035, +0.021]; `W-ridge − FTm` −0.002 [−0.018, +0.013] and −0.025 [−0.074, +0.024], undecided on both.
+- 2026-11-06, T5.4, not yet audited (`PF/bakeoff/score-c.json`, 1,340 renders; the predict code on FTm's nets reproduced its stored answers exactly), by the score, GOAT by item, BKS by DI: `A-mic − FTm` −0.006 [−0.013, +0.002] and +0.004 [−0.008, +0.017]; `A-mic − RcBG` −0.027 [−0.045, −0.008] and +0.023 [−0.030, +0.075]. Its knob gain does not show by the score.
