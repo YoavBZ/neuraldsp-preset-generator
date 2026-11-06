@@ -77,7 +77,7 @@ N4 (F56, one listener, the same 10 parts): FTm is not known by ear. It is above 
 closeness, and by the score S is closer on 8 of these 10 parts, the reverse of the two development sets (the pooled row on t reaches zero). S and FT repeat L0's split on the same clips:
 the models lead on clean parts and off the ac20, S on crunch and on the ac20, and class, amp and S's setting still cannot be pulled apart.
 The label check (F57, one listener, 11 parts of 12, amp and class crossed): J0's search labels through the true DI are heard closer than S on closeness (+1.45 [+0.91, +2.00] on the 0 to 3 scale) and the rank share reaches one half (8 of 11, 0.73 [0.45, 0.91]), so the declared row is not known and the closeness row is the user's evidence on whether to go on. With the listener's post hoc correction of item 8 the rank share reads 9 of 11 [0.64, 1.00] beside it, which does not move the declared reading. Neither of F56's splits shows for the labels, which does not say what drove those splits. It reads labels, not a model or a song.
-Findings F1–F62.
+Findings F1–F63.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -1983,7 +1983,7 @@ instead of generating unrealistic presets our own?"):
     this batch's yield replaces GOAT's 81% in that sum. Training comes after that, on FT's recipe, in its own
     declaration. L2 follows.
   - **N9, training on the captures, first step (declared 2026-11-06; ledger `phase_n9`; [design](capture-training-plan.md)).** On the user's go, on the 121 trusted labels in hand: FTm's recipe with and without the capture rows, on creator folds, with DI drops in every arm, read on held capture units. The second batch's labels stay unread until its gates pass. The draft below stays the plan for training on both batches.
-    - *N9b (declared 2026-11-06, ledger `phase_n9b`, the same design):* does a ridge gain from capture rows, on top of BKS's and GOAT's? Zero renders, zero training, read beside N9's nets.
+    - *N9b (declared 2026-11-06, ledger `phase_n9b`, the same design):* does a ridge gain from capture rows, on top of BKS's and GOAT's? Zero renders, zero training, read beside N9's nets. *Outcome (F63):* mixed, drive −0.056 [−0.093, −0.019], tone +0.038 [+0.001, +0.076], neither firm; about 40% of the drive cost is search v2's offset in the pooled cell mean.
     - *Outcome (2026-11-06, F62):* undecided: C-cap − C-ctl +0.018, −0.014 and +0.024, each reaching zero, excluding a gain above about +0.08 and not excluding +0.05. No knob gain shown; an undeclared lead only on the search's own mic labels. The second batch is the test with more rows.
   - **Training on the captures, a draft (2026-11-05; not declared, nothing runs).** It waits on the user's yes (F57's closeness row is the evidence), on the second batch's ear page, heavy page and stage check, and on a reviewed declaration in the ledger. FTc: FTm's recipe (W's best state, searched heads only, lr 1e-4, cap 300, patience 15, 4 folds × 2 seeds, the 8 inner runs then the 8 FTc_k, two at a time on MPS). N1's runs took 8 to 10 min each by `logs/ftm.log`, and more rows will take longer.
     - *Code it needs.* `ft_rows_of` and `dfix_records` take BKS and GOAT only; capture rows need a row-id range and a rows-per-epoch rule, which the recipe does not yet define (BKS and GOAT cycle to 300 each); `cmd_train_ft`'s input hash and inner fold check must learn them; `build-dfix-real --captures` reads the first batch only, and for a capture unit `session_of` gives "cap", so the rule that a unit never gets its own session's backing does nothing, while 31 of the second batch's 49 DI files sit in a pool session.
@@ -4447,6 +4447,29 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **What it changes.** Nothing is adopted. No gain is shown from replacing a third of the updates with 67 to 82 capture units, and a gain up to about +0.08 is not excluded, so by the map the second batch is the test with more rows. C-mic is not shown ahead of C-cap. The spread between ac20Power and inputGain is untouched by these rows: an untested candidate, from a post hoc scale read, and a rescale alone cannot raise r.
 - The design's limits needed two corrections: "a third of C-cap's rows mostly teach cab at S" holds for the continuous cab knobs (29 to 34% left S, mic level 16%), not for mic type (67% and 43%); and seed noise was larger here than the GOAT figure it quoted.
 - Files: `captrain/n9-read.json`, `captrain/audit/`. Logs `logs/n9.log`, `logs/n9-read.log`.
+
+### F63. N9b, a ridge with and without capture rows: mixed, and neither leg firm (phase_n9b, zero renders, zero training)
+- **What ran.** `M-pcs`, the mel ridge at 64 PCs, fitted per capture fold on N9's rows, each labelled record once, 473 to 565 records, capture rows 12 to 15% of a fit, so here they sit on top of BKS's and GOAT's. Read on the same 121 held units as N9, on variant 0. Control passed, worst 0.0.
+
+  | r | Drive | Tone | Cab |
+  |---|---|---|---|
+  | M-ctl | 0.173 | 0.283 | 0.134 |
+  | M-cap | 0.117 | 0.322 | 0.147 |
+  | **M-cap − M-ctl, primary** | **−0.056 [−0.093, −0.019]** | **+0.038 [+0.001, +0.076]** | **+0.013 [−0.017, +0.044]** |
+  | Head-standardised | −0.024 [−0.078, +0.031] | +0.023 [−0.046, +0.091] | +0.010 [−0.020, +0.040] |
+  | 25-backing mean, the same pair | −0.044 [−0.080, −0.007] | +0.061 [+0.016, +0.106] | +0.001 [−0.029, +0.031] |
+  | M-ctl − C-ctl, ridge against network | +0.053 [−0.097, +0.203] | +0.098 [−0.033, +0.229] | −0.080 [−0.190, +0.029] |
+
+- **By the declared map:** mixed, so no step on its own. It reads differently on other backings: on each of the 25 single backings the map gives undecided 11, lead 6, cost 5, mixed 3. Measured on these answers, chance gives mixed 1.0%, lead 9.3%, cost 8.5%.
+- **The audit (independent, own replica matching the stored answers to 2e-16, C-ctl's nets run on all 25 backings; every row reproduced; below post hoc).**
+  - *Drive's cost is real but narrow, and variant 0 overstates it.* It holds on removing any creator, DI or capture, and all four folds are negative. But variant 0 is the most negative of the 25 backings (single-backing mean −0.030, negative on 24). About 40% is search v2's offset going into the pooled cell mean: with capture rows centred on their own cell mean, −0.032 [−0.062, −0.003]. Most of the rest is one head, pr12Volume (−0.192 [−0.335, −0.048]), which N9's C-cap also flipped. Without pr12Volume, −0.030 [−0.076, +0.016]. inputGain does not move (+0.001).
+  - *Tone's gain is a lead at most.* About two thirds comes through the penalty: at M-ctl's penalty it is +0.011 [−0.013, +0.035]. The clear ends on removing any of 13 of 19 creators, and it rests on pr12 (+0.100 [+0.025, +0.174]; without pr12Treble +0.022 [−0.031, +0.076]). Shuffled labels give +0.000, so it does need the true labels, on 12 draws.
+  - *The ridge does not beat the cell mean where the networks lose.* Skill by creator, M-ctl against C-ctl: drive +.025 [−.041, +.091] and −.057 [−.135, +.020]; tone +.069 [−.030, +.168] and +.034 [−.006, +.074]; cab −.124 [−.246, −.002] and −.040 [−.130, +.050]. The pair reaches zero on all three.
+  - *The networks' readout, a lead.* Most of drive's point lead over the nets is their median readout on ac20Power (skill −.671 by median, −.074 by mean). C-ctl's mixture mean clearly beats its median on squared error: +.059 [+.024, +.093], +.012 [+.004, +.019], +.057 [+.033, +.082], which moves its skill to +.001, +.046, +.017. It needs no training. It says nothing of r or sound, and it is undeclared.
+  - *Backing noise is a large part of the ridge's error.* M-ctl's r over 1, 4 and 25 backings: drive .146, .188, .208; tone .250, .338, .361; cab .148, .187, .200. That says the sign is no accident of variant 0. It says nothing of songs: it is the same guitar under other backings. On 25 backings the fair ridge-against-net pairs are +0.061 [−0.008, +0.131], +0.097 [+0.020, +0.173], −0.029 [−0.096, +0.037].
+  - The ridge's fits hold BKS at 63 to 65% of records, against 50% in C-ctl, so M-cap − C-cap is not the same data balance. Variant 0 also flatters C-ctl's tone, the best of its 25 backings.
+- **What it changes.** Adding capture rows on top is not shown to help a ridge, and with labels from another search recipe they cost a little on drive. That recipe offset is the part to fix before the two are pooled in any fit, for a ridge or a network. `E-mix`, which needs 3,025 more embedded inputs, waits. Two free leads stand: the mixture mean as FTm's readout, and averaging over more of a recording, which the review session has put to the user. The second batch's labels are search v2's too, so the offset comes with them. Nothing here is sound.
+- Files: `captrain/n9b-read.json`, `captrain/audit/`. Log `logs/n9b.log`.
 
 ## Budget
 
