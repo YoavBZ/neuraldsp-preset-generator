@@ -2,11 +2,11 @@
 without the capture rows, read on the held capture units (`docs/capture-training-plan.md`; ledger `phase_n9b`).
 
     TORCH_PY=~/ndsp-presets/tools/demucs-venv/bin/python
-    PYTHONPATH=. $TORCH_PY -m learn.capture_ridge OUT.json       # CPU, zero renders
+    PYTHONPATH=. $TORCH_PY -m learn.capture_ridge OUT.json N9_ROWS.pkl     # CPU, zero renders
 
-A ridge takes each real unit once, so here capture rows sit on top of BKS's and GOAT's, which N9's pair could not show. Every
-row sharing a DI file with a held capture unit leaves both fits (`capture_train.rows_of`). The second batch, V-real, the NS
-songs and the panel are not read.
+A ridge takes each labelled record once, so here capture rows sit on top of BKS's and GOAT's, which N9's pair could not show.
+Every row sharing a DI file with a held capture unit leaves both fits (`capture_train.rows_of`). Each arm reads the held units
+on variant 0, as N9, and on the mean of all 25 backings beside. The second batch, V-real, the NS songs and the panel are not read.
 """
 from __future__ import annotations
 
@@ -19,18 +19,18 @@ import numpy as np
 from learn import capture_train as CT
 
 ARMS = {"M-ctl": "C-ctl", "M-cap": "C-cap"}
-PAIRS = (("M-cap", "M-ctl"), ("M-cap", "C-cap"), ("M-ctl", "C-ctl"))
+PAIRS = (("M-cap", "M-ctl"), ("M-cap", "C-cap"), ("M-ctl", "C-ctl"), ("M-cap-25", "M-ctl-25"), ("M-ctl-25", "M-ctl"))
 PCS = 64
 
 
 # --- pure -----------------------------------------------------------------------------------------------------------
 
 def unique_rows(rows):
-    """`rows` with each real unit once, the first of its cycled copies, in order."""
+    """`rows` with each labelled record once, the first of its cycled copies, in order. A BKS unit has a record per amp."""
     seen, out = set(), []
     for r in rows:
-        if r["real"] not in seen:
-            seen.add(r["real"])
+        if (r["real"], r["amp"]) not in seen:
+            seen.add((r["real"], r["amp"]))
             out.append(r)
     return out
 
@@ -58,12 +58,19 @@ def fold_answers(k, src, recs, cu):
     di = {**src[1], **src[3], **src[5]}
     out = {(r["rig"], h["amp"]): {} for r, h in zip(recs, held)}
     for arm, rows_arm in ARMS.items():
-        rows = unique_rows(CT.rows_of(rows_arm, k, src)[0])
+        cycled, n = CT.rows_of(rows_arm, k, src)
+        rows = unique_rows(cycled)
+        if len(rows) != n["bks"] + n["goat"] + n["capture"]:
+            raise SystemExit(f"{arm} fold {k}: {len(rows)} rows, not one per labelled record")
+        clusters = [di[r["real"]]["di"] for r in rows]
+        if {di[h["real"]]["di"] for h in held} & set(clusters):
+            raise SystemExit(f"{arm} fold {k}: a held DI in the training rows")
         Y = [np.stack(z) for z in zip(*(enc(r["label"]) for r in rows))]
-        mu, _ = ER.fit_predict(rows, [di[r["real"]]["di"] for r in rows], [r["real"] for r in rows], held,
-                               [h["real"] for h in held], (Y[0], Y[1]), rep="mel", pcs=PCS)
-        for j, (r, h) in enumerate(zip(recs, held)):
-            out[(r["rig"], h["amp"])][f"{arm}_ans"] = mu[j]
+        for label, back in ((arm, 1), (f"{arm}-25", 25)):
+            mu, _ = ER.fit_predict(rows, clusters, [r["real"] for r in rows], held, [h["real"] for h in held], (Y[0], Y[1]),
+                                   rep="mel", pcs=PCS, held=back)
+            for j, (r, h) in enumerate(zip(recs, held)):
+                out[(r["rig"], h["amp"])][f"{label}_ans"] = mu[j]
         print(arm, "fold", k, len(rows), "rows done", flush=True)
     return out
 
@@ -105,8 +112,8 @@ def main(out, n9_rows):
         answers.update(fold_answers(k, src, [r for u, r in sorted(recs.items()) if cu[u]["fold"] == k], cu))
     rows = join_answers(pickle.load(open(n9_rows, "rb")), lambda r: (r["rec"], r["amp"]), answers)
     pickle.dump(rows, open(out + ".rows.pkl", "wb"))
-    labels = (*ARMS, "C-ctl", "C-cap")
-    res = {"arms": {}, "jackknife": {}, "jackknife_std": {}, "size": {x: CT.size_rows(rows, x) for x in ARMS},
+    labels = (*ARMS, "M-ctl-25", "M-cap-25", "C-ctl", "C-cap")
+    res = {"arms": {}, "jackknife": {}, "jackknife_std": {}, "size": {x: CT.size_rows(rows, x) for x in (*ARMS, "M-ctl-25", "M-cap-25")},
            "heads": {x: CT.head_rows(rows, x) for x in ARMS}}
     for cls in ("all", "crunch", "clean"):
         S = [r for r in rows if cls in ("all", r["cls"])]
