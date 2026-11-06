@@ -55,3 +55,10 @@ def test_a_held_di_or_a_doubled_record_stops_the_ridge(monkeypatch):
     with pytest.raises(SystemExit, match="one row per"):
         F.ridge_answers(held, (brecs * 2, bu, grecs, gu, caps, cu), {"h": {"di": "new"}})
 
+
+def test_a_lead_must_keep_its_sign_without_the_shared_creators():
+    rows = {"drive": {"lo": 0.01}, "tone": {"lo": -0.1}}
+    std = {"drive": {"point": 0.1}, "tone": {"point": 0.1}}
+    assert F.lead_holds(rows, std, {"drive": {"point": 0.02}, "tone": {"point": -0.5}})
+    assert not F.lead_holds(rows, std, {"drive": {"point": -0.02}, "tone": {"point": 0.5}})
+

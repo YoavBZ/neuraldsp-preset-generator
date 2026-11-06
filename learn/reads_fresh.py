@@ -1,11 +1,11 @@
-"""N10: the trained models on the second capture batch, which no model trained on or was chosen on (`docs/capture-training-plan.md`;
+"""N10: the trained models on the second capture batch, in no model's real rows (`docs/capture-training-plan.md`;
 ledger `phase_n10`).
 
     TORCH_PY=~/ndsp-presets/tools/demucs-venv/bin/python
     PYTHONPATH=. $TORCH_PY -m learn.reads_fresh OUT.json       # CPU, zero renders, zero training
 
 Each network arm answers by the mean of all its fold models, both seeds, since no fold held these units. The ridges fit on every
-BKS and GOAT label, and with the first batch's trusted labels, each record once. Read as N6, variant 0, r demeaned within (amp,
+BKS and GOAT label, and with the first batch's trusted labels, each record once. Read as N6, variant 0, with the ridges on the mean of 25 backings beside, r demeaned within (amp,
 class, head), clusters by creator. V-real, the NS songs and the panel are not read.
 """
 from __future__ import annotations
@@ -44,8 +44,14 @@ def one_fold(rows):
     return [dict(r, fold=0) for r in rows]
 
 
+def lead_holds(rows, std, without):
+    """A lead's clear rows (clear above, standardised point above zero) keep their sign without the shared creators."""
+    return all(without[g]["point"] > 0 for g, r in rows.items() if r["lo"] > 0 and std[g]["point"] > 0)
+
+
 def decide(net, ridge):
-    """The declared next step from the two primary pairs' `capture_train.reading`."""
+    """The declared next step from the two primary pairs' `capture_train.reading`. A lead that fails `lead_holds` comes in here
+    as "undecided"."""
     if net == "a lead":
         return "train on both batches, in its own declaration"
     if ridge == "a lead":
@@ -134,9 +140,11 @@ def main(out):
     res = {"units": len(rows), "creators": len({r["cluster"] for r in rows}), "arms": {}, "jackknife": {}, "jackknife_std": {},
            "size": {x: CT.size_rows(rows, x) for x in labels}, "heads": {x: CT.head_rows(rows, x) for x in labels}}
     rng = np.random.default_rng(R.RNG_SEED)
-    res["swap"] = {x: {"total": R.t_row([(r["cluster"], float(r[f"{x}_swap"].sum())) for r in rows if r[f"{x}_swap"] is not None]),
-                       **{q: R.t_row([(r["cluster"], float(r[f"{x}_swap"][i])) for r in rows if r[f"{x}_swap"] is not None])
-                          for i, q in enumerate(("knob", "switch", "mic"))}} for x in NETS}
+    res["swap"] = {cls: {x: {"total": R.t_row([(r["cluster"], float(r[f"{x}_swap"].sum())) for r in rows
+                                               if r[f"{x}_swap"] is not None and cls in ("all", r["cls"])]),
+                             **{q: R.t_row([(r["cluster"], float(r[f"{x}_swap"][i])) for r in rows
+                                            if r[f"{x}_swap"] is not None and cls in ("all", r["cls"])])
+                                for i, q in enumerate(("knob", "switch", "mic"))}} for x in NETS} for cls in ("all", "clean")}
     res["shared_creators"] = sorted(shared & {r["cluster"] for r in rows})
     others = [r for r in rows if r["cluster"] not in shared]
     res["units_without_shared"] = len(others)
@@ -156,7 +164,13 @@ def main(out):
                     for g in R.GROUPS}
     res["branch"] = CT.reading(res["jackknife"]["all/C-cap-C-ctl"], res["jackknife_std"]["all/C-cap-C-ctl"])
     res["branch_ridge"] = CT.reading(res["jackknife"]["all/M-cap-M-ctl"], res["jackknife_std"]["all/M-cap-M-ctl"])
-    res["decision"] = decide(res["branch"], res["branch_ridge"])
+    def held_up(branch, p, q):
+        key = f"all/{p}-{q}"
+        if branch != "a lead" or lead_holds(res["jackknife"][key], res["jackknife_std"][key], res["without_shared"][f"{p}-{q}"]):
+            return branch
+        return "undecided"
+
+    res["decision"] = decide(held_up(res["branch"], "C-cap", "C-ctl"), held_up(res["branch_ridge"], "M-cap", "M-ctl"))
     json.dump(res, open(out, "w"), indent=1, default=float)
     for x in labels:
         print(x, {g: round(res["arms"]["all"][x][g]["r"], 3) for g in R.GROUPS})
