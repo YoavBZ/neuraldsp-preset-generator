@@ -109,3 +109,22 @@ def test_block_pca_keeps_each_blocks_own_components():
     assert np.allclose(c[:2, 3:], 0.0) and np.allclose(c[2:, :3], 0.0)
     assert np.allclose(np.linalg.norm(c, axis=1), 1.0)
     assert np.allclose(m, x.mean(0))
+
+
+def test_block_pca_takes_several_blocks():
+    x = np.random.default_rng(1).normal(size=(40, 9))
+    _, c = R.block_pca(x, (3, 6), 2)
+    assert c.shape == (6, 9)
+    assert np.allclose(c[:2, 3:], 0.0) and np.allclose(c[2:4, :3], 0.0) and np.allclose(c[2:4, 6:], 0.0) and np.allclose(c[4:, :6], 0.0)
+
+
+def test_tuned_family_is_24_contrasts():
+    f = R.tuned_family()
+    assert len(f) == 24 and len(set(f)) == 24
+    assert {q[1] for q in f} == {"E-mix", "W-pcs"}
+
+
+def test_by_seed_averages_answers_and_passes_a_missing_swap_on():
+    rows = [{"X-1_ans": np.array([1.0]), "X-2_ans": np.array([3.0]), "X-1_swap": np.array([0.0]), "X-2_swap": None}]
+    R.by_seed(rows, ["X"], (1, 2), lambda q: q)
+    assert rows[0]["X_ans"][0] == 2.0 and rows[0]["X_swap"] is None

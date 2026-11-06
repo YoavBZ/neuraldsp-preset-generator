@@ -7,6 +7,7 @@
     $TORCH_PY -m learn.eat_read tags OUT.json                                     # S4.4, AudioSet's outputs with no fit
     $TORCH_PY -m learn.eat_read domain OUT.json --reps top f6 mel                 # S3.4, the domain direction, no real label
     $TORCH_PY -m learn.eat_read exposure OUT.json                                 # S3.6, its guitar outputs against exposure
+    $TORCH_PY -m learn.eat_read tuned OUT.json --mid pub --pcs 64 [--check]       # S8.3, the tuned bodies and `EW-mix`
 
 Every read goes through `bakeoff.candidate_answers` unchanged: within-cell centring, 24 PCs in the fold, ridge with alpha from inner
 folds, residuals around the cell's mean, searched heads only, the two halves averaged. Only `feature` and the PC count are swapped,
@@ -47,6 +48,7 @@ GROUP_NAMES = ("drive", "tone", "cab")
 R_DIMS_TOP = 1921                                       # `top` with LUFS, at width 1
 W_FEATURE = B.feature
 GUITAR = ("Guitar", "Electric guitar")
+ET_SEEDS = (20261042, 20261043)
 TAG_CLASSES = ("Distortion", "Effects unit", "Electric guitar", "Reverberation", "Echo")
 DRAWS = 1000
 
@@ -122,7 +124,7 @@ class Features:
 
     def __init__(self, bank, paths=None):
         self.bank, self.paths = bank, paths or {}
-        self.cache, self.mel_scale, self.mix_cut = {}, None, {}
+        self.cache, self.mel_scale, self.w_scale, self.mix_cut = {}, None, None, {}
 
     def mel_sd(self):
         """The mel statistics' sd by dimension on the `wide` set's first rows, no labels."""
@@ -132,15 +134,34 @@ class Features:
             self.mel_scale = a.reshape(-1, a.shape[-1]).std(0)
         return self.mel_scale
 
+    def w_block(self, f, amp, cls):
+        """W's last layer on both its seeds, joined and scaled to unit total variance on the first real units, no labels."""
+        from learn import pipeline_fix as P
+        from learn import reads_v3 as R
+
+        if self.w_scale is None:
+            units = P.dfix_units()[:MEL_SD_ROWS]
+            a = np.stack([np.concatenate([W_FEATURE("W", sd, str(P.dfix_input_path(u, 0)), "pr12", prt["cls"]) for sd in R.SEEDS], 1)
+                          for u, _, prt in units])
+            self.w_scale = a.reshape(-1, a.shape[-1]).std(0)
+        v = np.concatenate([W_FEATURE("W", sd, f, amp, cls) for sd in R.SEEDS], 1)
+        return scaled(v, self.w_scale) / np.sqrt(v.shape[1])
+
     def __call__(self, name, seed, f, amp, cls):
         if name == "W":
             return W_FEATURE(name, seed, f, amp, cls)
         kind, key = self.paths[f] if isinstance(f, str) else f
-        q = (name, kind, key)
+        q = (name, kind, key, amp, cls) if name.startswith("mix3:") else (name, kind, key)
         if q in self.cache:
             return self.cache[q]
         if name == "mel":
             v = B.summary_of("mel", input_of(kind, key))
+        elif name.startswith("mix3:"):
+            base = self(f"mix:{name[5:]}", seed, f, amp, cls)
+            cut = self.mix_cut[base.shape[1]]
+            w = self.w_block(f, amp, cls)
+            v = np.concatenate([base[:, :cut], w, base[:, cut:]], 1)
+            self.mix_cut[v.shape[1]] = (cut, cut + w.shape[1])
         elif name.startswith("mix:"):
             m = scaled(B.summary_of("mel", input_of(kind, key))[:, :-1], self.mel_sd())
             e = self.bank.vector(name[4:], kind, key, rebuilt_lufs(kind, key))
@@ -207,11 +228,14 @@ def spiked_size(dims):
     return 10.0 * np.sqrt(dims)
 
 
-def block_pca(X, cut, k):
-    """(mean, components) with `k` PCs of the network block and `k` of the mel block, so neither crowds out the other's."""
+def block_pca(X, cuts, k):
+    """(mean, components) with `k` PCs of each block, the blocks split at `cuts` (one or several columns), so none crowds out the
+    others'."""
+    cuts = (cuts,) if isinstance(cuts, int) else tuple(cuts)
+    edges = (0, *cuts, X.shape[1])
     m = X.mean(0)
     parts = []
-    for lo, hi in ((0, cut), (cut, X.shape[1])):
+    for lo, hi in zip(edges, edges[1:]):
         vt = np.linalg.svd(X[:, lo:hi] - m[lo:hi], full_matrices=False)[2][:k]
         c = np.zeros((len(vt), X.shape[1]))
         c[:, lo:hi] = vt
@@ -370,9 +394,9 @@ def real_setup(a, pcs=None):
     return rows, data, prior
 
 
-def add_prior(rows, prior, label):
-    """A stored candidate's answers from the model comparison's rows, joined by position: both lists are `base_rows`' order."""
-    old = pickle.loads((prior / "read-a.json.rows.pkl").read_bytes())
+def add_prior(rows, path, label):
+    """A stored candidate's answers from a stored read's rows, joined by position: both lists are `base_rows`' order."""
+    old = pickle.loads(pathlib.Path(path).read_bytes())
     if len(old) != len(rows):
         raise SystemExit("the stored rows differ")
     for r, q in zip(rows, old):
@@ -456,7 +480,7 @@ def cmd_real(a):
     cands = candidates(a.mid)
     declared(cands, a)
     rows, data, prior = real_setup(a)
-    add_prior(rows, prior, "W-ridge")
+    add_prior(rows, prior / "read-a.json.rows.pkl", "W-ridge")
     by_fold = {k: [r for r in rows if r["fold"] == k] for k in range(FOLDS)}
     for k in range(FOLDS):
         B.add_candidates(by_fold[k], k, {**cands, **SAME_COUNT}, data)
@@ -470,6 +494,67 @@ def cmd_real(a):
     side = [(c, b) for c in ("E-top", "E-mid", "E-mix") for b in ("W-pcs", "W-ridge", "M-ridge")]
     side += [(c, "P4-ridge") for c in ("PE-top", "PE-mid", "PE-mix")]
     res = R.report(rows, labels, pairs=sorted({(q[0], q[1]) for q in fam} | set(side)))
+    res["crunch"] = B.crunch_read(rows, labels)
+    res["bounds"] = B.bounds(rows, fam)
+    res["player"] = B.player_read(rows, labels, data[4])
+    res["family"] = B.family(rows, labels)
+    pathlib.Path(a.out).write_text(json.dumps(res, indent=1, default=float))
+
+
+TUNED_LABELS = ("EW-mix", "TE-mix", "TE-mid", "TR-mix")
+
+
+def tuned_family():
+    """S8.3's declared contrasts: (a, b, group, crunch only)."""
+    return tuple((c, b, g, False) for c in TUNED_LABELS for b in ("E-mix", "W-pcs") for g in GROUP_NAMES)
+
+
+def by_seed(rows, labels, seeds, out):
+    """Each label's answers and swaps, averaged over its seeds' rows, under the label."""
+    for label in labels:
+        for r in rows:
+            r[f"{out(label)}_ans"] = np.mean([r[f"{label}-{s}_ans"] for s in seeds], 0)
+            q = [r[f"{label}-{s}_swap"] for s in seeds]
+            r[f"{out(label)}_swap"] = None if any(v is None for v in q) else np.mean(q, 0)
+
+
+def cmd_tuned(a):
+    """S8.3: `EW-mix` on the frozen net, and the tuned bodies read as `E-mix` is, each seed's answers averaged. With --check, the
+    shuffle on all four and the spike on `TE-mix`, no read."""
+    from learn import reads_v3 as R
+
+    B.sha_ok()
+    declared(TUNED_LABELS, a)
+    rows, data, _ = real_setup(a)
+    paths = B.feature.paths
+    add_prior(rows, EE.embed_root().parent / "read.json.rows.pkl", "E-mix")
+    add_prior(rows, EE.embed_root().parent / "read.json.rows.pkl", "W-pcs")
+    add_prior(rows, EE.embed_root().parent / "read.json.rows.pkl", "M-pcs")
+    root = B.OUT
+    check = "shuffle" if a.check else None
+    by_fold = {k: [r for r in rows if r["fold"] == k] for k in range(FOLDS)}
+    for k in range(FOLDS):
+        B.OUT = f"{root}/tuned"
+        B.add_candidates(by_fold[k], k, {"EW-mix": (f"mix3:{a.mid}", "ridge", "real")}, data, check=check)
+    for stage, labels in (("body", {"TE-mix": f"mix:{a.mid}", "TE-mid": a.mid}), ("rand", {"TR-mix": f"mix:{a.mid}"})):
+        for seed in ET_SEEDS:
+            B.feature = Features(Bank(f"{stage}-{seed}"), paths)
+            B.OUT = f"{root}/tuned-{stage}-{seed}"
+            cands = {f"{m}-{seed}": (rep, "ridge", "real") for m, rep in labels.items()}
+            for k in range(FOLDS):
+                B.add_candidates(by_fold[k], k, cands, data, check=check)
+        by_seed(rows, labels, ET_SEEDS, lambda q: q)
+    rows = [r for k in range(FOLDS) for r in by_fold[k]]
+    if a.check:
+        G = [r for r in rows if r["set"] == "GOAT"]
+        res = {m: {g: v[0] for g, v in R.corr(R.blocks(G, m)).items()} for m in TUNED_LABELS}
+        print(json.dumps(res, default=float), flush=True)
+        pathlib.Path(a.out).write_text(json.dumps(res, indent=1, default=float))
+        return
+    pathlib.Path(a.out + ".rows.pkl").write_bytes(pickle.dumps(rows))
+    labels = ["FTM", "M-pcs", "W-pcs", "E-mix", *TUNED_LABELS]
+    fam = tuned_family()
+    res = R.report(rows, labels, pairs=sorted({(q[0], q[1]) for q in fam} | {(c, "FTM") for c in TUNED_LABELS}))
     res["crunch"] = B.crunch_read(rows, labels)
     res["bounds"] = B.bounds(rows, fam)
     res["player"] = B.player_read(rows, labels, data[4])
@@ -614,6 +699,11 @@ def main(argv=None):
     t.add_argument("out")
     t.add_argument("--mid", required=True)
     t.set_defaults(fn=cmd_tags)
+    u = sub.add_parser("tuned")
+    u.add_argument("out")
+    u.add_argument("--mid", required=True)
+    u.add_argument("--check", action="store_true")
+    u.set_defaults(fn=cmd_tuned)
     x = sub.add_parser("exposure")
     x.add_argument("out")
     x.set_defaults(fn=cmd_exposure)
@@ -621,7 +711,7 @@ def main(argv=None):
     d.add_argument("out")
     d.add_argument("--reps", nargs="+", required=True)
     d.set_defaults(fn=cmd_domain)
-    for q in (p, c, d, x, *(sub.choices[n] for n in ("amp", "real", "tags"))):
+    for q in (p, c, d, x, *(sub.choices[n] for n in ("amp", "real", "tags", "tuned"))):
         q.add_argument("--net", default="mn10_as")
         q.add_argument("--pcs", type=int, default=24)
     args = ap.parse_args(argv)

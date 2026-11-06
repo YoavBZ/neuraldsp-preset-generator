@@ -34,6 +34,7 @@ SKIP_A = 100                                            # `pretrain_set.MASK_A_F
 BATCH = 64
 RAND_SEED = 20261042
 CAL_INPUTS = 512
+TUNED = ("body-", "rand-")
 
 
 def embed_root():
@@ -96,9 +97,24 @@ def calibrate(net, paths, dev):
     return net.eval()
 
 
+def tuned(name):
+    """A body from `eat_train`: `<stage>-<seed>`, its body's weights and batch-norm statistics as training left them."""
+    import torch
+
+    from learn import eat_train as ET
+
+    stage, seed = name.rsplit("-", 1)
+    state = torch.load(ET.run_path(stage, int(seed)), map_location="cpu", weights_only=True)
+    net = E.network(1.0)
+    net.load_state_dict({k[5:]: v for k, v in state.items() if k.startswith("body.")}, strict=True)
+    return net
+
+
 def build(name, dev):
     import torch
 
+    if name.startswith(TUNED):
+        return tuned(name).to(dev).eval()
     if name == "mn10_rand":
         torch.manual_seed(RAND_SEED)
         net = E.network(1.0)
@@ -155,7 +171,7 @@ def main(argv=None):
     import torch
 
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--net", required=True, choices=(*E.NAMES, "mn10_rand"))
+    ap.add_argument("--net", required=True, help="an `eat_net.NAMES` name, mn10_rand, or a tuned body: body-<seed>, rand-<seed>")
     ap.add_argument("--sets", nargs="+", choices=("clean", "wide", "real", "amp", "reads", "captures"), required=True)
     ap.add_argument("--stats", nargs="+", default=list(STATS), choices=STATS)
     ap.add_argument("--dev", default="mps" if torch.backends.mps.is_available() else "cpu")
