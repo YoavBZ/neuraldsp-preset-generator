@@ -6,7 +6,7 @@
     $MAIN -m learn.eat_render report OUT.json --tags E-mix [--vs M-ridge]         # zero renders
 
 `bakeoff_render.root()` points at PF/eat/score, where this study's answers and judges go; the stored judges of S, RcBG, FTm and
-`M-ridge` are linked in from PF/bakeoff, not copied. An `E-` candidate fits as `bakeoff_render.fit_fold` fits a ridge, on this
+`M-ridge` are linked in from PF/bakeoff, not copied. A candidate fits as `bakeoff_render.fit_fold` fits a ridge, on this
 study's feature and PC count, with residuals around RcBG's own values.
 """
 from __future__ import annotations
@@ -45,10 +45,10 @@ def cmd_predict(a):
     from learn import bakeoff as B
     from learn import eat_read as ER
 
-    cands = ER.candidates(a.mid)
+    cands = {**ER.candidates(a.mid), **ER.SAME_COUNT}
     if a.tag not in cands or cands[a.tag][2] != "real":
-        raise SystemExit("predict takes a real-trained `E-` candidate")
-    ER.declared(cands, a)
+        raise SystemExit("predict takes a real-trained candidate of this study")
+    ER.declared(ER.candidates(a.mid), a)
     ER.real_setup(a)
     B.CANDIDATES = {**B.CANDIDATES, a.tag: cands[a.tag]}
     BR.root = score_root
