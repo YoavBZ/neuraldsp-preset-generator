@@ -363,8 +363,9 @@ def fit_predict(rows_tr, clusters, units_tr, rows_te, units_te, Y_tr, rep="mix:p
     keep_feature, keep_pca = B.feature, with_pcs(pcs)
     B.feature = Features(bank)
     try:
-        files = [[(kind[u], (u, v)) for v in range(P.DFIX_K)] for u in units_tr]
-        te = [(kind[u], (u, 0)) if held == 1 else ("avg", (u, held)) for u in units_te]
+        kind_of = lambda u: kind.get(u, kinds[0])       # noqa: E731    `mel` needs no embedded set
+        files = [[(kind_of(u), (u, v)) for v in range(P.DFIX_K)] for u in units_tr]
+        te = [(kind_of(u), (u, 0)) if held == 1 else ("avg", (u, held)) for u in units_te]
         return B.candidate_answers((rep, "ridge", "x"), rows_tr, clusters, files, rows_te, te, Y_tr, R.searched, (None,))
     finally:
         B.feature, B.pca = keep_feature, keep_pca
