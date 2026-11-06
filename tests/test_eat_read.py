@@ -6,9 +6,9 @@ np = pytest.importorskip("numpy")
 from learn import eat_read as R
 
 
-def test_the_declared_family_is_36_contrasts_and_no_pair_twice():
+def test_the_declared_family_is_42_contrasts_and_no_pair_twice():
     f = R.family_of()
-    assert len(f) == 36 and len(set(f)) == 36
+    assert len(f) == 42 and len(set(f)) == 42
     assert {q[2] for q in f} == set(R.GROUP_NAMES)
     assert all(not q[3] for q in f)
 
@@ -16,9 +16,14 @@ def test_the_declared_family_is_36_contrasts_and_no_pair_twice():
 def test_each_candidate_meets_its_two_references():
     f = R.family_of()
     for c in ("E-top", "E-mid", "E-mix"):
-        assert {q[1] for q in f if q[0] == c} == {"FTM", "M-ridge"}
+        assert {q[1] for q in f if q[0] == c} == {"FTM", "M-pcs"}
     for c in ("PE-top", "PE-mid", "PE-mix"):
-        assert {q[1] for q in f if q[0] == c} == {"W", "P4-ridge"}
+        assert {q[1] for q in f if q[0] == c} == {"W", "P-pcs"}
+
+
+def test_the_same_count_mel_readers_meet_the_models():
+    f = R.family_of()
+    assert {q[1] for q in f if q[0] == "M-pcs"} == {"FTM"} and {q[1] for q in f if q[0] == "P-pcs"} == {"W"}
 
 
 def test_candidates_carry_the_chosen_mid_and_their_training_set():
@@ -80,3 +85,18 @@ def test_clean_files_hold_a_whole_fold():
 def test_auc_is_one_when_positives_score_higher_and_a_half_on_ties():
     assert R.auc(np.array([3.0, 2.0, 1.0, 0.0]), np.array([1, 1, -1, -1])) == 1.0
     assert R.auc(np.zeros(4), np.array([1, 1, -1, -1])) == 0.5
+
+
+def test_a_level_matched_copy_is_at_the_reference_level():
+    from learn import eat_judge as J
+
+    ref = np.ones(100)
+    lufs = lambda y: 20 * np.log10(np.abs(y).mean())    # noqa: E731
+    assert lufs(J.level_matched(ref, 0.1 * ref, lufs)) == pytest.approx(0.0, abs=1e-9)
+
+
+def test_deep_distance_is_in_units_of_each_dimensions_sd():
+    from learn import eat_judge as J
+
+    assert J.distance(np.array([1.0, 2.0]), np.array([3.0, 2.0]), np.array([2.0, 1.0])) == pytest.approx(0.5)
+    assert J.distance(np.zeros(2), np.zeros(2), np.zeros(2)) == 0.0

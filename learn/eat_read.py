@@ -206,9 +206,8 @@ def with_pcs(pcs):
 
 
 def plugin_answers(rep, split, kind, pcs, check=None):
-    """One representation's held answers on W's rows, by fold, alpha and intervals on whole DIs; the mel reference keeps its
-    stored 24 PCs. kind "clean" or "backed". -> rows for `reads_v3`. check "shuffle" or "spike": the controls, the spike sized to
-    the representation's total variance."""
+    """One representation's held answers on W's rows, by fold, alpha and intervals on whole DIs. kind "clean" or "backed". -> rows
+    for `reads_v3`. check "shuffle" or "spike": the controls, the spike sized to the representation's total variance."""
     from learn import reads_v3 as R
     from learn import trusted_data_t3 as T3
 
@@ -216,7 +215,7 @@ def plugin_answers(rep, split, kind, pcs, check=None):
     enc = T3.encode_for(T3.FULL)
     Y = [np.stack(z) for z in zip(*(enc(h["label"]) for h in rows))]
     out = []
-    keep, spike_size = with_pcs(MEL_PCS if rep == "mel" else pcs), B.SPIKE
+    keep, spike_size = with_pcs(pcs), B.SPIKE
     if check == "spike":
         B.SPIKE = spiked_size(B.feature(rep, None, ("clean", (rows[0]["i"], -1)), None, None).shape[1])
     for k in range(FOLDS):
@@ -274,7 +273,8 @@ def code_key():
     return h.hexdigest()[:16]
 
 
-REFERENCES = {"M-ridge": ("mel", "ridge", "real"), "P4-ridge": ("mel", "ridge", "plugin")}
+REFERENCES = {"M-ridge": ("mel", "ridge", "real"), "P4-ridge": ("mel", "ridge", "plugin")}   # at the stored 24 PCs
+SAME_COUNT = {"M-pcs": ("mel", "ridge", "real"), "P-pcs": ("mel", "ridge", "plugin")}          # at the candidates' PC count
 
 
 def candidates(mid):
@@ -285,9 +285,9 @@ def candidates(mid):
 
 def family_of():
     """The declared contrasts: (a, b, group, crunch only)."""
-    return tuple((c, b, g, False) for c, b in (("E-top", "FTM"), ("E-mid", "FTM"), ("E-mix", "FTM"), ("E-top", "M-ridge"), ("E-mid", "M-ridge"),
-                                               ("E-mix", "M-ridge"), ("PE-top", "W"), ("PE-mid", "W"), ("PE-mix", "W"), ("PE-top", "P4-ridge"),
-                                               ("PE-mid", "P4-ridge"), ("PE-mix", "P4-ridge")) for g in GROUP_NAMES)
+    return tuple((c, b, g, False) for c, b in (("E-top", "FTM"), ("E-mid", "FTM"), ("E-mix", "FTM"), ("E-top", "M-pcs"), ("E-mid", "M-pcs"),
+                                               ("E-mix", "M-pcs"), ("PE-top", "W"), ("PE-mid", "W"), ("PE-mix", "W"), ("PE-top", "P-pcs"),
+                                               ("PE-mid", "P-pcs"), ("PE-mix", "P-pcs"), ("M-pcs", "FTM"), ("P-pcs", "W")) for g in GROUP_NAMES)
 
 
 def real_setup(a, pcs=None):
@@ -374,8 +374,8 @@ def cmd_amp(a):
     from learn import reads_v3 as R
 
     B.sha_ok()
-    cands = {"A-top": ("top", "ridge", "plugin"), "A-mid": (a.mid, "ridge", "plugin")}
-    declared([*cands, "A-mel"], a)
+    cands = {"A-top": ("top", "ridge", "plugin"), "A-mid": (a.mid, "ridge", "plugin"), "A-mel": ("mel", "ridge", "plugin")}
+    declared(cands, a)
     rows, data, _ = real_setup(a)
     feats = B.feature
     feats.paths = {str(P.dfix_input_path(u, 0)): ("amp", (u, -1)) for u, _, _ in P.dfix_units()}
@@ -385,11 +385,6 @@ def cmd_amp(a):
     by_fold = {k: [r for r in rows if r["fold"] == k] for k in range(FOLDS)}
     for k in range(FOLDS):
         B.add_candidates(by_fold[k], k, cands, data)
-    with_pcs(MEL_PCS)
-    mel = {"A-mel": ("mel", "ridge", "plugin")}
-    for k in range(FOLDS):
-        B.add_candidates(by_fold[k], k, mel, data)
-    cands = {**cands, **mel}
     flat = [r for k in range(FOLDS) for r in by_fold[k]]
     res = {}
     for st in ("GOAT", "BKS"):
@@ -412,13 +407,13 @@ def cmd_real(a):
     add_prior(rows, prior, "W-ridge")
     by_fold = {k: [r for r in rows if r["fold"] == k] for k in range(FOLDS)}
     for k in range(FOLDS):
-        B.add_candidates(by_fold[k], k, cands, data)
-    with_pcs(MEL_PCS)                                   # the references keep their stored PC count
+        B.add_candidates(by_fold[k], k, {**cands, **SAME_COUNT}, data)
+    with_pcs(MEL_PCS)                                   # the earlier references keep their stored PC count
     for k in range(FOLDS):
         B.add_candidates(by_fold[k], k, REFERENCES, data)
     rows = [r for k in range(FOLDS) for r in by_fold[k]]
     pathlib.Path(a.out + ".rows.pkl").write_bytes(pickle.dumps(rows))
-    labels = ["FTM", "W", "W-ridge", *REFERENCES, *cands]
+    labels = ["FTM", "W", "W-ridge", *REFERENCES, *SAME_COUNT, *cands]
     fam = family_of()
     side = [(c, "W-ridge") for c in ("E-top", "E-mid", "E-mix")]
     res = R.report(rows, labels, pairs=sorted({(q[0], q[1]) for q in fam} | set(side)))
