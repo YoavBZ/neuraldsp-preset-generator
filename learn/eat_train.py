@@ -96,6 +96,7 @@ class FrontData:
     """W's rows on the rebuilt input, for `bakeoff_train.train`: one half of one backing per row per epoch."""
 
     def __init__(self, rows):
+        from learn import pipeline_fix as P
         from learn import trusted_data_t3 as T3
 
         self.rows = rows
@@ -107,6 +108,7 @@ class FrontData:
                 self.X[j, k, 0], self.X[j, k, 1], self.L[j, k] = crop(z["sA"]), crop(z["sB"]), z["lufs"]
         enc = T3.encode_for(T3.FULL)
         self.Y = [np.stack(z) for z in zip(*(enc(r["label"]) for r in rows))]
+        P.mask_searched(self.Y, rows, P.A_menu_S())     # a change from W: the ridge reads searched heads only
 
     def batch(self, idx, epoch, dev):
         import torch
@@ -218,18 +220,35 @@ def cmd_rand(a):
     T.run_record(out.with_suffix(".json"), stage="rand", seed=a.seed, epochs=T.BODY_EPOCHS, lr=T.PLUGIN_LR, loss=last, minutes=(time.time() - t0) / 60)
 
 
-def cmd_steps(a):
-    """A short trial, nothing saved: the seconds an epoch takes, and that the loss falls."""
-    import torch
+def gradients(net, data, dev):
+    """{parameter: gradient} of one fixed batch in eval mode on `dev`."""
+    net = net.to(dev).eval()
+    net.zero_grad()
+    x, c, y = data.batch(np.arange(32), 0, dev)
+    loss()(net(x, c), *y).backward()
+    return {n: q.grad.detach().cpu().flatten().numpy().astype(np.float64) for n, q in net.named_parameters() if q.grad is not None}
 
+
+def cosine(a, b):
+    return float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-30))
+
+
+def cmd_steps(a):
+    """A short trial, nothing saved: gradients on MPS against CPU, the minutes an epoch takes, and that the loss falls."""
     from learn import pipeline_fix as P
 
     rows = plugin_rows()[:256]
     data = FrontData(rows)
     net = build(E.load("mn10_as"))
+    cpu = gradients(net, data, "cpu")
+    gpu = gradients(net, data, P.device())
+    worst = min((cosine(cpu[n], gpu[n]), n) for n in cpu if np.linalg.norm(cpu[n]) > 0)
+    print(f"gradient cosine, MPS against CPU, worst parameter {worst[0]:.6f} ({worst[1]})", flush=True)
+    if worst[0] < 0.999:
+        raise SystemExit("MPS gradients differ from CPU's")
     t0 = time.time()
     T.train(net, data, np.arange(len(rows)), loss(), a.seed, P.device(), a.epochs, TUNE_LR, None, "trial")
-    print(f"{(time.time() - t0) / a.epochs * len(plugin_rows()) / len(rows) / 60:.2f} min an epoch at 1,787 rows", torch.__version__, flush=True)
+    print(f"{(time.time() - t0) / a.epochs * len(plugin_rows()) / len(rows) / 60:.2f} min an epoch at 1,787 rows", flush=True)
 
 
 def main(argv=None):
