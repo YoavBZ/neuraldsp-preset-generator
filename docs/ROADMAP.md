@@ -1210,9 +1210,10 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
   running plugin, the audit agrees apart from two labelling points (X drops the mic list's E33/H30
   and shows the low-pass top as OFF), and 111 factory presets held by both editions gave the
   conversions. The recipes carry over in X's units, so `generate` works with only X
-  installed. `--strip-irs` now also clears X's own custom-IR flags. A file written in X's layout
-  loaded in the plugin with the written settings (one preset, 2026-11-06). Not done: `match` and the listening page still render the
-  original only. Starting presets were measured on the original; on the two baselines every amp
+  installed. `--strip-irs` now also clears X's own custom-IR flags. One file written in X's layout
+  was opened in the plugin (2026-11-06): no error, and what the screen showed matched, with Rhythm
+  Volume and delay mix judged by knob position only. Not done: `match` and the listening page still
+  render the original only. Starting presets were measured on the original; on the two baselines every amp
   control matches. Two oddities are disclosed in the pack's tone notes: Output Gain has no fixed
   conversion, and factory presets hold chorus depth and rate crossed although each key moves its
   own named control in both plugins. The chorus recipes follow the labels.
@@ -1462,3 +1463,4 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-11-05 | Reading only the guitar's dominant spots (N7, F58): a true map 35 of 116 against the mix's 30, stem maps no better than random spots; at this margin clean values on those spots read 38 because they cover too few bands, so the idea is parked with no better map declared. Item 8 corrected by the listener, a post hoc row (9 of 11 [0.64, 1.00]). | [plan](pipeline-fix-plan.md) |
 | 2026-11-05 | Scope page, N6, centre read, N8 (F59 to F61): 121 trusted labels; FTm follows labels on a fresh set, weakly, its drive on crunch resting on one knob; the capture centre picks nothing; a linear reader leans toward the louder guitar (post hoc), in the mix as much as on the stem. 2,016 renders; the panel's second read. | [plan](pipeline-fix-plan.md) |
 | 2026-11-06 | First training on captures (N9, F62): undecided, no knob gain shown from the capture rows, excluding a gain above about +0.08 in r; the second batch is the test with more rows. | [plan](pipeline-fix-plan.md) |
+| 2026-11-06 | One preset written in Tone King X's layout opened in the X plugin: no error, and what the screen showed matched, with Rhythm Volume and delay mix judged by knob position only. Updates the 2026-11-05 row's "not yet opened" | [installing](../reference/installing.md) |
