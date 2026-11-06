@@ -1210,8 +1210,8 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
   running plugin, the audit agrees apart from two labelling points (X drops the mic list's E33/H30
   and shows the low-pass top as OFF), and 111 factory presets held by both editions gave the
   conversions. The recipes carry over in X's units, so `generate` works with only X
-  installed. `--strip-irs` now also clears X's own custom-IR flags. Not done: a file written in
-  X's layout has not been opened in the plugin, and `match` and the listening page still render the
+  installed. `--strip-irs` now also clears X's own custom-IR flags. A file written in X's layout
+  loaded in the plugin with the written settings (one preset, 2026-11-06). Not done: `match` and the listening page still render the
   original only. Starting presets were measured on the original; on the two baselines every amp
   control matches. Two oddities are disclosed in the pack's tone notes: Output Gain has no fixed
   conversion, and factory presets hold chorus depth and rate crossed although each key moves its

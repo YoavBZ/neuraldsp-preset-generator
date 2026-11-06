@@ -36,9 +36,9 @@ there. A file made from an X preset keeps X's format, which nobody has checked t
 original plugin loads: write it to X's `User/` only. The `morgan` pack reads Morgan
 X's presets; Tone King X's have their own pack, `toneking_x`. So when only an X
 edition is installed, take the same starting presets from its folder and write to its
-`User/`. A preset made from a Tone King X template has not yet been opened in the
-plugin, and `match` and the listening page render Tone King presets on the original
-only ([tone notes](../packs/toneking_x/tone.md)).
+`User/`. A preset made from a Tone King X template loads in the plugin with
+the written settings (one preset checked, 2026-11-06). `match` and the listening page
+render Tone King presets on the original only ([tone notes](../packs/toneking_x/tone.md)).
 
 `/Library/…` is owned by root but the Neural DSP installer leaves these folders
 world-writable, so writing there needs no `sudo`. If a write is refused, say so
