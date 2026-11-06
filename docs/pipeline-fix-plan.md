@@ -77,7 +77,7 @@ N4 (F56, one listener, the same 10 parts): FTm is not known by ear. It is above 
 closeness, and by the score S is closer on 8 of these 10 parts, the reverse of the two development sets (the pooled row on t reaches zero). S and FT repeat L0's split on the same clips:
 the models lead on clean parts and off the ac20, S on crunch and on the ac20, and class, amp and S's setting still cannot be pulled apart.
 The label check (F57, one listener, 11 parts of 12, amp and class crossed): J0's search labels through the true DI are heard closer than S on closeness (+1.45 [+0.91, +2.00] on the 0 to 3 scale) and the rank share reaches one half (8 of 11, 0.73 [0.45, 0.91]), so the declared row is not known and the closeness row is the user's evidence on whether to go on. With the listener's post hoc correction of item 8 the rank share reads 9 of 11 [0.64, 1.00] beside it, which does not move the declared reading. Neither of F56's splits shows for the labels, which does not say what drove those splits. It reads labels, not a model or a song.
-Findings F1–F63.
+Findings F1–F64.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -2034,6 +2034,7 @@ instead of generating unrealistic presets our own?"):
     - *What does not change.* `items.json`, the stage check's stored figures and F57's rows. The stage check is not re-run. The minimum of 10 per amp and class still applies; it holds at 130 units and cannot fire on this page: with all 22 cards out the smallest cell is 12 (pr12 crunch).
     - *The second batch.* One unit a capture, so its ear card is the unit itself: the listener marks a card too distorted for scope "not sure", which drops it as any verdict but the first does. The page stands as built, and its heavy page as declared.
     - *Review (2026-11-05, independent, on F57 and this amendment):* 13 required changes, all made: the gate failing open, `rest_may_run` both ways, the crash in `cmd_search`, a missing test, seven passages on F57 that went further than the evidence or the declaration, the yield and the minimum.
+- **L1b's gates (2026-11-06).** The ear page, build fe2306eaa66e, 147 of 147 heard: 49 passed, 84 odd, 14 with a bad DI, 33% against the first batch's 98%. Crunch passed 9 of 73 and clean 40 of 74. The page asked that too-distorted cards take any verdict but the first, so "odd" holds those as well as other faults, and the two cannot be told apart. The heavy page has 0 cards: no passed unit is firmly driven. The stage check goes on: held best − S −0.425 [−0.494, −0.356], 47 labels, 37 clusters, inputGain at a bound 2.1%. One unit's held half is refused by the judge in every setting, so it leaves that row and stays a label; the check's filter gained a finite test, which changes no earlier read. **47 trusted units, 38 creators, 27 DI files: ac20 clean 16, crunch 2; pr12 11, 4; sw50r 11, 3.** Crunch stays thin, so the second batch adds clean units and new players, not crunch. **The declared minimum fired:** L1a's 10 per amp and class after the ear and the lag rule, which L1b keeps, is missed on all three crunch cells (2, 4, 3), and the code's check sits in `cmd_items`, which this batch never runs. The block is revised as the rule asks: the minimum protected a cell's centre, so these labels make no centre read and no crunch row; N10 reads within-cell r, with the all row still pooling those small cells, stated there. More crunch would need new captures and the user's yes.
 - **L1b, the second capture batch (ledger `phase_l1b`; 2026-11-05).** The user allowed more TONE3000 downloads the night L1a was
   declared, and signed the fetch in. 150 more named captures (`manifest-batch2.csv`): 108 packs, 79 creators (11 also in the first
   batch), 8 families, 91 crunch and 59 clean by the makers' words and the fetcher's guess on 17, 50 calibrated, 137 A2 and
@@ -4470,6 +4471,30 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - BKS is 63 to 65% of M-ctl's records against 50% of C-ctl's rows, and 54 to 57% of M-cap's against 34% of C-cap's, so ridge-against-net pairs are not the same data balance. Variant 0 also flatters C-ctl's tone, the best of its 25 backings.
 - **What it changes.** Adding capture rows on top is not shown to help a ridge, and they cost a little on drive. Centring the capture rows' offset is a candidate to test, not a fix: it was tried post hoc on a ridge only, and it left some drive cost and ended tone's clear. `E-mix`, which needs 3,025 more embedded inputs for the 121 units, waits. The mixture mean is a lead on answer size only. Averaging over more of a recording is the review session's idea, which this read does not test. The second batch's labels are search v2's too. Nothing here is sound.
 - Files: `captrain/n9b-read.json`, `captrain/audit/`. Log `logs/n9b.log`.
+
+### F64. N10, the trained models on the second batch: undecided on both pairs; tone agrees weakly, on sw50r for the networks; all-class drive is set by two units (phase_n10, zero renders, zero training)
+- **What ran.** 1,175 inputs built with no label read, then FTm, C-ctl, C-cap, C-mic and C-c39 by the mean of their 8 models, and the mel ridges, on the second batch's 47 trusted units, 38 creators. Controls passed. No model's real rows hold these units; 4 use a DI file in W's plugin rows, and 6 share a creator with the first batch's training rows.
+
+  | r, all classes (perm p) | Drive | Tone | Cab |
+  |---|---|---|---|
+  | FTm | −0.047 (.53) | 0.153 (.08) | 0.117 (.10) |
+  | C-ctl | −0.042 (.51) | 0.133 (.12) | 0.076 (.20) |
+  | C-cap | −0.011 (.50) | 0.217 (.03) | 0.064 (.23) |
+  | C-mic | −0.034 (.54) | 0.250 (.02) | 0.055 (.27) |
+  | M-ctl | 0.120 (.13) | 0.101 (.19) | −0.006 (.53) |
+  | M-cap | 0.141 (.06) | 0.046 (.36) | 0.000 (.50) |
+  | M-ctl, 25 backings | 0.005 (.49) | 0.372 (.001) | 0.183 (.04) |
+  | M-cap, 25 backings | 0.053 (.27) | 0.359 (.002) | 0.195 (.02) |
+  | **C-cap − C-ctl, primary** | **+0.031 [−0.078, +0.140]** | **+0.084 [−0.029, +0.198]** | **−0.012 [−0.103, +0.080]** |
+  | **M-cap − M-ctl, primary** | **+0.020 [−0.039, +0.080]** | **−0.055 [−0.124, +0.013]** | **+0.007 [−0.043, +0.057]** |
+
+  Head-standardised, C-cap − C-ctl +0.013, +0.109, −0.040 and M-cap − M-ctl +0.024, −0.038, −0.017, all reaching zero. Clean alone (38 units): FTm 0.073, 0.256, 0.230; C-cap 0.192, 0.251, 0.154.
+- **By the declared map:** both pairs undecided, so no new training on captures from this read, and the review session's ear page decides what follows.
+- **What the rows show (audited, independent, every number reproduced; head and band rows post hoc).** p is one-sided. On all classes the networks' drive r is set by one head on two units: ac20Power in the ac20 crunch cell, answered 0.31 and 0.93 (FTm) against labels 0.61 and 0.36. Those answers hold 44–66% of the nets' drive answer variance. Without that head in that cell, r is 0.07 to 0.17 and skill −0.06 to +0.03. On clean, drive is 0.07 to 0.19, only C-cap under p .05 (.016). Tone agrees with search labels in sign on every arm. For the networks that is sw50r: 72–101% of the covariance, r 0.00 to 0.13 and p ≥ .25 without it. Cab on clean is FTm's (0.230, standardised 0.175); the other nets fade when standardised and the single-backing ridges read about zero. The ridge on 25 backings agrees best on tone (0.37, 0.36, across all three amps), but no song offers 25 backings, the nets read one, and on one backing it reads tone 0.10, 0.05 and cab about zero.
+- **Declared beside rows.** Without the shared creators, C-cap − C-ctl +0.048, +0.089, −0.018 and M-cap − M-ctl −0.001, −0.055, −0.008, all reaching zero. 3 of 42 beside rows clear, about 4 by chance, none primary, each standardised pair reaching zero: M-cap-25 − M-ctl-25 drive +0.048 [+0.003, +0.094], C-mic − C-cap drive on clean −0.102 [−0.165, −0.039], C-cap − C-c39 drive on clean +0.119 [+0.028, +0.211]. Own against swap reaches zero on every total and part (FTm −0.056 [−0.171, +0.058], C-cap −0.077 [−0.212, +0.059]), so it gives no support to the tone or cab rows.
+- **By band (post hoc).** Tone keeps its sign on removing any band, except M-cap, and clears on a band jackknife only for the 25-backing ridges. M-cap − M-ctl tone by band is −0.055 [−0.108, −0.003], its standardised pair reaching zero; either way the next step is no new training. A sign-flip by band runs a little above the permutation p on most rows. The ridges' drive (0.120, 0.141) rests on one unit: without its DI 0.011, 0.050.
+- **Limits.** 47 units, cells of 2 to 16, 27 DI files in 14 bands, which the permutation ignores, and 8-model means that do not compare with N6's or N9's single-fold r. r is agreement with search labels, not sound. All these labels are search v2's. Disjointness from the fits' DIs is by name and session; audio was not compared.
+- Files: `captures2/n10-read.json`. Log `logs/n10.log`.
 
 ## Budget
 

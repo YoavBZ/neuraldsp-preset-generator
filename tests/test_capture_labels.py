@@ -594,3 +594,11 @@ def test_the_second_batch_guard_reads_its_own_digest(tmp_path, monkeypatch):
     with pytest.raises(SystemExit, match="second batch"):
         L.night_guard(us)
     assert L.BATCH2["night"] + "_batch" in P.ledger_entry()
+
+
+def test_a_held_half_the_judge_refuses_leaves_the_search_row():
+    good = {"held": "A", "label": {"x": 1}, "s_judge": {"A": 2.0}, "best": {"judge": {"A": 1.0}}}
+    bad = {"held": "A", "label": {"x": 1}, "s_judge": {"A": float("inf")}, "best": {"judge": {"A": float("inf")}}}
+    row = L.search_row([good, bad])
+    assert row["n"] == 1 and row["s_held"] == 2.0
+
