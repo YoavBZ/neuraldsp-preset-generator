@@ -761,3 +761,17 @@ was declared, what was measured, and the research behind it.
     rule-out result. Selection: the winner's curse exceeds the effects chosen on, so BKS vetoes
     and a finalist needs about 27-45 bands. Corrects the methods report on encoders and level.
     Ends with a plan order. Research, not a declared plan.
+26. [efficientat-pretrained-reuse-2026-11.md](research/efficientat-pretrained-reuse-2026-11.md):
+    what EfficientAT's published comparisons teach and how pretrained audio CNNs are best reused
+    on small regression tasks, for the ML models and scoring review session (November 2026;
+    nothing downloaded or run). Its big gains (distillation, ImageNet start) need AudioSet's 2M
+    clips and come only through the weights; what carries to 520 labels is the readout: pooled
+    middle blocks beside a time-averaged mel. Frozen EfficientAT beats a mel summary on time
+    structure, ties on static colour and loses to task-trained models; nothing published reads
+    amp or effect settings with it, with style statistics or with tagger classes. Recommends
+    testing it once, frozen, middle blocks beside the mel, with cab as the primary and the
+    plugin-to-real transfer read (T1, against P-ridge) as the key test, a pass being a lead to
+    confirm on an unchosen set; stored mels cannot feed it, so audio is rebuilt (zero renders),
+    and its front end needs torchaudio (the user's call). Clarifies PR #394 on the mel
+    concatenation and Combes, and corrects where the weights live. Research, not a declared
+    plan.
