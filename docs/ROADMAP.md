@@ -324,9 +324,9 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
          another guitar, and L2 needs 18 bands for 80% power at a rank gap of 0.75, 38 at 0.5. The cloud researcher's [report](research/proven-methods-preset-recovery-2026-11.md) ranks 13 methods, each with a proposed cheapest test; none is run as designed, and the review already speaks against some.
        - **Model comparison (2026-11-05; [plan](model-comparison-plan.md), declared before any read, adopts nothing):** the review compared versions of one network, so the user asked for research on
          network types, features and judging, then a comparison. Masked FT against 16 smaller readers and inputs without renders, then training arms, then by the score on the development sets.
-       - **Model comparison results (2026-11-06; [results](model-comparison-results.md), 6,700 renders, audited, adopts nothing):** on BKS and GOAT, no network type, input or judge term is shown better
-         than masked FT, mel statistics and J0. A plain ridge on mel statistics and one on W's frozen layer are level with FTm by the score, and the ridges' gain over the centre is the cleanest row on GOAT. A
-         small CNN and binned outputs read worse in these runs. Lowering the mic loss weight lifted all three knob groups at some cost to mics, undecided by the score. Pretrained encoders are untested and need the
+       - **Model comparison results (2026-11-06; [results](model-comparison-results.md), 6,700 renders, audited, adopts nothing):** on BKS and GOAT, by the score, no network type is shown better than
+         masked FT: a plain ridge on mel statistics and one on W's frozen layer are undecided against it. No hand-built input beats mel statistics, and no judge term passes the screen, so J0 stays. A small CNN and binned
+         outputs read worse in these runs, each with a handicap. Lowering the mic loss weight lifted all three knob groups at some cost to mics, undecided by the score. Pretrained encoders are untested and need the
          user's yes for a download.
        - **The ML review and N1 to N3 (2026-11-05):** an independent review found real rows teach mostly S's constants on
          unsearched controls, so FT's training loss says little, FT's per-track reading is real but weak, and the search is coarse. Declared on trusted
