@@ -191,6 +191,37 @@ Both bodies are tuned on searched heads only (`reads_v3.searched`, per cell; `P.
 - [x] S9.1 `learn/ear_eat.py`, the map committed, then 120 renders in 3 shards, each held as above.
 - [ ] S9.2 The page, published privately. Answers stored, then the key read.
 
+### S10, what each listening result leads to
+
+Written on the user's request of 2026-11-06, "While I listen, think and plan the next steps given the possible results", before any answer was read. The key stays closed. Reading order follows the page's declared map; a row reaching one half is not known by ear, never "failed".
+
+**First, is the page a read?** If more than 2 of the 12 first-hearing cards are out of scope, the rows are reported but drive no step: those cards are replaced, same map, before anything below. Repeats are consistency only. If both repeats change their top pick, the note says the listener could not hold the order at five candidates, and the next page has three.
+
+**Then the ceiling, `label` against S.** This decides what kind of problem is left, so it is read before any model row.
+
+| `label` over S | Then | Reading | Next step |
+|---|---|---|---|
+| Clear above | `EW-mix` over S clear, and over FTm clear | A reader is audibly closer on these sets | Propose one model for L2, by the rule below, with S and a placebo. The ML session and the user decide |
+| Clear above | `EW-mix` over S not clear, `label` over `EW-mix` clear | The target sounds right and the readers miss it | Keep the labels. Spend on the reader's input and on labels: S11, then the second batch. No new network |
+| Clear above | Neither clear | The page cannot place the readers | 12 more cards, same map, fresh parts, S11 beside. 24 cards take a true 75% from 56% to about 78% |
+| Reaches one half | Any | Not known that the labels sound closer than S here, so no reader's result can be read as a miss | Stop reader work until the target is settled. Read the closeness rows and notes beside F57. If `label` also rates no closer, go to the judge and label question below |
+| Clear below | Any | The search's labels sound further than S on these parts | Everything trained on them is in question. Stop model work, and take it to the ML session and the user first |
+
+**Then the simple reader.** `EW-mix` over `M-pcs` clear: W's and EfficientAT's features earn their cost. Not clear, whichever way its point lies: `M-pcs` becomes the default candidate, since it needs no download, no network and no GPU, and EfficientAT stays parked. If an L2 slot is proposed under the first row above, it goes to `EW-mix` only when that row is clear, and to `M-pcs` when `M-pcs` over FTm clears and `EW-mix` over `M-pcs` does not.
+
+**Splits are leads.** Clean against crunch and amp against amp are read after the rows, and are post hoc. On BKS class and song are tied. A split such as "models help on crunch, S holds on clean" would become a declared test, never a rule taken from this page.
+
+**The judge and label question, only if `label` is not clear above S.** The search optimises J0, which the user has set aside. So in order: (1) from the stored search curves, zero renders, ask how many settings sit within J0's noise of the best, which bounds how arbitrary a label is; (2) a small blind page of a part's top settings from the search against S, to see if any is heard closer; (3) then the judges left untried, AFx-Rep distance and HAAQI, which need downloads and a fresh blind page each. Not a new reader.
+
+### S11, reading more of a song (proposed, not run, needs the user's go)
+
+Every read so far takes one 10 s section. Backing noise is a large part of a ridge's error (F63: r rises from .147, .263, .145 at 1 backing to .205, .360, .198 at 25), but a song has one backing, so that only suggests a read of many sections could help. GOAT's takes are long enough to test it: median 130 s, 94% over 30 s, 76% over 60 s. Listed from the zip, no audio read.
+
+- **Test.** Up to 5 more 10 s windows from the same amp track, screened by `goat_window`'s rules with the unit's lag rule, each in the unit's backing variant 0. Same fitted readers, `M-pcs` first, no training. Read: answers on the labelled window against answers on the other windows alone, and on all, by knob on GOAT. Other windows share the chain but were not searched, stated. Folds stay on whole items.
+- **Why it may fail.** Those windows hold other notes, and a noisier part of a take can pull an answer. The rise over backings may not carry to sections.
+- **Cost.** CPU rebuild at about 0.3 s a window, no renders for the knob read, 1,340 renders per reader for the score, then an ear page.
+- **BKS** has several sections per rig already, averaged in its read, so it has no such gain to find and stays a flag.
+
 ## Findings log
 
 Newest last. Each entry: date, task, result, output path, audited by whom.
