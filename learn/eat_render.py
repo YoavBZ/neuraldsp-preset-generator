@@ -69,7 +69,7 @@ def cmd_predict(a):
         B.CANDIDATES = {**B.CANDIDATES, a.tag: ("W", "ridge", "real")}
         BR.root = score_root
         return BR.cmd_predict(a)
-    cands = {**ER.candidates(a.mid), **ER.SAME_COUNT}
+    cands = {**ER.candidates(a.mid), **ER.SAME_COUNT, "EW-mix": (f"mix3:{a.mid}", "ridge", "real")}
     if a.tag not in cands or cands[a.tag][2] != "real":
         raise SystemExit("predict takes a real-trained candidate of this study")
     ER.declared(ER.candidates(a.mid), a)
