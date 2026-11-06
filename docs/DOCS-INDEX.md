@@ -768,8 +768,9 @@ was declared, what was measured, and the research behind it.
     clips and come only through the weights; what carries to 520 labels is the readout: pooled
     middle blocks beside a time-averaged mel. Frozen EfficientAT beats a mel summary on time
     structure, ties on static colour and loses to task-trained models; nothing published reads
-    amp or effect settings with it, with style statistics or with tagger classes. Decision: test
-    it once, frozen, middle blocks beside the mel, with cab as the primary and the
-    plugin-to-real transfer read (T1, against P-ridge) deciding; stored mels cannot feed it, so
-    audio is rebuilt (zero renders). Corrects PR #394 on the mel concatenation and Combes.
-    Research, not a declared plan.
+    amp or effect settings with it, with style statistics or with tagger classes. Recommends
+    testing it once, frozen, middle blocks beside the mel, with cab as the primary and the
+    plugin-to-real transfer read (T1, against P-ridge) deciding, a pass being a lead to confirm
+    on an unchosen set; stored mels cannot feed it, so audio is rebuilt (zero renders), and its
+    front end needs torchaudio (the user's call). Clarifies PR #394 on the mel concatenation,
+    Combes and where the weights live. Research, not a declared plan.
