@@ -51,6 +51,8 @@ The second batch follows on 2, 4 and 5 once it is heard, and is the test with mo
 
 **Limits.** r is agreement with search labels, not sound. These DIs are library sections and W's plugin rows read that library: 4 of the 47 units (2 of 27 DI files) use a DI file in W's training set, and 15 sit in a session W trained on, none in NS. So this is new to the nets' real rows, not to their plugin start; only the ridges hold no plugin rows. One unit (`cap/5pmq8qku9nq#sw50r`) has a nearly guitar-free held half, so half its answer reads the backing. N9b's finding stands beside M-cap: about 40% of its drive cost was the capture rows' offset. All these labels are search v2's, which C-cap and M-cap saw and C-ctl and M-ctl did not, so a capture-row gain here may be the recipe's. Cells hold 2 to 16 units, so demeaning costs much. Answers by a mean of 8 models are steadier than one model's, so they do not compare with N6's or N9's r. Creator clusters ignore DI reuse: 27 DI files in 14 bands.
 
+**Outcome (2026-11-06, F64 in the [plan](pipeline-fix-plan.md)).** Both pairs undecided: C-cap − C-ctl +0.031, +0.084, −0.012, M-cap − M-ctl +0.020, −0.055, +0.007, all reaching zero. So no new training on captures from this read.
+
 **Cost.** Zero renders, zero training, no GPU, about 77 MB of inputs at N6's measured 0.21 s each, about 1.5 minutes on 3 shards, CPU for the read. Code `learn/reads_fresh.py`, `tests/test_reads_fresh.py`; ledger `phase_n10`.
 
 *Review (2026-11-06, independent, before any run):* eleven required changes, all made, four in code, the rest in this section and the gates note.

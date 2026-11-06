@@ -77,7 +77,7 @@ N4 (F56, one listener, the same 10 parts): FTm is not known by ear. It is above 
 closeness, and by the score S is closer on 8 of these 10 parts, the reverse of the two development sets (the pooled row on t reaches zero). S and FT repeat L0's split on the same clips:
 the models lead on clean parts and off the ac20, S on crunch and on the ac20, and class, amp and S's setting still cannot be pulled apart.
 The label check (F57, one listener, 11 parts of 12, amp and class crossed): J0's search labels through the true DI are heard closer than S on closeness (+1.45 [+0.91, +2.00] on the 0 to 3 scale) and the rank share reaches one half (8 of 11, 0.73 [0.45, 0.91]), so the declared row is not known and the closeness row is the user's evidence on whether to go on. With the listener's post hoc correction of item 8 the rank share reads 9 of 11 [0.64, 1.00] beside it, which does not move the declared reading. Neither of F56's splits shows for the labels, which does not say what drove those splits. It reads labels, not a model or a song.
-Findings F1–F63.
+Findings F1–F64.
 
 **Why.** The user (2026-10-31): "Start with the review, reevaluate our entire plan/roadmap and make sure we go
 over each finding the review found, fully understand it, fix it and verify its fixed. Be organized, go step by
@@ -4471,6 +4471,28 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - BKS is 63 to 65% of M-ctl's records against 50% of C-ctl's rows, and 54 to 57% of M-cap's against 34% of C-cap's, so ridge-against-net pairs are not the same data balance. Variant 0 also flatters C-ctl's tone, the best of its 25 backings.
 - **What it changes.** Adding capture rows on top is not shown to help a ridge, and they cost a little on drive. Centring the capture rows' offset is a candidate to test, not a fix: it was tried post hoc on a ridge only, and it left some drive cost and ended tone's clear. `E-mix`, which needs 3,025 more embedded inputs for the 121 units, waits. The mixture mean is a lead on answer size only. Averaging over more of a recording is the review session's idea, which this read does not test. The second batch's labels are search v2's too. Nothing here is sound.
 - Files: `captrain/n9b-read.json`, `captrain/audit/`. Log `logs/n9b.log`.
+
+### F64. N10, the trained models on the second batch: undecided on both pairs, tone and cab reach these recordings weakly, drive does not (phase_n10, zero renders, zero training)
+- **What ran.** 1,175 inputs built with no label read, then FTm, C-ctl, C-cap, C-mic and C-c39 by the mean of their 8 models, and the mel ridges, on the second batch's 47 trusted units, 38 creators. Controls passed. No model's real rows hold these units; 4 use a DI file in W's plugin rows, and 6 share a creator with the first batch's training rows.
+
+  | r, all classes (perm p) | Drive | Tone | Cab |
+  |---|---|---|---|
+  | FTm | −0.047 (.53) | 0.153 (.08) | 0.117 (.10) |
+  | C-ctl | −0.042 (.51) | 0.133 (.12) | 0.076 (.20) |
+  | C-cap | −0.011 (.50) | 0.217 (.03) | 0.064 (.23) |
+  | C-mic | −0.034 (.54) | 0.250 (.02) | 0.055 (.27) |
+  | M-ctl | 0.120 (.13) | 0.101 (.19) | −0.006 (.53) |
+  | M-cap | 0.141 (.06) | 0.046 (.36) | 0.000 (.50) |
+  | M-ctl, 25 backings | 0.005 (.49) | 0.372 (.001) | 0.183 (.04) |
+  | M-cap, 25 backings | 0.053 (.27) | 0.359 (.002) | 0.195 (.02) |
+  | **C-cap − C-ctl, primary** | **+0.031 [−0.078, +0.140]** | **+0.084 [−0.029, +0.198]** | **−0.012 [−0.103, +0.080]** |
+  | **M-cap − M-ctl, primary** | **+0.020 [−0.039, +0.080]** | **−0.055 [−0.124, +0.013]** | **+0.007 [−0.043, +0.057]** |
+
+  Head-standardised, C-cap − C-ctl +0.013, +0.109, −0.040 and M-cap − M-ctl +0.024, −0.038, −0.017, all reaching zero. Clean alone (38 units): FTm 0.073, 0.256, 0.230; C-cap 0.192, 0.251, 0.154.
+- **By the declared map:** both pairs undecided, so no new training on captures from this read, and the review session's ear page decides what follows.
+- **What the rows show.** Drive does not reach these recordings for the networks on all classes, where crunch holds 9 units in cells of 2 to 4; on clean it is 0.07 to 0.19. Tone does reach them, and cab on clean. C-cap's drive on clean reads above C-ctl's by a pair reaching zero (+0.080 [−0.008, +0.169]). The networks' answers still lose to the cell mean on drive (FTm −.231, C-cap −.122). The ridge on the mean of 25 backings reads tone and cab best here, and it is not a song's read.
+- **Limits.** 47 units, cells of 2 to 16, 8-model means that do not compare with N6's or N9's single-fold r. r is agreement with search labels, not sound. All these labels are search v2's.
+- Files: `captures2/n10-read.json`. Log `logs/n10.log`.
 
 ## Budget
 
