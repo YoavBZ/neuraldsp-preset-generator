@@ -3409,13 +3409,13 @@
     "TE-mid",
     "EW-mix"
    ],
-   "family_size": 58,
+   "family_size": 36,
    "bound_contrasts": 42,
    "reads": "S3.5 amp tracks, report only; S4 by knob; S5 by the score, at most two models; S6 judge battery on stored pages",
    "bands": "BKS (one band, 8 DIs, 4 blocks from 2 songs) and GOAT (130 items, about 76% one player); no new band is spent",
    "gate": "No adoption. A simultaneous 95% lower bound over 42 contrasts on GOAT, with the plan's added clauses against mel at the same PC count and, for plugin-trained readers, p_family; a finalist closer than FTm on GOAT by the score is a lead only.",
    "s8": "Bodies tuned on W's plugin rows, read by ridge on real rows; the bound over 12 to 18 contrasts against E-mix and W-pcs on GOAT; EW-mix is a post hoc lead outside the bound; BKS can only flag.",
-   "family_note": "58 reads in all, 53 by knob and 5 by the score, S8.0's nine included; TR-mix did not run"
+   "family_note": "36 reads here, 31 by knob and 5 by the score, S8.0's nine included; 58 with the model comparison's 22; TR-mix did not run"
   }
  ],
  "phase_fx_reader_e1a_outcome": "2026-11-03, F49. Wide draws (770), strong-third on/off AUC: stem reverb 0.614 [0.591, 0.648], delay 0.614 [0.584, 0.640]; mix 0.552, 0.609; target 0.767, 0.801; draw comparator 0.44-0.51. Stem vs mix undecided (mix's Forkupines fold, 306 of 770 wide, kept epoch index 1; without it mix delay strong 0.659 vs stem 0.616). Knobs vs the declared all-draw median prior: stem delay mix -0.044 [-0.052, -0.033], time -0.202 [-0.250, -0.125] log2, so the rule's letter passes for delay. Audit (post hoc): against draw-aware priors (training songs' wide-draw median; amp x draw x class cell median) no stem knob's error is better (rmix +0.019 [+0.006, +0.032], time +0.103 [+0.029, +0.249]); mixes rank weakly (Spearman 0.22, 0.16), time not (0.04). The target reads mixes and feedback but not decay or time. Corrected by the results review (first version took the argmax across both halves): a training-free picker (argmax of the summed prominence, lags 6-80) finds the set time within 10% on 43.5% of target wide delay-ons (strong third 65.7%; wide median 7.2%), stem 13.7%, mix 6.7%; prominence-at-set-lag AUC on vs off 0.79, 0.58, 0.55. E1b not declared; reader is the bottleneck for time; E1c declared. Product measures on clean targets: delay hit 2.2% of ons, fires 8.7% offs / 6.0% ons; reverb rule 38% ons / 42% offs. Files: fx-reader/e1a/score.json, audit/ (as-run versions kept). Results review (one review of F49 and E1c): 8 required changes, 4 on F49, all made.",
