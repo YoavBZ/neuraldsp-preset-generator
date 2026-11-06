@@ -21,7 +21,7 @@ Read this block first after any compaction, then the task list, then the finding
 - **Running jobs and PIDs:** S2 and S3 on CPU, this session's background job; PID 42832, watched by the executor. Each job so far ran under 15 min.
 - **Mac:** the ML session is starting about 2 hours of capture training on MPS. No GPU job here until it says it has finished. CPU reads go on. Renders are announced first.
 - **Disk:** 34 GB free, floor 33 GB; the controller asked to stop and tell ML and the executor at 33. `PF/eat/front` (1.5 GB) can be rebuilt in 15 min.
-- **Blocked on the user:** S6, fine-tuning, waits for a yes with its measured length. The rest does not.
+- **Blocked on the user:** nothing. Fine-tuning has its yes (S8).
 
 ## What EfficientAT is
 
@@ -148,23 +148,28 @@ The researcher's report advises against a deep distance as the judge: no listene
 ### S7, write-up
 - [ ] S7.1 `docs/efficientat-results.md`: each approach's answer, what their comparisons taught, what was not tested. Add the researcher's report. Log its claims against S3.3.
 - [ ] S7.2 ROADMAP and DOCS-INDEX lines. Review, CI, merge. Memory.
-- [ ] S7.3 Plain report to the user, with the fine-tuning question below.
+- [ ] S7.3 Plain report to the user.
 
-### Waiting for the user's yes: fine-tuning
+### S8, fine-tuning, on the user's yes of 2026-11-06
 
-Not run without a yes for this run, since the model comparison listed fine-tuning as needing one, and the user's words here name no training. The report states its difference from what failed, what S2 to S4 found, and a measured length. The researcher's report advises against end-to-end tuning before the transfer read passes, and for tuning batch-norm scales and biases plus a head first, statistics frozen. So arm 1 below would be followed by that step, and the whole body only after it. Its design, after the review:
+**What decides.** The user: "Any training/fine-tuning is welcome, as long as it gets us closer to our main goal". So plugin-row numbers select nothing here. A run counts by what it does on real rows, read as `E-mix` is read, and in the end by the score. S5's `E-mix` is the yardstick.
 
-| Order | Arm | What changes | Start |
-|---|---|---|---|
-| 1 | `T-head` | W's heads on the frozen `mn10_as` body, tapped at `mid`'s layer if S3 chose one, eval mode | AudioSet weights, on plugin rows with one DI fold held |
-| 2 | `T-body` | The whole body unfrozen at 6e-5, their ESC-50 rate, training-mode batch norm | Arm 1, both seeds |
-| 3 | `T-rand` | As arm 2 from random weights at W's rate | Fresh, both seeds |
-| 4 | `T-ctl` | W retrained once on the same held DI fold, so all three have a plugin-row holdout | As W |
-| 5 | `T-real` | Real rows by fold: heads at 1e-4, body at 2e-5, with E re-chosen by counted inner runs, 8 per arm, since FTm's stored E and rate would leave weights almost still | Arm 2 |
+**How this differs from what failed, and why the design changed.** The proposal below this plan's first draft kept W's heads and FTm's recipe. S4 and S5 changed that: a ridge fitted on real rows read better than any network head so far, and W's own layer under a ridge reads cab better than EfficientAT (`W-pcs` +0.309 against `E-mix` +0.250), while EfficientAT reads tone better (+0.317 against +0.261). So the aim is one body with both: start from AudioSet's weights, teach it this plugin on plugin rows, and keep the ridge as the reader. No real row reaches a body, so folds stay clean, as with W, and nothing has to be tuned on 520 labels. W learned from scratch, and FTm tuned W on real rows; neither started from a body that hears through a backing. It may still fail: tuning on plugin rows may teach the plugin's fingerprint and lose the transfer, which S3.4's domain measure reads.
 
-- All arms read the rebuilt inputs, not an adapter, so they see 4 backings against W's 24: a handicap to state. A batch crops each half to its last 350 frames, half A's whole length. Arms 2 to 4 use W's 60 epochs and the `final` state, with no NS tracking. `T-ctl` draws its ids from W's `train_ids` less the held DIs, not `plugin_rows --fold`, which reads NS.
-- Arms 2 and 3 are read zero-shot through `reads_v3` as two counted candidates, with the label-free domain measure per arm. Stop only if arm 2 loses on both to arm 3. Plugin-row r alone cannot gate this: a random body can win it by learning the plugin's fingerprint.
-- `A-ctl − FTm` understates this arm's seed noise, since it shares W's start, so report the gap between its seeds.
+| Order | Arm | What changes | Start | Size |
+|---|---|---|---|---|
+| 0 | `EW-mix` | No training: `pub`, mel and W's last layer (both W seeds), each block with its own 64 PCs, ridge on real rows | — | CPU minutes |
+| 1 | `head` | W's heads on the frozen body through a 1×1 reduction of each `pub` tap, mean and std over time, 30 epochs at 1e-3, eval mode | AudioSet weights | Measured at launch |
+| 2 | `body` | The whole net at 6e-5, their ESC-50 rate, W's 60 epochs, `final`, batch norm in training mode. Read as `TE-mix`: its `pub` stats beside mel, as `E-mix` | Arm 1, both seeds | Measured at launch. W took 10.0 min |
+| 3 | `rand` | The same net from random weights at W's 1e-3, W's 60 epochs, `final`. Read as `TR-mix` | Fresh, both seeds | As arm 2 |
+
+- [ ] S8.1 `learn/eat_train.py`, on `bakeoff_train.train` and W's loss, W's 1,787 rows, 4 rebuilt backings against W's 24, a handicap to state. A half is cropped to its last 350 frames. Control: `steps`, on 256 rows, the loss falls and an epoch's minutes are measured, stated to the ML session before launch. MPS only once `learn.capture_train` has ended.
+- [ ] S8.2 Arms 1 to 3, both seeds, in resumable pieces, watched by the executor. Each seed's body embedded on `wide`, `real` and `reads`, `f5`, `f11`, `f13`, `f15`.
+- [ ] S8.3 The read, through `reads_v3`: `EW-mix`, `TE-mix`, `TE-mid` (tuned `pub` alone), `TR-mix`, each seed's answers averaged. Contrasts on drive, tone and cab against `E-mix` and `W-pcs`, with the bound over those 24, one set of GOAT item weights. Shuffled labels and the spike first. Each candidate's domain AUC beside it, report only. Audit by recomputation.
+- [ ] S8.4 By the score: the candidate with the highest simultaneous lower bound against `E-mix`, unless its plain interval against `E-mix` sits wholly below zero on every group, and `EW-mix` if it clears a group against both `E-mix` and `W-pcs`. At most two models, 1,340 renders each. Reported against `E-mix`, RcBG, FTm and S. Audit.
+- [ ] S8.5 Tuning on real rows only if S8.4 shows a tuned body closer than `E-mix` on GOAT by item, or if the user asks: batch-norm scales and biases plus a head, statistics frozen, by fold, as the researcher's report advises. At 520 labels it reads by the head, not by a ridge on features of its own training rows, which would be in-sample.
+
+**Declared rule for S8.** Nothing is adopted. Candidates so far are stated in the results. A tuned model closer than `E-mix` on GOAT by item, by the score, with BKS not flagging it, is a lead for the ear, which is the ML session's and the user's call. If `TE-mix` is not shown better than `E-mix` by knob or by the score, plugin tuning is not shown to help, and that is reported as undecided, not failed.
 
 ## Findings log
 
