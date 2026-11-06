@@ -3381,10 +3381,10 @@
    "test_id": "efficientat",
    "plan": "docs/efficientat-plan.md",
    "entered": "2026-11-06, before any real label is read; the user's request of 2026-11-06 asked to study EfficientAT, plan several uses and test each in isolation; the ML session confirmed the limits that day",
-   "kind": "frozen pretrained encoder reads and a judge term against FTm, W and mel ridges on the development sets, without adoption; `mid` and the PC count were chosen on plugin rows alone",
+   "kind": "frozen pretrained encoder reads and a judge term against FTm, W and mel ridges on the development sets, without adoption; the input and the PC count were chosen on plugin rows alone",
    "parts": "BKS and GOAT's held real rows through learn/reads_v3.py unchanged (sha a04785f3a4838ae2); W's plugin training rows by its stored train_ids; judge-ear and judge-v5 stored pages. No NS row in a fit, a choice or a printout. No capture, panel, V-real, L2 or N6 data.",
    "net": "mn10_as",
-   "mid": "f15",
+   "mid": "pub",
    "pcs": 64,
    "candidates": [
     "E-top",

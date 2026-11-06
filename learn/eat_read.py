@@ -6,6 +6,7 @@
     $TORCH_PY -m learn.eat_read real OUT.json --mid f6 [--pcs 24]                 # S4.2, once the ledger declares it
     $TORCH_PY -m learn.eat_read tags OUT.json                                     # S4.4, AudioSet's outputs with no fit
     $TORCH_PY -m learn.eat_read domain OUT.json --reps top f6 mel                 # S3.4, the domain direction, no real label
+    $TORCH_PY -m learn.eat_read exposure OUT.json                                 # S3.6, its guitar outputs against exposure
 
 Every read goes through `bakeoff.candidate_answers` unchanged: within-cell centring, 24 PCs in the fold, ridge with alpha from inner
 folds, residuals around the cell's mean, searched heads only, the two halves averaged. Only `feature` and the PC count are swapped,
@@ -37,14 +38,15 @@ from learn import eat_embed as EE  # noqa: E402
 LEDGER_ID = "efficientat"
 OUT = "eat/reads"
 FOLDS = 4
-REPS = ("top", *(f"g{q}" for q in EE.G_LAYERS[:-1]), *(f"f{q}" for q in EE.F_LAYERS), "multi", "logits", "mel")
-MULTI = tuple(f"f{q}" for q in EE.F_LAYERS)
+BLOCKS = {"multi": ("f3", "f6", "f12", "f15"), "pub": ("f5", "f11", "f13", "f15")}      # `pub`: the embedding paper's blocks
+REPS = ("top", *(f"g{q}" for q in EE.G_LAYERS[:-1]), "f3", "f6", "f12", "f15", "multi", "logits", "mel")
 TRAIN_VARIANTS = 3
 MEL_SD_ROWS = 300
 MEL_PCS = 24
 GROUP_NAMES = ("drive", "tone", "cab")
 R_DIMS_TOP = 1921                                       # `top` with LUFS, at width 1
 W_FEATURE = B.feature
+GUITAR = ("Guitar", "Electric guitar")
 TAG_CLASSES = ("Distortion", "Effects unit", "Electric guitar", "Reverberation", "Echo")
 DRAWS = 1000
 
@@ -85,8 +87,8 @@ class Bank:
         return scaled(np.asarray(self.array(kind, stat)[self.row(kind, key)], np.float32), self.sd(stat))
 
     def vector(self, rep, kind, key, lufs):
-        if rep == "multi":
-            v = np.concatenate([self.stat(kind, key, s) / np.sqrt(self.sd(s).size) for s in MULTI], 1)
+        if rep in BLOCKS:
+            v = np.concatenate([self.stat(kind, key, s) / np.sqrt(self.sd(s).size) for s in BLOCKS[rep]], 1)
         else:
             v = self.stat(kind, key, stat_of(rep))
         return np.concatenate([v, (np.asarray(lufs, np.float32)[:, None] + 20.0) / 10.0], 1)
@@ -117,7 +119,7 @@ class Features:
 
     def __init__(self, bank, paths=None):
         self.bank, self.paths = bank, paths or {}
-        self.cache, self.mel_scale = {}, None
+        self.cache, self.mel_scale, self.mix_cut = {}, None, {}
 
     def mel_sd(self):
         """The mel statistics' sd by dimension on the `wide` set's first rows, no labels."""
@@ -139,8 +141,9 @@ class Features:
         elif name.startswith("mix:"):
             m = scaled(B.summary_of("mel", input_of(kind, key))[:, :-1], self.mel_sd())
             e = self.bank.vector(name[4:], kind, key, rebuilt_lufs(kind, key))
-            block = np.sqrt(len(MULTI) if name[4:] == "multi" else e.shape[1] - 1)     # `multi`'s blocks are already scaled
+            block = np.sqrt(len(BLOCKS[name[4:]]) if name[4:] in BLOCKS else e.shape[1] - 1)     # already block-scaled
             v = np.concatenate([e[:, :-1] / block, m / np.sqrt(m.shape[1]), e[:, -1:]], 1)
+            self.mix_cut[v.shape[1]] = e.shape[1] - 1
         else:
             v = self.bank.vector(name, kind, key, rebuilt_lufs(kind, key))
         self.cache[q] = v.astype(np.float32)
@@ -201,10 +204,27 @@ def spiked_size(dims):
     return 10.0 * np.sqrt(dims)
 
 
+def block_pca(X, cut, k):
+    """(mean, components) with `k` PCs of the network block and `k` of the mel block, so neither crowds out the other's."""
+    m = X.mean(0)
+    parts = []
+    for lo, hi in ((0, cut), (cut, X.shape[1])):
+        vt = np.linalg.svd(X[:, lo:hi] - m[lo:hi], full_matrices=False)[2][:k]
+        c = np.zeros((len(vt), X.shape[1]))
+        c[:, lo:hi] = vt
+        parts.append(c)
+    return m, np.concatenate(parts)
+
+
 def with_pcs(pcs):
-    """`B.pca` at `pcs` components."""
+    """`B.pca` at `pcs` components, by block on a `mix:` input."""
     keep = B.pca
-    B.pca = lambda X, k=pcs: keep(X, k)
+
+    def pca(X, k=pcs):
+        cut = getattr(B.feature, "mix_cut", {}).get(X.shape[1])
+        return keep(X, k) if cut is None else block_pca(X, cut, k)
+
+    B.pca = pca
     return keep
 
 
@@ -429,6 +449,32 @@ def cmd_real(a):
     pathlib.Path(a.out).write_text(json.dumps(res, indent=1, default=float))
 
 
+def cmd_exposure(a):
+    """S3.6, no real label: do its guitar outputs follow how exposed the guitar is? Plugin rows in backing 0 to 3 against each
+    row's drawn guitar-over-backing ratio, and how often Guitar or Electric guitar is in the top 5 on clean targets and amp tracks."""
+    from scipy.stats import spearmanr
+
+    from learn import eat_net as E
+    from learn import pipeline_fix as P
+
+    names = E.class_names()
+    on = [names.index(c) for c in GUITAR]
+    bank = Bank(a.net)
+    res = {}
+    for kind in ("clean", "amp"):
+        x = np.asarray(bank.array(kind, "logits"), np.float32).mean(1)
+        res[f"top5_{kind}"] = float(np.isin(np.argsort(-x, 1)[:, :5], on).any(1).mean())
+    e = P.require("phase_3")
+    _, kept, _, _, _ = P.recipe_inputs(pin=e.get("phase_3_doubles"))
+    rows, _ = B.plugin_set()
+    x = np.asarray(bank.array("wide", "logits"), np.float32).mean(1)
+    keys = [(r["i"], k) for r in rows for k in range(EB.WIDE_K)]
+    ratio = np.array([kept[i]["draw"]["ratio_db"] for i, _ in keys], float)
+    res["spearman"] = {c: float(spearmanr(x[:, names.index(c)], ratio)[0]) for c in GUITAR}
+    pathlib.Path(a.out).write_text(json.dumps(res, indent=1, default=float))
+    print(res, flush=True)
+
+
 def auc(score, y):
     """The chance a random positive scores above a random negative, ties halved."""
     from scipy.stats import rankdata
@@ -540,11 +586,14 @@ def main(argv=None):
     t.add_argument("out")
     t.add_argument("--mid", required=True)
     t.set_defaults(fn=cmd_tags)
+    x = sub.add_parser("exposure")
+    x.add_argument("out")
+    x.set_defaults(fn=cmd_exposure)
     d = sub.add_parser("domain")
     d.add_argument("out")
     d.add_argument("--reps", nargs="+", required=True)
     d.set_defaults(fn=cmd_domain)
-    for q in (p, c, d, *(sub.choices[n] for n in ("amp", "real", "tags"))):
+    for q in (p, c, d, x, *(sub.choices[n] for n in ("amp", "real", "tags"))):
         q.add_argument("--net", default="mn10_as")
         q.add_argument("--pcs", type=int, default=24)
     args = ap.parse_args(argv)

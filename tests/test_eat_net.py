@@ -53,5 +53,6 @@ def test_stats_have_the_declared_sizes():
     s = EE.stats_of(maps_, logits)
     assert s["g16"].shape == (2, 1920) and s["g1"].shape == (2, 32)
     assert s["f3"].shape == (2, 2 * 24 * 32) and s["f12"].shape == (2, 2 * 112 * 8) and s["f15"].shape == (2, 2 * 160 * 4)
+    assert s["f5"].shape == (2, 2 * 40 * 16) and s["f11"].shape == (2, 2 * 112 * 8) and s["f13"].shape == (2, 2 * 160 * 4)
     assert s["logits"].shape == (2, 527)
     assert set(s) == set(EE.STATS)

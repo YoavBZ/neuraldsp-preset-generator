@@ -19,7 +19,7 @@ Read this block first after any compaction, then the task list, then the finding
 - **Peers:** SendMessage to "NeuralDSP preset generator (ML)", "(executor)", "(controller)", "(cloud researcher)".
 - **Now:** S2 and S3, plugin rows.
 - **Running jobs and PIDs:** S2 and S3 on CPU, this session's background job; PID 42832, watched by the executor. Each job so far ran under 15 min.
-- **Mac:** the ML session has nothing planned and will say before capture training starts. Keep jobs resumable so they can pause.
+- **Mac:** the ML session is starting about 2 hours of capture training on MPS. No GPU job here until it says it has finished. CPU reads go on. Renders are announced first.
 - **Disk:** 34 GB free, floor 33 GB; the controller asked to stop and tell ML and the executor at 33. `PF/eat/front` (1.5 GB) can be rebuilt in 15 min.
 - **Blocked on the user:** S6, fine-tuning, waits for a yes with its measured length. The rest does not.
 
@@ -45,6 +45,8 @@ The cloud researcher is reporting on these and on independent uses of the family
 
 **What is really different.** Every model so far learned its filters from our own renders, so it could learn the plugin's fingerprint. EfficientAT's filters never saw the plugin, and were learned from
 general audio at a scale we cannot reach. That is the one mechanism for the domain gap that has not been tried.
+
+**What the literature predicts (researcher's report, 2026-11-06).** Frozen EfficientAT has won mainly on time structure and tied on static colour, a mel summary alone beat every network-only set on music in its authors' own table, and it lost to task-trained nets where task data was plentiful. So a tie with mel on tone and cab is the likeliest result, and drive, which has time structure, the likeliest gain.
 
 **Why it may still fail.** Tagging rewards ignoring how something was recorded, so a tagger may discard tone by design, and published AudioSet nets detect distortion poorly (PR #394). It changes nothing about the backing that hides the guitar,
 or the search labels' noise, which caps any reader's r near 0.75–0.81. And the score may not resolve what it does: every contrast with FTm so far was undecided by the score.
@@ -99,8 +101,9 @@ Representations: `top` (`g` at layer 16), `g-L` for each layer, `f-L` for each `
 
 ### S3, through a backing (CPU, plugin rows only)
 - [x] S3.1 The same rows and DI folds. Pool sessions (21) fold too: a held row reads its first backing of a session held in that fold, and training rows use only their backings of other sessions. So no held guitar part and no held backing session is in training. About 1,220 held rows. Same representations, and the mel reference on the same backings' stored inputs. Real reads share the pool across models, so contrasts between models stand there, but absolute r is optimistic and is compared within a set only.
-- [x] S3.2 **Choosing `mid` and the PC count, on plugin rows alone.** At 24 PCs, `mid` is the `f-L` or `multi` with the highest mean r over drive, tone and cab in S3, on `mn10_as`; ties within 0.01 go to the simpler. Then `top` and `mid` at 24, 64 and 128 PCs: the count with the highest mean r, the smaller within 0.01. Fixed before any real row is read, and logged. It selects on r, not on a clear against mel. **Chosen: `mid` = `f15`, 64 PCs** (findings log).
+- [x] S3.2 **Choosing `mid` and the PC count, on plugin rows alone.** At 24 PCs, `mid` is the `f-L` or `multi` with the highest mean r over drive, tone and cab in S3, on `mn10_as`; ties within 0.01 go to the simpler. Then `top` and `mid` at 24, 64 and 128 PCs: the count with the highest mean r, the smaller within 0.01. Fixed before any real row is read, and logged. It selects on r, not on a clear against mel. **Chosen then: `f15`, 64 PCs** (findings log). The second amendment below replaces `f15` with `pub`.
 - **Amendment, after S3.2, before any real label: mel at the same PC count.** The plan kept the mel references at 24 PCs. On plugin rows that flatters EfficientAT: more PCs lift mel as much, chiefly on cab (S3, backed: mel's cab +0.186 at 24, +0.319 at 64). So every contrast with mel uses the same count, `M-pcs` and `P-pcs` at 64. `M-ridge` and `P4-ridge` at 24 stay as plain rows. `M-pcs` and `P-pcs` are new readers in their own right, counted, and read against FTm and W.
+- **Second amendment, after the researcher's report (`docs/research/efficientat-pretrained-reuse-2026-11.md`), before any real label.** Two changes, each chosen on plugin rows alone. (a) `mid` becomes `pub`: the four blocks EfficientAT's embedding paper pools, features 5, 11, 13 and 15, each block scaled to unit total variance, frequency kept. On S3 it reads 0.256 against `f15`'s 0.244 and does not sit one conv below `top`. (b) A3 keeps each block's own PCs: the plan's joint PCA let the network crowd out mel's cab directions. `mix` is now 64 PCs of the network block beside 64 PCs of the mel block, as the report's "mel PCs plus k network PCs". Its network block was chosen among `f15`, `multi` and `pub` on S3's mean r, ties within 0.01 to fewer dimensions: 0.273, 0.283, 0.281, so `pub`, 5,632 dimensions against 5,888.
 - [x] S3.3 Their comparisons on our task: `mn04`, `mn10`, `mn20`, `mn10_im` and the untrained `mn10` on `top` and `mid`. Report only. If the untrained net matches the AudioSet one, pretraining is not what helps. Calibrated random filters with a ridge can read plugin rows well, so this cannot rule pretraining out for real rows.
 - [x] S3.4 The domain direction, report only: the AUC of a ridge telling plugin backed rows from real backed rows, on `top`, `mid` and mel statistics, and the cosine between that direction and each group's knob direction.
 - [ ] S3.5 **The domain gap with no backing.** Readers fitted on W's clean rows, read on each held unit's amp track alone: `A-top`, `A-mid`, `A-mel`. Report only, counted as 3 candidates. Stored amp-track inputs give the mel reference on the same audio. BKS's own DIs are among W's rows (628 rows), so only GOAT is zero-shot here.
@@ -119,6 +122,7 @@ Nine candidates, read once, through `B.add_candidates` and `R.report`:
 
 `W-pcs` sits beside each `E-` as a plain row: the same reader at the same count on filters learned from the plugin, which is the plan's mechanism. FTm mixes reader and filters. `M-ridge`, `W-ridge` and `P4-ridge` (`P-ridge` refitted on the same 4 backings, a new read, counted) stay at 24 PCs as plain rows.
 
+- [x] S3.6 Added on the report's advice, no real label. Guitar or Electric guitar is in the top 5 classes on 88% of clean targets and 97% of amp tracks, against the report's bar of 80%. Spearman with the drawn guitar-over-backing ratio on backed rows: Guitar 0.29, Electric guitar 0.30, under its 0.5, so no window choice is built. `PF/eat/s36-exposure.json`.
 - [ ] S4.1 `learn/eat_read.py check`. Control: `M-ridge`'s stored answers reproduce from stored mels through this code within 1e-6. Then shuffled labels on all nine, and the spike on `E-top` and `PE-top`. At 64 PCs `PE-top`'s spike is capped as S2.2 explains: plugin rows search 85 heads.
 - [ ] S4.2 The ledger's entry states `mid` and the PC count. The read, `PF/eat/read.json`, with the bound over 42 contrasts: each candidate against its primary and its mel reference, on drive, tone and cab. By-player rows on GOAT, the crunch-drive row, and `p_family` from `B.family`.
 - [ ] S4.3 Audit by recomputation. Log.
@@ -136,6 +140,8 @@ Nine candidates, read once, through `B.add_candidates` and `R.report`:
 **Declared rule for S5.** Nothing is adopted. Closer than FTm on GOAT by item, by the score, is a lead, stated with the labels' limits and the count of candidates. Which model goes to an ear page or to L2 is for the ML session and the user.
 
 ### S6, a judge term (CPU, zero renders)
+The researcher's report advises against a deep distance as the judge: no listener check on knob steps exists, and mn20 nearly doubled a log-mel distance's MFCC error on NSynth. The screen stays because it costs CPU minutes on stored pages and answers a question the user raised.
+
 - [ ] S6.1 `learn/eat_judge.py`. Terms `J-f6` and `J-f12`: the mean absolute difference between render and reference in `f` statistics at layers 6 and 12, per dimension scaled by its sd on the `wide` set, so no ear data sets any scale. J0 has no level-matched waveform: `bakeoff_judge.band_errors` takes a median in log-mel over the frames where the DI plays. Here the render is brought to the reference by the gain that matches their LUFS over the whole half, a simplification that J0's own frame-wise level step does not make, then both pass through `eat_net.front` and the network, in 4.5 s windows at J0's `HALVES`. Data as `bakeoff_judge.py`: `learn/trusted-data/judge-ear/` and `judge-v5/`, CPU only.
 - [ ] S6.2 The same battery and the same pass rule as the model comparison's T3.4, in-sample, a screen. A pass leads only to a proposal for a fresh blind page.
 
@@ -146,7 +152,7 @@ Nine candidates, read once, through `B.add_candidates` and `R.report`:
 
 ### Waiting for the user's yes: fine-tuning
 
-Not run without a yes for this run, since the model comparison listed fine-tuning as needing one, and the user's words here name no training. The report states its difference from what failed, what S2 to S4 found, and a measured length. Its design, after the review:
+Not run without a yes for this run, since the model comparison listed fine-tuning as needing one, and the user's words here name no training. The report states its difference from what failed, what S2 to S4 found, and a measured length. The researcher's report advises against end-to-end tuning before the transfer read passes, and for tuning batch-norm scales and biases plus a head first, statistics frozen. So arm 1 below would be followed by that step, and the whole body only after it. Its design, after the review:
 
 | Order | Arm | What changes | Start |
 |---|---|---|---|
@@ -179,3 +185,4 @@ Newest last. Each entry: date, task, result, output path, audited by whom.
 - 2026-11-06, S3.4, `PF/eat/s34-mn10_as-pc64.json`, domain AUC at 64 PCs, plugin against real backed inputs, held by DI: mel 0.971, `f15` 0.893, `top` 0.849. Mean absolute cosine of knob and domain directions: `f15` 0.12, 0.16, 0.25; `top` 0.07, 0.14, 0.07; mel 0.15, 0.07, 0.12. The features do sit nearer across domains than mel, which is the mechanism the plan named. This is the plan's first evidence for it, on no real label.
 - 2026-11-06, S3's records were rerun with mel at each file's PC count: `PF/eat/s23-mn10_as-pc64.json` with controls, `-pc128.json`.
 - 2026-11-06, the amendment's third review: 5 faults, all fixed: both mel readers in the clause; the placebo on every reader; `W-pcs` at the same count; S5's slots ordered; the records.
+- 2026-11-06, the second amendment's evidence, `PF/eat/s23-mn10_as-pc64.json`, backed, 64 PCs a block, mean r and against mel, 90% DI-bootstrap: `mix:pub` 0.281, drive +0.093 [+0.074, +0.112], tone +0.036 [+0.020, +0.055], cab −0.013 [−0.034, +0.008]. `mix:multi` 0.283, +0.088, +0.035, −0.001. `mix:f15` 0.273, +0.076, +0.035, −0.019. `pub` alone 0.256, +0.101, +0.015, −0.075. mel 0.243. So kept beside mel, the network adds on drive and tone and gives up nothing on cab. All on plugin rows. Spike at 64 PCs 0.88, 0.72, 0.95, under the 85-head cap; 1.00 at 128.

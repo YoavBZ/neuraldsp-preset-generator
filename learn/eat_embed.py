@@ -28,7 +28,7 @@ from learn import eat_build as EB  # noqa: E402
 from learn import eat_net as E  # noqa: E402
 
 G_LAYERS = (1, 3, 6, 12, 15, 16)
-F_LAYERS = (3, 6, 12, 15)
+F_LAYERS = (3, 5, 6, 11, 12, 13, 15)                    # 5, 11, 13 and 15 are the blocks EfficientAT's embedding paper pools
 STATS = (*(f"g{q}" for q in G_LAYERS), *(f"f{q}" for q in F_LAYERS), "logits")
 SKIP_A = 100                                            # `pretrain_set.MASK_A_FRAMES`
 BATCH = 64

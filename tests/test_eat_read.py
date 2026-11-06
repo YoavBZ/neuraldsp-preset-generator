@@ -100,3 +100,12 @@ def test_deep_distance_is_in_units_of_each_dimensions_sd():
 
     assert J.distance(np.array([1.0, 2.0]), np.array([3.0, 2.0]), np.array([2.0, 1.0])) == pytest.approx(0.5)
     assert J.distance(np.zeros(2), np.zeros(2), np.zeros(2)) == 0.0
+
+
+def test_block_pca_keeps_each_blocks_own_components():
+    x = np.random.default_rng(0).normal(size=(50, 6)) * np.array([9.0, 9.0, 9.0, 0.1, 0.1, 0.1])
+    m, c = R.block_pca(x, 3, 2)
+    assert c.shape == (4, 6)
+    assert np.allclose(c[:2, 3:], 0.0) and np.allclose(c[2:, :3], 0.0)
+    assert np.allclose(np.linalg.norm(c, axis=1), 1.0)
+    assert np.allclose(m, x.mean(0))
