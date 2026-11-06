@@ -66,21 +66,17 @@ def test_a_models_rows_hold_out_its_fold_and_its_dis(monkeypatch):
     monkeypatch.setattr(C, "CAP_PER_EPOCH", 6)
     src = _sources()
     cu, gu = src[5], src[3]
-    # fold 1's units sit on di1 and di3 only, so fold 0's training units are those on other DIs
-    src[5]["c1"].update(di="di5")
-    src[5]["c5"].update(di="di5")
-    src[5]["c0"].update(di="di0")
-    src[5]["c4"].update(di="di0")
-    for k in (0, 1):
+    cu["c1"]["di"] = "di0"                               # a DI shared across folds: c0 held at k=0 takes c1 with it
+    for k, survivors in ((0, {"c3", "c5", "c7"}), (1, {"c2", "c6"})):
         ctl, c = C.rows_of("C-ctl", k, src)
         cap, d = C.rows_of("C-cap", k, src)
+        new = cap[len(ctl):]
         assert cap[:len(ctl)] == ctl and c["goat"] == d["goat"] and c["capture"] == 0
+        assert {r["real"] for r in new} == survivors and len(new) == 6
+        assert all(r["i"] >= C.CAP_ROW0 for r in new)
         held = C.held_dis(list(cu.values()), k)
         units = {r["real"] for r in cap}
-        assert not any(cu[u]["fold"] == k for u in units if u in cu)
-        assert not any(cu[u]["di"] in held for u in units if u in cu)
         assert not any(gu[u]["di"] in held for u in units if u in gu)
-        assert all(r["i"] >= C.CAP_ROW0 for r in cap[len(ctl):]) and len(cap) - len(ctl) in (0, 6)
     assert C.rows_of("C-c39", 0, src)[0] == C.rows_of("C-ctl", 0, src)[0]
 
 
