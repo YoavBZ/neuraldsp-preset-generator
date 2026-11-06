@@ -3395,6 +3395,8 @@
     "PE-mix",
     "M-pcs",
     "P-pcs",
+    "W-pcs",
+    "P4-ridge",
     "A-top",
     "A-mid",
     "A-mel",
@@ -3404,7 +3406,7 @@
     "tag:Reverberation",
     "tag:Echo"
    ],
-   "family_size": 16,
+   "family_size": 18,
    "bound_contrasts": 42,
    "reads": "S3.5 amp tracks, report only; S4 by knob; S5 by the score, at most two models; S6 judge battery on stored pages",
    "bands": "BKS (one band, 8 DIs, 4 blocks from 2 songs) and GOAT (130 items, about 76% one player); no new band is spent",

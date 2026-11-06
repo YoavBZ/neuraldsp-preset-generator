@@ -44,6 +44,7 @@ MEL_SD_ROWS = 300
 MEL_PCS = 24
 GROUP_NAMES = ("drive", "tone", "cab")
 R_DIMS_TOP = 1921                                       # `top` with LUFS, at width 1
+W_FEATURE = B.feature
 TAG_CLASSES = ("Distortion", "Effects unit", "Electric guitar", "Reverberation", "Echo")
 DRAWS = 1000
 
@@ -126,7 +127,9 @@ class Features:
             self.mel_scale = a.reshape(-1, a.shape[-1]).std(0)
         return self.mel_scale
 
-    def __call__(self, name, _seed, f, _amp, _cls):
+    def __call__(self, name, seed, f, amp, cls):
+        if name == "W":
+            return W_FEATURE(name, seed, f, amp, cls)
         kind, key = self.paths[f] if isinstance(f, str) else f
         q = (name, kind, key)
         if q in self.cache:
@@ -274,7 +277,8 @@ def code_key():
 
 
 REFERENCES = {"M-ridge": ("mel", "ridge", "real"), "P4-ridge": ("mel", "ridge", "plugin")}   # at the stored 24 PCs
-SAME_COUNT = {"M-pcs": ("mel", "ridge", "real"), "P-pcs": ("mel", "ridge", "plugin")}          # at the candidates' PC count
+SAME_COUNT = {"M-pcs": ("mel", "ridge", "real"), "P-pcs": ("mel", "ridge", "plugin"),           # at the candidates' PC count
+              "W-pcs": ("W", "ridge", "real")}
 
 
 def candidates(mid):
@@ -349,7 +353,7 @@ def cmd_check(a):
     with_pcs(a.pcs)
     for check in ("shuffle", "spike"):
         S = {k: [dict(r) for r in by_fold[k]] for k in range(FOLDS)}
-        use = cands if check == "shuffle" else {q: cands[q] for q in ("E-top", "PE-top")}
+        use = {**cands, **SAME_COUNT} if check == "shuffle" else {q: cands[q] for q in ("E-top", "PE-top")}
         B.SPIKE = spiked_size(R_DIMS_TOP)
         for k in range(FOLDS):
             B.add_candidates(S[k], k, use, data, check=check)
@@ -357,7 +361,7 @@ def cmd_check(a):
         res[check] = {m: {g: v[0] for g, v in R.corr(R.blocks(G, m)).items()} for m in use}
         print(check, json.dumps(res[check], default=float), flush=True)
     B.pca = keep_pca
-    (B.root().parent / "check.json").write_text(json.dumps({"mel_worst": worst, **res}, indent=1, default=float))
+    (EE.embed_root().parent / "check.json").write_text(json.dumps({"mel_worst": worst, **res}, indent=1, default=float))
 
 
 def declared(cands, a):
@@ -415,7 +419,8 @@ def cmd_real(a):
     pathlib.Path(a.out + ".rows.pkl").write_bytes(pickle.dumps(rows))
     labels = ["FTM", "W", "W-ridge", *REFERENCES, *SAME_COUNT, *cands]
     fam = family_of()
-    side = [(c, "W-ridge") for c in ("E-top", "E-mid", "E-mix")]
+    side = [(c, b) for c in ("E-top", "E-mid", "E-mix") for b in ("W-pcs", "W-ridge", "M-ridge")]
+    side += [(c, "P4-ridge") for c in ("PE-top", "PE-mid", "PE-mix")]
     res = R.report(rows, labels, pairs=sorted({(q[0], q[1]) for q in fam} | set(side)))
     res["crunch"] = B.crunch_read(rows, labels)
     res["bounds"] = B.bounds(rows, fam)
