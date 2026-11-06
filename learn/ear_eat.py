@@ -85,19 +85,29 @@ def unblind(item, ans):
 
 
 def share_rows(items, heard, scope_out=()):
-    """The declared rows on first hearings: for each pair, (cluster, 1 if a ranks above b), and the closeness gap."""
-    first = [it for it in items if it["repeat_of"] is None and heard.get(it["id"]) and it["id"] not in set(scope_out)]
+    """The declared rows on first hearings: for each pair, the rank share and the closeness gap. Out-of-scope cards leave the rows,
+    and the share is read again with each such card counted both ways: a row is clear only if it reads clear both ways."""
+    out_ids = set(scope_out)
+    first = [it for it in items if it["repeat_of"] is None and heard.get(it["id"]) and it["id"] not in out_ids]
+    left = [it for it in items if it["repeat_of"] is None and it["id"] in out_ids]
     out = {}
     for a, b in ROWS:
         pts = [(it["cluster"], float(heard[it["id"]][a]["rank"] < heard[it["id"]][b]["rank"])) for it in first]
         gaps = [(it["cluster"], float(heard[it["id"]][a]["close"] - heard[it["id"]][b]["close"])) for it in first]
-        out[f"{a} over {b}"] = {"parts": len(pts), "share": C.share_row(pts) if pts else None, "close_gap": C.gap_row(gaps) if gaps else None}
+        row = {"parts": len(pts), "share": C.share_row(pts) if pts else None, "close_gap": C.gap_row(gaps) if gaps else None}
+        if left and pts:
+            row["if_won"] = C.share_row(pts + [(it["cluster"], 1.0) for it in left])
+            row["if_lost"] = C.share_row(pts + [(it["cluster"], 0.0) for it in left])
+            row["reads"] = row["if_won"]["reads"] if row["if_won"]["reads"] == row["if_lost"]["reads"] else "reaching one half"
+        elif pts:
+            row["reads"] = row["share"]["reads"]
+        out[f"{a} over {b}"] = row
     return out
 
 
-def table(items, heard):
-    """Each candidate's mean rank, mean closeness and firsts on first hearings."""
-    first = [it for it in items if it["repeat_of"] is None and heard.get(it["id"])]
+def table(items, heard, scope_out=()):
+    """Each candidate's mean rank, mean closeness and firsts on first hearings, out-of-scope cards left out."""
+    first = [it for it in items if it["repeat_of"] is None and heard.get(it["id"]) and it["id"] not in set(scope_out)]
     return {c: {"rank": sum(heard[it["id"]][c]["rank"] for it in first) / max(len(first), 1),
                 "close": sum(heard[it["id"]][c]["close"] for it in first) / max(len(first), 1),
                 "firsts": sum(heard[it["id"]][c]["rank"] == 1 for it in first)} for c in CANDS}
@@ -253,6 +263,10 @@ items.forEach(it => { const b = it.querySelector(".scope"), id = it.dataset.id;
   b.addEventListener("click", () => { const a = ans[id] = ans[id] || {}; a.scope = !a.scope;
     b.setAttribute("aria-pressed", String(a.scope)); save(); paint(); }); });
 """
+    for old, new in (('it.querySelectorAll(".conf button").forEach(b => b.setAttribute("aria-pressed", String(a.conf === b.dataset.c)));', 'it.querySelectorAll(".conf button[data-c]").forEach(b => b.setAttribute("aria-pressed", String(a.conf === b.dataset.c)));\n    it.querySelector(".scope").setAttribute("aria-pressed", String(!!a.scope));'), ('it.querySelectorAll(".conf button").forEach(b => b.addEventListener("click", () => {', 'it.querySelectorAll(".conf button[data-c]").forEach(b => b.addEventListener("click", () => {')):       # the out-of-scope button sits among the confidence buttons
+        if old not in js:
+            raise SystemExit(f"ear_vreal's player changed: {old}")
+        js = js.replace(old, new)
     full = '.every(l => r[l] && cl[l]) && a.conf;'
     if full not in js or not js.rstrip().endswith("paint();"):
         raise SystemExit("ear_vreal's player changed")
@@ -391,18 +405,27 @@ def cmd_page(_args):
     print(f"EAR-EAT PAGE DONE: {len(kept)} items -> {out}; build {build}; {out.stat().st_size / 1e6:.1f} MB")
 
 
+def stored_answers(text):
+    """The page's Export text, or a stored `answers/<build>` document, whole or under `data`. -> {build, answers}."""
+    try:
+        got = json.loads(text)
+    except ValueError:
+        got = json.loads([ln for ln in text.splitlines() if ln.startswith("{")][-1])
+    return got.get("data", got)
+
+
 def cmd_score(args):
     key = json.loads((data_dir() / "key.json").read_text())
-    last = [ln for ln in pathlib.Path(args.answers).read_text().splitlines() if ln.startswith("{")][-1]
-    ex = json.loads(last)
+    ex = stored_answers(pathlib.Path(args.answers).read_text())
     if ex.get("build") != key["build"]:
         raise SystemExit(f"{args.answers}: build {ex.get('build')}, this page's is {key['build']}")
     got = ex["answers"]
     heard = {it["id"]: unblind(it, got.get(it["id"]) or {}) for it in key["items"]}
     out_of_scope = [it["id"] for it in key["items"] if (got.get(it["id"]) or {}).get("scope")]
     unsure = [it["id"] for it in key["items"] if (got.get(it["id"]) or {}).get("conf") == "unsure"]
+    both = [it["id"] for it in key["items"] if it["id"] in out_of_scope and heard[it["id"]]]
     rep = {"answered": sum(v is not None for v in heard.values()), "items": len(key["items"]), "out_of_scope": out_of_scope, "unsure": unsure,
-           "by_candidate": table(key["items"], heard), "rows": share_rows(key["items"], heard, out_of_scope),
+           "scope_and_ranked": both, "by_candidate": table(key["items"], heard, out_of_scope), "rows": share_rows(key["items"], heard, out_of_scope),
            "rows_unsure_out": share_rows(key["items"], heard, [*out_of_scope, *unsure]),
            "repeats": [{"same_top": min(heard[it["id"]], key=lambda c: heard[it["id"]][c]["rank"]) ==
                         min(heard[it["repeat_of"]], key=lambda c: heard[it["repeat_of"]][c]["rank"])}

@@ -67,3 +67,18 @@ def test_chance_rarely_clears_and_a_sure_thing_does():
     clusters = [f"c{i}" for i in range(12)]
     got = Q.simulate(clusters, shares=(0.5, 0.95), pages=60, n=200)
     assert got["0.5"] < 0.2 and got["0.95"] > 0.8
+
+
+def test_a_scope_card_is_read_both_ways():
+    items = [{"id": f"i{n}", "repeat_of": None, "cluster": f"c{n}"} for n in range(6)]
+    won = {c: {"rank": 5 - j, "close": 1} for j, c in enumerate(Q.CANDS)}
+    heard = {f"i{n}": won for n in range(5)}
+    heard["i5"] = None
+    row = Q.share_rows(items, heard, ["i5"])["FTm over S"]
+    assert row["parts"] == 5 and row["if_won"]["share"] == 1.0 and row["if_lost"]["share"] == 5 / 6
+
+
+def test_stored_answers_take_each_form():
+    assert Q.stored_answers('head line\n{"build": "x", "answers": {}}')["build"] == "x"
+    assert Q.stored_answers('{\n "data": {"build": "y", "answers": {}}\n}')["build"] == "y"
+    assert Q.stored_answers('{"build": "z", "answers": {}}')["build"] == "z"
