@@ -96,13 +96,16 @@ class Bank:
 
 def rebuilt_lufs(kind, key):
     path = {"clean": lambda: EB.clean_path(key[0]), "wide": lambda: EB.wide_path(*key), "real": lambda: EB.real_path(*key),
-            "reads": lambda: EB.real_path(*key), "amp": lambda: EB.amp_path(key[0])}[kind]()
+            "reads": lambda: EB.real_path(*key), "captures": lambda: EB.real_path(*key), "amp": lambda: EB.amp_path(key[0])}[kind]()
     return np.load(path)["lufs"]
 
 
 def input_of(kind, key):
     """The stored 96-band file of an input: the mel reference reads the same audio as the network."""
     from learn import pipeline_fix as P
+
+    if kind in ("reads", "captures"):
+        return str(P.dfix_input_path(*key))
 
     if kind == "clean":
         return str(P.input_path(P.DATA, key[0], P.RUNG_KINDS["a"]))
@@ -312,6 +315,28 @@ def family_of():
     return tuple((c, b, g, False) for c, b in (("E-top", "FTM"), ("E-mid", "FTM"), ("E-mix", "FTM"), ("E-top", "M-pcs"), ("E-mid", "M-pcs"),
                                                ("E-mix", "M-pcs"), ("PE-top", "W"), ("PE-mid", "W"), ("PE-mix", "W"), ("PE-top", "P-pcs"),
                                                ("PE-mid", "P-pcs"), ("PE-mix", "P-pcs"), ("M-pcs", "FTM"), ("P-pcs", "W")) for g in GROUP_NAMES)
+
+
+def fit_predict(rows_tr, clusters, units_tr, rows_te, units_te, Y_tr, rep="mix:pub", net="mn10_as", pcs=64, kinds=("real", "captures")):
+    """`E-mix` on any real rows, for a caller that holds its own folds: fitted on rows_tr (each row's unit in units_tr, its 25
+    backings), read on rows_te (each row's unit in units_te, backing 0), through `candidate_answers` unchanged. Y_tr: (labels, mask),
+    as `candidate_answers` takes them. `kinds`: the embedded sets to look units up in. -> (mu [m, knobs], sd [knobs])."""
+    from learn import pipeline_fix as P
+    from learn import reads_v3 as R
+
+    bank = Bank(net)
+    kind = {}
+    for k in kinds:
+        if (EE.embed_root() / net / k / "keys.json").exists():
+            kind.update({u: k for u, _ in json.loads((EE.embed_root() / net / k / "keys.json").read_text())})
+    keep_feature, keep_pca = B.feature, with_pcs(pcs)
+    B.feature = Features(bank)
+    try:
+        files = [[(kind[u], (u, v)) for v in range(P.DFIX_K)] for u in units_tr]
+        return B.candidate_answers((rep, "ridge", "x"), rows_tr, clusters, files, rows_te, [(kind[u], (u, 0)) for u in units_te],
+                                   Y_tr, R.searched, (None,))
+    finally:
+        B.feature, B.pca = keep_feature, keep_pca
 
 
 def real_setup(a, pcs=None):

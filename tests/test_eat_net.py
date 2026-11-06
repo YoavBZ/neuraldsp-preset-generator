@@ -56,3 +56,30 @@ def test_stats_have_the_declared_sizes():
     assert s["f5"].shape == (2, 2 * 40 * 16) and s["f11"].shape == (2, 2 * 112 * 8) and s["f13"].shape == (2, 2 * 160 * 4)
     assert s["logits"].shape == (2, 527)
     assert set(s) == set(EE.STATS)
+
+
+def test_tuned_net_has_full_space_outputs_and_taps_its_blocks():
+    from learn import eat_train as ET
+    from learn import full_space as F
+    from learn import song_model as SM
+
+    net = ET.build(E.network(1.0)).eval()
+    cond = torch.zeros(2, len(SM.AMPS) + len(SM.CLASSES) + 2)
+    logpi, mu, ls, sw, cat, amp = net(torch.zeros(2, 1, 128, ET.FRAMES), cond)
+    assert logpi.shape == (2, SM.K_MIX) and mu.shape == (2, SM.K_MIX, len(F.CONT)) and ls.shape == mu.shape
+    assert sw.shape == (2, len(F.SW)) and len(cat) == len(F.CAT) and amp.shape == (2, len(F.AMPS))
+
+
+def test_crop_keeps_the_last_frames():
+    from learn import eat_train as ET
+
+    x = np.arange(450)[None]
+    assert ET.crop(x).shape == (1, ET.FRAMES) and ET.crop(x)[0, 0] == 100
+
+
+def test_variants_are_stable_and_in_range():
+    from learn import eat_train as ET
+
+    v = [ET.variant_of(800001, e) for e in range(60)]
+    assert v == [ET.variant_of(800001, e) for e in range(60)]
+    assert set(v) == set(range(EB.WIDE_K))
