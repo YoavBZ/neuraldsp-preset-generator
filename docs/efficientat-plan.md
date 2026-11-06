@@ -149,8 +149,8 @@ The researcher's report advises against a deep distance as the judge: no listene
 
 ### S7, write-up
 - [x] S7.1 `docs/efficientat-results.md`: each approach's answer, what their comparisons taught, what was not tested. Add the researcher's report. Log its claims against S3.3.
-- [ ] S7.2 ROADMAP and DOCS-INDEX lines. Review, CI, merge. Memory.
-- [ ] S7.3 Plain report to the user.
+- [x] S7.2 ROADMAP and DOCS-INDEX lines. Review, CI, merge. Memory.
+- [x] S7.3 Plain report to the user.
 
 ### S8, fine-tuning, on the user's yes of 2026-11-06
 
@@ -176,6 +176,20 @@ Both bodies are tuned on searched heads only (`reads_v3.searched`, per cell; `P.
 - [ ] S8.5 Tuning on real rows only if S8.4 shows a tuned body closer than `E-mix` on GOAT by item, or if the user asks: batch-norm scales and biases plus a head, statistics frozen, by fold, as the researcher's report advises. At 520 labels it reads by the head, not by a ridge on features of its own training rows, which would be in-sample.
 
 **Declared rule for S8.** Nothing is adopted. Candidates so far are stated in the results. A tuned model closer than `E-mix` on GOAT by item, by the score, is a lead for the ear, which is the ML session's and the user's call. BKS can only flag: W and the tuned bodies saw BKS's DIs and `E-mix` did not, so a BKS gain supports nothing and a BKS loss counts. If `TE-mix` is not shown better than `E-mix` by knob or by the score, plugin tuning is not shown to help, and that is reported as undecided, not failed.
+
+### S9, by ear, on the user's request of 2026-11-06
+
+**The user:** "Put the score aside since we know it's not accurate, provide a listening page for me to hear". Declared here before any render. The ML session set the terms.
+
+- **Page.** 12 cards and 2 repeats, about 4 s each, looping, the amp track alone as the Record, instant switching, headphones asked for. Blind: letters shuffled per card, balanced, the key out of chat until answers are stored. Separate from the capture pages the user has open.
+- **Candidates.** S, FTm, `M-pcs`, `EW-mix` and `label`, the search's best setting on that part. `label` is fitted on the true DI, so it is a ceiling, not a product, and no page has yet played a label beside a model's answer on the same part. `E-mix` is left out to keep the card size: `EW-mix` contains it. Each reader plays the answer it was scored with on the search's own direction, fold-held, heard on the held half. Every render is held to the render already judged, and the label to its stored judge.
+- **Parts.** `learn/ear_eat.py plan`, seed 20261201: one GOAT and one BKS part in each of 3 amps × clean, crunch, no take twice, clusters spread, no score read. Its amp is a draw inside the cell: GOAT's amps were assigned at build, not by S's distance, and BKS's were read on all three. 9 clusters: 6 BKS DIs, 3 GOAT players. On BKS clean is one song and crunch the other, so class and song are tied there, and BKS is 2 songs. The user heard these references on earlier gates, not these renders; a caveat, recorded per card.
+- **Map, declared before any render.** First hearings, the forced rank, pairwise, by `capture_ear.boot_share` over clusters, 90%. Primary row: `EW-mix` above FTm. Other rows: `EW-mix` above S, FTm above S, `M-pcs` above FTm, `EW-mix` above `M-pcs`, `label` above S, `label` above `EW-mix`. Closeness gaps are the second reading, within this page only. A row with its lower end above one half is a lead, heard. A row reaching one half is not known by ear. By simulation on these 12 cards and 9 clusters a true 50% clears 6%, a true 60% 22%, a true 75% 56%, a true 90% 96%, so a row reaching one half does not rule a reader out.
+- **Scope.** A card marked "too distorted, out of scope" leaves the rows, and each row is reported both ways that card could have gone. A corrected answer is a post hoc side row only; the answer on file stands. Unsure cards stay in, with a row beside without them. Repeats are read as consistency only.
+- **What it can do.** It adopts nothing. These are development sets, and one listener. A clear row is a lead for L2, the ML session's and the user's call.
+
+- [ ] S9.1 `learn/ear_eat.py`, the map committed, then 120 renders in 3 shards, each held as above.
+- [ ] S9.2 The page, published privately. Answers stored, then the key read.
 
 ## Findings log
 
