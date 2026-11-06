@@ -1,6 +1,7 @@
 """Model comparison, by the score (`docs/model-comparison-plan.md`, Phase 5), on read 2's units.
 
     $TORCH_PY -m learn.bakeoff_render predict --tag M-ridge               # answers, CPU, zero renders
+    $TORCH_PY -m learn.bakeoff_render predict-arm --tag A-mic             # a mixture arm's answers, after a control on FTm's nets
     $MAIN -m learn.bakeoff_render render --tags S,RcBG,P2b-ftm,M-ridge --shard 0/3
     $MAIN -m learn.bakeoff_render report OUT.json --tags M-ridge          # zero renders
 
@@ -260,6 +261,53 @@ def cmd_predict(a):
         print(a.tag, which, len(ans), "keys", flush=True)
 
 
+def net_answers(models, units):
+    """Answers read from nets as `pipeline_fix.goat_predict` reads them: the backed input per search half, seeds pooled, every
+    control outside `K.space` at S. models: {fold: [net per seed]}. -> {set: {key: {search: {select, settings}}}}."""
+    from learn import direct_stems as DS
+    from learn import full_space as F
+    from learn import local_objective as LO
+    from learn import pipeline_fix as P
+
+    ms = P.A_menu_S()
+    out = {w: {} for w in SETS}
+    for which, prt in units:
+        backed = P.dfix_backed(prt["unit"])
+        for key in keys_of(which, prt):
+            amp = key.rsplit("|", 1)[1]
+            sel, S = ms[amp][prt["cls"]]
+            for search in ("A", "B"):
+                s8, ls = backed[search]
+                x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
+                r = F.readout([o[0] for o in F.run_nets(models[prt["fold"]], [x], [c])])
+                st = P.hold_outside_space(F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"]), S, amp)
+                out[which].setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(st)}
+    return out
+
+
+def cmd_predict_arm(a):
+    """A mixture arm's per-half answers, after the same code on FTm's own nets reproduces its stored answers."""
+    from learn import bakeoff_train as T
+    from learn import pipeline_fix as P
+
+    units = read_units()
+    ftm = {k: [P.load_run(f"{FTM}-k{k}", sd, "best")[0] for sd in T.SEEDS] for k in range(P.REAL_FOLDS)}
+    got = net_answers(ftm, units)
+    for w in SETS:
+        want = stored_answers(w, FTM)
+        bad = [k for k in got[w] if got[w][k] != want[k]]
+        if bad:
+            raise SystemExit(f"control: {w}: {len(bad)} of {len(got[w])} keys differ from the stored {FTM} answers, first {bad[0]}")
+    print("CONTROL OK: FTm's stored answers reproduced", flush=True)
+    arm = {k: [T.load_arm(a.tag, k, sd) for sd in T.SEEDS] for k in range(P.REAL_FOLDS)}
+    out = net_answers(arm, units)
+    for which, ans in out.items():
+        p = answers_path(which, a.tag)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"tag": a.tag, "time": time.strftime("%Y-%m-%d %H:%M:%S"), "answers": ans}))
+        print(a.tag, which, len(ans), "keys", flush=True)
+
+
 # --- renders ---------------------------------------------------------------------------------------------------------
 
 def scored(ref, y, di, lag):
@@ -446,6 +494,9 @@ def main(argv=None):
     p = sub.add_parser("predict")
     p.add_argument("--tag", required=True)
     p.set_defaults(fn=cmd_predict)
+    p = sub.add_parser("predict-arm")
+    p.add_argument("--tag", required=True)
+    p.set_defaults(fn=cmd_predict_arm)
     p = sub.add_parser("render")
     p.add_argument("--tags", required=True)
     p.add_argument("--shard", type=shard, default=(0, 1))

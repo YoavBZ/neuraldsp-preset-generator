@@ -21,10 +21,9 @@ Read this block first after any compaction, then the task list, then the finding
 - **Run from the worktree root:** `TORCH_PY=~/ndsp-presets/tools/demucs-venv/bin/python`; `$TORCH_PY -m learn.bakeoff ...`. Tests:
   `/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python -m pytest tests/test_bakeoff.py tests/test_bakeoff_inputs.py -q -n0`.
 - **Peers:** SendMessage to "NeuralDSP preset generator (ML)", "(executor)", "(controller)", "(cloud researcher)". The researcher's PR is #394.
-- **Now:** T3.3 audit of `read-a` by a subagent; T4.3 arms chain; T5.2 renders; PR #396's CI.
-- **Next:** if `W-ridge` stands, its per-half answers and 1,340 renders; then `bakeoff arms` once over all arms.
-- **Running jobs and PIDs:** see `PF/bakeoff/logs/`. Training chain PID 97624, script `PF/bakeoff/chain.zsh`. To stop it after the process in hand: `touch PF/bakeoff/STOP`. Finished runs are
-  skipped on a relaunch.
+- **Now:** T5.4, `A-mic`'s post hoc score read.
+- **Next:** audit of the arms and score reads; T6, the write-up.
+- **Running jobs and PIDs:** none so far.
 - **Render or MPS use announced to the ML session:** none. Holds lifted so far: the ML session's renders finished at about 23:20 on 2026-11-05 and the 3 slots are free;
   it plans none tonight and will say first if an audit asks. A new hold, or its end, is recorded on this line.
 - **Disk:** about 36–39 GB free, floor 33 GB: stop new builds under it and tell the executor.
@@ -183,8 +182,8 @@ the eight FTm_k sum to 54.0 min. The ML session gets each arm's size and PIDs be
 - [x] T4.1 Read `P.cmd_train`, `P.cmd_train_ft` and `P.fit`; write `learn/bakeoff_train.py`, a new file, nothing in `pipeline_fix` changed. Any recipe
   takes extra rows later, with the mask and a drop key on `di`.
 - [x] T4.2 Control: one fold and seed of `A-ctl` on FTm's own seed; its last logged real loss within 5% of FTm's. About 6 min.
-- [~] T4.3 Run the arms in order, in resumable pieces, one record each with command, seed, git sha, PID, minutes. The executor watches from launch.
-- [ ] T4.4 Each arm's answers fill `_ans` and `_swap` directly (`read_fold` cannot load these nets), read through `reads_v3`, paired against FTm. `bakeoff arms` runs once over all arms, so the bound holds. Audit. Log.
+- [x] T4.3 Run the arms in order, in resumable pieces, one record each with command, seed, git sha, PID, minutes. The executor watches from launch.
+- [~] T4.4 Each arm's answers fill `_ans` and `_swap` directly (`read_fold` cannot load these nets), read through `reads_v3`, paired against FTm. `bakeoff arms` runs once over all arms, so the bound holds. Audit. Log.
 
 **Declared rule for Phase 4.** An arm moves on if `arm − FTm` clears zero on GOAT by the max-t bound over all arms' groups, beats `A-ctl − FTm`'s size in that
 group, no group's plain interval sits wholly below zero, and its switch or mic own-against-swap less FTm's has no interval wholly above zero on GOAT. Knob swap is not compared: an arm's knob output can have another form. An interval holding zero is undecided: `A-cnn` undecided means network size is not shown to
@@ -204,6 +203,12 @@ matter, not that it doesn't. An arm that moves on gets the full nested recipe (8
 
 **Declared rule for Phase 5.** Nothing is adopted here. BKS and GOAT are development sets, chosen on many times. A finalist closer than FTm on GOAT by item, by the score, is a lead,
 stated with the search labels' limits and the count of candidates tried. Which model goes to L2, or to an ear page, is for the ML session and the user.
+
+**Amendment, 2026-11-06, after the arms' read, before any `A-mic` render.** `A-mic` does not move on by the declared rule: its bound sits just below zero and its mic own-against-swap is worse. Yet all three of its groups clear zero on plain intervals, on both signs of evidence the
+read can give, and its only cost is the mics, which the score can weigh and the knob read cannot. So one post hoc read: `A-mic` by the score, FTm's readout on its nets (controls outside `K.space` at S), 1,340 renders. It is a lead, never a move: it adopts nothing, it is counted as the 22nd candidate tried, and it stays outside the rule above.
+The renders fall under the user's "render whatever needed". Control: the same predict code on FTm's own nets must reproduce the stored `P2b-ftm` answers exactly.
+
+- [ ] T5.4 The amendment's read: `predict-arm`, its control, the renders, the report. Audit with T5.3.
 
 ### Phase 6, write-up
 
@@ -264,3 +269,6 @@ Newest last. Each entry: date, task, result, output path and sha256, audited by 
   marginally: over 20 inner-fold salts the bound's mean is −.003 (range −.035 to +.018, 10 of 20 above zero); the plain interval clears zero in all 20. What the drive gain is: FTm puts 68% of its answer variance on ac20Power, which holds 8% of label variance, and 3.4% on inputGain, which holds 59%; `W-ridge` puts 2% and 60%. Paired head-standardised it is undecided (−.011 [−.090, +.067]); with both answers' spreads set
   proportional to the labels', +.100 [+.005, +.194]. So about a third is FTm's misplaced spread and two thirds reading. On same-DI, two-chain pairs inputGain reads `W-ridge` +.326 [+.163, +.475], FTm +.144, `M-ridge` +.133. Without limit labels the gain is +.062 [−.044, +.157]. It rests on pr12's inputGain, and BKS does not repeat it (−.020 [−.402, +.362]). `W-ridge − M-ridge`: drive +.022 [−.051, +.095], cab +.136 [+.080, +.191], so W's
   body adds on cab, not drive. Artefact attempts failed: distinct files, no shared DI, LUFS, player, backing and seed noise (A-ctl +.006) do not explain it. Do not write "reads drive better". Scripts: scratchpad `mcmp/audit/`, not kept.
+- 2026-11-06, T4.3 and T4.4, not yet audited (`PF/bakeoff/read-arms.json`), GOAT, arm − FTm on drive, tone, cab, 90%: `A-ctl` +0.006, −0.014, −0.000, the seed noise. `A-cat` +0.025 [−0.023, +0.075], −0.092 [−0.169, −0.012], −0.062 [−0.103, −0.018]. `A-cnn` −0.039 [−0.098, +0.016], −0.138 [−0.212, −0.053], −0.114 [−0.184, −0.047], mic swap +0.099 [+0.042, +0.157] worse. `A-k1` +0.026 [−0.003, +0.052], +0.020 [−0.024, +0.062], +0.009
+  [−0.012, +0.032]. `A-mic` +0.037 [+0.013, +0.063], +0.065 [+0.012, +0.119], +0.043 [+0.014, +0.068], bounds −0.005, −0.022, −0.001; mic swap +0.057 [+0.029, +0.085] worse, switch −0.015 better. No arm moves on by the declared rule. Measured: `A-cat` 33 min, `A-cnn` 13 min, `A-k1` 31 min, `A-mic` 30 min, `A-ctl` 32 min. W's stored body, chosen on NS loss, underlies `A-ctl`, `A-cat`, `A-k1` and `A-mic`; `P2b-wide24:final` reads +0.075, +0.148, −0.076 against `best`'s +0.096, +0.222, −0.086, so `A-cnn`'s `final` start costs it something on tone.
+- 2026-11-06, T5.2, not yet audited (`PF/bakeoff/score-b.json`), by the score, GOAT by item, BKS by DI: `W-ridge − RcBG` −0.023 [−0.032, −0.015] and −0.007 [−0.035, +0.021]; `W-ridge − FTm` −0.002 [−0.018, +0.013] and −0.025 [−0.074, +0.024], undecided on both.
