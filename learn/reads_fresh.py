@@ -19,8 +19,11 @@ import numpy as np
 from learn import capture_ridge as CR
 from learn import capture_train as CT
 
-NETS = {"FTM": ("P2b-ftm-k{k}", "final"), "C-ctl": ("C-ctl-k{k}", None), "C-cap": ("C-cap-k{k}", None), "C-mic": ("C-mic-k{k}", None)}
-PAIRS = (("C-cap", "C-ctl"), ("M-cap", "M-ctl"), ("C-mic", "C-cap"), ("M-ctl", "C-ctl"), ("C-ctl", "FTM"))
+NETS = {"FTM": ("P2b-ftm-k{k}", "final"), "C-ctl": ("C-ctl-k{k}", None), "C-cap": ("C-cap-k{k}", None), "C-mic": ("C-mic-k{k}", None),
+        "C-c39": ("C-c39-k{k}", None)}
+PAIRS = (("C-cap", "C-ctl"), ("M-cap", "M-ctl"), ("C-mic", "C-cap"), ("M-ctl", "C-ctl"), ("C-ctl", "FTM"), ("C-cap", "C-c39"),
+         ("M-cap-25", "M-ctl-25"))
+PRIMARY = PAIRS[:2]
 PCS = 64
 
 
@@ -39,6 +42,17 @@ def mean_folds(per_fold, label):
 def one_fold(rows):
     """Rows read as one set: every row in fold 0, so r is demeaned within (amp, class, head) alone."""
     return [dict(r, fold=0) for r in rows]
+
+
+def decide(net, ridge):
+    """The declared next step from the two primary pairs' `capture_train.reading`."""
+    if net == "a lead":
+        return "train on both batches, in its own declaration"
+    if ridge == "a lead":
+        return "the ridge by the score first, no new network training"
+    if "a cost to review" in (net, ridge):
+        return "no new training: review the cost, against C-c39 for the nets and the offset for the ridge"
+    return "no new training on captures from this read"
 
 
 # --- the stored data --------------------------------------------------------------------------------------------------
@@ -63,8 +77,9 @@ def fresh_records():
     return sorted(recs, key=lambda r: r["unit"]), units
 
 
-def ridge_answers(held, src):
-    """M-ctl and M-cap on the held rows, fitted on all of BKS's and GOAT's records, and the first batch's trusted ones."""
+def ridge_answers(held, src, units):
+    """M-ctl and M-cap on the held rows, on variant 0 and the mean of 25 backings, fitted on all of BKS's and GOAT's records,
+    and the first batch's trusted ones. `units`: the held units', for the refusal of a held DI."""
     from learn import eat_read as ER
     from learn import pipeline_fix as P
     from learn import trusted_data_t3 as T3
@@ -75,10 +90,15 @@ def ridge_answers(held, src):
     di = {**bu, **gu, **cu}
     out = {}
     for label, rows in (("M-ctl", base), ("M-cap", base + P.record_rows(caps, cu, CT.CAP_ROW0))):
+        clusters = [di[r["real"]]["di"] for r in rows]
+        if len({(r["real"], r["amp"]) for r in rows}) != len(rows):
+            raise SystemExit(f"{label}: not one row per labelled record")
+        if {units[h["real"]]["di"] for h in held} & set(clusters):
+            raise SystemExit(f"{label}: a held DI in the training rows")
         Y = [np.stack(z) for z in zip(*(enc(r["label"]) for r in rows))]
-        mu, _ = ER.fit_predict(rows, [di[r["real"]]["di"] for r in rows], [r["real"] for r in rows], held,
-                               [h["real"] for h in held], (Y[0], Y[1]), rep="mel", pcs=PCS)
-        out[label] = mu
+        for name, back in ((label, 1), (f"{label}-25", 25)):
+            out[name] = ER.fit_predict(rows, clusters, [r["real"] for r in rows], held, [h["real"] for h in held], (Y[0], Y[1]),
+                                       rep="mel", pcs=PCS, held=back)[0]
     return out
 
 
@@ -103,15 +123,27 @@ def main(out):
                                          for r, g in zip(rows, got)]
         print(label, "done", flush=True)
     held = P.record_rows(recs, units, 0)
-    for label, mu in ridge_answers(held, CT.sources()).items():
+    src = CT.sources()
+    shared = {src[5][r["unit"]]["creator"] for r in src[4]}      # creators also in the first batch's trusted rows
+    for label, mu in ridge_answers(held, src, units).items():
         for j, r in enumerate(rows):
             r[f"{label}_ans"] = mu[j]
     rows = one_fold(rows)
     pickle.dump(rows, open(out + ".rows.pkl", "wb"))
-    labels = (*NETS, "M-ctl", "M-cap")
+    labels = (*NETS, "M-ctl", "M-cap", "M-ctl-25", "M-cap-25")
     res = {"units": len(rows), "creators": len({r["cluster"] for r in rows}), "arms": {}, "jackknife": {}, "jackknife_std": {},
            "size": {x: CT.size_rows(rows, x) for x in labels}, "heads": {x: CT.head_rows(rows, x) for x in labels}}
     rng = np.random.default_rng(R.RNG_SEED)
+    res["swap"] = {x: {"total": R.t_row([(r["cluster"], float(r[f"{x}_swap"].sum())) for r in rows if r[f"{x}_swap"] is not None]),
+                       **{q: R.t_row([(r["cluster"], float(r[f"{x}_swap"][i])) for r in rows if r[f"{x}_swap"] is not None])
+                          for i, q in enumerate(("knob", "switch", "mic"))}} for x in NETS}
+    res["shared_creators"] = sorted(shared & {r["cluster"] for r in rows})
+    others = [r for r in rows if r["cluster"] not in shared]
+    res["units_without_shared"] = len(others)
+    blocks_o = {x: R.blocks(others, x) for x in labels}
+    res["without_shared"] = {f"{p}-{q}": {g: CT.jackknife_t(
+        lambda c, g_=g: R.corr(blocks_o[p], drop=c)[g_][0] - R.corr(blocks_o[q], drop=c)[g_][0],
+        sorted({r["cluster"] for r in others}), PS.t90) for g in R.GROUPS} for p, q in PRIMARY}
     for cls in ("all", "clean"):
         S = [r for r in rows if cls in ("all", r["cls"])]
         creators = sorted({r["cluster"] for r in S})
@@ -124,10 +156,11 @@ def main(out):
                     for g in R.GROUPS}
     res["branch"] = CT.reading(res["jackknife"]["all/C-cap-C-ctl"], res["jackknife_std"]["all/C-cap-C-ctl"])
     res["branch_ridge"] = CT.reading(res["jackknife"]["all/M-cap-M-ctl"], res["jackknife_std"]["all/M-cap-M-ctl"])
+    res["decision"] = decide(res["branch"], res["branch_ridge"])
     json.dump(res, open(out, "w"), indent=1, default=float)
     for x in labels:
         print(x, {g: round(res["arms"]["all"][x][g]["r"], 3) for g in R.GROUPS})
-    print("BRANCH:", res["branch"], "| ridge:", res["branch_ridge"])
+    print("BRANCH:", res["branch"], "| ridge:", res["branch_ridge"], "|", res["decision"])
 
 
 if __name__ == "__main__":

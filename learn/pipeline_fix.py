@@ -5933,6 +5933,9 @@ def cmd_build_dfix_real(args):
     psha = pool_sha(pool)
     own_lv = json.loads((out_dir() / "inputs" / "backings-levels.json").read_text())["levels"]
     kk, n = args.shard
+    batch = getattr(args, "capture_batch", 1)          # `eat_build` calls this with no such argument
+    if batch == 2 and not args.captures:
+        raise SystemExit("--capture-batch 2 needs --captures")
     units = dfix_units()
     if args.reads_only:                            # read 2's GOAT units with no row (`dfix_read_only`)
         units = dfix_read_only(units, goat_read_units())
@@ -5941,7 +5944,7 @@ def cmd_build_dfix_real(args):
 
         require("phase_n6")
         units = [(u["unit"], "goat", u) for u in sorted(CL.units_of(), key=lambda u: u["unit"])]
-        if getattr(args, "capture_batch", 1) == 2:     # N10: the second batch's trusted units; a library DI has a session
+        if batch == 2:                                 # N10: the second batch's trusted units; a library DI has a session
             require("phase_n10")
             CL.BATCH = CL.BATCH2
             units = [(u["unit"], "goat", u) for u in sorted(CL.trusted_units()[0], key=lambda u: u["unit"])]
@@ -5954,7 +5957,7 @@ def cmd_build_dfix_real(args):
         i, rule = dfix_lend(unit, prt["cls"], sp["train"], kept, prt["section"] if bks else None)
         x, rw, bw = kept[i], rend[i], built[i]
         e_voc = bool(x["draw"]["vocals_drawn"] and x["stems"]["v"] != x["stems"]["n"])
-        draws = dfix_draws(unit, prt["di"] if getattr(args, "capture_batch", 1) == 2 else prt["section"], pool, own=bks)
+        draws = dfix_draws(unit, prt["di"] if batch == 2 else prt["section"], pool, own=bks)
         paths = [dfix_input_path(unit, v) for v in range(DFIX_K)]
         for p in paths:
             if p.exists() and str(np.load(p)["pool_sha256"]) != psha:
@@ -6004,7 +6007,7 @@ def cmd_build_dfix_real(args):
             done += 1
         if m % 10 == 0:
             print(f"unit {m + 1}/{len(mine)}: {done} built; {(time.time() - t0) / max(1, done):.2f} s each", flush=True)
-    tag = "captures-" if args.captures else "reads-" if args.reads_only else ""
+    tag = f"captures{'2' if batch == 2 else ''}-" if args.captures else "reads-" if args.reads_only else ""
     save(out_dir() / DFIX_DIR / f"lends-{tag}{kk}-of-{n}.json",
          {"rule": cmd_build_dfix_real.__doc__, "pool_sha256": psha, "units": lends})
     fb = sorted(u for u, r in lends.items() if r["kind"] == "bks" and r["rule"] == "class")
