@@ -7,7 +7,7 @@ inside amp and class, one GOAT and one BKS part in each, at most one per take, c
 
     $MAIN -m learn.ear_eat plan                 # the parts, zero renders
     $MAIN -m learn.ear_eat render --shard k/n   # each candidate's clip, its render hash held to the stored one
-    $MAIN -m learn.ear_eat page                 # -> PF/eat/ear/page/index.html
+    $MAIN -m learn.ear_eat page                 # -> PF/eat/ear/page/artifact.html, and listening/ear-eat/index.html
     $MAIN -m learn.ear_eat score --answers FILE
 """
 from __future__ import annotations
@@ -294,8 +294,64 @@ can get the same rating if you cannot tell them apart. Say whether you are sure.
 button instead. Which preset is which is hidden and shuffled per item, and a few items come back later. Answers are saved in this browser as you go; tap <b>Export</b> any time and send the text.</p>"""
 
 
+SYNC = r"""
+let dbDoc = null, syncTimer = null, syncBusy = false, syncAgain = false;
+function push() {
+  if (!dbDoc) return;
+  if (syncBusy) { syncAgain = true; return; }
+  syncBusy = true;
+  dbDoc.set({build: DATA.build, answers: ans, at: Date.now()}).catch(() => {}).finally(() => {
+    syncBusy = false; if (syncAgain) { syncAgain = false; push(); } });
+}
+const saveHere = save;
+save = function () { saveHere(); if (dbDoc) { clearTimeout(syncTimer); syncTimer = setTimeout(push, 700); } };
+(async () => {
+  try {
+    if (!window.claude) return;
+    const db = await window.claude.use("db");
+    if (!db) return;
+    const d = db.doc("answers/" + DATA.build), snap = await d.get();
+    if (snap.exists && !Object.keys(ans).length) {
+      ans = snap.data().answers || {}; saveHere(); paint();
+      items.forEach(it => it.querySelector(".scope").setAttribute("aria-pressed", String(!!(ans[it.dataset.id] || {}).scope)));
+    }
+    dbDoc = d;
+    if (Object.keys(ans).length) push();
+  } catch (e) {}
+})();
+"""
+ARTIFACT_INTRO = ("Answers are saved in this browser as you go; tap <b>Export</b> any time and send the text.",
+                  "Your answers save as you go, and I can read them from here when you tell me you are done.")
+
+
+def artifact_css(css):
+    """The page's colours in the viewer's three themes, and its gutter on a phone."""
+    light = css[css.index(":root {"):css.index("@media (prefers-color-scheme: dark)")]
+    start = css.index("@media (prefers-color-scheme: dark) { :root {") + len("@media (prefers-color-scheme: dark) { :root {")
+    dark = css[start:css.index("} }", start)].strip()
+    themed = (light + "@media (prefers-color-scheme: dark) { :root:not([data-theme=\"light\"]) { " + dark + " color-scheme:dark; } }\n"
+              + ":root[data-theme=\"dark\"] { " + dark + " color-scheme:dark; }\n")
+    rest = css[css.index("} }", start) + 3:]
+    return themed + rest.replace("main { max-width:760px; margin:0 auto; padding:16px 16px 120px; }",
+                                 "main { max-width:760px; margin:0 auto; padding-block:16px 120px; "
+                                 "padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); }")
+
+
+def artifact_page(page, css, js):
+    """The same page for the Artifact viewer: no document wrapper, its themes, answers kept for reading back, no file save."""
+    body = page[page.index("<body>") + len("<body>"):page.index("</body>")]
+    body = body.replace(*ARTIFACT_INTRO).replace('<button type="button" id="save">Save file</button>', "")
+    body = body.replace("<script>" + js + "</script>", "<script>" + js.replace(
+        'document.getElementById("save").addEventListener("click", () => {', 'if (false) document.getElementById("save").addEventListener("click", () => {')
+        + SYNC + "</script>")
+    return ('<title>Record Tone Check</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n<style>'
+            + artifact_css(css) + "</style>\n" + body)
+
+
 def cmd_page(_args):
     import numpy as np
+
+    from learn import pretrain_set as PS
 
     key_path = data_dir() / "key.json"
     if key_path.exists():
@@ -326,9 +382,12 @@ def cmd_page(_args):
     if leaks:
         raise SystemExit(f"the page names {leaks}")
     key_path.write_text(json.dumps({"page": "ear-eat", "build": build, "items": kept, "time": time.strftime("%Y-%m-%d %H:%M:%S")}, indent=1))
-    out = data_dir() / "page" / "index.html"
+    local = PS.HOME / "listening" / "ear-eat" / "index.html"
+    local.parent.mkdir(parents=True, exist_ok=True)
+    local.write_text(page)
+    out = data_dir() / "page" / "artifact.html"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(page)
+    out.write_text(artifact_page(page, css, player_js()))
     print(f"EAR-EAT PAGE DONE: {len(kept)} items -> {out}; build {build}; {out.stat().st_size / 1e6:.1f} MB")
 
 
