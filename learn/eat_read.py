@@ -96,7 +96,7 @@ class Bank:
 
 def rebuilt_lufs(kind, key):
     path = {"clean": lambda: EB.clean_path(key[0]), "wide": lambda: EB.wide_path(*key), "real": lambda: EB.real_path(*key),
-            "amp": lambda: EB.amp_path(key[0])}[kind]()
+            "reads": lambda: EB.real_path(*key), "amp": lambda: EB.amp_path(key[0])}[kind]()
     return np.load(path)["lufs"]
 
 
@@ -335,6 +335,9 @@ def real_setup(a, pcs=None):
     B.training_set = training_set
     paths = {str(P.dfix_input_path(u, v)): ("real", (u, v)) for u, _, _ in P.dfix_units() for v in range(P.DFIX_K)}
     paths.update({str(P.wide_path(r["i"], k)): ("wide", (r["i"], k)) for r in pkeep[0] for k in range(EB.WIDE_K)})
+    reads = EE.embed_root() / net / "reads" / "keys.json"
+    if reads.exists():
+        paths.update({str(P.dfix_input_path(u, 0)): ("reads", (u, v)) for u, v in json.loads(reads.read_text())})
     B.plugin_set = functools.lru_cache(maxsize=1)(lambda: (pkeep[0], [fs[1:] for fs in pkeep[1]]))
     B.feature = Features(Bank(net), paths)
     B.OUT, B.code_key = f"{OUT}/{net}-{a.mid}-pc{a.pcs}", code_key
