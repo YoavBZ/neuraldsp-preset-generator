@@ -1,6 +1,7 @@
 """Model comparison, by the score (`docs/model-comparison-plan.md`, Phase 5), on read 2's units.
 
     $TORCH_PY -m learn.bakeoff_render predict --tag M-ridge               # answers, CPU, zero renders
+    $TORCH_PY -m learn.bakeoff_render predict-arm --tag A-mic             # a mixture arm's answers, after a control on FTm's nets
     $MAIN -m learn.bakeoff_render render --tags S,RcBG,P2b-ftm,M-ridge --shard 0/3
     $MAIN -m learn.bakeoff_render report OUT.json --tags M-ridge          # zero renders
 
@@ -158,9 +159,9 @@ def stored_answers(which, tag):
 
 # --- answers ---------------------------------------------------------------------------------------------------------
 
-def fit_fold(k, name, fit, data, centres):
-    """A ridge-family candidate on fold k's training records, residuals about the fold's centres.
-    -> predict(features [m, d], cells) -> residuals [m, knobs]."""
+def fit_fold(k, name, fit, data, centres, seed=None):
+    """A ridge-family candidate on fold k's training records, residuals about the fold's centres; `seed` picks W's seed for
+    W's features. -> predict(features [m, d], cells) -> residuals [m, knobs]."""
     from learn import bakeoff as B
     from learn import reads_v3 as R
     from learn import trusted_data_t3 as T3
@@ -172,7 +173,7 @@ def fit_fold(k, name, fit, data, centres):
     cells = [(h["amp"], h["cls"]) for h in rows_tr]
     mask = cm * np.stack([R.searched(*q)[0] for q in cells])
     resid = (c - np.stack([centres[(k, *q)] for q in cells])) * mask
-    X = np.stack([[B.feature(name, None, f, h["amp"], h["cls"]) for f in fs] for h, fs in zip(rows_tr, files)])
+    X = np.stack([[B.feature(name, seed, f, h["amp"], h["cls"]) for f in fs] for h, fs in zip(rows_tr, files)])
     n, v, h_, d = X.shape
     rep = np.repeat(np.arange(n), v * h_)
     flat, means = B.centre_within(X.reshape(-1, d), [cells[i] for i in rep])
@@ -199,10 +200,11 @@ def cmd_predict(a):
     from learn import knob_ceiling as K
     from learn import local_objective as LO
     from learn import pipeline_fix as P
+    from learn import reads_v3 as R
     from learn import trusted_data_t3 as T3
 
-    if a.tag not in B.CANDIDATES or B.CANDIDATES[a.tag][1] != "ridge" or B.CANDIDATES[a.tag][2] != "real" or B.CANDIDATES[a.tag][0] == "W":
-        raise SystemExit("predict takes a real-trained ridge on a stored input; arms and W-ridge need per-half answers of their own")
+    if a.tag not in B.CANDIDATES or B.CANDIDATES[a.tag][1] != "ridge" or B.CANDIDATES[a.tag][2] != "real":
+        raise SystemExit("predict takes a real-trained ridge; arms need per-half answers of their own")
     if any((root() / "score-judge" / w / a.tag).exists() for w in SETS):
         raise SystemExit(f"{a.tag}: judges exist, and new answers would sit under old judges; move them aside first")
     name, fit, _ = B.CANDIDATES[a.tag]
@@ -237,7 +239,8 @@ def cmd_predict(a):
                     sel, S = ms[amp][cls]
                     labels = [LO.tdict(r["label"]) for r in src[k]["RcBG"] if r["amp"] == amp and cls_of(r) == cls]
                     centres[(k, amp, cls)] = enc(F.label_of(P.rc_setting(K.space(amp, S), S, labels), amp))[0].astype(float)
-    models = {k: fit_fold(k, name, fit, data, centres) for k in range(P.REAL_FOLDS)}
+    seeds = R.SEEDS if name == "W" else (None,)
+    models = {k: [(sd, fit_fold(k, name, fit, data, centres, sd)) for sd in seeds] for k in range(P.REAL_FOLDS)}
     out = {w: {} for w in SETS}
     for which, prt in units:
         for key in keys_of(which, prt):
@@ -246,8 +249,8 @@ def cmd_predict(a):
             sel, S = ms[amp][prt["cls"]]
             base = LO.tdict(stored[which][key][ANY]["settings"])
             dims = [(D[n], j) for j, n in enumerate(F.CONT) if (D[n].module, D[n].key) in {(d.module, d.key) for d in K.space(amp, S)}]
-            x = B.feature(name, None, str(P.dfix_input_path(prt["unit"], 0)), amp, prt["cls"])
-            res = models[prt["fold"]](x, [cell, cell])
+            res = np.mean([f(B.feature(name, sd, str(P.dfix_input_path(prt["unit"], 0)), amp, prt["cls"]), [cell, cell])
+                           for sd, f in models[prt["fold"]]], 0)
             c = centres[(prt["fold"], *cell)]
             out[which][key] = {h: {"select": stored[which][key][ANY]["select"], "settings": LO.sdict(overwrite(base, dims, c, res[i]))}
                                for i, h in enumerate("AB")}
@@ -255,6 +258,53 @@ def cmd_predict(a):
         p = answers_path(which, a.tag)
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(json.dumps({"tag": a.tag, "code_key": B.code_key(), "time": time.strftime("%Y-%m-%d %H:%M:%S"), "answers": ans}))
+        print(a.tag, which, len(ans), "keys", flush=True)
+
+
+def net_answers(models, units):
+    """Answers read from nets as `pipeline_fix.goat_predict` reads them: the backed input per search half, seeds pooled, every
+    control outside `K.space` at S. models: {fold: [net per seed]}. -> {set: {key: {search: {select, settings}}}}."""
+    from learn import direct_stems as DS
+    from learn import full_space as F
+    from learn import local_objective as LO
+    from learn import pipeline_fix as P
+
+    ms = P.A_menu_S()
+    out = {w: {} for w in SETS}
+    for which, prt in units:
+        backed = P.dfix_backed(prt["unit"])
+        for key in keys_of(which, prt):
+            amp = key.rsplit("|", 1)[1]
+            sel, S = ms[amp][prt["cls"]]
+            for search in ("A", "B"):
+                s8, ls = backed[search]
+                x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
+                r = F.readout([o[0] for o in F.run_nets(models[prt["fold"]], [x], [c])])
+                st = P.hold_outside_space(F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"]), S, amp)
+                out[which].setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(st)}
+    return out
+
+
+def cmd_predict_arm(a):
+    """A mixture arm's per-half answers, after the same code on FTm's own nets reproduces its stored answers."""
+    from learn import bakeoff_train as T
+    from learn import pipeline_fix as P
+
+    units = read_units()
+    ftm = {k: [P.load_run(f"{FTM}-k{k}", sd, "best")[0] for sd in T.SEEDS] for k in range(P.REAL_FOLDS)}
+    got = net_answers(ftm, units)
+    for w in SETS:
+        want = stored_answers(w, FTM)
+        bad = [k for k in got[w] if got[w][k] != want[k]]
+        if bad:
+            raise SystemExit(f"control: {w}: {len(bad)} of {len(got[w])} keys differ from the stored {FTM} answers, first {bad[0]}")
+    print("CONTROL OK: FTm's stored answers reproduced", flush=True)
+    arm = {k: [T.load_arm(a.tag, k, sd) for sd in T.SEEDS] for k in range(P.REAL_FOLDS)}
+    out = net_answers(arm, units)
+    for which, ans in out.items():
+        p = answers_path(which, a.tag)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"tag": a.tag, "time": time.strftime("%Y-%m-%d %H:%M:%S"), "answers": ans}))
         print(a.tag, which, len(ans), "keys", flush=True)
 
 
@@ -444,6 +494,9 @@ def main(argv=None):
     p = sub.add_parser("predict")
     p.add_argument("--tag", required=True)
     p.set_defaults(fn=cmd_predict)
+    p = sub.add_parser("predict-arm")
+    p.add_argument("--tag", required=True)
+    p.set_defaults(fn=cmd_predict_arm)
     p = sub.add_parser("render")
     p.add_argument("--tags", required=True)
     p.add_argument("--shard", type=shard, default=(0, 1))
