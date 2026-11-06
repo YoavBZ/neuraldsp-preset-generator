@@ -164,7 +164,7 @@ The researcher's report advises against a deep distance as the judge: no listene
 | 2 | `body` | The whole net at 6e-5, their ESC-50 rate, W's 60 epochs, `final`, batch norm in training mode. Read as `TE-mix`: its `pub` stats beside mel, as `E-mix`, and `TE-mid`: its `pub` alone | Arm 1, both seeds | Measured at launch. W took 10.0 min |
 | 3 | `rand` | The same net from random weights at W's 1e-3, W's 60 epochs, `final`. Read as `TR-mix`. Runs only if `TE-mix` leads | Fresh, both seeds | As arm 2 |
 
-Both bodies are tuned on searched heads only (`P.mask_searched`), a change from W, since the ridge reads no others.
+Both bodies are tuned on searched heads only (`reads_v3.searched`, per cell; `P.mask_searched` skips plugin rows), a change from W, since the ridge reads no others. The amp head stays.
 
 - [ ] S8.0 CPU, counted as 9 reads, before any training. `E-mix` read on the mean of 5 and of 25 held backings: is the read held back by one backing's noise? A real song offers many sections, so this bounds what reading more of a song could add, though other backings are not other sections. A learning curve, fitted on 25, 50 and 75% of each fold's DIs, 2 draws each: are labels or features the limit?
 - [ ] S8.1 `learn/eat_train.py`, on `bakeoff_train.train` and W's loss, W's 1,787 rows, 4 rebuilt backings against W's 24, a handicap to state. A half is cropped to its last 350 frames. Control: `steps`, one batch in eval mode with gradients on MPS against CPU, cosine at least 0.999 on every parameter, then the loss falls on 256 rows and an epoch's minutes are measured, stated to the ML session before launch. MPS only once it says the GPU is free.

@@ -96,7 +96,7 @@ class FrontData:
     """W's rows on the rebuilt input, for `bakeoff_train.train`: one half of one backing per row per epoch."""
 
     def __init__(self, rows):
-        from learn import pipeline_fix as P
+        from learn import reads_v3 as R
         from learn import trusted_data_t3 as T3
 
         self.rows = rows
@@ -108,7 +108,11 @@ class FrontData:
                 self.X[j, k, 0], self.X[j, k, 1], self.L[j, k] = crop(z["sA"]), crop(z["sB"]), z["lufs"]
         enc = T3.encode_for(T3.FULL)
         self.Y = [np.stack(z) for z in zip(*(enc(r["label"]) for r in rows))]
-        P.mask_searched(self.Y, rows, P.A_menu_S())     # a change from W: the ridge reads searched heads only
+        for j, r in enumerate(rows):                    # a change from W: the ridge reads searched heads only
+            c, sw, mics = R.searched(r["amp"], r["cls"])
+            self.Y[1][j] *= c.astype(self.Y[1].dtype)
+            self.Y[3][j] *= sw.astype(self.Y[3].dtype)
+            self.Y[5][j] *= mics.astype(self.Y[5].dtype)
 
     def batch(self, idx, epoch, dev):
         import torch
