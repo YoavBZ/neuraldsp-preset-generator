@@ -7,9 +7,10 @@
 
 Folds are the capture units' stored creator folds. Model k trains on BKS's and GOAT's labels, and in C-cap and C-mic on the
 trusted capture units of the other folds, less every row sharing a DI file with a fold-k capture unit, so a held unit's
-capture, creator and performance stay out of its model. C-ctl has the same drops and no capture row, so C-cap - C-ctl is
-what the capture rows add. Every arm takes the same number of updates, FTm's: the median of its stored E on its rows. The
-second batch stays unread, and V-real, the NS songs and the panel are not read.
+capture, creator and performance stay out of its model. C-ctl has the same drops and no capture row. C-ctl and C-cap take
+the same number of updates, FTm's, so C-cap shows each BKS and GOAT row a third less: C-cap - C-ctl is capture rows in place
+of a third of those updates. C-c39 is C-ctl at C-cap's epochs, so C-cap - C-c39 is the same rows shown as often. The second
+batch stays unread, and V-real, the NS songs and the panel are not read.
 """
 from __future__ import annotations
 
@@ -32,8 +33,9 @@ SEEDS = (20261042, 20261043)
 FOLDS = 4
 CAP_ROW0 = 5_000_000
 CAP_PER_EPOCH = 300                  # as BKS's and GOAT's rows per epoch, so each source weighs alike
-ARMS = {"C-ctl": ("A-ctl", False), "C-cap": ("A-ctl", True), "C-mic": ("A-mic", True)}   # (`bakeoff_train` loss, capture rows?)
-PAIRS = (("C-cap", "C-ctl"), ("C-mic", "C-cap"))
+ARMS = {"C-ctl": ("A-ctl", False), "C-cap": ("A-ctl", True), "C-mic": ("A-mic", True), "C-c39": ("A-ctl", False)}   # (`bakeoff_train` loss, capture rows?)
+PAIRS = (("C-cap", "C-ctl"), ("C-mic", "C-cap"), ("C-cap", "C-c39"))
+DISK_FLOOR_GB = 33.0
 
 
 # --- pure -----------------------------------------------------------------------------------------------------------
@@ -46,6 +48,11 @@ def held_dis(cap_units, k):
 def keep_clear(recs, unit_of, dis):
     """`recs` whose unit's DI file is not in `dis`."""
     return [r for r in recs if unit_of[r["unit"]]["di"] not in dis]
+
+
+def steps(epochs, n_rows, batch):
+    """The steps `epochs` take on `n_rows`."""
+    return epochs * math.ceil(n_rows / batch)
 
 
 def epochs_for(updates, n_rows, batch):
@@ -62,13 +69,19 @@ def jackknife_t(stat, clusters, t90):
     return {"point": pt, "lo": pt - h, "hi": pt + h, "clusters": n}
 
 
-def reading(rows):
-    """The declared map on C-cap - C-ctl's three rows, by jackknife. rows: {group: {lo, hi}}."""
-    up = [g for g, r in rows.items() if r["lo"] > 0]
+def reading(rows, std):
+    """The declared map on C-cap - C-ctl's three rows, by jackknife. rows, std: {group: {point, lo, hi}}, raw and
+    head-standardised. A clear raw row with its standardised pair at or below zero reads as moved spread."""
+    clear_up = [g for g, r in rows.items() if r["lo"] > 0]
+    up = [g for g in clear_up if std[g]["point"] > 0]
     down = [g for g, r in rows.items() if r["hi"] < 0]
     if up and down:
         return "mixed"
-    return "the rows help" if up else "the rows cost" if down else "undecided"
+    if up:
+        return "a lead"
+    if down:
+        return "a cost to review"
+    return "moved spread" if clear_up else "undecided"
 
 
 # --- the stored data --------------------------------------------------------------------------------------------------
@@ -129,63 +142,67 @@ def cmd_tune(a):
     from learn import bakeoff_train as BT
     from learn import pretrain_set as PS
 
+    if PS.free_gb() < DISK_FLOOR_GB:
+        raise SystemExit(f"DISK: free disk below {DISK_FLOOR_GB:.0f} GB")
     root().mkdir(parents=True, exist_ok=True)
     out = root() / f"{a.arm}-k{a.fold}-{a.seed}.pt"
     if out.exists():
         return print(out.name, "exists")
     e_ = P.require("phase_3")
     croot, _, _, _, dropped = P.recipe_inputs(pin=e_.get("phase_3_doubles"))
-    rows, counts = rows_of(a.arm, a.fold, sources())
+    src = sources()
+    rows, counts = rows_of(a.arm, a.fold, src)
     doubled = P.doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
     data = P.DfixData(rows, P.rung_path(croot, "b", doubled), set(), {r["i"] for r in rows}, 1.0)
     P.mask_searched(data.Y, rows, P.A_menu_S())
     updates = ftm_updates()
-    epochs = epochs_for(updates, len(rows), PS.BATCH)
+    size = len(rows_of("C-cap", a.fold, src)[0]) if a.arm == "C-c39" else len(rows)   # C-c39 takes C-cap's epochs
+    epochs = epochs_for(updates, size, PS.BATCH)
     torch.set_num_threads(2)
     t0 = time.time()
     net = BT.arm_start("A-ctl", a.seed)
     last = BT.train(net, data, np.arange(len(rows)), BT.loss_of(ARMS[a.arm][0]), a.seed, P.device(), epochs, BT.TUNE_LR, None,
                     f"{a.arm} k{a.fold} {a.seed}")
     BT.save_state(net, out)
-    BT.run_record(out.with_suffix(".json"), arm=a.arm, seed=a.seed, fold=a.fold, epochs=epochs, updates=updates, rows=len(rows),
-                  counts=counts, loss=last, minutes=(time.time() - t0) / 60)
+    BT.run_record(out.with_suffix(".json"), arm=a.arm, seed=a.seed, fold=a.fold, epochs=epochs, ftm_updates=updates,
+                  steps=steps(epochs, len(rows), PS.BATCH), rows=len(rows), counts=counts, loss=last,
+                  inputs_sha256=data.inputs_sha256, minutes=(time.time() - t0) / 60)
     print(f"{a.arm} k{a.fold} {a.seed}: {epochs} epochs on {len(rows)} rows, last loss {last:.4f}", flush=True)
 
 
-def load_net(arm, k, seed):
+def load_net(name, seed, _which=None):
+    """A stored run, `name` as `arm-k{k}`."""
     import torch
 
     from learn import full_space as F
 
     net = F.build_net()
-    net.load_state_dict(torch.load(root() / f"{arm}-k{k}-{seed}.pt", map_location="cpu"))
+    net.load_state_dict(torch.load(root() / f"{name}-{seed}.pt", map_location="cpu"))
     return net.eval()
 
 
-def read_fold(k, recs, cu):
-    """`reads_capture.read_fold` on this module's nets: each arm's answers on fold k's held units."""
-    from learn import direct_stems as DS
-    from learn import pipeline_fix as P
+def size_rows(rows, label):
+    """Per group, how the answers do as answers: squared error against the cell mean, and the slope of label on answer."""
     from learn import reads_v3 as R
 
-    held = P.record_rows(recs, cu, 0)
-    d = R.make(held)
-    c, cm, s, sm, kk, km, _ = d.Y
-    rows = [{"fold": k, "set": "CAP", "cluster": cu[r["unit"]]["creator"], "rec": r["rig"], "amp": h["amp"], "cls": h["cls"],
-             "c": c[j], "cm": cm[j]} for j, (h, r) in enumerate(zip(held, recs))]
-    for arm in ARMS:
-        outs = [R.both_halves(load_net(arm, k, sd), d) for sd in SEEDS]
-        med = np.mean([np.mean([DS.mixture_median(*h[:3]) for h in o], 0) for o in outs], 0)
-        for j, row in enumerate(rows):
-            sk, ss, sc = R.searched(row["amp"], row["cls"])
-            args = (c[j], cm[j] * sk, s[j], sm[j] * ss, kk[j], km[j] * sc)
-            mine = np.mean([[R.loss(h, j, *args) for h in o] for o in outs], (0, 1))
-            others = [i for i, q in enumerate(rows) if i != j and (q["amp"], q["cls"]) == (row["amp"], row["cls"])
-                      and q["cluster"] != row["cluster"]]
-            row[f"{arm}_ans"] = med[j]
-            row[f"{arm}_swap"] = (mine - np.mean([[[R.loss(h, i, *args) for h in o] for o in outs] for i in others], (0, 1, 2))
-                                  if others else None)
-    return rows
+    out = {}
+    for g, heads in R.HEADS.items():
+        a, y = [], []
+        for j in heads:
+            cells = {}
+            for r in rows:
+                if r["cm"][j] > 0:
+                    cells.setdefault((r["fold"], r["amp"], r["cls"]), []).append((float(r[f"{label}_ans"][j]), float(r["c"][j])))
+            for v in cells.values():
+                x = np.array(v)
+                if len(x) > 1:
+                    x -= x.mean(0)
+                    a += x[:, 0].tolist()
+                    y += x[:, 1].tolist()
+        a, y = np.array(a), np.array(y)
+        out[g] = {"mse_skill": float(1 - ((y - a) ** 2).mean() / (y ** 2).mean()), "slope": float((a * y).sum() / (a * a).sum()),
+                  "n": len(a)}
+    return out
 
 
 def head_rows(rows, label):
@@ -229,12 +246,12 @@ def cmd_read(a):
     rows = []
     for k in range(FOLDS):
         mine = [r for u, r in sorted(recs.items()) if cu[u]["fold"] == k]
-        rows += read_fold(k, mine, cu)
+        rows += RC.read_fold(k, mine, cu, {x: (f"{x}-k{{k}}", None) for x in ARMS}, load_net)
         print("fold", k, len(mine), "done", flush=True)
     pickle.dump(rows, open(a.out + ".rows.pkl", "wb"))
     RC.MODELS, RC.PAIRS = {x: None for x in ARMS}, PAIRS
     res = RC.report(rows)
-    res["jackknife"] = {}
+    res["jackknife"], res["jackknife_std"] = {}, {}
     for cls in RC.CLASSES:
         S = [r for r in rows if cls in ("all", r["cls"])]
         creators = sorted({r["cluster"] for r in S})
@@ -243,9 +260,12 @@ def cmd_read(a):
             res["jackknife"][f"{cls}/{p}-{q}"] = {g: jackknife_t(
                 lambda c, g_=g: R.corr(blocks[p], drop=c)[g_][0] - R.corr(blocks[q], drop=c)[g_][0], creators, PS.t90)
                 for g in R.GROUPS}
+            res["jackknife_std"][f"{cls}/{p}-{q}"] = {g: jackknife_t(
+                lambda c, g_=g: R.corr(blocks[p], drop=c)[g_][3] - R.corr(blocks[q], drop=c)[g_][3], creators, PS.t90)
+                for g in R.GROUPS}
     res["heads"] = {x: head_rows(rows, x) for x in ARMS}
-    res["branch"] = reading(res["jackknife"]["all/C-cap-C-ctl"]) if all(
-        r["lo"] is not None for r in res["jackknife"]["all/C-cap-C-ctl"].values()) else "undecided"
+    res["size"] = {x: size_rows(rows, x) for x in ARMS}
+    res["branch"] = reading(res["jackknife"]["all/C-cap-C-ctl"], res["jackknife_std"]["all/C-cap-C-ctl"])
     json.dump(res, open(a.out, "w"), indent=1, default=float)
     for cls in RC.CLASSES:
         for x in ARMS:
