@@ -21,7 +21,7 @@ Read this block first after any compaction, then the task list, then the finding
 - **Run from the worktree root:** `TORCH_PY=~/ndsp-presets/tools/demucs-venv/bin/python`; `$TORCH_PY -m learn.bakeoff ...`. Tests:
   `/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python -m pytest tests/test_bakeoff.py tests/test_bakeoff_inputs.py -q -n0`.
 - **Peers:** SendMessage to "NeuralDSP preset generator (ML)", "(executor)", "(controller)", "(cloud researcher)". The researcher's PR is #394.
-- **Now:** T6.3, the results PR.
+- **Now:** T6.3, the results PR, #398.
 - **Next:** T6.4, the report to the user and the controller.
 - **Running jobs and PIDs:** none. Total renders 6,700; training 139 min.
 - **Render or MPS use announced to the ML session:** none. Holds lifted so far: the ML session's renders finished at about 23:20 on 2026-11-05 and the 3 slots are free;

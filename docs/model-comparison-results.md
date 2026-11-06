@@ -13,9 +13,9 @@ Cost: 6,700 renders and 139 minutes of training, one GPU job at a time.
 
 | Part | Best known now | What the evidence says | Not tested |
 |---|---|---|---|
-| **Network** | No type is shown better than FTm by the score. | Every contrast with FTm by the score is undecided, including two plain ridges, whose GOAT intervals sit within about ±0.02. By knob, a small CNN and binned outputs read worse in these runs, each with its own handicap. One mixture component is not shown worse. | Pretrained encoders (EfficientAT, AFx-Rep): their weights need a download and the user's yes. Larger networks are out of scope, by the report. |
-| **Features** | Mel band means and stds, the best hand-built input. | None is shown better for tone, for cab or for drive on crunch. Flatness did not hold up as the lead the review named. W's learned features read cab better than any of them. | Anything that needs audio, such as roughness, and any input on stems of real songs. |
-| **Judge** | J0 stays. | Neither `tonal` nor a cross-fitted term passes the screen. | Auditory models (HAAQI, PEAQ) and any song-only judge: they need a download. |
+| **Network** | No type is shown better than FTm by the score. | Every contrast with FTm by the score is undecided by item and DI, the declared read, including two plain ridges, whose GOAT intervals sit within about ±0.02. By knob, a small CNN and binned outputs read worse in these runs, each with its own handicap. One mixture component is not shown worse. | Pretrained encoders (EfficientAT, AFx-Rep): their weights need a download and the user's yes. Larger networks are out of scope, by the report. |
+| **Features** | Mel band means and stds, the best hand-built input. | None is shown better for tone, for cab or for drive on crunch. Flatness did not hold up as the lead the review named. W's learned features lead them on cab on a plain interval. | Anything that needs audio, such as roughness, and any input on stems of real songs. |
+| **Judge** | J0 stays. | Neither `tonal` nor a cross-fitted term passes the screen. | Auditory models (HAAQI, PEAQ) need a download. Song-only judges need a download or capture data this plan could not use. |
 
 **The score barely separates these models.** On GOAT, S to the centre is −0.073 and every model adds about −0.02 more. A knob gain of this size predicts a score change near what the score can resolve, so an undecided row here is not evidence that models are equal.
 
@@ -39,7 +39,7 @@ r is fold-demeaned and read through `reads_v3`, unchanged, on held rows. BKS is 
 - **`M-ridge − FTm`:** drive +0.131 [+0.036, +0.221], tone −0.057 [−0.146, +0.032], cab −0.070 [−0.136, −0.008], a plain loss on cab. It reached the score read by the ML session's handover, not by the rule.
 - **W's body adds on cab, not drive.** `W-ridge − M-ridge`: cab +0.136 [+0.080, +0.191], drive +0.022 [−0.051, +0.095] [audit].
 - **`P-ridge − W` is undecided in all three groups.** A linear model on mel statistics is not shown worse than the CNN at what W reads from plugin rows alone.
-- **One player carries 76% of GOAT.** r on that player, then the rest, on drive, tone, cab: FTm +0.097, +0.201, +0.198, then +0.168, +0.279, +0.234. `M-ridge` +0.235, +0.192, +0.140, then +0.244, +0.107, +0.103. `W-ridge` +0.233, +0.240, +0.259, then +0.334, +0.105, +0.298. Off the main player, tone falls for both ridges: `W-ridge − FTm` −0.174 [−0.414, +0.066], `M-ridge − FTm` −0.171 [−0.434, +0.032].
+- **One player carries 76% of GOAT.** r on that player, then the rest, on drive, tone, cab: FTm +0.097, +0.201, +0.198, then +0.168, +0.279, +0.234. `M-ridge` +0.235, +0.192, +0.140, then +0.244, +0.107, +0.103. `W-ridge` +0.233, +0.240, +0.259, then +0.334, +0.105, +0.298. Off the main player, tone is undecided for both ridges: `W-ridge − FTm` −0.174 [−0.414, +0.066], `M-ridge − FTm` −0.171 [−0.434, +0.032] (from the review's script, `audit/review-chk3.py`, not the stored reads).
 
 ## Inputs
 
@@ -75,7 +75,7 @@ Each arm ran FTm's recipe with one family of changes, at FTm's stored epoch coun
 - **No arm moves on by the declared rule.**
 - **`A-mic` is the knob lead.** All three plain intervals clear zero, its bounds sit just below (−0.005, −0.022, −0.001), and it gives up some mic reading. It fits the review's finding that mics take 75% of the real loss at FT's start.
 - **`A-k1`:** undecided in all three, so the mixture's extra components are not shown to help.
-- **`A-cat` and `A-cnn` read worse in these runs, which is not a verdict on the idea.** Their losses on tone and cab are plain-interval losses, and neither arm's clears a simultaneous bound. Each has a handicap. `A-cnn` starts from a `final` state, and W's own `final` reads tone 0.074 below its `best`, while its loss at FTm's epochs sits 25–40% above FTm's [audit]. 58% of `A-cat`'s tone gap precedes tuning, and off the main player its tone gap is +0.135 [−0.007, +0.247] [audit]. The report's first pick, binned heads, rested partly on a misread citation (the plan's log), and it is not supported here.
+- **`A-cat` and `A-cnn` read worse in these runs, which is not a verdict on the idea.** Their losses on tone and cab are plain-interval losses. No bound was declared for losses; mirrored, `A-cat`'s reach zero (+0.041, +0.011) and `A-cnn`'s just clear (−0.006, −0.000). Each has a handicap. `A-cnn` starts from a `final` state, and W's own `final` reads tone 0.074 below its `best`, while its loss at FTm's epochs sits 25–42% above FTm's [audit]. 58% of `A-cat`'s tone gap precedes tuning, and off the main player its tone gap is +0.135 [−0.007, +0.247] [audit]. The report's first pick, binned heads, rested partly on a misread citation (the plan's log), and it is not supported here.
 
 ## By the score
 
@@ -99,9 +99,9 @@ Minus is closer. 1,340 renders each, and every stored FTm, RcBG and S record cam
 | `W-ridge` | −0.148 [−0.254, −0.042] | −0.007 [−0.035, +0.021] | −0.005 [−0.048, +0.038] | −0.025 [−0.074, +0.024] | +0.000 [−0.038, +0.039] | −0.007 [−0.080, +0.067] |
 | `A-mic`, post hoc, a lead only | −0.119 [−0.200, −0.038] | +0.023 [−0.030, +0.075] | +0.025 [−0.062, +0.112] | +0.004 [−0.008, +0.017] | +0.010 [−0.081, +0.100] | +0.003 [−0.018, +0.023] |
 
-- **Every contrast with FTm is undecided.**
+- **Every contrast with FTm is undecided by item and DI, the declared read.** `A-mic` clears on GOAT by fold (−0.007 [−0.009, −0.006]), unit and cell [audit], which the rule does not count.
 - **`A-mic` by the score is undecided, not "no gain".** Its knob gain cuts squared error to the label by only 2%, which predicts −0.002 to −0.005 [audit], so the read fits and sits below what the score can resolve. All four folds lean closer on GOAT; two of four do on BKS.
-- **The ridges' gain over the centre on GOAT is steady but not everywhere.** It holds by unit, cell, fold and player [audit], and it vanishes in the closest third of directions: `M-ridge − centre` by thirds of S's distance is −0.001, −0.030, −0.024 (the first −0.001 [−0.012, +0.010]), and `W-ridge` −0.006, −0.025, −0.032. FTm reads +0.002, −0.019, −0.031.
+- **The ridges' gain over the centre on GOAT is steady but not everywhere.** It holds by unit, cell, fold and player [audit], and it is undecided in the closest third of directions: `M-ridge − centre` by thirds of S's distance is −0.001, −0.030, −0.024 (the first −0.001 [−0.012, +0.010]), and `W-ridge` −0.006, −0.025, −0.032. FTm reads +0.002, −0.019, −0.031.
 - **On BKS no model's contrast with the centre clears by fold.** Its 8 DIs sit in pairs sharing a model and a centre, on 2 songs.
 - **Contrasts with FTm mix several things.** Only the ridges move knobs alone. FTm and `A-mic` also change the centre: 64–69% of their squared move is a per-cell shift, 64% of directions change mics and 21% change switches [audit]. On GOAT with RcBG's mics and switches kept, on selected directions, FTm reads −0.027 [−0.041, −0.013] and `M-ridge` −0.023 [audit].
 - No score placebo exists, and closeness to the label explains at most 40–70% of the ridges' −0.02 [audit].
@@ -125,7 +125,7 @@ Stored pages, in-sample, one listener, so a screen only. The copy of J0's path m
 - **FTm stays the candidate, but it is not shown better than a ridge by the score.** A ridge on mel statistics needs no GPU and no fine-tuning, and it is undecided against FTm by the score on both sets. By knob it reads drive above FTm and cab below. That makes it a baseline any later network has to beat, with its input stated.
 - **Real labels may do as much through a shallow readout as through fine-tuning.** `W-ridge` keeps W's body: by knob it is undecided against FTm on tone and a plain lead on cab, and undecided by the score. That is the methods report's row 2. It is a lead, not a finding about real songs.
 - **Network size is not shown to matter, in either direction.** One handicapped smaller body read worse, and larger ones were not tried.
-- **What the score can resolve and what the labels hold look like the nearer limits.** Differences here sit at or below about 0.02. Only the ear or fresh bands can separate them: the report's 27–45 bands, or a blind page.
+- **What the score can resolve and what the labels hold look like the nearer limits.** On GOAT, differences by the score sit at or below about 0.02. Only the ear or fresh bands can separate them: the report's 27–45 bands, or a blind page.
 
 ## Limits
 
