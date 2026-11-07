@@ -184,6 +184,8 @@ def nonlinear_db(which, prt):
 def cmd_plan2(_args):
     """Page 2's cards: each of `CELLS2` in order, no take of page 1, clusters spread, crunch parts under `SCREEN_DB` only."""
     global PAGE
+    if PAGE == FIRST_PAGE:
+        raise SystemExit("plan2 writes page 2's plan: run it with --second")
     BR.root = ER.score_root
     ER.linked()
     keep, PAGE = PAGE, "ear"
@@ -440,8 +442,6 @@ def artifact_css(css):
 def artifact_page(page, css, js):
     """The same page for the Artifact viewer: no document wrapper, its themes, answers kept for reading back, no file save."""
     body = page[page.index("<body>") + len("<body>"):page.index("</body>")]
-    if PAGE != "ear":
-        body = body.replace(", and a few items come back later.", ".")
     body = body.replace(*ARTIFACT_INTRO).replace('<button type="button" id="save">Save file</button>', "")
     body = body.replace("<script>" + js + "</script>", "<script>" + js.replace(
         'document.getElementById("save").addEventListener("click", () => {', 'if (false) document.getElementById("save").addEventListener("click", () => {')
@@ -480,6 +480,8 @@ def cmd_page(_args):
     css = E.CSS + ".rank.five { grid-template-columns:auto repeat(5, 1fr); }\n.rank.close { grid-template-columns:auto repeat(4, 1fr); }\n.conf .scope { flex:1 1 180px; }\n"
     page = (E.PAGE[:a] + INTRO + "\n" + E.PAGE[b:]).replace("@@COUNT@@", str(len(kept))).replace("@@CARDS@@", body) \
         .replace("@@CSS@@", css).replace("@@DATA@@", data).replace("@@CLIPS@@", json.dumps(clips)).replace("@@JS@@", player_js())
+    if PAGE != "ear":
+        page = page.replace(", and a few items come back later.", ".")
     leaks = [w for w in (*CANDS, *{u["unit"] for u in units}, *{u["band"] for u in units}) if len(w) > 2 and w != "label" and w in body + data]
     if leaks:
         raise SystemExit(f"the page names {leaks}")
@@ -552,6 +554,8 @@ def cmd_pooled(args):
     cards1, cards2, heard = joined(key1, ex1["answers"], key2, ex2["answers"])
     side1, side2, _ = joined(key1, ex1["answers"], key2, ex2["answers"], slips=())
     every = cards1 + cards2
+    if len(cards2) < sum(not it["spare"] for it in key2["items"]):
+        raise SystemExit("a replacement slot is unfilled: S9b reads each row both ways over it, which this command does not do")
     unsure = {f"{tag}:{i}" for tag, ex in (("p1", ex1), ("p2", ex2)) for i, a in ex["answers"].items() if a.get("conf") == "unsure"}
     out = [{"id": f"{tag}:{i}", "repeat_of": None, "cluster": it["cluster"]} for tag, key, ex in (("p1", key1, ex1), ("p2", key2, ex2)) for it in key["items"]
            for i in [it["id"]] if (ex["answers"].get(i) or {}).get("scope") and it.get("repeat_of") is None and not (tag == "p1" and i in SLIPS)]

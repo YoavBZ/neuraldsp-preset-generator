@@ -11,7 +11,7 @@ Cost: 6,700 renders of five readers, 36 control renders, and 38 minutes on the G
 
 ## The short answer
 
-By the score, on sets read at least 58 times, frozen EfficientAT adds 0.6% over mel statistics on GOAT and is undecided on BKS. Tuning it on plugin rows changed nothing. The post hoc three-way reader `EW-mix` sits 3.7% closer than the centre on GOAT and leans 1.7% closer than FTm, a lead that is undecided by fold, within each player group and after correction.
+By the score, on sets read at least 58 times, frozen EfficientAT adds 0.6% over mel statistics on GOAT and is undecided on BKS. Tuning it on plugin rows changed nothing. By the score, the post hoc three-way reader `EW-mix` sits 3.7% closer than the centre on GOAT and leans 1.7% closer than FTm, a lead that is undecided by fold, within each player group and after correction.
 
 By ear, on 13 development cards, the search's labels are heard closer than S, and `EW-mix` leads FTm on rank without a clear gap on closeness: see [By ear](#by-ear-2026-11-07). Nothing here is a fresh set.
 
@@ -29,7 +29,7 @@ By ear, on 13 development cards, the search's labels are heard closer than S, an
 
 The user set the score aside and heard the candidates blind: S, FTm, `M-pcs`, `EW-mix` and the search's `label`, each on the same performance as the recording. [Plan](efficientat-plan.md) S9, S9b, S10.
 
-**Sentence.** "For this one listener, on 13 development cards, `label` ranked above S on 12 and holds every check; `EW-mix` ranked above FTm on 10, a lead that fails correction and was mostly rated equal, so a reader beating FTm is not known by ear."
+**Sentence.** "For this one listener, on 13 development cards, `label` ranked above S on 12 and holds every check; `EW-mix` ranked above FTm on 10, a lead that does not survive correction and was mostly rated equal, so a reader beating FTm is not known by ear."
 
 - **Cards.** Page 1 had 12 first hearings and 2 repeats, page 2 four replacement slots and 2 spares, 18 first hearings. Five were marked too distorted, three on page 1 and two on page 2, and a spare filled page 2's. That leaves 13 cards on 8 clusters, 8 GOAT and 5 BKS. A true 75% clears 58% of the time on this map, so a row reaching one half is not a no.
 - **Recording 2.** It carried a stored out-of-scope mark that the listener's screenshots do not show, very likely the page's bug, in a downloaded copy. It is in the main rows on the user's ruling, made before page 2's key was opened. All three clear rows stay clear without it.
@@ -48,7 +48,7 @@ Mean rank, 1 closest: `label` 2.00, `EW-mix` 2.46, `M-pcs` 3.08, FTm 3.46, S 4.0
 
 **Limits on the leads, from the audit.**
 - `EW-mix` and FTm got equal closeness ratings on 10 of 13 cards, 7 of its 10 wins among them. Gap by page: +0.11 on page 1, +0.25 on page 2, each holding zero or touching it.
-- Correction over seven rows takes the primary to 0.16–0.33. One row in chance clears 5.7% of the time, any of seven 31%. The primary also fails with page 1's card 3 left out.
+- Correction over seven rows takes the primary to 0.16–0.33. One row in chance clears 5.7% of the time, any of seven 31%. With page 1's card 3 left out the primary reaches one half, its lower end 0.50.
 - `EW-mix` above S: GOAT 4 of 8, BKS 5 of 5, and W's block saw BKS's DIs. With songs as clusters it reaches one half. FTm above S is also 4 of 8 on GOAT.
 - The primary by set: GOAT 6 of 8, BKS 4 of 5.
 - Page 2 is the only unseen data: `EW-mix` above FTm 4 of 4, but `M-pcs` above FTm is 4 of 4 too, with FTm ranked 4, 5, 4, 5. That may be FTm falling rather than `EW-mix` rising.
@@ -141,4 +141,4 @@ The report's forecast held by the score, not by knob: "a tie is the likeliest re
 
 ## Not tested
 
-Fine-tuning on real rows, wider nets on real rows and DyMN, reading more windows of a song, and any ear read. The ML session will read `E-mix` and `M-pcs` on held capture units, with their DIs held out, under its own declaration.
+Fine-tuning on real rows, wider nets on real rows, DyMN, and reading more windows of a song. The ML session will read `E-mix` and `M-pcs` on held capture units, with their DIs held out, under its own declaration.
