@@ -114,15 +114,15 @@ Every read so far takes one 10 s section. Same fitted readers, no training, no r
 
 - **One result.** `M-win` is nearly all `M-far`, by construction, and they correlate 0.997 by item, so the two rows are not two findings.
 - **What the rule says.** Both undecided, so no lead goes forward by this step.
-- **Power.** 80% power needs about 0.9%. The knob read's +.03 implies about 0.3%, and the fall in knob error about 0.4%, a third of the power or less. Undecided is the likely outcome even if the gain is real.
-- **Not the knob read's contrast.** On these rows, r against `M-pcs` is −0.07, +0.04, +0.06 for `M-win`, about zero on average. So this does not show that a knob gain failed to carry over.
+- **Power.** 80% power needs about 0.9%. The knob read's +.03 implies about 0.3%, and the fall in knob error about 0.4%, a power of a third or less. Undecided is the likely outcome even if the gain is real.
+- **Not the knob read's contrast.** On these rows, r against `M-pcs` is −0.07 [−0.14, −0.02], +0.04, +0.06 for `M-win`, about zero on average, with a clear loss on drive. So this does not show that a knob gain failed to carry over.
 - **The answers did move.** Median knob move 0.010 on drive, 0.026 on tone, 0.015 on cab, and J0 does respond to such moves. Re-renders were identical, 12 of 12.
-- **The rest group.** `M-win` less `M-pcs` is −0.012 [−0.023, −0.001] on the players outside the main one. It is no lead: declared beside, Holm 1 over 13 subgroups, and it holds zero for `M-far`, on `tonal` and on `cross`. Bands, class and amp all hold zero.
+- **The rest group.** `M-win` less `M-pcs` is −0.012 [−0.023, −0.001] on the players outside the main one. It is no lead: declared beside, Holm 1 over 13 subgroups, fold 3 also clears, and it holds zero for `M-far`, on `tonal` and on `cross`. Bands, class and amp all hold zero.
 - **Leaving the judged window out.** `M-far`, which hears none of it, keeps `M-pcs`'s gain over `RcBG` to within 18% at its upper end. Within a take, with gain, class and cell taken from the labelled window, this supports no large loss. It does not support "loses nothing", and says nothing of real songs or of sound.
 
-**What the score cannot tell.** Sound, BKS, or gains under about 0.9%. It judges one held half on a self-built mix, and the user set J0 aside for good reason.
+**What the score cannot tell.** Sound, BKS, or gains under about 0.9%. It judges one held half on a self-built mix, and the user set J0 aside.
 
-**Audit.** Independent, own code: rows reproduced within rounding, 153 keys rebuilt identically, 62 unblended keys equal stored `M-pcs`, only searched knobs moved, no overlaps.
+**Audit.** Independent, own code: rows reproduced within 2e-4, 153 keys rebuilt identically, 62 unblended keys equal stored `M-pcs`, only searched knobs moved, no overlaps.
 
 ## By the score
 
