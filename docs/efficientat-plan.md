@@ -11,14 +11,14 @@ should EfficientAT be downloaded and tested.
 
 Read this block first after any compaction, then the task list, then the findings log.
 
-- **Session:** "ML models and scoring review", branch `claude/efficientat`.
+- **Session:** "ML models and scoring review", branch `claude/efficientat-ear`.
 - **Worktree:** `/Users/yoavbz/projects/neuraldsp-preset-generator/.claude/worktrees/ml-models-scoring-review-8db392`. Work only there.
 - **Run from the worktree root:** `TORCH_PY=~/ndsp-presets/tools/demucs-venv/bin/python`; tests with
   `/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python -m pytest tests/test_eat*.py -q -n0`.
 - **Downloads:** `~/ndsp-presets/tools/efficientat/` (repo at a425fdce, 5 weight files, hashes in `learn/eat_net.py`). Weights load with `weights_only=True`.
 - **Peers:** SendMessage to "NeuralDSP preset generator (ML)", "(executor)", "(controller)", "(cloud researcher)".
-- **Now:** S2 and S3, plugin rows.
-- **Running jobs and PIDs:** S2 and S3 on CPU, this session's background job; PID 42832, watched by the executor. Each job so far ran under 15 min.
+- **Now:** S9 and S9b done and audited, [results](efficientat-results.md#by-ear-2026-11-07). S7 is done and merged, PR #402. L2 is the ML session's and the user's call. S11 awaits the user's go.
+- **Running jobs and PIDs:** none.
 - **Mac:** the ML session is starting about 2 hours of capture training on MPS. No GPU job here until it says it has finished. CPU reads go on. Renders are announced first.
 - **Disk:** 34 GB free, floor 33 GB; the controller asked to stop and tell ML and the executor at 33. `PF/eat/front` (1.5 GB) can be rebuilt in 15 min.
 - **Blocked on the user:** nothing. Fine-tuning has its yes (S8).
@@ -149,8 +149,8 @@ The researcher's report advises against a deep distance as the judge: no listene
 
 ### S7, write-up
 - [x] S7.1 `docs/efficientat-results.md`: each approach's answer, what their comparisons taught, what was not tested. Add the researcher's report. Log its claims against S3.3.
-- [ ] S7.2 ROADMAP and DOCS-INDEX lines. Review, CI, merge. Memory.
-- [ ] S7.3 Plain report to the user.
+- [x] S7.2 ROADMAP and DOCS-INDEX lines. Review, CI, merge. Memory.
+- [x] S7.3 Plain report to the user.
 
 ### S8, fine-tuning, on the user's yes of 2026-11-06
 
@@ -176,6 +176,76 @@ Both bodies are tuned on searched heads only (`reads_v3.searched`, per cell; `P.
 - [ ] S8.5 Tuning on real rows only if S8.4 shows a tuned body closer than `E-mix` on GOAT by item, or if the user asks: batch-norm scales and biases plus a head, statistics frozen, by fold, as the researcher's report advises. At 520 labels it reads by the head, not by a ridge on features of its own training rows, which would be in-sample.
 
 **Declared rule for S8.** Nothing is adopted. Candidates so far are stated in the results. A tuned model closer than `E-mix` on GOAT by item, by the score, is a lead for the ear, which is the ML session's and the user's call. BKS can only flag: W and the tuned bodies saw BKS's DIs and `E-mix` did not, so a BKS gain supports nothing and a BKS loss counts. If `TE-mix` is not shown better than `E-mix` by knob or by the score, plugin tuning is not shown to help, and that is reported as undecided, not failed.
+
+### S9, by ear, on the user's request of 2026-11-06
+
+**The user:** "Put the score aside since we know it's not accurate, provide a listening page for me to hear". Declared here before any render. The ML session set the terms.
+
+- **Page.** 12 cards and 2 repeats, about 4 s each, looping, the amp track alone as the Record, instant switching, headphones asked for. Blind: letters shuffled per card, balanced, the key out of chat until answers are stored. Separate from the capture pages the user has open.
+- **Candidates.** S, FTm, `M-pcs`, `EW-mix` and `label`, the search's best setting on that part. `label` is fitted on the true DI, so it is a ceiling, not a product, and no page has yet played a label beside a model's answer on the same part. `E-mix` is left out to keep the card size: `EW-mix` contains it. Each reader plays the answer it was scored with on the search's own direction, fold-held, heard on the held half. Every render is held to the render already judged, and the label to its stored judge.
+- **Parts.** `learn/ear_eat.py plan`, seed 20261201: one GOAT and one BKS part in each of 3 amps × clean, crunch, no take twice, clusters spread, no score read. Its amp is a draw inside the cell: GOAT's amps were assigned at build, not by S's distance, and BKS's were read on all three. 9 clusters: 6 BKS DIs, 3 GOAT players. On BKS clean is one song and crunch the other, so class and song are tied there, and BKS is 2 songs. The user heard these references on earlier gates, not these renders; a caveat, recorded per card.
+- **Map, declared before any render.** First hearings, the forced rank, pairwise, by `capture_ear.boot_share` over clusters, 90%. Primary row: `EW-mix` above FTm. Other rows: `EW-mix` above S, FTm above S, `M-pcs` above FTm, `EW-mix` above `M-pcs`, `label` above S, `label` above `EW-mix`. Closeness gaps are the second reading, within this page only. A row with its lower end above one half is a lead, heard. A row reaching one half is not known by ear. By simulation on these 12 cards and 9 clusters a true 50% clears 6%, a true 60% 22%, a true 75% 56%, a true 90% 96%, so a row reaching one half does not rule a reader out.
+- **Scope.** A card marked "too distorted, out of scope" leaves the rows, and each row is reported both ways that card could have gone. A corrected answer is a post hoc side row only; the answer on file stands. Overridden for card 2 by the user's ruling, S9b's amendment. Unsure cards stay in, with a row beside without them. Repeats are read as consistency only.
+- **What it can do.** It adopts nothing. These are development sets, and one listener. A clear row is a lead for L2, the ML session's and the user's call.
+
+- [x] S9.1 `learn/ear_eat.py`, the map committed, then 120 renders in 3 shards, each held as above.
+- [x] S9.2 The page, published privately. Answers stored, then the key read.
+- [x] S9.3 Page 2 and the join, S9b with its amendment, audited.
+
+### S9b, page 2, replacing page 1's out-of-scope cards
+
+Declared before any page 2 render, after page 1's answers were unblinded: the rows on page 1's 8 cards were seen, so what follows fixes the join in advance and changes no row. By S10, 4 of 12 first-hearing cards out of scope is over the limit of 2. Card 2 stays out on file. If the user says it was a slip, its answer is a post hoc side row only.
+
+- **Parts.** Four replacement cards and two crunch spares, no take of page 1, clusters spread, seed 20261211. Crunch parts must read `nonlinear_to_linear_db` under −3, N6's line, as a screen: on page 1 the three crunch cards marked out read −1.74, +1.37 and +1.54, and the crunch cards kept −3.23, −2.71 and +3.69, so it does not fully separate them.
+- **BKS's crunch cells cannot fill.** All 3 parts left in each have too much drive by the screen, so they are not drawn. Their two slots go to GOAT crunch on the same amp. That takes the planned 6 BKS and 6 GOAT cards to 4 and 8, and BKS crunch then sits on one card, the one page 1 kept. Stated.
+- **Page.** Same five candidates, same form, letters shuffled per card, no repeats, about 8 minutes. Same rendering holds.
+- **The join.** Rows are the rank share on all in-scope first hearings of both pages, up to 12 cards: page 1's 8, then the four replacement cards. A replacement card marked out of scope gives way to the next spare in page order; spares not needed stay out of the rows and are reported beside. If fewer than 12 remain, rows run on what is there, and each row is read both ways over the cards still missing.
+- **Clusters.** As S9: DI on BKS, player on GOAT, and a cluster on both pages is one cluster. `capture_ear.boot_share`, 90%. The map is unchanged: lower end above one half is a lead, heard; a row reaching one half is not known by ear.
+- **Closeness.** Ratings move between pages, so gaps are read within each page. A pooled gap is a beside row only.
+- **Repeats.** Page 1's only, consistency only.
+- **Amended 2026-11-07, the user's ruling on card 2, before page 2's key was opened.** "Recording 2 should be part of the main results, I didn't change anything". The stored mark is very likely the page's scope bug, the screenshots show none, and the answer itself is unchanged, so card 2 joins the main rows. This overrides S9's "a corrected answer is a post hoc side row only" and "card 2 stays out on file" above. Card 2 moves rows both ways: it raises four and lowers three, the primary among those lowered. Page 1's rows, card 2's unblinded answer included, were seen before this ruling; page 2's were not. Reviewed independently, before the key.
+  - **Cards.** Page 1's 9 in-scope first hearings plus the four replacement slots, 13 cards. Wherever S9b says 12, read 13. The cap goes, since dropping a card to keep it would be a choice with no rule behind it. Page 2 came back with card 3, a spare, and card 4, a replacement, marked out, so the last spare, card 6, fills card 4's slot.
+  - **Gate.** Every slot is filled, so S10's gate is met for the join. Both-ways reads apply to unfilled slots only, as S9b says, because replaced cards are what S10 calls for. The five out-of-scope first hearings, 3 + 2, are read both ways in a row beside, which drives no step.
+  - **Closeness.** Pooled gaps and pooled closeness means stay beside. For S10's branch, "closeness gap above zero" means above zero on both pages; otherwise it reads as reaching zero.
+  - **Power.** On these 13 cards and 8 clusters a true 50% clears 6%, 60% 19%, 75% 58%, 90% 96%.
+  - **Beside:** the rows without card 2, the rows without unsure cards, the rows by page.
+
+### S10, what each listening result leads to
+
+Written on the user's request of 2026-11-06, "While I listen, think and plan the next steps given the possible results", before any answer was read. The key stays closed. Reading order follows the page's declared map; a row reaching one half is not known by ear, never "failed".
+
+**First, is the page a read?** If more than 2 of the 12 first-hearing cards are out of scope, the rows are reported but drive no step: those cards are replaced, same map, before anything below. Repeats are consistency only. If both repeats change their top pick, the note says the listener could not hold the order at five candidates, and the next page has three.
+
+**Then the ceiling, `label` against S.** This decides what kind of problem is left, so it is read before any model row. A row counts as clear only if it clears both ways that any out-of-scope card could have gone. A true 75% reaches one half 44% of the time on this page, so no branch treats a row reaching one half as a no.
+
+| `label` over S | Model rows | Reading | Next step |
+|---|---|---|---|
+| Clear above | `EW-mix` over FTm clear | A reader is audibly closer than the current model | Propose it for L2 as a lead, rows by set, since its W block saw BKS's DIs |
+| Clear above | `EW-mix` over S clear, over FTm not | A reader beats S, not shown beyond FTm | Take the lowest-cost reader clear over S forward as the candidate, with S11 beside |
+| Clear above | FTm over S clear, `EW-mix` over S not | FTm is heard, the new reader is not | FTm stays the candidate. The score's lead for `EW-mix` is not carried by ear |
+| Clear above | FTm clear above `EW-mix` | The ear reverses the score | FTm stays. The ridges are not candidates on these parts. Say so plainly, and keep them only as baselines |
+| Clear above | No reader clear over S, `label` over `EW-mix` clear | The target sounds right and the readers miss it | Keep the labels. Spend on input and labels: S11, then the second batch. No new network |
+| Clear above | None of these | The page cannot place the readers | 12 more cards, same map, fresh parts, S11 beside. 24 cards take a true 75% from 56% to about 78% |
+| Reaches one half, closeness gap above zero | Any | The rank is not known, closeness leans to the label | Treat as the row above it would be, stated as weaker. F57 read v2's labels, not these, so it is context only |
+| Reaches one half, closeness gap reaching zero | Any | Not known that the labels sound closer than S here | Pause new reader builds, not S11's knob read. Run the judge and label question, step 1. Restart when a setting is heard closer than S on its page, or when the user says |
+| Clear below | Any | The search's labels sound further than S on these parts | Everything trained on them is in question. Pause model work, and take it to the ML session and the user first |
+
+**Then the simple reader.** `EW-mix` over `M-pcs` clear: W's and EfficientAT's features earn their cost. Not clear, whichever way its point lies: `M-pcs` is the default by cost, since it needs no download, no network and no GPU, and EfficientAT is not ruled out. `M-pcs` over FTm clear can propose `M-pcs` for L2 on its own. L2 is the clean test, so `EW-mix` being post hoc does not bar it, and the ML session and the user decide.
+
+**Splits are leads.** Clean against crunch and amp against amp are read after the rows, and are post hoc. On BKS class and song are tied. A split such as "models help on crunch, S holds on clean" would become a declared test, never a rule taken from this page.
+
+**The judge and label question, only where a branch above sends it.** The search optimises J0, which the user has set aside. So in order: (1) from the stored search curves, zero renders, ask how many settings sit within J0's noise of the best, which bounds how arbitrary a label is; (2) a small blind page of a part's top settings from the search against S, to see if any is heard closer; (3) then the judges left untried, AFx-Rep distance and HAAQI, which need downloads and a fresh blind page each. Not a new reader.
+
+### S11, reading more of a song (proposed, not run, needs the user's go)
+
+Every read so far takes one 10 s section. Backing noise is a large part of a ridge's error (F63: r rises from .147, .263, .145 at 1 backing to .205, .360, .198 at 25), but a song has one backing, so that only suggests a read of many sections could help. GOAT's takes are long enough to test it: median 130 s, 94% over 30 s, 76% over 60 s, listed from the zip, no audio read.
+
+- **First, no rebuild.** BKS labels every section, and `reads_v3.blocks` averages a rig's answers. Read BKS's r on single sections against the rig mean. It is a real-labelled test of what more sections add, on 2 songs.
+- **Then GOAT.** Up to 5 more 10 s windows from the same amp track, none overlapping the labelled window, screened by `goat_window`'s rules with the unit's lag rule. Each takes the unit's own lend and level, fixed, and another window of the same pool session as its backing, since one backing clip would average no backing noise. Same fitted readers, `M-pcs` first, no training.
+- **Read.** Primary: all windows against the labelled window, paired, by player. Other windows alone beside. Folds stay on whole items. Other windows share the chain but were not searched, stated.
+- **By the score, if it moves on.** The held half stays out of every input, so the score reads an answer that never heard it.
+- **Why it may fail.** Those windows hold other notes, and a noisier part of a take can pull an answer. The rise over backings may not carry to sections.
+- **Cost.** CPU rebuild at about 0.3 s a window, no renders for the knob read, 1,340 renders per reader for the score, then an ear page.
 
 ## Findings log
 
@@ -225,3 +295,9 @@ Newest last. Each entry: date, task, result, output path, audited by whom.
 - 2026-11-06, S8.4b, `EW-mix`, 1,340 renders, `PF/eat/score-ew.json`, `score-ew-vs-e.json`, `score-ew-vs-m.json`, unaudited at this line. GOAT by item: − RcBG −0.038 [−0.048, −0.028], − FTm −0.017 [−0.033, −0.001], − `E-mix` −0.007 [−0.011, −0.002], − `M-pcs` −0.012 [−0.019, −0.006], − S −0.111. BKS by DI: − RcBG −0.022 [−0.050, +0.006], − FTm −0.040 [−0.085, +0.004], − `E-mix` +0.006 [−0.003, +0.015], − `M-pcs` +0.003, − S −0.163. GOAT by fold: − FTm −0.020 [−0.054, +0.015]. It is post hoc, chosen after S4 on the same GOAT, and BKS's rows are not clean for W's block.
 - 2026-11-06, the final audit, independent, own code: 120 stored score rows recomputed, mean gap 0; refits of `E-mix`, `TE-mix` and `EW-mix` on all folds, 670 answers within 1.6e-6, r within 1e-7. W's block variance by amp 0.82–0.92, sound. Tuned bodies trained on W's ids only; CPU re-embedding matches each checkpoint. `TE-mix − E-mix` +0.000 is real: answers differ 0.014 rms against `E-mix`'s own A-to-B 0.048, weights moved 2%, top PCs cos above 0.99. No leak. Corrections, carried into the results: (1) one backing against five, averaged over backings, is +0.200, +0.340, +0.264 to +0.244, +0.387, +0.298, about equal in each group; (2) all knob reads rest on variant 0, `E-mix`'s drive ranks 23 of 25, and `EW-mix − E-mix` on cab averages +0.025 over 25 backings; (3) "held" backings also back that fold's training rows, 98–100%, with no label leak, and holding sessions out moves `E-mix`'s tone −0.023 [−0.063, +0.017]; (4) the curve's shares are 8–46%, 19–67% and 58–85% of rows, and are nested; (5) `M-pcs − M-ridge` −0.006, `E-mix − M-pcs` −0.006, p about 0.07; (6) 31 knob reads and 5 by the score here, 58 with the comparison's 22. `EW-mix − FTm` on GOAT: by fold −0.020 [−0.054, +0.015], main player −0.012, rest −0.034, crunch −0.041, clean −0.005, ac20 +0.001, 106 of 130 leave-one-outs clear, 96% of 200 bootstraps below zero, Holm over its ten rows 0.43. A post hoc lead, undecided after correction.
 - 2026-11-06, S7.1, the results' review, by the auditor: 15 wording and count faults, all taken.
+- 2026-11-06, S9.1: 120 renders, under 2 min on three shards, every reader's held to its judged render hash and each label to its stored judge within 0.1%. Page built, 14 cards, 84 clips, 16.0 MB, published privately. Tested on the local copy: clips decode, switching works, rank, scope and export work, no key or part name on the page. The hosted copy's database took a probe write and read, deleted. The hosted page itself was not opened here: it needs the user's sign-in.
+- 2026-11-06, S10's review, independent, with neither the key nor any answer read: 7 faults, all fixed. The page's out-of-scope button sat among the confidence buttons, so it showed lit on every card with no confidence set, and clicking it wiped Sure or Unsure. Fixed on the live page, same build, same letters; the user was told. Any card holding both scope and ranks is asked about before scoring, `scope_and_ranked` in `score.json`. Also: both-ways reading coded; `cmd_score` takes the stored document; S10's gaps closed; S11's windows, lend, backing and primary set.
+- 2026-11-07, S9.2, page 1's answers, `PF/eat/ear/answers.txt`, `score.json`, unaudited at this line: 8 of 12 first-hearing cards in scope, out of the planned 12. Mean rank and closeness: S 3.88, 0.38; FTm 3.25, 1.50; `M-pcs` 3.38, 1.38; `EW-mix` 2.75, 1.62; `label` 1.75, 2.38. Over the limit of 2 out-of-scope cards, so no step is driven and page 2 follows. One repeat answered, same top.
+- 2026-11-07, page 1's audit, independent, own code: table and all seven rows reproduced. All 84 clips byte-exact to the cache, each matching its key candidate, 48 of 48 reader hashes match. By S10 the page is not a read: 4 of 12 first-hearing cards out, 3 even with card 2 back. No row clears both ways, and none could have. On the 8 cards alone `EW-mix` over FTm and `label` over S clear, on 6 clusters, not 9: exact false-clear 5.1% for one row, 28% for any of seven; Clopper-Pearson for 6 of 8 [0.40, 0.95]. Card 2 is almost certainly the bug: its stored keys show scope clicked before any rating, as on card 1, and its repeat was answered Sure; it stays out on file. Dropping it is what makes the primary row clear on the 8 cards: with it 6 of 9 [0.50, 0.875]. `EW-mix` and FTm got equal ratings on 9 of 10 answers. Closeness: each reader above S on 5 cards, level on 3, below on none, 5 of 6 clusters; the readers' ratings are nearly one vector, and S sits at the floor on 6 of 8. `label` over S is sturdy: 6 of 6 on Sure cards, clear on every leave-out. The amp draw explains the gap from N4 and F57 in part at most. The audit's sentence: "On the 8 cards left, one listener rated the label above S on 7 and each reader above S on 5, never below, but the page failed its scope gate, so no row is clear and nothing separates `EW-mix` from FTm."
+- 2026-11-07, card 2's mark: the user's screenshots of page 1 show the out-of-scope button dark on Recording 2 and lit on 4, 5, 7 and 11. Only the export's data line holds it, `i2.scope: true`; the export's readable lines never print scope, on either page. With the fixed code a stored mark paints lit. The user answered a downloaded copy, so an old copy fits, though when it was downloaded is not known. Then read as a slip under S9b, superseded the same day by the user's ruling: see S9b's amendment. 3 of 12 out with it back, still over the limit, so page 1 alone is still not a read. The hosted store held no document on page 1 because the user answered a downloaded copy, which has no store and, if taken before the fix, keeps the old button. Page 2 was answered on the hosted page and its answers reached the store, `PF/eat/ear2/answers.json`.
+- 2026-11-07, S9.3, both pages joined, `PF/eat/ear2/pooled.json`, audited: 13 cards, 8 clusters. `label` above S 12 of 13 [0.82, 1.00], `EW-mix` above FTm 10 of 13 [0.60, 0.93], `EW-mix` above S 9 of 13 [0.55, 0.90], all clear; the other four reach one half. The audit's faults: "audibly closer" is not earned, since `EW-mix` and FTm were rated equal on 10 of 13 and Holm over seven rows gives 0.16–0.33; `EW-mix` above S is 4 of 8 on GOAT and reaches one half with songs as clusters. Page 2's card 5 is Bulldozer clean, so BKS's class and song are not fully tied. The audit's sentence: "For this one listener, on 13 development cards, `label` ranked above S on 12 and holds every check; `EW-mix` ranked above FTm on 10, a lead that does not survive correction and was mostly rated equal, so a reader beating FTm is not known by ear." S10's first row fires as a lead for L2, and `M-pcs` is the default by cost.
