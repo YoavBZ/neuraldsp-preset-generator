@@ -70,25 +70,25 @@ Every read so far takes one 10 s section. Same fitted readers, no training, no r
 | All sections less one | Drive | Tone | Cab |
 |---|---|---|---|
 | `M-pcs` | +0.10 [+0.05, +0.15] | +0.11 [−0.07, +0.28] | +0.07 [−0.12, +0.27] |
-| `E-mix` | +0.16 [+0.09, +0.22] | +0.06 [−0.00, +0.13] | +0.05 [−0.05, +0.14] |
+| `E-mix` | +0.16 [+0.09, +0.22] | +0.06 [−0.00, +0.13] | +0.05 [−0.04, +0.14] |
 | `W-pcs` | +0.15 [+0.06, +0.23] | +0.09 [−0.12, +0.30] | +0.09 [+0.02, +0.15] |
-| `EW-mix` | +0.21 [+0.04, +0.38] | +0.10 [−0.04, +0.23] | +0.07 [+0.01, +0.13] |
+| `EW-mix` | +0.21 [+0.04, +0.37] | +0.10 [−0.04, +0.23] | +0.06 [+0.00, +0.12] |
 | FTm | +0.10 [−0.08, +0.28] | +0.06 [−0.08, +0.20] | +0.10 [+0.04, +0.17] |
 
-12 rigs stop at 2 sections, so the curve cannot say where the gain ends. On the 18 rigs of 8 or more sections, one song, going from 3 sections to all adds +0.03, +0.07, +0.03.
+12 rigs stop at 2 sections, so the curve cannot say where the gain ends. On the 15 read rigs of 8 or more sections, one song, going from 3 sections to all adds +0.04, +0.07, +0.03.
 
-**GOAT, `M-pcs`.** Up to 5 other windows of the same take at the unit's own levels, each with another backing of the same session. 184 units had at least one, 86 had five. 246 candidates were refused: 147 by class, 95 by lag, 4 with no lag.
+**GOAT, `M-pcs`.** Up to 5 other windows of the same take at the unit's own levels, each with another backing of the same session where it has one: 78 windows of 20 units reused the unit's own, and removing them changes nothing. 184 units had at least one, 86 had five. 246 candidates were refused: 147 by class, 95 by lag, 4 with no lag.
 
 | Row | Drive | Tone | Cab |
 |---|---|---|---|
 | More unsearched windows less one, declared, 153 units | −0.02 [−0.08, +0.04] | **+0.08 [+0.02, +0.14]** | +0.03 [−0.02, +0.08] |
-| The same, one window averaged over every choice, post hoc | +0.02 [+0.01, +0.04] | +0.03 [+0.02, +0.05] | +0.02 [+0.01, +0.04] |
+| The same, one window averaged over 200 random choices, post hoc | +0.02 [+0.01, +0.04] | +0.03 [+0.02, +0.05] | +0.02 [+0.01, +0.04] |
 | All windows less the labelled one, declared | −0.01 [−0.05, +0.03] | +0.04 [−0.01, +0.09] | +0.03, reaches zero |
 
 - **Size.** The declared +0.08 is not the size: the seeded single window happened to read low on tone. About +0.03 is the fair figure, and it is post hoc.
 - **The rule fired,** on tone, and stayed clear across seeds. Over six rows it is borderline: Holm 0.0498, Bonferroni +0.0001, max-t −0.006. A modest reason.
-- **Where it holds.** Tone stays at +0.05 or more leaving out any fold, amp, class or player. All choices, main player +0.03, +0.03, +0.02; the rest +0.04, +0.06, +0.08. The screens do not carry it.
-- **Count.** Units with five windows gain +0.03, +0.04, +0.04, units with 2 to 4 +0.00, +0.00, +0.03. From 1 to 3 windows +0.02, +0.04, +0.03; from 3 to 5 about +0.01.
+- **Where it holds.** The declared tone row stays at +0.05 or more leaving out any fold, amp, class or player. Over the 200 choices, main player +0.03, +0.03, +0.02; the rest +0.04, +0.06, +0.08. The screens do not carry it.
+- **Count.** Units with five windows gain +0.03, +0.04, +0.04, units with 2 to 4 +0.00, +0.00, +0.03. On those 86 five-window units, from 1 to 3 windows +0.02, +0.04, +0.03; from 3 to 5 about +0.01.
 - **Why.** The answers' spread falls and their covariance with the label holds, so noise falls and r is not flattered. Window-to-window variance is 50–65% backing, the rest notes. RMSE falls about 1%.
 - **Drive.** Its label sits on the searched window: `L` 0.21, another window 0.10. That caps what drive can show here and is no source of gain.
 - **Checks.** The chain gave stored inputs within 1 grid step, the labelled arm stored `M-pcs` within 2e-16, and a placebo of another take's windows lost r, so the harness holds.

@@ -3439,7 +3439,7 @@
     "page2": "2026-11-07, S9b: four replacement slots and 2 spares, seed 20261211, crunch parts screened under -3 dB; joined with page 1 on 13 cards, 8 clusters, Recording 2 in the main rows on the user's ruling before page 2's key was opened",
     "outcome": "2026-11-07, audited, one listener, adopts nothing: label above S 12 of 13 [0.82, 1.00]; EW-mix above FTm 10 of 13 [0.60, 0.93], Holm over seven rows 0.16 to 0.33, rated equal on 10 of 13; EW-mix above S 9 of 13 [0.55, 0.90], GOAT 4 of 8; FTm above S, M-pcs above FTm, EW-mix above M-pcs and label above EW-mix reach one half",
     "s11_entered": "2026-11-07, before any read: S11.1 BKS stored answers by sections, S11.2 GOAT M-pcs on up to 5 other windows, no training, no render; adopts nothing; 15 reads on BKS and 6 on GOAT outside the bound",
-    "s11_outcome": "2026-11-07, audited, by the knob read, adopts nothing: GOAT M-pcs OTHERS less O1 tone +0.077 [+0.024, +0.140], Holm over six rows 0.0498; over every choice of O1, post hoc, +0.025, +0.033, +0.025; BKS all sections less one M-pcs +0.10, +0.11, +0.07, direction only"
+    "s11_outcome": "2026-11-07, audited, by the knob read, adopts nothing: GOAT M-pcs OTHERS less O1 tone +0.077 [+0.024, +0.140], Holm over six rows 0.0498; over 200 random choices of O1, post hoc, +0.025, +0.033, +0.025; BKS all sections less one M-pcs +0.10, +0.11, +0.07, direction only"
    }
   }
  ],
