@@ -20,7 +20,6 @@ import json
 import math
 import pathlib
 import random
-import secrets
 import sys
 import time
 
@@ -698,7 +697,7 @@ def cmd_page(_args):
             for k, y in lev.items():
                 clips[f"{it['id']}-{k}"] = E.encode(y, cache)
             chunk[q] = {**it, "levels": info}
-        build = hashlib.sha256((json.dumps([k["letters"] for k in chunk]) + secrets.token_hex(8)).encode()).hexdigest()[:12]
+        build = hashlib.sha256(f"{json.dumps([k['letters'] for k in chunk])}{time.time_ns()}".encode()).hexdigest()[:12]      # a page's name, no secret
         body = EE.cards(chunk)
         data = json.dumps({"build": build, "items": [{"id": it["id"], "n": it["n"]} for it in chunk]})
         a, b = E.PAGE.index("<h1>"), E.PAGE.index("@@CARDS@@")
