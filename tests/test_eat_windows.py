@@ -69,3 +69,11 @@ def test_the_far_arm_reads_no_labelled_audio():
     x = np.array([[1000.0], [1000.0]])
     got = W.blended(x, [np.array([[2.0], [4.0]]), np.array([[6.0], [8.0]])], False)
     assert np.allclose(got, 5.0) and got.shape == x.shape
+
+
+def test_the_split_scores_each_direction_and_groups_by_item():
+    judge = {t: {f"goat/item_{i}@5#amp_1|pr12": {"A": {"B": {"distance": d}}, "B": {"A": {"distance": d}}} for i in (1, 2)}
+             for t, d in (("M-win", 2.0), ("M-pcs", 3.0), ("S", 4.0))}
+    keys = sorted(judge["S"])
+    got = W.split_rows("M-win", "M-pcs", judge, keys, {k: "main" for k in keys})
+    assert got["main"]["clusters"] == 2 and abs(got["main"]["mean"] - np.log(2 / 3)) < 1e-9
