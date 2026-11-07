@@ -31,6 +31,7 @@ if str(ROOT) not in sys.path:
 from learn import bakeoff as B               # noqa: E402
 from learn import eat_read as ER             # noqa: E402
 
+EAT = "eat"                                  # under out_dir()
 SEED = 20261221
 MORE = 5                                     # other windows at most, S11
 BKS_K = (1, 2, 3, 5)
@@ -43,7 +44,7 @@ def stored_rows():
     """The read's stored rows with `EW-mix` joined by position, which `add_prior` checks. No reader is refitted."""
     from learn import pipeline_fix as P
 
-    root = P.out_dir() / ER.OUT
+    root = P.out_dir() / EAT
     rows = pickle.loads((root / "read.json.rows.pkl").read_bytes())
     ER.add_prior(rows, root / "s83-read.json.rows.pkl", "EW-mix")
     return rows
@@ -122,7 +123,7 @@ def cmd_bks(_a):
     for label in BKS_READERS:
         res["readers"][label] = {"r": {str(k): read_k(S, label, k) for k in (*BKS_K, ALL)}, "all_less_one": jackknife(S, label),
                                  "by_song": {s: {str(k): read_k([r for r in S if song(r) == s], label, k) for k in (1, ALL)} for s in sorted({song(r) for r in S})}}
-    out = P.out_dir() / ER.OUT / "s11-bks.json"
+    out = P.out_dir() / EAT / "s11-bks.json"
     out.write_text(json.dumps(res, indent=1, default=float))
     print(json.dumps({m: v["all_less_one"] for m, v in res["readers"].items()}, indent=1, default=float))
 
@@ -132,7 +133,7 @@ def cmd_bks(_a):
 def windows_root():
     from learn import pipeline_fix as P
 
-    return P.out_dir() / ER.OUT / "windows"
+    return P.out_dir() / EAT / "windows"
 
 
 def window_path(unit, w):
@@ -402,7 +403,7 @@ def cmd_read(_a):
     res["player"] = B.player_read(out_rows, list(labels), data[4])
     full = [r for r in out_rows if len(r["win"]) - 1 >= 3]
     res["three_or_more"] = {"units": len(full), "r": {m: {g: v[0] for g, v in R.corr(R.blocks(full, m)).items()} for m in ("L", "ALL")}}
-    (P.out_dir() / ER.OUT / "s11-goat.json").write_text(json.dumps(res, indent=1, default=float))
+    (P.out_dir() / EAT / "s11-goat.json").write_text(json.dumps(res, indent=1, default=float))
     print(json.dumps({k_: res[k_] for k_ in ("units", "windows", "r", "pairs")}, indent=1, default=float))
 
 
