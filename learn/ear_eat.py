@@ -514,7 +514,7 @@ def cmd_score(args):
     both = [it["id"] for it in key["items"] if it["id"] in out_of_scope and heard[it["id"]]]
     rep = {"answered": sum(v is not None for v in heard.values()), "items": len(key["items"]), "out_of_scope": out_of_scope, "unsure": unsure,
            "scope_and_ranked": both, "by_candidate": table(key["items"], heard, out_of_scope), "rows": share_rows(key["items"], heard, out_of_scope),
-           "rows_unsure_out": share_rows(key["items"], heard, [*out_of_scope, *unsure]),
+           "rows_unsure_out": share_rows([it for it in key["items"] if it["id"] not in unsure], heard, out_of_scope),
            "repeats": [{"same_top": min(heard[it["id"]], key=lambda c: heard[it["id"]][c]["rank"]) ==
                         min(heard[it["repeat_of"]], key=lambda c: heard[it["repeat_of"]][c]["rank"])}
                        for it in key["items"] if it["repeat_of"] and heard.get(it["id"]) and heard.get(it["repeat_of"])],
@@ -552,14 +552,19 @@ def cmd_pooled(args):
     cards1, cards2, heard = joined(key1, ex1["answers"], key2, ex2["answers"])
     side1, side2, _ = joined(key1, ex1["answers"], key2, ex2["answers"], slips=())
     every = cards1 + cards2
-    unsure = [f"p1:{i}" for i, a in ex1["answers"].items() if a.get("conf") == "unsure"] + [f"p2:{i}" for i, a in ex2["answers"].items() if a.get("conf") == "unsure"]
+    unsure = {f"{tag}:{i}" for tag, ex in (("p1", ex1), ("p2", ex2)) for i, a in ex["answers"].items() if a.get("conf") == "unsure"}
+    out = [{"id": f"{tag}:{i}", "repeat_of": None, "cluster": it["cluster"]} for tag, key, ex in (("p1", key1, ex1), ("p2", key2, ex2)) for it in key["items"]
+           for i in [it["id"]] if (ex["answers"].get(i) or {}).get("scope") and it.get("repeat_of") is None and not (tag == "p1" and i in SLIPS)]
+    by_page = {"page1": share_rows(cards1, heard), "page2": share_rows(cards2, heard)}
     rep = {"cards": [it["id"] for it in every], "by_card": [{k: it[k] for k in ("id", "amp", "cls", "band", "which", "cluster")} | {"heard": heard[it["id"]]} for it in every],
-           "by_candidate": table(every, heard), "rows": share_rows(every, heard),
-           "close_by_page": {"page1": share_rows(cards1, heard), "page2": share_rows(cards2, heard)},
-           "beside": {"without_slips": share_rows(side1 + side2, heard), "unsure_out": share_rows(every, heard, unsure) if unsure else None,
-                      "page1_rows": share_rows(cards1, heard), "page2_rows": share_rows(cards2, heard)}}
+           "by_candidate_page1": table(cards1, heard), "by_candidate_page2": table(cards2, heard),
+           "rows": {k: {x: v for x, v in row.items() if x != "close_gap"} for k, row in share_rows(every, heard).items()},
+           "close_by_page": {k: {page: rows[k]["close_gap"] for page, rows in by_page.items()} for k in by_page["page1"]},
+           "beside": {"without_slips": share_rows(side1 + side2, heard), "unsure_out": share_rows([it for it in every if it["id"] not in unsure], heard),
+                      "out_of_scope_both_ways": share_rows(every + out, heard | {it["id"]: None for it in out}, [it["id"] for it in out]),
+                      "pooled_close_and_table": {"rows": share_rows(every, heard), "table": table(every, heard)}, "by_page": by_page}}
     (root / SECOND[0] / "pooled.json").write_text(json.dumps(rep, indent=1))
-    print(json.dumps({k: v for k, v in rep.items() if k in ("cards", "by_candidate", "rows")}, indent=1))
+    print(json.dumps({k: v for k, v in rep.items() if k not in ("by_card", "beside")}, indent=1))
 
 
 def main(argv=None):
