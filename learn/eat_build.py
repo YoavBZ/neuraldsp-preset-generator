@@ -168,11 +168,15 @@ def cmd_real(a):
 
     P.dfix_input_path = path
     P.save = lambda *_q, **_kw: None                    # `lends-*.json` stay the ML session's
+    batch, variants = a.capture_batch, P.DFIX_K
+    if batch == 2:                                      # the second batch is read on variant 0 alone, each held to its stored input
+        global PARITY_EVERY
+        P.DFIX_K, PARITY_EVERY = 1, 1
     try:
-        run(lambda: P.cmd_build_dfix_real(argparse.Namespace(shard=a.shard, reads_only=a.reads_only, captures=a.captures)),
-            lambda p: stored[str(p)], a.shard, kind="captures" if a.captures else "real", reads_only=a.reads_only)
+        run(lambda: P.cmd_build_dfix_real(argparse.Namespace(shard=a.shard, reads_only=a.reads_only, captures=a.captures, capture_batch=batch)),
+            lambda p: stored[str(p)], a.shard, kind=("captures2" if batch == 2 else "captures") if a.captures else "real", reads_only=a.reads_only)
     finally:
-        P.dfix_input_path, P.save = keep
+        P.dfix_input_path, P.save, P.DFIX_K = (*keep, variants)
 
 
 def cmd_clean(a):
@@ -241,6 +245,7 @@ def main(argv=None):
         if name == "real":
             s.add_argument("--reads-only", action="store_true")
             s.add_argument("--captures", action="store_true", help="the ML session's: audio only, no label; requires its phase_n6")
+            s.add_argument("--capture-batch", type=int, default=1, choices=(1, 2), help="2: the second batch's trusted units, variant 0 only")
         s.set_defaults(fn=fn)
     args = ap.parse_args(argv)
     args.fn(args)

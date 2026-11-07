@@ -54,6 +54,11 @@ def keys_of(kind):
         from learn import capture_labels as CL
 
         return [((u["unit"], v), EB.real_path(u["unit"], v)) for u in sorted(CL.units_of(), key=lambda q: q["unit"]) for v in range(P.DFIX_K)]
+    if kind == "captures2":                             # the ML session's second batch, its trusted units, variant 0 only: audio, no label
+        from learn import capture_labels as CL
+
+        CL.BATCH = CL.BATCH2
+        return [((u["unit"], 0), EB.real_path(u["unit"], 0)) for u in sorted(CL.trusted_units()[0], key=lambda q: q["unit"])]
     if kind == "reads":                                 # read 2's units with no labelled row, variant 0 only
         return [((u, 0), EB.real_path(u, 0)) for u, _, _ in P.dfix_read_only(P.dfix_units(), P.goat_read_units())]
     rows, _ = B.plugin_set()
@@ -172,7 +177,7 @@ def main(argv=None):
 
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--net", required=True, help="an `eat_net.NAMES` name, mn10_rand, or a tuned body: body-<seed>, rand-<seed>")
-    ap.add_argument("--sets", nargs="+", choices=("clean", "wide", "real", "amp", "reads", "captures"), required=True)
+    ap.add_argument("--sets", nargs="+", choices=("clean", "wide", "real", "amp", "reads", "captures", "captures2"), required=True)
     ap.add_argument("--stats", nargs="+", default=list(STATS), choices=STATS)
     ap.add_argument("--dev", default="mps" if torch.backends.mps.is_available() else "cpu")
     a = ap.parse_args(argv)
