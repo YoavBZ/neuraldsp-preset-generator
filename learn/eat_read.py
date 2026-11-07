@@ -102,7 +102,8 @@ class Bank:
 
 def rebuilt_lufs(kind, key):
     path = {"clean": lambda: EB.clean_path(key[0]), "wide": lambda: EB.wide_path(*key), "real": lambda: EB.real_path(*key),
-            "reads": lambda: EB.real_path(*key), "captures": lambda: EB.real_path(*key), "amp": lambda: EB.amp_path(key[0])}[kind]()
+            "reads": lambda: EB.real_path(*key), "captures": lambda: EB.real_path(*key), "captures2": lambda: EB.real_path(*key),
+            "amp": lambda: EB.amp_path(key[0])}[kind]()
     return np.load(path)["lufs"]
 
 
@@ -110,7 +111,7 @@ def input_of(kind, key):
     """The stored 96-band file of an input: the mel reference reads the same audio as the network."""
     from learn import pipeline_fix as P
 
-    if kind in ("reads", "captures"):
+    if kind in ("reads", "captures", "captures2"):
         return str(P.dfix_input_path(*key))
 
     if kind == "clean":
