@@ -171,6 +171,7 @@ def cmd_real(a):
     batch, variants = a.capture_batch, P.DFIX_K
     if batch == 2:                                      # the second batch is read on variant 0 alone, each held to its stored input
         global PARITY_EVERY
+        P.require("phase_n12")
         P.DFIX_K, PARITY_EVERY = 1, 1
     try:
         run(lambda: P.cmd_build_dfix_real(argparse.Namespace(shard=a.shard, reads_only=a.reads_only, captures=a.captures, capture_batch=batch)),

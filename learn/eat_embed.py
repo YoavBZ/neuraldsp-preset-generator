@@ -35,10 +35,22 @@ BATCH = 64
 RAND_SEED = 20261042
 CAL_INPUTS = 512
 TUNED = ("body-", "rand-")
+CAPTURES2 = 32
 
 
 def embed_root():
     return EB.front_root().parent / "embed"
+
+
+def captures2():
+    """The second batch's trusted units through the ML session's loader, metadata only, stopping unless its drop of DIs T0 did not verify is in."""
+    from learn import capture_labels as CL
+
+    CL.BATCH = CL.BATCH2
+    units = sorted(CL.trusted_units()[0], key=lambda q: q["unit"])
+    if len(units) != CAPTURES2:
+        raise SystemExit(f"{len(units)} trusted units in the second batch, not {CAPTURES2}: merge the ML session's `capture_labels` first")
+    return units
 
 
 def keys_of(kind):
@@ -54,11 +66,8 @@ def keys_of(kind):
         from learn import capture_labels as CL
 
         return [((u["unit"], v), EB.real_path(u["unit"], v)) for u in sorted(CL.units_of(), key=lambda q: q["unit"]) for v in range(P.DFIX_K)]
-    if kind == "captures2":                             # the ML session's second batch, its trusted units, variant 0 only: audio, no label
-        from learn import capture_labels as CL
-
-        CL.BATCH = CL.BATCH2
-        return [((u["unit"], 0), EB.real_path(u["unit"], 0)) for u in sorted(CL.trusted_units()[0], key=lambda q: q["unit"])]
+    if kind == "captures2":                             # the ML session's second batch, variant 0 only: audio, no label
+        return [((u["unit"], 0), EB.real_path(u["unit"], 0)) for u in captures2()]
     if kind == "reads":                                 # read 2's units with no labelled row, variant 0 only
         return [((u, 0), EB.real_path(u, 0)) for u, _, _ in P.dfix_read_only(P.dfix_units(), P.goat_read_units())]
     rows, _ = B.plugin_set()

@@ -1,22 +1,24 @@
 """`M-pcs` and `EW-mix` on the second capture batch, one answer per unit on its search half, for the ML session's N12 (`docs/score-ear-plan.md`).
 Built by the review session; the ML session runs it. This file opens no capture row, label or search record.
 
-    $TORCH_PY -m learn.eat_capture control                              # BKS and GOAT only: stops on any difference from the stored answers
+    $TORCH_PY -m learn.eat_capture control                              # BKS and GOAT only: stops on any difference, stamps this code when it passes
     $TORCH_PY -m learn.eat_build real --captures --capture-batch 2      # EfficientAT's input of each capture unit, variant 0, for `EW-mix`
     $TORCH_PY -m learn.eat_embed --net mn10_as --sets captures2 --stats f5 f11 f13 f15
-    $TORCH_PY -m learn.eat_capture answers --tags M-pcs EW-mix --out FILE
+    $TORCH_PY -m learn.eat_capture answers --out-dir DIR                # refuses without the code's stamp, then writes DIR/<tag>.json
 
 The recipe is `bakeoff_render.cmd_predict`'s, unchanged: `fit_fold` on every BKS and GOAT record, k None, which `dfix_records` already takes as every
 label, with residuals around `RcBG` built by `cmd_goat_centres`' rule on `dfix_records`' lists for k None. Those are cycled to their rows per epoch, as
 each fold's are. Each answer starts from that centre, so every control outside `K.space` stays at S. `control` runs the same functions on the four folds.
--> {tag: {unit: {search: {select, settings}}}}
+-> DIR/<tag>.json: {tag, time, answers: {unit: {search: {select, settings}}}}, the shape `score_ear.stored_reader` reads.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import pathlib
 import sys
+import time
 
 import numpy as np
 
@@ -29,6 +31,23 @@ from learn import bakeoff_render as BR       # noqa: E402
 
 TAGS = {"M-pcs": ("mel", "ridge", "real"), "EW-mix": ("mix3:pub", "ridge", "real")}
 KIND = "captures2"
+CODE = ("learn/eat_capture.py", "learn/eat_read.py", "learn/bakeoff_render.py", "learn/bakeoff.py")
+
+
+def code_key():
+    """The code the control vouches for."""
+    return hashlib.sha256(b"".join((PLUGIN_ROOT / f).read_bytes() for f in CODE)).hexdigest()[:16]
+
+
+def stamp_path():
+    from learn import eat_render as ERN
+
+    return ERN.score_root().parent / "capture-control.json"
+
+
+def control_passed():
+    p = stamp_path()
+    return p.exists() and json.loads(p.read_text()).get("code") == code_key()
 
 
 def setup():
@@ -135,15 +154,8 @@ def cmd_control(_a):
                     raise SystemExit(f"control: {tag} {key} differs from its stored answer")
                 done += 1
             print(f"fold {k} {tag}: {len(here)} keys equal", flush=True)
+    stamp_path().write_text(json.dumps({"code": code_key(), "answers": done, "time": time.strftime("%Y-%m-%d %H:%M:%S")}))
     print(f"CONTROL OK: {done} answers equal stored, centres equal stored RcBG", flush=True)
-
-
-def capture_units():
-    """The second batch's units the ML session trusts, through its own loader. Metadata only."""
-    from learn import capture_labels as CL
-
-    CL.BATCH = CL.BATCH2
-    return sorted(CL.trusted_units()[0], key=lambda u: u["unit"])
 
 
 def answers_on(tags, units, data):
@@ -160,25 +172,37 @@ def answers_on(tags, units, data):
     return out
 
 
+def no_shared_di(units, clusters):
+    """No capture unit's DI among the training records' DIs: at k None `training_set`'s own check has no held fold to read."""
+    both = {u["di"] for u in units} & set(clusters)
+    if both:
+        raise SystemExit(f"{len(both)} of the units' DIs in the training records")
+
+
 def cmd_answers(a):
     from learn import eat_embed as EE
     from learn import pipeline_fix as P
 
+    if not a.smoke:
+        P.require("phase_n12")
+        if not control_passed():
+            raise SystemExit("run `control` on this code first")
+    data = setup()
     if a.smoke:                                         # the same path on five GOAT units, in-sample, to see the file's shape
-        data = setup()
         units = [{**data[4][u], "search": "A"} for u in sorted(r["unit"] for r in data[3])[:5]]
     else:
-        data = setup()
-        units = capture_units()
+        units = EE.captures2()
         if "EW-mix" in a.tags and not (EE.embed_root() / "mn10_as" / KIND / "keys.json").exists():
             raise SystemExit("`EW-mix` needs the captures2 embedding: run `eat_build` and `eat_embed` as above")
+        no_shared_di(units, B.training_set("real", None, data)[1])
         B.feature.paths.update({str(P.dfix_input_path(u["unit"], 0)): (KIND, (u["unit"], 0)) for u in units})
     got = answers_on(a.tags, units, data)
-    out = pathlib.Path(a.out)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    tmp = out.with_suffix(".tmp")
-    tmp.write_text(json.dumps(got, indent=1))
-    tmp.replace(out)
+    out = pathlib.Path(a.out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    for tag, ans in got.items():
+        tmp = out / f"{tag}.tmp"
+        tmp.write_text(json.dumps({"tag": tag, "time": time.strftime("%Y-%m-%d %H:%M:%S"), "answers": ans}))
+        tmp.replace(out / f"{tag}.json")
     print(f"ANSWERS DONE: {out}, {', '.join(f'{t} {len(v)}' for t, v in got.items())}", flush=True)
 
 
@@ -188,7 +212,7 @@ def main(argv=None):
     sub.add_parser("control").set_defaults(fn=cmd_control)
     p = sub.add_parser("answers")
     p.add_argument("--tags", nargs="+", default=list(TAGS), choices=list(TAGS))
-    p.add_argument("--out", required=True)
+    p.add_argument("--out-dir", required=True)
     p.add_argument("--smoke", action="store_true", help="five GOAT units, no capture unit opened")
     p.set_defaults(fn=cmd_answers)
     a = ap.parse_args(argv)
