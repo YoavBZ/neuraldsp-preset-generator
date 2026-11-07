@@ -97,6 +97,33 @@ Every read so far takes one 10 s section. Same fitted readers, no training, no r
 
 **Audit.** Independent, own code: every r and interval reproduced, five windows rebuilt at 0 grid steps, all 660 free of overlap and in their session, no held item in training. The review stopped a 3 dB error in the windows' level before any read. `EW-mix`'s stored column in `s83-read` is the read before its scaling fix; this read uses the fixed answers, checked against S8.3b's r.
 
+## Reading more of a song, by the score (S11.3, 2026-11-07)
+
+`M-pcs`'s fit, no training, 918 renders, 153 GOAT keys, 306 directions, 97 items. `M-win` reads the search half plus every other window; `M-far` reads the other windows alone. Neither reads the held half each direction is judged on. The single-window side is stored `M-pcs` on the search half, which needs no draw. By the score only: `distance`, ln ratio, by item, 90%. Negative is closer. [Plan](efficientat-plan.md) S11.3.
+
+**Sentence.** "By the score, on GOAT's self-built mixes, reading other windows of a take was undecided against the single half, −0.0025 [−0.0085, +0.0035], a test able to see about 0.9% where the knobs suggest about 0.4%, so a gain is neither shown nor ruled out."
+
+| Row | By item | Closer |
+|---|---|---|
+| `M-win` less `M-pcs`, primary | −0.0025 [−0.0085, +0.0035] | 53 of 97 |
+| `M-far` less `M-pcs` | −0.0015 [−0.0081, +0.0051] | 52 of 97 |
+| `M-win` less FTm | −0.0062 [−0.0270, +0.0147] | 55 of 97 |
+| `M-far` less FTm | −0.0052 [−0.0261, +0.0157] | 54 of 97 |
+| `M-win` less `RcBG` | −0.0311 [−0.0408, −0.0215] | 71 of 97 |
+| `M-pcs` less `RcBG` | −0.0287 [−0.0398, −0.0175] | 69 of 97 |
+
+- **One result.** `M-win` is nearly all `M-far`, by construction, and they correlate 0.997 by item, so the two rows are not two findings.
+- **What the rule says.** Both undecided, so no lead goes forward by this step.
+- **Power.** 80% power needs about 0.9%. The knob read's +.03 implies about 0.3%, and the fall in knob error about 0.4%, a power of a third or less. Undecided is the likely outcome even if the gain is real.
+- **Not the knob read's contrast.** On these rows, r against `M-pcs` is −0.07 [−0.14, −0.02], +0.04, +0.06 for `M-win`, about zero on average, with a clear loss on drive. So this does not show that a knob gain failed to carry over.
+- **The answers did move.** Median knob move 0.010 on drive, 0.026 on tone, 0.015 on cab, and J0 does respond to such moves. Re-renders were identical, 12 of 12.
+- **The rest group.** `M-win` less `M-pcs` is −0.012 [−0.023, −0.001] on the players outside the main one. It is no lead: declared beside, Holm 1 over 13 subgroups, fold 3 also clears, and it holds zero for `M-far`, on `tonal` and on `cross`. Bands, class and amp all hold zero.
+- **Leaving the judged window out.** `M-far`, which hears none of it, keeps `M-pcs`'s gain over `RcBG` to within 18% at its upper end. Within a take, with gain, class and cell taken from the labelled window, this supports no large loss. It does not support "loses nothing", and says nothing of real songs or of sound.
+
+**What the score cannot tell.** Sound, BKS, or gains under about 0.9%. It judges one held half on a self-built mix, and the user set J0 aside.
+
+**Audit.** Independent, own code: rows reproduced within 2e-4, 153 keys rebuilt identically, 62 unblended keys equal stored `M-pcs`, only searched knobs moved, no overlaps.
+
 ## By the score
 
 ln ratio of J0's distance on the held half, 90% t intervals, 670 directions, each reader on the same ones. Negative is closer. GOAT by item, BKS by DI.
@@ -179,4 +206,4 @@ The report's forecast held by the score, not by knob: "a tie is the likeliest re
 
 ## Not tested
 
-Fine-tuning on real rows, wider nets on real rows, and DyMN. Reading more windows is tested for its knob read only, not by the score or by ear. The ML session will read `E-mix` and `M-pcs` on held capture units, with their DIs held out, under its own declaration.
+Fine-tuning on real rows, wider nets on real rows, and DyMN. Reading more windows is tested by the knob read and the score, not by ear. The ML session will read `E-mix` and `M-pcs` on held capture units, with their DIs held out, under its own declaration.
