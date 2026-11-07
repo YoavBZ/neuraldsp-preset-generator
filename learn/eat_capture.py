@@ -31,7 +31,7 @@ from learn import bakeoff_render as BR       # noqa: E402
 
 TAGS = {"M-pcs": ("mel", "ridge", "real"), "EW-mix": ("mix3:pub", "ridge", "real")}
 KIND = "captures2"
-CODE = ("learn/eat_capture.py", "learn/eat_read.py", "learn/bakeoff_render.py", "learn/bakeoff.py")
+CODE = ("learn/eat_capture.py", "learn/eat_read.py", "learn/bakeoff_render.py", "learn/bakeoff.py", "learn/bakeoff_inputs.py", "learn/pipeline_fix.py")
 
 
 def code_key():
