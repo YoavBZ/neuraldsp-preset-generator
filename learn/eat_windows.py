@@ -43,12 +43,18 @@ ALL = "all"                                  # every section or window of the ri
 
 
 def stored_rows():
-    """The read's stored rows with `EW-mix` joined by position, which `add_prior` checks. No reader is refitted."""
+    """The read's stored rows with `EW-mix` joined by position. No reader is refitted."""
     from learn import pipeline_fix as P
 
     root = P.out_dir() / EAT
     rows = pickle.loads((root / "read.json.rows.pkl").read_bytes())
-    ER.add_prior(rows, root / "s83-read.json.rows.pkl", "EW-mix")
+    for k in range(ER.FOLDS):                          # S8.3b's fixed answers: the column in `s83-read`'s rows is the read before the scaling fix
+        mu = np.load(root / "reads" / "mn10_as-pub-pc64" / "ew" / "answers" / f"EW-mix-k{k}.npz")["mu"]
+        fold = [r for r in rows if r["fold"] == k]
+        if len(fold) != len(mu):
+            raise SystemExit(f"fold {k}: {len(fold)} rows, {len(mu)} answers")
+        for r, v in zip(fold, mu):
+            r["EW-mix_ans"] = v
     return rows
 
 
