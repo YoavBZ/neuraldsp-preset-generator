@@ -82,3 +82,34 @@ def test_stored_answers_take_each_form():
     assert Q.stored_answers('head line\n{"build": "x", "answers": {}}')["build"] == "x"
     assert Q.stored_answers('{\n "data": {"build": "y", "answers": {}}\n}')["build"] == "y"
     assert Q.stored_answers('{"build": "z", "answers": {}}')["build"] == "z"
+
+
+def _page(n, spares=()):
+    return {"items": [{"id": f"i{j}", "repeat_of": None, "cluster": f"c{j}", "spare": j in spares} for j in range(n)]}
+
+
+def _answer():
+    return {"rank": {k: j + 1 for j, k in enumerate(Q.LETTERS)}, "close": {k: "close" for k in Q.LETTERS}}
+
+
+def test_the_join_counts_a_slip_and_fills_from_spares_in_order():
+    key1, key2 = _page(3), _page(4, spares=(2, 3))
+    for page in (key1, key2):
+        for it in page["items"]:
+            it["letters"] = dict(zip(Q.LETTERS, Q.CANDS))
+    got1 = {"i0": _answer(), "i1": _answer() | {"scope": True}, "i2": {"scope": True}}
+    got2 = {"i0": _answer(), "i1": {"scope": True}, "i2": {"scope": True}, "i3": _answer()}
+    one, two, heard = Q.joined(key1, got1, key2, got2, slips=("i1",))
+    assert [it["id"] for it in one] == ["p1:i0", "p1:i1"]
+    assert [it["id"] for it in two] == ["p2:i0", "p2:i3"]
+    assert heard["p1:i1"] and not heard["p1:i2"]
+    assert [it["id"] for it in Q.joined(key1, got1, key2, got2, slips=())[0]] == ["p1:i0"]
+
+
+def test_an_unneeded_spare_stays_out():
+    key1, key2 = _page(1), _page(3, spares=(2,))
+    for page in (key1, key2):
+        for it in page["items"]:
+            it["letters"] = dict(zip(Q.LETTERS, Q.CANDS))
+    two = Q.joined(key1, {"i0": _answer()}, key2, {"i0": _answer(), "i1": _answer(), "i2": _answer()})[1]
+    assert [it["id"] for it in two] == ["p2:i0", "p2:i1"]

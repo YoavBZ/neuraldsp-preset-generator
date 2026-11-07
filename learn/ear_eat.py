@@ -10,7 +10,7 @@ inside amp and class, one GOAT and one BKS part in each, at most one per take, c
     $MAIN -m learn.ear_eat page                 # -> PF/eat/ear/page/artifact.html, and listening/ear-eat/index.html
     $MAIN -m learn.ear_eat score --answers FILE
     $MAIN -m learn.ear_eat --second plan2       # page 2: fresh parts for page 1's out-of-scope cards, crunch screened
-    (then --second render, --second page, --second score; `pooled --answers2 FILE` joins the two as declared in S9)
+    (then --second render, --second page, --second score; `pooled --answers FILE --answers2 FILE` joins the two as declared in S9b)
 """
 from __future__ import annotations
 
@@ -36,6 +36,8 @@ from learn import eat_render as ER           # noqa: E402
 
 P_SEARCH = "search"                          # `pipeline_fix.SEARCH_DIR`
 PAGE, LISTENING = "ear", "ear-eat"
+FIRST_PAGE = PAGE
+SLIPS = ("i2",)                              # page 1, Recording 2: a stray mark from the page's scope bug, counted on the user's ruling of 2026-11-07
 SECOND = "ear2", "ear-eat-2"
 SCREEN_DB = -3.0                             # N6's `nonlinear_db` line: a screen, it did not fully separate what the ear put out
 CELLS2 = (("pr12", "crunch", "goat"), ("pr12", "crunch", "goat"), ("ac20", "crunch", "goat"), ("pr12", "clean", "bks"),   # page 1's four
@@ -522,6 +524,44 @@ def cmd_score(args):
     print(json.dumps({k: v for k, v in rep.items() if k != "per_item"}, indent=1))
 
 
+def joined(key1, got1, key2, got2, slips=SLIPS):
+    """S9b's join: page 1's in-scope first hearings, plus page 2's replacement cards, a card that falls out giving way to the next spare
+    in page order. Ids take their page's tag, since both pages start at i1. -> (cards of page 1, cards of page 2, heard)."""
+    def page(key, got, tag, ruled=()):
+        items = [it | {"id": f"{tag}:{it['id']}"} for it in key["items"]]
+        heard = {f"{tag}:{it['id']}": unblind(it, got.get(it["id"]) or {}) for it in key["items"]}
+        out = {f"{tag}:{it['id']}" for it in key["items"] if (got.get(it["id"]) or {}).get("scope") and it["id"] not in ruled}
+        return items, heard, out
+
+    items1, heard1, out1 = page(key1, got1, "p1", slips)
+    items2, heard2, out2 = page(key2, got2, "p2")
+    kept = [it for it in items1 if it["repeat_of"] is None and heard1[it["id"]] and it["id"] not in out1]
+    usable = [it for it in items2 if heard2[it["id"]] and it["id"] not in out2]
+    wanted = sum(not it["spare"] for it in items2)
+    plain = [it for it in usable if not it["spare"]]
+    plain += [it for it in usable if it["spare"]][:wanted - len(plain)]
+    return kept, plain, heard1 | heard2
+
+
+def cmd_pooled(args):
+    root = data_dir().parent
+    key1, key2 = (json.loads((root / p / "key.json").read_text()) for p in (FIRST_PAGE, SECOND[0]))
+    ex1, ex2 = (stored_answers(pathlib.Path(f).read_text()) for f in (args.answers, args.answers2))
+    if ex1.get("build") != key1["build"] or ex2.get("build") != key2["build"]:
+        raise SystemExit("an answer file is not this page's build")
+    cards1, cards2, heard = joined(key1, ex1["answers"], key2, ex2["answers"])
+    side1, side2, _ = joined(key1, ex1["answers"], key2, ex2["answers"], slips=())
+    every = cards1 + cards2
+    unsure = [f"p1:{i}" for i, a in ex1["answers"].items() if a.get("conf") == "unsure"] + [f"p2:{i}" for i, a in ex2["answers"].items() if a.get("conf") == "unsure"]
+    rep = {"cards": [it["id"] for it in every], "by_card": [{k: it[k] for k in ("id", "amp", "cls", "band", "which", "cluster")} | {"heard": heard[it["id"]]} for it in every],
+           "by_candidate": table(every, heard), "rows": share_rows(every, heard),
+           "close_by_page": {"page1": share_rows(cards1, heard), "page2": share_rows(cards2, heard)},
+           "beside": {"without_slips": share_rows(side1 + side2, heard), "unsure_out": share_rows(every, heard, unsure) if unsure else None,
+                      "page1_rows": share_rows(cards1, heard), "page2_rows": share_rows(cards2, heard)}}
+    (root / SECOND[0] / "pooled.json").write_text(json.dumps(rep, indent=1))
+    print(json.dumps({k: v for k, v in rep.items() if k in ("cards", "by_candidate", "rows")}, indent=1))
+
+
 def main(argv=None):
     global PAGE, LISTENING
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -536,6 +576,10 @@ def main(argv=None):
     s = sub.add_parser("score")
     s.add_argument("--answers", required=True)
     s.set_defaults(fn=cmd_score)
+    j = sub.add_parser("pooled")
+    j.add_argument("--answers", required=True)
+    j.add_argument("--answers2", required=True)
+    j.set_defaults(fn=cmd_pooled)
     a = ap.parse_args(argv)
     if a.second:
         PAGE, LISTENING = SECOND
