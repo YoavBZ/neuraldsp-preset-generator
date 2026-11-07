@@ -1,12 +1,13 @@
 """S11, reading more of a song (`docs/efficientat-plan.md`): does an answer read over more of a take sit closer to its rig's label?
 No training and no render. The same fitted readers read more sections; the label is always the rig's own.
 
-    $MAIN -m learn.eat_windows bks                      # S11.1, stored answers, single sections against the rig mean
-    $MAIN -m learn.eat_windows windows --shard 0/3      # S11.2, GOAT's other windows through the unit's own chain (CPU)
-    $MAIN -m learn.eat_windows check                    # the chain on labelled windows against their stored inputs
-    $MAIN -m learn.eat_windows read                     # S11.2's read, `M-pcs`, by the fold's own fit
+    $TORCH_PY -m learn.eat_windows bks                      # S11.1, stored answers, single sections against the rig mean
+    $TORCH_PY -m learn.eat_windows check                    # the chain on labelled windows against their stored inputs
+    $TORCH_PY -m learn.eat_windows windows --shard 0/3      # S11.2, GOAT's other windows through the unit's own chain (CPU)
+    $TORCH_PY -m learn.eat_windows read                     # S11.2's read, `M-pcs`, by the fold's own fit
 
-It reads BKS and GOAT only. Levels and backing ids come from each unit's stored variant 0, so nothing here opens a build row.
+It reads BKS and GOAT only. Levels and backing ids come from each unit's stored variant 0. `base_rows` goes through `recipe_inputs`,
+as every read does, for ids and refusals only.
 """
 from __future__ import annotations
 
@@ -21,6 +22,7 @@ import random
 import sys
 import time
 import zipfile
+import zlib
 
 import numpy as np
 
@@ -55,7 +57,12 @@ def picked(n, k, rng):
     return np.arange(n) if k == ALL or k >= n else rng.choice(n, k, replace=False)
 
 
-def section_blocks(rows, label, k, rng):
+def rig_rng(seed, draw, cell, rig):
+    """A draw's choice for one rig, the same whichever other rigs a jackknife leaves out."""
+    return np.random.default_rng([seed, draw, zlib.crc32(repr((cell, rig)).encode())])
+
+
+def section_blocks(rows, label, k, seed=SEED, draw=0):
     """`reads_v3.blocks` with the answer averaged over k of the rig's sections and the label over all of them."""
     from learn import reads_v3 as R
 
@@ -63,13 +70,15 @@ def section_blocks(rows, label, k, rng):
     for r in rows:
         cells[(r["fold"], r["amp"], r["cls"])][r["rec"]].append(r)
     out = []
-    for (_, amp, cls), recs in cells.items():
+    for cell, recs in cells.items():
+        amp, cls = cell[1:]
         use = np.nonzero(R.searched(amp, cls)[0])[0]
         items = []
         for rig, rr in sorted(recs.items()):
             C, M = np.array([r["c"] for r in rr], float), np.array([r["cm"] for r in rr], float)
             lab = np.where(M.sum(0) > 0, (C * M).sum(0) / np.maximum(M.sum(0), 1), np.nan)
-            items.append((np.mean([rr[j][f"{label}_ans"] for j in picked(len(rr), k, rng)], 0), lab, rr[0]["cluster"], rig))
+            some = picked(len(rr), k, rig_rng(seed, draw, cell, rig))
+            items.append((np.mean([rr[j][f"{label}_ans"] for j in some], 0), lab, rr[0]["cluster"], rig))
         if len(items) >= 2:
             out.append((use, items, amp))
     return out
@@ -80,11 +89,10 @@ def read_k(rows, label, k, draws=BKS_DRAWS, seed=SEED):
     from learn import reads_v3 as R
 
     if k == ALL:
-        return {g: v[0] for g, v in R.corr(section_blocks(rows, label, ALL, None)).items()}
-    rng = np.random.default_rng(seed)
+        return {g: v[0] for g, v in R.corr(section_blocks(rows, label, ALL)).items()}
     got = collections.defaultdict(list)
-    for _ in range(draws):
-        for g, v in R.corr(section_blocks(rows, label, k, rng)).items():
+    for d in range(draws):
+        for g, v in R.corr(section_blocks(rows, label, k, seed, d)).items():
             got[g].append(v[0])
     return {g: float(np.mean(v)) for g, v in got.items()}
 
@@ -93,9 +101,12 @@ def jackknife(rows, label, k=1, draws=BKS_DRAWS):
     """All sections less k sections by group, with `reads_v3.bks_pair`'s delete-one-block interval, t(3), over (fold, class)."""
     from learn import reads_v3 as R
 
-    keys = sorted({(r["fold"], r["cls"]) for r in rows})
+    recs = collections.defaultdict(set)
+    for r in rows:
+        recs[(r["fold"], r["cls"])].add(r["rec"])
+    keys = sorted(q for q, v in recs.items() if len(v) >= 2)
     if len(keys) != 4:
-        raise SystemExit(f"{len(keys)} BKS blocks, not 4")
+        raise SystemExit(f"{len(keys)} usable BKS blocks, not 4")
 
     def diff(S):
         a, b = read_k(S, label, ALL), read_k(S, label, k, draws)
@@ -105,9 +116,11 @@ def jackknife(rows, label, k=1, draws=BKS_DRAWS):
     jk = [diff([r for r in rows if (r["fold"], r["cls"]) != q]) for q in keys]
     per = [diff([r for r in rows if (r["fold"], r["cls"]) == q]) for q in keys]
     for g in R.GROUPS:
+        if any(g not in d for d in per):
+            raise SystemExit(f"{g} is not in all 4 BKS blocks: the jackknife does not apply")
         v = np.array([d[g] for d in jk], float)
         h = 2.353 * math.sqrt(3 / 4 * ((v - v.mean()) ** 2).sum())
-        out[g] = {"diff": whole[g], "lo90": whole[g] - h, "hi90": whole[g] + h, "blocks_positive": sum(d.get(g, 0) > 0 for d in per)}
+        out[g] = {"diff": whole[g], "lo90": whole[g] - h, "hi90": whole[g] + h, "blocks_positive": sum(d[g] > 0 for d in per)}
     return out
 
 
@@ -167,13 +180,31 @@ def windows_of(unit, stored_start, rng_key, ok, length):
     return order
 
 
-def mix_of(amp_section, gain_db, back, gb, ga, lend):
+def amp_section(a, sr, start):
+    """A window of a take's render as `cmd_goat_sections` wrote it and `real_amp_track` reads it: resampled, trimmed, at the centred
+    mono fold, on which each unit's stored guitar gain was set. -> (the slice before the fold and trim, the window)."""
+    from learn import clean_di as CD
+    from learn import pretrain_set as PS
+    from learn import trusted_data as T
+
+    lo, hi = window_range(start, sr)
+    raw = CD.resample(a[lo:hi], sr, PS.SR)[:int(round((PS.SEC_S + PS.TRIM_S) * PS.SR))]
+    return raw, raw[int(PS.TRIM_S * PS.SR):] * T.pan_fold(0.0)
+
+
+def window_range(start, sr):
+    from learn import pretrain_set as PS
+
+    return max(0, int(round((start - PS.TRIM_S) * sr))), int(round((start + PS.SEC_S) * sr))
+
+
+def mix_of(window, gain_db, back, gb, ga, lend):
     """`cmd_build_dfix_real`'s input for one window at the unit's own fixed levels."""
     from learn import direct_stems as DS
     from learn import pipeline_fix as P
     from learn import song_aug as SA
 
-    gtr = np.asarray(amp_section, np.float64) * 10 ** (gain_db / 20)
+    gtr = np.asarray(window, np.float64) * 10 ** (gain_db / 20)
     mix = P.dfix_mix(gtr, back, gb, ga)
     mastered, mrng = DS.master_draw(int(lend))
     return SA.compress(mix, mrng) if mastered else mix
@@ -260,11 +291,12 @@ def cmd_windows(a):
                         break
                     if not far_enough(start, [h[0] for h in held], length):
                         continue
-                    lo, hi = max(0, int(round((start - PS.TRIM_S) * sr))), int(round((start + PS.SEC_S) * sr))
+                    lo, hi = window_range(start, sr)
                     if len(CD.clip_runs(a_[lo:hi], peak=peak)):
                         refused["clips"] += 1
                         continue
-                    dsec, asec = CD.resample(x[lo:hi], sr, PS.SR)[:samples], CD.resample(a_[lo:hi], sr, PS.SR)[:samples]
+                    dsec = CD.resample(x[lo:hi], sr, PS.SR)[:samples]
+                    asec, sec = amp_section(a_, sr, start)
                     if len(asec) < samples or len(dsec) < samples:
                         refused["past the end"] += 1
                         continue
@@ -281,7 +313,7 @@ def cmd_windows(a):
                     if abs(lag - u["item_lag"]) > P.GOAT_LAG_TOL:
                         refused["lag"] += 1
                         continue
-                    held.append((float(start), asec[trim:], cls, lag))
+                    held.append((float(start), sec, cls, lag))
                 done = []
                 for w, (start, sec, cls, lag) in enumerate(held):
                     path = window_path(unit, w)
@@ -298,12 +330,12 @@ def cmd_windows(a):
 
 
 def cmd_check(_a):
-    """The window's chain on each sampled unit's labelled window and own backing must give its stored variant 0, within 1 grid step."""
+    """`amp_section` and the chain on 12 sampled units' labelled windows, from the zip as `cmd_windows` reads them, must give each unit's
+    stored variant 0 within 1 grid step."""
     import soundfile as sf
 
     from learn import direct_stems as DS
     from learn import pipeline_fix as P
-    from learn import pretrain_set as PS
 
     by, _ = units_read()
     pool, stems = source()
@@ -311,13 +343,16 @@ def cmd_check(_a):
     units = [u for item in sorted(by) for u in by[item]]
     random.Random(SEED).shuffle(units)
     worst = 0
-    for u in units[:12]:
-        z0 = np.load(P.dfix_input_path(u["unit"], 0))
-        sec = np.asarray(P.real_amp_track(u["sd"], u["track"], u["start_s"]), np.float64)
-        back, lv = backing_of(pool[ids[str(z0["backing"])]], bool(z0["vocals"]), stems)
-        gb, ga = (float(v) for v in z0["gains"])
-        f, _, _ = DS.half_features(mix_of(sec, float(z0["guitar_gain_db"]), back, gb, ga, z0["lend"]))
-        worst = max(worst, *(int(np.abs(f[h].astype(int) - z0[n].astype(int)).max()) for h, n in (("A", "sA"), ("B", "sB"))))
+    with zipfile.ZipFile(P.GOAT_ZIP) as z:
+        meta = {m["item"]: m for m in P.goat_items_from(z)}
+        for u in units[:12]:
+            z0 = np.load(P.dfix_input_path(u["unit"], 0))
+            a_, sra = sf.read(io.BytesIO(z.read(P.goat_member(u["item"], meta[u["item"]][f"amp_audio_path_{u['render']}"]))), dtype="float64", always_2d=True)
+            _, sec = amp_section(a_.mean(1), sra, u["window_s"])
+            back, _ = backing_of(pool[ids[str(z0["backing"])]], bool(z0["vocals"]), stems)
+            gb, ga = (float(v) for v in z0["gains"])
+            f, _, _ = DS.half_features(mix_of(sec, float(z0["guitar_gain_db"]), back, gb, ga, z0["lend"]))
+            worst = max(worst, *(int(np.abs(f[h].astype(int) - z0[n].astype(int)).max()) for h, n in (("A", "sA"), ("B", "sB"))))
     print(f"CHECK: worst {worst} grid steps over 12 units", flush=True)
     if worst > 1:
         raise SystemExit("the chain differs from the stored inputs")
@@ -325,16 +360,14 @@ def cmd_check(_a):
 
 # --- the read ---------------------------------------------------------------------------------------------------------
 
-def arms_of(units, key):
-    """The files an arm reads per unit. key(unit) -> the unit's other windows, in order."""
-    return {u: key(u) for u in units}
-
-
 def rotated(by_cell):
-    """The placebo's map: each unit reads the next item's windows in its own cell, so a window of another take stands in for its own."""
+    """The placebo's map: each unit reads the next item's windows in its own fold, amp and class, so a window of another take stands in
+    for its own under the same fit and centre."""
     out = {}
-    for units in by_cell.values():
+    for cell, units in by_cell.items():
         items = sorted({u.split("@")[0] for u in units})
+        if len(items) < 2:
+            raise SystemExit(f"{cell}: one item, no other take to borrow")
         for u in units:
             other = items[(items.index(u.split("@")[0]) + 1) % len(items)]
             out[u] = next(v for v in units if v.split("@")[0] == other)
@@ -384,25 +417,26 @@ def cmd_read(_a):
         raise SystemExit("the fit differs from the stored reader")
     by_cell = collections.defaultdict(list)
     for r in out_rows:
-        by_cell[(r["amp"], r["cls"])].append(r["unit"])
+        by_cell[(r["fold"], r["amp"], r["cls"])].append(r["unit"])
     rot, of = rotated(by_cell), {r["unit"]: r for r in out_rows}
     for r in out_rows:
         others = [v for w, v in sorted(r["win"].items()) if w >= 0]
         r["L_ans"] = r["win"][-1]
         r["ALL_ans"] = np.mean([r["win"][-1], *others], 0)
         r["OTHERS_ans"] = np.mean(others, 0) if others else r["win"][-1]
+        r["O1_ans"] = others[0] if others else r["win"][-1]
         placebo = [v for w, v in sorted(of[rot[r["unit"]]]["win"].items()) if w >= 0]
         r["PLACEBO_ans"] = np.mean([r["win"][-1], *placebo], 0)
-        for n_ in (1, 2, 3, 5):
+        for n_ in (1, 2, 3):
             r[f"N{n_}_ans"] = np.mean([r["win"][-1], *others[:n_]], 0)
-    labels = ("L", "ALL", "OTHERS", "PLACEBO", "N1", "N2", "N3", "N5")
-    pairs = [("ALL", "L"), ("OTHERS", "L"), ("PLACEBO", "L")]
+    labels = ("L", "ALL", "OTHERS", "O1", "PLACEBO", "N1", "N2", "N3")
+    pairs = [("OTHERS", "O1"), ("ALL", "L"), ("OTHERS", "L"), ("PLACEBO", "L")]
     res = {"units": len(out_rows), "windows": collections.Counter(len(r["win"]) - 1 for r in out_rows), "r": {m: {g: v[0] for g, v in R.corr(R.blocks(out_rows, m)).items()} for m in labels}}
     iv = R.goat_intervals(out_rows, list(labels), pairs)
     res["pairs"] = {f"{a}-{b}": {g: iv[(f"{a}-{b}", g)] for g in R.GROUPS} for a, b in pairs}
     res["player"] = B.player_read(out_rows, list(labels), data[4])
     full = [r for r in out_rows if len(r["win"]) - 1 >= 3]
-    res["three_or_more"] = {"units": len(full), "r": {m: {g: v[0] for g, v in R.corr(R.blocks(full, m)).items()} for m in ("L", "ALL")}}
+    res["three_or_more"] = {"units": len(full), "r": {m: {g: v[0] for g, v in R.corr(R.blocks(full, m)).items()} for m in ("L", "ALL", "OTHERS", "O1", "PLACEBO")}}
     (P.out_dir() / EAT / "s11-goat.json").write_text(json.dumps(res, indent=1, default=float))
     print(json.dumps({k_: res[k_] for k_ in ("units", "windows", "r", "pairs")}, indent=1, default=float))
 

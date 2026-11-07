@@ -30,6 +30,29 @@ def test_backings_stay_in_the_session_and_leave_the_own_entry_out():
 
 
 def test_the_placebo_reads_another_take_in_the_same_cell():
-    cell = {("pr12", "clean"): ["goat/item_1@5#amp_1", "goat/item_1@5#amp_2", "goat/item_2@9#amp_1", "goat/item_3@7#amp_2"]}
+    cell = {(0, "pr12", "clean"): ["goat/item_1@5#amp_1", "goat/item_1@5#amp_2", "goat/item_2@9#amp_1", "goat/item_3@7#amp_2"]}
     got = W.rotated(cell)
     assert all(u.split("@")[0] != v.split("@")[0] for u, v in got.items())
+
+
+def test_a_cell_of_one_take_has_nothing_to_borrow():
+    with pytest.raises(SystemExit):
+        W.rotated({(0, "pr12", "clean"): ["goat/item_1@5#amp_1", "goat/item_1@5#amp_2"]})
+
+
+def test_a_rig_draws_the_same_sections_whichever_rows_are_left_out():
+    a = W.picked(9, 3, W.rig_rng(1, 2, (0, "pr12", "clean"), "r"))
+    b = W.picked(9, 3, W.rig_rng(1, 2, (0, "pr12", "clean"), "r"))
+    assert list(a) == list(b)
+
+
+def test_a_window_slice_keeps_the_trim_and_the_mono_fold():
+    from learn import pretrain_set as PS
+    from learn import trusted_data as T
+
+    sr = PS.SR
+    a = np.ones(sr * 40)
+    raw, sec = W.amp_section(a, sr, 20.0)
+    assert len(raw) == int(round((PS.SEC_S + PS.TRIM_S) * sr))
+    assert len(sec) == len(raw) - int(PS.TRIM_S * sr)
+    assert abs(sec[len(sec) // 2] - T.pan_fold(0.0)) < 1e-3
