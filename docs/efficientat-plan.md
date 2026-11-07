@@ -17,7 +17,7 @@ Read this block first after any compaction, then the task list, then the finding
   `/Users/yoavbz/projects/neuraldsp-preset-generator/.venv/bin/python -m pytest tests/test_eat*.py -q -n0`.
 - **Downloads:** `~/ndsp-presets/tools/efficientat/` (repo at a425fdce, 5 weight files, hashes in `learn/eat_net.py`). Weights load with `weights_only=True`.
 - **Peers:** SendMessage to "NeuralDSP preset generator (ML)", "(executor)", "(controller)", "(cloud researcher)".
-- **Now:** S2 and S3, plugin rows.
+- **Now:** S9b, page 2 is with the user: https://claude.ai/artifact/5jMAaDCFCva12BNRPE6pjd, build 61f8f90df633, 60 renders held as S9. Answers save to its database, collection `answers`, document the build id, or come back as an Export file. Page 1's answers are stored, `PF/eat/ear/answers.txt`, unblinded, audit running. S7 is done and merged, PR #402.
 - **Running jobs and PIDs:** S2 and S3 on CPU, this session's background job; PID 42832, watched by the executor. Each job so far ran under 15 min.
 - **Mac:** the ML session is starting about 2 hours of capture training on MPS. No GPU job here until it says it has finished. CPU reads go on. Renders are announced first.
 - **Disk:** 34 GB free, floor 33 GB; the controller asked to stop and tell ML and the executor at 33. `PF/eat/front` (1.5 GB) can be rebuilt in 15 min.

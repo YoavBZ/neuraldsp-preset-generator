@@ -439,7 +439,7 @@ def artifact_page(page, css, js):
     """The same page for the Artifact viewer: no document wrapper, its themes, answers kept for reading back, no file save."""
     body = page[page.index("<body>") + len("<body>"):page.index("</body>")]
     if PAGE != "ear":
-        body = body.replace("shuffled per\nitem, and a few items come back later.", "shuffled per\nitem.")
+        body = body.replace(", and a few items come back later.", ".")
     body = body.replace(*ARTIFACT_INTRO).replace('<button type="button" id="save">Save file</button>', "")
     body = body.replace("<script>" + js + "</script>", "<script>" + js.replace(
         'document.getElementById("save").addEventListener("click", () => {', 'if (false) document.getElementById("save").addEventListener("click", () => {')
