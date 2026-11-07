@@ -4473,6 +4473,8 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - Files: `captrain/n9b-read.json`, `captrain/audit/`. Log `logs/n9b.log`.
 
 ### F64. N10, the trained models on the second batch: undecided on both pairs; tone agrees weakly, on sw50r for the networks; all-class drive is set by two units (phase_n10, zero renders, zero training)
+**Corrected 2026-11-07, see F65.** 15 of the 47 units sit on DIs T0 refused or left unheard. On the 32 verified units both pairs stay undecided and the decision stands, but rows below change: read F65's beside them.
+
 - **What ran.** 1,175 inputs built with no label read, then FTm, C-ctl, C-cap, C-mic and C-c39 by the mean of their 8 models, and the mel ridges, on the second batch's 47 trusted units, 38 creators. Controls passed. No model's real rows hold these units; 4 use a DI file in W's plugin rows, and 6 share a creator with the first batch's training rows.
 
   | r, all classes (perm p) | Drive | Tone | Cab |
@@ -4495,6 +4497,35 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **By band (post hoc).** Tone keeps its sign on removing any band, except M-cap, and clears on a band jackknife only for the 25-backing ridges. M-cap − M-ctl tone by band is −0.055 [−0.108, −0.003], its standardised pair reaching zero; either way the next step is no new training. A sign-flip by band runs a little above the permutation p on most rows. The ridges' drive (0.120, 0.141) rests on one unit: without its DI 0.011, 0.050.
 - **Limits.** 47 units, cells of 2 to 16, 27 DI files in 14 bands, which the permutation ignores, and 8-model means that do not compare with N6's or N9's single-fold r. r is agreement with search labels, not sound. All these labels are search v2's. Disjointness from the fits' DIs is by name and session; audio was not compared.
 - Files: `captures2/n10-read.json`. Log `logs/n10.log`.
+
+### F65. The score against the ear on stored pages: J0's order follows the ear at about +0.5, large gaps agree most, and a fixed order reaches about half of it; and N10b, F64 corrected (phase_n10b, phase_n11, zero renders, one listener)
+- **N10b, the correction.** L1b's draw took `training_ok` for T0's verdict, so 15 of the second batch's 47 units sat on DIs T0 refused or left unheard (Doom Flamingo 6, Eggy 4, Bernard Purdie 2, Starnes And Shah 2, Timo And The Timezone 1). `capture_labels.trusted` now drops them, and refuses a DI T0 has no verdict on. Re-read on the 32 units, 29 creators, 18 DIs, 9 bands, zero renders; the answers equal N10's.
+
+  | On 32 units | Drive | Tone | Cab |
+  |---|---|---|---|
+  | FTm, r (p) | −0.114 (.64) | 0.108 (.17) | −0.079 (.74) |
+  | M-ctl, r (p) | −0.002 (.49) | 0.017 (.44) | 0.088 (.22) |
+  | **C-cap − C-ctl** | −0.015 [−0.072, +0.042] | +0.102 [−0.028, +0.232] | +0.046 [−0.053, +0.145] |
+  | **M-cap − M-ctl** | +0.048 [−0.020, +0.115] | −0.074 [−0.189, +0.040] | −0.011 [−0.049, +0.027] |
+
+  What changes in F64: FTm's cab falls from 0.117 to −0.079; the ridges' drive falls to −0.00 and 0.05; M-cap's tone turns negative, so "every arm" fails on tone; "on sw50r" holds for FTm and C-ctl only; the 25-backing ridges' cab p is .10 and .09. 2 of 42 beside rows clear, both new, about 4 by chance. The swap's switch part clears for C-cap and C-mic. The audit's sentence: "On the 32 verified units both pairs stay undecided, and no new capture training follows."
+- **N11, what ran.** J0's held-half order against the ear on four blind pages of whole presets on the same performance: L0, N4, F57, `ear-eat`, 43 cards, 12 clusters. `record-match-1` beside. V-real's rows are stored rows only, and they brief no judge term. F57 is less the label page's out-of-scope unit, with item 8 by the listener's blind correction, and clusters on GOAT players, since its creators sit on players `ear-eat` shares.
+
+  | Mean within-card Spearman, ear and J0 | Cards, clusters, all | All candidates | Without label | Models only |
+  |---|---|---|---|---|
+  | L0, V-real | 10, 7 | +0.50 [+0.20, +0.80] | same | +0.70 [+0.47, +0.93] |
+  | N4, V-real | 10, 7 | +0.50 [+0.10, +0.90] | same | under 3 candidates |
+  | F57 | 10, 2 | +0.60 | under 3 candidates | under 3 candidates |
+  | `ear-eat` | 13, 5 | +0.62 [+0.41, +0.84] | +0.65 [+0.33, +0.97] | +0.35 [−0.21, +0.91] |
+  | Pooled | 43, 12 | +0.56 [+0.41, +0.71] | +0.56 [+0.34, +0.77], 33 cards | +0.50 [+0.22, +0.78], 23 cards |
+
+- **How much needs no score.** Pooled, S last with the rest tied reads +0.13 [−0.11, +0.37], and a fixed order from other clusters +0.25 [+0.10, +0.41]. What J0 adds over that fixed order is +0.31 [−0.08, +0.69], reaching zero. N4's own row, +0.80 [−1.61, +3.21], is unusable: near-tied mean ranks swing the baseline, passing the possible ±2. A post hoc form, card-and-type residuals, reads 0.41 [0.29, 0.52] pooled and about 0.34 on V-real.
+- **Large gaps agree most (post hoc cut).** At a J0 log ratio of 0.2, 96% [92, 100] of pairs agree with the ear above it and 65% [56, 75] below, +0.31 [0.21, 0.41], also +0.31 within page and pair type, order kept and gaps shuffled p < .001. No cut was set in advance: 0.2 is a tercile edge. At 10% the difference is +0.20 [0.09, 0.31], and at 5% it is +0.09, reaching zero. A fixed order alone gets 85% above and 52% below, so J0 adds +0.11 [0.04, 0.19] above. Among models alone, outside W, 8 pairs sit above the cut. Below it models agree with the ear on about two pairs in three, 67% [53, 81], where the ear repeats its own pair order 78%.
+- **Models against S.** Within page and model, gain by the score against closeness gain by the ear is +0.45 [0.26, 0.64]. On V-real's parts, above S of 10 parts by the score FT 4, D_fix 3, FTm 2, W 0, and by ear rank FT 5, D_fix 3, FTm 4, W 2; of the gaps between score and ear only W's clears. FTm between pages: rank −0.29 [−0.82, +0.24], score −0.19 [−0.40, +0.02], with S's amp and model versions confounded. So V-real against development stays unshown. FT's "side of S" agreeing 5 of 10 is one read shown twice and is chance from margins; like for like, FTm agrees 8 of 10 on V-real and 11 of 13 on `ear-eat`. Labels' agreement is J0's own choice, kappa 0.
+- **The ear's own repeat.** Six repeats, r 0.75 [0.56, 0.94]. The simulated ceiling on a fixed score is about 0.83; √r's 0.87 runs high. Pairs repeat 92% above the cut and 78% below.
+- **The audit's sentence.** "On one listener's 43 cards J0's order follows the ear at about +0.5, large gaps agree most, a fixed order reaches about half of that, and V-real against development stays unshown."
+- **What it changes.** Nothing moves: J0 stays. The user's concern stands narrower than "the score is wrong": between close models J0 and the ear agree about two pairs in three, and on V-real's parts the two differ most on W. No fix is proposed yet. N12 follows.
+- Files: `PF/score-ear-n11.json`, `captures2/n10b-read.json`. Plan: [score-ear-plan.md](score-ear-plan.md).
 
 ## Budget
 

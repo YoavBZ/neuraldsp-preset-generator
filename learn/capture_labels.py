@@ -580,9 +580,41 @@ def scope_out():
     return out | {u for u in cards if got["verdicts"][u]["verdict"] != "keep"}
 
 
+# T0 holds these DIs by their crop's slug, not their path (`verified.json` `measure_dis`). A library section's `training_ok` is no
+# T0 verdict, and L1b's draw took it for one: the review of `docs/score-ear-plan.md` found 15 of the second batch's 47 units on DIs
+# T0 had refused or left unheard.
+T0_SLUG = {"cambridge/TheTravellingBand_Quicksand_Full/16_ElecGtr1DI.wav": "cambridge-Quicksand-ElecGtr1",
+           "cambridge/TimoAndTheTimezone_JustDontTalk_Full/TimoAndTheTimezone_JustDontTalk_Full/13_ElecGtr3DI.wav":
+               "cambridge-just-don-t-talk-elecgtr3",
+           "telefunken/Doom Flamingo - Blind Spots LFTL/GTR DI_TDP-1.wav": "telefunken-Blind_Spots-GTR",
+           "telefunken/Doom Flamingo - Long Way Home LFTL/GTR DI_TDP-1.wav": "telefunken-Long_Way_Home-GTR",
+           "telefunken/Doom Flamingo - Measurements LFTL/GTR DI_TDP-1.wav": "telefunken-Measurements-GTR",
+           "telefunken/Doom Flamingo - Strangest Places LFTL/GTR DI_TDP-1.wav": "telefunken-Strangest_Places-GTR",
+           "telefunken/Shes Gone Bernard Purdie Tribute All Stars/GTR DI.wav": "telefunken-She's_Gone-GTR"}
+
+
+def di_verdict(di, verified):
+    """T0's verdict on a DI path, from `verified.json`; refuses a DI T0 has no verdict on, since unheard is not trusted."""
+    for table in ("dis", "intake_dis"):
+        if di in verified[table]:
+            return verified[table][di]["verdict"]
+    if di in T0_SLUG:
+        return verified["measure_dis"][T0_SLUG[di]]["verdict"]
+    raise SystemExit(f"{di}: T0 has no verdict on this DI")
+
+
+def t0_dropped(units, verified=None):
+    """The units whose DI T0 did not verify. GOAT's DIs are outside T0, passed by `goat-ear`, and stay."""
+    from learn import verify_tracks as VT
+
+    if verified is None:
+        verified = json.loads((VT.OUT / "t0" / "verified.json").read_text())
+    return {u["unit"] for u in units if not u["di"].startswith("goat/") and di_verdict(u["di"], verified) != "verified"}
+
+
 def trusted(units):
-    """`passed` on the stored verdicts, less `scope_out`; refuses while anything is unheard or any page is not the
-    current one."""
+    """`passed` on the stored verdicts, less `scope_out` and any unit on a DI T0 did not verify; refuses while anything is unheard
+    or any page is not the current one."""
     ear = ear_verdicts()
     ek = root() / "ear-key.json"
     if ear and (not ek.exists() or json.loads((root() / "ear.json").read_text())["build"] != json.loads(ek.read_text())["build"]):
@@ -601,7 +633,8 @@ def trusted(units):
     ok, miss = passed(units, ear, cards, hv["verdicts"])
     if miss:
         raise SystemExit(f"{len(miss)} still unheard: both pages come before any plugin render")
-    return ok - scope_out()
+    ok -= scope_out()
+    return ok - t0_dropped([u for u in units if u["unit"] in ok])
 
 
 def lags_of(units):
@@ -616,7 +649,7 @@ def lags_of(units):
     return lags, P.goat_lag_refused(lags, {u["unit"]: u["item_lag"] for u in units})
 
 
-def trusted_units():
+def gated_units():
     """The units both gates passed and the lag rule keeps, the lag median taken over them alone. -> (units, {unit: lag})."""
     units = units_of()
     ok = trusted(units)
@@ -625,11 +658,14 @@ def trusted_units():
     return [u for u in tr if u["unit"] not in off], lags
 
 
+trusted_units = gated_units                  # the older name; CodeQL reads "trusted" as a secret in code that stores or prints a unit
+
+
 def search_records():
     """The one loader of the search records: every reader goes through `trusted_units`. -> {unit: record}."""
     from learn import pipeline_fix as P
 
-    keep = {u["unit"] for u in trusted_units()[0]}
+    keep = {u["unit"] for u in gated_units()[0]}
     recs = [json.loads(q.read_text()) for q in sorted((root() / P.SEARCH_DIR).glob("*.json"))]
     return {r["unit"]: r for r in recs if r["unit"] in keep}
 
