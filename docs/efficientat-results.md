@@ -59,6 +59,44 @@ Mean rank, 1 closest: `label` 2.00, `EW-mix` 2.46, `M-pcs` 3.08, FTm 3.46, S 4.0
 
 **What S10 leads to.** The search's labels are heard closer than S, so they stay. `EW-mix` above FTm fires S10's first row as a lead for L2, which is the ML session's and the user's call. `EW-mix` above `M-pcs` reaches one half, so `M-pcs` is the default by cost and EfficientAT is not ruled out.
 
+## Reading more of a song (S11, 2026-11-07)
+
+Every read so far takes one 10 s section. Same fitted readers, no training, no render, 660 new windows on 214 GOAT units, 42 MB. [Plan](efficientat-plan.md) S11. Read by the knob, r by group, never sound.
+
+**Sentence.** "By the knob read, reading more windows of a take sharpened answers slightly, about +.03 in r on all three groups on GOAT averaged over the single window compared, in the same direction on BKS, as backing and note noise fall; one declared row is clear, which is a lead, not a result by score or ear."
+
+**BKS, stored answers.** The answer averages a rig's sections; the label is always the rig mean. 36 rigs read, on 2 songs. Four blocks allow direction only, and two of them hold 2 rigs per cell.
+
+| All sections less one | Drive | Tone | Cab |
+|---|---|---|---|
+| `M-pcs` | +0.10 [+0.05, +0.15] | +0.11 [−0.07, +0.28] | +0.07 [−0.12, +0.27] |
+| `E-mix` | +0.16 [+0.09, +0.22] | +0.06 [−0.00, +0.13] | +0.05 [−0.04, +0.14] |
+| `W-pcs` | +0.15 [+0.06, +0.23] | +0.09 [−0.12, +0.30] | +0.09 [+0.02, +0.15] |
+| `EW-mix` | +0.21 [+0.04, +0.37] | +0.10 [−0.04, +0.23] | +0.06 [+0.00, +0.12] |
+| FTm | +0.10 [−0.08, +0.28] | +0.06 [−0.08, +0.20] | +0.10 [+0.04, +0.17] |
+
+12 rigs stop at 2 sections, so the curve cannot say where the gain ends. On the 15 read rigs of 8 or more sections, one song, going from 3 sections to all adds +0.04, +0.07, +0.03.
+
+**GOAT, `M-pcs`.** Up to 5 other windows of the same take at the unit's own levels, each with another backing of the same session where it has one: 78 windows of 20 units reused the unit's own, and removing them changes nothing. 184 units had at least one, 86 had five. 246 candidates were refused: 147 by class, 95 by lag, 4 with no lag.
+
+| Row | Drive | Tone | Cab |
+|---|---|---|---|
+| More unsearched windows less one, declared, 153 units | −0.02 [−0.08, +0.04] | **+0.08 [+0.02, +0.14]** | +0.03 [−0.02, +0.08] |
+| The same, one window averaged over 200 random choices, post hoc | +0.02 [+0.01, +0.04] | +0.03 [+0.02, +0.05] | +0.02 [+0.01, +0.04] |
+| All windows less the labelled one, declared | −0.01 [−0.05, +0.03] | +0.04 [−0.01, +0.09] | +0.03, reaches zero |
+
+- **Size.** The declared +0.08 is not the size: the seeded single window happened to read low on tone. About +0.03 is the fair figure, and it is post hoc.
+- **The rule fired,** on tone, and stayed clear across seeds. Over six rows it is borderline: Holm 0.0498, Bonferroni +0.0001, max-t −0.006. A modest reason.
+- **Where it holds.** The declared tone row stays at +0.05 or more leaving out any fold, amp, class or player. Over the 200 choices, main player +0.03, +0.03, +0.02; the rest +0.04, +0.06, +0.08. The screens do not carry it.
+- **Count.** Units with five windows gain +0.03, +0.04, +0.04, units with 2 to 4 +0.00, +0.00, +0.03. On those 86 five-window units, from 1 to 3 windows +0.02, +0.04, +0.03; from 3 to 5 about +0.01.
+- **Why.** The answers' spread falls and their covariance with the label holds, so noise falls and r is not flattered. Window-to-window variance is 50–65% backing, the rest notes. RMSE falls about 1%.
+- **Drive.** Its label sits on the searched window: `L` 0.21, another window 0.10. That caps what drive can show here and is no source of gain.
+- **Checks.** The chain gave stored inputs within 1 grid step, the labelled arm stored `M-pcs` within 2e-16, and a placebo of another take's windows lost r, so the harness holds.
+
+**Limits.** Other windows share the chain but were never searched, and they carry the unit's label. Only `M-pcs` was read on GOAT. BKS is 2 songs. Nothing here is by score or ear, and it adopts nothing.
+
+**Audit.** Independent, own code: every r and interval reproduced, five windows rebuilt at 0 grid steps, all 660 free of overlap and in their session, no held item in training. The review stopped a 3 dB error in the windows' level before any read. `EW-mix`'s stored column in `s83-read` is the read before its scaling fix; this read uses the fixed answers, checked against S8.3b's r.
+
 ## By the score
 
 ln ratio of J0's distance on the held half, 90% t intervals, 670 directions, each reader on the same ones. Negative is closer. GOAT by item, BKS by DI.
@@ -141,4 +179,4 @@ The report's forecast held by the score, not by knob: "a tie is the likeliest re
 
 ## Not tested
 
-Fine-tuning on real rows, wider nets on real rows, DyMN, and reading more windows of a song. The ML session will read `E-mix` and `M-pcs` on held capture units, with their DIs held out, under its own declaration.
+Fine-tuning on real rows, wider nets on real rows, and DyMN. Reading more windows is tested for its knob read only, not by the score or by ear. The ML session will read `E-mix` and `M-pcs` on held capture units, with their DIs held out, under its own declaration.
