@@ -236,7 +236,7 @@ Written on the user's request of 2026-11-06, "While I listen, think and plan the
 
 **The judge and label question, only where a branch above sends it.** The search optimises J0, which the user has set aside. So in order: (1) from the stored search curves, zero renders, ask how many settings sit within J0's noise of the best, which bounds how arbitrary a label is; (2) a small blind page of a part's top settings from the search against S, to see if any is heard closer; (3) then the judges left untried, AFx-Rep distance and HAAQI, which need downloads and a fresh blind page each. Not a new reader.
 
-### S11, reading more of a song (proposed, not run, needs the user's go)
+### S11, reading more of a song (the user's go, 2026-11-07, relayed by the ML session)
 
 Every read so far takes one 10 s section. Backing noise is a large part of a ridge's error (F63: r rises from .147, .263, .145 at 1 backing to .205, .360, .198 at 25), but a song has one backing, so that only suggests a read of many sections could help. GOAT's takes are long enough to test it: median 130 s, 94% over 30 s, 76% over 60 s, listed from the zip, no audio read.
 
@@ -246,6 +246,15 @@ Every read so far takes one 10 s section. Backing noise is a large part of a rid
 - **By the score, if it moves on.** The held half stays out of every input, so the score reads an answer that never heard it.
 - **Why it may fail.** Those windows hold other notes, and a noisier part of a take can pull an answer. The rise over backings may not carry to sections.
 - **Cost.** CPU rebuild at about 0.3 s a window, no renders for the knob read, 1,340 renders per reader for the score, then an ear page.
+
+**The final declaration, 2026-11-07, before any read.** The go covers S11.1 and S11.2. It does not cover L2, the score step or an ear page: if the knob read gives a reason, that goes back to the ML session and the user first. No training, no render, no V-real, NS or panel read. `learn/eat_windows.py`.
+
+- **S11.1, BKS, stored answers only.** Readers `M-pcs` first, then `E-mix`, `W-pcs`, `EW-mix`, FTm. A rig's answer averages k of its sections, k 1, 2, 3, 5, all, over 200 seeded draws; the label is always the rig mean over all its sections. Primary: `M-pcs`, r on all sections less r on one, by group, `bks_pair`'s delete-one-block interval, t(3), over (fold, class). Four blocks allow no decision, so this reads as direction only, with each song beside. Rigs hold 2 to 18 sections, so a rig's k stops at its own count.
+- **S11.2, GOAT, `M-pcs`.** All units the read holds. Up to 5 other 10 s windows per unit, from the same grid `goat_window` draws from, in a seeded order, none overlapping the labelled window or each other. A window also passes the unit's own 5C screens: no clip run in the render, classed clean or crunch by `classify`, and its amp-to-DI lag within `GOAT_LAG_TOL` of the item lag, which is how the one-window lag rule is read with no render. Windows chosen on neither label nor answer.
+- **Chain.** Each window takes the unit's own stored levels from its variant 0: guitar gain, lend, overall gain and mastering draw, unchanged per window. Its backing is another entry of the same pool session as the unit's variant 0, same vocal flag, gain by `dfix_backing_gain`; a session short of entries reuses them, counted. Checked first: this chain on 12 units' labelled windows must give their stored inputs within 1 grid step. Nothing opens a build row.
+- **Read.** The same fitted ridge per fold, `M-pcs`, 64 PCs, held item out. The labelled arm must give the stored answers within 1e-5. Arms: `L` the labelled window; `ALL` its mean with the others; `OTHERS` the others alone; `PLACEBO` the labelled window with another item's windows from the same amp and class, which must not gain; n of 1, 2, 3, 5 windows beside. Primary: `ALL` less `L`, r by group, `goat_intervals`' item bootstrap, 90%, with the main player and the rest beside. Units with 3 or more windows beside. A unit with no other window reads as its labelled window, counted.
+- **What each result leads to.** A lower end above zero on any group, with `PLACEBO` not doing the same, is a reason to bring back the score step. Anything else: not known what more windows add, reported with its effect, never as failed. No bar on size. Three groups, so one clear group alone is a lead.
+- **Count.** S11.1 is 5 readers by 3 groups on BKS, S11.2 is 3 groups on GOAT, both outside the bound. Other windows share the chain but were never searched, and their label is the unit's, stated.
 
 ## Findings log
 
