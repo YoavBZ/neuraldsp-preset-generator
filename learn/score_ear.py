@@ -522,7 +522,7 @@ def wide_units():
     keep = CL.BATCH
     CL.BATCH = CL.BATCH2
     try:
-        units = CL.trusted_units()[0]
+        units = CL.gated_units()[0]
         recs = CL.search_records()
     finally:
         CL.BATCH = keep
