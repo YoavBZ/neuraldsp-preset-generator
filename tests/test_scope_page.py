@@ -70,6 +70,7 @@ def test_leaks_finds_a_name_outside_the_clips_and_none_inside_them():
 
 
 def test_stored_marks_reads_each_page_and_skips_a_card_with_no_answer(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")
     from learn import pipeline_fix as P
 
     monkeypatch.setattr(P, "out_dir", lambda: tmp_path)
@@ -85,6 +86,7 @@ def test_stored_marks_reads_each_page_and_skips_a_card_with_no_answer(tmp_path, 
 
 
 def test_answers_refuses_another_build(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")
     monkeypatch.setattr(S, "scope_dir", lambda: tmp_path)
     (tmp_path / "key.json").write_text(json.dumps({"build": "b1", "items": ITEMS}))
     f = tmp_path / "stored.json"
