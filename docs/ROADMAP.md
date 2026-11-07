@@ -1,7 +1,7 @@
 # Roadmap
 
 The one living plan. Update it when a result lands or a decision changes; the detail
-lives in the linked documents. Last updated 2026-11-05.
+lives in the linked documents. Last updated 2026-11-07.
 
 ## Where the product is
 
@@ -347,6 +347,7 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
        - **N9b (F63, 2026-11-06, zero renders):** a mel ridge with and without capture rows on top: mixed, drive −0.056 [−0.093, −0.019], tone +0.038 [+0.001, +0.076], neither firm. About 40% of the drive cost is the capture rows' offset going into a pooled cell mean; centring it is a candidate to test, not a fix. The mixture mean is a lead on answer size only, on C-ctl. Averaging over more of a recording is the review session's idea, not tested here.
        - **The second capture batch's gates (2026-11-06):** the listener passed 49 of 147 (crunch 9 of 73, clean 40 of 74), the check for firmly driven units has no cards, and the stage check goes on, leaving 47 trusted units. It adds clean units and new players, not crunch.
        - **N10 (F64, 2026-11-06, zero renders):** the trained models on the second batch's 47 trusted units, in no model's real rows ([design](capture-training-plan.md)). Both capture-row pairs undecided, so no new training on captures from this read. Tone agrees weakly with search labels, for the networks on sw50r alone; the all-class drive read is set by two units. The review session's ear page decides what follows.
+       - **N11 and N10b (F65, 2026-11-07, zero renders):** on 43 blind cards, J0's order follows the ear at about +0.5, large gaps agree most, a fixed order reaches about half of that, and between close models J0 and the ear agree about two pairs in three ([plan](score-ear-plan.md)). L1b's draw had let 15 of the second batch's 47 units through on DIs T0 did not verify; dropped, N10 stays undecided on the 32. Next: N12, a blind page on 9 other bands, songs some models may have seen, noted as such.
        - **The centre read's code is merged (2026-11-05),** waiting on the scope page; the capture training is an undeclared draft in the [plan](pipeline-fix-plan.md).
        - **Next (2026-11-03, after L0):** the approved real-amp recordings, scored with J0, and, as the user chose, the per-recording reading, with FT's
          recipe as the base (chosen on read 2, BKS −0.055; on V-real FT is not shown different from D_fix): many more real-amp labelled recordings (captures on verified DIs, as GOAT) and a fresh,
@@ -1469,3 +1470,4 @@ heavy metal, so testing and perfecting stay clean/crunch-focused.
 | 2026-11-06 | One preset written in Tone King X's layout opened in the X plugin: no error, and what the screen showed matched, with Rhythm Volume and delay mix judged by knob position only. Updates the 2026-11-05 row's "not yet opened" | [installing](../reference/installing.md) |
 | 2026-11-06 | A ridge with and without capture rows (N9b, F63): mixed, neither leg firm; centring the capture rows' offset is a candidate to test. | [plan](pipeline-fix-plan.md) |
 | 2026-11-06 | Second capture batch: 47 trusted units, crunch thin (minimum fired, revised). The models on them (N10, F64): undecided, no new training on captures from this read. | [plan](pipeline-fix-plan.md) |
+| 2026-11-07 | The score against the ear on stored pages (N11, F65): about +0.5, large gaps agree most, J0 stays. The second batch's trusted set is 32 units after T0's DI verdicts (N10b), the decision unchanged. | [plan](score-ear-plan.md) |

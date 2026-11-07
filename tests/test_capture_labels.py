@@ -9,6 +9,13 @@ from learn import nam_load as N
 from learn import pipeline_fix as P
 
 
+@pytest.fixture(autouse=True)
+def no_t0(request, monkeypatch):
+    """T0's file is the user's data: the gate tests take no unit away, and its own tests below hold the rule."""
+    if not request.function.__name__.startswith("test_t0_"):
+        monkeypatch.setattr(L, "t0_dropped", lambda units, verified=None: set())
+
+
 def players():
     return {"player1": [f"a{j}" for j in range(40)], "player2": [f"b{j}" for j in range(30)],
             "player4": [f"c{j}" for j in range(4)]}
@@ -602,3 +609,23 @@ def test_a_held_half_the_judge_refuses_leaves_the_search_row():
     row = L.search_row([good, bad])
     assert row["n"] == 1 and row["s_held"] == 2.0
 
+
+
+T0 = {"dis": {"cambridge/a.wav": {"verdict": "verified"}, "cambridge/b.wav": {"verdict": "excluded"}},
+      "intake_dis": {"cambridge-new/c.wav": {"verdict": "verified"}},
+      "measure_dis": {"telefunken-Blind_Spots-GTR": {"verdict": "excluded"}, "telefunken-Measurements-GTR": {"verdict": "pending ear"},
+                      "cambridge-Quicksand-ElecGtr1": {"verdict": "verified"}}}
+
+
+def test_t0_drops_every_di_it_did_not_verify_and_keeps_goats():
+    units = [{"unit": u, "di": d} for u, d in (("g", "goat/item_1"), ("a", "cambridge/a.wav"), ("b", "cambridge/b.wav"),
+                                               ("c", "cambridge-new/c.wav"),
+                                               ("d", "telefunken/Doom Flamingo - Blind Spots LFTL/GTR DI_TDP-1.wav"),
+                                               ("e", "telefunken/Doom Flamingo - Measurements LFTL/GTR DI_TDP-1.wav"),
+                                               ("f", "cambridge/TheTravellingBand_Quicksand_Full/16_ElecGtr1DI.wav"))]
+    assert L.t0_dropped(units, T0) == {"b", "d", "e"}            # "pending ear" is not trusted
+
+
+def test_t0_refuses_a_di_it_has_no_verdict_on():
+    with pytest.raises(SystemExit, match="no verdict"):
+        L.t0_dropped([{"unit": "x", "di": "cambridge/nowhere.wav"}], T0)
