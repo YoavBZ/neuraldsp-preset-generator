@@ -9,6 +9,8 @@ inside amp and class, one GOAT and one BKS part in each, at most one per take, c
     $MAIN -m learn.ear_eat render --shard k/n   # each candidate's clip, its render hash held to the stored one
     $MAIN -m learn.ear_eat page                 # -> PF/eat/ear/page/artifact.html, and listening/ear-eat/index.html
     $MAIN -m learn.ear_eat score --answers FILE
+    $MAIN -m learn.ear_eat --second plan2       # page 2: fresh parts for page 1's out-of-scope cards, crunch screened
+    (then --second render, --second page, --second score; `pooled --answers2 FILE` joins the two as declared in S9)
 """
 from __future__ import annotations
 
@@ -33,6 +35,11 @@ from learn import ear_vreal as E             # noqa: E402
 from learn import eat_render as ER           # noqa: E402
 
 P_SEARCH = "search"                          # `pipeline_fix.SEARCH_DIR`
+PAGE, LISTENING = "ear", "ear-eat"
+SECOND = "ear2", "ear-eat-2"
+SCREEN_DB = -3.0                             # N6's `nonlinear_db` line: a screen, it did not fully separate what the ear put out
+CELLS2 = (("pr12", "crunch", "goat"), ("pr12", "crunch", "goat"), ("ac20", "crunch", "goat"), ("pr12", "clean", "bks"),   # page 1's four
+          ("sw50r", "crunch", "goat"), ("ac20", "crunch", "goat"))                                                      # two crunch spares
 
 CANDS = ("S", "FTm", "M-pcs", "EW-mix", "label")
 LETTERS = ("A", "B", "C", "D", "E")
@@ -130,7 +137,13 @@ def simulate(clusters, shares=(0.5, 0.6, 0.75, 0.9), pages=SIM_PAGES, seed=SIM_S
 # --- paths -----------------------------------------------------------------------------------------------------------
 
 def data_dir():
-    return ER.score_root().parent / "ear"
+    return ER.score_root().parent / PAGE
+
+
+def page_dir():
+    from learn import pretrain_set as PS
+
+    return PS.HOME / "listening" / LISTENING
 
 
 def plan_path():
@@ -146,6 +159,77 @@ def slug_of(key):
 
 
 # --- the commands ----------------------------------------------------------------------------------------------------
+
+def nonlinear_db(which, prt):
+    """How driven a part's amp track is against its DI, as `goat_sections` and N6 measure it."""
+    import numpy as np
+
+    from learn import pipeline_fix as P
+    from learn import pretrain_set as PS
+    from learn import song_bank as B
+
+    sys.path.insert(0, str(PS.HOME / "references/datasets-set3/_tools"))
+    import gainmeasure as GM
+
+    trim = int(PS.TRIM_S * PS.SR)
+    di = np.asarray(B.measure(PS.section_audio(prt["di_path"], prt["start_s"])), np.float64)[trim:]
+    amp = np.asarray(P.real_amp_track(prt["sd"], prt["track"], prt["start_s"]), np.float64)
+    n = min(len(di), len(amp))
+    got = GM.measures(amp[:n], di[:n], PS.SR)
+    return None if not got else float(got["nonlinear_to_linear_db"])
+
+
+def cmd_plan2(_args):
+    """Page 2's cards: each of `CELLS2` in order, no take of page 1, clusters spread, crunch parts under `SCREEN_DB` only."""
+    global PAGE
+    BR.root = ER.score_root
+    ER.linked()
+    keep, PAGE = PAGE, "ear"
+    first = json.loads(plan_path().read_text())["units"]
+    PAGE = keep
+    parts = {(w, q["unit"]): (w, q) for w, q in BR.read_units()}
+    takes = {take_of(parts[(u["which"], u["unit"])][1]) for u in first}
+    used = collections.Counter(u["cluster"] for u in first)
+    rng = random.Random(PLAN_SEED + 10)
+    pool, cache, measured = {}, {}, {}
+    for (which, unit), (_, prt) in parts.items():
+        for key in BR.keys_of(which, prt):
+            amp = key.rsplit("|", 1)[1]
+            p = BR.stored_dir(which) / P_SEARCH / f"{key.replace('/', '__')}.json"
+            if prt["cls"] in CLASSES and take_of(prt) not in takes and p.exists():
+                r = json.loads(p.read_text())
+                if r.get("held") in ("A", "B") and r.get("best"):
+                    pool.setdefault((amp, prt["cls"], which), []).append((key, unit, r["search"], r["held"], prt))
+    out, short = [], []
+    for cell in CELLS2:
+        got = pool.get(cell, [])
+        rng.shuffle(got)
+        ok = []
+        for q in got:
+            if take_of(q[4]) in takes:
+                continue
+            if cell[1] == "crunch":
+                if q[1] not in cache:
+                    cache[q[1]] = nonlinear_db(cell[2], q[4])
+                if cache[q[1]] is None or cache[q[1]] >= SCREEN_DB:
+                    continue
+            ok.append(q)
+        measured[str(cell)] = {"in_pool": len(got), "passing": len(ok)}
+        if not ok:
+            short.append(cell)
+            continue
+        key, unit, search, held, prt = min(ok, key=lambda q: used[cluster_of(cell[2], q[4])])
+        takes.add(take_of(prt))
+        used[cluster_of(cell[2], prt)] += 1
+        out.append({"which": cell[2], "key": key, "unit": unit, "amp": cell[0], "cls": cell[1], "band": prt["band"],
+                    "cluster": cluster_of(cell[2], prt), "search": search, "held": held, "slug": slug_of(key),
+                    "nonlinear_db": cache.get(unit), "spare": len(out) >= 4})
+    data_dir().mkdir(parents=True, exist_ok=True)
+    plan_path().write_text(json.dumps({"seed": PLAN_SEED + 10, "units": out, "short": [list(c) for c in short], "pool": measured}, indent=1))
+    for u in out:
+        print(u["which"], u["amp"], u["cls"], u["cluster"][-24:], u["nonlinear_db"], "spare" if u["spare"] else "", flush=True)
+    print("cannot fill", short, measured, flush=True)
+
 
 def search_record(which, key):
     """The search's stored record of a key: its direction and its best setting."""
@@ -354,11 +438,13 @@ def artifact_css(css):
 def artifact_page(page, css, js):
     """The same page for the Artifact viewer: no document wrapper, its themes, answers kept for reading back, no file save."""
     body = page[page.index("<body>") + len("<body>"):page.index("</body>")]
+    if PAGE != "ear":
+        body = body.replace("shuffled per\nitem, and a few items come back later.", "shuffled per\nitem.")
     body = body.replace(*ARTIFACT_INTRO).replace('<button type="button" id="save">Save file</button>', "")
     body = body.replace("<script>" + js + "</script>", "<script>" + js.replace(
         'document.getElementById("save").addEventListener("click", () => {', 'if (false) document.getElementById("save").addEventListener("click", () => {')
         + SYNC + "</script>")
-    return ('<title>Record Tone Check</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n<style>'
+    return (f'<title>Record Tone Check{" 2" if PAGE != "ear" else ""}</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n<style>'
             + artifact_css(css) + "</style>\n" + body)
 
 
@@ -372,7 +458,7 @@ def cmd_page(_args):
         raise SystemExit(f"{key_path} exists: a rebuild hides the listener's stored answers; move it aside first")
     units = json.loads(plan_path().read_text())["units"]
     C.CANDS, C.LETTERS = CANDS, LETTERS
-    items = C.draw(units, PAGE_SEED, repeats=2, gap=4)
+    items = C.draw(units, PAGE_SEED + (10 if PAGE != "ear" else 0), repeats=0 if PAGE != "ear" else 2, gap=4)
     cache = data_dir() / "aac-cache"
     clips, kept = {}, []
     for it in items:
@@ -396,7 +482,7 @@ def cmd_page(_args):
     if leaks:
         raise SystemExit(f"the page names {leaks}")
     key_path.write_text(json.dumps({"page": "ear-eat", "build": build, "items": kept, "time": time.strftime("%Y-%m-%d %H:%M:%S")}, indent=1))
-    local = PS.HOME / "listening" / "ear-eat" / "index.html"
+    local = page_dir() / "index.html"
     local.parent.mkdir(parents=True, exist_ok=True)
     local.write_text(page)
     out = data_dir() / "page" / "artifact.html"
@@ -437,9 +523,12 @@ def cmd_score(args):
 
 
 def main(argv=None):
+    global PAGE, LISTENING
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--second", action="store_true")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("plan").set_defaults(fn=cmd_plan)
+    sub.add_parser("plan2").set_defaults(fn=cmd_plan2)
     r = sub.add_parser("render")
     r.add_argument("--shard", default="0/1")
     r.set_defaults(fn=cmd_render)
@@ -448,6 +537,8 @@ def main(argv=None):
     s.add_argument("--answers", required=True)
     s.set_defaults(fn=cmd_score)
     a = ap.parse_args(argv)
+    if a.second:
+        PAGE, LISTENING = SECOND
     a.fn(a)
 
 

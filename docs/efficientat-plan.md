@@ -191,6 +191,18 @@ Both bodies are tuned on searched heads only (`reads_v3.searched`, per cell; `P.
 - [x] S9.1 `learn/ear_eat.py`, the map committed, then 120 renders in 3 shards, each held as above.
 - [ ] S9.2 The page, published privately. Answers stored, then the key read.
 
+### S9b, page 2, replacing page 1's out-of-scope cards
+
+Declared before any page 2 render, after page 1's answers were unblinded: the rows on page 1's 8 cards were seen, so what follows fixes the join in advance and changes no row. By S10, 4 of 12 first-hearing cards out of scope is over the limit of 2. Card 2 stays out on file. If the user says it was a slip, its answer is a post hoc side row only.
+
+- **Parts.** Four replacement cards and two crunch spares, no take of page 1, clusters spread, seed 20261211. Crunch parts must read `nonlinear_to_linear_db` under −3, N6's line, as a screen: on page 1 the three crunch cards marked out read −1.74, +1.37 and +1.54, and the crunch cards kept −3.23, −2.71 and +3.69, so it does not fully separate them.
+- **BKS's crunch cells cannot fill.** All 3 parts left in each have too much drive by the screen, so they are not drawn. Their two slots go to GOAT crunch on the same amp. That takes the planned 6 BKS and 6 GOAT cards to 5 and 7 (4 if card 2's cell is counted apart), and BKS crunch then sits on one card. Stated.
+- **Page.** Same five candidates, same form, letters shuffled per card, no repeats, about 8 minutes. Same rendering holds.
+- **The join.** Rows are the rank share on all in-scope first hearings of both pages, up to 12 cards: page 1's 8, then the four replacement cards. A replacement card marked out of scope gives way to the next spare in page order; spares not needed stay out of the rows and are reported beside. If fewer than 12 remain, rows run on what is there, and each row is read both ways over the cards still missing.
+- **Clusters.** As S9: DI on BKS, player on GOAT, and a cluster on both pages is one cluster. `capture_ear.boot_share`, 90%. The map is unchanged: lower end above one half is a lead, heard; a row reaching one half is not known by ear.
+- **Closeness.** Ratings move between pages, so gaps are read within each page. A pooled gap is a beside row only.
+- **Repeats.** Page 1's only, consistency only.
+
 ### S10, what each listening result leads to
 
 Written on the user's request of 2026-11-06, "While I listen, think and plan the next steps given the possible results", before any answer was read. The key stays closed. Reading order follows the page's declared map; a row reaching one half is not known by ear, never "failed".
@@ -278,3 +290,4 @@ Newest last. Each entry: date, task, result, output path, audited by whom.
 - 2026-11-06, S7.1, the results' review, by the auditor: 15 wording and count faults, all taken.
 - 2026-11-06, S9.1: 120 renders, under 2 min on three shards, every reader's held to its judged render hash and each label to its stored judge within 0.1%. Page built, 14 cards, 84 clips, 16.0 MB, published privately. Tested on the local copy: clips decode, switching works, rank, scope and export work, no key or part name on the page. The hosted copy's database took a probe write and read, deleted. The hosted page itself was not opened here: it needs the user's sign-in.
 - 2026-11-06, S10's review, independent, with neither the key nor any answer read: 7 faults, all fixed. The page's out-of-scope button sat among the confidence buttons, so it showed lit on every card with no confidence set, and clicking it wiped Sure or Unsure. Fixed on the live page, same build, same letters; the user was told. Any card holding both scope and ranks is asked about before scoring, `scope_and_ranked` in `score.json`. Also: both-ways reading coded; `cmd_score` takes the stored document; S10's gaps closed; S11's windows, lend, backing and primary set.
+- 2026-11-07, S9.2, page 1's answers, `PF/eat/ear/answers.txt`, `score.json`, unaudited at this line: 8 of 12 first-hearing cards in scope, out of the planned 12. Mean rank and closeness: S 3.88, 0.38; FTm 3.25, 1.50; `M-pcs` 3.38, 1.38; `EW-mix` 2.75, 1.62; `label` 1.75, 2.38. Over the limit of 2 out-of-scope cards, so no step is driven and page 2 follows. One repeat answered, same top.
