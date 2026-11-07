@@ -5,6 +5,7 @@ No training and no render. The same fitted readers read more sections; the label
     $TORCH_PY -m learn.eat_windows check                    # the chain on labelled windows against their stored inputs
     $TORCH_PY -m learn.eat_windows windows --shard 0/3      # S11.2, GOAT's other windows through the unit's own chain (CPU)
     $TORCH_PY -m learn.eat_windows read                     # S11.2's read, `M-pcs`, by the fold's own fit
+    $TORCH_PY -m learn.eat_windows predict --tag M-win      # S11.3's answers, CPU, zero renders; then `eat_render render` and `report`
 
 It reads BKS and GOAT only. Levels and backing ids come from each unit's stored variant 0. `base_rows` goes through `recipe_inputs`,
 as every read does, for ids and refusals only.
@@ -452,6 +453,85 @@ def cmd_read(_a):
     print(json.dumps({k_: res[k_] for k_ in ("units", "windows", "r", "unsearched", "pairs", "harness_fault")}, indent=1, default=float))
 
 
+# --- the score step ---------------------------------------------------------------------------------------------------
+
+SCORE_TAGS = ("M-win", "M-far")
+MIN_OTHERS = 2
+
+
+def blended(x, others, keep_search):
+    """A unit's (2, d) mel input with its other windows' both halves at equal weight per half. `keep_search`: each direction keeps its own
+    search half of the labelled window. It never takes the labelled window's other half, the held half that direction is judged on."""
+    more = np.concatenate(others, 0)
+    if not keep_search:
+        return np.broadcast_to(more.mean(0), x.shape).copy()
+    return np.stack([np.concatenate([x[h:h + 1], more], 0).mean(0) for h in range(2)])
+
+
+def score_units():
+    """{str(variant 0 file): the unit's other windows' files}, for units with `MIN_OTHERS` or more."""
+    from learn import pipeline_fix as P
+
+    out = {}
+    for u in sorted(p for q in units_read()[0].values() for p in (v["unit"] for v in q)):
+        files = [str(window_path(u, w)) for w in range(MORE) if window_path(u, w).exists()]
+        if len(files) >= MIN_OTHERS:
+            out[str(P.dfix_input_path(u, 0))] = files
+    return out
+
+
+def cmd_predict(a):
+    """`bakeoff_render.cmd_predict` for `M-pcs` unchanged, with a fold's fit left alone and only the held read's input blended. Units with too
+    few windows run through unblended, so their answers must equal stored `M-pcs`'s: the control. Only the blended units are kept."""
+    from learn import bakeoff_render as BR
+    from learn import eat_render as ERN
+    from learn import pipeline_fix as P
+
+    if a.tag not in SCORE_TAGS:
+        raise SystemExit(f"--tag {SCORE_TAGS}")
+    a.mid, a.pcs, a.net = "pub", 64, "mn10_as"
+    ER.real_setup(a)
+    B.CANDIDATES = {**B.CANDIDATES, a.tag: ER.SAME_COUNT["M-pcs"]}
+    BR.root = ERN.score_root
+    units = score_units()
+    state, feature, fit = {"fitting": False}, B.feature, BR.fit_fold
+
+    def fit_fold(*q, **kw):
+        state["fitting"] = True
+        try:
+            return fit(*q, **kw)
+        finally:
+            state["fitting"] = False
+
+    def read(name, seed, f, amp, cls):
+        x = feature(name, seed, f, amp, cls)
+        if state["fitting"] or f not in units:
+            return x
+        return blended(x, [B.summary_of("mel", w) for w in units[f]], a.tag == "M-win")
+
+    B.feature, BR.fit_fold = read, fit_fold
+    BR.cmd_predict(a)
+    stored = BR.stored_answers("goat", "M-pcs")
+    path = BR.answers_path("goat", a.tag)
+    got = json.loads(path.read_text())
+    held = {f for f in units}
+    mine, same = {}, 0
+    for key, ans in got["answers"].items():
+        if str(P.dfix_input_path(key.split("|")[0], 0)) in held:
+            mine[key] = {BR.ANY: ans["A"]} if a.tag == "M-far" else ans
+        elif ans != stored[key]:
+            raise SystemExit(f"control: {key} differs from stored `M-pcs` though no window was blended")
+        else:
+            same += 1
+    got["answers"] = mine
+    path.write_text(json.dumps(got))
+    bks = BR.answers_path("bks", a.tag)
+    b = json.loads(bks.read_text())
+    b["answers"] = {}
+    bks.write_text(json.dumps(b))
+    print(f"CONTROL OK: {same} unblended keys equal stored `M-pcs`; {a.tag}: {len(mine)} keys", flush=True)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -461,6 +541,9 @@ def main(argv=None):
     w.set_defaults(fn=cmd_windows)
     sub.add_parser("check").set_defaults(fn=cmd_check)
     sub.add_parser("read").set_defaults(fn=cmd_read)
+    p = sub.add_parser("predict")
+    p.add_argument("--tag", required=True)
+    p.set_defaults(fn=cmd_predict)
     a = ap.parse_args(argv)
     a.fn(a)
 

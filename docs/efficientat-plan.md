@@ -256,6 +256,18 @@ Every read so far takes one 10 s section. Backing noise is a large part of a rid
 - **What each result leads to.** A lower end above zero on any group in either primary is a reason to bring back the score step. Anything else: not known what more windows add, reported with its effect, never as failed. No bar on size. Six rows, so one clear row alone is a lead.
 - **Count.** S11.1 is 5 readers by 3 groups on BKS, S11.2 is 6 rows on GOAT, both outside the bound. Other windows share the chain but were never searched, and their label is the unit's, stated.
 
+**S11.3, the score step, declared 2026-11-07 before any render.** On the ML session's call within the user's go: `M-pcs` only, no `EW-mix`, no ear page, no L2, no training, no V-real, NS or panel read. Reported by the score only.
+
+- **Arms, GOAT only,** on the units with 2 or more other windows, 153 labelled rows, the same units for every arm. `M-win` reads, per direction, the search half of the labelled window plus both halves of every other window, equal weight per half. `M-far` reads the other windows alone, one answer for both directions. The fit is stored `M-pcs`'s, by `bakeoff_render.fit_fold` unchanged. Each answer starts from `RcBG`'s settings as every ridge does.
+- **The held half.** A direction is judged on the labelled window's other half, which no arm reads: the blend takes only the search half, other windows never overlap the labelled window. `M-far` reads neither half.
+- **The comparison, fixed here.** The single-window side is stored `M-pcs` on the labelled window's search half, the read every earlier score used. It needs no draw, so no seeded window can set the size. `O1` plays no part. The stored judges cost no render.
+- **Primary.** `M-win` less `M-pcs`, `distance`, ln ratio, by item, 90% t, on the same directions, through `bakeoff_render.cmd_report` with `--vs M-pcs`. Negative is closer. Beside: `M-far` less `M-pcs`, each against FTm, `RcBG` and S, by fold, part-weighted, by S's distance band, and main player against the rest. FTm stays beside as the model to beat.
+- **Which way it leans.** `M-pcs`'s half sits next to the half it is judged on, in the same notes, and other windows do not, so a null or a loss here is no evidence against reading more. A closer `M-far` would say most about a whole-song read, because it reads no audio of the judged window.
+- **What each result leads to.** An upper end below zero on the primary is a lead by the score, nothing more: it goes back to the ML session and the user, who decide on any ear page. An interval holding zero is undecided. No bar on size.
+- **Control.** Units not blended run through the same code and must equal stored `M-pcs`'s answers exactly. `eat_render check` on a shard of FTm's stored renders first.
+- **Cost.** About 918 renders: 612 for `M-win`, 306 for `M-far`. Within the 1,340 allowed. At most 3 render processes.
+- **What the score cannot tell.** J0 is not sound: the user set it aside. It judges one held half of one labelled window, while the arms are built to read a whole take. It says nothing about BKS here, and it carries J0's known limits near real distances. Only an ear page can say a setting sounds closer.
+
 ## Findings log
 
 Newest last. Each entry: date, task, result, output path, audited by whom.
