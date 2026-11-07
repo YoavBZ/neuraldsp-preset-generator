@@ -430,15 +430,20 @@ def cmd_read(_a):
         for n_ in (1, 2, 3):
             r[f"N{n_}_ans"] = np.mean([r["win"][-1], *others[:n_]], 0)
     labels = ("L", "ALL", "OTHERS", "O1", "PLACEBO", "N1", "N2", "N3")
-    pairs = [("OTHERS", "O1"), ("ALL", "L"), ("OTHERS", "L"), ("PLACEBO", "L")]
+    pairs = [("ALL", "L"), ("OTHERS", "L"), ("PLACEBO", "L")]
     res = {"units": len(out_rows), "windows": collections.Counter(len(r["win"]) - 1 for r in out_rows), "r": {m: {g: v[0] for g, v in R.corr(R.blocks(out_rows, m)).items()} for m in labels}}
     iv = R.goat_intervals(out_rows, list(labels), pairs)
     res["pairs"] = {f"{a}-{b}": {g: iv[(f"{a}-{b}", g)] for g in R.GROUPS} for a, b in pairs}
+    two = [r for r in out_rows if len(r["win"]) - 1 >= 2]              # no searched window on either side of this primary
+    iv2 = R.goat_intervals(two, ["OTHERS", "O1"], [("OTHERS", "O1")])
+    res["unsearched"] = {"units": len(two), "OTHERS-O1": {g: iv2[("OTHERS-O1", g)] for g in R.GROUPS},
+                         "r": {m: {g: v[0] for g, v in R.corr(R.blocks(two, m)).items()} for m in ("OTHERS", "O1")}}
+    res["harness_fault"] = [g for g in R.GROUPS if res["pairs"]["PLACEBO-L"][g]["lo90"] > 0]
     res["player"] = B.player_read(out_rows, list(labels), data[4])
     full = [r for r in out_rows if len(r["win"]) - 1 >= 3]
     res["three_or_more"] = {"units": len(full), "r": {m: {g: v[0] for g, v in R.corr(R.blocks(full, m)).items()} for m in ("L", "ALL", "OTHERS", "O1", "PLACEBO")}}
     (P.out_dir() / EAT / "s11-goat.json").write_text(json.dumps(res, indent=1, default=float))
-    print(json.dumps({k_: res[k_] for k_ in ("units", "windows", "r", "pairs")}, indent=1, default=float))
+    print(json.dumps({k_: res[k_] for k_ in ("units", "windows", "r", "unsearched", "pairs", "harness_fault")}, indent=1, default=float))
 
 
 def main(argv=None):
