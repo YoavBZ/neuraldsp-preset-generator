@@ -3793,7 +3793,8 @@ def stage_read(root, phase, keep=None):
         recs = [r for r in recs if r["unit"] in keep]
     lab = [r for r in recs if r["label"] is not None]
     rows = [(r["item"], r["unit"], math.log(r["best"]["judge"][r["held"]] / r["s_judge"][r["held"]])) for r in lab
-            if r["s_judge"][r["held"]] and r["best"]["judge"][r["held"]] > 0]
+            if r["s_judge"][r["held"]] and r["best"]["judge"][r["held"]] > 0
+            and math.isfinite(r["s_judge"][r["held"]] + r["best"]["judge"][r["held"]])]    # a held half the judge refuses
     at = []
     for r in lab:
         S = ms[r["amp"]][r["cls"]][1]
@@ -5932,6 +5933,9 @@ def cmd_build_dfix_real(args):
     psha = pool_sha(pool)
     own_lv = json.loads((out_dir() / "inputs" / "backings-levels.json").read_text())["levels"]
     kk, n = args.shard
+    batch = getattr(args, "capture_batch", 1)          # `eat_build` calls this with no such argument
+    if batch == 2 and not args.captures:
+        raise SystemExit("--capture-batch 2 needs --captures")
     units = dfix_units()
     if args.reads_only:                            # read 2's GOAT units with no row (`dfix_read_only`)
         units = dfix_read_only(units, goat_read_units())
@@ -5940,6 +5944,10 @@ def cmd_build_dfix_real(args):
 
         require("phase_n6")
         units = [(u["unit"], "goat", u) for u in sorted(CL.units_of(), key=lambda u: u["unit"])]
+        if batch == 2:                                 # N10: the second batch's trusted units; a library DI has a session
+            require("phase_n10")
+            CL.BATCH = CL.BATCH2
+            units = [(u["unit"], "goat", u) for u in sorted(CL.trusted_units()[0], key=lambda u: u["unit"])]
     mine = [u for q, u in enumerate(units) if q % n == kk]
     lends, t0, done = {}, time.time(), 0
     for m, (unit, kind, prt) in enumerate(mine):
@@ -5949,7 +5957,7 @@ def cmd_build_dfix_real(args):
         i, rule = dfix_lend(unit, prt["cls"], sp["train"], kept, prt["section"] if bks else None)
         x, rw, bw = kept[i], rend[i], built[i]
         e_voc = bool(x["draw"]["vocals_drawn"] and x["stems"]["v"] != x["stems"]["n"])
-        draws = dfix_draws(unit, prt["section"], pool, own=bks)
+        draws = dfix_draws(unit, prt["di"] if batch == 2 else prt["section"], pool, own=bks)
         paths = [dfix_input_path(unit, v) for v in range(DFIX_K)]
         for p in paths:
             if p.exists() and str(np.load(p)["pool_sha256"]) != psha:
@@ -5999,7 +6007,7 @@ def cmd_build_dfix_real(args):
             done += 1
         if m % 10 == 0:
             print(f"unit {m + 1}/{len(mine)}: {done} built; {(time.time() - t0) / max(1, done):.2f} s each", flush=True)
-    tag = "captures-" if args.captures else "reads-" if args.reads_only else ""
+    tag = f"captures{'2' if batch == 2 else ''}-" if args.captures else "reads-" if args.reads_only else ""
     save(out_dir() / DFIX_DIR / f"lends-{tag}{kk}-of-{n}.json",
          {"rule": cmd_build_dfix_real.__doc__, "pool_sha256": psha, "units": lends})
     fb = sorted(u for u, r in lends.items() if r["kind"] == "bks" and r["rule"] == "class")
@@ -7506,6 +7514,7 @@ def main(argv=None):
     ap.add_argument("--shard", type=lambda v: tuple(int(z) for z in v.split("/")), default=(0, 1))
     ap.add_argument("--reads-only", action="store_true", help="build-dfix-real: only the read units with no row")
     ap.add_argument("--captures", action="store_true", help="build-dfix-real: the first capture batch's units (N6)")
+    ap.add_argument("--capture-batch", type=int, choices=(1, 2), default=1, help="build-dfix-real --captures: N10's second batch")
     ap.add_argument("--rung", choices=tuple(RUNG_KINDS), default="a")
     ap.add_argument("--epochs", type=int, default=1500)
     ap.add_argument("--device", choices=("mps", "cpu"), default="mps")

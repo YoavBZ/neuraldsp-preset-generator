@@ -189,7 +189,8 @@ def input_gain(label):
 def search_row(recs):
     """Mean S held-half distance and mean search gain, ln(d_S / d_best) on the held half, of search records."""
     rows = [(r["s_judge"][r["held"]], r["best"]["judge"][r["held"]]) for r in recs if r["label"] is not None
-            and r["s_judge"][r["held"]] and r["best"]["judge"][r["held"]] > 0]
+            and r["s_judge"][r["held"]] and r["best"]["judge"][r["held"]] > 0
+            and math.isfinite(r["s_judge"][r["held"]] + r["best"]["judge"][r["held"]])]
     if not rows:
         return None
     return {"n": len(rows), "s_held": sum(s for s, _ in rows) / len(rows),

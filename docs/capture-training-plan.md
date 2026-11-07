@@ -29,8 +29,50 @@ The second batch follows on 2, 4 and 5 once it is heard, and is the test with mo
 
 **Outcome (2026-11-06, F62 in the [plan](pipeline-fix-plan.md)).** Undecided: C-cap − C-ctl drive +0.018 [−0.032, +0.068], tone −0.014 [−0.093, +0.065], cab +0.024 [−0.028, +0.076]. It excludes a gain above about +0.07 to +0.08 and does not exclude +0.05. C-cap − C-c39's clear rows are not evidence for capture labels: about half or more is updates alone, and no row clears on both seeds. The two limits corrected by the audit are in F62.
 
+**Code.** `learn/capture_train.py`, `tests/test_capture_train.py`; ledger `pipeline-fix`, `phase_n9`; outputs `PF/captrain/`.
+
 **Cost.** 590 updates took about 3.3 min at `A-ctl`'s measured rate, so about 1.5 to 2 h for 32 runs, about 140 MB of checkpoints, zero renders. Inputs are built. A run refuses under 33 GB free. The read is CPU, about 5 min.
 
 *Review (2026-11-06, independent, before any run; a second pass during it on the read and the wording):* eight required changes, all made. No leakage found on all 4 folds, and the data path ran on real rows. The main ones: the pair is not capture rows on top, so C-c39 joins; the chance rate of a clear row; the control now covers this step's nets; the standardised pair; the recipe's limit on cab.
 
-**Code.** `learn/capture_train.py`, `tests/test_capture_train.py`; ledger `pipeline-fix`, `phase_n9`; outputs `PF/captrain/`.
+## N10: the trained models on the second batch (declared 2026-11-06, before it is computed)
+
+**Why.** The second batch's 47 trusted units are new captures on library DIs, with far more players than GOAT's. No real row of any model holds them, so reading what exists is a fresher test than N6 or N9, and it costs no training. 4 of their 38 creators (analog, rxguitar, suomapyr, tone3000) are in the first batch's trusted set, covering 6 of the 47 units; those creators are in C-cap's and M-cap's training rows and in neither C-ctl nor M-ctl. No capture file, pack or content hash is shared. A further arm on both batches would take 8 runs, about 27 minutes by N9's measured rates, and is not declared here; the reading below says whether to declare it.
+
+**Rows.** The 47 units, inputs built for them by `build-dfix-real --captures --capture-batch 2`, 1,175 files for later training as well as this read, audio and pool backings only, no label; backings never from the DI's own session, which this batch's units need said explicitly since their section is the capture.
+
+**Readers.** FTm, C-ctl, C-cap, C-mic and C-c39, each by the mean of its 8 fold-and-seed models, since no fold held these units. `M-ctl`, the mel ridge on all of BKS's and GOAT's records, and `M-cap`, with the first batch's trusted records too, each on variant 0 and on the mean of 25 backings beside, since N9b found variant 0 overstates that pair's drive.
+
+**Read.** N6's rows, r by drive, tone and cab, demeaned within (amp, class, head), one value per recording, permutation p, own against swap, clusters by creator. All and clean; crunch holds 9 units, so no crunch row. **Primary: C-cap − C-ctl and M-cap − M-ctl, drive, tone and cab, all classes, delete-one-creator t,** each with its head-standardised pair. Beside: the primary pairs without the 6 units of shared creators, so that a lead is not creator style; C-mic − C-cap, C-cap − C-c39, M-ctl − C-ctl, C-ctl − FTm, the 25-backing pair; own against swap for the nets, all and clean, as a mean of 8 models' swaps, which the ridges do not have; per-head spread; squared error against the cell mean.
+
+**Controls, stopping the run.** N6's control and N9b's three: stored `M-pcs` answers, one row per labelled record, no held DI in a fit.
+
+**Reading.** N9's map gives each primary pair its outcome, and these fix the next step, first match (`decide`). A lead on C-cap − C-ctl: train on both batches, in its own declaration, about 27 minutes an arm. A lead on the ridge alone: the ridge by the score first, no new network training. A cost on either: no new training; a net's cost is read against C-c39, a ridge's against the offset. Otherwise, the likely result at 47 units: no new training on captures from this read, and the review session's ear page (`docs/efficientat-plan.md` S9, `listening/ear-eat/`, build 52449007a5d2, labels beside models) decides what follows. With two pairs a clear row by chance is commoner than N9's 11 to 17% for one, so a lead stands only if its clear rows keep their sign without the shared creators; a lead that fails counts as undecided. Beside the map, each arm's r against zero says how far the models' reading reaches real rows they never held.
+
+**Limits.** r is agreement with search labels, not sound. These DIs are library sections and W's plugin rows read that library: 4 of the 47 units (2 of 27 DI files) use a DI file in W's training set, and 15 sit in a session W trained on, none in NS. So this is new to the nets' real rows, not to their plugin start; only the ridges hold no plugin rows. One unit (`cap/5pmq8qku9nq#sw50r`) has a nearly guitar-free held half, so half its answer reads the backing. N9b's finding stands beside M-cap: about 40% of its drive cost was the capture rows' offset. All these labels are search v2's, which C-cap and M-cap saw and C-ctl and M-ctl did not, so a capture-row gain here may be the recipe's. Cells hold 2 to 16 units, so demeaning costs much. Answers by a mean of 8 models are steadier than one model's, so they do not compare with N6's or N9's r. Creator clusters ignore DI reuse: 27 DI files in 14 bands.
+
+**Outcome (2026-11-06, F64 in the [plan](pipeline-fix-plan.md)).** Both pairs undecided: C-cap − C-ctl +0.031, +0.084, −0.012, M-cap − M-ctl +0.020, −0.055, +0.007, all reaching zero. So no new training on captures from this read.
+
+**Cost.** Zero renders, zero training, no GPU, about 77 MB of inputs at N6's measured 0.21 s each, about 1.5 minutes on 3 shards, CPU for the read. Code `learn/reads_fresh.py`, `tests/test_reads_fresh.py`; ledger `phase_n10`.
+
+*Review (2026-11-06, independent, before any run):* eleven required changes, all made, four in code, the rest in this section and the gates note.
+
+## N9b: does a ridge gain from capture rows? (declared 2026-11-06, before it is computed)
+
+**Why.** N9 tested capture rows in place of updates. It could not test them on top, because a network's epoch has a fixed budget. A ridge takes each labelled record once, so capture rows simply join. The review session's `M-pcs`, the mel ridge at 64 PCs, needs no training, no GPU and no download, and it reads about as well as FTm on the development sets by the score. `E-mix` reads a little better on GOAT, but needs 3,750 more embedded inputs (3,025 for the 121 trusted units) for a gain of −0.006, so it waits on this read. This was told to the user on 2026-11-06.
+
+**Arms.** `M-ctl`, fitted per capture fold on C-ctl's rows, each labelled record once (a BKS unit has one per amp). `M-cap`, on C-cap's rows, likewise. The same folds, DI drops and holds as N9, through `capture_train.rows_of`. Read on variant 0, as N9, and on the mean of all 25 backings beside, which costs nothing and shows whether the primary pair rests on one backing. Capture rows are about 12 to 15% of a fit's records.
+
+**Read.** N9's rows, joined by recording and amp, so `M-*` sit beside C-ctl and C-cap on the same 121 units. **Primary: M-cap − M-ctl on drive, tone and cab, all classes, delete-one-creator t,** with the head-standardised pair. Beside: M-cap − C-cap and M-ctl − C-ctl, ridge against network on one set; the 25-backing pair, and what the mean adds to M-ctl; crunch and clean; per-head spread and squared error against the cell mean, because N9's answers lose to it.
+
+**Controls, stopping the run.** `fit_predict` at these settings reproduces the stored `M-pcs` answers on BKS's and GOAT's fold 0 within 1e-6 (worst 0.0 when checked before this declaration, on no capture row); a fit must hold one row per labelled record; no held DI may sit in a fit's rows.
+
+**Reading.** N9's map, first match: mixed; a row clear above with its standardised pair above zero is a lead, then labels shuffled within cells, then the score, each declared; a row clear below is a cost to review; a clear raw row with its standardised pair at or below zero is moved spread; otherwise undecided. About the chance rate, N9's figures for its network pairs are the only guide, and they were not measured on these answers: at least one of three rows clears above with none below on 11 to 17% of tries.
+
+**Limits.** N9's, and these: on GOAT `E-mix`'s drive read on variant 0 ranks 23 of 25 backings, so one variant may flatter a read. The 25-backing pair shows whether the primary rests on one backing. It cannot show how far variant 0 flatters one arm, since a mean reads better by averaging alone: M-ctl-25 − M-ctl is what averaging adds, and no song offers 25 backings. 64 PCs was chosen on plugin rows alone. The penalty is chosen inside each fit, per head, on that fit's rows, with inner folds that hold DIs and not creators, so M-cap's choice sees one creator on both sides of an inner fold and may lean under-regularised; only the grid and the rule were set earlier. Held backings also back training rows. Capture labels' offset from the search recipe goes into one pooled cell mean, so M-cap spends some weight on it. This is agreement with search labels, not sound.
+
+**Outcome (2026-11-06, F63 in the [plan](pipeline-fix-plan.md)).** Mixed by the map: drive −0.056 [−0.093, −0.019], tone +0.038 [+0.001, +0.076], cab +0.013 [−0.017, +0.044], with the head-standardised pairs reaching zero. Neither leg is firm: variant 0 overstates drive and about 40% of it is the capture rows' offset, and tone's gain mostly comes through the penalty.
+
+**Cost.** Zero renders, zero training, no GPU, no new files but the read; the control's fit took 5 s, so 16 fits take minutes. Code `learn/capture_ridge.py`, `tests/test_capture_ridge.py`; ledger `phase_n9b`.
+
+*Review (2026-11-06, independent, before any run):* eight required changes over two passes, all made. The main one: a first draft kept one row per unit, which would have dropped two of each BKS unit's three amps and leaned toward a false lead; the control could not see it, so a fit now stops on the wrong count.
