@@ -134,7 +134,7 @@ Measured only after the line is set.
   - each arm less S;
   - each arm less FTm by class;
   - the full arm less the gentle arm;
-  - each arm less FTm on N12's 31 units, by N12's FTm answer path. That set is other bands' songs, in no model's real rows.
+  - each arm less FTm on N12's units, by N12's FTm answer path: the primary on the 27 units whose DI is not among W's training rows, with all 31 and the 4 apart beside. That set is other bands' songs, in no model's real rows.
 - The N12 side read needs `score_ear`'s FTm answer path extended to the H4 tags before H4a; the by-class rows are added to the reports then.
 - No bar is set, and undecided is not failed. The score is weak between close models (F65, F66), so by the score alone a small difference will likely read undecided, and the ear page decides.
 
