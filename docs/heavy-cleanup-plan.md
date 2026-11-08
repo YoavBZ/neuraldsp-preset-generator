@@ -144,7 +144,7 @@ Measured only after the line is set.
 - **Candidates:** S, FTm, `P2b-ftmf`, `P2b-ftmg` and `P2b-ftmc`, each answering from the unit's search half and judged on its held half.
   - The clips come from H4a's N12 side read, which keeps every tag's held-window clip on all 31 units.
   - On the 15 units N12's page didn't use, it also renders S (checked against its stored hash) and keeps S's and FTm's clips. That adds about 60 renders to H4a.
-- **Cards:** 14 first hearings, 8 clean and 6 crunch, at most 2 a band, seeded (seed 20261112).
+- **Cards:** 14 first hearings, 8 clean and 6 crunch, at most 2 a band within each class (2 a band across the page can fill only 13), seeded (seed 20261112).
   - The clean cards come from the 14 clean units N12's page didn't use.
   - The crunch cards come from all of N12's crunch units, since only one was unheard. Those cards are marked "heard on N12 with other candidates".
   - Within a class the draw is plain and seeded, as N12's was. No score enters it: a draw that put close model pairs first would push each arm's share over FTm toward one half, and no judge was named to need them (S12).
@@ -164,6 +164,7 @@ Measured only after the line is set.
   - **Power:** with 14 cards in about 7 bands only a large gain reads clear, so "not shown" means not shown here, not no effect.
   - The page's code is N12's, extended to 2 repeats a class, since `page_order` repeats one card a class today.
 - **Cost:** no renders beyond H4a's (which include the 60 above), and one listening session of 18 cards.
+- **If two arms pass,** the user decides between them, with the full-over-gentle row beside.
 
 **What it leads to.** The user decides from both reads.
 - **An arm better than FTm** by ear, with the score beside: its cut is adopted.

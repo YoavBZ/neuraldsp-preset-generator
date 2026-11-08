@@ -9,6 +9,9 @@
     $TORCH_PY -m learn.score_ear h4-answers --tags P2b-ftmf,P2b-ftmg,P2b-ftmc   # H4a: the H4 tags by N12's FTm path
     $MAIN -m learn.score_ear h4-render --tags P2b-ftmf,P2b-ftmg,P2b-ftmc --shard k/n   # their renders, FTm's checked first
     $MAIN -m learn.score_ear h4-wide OUT.json --tags P2b-ftmf,P2b-ftmg,P2b-ftmc        # each tag less FTm, by band
+    $MAIN -m learn.score_ear h4b-draw                               # H4b: 14 cards, seeded, on metadata alone, once
+    $MAIN -m learn.score_ear h4b-page                               # H4b's page from N12's and H4a's clips -> ear-wide/h4b/
+    $MAIN -m learn.score_ear h4b-read OUT.json --answers F1 F2      # H4b's read: each arm over FTm, Holm, rows beside
 
 Nothing here changes J0 or picks a model. A card is one part of one page: its ear ranks and closeness, and J0's held-half distance
 per candidate. V-real's and `record-match-1`'s rows inform the report and never brief a judge term.
@@ -305,9 +308,9 @@ def draw_cards(units, seed=DRAW_SEED):
     return cards, spares
 
 
-def page_order(cards, spares, cands, letters, seed=PAGE_SEED, gap=4):
-    """The page's order: every card and spare once, letters balanced, and two cards again, one of each class, at least `gap` items
-    later, every candidate on another letter there. -> [{**unit, id, n, letters, repeat_of, spare}]."""
+def page_order(cards, spares, cands, letters, seed=PAGE_SEED, gap=4, repeats=1):
+    """The page's order: every card and spare once, letters balanced, and `repeats` cards again of each class (N12: one), at least
+    `gap` items later, every candidate on another letter there. -> [{**unit, id, n, letters, repeat_of, spare}]."""
     from learn import capture_ear as C
 
     keep = C.CANDS, C.LETTERS
@@ -315,7 +318,8 @@ def page_order(cards, spares, cands, letters, seed=PAGE_SEED, gap=4):
     try:
         rng = random.Random(seed)
         by = {u["unit"]: dict(u, spare=False) for u in cards} | {u["unit"]: dict(u, spare=True) for u in spares}
-        twice = [rng.choice(sorted(u["unit"] for u in cards if u["cls"] == c)) for c in ("clean", "crunch")]
+        pools = [sorted(u["unit"] for u in cards if u["cls"] == c) for c in ("clean", "crunch")]
+        twice = [rng.choice(q) for q in pools] if repeats == 1 else [x for q in pools for x in rng.sample(q, repeats)]
         seq = sorted(by) + twice
         while True:
             rng.shuffle(seq)
@@ -687,15 +691,29 @@ def cmd_page(_args):
     import numpy as np
 
     from learn import ear_eat as EE
-    from learn import ear_vreal as E
-    from learn import pretrain_set as PS
 
     key_path = wide_dir() / "key.json"
     if key_path.exists():
         raise SystemExit(f"{key_path} exists: a rebuild hides the listener's stored answers; move it aside first")
     plan = json.loads((wide_dir() / "plan.json").read_text())
     items = page_order(plan["cards"], plan["spares"], CANDS, EE.LETTERS)
-    cache = wide_dir() / "aac-cache"
+
+    def group_of(it):
+        z = np.load(wide_dir() / "renders" / it["slug"] / "clips.npz")
+        return {"ref": np.asarray(z["ref"], np.float64), **{k: np.asarray(z[c.replace("-", "_")], np.float64) for k, c in it["letters"].items()}}
+
+    kept, builds = page_parts(items, CANDS, group_of, wide_dir() / "aac-cache", LISTENING, wide_dir() / "page")
+    key_path.write_text(json.dumps({"page": WIDE_DIR, "builds": builds, "items": kept, "time": time.strftime("%Y-%m-%d %H:%M:%S")}, indent=1))
+
+
+def page_parts(items, cands, group_of, cache, listening, page_out, label="N12"):
+    """N12's page in parts of PAGE_ITEMS: each item's clips (`group_of(item)` -> {"ref" or letter: mono clip}) levelled as a
+    group, blind letters, the leak check over candidates, units, bands and DI stems; the local page under
+    listening/<listening>-<part> and its artifact form under `page_out`. -> (items with part and levels, builds)."""
+    from learn import ear_eat as EE
+    from learn import ear_vreal as E
+    from learn import pretrain_set as PS
+
     intro = EE.INTRO.replace("the guitar as it was recorded through a real amp", "the guitar through a real amp, or a close capture of one")
     if intro == EE.INTRO:
         raise SystemExit("the intro's Record line has changed: word it again")
@@ -704,8 +722,7 @@ def cmd_page(_args):
         chunk = [{**it, "n": j, "part": part} for j, it in enumerate(items[start:start + PAGE_ITEMS], 1)]
         clips = {}
         for q, it in enumerate(chunk):
-            z = np.load(wide_dir() / "renders" / it["slug"] / "clips.npz")
-            group = {"ref": np.asarray(z["ref"], np.float64), **{k: np.asarray(z[c.replace("-", "_")], np.float64) for k, c in it["letters"].items()}}
+            group = group_of(it)
             if len({len(v) for v in group.values()}) != 1:
                 raise SystemExit(f"{it['slug']}: clip lengths differ")
             lev, info = E.level_group(group)
@@ -719,20 +736,20 @@ def cmd_page(_args):
         css = E.CSS + ".rank.five { grid-template-columns:auto repeat(5, 1fr); }\n.rank.close { grid-template-columns:auto repeat(4, 1fr); }\n.conf .scope { flex:1 1 180px; }\n"
         page = (E.PAGE[:a] + intro + "\n" + E.PAGE[b:]).replace("@@COUNT@@", str(len(chunk))).replace("@@CARDS@@", body) \
             .replace("@@CSS@@", css).replace("@@DATA@@", data).replace("@@CLIPS@@", json.dumps(clips)).replace("@@JS@@", EE.player_js())
-        words = (*CANDS, *{u["unit"] for u in items}, *{u["band"] for u in items}, *{di_stem(u) for u in items})
+        words = (*cands, *{u["unit"] for u in items}, *{u["band"] for u in items}, *{di_stem(u) for u in items})
         leaks = [w for w in words if len(w) > 2 and w != "label" and w in body + data]
         if leaks:
             raise SystemExit(f"the page names {leaks}")
-        local = PS.HOME / "listening" / f"{LISTENING}-{part}" / "index.html"
+        local = PS.HOME / "listening" / f"{listening}-{part}" / "index.html"
         local.parent.mkdir(parents=True, exist_ok=True)
         local.write_text(page)
-        out = wide_dir() / "page" / f"artifact-{part}.html"
+        out = page_out / f"artifact-{part}.html"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(EE.artifact_page(page, css, EE.player_js()))
         kept += chunk
         builds.append(build)
-        print(f"N12 PAGE {part}: {len(chunk)} items -> {out}; build {build}; {out.stat().st_size / 1e6:.1f} MB")
-    key_path.write_text(json.dumps({"page": WIDE_DIR, "builds": builds, "items": kept, "time": time.strftime("%Y-%m-%d %H:%M:%S")}, indent=1))
+        print(f"{label} PAGE {part}: {len(chunk)} items -> {out}; build {build}; {out.stat().st_size / 1e6:.1f} MB")
+    return kept, builds
 
 
 def cmd_wide(args):
@@ -1001,6 +1018,279 @@ def cmd_h4_wide(args):
     print(json.dumps({k: rep[k] for k in ("units", "bands", "w_di_units", "rows", "refused")}, indent=1))
 
 
+# --- H4b: the page by ear on N12's units (docs/heavy-cleanup-plan.md, "H4b, the page") -----------------------------------
+
+H4B_DIR, H4B_LISTENING = "h4b", "ear-h4b"           # ear-wide/h4b/: plan, key, page, cache; N12's own files are only read
+H4B_SEED = 20261112
+H4B_CANDS = ("S", "FTm", "P2b-ftmf", "P2b-ftmg", "P2b-ftmc")
+H4B_ARMS = ("P2b-ftmf", "P2b-ftmg", "P2b-ftmc")
+H4B_CLEAN, H4B_CRUNCH, H4B_BAND_MAX, H4B_REPEATS = 8, 6, 2, 2
+H4B_ALPHA = 0.05                                     # the decision rule: Holm-adjusted one-sided p below this
+
+
+def h4b_dir():
+    return wide_dir() / H4B_DIR
+
+
+def h4b_pick(pool, n, rng, band_max=H4B_BAND_MAX):
+    """A plain seeded draw of `n` units from `pool`, at most `band_max` a band: the pool sorted by unit, shuffled, taken in order
+    skipping a unit whose band is full. No score enters it. Refuses when the pool can't fill `n`."""
+    order = sorted(pool, key=lambda u: u["unit"])
+    rng.shuffle(order)
+    got, per = [], collections.Counter()
+    for u in order:
+        if len(got) < n and per[u["player"]] < band_max:
+            got.append(u)
+            per[u["player"]] += 1
+    if len(got) < n:
+        raise SystemExit(f"{n} cards wanted at most {band_max} a band, the pool gives {len(got)}")
+    return got
+
+
+def h4b_draw(units, on_n12, seed=H4B_SEED):
+    """H4b's 14 first hearings from unit metadata alone: 8 clean from the clean units N12's page didn't use, then 6 crunch from
+    every crunch unit, each marked `heard_on_n12` if N12's page played it. -> [unit]."""
+    rng = random.Random(seed)
+    clean = h4b_pick([u for u in units if u["cls"] == "clean" and u["unit"] not in on_n12], H4B_CLEAN, rng)
+    crunch = h4b_pick([u for u in units if u["cls"] == "crunch"], H4B_CRUNCH, rng)
+    return [dict(u, heard_on_n12=u["unit"] in on_n12) for u in clean + crunch]
+
+
+def cmd_h4b_draw(_args):
+    """H4b's cards, seeded, on metadata alone, once -> ear-wide/h4b/plan.json. No spares: the plan declares none."""
+    from learn import pipeline_fix as P
+
+    P.require(WIDE)
+    P.require(H4)
+    path = h4b_dir() / "plan.json"
+    if path.exists():
+        raise SystemExit(f"{path} exists: the cards are drawn once")
+    n12 = json.loads((wide_dir() / "plan.json").read_text())
+    on_n12 = {u["unit"] for u in n12["cards"] + n12["spares"]}
+    units, recs, _ = wide_units()
+    cards = h4b_draw(units, on_n12)
+    row = lambda u: {"unit": u["unit"], "slug": slug_of(u["unit"]), "amp": u["amp"], "cls": u["cls"], "band": u["player"],     # noqa: E731
+                     "cluster": u["player"], "di": u["di"], "di_path": u["di_path"], "start_s": u["start_s"],
+                     "search": recs[u["unit"]]["search"], "held": recs[u["unit"]]["held"], "lag": recs[u["unit"]]["lag"],
+                     "heard_on_n12": u["heard_on_n12"]}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"seed": H4B_SEED, "phase": H4, "cands": H4B_CANDS, "repeats_per_class": H4B_REPEATS,
+                                "cards": [row(u) for u in cards], "spares": []}, indent=1))
+    for u in cards:
+        print(u["player"], u["cls"], u["amp"], di_stem(u), "heard on N12" if u["heard_on_n12"] else "", flush=True)
+    print(len(cards), "cards; bands", collections.Counter(u["player"] for u in cards), flush=True)
+
+
+def h4b_sources(slug, n12_clips, base, tag_clip, tag_rec, n12_rec, s_judge):
+    """One card's clips, windows and stored J0 per candidate, from N12's `clips.npz` where it exists (ref, S, FTm), else H4a's base
+    file, and each arm's own H4a clip. Inputs are loaded dicts or None. Refuses a missing clip or judge, or a window that differs
+    from the reference's. -> ({"ref" or cand: clip}, {cand: [s0, s1]}, {cand: J0})."""
+    src = n12_clips if n12_clips is not None else base
+    if src is None or any(k not in src for k in ("ref", "S", "FTm")):
+        raise SystemExit(f"{slug}: no clips of the reference, S and FTm (N12's or H4a's base)")
+    win = list(n12_rec["window"]) if n12_clips is not None else [int(x) for x in base["window"]]
+    clips, wins = {"ref": src["ref"], "S": src["S"], "FTm": src["FTm"]}, {"S": win, "FTm": win}
+    j0 = {"S": s_judge, "FTm": n12_rec["judge"].get("FTm")}
+    for t in H4B_ARMS:
+        z, r = tag_clip.get(t), tag_rec.get(t)
+        if z is None or r is None:
+            raise SystemExit(f"{slug}: no H4a clip or record for {t}")
+        if list(r["window"]) != win or [int(x) for x in z["window"]] != win:
+            raise SystemExit(f"{slug}: {t}'s window {r['window']} is not the reference's {win}")
+        clips[t], wins[t], j0[t] = z["clip"], win, r["judge"]
+    bad = [c for c, v in j0.items() if not (isinstance(v, (int, float)) and math.isfinite(v) and v > 0)]
+    if bad:
+        raise SystemExit(f"{slug}: no finite stored J0 for {bad}")
+    return clips, wins, j0
+
+
+def h4b_card_sources(it, recs):
+    """`h4b_sources` on the stored files of one card."""
+    import numpy as np
+
+    slug = it["slug"]
+    load = lambda p: dict(np.load(p)) if p.exists() else None                     # noqa: E731
+    rd = lambda p: json.loads(p.read_text()) if p.exists() else None               # noqa: E731
+    h4 = wide_dir() / H4_DIR
+    rec = recs[it["unit"]]
+    return h4b_sources(slug, load(wide_dir() / "renders" / slug / "clips.npz"), load(h4 / H4_BASE / f"{slug}.npz"),
+                       {t: load(h4 / t / f"{slug}.npz") for t in H4B_ARMS}, {t: rd(h4 / t / f"{slug}.json") for t in H4B_ARMS},
+                       json.loads((wide_dir() / "renders" / slug / "rec.json").read_text()), rec["s_judge"][rec["held"]])
+
+
+def cmd_h4b_page(_args):
+    """H4b's page: N12's page (`page_parts`) on H4b's 14 cards and 2 repeats a class, five candidates, every clip from N12's or
+    H4a's stored files (refusing a missing one), in two parts of 9 -> ear-wide/h4b/{page, key.json}; each item stores N12's
+    per-card fields: each candidate's window, the lag, the stored J0, the DI path and start."""
+    import numpy as np
+
+    from learn import ear_eat as EE
+    from learn import pipeline_fix as P
+
+    P.require(WIDE)
+    P.require(H4)
+    key_path = h4b_dir() / "key.json"
+    if key_path.exists():
+        raise SystemExit(f"{key_path} exists: a rebuild hides the listener's stored answers; move it aside first")
+    plan = json.loads((h4b_dir() / "plan.json").read_text())
+    if plan["spares"]:
+        raise SystemExit("H4b declares no spares")
+    _, recs, _ = wide_units()
+    items = page_order(plan["cards"], [], H4B_CANDS, EE.LETTERS, seed=H4B_SEED, repeats=H4B_REPEATS)
+    src = {it["unit"]: h4b_card_sources(it, recs) for it in items}            # every clip present before any page is built
+    items = [{**it, "windows": src[it["unit"]][1], "j0": src[it["unit"]][2]} for it in items]
+
+    def group_of(it):
+        clips = src[it["unit"]][0]
+        return {"ref": np.asarray(clips["ref"], np.float64), **{k: np.asarray(clips[c], np.float64) for k, c in it["letters"].items()}}
+
+    kept, builds = page_parts(items, H4B_CANDS, group_of, h4b_dir() / "aac-cache", H4B_LISTENING, h4b_dir() / "page", "H4b")
+    key_path.write_text(json.dumps({"page": H4B_LISTENING, "builds": builds, "items": kept,
+                                    "time": time.strftime("%Y-%m-%d %H:%M:%S")}, indent=1))
+
+
+def betainc(a, b, x):
+    """The regularised incomplete beta I_x(a, b): Lentz's continued fraction, on the side of x where it converges fast."""
+    if x <= 0:
+        return 0.0
+    if x >= 1:
+        return 1.0
+    if x > (a + 1) / (a + b + 2):
+        return 1 - betainc(b, a, 1 - x)
+    lbeta = math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b)
+    front = math.exp(a * math.log(x) + b * math.log1p(-x) - lbeta) / a
+    tiny = 1e-300
+    c, d = 1.0, 1 - (a + b) * x / (a + 1)
+    d = 1 / (d if abs(d) > tiny else tiny)
+    f = d
+    for m in range(1, 500):
+        for num in (m * (b - m) * x / ((a + 2 * m - 1) * (a + 2 * m)), -(a + m) * (a + b + m) * x / ((a + 2 * m) * (a + 2 * m + 1))):
+            d = 1 + num * d
+            d = 1 / (d if abs(d) > tiny else tiny)
+            c = 1 + num / c
+            c = c if abs(c) > tiny else tiny
+            f *= c * d
+        if abs(c * d - 1) < 1e-15:
+            break
+    return front * f
+
+
+def t_sf(t, df):
+    """P(T > t) for Student's t with `df` degrees of freedom: I_{df/(df+t^2)}(df/2, 1/2) / 2 for t >= 0."""
+    if math.isinf(t):
+        return 0.0 if t > 0 else 1.0
+    half = betainc(df / 2, 0.5, df / (df + t * t)) / 2
+    return half if t >= 0 else 1 - half
+
+
+def jackknife_t(pairs, null=0.5):
+    """The primary: the share of (cluster, 1 or 0), its delete-one-cluster jackknife SE, t = (share − null) / SE on clusters − 1 df,
+    and the one-sided p of the share being above `null`. -> row, or one without p under 2 clusters."""
+    by = collections.defaultdict(list)
+    for c, v in pairs:
+        by[c].append(v)
+    names = sorted(by)
+    point = sum(v for _, v in pairs) / len(pairs) if pairs else None
+    out = {"share": point, "cards": len(pairs), "clusters": len(names)}
+    if len(names) < 2:
+        return {**out, "p": None}
+    th = [sum(v for c, v in pairs if c != k) / sum(1 for c, _ in pairs if c != k) for k in names]
+    n = len(th)
+    mt = sum(th) / n
+    se = math.sqrt((n - 1) / n * sum((x - mt) ** 2 for x in th))
+    t = (point - null) / se if se else (math.inf if point > null else -math.inf if point < null else 0.0)
+    return {**out, "se": se, "df": n - 1, "t": t, "p": 0.5 if t == 0.0 and not se else t_sf(t, n - 1)}
+
+
+def ear_rows(cards, pairs):
+    """N12's ear rows (`capture_ear.share_row`, `gap_row`, the sign test) and the primary's jackknife t, for each (a, b): a ranked
+    above b, and a's closeness less b's, per card, clustered by band."""
+    from learn import capture_ear as C
+
+    out = {}
+    for x, y in pairs:
+        pts = [(c["cluster"], float(c["ear"][x]["rank"] < c["ear"][y]["rank"])) for c in cards]
+        gaps = [(c["cluster"], float(c["ear"][x]["close"] - c["ear"][y]["close"])) for c in cards]
+        if not pts:
+            out[f"{x} over {y}"] = None
+            continue
+        out[f"{x} over {y}"] = {"jackknife": jackknife_t(pts), "share": C.share_row(pts), "close_gap": C.gap_row(gaps),
+                                "p_sign": sign_p(int(sum(v for _, v in pts)), len(pts))}
+    return out
+
+
+H4B_PRIMARY = tuple((a, "FTm") for a in H4B_ARMS)
+H4B_BESIDE = tuple((a, "S") for a in H4B_ARMS) + (("P2b-ftmf", "P2b-ftmg"),)
+
+
+def h4b_primary(cards):
+    """The decision rows: each arm over FTm, the one-sided jackknife p, Holm over the three (a row with no p counts as 1)."""
+    rows = ear_rows(cards, H4B_PRIMARY)
+    ps = {k: (r["jackknife"]["p"] if r and r["jackknife"]["p"] is not None else 1.0) for k, r in rows.items()}
+    adj = holm(ps)
+    for k, r in rows.items():
+        if r:
+            r["holm"] = adj[k]
+            r["better_than_FTm"] = adj[k] < H4B_ALPHA
+    return rows
+
+
+def h4b_j0(cards, t90):
+    """J0's order against the ear by N12's rows on `cards` (no label on this page)."""
+    return {"order": page_rows(cards, t90), "side_of_s": side_of_s(cards), "gap_bins": gap_bins(pairs_of(cards)),
+            "claim": claim_row(claim_pairs(cards)), "disagreements": [r for r in pairs_of(cards) if not r["agree"]]}
+
+
+def h4b_report(items, got, w_di, t90):
+    """H4b's read from the key's items and the answers {id: answer}. -> report."""
+    from learn import ear_eat as EE
+
+    heard = {it["id"]: EE.unblind(it, got.get(it["id"]) or {}) for it in items}
+    out = {it["id"] for it in items if (got.get(it["id"]) or {}).get("scope")}
+    both = sorted(i for i in out if heard[i])
+    if both:
+        raise SystemExit(f"{both} hold both a scope mark and ranks: these go to the user before scoring")
+    read = filled(items, heard, out)
+    cards = [{"page": "H4b", "id": it["id"], "cluster": it["cluster"], "cls": it["cls"], "amp": it["amp"], "di": it["di"],
+              "heard_on_n12": it["heard_on_n12"], "ear": heard[it["id"]], "j0": it["j0"]} for it in read]
+    never = [c for c in cards if c["cls"] == "clean" and not c["heard_on_n12"]]
+    off_w = [c for c in cards if c["di"] not in w_di]
+    fresh = [c for c in cards if not c["heard_on_n12"]]
+    again = [c for c in cards if c["heard_on_n12"] and c["cls"] == "crunch"]
+    rows = [{"heard": heard.get(it["id"]), "repeat_of": it["repeat_of"]} for it in items]
+    return {"phase": H4, "read": [c["id"] for c in cards], "out_of_scope": sorted(out), "page_failed": failed(len(read)),
+            "unsure": [it["id"] for it in items if (got.get(it["id"]) or {}).get("conf") == "unsure"],
+            "primary": h4b_primary(cards), "alpha": H4B_ALPHA,
+            "beside": {"arms_over_S_and_full_over_gentle": ear_rows(cards, H4B_BESIDE),
+                       "never_heard_clean": {"cards": len(never), "rows": ear_rows(never, H4B_PRIMARY + H4B_BESIDE)},
+                       "without_w_di": {"cards": len(off_w), "rows": ear_rows(off_w, H4B_PRIMARY + H4B_BESIDE)}},
+            "j0": {"all": h4b_j0(cards, t90), "first_hearings_only": h4b_j0(fresh, t90), "heard_before_crunch_apart": h4b_j0(again, t90)},
+            "repeats": repeat_rhos(rows)}
+
+
+def cmd_h4b_read(args):
+    """H4b's read (zero renders): the primary, each arm over FTm with Holm, and the rows beside. -> OUT.json."""
+    from learn import ear_eat as EE
+    from learn import pipeline_fix as P
+    from learn import pretrain_set as PS
+
+    P.require(WIDE)
+    P.require(H4)
+    key = json.loads((h4b_dir() / "key.json").read_text())
+    got, seen = {}, set()
+    for f in args.answers:
+        ex = EE.stored_answers(pathlib.Path(f).read_text())
+        if ex.get("build") not in key["builds"]:
+            raise SystemExit(f"{f}: build {ex.get('build')}, this page's are {key['builds']}")
+        seen.add(ex["build"])
+        got |= ex["answers"]
+    if seen != set(key["builds"]):
+        raise SystemExit("every part's answers are needed")
+    rep = {"builds": key["builds"], **h4b_report(key["items"], got, w_dis(), PS.t90)}
+    pathlib.Path(args.out).write_text(json.dumps(rep, indent=1))
+    print(json.dumps({k: rep[k] for k in ("page_failed", "primary", "repeats")}, indent=1))
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -1024,6 +1314,12 @@ def main(argv=None):
     s.add_argument("--tags", required=True)
     s.add_argument("--shard", default="0/1")
     s.set_defaults(fn=cmd_h4_render)
+    sub.add_parser("h4b-draw").set_defaults(fn=cmd_h4b_draw)
+    sub.add_parser("h4b-page").set_defaults(fn=cmd_h4b_page)
+    s = sub.add_parser("h4b-read")
+    s.add_argument("out")
+    s.add_argument("--answers", nargs="+", required=True)
+    s.set_defaults(fn=cmd_h4b_read)
     s = sub.add_parser("h4-wide")
     s.add_argument("out")
     s.add_argument("--tags", required=True)
