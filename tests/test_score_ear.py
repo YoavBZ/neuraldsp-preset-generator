@@ -162,6 +162,17 @@ def test_a_spare_fills_only_for_a_crunch_card_out_or_unanswered():
     assert [it["id"] for it in E.filled(items, {k: v for k, v in heard.items() if k != "b"}, set())] == ["a"]        # clean: none
 
 
+def test_two_crunch_cards_lost_take_both_spares_and_an_unanswered_spare_is_skipped():
+    items = [{"id": "a", "repeat_of": None, "spare": False, "cls": "crunch"}, {"id": "f", "repeat_of": None, "spare": False, "cls": "crunch"},
+             {"id": "b", "repeat_of": None, "spare": False, "cls": "clean"},
+             {"id": "d", "repeat_of": None, "spare": True, "cls": "crunch", "band": "Dark Ride"},
+             {"id": "c", "repeat_of": None, "spare": True, "cls": "crunch", "band": "Ale Lak"}]
+    heard = {k: {"S": {"rank": 1}} for k in "abcdf"}
+    lost = {k: v for k, v in heard.items() if k != "f"}                                  # a out of scope, f unanswered
+    assert [it["id"] for it in E.filled(items, lost, {"a"})] == ["b", "c", "d"]
+    assert [it["id"] for it in E.filled(items, {k: v for k, v in lost.items() if k != "c"}, {"a"})] == ["b", "d"]
+
+
 def test_holm_steps_down():
     assert E.holm({"a": 0.01, "b": 0.04, "c": 0.5}) == {"a": 0.03, "b": 0.08, "c": 0.5}
     assert E.sign_p(3, 3) == pytest.approx(0.125)
