@@ -149,7 +149,7 @@ def test_the_page_order_repeats_one_of_each_class_and_never_a_spare():
     assert all(it["letters"][k] != ids[it["repeat_of"]]["letters"][k] for it in again for k in "ABCDE")
 
 
-def test_a_spare_fills_only_for_a_crunch_card_out():
+def test_a_spare_fills_only_for_a_crunch_card_out_or_unanswered():
     items = [{"id": "a", "repeat_of": None, "spare": False, "cls": "crunch"}, {"id": "b", "repeat_of": None, "spare": False, "cls": "clean"},
              {"id": "d", "repeat_of": None, "spare": True, "cls": "crunch", "band": "Dark Ride"},
              {"id": "c", "repeat_of": None, "spare": True, "cls": "crunch", "band": "Ale Lak"},
@@ -158,6 +158,8 @@ def test_a_spare_fills_only_for_a_crunch_card_out():
     assert [it["id"] for it in E.filled(items, heard, set())] == ["a", "b"]
     assert [it["id"] for it in E.filled(items, heard, {"b"})] == ["a"]
     assert [it["id"] for it in E.filled(items, heard, {"a"})] == ["b", "c"]
+    assert [it["id"] for it in E.filled(items, {k: v for k, v in heard.items() if k != "a"}, set())] == ["b", "c"]   # unanswered
+    assert [it["id"] for it in E.filled(items, {k: v for k, v in heard.items() if k != "b"}, set())] == ["a"]        # clean: none
 
 
 def test_holm_steps_down():
