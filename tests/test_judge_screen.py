@@ -80,6 +80,16 @@ def test_jackknife_on_equal_clusters_and_holm():
     assert J.holm({"a": 0.01, "b": 0.04, "c": 0.03}) == {"a": 0.03, "c": 0.06, "b": 0.06}
 
 
-def test_named_takes_the_highest_mean_above_zero():
-    assert J.named({"v2": {"mean": 0.02}, "v3": {"mean": 0.05}, "J5": None}) == "v3"
-    assert J.named({"v2": {"mean": -0.02}, "v3": {"mean": 0.0}}) is None
+def test_named_takes_the_highest_mean_above_zero_with_the_declared_ties():
+    assert J.named({"v2": {"mean": 0.02, "holm": 1}, "v3": {"mean": 0.05, "holm": 1}, "J5": None}, {}) == "v3"
+    assert J.named({"v2": {"mean": -0.02}, "v3": {"mean": 0.0}}, {}) is None
+    tie = {"v2": {"mean": 0.025, "holm": 0.5}, "v3": {"mean": 0.025, "holm": 0.2}}
+    assert J.named(tie, {"v2": {"mean": 0.01}, "v3": {"mean": 0.0}}) == "v2"
+    assert J.named(tie, {"v2": {"mean": 0.0}, "v3": {"mean": 0.0}}) == "v3"
+    assert J.named({"v3": {"mean": 0.01, "holm": 1}, "v2": {"mean": 0.01, "holm": 1}}, {}) == "v2"
+
+
+def test_s_last_puts_s_farthest_and_keeps_j0_otherwise():
+    c = {"d": {"J0": {"S": 1.0, "FTm": 2.0, "M-pcs": 3.0}}}
+    got = J.s_last(c)
+    assert got["S"] > got["M-pcs"] > got["FTm"]

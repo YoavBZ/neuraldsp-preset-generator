@@ -1,6 +1,7 @@
 """The judges we have, on whole presets the ear ranked (`docs/judge-screen-plan.md`, S12; ledger `judge-screen`). CPU, zero renders.
 
-    $TORCH_PY -m learn.judge_screen judge OUT.json     # every judge on every candidate of the 36 development cards, J0's control first
+    $MAIN -m learn.judge_screen control OUT.json       # J0 alone, held to the stored J0, before any other judge
+    $TORCH_PY -m learn.judge_screen judge OUT.json     # every judge on every candidate of the 36 development cards, with the checks
     $MAIN -m learn.judge_screen report OUT.json REP.json
 
 The stored clips are each card's held half: the reference's [s0, s1) and each render's [s0 - lag, s1 - lag), in mono. Each render
@@ -147,10 +148,13 @@ def card_rho(card, j, drop=LABELS):
     return SE.spearman([card["ear"][c]["rank"] for c in cs], vals)
 
 
-def named(rows):
-    """The judge the plan names for H4's page: the highest primary mean above zero, or None."""
-    best = max(((j, r["mean"]) for j, r in rows.items() if r and r["mean"] > 0), key=lambda q: q[1], default=None)
-    return best[0] if best else None
+def named(primary, rank):
+    """The judge the plan names for H4's page: the highest primary mean above zero; ties to the higher row 2 mean, then the
+    smaller Holm p, then JUDGES' order. None if no mean is above zero."""
+    cand = [j for j in JUDGES if primary.get(j) and primary[j]["mean"] > 0]
+    if not cand:
+        return None
+    return min(cand, key=lambda j: (-primary[j]["mean"], -(rank.get(j) or {}).get("mean", -math.inf), primary[j].get("holm", 1.0), JUDGES.index(j)))
 
 
 # --- the cards and their audio ---------------------------------------------------------------------------------------
@@ -198,9 +202,12 @@ def cards():
 
 
 def audio(card):
-    """(reference, DI on the reference's timeline, {candidate: render at lag 0}, s0, s1) for one card."""
+    """(reference, DI on the reference's timeline, {candidate: render at lag 0}, s0, s1) for one card. Refuses a card whose stored
+    window is not `ear_vreal.window` of its held half and lag, or whose rebuilt reference is not its stored clip."""
     import numpy as np
 
+    from learn import ear_vreal as E
+    from learn import knob_ceiling as K
     from learn import pipeline_fix as P
     from learn import pretrain_set as PS
     from learn import song_bank as B
@@ -211,18 +218,30 @@ def audio(card):
     ref = np.asarray(P.real_amp_track(src["sd"], src["track"], src["start_s"]), np.float64)
     trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
     di = np.asarray(B.measure(PS.section_audio(src["di_path"], src["start_s"])).astype(np.float32), np.float64)[trim[0]:trim[1]]
+    n = len(ref)
+    a, b = (int(x * E.SR) for x in K.R.HALVES[card["held"]])
+    if list(E.window(a, b, n, len(di), lag)) != [s0, s1]:
+        raise SystemExit(f"{card['page']} {card['id']}: the stored window is not the held half's")
     z = np.load(card["dir"] / "clips.npz")
     if card["ref_stored"]:
         r = z["ref"].astype(np.float64)
         if len(r) != s1 - s0 or np.max(np.abs(r - ref[s0:s1])) > REF_TOL * np.max(np.abs(ref[s0:s1])):
             raise SystemExit(f"{card['page']} {card['id']}: the rebuilt reference is not the stored clip")
-    n = len(ref)
     rens = {c: placed(z[c.replace("-", "_")], s0, s1, n) for c in card["ear"] if c.replace("-", "_") in z.files}
     return ref, shifted(di, lag), rens, s0, s1
 
 
+def j0_of(ref, di, ren, s0, s1):
+    from analysis import aligned as A
+    from learn import pretrain_set as PS
+
+    a, b = window_s(s0, s1)
+    return A.aligned_distance(ref, ren, di, lag=0, render_latency=PS.LATENCY, start_s=a, end_s=b)
+
+
 def judge_all(ref, di, ren, s0, s1, deep):
-    """{judge: distance} for one candidate on its card's held half; None where a judge refuses."""
+    """{judge: distance} for one candidate on its card's held half, None where a judge refuses, and the run's checks:
+    J5's J0 term against J0, `bakeoff_judge`'s tonal against J0's own."""
     from analysis import aligned as A
     from learn import bakeoff_judge as BJ
     from learn import judge_v5 as J5
@@ -230,32 +249,47 @@ def judge_all(ref, di, ren, s0, s1, deep):
 
     a, b = window_s(s0, s1)
     kw = dict(lag=0, render_latency=PS.LATENCY, start_s=a, end_s=b)
-    out = {"J0": A.aligned_distance(ref, ren, di, **kw).distance,
+    j0 = A.aligned_distance(ref, ren, di, **kw)
+    out = {"J0": j0.distance, "tonal": j0.tonal,
            "v2": A.aligned_distance(ref, ren, di, bands="fixed", **kw).distance,
            "v3": A.aligned_distance(ref, ren, di, **A.JUDGE_V3, **kw).distance}
     w = J5.window(ref, ren, di, latency=PS.LATENCY, start_s=a, end_s=b)
     out["J5"] = J5.j5([w], deep["w_c"])
-    out["tonal"] = BJ.terms_of(BJ.band_errors(ref, ren, di, PS.LATENCY, a, b))["tonal"]
-    out["J-f6"] = deep["terms"](ref, ren, {"h": (a, b)})["h"]["J-f6"]
+    if w is not None and j0.distance is not None and abs(w["j0"] - j0.distance) > 1e-9:
+        raise SystemExit(f"J5's J0 term {w['j0']} is not J0's {j0.distance}")
+    try:
+        t = BJ.terms_of(BJ.band_errors(ref, ren, di, PS.LATENCY, a, b))["tonal"]
+    except Exception:  # noqa: BLE001 - a refusal in the copy; J0's own tonal stands
+        t = None
+    if t is not None and j0.tonal is not None and abs(t - j0.tonal) > 1e-9:
+        raise SystemExit(f"bakeoff_judge's tonal {t} is not J0's {j0.tonal}")
+    try:
+        out["J-f6"] = deep["terms"](ref, ren, {"h": (a, b)})["h"]["J-f6"]
+    except Exception:  # noqa: BLE001 - counted as a refusal, as the plan says
+        out["J-f6"] = None
     return out
+
+
+def control_of(card, d):
+    """(worst |ln| over the non-label candidates, the labels that fail and drop)."""
+    lab = [c for c in d if c in LABELS and abs(math.log(d[c] / card["j0"][c])) > CONTROL_TOL]
+    worst = max(abs(math.log(d[c] / card["j0"][c])) for c in d if c not in LABELS)
+    return worst, lab
 
 
 def cmd_control(out_path):
     """J0 alone, recomputed on every candidate and held to the stored J0: run and read before any other judge."""
-    from analysis import aligned as A
-    from learn import pretrain_set as PS
-
     res, failed = [], []
     for card in cards():
         ref, di, rens, s0, s1 = audio(card)
-        a, b = window_s(s0, s1)
-        d = {c: A.aligned_distance(ref, y, di, lag=0, render_latency=PS.LATENCY, start_s=a, end_s=b).distance for c, y in rens.items()}
+        d = {c: j0_of(ref, di, y, s0, s1).distance for c, y in rens.items()}
         missing = sorted(set(card["ear"]) - set(rens))
-        worst = max(abs(math.log(d[c] / card["j0"][c])) for c in rens)
-        res.append({"page": card["page"], "id": card["id"], "control": worst, "missing": missing})
+        worst, lab = control_of(card, d)
+        allw = max(abs(math.log(d[c] / card["j0"][c])) for c in d)
+        res.append({"page": card["page"], "id": card["id"], "control": worst, "with_labels": allw, "labels_out": lab, "missing": missing})
         if worst > CONTROL_TOL or missing:
             failed.append(card["id"])
-        print(f"{card['page']} {card['id']}: control {worst:.2e}{' missing ' + str(missing) if missing else ''}", flush=True)
+        print(f"{card['page']} {card['id']}: control {allw:.2e}{' missing ' + str(missing) if missing else ''}", flush=True)
     pathlib.Path(out_path).write_text(json.dumps({"key": KEY, "control_tol": CONTROL_TOL, "failed": failed, "cards": res}, indent=1))
     print(json.dumps({"cards": len(res), "failed": failed}), flush=True)
 
@@ -277,13 +311,17 @@ def cmd_judge(out_path):
     res, failed = [], []
     for card in cards():
         ref, di, rens, s0, s1 = audio(card)
+        a, b = window_s(s0, s1)
+        self_ = deep["terms"](ref, ref, {"h": (a, b)})["h"]["J-f6"]
+        if self_ != 0:
+            raise SystemExit(f"{card['id']}: J-f6 of the reference against itself is {self_}")
         d = {c: judge_all(ref, di, y, s0, s1, deep) for c, y in rens.items()}
-        worst = max(abs(math.log(d[c]["J0"] / card["j0"][c])) for c in rens)
-        row = {k: card[k] for k in ("page", "id", "cluster", "cls", "amp", "ear")}
-        row |= {"j0_stored": {c: card["j0"][c] for c in rens}, "control": worst, "window": [s0, s1],
-                "d": {j: {c: d[c][j] for c in rens} for j in ("J0", *JUDGES)}}
+        worst, lab = control_of(card, {c: v["J0"] for c, v in d.items()})
+        row = {k: card[k] for k in ("page", "id", "cluster", "cls", "amp")}
+        row |= {"ear": {c: v for c, v in card["ear"].items() if c not in lab}, "labels_out": lab, "j0_stored": {c: card["j0"][c] for c in rens},
+                "control": worst, "window": [s0, s1], "d": {j: {c: d[c][j] for c in rens} for j in ("J0", *JUDGES)}}
         res.append(row)
-        if worst > CONTROL_TOL:
+        if worst > CONTROL_TOL or set(card["ear"]) - set(rens):
             failed.append(card["id"])
         print(f"{card['page']} {card['id']}: control {worst:.2e}", flush=True)
     rep = {"key": KEY, "w_c": w_c, "control_tol": CONTROL_TOL, "failed": failed, "cards": res}
@@ -293,6 +331,23 @@ def cmd_judge(out_path):
         raise SystemExit(f"{len(failed)} cards fail the control: nothing is read")
 
 
+def s_last(card):
+    """The no-audio baseline: S farthest, otherwise J0's order."""
+    j0 = card["d"]["J0"]
+    top = max(v for v in j0.values() if v is not None)
+    return {c: (10 * top if c == "S" else v) for c, v in j0.items()}
+
+
+def by_cluster(rows, value, t90):
+    """The cluster-weighted form of `jackknife`: each cluster's mean once."""
+    got = {}
+    for r in rows:
+        v = value(r)
+        if v is not None:
+            got.setdefault(r["cluster"], []).append(v)
+    return jackknife([{"cluster": k, "v": sum(v) / len(v)} for k, v in got.items()], lambda r: r["v"], t90)
+
+
 def cmd_report(in_path, out_path):
     from learn import pretrain_set as PS
 
@@ -300,11 +355,19 @@ def cmd_report(in_path, out_path):
     if len(got["failed"]) > MAX_OUT:
         raise SystemExit("the control failed: nothing is read")
     cs = [c for c in got["cards"] if c["id"] not in got["failed"]]
+    for c in cs:
+        c["d"]["S-last"] = s_last(c)
     t90 = PS.t90
-    rows = pairs_of(cs, JUDGES)
-    with_labels = pairs_of(cs, JUDGES, drop=())
+    js = (*JUDGES, "S-last")
+    rows = pairs_of(cs, js)
+    with_labels = pairs_of(cs, js, drop=())
     heard = [r for r in rows if r["heard"]]
-    rep = {"cards": len(cs), "out": got["failed"], "clusters": len({c["cluster"] for c in cs}), "pairs": len(rows), "heard": len(heard),
+    size = {}
+    for r in heard:
+        size[r["cluster"]] = size.get(r["cluster"], 0) + 1
+    rep = {"cards": len(cs), "out": got["failed"], "labels_out": {c["id"]: c["labels_out"] for c in cs if c["labels_out"]},
+           "clusters": len({c["cluster"] for c in cs}), "pairs": len(rows), "heard": len(heard), "heard_by_cluster": size,
+           "heard_rank_against_closeness": sum(r["agree"]["J0"]["close"] != r["agree"]["J0"]["rank"] for r in heard),
            "j0_heard": jackknife(heard, lambda r: r["agree"]["J0"]["close"], t90),
            "j0_rank": jackknife(rows, lambda r: r["agree"]["J0"]["rank"], t90)}
     primary = {j: jackknife(heard, contrast(heard, j, "close"), t90) for j in JUDGES}
@@ -312,30 +375,36 @@ def cmd_report(in_path, out_path):
     for j, v in primary.items():
         v["holm"] = adj[j]
     rep["primary"] = primary
-    rep["rank"] = {j: jackknife(rows, contrast(rows, j, "rank"), t90) for j in JUDGES}
-    rho = {j: [(c["cluster"], card_rho(c, j)) for c in cs] for j in ("J0", *JUDGES)}
+    rep["primary_s_last"] = jackknife(heard, contrast(heard, "S-last", "close"), t90)
+    rep["primary_by_cluster"] = {j: by_cluster(heard, contrast(heard, j, "close"), t90) for j in js}
+    rep["primary_split"] = {part: {j: jackknife(h := [r for r in heard if r["models"] == m], contrast(h, j, "close"), t90) for j in js}
+                            for part, m in (("with_S", False), ("models", True))}
+    rep["rank"] = {j: jackknife(rows, contrast(rows, j, "rank"), t90) for j in js}
+    rho = {j: [(c["cluster"], card_rho(c, j)) for c in cs] for j in ("J0", *js)}
 
     def rho_row(j):
         pts = [{"cluster": k, "v": v - w} for (k, v), (_, w) in zip(rho[j], rho["J0"]) if v is not None and w is not None]
         return jackknife(pts, lambda r: r["v"], t90)
-    rep["order"] = {j: rho_row(j) for j in JUDGES}
+    rep["order"] = {j: rho_row(j) for j in js}
     lh = [r for r in with_labels if r["heard"]]
     rep["labels_in"] = {j: {"heard": jackknife(lh, contrast(lh, j, "close"), t90), "rank": jackknife(with_labels, contrast(with_labels, j, "rank"), t90)}
-                        for j in JUDGES}
+                        for j in js}
     rep["by_page"] = {pg: {j: {"heard": jackknife(h := [r for r in heard if r["page"] == pg], contrast(h, j, "close"), t90),
-                               "rank": jackknife(a := [r for r in rows if r["page"] == pg], contrast(a, j, "rank"), t90)} for j in JUDGES}
+                               "rank": jackknife(a := [r for r in rows if r["page"] == pg], contrast(a, j, "rank"), t90)} for j in js}
                       for pg in ("F57", "ear-eat", "N12")}
     move = {}
-    for j in JUDGES:
+    for j in js:
         dif = [r for r in rows if r["agree"][j]["order"] is not None and r["agree"][j]["order"] != r["agree"]["J0"]["order"]]
         hd = [r for r in dif if r["heard"]]
         move[j] = {"differs": len(dif), "heard": len(hd), "heard_its_way": sum(r["agree"][j]["close"] == 1 for r in hd),
                    "refused": sum(r["agree"][j]["rank"] is None for r in rows)}
-        for name, sub in (("small", [r for r in heard if r["lnr"] < SMALL]), ("models", [r for r in heard if r["models"]])):
+        subs = (("small", [r for r in heard if r["lnr"] < SMALL]), ("models", [r for r in heard if r["models"]]),
+                ("with_EW-mix", [r for r in heard if "EW-mix" in (r["a"], r["b"])]), ("without_EW-mix", [r for r in heard if "EW-mix" not in (r["a"], r["b"])]))
+        for name, sub in subs:
             ok = [r for r in sub if r["agree"][j]["close"] is not None]
             move[j][name] = {"pairs": len(ok), "agree": sum(r["agree"][j]["close"] for r in ok), "j0": sum(r["agree"]["J0"]["close"] for r in ok)}
     rep["move"] = move
-    rep["named"] = named(primary)
+    rep["named"] = named(primary, rep["rank"])
     pathlib.Path(out_path).write_text(json.dumps(rep, indent=1))
     print(json.dumps({"primary": primary, "named": rep["named"], "move": move}, indent=1))
 
