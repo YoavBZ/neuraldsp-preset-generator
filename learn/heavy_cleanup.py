@@ -14,6 +14,7 @@ stored targets are read, never written.
     $MAIN -m learn.heavy_cleanup check-page                   # the 50-card check page -> heavy/check/page.html, key.json
     $MAIN -m learn.heavy_cleanup check-answers STORED.json    # the plugin line -> heavy/check/verdicts.json
     $MAIN -m learn.heavy_cleanup real-flat-line               # for the record: GOAT's line on flatness
+    $MAIN -u -m learn.heavy_cleanup h2-doubler-render --shard k/3   # H2: W's doubler rows, doubler off (about 1,014 renders)
 """
 from __future__ import annotations
 
@@ -94,6 +95,18 @@ def check_dry(x, y, amp):
     bad = sorted(f"{a}/{b}" for (a, b) in x if x[(a, b)] != y[(a, b)] and ((a, b) not in dry_keys(amp) or y[(a, b)] != OFF[(a, b)]))
     if bad:
         raise SystemExit(f"the dry setting changes undeclared keys: {bad}")
+
+
+def nodoubler(x):
+    """A plugin setting with only the doubler switched off; refuses one where it is not on, or any other change."""
+    k = TIME["doubler"]
+    if not _on(x.get(k)):
+        raise SystemExit("the doubler is not on in this setting")
+    y = dict(x)
+    y[k] = "false"
+    if set(y) != set(x) or [q for q in x if x[q] != y[q]] != [k]:
+        raise SystemExit("the doubler-off setting changes more than the doubler")
+    return y
 
 
 def heavy_dir():
@@ -195,6 +208,10 @@ def render_one(x, it, menus, make):
         check_dry(xf, xs, amp)
         if xs == xf:
             raise SystemExit(f"{it['i']}: the dry twin changes nothing")
+    elif it["kind"] == "nodoubler":
+        xs = nodoubler(xf)
+    elif it["kind"] != "same":
+        raise SystemExit(f"{it['i']}: unknown kind {it['kind']!r}")
     di = B.measure(PS.section_audio(str(di_path(x)), start_of(x))).astype(np.float32)
     trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
     y = AM.fresh_render(make, di, sel, xs, xs)
@@ -889,6 +906,74 @@ def cmd_real_flat_line(_args):
     print(json.dumps({k: rep[k] for k in ("line_db", "n", "heavy", "songs", "boot", "past")}, indent=1))
 
 
+# --- H2: the doubler rows, measured with the doubler off (Amendment 1) ---------------------------------------------
+
+H2_DIR = "h2"
+
+
+def doubler_rows(rows):
+    """Rows with the doubler on (the complement of `no_doubler`)."""
+    keep = {int(x["i"]) for x in no_doubler(rows)}
+    return [x for x in rows if int(x["i"]) not in keep]
+
+
+def cmd_h2_doubler_render(args):
+    """W's doubler rows outside the heavy bands, each rendered with only the doubler off in its own new process (one
+    priming render, 0.25 s trim, as H1) and measured by `plugin_flatness` -> heavy/h2/doubler-k-of-n.jsonl."""
+    from learn import cc_build as CB
+    from learn import direct_sound_gate as G
+    from learn import direct_stems as DS
+    from learn import local_objective as LO
+    from learn import pipeline_fix as P
+    from learn import pretrain_set as PS
+    from learn import trusted_data as T
+    from learn import trusted_data_t3 as T3
+
+    P.require(H2A)
+    k, n = args.shard
+    rows = sorted(doubler_rows(w_rows()), key=lambda x: int(x["i"]))
+    d = heavy_dir() / H2_DIR
+    done = {json.loads(l)["i"] for f in d.glob("doubler-*.jsonl") for l in f.read_text().splitlines() if l.strip()}
+    todo = [x for j, x in enumerate(rows) if j % n == k and int(x["i"]) not in done]
+    if not todo:
+        print(f"H2 DOUBLER RENDER DONE {k}/{n} (nothing to do)")
+        return
+    if PS.free_gb() < T.DISK_GUARD_GB:
+        raise SystemExit(f"free disk below {T.DISK_GUARD_GB:.0f} GB")
+    cc = CB.load_plan(cc_args())
+    menus = T3.Menus()
+    menus.gate_u = cc["gate_cap"]["unit"]
+    LO._wait_cap()
+    rr = CB.new_renderer()
+    try:
+        T3.check_menu(rr.menu(), menus.dried)
+        if abs(CB.F_gate(menus) - cc["gate_cap"]["unit"]) > 1e-12:
+            raise SystemExit("the factory gate thresholds changed since D_CC's plan")
+    finally:
+        rr.close()
+    rp = d / f"doubler-{k}of{n}.jsonl"
+    rp.parent.mkdir(parents=True, exist_ok=True)
+    renders, swap0 = 0, DS.swap_mb()
+    with open(rp, "a") as fh:
+        for x in todo:
+            g = DS._guards("h2-doubler", T.DISK_GUARD_GB, swap0)
+            if g:
+                print(g[1], flush=True)
+                raise SystemExit(g[0])
+            it = {"i": int(x["i"]), "kind": "nodoubler"}
+            y, st = render_one(x, it, menus, CB.new_renderer)
+            renders += 2
+            v = plugin_flatness(x, y)
+            if v is None or not math.isfinite(v):
+                raise SystemExit(f"{it['i']}: no flatness reading on the doubler-off render")
+            f = d / "audio" / f"{it['i']:07d}-nodoubler.flac"
+            sc, sha = G.write_flac(f, y, PS.SR)
+            fh.write(json.dumps({**it, "file": f.name, "scale": sc, "sha256": sha, "flatness_db": v, "settings": st}) + "\n")
+            fh.flush()
+            print(f"nodoubler {it['i']}: {v:.3f} dB; renders {renders}", flush=True)
+    print(f"H2 DOUBLER RENDER DONE {k}/{n}: {renders} renders (priming included)")
+
+
 def main(argv=None):
     from learn import cc_pool as CP
 
@@ -901,6 +986,9 @@ def main(argv=None):
     sub.add_parser("pilot-read").set_defaults(fn=cmd_pilot_read)
     sub.add_parser("line").set_defaults(fn=cmd_line)
     sub.add_parser("real-flat-line").set_defaults(fn=cmd_real_flat_line)
+    s = sub.add_parser("h2-doubler-render")
+    s.add_argument("--shard", type=CP.parse_shard, default=(0, 1))
+    s.set_defaults(fn=cmd_h2_doubler_render)
     sub.add_parser("check-measure").set_defaults(fn=cmd_check_measure)
     sub.add_parser("check-page").set_defaults(fn=cmd_check_page)
     a = sub.add_parser("check-answers")

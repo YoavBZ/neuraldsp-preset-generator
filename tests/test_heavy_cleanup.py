@@ -253,3 +253,13 @@ def test_check_page_refuses_when_its_key_exists(tmp_path, monkeypatch):
     monkeypatch.setattr(H, "heavy_dir", lambda: tmp_path)
     with pytest.raises(SystemExit, match="exists"):
         H.cmd_check_page(None)
+
+
+def test_nodoubler_changes_the_doubler_alone_and_refuses_where_it_is_off():
+    x = {tuple(k.split("/")): v for k, v in setting(**{"parameters/doublerActive": "true", "reverb/reverbActive": "true"}).items()}
+    y = H.nodoubler(x)
+    assert y[("parameters", "doublerActive")] == "false" and [k for k in x if x[k] != y[k]] == [("parameters", "doublerActive")]
+    with pytest.raises(SystemExit):
+        H.nodoubler(y)
+    rows = [{"i": 1, "settings": setting()}, {"i": 2, "settings": setting(**{"parameters/doublerActive": "true"})}]
+    assert [x["i"] for x in H.doubler_rows(rows)] == [2]
