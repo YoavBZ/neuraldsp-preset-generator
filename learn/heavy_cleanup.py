@@ -15,6 +15,9 @@ stored targets are read, never written.
     $MAIN -m learn.heavy_cleanup check-answers STORED.json    # the plugin line -> heavy/check/verdicts.json
     $MAIN -m learn.heavy_cleanup real-flat-line               # for the record: GOAT's line on flatness
     $MAIN -u -m learn.heavy_cleanup h2-doubler-render --shard k/3   # H2: W's doubler rows, doubler off (about 1,014 renders)
+    $MAIN -m learn.heavy_cleanup h4-ns-measure                # H4: NS's stored flatness, zero renders -> heavy/h4/
+    $MAIN -u -m learn.heavy_cleanup h4-ns-doubler-render --shard k/3   # H4: NS's doubler rows, doubler off (about 228 renders)
+    $MAIN -m learn.heavy_cleanup h4-exclusions                # H4: the lists -> heavy/h4-exclusions.json, once
 """
 from __future__ import annotations
 
@@ -920,23 +923,32 @@ def doubler_rows(rows):
 def cmd_h2_doubler_render(args):
     """W's doubler rows outside the heavy bands, each rendered with only the doubler off in its own new process (one
     priming render, 0.25 s trim, as H1) and measured by `plugin_flatness` -> heavy/h2/doubler-k-of-n.jsonl."""
+    from learn import pipeline_fix as P
+
+    P.require(H2A)
+    doubler_render(args, doubler_rows(w_rows()), heavy_dir() / H2_DIR, "doubler", "h2-doubler", "H2")
+
+
+def doubler_render(args, rows, d, stem, guard, label):
+    """`rows` (plan examples with the doubler on), shard `args.shard`, each rendered with only the doubler off in its
+    own new process (`render_one`'s "nodoubler": the full twin checked against the plan, `nodoubler` asserting the
+    doubler is the one change, one priming render, 0.25 s trim) and measured by `plugin_flatness` from the written
+    file -> d/<stem>-k-of-n.jsonl, audio in d/audio. Rows already in any d/<stem>-*.jsonl are skipped; the disk and
+    swap guards stop it; a missing reading refuses (its audio kept)."""
     from learn import cc_build as CB
     from learn import direct_sound_gate as G
     from learn import direct_stems as DS
     from learn import local_objective as LO
-    from learn import pipeline_fix as P
     from learn import pretrain_set as PS
     from learn import trusted_data as T
     from learn import trusted_data_t3 as T3
 
-    P.require(H2A)
     k, n = args.shard
-    rows = sorted(doubler_rows(w_rows()), key=lambda x: int(x["i"]))
-    d = heavy_dir() / H2_DIR
-    done = {json.loads(l)["i"] for f in d.glob("doubler-*.jsonl") for l in f.read_text().splitlines() if l.strip()}
+    rows = sorted(rows, key=lambda x: int(x["i"]))
+    done = {json.loads(l)["i"] for f in d.glob(f"{stem}-*.jsonl") for l in f.read_text().splitlines() if l.strip()}
     todo = [x for j, x in enumerate(rows) if j % n == k and int(x["i"]) not in done]
     if not todo:
-        print(f"H2 DOUBLER RENDER DONE {k}/{n} (nothing to do)")
+        print(f"{label} DOUBLER RENDER DONE {k}/{n} (nothing to do)")
         return
     if PS.free_gb() < T.DISK_GUARD_GB:
         raise SystemExit(f"free disk below {T.DISK_GUARD_GB:.0f} GB")
@@ -951,12 +963,12 @@ def cmd_h2_doubler_render(args):
             raise SystemExit("the factory gate thresholds changed since D_CC's plan")
     finally:
         rr.close()
-    rp = d / f"doubler-{k}of{n}.jsonl"
+    rp = d / f"{stem}-{k}of{n}.jsonl"
     rp.parent.mkdir(parents=True, exist_ok=True)
     renders, swap0 = 0, DS.swap_mb()
     with open(rp, "a") as fh:
         for x in todo:
-            g = DS._guards("h2-doubler", T.DISK_GUARD_GB, swap0)
+            g = DS._guards(guard, T.DISK_GUARD_GB, swap0)
             if g:
                 print(g[1], flush=True)
                 raise SystemExit(g[0])
@@ -972,7 +984,186 @@ def cmd_h2_doubler_render(args):
             if not ok:
                 raise SystemExit(f"{it['i']}: no flatness reading on the doubler-off render (its audio is kept)")
             print(f"nodoubler {it['i']}: {v:.3f} dB; renders {renders}", flush=True)
-    print(f"H2 DOUBLER RENDER DONE {k}/{n}: {renders} renders (priming included)")
+    print(f"{label} DOUBLER RENDER DONE {k}/{n}: {renders} renders (priming included)")
+
+
+# --- H4: the exclusions file (docs/heavy-cleanup-plan.md, "H4: retraining on the cleaned rows") ---------------------
+
+H4 = "phase_h4"
+H4_DIR = "h4"
+H4_FILE = "h4-exclusions.json"
+W_RUN = "P2b-wide24"                                 # W: its NS (held_ids) is the selection set H4 cleans too
+
+
+def ns_ids():
+    """W's NS: the held ids of P2b-wide24's two seeds (one set, `held` "ns", disjoint from its training ids)."""
+    from learn import pipeline_fix as P
+
+    recs = [json.loads((P.out_dir() / "runs" / f"{W_RUN}-{sd}.json").read_text()) for sd in P.SEEDS]
+    if any(r["held"] != "ns" or r["held_ids"] != recs[0]["held_ids"] or r["train_ids"] != recs[0]["train_ids"]
+           for r in recs):
+        raise SystemExit(f"{W_RUN}: both seeds must hold one NS and train on one set")
+    if set(recs[0]["held_ids"]) & set(recs[0]["train_ids"]):
+        raise SystemExit(f"{W_RUN}: NS overlaps the training rows")
+    return [int(i) for i in recs[0]["held_ids"]]
+
+
+def ns_rows():
+    """NS's plan examples outside the heavy bands (the heavy bands' rows go out by rule, unmeasured)."""
+    ex = cc_examples()
+    return [ex[i] for i in ns_ids() if ex[i]["band"] not in HEAVY_BANDS]
+
+
+def cmd_h4_ns_measure(_args):
+    """NS's stored flatness, zero renders: each row's D_CC stored target against its DI (`plugin_flatness`), as
+    `check-measure` reads W's rows -> heavy/h4/ns-flatness.json."""
+    from multiprocessing import Pool
+
+    from learn import pipeline_fix as P
+
+    P.require(H4)
+    rows = ns_rows()
+    with Pool(3) as pool:
+        got = dict(pool.map(_flat_one, rows, chunksize=8))
+    bad = [i for i, v in got.items() if v is None or not math.isfinite(v)]
+    if bad:
+        raise SystemExit(f"{len(bad)} NS rows have no flatness reading: {bad[:5]}")
+    out = heavy_dir() / H4_DIR / "ns-flatness.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps({"phase": H4, "rows": "NS: held_ids of P2b-wide24, outside the heavy bands",
+                               "flatness_db": {str(i): v for i, v in sorted(got.items())},
+                               "time": time.strftime("%Y-%m-%d %H:%M:%S")}, indent=1))
+    print(f"H4 NS MEASURE: {len(got)} rows -> {out}")
+
+
+def cmd_h4_ns_doubler_render(args):
+    """NS's doubler rows (about 114), each with only the doubler off: H2's recipe and guards exactly
+    (`doubler_render`) -> heavy/h4/ns-doubler-k-of-n.jsonl."""
+    from learn import pipeline_fix as P
+
+    P.require(H4)
+    doubler_render(args, doubler_rows(ns_rows()), heavy_dir() / H4_DIR, "ns-doubler", "h4-ns-doubler", "H4 NS")
+
+
+def read_jsonl_values(files, want):
+    """{i: doubler-off dB} from doubler-off render records (`doubler_render`'s), refusing a record of another kind, a
+    row outside `want`, a row twice or a missing reading."""
+    out = {}
+    for f in files:
+        for l in pathlib.Path(f).read_text().splitlines():
+            if not l.strip():
+                continue
+            r = json.loads(l)
+            i, v = int(r["i"]), r.get("flatness_db")
+            if r.get("kind") != "nodoubler" or i not in want or i in out:
+                raise SystemExit(f"{f}: row {i} is not one doubler-off render of a doubler row")
+            if v is None or not math.isfinite(v) or _on(r["settings"].get("/".join(TIME["doubler"]))):
+                raise SystemExit(f"{f}: row {i} has no doubler-off reading")
+            out[i] = float(v)
+    return out
+
+
+def out_list(rows, stored, nodbl, threshold):
+    """An exclusion list on `rows` (plan examples): every heavy-band row, and every other row at or past `threshold`
+    by its stored flatness, or for a doubler row its doubler-off flatness. Refuses a row with no value.
+    -> {"ids", "threshold", "n", "of", "left", "by_source"}."""
+    dbl = {int(x["i"]) for x in doubler_rows(rows)}
+    ids, src, missing = [], {"heavy_band": 0, "stored": 0, "doubler_off": 0}, []
+    for x in sorted(rows, key=lambda x: int(x["i"])):
+        i = int(x["i"])
+        if x["band"] in HEAVY_BANDS:
+            ids.append(i)
+            src["heavy_band"] += 1
+            continue
+        kind, v = ("doubler_off", nodbl.get(i)) if i in dbl else ("stored", stored.get(i))
+        if v is None or not math.isfinite(v):
+            missing.append(i)
+        elif v >= threshold:
+            ids.append(i)
+            src[kind] += 1
+    if missing:
+        raise SystemExit(f"{len(missing)} rows have no flatness value: {missing[:5]}")
+    return {"ids": ids, "threshold": threshold, "n": len(ids), "of": len(rows), "left": len(rows) - len(ids),
+            "by_source": src}
+
+
+def h4_lists(w, ns, w_flat, w_nodbl, ns_flat, ns_nodbl, real_out, line, edge):
+    """H4's five lists: real_out as given; W's and NS's at the plugin line (full) and at the doubler-free rows' 75th
+    percentile edge (gentle)."""
+    if not real_out or len(set(real_out)) != len(real_out):
+        raise SystemExit("real_out: empty, or a unit twice")
+    if not (math.isfinite(line) and math.isfinite(edge)):
+        raise SystemExit("a threshold is missing")
+    return {"real_out": {"ids": sorted(real_out), "n": len(real_out), "source": "scope/verdicts.json out"},
+            "plugin_out_full": out_list(w, w_flat, w_nodbl, line),
+            "plugin_out_gentle": out_list(w, w_flat, w_nodbl, edge),
+            "ns_out_full": out_list(ns, ns_flat, ns_nodbl, line),
+            "ns_out_gentle": out_list(ns, ns_flat, ns_nodbl, edge)}
+
+
+def cmd_h4_exclusions(_args):
+    """H4's exclusions, zero renders, written once before any training -> heavy/h4-exclusions.json: real_out (the
+    keep-or-drop page's 19 units), and W's rows (P2b-wide24's 1,787 training ids) and NS's at the plugin line (full)
+    and the 75th-percentile edge (gentle), by stored flatness or the doubler-off value, plus the heavy bands. Each list
+    carries its threshold, count and sources; the file its inputs' sha256s and its lists' own sha256 (the ledger's
+    `phase_h4_exclusions` pins the file's sha256, printed). Refuses if any value is missing or the file exists."""
+    from learn import bakeoff as B
+    from learn import direct_stems as DS
+    from learn import pipeline_fix as P
+    from learn import scope_page as SP
+
+    P.require(H4)
+    hd = heavy_dir()
+    out = hd / H4_FILE
+    if out.exists():
+        raise SystemExit(f"{out} exists: H4's exclusions are written once")
+    srcs = {"w_flat": hd / CHECK_DIR / "flatness.json", "key": hd / CHECK_DIR / "key.json",
+            "verdicts": hd / CHECK_DIR / "verdicts.json", "scope": SP.scope_dir() / "verdicts.json",
+            "ns_flat": hd / H4_DIR / "ns-flatness.json"}
+    w_files = sorted((hd / H2_DIR).glob("doubler-*.jsonl"))
+    ns_files = sorted((hd / H4_DIR).glob("ns-doubler-*.jsonl"))
+    miss = [str(p) for p in srcs.values() if not p.exists()] + ["heavy/h2/doubler-*.jsonl"] * (not w_files) \
+        + ["heavy/h4/ns-doubler-*.jsonl"] * (not ns_files)
+    if miss:
+        raise SystemExit(f"missing inputs: {miss}")
+    rows, _ = B.plugin_set()                         # W's training rows (refuses unless the ids are W's)
+    ex = cc_examples()
+    w = [ex[int(r["i"])] for r in rows]
+    ns = [ex[i] for i in ns_ids()]
+    if {int(x["i"]) for x in w} & {int(x["i"]) for x in ns}:
+        raise SystemExit("W's rows and NS overlap")
+    w_in, ns_in = [x for x in w if x["band"] not in HEAVY_BANDS], [x for x in ns if x["band"] not in HEAVY_BANDS]
+    w_flat = {int(k): v for k, v in json.loads(srcs["w_flat"].read_text())["flatness_db"].items()}
+    ns_flat = {int(k): v for k, v in json.loads(srcs["ns_flat"].read_text())["flatness_db"].items()}
+    w_nodbl = read_jsonl_values(w_files, {int(x["i"]) for x in doubler_rows(w_in)})
+    ns_nodbl = read_jsonl_values(ns_files, {int(x["i"]) for x in doubler_rows(ns_in)})
+    line = float(json.loads(srcs["verdicts"].read_text())["line_db"])
+    bands = json.loads(srcs["key"].read_text())["bands"]
+    edge = float(bands[1][1])
+    if abs(check_bands([w_flat[int(x["i"])] for x in no_doubler(w_in)])[1][1] - edge) > 1e-12:
+        raise SystemExit("key.json's 75th-percentile edge is not the doubler-free rows' own")
+    real_out = json.loads(srcs["scope"].read_text())["out"]
+    lists = h4_lists(w, ns, w_flat, w_nodbl, ns_flat, ns_nodbl, real_out, line, edge)
+    lists["plugin_out_full"]["threshold_source"] = lists["ns_out_full"]["threshold_source"] = \
+        "heavy/check/verdicts.json line_db (the plugin line)"
+    lists["plugin_out_gentle"]["threshold_source"] = lists["ns_out_gentle"]["threshold_source"] = \
+        "heavy/check/key.json bands[1][1] (the doubler-free rows' 75th percentile)"
+    for k in ("plugin_out_full", "plugin_out_gentle"):
+        lists[k]["values"] = "heavy/check/flatness.json (stored), heavy/h2/doubler-*.jsonl (doubler rows, doubler off)"
+    for k in ("ns_out_full", "ns_out_gentle"):
+        lists[k]["values"] = "heavy/h4/ns-flatness.json (stored), heavy/h4/ns-doubler-*.jsonl (doubler rows, doubler off)"
+    rel = lambda p: str(pathlib.Path(p).relative_to(P.out_dir()))      # noqa: E731
+    doc = {"phase": H4, "plan": "docs/heavy-cleanup-plan.md", **lists,
+           "rows": {"w": len(w), "w_doubler": len(w_nodbl), "ns": len(ns), "ns_doubler": len(ns_nodbl),
+                    "w_from": f"{W_RUN}'s training ids (bakeoff.plugin_set)", "ns_from": f"{W_RUN}'s held_ids (NS)"},
+           "inputs_sha256": {rel(p): DS.hashlib_file(p) for p in [*srcs.values(), *w_files, *ns_files]},
+           "lists_sha256": P.h4_lists_sha(lists), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    out.write_text(json.dumps(doc, indent=1))
+    print(json.dumps({k: {"n": lists[k]["n"], **({"of": lists[k]["of"], "threshold": lists[k]["threshold"],
+                                                  "by_source": lists[k]["by_source"]} if k != "real_out" else {})}
+                      for k in P.H4_LISTS}, indent=1))
+    print(f"H4 EXCLUSIONS -> {out}\nsha256 {DS.hashlib_file(out)}\nrecord in the ledger's pipeline-fix entry: "
+          f"\"{P.H4_EXCL}\": {{\"path\": \"{rel(out)}\", \"sha256\": \"{DS.hashlib_file(out)}\"}}")
 
 
 def main(argv=None):
@@ -990,6 +1181,11 @@ def main(argv=None):
     s = sub.add_parser("h2-doubler-render")
     s.add_argument("--shard", type=CP.parse_shard, default=(0, 1))
     s.set_defaults(fn=cmd_h2_doubler_render)
+    sub.add_parser("h4-ns-measure").set_defaults(fn=cmd_h4_ns_measure)
+    s = sub.add_parser("h4-ns-doubler-render")
+    s.add_argument("--shard", type=CP.parse_shard, default=(0, 1))
+    s.set_defaults(fn=cmd_h4_ns_doubler_render)
+    sub.add_parser("h4-exclusions").set_defaults(fn=cmd_h4_exclusions)
     sub.add_parser("check-measure").set_defaults(fn=cmd_check_measure)
     sub.add_parser("check-page").set_defaults(fn=cmd_check_page)
     a = sub.add_parser("check-answers")
