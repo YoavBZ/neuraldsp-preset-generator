@@ -1,6 +1,6 @@
 # Too-heavy recordings out of the plugin rows and the test sets (H1 to H3; H4 to follow)
 
-**Status: declared 2026-11-08, the user's yes ("Go ahead for the rest", 2026-11-08, on the proposal of 2026-11-07), before any render, measure or answer here is read. Amended after its independent review: the line's population and rule, the effects list, W's own rows, the render counts, opt-in exclusions.** One look came first and is stated: the review measured the goat-heavy page's 22 heavy recordings and showed how the existing marks fall by bin (for example 8 heavy of 10 in [3, 5) dB) before the rule was amended, and the top bin's merge-down rule was written knowing [5, 7) holds 2. No keep-or-drop answer had been read. Ledger `pipeline-fix`, `phase_h1` to `phase_h3`. H4 goes in the ledger when its detail is declared. The line comes from the keep-or-drop page (`phase_scope`, `learn/scope_page.py`), which the user is answering. Nothing is deleted: every step writes exclusion lists that only new runs read. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F67 on.
+**Status: declared 2026-11-08 and amended the same day after the keep-or-drop answers were read (Amendment 1: a tone-free flatness replaces the declared measure, H2's dry renders are superseded, a plugin check page sets the plugin line), the user's yes ("Go ahead for the rest", 2026-11-08, on the proposal of 2026-11-07). H1 to H3 were declared before any render, measure or answer here was read; Amendment 1 was written after the keep-or-drop answers were read. Amended after its independent review: the line's population and rule, the effects list, W's own rows, the render counts, opt-in exclusions.** One look came first and is stated: the review measured the goat-heavy page's 22 heavy recordings and showed how the existing marks fall by bin (for example 8 heavy of 10 in [3, 5) dB) before the rule was amended, and the top bin's merge-down rule was written knowing [5, 7) holds 2. No keep-or-drop answer had been read. Ledger `pipeline-fix`, `phase_h1` to `phase_h3`. H4 goes in the ledger when its detail is declared. The line comes from the keep-or-drop page (`phase_scope`, `learn/scope_page.py`), answered 2026-11-08; Amendment 1 says how it is used. Nothing is deleted: every step writes exclusion lists that only new runs read. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F67 on.
 
 ## Why
 
@@ -62,7 +62,7 @@ The line, its interval and the bins go to the user before any exclusion is writt
 
 **Checks that stop H2 if they fail.** The 15 renders again as stored must reproduce the stored target, bit for bit or with a residual under −90 dB of the target's energy. Stored renders have done so before: 12 of 12 in `phase_5c_lag_diagnostic`.
 
-## H2: W's plugin rows (after the line)
+## H2: W's plugin rows (after the line; its dry renders, audit and render table superseded by Amendment 1)
 
 **The rows.** W's 1,787 training rows: the rows FTm's base trained on. 34 of them are on Ale Lak and Storm Of Particles, which go out by the proposal the user approved: the two heavy bands of the October sittings. FS is not used by W and is out of this step. NS is under H3.
 
@@ -109,18 +109,94 @@ Measured only after the line is set.
   - Effect sizes with 90% intervals, by class, so a heavy minority's effect on clean parts shows.
 - **Cost.** FTm's 18 runs took 136 MPS minutes, and W's two took about 10 minutes each. The user's training yes of 2026-11-06 covers it. One MPS job at a time, announced first.
 
+## Amendment 1 (2026-11-08): the line doesn't fit, so a tone-free flatness, and a check page of plugin examples (declared before the page is built, amended after its review)
+
+The user's word of 2026-11-08: "Go ahead, also make sure the measurement is correct. If the line you find doesn't fit - use a different measurement (not necessarily distortion, can be other noise indication)." Everything here was found after the keep-or-drop answers were read, and is stated as such. The answers are not used to tune the measure any further: the check page below is its only fresh test.
+
+**The line as declared doesn't fit.**
+- **The answers:** 110 keep, 12 heavy and 2 unsure.
+- **The declared rule** gives +1.05 dB [−2.27, +2.63]. That is `phase_h2`'s outcome, and it stays in the ledger.
+- **The old measure separates the answers weakly.** Its AUC on the 176 answered recordings is 0.63 [0.55, 0.75], clustered by song. On the 124 the page asked about it points the wrong way, at 0.68.
+- **Why:** a miked room reads as drive on that meter, as H1 found for the plugin's room. All 76 BKS recordings asked were kept, up to +3 dB.
+- **Alignment is not the cause:** at each recording's best lag the AUC is 0.62.
+
+**The measure: spectral flatness of the amp's sound, with each frame's tone taken out (`heavy_cleanup.flatness_db`).**
+- **How it is computed:**
+  - Per Hann frame of 4096, hop 2048, the power spectrum is divided by its own 1/3-octave moving average.
+  - The flatness (geometric over arithmetic mean) is taken over 200–5000 Hz.
+  - The median runs over the frames where both signals play: the DI within 30 dB of its loudest, the amp within 40 dB of its own.
+- **What it reads:** the amp's sound alone, as the ear hears it. Distortion fills the spectrum between a note's harmonics, and dividing out the envelope removes EQ, cab and room tilt. The DI only picks the frames.
+- **Test signals:** on two notes through rising drive it rises steadily, and a tone change moves it under 0.5 dB.
+
+How it was found, after the answers were read:
+- **Plain flatness** was picked from 14 measures (study in `PF/heavy/measures/`). It moved with tone as much as with heaviness: a 2 kHz low-pass took 3.6 dB off it.
+- **Dividing out the envelope** fixed that. That version also subtracted the DI's own value, and on plugin rows it then mostly read each section's DI: 89% of its variance lay between sections, and the section means correlated at −0.95 with the DI term.
+- **The amp side alone** is this, the 16th variant tried. Its between-section share is 0.60, near the old meter's 0.61 on dry rows. Within a section it orders rows by drive (Spearman with "drive pedal on or crunch base", median 0.45 over 162 sections). The design (band, median, frame rule) was never varied.
+
+**On the real answers (zero renders), by song.**
+- **Within GOAT it separates heavy from kept:** AUC 0.85 [0.78, 0.92] on 93 recordings (39 heavy); 0.89 for player1 and 0.83 for player2; 0.78 on the 48 GOAT recordings the page asked.
+- **The scale differs by source.** BKS's 83 recordings read −19.97 to −3.35, with all 76 asked kept. Across sources the AUC falls to 0.67, and a GOAT line (−5.84 [−8.26, −4.34]) fails left out by song, at 0.49 accuracy.
+- **W's plugin rows read flatter again:** median −4.63, 80% range −8.33 to −3.29. 72% sit past the GOAT line.
+- So the measure orders recordings within a source, but no line carries across sources. The plugin line comes from plugin answers alone.
+
+**On the plugin rows, the effects move it little, except the doubler.** On H1's 60 pairs, stored less dry, in dB and in W's percentile points:
+
+| Family | dB, median [range] | Percentile points, median [range] |
+|---|---|---|
+| reverb | +0.02 [−0.02, +0.54] | +0.5 [−0.1, +6.7] |
+| delay | +0.12 [−0.01, +1.55] | +2.2 [−0.1, +10.5] |
+| doubler | −0.99 [−1.53, −0.10] | −23.1 [−44.2, −0.2] |
+| tremolo | +0.02 [−0.23, +0.61] | +0.3 [−2.5, +10.3] |
+| spring | +0.06 [0.00, +1.12] | +0.7 [−0.1, +4.4] |
+| room | −0.04 [−0.75, +0.40] | −0.4 [−15.6, +6.3] |
+
+- **The scale is compressed at the top.** White noise reads −2.34 dB, and W's top quarter sits between −3.74 and −2.71, so a few tenths of a dB is a whole band. W's top rows sit nearer noise than clipped harmonics: a hard-clipped three-note chord levels off near −5.2. BKS's kept recordings (median −4.01) read flatter than GOAT's heavy ones (−4.37). That fits the user's "can be other noise indication", but it means the measure is read only within a source.
+- **The doubler pushes rows down.** Its fold to mono puts comb notches finer than 1/3 octave into the spectrum, which read as less flat. 507 of W's 1,753 rows have it on. So:
+  - Doubler rows never go on the check page.
+  - The plugin line is set on the 1,246 rows without it.
+  - In H2, the doubler rows are measured with only the doubler off, on H1's path: a variant whose setting differs from the full twin in the doubler key alone, checked as `check_dry` does. That is about 1,014 renders, then a cut at the plugin line.
+  - NS's doubler rows get the same in H3.
+- **Otherwise the question moves from drive to heaviness as heard,** effects included, and rows without the doubler are measured as stored.
+
+**The check page (H2a, zero renders).**
+- **The cards:** 40 of W's stored targets outside the heavy bands and without the doubler (1,246 rows), the exact training audio, the guitar alone at −23 LUFS. Seed 20261110.
+- **By flatness, in 4 bands of 10,** by those rows' own percentiles: under the median (−4.36 dB), to the 75th (−3.57), to the 90th (−3.21), and over (to −2.71).
+- **Within a band,** songs go round robin: each round takes one row a song, the band's least used amp first. No section gives more than one card.
+- **5 within-section pairs** come on top, 50 cards in all. They are sections not on the band cards, one a song, seeded among those whose lowest row sits under the doubler-free rows' median and highest at or past their 90th percentile (else the widest). Each gives its lowest- and highest-flatness rows. These pairs tell a setting's effect from a section's.
+- **The page:** `scope_page`'s page and rule. It is blind and one tap each, only Keep stays, and "Not sure" counts as dropped. Answered in place. Its answers are not used to tune the measure.
+- **The plugin line:** the declared isotonic rule on the 40 band cards' stored flatness, with each card weighing one.
+  - Songs are resampled in the bootstrap (2,000).
+  - "Not sure" as neither is reported beside.
+  - **The pairs' read:** of pairs with exactly one card dropped, how often it is the flatter one. Five pairs can only show a gross failure, so an undecided result there is expected.
+  - The line and its interval are also given as percentile ranks among the 1,246 doubler-free rows, since near the top a few tenths of a dB is a whole band.
+- **Undecided outcomes:** if the fit never reaches one half, the line falls in the lowest band, its interval is wide, or the pairs don't favour the flatter card, that goes to the user as undecided, not as a failure. No row is dropped by measure until the user rules.
+
+**H2 and H3 change as follows.**
+- **H2:** out are W's rows at or past the plugin line, by stored flatness or, for doubler rows, by their doubler-off measure, and Ale Lak's and Storm Of Particles' 34 as before.
+  - The report gives, before anything is trained, the share of each section and each DI the cut removes. If a whole DI or section goes, the user decides.
+  - H2's dry renders, audit and render table are superseded: only the doubler rows are rendered again, doubler off.
+  - The cell stop and the opt-in exclusion key stand.
+- **H3:**
+  - All of V-real's 11 parts and the panel's 45 heard read units go on H3's page, since no real line carries across sources. That is 56 test recordings.
+  - Each sits beside 1 development filler: the nearest unused kept GOAT or BKS recording by flatness, never reused. Where no unused filler sits within 2 dB, the nearest is used anyway and the card is noted. That is 112 cards, under the 124-clip size.
+  - NS's rows are measured by stored flatness (its 114 doubler rows doubler off, 228 renders) and cut at the plugin line, with no page.
+- **H1** still stands as run. It showed that the old measure reads effects and rooms as drive.
+
+**How this differs from what failed.** The declared line used a measure the answers show can't tell heavy from kept. This uses one that orders recordings by heaviness within a source, with tone taken out, and sets the plugin line from plugin answers before any plugin row is dropped. It chooses rows by sound, not by song or section, and the per-section report checks that. Nothing is excluded until the page is answered.
+
 ## What this can bear
 
-- **Real amps against the plugin.** The line comes from one listener's answers on real amps, applied to plugin renders. The meter reads alike on both, but a plugin amp at a given measure might not sound as driven as a real one at the same measure.
-- **What the dry renders measure.** They measure each row's drive, not what the networks heard. A row kept here can still carry a heavy reverb.
+- **Real amps against the plugin.** No line carries across sources: GOAT, BKS and the plugin read on different scales. The plugin line comes from plugin answers, on 40 cards and 5 pairs, one listener.
+- **What is measured.** Rows are judged and measured as stored, effects included: heaviness as heard, not drive alone. Since Amendment 1, H1's dry renders are a check on the meters, not the measure.
 - **What isn't measured.** The other guitars in each D_CC mix are not screened, and neither is drive inside an effect, such as a delay's tape drive.
-- **Rooms.** The real recordings keep their own rooms (BKS's reamps are miked), while plugin rows are measured with the room off. At equal drive that leans toward keeping plugin rows.
+- **The measure's design.** The band, the median and the frame rule were never varied. The tone-free form was tried once, after the answers were read.
 - **The heavy bands.** Their rule is the user's choice, not a measurement.
 
 ## Order of work
 
-1. The amended plan is reviewed again, then the ledger entries are written.
-2. H1 runs, is audited and is reported.
-3. Once the keep-or-drop answers are in, the line is set by the rule above and shown to the user.
-4. H2 and H3 run. Their lists are written and audited, and H3's page goes to the user if any recording needs it.
-5. H4's detail is declared, reviewed, then run.
+1. H1 ran and was audited (F67). The keep-or-drop answers are in, and the declared line (+1.05 dB) doesn't fit (Amendment 1).
+2. Amendment 1 is reviewed independently, then the ledger entry `phase_h2a` is written. `phase_h2` gets its outcome.
+3. `check-measure` and `check-page` run, and the page goes to the user.
+4. Once it is answered, `check-answers` sets the plugin line. That goes to the user before any exclusion is written. F68 records the keep-or-drop answers, the measure study and the check page's read together.
+5. H2's list and H3's measures and page follow, each audited.
+6. H4's detail is declared, reviewed, then run.

@@ -78,7 +78,7 @@ def out_units(verdicts, marks):
 def leaks(page, units):
     """What the page shows of a recording's name, set or measure, its clips and hashed ids aside."""
     a = page.index('<script id="clips"')
-    shown = re.sub(r"\br?[0-9a-f]{12}\b", "", page[:a] + page[page.index("</script>", a):])
+    shown = re.sub(r"\b[pr]?[0-9a-f]{12}\b", "", page[:a] + page[page.index("</script>", a):])
     return [w for w in (*WORDS, *units) if w in shown]
 
 
