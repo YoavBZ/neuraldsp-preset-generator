@@ -96,18 +96,52 @@ Measured only after the line is set.
 
 **Exclusions.** Exclusions are lists, as in H2. Any V-real part out goes to the user, read by band, since Eat The Feeder is 3 of the 11. Each test set's earlier reads are restated, with and without the excluded parts, in a later write-up. This step reads none of them.
 
-## H4, fixed points only (declared in full and reviewed again before any training)
+## H4: retraining on the cleaned rows (declared 2026-11-08 after the check page was read, before any training; the user's go: "Agreed. Let's follow your suggestions")
 
-- **Two arms, each with new run tags,** since `cmd_train_ft` refuses other plugin rows than W's:
-  - W retrained on H2's rows, then FTm's tuning on the rows the keep-or-drop page left.
-  - The old W with FTm's tuning on the cleaned real rows. This one says which half of the cleaning any change comes from.
-  - FTm's recipe is otherwise unchanged: folds, seeds, masks.
-- **NS is W's selection set,** the NS-best state FTm starts from. The retrained W selects on NS less H3's NS exclusions, and that use of NS is selection inside H4, not a test read.
-- **The comparison:**
-  - By the score, on the held halves of GOAT's and BKS's folds, on the units both models keep, with dropped units reported apart.
-  - By ear, on a blind page of whole presets beside S, with the score beside.
-  - Effect sizes with 90% intervals, by class, so a heavy minority's effect on clean parts shows.
-- **Cost.** FTm's 18 runs took 136 MPS minutes, and W's two took about 10 minutes each. The user's training yes of 2026-11-06 covers it. One MPS job at a time, announced first.
+**Why.** The check page sets a plugin line, but the line is undecided on its interval. `check_read` missed that flag; the audit caught it, and the write-up records it: −5.08 to −3.57 dB, the 36th to 75th percentile of the doubler-free rows. It also rests on a tie at one half, and Bulldozer supplies 42% of the rows it cuts. So the cut is chosen by result, not guessed. Two plugin cuts bracket the interval, and a third arm cleans the real rows only. Each is compared with FTm as it stands.
+
+**The stops tripped, and the user's ruling.** The full cut trips both of H2's stops.
+- **Cells:** counted on all 1,787 rows, 4 amp-and-class cells lose more than half: ac20 crunch, sw50r crunch, pr12 crunch, and ac20 clean at 51%. Counted outside the heavy bands, it is the 3 crunch cells, with ac20 clean just under half.
+- **Sections:** 13 of the 174 sections outside the heavy bands go entirely, and half or more of 114 sections and of 13 of the 23 DIs. No DI goes entirely.
+- **The gentle cut** removes 1 section entirely and trips no cell.
+- **The ruling:** these went to the user. The user's "Agreed. Let's follow your suggestions" answered a proposal to train both cuts and compare, so it covers both.
+
+**The exclusions** are an opt-in pinned ledger key, `phase_h4_exclusions`, holding a file path and its sha256: `PF/heavy/h4-exclusions.json`, written before any training. Only the new run tags read it, and `recipe_inputs`, `real_labels`, `goat_labels`, `plugin_rows`' default path and `bakeoff.plugin_set` are unchanged. The review session is told before it is written. It holds:
+- **`real_out`:** the 19 labelled recordings the keep-or-drop page and the earlier marks put out (`scope/verdicts.json`'s `out`), all crunch: GOAT pr12 9, sw50r 6, ac20 2, and BKS 2. They leave the real training rows and every held set that chooses an epoch count: the inner runs' validation fold, which sets E for FT_k and the all-labels pair. The code enforces this. The score read keeps them, reported apart.
+- **`plugin_out_full`:** W's rows at or past the plugin line, −4.331 dB, by stored flatness or, for doubler rows, the doubler-off value. Plus Ale Lak's and Storm Of Particles' 34 rows. That is 927 of 1,787, leaving 860.
+- **`plugin_out_gentle`:** the same at the doubler-free rows' 75th percentile, −3.57385 dB (the page's band edge, not the bootstrap's `hi90` of −3.57451, which would cut one row more), where the listener dropped 18 of 20. Plus the 34. That is 496 of 1,787, leaving 1,291. Each list is written with its threshold and count.
+- **`ns_out_full` and `ns_out_gentle`:** NS's 383 rows by the same rules. They are measured first, as H3 declares: stored flatness with zero renders, and the 114 doubler rows doubler off, 228 renders. Their counts and the doubler-off provenance go into the file before training. NS is W's selection set, so this use is selection inside H4, not a test read. Each arm's W selects on its own NS list, and changing the selection set is part of the arm.
+
+**The arms.** All keep FTm's recipe unchanged except their rows:
+- **Full (`P2b-wide24-hf`, then `P2b-ftmf`):** W retrained on the 860 rows (`train --rung b --wide`, both seeds, 60 epochs as the ledger's `phase_3_length`), choosing its best state on NS less `ns_out_full`. Then FTm's masked tuning (`train-ft --masked --ft-cap 300`: 4 folds × 2 seeds, inner then FT_k, plus the all-labels pair), from that W's best, on the real rows less `real_out`.
+- **Gentle (`P2b-wide24-hg`, then `P2b-ftmg`):** the same on the 1,291 rows, with `ns_out_gentle`.
+- **Real only (`P2b-ftmc`):** today's W, `P2b-wide24`, with FTm's tuning on the real rows less `real_out`. This says which half of the cleaning any change comes from.
+- **Not equalised:** the epoch count stays the recipe's, so the full arm takes about half the steps. That is part of what is compared, and it is stated beside the result.
+- **Inputs:** the inputs hash guard against D_fix's runs can't hold with units left out, so the new tags check three things:
+  1. The full, unfiltered `DfixData` hash, rebuilt today, equals D_fix's stored one, so the files are unchanged.
+  2. The tag's units are exactly D_fix's units less `real_out`.
+  3. The filtered hash is stored on the run.
+  - `ft_carry`'s check for the all-labels pair gets the same guard.
+  - `FT_PRETRAIN` becomes a setting per tag: `P2b-ftmc` starts from `P2b-wide24`, and the other two from their own W.
+- **Undertraining:** if a retrained W's best state falls in its last 5 epochs, it is reported as possibly undertrained, beside the result. A run with the steps equalised stays a later option, approved separately.
+
+**Cost, measured on today's runs.** W took 10.6 min a seed on MPS, and fewer rows take less. FTm's 18 runs took 136 record minutes, 78 min wall at two at a time. So the three arms take about 4 to 5 hours of MPS wall time in all. One MPS job at a time, announced first.
+
+**The read by the score** (H4a). FTm's stored read is `real-predict`/`goat-predict`, then `real-render`/`goat-render`, then `real-report`/`goat-report`, on read 2's units: BKS's 40 units by DI fold, GOAT's by item fold, each read by its own fold's model. The new tags are read the same way, about 1,340 renders each and 4,000 in all, at most 3 render processes.
+- **The baseline:** FTm's stored reads, since the new tags read the same units, halves, render settings and judge (`aligned.py`).
+- **Primary, one row per arm:** `ln(d_arm/d_FTm)` on the held half, BKS clustered by DI and GOAT by item, 90% intervals, on the units no arm's cleaning removed. The 19 removed real units are reported apart.
+- **Beside:**
+  - each arm less S;
+  - each arm less FTm by class;
+  - the full arm less the gentle arm;
+  - each arm less FTm on N12's 31 units, by N12's FTm answer path. That set is other bands' songs, in no model's real rows.
+- No bar is set, and undecided is not failed. The score is weak between close models (F65, F66), so by the score alone a small difference will likely read undecided, and the ear page decides.
+
+**The read by ear** (H4b) is declared on its own before it is built, after training. It is one blind page with S, FTm and the three arms, built to the review session's five requests: N12's stored fields per card; closeness on every candidate; at least 2 repeats a class; S on every card; and model pairs under a J0 log ratio of about 0.06 among the cards. J0 is computed for the draw only, and no score result is read before the page. The review session names its judge, if any, before the answers are opened.
+
+**What it leads to.** The user decides from both reads.
+- **An arm better than FTm** by ear, with the score beside: its cut is adopted.
+- **None better:** the clean-up stops there. No more listening goes into data, and the work turns to the plugin-to-real gap and the score.
 
 ## Amendment 1 (2026-11-08): the line doesn't fit, so a tone-free flatness, and a check page of plugin examples (declared before the page is built, amended after its review)
 
