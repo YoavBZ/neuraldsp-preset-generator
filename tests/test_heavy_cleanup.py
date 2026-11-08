@@ -159,3 +159,91 @@ def test_pairs_straddle_the_line_one_section_a_song_off_the_band_cards():
 def test_no_doubler_keeps_only_rows_with_the_doubler_off():
     rows = [{"i": 1, "settings": setting()}, {"i": 2, "settings": setting(**{"parameters/doublerActive": "true"})}]
     assert [x["i"] for x in H.no_doubler(rows)] == [1]
+
+
+def _cards():
+    items = []
+    for k in range(8):                                                             # 8 band cards over 4 bands
+        items.append({"i": k, "band": k // 2, "flatness_db": -6.0 + k * 0.5, "song": f"s{k % 3}"})
+    items += [{"i": 100, "band": "pair", "pair": 0, "flatness_db": -6.0, "song": "p0"},
+              {"i": 101, "band": "pair", "pair": 0, "flatness_db": -3.0, "song": "p0"},
+              {"i": 102, "band": "pair", "pair": 1, "flatness_db": -5.0, "song": "p1"},
+              {"i": 103, "band": "pair", "pair": 1, "flatness_db": -2.9, "song": "p1"}]
+    return items
+
+
+BANDS = ((None, -5.0), (-5.0, -4.0), (-4.0, -3.0), (-3.0, None))
+
+
+def test_check_read_fits_band_cards_only_and_reads_the_pairs():
+    items = _cards()
+    got = {str(it["i"]): ("keep" if it["flatness_db"] < -3.9 else "heavy") for it in items if it["band"] != "pair"}
+    got |= {"100": "keep", "101": "heavy", "102": "heavy", "103": "keep"}
+    pool = sorted(-7.0 + 0.1 * k for k in range(50))
+    r = H.check_read(items, got, pool, BANDS)
+    assert r["line_db"] == -3.5 and r["line_band"] == 2                            # pairs (at -6 heavy etc.) stay out
+    assert r["line_pct"] == 100.0 * sum(1 for x in pool if x < -3.5) / len(pool)   # strictly below
+    assert r["pairs"] == {"n": 2, "split": 2, "flatter_dropped": 1, "both_dropped": 0}
+    assert "the pairs do not favour the flatter card" in r["undecided"]
+    assert [b["dropped"] for b in r["by_band"]] == [0, 0, 1, 2] and [b["n"] for b in r["by_band"]] == [2, 2, 2, 2]
+
+
+def test_check_read_counts_unsure_as_dropped_but_not_in_the_neither_fit():
+    items = [it for it in _cards() if it["band"] != "pair"]
+    got = {str(it["i"]): "keep" for it in items}
+    got["7"] = "unsure"
+    got["6"] = "heavy"
+    r = H.check_read(items, got, [0.0], BANDS)
+    assert r["line_db"] == -3.0 and r["unsure_neither_line_db"] == -3.0
+    got["6"] = "unsure"
+    r = H.check_read(items, got, [0.0], BANDS)
+    assert r["line_db"] == -3.0 and r["unsure_neither_line_db"] is None
+    assert H.check_read(items, {str(it["i"]): "keep" for it in items}, [0.0], BANDS)["undecided"][0] == "no line"
+
+
+def test_flatness_refuses_bad_shapes_and_gives_no_reading_for_silence():
+    np = pytest.importorskip("numpy")
+    di = np.random.default_rng(0).standard_normal(48000)
+    assert H.flatness_db(np.zeros(48000), di) is None
+    assert H.flatness_db(di[:100], di[:100]) is None
+    with pytest.raises(ValueError):
+        H.flatness_db(di[:20000], di)
+    with pytest.raises(ValueError):
+        H.flatness_db(np.stack([di, di], axis=1), di)
+
+
+def test_draw_rounds_over_a_songs_sections_and_never_reuses_one_across_bands():
+    rows, flat, i = [], {}, 0
+    for song in ("A", "B"):
+        for sec in range(24):
+            for a in H.AMPS:
+                i += 1
+                rows.append({"i": i, "amp": a, "section": f"set/{song}_Full/{sec}.wav@0"})
+                flat[i] = (10.0, 20.0, 24.0, 30.0)[sec % 4]
+    got = H.check_draw(rows, flat, ((None, 18.0), (18.0, 22.0), (22.0, 26.0), (26.0, None)))
+    assert len({g["section"] for g in got}) == len(got) == 40
+    for k in range(4):
+        band = [g for g in got if g["band"] == k]
+        songs = [H.song_of(g["section"]) for g in band]
+        assert abs(songs.count("set/A_Full") - songs.count("set/B_Full")) <= 1
+        amps = [g["amp"] for g in band]
+        assert max(amps.count(a) for a in H.AMPS) - min(amps.count(a) for a in H.AMPS) <= 1
+
+
+def test_pairs_fall_back_to_the_widest_sections():
+    rows, flat = [], {}
+    for k, (lo, hi) in enumerate(((1.0, 2.0), (1.0, 5.0), (1.0, 4.0), (1.0, 3.0), (1.0, 6.0), (1.0, 1.5))):
+        for m, v in enumerate((lo, hi)):
+            i = 10 * k + m
+            rows.append({"i": i, "amp": "pr12", "section": f"set/S{k}_Full/x.wav@0"})
+            flat[i] = v
+    got = H.pair_draw(rows, flat, ((None, 0.0), (0.0, 50.0), (50.0, 60.0), (60.0, None)), set())   # none straddles
+    assert sorted({g["section"] for g in got}) == [f"set/S{k}_Full/x.wav@0" for k in (0, 1, 2, 3, 4)]
+
+
+def test_check_page_refuses_when_its_key_exists(tmp_path, monkeypatch):
+    (tmp_path / H.CHECK_DIR).mkdir()
+    (tmp_path / H.CHECK_DIR / "key.json").write_text("{}")
+    monkeypatch.setattr(H, "heavy_dir", lambda: tmp_path)
+    with pytest.raises(SystemExit, match="exists"):
+        H.cmd_check_page(None)

@@ -197,6 +197,6 @@ How it was found, after the answers were read:
 1. H1 ran and was audited (F67). The keep-or-drop answers are in, and the declared line (+1.05 dB) doesn't fit (Amendment 1).
 2. Amendment 1 is reviewed independently, then the ledger entry `phase_h2a` is written. `phase_h2` gets its outcome.
 3. `check-measure` and `check-page` run, and the page goes to the user.
-4. Once it is answered, `check-answers` sets the plugin line. That goes to the user before any exclusion is written.
+4. Once it is answered, `check-answers` sets the plugin line. That goes to the user before any exclusion is written. F68 records the keep-or-drop answers, the measure study and the check page's read together.
 5. H2's list and H3's measures and page follow, each audited.
 6. H4's detail is declared, reviewed, then run.

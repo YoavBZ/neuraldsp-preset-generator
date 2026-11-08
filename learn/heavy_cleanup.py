@@ -9,6 +9,11 @@ stored targets are read, never written.
     $MAIN -m learn.heavy_cleanup pilot-draw                   # zero renders: H1's 75 rows -> heavy/h1-plan.json
     $MAIN -u -m learn.heavy_cleanup pilot-render --shard k/3  # 150 renders with their priming renders
     $MAIN -m learn.heavy_cleanup pilot-read                   # zero renders: shifts by family, the margin, the checks
+    $MAIN -m learn.heavy_cleanup line                         # the declared line (+1.05 dB; superseded, Amendment 1)
+    $MAIN -m learn.heavy_cleanup check-measure                # Amendment 1: W's stored flatness -> heavy/check/flatness.json
+    $MAIN -m learn.heavy_cleanup check-page                   # the 50-card check page -> heavy/check/page.html, key.json
+    $MAIN -m learn.heavy_cleanup check-answers STORED.json    # the plugin line -> heavy/check/verdicts.json
+    $MAIN -m learn.heavy_cleanup real-flat-line               # for the record: GOAT's line on flatness
 """
 from __future__ import annotations
 
@@ -512,13 +517,13 @@ def cmd_line(_args):
 H2A = "phase_h2a"
 CHECK_DIR = "check"
 CHECK_SEED = 20261110
-BAND_PCTS = (50, 75, 90)                             # the check page's bands: W's rows under their median, to the 75th,
+BAND_PCTS = (50, 75, 90)                             # the check page's bands: the rows under their median, to the 75th,
                                                      # to the 90th, and over (a real line does not carry over: sources
                                                      # differ in scale)
 
 
 def check_bands(flat_values):
-    """((lo, hi), ...) by W's own flatness percentiles."""
+    """((lo, hi), ...) by the given rows' own flatness percentiles (the page passes the doubler-free rows)."""
     import numpy as np
 
     v = list(flat_values)
@@ -535,13 +540,17 @@ def flatness_db(amp, di):
     200-5000 Hz; 10 log10 of the median over the frames where both play (the DI within 30 dB of its loudest, the amp
     within 40 dB of its own, so a gated frame does not read flat). The amp side alone, as the ear hears it: the DI only
     picks the frames (subtracting the DI's own value made plugin rows read their section's DI, Amendment 1's review).
-    Distortion fills the spectrum between a note's harmonics; an EQ, cab or room tilt does not move it. Both signals
-    the same length and aligned. -> dB."""
+    Distortion fills the spectrum between a note's harmonics; an EQ, cab or room tilt does not move it. Mono, aligned,
+    the amp at least as long as the DI. -> dB, or None for a silent amp, no shared frame or under one frame."""
     import numpy as np
 
     from learn import pretrain_set as PS
 
+    if amp.ndim != 1 or di.ndim != 1 or len(amp) < len(di):
+        raise ValueError("flatness_db: mono signals, the amp at least as long as the DI")
     n = (len(di) - FRAME) // HOP + 1
+    if n < 1:
+        return None
     idx = np.arange(FRAME)[None, :] + HOP * np.arange(n)[:, None]
     fa, fd = amp[idx], di[idx]
 
@@ -550,6 +559,8 @@ def flatness_db(amp, di):
 
     rd, ra = level(fd), level(fa)
     act = (rd >= rd.max() - 30) & (ra >= ra.max() - 40)
+    if ra.max() < -90 or not act.any():                  # a silent amp or no shared frame: no reading, never "flat"
+        return None
     win = np.hanning(FRAME)
     f = np.fft.rfftfreq(FRAME, 1 / PS.SR)
     bins = np.where((f >= 200) & (f < 5000))[0]
@@ -638,6 +649,9 @@ def cmd_check_measure(_args):
     rows = w_rows()
     with Pool(3) as pool:
         got = dict(pool.map(_flat_one, rows, chunksize=8))
+    bad = [i for i, v in got.items() if v is None or not math.isfinite(v)]
+    if bad:
+        raise SystemExit(f"{len(bad)} rows have no flatness reading: {bad[:5]}")
     out = heavy_dir() / CHECK_DIR / "flatness.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps({"phase": H2A, "flatness_db": {str(i): v for i, v in sorted(got.items())},
@@ -693,9 +707,9 @@ PAIRS = 5                                            # sections with two cards: 
 
 
 def pair_draw(rows, flat, bands, used, seed=CHECK_SEED + 2):
-    """PAIRS sections not on the band cards, seeded among those whose rows span the bands (the lowest under W's median,
-    the highest at or past its 90th percentile), then the widest if too few; each gives its lowest- and highest-flatness
-    rows, one section a song. -> [{i, band: "pair", amp, section, pair}]."""
+    """PAIRS sections not on the band cards, seeded among those whose rows span the bands (the lowest under the bands'
+    median edge, the highest at or past their 90th-percentile edge), then the widest if too few; each gives its lowest-
+    and highest-flatness rows, one section a song. -> [{i, band: "pair", amp, section, pair}]."""
     lo_edge, hi_edge = bands[0][1], bands[3][0]
     rng = random.Random(seed)
     by = {}
@@ -762,6 +776,47 @@ def cmd_check_page(_args):
     print(f"CHECK PAGE DONE: {len(items)} cards, build {build}, {len(page) / 1e6:.1f} MB -> {d / 'page.html'}")
 
 
+def check_read(items, got, pool, bands):
+    """The check page's read. items: key.json's cards; got: {str(i): verdict}; pool: the doubler-free rows' sorted
+    flatness; bands: the page's bands. -> the line on the band cards (each weighing one, songs resampled), the
+    percentiles, the drop share per band, the pairs' read, and the undecided flags."""
+    import bisect
+
+    bandc = [it for it in items if it["band"] != "pair"]
+    v = lambda it: got[str(it["i"])]
+    pts = [(it["flatness_db"], int(v(it) != "keep"), it["song"]) for it in bandc]
+    neither = [(it["flatness_db"], int(v(it) == "heavy"), it["song"]) for it in bandc if v(it) != "unsure"]
+    pairs = {}
+    for it in items:
+        if it["band"] == "pair":
+            pairs.setdefault(it["pair"], []).append((it["flatness_db"], int(v(it) != "keep")))
+    split = [sorted(p) for p in pairs.values() if sum(y for _, y in p) == 1]
+    card = lambda q: [(x, y, f"card{k}") for k, (x, y, _) in enumerate(q)]            # each card weighs one
+    boot = boot_lines(pts, floor=None, each_one=True)                                   # songs resampled
+    have = sorted(b for b in boot if b is not None)
+
+    def pct(x):
+        return None if x is None else 100.0 * bisect.bisect_left(pool, x) / len(pool)
+
+    line = line_of(card(pts), None)
+    lo90 = have[int(0.05 * len(have))] if have else None
+    hi90 = have[min(len(have) - 1, int(0.95 * len(have)))] if have else None
+    flatter = sum(1 for p in split if p[1][1] == 1)
+    line_band = None if line is None else next(k for k, b in enumerate(bands) if in_band(line, b))
+    undecided = [w for w, c in (("no line", line is None), ("the line falls in the lowest band", line_band == 0),
+                                ("the pairs do not favour the flatter card", 2 * flatter <= len(split))) if c]
+    return {"line_db": line, "line_pct": pct(line), "line_band": line_band,
+            "boot": {"n": len(boot), "none_share": (len(boot) - len(have)) / len(boot), "interval_over": "resamples with a line",
+                     "lo90": lo90, "hi90": hi90, "lo90_pct": pct(lo90), "hi90_pct": pct(hi90)},
+            "unsure_neither_line_db": line_of(card(neither), None),
+            "by_band": [{"band": b, "lo": lo, "hi": hi, "n": sum(1 for it in bandc if it["band"] == b),
+                         "dropped": sum(1 for it in bandc if it["band"] == b and v(it) != "keep")} for b, (lo, hi) in enumerate(bands)],
+            "percentile_of": f"the {len(pool)} doubler-free rows of W outside the heavy bands",
+            "pairs": {"n": len(pairs), "split": len(split), "flatter_dropped": flatter,
+                      "both_dropped": sum(1 for p in pairs.values() if sum(y for _, y in p) == 2)},
+            "undecided": undecided}
+
+
 def cmd_check_answers(args):
     from learn import ear_eat as EE
     from learn import pipeline_fix as P
@@ -773,43 +828,18 @@ def cmd_check_answers(args):
     ex = EE.stored_answers(pathlib.Path(args.stored).read_text())
     if ex.get("build") != key["build"]:
         raise SystemExit(f"{args.stored}: build {ex.get('build')}, this page's is {key['build']}")
-    by_id = {it["id"]: it for it in key["items"]}
     got = SP.unit_verdicts(ex["answers"], [{"id": it["id"], "unit": str(it["i"])} for it in key["items"]])
-    band_ids = [k for k in by_id if by_id[k]["band"] != "pair"]
-    pts = [(by_id[k]["flatness_db"], int(got[str(by_id[k]["i"])] != "keep"), by_id[k]["song"]) for k in band_ids]
-    neither = [(by_id[k]["flatness_db"], int(got[str(by_id[k]["i"])] == "heavy"), by_id[k]["song"]) for k in band_ids
-               if got[str(by_id[k]["i"])] != "unsure"]
-    pairs = {}
-    for k, it in by_id.items():
-        if it["band"] == "pair":
-            pairs.setdefault(it["pair"], []).append((it["flatness_db"], int(got[str(it["i"])] != "keep")))
-    split = [sorted(v) for v in pairs.values() if sum(y for _, y in v) == 1]
-    card = lambda v: [(x, y, f"card{k}") for k, (x, y, _) in enumerate(v)]          # each card weighs one
-    boot = boot_lines(pts, floor=None, each_one=True)                                 # songs resampled
-    have = sorted(b for b in boot if b is not None)
     flat = {int(k): v for k, v in json.loads((d / "flatness.json").read_text())["flatness_db"].items()}
+    if any(flat[it["i"]] != it["flatness_db"] for it in key["items"]):
+        raise SystemExit("flatness.json no longer matches the page's cards")
     pool = sorted(flat[int(x["i"])] for x in no_doubler(w_rows()))
-
-    def pct(v):
-        import bisect
-
-        return None if v is None else 100.0 * bisect.bisect_left(pool, v) / len(pool)
-
-    rep = {"phase": H2A, "build": key["build"], "verdicts": got, "line_db": line_of(card(pts), None),
-           "bins": bins_of(card(pts), None), "bin_line_db": bin_line(bins_of(card(pts), None)),
-           "boot": {"n": len(boot), "none_share": (len(boot) - len(have)) / len(boot), "interval_over": "resamples with a line",
-                    "lo90": have[int(0.05 * len(have))] if have else None, "hi90": have[min(len(have) - 1, int(0.95 * len(have)))] if have else None},
-           "unsure_neither_line_db": line_of(card(neither), None),
-           "percentile_of": "the 1,246 doubler-free rows of W outside the heavy bands",
-           "pairs": {"n": len(pairs), "split": len(split), "flatter_dropped": sum(1 for v in split if v[1][1] == 1),
-                     "both_dropped": sum(1 for v in pairs.values() if sum(y for _, y in v) == 2)},
+    rep = {"phase": H2A, "build": key["build"], "verdicts": got, **check_read(key["items"], got, pool, [tuple(b) for b in key["bands"]]),
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
-    rep["line_pct"], rep["boot"]["lo90_pct"], rep["boot"]["hi90_pct"] = pct(rep["line_db"]), pct(rep["boot"]["lo90"]), pct(rep["boot"]["hi90"])
     (d / "verdicts.json").write_text(json.dumps(rep, indent=1))
     c = {}
     for v in got.values():
         c[v] = c.get(v, 0) + 1
-    print(json.dumps({"heard": c, **{k: rep[k] for k in ("line_db", "line_pct", "bin_line_db", "boot", "unsure_neither_line_db", "pairs")}}, indent=1))
+    print(json.dumps({"heard": c, **{k: rep[k] for k in ("line_db", "line_pct", "line_band", "boot", "unsure_neither_line_db", "by_band", "pairs", "undecided")}}, indent=1))
 
 
 def real_answers():
