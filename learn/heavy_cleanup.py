@@ -963,13 +963,14 @@ def cmd_h2_doubler_render(args):
             it = {"i": int(x["i"]), "kind": "nodoubler"}
             y, st = render_one(x, it, menus, CB.new_renderer)
             renders += 2
-            v = plugin_flatness(x, y)
-            if v is None or not math.isfinite(v):
-                raise SystemExit(f"{it['i']}: no flatness reading on the doubler-off render")
             f = d / "audio" / f"{it['i']:07d}-nodoubler.flac"
             sc, sha = G.write_flac(f, y, PS.SR)
-            fh.write(json.dumps({**it, "file": f.name, "scale": sc, "sha256": sha, "flatness_db": v, "settings": st}) + "\n")
+            v = plugin_flatness(x, G.read_flac(f, sc, sha))          # from the file, as the stored targets are read
+            ok = v is not None and math.isfinite(v)
+            fh.write(json.dumps({**it, "file": f.name, "scale": sc, "sha256": sha, "flatness_db": v if ok else None, "settings": st}) + "\n")
             fh.flush()
+            if not ok:
+                raise SystemExit(f"{it['i']}: no flatness reading on the doubler-off render (its audio is kept)")
             print(f"nodoubler {it['i']}: {v:.3f} dB; renders {renders}", flush=True)
     print(f"H2 DOUBLER RENDER DONE {k}/{n}: {renders} renders (priming included)")
 
