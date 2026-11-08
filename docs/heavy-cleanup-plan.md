@@ -140,6 +140,24 @@ Measured only after the line is set.
 
 **The read by ear** (H4b) is declared on its own before it is built, after training. It is one blind page with S, FTm and the three arms, built to the review session's five requests: N12's stored fields per card; closeness on every candidate; at least 2 repeats a class; S on every card; and model pairs under a J0 log ratio of about 0.06 among the cards. J0 is computed for the draw only, and no score result is read before the page. The review session names its judge, if any, before the answers are opened.
 
+**H4b, the page (declared 2026-11-08 during H4's training, before any H4 read or render is opened).** This is N12's page and code, `score_ear`'s, on N12's 31 units: real songs from 9 other bands through captured amps, in no model's real rows.
+- **Candidates:** S, FTm, `P2b-ftmf`, `P2b-ftmg` and `P2b-ftmc`, each answering from the unit's search half and judged on its held half. The renders are H4a's N12 side read, with FTm's and S's stored renders.
+- **Cards:** 14 first hearings, 8 clean and 6 crunch, at most 2 a band, seeded (seed 20261112).
+  - The clean cards come from the 14 clean units N12's page didn't use.
+  - The crunch cards come from all of N12's crunch units, since only one was unheard. Those cards are marked "heard on N12 with other candidates".
+  - Within a class, units with at least one model pair under a J0 log ratio of 0.06, between FTm and the three arms, are drawn first. J0 is used for the draw only, and the draw is stored before the page.
+  - Plus 2 repeats a class, seeded, so 18 items in two parts of 9.
+- **The page:** N12's, with blind letters, the recording beside, rank and closeness on every candidate, sure or unsure, and the out-of-scope mark. Answered in place.
+- **Stored per card:** each candidate's held-half clip, its window, the lag, the stored J0, and the unit's DI path and start, as N12 stored them.
+- **The read:**
+  - By ear, each arm over FTm: rank share and closeness gap, clustered by the DI's band, with a jackknife t primary (df the bands less one) and Holm over the three rows.
+  - Beside: each arm over S, and the full arm over the gentle.
+  - J0's order against the ear, by N12's rows.
+  - The review session's named judge, if any, by its declared rule.
+  - The page fails if more than 3 of the 14 cards are unfilled.
+- **The decision rule:** an arm counts as better than FTm by ear when its rank share over FTm reads clear above one half after Holm. Otherwise it is undecided or not shown, and the stop rule applies.
+- **Cost:** zero new renders beyond H4a's, and one listening session of 18 cards.
+
 **What it leads to.** The user decides from both reads.
 - **An arm better than FTm** by ear, with the score beside: its cut is adopted.
 - **None better:** the clean-up stops there. No more listening goes into data, and the work turns to the plugin-to-real gap and the score.
