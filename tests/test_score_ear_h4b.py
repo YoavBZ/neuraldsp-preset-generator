@@ -196,6 +196,9 @@ def test_h4b_page_stores_n12s_fields_and_refuses_a_missing_clip_before_building(
     assert it["lag"] == 3 and it["di_path"] == "/d.wav" and it["start_s"] == 1.0 and "heard_on_n12" in it
     assert built["out"] == d / "page" and built["cache"] == d / "aac-cache" and built["listening"] == "ear-h4b"
     assert sorted(built["group"]) == ["A", "B", "C", "D", "E", "ref"]
+    plays = {"S": .5, "FTm": 1., **{t: 2. + j for j, t in enumerate(E.H4B_ARMS)}}          # each letter its candidate's clip
+    assert all(float(built["group"][k][0]) == plays[c] for k, c in built["items"][0]["letters"].items())
+    assert float(built["group"]["ref"][0]) == 0.0
     with pytest.raises(SystemExit, match="exists"):
         E.cmd_h4b_page(None)
     (d / "key.json").unlink()
@@ -277,6 +280,41 @@ def test_the_primary_is_holm_over_the_three_arm_over_ftm_rows():
     assert f["p_sign"] == E.sign_p(14, 14)
 
 
+def test_one_band_gives_no_p_and_no_arm_reads_better():
+    cards = [_card(i, "only", (5, 3, 1, 2, 4)) for i in range(14)]             # the full arm wins every card, in one band
+    rows = E.h4b_primary(cards)
+    f = rows["P2b-ftmf over FTm"]
+    assert f["jackknife"]["share"] == 1.0 and f["jackknife"]["p"] is None
+    assert f["holm"] == 1.0 and not any(r["better_than_FTm"] for r in rows.values())
+
+
+def test_the_page_refuses_spares_and_a_tag_name_on_the_page(tmp_path, monkeypatch):
+    np = pytest.importorskip("numpy")
+    from learn import ear_eat as EE
+    from learn import ear_vreal as EV
+
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    d = tmp_path / E.WIDE_DIR / E.H4B_DIR
+    d.mkdir(parents=True)
+    (d / "plan.json").write_text(json.dumps({"cards": [], "spares": [{"unit": "x"}]}))
+    _ledger(monkeypatch)
+    with pytest.raises(SystemExit, match="no spares"):
+        E.cmd_h4b_page(None)
+    units, on = _units()
+    cards = [dict(c, slug=E.slug_of(c["unit"]), band=c["player"]) for c in E.h4b_draw(units, on)]
+    items = E.page_order(cards, [], E.H4B_CANDS, EE.LETTERS, seed=E.H4B_SEED, repeats=2)
+    monkeypatch.setattr(EV, "level_group", lambda g: (g, {}))
+    monkeypatch.setattr(EV, "encode", lambda y, cache: "x")
+    group = lambda it: {"ref": np.zeros(4), **{k: np.zeros(4) for k in EE.LETTERS}}   # noqa: E731
+    monkeypatch.setattr(EE, "cards", lambda chunk: "<p>P2b-ftmg</p>")
+    from learn import pretrain_set as PS
+
+    monkeypatch.setattr(PS, "HOME", tmp_path / "home")                           # a leak never reaches the real listening dir
+    with pytest.raises(SystemExit, match="the page names"):
+        E.page_parts(items, E.H4B_CANDS, group, d / "cache", "ear-h4b-test", d / "page", "H4b")
+    assert not (d / "page").exists() and not (tmp_path / "home").exists()
+
+
 def test_the_holm_step_can_turn_a_row_off():
     ps = {"x": 0.02, "y": 0.03, "z": 0.5}
     adj = E.holm(ps)
@@ -305,10 +343,15 @@ def test_the_read_splits_the_beside_groups_and_applies_the_failure_rule():
 
     close = next(iter(EV.CLOSE_VALUE))
     items = _items()
-    got = {it["id"]: {"rank": dict(zip("ABCDE", (5, 3, 1, 2, 4))), "close": {k: close for k in "ABCDE"}} for it in items}
+    worse = {"b0", "b1"}                                                         # the full arm loses to FTm in two bands
+    got = {it["id"]: {"rank": dict(zip("ABCDE", (5, 3, 4, 2, 1) if it["cluster"] in worse else (5, 3, 1, 2, 4))),
+                      "close": {k: close for k in "ABCDE"}} for it in items}
     rep = E.h4b_report(items, got, frozenset({"w-di"}), PS.t90)
     assert not rep["page_failed"] and len(rep["read"]) == 14
-    assert rep["primary"]["P2b-ftmf over FTm"]["jackknife"]["share"] == 1.0
+    jk = rep["primary"]["P2b-ftmf over FTm"]["jackknife"]
+    assert jk["clusters"] == len({it["cluster"] for it in items}) == 5 and jk["df"] == 4      # by band, not by card
+    assert jk == E.jackknife_t([(it["cluster"], float(it["cluster"] not in worse)) for it in items])
+    assert jk["share"] == pytest.approx(8 / 14)
     assert rep["beside"]["never_heard_clean"]["cards"] == 8 and rep["beside"]["without_w_di"]["cards"] == 13
     assert set(rep["beside"]["arms_over_S_and_full_over_gentle"]) == {"P2b-ftmf over S", "P2b-ftmg over S", "P2b-ftmc over S",
                                                                          "P2b-ftmf over P2b-ftmg"}
