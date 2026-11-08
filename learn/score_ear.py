@@ -330,10 +330,12 @@ def page_order(cards, spares, cands, letters, seed=PAGE_SEED, gap=4):
 
 
 def filled(items, heard, out):
-    """The first hearings read: cards in scope and answered, a crunch card out giving way to the next crunch spare in page order."""
+    """The first hearings read: cards in scope and answered, a crunch card out or unanswered giving way to the next crunch spare
+    in `SPARE_BANDS` order."""
     first = [it for it in items if it["repeat_of"] is None]
     kept = [it for it in first if not it["spare"] and heard.get(it["id"]) and it["id"] not in out]
-    gone = sum(1 for it in first if not it["spare"] and it["cls"] == "crunch" and it["id"] in out)
+    read = {it["id"] for it in kept}
+    gone = sum(1 for it in first if not it["spare"] and it["cls"] == "crunch" and it["id"] not in read)
     spares = [it for it in first if it["spare"] and heard.get(it["id"]) and it["id"] not in out]
     return kept + sorted(spares, key=lambda it: SPARE_BANDS.index(it["band"]))[:gone]
 
