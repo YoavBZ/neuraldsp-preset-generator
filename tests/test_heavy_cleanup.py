@@ -74,6 +74,8 @@ def test_isotonic_pools_violators_and_the_line_is_the_first_value_reaching_half(
 
 def test_weights_are_one_over_the_cluster_count():
     assert [w for _, _, w in H.weighted([(0, 1, "a"), (1, 0, "a"), (2, 1, "b")])] == [0.5, 0.5, 1.0]
+    third = [(0.0, 1, "a"), (0.0, 0, "a"), (0.0, 0, "a"), (0.0, 1, "b"), (0.0, 0, "b"), (0.0, 1, "b")]   # exactly one half
+    assert H.isotonic(H.weighted(third)) == [(0.0, 0.5)]
     assert H.cluster_of("goat/item_10@240.0#amp_4") == "goat/item_10"
     assert H.cluster_of("set5/BKS_Bulldozer_Full/19_ElecGtr1aDI.wav@15.0#21_ElecGtr1cReamp.wav") == "set5/BKS_Bulldozer_Full/19_ElecGtr1aDI.wav"
 
@@ -97,3 +99,11 @@ def test_answer_points_a_page_verdict_wins_and_unsure_counts_heavy():
 def test_boot_is_seeded():
     pts = [(float(k), int(k > 3), f"c{k}") for k in range(8)]
     assert H.boot_lines(pts, boot=50) == H.boot_lines(pts, boot=50)
+
+
+def test_boot_draws_only_clusters_in_the_fit_and_a_cluster_drawn_twice_counts_twice():
+    pts = [(float(k), int(k > 3), f"c{k}") for k in range(8)] + [(-9.0, 1, "under")]
+    lines = H.boot_lines(pts, boot=200)
+    assert lines == H.boot_lines([p for p in pts if p[2] != "under"], boot=200)
+    one = [(0.0, 0, "a"), (1.0, 1, "b")]
+    assert H.line_of([(x, y, f"{c}#{k}") for k, (x, y, c) in enumerate(one + one)]) == 1.0

@@ -19,6 +19,7 @@ import pathlib
 import random
 import sys
 import time
+from fractions import Fraction
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 if str(PLUGIN_ROOT) not in sys.path:
@@ -342,11 +343,12 @@ def cluster_of(unit):
 
 
 def weighted(points):
-    """[(db, heavy, cluster)] -> [(db, heavy, weight)], weight one over the cluster's count among them."""
+    """[(db, heavy, cluster)] -> [(db, heavy, weight)], weight one over the cluster's count among them, exact, so a fit
+    of exactly one half reads as one half."""
     n = {}
     for _, _, c in points:
         n[c] = n.get(c, 0) + 1
-    return [(x, y, 1.0 / n[c]) for x, y, c in points]
+    return [(x, y, Fraction(1, n[c])) for x, y, c in points]
 
 
 def isotonic(points):
@@ -354,7 +356,7 @@ def isotonic(points):
     points: [(db, heavy 0/1, weight)] -> [(db, fitted)] by measure."""
     by = {}
     for x, y, w in points:
-        a = by.setdefault(x, [0.0, 0.0])
+        a = by.setdefault(x, [Fraction(0), Fraction(0)])
         a[0] += w * y
         a[1] += w
     blocks = []                                      # [sum wy, sum w, [xs]]
@@ -365,7 +367,7 @@ def isotonic(points):
             blocks[-1][0] += b[0]
             blocks[-1][1] += b[1]
             blocks[-1][2] += b[2]
-    return [(x, b[0] / b[1]) for b in blocks for x in b[2]]
+    return [(x, float(b[0] / b[1])) for b in blocks for x in b[2]]
 
 
 def line_of(points):
@@ -399,7 +401,7 @@ def bins_of(points):
         b = out.pop()
         out[-1][1], out[-1][2] = b[1], out[-1][2] + b[2]
     return [{"lo": lo, "hi": hi, "n": len(ks), "clusters": len({pts[k][2] for k in ks}),
-             "share": sum(w[k] * pts[k][1] for k in ks) / sum(w[k] for k in ks) if ks else None} for lo, hi, ks in out]
+             "share": float(sum(w[k] * pts[k][1] for k in ks) / sum(w[k] for k in ks)) if ks else None} for lo, hi, ks in out]
 
 
 def bin_line(bins):
@@ -407,11 +409,11 @@ def bin_line(bins):
 
 
 def boot_lines(points, boot=BOOT, seed=BOOT_SEED):
-    """The line on cluster-bootstrap resamples (a resampled cluster's recordings keep their own cluster, numbered
-    apart). -> [line or None]."""
+    """The line on cluster-bootstrap resamples of the fit's population (the clusters with a recording at or over the
+    floor; a resampled cluster's recordings keep their own cluster, numbered apart). -> [line or None]."""
     rng = random.Random(seed)
     by = {}
-    for p in points:
+    for p in (q for q in points if q[0] >= FLOOR_DB):
         by.setdefault(p[2], []).append(p)
     cs = sorted(by)
     out = []
@@ -438,7 +440,7 @@ def answer_points(nl, verdicts, marks, unsure_heavy=True, ear_eat_keeps=True, ea
 
 
 def eat_only_keeps():
-    """Units whose keep mark comes only from an ear-eat card with no scope mark."""
+    """Units answered only on ear-eat's cards (their mark keep or out; `answer_points` drops only the keeps)."""
     from learn import ear_eat as EE
     from learn import pipeline_fix as P
 
@@ -463,6 +465,8 @@ def cmd_line(_args):
     d = SP.scope_dir()
     lst = json.loads((d / "list.json").read_text())
     ver = json.loads((d / "verdicts.json").read_text())["verdicts"]
+    if set(ver) != set(lst["ask"]):
+        raise SystemExit("verdicts.json is not from this list's asked recordings")
     nl, marks = dict(lst["nl"]), dict(lst["marks"])
     goat = {u["unit"]: u for u in P.goat_units()}
     heavy = json.loads((P.out_dir() / P.GOAT_DIR / "heavy.json").read_text())["verdicts"]
@@ -470,6 +474,9 @@ def cmd_line(_args):
     missing = [u for u in extra if u not in goat]
     if missing:
         raise SystemExit(f"goat-heavy units with no GOAT part: {missing}")
+    bad = {u: v["verdict"] for u, v in heavy.items() if v["verdict"] not in ("keep", "heavy")}
+    if bad:
+        raise SystemExit(f"goat-heavy verdicts outside keep and heavy: {bad}")
     for u, v in extra.items():
         nl[u] = EE.nonlinear_db("goat", goat[u])
         marks[u] = "keep" if v["verdict"] == "keep" else "out"
@@ -483,7 +490,7 @@ def cmd_line(_args):
     got = [b for b in boot if b is not None]
     got.sort()
     rep = {"phase": H2, "line_db": line_of(main), "bins": bins_of(main), "bin_line_db": bin_line(bins_of(main)),
-           "boot": {"n": len(boot), "none_share": 1 - len(got) / len(boot),
+           "boot": {"n": len(boot), "none_share": (len(boot) - len(got)) / len(boot), "interval_over": "resamples with a line",
                     "lo90": got[int(0.05 * len(got))] if got else None, "hi90": got[min(len(got) - 1, int(0.95 * len(got)))] if got else None},
            "beside": {k: {"line_db": line_of(v), "bin_line_db": bin_line(bins_of(v)), "n": len([p for p in v if p[0] >= FLOOR_DB])}
                       for k, v in rows.items() if k != "primary"},
