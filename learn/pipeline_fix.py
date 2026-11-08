@@ -4088,6 +4088,8 @@ def cmd_goat_report(args):
         out["rows"][f"{a} - {b}{sfx}"] = {**{q: c.get(q) for q in keep}, "missing": missing,
                                           "per_item": c.get("per_cluster"),
                                           "by_fold": {q: f.get(q) for q in keep + ("per_cluster",)}}
+        if apart is not None and not sfx:                  # H4: the primary units by class, clustered by item
+            out["rows"].update(h4_class_rows(f"{a} - {b}", [r[:3] for r in rows], lambda u: units[u]["cls"], keep))
         if c["mean"] is not None:
             iv = lambda z: "" if z["lo90"] is None else f" [{z['lo90']:+.4f}, {z['hi90']:+.4f}]"   # noqa: E731 (one cluster: none)
             print(f"{a} - {b}{sfx}: {c['mean']:+.4f}{iv(c)} by item ({c['clusters']} items, "
@@ -4459,6 +4461,8 @@ def cmd_real_report(args):
         if fold_of is not None:
             by_fold = clustered([(fold_of[meta[r[1]]["di"]], r[1], r[2]) for r in rows])
             out["rows"][f"{a} - {b}{sfx}"]["by_fold"] = {q: by_fold.get(q) for q in keep + ("per_cluster",)}
+        if apart is not None and not sfx:                  # H4: the primary units by class, clustered by DI
+            out["rows"].update(h4_class_rows(f"{a} - {b}", [r[:3] for r in rows], lambda u: meta[u]["cls"], keep))
         r_ = out["rows"][f"{a} - {b}{sfx}"]
         if r_["mean"] is not None:
             iv = "" if r_["lo90"] is None else f" [{r_['lo90']:+.4f}, {r_['hi90']:+.4f}]"
@@ -7288,6 +7292,23 @@ def h4_apart(out):
     out["h4_apart"] = {"real_out": sorted(ex["real_out"]), "exclusions_sha256": ex["sha256"],
                        "rule": "primary rows on the units no arm's cleaning removed; the real_out units apart"}
     return ex["real_out"]
+
+
+H4_CLASSES = ("clean", "crunch")
+
+
+def h4_class_rows(row, rows, cls_of, keep):
+    """`--h4-apart`'s rows by class beside a primary row: rows [(cluster, part, value)] split by `cls_of(part)`, each
+    clustered as the primary is (`clustered`: parts within clusters, the 90% t interval over clusters).
+    -> {"<row> (clean)": {...}, "<row> (crunch)": {...}}."""
+    out = {}
+    for cls in H4_CLASSES:
+        c = clustered([r for r in rows if cls_of(r[1]) == cls])
+        out[f"{row} ({cls})"] = {**{q: c.get(q) for q in keep}, "class": cls, "per_cluster": c.get("per_cluster")}
+        if c["mean"] is not None:
+            iv = "" if c["lo90"] is None else f" [{c['lo90']:+.4f}, {c['hi90']:+.4f}]"
+            print(f"{row} ({cls}): {c['mean']:+.4f}{iv} ({c['clusters']} clusters, {c['parts']} units)")
+    return out
 
 
 def h4_apart_groups(units, apart, key=lambda u: u[0]):

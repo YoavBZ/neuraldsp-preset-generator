@@ -285,6 +285,26 @@ def net_answers(models, units):
     return out
 
 
+def fold_nets(tag):
+    """{fold: [net per seed]}: an H4 tag's FT_k runs (`pipeline_fix.H4_FT_TAGS`), each at its read checkpoint
+    (`ft_read_check`) and its own arm's run on the pinned exclusions (`h4_read_check`, which needs `phase_h4` and
+    `phase_h4_exclusions`), for `net_answers` to read as it reads FTm's."""
+    from learn import pipeline_fix as P
+
+    if tag not in P.H4_FT_TAGS:
+        raise SystemExit(f"fold_nets: {tag} is not an H4 tag ({', '.join(sorted(P.H4_FT_TAGS))})")
+    sha = P.h4_exclusions()["sha256"]
+    out = {}
+    for k in range(P.REAL_FOLDS):
+        out[k] = []
+        for sd in P.SEEDS:
+            net, rec = P.load_run(f"{tag}-k{k}", sd, "best")
+            P.ft_read_check(rec)
+            P.h4_read_check(rec, sha)
+            out[k].append(net)
+    return out
+
+
 def cmd_predict_arm(a):
     """A mixture arm's per-half answers, after the same code on FTm's own nets reproduces its stored answers."""
     from learn import bakeoff_train as T
