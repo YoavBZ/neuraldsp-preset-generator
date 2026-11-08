@@ -134,11 +134,36 @@ Measured only after the line is set.
   - each arm less S;
   - each arm less FTm by class;
   - the full arm less the gentle arm;
-  - each arm less FTm on N12's 31 units, by N12's FTm answer path. That set is other bands' songs, in no model's real rows.
+  - each arm less FTm on N12's units, by N12's FTm answer path: the primary on the 27 units whose DI is not among W's training rows, with all 31 and the 4 apart beside. That set is other bands' songs, in no model's real rows.
 - The N12 side read needs `score_ear`'s FTm answer path extended to the H4 tags before H4a; the by-class rows are added to the reports then.
 - No bar is set, and undecided is not failed. The score is weak between close models (F65, F66), so by the score alone a small difference will likely read undecided, and the ear page decides.
 
-**The read by ear** (H4b) is declared on its own before it is built, after training. It is one blind page with S, FTm and the three arms, built to the review session's five requests: N12's stored fields per card; closeness on every candidate; at least 2 repeats a class; S on every card; and model pairs under a J0 log ratio of about 0.06 among the cards. J0 is computed for the draw only, and no score result is read before the page. The review session names its judge, if any, before the answers are opened.
+**The read by ear** (H4b) is declared on its own before it is built, after training. It is one blind page with S, FTm and the three arms, built to the review session's requests: N12's stored fields per card, closeness on every candidate, at least 2 repeats a class, and S on every card. A fifth request, drawing close model pairs first, was dropped once no judge was named (S12), since it would bias the arm-over-FTm read.
+
+**H4b, the page (declared 2026-11-08 during H4's training, before any H4 read or render is opened).** This is N12's page and code, `score_ear`'s, on N12's 31 units: real songs from 9 other bands through captured amps, in no model's real rows.
+- **Candidates:** S, FTm, `P2b-ftmf`, `P2b-ftmg` and `P2b-ftmc`, each answering from the unit's search half and judged on its held half.
+  - The clips come from H4a's N12 side read, which keeps every tag's held-window clip on all 31 units.
+  - On the 15 units N12's page didn't use, it also renders S (checked against its stored hash) and keeps S's and FTm's clips. That adds about 60 renders to H4a.
+- **Cards:** 14 first hearings, 8 clean and 6 crunch, at most 2 a band, seeded (seed 20261112).
+  - The clean cards come from the 14 clean units N12's page didn't use.
+  - The crunch cards come from all of N12's crunch units, since only one was unheard. Those cards are marked "heard on N12 with other candidates".
+  - Within a class the draw is plain and seeded, as N12's was. No score enters it: a draw that put close model pairs first would push each arm's share over FTm toward one half, and no judge was named to need them (S12).
+  - Plus 2 repeats a class, seeded, so 18 items in two parts of 9.
+- **The page:** N12's, with blind letters, the recording beside, rank and closeness on every candidate, sure or unsure, and the out-of-scope mark. Answered in place.
+- **Stored per card:** each candidate's held-half clip, its window, the lag, the stored J0, and the unit's DI path and start, as N12 stored them.
+- **The read:**
+  - By ear, each arm over FTm: rank share and closeness gap, clustered by the DI's band. N12's rows (bootstrap share, sign test) stay beside.
+  - **Primary,** new code: the one-sided p of the band-clustered jackknife t on the rank share over FTm (df the bands less one), Holm over the three arm-over-FTm rows.
+  - **Beside:** the same rows on the 8 clean cards never heard before, and the rows without the 4 units whose exact DI is among W's training rows. On those 4 units FTm and `P2b-ftmc` have seen the recordings through the plugin, while the cut arms lost some or all of them. H4a's N12 side read reports the same apart group.
+  - Beside: each arm over S, and the full arm over the gentle.
+  - J0's order against the ear, by N12's rows.
+  - Named judge: none (S12, `docs/judge-screen-results.md`), so J0 alone. In the score-against-ear rows, the heard-before crunch cards are also reported apart, beside only.
+  - The page fails if more than 3 of the 14 cards are unfilled.
+- **The decision rule:** an arm counts as better than FTm by ear when the primary's Holm-adjusted one-sided p is below 0.05.
+  - Otherwise it is not shown at this size, and the stop rule applies.
+  - **Power:** with 14 cards in about 7 bands only a large gain reads clear, so "not shown" means not shown here, not no effect.
+  - The page's code is N12's, extended to 2 repeats a class, since `page_order` repeats one card a class today.
+- **Cost:** no renders beyond H4a's (which include the 60 above), and one listening session of 18 cards.
 
 **What it leads to.** The user decides from both reads.
 - **An arm better than FTm** by ear, with the score beside: its cut is adopted.

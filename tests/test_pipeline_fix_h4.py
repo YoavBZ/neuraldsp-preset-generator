@@ -2,6 +2,7 @@
 chain, the inputs guard and the read's registrations, all without training or rendering."""
 import argparse
 import json
+import math
 
 import pytest
 
@@ -281,13 +282,14 @@ def test_the_h4_tags_reach_the_predict_paths_and_refuse_without_the_pin(monkeypa
 def test_h4_apart_reports_real_out_units_apart_and_leaves_the_default_unchanged(tmp_path, monkeypatch):
     pytest.importorskip("scipy")
     _pin(tmp_path, monkeypatch, doc=_lists(real_out=("g/u2",)), have=(P.H4, P.H4_EXCL, "phase_5c"))
-    units = [{"unit": f"g/u{j}", "amp": "pr12", "item": f"it{j}", "fold": j % 4} for j in range(6)]
+    units = [{"unit": f"g/u{j}", "amp": "pr12", "item": f"it{j}", "fold": j % 4, "cls": ("clean", "crunch")[j % 2]}
+             for j in range(6)]
     monkeypatch.setattr(P, "goat_read_units", lambda tol=None: units)
     for t, scale in (("P2b-ftmf", 1.0), ("P2b-ftm", 2.0)):
         d = tmp_path / P.GOAT_DIR / "judge" / t
         d.mkdir(parents=True)
         for j, u in enumerate(units):
-            v = scale * (1 + j)
+            v = scale * (1 + j) * (0.5 if t == "P2b-ftmf" and u["cls"] == "crunch" else 1.0)
             (d / f"{j}.json").write_text(json.dumps({"unit": u["unit"], "amp": "pr12",
                                                      "judge": {"A": {"B": v}, "B": {"A": v * 1.1}}}))
     a = argparse.Namespace(pairs="P2b-ftmf:P2b-ftm", label="t", lag_tol=None, h4_apart=False)
@@ -297,8 +299,13 @@ def test_h4_apart_reports_real_out_units_apart_and_leaves_the_default_unchanged(
     assert base["rows"]["P2b-ftmf - P2b-ftm"]["parts"] == 6
     P.cmd_goat_report(argparse.Namespace(**{**vars(a), "h4_apart": True}))
     rep = json.loads((tmp_path / P.GOAT_DIR / "report-t.json").read_text())
-    assert list(rep["rows"]) == ["P2b-ftmf - P2b-ftm", "P2b-ftmf - P2b-ftm (real_out, apart)"]
+    assert list(rep["rows"]) == ["P2b-ftmf - P2b-ftm", "P2b-ftmf - P2b-ftm (clean)", "P2b-ftmf - P2b-ftm (crunch)",
+                                 "P2b-ftmf - P2b-ftm (real_out, apart)"]
     assert rep["rows"]["P2b-ftmf - P2b-ftm"]["parts"] == 5
+    clean, crunch = rep["rows"]["P2b-ftmf - P2b-ftm (clean)"], rep["rows"]["P2b-ftmf - P2b-ftm (crunch)"]
+    assert clean["parts"] == clean["clusters"] == 2 and crunch["parts"] == crunch["clusters"] == 3   # g/u2 apart
+    assert clean["mean"] == pytest.approx(math.log(0.5)) and crunch["mean"] == pytest.approx(math.log(0.25))
+    assert clean["class"] == "clean" and crunch["lo90"] == pytest.approx(math.log(0.25))
     assert rep["rows"]["P2b-ftmf - P2b-ftm (real_out, apart)"]["parts"] == 1
     assert rep["h4_apart"]["real_out"] == ["g/u2"] and rep["ledger"].endswith(P.H4)
     assert P.h4_apart_groups([("a", 1), ("b", 2)], None) == [("", [("a", 1), ("b", 2)])]
@@ -309,7 +316,8 @@ def test_real_report_h4_apart_splits_the_rows_by_real_out(tmp_path, monkeypatch)
     from learn import cc_build as CB
 
     _pin(tmp_path, monkeypatch, doc=_lists(real_out=("s/A/d1@0#t1",)), have=(P.H4, P.H4_EXCL, "phase_5b1", "phase_5b2"))
-    parts = [{"unit": f"s/A/d{j}@0#t{j}", "di": f"d{j % 3}", "rig": f"r{j}"} for j in range(6)]
+    parts = [{"unit": f"s/A/d{j}@0#t{j}", "di": f"d{j % 3}", "rig": f"r{j}", "cls": "crunch" if j == 5 else "clean"}
+             for j in range(6)]
     d = tmp_path / P.REAL_DIR / "answers"
     d.mkdir(parents=True)
     (d / "S.json").write_text(json.dumps({"parts": parts}))
@@ -335,6 +343,10 @@ def test_real_report_h4_apart_splits_the_rows_by_real_out(tmp_path, monkeypatch)
     assert rep["rows"]["P2b-ftmg - P2b-ftm"]["parts"] == 5
     assert rep["rows"]["P2b-ftmg - P2b-ftm (real_out, apart)"]["parts"] == 1
     assert rep["rows"]["P2b-ftmg - P2b-ftm"]["directions"] == 5 * len(P.AMPS3) * 2
+    clean, crunch = rep["rows"]["P2b-ftmg - P2b-ftm (clean)"], rep["rows"]["P2b-ftmg - P2b-ftm (crunch)"]
+    assert clean["parts"] == 4 and clean["clusters"] == 3 and crunch["parts"] == 1 and crunch["clusters"] == 1
+    assert clean["mean"] == pytest.approx(math.log(0.5)) and crunch["lo90"] is None     # one DI: no interval
+    assert not any("(clean)" in k for k in base["rows"])                               # without the flag: no class rows
 
 
 # --- the two training commands' H4 wiring, end to end with fakes in place of torch, the data and `fit` ------------------

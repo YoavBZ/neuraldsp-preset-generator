@@ -6,6 +6,9 @@
     $MAIN -m learn.score_ear render --shard k/n                     # every reader on every unit, the cards' clips kept
     $MAIN -m learn.score_ear page                                   # -> listening/ear-wide-1 and -2, and two artifact pages
     $MAIN -m learn.score_ear wide OUT.json --answers FILE1 FILE2    # N12's rows
+    $TORCH_PY -m learn.score_ear h4-answers --tags P2b-ftmf,P2b-ftmg,P2b-ftmc   # H4a: the H4 tags by N12's FTm path
+    $MAIN -m learn.score_ear h4-render --tags P2b-ftmf,P2b-ftmg,P2b-ftmc --shard k/n   # their renders, FTm's checked first
+    $MAIN -m learn.score_ear h4-wide OUT.json --tags P2b-ftmf,P2b-ftmg,P2b-ftmc        # each tag less FTm, by band
 
 Nothing here changes J0 or picks a model. A card is one part of one page: its ear ranks and closeness, and J0's held-half distance
 per candidate. V-real's and `record-match-1`'s rows inform the report and never brief a judge term.
@@ -565,17 +568,27 @@ def cmd_answers(_args):
     """FTm per search half, all 8 fold-and-seed models pooled, after `net_answers`' path reproduces stored answers on BKS and GOAT."""
     from learn import bakeoff_render as BR
     from learn import bakeoff_train as T
+    from learn import pipeline_fix as P
+
+    P.require(WIDE)
+    folds = {k: [P.load_run(f"{BR.FTM}-k{k}", sd, "best")[0] for sd in T.SEEDS] for k in range(P.REAL_FOLDS)}
+    wide_answers(folds, BR.FTM, "FTm")
+
+
+def wide_answers(folds, stored_tag, tag):
+    """N12's answer path for fold models `folds` ({fold: [net per seed]}): the control first (`net_answers` on every 12th read
+    unit must reproduce `stored_tag`'s stored BKS and GOAT answers), then all 8 nets pooled on each unit's backed search half,
+    every control outside the search at S -> ear-wide/answers/<tag>.json."""
+    from learn import bakeoff_render as BR
     from learn import direct_stems as DS
     from learn import full_space as F
     from learn import local_objective as LO
     from learn import pipeline_fix as P
 
-    P.require(WIDE)
-    folds = {k: [P.load_run(f"{BR.FTM}-k{k}", sd, "best")[0] for sd in T.SEEDS] for k in range(P.REAL_FOLDS)}
     some = BR.read_units()[::12]
     got = BR.net_answers(folds, some)
     for w in BR.SETS:
-        want = BR.stored_answers(w, BR.FTM)
+        want = BR.stored_answers(w, stored_tag)
         bad = [k for k in got[w] if got[w][k] != want[k]]
         if bad or not got[w]:
             raise SystemExit(f"control: {w}: {len(bad)} of {len(got[w])} keys differ from the stored answers")
@@ -592,10 +605,10 @@ def cmd_answers(_args):
         r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
         st = P.hold_outside_space(F.answer_settings(u["amp"], S, r["a2"], r["sw_p"], r["mics"]), S, u["amp"])
         out[u["unit"]] = {search: {"select": sel, "settings": LO.sdict(st)}}
-    path = wide_dir() / "answers" / "FTm.json"
+    path = wide_dir() / "answers" / f"{tag}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"tag": "FTm", "time": time.strftime("%Y-%m-%d %H:%M:%S"), "answers": out}))
-    print("FTm", len(out), "units", flush=True)
+    path.write_text(json.dumps({"tag": tag, "time": time.strftime("%Y-%m-%d %H:%M:%S"), "answers": out}))
+    print(tag, len(out), "units", flush=True)
 
 
 def stored_reader(tag):
@@ -786,6 +799,208 @@ def cmd_wide(args):
     print(json.dumps({k: rep[k] for k in ("primary", "pages_difference", "page_failed", "ear", "by_score", "repeats")}, indent=1))
 
 
+# --- H4a's side read: each H4 tag less FTm on N12's units, by N12's FTm answer path (docs/heavy-cleanup-plan.md) --------
+
+H4 = "phase_h4"
+H4_DIR = "h4"                                        # ear-wide/h4/<tag>/<slug>.json; N12's own renders are never written
+
+
+def h4_tags(tags):
+    """`--tags` as H4 tags (`pipeline_fix.H4_FT_TAGS`); any other refuses."""
+    from learn import pipeline_fix as P
+
+    got = [t for t in tags.split(",") if t]
+    bad = [t for t in got if t not in P.H4_FT_TAGS]
+    if bad or not got:
+        raise SystemExit(f"--tags takes H4's tags only ({', '.join(sorted(P.H4_FT_TAGS))}): {bad or 'none given'}")
+    return got
+
+
+def cmd_h4_answers(args):
+    """Each H4 tag's answers on N12's units by N12's FTm path (`wide_answers`): its 8 FT_k nets (`bakeoff_render.fold_nets`,
+    each through `h4_read_check`), after they reproduce the tag's stored real-predict and goat-predict answers."""
+    from learn import bakeoff_render as BR
+    from learn import pipeline_fix as P
+
+    P.require(WIDE)
+    P.require(H4)
+    for tag in h4_tags(args.tags):
+        wide_answers(BR.fold_nets(tag), tag, tag)
+
+
+def h4_judged(tag, slug):
+    """A tag's stored H4 render record on a unit, or None (a record is written after its clip, so it marks the unit done)."""
+    p = wide_dir() / H4_DIR / tag / f"{slug}.json"
+    return json.loads(p.read_text()) if p.exists() else None
+
+
+H4_BASE = "base"                                     # ear-wide/h4/base/<slug>.npz: ref, FTm and (where N12 kept none) S's clips
+
+
+def h4_base_done(slug):
+    """Whether a unit's base clips are kept: N12's own `clips.npz` (a card or spare), or this read's base file holding S."""
+    if (wide_dir() / "renders" / slug / "clips.npz").exists():
+        return True
+    p = wide_dir() / H4_DIR / H4_BASE / f"{slug}.npz"
+    if not p.exists():
+        return False
+    import numpy as np
+
+    return "S" in np.load(p).files
+
+
+def h4_window(held, n_ref, n_ren, lag):
+    """The held half's judge window in samples (`render`'s rule: `R.HALVES[held]` at `E.SR`, `E.window`). -> (s0, s1)."""
+    from learn import ear_vreal as EV
+    from learn import rescore as R
+
+    a, b = (int(x * EV.SR) for x in R.HALVES[held])
+    return EV.window(a, b, n_ref, n_ren, lag)
+
+
+def cmd_h4_render(args):
+    """Each H4 tag's answer through each N12 unit's DI, a fresh process and a priming render each, judged on the held half at
+    the unit's lag, as `render` renders FTm, its held-window clip kept beside its record (ear-wide/h4/<tag>/<slug>.npz, .json).
+    FTm's stored answer renders again on each shard's first unit, and on every unit N12 kept no clips for, held to N12's stored
+    hash; on those units S renders too, held to the search's stored hash; their clips and the record's window go to
+    ear-wide/h4/base/<slug>.npz, once per unit. Resumes unit by unit."""
+    import numpy as np
+
+    from learn import arm_a_levers as AL
+    from learn import audibility_measure as AM
+    from learn import cc_build as CB
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+    from learn import pipeline_fix as P
+    from learn import pretrain_set as PS
+    from learn import song_bank as B
+    from learn import trusted_data as T
+
+    P.require(WIDE)
+    P.require(H4)
+    tags = h4_tags(args.tags)
+    readers = {t: stored_reader(t) for t in ["FTm", *tags]}
+    units, recs, _ = wide_units()
+    ms = AL.menu_S()
+    k, n = (int(x) for x in args.shard.split("/"))
+    trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
+    LO._wait_cap()
+    renders, checked = 0, False
+    for u in sorted(units, key=lambda q: q["unit"])[k::n]:
+        slug = slug_of(u["unit"])
+        todo = [t for t in tags if h4_judged(t, slug) is None]
+        base = not h4_base_done(slug)                    # no clips of S and FTm kept for this unit yet
+        if not todo and not base:
+            continue
+        rec = recs[u["unit"]]
+        search, held, lag = rec["search"], rec["held"], rec["lag"]
+        n12 = json.loads((wide_dir() / "renders" / slug / "rec.json").read_text())
+        if (n12["lag"], n12["held"]) != (lag, held):
+            raise SystemExit(f"{u['unit']}: N12's stored lag or half differs from the search record's")
+        di32 = B.measure(PS.section_audio(u["di_path"], u["start_s"])).astype(np.float32)
+        di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
+        ref = np.asarray(P.real_amp_track(u["sd"], u["track"], u["start_s"]), np.float64)
+        sel, S = ms[u["amp"]][u["cls"]]
+        jobs = (["FTm"] if base or not checked else []) + (["S"] if base else []) + todo
+        kept = {}
+        for c in jobs:
+            if PS.free_gb() < T.DISK_GUARD_GB:
+                raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
+            a = {"select": sel, "settings": LO.sdict(S)} if c == "S" else readers[c][u["unit"]][search]
+            st = LO.tdict(a["settings"])
+            y = np.asarray(AM.fresh_render(CB.new_renderer, di32, a["select"], st, st), np.float64)[trim[0]:trim[1]]
+            renders += 2
+            sha = AM.audio_sha(y)
+            mono = np.mean(y, 1) if y.ndim == 2 else y
+            s0, s1 = h4_window(held, len(ref), len(mono), lag)
+            clip = mono[s0 - lag:s1 - lag].astype(np.float32)
+            if c in ("FTm", "S"):                            # the controls: N12's FTm render, the search's S render
+                want = n12["sha"]["FTm"] if c == "FTm" else rec["s_render_sha256"]
+                if sha != want:
+                    raise SystemExit(f"{u['unit']}: {c}'s render differs from {'N12' if c == 'FTm' else 'the search'}'s stored one")
+                checked = checked or c == "FTm"
+                kept[c], win = clip, (s0, s1)
+                continue
+            d = wide_dir() / H4_DIR / c
+            d.mkdir(parents=True, exist_ok=True)
+            np.savez(d / f"{slug}.npz", clip=clip, window=np.array([s0, s1]))
+            (d / f"{slug}.json").write_text(json.dumps({
+                "unit": u["unit"], "tag": c, "lag": lag, "held": held, "search": search, "window": [s0, s1],
+                "answer_sha256": hashlib.sha256(json.dumps(a, sort_keys=True).encode()).hexdigest(),
+                "sha": sha, "judge": K.judge(ref, y, di, lag)[held]}, indent=1))
+        if kept:                                           # FTm's (and S's) clips, the reference's window beside them
+            s0, s1 = win
+            d = wide_dir() / H4_DIR / H4_BASE
+            d.mkdir(parents=True, exist_ok=True)
+            p = d / f"{slug}.npz"
+            old = dict(np.load(p)) if p.exists() else {}
+            np.savez(p, **{**old, "ref": ref[s0:s1].astype(np.float32), **kept, "window": np.array([s0, s1])})
+        print(f"{u['amp']} {u['cls']} {u['player']}: renders so far {renders}", flush=True)
+    print(f"H4 N12 RENDER DONE {k}/{n}: {renders} renders", flush=True)
+
+
+def w_dis():
+    """The DIs of W's training rows (`bakeoff.plugin_set`, which refuses unless the ids are W's): their sections' DI files."""
+    from learn import bakeoff as BK
+
+    rows, _ = BK.plugin_set()
+    return frozenset(r["section"].rsplit("@", 1)[0] for r in rows)
+
+
+H4_GROUPS = (("", "primary: the units whose DI W never trained on"), (" (all units)", "every unit"),
+             (" (W's DIs, apart)", "the units whose DI is among W's training rows"))
+
+
+def h4_rows(units, recs, tags, judged, n12, apart=frozenset()):
+    """Each tag less FTm (and less S beside) by the score on N12's units, ln(d_tag / d_FTm) on the held half, clustered by the DI's
+    band as N12's `by_score`: the primary on the units whose DI is not in `apart` (W's training DIs), the all-units row and the
+    apart units' row beside. judged(tag, slug), n12(slug) -> a judge record or None. Refuses a unit with no render; a non-finite
+    judge drops that unit from the row, counted. -> {row: interval, ...}, counts."""
+    from learn import pretrain_set as PS
+
+    miss = [(t, u["unit"]) for t in tags for u in units if judged(t, slug_of(u["unit"])) is None]
+    if miss:
+        raise SystemExit(f"{len(miss)} renders missing, first {miss[0]}")
+    keep = {"": lambda u: u["di"] not in apart, " (all units)": lambda u: True, " (W's DIs, apart)": lambda u: u["di"] in apart}
+    rows, refused = {}, {}
+    for t in tags:
+        for base in ("FTm", "S"):
+            for sfx, _ in H4_GROUPS:
+                v, bad = [], 0
+                for u in filter(keep[sfx], units):
+                    rec = recs[u["unit"]]
+                    j = dict(n12(slug_of(u["unit"]))["judge"])
+                    j.setdefault("S", rec["s_judge"][rec["held"]])
+                    x, y = judged(t, slug_of(u["unit"]))["judge"], j[base]
+                    if not all(isinstance(z, (int, float)) and math.isfinite(z) and z > 0 for z in (x, y)):
+                        bad += 1
+                        continue
+                    v.append((u["player"], math.log(x / y)))
+                rows[f"{t} less {base}{sfx}"] = interval(v, PS.t90)
+                refused[f"{t} less {base}{sfx}"] = bad
+    return rows, refused
+
+
+def cmd_h4_wide(args):
+    """H4a's side read on N12's units (zero renders): each tag less FTm, and less S beside, clustered by band; the primary leaves
+    out the units whose DI is among W's training rows, which are reported apart, with every unit beside. -> OUT.json."""
+    from learn import pipeline_fix as P
+
+    P.require(WIDE)
+    P.require(H4)
+    tags = h4_tags(args.tags)
+    units, recs, _ = wide_units()
+    apart = w_dis()
+    rows, refused = h4_rows(units, recs, tags, h4_judged,
+                            lambda slug: json.loads((wide_dir() / "renders" / slug / "rec.json").read_text()), apart)
+    rep = {"phase": H4, "read": "N12's units, N12's FTm answer path; ln(d_tag / d_FTm) on the held half, clustered by band",
+           "units": len(units), "bands": len({u["player"] for u in units}), "groups": dict(H4_GROUPS),
+           "w_di_units": sorted(u["unit"] for u in units if u["di"] in apart), "rows": rows, "refused": refused,
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    pathlib.Path(args.out).write_text(json.dumps(rep, indent=1))
+    print(json.dumps({k: rep[k] for k in ("units", "bands", "w_di_units", "rows", "refused")}, indent=1))
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -802,6 +1017,17 @@ def main(argv=None):
     s = sub.add_parser("stored")
     s.add_argument("out")
     s.set_defaults(fn=cmd_stored)
+    s = sub.add_parser("h4-answers")
+    s.add_argument("--tags", required=True)
+    s.set_defaults(fn=cmd_h4_answers)
+    s = sub.add_parser("h4-render")
+    s.add_argument("--tags", required=True)
+    s.add_argument("--shard", default="0/1")
+    s.set_defaults(fn=cmd_h4_render)
+    s = sub.add_parser("h4-wide")
+    s.add_argument("out")
+    s.add_argument("--tags", required=True)
+    s.set_defaults(fn=cmd_h4_wide)
     args = ap.parse_args(argv)
     args.fn(args)
 
