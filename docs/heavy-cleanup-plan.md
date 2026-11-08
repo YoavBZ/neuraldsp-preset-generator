@@ -164,6 +164,7 @@ Measured only after the line is set.
   - **Power:** with 14 cards in about 7 bands only a large gain reads clear, so "not shown" means not shown here, not no effect.
   - The page's code is N12's, extended to 2 repeats a class, since `page_order` repeats one card a class today.
 - **Cost:** no renders beyond H4a's (which include the 60 above), and one listening session of 18 cards.
+- **If two arms pass,** the user decides between them, with the full-over-gentle row beside.
 
 **What it leads to.** The user decides from both reads.
 - **An arm better than FTm** by ear, with the score beside: its cut is adopted.
