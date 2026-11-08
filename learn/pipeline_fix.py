@@ -28,6 +28,10 @@ after the review's (P1-P7), and the recipe every retrain in the plan shares. Out
     $MAIN -u -m learn.pipeline_fix ft-vreal-render --shard k/3    # FT's V-real renders (hashes in the ledger first)
     $MAIN -m learn.pipeline_fix ft-vreal-report --label ft-vreal  # FT's V-real rows (zero renders)
     $MAIN -m learn.pipeline_fix ft-groups                     # FT's BKS answers split by control group (zero renders)
+    $TORCH_PY -m learn.pipeline_fix train --rung b --wide --h4 full|gentle --seed S   # H4: W on an arm's rows
+    $TORCH_PY -m learn.pipeline_fix train-ft --masked --ft-cap 300 [--inner] [--real-fold k] --seed S --h4 ARM   # H4's FTm
+    $TORCH_PY -m learn.pipeline_fix real-predict --names P2b-ftmf      # H4's read (goat-predict alike), then the renders
+    $MAIN -m learn.pipeline_fix real-report --pairs P2b-ftmf:P2b-ftm --h4-apart --label h4-full   # real_out apart
 """
 
 from __future__ import annotations
@@ -1094,6 +1098,13 @@ def cmd_train(args):
         name = goat_run_name(name, args.real_fold, args.stage, args.goat_shuffle)
     if args.dfix:                                      # D_fix: its own names (`dfix_refusal` took every other flag)
         name = dfix_run_name(args.real_fold, args.dfix_share)
+    h4 = getattr(args, "h4", None)
+    if h4 is not None:                                 # H4: W's recipe on its arm's rows, its own name
+        why = h4_train_refusal(args, name)
+        if why:
+            raise SystemExit(why)
+        h4x = h4_exclusions()                          # phase_h4 and phase_h4_exclusions, the file's hash checked
+        name = H4_W[h4]
     od = out_dir() / "runs"
     rp = od / f"{name}-{args.seed}.json"
     if rp.exists():
@@ -1102,6 +1113,16 @@ def cmd_train(args):
     if args.seed not in SEEDS:
         raise SystemExit(f"--seed in {SEEDS}")
     tr, held, held_name, rows = plugin_rows(kept, sp, args, lambda ids: rung_rows(kept, rend, ids))
+    h4_info = None
+    if h4 is not None:                                 # W's own rows, then the arm's lists out of training and NS
+        w0 = json.loads((od / f"{FT_PRETRAIN}-{args.seed}.json").read_text())
+        if tr != w0["train_ids"] or held != w0["held_ids"] or held_name != "ns":
+            raise SystemExit(f"{name}: W's unfiltered rows are not {FT_PRETRAIN}-{args.seed}'s")
+        n_tr, n_held = len(tr), len(held)
+        tr, held, rows = h4_filter(tr, held, rows, h4x["plugin_out"][h4], h4x["ns_out"][h4])
+        h4_info = {"arm": h4, "exclusions_sha256": h4x["sha256"], "exclusions": h4x["path"],
+                   "from": f"{FT_PRETRAIN}-{args.seed}", "train_before": n_tr, "held_before": n_held,
+                   "plugin_out": n_tr - len(tr), "ns_out": n_held - len(held)}
     doubled = doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
     real_held, dfix_info = [], None
     if args.dfix:
@@ -1189,22 +1210,31 @@ def cmd_train(args):
         torch.save(st, od / f"{name}-{args.seed}-{which}.pt")
     phase = (dfix_phase(name) if args.dfix else "phase_5c" if (args.goat or args.goat_shuffle)
              else "phase_5b2" if (args.pc or args.pcsz or args.real_fold is not None) else "phase_3")
-    save(rp, {"plan": PLAN, "test": name, "ledger": f"{LEDGER_ID} {phase}", "rung": args.rung,
-              "input": RUNG_KINDS[args.rung], "aug": bool(args.aug), "frac": args.frac, "sections": args.sections,
-              "fold": args.fold, "held": held_name, "seed": args.seed, "train": len(tr), "held_n": len(held),
-              "train_ids": tr, "held_ids": held, "dropped": dropped, "split_dropped": sp["dropped"],
-              "epochs_run": log[-1]["epoch"] + 1, "best_epoch": best_ep, "best_held_loss": best,
-              "steps": log[-1]["steps"], "minutes": round((time.time() - t0) / 60, 1), "device": str(dev),
-              "length": length, "augmentations_applied": data.applied, "flags": {"dd": bool(args.dd),
-              "backings": bool(args.backings), "aug": bool(args.aug), "wide": bool(args.wide),
-              "pc": bool(args.pc), "pcsz": bool(args.pcsz), "real_fold": args.real_fold, "dfix": bool(args.dfix),
-              "dfix_share": args.dfix_share,
-              "goat": bool(args.goat), "stage": args.stage},
-              "dfix": dfix_info, "backing_variants": getattr(data, "counts", None),
-              "baseline_families": {k: family_means(v) for k, v in bl.items()}, "heads": heads, "log": log,
-              "models": {w: f"{name}-{args.seed}-{w}.pt" for w in ("final", "best")},
-              "model_sha256": {w: DS.hashlib_file(od / f"{name}-{args.seed}-{w}.pt") for w in ("final", "best")},
-              "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    if h4_info is not None:
+        phase = H4
+    rec = {"plan": PLAN, "test": name, "ledger": f"{LEDGER_ID} {phase}", "rung": args.rung,
+           "input": RUNG_KINDS[args.rung], "aug": bool(args.aug), "frac": args.frac, "sections": args.sections,
+           "fold": args.fold, "held": held_name, "seed": args.seed, "train": len(tr), "held_n": len(held),
+           "train_ids": tr, "held_ids": held, "dropped": dropped, "split_dropped": sp["dropped"],
+           "epochs_run": log[-1]["epoch"] + 1, "best_epoch": best_ep, "best_held_loss": best,
+           "steps": log[-1]["steps"], "minutes": round((time.time() - t0) / 60, 1), "device": str(dev),
+           "length": length, "augmentations_applied": data.applied, "flags": {"dd": bool(args.dd),
+           "backings": bool(args.backings), "aug": bool(args.aug), "wide": bool(args.wide),
+           "pc": bool(args.pc), "pcsz": bool(args.pcsz), "real_fold": args.real_fold, "dfix": bool(args.dfix),
+           "dfix_share": args.dfix_share,
+           "goat": bool(args.goat), "stage": args.stage},
+           "dfix": dfix_info, "backing_variants": getattr(data, "counts", None),
+           "baseline_families": {k: family_means(v) for k, v in bl.items()}, "heads": heads, "log": log,
+           "models": {w: f"{name}-{args.seed}-{w}.pt" for w in ("final", "best")},
+           "model_sha256": {w: DS.hashlib_file(od / f"{name}-{args.seed}-{w}.pt") for w in ("final", "best")},
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    if h4_info is not None:                            # opt-in only: a run without --h4 is saved exactly as before
+        rec["flags"]["h4"] = h4
+        h4_info["possibly_undertrained"] = best_ep >= rec["epochs_run"] - H4_UNDERTRAINED
+        rec["h4"] = h4_info
+        if h4_info["possibly_undertrained"]:
+            print(f"H4: best state at epoch {best_ep} of {rec['epochs_run']}: possibly undertrained (reported beside)")
+    save(rp, rec)
     for which in ("final", "best"):
         h = heads[which][held_name]
         print(f"{which}: {held_name} families model {h['families']['model']} baseline {h['families']['baseline']}; "
@@ -2702,7 +2732,7 @@ def cmd_real_predict(args):
     if args.names == "RcM":
         return real_rcm_answers()
     if args.names in ("P2a-pc", "P2a-pcsz", "P2a-real", "P2a-reals2", "P2a-pc-Sc", "P2a-goat", "P2a-goatshuf") \
-            or args.names in DFIX_READS or args.names in (FT_BASE, FTM_BASE, FTS_TAG):
+            or args.names in DFIX_READS or args.names in (FT_BASE, FTM_BASE, FTS_TAG) or args.names in H4_FT_TAGS:
         return real_predict_5b2(args.names)
     if args.names == "S-shift":
         require("phase_5b1b")
@@ -2764,6 +2794,8 @@ def read_phase(name):
     """The ledger phase a read-2 model tag answers under: FT's, a D_fix family member's, 5C's or 5B.2's."""
     if name == FT_BASE:
         return "phase_ft"
+    if name in H4_FT_TAGS:                             # H4's arms: FTm's read on their own fold models
+        return H4
     if name in (FTM_BASE, FTS_TAG):
         return "phase_night2"
     if name.startswith("P2b-dfix"):
@@ -2784,6 +2816,7 @@ def real_predict_5b2(name):
     from learn import trusted_data_t3 as T3
 
     e = require(read_phase(name))
+    h4x = h4_exclusions() if name in H4_FT_TAGS else None     # phase_h4 and the pinned exclusions
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     inv = CB.cc_inventory()
     parts = real_parts(kept, sp, inv)
@@ -2794,7 +2827,7 @@ def real_predict_5b2(name):
     elif name.startswith("P2a-goat"):                   # 5C: RG and RGshuf, each BKS unit by its DI's fold model
         folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
         names = {p_["unit"]: f"{name}{folds[p_['di']]}" for p_ in parts}
-    elif name in (FT_BASE, FTM_BASE, FTS_TAG):          # FT's read 2: each BKS unit by its DI's FT_k
+    elif name in (FT_BASE, FTM_BASE, FTS_TAG, *H4_FT_TAGS):   # FT's read 2: each BKS unit by its DI's FT_k
         folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
         names = {p_["unit"]: ft_name(folds[p_["di"]], base=FTM_BASE if name == FTS_TAG else name) for p_ in parts}
     elif name.startswith("P2b-dfix"):                   # D_fix's read 2: each BKS unit by its DI's fold model only
@@ -2810,6 +2843,8 @@ def real_predict_5b2(name):
         nets, recs = zip(*(load_run(nm, sd, "best") for sd in SEEDS))
         for r_ in recs:
             ft_read_check(r_)
+            if h4x is not None:
+                h4_read_check(r_, h4x["sha256"])
         own = [i for i in recs[0]["train_ids"] if i < REAL_ROW0]
         if any([i for i in r_["train_ids"] if i < REAL_ROW0] != own for r_ in recs):
             raise SystemExit(f"{nm}: the seeds trained on different sets")
@@ -2821,7 +2856,7 @@ def real_predict_5b2(name):
         nets, _, target, const = models[names[prt["unit"]]]
         ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
         g = DE.inference_gain_db(ref, target)
-        backed = stem_backed(prt["unit"]) if name == FTS_TAG else dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE, FTM_BASE) else None
+        backed = stem_backed(prt["unit"]) if name == FTS_TAG else dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE, FTM_BASE, *H4_FT_TAGS) else None
         if name == FTS_TAG and backed is None:
             continue
         for amp in AMPS3:
@@ -2842,7 +2877,7 @@ def real_predict_5b2(name):
                                            sw, mics)
                 else:
                     st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
-                    if name in (FTM_BASE, FTS_TAG):
+                    if name in (FTM_BASE, FTS_TAG, *H4_FT_TAGS):
                         st = hold_outside_space(st, S, amp)
                 out[name].setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(st)}
             if name == "P2a-pc":
@@ -2851,7 +2886,7 @@ def real_predict_5b2(name):
     for t, a in out.items():
         save(out_dir() / REAL_DIR / "answers" / f"{t}.json", {
             "plan": PLAN, "ledger": f"{LEDGER_ID} {read_phase(name)}",
-            "tag": t, "parts": parts, "input": "X-LANCE stem" if name == FTS_TAG else "backed (variant 0)" if name in (*DFIX_BASES, FT_BASE, FTM_BASE) else "clean", "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
+            "tag": t, "parts": parts, "input": "X-LANCE stem" if name == FTS_TAG else "backed (variant 0)" if name in (*DFIX_BASES, FT_BASE, FTM_BASE, *H4_FT_TAGS) else "clean", "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
             "unit_model": names, "answers": a, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"REAL PREDICT 5B.2 DONE: {name} on {len(parts)} units")
 
@@ -3913,15 +3948,18 @@ def goat_predict(name):
     from learn import local_objective as LO
 
     e = require(read_phase(name))
+    h4x = h4_exclusions() if name in H4_FT_TAGS else None     # phase_h4 and the pinned exclusions
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     units = goat_read_units()
     models = {}
     for k in sorted({p_["fold"] for p_ in units}):
-        nm = (ft_name(k, base=FTM_BASE if name == FTS_TAG else name) if name in (FT_BASE, FTM_BASE, FTS_TAG) else dfix_fold_name(name, k) if name in DFIX_BASES
+        nm = (ft_name(k, base=FTM_BASE if name == FTS_TAG else name) if name in (FT_BASE, FTM_BASE, FTS_TAG, *H4_FT_TAGS) else dfix_fold_name(name, k) if name in DFIX_BASES
               else f"{name}{k}")
         nets, recs = zip(*(load_run(nm, sd, "best") for sd in SEEDS))
         for r_ in recs:
             ft_read_check(r_)
+            if h4x is not None:
+                h4_read_check(r_, h4x["sha256"])
         models[k] = (list(nets), [r_["model_sha256"]["best"] for r_ in recs], model_input_lufs(recs[0]))
     ms = A_menu_S()
     out = {}
@@ -3931,7 +3969,7 @@ def goat_predict(name):
         g = DE.inference_gain_db(ref, target)
         amp = prt["amp"]
         sel, S = ms[amp][prt["cls"]]
-        backed = stem_backed(prt["unit"]) if name == FTS_TAG else dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE, FTM_BASE) else None   # D_fix, FT: pool-backed
+        backed = stem_backed(prt["unit"]) if name == FTS_TAG else dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE, FTM_BASE, *H4_FT_TAGS) else None   # D_fix, FT: pool-backed
         if name == FTS_TAG and backed is None:
             continue
         for search in ("A", "B"):
@@ -3942,7 +3980,7 @@ def goat_predict(name):
             x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
             r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
             st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
-            if name in (FTM_BASE, FTS_TAG):
+            if name in (FTM_BASE, FTS_TAG, *H4_FT_TAGS):
                 st = hold_outside_space(st, S, amp)
             out.setdefault(real_key(prt, amp), {})[search] = {"select": sel, "settings": LO.sdict(st)}
     save(out_dir() / GOAT_DIR / "answers" / f"{name}.json", {
@@ -3954,7 +3992,7 @@ def goat_predict(name):
 
 
 def cmd_goat_predict(args):
-    if args.names not in ("P2a-goat", "P2a-goatshuf", *DFIX_BASES, FT_BASE, FTM_BASE, FTS_TAG):
+    if args.names not in ("P2a-goat", "P2a-goatshuf", *DFIX_BASES, FT_BASE, FTM_BASE, FTS_TAG, *sorted(H4_FT_TAGS)):
         raise SystemExit(f"--names P2a-goat, P2a-goatshuf, {FT_BASE} or one of {', '.join(DFIX_BASES)} (fold models)")
     goat_predict(args.names)
 
@@ -4027,13 +4065,17 @@ def cmd_goat_report(args):
             judge[t][f"{r['unit']}|{r['amp']}"] = r["judge"]
     if "S" in tags:                                    # S's judges live in the search records
         judge["S"] = {f"{r['unit']}|{r['amp']}": {ANY_HALF: r["s_judge"]} for r in goat_labels()[0]}
-    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} phase_5c", "units": len(units),
+    if tags & H4_FT_TAGS:
+        require(H4)
+    out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {H4 if tags & H4_FT_TAGS else 'phase_5c'}", "units": len(units),
            "lag_tol": GOAT_LAG_TOL if args.lag_tol is None else args.lag_tol, "rows": {}}
     keep = ("mean", "lo90", "hi90", "clusters", "clusters_negative", "part_weighted", "parts", "parts_negative")
-    for pair in args.pairs.split(","):
+    apart = h4_apart(out) if getattr(args, "h4_apart", False) else None
+    groups = h4_apart_groups(sorted(units.items()), apart)   # [("", every unit)] unless --h4-apart
+    for pair, (sfx, group) in [(p_, g) for p_ in args.pairs.split(",") for g in groups]:
         a, b = pair.split(":")
         rows, missing = [], 0
-        for u, prt in sorted(units.items()):
+        for u, prt in group:
             for sh, h in (("A", "B"), ("B", "A")):
                 vals = [vreal_value(judge, t, (u, prt["amp"], sh, h)) for t in (a, b)]
                 if any(v is None or v == "refused" for v in vals):
@@ -4042,12 +4084,13 @@ def cmd_goat_report(args):
                 rows.append((prt["item"], u, math.log(vals[0] / vals[1]), prt["fold"]))
         c = clustered([r[:3] for r in rows])
         f = clustered([(r[3], r[1], r[2]) for r in rows])
-        out["rows"][f"{a} - {b}"] = {**{q: c.get(q) for q in keep}, "missing": missing,
-                                     "per_item": c.get("per_cluster"),
-                                     "by_fold": {q: f.get(q) for q in keep + ("per_cluster",)}}
+        out["rows"][f"{a} - {b}{sfx}"] = {**{q: c.get(q) for q in keep}, "missing": missing,
+                                          "per_item": c.get("per_cluster"),
+                                          "by_fold": {q: f.get(q) for q in keep + ("per_cluster",)}}
         if c["mean"] is not None:
-            print(f"{a} - {b}: {c['mean']:+.4f} [{c['lo90']:+.4f}, {c['hi90']:+.4f}] by item ({c['clusters']} items, "
-                  f"{c['clusters_negative']} better); by fold {f['mean']:+.4f} [{f['lo90']:+.4f}, {f['hi90']:+.4f}]; "
+            iv = lambda z: "" if z["lo90"] is None else f" [{z['lo90']:+.4f}, {z['hi90']:+.4f}]"   # noqa: E731 (one cluster: none)
+            print(f"{a} - {b}{sfx}: {c['mean']:+.4f}{iv(c)} by item ({c['clusters']} items, "
+                  f"{c['clusters_negative']} better); by fold {f['mean']:+.4f}{iv(f)}; "
                   f"missing {missing}")
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     save(out_dir() / GOAT_DIR / f"report-{args.label or 'goat'}.json", out)
@@ -4328,12 +4371,13 @@ def cmd_real_heads(args):
     print("REAL-HEADS DONE")
 
 
-ARM_FOLD_PHASES = ("phase_5b2", "phase_5c", "phase_dfix", "phase_ft", "phase_ft_groups", "phase_night2")    # real-report's phases whose models share 5B.2's DI folds
+ARM_FOLD_PHASES = ("phase_5b2", "phase_5c", "phase_dfix", "phase_ft", "phase_ft_groups", "phase_night2", "phase_h4")    # real-report's phases whose models share 5B.2's DI folds
 
 
 def report_phase(tags):
     """real-report's ledger phase for the tags it reads."""
-    return ("phase_ft_groups" if any(t.startswith("FTg-") for t in tags) else "phase_night2" if tags & {FTM_BASE, FTH_TAG, FTS_TAG} else "phase_ft" if FT_BASE in tags else "phase_dfix" if tags & DFIX_READS else "phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
+    return ("phase_ft_groups" if any(t.startswith("FTg-") for t in tags) else H4 if tags & H4_FT_TAGS
+            else "phase_night2" if tags & {FTM_BASE, FTH_TAG, FTS_TAG} else "phase_ft" if FT_BASE in tags else "phase_dfix" if tags & DFIX_READS else "phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
             else "phase_5b2_rigo" if tags & {"RigO", "RcM"}
             else "phase_5b2" if any(t.startswith(("P2a-pc", "P2a-real", "Rc")) for t in tags)
             else "phase_5b1b" if any(t in ("P2a-Sc", "S-shift") for t in tags) else "phase_5b1")
@@ -4362,12 +4406,15 @@ def cmd_real_report(args):
                                        .read_text())["lag"] is None]
     meta = {p_["unit"]: p_ for p_ in parts}
     phase = report_phase(tags)
+    if phase == H4:
+        require(H4)
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {phase}", "units": len(parts), "no_lag": no_lag, "rows": {}}
     units = [(p_["unit"], amp, sh, h) for p_ in parts for amp in AMPS3 for sh, h in (("A", "B"), ("B", "A"))]
     if args.within:                                    # only the directions `--within`'s answers cover (RigO's)
         cover = json.loads((out_dir() / REAL_DIR / "answers" / f"{args.within}.json").read_text())["answers"]
         units = [u for u in units if f"{u[0]}|{u[1]}" in cover]
         out["within"] = args.within
+    apart = h4_apart(out) if getattr(args, "h4_apart", False) else None
     fold_of = None
     if phase.startswith(ARM_FOLD_PHASES):              # arm R's (and RG's) folds: the DIs that share a pair of models
         from learn import cc_build as CB
@@ -4377,7 +4424,8 @@ def cmd_real_report(args):
         inv = CB.cc_inventory()
         s1 = stage_units(kept, sp, inv, 1)
         fold_of = real_folds(s1, s1 + stage_units(kept, sp, inv, 2))
-    for pair in args.pairs.split(","):
+    groups = h4_apart_groups(units, apart)             # [("", units)] unless --h4-apart
+    for pair, (sfx, units) in [(p_, g) for p_ in args.pairs.split(",") for g in groups]:
         a, b = pair.split(":")
         rows, cnt = [], {"directions": len(units), "base_dropped": 0, "missing": 0, "refused_scored_as_S": 0}
         for u in units:
@@ -4405,15 +4453,15 @@ def cmd_real_report(args):
         keep = ("mean", "lo90", "hi90", "clusters", "clusters_negative", "part_weighted", "parts", "parts_negative")
         c = clustered([r[:3] for r in rows])
         by_rig = clustered([(r[3], r[1], r[2]) for r in rows])
-        out["rows"][f"{a} - {b}"] = {**{q: c.get(q) for q in keep}, **cnt,
-                                     "per_di": c.get("per_cluster"), "by_rig": {q: by_rig.get(q) for q in keep}}
+        out["rows"][f"{a} - {b}{sfx}"] = {**{q: c.get(q) for q in keep}, **cnt,
+                                          "per_di": c.get("per_cluster"), "by_rig": {q: by_rig.get(q) for q in keep}}
         if fold_of is not None:
             by_fold = clustered([(fold_of[meta[r[1]]["di"]], r[1], r[2]) for r in rows])
-            out["rows"][f"{a} - {b}"]["by_fold"] = {q: by_fold.get(q) for q in keep + ("per_cluster",)}
-        r_ = out["rows"][f"{a} - {b}"]
+            out["rows"][f"{a} - {b}{sfx}"]["by_fold"] = {q: by_fold.get(q) for q in keep + ("per_cluster",)}
+        r_ = out["rows"][f"{a} - {b}{sfx}"]
         if r_["mean"] is not None:
             iv = "" if r_["lo90"] is None else f" [{r_['lo90']:+.4f}, {r_['hi90']:+.4f}]"
-            print(f"{a} - {b}: {r_['mean']:+.4f}{iv} ({r_['clusters']} DIs, {r_['clusters_negative']} better; "
+            print(f"{a} - {b}{sfx}: {r_['mean']:+.4f}{iv} ({r_['clusters']} DIs, {r_['clusters_negative']} better; "
                   f"{r_['parts_negative']} of {r_['parts']} units better); missing {cnt['missing']}, S dropped "
                   f"{cnt['base_dropped']}, refused {cnt['refused_scored_as_S']}")
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -6766,9 +6814,14 @@ def ft_rows_of(brecs, by_unit, folds, grecs, gunits, k, inner, label_of=None):
     return dfix_rows_of(b, by_unit, folds, g, gunits, (k + 1) % REAL_FOLDS, label_of)
 
 
-def ft_real_rows(k, inner):
+def ft_real_rows(k, inner, drop=frozenset()):
+    """FT's real rows on the stored labels; `drop` (H4's real_out) takes those units' records out before any row is
+    built, so they leave the training rows and every held set (the inner run's validation fold, FT_k's held fold)."""
     brecs, by_unit, folds = real_labels(2)
     grecs, gunits, _ = goat_labels()
+    if drop:
+        brecs = [r for r in brecs if r["unit"] not in drop]
+        grecs = [r for r in grecs if r["unit"] not in drop]
     return ft_rows_of(brecs, by_unit, folds, grecs, gunits, k, inner)
 
 
@@ -6839,9 +6892,9 @@ def ft_layout(n_plugin_tr, n_real, n_rows, n_real_held):
             np.arange(n_rows - n_real_held, n_rows))
 
 
-def ft_start_state(seed):
-    """W's NS-best state for `seed` (hash checked by `load_run`). -> (state, W's run record)."""
-    net, rec = load_run(FT_PRETRAIN, seed, "best")
+def ft_start_state(seed, pretrain=FT_PRETRAIN):
+    """W's NS-best state for `seed` (hash checked by `load_run`); H4 passes its tag's W. -> (state, W's run record)."""
+    net, rec = load_run(pretrain, seed, "best")
     return {k: t.detach().cpu().clone() for k, t in net.state_dict().items()}, rec
 
 
@@ -6855,7 +6908,9 @@ def cmd_train_ft(args):
     """One FT run (demucs-venv): `--inner --real-fold k` (k's epoch choice: from W on the folds other than k and j,
     fold j's real loss each epoch, the trailing 3-epoch average's argmin + 1 = E, patience 15); `--real-fold k`
     (FT_k: from W on the folds other than k for its inner run's E, the state after E epochs read); neither (the
-    all-labels FT, the median of the eight inner E's; only after `phase_ft_carry`)."""
+    all-labels FT, the median of the eight inner E's; only after `phase_ft_carry`). `--h4 ARM` (H4, opt-in): FTm's
+    recipe from the arm's W (`H4_PRETRAIN`) on its plugin rows and the real rows less real_out, under the arm's tags,
+    each run chained within the arm (`h4_chain_refusal`) and D_fix's hash check replaced by `h4_inputs_refusal`."""
     import numpy as np
     import torch
 
@@ -6880,6 +6935,14 @@ def cmd_train_ft(args):
     if seed not in SEEDS:
         raise SystemExit(f"--seed in {SEEDS}")
     lr, cap = ft_rate(args)
+    h4 = getattr(args, "h4", None)
+    pre, h4x = FT_PRETRAIN, None
+    if h4 is not None:                                 # H4: FTm's recipe on its arm's W and the real rows less real_out
+        why = h4_ft_refusal(args, masked, curve, lr, cap)
+        if why:
+            raise SystemExit(why)
+        h4x = h4_exclusions()                          # phase_h4 and phase_h4_exclusions, the file's hash checked
+        base, pre = H4_FT[h4], H4_PRETRAIN[h4]
     name = ft_name(k, inner, lr, cap, base)            # FT_k's name is one at any setting; its (lr, cap) recorded
     if curve:
         name = f"{base}{'s' if shuf else f'f{round(frac * 100)}'}-k{k}"
@@ -6888,6 +6951,14 @@ def cmd_train_ft(args):
     if rp.exists():
         print(f"{rp.name} exists: nothing to do")
         return
+    if h4 is not None:                                 # each run chains within its arm (W, inner, FT_k, all-labels)
+        def run_of(nm, sd):
+            q = od / f"{nm}-{sd}.json"
+            return json.loads(q.read_text()) if q.exists() else None
+
+        why = h4_chain_refusal(h4, k, inner, h4x["sha256"], run_of)
+        if why:
+            raise SystemExit(f"{name}: {why}")
     if inner:
         epochs = cap
     else:
@@ -6906,16 +6977,25 @@ def cmd_train_ft(args):
         epochs = ft_epoch_of(inners)
     e = require("phase_3")
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
-    init, wrec = ft_start_state(seed)
-    if not inner and ft_inner_init_refusal(inners, lambda sd: json.loads((od / f"{FT_PRETRAIN}-{sd}.json")
+    init, wrec = ft_start_state(seed, pre)
+    if not inner and ft_inner_init_refusal(inners, lambda sd: json.loads((od / f"{pre}-{sd}.json")
                                                                          .read_text())["model_sha256"]["best"]):
         raise SystemExit("an inner run started from another W state than its seed's")
     pa = argparse.Namespace(rung="b", fold=None, frac=1.0, sections=1.0, pc=False, pcsz=False, aug=False)
     tr, held, held_name, rows = plugin_rows(kept, sp, pa, lambda ids: rung_rows(kept, rend, ids))
+    if h4 in H4_W:                                     # the plugin arms: W's rows less the arm's lists, as its W trained
+        tr, held, rows = h4_filter(tr, held, rows, h4x["plugin_out"][h4], h4x["ns_out"][h4])
     if tr != [i for i in wrec["train_ids"] if i < REAL_ROW0]:
-        raise SystemExit(f"{FT_PRETRAIN}-{seed}: trained on other plugin rows than FT's")
+        raise SystemExit(f"{pre}-{seed}: trained on other plugin rows than FT's")
+    if h4 is not None and held != wrec["held_ids"]:
+        raise SystemExit(f"{pre}-{seed}: selected on other NS rows than this arm's")
     doubled = doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
-    rrows, real_held, info = ft_real_rows(k, inner)
+    rrows, real_held, info = ft_real_rows(k, inner, h4x["real_out"] if h4x else frozenset())
+    if h4x is not None:                                # no real_out unit in the training rows or any held set
+        if {r["real"] for r in rrows + real_held} & h4x["real_out"]:
+            raise SystemExit(f"{name}: a real_out unit among its real rows")
+        urrows, ureal_held, _ = ft_real_rows(k, inner)
+        full_units = {r["real"] for r in urrows + ureal_held}
     if curve:                                          # as many updates as FTm: the kept rows' batches fix the epochs
         from learn import pretrain_set as PS
 
@@ -6927,7 +7007,24 @@ def cmd_train_ft(args):
     data = DfixData(rows, rung_path(croot, "b", doubled), set(plugin_tr), {r["i"] for r in rrows}, 1.0)
     if masked:
         mask_searched(data.Y, rows, A_menu_S())
-    if not inner and frac == 1:                        # every unit loaded: D_fix_k's (or D_fix's) inputs exactly
+    h4_info = None
+    if h4x is not None:                                # H4's three checks in place of the hash equality below
+        dref = json.loads((od / f"{dfix_run_name(None)}-{seed}.json").read_text())["dfix"]
+        why = h4_real_out_refusal(h4x["real_out"], dref["target_lufs"])
+        ref = ft_name(k, True, lr, cap, FTM_BASE) if inner else dfix_run_name(k)   # an inner run: FTm's own inner run
+        full_sha = dfix_inputs_sha256(full_units)      # (a) the unfiltered inputs, rebuilt now
+        why = why or h4_inputs_refusal(full_sha, data.target_lufs, json.loads((od / f"{ref}-{seed}.json").read_text())["dfix"],
+                                       h4x["real_out"], ref)                       # (a) and (b)
+        if why:
+            raise SystemExit(f"{name}: {why}")
+        h4_info = {"arm": h4, "exclusions_sha256": h4x["sha256"], "exclusions": h4x["path"], "pretrain": pre,
+                   "inputs_ref": f"{ref}-{seed}", "full_inputs_sha256": full_sha,
+                   "inputs_sha256": data.inputs_sha256,                            # (c) the filtered hash, stored
+                   "real_out_dropped": sorted(full_units & h4x["real_out"]),
+                   "train_units": sorted({r["real"] for r in rrows}),
+                   "plugin_out": len(h4x["plugin_out"][h4]) if h4 in H4_W else 0,
+                   "ns_out": len(h4x["ns_out"][h4]) if h4 in H4_W else 0}
+    elif not inner and frac == 1:                      # every unit loaded: D_fix_k's (or D_fix's) inputs exactly
         ref = dfix_run_name(k)
         want = json.loads((od / f"{ref}-{seed}.json").read_text())["dfix"]["inputs_sha256"]
         if data.inputs_sha256 != want:
@@ -6969,8 +7066,8 @@ def cmd_train_ft(args):
             watch["real_held"] = rh
         net, final, best_state, best_ep, best = fit(data, ti, watch, None, seed, dev, log, epochs, every=FT_EVERY,
                                                     init=init, lr=lr)
-    out = {"plan": PLAN, "test": name, "ledger": f"{LEDGER_ID} {'phase_night2' if masked else 'phase_ft'}", "rung": "b",
-           "seed": seed, "real_fold": k, "masked": masked, "real_frac": frac, "shuffle_real": shuf, "inner": inner, "lr": lr, "cap": cap, "init": {"run": f"{FT_PRETRAIN}-{seed}", "which": "best",
+    out = {"plan": PLAN, "test": name, "ledger": f"{LEDGER_ID} {H4 if h4 else 'phase_night2' if masked else 'phase_ft'}", "rung": "b",
+           "seed": seed, "real_fold": k, "masked": masked, "real_frac": frac, "shuffle_real": shuf, "inner": inner, "lr": lr, "cap": cap, "init": {"run": f"{pre}-{seed}", "which": "best",
                                                           "sha256": wrec["model_sha256"]["best"]},
            "train_ids": plugin_tr + [r["i"] for r in rrows], "ft_train_ids": [r["i"] for r in rrows],
            "held": held_name, "held_ids": held, "real_held_ids": [r["i"] for r in real_held],
@@ -6979,6 +7076,8 @@ def cmd_train_ft(args):
                         target_lufs=data.target_lufs, share=1.0),
            "backing_variants": getattr(data, "counts", None), "log": log,
            "minutes": round((time.time() - t0) / 60, 1), "device": str(dev), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    if h4_info is not None:
+        out["h4"] = h4_info
     od.mkdir(parents=True, exist_ok=True)
     if inner:
         out["dfix"]["val_fold"] = (k + 1) % REAL_FOLDS
@@ -6994,6 +7093,204 @@ def cmd_train_ft(args):
                    models={"final": mp.name, "best": mp.name}, model_sha256={"final": sha, "best": sha})
     save(rp, out)
     print(f"TRAIN-FT DONE {name} {seed}: {out['epochs_run']} epochs, E {out['E']}; {out['minutes']} min")
+
+
+# --- H4 (docs/heavy-cleanup-plan.md, ledger phase_h4): W and FTm again on the cleaned rows, opt-in by tag only -------
+
+H4 = "phase_h4"
+H4_EXCL = "phase_h4_exclusions"      # the pinned key: {"path": PF/heavy/h4-exclusions.json, "sha256": its sha256}
+H4_W = {"full": "P2b-wide24-hf", "gentle": "P2b-wide24-hg"}           # W retrained on the arm's plugin rows
+H4_FT = {"full": "P2b-ftmf", "gentle": "P2b-ftmg", "real": "P2b-ftmc"}  # FTm's tuning, the real rows less real_out
+H4_PRETRAIN = {"full": H4_W["full"], "gentle": H4_W["gentle"], "real": FT_PRETRAIN}   # FT_PRETRAIN per tag
+H4_FT_TAGS = frozenset(H4_FT.values())
+H4_LISTS = ("real_out", "plugin_out_full", "plugin_out_gentle", "ns_out_full", "ns_out_gentle")
+H4_UNDERTRAINED = 5                  # a retrained W's best in its last 5 epochs: reported as possibly undertrained
+
+
+def h4_lists_sha(d):
+    """The sha256 of the exclusions file's lists (each list's sorted entries, canonical JSON): the file's own content
+    hash, which `heavy_cleanup.cmd_h4_exclusions` writes into it and the loader checks."""
+    import hashlib
+
+    return hashlib.sha256(json.dumps({k: sorted(d[k]["ids"]) for k in H4_LISTS}, sort_keys=True)
+                          .encode()).hexdigest()
+
+
+def h4_exclusions():
+    """H4's pinned exclusions (`phase_h4_exclusions`: {path, sha256}): the file's sha256 checked against the pin, its
+    lists against its own `lists_sha256`; every new H4 path reads them through here, so each needs `phase_h4` and the
+    pin. -> {"sha256", "path", "real_out", "plugin_out": {arm: ids}, "ns_out": {arm: ids}}, frozensets."""
+    from learn import direct_stems as DS
+
+    require(H4)
+    pin = require(H4_EXCL).get(H4_EXCL)
+    if not isinstance(pin, dict) or not pin.get("path") or not pin.get("sha256"):
+        raise SystemExit(f"{H4_EXCL} must hold the exclusions file's path and sha256")
+    p = pathlib.Path(pin["path"])
+    if not p.is_absolute():
+        p = out_dir() / p
+    if not p.exists():
+        raise SystemExit(f"{p}: the pinned exclusions file is missing")
+    sha = DS.hashlib_file(p)
+    if sha != pin["sha256"]:
+        raise SystemExit(f"{p.name}: sha256 {sha[:12]}, the ledger pins {pin['sha256'][:12]}")
+    d = json.loads(p.read_text())
+    miss = [k for k in H4_LISTS if not isinstance(d.get(k), dict) or not isinstance(d[k].get("ids"), list)]
+    if miss:
+        raise SystemExit(f"{p.name}: no list {miss}")
+    if d.get("lists_sha256") != h4_lists_sha(d):
+        raise SystemExit(f"{p.name}: its lists do not match its own lists_sha256")
+    if any(d[k].get("n") != len(d[k]["ids"]) or len(set(d[k]["ids"])) != len(d[k]["ids"]) for k in H4_LISTS):
+        raise SystemExit(f"{p.name}: a list's count is not its length, or it repeats an entry")
+    return {"sha256": sha, "path": str(p), "real_out": frozenset(d["real_out"]["ids"]),
+            "plugin_out": {a: frozenset(int(i) for i in d[f"plugin_out_{a}"]["ids"]) for a in ("full", "gentle")},
+            "ns_out": {a: frozenset(int(i) for i in d[f"ns_out_{a}"]["ids"]) for a in ("full", "gentle")}}
+
+
+def h4_filter(tr, held, rows, out_tr, out_held):
+    """W's plugin rows less an arm's lists (after `plugin_rows`): the training ids less `out_tr`, NS less `out_held`,
+    and their rows in `plugin_rows`' layout (training first, then held). Refuses a list entry outside the set it
+    cleans. -> (training ids, held ids, rows)."""
+    if not set(out_tr) <= set(tr):
+        raise SystemExit(f"H4: {len(set(out_tr) - set(tr))} plugin_out ids are not W's training rows")
+    if not set(out_held) <= set(held):
+        raise SystemExit(f"H4: {len(set(out_held) - set(held))} ns_out ids are not W's NS rows")
+    tr2 = [i for i in tr if i not in out_tr]
+    held2 = [i for i in held if i not in out_held]
+    drop = set(out_tr) | set(out_held)
+    rows2 = [r for r in rows if r["i"] not in drop]
+    if [r["i"] for r in rows2] != tr2 + held2 or any(bool(r.get("held")) != (j >= len(tr2)) for j, r in enumerate(rows2)):
+        raise SystemExit("H4: the filtered rows are out of plugin_rows' layout")
+    return tr2, held2, rows2
+
+
+def h4_train_refusal(args, name):
+    """Why `train --h4 ARM` may not run, or None: only W's recipe (`--rung b --wide`, nothing else, so the base name
+    is P2b-wide24's) and only a plugin arm (the real arm keeps today's W)."""
+    if args.h4 not in H4_W:
+        return f"--h4 {args.h4}: train takes --h4 {' or '.join(H4_W)} (the real arm keeps {FT_PRETRAIN})"
+    if name != FT_PRETRAIN or not args.wide or args.rung != "b":
+        return f"--h4 retrains W only: train --rung b --wide --h4 ARM --seed S (this run would be {name})"
+    return None
+
+
+def h4_ft_refusal(args, masked, curve, lr, cap):
+    """Why `train-ft --h4 ARM` may not run, or None: FTm's recipe exactly (`--masked --ft-cap 300`, the declared
+    rate), no N3 curve."""
+    if args.h4 not in H4_FT:
+        return f"--h4 in {sorted(H4_FT)}"
+    if not masked or curve or (lr, cap) != (FT_LR, FT_FALLBACK_CAP):
+        return "--h4 is FTm's recipe: train-ft --masked --ft-cap 300 [--inner] [--real-fold k] --seed S --h4 ARM"
+    return None
+
+
+def h4_chain_refusal(arm, k, inner, sha, get):
+    """Why an H4 FT run may not start yet, or None: each run chains within its arm. Every run needs its arm's W for
+    both seeds (for a plugin arm, W retrained with `--h4 arm` on these exclusions); FT_k needs the arm's 8 inner runs;
+    the all-labels pair needs those and the arm's 8 FT_k. Each H4 record must be the arm's and carry these exclusions'
+    sha256. get(name, seed) -> a run record or None."""
+    need = [(H4_PRETRAIN[arm], sd) for sd in SEEDS]
+    base = H4_FT[arm]
+    if not inner:
+        need += [(ft_name(q, True, FT_LR, FT_FALLBACK_CAP, base), sd) for q in range(REAL_FOLDS) for sd in SEEDS]
+    if k is None and not inner:
+        need += [(ft_name(q, False, FT_LR, FT_FALLBACK_CAP, base), sd) for q in range(REAL_FOLDS) for sd in SEEDS]
+    for nm, sd in need:
+        rec = get(nm, sd)
+        if rec is None:
+            return f"{nm}-{sd} is missing: the {arm} arm's runs chain W, inner, FT_k, all-labels"
+        if nm == FT_PRETRAIN:                          # the real arm's W is today's W: no H4 field
+            continue
+        h = rec.get("h4") or {}
+        if h.get("arm") != arm or h.get("exclusions_sha256") != sha:
+            return f"{nm}-{sd} is not the {arm} arm's run on these exclusions"
+    return None
+
+
+def h4_real_out_refusal(real_out, dfix_units):
+    """Why the exclusions' real_out does not fit D_fix, or None: every unit must be one of D_fix's (all labels)."""
+    miss = sorted(set(real_out) - set(dfix_units))
+    return f"real_out names {len(miss)} units D_fix never had: {miss[:3]}" if miss else None
+
+
+def h4_inputs_refusal(full_sha, units, ref, real_out, ref_name):
+    """H4's inputs guard in place of the D_fix hash check (units are left out, so that hash can't hold): (a) the full,
+    unfiltered inputs hash rebuilt now equals the reference run's stored one (the files are unchanged); (b) the run's
+    units are exactly the reference's less real_out. ref: the reference record's `dfix`. -> why, or None."""
+    if full_sha != ref["inputs_sha256"]:
+        return f"the unfiltered real-row inputs differ from {ref_name}'s ({full_sha[:8]} vs {ref['inputs_sha256'][:8]})"
+    want = set(ref["target_lufs"]) - set(real_out)
+    if set(units) != want:
+        return (f"the real units are not {ref_name}'s less real_out ({len(set(units) - want)} extra, "
+                f"{len(want - set(units))} missing)")
+    return None
+
+
+def dfix_inputs_sha256(units):
+    """`DfixData`'s inputs hash over `units` without loading the data: each unit's DFIX_K variant files in order,
+    "name sha256" lines, the units sorted (what `DfixData.inputs_sha256` hashes)."""
+    import hashlib
+
+    from learn import direct_stems as DS
+
+    h = hashlib.sha256()
+    for u in sorted(set(units)):
+        for v in range(DFIX_K):
+            p = dfix_input_path(u, v)
+            h.update(f"{p.name} {DS.hashlib_file(p)}\n".encode())
+    return h.hexdigest()
+
+
+def h4_read_check(rec, sha):
+    """An H4 FT model read: its own arm's run on the pinned exclusions."""
+    h = rec.get("h4") or {}
+    arm = next((a for a, t in H4_FT.items() if rec["test"] == t or rec["test"].startswith(f"{t}-k")), None)
+    if arm is None or h.get("arm") != arm or h.get("exclusions_sha256") != sha:
+        raise SystemExit(f"{rec['test']}-{rec['seed']}: not an H4 run on the pinned exclusions")
+
+
+def h4_all_labels_load(arm):
+    """The H4 arm's all-labels pair, both seeds at its read checkpoint, with `ft_vreal_provenance`'s guard in its H4
+    form (the arm's W and inner runs; D_fix's units less real_out; the unfiltered inputs D_fix's). -> (nets, recs)."""
+    ex = h4_exclusions()
+    od = out_dir() / "runs"
+    base, pre = H4_FT[arm], H4_PRETRAIN[arm]
+    nets, recs = [], []
+    for sd in SEEDS:
+        net, rec = load_run(base, sd, "best")
+        ft_read_check(rec)
+        h4_read_check(rec, ex["sha256"])
+        if rec.get("inner") or rec.get("real_fold") is not None or not rec.get("masked"):
+            raise SystemExit(f"{base}-{sd}: not the all-labels masked run")
+        nets.append(net)
+        recs.append(rec)
+    if any(r_["train_ids"] != recs[0]["train_ids"] or r_["held_ids"] != recs[0]["held_ids"] for r_ in recs):
+        raise SystemExit(f"{base}: both seeds of one training set")
+
+    def inner_set(lr_, cap_):
+        ps = [od / f"{ft_name(k, True, lr_, cap_, base)}-{sd}.json" for k in range(REAL_FOLDS) for sd in SEEDS]
+        return [json.loads(q.read_text()) for q in ps] if all(q.exists() for q in ps) else None
+
+    return nets, ft_vreal_provenance(recs, inner_set, lambda sd: json.loads((od / f"{pre}-{sd}.json").read_text()),
+                                     lambda sd: json.loads((od / f"{dfix_run_name(None)}-{sd}.json").read_text()),
+                                     base=base, pretrain=pre, real_out=ex["real_out"])
+
+
+def h4_apart(out):
+    """`--h4-apart`: H4's real_out (the pinned exclusions), recorded on the report `out`. -> frozenset of units."""
+    ex = h4_exclusions()
+    out["h4_apart"] = {"real_out": sorted(ex["real_out"]), "exclusions_sha256": ex["sha256"],
+                       "rule": "primary rows on the units no arm's cleaning removed; the real_out units apart"}
+    return ex["real_out"]
+
+
+def h4_apart_groups(units, apart, key=lambda u: u[0]):
+    """The reports' unit groups: [("", units)] by default; with H4's real_out, the primary rows on the units no arm's
+    cleaning removed and the removed ones reported apart. -> [(row suffix, units)]."""
+    if apart is None:
+        return [("", units)]
+    return [("", [u for u in units if key(u) not in apart]),
+            (" (real_out, apart)", [u for u in units if key(u) in apart])]
 
 
 def ft_read_check(rec):
@@ -7134,33 +7431,50 @@ def ft_vreal_load():
                                      lambda sd: json.loads((od / f"{dfix_run_name(None)}-{sd}.json").read_text()))
 
 
-def ft_vreal_provenance(recs, inner_set, w_of, d_of):
+def ft_vreal_provenance(recs, inner_set, w_of, d_of, base=FT_BASE, pretrain=FT_PRETRAIN, real_out=None):
     """The all-labels FT runs' declared provenance (refuses on any miss): their (lr, cap) the settled one
     (`ft_fallback_refusal` on inner_set(lr, cap) -> the 8 inner records or None) and each inner run started from its
     own seed's W; E the inner median; each run started from its seed's W best, on W's plugin and NS-held ids, and on
     exactly D_fix's training labels and real-row inputs (plugin + BKS + GOAT). w_of(seed), d_of(seed) -> run
-    records. -> recs."""
+    records. -> recs. With `real_out` (H4's all-labels pair, `base` its tag and `pretrain` its W): FTm's recipe (cap
+    300 from the start, no fallback order), and in place of D_fix's labels and hash, H4's inputs guard: the unfiltered
+    inputs hash D_fix's, the units D_fix's less real_out, the filtered hash stored."""
     lr, cap = recs[0]["lr"], recs[0]["cap"]
-    why = ft_fallback_refusal(inner_set, lr, cap)
+    if real_out is None:
+        why = ft_fallback_refusal(inner_set, lr, cap)
+    else:
+        why = (f"not FTm's rate and cap ({lr:g}, {cap})" if (lr, cap) != (FT_LR, FT_FALLBACK_CAP)
+               else "the 8 inner runs are not all done" if inner_set(lr, cap) is None else None)
     if why:
-        raise SystemExit(f"{FT_BASE}: {why}")
+        raise SystemExit(f"{base}: {why}")
     inners = inner_set(lr, cap)
     if ft_inner_init_refusal(inners, lambda sd: w_of(sd)["model_sha256"]["best"]):
-        raise SystemExit(f"{FT_BASE}: the inner runs are not all eight, each from its own seed's W")
+        raise SystemExit(f"{base}: the inner runs are not all eight, each from its own seed's W")
     want = ft_epoch_of(inners)
     for r_ in recs:
         sd = r_["seed"]
         w, d = w_of(sd), d_of(sd)
         if r_["E"] != want:
-            raise SystemExit(f"{FT_BASE}-{sd}: trained {r_['E']} epochs, not the inner median {want}")
+            raise SystemExit(f"{base}-{sd}: trained {r_['E']} epochs, not the inner median {want}")
         if r_["init"]["sha256"] != w["model_sha256"]["best"]:
-            raise SystemExit(f"{FT_BASE}-{sd}: not started from {FT_PRETRAIN}'s best")
+            raise SystemExit(f"{base}-{sd}: not started from {pretrain}'s best")
         if [i for i in r_["train_ids"] if i < REAL_ROW0] != w["train_ids"] or r_["held_ids"] != w["held_ids"]:
-            raise SystemExit(f"{FT_BASE}-{sd}: plugin or held rows other than {FT_PRETRAIN}'s")
+            raise SystemExit(f"{base}-{sd}: plugin or held rows other than {pretrain}'s")
+        if real_out is not None:
+            h = r_.get("h4") or {}
+            why = h4_inputs_refusal(h.get("full_inputs_sha256"), r_["dfix"]["target_lufs"], d["dfix"], real_out,
+                                    dfix_run_name(None))
+            if why is None and set(h.get("train_units") or ()) != set(r_["dfix"]["target_lufs"]):
+                why = "its training units are not all its units (an all-labels run holds none)"
+            if why is None and (h.get("inputs_sha256") != r_["dfix"]["inputs_sha256"] or r_["real_held_ids"]):
+                why = "the filtered inputs hash is not stored, or it holds real rows"
+            if why:
+                raise SystemExit(f"{base}-{sd}: {why}")
+            continue
         if set(r_["train_ids"]) != set(d["train_ids"]) or r_["held_ids"] != d["held_ids"] \
                 or set(r_["ft_train_ids"]) != {i for i in d["train_ids"] if i >= REAL_ROW0} \
                 or r_["dfix"]["inputs_sha256"] != d["dfix"]["inputs_sha256"]:
-            raise SystemExit(f"{FT_BASE}-{sd}: not D_fix's training labels and inputs")
+            raise SystemExit(f"{base}-{sd}: not D_fix's training labels and inputs")
     return recs
 
 
@@ -7561,6 +7875,10 @@ def main(argv=None):
     ap.add_argument("--shuffle-real", action="store_true", help="train-ft: N3, labels shuffled within amp and class")
     ap.add_argument("--ft-lr", type=float, default=None)       # train-ft: a declared fallback only
     ap.add_argument("--ft-cap", type=int, default=None)
+    ap.add_argument("--h4", choices=("full", "gentle", "real"), default=None,
+                    help="train: H4's W on an arm's plugin rows (full, gentle); train-ft: H4's FTm arm (full, gentle, real)")
+    ap.add_argument("--h4-apart", action="store_true",
+                    help="real-report, goat-report: H4's real_out units out of the primary rows, reported apart")
     args = ap.parse_args(argv)
     return COMMANDS[args.cmd](args)
 
