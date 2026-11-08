@@ -41,9 +41,12 @@ MARGIN_DB = 0.5                                      # the least margin m
 LATENCY = 52                                         # the meter's lag on plugin renders (PS.LATENCY)
 
 
-def dry_keys():
-    """Every (module, key) the dry twin may change."""
-    return ({*TIME.values()} | {*SPRING.values()} | {(m, r) for m, r, _ in ROOMS})
+OFF = {**{p: "false" for p in TIME.values()}, **{(m, r): "false" for m, r, _ in ROOMS}, **{p: "0" for p in SPRING.values()}}
+
+
+def dry_keys(amp):
+    """Every (module, key) the dry twin on `amp` may change: the time effects, that amp's spring, the room mics."""
+    return {*TIME.values(), *([SPRING[amp]] if amp in SPRING else []), *((m, r) for m, r, _ in ROOMS)}
 
 
 def _on(v):
@@ -76,11 +79,12 @@ def dry(x, amp):
     return y
 
 
-def check_dry(x, y):
-    """Refuses a dry setting that differs from its twin outside the declared keys, or that adds a key."""
+def check_dry(x, y, amp):
+    """Refuses a dry setting that differs from its twin outside `amp`'s declared keys, sets one to anything but off, or
+    adds a key."""
     if set(y) != set(x):
         raise SystemExit("the dry setting's keys differ from the twin's")
-    bad = sorted(f"{a}/{b}" for (a, b) in x if x[(a, b)] != y[(a, b)] and (a, b) not in dry_keys())
+    bad = sorted(f"{a}/{b}" for (a, b) in x if x[(a, b)] != y[(a, b)] and ((a, b) not in dry_keys(amp) or y[(a, b)] != OFF[(a, b)]))
     if bad:
         raise SystemExit(f"the dry setting changes undeclared keys: {bad}")
 
@@ -137,12 +141,9 @@ def di_path(x):
     sd = pathlib.Path(x["session_dir"])
     tail = x["di"].split("/", 2)[2]
     p = sd / tail
-    if p.exists():
-        return p
-    hits = sorted(sd.rglob(pathlib.Path(tail).name))
-    if len(hits) != 1:
-        raise SystemExit(f"{x['i']}: the DI {tail} is not found once under {sd}")
-    return hits[0]
+    if not p.exists():
+        raise SystemExit(f"{x['i']}: the DI {p} is missing")
+    return p
 
 
 def start_of(x):
@@ -184,7 +185,7 @@ def render_one(x, it, menus, make):
     xs = xf
     if it["kind"] == "dry":
         xs = dry(xf, amp)
-        check_dry(xf, xs)
+        check_dry(xf, xs, amp)
         if xs == xf:
             raise SystemExit(f"{it['i']}: the dry twin changes nothing")
     di = B.measure(PS.section_audio(str(di_path(x)), start_of(x))).astype(np.float32)
@@ -196,6 +197,7 @@ def render_one(x, it, menus, make):
 def cmd_pilot_render(args):
     from learn import cc_build as CB
     from learn import direct_sound_gate as G
+    from learn import direct_stems as DS
     from learn import local_objective as LO
     from learn import pipeline_fix as P
     from learn import pretrain_set as PS
@@ -206,7 +208,7 @@ def cmd_pilot_render(args):
     k, n = args.shard
     plan = json.loads((heavy_dir() / "h1-plan.json").read_text())
     rp = heavy_dir() / "h1" / f"render-{k}of{n}.jsonl"
-    done = {json.loads(l)["i"] for l in rp.read_text().splitlines()} if rp.exists() else set()
+    done = {json.loads(l)["i"] for f in (heavy_dir() / "h1").glob("render-*.jsonl") for l in f.read_text().splitlines() if l.strip()}
     todo = [it for j, it in enumerate(plan["items"]) if j % n == k and it["i"] not in done]
     if not todo:
         print(f"H1 RENDER DONE {k}/{n} (nothing to do)")
@@ -227,10 +229,13 @@ def cmd_pilot_render(args):
         rr.close()
     rp.parent.mkdir(parents=True, exist_ok=True)
     renders = 0
+    swap0 = DS.swap_mb()
     with open(rp, "a") as fh:
         for it in todo:
-            if PS.free_gb() < T.DISK_GUARD_GB:
-                raise SystemExit(f"free disk below {T.DISK_GUARD_GB:.0f} GB")
+            g = DS._guards("h1-render", T.DISK_GUARD_GB, swap0)
+            if g:
+                print(g[1], flush=True)
+                raise SystemExit(g[0])
             y, st = render_one(ex[it["i"]], it, menus, CB.new_renderer)
             renders += 2
             f = heavy_dir() / "h1" / "audio" / f"{it['i']:07d}-{it['kind']}.flac"
@@ -245,9 +250,10 @@ def residual_db(a, b):
     """10 log10 of the residual's energy against b's. -inf when identical."""
     import numpy as np
 
-    n = min(len(a), len(b))
-    e = float(np.sum((a[:n] - b[:n]) ** 2))
-    return -math.inf if e == 0 else 10 * math.log10(e / float(np.sum(b[:n] ** 2)))
+    if len(a) != len(b):
+        return math.inf
+    e = float(np.sum((a - b) ** 2))
+    return -math.inf if e == 0 else 10 * math.log10(e / float(np.sum(b ** 2)))
 
 
 def measure(y, x):
@@ -256,7 +262,9 @@ def measure(y, x):
 
     from learn import pretrain_set as PS
 
-    sys.path.insert(0, str(PS.HOME / "references/datasets-set3/_tools"))
+    tools = str(PS.HOME / "references/datasets-set3/_tools")
+    if tools not in sys.path:
+        sys.path.insert(0, tools)
     import gainmeasure as GM
 
     di = np.asarray(PS.section_audio(str(di_path(x)), start_of(x)), np.float64)
@@ -294,8 +302,8 @@ def cmd_pilot_read(_args):
     built = T.rows_of(root, "cc", "render")
     out, checks = [], []
     for it in plan["items"]:
-        x, r, b = ex[it["i"]], rows[it["i"]], built[it["i"]]["target"]
-        stored = G.read_flac(T.flac_path(root, "cc", it["i"], "target"), b["scale"], b["sha256"])
+        x, r, tg = ex[it["i"]], rows[it["i"]], built[it["i"]]["target"]
+        stored = G.read_flac(T.flac_path(root, "cc", it["i"], "target"), tg["scale"], tg["sha256"])
         new = G.read_flac(heavy_dir() / "h1" / "audio" / r["file"], r["scale"], r["sha256"])
         if it["kind"] == "same":
             res = residual_db(new, stored)

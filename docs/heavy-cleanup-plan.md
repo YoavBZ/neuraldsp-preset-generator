@@ -10,7 +10,7 @@ The user asked to clear recordings that are too heavy or distorted out of traini
 
 The capture sets were screened by ear on their own pages. The backing pool has no guitar on it.
 
-A first read of D_CC's kept rows on the 8 training songs found them more driven than the real labelled recordings. It took 2,640 rows, zero renders, with `nonlinear_db`'s meter at the plugin's latency of 52 samples. On the 293 rows with no time effect, spring or room mic on:
+A first read of D_CC's kept rows on the 8 training songs found them more driven than the real labelled recordings. It took 2,640 rows, zero renders, with `nonlinear_db`'s meter at the plugin's latency of 52 samples. On the 293 rows with no time effect, spring or room mic on (a room on either cab; under H2's active-cab rule it is 313 rows, 57%, 29% and 5%):
 
 | | At or past −2.91 dB | Past 0 | Past +3 |
 |---|---|---|---|

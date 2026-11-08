@@ -25,11 +25,15 @@ def test_the_dry_twin_changes_only_declared_keys():
     assert y[("delay", "delayActive")] == "false" and y[("pr12Amp", "pr12Reverb")] == "0"
     assert y[("sw50rAmp", "sw50rReverb")] == "0.3"                                # the other amp's knob stays
     assert y[("cabParameters", "rightRoomActive")] == "false" and y[("pr12Amp", "pr12Gain")] == "0.5"
-    H.check_dry(x, y)
+    H.check_dry(x, y, "pr12")
     with pytest.raises(SystemExit):
-        H.check_dry(x, {**y, ("pr12Amp", "pr12Gain"): "0.6"})
+        H.check_dry(x, {**y, ("pr12Amp", "pr12Gain"): "0.6"}, "pr12")
     with pytest.raises(SystemExit):
-        H.check_dry(x, {**y, ("new", "key"): "1"})
+        H.check_dry(x, {**y, ("new", "key"): "1"}, "pr12")
+    with pytest.raises(SystemExit):                                                 # another amp's spring
+        H.check_dry(x, {**y, ("sw50rAmp", "sw50rReverb"): "0"}, "pr12")
+    with pytest.raises(SystemExit):                                                 # a dry key set on, not off
+        H.check_dry(x, {**y, ("reverb", "reverbActive"): "true"}, "pr12")
 
 
 def test_draw_is_disjoint_and_per_family():
@@ -53,3 +57,4 @@ def test_margin_takes_the_worst_negative_shift_when_larger():
     assert H.margin([0.2, 1.0]) == 0.5
     assert H.margin([-0.8, 1.0]) == 0.8
     assert H.residual_db(__import__("numpy").ones(4), __import__("numpy").ones(4)) == float("-inf")
+    assert H.residual_db(__import__("numpy").ones(4), __import__("numpy").ones(5)) == float("inf")
