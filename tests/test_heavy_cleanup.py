@@ -263,3 +263,158 @@ def test_nodoubler_changes_the_doubler_alone_and_refuses_where_it_is_off():
         H.nodoubler(y)
     rows = [{"i": 1, "settings": setting()}, {"i": 2, "settings": setting(**{"parameters/doublerActive": "true"})}]
     assert [x["i"] for x in H.doubler_rows(rows)] == [2]
+
+
+# --- H4: the exclusions file ----------------------------------------------------------------------------------------
+
+def _rows(n, band="b", doubler=()):
+    return [{"i": i, "band": band, "settings": setting(**({"parameters/doublerActive": "true"} if i in doubler else {}))}
+            for i in range(n)]
+
+
+def test_out_list_cuts_at_or_past_the_threshold_by_the_right_value_and_takes_the_heavy_bands():
+    rows = _rows(5, doubler={3, 4}) + [{"i": 9, "band": H.HEAVY_BANDS[0], "settings": setting()}]
+    stored = {0: -5.0, 1: -4.0, 2: -3.0, 3: -1.0, 4: -9.0}          # doubler rows: their stored value is not read
+    nodbl = {3: -6.0, 4: -4.0}
+    got = H.out_list(rows, stored, nodbl, -4.0)
+    assert got["ids"] == [1, 2, 4, 9] and got["n"] == 4 and got["of"] == 6 and got["left"] == 2
+    assert got["by_source"] == {"heavy_band": 1, "stored": 2, "doubler_off": 1} and got["threshold"] == -4.0
+    with pytest.raises(SystemExit, match="no flatness"):
+        H.out_list(rows, stored, {3: -6.0}, -4.0)                    # a doubler row with no doubler-off value
+    with pytest.raises(SystemExit, match="no flatness"):
+        H.out_list(rows, {0: -5.0}, nodbl, -4.0)
+    with pytest.raises(SystemExit, match="no flatness"):
+        H.out_list(rows, {**stored, 1: float("nan")}, nodbl, -4.0)
+
+
+def test_the_five_lists_share_one_rule_and_refuse_a_missing_value():
+    w, ns = _rows(4, doubler={1}), [dict(r, i=r["i"] + 100) for r in _rows(3, doubler={0})]
+    wf, wn = {0: -5.0, 2: -3.9, 3: -3.0}, {1: -4.2}
+    nf, nn = {101: -4.1, 102: -3.5}, {100: -2.0}
+    L = H.h4_lists(w, ns, wf, wn, nf, nn, ["u2", "u1"], -4.3, -3.6)
+    assert L["real_out"]["ids"] == ["u1", "u2"] and L["real_out"]["n"] == 2
+    assert L["plugin_out_full"]["ids"] == [1, 2, 3] and L["plugin_out_gentle"]["ids"] == [3]
+    assert L["ns_out_full"]["ids"] == [100, 101, 102] and L["ns_out_gentle"]["ids"] == [100, 102]
+    for bad in ((["u1", "u1"], -4.3, -3.6), ([], -4.3, -3.6), (["u1"], float("nan"), -3.6)):
+        with pytest.raises(SystemExit):
+            H.h4_lists(w, ns, wf, wn, nf, nn, *bad)
+
+
+def test_doubler_off_records_must_be_one_doubler_off_render_of_a_doubler_row(tmp_path):
+    import json
+
+    f = tmp_path / "ns-doubler-0of1.jsonl"
+    rec = lambda i, v=-4.0, **kw: json.dumps({"i": i, "kind": "nodoubler", "flatness_db": v,   # noqa: E731
+                                             "settings": setting(), **kw})
+    f.write_text(rec(1) + "\n" + rec(2, -3.0) + "\n\n")
+    assert H.read_jsonl_values([f], {1, 2, 3}) == {1: -4.0, 2: -3.0}
+    for body, want in ((rec(5), {1}), (rec(1) + "\n" + rec(1), {1}), (rec(1, kind="dry"), {1}),
+                       (rec(1, None), {1}), (rec(1, settings=setting(**{"parameters/doublerActive": "true"})), {1})):
+        f.write_text(body)
+        with pytest.raises(SystemExit):
+            H.read_jsonl_values([f], want)
+
+
+def _h4_world(tmp_path, monkeypatch, ns_doubler=True):
+    """Synthetic W (rows 0-5, rows 4-5 doubler, row 6 a heavy band), NS (10-12, 12 doubler) and every input file."""
+    import json
+
+    from learn import bakeoff as B
+    from learn import pipeline_fix as P
+    from learn import scope_page as SP
+
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    monkeypatch.setattr(P, "require", lambda key: {})
+    hd = tmp_path / "heavy"
+    (hd / "check").mkdir(parents=True)
+    (hd / "h2").mkdir()
+    (hd / "h4").mkdir()
+    ex = {r["i"]: r for r in _rows(6, doubler={4, 5}) + [{"i": 6, "band": H.HEAVY_BANDS[1], "settings": setting()}]
+          + [dict(r, i=r["i"] + 10) for r in _rows(3, doubler={2})]}
+    monkeypatch.setattr(H, "cc_examples", lambda: ex)
+    monkeypatch.setattr(B, "plugin_set", lambda: ([{"i": i} for i in range(7)], None))
+    (tmp_path / "runs").mkdir()
+    for sd in P.SEEDS:
+        (tmp_path / "runs" / f"P2b-wide24-{sd}.json").write_text(json.dumps({"held": "ns", "held_ids": [10, 11, 12],
+                                                                              "train_ids": list(range(7))}))
+    flat = {0: -6.0, 1: -5.0, 2: -4.0, 3: -3.0, 4: -9.0, 5: -9.0}
+    (hd / "check" / "flatness.json").write_text(json.dumps({"flatness_db": {str(k): v for k, v in flat.items()}}))
+    edge = H.check_bands([flat[i] for i in range(4)])[1][1]
+    (hd / "check" / "key.json").write_text(json.dumps({"bands": [[None, -5.0], [-5.0, edge], [edge, None], [0, None]]}))
+    (hd / "check" / "verdicts.json").write_text(json.dumps({"line_db": H.H4_LINE_DB}))
+    rec = lambda i, v: json.dumps({"i": i, "kind": "nodoubler", "flatness_db": v, "settings": setting()})  # noqa: E731
+    (hd / "h2" / "doubler-0of1.jsonl").write_text(rec(4, -4.4) + "\n" + rec(5, -2.0) + "\n")
+    (hd / "h4" / "ns-flatness.json").write_text(json.dumps({"flatness_db": {"10": -4.0, "11": -6.0, "12": -9.0}}))
+    if ns_doubler:
+        (hd / "h4" / "ns-doubler-0of1.jsonl").write_text(rec(12, -4.0) + "\n")
+    monkeypatch.setattr(SP, "scope_dir", lambda: tmp_path / "scope")
+    (tmp_path / "scope").mkdir()
+    (tmp_path / "scope" / "verdicts.json").write_text(json.dumps({"out": ["goat/x@1#amp_1", "s/A/d@0#t"]}))
+    return hd, edge
+
+
+def test_h4_exclusions_writes_the_lists_once_and_they_load_through_the_pin(tmp_path, monkeypatch, capsys):
+    pytest.importorskip("numpy")
+    import json
+
+    from learn import direct_stems as DS
+    from learn import pipeline_fix as P
+
+    hd, edge = _h4_world(tmp_path, monkeypatch)
+    H.cmd_h4_exclusions(None)
+    out = hd / H.H4_FILE
+    doc = json.loads(out.read_text())
+    assert doc["plugin_out_full"]["ids"] == [2, 3, 5, 6] and doc["plugin_out_full"]["threshold"] == H.H4_LINE_DB
+    assert doc["plugin_out_gentle"]["ids"] == [i for i in (2, 3) if [-4.0, -3.0][i - 2] >= edge] + [5, 6]
+    assert doc["ns_out_full"]["ids"] == [10, 12] and doc["real_out"]["n"] == 2
+    assert doc["lists_sha256"] == P.h4_lists_sha(doc) and len(doc["inputs_sha256"]) == 7
+    sha = DS.hashlib_file(out)
+    assert sha in capsys.readouterr().out
+    pin = {P.H4: {}, P.H4_EXCL: {"path": "heavy/h4-exclusions.json", "sha256": sha}}
+    monkeypatch.setattr(P, "require", lambda key: pin)
+    ex = P.h4_exclusions()
+    assert ex["plugin_out"]["full"] == {2, 3, 5, 6} and ex["ns_out"]["full"] == {10, 12}
+    assert ex["real_out"] == {"goat/x@1#amp_1", "s/A/d@0#t"}
+    with pytest.raises(SystemExit, match="written once"):
+        H.cmd_h4_exclusions(None)
+
+
+def test_h4_exclusions_refuse_before_ns_is_measured_or_on_a_moved_edge(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")
+    import json
+
+    hd, _ = _h4_world(tmp_path, monkeypatch, ns_doubler=False)
+    with pytest.raises(SystemExit, match="ns-doubler"):
+        H.cmd_h4_exclusions(None)
+    (hd / "h4" / "ns-doubler-0of1.jsonl").write_text("")
+    with pytest.raises(SystemExit, match="no flatness"):            # NS's doubler row has no doubler-off value
+        H.cmd_h4_exclusions(None)
+    (hd / "h4" / "ns-doubler-0of1.jsonl").write_text(json.dumps({"i": 12, "kind": "nodoubler", "flatness_db": -4.0,
+                                                                "settings": setting()}) + "\n")
+    (hd / "check" / "verdicts.json").write_text(json.dumps({"line_db": H.H4_LINE_DB + 1e-6}))
+    with pytest.raises(SystemExit, match="declared plugin line"):
+        H.cmd_h4_exclusions(None)
+    (hd / "check" / "verdicts.json").write_text(json.dumps({"line_db": H.H4_LINE_DB}))
+    key = json.loads((hd / "check" / "key.json").read_text())
+    key["bands"][1][1] += 0.01
+    (hd / "check" / "key.json").write_text(json.dumps(key))
+    with pytest.raises(SystemExit, match="75th"):
+        H.cmd_h4_exclusions(None)
+    assert not (hd / H.H4_FILE).exists()
+
+
+def test_ns_is_ws_held_set_on_both_seeds(tmp_path, monkeypatch):
+    import json
+
+    from learn import pipeline_fix as P
+
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    (tmp_path / "runs").mkdir()
+    for sd, held in zip(P.SEEDS, ([3, 4], [3, 4])):
+        (tmp_path / "runs" / f"P2b-wide24-{sd}.json").write_text(json.dumps({"held": "ns", "held_ids": held,
+                                                                              "train_ids": [1, 2]}))
+    assert H.ns_ids() == [3, 4]
+    (tmp_path / "runs" / f"P2b-wide24-{P.SEEDS[1]}.json").write_text(json.dumps({"held": "ns", "held_ids": [3],
+                                                                                 "train_ids": [1, 2]}))
+    with pytest.raises(SystemExit, match="one NS"):
+        H.ns_ids()
