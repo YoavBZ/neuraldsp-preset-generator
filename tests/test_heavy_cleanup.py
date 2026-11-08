@@ -162,12 +162,10 @@ def test_no_doubler_keeps_only_rows_with_the_doubler_off():
 
 
 def _cards():
-    items = []
-    for k in range(8):                                                             # 8 band cards over 4 bands
-        items.append({"i": k, "band": k // 2, "flatness_db": -6.0 + k * 0.5, "song": f"s{k % 3}"})
+    items = [{"i": k, "band": k // 2, "flatness_db": -6.0 + k * 0.5, "song": f"s{k % 3}"} for k in range(8)]
     items += [{"i": 100, "band": "pair", "pair": 0, "flatness_db": -6.0, "song": "p0"},
               {"i": 101, "band": "pair", "pair": 0, "flatness_db": -3.0, "song": "p0"},
-              {"i": 102, "band": "pair", "pair": 1, "flatness_db": -5.0, "song": "p1"},
+              {"i": 102, "band": "pair", "pair": 1, "flatness_db": -4.0, "song": "p1"},   # in the fit, it would pull the line to -4.0
               {"i": 103, "band": "pair", "pair": 1, "flatness_db": -2.9, "song": "p1"}]
     return items
 
@@ -178,14 +176,18 @@ BANDS = ((None, -5.0), (-5.0, -4.0), (-4.0, -3.0), (-3.0, None))
 def test_check_read_fits_band_cards_only_and_reads_the_pairs():
     items = _cards()
     got = {str(it["i"]): ("keep" if it["flatness_db"] < -3.9 else "heavy") for it in items if it["band"] != "pair"}
-    got |= {"100": "keep", "101": "heavy", "102": "heavy", "103": "keep"}
+    got |= {"100": "keep", "101": "heavy", "102": "heavy", "103": "heavy"}
     pool = sorted(-7.0 + 0.1 * k for k in range(50))
     r = H.check_read(items, got, pool, BANDS)
-    assert r["line_db"] == -3.5 and r["line_band"] == 2                            # pairs (at -6 heavy etc.) stay out
+    assert r["line_db"] == -3.5 and r["line_band"] == 2                            # the pairs stay out (else -4.0)
     assert r["line_pct"] == 100.0 * sum(1 for x in pool if x < -3.5) / len(pool)   # strictly below
-    assert r["pairs"] == {"n": 2, "split": 2, "flatter_dropped": 1, "both_dropped": 0}
-    assert "the pairs do not favour the flatter card" in r["undecided"]
+    assert r["pairs"] == {"n": 2, "split": 1, "flatter_dropped": 1, "both_dropped": 1}
+    assert r["undecided"] == []
     assert [b["dropped"] for b in r["by_band"]] == [0, 0, 1, 2] and [b["n"] for b in r["by_band"]] == [2, 2, 2, 2]
+    got |= {"100": "heavy", "101": "keep"}                                          # the less flat card dropped
+    assert H.check_read(items, got, pool, BANDS)["undecided"] == ["the pairs do not favour the flatter card"]
+    low = H.check_read(items, {**got, **{str(k): "heavy" for k in range(8)}}, pool, BANDS)
+    assert low["line_band"] == 0 and "the line falls in the lowest band" in low["undecided"]
 
 
 def test_check_read_counts_unsure_as_dropped_but_not_in_the_neither_fit():
@@ -197,7 +199,10 @@ def test_check_read_counts_unsure_as_dropped_but_not_in_the_neither_fit():
     assert r["line_db"] == -3.0 and r["unsure_neither_line_db"] == -3.0
     got["6"] = "unsure"
     r = H.check_read(items, got, [0.0], BANDS)
-    assert r["line_db"] == -3.0 and r["unsure_neither_line_db"] is None
+    assert r["line_db"] == -3.0 and r["unsure_neither_line_db"] is None              # not counted heavy
+    got["5"] = "heavy"
+    r = H.check_read(items, got, [0.0], BANDS)
+    assert r["line_db"] == -3.5 and r["unsure_neither_line_db"] == -3.5              # not counted keep (else None)
     assert H.check_read(items, {str(it["i"]): "keep" for it in items}, [0.0], BANDS)["undecided"][0] == "no line"
 
 
@@ -216,10 +221,10 @@ def test_draw_rounds_over_a_songs_sections_and_never_reuses_one_across_bands():
     rows, flat, i = [], {}, 0
     for song in ("A", "B"):
         for sec in range(24):
-            for a in H.AMPS:
+            for j, a in enumerate(H.AMPS):
                 i += 1
                 rows.append({"i": i, "amp": a, "section": f"set/{song}_Full/{sec}.wav@0"})
-                flat[i] = (10.0, 20.0, 24.0, 30.0)[sec % 4]
+                flat[i] = (10.0, 20.0, 24.0, 30.0)[(sec + j) % 4]                  # each section in 3 bands
     got = H.check_draw(rows, flat, ((None, 18.0), (18.0, 22.0), (22.0, 26.0), (26.0, None)))
     assert len({g["section"] for g in got}) == len(got) == 40
     for k in range(4):
@@ -228,6 +233,7 @@ def test_draw_rounds_over_a_songs_sections_and_never_reuses_one_across_bands():
         assert abs(songs.count("set/A_Full") - songs.count("set/B_Full")) <= 1
         amps = [g["amp"] for g in band]
         assert max(amps.count(a) for a in H.AMPS) - min(amps.count(a) for a in H.AMPS) <= 1
+
 
 
 def test_pairs_fall_back_to_the_widest_sections():

@@ -529,6 +529,7 @@ def check_bands(flat_values):
     v = list(flat_values)
     e = [float(np.percentile(v, q)) for q in BAND_PCTS]
     return ((None, e[0]), (e[0], e[1]), (e[1], e[2]), (e[2], None))
+
 PER_BAND = 10
 AMPS = ("ac20", "pr12", "sw50r")
 FRAME, HOP = 4096, 2048                              # gainmeasure's frames
@@ -811,7 +812,7 @@ def check_read(items, got, pool, bands):
             "unsure_neither_line_db": line_of(card(neither), None),
             "by_band": [{"band": b, "lo": lo, "hi": hi, "n": sum(1 for it in bandc if it["band"] == b),
                          "dropped": sum(1 for it in bandc if it["band"] == b and v(it) != "keep")} for b, (lo, hi) in enumerate(bands)],
-            "percentile_of": f"the {len(pool)} doubler-free rows of W outside the heavy bands",
+            "percentile_of": f"the {len(pool):,} doubler-free rows of W outside the heavy bands",
             "pairs": {"n": len(pairs), "split": len(split), "flatter_dropped": flatter,
                       "both_dropped": sum(1 for p in pairs.values() if sum(y for _, y in p) == 2)},
             "undecided": undecided}
@@ -830,7 +831,7 @@ def cmd_check_answers(args):
         raise SystemExit(f"{args.stored}: build {ex.get('build')}, this page's is {key['build']}")
     got = SP.unit_verdicts(ex["answers"], [{"id": it["id"], "unit": str(it["i"])} for it in key["items"]])
     flat = {int(k): v for k, v in json.loads((d / "flatness.json").read_text())["flatness_db"].items()}
-    if any(flat[it["i"]] != it["flatness_db"] for it in key["items"]):
+    if any(flat.get(it["i"]) != it["flatness_db"] for it in key["items"]):
         raise SystemExit("flatness.json no longer matches the page's cards")
     pool = sorted(flat[int(x["i"])] for x in no_doubler(w_rows()))
     rep = {"phase": H2A, "build": key["build"], "verdicts": got, **check_read(key["items"], got, pool, [tuple(b) for b in key["bands"]]),
@@ -872,6 +873,8 @@ def cmd_real_flat_line(_args):
     jobs = [(u, parts.get(u) or {**goat[u], "source": "goat"}) for u in sorted(lab)]
     with Pool(3) as pool:
         flat = dict(zip([u for u, _ in jobs], pool.map(real_flatness, [p for _, p in jobs], chunksize=4)))
+    if any(v is None or not math.isfinite(v) for v in flat.values()):
+        raise SystemExit(f"recordings with no flatness reading: {[u for u, v in flat.items() if v is None][:5]}")
     pts = [(flat[u], lab[u], song_of(u)) for u in sorted(lab)]
     boot = boot_lines(pts, floor=None)
     have = sorted(b for b in boot if b is not None)
