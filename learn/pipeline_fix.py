@@ -1230,7 +1230,7 @@ def cmd_train(args):
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     if h4_info is not None:                            # opt-in only: a run without --h4 is saved exactly as before
         rec["flags"]["h4"] = h4
-        h4_info["possibly_undertrained"] = best_ep >= rec["epochs_run"] - H4_UNDERTRAINED
+        h4_info["possibly_undertrained"] = h4_possibly_undertrained(best_ep, rec["epochs_run"])
         rec["h4"] = h4_info
         if h4_info["possibly_undertrained"]:
             print(f"H4: best state at epoch {best_ep} of {rec['epochs_run']}: possibly undertrained (reported beside)")
@@ -3993,7 +3993,8 @@ def goat_predict(name):
 
 def cmd_goat_predict(args):
     if args.names not in ("P2a-goat", "P2a-goatshuf", *DFIX_BASES, FT_BASE, FTM_BASE, FTS_TAG, *sorted(H4_FT_TAGS)):
-        raise SystemExit(f"--names P2a-goat, P2a-goatshuf, {FT_BASE} or one of {', '.join(DFIX_BASES)} (fold models)")
+        raise SystemExit(f"--names P2a-goat, P2a-goatshuf, {FT_BASE}, {FTM_BASE}, {FTS_TAG}, H4's "
+                         f"{', '.join(sorted(H4_FT_TAGS))} or one of {', '.join(DFIX_BASES)} (fold models)")
     goat_predict(args.names)
 
 
@@ -7105,6 +7106,11 @@ H4_PRETRAIN = {"full": H4_W["full"], "gentle": H4_W["gentle"], "real": FT_PRETRA
 H4_FT_TAGS = frozenset(H4_FT.values())
 H4_LISTS = ("real_out", "plugin_out_full", "plugin_out_gentle", "ns_out_full", "ns_out_gentle")
 H4_UNDERTRAINED = 5                  # a retrained W's best in its last 5 epochs: reported as possibly undertrained
+
+
+def h4_possibly_undertrained(best_ep, epochs_run):
+    """A retrained W whose best state (0-based epoch) falls in its last H4_UNDERTRAINED epochs: reported beside."""
+    return best_ep >= epochs_run - H4_UNDERTRAINED
 
 
 def h4_lists_sha(d):

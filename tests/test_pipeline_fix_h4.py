@@ -253,7 +253,7 @@ def test_goat_predict_takes_the_h4_tags(monkeypatch):
     for t in sorted(P.H4_FT_TAGS):
         P.cmd_goat_predict(argparse.Namespace(names=t))
     assert seen == sorted(P.H4_FT_TAGS)
-    with pytest.raises(SystemExit):
+    with pytest.raises(SystemExit, match="P2b-ftmc, P2b-ftmf, P2b-ftmg"):
         P.cmd_goat_predict(argparse.Namespace(names="P2b-ftmx"))
 
 
@@ -356,7 +356,7 @@ def _fake_torch(monkeypatch):
 def _world(tmp_path, monkeypatch, doc):
     """Ledger, exclusions pin, D_CC's split (training 1-6, NS 7-9) and W's stored record, all synthetic."""
     have = (P.H4, P.H4_EXCL, "phase_3", "phase_5a", "phase_ft", "phase_night2", "phase_ft_fallback", "phase_n4",
-            "phase_ft_carry")
+            "phase_ft_carry", "phase_n3")
     _pin(tmp_path, monkeypatch, doc=doc, have=have)
     entry = P.require(P.H4)
     entry["phase_3_length"] = {"epochs": 10, "every": 5}
@@ -541,6 +541,10 @@ def test_train_ft_h4_chains_filters_and_guards_its_inputs(tmp_path, monkeypatch)
         "train_ids": [1, 2, 3, 5, 6], "held_ids": [7, 9], "model_sha256": {"best": f"hf{sd}"},
         "h4": json.loads((od / f"P2b-ftmf-k0-inner-cap300-{sd}.json").read_text())["h4"]})),
      "other plugin rows"),
+    (lambda od, sd: (od / f"P2b-wide24-hf-{sd}.json").write_text(json.dumps({
+        "train_ids": [1, 3, 5, 6], "held_ids": [7, 8, 9], "model_sha256": {"best": f"hf{sd}"},
+        "h4": json.loads((od / f"P2b-ftmf-k0-inner-cap300-{sd}.json").read_text())["h4"]})),
+     "other NS rows"),
 ])
 def test_train_ft_h4_refuses_on_each_guard(tmp_path, monkeypatch, break_it, why):
     pytest.importorskip("numpy")
@@ -553,8 +557,97 @@ def test_train_ft_h4_refuses_on_each_guard(tmp_path, monkeypatch, break_it, why)
     assert not (od / f"P2b-ftmf-k1-{P.SEEDS[0]}.json").exists()
 
 
+def test_the_undertraining_flag_covers_exactly_the_last_five_epochs():
+    assert P.h4_possibly_undertrained(60 - 5, 60) and P.h4_possibly_undertrained(59, 60)
+    assert not P.h4_possibly_undertrained(60 - 6, 60) and not P.h4_possibly_undertrained(50, 60)
+
+
 def test_train_ft_h4_refuses_another_recipe(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")                                # cmd_train_ft imports numpy first
     _world(tmp_path, monkeypatch, _lists())
-    for kw in ({"masked": False}, {"ft_cap": None}, {"real_frac": 0.5}, {"h4": "other"}):
-        with pytest.raises(SystemExit):
+    for kw, why in (({"masked": False}, "FTm's recipe"), ({"ft_cap": None}, "FTm's recipe"),
+                    ({"real_frac": 0.5}, "FTm's recipe"), ({"h4": "other"}, "--h4 in")):
+        with pytest.raises(SystemExit, match=why):
             P.cmd_train_ft(_ft_args(**kw))
+
+
+# --- the read path: an H4 tag is read exactly as FTm is (backed input, controls outside the search at S) -------------
+
+def _read_fakes(tmp_path, monkeypatch, with_h4=True):
+    """Fake nets, records and inputs for `goat_predict` and `real_predict_5b2`: each answer records the input it was
+    read from ("backed" or "clean") and whether `hold_outside_space` ran."""
+    from learn import cc_build as CB
+    from learn import direct_existing as DE
+    from learn import direct_stems as DS
+    from learn import full_space as F
+    from learn import local_objective as LO
+
+    _pin(tmp_path, monkeypatch, have=(P.H4, P.H4_EXCL, "phase_night2"))
+    sha = P.h4_exclusions()["sha256"]
+
+    def load_run(nm, sd, which):
+        arm = next((a for a, t in P.H4_FT.items() if nm.startswith(t)), None)
+        rec = {"test": nm, "seed": sd, "inner": False, "E": 5, "epochs_run": 5, "train_ids": [1],
+               "models": {"final": "m", "best": "m"}, "model_sha256": {"final": "h", "best": "h"}}
+        if arm and with_h4:
+            rec["h4"] = {"arm": arm, "exclusions_sha256": sha}
+        return None, rec
+    monkeypatch.setattr(P, "load_run", load_run)
+    monkeypatch.setattr(P, "recipe_inputs", lambda pin=None: (None, {}, None, {}, None))
+    monkeypatch.setattr(P, "model_input_lufs", lambda rec: -20.0)
+    monkeypatch.setattr(P, "A_menu_S", lambda: {a: {"clean": ("sel", {"S": 1})} for a in P.AMPS3})
+    monkeypatch.setattr(P, "real_amp_track", lambda sd, track, start: None)
+    monkeypatch.setattr(P, "dfix_backed", lambda unit: {"A": ("backed", -20.0), "B": ("backed", -20.0)})
+    monkeypatch.setattr(P, "stem_backed", lambda unit: None)
+    monkeypatch.setattr(P, "hold_outside_space", lambda st, S, amp: {**st, "held": True})
+    monkeypatch.setattr(DE, "inference_gain_db", lambda ref, target: 0.0)
+    monkeypatch.setattr(DS, "step4_half", lambda a, b, search, g: ("clean", None, -20.0, None))
+    monkeypatch.setattr(DS, "model_input", lambda s8, s8b, ls, lsb, search, amp, cls, kind: (s8, None))
+    monkeypatch.setattr(F, "run_nets", lambda nets, xs, cs: [[xs[0]]])
+    monkeypatch.setattr(F, "readout", lambda outs: {"a2": outs[0], "sw_p": None, "mics": None})
+    monkeypatch.setattr(F, "answer_settings", lambda amp, S, a2, sw, mics: {"input": a2})
+    monkeypatch.setattr(LO, "sdict", dict)
+    gunits = [{"unit": f"goat/i{j}@0#amp_1", "fold": j % 4, "amp": "pr12", "cls": "clean", "sd": None, "track": None,
+               "start_s": 0.0, "item": f"i{j}"} for j in range(4)]
+    monkeypatch.setattr(P, "goat_read_units", lambda tol=None: gunits)
+    parts = [{"unit": f"s/A/d{j}@0#t", "di": f"d{j}", "cls": "clean", "sd": None, "track": None, "start_s": 0.0,
+              "section": "s", "rig": "r"} for j in range(4)]
+    monkeypatch.setattr(CB, "cc_inventory", lambda: {})
+    monkeypatch.setattr(P, "real_parts", lambda kept, sp, inv: parts)
+    monkeypatch.setattr(P, "stage_units", lambda kept, sp, inv, st: parts)
+    monkeypatch.setattr(P, "real_folds", lambda a, b: {f"d{j}": j for j in range(4)})
+    monkeypatch.setattr(P, "rung_rows", lambda kept, rend, ids: [])
+    monkeypatch.setattr(P, "constant_of", lambda rows: {})
+
+
+def test_an_h4_tag_reads_exactly_as_ftm_on_both_predict_paths(tmp_path, monkeypatch):
+    _read_fakes(tmp_path, monkeypatch)
+    for fn, d in ((P.goat_predict, P.GOAT_DIR), (P.real_predict_5b2, P.REAL_DIR)):
+        got = {}
+        for t in ("P2b-ftm", "P2b-ftmg"):
+            fn(t)
+            got[t] = json.loads((tmp_path / d / "answers" / f"{t}.json").read_text())
+        assert got["P2b-ftm"]["answers"] == got["P2b-ftmg"]["answers"]
+        one = next(iter(got["P2b-ftmg"]["answers"].values()))
+        assert one["A"]["settings"] == {"input": "backed", "held": True}           # backed input, outside held at S
+        assert got["P2b-ftmg"]["ledger"].endswith(P.H4)
+    models = json.loads((tmp_path / P.REAL_DIR / "answers" / "P2b-ftmg.json").read_text())["models"]
+    assert sorted(models) == [f"P2b-ftmg-k{k}" for k in range(4)]                  # each unit by its fold's FT_k
+
+
+def test_an_h4_read_refuses_a_record_without_its_h4_field(tmp_path, monkeypatch):
+    _read_fakes(tmp_path, monkeypatch, with_h4=False)
+    for fn in (P.goat_predict, P.real_predict_5b2):
+        with pytest.raises(SystemExit, match="not an H4 run"):
+            fn("P2b-ftmc")
+
+
+def test_train_ft_h4_refuses_real_rows_that_still_hold_a_real_out_unit(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")
+    od = _world(tmp_path, monkeypatch, _lists(real_out=("b",), pf=(2, 4), nf=(8,)))
+    _ft_runs(od, P.h4_exclusions()["sha256"])
+    _ft_fakes(monkeypatch, {})
+    leaky = P.ft_real_rows
+    monkeypatch.setattr(P, "ft_real_rows", lambda k, inner, drop=frozenset(): leaky(k, inner))   # ignores the drop
+    with pytest.raises(SystemExit, match="a real_out unit among its real rows"):
+        P.cmd_train_ft(_ft_args())

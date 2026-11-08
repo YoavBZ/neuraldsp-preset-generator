@@ -993,6 +993,7 @@ H4 = "phase_h4"
 H4_DIR = "h4"
 H4_FILE = "h4-exclusions.json"
 W_RUN = "P2b-wide24"                                 # W: its NS (held_ids) is the selection set H4 cleans too
+H4_LINE_DB = -4.3310904244922295                     # the plugin line H4 declares (check/verdicts.json line_db)
 
 
 def ns_ids():
@@ -1138,6 +1139,8 @@ def cmd_h4_exclusions(_args):
     w_nodbl = read_jsonl_values(w_files, {int(x["i"]) for x in doubler_rows(w_in)})
     ns_nodbl = read_jsonl_values(ns_files, {int(x["i"]) for x in doubler_rows(ns_in)})
     line = float(json.loads(srcs["verdicts"].read_text())["line_db"])
+    if not abs(line - H4_LINE_DB) <= 1e-9:
+        raise SystemExit(f"verdicts.json's line_db {line} is not the declared plugin line {H4_LINE_DB}")
     bands = json.loads(srcs["key"].read_text())["bands"]
     edge = float(bands[1][1])
     if abs(check_bands([w_flat[int(x["i"])] for x in no_doubler(w_in)])[1][1] - edge) > 1e-12:

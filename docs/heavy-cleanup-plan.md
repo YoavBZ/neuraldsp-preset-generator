@@ -125,7 +125,7 @@ Measured only after the line is set.
   - `FT_PRETRAIN` becomes a setting per tag: `P2b-ftmc` starts from `P2b-wide24`, and the other two from their own W.
 - **Undertraining:** if a retrained W's best state falls in its last 5 epochs, it is reported as possibly undertrained, beside the result. A run with the steps equalised stays a later option, approved separately.
 
-**Cost, measured on today's runs.** W took 10.6 min a seed on MPS, and fewer rows take less. FTm's 18 runs took 136 record minutes, 78 min wall at two at a time. So the three arms take about 4 to 5 hours of MPS wall time in all. One MPS job at a time, announced first.
+**Cost, measured on today's runs.** W took 10.6 min a seed on MPS, and fewer rows take less. FTm's 18 runs took 136 record minutes, 78 min wall at two at a time. So the three arms take about 4 to 5 hours of MPS wall time in all. One job group (two runs) at a time, as FTm's runs were, announced first.
 
 **The read by the score** (H4a). FTm's stored read is `real-predict`/`goat-predict`, then `real-render`/`goat-render`, then `real-report`/`goat-report`, on read 2's units: BKS's 40 units by DI fold, GOAT's by item fold, each read by its own fold's model. The new tags are read the same way, about 1,340 renders each and 4,000 in all, at most 3 render processes.
 - **The baseline:** FTm's stored reads, since the new tags read the same units, halves, render settings and judge (`aligned.py`).
@@ -135,6 +135,7 @@ Measured only after the line is set.
   - each arm less FTm by class;
   - the full arm less the gentle arm;
   - each arm less FTm on N12's 31 units, by N12's FTm answer path. That set is other bands' songs, in no model's real rows.
+- The N12 side read needs `score_ear`'s FTm answer path extended to the H4 tags before H4a; the by-class rows are added to the reports then.
 - No bar is set, and undecided is not failed. The score is weak between close models (F65, F66), so by the score alone a small difference will likely read undecided, and the ear page decides.
 
 **The read by ear** (H4b) is declared on its own before it is built, after training. It is one blind page with S, FTm and the three arms, built to the review session's five requests: N12's stored fields per card; closeness on every candidate; at least 2 repeats a class; S on every card; and model pairs under a J0 log ratio of about 0.06 among the cards. J0 is computed for the draw only, and no score result is read before the page. The review session names its judge, if any, before the answers are opened.

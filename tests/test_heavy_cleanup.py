@@ -341,7 +341,7 @@ def _h4_world(tmp_path, monkeypatch, ns_doubler=True):
     (hd / "check" / "flatness.json").write_text(json.dumps({"flatness_db": {str(k): v for k, v in flat.items()}}))
     edge = H.check_bands([flat[i] for i in range(4)])[1][1]
     (hd / "check" / "key.json").write_text(json.dumps({"bands": [[None, -5.0], [-5.0, edge], [edge, None], [0, None]]}))
-    (hd / "check" / "verdicts.json").write_text(json.dumps({"line_db": -4.5}))
+    (hd / "check" / "verdicts.json").write_text(json.dumps({"line_db": H.H4_LINE_DB}))
     rec = lambda i, v: json.dumps({"i": i, "kind": "nodoubler", "flatness_db": v, "settings": setting()})  # noqa: E731
     (hd / "h2" / "doubler-0of1.jsonl").write_text(rec(4, -4.4) + "\n" + rec(5, -2.0) + "\n")
     (hd / "h4" / "ns-flatness.json").write_text(json.dumps({"flatness_db": {"10": -4.0, "11": -6.0, "12": -9.0}}))
@@ -364,7 +364,7 @@ def test_h4_exclusions_writes_the_lists_once_and_they_load_through_the_pin(tmp_p
     H.cmd_h4_exclusions(None)
     out = hd / H.H4_FILE
     doc = json.loads(out.read_text())
-    assert doc["plugin_out_full"]["ids"] == [2, 3, 4, 5, 6] and doc["plugin_out_full"]["threshold"] == -4.5
+    assert doc["plugin_out_full"]["ids"] == [2, 3, 5, 6] and doc["plugin_out_full"]["threshold"] == H.H4_LINE_DB
     assert doc["plugin_out_gentle"]["ids"] == [i for i in (2, 3) if [-4.0, -3.0][i - 2] >= edge] + [5, 6]
     assert doc["ns_out_full"]["ids"] == [10, 12] and doc["real_out"]["n"] == 2
     assert doc["lists_sha256"] == P.h4_lists_sha(doc) and len(doc["inputs_sha256"]) == 7
@@ -373,7 +373,7 @@ def test_h4_exclusions_writes_the_lists_once_and_they_load_through_the_pin(tmp_p
     pin = {P.H4: {}, P.H4_EXCL: {"path": "heavy/h4-exclusions.json", "sha256": sha}}
     monkeypatch.setattr(P, "require", lambda key: pin)
     ex = P.h4_exclusions()
-    assert ex["plugin_out"]["full"] == {2, 3, 4, 5, 6} and ex["ns_out"]["full"] == {10, 12}
+    assert ex["plugin_out"]["full"] == {2, 3, 5, 6} and ex["ns_out"]["full"] == {10, 12}
     assert ex["real_out"] == {"goat/x@1#amp_1", "s/A/d@0#t"}
     with pytest.raises(SystemExit, match="written once"):
         H.cmd_h4_exclusions(None)
@@ -391,6 +391,10 @@ def test_h4_exclusions_refuse_before_ns_is_measured_or_on_a_moved_edge(tmp_path,
         H.cmd_h4_exclusions(None)
     (hd / "h4" / "ns-doubler-0of1.jsonl").write_text(json.dumps({"i": 12, "kind": "nodoubler", "flatness_db": -4.0,
                                                                 "settings": setting()}) + "\n")
+    (hd / "check" / "verdicts.json").write_text(json.dumps({"line_db": H.H4_LINE_DB + 1e-6}))
+    with pytest.raises(SystemExit, match="declared plugin line"):
+        H.cmd_h4_exclusions(None)
+    (hd / "check" / "verdicts.json").write_text(json.dumps({"line_db": H.H4_LINE_DB}))
     key = json.loads((hd / "check" / "key.json").read_text())
     key["bands"][1][1] += 0.01
     (hd / "check" / "key.json").write_text(json.dumps(key))
