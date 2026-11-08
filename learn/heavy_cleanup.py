@@ -19,6 +19,7 @@ import pathlib
 import random
 import sys
 import time
+from fractions import Fraction
 
 PLUGIN_ROOT = pathlib.Path(__file__).resolve().parents[1]
 if str(PLUGIN_ROOT) not in sys.path:
@@ -26,6 +27,7 @@ if str(PLUGIN_ROOT) not in sys.path:
 
 HEAVY_DIR = "heavy"
 H1 = "phase_h1"
+H2 = "phase_h2"
 SEED = 20261108
 HEAVY_BANDS = ("Ale Lak", "Storm Of Particles")      # out by the proposal the user approved
 TIME = {"reverb": ("reverb", "reverbActive"), "delay": ("delay", "delayActive"),
@@ -327,6 +329,177 @@ def cmd_pilot_read(_args):
         raise SystemExit("a render again as stored did not reproduce its target: H2 stops")
 
 
+# --- the line (zero renders; after the keep-or-drop answers) -----------------------------------------------------
+
+FLOOR_DB = -3.0                                      # recordings under this are not used: the line can't fall below it
+BIN_DB = 2.0
+BIN_MIN, BIN_CLUSTERS = 8, 4                         # a bin with fewer merges up; the top bin merges down
+BOOT, BOOT_SEED = 2000, 20261108
+
+
+def cluster_of(unit):
+    """The DI: a BKS DI track, a GOAT item."""
+    return unit.split("@", 1)[0]
+
+
+def weighted(points):
+    """[(db, heavy, cluster)] -> [(db, heavy, weight)], weight one over the cluster's count among them, exact, so a fit
+    of exactly one half reads as one half."""
+    n = {}
+    for _, _, c in points:
+        n[c] = n.get(c, 0) + 1
+    return [(x, y, Fraction(1, n[c])) for x, y, c in points]
+
+
+def isotonic(points):
+    """A weighted non-decreasing fit of heavy on the measure (pool-adjacent-violators, equal measures pooled first).
+    points: [(db, heavy 0/1, weight)] -> [(db, fitted)] by measure."""
+    by = {}
+    for x, y, w in points:
+        a = by.setdefault(x, [Fraction(0), Fraction(0)])
+        a[0] += w * y
+        a[1] += w
+    blocks = []                                      # [sum wy, sum w, [xs]]
+    for x in sorted(by):
+        blocks.append([by[x][0], by[x][1], [x]])
+        while len(blocks) > 1 and blocks[-2][0] / blocks[-2][1] > blocks[-1][0] / blocks[-1][1]:
+            b = blocks.pop()
+            blocks[-1][0] += b[0]
+            blocks[-1][1] += b[1]
+            blocks[-1][2] += b[2]
+    return [(x, float(b[0] / b[1])) for b in blocks for x in b[2]]
+
+
+def line_of(points):
+    """The lowest measured value at which the fit reaches one half, or None. points: [(db, heavy, cluster)]."""
+    fit = isotonic(weighted([p for p in points if p[0] >= FLOOR_DB]))
+    return next((x for x, f in fit if f >= 0.5), None)
+
+
+def bins_of(points):
+    """The binned form: 2 dB bins from the floor, merged up while short (under BIN_MIN recordings or BIN_CLUSTERS
+    clusters), the top merged down. -> [{lo, hi, n, clusters, share}] with the weighted share."""
+    pts = [p for p in points if p[0] >= FLOOR_DB]
+    if not pts:
+        return []
+    w = [q[2] for q in weighted(pts)]
+    edges = [FLOOR_DB]
+    while edges[-1] <= max(x for x, _, _ in pts):
+        edges.append(edges[-1] + BIN_DB)
+    raw = [[lo, hi, [k for k, (x, _, _) in enumerate(pts) if lo <= x < hi]] for lo, hi in zip(edges, edges[1:])]
+
+    def short(b):
+        return len(b[2]) < BIN_MIN or len({pts[k][2] for k in b[2]}) < BIN_CLUSTERS
+
+    out = []
+    for b in raw:
+        if out and short(out[-1]):
+            out[-1][1], out[-1][2] = b[1], out[-1][2] + b[2]
+        else:
+            out.append(b)
+    while len(out) > 1 and short(out[-1]):
+        b = out.pop()
+        out[-1][1], out[-1][2] = b[1], out[-1][2] + b[2]
+    return [{"lo": lo, "hi": hi, "n": len(ks), "clusters": len({pts[k][2] for k in ks}),
+             "share": float(sum(w[k] * pts[k][1] for k in ks) / sum(w[k] for k in ks)) if ks else None} for lo, hi, ks in out]
+
+
+def bin_line(bins):
+    return next((b["lo"] for b in bins if b["share"] is not None and b["share"] >= 0.5), None)
+
+
+def boot_lines(points, boot=BOOT, seed=BOOT_SEED):
+    """The line on cluster-bootstrap resamples of the fit's population (the clusters with a recording at or over the
+    floor; a resampled cluster's recordings keep their own cluster, numbered apart). -> [line or None]."""
+    rng = random.Random(seed)
+    by = {}
+    for p in (q for q in points if q[0] >= FLOOR_DB):
+        by.setdefault(p[2], []).append(p)
+    cs = sorted(by)
+    out = []
+    for _ in range(boot):
+        pts = [(x, y, f"{c}#{k}") for k, c in enumerate(rng.choice(cs) for _ in cs) for x, y, _ in by[c]]
+        out.append(line_of(pts))
+    return out
+
+
+def answer_points(nl, verdicts, marks, unsure_heavy=True, ear_eat_keeps=True, eat_only=frozenset()):
+    """[(db, heavy, cluster)] from the page's verdicts and the earlier marks. A page verdict wins over a mark."""
+    out = []
+    for u, x in nl.items():
+        if u in verdicts:
+            v = verdicts[u]
+            if v == "unsure" and not unsure_heavy:
+                continue
+            out.append((x, int(v != "keep"), cluster_of(u)))
+        elif u in marks:
+            if marks[u] == "keep" and u in eat_only and not ear_eat_keeps:
+                continue
+            out.append((x, int(marks[u] == "out"), cluster_of(u)))
+    return out
+
+
+def eat_only_keeps():
+    """Units answered only on ear-eat's cards (their mark keep or out; `answer_points` drops only the keeps)."""
+    from learn import ear_eat as EE
+    from learn import pipeline_fix as P
+
+    root = P.out_dir()
+    pages = {}
+    for u, v in json.loads((root / P.GOAT_DIR / "heavy.json").read_text())["verdicts"].items():
+        pages.setdefault(u, set()).add("goat-heavy")
+    for page, sub, name in (("ear-eat-1", "eat/ear", "answers.txt"), ("ear-eat-2", "eat/ear2", "answers.json")):
+        answers = EE.stored_answers((root / sub / name).read_text())["answers"]
+        for it in json.loads((root / sub / "key.json").read_text())["items"]:
+            if it["id"] in answers:
+                pages.setdefault(it["unit"], set()).add(page)
+    return frozenset(u for u, ps in pages.items() if ps and ps <= {"ear-eat-1", "ear-eat-2"})
+
+
+def cmd_line(_args):
+    from learn import ear_eat as EE
+    from learn import pipeline_fix as P
+    from learn import scope_page as SP
+
+    P.require(H2)
+    d = SP.scope_dir()
+    lst = json.loads((d / "list.json").read_text())
+    ver = json.loads((d / "verdicts.json").read_text())["verdicts"]
+    if set(ver) != set(lst["ask"]):
+        raise SystemExit("verdicts.json is not from this list's asked recordings")
+    nl, marks = dict(lst["nl"]), dict(lst["marks"])
+    goat = {u["unit"]: u for u in P.goat_units()}
+    heavy = json.loads((P.out_dir() / P.GOAT_DIR / "heavy.json").read_text())["verdicts"]
+    extra = {u: v for u, v in heavy.items() if u not in nl}
+    missing = [u for u in extra if u not in goat]
+    if missing:
+        raise SystemExit(f"goat-heavy units with no GOAT part: {missing}")
+    bad = {u: v["verdict"] for u, v in heavy.items() if v["verdict"] not in ("keep", "heavy")}
+    if bad:
+        raise SystemExit(f"goat-heavy verdicts outside keep and heavy: {bad}")
+    for u, v in extra.items():
+        nl[u] = EE.nonlinear_db("goat", goat[u])
+        marks[u] = "keep" if v["verdict"] == "keep" else "out"
+    if any(v is None for v in nl.values()):
+        raise SystemExit("a recording has no measure")
+    eat = eat_only_keeps()
+    main = answer_points(nl, ver, marks)
+    rows = {"primary": main, "unsure_neither": answer_points(nl, ver, marks, unsure_heavy=False),
+            "no_ear_eat_keeps": answer_points(nl, ver, marks, ear_eat_keeps=False, eat_only=eat)}
+    boot = boot_lines(main)
+    got = [b for b in boot if b is not None]
+    got.sort()
+    rep = {"phase": H2, "line_db": line_of(main), "bins": bins_of(main), "bin_line_db": bin_line(bins_of(main)),
+           "boot": {"n": len(boot), "none_share": (len(boot) - len(got)) / len(boot), "interval_over": "resamples with a line",
+                    "lo90": got[int(0.05 * len(got))] if got else None, "hi90": got[min(len(got) - 1, int(0.95 * len(got)))] if got else None},
+           "beside": {k: {"line_db": line_of(v), "bin_line_db": bin_line(bins_of(v)), "n": len([p for p in v if p[0] >= FLOOR_DB])}
+                      for k, v in rows.items() if k != "primary"},
+           "n": len([p for p in main if p[0] >= FLOOR_DB]), "goat_heavy_measured": {u: nl[u] for u in extra},
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    (heavy_dir() / "line.json").write_text(json.dumps(rep, indent=1))
+    print(json.dumps({k: rep[k] for k in ("line_db", "bin_line_db", "boot", "beside", "n")}, indent=1))
+
+
 def main(argv=None):
     from learn import cc_pool as CP
 
@@ -337,6 +510,7 @@ def main(argv=None):
     s.add_argument("--shard", type=CP.parse_shard, default=(0, 1))
     s.set_defaults(fn=cmd_pilot_render)
     sub.add_parser("pilot-read").set_defaults(fn=cmd_pilot_read)
+    sub.add_parser("line").set_defaults(fn=cmd_line)
     args = ap.parse_args(argv)
     args.fn(args)
 
