@@ -56,5 +56,9 @@ def test_draw_is_disjoint_and_per_family():
 def test_margin_takes_the_worst_negative_shift_when_larger():
     assert H.margin([0.2, 1.0]) == 0.5
     assert H.margin([-0.8, 1.0]) == 0.8
-    assert H.residual_db(__import__("numpy").ones(4), __import__("numpy").ones(4)) == float("-inf")
-    assert H.residual_db(__import__("numpy").ones(4), __import__("numpy").ones(5)) == float("inf")
+
+
+def test_residual_is_minus_inf_when_identical_and_inf_on_unequal_lengths():
+    np = pytest.importorskip("numpy")
+    assert H.residual_db(np.ones(4), np.ones(4)) == float("-inf")
+    assert H.residual_db(np.ones(4), np.ones(5)) == float("inf")
