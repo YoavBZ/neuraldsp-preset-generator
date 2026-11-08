@@ -1,6 +1,6 @@
 # The judges we have, on whole presets the ear ranked (S12)
 
-**Status: declared 2026-11-08, before any judge below is computed on these cards, amended the same day after its independent review.** Only J0's control has run, as the review allowed (all 36 cards within 4.5e-4). Owner: the review session, by the agreed split. Ledger `judge-screen`. Results go in [judge-screen-results.md](judge-screen-results.md). Code `learn/judge_screen.py`.
+**Status: declared 2026-11-08, before any judge below is computed on these cards, amended the same day after its independent review.** Only J0's control has run, as the review allowed (all 36 cards within 4.5e-4). Run 2026-11-08: [results](judge-screen-results.md). No judge is named. Owner: the review session, by the agreed split. Ledger `judge-screen`. Results go in [judge-screen-results.md](judge-screen-results.md). Code `learn/judge_screen.py`.
 
 **Why.** The user holds that the score does not follow what the listening tests show. N11 and N12 ([F65, F66](pipeline-fix-plan.md)) found where J0 parts from the ear: mostly between models, on small J0 gaps. The ML session handed this on as a judge-terms brief. On 2026-11-08 the user picked this option of three: screen the judges already built, on the stored clips, CPU only, no fitting, a lead at most. The user's words, in the ML session, on a plan naming it: "Agreed. Let's follow your suggestions."
 
