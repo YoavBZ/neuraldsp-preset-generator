@@ -191,3 +191,68 @@ def test_h4_render_refuses_without_phase_h4_or_on_another_tag(monkeypatch):
     _ledger(monkeypatch)
     with pytest.raises(SystemExit, match="H4's tags only"):
         E.cmd_h4_render(argparse.Namespace(tags="M-pcs", shard="0/3"))
+
+
+def _render_world(tmp_path, monkeypatch, n12_lag=7, n12_held="B", n12_sha="sha-1.0"):
+    """`cmd_h4_render`'s world: 2 N12 units held on B at lag 7, stored readers whose settings tag their renders (FTm 1.0, the H4
+    tag 2.0), N12's stored records, and fakes for every audio step. -> the list of renders made."""
+    np = pytest.importorskip("numpy")
+    from learn import audibility_measure as AM
+    from learn import knob_ceiling as K
+    from learn import local_objective as LO
+    from learn import pretrain_set as PS
+    from learn import song_bank as B
+
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    _ledger(monkeypatch)
+    units = [{"unit": f"u{j}", "amp": "pr12", "cls": "clean", "player": "band", "di_path": "di", "start_s": 0.0, "sd": None,
+              "track": None} for j in range(2)]
+    recs = {u["unit"]: {"search": "A", "held": "B", "lag": 7} for u in units}
+    monkeypatch.setattr(E, "wide_units", lambda: (units, recs, []))
+    val = {"FTm": 1.0, "P2b-ftmf": 2.0}
+    monkeypatch.setattr(E, "stored_reader", lambda t: {u["unit"]: {"A": {"select": "sel", "settings": {"v": val[t]}}}
+                                                        for u in units})
+    for u in units:
+        d = tmp_path / E.WIDE_DIR / "renders" / E.slug_of(u["unit"])
+        d.mkdir(parents=True)
+        (d / "rec.json").write_text(json.dumps({"lag": n12_lag, "held": n12_held, "sha": {"FTm": n12_sha}, "judge": {}}))
+    monkeypatch.setattr(LO, "_wait_cap", lambda: None)
+    monkeypatch.setattr(LO, "tdict", dict)
+    monkeypatch.setattr(PS, "free_gb", lambda: 1e9)
+    monkeypatch.setattr(PS, "TRIM_S", 0.0)
+    monkeypatch.setattr(PS, "SEC_S", 1.0)
+    monkeypatch.setattr(PS, "SR", 4)
+    monkeypatch.setattr(PS, "section_audio", lambda path, start: np.zeros(8))
+    monkeypatch.setattr(B, "measure", lambda x: x)
+    monkeypatch.setattr(P, "real_amp_track", lambda sd, track, start: np.zeros(8))
+    made = []
+
+    def fresh_render(make, di, sel, st, st2):
+        made.append(st["v"])
+        return np.full(8, st["v"])
+    monkeypatch.setattr(AM, "fresh_render", fresh_render)
+    monkeypatch.setattr(AM, "audio_sha", lambda y: f"sha-{float(y[0])}")
+    monkeypatch.setattr(K, "judge", lambda ref, y, di, lag: {"A": 1.0, "B": 2.0} if lag == 7 else {})
+    return made
+
+
+def test_h4_render_judges_the_held_half_after_ftms_hash_control(tmp_path, monkeypatch):
+    made = _render_world(tmp_path, monkeypatch)
+    E.cmd_h4_render(argparse.Namespace(tags="P2b-ftmf", shard="0/1"))
+    assert made == [1.0, 2.0, 2.0]                                      # FTm once, as the shard's control, then the tag
+    for u in ("u0", "u1"):
+        r = json.loads((tmp_path / E.WIDE_DIR / E.H4_DIR / "P2b-ftmf" / f"{E.slug_of(u)}.json").read_text())
+        assert r["judge"] == 2.0 and r["held"] == "B" and r["lag"] == 7 and r["sha"] == "sha-2.0" and r["tag"] == "P2b-ftmf"
+    assert sorted(q.name for q in (tmp_path / E.WIDE_DIR / E.H4_DIR).iterdir()) == ["P2b-ftmf"]   # FTm's render not kept
+    E.cmd_h4_render(argparse.Namespace(tags="P2b-ftmf", shard="0/1"))
+    assert made == [1.0, 2.0, 2.0]                                      # a second run: nothing left to render
+
+
+@pytest.mark.parametrize("world, why", [({"n12_sha": "sha-other"}, "FTm's render differs"),
+                                        ({"n12_lag": 8}, "lag or half differs"),
+                                        ({"n12_held": "A"}, "lag or half differs")])
+def test_h4_render_refuses_before_writing_on_each_gate(tmp_path, monkeypatch, world, why):
+    _render_world(tmp_path, monkeypatch, **world)
+    with pytest.raises(SystemExit, match=why):
+        E.cmd_h4_render(argparse.Namespace(tags="P2b-ftmf", shard="0/1"))
+    assert not (tmp_path / E.WIDE_DIR / E.H4_DIR).exists()
