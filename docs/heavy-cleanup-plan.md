@@ -164,10 +164,14 @@ Measured only after the line is set.
   - **Power:** with 14 cards in about 7 bands only a large gain reads clear, so "not shown" means not shown here, not no effect.
   - The page's code is N12's, extended to 2 repeats a class, since `page_order` repeats one card a class today.
 - **Cost:** no renders beyond H4a's (which include the 60 above), and one listening session of 18 cards.
-- **If two arms pass,** the user decides between them, with the full-over-gentle row beside.
+- **If two arms pass,** the user decides between them, with the full-over-gentle row beside. An arm flagged by the score (below) stays a candidate, with its score row beside.
 
 **What it leads to.** The user decides from both reads.
 - **An arm better than FTm** by ear, with the score beside: its cut is adopted.
+  - **If the score reads that arm reliably worse than FTm** on a primary set (BKS by DI, GOAT by item, or N12's 27 units; the lower end of its 90% interval above zero), the user decides between adopting it and keeping FTm, with both reads beside.
+    - Adoption is the default. Keeping FTm counts as none better, and the clean-up stops. No new run or listening follows either way.
+    - Other clusterings, such as GOAT by fold, are beside only.
+    - Declared 2026-11-08 after H4a's read and before the H4b sitting. The only such case is the gentle arm on GOAT by item, +0.0155 [+0.0051, +0.0259] (by fold, beside: [−0.0028, +0.0327]). Every other arm-less-FTm row on the three sets has its interval spanning zero or below it.
 - **None better:** the clean-up stops there. No more listening goes into data, and the work turns to the plugin-to-real gap and the score.
 
 ## Amendment 1 (2026-11-08): the line doesn't fit, so a tone-free flatness, and a check page of plugin examples (declared before the page is built, amended after its review)
