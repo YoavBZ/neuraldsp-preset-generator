@@ -43,7 +43,7 @@ All of the development cards N11 and N12 used:
 
 **The controls, before any other judge is read.**
 - J0 is recomputed this way on every candidate of every card and must match the stored J0 within 1e-3 in |log ratio|.
-- A label's stored J0 is the search's in-process value, which its fresh render was held to within 1e-3, so a label may miss by that plus float32's margin. A label that fails drops only its own pairs. Any other candidate that fails takes its card out of every row, and is named.
+- A label's stored J0 is the search's in-process value, which its fresh render was held to within 1e-3. A label is held to 1e-3 here too, and a label over it drops only its own pairs. Any other candidate that fails takes its card out of every row, and is named.
 - If more than 3 cards are out, nothing is read, and the plan comes back for a fix. This control has run: every card passed, worst 4.5e-4.
 - J5's `j0` term must equal the recomputed J0 within 1e-9.
 - `tonal` is taken from `aligned_distance`'s own `tonal`, as the model comparison stored it, so it refuses where J0 does. `bakeoff_judge`'s copy must agree within 1e-9 wherever it reads.
@@ -62,7 +62,7 @@ All of the development cards N11 and N12 used:
 | `tonal` | The mean band error, ignoring frame-to-frame changes | `aligned_distance(...).tonal` |
 | `J-f6` | EfficientAT's layer-6 statistics, level matched by LUFS | `eat_judge.deep_terms`, `mn10_as` on CPU, sds from `wide` |
 
-A judge that refuses a candidate's window (None, not finite, or an error) drops that candidate's pairs from its rows, and the count is given. Its contrast with J0 is read on the same pairs. Lower is closer for every judge.
+A judge that refuses a candidate's window drops that candidate's pairs from its rows. A refusal is None or not finite, and for `J-f6` also an error, whose text is stored. More than 3 `J-f6` errors stop the run, and an error in any other judge stops it, and the count is given. Its contrast with J0 is read on the same pairs. Lower is closer for every judge.
 
 **A baseline with no audio, beside only.** `S-last`: S farthest, otherwise J0's order. On N12 the ear put every model above S, so a judge that only pushes S away gains without hearing anything. It is reported beside each row and is never named.
 
@@ -77,7 +77,7 @@ A pair is two candidates on one card. Labels are out of the primary: the search 
 5. **By page:** rows 1 and 2, F57, `ear-eat` and N12 apart, described only.
 6. **Where they move.** The number of pairs each judge orders differently from J0, and of those how many are heard and how many go the ear's way. Heard pairs under a J0 log ratio of 0.06, given apart. Models-only pairs, given apart. `EW-mix` is read on EfficientAT's features, so `J-f6` may share its view. `J-f6`'s pairs with `EW-mix` are given apart from its others.
 
-**Power, said now.** Only pairs where a judge and J0 order differently can move a row. J0 already agrees on 70 of the 80 heard pairs, so the most any judge can gain on row 1 is +0.125. With 13 clusters, the likely outcome is an interval reaching zero whatever is true, and that says nothing against any judge. Undecided is not failed.
+**Power, said now.** Only pairs where a judge and J0 order differently can move a row. J0 already agrees on 70 of the 80 heard pairs, so the most any judge can gain on row 1 is +0.125. With 11 clusters on row 1, the likely outcome is an interval reaching zero whatever is true, and that says nothing against any judge. Undecided is not failed.
 
 ## What each reading leads to
 
@@ -85,15 +85,16 @@ Nothing is adopted here, and nothing changes J0.
 - **Named for H4's page.** The judge with the highest primary point estimate above zero is named to the ML session before H4's page answers are opened.
   - Ties go to the higher row 2, then the smaller Holm p, then the table's order.
   - If no judge is above zero, none is named, and H4's page reads J0 alone.
-  - H4 is the heavy clean-up's retrain ([heavy-cleanup-plan.md](heavy-cleanup-plan.md)). Its blind page, H4b, is the ML session's, declared under H4 there. It ranks whole presets with closeness on every candidate, S among them, with at least 2 repeats a class, and stores each card's clips, window, lag, J0 and DI source, as agreed on 2026-11-08.
-  - The fresh rule is fixed now: the named judge alone, less J0, on that page's heard pairs, labels out. Pooled by pairs, with a delete-one-cluster jackknife t by the page's clusters and a one-sided 90% interval, read by this file's code unchanged. Its clusters and any page-specific detail are declared with the ML session before that page's answers are opened.
+  - H4 is the heavy clean-up's retrain ([heavy-cleanup-plan.md](heavy-cleanup-plan.md)). Its blind page, H4b, is the ML session's and will be declared under H4 there. The ML session agreed on 2026-11-08 that it ranks whole presets with closeness on every candidate, S among them, with at least 2 repeats a class, and stores each card's clips, window, lag, J0 and DI source. The rule below applies only if H4b's declaration says so.
+  - The fresh rule is fixed now: the named judge alone, less J0, on that page's heard pairs, labels out. Pooled by pairs, with a delete-one-cluster jackknife t by the page's clusters and a two-sided 90% interval (`PS.t90`). If its lower end is above zero, the named judge orders that page's heard pairs better than J0. Otherwise it is undecided there.
+  - It reuses this file's pure functions (`pairs_of`, `contrast`, `jackknife`). H4b gets its own loader, held to the same window and J0 controls. Its clusters and any page-specific detail are declared with the ML session before that page's answers are opened.
   - If those answers are opened before this screen names a judge, or the page lacks closeness or whole presets, the named judge waits for the next fresh page that meets these terms.
 - **A lead.** A named judge whose Holm-adjusted p is under 0.10 is called a lead on these cards. Otherwise it is named for the fresh test only, and called undecided here.
 - **Whatever reads here,** the verdict on any judge is the fresh blind page, as the standing rule requires. These cards have been read many times.
 
 **What this can bear.** One listener, 36 cards, 13 clusters, and pages built for other questions. Development material only.
 
-**Cost.** Zero renders, CPU only, since the GPU is the ML session's for H4. No training and no download: `mn10_as` is already local. Output is `PF/eat/judge-screen.json`, well under 1 GB.
+**Cost.** Zero renders, CPU only, since the GPU is the ML session's for H4. No training and no download: `mn10_as` is already local. Output is in `PF/eat/judge-screen/`, well under 1 GB.
 
 ## Order of work
 

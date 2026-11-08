@@ -82,13 +82,14 @@ def pairs_of(cards, judges, drop=LABELS):
             by_rank = ex["rank"] < ey["rank"]
             j0x, j0y = card["d"]["J0"][x], card["d"]["J0"][y]
             row = {"page": card["page"], "id": card["id"], "cluster": card["cluster"], "a": x, "b": y, "heard": heard,
+                   "rank_against_closeness": heard and by_close != by_rank,
                    "models": not ({x, y} & {"S", "placebo", *LABELS}), "lnr": abs(math.log(j0y / j0x)), "agree": {}}
             for j in ("J0", *judges):
                 dx, dy = card["d"][j].get(x), card["d"][j].get(y)
                 ok = dx is not None and dy is not None and math.isfinite(dx) and math.isfinite(dy)
                 row["agree"][j] = {"close": agreement(dx, dy, by_close) if ok and heard else None,
                                    "rank": agreement(dx, dy, by_rank) if ok else None,
-                                   "order": (dx < dy) if ok else None}
+                                   "order": (None if dx == dy else dx < dy) if ok else None, "tie": ok and dx == dy}
             out.append(row)
     return out
 
@@ -184,6 +185,7 @@ def cards():
         d = pf / "eat" / ("ear" if page == "p1" else "ear2") / "renders" / it["slug"]
         if not d.exists():
             d = pf / "eat" / "ear" / "renders" / it["slug"]
+            print(f"ear-eat {c['id']}: clips from page 1's folder", flush=True)
         out.append({**c, "dir": d, "held": it["held"], "src": parts[(it["which"], it["unit"])], "ref_stored": True})
     key = json.loads((SE.wide_dir() / "key.json").read_text())
     wide = {it["id"]: it for it in key["items"]}
@@ -265,8 +267,11 @@ def judge_all(ref, di, ren, s0, s1, deep):
         raise SystemExit(f"bakeoff_judge's tonal {t} is not J0's {j0.tonal}")
     try:
         out["J-f6"] = deep["terms"](ref, ren, {"h": (a, b)})["h"]["J-f6"]
-    except Exception:  # noqa: BLE001 - counted as a refusal, as the plan says
+    except Exception as e:  # noqa: BLE001 - a refusal, its text kept; more than MAX_OUT stop the run
         out["J-f6"] = None
+        deep["errors"].append(repr(e))
+        if len(deep["errors"]) > MAX_OUT:
+            raise SystemExit(f"J-f6 failed on more than {MAX_OUT} candidates: {deep['errors']}")
     return out
 
 
@@ -307,7 +312,7 @@ def cmd_judge(out_path):
     net = EN.load("mn10_as")
     bank = ER.Bank("mn10_as")
     sds = {s: bank.sd(s) for s in EJ.TERMS.values()}
-    deep = {"w_c": w_c, "terms": lambda r, x, h: EJ.deep_terms(net, sds, r, x, h)}
+    deep = {"w_c": w_c, "terms": lambda r, x, h: EJ.deep_terms(net, sds, r, x, h), "errors": []}
     res, failed = [], []
     for card in cards():
         ref, di, rens, s0, s1 = audio(card)
@@ -324,7 +329,7 @@ def cmd_judge(out_path):
         if worst > CONTROL_TOL or set(card["ear"]) - set(rens):
             failed.append(card["id"])
         print(f"{card['page']} {card['id']}: control {worst:.2e}", flush=True)
-    rep = {"key": KEY, "w_c": w_c, "control_tol": CONTROL_TOL, "failed": failed, "cards": res}
+    rep = {"key": KEY, "w_c": w_c, "control_tol": CONTROL_TOL, "failed": failed, "jf6_errors": deep["errors"], "cards": res}
     pathlib.Path(out_path).write_text(json.dumps(rep, indent=1))
     print(json.dumps({"cards": len(res), "failed": failed}), flush=True)
     if len(failed) > MAX_OUT:
@@ -367,13 +372,14 @@ def cmd_report(in_path, out_path):
         size[r["cluster"]] = size.get(r["cluster"], 0) + 1
     rep = {"cards": len(cs), "out": got["failed"], "labels_out": {c["id"]: c["labels_out"] for c in cs if c["labels_out"]},
            "clusters": len({c["cluster"] for c in cs}), "pairs": len(rows), "heard": len(heard), "heard_by_cluster": size,
-           "heard_rank_against_closeness": sum(r["agree"]["J0"]["close"] != r["agree"]["J0"]["rank"] for r in heard),
+           "heard_rank_against_closeness": sum(r["rank_against_closeness"] for r in heard),
            "j0_heard": jackknife(heard, lambda r: r["agree"]["J0"]["close"], t90),
            "j0_rank": jackknife(rows, lambda r: r["agree"]["J0"]["rank"], t90)}
     primary = {j: jackknife(heard, contrast(heard, j, "close"), t90) for j in JUDGES}
-    adj = holm({j: v["p"] for j, v in primary.items()})
+    adj = holm({j: v["p"] for j, v in primary.items() if v and "p" in v})
     for j, v in primary.items():
-        v["holm"] = adj[j]
+        if v:
+            v["holm"] = adj.get(j, 1.0)
     rep["primary"] = primary
     rep["primary_s_last"] = jackknife(heard, contrast(heard, "S-last", "close"), t90)
     rep["primary_by_cluster"] = {j: by_cluster(heard, contrast(heard, j, "close"), t90) for j in js}
@@ -396,8 +402,10 @@ def cmd_report(in_path, out_path):
     for j in js:
         dif = [r for r in rows if r["agree"][j]["order"] is not None and r["agree"][j]["order"] != r["agree"]["J0"]["order"]]
         hd = [r for r in dif if r["heard"]]
+        un = [r for r in dif if not r["heard"]]
         move[j] = {"differs": len(dif), "heard": len(hd), "heard_its_way": sum(r["agree"][j]["close"] == 1 for r in hd),
-                   "refused": sum(r["agree"][j]["rank"] is None for r in rows)}
+                   "unheard_rank_its_way": sum(r["agree"][j]["rank"] == 1 for r in un), "unheard": len(un),
+                   "ties": sum(r["agree"][j]["tie"] for r in rows), "refused": sum(r["agree"][j]["rank"] is None for r in rows)}
         subs = (("small", [r for r in heard if r["lnr"] < SMALL]), ("models", [r for r in heard if r["models"]]),
                 ("with_EW-mix", [r for r in heard if "EW-mix" in (r["a"], r["b"])]), ("without_EW-mix", [r for r in heard if "EW-mix" not in (r["a"], r["b"])]))
         for name, sub in subs:
