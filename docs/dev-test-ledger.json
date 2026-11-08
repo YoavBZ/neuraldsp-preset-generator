@@ -3454,6 +3454,27 @@
     "s11_score_entered": "2026-11-07, before any render, on the ML session's call within the user's go: M-win and M-far, M-pcs's fit, 153 GOAT rows; primary M-win less stored M-pcs, distance, by item, 90% t; FTm beside; about 918 renders; adopts nothing; a lead goes back to the ML session and the user",
     "s11_score_outcome": "2026-11-07, audited, by the score, adopts nothing: M-win less M-pcs -0.0025 [-0.0085, +0.0035], M-far less M-pcs -0.0015 [-0.0081, +0.0051], one result; M-win less FTm -0.0062 [-0.0270, +0.0147]; both undecided; 80% power needs about 0.9%"
    }
+  },
+  {
+   "test_id": "judge-screen",
+   "plan": "docs/judge-screen-plan.md",
+   "entered": "2026-11-08, after the plan's independent review and before any judge but J0 is computed on these cards; the user picked this option on 2026-11-08 (relayed by the ML session: \"Agreed. Let's follow your suggestions.\"), and the ML session cleared the data that day",
+   "kind": "screen of existing judges (v2, v3, J5, tonal, J-f6) against the ear on stored blind pages of whole presets; nothing fitted, nothing adopted, J0 unchanged",
+   "parts": "F57 (capture-labels, 10 cards), ear-eat (13 cards), N12 (ear-wide, 13 cards): stored ranks, closeness and clips; references and DIs rebuilt read-only from their sources, PF/captures/sections included. No V-real (L0, N4), record-match-1, NS, panel or held band.",
+   "candidates": [
+    "v2",
+    "v3",
+    "J5",
+    "tonal",
+    "J-f6"
+   ],
+   "baseline": "J0, recomputed on the same audio; S-last beside, never named",
+   "primary": "heard pairs (closeness differs, labels out): agreement less J0's, pair-pooled, delete-one-cluster jackknife t, Holm over five",
+   "reads": "one run on CPU; the named judge, if any, goes to H4b's fresh page under the rule fixed in the plan",
+   "control": "J0 recomputed matches stored J0 on all 36 cards, worst 4.5e-4 (run 2026-11-08 before the review's fixes and again after)",
+   "bands": "no new or held band; only the development cards' existing bands and GOAT players",
+   "gate": "No adoption. The highest primary mean above zero is named for H4b's fresh page; Holm p under 0.10 makes it a lead; none above zero, none named",
+   "outcome": "2026-11-08, audited: no judge above J0 on the primary (v2 +0.000, v3 -0.087 [-0.153, -0.022] Holm .18, J5 -0.062, tonal -0.013, J-f6 -0.062); none named; H4b reads J0 alone"
   }
  ],
  "phase_fx_reader_e1a_outcome": "2026-11-03, F49. Wide draws (770), strong-third on/off AUC: stem reverb 0.614 [0.591, 0.648], delay 0.614 [0.584, 0.640]; mix 0.552, 0.609; target 0.767, 0.801; draw comparator 0.44-0.51. Stem vs mix undecided (mix's Forkupines fold, 306 of 770 wide, kept epoch index 1; without it mix delay strong 0.659 vs stem 0.616). Knobs vs the declared all-draw median prior: stem delay mix -0.044 [-0.052, -0.033], time -0.202 [-0.250, -0.125] log2, so the rule's letter passes for delay. Audit (post hoc): against draw-aware priors (training songs' wide-draw median; amp x draw x class cell median) no stem knob's error is better (rmix +0.019 [+0.006, +0.032], time +0.103 [+0.029, +0.249]); mixes rank weakly (Spearman 0.22, 0.16), time not (0.04). The target reads mixes and feedback but not decay or time. Corrected by the results review (first version took the argmax across both halves): a training-free picker (argmax of the summed prominence, lags 6-80) finds the set time within 10% on 43.5% of target wide delay-ons (strong third 65.7%; wide median 7.2%), stem 13.7%, mix 6.7%; prominence-at-set-lag AUC on vs off 0.79, 0.58, 0.55. E1b not declared; reader is the bottleneck for time; E1c declared. Product measures on clean targets: delay hit 2.2% of ons, fires 8.7% offs / 6.0% ons; reverb rule 38% ons / 42% offs. Files: fx-reader/e1a/score.json, audit/ (as-run versions kept). Results review (one review of F49 and E1c): 8 required changes, 4 on F49, all made.",
