@@ -107,3 +107,55 @@ def test_boot_draws_only_clusters_in_the_fit_and_a_cluster_drawn_twice_counts_tw
     a, b = [(1.0, 1, "a")], [(1.0, 0, "b")] * 3
     assert H.line_of([(x, y, f"{c}#{k}") for k, g in enumerate([a, b, b]) for x, y, c in g]) is None   # two copies of b
     assert H.line_of(a + b + b) == 1.0                                                                 # merged, it would read
+
+
+def test_flatness_rises_with_drive_on_two_notes_and_ignores_a_tone_change():
+    np = pytest.importorskip("numpy")
+    rng = np.random.default_rng(0)
+    t = np.arange(48000 * 2) / 48000
+
+    def note(f0):
+        return sum(np.sin(2 * np.pi * f0 * k * t) / k for k in range(1, int(5000 / f0) + 1))
+
+    di = 0.1 * (note(220) + note(293.7)) + 1e-4 * rng.standard_normal(len(t))
+    got = [H.flatness_db(np.tanh(g * di), di) for g in (2, 4, 8, 16)]               # more drive, flatter
+    assert got == sorted(got) and got[-1] > got[0] + 3
+    tilt = np.convolve(np.tanh(2 * di), [0.6, 0.3, 0.1], mode="same")                   # a tone change only
+    assert abs(H.flatness_db(tilt, di) - got[0]) < 0.5
+
+
+def test_check_draw_fills_bands_round_robin_with_no_section_twice():
+    rows, i = [], 0
+    for band_v in (10.0, 20.0, 24.0, 30.0):
+        for a in H.AMPS:
+            for k in range(8):
+                i += 1
+                rows.append({"i": i, "amp": a, "section": f"s{(i + 1) // 2}@0", "v": band_v})   # pairs share a section
+    flat = {r["i"]: r["v"] for r in rows}
+    got = H.check_draw(rows, flat, ((None, 18.0), (18.0, 22.0), (22.0, 26.0), (26.0, None)))
+    assert len(got) == 4 * H.PER_BAND and len({g["section"] for g in got}) == len(got)
+    assert [sum(1 for g in got if g["band"] == k) for k in range(4)] == [H.PER_BAND] * 4
+    assert got == H.check_draw(rows, flat, ((None, 18.0), (18.0, 22.0), (22.0, 26.0), (26.0, None)))
+    assert H.song_of("cambridge/TheTravellingBand_Quicksand_Full/16_ElecGtr1DI.wav@40.0") == "cambridge/TheTravellingBand_Quicksand_Full"
+    assert H.song_of("goat/item_10@240.0#amp_4") == "goat/item_10"
+
+
+def test_pairs_straddle_the_line_one_section_a_song_off_the_band_cards():
+    rows, flat = [], {}
+    for k in range(8):
+        for m, v in enumerate((2.0, 9.0)):
+            i = 10 * k + m
+            rows.append({"i": i, "amp": "pr12", "section": f"set/S{k}_Full/x.wav@0"})
+            flat[i] = v
+    got = H.pair_draw(rows, flat, ((None, 5.0), (5.0, 6.0), (6.0, 7.0), (7.0, None)), {"set/S0_Full/x.wav@0"})
+    assert len(got) == 2 * H.PAIRS and "set/S0_Full/x.wav@0" not in {g["section"] for g in got}
+    assert len({H.song_of(g["section"]) for g in got}) == H.PAIRS
+    assert all(flat[got[2 * k]["i"]] < 5.0 and flat[got[2 * k + 1]["i"]] >= 7.0 for k in range(H.PAIRS))
+    np = pytest.importorskip("numpy")
+    b = H.check_bands(x for x in range(101))                                         # a generator, read once
+    assert [round(x, 1) for x in (b[0][1], b[1][1], b[2][1])] == [50.0, 75.0, 90.0]
+
+
+def test_no_doubler_keeps_only_rows_with_the_doubler_off():
+    rows = [{"i": 1, "settings": setting()}, {"i": 2, "settings": setting(**{"parameters/doublerActive": "true"})}]
+    assert [x["i"] for x in H.no_doubler(rows)] == [1]
