@@ -4559,11 +4559,11 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **What it changes.** J0 stays, and FTm stays the main model: no reader is shown better than it, by ear or by the score. The judge-terms brief goes to the review session as a declared study: small gaps between models, with the clean cards noted, with N11's development rows (F57 and `ear-eat`); V-real's L0 and N4 rows stay out, as N11 and N12 declare. The held bands' test stays the user's decision.
 - Files: `PF/score-ear-n12.json`, `PF/ear-wide/heard/` (the two parts' answers), `PF/ear-wide/key.json`, `PF/score-ear-n12-audit/` (the audit's code and output, the seen list, the † rows). Plan: [score-ear-plan.md](score-ear-plan.md).
 
-### F67. H1, the dry-render pilot: the dry path changes only what it should; the doubler and the room mic read as drive, reverb and delay barely; m = 0.5 dB (phase_h1, 150 renders, audited)
+### F67. H1, the dry-render pilot: the dry path changes only what it should; the doubler and the room mic move the measure most, tremolo on half its rows, reverb and delay little at the median; m = 0.5 dB (phase_h1, 150 renders, audited)
 - **What ran.** 75 of W's 1,753 training rows outside Ale Lak and Storm Of Particles, seed 20261108, each in its own new plugin process with one priming render and a 0.25 s trim ([plan](heavy-cleanup-plan.md)).
   - 60 rows, 10 per family, had one switch on and were rendered dry: the time effects off, the row's own spring at 0, both room mics off.
   - 15 rows were rendered again as stored.
-- **The checks pass.** All 15 rows rendered again as stored are bit-identical to their targets, both the 10 with no switch and the 5 with one on. Every dry render changed only the declared keys and set each to off. 5 rows also turned off a room on a cab that is switched off, which "both room mics off" covers.
+- **The checks pass.** All 15 rows rendered again as stored are bit-identical to their targets: the 10 with no switch and the 5 with one or more on (4 of them several). Every dry render changed only the declared keys and set each to off. 5 rows also turned off a room on a cab that is switched off, which "both room mics off" covers.
 - **The shift, the stored measure less the dry one, in dB.**
 
   | Family | Median | Min | Max |
@@ -4572,13 +4572,13 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   | room | +3.13 | +0.01 | +7.58 |
   | tremolo | +0.88 | −0.43 | +4.21 |
   | delay | +0.32 | 0.00 | +2.37 |
-  | spring | +0.25 | 0.00 | +1.14 |
+  | spring | +0.24 | 0.00 | +1.14 |
   | reverb | +0.10 | −0.02 | +3.86 |
 
-  The doubler and the room mic are what the meter misreads as drive. Reverb and delay barely move it, against what the first read assumed. One spring row sits at 0.001, so the spring family tells something on 9 rows.
-- **The margin.** The worst negative shift is −0.43 dB, on an sw50r tremolo row, so m = 0.5 dB. Only 4 of the 60 shifts are negative, and 3 of those are tremolo on sw50r. With 10 rows a family, a shift past −0.5 dB is bounded at about 26% per family and 5% overall (95%). So H2's audit window, not m alone, guards rows near the line. 1,202 of the 1,543 rows with a switch have more than one on, which single-switch rows don't bound. No row crossed −2.91 dB upward, and 8 crossed downward when rendered dry.
+  The doubler and the room mic move the measure most: every doubler row by at least 1.41 dB and 9 of 10 room rows by 1 dB or more. Tremolo moves it by 1 dB or more on 5 of 10 rows. Reverb and delay move it little at the median (+0.10 and +0.32 dB), but not always: one reverb row by 3.86 dB, one delay row by 2.37 dB, and another delay row (0.97 dB) crossed −2.91 dB downward. One spring row sits at 0.001, so the spring family tells something on 9 rows.
+- **The margin.** The worst negative shift is −0.43 dB, on an sw50r tremolo row, so m = 0.5 dB. Only 4 of the 60 shifts are negative, and 3 of those are tremolo on sw50r. No row went past −0.5 dB, but with 10 rows a family that only rules out such shifts on more than about 26% of a family's single-switch rows, or about 5% over the 60 as drawn (one-sided 95% upper bounds). So H2's audit window, not m alone, guards rows near the line. 1,202 of the 1,543 rows with a switch have more than one on, which single-switch rows don't bound. No row crossed −2.91 dB upward, and 8 crossed downward when rendered dry.
 - **The audit's sentence.** "Recomputed independently from the raw audio, every number in H1's stored read is correct: the draw follows the plan and reproduces from seed 20261108, the 15 rows rendered again as stored are bit-identical to their targets, the 60 dry renders changed only the declared keys, and the shifts by family, the worst negative shift (−0.43 dB, a tremolo row) and m = 0.5 dB all match; since m rests on 60 single-switch rows and none went past it, H2's audit window, not m alone, guards the rows near the line."
-- **What it changes.** H2 can render rows dry by the narrow rule, at the line less 0.5 dB, with its audit. It waits on the keep-or-drop answers for the line. 28 rows with a spring at 0.01 or less count as on and will be rendered dry for nothing, which is harmless.
+- **What it changes.** H2 can render rows dry by the narrow rule, at the line less 0.5 dB, with its audit. It waits on the keep-or-drop answers for the line. 28 rows have their spring at 0.01 or less (24 at 0.001) and count it as on. 27 of them have another switch on and would be rendered dry anyway, so at most one, 801019, is rendered dry for nothing. That is harmless.
 - Files: `PF/heavy/h1-plan.json`, `PF/heavy/h1-read.json`, `PF/heavy/h1/`.
 
 ## Budget
