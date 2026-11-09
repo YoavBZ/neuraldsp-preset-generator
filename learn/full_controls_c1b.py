@@ -24,6 +24,7 @@ PHASE = "phase_c1b"
 SEED = 20261125                      # stage A; stage B SEED + 1; effect i SEED + 2 + i
 BUDGET_ROOMS = 16                    # stage A: the left cab and the room mics, about 3 a control
 BUDGET_MICS_EQ = 48                  # stage B: the mics and the amp EQ jointly (`knob_search`, its mic stages)
+STAGE_B_SHARES = {"main": 0.25, "alts": 0.5, "restarts": 0.15}   # stage B: half the budget to the mic alternatives
 PER_KNOB = 3.5                       # stage C: each effect's budget, by its knobs (knob ceiling 2 used 24 an effect)
 KEEP_MARGIN = 0.02                   # an effect is kept only if its fresh render beats the dry one by this (search
                                      # half, log): declared before use, above knob ceiling 2's 0.005 (see the plan)
@@ -34,6 +35,11 @@ ROOM_KEYS = (("cabParameters", "leftCabActive"), ("cabParameters", "leftCabMicLe
              ("cabParameters", "rightRoomActive"), ("cabParameters", "rightRoomMicLevel"))
 MIC_KEYS = (("cabParameters", "leftMicType"), ("cabParameters", "rightMicType"))
 SPRING_KEY = ("spring", "springOn")
+PHASE_KEY = ("cabParameters", "rightCabPhase")   # the cabs' relative phase: one switch, both cabs on (mono J0 hears it)
+EXTRA_KNOBS = {"tremolo": {("tremolo", "tremoloLevel"): "0.5"},  # knobs knob ceiling 2 left out, with their declared
+               "delay": {("delay", "delayTapeDrive"): "0"}}      # on values for an off effect
+DRY_KEYS = (("reverb", "reverbActive"), ("delay", "delayActive"), ("tremolo", "tremoloActive"),
+            ("parameters", "doublerActive"))
 ABLATIONS = ("rooms_reset", "mics_eq_reset", "effects_reset")
 OUT_DIRS = {"n12": ("captures2", "search-c1b"), "bks": ("real", "search-c1b")}
 C1A_DIRS = {"n12": ("captures2", "search-c1a"), "bks": ("real", "search-c1a")}
@@ -64,17 +70,33 @@ def c1b_records(c1a_records, outputs):
 # --- the start, the spaces and the canonical form ---------------------------------------------------------------------
 
 def make_canon(amp):
-    """C1b's canonical form: the rooms' own controls to neutral when they can't sound
-    (`every_control.group_canon("rooms")`), then the time effects' (`knob_ceiling2.make_canon_effects`: an off effect's
-    knobs at its declared on values, sync free)."""
+    """C1b's canonical form: the rooms' and the cab phase group's own controls to neutral when they can't sound
+    (`every_control.group_canon`), then the time effects' (`knob_ceiling2.make_canon_effects`: an off effect's knobs at
+    its declared on values, sync free), with EXTRA_KNOBS' on values for an off tremolo or delay."""
     from learn import every_control as E
     from learn import knob_ceiling2 as K2
 
-    rooms, fx = E.group_canon("rooms", amp), K2.make_canon_effects(amp)
+    rooms, phase, fx = E.group_canon("rooms", amp), E.group_canon("phase", amp), K2.make_canon_effects(amp)
 
     def canon(x):
-        return fx(rooms(x))
+        y = fx(phase(rooms(x)))
+        for name, on in EXTRA_KNOBS.items():
+            if not _on(y, K2.EFFECTS[name][0]):
+                y.update(on)
+        return y
     return canon
+
+
+def dry_start_problems(x, amp):
+    """What is on that C1b's start must have off: a time effect, the spring (level above 0), or the doubler."""
+    from learn import knob_ceiling2 as K2
+
+    out = ["/".join(k) for k in DRY_KEYS if _on(x, k)]
+    if amp in K2.SPRING:
+        level = next(iter(K2.SPRING[amp][0]))
+        if float(x.get(level, 0) or 0) > 0:
+            out.append("/".join(level))
+    return out
 
 
 def with_spring(x, amp):
@@ -115,25 +137,41 @@ def audible_change(start, label, amp):
 
 
 def rooms_dims(x):
-    """Stage A: the left cab and the room mics, as `every_control.group_plan("rooms")` lists them but nothing switched
-    on: the left cab's switch only while the right cab is on (one cab must stay on), the right room only while the
-    right cab is on. Room mic types have no UI control and stay as stored."""
+    """Stage A: the left cab, the room mics and the cabs' relative phase, as `every_control.group_plan` lists them but
+    nothing switched on. With both cabs on: the left cab's switch and level, both rooms, and the right cab's phase
+    switch (one switch: only the relative phase sounds to a mono judge). With the right cab off: the left room alone
+    (the left cab must stay on, and its level is then only the output level). Room mic types have no UI control and
+    stay as stored."""
     from learn import every_control as E
 
-    dims = [E._dim(("cabParameters", "leftCabActive")), E._dim(("cabParameters", "leftCabMicLevel")),
-            E._dim(("cabParameters", "leftRoomActive")), E._dim(("cabParameters", "leftRoomMicLevel"))]
     if _on(x, ("cabParameters", "rightCabActive")):
-        dims += [E._dim(("cabParameters", "rightRoomActive")), E._dim(("cabParameters", "rightRoomMicLevel"))]
+        keys = [("cabParameters", "leftCabActive"), ("cabParameters", "leftCabMicLevel"),
+                ("cabParameters", "leftRoomActive"), ("cabParameters", "leftRoomMicLevel"),
+                ("cabParameters", "rightRoomActive"), ("cabParameters", "rightRoomMicLevel"), PHASE_KEY]
     else:
-        dims = [d for d in dims if d.key != "leftCabActive"]
-    return dims
+        keys = [("cabParameters", "leftRoomActive"), ("cabParameters", "leftRoomMicLevel")]
+    return [E._dim(k) for k in keys]
 
 
-def mics_eq_dims(x, amp):
-    """Stage B: the mic type of each cab that is on, with the amp EQ (its 9 bands and both filters), searched together."""
+def mic_lists():
+    """GOAT's label-derived short mic lists (`night2.mic_lists`), the alternatives stage B tries. -> {amp: {key: values}}."""
+    from learn import night2 as N
+    from learn import pipeline_fix as P
+
+    return N.mic_lists(P.goat_labels()[0])
+
+
+def mics_eq_dims(x, amp, lists):
+    """Stage B: the mic type of each cab that is on, its values the short list (`lists[amp]`) with the current mic, and
+    the amp EQ (its 9 bands and both filters), searched together."""
     from learn import knob_ceiling as K
+    from learn.knob_ceiling import Dim
 
-    mics = [d for d in K.CAB if d.kind == "cat" and _on(x, ("cabParameters", d.key.replace("MicType", "CabActive")))]
+    mics = []
+    for d in K.CAB:
+        if d.kind == "cat" and _on(x, ("cabParameters", d.key.replace("MicType", "CabActive"))):
+            vals = sorted(set(lists[amp][d.key]) | {x[(d.module, d.key)]}, key=int)
+            mics.append(Dim(d.module, d.key, "cat", values=tuple(vals)))
     return mics + K.eq_space(amp)
 
 
@@ -141,7 +179,10 @@ def effect_plan(amp):
     """Stage C, each effect on its own: {name: (switch key, knob dims, budget)}; the budget is PER_KNOB a knob."""
     from learn import knob_ceiling2 as K2
 
-    out = {n: (sw, dims) for n, (sw, _, dims) in K2.EFFECTS.items()}
+    from learn.knob_ceiling import Dim
+
+    out = {n: (sw, list(dims) + [Dim(*k, "cont") for k in EXTRA_KNOBS.get(n, {})])
+           for n, (sw, _, dims) in K2.EFFECTS.items()}
     if amp in K2.SPRING:
         out["spring"] = (SPRING_KEY, K2.SPRING[amp][1])
     return {n: (sw, dims, round(PER_KNOB * len(dims))) for n, (sw, dims) in out.items()}
@@ -155,7 +196,11 @@ def effect_start(dry, sw, amp, raw=False):
 
     if not raw:
         return make_canon(amp)({**dry, sw: "true"})
-    on = dict(K2.SPRING[amp][0]) if sw == SPRING_KEY else dict(next(v[1] for v in K2.EFFECTS.values() if v[0] == sw))
+    if sw == SPRING_KEY:
+        on = dict(K2.SPRING[amp][0])
+    else:
+        name = next(n for n, v in K2.EFFECTS.items() if v[0] == sw)
+        on = {**K2.EFFECTS[name][1], **EXTRA_KNOBS.get(name, {})}
     sync = {k: v for k, v in K2.FREE_SYNC.items() if k[0] == sw[0]}
     return {**dry, **on, **sync, sw: "true"}
 
@@ -184,12 +229,30 @@ def ablation_settings(final, start, dry, amp, raw=False):
             "mics_eq_reset": canon(F.reset(final, start, list(MIC_KEYS) + eq)), "effects_reset": dict(dry)}
 
 
+def searched_union(c1a_keys, start, xa, amp, lists):
+    """C3's mask for this record: C1a's searched keys with C1b's (stage A's, stage B's, every effect's knobs and
+    switches; the spring's pseudo-switch is not a plugin control)."""
+    c1b = ({d.name for d in rooms_dims(start)} | {d.name for d in mics_eq_dims(xa, amp, lists)}
+           | {d.name for _, ds, _ in effect_plan(amp).values() for d in ds}
+           | {"/".join(sw) for sw, _, _ in effect_plan(amp).values() if sw != SPRING_KEY})
+    return sorted(set(c1a_keys) | c1b)
+
+
 def drifted(start_peak, final_peak, db=DRIFT_DB):
     """The output-level drift flag: the final's peak more than `db` below the start's."""
     try:
         return float(start_peak) - float(final_peak) > db
     except (TypeError, ValueError):
         return False
+
+
+def dropped(recs):
+    """[(unit, why)] for the records the primary leaves out: a fallback label, or a non-finite final or C1a best."""
+    out = []
+    for r in recs:
+        if record_values(r) is None:
+            out.append((r["unit"], "fallback label" if r.get("label") is None else "non-finite final or C1a best"))
+    return out
 
 
 def nonfinite_ablations(recs):
@@ -298,6 +361,7 @@ def cmd_search(args):
     LO._wait_cap()
     renders = 0
     counts = {"canonical": 0, "raw_after_miss": 0, "refused": 0}
+    lists = mic_lists()
 
     def sorted_x(x, amp):
         return LO.tdict(LO.sdict(plugin(x, amp)))
@@ -315,6 +379,9 @@ def cmd_search(args):
             raise SystemExit(f"{rec['key']}: the C1a record's unit, amp or label does not fit")
         sel, search, held, lag = src["select"], src["search"], src["held"], src["lag"]
         label = src["label"]
+        wet = dry_start_problems(LO.tdict(label), amp)
+        if wet:
+            raise SystemExit(f"{rec['key']}: C1b's start must be dry: {wet} on")
         start = c1b_start(label, amp)
         bad = audible_change(start, label, amp)
         if bad:
@@ -352,10 +419,14 @@ def cmd_search(args):
                     trace.append({"stage": stage[0], "judge": j})
                     return j[search]
 
+                cn = canon or (lambda x: x)                 # every stage's x is looked up in its canonical form
                 stage = ["A"]
                 xa, _, _ = K.coord_search(rooms_dims(x0), x0, f, BUDGET_ROOMS, SEED, cats="levels", canon=canon)
+                xa = cn(xa)
                 stage[0] = "B"
-                xb, _, _, stages_b = K.knob_search(mics_eq_dims(xa, amp), xa, f, BUDGET_MICS_EQ, SEED + 1, canon=canon)
+                xb, _, _, stages_b = K.knob_search(mics_eq_dims(xa, amp, lists), xa, f, BUDGET_MICS_EQ, SEED + 1,
+                                                   shares=STAGE_B_SHARES, canon=canon)
+                xb = cn(xb)
             except F.StartMiss as miss:
                 miss.renders = used[0]
                 raise
@@ -409,7 +480,7 @@ def cmd_search(args):
                         best[:] = [dict(x), j[search], j]
                     return j[search]
 
-                K.knob_search(dims, x0, g, budget, SEED + 2 + i, canon=canon)
+                K.coord_search(dims, x0, g, budget, SEED + 2 + i, canon=canon)   # +-0.25 on every knob first
                 renders += len(vals)
             finally:
                 rr.close()
@@ -447,12 +518,12 @@ def cmd_search(args):
                      "start_settings": LO.sdict(plugin(start, amp)), "start": dry["start"],
                      "stage_a": dry["a"], "stage_b": dry["b"], "trace": dry["trace"],
                      "rooms_keys": [d.name for d in rooms_dims(start)],
-                     "mics_eq_keys": [d.name for d in mics_eq_dims(xa, amp)],
+                     "mics_eq_keys": [d.name for d in mics_eq_dims(xa, amp, lists)],
+                     "stage_a_settings": LO.sdict(plugin(xa, amp)), "stage_b_settings": LO.sdict(plugin(xb, amp)),
                      "effects": per, "effect_kept": kept,
                      "mics_changed": any(xb.get(m) != start.get(m) for m in MIC_KEYS),
-                     "searched_keys": sorted({d.name for d in rooms_dims(start)} | {d.name for d in mics_eq_dims(xa, amp)}
-                                             | {d.name for _, ds, _ in effect_plan(amp).values() for d in ds}
-                                             | {"/".join(sw) for sw, _, _ in effect_plan(amp).values() if sw != SPRING_KEY}),
+                     "c1b_searched_keys": searched_union([], start, xa, amp, lists),
+                     "searched_keys": searched_union(src.get("searched_keys") or [], start, xa, amp, lists),
                      "fresh": fr, "drift": drifted(dry["start"]["peak_dbfs"], fr["final"]["peak_dbfs"]),
                      "label": None if fb else LO.sdict(plugin(final, amp)), "fallback": fb,
                      "time": time.strftime("%Y-%m-%d %H:%M:%S")})
@@ -479,6 +550,8 @@ def cmd_report(_args):
                              for k in ("canonical", "raw_after_miss", "refused")},
                   "refused": [{"unit": r["unit"], **r["refused"]} for r in every if "refused" in r],
                   "fallbacks": sum(1 for r in recs if r["label"] is None),
+                  "fallback_units": [r["unit"] for r in recs if r["label"] is None],
+                  "dropped_from_primary": dropped(main),
                   "drift": {"main": sum(1 for r in main if r.get("drift")),
                             "real_out": sum(1 for r in recs if r["real_out"] and r.get("drift"))},
                   "nonfinite_ablations": nonfinite_ablations(recs)}

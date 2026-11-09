@@ -81,31 +81,43 @@ def test_c1b_start_changes_nothing_that_sounds_and_raw_start_changes_nothing():
     assert C.audible_change(raw, lab, "pr12") == []
 
 
-def test_rooms_dims_keep_one_cab_on_and_drop_the_right_room_with_the_right_cab():
+def test_rooms_dims_on_two_cabs_and_on_one():
     x = full_start()
     names = [d.name for d in C.rooms_dims(x)]
     assert names == ["cabParameters/leftCabActive", "cabParameters/leftCabMicLevel", "cabParameters/leftRoomActive",
-                     "cabParameters/leftRoomMicLevel", "cabParameters/rightRoomActive", "cabParameters/rightRoomMicLevel"]
-    x[("cabParameters", "rightCabActive")] = "false"
-    assert [d.name for d in C.rooms_dims(x)] == ["cabParameters/leftCabMicLevel", "cabParameters/leftRoomActive",
-                                                 "cabParameters/leftRoomMicLevel"]
+                     "cabParameters/leftRoomMicLevel", "cabParameters/rightRoomActive", "cabParameters/rightRoomMicLevel",
+                     "cabParameters/rightCabPhase"]
+    x[("cabParameters", "rightCabActive")] = "false"                           # one cab: no left switch, level or phase
+    assert [d.name for d in C.rooms_dims(x)] == ["cabParameters/leftRoomActive", "cabParameters/leftRoomMicLevel"]
     lvl = next(d for d in C.rooms_dims(full_start()) if d.key == "leftRoomMicLevel")
     assert (lvl.kind, lvl.lo, lvl.hi) == ("cont", -40.0, 6.0)
+    ph = next(d for d in C.rooms_dims(full_start()) if d.key == "rightCabPhase")
+    assert ph.kind == "switch"
 
 
-def test_mics_eq_dims_are_the_cabs_on_mics_with_the_amp_eq():
+LISTS = {"pr12": {"leftMicType": ["3", "9"], "rightMicType": ["3", "8"]},
+         "sw50r": {"leftMicType": ["3", "9", "0", "6"], "rightMicType": ["3", "5", "2"]},
+         "ac20": {"leftMicType": ["3"], "rightMicType": ["4"]}}
+
+
+def test_mics_eq_dims_are_the_cabs_on_short_list_mics_with_the_amp_eq():
     x = full_start("sw50r")
-    names = [d.name for d in C.mics_eq_dims(x, "sw50r")]
-    assert names[:2] == ["cabParameters/leftMicType", "cabParameters/rightMicType"]
-    assert set(names[2:]) == {d.name for d in K.eq_space("sw50r")} and len(names) == 13
+    dims = C.mics_eq_dims(x, "sw50r", LISTS)
+    assert [d.name for d in dims[:2]] == ["cabParameters/leftMicType", "cabParameters/rightMicType"]
+    assert dims[0].values == ("0", "3", "6", "9") and dims[1].values == ("2", "3", "5")       # the current mic kept
+    assert {d.name for d in dims[2:]} == {d.name for d in K.eq_space("sw50r")} and len(dims) == 13
     x[("cabParameters", "leftCabActive")] = "false"
-    assert [d.name for d in C.mics_eq_dims(x, "sw50r")][0] == "cabParameters/rightMicType"
+    assert C.mics_eq_dims(x, "sw50r", LISTS)[0].name == "cabParameters/rightMicType"
+    pr = C.mics_eq_dims(full_start("pr12"), "pr12", LISTS)                         # the current "0" is not listed
+    assert pr[0].values == ("0", "3", "9") and pr[1].values == ("3", "8")
 
 
 @pytest.mark.parametrize("amp, spring", [("pr12", 7), ("sw50r", 4), ("ac20", None)])
 def test_effect_plan_budgets_by_knobs(amp, spring):
     plan = C.effect_plan(amp)
-    assert plan["reverb"][2] == 18 and plan["delay"][2] == 18 and plan["tremolo"][2] == 7
+    assert plan["reverb"][2] == 18 and plan["delay"][2] == 21 and plan["tremolo"][2] == 10
+    assert "delay/delayTapeDrive" in [d.name for d in plan["delay"][1]]
+    assert "tremolo/tremoloLevel" in [d.name for d in plan["tremolo"][1]]
     assert (plan["spring"][2] if spring else "spring" in plan) == (spring if spring else False)
     assert plan["reverb"][0] == ("reverb", "reverbActive") and all(d.kind != "switch" for d in plan["reverb"][1])
 
@@ -119,6 +131,9 @@ def test_effect_start_canonical_and_raw():
     assert r[("delay", "delayActive")] == "true" and r[("delay", "delaySync")] == "0"
     assert all(r[k] == v for k, v in K2.EFFECTS["delay"][1].items())
     assert r[("tremolo", "tremoloSync")] == raw_dry[("tremolo", "tremoloSync")]       # another effect untouched
+    assert r[("delay", "delayTapeDrive")] == "0"
+    t = C.effect_start({**raw_dry, ("tremolo", "tremoloLevel"): "0.9"}, ("tremolo", "tremoloActive"), "pr12", raw=True)
+    assert t[("tremolo", "tremoloLevel")] == "0.5"
     sp = C.effect_start(raw_dry, C.SPRING_KEY, "pr12", raw=True)
     assert sp[C.SPRING_KEY] == "true" and sp[("pr12Amp", "pr12Reverb")] == "0.2"
 
@@ -206,7 +221,7 @@ def _value(x):
     return v
 
 
-def _stub(tmp_path, monkeypatch, n=1, miss=(), sync_cost=0.0, fresh_offset=0.0):
+def _stub(tmp_path, monkeypatch, n=1, miss=(), sync_cost=0.0, fresh_offset=0.0, full=None, value=None):
     np = pytest.importorskip("numpy")
     from learn import audibility_measure as AM
     from learn import cc_build as CB
@@ -224,13 +239,16 @@ def _stub(tmp_path, monkeypatch, n=1, miss=(), sync_cost=0.0, fresh_offset=0.0):
     monkeypatch.setattr(B, "measure", lambda a: np.zeros(4))
     monkeypatch.setattr(P, "real_amp_track", lambda sd, track, start: np.zeros(4))
     monkeypatch.setitem(SYNC_COST, "v", sync_cost)
+    monkeypatch.setattr(C, "mic_lists", lambda: LISTS)
+    full = full or full_start
+    value = value or _value
     calls = {"n": 0, "procs": 0}
 
     class R:
         def render(self, di, sel, x):
             assert C.SPRING_KEY not in x                                        # the plugin gets real settings
             calls["n"] += 1
-            return np.full(4, _value(x))
+            return np.full(4, value(x))
 
         def close(self):
             pass
@@ -241,12 +259,12 @@ def _stub(tmp_path, monkeypatch, n=1, miss=(), sync_cost=0.0, fresh_offset=0.0):
 
     def fresh(make, di, sel, xp, x):                                            # fresh_offset: a process position
         calls["n"] += 2
-        return np.full(4, _value(x) + fresh_offset)
+        return np.full(4, value(x) + fresh_offset)
     monkeypatch.setattr(CB, "new_renderer", new)
     monkeypatch.setattr(AM, "fresh_render", fresh)
     monkeypatch.setattr(K, "judge", lambda ref, y, di, lag: {"A": float(y[0]), "B": float(y[0]) + 0.5})
-    label = LO.sdict(full_start("pr12"))
-    v0 = _value(LO.tdict(label))
+    label = LO.sdict(full("pr12"))
+    v0 = value(LO.tdict(label))
     rows = []
     for i in range(n):
         unit = f"cap/u{i}"
@@ -272,11 +290,25 @@ def _out(tmp_path, r):
 def test_c1b_search_runs_the_stages_keeps_a_clear_effect_and_counts_renders(tmp_path, monkeypatch, capsys):
     import argparse
     (row,), calls = _stub(tmp_path, monkeypatch)
+    used = {"coord": [], "knob": []}
+    real_coord, real_knob = K.coord_search, K.knob_search
+
+    def coord(dims, x0, f, budget, seed, **kw):
+        used["coord"].append((tuple(d.name for d in dims), budget))
+        return real_coord(dims, x0, f, budget, seed, **kw)
+
+    def knob(dims, x0, f, budget, seed, **kw):
+        used["knob"].append((tuple(d.name for d in dims), budget, kw.get("shares")))
+        return real_knob(dims, x0, f, budget, seed, **kw)
+    monkeypatch.setattr(K, "coord_search", coord)
+    monkeypatch.setattr(K, "knob_search", knob)
     C.cmd_search(argparse.Namespace(shard=(0, 1)))
     r = json.loads(_out(tmp_path, row).read_text())
     assert r["start_kind"] == "canonical" and r["first_start_miss"] is None
     assert r["label"]["cabParameters/leftRoomActive"] == "true"                    # stage A turned the room on
     assert r["label"]["pr12EQ/pr12EQBand3"] != "0"                                 # stage B moved the EQ
+    assert r["stage_a_settings"]["pr12EQ/pr12EQBand3"] == "0" and r["stage_b_settings"]["pr12EQ/pr12EQBand3"] != "0"
+    assert r["stage_a_settings"]["cabParameters/leftRoomActive"] == "true"
     assert r["effect_kept"] == "reverb" and r["label"]["reverb/reverbActive"] == "true"
     assert "spring/springOn" not in r["label"] and r["label"]["pr12Amp/pr12Reverb"] == "0"       # the plugin's settings
     assert "spring/springOn" not in r["searched_keys"] and "reverb/reverbMix" in r["searched_keys"]
@@ -285,6 +317,10 @@ def test_c1b_search_runs_the_stages_keeps_a_clear_effect_and_counts_renders(tmp_
     assert not r["effects"]["tremolo"]["passed_in_process"] and "fresh" not in r["effects"]["tremolo"]
     assert r["fresh"]["ablations"]["effects_reset"].get("same_as_dry") and not r["drift"]
     assert calls["procs"] == 1 + len(C.effect_plan("pr12"))                         # each effect in its own process
+    for name, (sw, dims, budget) in C.effect_plan("pr12").items():                # plain coord_search per effect
+        assert (tuple(d.name for d in dims), budget) in used["coord"]
+    (b,) = [u for u in used["knob"] if u[1] == C.BUDGET_MICS_EQ]
+    assert b[2] == C.STAGE_B_SHARES and b[0][0] == "cabParameters/leftMicType"
     stage_ab = 1 + len(r["trace"])
     fx = sum(1 + v["renders"] for v in r["effects"].values())
     confirms = 2 * sum("fresh" in v for v in r["effects"].values())
@@ -355,3 +391,64 @@ def test_c1b_report_reads_the_search_outputs(tmp_path, monkeypatch, capsys):
     assert n12["rows"]["all"]["primary"]["mean"] < 0                                   # the stub's gains, on the held half
     printed = json.loads(capsys.readouterr().out)["n12"]
     assert printed["starts"]["refused"] == 1 and printed["effects_kept"] == {"reverb": 2}
+
+
+def test_stage_a_turning_the_left_cab_off_with_a_nonneutral_level(tmp_path, monkeypatch):
+    """The review's repro: the left cab off on a label whose leftCabMicLevel is not the neutral 0 (as 20 of C1a's 38
+    both-cab records store it); each stage's best is looked up in its canonical form."""
+    import argparse
+
+    def full(amp="pr12"):
+        x = full_start(amp)
+        x[("cabParameters", "leftCabMicLevel")] = "6"
+        return x
+
+    def value(x):
+        return _value(x) - (0.3 if str(x.get(("cabParameters", "leftCabActive"))).lower() == "false" else 0.0)
+    (row,), _ = _stub(tmp_path, monkeypatch, full=full, value=value)
+    C.cmd_search(argparse.Namespace(shard=(0, 1)))
+    r = json.loads(_out(tmp_path, row).read_text())
+    assert r["stage_a_settings"]["cabParameters/leftCabActive"] == "false"
+    assert r["label"]["cabParameters/leftCabActive"] == "false"
+
+
+def test_dry_start_problems_name_effects_spring_and_doubler():
+    x = full_start("pr12")
+    assert C.dry_start_problems(x, "pr12") == []
+    x[("delay", "delayActive")] = "true"
+    x[("parameters", "doublerActive")] = "true"
+    x[("pr12Amp", "pr12Reverb")] = "0.1"
+    assert C.dry_start_problems(x, "pr12") == ["delay/delayActive", "parameters/doublerActive", "pr12Amp/pr12Reverb"]
+    assert C.dry_start_problems(full_start("ac20"), "ac20") == []
+
+
+def test_c1b_search_refuses_a_wet_start(tmp_path, monkeypatch):
+    import argparse
+
+    def full(amp="pr12"):
+        return {**full_start(amp), ("tremolo", "tremoloActive"): "true"}
+    _stub(tmp_path, monkeypatch, full=full)
+    with pytest.raises(SystemExit, match="must be dry"):
+        C.cmd_search(argparse.Namespace(shard=(0, 1)))
+
+
+def test_make_canon_sets_the_extra_knobs_of_an_off_effect_and_neutralises_a_lone_cabs_phase():
+    x = full_start("pr12")
+    x[("tremolo", "tremoloLevel")] = "0.9"
+    x[("delay", "delayTapeDrive")] = "0.7"
+    y = C.make_canon("pr12")(x)
+    assert y[("tremolo", "tremoloLevel")] == "0.5" and y[("delay", "delayTapeDrive")] == "0"
+    on = {**x, ("tremolo", "tremoloActive"): "true"}
+    assert C.make_canon("pr12")(on)[("tremolo", "tremoloLevel")] == "0.9"
+    one = {**x, ("cabParameters", "rightCabActive"): "false", ("cabParameters", "rightCabPhase"): "true"}
+    assert C.make_canon("pr12")(one)[("cabParameters", "rightCabPhase")] == "false"
+
+
+def test_searched_union_and_dropped():
+    st = C.c1b_start(LO.sdict(full_start("pr12")), "pr12")
+    u = C.searched_union(["pr12Amp/pr12Volume", "pr12EQ/pr12EQBand1"], st, st, "pr12", LISTS)
+    assert "pr12Amp/pr12Volume" in u and "cabParameters/rightCabPhase" in u and "delay/delayTapeDrive" in u
+    assert "reverb/reverbActive" in u and "spring/springOn" not in u and u == sorted(set(u))
+    ok = done("d1", "clean", 4.0, 3.0)
+    assert C.dropped([ok, dict(ok, unit="u2", label=None), dict(ok, unit="u3", c1a_fresh_best={"B": float("nan")})]) == [
+        ("u2", "fallback label"), ("u3", "non-finite final or C1a best")]
