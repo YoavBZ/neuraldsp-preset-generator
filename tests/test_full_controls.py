@@ -108,12 +108,26 @@ def test_c1a_start_changes_nothing_that_sounds_and_audible_change_catches_what_d
     label = LO.sdict(lab)
     st = F.c1a_start(label, "pr12")
     assert st[("pr12EQ", "pr12EQBand3")] == "4.5"
-    assert st[("drive2", "drive2Gain")] != "0.77" and st[("parameters", "gateThreshold")] == F.GATE_ON_DB
-    assert F.audible_change(st, label, "pr12") == []
+    assert st[("drive2", "drive2Gain")] != "0.77"
+    assert st[("parameters", "gateActive")] == "true" and st[("parameters", "gateThreshold")] == F.GATE_ON_DB == "-80"
+    assert F.audible_change(st, label, "pr12", declared=F.GATE_KEYS) == []      # the gate on: verified by render
+    assert F.audible_change(st, label, "pr12") == ["parameters/gateActive", "parameters/gateThreshold"]
     off = dict(lab)
     off[("pr12EQ", "pr12EQActive")] = "false"                                  # an inactive EQ: eq_start flattens it
     st2 = F.c1a_start(LO.sdict(off), "pr12")
-    assert "pr12EQ/pr12EQActive" in F.audible_change(st2, LO.sdict(off), "pr12")
+    assert "pr12EQ/pr12EQActive" in F.audible_change(st2, LO.sdict(off), "pr12", declared=F.GATE_KEYS)
+
+
+def test_gate_on_keeps_a_gate_already_on_and_turns_an_off_one_on_at_the_factory_threshold():
+    on = {("parameters", "gateActive"): "true", ("parameters", "gateThreshold"): "-42"}
+    assert F.gate_on(on) == on
+    off = {("parameters", "gateActive"): "false", ("parameters", "gateThreshold"): "-12"}
+    assert F.gate_on(off) == {("parameters", "gateActive"): "true", ("parameters", "gateThreshold"): F.GATE_ON_DB}
+    lab = full_start()
+    lab[("parameters", "gateActive")] = "true"
+    lab[("parameters", "gateThreshold")] = "-42"
+    st = F.c1a_start(LO.sdict(lab), "pr12")
+    assert st[("parameters", "gateThreshold")] == "-42" and F.audible_change(st, LO.sdict(lab), "pr12") == []
 
 
 def test_ablations_reset_only_their_own_keys_to_the_start():
@@ -262,7 +276,7 @@ def test_audible_change_flags_a_key_outside_the_table():
     lab = full_start()
     st = dict(F.c1a_start(LO.sdict(lab), "pr12"))
     st[("nowhere", "unknownKey")] = "1"
-    assert F.audible_change(st, LO.sdict(lab), "pr12") == ["nowhere/unknownKey"]
+    assert F.audible_change(st, LO.sdict(lab), "pr12", declared=F.GATE_KEYS) == ["nowhere/unknownKey"]
 
 
 def test_c1a_space_refuses_a_categorical_dim(monkeypatch):
@@ -306,11 +320,15 @@ def test_subset_curves_read_both_halves_from_the_checkpoints():
 TARGET = {("pr12EQ", f"pr12EQBand{i + 1}"): t for i, t in enumerate((5, -7, 3, 9, -2, 6, -4, 8, 1))}
 
 
+GATE_COST = {"v": 0.0}                                                          # a gate that acts, when set
+
+
 def _value(x):
-    return 2.0 + sum((float(x[k]) - t) ** 2 for k, t in TARGET.items()) / 1000
+    gate = GATE_COST["v"] if str(x.get(("parameters", "gateActive"))).lower() == "true" else 0.0
+    return 2.0 + sum((float(x[k]) - t) ** 2 for k, t in TARGET.items()) / 1000 + gate
 
 
-def _stub(tmp_path, monkeypatch, recs, miss=False, src_amp="pr12"):
+def _stub(tmp_path, monkeypatch, recs, miss=False, src_amp="pr12", gate_cost=0.0):
     """cmd_search on stub audio and a stub renderer whose judge reads the EQ's distance to TARGET."""
     import argparse  # noqa: F401
     np = pytest.importorskip("numpy")
@@ -351,8 +369,9 @@ def _stub(tmp_path, monkeypatch, recs, miss=False, src_amp="pr12"):
     monkeypatch.setattr(F, "BUDGET", 10)
     monkeypatch.setattr(F, "SUBSET_BUDGET", 30)
     monkeypatch.setattr(F, "CHECKPOINTS", (5, 10, 20, 30))
+    monkeypatch.setitem(GATE_COST, "v", gate_cost)
     label = LO.sdict(S)
-    v0 = _value(F.c1a_start(label, "pr12"))
+    v0 = _value(S)                                                              # the stored label's own value
     rows = []
     for i, (st, subset) in enumerate(recs):
         unit = f"{'cap' if st == 'n12' else 'set5'}/u{i}"
@@ -393,6 +412,8 @@ def test_cmd_search_labels_resume_and_render_count(tmp_path, monkeypatch, capsys
         assert {k: lab[k] for k in names} == sub["trials"][i]["x"]
     assert {k: plain["label"][k] for k in names} == plain["trials"][F.incumbent_at(plain["curve"], 10)]["x"]
     assert sub["start_settings"] and plain["measurement_only"] and not sub["measurement_only"]
+    assert sub["start_settings"]["parameters/gateActive"] == "true"               # the start has the gate on
+    assert sub["start_settings"]["parameters/gateThreshold"] == F.GATE_ON_DB
     assert sub["fresh"]["ablations"]["pedals_reset"]["same_as_best"]                 # nothing to reset: reused
     assert not sub["fresh"]["ablations"]["eq_reset"]["same_as_best"]
     assert not sub["fresh"]["best_300"]["same_as_best"]                          # a different best: rendered fresh
@@ -415,4 +436,11 @@ def test_cmd_search_refuses_a_source_of_another_amp(tmp_path, monkeypatch):
     import argparse
     _stub(tmp_path, monkeypatch, [("n12", False)], src_amp="sw50r")
     with pytest.raises(SystemExit, match="does not fit"):
+        F.cmd_search(argparse.Namespace(shard=(0, 1)))
+
+
+def test_cmd_search_stops_when_the_gate_on_at_the_factory_threshold_is_not_inert(tmp_path, monkeypatch):
+    import argparse
+    _stub(tmp_path, monkeypatch, [("n12", False)], gate_cost=0.1)
+    with pytest.raises(SystemExit, match="is not the stored label's"):
         F.cmd_search(argparse.Namespace(shard=(0, 1)))

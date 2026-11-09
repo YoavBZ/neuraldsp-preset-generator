@@ -88,14 +88,15 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
     - GOAT and BKS are training rows;
     - V-real and the panel are held out.
   - **C4 needs a new source before it is built,** such as a third capture batch, on the user's yes.
-- **Start:** the record's stored label as it is. Every S already has its amp EQ and the EQ and pedal sections on, so `knob_ceiling2.stage1_start` changes only inert keys: the knobs of pedals that are off, set to neutral. The gate's own canonical form then sets an off gate's threshold, which `stage1_start` does not touch. There is no audible change.
-  - **The check:** the first evaluation's search-half value must equal `best.judge[search]` within 0.005 in log. Its render sha is recorded beside `best.render_sha256`. A miss stops the shard.
+- **Start:** the record's stored label, with one declared change. Every S already has its amp EQ and the EQ and pedal sections on, so `knob_ceiling2.stage1_start` changes only inert keys: the knobs of pedals that are off, set to neutral.
+  - **The declared change:** the start has the gate on at the factory threshold, as `every_control.group_plan("gate")` does. A label with the gate off gets it on at −80 dB, as 102 of the 107 factory presets have it. A label with the gate on keeps its threshold.
+  - So the search tries the threshold of a gate that is on, and the switch beside it, not a flip to a near-inert gate.
+  - **The check:** the first evaluation's search-half value must equal `best.judge[search]` within 0.005 in log. That also verifies that the gate on at −80 dB is inert on the record. Its render sha is recorded beside `best.render_sha256`. A miss stops the shard.
 - **Space:** `knob_ceiling2.stage1_space`'s controls, about 37 to 42 an amp. The core knobs have input gain at FT2's head range, −20 to +12 dB, not −24. Then the amp EQ, drive 1, drive 2 and the compressor, plus the gate: `gateActive` as a switch and `gateThreshold` from −96 to 0 dB.
   - The mic types are held at the label's.
-  - **Canonical form:** `canon_pedals`, then the gate's: an off gate's threshold goes to an acting value, so a flip on tests a gate that acts.
-    - That value is the median threshold of the factory menu's presets with the gate on, read from the preset files at zero renders (`full_controls.factory_gate_median`). It is −60 dB if none had the gate on.
+  - **The factory threshold** is the median threshold of the factory menu's presets with the gate on, read from the preset files at zero renders (`full_controls.factory_gate_median`). It would be −60 dB if none had the gate on.
     - **Used: −80 dB.** 102 of the 107 factory presets have the gate on, with a median of −80.0, the same as the table's neutral. `c1a-draw` re-reads it and refuses on a mismatch.
-    - A move that changes nothing audible costs no render.
+  - **Canonical form:** `canon_pedals`, then the gate's: an off gate's threshold stays at −80 dB. A move that changes nothing audible costs no render.
 - **Search:** `knob_ceiling.coord_search` from the start, with `canon`, seed 20261123, which no other run uses.
   - **Budget:** 100 evaluations on every record.
   - **The calibration subset:** a seeded subset of 12 records, 6 from each set, drawn by `c1a-draw` with seed 20261124, runs on to 300. The search is deterministic and the budget only truncates it, so the subset's first 100 evaluations are its 100-budget run.
@@ -111,7 +112,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **Fresh renders** (each in a new process with one priming render, as `audibility_measure.fresh_render`):
     - the 100-budget best;
     - the 300-budget best on the subset;
-    - four ablations of the 100-budget best: pedals reset to the start's, amp EQ reset to the label's, both reset, and the gate reset to the start's.
+    - four ablations of the 100-budget best: pedals reset to the start's, amp EQ reset to the label's, both reset, and the gate reset to the start's (on, at its start threshold).
   - All of them are judged on both halves.
   - **Reuse:** an ablation whose canonical setting equals the best's reuses the best's fresh render, and the 300 best does too when it equals the 100 best. Each is marked `same_as_best`.
   - **Also stored:** the start's settings (`start_settings`), and `measurement_only: true` on N12's records.

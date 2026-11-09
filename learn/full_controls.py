@@ -30,9 +30,10 @@ GAIN_DB = (-20.0, 12.0)              # FT2's input-gain head range (`knob_ceilin
 PEDAL_MODULES = ("drive1", "drive2", "compressor")
 PEDAL_SWITCHES = (("drive1", "drive1Active"), ("drive2", "drive2Active"), ("compressor", "compressorActive"))
 GATE_KEYS = (("parameters", "gateActive"), ("parameters", "gateThreshold"))
-GATE_ON_DB = "-80"                   # an off gate's canonical threshold, so a flip on tests a gate that acts: the median
-                                     # threshold of the factory menu's presets with the gate on (102 of 107, read
-                                     # 2026-11-09 at zero renders, `factory_gate_median`); -60 if there were none
+GATE_ON_DB = "-80"                   # the factory threshold: the median of the factory menu's presets with the gate on
+                                     # (102 of 107, read 2026-11-09 at zero renders, `factory_gate_median`); -60 if none.
+                                     # C1a's start turns an off gate on here (`gate_on`, as `every_control.group_plan`
+                                     # does), and an off gate's canonical threshold stays here
 GATE_FALLBACK_DB = -60.0
 FACTORY = "/Library/Audio/Presets/Neural DSP/Morgan Amps Suite"
 ABLATIONS = ("pedals_reset", "eq_reset", "pedals_eq_reset", "gate_reset")
@@ -110,8 +111,18 @@ def factory_gate_median(root=FACTORY):
     return (statistics.median(thr) if thr else GATE_FALLBACK_DB), len(files), len(thr)
 
 
+def gate_on(x):
+    """The gate on at GATE_ON_DB when it is off, as `every_control.group_plan("gate")` does; a gate already on keeps its
+    stored threshold. The start check (the first evaluation against the stored label) verifies that this is inert."""
+    y = dict(x)
+    if str(y.get(GATE_KEYS[0], "false")).lower() not in ("true", "1"):
+        y[GATE_KEYS[0]] = "true"
+        y[GATE_KEYS[1]] = GATE_ON_DB
+    return y
+
+
 def canon_gate(x):
-    """An off gate's threshold to GATE_ON_DB (it can't sound while off; a flip on then tests a gate that acts)."""
+    """An off gate's threshold to GATE_ON_DB (it can't sound while off)."""
     y = dict(x)
     if str(y.get(GATE_KEYS[0], "false")).lower() not in ("true", "1"):
         y[GATE_KEYS[1]] = GATE_ON_DB
@@ -128,16 +139,17 @@ def make_canon(amp):
 
 
 def c1a_start(label, amp):
-    """The stored label as it is (`knob_ceiling2.stage1_start`: inert keys only), in canonical form. label:
-    {"module/key": value} -> {(module, key): value}."""
+    """The stored label (`knob_ceiling2.stage1_start`: inert keys only) with the gate on at the factory threshold
+    (`gate_on`), in canonical form. label: {"module/key": value} -> {(module, key): value}."""
     from learn import knob_ceiling2 as K2
     from learn import local_objective as LO
 
-    return make_canon(amp)(K2.stage1_start(LO.tdict(label), amp))
+    return make_canon(amp)(gate_on(K2.stage1_start(LO.tdict(label), amp)))
 
 
-def audible_change(start, label, amp):
-    """Keys the start changes from the label that can sound in the start (must be empty)."""
+def audible_change(start, label, amp, declared=()):
+    """Keys the start changes from the label that can sound in the start, less the `declared` ones (the gate turned on,
+    which the start check verifies by render instead). Must be empty."""
     from learn import every_control as E
     from learn import local_objective as LO
 
@@ -145,7 +157,7 @@ def audible_change(start, label, amp):
     by = {c.path: c for c in E.table("morgan")}
     out = []
     for k, v in start.items():
-        if lab.get(k) != v:
+        if lab.get(k) != v and k not in declared:
             c = by.get(k)
             if c is None or E.sounds(c, start, amp, True, by):
                 out.append("/".join(k))
@@ -451,7 +463,7 @@ def cmd_search(args):
             raise SystemExit(f"{rec['key']}: the source record's unit, amp, select or label does not fit")
         search, held, lag = src["search"], src["held"], src["lag"]
         start = c1a_start(src["best"]["settings"], amp)
-        bad = audible_change(start, src["best"]["settings"], amp)
+        bad = audible_change(start, src["best"]["settings"], amp, declared=GATE_KEYS)
         if bad:
             raise SystemExit(f"{rec['key']}: the start changes what sounds: {bad}")
         dims = c1a_space(amp, start)
