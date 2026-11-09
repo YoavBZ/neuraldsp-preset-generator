@@ -9,7 +9,7 @@
 - **The user's go for C1a:** "Go", at about 10,000 renders, with the gate included.
 - **The user's word on ranking pages:** several presets may share a rank, instead of a "can't tell" answer.
 - **Every later step** with renders beyond C1a's, or with training, goes to the user with its cost before it runs.
-- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a` and `phase_c1a_a1` (Amendment 1). Code: `learn/full_controls.py`, tests `tests/test_full_controls.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
+- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1) and `phase_c1a_ear` (C1a by ear). Code: `learn/full_controls.py`, tests `tests/test_full_controls.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
 
 **The every-control plan's stage 1 never ran.** It is a true-DI oracle for the groups with no number, about 13–14k renders. It was approved on 2026-10-22 and waited for a trusted data list. Then the work moved to the trusted data and the pipeline fix. This amendment carries its goal onto today's route (FT2 and its real rows). It folds stage 1's never-measured groups in as C1b.
 
@@ -154,6 +154,45 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **Resume.** Records already written, refused ones included, are skipped.
 - **Counts.** The shard's last line and the report count each kind: on, off after a miss, refused. Records written before the amendment carry no flag and count as on.
 - **Cost.** A gate-only miss adds 4 renders (the missed start's process and the second start). A refused record costs 4 renders, or 6 when the gate-off run itself misses.
+
+### C1a by ear (declared 2026-11-09, after C1a's score read and before any render for it; ledger `phase_c1a_ear`)
+
+- **Why.** C1a's result is J0's alone (F69). No real-song verdict stands on the score alone, so this page reads it by ear.
+- **The user's yes (2026-11-09).** "Yes" to "a short blind A/B page, about 14 items, comparing the current label with the C1a preset … costs about 30 renders. Ties are allowed."
+  - The count was wrong: every item needs two fresh renders, each with its priming render. The page costs **56 renders**: 14 items × 2 candidates × 2. The repeats reuse their clips.
+- **Items, 14 first hearings and 2 repeats.**
+  - **N12's 7 never-heard units, all of them.** Each is outside N12's cards and spares, and was never played on N12's or H4b's page.
+    - `cap/1w1lkv30jfn#ac20` and `cap/a9j26sllzrq_a2#ac20` (Storm Of Particles).
+    - `cap/9nbhb9zvawu#ac20` and `cap/piou1nfi5cm_a2#ac20` (Ale Lak).
+    - `cap/3iqknlf6u0x_a2#sw50r` (The Travelling Band) and `cap/rtxifphieu#sw50r` (Dark Ride).
+    - `cap/wji8wcrx9yf#sw50r` (Rebuild The Evil, crunch).
+    - The other six are clean. The unplayed spares are none: N12 played both of its spares.
+  - **7 of BKS's searched records outside real_out, at most one a DI.** Seed 20261125: 7 of the 8 DIs, then one record each. That gives 4 crunch and 3 clean.
+  - **2 repeats of the decision pair,** one from each set, seeded (20261126). Each sits at least 4 items after its first hearing, with the letters swapped.
+- **Each item.**
+  - The record's held half is the reference.
+  - Two candidates, the letters shuffled per item, with the label on A for half the first hearings:
+    - the stored label (`best.settings` of the source record);
+    - C1a's best (its 100-evaluation `label`).
+  - **Rendering.** Both are rendered fresh through the record's DI, in their own process with one priming render, on `full_controls`' `fresh()` path: `AM.fresh_render`, the 0.25 s trim, isolate=True, at most 3 render processes.
+  - **Check.** Each render's held-half judge must match the stored one within 0.005 (ln): the source's `best.judge[held]` for the label, and C1a's `fresh.best.judge[held]` for C1a. A miss stops the shard.
+  - **The clips** are the held half's judge window at the record's lag (`score_ear.h4_window`). They are levelled as a group, as earlier pages are.
+- **Answers.**
+  - Per item, A and B each get a rank: 1 is closer, 2 is further. Both may hold the same rank, which is a tie; that is the user's rule, with no "can't tell" button.
+  - Closeness ratings and confidence are optional.
+  - Stored in the artifact's `answers/<build>` document.
+- **The read, declared.**
+  - **The primary:** the share of first hearings where C1a is ranked above the label, a tie counted as a half. It uses a jackknife t clustered by N12's band and BKS's DI, one-sided against one half (`score_ear.jackknife_t`). No bar: the share and its interval are the result.
+  - **Beside:**
+    - the same by set and by class;
+    - the repeats' agreement (the same preference on both hearings);
+    - J0 against the ear: on the items not tied by ear, how often J0's held-half sign, ln(d_C1a / d_label) from these renders, agrees;
+    - the mean closeness gap where both were rated.
+  - **The page is read** if at least 10 of the 14 first hearings are answered.
+- **What it leads to.** It is a description, and nothing is adopted from it alone.
+  - An ear read that agrees with F69 supports building C2 on C1a's recipe.
+  - One that reverses it, C1a heard below the label, goes to the user before C2.
+- **Code:** `learn/c1a_ear.py` (`c1a-ear-draw`, `c1a-ear-render`, `c1a-ear-page`, `c1a-ear-read`). Tests: `tests/test_c1a_ear.py`.
 
 ## C5: the heavy clean-up re-tested on the full-control model
 - **What F68 said, and what has changed.** F68 closed the clean-up with "This clean-up is not reopened." Its verdict on the `K.space` model stands.
