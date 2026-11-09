@@ -9,7 +9,7 @@
 - **The user's go for C1a:** "Go", at about 10,000 renders, with the gate included.
 - **The user's word on ranking pages:** several presets may share a rank, instead of a "can't tell" answer.
 - **Every later step** with renders beyond C1a's, or with training, goes to the user with its cost before it runs.
-- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`. Code: `learn/full_controls.py`, tests `tests/test_full_controls.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
+- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a` and `phase_c1a_a1` (Amendment 1). Code: `learn/full_controls.py`, tests `tests/test_full_controls.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
 
 **The every-control plan's stage 1 never ran.** It is a true-DI oracle for the groups with no number, about 13–14k renders. It was approved on 2026-10-22 and waited for a trusted data list. Then the work moved to the trusted data and the pipeline fix. This amendment carries its goal onto today's route (FT2 and its real rows). It folds stage 1's never-measured groups in as C1b.
 
@@ -131,6 +131,20 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
     - real_out apart.
 - **What it leads to:** the labels and the budget for C2, and the size that orders C1b and C2. There is no bar.
 - **Cost, an upper bound:** 71 records × (1 priming + 100 + 5 fresh renders × 2) ≈ 7,900 renders. The subset adds 12 × (200 + 2) ≈ 2,400. That is about 10,300 in all, about 2.5 h at H4a's measured rate. The reuse above can only lower it. No training.
+
+### C1a, Amendment 1 (2026-11-09): a start miss is tried with the gate as in the label, else refused
+
+- **When it was declared.** After shard 2 stopped on one record's start check, and before any C1a result is read.
+  - The record: `cap/1xiluf3lhnm#ac20`. The gate-on start scored 2.9622 against the stored label's 2.9774, an ln gap of 0.0051.
+  - So the gate at −80 dB is not inert there: it scores about 0.5% better.
+  - Shards 0 and 1 kept running, and their records are kept as written.
+- **The rule, on a start miss:**
+  1. One more start is rendered, in its own process with one priming render, as the start is: the same start with the gate as in the label (off, its threshold canonical at −80).
+  2. **If it matches the stored label within 0.005,** the gate alone caused the miss. The record runs from this gate-off start. The gate stays searchable: its flip tests a gate on at −80, which acts on such a record, so the threshold then moves. The record is flagged `start_gate: "off_after_miss"`, with both start values in `first_start_miss`.
+  3. **Otherwise** the record is written refused (`start_gate: "refused"`), with both values, and the shard continues. A shard never stops on a start miss.
+- **Resume.** Records already written, refused ones included, are skipped.
+- **Counts.** The shard's last line and the report count each kind: on, off after a miss, refused. Records written before the amendment carry no flag and count as on.
+- **Cost.** A gate-only miss adds 4 renders (the missed start's process and the second start). A refused record costs 4 and nothing more.
 
 ## C5: the heavy clean-up re-tested on the full-control model
 - **What F68 said, and what has changed.** F68 closed the clean-up with "This clean-up is not reopened." Its verdict on the `K.space` model stands.
