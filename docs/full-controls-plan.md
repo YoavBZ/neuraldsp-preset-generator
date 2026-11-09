@@ -57,11 +57,13 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **C1a** (approved; this plan in full below): the EQ, pedals, compressor and gate on top of the label. On N12's 31 units and BKS's 40, as labels and a measurement.
 - **C1b** (declared before it runs; the user's go): the time effects, the spring, the room mics and the left cab, on C1a's records.
   - Each effect is searched on its own, rendered in a fresh process, with a keep margin declared first (knob ceiling 2's stage 2).
-  - It also re-checks the mics, since N12's v2 mics came from a 4-mic short list and the EQ can compensate for a wrong mic.
+  - It re-checks the mics and re-searches the amp EQ jointly with them, since N12's v2 mics came from a 4-mic short list and the EQ can compensate for a wrong mic.
 - **C2** (the user's go): C1a and C1b's recipe on every training record. That is GOAT's, BKS's stage-2 records, and BKS's other 80 stage-1 records, because FT2 trains all three forced-amp records per unit.
   - **Cost, stated now:** about 490 records × 105 ≈ 51k renders at a budget of 100. Up to about 150k at 300. C1a's calibration sets the budget.
+  - **C1a's BKS records are continued, not searched again.** If C2's budget exceeds 100, each one is replayed from its stored trials (the search is deterministic) at zero renders, and only the evaluations past 100 are rendered.
 - **C3** (the user's go, training): FT2 retrained on the full labels.
   - **Masks.** Each record trains only the heads its own search covered: `searched_heads` generalised to a per-record space. That is C1a's space plus the mics for C1a and C2 records, and `K.space` for the rest. `EQActive` is masked: it is forced on. Unmasking unsearched heads would repeat F55.
+  - **A C1a label that fell back** (stored as `None`) falls back to its source label, with the source's `K.space` mask.
   - **The read is H4's,** with one row beside: C3 with the new controls at S, because C1a also re-tunes the core knobs.
   - **Adoption, per family:** "C3 less C3 with that family at S" is at or below 0 by the score, and C4 does not reverse it. A family not adopted is written at S in the product and stays open, with its next route and blocker named.
 - **C4:** a blind page of full-control presets against FT2 and S.
@@ -78,22 +80,32 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **real_out:** the 2 BKS units in H4's real_out (`pipeline_fix.h4_exclusions()`) are searched and reported apart. BKS is one band, so its clusters are its DIs.
   - **N12's labels are measurement only.** They never become C2 or C3 training rows: N12 is FT2's, H4a's and H4b's read set.
   - **Not touched:** V-real, NS, the panel, the reserve (`HELD_BANDS` apart from BKS), and GOAT (it is C2's).
-- **The unheard-card pool for C4 and C5.** N12's 31 units less every unit already heard on N12's page and H4b's (`ear-wide/plan.json`, `ear-wide/h4b/plan.json`). It is topped up from batch 2's trusted units outside every training set, if that is short.
-- **Start:** the record's stored label as it is. Every S already has its amp EQ and the EQ and pedal sections on, so `knob_ceiling2.stage1_start` changes only inert keys: the knobs of pedals that are off, set to neutral, and the gate's threshold when the gate is off. There is no audible change.
+- **The unheard-card pool for C4 and C5.** This is N12's 31 units less every unit already heard on N12's page and H4b's (`ear-wide/plan.json`, `ear-wide/h4b/plan.json`). That leaves **7 units**, or 9 if N12's unplayed spares count: Ale Lak 2, Storm Of Particles 2, Dark Ride, The Travelling Band (clean), and Rebuild The Evil (crunch). Counted 2026-11-09 at zero renders.
+  - **No top-up source exists yet.** It was checked at zero renders:
+    - batch 2's 32nd trusted unit has no finite held judge;
+    - its other 115 units failed the gate;
+    - batch 1's units trained N9's and N10's arms;
+    - GOAT and BKS are training rows;
+    - V-real and the panel are held out.
+  - **C4 needs a new source before it is built,** such as a third capture batch, on the user's yes.
+- **Start:** the record's stored label as it is. Every S already has its amp EQ and the EQ and pedal sections on, so `knob_ceiling2.stage1_start` changes only inert keys: the knobs of pedals that are off, set to neutral. The gate's own canonical form then sets an off gate's threshold, which `stage1_start` does not touch. There is no audible change.
   - **The check:** the first evaluation's search-half value must equal `best.judge[search]` within 0.005 in log. Its render sha is recorded beside `best.render_sha256`. A miss stops the shard.
 - **Space:** `knob_ceiling2.stage1_space`'s controls, about 37 to 42 an amp. The core knobs have input gain at FT2's head range, −20 to +12 dB, not −24. Then the amp EQ, drive 1, drive 2 and the compressor, plus the gate: `gateActive` as a switch and `gateThreshold` from −96 to 0 dB.
   - The mic types are held at the label's.
-  - Canonical form: `canon_pedals`, then the gate's own (`every_control.group_canon("gate")`). A move that changes nothing audible costs no render.
+  - **Canonical form:** `canon_pedals`, then the gate's: an off gate's threshold goes to an acting value, so a flip on tests a gate that acts.
+    - That value is the median threshold of the factory menu's presets with the gate on, read from the preset files at zero renders (`full_controls.factory_gate_median`). It is −60 dB if none had the gate on.
+    - **Used: −80 dB.** 102 of the 107 factory presets have the gate on, with a median of −80.0, the same as the table's neutral. `c1a-draw` re-reads it and refuses on a mismatch.
+    - A move that changes nothing audible costs no render.
 - **Search:** `knob_ceiling.coord_search` from the start, with `canon`, seed 20261123, which no other run uses.
   - **Budget:** 100 evaluations on every record.
   - **The calibration subset:** a seeded subset of 12 records, 6 from each set, drawn by `c1a-draw` with seed 20261124, runs on to 300. The search is deterministic and the budget only truncates it, so the subset's first 100 evaluations are its 100-budget run.
   - **Checkpoints:** incumbents at 50, 100, 150, 200 and 300 evaluations, with both halves' judge from the in-process render.
-  - **Declared now:** C2's budget is the first checkpoint at which the subset's median search-half gain reaches 90% of its 300-evaluation gain, the gain being ln(d_start / d_incumbent).
+  - **Declared now: C2's budget** is the first checkpoint at which the median, over the subset's records, of each record's ratio gain(n) / gain(300) on the search half reaches 0.9. The gain is ln(d_start / d_incumbent). Records with no gain at 300 are left out.
 - **Harness:** `pipeline_fix.search_units`'s and `cmd_real_search`'s render path.
   - The audio: `song_bank.measure` of the section's DI, `pretrain_set`'s trim, `real_amp_track` for the reference, and the record's stored lag.
   - The renderer: `cc_build.new_renderer`, with edits in `sorted_x`'s order.
   - Each record runs in its own renderer process, primed once with its own start. At most 3 render processes, by `local_objective`'s cap. The disk guard is 31 GB.
-  - `fallback_reason` (peak and silence) is applied to each new label, since pedal levels can change peaks. A fallback label is stored as `None`.
+  - `fallback_reason` is applied to each new label: a silence floor on the render's peak, or a refused search-half objective. It is not a test of high peaks. A fallback label is stored as `None`.
 - **Recorded per record:**
   - **The record itself:** every evaluation's setting and both halves' judge, the checkpoints, and the in-process best.
   - **Fresh renders** (each in a new process with one priming render, as `audibility_measure.fresh_render`):
@@ -101,20 +113,23 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
     - the 300-budget best on the subset;
     - four ablations of the 100-budget best: pedals reset to the start's, amp EQ reset to the label's, both reset, and the gate reset to the start's.
   - All of them are judged on both halves.
+  - **Reuse:** an ablation whose canonical setting equals the best's reuses the best's fresh render, and the 300 best does too when it equals the 100 best. Each is marked `same_as_best`.
+  - **Also stored:** the start's settings (`start_settings`), and `measurement_only: true` on N12's records.
 - **The label is stored in today's record schema** (`unit`, `amp`, `select`, `search`, `held`, `lag`, `s_judge`, `curve`, `best`, `label`). It goes in parallel directories, `captures2/search-c1a/` and `real/search-c1a/`, with each record's searched-key list for C3's per-record masks.
-- **Rows** (held half, ln ratio, per set, all and by class; clustered by DI for BKS and by band for N12; 90% cluster-jackknife t intervals, df = clusters − 1):
+- **Rows** (held half, ln ratio, per set, all and by class; clustered by DI for BKS and by band for N12; 90% cluster-jackknife t intervals, df = clusters − 1, record-weighted; beside each, the band-weighted reading from `pipeline_fix.clustered` with its per-cluster breakdown):
   - **The primary:** C1a's fresh 100-budget best against the stored label.
   - **Beside:**
     - Each ablation against the best.
-    - Each pedal's state changed from the label's, counted.
+    - Each pedal's state changed from the label's, counted, and, for each pedal on in the best, its knobs moved from the label's.
     - The amp EQ moved from S's curve, counted.
     - The gate's state changed, counted.
     - The label against S, for scale.
-    - The subset's curve and its 300-budget best.
-    - BKS's amp choice against the label's mean over the three amps, on the search half.
+    - The subset's checkpoint curves, from the stored checkpoint judges: on the search half (which sets C2's budget) and on the held half beside it.
+    - The subset's held-half rows per set: ln(fresh 300 best / fresh 100 best) and ln(fresh 300 best / label).
+    - BKS's amp choice, chosen on the search half and read on the held half: the chosen amp's log held judge less the mean over the three amps, as stage 0b read it.
     - real_out apart.
 - **What it leads to:** the labels and the budget for C2, and the size that orders C1b and C2. There is no bar.
-- **Cost:** 71 records × (1 priming + 100 + 5 fresh renders × 2) ≈ 7,900 renders. The subset adds 12 × (200 + 2) ≈ 2,400. That is about 10,300 in all, about 2.5 h at H4a's measured rate. No training.
+- **Cost, an upper bound:** 71 records × (1 priming + 100 + 5 fresh renders × 2) ≈ 7,900 renders. The subset adds 12 × (200 + 2) ≈ 2,400. That is about 10,300 in all, about 2.5 h at H4a's measured rate. The reuse above can only lower it. No training.
 
 ## C5: the heavy clean-up re-tested on the full-control model
 - **What F68 said, and what has changed.** F68 closed the clean-up with "This clean-up is not reopened." Its verdict on the `K.space` model stands.
@@ -135,5 +150,6 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 ## Caveats
 - **The search half flatters the search.** The held half is the read.
 - **Search order.** The core knobs re-tune with the pedals, so a pedal's gain can come back as amp-knob gain. The ablations bound that.
+- **A short search.** At 100 evaluations over 37 to 42 dims, the search makes about 1.5 sweeps. So the primary is a lower bound on what these controls are worth, and the subset's 300-evaluation rows bound how loose it is.
 - **The scores are J0's.** F44: J0 weighs treble and drive above the ear. C4 is the ear check.
 - **N12's labels are v2's,** a different search from BKS's main stage. C1a continues from each record's stored label either way.

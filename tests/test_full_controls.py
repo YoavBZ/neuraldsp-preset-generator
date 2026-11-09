@@ -1,4 +1,5 @@
 """C1a (docs/full-controls-plan.md): the pure parts of learn/full_controls.py."""
+import json
 import math
 import re
 
@@ -11,6 +12,7 @@ from learn import full_controls as F  # noqa: E402
 from learn import knob_ceiling as K  # noqa: E402
 from learn import knob_ceiling2 as K2  # noqa: E402
 from learn import local_objective as LO  # noqa: E402
+from learn import pipeline_fix as P  # noqa: E402
 
 
 def rec(v, search="A", label=True):
@@ -88,7 +90,7 @@ def test_make_canon_neutralises_off_pedals_and_an_off_gate_only():
     x[("parameters", "gateThreshold")] = "-30"
     y = F.make_canon("pr12")(x)
     assert y[("drive1", "drive1Drive")] == K2.PEDALS["drive1"][1]["drive1Drive"]
-    assert y[("parameters", "gateThreshold")] == "-80"
+    assert y[("parameters", "gateThreshold")] == F.GATE_ON_DB == "-80"                  # the factory median
     assert F.make_canon("pr12")(y) == y                                      # idempotent
     x[("drive1", "drive1Active")] = "true"
     x[("parameters", "gateActive")] = "true"
@@ -106,7 +108,7 @@ def test_c1a_start_changes_nothing_that_sounds_and_audible_change_catches_what_d
     label = LO.sdict(lab)
     st = F.c1a_start(label, "pr12")
     assert st[("pr12EQ", "pr12EQBand3")] == "4.5"
-    assert st[("drive2", "drive2Gain")] != "0.77" and st[("parameters", "gateThreshold")] == "-80"
+    assert st[("drive2", "drive2Gain")] != "0.77" and st[("parameters", "gateThreshold")] == F.GATE_ON_DB
     assert F.audible_change(st, label, "pr12") == []
     off = dict(lab)
     off[("pr12EQ", "pr12EQActive")] = "false"                                  # an inactive EQ: eq_start flattens it
@@ -173,7 +175,8 @@ def test_jackknife_mean_by_hand():
 
 def searched(cluster, cls, label_h, new_h, s_h, abl=1.0, held="B"):
     j = lambda v: {"A": 9.0, "B": v} if held == "B" else {"A": v, "B": 9.0}          # noqa: E731
-    return {"cluster": cluster, "cls": cls, "held": held, "label": {}, "source_best_judge": j(label_h),
+    return {"cluster": cluster, "unit": f"u-{cluster}", "cls": cls, "held": held, "label": {},
+            "source_best_judge": j(label_h),
             "s_judge": j(s_h), "fresh": {"best": {"judge": j(new_h)},
                                           "ablations": {a: {"judge": j(new_h * abl)} for a in F.ABLATIONS}},
             "changed": {"drive1": True, "drive2": False, "compressor": False, "eq_moved_from_S": True, "gate": False}}
@@ -182,7 +185,7 @@ def searched(cluster, cls, label_h, new_h, s_h, abl=1.0, held="B"):
 def test_report_rows_use_the_held_half_and_split_by_class():
     rs = [searched("d1", "clean", 4.0, 3.0, 5.0), searched("d2", "crunch", 4.0, 4.4, 5.0, abl=1.1),
           searched("d3", "clean", 2.0, 2.0, 2.5, held="A")]
-    out = F.report_rows(rs, lambda df: 2.0)
+    out = F.report_rows(rs, lambda df: 2.0, P.clustered)
     p = out["all"]["primary"]
     assert math.isclose(p["mean"], (math.log(0.75) + math.log(1.1) + 0.0) / 3) and p["clusters"] == 3
     assert math.isclose(out["clean"]["primary"]["mean"], math.log(0.75) / 2)
@@ -191,7 +194,14 @@ def test_report_rows_use_the_held_half_and_split_by_class():
     assert math.isclose(out["crunch"]["ablations"]["gate_reset"]["mean"], math.log(1.1))
     assert out["all"]["changed_counts"] == {"drive1": 3, "drive2": 0, "compressor": 0, "eq_moved_from_S": 3, "gate": 0}
     nolabel = dict(rs[0], label=None)
-    assert F.report_rows([nolabel], lambda df: 2.0)["records"] == 0
+    assert F.report_rows([nolabel], lambda df: 2.0, P.clustered)["records"] == 0
+    bw = out["all"]["primary"]["band_weighted"]
+    assert bw["clusters"] == 3 and set(bw["per_cluster"]) == {"d1", "d2", "d3"}
+    assert math.isclose(bw["per_cluster"]["d2"], math.log(1.1))
+    broken = dict(rs[0], fresh={"best": {"judge": {"A": 9.0, "B": float("nan")}}, "ablations": {}})
+    assert F.report_rows([broken], lambda df: 2.0, P.clustered)["records"] == 0      # finite guard
+    no_s = dict(rs[0], s_judge={"A": 9.0, "B": 0.0})
+    assert F.report_rows([no_s], lambda df: 2.0, P.clustered)["records"] == 0
 
 
 def test_changed_reads_switches_from_the_start_and_the_eq_from_s():
@@ -200,7 +210,16 @@ def test_changed_reads_switches_from_the_start_and_the_eq_from_s():
     best = dict(st)
     best[("compressor", "compressorActive")] = "true"
     out = F.changed(best, st, "pr12", S)
-    assert out == {"drive1": False, "drive2": False, "compressor": True, "eq_moved_from_S": False, "gate": False}
+    assert out == {"drive1": False, "drive2": False, "compressor": True, "eq_moved_from_S": False, "gate": False,
+                   "drive1_knobs": False, "drive2_knobs": False, "compressor_knobs": False}
+    st_on = dict(st)
+    st_on[("drive1", "drive1Active")] = "true"
+    moved = dict(st_on)
+    moved[("drive1", "drive1Tone")] = "0.9"
+    assert F.changed(moved, st_on, "pr12", S)["drive1_knobs"] and not F.changed(moved, st_on, "pr12", S)["drive1"]
+    off = dict(st)
+    off[("drive1", "drive1Tone")] = "0.9"                                       # an off pedal's knobs don't count
+    assert not F.changed(off, st, "pr12", S)["drive1_knobs"]
     best[("pr12EQ", "pr12EQHpf")] = "80"
     best[("parameters", "gateActive")] = "true"
     out = F.changed(best, st, "pr12", S)
@@ -208,6 +227,9 @@ def test_changed_reads_switches_from_the_start_and_the_eq_from_s():
     S2 = dict(S)
     S2[("pr12EQ", "pr12EQActive")] = "false"                                 # the switch itself doesn't count
     assert F.changed(dict(st), st, "pr12", S2)["eq_moved_from_S"] is False
+    S3 = dict(S)
+    S3[("pr12EQ", "pr12EQBand5")] = "-6"                                        # the label's EQ already differs from S's
+    assert F.changed(dict(st), st, "pr12", S3)["eq_moved_from_S"] is True
 
 
 def test_the_search_is_a_render_command_and_the_rest_are_not():
@@ -257,3 +279,140 @@ def test_amp_choice_value_is_the_chosen_held_half_against_the_mean_log():
     assert math.isclose(F.amp_choice_value(recs, "pr12"), math.log(2.0) - (math.log(2.0) + math.log(4.0)) / 2)
     recs["ac20"] = r(8.0, held="A")
     assert math.isclose(F.amp_choice_value(recs, "sw50r"), math.log(4.0) - math.log(64.0) / 3)
+    recs["pr12"] = r(float("inf"))                                               # finite guard
+    assert math.isclose(F.amp_choice_value(recs, "sw50r"), math.log(4.0) - math.log(32.0) / 2)
+    assert F.amp_choice_value(recs, "pr12") is None
+
+
+def test_canon_gate_uses_the_declared_acting_value(monkeypatch):
+    monkeypatch.setattr(F, "GATE_ON_DB", "-55")
+    x = {("parameters", "gateActive"): "false", ("parameters", "gateThreshold"): "-12"}
+    assert F.canon_gate(x)[("parameters", "gateThreshold")] == "-55"
+    x[("parameters", "gateActive")] = "true"
+    assert F.canon_gate(x)[("parameters", "gateThreshold")] == "-12"
+    st = full_start()
+    st[("parameters", "gateActive")] = "false"
+    assert F.make_canon("pr12")(st)[("parameters", "gateThreshold")] == "-55"
+
+
+def test_subset_curves_read_both_halves_from_the_checkpoints():
+    r = {"subset": True, "search": "A", "held": "B", "trials": [{"judge": {"A": 4.0, "B": 5.0}}],
+         "checkpoints": {"50": {"judge": {"A": 2.0, "B": 4.0}}, "300": {"judge": {"A": 1.0, "B": 5.0}}}}
+    (c,) = F.subset_curves([r, dict(r, subset=False)])
+    assert math.isclose(c["search"][50], math.log(2.0)) and math.isclose(c["search"][300], math.log(4.0))
+    assert math.isclose(c["held"][50], math.log(5 / 4)) and c["held"][300] == 0.0
+
+
+TARGET = {("pr12EQ", f"pr12EQBand{i + 1}"): t for i, t in enumerate((5, -7, 3, 9, -2, 6, -4, 8, 1))}
+
+
+def _value(x):
+    return 2.0 + sum((float(x[k]) - t) ** 2 for k, t in TARGET.items()) / 1000
+
+
+def _stub(tmp_path, monkeypatch, recs, miss=False, src_amp="pr12"):
+    """cmd_search on stub audio and a stub renderer whose judge reads the EQ's distance to TARGET."""
+    import argparse  # noqa: F401
+    np = pytest.importorskip("numpy")
+    from learn import arm_a_levers as L
+    from learn import audibility_measure as AM
+    from learn import cc_build as CB
+    from learn import pretrain_set as PS
+    from learn import song_bank as B
+
+    S = full_start("pr12")
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    monkeypatch.setattr(P, "require", lambda k: {})
+    monkeypatch.setattr(LO, "_wait_cap", lambda *a: None)
+    monkeypatch.setattr(PS, "free_gb", lambda: 1e9)
+    monkeypatch.setattr(PS, "TRIM_S", 0.0)
+    monkeypatch.setattr(PS, "SEC_S", 1.0)
+    monkeypatch.setattr(PS, "SR", 4)
+    monkeypatch.setattr(PS, "section_audio", lambda path, start: np.zeros(4))
+    monkeypatch.setattr(B, "measure", lambda a: np.zeros(4))
+    monkeypatch.setattr(P, "real_amp_track", lambda sd, track, start: np.zeros(4))
+    monkeypatch.setattr(L, "menu_S", lambda: {"pr12": {"clean": (0, S)}})
+    calls = {"n": 0}
+
+    class R:
+        def render(self, di, sel, x):
+            calls["n"] += 1
+            return np.full(4, _value(x))
+
+        def close(self):
+            pass
+
+    def fresh(make, di, sel, xp, x):
+        calls["n"] += 2
+        return np.full(4, _value(x))
+    monkeypatch.setattr(CB, "new_renderer", lambda: R())
+    monkeypatch.setattr(AM, "fresh_render", fresh)
+    monkeypatch.setattr(K, "judge", lambda ref, y, di, lag: {"A": float(y[0]), "B": float(y[0]) + 0.5})
+    monkeypatch.setattr(F, "BUDGET", 10)
+    monkeypatch.setattr(F, "SUBSET_BUDGET", 30)
+    monkeypatch.setattr(F, "CHECKPOINTS", (5, 10, 20, 30))
+    label = LO.sdict(S)
+    v0 = _value(F.c1a_start(label, "pr12"))
+    rows = []
+    for i, (st, subset) in enumerate(recs):
+        unit = f"{'cap' if st == 'n12' else 'set5'}/u{i}"
+        src = tmp_path / "src" / f"u{i}.json"
+        src.parent.mkdir(parents=True, exist_ok=True)
+        src.write_text(json.dumps({"unit": unit, "amp": src_amp, "select": 0, "label": label, "search": "A", "held": "B",
+                                   "lag": 0, "s_judge": {"A": 3.0, "B": 3.5}, "rig": "r", "di": "d",
+                                   "best": {"settings": label, "judge": {"A": v0 * (1.1 if miss else 1.0), "B": v0 + 0.5},
+                                            "render_sha256": "x"}}))
+        rows.append({"set": st, "key": f"{unit}|pr12", "unit": unit, "amp": "pr12", "cls": "clean", "cluster": f"c{i}",
+                     "source": str(src), "prt": {"di_path": "", "start_s": 0.0, "sd": "", "track": ""},
+                     "real_out": False, "subset": subset, "budget": 30 if subset else 10})
+    (tmp_path / "c1a").mkdir(exist_ok=True)
+    (tmp_path / "c1a" / "records.json").write_text(json.dumps({"records": rows}))
+    return rows, calls
+
+
+def _out(tmp_path, r):
+    root, sub = F.OUT_DIRS[r["set"]]
+    return tmp_path / root / sub / f"{F.fname(r['key'])}.json"
+
+
+def test_cmd_search_labels_resume_and_render_count(tmp_path, monkeypatch, capsys):
+    import argparse
+    rows, calls = _stub(tmp_path, monkeypatch, [("bks", True), ("n12", False), ("n12", False)])
+    kept = _out(tmp_path, rows[2])
+    kept.parent.mkdir(parents=True, exist_ok=True)
+    kept.write_text('{"kept": true}')
+    F.cmd_search(argparse.Namespace(shard=(0, 1)))
+    assert json.loads(kept.read_text()) == {"kept": True}                        # resume: skipped
+    sub, plain = (json.loads(_out(tmp_path, r).read_text()) for r in rows[:2])
+    names = [d.name for d in F.c1a_space("pr12", F.c1a_start(LO.sdict(full_start("pr12")), "pr12"))]
+    assert sub["searched_keys"] == names == plain["searched_keys"]
+    assert sub["evaluations"] == 30 and plain["evaluations"] == 10
+    i10, i30 = F.incumbent_at(sub["curve"], 10), F.incumbent_at(sub["curve"], 30)
+    assert i10 != i30
+    for lab, i in ((sub["label"], i10), (sub["label_300"], i30)):
+        assert {k: lab[k] for k in names} == sub["trials"][i]["x"]
+    assert {k: plain["label"][k] for k in names} == plain["trials"][F.incumbent_at(plain["curve"], 10)]["x"]
+    assert sub["start_settings"] and plain["measurement_only"] and not sub["measurement_only"]
+    assert sub["fresh"]["ablations"]["pedals_reset"]["same_as_best"]                 # nothing to reset: reused
+    assert not sub["fresh"]["ablations"]["eq_reset"]["same_as_best"]
+    assert not sub["fresh"]["best_300"]["same_as_best"]                          # a different best: rendered fresh
+    assert sub["fresh"]["best_300"]["judge"] == sub["trials"][i30]["judge"]
+    assert sub["fresh"]["best"]["judge"] == sub["trials"][i10]["judge"]
+    want = sum(1 + r["evaluations"] + 2 * (1 + sum(not a["same_as_best"] for a in r["fresh"]["ablations"].values())
+                                          + (0 if "best_300" not in r["fresh"] or r["fresh"]["best_300"]["same_as_best"]
+                                             else 1)) for r in (sub, plain))
+    assert f"C1A-SEARCH DONE 0/1: {want} renders" in capsys.readouterr().out and calls["n"] == want
+
+
+def test_cmd_search_stops_on_a_start_miss(tmp_path, monkeypatch):
+    import argparse
+    _stub(tmp_path, monkeypatch, [("n12", False)], miss=True)
+    with pytest.raises(SystemExit, match="is not the stored label's"):
+        F.cmd_search(argparse.Namespace(shard=(0, 1)))
+
+
+def test_cmd_search_refuses_a_source_of_another_amp(tmp_path, monkeypatch):
+    import argparse
+    _stub(tmp_path, monkeypatch, [("n12", False)], src_amp="sw50r")
+    with pytest.raises(SystemExit, match="does not fit"):
+        F.cmd_search(argparse.Namespace(shard=(0, 1)))

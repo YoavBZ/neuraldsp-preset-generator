@@ -30,6 +30,11 @@ GAIN_DB = (-20.0, 12.0)              # FT2's input-gain head range (`knob_ceilin
 PEDAL_MODULES = ("drive1", "drive2", "compressor")
 PEDAL_SWITCHES = (("drive1", "drive1Active"), ("drive2", "drive2Active"), ("compressor", "compressorActive"))
 GATE_KEYS = (("parameters", "gateActive"), ("parameters", "gateThreshold"))
+GATE_ON_DB = "-80"                   # an off gate's canonical threshold, so a flip on tests a gate that acts: the median
+                                     # threshold of the factory menu's presets with the gate on (102 of 107, read
+                                     # 2026-11-09 at zero renders, `factory_gate_median`); -60 if there were none
+GATE_FALLBACK_DB = -60.0
+FACTORY = "/Library/Audio/Presets/Neural DSP/Morgan Amps Suite"
 ABLATIONS = ("pedals_reset", "eq_reset", "pedals_eq_reset", "gate_reset")
 SETS = ("n12", "bks")
 OUT_DIRS = {"n12": ("captures2", "search-c1a"), "bks": ("real", "search-c1a")}
@@ -88,15 +93,37 @@ def c1a_space(amp, start):
     return [Dim("parameters", "inputGain", "cont", *GAIN_DB)] + dims + gate_dims()
 
 
+def factory_gate_median(root=FACTORY):
+    """The median threshold (dB) of the factory menu presets (`Neural DSP` and `Artists`) with the gate on, read from the
+    files at zero renders; GATE_FALLBACK_DB if none has it on. -> (median, presets, gate on)."""
+    import pathlib
+
+    from format.parser import parse_file
+    from format.structured import build
+
+    files = sorted(p for d in ("Neural DSP", "Artists") for p in (pathlib.Path(root) / d).rglob("*.xml"))
+    thr = []
+    for f in files:
+        by = build(parse_file(f)).by_path
+        if str(by[("parameters", "gateActive")].value).lower() == "true":
+            thr.append(float(by[("parameters", "gateThreshold")].value))
+    return (statistics.median(thr) if thr else GATE_FALLBACK_DB), len(files), len(thr)
+
+
+def canon_gate(x):
+    """An off gate's threshold to GATE_ON_DB (it can't sound while off; a flip on then tests a gate that acts)."""
+    y = dict(x)
+    if str(y.get(GATE_KEYS[0], "false")).lower() not in ("true", "1"):
+        y[GATE_KEYS[1]] = GATE_ON_DB
+    return y
+
+
 def make_canon(amp):
-    """canon_pedals, then the gate's own canonical form (`every_control.group_canon("gate")`)."""
-    from learn import every_control as E
+    """canon_pedals, then the gate's canonical form (`canon_gate`). `amp` is kept for the callers' symmetry."""
     from learn import knob_ceiling2 as K2
 
-    gate = E.group_canon("gate", amp)
-
     def canon(x):
-        return gate(K2.canon_pedals(x))
+        return canon_gate(K2.canon_pedals(x))
     return canon
 
 
@@ -201,31 +228,55 @@ def with_interval(row, tq):
     return dict(row, lo=row["mean"] - q * row["se"], hi=row["mean"] + q * row["se"])
 
 
+def _pos(v):
+    """A finite positive judge value as float, else None."""
+    try:
+        v = float(v)
+    except (TypeError, ValueError):
+        return None
+    return v if math.isfinite(v) and v > 0 else None
+
+
 def record_values(r):
     """One searched record's held-half rows (ln ratios) and counts, or None if it has no fresh best."""
     h = r["held"]
     fb = (r.get("fresh") or {}).get("best")
     if not fb or r.get("label") is None:
         return None
-    lab_h = float(r["source_best_judge"][h])
-    out = {"primary": math.log(float(fb["judge"][h]) / lab_h),
-           "label_vs_S": math.log(lab_h / float(r["s_judge"][h])),
-           "ablations": {a: math.log(float(r["fresh"]["ablations"][a]["judge"][h]) / float(fb["judge"][h]))
-                         for a in ABLATIONS if a in r["fresh"].get("ablations", {})}}
+    lab_h, new_h, s_h = (_pos(r["source_best_judge"][h]), _pos(fb["judge"][h]), _pos(r["s_judge"][h]))
+    if None in (lab_h, new_h, s_h):
+        return None
+    abl = {}
+    for a in ABLATIONS:
+        v = _pos(((r["fresh"].get("ablations") or {}).get(a) or {}).get("judge", {}).get(h))
+        if v is not None:
+            abl[a] = math.log(v / new_h)
+    out = {"primary": math.log(new_h / lab_h), "label_vs_S": math.log(lab_h / s_h), "ablations": abl}
+    b3 = _pos(((r["fresh"].get("best_300") or {}).get("judge") or {}).get(h))
+    if r.get("subset") and b3 is not None:
+        out["b300_vs_best"], out["b300_vs_label"] = math.log(b3 / new_h), math.log(b3 / lab_h)
     out["changed"] = r.get("changed", {})
     return out
 
 
-def report_rows(recs, tq):
-    """recs: the searched records of one set (each with `cluster`, `cls`). -> rows, all and by class."""
+def report_rows(recs, tq, clus):
+    """recs: the searched records of one set (each with `cluster`, `cls`, `unit`). tq(df): the t quantile; clus: the
+    band-weighted reading (`pipeline_fix.clustered`). -> rows, all and by class, each record-weighted (jackknife t)
+    with the band-weighted reading and its per-cluster breakdown beside."""
     vals = [(r, record_values(r)) for r in recs]
     vals = [(r, v) for r, v in vals if v is not None]
 
+    def row(sub, get):
+        pts = [(r["cluster"], r["unit"], get(v)) for r, v in sub if get(v) is not None]
+        if not pts:
+            return None
+        return dict(with_interval(jackknife_mean([(c, x) for c, _, x in pts]), tq), band_weighted=clus(pts))
+
     def rows(sub):
-        out = {"primary": with_interval(jackknife_mean([(r["cluster"], v["primary"]) for r, v in sub]), tq),
-               "label_vs_S": with_interval(jackknife_mean([(r["cluster"], v["label_vs_S"]) for r, v in sub]), tq),
-               "ablations": {a: with_interval(jackknife_mean([(r["cluster"], v["ablations"][a]) for r, v in sub
-                                                              if a in v["ablations"]]), tq) for a in ABLATIONS}}
+        out = {"primary": row(sub, lambda v: v["primary"]), "label_vs_S": row(sub, lambda v: v["label_vs_S"]),
+               "ablations": {a: row(sub, lambda v, a=a: v["ablations"].get(a)) for a in ABLATIONS},
+               "subset_b300_vs_best": row(sub, lambda v: v.get("b300_vs_best")),
+               "subset_b300_vs_label": row(sub, lambda v: v.get("b300_vs_label"))}
         cnt = {}
         for _, v in sub:
             for k, c in v["changed"].items():
@@ -241,17 +292,46 @@ def report_rows(recs, tq):
     return res
 
 
+def subset_curves(recs):
+    """The subset's checkpoint curves, from the stored checkpoint judges: per record {half: {checkpoint: gain}}, the gain
+    ln(d_start / d_incumbent) on the search half and on the held half (the start's both halves are its first
+    evaluation's)."""
+    out = []
+    for r in recs:
+        if not r.get("subset"):
+            continue
+        s0 = r["trials"][0]["judge"]
+        cur = {}
+        for half, name in ((r["search"], "search"), (r["held"], "held")):
+            v0 = _pos(s0[half])
+            cur[name] = {int(c): math.log(v0 / _pos(cp["judge"][half])) for c, cp in r["checkpoints"].items()
+                         if v0 is not None and _pos(cp["judge"][half]) is not None}
+        out.append(cur)
+    return out
+
+
 def amp_choice_value(recs, chosen):
     """One BKS unit: the chosen amp's held half against an amp chosen blind, log(held of the chosen) less the mean log
     held over the amps with a label (every-control stage 0b's reading). recs: {amp: stored stage-1 record}."""
-    ok = {a: r for a, r in recs.items() if r.get("label") is not None}
-    logs = {a: math.log(float(r["best"]["judge"][r["held"]])) for a, r in ok.items()}
+    logs = {}
+    for a, r in recs.items():
+        v = _pos(r["best"]["judge"].get(r["held"])) if r.get("label") is not None else None
+        if v is not None:
+            logs[a] = math.log(v)
+    if chosen not in logs:
+        return None
     return logs[chosen] - sum(logs.values()) / len(logs)
 
 
 def changed(best, start, amp, S):
     """What the best changed: each pedal's switch from the start (the label), the amp EQ from S's curve, the gate."""
+    from learn import knob_ceiling2 as K2
+
     out = {f"{m}": best.get((m, k)) != start.get((m, k)) for m, k in PEDAL_SWITCHES}
+    for m, k in PEDAL_SWITCHES:                         # an on pedal's knobs moved from the start's
+        on = str(best.get((m, k), "false")).lower() in ("true", "1")
+        knobs = [(m, kk) for kk in K2.PEDALS[m][1]] + ([("compressor", "compressorRelease")] if m == "compressor" else [])
+        out[f"{m}_knobs"] = on and any(best.get(q) != start.get(q) for q in knobs)
     eq = [k for k in best if k[0] == f"{amp}EQ" and k[1] != f"{amp}EQActive"]
     out["eq_moved_from_S"] = any(best.get(k) != S.get(k) for k in eq)
     out["gate"] = best.get(GATE_KEYS[0]) != start.get(GATE_KEYS[0])
@@ -310,13 +390,19 @@ def cmd_draw(_args):
         raise SystemExit(f"{path} exists: the records are drawn once")
     recs = load_sources()
     sub = draw_subset(recs)
+    med, n_files, n_on = factory_gate_median()
+    want = float(GATE_ON_DB) if n_on else GATE_FALLBACK_DB
+    if med != want:
+        raise SystemExit(f"the factory gate median is {med} dB ({n_on} of {n_files} on), not the declared {GATE_ON_DB}")
     for r in recs:
         r["subset"] = r["key"] in sub
         r["budget"] = SUBSET_BUDGET if r["subset"] else BUDGET
+        r["measurement_only"] = r["set"] == "n12"
     P.save(path, {"phase": PHASE, "seed": SEED, "subset_seed": SUBSET_SEED, "records": recs,
+                  "gate_factory": {"median_db": med, "presets": n_files, "gate_on": n_on, "used": GATE_ON_DB},
                   "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     n = {s: sum(1 for r in recs if r["set"] == s) for s in SETS}
-    print("C1A DRAW", n, "subset", len(sub), "renders about",
+    print("C1A DRAW", n, "subset", len(sub), "renders at most",
           sum(1 + r["budget"] + 10 + (2 if r["subset"] else 0) for r in recs), flush=True)
 
 
@@ -361,8 +447,8 @@ def cmd_search(args):
         src = json.loads(open(rec["source"]).read())
         amp, prt = rec["amp"], rec["prt"]
         sel, S = ms[amp][rec["cls"]]
-        if src["select"] != sel or src.get("label") is None:
-            raise SystemExit(f"{rec['key']}: the source record's select or label does not fit")
+        if src["select"] != sel or src.get("label") is None or src["unit"] != rec["unit"] or src["amp"] != amp:
+            raise SystemExit(f"{rec['key']}: the source record's unit, amp, select or label does not fit")
         search, held, lag = src["search"], src["held"], src["lag"]
         start = c1a_start(src["best"]["settings"], amp)
         bad = audible_change(start, src["best"]["settings"], amp)
@@ -414,24 +500,33 @@ def cmd_search(args):
         fr["best"] = {"judge": K.judge(ref, y, di, lag), "render_sha256": AM.audio_sha(y),
                       "peak_dbfs": A.peak_dbfs(y, trim_s=0.0)}
         for name, x in ablation_settings(bx, start, amp).items():
+            if K.key(x) == K.key(bx):                   # nothing to reset: the best's own fresh render
+                fr["ablations"][name] = dict(fr["best"], same_as_best=True)
+                continue
             y = fresh(di32, sel, x)
             renders += 2
-            fr["ablations"][name] = {"judge": K.judge(ref, y, di, lag), "render_sha256": AM.audio_sha(y)}
+            fr["ablations"][name] = {"judge": K.judge(ref, y, di, lag), "render_sha256": AM.audio_sha(y),
+                                     "same_as_best": False}
         extra = {}
         if rec["budget"] > BUDGET:
             b300 = by_order[cps[SUBSET_BUDGET]] if cps.get(SUBSET_BUDGET) is not None else best100
-            y = fresh(di32, sel, b300["x"])
-            renders += 2
-            fr["best_300"] = {"judge": K.judge(ref, y, di, lag), "render_sha256": AM.audio_sha(y)}
+            if K.key(b300["x"]) == K.key(bx):
+                fr["best_300"] = dict(fr["best"], same_as_best=True)
+            else:
+                y = fresh(di32, sel, b300["x"])
+                renders += 2
+                fr["best_300"] = {"judge": K.judge(ref, y, di, lag), "render_sha256": AM.audio_sha(y),
+                                  "same_as_best": False}
             fb3 = A.fallback_reason(b300["peak_dbfs"], b300["judge"][search])
             extra = {"label_300": None if fb3 else LO.sdict(b300["x"]), "fallback_300": fb3}
         P.save(out, {"plan": "docs/full-controls-plan.md", "ledger": f"{P.LEDGER_ID} {PHASE}", "set": rec["set"],
                      "unit": rec["unit"], "rig": src.get("rig"), "di": src.get("di"), "item": src.get("item"),
                      "fold": src.get("fold"), "cls": rec["cls"], "amp": amp, "select": sel, "search": search,
                      "held": held, "lag": lag, "item_lag": src.get("item_lag"), "cluster": rec["cluster"],
-                     "real_out": rec["real_out"], "subset": rec["subset"], "budget": rec["budget"], "seed": SEED,
+                     "real_out": rec["real_out"], "measurement_only": rec["set"] == "n12", "subset": rec["subset"],
+                     "budget": rec["budget"], "seed": SEED, "gate_on_db": GATE_ON_DB,
                      "source": rec["source"], "source_best_judge": src["best"]["judge"], "s_judge": src["s_judge"],
-                     "start": start_rec, "searched_keys": names, "curve": values, "evaluations": len(values),
+                     "start": start_rec, "start_settings": LO.sdict(start), "searched_keys": names, "curve": values, "evaluations": len(values),
                      "trials": trials,
                      "checkpoints": {str(c): {"evaluations": c, "index": i, "judge": by_order[i]["judge"]}
                                      for c, i in cps.items() if i is not None},
@@ -451,21 +546,18 @@ def cmd_report(_args):
 
     P.require(PHASE)
     tq = lambda df: float(stats.t.ppf(0.95, df))          # noqa: E731
-    out = {"phase": PHASE}
+    out = {"phase": PHASE, "gate_on_db": GATE_ON_DB}
     for s in SETS:
         root, sub = OUT_DIRS[s]
         recs = [json.loads(p.read_text()) for p in sorted((P.out_dir() / root / sub).glob("*.json"))]
         main = [r for r in recs if not r["real_out"]]
-        out[s] = {"rows": report_rows(main, tq), "real_out": report_rows([r for r in recs if r["real_out"]], tq),
+        cur = subset_curves(recs)
+        out[s] = {"rows": report_rows(main, tq, P.clustered),
+                  "real_out": report_rows([r for r in recs if r["real_out"]], tq, P.clustered),
                   "fallbacks": sum(1 for r in recs if r["label"] is None),
-                  "start_bit_identical": sum(1 for r in recs if r["start"].get("bit_identical"))}
-        curves = []
-        for r in recs:
-            if not r["subset"]:
-                continue
-            v0 = r["curve"][0]
-            curves.append({int(c): math.log(v0 / float(cp["judge"][r["search"]])) for c, cp in r["checkpoints"].items()})
-        out[s]["subset_curves"] = curves
+                  "start_bit_identical": sum(1 for r in recs if r["start"].get("bit_identical")),
+                  "subset_curves": cur,
+                  "subset_median_ratio": {h: c2_budget([c[h] for c in cur])[1] for h in ("search", "held")}}
     plan = json.loads((c1a_dir() / "records.json").read_text())
     pairs = []
     for r in plan["records"]:
@@ -476,13 +568,16 @@ def cmd_report(_args):
             q = P.out_dir() / P.REAL_DIR / P.SEARCH_DIR / f"{fname(r['unit'] + '|' + a)}.json"
             if q.exists():
                 recs[a] = json.loads(q.read_text())
-        pairs.append((r["cluster"], amp_choice_value(recs, r["amp"])))
-    out["bks"]["amp_choice_held"] = with_interval(jackknife_mean(pairs), tq) if pairs else None
-    allc = out["n12"]["subset_curves"] + out["bks"]["subset_curves"]
+        v = amp_choice_value(recs, r["amp"])
+        if v is not None:
+            pairs.append((r["cluster"], r["unit"], v))
+    out["bks"]["amp_choice_chosen_search_read_held"] = (
+        dict(with_interval(jackknife_mean([(c, x) for c, _, x in pairs]), tq), band_weighted=P.clustered(pairs))
+        if pairs else None)
+    allc = [c["search"] for c in out["n12"]["subset_curves"] + out["bks"]["subset_curves"]]
     out["c2_budget"], out["c2_median_ratio"] = c2_budget(allc)
     P.save(c1a_dir() / "report.json", out)
-    print(json.dumps({s: out[s]["rows"]["all"]["primary"] if out[s]["rows"]["all"] else None for s in SETS},
-                     indent=1, default=str))
+    print(json.dumps({s: (out[s]["rows"]["all"] or {}).get("primary") for s in SETS}, indent=1, default=str))
     print("C2 budget", out["c2_budget"], out["c2_median_ratio"])
 
 
