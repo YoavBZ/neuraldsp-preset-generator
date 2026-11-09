@@ -1,5 +1,7 @@
 # Every control: how and when each route covers the whole plugin: plan
 
+*Status, 2026-11-09:* **[Amendment 2](full-controls-plan.md) carries this plan onto today's route,** FT2 and its real rows. Stage 1 below was approved on 2026-10-22 and never ran: it waited for a trusted amp-track list, and the work then moved to the trusted data and the pipeline fix. Its never-measured groups are folded into the amendment's C1b. The amendment's C1a (the EQ, pedals, compressor and gate on the real rows) is approved and declared there.
+
 *Status, 2026-10-22 evening:* stage 0 is done ([results](every-control-stage0-results.md)). Stage 1
 waits for the trusted amp-track list from the user's data review (the user's decision: "use only
 what we can trust, no dirty tracks") and runs on trusted parts only, by a dated amendment. It does
