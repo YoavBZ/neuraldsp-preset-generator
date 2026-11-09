@@ -54,6 +54,8 @@ def test_page_order_one_repeat_a_set_far_enough_with_the_letters_swapped():
         assert sum(o["letters"]["A"] == "label" for o in firsts) == 7               # balanced
         assert all(sorted(o["letters"].values()) == ["C1a", "label"] for o in out)
     assert C.page_order(items14()) == C.page_order(list(reversed(items14())))
+    with pytest.raises(SystemExit, match="cannot hold repeats"):
+        C.page_order(items14()[6:8])                                             # two items: no room for the gap
 
 
 def item(i, a="label", cluster="c", st="n12", cls="clean", rep=None, j0=(2.0, 1.8)):
@@ -221,3 +223,87 @@ def test_cmd_render_stops_on_a_held_judge_off_its_stored_one(tmp_path, monkeypat
     _render_stub(tmp_path, monkeypatch, off=0.05)
     with pytest.raises(SystemExit, match="label's fresh held judge"):
         C.cmd_render(argparse.Namespace(shard=(0, 1)))
+
+
+def test_verdict_is_the_declared_rule():
+    assert C.verdict({"share": 0.8, "p": 0.01}) == "above"
+    assert C.verdict({"share": 0.8, "p": 0.06}) == "undecided"
+    assert C.verdict({"share": 0.2, "p": 0.99}) == "below"                     # mirrored p 0.01
+    assert C.verdict({"share": 0.2, "p": 0.94}) == "undecided"                 # mirrored p 0.06
+    assert C.verdict({"share": 0.5, "p": 0.5}) == "undecided"
+    assert C.verdict({"share": 0.6, "p": 0.99}) == "undecided"                 # "below" needs the share under a half
+    assert C.verdict({"share": 0.6, "p": None}) == "undecided" and C.verdict({"share": None, "p": None}) == "undecided"
+    assert C.verdict({"share": 0.6, "p": 0.04}, alpha=0.01) == "undecided"
+
+
+def test_share_row_carries_the_jackknife_interval_and_bks_reads_by_song():
+    cards = [{"cluster": c, "song": s, "pref": p} for c, s, p in
+             (("a", "s1", 1.0), ("b", "s1", 1.0), ("c", "s2", 0.0), ("d", "s2", 1.0), ("e", "s2", 0.5))]
+    row = C.share_row(cards)
+    assert row["interval"]["mean"] == pytest.approx(0.7) and row["interval"]["clusters"] == 5 and "lo" in row["interval"]
+    assert C.share_row(cards, key="song")["clusters"] == 2
+    assert C.song_of("set5/BKS_Bulldozer_Full/19_ElecGtr1aDI.wav") == "set5/BKS_Bulldozer_Full"
+    items = [item(1, "label", "set5/BKS_A/19.wav", st="bks"), item(2, "label", "set5/BKS_A/22.wav", st="bks"),
+             item(3, "label", "set5/BKS_B/16.wav", st="bks")]
+    r = C.ear_read(items, {f"i{i}": {"rank": {"A": 2, "B": 1}} for i in (1, 2, 3)})
+    assert r["by_set"]["bks"]["clusters"] == 3 and r["bks_by_song"]["clusters"] == 2
+    assert r["verdict"] in ("above", "undecided", "below")
+
+
+def test_ear_read_names_the_verdict_from_the_primary():
+    items = [item(i, "label", f"c{i}") for i in range(1, 15)]
+    up = C.ear_read(items, {f"i{i}": {"rank": {"A": 2, "B": 1}} for i in range(1, 15)})
+    assert up["primary"]["share"] == 1.0 and up["verdict"] == "above"
+    down = C.ear_read(items, {f"i{i}": {"rank": {"A": 1, "B": 2}} for i in range(1, 15)})
+    assert down["verdict"] == "below"
+    mixed = C.ear_read(items, {f"i{i}": {"rank": {"A": 1 + i % 2, "B": 2 - i % 2}} for i in range(1, 15)})
+    assert mixed["verdict"] == "undecided"
+
+
+def test_the_export_line_prints_a_tie():
+    assert '(order.length === 2 && r.A === r.B ? "A=B" : order.join(">") || "-")' in C.player_js()
+
+
+def test_cmd_render_stores_the_stored_sha_and_whether_it_is_bit_identical(tmp_path, monkeypatch):
+    import argparse
+    rows, calls, np = _render_stub(tmp_path, monkeypatch)
+    from learn import audibility_measure as AM
+    src = json.loads(open(rows[0]["source"]).read())
+    src["best"]["render_sha256"] = AM.audio_sha(np.arange(8.0) + 2.0)
+    open(rows[0]["source"], "w").write(json.dumps(src))
+    C.cmd_render(argparse.Namespace(shard=(0, 2)))
+    rec = json.loads((tmp_path / "c1a" / "ear" / "clips" / "s0.json").read_text())
+    assert rec["cands"]["label"]["bit_identical"] and rec["cands"]["label"]["stored_sha"] == src["best"]["render_sha256"]
+    assert rec["cands"]["C1a"]["bit_identical"] is False and rec["cands"]["C1a"]["stored_sha"] is None
+
+
+def test_cmd_page_refuses_while_a_clip_is_missing(tmp_path, monkeypatch):
+    import argparse
+    _render_stub(tmp_path, monkeypatch)
+    with pytest.raises(SystemExit, match="no clips for"):
+        C.cmd_page(argparse.Namespace())
+    assert not (tmp_path / "c1a" / "ear" / "key.json").exists()
+
+
+def test_cmd_draw_refuses_a_never_heard_set_other_than_the_declared(tmp_path, monkeypatch):
+    import argparse
+    pytest.importorskip("numpy")
+    from learn import full_controls as F
+    from learn import pipeline_fix as P
+    from learn import score_ear as SE
+
+    monkeypatch.setattr(P, "require", lambda k: {})
+    monkeypatch.setattr(F, "c1a_dir", lambda: tmp_path / "c1a")
+    monkeypatch.setattr(SE, "wide_units", lambda: ([], {}, None))
+    monkeypatch.setattr(SE, "wide_dir", lambda: tmp_path / "w")
+    monkeypatch.setattr(SE, "h4b_dir", lambda: tmp_path / "h")
+    for p, obj in ((tmp_path / "c1a" / "records.json", {"records": []}), (tmp_path / "w" / "plan.json", {}),
+                   (tmp_path / "w" / "key.json", {}), (tmp_path / "h" / "plan.json", {})):
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(obj))
+    monkeypatch.setattr(C, "never_heard", lambda *a: ["cap/other#ac20"])
+    with pytest.raises(SystemExit, match="are not the plan's"):
+        C.cmd_draw(argparse.Namespace())
+    monkeypatch.setattr(C, "never_heard", lambda *a: list(C.NEVER_HEARD))
+    with pytest.raises(SystemExit, match="no C1a record"):                      # the declared set, but no records
+        C.cmd_draw(argparse.Namespace())

@@ -29,6 +29,9 @@ SETS = ("n12", "bks")
 CANDS = ("label", "C1a")
 LETTERS = ("A", "B")
 MIN_READ = 10                        # first hearings answered for the page to be read (of 14)
+ALPHA = 0.05                         # the declared decision rule's one-sided level
+NEVER_HEARD = ("cap/1w1lkv30jfn#ac20", "cap/3iqknlf6u0x_a2#sw50r", "cap/9nbhb9zvawu#ac20", "cap/a9j26sllzrq_a2#ac20",
+               "cap/piou1nfi5cm_a2#ac20", "cap/rtxifphieu#sw50r", "cap/wji8wcrx9yf#sw50r")   # declared in the plan
 LISTENING = "c1a-ear"
 
 
@@ -68,10 +71,12 @@ def page_order(items, seed=PAGE_SEED, gap=GAP):
     by = {it["key"]: it for it in items}
     twice = [rng.choice(sorted(k for k, it in by.items() if it["set"] == s)) for s in SETS]
     seq = sorted(by) + twice
-    while True:
+    for _ in range(10000):
         rng.shuffle(seq)
         if all(seq.index(t) + gap <= len(seq) - 1 - seq[::-1].index(t) for t in twice):
             break
+    else:
+        raise SystemExit(f"{len(by)} items cannot hold repeats {gap} items after their first hearings")
     flags = [i % 2 == 0 for i in range(len(by))]
     rng.shuffle(flags)
     flags = iter(flags)
@@ -106,13 +111,34 @@ def pref(heard):
     return 1.0 if a < b else 0.0 if a > b else 0.5
 
 
-def share_row(cards):
-    """The jackknife-t share of C1a over the label (ties a half) and its counts. cards: [{cluster, pref}]."""
+def share_row(cards, key="cluster"):
+    """The jackknife-t share of C1a over the label (ties a half), its 90% jackknife interval and its counts, clustered by
+    `key`. cards: [{cluster, pref, ...}]."""
+    from learn import pretrain_set as PS
     from learn import score_ear as SE
 
-    row = SE.jackknife_t([(c["cluster"], c["pref"]) for c in cards]) if cards else {"share": None, "cards": 0, "p": None}
-    return {**row, "above": sum(c["pref"] == 1.0 for c in cards), "ties": sum(c["pref"] == 0.5 for c in cards),
-            "below": sum(c["pref"] == 0.0 for c in cards)}
+    pairs = [(c[key], c["pref"]) for c in cards]
+    row = SE.jackknife_t(pairs) if cards else {"share": None, "cards": 0, "p": None}
+    return {**row, "interval": SE.interval(pairs, PS.t90), "above": sum(c["pref"] == 1.0 for c in cards),
+            "ties": sum(c["pref"] == 0.5 for c in cards), "below": sum(c["pref"] == 0.0 for c in cards)}
+
+
+def verdict(row, alpha=ALPHA):
+    """The declared rule on the primary: "above" if the one-sided p is below `alpha`; "below" if the share is under one half
+    and the mirrored one-sided p (1 - p) is below `alpha`; else "undecided"."""
+    p = row.get("p")
+    if p is None or row.get("share") is None:
+        return "undecided"
+    if p < alpha:
+        return "above"
+    if row["share"] < 0.5 and 1 - p < alpha:
+        return "below"
+    return "undecided"
+
+
+def song_of(cluster):
+    """A BKS DI's song: its session folder ("set5/BKS_Bulldozer_Full")."""
+    return "/".join(str(cluster).split("/")[:2])
 
 
 def ear_read(items, got):
@@ -120,6 +146,7 @@ def ear_read(items, got):
     heard = {it["id"]: unblind(it, got.get(it["id"])) for it in items}
     first = [it for it in items if it["repeat_of"] is None]
     cards = [{"id": it["id"], "set": it["set"], "cls": it["cls"], "cluster": f"{it['set']}:{it['cluster']}",
+              "song": f"{it['set']}:{song_of(it['cluster'])}",
               "pref": pref(heard[it["id"]]), "j0": math.log(it["j0"]["C1a"] / it["j0"]["label"]),
               "close_gap": (heard[it["id"]]["C1a"]["close"] - heard[it["id"]]["label"]["close"]
                             if None not in (heard[it["id"]]["C1a"]["close"], heard[it["id"]]["label"]["close"]) else None)}
@@ -131,9 +158,11 @@ def ear_read(items, got):
             reps.append({"id": it["id"], "repeat_of": it["repeat_of"], "first": a, "again": b, "agree": a == b})
     decided = [c for c in cards if c["pref"] != 0.5]
     gaps = [c["close_gap"] for c in cards if c["close_gap"] is not None]
+    primary = share_row(cards)
     return {"read": len(cards), "unanswered": [it["id"] for it in first if not heard[it["id"]]],
-            "page_failed": len(cards) < MIN_READ, "primary": share_row(cards),
+            "page_failed": len(cards) < MIN_READ, "primary": primary, "verdict": verdict(primary),
             "by_set": {s: share_row([c for c in cards if c["set"] == s]) for s in SETS},
+            "bks_by_song": share_row([c for c in cards if c["set"] == "bks"], key="song"),
             "by_class": {k: share_row([c for c in cards if c["cls"] == k]) for k in ("clean", "crunch")},
             "repeats": reps,
             "j0_agrees": {"decided": len(decided), "agree": sum((c["j0"] < 0) == (c["pref"] == 1.0) for c in decided),
@@ -187,6 +216,7 @@ JS_EDITS = (
     ("    Object.keys(r).forEach(o => { if (o !== l && r[o] === v) delete r[o]; });   // a rank is held by one letter\n", ""),
     ('const full = ["A", "B", "C", "D"].every(l => r[l] && cl[l]) && a.conf;', 'const full = ["A", "B"].every(l => r[l]);'),
     ('a: "A", b: "B", c: "C", d: "D", "1": "ref", "2": "A", "3": "B", "4": "C", "5": "D"', 'a: "A", b: "B", "1": "ref", "2": "A", "3": "B"'),
+    ('(order.join(">") || "-")', '(order.length === 2 && r.A === r.B ? "A=B" : order.join(">") || "-")'),     # a tie, plainly
 )
 
 
@@ -296,6 +326,8 @@ def cmd_draw(_args):
     never = set(never_heard(units, json.loads((SE.wide_dir() / "plan.json").read_text()),
                             json.loads((SE.wide_dir() / "key.json").read_text()),
                             json.loads((SE.h4b_dir() / "plan.json").read_text())))
+    if never != set(NEVER_HEARD):
+        raise SystemExit(f"the never-heard units {sorted(never)} are not the plan's {sorted(NEVER_HEARD)}")
     n12 = [r for r in recs if r["set"] == "n12" and r["unit"] in never]
     if len(n12) != len(never) or not all(labelled(r) for r in n12):
         raise SystemExit("a never-heard N12 unit has no C1a record or label")
@@ -348,8 +380,9 @@ def cmd_render(args):
         di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
         ref = np.asarray(P.real_amp_track(prt["sd"], prt["track"], prt["start_s"]), np.float64)
         kept, rec, win = {}, {"unit": it["unit"], "key": it["key"], "held": held, "lag": lag, "cands": {}}, None
-        for c, settings, stored in (("label", src["best"]["settings"], src["best"]["judge"][held]),
-                                    ("C1a", c1["label"], c1["fresh"]["best"]["judge"][held])):
+        for c, settings, stored, stored_sha in (
+                ("label", src["best"]["settings"], src["best"]["judge"][held], src["best"].get("render_sha256")),
+                ("C1a", c1["label"], c1["fresh"]["best"]["judge"][held], c1["fresh"]["best"].get("render_sha256"))):
             st = LO.tdict(settings)
             y = np.asarray(AM.fresh_render(CB.new_renderer, di32, sel, st, st), np.float64)[trim[0]:trim[1]]
             renders += 2
@@ -362,12 +395,14 @@ def cmd_render(args):
                 raise SystemExit(f"{it['key']}: the two renders' windows differ")
             win = (s0, s1)
             kept[c] = mono[s0 - lag:s1 - lag].astype(np.float32)
-            rec["cands"][c] = {"judge": j[held], "stored": stored, "sha": AM.audio_sha(y)}
+            sha = AM.audio_sha(y)
+            rec["cands"][c] = {"judge": j[held], "stored": stored, "sha": sha, "stored_sha": stored_sha,
+                               "bit_identical": sha == stored_sha}
         s0, s1 = win
         rec["window"] = [s0, s1]
         d.mkdir(parents=True, exist_ok=True)
         np.savez(d / f"{it['slug']}.npz", ref=ref[s0:s1].astype(np.float32), window=np.array([s0, s1]), **kept)
-        (d / f"{it['slug']}.json").write_text(json.dumps(rec, indent=1))
+        P.save(d / f"{it['slug']}.json", rec)                # the resume marker, after its clips
         print(f"{it['set']} {it['cls']}: renders so far {renders}", flush=True)
     print(f"C1A-EAR RENDER DONE {k}/{n}: {renders} renders", flush=True)
 
@@ -385,6 +420,10 @@ def cmd_page(_args):
     if key_path.exists():
         raise SystemExit(f"{key_path} exists: a rebuild hides the listener's stored answers; move it aside first")
     plan = json.loads((ear_dir() / "plan.json").read_text())
+    missing = [it["key"] for it in plan["items"] if not ((ear_dir() / "clips" / f"{it['slug']}.npz").exists()
+                                                         and (ear_dir() / "clips" / f"{it['slug']}.json").exists())]
+    if missing:
+        raise SystemExit(f"no clips for {missing}: every item's renders come first, and no partial page is built")
     items = page_order(plan["items"])
     clips, kept = {}, []
     for it in items:
@@ -409,8 +448,7 @@ def cmd_page(_args):
     out = ear_dir() / "page" / "artifact-1.html"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(artifact_page(page, css, js))
-    key_path.write_text(json.dumps({"phase": PHASE, "build": build, "items": kept,
-                                    "time": time.strftime("%Y-%m-%d %H:%M:%S")}, indent=1))
+    P.save(key_path, {"phase": PHASE, "build": build, "items": kept, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"C1A-EAR PAGE: {len(kept)} items -> {out}; build {build}; {out.stat().st_size / 1e6:.1f} MB", flush=True)
 
 
@@ -428,7 +466,8 @@ def cmd_read(args):
         raise SystemExit(f"answers for build {ex.get('build')}, the page's is {key['build']}")
     rep = {"phase": PHASE, "build": key["build"], **ear_read(key["items"], ex["answers"])}
     pathlib.Path(args.out).write_text(json.dumps(rep, indent=1))
-    print(json.dumps({k: rep[k] for k in ("read", "page_failed", "primary", "by_set", "repeats", "j0_agrees")}, indent=1))
+    print(json.dumps({k: rep[k] for k in ("read", "page_failed", "verdict", "primary", "by_set", "bks_by_song", "repeats",
+                                          "j0_agrees")}, indent=1))
 
 
 def shard(s):
