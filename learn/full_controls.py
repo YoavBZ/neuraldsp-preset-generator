@@ -95,6 +95,12 @@ def c1a_space(amp, start):
     return [Dim("parameters", "inputGain", "cont", *GAIN_DB)] + dims + gate_dims()
 
 
+def factory_guard(med, n_files, n_on):
+    """The draw refuses unless some factory preset has the gate on and their median is the declared GATE_ON_DB."""
+    if n_on == 0 or med != float(GATE_ON_DB):
+        raise SystemExit(f"the factory gate median is {med} dB ({n_on} of {n_files} on), not the declared {GATE_ON_DB}")
+
+
 def factory_gate_median(root=FACTORY):
     """The median threshold (dB) of the factory menu presets (`Neural DSP` and `Artists`) with the gate on, read from the
     files at zero renders; GATE_FALLBACK_DB if none has it on. -> (median, presets, gate on)."""
@@ -346,7 +352,8 @@ def gate_on_start(r):
 
 def gate_off_rows(recs):
     """Amendment 1's gate-off starts, listed apart: their gate ablation resets to the gate off, not to the gate on at
-    -80. -> [{unit, set, cls, primary, gate_reset, gate}] (held half, ln ratios; gate: what the best did with it)."""
+    -80. -> [{unit, set, cls, real_out, primary, gate_reset, gate}] (held half, ln ratios; gate: what the best did with
+    it)."""
     out = []
     for r in recs:
         if r.get("start_gate") != "off_after_miss":
@@ -356,10 +363,28 @@ def gate_off_rows(recs):
         st = r.get("start_settings", {})
         on = str(g.get("parameters/gateActive")).lower() == "true"
         moved = g.get("parameters/gateThreshold") != st.get("parameters/gateThreshold")
-        out.append({"unit": r["unit"], "set": r.get("set"), "cls": r.get("cls"),
+        out.append({"unit": r["unit"], "set": r.get("set"), "cls": r.get("cls"), "real_out": bool(r.get("real_out")),
                     "primary": None if v is None else v["primary"],
                     "gate_reset": None if v is None else v["ablations"].get("gate_reset"),
                     "gate": ("turned on" + (", threshold moved" if moved else "")) if on else "stayed off"})
+    return out
+
+
+def gate_threshold_moved(r):
+    """Did the best keep the gate on with its threshold moved from the factory value (GATE_ON_DB)? Zero renders."""
+    g = (r.get("best") or {}).get("settings") or {}
+    return (str(g.get("parameters/gateActive")).lower() == "true"
+            and g.get("parameters/gateThreshold") not in (None, GATE_ON_DB)
+            and float(g["parameters/gateThreshold"]) != float(GATE_ON_DB))
+
+
+def median_gain(curves, half):
+    """The subset's median gain at each checkpoint on one half (losers kept: a gain may be below zero)."""
+    out = {}
+    for n in CHECKPOINTS:
+        xs = [c[half][n] for c in curves if n in c.get(half, {})]
+        if xs:
+            out[n] = statistics.median(xs)
     return out
 
 
@@ -471,9 +496,7 @@ def cmd_draw(_args):
     recs = load_sources()
     sub = draw_subset(recs)
     med, n_files, n_on = factory_gate_median()
-    want = float(GATE_ON_DB) if n_on else GATE_FALLBACK_DB
-    if med != want:
-        raise SystemExit(f"the factory gate median is {med} dB ({n_on} of {n_files} on), not the declared {GATE_ON_DB}")
+    factory_guard(med, n_files, n_on)
     for r in recs:
         r["subset"] = r["key"] in sub
         r["budget"] = SUBSET_BUDGET if r["subset"] else BUDGET
@@ -690,7 +713,9 @@ def cmd_report(_args):
                   "starts": start_counts(every),
                   "refused": refused,
                   "subset_curves": cur,
-                  "subset_median_ratio": {h: c2_budget([c[h] for c in cur])[1] for h in ("search", "held")}}
+                  "subset_median_ratio": {h: c2_budget([c[h] for c in cur])[1] for h in ("search", "held")},
+                  "subset_median_gain": {h: median_gain(cur, h) for h in ("search", "held")},
+                  "gate_threshold_moved_on": sum(1 for r in recs if gate_threshold_moved(r))}
     plan = json.loads((c1a_dir() / "records.json").read_text())
     pairs = []
     for r in plan["records"]:

@@ -89,7 +89,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
     - V-real and the panel are held out.
   - **C4 needs a new source before it is built,** such as a third capture batch, on the user's yes.
 - **Start:** the record's stored label, with one declared change. Every S already has its amp EQ and the EQ and pedal sections on, so `knob_ceiling2.stage1_start` changes only inert keys: the knobs of pedals that are off, set to neutral.
-  - **The declared change:** the start has the gate on at the factory threshold, as `every_control.group_plan("gate")` does. A label with the gate off gets it on at −80 dB, as 102 of the 107 factory presets have it. A label with the gate on keeps its threshold.
+  - **The declared change:** the start has the gate on at the factory threshold, as `every_control.group_plan("gate")` does. A label with the gate off gets it on at −80 dB, as the factory presets do: 102 of 107 have the gate on, 74 at exactly −80, median −80. A label with the gate on keeps its threshold.
   - So the search tries the threshold of a gate that is on, and the switch beside it, not a flip to a near-inert gate.
   - **The check:** the first evaluation's search-half value must equal `best.judge[search]` within 0.005 in log. That also verifies that the gate on at −80 dB is inert on the record. Its render sha is recorded beside `best.render_sha256`. A miss stops the shard.
 - **Space:** `knob_ceiling2.stage1_space`'s controls, about 37 to 42 an amp. The core knobs have input gain at FT2's head range, −20 to +12 dB, not −24. Then the amp EQ, drive 1, drive 2 and the compressor, plus the gate: `gateActive` as a switch and `gateThreshold` from −96 to 0 dB.
@@ -123,10 +123,10 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
     - Each ablation against the best.
     - Each pedal's state changed from the label's, counted, and, for each pedal on in the best, its knobs moved from the label's.
     - The amp EQ moved from S's curve, counted.
-    - The gate's state changed from the start's, counted.
+    - The gate's state changed from the start's, counted, and the threshold moves with the gate on (the threshold moved from −80 with the gate on in the best), counted.
     - The start against the label, on the held half, at zero renders: the start's first trial against the stored label.
     - The label against S, for scale.
-    - The subset's checkpoint curves, from the stored checkpoint judges: on the search half (which sets C2's budget) and on the held half beside it.
+    - The subset's checkpoint curves, from the stored checkpoint judges: on the search half (which sets C2's budget) and on the held half beside it, with the median gain at each checkpoint on both halves beside the median ratio, so records that lose are not hidden.
     - The subset's held-half rows per set: ln(fresh 300 best / fresh 100 best) and ln(fresh 300 best / label).
     - BKS's amp choice, chosen on the search half and read on the held half: the chosen amp's log held judge less the mean over the three amps, as stage 0b read it.
     - real_out apart.
@@ -137,7 +137,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 
 - **When it was declared.** After shard 2 stopped on one record's start check, and before any C1a result is read.
   - The record: `cap/1xiluf3lhnm#ac20`. The gate-on start scored 2.9622 against the stored label's 2.9774, an ln gap of 0.0051.
-  - So the gate at −80 dB is not inert there: it scores about 0.5% better.
+  - So the gate at −80 dB may act there: the gate-on start scored about 0.5% better.
   - Shards 0 and 1 kept running, and their records are kept as written.
 - **The rule, on a start miss:**
   1. One more start is rendered, in its own process with one priming render, as the start is: the same start with the gate as in the label (off, its threshold canonical at −80).
@@ -153,7 +153,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **C2 inherits this rule** for every record it searches.
 - **Resume.** Records already written, refused ones included, are skipped.
 - **Counts.** The shard's last line and the report count each kind: on, off after a miss, refused. Records written before the amendment carry no flag and count as on.
-- **Cost.** A gate-only miss adds 4 renders (the missed start's process and the second start). A refused record costs 4 and nothing more.
+- **Cost.** A gate-only miss adds 4 renders (the missed start's process and the second start). A refused record costs 4 renders, or 6 when the gate-off run itself misses.
 
 ## C5: the heavy clean-up re-tested on the full-control model
 - **What F68 said, and what has changed.** F68 closed the clean-up with "This clean-up is not reopened." Its verdict on the `K.space` model stands.

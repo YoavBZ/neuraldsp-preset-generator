@@ -545,7 +545,8 @@ def test_cmd_report_gives_gate_on_rows_beside_the_pooled_and_counts_the_starts(t
     d = tmp_path / "captures2" / "search-c1a"
     d.mkdir(parents=True)
     base = dict(real_out=False, subset=False, start={"bit_identical": True}, set="n12")
-    on1 = dict(searched("b1", "clean", 4.0, 3.0, 5.0), **base, unit="u1")
+    on1 = dict(searched("b1", "clean", 4.0, 3.0, 5.0), **base, unit="u1",
+               best={"settings": {"parameters/gateActive": "true", "parameters/gateThreshold": "-55"}})
     on2 = dict(searched("b2", "clean", 4.0, 3.4, 5.0), **base, unit="u2")
     off = dict(searched("b3", "crunch", 4.0, 2.0, 5.0), **base, unit="u3", start_gate="off_after_miss",
                best={"settings": {"parameters/gateActive": "false"}}, start_settings={})
@@ -561,5 +562,56 @@ def test_cmd_report_gives_gate_on_rows_beside_the_pooled_and_counts_the_starts(t
     assert rep["rows"]["records"] == 3 and rep["rows_gate_on_start"]["records"] == 2
     assert math.isclose(rep["rows_gate_on_start"]["all"]["primary"]["mean"], (math.log(0.75) + math.log(0.85)) / 2)
     assert [g["unit"] for g in rep["gate_off_after_miss"]] == ["u3"] and rep["refused"][0]["unit"] == "u4"
+    assert rep["gate_threshold_moved_on"] == 1 and "subset_median_gain" in rep and set(rep["subset_median_gain"]) == {
+        "search", "held"}
     printed = json.loads(capsys.readouterr().out.split("C2 budget")[0])["n12"]
     assert printed["refused"] == 1 and printed["starts"] == {"on": 2, "off_after_miss": 1, "refused": 1}
+
+
+def test_factory_guard_refuses_no_gate_on_or_another_median():
+    F.factory_guard(-80.0, 107, 102)
+    with pytest.raises(SystemExit):
+        F.factory_guard(F.GATE_FALLBACK_DB, 107, 0)                                # none on: refused, not the fallback
+    with pytest.raises(SystemExit):
+        F.factory_guard(-80.0, 107, 0)
+    with pytest.raises(SystemExit):
+        F.factory_guard(-70.0, 107, 102)
+
+
+def test_gate_threshold_moved_counts_only_an_on_gate_off_the_factory_value():
+    def rec(active, thr):
+        return {"best": {"settings": {"parameters/gateActive": active, "parameters/gateThreshold": thr}}}
+    assert F.gate_threshold_moved(rec("true", "-55"))
+    assert not F.gate_threshold_moved(rec("true", F.GATE_ON_DB)) and not F.gate_threshold_moved(rec("true", "-80.0"))
+    assert not F.gate_threshold_moved(rec("false", "-55")) and not F.gate_threshold_moved({})
+
+
+def test_median_gain_keeps_losers():
+    cur = [{"held": {50: -0.02, 300: 0.01}}, {"held": {50: -0.04, 300: -0.03}}, {"held": {50: 0.01}}]
+    got = F.median_gain(cur, "held")
+    assert math.isclose(got[50], -0.02) and math.isclose(got[300], (0.01 - 0.03) / 2) and 100 not in got
+
+
+def test_gate_off_rows_carry_real_out():
+    off = dict(searched("d2", "clean", 4.0, 3.6, 5.0), start_gate="off_after_miss", real_out=True,
+               best={"settings": {"parameters/gateActive": "false"}}, start_settings={})
+    assert F.gate_off_rows([off])[0]["real_out"] is True
+    assert F.gate_off_rows([dict(off, real_out=False)])[0]["real_out"] is False
+
+
+def test_cmd_draw_checks_the_factory_gate_before_it_writes(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    monkeypatch.setattr(P, "require", lambda k: {})
+    recs = [{"set": "n12", "key": f"n{i}", "unit": f"n{i}"} for i in range(8)] + [
+        {"set": "bks", "key": f"b{i}", "unit": f"b{i}"} for i in range(8)]
+    monkeypatch.setattr(F, "load_sources", lambda: [dict(r) for r in recs])
+    monkeypatch.setattr(F, "factory_gate_median", lambda: (-70.0, 107, 102))
+    with pytest.raises(SystemExit, match="factory gate median"):
+        F.cmd_draw(None)
+    assert not (tmp_path / "c1a" / "records.json").exists()
+    monkeypatch.setattr(F, "factory_gate_median", lambda: (-80.0, 107, 102))
+    F.cmd_draw(None)
+    got = json.loads((tmp_path / "c1a" / "records.json").read_text())
+    assert got["gate_factory"] == {"median_db": -80.0, "presets": 107, "gate_on": 102, "used": F.GATE_ON_DB}
+    assert sum(r["subset"] for r in got["records"]) == 12
+    assert all(r["measurement_only"] == (r["set"] == "n12") for r in got["records"])
