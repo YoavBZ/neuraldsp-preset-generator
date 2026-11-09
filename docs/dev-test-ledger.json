@@ -3370,7 +3370,8 @@
     "path": "heavy/h4-exclusions.json",
     "sha256": "cc7b9ab9068d1ca692aa3cea4453d42fad24ed49949a1064a8cf4606d9cb36f2",
     "note": "Written 2026-11-08 by heavy_cleanup h4-exclusions after NS's 228 doubler-off renders, before any H4 training; read only by the --h4 tags."
-   }
+   },
+   "phase_h4_outcome": "Trained 2026-11-08 (4 h 17 min MPS, no failure), read by the score (H4a, 4,270 renders) and by ear (H4b, zero new renders, answered 2026-11-09), both audited with separate code (F68). Arm less FTm by the score: BKS full +0.017 [-0.012, +0.047], gentle +0.010 [-0.013, +0.033], real only -0.004 [-0.013, +0.005]; GOAT by item +0.005, +0.016 [+0.005, +0.026] (by fold [-0.003, +0.033]), +0.001; N12's 27 units all span zero; every arm beats S. By ear over FTm, of 14 cards in 7 bands: 7, 7, 8 (Holm 1, 1, 0.86): none shown; over S 12, 11, 11 (beside, below 0.05 under a post-hoc Holm). The conflict rule (PR #422) does not trigger. FTm stays; the stop rule applies and the clean-up ends; the exclusion lists stay opt-in, H3 not run."
   },
   {
    "test_id": "model-comparison",

@@ -4581,6 +4581,101 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **What it changes.** H2 can render rows dry by the narrow rule, at the line less 0.5 dB, with its audit. It waits on the keep-or-drop answers for the line. 28 rows have their spring at 0.01 or less (24 at 0.001) and count it as on. 27 of them have another switch on and would be rendered dry anyway, so at most one, 801019, is rendered dry for nothing. That is harmless.
 - Files: `PF/heavy/h1-plan.json`, `PF/heavy/h1-read.json`, `PF/heavy/h1/`.
 
+### F68. The heavy clean-up, closed: the keep-or-drop answers, a tone-free measure, the plugin line, and three FTm variants retrained on what is left. None is shown better than FTm by the score or by ear; all three beat S by the score, as FTm does, and on the blind page (FTm itself 10 of 14 over S there, p 0.058) (phase_scope, phase_h2a, phase_h2, phase_h4, 5,512 renders, about 4.3 h of MPS, one listener, audited)
+- **What ran.** The user asked to clear too-heavy recordings out of training and testing ([plan](heavy-cleanup-plan.md)).
+  - A blind keep-or-drop page covered the real rows.
+  - The declared drive meter did not fit those answers, so Amendment 1 replaced it with a tone-free flatness. A blind check page of W's stored plugin examples then set the plugin line.
+  - W's doubler rows were measured with the doubler off (H2), and the exclusions were pinned.
+  - H4 retrained FTm's masked recipe three ways: full cut, gentle cut, and real rows cleaned only. Each was read by FTm's stored score read (H4a), then on one blind page (H4b).
+  - Each read was audited with separate code, and every number below matches.
+- **Keep-or-drop (`phase_scope`).** 124 recordings on the page: 110 keep, 12 heavy, 2 unsure.
+  - With the earlier pages' marks, 19 of the 316 labelled real recordings go out: GOAT pr12 crunch 9 of 35, sw50r 6 of 33, ac20 2 of 36, and BKS 2 of 80. All are crunch.
+  - Many recordings are parts or guitars of one song, so every row here is clustered by song.
+- **The measure (Amendment 1).**
+  - **The declared rule did not fit.** It gave +1.05 dB [−2.27, +2.63]. The drive meter separates the answers at AUC 0.63 [0.55, 0.75] and reads rooms as drive.
+  - **The replacement.** `heavy_cleanup.flatness_db` is the median spectral flatness of the amp's sound over 200–5000 Hz, against its own 1/3-octave average, on frames where the DI and the amp both play.
+  - **How well it separates.** On GOAT it separates the answers at AUC 0.85 [0.78, 0.92]. The sources differ in scale, so no one line carries across them.
+  - **The doubler lowers the reading,** so its rows are measured with the doubler off. H2 rendered 507 doubler rows with the doubler off, two renders a row with the priming one (1,014 renders). The doubler lowers the reading by a median 0.70 dB: doubler off reads 0.70 dB flatter. NS's 114 doubler rows took 228 more renders.
+- **The plugin line (`phase_h2a`).** 50 blind cards from W's stored examples, zero renders: 28 heavy, 18 keep, 4 unsure.
+  - The line is −4.331 dB, the 51st percentile of the 1,246 doubler-free rows. Its 90% interval is [−5.08, −3.57], the 36th to 75th percentile. That width makes it undecided: `check_read` missed the flag, and the audit caught it.
+  - Drops by band were 2, 6, 10 and 8 of 10. In 4 of 4 split pairs the flatter card was dropped.
+  - The full cut trips both stops (cells and 13 whole sections), and Bulldozer is 42% of it. The user ruled to train both cuts and compare.
+- **The exclusions** (`PF/heavy/h4-exclusions.json`, sha256 cc7b9ab9…cb36f2, `phase_h4_exclusions`):
+  - **real_out:** 19.
+  - **Full cut (−4.331):** 927 of W's 1,787 rows out, 860 left. NS keeps 259 of 383.
+  - **Gentle cut (−3.57385, the 75th percentile):** 496 out, 1,291 left. NS keeps 338.
+  - Every arm drops real_out from training and from every epoch-choosing held set.
+- **Training (H4).** 4 h 17 min of MPS in one run, with no failure:
+  - Full arm: 1 h 22 min. Gentle: 1 h 41 min. Real only, which reuses W: 1 h 13 min.
+  - The retrained W's best epochs were 50 and 50 (full) and 15 and 20 (gentle), of 60. The undertraining flag did not trip.
+  - All 24 fold records carry their arm, the exclusions sha and their own W.
+- **By the score (H4a, 4,270 renders).** Arm less FTm is the ln of the J0 distance ratio on the held half, so +0.01 is about 1% worse and lower is better.
+  - BKS has 38 units clustered by DI. GOAT is by item, 126 items. N12 has 27 units clustered by band. real_out is reported apart.
+
+  | Arm less FTm | BKS | GOAT by item | N12's 27 units |
+  |---|---|---|---|
+  | full | +0.017 [−0.012, +0.047] | +0.005 [−0.007, +0.017] | −0.006 [−0.047, +0.036] |
+  | gentle | +0.010 [−0.013, +0.033] | +0.016 [+0.005, +0.026] | −0.012 [−0.081, +0.057] |
+  | real only | −0.004 [−0.013, +0.005] | +0.001 [−0.005, +0.006] | −0.006 [−0.018, +0.006] |
+
+  - **No arm is shown better than FTm.** Gentle reads worse on GOAT by item, about 1.6%. By fold, printed beside, it is [−0.003, +0.033], and units in a fold share their models. Real only is indistinguishable from FTm.
+  - **Every arm beats S,** pooled on all three sets, by about as much as FTm does. Full less S is −0.116 on BKS, −0.083 on GOAT and −0.129 on N12. On BKS clean alone every arm's interval reaches zero.
+  - **Renders:**
+    - BKS: 1,440 (40 units × 3 amps × 3 tags × 4).
+    - GOAT: 2,580 (215 units × 3 × 4).
+    - N12: 250. That is 186 arm cards with priming, plus 60 for S and FTm on the 15 units without N12 clips, plus 4 hash controls, every one held to its stored hash.
+  - **Departures:**
+    - GOAT's S pairs miss one unit, `item_68@35.0#amp_5`. Its label is None, so `goat_labels()` drops it. This is inherited from FTm's stored read and is negligible.
+    - On W's 4 DIs, reported apart, all three arms read +0.05 to +0.10 against FTm, real only included, which shares W with FTm. That points to noise on those units.
+- **The conflict rule (PR #422).** Declared after H4a and before the sitting: an arm that wins by ear but reads reliably worse by the score goes to the user, with adoption the default. It did not trigger, since no arm won by ear.
+- **By ear (H4b, zero new renders).** 14 first hearings in 7 bands plus 4 repeats, five candidates each, all answered. The 8 clean cards were never heard before; the 6 crunch cards were heard on N12. The primary is the rank share over FTm, a band-clustered jackknife t, one-sided, with Holm over the three arms.
+
+  | Row | Above, of 14 | p (one-sided) | Holm | Closeness gap |
+  |---|---|---|---|---|
+  | full over FTm | 7 | 0.50 | 1 | +0.14 |
+  | gentle over FTm | 7 | 0.50 | 1 | +0.07 |
+  | real only over FTm | 8 | 0.29 | 0.86 | +0.29 [0.00, 0.50] (90%) |
+  | full over S | 12 | 0.001 | | |
+  | gentle over S | 11 | 0.003 | | |
+  | real only over S | 11 | 0.033 | | |
+  | FTm over S | 10 | 0.058 | | |
+
+  - **No arm is better than FTm by ear, at this size.**
+    - With these clusters the page had about 24% power for a true share of 0.7, and 53% for 0.8.
+    - The one-sided 95% upper bounds on the share are 0.78, 0.65 and 0.80, so a moderate gain is not ruled out.
+    - Dropping the two cards marked unsure changes nothing: shares 0.50, 0.50 and 0.58.
+    - Without the one card whose DI is among W's rows (Storm Of Particles), 13 cards: 6, 6 and 7 above FTm (shares 0.46, 0.46 and 0.54). Nothing changes. The H4b audit's code could not match W's DI paths, so this row was checked by hand against `read.json`.
+  - **The three arms beat S,** a beside row: one-sided p 0.001, 0.003 and 0.033. They stay below 0.05 under a post-hoc Holm over the three (0.004, 0.006 and 0.033).
+  - **Leans, none tested, in both directions:**
+    - Every closeness gap is positive, and full has the best mean rank (2.29 against FTm's 2.86).
+    - On the 8 fresh clean cards, each arm is above FTm on 5.
+    - On crunch the arms are above FTm on only 2, 2 and 3 of 6.
+- **The models are near-identical to this listener.**
+  - The user said the page "was harder than usual" (2026-11-09, in chat). On one card they noted that the other four candidates sounded exactly the same.
+  - Closeness was rated equal between arm and FTm on 8, 10 and 10 of 14 cards.
+  - The repeats' rank correlation over five candidates is 0.8, 0.3, 0.9 and 0.4. S, last on both hearings in 3 of 4, lifts that figure. Over the four models alone it is 0.6, −0.4, 1.0 and −0.2.
+  - The arm-against-FTm call repeats on 5 of 12 decision pairs, at chance.
+  - No model was heard very close on any card. The best candidate was rated "close" on 4 of 14, "some" on 9 and "far" on 1.
+- **The score against the ear.**
+  - J0's order within a card reads +0.44 [+0.24, +0.63], against +0.40 for "S last", so J0 adds +0.03 [−0.22, +0.29].
+  - With S left out, among the four models it reads +0.26 [−0.03, +0.55].
+  - On the 8 fresh cards J0 reads 0.14, below S-last's 0.35.
+  - J0's order among the four models is not shown, as in N12 (F66).
+- **The audits' sentence** (FT2 is FTm). "By the score no retrained version beats FT2 and all beat S; the gentle cut reads slightly worse than FT2 on GOAT (+1.6%, by item; undecided by fold); the real-only cleaning is indistinguishable from FT2. By ear no arm is better than FTm at this size, all three beat S, the conflict rule does not trigger, and the stop rule applies; the listener cannot repeat the arm-against-FTm call, so the four models are close to indistinguishable here."
+- **What it changes.**
+  - **FTm stays the model,** and the clean-up ends by its declared stop rule. No more listening or training goes into data cleaning.
+  - **The exclusion lists stay opt-in** (`--h4`). Nothing was deleted, and no current model reads them. So nothing is removed: FTm keeps its rows, the 19 included, and the test sets are not screened (H3 not run).
+  - **Work turns to the plugin-to-real gap and the score,** as declared. By ear, the distance to the record is far larger than any difference between these models.
+  - **Two lessons for the next pages:**
+    1. Between near-identical models, a forced five-way rank turns ties into coin flips. For later model comparisons, a page meant to decide such a pair needs a "can't tell" answer, or paired A/B with repeats of the decision pair. This clean-up is not reopened.
+    2. The next score must track the ear on distance to the record first, and order close models second. Neither is shown for J0 here: +0.03 [−0.22, +0.29] over S-last, and +0.26 [−0.03, +0.55] among the models.
+- **Files:**
+  - `PF/heavy/` holds `check/`, `h2/`, `h4/` and `h4-exclusions.json`.
+  - `PF/ear-wide/h4/` holds H4a's N12 clips and records.
+  - `PF/ear-wide/h4b/` holds `plan.json`, `key.json`, `page/` and `read.json`. The answers are builds cbe1e1c63ced and acf351166587.
+  - The logs are `logs/h4.log` and `logs/h4-read*.log`.
+  - Plan: [heavy-cleanup-plan.md](heavy-cleanup-plan.md).
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
