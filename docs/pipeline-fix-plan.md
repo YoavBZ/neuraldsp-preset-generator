@@ -4676,6 +4676,76 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - The logs are `logs/h4.log` and `logs/h4-read*.log`.
   - Plan: [heavy-cleanup-plan.md](heavy-cleanup-plan.md).
 
+### F69. C1a: the EQ, both drives, the compressor and the gate on top of the labels. By the score the held half beats the label by −0.205 on N12's captures (30 of 31, 9 of 9 bands) and by −0.030 on BKS, undecided (crunch −0.052 on 21 of 21). The gain needs the new controls; the gate is inert; choosing the amp beats a blind choice by −0.058. C2's budget is 200 (phase_c1a, phase_c1a_a1, 10,237 renders, no training, audited; by ear pending)
+- **What ran** ([plan](full-controls-plan.md), Amendment 2 of the [every-control plan](every-control-plan.md)).
+  - **The search.** Each record's stored J0 label was the start, and the search ran on top of it. It covered the amp EQ, drive 1, drive 2, the compressor and the gate. The core knobs re-tuned with them, input gain stayed within −20 to +12 dB, and the mics were held.
+  - **Budget.** 100 evaluations, with a seeded 12-record subset run to 300.
+  - **Where.**
+    - N12's 31 capture units, measurement only and never training rows.
+    - BKS's 40 stage-1 units, one amp each, picked on the search half.
+    - BKS's 2 real_out units are reported apart.
+  - **Rows.** Held half, ln(d_C1a / d_label), lower is better. 90% cluster-jackknife t intervals, by band on N12 and by DI on BKS. Band-weighted means beside.
+  - **The audit.** It was done with separate code; every row below matches the stored report, by class too. Its scripts and per-record values are in the session scratchpad (`c1a-audit/`).
+- **The starts.**
+  - Every start was within 0.005 of `best.judge[search]`; the largest gap was 0.0037.
+  - 2 N12 starts missed with the gate on, by 0.00513 and 0.00533. They matched exactly with the gate as in the label, so they ran from there (Amendment 1).
+  - Starts: N12 29 gate-on and 2 gate-off, BKS 40 gate-on; none refused; no fallback label.
+  - The labels are the 100-evaluation incumbents, and every subset `label_300` is the 300 incumbent. Fresh and in-process renders agree within 1.0e-4.
+- **By the score.**
+
+  | Row | N12 (31, 9 bands) | BKS (38, 8 DIs) |
+  |---|---|---|
+  | **C1a best − label** | **−0.205 [−0.319, −0.091]**; band-weighted −0.180 [−0.261, −0.099]; 30 of 31 parts, 9 of 9 bands | **−0.030 [−0.073, +0.014]**; band-weighted −0.034; 34 of 38 parts, 6 of 8 DIs |
+  | clean | −0.140 [−0.222, −0.058] (22) | −0.002 [−0.102, +0.097] (17) |
+  | crunch | −0.363 [−0.641, −0.086] (9); band-weighted −0.287 [−0.590, +0.017] | −0.052 [−0.077, −0.027] (21, all 21 negative) |
+  | Label − S, for scale | −0.407 | −0.403 |
+  | Pedals reset to the start's (all / clean / crunch) | +0.126 / +0.049 / +0.313 | +0.020 [−0.005, +0.046] / +0.004 / +0.034 |
+  | EQ reset to the label's | +0.116 / +0.117 / +0.113 | +0.020 [−0.010, +0.049] / +0.016 / +0.023 |
+  | Both reset | +0.222 (30 records) | +0.034 |
+  | Gate reset to the start's | −0.000 | −0.006 [−0.017, +0.005] |
+  | Subset: 300 evaluations − 100 | +0.013 [−0.070, +0.097] (6) | −0.074 [−0.150, +0.003] (6) |
+  | Subset: 300 evaluations − label | −0.239 [−0.522, +0.044] | −0.056 [−0.103, −0.010] |
+
+  - **What changed.**
+    - The EQ moved from S's curve on 31 of 31 N12 records and 38 of 38 BKS.
+    - On N12 the compressor was switched in 11 times, drive 1 in 4 and drive 2 in 1. On BKS the compressor was switched in 3 times and drive 1 once. Drive 2's knobs moved on 19 BKS crunch records, where S already has drive 2 on.
+    - The gate's threshold moved, with the gate on in the best, on 11 N12 records and on 22 BKS (+2 real_out).
+  - **BKS real_out:** −0.049 [−0.260, +0.161], n = 2.
+  - **Amp choice** (BKS, from the stored stage-1 labels of all three amps: chosen on the search half, read on the held half, against the mean of the three amps): −0.058 [−0.087, −0.028]; band-weighted −0.067 [−0.103, −0.032]; 35 of 38 parts. The chosen amp is the best on the held half in 28 of 38 units. Stage 0b read −0.044 the same way.
+- **The gain needs the new controls.**
+  - With the EQ and pedals reset, what is left of the best is no better than the label: +0.014 [−0.009, +0.036] on N12 and +0.004 on BKS.
+  - By path credit over the first 100 evaluations, core-knob moves carry 43% of N12's search-half gain (59% on crunch) and 28% of BKS's. None came before the first EQ or pedal move; they are co-moves. Input gain moved on 12 of 31 N12 records against 3 of 38 on BKS.
+  - The gate is inert as searched.
+- **Why N12 gains more than BKS.** It reflects N12's data, not an artefact.
+  - **N12's labels are weaker.** v2 is one pass, capped at 44 evaluations (32 to 42 used, median best at evaluation 33). BKS's `main_stage` labels used 52 (median best at 46.5).
+    - Within N12, C1a gains most where the label gained least over S (Spearman −0.51; BKS −0.07).
+    - Per amp, the label's gain over S and then C1a's: pr12 −0.19 then −0.38, ac20 −0.45 then −0.20, sw50r −0.57 then −0.05. The totals land close together, at −0.57, −0.65 and −0.62.
+  - **The targets differ in kind.** N12's are noise-free NAM captures of 31 other miked rigs. BKS's are real reamps of one session.
+    - N12's held half keeps 89% of the search-half gain (−0.205 of −0.229); BKS keeps 50% (−0.030 of −0.059).
+    - On BKS clean, 4 of 17 records lose on the held half (up to +0.37) while gaining on the search half.
+  - **N12's top three are pr12 crunch captures,** where the pedals are worth +0.69. Without them N12 reads −0.130.
+  - **Reweighting N12** to BKS's amp-by-class mix leaves −0.179.
+  - **So BKS is the guide for C2's training rows:** −0.03 at 100 evaluations, about −0.06 at 300.
+- **C2's budget is 200,** by the declared rule. The pooled median of per-record search-half ratios is 0.483, 0.703, 0.835 and 0.952 at 50, 100, 150 and 200.
+  - N12 alone would give 150; BKS alone gives 200.
+  - N12's apparent held-half fall with more budget is one record, `2cstca38hta`. Two EQ low-pass moves there gained 0.0007 on the search half and cost 0.26 on the held half. N12's held means are flat after 100: .217, .253, .225, .228 and .239 at 50 to 300.
+  - BKS's held means keep rising: +.008, −.017, +.015, +.037 and +.056.
+  - Nothing supports a budget below 200.
+- **Flags, carried here.**
+  - **The both-reset row covers 30 N12 records.** On `cap/9w20zyf2mb#pr12` that ablation's judge is infinite on both halves. Its best had set pr12 Volume to 0, peak −48.9 dBFS.
+  - **The start check covers the search half only.** On BKS Bulldozer `31_ElecGtr5aDI@300` (sw50r crunch), the gate on at −80 shifts the held half by −0.0997 while the search half matches to 0.0000. That is about −0.003 of BKS's mean.
+  - **Renders: 10,237.** The shards logged 3,442 + 3,444 + 1,246 + 2,103 = 10,235. The pre-amendment crash on `cap/1xiluf3lhnm` spent 2 more (a priming render and one evaluation). That is under the drawn bound of 10,305.
+  - **Output level drift.** The best's peak fell by more than 10 dB on 7 of 31 N12 records and 5 of 38 BKS, through mic levels, drive levels, amp volume and the right cab turned off. The deepest are −52.6 dBFS (N12) and −59.6 dBFS (BKS), the latter 0.36 dB above the −60 dBFS silence floor. That is free to the judge, which removes level. A written preset needs its output gain set by the loudness rule, and C2 should guard the floor.
+- **The audit's sentence.** "C1a searched the amp EQ, both drives, the compressor and the gate on top of the stored J0 labels for 100 evaluations, at 10,237 renders. On N12's 31 capture units (measurement only), the held half beat the label by −0.205 [−0.319, −0.091] by the score (band-weighted −0.180; 30 of 31 parts, 9 of 9 bands): −0.140 on clean and −0.363 on crunch. On BKS's 38 units it was −0.030 [−0.073, +0.014], undecided (crunch −0.052 [−0.077, −0.027] on 21 of 21; clean −0.002). The gain needs the new controls: with the EQ and pedals reset, what is left of the best is no better than the label (+0.014 on N12, +0.004 on BKS), and the gate is inert. N12's larger number reflects its data: noise-free captures of other amps, whose held half keeps 89% of the search gain against BKS's 50%, and shorter v2 labels that C1a improved most where they were weakest. BKS's number is the one to expect on C2's training rows. Choosing the amp on the search half beat a blind choice by −0.058 [−0.087, −0.028]. The declared rule sets C2's budget at 200; BKS's held half agrees, and N12's apparent fall is one record. These are J0's scores; no one has listened."
+- **By ear: pending.** The user said yes on 2026-11-09 to a short blind A/B page, the label against C1a's best, with ties allowed. No ear verdict is drawn here.
+- **What it changes.**
+  - The controls FT2 never sets are worth a lot on N12's captures and a little on BKS's reamps, mostly on crunch. That is a lever for the main goal as well as completeness.
+  - **Labels.** The 40 BKS records are C2's first full-control training labels. C2 continues them by replaying their stored trials if its budget is above 100. The 31 N12 records stay measurement only.
+  - **The amp choice** has its first real-row label (BKS).
+  - **C2's budget is 200.** Its recipe is C1a's plus C1b's, with the start rule and Amendment 1's miss rule.
+  - **Next, on the user's yes of 2026-11-09:** C1b (time effects, the spring, the room mics, the left cab and the mics re-searched with the EQ), declared with its cost before it renders, and the A/B page. C2 and C3 go to the user with their costs.
+- Files: `PF/c1a/` (`records.json`, `report.json`, per-record outputs), logs `logs/c1a*.log`. Code: `learn/full_controls.py`. Plan: [full-controls-plan.md](full-controls-plan.md).
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read

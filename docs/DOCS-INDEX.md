@@ -432,7 +432,7 @@ was declared, what was measured, and the research behind it.
   The new model clearly beats the old one (D − D_existing −0.067 [−0.113, −0.021]) and is
   indistinguishable from arm A's search (D − H −0.006 [−0.062, +0.050]; not shown equivalence)
   at zero renders. 321 renders. Audited. Read on all parts, before the trusted-data rule.
-- [full-controls-plan.md](full-controls-plan.md) (Amendment 2 of the every-control plan; code `learn/full_controls.py`, ledger `pipeline-fix` `phase_c1a`): every control on the real rows. A coverage table of all 131 Morgan rows and Tone King, with routes and blockers, then C1a: the EQ, pedals, compressor and gate searched on top of the labels, on N12's units and BKS. C1b to C5 follow: the time effects and the rest, every training record, the retrain, the ear page, and the clean-up re-tested. Declared 2026-11-09; C1a approved.
+- [full-controls-plan.md](full-controls-plan.md) (Amendment 2 of the every-control plan; code `learn/full_controls.py`, ledger `pipeline-fix` `phase_c1a` to `phase_c1a_outcome`; C1a ran 2026-11-09, F69): every control on the real rows. A coverage table of all 131 Morgan rows and Tone King, with routes and blockers, then C1a: the EQ, pedals, compressor and gate searched on top of the labels, on N12's units and BKS. C1b to C5 follow: the time effects and the rest, every training record, the retrain, the ear page, and the clean-up re-tested. Declared 2026-11-09; C1a approved.
 - [every-control-plan.md](every-control-plan.md) → [stage 0 results](every-control-stage0-results.md):
   how and when each route covers every manifest control (approved 2026-10-22 for stages 0–1;
   every control is learned); code `learn/every_control.py`. Stage 0 (94 renders): amp choice
