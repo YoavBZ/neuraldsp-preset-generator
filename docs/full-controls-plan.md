@@ -94,7 +94,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **The check:** the first evaluation's search-half value must equal `best.judge[search]` within 0.005 in log. That also verifies that the gate on at −80 dB is inert on the record. Its render sha is recorded beside `best.render_sha256`. A miss stops the shard.
 - **Space:** `knob_ceiling2.stage1_space`'s controls, about 37 to 42 an amp. The core knobs have input gain at FT2's head range, −20 to +12 dB, not −24. Then the amp EQ, drive 1, drive 2 and the compressor, plus the gate: `gateActive` as a switch and `gateThreshold` from −96 to 0 dB.
   - The mic types are held at the label's.
-  - **The factory threshold** is the median threshold of the factory menu's presets with the gate on, read from the preset files at zero renders (`full_controls.factory_gate_median`). It would be −60 dB if none had the gate on.
+  - **The factory threshold** is the median threshold of the factory menu's presets with the gate on, read from the preset files at zero renders (`full_controls.factory_gate_median`). The draw refuses if none has the gate on.
     - **Used: −80 dB.** 102 of the 107 factory presets have the gate on, with a median of −80.0, the same as the table's neutral. `c1a-draw` re-reads it and refuses on a mismatch.
   - **Canonical form:** `canon_pedals`, then the gate's: an off gate's threshold stays at −80 dB. A move that changes nothing audible costs no render.
 - **Search:** `knob_ceiling.coord_search` from the start, with `canon`, seed 20261123, which no other run uses.
@@ -117,13 +117,13 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **Reuse:** an ablation whose canonical setting equals the best's reuses the best's fresh render, and the 300 best does too when it equals the 100 best. Each is marked `same_as_best`.
   - **Also stored:** the start's settings (`start_settings`), and `measurement_only: true` on N12's records.
 - **The label is stored in today's record schema** (`unit`, `amp`, `select`, `search`, `held`, `lag`, `s_judge`, `curve`, `best`, `label`). It goes in parallel directories, `captures2/search-c1a/` and `real/search-c1a/`, with each record's searched-key list for C3's per-record masks.
-- **Rows** (held half, ln ratio, per set, all and by class; clustered by DI for BKS and by band for N12; 90% cluster-jackknife t intervals, df = clusters − 1, record-weighted; beside each, the band-weighted reading from `pipeline_fix.clustered` with its per-cluster breakdown):
+- **Rows** (held half, ln ratio, per set, all and by class; clustered by DI for BKS and by band for N12; 90% cluster-jackknife t intervals, df = clusters − 1, record-weighted; beside each, the band-weighted reading from `pipeline_fix.clustered` with its per-cluster breakdown; the threshold-move count, the start row and the median gains added 2026-11-09, before any C1a result is read):
   - **The primary:** C1a's fresh 100-budget best against the stored label.
   - **Beside:**
     - Each ablation against the best.
     - Each pedal's state changed from the label's, counted, and, for each pedal on in the best, its knobs moved from the label's.
     - The amp EQ moved from S's curve, counted.
-    - The gate's state changed from the start's, counted, and the threshold moves with the gate on (the threshold moved from −80 with the gate on in the best), counted.
+    - The gate's state changed from the start's, counted, and the threshold moves with the gate on (the threshold moved from the start's, −80 in C1a, with the gate on in the best), counted, over the main records with real_out beside.
     - The start against the label, on the held half, at zero renders: the start's first trial against the stored label.
     - The label against S, for scale.
     - The subset's checkpoint curves, from the stored checkpoint judges: on the search half (which sets C2's budget) and on the held half beside it, with the median gain at each checkpoint on both halves beside the median ratio, so records that lose are not hidden.

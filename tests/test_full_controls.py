@@ -552,20 +552,22 @@ def test_cmd_report_gives_gate_on_rows_beside_the_pooled_and_counts_the_starts(t
                best={"settings": {"parameters/gateActive": "false"}}, start_settings={})
     bad = {"unit": "u4", "set": "n12", "label": None, "real_out": False, "subset": False, "start_gate": "refused",
            "refused": {"value": 1.0, "ref_value": 2.0, "gate_off_value": 1.5}}
-    for i, r in enumerate((on1, on2, off, bad)):
+    ro = dict(searched("b5", "clean", 4.0, 3.0, 5.0), **dict(base, real_out=True), unit="u5",
+              best={"settings": {"parameters/gateActive": "true", "parameters/gateThreshold": "-60"}})
+    for i, r in enumerate((on1, on2, off, bad, ro)):
         (d / f"r{i}.json").write_text(json.dumps(r))
     (tmp_path / "c1a").mkdir()
     (tmp_path / "c1a" / "records.json").write_text(json.dumps({"records": []}))
     F.cmd_report(None)
     rep = json.loads((tmp_path / "c1a" / "report.json").read_text())["n12"]
-    assert rep["starts"] == {"on": 2, "off_after_miss": 1, "refused": 1}
+    assert rep["starts"] == {"on": 3, "off_after_miss": 1, "refused": 1}
     assert rep["rows"]["records"] == 3 and rep["rows_gate_on_start"]["records"] == 2
     assert math.isclose(rep["rows_gate_on_start"]["all"]["primary"]["mean"], (math.log(0.75) + math.log(0.85)) / 2)
     assert [g["unit"] for g in rep["gate_off_after_miss"]] == ["u3"] and rep["refused"][0]["unit"] == "u4"
-    assert rep["gate_threshold_moved_on"] == 1 and "subset_median_gain" in rep and set(rep["subset_median_gain"]) == {
+    assert rep["gate_threshold_moved_on"] == {"main": 1, "real_out": 1} and "subset_median_gain" in rep and set(rep["subset_median_gain"]) == {
         "search", "held"}
     printed = json.loads(capsys.readouterr().out.split("C2 budget")[0])["n12"]
-    assert printed["refused"] == 1 and printed["starts"] == {"on": 2, "off_after_miss": 1, "refused": 1}
+    assert printed["refused"] == 1 and printed["starts"] == {"on": 3, "off_after_miss": 1, "refused": 1}
 
 
 def test_factory_guard_refuses_no_gate_on_or_another_median():
@@ -578,12 +580,17 @@ def test_factory_guard_refuses_no_gate_on_or_another_median():
         F.factory_guard(-70.0, 107, 102)
 
 
-def test_gate_threshold_moved_counts_only_an_on_gate_off_the_factory_value():
-    def rec(active, thr):
-        return {"best": {"settings": {"parameters/gateActive": active, "parameters/gateThreshold": thr}}}
-    assert F.gate_threshold_moved(rec("true", "-55"))
+def test_gate_threshold_moved_counts_an_on_gate_moved_from_the_starts_threshold():
+    def rec(active, thr, start=None):
+        r = {"best": {"settings": {"parameters/gateActive": active, "parameters/gateThreshold": thr}}}
+        if start is not None:
+            r["start_settings"] = {"parameters/gateThreshold": start}
+        return r
+    assert F.gate_threshold_moved(rec("true", "-55"))                              # no start: against -80
     assert not F.gate_threshold_moved(rec("true", F.GATE_ON_DB)) and not F.gate_threshold_moved(rec("true", "-80.0"))
     assert not F.gate_threshold_moved(rec("false", "-55")) and not F.gate_threshold_moved({})
+    assert not F.gate_threshold_moved(rec("true", "-42", start="-42"))             # the start's own threshold
+    assert F.gate_threshold_moved(rec("true", "-80", start="-42"))
 
 
 def test_median_gain_keeps_losers():

@@ -32,7 +32,8 @@ PEDAL_MODULES = ("drive1", "drive2", "compressor")
 PEDAL_SWITCHES = (("drive1", "drive1Active"), ("drive2", "drive2Active"), ("compressor", "compressorActive"))
 GATE_KEYS = (("parameters", "gateActive"), ("parameters", "gateThreshold"))
 GATE_ON_DB = "-80"                   # the factory threshold: the median of the factory menu's presets with the gate on
-                                     # (102 of 107, read 2026-11-09 at zero renders, `factory_gate_median`); -60 if none.
+                                     # (102 of 107, read 2026-11-09 at zero renders, `factory_gate_median`; the draw
+                                     # refuses if none has the gate on).
                                      # C1a's start turns an off gate on here (`gate_on`, as `every_control.group_plan`
                                      # does), and an off gate's canonical threshold stays here
 GATE_FALLBACK_DB = -60.0
@@ -371,11 +372,12 @@ def gate_off_rows(recs):
 
 
 def gate_threshold_moved(r):
-    """Did the best keep the gate on with its threshold moved from the factory value (GATE_ON_DB)? Zero renders."""
+    """Did the best have the gate on with its threshold moved from the start's (`start_settings`; GATE_ON_DB, -80 in
+    C1a, if a record has none)? Zero renders."""
     g = (r.get("best") or {}).get("settings") or {}
-    return (str(g.get("parameters/gateActive")).lower() == "true"
-            and g.get("parameters/gateThreshold") not in (None, GATE_ON_DB)
-            and float(g["parameters/gateThreshold"]) != float(GATE_ON_DB))
+    st = (r.get("start_settings") or {}).get("parameters/gateThreshold", GATE_ON_DB)
+    thr = g.get("parameters/gateThreshold")
+    return str(g.get("parameters/gateActive")).lower() == "true" and thr is not None and float(thr) != float(st)
 
 
 def median_gain(curves, half):
@@ -715,7 +717,8 @@ def cmd_report(_args):
                   "subset_curves": cur,
                   "subset_median_ratio": {h: c2_budget([c[h] for c in cur])[1] for h in ("search", "held")},
                   "subset_median_gain": {h: median_gain(cur, h) for h in ("search", "held")},
-                  "gate_threshold_moved_on": sum(1 for r in recs if gate_threshold_moved(r))}
+                  "gate_threshold_moved_on": {"main": sum(1 for r in main if gate_threshold_moved(r)),
+                                              "real_out": sum(1 for r in recs if r["real_out"] and gate_threshold_moved(r))}}
     plan = json.loads((c1a_dir() / "records.json").read_text())
     pairs = []
     for r in plan["records"]:
