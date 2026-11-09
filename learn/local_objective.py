@@ -152,8 +152,9 @@ RENDERS = (r"-m learn\.song_relabel (render-new|probe)\b", r"-m learn\.ks_extend
            r"-m learn\.cc_audibility render\b",                   # the clean/crunch pool's step-4 listening page
            r"-m learn\.cc_drive_page render\b",                   # the clean/crunch pool's drive-pedal page
            r"-m learn\.heavy_cleanup (pilot-render|h2-doubler-render)\b",  # docs/heavy-cleanup-plan.md, H1 and H2
-           r"-m learn\.full_controls c1a-search\b",              # docs/full-controls-plan.md (C1a)
-           r"-m learn\.c1a_ear c1a-ear-render\b")                 # docs/full-controls-plan.md (C1a by ear)
+           r"-m learn\.full_controls c1a-search\b",             # docs/full-controls-plan.md (C1a)
+           r"-m learn\.c1a_ear c1a-ear-render\b",                # docs/full-controls-plan.md (C1a by ear)
+           r"-m learn\.full_controls_c1b c1b-search\b")         # docs/full-controls-plan.md (C1b)
 # Separations that need the machine to themselves (amendment 3): no render starts beside one.
 SEPARATIONS = (r"-m learn\.local_objective_1c separate\b", r"-m learn\.separator_screen (separate|identity)\b",
                r"-m learn\.separate\b", r"-m learn\.known_answer separate\b",
