@@ -45,6 +45,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 | Left cab on and level (2) | C1b | C3 | never | C1b, with both cabs on | none |
 | Cab phase, left and right (2) | C1b: the right cab's phase, both cabs on | C3 | screen: J0 hears it up to 0.296 | C1b stage A; one switch carries the relative phase a mono judge hears, the left held | the left switch's own meaning is stereo: with the stereo row |
 | Stereo: doubler on and spread; cab pan and stereo per side; delay width and ping-pong (8) | no | no | screen only | needs a stereo term from the song's stereo image | J0 is mono; no stereo target yet |
+| Mic types outside GOAT's short lists | no | no | never: C1b re-tests the short lists only | widen the lists in C2, or a full mic-alternative stage | budget |
 | Combinations of time effects (two or more on) | no | no | never | a second effect searched on top of the kept one, in C2 or a C1b amendment | budget, and the keep margin's comparisons multiplying; C1b keeps at most one |
 | Tempo sync: delay sync, tempo and sync note; tremolo sync and sync note (5) | no | no | none | written free, as ms and Hz; tempo-locked delay needs the song's tempo from beat tracking | no beat tracker in the pipeline |
 | Section switches: amp, EQ, pedal, cab, effects (5) | no | no | none | held on; each section's own switches carry the same sounds | none: a reparametrisation |
@@ -60,7 +61,8 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **C1a** (approved; this plan in full below): the EQ, pedals, compressor and gate on top of the label. On N12's 31 units and BKS's 40, as labels and a measurement.
 - **C1b** (declared before it runs; the user's go): the time effects, the spring, the room mics and the left cab, on C1a's records.
   - Each effect is searched on its own, rendered in a fresh process, with a keep margin declared first (knob ceiling 2's stage 2).
-  - It re-checks the mics and re-searches the amp EQ jointly with them, since N12's v2 mics came from a 4-mic short list and the EQ can compensate for a wrong mic.
+  - Stage B re-tests GOAT's short mic lists (`night2.mic_lists`, the same lists N12's v2 labels came from), now with an EQ re-tune beside each mic, since the EQ can compensate for a wrong mic.
+  - The mics outside those lists stay open in C0. The route is to widen the lists in C2, or to run a full mic-alternative stage.
 - **C2** (the user's go): C1a and C1b's recipe on every training record. That is GOAT's, BKS's stage-2 records, and BKS's other 80 stage-1 records, because FT2 trains all three forced-amp records per unit.
   - **Cost, stated now:** about 490 records × 105 ≈ 51k renders at a budget of 100. Up to about 150k at 300. C1a's calibration sets the budget.
   - **C1a's BKS records are continued, not searched again.** If C2's budget exceeds 100, each one is replayed from its stored trials (the search is deterministic) at zero renders, and only the evaluations past 100 are rendered.
@@ -183,11 +185,11 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - A room switched on starts at the table's neutral −6 dB, an acting level.
   - `knob_ceiling.coord_search`, budget 16, seed 20261125, in the dry process, primed with the start.
 - **Stage B, the mic re-check jointly with the EQ.** The mic type of each cab that is on, and the amp EQ (9 bands, both filters), searched together by `knob_ceiling.knob_search`. Budget 48, seed 20261126, in the same dry process.
-  - **The mic alternatives are GOAT's label-derived short lists** (`night2.mic_lists`, 3 to 4 a side, with the current mic). That keeps them few enough for each to get an EQ re-tune.
+  - **The mic alternatives are GOAT's label-derived short lists** (`night2.mic_lists`, 3 to 4 a side, with the current mic). These are the same lists N12's v2 labels came from, so stage B re-tests them, now with an EQ re-tune. Each record stores the lists it used.
   - **The budget's shares are 25%, 50% and 15%:**
-    - About 12 evaluations go to the main stage, over the EQ, with the short-list mics tried at each new step size.
-    - About 24 go to the alternatives. Each short-list mic is set on the incumbent and followed by a quick re-tune of the EQ's 3 key dims (steps 0.25 and 0.125). That is 3 or 4 evaluations each across the 6 or 7 alternatives.
-    - About 7 go to two restarts from the best alternatives, and the rest to a final pass.
+    - **Main stage, 12 evaluations,** over the EQ. They never try a mic, because the first sweep over the 11 EQ dims doesn't finish.
+    - **Alternatives, 24 evaluations.** Each short-list mic is set on the incumbent and followed by a quick re-tune of the EQ's 3 key dims (steps 0.25 and 0.125). With both cabs on, that is 5 to 8 alternatives at 3 or 4 evaluations each. With one cab, it is 3 or 4 alternatives at 6 to 8 each.
+    - **Restarts, 6 evaluations:** two of 3 each, from the best alternatives. The rest goes to a final pass.
 - **Stage C, each time effect on its own,** on top of B's best, as knob ceiling 2's stage 2: reverb, delay, tremolo, and the amp's spring (pr12: level and dwell; sw50r: level).
   - **Its knobs:** knob ceiling 2's, plus the two it left out. Those are tremolo level and delay tape drive, each continuous 0 to 1 as `every_control._dim` defines them, with declared on values for an off effect of 0.5 and 0.
   - **The search:** each effect is switched on at its declared on values, and its knobs are searched by plain `knob_ceiling.coord_search`, so ±0.25 is tried on every knob first, and delay time and tremolo rate reach their range. At 3.5 evaluations a knob: reverb 18, delay 21, tremolo 10, and the spring 7 or 4. Seed 20261127 on.
@@ -206,7 +208,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **Fresh renders and ablations,** each in its own process with one priming render:
   - B's best: the dry baseline, and the effects-reset ablation.
   - Each effect that passes in process.
-  - The final with the rooms reset to the C1a label's.
+  - The final with stage A's controls (the left cab, the room mics and the phase) reset to the C1a label's. Resetting the phase with them costs no extra render.
   - The final with the mics and amp EQ reset to the C1a label's.
   - An ablation equal to the final or to B's best reuses its render.
 - **Recorded:**
@@ -218,7 +220,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **Rows.** Held half, ln ratio, per set, all and by class. Record-weighted jackknife t intervals, with the band-weighted reading (`pipeline_fix.clustered`) and its per-cluster breakdown beside.
   - **The primary:** C1b's final, rendered fresh, against C1a's fresh best.
   - **Per stage:** each ablation against the final.
-  - **Counts:** the wet effects kept, per effect; mic changes.
+  - **Counts:** the wet effects kept, per effect; mic changes; and what stage A changed: the left cab turned off, rooms turned on, the phase flipped.
   - **C1a's flags, carried:** output-level drift (the final's peak more than 10 dB below the start's), counted; non-finite ablations, named, not dropped.
   - **Records left out of the primary,** named with why: a fallback label, or a non-finite final or C1a best. The fallbacks are listed by unit.
   - real_out apart.

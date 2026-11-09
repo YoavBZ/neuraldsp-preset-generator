@@ -152,11 +152,13 @@ def test_passes_and_choose():
 def test_ablations_reset_their_own_keys_and_effects_reset_is_the_dry_best():
     st = C.make_canon("pr12")(C.with_spring(full_start(), "pr12"))
     final = {**st, ("cabParameters", "leftRoomActive"): "true", ("cabParameters", "leftMicType"): "5",
-             ("pr12EQ", "pr12EQBand2"): "3", ("reverb", "reverbActive"): "true"}
+             ("pr12EQ", "pr12EQBand2"): "3", ("reverb", "reverbActive"): "true", C.PHASE_KEY: "true"}
     dry = {**final, ("reverb", "reverbActive"): "false"}
     ab = C.ablation_settings(final, st, dry, "pr12")
     assert set(ab) == set(C.ABLATIONS)
     assert ab["rooms_reset"][("cabParameters", "leftRoomActive")] == "false"
+    assert ab["rooms_reset"][C.PHASE_KEY] == st[C.PHASE_KEY] != "true"               # the phase is stage A's too
+    assert ab["mics_eq_reset"][C.PHASE_KEY] == "true"
     assert ab["rooms_reset"][("cabParameters", "leftMicType")] == "5" and ab["rooms_reset"][("reverb", "reverbActive")] == "true"
     m = ab["mics_eq_reset"]
     assert m[("cabParameters", "leftMicType")] == "0" and m[("pr12EQ", "pr12EQBand2")] == st[("pr12EQ", "pr12EQBand2")]
@@ -309,6 +311,8 @@ def test_c1b_search_runs_the_stages_keeps_a_clear_effect_and_counts_renders(tmp_
     assert r["label"]["pr12EQ/pr12EQBand3"] != "0"                                 # stage B moved the EQ
     assert r["stage_a_settings"]["pr12EQ/pr12EQBand3"] == "0" and r["stage_b_settings"]["pr12EQ/pr12EQBand3"] != "0"
     assert r["stage_a_settings"]["cabParameters/leftRoomActive"] == "true"
+    assert r["stage_a_changed"] == {"left_cab_off": False, "rooms_on": 1, "phase_flipped": False}
+    assert r["mic_lists"] == LISTS["pr12"]
     assert r["effect_kept"] == "reverb" and r["label"]["reverb/reverbActive"] == "true"
     assert "spring/springOn" not in r["label"] and r["label"]["pr12Amp/pr12Reverb"] == "0"       # the plugin's settings
     assert "spring/springOn" not in r["searched_keys"] and "reverb/reverbMix" in r["searched_keys"]
@@ -410,6 +414,7 @@ def test_stage_a_turning_the_left_cab_off_with_a_nonneutral_level(tmp_path, monk
     r = json.loads(_out(tmp_path, row).read_text())
     assert r["stage_a_settings"]["cabParameters/leftCabActive"] == "false"
     assert r["label"]["cabParameters/leftCabActive"] == "false"
+    assert r["stage_a_changed"]["left_cab_off"] is True
 
 
 def test_dry_start_problems_name_effects_spring_and_doubler():
@@ -452,3 +457,17 @@ def test_searched_union_and_dropped():
     ok = done("d1", "clean", 4.0, 3.0)
     assert C.dropped([ok, dict(ok, unit="u2", label=None), dict(ok, unit="u3", c1a_fresh_best={"B": float("nan")})]) == [
         ("u2", "fallback label"), ("u3", "non-finite final or C1a best")]
+
+
+def test_stage_a_changes_and_their_counts():
+    st = full_start()
+    xa = {**st, ("cabParameters", "leftCabActive"): "false", ("cabParameters", "leftRoomActive"): "true",
+          ("cabParameters", "rightRoomActive"): "true", C.PHASE_KEY: "true"}
+    assert C.stage_a_changes(xa, st) == {"left_cab_off": True, "rooms_on": 2, "phase_flipped": True}
+    assert C.stage_a_changes(st, st) == {"left_cab_off": False, "rooms_on": 0, "phase_flipped": False}
+    off = {**st, ("cabParameters", "leftCabActive"): "false"}
+    assert C.stage_a_changes(off, off)["left_cab_off"] is False                     # already off at the start
+    rs = [dict(done("d1", "clean", 4.0, 3.0), stage_a_changed={"left_cab_off": True, "rooms_on": 2, "phase_flipped": True}),
+          dict(done("d2", "clean", 4.0, 3.0), stage_a_changed={"left_cab_off": False, "rooms_on": 1, "phase_flipped": False})]
+    out = C.report_rows(rs, lambda df: 2.0, P.clustered)["all"]
+    assert (out["left_cab_off"], out["rooms_on"], out["phase_flipped"]) == (1, 3, 1)

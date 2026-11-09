@@ -30,14 +30,15 @@ KEEP_MARGIN = 0.02                   # an effect is kept only if its fresh rende
                                      # half, log): declared before use, above knob ceiling 2's 0.005 (see the plan)
 START_TOL = F.START_TOL
 DRIFT_DB = 10.0                      # an output-level drift flag: the final's peak this far below the start's
-ROOM_KEYS = (("cabParameters", "leftCabActive"), ("cabParameters", "leftCabMicLevel"),
-             ("cabParameters", "leftRoomActive"), ("cabParameters", "leftRoomMicLevel"),
-             ("cabParameters", "rightRoomActive"), ("cabParameters", "rightRoomMicLevel"))
 MIC_KEYS = (("cabParameters", "leftMicType"), ("cabParameters", "rightMicType"))
 SPRING_KEY = ("spring", "springOn")
 PHASE_KEY = ("cabParameters", "rightCabPhase")   # the cabs' relative phase: one switch, both cabs on (mono J0 hears it)
 EXTRA_KNOBS = {"tremolo": {("tremolo", "tremoloLevel"): "0.5"},  # knobs knob ceiling 2 left out, with their declared
                "delay": {("delay", "delayTapeDrive"): "0"}}      # on values for an off effect
+ROOM_KEYS = (PHASE_KEY,                          # stage A's controls, which rooms_reset resets
+             ("cabParameters", "leftCabActive"), ("cabParameters", "leftCabMicLevel"),
+             ("cabParameters", "leftRoomActive"), ("cabParameters", "leftRoomMicLevel"),
+             ("cabParameters", "rightRoomActive"), ("cabParameters", "rightRoomMicLevel"))
 DRY_KEYS = (("reverb", "reverbActive"), ("delay", "delayActive"), ("tremolo", "tremoloActive"),
             ("parameters", "doublerActive"))
 ABLATIONS = ("rooms_reset", "mics_eq_reset", "effects_reset")
@@ -238,6 +239,14 @@ def searched_union(c1a_keys, start, xa, amp, lists):
     return sorted(set(c1a_keys) | c1b)
 
 
+def stage_a_changes(xa, start):
+    """What stage A changed from the start: the left cab turned off, rooms turned on (0 to 2), the phase flipped."""
+    return {"left_cab_off": _on(start, ("cabParameters", "leftCabActive")) and not _on(xa, ("cabParameters", "leftCabActive")),
+            "rooms_on": sum(_on(xa, (m, k)) and not _on(start, (m, k))
+                            for m, k in (("cabParameters", "leftRoomActive"), ("cabParameters", "rightRoomActive"))),
+            "phase_flipped": xa.get(PHASE_KEY) != start.get(PHASE_KEY)}
+
+
 def drifted(start_peak, final_peak, db=DRIFT_DB):
     """The output-level drift flag: the final's peak more than `db` below the start's."""
     try:
@@ -301,6 +310,9 @@ def report_rows(recs, tq, clus):
         return {"primary": row(sub, lambda v: v["primary"]),
                 "ablations": {a: row(sub, lambda v, a=a: v["ablations"].get(a)) for a in ABLATIONS},
                 "effects_kept": kept, "mics_changed": sum(1 for r, _ in sub if r.get("mics_changed")),
+                "left_cab_off": sum(1 for r, _ in sub if (r.get("stage_a_changed") or {}).get("left_cab_off")),
+                "rooms_on": sum((r.get("stage_a_changed") or {}).get("rooms_on", 0) for r, _ in sub),
+                "phase_flipped": sum(1 for r, _ in sub if (r.get("stage_a_changed") or {}).get("phase_flipped")),
                 "records": len(sub)}
 
     res = {"all": rows(vals) if vals else None}
@@ -522,6 +534,7 @@ def cmd_search(args):
                      "stage_a_settings": LO.sdict(plugin(xa, amp)), "stage_b_settings": LO.sdict(plugin(xb, amp)),
                      "effects": per, "effect_kept": kept,
                      "mics_changed": any(xb.get(m) != start.get(m) for m in MIC_KEYS),
+                     "stage_a_changed": stage_a_changes(xa, start), "mic_lists": lists[amp],
                      "c1b_searched_keys": searched_union([], start, xa, amp, lists),
                      "searched_keys": searched_union(src.get("searched_keys") or [], start, xa, amp, lists),
                      "fresh": fr, "drift": drifted(dry["start"]["peak_dbfs"], fr["final"]["peak_dbfs"]),
