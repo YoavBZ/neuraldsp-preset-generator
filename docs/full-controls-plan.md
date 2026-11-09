@@ -9,7 +9,7 @@
 - **The user's go for C1a:** "Go", at about 10,000 renders, with the gate included.
 - **The user's word on ranking pages:** several presets may share a rank, instead of a "can't tell" answer.
 - **Every later step** with renders beyond C1a's, or with training, goes to the user with its cost before it runs.
-- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a` and `phase_c1a_a1` (Amendment 1). Code: `learn/full_controls.py`, tests `tests/test_full_controls.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
+- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1) and `phase_c1b`. Code: `learn/full_controls.py`, tests `tests/test_full_controls.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
 
 **The every-control plan's stage 1 never ran.** It is a true-DI oracle for the groups with no number, about 13–14k renders. It was approved on 2026-10-22 and waited for a trusted data list. Then the work moved to the trusted data and the pipeline fix. This amendment carries its goal onto today's route (FT2 and its real rows). It folds stage 1's never-measured groups in as C1b.
 
@@ -154,6 +154,68 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **Resume.** Records already written, refused ones included, are skipped.
 - **Counts.** The shard's last line and the report count each kind: on, off after a miss, refused. Records written before the amendment carry no flag and count as on.
 - **Cost.** A gate-only miss adds 4 renders (the missed start's process and the second start). A refused record costs 4 renders, or 6 when the gate-off run itself misses.
+
+## C1b in detail (declared 2026-11-09, before any C1b render)
+
+- **Status.** Declared on the user's "Yes" to C1b at about 8,500 renders.
+  - It comes after C1a's results were read: by C1a's report, C1a's best against the stored label on the held half was −0.205 [−0.319, −0.091] on N12 and −0.030 [−0.073, +0.014] on BKS, and C2's budget was set at 200.
+  - Nothing of C1b has been rendered.
+  - Ledger `pipeline-fix` `phase_c1b`. Code: `learn/full_controls_c1b.py` (`c1b-draw`, `c1b-search`, `c1b-report`), tests `tests/test_full_controls_c1b.py`.
+- **Records.** C1a's 71 records, read from `c1a/records.json` and C1a's outputs. The sets, clusters and real_out apart are as in C1a, and N12's records stay measurement only. A C1a record that was refused or fell back is left out and named; C1a had none.
+- **Start.** Each record's C1a `label`; `label_300` is not used.
+  - C1b's canonical form changes only inert keys, checked at zero renders on all 71: a room's level goes to neutral while the room is off; an off effect's knobs go to its declared on values, with the sync free; the spring's pseudo-switch is set from its level.
+  - **The start check:** the first evaluation must be within 0.005 of C1a's stored best (`best.judge[search]`).
+  - **On a miss,** in Amendment 1's manner:
+    - A second start, the C1a label as stored with no canonical form, runs in its own process with priming.
+    - If it matches, the record runs from it with no canonical form anywhere, flagged `start_kind: "raw_after_miss"`.
+    - Otherwise the record is written refused, with both values, and the shard continues.
+- **Order: A, then B, then the effects last.** The request listed the effects first. They go last for three reasons:
+  - **Carry-over.** Morgan's time effects run on across renders in one process. So the dry stages share one process, as C1a did, and only the effect stage needs a process per effect.
+  - **Precedent.** Knob ceiling 2 searched the tone first and the effects on top.
+  - **A kept effect would otherwise sit under every later evaluation.**
+- **Stage A, the rest of the cab.**
+  - The left cab's switch, searched only while the right cab is on, so one cab stays on. Its level, −40 to +6 dB.
+  - Each room mic's switch and level (−40 to +6 dB). The right room only while the right cab is on.
+  - The room mic types stay as stored: they have no UI control.
+  - A room switched on starts at the table's neutral −6 dB, an acting level.
+  - `knob_ceiling.coord_search`, budget 16, seed 20261125, in the dry process, primed with the start.
+- **Stage B, the mic re-check jointly with the EQ.** The mic type of each cab that is on, with the amp EQ (9 bands, both filters), searched together by `knob_ceiling.knob_search` with its mic stages. Budget 48, seed 20261126, in the same dry process.
+- **Stage C, each time effect on its own,** on top of B's best, as knob ceiling 2's stage 2: reverb, delay, tremolo, and the amp's spring (pr12: level and dwell; sw50r: level).
+  - Each is switched on at its declared on values, and its knobs are searched by `knob_search`, at 3.5 evaluations a knob: 18, 18, 7, and 7 or 4. Seed 20261127 on.
+  - **Each effect runs in its own renderer process,** primed with its own start, so no other effect's tail carries in.
+  - **The keep decision is on fresh renders.** Within an effect's process its own tail carries over between candidates. So an effect whose in-process best beats B's in-process best by the margin is rendered fresh, in its own process with priming, and compared with B's best rendered fresh. It is kept if ln(wet / dry) ≤ −0.02 on the search half.
+  - **At most one effect a record:** the best of those kept. Combinations stay open in C0.
+  - **The sync is written free** (`knob_ceiling2.FREE_SYNC`). Tempo-locked delay stays open in C0.
+- **The keep margin, 0.02 search-half log, declared before use.**
+  - Knob ceiling 2 declared that a margin above its 0.005 must be set before the next use. There, two near-ties passed 0.005 by a hair while the listener split, and the 3 clear-gain trials the listener confirmed were far past 0.02.
+  - Four effects compete on the search half, so the best of four noisy candidates is biased low.
+  - 0.02 is four times the start tolerance, about 2% in distance.
+- **Budgets,** grounded in C1a's calibration and knob ceiling 2.
+  - On C1a's 37 to 42 dims, 100 evaluations (about 2.5 a dim) reached a median 70% of the 300-evaluation gain, and 150 (about 3.7 a dim) reached 84%.
+  - C1b gives about 2.7 a dim to stage A, 3.7 to stage B (whose EQ C1a already searched), and 3.5 a knob to each effect. Knob ceiling 2 gave 24 an effect, about 4.8 a knob for reverb and delay.
+  - So C1b's labels, like C1a's, are a lower bound.
+- **Fresh renders and ablations,** each in its own process with one priming render:
+  - B's best: the dry baseline, and the effects-reset ablation.
+  - Each effect that passes in process.
+  - The final with the rooms reset to the C1a label's.
+  - The final with the mics and amp EQ reset to the C1a label's.
+  - An ablation equal to the final or to B's best reuses its render.
+- **Recorded:**
+  - the trace; each stage's in-process best;
+  - each effect's in-process best, renders, settings and fresh render; the effect kept;
+  - mic changes; the start kind; the searched keys for C3's masks;
+  - `label`, the plugin settings of the final, with `fallback_reason` applied.
+- **Rows.** Held half, ln ratio, per set, all and by class. Record-weighted jackknife t intervals, with the band-weighted reading (`pipeline_fix.clustered`) and its per-cluster breakdown beside.
+  - **The primary:** C1b's final, rendered fresh, against C1a's fresh best.
+  - **Per stage:** each ablation against the final.
+  - **Counts:** the wet effects kept, per effect; mic changes.
+  - **C1a's flags, carried:** output-level drift (the final's peak more than 10 dB below the start's), counted; non-finite ablations, named, not dropped.
+  - real_out apart.
+- **Still open in C0 after C1b,** with their blockers: the stereo controls (J0 is mono), tempo sync (no beat tracker), combinations of effects, the custom IR paths (the user's decision), and Tone King (a searchable renderer).
+- **Cost.**
+  - **Per record:** the dry process takes at most 65 renders. The effects take Σ(1 + budget): pr12 54, sw50r 51, ac20 46. Then B's best fresh 2, two ablations 2 each, and 2 for each effect that passes.
+  - **In all: 8,644 renders if no effect passes, at most 9,182 if every one did.** That is 2% to 8% above the about 8,500 the user approved. No training.
+- **What it leads to.** C1a and C1b's recipe for C2, and the order of C1b's groups. There is no bar.
 
 ## C5: the heavy clean-up re-tested on the full-control model
 - **What F68 said, and what has changed.** F68 closed the clean-up with "This clean-up is not reopened." Its verdict on the `K.space` model stands.
