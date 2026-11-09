@@ -112,7 +112,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **Fresh renders** (each in a new process with one priming render, as `audibility_measure.fresh_render`):
     - the 100-budget best;
     - the 300-budget best on the subset;
-    - four ablations of the 100-budget best: pedals reset to the start's, amp EQ reset to the label's, both reset, and the gate reset to the start's (on, at its start threshold).
+    - four ablations of the 100-budget best: pedals reset to the start's, amp EQ reset to the label's, both reset, and the gate reset to the start's. That is the gate on at its start threshold, or, for Amendment 1's gate-off starts, the gate off.
   - All of them are judged on both halves.
   - **Reuse:** an ablation whose canonical setting equals the best's reuses the best's fresh render, and the 300 best does too when it equals the 100 best. Each is marked `same_as_best`.
   - **Also stored:** the start's settings (`start_settings`), and `measurement_only: true` on N12's records.
@@ -123,7 +123,8 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
     - Each ablation against the best.
     - Each pedal's state changed from the label's, counted, and, for each pedal on in the best, its knobs moved from the label's.
     - The amp EQ moved from S's curve, counted.
-    - The gate's state changed, counted.
+    - The gate's state changed from the start's, counted.
+    - The start against the label, on the held half, at zero renders: the start's first trial against the stored label.
     - The label against S, for scale.
     - The subset's checkpoint curves, from the stored checkpoint judges: on the search half (which sets C2's budget) and on the held half beside it.
     - The subset's held-half rows per set: ln(fresh 300 best / fresh 100 best) and ln(fresh 300 best / label).
@@ -140,8 +141,16 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - Shards 0 and 1 kept running, and their records are kept as written.
 - **The rule, on a start miss:**
   1. One more start is rendered, in its own process with one priming render, as the start is: the same start with the gate as in the label (off, its threshold canonical at −80).
-  2. **If it matches the stored label within 0.005,** the gate alone caused the miss. The record runs from this gate-off start. The gate stays searchable: its flip tests a gate on at −80, which acts on such a record, so the threshold then moves. The record is flagged `start_gate: "off_after_miss"`, with both start values in `first_start_miss`.
+  2. **If it matches the stored label within 0.005,** the gate alone caused the miss. The record runs from this gate-off start, flagged `start_gate: "off_after_miss"`.
+     - Both start values go in `first_start_miss`, with the gate-off render's sha and whether it is bit-identical to the label's.
+     - The gate stays searchable: its flip tries the gate on at −80, which may act there. Step 2's search tests it, and the threshold moves if that helps.
+     - If that run's own first evaluation then misses, the record is refused, with that value as well.
   3. **Otherwise** the record is written refused (`start_gate: "refused"`), with both values, and the shard continues. A shard never stops on a start miss.
+- **The gate rows have two meanings, stated before any read.**
+  - On a gate-on start, the gate ablation resets to the gate on at −80, and a flip means turning it off.
+  - On a gate-off start, it resets to the gate off, and a flip means turning it on.
+  - So `c1a-report` gives the rows over gate-on starts beside the pooled rows, and lists each gate-off start apart: its unit, primary, gate ablation, and what the best did with the gate.
+- **C2 inherits this rule** for every record it searches.
 - **Resume.** Records already written, refused ones included, are skipped.
 - **Counts.** The shard's last line and the report count each kind: on, off after a miss, refused. Records written before the amendment carry no flag and count as on.
 - **Cost.** A gate-only miss adds 4 renders (the missed start's process and the second start). A refused record costs 4 and nothing more.

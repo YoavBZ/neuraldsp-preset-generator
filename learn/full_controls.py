@@ -287,6 +287,9 @@ def record_values(r):
         if v is not None:
             abl[a] = math.log(v / new_h)
     out = {"primary": math.log(new_h / lab_h), "label_vs_S": math.log(lab_h / s_h), "ablations": abl}
+    st_h = _pos((((r.get("trials") or [{}])[0]).get("judge") or {}).get(h))
+    if st_h is not None:
+        out["start_vs_label"] = math.log(st_h / lab_h)        # zero renders: the start's own held half
     b3 = _pos(((r["fresh"].get("best_300") or {}).get("judge") or {}).get(h))
     if r.get("subset") and b3 is not None:
         out["b300_vs_best"], out["b300_vs_label"] = math.log(b3 / new_h), math.log(b3 / lab_h)
@@ -309,6 +312,7 @@ def report_rows(recs, tq, clus):
 
     def rows(sub):
         out = {"primary": row(sub, lambda v: v["primary"]), "label_vs_S": row(sub, lambda v: v["label_vs_S"]),
+               "start_vs_label": row(sub, lambda v: v.get("start_vs_label")),
                "ablations": {a: row(sub, lambda v, a=a: v["ablations"].get(a)) for a in ABLATIONS},
                "subset_b300_vs_best": row(sub, lambda v: v.get("b300_vs_best")),
                "subset_b300_vs_label": row(sub, lambda v: v.get("b300_vs_label"))}
@@ -328,8 +332,35 @@ def report_rows(recs, tq, clus):
 
 
 def split_refused(recs):
-    """(searched records, [{unit, the refused start's values}]): Amendment 1's refused records carry no search."""
-    return [r for r in recs if "refused" not in r], [{"unit": r["unit"], **r["refused"]} for r in recs if "refused" in r]
+    """(searched records, [{unit, set, amp, cls, subset, real_out, the refused start's values}]): Amendment 1's refused
+    records carry no search."""
+    keep = ("unit", "set", "amp", "cls", "subset", "real_out")
+    return ([r for r in recs if "refused" not in r],
+            [{**{k: r.get(k) for k in keep}, **r["refused"]} for r in recs if "refused" in r])
+
+
+def gate_on_start(r):
+    """Did the record start with the gate on at the factory threshold (records before Amendment 1 carry no flag)?"""
+    return r.get("start_gate", "on") == "on"
+
+
+def gate_off_rows(recs):
+    """Amendment 1's gate-off starts, listed apart: their gate ablation resets to the gate off, not to the gate on at
+    -80. -> [{unit, set, cls, primary, gate_reset, gate}] (held half, ln ratios; gate: what the best did with it)."""
+    out = []
+    for r in recs:
+        if r.get("start_gate") != "off_after_miss":
+            continue
+        v = record_values(r)
+        g = r.get("best", {}).get("settings", {})
+        st = r.get("start_settings", {})
+        on = str(g.get("parameters/gateActive")).lower() == "true"
+        moved = g.get("parameters/gateThreshold") != st.get("parameters/gateThreshold")
+        out.append({"unit": r["unit"], "set": r.get("set"), "cls": r.get("cls"),
+                    "primary": None if v is None else v["primary"],
+                    "gate_reset": None if v is None else v["ablations"].get("gate_reset"),
+                    "gate": ("turned on" + (", threshold moved" if moved else "")) if on else "stayed off"})
+    return out
 
 
 def start_counts(recs):
@@ -557,7 +588,18 @@ def cmd_search(args):
             renders += 2
             v_off = K.judge(ref, y, di, lag)[search]
             start_gate = start_plan(False, within(v_off, ref_v))
-            first_miss["gate_off_value"] = v_off
+            first_miss.update(gate_off_value=v_off, gate_off_sha=AM.audio_sha(y),
+                              gate_off_bit_identical=AM.audio_sha(y) == ref_sha)
+            if start_gate == "off_after_miss":
+                start = start_off
+                try:
+                    used, values, trials, evals, start_rec, names = run(start)
+                    renders += used
+                    counts["off_after_miss"] += 1
+                except StartMiss as m2:                 # the run's own first evaluation missed after all
+                    renders += m2.renders
+                    first_miss["gate_off_run_value"] = m2.value
+                    start_gate = "refused"
             if start_gate == "refused":
                 P.save(out, {"plan": "docs/full-controls-plan.md", "ledger": f"{P.LEDGER_ID} {PHASE_A1}",
                              "set": rec["set"], "unit": rec["unit"], "cls": rec["cls"], "amp": amp,
@@ -569,10 +611,6 @@ def cmd_search(args):
                 print(f"{rec['key'][-70:]}: refused (start {miss.value} and gate off {v_off} against {ref_v}); "
                       f"renders so far {renders}", flush=True)
                 continue
-            start = start_off
-            used, values, trials, evals, start_rec, names = run(start)
-            renders += used
-            counts["off_after_miss"] += 1
         if start_gate == "on":
             counts["on"] += 1
         cps = checkpoints(values, rec["budget"])
@@ -607,7 +645,8 @@ def cmd_search(args):
                                   "same_as_best": False}
             fb3 = A.fallback_reason(b300["peak_dbfs"], b300["judge"][search])
             extra = {"label_300": None if fb3 else LO.sdict(b300["x"]), "fallback_300": fb3}
-        P.save(out, {"plan": "docs/full-controls-plan.md", "ledger": f"{P.LEDGER_ID} {PHASE}", "set": rec["set"],
+        ledger = f"{P.LEDGER_ID} {PHASE}" + (f" {PHASE_A1}" if start_gate == "off_after_miss" else "")
+        P.save(out, {"plan": "docs/full-controls-plan.md", "ledger": ledger, "set": rec["set"],
                      "unit": rec["unit"], "rig": src.get("rig"), "di": src.get("di"), "item": src.get("item"),
                      "fold": src.get("fold"), "cls": rec["cls"], "amp": amp, "select": sel, "search": search,
                      "held": held, "lag": lag, "item_lag": src.get("item_lag"), "cluster": rec["cluster"],
@@ -643,6 +682,8 @@ def cmd_report(_args):
         main = [r for r in recs if not r["real_out"]]
         cur = subset_curves(recs)
         out[s] = {"rows": report_rows(main, tq, P.clustered),
+                  "rows_gate_on_start": report_rows([r for r in main if gate_on_start(r)], tq, P.clustered),
+                  "gate_off_after_miss": gate_off_rows(recs),
                   "real_out": report_rows([r for r in recs if r["real_out"]], tq, P.clustered),
                   "fallbacks": sum(1 for r in recs if r["label"] is None),
                   "start_bit_identical": sum(1 for r in recs if r["start"].get("bit_identical")),
@@ -669,7 +710,8 @@ def cmd_report(_args):
     allc = [c["search"] for c in out["n12"]["subset_curves"] + out["bks"]["subset_curves"]]
     out["c2_budget"], out["c2_median_ratio"] = c2_budget(allc)
     P.save(c1a_dir() / "report.json", out)
-    print(json.dumps({s: (out[s]["rows"]["all"] or {}).get("primary") for s in SETS}, indent=1, default=str))
+    print(json.dumps({s: {"primary": (out[s]["rows"]["all"] or {}).get("primary"), "starts": out[s]["starts"],
+                          "refused": len(out[s]["refused"])} for s in SETS}, indent=1, default=str))
     print("C2 budget", out["c2_budget"], out["c2_median_ratio"])
 
 
