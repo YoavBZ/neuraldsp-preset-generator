@@ -9,7 +9,8 @@
 - **The user's go for C1a:** "Go", at about 10,000 renders, with the gate included.
 - **The user's word on ranking pages:** several presets may share a rank, instead of a "can't tell" answer.
 - **Every later step** with renders beyond C1a's, or with training, goes to the user with its cost before it runs.
-- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a` and `phase_c1a_a1` (Amendment 1). Code: `learn/full_controls.py`, tests `tests/test_full_controls.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
+- **C1a ran** on 2026-11-09 (10,237 renders, audited; [F69](pipeline-fix-plan.md)): by the score −0.205 on N12 and −0.030 on BKS (undecided; crunch −0.052), against the label. The user said yes to C1b (2026-11-09, at about 8,500 renders; the built C1b counts 8,644–9,182) and to a blind A/B page of C1a against the label; both are declared before they render.
+- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1) and `phase_c1a_outcome`. Code: `learn/full_controls.py`, tests `tests/test_full_controls.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
 
 **The every-control plan's stage 1 never ran.** It is a true-DI oracle for the groups with no number, about 13–14k renders. It was approved on 2026-10-22 and waited for a trusted data list. Then the work moved to the trusted data and the pipeline fix. This amendment carries its goal onto today's route (FT2 and its real rows). It folds stage 1's never-measured groups in as C1b.
 
