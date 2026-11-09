@@ -328,7 +328,7 @@ def _value(x):
     return 2.0 + sum((float(x[k]) - t) ** 2 for k, t in TARGET.items()) / 1000 + gate
 
 
-def _stub(tmp_path, monkeypatch, recs, miss=False, src_amp="pr12", gate_cost=0.0):
+def _stub(tmp_path, monkeypatch, recs, miss=(), src_amp="pr12", gate_cost=0.0, run_cost=0.0):
     """cmd_search on stub audio and a stub renderer whose judge reads the EQ's distance to TARGET."""
     import argparse  # noqa: F401
     np = pytest.importorskip("numpy")
@@ -353,9 +353,10 @@ def _stub(tmp_path, monkeypatch, recs, miss=False, src_amp="pr12", gate_cost=0.0
     calls = {"n": 0}
 
     class R:
-        def render(self, di, sel, x):
+        def render(self, di, sel, x):                                           # run_cost: in-process, gate off only
             calls["n"] += 1
-            return np.full(4, _value(x))
+            off = str(x.get(("parameters", "gateActive"))).lower() != "true"
+            return np.full(4, _value(x) + (run_cost if off else 0.0))
 
         def close(self):
             pass
@@ -379,7 +380,7 @@ def _stub(tmp_path, monkeypatch, recs, miss=False, src_amp="pr12", gate_cost=0.0
         src.parent.mkdir(parents=True, exist_ok=True)
         src.write_text(json.dumps({"unit": unit, "amp": src_amp, "select": 0, "label": label, "search": "A", "held": "B",
                                    "lag": 0, "s_judge": {"A": 3.0, "B": 3.5}, "rig": "r", "di": "d",
-                                   "best": {"settings": label, "judge": {"A": v0 * (1.1 if miss else 1.0), "B": v0 + 0.5},
+                                   "best": {"settings": label, "judge": {"A": v0 * (1.1 if i in miss else 1.0), "B": v0 + 0.5},
                                             "render_sha256": "x"}}))
         rows.append({"set": st, "key": f"{unit}|pr12", "unit": unit, "amp": "pr12", "cls": "clean", "cluster": f"c{i}",
                      "source": str(src), "prt": {"di_path": "", "start_s": 0.0, "sd": "", "track": ""},
@@ -425,11 +426,51 @@ def test_cmd_search_labels_resume_and_render_count(tmp_path, monkeypatch, capsys
     assert f"C1A-SEARCH DONE 0/1: {want} renders" in capsys.readouterr().out and calls["n"] == want
 
 
-def test_cmd_search_stops_on_a_start_miss(tmp_path, monkeypatch):
+def test_cmd_search_refuses_a_miss_the_gate_does_not_explain_and_continues(tmp_path, monkeypatch, capsys):
     import argparse
-    _stub(tmp_path, monkeypatch, [("n12", False)], miss=True)
-    with pytest.raises(SystemExit, match="is not the stored label's"):
-        F.cmd_search(argparse.Namespace(shard=(0, 1)))
+    rows, calls = _stub(tmp_path, monkeypatch, [("n12", False), ("n12", False)], miss={0})
+    F.cmd_search(argparse.Namespace(shard=(0, 1)))
+    bad, good = (json.loads(_out(tmp_path, r).read_text()) for r in rows)
+    assert bad["start_gate"] == "refused" and bad["label"] is None and "trials" not in bad
+    ref = bad["refused"]["ref_value"]
+    assert not F.within(bad["refused"]["value"], ref) and not F.within(bad["refused"]["gate_off_value"], ref)
+    assert good["start_gate"] == "on" and good["first_start_miss"] is None and good["label"] is not None
+    out = capsys.readouterr().out
+    assert "starts {'on': 1, 'off_after_miss': 0, 'refused': 1}" in out
+    want = 2 + 2 + (1 + good["evaluations"] + 2 * (1 + sum(not a["same_as_best"]
+                                                           for a in good["fresh"]["ablations"].values())))
+    assert f"C1A-SEARCH DONE 0/1: {want} renders" in out and calls["n"] == want
+    assert F.start_counts([bad, good, {"x": 1}]) == {"on": 2, "off_after_miss": 0, "refused": 1}
+    F.cmd_search(argparse.Namespace(shard=(0, 1)))                                # resume: both written, skipped
+    assert "C1A-SEARCH DONE 0/1: 0 renders" in capsys.readouterr().out
+
+
+def test_cmd_search_restarts_from_the_gate_off_when_the_gate_alone_missed(tmp_path, monkeypatch, capsys):
+    import argparse
+    rows, calls = _stub(tmp_path, monkeypatch, [("bks", False)], gate_cost=0.1)
+    F.cmd_search(argparse.Namespace(shard=(0, 1)))
+    r = json.loads(_out(tmp_path, rows[0]).read_text())
+    assert r["start_gate"] == "off_after_miss" and r["label"] is not None
+    assert r["start_settings"]["parameters/gateActive"] == "false"
+    assert r["start_settings"]["parameters/gateThreshold"] == F.GATE_ON_DB             # canonical while off
+    assert "parameters/gateActive" in r["searched_keys"] and "parameters/gateThreshold" in r["searched_keys"]
+    m = r["first_start_miss"]
+    assert not F.within(m["value"], m["ref_value"]) and F.within(m["gate_off_value"], m["ref_value"])
+    assert F.within(r["start"]["value"], r["start"]["ref_value"])
+    assert "gate_off_sha" in m and "gate_off_bit_identical" in m and "gate_off_run_value" not in m
+    assert r["ledger"].endswith(F.PHASE_A1) and F.PHASE in r["ledger"]
+    out = capsys.readouterr().out
+    assert "starts {'on': 0, 'off_after_miss': 1, 'refused': 0}" in out
+    want = 2 + 2 + 1 + r["evaluations"] + 2 * (1 + sum(not a["same_as_best"] for a in r["fresh"]["ablations"].values()))
+    assert f"C1A-SEARCH DONE 0/1: {want} renders" in out and calls["n"] == want
+    assert r["fresh"]["ablations"]["gate_reset"]["same_as_best"]                    # the gate stays as the start's: off
+
+
+def test_start_plan_and_within():
+    assert F.start_plan(True, None) == "on" and F.start_plan(False, True) == "off_after_miss"
+    assert F.start_plan(False, False) == "refused" and F.start_plan(False, None) == "refused"
+    assert F.within(1.004, 1.0) and not F.within(1.006, 1.0) and not F.within(float("nan"), 1.0)
+    assert not F.within(0.0, 1.0) and F.within(math.exp(-0.0049), 1.0) and not F.within(math.exp(-0.0051), 1.0)
 
 
 def test_cmd_search_refuses_a_source_of_another_amp(tmp_path, monkeypatch):
@@ -439,8 +480,86 @@ def test_cmd_search_refuses_a_source_of_another_amp(tmp_path, monkeypatch):
         F.cmd_search(argparse.Namespace(shard=(0, 1)))
 
 
-def test_cmd_search_stops_when_the_gate_on_at_the_factory_threshold_is_not_inert(tmp_path, monkeypatch):
+def test_split_refused_keeps_the_searched_records_and_lists_the_refused():
+    done = {"unit": "a", "label": {}}
+    bad = {"unit": "b", "set": "n12", "amp": "ac20", "cls": "clean", "subset": True, "real_out": False, "label": None,
+           "refused": {"value": 1.0, "ref_value": 2.0}}
+    recs, refused = F.split_refused([done, bad])
+    assert recs == [done] and refused == [{"unit": "b", "set": "n12", "amp": "ac20", "cls": "clean", "subset": True,
+                                           "real_out": False, "value": 1.0, "ref_value": 2.0}]
+
+
+def test_cmd_search_needs_the_amendments_ledger_entry(tmp_path, monkeypatch):
     import argparse
-    _stub(tmp_path, monkeypatch, [("n12", False)], gate_cost=0.1)
-    with pytest.raises(SystemExit, match="is not the stored label's"):
+    _stub(tmp_path, monkeypatch, [("n12", False)])
+
+    def require(k):
+        if k == F.PHASE_A1:
+            raise SystemExit(f"no {k}")
+        return {}
+    monkeypatch.setattr(P, "require", require)
+    with pytest.raises(SystemExit, match="phase_c1a_a1"):
         F.cmd_search(argparse.Namespace(shard=(0, 1)))
+
+
+def test_cmd_search_refuses_when_the_gate_off_run_misses_after_a_matching_fresh_start(tmp_path, monkeypatch, capsys):
+    import argparse
+    rows, calls = _stub(tmp_path, monkeypatch, [("n12", False), ("n12", False)], gate_cost=0.1, run_cost=0.05)
+    F.cmd_search(argparse.Namespace(shard=(0, 1)))
+    for r in rows:
+        got = json.loads(_out(tmp_path, r).read_text())
+        assert got["start_gate"] == "refused" and got["label"] is None and "trials" not in got
+        m = got["refused"]
+        assert F.within(m["gate_off_value"], m["ref_value"]) and not F.within(m["gate_off_run_value"], m["ref_value"])
+    out = capsys.readouterr().out
+    assert "starts {'on': 0, 'off_after_miss': 0, 'refused': 2}" in out
+    assert "C1A-SEARCH DONE 0/1: 12 renders" in out and calls["n"] == 12              # 2 + 2 + 2 a record
+
+
+def test_gate_rows_split_the_two_meanings_of_the_gate_ablation():
+    on = searched("d1", "clean", 4.0, 3.0, 5.0)
+    off = dict(searched("d2", "clean", 4.0, 3.6, 5.0, abl=1.2), start_gate="off_after_miss",
+               best={"settings": {"parameters/gateActive": "true", "parameters/gateThreshold": "-55"}},
+               start_settings={"parameters/gateActive": "false", "parameters/gateThreshold": "-80"}, set="n12")
+    assert F.gate_on_start(on) and not F.gate_on_start(off) and F.gate_on_start(dict(on, start_gate="on"))
+    (row,) = F.gate_off_rows([on, off])
+    assert row["unit"] == "u-d2" and math.isclose(row["primary"], math.log(0.9))
+    assert math.isclose(row["gate_reset"], math.log(1.2)) and row["gate"] == "turned on, threshold moved"
+    stay = dict(off, best={"settings": {"parameters/gateActive": "false", "parameters/gateThreshold": "-80"}})
+    assert F.gate_off_rows([stay])[0]["gate"] == "stayed off"
+
+
+def test_start_against_the_label_reads_the_stored_first_trial():
+    r = dict(searched("d1", "clean", 4.0, 3.0, 5.0), trials=[{"judge": {"A": 9.0, "B": 4.02}}])
+    v = F.record_values(r)
+    assert math.isclose(v["start_vs_label"], math.log(4.02 / 4.0))
+    out = F.report_rows([r], lambda df: 2.0, P.clustered)
+    assert math.isclose(out["all"]["start_vs_label"]["mean"], math.log(4.02 / 4.0))
+    assert "start_vs_label" not in F.record_values(searched("d1", "clean", 4.0, 3.0, 5.0))
+
+
+def test_cmd_report_gives_gate_on_rows_beside_the_pooled_and_counts_the_starts(tmp_path, monkeypatch, capsys):
+    pytest.importorskip("scipy")
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    monkeypatch.setattr(P, "require", lambda k: {})
+    d = tmp_path / "captures2" / "search-c1a"
+    d.mkdir(parents=True)
+    base = dict(real_out=False, subset=False, start={"bit_identical": True}, set="n12")
+    on1 = dict(searched("b1", "clean", 4.0, 3.0, 5.0), **base, unit="u1")
+    on2 = dict(searched("b2", "clean", 4.0, 3.4, 5.0), **base, unit="u2")
+    off = dict(searched("b3", "crunch", 4.0, 2.0, 5.0), **base, unit="u3", start_gate="off_after_miss",
+               best={"settings": {"parameters/gateActive": "false"}}, start_settings={})
+    bad = {"unit": "u4", "set": "n12", "label": None, "real_out": False, "subset": False, "start_gate": "refused",
+           "refused": {"value": 1.0, "ref_value": 2.0, "gate_off_value": 1.5}}
+    for i, r in enumerate((on1, on2, off, bad)):
+        (d / f"r{i}.json").write_text(json.dumps(r))
+    (tmp_path / "c1a").mkdir()
+    (tmp_path / "c1a" / "records.json").write_text(json.dumps({"records": []}))
+    F.cmd_report(None)
+    rep = json.loads((tmp_path / "c1a" / "report.json").read_text())["n12"]
+    assert rep["starts"] == {"on": 2, "off_after_miss": 1, "refused": 1}
+    assert rep["rows"]["records"] == 3 and rep["rows_gate_on_start"]["records"] == 2
+    assert math.isclose(rep["rows_gate_on_start"]["all"]["primary"]["mean"], (math.log(0.75) + math.log(0.85)) / 2)
+    assert [g["unit"] for g in rep["gate_off_after_miss"]] == ["u3"] and rep["refused"][0]["unit"] == "u4"
+    printed = json.loads(capsys.readouterr().out.split("C2 budget")[0])["n12"]
+    assert printed["refused"] == 1 and printed["starts"] == {"on": 2, "off_after_miss": 1, "refused": 1}

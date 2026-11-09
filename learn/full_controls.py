@@ -20,6 +20,7 @@ import statistics
 import time
 
 PHASE = "phase_c1a"
+PHASE_A1 = "phase_c1a_a1"            # Amendment 1: a start miss tries the gate as in the label, else the record is refused
 SEED = 20261123                      # the search's
 SUBSET_SEED = 20261124               # the calibration subset's draw
 BUDGET, SUBSET_BUDGET, SUBSET_PER_SET = 100, 300, 6
@@ -138,13 +139,35 @@ def make_canon(amp):
     return canon
 
 
-def c1a_start(label, amp):
+def c1a_start(label, amp, gate=True):
     """The stored label (`knob_ceiling2.stage1_start`: inert keys only) with the gate on at the factory threshold
-    (`gate_on`), in canonical form. label: {"module/key": value} -> {(module, key): value}."""
+    (`gate_on`), in canonical form; with gate=False the gate stays as in the label (Amendment 1's second start). label:
+    {"module/key": value} -> {(module, key): value}."""
     from learn import knob_ceiling2 as K2
     from learn import local_objective as LO
 
-    return make_canon(amp)(gate_on(K2.stage1_start(LO.tdict(label), amp)))
+    x = K2.stage1_start(LO.tdict(label), amp)
+    return make_canon(amp)(gate_on(x) if gate else x)
+
+
+class StartMiss(Exception):
+    """The search's first evaluation is not the stored label's within START_TOL."""
+
+    def __init__(self, value, sha):
+        super().__init__(value)
+        self.value, self.sha = value, sha
+
+
+def within(value, ref):
+    return isinstance(value, (int, float)) and math.isfinite(value) and value > 0 and abs(math.log(value / ref)) <= START_TOL
+
+
+def start_plan(first_ok, second_ok):
+    """Amendment 1's rule on one record's start check. first_ok: the gate-on start matched the stored label; second_ok:
+    the gate-as-in-the-label start did (None when not rendered). -> "on", "off_after_miss" or "refused"."""
+    if first_ok:
+        return "on"
+    return "off_after_miss" if second_ok else "refused"
 
 
 def audible_change(start, label, amp, declared=()):
@@ -264,6 +287,9 @@ def record_values(r):
         if v is not None:
             abl[a] = math.log(v / new_h)
     out = {"primary": math.log(new_h / lab_h), "label_vs_S": math.log(lab_h / s_h), "ablations": abl}
+    st_h = _pos((((r.get("trials") or [{}])[0]).get("judge") or {}).get(h))
+    if st_h is not None:
+        out["start_vs_label"] = math.log(st_h / lab_h)        # zero renders: the start's own held half
     b3 = _pos(((r["fresh"].get("best_300") or {}).get("judge") or {}).get(h))
     if r.get("subset") and b3 is not None:
         out["b300_vs_best"], out["b300_vs_label"] = math.log(b3 / new_h), math.log(b3 / lab_h)
@@ -286,6 +312,7 @@ def report_rows(recs, tq, clus):
 
     def rows(sub):
         out = {"primary": row(sub, lambda v: v["primary"]), "label_vs_S": row(sub, lambda v: v["label_vs_S"]),
+               "start_vs_label": row(sub, lambda v: v.get("start_vs_label")),
                "ablations": {a: row(sub, lambda v, a=a: v["ablations"].get(a)) for a in ABLATIONS},
                "subset_b300_vs_best": row(sub, lambda v: v.get("b300_vs_best")),
                "subset_b300_vs_label": row(sub, lambda v: v.get("b300_vs_label"))}
@@ -302,6 +329,47 @@ def report_rows(recs, tq, clus):
         res[cl] = rows(sub) if sub else None
     res["records"] = len(vals)
     return res
+
+
+def split_refused(recs):
+    """(searched records, [{unit, set, amp, cls, subset, real_out, the refused start's values}]): Amendment 1's refused
+    records carry no search."""
+    keep = ("unit", "set", "amp", "cls", "subset", "real_out")
+    return ([r for r in recs if "refused" not in r],
+            [{**{k: r.get(k) for k in keep}, **r["refused"]} for r in recs if "refused" in r])
+
+
+def gate_on_start(r):
+    """Did the record start with the gate on at the factory threshold (records before Amendment 1 carry no flag)?"""
+    return r.get("start_gate", "on") == "on"
+
+
+def gate_off_rows(recs):
+    """Amendment 1's gate-off starts, listed apart: their gate ablation resets to the gate off, not to the gate on at
+    -80. -> [{unit, set, cls, primary, gate_reset, gate}] (held half, ln ratios; gate: what the best did with it)."""
+    out = []
+    for r in recs:
+        if r.get("start_gate") != "off_after_miss":
+            continue
+        v = record_values(r)
+        g = r.get("best", {}).get("settings", {})
+        st = r.get("start_settings", {})
+        on = str(g.get("parameters/gateActive")).lower() == "true"
+        moved = g.get("parameters/gateThreshold") != st.get("parameters/gateThreshold")
+        out.append({"unit": r["unit"], "set": r.get("set"), "cls": r.get("cls"),
+                    "primary": None if v is None else v["primary"],
+                    "gate_reset": None if v is None else v["ablations"].get("gate_reset"),
+                    "gate": ("turned on" + (", threshold moved" if moved else "")) if on else "stayed off"})
+    return out
+
+
+def start_counts(recs):
+    """Amendment 1's start kinds over a set's written records: on (the gate on at the factory threshold; records
+    written before the amendment carry no flag and are this kind), off_after_miss, refused."""
+    out = {"on": 0, "off_after_miss": 0, "refused": 0}
+    for r in recs:
+        out[r.get("start_gate", "on")] += 1
+    return out
 
 
 def subset_curves(recs):
@@ -433,6 +501,7 @@ def cmd_search(args):
     from learn import trusted_data as T
 
     P.require(PHASE)
+    P.require(PHASE_A1)
     plan = json.loads((c1a_dir() / "records.json").read_text())
     k, n = args.shard
     mine = [r for j, r in enumerate(shard_order(plan["records"])) if j % n == k]
@@ -440,6 +509,7 @@ def cmd_search(args):
     ms = L.menu_S()
     LO._wait_cap()
     renders = 0
+    counts = {"on": 0, "off_after_miss": 0, "refused": 0}
 
     def sorted_x(x):
         return LO.tdict(LO.sdict(x))
@@ -466,39 +536,83 @@ def cmd_search(args):
         bad = audible_change(start, src["best"]["settings"], amp, declared=GATE_KEYS)
         if bad:
             raise SystemExit(f"{rec['key']}: the start changes what sounds: {bad}")
-        dims = c1a_space(amp, start)
-        canon = make_canon(amp)
         di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
         di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
         ref = P.real_amp_track(prt["sd"], prt["track"], prt["start_s"])
-        names = [d.name for d in dims]
-        values, trials, evals = [], [], []
         ref_v, ref_sha = float(src["best"]["judge"][search]), src["best"].get("render_sha256")
-        start_rec = {}
-        rr = CB.new_renderer()
+
+        def run(start):
+            """One search from `start` in its own renderer process, primed with the start. -> (renders, values, trials,
+            evals, start record, names); raises StartMiss if its first evaluation is not the stored label's."""
+            dims = c1a_space(amp, start)
+            canon = make_canon(amp)
+            names = [d.name for d in dims]
+            values, trials, evals, start_rec = [], [], [], {}
+            used = [1]
+            rr = CB.new_renderer()
+            try:
+                rr.render(di32, sel, sorted_x(start))   # the discarded priming render, with the start
+
+                def f(x):
+                    y = np.asarray(rr.render(di32, sel, sorted_x(x)), np.float64)[trim[0]:trim[1]]
+                    used[0] += 1
+                    j = K.judge(ref, y, di, lag)
+                    if not values:
+                        start_rec.update(value=j[search], sha=AM.audio_sha(y), ref_value=ref_v, ref_sha=ref_sha,
+                                         bit_identical=AM.audio_sha(y) == ref_sha)
+                        if not within(j[search], ref_v):
+                            raise StartMiss(j[search], AM.audio_sha(y))
+                    evals.append({"judge": j, "peak_dbfs": A.peak_dbfs(y, trim_s=0.0), "render_sha256": AM.audio_sha(y),
+                                  "x": dict(x)})
+                    values.append(j[search])
+                    trials.append({"x": {nm: x.get(tuple(nm.rsplit("/", 1))) for nm in names}, "judge": j})
+                    return j[search]
+
+                K.coord_search(dims, start, f, rec["budget"], SEED, cats="levels", canon=canon)
+            except StartMiss as miss:
+                miss.renders = used[0]
+                raise
+            finally:
+                rr.close()
+            return used[0], values, trials, evals, start_rec, names
+
+        start_gate, first_miss = "on", None
         try:
-            rr.render(di32, sel, sorted_x(start))       # the discarded priming render, with the start
-            renders += 1
-
-            def f(x):
-                y = np.asarray(rr.render(di32, sel, sorted_x(x)), np.float64)[trim[0]:trim[1]]
-                j = K.judge(ref, y, di, lag)
-                if not values:
-                    start_rec.update(value=j[search], sha=AM.audio_sha(y), ref_value=ref_v, ref_sha=ref_sha,
-                                     bit_identical=AM.audio_sha(y) == ref_sha)
-                    if not (math.isfinite(j[search]) and abs(math.log(j[search] / ref_v)) <= START_TOL):
-                        raise SystemExit(f"{rec['key']}: the start's first evaluation {j[search]} is not the stored "
-                                         f"label's {ref_v} within {START_TOL}")
-                evals.append({"judge": j, "peak_dbfs": A.peak_dbfs(y, trim_s=0.0), "render_sha256": AM.audio_sha(y),
-                              "x": dict(x)})
-                values.append(j[search])
-                trials.append({"x": {nm: x.get(tuple(nm.rsplit("/", 1))) for nm in names}, "judge": j})
-                return j[search]
-
-            K.coord_search(dims, start, f, rec["budget"], SEED, cats="levels", canon=canon)
-            renders += len(values)
-        finally:
-            rr.close()
+            used, values, trials, evals, start_rec, names = run(start)
+            renders += used
+        except StartMiss as miss:
+            renders += miss.renders
+            first_miss = {"value": miss.value, "sha": miss.sha, "ref_value": ref_v}
+            start_off = c1a_start(src["best"]["settings"], amp, gate=False)
+            y = fresh(di32, sel, start_off)             # the second start: the gate as in the label
+            renders += 2
+            v_off = K.judge(ref, y, di, lag)[search]
+            start_gate = start_plan(False, within(v_off, ref_v))
+            first_miss.update(gate_off_value=v_off, gate_off_sha=AM.audio_sha(y),
+                              gate_off_bit_identical=AM.audio_sha(y) == ref_sha)
+            if start_gate == "off_after_miss":
+                start = start_off
+                try:
+                    used, values, trials, evals, start_rec, names = run(start)
+                    renders += used
+                    counts["off_after_miss"] += 1
+                except StartMiss as m2:                 # the run's own first evaluation missed after all
+                    renders += m2.renders
+                    first_miss["gate_off_run_value"] = m2.value
+                    start_gate = "refused"
+            if start_gate == "refused":
+                P.save(out, {"plan": "docs/full-controls-plan.md", "ledger": f"{P.LEDGER_ID} {PHASE_A1}",
+                             "set": rec["set"], "unit": rec["unit"], "cls": rec["cls"], "amp": amp,
+                             "cluster": rec["cluster"], "real_out": rec["real_out"],
+                             "measurement_only": rec["set"] == "n12", "subset": rec["subset"], "label": None,
+                             "start_gate": "refused", "refused": first_miss,
+                             "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+                counts["refused"] += 1
+                print(f"{rec['key'][-70:]}: refused (start {miss.value} and gate off {v_off} against {ref_v}); "
+                      f"renders so far {renders}", flush=True)
+                continue
+        if start_gate == "on":
+            counts["on"] += 1
         cps = checkpoints(values, rec["budget"])
         by_order = evals                                # evaluation order
         best100 = by_order[cps[BUDGET]] if cps.get(BUDGET) is not None else None
@@ -531,14 +645,16 @@ def cmd_search(args):
                                   "same_as_best": False}
             fb3 = A.fallback_reason(b300["peak_dbfs"], b300["judge"][search])
             extra = {"label_300": None if fb3 else LO.sdict(b300["x"]), "fallback_300": fb3}
-        P.save(out, {"plan": "docs/full-controls-plan.md", "ledger": f"{P.LEDGER_ID} {PHASE}", "set": rec["set"],
+        ledger = f"{P.LEDGER_ID} {PHASE}" + (f" {PHASE_A1}" if start_gate == "off_after_miss" else "")
+        P.save(out, {"plan": "docs/full-controls-plan.md", "ledger": ledger, "set": rec["set"],
                      "unit": rec["unit"], "rig": src.get("rig"), "di": src.get("di"), "item": src.get("item"),
                      "fold": src.get("fold"), "cls": rec["cls"], "amp": amp, "select": sel, "search": search,
                      "held": held, "lag": lag, "item_lag": src.get("item_lag"), "cluster": rec["cluster"],
                      "real_out": rec["real_out"], "measurement_only": rec["set"] == "n12", "subset": rec["subset"],
                      "budget": rec["budget"], "seed": SEED, "gate_on_db": GATE_ON_DB,
                      "source": rec["source"], "source_best_judge": src["best"]["judge"], "s_judge": src["s_judge"],
-                     "start": start_rec, "start_settings": LO.sdict(start), "searched_keys": names, "curve": values, "evaluations": len(values),
+                     "start": start_rec, "start_gate": start_gate, "first_start_miss": first_miss,
+                     "start_settings": LO.sdict(start), "searched_keys": names, "curve": values, "evaluations": len(values),
                      "trials": trials,
                      "checkpoints": {str(c): {"evaluations": c, "index": i, "judge": by_order[i]["judge"]}
                                      for c, i in cps.items() if i is not None},
@@ -548,7 +664,7 @@ def cmd_search(args):
                      "label": None if fb else LO.sdict(bx), **extra,
                      "time": time.strftime("%Y-%m-%d %H:%M:%S")})
         print(f"{rec['key'][-70:]}: {len(values)} evaluations; renders so far {renders}", flush=True)
-    print(f"C1A-SEARCH DONE {k}/{n}: {renders} renders", flush=True)
+    print(f"C1A-SEARCH DONE {k}/{n}: {renders} renders; starts {counts}", flush=True)
 
 
 def cmd_report(_args):
@@ -561,13 +677,18 @@ def cmd_report(_args):
     out = {"phase": PHASE, "gate_on_db": GATE_ON_DB}
     for s in SETS:
         root, sub = OUT_DIRS[s]
-        recs = [json.loads(p.read_text()) for p in sorted((P.out_dir() / root / sub).glob("*.json"))]
+        every = [json.loads(p.read_text()) for p in sorted((P.out_dir() / root / sub).glob("*.json"))]
+        recs, refused = split_refused(every)                        # Amendment 1's refused starts are counted apart
         main = [r for r in recs if not r["real_out"]]
         cur = subset_curves(recs)
         out[s] = {"rows": report_rows(main, tq, P.clustered),
+                  "rows_gate_on_start": report_rows([r for r in main if gate_on_start(r)], tq, P.clustered),
+                  "gate_off_after_miss": gate_off_rows(recs),
                   "real_out": report_rows([r for r in recs if r["real_out"]], tq, P.clustered),
                   "fallbacks": sum(1 for r in recs if r["label"] is None),
                   "start_bit_identical": sum(1 for r in recs if r["start"].get("bit_identical")),
+                  "starts": start_counts(every),
+                  "refused": refused,
                   "subset_curves": cur,
                   "subset_median_ratio": {h: c2_budget([c[h] for c in cur])[1] for h in ("search", "held")}}
     plan = json.loads((c1a_dir() / "records.json").read_text())
@@ -589,7 +710,8 @@ def cmd_report(_args):
     allc = [c["search"] for c in out["n12"]["subset_curves"] + out["bks"]["subset_curves"]]
     out["c2_budget"], out["c2_median_ratio"] = c2_budget(allc)
     P.save(c1a_dir() / "report.json", out)
-    print(json.dumps({s: (out[s]["rows"]["all"] or {}).get("primary") for s in SETS}, indent=1, default=str))
+    print(json.dumps({s: {"primary": (out[s]["rows"]["all"] or {}).get("primary"), "starts": out[s]["starts"],
+                          "refused": len(out[s]["refused"])} for s in SETS}, indent=1, default=str))
     print("C2 budget", out["c2_budget"], out["c2_median_ratio"])
 
 
