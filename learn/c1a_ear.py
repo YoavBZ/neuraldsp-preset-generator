@@ -160,7 +160,8 @@ def ear_read(items, got):
     gaps = [c["close_gap"] for c in cards if c["close_gap"] is not None]
     primary = share_row(cards)
     return {"read": len(cards), "unanswered": [it["id"] for it in first if not heard[it["id"]]],
-            "page_failed": len(cards) < MIN_READ, "primary": primary, "verdict": verdict(primary),
+            "page_failed": len(cards) < MIN_READ, "primary": primary,
+            "verdict": "not read" if len(cards) < MIN_READ else verdict(primary),
             "by_set": {s: share_row([c for c in cards if c["set"] == s]) for s in SETS},
             "bks_by_song": share_row([c for c in cards if c["set"] == "bks"], key="song"),
             "by_class": {k: share_row([c for c in cards if c["cls"] == k]) for k in ("clean", "crunch")},

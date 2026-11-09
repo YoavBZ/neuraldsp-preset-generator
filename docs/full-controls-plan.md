@@ -204,7 +204,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   | 0.8, no ties | about 72% |
   | 0.9, no ties | about 96% |
   | 0.75, with ties | about 79% |
-  | if BKS's items tie | 37–48% |
+  | N12 at 80–90% for C1a, BKS near ties or a coin flip | 37–48% |
 
   F69's BKS gain is small, and near-ties are likely there. **An undecided read is the likeliest outcome**, and it says nothing against C1a.
 - **What it leads to.** It is a description; nothing is adopted from it alone beyond the rule above.

@@ -108,9 +108,10 @@ def test_ear_read_reads_with_ten_answered():
     got = {f"i{i}": {"rank": {"A": 2, "B": 1}} for i in range(1, 11)}
     r = C.ear_read(items, got)
     assert r["read"] == 10 and not r["page_failed"] and len(r["unanswered"]) == 4
-    assert r["primary"]["share"] == 1.0
+    assert r["primary"]["share"] == 1.0 and r["verdict"] == "above"
     got.pop("i10")
-    assert C.ear_read(items, got)["page_failed"]
+    nine = C.ear_read(items, got)
+    assert nine["page_failed"] and nine["verdict"] == "not read" and nine["primary"]["share"] == 1.0
 
 
 def test_the_player_allows_ties_two_letters_and_optional_ratings():
@@ -247,7 +248,7 @@ def test_share_row_carries_the_jackknife_interval_and_bks_reads_by_song():
              item(3, "label", "set5/BKS_B/16.wav", st="bks")]
     r = C.ear_read(items, {f"i{i}": {"rank": {"A": 2, "B": 1}} for i in (1, 2, 3)})
     assert r["by_set"]["bks"]["clusters"] == 3 and r["bks_by_song"]["clusters"] == 2
-    assert r["verdict"] in ("above", "undecided", "below")
+    assert r["verdict"] == "not read"                                            # 3 answered, under the 10
 
 
 def test_ear_read_names_the_verdict_from_the_primary():
