@@ -27,8 +27,8 @@ note() { echo "$1 $(date)" >> ${L}; }
 scope_ready() {  # Amendment 1: `di_scope ready` exits 0 complete, 3 not yet, 2 never as it stands (another build's file)
   ${PY} -m learn.di_scope ready > ${LOGS}/c3r-scope-ready.log 2>&1
   local rc=$?
-  if (( rc == 2 )); then
-    note "FAILED: the DI scope's verdicts will not complete as they stand ($(tail -1 ${LOGS}/c3r-scope-ready.log))"
+  if (( rc != 0 && rc != 3 )); then   # 2: another build's file; anything else (an import error, a missing interpreter) fails too
+    note "FAILED: the DI scope's readiness check exited ${rc} ($(tail -1 ${LOGS}/c3r-scope-ready.log))"
     exit 1
   fi
   (( rc == 0 ))

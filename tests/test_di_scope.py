@@ -167,7 +167,8 @@ def test_the_training_launcher_stops_on_a_verdicts_file_that_will_never_be_ready
     fn = text[text.index("scope_ready() {"):text.index('note "waiting for C2r')]
     fake = tmp_path / "py"
     log = tmp_path / "train.log"
-    for rc, want_exit, want_log in ((2, 1, "FAILED: the DI scope's verdicts"), (3, 7, None), (0, 0, None)):
+    for rc, want_exit, want_log in ((2, 1, "FAILED: the DI scope's readiness check exited 2"),
+                                    (1, 1, "FAILED: the DI scope's readiness check exited 1"), (3, 7, None), (0, 0, None)):
         fake.write_text(f"#!/bin/zsh\necho 'DI SCOPE STATE {rc}'\nexit {rc}\n")
         fake.chmod(0o755)
         log.write_text("")
