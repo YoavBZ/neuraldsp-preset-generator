@@ -31,7 +31,7 @@ OUT_DIRS = {"goat": ("goat", "search-c2"), "bks": ("real", "search-c2")}
 PLAN = "docs/full-controls-plan.md"
 STEP2_RENDERS = 1 + C.BUDGET_ROOMS + C.BUDGET_MICS_EQ      # priming, stage A, stage B (at most)
 SILENT_DBFS = -60.0                  # J0's silence floor (`arm_a_mega53.SILENT_DBFS`: a peak under it is "silent")
-UNUSABLE_DB = 3.0                    # a render peaking within this of the floor can't be a label (F70's near-silent guard)
+UNUSABLE_DB = 3.0                    # a later stage's best may not peak below min(floor + this, the start's peak) (F70)
 QUIET_DBFS = -50.0                   # a label peaking under this is flagged and counted, nothing more (J0 removes level)
 MISS_GUARD = (5, 10)                 # a shard stops when this many of its first records are refused at the start
 KNOWN_WHY = ("off by source: the sources are dry (GOAT's capture renders, BKS's reamps) and mono (no doubler); not "
@@ -202,21 +202,31 @@ def renders_upper(recs):
 
 # --- the guards and the replay ----------------------------------------------------------------------------------------
 
-def unusable(judge, peak, check_peak=True, floor=SILENT_DBFS, margin=UNUSABLE_DB):
-    """Why a render can't stand as a label, or None: non-finite on either half, or its peak within `margin` dB of J0's
-    silence floor (F70: a label at -59.6 dBFS left a final J0 refused on the held half). With check_peak False (a
-    replayed evaluation, whose peak was not stored) only the halves are read."""
+def peak_bound(start_peak, floor=SILENT_DBFS, margin=UNUSABLE_DB):
+    """The lowest peak a later stage's best may have: min(floor + margin, the start's peak), so a search may not go
+    quieter than -57 dBFS, or than its start when the start is already quieter (an unknown start: floor + margin)."""
+    try:
+        p = float(start_peak)
+    except (TypeError, ValueError):
+        p = math.nan
+    return min(floor + margin, p) if math.isfinite(p) else floor + margin
+
+
+def unusable(judge, peak, bound=None):
+    """Why a render can't stand as a label, or None: non-finite on either half, or (with a `bound`, `peak_bound`) its
+    peak below the bound or unknown. The start is read without a bound: only its halves (F70: a final at -59.9 dBFS
+    from a -59.6 dBFS start, which J0 refused on the held half, falls back under the bound)."""
     for h in ("A", "B"):
         if F._pos((judge or {}).get(h)) is None:
             return f"non-finite on half {h}"
-    if not check_peak:
+    if bound is None:
         return None
     try:
         p = float(peak)
     except (TypeError, ValueError):
         p = math.nan
-    if not math.isfinite(p) or p < floor + margin:
-        return f"peak {peak} dBFS within {margin} dB of the {floor} dBFS floor"
+    if not math.isfinite(p) or p < bound:
+        return f"peak {peak} dBFS below the bound {bound:.2f} dBFS (min of -57 and the start's peak)"
     return None
 
 
@@ -371,7 +381,7 @@ def no_finite_final(recs):
     for r in recs:
         fin = ((r.get("fresh") or {}).get("final") or {}).get("judge")
         if "refused" not in r and (r.get("step2") or {}).get("start_kind") != "not_run" and \
-                unusable(fin, None, check_peak=False):
+                unusable(fin, None):
             out.append({"unit": r["unit"], "amp": r.get("amp"), "fallback_stage": r.get("fallback_stage")})
     return out
 
@@ -525,7 +535,7 @@ def cmd_search(args):
                                          bit_identical=AM.audio_sha(y) == src["best"].get("render_sha256"))
                         if not F.within(j[search], ref_v):
                             raise F.StartMiss(j[search], AM.audio_sha(y))
-                        why = unusable(j, A.peak_dbfs(y, trim_s=0.0))
+                        why = unusable(j, None)             # the start: its halves alone
                         if why:
                             raise StartUnusable(why)
                     evals.append({"judge": j, "peak_dbfs": A.peak_dbfs(y, trim_s=0.0), "render_sha256": AM.audio_sha(y),
@@ -563,9 +573,9 @@ def cmd_search(args):
                     ok = F.within(j[search], float(stored[0]["judge"][search]))
                     info["start_check"] = {"value": j[search], "ref_value": stored[0]["judge"][search], "ok": ok,
                                            "peak_dbfs": A.peak_dbfs(y, trim_s=0.0)}
-                    why = unusable(j, info["start_check"]["peak_dbfs"])
-                else:                                       # no render: C1a's first evaluation, the stored label's peak
-                    why = unusable(stored[0]["judge"], src["best"].get("peak_dbfs"))
+                    why = unusable(j, None)                 # the start: its halves alone
+                else:                                       # no render: C1a's first evaluation
+                    why = unusable(stored[0]["judge"], None)
                 if why:
                     e = StartUnusable(why)
                     e.renders = used[0]
@@ -680,7 +690,14 @@ def cmd_search(args):
                 raise SystemExit(f"{rec['key']}: no finite evaluation")
             best_ev = evals[i1]
             bx = best_ev["x"]
-            why1 = unusable(best_ev["judge"], best_ev["peak_dbfs"], check_peak=not best_ev.get("replayed"))
+            p0 = evals[0]["peak_dbfs"]
+            if p0 is None:                              # a replayed start: the start-check render, else the stored label
+                p0 = ((cont or {}).get("start_check") or {}).get("peak_dbfs")
+            if p0 is None:
+                p0 = src["best"].get("peak_dbfs")
+            bound = peak_bound(p0)
+            why1 = unusable(best_ev["judge"], best_ev["peak_dbfs"],     # a replayed best's peak is unknown: its halves
+                            None if best_ev.get("replayed") else bound)  # here, its peak at step 2 and the final
             best1 = {"judge": best_ev["judge"], "peak_dbfs": best_ev["peak_dbfs"],
                      "render_sha256": best_ev["render_sha256"], "settings": LO.sdict(bx), "unusable": why1,
                      "replayed": bool(best_ev.get("replayed"))}
@@ -690,10 +707,7 @@ def cmd_search(args):
                   "checkpoints": {str(c): {"evaluations": c, "index": i, "judge": evals[i]["judge"]}
                                   for c, i in cps.items() if i is not None},
                   "best": best1, "changed": F.changed(bx, start, amp, S)}
-            p0 = evals[0]["peak_dbfs"]
-            if p0 is None:                              # a replayed start: the continuation's start-check render
-                p0 = ((cont or {}).get("start_check") or {}).get("peak_dbfs")
-            peaks = {"start": p0, "step1_best": best_ev["peak_dbfs"]}
+            peaks = {"start": p0, "step1_best": best_ev["peak_dbfs"], "bound": bound}
             P.save(out1, {"ledger": f"{P.LEDGER_ID} {PHASE}", "step1": s1, "peaks": peaks})   # a stop loses <= 65
         ledger = f"{P.LEDGER_ID} {PHASE}" + (f" {F.PHASE_A1}" if start_gate == "off_after_miss" else "")
         if why1:                                        # step 2 skipped: C3 falls back to the source label
@@ -789,11 +803,12 @@ def cmd_search(args):
         fr = fresh(final, form)
         renders += 2
         peaks["final_fresh"] = fr["peak_dbfs"]
-        why = unusable(fr["judge"], fr["peak_dbfs"])
+        bound = peaks.get("bound", peak_bound(peaks.get("start")))
+        why = unusable(fr["judge"], fr["peak_dbfs"], bound)
         stage_fb, reason, lab_fr = None, None, fr
         label = LO.sdict(final if form else C.plugin(final, amp))
         if why:                                         # F70's guard: back to the previous stage's best
-            why_s1 = unusable(dry["start"]["judge"], dry["start"]["peak_dbfs"]) if kind != "refused" else why
+            why_s1 = unusable(dry["start"]["judge"], dry["start"]["peak_dbfs"], bound) if kind != "refused" else why
             if why_s1 is None:
                 stage_fb, reason, lab_fr = "step1", f"the final unusable: {why}", dry["start"]
                 label, keys = label1, names

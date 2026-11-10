@@ -116,18 +116,21 @@ def test_searched_keys_join_step_1_and_stages_a_and_b_with_no_effect_key():
     assert not any(k.split("/")[0] in ("reverb", "delay", "tremolo", "spring") for k in keys)
 
 
-def test_unusable_is_non_finite_on_either_half_or_a_peak_near_j0s_floor():
+def test_the_guard_reads_the_halves_and_a_later_best_against_the_starts_bound():
     from learn import arm_a_mega53 as A
     assert X.SILENT_DBFS == A.SILENT_DBFS
     ok = {"A": 2.0, "B": 3.0}
-    assert X.unusable(ok, -40.0) is None and X.unusable(ok, -56.9) is None
-    assert "floor" in X.unusable(ok, -57.1) and "floor" in X.unusable(ok, None)
+    assert X.peak_bound(-20.0) == -57.0 and X.peak_bound(-59.6) == -59.6 and X.peak_bound(None) == -57.0
+    assert X.unusable(ok, -59.9) is None and X.unusable(ok, None) is None       # the start: its halves alone
     assert X.unusable({"A": 2.0, "B": float("nan")}, -20.0) == "non-finite on half B"
-    assert X.unusable({"A": 2.0}, -20.0) == "non-finite on half B"
-    assert X.quiet(-50.5) and not X.quiet(-49.0) and not X.quiet(None)
-    assert X.unusable(ok, None, check_peak=False) is None                       # a replayed best: the halves alone
+    assert X.unusable({"A": 2.0}, -20.0, -57.0) == "non-finite on half B"
+    b = X.peak_bound(-30.0)
+    assert X.unusable(ok, -56.9, b) is None and "bound" in X.unusable(ok, -57.1, b) and "bound" in X.unusable(ok, None, b)
+    f70 = X.peak_bound(-59.6)                                                    # C1b's failed record: start -59.6
+    assert "bound" in X.unusable(ok, -59.9, f70) and X.unusable(ok, -59.5, f70) is None
     for p in (-56.9, -52.0, -49.0):                                             # the -57 to -49 dBFS labels stand
-        assert X.unusable(ok, p) is None
+        assert X.unusable(ok, p, b) is None
+    assert X.quiet(-50.5) and not X.quiet(-49.0) and not X.quiet(None)
 
 
 def test_renders_upper_is_the_declared_per_record_cost():
@@ -188,7 +191,8 @@ def _value(x):
     return v
 
 
-def _stub(tmp_path, monkeypatch, n=1, miss=(), offsets=(), sync_cost=0.0, fresh_nan=False, peak=None):
+def _stub(tmp_path, monkeypatch, n=1, miss=(), offsets=(), sync_cost=0.0, fresh_nan=False, peak=None,
+          nan_at_start=False):
     """cmd_search on stub audio and a stub renderer; `offsets`: render processes (1 on) whose renders read higher."""
     np = pytest.importorskip("numpy")
     from learn import arm_a_levers as L
@@ -234,13 +238,18 @@ def _stub(tmp_path, monkeypatch, n=1, miss=(), offsets=(), sync_cost=0.0, fresh_
         calls["n"] += 2
         return np.full(4, math.nan if fresh_nan else _value(x))
     monkeypatch.setattr(CB, "new_renderer", new)
-    if peak is not None:
-        from learn import arm_a_mega53 as A
-        monkeypatch.setattr(A, "peak_dbfs", lambda y, trim_s=0.0: peak)
-    monkeypatch.setattr(AM, "fresh_render", fresh)
-    monkeypatch.setattr(K, "judge", lambda ref, y, di, lag: {"A": float(y[0]), "B": float(y[0]) + 0.5})
     label = LO.sdict(S)
     v0 = _value(S)
+    if peak is not None:                                                        # a level, or a function of the render
+        from learn import arm_a_mega53 as A
+        monkeypatch.setattr(A, "peak_dbfs", (lambda y, trim_s=0.0: peak(float(y[0]), v0)) if callable(peak)
+                            else (lambda y, trim_s=0.0: peak))
+    monkeypatch.setattr(AM, "fresh_render", fresh)
+
+    def judge(ref, y, di, lag):                                                 # nan_at_start: the start's held half
+        a = float(y[0])
+        return {"A": a, "B": math.nan if nan_at_start and abs(a - v0) < 1e-12 else a + 0.5}
+    monkeypatch.setattr(K, "judge", judge)
     rows = []
     for i in range(n):
         unit = f"goat/u{i}"
@@ -353,14 +362,32 @@ def test_c2_falls_back_to_the_start_when_step_1s_best_is_unusable_too(tmp_path, 
     assert r["label"] is None and r["searched_keys"] is None and X.record_values(r) is None
 
 
-def test_c2_refuses_a_record_whose_start_is_unusable_and_flags_quiet_labels(tmp_path, monkeypatch, capsys):
+def test_c2_searches_a_near_silent_start_and_refuses_only_a_non_finite_one(tmp_path, monkeypatch, capsys):
     import argparse
-    (row,), calls = _stub(tmp_path, monkeypatch, peak=-58.0)
+    (row,), _ = _stub(tmp_path, monkeypatch, peak=-58.0)                        # the start, and every best, at -58
     X.cmd_search(argparse.Namespace(shard=(0, 1)))
     r = json.loads(_out(tmp_path, row).read_text())
-    assert r["step1"]["start_gate"] == "refused" and "floor" in r["refused"]["unusable"] and r["label"] is None
-    assert calls["n"] == 2                                                       # the priming and the first evaluation
-    assert "renders so far 2" in capsys.readouterr().out
+    assert r["step1"]["start_gate"] == "on" and r["label"] is not None and r["fallback_stage"] is None
+    assert r["peaks"]["start"] == -58.0 and r["peaks"]["bound"] == -58.0 and r["quiet"] is True
+    capsys.readouterr()
+    (row,), calls = _stub(tmp_path / "n", monkeypatch, nan_at_start=True)
+    X.cmd_search(argparse.Namespace(shard=(0, 1)))
+    r = json.loads(_out(tmp_path / "n", row).read_text())
+    assert r["step1"]["start_gate"] == "refused" and r["refused"]["unusable"] == "non-finite on half B"
+    assert r["label"] is None and calls["n"] == 2                                # the priming and the first evaluation
+
+
+def test_c2_a_best_quieter_than_the_bound_falls_back_to_the_source_label(tmp_path, monkeypatch):
+    import argparse
+    (row,), _ = _stub(tmp_path, monkeypatch, peak=lambda v, v0: -50.0 if abs(v - v0) < 1e-12 else -58.0)
+    X.cmd_search(argparse.Namespace(shard=(0, 1)))
+    r = json.loads(_out(tmp_path, row).read_text())
+    assert r["peaks"]["bound"] == -57.0 and "bound" in r["step1"]["best"]["unusable"]
+    assert r["label"] is None and r["fallback_stage"] == "start" and r["step2"]["start_kind"] == "not_run"
+
+
+def test_c2_flags_a_quiet_label(tmp_path, monkeypatch):
+    import argparse
     (row,), _ = _stub(tmp_path / "q", monkeypatch, peak=-55.0)
     X.cmd_search(argparse.Namespace(shard=(0, 1)))
     q = json.loads(_out(tmp_path / "q", row).read_text())
@@ -486,10 +513,15 @@ def test_c2_stops_a_shard_on_systematic_start_misses(tmp_path, monkeypatch):
         X.cmd_search(argparse.Namespace(shard=(0, 1)))
 
 
-def test_c2_refuses_a_continuation_whose_start_is_near_silent(tmp_path, monkeypatch):
+def test_c2_continues_a_near_silent_start_and_refuses_a_non_finite_one(tmp_path, monkeypatch):
     import argparse
-    (row,), calls = _stub(tmp_path, monkeypatch, peak=-58.0)
+    (row,), _ = _stub(tmp_path, monkeypatch, peak=-58.0)
     c, _ = _with_c1a(tmp_path, [row])
     X.cmd_search(argparse.Namespace(shard=(0, 1)))
     r = json.loads(_out(tmp_path, c).read_text())
-    assert r["label"] is None and "floor" in r["refused"]["unusable"]
+    assert r["label"] is not None and r["peaks"]["start"] == -58.0 and r["peaks"]["bound"] == -58.0
+    (row,), _ = _stub(tmp_path / "n", monkeypatch, nan_at_start=True)
+    c, _ = _with_c1a(tmp_path / "n", [row])
+    X.cmd_search(argparse.Namespace(shard=(0, 1)))
+    r = json.loads(_out(tmp_path / "n", c).read_text())
+    assert r["label"] is None and r["refused"]["unusable"] == "non-finite on half B"
