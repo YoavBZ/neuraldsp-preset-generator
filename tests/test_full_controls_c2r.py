@@ -68,22 +68,35 @@ def test_panel_amps_keep_the_ceiling_amp_and_balance_each_class_by_seed():
     assert R.panel_amps(units, {}, amps, seed=1) != R.panel_amps(units, {}, amps, seed=2)  # the order is the seed's
 
 
-def test_panel_records_leave_the_high_bleed_units_out_and_take_step_0s_source(tmp_path, monkeypatch):
+def test_panel_records_leave_every_unit_on_a_high_bleed_track_out_and_take_step_0s_source(tmp_path, monkeypatch):
     monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
     units = [{"unit": "panel/B a/x@1#t1.wav", "di": "panel/B a/x", "band": "B a", "cls": "clean", "fold": 1,
-              "bleed_db": -30.0},
+              "bleed_db": -30.0, "amp_file": "t1"},
              {"unit": "panel/B a/x@1#t2.wav", "di": "panel/B a/x", "band": "B a", "cls": "clean", "fold": 1,
-              "bleed_db": -10.0},
+              "bleed_db": -10.0, "amp_file": "t2"},
+             {"unit": "panel/B a/x@9#t2.wav", "di": "panel/B a/x", "band": "B a", "cls": "clean", "fold": 2,
+              "bleed_db": None, "amp_file": "t2"},                                # unmeasured, but on t2's track
              {"unit": "panel/C/y@2#t.wav", "di": "panel/C/y", "band": "C", "cls": "crunch", "fold": 2,
-              "bleed_db": None}]
+              "bleed_db": None, "amp_file": "t3"}]
     recs, left = R.panel_records(units, {u["unit"]: "A" for u in units}, {"panel/C/y@2#t.wav": "sw50r"},
                                  ["pr12", "sw50r", "ac20"], set(), -18.35)
     assert [r["unit"] for r in recs] == ["panel/B a/x@1#t1.wav", "panel/C/y@2#t.wav"]
-    assert [x["key"] for x in left] == ["panel/B a/x@1#t2.wav"] and "bleed" in left[0]["why"]
+    assert [x["key"] for x in left] == ["panel/B a/x@1#t2.wav", "panel/B a/x@9#t2.wav"]
+    assert "unmeasured" in left[1]["why"] and "unmeasured" not in left[0]["why"]
     c = recs[1]
     assert (c["amp"], c["ceiling_amp"], c["band"], c["cluster"], c["search"]) == ("sw50r", "sw50r", "C", "panel/C/y", "A")
     assert c["source"] == str(tmp_path / "panel" / "search-c2r" / "step0" / "panel__C__y@2#t.wav|sw50r.json")
     assert " " not in R.out_path(recs[0]).name                                          # the panel's own file names
+
+
+def test_bleed_tracks_judge_a_track_by_its_worst_measured_window_and_a_wider_unit_list():
+    units = [{"amp_file": "a", "bleed_db": -20.0}, {"amp_file": "a", "bleed_db": -18.0}, {"amp_file": "b",
+                                                                                         "bleed_db": None}]
+    assert R.bleed_tracks(units, -18.35) == {"a": -18.0}
+    keep = [{"unit": "u", "amp_file": "b", "cls": "clean", "di": "d", "band": "x", "fold": 0, "bleed_db": None}]
+    every = keep + [{"unit": "v", "amp_file": "b", "bleed_db": -5.0}]                   # a window outside the read set
+    recs, left = R.panel_records(keep, {"u": "A"}, {}, ["pr12"], set(), -18.35, every=every)
+    assert recs == [] and left[0]["key"] == "u"
 
 
 def test_the_order_is_cap1_then_n12_then_the_panel_in_every_shard():

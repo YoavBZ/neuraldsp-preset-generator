@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import random
 import time
 
@@ -112,9 +113,20 @@ def n12_block(c1a_recs, outputs, units, c1b_path):
 
 
 def high_bleed(u, cap):
-    """A panel unit whose measured bleed residual is above `cap` (BKS's reamps' maximum); unmeasured units stay."""
+    """A panel window whose measured bleed residual is above `cap` (BKS's reamps' maximum)."""
     b = u.get("bleed_db")
     return b is not None and float(b) > cap
+
+
+def bleed_tracks(units, cap):
+    """The amp tracks (`amp_file`) with any measured window above `cap`: bleed is the mic's in the room, so a track
+    measured above the bound in one window is out in all of them, its unmeasured windows included. units: every panel
+    unit that has a bleed measure or not (5D's units.json). -> {amp_file: the worst measured window's residual}."""
+    out = {}
+    for u in units:
+        if high_bleed(u, cap):
+            out[u["amp_file"]] = max(out.get(u["amp_file"], -math.inf), float(u["bleed_db"]))
+    return out
 
 
 def panel_amps(units, ceiling, amps, seed=PANEL_AMP_SEED):
@@ -138,15 +150,20 @@ def panel_amps(units, ceiling, amps, seed=PANEL_AMP_SEED):
     return out
 
 
-def panel_records(units, halves, ceiling, amps, real_out, cap):
-    """The panel's records: the lagged read units less the high-bleed ones, on their forced amps (`panel_amps`), clustered
-    by DI with the band beside; their source is step 0's record. -> (records, left out with why)."""
+def panel_records(units, halves, ceiling, amps, real_out, cap, every=None):
+    """The panel's records: the lagged read units less every unit on an amp track with a measured window above the bound
+    (`bleed_tracks` over `every`, 5D's units; default `units`), on their forced amps (`panel_amps`), clustered by DI with
+    the band beside; `halves` are 5D's as stored (dealt over every lagged unit, never re-dealt here); their source is
+    step 0's record. -> (records, left out with why)."""
     from learn import pipeline_fix as P
 
-    keep = [u for u in units if not high_bleed(u, cap)]
+    bad = bleed_tracks(units if every is None else every, cap)
+    keep = [u for u in units if u["amp_file"] not in bad]
     left = [{"key": u["unit"], "block": "panel",
-             "why": f"bleed residual {u['bleed_db']:.2f} dB above BKS's reamps' maximum {cap} dB (trusted data only)"}
-            for u in units if high_bleed(u, cap)]
+             "why": (f"its amp track has a window with bleed residual {bad[u['amp_file']]:.2f} dB above BKS's reamps' "
+                     f"maximum {cap} dB" + ("" if high_bleed(u, cap) else " (this window unmeasured)")
+                     + " (trusted data only)")}
+            for u in units if u["amp_file"] in bad]
     forced = panel_amps(keep, ceiling, amps)
     out = []
     for u in keep:
@@ -380,7 +397,8 @@ def load_records():
     units, lags = P.panel_lagged_units()
     halves = P.panel_halves(units)
     ceiling = {prt["unit"]: a for prt, a in P.panel_ceiling_units(units)}
-    pb, pl = panel_records(units, halves, ceiling, list(P.AMPS3), real_out, P.PANEL_BLEED_MAX_DB)
+    pb, pl = panel_records(units, halves, ceiling, list(P.AMPS3), real_out, P.PANEL_BLEED_MAX_DB,
+                           every=P.panel_units())
     pl += [{"key": u, "block": "panel", "why": f"no usable 5D lag ({r['status']})"} for u, r in sorted(lags.items())
            if r["status"] != "ok"]
     ms = L.menu_S()
@@ -503,7 +521,8 @@ def cmd_ceiling_check(_args):
     for prt, amp in P.panel_ceiling_units(units):
         cp = P.out_dir() / P.PANEL_DIR / "ceiling" / f"{P.panel_fname(P.real_key(prt, amp))}.json"
         c = json.loads(cp.read_text()) if cp.exists() else None
-        rows.append({"unit": prt["unit"], "amp": amp, "kept": not high_bleed(prt, P.PANEL_BLEED_MAX_DB),
+        rows.append({"unit": prt["unit"], "amp": amp,
+                     "kept": prt["amp_file"] not in bleed_tracks(P.panel_units(), P.PANEL_BLEED_MAX_DB),
                      "record": c is not None, "evaluations": (c or {}).get("evaluations"),
                      "same_half": (c or {}).get("search") == halves[prt["unit"]],
                      "same_lag": (c or {}).get("lag") == prt["lag"]})
