@@ -476,7 +476,38 @@ def cmd_draw(_args):
     print("C2 DRAW", n, "records,", len(left), "left out; renders at most", renders_upper(recs), flush=True)
 
 
-def cmd_search(args):
+class Shard:
+    """What C2's search loop (`cmd_search`) takes from its caller; C2's own by default. C2r (`full_controls_c2r`)
+    passes its own: its records and output folders, its phase, its continued block, its known keys and a `prepare`
+    step (the panel's step 0) that writes a record's source before the loop reads it."""
+    phase = PHASE
+    tag = "C2"
+
+    def mine(self, k, n):
+        return shard_records(json.loads((c2_dir() / "records.json").read_text())["records"], k, n)
+
+    def out_path(self, rec, step1=False):
+        return out_path(rec, step1)
+
+    def continued(self, rec):
+        """A record whose stored C1a search is continued to the budget (replayed, then rendered past it)."""
+        return rec["block"] == "c1a"
+
+    def known(self, rec):
+        """-> (the keys recorded off by source, why)."""
+        return known_keys(rec["amp"]), KNOWN_WHY
+
+    def prepare(self, rec):
+        """-> (renders, None) once the record's source can start; (renders, record) to write as its output instead."""
+        return 0, None
+
+    def extra(self, rec):
+        """More fields for the record's output."""
+        return {}
+
+
+def cmd_search(args, shard=None):
+    """One shard of the search. `shard` (a `Shard`) is what the loop takes from its caller; C2's own by default."""
     import numpy as np
 
     from learn import arm_a_levers as L
@@ -490,10 +521,10 @@ def cmd_search(args):
     from learn import song_bank as B
     from learn import trusted_data as T
 
-    P.require(PHASE)
-    plan = json.loads((c2_dir() / "records.json").read_text())
+    cfg = shard or Shard()
+    P.require(cfg.phase)
     k, n = args.shard
-    mine = shard_records(plan["records"], k, n)
+    mine = cfg.mine(k, n)
     first = mine[:MISS_GUARD[1]]
     trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
     ms = L.menu_S()
@@ -511,7 +542,7 @@ def cmd_search(args):
         return LO.tdict(LO.sdict(C.plugin(x, amp)))
 
     def outcome(r):
-        p = out_path(r)
+        p = cfg.out_path(r)
         if not p.exists():
             return None
         return "refused" if "refused" in json.loads(p.read_text()) else "ok"
@@ -519,8 +550,14 @@ def cmd_search(args):
     for rec in mine:
         if PS.free_gb() < T.DISK_GUARD_GB:
             raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
-        out, out1 = out_path(rec), out_path(rec, step1=True)
+        out, out1 = cfg.out_path(rec), cfg.out_path(rec, step1=True)
         if out.exists():
+            continue
+        used0, skip = cfg.prepare(rec)                  # C2r's panel: step 0 makes the source (C2: nothing)
+        renders += used0
+        if skip is not None:
+            P.save(out, skip)
+            print(f"{rec['key'][-70:]}: {skip.get('why')}; renders so far {renders}", flush=True)
             continue
         src = json.loads(open(rec["source"]).read())
         amp, prt = rec["amp"], rec["prt"]
@@ -528,6 +565,7 @@ def cmd_search(args):
         if src["select"] != sel or src.get("label") is None or src["unit"] != rec["unit"] or src["amp"] != amp:
             raise SystemExit(f"{rec['key']}: the source record's unit, amp, select or label does not fit")
         search, held, lag = src["search"], src["held"], src["lag"]
+        kk, kwhy = cfg.known(rec)
         di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
         di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
         ref = P.real_amp_track(prt["sd"], prt["track"], prt["start_s"])
@@ -538,9 +576,10 @@ def cmd_search(args):
                 "cluster": rec["cluster"], "real_out": rec["real_out"], "budget": BUDGET,
                 "seeds": {"step1": F.SEED, "stage_a": C.SEED, "stage_b": C.SEED + 1}, "gate_on_db": F.GATE_ON_DB,
                 "source": rec["source"], "source_best_judge": src["best"]["judge"], "s_judge": src.get("s_judge"),
-                "known_keys": known_keys(amp), "known_why": KNOWN_WHY,
+                "known_keys": kk, "known_why": kwhy,
                 **({"c1b_record": rec.get("c1b_record"), "c1a_output": rec.get("c1a_output"),
-                    "on_fallback": "C1b's record (c1b_record) is C3's input"} if rec["block"] == "c1a" else {})}
+                    "on_fallback": "C1b's record (c1b_record) is C3's input"} if cfg.continued(rec) else {}),
+                **cfg.extra(rec)}
 
         def fresh(x, form=None):
             xs = (form or (lambda z: sorted_x(z, amp)))(x)
@@ -663,14 +702,14 @@ def cmd_search(args):
             bx, why1 = LO.tdict(best1["settings"]), best1["unusable"]
             tally["step1"]["resumed"] += 1
         else:
-            if rec["block"] == "c1a":
+            if cfg.continued(rec):
                 c1a = json.loads(open(rec["c1a_output"]).read())
                 start_gate = c1a.get("start_gate", "on")
                 try:
                     used, values, trials, evals, start_rec, names, start, cont = continued(c1a)
                 except StartUnusable as bad_start:
                     renders += bad_start.renders
-                    P.save(out, {**base, "ledger": f"{P.LEDGER_ID} {PHASE}", "label": None,
+                    P.save(out, {**base, "ledger": f"{P.LEDGER_ID} {cfg.phase}", "label": None,
                                  "step1": {"start_gate": "refused"}, "refused": {"unusable": str(bad_start)},
                                  "time": time.strftime("%Y-%m-%d %H:%M:%S")})
                     tally["step1"]["refused"] += 1
@@ -679,7 +718,7 @@ def cmd_search(args):
                     continue
                 except ReplayMismatch as m:
                     renders += m.renders
-                    P.save(out, {**base, "ledger": f"{P.LEDGER_ID} {PHASE}", "label": None,
+                    P.save(out, {**base, "ledger": f"{P.LEDGER_ID} {cfg.phase}", "label": None,
                                  "step1": {"start_gate": "refused"}, "refused": {"replay_mismatch": m.args[0]},
                                  "time": time.strftime("%Y-%m-%d %H:%M:%S")})
                     tally["step1"]["replay_mismatch"] += 1
@@ -721,7 +760,7 @@ def cmd_search(args):
                     renders += bad_start.renders
                     start_gate, first_miss = "refused", dict(first_miss or {}, unusable=str(bad_start))
                 if start_gate == "refused":
-                    P.save(out, {**base, "ledger": f"{P.LEDGER_ID} {PHASE}", "label": None,
+                    P.save(out, {**base, "ledger": f"{P.LEDGER_ID} {cfg.phase}", "label": None,
                                  "step1": {"start_gate": "refused"}, "refused": first_miss,
                                  "time": time.strftime("%Y-%m-%d %H:%M:%S")})
                     tally["step1"]["refused"] += 1
@@ -766,8 +805,8 @@ def cmd_search(args):
                                     else {"kind": "start", "settings": LO.sdict(start), "judge": evals[0]["judge"],
                                           "peak_dbfs": p0}) if best_ev.get("replayed") else None}
             peaks = {"start": p0, "step1_best": best_ev["peak_dbfs"], "bound": bound}
-            P.save(out1, {"ledger": f"{P.LEDGER_ID} {PHASE}", "step1": s1, "peaks": peaks})   # a stop loses <= 65
-        ledger = f"{P.LEDGER_ID} {PHASE}" + (f" {F.PHASE_A1}" if start_gate == "off_after_miss" else "")
+            P.save(out1, {"ledger": f"{P.LEDGER_ID} {cfg.phase}", "step1": s1, "peaks": peaks})   # a stop loses <= 65
+        ledger = f"{P.LEDGER_ID} {cfg.phase}" + (f" {F.PHASE_A1}" if start_gate == "off_after_miss" else "")
         if why1:                                        # step 2 skipped: C3 falls back to the source label
             P.save(out, {**base, "ledger": ledger, "step1": s1, "step2": {"start_kind": "not_run"},
                          "searched_keys": None, "peaks": peaks, "label": None, "fallback_stage": "start",
@@ -907,7 +946,7 @@ def cmd_search(args):
                 stage_fb, lab_fr = "start", None
                 reason = f"the final unusable: {why}; step 1's best unusable: {why_s1}"
                 label, keys = None, None
-        known_bad = known_problems(label, amp) if label else []
+        known_bad = known_problems(label, amp) if label and kk else []
         if known_bad:
             raise SystemExit(f"{rec['key']}: the label is not dry: {known_bad}")
         lab_peak = (lab_fr or {}).get("peak_dbfs")
@@ -919,7 +958,7 @@ def cmd_search(args):
                      "time": time.strftime("%Y-%m-%d %H:%M:%S")})
         print(f"{rec['key'][-70:]}: step 1 {s1['evaluations']} + step 2 {len(s2.get('trace') or [])} evaluations "
               f"({kind}{', ' + stage_fb + ' fallback' if stage_fb else ''}); renders so far {renders}", flush=True)
-    print(f"C2-SEARCH DONE {k}/{n}: {renders} renders; starts {tally}", flush=True)
+    print(f"{cfg.tag}-SEARCH DONE {k}/{n}: {renders} renders; starts {tally}", flush=True)
 
 
 def cmd_report(_args):
