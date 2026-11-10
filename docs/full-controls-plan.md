@@ -540,7 +540,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 
 - **What C2r is.** Labels, not a measurement: C2's per-record recipe exactly as declared and amended (C2 in detail: C1a's search at budget 200, then C1b's stages A and B, the fresh final, the near-silent guard with its constrained bests, the systematic-miss guard, no effect stage), on the new trusted rows. No training.
 - **Records, 170, in three blocks, in this order:**
-  1. **`cap1`, 121:** batch 1's trusted labelled units (`capture_labels.search_records()` with a label), one forced amp each as stored. The start is the stored label, searched with GOAT's recipe (`K.space`, 52 evaluations), exactly as a C2 GOAT record starts. Clustered by DI file; folds are the stored creator folds.
+  1. **`cap1`, 121:** batch 1's trusted labelled units (`capture_labels.search_records()` with a label), one forced amp each as stored. The start is the stored label. That label is search v2's (N2: `K.space`'s dims, 32 to 43 evaluations, like N12's v2 labels), not GOAT's 52-evaluation recipe. C2's recipe continues from it as it does from a GOAT record's. Clustered by DI file; folds are the stored creator folds.
   2. **`n12`, 31:** batch 2's C1a records (`captures2/search-c1a/`), continued to 200 exactly as C2's C1a block (25 at budget 100, 6 subset records that ran to 300 and already hold their 200 incumbent):
      - their stored evaluations are replayed at zero renders, with each setting checked against the stored one;
      - then the evaluations past 100 are rendered;
@@ -574,7 +574,8 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - blocks in the order above; within a block, by key, round robin over 3 shards, at most 3 render processes;
   - a shard skips records already written and resumes a saved step 1 at step 2;
   - outputs go to `captures/search-c2r/`, `captures2/search-c2r/` and `panel/search-c2r/`.
-- **Guards:** C2's, unchanged.
+- **Guards:** C2's, unchanged, plus one for step 0.
+  - **Step 0's systematic-miss guard,** as C2b's: a shard stops when 3 of the first 5 panel records it reaches are refused at step 0's start. A refusal means S is not bit-identical to the stored S render and is more than 0.005 off it. Before a resume, refused records are moved aside, never deleted.
   - **The near-silent bound** is min(−57 dBFS, the start's peak) − 0.05 dB. For the panel, the start is step 0's best.
   - **Quiet** is flagged below −50 dBFS and counted.
   - **A shard stops** when 5 of its first 10 records are refused at the start.
@@ -643,7 +644,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   The same folds, drops and read apply, and the write-up names the switch.
 - **The read, by the score, as H4a and C3:** each held unit's answer from its fold's FT_k, from the search half, judged on the held half.
   - **Tags:** R-all and R-ctl on every set: BKS (40 units × 3 amps), GOAT (214), cap1 (121), n12 (31), the panel (18).
-  - **C3's stored scores** sit beside on BKS, GOAT and n12. That is a product comparison, since C3's folds drop nothing.
+  - **C3's stored scores** sit beside on BKS, GOAT and n12. That is a product comparison, since C3's folds drop nothing. C3's n12 scores cover one direction only, so n12's R-all − C3 uses that direction.
   - **The reader's input** is each set's existing read input:
     - BKS and GOAT as H4a;
     - n12 as `score_ear h4-*`;
@@ -655,8 +656,8 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **The deciding pool is BKS, GOAT and the panel, weighted equally** (the mean of the three set means), its interval from the three sets' jackknife variances. Their DI files are disjoint, so the variances are independent.
   - **The five-set pool is reported beside it.** It does not decide: cap1 and n12 lean towards R-all by design, and cap1 shares DI files with GOAT, so independent set variances would make its interval too narrow.
   - **Read apart, counted:**
-    - units whose DI file is among W's plugin training rows (`score_ear.w_dis()`: 4 n12 units on 2 files);
-    - H4's real_out units;
+    - units of the new sets whose DI file is among W's plugin training rows (`score_ear.w_dis()`: 4 n12 units on 2 files). BKS is left out of this split: all 120 of its read units sit on W's DIs, as in every earlier BKS read;
+    - H4's real_out units (17 GOAT, 6 BKS): kept in every training row and every main read row, as in C3, with a reading without them beside;
     - cap1 and n12 split by whether the held unit's band or GOAT player trains in its FT_k. Only the panel is folded by band; n12's 9 bands and GOAT's players straddle folds.
 - **Adoption: kept unless shown worse.** R-all's all-labels model replaces C3's adopted model, unless R-all − R-ctl has its 90% interval wholly above 0:
   - on the deciding pool; or
@@ -681,7 +682,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **Open, a read closer to the goal:** the panel scored on each unit's own session mix. BKS's variant 0 is its own song's backing, but the panel's own sessions are not in the stem store, so it reads on pool backings only.
 - **Cost:**
   - **Training:** 34 runs, two arms of C3's 18 less R-ctl's pair, about 2.3 to 4.6 h of MPS at C3's measured 1.2 to 2.3 h an arm. It runs beside the render slots.
-  - **The read:** about 3 renders an answer × 2 tags × about 504 answers ≈ 3,000 renders, under 1 h.
+  - **The read:** every set is answered on both halves, as BKS and GOAT already are. That is 505 units (GOAT's 215 include its one read-only unit, as in C3), so 1,010 answers × 2 renders × 2 arms ≈ 4,040 renders, about 35 min.
   - **The panel's input build:** zero renders.
 
 ## C5: the heavy clean-up re-tested on the full-control model
