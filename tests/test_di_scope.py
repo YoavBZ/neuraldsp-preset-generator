@@ -60,6 +60,7 @@ def test_no_verdicts_is_none_not_an_empty_drop(tmp_path, monkeypatch):
 
 
 def test_answers_reads_the_stored_copy_into_verdicts(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")                      # CI's light runner has no numpy (bakeoff_render imports it)
     from learn import pipeline_fix as P
     import argparse
     monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
