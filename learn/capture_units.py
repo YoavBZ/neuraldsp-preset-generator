@@ -1,4 +1,4 @@
-"""L1a's units (`docs/pipeline-fix-plan.md`, ledger `phase_l1a`): which capture plays which DI at which level.
+"""L1a's units, and L1b's and L1c's (`docs/pipeline-fix-plan.md`, ledger `phase_l1a`; `docs/full-controls-plan.md`, `phase_l1c`): which capture plays which DI at which level.
 
 The pure rules run anywhere; the worker runs in `tools/nam-venv` and reads the captures as data:
 
@@ -47,12 +47,13 @@ def amps_balanced(captures, seed, amps=AMPS):
     return {c: amps[j % len(amps)] for j, c in enumerate(order)}
 
 
-def walk(captures, players, class_of, seed, amps=AMPS, cap=DI_CAP, tries=TRIES, after=None, amp_of=None):
+def walk(captures, players, class_of, seed, amps=AMPS, cap=DI_CAP, tries=TRIES, after=None, amp_of=None, prefer=None):
     """The DI walk. Captures run in a seeded order, each with a seeded amp order and first player; its `tries` candidates
     take the players in turn, items cycling within a player, skipping a DI at the cap or already this capture's. Each amp
     takes the next candidate giving crunch if there is one, otherwise the next giving clean; other classes play nothing.
     class_of(capture, item) -> class. players: {player: [item]}. `after(capture, {amp: item})` runs after each capture.
-    `amp_of`, {capture: amp}: that capture plays that amp alone (L1b).
+    `amp_of`, {capture: amp}: that capture plays that amp alone (L1b). `prefer`, {capture: "clean" | "crunch"}: that capture
+    takes that class first, then the other (L1c: the capture's own tag).
     -> ({capture: {amp: item}}, {capture: [item]})."""
     order = {p: seeded(v, f"{seed}|{p}") for p, v in players.items()}
     pos, used, taken, tried = {p: 0 for p in order}, {}, {}, {}
@@ -85,9 +86,13 @@ def walk(captures, players, class_of, seed, amps=AMPS, cap=DI_CAP, tries=TRIES, 
                     own.append(it)
         tried[c] = own
         by = {k: [it for it in own if class_of(c, it) == k] for k in ("crunch", "clean")}
+        first = (prefer or {}).get(c, "crunch")
+        if first not in by:
+            raise SystemExit(f"{c}: no class {first!r} to take first")
+        second = "clean" if first == "crunch" else "crunch"
         taken[c] = {}
         for amp in amp_order:
-            pick = by["crunch"].pop(0) if by["crunch"] else by["clean"].pop(0) if by["clean"] else None
+            pick = by[first].pop(0) if by[first] else by[second].pop(0) if by[second] else None
             if pick is not None:
                 taken[c][amp] = pick
                 used[pick] = used.get(pick, 0) + 1
@@ -119,6 +124,8 @@ def worker(plan_path, out_dir):
     from nam_load import load
 
     spec = json.loads(pathlib.Path(plan_path).read_text())
+    if spec.get("threads"):                             # L1c: beside the plugin's render shards
+        torch.set_num_threads(int(spec["threads"]))
     dis = dict(np.load(spec["dis"]))
     keep = int(TRIM_S * SR)
     done, audio = {}, {}
@@ -151,7 +158,8 @@ def worker(plan_path, out_dir):
         for k in [k for k in audio if k[0] == name]:
             del audio[k]
 
-    taken, tried = walk(sorted(byname), spec["players"], class_of, spec["seed"], after=keep_units, amp_of=spec.get("amp_of"))
+    taken, tried = walk(sorted(byname), spec["players"], class_of, spec["seed"], after=keep_units, amp_of=spec.get("amp_of"),
+                        prefer=spec.get("prefer"))
     out = pathlib.Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     np.savez(out / "renders.npz", **kept)
