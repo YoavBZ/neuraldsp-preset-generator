@@ -46,7 +46,8 @@ BATCH3 = {"dir": "captures3", "phase": "phase_l1c", "night": None, "manifest": "
           "name": "third", "captures": 44, "seed": SEED3, "minimum": False, "threads": 2}
 EARLIER = ("manifest.csv", "manifest-batch2.csv")       # L1c refuses a capture already fetched in these
 BATCH3_CMDS = ("dis", "units", "page", "answers", "heavy", "heavy-answers", "gate-read")
-B2_YIELD = {"heard": 147, "passed": 49, "trusted": 32}     # L1b's ear page and N10b's trusted units, for L1c's read
+B2_YIELD = {"heard": 147, "passed": 49, "di_bad": 14, "trusted_after_lag_and_t0": 32}   # L1b's ear page (before the heavy
+#   page, the lag rule and T0; its 14 bad-DI verdicts fell on DIs T0 never verified) and N10b's 32 (after the lag rule and T0)
 HELD_BANDS = ("Atlantis Bound", "Diesel13", "Eat The Feeder", "Magician's Nephew", "Szymon Skiba", "Wall Of Death", "Zeno",  # V-real
               "Adam Buckley", "The Maybe Next Years",  # NS
               "Aimee Norwich", "Big Troubles", "Blue Manic", "Dahka Band", "Guitar-TECHS P3", "Jen Hartswick & Nick Cassarino",
@@ -84,23 +85,29 @@ EAR_SPEC3 = dict(EAR_SPEC, verdicts=VERDICTS3, ask=EAR_SPEC["ask"].replace(
     "not muffled, not fizzy, with no artifacts?",
     "not muffled, not fizzy, with no artifacts? Our presets are clean and light crunch: if B is more distorted than that, say\nso with its own button, even if it sounds like a good amp.", 1))
 ARTIFACT_INTRO = ("Answers are saved in this browser as you go; tap <b>Export</b> any time, even halfway, and send the file.",
-                  "Your answers save as you go, and I can read them from here when you tell me you are done.")
+                  "Your answers save as you go, and I can read them from here when you tell me you are done. Use one device for "
+                  "this page. If the line below says they are not saving, tap <b>Export</b> and send the text instead."
+                  ' <b id="sync">Not saved yet.</b>')
 GATE_SYNC = r"""
 let dbDoc = null, syncTimer = null, syncBusy = false, syncAgain = false;
 function push() {
   if (!dbDoc) return;
   if (syncBusy) { syncAgain = true; return; }
   syncBusy = true;
-  dbDoc.set(JSON.parse(exportText())).catch(() => {}).finally(() => {
+  const el = document.getElementById("sync");
+  dbDoc.set(JSON.parse(exportText())).then(() => { if (el) el.textContent = "Saved."; })
+    .catch(() => { if (el) el.textContent = "Not saving here: tap Export and send the text."; }).finally(() => {
     syncBusy = false; if (syncAgain) { syncAgain = false; push(); } });
 }
 const saveHere = save;
 save = function () { saveHere(); if (dbDoc) { clearTimeout(syncTimer); syncTimer = setTimeout(push, 700); } };
 (async () => {
   try {
-    if (!window.claude) return;
+    if (!window.claude) { const el = document.getElementById("sync");
+      if (el) el.textContent = "Not saving here: tap Export and send the text."; return; }
     const db = await window.claude.use("db");
-    if (!db) return;
+    const el = document.getElementById("sync");
+    if (!db) { if (el) el.textContent = "Not saving here: tap Export and send the text."; return; }
     const d = db.doc("answers/" + DATA.build + "-part" + DATA.part), snap = await d.get();
     if (snap.exists && !Object.keys(store).length) {
       for (const a of (snap.data().answers || [])) if (a.verdict || a.note) store[a.id] = {verdict: a.verdict, note: a.note, t: a.t};
@@ -155,10 +162,17 @@ def earlier_overlap(rows, earlier):
     return sorted(r["file_name"] for r in rows if r["sha256"] in sha or (r.get("model_id") and r["model_id"] in mid))
 
 
-def l1c_sections(sections, verdict_of, w_files):
-    """L1c's DI pool before L1b's library rule: the sections whose DI T0 verified and whose DI file is not among W's training
-    rows. verdict_of(di) -> T0's verdict or None (no verdict: left out). -> [section row]."""
-    return [s for s in sections if verdict_of(s["di"]) == "verified" and s["di"] not in w_files]
+def l1c_sections(sections, verdict_of, w_files, played=frozenset()):
+    """L1c's DI pool before L1b's library rule: the sections whose DI T0 verified, whose DI file is not among W's training
+    rows and was played on no capture or preset page (`played`: L1b's units' DI files, every one on its gate page, and the
+    cards of N12's, H4b's and C1a's pages). verdict_of(di) -> T0's verdict or None (no verdict: left out). -> [section row]."""
+    return [s for s in sections if verdict_of(s["di"]) == "verified" and s["di"] not in w_files and s["di"] not in played]
+
+
+def played_dis(l1b_units, *card_lists):
+    """The DI files already played on a capture or preset page: L1b's units' (all on `capture-ear-2`) and any card's own `di`.
+    -> frozenset of DI files."""
+    return frozenset({u["di"] for u in l1b_units} | {c["di"] for cards in card_lists for c in cards if c.get("di")})
 
 
 def gate_read(units, ear, trusted_units, b2=B2_YIELD):
@@ -184,8 +198,13 @@ def gate_read(units, ear, trusted_units, b2=B2_YIELD):
             "distorted_vs_odd": {"distorted": sum(verdict(u) == "distorted" for u in units), "odd": sum(verdict(u) == "odd" for u in units)},
             "trusted_by": {"amp_class": count(kept, lambda u: (u["amp"], u["cls"])), "creator": count(kept, lambda u: u["creator"]),
                            "band": count(kept, lambda u: u["player"]), "di_file": count(kept, lambda u: u["di"])},
-            "yield": {"passed_share": passed_n / heard if heard else None, "trusted_share": len(kept) / len(units) if units else None,
-                      "batch2_passed_share": b2["passed"] / b2["heard"], "batch2_trusted_share": b2["trusted"] / b2["heard"]}}
+            "units_per_section": count(units, lambda u: u["di_item"]),
+            "bad_di_on_t0_verified": sorted(u["unit"] for u in units if verdict(u) == "di_bad"),   # disagreements with T0
+            "yield": {"passed_share": passed_n / heard if heard else None,
+                      "batch2_passed_share (the ear page alone, like for like)": b2["passed"] / b2["heard"],
+                      "trusted_share (no lag rule in L1c)": len(kept) / len(units) if units else None,
+                      "batch2_trusted_share (after the lag rule and T0, not like for like)": b2["trusted_after_lag_and_t0"] / b2["heard"],
+                      "batch2_di_bad (on DIs T0 never verified)": b2["di_bad"]}}
 
 
 def artifact_gate(page, js):
@@ -459,7 +478,12 @@ def cmd_dis(_args):
                 except SystemExit:
                     return None
 
-            lib, seed = l1c_sections(lib, verdict_of, SE.w_dis()), SEED3
+            l1b = json.loads((P.out_dir() / BATCH2["dir"] / "units.json").read_text())["units"]
+            pages = [json.loads((SE.wide_dir() / f).read_text()) for f in ("plan.json", "h4b/plan.json")]
+            cards = [d["cards"] + d.get("spares", []) for d in pages]           # N12's and H4b's cards and spares
+            played = played_dis(l1b, *cards)
+            lib, seed = l1c_sections(lib, verdict_of, SE.w_dis(), played), SEED3
+            print(f"L1c's DI pool: {len(lib)} sections, {len({s['di'] for s in lib})} DI files; {len(played)} played DI files out")
         for band, rows in library_dis(lib, seed=seed).items():
             for s in rows:
                 item = "lib-" + hashlib.sha256(f"{s['di']}@{s['start_s']}".encode()).hexdigest()[:12]
@@ -586,7 +610,7 @@ def build_page(items, spec, key_name, by_unit, extra=None):
             a.parent.mkdir(parents=True, exist_ok=True)
             a.write_text(artifact_gate(html_text, js))
             print(f"{page}: the Artifact's copy {a.stat().st_size / 1e6:.1f} MB -> {a}")
-    P.save(key_path, {"page": page, "seed": SEED, "build": build, "items": items, **(extra or {}),
+    P.save(key_path, {"page": page, "seed": SEED, "batch_seed": BATCH.get("seed"), "build": build, "items": items, **(extra or {}),
                       "time": time.strftime("%Y-%m-%d %H:%M:%S")})
 
 
@@ -611,20 +635,32 @@ def cmd_page(_args):
                {"tilt": tilts, "outside_bks_range": outside})
 
 
-def read_export(exports, key_name, page):
-    """Exports -> (the page's key, {item id: item}, {item id: {verdict, note}}); refuses another page's or build's export."""
-    key = json.loads((root() / key_name).read_text())
-    unit_of = {it["id"]: it for it in key["items"]}
-    got = {}
+def read_export(exports, key_name, page, store=None):
+    """Exports, and the Artifact's stored copy if given -> (the page's key, {item id: item}, {item id: {verdict, note}}).
+    Refuses another page's or build's file. The stored copy wins: an Export whose verdict on any id differs from it, or that
+    answers an id it lacks, is refused and the ids named, never merged; without a stored copy, Exports that differ on an id
+    are refused the same way."""
     from learn import ear_eat as EE
 
-    for f in exports:
+    key = json.loads((root() / key_name).read_text())
+    unit_of = {it["id"]: it for it in key["items"]}
+
+    def answers(f):
         ex = EE.stored_answers(pathlib.Path(f).read_text())     # the Export's text, or the Artifact's stored copy
         if ex.get("page") != page or ex.get("build") != key["build"]:
             raise SystemExit(f"{f}: not this page's export (page {ex.get('page')}, build {ex.get('build')})")
-        for a in ex.get("answers", []):
-            if a["id"] in unit_of and a.get("verdict"):
-                got[a["id"]] = {"verdict": a["verdict"], "note": a.get("note") or ""}
+        return {a["id"]: {"verdict": a["verdict"], "note": a.get("note") or ""}
+                for a in ex.get("answers", []) if a["id"] in unit_of and a.get("verdict")}
+
+    got = answers(store) if store else {}
+    for f in exports:
+        ex = answers(f)
+        clash = sorted(i for i, a in ex.items() if (i in got and got[i]["verdict"] != a["verdict"]) or (store and i not in got))
+        if clash:
+            raise SystemExit(f"{f}: {len(clash)} answers differ from {'the stored copy' if store else 'an earlier file'}, "
+                             f"first {clash[:3]}: not merged")
+        for i, a in ex.items():
+            got.setdefault(i, a)
     return key, unit_of, got
 
 
@@ -632,7 +668,7 @@ def cmd_answers(args):
     from learn import pipeline_fix as P
 
     P.require(BATCH["phase"])
-    key, unit_of, got = read_export(args.exports, "ear-key.json", PAGE_NAME + BATCH["page"])
+    key, unit_of, got = read_export(args.exports, "ear-key.json", PAGE_NAME + BATCH["page"], getattr(args, "store", None))
     P.save(root() / "ear.json", {"page": PAGE_NAME + BATCH["page"], "build": key["build"], "exports": args.exports,
                                  "verdicts": {unit_of[i]["capture"]: v for i, v in got.items()},
                                  "time": time.strftime("%Y-%m-%d %H:%M:%S")})
@@ -677,7 +713,7 @@ def cmd_scope_answers(args):
     from learn import pipeline_fix as P
 
     P.require(BATCH["phase"])
-    key, unit_of, got = read_export(args.exports, "scope-key.json", SCOPE_PAGE + BATCH["page"])
+    key, unit_of, got = read_export(args.exports, "scope-key.json", SCOPE_PAGE + BATCH["page"], getattr(args, "store", None))
     P.save(root() / "scope.json", {"page": SCOPE_PAGE + BATCH["page"], "build": key["build"], "exports": args.exports,
                                    "verdicts": {unit_of[i]["unit"]: v for i, v in got.items()},
                                    "time": time.strftime("%Y-%m-%d %H:%M:%S")})
@@ -705,7 +741,7 @@ def cmd_heavy_answers(args):
     from learn import pipeline_fix as P
 
     P.require(BATCH["phase"])
-    key, unit_of, got = read_export(args.exports, "heavy-key.json", HEAVY_PAGE + BATCH["page"])
+    key, unit_of, got = read_export(args.exports, "heavy-key.json", HEAVY_PAGE + BATCH["page"], getattr(args, "store", None))
     P.save(root() / "heavy.json", {"page": HEAVY_PAGE + BATCH["page"], "build": key["build"], "exports": args.exports,
                                    "verdicts": {unit_of[i]["unit"]: v for i, v in got.items()},
                                    "time": time.strftime("%Y-%m-%d %H:%M:%S")})
@@ -992,7 +1028,9 @@ def main(argv=None):
     for c in ("dis", "units", "page", "heavy", "scope", "items", "stage-check", "night-check", "gate-read"):
         sub.add_parser(c)
     for c in ("answers", "heavy-answers", "scope-answers"):
-        sub.add_parser(c).add_argument("exports", nargs="+")
+        a = sub.add_parser(c)
+        a.add_argument("exports", nargs="*")
+        a.add_argument("--store", help="the Artifact's stored copy (`answers/<build>-part<k>`), which wins")
     s = sub.add_parser("search")
     s.add_argument("--lags-only", action="store_true")
     s.add_argument("--before-ear", action="store_true")
@@ -1000,6 +1038,8 @@ def main(argv=None):
     s.add_argument("--stage", default="third")
     s.add_argument("--shard", type=shard, default=(0, 1))
     args = ap.parse_args(argv)
+    if args.cmd in ("answers", "heavy-answers", "scope-answers") and not (args.exports or args.store):
+        raise SystemExit(f"{args.cmd}: give the stored copy, an Export, or both")
     if args.batch == 2:
         BATCH = BATCH2
     if args.batch == 3:

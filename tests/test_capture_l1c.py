@@ -43,10 +43,16 @@ def test_earlier_overlap_by_sha_or_model_id():
     assert L.earlier_overlap(rows, []) == []
 
 
-def test_l1c_sections_keep_t0_verified_dis_outside_w():
-    secs = [{"di": "x/1.wav"}, {"di": "x/2.wav"}, {"di": "x/3.wav"}, {"di": "w/4.wav"}]
-    verdict = {"x/1.wav": "verified", "x/2.wav": "excluded", "w/4.wav": "verified"}.get   # x/3: no verdict, left out
-    assert L.l1c_sections(secs, verdict, frozenset({"w/4.wav"})) == [{"di": "x/1.wav"}]
+def test_l1c_sections_keep_t0_verified_unplayed_dis_outside_w():
+    secs = [{"di": "x/1.wav"}, {"di": "x/2.wav"}, {"di": "x/3.wav"}, {"di": "w/4.wav"}, {"di": "x/5.wav"}]
+    verdict = {"x/1.wav": "verified", "x/2.wav": "excluded", "w/4.wav": "verified", "x/5.wav": "verified"}.get   # x/3: none
+    assert L.l1c_sections(secs, verdict, frozenset({"w/4.wav"})) == [{"di": "x/1.wav"}, {"di": "x/5.wav"}]
+    assert L.l1c_sections(secs, verdict, frozenset({"w/4.wav"}), frozenset({"x/5.wav"})) == [{"di": "x/1.wav"}]
+
+
+def test_played_dis_take_every_l1b_unit_and_every_card():
+    l1b = [{"di": "a.wav"}, {"di": "b.wav"}]
+    assert L.played_dis(l1b, [{"di": "c.wav"}, {"unit": "no di"}], [{"di": "a.wav"}]) == frozenset({"a.wav", "b.wav", "c.wav"})
 
 
 def test_batch3_runs_only_its_own_commands():
@@ -69,14 +75,16 @@ def test_gate_read_tallies_the_declared_tables():
     amp = lambda j: "pr12" if j % 2 else "ac20"
     units = [{"unit": f"cap/u{j}#{amp(j)}", "capture": f"u{j}", "label": "clean" if j < 3 else "crunch",
               "cls": "clean" if j < 2 else "crunch", "amp": amp(j), "creator": f"m{j % 2}", "player": "Band A",
-              "di": f"d{j % 3}.wav"} for j in range(5)]
+              "di": f"d{j % 3}.wav", "di_item": f"s{j % 2}"} for j in range(5)]
     ear = {"u0": {"verdict": "amp"}, "u1": {"verdict": "amp"}, "u2": {"verdict": "distorted"}, "u3": {"verdict": "odd"}}
     r = L.gate_read(units, ear, {"cap/u0#ac20", "cap/u1#pr12"})
     assert (r["units"], r["heard"], r["passed"], r["trusted"]) == (5, 4, 2, 2)
     assert r["distorted_vs_odd"] == {"distorted": 1, "odd": 1}
     assert r["by_tag"]["clean"] == {"amp": 2, "distorted": 1} and r["by_tag"]["crunch"] == {"odd": 1, "unheard": 1}
     assert r["trusted_by"]["amp_class"] == {"('ac20', 'clean')": 1, "('pr12', 'clean')": 1}
-    assert r["yield"]["passed_share"] == 0.5 and r["yield"]["batch2_passed_share"] == pytest.approx(49 / 147)
+    assert r["yield"]["passed_share"] == 0.5
+    assert r["yield"]["batch2_passed_share (the ear page alone, like for like)"] == pytest.approx(49 / 147)
+    assert r["units_per_section"] == {"s0": 3, "s1": 2} and r["bad_di_on_t0_verified"] == []
 
 
 def test_read_export_takes_the_stored_copy(tmp_path, monkeypatch):
@@ -93,6 +101,39 @@ def test_read_export_takes_the_stored_copy(tmp_path, monkeypatch):
     bad.write_text(json.dumps(dict(doc["data"], build="b2")))
     with pytest.raises(SystemExit):
         L.read_export([bad], "ear-key.json", "capture-ear-3")
+
+
+def test_read_export_refuses_answers_that_differ_and_the_store_wins(tmp_path, monkeypatch):
+    pytest.importorskip("numpy")
+    monkeypatch.setattr(L, "root", lambda: tmp_path)
+    (tmp_path / "ear-key.json").write_text(json.dumps({"build": "b1", "items": [{"id": "c1"}, {"id": "c2"}, {"id": "c3"}]}))
+
+    def write(name, answers):
+        f = tmp_path / name
+        f.write_text(json.dumps({"page": "capture-ear-3", "part": 1, "build": "b1",
+                                 "answers": [{"id": i, "verdict": v, "note": ""} for i, v in answers.items()]}))
+        return f
+
+    store = write("store.json", {"c1": "amp", "c2": "odd", "c3": "distorted"})
+    early = write("early.json", {"c1": "amp", "c2": "odd"})                 # an earlier, partial Export: agrees
+    late = write("late.json", {"c1": "amp", "c2": "amp"})                   # a later change on c2: refused, named
+    _, _, got = L.read_export([early], "ear-key.json", "capture-ear-3", store)
+    assert {i: a["verdict"] for i, a in got.items()} == {"c1": "amp", "c2": "odd", "c3": "distorted"}
+    with pytest.raises(SystemExit, match="c2"):
+        L.read_export([late], "ear-key.json", "capture-ear-3", store)
+    with pytest.raises(SystemExit, match="c2"):
+        L.read_export([early, late], "ear-key.json", "capture-ear-3")     # no store: the order cannot decide
+    short = write("short.json", {"c1": "amp"})
+    extra = write("extra.json", {"c3": "amp"})
+    with pytest.raises(SystemExit, match="c3"):
+        L.read_export([extra], "ear-key.json", "capture-ear-3", short)      # an id the stored copy lacks: refused
+    _, _, both = L.read_export([short, extra], "ear-key.json", "capture-ear-3")
+    assert set(both) == {"c1", "c3"}
+
+
+def test_answers_needs_a_file():
+    with pytest.raises(SystemExit, match="stored copy"):
+        L.main(["--batch", "3", "answers"])
 
 
 def test_artifact_gate_keeps_answers_in_the_store_and_drops_the_file_save():
@@ -112,3 +153,4 @@ def test_artifact_gate_keeps_answers_in_the_store_and_drops_the_file_save():
     assert 'db.doc("answers/" + DATA.build + "-part" + DATA.part)' in out
     assert L.ARTIFACT_INTRO[1] in out and L.ARTIFACT_INTRO[0] not in out
     assert 'data-v="distorted"' in out and out.startswith("<title>Capture ear 1</title>")
+    assert 'id="sync"' in out and 'el.textContent = "Saved."' in out

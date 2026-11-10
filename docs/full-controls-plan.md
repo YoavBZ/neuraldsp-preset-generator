@@ -442,11 +442,14 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 
 ## L1c in detail: batch 3's units and ear gate (declared 2026-11-10, before any render; ledger `phase_l1c`)
 
-**Why.** C4 is a blind ear page of full-control presets against FT2 and S. It needs units that no model trained on, that no read chose anything on, and that no listener has heard. Only 7 such units are left (above). On 2026-11-10 the user said yes to a third TONE3000 batch for C4. L1c turns it into units and runs them past the ear gate. It follows L1b, the second batch ([pipeline-fix-plan.md](pipeline-fix-plan.md), L1b and its gates), with the changes named below.
+*Amended the same day, before any render, after its independent review (three required changes on the declaration and two on the code, all made, and the cheap optional points; noted where they land).*
+
+**Why.** C4 is a blind ear page of full-control presets against FT2 and S. It needs units that no model trained on, that no read chose anything on, and that were heard on no ranking page. Only 7 such units are left (above). On 2026-11-10 the user said yes to a third TONE3000 batch for C4. L1c turns it into units and runs them past the ear gate. It follows L1b, the second batch ([pipeline-fix-plan.md](pipeline-fix-plan.md), L1b and its gates), with the changes named below.
 
 - **The captures.** `manifest-batch3.csv` lists 44 named captures, fetched 2026-11-10 with no failures. They come from 31 packs and 22 creators, 15 of them new to batches 1 and 2. By the makers' words, with the fetcher's guess on 11, 28 are clean and 16 light crunch. All 44 are calibrated: 40 are A2 (the loader takes the container's largest submodel) and 4 are A1 Standard.
   - **Checked at zero renders:** all 44 load in `tools/nam-venv` with `nam_load.load`. A 12 s input takes about 0.5 s on the CPU.
-  - **Checked in code before the draw:** each file's sha256 against the manifest. The draw also refuses any capture whose sha256 or model id is in `manifest.csv` or `manifest-batch2.csv`.
+  - **Checked in code before the draw:** each file's sha256 against the manifest. The draw also refuses any capture whose sha256 or model id is in `manifest.csv` or `manifest-batch2.csv`. The review found no overlap by sha256, model id, tone id, content hash, pack, or creator and name.
+  - **Recorded:** the manifest's sha256 starts `8d71c10136c342a7` (ledger), so later loaders and draws can refuse these captures by file. The DI files the walk uses go in L1c's outcome entry.
 - **What stays as L1b:**
   - the loader and the level rule (9 dBu less the stored level, the input's peak never past 1.0);
   - the walk: 9 candidates a capture, the bands taking turns, at most 3 units a DI section, high-gain candidates playing nothing;
@@ -454,22 +457,36 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - the DI's section written beside the render;
   - the lag to the DI;
   - creator folds;
-  - the ear page's one card per capture, then the heavy page on the firmly driven passed units;
+  - the ear page's one card per capture, then the heavy page on the firmly driven passed units. With one unit a capture, the heavy page plays the ear card's clip again: a second hearing that can only drop units;
   - the gates in code (`passed`, `trusted`).
 - **What differs, and why:**
-  - **The DIs.** L1b's library rule (`library_dis`: trusted, clean, disjoint sections outside every held band, at most 40 a band) applies, plus two more conditions:
+  - **The DIs.** L1b's library rule (`library_dis`: trusted, clean, disjoint sections outside every held band, at most 40 a band) applies, plus three more conditions:
     - T0's verdict on the DI is `verified`. N10b found that L1b's draw took `training_ok` for T0's verdict, and 15 of its 47 units sat on DIs that T0 had refused or left unheard. A DI with no verdict is left out of the draw, not refused.
-    - The DI file is not among W's training rows (`score_ear.w_dis()`, 25 files). The performance is then new to every model C4 compares, as the capture is. Counted at zero renders, this leaves 196 sections, 37 DI files and 10 bands: Renesans 37, Death Of A Romantic 32, Ale Lak 30, Rebuild The Evil 30, Hollow Ground 25, Storm Of Particles 17, Dark Ride 13, Cnoc An Tursa 10, Starnes And Shah 1, The Long Wait 1. Without the two conditions, L1b's rule gives 391 sections.
+    - The DI file is not among W's training rows (`score_ear.w_dis()`, 25 files). C3 and FT2 fine-tune from W on GOAT's and BKS's rows only, and neither set's DIs are in the library pool. So the performance is new to every model C4 compares, as the capture is.
+    - **The DI file was played on no capture or preset page** (`played_dis`). That means no file of L1b's 147 units, all of which played on its gate page `capture-ear-2`, and no card or spare of N12's and H4b's pages. C1a's ear page played N12 units, which are L1b's. The review found 13 of N12's 14 card files and 11 of H4b's 12 in the pool before this condition. Without it, C4 would play riffs the listener has already ranked candidates on. Earlier listening pages, before L1b, are not checked file by file. T0's own DI checks may have played a DI on its own.
+    - **Counted at zero renders:**
+      - L1b's rule alone: 391 sections.
+      - With T0 and W: 196 sections, 37 DI files, 10 bands.
+      - Also without N12's and H4b's cards and spares: 105 sections, 21 files, 8 bands.
+      - Also without every L1b unit's file: **12 sections, 10 DI files, 5 bands.** These are Cnoc An Tursa (4 sections on 4 files), Dark Ride (3 on 3), Death Of A Romantic (3 on 1), Ale Lak (1) and Storm Of Particles (1).
+    - **So fewer than 44 captures get a unit.** The cap of 3 units a section gives 36 places. A seeded dry run with every candidate playable gives 36 of the 44 captures a unit, and the walk names the rest. C4 clusters by DI file (10 at most), and the units per section are reported.
   - **The class taken first is the capture's own tag.** A capture tagged clean takes its first clean candidate, and a crunch candidate only if no clean one plays. A capture tagged crunch takes crunch first, then clean. L1a and L1b took crunch first for every capture. Why: on batch 2's ear page crunch passed 9 of 73 and clean 40 of 74, and too distorted was the main fault named. C4's scope is clean and light crunch.
-  - **The seed** is 20261150, for the DI order, the walk and the amps.
+  - **The seed** is 20261150, for the DI order, the walk and the amps. The page order and card ids keep L1a's and L1b's 20261105 (`SEED`), and the page's key records both.
   - **One more verdict on the ear page:** "Too distorted for clean or light crunch", beside believable, odd, a bad DI and not sure. L1b's page folded too distorted into odd, so the two faults could not be told apart. Only "believable amp" passes, as before. This page asks for a verdict, not a ranking, so the rule on ties does not arise.
-  - **Answers** are kept in the Artifact's own store (`answers/<build>`, as on C1a's page) as well as by Export, so the listener need not send a file.
+  - **Answers** are kept in the Artifact's own store (`answers/<build>-part<k>`, as on C1a's page) as well as by Export, so the listener need not send a file.
+    - The page shows whether they are saving, and asks for one device.
+    - When both are given, the stored copy wins. An Export that differs from it on any id is refused and the ids are named, never merged. That means a different verdict, or an answer the stored copy lacks.
+    - Exports alone that differ on an id are refused the same way.
   - **No minimum.** The minimum of 10 units per amp and class protected a cell's centre read. L1c makes no centre read and no training row. So the per-cell counts are only reported, and a short cell does not stop the batch.
   - **No labels ahead of the ear.** No label search runs in L1c: it renders nothing on the plugin.
 - **Files.** Records go under `captures3/`, and the pages are `capture-ear-3` and `capture-heavy-3`. The first two manifests are not touched.
 - **Renders.**
   - **Plugin renders:** none.
-  - **NAM renders:** at most 44 × 9 = 396 of 10.25 s each. They run in one process with two threads (`OMP_NUM_THREADS=2`, `torch.set_num_threads(2)`), so the three C2 shards keep their cores on the 8-core Mac. At about 0.5 s a render that is roughly 4 minutes, plus the class measures. Encoding the page's 88 AAC clips is a few minutes more.
+  - **NAM renders:** at most 44 × 9 = 396 of 10.25 s each. With the pool above, the dry run tries 247.
+  - **One NAM process beside C2.** The machine's cap of 3 render processes counts Morgan plugin processes, and C2's three shards hold it. One NAM process, on the CPU in `tools/nam-venv`, runs beside them on the 8-core Mac, whose load is about 4.7.
+    - It runs with two threads: `OMP_NUM_THREADS`, `VECLIB_MAXIMUM_THREADS` and `OPENBLAS_NUM_THREADS` are set to 2 before Python starts, and `torch.set_num_threads(2)` inside it.
+    - C2's rate is checked before and after the walk. The executor reports about 6,600 renders/h.
+    - The 0.5 s a render was timed at the default thread count, so expect up to about 10 minutes, plus the class measures. Encoding the page's AAC clips takes a few minutes more.
 - **Use.**
   - Batch 3 is C4's source only. Its units never become training rows, and no recipe, threshold, adoption or other choice is made on them.
   - Any label searched on them later is a measurement only, declared with C4.
@@ -478,10 +495,13 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - the verdicts by the tagged and the measured class, and by amp;
   - how many fail as too distorted against odd;
   - the trusted units, by amp, class, creator, band and DI file;
-  - the yield against batch 2's.
+  - the yield against batch 2's, like for like: the share passed on the ear page alone, against batch 2's 49 of 147, of which 14 were bad-DI verdicts on DIs T0 never verified. Batch 2's 32 trusted units come after the lag rule and T0, which L1c lacks, so that row is labelled as not like for like;
+  - every bad-DI verdict, here a disagreement with T0, since every DI was verified;
+  - the units per DI section.
 - **Goal check and stop rule.**
-  - **Goal check:** L1c serves C4 alone. It gives C4 believable, in-scope, unheard units on DIs and captures that no compared model saw.
-  - **Stop rule:** one gate page, and a heavy page if any passed unit is firmly driven. No re-draw and no second page to raise the count. L1c ends when the answers are read and the trusted units counted. C4's declaration takes whatever passes, beside N12's 7 unheard units.
+  - **Goal check:** L1c serves C4 alone. It gives C4 believable, in-scope units on captures and DI files that no compared model saw, and that played on no capture or preset page.
+  - **Stop rule:** one gate page, and a heavy page if any passed unit is firmly driven. No re-draw and no second page to raise the count. L1c ends when the answers are read and the trusted units counted. C4's declaration takes whatever passes, beside N12's 7 unheard units, and states its power on that count.
+    - At batch 2's 33%, about 12 units would pass of the 36 at most.
   - **A fourth batch** needs the user's yes. The fetcher found the calibrated clean and low-gain full rigs outside batches 1 to 3 mostly used up.
 
 ## C5: the heavy clean-up re-tested on the full-control model
