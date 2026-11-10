@@ -88,6 +88,7 @@ def test_gate_read_tallies_the_declared_tables():
     assert r["yield"]["passed_share"] == 0.5
     assert r["yield"]["batch2_passed_share (the ear page alone, like for like)"] == pytest.approx(49 / 147)
     assert r["units_per_section"] == {"s0": 3, "s1": 2} and r["bad_di_on_t0_verified"] == []
+    assert r["units_per_di_file"] == {"d0.wav": 2, "d1.wav": 2, "d2.wav": 1}
 
 
 def test_read_export_takes_the_stored_copy(tmp_path, monkeypatch):

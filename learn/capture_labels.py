@@ -206,7 +206,7 @@ def gate_read(units, ear, trusted_units, b2=B2_YIELD):
             "distorted_vs_odd": {"distorted": sum(verdict(u) == "distorted" for u in units), "odd": sum(verdict(u) == "odd" for u in units)},
             "trusted_by": {"amp_class": count(kept, lambda u: (u["amp"], u["cls"])), "creator": count(kept, lambda u: u["creator"]),
                            "band": count(kept, lambda u: u["player"]), "di_file": count(kept, lambda u: u["di"])},
-            "units_per_section": count(units, lambda u: u["di_item"]),
+            "units_per_section": count(units, lambda u: u["di_item"]), "units_per_di_file": count(units, lambda u: u["di"]),
             "bad_di_on_t0_verified": sorted(u["unit"] for u in units if verdict(u) == "di_bad"),   # disagreements with T0
             "yield": {"passed_share": passed_n / heard if heard else None,
                       "batch2_passed_share (the ear page alone, like for like)": b2["passed"] / b2["heard"],

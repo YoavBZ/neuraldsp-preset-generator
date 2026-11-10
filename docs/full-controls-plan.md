@@ -474,7 +474,8 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
       - With T0 and W: 196 sections, 37 DI files, 10 bands.
       - Without N12's and H4b's cards and spares: 105 sections, 21 files, 8 bands. C1a's cards add 7 files to the 18 left out, all N12 files already out or BKS files outside the pool, so the pool stays at **105 sections, 21 DI files, 8 bands.**
       - By band: Death Of A Romantic 29 sections on 3 files, Hollow Ground 25 on 3, Renesans 24 on 2, Ale Lak 13 on 3, Storm Of Particles 6 on 2, Cnoc An Tursa 4 on 4, Dark Ride 3 on 3, Starnes And Shah 1 on 1.
-    - **All 44 captures fit.** A seeded dry run with every candidate playable gives every capture a unit and tries all 396 candidates. C4 clusters by DI file. The units per section are reported.
+    - **All 44 captures fit.** A seeded dry run with every candidate playable gives every capture a unit and tries all 396 candidates. C4 clusters by DI file. The units per section and per DI file are reported.
+    - **C4 re-runs this pool check when it is built:** any ranking page built on library DIs before C4 joins `played_dis`, and a unit whose DI file it then holds is named and left out.
   - **The class taken first is the capture's own tag.** A capture tagged clean takes its first clean candidate, and a crunch candidate only if no clean one plays. A capture tagged crunch takes crunch first, then clean. L1a and L1b took crunch first for every capture. Why: on batch 2's ear page crunch passed 9 of 73 and clean 40 of 74, and too distorted was the main fault named. C4's scope is clean and light crunch.
   - **The seed** is 20261150, for the DI order, the walk and the amps. The page order and card ids keep L1a's and L1b's 20261105 (`SEED`), and the page's key records both.
   - **One more verdict on the ear page:** "Too distorted for clean or light crunch", beside believable, odd, a bad DI and not sure. L1b's page folded too distorted into odd, so the two faults could not be told apart. Only "believable amp" passes, as before. This page asks for a verdict, not a ranking, so the rule on ties does not arise.
@@ -502,7 +503,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - the trusted units, by amp, class, creator, band and DI file;
   - the yield against batch 2's, like for like: the share passed on the ear page alone, against batch 2's 49 of 147, of which 14 were bad-DI verdicts on DIs T0 never verified. Batch 2's 32 trusted units come after the lag rule and T0, which L1c lacks, so that row is labelled as not like for like;
   - every bad-DI verdict, here a disagreement with T0, since every DI was verified;
-  - the units per DI section.
+  - the units per DI section and per DI file.
 - **Goal check and stop rule.**
   - **Goal check:** L1c serves C4 alone. It gives C4 believable, in-scope units on captures and DI files that no compared model saw, and that were heard on no ranking or preset page.
   - **Stop rule:** one gate page, and a heavy page if any passed unit is firmly driven. No re-draw and no second page to raise the count. L1c ends when the answers are read and the trusted units counted. C4's declaration takes whatever passes, and states its power on that count. Batch 3 is C4's only unheard source: C1a's ear page played N12's 7.
