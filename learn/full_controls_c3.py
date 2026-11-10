@@ -348,6 +348,9 @@ def judged(bks, goat):
             "shown_worse": any(shown_worse(r) for r in (bks, goat, p))}
 
 
+COMPARISONS = (f"C3-ftm - {FTM_TAG}", "C3-ftm - S", f"C3-core - {FTM_TAG}")   # pooled beside the families
+
+
 def config_tag(at_S):
     """The tag that answers with exactly the families `at_S` at S: one of the six, else C3-adopt."""
     want = set(at_S)
@@ -371,8 +374,13 @@ def adoption(bks_rows, goat_rows):
             raise SystemExit(f"the report has no row {n}")
         fam[f] = judged(bks_rows[n], goat_rows[n])
     at_S = [f for f in FAMILIES if fam[f]["shown_worse"]]
+    comp = {n: judged(bks_rows[n], goat_rows[n]) for n in COMPARISONS if n in bks_rows and n in goat_rows}
+    missing = [n for n in COMPARISONS if n not in comp]
+    if missing:
+        raise SystemExit(f"the report has no row {missing[0]}")
     return {"families": fam, "adopted": [f for f in FAMILIES if f not in at_S], "at_S": at_S,
-            "config_tag": config_tag(at_S)}
+            "config_tag": config_tag(at_S), "comparisons": comp,
+            "core_shown_worse": comp[row_name("C3-core", FTM_TAG)]["shown_worse"]}
 
 
 def replacement(bks_rows, goat_rows, tag):
@@ -563,6 +571,8 @@ def cmd_recheck(_args):
             if PS.free_gb() < T.DISK_GUARD_GB:
                 raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
             old = json.loads((jd / f).read_text())
+            if old["unit"] not in by:
+                raise SystemExit(f"{jd / f}: its unit is no longer a read unit")
             prt = by[old["unit"]]
             key = P.real_key(prt, old["amp"])
             if old["answers_sha256"] != P.answers_sha(ans if kind == "bks" else {key: ans[key]}):
@@ -578,7 +588,8 @@ def cmd_recheck(_args):
     miss = [r_ for r_ in rows if not r_["same"]]
     P.save(c3_dir() / "recheck.json", {"ledger": f"{P.LEDGER_ID} {PHASE}", "rows": rows, "renders": renders,
                                        "mismatched": len(miss), "time": time.strftime("%Y-%m-%d %H:%M:%S")})
-    print(f"C3-RECHECK: {len(rows) - len(miss)} of {len(rows)} FTm renders identical; {renders} renders", flush=True)
+    print(f"C3-RECHECK: {len(rows) - len(miss)} of {len(rows)} FTm renders identical; {renders} renders, priming "
+          "included", flush=True)
     if miss:
         raise SystemExit(f"C3-RECHECK: {len(miss)} renders differ from FTm's stored ones: re-render FTm in full")
     print("C3-RECHECK DONE")
@@ -628,32 +639,41 @@ def amp_value(held, pick):
     return logs[pick] - sum(logs.values()) / len(logs)
 
 
+def amp_rows(parts, amp_p, judge, amps, head_amps):
+    """BKS's amp read rows: per unit and search half, the head's pick (its probabilities on the first amp input that has
+    them; the head reads the audio only) and `amp_value` on the held half of each amp's render. judge: {(unit, amp):
+    a judge file's "judge", {search half: {half: value}}}; amp_p: {key: {search half: [p per head amp]}}.
+    -> [(DI, unit, value)]."""
+    rows = []
+    for prt in parts:
+        for sh, h in (("A", "B"), ("B", "A")):
+            ps = [(amp_p.get(f"{prt['unit']}|{a}") or {}).get(sh) for a in amps]
+            ps = [q for q in ps if q]
+            if not ps:
+                continue
+            pick = head_amps[max(range(len(ps[0])), key=lambda i: ps[0][i])]
+            held = {a: ((judge.get((prt["unit"], a)) or {}).get(sh) or {}).get(h) for a in amps}
+            val = amp_value(held, pick)
+            if val is not None:
+                rows.append((prt["di"], prt["unit"], val))
+    return rows
+
+
 def cmd_amp(args):
     """BKS: the amp pick of W's amp head on C3's body (the head is masked on real rows by `loss_fn`'s `keep`) against a
     blind choice, from C3's per-amp renders, clustered by DI. Zero renders."""
+    from learn import full_space as FS
     from learn import pipeline_fix as P
 
     P.require(PHASE)
     ans = json.loads((P.out_dir() / P.REAL_DIR / "answers" / "C3-ftm.json").read_text())
-    amp_p = ans.get("amp_p") or {}
     judge = {}
     for p_ in (P.out_dir() / P.REAL_DIR / "judge" / "C3-ftm").glob("*.json"):
         r = json.loads(p_.read_text())
         judge[(r["unit"], r["amp"])] = r["judge"]
-    rows = []
-    for prt in ans["parts"]:
-        for sh, h in (("A", "B"), ("B", "A")):
-            ps = [amp_p.get(P.real_key(prt, a), {}).get(sh) for a in P.AMPS3]
-            ps = [q for q in ps if q]
-            if not ps:
-                continue
-            from learn import full_space as FS
-
-            pick = FS.AMPS[max(range(len(ps[0])), key=lambda i: ps[0][i])]
-            held = {a: (judge.get((prt["unit"], a)) or {}).get(h) for a in P.AMPS3}
-            val = amp_value(held, pick)
-            if val is not None:
-                rows.append((prt["di"], prt["unit"], val))
+    rows = amp_rows(ans["parts"], ans.get("amp_p") or {}, judge, P.AMPS3, FS.AMPS)
+    if not rows:
+        raise SystemExit("c3-amp: no row (no amp probabilities or no finite held judges)")
     rep = {"phase": PHASE, "read": "W's amp head on C3's body (masked on real rows): the picked amp's held judge less "
            "the mean over the three amps, ln, clustered by DI", "row": P.clustered(rows),
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
@@ -682,9 +702,15 @@ def cmd_adopt(args):
     if not args.final:
         a = adoption(b, g)
         rec = dict(a, c2_sha256=c2_sha(), needs_own_tag=a["config_tag"] == ADOPT_TAG,
+                   isolation_run_needed=a["core_shown_worse"],   # C3 core worse than FTm: FTm's mask on C2's labels
                    time=time.strftime("%Y-%m-%d %H:%M:%S"))
         P.save(c3_dir() / "adoption.json", rec)
-        print(json.dumps({k: rec[k] for k in ("adopted", "at_S", "config_tag", "needs_own_tag")}, indent=1))
+        print(json.dumps({k: rec[k] for k in ("adopted", "at_S", "config_tag", "needs_own_tag", "core_shown_worse")},
+                         indent=1))
+        for n, j in rec["comparisons"].items():
+            p_ = j["pooled"] or {}
+            print(f"{n}: BKS {j['bks'].get('mean')}, GOAT {j['goat'].get('mean')}, pooled {p_.get('mean')} "
+                  f"[{p_.get('lo90')}, {p_.get('hi90')}]; shown worse {j['shown_worse']}")
         return
     a = json.loads((c3_dir() / "adoption.json").read_text())
     tag = a["config_tag"]

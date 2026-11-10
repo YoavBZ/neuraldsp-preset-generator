@@ -1016,7 +1016,8 @@ def cmd_h4_wide(args):
     apart = w_dis()
     rows, refused = h4_rows(units, recs, tags, h4_judged,
                             lambda slug: json.loads((wide_dir() / "renders" / slug / "rec.json").read_text()), apart)
-    rep = {"phase": H4, "read": "N12's units, N12's FTm answer path; ln(d_tag / d_FTm) on the held half, clustered by band",
+    rep = {"phase": "phase_c3" if set(tags) & P.C3_TAGS else H4,
+           "read": "N12's units, N12's FTm answer path; ln(d_tag / d_FTm) on the held half, clustered by band",
            "units": len(units), "bands": len({u["player"] for u in units}), "groups": dict(H4_GROUPS),
            "w_di_units": sorted(u["unit"] for u in units if u["di"] in apart), "rows": rows, "refused": refused,
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}

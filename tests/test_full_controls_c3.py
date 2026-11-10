@@ -251,8 +251,15 @@ def test_shown_worse_and_adoption():
     ok, worse = row(-0.001, 0.01, 8), row(0.03, 0.01, 8)
     b = {X.row_name("C3-ftm", X.FAMILY_TAG[f]): ok for f in X.FAMILIES}
     g = {X.row_name("C3-ftm", X.FAMILY_TAG[f]): row(-0.001, 0.003, 126) for f in X.FAMILIES}
+    for n in X.COMPARISONS:
+        b[n], g[n] = ok, row(-0.001, 0.003, 126)
     a = X.adoption(b, g)
     assert a["adopted"] == list(X.FAMILIES) and a["at_S"] == [] and a["config_tag"] == "C3-ftm"
+    assert set(a["comparisons"]) == set(X.COMPARISONS) and not a["core_shown_worse"]
+    assert all(a["comparisons"][n]["pooled"]["mean"] == pytest.approx(-0.001) for n in X.COMPARISONS)
+    g[X.row_name("C3-core", X.FTM_TAG)] = row(0.01, 0.003, 126)   # C3 core worse than FTm on GOAT: the isolation run
+    assert X.adoption(b, g)["core_shown_worse"]
+    g[X.row_name("C3-core", X.FTM_TAG)] = row(-0.001, 0.003, 126)
     b[X.row_name("C3-ftm", "C3-gateS")] = worse                 # shown worse on BKS alone: back at S
     a = X.adoption(b, g)
     assert a["at_S"] == ["gate"] and a["config_tag"] == "C3-gateS"
@@ -261,6 +268,9 @@ def test_shown_worse_and_adoption():
     assert a["at_S"] == ["gate", "cab"] and a["config_tag"] == X.ADOPT_TAG
     with pytest.raises(SystemExit):
         X.adoption({}, g)
+    del b["C3-ftm - S"]
+    with pytest.raises(SystemExit, match="C3-ftm - S"):
+        X.adoption(b, g)
 
 
 def test_config_tag():
@@ -296,6 +306,32 @@ def test_gate_rows_and_spread():
     t = r["threshold_where_on"]
     assert t["n"] == 2 and t["at_minus_80"] == 1 and t["moved_from_minus_80"] == 1 and t["min"] == -80.0
     assert X.spread([]) is None
+
+
+# The shape of a stored judge file (real/judge/P2b-ftm/..19_ElecGtr1aDI.wav@15.0#21_ElecGtr1cReamp.wav|ac20.json, its
+# values as stored): "judge" is {search half: {half: value}}.
+JUDGE_FILE = {"unit": "set5/BKS_Bulldozer_Full/19_ElecGtr1aDI.wav@15.0#21_ElecGtr1cReamp.wav", "amp": "ac20",
+              "tag": "P2b-ftm", "lag": -64,
+              "judge": {"A": {"A": 4.608276525688598, "B": 5.056316872084529},
+                        "B": {"A": 4.196592669221414, "B": 4.671852325355218}}}
+
+
+def test_amp_rows_on_a_judge_file_shape():
+    u = JUDGE_FILE["unit"]
+    judge = {(u, "ac20"): JUDGE_FILE["judge"],
+             (u, "pr12"): {"A": {"A": 4.0, "B": 6.0}, "B": {"A": 3.0, "B": 5.0}},
+             (u, "sw50r"): {"A": {"A": 5.0, "B": 7.0}, "B": {"A": 4.5, "B": 4.4}}}
+    amps = ("ac20", "pr12", "sw50r")
+    amp_p = {f"{u}|ac20": {"A": [0.7, 0.2, 0.1], "B": [0.1, 0.2, 0.7]}}
+    rows = X.amp_rows([{"unit": u, "di": "d1"}], amp_p, judge, amps, amps)
+    assert len(rows) == 2
+    held_A = {a: judge[(u, a)]["A"]["B"] for a in amps}       # search half A's answers, judged on B
+    want = math.log(held_A["ac20"]) - sum(math.log(v) for v in held_A.values()) / 3
+    assert rows[0] == ("d1", u, pytest.approx(want))
+    held_B = {a: judge[(u, a)]["B"]["A"] for a in amps}
+    want = math.log(held_B["sw50r"]) - sum(math.log(v) for v in held_B.values()) / 3
+    assert rows[1] == ("d1", u, pytest.approx(want))
+    assert X.amp_rows([{"unit": u, "di": "d1"}], {}, judge, amps, amps) == []
 
 
 def test_amp_value():

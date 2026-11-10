@@ -4024,7 +4024,8 @@ def cmd_goat_predict(args):
     if args.names not in ("P2a-goat", "P2a-goatshuf", *DFIX_BASES, FT_BASE, FTM_BASE, FTS_TAG, *sorted(H4_FT_TAGS),
                           *sorted(C3_TAGS)):
         raise SystemExit(f"--names P2a-goat, P2a-goatshuf, {FT_BASE}, {FTM_BASE}, {FTS_TAG}, H4's "
-                         f"{', '.join(sorted(H4_FT_TAGS))} or one of {', '.join(DFIX_BASES)} (fold models)")
+                         f"{', '.join(sorted(H4_FT_TAGS))}, C3's {', '.join(sorted(C3_TAGS))} or one of "
+                         f"{', '.join(DFIX_BASES)} (fold models)")
     goat_predict(args.names)
 
 
