@@ -86,13 +86,15 @@ def test_the_order_is_goat_then_bks_stage_1_then_stage_2_in_every_shard():
 def test_known_keys_are_the_effects_doubler_and_spring_off():
     pr = X.known_keys("pr12")
     assert pr == {"reverb/reverbActive": "false", "delay/delayActive": "false", "tremolo/tremoloActive": "false",
-                  "parameters/doublerActive": "false", "spring/springOn": "false"}
-    assert "spring/springOn" not in X.known_keys("ac20") and "spring/springOn" in X.known_keys("sw50r")
+                  "parameters/doublerActive": "false", "pr12Amp/springOn": "false"}       # FT2's head name
+    from learn import full_space as FS
+    assert FS.spring_dim("pr12").name in pr and "sw50rAmp/springOn" in X.known_keys("sw50r")
+    assert not any(k.endswith("springOn") for k in X.known_keys("ac20"))
     assert "off by source" in X.KNOWN_WHY
     dry = LO.sdict(full_start("pr12"))
     assert X.known_problems(dry, "pr12") == []
     assert X.known_problems({**dry, "reverb/reverbActive": "true", "pr12Amp/pr12Reverb": "0.3"}, "pr12") == \
-        ["reverb/reverbActive", "spring/springOn"]
+        ["pr12Amp/springOn", "reverb/reverbActive"]
     assert X.known_problems({}, "sw50r") == []
 
 
@@ -377,13 +379,23 @@ def test_c2_searches_a_near_silent_start_and_refuses_only_a_non_finite_one(tmp_p
     assert r["label"] is None and calls["n"] == 2                                # the priming and the first evaluation
 
 
-def test_c2_a_best_quieter_than_the_bound_falls_back_to_the_source_label(tmp_path, monkeypatch):
+def test_c2_each_stages_best_is_the_best_that_passes_the_bound(tmp_path, monkeypatch):
     import argparse
-    (row,), _ = _stub(tmp_path, monkeypatch, peak=lambda v, v0: -50.0 if abs(v - v0) < 1e-12 else -58.0)
+    cut = {"v": None}
+
+    def peak(v, v0):                                                            # better than the cut: too quiet
+        return -58.0 if v < cut["v"] else -50.0
+    (row,), _ = _stub(tmp_path, monkeypatch, peak=peak)
+    cut["v"] = _value(full_start()) - 0.002                                     # a little below the start's
     X.cmd_search(argparse.Namespace(shard=(0, 1)))
     r = json.loads(_out(tmp_path, row).read_text())
-    assert r["peaks"]["bound"] == -57.0 and "bound" in r["step1"]["best"]["unusable"]
-    assert r["label"] is None and r["fallback_stage"] == "start" and r["step2"]["start_kind"] == "not_run"
+    b = r["step1"]["best"]
+    assert r["peaks"]["bound"] == -57.0 and b["constrained"] and b["unusable"] is None
+    assert b["index"] != b["unconstrained_index"] and r["step1"]["trials"][b["index"]]["judge"]["A"] >= cut["v"]
+    assert r["label"] is not None and r["fallback_stage"] is None
+    for st in ("stage_a", "stage_b"):
+        assert r["step2"][st]["judge"]["A"] >= cut["v"] and r["step2"][st]["peak_dbfs"] == -50.0
+    assert r["fresh"]["label"]["peak_dbfs"] == -50.0
 
 
 def test_c2_flags_a_quiet_label(tmp_path, monkeypatch):
@@ -407,6 +419,7 @@ def test_c2_report_reads_the_search_outputs_by_block(tmp_path, monkeypatch, caps
     assert g["step1_starts"] == {"on": 2, "off_after_miss": 0, "refused": 1} and g["refused"][0]["unit"] == "goat/u2"
     assert g["step2_starts"]["canonical"] == 2
     assert g["rows"]["records"] == 2 and g["rows"]["all"]["primary"]["mean"] < 0
+    assert g["rows"]["all"]["records_counted"] == 3 and g["rows"]["all"]["counts"]["label_none"] == 1
     assert g["rows"]["all"]["counts"]["rooms_on"] == 2 and g["rows"]["left_out_of_primary"][0]["why"] == "refused"
     printed = json.loads(capsys.readouterr().out)
     assert printed["goat"]["written"] == 3
@@ -478,7 +491,8 @@ def test_c2_takes_a_subset_records_200_incumbent_at_zero_step_1_renders(tmp_path
     X.cmd_search(argparse.Namespace(shard=(0, 1)))
     g, r = (json.loads(_out(tmp_path, x).read_text()) for x in (row, c))
     assert r["step1"]["curve"] == g["step1"]["curve"] and r["step1"]["continuation"]["rendered"] == 0
-    assert r["step1"]["continuation"]["start_check"] is None and r["step1"]["best"]["replayed"] in (True, False)
+    assert r["step1"]["continuation"]["start_check"] is None and r["step1"]["best"]["replayed"] is True
+    assert r["step1"]["peak_fallback"]["kind"] == "start"                       # no rendered evaluation to fall to
 
 
 def test_c2_refuses_a_continuation_whose_replay_is_not_exact(tmp_path, monkeypatch):
@@ -488,7 +502,7 @@ def test_c2_refuses_a_continuation_whose_replay_is_not_exact(tmp_path, monkeypat
     assert X.replay_check(json.loads(open(c["c1a_output"]).read()), "pr12")[0] == ["evaluation 5 differs"]
     X.cmd_search(argparse.Namespace(shard=(0, 1)))
     r = json.loads(_out(tmp_path, c).read_text())
-    assert r["refused"] == {"replay_mismatch": 5} and r["label"] is None
+    assert r["refused"] == {"replay_mismatch": 5} and r["label"] is None and r["step1"]["start_gate"] == "refused"
 
 
 def test_c2_resumes_at_step_2_from_the_saved_step_1(tmp_path, monkeypatch, capsys):
@@ -525,3 +539,49 @@ def test_c2_continues_a_near_silent_start_and_refuses_a_non_finite_one(tmp_path,
     X.cmd_search(argparse.Namespace(shard=(0, 1)))
     r = json.loads(_out(tmp_path / "n", c).read_text())
     assert r["label"] is None and r["refused"]["unusable"] == "non-finite on half B"
+
+
+def test_constrained_index_takes_the_best_passing_evaluation():
+    ev = [{"judge": {"A": 3.0, "B": 3.0}, "peak_dbfs": -30.0}, {"judge": {"A": 1.0, "B": 1.0}, "peak_dbfs": -58.0},
+          {"judge": {"A": 2.0, "B": 2.0}, "peak_dbfs": -56.0}, {"judge": {"A": 0.5, "B": math.nan}, "peak_dbfs": -20.0},
+          {"judge": {"A": 1.5, "B": 1.5}, "peak_dbfs": None, "replayed": True}]
+    assert X.constrained_index(ev, "A", -57.0) == 4                              # a replayed one passes on its halves
+    assert X.constrained_index(ev, "A", -57.0, known_only=True) == 2
+    assert X.constrained_index(ev, "A", -57.0, n=2) == 0
+    assert X.constrained_index(ev, "A", -60.0, n=3) == 1
+    assert X.constrained_index(ev, "A", -58.0 + X.PEAK_TOL / 2, n=3) == 1        # within the tolerance
+    assert X.constrained_index(ev, "A", -58.0 + 2 * X.PEAK_TOL, n=3) == 2
+
+
+def test_the_bound_has_a_tolerance_for_fresh_against_in_process_peaks():
+    ok = {"A": 2.0, "B": 3.0}
+    b = X.peak_bound(-59.6)
+    assert X.unusable(ok, -59.6 - 0.0038, b) is None and X.unusable(ok, -59.6 - X.PEAK_TOL + 1e-9, b) is None
+    assert X.unusable(ok, -59.6 - X.PEAK_TOL - 1e-6, b)
+
+
+def test_record_values_leave_a_continuation_miss_out_of_the_200_checkpoint():
+    r = {"held": "B", "label": {"x": 1}, "fresh": {"label": {"judge": {"B": 2.0}}},
+         "step1": {"trials": [{"judge": {"B": 4.0}}], "continuation": {"start_check": {"ok": False}},
+                   "checkpoints": {"100": {"judge": {"B": 3.2}}, "200": {"judge": {"B": 3.2}}}}}
+    v = X.record_values(r)
+    assert "held_gain_at_100" in v and "held_gain_at_200" not in v
+    assert X.counts([r])["continuation_start_miss"] == 1
+
+
+def test_c2_a_replayed_best_too_quiet_at_step_2_falls_back_to_a_rendered_passing_one(tmp_path, monkeypatch):
+    import argparse
+    cut = {"v": None}
+
+    def peak(v, v0):
+        return -58.0 if v <= cut["v"] else -50.0
+    (row,), _ = _stub(tmp_path, monkeypatch, peak=peak)
+    c, trials = _with_c1a(tmp_path, [row])
+    cut["v"] = min(t["judge"]["A"] for t in trials) + 1e-9                     # C1a's 100 best is too quiet
+    X.cmd_search(argparse.Namespace(shard=(0, 1)))
+    r = json.loads(_out(tmp_path, c).read_text())
+    pf = r["step1"]["peak_fail"]
+    assert pf["replayed_best"]["replayed"] is True and "bound" in pf["why"]
+    assert pf["fallback"] in ("rendered", "start") and r["step1"]["best"]["replayed"] is False
+    assert r["step2"]["start_kind"] == "canonical" and r["label"] is not None
+    assert r["fresh"]["label"]["peak_dbfs"] == -50.0 and X.counts([r])["peak_fail_at_step2"] == 1

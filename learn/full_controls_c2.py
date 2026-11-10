@@ -32,6 +32,7 @@ PLAN = "docs/full-controls-plan.md"
 STEP2_RENDERS = 1 + C.BUDGET_ROOMS + C.BUDGET_MICS_EQ      # priming, stage A, stage B (at most)
 SILENT_DBFS = -60.0                  # J0's silence floor (`arm_a_mega53.SILENT_DBFS`: a peak under it is "silent")
 UNUSABLE_DB = 3.0                    # a later stage's best may not peak below min(floor + this, the start's peak) (F70)
+PEAK_TOL = 0.05                      # dB: fresh and in-process peaks of one setting differ by up to 0.0038 dB (C1a)
 QUIET_DBFS = -50.0                   # a label peaking under this is flagged and counted, nothing more (J0 removes level)
 MISS_GUARD = (5, 10)                 # a shard stops when this many of its first records are refused at the start
 KNOWN_WHY = ("off by source: the sources are dry (GOAT's capture renders, BKS's reamps) and mono (no doubler); not "
@@ -134,23 +135,25 @@ def shard_records(records, k, n):
 
 def known_keys(amp):
     """The controls C2 records as off by source, not searched (`KNOWN_WHY`): the three time-effect switches, the
-    doubler, and the spring's pseudo-switch on the amps that have one. -> {"module/key": "false"}."""
-    from learn import knob_ceiling2 as K2
+    doubler, and on the amps that have one the spring's switch under FT2's head name (`full_space.spring_dim`, e.g.
+    `pr12Amp/springOn`), so C3 sets it to known off rather than masking it. -> {"module/key": "false"}."""
+    from learn import full_space as FS
 
     out = {"/".join(k): "false" for k in C.DRY_KEYS}
-    if amp in K2.SPRING:
-        out["/".join(C.SPRING_KEY)] = "false"
+    if amp in FS.SPRING:
+        out[FS.spring_dim(amp).name] = "false"
     return out
 
 
 def known_problems(label, amp):
     """The known-off controls a label (the plugin's settings, {"module/key": value}) has on: a switch on, or the
     spring's level above 0 for its pseudo-switch (must be empty; a key the label does not store is off)."""
+    from learn import full_space as FS
     from learn import knob_ceiling2 as K2
 
     out = []
     for k in known_keys(amp):
-        if k == "/".join(C.SPRING_KEY):
+        if amp in FS.SPRING and k == FS.spring_dim(amp).name:
             lvl = label.get("/".join(next(iter(K2.SPRING[amp][0]))))
             if lvl is not None and float(lvl) > 0:
                 out.append(k)
@@ -225,9 +228,30 @@ def unusable(judge, peak, bound=None):
         p = float(peak)
     except (TypeError, ValueError):
         p = math.nan
-    if not math.isfinite(p) or p < bound:
-        return f"peak {peak} dBFS below the bound {bound:.2f} dBFS (min of -57 and the start's peak)"
+    if not math.isfinite(p) or p < bound - PEAK_TOL:
+        return f"peak {peak} dBFS below the bound {bound:.2f} dBFS (min of -57 and the start's peak, less {PEAK_TOL})"
     return None
+
+
+def constrained_index(evals, search, bound, n=None, known_only=False):
+    """A stage's best under the bound: the index of the lowest search-half value among its first n evaluations that
+    pass (`unusable` None: finite on both halves and, where the peak is known, not below the bound). A replayed
+    evaluation's peak is unknown: it passes on its halves alone, or is left out with known_only. Earliest on ties; None
+    if none passes."""
+    best = None
+    for i, e in enumerate(evals[:n]):
+        if e.get("replayed") and known_only:
+            continue
+        if unusable(e["judge"], e.get("peak_dbfs"), None if e.get("replayed") else bound):
+            continue
+        v = e["judge"][search]
+        if best is None or v < evals[best]["judge"][search]:
+            best = i
+    return best
+
+
+class PeakFail(Exception):
+    """Step 2's first evaluation (step 1's best rendered in a fresh process) fails the peak bound: a replayed best."""
 
 
 def quiet(peak, level=QUIET_DBFS):
@@ -314,7 +338,8 @@ def record_values(r):
         out["vs_stored_label"] = math.log(fin / lab)
     if s is not None:
         out["vs_S"] = math.log(fin / s)
-    for c in ("100", "200"):
+    miss = ((s1.get("continuation") or {}).get("start_check") or {}).get("ok") is False
+    for c in ("100",) if miss else ("100", "200"):         # a continuation that did not render: no 200 checkpoint
         v = F._pos((((s1.get("checkpoints") or {}).get(c) or {}).get("judge") or {}).get(h))
         if v is not None:
             out[f"held_gain_at_{c}"] = math.log(v / st)
@@ -327,7 +352,8 @@ def counts(recs):
         return str(x.get(k, "false")).lower() in ("true", "1")
     out = {"mics_changed": 0, "left_cab_off": 0, "rooms_on": 0, "phase_flipped": 0, "pedals_on": 0,
            "gate_threshold_moved": 0, "step2_refused": 0, "drift": 0, "quiet": 0, "fell_back_to_step1": 0,
-           "fell_back_to_start": 0}
+           "fell_back_to_start": 0, "label_none": 0, "continuation_start_miss": 0, "step1_constrained": 0,
+           "step2_constrained": 0, "peak_fail_at_step2": 0}
     for r in recs:
         s2 = r.get("step2") or {}
         out["step2_refused"] += int(s2.get("start_kind") == "refused")
@@ -343,6 +369,12 @@ def counts(recs):
         out["quiet"] += int(bool(r.get("quiet")))
         out["fell_back_to_step1"] += int(r.get("fallback_stage") == "step1")
         out["fell_back_to_start"] += int(r.get("fallback_stage") == "start")
+        out["label_none"] += int(r.get("label") is None)
+        s1 = r.get("step1") or {}
+        out["continuation_start_miss"] += int(((s1.get("continuation") or {}).get("start_check") or {}).get("ok") is False)
+        out["step1_constrained"] += int(bool((s1.get("best") or {}).get("constrained")))
+        out["step2_constrained"] += int(bool(s2.get("a_constrained") or s2.get("b_constrained")))
+        out["peak_fail_at_step2"] += int(bool(s1.get("peak_fail")))
     return out
 
 
@@ -360,13 +392,15 @@ def report_rows(recs, tq, clus):
             return None
         return dict(F.with_interval(F.jackknife_mean([(c, x) for c, _, x in pts]), tq), band_weighted=clus(pts))
 
-    def rows(sub):
-        return {**{name: row(sub, name) for name in ROWS}, "counts": counts([r for r, _ in sub]), "records": len(sub)}
+    def rows(sub, every):                               # counts over every record, label None included
+        return {**{name: row(sub, name) for name in ROWS}, "counts": counts(every), "records": len(sub),
+                "records_counted": len(every)}
 
-    res = {"all": rows(vals) if vals else None}
+    res = {"all": rows(vals, recs) if recs else None}
     for cl in ("clean", "crunch"):
         sub = [(r, v) for r, v in vals if r["cls"] == cl]
-        res[cl] = rows(sub) if sub else None
+        every = [r for r in recs if r["cls"] == cl]
+        res[cl] = rows(sub, every) if every else None
     res["records"] = len(vals)
     res["left_out_of_primary"] = [{"unit": r["unit"], "amp": r.get("amp"),
                                    "why": "refused" if "refused" in r else
@@ -411,6 +445,8 @@ def load_records():
         if q.exists():
             outs[r["key"]] = dict(json.loads(q.read_text()), _path=str(q))
     cb, cl = c1a_block(c1a, outs)
+    for r in cb:                                        # what "source" means on a fallback in this block (C3)
+        r["c1b_record"] = str(P.out_dir() / C.OUT_DIRS["bks"][0] / C.OUT_DIRS["bks"][1] / f"{F.fname(r['key'])}.json")
     recs, left = recs + b + cb, left + cl
     ms = L.menu_S()
     ok = []
@@ -464,7 +500,8 @@ def cmd_search(args):
     LO._wait_cap()
     lists = C.mic_lists()
     renders = 0
-    tally = {"step1": {"on": 0, "off_after_miss": 0, "refused": 0, "continued": 0, "resumed": 0},
+    tally = {"step1": {"on": 0, "off_after_miss": 0, "refused": 0, "continued": 0, "resumed": 0, "replay_mismatch": 0,
+                       "continuation_start_miss": 0},
              "step2": {"canonical": 0, "raw_after_miss": 0, "refused": 0, "not_run": 0}}
 
     def sx1(x):                                         # C1a's (step 1): edits in 5B.1's order
@@ -501,7 +538,9 @@ def cmd_search(args):
                 "cluster": rec["cluster"], "real_out": rec["real_out"], "budget": BUDGET,
                 "seeds": {"step1": F.SEED, "stage_a": C.SEED, "stage_b": C.SEED + 1}, "gate_on_db": F.GATE_ON_DB,
                 "source": rec["source"], "source_best_judge": src["best"]["judge"], "s_judge": src.get("s_judge"),
-                "known_keys": known_keys(amp), "known_why": KNOWN_WHY}
+                "known_keys": known_keys(amp), "known_why": KNOWN_WHY,
+                **({"c1b_record": rec.get("c1b_record"), "c1a_output": rec.get("c1a_output"),
+                    "on_fallback": "C1b's record (c1b_record) is C3's input"} if rec["block"] == "c1a" else {})}
 
         def fresh(x, form=None):
             xs = (form or (lambda z: sorted_x(z, amp)))(x)
@@ -605,6 +644,9 @@ def cmd_search(args):
                         values.append(v)
                     return v
                 K.coord_search(dims, start, f, BUDGET, F.SEED, cats="levels", canon=F.make_canon(amp))
+            except ReplayMismatch as m:
+                m.renders = used[0]
+                raise
             finally:
                 if rr is not None:
                     rr.close()
@@ -636,13 +678,18 @@ def cmd_search(args):
                           flush=True)
                     continue
                 except ReplayMismatch as m:
+                    renders += m.renders
                     P.save(out, {**base, "ledger": f"{P.LEDGER_ID} {PHASE}", "label": None,
-                                 "step1": {"start_gate": start_gate}, "refused": {"replay_mismatch": m.args[0]},
+                                 "step1": {"start_gate": "refused"}, "refused": {"replay_mismatch": m.args[0]},
                                  "time": time.strftime("%Y-%m-%d %H:%M:%S")})
-                    print(f"{rec['key'][-70:]}: the replay is not exact at evaluation {m.args[0]}", flush=True)
+                    tally["step1"]["replay_mismatch"] += 1
+                    print(f"{rec['key'][-70:]}: the replay is not exact at evaluation {m.args[0]}; renders so far "
+                          f"{renders}", flush=True)
                     continue
                 renders += used
                 tally["step1"]["continued"] += 1
+                if (cont.get("start_check") or {}).get("ok") is False:
+                    tally["step1"]["continuation_start_miss"] += 1
             else:
                 start = F.c1a_start(src["best"]["settings"], amp)
                 bad = F.audible_change(start, src["best"]["settings"], amp, declared=F.GATE_KEYS)
@@ -679,34 +726,45 @@ def cmd_search(args):
                                  "time": time.strftime("%Y-%m-%d %H:%M:%S")})
                     tally["step1"]["refused"] += 1
                     print(f"{rec['key'][-70:]}: refused ({first_miss}); renders so far {renders}", flush=True)
+                    # read from the written records: after a restart the first ten are written, and the guard does
+                    # not fire again on records it already passed (by design: a restart is a human's decision)
                     if rec in first and systematic_miss([outcome(r) for r in first]):
                         raise SystemExit(f"SYSTEMATIC MISS: {MISS_GUARD[0]} of shard {k}/{n}'s first {MISS_GUARD[1]} "
                                          "records refused at the start")
                     continue
                 tally["step1"][start_gate] += 1
-            cps = F.checkpoints(values, BUDGET)
-            i1 = F.incumbent_at(values, BUDGET)
-            if i1 is None:
-                raise SystemExit(f"{rec['key']}: no finite evaluation")
-            best_ev = evals[i1]
-            bx = best_ev["x"]
             p0 = evals[0]["peak_dbfs"]
             if p0 is None:                              # a replayed start: the start-check render, else the stored label
                 p0 = ((cont or {}).get("start_check") or {}).get("peak_dbfs")
             if p0 is None:
                 p0 = src["best"].get("peak_dbfs")
             bound = peak_bound(p0)
-            why1 = unusable(best_ev["judge"], best_ev["peak_dbfs"],     # a replayed best's peak is unknown: its halves
-                            None if best_ev.get("replayed") else bound)  # here, its peak at step 2 and the final
+            # the constrained best: the lowest among the evaluations that pass the bound (a replayed one's peak is
+            # unknown here; it is checked at step 2's first evaluation), the checkpoints likewise
+            cps = {c: constrained_index(evals, search, bound, c) for c in F.CHECKPOINTS if c <= BUDGET}
+            i1 = constrained_index(evals, search, bound, BUDGET)
+            i_free = F.incumbent_at(values, BUDGET)
+            if i1 is None:                              # nothing passes, not even the start: the source label
+                i1 = i_free if i_free is not None else 0
+            best_ev = evals[i1]
+            bx = best_ev["x"]
+            why1 = unusable(best_ev["judge"], best_ev["peak_dbfs"], None if best_ev.get("replayed") else bound)
+            i_fb = constrained_index(evals, search, bound, BUDGET, known_only=True)   # if a replayed best fails later
+            fb_ev = evals[i_fb] if i_fb is not None else None
             best1 = {"judge": best_ev["judge"], "peak_dbfs": best_ev["peak_dbfs"],
                      "render_sha256": best_ev["render_sha256"], "settings": LO.sdict(bx), "unusable": why1,
-                     "replayed": bool(best_ev.get("replayed"))}
+                     "replayed": bool(best_ev.get("replayed")), "index": i1, "unconstrained_index": i_free,
+                     "constrained": i1 != i_free}
             s1 = {"start": start_rec, "start_gate": start_gate, "first_start_miss": first_miss, "continuation": cont,
                   "start_settings": LO.sdict(start), "searched_keys": names, "curve": values,
                   "evaluations": len(values), "trials": trials,
                   "checkpoints": {str(c): {"evaluations": c, "index": i, "judge": evals[i]["judge"]}
                                   for c, i in cps.items() if i is not None},
-                  "best": best1, "changed": F.changed(bx, start, amp, S)}
+                  "best": best1, "changed": F.changed(bx, start, amp, S),
+                  "peak_fallback": ({"kind": "rendered", "index": i_fb, "settings": LO.sdict(fb_ev["x"]),
+                                     "judge": fb_ev["judge"], "peak_dbfs": fb_ev["peak_dbfs"]} if fb_ev is not None
+                                    else {"kind": "start", "settings": LO.sdict(start), "judge": evals[0]["judge"],
+                                          "peak_dbfs": p0}) if best_ev.get("replayed") else None}
             peaks = {"start": p0, "step1_best": best_ev["peak_dbfs"], "bound": bound}
             P.save(out1, {"ledger": f"{P.LEDGER_ID} {PHASE}", "step1": s1, "peaks": peaks})   # a stop loses <= 65
         ledger = f"{P.LEDGER_ID} {PHASE}" + (f" {F.PHASE_A1}" if start_gate == "off_after_miss" else "")
@@ -721,17 +779,15 @@ def cmd_search(args):
             continue
 
         # --- step 2: C1b's stages A and B on step 1's best, its start check against step 1's best --------------------
-        label1 = LO.sdict(bx)
-        ref2 = float(best1["judge"][search])
-        wet = C.dry_start_problems(LO.tdict(label1), amp)
-        if wet:
-            raise SystemExit(f"{rec['key']}: step 2's start must be dry: {wet} on")
+        bound = peaks.get("bound", peak_bound(peaks.get("start")))
 
-        def dry_stages(x0, canon):
-            """C1b's stages A and B in one renderer process primed with x0. -> (renders, x_A, x_B, record); raises
-            F.StartMiss if the first evaluation is not step 1's best."""
+        def dry_stages(x0, canon, ref2, check_peak):
+            """C1b's stages A and B in one renderer process primed with x0, each stage's best the lowest of its
+            evaluations that pass the bound (`constrained_index`). -> (renders, x_A, x_B, record); raises F.StartMiss
+            if the first evaluation is not step 1's best, PeakFail if it fails the bound (check_peak: a replayed best,
+            whose peak this is the first reading of)."""
             used = [1]
-            seen, trace = {}, []
+            seen, xs, stage_of, trace = {}, {}, {}, []
             stage = ["A"]
             rr = CB.new_renderer()
             try:
@@ -744,47 +800,82 @@ def cmd_search(args):
                     y = np.asarray(rr.render(di32, sel, sorted_x(x, amp)), np.float64)[trim[0]:trim[1]]
                     used[0] += 1
                     j = K.judge(ref, y, di, lag)
-                    if not trace and not F.within(j[search], ref2):
-                        raise F.StartMiss(j[search], AM.audio_sha(y))
-                    seen[key] = {"judge": j, "peak_dbfs": A.peak_dbfs(y, trim_s=0.0)}
-                    trace.append({"stage": stage[0], "judge": j})
+                    pk = A.peak_dbfs(y, trim_s=0.0)
+                    if not trace:
+                        if not F.within(j[search], ref2):
+                            raise F.StartMiss(j[search], AM.audio_sha(y))
+                        why_p = unusable(j, pk, bound) if check_peak else None
+                        if why_p:
+                            raise PeakFail({"judge": j, "peak_dbfs": pk, "why": why_p})
+                    seen[key], xs[key], stage_of[key] = {"judge": j, "peak_dbfs": pk}, dict(x), stage[0]
+                    trace.append({"stage": stage[0], "judge": j, "peak_dbfs": pk})
                     return j[search]
 
+                def best_of(keys, fallback):
+                    i = constrained_index([seen[q] for q in keys], search, bound)
+                    return cn(xs[keys[i]]) if i is not None else fallback
+
                 cn = canon or (lambda x: x)
-                xa, _, _ = K.coord_search(C.rooms_dims(x0), x0, f, C.BUDGET_ROOMS, C.SEED, cats="levels", canon=canon)
-                xa = cn(xa)
+                xa_free, _, _ = K.coord_search(C.rooms_dims(x0), x0, f, C.BUDGET_ROOMS, C.SEED, cats="levels",
+                                               canon=canon)
+                xa = best_of([q for q in seen if stage_of[q] == "A"], cn(x0))
                 stage[0] = "B"
-                xb, _, _, stages_b = K.knob_search(C.mics_eq_dims(xa, amp, lists), xa, f, C.BUDGET_MICS_EQ, C.SEED + 1,
-                                                   shares=C.STAGE_B_SHARES, canon=canon)
-                xb = cn(xb)
-            except F.StartMiss as miss:
+                xb_free, _, _, stages_b = K.knob_search(C.mics_eq_dims(xa, amp, lists), xa, f, C.BUDGET_MICS_EQ,
+                                                        C.SEED + 1, shares=C.STAGE_B_SHARES, canon=canon)
+                xb = best_of([K.key(xa)] + [q for q in seen if stage_of[q] == "B"], xa)
+            except (F.StartMiss, PeakFail) as miss:
                 miss.renders = used[0]
                 raise
             finally:
                 rr.close()
             return used[0], xa, xb, {"trace": trace, "start": seen[K.key(x0)], "a": seen[K.key(xa)],
-                                     "b": seen[K.key(xb)], "stages_b": stages_b}
+                                     "b": seen[K.key(xb)], "stages_b": stages_b,
+                                     "a_constrained": K.key(xa) != K.key(cn(xa_free)),
+                                     "b_constrained": K.key(xb) != K.key(cn(xb_free))}
 
-        start2 = C.c1b_start(label1, amp)
-        bad = C.audible_change(start2, label1, amp)
-        if bad:
-            raise SystemExit(f"{rec['key']}: step 2's start changes what sounds: {bad}")
-        kind, miss2 = "canonical", None
-        try:
-            used, xa, xb, dry = dry_stages(start2, C.make_canon(amp))
-            renders += used
-        except F.StartMiss as miss:
-            renders += miss.renders
-            miss2 = {"value": miss.value, "sha": miss.sha, "ref_value": ref2}
+        def step2_from(label1, ref2, check_peak):
+            """Step 2 from one step-1 label: the canonical start, then the raw label on a miss. -> (renders, kind,
+            miss, start, x_A, x_B, record); PeakFail propagates."""
+            start2 = C.c1b_start(label1, amp)
+            bad = C.audible_change(start2, label1, amp)
+            if bad:
+                raise SystemExit(f"{rec['key']}: step 2's start changes what sounds: {bad}")
+            got = 0
+            try:
+                used, xa, xb, dry = dry_stages(start2, C.make_canon(amp), ref2, check_peak)
+                return got + used, "canonical", None, start2, xa, xb, dry
+            except F.StartMiss as miss:
+                got += miss.renders
+                miss2 = {"value": miss.value, "sha": miss.sha, "ref_value": ref2}
             start2 = C.raw_start(label1, amp)
             try:
-                used, xa, xb, dry = dry_stages(start2, None)
-                renders += used
-                kind = "raw_after_miss"
+                used, xa, xb, dry = dry_stages(start2, None, ref2, check_peak)
+                return got + used, "raw_after_miss", miss2, start2, xa, xb, dry
             except F.StartMiss as m2:
-                renders += m2.renders
                 miss2["raw_value"] = m2.value
-                kind = "refused"
+                return got + m2.renders, "refused", miss2, start2, None, None, None
+            except PeakFail as pf:
+                pf.renders += got
+                raise
+
+        label1 = LO.sdict(bx)
+        wet = C.dry_start_problems(LO.tdict(label1), amp)
+        if wet:
+            raise SystemExit(f"{rec['key']}: step 2's start must be dry: {wet} on")
+        try:
+            used, kind, miss2, start2, xa, xb, dry = step2_from(label1, float(best1["judge"][search]),
+                                                               bool(best1.get("replayed")))
+            renders += used
+        except PeakFail as pf:                          # a replayed best quieter than the bound: the best rendered
+            renders += pf.renders                       # evaluation that passes (101 to 200), else the start
+            fb = s1["peak_fallback"]
+            s1["peak_fail"] = {**pf.args[0], "fallback": fb["kind"], "replayed_best": dict(best1)}
+            label1, bx = fb["settings"], LO.tdict(fb["settings"])
+            best1 = {**best1, "settings": fb["settings"], "judge": fb["judge"], "peak_dbfs": fb["peak_dbfs"],
+                     "replayed": False, "index": fb.get("index"), "constrained": True}
+            s1["best"] = best1
+            used, kind, miss2, start2, xa, xb, dry = step2_from(label1, float(fb["judge"][search]), False)
+            renders += used
         tally["step2"][kind] += 1
         if kind == "refused":                           # step 1's best stands, with step 1's mask
             final, keys, form = bx, names, sx1
@@ -793,7 +884,8 @@ def cmd_search(args):
             final, keys, form = xb, searched_keys(names, start2, xa, amp, lists), None
             s2 = {"start_kind": kind, "first_start_miss": miss2, "start_settings": LO.sdict(C.plugin(start2, amp)),
                   "start": dry["start"], "stage_a": dry["a"], "stage_b": dry["b"], "trace": dry["trace"],
-                  "stages_b": dry["stages_b"],
+                  "stages_b": dry["stages_b"], "a_constrained": dry["a_constrained"],
+                  "b_constrained": dry["b_constrained"],
                   "rooms_keys": [d.name for d in C.rooms_dims(start2)],
                   "mics_eq_keys": [d.name for d in C.mics_eq_dims(xa, amp, lists)],
                   "stage_a_settings": LO.sdict(C.plugin(xa, amp)), "stage_b_settings": LO.sdict(C.plugin(xb, amp)),
@@ -803,7 +895,6 @@ def cmd_search(args):
         fr = fresh(final, form)
         renders += 2
         peaks["final_fresh"] = fr["peak_dbfs"]
-        bound = peaks.get("bound", peak_bound(peaks.get("start")))
         why = unusable(fr["judge"], fr["peak_dbfs"], bound)
         stage_fb, reason, lab_fr = None, None, fr
         label = LO.sdict(final if form else C.plugin(final, amp))
