@@ -629,7 +629,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **Within a source, no set is favoured by its place in the list** (the code review). Each set's records are shuffled (seed 20261152 with the arm, fold, run and source), and the sets are interleaved in proportion to their size before cycling. So every record is shown k or k + 1 times an epoch, and each set's showings are within one row of its share of the source.
   - **The cost of this mix** (recounted on the drawn records):
     - **FT_k:** each GOAT row is shown 35 to 40% less often an epoch in R-all than in R-ctl, and each BKS row 5 to 6% less.
-    - **Inner runs:** GOAT 27 to 34% less, BKS 4 to 7% less.
+    - **Inner runs:** GOAT 27 to 34% less, BKS 4 to 8% less.
     - A GOAT veto may then reflect the mix rather than the rows, and the write-up says so.
 - **Validation.** Both arms' inner runs choose E on fold j's rows of all five sets. R-ctl never trains on the new sets' rows, so this leans towards R-ctl: conservative for R-all.
 - **The recipe is C3's, unchanged** otherwise:
