@@ -3672,7 +3672,31 @@ def cmd_goat_search(args):
     print(f"GOAT-SEARCH{' LAGS' if args.lags_only else ''} DONE {k}/{n}: {renders} renders")
 
 
-def search_units(mine, root, phase, halves, refused, lags_only, quiet=False, searcher=None):
+class FirstEvalMiss(Exception):
+    """`search_units`' first evaluation missed S's stored render beyond `first_tol` (C2b's refusal)."""
+
+    def __init__(self, value):
+        super().__init__(value)
+        self.value = value
+
+
+def first_eval_check(sha, s_sha, value, s_value, tol):
+    """The search's first evaluation (S) against S's stored fresh render. -> "ok" (bit-identical); with `tol` None
+    (every caller before C2b) "raise" otherwise; with `tol`, "sha_differs" when the search-half judge is within `tol`
+    of the stored one (|log ratio|), else "refuse"."""
+    if sha == s_sha:
+        return "ok"
+    if tol is None:
+        return "raise"
+    try:
+        d = abs(math.log(float(value) / float(s_value)))
+    except (TypeError, ValueError, ZeroDivisionError):
+        return "refuse"
+    return "sha_differs" if math.isfinite(d) and d <= tol else "refuse"
+
+
+def search_units(mine, root, phase, halves, refused, lags_only, quiet=False, searcher=None, *, sdir=None,
+                 lag_phase=None, first_tol=None, miss_guard=None):
     """5C's labels, for GOAT's units and L1a's captures alike (`root` holds search/ and lags/), as 5B.2's stage 2
     (`cmd_real_search`), per unit on its forced amp only: three fresh S renders (one per amp, the class's S) give the
     judge lag, S's judge and its sha (saved, so the search resumes); then one discarded priming render and arm A's main
@@ -3680,7 +3704,13 @@ def search_units(mine, root, phase, halves, refused, lags_only, quiet=False, sea
     render on the unit's search half (`halves`); S's first evaluation must be bit-identical to its fresh render; the
     label is the best's in-process render. With `lags_only`, the S renders and lags alone. Units in `refused` are
     recorded, not searched. With `quiet`, the log names units and render counts only, no judge figure. `searcher(dims, S, f,
-    amp)` -> (best x, best value, evaluations) replaces the main stage (N2's v2). -> renders made."""
+    amp)` -> (best x, best value, evaluations) replaces the main stage (N2's v2).
+    C2b's options, each off by default so every earlier caller runs exactly as before: `sdir` writes the records
+    somewhere other than root/search; `lag_phase` is the phase the stored lags must carry (default `phase`); with
+    `first_tol`, a first evaluation that is not bit-identical to S's fresh render is accepted, flagged, if its
+    search-half judge is within `first_tol` (|log ratio|) of S's stored judge, and otherwise the record is written
+    refused and the shard goes on (`first_eval_check`); `miss_guard` (k, n) stops the shard when k of the first n
+    records it reaches in this run are refused that way. -> renders made."""
     import numpy as np
 
     from analysis.aligned import estimate_lag
@@ -3706,8 +3736,9 @@ def search_units(mine, root, phase, halves, refused, lags_only, quiet=False, sea
         for cls, (_, S) in by_cls.items():
             if K.key(dict(menu[amp][K.START[cls][amp]][1])) != K.key(S):
                 raise SystemExit(f"{amp} {cls}: the live S differs from the stored copy")
-    sdir, ldir = root / SEARCH_DIR, root / "lags"
-    renders = 0
+    sdir, ldir = (root / SEARCH_DIR if sdir is None else sdir), root / "lags"
+    lag_phase = phase if lag_phase is None else lag_phase
+    renders, reached, missed = 0, 0, 0
 
     def sorted_x(x):                                   # edits in 5B.1's order (`sdict` sorts the keys)
         return LO.tdict(LO.sdict(x))
@@ -3735,7 +3766,7 @@ def search_units(mine, root, phase, halves, refused, lags_only, quiet=False, sea
         held = "B" if search == "A" else "A"
         lp = ldir / f"{fname(prt['unit'])}.json"
         rec = json.loads(lp.read_text()) if lp.exists() else None
-        if rec is not None and rec.get("phase") != phase:
+        if rec is not None and rec.get("phase") != lag_phase:
             raise SystemExit(f"{lp.name}: a unit has a lag from another phase")
         if rec is None:
             ys = {}
@@ -3769,6 +3800,7 @@ def search_units(mine, root, phase, halves, refused, lags_only, quiet=False, sea
         sel, S = ms[amp][prt["cls"]]
         dims = K.space(amp, S)
         curve, first, seen = [], {}, {}
+        reached += 1
         rr = CB.new_renderer()
         try:
             rr.render(di32, sel, sorted_x(S))          # the discarded priming render, as `fresh_render`'s
@@ -3779,14 +3811,36 @@ def search_units(mine, root, phase, halves, refused, lags_only, quiet=False, sea
                 j = K.judge(ref, y, di, lag)
                 if not curve:
                     first.update(sha=AM.audio_sha(y), value=j[search])
-                    if first["sha"] != s_sha:
+                    verdict = first_eval_check(first["sha"], s_sha, j[search], s_j[search], first_tol)
+                    if verdict == "raise":
                         raise SystemExit(f"{key}: S's first evaluation is not bit-identical to its fresh render")
+                    if verdict == "refuse":
+                        raise FirstEvalMiss(j[search])
+                    if first_tol is not None:              # C2b's flag; earlier callers' records are unchanged
+                        first["sha_differs"] = verdict == "sha_differs"
                 seen[K.key(x)] = {"judge": j, "peak_dbfs": A.peak_dbfs(y, trim_s=0.0), "render_sha256":
                                   AM.audio_sha(y)}
                 curve.append(j[search])
                 return j[search]
 
-            best_x, best_v, evals = (searcher(dims, S, f, amp) if searcher else L.main_stage(dims, S, f, seed=L.SEED))
+            try:
+                best_x, best_v, evals = (searcher(dims, S, f, amp) if searcher
+                                         else L.main_stage(dims, S, f, seed=L.SEED))
+            except FirstEvalMiss as miss:
+                renders += 1
+                missed += 1
+                save(path, {"plan": PLAN, "ledger": f"{LEDGER_ID} {phase}", "unit": prt["unit"], "rig": prt["rig"],
+                            "di": prt["di"], "item": prt["item"], "fold": prt["fold"], "cls": prt["cls"], "amp": amp,
+                            "select": sel, "search": search, "held": held, "lag": lag, "item_lag": prt["item_lag"],
+                            "label": None, "why": "the first evaluation misses S's stored render",
+                            "refused": {"first_sha": first["sha"], "s_sha": s_sha, "first_value": miss.value,
+                                        "s_value": s_j[search], "tol": first_tol},
+                            "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+                print(f"{key[-70:]}: refused (the first evaluation misses S's stored render); renders so far "
+                      f"{renders}", flush=True)
+                if miss_guard and reached <= miss_guard[1] and missed >= miss_guard[0]:
+                    raise SystemExit(f"SYSTEMATIC MISS: {missed} of the first {reached} records refused")
+                continue
             renders += evals
         finally:
             rr.close()
