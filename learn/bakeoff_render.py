@@ -261,9 +261,10 @@ def cmd_predict(a):
         print(a.tag, which, len(ans), "keys", flush=True)
 
 
-def net_answers(models, units):
+def net_answers(models, units, hold=None):
     """Answers read from nets as `pipeline_fix.goat_predict` reads them: the backed input per search half, seeds pooled, every
-    control outside `K.space` at S. models: {fold: [net per seed]}. -> {set: {key: {search: {select, settings}}}}."""
+    control outside `K.space` at S (`hold`: a C3 tag's per-control hold instead). models: {fold: [net per seed]}.
+    -> {set: {key: {search: {select, settings}}}}."""
     from learn import direct_stems as DS
     from learn import full_space as F
     from learn import local_objective as LO
@@ -280,7 +281,8 @@ def net_answers(models, units):
                 s8, ls = backed[search]
                 x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
                 r = F.readout([o[0] for o in F.run_nets(models[prt["fold"]], [x], [c])])
-                st = P.hold_outside_space(F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"]), S, amp)
+                st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
+                st = P.hold_outside_space(st, S, amp) if hold is None else P.hold_outside_space(st, S, amp, hold)
                 out[which].setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(st)}
     return out
 
@@ -288,19 +290,24 @@ def net_answers(models, units):
 def fold_nets(tag):
     """{fold: [net per seed]}: an H4 tag's FT_k runs (`pipeline_fix.H4_FT_TAGS`), each at its read checkpoint
     (`ft_read_check`) and its own arm's run on the pinned exclusions (`h4_read_check`, which needs `phase_h4` and
-    `phase_h4_exclusions`), for `net_answers` to read as it reads FTm's."""
+    `phase_h4_exclusions`), for `net_answers` to read as it reads FTm's. A C3 tag (`pipeline_fix.C3_TAGS`) reads C3's
+    FT_k runs, each checked against C2's state (`full_controls_c3.read_check`)."""
     from learn import pipeline_fix as P
 
-    if tag not in P.H4_FT_TAGS:
-        raise SystemExit(f"fold_nets: {tag} is not an H4 tag ({', '.join(sorted(P.H4_FT_TAGS))})")
-    sha = P.h4_exclusions()["sha256"]
+    c3 = tag in P.C3_TAGS
+    if tag not in P.H4_FT_TAGS and not c3:
+        raise SystemExit(f"fold_nets: {tag} is not an H4 tag, nor a C3 one ({', '.join(sorted(P.H4_FT_TAGS | P.C3_TAGS))})")
+    sha = None if c3 else P.h4_exclusions()["sha256"]
     out = {}
     for k in range(P.REAL_FOLDS):
         out[k] = []
         for sd in P.SEEDS:
-            net, rec = P.load_run(f"{tag}-k{k}", sd, "best")
+            net, rec = P.load_run(f"{P.model_base(tag)}-k{k}", sd, "best")
             P.ft_read_check(rec)
-            P.h4_read_check(rec, sha)
+            if c3:
+                P.C3_read_check(rec)
+            else:
+                P.h4_read_check(rec, sha)
             out[k].append(net)
     return out
 
