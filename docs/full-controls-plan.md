@@ -40,7 +40,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 | Amp EQ: on, 9 bands, high- and low-pass, ×3 amps (36) | C1a; C2 on every FT2 row | C3 | knob ceiling (d); C1a (F69) | C1a, C2 | none |
 | Pedals: compressor 5, drive 1 4, drive 2 5 (14) | C1a; C2 on every FT2 row | C3 | knob ceiling 2; C1a (F69) | C1a, C2 | none |
 | Gate: on, threshold (2) | C1a; C2 on every FT2 row | C3 | C1a: inert (F69) | C1a, C2 | none |
-| Time effects: reverb, delay, tremolo, with tremolo level and tape drive (17) | the switches off by source in C2 (not searched, not a learned label); the knobs masked | C3, as declared before it trains: (a) the switches masked on real rows and learned from W only, or (b) unmasked, with a read on audio that has effects | knob ceiling 2; C1b: the 0.02 keep rule let false effects through (3 of 31 N12 records, 3 of 114 searches), not fit for labels (F70) | W's plugin rows for the knobs. To check for effects on real audio: render Morgan's effects, amp and cab sections off, onto a dry real target (check the chain order first) | no real training row with an effect on and a DI; a keep rule tested on a source with known effects (e.g. W's plugin rows) |
+| Time effects: reverb, delay, tremolo, with tremolo level and tape drive (17) | the switches off by source in C2 (not searched, not a learned label); the knobs masked | not in C3: masked on real rows and held at S in every answer (C3 in detail) | knob ceiling 2; C1b: the 0.02 keep rule let false effects through (3 of 31 N12 records, 3 of 114 searches), not fit for labels (F70) | in order: (1) at zero renders, each effect switch's loss on NS against its marginal; (2) a reader that hears effects through a backing on rows whose truth is known; (3) only then real wet rows: Morgan's effects, amp and cab sections off, rendered onto dry real targets (check the chain order first) | no reader hears effects through a backing: W, trained on exact plugin labels, reads NS at about the marginal (switches 0.612 against 0.617), and F48 to F52 found none |
 | The amp's spring: pr12 Reverb and Dwell, sw50r Reverb (3) | `springOn` off by source in C2; the knobs masked | as the time effects | knob ceiling 2; C1b: as the time effects (F70) | as the time effects | as the time effects |
 | Room mics: on, level, per side (4) | C1b; C2 stage A | C3 | C1b: barely tested (one-cab records tried the left room on at −6 dB once; levels searched only where a room went on, 1 record) (F70) | a real test of the rooms; still open | stage A's budget: 16 evaluations over 7 controls |
 | Left cab on and level (2) | C1b; C2 stage A | C3 | C1b: mostly balance (34 of 38 two-cab records moved it, 4 to +6 dB; 3 N12 records turned it off) (F70) | C1b, C2, with both cabs on | none |
@@ -316,7 +316,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - The read names every record whose final has no finite score.
 - **A systematic-miss guard.** A shard stops when 5 of its first 10 records are refused at the start. It reads the written records, so after a restart it does not fire again on records it has already passed.
 - **Fresh renders:** each record's final once, in its own process with priming.
-- **Recorded,** as C1a and C1b record: the trace, each step's best, the start kind, the continuation's replay, what changed, the peaks (the start's, step 1's best, its fresh render, the final's fresh render), `searched_keys` (C1a's space plus stages A and B only, not C1b's `searched_union`, which adds every effect knob: F55 again), `known_keys` (the spring under FT2's head name, `full_space.spring_dim`: `pr12Amp/springOn`, `sw50rAmp/springOn`, so C3 sets it to known off rather than masking it), each stage's constrained and unconstrained best, `c1b_record` for C1a's block (C3's input on a fallback there), and `label` (the final's settings, with the guard's fallback applied).
+- **Recorded,** as C1a and C1b record: the trace, each step's best, the start kind, the continuation's replay, what changed, the peaks (the start's, step 1's best, its fresh render, the final's fresh render), `searched_keys` (C1a's space plus stages A and B only, not C1b's `searched_union`, which adds every effect knob: F55 again), `known_keys` (the spring under FT2's head name, `full_space.spring_dim`: `pr12Amp/springOn`, `sw50rAmp/springOn`, recorded for C3, which masks it and holds it at S), each stage's constrained and unconstrained best, `c1b_record` for C1a's block (C3's input on a fallback there), and `label` (the final's settings, with the guard's fallback applied).
 - **The read (zero renders past the fresh final).** Held half, ln(the label's fresh render / the start's first evaluation), per block and class. Beside it: against the stored label, against S, and step 1's in-process held gain at the 100 and 200 checkpoints. Record-weighted jackknife intervals, with the band-weighted reading beside, clustered by DI (GOAT by item). Counts, over every record, label `None` included: start kinds, refusals, replay mismatches, continuation start-check misses (left out of the 200-checkpoint row), constrained bests, peak failures at step 2, fallbacks, quiet, drift, mic changes, left cab off, rooms on, pedals on, gate threshold moved; real_out apart. There is no bar: C2's output is C3's input.
 - **Order.** GOAT first, then BKS stage 1, then BKS stage 2, then C1a's 40. Within a block, records go by key, round robin over 3 shards. A shard skips records already written, and resumes a saved step 1 at step 2.
 - **Cost.** At most 268 renders a record (step 1 201, steps A and B 65, the fresh final 2): about 129k for the 480, GOAT about 57k. C1a's 40 add about 6.1k (34 × 169 + 6 × 67). In all at most about 135k. At C1a's and C1b's measured 5,400 to 6,300 renders an hour on 3 processes, GOAT takes 9 to 11 h and the whole 21 to 25 h. No training.
@@ -325,52 +325,68 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 
 ## C3 in detail (declared 2026-11-10, while C2 runs and before any C3 training; ledger `phase_c3`)
 
-- **Status.** Declared while C2 renders. It trains when C2's last record is written, since C2's labels are its input. Under the user's rule of 2026-11-10 it then launches without a wait once its review has passed, and the user is told.
+- **Status.** Declared while C2 renders, and amended after its independent review: the seven changes it required and four of its optional ones are folded in below. It trains when C2's last record is written, since C2's labels are its input. Under the user's rule of 2026-11-10 it then launches without a wait once its code review has passed, and the user is told.
+- **Its own runs.** Every C3 run has its own base name (`C3-…`), never FTm's, since `cmd_train_ft` skips a name that exists. Each run records the sha256 of C2's records and outputs, and refuses until all 520 are written.
 - **What C3 is.** FTm's recipe, retrained on C2's full labels with per-record masks, then read by the score as H4a read FTm. One tag per family, with that family at S, lets each family be adopted on its own.
 - **Rows.** FTm's own rows: GOAT's 214 (`goat_labels`) and BKS's 306 (`real_labels(2)`).
   - **Each takes C2's `label`.**
   - **A record with no C2 label** (C2 fell back or refused it) takes its source:
     - the stored label for GOAT and BKS;
-    - C1b's record for C1a's block.
+    - C1b's record for C1a's block, masked by C1a's space ∪ C1b's stage A and B keys, never by C1b's `searched_keys`: those list every effect knob (F70).
     - C1b's failed record (`22_ElecGtr2aDI@290 #24`, F70) takes its stored label.
   - **Nothing else changes:** no new rows, no N12 rows, and real_out as in FTm (every row; C5 holds the exclusions).
 - **Masks, per record.**
   - **A record on a C2 label:** `K.space`'s keys ∪ C2's `searched_keys`.
     - Every C2 start is a label whose search covered `K.space`, so `K.space` is labelled on every record. That includes the mics: held at the source's searched value, or moved in C2's stage B.
     - This also covers C2's fallback records, whose `searched_keys` hold no mic types.
-  - **A record on its source label:** `K.space` only, as in FTm.
+  - **A record on its stored source label:** `K.space` only, as in FTm.
   - **Masked everywhere:** `EQActive` (forced on), and `encode`'s sounding mask on top: EQ bands with the EQ off, pedal knobs with the pedal off, and room level with the room off.
   - **The amp head** stays at −100 on real rows, as in FTm.
-- **The time effects, the spring and the doubler are masked on real rows and held at S in every C3 answer.** Three reasons:
-  - Every real row is dry. Training these heads teaches "off", which is S's value, so there is nothing to adopt.
-  - Masked, they keep W's weights, which read new songs at the marginal (switches 0.612 against 0.617 on NS). Reading them on above 0.5 would switch an effect on about half the time.
-  - No read set has an effect on, so no read could show a gain.
-  - **So this family is not trained in C3 and stays open in C0.** The blocker: no real row with an effect on and a DI. F50 to F52 add that the backing hides the echo from the readers tried so far.
-- **The gate** is trained as labelled. Every C2 start turns the gate on at −80 dB, where it is inert (F69), while S has it off. So the head learns "on, about −80", and the per-family read decides whether that is written.
+- **The time effects, the spring and the doubler are masked on real rows and held at S in every C3 answer.**
+  - **The binding blocker is the reader, not the rows.** W trained on exact plugin labels for every effect, and still reads new songs at about the marginal: its switches score 0.612 against 0.617 on NS. F48 to F52 found no reader that hears effects through a backing.
+  - So adding plugin rows to FT would not help. Real wet rows would pay only once a reader passes on rows whose truth is known.
+  - Training these heads on dry real rows would teach "off", S's value. Masked, they keep W's weights, which would switch an effect on about half the time if read. So they are held at S.
+  - No read set has an effect on, so no read could show a gain either way.
+  - **This family stays open in C0, with its order.** First, at zero renders, each effect switch's loss on NS against its marginal. Then a reader that passes on rows whose truth is known. Only then real wet rows: Morgan's effects, amp and cab sections off, rendered onto dry real targets, after checking the chain order.
+- **The gate.** Every C2 start turns the gate on at −80 dB, and the switch is inert there (F69), so its label is the start's convention, not a finding.
+  - The switch is masked on real rows and held on in the answer.
+  - The threshold is trained wherever the gate is on.
+  - Before training, the threshold labels' spread is reported at zero renders. C1a moved the threshold on 22 of 38 BKS records with no held-half gain.
 - **The recipe is FTm's, unchanged** except in three places: the label source, the masks and the answer's hold.
   - **W:** P2b-wide24's NS-best state per seed.
-  - **Training:** `train-ft --masked --ft-cap 300`, with FTm's 8 inner fold-and-seed runs, 8 FT_k fold runs and the all-labels pair. Seeds 20261042 and 20261043. E is the inner runs' median, as in FTm.
-  - **The answer's hold.** `hold_outside_space` becomes a per-family hold (`full_space.answer_settings`'s `at_S`) at its six call sites. The default stays `K.space`, so every stored read reproduces.
+  - **Training:** `train-ft --masked --ft-cap 300`, with FTm's 8 inner fold-and-seed runs, 8 FT_k fold runs and the all-labels pair. Seeds 20261042 and 20261043. As in FTm, each FT_k takes its own (fold, seed) inner run's E, and only the all-labels pair takes the median of the eight.
+  - **Per-head held losses** are logged every epoch (`head_losses`, at zero cost). C3's objective differs from FTm's: the knob NLL averages over about 2.5× more dims, the mixture is shaped mostly by the EQ's 11 dims, and the switch loss is pooled wider.
+  - **The answer's hold works per control, not per family.** `answer_settings` writes every head that can sound on the amp, and `at_S` resets whole `FAMILIES`. But three families hold heads that are masked on every real row: the left cab's phase, both pans and both stereo switches in "cab rest"; the doubler in "gate and doubler"; and `EQActive` in "EQ". Read through FT's moved trunk, those W heads would write untrained values.
+    - **So C3's answer writes from the heads only `K.space` ∪ the union of C2's `searched_keys` for that amp.** It holds `EQActive` on and the gate on, and everything else at S. Each tag then sets a subset of the trained keys to S.
+    - **At the six call sites,** `hold_outside_space` takes this hold as an argument. The default stays `K.space`, so every stored read reproduces.
+    - **Tests:** the all-new-at-S tag must equal `hold_outside_space`'s output, and no untrained key may differ from S.
 - **The read: by the score, as H4a.** BKS (40 units × 3 amps, by DI fold), GOAT (its units on their own amp, by item fold) and N12 (pooled; measurement only). Each answer comes from the search half and is judged on the held half. Its tags:
-  - **C3:** every trained family as answered, with the effects family at S.
-  - **C3 core:** every family outside `K.space` at S. This isolates the retrain on the `K.space` heads against FTm.
-  - **One tag per family at S:** EQ, pedals, gate (with the doubler, already at S) and cab rest. That is 4 tags.
-  - **FTm:** H4a's stored scores as the comparator, re-rendered only if its stored settings can't be matched.
+  - **C3:** every trained key as answered.
+  - **C3 core:** every trained key outside `K.space` at S. This is a product comparison against FTm, not an isolation. It mixes three things: C2's shift in the core labels, core knobs tuned for partners the tag sets to S, and the changed objective. FTm's mask on C2's labels, the true isolation, is trained only if C3 core reads worse than FTm.
+  - **One tag per family at S,** over the trained keys: the amp EQ, the pedals, the gate's threshold, and cab rest (the left cab, the rooms and the right cab's phase). That is 4 tags.
+  - **The adopted configuration,** as its own tag when it is none of the six (at most about 1,400 renders more).
+  - **FTm:** H4a's stored scores as the comparator. A few FTm answers on BKS and GOAT are re-rendered as hash checks, as H4a did on N12; FTm is re-rendered in full only if they don't match.
   - **Cost:** 6 tags × about 1,400 renders ≈ 8,400 renders, about 2 h on 3 processes at H4a's measured rate.
 - **Rows read, per set and pooled.**
-  - C3 − FTm.
+  - C3 − FTm, and C3 − S.
   - C3 core − FTm.
+  - N12 against its C1b labels, at zero renders.
   - For each family: C3 − (C3 with that family at S).
   - Intervals: band-weighted means and record-weighted jackknife intervals, as in H4a.
-- **Adoption, per family,** by the plan's rule. A family is adopted when C3 − (C3 with it at S) is at or below 0 by the score on BKS and GOAT pooled, and neither set's 90% interval lies wholly above 0.
+- **Adoption, per family: kept unless shown worse,** as the user's rule asks. A small gain sets priority, never inclusion.
+  - **Shown worse** means: C3 − (C3 with that family at S) has its 90% interval wholly above 0 on BKS, on GOAT, or pooled.
+  - **Pooled** means the two sets weighted equally: the mean of the two set means, with its interval from the two sets' jackknife variances. GOAT has 126 items and BKS 8 DIs, and F55's mask split the two (GOAT −0.023, BKS +0.039), so each set is also reported apart.
+  - An undecided family is kept. The families expected to be inert, the gate and the rooms, will probably read undecided.
   - C4's ear page can reverse it, through PR #422's conflict rule.
   - A family not adopted is written at S in the product, and stays open in C0 with its next route and blocker.
+  - **The rooms stay open in C0 whatever "cab rest" reads.** Their labels were barely searched (F70), so they learn S's "off".
+- **When C3 replaces FTm.** The adopted configuration replaces FTm unless it is shown worse than FTm, by the same test as a family. C4 can reverse that, through PR #422's conflict rule. C5 runs only if it replaces FTm.
   - **No bar on size:** an adopted family's effect size is reported. A small gain sets its priority for the next labels, never whether it is learned.
 - **Amp choice** is not trained in C3: GOAT has no amp label until C2b runs.
-  - On BKS, C3's per-amp renders give a zero-render read of the amp head's pick against a blind choice.
+  - On BKS, C3's per-amp renders give a zero-render read of the amp pick against a blind choice. This is W's amp head on C3's body, since `loss_fn`'s `keep` masks the head on real rows, and it is labelled that way.
   - Training the amp head on real rows comes after C2b, as C3b, at about the same training cost.
 - **Stop rule.** C3 is one retrain and one read, with no tuning loop on the read sets: they choose adoption only. After it, every C0 row is adopted, written at S with its blocker, or open with its next route. Then C4 hears the adopted families.
-- **Cost.** Training is about 2.3 h of MPS (FTm measured 135.7 min). The read is about 8,400 renders. No new data.
+- **Cost.** Training is about 1.2 to 2.3 h of MPS: H4's real-only arm ran this recipe in 73.5 min, and FTm measured 135.7 min, unless E grows. The read is about 8,400 renders, plus up to 1,400 for the adopted tag. No new data.
 
 ## C5: the heavy clean-up re-tested on the full-control model
 - **What F68 said, and what has changed.** F68 closed the clean-up with "This clean-up is not reopened." Its verdict on the `K.space` model stands.
