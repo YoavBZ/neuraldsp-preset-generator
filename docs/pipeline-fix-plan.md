@@ -4748,7 +4748,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - **The listener's note on a BKS card:** C1a had too much drive and the label too little; the reference sat between them.
   - **Reading.** The ear agrees with the score where the score's gain is large (N12's captures). On BKS, where the score's gain was small (−0.030), the ear is mostly ties, as the plan's power table expected. One listener, 14 cards.
 - **What it changes.**
-  - By the score, the controls FT2 never sets are worth a lot on N12's captures; on BKS's reamps the gain is undecided overall and shown only on crunch (−0.052). Not yet heard.
+  - By the score, the controls FT2 never sets are worth a lot on N12's captures; on BKS's reamps the gain is undecided overall and shown only on crunch (−0.052). By ear (above), C1a is heard closer on N12 and mostly tied on BKS.
   - **Labels.** The 40 BKS records are C2's first training labels for C1a's controls. C2 continues them by replaying their stored trials if its budget is above 100. The 31 N12 records stay measurement only.
   - **The amp choice** has its first real-row label (BKS).
   - **C2's budget is 200.** Its recipe is C1a's plus C1b's, with the start rule and Amendment 1's miss rule.

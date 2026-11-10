@@ -527,7 +527,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - The reason is the performance, not the card, so every unit on those 3 files leaves. That includes 9 the user passed as amp.
   - The marks are listed in `captures3/di-marks.json`, with the cards and the user's words, and the gates read that file.
 - **No heavy page:** no passed unit is firmly driven.
-- **What passes:** 18 units on 10 DI files, 16 clean and 2 crunch. Dark Ride holds 9 of the 18. C4 clusters by DI file.
+- **What passes:** 18 units on 10 DI files from 6 songs, 16 clean and 2 crunch. Dark Ride holds 9 of the 18. C4 clusters by DI file, and reports by song beside, since the source is thin.
   - 6 of batch 3's creators also make R-all's rows (C3r, below). C4 reads their units apart.
 
 ## C2r and C3r in detail: every trusted real row, by rotation (declared 2026-11-10, before any render or training; ledger `phase_c2r`, `phase_c3r`)
@@ -724,7 +724,11 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - If the verdicts are not there yet, the record is labelled anyway, and C3r drops it.
   - C3r's training refuses until the verdicts hold all 26 answers.
   - The folds stay as declared, with no re-deal. The drops only remove units, and the report counts them.
-  - If no panel unit is left, the deciding pool is BKS and GOAT.
+  - **The panel decides only with at least 3 DI files left** (declared before any answer, after the review). The panel clusters by DI file, so with 1 file it has no interval, and with 2 its jackknife has 1 degree of freedom. With fewer than 3, the deciding pool is BKS and GOAT, and the panel is reported beside.
+  - **A changed verdict is refused, not absorbed.**
+    - `di_scope answers` refuses to overwrite an answer already stored with a different one. A later sitting may only add answers.
+    - C3r refuses if a `scope_out` record's DI is kept by the final verdicts. Such a record needs its label: it is moved aside and its shard resumed.
+  - **A verdicts file for another build** makes the waiting launcher fail with a message. It does not wait for ever.
 - **Cost.** Zero renders. At most it saves the renders of the records it drops.
 
 ## C5: the heavy clean-up re-tested on the full-control model
