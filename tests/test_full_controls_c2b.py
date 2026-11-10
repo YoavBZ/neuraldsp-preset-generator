@@ -75,25 +75,73 @@ def test_amp_read_is_the_chosen_held_half_against_the_mean_over_usable_amps():
     assert X.amp_read(by, "nope") is None
 
 
-def test_report_rows_count_the_choice_and_read_it_by_item():
-    def cl(rows):
-        return {"n": len(rows), "mean": sum(v for _, _, v in rows) / len(rows)}
+def _cl(rows):
+    return {"n": len(rows), "mean": sum(v for _, _, v in rows) / len(rows)}
 
+
+def test_report_rows_count_the_choice_and_read_it_by_item():
     units = [{"unit": "u1", "item": "i1", "cls": "clean", "forced_amp": "ac20",
               "by_amp": {"ac20": rec(2.0, 1.0), "pr12": rec(1.0, math.e), "sw50r": rec(3.0, math.e ** 2)}},
              {"unit": "u2", "item": "i1", "cls": "crunch", "forced_amp": "pr12",
-              "by_amp": {"ac20": None, "pr12": rec(1.0, 1.0), "sw50r": rec(2.0, math.e)}},
+              "by_amp": {"ac20": rec(1.0, 1.0, label=False), "pr12": rec(1.0, 1.0), "sw50r": rec(2.0, math.e)}},
              {"unit": "u3", "item": "i2", "cls": "clean", "forced_amp": "pr12",
-              "by_amp": {"ac20": None, "pr12": rec(1.0, 1.0, label=False), "sw50r": None}}]
-    out = X.report_rows(units, cl)
+              "by_amp": {"ac20": rec(1.0, 1.0, label=False), "pr12": rec(1.0, 1.0, label=False),
+                         "sw50r": rec(1.0, 1.0, label=False)}}]
+    out = X.report_rows(units, _cl)
     c = out["counts"]
     assert c["units"] == 3 and c["chosen"] == 2 and c["no_choice"] == 1 and c["three_usable"] == 1
-    assert out["labels"]["u1"]["amp"] == "pr12" and out["labels"]["u2"]["amp"] == "pr12" and out["labels"]["u3"] is None
+    assert c["withheld"] == 0
+    assert out["labels"]["u1"]["amp"] == "pr12" and out["labels"]["u1"]["n_usable"] == 3
+    assert out["labels"]["u2"]["amp"] == "pr12" and out["labels"]["u2"]["n_usable"] == 2
+    assert out["labels"]["u3"] == {"amp": None, "n_usable": 0}
     assert c["chosen_is_forced"] == 1 and c["chosen_is_held_best"] == 1
+    assert out["chosen_by_amp"] == {"pr12": 2}
+    assert out["chosen_by_forced_amp"] == {"ac20": {"pr12": 1}, "pr12": {"pr12": 1}}
     assert out["chosen_minus_blind"]["all"]["n"] == 2
     assert out["chosen_minus_blind"]["clean"]["n"] == 1 and out["chosen_minus_blind"]["crunch"]["n"] == 1
     assert out["chosen_minus_blind"]["crunch"]["mean"] == pytest.approx(-0.5)
     assert out["forced_minus_blind"]["all"]["n"] == 2
+
+
+def test_a_unit_with_a_refused_or_missing_record_gets_no_label():
+    refused = dict(rec(0.1, 0.1), label=None, refused={"first_sha": "y"})
+    units = [{"unit": "u1", "item": "i1", "cls": "clean", "forced_amp": "ac20",
+              "by_amp": {"ac20": rec(2.0, 1.0), "pr12": refused, "sw50r": rec(3.0, 1.0)}},
+             {"unit": "u2", "item": "i1", "cls": "clean", "forced_amp": "ac20",
+              "by_amp": {"ac20": rec(2.0, 1.0), "pr12": None, "sw50r": rec(3.0, 1.0)}}]
+    out = X.report_rows(units, _cl)
+    assert out["labels"]["u1"] == {"amp": None, "withheld": "a record was refused"}
+    assert out["labels"]["u2"] == {"amp": None, "withheld": "a record is missing"}
+    assert out["counts"]["withheld"] == 2 and out["counts"]["chosen"] == 0
+
+
+def test_dropped_reads_and_the_sensitivity_check_are_counted():
+    units = [{"unit": "u1", "item": "i1", "cls": "clean", "forced_amp": "ac20",       # chosen held half infinite
+              "by_amp": {"ac20": rec(1.0, float("inf")), "pr12": rec(2.0, 1.0), "sw50r": rec(3.0, 1.0)}},
+             {"unit": "u2", "item": "i2", "cls": "clean", "forced_amp": "ac20",       # one usable amp
+              "by_amp": {"ac20": rec(1.0, 1.0), "pr12": rec(2.0, 1.0, label=False),
+                         "sw50r": rec(3.0, 1.0, label=False)}},
+             {"unit": "u3", "item": "i3", "cls": "clean", "forced_amp": "ac20",       # -55.5 dBFS: out at -54
+              "by_amp": {"ac20": rec(1.0, 1.0, peak=-55.5), "pr12": rec(2.0, 1.0), "sw50r": rec(3.0, 1.0)}}]
+    c = X.report_rows(units, _cl)["counts"]
+    assert c["read_dropped_held_nonfinite"] == 1 and c["read_dropped_one_amp"] == 1 and c["read"] == 1
+    assert c["changed_at_sensitivity"] == 1
+
+
+def test_quiet_is_the_near_silence_rule_alone():
+    assert X.quiet(rec(1.0, 1.0, peak=-57.3))
+    assert not X.quiet(rec(1.0, 1.0, peak=-20.0))
+    assert not X.quiet(rec(float("inf"), 1.0, peak=-57.3))      # out for its search half, not for silence
+    assert not X.quiet(rec(1.0, 1.0, peak=-57.3, label=False))
+
+
+def test_systematic_miss_counts_misses_overall_and_per_amp():
+    assert P.systematic_miss(10, 4, {"pr12": 5}, {"pr12": 2}, (5, 10), (3, 5)) is None
+    assert "5 of the first 9" in P.systematic_miss(9, 5, {}, {}, (5, 10), None)
+    assert P.systematic_miss(11, 5, {}, {}, (5, 10), None) is None           # past the first 10
+    assert "pr12" in P.systematic_miss(6, 3, {"pr12": 4, "ac20": 2}, {"pr12": 3}, (5, 10), (3, 5))
+    assert P.systematic_miss(9, 3, {"pr12": 6}, {"pr12": 3}, (5, 10), (3, 5)) is None    # past pr12's first 5
+    assert P.systematic_miss(9, 9, {}, {}, None, None) is None
 
 
 @pytest.mark.parametrize("sha,tol,value,expect", [
@@ -108,9 +156,10 @@ def test_search_units_defaults_keep_earlier_callers():
     import inspect
 
     sig = inspect.signature(P.search_units)
-    for name in ("sdir", "lag_phase", "first_tol", "miss_guard"):
+    for name in ("sdir", "lag_phase", "first_tol", "miss_guard", "amp_guard"):
         assert sig.parameters[name].default is None
         assert sig.parameters[name].kind is inspect.Parameter.KEYWORD_ONLY
+    assert sig.parameters["lags_stored"].default is False
 
 
 def test_search_is_registered_as_a_render_command():

@@ -326,41 +326,51 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 
 ## C2b in detail (declared 2026-11-10, before any C2b render; ledger `phase_c2b`)
 
-- **Status.** Declared while C2 renders. It renders after C3's read, the last job queued on the render slots. Its launcher waits for that read's "done". Under the user's rule of 2026-11-10 it launches without a wait once its review has passed, and the user is told.
+- **Status.** Declared while C2 renders, and amended after its independent review, which confirmed the like-for-like recipe and that the earlier callers run unchanged. It renders after C3's read, the last job queued on the render slots.
+  - **The launcher** waits for C3's read launcher to exit, by its PID. Its outcome doesn't matter (done, failed or otherwise): once it has exited the render slots are free, and `_wait_cap` guards the cap. `c2b.log` records which way it ended.
+  - Under the user's rule of 2026-11-10 it launches without a wait once its review has passed, and the user is told.
 - **Why.** Amp choice is a control: the model picks which of the three amps to load. FT2's amp head is masked on real rows. BKS gives an amp label for every unit, since all three forced amps of each BKS unit are searched. GOAT's 214 units each have one forced amp, so the amp head would learn its real-row choice from BKS's 8 DIs and 2 songs alone.
 - **Records, 428:** each of GOAT's 214 labelled units (`goat_labels`) on its two other amps (`P.AMPS3` less its forced amp), sorted by key (`unit|amp`).
 - **The recipe is the stored labels' own,** so the three amps are like for like.
   - **The code:** `pipeline_fix.search_units`, the function that wrote `goat/search/`. Arm A's main stage (`K.space`, 52 evaluations, seed 20261013) runs from the class's S, with one discarded priming render, the unit's DI, its stored halves and its stored lag, in a fresh process per record.
   - **Output:** `goat/search-c2b/`.
   - **What it reuses:** GOAT's stored lags and S renders, rendered on all three amps in 5C's lag pass (phase_5c). So C2b renders no lag.
-  - **`search_units` gains four options, each off by default,** so GOAT's and L1a's callers run exactly as before: an output folder, the lag files' phase, a start tolerance, and a systematic-miss guard.
+  - **`search_units` gains six options, each off by default,** so GOAT's and L1a's callers run exactly as before: an output folder, the lag files' phase, a start tolerance, a systematic-miss guard, a per-amp guard, and refusing a unit with no stored lag rather than rendering one into GOAT's stored lags.
 - **The start check.**
   - The first evaluation is S on the new amp. It must be bit-identical to that amp's stored S render, as the stored labels' check was.
   - Otherwise, it is accepted and flagged if its search-half judge is within 0.005 (|log ratio|) of the stored one, as C1a's and C2's start tolerance.
   - Otherwise the record is written refused, with both values, and the shard goes on. Before C2b a mismatch stopped the shard.
 - **Guards.**
   - **Disk:** `search_units`' own, 31 GB.
-  - **Systematic miss:** a shard stops when 5 of the first 10 records it reaches are refused. That would mean the plugin no longer renders S as it did on 2026-11-01.
+  - **Systematic miss.** In 5C, fresh-primed against fresh-primed was bit-identical on 214 of 214, so a start that is not bit-identical means the plugin or the environment changed. Such a start counts as a miss whether it is refused or accepted and flagged, and so does a unit with no stored lag file.
+    - A shard stops when 5 of the first 10 records it reaches miss.
+    - It also stops when 3 of one amp's first 5 miss (`pipeline_fix.systematic_miss`).
+    - **Before a resume** after such a stop, the refused records are moved aside, never deleted, so they are searched again.
   - **Near silence:**
     - The search's own fallback writes no label when the best's peak is below −60 dBFS or its search half is non-finite (`fallback_reason`, as for the stored labels).
-    - The amp choice then counts only labels whose best peaks at or above −57 dBFS, as in C2: J0's floor plus 3 dB. The rule applies to the stored records and C2b's alike.
-    - One stored GOAT label, `goat/item_1@25.0#amp_4` at −57.3 dBFS, therefore drops out of its unit's choice.
+    - The amp choice then counts only labels whose best peaks at or above −57 dBFS, like for like on all three amps. This is not C2's min(−57, start) − 0.05 rule: every search here starts from S. It applies to the stored records and C2b's alike.
+    - One stored GOAT label, `goat/item_1@25.0#amp_4` at −57.3 dBFS, therefore drops out of its unit's choice. It is listed in the report's `quiet` list with C2b's own.
+    - **A sensitivity check at −54 dBFS** runs at zero renders. The report counts the units whose choice it changes.
 - **Zero-render checks, done at declaration:**
   - All 214 stored searches replay exactly with `arm_a_levers.Replay` on their stored curves: the same 52 evaluations, the same best value and the same best setting. So the main stage is deterministic, and C2b's run on another amp is the stored recipe.
   - Every unit's stored lag file is phase_5c, holds a lag and holds S's judge and render sha on all three amps.
   - The stored halves equal `goat_halves`, and every unit's forced amp and class fit the draw.
 - **The amp label.** For each unit, the argmin of best.judge[search] over its usable labels among the three, ties going to the first in sorted order, as `full_controls.bks_amp_choice` does on BKS.
-  - It is written to `c2b/report.json`'s `labels`, with every amp's value.
-  - A unit with no usable label gets none.
+  - It is written to `c2b/report.json`'s `labels`, with every amp's value and `n_usable`.
+  - **Labels only from complete sets:** while any of the 428 records is missing, the report writes no labels.
+  - **A unit with a refused record gets no label.** A refusal is a technical gap, not evidence about the amp.
+  - A unit with no usable label gets none either.
 - **The read, at zero renders.** Every-control stage 0b's reading, as F69's −0.058 on BKS: the chosen amp's held half, ln, less the mean log held half over the usable amps.
   - Clustered by item (`pipeline_fix.clustered`), all and by class.
   - Beside it: the same reading for the forced amp, for scale.
-  - Counts: units with a choice, with three usable amps, where the choice is the forced amp, and where it is the held half's best.
+  - Counts: units with a choice, withheld, with three usable amps, where the choice is the forced amp, and where it is the held half's best. Also counted: units dropped from the read for a non-finite held half on the chosen amp, or with only one usable amp.
+  - The choices are also reported by amp, overall and by forced amp.
   - Also listed: refusals, fallbacks, quiet labels, and starts accepted with a differing sha.
   - There is no bar: C2b makes labels.
 - **The order.** Records go by key, round robin over 3 shards, at most 3 render processes. A shard skips records already written, so a stopped run resumes.
 - **Cost.** One priming render and 52 evaluations a record: at most 428 × 53 = 22,684 renders. That is about 3.6 to 4.2 h at C1a's and C2's measured 5,400 to 6,300 an hour on 3 processes. A refused record costs 2. No training.
 - **What it leads to: C3b,** declared separately before it trains. It is the amp head trained on real rows: BKS's argmin over C2's three labels, and GOAT's from C2b.
+  - **A zero-render check for C3b, declared now.** Once C2 is done, compare on BKS the argmin over the stored 52-evaluation labels with the argmin over C2's labels. This shows how much the amp label moves with the label's recipe, since GOAT's C2b labels are 52-evaluation `K.space` labels like the stored ones.
 
 ## C5: the heavy clean-up re-tested on the full-control model
 - **What F68 said, and what has changed.** F68 closed the clean-up with "This clean-up is not reopened." Its verdict on the `K.space` model stands.

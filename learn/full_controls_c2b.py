@@ -23,8 +23,11 @@ PHASE = "phase_c2b"
 LAG_PHASE = "phase_5c"               # GOAT's stored lags (and S's fresh renders on all three amps) are 5C's
 SEARCH_SUB = "search-c2b"            # under the GOAT folder
 START_TOL = 0.005                    # a first evaluation not bit-identical to S's stored render: within this, flagged
-MISS_GUARD = (5, 10)                 # stop a shard when 5 of the first 10 records it reaches are refused
-QUIET_DBFS = -57.0                   # J0's silence floor (-60) plus 3 dB, as C2: a best below it is no amp label
+MISS_GUARD = (5, 10)                 # stop a shard when 5 of the first 10 records it reaches miss S's stored render
+AMP_GUARD = (3, 5)                   # ... or when 3 of one amp's first 5 do (`pipeline_fix.systematic_miss`)
+QUIET_DBFS = -57.0                   # J0's silence floor (-60) plus 3 dB, like for like on all three amps (not C2's
+                                     # min(-57, start) - 0.05 rule: here every search starts from S)
+QUIET_SENSITIVITY_DBFS = -54.0       # the report's zero-render sensitivity check of that floor
 EVALS = 52                           # arm A's main stage (`arm_a_levers.main_stage`)
 PER_RECORD = 1 + EVALS               # one priming render and the evaluations; the lags are stored
 
@@ -69,9 +72,9 @@ def _pos(v):
     return v if math.isfinite(v) and v > 0 else None
 
 
-def usable(r):
+def usable(r, floor=QUIET_DBFS):
     """A record's label counts for the amp choice: a label, a finite search-half best, and a best not near silence
-    (peak at or above QUIET_DBFS). The same rule for the stored forced-amp records and C2b's, so the three amps are
+    (peak at or above `floor`). The same rule for the stored forced-amp records and C2b's, so the three amps are
     compared like for like. -> bool."""
     if r is None or r.get("label") is None:
         return False
@@ -79,13 +82,28 @@ def usable(r):
     if _pos((best.get("judge") or {}).get(r["search"])) is None:
         return False
     peak = best.get("peak_dbfs")
-    return peak is not None and float(peak) >= QUIET_DBFS
+    return peak is not None and float(peak) >= floor
 
 
-def amp_choice(by_amp):
+def quiet(r, floor=QUIET_DBFS):
+    """A label that the near-silence rule alone keeps out of the amp choice."""
+    return r is not None and r.get("label") is not None and not usable(r, floor) and usable(r, -math.inf)
+
+
+def withheld(by_amp):
+    """A unit whose three records are not all there, or one of which was refused (a technical gap, not evidence):
+    no amp label. -> why, or None."""
+    if any(r is None for r in by_amp.values()):
+        return "a record is missing"
+    if any(r.get("refused") for r in by_amp.values()):
+        return "a record was refused"
+    return None
+
+
+def amp_choice(by_amp, floor=QUIET_DBFS):
     """One unit's records {amp: record or None} -> the amp whose usable label has the lowest best.judge[search]
     (ties to the first in sorted order, as `full_controls.bks_amp_choice`), or None."""
-    ok = {a: r for a, r in by_amp.items() if usable(r)}
+    ok = {a: r for a, r in by_amp.items() if usable(r, floor)}
     if not ok:
         return None
     return min(sorted(ok), key=lambda a: float(ok[a]["best"]["judge"][ok[a]["search"]]))
@@ -116,28 +134,42 @@ def report_rows(units, clustered):
     """units: [{unit, item, cls, forced_amp, by_amp: {amp: record or None}}] -> the amp labels and the read's rows:
     the chosen amp against a blind one (clustered by item), all and by class; how often the chosen amp is also the
     held half's best; how often it is the forced amp; and the forced amp's own reading, for scale."""
-    labels, rows, forced_rows, counts = {}, [], [], {"units": len(units), "chosen": 0, "no_choice": 0,
-                                                     "chosen_is_forced": 0, "chosen_is_held_best": 0,
-                                                     "three_usable": 0, "read": 0}
+    labels, rows, forced_rows = {}, [], []
+    counts = {"units": len(units), "withheld": 0, "chosen": 0, "no_choice": 0, "chosen_is_forced": 0,
+              "chosen_is_held_best": 0, "three_usable": 0, "read": 0, "read_dropped_held_nonfinite": 0,
+              "read_dropped_one_amp": 0, "changed_at_sensitivity": 0}
+    by_amp_chosen = {}
     for u in units:
         by = u["by_amp"]
+        w = withheld(by)
+        if w:
+            counts["withheld"] += 1
+            labels[u["unit"]] = {"amp": None, "withheld": w}
+            continue
         c = amp_choice(by)
+        counts["changed_at_sensitivity"] += amp_choice(by, QUIET_SENSITIVITY_DBFS) != c
         nu = sum(1 for r in by.values() if usable(r))
         counts["three_usable"] += nu == 3
         if c is None:
             counts["no_choice"] += 1
-            labels[u["unit"]] = None
+            labels[u["unit"]] = {"amp": None, "n_usable": 0}
             continue
         counts["chosen"] += 1
         counts["chosen_is_forced"] += c == u["forced_amp"]
         counts["chosen_is_held_best"] += c == held_best(by)
-        labels[u["unit"]] = {"amp": c, "forced_amp": u["forced_amp"],
+        cell = by_amp_chosen.setdefault(u["forced_amp"], {})
+        cell[c] = cell.get(c, 0) + 1
+        labels[u["unit"]] = {"amp": c, "forced_amp": u["forced_amp"], "n_usable": nu,
                              "search": {a: (r["best"]["judge"][r["search"]] if usable(r) else None)
                                         for a, r in sorted(by.items())}}
         v = amp_read(by, c)
         if v is not None:
             counts["read"] += 1
             rows.append((u["item"], u["unit"], u["cls"], v))
+        elif nu < 2:
+            counts["read_dropped_one_amp"] += 1
+        else:
+            counts["read_dropped_held_nonfinite"] += 1
         fv = amp_read(by, u["forced_amp"])
         if fv is not None:
             forced_rows.append((u["item"], u["unit"], u["cls"], fv))
@@ -145,7 +177,12 @@ def report_rows(units, clustered):
     def cl(rs):
         return clustered([(i, p, v) for i, p, _, v in rs]) if rs else None
 
-    return {"labels": labels, "counts": counts,
+    chosen_totals = {}
+    for cell in by_amp_chosen.values():
+        for a, n in cell.items():
+            chosen_totals[a] = chosen_totals.get(a, 0) + n
+    return {"labels": labels, "counts": counts, "chosen_by_amp": chosen_totals,
+            "chosen_by_forced_amp": {a: dict(sorted(c.items())) for a, c in sorted(by_amp_chosen.items())},
             "chosen_minus_blind": {"all": cl(rows), **{k: cl([q for q in rows if q[2] == k]) for k in ("clean", "crunch")}},
             "forced_minus_blind": {"all": cl(forced_rows),
                                    **{k: cl([q for q in forced_rows if q[2] == k]) for k in ("clean", "crunch")}}}
@@ -199,7 +236,8 @@ def cmd_search(args):
         prts.append(dict(u, amp=r["amp"]))
         halves[r["unit"]] = r["search"]
     renders = P.search_units(prts, P.out_dir() / P.GOAT_DIR, PHASE, halves, set(), False, sdir=search_dir(),
-                             lag_phase=LAG_PHASE, first_tol=START_TOL, miss_guard=MISS_GUARD)
+                             lag_phase=LAG_PHASE, first_tol=START_TOL, miss_guard=MISS_GUARD, amp_guard=AMP_GUARD,
+                             lags_stored=True)
     print(f"C2B SEARCH DONE {k}/{n}: {renders} renders", flush=True)
 
 
@@ -215,26 +253,33 @@ def cmd_report(_args):
         q = search_dir() / f"{fname(r['key'])}.json"
         new[r["key"]] = json.loads(q.read_text()) if q.exists() else None
     missing = [k for k, v in new.items() if v is None]
-    units = []
-    for unit, s in sorted(by_unit.items()):
-        by = {s["amp"]: s}
-        for a in P.AMPS3:
-            if a != s["amp"]:
-                by[a] = new.get(f"{unit}|{a}")
-        units.append({"unit": unit, "item": s["item"], "cls": s["cls"], "forced_amp": s["amp"], "by_amp": by})
-    out = report_rows(units, P.clustered)
     written = [v for v in new.values() if v is not None]
-    out.update({"phase": PHASE, "records": len(plan["records"]), "written": len(written), "missing": missing,
-                "refused": sorted(v["unit"] + "|" + v["amp"] for v in written if v.get("refused")),
-                "fallbacks": sorted(v["unit"] + "|" + v["amp"] for v in written
-                                    if v.get("label") is None and not v.get("refused")),
-                "quiet": sorted(v["unit"] + "|" + v["amp"] for v in written if v.get("label") is not None
-                                and not usable(v)),
-                "sha_differs": sum(1 for v in written if (v.get("s_first") or {}).get("sha_differs")),
-                "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    out = {"phase": PHASE, "records": len(plan["records"]), "written": len(written), "missing": missing,
+           "complete": not missing,
+           "refused": sorted(v["unit"] + "|" + v["amp"] for v in written if v.get("refused")),
+           "fallbacks": sorted(v["unit"] + "|" + v["amp"] for v in written
+                               if v.get("label") is None and not v.get("refused")),
+           "quiet": sorted([v["unit"] + "|" + v["amp"] for v in written if quiet(v)]
+                           + [s["unit"] + "|" + s["amp"] + " (stored)" for s in stored if quiet(s)]),
+           "sha_differs": sum(1 for v in written if (v.get("s_first") or {}).get("sha_differs")),
+           "quiet_dbfs": QUIET_DBFS, "sensitivity_dbfs": QUIET_SENSITIVITY_DBFS,
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    if missing:                                    # labels only from complete sets
+        out["labels"] = None
+        print(f"C2B REPORT: {len(missing)} of {len(plan['records'])} records missing; no labels written", flush=True)
+    else:
+        units = []
+        for unit, s in sorted(by_unit.items()):
+            by = {s["amp"]: s}
+            for a in P.AMPS3:
+                if a != s["amp"]:
+                    by[a] = new[f"{unit}|{a}"]
+            units.append({"unit": unit, "item": s["item"], "cls": s["cls"], "forced_amp": s["amp"], "by_amp": by})
+        out.update(report_rows(units, P.clustered))
     P.save(c2b_dir() / "report.json", out)
-    print(json.dumps({k: out[k] for k in ("counts", "chosen_minus_blind", "forced_minus_blind", "written",
-                                          "refused", "fallbacks", "quiet", "sha_differs")}, indent=1, default=str))
+    print(json.dumps({k: out.get(k) for k in ("complete", "counts", "chosen_by_amp", "chosen_minus_blind",
+                                              "forced_minus_blind", "written", "refused", "fallbacks", "quiet",
+                                              "sha_differs")}, indent=1, default=str))
 
 
 def main(argv=None):
