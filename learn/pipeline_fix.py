@@ -7096,6 +7096,8 @@ def cmd_train_ft(args):
     masked = bool(getattr(args, "masked", False))
     c3 = bool(getattr(args, "c3", False))
     c3r = getattr(args, "c3r", None)
+    if c3 and c3r is not None:
+        raise SystemExit("--c3r trains C3's recipe only: --masked, no --c3, no --h4, no --real-frac or --shuffle-real")
     frac, shuf = float(getattr(args, "real_frac", 1.0)), bool(getattr(args, "shuffle_real", False))
     curve = frac < 1 or shuf
     base = FTM_BASE if masked else FT_BASE
@@ -7260,6 +7262,13 @@ def cmd_train_ft(args):
         if any(fold_of(r["real"]) == k for r in rrows + real_held) \
                 or any(fold_of(u) != (k + 1) % REAL_FOLDS for u in held_units):
             raise SystemExit(f"{name}: fold {k} in its rows, or a held row outside fold {(k + 1) % REAL_FOLDS}")
+    if getattr(args, "dry_run", False):                # the run's wiring up to its first step; nothing is written
+        dry = {"name": name, "seed": seed, "epochs": epochs, "inner": inner, "real_fold": k, "rows": len(rows),
+               "plugin_train": len(plugin_tr), "train_real": len(rrows), "held_real": len(real_held),
+               "train_units": sorted({r["real"] for r in rrows}), "held_units": sorted(held_units), "info": info,
+               "inputs_sha256": data.inputs_sha256, "phase": "phase_c3r" if c3r is not None else None}
+        print("TRAIN-FT DRY RUN", json.dumps({q: dry[q] for q in ("name", "epochs", "rows", "train_real", "held_real")}))
+        return dry
     sub = np.sort(np.random.default_rng(SUBSET_SEED).choice(ti, min(SUBSET_N, len(ti)), replace=False))
     dev = device()
     torch.set_num_threads(2)
@@ -8117,6 +8126,8 @@ def main(argv=None):
     ap.add_argument("--inner", action="store_true", help="train-ft: fold k's epoch-choice run")
     ap.add_argument("--masked", action="store_true", help="train-ft: N1, heads outside the search masked on real rows")
     ap.add_argument("--c3", action="store_true", help="train-ft: C3, FTm's recipe on C2's labels (with --masked)")
+    ap.add_argument("--dry-run", action="store_true",
+                    help="train-ft: build the run's rows, data and masks and check them, then stop before its first step")
     ap.add_argument("--c3r", choices=("all", "ctl"), default=None,
                     help="train-ft: C3r's arm, C3's recipe on every trusted real row by rotation (with --masked)")
     ap.add_argument("--real-frac", type=float, default=1.0, help="train-ft: N3, this share of the training real rows")

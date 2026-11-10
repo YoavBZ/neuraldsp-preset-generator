@@ -38,6 +38,7 @@ PLAN = "docs/full-controls-plan.md"
 PANEL_AMP_SEED = 20261151            # the panel's forced amps: a seeded order within class
 STEP0_EVALS = 52                     # arm A's main stage: round(150 x 0.35) distinct settings (`arm_a_levers`)
 STEP0_RENDERS = 1 + STEP0_EVALS      # its priming render and its evaluations
+STEP0_GUARD = (3, 5)                 # a shard stops when 3 of the first 5 panel records it reaches are refused at step 0
 KNOWN_WHY_CAP = ("off by source: NAM captures carry no time effect, and the sources are mono (no doubler); not "
                  "searched and not a learned label")
 KNOWN_WHY_PANEL = ("none recorded: the panel's amp tracks are real recordings and may carry an amp's spring or a "
@@ -214,6 +215,15 @@ def known(rec):
     return X.known_keys(rec["amp"]), KNOWN_WHY_CAP
 
 
+def step0_miss(reached, refused, guard=STEP0_GUARD):
+    """Step 0's systematic-miss guard, modelled on C2b's: True once `guard[0]` of the first `guard[1]` panel records a
+    shard reaches in this run are refused at step 0's start (S neither bit-identical to its stored render nor within
+    START_TOL of its judge: the plugin or the environment changed). Refused records are moved aside (`c2r-aside`), never
+    deleted, before a resume, so they are searched again."""
+    k, n = guard
+    return reached <= n and refused >= k
+
+
 def ceiling_check(step0, ceiling_rec):
     """Step 0 on a 5D ceiling unit's own amp and half against the stored ceiling search (same recipe, seed and
     priming): its best's settings and both halves' judge, exact. -> dict (None when there is no ceiling record)."""
@@ -233,6 +243,7 @@ class Shard(X.Shard):
 
     def __init__(self):
         self._ms = None
+        self._step0 = {"reached": 0, "refused": 0}
 
     def mine(self, k, n):
         return shard_records(json.loads((c2r_dir() / "records.json").read_text())["records"], k, n)
@@ -260,15 +271,29 @@ class Shard(X.Shard):
         if not p.exists():
             used = step0(rec, self.menu())
         s0 = json.loads(p.read_text())
-        if s0.get("label") is not None:
+        g = self._step0
+        g["reached"] += 1
+        g["refused"] += int("refused" in s0)
+        stop = step0_miss(g["reached"], g["refused"])
+        if s0.get("label") is not None and not stop:
             return used, None
-        return used, {"plan": PLAN, "ledger": s0.get("ledger"), "set": rec["set"], "block": rec["block"],
-                      "unit": rec["unit"], "amp": rec["amp"], "cls": rec["cls"], "cluster": rec["cluster"],
-                      "band": rec.get("band"), "real_out": rec["real_out"], "step0": str(p), "label": None,
-                      **({"refused": s0["refused"]} if "refused" in s0 else {}),
-                      "fallback_stage": "step0", "fallback_reason": s0.get("why"),
-                      "why": f"step 0 gave no label ({s0.get('why')}): the record leaves C3r's rows",
-                      "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+        skip = None
+        if s0.get("label") is None:
+            skip = {"plan": PLAN, "ledger": s0.get("ledger"), "set": rec["set"], "block": rec["block"],
+                    "unit": rec["unit"], "amp": rec["amp"], "cls": rec["cls"], "cluster": rec["cluster"],
+                    "band": rec.get("band"), "real_out": rec["real_out"], "step0": str(p), "label": None,
+                    **({"refused": s0["refused"]} if "refused" in s0 else {}),
+                    "fallback_stage": "step0", "fallback_reason": s0.get("why"),
+                    "why": f"step 0 gave no label ({s0.get('why')}): the record leaves C3r's rows",
+                    "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+        if stop:
+            from learn import pipeline_fix as P
+
+            if skip is not None:
+                P.save(out_path(rec), skip)
+            raise SystemExit(f"SYSTEMATIC MISS: {g['refused']} of the first {g['reached']} panel records refused at "
+                             "step 0's start (move them aside with c2r-aside before a resume)")
+        return used, skip
 
     def menu(self):
         if self._ms is None:
@@ -510,6 +535,39 @@ def cmd_report(_args):
                      indent=1, default=str))
 
 
+def aside_moves(step0_dir, out_dir, stamp):
+    """Where `c2r-aside` moves each panel record refused at step 0: its step 0 record and, when written, its output,
+    into an `aside-<stamp>` folder beside them. Nothing is deleted. -> [(from, to)]."""
+    moves = []
+    if not step0_dir.exists():
+        return moves
+    aside = out_dir / f"aside-{stamp}"
+    for p in sorted(step0_dir.glob("*.json")):
+        if "refused" not in json.loads(p.read_text()):
+            continue
+        moves.append((p, aside / "step0" / p.name))
+        q = out_dir / p.name
+        if q.exists():
+            moves.append((q, aside / p.name))
+    return moves
+
+
+def cmd_aside(_args):
+    """Before a resume after step 0's systematic-miss stop: every panel record refused at step 0 moved aside, its step 0
+    record and its output, never deleted, so the resumed shards search it again."""
+    from learn import pipeline_fix as P
+
+    P.require(PHASE)
+    root, sub = OUT_DIRS["panel"]
+    d = P.out_dir() / root / sub
+    moves = aside_moves(d / "step0", d, time.strftime("%Y%m%d-%H%M%S"))
+    for a, b in moves:
+        b.parent.mkdir(parents=True, exist_ok=True)
+        a.rename(b)
+        print(f"moved {a.name} -> {b.parent.name}/{b.name}")
+    print(f"C2R ASIDE DONE: {len(moves)} files moved")
+
+
 def cmd_ceiling_check(_args):
     """Zero renders: does 5D's stored ceiling search use step 0's recipe? Its code path (`cmd_panel_ceiling`: priming
     with S, `K.space`, `arm_a_levers.main_stage` at `arm_a_levers.SEED`, the first evaluation bit-identical to S's stored
@@ -550,6 +608,7 @@ def main(argv=None):
     s.set_defaults(fn=cmd_search)
     sub.add_parser("c2r-report").set_defaults(fn=cmd_report)
     sub.add_parser("c2r-ceiling-check").set_defaults(fn=cmd_ceiling_check)
+    sub.add_parser("c2r-aside").set_defaults(fn=cmd_aside)
     args = ap.parse_args(argv)
     args.fn(args)
 

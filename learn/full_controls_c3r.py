@@ -689,8 +689,8 @@ def pair_rows(st, units, val_a, val_b, set_):
 def cmd_report(_args):
     """The rows (zero renders): per set and pooled, R-all - R-ctl (primary), R-all - S, R-ctl - S, and R-all - C3 where
     C3's scores are stored; cluster t intervals (GOAT by item, BKS by DI, cap1 and n12 by creator, the panel by DI with
-    the band-weighted reading beside); the units whose DI file is among W's plugin rows and H4's real_out units apart;
-    the adoption rule. -> c3r/report.json."""
+    the band-weighted reading beside); the new sets' units whose DI file is among W's plugin rows apart; H4's real_out
+    units in the rows, with a reading without them beside; the adoption rule. -> c3r/report.json."""
     from learn import pipeline_fix as P
     from learn import score_ear as SE
 
@@ -726,11 +726,13 @@ def cmd_report(_args):
         out["rows"][name] = {}
         for s in SETS:
             rows, missing = pair_rows(st, units, fa, fb, s)
-            main = [r for r in rows if not _apart(r, units, wd, real_out)]
+            main = [r for r in rows if not _apart(r, units, wd)]
             c = P.clustered(main)
             row = {q: c.get(q) for q in keep}
             row["missing"] = missing
             row["directions"] = len(main)
+            ro = [r for r in main if r[1].rsplit("|", 1)[0] not in real_out]   # H4's real_out read beside, as C3
+            row["without_real_out"] = dict({q: P.clustered(ro).get(q) for q in keep}, directions=len(ro)) if ro else None
             if s == "panel":
                 bands = {ru["unit"] + "|" + ru["amp"]: ru.get("band") for ru in units if ru["set"] == "panel"}
                 row["band_weighted"] = {q: P.clustered([(bands[p_], p_, v) for _, p_, v in main]).get(q) for q in keep}
@@ -739,7 +741,7 @@ def cmd_report(_args):
                     sub = [r for r in main if (r[1] in seen_player) == keep_it]
                     row[tag_] = {q: P.clustered(sub).get(q) for q in keep} if sub else None
             out["rows"][name][s] = row
-            ap = [r for r in rows if _apart(r, units, wd, real_out)]
+            ap = [r for r in rows if _apart(r, units, wd)]
             if ap:
                 out["apart"].setdefault(name, {})[s] = {q: P.clustered(ap).get(q) for q in keep}
                 out["apart"][name][s]["units"] = sorted({r[1] for r in ap})
@@ -768,14 +770,14 @@ def player_seen(st, units):
             if ru["set"] in ("cap1", "n12") and ent[ru["unit"]]["player"] in by_fold[ru["fold"]]}
 
 
-def _apart(row, units, wd, real_out):
+def _apart(row, units, wd):
     """A direction read apart: a new set's unit whose DI file is among W's plugin rows (`score_ear.w_dis`; BKS's and
-    GOAT's reads keep H4a's and C3's convention, and BKS's 40 units all sit on W's DIs), or one of H4's real_out."""
+    GOAT's reads keep H4a's and C3's convention, and BKS's 40 units all sit on W's DIs). H4's real_out units stay in the
+    main rows, as C3 trains and reads every row (C5 holds the exclusions); a reading without them is reported beside."""
     u = row[1].rsplit("|", 1)[0]
     ru = next((x for x in units if x["unit"] == u), {})
     prt = ru.get("prt") or {}
-    w = ru.get("set") in NEW_SETS and (prt.get("di_path") in wd or prt.get("di") in wd)
-    return u in real_out or w
+    return ru.get("set") in NEW_SETS and (prt.get("di_path") in wd or prt.get("di") in wd)
 
 
 def cmd_folds(_args):

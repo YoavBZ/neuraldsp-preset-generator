@@ -7,7 +7,8 @@
 #   zsh logs/launch-c2r.zsh /path/to/worktree-at-merged-main
 # A resume after a failed shard: the same command once c2r/records.json exists fails at the draw ("drawn once"); run the
 # named shards by hand instead (each skips records already written and resumes a saved step 1 at step 2), then
-# c2r-report.
+# c2r-report. After a systematic miss at step 0 (3 of a shard's first 5 panel records refused), run c2r-aside first:
+# it moves the refused records aside (never deletes them), so they are searched again.
 setopt no_bg_nice
 W=${1:?the worktree to run from}
 cd "${W}" || exit 1

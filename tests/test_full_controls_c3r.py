@@ -208,6 +208,6 @@ def test_w_di_units_are_read_apart_only_in_the_new_sets():
     units = [{"set": "bks", "unit": "b", "prt": {"di": "w1"}}, {"set": "n12", "unit": "n", "prt": {"di": "w1"}},
              {"set": "goat", "unit": "g", "prt": {"di": "x"}}]
     wd = {"w1"}
-    assert not R3._apart(("c", "b|pr12", 0.0), units, wd, set())
-    assert R3._apart(("c", "n|pr12", 0.0), units, wd, set())
-    assert R3._apart(("c", "g|pr12", 0.0), units, wd, {"g"})
+    assert not R3._apart(("c", "b|pr12", 0.0), units, wd)
+    assert R3._apart(("c", "n|pr12", 0.0), units, wd)
+    assert not R3._apart(("c", "g|pr12", 0.0), units, wd)                    # real_out stays in the main rows

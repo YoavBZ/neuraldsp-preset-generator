@@ -239,3 +239,64 @@ def test_c2_runs_unchanged_with_its_own_shard(tmp_path, monkeypatch, capsys):
     assert r["ledger"].endswith(X.PHASE) and r["known_why"] == X.KNOWN_WHY and "step0" not in r
     assert "creator" not in r and math.isfinite(r["step1"]["start"]["value"])
     assert "C2-SEARCH DONE 0/1" in capsys.readouterr().out
+
+
+# --- step 0's systematic-miss guard and the aside --------------------------------------------------------------------------
+
+def test_step_0s_guard_fires_on_3_refusals_among_the_first_5_panel_records():
+    assert not R.step0_miss(3, 2) and R.step0_miss(3, 3) and R.step0_miss(5, 3)
+    assert not R.step0_miss(6, 3)                                                # past the first five: no stop
+
+
+def _panel_recs(tmp_path, monkeypatch, n, sha_ok_at=()):
+    """n panel records on the C2 stub, each with its 5D lag record; S bit-identical only for those in sha_ok_at."""
+    np = pytest.importorskip("numpy")
+    from learn import audibility_measure as AM
+
+    (row,), calls = T2._stub(tmp_path, monkeypatch)
+    S = T2.full_start("pr12")
+    v0 = T2._value(S)
+    lags = tmp_path / "panel" / "lags"
+    lags.mkdir(parents=True, exist_ok=True)
+    recs = []
+    for i in range(n):
+        unit = f"panel/B/x{i}@1#t.wav"
+        ok = i in sha_ok_at
+        prt = {"unit": unit, "di": f"panel/B/x{i}", "band": "B", "cls": "clean", "fold": 0, "lag": 0, "rig": "r",
+               "di_path": "", "start_s": 0.0, "sd": "", "track": ""}
+        rec = {"set": "panel", "block": "panel", "key": f"{unit}|pr12", "unit": unit, "amp": "pr12", "cls": "clean",
+               "cluster": prt["di"], "band": "B", "fold_stored": 0, "search": "A", "ceiling_amp": None, "prt": prt,
+               "real_out": False}
+        rec["source"] = str(R.step0_path(rec))
+        (lags / f"{P.panel_fname(unit)}.json").write_text(json.dumps(
+            {"unit": unit, "lag": 0, "status": "ok", "phase": "phase_5d",
+             "s": {"pr12": {"judge": {"A": v0 * (1.0 if ok else 1.5), "B": v0 + 0.5},
+                            "render_sha256": AM.audio_sha(np.full(4, v0)) if ok else "other"}}}))
+        recs.append(rec)
+    _c2r_plan(tmp_path, recs)
+    return recs, calls
+
+
+def test_c2r_stops_a_shard_on_systematic_step_0_misses_and_writes_the_third(tmp_path, monkeypatch):
+    recs, _ = _panel_recs(tmp_path, monkeypatch, 5, sha_ok_at=(1,))
+    with pytest.raises(SystemExit, match="SYSTEMATIC MISS"):
+        R.cmd_search(argparse.Namespace(shard=(0, 1)))
+    order = R.order(recs)
+    done = [R.out_path(r).exists() for r in order]
+    assert done == [True, True, True, True, False]       # refused, labelled, refused, the third refusal (written), stop
+    assert json.loads(R.out_path(order[3]).read_text())["fallback_stage"] == "step0"
+
+
+def test_c2r_aside_moves_refused_records_and_never_deletes(tmp_path, monkeypatch, capsys):
+    recs, _ = _panel_recs(tmp_path, monkeypatch, 5, sha_ok_at=(1,))
+    with pytest.raises(SystemExit):
+        R.cmd_search(argparse.Namespace(shard=(0, 1)))
+    d = tmp_path / "panel" / "search-c2r"
+    before = sorted(p.name for p in d.rglob("*.json"))
+    R.cmd_aside(argparse.Namespace())
+    after = sorted(p.name for p in d.rglob("*.json"))
+    assert before == after                                                     # moved, not deleted
+    left = sorted(p.name for p in (d / "step0").glob("*.json"))
+    assert len(left) == 1 and "x1@" in left[0]                                # the labelled one stays
+    assert len(list(d.glob("aside-*/step0/*.json"))) == 3 and len(list(d.glob("aside-*/*.json"))) == 3
+    assert "C2R ASIDE DONE: 6 files moved" in capsys.readouterr().out
