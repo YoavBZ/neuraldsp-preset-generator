@@ -4746,6 +4746,57 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - **Next, on the user's yes of 2026-11-09:** C1b (time effects, the spring, the room mics, the left cab and the mics re-searched with the EQ; the user's yes, 2026-11-09, at about 8,500 renders; the built C1b counts 8,644–9,182), and the A/B page. C2 and C3 go to the user with their costs.
 - Files: `PF/c1a/` (`records.json`, `report.json`, per-record outputs), logs `logs/c1a*.log`. Code: `learn/full_controls.py`. Plan: [full-controls-plan.md](full-controls-plan.md).
 
+
+### F70. C1b: the rest of the cab, the mics with the EQ, and each time effect, on top of C1a. By the score it is −0.008 on BKS [−0.017, +0.001], undecided, with 6 of 8 DIs negative, carried by the mic re-checks. On N12 it is −0.004, undecided: clean −0.012, decided by the score; crunch +0.017 from one record. All three effects it kept are false: N12's captures can't carry an effect. So its keep rule is not fit for labels, and C2 writes the effects off on its dry sources (phase_c1b, 8,391 renders, no training, audited)
+- **What ran** ([plan](full-controls-plan.md), "C1b in detail"). Each of C1a's 71 labels was the start: N12's 31 capture units (measurement only) and BKS's 40 stage-1 units. Three stages ran on top of it, each read against C1a's fresh best on the held half, ln(d_C1b / d_C1a), lower is better:
+  - **Stage A:** the rest of the cab.
+  - **Stage B:** the mic types from GOAT's short lists, jointly with the amp EQ.
+  - **Stage C:** each time effect on its own, kept only if its fresh render beat B's by 0.02 on the search half.
+- **The run** matched the declaration (audited with separate code; every row matches the stored report).
+  - All 71 starts were canonical and within 7e-5 of C1a's best; none was refused.
+  - Fresh and in-process renders agree within 7e-5 dry and 0.002 wet.
+  - **Renders: 8,391,** against the declared 9,070, from three savings. 33 one-cab records tried only 2 settings in stage A (−462), inert dims saved 64, and stage B's first point was cached (−71). 44 ablations equal to the final reused its render (−88). The three passing effects' fresh renders added 6.
+- **By the score.**
+
+  | Row | N12 (31, 9 bands) | BKS (37, 8 DIs) |
+  |---|---|---|
+  | **C1b final − C1a best** | **−0.004 [−0.014, +0.007]**; band-weighted −0.008 [−0.019, +0.002]; 20 of 31 parts, 6 of 9 bands | **−0.008 [−0.017, +0.001]**; band-weighted −0.010 [−0.020, +0.000]; 25 of 37 parts, 6 of 8 DIs |
+  | clean | −0.012 [−0.020, −0.004] (22); 7 of 8 bands | −0.009 [−0.031, +0.012] (17) |
+  | crunch | +0.017 [−0.006, +0.041] (9); +0.003 without `2cstca38hta` | −0.007 [−0.023, +0.009] (20) |
+  | Stage A reset (positive: it helped) | +0.004 [+0.000, +0.008] | +0.002 [−0.000, +0.004] |
+  | Mics and EQ reset | +0.005 [−0.004, +0.014]; band-weighted +0.008 [+0.001, +0.016] | +0.007 [−0.002, +0.015] |
+  | Effects reset | −0.003 [−0.009, +0.003]; crunch −0.013 | 0 (none kept) |
+
+  The resets are not a decomposition: on N12 they add up to more than the primary.
+- **The effects kept are all false.**
+  - N12 kept 3 of 31; BKS kept none, its nearest being reverb at −0.011 to −0.016.
+  - No capture of an amp carries a 350 ms echo or a 2.25 Hz tremolo, so every N12 keep is wrong by construction:
+    - **`2cstca38hta`, delay** (mix 0.2, 350 ms): −0.081 on the search half, +0.076 on the held half.
+    - **`wji8wcrx9yf`, tremolo** at depth 0 and level 1: a level move through the tremolo's level knob (+5.8 dB peak), not a modulation. −0.027 search, +0.043 held.
+    - **`4ll6kx6g6d_a2`, tremolo** at depth 0.15: −0.051 search and −0.028 held. So J0 itself rewards an impossible tremolo, and a held-half check would not have caught it.
+  - **So the 0.02 search-half rule lets about 1 in 10 false effects through.** It is not fit for training labels as it stands.
+    - **C2** writes the effects off on its dry sources: GOAT's capture renders, and BKS, which kept none.
+    - **The effects' route to labels** stays open in C0. It needs a keep rule tested on sources whose effects are known.
+- **Where the gain comes from.**
+  - **On BKS, the mic re-checks.** Records whose mic changed: +0.016 from the mics-and-EQ reset (17). Unchanged: −0.001 (20). The EQ re-tune alone does not carry over to the held half. The changes agree across sections of the same reamp, mostly to mic 9.
+  - **Stage A was mostly the left cab's balance.** 34 of 38 two-cab records moved it, several to the +6 dB cap.
+  - **The rooms were barely tested.** On the 33 one-cab records stage A tried one setting, the left room on at −6 dB. Room levels were searched only where a room went on (one record, where it lost 0.008 on the held half). The rooms stay open in C0 for a real test.
+  - **On N12 the search-half gain barely carries over:** 20% kept, Spearman 0.17. BKS keeps 68%, Spearman 0.51.
+  - **N12's crunch loss is one record.** On `2cstca38hta` the false delay costs +0.076 and stage B +0.064, on a search gain of 0.0002. Its two halves score 3.4 and 5.6–6.0 apart. The same record broke C1a's 300-evaluation row (F69).
+- **Flags.**
+  - **One BKS record is a C1b failure, left out of the primary:** Bulldozer `22_ElecGtr2aDI@290 #24` (pr12).
+    - C1a's label already peaked at −59.6 dBFS, with pr12 Volume 0 inherited from the stored label.
+    - Stage B's mic and EQ move gained 0.0035 on the search half. It left a −59.9 dBFS render that J0 refuses on the held half.
+    - Its two "non-finite ablations" are that render reused. Its label is still written. It is kept out of C3's rows, and C2 refuses near-silent finals.
+  - **Other near-silent labels come from C1a:** BKS −57 to −49 dBFS, N12 −52 and −51. The drift flag counts change from the start, so it can't see them. A written preset needs its output set by the loudness rule.
+  - **BKS real_out:** +0.004, n = 2, reported apart.
+- **What it changes.**
+  - **C1b's labels are C3's** for the 40 BKS records, except the failed one, with effects off. N12 stays measurement only.
+  - **C2 keeps stages A and B and drops stage C.** Its effects are known off on dry sources. It refuses near-silent finals.
+  - **Still open in C0:** the effects' labels (a keep rule that holds on known-dry sources) and the room mics (a real test).
+  - Not yet heard. The C1a page is out with the user.
+- Files: `PF/c1b/` (`records.json`, `report.json`), per-record outputs in `PF/captures2/search-c1b/` and `PF/real/search-c1b/`, logs `logs/c1b*.log`. Code: `learn/full_controls_c1b.py`. The audit's scripts are in the session scratchpad (`recompute.py`, `decomp.py`).
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
