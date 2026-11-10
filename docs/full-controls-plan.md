@@ -11,7 +11,8 @@
 - **Every later step** with renders beyond C1a's, or with training, went to the user with its cost before it ran, until 2026-11-10. Then the user said: "next time, I prefer you to leverage the night and render or train whatever is needed instead of waiting for my approval. At max, I can stop the ongoing process if needed." From C2 on, a declared and reviewed step launches without a wait, and the user is told what runs.
 - **C1a ran** on 2026-11-09 (10,237 renders, audited; [F69](pipeline-fix-plan.md)): by the score −0.205 on N12 and −0.030 on BKS (undecided; crunch −0.052), against the label. The user said yes to C1b (2026-11-09, at about 8,500 renders; the built C1b counts 9,070–9,608 after its review) and to a blind A/B page of C1a against the label; both are declared before they render.
 - **C1b ran** on 2026-11-10 (8,391 renders, audited; [F70](pipeline-fix-plan.md)): by the score −0.008 on BKS and −0.004 on N12 against C1a, both undecided; on BKS most of it sits in the records whose mic changed. Its 3 kept effects are all false (N12's captures), so its keep rule is not used for labels. The C1a page is out with the user.
-- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1), `phase_c1a_outcome`, `phase_c1a_ear` (C1a by ear), `phase_c1b`, `phase_c1b_outcome`, `phase_c2`, `phase_c3` and `phase_c2b`. Code: `learn/full_controls.py` (C1a), `learn/c1a_ear.py` (C1a by ear), `learn/full_controls_c1b.py` (C1b), `learn/full_controls_c2.py` (C2), `learn/full_controls_c3.py` with `pipeline_fix train-ft --c3` (C3) and `learn/full_controls_c2b.py` (C2b), tests `tests/test_full_controls.py`, `tests/test_c1a_ear.py`, `tests/test_full_controls_c1b.py`, `tests/test_full_controls_c2.py`, `tests/test_full_controls_c3.py` and `tests/test_full_controls_c2b.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
+- **Every trusted real row, by rotation (2026-11-10).** The user asked why only GOAT and BKS train, then said "Go for 3" to training and testing on every usable track by rotation. C2r and C3r are declared below, before any render or training; V-real and the reserve stay sealed.
+- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1), `phase_c1a_outcome`, `phase_c1a_ear` (C1a by ear), `phase_c1b`, `phase_c1b_outcome`, `phase_c2`, `phase_c3`, `phase_c2b`, `phase_l1c`, `phase_c2r` and `phase_c3r`. Code: `learn/full_controls.py` (C1a), `learn/c1a_ear.py` (C1a by ear), `learn/full_controls_c1b.py` (C1b), `learn/full_controls_c2.py` (C2), `learn/full_controls_c3.py` with `pipeline_fix train-ft --c3` (C3) and `learn/full_controls_c2b.py` (C2b), tests `tests/test_full_controls.py`, `tests/test_c1a_ear.py`, `tests/test_full_controls_c1b.py`, `tests/test_full_controls_c2.py`, `tests/test_full_controls_c3.py` and `tests/test_full_controls_c2b.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
 
 **The every-control plan's stage 1 never ran.** It is a true-DI oracle for the groups with no number, about 13–14k renders. It was approved on 2026-10-22 and waited for a trusted data list. Then the work moved to the trusted data and the pipeline fix. This amendment carries its goal onto today's route (FT2 and its real rows). It folds stage 1's never-measured groups in as C1b.
 
@@ -74,6 +75,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **A C1a or C2 label that fell back** (stored as `None`) falls back to its source label, with the source's `K.space` mask. A C2 record refused at its start, or for an inexact replay, does the same.
   - **The read is H4's,** with one row beside: C3 with the new controls at S, because C1a also re-tunes the core knobs.
   - **Adoption, per family:** "C3 less C3 with that family at S" is at or below 0 by the score, and C4 does not reverse it. A family not adopted is written at S in the product and stays open, with its next route and blocker named.
+- **C2r and C3r** (the user's go, 2026-11-10, "Go for 3"; declared in detail below): every trusted real row by rotation. C2r labels batch 1's 121, N12's 31 and the panel's 18 clean units with C2's recipe (at most about 42,800 renders, after C2b). C3r trains C3's recipe on all 690 rows by 4 folds, with no shared DI file, creator or panel band across a fold, against a control without the new rows, and reads both by the score on every set. V-real and the reserve stay sealed; batch 3 stays C4's.
 - **C4:** a blind page of full-control presets against FT2 and S.
   - Ranks allow ties: several presets may share a rank, and a tie counts as no preference. Repeats of the decision pairs.
   - Effect pages are guitar-only with instant switching.
@@ -509,6 +511,184 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **Stop rule:** one gate page, and a heavy page if any passed unit is firmly driven. No re-draw and no second page to raise the count. L1c ends when the answers are read and the trusted units counted. C4's declaration takes whatever passes, and states its power on that count. Batch 3 is C4's only unheard source: C1a's ear page played N12's 7.
     - At batch 2's 33%, about 15 of the 44 units would pass.
   - **A fourth batch** needs the user's yes. The fetcher found the calibrated clean and low-gain full rigs outside batches 1 to 3 mostly used up.
+
+## C2r and C3r in detail: every trusted real row, by rotation (declared 2026-11-10, before any render or training; ledger `phase_c2r`, `phase_c3r`)
+
+*Amended the same day, before any render or training, after its independent review. All five of its required changes are made: the panel's units, lags and halves; bleed judged per amp track; the DI drops within a set; the deciding pool; and C4's creator overlap. Most of its optional points are made too, noted where they land.*
+
+**Why.** The user asked, 2026-11-10: "why are we even discussing GOAT and BKS? What about the other materials we've gathered? Why not every usable track is used for training and testing?" Then they gave the go: "Go for 3", the plan to train and test on all usable tracks by rotation.
+
+- **Where the rows stand now.** FT2, FTm and C3 fine-tune on GOAT's 214 and BKS's 306 rows only. Three trusted sets sit outside every product model:
+  - TONE3000 batch 1's 121 trusted labels, used only in N9 and N10, both undecided;
+  - batch 2's 31 (N12), declared "measurement only and never training rows" (F69);
+  - the panel's 45, a test set read as a strong hint (5D: effective N 15.4 below its minimum of 20).
+- **The fix:** rotation. Every trusted real unit is used for both training and testing. It trains the models of the folds it is not in, and is scored only by the fold model that never saw its DI file, its creator, or its panel band.
+- **What stays sealed:**
+  - V-real and the reserve stay sealed, as the one final exam that no choice has touched.
+  - Batch 3 stays C4's unheard source (L1c): never training rows, never a read set.
+  - The NS songs remain W's plugin held set, as before.
+- **How it differs from what did not work before.**
+  - **Real rows went into the base training once, and it cost the base read.** Here real rows enter only at the fine-tuning step, as in FTm and C3.
+  - **N9 and N10 added batch 1 alone,** on `K.space` labels, and read by the knobs. Both came out undecided, not worse: undecided is not failed.
+  - **This step instead:**
+    - adds three sets at once: 170 rows from 43 capture creators and 6 more bands;
+    - labels every control with C2's recipe;
+    - reads by the score, against a control trained on the same folds without the new rows.
+- **Caveat:** the captures share DI files with GOAT. All of batch 1's 121 use a GOAT DI, and 111 use the DI of a labelled GOAT row. Batch 2's own DI files also straddle its creator folds. Keeping performances apart drops overlapping rows from each fold model (counted below), which shrinks the gain.
+
+### C2r: the labels
+
+- **What C2r is.** Labels, not a measurement: C2's per-record recipe exactly as declared and amended (C2 in detail: C1a's search at budget 200, then C1b's stages A and B, the fresh final, the near-silent guard with its constrained bests, the systematic-miss guard, no effect stage), on the new trusted rows. No training.
+- **Records, 170, in three blocks, in this order:**
+  1. **`cap1`, 121:** batch 1's trusted labelled units (`capture_labels.search_records()` with a label), one forced amp each as stored. The start is the stored label. That label is search v2's (N2: `K.space`'s dims, 32 to 43 evaluations, like N12's v2 labels), not GOAT's 52-evaluation recipe. C2's recipe continues from it as it does from a GOAT record's. Clustered by DI file; folds are the stored creator folds.
+  2. **`n12`, 31:** batch 2's C1a records (`captures2/search-c1a/`), continued to 200 exactly as C2's C1a block (25 at budget 100, 6 subset records that ran to 300 and already hold their 200 incumbent):
+     - their stored evaluations are replayed at zero renders, with each setting checked against the stored one;
+     - then the evaluations past 100 are rendered;
+     - then stages A and B and the fresh final.
+     A record refused for an inexact replay keeps its C1b record (`captures2/search-c1b/`) as C3r's input, as C2's C1a block does. The 32nd trusted unit of batch 2, `cap/5pmq8qku9nq#sw50r`, has no C1a record: it is named out with its reason.
+  3. **`panel`, 18:** the units 5D searched and read (`panel_lagged_units`: the ear-passed read units with a usable lag), less every unit on an amp track with any measured window above BKS's reamps' maximum bleed (`PANEL_BLEED_MAX_DB`, −18.35 dB).
+     - **Why bleed is judged per amp track:** bleed is a property of the mic in the room. A window that never went quiet enough to measure does not have clean bleed, so a track measured above the bound in one window is out in all of them.
+     - **Why those units are out:** the trusted-data rule excludes dirty examples. 5D already reported high-bleed units apart and acted on "worse" only without them. A label searched against bleed teaches the bleed.
+     - **What leaves:**
+       - 22 read units are measured above the bound: The Laminar Flow 20, Little Tybee 1 and Big Troubles 1.
+       - 4 more units are unmeasured but sit on The Laminar Flow's ElecGtr01 Mic1 (−18.2 dB) and Mic3 (−18.0 dB) tracks, at 55 s and 105 s.
+       - `Jen Hartswick & Nick Cassarino/Novacaine@315.0` has no usable lag: 5D's lag rule held it out, with its judge lag at −171 against the DI-to-track estimate of −52.
+     - **What is left:** 18 units on 8 DI files in 6 bands, 11 clean and 7 crunch:
+       - The Laminar Flow 4;
+       - Jen Hartswick & Nick Cassarino 5;
+       - Aimee Norwich 3 (its track at −18.5 dB, just inside the bound);
+       - Port St Willow 3;
+       - Blue Manic 2;
+       - Big Troubles 1.
+     - **The halves are 5D's as stored,** dealt over all of `panel_lagged_units`, never re-dealt on the kept set. Re-dealt, one unit's search half would change.
+     - **The panel has no stored label,** so each record first runs **step 0**: the stored labels' own recipe, arm A's main stage (`K.space`, 52 evaluations, seed 20261013) from the class's S, with one priming render, on its stored halves and stored lag (`panel/lags/`, phase_5d, S on all three amps). Step 0's best is the start of C2's recipe, its start check against step 0's in-process best.
+     - **One forced amp a unit,** balanced within class.
+       - The 5 kept units of 5D's ceiling (one per band) keep their ceiling amp: Aimee Norwich sw50r, Port St Willow sw50r, Blue Manic sw50r, Big Troubles pr12, and Jen Hartswick & Nick Cassarino ac20. They count in their class's balance.
+       - The other units of each class go in a seeded order (seed 20261151). Each takes the amp with the fewest units in its class so far, ties in `P.AMPS3`'s order.
+       - On the 5 ceiling units, step 0 is checked against their stored `panel/ceiling/` records. If that search used this recipe and seed, step 0 must reproduce its best exactly. A mismatch is reported, not refused.
+     - **The effect switches are not recorded off by source** (`known_keys` empty, with the reason). The panel's amp tracks are real recordings and may carry an amp's spring or a pedal's delay. C3 masks every effect head on real rows anyway, so this changes no training row.
+- **Each record's cluster:**
+  - cap1 and n12: the DI file, with the creator stored beside;
+  - panel: the DI file (8), with the band stored beside.
+- **Order and shards:**
+  - blocks in the order above; within a block, by key, round robin over 3 shards, at most 3 render processes;
+  - a shard skips records already written and resumes a saved step 1 at step 2;
+  - outputs go to `captures/search-c2r/`, `captures2/search-c2r/` and `panel/search-c2r/`.
+- **Guards:** C2's, unchanged, plus one for step 0.
+  - **Step 0's systematic-miss guard,** as C2b's: a shard stops when 3 of the first 5 panel records it reaches are refused at step 0's start. A refusal means S is not bit-identical to the stored S render and is more than 0.005 off it. Before a resume, refused records are moved aside, never deleted.
+  - **The near-silent bound** is min(−57 dBFS, the start's peak) − 0.05 dB. For the panel, the start is step 0's best.
+  - **Quiet** is flagged below −50 dBFS and counted.
+  - **A shard stops** when 5 of its first 10 records are refused at the start.
+  - **The disk guard** is 31 GB.
+- **The read (zero renders past the fresh final).** C2's rows, per block and class, record-weighted with the cluster jackknife and band- or creator-weighted beside. Its counts: start kinds, refusals, replay mismatches, constrained bests, fallbacks, quiet, drift, mic changes, left cab off, rooms on, pedals on, gate threshold moved.
+  - **The output level is counted, not changed.** The quiet and drift rows report what C2's GOAT audit found: J0 removes level, so 31 of GOAT's 214 labels drifted 20 to 50 dB quieter. The product's loudness step handles output level after prediction (C0's output-gain row). It is declared before any preset ships.
+  - There is no bar: C2r's output is C3r's input.
+- **Cost:**
+  - **cap1:** at most 268 renders a record, 32,428.
+  - **n12:** 25 × 169 + 6 × 67, 4,627.
+  - **panel:** 53 more renders a record for step 0, 18 × 321 = 5,778.
+  - **In all:** at most about 42,800 renders. At C2's measured 6,600 to 7,100 an hour on 3 processes, that is 6.0 to 6.5 h.
+- **When it runs.** Right after C2b, the last job on the render slots tonight. Its launcher waits for C2b's launcher to exit, by its PID, and `_wait_cap` guards the cap. Under the user's rule of 2026-11-10 it launches once its review has passed, and the user is told.
+
+### C3r: training and the read, by rotation
+
+- **What C3r is.** C3's recipe (FTm's, with C3's per-record masks and answer hold) on every trusted real row, trained and read fold by fold.
+  - **R-all:** GOAT's and BKS's rows on C2's labels, plus cap1, n12 and the panel on C2r's labels.
+  - **R-ctl:** the same folds, drops and validation rows, without the new rows, so R-all − R-ctl is the new rows alone.
+- **The rows.**
+  - **GOAT's 214 and BKS's 306 take C2's `label`,** with C3's fallbacks: a record with no C2 label takes its source.
+  - **The new rows take C2r's `label`:**
+    - a cap1 record with none takes its stored label, with `K.space`'s mask;
+    - an n12 record with none takes its C1b record, with C1a's space ∪ C1b's stage A and B keys as the mask, as C3 does for C1a's block;
+    - a panel record with none takes step 0's best, with `K.space`'s mask, or leaves the rows if step 0 itself fell back.
+  - **Masks:** C3's, per record: `K.space`'s keys ∪ C2r's `searched_keys`.
+- **The model inputs.**
+  - **cap1 and n12:** their built `build-dfix-real` inputs (`--captures`, N6; `--capture-batch 2`, N10).
+  - **The panel:** a new `build-dfix-real --panel`. A panel unit reads as a GOAT unit does: 25 pool backings, lent by class, never the unit's own session. CPU, zero renders, built before C3r trains. Each built input's pool check is as for every other set.
+- **The folds: 4, as `REAL_FOLDS`.**
+  - **GOAT and BKS:** FTm's own (GOAT's stored item folds, BKS's DI pairs, `real_folds`). Their held sets are C3's.
+  - **cap1:** the stored creator folds.
+  - **n12:** batch 2's stored creator folds, except that a creator in both batches takes batch 1's fold. 4 creators are shared, so a creator never sits on both sides of a fold.
+  - **The panel, by band:** the bands are taken largest first, bands of equal size by name. Each goes to the fold with the fewest panel units so far, ties to the lowest fold. That gives:
+    - Jen Hartswick & Nick Cassarino (5): fold 0;
+    - The Laminar Flow (4): fold 1;
+    - Aimee Norwich (3) and Blue Manic (2): fold 2;
+    - Port St Willow (3) and Big Troubles (1): fold 3.
+    So the folds hold 5, 4, 5 and 4 units. So no fold model sees the panel band it is scored on. That is stricter than 5D's folds, which dealt one band's DIs over all folds.
+- **The drops: no shared performance or creator across a fold.**
+  - **Model k** (FT_k) trains on the other folds' rows, less every row that shares a DI file or a capture creator with any fold-k unit of any set, its own set included. Within n12 this matters: 6 of its 18 DI files straddle its creator folds.
+  - **Inner run k** trains on the folds other than k and j = (k + 1) mod 4, less every row that shares a DI file or a creator with a unit of fold k or j. It validates on fold j's rows, as C3's inner runs do.
+  - **R-ctl's drops are R-all's,** so the held and validation sets are identical.
+  - **Counted at zero renders on the final folds** (the review's recount, with the panel's 18): FT_k keeps 415 to 507 rows, against C3's 354 to 450.
+    - GOAT drops 36, 36, 35 and 30 rows in folds 0 to 3.
+    - cap1 drops 34, 46, 30 and 31, all by DI: once n12's shared creators take batch 1's folds, no row is dropped by creator.
+    - n12 drops 7, 2, 3 and 7, all by DI.
+    - A test pins the within-set DI rule on n12's own folds. The report recounts every drop.
+  - **The all-labels pair** trains on every row, with no drops: R-all's product model.
+- **Each epoch's mix is FTm's.** Two sources, each cycled to at least 300 rows an epoch as FT does: real amps (BKS + the panel, as `REAL_PER_EPOCH`) and captures (GOAT + cap1 + n12, as `GOAT_PER_EPOCH`). No fold's source passes 300 (fold 3's real amps: 282 + 14 = 296), so R-all and R-ctl take the same number of updates an epoch, and R-all spreads them over more distinct rows.
+  - **Within a source, no set is favoured by its place in the list** (the code review). Each set's records are shuffled (seed 20261152 with the arm, fold, run and source), and the sets are interleaved in proportion to their size before cycling. So every record is shown k or k + 1 times an epoch, and each set's showings are within one row of its share of the source.
+  - **The cost of this mix** (recounted on the drawn records):
+    - **FT_k:** each GOAT row is shown 35 to 40% less often an epoch in R-all than in R-ctl, and each BKS row 5 to 6% less.
+    - **Inner runs:** GOAT 27 to 34% less, BKS 4 to 8% less.
+    - A GOAT veto may then reflect the mix rather than the rows, and the write-up says so.
+- **Validation.** Both arms' inner runs choose E on fold j's rows of all five sets. R-ctl never trains on the new sets' rows, so this leans towards R-ctl: conservative for R-all.
+- **The recipe is C3's, unchanged** otherwise:
+  - W's NS-best state per seed;
+  - `train-ft --masked --ft-cap 300`, seeds 20261042 and 20261043;
+  - 8 inner runs, 8 FT_k, and the all-labels pair for R-all only (R-ctl's would be C3's rows: it is no candidate);
+  - each FT_k takes its own inner run's E, the pair the median of the eight;
+  - per-head held losses logged;
+  - the answer's hold is C3's adopted configuration, as C3's read sets it.
+  - Every run has its own base name (`C3r-all-…`, `C3r-ctl-…`) and records the sha256 of C2's and C2r's records. It refuses until all 520 and all 170 are written, and until C3's adoption record exists.
+- **If C3 is shown worse than FTm** (C3's own rule), C3r trains FTm's recipe instead, on each record's `K.space` labels:
+  - GOAT and BKS on their stored labels;
+  - cap1 on its stored label;
+  - n12 on its v2 label;
+  - the panel on step 0's best.
+  The same folds, drops and read apply, and the write-up names the switch.
+- **The read, by the score, as H4a and C3:** each held unit's answer from its fold's FT_k, from the search half, judged on the held half.
+  - **Tags:** R-all and R-ctl on every set: BKS (40 units × 3 amps), GOAT (214), cap1 (121), n12 (31), the panel (18).
+  - **C3's stored scores** sit beside on BKS, GOAT and n12. That is a product comparison, since C3's folds drop nothing. C3's n12 scores cover one direction only, so n12's R-all − C3 uses that direction.
+  - **The reader's input** is each set's existing read input:
+    - BKS and GOAT as H4a;
+    - n12 as `score_ear h4-*`;
+    - cap1 and the panel as GOAT, on variant 0 of their inputs.
+- **The rows read, per set and pooled:**
+  - **Primary:** R-all − R-ctl, per set and on the deciding pool.
+  - **Beside:** R-all − S, R-ctl − S, R-all − C3 (where stored).
+  - **Intervals:** the cluster jackknife on the mean of cluster means, as C3's `clustered`: GOAT by item, BKS by DI, cap1 and n12 by creator as N9 and N10, the panel by DI with the band-weighted reading beside. Band- or creator-weighted means beside each.
+  - **The deciding pool is BKS, GOAT and the panel, weighted equally** (the mean of the three set means), its interval from the three sets' jackknife variances. Their DI files are disjoint, so the variances are independent.
+  - **The five-set pool is reported beside it.** It does not decide: cap1 and n12 lean towards R-all by design, and cap1 shares DI files with GOAT, so independent set variances would make its interval too narrow.
+  - **An incomplete read decides nothing:** if BKS, GOAT, the panel or the deciding pool has no interval, the adoption record says so and replaces nothing.
+  - **Read apart, counted:**
+    - units of the new sets whose DI file is among W's plugin training rows (`score_ear.w_dis()`: 4 n12 units on 2 files). BKS is left out of this split: all 120 of its read units sit on W's DIs, as in every earlier BKS read;
+    - H4's real_out units (17 GOAT, 6 BKS): kept in every training row and every main read row, as in C3, with a reading without them beside;
+    - cap1 and n12 split by whether the held unit's band or GOAT player trains in its FT_k. Only the panel is folded by band; n12's 9 bands and GOAT's players straddle folds.
+- **Adoption: kept unless shown worse.** R-all's all-labels model replaces C3's adopted model, unless R-all − R-ctl has its 90% interval wholly above 0:
+  - on the deciding pool; or
+  - on BKS, on GOAT, or on the panel (the multi-band real-amp set; small, 18 units on 8 DI files, so a fair veto but not a strong measure).
+  - cap1 and n12 are reported but do not decide: R-ctl never saw a capture, so they lean towards R-all.
+  - C4 can reverse the decision, through PR #422's conflict rule.
+  - No bar on size: the effect size is reported. A small gain sets priority, never inclusion.
+- **What C3r does not do, and stays open in C0:**
+  - **Amp choice on the new rows.** C2b's recipe on each new unit's two other amps, at about 170 × 2 × 53 ≈ 18,000 renders.
+  - **The amp head on them.** C3b trains the amp head on GOAT and BKS. Its combination with C3r is declared after C3b's read.
+  - **The effects:** as C3, masked.
+- **Stop rule.** One label run, one training of two arms and one read. No tuning loop on the read sets: they choose adoption only.
+- **What it changes downstream.**
+  - **C4** hears the model adopted when C4 is built.
+    - **C4's source on the capture side.** By C3r's own creator rule, R-all has already seen part of it: 6 of batch 3's 22 creators make R-all's new rows (amalgamaudio, claybennett, rxguitar, tone3000, danieljdtaylor04, lorenzobona), and 17 of its 44 captures are by them.
+    - FT2 and S never trained on a capture, so this edge goes one way. If R-all is adopted, C4 reads those captures' units apart by whether their creator trains in the adopted model, and states the split.
+    - The DI side is clean: none of n12's 18 DI files is among L1c's 21.
+  - **C5's comparator** becomes the adopted model. C5 is restated on C3r's rows before it trains. N12 is then a rotation set, so C5 reads it fold-wise, not as an unheard pool.
+  - **The panel** is no longer a test of unseen bands for any later step, since later models train on it. This is its third counted read (phase_5d_panel_reads).
+  - **N12's "measurement only" (F69) is lifted** in C3r's loader, explicitly, citing `phase_c3r`. The check is not dropped.
+  - **The bands still unseen** by any product model after C3r: V-real's, the NS songs', and among the reserve's held bands Dahka Band, Guitar-TECHS P3, Little Tybee and Sonnet & Alcohol. The Laminar Flow's high-bleed tracks belong to a band that now trains.
+  - **Open, a read closer to the goal:** the panel scored on each unit's own session mix. BKS's variant 0 is its own song's backing, but the panel's own sessions are not in the stem store, so it reads on pool backings only.
+- **Cost:**
+  - **Training:** 34 runs, two arms of C3's 18 less R-ctl's pair, about 2.3 to 4.6 h of MPS at C3's measured 1.2 to 2.3 h an arm. It runs beside the render slots.
+  - **The read:** every set is answered on both halves, as BKS and GOAT already are. That is 505 units (GOAT's 215 include its one read-only unit, as in C3), so 1,010 answers × 2 renders × 2 arms ≈ 4,040 renders, about 35 min.
+  - **The panel's input build:** zero renders.
 
 ## C5: the heavy clean-up re-tested on the full-control model
 - **What F68 said, and what has changed.** F68 closed the clean-up with "This clean-up is not reopened." Its verdict on the `K.space` model stands.
