@@ -232,3 +232,30 @@ def test_a_leaking_row_stops_the_run(base, monkeypatch):
                                                                   *real_split(ents, k, inner, arm)[1:]))
     with pytest.raises(SystemExit, match="problems"):
         P.cmd_train_ft(ns(real_fold=3, inner=True))
+
+
+def test_train_ft_refuses_until_the_di_scope_holds_all_26_answers(base, monkeypatch):
+    from learn import di_scope as DS
+    _c2(base, monkeypatch)
+    _c2r(base)
+    (base / "c3").mkdir(exist_ok=True)
+    (base / "c3" / "decision.json").write_text(json.dumps({"replaces_ftm": True, "tag": "C3-ftm"}))
+    R3._CACHE.clear()
+    with pytest.raises(SystemExit, match="DI scope's verdicts are missing"):
+        P.cmd_train_ft(ns(real_fold=0, inner=True))
+    (base / DS.DIR).mkdir(exist_ok=True)
+    (base / DS.DIR / "verdicts.json").write_text(json.dumps({"build": DS.BUILD, "verdicts": {"a": "keep"}}))
+    R3._CACHE.clear()
+    with pytest.raises(SystemExit, match="1 of 26 answers"):
+        P.cmd_train_ft(ns(real_fold=0, inner=True))
+
+
+def test_a_dropped_library_unit_is_in_no_row_and_no_held_set(base, monkeypatch):
+    st, S = _state()
+    ents, src, rec, out = R3.scope_drop(st["entries"], st["sources"], st["rec_set"], frozenset({"n12-di1", "panel-di1"}))
+    st = dict(st, entries=ents, sources=src, rec_set=rec, scope={"out": out})
+    _wire(base, monkeypatch, st, S)
+    d = P.cmd_train_ft(ns(real_fold=0, inner=True))                                   # holds fold 1
+    assert "n12/u1" not in d["held_units"] and "panel/u1" not in d["held_units"]
+    assert d["held_units"] == sorted(f"{s}/u1" for s in ("bks", "goat", "cap1"))
+    assert out == {"n12": ["n12/u1"], "panel": ["panel/u1"]}

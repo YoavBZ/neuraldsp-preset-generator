@@ -45,7 +45,8 @@ VERDICTS3 = [("amp", "A believable amp tone"), ("distorted", "Too distorted for 
 BATCH3 = {"dir": "captures3", "phase": "phase_l1c", "night": None, "manifest": "manifest-batch3.csv", "page": "-3",
           "name": "third", "captures": 44, "seed": SEED3, "minimum": False, "threads": 2}
 EARLIER = ("manifest.csv", "manifest-batch2.csv")       # L1c refuses a capture already fetched in these
-BATCH3_CMDS = ("dis", "units", "page", "answers", "heavy", "heavy-answers", "gate-read")
+BATCH3_CMDS = ("dis", "units", "page", "answers", "heavy", "heavy-answers", "gate-read", "di-marks")
+DI_MARK_NOTE = "don't like this di"   # L1c's answers (phase_l1c_answers): a card the user marked, besides a di_bad verdict
 B2_YIELD = {"heard": 147, "passed": 49, "di_bad": 14, "trusted_after_lag_and_t0": 32}   # L1b's ear page (before the heavy
 #   page, the lag rule and T0; its 14 bad-DI verdicts fell on DIs T0 never verified) and N10b's 32 (after the lag rule and T0)
 HELD_BANDS = ("Atlantis Bound", "Diesel13", "Eat The Feeder", "Magician's Nephew", "Szymon Skiba", "Wall Of Death", "Zeno",  # V-real
@@ -183,7 +184,7 @@ def played_dis(*card_lists):
     return frozenset(out)
 
 
-def gate_read(units, ear, trusted_units, b2=B2_YIELD):
+def gate_read(units, ear, trusted_units, b2=B2_YIELD, marked=frozenset()):
     """L1c's read of its gate, zero renders. units: the batch's; ear: {capture: {verdict}}; trusted_units: the set of units
     `trusted` keeps. -> the declared tables."""
     def tally(rows, key, val):
@@ -200,7 +201,11 @@ def gate_read(units, ear, trusted_units, b2=B2_YIELD):
     count = lambda rows, key: dict(sorted({str(k): sum(1 for r in rows if key(r) == k) for k in {key(r) for r in rows}}.items()))
     heard = sum(verdict(u) != "unheard" for u in units)
     passed_n = sum(verdict(u) == "amp" for u in units)
+    on_marked = [u for u in units if u["di"] in marked]
     return {"units": len(units), "heard": heard, "passed": passed_n, "trusted": len(kept),
+            "di_marked": {"di_files": sorted(marked), "units": len(on_marked),
+                          "passed_units_on_them": sum(verdict(u) == "amp" for u in on_marked)},
+            "trusted_by_class": count(kept, lambda u: u["cls"]), "trusted_di_files": len({u["di"] for u in kept}),
             "by_tag": tally(units, lambda u: u["label"], verdict), "by_class": tally(units, lambda u: u["cls"], verdict),
             "by_amp": tally(units, lambda u: u["amp"], verdict),
             "distorted_vs_odd": {"distorted": sum(verdict(u) == "distorted" for u in units), "odd": sum(verdict(u) == "odd" for u in units)},
@@ -247,13 +252,76 @@ def card_units(units):
     return [best[c] for c in sorted(best)]
 
 
-def passed(units, ear, heavy_cards, heavy):
+def passed(units, ear, heavy_cards, heavy, marked=frozenset()):
     """The two gates. ear: {capture: {verdict}}, only "amp" passes and any other verdict drops the capture; every capture
     needs one. heavy_cards: the units on the heavy page; heavy: {unit: {verdict}}, only "keep" stays and it drops that
-    unit alone; every card needs one. -> (units passed, what is still unheard)."""
+    unit alone; every card needs one. marked: DI files the user marked (L1c's `di-marks.json`): every unit on one leaves.
+    -> (units passed, what is still unheard)."""
     miss = sorted({u["capture"] for u in units} - set(ear)) + [u for u in heavy_cards if u not in heavy]
-    ok = {u["unit"] for u in units if (ear.get(u["capture"]) or {}).get("verdict") == "amp"}
+    ok = {u["unit"] for u in units if (ear.get(u["capture"]) or {}).get("verdict") == "amp"
+          and not (marked and u.get("di") in marked)}
     return ok - {u for u in heavy_cards if (heavy.get(u) or {}).get("verdict") != "keep"}, miss
+
+
+def is_marked(answer):
+    """A gate card the user marked against its DI (L1c's answers): a di_bad verdict, or a note saying they don't like it."""
+    note = (answer.get("note") or "").replace("\u2019", "'").lower()
+    return answer.get("verdict") == "di_bad" or DI_MARK_NOTE in note
+
+
+def di_marks(answers, items, units):
+    """L1c's DI marks from the stored answers. answers: [{id, verdict, note, title}]; items: the ear key's {id, unit,
+    capture}; units: {unit: unit dict}. -> {"cards": [...], "di_files": [...]}, every unit on a listed file out."""
+    unit_of = {it["id"]: it for it in items}
+    cards = []
+    for a in answers:
+        if not is_marked(a):
+            continue
+        it = unit_of[a["id"]]
+        u = units[it["unit"]]
+        cards.append({"id": a["id"], "title": a.get("title"), "verdict": a.get("verdict"), "note": a.get("note") or "",
+                      "unit": it["unit"], "capture": it["capture"], "di": u["di"], "player": u.get("player")})
+    return {"cards": cards, "di_files": sorted({c["di"] for c in cards})}
+
+
+def marked_dis():
+    """The DI files the user marked on L1c's gate page (`di-marks.json`), batch 3 only; refuses while the file is missing.
+    Other batches: none."""
+    if BATCH is not BATCH3:
+        return frozenset()
+    p = root() / "di-marks.json"
+    if not p.exists():
+        raise SystemExit(f"{p}: L1c's DI marks are not written (capture_labels --batch 3 di-marks)")
+    return frozenset(json.loads(p.read_text())["di_files"])
+
+
+def cmd_di_marks(args):
+    """L1c's DI marks (phase_l1c_answers) from the stored answers -> captures3/di-marks.json. Zero renders."""
+    from learn import pipeline_fix as P
+
+    P.require(BATCH["phase"])
+    if BATCH is not BATCH3:
+        raise SystemExit("di-marks is L1c's")
+    key = json.loads((root() / "ear-key.json").read_text())
+    store = pathlib.Path(args.store) if args.store else root() / f"answers-{key['build']}-part1.json"
+    ex = json.loads(store.read_text())
+    if ex.get("build") != key["build"]:
+        raise SystemExit(f"{store}: build {ex.get('build')}, the gate page's is {key['build']}")
+    units = {u["unit"]: u for u in units_of()}
+    rec = {"page": ex.get("page"), "build": key["build"], "answers": str(store),
+           "rule": ("a card marked di_bad, or a note saying the user doesn't like the DI; the reason is the performance "
+                    "(too low in frequency or too metal in playing style for the model's future input), so every unit "
+                    "on a marked DI file leaves (phase_l1c_answers)"),
+           **di_marks(ex["answers"], key["items"], units), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    p = root() / "di-marks.json"
+    if p.exists():
+        old = json.loads(p.read_text())
+        if (old["cards"], old["di_files"]) != (rec["cards"], rec["di_files"]):
+            raise SystemExit(f"{p} exists with other marks: move it aside first")
+        print(f"{p} exists with the same marks")
+        return
+    P.save(p, rec)
+    print(f"DI MARKS: {len(rec['cards'])} cards on {len(rec['di_files'])} DI files: {rec['di_files']}")
 
 
 def pick_items(units, active, seed=SEED, per_cell=CELL_ITEMS, fallbacks=PLACEBO_FALLBACKS, amps=None):
@@ -815,9 +883,12 @@ def trusted(units):
     if ear and (not ek.exists() or json.loads((root() / "ear.json").read_text())["build"] != json.loads(ek.read_text())["build"]):
         raise SystemExit("captures/ear.json is not from the ear page's build")
     kp = root() / "heavy-key.json"
-    if not kp.exists():
+    if kp.exists():
+        key = json.loads(kp.read_text())
+    elif BATCH is BATCH3 and not heavy_candidates(units, ear):   # L1c: no passed unit is firmly driven, so no page
+        key = {"build": None, "items": []}
+    else:
         raise SystemExit("the heavy check is not built yet")
-    key = json.loads(kp.read_text())
     cards = [it["unit"] for it in key["items"]]
     if sorted(cards) != heavy_candidates(units, ear):
         raise SystemExit("the heavy page's units are not the current firmly driven passed units: rebuild it")
@@ -825,7 +896,7 @@ def trusted(units):
     hv = json.loads(hp.read_text()) if hp.exists() else {"build": key["build"], "verdicts": {}}
     if hv["build"] != key["build"]:
         raise SystemExit("captures/heavy.json is not from the heavy page's build")
-    ok, miss = passed(units, ear, cards, hv["verdicts"])
+    ok, miss = passed(units, ear, cards, hv["verdicts"], marked_dis())
     if miss:
         raise SystemExit(f"{len(miss)} still unheard: both pages come before any plugin render")
     ok -= scope_out()
@@ -840,7 +911,8 @@ def cmd_gate_read(_args):
     if BATCH is not BATCH3:
         raise SystemExit("gate-read is L1c's")
     units = units_of()
-    rep = {"phase": BATCH["phase"], **gate_read(units, ear_verdicts(), trusted(units)), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    rep = {"phase": BATCH["phase"], **gate_read(units, ear_verdicts(), trusted(units), marked=marked_dis()),
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     P.save(root() / "gate-read.json", rep)
     print(json.dumps(rep, indent=1))
 
@@ -1035,6 +1107,7 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     for c in ("dis", "units", "page", "heavy", "scope", "items", "stage-check", "night-check", "gate-read"):
         sub.add_parser(c)
+    sub.add_parser("di-marks").add_argument("--store", help="the gate page's stored answers (default answers-<build>-part1)")
     for c in ("answers", "heavy-answers", "scope-answers"):
         a = sub.add_parser(c)
         a.add_argument("exports", nargs="*")
@@ -1057,7 +1130,8 @@ def main(argv=None):
     {"dis": cmd_dis, "units": cmd_units, "page": cmd_page, "answers": cmd_answers, "heavy": cmd_heavy,
      "heavy-answers": cmd_heavy_answers, "scope": cmd_scope, "scope-answers": cmd_scope_answers, "items": cmd_items,
      "search": cmd_search,
-     "stage-check": cmd_stage_check, "night-check": cmd_night_check, "gate-read": cmd_gate_read}[args.cmd](args)
+     "stage-check": cmd_stage_check, "night-check": cmd_night_check, "gate-read": cmd_gate_read,
+     "di-marks": cmd_di_marks}[args.cmd](args)
 
 
 if __name__ == "__main__":

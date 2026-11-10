@@ -257,3 +257,25 @@ def test_c3s_n12_scores_are_refused_clearly_when_their_side_read_is_missing(tmp_
     (d / "x.json").write_text("{}")
     assert R3.c3_n12_refusal("C3-ftm") is None
     assert "P2b-ftm" in R3.c3_n12_refusal(P.FTM_BASE)
+
+
+# --- Amendment 1, the DI scope ----------------------------------------------------------------------------------------
+
+def test_the_scope_takes_library_units_on_dropped_dis_out_after_the_folds_are_dealt():
+    ents = _ents()
+    src = {(e["unit"], "pr12"): {"kind": "c2"} for e in ents}
+    rec = {(e["unit"], "pr12"): e["set"] for e in ents}
+    e2, s2, r2, out = R3.scope_drop(ents, src, rec, frozenset({"lib1", "pd2", "gi0"}))
+    assert out == {"n12": ["n0", "n1"], "panel": ["p2"]}                              # GOAT's gi0 is not checked
+    assert {e["unit"] for e in e2} == {e["unit"] for e in ents} - {"n0", "n1", "p2"}
+    assert all(e["fold"] == f["fold"] for e in e2 for f in ents if f["unit"] == e["unit"])   # no re-deal
+    assert ("n0", "pr12") not in s2 and ("n0", "pr12") not in r2 and ("c1", "pr12") in s2
+
+
+def test_with_no_panel_unit_left_bks_and_goat_decide():
+    assert R3.deciding_sets(True) == ("bks", "goat", "panel") and R3.deciding_sets(False) == ("bks", "goat")
+    rows = {s: _row(-0.02) for s in R3.SETS}
+    rows["panel"] = {"mean": None}
+    a = R3.adoption(rows, R3.deciding_sets(False))
+    assert a["replaces_c3"] is True and a["deciding_pool"]["sets"] == 2 and a["deciding_sets"] == ["bks", "goat"]
+    assert R3.adoption(rows)["replaces_c3"] is None                                  # the three-set rule would wait

@@ -300,3 +300,54 @@ def test_c2r_aside_moves_refused_records_and_never_deletes(tmp_path, monkeypatch
     assert len(left) == 1 and "x1@" in left[0]                                # the labelled one stays
     assert len(list(d.glob("aside-*/step0/*.json"))) == 3 and len(list(d.glob("aside-*/*.json"))) == 3
     assert "C2R ASIDE DONE: 6 files moved" in capsys.readouterr().out
+
+
+# --- Amendment 1, the DI scope ----------------------------------------------------------------------------------------
+
+def _scope(tmp_path, verdicts):
+    from learn import di_scope as DS
+    (tmp_path / DS.DIR).mkdir(exist_ok=True)
+    (tmp_path / DS.DIR / "verdicts.json").write_text(json.dumps({"build": DS.BUILD, "verdicts": verdicts}))
+
+
+def test_scope_out_records_only_a_library_record_on_a_dropped_di():
+    from learn import di_scope as DS
+    v = {"build": DS.BUILD, "verdicts": {"lib/1": "heavy", "lib/2": "keep"}}
+    n12 = {"set": "n12", "block": "n12", "key": "k", "unit": "u", "amp": "pr12", "cls": "clean", "cluster": "lib/1",
+           "real_out": False}
+    out = R.scope_out_record(n12, v)
+    assert out["label"] is None and out["scope_out"] == {"build": DS.BUILD, "di": "lib/1", "verdict": "heavy"}
+    assert out["ledger"].endswith(DS.PHASE)
+    assert R.scope_out_record(dict(n12, cluster="lib/2"), v) is None                      # kept
+    assert R.scope_out_record(dict(n12, cluster="lib/3"), v) is None                      # unanswered yet
+    assert R.scope_out_record(dict(n12, block="cap1", set="cap1"), v) is None             # not a library DI
+
+
+def test_c2r_writes_a_dropped_panel_record_as_scope_out_at_zero_renders(tmp_path, monkeypatch, capsys):
+    rec, calls = _panel_stub(tmp_path, monkeypatch)
+    _scope(tmp_path, {rec["cluster"]: "heavy"})
+    R.cmd_search(argparse.Namespace(shard=(0, 1)))
+    r = json.loads(R.out_path(rec).read_text())
+    assert r["scope_out"]["verdict"] == "heavy" and r["label"] is None
+    assert calls["n"] == 0 and not R.step0_path(rec).exists()                              # no step 0, no render
+    assert "C2R-SEARCH DONE 0/1: 0 renders" in capsys.readouterr().out
+
+
+def test_c2r_labels_a_library_record_as_now_while_the_verdicts_are_missing_or_keep_it(tmp_path, monkeypatch):
+    rec, calls = _panel_stub(tmp_path, monkeypatch)
+    _scope(tmp_path, {rec["cluster"]: "keep"})
+    R.cmd_search(argparse.Namespace(shard=(0, 1)))
+    r = json.loads(R.out_path(rec).read_text())
+    assert "scope_out" not in r and r["label"] is not None and calls["n"] > 0
+
+
+def test_c2r_report_counts_the_scope_out_records_apart(tmp_path, monkeypatch, capsys):
+    pytest.importorskip("scipy")
+    rec, _ = _panel_stub(tmp_path, monkeypatch)
+    _scope(tmp_path, {rec["cluster"]: "unsure"})
+    R.cmd_search(argparse.Namespace(shard=(0, 1)))
+    R.cmd_report(argparse.Namespace())
+    rep = json.loads((tmp_path / "c2r" / "report.json").read_text())
+    assert rep["panel"]["scope_out"] == 1 and rep["panel"]["written"] == 1
+    assert rep["panel"]["scope_out_records"] == [rec["key"]]
+    assert rep["panel"]["no_finite_final"] == [] and rep["panel"]["rows"]["records"] == 0

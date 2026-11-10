@@ -1,6 +1,7 @@
 #!/bin/zsh
 # C3r's training (ledger phase_c3r, docs/full-controls-plan.md "C2r and C3r in detail"): after C2r ends (logs/c2r.log's
-# last line "done") and C3's decision exists (c3/decision.json, written by launch-c3-read.zsh's last step), the panel's
+# last line "done"), C3's decision exists (c3/decision.json, written by launch-c3-read.zsh's last step) and the DI scope's
+# verdicts hold all 26 answers (Amendment 1, phase_c2r_a1: di-scope/verdicts.json, build f75f017f9d66), the panel's
 # D_fix inputs (build-dfix-real --panel, CPU, zero renders), the zero-render check and the folds, then both arms of C3's
 # recipe under C3r's names: R-all's and R-ctl's 8 inner runs, then their 8 FT_k (each on its own inner run's E), two at
 # a time, then R-all's all-labels pair (R-ctl has none). Every run refuses until C2's 520 and C2r's records are written
@@ -23,8 +24,11 @@ SEEDS=(20261042 20261043)
 caffeinate -i -w $$ &
 echo "launcher $$ $(date)" >> ${PIDS}
 note() { echo "$1 $(date)" >> ${L}; }
-note "waiting for C2r and C3's decision"
-until [[ $(tail -1 ${LOGS}/c2r.log 2>/dev/null) == done* && -f ${PF}/c3/decision.json ]]; do
+scope_ready() {  # Amendment 1: the DI scope's verdicts hold all the page's answers (di_scope.complete_refusal)
+  ${PY} -c "import sys; from learn import di_scope as D; sys.exit(0 if D.complete_refusal() is None else 1)" > /dev/null 2>&1
+}
+note "waiting for C2r, C3's decision and the DI scope's answers"
+until [[ $(tail -1 ${LOGS}/c2r.log 2>/dev/null) == done* && -f ${PF}/c3/decision.json ]] && scope_ready; do
   [[ $(tail -1 ${LOGS}/c2r.log 2>/dev/null) == *FAILED* ]] && { note "C2r failed; C3r does not train"; exit 1; }
   [[ $(tail -1 ${LOGS}/c3-read.log 2>/dev/null) == *FAILED* ]] && { note "C3's read failed: no decision; C3r does not train"; exit 1; }
   sleep 60
