@@ -206,23 +206,42 @@ def pooled(rows):
     return {"mean": m, "lo90": m - h, "hi90": m + h, "df": df, "sets": n}
 
 
-def adoption(rows):
+PANEL_MIN_DIS = 3                    # the panel decides only with this many DI files left (it clusters by DI file: with
+#                                      1 it has no interval, with 2 its jackknife has 1 df)
+
+
+def deciding_sets(panel_dis):
+    """The sets whose rows decide (Amendment 1, after its review): BKS, GOAT and the panel while at least PANEL_MIN_DIS of
+    the panel's DI files are left after the scope; BKS and GOAT otherwise, the panel reported beside. panel_dis: the
+    number of panel DI files read."""
+    return DECIDING if panel_dis >= PANEL_MIN_DIS else ("bks", "goat")
+
+
+def stale_scope_out(records, outputs, dropped):
+    """C2r records written `scope_out` whose DI the final verdicts keep: each needs its label, so C3r refuses until it is
+    moved aside and its shard resumed. records: C2r's; outputs: {key: output}; dropped: the DIs not kept. -> [key]."""
+    return sorted(r["key"] for r in records if (outputs.get(r["key"]) or {}).get("scope_out")
+                  and outputs[r["key"]]["scope_out"]["di"] not in dropped)
+
+
+def adoption(rows, deciding=DECIDING):
     """R-all replaces C3's adopted model unless R-all - R-ctl is shown worse (its 90% interval wholly above 0) on the
-    deciding pool (BKS, GOAT and the panel, weighted equally: their DI files are disjoint) or on BKS, GOAT or the panel
-    alone. The five-set pool is reported beside, not deciding (cap1 and n12 lean towards R-all by design, and cap1
-    shares GOAT's DI files, so independent set variances would make its interval too narrow). rows: {set: row}."""
+    deciding pool (BKS, GOAT and the panel, weighted equally: their DI files are disjoint; BKS and GOAT with no panel
+    unit left, `deciding_sets`) or on one deciding set alone. The five-set pool is reported beside, not deciding (cap1
+    and n12 lean towards R-all by design, and cap1 shares GOAT's DI files, so independent set variances would make its
+    interval too narrow). rows: {set: row}."""
     from learn import full_controls_c3 as C3
 
-    dp = pooled({s: rows[s] for s in DECIDING}) if all(rows.get(s) for s in DECIDING) else None
+    dp = pooled({s: rows[s] for s in deciding}) if all(rows.get(s) for s in deciding) else None
     five = pooled({s: rows[s] for s in SETS}) if all(rows.get(s) for s in SETS) else None
-    worse = {s: C3.shown_worse(rows.get(s)) for s in DECIDING}
+    worse = {s: C3.shown_worse(rows.get(s)) for s in deciding}
     worse["deciding_pool"] = C3.shown_worse(dp)
-    missing = [s for s in DECIDING if C3.se_of(rows.get(s)) is None]
+    missing = [s for s in deciding if C3.se_of(rows.get(s)) is None]
     if dp is None or dp.get("lo90") is None or dp.get("hi90") is None:
         missing.append("deciding_pool")
     why = None if not missing else (f"no interval on {', '.join(missing)}: the read is incomplete, so the rule does "
                                     "not decide")
-    return {"deciding_pool": dp, "five_set_pool": five, "shown_worse": worse,
+    return {"deciding_pool": dp, "deciding_sets": list(deciding), "five_set_pool": five, "shown_worse": worse,
             "replaces_c3": None if missing else not any(worse.values()), "complete": not missing, "why": why}
 
 
@@ -280,6 +299,8 @@ def state(partial=False):
     from learn import pipeline_fix as P
     from learn import score_ear as SE
 
+    from learn import di_scope as DS
+
     c2 = C3.c2_state(partial)
     c2r = c2r_state(partial)
     try:
@@ -288,6 +309,19 @@ def state(partial=False):
         if not partial:
             raise
         recipe, tag, dec = "c3", None, None
+    scope_v = DS.verdicts()                            # Amendment 1: training waits for all the page's answers
+    why = DS.complete_refusal(scope_v)
+    if why and not partial:
+        raise SystemExit(why)
+    dropped = DS.dropped_of(scope_v) if scope_v else frozenset()
+    stale = stale_scope_out(c2r["records"], c2r["outputs"], dropped)
+    if stale and not partial:
+        from learn import full_controls_c2r as R
+
+        first = next(r for r in c2r["records"] if r["key"] == stale[0])
+        raise SystemExit(f"{len(stale)} C2r records are scope_out but the final verdicts keep their DI (first "
+                         f"{stale[0]}): move each aside (never delete), e.g. {R.out_path(first)}, and resume its shard "
+                         "(c2r-search --shard k/3) so it is labelled; then c2r-report")
     brecs, by_unit, bfolds = P.real_labels(2)
     grecs, gunits, _ = P.goat_labels()
     cu1 = {u["unit"]: u for u in CL.units_of()}
@@ -368,11 +402,17 @@ def state(partial=False):
             seen.add(prt["unit"])
             ents.append(entry("goat", prt["unit"], prt["fold"], prt["di"], row=False))
             ents[-1]["n"], ents[-1]["player"] = 0, player_of("goat", prt)
+    # Amendment 1: every library unit on a DI file the user did not keep leaves the rows and every read, after the
+    # folds are dealt (no re-deal), C2r's labelled ones included
+    ents, src, rec_set, scope_out = scope_drop(ents, src, rec_set, dropped)
     out = {"c2": c2, "c2r": c2r, "recipe": recipe, "answer_tag": tag, "decision": dec, "sources": src,
            "rec_set": rec_set, "units": units, "entries": ents, "band_folds": fb, "n12_folds": f2,
            "measurement_only_lifted": {"phase": PHASE, "records": sorted(lifted)},
+           "scope": {"build": (scope_v or {}).get("build"), "complete": why is None, "dropped_dis": sorted(dropped),
+                     "out": scope_out, "stale_scope_out": stale},
            "records": {"bks": brecs, "goat": grecs}, "sha256": None if partial else hashlib.sha256(
-               (c2["sha256"] + c2r["sha256"] + json.dumps(dec, sort_keys=True)).encode()).hexdigest()}
+               (c2["sha256"] + c2r["sha256"] + json.dumps(dec, sort_keys=True)
+                + json.dumps((scope_v or {}).get("verdicts"), sort_keys=True)).encode()).hexdigest()}
     _CACHE[key] = out
     return out
 
@@ -392,6 +432,15 @@ def player_of(set_, prt):
         p = prt.get("player")
         return f"GOAT {p}" if set_ == "cap1" and p and not str(p).startswith("GOAT ") else p
     return prt.get("band")
+
+
+def scope_drop(ents, src, rec_set, dropped, sets=("n12", "panel")):
+    """Amendment 1: take every unit of `sets` on a dropped DI file out of the entries, the sources and the records, after
+    the folds are dealt. -> (entries, sources, records, {set: [units out]})."""
+    out_u = {e["unit"] for e in ents if e["set"] in sets and e["di"] in dropped}
+    scope_out = {s: sorted(e["unit"] for e in ents if e["unit"] in out_u and e["set"] == s) for s in sets}
+    return ([e for e in ents if e["unit"] not in out_u], {k: v for k, v in src.items() if k[0] not in out_u},
+            {k: v for k, v in rec_set.items() if k[0] not in out_u}, scope_out)
 
 
 def pathlib_exists(p):
@@ -538,8 +587,11 @@ def read_units(st=None):
     for prt in P.goat_read_units():
         out.append({"set": "goat", "unit": prt["unit"], "amp": prt["amp"], "fold": ent[prt["unit"]]["fold"],
                     "lag": prt["lag"], "cluster": prt["item"], "prt": prt})
+    gone = {u for us in ((st.get("scope") or {}).get("out") or {}).values() for u in us}
     for r in sorted(st["c2r"]["records"], key=lambda x: (NEW_SETS.index(x["set"]), x["key"])):
         s, u, a = r["set"], r["unit"], r["amp"]
+        if u in gone:                                  # Amendment 1: a dropped library DI, read nowhere
+            continue
         prt = st["units"][s][u]
         lag = prt["lag"] if s == "panel" else json.loads(open(r["source"]).read())["lag"]
         out.append({"set": s, "unit": u, "amp": a, "fold": ent[u]["fold"], "lag": lag,
@@ -780,6 +832,8 @@ def cmd_report(_args):
         return half_value(c3_judge(ru, c3tag), sh, h)
 
     seen_player = player_seen(st, units)
+    panel_dis = len({ru["prt"]["di"] for ru in units if ru["set"] == "panel"})
+    deciding = deciding_sets(panel_dis)
     pairs = {"R-all - R-ctl": (val("all"), val("ctl")), "R-all - S": (val("all"), s_val),
              "R-ctl - S": (val("ctl"), s_val), f"R-all - {c3tag}": (val("all"), c3_val)}
     keep = ("mean", "lo90", "hi90", "clusters", "clusters_negative", "part_weighted", "parts", "parts_negative")
@@ -809,11 +863,12 @@ def cmd_report(_args):
                 out["apart"].setdefault(name, {})[s] = {q: P.clustered(ap).get(q) for q in keep}
                 out["apart"][name][s]["units"] = sorted({r[1] for r in ap})
         rs = out["rows"][name]
-        rs["deciding_pool"] = pooled({s: rs[s] for s in DECIDING}) if all(rs[s].get("mean") is not None
-                                                                        for s in DECIDING) else None
+        rs["deciding_pool"] = pooled({s: rs[s] for s in deciding}) if all(rs[s].get("mean") is not None
+                                                                        for s in deciding) else None
         rs["five_set_pool"] = pooled({s: rs[s] for s in SETS}) if all(rs[s].get("mean") is not None
                                                                      for s in SETS) else None
-    out["adoption"] = adoption({s: out["rows"]["R-all - R-ctl"][s] for s in SETS})
+    out["adoption"] = adoption({s: out["rows"]["R-all - R-ctl"][s] for s in SETS}, deciding)
+    out["scope"] = dict(st["scope"], panel_dis_read=panel_dis, deciding_sets=list(deciding))
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     P.save(c3r_dir() / "report.json", out)
     for name in pairs:
@@ -855,9 +910,11 @@ def cmd_folds(_args):
            "read_only_goat": sum(1 for e in ents if not e["row"]),
            "arms": {a: drop_counts(ents, a) for a in ARMS},
            "records": {s: sum(1 for q in st["rec_set"].values() if q == s) for s in SETS},
-           "complete": {"c2": st["c2"]["written"], "c2r": st["c2r"]["written"], "decision": st["decision"] is not None}}
+           "complete": {"c2": st["c2"]["written"], "c2r": st["c2r"]["written"], "decision": st["decision"] is not None},
+           "scope": st["scope"]}
     P.save(c3r_dir() / "folds.json", out)
-    print(json.dumps({k: out[k] for k in ("band_folds", "folds", "records", "complete", "read_only_goat")}, indent=1))
+    print(json.dumps({k: out[k] for k in ("band_folds", "folds", "records", "complete", "read_only_goat", "scope")},
+                     indent=1))
     for a in ARMS:
         for name, c in out["arms"][a].items():
             print(a, name, "train", c["train"], "dropped", c["dropped"])
@@ -871,7 +928,7 @@ def cmd_check(_args):
     missing = sorted({u for (u, _) in st["sources"]} | {ru["unit"] for ru in read_units(st)})
     missing = [u for u in missing if not all(P.dfix_input_path(u, v).exists() for v in range(P.DFIX_K))]
     print(json.dumps({"recipe": st["recipe"], "answer_tag": st["answer_tag"], "c2": st["c2"]["written"],
-                      "c2r": st["c2r"]["written"], "records": len(st["sources"]),
+                      "c2r": st["c2r"]["written"], "records": len(st["sources"]), "scope": st["scope"],
                       "units_missing_inputs": len(missing), "first_missing": missing[:3]}, indent=1))
     if missing:
         raise SystemExit("D_fix inputs missing (build-dfix-real --panel)")

@@ -159,3 +159,52 @@ def test_artifact_gate_keeps_answers_in_the_store_and_drops_the_file_save():
     assert 'data-v="distorted"' in out and out.startswith("<title>Capture ear 1</title>")
     assert 'id="sync"' in out and 'el.textContent = "Saved."' in out
     assert out.count("Not saving here") == 4            # no store, no viewer, a failed read, a failed write
+
+
+# --- the user's DI marks (phase_l1c_answers) ----------------------------------------------------------------------------
+
+def test_a_marked_card_is_a_di_bad_verdict_or_a_note_against_the_di():
+    assert L.is_marked({"verdict": "di_bad", "note": ""})
+    assert L.is_marked({"verdict": "amp", "note": "I don't like this DI"})
+    assert L.is_marked({"verdict": "unsure", "note": "I don’t like this DI"})
+    assert not L.is_marked({"verdict": "distorted", "note": "too fizzy"})
+
+
+def test_di_marks_list_the_cards_and_their_di_files():
+    items = [{"id": "c1", "unit": "cap/a#pr12", "capture": "a"}, {"id": "c2", "unit": "cap/b#ac20", "capture": "b"},
+             {"id": "c3", "unit": "cap/c#ac20", "capture": "c"}]
+    units = {"cap/a#pr12": {"di": "lib/1", "player": "X"}, "cap/b#ac20": {"di": "lib/1", "player": "X"},
+             "cap/c#ac20": {"di": "lib/2", "player": "Y"}}
+    answers = [{"id": "c1", "verdict": "di_bad", "note": ""}, {"id": "c2", "verdict": "amp", "note": "I don't like this DI"},
+               {"id": "c3", "verdict": "amp", "note": ""}]
+    got = L.di_marks(answers, items, units)
+    assert [c["id"] for c in got["cards"]] == ["c1", "c2"] and got["di_files"] == ["lib/1"]
+
+
+def test_passed_leaves_out_every_unit_on_a_marked_di_file():
+    us = [{"unit": "cap/a#pr12", "capture": "a", "di": "lib/1"}, {"unit": "cap/b#ac20", "capture": "b", "di": "lib/2"}]
+    ear = {"a": {"verdict": "amp"}, "b": {"verdict": "amp"}}
+    assert L.passed(us, ear, [], {})[0] == {"cap/a#pr12", "cap/b#ac20"}
+    assert L.passed(us, ear, [], {}, frozenset({"lib/1"}))[0] == {"cap/b#ac20"}
+
+
+def test_batch_3s_gates_refuse_without_the_marks_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(L, "BATCH", L.BATCH3)
+    monkeypatch.setattr(L, "root", lambda: tmp_path)
+    with pytest.raises(SystemExit, match="DI marks"):
+        L.marked_dis()
+    (tmp_path / "di-marks.json").write_text(json.dumps({"di_files": ["lib/1"]}))
+    assert L.marked_dis() == {"lib/1"}
+    monkeypatch.setattr(L, "BATCH", L.BATCH2)
+    assert L.marked_dis() == frozenset()
+
+
+def test_gate_read_counts_the_marked_dis():
+    units = [{"unit": "cap/u0#ac20", "capture": "u0", "di": "lib/1", "cls": "clean", "amp": "ac20", "label": "clean",
+              "creator": "c", "player": "p", "di_item": "s0"},
+             {"unit": "cap/u1#pr12", "capture": "u1", "di": "lib/2", "cls": "crunch", "amp": "pr12", "label": "clean",
+              "creator": "c", "player": "p", "di_item": "s1"}]
+    ear = {"u0": {"verdict": "amp"}, "u1": {"verdict": "amp"}}
+    r = L.gate_read(units, ear, {"cap/u1#pr12"}, marked=frozenset({"lib/1"}))
+    assert r["di_marked"] == {"di_files": ["lib/1"], "units": 1, "passed_units_on_them": 1}
+    assert r["trusted"] == 1 and r["trusted_by_class"] == {"crunch": 1} and r["trusted_di_files"] == 1

@@ -257,3 +257,82 @@ def test_c3s_n12_scores_are_refused_clearly_when_their_side_read_is_missing(tmp_
     (d / "x.json").write_text("{}")
     assert R3.c3_n12_refusal("C3-ftm") is None
     assert "P2b-ftm" in R3.c3_n12_refusal(P.FTM_BASE)
+
+
+# --- Amendment 1, the DI scope ----------------------------------------------------------------------------------------
+
+def test_the_scope_takes_library_units_on_dropped_dis_out_after_the_folds_are_dealt():
+    ents = _ents()
+    src = {(e["unit"], "pr12"): {"kind": "c2"} for e in ents}
+    rec = {(e["unit"], "pr12"): e["set"] for e in ents}
+    e2, s2, r2, out = R3.scope_drop(ents, src, rec, frozenset({"lib1", "pd2", "gi0"}))
+    assert out == {"n12": ["n0", "n1"], "panel": ["p2"]}                              # GOAT's gi0 is not checked
+    assert {e["unit"] for e in e2} == {e["unit"] for e in ents} - {"n0", "n1", "p2"}
+    assert all(e["fold"] == f["fold"] for e in e2 for f in ents if f["unit"] == e["unit"])   # no re-deal
+    assert ("n0", "pr12") not in s2 and ("n0", "pr12") not in r2 and ("c1", "pr12") in s2
+
+
+def test_with_no_panel_unit_left_bks_and_goat_decide():
+    assert R3.deciding_sets(8) == ("bks", "goat", "panel") and R3.deciding_sets(0) == ("bks", "goat")
+    rows = {s: _row(-0.02) for s in R3.SETS}
+    rows["panel"] = {"mean": None}
+    a = R3.adoption(rows, R3.deciding_sets(0))
+    assert a["replaces_c3"] is True and a["deciding_pool"]["sets"] == 2 and a["deciding_sets"] == ["bks", "goat"]
+    assert R3.adoption(rows)["replaces_c3"] is None                                  # the three-set rule would wait
+
+
+# --- the review's guards: the panel's DI threshold and stale scope_out records ------------------------------------------
+
+def test_the_panel_decides_only_with_three_di_files_left():
+    assert R3.deciding_sets(1) == ("bks", "goat") and R3.deciding_sets(2) == ("bks", "goat")
+    assert R3.deciding_sets(3) == ("bks", "goat", "panel") and R3.deciding_sets(8) == ("bks", "goat", "panel")
+
+
+def test_seven_of_eight_panel_dis_dropped_still_decide_on_bks_and_goat():
+    rows = {s: _row(-0.02) for s in R3.SETS}
+    rows["panel"] = {"mean": -0.05, "lo90": None, "hi90": None, "clusters": 1}           # one DI file: no interval
+    a = R3.adoption(rows, R3.deciding_sets(1))
+    assert a["replaces_c3"] is True and a["why"] is None and "panel" not in a["shown_worse"]
+    rows["panel"] = _row(0.3, half=0.1, clusters=2)                                    # 2 files: reported, no veto
+    assert R3.adoption(rows, R3.deciding_sets(2))["replaces_c3"] is True
+
+
+def test_a_scope_out_record_whose_di_is_kept_is_stale():
+    recs = [{"key": "a", "set": "n12"}, {"key": "b", "set": "panel"}, {"key": "c", "set": "n12"}]
+    outs = {"a": {"label": None, "scope_out": {"di": "lib/1"}}, "b": {"label": None, "scope_out": {"di": "lib/2"}},
+            "c": {"label": {"x": 1}}}
+    assert R3.stale_scope_out(recs, outs, frozenset({"lib/2"})) == ["a"]
+    assert R3.stale_scope_out(recs, outs, frozenset({"lib/1", "lib/2"})) == []
+
+
+def test_c3r_refuses_while_a_scope_out_records_di_is_kept(tmp_path, monkeypatch):
+    import json
+
+    from learn import di_scope as DS
+    from learn import full_controls_c2 as C2
+    from learn import full_controls_c2r as R
+    from learn import full_controls_c3 as C3
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    monkeypatch.setattr(C3, "N_C2", 1)
+    c2 = [{"set": "goat", "block": "goat", "key": "goat/u|pr12", "unit": "goat/u", "amp": "pr12"}]
+    (tmp_path / "c2").mkdir()
+    (tmp_path / "c2" / "records.json").write_text(json.dumps({"records": c2}))
+    C2.out_path(c2[0]).parent.mkdir(parents=True)
+    C2.out_path(c2[0]).write_text(json.dumps({"label": {"a/b": "1"}}))
+    c2r = [{"set": "n12", "block": "n12", "key": "cap/n#ac20|ac20", "unit": "cap/n#ac20", "amp": "ac20",
+            "c1a_output": str(tmp_path / "c1a.json")}]
+    (tmp_path / "c1a.json").write_text(json.dumps({"set": "n12", "measurement_only": True}))
+    (tmp_path / "c2r").mkdir()
+    (tmp_path / "c2r" / "records.json").write_text(json.dumps({"records": c2r}))
+    R.out_path(c2r[0]).parent.mkdir(parents=True)
+    R.out_path(c2r[0]).write_text(json.dumps({"label": None, "scope_out": {"build": DS.BUILD, "di": "lib/1",
+                                                                            "verdict": "heavy"}}))
+    (tmp_path / "c3").mkdir()
+    (tmp_path / "c3" / "decision.json").write_text(json.dumps({"replaces_ftm": True, "tag": "C3-ftm"}))
+    (tmp_path / DS.DIR).mkdir()
+    (tmp_path / DS.DIR / "verdicts.json").write_text(json.dumps(
+        {"build": DS.BUILD, "verdicts": {"lib/1": "keep", **{f"x{i}": "keep" for i in range(DS.N_CARDS - 1)}}}))
+    R3._CACHE.clear()
+    with pytest.raises(SystemExit, match="move each aside"):
+        R3.state()
+    R3._CACHE.clear()

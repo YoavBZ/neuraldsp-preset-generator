@@ -237,6 +237,29 @@ def ceiling_check(step0, ceiling_rec):
 
 # --- the loop's shard (C2's search loop, C2r's records) -----------------------------------------------------------------
 
+SCOPE_BLOCKS = ("n12", "panel")      # Amendment 1 (the DI scope): the library DIs the user checks
+
+
+def scope_out_record(rec, v=None):
+    """Amendment 1 (`di_scope`): a library record (n12, the panel) whose DI file the user did not keep, written at zero
+    renders when the verdicts exist by the time its shard reaches it; None otherwise (no verdicts yet: it is labelled,
+    and C3r drops it). v: the verdicts record (default the stored one, read now)."""
+    from learn import di_scope as DS
+    from learn import pipeline_fix as P
+
+    if rec["block"] not in SCOPE_BLOCKS:
+        return None
+    v = DS.verdicts() if v is None else v
+    if v is None or rec["cluster"] not in DS.dropped_of(v):
+        return None
+    return {"plan": PLAN, "ledger": f"{P.LEDGER_ID} {PHASE} {DS.PHASE}", "set": rec["set"], "block": rec["block"],
+            "unit": rec["unit"], "amp": rec["amp"], "cls": rec["cls"], "cluster": rec["cluster"],
+            "creator": rec.get("creator"), "band": rec.get("band"), "real_out": rec["real_out"], "label": None,
+            "scope_out": {"build": v["build"], "di": rec["cluster"], "verdict": v["verdicts"][rec["cluster"]]},
+            "why": f"scope_out: the user did not keep its DI file on the DI scope page (build {v['build']})",
+            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+
+
 class Shard(X.Shard):
     phase = PHASE
     tag = "C2R"
@@ -264,6 +287,9 @@ class Shard(X.Shard):
         return e
 
     def prepare(self, rec):
+        out = scope_out_record(rec)                    # Amendment 1: a library DI the user did not keep, at zero renders
+        if out is not None:
+            return 0, out
         if rec["block"] != "panel":
             return 0, None
         p = step0_path(rec)
@@ -503,9 +529,11 @@ def cmd_report(_args):
         if p.exists():
             every.setdefault(r["block"], []).append(json.loads(p.read_text()))
     for b in BLOCKS:
-        recs = every.get(b, [])
+        scoped = [r for r in every.get(b, []) if r.get("scope_out")]   # Amendment 1: out at zero renders, not labels
+        recs = [r for r in every.get(b, []) if not r.get("scope_out")]
         main = [r for r in recs if not r.get("real_out")]
-        out[b] = {"written": len(recs), "drawn": sum(1 for r in plan["records"] if r["block"] == b),
+        out[b] = {"written": len(recs) + len(scoped), "drawn": sum(1 for r in plan["records"] if r["block"] == b),
+                  "scope_out": len(scoped), "scope_out_records": sorted(r["unit"] + "|" + r["amp"] for r in scoped),
                   "rows": X.report_rows(main, tq, P.clustered),
                   "rows_by_" + GROUP[b]: X.report_rows(grouped(main, GROUP[b]), tq, P.clustered),
                   "real_out": X.report_rows([r for r in recs if r.get("real_out")], tq, P.clustered),
@@ -527,7 +555,7 @@ def cmd_report(_args):
                        "first": (s.get("s_first") or {}).get("verdict"), "ceiling_check": s.get("ceiling_check")})
     out["panel"]["step0"] = s0
     P.save(c2r_dir() / "report.json", out)
-    print(json.dumps({b: {"written": out[b]["written"], "drawn": out[b]["drawn"],
+    print(json.dumps({b: {"written": out[b]["written"], "drawn": out[b]["drawn"], "scope_out": out[b]["scope_out"],
                           "primary": (out[b]["rows"]["all"] or {}).get("primary"),
                           "step1_starts": out[b]["step1_starts"], "step2_starts": out[b]["step2_starts"],
                           "counts": (out[b]["rows"]["all"] or {}).get("counts"),

@@ -11,6 +11,7 @@
 - **Every later step** with renders beyond C1a's, or with training, went to the user with its cost before it ran, until 2026-11-10. Then the user said: "next time, I prefer you to leverage the night and render or train whatever is needed instead of waiting for my approval. At max, I can stop the ongoing process if needed." From C2 on, a declared and reviewed step launches without a wait, and the user is told what runs.
 - **C1a ran** on 2026-11-09 (10,237 renders, audited; [F69](pipeline-fix-plan.md)): by the score −0.205 on N12 and −0.030 on BKS (undecided; crunch −0.052), against the label. The user said yes to C1b (2026-11-09, at about 8,500 renders; the built C1b counts 9,070–9,608 after its review) and to a blind A/B page of C1a against the label; both are declared before they render.
 - **C1b ran** on 2026-11-10 (8,391 renders, audited; [F70](pipeline-fix-plan.md)): by the score −0.008 on BKS and −0.004 on N12 against C1a, both undecided; on BKS most of it sits in the records whose mic changed. Its 3 kept effects are all false (N12's captures), so its keep rule is not used for labels. The C1a page is out with the user.
+- **C1a by ear (2026-11-10):** heard closer than the label, 0.68 [0.54, 0.82], p 0.020 on 14 cards (N12 0.79; BKS 0.57, undecided). By the declared rule that is "above", so C2 stands on C1a's recipe ([F69](pipeline-fix-plan.md)).
 - **Every trusted real row, by rotation (2026-11-10).** The user asked why only GOAT and BKS train, then said "Go for 3" to training and testing on every usable track by rotation. C2r and C3r are declared below, before any render or training; V-real and the reserve stay sealed.
 - **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1), `phase_c1a_outcome`, `phase_c1a_ear` (C1a by ear), `phase_c1b`, `phase_c1b_outcome`, `phase_c2`, `phase_c3`, `phase_c2b`, `phase_l1c`, `phase_c2r` and `phase_c3r`. Code: `learn/full_controls.py` (C1a), `learn/c1a_ear.py` (C1a by ear), `learn/full_controls_c1b.py` (C1b), `learn/full_controls_c2.py` (C2), `learn/full_controls_c3.py` with `pipeline_fix train-ft --c3` (C3) and `learn/full_controls_c2b.py` (C2b), tests `tests/test_full_controls.py`, `tests/test_c1a_ear.py`, `tests/test_full_controls_c1b.py`, `tests/test_full_controls_c2.py`, `tests/test_full_controls_c3.py` and `tests/test_full_controls_c2b.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
 
@@ -512,6 +513,23 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
     - At batch 2's 33%, about 15 of the 44 units would pass.
   - **A fourth batch** needs the user's yes. The fetcher found the calibrated clean and low-gain full rigs outside batches 1 to 3 mostly used up.
 
+
+### L1c's ear answers and the user's DI marks (2026-11-10)
+
+- **The gate page's answers:** 44 of 44 heard. 27 believable amp, 14 too distorted, 2 bad DI and 1 not sure. Stored as `captures3/answers-444ab6963e8b-part1.json`, and read by `capture_labels --batch 3 answers --store`.
+- **The user's DI marks, applied per DI file (Amendment, declared now).**
+  - The user marked DIs they do not want: tuned too low, or played too metal, for the model's future input.
+  - 5 cards carry such a mark: the 2 bad-DI verdicts, plus 3 notes reading "I don't like this DI" on cards answered amp, too distorted and not sure.
+  - They sit on 3 DI files:
+    - Death Of A Romantic, "The Well", ElecGtr01;
+    - Storm Of Particles, ElecGtr07;
+    - Renesans, "Less Than Nothing" take 2, GTR 1.
+  - The reason is the performance, not the card, so every unit on those 3 files leaves. That includes 9 the user passed as amp.
+  - The marks are listed in `captures3/di-marks.json`, with the cards and the user's words, and the gates read that file.
+- **No heavy page:** no passed unit is firmly driven.
+- **What passes:** 18 units on 10 DI files from 6 songs, 16 clean and 2 crunch. Dark Ride holds 9 of the 18. C4 clusters by DI file, and reports by song beside, since the source is thin.
+  - 6 of batch 3's creators also make R-all's rows (C3r, below). C4 reads their units apart.
+
 ## C2r and C3r in detail: every trusted real row, by rotation (declared 2026-11-10, before any render or training; ledger `phase_c2r`, `phase_c3r`)
 
 *Amended the same day, before any render or training, after its independent review. All five of its required changes are made: the panel's units, lags and halves; bleed judged per amp track; the DI drops within a set; the deciding pool; and C4's creator overlap. Most of its optional points are made too, noted where they land.*
@@ -689,6 +707,29 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **Training:** 34 runs, two arms of C3's 18 less R-ctl's pair, about 2.3 to 4.6 h of MPS at C3's measured 1.2 to 2.3 h an arm. It runs beside the render slots.
   - **The read:** every set is answered on both halves, as BKS and GOAT already are. That is 505 units (GOAT's 215 include its one read-only unit, as in C3), so 1,010 answers × 2 renders × 2 arms ≈ 4,040 renders, about 35 min.
   - **The panel's input build:** zero renders.
+
+
+### C2r and C3r, Amendment 1 (2026-11-10, before any C2r render): the DI scope
+
+- **Why.** On batch 3's ear page the user marked DIs "way too low (in frequency, not volume)" or played "too metal (though not necessarily too distorted)", because they "don't fit the model future input and might hurt its accuracy". Asked whether the same check should run on the DIs C3r trains on, they chose the library recordings: n12's and the panel's. GOAT's dataset DIs (and so cap1's) and BKS's are not checked.
+- **No measure stands in for the ear.** At zero renders, pYIN's low pitch percentiles and the spectral centroid or low-band share of batch 3's 18 DI files did not separate the 3 the user marked from the rest. So no threshold is drawn.
+- **The page.** `di-scope`, build f75f017f9d66.
+  - One card per library DI file: n12's 18 and the panel's 8.
+  - Each card plays the DI alone: a 10 s window from the first unit on that file, by key, levelled as the scope page levels its clips.
+  - The cards are in a seeded order (seed 20261153), and the page names no source.
+  - The answers are Keep, "Drop: too low or too metal" and Not sure. Only Keep stays in, as on the scope page.
+  - The answers are stored in the artifact's `answers/<build>` and read into `di-scope/verdicts.json`.
+- **The rule.** A DI file not kept takes every unit on it out of C2r's records, C3r's rows and every read.
+  - C2r skips such a record at zero renders, writing it as `scope_out`, when the verdicts exist by the time its shard reaches it. The n12 and panel blocks come after cap1's 121.
+  - If the verdicts are not there yet, the record is labelled anyway, and C3r drops it.
+  - C3r's training refuses until the verdicts hold all 26 answers.
+  - The folds stay as declared, with no re-deal. The drops only remove units, and the report counts them.
+  - **The panel decides only with at least 3 DI files left** (declared before any answer, after the review). The panel clusters by DI file, so with 1 file it has no interval, and with 2 its jackknife has 1 degree of freedom. With fewer than 3, the deciding pool is BKS and GOAT, and the panel is reported beside.
+  - **A changed verdict is refused, not absorbed.**
+    - `di_scope answers` refuses to overwrite an answer already stored with a different one. A later sitting may only add answers.
+    - C3r refuses if a `scope_out` record's DI is kept by the final verdicts. Such a record needs its label: it is moved aside and its shard resumed.
+  - **A verdicts file for another build** makes the waiting launcher fail with a message. It does not wait for ever.
+- **Cost.** Zero renders. At most it saves the renders of the records it drops.
 
 ## C5: the heavy clean-up re-tested on the full-control model
 - **What F68 said, and what has changed.** F68 closed the clean-up with "This clean-up is not reopened." Its verdict on the `K.space` model stands.
