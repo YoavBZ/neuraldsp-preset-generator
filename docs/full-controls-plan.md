@@ -626,7 +626,11 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
     - A test pins the within-set DI rule on n12's own folds. The report recounts every drop.
   - **The all-labels pair** trains on every row, with no drops: R-all's product model.
 - **Each epoch's mix is FTm's.** Two sources, each cycled to at least 300 rows an epoch as FT does: real amps (BKS + the panel, as `REAL_PER_EPOCH`) and captures (GOAT + cap1 + n12, as `GOAT_PER_EPOCH`). No fold's source passes 300 (fold 3's real amps: 282 + 14 = 296), so R-all and R-ctl take the same number of updates an epoch, and R-all spreads them over more distinct rows.
-  - **The cost of this mix:** in R-all, GOAT is 60 to 65% of the capture source, so each GOAT row is shown about 37% less often an epoch than in R-ctl. BKS's share falls only about 6 to 8%. A GOAT veto may then reflect the mix rather than the rows, and the write-up says so.
+  - **Within a source, no set is favoured by its place in the list** (the code review). Each set's records are shuffled (seed 20261152 with the arm, fold, run and source), and the sets are interleaved in proportion to their size before cycling. So every record is shown k or k + 1 times an epoch, and each set's showings are within one row of its share of the source.
+  - **The cost of this mix** (recounted on the drawn records):
+    - **FT_k:** each GOAT row is shown 35 to 40% less often an epoch in R-all than in R-ctl, and each BKS row 5 to 6% less.
+    - **Inner runs:** GOAT 27 to 34% less, BKS 4 to 7% less.
+    - A GOAT veto may then reflect the mix rather than the rows, and the write-up says so.
 - **Validation.** Both arms' inner runs choose E on fold j's rows of all five sets. R-ctl never trains on the new sets' rows, so this leans towards R-ctl: conservative for R-all.
 - **The recipe is C3's, unchanged** otherwise:
   - W's NS-best state per seed;
@@ -652,9 +656,10 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **The rows read, per set and pooled:**
   - **Primary:** R-all − R-ctl, per set and on the deciding pool.
   - **Beside:** R-all − S, R-ctl − S, R-all − C3 (where stored).
-  - **Intervals:** record-weighted cluster jackknife: GOAT by item, BKS by DI, cap1 and n12 by creator as N9 and N10, the panel by DI with the band-weighted reading beside. Band- or creator-weighted means beside each.
+  - **Intervals:** the cluster jackknife on the mean of cluster means, as C3's `clustered`: GOAT by item, BKS by DI, cap1 and n12 by creator as N9 and N10, the panel by DI with the band-weighted reading beside. Band- or creator-weighted means beside each.
   - **The deciding pool is BKS, GOAT and the panel, weighted equally** (the mean of the three set means), its interval from the three sets' jackknife variances. Their DI files are disjoint, so the variances are independent.
   - **The five-set pool is reported beside it.** It does not decide: cap1 and n12 lean towards R-all by design, and cap1 shares DI files with GOAT, so independent set variances would make its interval too narrow.
+  - **An incomplete read decides nothing:** if BKS, GOAT, the panel or the deciding pool has no interval, the adoption record says so and replaces nothing.
   - **Read apart, counted:**
     - units of the new sets whose DI file is among W's plugin training rows (`score_ear.w_dis()`: 4 n12 units on 2 files). BKS is left out of this split: all 120 of its read units sit on W's DIs, as in every earlier BKS read;
     - H4's real_out units (17 GOAT, 6 BKS): kept in every training row and every main read row, as in C3, with a reading without them beside;
