@@ -211,3 +211,49 @@ def test_w_di_units_are_read_apart_only_in_the_new_sets():
     assert not R3._apart(("c", "b|pr12", 0.0), units, wd)
     assert R3._apart(("c", "n|pr12", 0.0), units, wd)
     assert not R3._apart(("c", "g|pr12", 0.0), units, wd)                    # real_out stays in the main rows
+
+
+# --- the source mix and an incomplete read (the code review) ------------------------------------------------------------
+
+def test_each_sets_showings_match_its_share_of_the_source_within_one_row_whatever_the_order():
+    import itertools
+    for sizes in ((121, 52, 18), (130, 59, 21), (219, 13), (5, 3), (282, 14), (1, 1, 1), (200, 99, 1)):
+        recs = [{"set": f"s{i}", "unit": f"s{i}/{j}"} for i, n in enumerate(sizes) for j in range(n)]
+        for perm in itertools.permutations(range(len(sizes))):
+            order = [r for i in perm for r in recs if r["set"] == f"s{i}"]
+            got = R3.showings(R3.mixed(order, R3.mix_seed("all", 0, False, "captures")))
+            tot = sum(got.values())
+            assert tot == max(300, len(recs))
+            for i, n in enumerate(sizes):
+                assert abs(got[f"s{i}"] - tot * n / len(recs)) <= 1, (sizes, perm, i)
+
+
+def test_the_mix_is_seeded_per_run_and_source_and_keeps_every_record():
+    recs = [{"set": s, "unit": f"{s}/{j}"} for s in ("goat", "cap1") for j in range(20)]
+    a = R3.mixed(recs, R3.mix_seed("all", 0, False, "captures"))
+    assert a == R3.mixed(recs, R3.mix_seed("all", 0, False, "captures"))
+    assert a != R3.mixed(recs, R3.mix_seed("all", 1, False, "captures"))
+    assert sorted(r["unit"] for r in a) == sorted(r["unit"] for r in recs)
+    one = [r for r in recs if r["set"] == "goat"]                              # one set: a seeded shuffle alone
+    assert sorted(r["unit"] for r in R3.mixed(one, "x")) == sorted(r["unit"] for r in one)
+
+
+def test_adoption_does_not_decide_on_an_incomplete_read():
+    good = {s: _row(-0.02) for s in R3.SETS}
+    for bad in ({"mean": None}, {"mean": -0.1, "lo90": None, "hi90": None, "clusters": 1}, _row(-0.1, clusters=1)):
+        for s in ("bks", "goat", "panel"):
+            a = R3.adoption(dict(good, **{s: bad}))
+            assert a["replaces_c3"] is None and not a["complete"] and s in a["why"]
+    a = R3.adoption(dict(good, cap1={"mean": None}))                            # a non-deciding set: still decided
+    assert a["replaces_c3"] is True and a["five_set_pool"] is None and a["why"] is None
+
+
+def test_c3s_n12_scores_are_refused_clearly_when_their_side_read_is_missing(tmp_path, monkeypatch):
+    from learn import score_ear as SE
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    assert "no N12 scores for C3-ftm" in R3.c3_n12_refusal("C3-ftm")
+    d = SE.wide_dir() / SE.H4_DIR / "C3-ftm"
+    d.mkdir(parents=True)
+    (d / "x.json").write_text("{}")
+    assert R3.c3_n12_refusal("C3-ftm") is None
+    assert "P2b-ftm" in R3.c3_n12_refusal(P.FTM_BASE)

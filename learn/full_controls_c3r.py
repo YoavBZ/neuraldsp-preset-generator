@@ -34,6 +34,7 @@ DECIDING = ("bks", "goat", "panel")                    # with the pooled row, th
 BASE = {("all", "c3"): "C3r-all", ("ctl", "c3"): "C3r-ctl", ("all", "ftm"): "C3r-allK", ("ctl", "ftm"): "C3r-ctlK"}
 FOLDS = 4
 PER_EPOCH = 300                                        # each source cycled to at least this, as FT's REAL/GOAT_PER_EPOCH
+MIX_SEED = 20261152                                    # each source's order before cycling: one seed per run and source
 OUT = "c3r"
 
 
@@ -143,6 +144,40 @@ def stored_source(label):
     return None if label is None else {"kind": "stored", "label": label}
 
 
+def mixed(recs, seed):
+    """A source's records in the order its cycling shows them: each set's records shuffled with `seed`, then the sets
+    interleaved in proportion (the j-th of a set's n at position (j + 0.5) / n, ties in set order), so every prefix
+    holds each set within one record of its share. Cycled to 300 (`cycled_to`), each record is shown k or k + 1 times
+    an epoch and each set's showings are within one row of its share of the records, whatever the sets' order in the
+    list. (FTm's and C3's sources hold one set each; their own paths are unchanged.)"""
+    import random
+
+    by, order = {}, []
+    for r in recs:
+        if r["set"] not in by:
+            order.append(r["set"])
+        by.setdefault(r["set"], []).append(r)
+    keyed = []
+    for si, s_ in enumerate(order):
+        xs = list(by[s_])
+        random.Random(f"{seed}|{s_}").shuffle(xs)
+        keyed += [((j + 0.5) / len(xs), si, j, x) for j, x in enumerate(xs)]
+    return [x for *_, x in sorted(keyed, key=lambda t: t[:3])]
+
+
+def mix_seed(arm, k, inner, source):
+    """The fixed seed of one run's source order: from MIX_SEED, per (arm, fold, inner, source)."""
+    return f"{MIX_SEED}|{arm}|{k}|{bool(inner)}|{source}"
+
+
+def showings(recs, n=PER_EPOCH):
+    """How often each set is shown an epoch when `recs` (in order) are cycled to at least n. -> {set: showings}."""
+    out = {}
+    for r in cycled_to(recs, n):
+        out[r["set"]] = out.get(r["set"], 0) + 1
+    return out
+
+
 def cycled_to(recs, n=PER_EPOCH):
     """A source's training records cycled to at least n (a longer list kept whole), as FT's `dfix_records`."""
     from learn import pipeline_fix as P
@@ -182,8 +217,13 @@ def adoption(rows):
     five = pooled({s: rows[s] for s in SETS}) if all(rows.get(s) for s in SETS) else None
     worse = {s: C3.shown_worse(rows.get(s)) for s in DECIDING}
     worse["deciding_pool"] = C3.shown_worse(dp)
-    return {"deciding_pool": dp, "five_set_pool": five, "shown_worse": worse, "replaces_c3": not any(worse.values()),
-            "complete": dp is not None}
+    missing = [s for s in DECIDING if C3.se_of(rows.get(s)) is None]
+    if dp is None or dp.get("lo90") is None or dp.get("hi90") is None:
+        missing.append("deciding_pool")
+    why = None if not missing else (f"no interval on {', '.join(missing)}: the read is incomplete, so the rule does "
+                                    "not decide")
+    return {"deciding_pool": dp, "five_set_pool": five, "shown_worse": worse,
+            "replaces_c3": None if missing else not any(worse.values()), "complete": not missing, "why": why}
 
 
 # --- the state (zero renders) ---------------------------------------------------------------------------------------------
@@ -398,6 +438,7 @@ def rows_for(arm, k, inner, st=None):
         merged.update(st["units"][s])
     label_of = C3.label_fn(st["sources"])
     rows, held_rows = [], []
+    trr = {name: mixed(v, mix_seed(arm, k, inner, name)) for name, v in trr.items()}   # no set favoured by its place
     for name, row0 in (("real_amps", P.REAL_ROW0), ("captures", P.GOAT_ROW0)):
         rows += P.record_rows(cycled_to(trr[name]), merged, row0, label_of)
         held_rows += P.record_rows(hdr[name], merged, row0 + P.DFIX_HELD0, label_of)
@@ -410,6 +451,7 @@ def rows_for(arm, k, inner, st=None):
             "dropped_units": {s: len(v) for s, v in by_set(dropped).items()},
             "train_records": {n: len(v) for n, v in trr.items()},
             "train_rows": {n: len(cycled_to(v)) for n, v in trr.items()},
+            "showings": {n: showings(v) for n, v in trr.items()},
             "held_records": {n: len(v) for n, v in hdr.items()}}
     return rows, held_rows, info
 
@@ -660,14 +702,32 @@ def c3_judge(ru, tag):
         p = P.out_dir() / P.REAL_DIR / "judge" / tag / f"{k}.json"
     elif ru["set"] == "goat":
         p = P.out_dir() / P.GOAT_DIR / "judge" / tag / f"{k}.json"
-    elif ru["set"] == "n12":
-        j = SE.h4_judged(tag, SE.slug_of(ru["unit"])) if hasattr(SE, "h4_judged") else None
+    elif ru["set"] == "n12":                           # N12's side read: one direction, its held half
+        slug = SE.slug_of(ru["unit"])
+        if tag == P.FTM_BASE:                          # FTm's own N12 renders (ear-wide/renders/<slug>/rec.json)
+            q = SE.wide_dir() / "renders" / slug / "rec.json"
+            if not q.exists():
+                return None
+            r = json.loads(q.read_text())
+            v = (r.get("judge") or {}).get("FTm")
+            return None if v is None else {("B" if r["held"] == "A" else "A"): {r["held"]: v}}
+        j = SE.h4_judged(tag, slug)
         if not j:
             return None
         return {j["search"]: {j["held"]: j["judge"]}}
     else:
         return None
     return json.loads(p.read_text())["judge"] if p.exists() else None
+
+
+def c3_n12_refusal(tag):
+    """Why C3's N12 scores can't be read for `tag`, or None: a C3 tag's side read writes ear-wide/h4/<tag>/ (C3's read
+    launcher, before its decision); FTm's are N12's own renders."""
+    from learn import pipeline_fix as P
+    from learn import score_ear as SE
+
+    d = SE.wide_dir() / ("renders" if tag == P.FTM_BASE else SE.H4_DIR) / ("" if tag == P.FTM_BASE else tag)
+    return None if d.is_dir() and any(d.iterdir()) else f"{d}: no N12 scores for {tag} (C3's side read has not run)"
 
 
 def pair_rows(st, units, val_a, val_b, set_):
@@ -705,7 +765,10 @@ def cmd_report(_args):
                 judge[a][(ru["unit"], ru["amp"])] = json.loads(p.read_text())["judge"]
     wd = set(SE.w_dis())
     real_out = set(P.h4_exclusions()["real_out"])
-    c3tag = st["answer_tag"] if st["recipe"] == "c3" else "P2b-ftm"
+    c3tag = st["answer_tag"] if st["recipe"] == "c3" else P.FTM_BASE
+    why = c3_n12_refusal(c3tag)
+    if why:
+        raise SystemExit(why)
 
     def val(arm):
         return lambda ru, sh, h: half_value(judge[arm].get((ru["unit"], ru["amp"])), sh, h)
@@ -757,7 +820,7 @@ def cmd_report(_args):
         rs = out["rows"][name]
         print(name, {s: (rs[s].get("mean"), rs[s].get("lo90"), rs[s].get("hi90")) for s in SETS},
               "deciding pool", rs.get("deciding_pool"), "five-set pool", rs.get("five_set_pool"))
-    print("ADOPTION", json.dumps({k: out["adoption"][k] for k in ("shown_worse", "replaces_c3", "complete")}))
+    print("ADOPTION", json.dumps({k: out["adoption"][k] for k in ("shown_worse", "replaces_c3", "complete", "why")}))
 
 
 def player_seen(st, units):
