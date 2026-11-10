@@ -177,6 +177,6 @@ def test_the_training_launcher_stops_on_a_verdicts_file_that_will_never_be_ready
         r = subprocess.run(["zsh", "-c", script], capture_output=True, text=True)
         assert r.returncode == want_exit, (rc, r.returncode, r.stderr)
         if want_log:
-            assert want_log in log.read_text() and "DI SCOPE STATE 2" in log.read_text()
+            assert want_log in log.read_text() and f"DI SCOPE STATE {rc}" in log.read_text()
         else:
             assert log.read_text() == ""
