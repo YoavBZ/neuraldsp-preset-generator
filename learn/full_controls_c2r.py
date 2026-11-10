@@ -176,6 +176,16 @@ def panel_records(units, halves, ceiling, amps, real_out, cap, every=None):
     return out, left
 
 
+def panel_kept_units():
+    """The panel units C2r labels (zero renders): 5D's lagged read units less every unit on a high-bleed amp track, as
+    `panel_records` keeps them, with their 5D lag. -> [unit dict]."""
+    from learn import pipeline_fix as P
+
+    units, _ = P.panel_lagged_units()
+    bad = bleed_tracks(P.panel_units(), P.PANEL_BLEED_MAX_DB)
+    return [u for u in units if u["amp_file"] not in bad]
+
+
 def order(records):
     """By block (`BLOCKS`), then by key."""
     return sorted(records, key=lambda r: (BLOCKS.index(r["block"]), r["key"]))

@@ -6129,6 +6129,13 @@ def cmd_build_dfix_real(args):
             require("phase_n10")
             CL.BATCH = CL.BATCH2
             units = [(u["unit"], "goat", u) for u in sorted(CL.trusted_units()[0], key=lambda u: u["unit"])]
+    if getattr(args, "panel", False):              # C3r: C2r's panel units read as GOAT units do, pool backings, by class
+        from learn import full_controls_c2r as R
+
+        require("phase_c3r")
+        if args.captures or args.reads_only:
+            raise SystemExit("--panel builds the panel's units alone")
+        units = [(u["unit"], "goat", u) for u in sorted(R.panel_kept_units(), key=lambda u: u["unit"])]
     mine = [u for q, u in enumerate(units) if q % n == kk]
     lends, t0, done = {}, time.time(), 0
     for m, (unit, kind, prt) in enumerate(mine):
@@ -6188,7 +6195,8 @@ def cmd_build_dfix_real(args):
             done += 1
         if m % 10 == 0:
             print(f"unit {m + 1}/{len(mine)}: {done} built; {(time.time() - t0) / max(1, done):.2f} s each", flush=True)
-    tag = f"captures{'2' if batch == 2 else ''}-" if args.captures else "reads-" if args.reads_only else ""
+    tag = (f"captures{'2' if batch == 2 else ''}-" if args.captures else "reads-" if args.reads_only
+           else "panel-" if getattr(args, "panel", False) else "")
     save(out_dir() / DFIX_DIR / f"lends-{tag}{kk}-of-{n}.json",
          {"rule": cmd_build_dfix_real.__doc__, "pool_sha256": psha, "units": lends})
     fb = sorted(u for u, r in lends.items() if r["kind"] == "bks" and r["rule"] == "class")
@@ -7087,6 +7095,7 @@ def cmd_train_ft(args):
     k, inner, seed = args.real_fold, bool(args.inner), args.seed
     masked = bool(getattr(args, "masked", False))
     c3 = bool(getattr(args, "c3", False))
+    c3r = getattr(args, "c3r", None)
     frac, shuf = float(getattr(args, "real_frac", 1.0)), bool(getattr(args, "shuffle_real", False))
     curve = frac < 1 or shuf
     base = FTM_BASE if masked else FT_BASE
@@ -7101,6 +7110,18 @@ def cmd_train_ft(args):
         c3src = C3.sources(c2)
         base = C3.C3_BASE
         c3info = {"c2_sha256": c2["sha256"], "c2_written": c2["written"], "sources": C3.source_counts(c3src)}
+    r3st = None
+    if c3r is not None:                                # C3r: C3's recipe on every trusted real row, by rotation
+        from learn import full_controls_c3 as C3
+        from learn import full_controls_c3r as R3
+
+        require(R3.PHASE)
+        if c3 or not masked or curve or getattr(args, "h4", None) is not None:
+            raise SystemExit("--c3r trains C3's recipe only: --masked, no --c3, no --h4, no --real-frac or --shuffle-real")
+        if c3r == "ctl" and k is None:
+            raise SystemExit("R-ctl has no all-labels pair: its rows are C3's, so it is no candidate")
+        r3st = R3.state()                              # refuses until C2 and C2r are complete and C3's decision exists
+        base = R3.base_of(c3r, r3st)
     if masked:
         require("phase_night2")
         if k is None:
@@ -7154,6 +7175,8 @@ def cmd_train_ft(args):
             raise SystemExit("the inner runs used another rate or cap")
         if c3 and any((r_.get("c3") or {}).get("c2_sha256") != c3info["c2_sha256"] for r_ in allin):
             raise SystemExit(f"{name}: an inner run was made on another C2 state")
+        if c3r is not None and any((r_.get("c3r") or {}).get("c3r_sha256") != r3st["sha256"] for r_ in allin):
+            raise SystemExit(f"{name}: an inner run was made on another C2, C2r or C3 state")
         inners = [r_ for r_ in allin if k is None or (r_["real_fold"], r_["seed"]) == (k, seed)]
         epochs = ft_epoch_of(inners)
     e = require("phase_3")
@@ -7171,8 +7194,14 @@ def cmd_train_ft(args):
     if h4 is not None and held != wrec["held_ids"]:
         raise SystemExit(f"{pre}-{seed}: selected on other NS rows than this arm's")
     doubled = doubled_ids() if dropped["doubles"] == "fixed" else frozenset()
-    rrows, real_held, info = ft_real_rows(k, inner, h4x["real_out"] if h4x else frozenset(),
-                                          **({"label_of": C3.label_fn(c3src)} if c3 else {}))
+    if c3r is not None:                                # C3r's rows: its folds, drops and two-source mix
+        rrows, real_held, info = R3.rows_for(c3r, k, inner, r3st)
+        bad = R3.check_rows(c3r, k, inner, rrows, real_held, r3st)
+        if bad:
+            raise SystemExit(f"{name}: {bad[0]} ({len(bad)} problems)")
+    else:
+        rrows, real_held, info = ft_real_rows(k, inner, h4x["real_out"] if h4x else frozenset(),
+                                              **({"label_of": C3.label_fn(c3src)} if c3 else {}))
     if h4x is not None:                                # no real_out unit in the training rows or any held set
         if {r["real"] for r in rrows + real_held} & h4x["real_out"]:
             raise SystemExit(f"{name}: a real_out unit among its real rows")
@@ -7189,6 +7218,8 @@ def cmd_train_ft(args):
     data = DfixData(rows, rung_path(croot, "b", doubled), set(plugin_tr), {r["i"] for r in rrows}, 1.0)
     if c3:
         C3.mask_rows(data.Y, rows, A_menu_S(), C3.keys_fn(c3src))
+    elif c3r is not None:
+        C3.mask_rows(data.Y, rows, A_menu_S(), R3.keys_fn(r3st))
     elif masked:
         mask_searched(data.Y, rows, A_menu_S())
     h4_info = None
@@ -7208,7 +7239,7 @@ def cmd_train_ft(args):
                    "train_units": sorted({r["real"] for r in rrows}),
                    "plugin_out": len(h4x["plugin_out"][h4]) if h4 in H4_W else 0,
                    "ns_out": len(h4x["ns_out"][h4]) if h4 in H4_W else 0}
-    elif not inner and frac == 1:                      # every unit loaded: D_fix_k's (or D_fix's) inputs exactly
+    elif not inner and frac == 1 and c3r is None:      # every unit loaded: D_fix_k's (or D_fix's) inputs exactly
         ref = dfix_run_name(k)
         want = json.loads((od / f"{ref}-{seed}.json").read_text())["dfix"]["inputs_sha256"]
         if data.inputs_sha256 != want:
@@ -7219,7 +7250,7 @@ def cmd_train_ft(args):
     held_units = {r["real"] for r in real_held}
     if held_units & {r["real"] for r in rrows}:
         raise SystemExit("a held unit among the training rows")
-    if inner:                                          # no fold-k unit anywhere; every held unit is fold j's
+    if inner and c3r is None:                          # no fold-k unit anywhere; every held unit is fold j's (C3r: above)
         brecs, by_unit, folds = real_labels(2)
         _, gunits, _ = goat_labels()
 
@@ -7243,14 +7274,16 @@ def cmd_train_ft(args):
         watch = {"train_real": sub, "real_val": rh}
         net, final, best_state, best_ep, best = fit(data, ti, watch, "real_val", seed, dev, log, epochs, every=1,
                                                     patience=FT_PATIENCE, min_gain=FT_MIN_FALL, init=init, lr=lr,
-                                                    smooth=FT_SMOOTH, per_head=c3)
+                                                    smooth=FT_SMOOTH, per_head=c3 or c3r is not None)
     else:
         watch = {"train_real": sub, held_name: hi}
         if len(rh):                                    # fold k's real loss: logged, never `fit`'s tracked set
             watch["real_held"] = rh
         net, final, best_state, best_ep, best = fit(data, ti, watch, None, seed, dev, log, epochs,
-                                                    every=1 if c3 else FT_EVERY, init=init, lr=lr, per_head=c3)
-    phase_of = "phase_c3" if c3 else H4 if h4 else "phase_night2" if masked else "phase_ft"
+                                                    every=1 if (c3 or c3r is not None) else FT_EVERY, init=init, lr=lr,
+                                                    per_head=c3 or c3r is not None)
+    phase_of = ("phase_c3r" if c3r is not None else "phase_c3" if c3 else H4 if h4 else "phase_night2" if masked
+                else "phase_ft")
     out = {"plan": PLAN, "test": name, "ledger": f"{LEDGER_ID} {phase_of}", "rung": "b",
            "seed": seed, "real_fold": k, "masked": masked, "real_frac": frac, "shuffle_real": shuf, "inner": inner, "lr": lr, "cap": cap, "init": {"run": f"{pre}-{seed}", "which": "best",
                                                           "sha256": wrec["model_sha256"]["best"]},
@@ -7265,6 +7298,8 @@ def cmd_train_ft(args):
         out["h4"] = h4_info
     if c3info is not None:
         out["c3"] = c3info
+    if c3r is not None:
+        out["c3r"] = dict(info, base=base, inputs_sha256=data.inputs_sha256)
     od.mkdir(parents=True, exist_ok=True)
     if inner:
         out["dfix"]["val_fold"] = (k + 1) % REAL_FOLDS
@@ -8037,6 +8072,7 @@ def main(argv=None):
     ap.add_argument("--shard", type=lambda v: tuple(int(z) for z in v.split("/")), default=(0, 1))
     ap.add_argument("--reads-only", action="store_true", help="build-dfix-real: only the read units with no row")
     ap.add_argument("--captures", action="store_true", help="build-dfix-real: the first capture batch's units (N6)")
+    ap.add_argument("--panel", action="store_true", help="build-dfix-real: C3r's panel units (C2r's 18)")
     ap.add_argument("--capture-batch", type=int, choices=(1, 2), default=1, help="build-dfix-real --captures: N10's second batch")
     ap.add_argument("--rung", choices=tuple(RUNG_KINDS), default="a")
     ap.add_argument("--epochs", type=int, default=1500)
@@ -8081,6 +8117,8 @@ def main(argv=None):
     ap.add_argument("--inner", action="store_true", help="train-ft: fold k's epoch-choice run")
     ap.add_argument("--masked", action="store_true", help="train-ft: N1, heads outside the search masked on real rows")
     ap.add_argument("--c3", action="store_true", help="train-ft: C3, FTm's recipe on C2's labels (with --masked)")
+    ap.add_argument("--c3r", choices=("all", "ctl"), default=None,
+                    help="train-ft: C3r's arm, C3's recipe on every trusted real row by rotation (with --masked)")
     ap.add_argument("--real-frac", type=float, default=1.0, help="train-ft: N3, this share of the training real rows")
     ap.add_argument("--shuffle-real", action="store_true", help="train-ft: N3, labels shuffled within amp and class")
     ap.add_argument("--ft-lr", type=float, default=None)       # train-ft: a declared fallback only
