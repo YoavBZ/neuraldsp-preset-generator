@@ -620,7 +620,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **R-ctl's drops are R-all's,** so the held and validation sets are identical.
   - **Counted at zero renders on the final folds** (the review's recount, with the panel's 18): FT_k keeps 415 to 507 rows, against C3's 354 to 450.
     - GOAT drops 36, 36, 35 and 30 rows in folds 0 to 3.
-    - cap1 drops 36, 49, 40 and 31.
+    - cap1 drops 34, 46, 30 and 31, all by DI: once n12's shared creators take batch 1's folds, no row is dropped by creator.
     - n12 drops 7, 2, 3 and 7, all by DI.
     - A test pins the within-set DI rule on n12's own folds. The report recounts every drop.
   - **The all-labels pair** trains on every row, with no drops: R-all's product model.
