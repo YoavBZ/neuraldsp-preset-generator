@@ -590,7 +590,8 @@ def wide_answers(folds, stored_tag, tag):
     from learn import pipeline_fix as P
 
     some = BR.read_units()[::12]
-    got = BR.net_answers(folds, some)
+    hold = P.answer_hold(tag)                          # a C3 tag's per-control hold; else None (`K.space`, FTm's)
+    got = BR.net_answers(folds, some) if hold is None else BR.net_answers(folds, some, hold)
     for w in BR.SETS:
         want = BR.stored_answers(w, stored_tag)
         bad = [k for k in got[w] if got[w][k] != want[k]]
@@ -607,7 +608,8 @@ def wide_answers(folds, stored_tag, tag):
         s8, ls = P.dfix_backed(u["unit"])[search]
         x, c = DS.model_input(s8, s8, ls, ls, search, u["amp"], u["cls"], "Dstem")
         r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
-        st = P.hold_outside_space(F.answer_settings(u["amp"], S, r["a2"], r["sw_p"], r["mics"]), S, u["amp"])
+        st = F.answer_settings(u["amp"], S, r["a2"], r["sw_p"], r["mics"])
+        st = P.hold_outside_space(st, S, u["amp"]) if hold is None else P.hold_outside_space(st, S, u["amp"], hold)
         out[u["unit"]] = {search: {"select": sel, "settings": LO.sdict(st)}}
     path = wide_dir() / "answers" / f"{tag}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -823,13 +825,17 @@ H4_DIR = "h4"                                        # ear-wide/h4/<tag>/<slug>.
 
 
 def h4_tags(tags):
-    """`--tags` as H4 tags (`pipeline_fix.H4_FT_TAGS`); any other refuses."""
+    """`--tags` as H4 tags (`pipeline_fix.H4_FT_TAGS`) or C3 tags (`pipeline_fix.C3_TAGS`, which need `phase_c3`); any
+    other refuses."""
     from learn import pipeline_fix as P
 
     got = [t for t in tags.split(",") if t]
-    bad = [t for t in got if t not in P.H4_FT_TAGS]
+    ok = P.H4_FT_TAGS | P.C3_TAGS
+    bad = [t for t in got if t not in ok]
     if bad or not got:
-        raise SystemExit(f"--tags takes H4's tags only ({', '.join(sorted(P.H4_FT_TAGS))}): {bad or 'none given'}")
+        raise SystemExit(f"--tags takes H4's tags only, or C3's ({', '.join(sorted(ok))}): {bad or 'none given'}")
+    if set(got) & P.C3_TAGS:
+        P.require("phase_c3")
     return got
 
 
