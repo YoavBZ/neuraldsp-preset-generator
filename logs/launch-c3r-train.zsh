@@ -24,11 +24,17 @@ SEEDS=(20261042 20261043)
 caffeinate -i -w $$ &
 echo "launcher $$ $(date)" >> ${PIDS}
 note() { echo "$1 $(date)" >> ${L}; }
-scope_ready() {  # Amendment 1: the DI scope's verdicts hold all the page's answers (di_scope.complete_refusal)
-  ${PY} -c "import sys; from learn import di_scope as D; sys.exit(0 if D.complete_refusal() is None else 1)" > /dev/null 2>&1
+scope_ready() {  # Amendment 1: `di_scope ready` exits 0 complete, 3 not yet, 2 never as it stands (another build's file)
+  ${PY} -m learn.di_scope ready > ${LOGS}/c3r-scope-ready.log 2>&1
+  local rc=$?
+  if (( rc == 2 )); then
+    note "FAILED: the DI scope's verdicts will not complete as they stand ($(tail -1 ${LOGS}/c3r-scope-ready.log))"
+    exit 1
+  fi
+  (( rc == 0 ))
 }
 note "waiting for C2r, C3's decision and the DI scope's answers"
-until [[ $(tail -1 ${LOGS}/c2r.log 2>/dev/null) == done* && -f ${PF}/c3/decision.json ]] && scope_ready; do
+until scope_ready && [[ $(tail -1 ${LOGS}/c2r.log 2>/dev/null) == done* && -f ${PF}/c3/decision.json ]]; do
   [[ $(tail -1 ${LOGS}/c2r.log 2>/dev/null) == *FAILED* ]] && { note "C2r failed; C3r does not train"; exit 1; }
   [[ $(tail -1 ${LOGS}/c3-read.log 2>/dev/null) == *FAILED* ]] && { note "C3's read failed: no decision; C3r does not train"; exit 1; }
   sleep 60

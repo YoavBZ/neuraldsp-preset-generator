@@ -5,6 +5,7 @@ it out of C2r's records, C3r's rows and every read. Zero renders.
 
     .venv/bin/python -m learn.di_scope page [--out DIR]     # the page (PF/di-scope by default; refuses over a key)
     .venv/bin/python -m learn.di_scope answers --store FILE  # the Artifact's stored answers/<build> -> di-scope/verdicts.json
+    .venv/bin/python -m learn.di_scope ready                 # exit 0 complete, 3 not yet, 2 never as it stands
 
 The page was published as build f75f017f9d66 from the scratch builder this module ports; `page` reproduces its ids and
 build hash. The user's choice ("Library recordings"): GOAT's dataset DIs (and so cap1's) and BKS's are not checked.
@@ -175,6 +176,9 @@ def cmd_answers(args):
     if ex.get("build") != key["build"]:
         raise SystemExit(f"{args.store}: build {ex.get('build')}, this page's is {key['build']}")
     got = di_verdicts(ex.get("answers") or {}, key["items"])
+    vp = d / "verdicts.json"
+    if vp.exists():                                    # a later sitting may only add answers, never change one
+        got = merged_verdicts(json.loads(vp.read_text()), got, key["build"])
     rec = {"page": DIR, "build": key["build"], "store": str(args.store), "verdicts": got,
            "answered": len(got), "cards": len(key["items"]), "complete": len(got) == len(key["items"]),
            "dropped": sorted(di for di, v in got.items() if v != "keep"), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
@@ -183,6 +187,39 @@ def cmd_answers(args):
     for v in got.values():
         c[v] = c.get(v, 0) + 1
     print(f"DI SCOPE ANSWERS: {len(got)} of {len(key['items'])} heard; {c}; dropped {len(rec['dropped'])} DI files")
+
+
+def merged_verdicts(old, new, build):
+    """A stored verdicts record and a new sitting's {di: verdict} -> every answer: the stored ones and the new. Refuses a
+    stored answer changed (a scope_out record already written on it would go stale) and another build's record."""
+    if old.get("build") != build:
+        raise SystemExit(f"verdicts.json is build {old.get('build')}'s, this page's is {build}: move it aside first")
+    prev = old.get("verdicts") or {}
+    changed = sorted(di for di, v in new.items() if di in prev and prev[di] != v)
+    if changed:
+        raise SystemExit(f"{len(changed)} stored answers would change (first {changed[0]}: {prev[changed[0]]} -> "
+                         f"{new[changed[0]]}): a later sitting may only add answers")
+    return {**prev, **new}
+
+
+def ready_state():
+    """The scope's state for a waiting launcher: (0, why) complete, (3, why) not yet (missing or partial), (2, why) never
+    on its own (another build's verdicts, or an unreadable file): the launcher stops and says why."""
+    try:
+        v = verdicts()
+    except SystemExit as e:
+        return 2, str(e)
+    except (ValueError, OSError) as e:
+        return 2, f"{DIR}/verdicts.json unreadable: {e}"
+    why = complete_refusal(v)
+    return (0, f"complete: {N_CARDS} answers for build {BUILD}") if why is None else (3, why)
+
+
+def cmd_ready(_args):
+    """Exit 0 when the verdicts hold every answer, 3 while they don't yet, 2 when they never will as they stand."""
+    code, why = ready_state()
+    print(f"DI SCOPE {'READY' if code == 0 else 'WAITING' if code == 3 else 'REFUSED'}: {why}", flush=True)
+    raise SystemExit(code)
 
 
 def verdicts():
@@ -228,6 +265,7 @@ def main(argv=None):
     a = sub.add_parser("answers")
     a.add_argument("--store", required=True, help="the Artifact's stored answers/<build>, as a file")
     a.set_defaults(fn=cmd_answers)
+    sub.add_parser("ready").set_defaults(fn=cmd_ready)
     args = ap.parse_args(argv)
     args.fn(args)
 

@@ -206,10 +206,22 @@ def pooled(rows):
     return {"mean": m, "lo90": m - h, "hi90": m + h, "df": df, "sets": n}
 
 
-def deciding_sets(panel_left):
-    """The sets whose rows decide: BKS, GOAT and the panel; BKS and GOAT when the DI scope left no panel unit
-    (Amendment 1)."""
-    return DECIDING if panel_left else ("bks", "goat")
+PANEL_MIN_DIS = 3                    # the panel decides only with this many DI files left (it clusters by DI file: with
+#                                      1 it has no interval, with 2 its jackknife has 1 df)
+
+
+def deciding_sets(panel_dis):
+    """The sets whose rows decide (Amendment 1, after its review): BKS, GOAT and the panel while at least PANEL_MIN_DIS of
+    the panel's DI files are left after the scope; BKS and GOAT otherwise, the panel reported beside. panel_dis: the
+    number of panel DI files read."""
+    return DECIDING if panel_dis >= PANEL_MIN_DIS else ("bks", "goat")
+
+
+def stale_scope_out(records, outputs, dropped):
+    """C2r records written `scope_out` whose DI the final verdicts keep: each needs its label, so C3r refuses until it is
+    moved aside and its shard resumed. records: C2r's; outputs: {key: output}; dropped: the DIs not kept. -> [key]."""
+    return sorted(r["key"] for r in records if (outputs.get(r["key"]) or {}).get("scope_out")
+                  and outputs[r["key"]]["scope_out"]["di"] not in dropped)
 
 
 def adoption(rows, deciding=DECIDING):
@@ -302,6 +314,14 @@ def state(partial=False):
     if why and not partial:
         raise SystemExit(why)
     dropped = DS.dropped_of(scope_v) if scope_v else frozenset()
+    stale = stale_scope_out(c2r["records"], c2r["outputs"], dropped)
+    if stale and not partial:
+        from learn import full_controls_c2r as R
+
+        first = next(r for r in c2r["records"] if r["key"] == stale[0])
+        raise SystemExit(f"{len(stale)} C2r records are scope_out but the final verdicts keep their DI (first "
+                         f"{stale[0]}): move each aside (never delete), e.g. {R.out_path(first)}, and resume its shard "
+                         "(c2r-search --shard k/3) so it is labelled; then c2r-report")
     brecs, by_unit, bfolds = P.real_labels(2)
     grecs, gunits, _ = P.goat_labels()
     cu1 = {u["unit"]: u for u in CL.units_of()}
@@ -389,7 +409,7 @@ def state(partial=False):
            "rec_set": rec_set, "units": units, "entries": ents, "band_folds": fb, "n12_folds": f2,
            "measurement_only_lifted": {"phase": PHASE, "records": sorted(lifted)},
            "scope": {"build": (scope_v or {}).get("build"), "complete": why is None, "dropped_dis": sorted(dropped),
-                     "out": scope_out},
+                     "out": scope_out, "stale_scope_out": stale},
            "records": {"bks": brecs, "goat": grecs}, "sha256": None if partial else hashlib.sha256(
                (c2["sha256"] + c2r["sha256"] + json.dumps(dec, sort_keys=True)
                 + json.dumps((scope_v or {}).get("verdicts"), sort_keys=True)).encode()).hexdigest()}
@@ -812,7 +832,8 @@ def cmd_report(_args):
         return half_value(c3_judge(ru, c3tag), sh, h)
 
     seen_player = player_seen(st, units)
-    deciding = deciding_sets(any(ru["set"] == "panel" for ru in units))
+    panel_dis = len({ru["prt"]["di"] for ru in units if ru["set"] == "panel"})
+    deciding = deciding_sets(panel_dis)
     pairs = {"R-all - R-ctl": (val("all"), val("ctl")), "R-all - S": (val("all"), s_val),
              "R-ctl - S": (val("ctl"), s_val), f"R-all - {c3tag}": (val("all"), c3_val)}
     keep = ("mean", "lo90", "hi90", "clusters", "clusters_negative", "part_weighted", "parts", "parts_negative")
@@ -847,7 +868,7 @@ def cmd_report(_args):
         rs["five_set_pool"] = pooled({s: rs[s] for s in SETS}) if all(rs[s].get("mean") is not None
                                                                      for s in SETS) else None
     out["adoption"] = adoption({s: out["rows"]["R-all - R-ctl"][s] for s in SETS}, deciding)
-    out["scope"] = st["scope"]
+    out["scope"] = dict(st["scope"], panel_dis_read=panel_dis, deciding_sets=list(deciding))
     out["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     P.save(c3r_dir() / "report.json", out)
     for name in pairs:

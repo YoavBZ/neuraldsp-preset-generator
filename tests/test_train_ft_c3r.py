@@ -259,3 +259,25 @@ def test_a_dropped_library_unit_is_in_no_row_and_no_held_set(base, monkeypatch):
     assert "n12/u1" not in d["held_units"] and "panel/u1" not in d["held_units"]
     assert d["held_units"] == sorted(f"{s}/u1" for s in ("bks", "goat", "cap1"))
     assert out == {"n12": ["n12/u1"], "panel": ["panel/u1"]}
+
+
+def test_train_ft_refuses_while_a_scope_out_records_di_is_kept_by_the_final_verdicts(base, monkeypatch):
+    from learn import di_scope as DS
+    _c2(base, monkeypatch)
+    recs = [{"set": "n12", "block": "n12", "key": "cap/n#ac20|ac20", "unit": "cap/n#ac20", "amp": "ac20",
+             "c1a_output": str(base / "c1a.json")}]
+    (base / "c1a.json").write_text(json.dumps({"set": "n12", "measurement_only": True}))
+    (base / "c2r").mkdir(exist_ok=True)
+    (base / "c2r" / "records.json").write_text(json.dumps({"records": recs}))
+    p = R.out_path(recs[0])
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps({"label": None, "scope_out": {"build": DS.BUILD, "di": "lib/1", "verdict": "heavy"}}))
+    (base / "c3").mkdir(exist_ok=True)
+    (base / "c3" / "decision.json").write_text(json.dumps({"replaces_ftm": True, "tag": "C3-ftm"}))
+    (base / DS.DIR).mkdir(exist_ok=True)
+    (base / DS.DIR / "verdicts.json").write_text(json.dumps(
+        {"build": DS.BUILD, "verdicts": {"lib/1": "keep", **{f"x{i}": "keep" for i in range(DS.N_CARDS - 1)}}}))
+    R3._CACHE.clear()
+    with pytest.raises(SystemExit, match="move each aside"):
+        P.cmd_train_ft(ns(real_fold=0, inner=True))
+    R3._CACHE.clear()
