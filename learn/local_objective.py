@@ -155,8 +155,11 @@ RENDERS = (r"-m learn\.song_relabel (render-new|probe)\b", r"-m learn\.ks_extend
            r"-m learn\.full_controls c1a-search\b",             # docs/full-controls-plan.md (C1a)
            r"-m learn\.c1a_ear c1a-ear-render\b",                # docs/full-controls-plan.md (C1a by ear)
            r"-m learn\.full_controls_c1b c1b-search\b",          # docs/full-controls-plan.md (C1b)
-           r"-m learn\.full_controls_c2 c2-search\b",          # docs/full-controls-plan.md (C2)
-           r"-m learn\.full_controls_c2b c2b-search\b")         # docs/full-controls-plan.md (C2b)
+           r"-m learn\.full_controls_c2 c2-search\b",           # docs/full-controls-plan.md (C2)
+           r"-m learn\.full_controls_c3 c3-recheck\b",          # docs/full-controls-plan.md (C3's read)
+           r"-m learn\.pipeline_fix (real-render|goat-render)\b",  # the score reads' renders (H4a's, C3's)
+           r"-m learn\.score_ear h4-render\b",                   # N12's side read (H4a's, C3's)
+           r"-m learn\.full_controls_c2b c2b-search\b")          # docs/full-controls-plan.md (C2b)
 # Separations that need the machine to themselves (amendment 3): no render starts beside one.
 SEPARATIONS = (r"-m learn\.local_objective_1c separate\b", r"-m learn\.separator_screen (separate|identity)\b",
                r"-m learn\.separate\b", r"-m learn\.known_answer separate\b",

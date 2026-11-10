@@ -136,7 +136,7 @@ def shard_records(records, k, n):
 def known_keys(amp):
     """The controls C2 records as off by source, not searched (`KNOWN_WHY`): the three time-effect switches, the
     doubler, and on the amps that have one the spring's switch under FT2's head name (`full_space.spring_dim`, e.g.
-    `pr12Amp/springOn`), so C3 sets it to known off rather than masking it. -> {"module/key": "false"}."""
+    `pr12Amp/springOn`), recorded for C3, which masks it and holds it at S (C3 in detail). -> {"module/key": "false"}."""
     from learn import full_space as FS
 
     out = {"/".join(k): "false" for k in C.DRY_KEYS}
