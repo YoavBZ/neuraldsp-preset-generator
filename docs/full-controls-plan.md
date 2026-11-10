@@ -36,7 +36,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 | Family (rows) | L | T | M | Route | Blocker |
 |---|---|---|---|---|---|
 | Input gain, amp knobs and switches, mic types, cab position and distance, right cab on and level (25) | yes | yes | F43, G1 | today | none |
-| Amp choice, `selectedAmp` (1) | BKS: C1a's per-unit argmin on 40 units; C2 searches all three forced amps of every BKS row. **GOAT: open,** one forced amp a unit | no: the amp head is masked on real rows | stage 0b, −0.044; C1a: the chosen amp beats a blind one by −0.058 | BKS: the argmin over C2's three labels. GOAT: **C2b** (declared in detail below): the argmin over its three like-for-like `K.space` labels | GOAT: C2b's renders (at most 22,684); training the head on real rows waits for C3b |
+| Amp choice, `selectedAmp` (1) | BKS: C1a's per-unit argmin on 40 units; C2 searches all three forced amps of every BKS row. **GOAT: C2b** (declared, not yet run), one forced amp a unit until then | no: the amp head is masked on real rows | stage 0b, −0.044; C1a: the chosen amp beats a blind one by −0.058 | BKS: the argmin over C2's three labels. GOAT: **C2b** (declared in detail below): the argmin over its three like-for-like `K.space` labels | GOAT: C2b's renders (at most 22,684); training the head on real rows waits for C3b |
 | Amp EQ: on, 9 bands, high- and low-pass, ×3 amps (36) | C1a; C2 on every FT2 row | C3 | knob ceiling (d); C1a (F69) | C1a, C2 | none |
 | Pedals: compressor 5, drive 1 4, drive 2 5 (14) | C1a; C2 on every FT2 row | C3 | knob ceiling 2; C1a (F69) | C1a, C2 | none |
 | Gate: on, threshold (2) | C1a; C2 on every FT2 row | C3 | C1a: inert (F69) | C1a, C2 | none |
