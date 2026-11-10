@@ -115,7 +115,7 @@ save = function () { saveHere(); if (dbDoc) { clearTimeout(syncTimer); syncTimer
     }
     dbDoc = d;
     if (Object.keys(store).length) push();
-  } catch (e) {}
+  } catch (e) { const el = document.getElementById("sync"); if (el) el.textContent = "Not saving here: tap Export and send the text."; }
 })();
 """
 
@@ -164,15 +164,23 @@ def earlier_overlap(rows, earlier):
 
 def l1c_sections(sections, verdict_of, w_files, played=frozenset()):
     """L1c's DI pool before L1b's library rule: the sections whose DI T0 verified, whose DI file is not among W's training
-    rows and was played on no capture or preset page (`played`: L1b's units' DI files, every one on its gate page, and the
-    cards of N12's, H4b's and C1a's pages). verdict_of(di) -> T0's verdict or None (no verdict: left out). -> [section row]."""
+    rows and was heard on no ranking or preset page (`played`, from `played_dis`). verdict_of(di) -> T0's verdict or None
+    (no verdict: left out). -> [section row]."""
     return [s for s in sections if verdict_of(s["di"]) == "verified" and s["di"] not in w_files and s["di"] not in played]
 
 
-def played_dis(l1b_units, *card_lists):
-    """The DI files already played on a capture or preset page: L1b's units' (all on `capture-ear-2`) and any card's own `di`.
-    -> frozenset of DI files."""
-    return frozenset({u["di"] for u in l1b_units} | {c["di"] for cards in card_lists for c in cards if c.get("di")})
+def played_dis(*card_lists):
+    """The DI files heard on a ranking or preset page: each card's own `di`, or its part's (`prt`, as C1a's ear plan stores
+    it). A card with neither refuses. The risk is ranking memory, which a gate page does not carry, so L1b's gate page
+    (`capture-ear-2`, record-only) is not among the lists. -> frozenset of DI files."""
+    out = set()
+    for cards in card_lists:
+        for c in cards:
+            di = c.get("di") or (c.get("prt") or {}).get("di")
+            if not di:
+                raise SystemExit(f"a played card with no DI file: {c.get('unit') or c}")
+            out.add(di)
+    return frozenset(out)
 
 
 def gate_read(units, ear, trusted_units, b2=B2_YIELD):
@@ -478,12 +486,12 @@ def cmd_dis(_args):
                 except SystemExit:
                     return None
 
-            l1b = json.loads((P.out_dir() / BATCH2["dir"] / "units.json").read_text())["units"]
             pages = [json.loads((SE.wide_dir() / f).read_text()) for f in ("plan.json", "h4b/plan.json")]
             cards = [d["cards"] + d.get("spares", []) for d in pages]           # N12's and H4b's cards and spares
-            played = played_dis(l1b, *cards)
+            cards.append(json.loads((P.out_dir() / "c1a" / "ear" / "plan.json").read_text())["items"])   # C1a's ear page
+            played = played_dis(*cards)
             lib, seed = l1c_sections(lib, verdict_of, SE.w_dis(), played), SEED3
-            print(f"L1c's DI pool: {len(lib)} sections, {len({s['di'] for s in lib})} DI files; {len(played)} played DI files out")
+            print(f"L1c's DI pool: {len(lib)} sections, {len({s['di'] for s in lib})} DI files; {len(played)} ranked-page DI files out")
         for band, rows in library_dis(lib, seed=seed).items():
             for s in rows:
                 item = "lib-" + hashlib.sha256(f"{s['di']}@{s['start_s']}".encode()).hexdigest()[:12]

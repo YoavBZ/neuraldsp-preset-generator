@@ -50,9 +50,12 @@ def test_l1c_sections_keep_t0_verified_unplayed_dis_outside_w():
     assert L.l1c_sections(secs, verdict, frozenset({"w/4.wav"}), frozenset({"x/5.wav"})) == [{"di": "x/1.wav"}]
 
 
-def test_played_dis_take_every_l1b_unit_and_every_card():
-    l1b = [{"di": "a.wav"}, {"di": "b.wav"}]
-    assert L.played_dis(l1b, [{"di": "c.wav"}, {"unit": "no di"}], [{"di": "a.wav"}]) == frozenset({"a.wav", "b.wav", "c.wav"})
+def test_played_dis_take_every_ranked_card_c1a_s_by_its_part():
+    n12 = [{"unit": "u1", "di": "a.wav"}, {"unit": "u2", "di": "b.wav"}]
+    c1a = [{"unit": "u3", "prt": {"di": "c.wav"}}, {"unit": "u4", "prt": {"di": "a.wav"}}]     # C1a's ear plan keeps the part
+    assert L.played_dis(n12, c1a) == frozenset({"a.wav", "b.wav", "c.wav"})
+    with pytest.raises(SystemExit, match="u5"):
+        L.played_dis([{"unit": "u5"}])
 
 
 def test_batch3_runs_only_its_own_commands():
@@ -154,3 +157,4 @@ def test_artifact_gate_keeps_answers_in_the_store_and_drops_the_file_save():
     assert L.ARTIFACT_INTRO[1] in out and L.ARTIFACT_INTRO[0] not in out
     assert 'data-v="distorted"' in out and out.startswith("<title>Capture ear 1</title>")
     assert 'id="sync"' in out and 'el.textContent = "Saved."' in out
+    assert out.count("Not saving here") == 4            # no store, no viewer, a failed read, a failed write
