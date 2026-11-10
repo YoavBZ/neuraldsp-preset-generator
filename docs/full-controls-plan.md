@@ -8,7 +8,7 @@
 - **Amended the same day after its independent review.** The review found missing controls, a wrong start, a wrong ablation and too low a budget, and asked for a stop rule that converges. All of it is folded in below.
 - **The user's go for C1a:** "Go", at about 10,000 renders, with the gate included.
 - **The user's word on ranking pages:** several presets may share a rank, instead of a "can't tell" answer.
-- **Every later step** with renders beyond C1a's, or with training, goes to the user with its cost before it runs.
+- **Every later step** with renders beyond C1a's, or with training, went to the user with its cost before it ran, until 2026-11-10. Then the user said: "next time, I prefer you to leverage the night and render or train whatever is needed instead of waiting for my approval. At max, I can stop the ongoing process if needed." From C2 on, a declared and reviewed step launches without a wait, and the user is told what runs.
 - **C1a ran** on 2026-11-09 (10,237 renders, audited; [F69](pipeline-fix-plan.md)): by the score −0.205 on N12 and −0.030 on BKS (undecided; crunch −0.052), against the label. The user said yes to C1b (2026-11-09, at about 8,500 renders; the built C1b counts 9,070–9,608 after its review) and to a blind A/B page of C1a against the label; both are declared before they render.
 - **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1), `phase_c1a_outcome`, `phase_c1a_ear` (C1a by ear) and `phase_c1b`. Code: `learn/full_controls.py` (C1a), `learn/c1a_ear.py` (C1a by ear) and `learn/full_controls_c1b.py` (C1b), tests `tests/test_full_controls.py`, `tests/test_c1a_ear.py` and `tests/test_full_controls_c1b.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
 
@@ -286,6 +286,30 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
     - A canonical miss costs its process's priming and first evaluation (2), and the raw start then reruns the dry process (up to 65).
     - A refused record costs 4 in all.
 - **What it leads to.** C1a and C1b's recipe for C2, and the order of C1b's groups. There is no bar.
+
+## C2 in detail (declared 2026-11-10, after C1b's report and before any C2 render; ledger `phase_c2`)
+
+- **Status.** Declared after C1b ran (8,391 renders, no start misses, nothing refused). Under the user's rule of 2026-11-10 it launches once its review passes, and the user is told. C1a's blind page is out with the user. If that page reads C1a *below* the label (its declared rule), C2 stops at the next record and goes to the user.
+- **What C2 is.** Labels, not a measurement: every control, for every real training row of FT2 that C1a and C1b did not already cover, so C3 can train each head on a searched or known value.
+- **Records, 489,** each a stored label with its DI, target, select, halves and lag as stored:
+  - **GOAT, 214:** every GOAT record with a label (233 stored, 19 fell back and stay out, named). One amp a unit, as stored.
+  - **BKS stage 1, 80:** the other two amps of C1a's 40 units.
+  - **BKS stage 2, 195:** 65 units × 3 amps.
+  - real_out units are flagged as in C1a. N12 stays out: it is measurement only.
+- **C1a's and C1b's 71 records are kept as they are.** The 40 BKS ones are labels at C1a's budget (100, or 300 on its subset) plus C1b. Each is flagged with its budget. Continuing them to 200 would also mean running C1b on them again, so it is left open, with its cost (about 40 × 170 renders).
+- **The recipe, per record, in order:**
+  1. **C1a's search,** as declared and amended (Amendment 1's start-miss path included): the start from the stored label with the gate on at −80 dB, the start check within 0.005, `c1a_space`, seed 20261123, at **budget 200.** That is the budget C1a's calibration set: the first checkpoint whose median reached 90% of the 300 gain. No ablations.
+  2. **C1b's stages A and B,** as declared: the rest of the cab, then the mic types with the amp EQ, budgets 16 and 48, seeds 20261125 and 20261126. Their start check is against step 1's best. No ablations.
+  3. **No effect stage.** The time effects, the spring and the doubler are written **off,** as the start has them, and recorded as *known*, not searched. Two reasons:
+     - **The sources are dry.** GOAT's targets are capture renders, which carry no time effect. On BKS, C1b kept no effect on any of its 40 records.
+     - **On dry sources the search only adds false keeps.** On N12, also captures, C1b kept 3 effects on 31 records, all of them where the truth is off. Its effects-reset row is −0.003 on the held half (−0.013 on crunch): the kept effects did worse there.
+     - **Effects are still learned.** C3 trains the effect switches on these rows as off, a known label. It trains the effect knobs on W's plugin rows, whose drawn labels are exact. This row stays open in C0 until C4 hears it.
+- **Fresh renders:** each record's final once, in its own process with priming, for the read below.
+- **Recorded,** as C1a and C1b record: the trace, each step's best, the start kind, what changed, `searched_keys` (C1a's and C1b's spaces), `known_keys` (the effect switches, off), and `label` (the final's settings with `fallback_reason` applied).
+- **The read (zero renders past the fresh final).** Held half, ln(C2 final fresh / the start's first evaluation), per block (GOAT, BKS stage 1, BKS stage 2) and class. Record-weighted jackknife intervals, with the band-weighted reading beside it. Counts: start kinds, refusals, drift, mic changes, left cab off, rooms on, pedals on, gate threshold moved. There is no bar: C2's output is C3's input.
+- **Order.** GOAT first, then BKS stage 1, then BKS stage 2. Within a block, records go by key, round robin over 3 shards. A shard skips records already written, so a stopped run resumes.
+- **Cost.** About 270 renders a record: step 1 about 201, steps 2 and 3 about 66, and the fresh final 2. In all about 132k renders: GOAT about 58k, BKS about 74k. At C1a's and C1b's measured 5,100 to 6,100 renders an hour on 3 processes, GOAT takes about 9.5 to 11 h and the whole about 22 to 26 h. No training.
+- **What it leads to.** C3, declared before it trains.
 
 ## C5: the heavy clean-up re-tested on the full-control model
 - **What F68 said, and what has changed.** F68 closed the clean-up with "This clean-up is not reopened." Its verdict on the `K.space` model stands.
