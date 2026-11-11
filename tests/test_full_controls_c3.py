@@ -456,3 +456,5 @@ def test_c3i_launchers_train_with_c3i_and_read_after_c2r():
     t, r = (root / "launch-c3i-train.zsh").read_text(), (root / "launch-c3i-read.zsh").read_text()
     assert "--masked --c3i" in t and "--c3 " not in t.replace("--c3i", "")
     assert "c2r.log" in r and "c3i-train.log" in r and "--names ${TAG}" in r and "c3i-rows" in r
+    for x in (t, r):                                    # a stop by recorded PIDs reads only this launch's
+        assert "mv ${PIDS} ${PIDS}." in x and x.index("mv ${PIDS}") < x.index('echo "launcher $$" >> ${PIDS}')

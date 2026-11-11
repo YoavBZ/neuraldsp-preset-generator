@@ -15,6 +15,7 @@ L=${LOGS}/c3i-read.log
 PIDS=${LOGS}/c3i-read-pids.txt
 TAG=C3i
 [[ -f ${L} ]] && mv ${L} ${L}.$(date +%Y%m%d-%H%M%S)                  # a relaunch: the old log rotated aside
+[[ -f ${PIDS} ]] && mv ${PIDS} ${PIDS}.$(date +%Y%m%d-%H%M%S)         # and the old PIDs: only this launch's are live
 caffeinate -i -w $$ &
 echo "launcher $$" >> ${PIDS}
 note() { echo "$1 $(date)" >> ${L}; }
