@@ -731,6 +731,13 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
     - C3r refuses if a `scope_out` record's DI is kept by the final verdicts. Such a record needs its label: it is moved aside and its shard resumed.
   - **A verdicts file for another build** makes the waiting launcher fail with a message. It does not wait for ever.
 - **Cost.** Zero renders. At most it saves the renders of the records it drops.
+- **The amp-track version of the page (2026-11-11, the user's ask, after 2 of 26 answers).** The user asked: "add the amp track also so I could compare the DI and make sure its not processed".
+  - **The same 26 cards, ids and build** (f75f017f9d66), so the 2 answers already stored carry over. `key.json` is untouched; the page and its key are `di-scope/page-amp.html` and `amp-key.json` (`di_scope page-amp`). The DI clips are byte-identical to the first version's.
+  - **Each DI has the amp track its own session recorded for the same part,** at the same moment, levelled alike, with an instant switch. Each card starts on the DI.
+    - n12: the session's track named for the part (`SESSION_AMP`, 15 of 18). Dark Ride's 3 DI files have no amp track, and their cards say so.
+    - The panel: each unit's own amp track (8 of 8).
+  - **Checked at zero renders:** on each pair the waveform or onset correlation peaks within 2 ms of the same moment, except The Long Wait's `10_ElecGtr1DI`. Its amp track doesn't clearly line up, and its card says it may be another take.
+  - **A fourth answer, "Drop: processed".** Like every answer but Keep, it drops the DI file. Read the answers with `di_scope answers` from this version on, since older code refuses the new answer. The waiting launchers' `ready` and `dropped_dis` only count answers and non-keeps, so they need no change.
 
 ## C5: the heavy clean-up re-tested on the full-control model
 - **What F68 said, and what has changed.** F68 closed the clean-up with "This clean-up is not reopened." Its verdict on the `K.space` model stands.

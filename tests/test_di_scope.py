@@ -180,3 +180,50 @@ def test_the_training_launcher_stops_on_a_verdicts_file_that_will_never_be_ready
             assert want_log in log.read_text() and f"DI SCOPE STATE {rc}" in log.read_text()
         else:
             assert log.read_text() == ""
+
+
+# --- the amp-track page (2026-11-11, the user's ask) ------------------------------------------------------------------
+
+def test_the_amp_page_keeps_the_cards_and_adds_the_switch_and_the_processed_verdict():
+    page = D.page_html_amp(["d1", "d2"], {"d1": "", "d1a": "", "d2": ""}, {"d1": "d1a"}, {"d2": D.NO_AMP_NOTE}, "b1")
+    assert '"items": ["d1", "d2"], "amp": {"d1": "d1a"}' in page and D.NO_AMP_NOTE in page
+    assert 'id="sd"' in page and 'id="sa"' in page and 'data-v="processed"' in page and "Drop: processed" in page
+    assert "Playing (it loops)" not in page and "setSide" in page and 'answer("processed")' in page
+    assert "2 dry guitar recordings (DIs)" in page and D.leaks(page) == []
+
+
+def test_processed_is_a_verdict_and_drops():
+    items = [{"id": "d1", "di": "a"}, {"id": "d2", "di": "b"}]
+    got = D.di_verdicts({"d1": {"v": "processed"}, "d2": {"v": "keep"}}, items)
+    assert got == {"a": "processed", "b": "keep"}
+    assert D.dropped_of({"verdicts": got}) == {"a"}
+
+
+def test_amp_sources_take_the_sessions_track_or_none_and_refuse_an_unnamed_di():
+    di = next(iter(D.SESSION_AMP))
+    n12 = [{"unit": "cap/x", "di_item": "lib-1"}, {"unit": "cap/y", "di_item": "lib-2"}]
+    panel = [{"unit": "panel/p", "amp_file": "/s/amp.wav", "window_s": 220.0, "di_file": "/s/di.wav"}]
+    meta = {"lib-1": {"di_path": "/lib/song/di.wav", "start_s": 40.0}, "lib-2": {"di_path": "/lib/dark/di.wav", "start_s": 5}}
+    items = [{"id": "d1", "set": "n12", "unit": "cap/x", "di": di},
+             {"id": "d2", "set": "n12", "unit": "cap/y", "di": D.NO_SESSION_AMP[0]},
+             {"id": "d3", "set": "panel", "unit": "panel/p", "di": "panel/p"}]
+    got = D.amp_sources(items, n12, panel, meta)
+    assert got["d1"] == {"path": "/lib/song/" + D.SESSION_AMP[di], "start": 40.0, "di_file": "/lib/song/di.wav"}
+    assert got["d2"] is None and got["d3"] == {"path": "/s/amp.wav", "start": 220.0, "di_file": "/s/di.wav"}
+    with pytest.raises(SystemExit):
+        D.amp_sources([dict(items[0], di="cambridge/other/DI.wav")], n12, panel, meta)
+
+
+def test_every_n12_card_is_named_and_its_amp_track_exists():
+    import pathlib
+    from learn import pipeline_fix as P
+    key = P.out_dir() / D.DIR / "key.json"
+    if not key.exists():
+        pytest.skip("no stored data")
+    k = json.loads(key.read_text())
+    meta = json.loads((P.out_dir() / "captures2" / "plan.json").read_text())["di_meta"]
+    n12 = [it for it in k["items"] if it["set"] == "n12"]
+    assert {it["di"] for it in n12} == set(D.SESSION_AMP) | set(D.NO_SESSION_AMP)
+    folders = {m["di"]: pathlib.Path(m["di_path"]).parent for m in meta.values()}
+    for di, amp in D.SESSION_AMP.items():
+        assert (folders[di] / amp).exists(), (di, amp)
