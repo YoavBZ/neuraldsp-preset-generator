@@ -251,11 +251,20 @@ def leaks(text, items):
 # --- the commands -------------------------------------------------------------------------------------------------------
 
 def trusted_units():
+    """Batch 3's gated units and lags, and every unit both gates passed (before the lag rule). capture_labels' batch is
+    module state, so it is restored after: C3r's state reads batch 1 through the same module (2026-11-11's draw failure).
+    -> (units, {unit: lag}, gated)."""
     from learn import capture_labels as CL
 
+    prev = CL.BATCH
     CL.BATCH = CL.BATCH3
-    units, lags = CL.trusted_units()
-    return units, lags
+    try:
+        units, lags = CL.trusted_units()
+        every = CL.units_of()
+        gated = [u for u in every if u["unit"] in CL.trusted(every)]
+    finally:
+        CL.BATCH = prev
+    return units, lags, gated
 
 
 def r_all_sources():
@@ -282,10 +291,7 @@ def cmd_draw(_args):
     p = ear_dir() / "plan.json"
     if p.exists():
         raise SystemExit(f"{p} exists: the items are drawn once")
-    from learn import capture_labels as CL
-
-    units, lags = trusted_units()
-    gated = [u for u in CL.units_of() if u["unit"] in CL.trusted(CL.units_of())]
+    units, lags, gated = trusted_units()
     items = [{**item_of(u), "creator": u.get("creator"), "lag": lags[u["unit"]], "prt": u}
              for u in sorted(units, key=lambda u: u["unit"])]
     if any(it["lag"] is None for it in items):

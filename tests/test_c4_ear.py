@@ -85,3 +85,13 @@ def test_the_draw_flags_units_whose_creator_or_di_trains_in_r_all_and_the_read_s
     rep = C.ear_read(order, got)
     by = rep["rows"]["adopted over FTm"]["by_creator"]
     assert by["trains in R-all"]["ties"] == 4 and by["new to every model"]["ties"] == 14
+
+
+def test_the_draw_restores_capture_labels_batch(monkeypatch):
+    from learn import capture_labels as CL
+    before = CL.BATCH
+    monkeypatch.setattr(CL, "trusted_units", lambda: ([{"unit": "u"}], {"u": 1}))
+    monkeypatch.setattr(CL, "units_of", lambda: [{"unit": "u"}, {"unit": "v"}])
+    monkeypatch.setattr(CL, "trusted", lambda us: {"u", "v"})
+    units, lags, gated = C.trusted_units()
+    assert CL.BATCH is before and [u["unit"] for u in gated] == ["u", "v"] and lags == {"u": 1}
