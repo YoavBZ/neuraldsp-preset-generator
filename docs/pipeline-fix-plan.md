@@ -5193,6 +5193,35 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - By the score only.
 - Files: `PF/c3/c3s.json`, `decision-c3s.json`; `PF/{real,goat}/report-c3s.json`, `logs/c3s-n12.json`; runs `C3s-ftm-*`; logs `logs/c3s*.log`.
 
+### F79. C3c: the amp head on the amp that suits C3's own answer. By the score it doesn't learn: its pick reads +0.031 [−0.010, +0.073] against always-sw50r, undecided, worse on BKS (+0.065), level on GOAT (−0.002). It does beat a prior-only head (the class's label majority, −0.063, decided). A zero-render cost-target probe finds nothing on the input the model actually reads, so by the declared stop rule learning the amp from the audio stops (phase_c3c, 37 min of MPS, zero renders, audited)
+- **What ran** ([plan](full-controls-plan.md), "C3c in detail"). C3b's recipe with the amp label from C3b stage 2's renders: the argmin of C3-cabS's out-of-fold per-amp renders on each unit's search half (GOAT 214, BKS 40). 8 FT_k on C3's E and the all-labels pair, 37 min of MPS (21:22 to 21:59). The read: CPU predicts, zero renders, every pick valued on C3-cabS's own per-amp renders.
+- **The read matched the declaration.** It was audited with separate code: C3c − always sw50r and C3c − W reproduce to 1e-4. The guard passed: each C3c FT_k holds out C3's units and records the labels' sha256.
+- **By the score** (held half, ln; BKS by DI, GOAT by item, pooled with C3's weights):
+
+  | Row | BKS (40) | GOAT (215) | Pooled |
+  |---|---|---|---|
+  | **C3c − always sw50r (the declared reading)** | +0.065 [−0.014, +0.145] | −0.002 [−0.020, +0.016] | +0.031 [−0.010, +0.073] |
+  | C3c − W | +0.044 [−0.050, +0.138] | +0.002 [−0.016, +0.020] | +0.023 [−0.025, +0.071] |
+  | C3c − the class's label majority | −0.093 [−0.200, +0.014] | **−0.034 [−0.056, −0.011]** | **−0.063 [−0.118, −0.008]** |
+  | C3c − always ac20 | +0.019 | **−0.034 [−0.053, −0.015]** | −0.008 |
+  | Search-half argmin − blind (the ceiling) | −0.142 | −0.101 | −0.121 |
+
+  - **The declared reading is "undecided":** C3c doesn't beat the best constant.
+  - **It isn't a prior-only head:** it beats the labels' majority (the ac20 on clean, the pr12 on crunch), the worst constants. That majority is the pooled labels', applied to BKS too, where BKS's own majority is the sw50r.
+  - Its picks on GOAT: ac20 218, pr12 105, sw50r 107 of 430; 164 hit the direction's own argmin. AUC 0.53 to 0.59 on GOAT; on BKS 0.43 to 0.68.
+- **The cost-target probe** (the review session's, declared before its run; `logs/amp-cost-probe.md` in its worktree).
+  - A 3-output ridge regression on the per-amp centred search-half ln judges, picking the lowest predicted cost. Its inputs: class, set, the input's 53-number mel summary and C3c's out-of-fold log-probabilities. Outer folds: the 4 real folds.
+  - **As first run, on the clean amp track:** GOAT −0.018 [−0.033, −0.003], shown better; BKS +0.059, undecided. The mel summary alone read −0.023.
+  - **The flaw, found by the review itself:** that summary came from the clean reamped amp track, which the product never has. The model reads D_fix variant 0, the section mixed with a backing and separated. The two inputs' band shapes correlate 0.84 at the median and 0.54 at the 10th percentile.
+  - **On the input the model reads,** the same frozen probe reads BKS +0.031 [−0.037, +0.099], GOAT +0.002 [−0.015, +0.019], pooled +0.016, AUC 0.51; the mel summary alone −0.000, AUC 0.52. Nothing.
+- **What it means.**
+  - **The declared stop rule triggers:** on the input the product sees, no probe beats the best constant on GOAT, and BKS leans worse. C3c, C3's own embedding and the spectral probe agree. Learning the amp from the song's audio stops.
+  - **The user's idea** ("render each song with all three amps and then train") would only confirm a null for this question, so its 4,320 renders were declared, then withdrawn before any ran.
+  - **The clean amp track carries a weak signal** (−0.018 on GOAT) that separation erases, so a cleaner stem would be the precondition for any later learned selector.
+  - **What goes to the user,** explained: comparing each amp's answer rendered through a library DI with the song's separated guitar at inference (a new approach, about 2,600 renders to test), or offering three presets, one per amp, to pick by ear. Until then the product keeps W's pick.
+  - By the score only.
+- Files: `PF/c3/c3c.json`; runs `C3c-ftm-*`; logs `logs/c3c*.log`. `PF/c3r/answers/all-amps3.json` is the withdrawn read's zero-render answers (R-all on all three amps), unused.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
