@@ -12,9 +12,10 @@
 - **C1a ran** on 2026-11-09 (10,237 renders, audited; [F69](pipeline-fix-plan.md)): by the score −0.205 on N12 and −0.030 on BKS (undecided; crunch −0.052), against the label. The user said yes to C1b (2026-11-09, at about 8,500 renders; the built C1b counts 9,070–9,608 after its review) and to a blind A/B page of C1a against the label; both are declared before they render.
 - **C1b ran** on 2026-11-10 (8,391 renders, audited; [F70](pipeline-fix-plan.md)): by the score −0.008 on BKS and −0.004 on N12 against C1a, both undecided; on BKS most of it sits in the records whose mic changed. Its 3 kept effects are all false (N12's captures), so its keep rule is not used for labels. The C1a page is out with the user.
 - **C2 ran** on 2026-11-10 and 11 (131,545 renders, audited; [F71](pipeline-fix-plan.md)): all 520 labels written, none refused or fallen back. By the score, on the held half against the stored label: GOAT −0.208, BKS stage 1 −0.108, stage 2 −0.129, C1a's 40 −0.056. 72 labels ended more than 10 dB quieter, and 90 can't reach −12 dBFS through the output control alone (49 of the stored labels couldn't). C3 trains on them (from 2026-11-11 06:25).
+- **C3 ran** on 2026-11-11 (71 min of MPS, 8,442 renders, audited; [F72](pipeline-fix-plan.md)): by the score the adopted model (EQ, pedals and gate learned, the rest of the cab at S) is level with FTm on BKS, GOAT and N12, all undecided, and 10% closer than S. The EQ gains −0.039 on GOAT, and C3's core loses +0.034 there, so C3i, the declared isolation, is declared below. By the declared rule the adopted model replaces FTm; C4 can reverse it.
 - **C1a by ear (2026-11-10):** heard closer than the label, 0.68 [0.54, 0.82], p 0.020 on 14 cards (N12 0.79; BKS 0.57, undecided). By the declared rule that is "above", so C2 stands on C1a's recipe ([F69](pipeline-fix-plan.md)).
 - **Every trusted real row, by rotation (2026-11-10).** The user asked why only GOAT and BKS train, then said "Go for 3" to training and testing on every usable track by rotation. C2r and C3r are declared below, before any render or training; V-real and the reserve stay sealed.
-- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1), `phase_c1a_outcome`, `phase_c1a_ear` (C1a by ear), `phase_c1b`, `phase_c1b_outcome`, `phase_c2`, `phase_c2_outcome`, `phase_c3`, `phase_c2b`, `phase_l1c`, `phase_c2r` and `phase_c3r`. Code: `learn/full_controls.py` (C1a), `learn/c1a_ear.py` (C1a by ear), `learn/full_controls_c1b.py` (C1b), `learn/full_controls_c2.py` (C2), `learn/full_controls_c3.py` with `pipeline_fix train-ft --c3` (C3) and `learn/full_controls_c2b.py` (C2b), tests `tests/test_full_controls.py`, `tests/test_c1a_ear.py`, `tests/test_full_controls_c1b.py`, `tests/test_full_controls_c2.py`, `tests/test_full_controls_c3.py` and `tests/test_full_controls_c2b.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
+- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1), `phase_c1a_outcome`, `phase_c1a_ear` (C1a by ear), `phase_c1b`, `phase_c1b_outcome`, `phase_c2`, `phase_c2_outcome`, `phase_c3`, `phase_c3_outcome`, `phase_c3i`, `phase_c2b`, `phase_l1c`, `phase_c2r` and `phase_c3r`. Code: `learn/full_controls.py` (C1a), `learn/c1a_ear.py` (C1a by ear), `learn/full_controls_c1b.py` (C1b), `learn/full_controls_c2.py` (C2), `learn/full_controls_c3.py` with `pipeline_fix train-ft --c3` (C3) and `learn/full_controls_c2b.py` (C2b), tests `tests/test_full_controls.py`, `tests/test_c1a_ear.py`, `tests/test_full_controls_c1b.py`, `tests/test_full_controls_c2.py`, `tests/test_full_controls_c3.py` and `tests/test_full_controls_c2b.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
 
 **The every-control plan's stage 1 never ran.** It is a true-DI oracle for the groups with no number, about 13–14k renders. It was approved on 2026-10-22 and waited for a trusted data list. Then the work moved to the trusted data and the pipeline fix. This amendment carries its goal onto today's route (FT2 and its real rows). It folds stage 1's never-measured groups in as C1b.
 
@@ -397,6 +398,40 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - Training the amp head on real rows comes after C2b, as C3b, at about the same training cost.
 - **Stop rule.** C3 is one retrain and one read, with no tuning loop on the read sets: they choose adoption only. After it, every C0 row is adopted, written at S with its blocker, or open with its next route. Then C4 hears the adopted families.
 - **Cost.** Training is about 1.2 to 2.3 h of MPS: H4's real-only arm ran this recipe in 73.5 min, and FTm measured 135.7 min, unless E grows. The read is about 8,400 renders, plus up to 1,400 for the adopted tag. No new data.
+## C3i in detail: the isolation of C3's core (declared 2026-11-11, after C3's read and before any C3i training; ledger `phase_c3i`)
+
+- **Why.** C3's own declaration calls for it: "FTm's mask on C2's labels, the true isolation, is trained only if C3 core reads worse than FTm." C3 core reads +0.034 [+0.021, +0.046] worse than FTm on GOAT and +0.016 [+0.000, +0.032] pooled (F72), so it is due.
+- **The question.** Why does C3's core lose to FTm's on GOAT, when the EQ gains −0.039 there?
+  - **(a) The labels.** C2 searched the core jointly with the EQ and the pedals, so its core values may fit only alongside them.
+  - **(b) The objective.** C3's loss spans about 2.5× more dims, and the EQ's 11 dims shape its mixture, so the core heads may learn less well.
+- **What C3i is.** FTm's recipe exactly: `train-ft --masked --ft-cap 300`, W, 8 inner runs, 8 FT_k and the all-labels pair, seeds 20261042 and 20261043. Only the labels change, to C3's: every C2 label, with C3's source rule for a record without one (none in C2). The mask is FTm's: `K.space` only. Everything else is as FTm's, under its own names (`C3i-ftm-…`).
+  - It records C2's sha256 and refuses on another C2 state, as C3 does.
+  - Its answer holds as FTm's does: `K.space` from the heads, everything else at S. So it writes the same keys as C3 core, and like C3 core it is a core-only model.
+- **The read, as H4a:** one tag, `C3i`, on BKS, GOAT and N12 (measurement only), about 1,400 renders (each answer primed and kept).
+  - **The rows:** C3i − FTm, C3 core − C3i and C3i − S on BKS, GOAT and pooled, with C3's intervals and pooling. N12 reads C3i − FTm and C3i − S.
+  - **Beside, at zero renders:** C3i's and C3's per-head held losses on the `K.space` keys, epoch by epoch. That is a direct look at cause (b), reported and not deciding.
+- **What each outcome means, declared before the training.**
+  - **The test is C3's.** A row is *worse* when its 90% interval is wholly above 0 on BKS, on GOAT or pooled, and *better* when wholly below 0 on one of them. Otherwise it is undecided. A row worse on one set and better on another is *split*.
+  - The two deciding rows sum exactly to C3 core − FTm (+0.034 on GOAT), so mixed outcomes are expected:
+
+    | C3i − FTm | C3 core − C3i | Reading | Next |
+    |---|---|---|---|
+    | worse | undecided | (a) the labels: C2's core values are worse alone | the adopted C3 stands; nothing in the objective to fix |
+    | worse | better | (a), and the wider objective helps the core | the adopted C3 stands |
+    | worse | worse | both | sizes reported; the (b) follow-up as below |
+    | undecided | worse | (b) the objective | the (b) follow-up |
+    | better | worse | (b), and C2's core labels are better alone | the (b) follow-up |
+    | undecided or better | undecided or better | neither shown | the adopted C3 stands |
+    | split, on either row | | per set, as that set reads | no follow-up on a split |
+
+  - **The (b) follow-up is one variant,** declared separately before it trains: C3's recipe with the core heads' share of the loss restored to FTm's. Its aim is C3i's core with the EQ's gain on top. No second variant follows from this read.
+  - Either way C3i is a diagnostic, not a product candidate. It replaces nothing.
+- **Stop rule.** One training and one read, with no tuning on the read sets.
+- **Cost.** Training about 71 minutes of wall clock on MPS (124 run-minutes), as C3 measured. The read is about 1,400 renders.
+- **When.** It trains as soon as its code is reviewed, on the otherwise idle MPS, while C2b or C2r render on 3 CPU processes. It launches with `setopt no_bg_nice`, and no other MPS job starts while it runs.
+  - **The stop.** The measure is the 3 render shards' summed renders per minute. The window is the 60 minutes before the training against its first 20 minutes. If the rate drops by more than 20%, the executor stops the training by its recorded PIDs, and it reruns after C3r's training. Otherwise it runs to the end.
+  - **The read** waits for a free render slot: after C2r, before C3r's read.
+
 ## C2b in detail (declared 2026-11-10, before any C2b render; ledger `phase_c2b`)
 
 - **Status.** Declared while C2 renders, and amended after its independent review, which confirmed the like-for-like recipe and that the earlier callers run unchanged. It renders after C3's read, the last job queued on the render slots.
