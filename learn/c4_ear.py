@@ -158,8 +158,8 @@ Everything loops together and switches instantly at the same moment: tap a butto
 All clips are set to the same loudness. Headphones, please.</p>
 <p class="intro">For each item, rank A, B and C: 1 is closest to the Record. If two or all three sound the same to you, give
 them the same rank. Rating how close each one is, and saying whether you are sure, are optional. Which preset is which is
-hidden and shuffled per item, and a couple of items come back later. Answers are saved in this browser as you go; tap
-<b>Export</b> any time and send the text.</p>"""
+hidden and shuffled per item, and a couple of items come back later.
+Answers are saved in this browser as you go; tap <b>Export</b> any time and send the text.</p>"""
 
 
 def cards(items):

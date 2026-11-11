@@ -95,3 +95,8 @@ def test_the_draw_restores_capture_labels_batch(monkeypatch):
     monkeypatch.setattr(CL, "trusted", lambda us: {"u", "v"})
     units, lags, gated = C.trusted_units()
     assert CL.BATCH is before and [u["unit"] for u in gated] == ["u", "v"] and lags == {"u": 1}
+
+
+def test_the_intro_carries_the_artifact_save_line():
+    from learn import ear_eat as EE
+    assert EE.ARTIFACT_INTRO[0] in C.INTRO
