@@ -5125,6 +5125,74 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - `PF/goat/answers-amps3/`, `PF/goat/judge-amps3/` and `PF/real/judge/C3b/`;
   - logs `logs/c3b-s2*.log`.
 
+### F77. C2r and C3r: every trusted real row, by rotation. C2r's labels beat their starts by the score on all three new sets (captures batch 1 −0.179, batch 2 −0.356, the panel −0.073, undecided). C3r trained on them: R-all beats R-ctl, the same folds without the new rows, by −0.059 [−0.078, −0.040] on the deciding pool, decided on BKS, GOAT and the panel. Part of that is a handicap on R-ctl: its epochs were chosen on five sets, three of which it never trains on, so it trained about 12 epochs short; where the two arms' epochs match (fold 3), the new rows read about −0.04. Against C3 itself R-all reads level (BKS −0.008, GOAT −0.013, undecided). By the declared rule R-all's all-labels model replaces C3; C4 can reverse it (phase_c2r, phase_c3r; 36,948 + 3,840 renders, 2 h 9 min of MPS, audited)
+- **What ran** ([plan](full-controls-plan.md), "C2r and C3r in detail", Amendments 1 and 2).
+  - **C2r:** C2's recipe on the new rows the DI check kept: batch 1's captures (cap1, 121 records), batch 2's C1a records (n12, 12 of 31) and the panel (12 of 18). The DI check (Amendment 1) dropped 14 of 26 DI files: 19 n12 records and 6 panel records left the read.
+    - **The run:** 5 render shards (Amendment 2, the user's "Yes, try 5"), 36,948 renders in 3 h 25 min. Nothing refused, not run, or mismatched on replay; 4 starts restarted with the gate off after a miss, none refused.
+  - **C3r:** C3's recipe on every trusted real row, trained and read by rotation. R-all has GOAT's and BKS's rows plus the new ones; R-ctl has the same folds, drops and validation rows without them.
+    - **The training:** 34 runs, 221 run-minutes, 2 h 9 min of MPS (16:49 to 18:59).
+    - **The read:** 3,840 renders. A render deadlock with C3b's stage 2 (19:00 to 19:20) stopped it before its first render; it reran after stage 2, from 19:35.
+- **Both reads matched their declarations.** They were audited with separate code: C2r's three primaries from the per-record files (the cluster means equal the report's band-weighted means), and C3r's BKS, GOAT and panel rows, the deciding pool, and R-all − C3 from the judge files, all to 1e-4.
+- **C2r, by the score** (the label's fresh render against its start, held half, ln):
+
+  | Set | Records (clusters) | Label − start | Label − S |
+  |---|---|---|---|
+  | cap1 (batch 1's captures) | 121 (84) | **−0.179 [−0.210, −0.148]** | −0.547 |
+  | n12 (batch 2's C1a records) | 12 (7) | **−0.356 [−0.539, −0.172]** | −0.649 |
+  | Panel (step 0's best as start) | 12 (5) | −0.073 [−0.167, +0.021] | −0.646 |
+
+  - Both columns are record-weighted, with the cluster jackknife on the first. The band- or creator-weighted means beside: label − start −0.181, −0.319, −0.079; label − S −0.529, −0.607, −0.594.
+
+  - More than 10 dB quieter than their start: cap1 20 of 121, n12 3, the panel 2.
+- **C3r, by the score** (each held unit's answer from its fold's FT_k, held half, ln; BKS by DI, GOAT by item, the panel by DI, cap1 and n12 by creator):
+
+  | Row | BKS | GOAT | Panel | Deciding pool (BKS, GOAT, panel) | cap1 | n12 |
+  |---|---|---|---|---|---|---|
+  | **R-all − R-ctl** | **−0.061 [−0.100, −0.022]** | **−0.039 [−0.055, −0.023]** | **−0.076 [−0.122, −0.030]** | **−0.059 [−0.078, −0.040]** | −0.027 [−0.054, −0.001] | +0.002 [−0.070, +0.074] |
+  | R-all − S | −0.130 | −0.103 | −0.168 | −0.134 | −0.152 | −0.338 |
+  | R-ctl − S | −0.069 | −0.064 | −0.092 | −0.075 | −0.125 | −0.340 |
+  | R-all − C3-cabS (C3's stored scores) | −0.008 [−0.061, +0.046] | −0.013 [−0.027, +0.001] | — | — | — | +0.024 [−0.060, +0.109] |
+
+  - **Beside, recounted:** R-ctl − C3-cabS reads +0.053 [+0.009, +0.098] on BKS and +0.026 [+0.013, +0.040] on GOAT, both worse.
+  - **The cause is R-ctl's epochs, not its drops** (the review's finding, recounted). E, the mean of the two seeds' FT_k epochs: C3 59.5, R-ctl 47.3, R-all 59.3. The inner runs chose E on validation over all five sets, and R-ctl never trains on three of them, so it stopped early. BKS drops no rows in R-ctl, yet shows the larger gap. GOAT's drops are flat by fold (36, 36, 35, 30), while fold 3, with the fewest drops, has the largest gap and the largest E shortfall.
+  - **So part of R-all − R-ctl is that handicap.** In fold 3, where the two arms' E match (48.0 and 48.5), R-all − R-ctl reads −0.046 on BKS and −0.032 on GOAT. The plan called the five-set validation "conservative for R-all"; it was the opposite.
+  - **The adoption is unaffected:** R-all's all-labels pair trains to E 57, as C3's does, so the product model carries no such handicap.
+- **The declared rule: kept unless shown worse.** R-all − R-ctl is not shown worse anywhere, and is better on every deciding set, so R-all's all-labels model replaces C3-cabS as the adopted model (`c3r/report.json`: replaces_c3, complete).
+- **What it means.**
+  - **Training on every trusted row helps, by the score:** about 4% closer where the arms' epochs match, and 6% on the deciding pool with R-ctl's early stop included. Against C3 itself the product reads level.
+  - **For any later control arm:** match its E to the treated arm's, or validate it only on the sets it trains on.
+  - **What changes downstream:** C4 hears R-all, reading apart the batch 3 captures whose creator trains in it (6 of 22 creators, 17 of 44 captures); C5 is restated on C3r's rows; the panel is no longer an unseen-band test.
+  - **What stays open:** the amp head on the new rows (C3c reads first), the split loss (C3s, F78), and the effects, masked as in C3.
+  - By the score only.
+- Files:
+  - `PF/c2r/` (`records.json`, `report.json`) and the per-record outputs in `captures/search-c2r/`, `captures2/search-c2r/`, `panel/search-c2r/`;
+  - `PF/c3r/` (`folds.json`, `answers/`, `judge/`, `report.json`);
+  - logs `logs/c2r*.log`, `logs/c3r*.log`.
+  - Code: `learn/full_controls_c2r.py`, `learn/full_controls_c3r.py`.
+
+### F78. C3s: C3's recipe with the core's share of the loss restored. By the score it improves the core: C3s-core − C3-core −0.019 [−0.025, −0.012] and C3s-core − C3i −0.011 [−0.020, −0.002], both decided, with its core heads' held losses back at C3i's level. But in the adopted configuration the gain is −0.008 [−0.026, +0.009], undecided, so by the declared rule C3's recipe stands (phase_c3s, 81 min of MPS, 2,810 renders, audited)
+- **What ran** ([plan](full-controls-plan.md), "C3s in detail"). C3's recipe with `full_space.loss_split`: the core's terms exactly C3i's, the added controls' own term beside. 18 runs, 137 run-minutes, 81 min of MPS (18:59 to 20:20), its own inner runs. The read: two tags, C3s-cabS (held as C3-cabS) and C3s-core (held as C3-core), on BKS, GOAT and N12, 2,810 renders.
+- **The read matched the declaration.** It was audited with separate code from the judge files: the three deciding rows reproduce the report to 1e-4.
+- **By the score:**
+
+  | Row | BKS | GOAT | Pooled |
+  |---|---|---|---|
+  | **C3s-cabS − C3-cabS (decides)** | −0.010 [−0.044, +0.024] | −0.007 [−0.017, +0.003] | −0.008 [−0.026, +0.009] |
+  | C3s-core − C3i | −0.016 [−0.032, +0.001] | **−0.007 [−0.014, −0.000]** | **−0.011 [−0.020, −0.002]** |
+  | C3s-core − C3-core | **−0.024 [−0.035, −0.014]** | **−0.013 [−0.020, −0.006]** | **−0.019 [−0.025, −0.012]** |
+  | C3s-cabS − S | −0.132 | −0.097 | −0.114 [−0.155, −0.074] |
+
+  - **N12** (27 cards): C3s-cabS − FTm −0.055 [−0.135, +0.026]; C3s-core − FTm +0.013 [−0.010, +0.035].
+  - **The 4 heads that carried F75's gap,** held loss at the last epoch, mean of 8 FT_k (C3 / C3i / C3s): the sw50r's treble −0.38 / −1.31 / −1.34; the right cab's mic level −0.38 / −1.23 / −1.46; its distance +0.16 / −0.27 / −0.27; the ac20's power +0.16 / −0.22 / −0.11. Over all 17 core heads: +0.062 / −0.129 / −0.147. The split loss brings the core's fit back to C3i's.
+- **The declared reading:** C3s-cabS − C3-cabS is undecided, so the split loss is not adopted for later steps (`c3/decision-c3s.json`: C3). The core rows are diagnostics: restoring the share recovers the core, and more.
+- **What it means.**
+  - **Cause (b) is real and fixable:** with its own term, the core learns better than in C3, and a little better than in C3i, which suggests the added controls' own term helps the shared mixture.
+  - **The adopted configuration barely moves,** as the review predicted: the learned EQ and cab already make up for most of the core's loss there.
+  - **The split loss stays a candidate** for the next retrain's declaration, with its −0.008 stated. It is not adopted into the model now. That declaration states that it was undecided on the product row, reads it again on its own primary, and runs on R-all's recipe.
+  - **Not an epoch effect** (the review's check): C3s trains longer (E 67.8 against 59.5), but its core gain is even across folds, and C3 and C3i differ in core loss at similar E.
+  - By the score only.
+- Files: `PF/c3/c3s.json`, `decision-c3s.json`; `PF/{real,goat}/report-c3s.json`, `logs/c3s-n12.json`; runs `C3s-ftm-*`; logs `logs/c3s*.log`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
