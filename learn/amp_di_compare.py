@@ -60,9 +60,42 @@ def shape(mel_u8):
     return [x - m for x in means]
 
 
+def band_mask(lo_hz=60.0, hi_hz=8000.0):
+    """The mel bands whose centres sit in [lo_hz, hi_hz] (`song_aug`'s grid): the review's beside band. -> [bool]."""
+    import numpy as np
+
+    from learn import song_aug as SA
+
+    def hz_to_mel(f):                                   # song_aug.mel_matrix's own scale
+        return 2595 * np.log10(1 + f / 700)
+
+    def mel_to_hz(m):
+        return 700 * (10 ** (m / 2595) - 1)
+
+    edges = mel_to_hz(np.linspace(hz_to_mel(SA.FMIN), hz_to_mel(SA.FMAX), SA.MELS + 2))
+    return [bool(lo_hz <= c <= hi_hz) for c in edges[1:-1]]
+
+
+def shape_in(mel_u8, mask):
+    """`shape` on the bands `mask` keeps."""
+    return shape([r for r, keep in zip(mel_u8, mask) if keep])
+
+
 def distance(a, b):
     """The L2 distance of two shapes."""
     return math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b)))
+
+
+def band_pick(band, rec, sh, mask, amps=AMPS):
+    """The pick on the 60 Hz-8 kHz bands, from the stored mels (the stored shapes are full-band): each amp's stock-DI
+    renders' model-input mel on both halves, band-limited. -> amp."""
+    import numpy as np
+
+    z = np.load(a1_dir() / "mels" / f"{rec['set']}__{rec['unit'].replace('/', '__')}.npz")
+    n = len(rec["shapes"][sh][amps[0]])
+    renders = {a: [shape_in(np.concatenate([z[f"{sh}_{a}_{j}_A"], z[f"{sh}_{a}_{j}_B"]], axis=1).tolist(), mask)
+                   for j in range(n)] for a in amps}
+    return pick(band, renders, amps)
 
 
 def pick(target, renders, amps=AMPS):
@@ -134,6 +167,14 @@ def read_units():
     return out
 
 
+def target_lufs():
+    """The model's own input loudness (C3's fold models'), the gain the clean inputs and the stock-DI renders are read at."""
+    from learn import pipeline_fix as P
+
+    rec = json.loads((P.out_dir() / "runs" / f"C3-ftm-k0-{P.SEEDS[0]}.json").read_text())
+    return P.model_input_lufs(rec)
+
+
 def cmd_draw(_args):
     """The stock DIs, 2 per class from C3r's n12 units (the library DIs the DI check kept), and the units -> a1/plan.json,
     written once."""
@@ -146,15 +187,17 @@ def cmd_draw(_args):
         raise SystemExit(f"{p} exists: drawn once")
     cands = [{"unit": ru["unit"], "di": ru["prt"]["di"], "cls": ru["prt"]["cls"], "di_path": ru["prt"]["di_path"],
               "start_s": ru["prt"]["start_s"]} for ru in R3.read_units(R3.state()) if ru["set"] == "n12"]
-    stock = draw_stock(cands)
     units = [{k: v for k, v in u.items() if k != "answers"} for u in read_units()]
+    own = {u["cluster"] for u in units}                # a read unit's own DI file never serves as a stock DI
+    stock = draw_stock([c for c in cands if c["di"] not in own])
     P.save(p, {"phase": PHASE, "stock": stock, "units": units, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"A1 DRAW: {len(units)} units; stock DIs {json.dumps({c: [s['di'] for s in v] for c, v in stock.items()})}")
 
 
 def cmd_render(args):
     """Each unit's answer per amp and search half, through each stock DI of its class, fresh (own process, one priming
-    render), trimmed; only its log-mel shape is kept -> a1/shapes/<unit>.json."""
+    render), trimmed; its log-mel shape -> a1/shapes/<unit>.json, and (the review) its model-input mel per half at the
+    model's input gain (`step4_half`, uint8 and LUFS) -> a1/mels/<unit>.npz."""
     import numpy as np
 
     from learn import audibility_measure as AM
@@ -172,31 +215,42 @@ def cmd_render(args):
     ans = {(u["set"], u["unit"]): u["answers"] for u in read_units()}
     k, n = args.shard
     trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
+    from learn import direct_stems as DS
+
+    target = target_lufs()
     dis = {}
     for cls, ss in plan["stock"].items():
         dis[cls] = [B.measure(PS.section_audio(s["di_path"], s["start_s"])).astype(np.float32) for s in ss]
     LO._wait_cap()
     renders = 0
-    d = a1_dir() / "shapes"
+    d, dm = a1_dir() / "shapes", a1_dir() / "mels"
     d.mkdir(parents=True, exist_ok=True)
+    dm.mkdir(parents=True, exist_ok=True)
     for u in plan["units"][k::n]:
         out = d / f"{u['set']}__{u['unit'].replace('/', '__')}.json"
         if out.exists():
             continue
         if PS.free_gb() < T.DISK_GUARD_GB:
             raise SystemExit(f"DISK GUARD: free disk below {T.DISK_GUARD_GB:.0f} GB")
-        rec = {"set": u["set"], "unit": u["unit"], "cls": u["cls"], "shapes": {}}
+        rec = {"set": u["set"], "unit": u["unit"], "cls": u["cls"], "target_lufs": target, "shapes": {}}
+        mels = {}
         for sh in ("A", "B"):
             for a in AMPS:
                 x = ans[(u["set"], u["unit"])][a][sh]
                 st = LO.tdict(x["settings"])
                 got = []
-                for di32 in dis[u["cls"]]:
+                for j, di32 in enumerate(dis[u["cls"]]):
                     y = np.asarray(AM.fresh_render(CB.new_renderer, di32, x["select"], st, st), np.float64)[trim[0]:trim[1]]
                     renders += 2
                     got.append(shape(PS.quant(SA.logmel(DE.mono(y))).tolist()))
+                    g = DE.inference_gain_db(y, target)
+                    for h in ("A", "B"):
+                        s8, _, ls, _ = DS.step4_half(y, y, h, g)
+                        mels[f"{sh}_{a}_{j}_{h}"] = s8
+                        mels[f"{sh}_{a}_{j}_{h}_lufs"] = np.array([ls], np.float32)
                 rec["shapes"].setdefault(sh, {})[a] = got
-        P.save(out, rec)
+        np.savez_compressed(dm / f"{u['set']}__{u['unit'].replace('/', '__')}.npz", **mels)
+        P.save(out, rec)                                # the resume marker, after its mels
         print(f"{u['set']} {u['cls']}: renders so far {renders}", flush=True)
     print(f"A1 RENDER DONE {k}/{n}: {renders} renders", flush=True)
 
@@ -211,7 +265,10 @@ def cmd_rows(_args):
 
     P.require(PHASE)
     plan = json.loads((a1_dir() / "plan.json").read_text())
+    from learn import direct_existing as DE
+
     root = P.out_dir()
+    target, mask = target_lufs(), band_mask()
     sets, counts = {}, {}
     for name, d, sa, sj in (("bks", P.REAL_DIR, "answers", "judge"), ("goat", P.GOAT_DIR, P.AMPS3_DIR, P.AMPS3_JUDGE)):
         judge = {k: v["judge"] for k, v in X._judge_files(root / d / sj / MODEL).items()}
@@ -224,10 +281,13 @@ def cmd_rows(_args):
             backed = P.dfix_backed(u["unit"])
             prt = gparts[u["unit"]]
             ref = P.real_amp_track(prt["sd"], prt["track"], prt["start_s"])
-            picks = {"stem": {}, "clean amp track": {}}
+            g = DE.inference_gain_db(ref, target)           # the clean track at the model's input gain (the review)
+            picks = {"stem": {}, "clean amp track": {}, "60 Hz-8 kHz band": {}}
             for sh in ("A", "B"):
-                picks["stem"][sh] = pick(shape(backed[sh][0].tolist()), rec["shapes"][sh])
-                picks["clean amp track"][sh] = pick(shape(DS.step4_half(ref, ref, sh, 0.0)[0].tolist()), rec["shapes"][sh])
+                stem = backed[sh][0].tolist()
+                picks["stem"][sh] = pick(shape(stem), rec["shapes"][sh])
+                picks["clean amp track"][sh] = pick(shape(DS.step4_half(ref, ref, sh, g)[0].tolist()), rec["shapes"][sh])
+                picks["60 Hz-8 kHz band"][sh] = band_pick(shape_in(stem, mask), rec, sh, mask)
                 by_amp[picks["stem"][sh]] += 1
             w = X.s2_picks(amp_p, u["unit"], FS.AMPS)
             r, dr = unit_rows(u["unit"], u["cluster"], u["cls"], {a: judge[(u["unit"], a)] for a in AMPS}, picks, w)

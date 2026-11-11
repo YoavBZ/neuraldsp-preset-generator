@@ -1,7 +1,7 @@
 #!/bin/zsh
 # A1 (ledger phase_a1, docs/full-controls-plan.md "A1 in detail"): the amp chosen by a stock-DI comparison. The units and
-# stock DIs (a1-draw), each amp's answer through each stock DI in 3 shards (a1-render), then the read (a1-rows, zero
-# renders). The render slots are file locks (PR #446). Any failure stops it.   zsh logs/launch-a1.zsh /path/to/worktree
+# stock DIs (a1-draw), each amp's answer through each stock DI in 3 shards (a1-render), then stops: the read waits for its
+# amendment (the embedding pick, the review's Required 2). The render slots are file locks (PR #446). Any failure stops it.   zsh logs/launch-a1.zsh /path/to/worktree
 setopt no_bg_nice
 W=${1:?the worktree to run from}
 cd "${W}" || exit 1
@@ -42,5 +42,5 @@ three() {
 
 run draw ${PY} -u -m learn.amp_di_compare a1-draw
 three render ${PY} -u -m learn.amp_di_compare a1-render
-run rows ${PY} -u -m learn.amp_di_compare a1-rows
+note "renders done; the read (a1-rows) waits for the amendment's review"
 note done

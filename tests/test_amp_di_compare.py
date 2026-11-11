@@ -48,5 +48,11 @@ def test_the_reading_learns_only_when_better_somewhere_and_worse_nowhere():
 
 def test_the_launcher_draws_renders_then_reads_on_slot_locks():
     t = (pathlib.Path(__file__).resolve().parents[1] / "logs" / "launch-a1.zsh").read_text()
-    order = [t.index(x) for x in ("run draw", "three render", "run rows")]
-    assert order == sorted(order) and "acquire_render_slot" in t and "train-ft" not in t
+    order = [t.index(x) for x in ("run draw", "three render")]
+    assert order == sorted(order) and "acquire_render_slot" in t and "train-ft" not in t and "run rows" not in t
+
+
+def test_the_band_mask_keeps_60_hz_to_8_khz():
+    pytest.importorskip("numpy")
+    m = A.band_mask()
+    assert len(m) == 96 and 0 < sum(m) < 96 and not m[0] and not m[-1]

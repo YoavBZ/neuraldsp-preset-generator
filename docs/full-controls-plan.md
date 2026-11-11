@@ -444,10 +444,13 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **How it differs from what failed:** no head predicts the amp. Each amp's answer is rendered and compared with the song, so the choice uses the presets' own sound.
 - **The method, fixed before any render.**
   - **The stock DIs:** 2 per class, on distinct DI files, seeded (20261128), from C3r's n12 units: the library DIs the user's DI check kept. A unit's class picks its two.
-  - **The renders:** each unit's answer for each amp and search half (C3-cabS's, the model C3b stage 2 rendered on all three amps), through each of its class's stock DIs, fresh and primed, trimmed. Only each render's log-mel shape is kept.
+  - **The renders:** each unit's answer for each amp and search half (C3-cabS's, the model C3b stage 2 rendered on all three amps), through each of its class's stock DIs, fresh and primed, trimmed. Each render's log-mel shape is kept, and (after the review) its model-input mel on each half at the model's input gain (`step4_half`, uint8 and LUFS), about 260 MB, so a second statistic can be read without new renders.
+  - A stock DI whose file is a read unit's own DI file is refused (none is: the 12 kept library DIs are Cambridge sessions).
   - **The shape:** the model input's log-mel (`song_aug.logmel`, quantised as the inputs are), each band's mean over time, less the mean over bands, so level drops out.
   - **The pick:** per direction, the amp whose renders' shapes sit closest (L2, averaged over the two stock DIs) to the shape of the song's separated guitar on that search half, which is the model's own input (D_fix variant 0, `dfix_backed`). Ties go to the first amp.
-  - Beside, at zero renders: the same pick against the clean amp track's shape, which the product never has. It tells how much the separation costs.
+  - Beside, at zero renders: the same pick against the clean amp track's shape (at the model's input gain), which the product never has. It tells how much the separation costs. Also beside: the shape on the 60 Hz to 8 kHz bands alone, from the stored mels.
+  - **The review's warning, recorded before any read:** on a zero-render analog (does a statistic recognise a recording's own tone on its other half, against other units'?), the declared shape reaches AUC 0.59 on GOAT and 0.52 on BKS from the stem, against 0.95 and 0.87 from the clean track. The model's own embedding reaches 0.79. So an undecided row for the declared shape is expected, and is not a verdict on the route.
+  - **The read waits for an amendment,** declared and reviewed before `a1-rows` runs: the embedding pick as the primary, with the shape beside. The renders don't change.
 - **The units:** GOAT's 215 read units and BKS's 40, both search halves: 255 × 2 halves × 3 amps × 2 stock DIs × 2 = 6,120 renders, about 70 minutes on 3 processes.
 - **The read** (`a1-rows`, zero renders), valued on the held half of C3-cabS's own per-amp renders (C3b stage 2's), as C3c's:
   - **Primary: "DI-compare − always sw50r"** (the best constant), by DI on BKS and by item on GOAT, pooled with C3's weights, also by class.
