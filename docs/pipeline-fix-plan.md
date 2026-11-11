@@ -5066,6 +5066,8 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - **The declared reading is "both":** C3i − FTm is worse (on GOAT), and C3 core − C3i is worse (pooled). Neither row is split.
   - The two rows add up exactly to C3 core − FTm: +0.034 on GOAT, of which +0.028 is the labels and +0.006 the objective.
 - **Beside, at zero renders: the core heads' held losses.** On the 17 continuous `K.space` heads that every run of both models scores, C3's held loss (on C2's labels) is higher than C3i's in all 8 FT_k: by +0.12 to +0.29, mean +0.19. With the same labels and rows, the wider objective fits the core less well. This is a direct look at cause (b); it is reported, not deciding.
+  - **The gap is 4 heads** (the review's split, recounted), each worse under C3 in 8 of 8 FT_k: the sw50r's treble +0.93, the right cab's mic level +0.85, the right cab's distance +0.43, the ac20's power +0.38. 8 of the 17 differ by less than 0.03, and the pr12's treble reads −0.02.
+  - **Each of the 4 has a close relative among the controls C3 adds:** the sw50r's EQ for its treble, and C1b's mics, rooms and cab for the right cab's level and distance. So with those controls in the loss, the core heads that overlap them in sound fit their labels less well.
 - **What it means.**
   - **On GOAT most of the core's loss is the labels.** C2 searched the core with the EQ and pedals, so its core values fit alongside them, and alone they read worse than the stored labels' on GOAT. On BKS they read slightly better, undecided. The adopted C3 learns the EQ and pedals as well, which is how it ends level with FTm.
   - **The wider objective costs a little:** +0.007 pooled, decided, and the held losses agree.

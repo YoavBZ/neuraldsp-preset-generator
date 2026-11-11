@@ -5,6 +5,7 @@
 # C3-core), their renders in 3 shards (BKS, GOAT, N12), N12's rows (h4-wide), the reports (C3s-cabS - C3-cabS, C3s-core
 # - C3i, C3s-core - C3-core, C3s-cabS - S) and the declared reading (c3s-rows). Any failure stops it.
 #   zsh logs/launch-c3s-read.zsh /path/to/worktree PID [PID ...]
+# Launch it after the training launcher has rotated c3s-train.log: an old log's "done" would start the read early.
 setopt no_bg_nice
 W=${1:?the worktree to run from}
 shift

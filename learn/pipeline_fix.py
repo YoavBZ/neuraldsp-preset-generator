@@ -7289,8 +7289,10 @@ def cmd_train_ft(args):
             raise SystemExit(f"{name}: an inner run was made on another C2 state")
         if c3b and any("amp_labels" in (r_.get("c3") or {}) or "isolation" in (r_.get("c3") or {}) for r_ in allin):
             raise SystemExit(f"{name}: C3b's E comes from C3's own inner runs only")
-        if c3 and c3s != all("share" in (r_.get("c3") or {}) for r_ in allin):
-            raise SystemExit(f"{name}: C3s's E comes from its own inner runs only, and no other run's from C3s's")
+        if c3s and not all("share" in (r_.get("c3") or {}) for r_ in allin):
+            raise SystemExit(f"{name}: C3s's E comes from its own inner runs only")
+        if c3 and not c3s and any("share" in (r_.get("c3") or {}) for r_ in allin):
+            raise SystemExit(f"{name}: no other recipe's E comes from C3s's inner runs")
         if c3r is not None and any((r_.get("c3r") or {}).get("c3r_sha256") != r3st["sha256"] for r_ in allin):
             raise SystemExit(f"{name}: an inner run was made on another C2, C2r or C3 state")
         inners = [r_ for r_ in allin if k is None or (r_["real_fold"], r_["seed"]) == (k, seed)]
