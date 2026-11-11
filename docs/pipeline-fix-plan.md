@@ -4805,8 +4805,84 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - **C1b's labels are C3's** for the 40 BKS records, except the failed one; the 2 real_out ones as H4's exclusions decide. With effects off, their knob heads are masked in C3: a label that is always off on dry rows teaches only "off". (C1b's `searched_union` lists every effect knob, so C3 must not use it as the mask.) C2 continues these 40 to its budget. N12 stays measurement only.
   - **C2 keeps stages A and B and drops stage C,** writing effects off by source, with the fallback rule above.
   - **Still open in C0** (the table is updated with C2's declaration): the effects' labels (a keep rule tested on a source with known effects) and the room mics (a real test).
-  - Not yet heard. The C1a page is out with the user.
+  - By ear, C1a was later heard closer than the label (F69); C1b itself was not heard.
 - Files: `PF/c1b/` (`records.json`, `report.json`), per-record outputs in `PF/captures2/search-c1b/` and `PF/real/search-c1b/`, logs `logs/c1b*.log`. Code: `learn/full_controls_c1b.py`. The audit's scripts are in the session scratchpad (`recompute.py`, `decomp.py`).
+
+### F71. C2: every searched control on all 520 of FT2's real training rows. By the score, on the held half, the labels beat their start (the stored label) by −0.208 on GOAT (121 of 126 items), by −0.108 on BKS stage 1 and −0.129 on stage 2, and by −0.056 on C1a's 40, which were already searched to 100 evaluations (6 of them to 300). All of them sit far below S. Nothing was refused or fell back. 72 labels ended more than 10 dB quieter than their start, and 90 can't reach a −12 dBFS peak through the output control alone, so the loudness step needs a second lever (phase_c2, 131,545 renders, no training, audited)
+- **What ran** ([plan](full-controls-plan.md), "C2 in detail"). On each of FT2's 520 real training rows (GOAT 214, BKS stage 1 80, stage 2 186, and C1a's 40 last):
+  - **Step 1:** C1a's search from the stored label, at budget 200.
+  - **Step 2:** C1b's stages A and B, the rest of the cab and then the mics with the amp EQ.
+  - No effect stage: the effect, spring and doubler switches are written off by source. Then one fresh render of the final.
+  - The read is ln(the label's fresh render / the start's first evaluation) on the held half, lower is better.
+  - 28 records were left out at the draw, as declared: GOAT 16 by the one-window lag rule, 2 with no lag and 1 silent fallback; BKS stage 2 the 9 lag-refused.
+- **The run matched the declaration.** It was audited with separate code. Every primary, against-S and against-stored-label row, in every block, part and class, reproduces the stored report to 2e-16.
+  - **520 of 520 labels were written.** None was refused, fell back or has no label, and none has a non-finite final.
+  - **Starts.**
+    - 506 starts passed the 0.005 log check at once.
+    - 14 GOAT starts took Amendment 1's path: they missed with the gate on, matched with the gate as stored, and ran from that.
+    - All 40 replays of C1a's block were exact. The 34 stored at 100 evaluations each had a start check, and all passed. The 6 that ran to 300 in C1a rendered nothing in step 1: their step 1 is C1a's stored evaluations to 200.
+    - Every step 2 start was canonical.
+  - **Fresh and in-process renders** of the final agree within 0.0002 on all 520.
+  - **Every label is dry:** no time effect, spring or doubler is on.
+  - **The near-silent guard** took a constrained best 11 times in step 1 and 3 times in step 2, and never failed a peak at step 2.
+  - **Renders: 131,545,** against at most 134,788.
+- **By the score** (held half; record-weighted 90% cluster-jackknife intervals, clustered by DI or GOAT item; real_out apart).
+
+  | Block | Against the start | Clean | Crunch | Against S | Step 1 at 100 / at 200 |
+  |---|---|---|---|---|---|
+  | GOAT (197, 126 items) | **−0.208 [−0.231, −0.185]**; item-weighted −0.213, 121 of 126 negative | −0.204 (110) | −0.213 (87) | −0.518 | −0.158 / −0.181 |
+  | BKS stage 1 (76, 8 DIs) | **−0.108 [−0.172, −0.045]**; DI-weighted −0.135, 7 of 8 | −0.058 [−0.189, +0.073] (34), undecided | −0.150 [−0.259, −0.040] (42) | −0.421 | −0.085 / −0.101 |
+  | BKS stage 2 (186, 6 DIs) | **−0.129 [−0.159, −0.100]**; DI-weighted −0.142, 6 of 6 | −0.149 [−0.812, +0.514] (15, 2 DIs), undecided | −0.128 [−0.161, −0.094] (171) | −0.508 | −0.099 / −0.119 |
+  | C1a's 40 (38, 8 DIs) | **−0.056 [−0.094, −0.018]**; DI-weighted −0.061, 7 of 8 | −0.049 [−0.157, +0.058] (17), undecided | −0.062 [−0.086, −0.038] (21) | −0.462 | −0.027 / −0.051 |
+  | real_out (GOAT 17, BKS 6) | GOAT −0.217 [−0.261, −0.172]; BKS stage 1 −0.100 (4), C1a's −0.069 (2) | | | | |
+
+  Against the stored label's stored score, the rows differ from these by at most 0.007.
+- **Where the gain came from** (differences of the rows' means, no intervals):
+  - **GOAT:** −0.158 by evaluation 100, −0.023 more by 200, and −0.027 from stages A and B.
+  - **BKS stages 1 and 2:** −0.085 and −0.099 by 100, −0.016 and −0.020 more by 200, and −0.007 and −0.010 from A and B.
+  - **C1a's 40:** their −0.027 at 100 is C1a's own reading. The continuation to 200 adds −0.024, and A and B add −0.005.
+  - **C1a's 40 gain less than the other BKS records at the same checkpoint** (−0.027 against −0.085 and −0.099 at 100), on the same recipe. That follows from a selection. By C1a's draw rule each is its unit's best amp by the stored label's search half, and the other 80 stage-1 records are the same 40 units' other two amps. Paired by unit, C1a's records start closer to the target (−0.398 against S, against −0.313) and gain −0.028 at 100, against −0.084.
+- **What changed, over all 520:**
+  - Any pedal on in 354 labels, against 283 starts. The compressor was turned on in 175 (GOAT 64, BKS 108, C1a's 3) and off in 23, so it is on in 207 labels, against 55 starts. GOAT's capture renders carry no compressor by construction, and BKS's reamps are assumed to carry none, as the plan assumes them dry. So these are sound-alike settings by the score, not the rig's truth.
+  - The mic changed in 204.
+  - A room went on in 45 labels (59 rooms; no start had one), and the left cab went off in 9.
+  - The phase flipped in 2.
+  - The gate threshold moved in 255.
+- **The output level.**
+  - **72 of 520 labels ended more than 10 dB quieter than their start:** GOAT 31, BKS stage 1 10, stage 2 24, C1a's 7. 43 are more than 20 dB quieter, and the largest drop is 52.6 dB.
+  - **Step 1 made it:** 68 of the 72 were already more than 10 dB down at step 1's best. Step 1 drifts them 25 dB on average, and step 2 adds 0.8. Over the 72, the search changed an amp's volume, level or power in 45 labels (41 without ac20 Power), a cab mic's level (left 32, right 40) or the input gain (28). It turned the right cab off in 10.
+  - **pr12 Volume is 0 in 43 labels.** 31 of their starts already had it, so 12 went to 0. 7 of the 38 pr12 starts at 0 moved off it.
+  - **29 labels are flagged quiet,** below −50 dBFS.
+  - **The output control alone can't make up the rest.** `parameters/outputGain` spans −24 to +24 dB (`full_space.OUTPUT_RANGE`). At +24:
+    - 90 of the 520 labels still peak below −12 dBFS, and 62 below −20 dBFS. −12 dBFS is a yardstick for this count, not a declared target.
+    - 99 can't get back to their own start's peak, 94 of them by more than 0.5 dB.
+    - 57 of the 78 labels under −30 dBFS are pr12.
+  - **Part of it is older than C2.** 49 of the 520 starts (the stored labels FTm trained on) already peak below −12 dBFS at +24, and 40 below −20. 43 of the 90 short labels did not drift by more than 10 dB. So C2 took the count from 49 to 90, and the shortfall sits in FTm's labels too.
+  - **The cab mics close few.** Raising every active cab and room mic level together until the highest reaches +6 dB keeps the blend, and so the tone if the cab is linear. It brings 11 of the 90 to −12 dBFS. 30 are already at +6, and the other 79 stay a median 14 dB short. So most need the amp's volume, which changes the tone, or a reported shortfall.
+  - **The quieter labels gain more by the score.** A split made after the run, with no interval: the 43 labels more than 20 dB down read −0.233 on average, against −0.146 for the 448 not more than 10 dB down. By block:
+
+    | Block | More than 20 dB down | Not more than 10 dB down |
+    |---|---|---|
+    | GOAT | −0.339 (14) | −0.198 (183) |
+    | BKS stage 1 | −0.144 (5) | −0.108 (70) |
+    | BKS stage 2 | −0.233 (18) | −0.118 (162) |
+    | C1a's 40 | −0.057 (6) | −0.070 (33) |
+
+    The drift comes from step 1's amp, pedal and input controls, which leans to a real tone effect such as a lower amp volume, but does not settle it. At zero renders this can't tell a closer tone at low volume from J0's handling of level near its floor. An ear read of such labels would tell them apart.
+  - **A correction.** C2r's block said "31 of GOAT's 214 labels drifted 20 to 50 dB quieter". The 31 are the labels more than 10 dB quieter; 14 of them are 20 to 48 dB quieter. It is corrected there.
+- **The held half got worse on 17 of 520 labels,** by more than +0.03:
+  - GOAT 6 and BKS 11. 10 of BKS's 11 are on TooMuch, 5 of them on `16_ElecGtr1aDI` (both windows; @15 on all three amps, up to +0.474).
+  - They train as declared. A search that picks on one half is expected to overfit it on some records.
+- **What it changes.**
+  - **C3 trains on these labels as declared** (started 2026-11-11 06:25). Nothing here calls for a change to its declaration.
+  - **C2b, C2r and C3r follow in order.** C2r labels its 170 new records with the same recipe, so the same level drift may show there.
+  - **The loudness step must be declared with a second lever before any preset ships.** At +24 dB of output, 90 of C2's 520 labels and 49 of FTm's stored ones stay below −12 dBFS. The cab mics close 11 of the 90. So the lever is the amp's volume, which changes the tone, or the product reports the shortfall. The declaration also sets its own yardstick, against something measured on the same DI (S's peak, or the factory presets'). The C0 output-gain row carries this.
+  - **By the score only, and a risk for C3's adoption.** C3 is kept unless shown worse by J0, the judge that chose these labels, and the labels that dropped most in level gain most by it. If that comes from J0's handling of level rather than tone, C3's read can't see it. So C4's declaration should put a few of the 43 most-drifted labels on its blind page, level-matched against their start.
+- Files:
+  - `PF/c2/` (`records.json`, `report.json`);
+  - per-record outputs in `PF/goat/search-c2/` and `PF/real/search-c2/`;
+  - logs `logs/c2*.log`.
+  - Code: `learn/full_controls_c2.py`. The audit's scripts (`recompute.py`, `a3.py` to `a6.py`) are in the session scratchpad.
 
 ## Budget
 
