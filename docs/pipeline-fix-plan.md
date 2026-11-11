@@ -5220,7 +5220,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - **The clean amp track carries a weak signal** (−0.018 on GOAT) that separation erases, so a cleaner stem would be the precondition for any later learned selector.
   - **What goes to the user,** explained: comparing each amp's answer rendered through a library DI with the song's separated guitar at inference (a new approach, about 2,600 renders to test), or offering three presets, one per amp, to pick by ear. Until then the product keeps W's pick.
   - By the score only.
-- Files: `PF/c3/c3c.json`; runs `C3c-ftm-*`; logs `logs/c3c*.log`.
+- Files: `PF/c3/c3c.json`; runs `C3c-ftm-*`; logs `logs/c3c*.log`. `PF/c3r/answers/all-amps3.json` is the withdrawn read's zero-render answers (R-all on all three amps), unused.
 
 ## Budget
 
