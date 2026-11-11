@@ -4969,7 +4969,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - **C3b is declared separately and goes to the user first.** It must choose the amp labels' recipe. The options:
     1. GOAT's C2b labels as they are, beside BKS's C2 argmin. Zero renders, but two recipes.
     2. Both sets on the stored recipe, with BKS's stored argmin. Zero renders and like for like, but not C3's recipe.
-    3. C2's recipe on GOAT's other two amps. This is like for like with C3, but costs about 112k renders: C2's GOAT records took 263 each (253 to 271), so at most about 116k. That is about 10 h if 5 processes scale fully, 14 h at 8,100 an hour, or 17 h on 3, after C2r and the reads already queued. On BKS it would buy +0.009, undecided, over option 2's choice.
+    3. C2's recipe on GOAT's other two amps. This is like for like with C3, but costs about 112k renders: C2's GOAT records took 263 each (253 to 271), so at most about 116k. That is about 10 h if 5 processes scale fully, 14 h at 8,100 an hour, or 17 h on 3, after C2r and the reads already queued. On BKS it would gain about 0.009 over option 2's choice (the stored choice reads +0.009 worse, undecided).
     4. BKS's C2 argmin alone, with GOAT's amp rows masked. Zero renders and like for like, on 8 DIs and 2 songs.
   - **The amp head itself** is the larger open question. C3's amp pick (W's head on C3's body, untrained on real rows) reads −0.027 [−0.070, +0.016], undecided (F72).
   - By the score only.
