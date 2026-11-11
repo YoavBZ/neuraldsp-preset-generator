@@ -168,9 +168,12 @@ def test_the_read_render_is_a_render_command_and_the_rest_are_not():
 
 # --- on the stored data (zero renders; skipped where the data is not on this machine) ---------------------------------
 
-def test_the_final_folds_drop_what_the_review_counted():
+def test_the_final_folds_drop_what_the_review_counted(monkeypatch):
     if not (P.out_dir() / "c2" / "records.json").exists():
         pytest.skip("no stored data")
+    from learn import di_scope as DS
+    monkeypatch.setattr(DS, "verdicts", lambda: None)   # the review counted before the DI scope's answers (2026-11-11)
+    monkeypatch.setattr(R3, "_CACHE", {})               # state() caches per process: this one must not leak
     st = R3.state(partial=True)
     dc = R3.drop_counts(st["entries"], "all")
     ft = [dc[f"FT_k{k}"] for k in range(4)]
@@ -183,6 +186,19 @@ def test_the_final_folds_drop_what_the_review_counted():
     assert rows == {"bks": 306, "goat": 214, "cap1": 121, "n12": 31, "panel": 18} and sum(rows.values()) == 690
     assert st["band_folds"] == {"Jen Hartswick & Nick Cassarino": 0, "The Laminar Flow": 1, "Aimee Norwich": 2,
                                 "Port St Willow": 3, "Blue Manic": 2, "Big Troubles": 3}
+
+
+def test_the_di_scopes_answers_take_their_units_out_of_the_rows_and_the_drops(monkeypatch):
+    from learn import di_scope as DS
+    monkeypatch.setattr(R3, "_CACHE", {})
+    if not (P.out_dir() / "c2" / "records.json").exists() or DS.verdicts() is None:
+        pytest.skip("no stored data or no DI scope answers")
+    st = R3.state(partial=True)                         # the stored answers (2026-11-11): 14 of 26 DI files not kept
+    assert len(st["scope"]["dropped_dis"]) == 14 and {k: len(v) for k, v in st["scope"]["out"].items()} == {"n12": 19, "panel": 6}
+    rows = {s: sum(e["n"] for e in st["entries"] if e["set"] == s and e["row"]) for s in R3.SETS}
+    assert rows == {"bks": 306, "goat": 214, "cap1": 121, "n12": 12, "panel": 12} and sum(rows.values()) == 665
+    ft = [R3.drop_counts(st["entries"], "all")[f"FT_k{k}"] for k in range(4)]
+    assert [c["dropped"]["n12"] for c in ft] == [3, 1, 0, 3] and [c["train"]["all"] for c in ft] == [405, 410, 401, 494]
     assert len(st["measurement_only_lifted"]["records"]) == 31
 
 

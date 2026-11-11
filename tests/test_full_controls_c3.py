@@ -398,3 +398,63 @@ def test_renders_registered():
     for cmd in ("c3-check", "c3-gate x.json", "c3-adopt", "c3-n12 x.json", "c3-amp x.json"):
         assert not any(re.search(p, f"python -m learn.full_controls_c3 {cmd}") for p in LO.RENDERS), cmd
     assert not any(re.search(p, "python -m learn.pipeline_fix real-report --pairs a:b") for p in LO.RENDERS)
+
+
+# --- C3i, the isolation of C3's core (phase_c3i) ----------------------------------------------------------------------
+
+def test_c3i_is_read_through_c3s_paths_with_ftms_hold_and_its_own_runs():
+    from learn import full_controls_c3 as X
+    from learn import pipeline_fix as P
+    assert P.C3I_TAG == X.C3I_TAG and P.C3_READ == P.C3_TAGS | {X.C3I_TAG} and X.C3I_TAG not in X.ALL_TAGS
+    assert P.model_base(X.C3I_TAG) == X.C3I_BASE != X.C3_BASE and X.C3I_BASE != P.FTM_BASE
+    assert P.read_phase(X.C3I_TAG) == "phase_c3i" and P.answer_hold(X.C3I_TAG) is None   # FTm's hold: K.space
+    assert P.report_phase({X.C3I_TAG, "C3-core", "P2b-ftm"}) == "phase_c3i"
+
+
+def test_c3i_pairs_and_its_declared_readings():
+    from learn import full_controls_c3 as X
+    assert X.c3i_pairs() == "C3i:P2b-ftm,C3-core:C3i,C3i:S"
+    def j(lo, hi, where="goat"):
+        r = {"bks": {"lo90": -1, "hi90": 1}, "goat": {"lo90": -1, "hi90": 1}, "pooled": {"lo90": -1, "hi90": 1}}
+        r[where] = {"lo90": lo, "hi90": hi}
+        return r
+    W, B, U = j(0.01, 0.05), j(-0.05, -0.01), j(-0.01, 0.01)
+    S = dict(j(0.01, 0.05), bks={"lo90": -0.05, "hi90": -0.01})
+    assert [X.direction(r) for r in (W, B, U, S)] == ["worse", "better", "undecided", "split"]
+    got = {(a, b): X.c3i_reading(ra, rb) for a, ra in (("W", W), ("B", B), ("U", U)) for b, rb in (("W", W), ("B", B), ("U", U))}
+    assert got == {("W", "U"): "labels", ("W", "B"): "labels", ("W", "W"): "both", ("U", "W"): "objective",
+                   ("B", "W"): "objective", ("U", "U"): "neither", ("U", "B"): "neither", ("B", "U"): "neither",
+                   ("B", "B"): "neither"}
+    assert X.c3i_reading(S, U) == X.c3i_reading(U, S) == "split"
+
+
+def test_c3i_rows_judge_each_pair_on_both_sets(tmp_path, monkeypatch):
+    from learn import full_controls_c3 as X
+    from learn import pipeline_fix as P
+    monkeypatch.setattr(P, "out_dir", lambda root=None: tmp_path)
+    monkeypatch.setattr(P, "require", lambda phase: {})
+    monkeypatch.setattr(X, "c2_sha", lambda: "sha")
+
+    def row(m, lo, hi):
+        return {"mean": m, "lo90": lo, "hi90": hi, "clusters": 8}
+    rows = {"C3i - P2b-ftm": row(0.03, 0.01, 0.05), "C3-core - C3i": row(0.0, -0.02, 0.02), "C3i - S": row(-0.1, -0.2, 0.0)}
+    for d in (P.REAL_DIR, P.GOAT_DIR):
+        (tmp_path / d).mkdir()
+        (tmp_path / d / "report-c3i.json").write_text(json.dumps({"rows": rows}))
+    X.cmd_c3i(None)
+    rec = json.loads((tmp_path / X.OUT / "c3i.json").read_text())
+    assert rec["reading"] == "labels" and set(rec["rows"]) == set(rows) and rec["phase"] == "phase_c3i"
+    assert rec["follow_up"] is False and rec["directions"]["C3i - P2b-ftm"] == "worse"
+    (tmp_path / P.GOAT_DIR / "report-c3i.json").write_text(json.dumps({"rows": {"C3i - S": rows["C3i - S"]}}))
+    with pytest.raises(SystemExit):
+        X.cmd_c3i(None)
+
+
+def test_c3i_launchers_train_with_c3i_and_read_after_c2r():
+    import pathlib
+    root = pathlib.Path(__file__).resolve().parents[1] / "logs"
+    t, r = (root / "launch-c3i-train.zsh").read_text(), (root / "launch-c3i-read.zsh").read_text()
+    assert "--masked --c3i" in t and "--c3 " not in t.replace("--c3i", "")
+    assert "c2r.log" in r and "c3i-train.log" in r and "--names ${TAG}" in r and "c3i-rows" in r
+    for x in (t, r):                                    # a stop by recorded PIDs reads only this launch's
+        assert "mv ${PIDS} ${PIDS}." in x and x.index("mv ${PIDS}") < x.index('echo "launcher $$" >> ${PIDS}')

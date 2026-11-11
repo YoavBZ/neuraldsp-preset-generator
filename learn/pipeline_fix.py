@@ -2749,7 +2749,7 @@ def cmd_real_predict(args):
         return real_rcm_answers()
     if args.names in ("P2a-pc", "P2a-pcsz", "P2a-real", "P2a-reals2", "P2a-pc-Sc", "P2a-goat", "P2a-goatshuf") \
             or args.names in DFIX_READS or args.names in (FT_BASE, FTM_BASE, FTS_TAG) or args.names in H4_FT_TAGS \
-            or args.names in C3_TAGS:
+            or args.names in C3_READ:
         return real_predict_5b2(args.names)
     if args.names == "S-shift":
         require("phase_5b1b")
@@ -2811,6 +2811,8 @@ def read_phase(name):
     """The ledger phase a read-2 model tag answers under: FT's, a D_fix family member's, 5C's or 5B.2's."""
     if name == FT_BASE:
         return "phase_ft"
+    if name == C3I_TAG:                                # C3i: FTm's mask on C2's labels
+        return "phase_c3i"
     if name in C3_TAGS:                                # C3's tags: C3's fold models, each tag its own answer hold
         return "phase_c3"
     if name in H4_FT_TAGS:                             # H4's arms: FTm's read on their own fold models
@@ -2846,7 +2848,7 @@ def real_predict_5b2(name):
     elif name.startswith("P2a-goat"):                   # 5C: RG and RGshuf, each BKS unit by its DI's fold model
         folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
         names = {p_["unit"]: f"{name}{folds[p_['di']]}" for p_ in parts}
-    elif name in (FT_BASE, FTM_BASE, FTS_TAG, *H4_FT_TAGS, *C3_TAGS):   # FT's read 2: each BKS unit by its DI's FT_k
+    elif name in (FT_BASE, FTM_BASE, FTS_TAG, *H4_FT_TAGS, *C3_READ):   # FT's read 2: each BKS unit by its DI's FT_k
         folds = real_folds(parts, stage_units(kept, sp, inv, 1) + stage_units(kept, sp, inv, 2))
         names = {p_["unit"]: ft_name(folds[p_["di"]], base=model_base(name)) for p_ in parts}
     elif name.startswith("P2b-dfix"):                   # D_fix's read 2: each BKS unit by its DI's fold model only
@@ -2864,7 +2866,7 @@ def real_predict_5b2(name):
             ft_read_check(r_)
             if h4x is not None:
                 h4_read_check(r_, h4x["sha256"])
-            if name in C3_TAGS:
+            if name in C3_READ:
                 C3_read_check(r_)
         own = [i for i in recs[0]["train_ids"] if i < REAL_ROW0]
         if any([i for i in r_["train_ids"] if i < REAL_ROW0] != own for r_ in recs):
@@ -2878,7 +2880,7 @@ def real_predict_5b2(name):
         nets, _, target, const = models[names[prt["unit"]]]
         ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
         g = DE.inference_gain_db(ref, target)
-        backed = stem_backed(prt["unit"]) if name == FTS_TAG else dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE, FTM_BASE, *H4_FT_TAGS, *C3_TAGS) else None
+        backed = stem_backed(prt["unit"]) if name == FTS_TAG else dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE, FTM_BASE, *H4_FT_TAGS, *C3_READ) else None
         if name == FTS_TAG and backed is None:
             continue
         for amp in AMPS3:
@@ -2899,9 +2901,9 @@ def real_predict_5b2(name):
                                            sw, mics)
                 else:
                     st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
-                    if name in (FTM_BASE, FTS_TAG, *H4_FT_TAGS, *C3_TAGS):
+                    if name in (FTM_BASE, FTS_TAG, *H4_FT_TAGS, *C3_READ):
                         st = hold_outside_space(st, S, amp) if hold is None else hold_outside_space(st, S, amp, hold)
-                    if name in C3_TAGS and r["amp_p"] is not None:   # W's amp head on C3's body (masked on real rows)
+                    if name in C3_READ and r["amp_p"] is not None:   # W's amp head on C3's body (masked on real rows)
                         amp_p.setdefault(key, {})[search] = r["amp_p"]
                 out[name].setdefault(key, {})[search] = {"select": sel, "settings": LO.sdict(st)}
             if name == "P2a-pc":
@@ -2910,7 +2912,7 @@ def real_predict_5b2(name):
     for t, a in out.items():
         save(out_dir() / REAL_DIR / "answers" / f"{t}.json", {
             "plan": PLAN, "ledger": f"{LEDGER_ID} {read_phase(name)}",
-            "tag": t, "parts": parts, "input": "X-LANCE stem" if name == FTS_TAG else "backed (variant 0)" if name in (*DFIX_BASES, FT_BASE, FTM_BASE, *H4_FT_TAGS, *C3_TAGS) else "clean", "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
+            "tag": t, "parts": parts, "input": "X-LANCE stem" if name == FTS_TAG else "backed (variant 0)" if name in (*DFIX_BASES, FT_BASE, FTM_BASE, *H4_FT_TAGS, *C3_READ) else "clean", "models": {nm: {"sha256": m[1], "input_lufs": m[2]} for nm, m in models.items()},
             "unit_model": names, "answers": a, **({"amp_p": amp_p} if amp_p else {}),
             "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"REAL PREDICT 5B.2 DONE: {name} on {len(parts)} units")
@@ -4070,14 +4072,14 @@ def goat_predict(name):
     units = goat_read_units()
     models = {}
     for k in sorted({p_["fold"] for p_ in units}):
-        nm = (ft_name(k, base=model_base(name)) if name in (FT_BASE, FTM_BASE, FTS_TAG, *H4_FT_TAGS, *C3_TAGS) else dfix_fold_name(name, k) if name in DFIX_BASES
+        nm = (ft_name(k, base=model_base(name)) if name in (FT_BASE, FTM_BASE, FTS_TAG, *H4_FT_TAGS, *C3_READ) else dfix_fold_name(name, k) if name in DFIX_BASES
               else f"{name}{k}")
         nets, recs = zip(*(load_run(nm, sd, "best") for sd in SEEDS))
         for r_ in recs:
             ft_read_check(r_)
             if h4x is not None:
                 h4_read_check(r_, h4x["sha256"])
-            if name in C3_TAGS:
+            if name in C3_READ:
                 C3_read_check(r_)
         models[k] = (list(nets), [r_["model_sha256"]["best"] for r_ in recs], model_input_lufs(recs[0]))
     ms = A_menu_S()
@@ -4088,7 +4090,7 @@ def goat_predict(name):
         g = DE.inference_gain_db(ref, target)
         amp = prt["amp"]
         sel, S = ms[amp][prt["cls"]]
-        backed = stem_backed(prt["unit"]) if name == FTS_TAG else dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE, FTM_BASE, *H4_FT_TAGS, *C3_TAGS) else None   # D_fix, FT: pool-backed
+        backed = stem_backed(prt["unit"]) if name == FTS_TAG else dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE, FTM_BASE, *H4_FT_TAGS, *C3_READ) else None   # D_fix, FT: pool-backed
         if name == FTS_TAG and backed is None:
             continue
         for search in ("A", "B"):
@@ -4099,9 +4101,9 @@ def goat_predict(name):
             x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
             r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
             st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
-            if name in (FTM_BASE, FTS_TAG, *H4_FT_TAGS, *C3_TAGS):
+            if name in (FTM_BASE, FTS_TAG, *H4_FT_TAGS, *C3_READ):
                 st = hold_outside_space(st, S, amp) if hold is None else hold_outside_space(st, S, amp, hold)
-            if name in C3_TAGS and r["amp_p"] is not None:
+            if name in C3_READ and r["amp_p"] is not None:
                 amp_p.setdefault(real_key(prt, amp), {})[search] = r["amp_p"]
             out.setdefault(real_key(prt, amp), {})[search] = {"select": sel, "settings": LO.sdict(st)}
     save(out_dir() / GOAT_DIR / "answers" / f"{name}.json", {
@@ -4114,9 +4116,9 @@ def goat_predict(name):
 
 def cmd_goat_predict(args):
     if args.names not in ("P2a-goat", "P2a-goatshuf", *DFIX_BASES, FT_BASE, FTM_BASE, FTS_TAG, *sorted(H4_FT_TAGS),
-                          *sorted(C3_TAGS)):
+                          *sorted(C3_READ)):
         raise SystemExit(f"--names P2a-goat, P2a-goatshuf, {FT_BASE}, {FTM_BASE}, {FTS_TAG}, H4's "
-                         f"{', '.join(sorted(H4_FT_TAGS))}, C3's {', '.join(sorted(C3_TAGS))} or one of "
+                         f"{', '.join(sorted(H4_FT_TAGS))}, C3's {', '.join(sorted(C3_READ))} or one of "
                          f"{', '.join(DFIX_BASES)} (fold models)")
     goat_predict(args.names)
 
@@ -4191,9 +4193,11 @@ def cmd_goat_report(args):
         judge["S"] = {f"{r['unit']}|{r['amp']}": {ANY_HALF: r["s_judge"]} for r in goat_labels()[0]}
     if tags & H4_FT_TAGS:
         require(H4)
-    if tags & C3_TAGS:
+    if tags & C3_READ:
         require("phase_c3")
-    gphase = "phase_c3" if tags & C3_TAGS else H4 if tags & H4_FT_TAGS else "phase_5c"
+    if C3I_TAG in tags:
+        require("phase_c3i")
+    gphase = "phase_c3i" if C3I_TAG in tags else "phase_c3" if tags & C3_TAGS else H4 if tags & H4_FT_TAGS else "phase_5c"
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {gphase}", "units": len(units),
            "lag_tol": GOAT_LAG_TOL if args.lag_tol is None else args.lag_tol, "rows": {}}
     keep = ("mean", "lo90", "hi90", "clusters", "clusters_negative", "part_weighted", "parts", "parts_negative")
@@ -4506,7 +4510,8 @@ ARM_FOLD_PHASES = ("phase_5b2", "phase_5c", "phase_dfix", "phase_ft", "phase_ft_
 
 def report_phase(tags):
     """real-report's ledger phase for the tags it reads."""
-    return ("phase_ft_groups" if any(t.startswith("FTg-") for t in tags) else "phase_c3" if tags & C3_TAGS
+    return ("phase_ft_groups" if any(t.startswith("FTg-") for t in tags) else "phase_c3i" if C3I_TAG in tags
+            else "phase_c3" if tags & C3_TAGS
             else H4 if tags & H4_FT_TAGS
             else "phase_night2" if tags & {FTM_BASE, FTH_TAG, FTS_TAG} else "phase_ft" if FT_BASE in tags else "phase_dfix" if tags & DFIX_READS else "phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
             else "phase_5b2_rigo" if tags & {"RigO", "RcM"}
@@ -6861,12 +6866,18 @@ FTH_TAG = "P2b-fth"                  # N1's isolation: FT's stored answers, cont
 FTS_TAG = "P2b-ftm-stem"             # N5's score read: FTm_k on the units' X-LANCE stems (`night3`)
 C3_TAGS = frozenset({"C3-ftm", "C3-core", "C3-eqS", "C3-pedalsS", "C3-gateS", "C3-cabS", "C3-adopt"})
                                      # C3's read tags (`full_controls_c3.ALL_TAGS`): C3's fold models, each its own hold
+C3I_TAG = "C3i"                      # C3i (`phase_c3i`): FTm's mask on C2's labels, read with FTm's hold (`K.space`)
+C3_READ = C3_TAGS | {C3I_TAG}        # every tag read through C3's paths (C2's state checked on each run)
 
 
 def model_base(name):
     """The run base a read tag's fold models carry: FTm's for N5's stem read, C3's for every C3 tag, else the tag."""
     if name == FTS_TAG:
         return FTM_BASE
+    if name == C3I_TAG:
+        from learn import full_controls_c3 as C3
+
+        return C3.C3I_BASE
     if name in C3_TAGS:
         from learn import full_controls_c3 as C3
 
@@ -7085,7 +7096,8 @@ def cmd_train_ft(args):
     `--c3` (C3, opt-in, with --masked): FTm's recipe under C3's own names (`full_controls_c3.C3_BASE`) on C2's labels
     with per-record masks (`full_controls_c3.mask_rows`); refuses until all of C2's records are written, records C2's
     sha256, and every FT_k or all-labels run refuses inner runs made on another C2 state. Per-head losses are logged
-    every epoch."""
+    every epoch. `--c3i` (C3i, opt-in, with --masked; `phase_c3i`): FTm's recipe and FTm's mask (`K.space` only) on C3's
+    labels, under C3i's own names (`full_controls_c3.C3I_BASE`), with C3's C2-state checks."""
     import numpy as np
     import torch
 
@@ -7095,6 +7107,10 @@ def cmd_train_ft(args):
     k, inner, seed = args.real_fold, bool(args.inner), args.seed
     masked = bool(getattr(args, "masked", False))
     c3 = bool(getattr(args, "c3", False))
+    c3i = bool(getattr(args, "c3i", False))
+    if c3 and c3i:
+        raise SystemExit("--c3 or --c3i, not both")
+    c3 = c3 or c3i                                     # C3i takes C3's labels and C2 checks; only its mask and names differ
     c3r = getattr(args, "c3r", None)
     if c3 and c3r is not None:
         raise SystemExit("--c3r trains C3's recipe only: --masked, no --c3, no --h4, no --real-frac or --shuffle-real")
@@ -7112,6 +7128,10 @@ def cmd_train_ft(args):
         c3src = C3.sources(c2)
         base = C3.C3_BASE
         c3info = {"c2_sha256": c2["sha256"], "c2_written": c2["written"], "sources": C3.source_counts(c3src)}
+        if c3i:                                        # C3i: FTm's mask on C3's labels, under its own names
+            require(C3.C3I_PHASE)
+            base = C3.C3I_BASE
+            c3info["isolation"] = "C3i: FTm's mask (K.space) on C2's labels"
     r3st = None
     if c3r is not None:                                # C3r: C3's recipe on every trusted real row, by rotation
         from learn import full_controls_c3 as C3
@@ -7218,7 +7238,7 @@ def cmd_train_ft(args):
     tr, rows = with_rows(tr, rows, rrows)
     rows = rows + [dict(r, held=True) for r in real_held]
     data = DfixData(rows, rung_path(croot, "b", doubled), set(plugin_tr), {r["i"] for r in rrows}, 1.0)
-    if c3:
+    if c3 and not c3i:
         C3.mask_rows(data.Y, rows, A_menu_S(), C3.keys_fn(c3src))
     elif c3r is not None:
         C3.mask_rows(data.Y, rows, A_menu_S(), R3.keys_fn(r3st))
@@ -8126,6 +8146,7 @@ def main(argv=None):
     ap.add_argument("--inner", action="store_true", help="train-ft: fold k's epoch-choice run")
     ap.add_argument("--masked", action="store_true", help="train-ft: N1, heads outside the search masked on real rows")
     ap.add_argument("--c3", action="store_true", help="train-ft: C3, FTm's recipe on C2's labels (with --masked)")
+    ap.add_argument("--c3i", action="store_true", help="train-ft: C3i, FTm's recipe and mask on C2's labels (with --masked)")
     ap.add_argument("--dry-run", action="store_true",
                     help="train-ft: build the run's rows, data and masks and check them, then stop before its first step")
     ap.add_argument("--c3r", choices=("all", "ctl"), default=None,
