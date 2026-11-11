@@ -46,6 +46,10 @@ C3S_PHASE = "phase_c3s"              # C3s, C3i's (b) follow-up: C3's recipe wit
 C3S_BASE = "C3s-ftm"                 # its own runs (`train-ft --masked --c3s`), inner runs included
 C3S_HOLD = {"C3s-cabS": "C3-cabS", "C3s-core": "C3-core"}   # its read tags, each held as the C3 configuration it is read against
 C3S_PAIRS = (("C3s-cabS", "C3-cabS"), ("C3s-core", C3I_TAG), ("C3s-core", "C3-core"), ("C3s-cabS", "S"))
+C3C_PHASE = "phase_c3c"              # C3c: the amp head on the amp that suits C3's own answer (C3b stage 2's renders)
+C3C_BASE = "C3c-ftm"                 # its own runs (`train-ft --masked --c3c`): C3's recipe and E, the new amp labels
+C3C_TAG = "C3c"                      # its read tag (`pipeline_fix.C3C_TAG`), answered with the adopted C3's hold
+C3C_FROM = "C3-cabS"                 # the model whose per-amp renders set the label
 C3B_S2_PHASE = "phase_c3b_s2"        # C3b's stage 2: its full answer against the adopted C3's, on all three amps
 S2_AMPS = ("pr12", "sw50r", "ac20")  # `pipeline_fix.AMPS3`, the order every per-amp row is written in
 AMP_USABLE_DBFS = -57.0              # C2b's like-for-like bound: a label counts for the amp choice at or above it
@@ -766,9 +770,10 @@ def amp_labels_sha(labels):
     return hashlib.sha256(json.dumps(sorted(labels.items())).encode()).hexdigest()
 
 
-def amp_label_rows(Y, rows, labels):
+def amp_label_rows(Y, rows, labels, allow_missing=False):
     """Every real row (training or held) takes its unit's amp label in the amp head's slot (`Y[6]`, `full_space.AMPS`'
-    order) in place of -100. Refuses a real row whose unit has no label. -> the number of rows labelled."""
+    order) in place of -100. Refuses a real row whose unit has no label, unless `allow_missing` (C3c: only the units
+    with per-amp renders carry one; the rest keep -100). -> the number of rows labelled."""
     from learn import full_space as F
 
     n, missing = 0, []
@@ -780,7 +785,7 @@ def amp_label_rows(Y, rows, labels):
                 continue
             Y[6][j] = F.AMPS.index(a)
             n += 1
-    if missing:
+    if missing and not allow_missing:
         raise SystemExit(f"{len(missing)} real rows have no amp label (first {missing[0]})")
     return n
 
@@ -1078,6 +1083,130 @@ def cmd_c3b_s2(_args):
           + (" until the user decides" if outcome == "user" else "") + f"; check {check['renders_equal']}/{check['units']}")
 
 
+# --- C3c: the amp head on the amp that suits C3's own answer (phase_c3c) ---------------------------------------------
+
+def search_half_of(unit_labels):
+    """{unit: the stored labels' search half} (every label of a unit shares it)."""
+    return {u: next(iter(v.values()))["search"] for u, v in unit_labels.items() if v}
+
+
+def answer_argmin(judge, unit, half, amps=S2_AMPS):
+    """The amp whose render reads closest on `half` itself (the search half's own judge). judge: {(unit, amp): a judge
+    file's "judge"}. -> amp, or None without a finite judge on every amp."""
+    vals = {a: ((judge.get((unit, a)) or {}).get(half) or {}).get(half) for a in amps}
+    if not all(finite_pos(v) for v in vals.values()):
+        return None
+    return min(sorted(amps), key=lambda a: vals[a])
+
+
+def answer_amp_labels():
+    """C3c's amp label per unit: the amp whose render of C3-cabS's out-of-fold answer reads closest on the unit's
+    search half (the stored labels' search half), from C3b stage 2's per-amp renders: GOAT's read units
+    (goat/judge-amps3) and BKS's 40 (real/judge). Refuses until those renders are complete. -> {unit: amp}."""
+    from learn import pipeline_fix as P
+
+    root, out = P.out_dir(), {}
+    for d, sub, ul in ((P.GOAT_DIR, P.AMPS3_JUDGE, goat_unit_labels()), (P.REAL_DIR, "judge", bks_unit_labels())):
+        judge = _judge_files(root / d / sub / C3C_FROM)
+        units = sorted({u for u, _ in judge})
+        if not units or any((u, a) not in judge for u in units for a in S2_AMPS):
+            raise SystemExit(f"{d}/{sub}/{C3C_FROM}: per-amp renders incomplete; no C3c labels")
+        half = search_half_of(ul)
+        for u in units:
+            a = answer_argmin({k: v["judge"] for k, v in judge.items()}, u, half[u]) if u in half else None
+            if a is not None:
+                out[u] = a
+    return out
+
+
+C3C_BY_CLASS = ("C3c - W", "C3c - always sw50r")
+
+
+def c3c_unit_rows(unit, cluster, jc, pc, pw, cls=None, amps=S2_AMPS):
+    """One unit's C3c rows on C3-cabS's own per-amp renders (jc: {amp: {search half: {half: judge}}}), per direction
+    (search half sh, held half h), on the held half: C3c's pick (pc), W's (pw), always-sw50r and the search half's own
+    argmin (the fair ceiling) against blind (`amp_value`), and C3c - W and C3c - always sw50r (ln ratios), the last two
+    also by class. -> ({row: [(cluster, unit, value)]}, directions dropped)."""
+    rows, dropped = {}, 0
+
+    def add(name, v):
+        rows.setdefault(name, []).append((cluster, unit, v))
+        if cls is not None and name in C3C_BY_CLASS:
+            rows.setdefault(f"{name} ({cls})", []).append((cluster, unit, v))
+
+    for sh, h in (("A", "B"), ("B", "A")):
+        hv = {a: ((jc.get(a) or {}).get(sh) or {}).get(h) for a in amps}
+        sv = {a: ((jc.get(a) or {}).get(sh) or {}).get(sh) for a in amps}
+        c, w = pc.get(sh), pw.get(sh)
+        if c is None or w is None or not all(finite_pos(v) for v in (*hv.values(), *sv.values())):
+            dropped += 1
+            continue
+        lv = {a: math.log(float(v)) for a, v in hv.items()}
+        add("C3c's pick - blind", amp_value(hv, c))
+        add("W's pick - blind", amp_value(hv, w))
+        add("always sw50r - blind", amp_value(hv, "sw50r"))
+        add("search-half argmin - blind", amp_value(hv, min(sorted(amps), key=lambda a: sv[a])))
+        add("C3c - W", lv[c] - lv[w])
+        add("C3c - always sw50r", lv[c] - lv["sw50r"])
+    return rows, dropped
+
+
+def c3c_reading(beyond, over_w):
+    """C3c's declared reading: "learns" when its pick beats always-sw50r (the best constant; beyond the prior) somewhere
+    and is worse nowhere, by C3's test; otherwise that row's direction. C3c - W is reported beside. -> (reading,
+    C3c - W's direction)."""
+    d = direction(beyond)
+    return ("learns" if d == "better" else d), direction(over_w)
+
+
+def cmd_c3c(_args):
+    """C3c's read at zero renders -> c3/c3c.json: on BKS's 40 read units (by DI) and GOAT's (by item), C3c's pick (its
+    FT_k that held the unit out) and W's, each valued on the held half of C3-cabS's own per-amp renders; the declared
+    reading; picks by amp and the label hits beside."""
+    from learn import full_space as FS
+    from learn import pipeline_fix as P
+
+    P.require(C3C_PHASE)
+    root, labels = P.out_dir(), answer_amp_labels()
+    sets, picks = {}, {}
+    for name, d, sa, sj in (("bks", P.REAL_DIR, "answers", "judge"), ("goat", P.GOAT_DIR, P.AMPS3_DIR, P.AMPS3_JUDGE)):
+        ans = {t: json.loads((root / d / ("answers" if t == C3C_TAG else sa) / f"{t}.json").read_text())
+               for t in (C3C_TAG, C3C_FROM)}
+        judge = {k: v["judge"] for k, v in _judge_files(root / d / sj / C3C_FROM).items()}
+        if name == "bks":
+            units = {prt["unit"]: (prt["di"], prt["cls"]) for prt in ans[C3C_FROM]["parts"]}
+        else:
+            units = {prt["unit"]: (prt["item"], prt["cls"]) for prt in P.goat_read_units()}
+        rows, dropped, by_amp, hits, n = {}, 0, {a: 0 for a in S2_AMPS}, 0, 0
+        for u, (cl, cls) in sorted(units.items()):
+            pc = s2_picks(ans[C3C_TAG].get("amp_p") or {}, u, FS.AMPS)
+            pw = s2_picks(ans[C3C_FROM].get("amp_p") or {}, u, FS.AMPS)
+            for sh in ("A", "B"):
+                if pc.get(sh):
+                    by_amp[pc[sh]] += 1
+                    hits += pc[sh] == answer_argmin(judge, u, sh)
+                    n += 1
+            r, dr = c3c_unit_rows(u, cl, {a: judge[(u, a)] for a in S2_AMPS}, pc, pw, cls)
+            dropped += dr
+            for k, v in r.items():
+                rows.setdefault(k, []).extend(v)
+        sets[name] = {k: P.clustered(v) for k, v in rows.items()}
+        picks[name] = {"by_amp": by_amp, "hits_search_argmin": hits, "directions": n, "dropped": dropped,
+                       "units": len(units), "labelled": sum(1 for u in units if u in labels)}
+    names = sorted(set(sets["bks"]) | set(sets["goat"]))
+    jr = {n: judged(sets["bks"].get(n) or {}, sets["goat"].get(n) or {}) for n in names}
+    reading, over_w = c3c_reading(jr["C3c - always sw50r"], jr["C3c - W"])
+    rec = {"phase": C3C_PHASE, "rows": jr, "picks": picks, "reading": reading, "C3c - W": over_w,
+           "labels_sha256": amp_labels_sha(labels), "c2_sha256": c2_sha(), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    P.save(c3_dir() / "c3c.json", rec)
+    for n in names:
+        j = jr[n]
+        p_ = j["pooled"] or {}
+        print(f"{n}: BKS {(j['bks'] or {}).get('mean')}, GOAT {(j['goat'] or {}).get('mean')}, pooled {p_.get('mean')} "
+              f"[{p_.get('lo90')}, {p_.get('hi90')}]")
+    print(f"C3C READING (C3c - always sw50r): {reading}; C3c - W: {over_w}")
+
+
 def report_rows(label="c3"):
     from learn import pipeline_fix as P
 
@@ -1222,6 +1351,7 @@ def main(argv=None):
     sub.add_parser("c3s-rows").set_defaults(fn=cmd_c3s)
     sub.add_parser("c3b-rows").set_defaults(fn=cmd_c3b)
     sub.add_parser("c3b-s2-check").set_defaults(fn=cmd_c3b_s2_check)
+    sub.add_parser("c3c-rows").set_defaults(fn=cmd_c3c)
     sub.add_parser("c3b-s2-rows").set_defaults(fn=cmd_c3b_s2)
     s = sub.add_parser("c3-adopt")
     s.add_argument("--final", action="store_true")

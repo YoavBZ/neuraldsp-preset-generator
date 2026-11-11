@@ -125,5 +125,5 @@ def test_only_one_of_the_c3_variants_trains():
     pytest.importorskip("torch")
     import argparse
     a = argparse.Namespace(c3=False, c3i=True, c3b=False, c3s=True, masked=True, real_fold=0, seed=20261042, inner=False)
-    with pytest.raises(SystemExit, match="one of --c3, --c3i, --c3b or --c3s"):
+    with pytest.raises(SystemExit, match="one of --c3, --c3i, --c3b, --c3s or --c3c"):
         P.cmd_train_ft(a)

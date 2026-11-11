@@ -405,7 +405,7 @@ def test_renders_registered():
 def test_c3i_is_read_through_c3s_paths_with_ftms_hold_and_its_own_runs():
     from learn import full_controls_c3 as X
     from learn import pipeline_fix as P
-    assert P.C3I_TAG == X.C3I_TAG and P.C3_READ == P.C3_TAGS | {X.C3I_TAG, X.C3B_TAG} | P.C3S_TAGS and X.C3I_TAG not in X.ALL_TAGS
+    assert P.C3I_TAG == X.C3I_TAG and P.C3_READ == P.C3_TAGS | {X.C3I_TAG, X.C3B_TAG, X.C3C_TAG} | P.C3S_TAGS and X.C3I_TAG not in X.ALL_TAGS
     assert P.model_base(X.C3I_TAG) == X.C3I_BASE != X.C3_BASE and X.C3I_BASE != P.FTM_BASE
     assert P.read_phase(X.C3I_TAG) == "phase_c3i" and P.answer_hold(X.C3I_TAG) is None   # FTm's hold: K.space
     assert P.report_phase({X.C3I_TAG, "C3-core", "P2b-ftm"}) == "phase_c3i"
@@ -627,3 +627,53 @@ def test_c3b_stage2_launcher_waits_renders_all_three_amps_and_reports():
     assert "goat-render --amps3 --names C3-cabS" in t and "full_controls_c3 c3b-s2-check" in t
     assert "real-render --names C3b" in t and "goat-render --amps3 --names C3b\n" in t and "c3b-s2-rows" in t
     assert order == sorted(order) and "for k in 0 1 2" in t and "train-ft" not in t
+
+
+def test_c3c_reads_through_c3s_paths_with_its_own_runs_and_the_adopted_hold(tmp_path, monkeypatch):
+    assert P.C3C_TAG == X.C3C_TAG and P.C3C_TAG in P.C3_READ and X.C3C_TAG not in X.ALL_TAGS
+    assert P.model_base(X.C3C_TAG) == X.C3C_BASE not in (X.C3_BASE, X.C3B_BASE, X.C3S_BASE, X.C3I_BASE)
+    assert P.read_phase(X.C3C_TAG) == "phase_c3c"
+    (tmp_path / "decision.json").write_text(json.dumps({"tag": "C3-cabS"}))
+    monkeypatch.setattr(X, "c3_dir", lambda: tmp_path)
+    monkeypatch.setattr(X, "hold_for", lambda tag: ("hold", tag))
+    assert P.answer_hold(X.C3C_TAG) == ("hold", "C3-cabS")
+
+
+def test_c3c_label_is_the_search_halfs_own_argmin_and_rows_may_go_unlabelled():
+    j = {("u", "pr12"): {"A": {"A": 2.0, "B": 9.0}}, ("u", "sw50r"): {"A": {"A": 1.5, "B": 0.1}},
+         ("u", "ac20"): {"A": {"A": 1.0, "B": 9.0}}}
+    assert X.answer_argmin(j, "u", "A") == "ac20"                          # the search half's own judge, not the held
+    j[("u", "ac20")]["A"]["A"] = float("nan")
+    assert X.answer_argmin(j, "u", "A") is None
+    np = pytest.importorskip("numpy")
+    Y = [None] * 6 + [np.full(3, -100)]
+    rows = [{"real": "a"}, {"real": "b"}, {"i": 7}]
+    assert X.amp_label_rows(Y, rows, {"a": "sw50r"}, allow_missing=True) == 1
+    assert list(Y[6]) == [1, -100, -100]
+    with pytest.raises(SystemExit, match="no amp label"):
+        X.amp_label_rows(Y, rows, {"a": "sw50r"})
+
+
+def test_c3c_rows_value_both_picks_on_c3s_own_renders_and_learns_only_beyond_the_prior():
+    jc = {"pr12": {"A": {"A": 1.0, "B": 2.0}, "B": {"A": 2.0, "B": 1.0}},
+          "sw50r": {"A": {"A": 2.0, "B": 1.0}, "B": {"A": 1.0, "B": 2.0}},
+          "ac20": {"A": {"A": 3.0, "B": 4.0}, "B": {"A": 4.0, "B": 3.0}}}
+    rows, dropped = X.c3c_unit_rows("u", "c", jc, {"A": "pr12", "B": "pr12"}, {"A": "sw50r", "B": "ac20"}, "clean")
+    v = lambda n: [x for *_, x in rows[n]]   # noqa: E731
+    assert dropped == 0 and v("C3c - W") == pytest.approx([math.log(2.0 / 1.0), math.log(2.0 / 4.0)])
+    assert v("C3c - always sw50r") == pytest.approx([math.log(2.0), math.log(2.0)])
+    assert v("search-half argmin - blind")[0] == pytest.approx(X.amp_value({"pr12": 2.0, "sw50r": 1.0, "ac20": 4.0}, "pr12"))
+    assert v("C3c - W (clean)") == v("C3c - W") and "C3c's pick - blind (clean)" not in rows
+    row = lambda lo, hi: {"mean": (lo + hi) / 2, "lo90": lo, "hi90": hi, "clusters": 8}   # noqa: E731
+    und = {"bks": row(-0.02, 0.01), "goat": None, "pooled": None}
+    better = {"bks": row(-0.05, -0.01), "goat": None, "pooled": None}
+    assert X.c3c_reading(better, und) == ("learns", "undecided")
+    assert X.c3c_reading(und, better) == ("undecided", "better")
+
+
+def test_c3c_launchers_train_with_c3c_and_read_at_zero_renders():
+    import pathlib
+    root = pathlib.Path(__file__).resolve().parents[1] / "logs"
+    t, r = (root / "launch-c3c-train.zsh").read_text(), (root / "launch-c3c-read.zsh").read_text()
+    assert t.count("--masked --c3c") == 2 and "--inner" not in t and "mps_free" in t and "mv ${PIDS} ${PIDS}." in t
+    assert "c3c-train.log" in r and "c3c-rows" in r and "TAG=C3c" in r and "real-render" not in r and "goat-render" not in r

@@ -5081,6 +5081,50 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - logs `logs/c3i*.log`.
   - Code: `learn/full_controls_c3.py` (`c3i-rows`) and `pipeline_fix train-ft --c3i`.
 
+### F76. C3b stage 2: C3b's full answer against the adopted C3's, on all three amps. By the score it reads level, −0.009 [−0.037, +0.019] pooled, and its settings alone are level too (+0.001). It is just worse on BKS's clean recordings (+0.015 [+0.000, +0.029]), so by the declared rule it went to the user, who kept C3's pick. With the model's own settings, choosing each recording's amp on its search half beats always-sw50r by −0.093 on both sets and both classes, and the labels' amp doesn't point to it. So C3c trains the amp head on the amp that suits C3's own answer (phase_c3b_s2, 5,640 renders, audited)
+- **What ran** ([plan](full-controls-plan.md), "C3b stage 2 in detail").
+  - C3b's answers and the adopted C3's (C3-cabS), on all three amps and both search halves.
+  - BKS: C3b's 40 units, 480 renders. GOAT: both models on 215 units, 5,160 renders, in their own folders.
+  - **The canary passed:** C3-cabS's forced-amp answers and amp probabilities equal its stored ones on all 215 GOAT units, and its renders are bit-identical to F72's on all 215.
+  - **A render deadlock cost about 20 minutes** (19:00 to 19:20): stage 2's GOAT shards and C3r's read's shards each counted the other's waiting processes against the cap. The C3r read was stopped and rerun after stage 2. The cap is now a set of file locks (PR #446).
+- **The read matched the declaration.** It was audited with separate code from the judge files: the primary, the settings, the class, the headroom and the labels' rows reproduce the report to 1e-4. No direction was dropped.
+- **By the score** (held half, ln, by DI on BKS and by item on GOAT, pooled with C3's equal weights):
+
+  | Row | BKS (40 units) | GOAT (215) | Pooled |
+  |---|---|---|---|
+  | **C3b − C3** (each model's own pick and settings) | −0.022 [−0.077, +0.033] | +0.005 [−0.010, +0.019] | −0.009 [−0.037, +0.019] |
+  | the pick alone (C3 at C3b's pick − C3) | −0.027 [−0.075, +0.021] | +0.007 [−0.006, +0.020] | −0.010 [−0.035, +0.015] |
+  | **the settings alone** (C3b − C3 at C3b's pick) | +0.005 [−0.005, +0.015] | −0.002 [−0.011, +0.006] | +0.001 [−0.005, +0.007] |
+  | C3b − C3, clean | **+0.015 [+0.000, +0.029]**, worse | +0.009 [−0.013, +0.031] | +0.012 [−0.000, +0.024] |
+  | C3b − C3, crunch | −0.059 [−0.188, +0.070] | −0.010 [−0.027, +0.007] | −0.035 [−0.100, +0.031] |
+
+  - **The outcome is "user":** the primary is undecided, but on clean it is shown worse on BKS, by a hair.
+  - **The user's answer (2026-11-11): keep the current pick.** They asked first whether the sw50r, the most distorted of the three, fits heavier songs. In the search labels it does: it is the labels' amp on 20 of 23 BKS crunch recordings against 8 of 17 clean, and on GOAT 59 of 104 crunch against 50 of 110 clean. But with the model's own settings it does not: on GOAT crunch the sw50r is the best amp in only 43 of 210 directions, and always picking it reads worse than blind there (+0.015 [+0.002, +0.028]).
+- **The per-recording headroom, on the models' own answers:**
+
+  | Row, on C3's own renders | BKS | GOAT | Pooled |
+  |---|---|---|---|
+  | Always sw50r − blind | −0.049 [−0.102, +0.004] | −0.009 [−0.020, +0.003] | −0.029 [−0.056, −0.002] |
+  | W's pick − blind | −0.028 [−0.070, +0.015] | −0.013 [−0.026, +0.000] | −0.020 [−0.042, +0.002] |
+  | **Search-half argmin − always sw50r** | **−0.093 [−0.132, −0.053]** | **−0.093 [−0.110, −0.075]** | **−0.093 [−0.114, −0.071]** |
+  | the same, clean | −0.060 | −0.091 | −0.076 [−0.096, −0.055] |
+  | the same, crunch | −0.126 | −0.104 | −0.115 [−0.152, −0.077] |
+  | **The labels' argmin amp − always sw50r** | +0.055 [+0.002, +0.109], worse | +0.011 [−0.006, +0.027] | +0.033 [+0.005, +0.061], worse |
+  | the same, clean | +0.112, worse | +0.023 | +0.067 [+0.021, +0.113], worse |
+
+  - On C3b's own renders the same rows read alike: the headroom is −0.095 pooled.
+  - **GOAT confirms BKS.** With the model's own settings, choosing the amp per recording is worth about 9% by the score, on both sets and both classes. The best amp is spread over all three: on GOAT it is the ac20 in 173 of 430 directions, the pr12 in 150 and the sw50r in 107.
+  - **The stored search labels point away from it.** Their amp reads worse than always the sw50r on the model's answers, most of all on clean.
+- **What it means.**
+  - C3b is not adopted. The amp pick stays W's, near a coin toss, and the adopted C3 stands.
+  - **The amp the product needs is the one that suits the model's own answer,** not the one a full search fits best. The product has no DI, so it can't render its answer per amp: a head has to predict that amp from the audio.
+  - **Next: C3c** ([plan](full-controls-plan.md), "C3c in detail"). It is C3's recipe with the amp head trained on that amp, labelled from this stage's renders, at zero renders. In parallel, the review session investigates the amp choice more widely, on the user's ask ("render each song with all three amps and then train").
+  - By the score only.
+- Files:
+  - `PF/c3/c3b-stage2.json`, `c3b-stage2-check.json` and `decision-c3b.json` (C3-cabS);
+  - `PF/goat/answers-amps3/`, `PF/goat/judge-amps3/` and `PF/real/judge/C3b/`;
+  - logs `logs/c3b-s2*.log`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
