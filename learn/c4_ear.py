@@ -126,11 +126,14 @@ def ear_read(items, got):
     rows, cards_by = {}, {}
     for a, b in PAIRS:
         cards = [{"id": it["id"], "cls": it["cls"], "cluster": it["cluster"], "pref": pref(heard[it["id"]], a, b),
-                  "j0": math.log(it["j0"][a] / it["j0"][b])} for it in first if heard[it["id"]]]
+                  "creator_trains": bool(it.get("creator_trains")), "j0": math.log(it["j0"][a] / it["j0"][b])}
+                 for it in first if heard[it["id"]]]
         cards_by[f"{a} over {b}"] = cards
         decided = [c for c in cards if c["pref"] != 0.5]
         rows[f"{a} over {b}"] = {**share_row(cards), "by_class": {k: share_row([c for c in cards if c["cls"] == k])
                                                                     for k in ("clean", "crunch")},
+                                 "by_creator": {"trains in R-all": share_row([c for c in cards if c["creator_trains"]]),
+                                                "new to every model": share_row([c for c in cards if not c["creator_trains"]])},
                                  "j0_agrees": {"decided": len(decided),
                                                "agree": sum((c["j0"] < 0) == (c["pref"] == 1.0) for c in decided)}}
     read = len(cards_by["adopted over FTm"])
@@ -255,6 +258,22 @@ def trusted_units():
     return units, lags
 
 
+def r_all_sources():
+    """The creators and DI files of R-all's training rows (its all-labels pair trains on every C3r row): C3r's read units,
+    every set. -> (creators, DI files)."""
+    from learn import full_controls_c3r as R3
+
+    units = R3.read_units(R3.state())
+    return ({ru["prt"].get("creator") for ru in units if ru["prt"].get("creator")},
+            {ru["prt"].get("di") for ru in units if ru["prt"].get("di")})
+
+
+def flag_sources(items, creators, dis):
+    """C3r's plan (C4's source): each item flagged for whether its creator, or its DI file, makes any of R-all's training
+    rows. The edge favours the adopted model only: FTm and S never trained on a capture."""
+    return [{**it, "creator_trains": it.get("creator") in creators, "di_trains": it["cluster"] in dis} for it in items]
+
+
 def cmd_draw(_args):
     """The 18 items from L1c's trusted units, their lags (the lag pass) -> c4/plan.json, written once."""
     from learn import pipeline_fix as P
@@ -263,12 +282,21 @@ def cmd_draw(_args):
     p = ear_dir() / "plan.json"
     if p.exists():
         raise SystemExit(f"{p} exists: the items are drawn once")
+    from learn import capture_labels as CL
+
     units, lags = trusted_units()
-    items = [{**item_of(u), "lag": lags[u["unit"]], "prt": u} for u in sorted(units, key=lambda u: u["unit"])]
+    gated = [u for u in CL.units_of() if u["unit"] in CL.trusted(CL.units_of())]
+    items = [{**item_of(u), "creator": u.get("creator"), "lag": lags[u["unit"]], "prt": u}
+             for u in sorted(units, key=lambda u: u["unit"])]
     if any(it["lag"] is None for it in items):
         raise SystemExit("a unit with no lag: C4 reads only lagged units")
-    P.save(p, {"phase": PHASE, "items": items, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
-    print(f"C4 DRAW: {len(items)} items on {len({it['cluster'] for it in items})} DI files")
+    items = flag_sources(items, *r_all_sources())
+    P.save(p, {"phase": PHASE, "items": items, "lag_refused": sorted({u["unit"] for u in gated} - {u["unit"] for u in units}),
+               "creator_trains": sum(it["creator_trains"] for it in items), "di_trains": sum(it["di_trains"] for it in items),
+               "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"C4 DRAW: {len(items)} items on {len({it['cluster'] for it in items})} DI files; "
+          f"{sum(it['creator_trains'] for it in items)} with a creator in R-all's rows; "
+          f"{len(gated) - len(units)} refused by the lag rule")
 
 
 def cmd_answers(_args):

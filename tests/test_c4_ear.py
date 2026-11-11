@@ -72,3 +72,16 @@ def test_the_launcher_runs_lags_inputs_items_answers_clips_page_on_slot_locks():
     t = (pathlib.Path(__file__).resolve().parents[1] / "logs" / "launch-c4.zsh").read_text()
     order = [t.index(x) for x in ("three lags", "run inputs", "run draw", "run answers", "three render", "run page")]
     assert order == sorted(order) and "acquire_render_slot" in t and "--capture-batch 3" in t and "train-ft" not in t
+
+
+def test_the_draw_flags_units_whose_creator_or_di_trains_in_r_all_and_the_read_splits_by_it():
+    items = [{**it, "creator": "amalgamaudio" if i < 4 else f"c{i}"} for i, it in enumerate(_items())]
+    flagged = C.flag_sources(items, {"amalgamaudio"}, {"lib/di0.wav"})
+    assert sum(it["creator_trains"] for it in flagged) == 4 and sum(it["di_trains"] for it in flagged) == 2
+    order = C.page_order(flagged)
+    for it in order:
+        it["j0"] = {"adopted": 1.0, "FTm": 1.2, "S": 2.0}
+    got = {it["id"]: {"rank": {k: 1 for k in C.LETTERS}} for it in order}
+    rep = C.ear_read(order, got)
+    by = rep["rows"]["adopted over FTm"]["by_creator"]
+    assert by["trains in R-all"]["ties"] == 4 and by["new to every model"]["ties"] == 14

@@ -448,7 +448,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **the adopted model:** R-all's all-labels pair (`C3r-all`, both seeds pooled), held as C3-cabS, its sha256 checked against `adopted-model.json`;
   - **FTm:** FTm's all-labels pair (`P2b-ftm`), with its own hold (`K.space`), the model C3 replaced;
   - **S:** the class's factory start.
-  - The amp pick isn't heard: every preset plays the unit's forced amp. Learning the amp from the audio stopped (F79); the amp route is the user's.
+  - The amp pick isn't heard: every preset plays the unit's forced amp, so C4 doesn't hear the shipped amp pick (W's). Learning the amp from the audio stopped (F79); the amp route is the user's.
 - **The renders:** each preset fresh, in its own primed process, judged on both halves at the unit's lag (J0 beside); the held half's window kept, as C1a's page. 18 × 3 × 2 = 108 renders. With the lag pass, about 216 in all.
 - **The page:** C1a's player, with three letters. Each item has the Record (the capture's own render of the DI), A, B and C, looping in sync with an instant switch, all level-matched.
   - The listener ranks A, B and C from 1 (closest to the Record) to 3; ties are allowed, including all three. Closeness and confidence are optional.
@@ -458,6 +458,9 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **The pairs, from first hearings:** the adopted model over FTm (primary), the adopted model over S, and FTm over S. Each is a share of cards (above 1, a tie 0.5, below 0) with C1a's jackknife-t by DI file (10 clusters), by class beside, and how often J0's sign agrees.
   - **The verdict per pair:** C1a's one-sided rule at 0.05: "above", "below" (the mirrored test) or "undecided".
   - **The page is read only with 12 or more of the 18 first hearings answered.** The repeats' agreement is reported.
+  - **The creator split, as C3r's plan committed** (added after the review): each item is flagged for whether its creator makes any of R-all's training rows (6 of batch 3's 22 creators do), and whether its DI file does. Every pair's row is also read apart by the creator flag, with counts. The rule stays on all 18. The edge favours the adopted model only: FTm and S never trained on a capture.
+  - **Power** (the review's simulation, 18 first hearings on 10 DI files): P(above) is about 0.12 at a true share of 0.55, 0.22 to 0.26 at 0.60, 0.37 to 0.41 at 0.65, 0.55 to 0.60 at 0.70, and 0.73 to 0.80 at 0.75. "Below" is caught only near a 0.30 share. So the primary is likely undecided, which keeps the model; an undecided primary is not the ear confirming the score. The adopted model over S has about 0.5 to 0.7 power if the ear's share is near C1a's 0.68.
+  - The lag rule's refused units are recorded in `plan.json`.
 - **What each outcome leads to.**
   - **The adopted model above or undecided against FTm:** it stays adopted.
   - **Below FTm, or below S:** the ear says worse where the score says level or better. By PR #422's conflict rule this goes to the user, with the adopted model staying until they decide.
