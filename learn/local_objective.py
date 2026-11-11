@@ -1114,6 +1114,8 @@ def _wait_cap(cap=CAP):
     while separating(X._ps(), own):
         time.sleep(60)
     DS.acquire_render_slot(cap)
+    while separating(X._ps(), own):                    # one may have started while this waited for its slot (the review)
+        time.sleep(60)
 
 
 def _wait_after(pids):

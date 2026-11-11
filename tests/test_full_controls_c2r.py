@@ -433,3 +433,21 @@ def test_the_launcher_runs_n_shards_each_with_its_cap_and_resumes_a_drawn_run():
     assert "N=${C2R_SHARDS:-5}" in s and "--shard ${k}/${N} --cap ${N}" in s and "seq 0 $(( N - 1 ))" in s
     assert "draw exists: resuming" in s and s.index("draw exists") < s.index("c2r-search")
     assert "mv ${PIDS} ${PIDS}." in s and s.index("mv ${PIDS}") < s.index('echo "launcher $$')
+
+
+def test_wait_cap_rechecks_for_a_separation_after_its_slot(monkeypatch, tmp_path):
+    """The review: a separation that starts while a job waits for its slot is waited out before the first render."""
+    from learn import direct_stems as DS
+    from learn import ks_extend as KX
+    from learn import local_objective as LO
+    monkeypatch.setattr(DS, "RENDER_SLOT_DIR", tmp_path)
+    monkeypatch.setattr(DS, "_RENDER_SLOT", None)
+    calls = []
+    states = iter([False, True, False])                                           # none, then one started, then done
+    monkeypatch.setattr(KX, "_ps", lambda: [])
+    monkeypatch.setattr(LO, "separating", lambda ps, own: calls.append(1) or next(states))
+    monkeypatch.setattr(LO.time, "sleep", lambda s: None)
+    LO._wait_cap()
+    assert len(calls) == 3 and DS._RENDER_SLOT is not None
+    import os
+    os.close(DS._RENDER_SLOT[0])

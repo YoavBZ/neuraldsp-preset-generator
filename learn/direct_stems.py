@@ -1143,12 +1143,6 @@ def swap_mb():
     return SCR.swap_used_mb()
 
 
-def render_slot_free(python_renders, servers, cap=RENDER_CAP):
-    """Another render process may start: fewer than `cap` render processes machine-wide, counted
-    both as python render jobs and as running render servers."""
-    return python_renders < cap and servers < cap
-
-
 RENDER_SLOT_DIR = pathlib.Path.home() / "ndsp-presets" / "learn" / "render-slots"
 _RENDER_SLOT = None                   # (fd, index): the slot this process holds until it exits
 
@@ -1177,7 +1171,9 @@ def acquire_render_slot(cap=None):
     """Hold one of `cap` render slots for the rest of this process (returns at once if it holds one). Only holders
     count against the cap, so processes that wait never block each other: two jobs of 3 shards can no longer deadlock
     (2026-11-11, when each counted the other's waiting shards). The cap is read at call time (`RENDER_CAP` unless
-    given), so C2r's 5-shard search (Amendment 2) can use slots 3 and 4; every other job keeps 3. -> the slot index."""
+    given), so C2r's 5-shard search (Amendment 2) can use slots 3 and 4; every other job keeps 3. -> the slot index.
+    Two invariants keep the lifetime hold deadlock-free: a holder never waits on another render process, and it never
+    forks a child that takes a slot (the fd is not inherited across exec, so a render server never holds one)."""
     global _RENDER_SLOT
     if _RENDER_SLOT is None:
         cap = RENDER_CAP if cap is None else cap
