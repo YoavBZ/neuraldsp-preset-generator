@@ -4884,6 +4884,58 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - logs `logs/c2*.log`.
   - Code: `learn/full_controls_c2.py`. The audit's scripts (`recompute.py`, `a3.py` to `a6.py`) are in the session scratchpad.
 
+### F72. C3: FTm's recipe retrained on C2's every-control labels. By the score the adopted model reads level with FTm: BKS +0.001 [−0.057, +0.058], GOAT +0.005 [−0.019, +0.028], N12 −0.032 [−0.122, +0.059], all undecided. It learns the EQ, the pedals and the gate, with the rest of the cab at S. It stays 10% closer than S. The EQ carries −0.039 on GOAT, but C3's core reads +0.034 worse than FTm's there, so the two cancel and the isolation run C3i is due. By the declared rule the adopted model replaces FTm, and C4 can reverse it (phase_c3, 71 min of MPS, about 4,400 renders, audited)
+- **What ran** ([plan](full-controls-plan.md), "C3 in detail").
+  - **The training:** FTm's recipe on FTm's 520 real rows, every one with its C2 label (none fell back), and per-record masks of `K.space` ∪ C2's searched keys (40 to 50 keys a record). That is 8 inner runs, 8 FT_k and the all-labels pair, seeds 20261042 and 20261043, in 71 minutes. E was 48 to 74 by fold and seed, and the all-labels pair took the median, 57.
+  - **The read, as H4a:** six tags on BKS (40 units × 3 amps, by DI fold), GOAT (215 units on their own amp, by item fold) and N12 (pooled, measurement only). Each answer comes from the search half and is judged on the held half: ln(d_tag / d_FTm), lower is better.
+  - **The tags:**
+    - C3, every trained key as answered;
+    - C3 core, every trained key outside `K.space` at S;
+    - one tag for each family at S: EQ, pedals, gate threshold, cab rest.
+  - **Renders:** about 4,400 (BKS 1,440, GOAT 2,580, N12 about 370, the hash check 24), against the declared 8,400. That estimate counted about 1,400 renders a tag, but a tag takes about 740.
+- **The run matched the declaration.** It was audited with separate code: BKS's and GOAT's rows for C3, the adopted tag, C3 core, the EQ and the rest of the cab, against FTm, reproduce the stored adoption record to 1e-4.
+  - Training: no NaN or failure in any of the 18 runs. Each run records C2's sha256 (661dc9a7). Before training, C3 core's hold equalled `hold_outside_space` on 98 of 98 stored answers, and no untrained key left S.
+  - FTm's 12 hash-check renders matched (12 of 12), so FTm's stored scores are the comparator.
+- **By the score.**
+
+  | Row | BKS (8 DIs) | GOAT (130 items) | Pooled | N12 (8 bands, measurement) |
+  |---|---|---|---|---|
+  | **Adopted (C3, rest of the cab at S) − FTm** | **+0.001 [−0.057, +0.058]** | **+0.005 [−0.019, +0.028]** | **+0.003 [−0.028, +0.033]** | −0.032 [−0.122, +0.059] |
+  | C3 − FTm | +0.001 [−0.056, +0.058] | +0.006 [−0.017, +0.029] | +0.003 [−0.027, +0.034] | −0.029 [−0.121, +0.063] |
+  | C3 − S | −0.122 [−0.210, −0.034] | −0.088 [−0.120, −0.057] | −0.105 [−0.151, −0.059] | −0.152 [−0.329, +0.025] |
+  | C3 core − FTm | −0.002 [−0.031, +0.027] | **+0.034 [+0.021, +0.046]**, 49 of 130 items negative | +0.016 [+0.000, +0.032] | +0.005 [−0.023, +0.033] |
+
+  The family rows are C3 − (C3 with that family at S), so a negative row means the learned family helps:
+
+  | Family | BKS | GOAT | Pooled | Verdict |
+  |---|---|---|---|---|
+  | EQ | −0.004 [−0.018, +0.010] | **−0.039 [−0.048, −0.029]**, 97 of 130 | −0.021 [−0.029, −0.013] | kept: it helps |
+  | Pedals | +0.012 [−0.024, +0.048] | +0.008 [−0.012, +0.027] | +0.010 [−0.010, +0.030] | kept: undecided |
+  | Gate threshold | −0.003 [−0.008, +0.002] | +0.001 [−0.004, +0.006] | −0.001 [−0.004, +0.003] | kept: inert, as expected |
+  | Rest of the cab (left cab, rooms, right cab's phase) | +0.0003 [−0.001, +0.002] | **+0.0014 [+0.0007, +0.0020]** | +0.0008 [−0.0000, +0.0017] | shown worse on GOAT: at S |
+
+- **What it means, by the score.**
+  - **Learning every control is so far level with FTm, not ahead of it.** On GOAT the EQ's −0.039 is spent offsetting C3's own core, which reads +0.034 worse than FTm's core. On BKS neither moves.
+  - **The core's loss has two candidate causes, and the read can't separate them.**
+    - C2's core labels were searched jointly with the EQ and the pedals, so alone they may be the wrong core values.
+    - Or the wider objective (about 2.5× more dims, the mixture shaped by the EQ's 11) teaches the core heads less well.
+    - The declared isolation, C3i, separates the two: FTm's mask on C2's labels. It is declared below in the plan.
+  - **The rest of the cab is shown worse by 0.14% on GOAT,** and goes to S. Its labels barely searched the rooms (F70), so the rooms stay open in C0 regardless.
+  - **The pedals read +0.010, undecided.** By the keep rule they stay. Their labels turned the compressor on in 175 of 520 records (F71), and the read leans, without showing it, toward S's "off".
+  - **The amp pick** (W's amp head on C3's body, masked on real rows) reads −0.027 [−0.070, +0.016] against a blind choice on BKS, undecided. The amp head's real-row training is C3b's, after C2b.
+  - **N12:** C3 is 0.49 [0.30, 0.67] from its own C1b labels, so the model sits far from the labels, as FTm did. On the 2 bands whose DIs W trained on (read apart), every tag reads about +0.13 against FTm.
+- **What it changes.**
+  - **By the declared rule, the adopted model replaces FTm** as the product candidate, since it is not shown worse than FTm. That model is C3 with EQ, pedals and gate learned, and the rest of the cab at S. C4's blind page can reverse it (PR #422's rule). C5 runs on it.
+  - **C3r trains on C3's recipe,** so the core question bears on it too. C3i runs before C3r's read is interpreted.
+  - **C0:** the EQ, the pedals and the gate threshold are learned; the rest of the cab is written at S, and the rooms stay open with their blocker (a real test).
+  - **By the score only.** C4 is the ear check.
+- Files:
+  - `PF/c3/` (`check.json`, `recheck.json`, `adoption.json`, `decision.json`);
+  - the reports `PF/real/report-c3.json` and `PF/goat/report-c3.json`;
+  - the per-record scores in `PF/real/judge/C3-*` and `PF/goat/judge/C3-*`;
+  - logs `logs/c3-*.log`, `logs/c3-n12.json`, `logs/c3-n12-c1b.json`, `logs/c3-amp.json`.
+  - Code: `learn/full_controls_c3.py`, `pipeline_fix train-ft --c3`. The audit script (`c3re.py`) is in the session scratchpad.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
