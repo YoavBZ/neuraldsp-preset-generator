@@ -258,14 +258,15 @@ AMP_JS = [   # (old, new) on scope_page's script: two sources a card, started to
      'decode(AMP[ids[nx]]).catch(() => {}); }'),
     ('function go(i) { at = i; arm(false); paint(); }',
      'function go(i) { at = i; side = "d"; arm(false); paint(); }\n'
-     'function setSide(s) { if (s === "a" && !AMP[ids[at]]) s = "d"; side = s;\n'
+     'function ampLive() { return !!AMP[ids[at]] && !(gains && srcs.length < 2); }\n'
+     'function setSide(s) { if (s === "a" && !ampLive()) s = "d"; side = s;\n'
      '  if (gains) { const t = actx.currentTime; gains.d.gain.setTargetAtTime(s === "d" ? 1 : 0, t, 0.004);\n'
      '    gains.a.gain.setTargetAtTime(s === "a" ? 1 : 0, t, 0.004);\n'
      '    $("now").textContent = s === "a" ? "Playing the amp track (it loops)" : "Playing the DI (it loops)"; }\n'
      '  paint(); }'),
     ('  $("back").disabled = at === 0;',
      '  $("back").disabled = at === 0;\n'
-     '  $("sa").disabled = !AMP[ids[at]]; $("sd").setAttribute("aria-pressed", String(side === "d"));\n'
+     '  $("sa").disabled = !ampLive(); $("sd").setAttribute("aria-pressed", String(side === "d"));\n'
      '  $("sa").setAttribute("aria-pressed", String(side === "a")); $("note").textContent = NOTES[ids[at]] || "";'),
     ('$("back").addEventListener("click", back);',
      '$("back").addEventListener("click", back);\n$("sd").addEventListener("click", () => setSide("d"));\n'
