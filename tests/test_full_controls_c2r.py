@@ -351,3 +351,41 @@ def test_c2r_report_counts_the_scope_out_records_apart(tmp_path, monkeypatch, ca
     assert rep["panel"]["scope_out"] == 1 and rep["panel"]["written"] == 1
     assert rep["panel"]["scope_out_records"] == [rec["key"]]
     assert rep["panel"]["no_finite_final"] == [] and rep["panel"]["rows"]["records"] == 0
+
+
+# --- Amendment 2 (2026-11-11, the user's yes): the search on 5 render processes ---------------------------------------
+
+def test_the_search_cap_is_1_to_5_and_reaches_the_wait():
+    import argparse as A
+    import pathlib
+    assert [R.search_cap(v) for v in ("1", "3", "5")] == [1, 3, 5]
+    for bad in ("0", "6"):
+        with pytest.raises(A.ArgumentTypeError):
+            R.search_cap(bad)
+    src = (pathlib.Path(__file__).resolve().parents[1] / "learn" / "full_controls_c2.py").read_text()
+    assert 'cap = getattr(args, "cap", None) or LO.CAP' in src and "LO._wait_cap(cap)" in src
+    assert "DSm.RENDER_CAP = cap" in src                                          # the renderer's own wait, too
+
+
+def test_the_render_slot_reads_its_cap_at_call_time(monkeypatch):
+    from learn import direct_stems as DS
+    from learn import ks_extend as KX
+    ps = [(100 + i, "python -m learn.full_controls_c2r c2r-search --shard %d/5 --cap 5" % i) for i in range(4)]
+    ps += [(200 + i, "/T/au-bounded-x/au_render_server_bounded") for i in range(4)]
+    monkeypatch.setattr(KX, "_ps", lambda: ps)
+    slept = []
+    monkeypatch.setattr(DS.time, "sleep", lambda s: (_ for _ in ()).throw(RuntimeError("would wait")))
+    DS.wait_render_slot(cap=5)                                                    # 4 others, 4 servers: a slot at 5
+    monkeypatch.setattr(DS, "RENDER_CAP", 5)
+    DS.wait_render_slot()                                                         # the module's cap, read at call time
+    monkeypatch.setattr(DS, "RENDER_CAP", 3)
+    with pytest.raises(RuntimeError):
+        DS.wait_render_slot()                                                     # every other job: 3, so it waits
+
+
+def test_the_launcher_runs_n_shards_each_with_its_cap_and_resumes_a_drawn_run():
+    import pathlib
+    s = (pathlib.Path(__file__).resolve().parents[1] / "logs" / "launch-c2r.zsh").read_text()
+    assert "N=${C2R_SHARDS:-5}" in s and "--shard ${k}/${N} --cap ${N}" in s and "seq 0 $(( N - 1 ))" in s
+    assert "draw exists: resuming" in s and s.index("draw exists") < s.index("c2r-search")
+    assert "mv ${PIDS} ${PIDS}." in s and s.index("mv ${PIDS}") < s.index('echo "launcher $$')

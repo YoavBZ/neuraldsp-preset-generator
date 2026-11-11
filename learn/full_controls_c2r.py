@@ -38,6 +38,7 @@ PLAN = "docs/full-controls-plan.md"
 PANEL_AMP_SEED = 20261151            # the panel's forced amps: a seeded order within class
 STEP0_EVALS = 52                     # arm A's main stage: round(150 x 0.35) distinct settings (`arm_a_levers`)
 STEP0_RENDERS = 1 + STEP0_EVALS      # its priming render and its evaluations
+MAX_CAP = 5                          # Amendment 2 (2026-11-11, the user's yes): C2r's search on up to 5 render processes
 STEP0_GUARD = (3, 5)                 # a shard stops when 3 of the first 5 panel records it reaches are refused at step 0
 KNOWN_WHY_CAP = ("off by source: NAM captures carry no time effect, and the sources are mono (no doubler); not "
                  "searched and not a learned label")
@@ -190,6 +191,14 @@ def panel_kept_units():
 def order(records):
     """By block (`BLOCKS`), then by key."""
     return sorted(records, key=lambda r: (BLOCKS.index(r["block"]), r["key"]))
+
+
+def search_cap(v):
+    """`--cap`: 1 to MAX_CAP render processes machine-wide."""
+    n = int(v)
+    if not 1 <= n <= MAX_CAP:
+        raise argparse.ArgumentTypeError(f"--cap is 1 to {MAX_CAP}")
+    return n
 
 
 def shard_records(records, k, n):
@@ -633,6 +642,9 @@ def main(argv=None):
     d.set_defaults(fn=cmd_draw)
     s = sub.add_parser("c2r-search")
     s.add_argument("--shard", type=F.shard, default=(0, 1))
+    s.add_argument("--cap", type=search_cap, default=None,
+                   help="render processes machine-wide, this one included (default local_objective.CAP, 3; at most "
+                        "5, Amendment 2)")
     s.set_defaults(fn=cmd_search)
     sub.add_parser("c2r-report").set_defaults(fn=cmd_report)
     sub.add_parser("c2r-ceiling-check").set_defaults(fn=cmd_ceiling_check)

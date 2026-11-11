@@ -1,8 +1,9 @@
 #!/bin/zsh
 # C2r (ledger phase_c2r, docs/full-controls-plan.md "C2r and C3r in detail"): waits for C2b's launcher to exit (its PID,
 # the last "launcher" line of logs/c2b-pids.txt; once it has exited the render slots are free, whatever its outcome,
-# and `_wait_cap` guards the cap), then the draw (zero renders), the search in 3 shards at once (at most 3 render
-# processes; C2's per-record recipe, the panel's step 0 first), then the report (zero renders). Any failure stops it.
+# and `_wait_cap` guards the cap), then the draw (zero renders), the search in C2R_SHARDS shards at once (default 5,
+# Amendment 2; each passes --cap so the 5 start together; C2's per-record recipe, the panel's step 0 first), then the
+# report (zero renders). Any failure stops it. A draw already made is not redone (a relaunch after a stop resumes).
 # A relaunch moves its own old log aside first.
 #   zsh logs/launch-c2r.zsh /path/to/worktree-at-merged-main
 # A resume after a failed shard: the same command once c2r/records.json exists fails at the draw ("drawn once"); run the
@@ -18,6 +19,7 @@ LOGS=/Users/yoavbz/projects/neuraldsp-preset-generator/logs
 L=${LOGS}/c2r.log
 PIDS=${LOGS}/c2r-pids.txt
 [[ -f ${L} ]] && mv ${L} ${L}.$(date +%Y%m%d-%H%M%S)
+[[ -f ${PIDS} ]] && mv ${PIDS} ${PIDS}.$(date +%Y%m%d-%H%M%S)   # and the old PIDs: a stop reads only this launch's
 caffeinate -i -w $$ &
 echo "launcher $$ $(date)" >> ${PIDS}
 note() { echo "$1 $(date)" >> ${L}; }
@@ -37,12 +39,19 @@ case ${LAST} in
 esac
 note "start $(git rev-parse --short HEAD)"
 
-${PY} -u -m learn.full_controls_c2r c2r-draw >> ${LOGS}/c2r-draw.log 2>&1 || { note "FAILED draw"; exit 1; }
-note "draw done"
+if [[ -f ${HOME}/ndsp-presets/learn/trusted-data/pipeline-fix/c2r/records.json ]]; then
+  note "draw exists: resuming (each shard skips the records written and resumes a saved step 1)"
+else
+  ${PY} -u -m learn.full_controls_c2r c2r-draw >> ${LOGS}/c2r-draw.log 2>&1 || { note "FAILED draw"; exit 1; }
+  note "draw done"
+fi
 
+N=${C2R_SHARDS:-5}                     # Amendment 2 (phase_c2r_a2): 5 render processes, 3 on a fallback; each its own shard
+(( N >= 1 && N <= 5 )) || { note "FAILED: C2R_SHARDS ${N} is not 1 to 5"; exit 1; }
+note "search on ${N} shards"
 pids=() rc=0
-for k in 0 1 2; do
-  ${PY} -u -m learn.full_controls_c2r c2r-search --shard ${k}/3 >> ${LOGS}/c2r-search-${k}.log 2>&1 &
+for k in $(seq 0 $(( N - 1 ))); do
+  ${PY} -u -m learn.full_controls_c2r c2r-search --shard ${k}/${N} --cap ${N} >> ${LOGS}/c2r-search-${k}.log 2>&1 &
   pids+=($!)
 done
 echo "search ${pids}" >> ${PIDS}

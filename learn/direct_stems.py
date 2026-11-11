@@ -1149,15 +1149,18 @@ def render_slot_free(python_renders, servers, cap=RENDER_CAP):
     return python_renders < cap and servers < cap
 
 
-def wait_render_slot():
+def wait_render_slot(cap=None):
+    """Wait for a render slot. The cap is read at call time (`RENDER_CAP` unless given), so a job that raises it in
+    its own process (C2r's 5-shard search, Amendment 2) is counted against its own cap; every other job keeps 3."""
     from learn import ks_extend as X
     from learn import local_objective as LO
 
+    cap = RENDER_CAP if cap is None else cap
     own = {os.getpid(), os.getppid()}
     while True:
         ps = X._ps()
         servers = sum("au_render_server" in c for _, c in ps)
-        if render_slot_free(len(LO.others_rendering(ps, own)), servers):
+        if render_slot_free(len(LO.others_rendering(ps, own)), servers, cap):
             return
         print("waiting for a render slot", flush=True)
         time.sleep(60)
