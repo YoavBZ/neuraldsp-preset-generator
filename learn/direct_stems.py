@@ -1149,20 +1149,58 @@ def render_slot_free(python_renders, servers, cap=RENDER_CAP):
     return python_renders < cap and servers < cap
 
 
+RENDER_SLOT_DIR = pathlib.Path.home() / "ndsp-presets" / "learn" / "render-slots"
+_RENDER_SLOT = None                   # (fd, index): the slot this process holds until it exits
+
+
+def try_render_slot(cap, slot_dir=None):
+    """One pass over the slot files 0..cap-1, each an exclusive non-blocking `flock`. -> (fd, index) or None. The lock
+    lives as long as the fd, so a process's slot is freed when it exits, however it exits."""
+    import fcntl
+
+    d = pathlib.Path(slot_dir or RENDER_SLOT_DIR)
+    d.mkdir(parents=True, exist_ok=True)
+    for i in range(cap):
+        fd = os.open(d / f"slot-{i}.lock", os.O_CREAT | os.O_RDWR, 0o644)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            os.close(fd)
+            continue
+        os.ftruncate(fd, 0)
+        os.write(fd, f"{os.getpid()}\n".encode())
+        return fd, i
+    return None
+
+
+def acquire_render_slot(cap=None):
+    """Hold one of `cap` render slots for the rest of this process (returns at once if it holds one). Only holders
+    count against the cap, so processes that wait never block each other: two jobs of 3 shards can no longer deadlock
+    (2026-11-11, when each counted the other's waiting shards). The cap is read at call time (`RENDER_CAP` unless
+    given), so C2r's 5-shard search (Amendment 2) can use slots 3 and 4; every other job keeps 3. -> the slot index."""
+    global _RENDER_SLOT
+    if _RENDER_SLOT is None:
+        cap = RENDER_CAP if cap is None else cap
+        while (got := try_render_slot(cap)) is None:
+            print("waiting for a render slot", flush=True)
+            time.sleep(60)
+        _RENDER_SLOT = got
+    return _RENDER_SLOT[1]
+
+
 def wait_render_slot(cap=None):
-    """Wait for a render slot. The cap is read at call time (`RENDER_CAP` unless given), so a job that raises it in
-    its own process (C2r's 5-shard search, Amendment 2) is counted against its own cap; every other job keeps 3."""
+    """Before a render: hold a render slot (`acquire_render_slot`), then wait while `cap` render servers already run
+    (renders by processes that hold no slot, such as older code). A holder's own server isn't running while it waits,
+    so holders alone never fill it."""
     from learn import ks_extend as X
-    from learn import local_objective as LO
 
     cap = RENDER_CAP if cap is None else cap
-    own = {os.getpid(), os.getppid()}
+    acquire_render_slot(cap)
     while True:
-        ps = X._ps()
-        servers = sum("au_render_server" in c for _, c in ps)
-        if render_slot_free(len(LO.others_rendering(ps, own)), servers, cap):
+        servers = sum("au_render_server" in c for _, c in X._ps())
+        if servers < cap:
             return
-        print("waiting for a render slot", flush=True)
+        print("waiting for a render server to finish", flush=True)
         time.sleep(60)
 
 

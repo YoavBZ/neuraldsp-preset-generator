@@ -1105,14 +1105,15 @@ def separating(ps, own=()):
 
 
 def _wait_cap(cap=CAP):
+    """Before a render job's first render: wait while a separation runs (amendment 3), then hold a render slot
+    (`direct_stems.acquire_render_slot`; only holders count, so waiting jobs never block each other)."""
+    from learn import direct_stems as DS
     from learn import ks_extend as X
 
     own = {os.getpid(), os.getppid()}
-    while True:
-        ps = X._ps()
-        if len(others_rendering(ps, own)) < cap and not separating(ps, own):
-            return
+    while separating(X._ps(), own):
         time.sleep(60)
+    DS.acquire_render_slot(cap)
 
 
 def _wait_after(pids):
