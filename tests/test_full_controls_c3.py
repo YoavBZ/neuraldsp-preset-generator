@@ -405,7 +405,7 @@ def test_renders_registered():
 def test_c3i_is_read_through_c3s_paths_with_ftms_hold_and_its_own_runs():
     from learn import full_controls_c3 as X
     from learn import pipeline_fix as P
-    assert P.C3I_TAG == X.C3I_TAG and P.C3_READ == P.C3_TAGS | {X.C3I_TAG} and X.C3I_TAG not in X.ALL_TAGS
+    assert P.C3I_TAG == X.C3I_TAG and P.C3_READ == P.C3_TAGS | {X.C3I_TAG, X.C3B_TAG} and X.C3I_TAG not in X.ALL_TAGS
     assert P.model_base(X.C3I_TAG) == X.C3I_BASE != X.C3_BASE and X.C3I_BASE != P.FTM_BASE
     assert P.read_phase(X.C3I_TAG) == "phase_c3i" and P.answer_hold(X.C3I_TAG) is None   # FTm's hold: K.space
     assert P.report_phase({X.C3I_TAG, "C3-core", "P2b-ftm"}) == "phase_c3i"
@@ -458,3 +458,64 @@ def test_c3i_launchers_train_with_c3i_and_read_after_c2r():
     assert "c2r.log" in r and "c3i-train.log" in r and "--names ${TAG}" in r and "c3i-rows" in r
     for x in (t, r):                                    # a stop by recorded PIDs reads only this launch's
         assert "mv ${PIDS} ${PIDS}." in x and x.index("mv ${PIDS}") < x.index('echo "launcher $$" >> ${PIDS}')
+
+
+# --- C3b, the amp head on real rows (phase_c3b) -----------------------------------------------------------------------
+
+def _lab(s, h, pk=-6.0, half=("A", "B")):
+    return {"label": {}, "search": half[0], "held": half[1], "best": {"judge": {half[0]: s, half[1]: h}, "peak_dbfs": pk}}
+
+
+def test_c3b_reads_through_c3s_paths_with_its_own_runs_and_the_adopted_hold(tmp_path, monkeypatch):
+    assert P.C3B_TAG == X.C3B_TAG and P.C3B_TAG in P.C3_READ and X.C3B_TAG not in X.ALL_TAGS
+    assert P.model_base(X.C3B_TAG) == X.C3B_BASE not in (X.C3_BASE, X.C3I_BASE, P.FTM_BASE)
+    assert P.read_phase(X.C3B_TAG) == "phase_c3b"
+    (tmp_path / "decision.json").write_text(json.dumps({"tag": "C3-cabS"}))
+    monkeypatch.setattr(X, "c3_dir", lambda: tmp_path)
+    monkeypatch.setattr(X, "hold_for", lambda tag: ("hold", tag))
+    assert P.answer_hold(X.C3B_TAG) == ("hold", "C3-cabS")
+
+
+def test_c3b_labels_its_real_rows_and_refuses_a_row_with_none():
+    np = pytest.importorskip("numpy")
+    from learn import full_space as F
+    Y = [None] * 6 + [np.full(4, 7)]
+    rows = [{"i": 0}, {"real": "u1"}, {"real": "u2"}, {"i": 3}]
+    assert X.amp_label_rows(Y, rows, {"u1": "ac20", "u2": "pr12"}) == 2
+    assert list(Y[6]) == [7, F.AMPS.index("ac20"), F.AMPS.index("pr12"), 7]           # plugin rows keep their own
+    with pytest.raises(SystemExit):
+        X.amp_label_rows(Y, rows, {"u1": "ac20"})
+
+
+def test_c3b_usable_labels_argmin_and_stage1_rows():
+    assert X.usable_pair(_lab(3.0, 4.0)) == (3.0, 4.0)
+    assert X.usable_pair(_lab(3.0, 4.0, pk=-58.0)) is None and X.usable_pair(dict(_lab(3.0, 4.0), label=None)) is None
+    assert X.label_argmin({"sw50r": (3.0, 4.0), "ac20": (3.0, 5.0), "pr12": (2.0, 6.0)}) == "pr12"
+    ul = {"d1@1#t": {"pr12": _lab(2.0, 4.0), "sw50r": _lab(3.0, 2.0), "ac20": _lab(4.0, 3.0)}}
+    rows = X.stage1_rows(ul, {"C3b": {"d1@1#t": "sw50r"}, "W": {"d1@1#t": "pr12"}}, lambda u: u.split("@")[0])
+    blind = (math.log(4) + math.log(2) + math.log(3)) / 3
+    assert rows["C3b"] == [("d1", "d1@1#t", pytest.approx(math.log(2) - blind))]
+    assert rows["label"] == [("d1", "d1@1#t", pytest.approx(math.log(4) - blind))]      # the search argmin: pr12
+    assert rows["C3b - W"] == [("d1", "d1@1#t", pytest.approx(math.log(2) - math.log(4)))]
+    assert X.head_pick({"d1@1#t|pr12": {"A": [0.1, 0.7, 0.2]}}, "d1@1#t", "A", ("pr12", "sw50r", "ac20")) == "sw50r"
+    better = {"bks": {"lo90": -0.05, "hi90": -0.01}, "goat": {"lo90": -0.1, "hi90": 0.1}, "pooled": {"lo90": -0.1, "hi90": 0.1}}
+    assert X.stage1_reading(better) == "learns" and X.stage1_reading({"bks": {"lo90": -1, "hi90": 1}}) == "undecided"
+
+
+def test_c3b_amp_labels_cover_every_real_training_unit():
+    if not (P.out_dir() / "c2b" / "report.json").exists():
+        pytest.skip("no stored data")
+    lab = X.amp_labels()
+    goat = {r["unit"] for r in P.goat_labels()[0]}
+    bks = {r["unit"] for r in P.real_labels(2)[0]}
+    assert goat <= set(lab) and bks <= set(lab) and len(goat) == 214 and len(bks) == 102
+    rep = json.loads((P.out_dir() / "c2b" / "report.json").read_text())["labels"]
+    assert all(lab[u] == rep[u]["amp"] for u in goat)
+
+
+def test_c3b_launchers_train_with_c3b_and_read_at_zero_renders():
+    import pathlib
+    root = pathlib.Path(__file__).resolve().parents[1] / "logs"
+    t, r = (root / "launch-c3b-train.zsh").read_text(), (root / "launch-c3b-read.zsh").read_text()
+    assert "--masked --c3b" in t and "--c3i" not in t and "mv ${PIDS} ${PIDS}." in t
+    assert "c3b-train.log" in r and "c3b-rows" in r and "real-render" not in r and "goat-render" not in r and "h4-render" not in r
