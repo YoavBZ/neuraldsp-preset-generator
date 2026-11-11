@@ -599,33 +599,16 @@ def read_units(st=None):
     return out
 
 
-AMPS3_PHASE = "phase_r3_amps3"      # R-all's answers on all three amps (the amp-selector read; full-controls-plan.md)
-
-
-def read_units_amps3(st=None):
-    """The amp-selector read's units: every read unit outside BKS (whose 40 are read on all three amps already) on each
-    of the three amps, its own amp first. -> [{set, unit, amp, fold, lag, cluster, band, prt, forced}]."""
-    from learn import pipeline_fix as P
-
-    out = []
-    for ru in read_units(st):
-        if ru["set"] == "bks":
-            continue
-        for a in [ru["amp"]] + [x for x in P.AMPS3 if x != ru["amp"]]:
-            out.append(dict(ru, amp=a, forced=a == ru["amp"]))
-    return out
-
-
 def fname(key):
     return key.replace("/", "__").replace(" ", "_")
 
 
-def answers_path(arm, amps3=False):
-    return c3r_dir() / "answers" / f"{arm}{'-amps3' if amps3 else ''}.json"
+def answers_path(arm):
+    return c3r_dir() / "answers" / f"{arm}.json"
 
 
-def judge_path(arm, ru, amps3=False):
-    return c3r_dir() / ("judge-amps3" if amps3 else "judge") / arm / ru["set"] / f"{fname(ru['unit'] + '|' + ru['amp'])}.json"
+def judge_path(arm, ru):
+    return c3r_dir() / "judge" / arm / ru["set"] / f"{fname(ru['unit'] + '|' + ru['amp'])}.json"
 
 
 def cmd_predict(args):
@@ -638,11 +621,6 @@ def cmd_predict(args):
     from learn import pipeline_fix as P
 
     P.require(PHASE)
-    amps3 = bool(getattr(args, "amps3", False))
-    if amps3:
-        P.require(AMPS3_PHASE)
-        if args.arm != "all":
-            raise SystemExit("--amps3 reads R-all, the adopted model, only")
     st = state()
     base = base_of(args.arm, st)
     models = {}
@@ -657,7 +635,7 @@ def cmd_predict(args):
     ms = P.A_menu_S()
     hold = answer_hold(st)
     out = {}
-    units = read_units_amps3(st) if amps3 else read_units(st)
+    units = read_units(st)
     for ru in units:
         nets, _ = models[ru["fold"]]
         amp, prt = ru["amp"], ru["prt"]
@@ -671,8 +649,7 @@ def cmd_predict(args):
             stg = P.hold_outside_space(stg, S, amp) if hold is None else P.hold_outside_space(stg, S, amp, hold)
             out.setdefault(ru["set"], {}).setdefault(f"{ru['unit']}|{amp}", {})[search] = {
                 "select": sel, "settings": LO.sdict(stg)}
-    P.save(answers_path(args.arm, amps3), {"plan": "docs/full-controls-plan.md",
-                                           "ledger": f"{P.LEDGER_ID} {AMPS3_PHASE if amps3 else PHASE}",
+    P.save(answers_path(args.arm), {"plan": "docs/full-controls-plan.md", "ledger": f"{P.LEDGER_ID} {PHASE}",
                                     "arm": args.arm, "base": base, "recipe": st["recipe"],
                                     "answer_tag": st["answer_tag"], "c3r_sha256": st["sha256"],
                                     "models": {k: m[1] for k, m in models.items()}, "answers": out,
@@ -695,23 +672,14 @@ def cmd_render(args):
     from learn import trusted_data as T
 
     P.require(PHASE)
-    amps3 = bool(getattr(args, "amps3", False))
-    which = getattr(args, "which", "all")
     arms = [a for a in args.arms.split(",") if a]
-    if amps3:
-        P.require(AMPS3_PHASE)
-        if arms != ["all"]:
-            raise SystemExit("--amps3 renders R-all only: --arms all")
-    ans = {a: json.loads(answers_path(a, amps3).read_text()) for a in arms}
+    ans = {a: json.loads(answers_path(a).read_text()) for a in arms}
     st = state()
     for a in arms:
         if ans[a]["c3r_sha256"] != st["sha256"]:
             raise SystemExit(f"{a}: its answers were made on another state")
     k, n = args.shard
-    pool = read_units_amps3(st) if amps3 else read_units(st)
-    if amps3 and which != "all":                       # the canary first: each unit's own amp, then the other two
-        pool = [ru for ru in pool if ru["forced"] == (which == "forced")]
-    units = [ru for j, ru in enumerate(pool) if j % n == k]
+    units = [ru for j, ru in enumerate(read_units(st)) if j % n == k]
     trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
     LO._wait_cap()
     renders = 0
@@ -724,7 +692,7 @@ def cmd_render(args):
         todo = [a for a in arms if key in ans[a]["answers"].get(ru["set"], {})]
         di32 = ref = di = None
         for a in todo:
-            gp = judge_path(a, ru, amps3)
+            gp = judge_path(a, ru)
             asha = P.answers_sha({key: ans[a]["answers"][ru["set"]][key]})
             if gp.exists():
                 if json.loads(gp.read_text()).get("answers_sha256") != asha:
@@ -745,46 +713,6 @@ def cmd_render(args):
             P.save(gp, rec)
         print(f"{ru['set']} {ru['unit'][-56:]}|{ru['amp']}: renders so far {renders}", flush=True)
     print(f"C3R-RENDER DONE {k}/{n}: {renders} renders")
-
-
-def amps3_check(stored, fresh):
-    """The canary: each unit's own-amp render in judge-amps3 is bit-identical to C3r's read's (render sha256 on both
-    halves) and was rendered from the same answer. stored, fresh: {key: judge record}. -> {"units", "equal",
-    "mismatches"}."""
-    out = {"units": 0, "equal": 0, "mismatches": []}
-    for key, f in sorted(fresh.items()):
-        s = stored.get(key)
-        out["units"] += 1
-        ok = s is not None and s.get("render_sha256") == f.get("render_sha256") and s.get("answers_sha256") == f.get(
-            "answers_sha256")
-        out["equal"] += ok
-        if not ok:
-            out["mismatches"].append(key)
-    return out
-
-
-def cmd_amps3_check(_args):
-    """After the canary pass (`c3r-render --amps3 --which forced`): every forced-amp render equals C3r's read's, or exit
-    non-zero so the launcher stops before the other amps render. -> c3r/amps3-check.json."""
-    from learn import pipeline_fix as P
-
-    P.require(AMPS3_PHASE)
-    st = state()
-    stored, fresh = {}, {}
-    for ru in read_units_amps3(st):
-        if not ru["forced"]:
-            continue
-        key = f"{ru['set']}|{ru['unit']}|{ru['amp']}"
-        for d, p in ((stored, judge_path("all", ru)), (fresh, judge_path("all", ru, True))):
-            if p.exists():
-                d[key] = json.loads(p.read_text())
-    if len(fresh) != len(stored):
-        raise SystemExit(f"C3R AMPS3 CHECK FAILED: {len(fresh)} forced renders against {len(stored)} stored")
-    chk = amps3_check(stored, fresh)
-    P.save(c3r_dir() / "amps3-check.json", {"phase": AMPS3_PHASE, "check": chk, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
-    print(f"C3R AMPS3 CHECK: {chk['equal']}/{chk['units']} equal")
-    if chk["mismatches"]:
-        raise SystemExit(f"C3R AMPS3 CHECK FAILED: {len(chk['mismatches'])} differ")
 
 
 def half_value(judge, search, held):
@@ -1015,16 +943,11 @@ def main(argv=None):
     sub.add_parser("c3r-check").set_defaults(fn=cmd_check)
     p = sub.add_parser("c3r-predict")
     p.add_argument("--arm", choices=ARMS, required=True)
-    p.add_argument("--amps3", action="store_true", help="the amp-selector read: every read unit on all three amps")
     p.set_defaults(fn=cmd_predict)
     r = sub.add_parser("c3r-render")
     r.add_argument("--arms", default="all,ctl")
     r.add_argument("--shard", type=F.shard, default=(0, 1))
-    r.add_argument("--amps3", action="store_true", help="the amp-selector read's renders (judge-amps3)")
-    r.add_argument("--which", choices=("forced", "others", "all"), default="all",
-                   help="with --amps3: each unit's own amp (the canary), the other two, or both")
     r.set_defaults(fn=cmd_render)
-    sub.add_parser("c3r-amps3-check").set_defaults(fn=cmd_amps3_check)
     sub.add_parser("c3r-report").set_defaults(fn=cmd_report)
     args = ap.parse_args(argv)
     args.fn(args)

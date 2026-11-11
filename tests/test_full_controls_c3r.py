@@ -352,30 +352,3 @@ def test_c3r_refuses_while_a_scope_out_records_di_is_kept(tmp_path, monkeypatch)
     with pytest.raises(SystemExit, match="move each aside"):
         R3.state()
     R3._CACHE.clear()
-
-
-def test_the_amp_selector_read_expands_every_non_bks_unit_to_three_amps_own_first(monkeypatch):
-    from learn import full_controls_c3r as R
-    units = [{"set": "bks", "unit": "b", "amp": "pr12"}, {"set": "goat", "unit": "g", "amp": "sw50r"},
-             {"set": "panel", "unit": "p", "amp": "ac20"}]
-    monkeypatch.setattr(R, "read_units", lambda st=None: units)
-    got = R.read_units_amps3({})
-    assert [(r["unit"], r["amp"], r["forced"]) for r in got] == [
-        ("g", "sw50r", True), ("g", "pr12", False), ("g", "ac20", False),
-        ("p", "ac20", True), ("p", "pr12", False), ("p", "sw50r", False)]
-    assert R.answers_path("all", True).name == "all-amps3.json" and "judge-amps3" in str(R.judge_path("all", got[0], True))
-
-
-def test_the_amp_selector_canary_needs_equal_renders_and_answers():
-    from learn import full_controls_c3r as R
-    s = {"k": {"render_sha256": {"A": "x", "B": "y"}, "answers_sha256": "a"}}
-    assert R.amps3_check(s, {"k": dict(s["k"])}) == {"units": 1, "equal": 1, "mismatches": []}
-    assert R.amps3_check(s, {"k": {"render_sha256": {"A": "x", "B": "z"}, "answers_sha256": "a"}})["mismatches"] == ["k"]
-    assert R.amps3_check(s, {"k": {"render_sha256": {"A": "x", "B": "y"}, "answers_sha256": "b"}})["equal"] == 0
-
-
-def test_the_amp_selector_launcher_runs_the_canary_first_on_slot_locks():
-    import pathlib
-    t = (pathlib.Path(__file__).resolve().parents[1] / "logs" / "launch-r3-amps3.zsh").read_text()
-    order = [t.index(x) for x in ("run predict", "three forced", "run check", "three others")]
-    assert order == sorted(order) and "acquire_render_slot" in t and "--arm all --amps3" in t and "train-ft" not in t
