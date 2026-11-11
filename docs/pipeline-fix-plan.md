@@ -4949,7 +4949,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - Under the −54 dBFS sensitivity check, 1 unit's choice changes.
 - **By the score.**
 
-  | Row | All (214 units, 130 items) | Clean | Crunch |
+  | Row | All (214 units, 130 items; forced: 213 with a usable forced amp) | Clean | Crunch |
   |---|---|---|---|
   | **Chosen amp − blind** | **−0.054 [−0.063, −0.044]**, 119 of 130 items; part-weighted −0.055 | −0.051 [−0.060, −0.041] | −0.059 [−0.074, −0.044] |
   | Forced amp − blind | −0.001 [−0.013, +0.011] | −0.009 [−0.022, +0.003] | +0.003 [−0.016, +0.022] |
@@ -4959,15 +4959,19 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - GOAT's forced amp is the dataset's own assignment, and it reads as blind, so GOAT's rows give no amp information without C2b.
 - **The declared check for C3b, at zero renders: the amp label moves with the recipe.** On BKS (102 units, all three amps labelled twice), the argmin over the stored 52-evaluation `K.space` labels and over C2's every-control labels agree on 51 of 102 units (50%).
   - The stored labels pick sw50r on 78, pr12 on 18 and ac20 on 6.
-  - C2's labels pick pr12 on 48, sw50r on 40 and ac20 on 14. With the EQ and the pedals searched too, pr12 fits about as often as sw50r.
-  - Read on C2's labels (held half, against blind): C2's own choice −0.031 [−0.049, −0.013], and the stored labels' choice −0.022 [−0.036, −0.007], 8 DIs. Both beat blind, and C2's own choice reads about 40% more.
+  - C2's labels pick pr12 on 48, sw50r on 40 and ac20 on 14. With every control searched, pr12 fits about as often as sw50r.
+  - **51 of 102 is near chance.** Within one recipe, the search half's and the held half's argmin agree on 85 of 102 (stored) and 79 of 102 (C2). Chance agreement from the two recipes' shares is 40. No subset escapes it: by C2's search-half margin between its best two amps, the thirds agree on 12, 18 and 21 of 34. By class: clean 10 of 22, crunch 41 of 80. With C2's own near-silent bound instead of −57 dBFS, 50 agree.
+  - **The amp choice is worth about half as much under C2's labels.** On BKS, the stored choice read on the stored labels is −0.063 [−0.091, −0.036] against blind. On C2's labels (held half, 8 DIs), C2's own choice reads −0.031 [−0.049, −0.013] and the stored labels' choice −0.022 [−0.036, −0.007]. So under every-control labels the amp's ceiling is nearer 3% than 6%.
+  - **The price of the recipe.** The stored choice less C2's choice, both read on C2's labels, is +0.009 [−0.012, +0.030], undecided. That is all that relabelling on C2's recipe could buy over the stored recipe's choice, on BKS.
 - **What it changes.**
-  - **GOAT now has amp labels,** and choosing the amp is worth about 5% by the score on GOAT, as on BKS (F69's −0.058).
+  - **GOAT now has amp labels.** On its stored-recipe labels, choosing the amp is worth about 5% by the score, as the stored recipe's choice is on BKS (−0.063; F69's −0.058). Under C2's every-control labels it is worth about 3% on BKS.
   - **But GOAT's amp labels come from the stored recipe,** while BKS's would come from C2's, and the two pick different amps half the time. An amp head trained beside C3's every-control heads would learn two recipes' answers.
   - **C3b is declared separately and goes to the user first.** It must choose the amp labels' recipe. The options:
-    - GOAT's C2b labels as they are, beside BKS's C2 argmin;
-    - both sets on the stored recipe (BKS's stored argmin);
-    - C2's recipe on GOAT's other two amps, which is like for like with C3 but costs at most 428 × 268 ≈ 115k renders (about 11 to 12 h on 5 processes, if they scale).
+    1. GOAT's C2b labels as they are, beside BKS's C2 argmin. Zero renders, but two recipes.
+    2. Both sets on the stored recipe, with BKS's stored argmin. Zero renders and like for like, but not C3's recipe.
+    3. C2's recipe on GOAT's other two amps. This is like for like with C3, but costs about 112k renders: C2's GOAT records took 263 each (253 to 271), so at most about 116k. That is about 10 h if 5 processes scale fully, 14 h at 8,100 an hour, or 17 h on 3, after C2r and the reads already queued. On BKS it would buy +0.009, undecided, over option 2's choice.
+    4. BKS's C2 argmin alone, with GOAT's amp rows masked. Zero renders and like for like, on 8 DIs and 2 songs.
+  - **The amp head itself** is the larger open question. C3's amp pick (W's head on C3's body, untrained on real rows) reads −0.027 [−0.070, +0.016], undecided (F72).
   - By the score only.
 - Files:
   - `PF/c2b/` (`records.json`, `report.json`);
