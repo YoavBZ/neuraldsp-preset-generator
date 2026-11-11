@@ -876,17 +876,21 @@ S2_PRIMARY = "C3b - C3"
 
 S2_PICK = "C3 at C3b's pick - C3"          # the pick alone, on C3's settings
 S2_SETTINGS = "C3b - C3 at C3b's pick"    # the settings alone, at the amp the product would use (the review)
-S2_BY_CLASS = (S2_PRIMARY, S2_SETTINGS, "always sw50r - blind, on C3b", "always sw50r - blind, on C3")
+S2_HEADROOM = tuple(f"{r} - always sw50r, on {m}" for r in ("search-half argmin", "the labels' argmin amp")
+                    for m in ("C3b", "C3"))   # the per-recording headroom on the product's answers, and the labels' aim
+S2_BY_CLASS = (S2_PRIMARY, S2_SETTINGS, "always sw50r - blind, on C3b", "always sw50r - blind, on C3", *S2_HEADROOM)
 
 
-def s2_unit_rows(unit, cluster, jb, jc, pb, pc, cls=None, amps=S2_AMPS):
+def s2_unit_rows(unit, cluster, jb, jc, pb, pc, cls=None, lab=None, amps=S2_AMPS):
     """One unit's stage 2 rows from both models' renders on every amp. jb, jc: {amp: {search half: {half: judge}}} (C3b's,
     the adopted C3's); pb, pc: {search half: picked amp} (each model's head on that half's input). Per direction (search
     half sh, held half h), on the held half: the primary ln(C3b at its pick / C3 at W's pick), split exactly into the pick
     alone (C3 at C3b's pick / C3 at W's pick) and the settings alone (C3b / C3, both at C3b's pick); beside, each pick,
     always-sw50r and each model's own search-half argmin (the fair ceiling, valued on the held half) against blind
     (`amp_value` over the amps) on each model's own renders, each model at the sw50r against its own answer, and C3b - C3
-    amp by amp and their mean. `cls` also files `S2_BY_CLASS` rows under "<row> (<cls>)".
+    amp by amp and their mean; and, on each model, the search-half argmin and the unit's stored labels' argmin amp
+    (`lab`, C3b's amp label; none without one) against always-sw50r (the review's re-check). `cls` also files
+    `S2_BY_CLASS` rows under "<row> (<cls>)".
     -> ({row: [(cluster, unit, value)]}, directions dropped for a missing pick or a non-finite judge)."""
     rows, dropped = {}, 0
 
@@ -915,8 +919,14 @@ def s2_unit_rows(unit, cluster, jb, jc, pb, pc, cls=None, amps=S2_AMPS):
         add("W's pick - blind, on C3", amp_value(hc, c))
         add("always sw50r - blind, on C3b", amp_value(hb, "sw50r"))
         add("always sw50r - blind, on C3", amp_value(hc, "sw50r"))
-        add("search-half argmin - blind, on C3b", amp_value(hb, min(sorted(amps), key=lambda a: sb[a])))
-        add("search-half argmin - blind, on C3", amp_value(hc, min(sorted(amps), key=lambda a: sc[a])))
+        ab, ac = min(sorted(amps), key=lambda a: sb[a]), min(sorted(amps), key=lambda a: sc[a])
+        add("search-half argmin - blind, on C3b", amp_value(hb, ab))
+        add("search-half argmin - blind, on C3", amp_value(hc, ac))
+        add("search-half argmin - always sw50r, on C3b", lb[ab] - lb["sw50r"])
+        add("search-half argmin - always sw50r, on C3", lc[ac] - lc["sw50r"])
+        if lab in lb:
+            add("the labels' argmin amp - always sw50r, on C3b", lb[lab] - lb["sw50r"])
+            add("the labels' argmin amp - always sw50r, on C3", lc[lab] - lc["sw50r"])
         add("C3 at the sw50r - C3", lc["sw50r"] - lc[c])
         add("C3b at the sw50r - C3b", lb["sw50r"] - lb[b])
         add("C3 at the sw50r - C3b", lc["sw50r"] - lb[b])
@@ -1006,6 +1016,7 @@ def cmd_c3b_s2(_args):
     if ctag != "C3-cabS":
         raise SystemExit(f"stage 2 was declared against C3-cabS; the decision names {ctag}")
     root = P.out_dir()
+    labels = amp_labels()                              # C3b's amp labels: the stored recipe's argmin, both sets
     sets, picks, check = {}, {}, None
     for name, d, sub_a, sub_j in (("bks", P.REAL_DIR, "answers", "judge"),
                                   ("goat", P.GOAT_DIR, P.AMPS3_DIR, P.AMPS3_JUDGE)):
@@ -1034,13 +1045,13 @@ def cmd_c3b_s2(_args):
                     by_amp[nm][pk or "none"] = by_amp[nm].get(pk or "none", 0) + 1
                 agree += pb.get(sh) is not None and pb.get(sh) == pc.get(sh)
             r, dr = s2_unit_rows(u, cl, {a: judge[C3B_TAG][(u, a)]["judge"] for a in S2_AMPS},
-                                 {a: judge[ctag][(u, a)]["judge"] for a in S2_AMPS}, pb, pc, cls[u])
+                                 {a: judge[ctag][(u, a)]["judge"] for a in S2_AMPS}, pb, pc, cls[u], labels.get(u))
             dropped += dr
             for k, v in r.items():
                 rows.setdefault(k, []).extend(v)
         sets[name] = {k: P.clustered(v) for k, v in rows.items()}
         picks[name] = {"by_amp": by_amp, "agree": agree, "directions": 2 * len(units), "dropped": dropped,
-                       "units": len(units)}
+                       "units": len(units), "units_with_amp_label": sum(1 for u in units if u in labels)}
     if check["mismatches"]:
         P.save(c3_dir() / "c3b-stage2.json", {"phase": C3B_S2_PHASE, "check": check, "reading": "refused",
                                               "time": time.strftime("%Y-%m-%d %H:%M:%S")})

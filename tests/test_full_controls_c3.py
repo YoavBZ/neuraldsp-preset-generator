@@ -560,6 +560,12 @@ def test_c3b_stage2_rows_read_each_models_own_pick_on_its_own_renders():
     mean_ab = sum(math.log(b / c) for b, c in ((2.0, 1.2), (1.0, 1.1), (1.5, 1.3))) / 3
     assert v("C3b - C3, mean over the amps")[0] == pytest.approx(mean_ab)
     assert v(f"{X.S2_PRIMARY} (clean)") == v(X.S2_PRIMARY) and f"{X.S2_PICK} (clean)" not in rows
+    assert v("search-half argmin - always sw50r, on C3b") == pytest.approx([math.log(2.0 / 1.0), math.log(1.0 / 1.5)])
+    assert "the labels' argmin amp - always sw50r, on C3" not in rows      # no amp label given
+    lr, _ = X.s2_unit_rows("u", "c", jb, jc, {"A": "sw50r", "B": "sw50r"}, {"A": "pr12", "B": "ac20"}, "crunch", "ac20")
+    assert [x for *_, x in lr["the labels' argmin amp - always sw50r, on C3"]] == pytest.approx(
+        [math.log(1.3 / 1.1), math.log(1.0 / 1.1)])
+    assert len(lr["the labels' argmin amp - always sw50r, on C3b (crunch)"]) == 2
     assert {r[0] for x in rows.values() for r in x} == {"c"}
 
 
