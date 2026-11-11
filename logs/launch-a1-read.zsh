@@ -12,6 +12,7 @@ LOGS=/Users/yoavbz/projects/neuraldsp-preset-generator/logs
 L=${LOGS}/a1-read.log
 [[ -f ${L} ]] && mv ${L} ${L}.$(date +%Y%m%d-%H%M%S)
 caffeinate -i -w $$ &
+echo "read-launcher $$" >> ${LOGS}/a1-pids.txt
 note() { echo "$1 $(date)" >> ${L}; }
 note "waiting for A1's renders"
 until [[ $(tail -1 ${LOGS}/a1.log 2>/dev/null) == (done*|*FAILED*) ]]; do sleep 60; done

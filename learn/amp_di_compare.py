@@ -24,6 +24,7 @@ SEED = 20261128                      # the stock-DI draw's
 PER_CLASS = 2                        # stock DIs per class, on distinct DI files
 AMPS = ("pr12", "sw50r", "ac20")
 MODEL = "C3-cabS"                    # the model whose per-amp renders read the pick (C3b stage 2's)
+FLOOR_U8 = 44                        # -90 dB on the inputs' quantised grid: the common floor (the review, before the read)
 
 
 def a1_dir():
@@ -317,19 +318,24 @@ def cmd_embed(_args):
         ref = P.real_amp_track(prt["sd"], prt["track"], prt["start_s"])
         g = DE.inference_gain_db(ref, target)
         z = np.load(a1_dir() / "mels" / f"{u['set']}__{u['unit'].replace('/', '__')}.npz")
-        rec = {"set": u["set"], "unit": u["unit"], "model": name, "picks": {}, "dist": {}}
+        rec = {"set": u["set"], "unit": u["unit"], "model": name, "floor_u8": FLOOR_U8, "picks": {}, "dist": {}}
+
+        def emb(m8, lu, sh, floor):
+            m8 = np.maximum(m8, FLOOR_U8) if floor else m8
+            return feats(name, DS.model_input(m8, m8, lu, lu, sh, "sw50r", u["cls"], "Dstem")[0])
+
         for sh in ("A", "B"):
             s8, ls = backed[sh]
-            tgt = {"stem": feats(name, DS.model_input(s8, s8, ls, ls, sh, "sw50r", u["cls"], "Dstem")[0])}
             c8, _, lc, _ = DS.step4_half(ref, ref, sh, g)
-            tgt["clean amp track"] = feats(name, DS.model_input(c8, c8, lc, lc, sh, "sw50r", u["cls"], "Dstem")[0])
             n = sum(1 for k in z.files if k.startswith(f"{sh}_{AMPS[0]}_") and k.endswith(f"_{sh}"))
-            renders = {a: [feats(name, DS.model_input(z[f"{sh}_{a}_{j}_{sh}"], z[f"{sh}_{a}_{j}_{sh}"],
-                                                      float(z[f"{sh}_{a}_{j}_{sh}_lufs"][0]), float(z[f"{sh}_{a}_{j}_{sh}_lufs"][0]),
-                                                      sh, "sw50r", u["cls"], "Dstem")[0]) for j in range(n)] for a in AMPS}
-            for kind, t in tgt.items():
-                rec["picks"].setdefault(kind, {})[sh] = embed_pick(t, renders)
-                rec["dist"].setdefault(kind, {})[sh] = {a: sum(cosine_distance(t, r) for r in renders[a]) / n for a in AMPS}
+            for floor, kinds in ((True, {"stem": (s8, ls), "clean amp track": (c8, lc)}), (False, {"stem, no floor": (s8, ls)})):
+                renders = {a: [emb(z[f"{sh}_{a}_{j}_{sh}"], float(z[f"{sh}_{a}_{j}_{sh}_lufs"][0]), sh, floor)
+                               for j in range(n)] for a in AMPS}
+                for kind, (m8, lu) in kinds.items():
+                    t = emb(m8, lu, sh, floor)
+                    rec["picks"].setdefault(kind, {})[sh] = embed_pick(t, renders)
+                    rec["dist"].setdefault(kind, {})[sh] = {a: sum(cosine_distance(t, r) for r in renders[a]) / n
+                                                            for a in AMPS}
         P.save(out, rec)
     print(f"A1 EMBED DONE: {len(plan['units'])} units")
 
@@ -354,7 +360,7 @@ def cmd_rows(_args):
         amp_p = json.loads((root / d / sa / f"{MODEL}.json").read_text()).get("amp_p") or {}
         gparts = {p_["unit"]: p_ for p_ in P.goat_read_units()} if name == "goat" else {
             p_["unit"]: p_ for p_ in json.loads((root / d / "answers" / f"{MODEL}.json").read_text())["parts"]}
-        rows, dropped, by_amp = {}, 0, {a: 0 for a in AMPS}
+        rows, dropped, by_amp = {}, 0, {}
         for u in [x for x in plan["units"] if x["set"] == name]:
             rec = json.loads((a1_dir() / "shapes" / f"{name}__{u['unit'].replace('/', '__')}.json").read_text())
             backed = P.dfix_backed(u["unit"])
@@ -362,14 +368,17 @@ def cmd_rows(_args):
             ref = P.real_amp_track(prt["sd"], prt["track"], prt["start_s"])
             g = DE.inference_gain_db(ref, target)           # the clean track at the model's input gain (the review)
             emb = json.loads((a1_dir() / "embed" / f"{name}__{u['unit'].replace('/', '__')}.json").read_text())
-            picks = {"embedding": emb["picks"]["stem"], "embedding on the clean amp track": emb["picks"]["clean amp track"],
+            picks = {"embedding": emb["picks"]["stem"], "embedding with no floor": emb["picks"]["stem, no floor"],
+                     "embedding on the clean amp track": emb["picks"]["clean amp track"],
                      "stem": {}, "clean amp track": {}, "60 Hz-8 kHz band": {}}
             for sh in ("A", "B"):
                 stem = backed[sh][0].tolist()
                 picks["stem"][sh] = pick(shape(stem), rec["shapes"][sh])
                 picks["clean amp track"][sh] = pick(shape(DS.step4_half(ref, ref, sh, g)[0].tolist()), rec["shapes"][sh])
                 picks["60 Hz-8 kHz band"][sh] = band_pick(shape_in(stem, mask), rec, sh, mask)
-                by_amp[picks["stem"][sh]] += 1
+            for nm, p_ in picks.items():                 # every pick row's spread over the amps (the bias check)
+                for sh in ("A", "B"):
+                    by_amp.setdefault(nm, {a: 0 for a in AMPS})[p_[sh]] += 1
             w = X.s2_picks(amp_p, u["unit"], FS.AMPS)
             r, dr = unit_rows(u["unit"], u["cluster"], u["cls"], {a: judge[(u["unit"], a)] for a in AMPS}, picks, w)
             dropped += dr
