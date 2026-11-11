@@ -1119,10 +1119,27 @@ def answer_amp_labels():
     return out
 
 
-C3C_BY_CLASS = ("C3c - W", "C3c - always sw50r")
+C3C_BY_CLASS = ("C3c - W", "C3c - always sw50r", "C3c - always ac20", "C3c - the class's label majority")
 
 
-def c3c_unit_rows(unit, cluster, jc, pc, pw, cls=None, amps=S2_AMPS):
+def label_majority(labels, cls_of, amps=S2_AMPS):
+    """The labels' majority amp per class (ties to the first in `amps`' order): what a prior-only hard head picks."""
+    out = {}
+    for c in sorted({cls_of[u] for u in labels if u in cls_of}):
+        n = {a: sum(1 for u, x in labels.items() if cls_of.get(u) == c and x == a) for a in amps}
+        out[c] = max(amps, key=lambda a: n[a])
+    return out
+
+
+def auc(pos, neg):
+    """Mann-Whitney AUC of scores `pos` against `neg` (ties count half). -> float or None."""
+    if not pos or not neg:
+        return None
+    w = sum(1.0 if p > q else 0.5 if p == q else 0.0 for p in pos for q in neg)
+    return w / (len(pos) * len(neg))
+
+
+def c3c_unit_rows(unit, cluster, jc, pc, pw, cls=None, maj=None, amps=S2_AMPS):
     """One unit's C3c rows on C3-cabS's own per-amp renders (jc: {amp: {search half: {half: judge}}}), per direction
     (search half sh, held half h), on the held half: C3c's pick (pc), W's (pw), always-sw50r and the search half's own
     argmin (the fair ceiling) against blind (`amp_value`), and C3c - W and C3c - always sw50r (ln ratios), the last two
@@ -1148,6 +1165,9 @@ def c3c_unit_rows(unit, cluster, jc, pc, pw, cls=None, amps=S2_AMPS):
         add("search-half argmin - blind", amp_value(hv, min(sorted(amps), key=lambda a: sv[a])))
         add("C3c - W", lv[c] - lv[w])
         add("C3c - always sw50r", lv[c] - lv["sw50r"])
+        add("C3c - always ac20", lv[c] - lv["ac20"])
+        if maj is not None:
+            add("C3c - the class's label majority", lv[c] - lv[maj])
     return rows, dropped
 
 
@@ -1159,6 +1179,23 @@ def c3c_reading(beyond, over_w):
     return ("learns" if d == "better" else d), direction(over_w)
 
 
+def c3c_guard(labels):
+    """The review's guard: each C3c FT_k holds out exactly C3's units for the same k (both seeds), and records these
+    labels' sha256."""
+    from learn import pipeline_fix as P
+
+    want = amp_labels_sha(labels)
+    od = P.out_dir() / "runs"
+    for k in range(P.REAL_FOLDS):
+        for sd in P.SEEDS:
+            rc = json.loads((od / f"{C3C_BASE}-k{k}-{sd}.json").read_text())   # the run records (no torch here)
+            r3 = json.loads((od / f"{C3_BASE}-k{k}-{sd}.json").read_text())
+            if sorted(rc.get("real_held_units") or []) != sorted(r3.get("real_held_units") or []):
+                raise SystemExit(f"{C3C_BASE}-k{k}-{sd}: held units differ from C3's")
+            if ((rc.get("c3") or {}).get("amp_labels") or {}).get("sha256") != want:
+                raise SystemExit(f"{C3C_BASE}-k{k}-{sd}: trained on other amp labels")
+
+
 def cmd_c3c(_args):
     """C3c's read at zero renders -> c3/c3c.json: on BKS's 40 read units (by DI) and GOAT's (by item), C3c's pick (its
     FT_k that held the unit out) and W's, each valued on the held half of C3-cabS's own per-amp renders; the declared
@@ -1168,7 +1205,12 @@ def cmd_c3c(_args):
 
     P.require(C3C_PHASE)
     root, labels = P.out_dir(), answer_amp_labels()
-    sets, picks = {}, {}
+    c3c_guard(labels)
+    sets, picks, aucs = {}, {}, {}
+    cls_all = {prt["unit"]: prt["cls"] for prt in P.goat_read_units()}
+    cls_all.update({prt["unit"]: prt["cls"] for prt in
+                    json.loads((root / P.REAL_DIR / "answers" / f"{C3C_FROM}.json").read_text())["parts"]})
+    maj = label_majority(labels, cls_all)
     for name, d, sa, sj in (("bks", P.REAL_DIR, "answers", "judge"), ("goat", P.GOAT_DIR, P.AMPS3_DIR, P.AMPS3_JUDGE)):
         ans = {t: json.loads((root / d / ("answers" if t == C3C_TAG else sa) / f"{t}.json").read_text())
                for t in (C3C_TAG, C3C_FROM)}
@@ -1178,25 +1220,33 @@ def cmd_c3c(_args):
         else:
             units = {prt["unit"]: (prt["item"], prt["cls"]) for prt in P.goat_read_units()}
         rows, dropped, by_amp, hits, n = {}, 0, {a: 0 for a in S2_AMPS}, 0, 0
+        scored = []                                    # (each direction's own argmin, C3c's probabilities)
         for u, (cl, cls) in sorted(units.items()):
             pc = s2_picks(ans[C3C_TAG].get("amp_p") or {}, u, FS.AMPS)
             pw = s2_picks(ans[C3C_FROM].get("amp_p") or {}, u, FS.AMPS)
             for sh in ("A", "B"):
                 if pc.get(sh):
                     by_amp[pc[sh]] += 1
-                    hits += pc[sh] == answer_argmin(judge, u, sh)
+                    best = answer_argmin(judge, u, sh)
+                    hits += pc[sh] == best
                     n += 1
-            r, dr = c3c_unit_rows(u, cl, {a: judge[(u, a)] for a in S2_AMPS}, pc, pw, cls)
+                    probs = next(((ans[C3C_TAG]["amp_p"][k] or {}).get(sh) for k in sorted(ans[C3C_TAG]["amp_p"])
+                                  if k.split("|")[0] == u and (ans[C3C_TAG]["amp_p"][k] or {}).get(sh)), None)
+                    if best and probs:
+                        scored.append((best, dict(zip(FS.AMPS, probs))))
+            r, dr = c3c_unit_rows(u, cl, {a: judge[(u, a)] for a in S2_AMPS}, pc, pw, cls, maj.get(cls))
             dropped += dr
             for k, v in r.items():
                 rows.setdefault(k, []).extend(v)
         sets[name] = {k: P.clustered(v) for k, v in rows.items()}
         picks[name] = {"by_amp": by_amp, "hits_search_argmin": hits, "directions": n, "dropped": dropped,
                        "units": len(units), "labelled": sum(1 for u in units if u in labels)}
+        aucs[name] = {a: auc([p[a] for b, p in scored if b == a], [p[a] for b, p in scored if b != a]) for a in S2_AMPS}
     names = sorted(set(sets["bks"]) | set(sets["goat"]))
     jr = {n: judged(sets["bks"].get(n) or {}, sets["goat"].get(n) or {}) for n in names}
     reading, over_w = c3c_reading(jr["C3c - always sw50r"], jr["C3c - W"])
-    rec = {"phase": C3C_PHASE, "rows": jr, "picks": picks, "reading": reading, "C3c - W": over_w,
+    rec = {"phase": C3C_PHASE, "rows": jr, "picks": picks, "auc": aucs, "label_majority": maj, "reading": reading,
+           "C3c - W": over_w,
            "labels_sha256": amp_labels_sha(labels), "c2_sha256": c2_sha(), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     P.save(c3_dir() / "c3c.json", rec)
     for n in names:

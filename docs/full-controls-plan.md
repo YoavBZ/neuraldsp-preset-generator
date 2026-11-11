@@ -449,13 +449,16 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - Each pick is valued on the held half of **C3-cabS's own per-amp renders**, the settings fixed. So it asks whether the head picks the amp that suits C3's answer, without its own settings in the way.
   - **The rows:** C3c's pick, W's pick, always-sw50r and the search half's own argmin (the fair ceiling), each against blind; C3c − W and C3c − always sw50r, also by class. BKS by DI, GOAT by item, pooled with C3's equal weights.
   - Beside: C3c's picks by amp, and how often they hit the search half's argmin, against chance.
+  - **Added after its review, beside:** C3c − always ac20 and C3c − the class's label-majority amp. The labels' majority is the ac20, the worst constant (best in 40% of directions, worst in 43%), so a prior-only head would read worse than the sw50r. These rows tell "learned its prior" from "harmful". Also beside: the AUC of C3c's amp probabilities against each direction's own argmin.
+  - **A guard:** each C3c FT_k holds out exactly C3's units for the same fold (both seeds) and records these labels' sha256, or the read refuses.
+  - **The review's expectation:** "learns" has about a 15 to 25% chance. Its zero-render probes found the input's mel summary reaching AUC 0.61 to 0.65 and a quarter of the headroom on GOAT, worse on BKS, and nothing in C3's embedding.
 - **The declared reading, on "C3c − always sw50r"** (beyond the best constant: does the head read anything from the audio?). By C3's test:
   - *learns:* better on BKS, GOAT or pooled, and worse on none;
   - *worse*, *split* or *undecided* otherwise.
   - C3c − W is reported beside.
 - **What each reading leads to.**
   - **Learns:** a stage 2 is declared before any render, reading C3c's full answer (its pick and its settings) against the adopted C3's on all three amps, as C3b's stage 2 did.
-  - **Otherwise:** the head can't read the answer's best amp from the audio with these labels. The amp route then goes on the review session's findings (more labels by rendering every training unit's answer on all three amps, or another target or input), declared separately and explained to the user first.
+  - **Otherwise:** the head can't read the answer's best amp from the audio with these labels. Then, as the review's investigation recommends, one zero-render cost-target probe (a regression on the per-amp ln gaps, falling back to the best constant). If that doesn't beat the best constant on GOAT and stay level on BKS, learning the amp from the audio stops, and two other routes go to the user, explained: comparing each amp's answer rendered on a library DI with the song's stem at inference (a new approach, about 2,600 renders to test), or offering three presets, one per amp, to pick by ear. Rendering more units on all three amps (the user's idea, about 2,500 to 5,500 renders) is worth doing only once a head shows a signal.
   - **The read adopts nothing.**
 - **Stop rule.** One training and one zero-render read, with no tuning on the read sets.
 - **When.** The training (`logs/launch-c3c-train.zsh`) runs on MPS now, beside C3s's read renders, under Amendment 2's stop check. Before each pair it waits while any other train-ft runs. The read (`logs/launch-c3c-read.zsh`) follows its "done", with CPU predicts only and no renders. Under the user's rule of 2026-11-10, it launches once its review passes, and the user is told.

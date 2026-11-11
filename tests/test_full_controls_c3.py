@@ -677,3 +677,15 @@ def test_c3c_launchers_train_with_c3c_and_read_at_zero_renders():
     t, r = (root / "launch-c3c-train.zsh").read_text(), (root / "launch-c3c-read.zsh").read_text()
     assert t.count("--masked --c3c") == 2 and "--inner" not in t and "mps_free" in t and "mv ${PIDS} ${PIDS}." in t
     assert "c3c-train.log" in r and "c3c-rows" in r and "TAG=C3c" in r and "real-render" not in r and "goat-render" not in r
+
+
+def test_c3c_beside_rows_name_the_prior_and_the_auc():
+    jc = {"pr12": {"A": {"A": 1.0, "B": 2.0}, "B": {"A": 2.0, "B": 1.0}},
+          "sw50r": {"A": {"A": 2.0, "B": 1.0}, "B": {"A": 1.0, "B": 2.0}},
+          "ac20": {"A": {"A": 3.0, "B": 4.0}, "B": {"A": 4.0, "B": 3.0}}}
+    rows, _ = X.c3c_unit_rows("u", "c", jc, {"A": "pr12", "B": "pr12"}, {"A": "sw50r", "B": "ac20"}, "crunch", "ac20")
+    assert [x for *_, x in rows["C3c - always ac20"]] == pytest.approx([math.log(2.0 / 4.0), math.log(2.0 / 4.0)])
+    assert len(rows["C3c - the class's label majority (crunch)"]) == 2
+    maj = X.label_majority({"a": "ac20", "b": "ac20", "c": "sw50r", "d": "pr12"}, {"a": "clean", "b": "clean", "c": "clean", "d": "crunch"})
+    assert maj == {"clean": "ac20", "crunch": "pr12"}
+    assert X.auc([0.9, 0.8], [0.1, 0.2]) == 1.0 and X.auc([0.5], [0.5]) == 0.5 and X.auc([], [1]) is None
