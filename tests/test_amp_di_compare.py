@@ -29,12 +29,14 @@ def test_the_rows_read_each_pick_against_the_constant_and_w_on_the_models_render
     judge = {"pr12": {"A": {"A": 1.0, "B": 2.0}, "B": {"A": 2.0, "B": 1.0}},
              "sw50r": {"A": {"A": 2.0, "B": 1.0}, "B": {"A": 1.0, "B": 2.0}},
              "ac20": {"A": {"A": 3.0, "B": 4.0}, "B": {"A": 4.0, "B": 3.0}}}
-    picks = {"stem": {"A": "pr12", "B": "ac20"}, "clean amp track": {"A": "sw50r", "B": "sw50r"}}
+    picks = {"embedding": {"A": "pr12", "B": "ac20"}, "stem": {"A": "sw50r", "B": "pr12"},
+             "clean amp track": {"A": "sw50r", "B": "sw50r"}}
     rows, dropped = A.unit_rows("u", "c", "clean", judge, picks, {"A": "ac20", "B": "pr12"})
     v = lambda n: [x for *_, x in rows[n]]   # noqa: E731
     assert dropped == 0 and v("DI-compare - always sw50r") == pytest.approx([math.log(2.0), math.log(4.0)])
     assert v("DI-compare - W") == pytest.approx([math.log(2.0 / 4.0), math.log(4.0 / 2.0)])
-    assert v("DI-compare on the clean amp track - always sw50r") == pytest.approx([0.0, 0.0])
+    assert v("DI-compare by shape - always sw50r") == pytest.approx([0.0, math.log(2.0 / 1.0)])
+    assert v("DI-compare by shape on the clean amp track - always sw50r") == pytest.approx([0.0, 0.0])
     assert v("search-half argmin - always sw50r")[0] == pytest.approx(math.log(2.0))
     assert v("DI-compare - always sw50r (clean)") == v("DI-compare - always sw50r")
 
@@ -56,3 +58,14 @@ def test_the_band_mask_keeps_60_hz_to_8_khz():
     pytest.importorskip("numpy")
     m = A.band_mask()
     assert len(m) == 96 and 0 < sum(m) < 96 and not m[0] and not m[-1]
+
+
+def test_the_embedding_pick_takes_the_smallest_mean_cosine_distance():
+    assert A.cosine_distance([1, 0], [1, 0]) == pytest.approx(0.0) and A.cosine_distance([1, 0], [0, 1]) == pytest.approx(1.0)
+    renders = {"pr12": [[1, 0.1], [1, 0.2]], "sw50r": [[0, 1], [0.1, 1]], "ac20": [[-1, 0], [-1, 0.1]]}
+    assert A.embed_pick([1, 0], renders) == "pr12" and A.embed_pick([0, 1], renders) == "sw50r"
+
+
+def test_the_read_launcher_embeds_then_reads():
+    t = (pathlib.Path(__file__).resolve().parents[1] / "logs" / "launch-a1-read.zsh").read_text()
+    assert t.index("a1-embed") < t.index("a1-rows") and "DS_DEVICE=cpu" in t and "a1-render" not in t

@@ -131,7 +131,8 @@ def unit_rows(unit, cluster, cls, judge, picks, w, amps=AMPS):
             continue
         lv = {a: math.log(float(v)) for a, v in hv.items()}
         for name, p in picks.items():
-            label = "DI-compare" if name == "stem" else f"DI-compare on the {name}"
+            label = ("DI-compare" if name == "embedding" else "DI-compare by shape" if name == "stem"
+                     else f"DI-compare by {name}" if name.startswith("embedding") else f"DI-compare by shape on the {name}")
             add(f"{label} - always sw50r", lv[p[sh]] - lv["sw50r"])
             add(f"{label} - W", lv[p[sh]] - lv[w[sh]])
         add("W - always sw50r", lv[w[sh]] - lv["sw50r"])
@@ -146,6 +147,19 @@ def reading(primary):
 
     d = X.direction(primary)
     return "learns" if d == "better" else d
+
+
+def cosine_distance(a, b):
+    """1 less the cosine of two feature vectors."""
+    na, nb = math.sqrt(sum(x * x for x in a)), math.sqrt(sum(y * y for y in b))
+    return 1.0 - sum(x * y for x, y in zip(a, b)) / (na * nb) if na and nb else 1.0
+
+
+def embed_pick(target, renders, amps=AMPS):
+    """The amendment's pick: the amp whose renders' embeddings sit closest (cosine, averaged over the stock DIs) to the
+    target's. renders: {amp: [feature vector per stock DI]}. Ties to the first amp. -> amp."""
+    d = {a: sum(cosine_distance(target, r) for r in renders[a]) / len(renders[a]) for a in amps}
+    return min(amps, key=lambda a: d[a])
 
 
 # --- the commands -------------------------------------------------------------------------------------------------------
@@ -255,6 +269,71 @@ def cmd_render(args):
     print(f"A1 RENDER DONE {k}/{n}: {renders} renders", flush=True)
 
 
+def fold_model(name, unit, goat_fold, unit_model):
+    """The C3 fold model that held the unit out: GOAT by its item fold, BKS by C3-cabS's own unit-to-model record."""
+    return f"C3-ftm-k{goat_fold}" if name == "goat" else unit_model[unit]
+
+
+def cmd_embed(_args):
+    """The amendment's features (zero renders, CPU, torch): per unit and search half, the pooled body features of the C3
+    fold model that held the unit out (both seeds averaged), for the separated stem's input on that half (D_fix variant
+    0), the clean amp track's at the model's input gain, and each stock-DI render's stored mel on the same half; the
+    cosine distances and picks -> a1/embed/<unit>.json."""
+    import numpy as np
+    import torch
+
+    from learn import direct_existing as DE
+    from learn import direct_stems as DS
+    from learn import pipeline_fix as P
+
+    P.require(PHASE)
+    plan = json.loads((a1_dir() / "plan.json").read_text())
+    root, target = P.out_dir(), target_lufs()
+    bks = json.loads((root / P.REAL_DIR / "answers" / f"{MODEL}.json").read_text())
+    gparts = {p_["unit"]: p_ for p_ in P.goat_read_units()}
+    bparts = {p_["unit"]: p_ for p_ in bks["parts"]}
+    nets = {}
+
+    def feats(name, x):
+        with torch.no_grad():
+            X = torch.tensor(np.asarray([x], np.float32))
+            hs = []
+            for net in nets[name]:
+                h = net.body(X)
+                hs.append(torch.cat([h.mean(-1), h.std(-1)], dim=1).flatten(1)[0].numpy())
+        return np.mean(hs, 0).tolist()
+
+    d = a1_dir() / "embed"
+    d.mkdir(parents=True, exist_ok=True)
+    for u in plan["units"]:
+        out = d / f"{u['set']}__{u['unit'].replace('/', '__')}.json"
+        if out.exists():
+            continue
+        prt = gparts[u["unit"]] if u["set"] == "goat" else bparts[u["unit"]]
+        name = fold_model(u["set"], u["unit"], prt.get("fold"), bks["unit_model"])
+        if name not in nets:
+            nets[name] = [P.load_run(name, sd, "best")[0].eval() for sd in P.SEEDS]
+        backed = P.dfix_backed(u["unit"])
+        ref = P.real_amp_track(prt["sd"], prt["track"], prt["start_s"])
+        g = DE.inference_gain_db(ref, target)
+        z = np.load(a1_dir() / "mels" / f"{u['set']}__{u['unit'].replace('/', '__')}.npz")
+        rec = {"set": u["set"], "unit": u["unit"], "model": name, "picks": {}, "dist": {}}
+        for sh in ("A", "B"):
+            s8, ls = backed[sh]
+            tgt = {"stem": feats(name, DS.model_input(s8, s8, ls, ls, sh, "sw50r", u["cls"], "Dstem")[0])}
+            c8, _, lc, _ = DS.step4_half(ref, ref, sh, g)
+            tgt["clean amp track"] = feats(name, DS.model_input(c8, c8, lc, lc, sh, "sw50r", u["cls"], "Dstem")[0])
+            n = sum(1 for k in z.files if k.startswith(f"{sh}_{AMPS[0]}_") and k.endswith(f"_{sh}"))
+            renders = {a: [feats(name, DS.model_input(z[f"{sh}_{a}_{j}_{sh}"], z[f"{sh}_{a}_{j}_{sh}"],
+                                                      float(z[f"{sh}_{a}_{j}_{sh}_lufs"][0]), float(z[f"{sh}_{a}_{j}_{sh}_lufs"][0]),
+                                                      sh, "sw50r", u["cls"], "Dstem")[0]) for j in range(n)] for a in AMPS}
+            for kind, t in tgt.items():
+                rec["picks"].setdefault(kind, {})[sh] = embed_pick(t, renders)
+                rec["dist"].setdefault(kind, {})[sh] = {a: sum(cosine_distance(t, r) for r in renders[a]) / n for a in AMPS}
+        P.save(out, rec)
+    print(f"A1 EMBED DONE: {len(plan['units'])} units")
+
+
 def cmd_rows(_args):
     """The picks and the read -> a1/a1.json: per direction, the separated stem's shape (the model's own input, D_fix
     variant 0) against each amp's stock-DI shapes; beside, the clean amp track's (which the product never has)."""
@@ -282,7 +361,9 @@ def cmd_rows(_args):
             prt = gparts[u["unit"]]
             ref = P.real_amp_track(prt["sd"], prt["track"], prt["start_s"])
             g = DE.inference_gain_db(ref, target)           # the clean track at the model's input gain (the review)
-            picks = {"stem": {}, "clean amp track": {}, "60 Hz-8 kHz band": {}}
+            emb = json.loads((a1_dir() / "embed" / f"{name}__{u['unit'].replace('/', '__')}.json").read_text())
+            picks = {"embedding": emb["picks"]["stem"], "embedding on the clean amp track": emb["picks"]["clean amp track"],
+                     "stem": {}, "clean amp track": {}, "60 Hz-8 kHz band": {}}
             for sh in ("A", "B"):
                 stem = backed[sh][0].tolist()
                 picks["stem"][sh] = pick(shape(stem), rec["shapes"][sh])
@@ -321,6 +402,7 @@ def main(argv=None):
     r = sub.add_parser("a1-render")
     r.add_argument("--shard", type=shard, default=(0, 1))
     r.set_defaults(fn=cmd_render)
+    sub.add_parser("a1-embed").set_defaults(fn=cmd_embed)
     sub.add_parser("a1-rows").set_defaults(fn=cmd_rows)
     args = ap.parse_args(argv)
     args.fn(args)
