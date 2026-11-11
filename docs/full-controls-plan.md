@@ -785,13 +785,18 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - At C2b's 6,750 renders an hour, C2r's at most 38,000 renders (after the DI scope) take about 5.7 h. If the rate scales with the processes, 5 take about 3.5 to 4 h.
 - **What changes.** Only how the work is split:
   - The launcher runs `C2R_SHARDS` shards, 5 by default, each `--shard k/5 --cap 5`.
-  - `_wait_cap`, which counts the other render processes once at a shard's start, takes the `--cap` it is given (1 to 5) instead of `local_objective.CAP` (3). C2's own searches keep 3.
-  - Nothing in a record's recipe changes. Each record runs in its own primed process, with its own fixed seeds (20261123, 20261125, 20261126 and step 0's 20261013), so its label does not depend on which shard runs it. The guards stay per shard: the systematic miss (5 of a shard's first 10 refused) and step 0's (3 of its first 5 panel records).
+  - Two waits count the other render processes, and both take the `--cap` a shard is given (1 to 5) in its own process only:
+    - `_wait_cap`, once at a shard's start, instead of `local_objective.CAP` (3);
+    - `direct_stems.wait_render_slot`, at every new renderer, which counts both the Python render jobs and the render servers. Its cap is now read at call time, and the shard sets `direct_stems.RENDER_CAP`. Without this, the 5 shards would wait for ever at their first renderer, as the review found.
+  - C2's own searches and every other job keep 3.
+  - Nothing in a record's recipe changes. Each record runs in its own primed process, with its own fixed seeds (20261123, 20261125, 20261126 and step 0's 20261013), so its label does not depend on which shard runs it.
+  - The guards stay per shard: the systematic miss (5 of a shard's first 10 refused) and step 0's (3 of its first 5 panel records). With the panel's 12 searched records over 5 shards, some shard still holds 3 or more, so step 0's guard still fires on a full miss. It is weaker on a partial miss.
   - A relaunch after a stop skips the draw once `c2r/records.json` exists, so a resume writes to the same `c2r.log`. The launchers waiting on that log's last line (C3r's training, C3i's read) are unchanged.
 - **The check, declared before the run.**
-  - The measure is the shards' summed renders per minute in the search's first 20 minutes, counted from its first render (the 25 `scope_out` records take none).
+  - **The measure.** A shard's log prints its renders so far once per finished record, with no time. So for each shard, take its renders at its last finished record over the time from the launcher's "search on 5 shards" line to that record's output `time`. Sum this over the shards.
+  - **When.** Read it once every shard has finished at least 2 records that rendered (the 25 `scope_out` records take none), and at least 20 minutes in.
   - The reference is 3 processes' measured rate: C2b's 6,751 renders an hour after Chrome closed.
-  - **If the 5 shards don't beat it by at least 20%** (8,100 renders an hour), the executor stops the launcher, then its 5 search processes, by the PIDs recorded in `c2r-pids.txt`. C2r then relaunches with `C2R_SHARDS=3`, and the shards resume.
+  - **If the 5 shards don't beat it by at least 20%** (8,100 renders an hour), the executor stops the launcher first, then its 5 search processes, by the PIDs recorded in `c2r-pids.txt`. The launcher rotates that file at each start. C2r then relaunches with `C2R_SHARDS=3`, and the shards resume. The launcher goes first because a search killed first would write FAILED, and C3r's training and C3i's read stop on that line.
   - A stop loses at most the records in progress: 5 records, at most about 1,600 renders (a panel record with step 0 takes up to about 320).
   - Otherwise it runs to the end on 5.
 - **Not changed:** the 3-process cap for every other job; one MPS job at a time; the disk guard (31 GB); `setopt no_bg_nice`.

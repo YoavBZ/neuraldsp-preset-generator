@@ -19,6 +19,7 @@ LOGS=/Users/yoavbz/projects/neuraldsp-preset-generator/logs
 L=${LOGS}/c2r.log
 PIDS=${LOGS}/c2r-pids.txt
 [[ -f ${L} ]] && mv ${L} ${L}.$(date +%Y%m%d-%H%M%S)
+[[ -f ${PIDS} ]] && mv ${PIDS} ${PIDS}.$(date +%Y%m%d-%H%M%S)   # and the old PIDs: a stop reads only this launch's
 caffeinate -i -w $$ &
 echo "launcher $$ $(date)" >> ${PIDS}
 note() { echo "$1 $(date)" >> ${L}; }
