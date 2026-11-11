@@ -5193,6 +5193,33 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - By the score only.
 - Files: `PF/c3/c3s.json`, `decision-c3s.json`; `PF/{real,goat}/report-c3s.json`, `logs/c3s-n12.json`; runs `C3s-ftm-*`; logs `logs/c3s*.log`.
 
+### F79. C3c: the amp head on the amp that suits C3's own answer. By the score it doesn't learn: its pick reads +0.031 [−0.010, +0.073] against always-sw50r, undecided, worse on BKS (+0.065), level on GOAT (−0.002). It does beat a prior-only head (the class's label majority, −0.063, decided). A zero-render cost-target probe on the input's spectral summary reads −0.018 [−0.033, −0.003] on GOAT, shown better but marginal, and leans worse on BKS. So the user's idea, every recording on all three amps, becomes the confirmatory read (phase_c3c, 37 min of MPS, zero renders, audited)
+- **What ran** ([plan](full-controls-plan.md), "C3c in detail"). C3b's recipe with the amp label from C3b stage 2's renders: the argmin of C3-cabS's out-of-fold per-amp renders on each unit's search half (GOAT 214, BKS 40). 8 FT_k on C3's E and the all-labels pair, 37 min of MPS (21:22 to 21:59). The read: CPU predicts, zero renders, every pick valued on C3-cabS's own per-amp renders.
+- **The read matched the declaration.** It was audited with separate code: C3c − always sw50r and C3c − W reproduce to 1e-4. The guard passed: each C3c FT_k holds out C3's units and records the labels' sha256.
+- **By the score** (held half, ln; BKS by DI, GOAT by item, pooled with C3's weights):
+
+  | Row | BKS (40) | GOAT (215) | Pooled |
+  |---|---|---|---|
+  | **C3c − always sw50r (the declared reading)** | +0.065 [−0.014, +0.145] | −0.002 [−0.020, +0.016] | +0.031 [−0.010, +0.073] |
+  | C3c − W | +0.044 [−0.050, +0.138] | +0.002 [−0.016, +0.020] | +0.023 [−0.025, +0.071] |
+  | C3c − the class's label majority | −0.093 [−0.200, +0.014] | **−0.034 [−0.056, −0.011]** | **−0.063 [−0.118, −0.008]** |
+  | C3c − always ac20 | +0.019 | **−0.034 [−0.053, −0.015]** | −0.008 |
+  | Search-half argmin − blind (the ceiling) | −0.142 | −0.101 | −0.121 |
+
+  - **The declared reading is "undecided":** C3c doesn't beat the best constant.
+  - **It isn't a prior-only head:** it beats the labels' majority (the ac20 on clean, the pr12 on crunch), the worst constants.
+  - Its picks on GOAT: ac20 218, pr12 105, sw50r 107 of 430; 164 hit the direction's own argmin. AUC 0.53 to 0.59 on GOAT; on BKS 0.43 to 0.68.
+- **The cost-target probe** (the review session's, declared before its run; `logs/amp-cost-probe.md` in its worktree).
+  - A 3-output ridge regression on the per-amp centred search-half ln judges, picking the lowest predicted cost. Its inputs: class, set, the input's 53-number mel summary and C3c's out-of-fold log-probabilities. Outer folds: the 4 real folds.
+  - **GOAT −0.018 [−0.033, −0.003],** shown better; clean −0.025, crunch −0.031. **BKS +0.059 [−0.020, +0.137];** pooled +0.020, both undecided. 1 of 20 permutations reads as well.
+  - **The signal is spectral, not C3c's:** the mel summary alone reads −0.023 [−0.037, −0.008]; C3c's probabilities alone read worse. Loudness alone reads worse.
+  - **It is marginal:** BKS leans worse in every variant, and the inputs were chosen after exploring the same 254 units.
+- **What it means.**
+  - The declared stop rule doesn't trigger: the probe beats the best constant on GOAT.
+  - But nothing ships on it. The next read is a confirmation on units no probe has seen: **the user's idea** ("render each song with all three amps and then train"), R-all's answers on all three amps for every trusted read unit, then the probe's recipe, frozen, trained by C3r's rotation and read on the new sets ([plan](full-controls-plan.md), "The amp-selector read").
+  - By the score only.
+- Files: `PF/c3/c3c.json`; runs `C3c-ftm-*`; logs `logs/c3c*.log`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
