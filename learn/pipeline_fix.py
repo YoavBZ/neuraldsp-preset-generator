@@ -2813,6 +2813,8 @@ def read_phase(name):
         return "phase_ft"
     if name == C3I_TAG:                                # C3i: FTm's mask on C2's labels
         return "phase_c3i"
+    if name == C3B_TAG:                                # C3b: C3's recipe with the amp head on real rows
+        return "phase_c3b"
     if name in C3_TAGS:                                # C3's tags: C3's fold models, each tag its own answer hold
         return "phase_c3"
     if name in H4_FT_TAGS:                             # H4's arms: FTm's read on their own fold models
@@ -6867,7 +6869,8 @@ FTS_TAG = "P2b-ftm-stem"             # N5's score read: FTm_k on the units' X-LA
 C3_TAGS = frozenset({"C3-ftm", "C3-core", "C3-eqS", "C3-pedalsS", "C3-gateS", "C3-cabS", "C3-adopt"})
                                      # C3's read tags (`full_controls_c3.ALL_TAGS`): C3's fold models, each its own hold
 C3I_TAG = "C3i"                      # C3i (`phase_c3i`): FTm's mask on C2's labels, read with FTm's hold (`K.space`)
-C3_READ = C3_TAGS | {C3I_TAG}        # every tag read through C3's paths (C2's state checked on each run)
+C3B_TAG = "C3b"                      # C3b (`phase_c3b`): C3's recipe with the amp head on real rows, the adopted C3's hold
+C3_READ = C3_TAGS | {C3I_TAG, C3B_TAG}   # every tag read through C3's paths (C2's state checked on each run)
 
 
 def model_base(name):
@@ -6878,6 +6881,10 @@ def model_base(name):
         from learn import full_controls_c3 as C3
 
         return C3.C3I_BASE
+    if name == C3B_TAG:
+        from learn import full_controls_c3 as C3
+
+        return C3.C3B_BASE
     if name in C3_TAGS:
         from learn import full_controls_c3 as C3
 
@@ -6968,6 +6975,8 @@ def answer_hold(name):
     """The answer hold a read tag passes to `hold_outside_space`: a C3 tag's own, else None (`K.space`)."""
     from learn import full_controls_c3 as C3
 
+    if name == C3B_TAG:                                # C3b answers as the adopted C3 does (c3/decision.json's tag)
+        return C3.hold_for(json.loads((C3.c3_dir() / "decision.json").read_text())["tag"])
     return C3.hold_for(name) if name in C3.ALL_TAGS else None
 
 
@@ -7108,9 +7117,10 @@ def cmd_train_ft(args):
     masked = bool(getattr(args, "masked", False))
     c3 = bool(getattr(args, "c3", False))
     c3i = bool(getattr(args, "c3i", False))
-    if c3 and c3i:
-        raise SystemExit("--c3 or --c3i, not both")
-    c3 = c3 or c3i                                     # C3i takes C3's labels and C2 checks; only its mask and names differ
+    c3b = bool(getattr(args, "c3b", False))
+    if c3 + c3i + c3b > 1:
+        raise SystemExit("one of --c3, --c3i or --c3b")
+    c3 = c3 or c3i or c3b                              # C3i and C3b take C3's labels and C2 checks; see below for theirs
     c3r = getattr(args, "c3r", None)
     if c3 and c3r is not None:
         raise SystemExit("--c3r trains C3's recipe only: --masked, no --c3, no --h4, no --real-frac or --shuffle-real")
@@ -7132,6 +7142,14 @@ def cmd_train_ft(args):
             require(C3.C3I_PHASE)
             base = C3.C3I_BASE
             c3info["isolation"] = "C3i: FTm's mask (K.space) on C2's labels"
+        if c3b:                                        # C3b: C3's recipe, and each real row's unit amp label
+            require(C3.C3B_PHASE)
+            if inner:
+                raise SystemExit("C3b has no inner run of its own: each FT_k takes C3's inner run's E (the review)")
+            base = C3.C3B_BASE
+            amp_lab = C3.amp_labels()
+            c3info["amp_labels"] = {"n": len(amp_lab), "sha256": C3.amp_labels_sha(amp_lab),
+                                    "recipe": "stored (GOAT: C2b's argmin; BKS: its stored labels' argmin)"}
     r3st = None
     if c3r is not None:                                # C3r: C3's recipe on every trusted real row, by rotation
         from learn import full_controls_c3 as C3
@@ -7184,8 +7202,10 @@ def cmd_train_ft(args):
     if inner:
         epochs = cap
     else:
+        ebase = C3.C3_BASE if c3b else base            # C3b: C3's own inner runs set each FT_k's E, so its recipe is C3's
+
         def inner_set(lr_, cap_):
-            ps = [od / f"{ft_name(q, True, lr_, cap_, base)}-{sd}.json" for q in range(REAL_FOLDS) for sd in SEEDS]
+            ps = [od / f"{ft_name(q, True, lr_, cap_, ebase)}-{sd}.json" for q in range(REAL_FOLDS) for sd in SEEDS]
             return [json.loads(q.read_text()) for q in ps] if all(q.exists() for q in ps) else None
 
         why = ("the 8 inner runs are not all done" if inner_set(lr, cap) is None else None) if masked \
@@ -7197,6 +7217,8 @@ def cmd_train_ft(args):
             raise SystemExit("the inner runs used another rate or cap")
         if c3 and any((r_.get("c3") or {}).get("c2_sha256") != c3info["c2_sha256"] for r_ in allin):
             raise SystemExit(f"{name}: an inner run was made on another C2 state")
+        if c3b and any("amp_labels" in (r_.get("c3") or {}) or "isolation" in (r_.get("c3") or {}) for r_ in allin):
+            raise SystemExit(f"{name}: C3b's E comes from C3's own inner runs only")
         if c3r is not None and any((r_.get("c3r") or {}).get("c3r_sha256") != r3st["sha256"] for r_ in allin):
             raise SystemExit(f"{name}: an inner run was made on another C2, C2r or C3 state")
         inners = [r_ for r_ in allin if k is None or (r_["real_fold"], r_["seed"]) == (k, seed)]
@@ -7240,6 +7262,8 @@ def cmd_train_ft(args):
     data = DfixData(rows, rung_path(croot, "b", doubled), set(plugin_tr), {r["i"] for r in rrows}, 1.0)
     if c3 and not c3i:
         C3.mask_rows(data.Y, rows, A_menu_S(), C3.keys_fn(c3src))
+        if c3b:                                        # the amp head learns each real row's unit amp label
+            c3info["amp_rows"] = C3.amp_label_rows(data.Y, rows, amp_lab)
     elif c3r is not None:
         C3.mask_rows(data.Y, rows, A_menu_S(), R3.keys_fn(r3st))
     elif masked:
@@ -8147,6 +8171,7 @@ def main(argv=None):
     ap.add_argument("--masked", action="store_true", help="train-ft: N1, heads outside the search masked on real rows")
     ap.add_argument("--c3", action="store_true", help="train-ft: C3, FTm's recipe on C2's labels (with --masked)")
     ap.add_argument("--c3i", action="store_true", help="train-ft: C3i, FTm's recipe and mask on C2's labels (with --masked)")
+    ap.add_argument("--c3b", action="store_true", help="train-ft: C3b, C3's recipe with the amp head on real rows (with --masked)")
     ap.add_argument("--dry-run", action="store_true",
                     help="train-ft: build the run's rows, data and masks and check them, then stop before its first step")
     ap.add_argument("--c3r", choices=("all", "ctl"), default=None,

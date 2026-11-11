@@ -16,7 +16,7 @@
 - **C3 ran** on 2026-11-11 (71 min of MPS, 8,442 renders, audited; [F72](pipeline-fix-plan.md)): by the score the adopted model (EQ, pedals and gate learned, the rest of the cab at S) is level with FTm on BKS, GOAT and N12, all undecided, and 10% closer than S. The EQ gains −0.039 on GOAT, and C3's core loses +0.034 there, so C3i, the declared isolation, is declared below. By the declared rule the adopted model replaces FTm; C4 can reverse it.
 - **C1a by ear (2026-11-10):** heard closer than the label, 0.68 [0.54, 0.82], p 0.020 on 14 cards (N12 0.79; BKS 0.57, undecided). By the declared rule that is "above", so C2 stands on C1a's recipe ([F69](pipeline-fix-plan.md)).
 - **Every trusted real row, by rotation (2026-11-10).** The user asked why only GOAT and BKS train, then said "Go for 3" to training and testing on every usable track by rotation. C2r and C3r are declared below, before any render or training; V-real and the reserve stay sealed.
-- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1), `phase_c1a_outcome`, `phase_c1a_ear` (C1a by ear), `phase_c1b`, `phase_c1b_outcome`, `phase_c2`, `phase_c2_outcome`, `phase_c3`, `phase_c3_outcome`, `phase_c3i`, `phase_c2b`, `phase_c2b_outcome`, `phase_l1c`, `phase_c2r`, `phase_c2r_a1`, `phase_c2r_a2` and `phase_c3r`. Code: `learn/full_controls.py` (C1a), `learn/c1a_ear.py` (C1a by ear), `learn/full_controls_c1b.py` (C1b), `learn/full_controls_c2.py` (C2), `learn/full_controls_c3.py` with `pipeline_fix train-ft --c3` (C3) and `learn/full_controls_c2b.py` (C2b), tests `tests/test_full_controls.py`, `tests/test_c1a_ear.py`, `tests/test_full_controls_c1b.py`, `tests/test_full_controls_c2.py`, `tests/test_full_controls_c3.py` and `tests/test_full_controls_c2b.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
+- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1), `phase_c1a_outcome`, `phase_c1a_ear` (C1a by ear), `phase_c1b`, `phase_c1b_outcome`, `phase_c2`, `phase_c2_outcome`, `phase_c3`, `phase_c3_outcome`, `phase_c3i`, `phase_c3b`, `phase_c2b`, `phase_c2b_outcome`, `phase_l1c`, `phase_c2r`, `phase_c2r_a1`, `phase_c2r_a2` and `phase_c3r`. Code: `learn/full_controls.py` (C1a), `learn/c1a_ear.py` (C1a by ear), `learn/full_controls_c1b.py` (C1b), `learn/full_controls_c2.py` (C2), `learn/full_controls_c3.py` with `pipeline_fix train-ft --c3` (C3) and `learn/full_controls_c2b.py` (C2b), tests `tests/test_full_controls.py`, `tests/test_c1a_ear.py`, `tests/test_full_controls_c1b.py`, `tests/test_full_controls_c2.py`, `tests/test_full_controls_c3.py` and `tests/test_full_controls_c2b.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
 
 **The every-control plan's stage 1 never ran.** It is a true-DI oracle for the groups with no number, about 13–14k renders. It was approved on 2026-10-22 and waited for a trusted data list. Then the work moved to the trusted data and the pipeline fix. This amendment carries its goal onto today's route (FT2 and its real rows). It folds stage 1's never-measured groups in as C1b.
 
@@ -432,6 +432,49 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **When.** It trains as soon as its code is reviewed, on the otherwise idle MPS, while C2b or C2r render on 3 CPU processes. It launches with `setopt no_bg_nice`, and no other MPS job starts while it runs.
   - **The stop.** The measure is the 3 render shards' summed renders per minute. The window is the 60 minutes before the training against its first 20 minutes. If the rate drops by more than 20%, the executor stops the training by its recorded PIDs, and it reruns after C3r's training. Otherwise it runs to the end.
   - **The read** waits for a free render slot: after C2r, before C3r's read.
+
+## C3b in detail: the amp head on real rows, stage 1 (declared 2026-11-11, after C2b's read and before any C3b training; ledger `phase_c3b`)
+
+- **Why.** The model picks the amp, then sets its controls, and its amp head has never trained on a real row. FT masks it there (−100), so C3's pick is W's plugin-trained head on C3's body. That pick reads −0.027 [−0.070, +0.016] against blind on BKS, undecided (F72).
+- **The user's choice (2026-11-11): "Cheap test first".** The labels come from the stored recipe on both sets, so they are like for like with each other at zero renders:
+  - **GOAT:** C2b's argmin, 214 units (F73).
+  - **BKS:** the argmin over each unit's three stored 52-evaluation labels, 102 units. It uses the same usable rule: a label, finite halves, a best peak at or above −57 dBFS.
+  - Not C2's labels: F73 showed the two recipes' choices agree only by chance. The thorough relabel of GOAT's other amps on C2's recipe (about 112k renders) waits on this stage's answer.
+- **The training.** C3's recipe exactly: labels, masks, W, 8 FT_k and the all-labels pair, seeds 20261042 and 20261043.
+  - **No inner run of its own** (after the review). Each FT_k trains for C3's own inner run's E for its fold and seed (48 to 74), and the all-labels pair for their median, 57. Held rows carry the amp label too, so C3b's own E would include the amp's loss and could differ from C3's; taking C3's keeps the recipe the same. The held rows' amp loss is logged per head, beside.
+  - Only the amp head changes: every real row, training or held, takes its unit's amp label in the amp head's slot in place of −100. A BKS unit's three rows share one label, and a GOAT unit's single row has its own. The loss already counts any label of 0 or more.
+  - Its own names (`C3b-ftm-…`).
+  - Each run records C2's sha256 and the amp labels' sha256, and an FT_k refuses inner runs made on other amp labels.
+  - **It trains on MPS beside C2r's 5 render shards,** which are in C2r's cap1 block now.
+    - **The stop.** The measure is Amendment 2's per-shard estimator: each shard's renders over the time between its finished records, summed. The executor compares the hour before the training with its first 20 minutes, once every shard has finished 2 or more records within them. A drop of more than 20% stops it by its recorded PIDs, launcher first, and it reruns after C3r's training.
+    - **One MPS job at a time.** Before each pair, the launcher waits while any other train-ft runs. C3r's training starts when C2r ends. The guard can't stop a pair already running, so if C3r's training starts mid-pair, the two overlap for up to one pair.
+- **Stage 1, at zero renders: does the head learn the amp label?**
+  - C3b's answers (real-predict and goat-predict, CPU) give its amp probabilities on each read unit. That is BKS's 40 by DI fold and GOAT's 214 by item fold, each from the FT_k that held the unit out.
+  - **The pick** is the argmax of the probabilities from the input on the labels' search half.
+  - **Its value** is `amp_value` on the labels' held halves: ln(the picked amp's label's held judge) less the mean over the unit's usable labels. That is C2b's yardstick, clustered by DI or item.
+  - **A pick of an amp with no usable label** is scored as the worst usable amp, and counted. It is not dropped. Every row reads the same units.
+  - **The rows:**
+    - C3b's pick − blind;
+    - W's pick (C3-cabS's probabilities) − blind;
+    - C3b − W;
+    - the labels' own argmin − blind, which is the ceiling.
+    - Each is judged on BKS, GOAT and pooled with C3's equal weights.
+    - **Measured before the training, at zero renders** (the review's count, recounted):
+    - W's pick against blind: GOAT −0.013 [−0.025, −0.002] (214 units, 2 picks scored as the worst), already better; BKS −0.027 [−0.077, +0.024] (40 units, 2 scored as the worst).
+    - The ceiling, the labels' own argmin: GOAT −0.054, BKS's read units −0.063.
+    - So the head's headroom over W is about 0.03 to 0.04 by the score.
+  - **The declared reading, by C3's test on C3b − W** (what training adds over W's pick; after the review, which found W already passes against blind):
+    - *learns*: better on BKS, on GOAT or pooled, and worse on none;
+    - *worse*;
+    - *split*;
+    - *undecided*.
+    - C3b − blind is reported beside.
+- **What each reading leads to.**
+  - **Learns:** stage 2 is declared next, before any render. It reads C3b's full answer (its own pick and its settings) against the adopted C3's on all three amps, at about 2,400 renders. Its adoption follows C3's rule, "kept unless shown worse". The thorough relabel can then be weighed on its measured gain.
+  - **Anything else:** C3b stops at stage 1 and the amp head stays W's. The amp row stays open in C0, with its next route (more amp labels, or the thorough relabel) and its blocker.
+  - **Stage 1 adopts nothing:** it changes no product setting.
+- **Stop rule.** One training and one zero-render read, with no tuning on the read sets.
+- **Cost.** Training about 40 minutes of MPS wall clock: 8 FT_k and the all-labels pair, two at a time, with no inner runs. Stage 1 needs zero renders and a few minutes of CPU.
 
 ## C2b in detail (declared 2026-11-10, before any C2b render; ledger `phase_c2b`)
 
