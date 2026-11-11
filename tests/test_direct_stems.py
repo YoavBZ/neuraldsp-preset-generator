@@ -264,8 +264,7 @@ def test_disk_guard_logic():
 def test_memory_guard_and_render_slots():
     assert DS.mem_stop(10.0, 0.0) is None and DS.mem_stop(None, None) is None
     assert "free memory" in DS.mem_stop(3.9, 0.0)
-    assert "swap" in DS.mem_stop(10.0, 300.0)
-    assert DS.render_slot_free(2, 2) and not DS.render_slot_free(3, 0) and not DS.render_slot_free(0, 3)
+    assert "swap" in DS.mem_stop(10.0, 300.0)   # the render slots are file locks now (tests/test_full_controls_c2r.py)
 
 
 def test_half_of_matches_part_c_draw():
