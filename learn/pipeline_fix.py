@@ -686,6 +686,36 @@ def head_means(h):
             "mic": {nm: m(h["mic_sum"][j], h["mic_n"][j]) for j, nm in enumerate(F.CAT)}}
 
 
+def batch_loss(data, out, y, idx, dev):
+    """A batch's training loss: `full_space.loss_fn`, or C3s's `loss_split` when the data carries core masks
+    (`data.core`: per row (continuous, switch) masks of the core's dims; `phase_c3s`)."""
+    from learn import full_space as F
+
+    core = getattr(data, "core", None)
+    if core is None:
+        return F.loss_fn(out, *y)
+    import numpy as np
+    import torch
+
+    ix = np.asarray(idx)
+    return F.loss_split(out, *y, torch.tensor(core[0][ix], device=dev), torch.tensor(core[1][ix], device=dev))
+
+
+def core_masks(rows, ms):
+    """C3s: per row, the (continuous, switch) masks of the core's dims: a real row's `K.space` heads (FTm's mask,
+    `searched_heads`), every dim of a plugin row. -> (float32 [N, len(CONT)], float32 [N, len(SW)])."""
+    import numpy as np
+
+    from learn import full_space as F
+
+    cc, sc = np.ones((len(rows), len(F.CONT)), np.float32), np.ones((len(rows), len(F.SW)), np.float32)
+    for j, r in enumerate(rows):
+        if "real" in r:
+            c, s_, _ = searched_heads(r["amp"], ms[r["amp"]][r["cls"]][1])
+            cc[j], sc[j] = c, s_
+    return cc, sc
+
+
 def head_losses(net, data, idx, dev, batch=64):
     """A model's per-head loss sums and counts on rows `idx` (eval mode, the fixed half): the knob mixture's joint NLL
     per example (normalised by its sounding knobs, as `full_space.loss_fn`) and each knob's marginal NLL under the
@@ -706,7 +736,7 @@ def head_losses(net, data, idx, dev, batch=64):
             o = net(x, cv)
             c, cm, s, sm, k, km, a = y
             logpi, mu, ls, swl, catl, ampl = o
-            out["total"].append(float(F.loss_fn(o, *y)) * len(x))
+            out["total"].append(float(batch_loss(data, o, y, idx[j:j + batch], dev)) * len(x))
             z = (c.unsqueeze(1) - mu) / ls.exp()
             lp = -0.5 * z ** 2 - ls - 0.5 * math.log(2 * math.pi)                      # [B, K, n]
             marg = -torch.logsumexp(logpi.unsqueeze(-1) + lp, dim=1)                     # [B, n]
@@ -839,7 +869,7 @@ def fit(data, tr, watch, track, seed, dev, log, epochs, every=1, patience=None, 
         tl, skipped = [], 0
         for j in range(0, len(order), PS.BATCH):
             x, c, y = data.batch(order[j:j + PS.BATCH], epoch, dev)
-            loss = F.loss_fn(net(x, c), *y)
+            loss = batch_loss(data, net(x, c), y, order[j:j + PS.BATCH], dev)
             opt.zero_grad()
             loss.backward()
             g = DS.grad_norm(net.parameters())
@@ -2815,6 +2845,8 @@ def read_phase(name):
         return "phase_c3i"
     if name == C3B_TAG:                                # C3b: C3's recipe with the amp head on real rows
         return "phase_c3b"
+    if name in C3S_TAGS:                               # C3s: C3's recipe with the core's share of the loss restored
+        return "phase_c3s"
     if name in C3_TAGS:                                # C3's tags: C3's fold models, each tag its own answer hold
         return "phase_c3"
     if name in H4_FT_TAGS:                             # H4's arms: FTm's read on their own fold models
@@ -4221,7 +4253,10 @@ def cmd_goat_report(args):
         require("phase_c3")
     if C3I_TAG in tags:
         require("phase_c3i")
-    gphase = "phase_c3i" if C3I_TAG in tags else "phase_c3" if tags & C3_TAGS else H4 if tags & H4_FT_TAGS else "phase_5c"
+    if tags & C3S_TAGS:
+        require("phase_c3s")
+    gphase = ("phase_c3s" if tags & C3S_TAGS else "phase_c3i" if C3I_TAG in tags else "phase_c3" if tags & C3_TAGS
+              else H4 if tags & H4_FT_TAGS else "phase_5c")
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {gphase}", "units": len(units),
            "lag_tol": GOAT_LAG_TOL if args.lag_tol is None else args.lag_tol, "rows": {}}
     keep = ("mean", "lo90", "hi90", "clusters", "clusters_negative", "part_weighted", "parts", "parts_negative")
@@ -4534,7 +4569,8 @@ ARM_FOLD_PHASES = ("phase_5b2", "phase_5c", "phase_dfix", "phase_ft", "phase_ft_
 
 def report_phase(tags):
     """real-report's ledger phase for the tags it reads."""
-    return ("phase_ft_groups" if any(t.startswith("FTg-") for t in tags) else "phase_c3i" if C3I_TAG in tags
+    return ("phase_ft_groups" if any(t.startswith("FTg-") for t in tags) else "phase_c3s" if tags & C3S_TAGS
+            else "phase_c3i" if C3I_TAG in tags
             else "phase_c3" if tags & C3_TAGS
             else H4 if tags & H4_FT_TAGS
             else "phase_night2" if tags & {FTM_BASE, FTH_TAG, FTS_TAG} else "phase_ft" if FT_BASE in tags else "phase_dfix" if tags & DFIX_READS else "phase_5c" if tags & {"P2a-goat", "P2a-goatshuf", "RcBG", "RcG"}
@@ -4566,7 +4602,7 @@ def cmd_real_report(args):
                                        .read_text())["lag"] is None]
     meta = {p_["unit"]: p_ for p_ in parts}
     phase = report_phase(tags)
-    if phase in (H4, "phase_c3"):
+    if phase in (H4, "phase_c3", "phase_c3s"):
         require(phase)
     out = {"plan": PLAN, "ledger": f"{LEDGER_ID} {phase}", "units": len(parts), "no_lag": no_lag, "rows": {}}
     units = [(p_["unit"], amp, sh, h) for p_ in parts for amp in AMPS3 for sh, h in (("A", "B"), ("B", "A"))]
@@ -6892,7 +6928,8 @@ C3_TAGS = frozenset({"C3-ftm", "C3-core", "C3-eqS", "C3-pedalsS", "C3-gateS", "C
                                      # C3's read tags (`full_controls_c3.ALL_TAGS`): C3's fold models, each its own hold
 C3I_TAG = "C3i"                      # C3i (`phase_c3i`): FTm's mask on C2's labels, read with FTm's hold (`K.space`)
 C3B_TAG = "C3b"                      # C3b (`phase_c3b`): C3's recipe with the amp head on real rows, the adopted C3's hold
-C3_READ = C3_TAGS | {C3I_TAG, C3B_TAG}   # every tag read through C3's paths (C2's state checked on each run)
+C3S_TAGS = frozenset({"C3s-cabS", "C3s-core"})   # C3s (`phase_c3s`): its fold models, held as C3-cabS and C3-core
+C3_READ = C3_TAGS | {C3I_TAG, C3B_TAG} | C3S_TAGS   # every tag read through C3's paths (C2's state checked on each run)
 
 
 def model_base(name):
@@ -6907,6 +6944,10 @@ def model_base(name):
         from learn import full_controls_c3 as C3
 
         return C3.C3B_BASE
+    if name in C3S_TAGS:
+        from learn import full_controls_c3 as C3
+
+        return C3.C3S_BASE
     if name in C3_TAGS:
         from learn import full_controls_c3 as C3
 
@@ -6999,6 +7040,8 @@ def answer_hold(name):
 
     if name == C3B_TAG:                                # C3b answers as the adopted C3 does (c3/decision.json's tag)
         return C3.hold_for(json.loads((C3.c3_dir() / "decision.json").read_text())["tag"])
+    if name in C3S_TAGS:                               # C3s answers as the C3 configuration it is read against
+        return C3.hold_for(C3.C3S_HOLD[name])
     return C3.hold_for(name) if name in C3.ALL_TAGS else None
 
 
@@ -7140,9 +7183,10 @@ def cmd_train_ft(args):
     c3 = bool(getattr(args, "c3", False))
     c3i = bool(getattr(args, "c3i", False))
     c3b = bool(getattr(args, "c3b", False))
-    if c3 + c3i + c3b > 1:
-        raise SystemExit("one of --c3, --c3i or --c3b")
-    c3 = c3 or c3i or c3b                              # C3i and C3b take C3's labels and C2 checks; see below for theirs
+    c3s = bool(getattr(args, "c3s", False))
+    if c3 + c3i + c3b + c3s > 1:
+        raise SystemExit("one of --c3, --c3i, --c3b or --c3s")
+    c3 = c3 or c3i or c3b or c3s                       # C3i, C3b and C3s take C3's labels and C2 checks; see below
     c3r = getattr(args, "c3r", None)
     if c3 and c3r is not None:
         raise SystemExit("--c3r trains C3's recipe only: --masked, no --c3, no --h4, no --real-frac or --shuffle-real")
@@ -7164,6 +7208,10 @@ def cmd_train_ft(args):
             require(C3.C3I_PHASE)
             base = C3.C3I_BASE
             c3info["isolation"] = "C3i: FTm's mask (K.space) on C2's labels"
+        if c3s:                                        # C3s: C3's recipe, the core's share of the loss restored
+            require(C3.C3S_PHASE)
+            base = C3.C3S_BASE
+            c3info["share"] = "C3s: the core's terms as C3i's, the added controls' own term beside (loss_split)"
         if c3b:                                        # C3b: C3's recipe, and each real row's unit amp label
             require(C3.C3B_PHASE)
             if inner:
@@ -7241,6 +7289,10 @@ def cmd_train_ft(args):
             raise SystemExit(f"{name}: an inner run was made on another C2 state")
         if c3b and any("amp_labels" in (r_.get("c3") or {}) or "isolation" in (r_.get("c3") or {}) for r_ in allin):
             raise SystemExit(f"{name}: C3b's E comes from C3's own inner runs only")
+        if c3s and not all("share" in (r_.get("c3") or {}) for r_ in allin):
+            raise SystemExit(f"{name}: C3s's E comes from its own inner runs only")
+        if c3 and not c3s and any("share" in (r_.get("c3") or {}) for r_ in allin):
+            raise SystemExit(f"{name}: no other recipe's E comes from C3s's inner runs")
         if c3r is not None and any((r_.get("c3r") or {}).get("c3r_sha256") != r3st["sha256"] for r_ in allin):
             raise SystemExit(f"{name}: an inner run was made on another C2, C2r or C3 state")
         inners = [r_ for r_ in allin if k is None or (r_["real_fold"], r_["seed"]) == (k, seed)]
@@ -7284,6 +7336,8 @@ def cmd_train_ft(args):
     data = DfixData(rows, rung_path(croot, "b", doubled), set(plugin_tr), {r["i"] for r in rrows}, 1.0)
     if c3 and not c3i:
         C3.mask_rows(data.Y, rows, A_menu_S(), C3.keys_fn(c3src))
+        if c3s:                                        # the core's dims per row, for `batch_loss`'s split loss
+            data.core = core_masks(rows, A_menu_S())
         if c3b:                                        # the amp head learns each real row's unit amp label
             c3info["amp_rows"] = C3.amp_label_rows(data.Y, rows, amp_lab)
     elif c3r is not None:
@@ -8194,6 +8248,8 @@ def main(argv=None):
     ap.add_argument("--c3", action="store_true", help="train-ft: C3, FTm's recipe on C2's labels (with --masked)")
     ap.add_argument("--c3i", action="store_true", help="train-ft: C3i, FTm's recipe and mask on C2's labels (with --masked)")
     ap.add_argument("--c3b", action="store_true", help="train-ft: C3b, C3's recipe with the amp head on real rows (with --masked)")
+    ap.add_argument("--c3s", action="store_true",
+                    help="train-ft: C3s, C3's recipe with the core's share of the loss restored (with --masked)")
     ap.add_argument("--amps3", action="store_true",
                     help="goat-predict, goat-render: C3b's stage 2, every GOAT unit on all three amps (answers-amps3)")
     ap.add_argument("--dry-run", action="store_true",

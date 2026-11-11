@@ -454,6 +454,31 @@ def loss_fn(out, c, cm, s, sm, k, km, a):
     return nll + bce + ce + (F.cross_entropy(ampl[keep], a[keep]) if keep.any() else ampl.sum() * 0.0)
 
 
+def loss_split(out, c, cm, s, sm, k, km, a, cc, sc):
+    """C3s (`phase_c3s`): `loss_fn` with the core's share restored. cc, sc: per row, 1 on the core's continuous and switch
+    dims (a real row's `K.space` heads, FTm's mask; every dim of a plugin row). The core part is `loss_fn` on masks
+    cm * cc and sm * sc, which is C3i's loss on the same rows exactly; the rest of each row's dims (the controls C3 adds)
+    get their own term beside it, the joint NLL over them normalised by their count and averaged over the rows that
+    have any, and their own switch BCE, instead of diluting the core's. The mics and the amp head are `loss_fn`'s (each
+    mic head is its own term already)."""
+    import torch
+    import torch.nn.functional as F
+
+    core = loss_fn(out, c, cm * cc, s, sm * sc, k, km, a)
+    logpi, mu, ls, swl, _, _ = out
+    nm, nsm = cm * (1 - cc), sm * (1 - sc)
+    rows = nm.sum(-1) > 0
+    if rows.any():
+        z = (c[rows].unsqueeze(1) - mu[rows]) / ls[rows].exp()
+        lp = (-0.5 * z ** 2 - ls[rows] - 0.5 * math.log(2 * math.pi)) * nm[rows].unsqueeze(1)
+        new = (-torch.logsumexp(logpi[rows] + lp.sum(-1), dim=-1) / nm[rows].sum(-1)).mean()
+    else:
+        new = mu.sum() * 0.0
+    if nsm.sum() > 0:
+        new = new + (F.binary_cross_entropy_with_logits(swl, s, reduction="none") * nsm).sum() / nsm.sum()
+    return core + new
+
+
 # --- the readout (amendment 5's, extended) -------------------------------------------------------------------
 
 def run_nets(nets, X, C, batch=128):

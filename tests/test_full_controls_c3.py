@@ -405,7 +405,7 @@ def test_renders_registered():
 def test_c3i_is_read_through_c3s_paths_with_ftms_hold_and_its_own_runs():
     from learn import full_controls_c3 as X
     from learn import pipeline_fix as P
-    assert P.C3I_TAG == X.C3I_TAG and P.C3_READ == P.C3_TAGS | {X.C3I_TAG, X.C3B_TAG} and X.C3I_TAG not in X.ALL_TAGS
+    assert P.C3I_TAG == X.C3I_TAG and P.C3_READ == P.C3_TAGS | {X.C3I_TAG, X.C3B_TAG} | P.C3S_TAGS and X.C3I_TAG not in X.ALL_TAGS
     assert P.model_base(X.C3I_TAG) == X.C3I_BASE != X.C3_BASE and X.C3I_BASE != P.FTM_BASE
     assert P.read_phase(X.C3I_TAG) == "phase_c3i" and P.answer_hold(X.C3I_TAG) is None   # FTm's hold: K.space
     assert P.report_phase({X.C3I_TAG, "C3-core", "P2b-ftm"}) == "phase_c3i"
