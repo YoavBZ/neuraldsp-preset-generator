@@ -2845,6 +2845,8 @@ def read_phase(name):
         return "phase_c3i"
     if name == C3B_TAG:                                # C3b: C3's recipe with the amp head on real rows
         return "phase_c3b"
+    if name == C3C_TAG:                                # C3c: the amp head on the amp that suits C3's own answer
+        return "phase_c3c"
     if name in C3S_TAGS:                               # C3s: C3's recipe with the core's share of the loss restored
         return "phase_c3s"
     if name in C3_TAGS:                                # C3's tags: C3's fold models, each tag its own answer hold
@@ -6928,8 +6930,9 @@ C3_TAGS = frozenset({"C3-ftm", "C3-core", "C3-eqS", "C3-pedalsS", "C3-gateS", "C
                                      # C3's read tags (`full_controls_c3.ALL_TAGS`): C3's fold models, each its own hold
 C3I_TAG = "C3i"                      # C3i (`phase_c3i`): FTm's mask on C2's labels, read with FTm's hold (`K.space`)
 C3B_TAG = "C3b"                      # C3b (`phase_c3b`): C3's recipe with the amp head on real rows, the adopted C3's hold
+C3C_TAG = "C3c"                      # C3c (`phase_c3c`): the amp head on the amp that suits C3's own answer, C3's hold
 C3S_TAGS = frozenset({"C3s-cabS", "C3s-core"})   # C3s (`phase_c3s`): its fold models, held as C3-cabS and C3-core
-C3_READ = C3_TAGS | {C3I_TAG, C3B_TAG} | C3S_TAGS   # every tag read through C3's paths (C2's state checked on each run)
+C3_READ = C3_TAGS | {C3I_TAG, C3B_TAG, C3C_TAG} | C3S_TAGS   # every tag read through C3's paths (C2's state checked on each run)
 
 
 def model_base(name):
@@ -6948,6 +6951,10 @@ def model_base(name):
         from learn import full_controls_c3 as C3
 
         return C3.C3S_BASE
+    if name == C3C_TAG:
+        from learn import full_controls_c3 as C3
+
+        return C3.C3C_BASE
     if name in C3_TAGS:
         from learn import full_controls_c3 as C3
 
@@ -7038,7 +7045,7 @@ def answer_hold(name):
     """The answer hold a read tag passes to `hold_outside_space`: a C3 tag's own, else None (`K.space`)."""
     from learn import full_controls_c3 as C3
 
-    if name == C3B_TAG:                                # C3b answers as the adopted C3 does (c3/decision.json's tag)
+    if name in (C3B_TAG, C3C_TAG):                     # C3b and C3c answer as the adopted C3 does (decision.json's tag)
         return C3.hold_for(json.loads((C3.c3_dir() / "decision.json").read_text())["tag"])
     if name in C3S_TAGS:                               # C3s answers as the C3 configuration it is read against
         return C3.hold_for(C3.C3S_HOLD[name])
@@ -7184,9 +7191,10 @@ def cmd_train_ft(args):
     c3i = bool(getattr(args, "c3i", False))
     c3b = bool(getattr(args, "c3b", False))
     c3s = bool(getattr(args, "c3s", False))
-    if c3 + c3i + c3b + c3s > 1:
-        raise SystemExit("one of --c3, --c3i, --c3b or --c3s")
-    c3 = c3 or c3i or c3b or c3s                       # C3i, C3b and C3s take C3's labels and C2 checks; see below
+    c3c = bool(getattr(args, "c3c", False))
+    if c3 + c3i + c3b + c3s + c3c > 1:
+        raise SystemExit("one of --c3, --c3i, --c3b, --c3s or --c3c")
+    c3 = c3 or c3i or c3b or c3s or c3c                # the variants take C3's labels and C2 checks; see below for theirs
     c3r = getattr(args, "c3r", None)
     if c3 and c3r is not None:
         raise SystemExit("--c3r trains C3's recipe only: --masked, no --c3, no --h4, no --real-frac or --shuffle-real")
@@ -7220,6 +7228,14 @@ def cmd_train_ft(args):
             amp_lab = C3.amp_labels()
             c3info["amp_labels"] = {"n": len(amp_lab), "sha256": C3.amp_labels_sha(amp_lab),
                                     "recipe": "stored (GOAT: C2b's argmin; BKS: its stored labels' argmin)"}
+        if c3c:                                        # C3c: C3's recipe, the amp head on the amp that suits C3's answer
+            require(C3.C3C_PHASE)
+            if inner:
+                raise SystemExit("C3c has no inner run of its own: each FT_k takes C3's inner run's E, as C3b")
+            base = C3.C3C_BASE
+            amp_lab = C3.answer_amp_labels()
+            c3info["amp_labels"] = {"n": len(amp_lab), "sha256": C3.amp_labels_sha(amp_lab),
+                                    "recipe": "C3c: the argmin of C3-cabS's per-amp renders on the unit's search half"}
     r3st = None
     if c3r is not None:                                # C3r: C3's recipe on every trusted real row, by rotation
         from learn import full_controls_c3 as C3
@@ -7272,7 +7288,7 @@ def cmd_train_ft(args):
     if inner:
         epochs = cap
     else:
-        ebase = C3.C3_BASE if c3b else base            # C3b: C3's own inner runs set each FT_k's E, so its recipe is C3's
+        ebase = C3.C3_BASE if (c3b or c3c) else base   # C3b, C3c: C3's own inner runs set each FT_k's E (C3's recipe)
 
         def inner_set(lr_, cap_):
             ps = [od / f"{ft_name(q, True, lr_, cap_, ebase)}-{sd}.json" for q in range(REAL_FOLDS) for sd in SEEDS]
@@ -7287,8 +7303,9 @@ def cmd_train_ft(args):
             raise SystemExit("the inner runs used another rate or cap")
         if c3 and any((r_.get("c3") or {}).get("c2_sha256") != c3info["c2_sha256"] for r_ in allin):
             raise SystemExit(f"{name}: an inner run was made on another C2 state")
-        if c3b and any("amp_labels" in (r_.get("c3") or {}) or "isolation" in (r_.get("c3") or {}) for r_ in allin):
-            raise SystemExit(f"{name}: C3b's E comes from C3's own inner runs only")
+        if (c3b or c3c) and any("amp_labels" in (r_.get("c3") or {}) or "isolation" in (r_.get("c3") or {})
+                                for r_ in allin):
+            raise SystemExit(f"{name}: C3b's and C3c's E come from C3's own inner runs only")
         if c3s and not all("share" in (r_.get("c3") or {}) for r_ in allin):
             raise SystemExit(f"{name}: C3s's E comes from its own inner runs only")
         if c3 and not c3s and any("share" in (r_.get("c3") or {}) for r_ in allin):
@@ -7340,6 +7357,8 @@ def cmd_train_ft(args):
             data.core = core_masks(rows, A_menu_S())
         if c3b:                                        # the amp head learns each real row's unit amp label
             c3info["amp_rows"] = C3.amp_label_rows(data.Y, rows, amp_lab)
+        if c3c:                                        # only units with per-amp renders carry one; the rest stay -100
+            c3info["amp_rows"] = C3.amp_label_rows(data.Y, rows, amp_lab, allow_missing=True)
     elif c3r is not None:
         C3.mask_rows(data.Y, rows, A_menu_S(), R3.keys_fn(r3st))
     elif masked:
@@ -8248,6 +8267,8 @@ def main(argv=None):
     ap.add_argument("--c3", action="store_true", help="train-ft: C3, FTm's recipe on C2's labels (with --masked)")
     ap.add_argument("--c3i", action="store_true", help="train-ft: C3i, FTm's recipe and mask on C2's labels (with --masked)")
     ap.add_argument("--c3b", action="store_true", help="train-ft: C3b, C3's recipe with the amp head on real rows (with --masked)")
+    ap.add_argument("--c3c", action="store_true",
+                    help="train-ft: C3c, C3's recipe with the amp head on the amp that suits C3's own answer (with --masked)")
     ap.add_argument("--c3s", action="store_true",
                     help="train-ft: C3s, C3's recipe with the core's share of the loss restored (with --masked)")
     ap.add_argument("--amps3", action="store_true",
