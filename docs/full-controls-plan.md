@@ -440,33 +440,41 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **GOAT:** C2b's argmin, 214 units (F73).
   - **BKS:** the argmin over each unit's three stored 52-evaluation labels, 102 units. It uses the same usable rule: a label, finite halves, a best peak at or above −57 dBFS.
   - Not C2's labels: F73 showed the two recipes' choices agree only by chance. The thorough relabel of GOAT's other amps on C2's recipe (about 112k renders) waits on this stage's answer.
-- **The training.** C3's recipe exactly: labels, masks, W, 8 inner runs, 8 FT_k and the all-labels pair, seeds 20261042 and 20261043.
+- **The training.** C3's recipe exactly: labels, masks, W, 8 FT_k and the all-labels pair, seeds 20261042 and 20261043.
+  - **No inner run of its own** (after the review). Each FT_k trains for C3's own inner run's E for its fold and seed (48 to 74), and the all-labels pair for their median, 57. Held rows carry the amp label too, so C3b's own E would include the amp's loss and could differ from C3's; taking C3's keeps the recipe the same. The held rows' amp loss is logged per head, beside.
   - Only the amp head changes: every real row, training or held, takes its unit's amp label in the amp head's slot in place of −100. A BKS unit's three rows share one label, and a GOAT unit's single row has its own. The loss already counts any label of 0 or more.
   - Its own names (`C3b-ftm-…`).
   - Each run records C2's sha256 and the amp labels' sha256, and an FT_k refuses inner runs made on other amp labels.
-  - It trains on MPS beside C2r's 5 render shards. The executor stops it by its recorded PIDs if their summed rate in its first 20 minutes falls more than 20% below C2r's measured 11,495 renders an hour. It then reruns after C3r's training.
+  - **It trains on MPS beside C2r's 5 render shards,** which are in C2r's cap1 block now.
+    - **The stop.** The measure is Amendment 2's per-shard estimator: each shard's renders over the time between its finished records, summed. The executor compares the hour before the training with its first 20 minutes, once every shard has finished 2 or more records within them. A drop of more than 20% stops it by its recorded PIDs, launcher first, and it reruns after C3r's training.
+    - **One MPS job at a time.** Before each pair, the launcher waits while any other train-ft runs. C3r's training starts when C2r ends.
 - **Stage 1, at zero renders: does the head learn the amp label?**
   - C3b's answers (real-predict and goat-predict, CPU) give its amp probabilities on each read unit. That is BKS's 40 by DI fold and GOAT's 214 by item fold, each from the FT_k that held the unit out.
   - **The pick** is the argmax of the probabilities from the input on the labels' search half.
   - **Its value** is `amp_value` on the labels' held halves: ln(the picked amp's label's held judge) less the mean over the unit's usable labels. That is C2b's yardstick, clustered by DI or item.
+  - **A pick of an amp with no usable label** is scored as the worst usable amp, and counted. It is not dropped. Every row reads the same units.
   - **The rows:**
     - C3b's pick − blind;
     - W's pick (C3-cabS's probabilities) − blind;
     - C3b − W;
     - the labels' own argmin − blind, which is the ceiling.
     - Each is judged on BKS, GOAT and pooled with C3's equal weights.
-  - **The declared reading, by C3's test on C3b − blind:**
+    - **Measured before the training, at zero renders** (the review's count, recounted):
+    - W's pick against blind: GOAT −0.014 [−0.025, −0.002] (212 units), already better; BKS −0.029 [−0.079, +0.021] (38 of 40).
+    - The ceiling, the labels' own argmin: GOAT −0.054, BKS's read units −0.063.
+    - So the head's headroom over W is about 0.03 to 0.04 by the score.
+  - **The declared reading, by C3's test on C3b − W** (what training adds over W's pick; after the review, which found W already passes against blind):
     - *learns*: better on BKS, on GOAT or pooled, and worse on none;
     - *worse*;
     - *split*;
     - *undecided*.
-    - C3b − W is reported beside.
+    - C3b − blind is reported beside.
 - **What each reading leads to.**
   - **Learns:** stage 2 is declared next, before any render. It reads C3b's full answer (its own pick and its settings) against the adopted C3's on all three amps, at about 2,400 renders. Its adoption follows C3's rule, "kept unless shown worse". The thorough relabel can then be weighed on its measured gain.
   - **Anything else:** C3b stops at stage 1 and the amp head stays W's. The amp row stays open in C0, with its next route (more amp labels, or the thorough relabel) and its blocker.
   - **Stage 1 adopts nothing:** it changes no product setting.
 - **Stop rule.** One training and one zero-render read, with no tuning on the read sets.
-- **Cost.** Training about 71 minutes of MPS wall clock, as C3. Stage 1 needs zero renders and a few minutes of CPU.
+- **Cost.** Training about 40 minutes of MPS wall clock: 8 FT_k and the all-labels pair, two at a time, with no inner runs. Stage 1 needs zero renders and a few minutes of CPU.
 
 ## C2b in detail (declared 2026-11-10, before any C2b render; ledger `phase_c2b`)
 

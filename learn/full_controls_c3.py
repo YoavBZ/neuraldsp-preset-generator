@@ -786,31 +786,42 @@ def head_pick(amp_p, unit, half, head_amps):
     return None
 
 
+def pick_value(held, pick):
+    """`amp_value` of a pick; a pick of an amp with no usable label scores as the worst usable one (the review: a head that
+    picks such an amp is not dropped). -> (value, scored as worst)."""
+    if pick in held:
+        return amp_value(held, pick), False
+    return max(amp_value(held, a) for a in held), True
+
+
 def stage1_rows(unit_labels, picks, cluster_of):
-    """Stage 1's rows: per unit, `amp_value` of each pick on its labels' held halves (the pick made from the input on the
-    labels' search half). unit_labels: {unit: {amp: record}}; picks: {name: {unit: amp}}. -> {name: [(cluster, unit,
-    value)]}, plus "label" (the labels' own argmin: the ceiling) and the pairwise "C3b - W"."""
-    out = {n: [] for n in list(picks) + ["label", "C3b - W"]}
+    """Stage 1's rows on one set of units, the same for every row: those with 2 or more usable labels and every pick.
+    Per unit, `pick_value` of each pick on its labels' held halves (the pick made from the input on the labels' search
+    half). unit_labels: {unit: {amp: record}}; picks: {name: {unit: amp}}. -> ({name: [(cluster, unit, value)]}, plus
+    "label" (the labels' own argmin: the ceiling) and the pairwise "C3b - W" when both picks are given; {name: picks of an
+    amp with no usable label})."""
+    names = list(picks)
+    out = {n: [] for n in names + ["label"] + (["C3b - W"] if {"C3b", "W"} <= set(names) else [])}
+    worst = {n: 0 for n in names}
     for u, recs in sorted(unit_labels.items()):
         pairs = {a: q for a, q in ((a, usable_pair(r)) for a, r in recs.items()) if q}
-        if len(pairs) < 2:
+        if len(pairs) < 2 or any(u not in p for p in picks.values()):
             continue
         held = {a: q[1] for a, q in pairs.items()}
-        vals = {n: amp_value(held, p[u]) for n, p in picks.items() if u in p}
-        for n, v in vals.items():
-            if v is not None:
-                out[n].append((cluster_of(u), u, v))
-        lv = amp_value(held, label_argmin(pairs))
-        if lv is not None:
-            out["label"].append((cluster_of(u), u, lv))
-        if vals.get("C3b") is not None and vals.get("W") is not None:
+        vals = {}
+        for n in names:
+            vals[n], w = pick_value(held, picks[n][u])
+            worst[n] += w
+            out[n].append((cluster_of(u), u, vals[n]))
+        out["label"].append((cluster_of(u), u, amp_value(held, label_argmin(pairs))))
+        if "C3b - W" in out:
             out["C3b - W"].append((cluster_of(u), u, vals["C3b"] - vals["W"]))
-    return out
+    return out, worst
 
 
 def stage1_reading(row):
-    """Stage 1's declared reading of `C3b - blind` judged by C3's test: "learns" (better, never worse), "worse", "split"
-    or "undecided"."""
+    """Stage 1's declared reading of `C3b - W` (what training adds over W's pick; the review) by C3's test: "learns"
+    (better somewhere, worse nowhere), "worse", "split" or "undecided"."""
     d = direction(row)
     return "learns" if d == "better" else d
 
@@ -833,15 +844,16 @@ def cmd_c3b(args):
         half = {u: next(iter(v.values()))["search"] for u, v in ul.items()}
         picks = {n: {u: a for u in ul if (a := head_pick(ans[t], u, half[u], FS.AMPS))}
                  for n, t in (("C3b", C3B_TAG), ("W", "C3-cabS"))}
-        rows = stage1_rows(ul, picks, cl)
+        rows, worst = stage1_rows(ul, picks, cl)
         sets[name] = {n: P.clustered(v) if v else None for n, v in rows.items()}
-        sets[name]["units"] = len(ul)
+        sets[name]["units"] = len(rows["label"])
+        sets[name]["scored_as_worst"] = worst
         sets[name]["picks_by_amp"] = {n: {a: sum(1 for x in p.values() if x == a) for a in FS.AMPS}
                                       for n, p in picks.items()}
     names = ("C3b", "W", "label", "C3b - W")
     judged_rows = {n: judged(sets["bks"][n] or {}, sets["goat"][n] or {}) for n in names}
-    rec = {"phase": C3B_PHASE, "sets": sets, "rows": judged_rows, "reading": stage1_reading(judged_rows["C3b"]),
-           "against_W": direction(judged_rows["C3b - W"]), "labels_sha256": amp_labels_sha(amp_labels()),
+    rec = {"phase": C3B_PHASE, "sets": sets, "rows": judged_rows, "reading": stage1_reading(judged_rows["C3b - W"]),
+           "against_blind": direction(judged_rows["C3b"]), "labels_sha256": amp_labels_sha(amp_labels()),
            "c2_sha256": c2_sha(), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     P.save(c3_dir() / "c3b-stage1.json", rec)
     for n in names:
@@ -849,7 +861,7 @@ def cmd_c3b(args):
         p_ = j["pooled"] or {}
         print(f"{n} - blind: BKS {(j['bks'] or {}).get('mean')}, GOAT {(j['goat'] or {}).get('mean')}, pooled "
               f"{p_.get('mean')} [{p_.get('lo90')}, {p_.get('hi90')}]")
-    print(f"C3B STAGE 1: {rec['reading']}; against W: {rec['against_W']}")
+    print(f"C3B STAGE 1 (C3b - W): {rec['reading']}; C3b against blind: {rec['against_blind']}")
 
 
 def report_rows(label="c3"):

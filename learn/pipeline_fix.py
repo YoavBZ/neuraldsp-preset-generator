@@ -7144,6 +7144,8 @@ def cmd_train_ft(args):
             c3info["isolation"] = "C3i: FTm's mask (K.space) on C2's labels"
         if c3b:                                        # C3b: C3's recipe, and each real row's unit amp label
             require(C3.C3B_PHASE)
+            if inner:
+                raise SystemExit("C3b has no inner run of its own: each FT_k takes C3's inner run's E (the review)")
             base = C3.C3B_BASE
             amp_lab = C3.amp_labels()
             c3info["amp_labels"] = {"n": len(amp_lab), "sha256": C3.amp_labels_sha(amp_lab),
@@ -7200,8 +7202,10 @@ def cmd_train_ft(args):
     if inner:
         epochs = cap
     else:
+        ebase = C3.C3_BASE if c3b else base            # C3b: C3's own inner runs set each FT_k's E, so its recipe is C3's
+
         def inner_set(lr_, cap_):
-            ps = [od / f"{ft_name(q, True, lr_, cap_, base)}-{sd}.json" for q in range(REAL_FOLDS) for sd in SEEDS]
+            ps = [od / f"{ft_name(q, True, lr_, cap_, ebase)}-{sd}.json" for q in range(REAL_FOLDS) for sd in SEEDS]
             return [json.loads(q.read_text()) for q in ps] if all(q.exists() for q in ps) else None
 
         why = ("the 8 inner runs are not all done" if inner_set(lr, cap) is None else None) if masked \
@@ -7213,9 +7217,8 @@ def cmd_train_ft(args):
             raise SystemExit("the inner runs used another rate or cap")
         if c3 and any((r_.get("c3") or {}).get("c2_sha256") != c3info["c2_sha256"] for r_ in allin):
             raise SystemExit(f"{name}: an inner run was made on another C2 state")
-        if c3b and any(((r_.get("c3") or {}).get("amp_labels") or {}).get("sha256") != c3info["amp_labels"]["sha256"]
-                       for r_ in allin):
-            raise SystemExit(f"{name}: an inner run was made on other amp labels")
+        if c3b and any("amp_labels" in (r_.get("c3") or {}) or "isolation" in (r_.get("c3") or {}) for r_ in allin):
+            raise SystemExit(f"{name}: C3b's E comes from C3's own inner runs only")
         if c3r is not None and any((r_.get("c3r") or {}).get("c3r_sha256") != r3st["sha256"] for r_ in allin):
             raise SystemExit(f"{name}: an inner run was made on another C2, C2r or C3 state")
         inners = [r_ for r_ in allin if k is None or (r_["real_fold"], r_["seed"]) == (k, seed)]

@@ -492,7 +492,8 @@ def test_c3b_usable_labels_argmin_and_stage1_rows():
     assert X.usable_pair(_lab(3.0, 4.0, pk=-58.0)) is None and X.usable_pair(dict(_lab(3.0, 4.0), label=None)) is None
     assert X.label_argmin({"sw50r": (3.0, 4.0), "ac20": (3.0, 5.0), "pr12": (2.0, 6.0)}) == "pr12"
     ul = {"d1@1#t": {"pr12": _lab(2.0, 4.0), "sw50r": _lab(3.0, 2.0), "ac20": _lab(4.0, 3.0)}}
-    rows = X.stage1_rows(ul, {"C3b": {"d1@1#t": "sw50r"}, "W": {"d1@1#t": "pr12"}}, lambda u: u.split("@")[0])
+    rows, worst = X.stage1_rows(ul, {"C3b": {"d1@1#t": "sw50r"}, "W": {"d1@1#t": "pr12"}}, lambda u: u.split("@")[0])
+    assert worst == {"C3b": 0, "W": 0}
     blind = (math.log(4) + math.log(2) + math.log(3)) / 3
     assert rows["C3b"] == [("d1", "d1@1#t", pytest.approx(math.log(2) - blind))]
     assert rows["label"] == [("d1", "d1@1#t", pytest.approx(math.log(4) - blind))]      # the search argmin: pr12
@@ -500,6 +501,16 @@ def test_c3b_usable_labels_argmin_and_stage1_rows():
     assert X.head_pick({"d1@1#t|pr12": {"A": [0.1, 0.7, 0.2]}}, "d1@1#t", "A", ("pr12", "sw50r", "ac20")) == "sw50r"
     better = {"bks": {"lo90": -0.05, "hi90": -0.01}, "goat": {"lo90": -0.1, "hi90": 0.1}, "pooled": {"lo90": -0.1, "hi90": 0.1}}
     assert X.stage1_reading(better) == "learns" and X.stage1_reading({"bks": {"lo90": -1, "hi90": 1}}) == "undecided"
+
+
+def test_c3b_scores_a_pick_with_no_usable_label_as_the_worst_and_reads_every_row_on_the_same_units():
+    ul = {"d1@1#t": {"pr12": _lab(2.0, 4.0), "sw50r": _lab(3.0, 2.0), "ac20": _lab(4.0, 3.0, pk=-59.0)},
+          "d2@1#t": {"pr12": _lab(2.0, 4.0), "sw50r": _lab(3.0, 2.0)}}
+    rows, worst = X.stage1_rows(ul, {"C3b": {"d1@1#t": "ac20", "d2@1#t": "sw50r"}, "W": {"d1@1#t": "pr12"}},
+                                lambda u: u.split("@")[0])
+    half = (math.log(4) - math.log(2)) / 2
+    assert worst == {"C3b": 1, "W": 0} and rows["C3b"] == [("d1", "d1@1#t", pytest.approx(half))]   # ac20: the worst
+    assert [r[1] for r in rows["W"]] == [r[1] for r in rows["label"]] == ["d1@1#t"]                  # d2: no W pick
 
 
 def test_c3b_amp_labels_cover_every_real_training_unit():
@@ -517,5 +528,6 @@ def test_c3b_launchers_train_with_c3b_and_read_at_zero_renders():
     import pathlib
     root = pathlib.Path(__file__).resolve().parents[1] / "logs"
     t, r = (root / "launch-c3b-train.zsh").read_text(), (root / "launch-c3b-read.zsh").read_text()
-    assert "--masked --c3b" in t and "--c3i" not in t and "mv ${PIDS} ${PIDS}." in t
+    assert "--masked --c3b" in t and "--c3i" not in t and "mv ${PIDS} ${PIDS}." in t and "--inner" not in t
+    assert "mps_free" in t and 'pgrep -f "learn.pipeline_fix train-ft"' in t
     assert "c3b-train.log" in r and "c3b-rows" in r and "real-render" not in r and "goat-render" not in r and "h4-render" not in r
