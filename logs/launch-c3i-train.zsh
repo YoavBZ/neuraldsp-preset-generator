@@ -2,8 +2,9 @@
 # C3i's training (ledger phase_c3i, docs/full-controls-plan.md "C3i in detail"): FTm's recipe and FTm's mask (K.space)
 # on C2's labels, under C3i's own names: the 8 inner fold-and-seed runs two at a time, the 8 FT_k two at a time (each on
 # its own inner run's E), then the all-labels pair. Every run refuses until C2's 520 records are written and records C2's
-# sha256. Any failure stops the launcher. MPS, un-niced; it runs beside C2b's or C2r's CPU renders, and the executor stops
-# it by its recorded PIDs if their render rate falls by more than 20%.   zsh logs/launch-c3i-train.zsh /path/to/worktree
+# sha256. Any failure stops the launcher. MPS, un-niced, with no other MPS job meanwhile; it runs beside C2b's or C2r's
+# CPU renders, and the executor stops it by its recorded PIDs if the 3 shards' summed renders per minute in its first
+# 20 min fall more than 20% below the 60 min before it.   zsh logs/launch-c3i-train.zsh /path/to/worktree
 # A relaunch rotates the old c3i-train.log first, so launch-c3i-read.zsh never reads a stale FAILED line; runs already
 # written are skipped by train-ft itself.
 setopt no_bg_nice

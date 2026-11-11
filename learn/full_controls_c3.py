@@ -36,7 +36,6 @@ C3I_PHASE = "phase_c3i"              # C3i, the isolation of C3's core (docs/ful
 C3I_BASE = "C3i-ftm"                 # its own runs (`train-ft --masked --c3i`): FTm's recipe and mask on C2's labels
 C3I_TAG = "C3i"                      # its read tag (`pipeline_fix.C3I_TAG`), answered with FTm's hold (`K.space`)
 C3I_PAIRS = ((C3I_TAG, FTM_TAG), ("C3-core", C3I_TAG), (C3I_TAG, "S"))
-READINGS = {(True, False): "labels", (False, True): "objective", (True, True): "both", (False, False): "neither"}
 PEDAL_MODULES = ("drive1", "drive2", "compressor")
 GATE_SW, GATE_THR = ("parameters", "gateActive"), ("parameters", "gateThreshold")
 RECHECK_N = 3                        # FTm's stored judge files rendered again per set (both halves: 12 renders + priming)
@@ -701,10 +700,25 @@ def c3i_pairs():
     return ",".join(f"{a}:{b}" for a, b in C3I_PAIRS)
 
 
+def direction(j):
+    """A judged row by C3's test: "worse" (a 90% interval wholly above 0 on BKS, GOAT or pooled), "better" (wholly below 0
+    on one of them), "split" (both), else "undecided"."""
+    rs = [r for r in (j.get("bks"), j.get("goat"), j.get("pooled")) if r]
+    w = any(r.get("lo90") is not None and r["lo90"] > 0 for r in rs)
+    b = any(r.get("hi90") is not None and r["hi90"] < 0 for r in rs)
+    return "split" if w and b else "worse" if w else "better" if b else "undecided"
+
+
 def c3i_reading(iso_ftm, core_iso):
-    """C3i's declared reading from its two judged rows (C3's test: a 90% interval wholly above 0 on BKS, GOAT or pooled):
-    "labels" (C3i worse than FTm, C3 core - C3i not shown worse), "objective" (the reverse), "both" or "neither"."""
-    return READINGS[(bool(iso_ftm["shown_worse"]), bool(core_iso["shown_worse"]))]
+    """C3i's declared reading (docs/full-controls-plan.md, "C3i in detail") from its two judged rows, C3i - FTm and C3 core
+    - C3i: "split" (either row split; read per set, no follow-up), "both" (both worse), "labels" (C3i worse, the other
+    not), "objective" (C3 core - C3i worse, C3i not), else "neither"."""
+    a, b = direction(iso_ftm), direction(core_iso)
+    if "split" in (a, b):
+        return "split"
+    if a == "worse":
+        return "both" if b == "worse" else "labels"
+    return "objective" if b == "worse" else "neither"
 
 
 def cmd_c3i(args):
@@ -721,7 +735,8 @@ def cmd_c3i(args):
             raise SystemExit(f"{n}: not in both C3i reports")
         rows[n] = judged(b[n], g[n])
     reading = c3i_reading(rows[row_name(C3I_TAG, FTM_TAG)], rows[row_name("C3-core", C3I_TAG)])
-    rec = {"phase": C3I_PHASE, "rows": rows, "reading": reading, "c2_sha256": c2_sha(),
+    rec = {"phase": C3I_PHASE, "rows": rows, "directions": {n: direction(j) for n, j in rows.items()}, "reading": reading,
+           "follow_up": reading in ("objective", "both"), "c2_sha256": c2_sha(),
            "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     P.save(c3_dir() / "c3i.json", rec)
     for n, j in rows.items():

@@ -414,8 +414,18 @@ def test_c3i_is_read_through_c3s_paths_with_ftms_hold_and_its_own_runs():
 def test_c3i_pairs_and_its_declared_readings():
     from learn import full_controls_c3 as X
     assert X.c3i_pairs() == "C3i:P2b-ftm,C3-core:C3i,C3i:S"
-    w, n = {"shown_worse": True}, {"shown_worse": False}
-    assert [X.c3i_reading(a, b) for a, b in ((w, n), (n, w), (w, w), (n, n))] == ["labels", "objective", "both", "neither"]
+    def j(lo, hi, where="goat"):
+        r = {"bks": {"lo90": -1, "hi90": 1}, "goat": {"lo90": -1, "hi90": 1}, "pooled": {"lo90": -1, "hi90": 1}}
+        r[where] = {"lo90": lo, "hi90": hi}
+        return r
+    W, B, U = j(0.01, 0.05), j(-0.05, -0.01), j(-0.01, 0.01)
+    S = dict(j(0.01, 0.05), bks={"lo90": -0.05, "hi90": -0.01})
+    assert [X.direction(r) for r in (W, B, U, S)] == ["worse", "better", "undecided", "split"]
+    got = {(a, b): X.c3i_reading(ra, rb) for a, ra in (("W", W), ("B", B), ("U", U)) for b, rb in (("W", W), ("B", B), ("U", U))}
+    assert got == {("W", "U"): "labels", ("W", "B"): "labels", ("W", "W"): "both", ("U", "W"): "objective",
+                   ("B", "W"): "objective", ("U", "U"): "neither", ("U", "B"): "neither", ("B", "U"): "neither",
+                   ("B", "B"): "neither"}
+    assert X.c3i_reading(S, U) == X.c3i_reading(U, S) == "split"
 
 
 def test_c3i_rows_judge_each_pair_on_both_sets(tmp_path, monkeypatch):
@@ -434,6 +444,7 @@ def test_c3i_rows_judge_each_pair_on_both_sets(tmp_path, monkeypatch):
     X.cmd_c3i(None)
     rec = json.loads((tmp_path / X.OUT / "c3i.json").read_text())
     assert rec["reading"] == "labels" and set(rec["rows"]) == set(rows) and rec["phase"] == "phase_c3i"
+    assert rec["follow_up"] is False and rec["directions"]["C3i - P2b-ftm"] == "worse"
     (tmp_path / P.GOAT_DIR / "report-c3i.json").write_text(json.dumps({"rows": {"C3i - S": rows["C3i - S"]}}))
     with pytest.raises(SystemExit):
         X.cmd_c3i(None)
