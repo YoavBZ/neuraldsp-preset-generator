@@ -42,6 +42,10 @@ C3I_PAIRS = ((C3I_TAG, FTM_TAG), ("C3-core", C3I_TAG), (C3I_TAG, "S"))
 C3B_PHASE = "phase_c3b"              # C3b, the amp head on real rows (docs/full-controls-plan.md, "C3b in detail")
 C3B_BASE = "C3b-ftm"                 # its own runs (`train-ft --masked --c3b`): C3's recipe, plus each unit's amp label
 C3B_TAG = "C3b"                      # its read tag (`pipeline_fix.C3B_TAG`), answered with the adopted C3's hold
+C3S_PHASE = "phase_c3s"              # C3s, C3i's (b) follow-up: C3's recipe with the core's share of the loss restored
+C3S_BASE = "C3s-ftm"                 # its own runs (`train-ft --masked --c3s`), inner runs included
+C3S_HOLD = {"C3s-cabS": "C3-cabS", "C3s-core": "C3-core"}   # its read tags, each held as the C3 configuration it is read against
+C3S_PAIRS = (("C3s-cabS", "C3-cabS"), ("C3s-core", C3I_TAG), ("C3s-core", "C3-core"), ("C3s-cabS", "S"))
 C3B_S2_PHASE = "phase_c3b_s2"        # C3b's stage 2: its full answer against the adopted C3's, on all three amps
 S2_AMPS = ("pr12", "sw50r", "ac20")  # `pipeline_fix.AMPS3`, the order every per-amp row is written in
 AMP_USABLE_DBFS = -57.0              # C2b's like-for-like bound: a label counts for the amp choice at or above it
@@ -1108,6 +1112,43 @@ def c3i_reading(iso_ftm, core_iso):
     return "objective" if b == "worse" else "neither"
 
 
+def c3s_pairs():
+    """C3s's report pairs (`real-report` and `goat-report --pairs ... --label c3s`)."""
+    return ",".join(f"{a}:{b}" for a, b in C3S_PAIRS)
+
+
+def c3s_reading(cabs, core_iso, core_core):
+    """C3s's declared reading (docs/full-controls-plan.md, "C3s in detail") from its judged rows. The recipe is adopted
+    for later steps only if C3s-cabS - C3-cabS is shown better (BKS, GOAT or pooled) and worse on none; the two core
+    rows are reported as diagnostics. -> {"adopt": bool, "cabS": direction, "core - C3i": direction, "core - C3 core":
+    direction}."""
+    d = direction(cabs)
+    return {"adopt": d == "better", "cabS": d, "core - C3i": direction(core_iso), "core - C3 core": direction(core_core)}
+
+
+def cmd_c3s(args):
+    """C3s's rows from its reports (`--label c3s`) -> c3/c3s.json and c3/decision-c3s.json: each pair judged on BKS,
+    GOAT and pooled, and the declared reading. It changes neither c3/decision.json nor C3r."""
+    from learn import pipeline_fix as P
+
+    P.require(C3S_PHASE)
+    b, g = report_rows("c3s")
+    rows = {}
+    for a, z in C3S_PAIRS:
+        n = row_name(a, z)
+        rows[n] = judged(b.get(n) or {}, g.get(n) or {})
+    rd = c3s_reading(rows[row_name("C3s-cabS", "C3-cabS")], rows[row_name("C3s-core", C3I_TAG)],
+                     rows[row_name("C3s-core", "C3-core")])
+    t = time.strftime("%Y-%m-%d %H:%M:%S")
+    P.save(c3_dir() / "c3s.json", {"phase": C3S_PHASE, "rows": rows, "reading": rd, "c2_sha256": c2_sha(), "time": t})
+    P.save(c3_dir() / "decision-c3s.json", {"phase": C3S_PHASE, "recipe": "C3s" if rd["adopt"] else "C3", "time": t})
+    for n, j in rows.items():
+        p_ = j["pooled"] or {}
+        print(f"{n}: BKS {(j['bks'] or {}).get('mean')}, GOAT {(j['goat'] or {}).get('mean')}, pooled {p_.get('mean')} "
+              f"[{p_.get('lo90')}, {p_.get('hi90')}]; {direction(j)}")
+    print(f"C3S READING: {rd}")
+
+
 def cmd_c3i(args):
     """C3i's rows from its reports (`--label c3i`) -> c3/c3i.json: each pair judged on BKS, GOAT and pooled, and the
     declared reading. A diagnostic: it adopts and replaces nothing."""
@@ -1178,6 +1219,7 @@ def main(argv=None):
     s.add_argument("out")
     s.set_defaults(fn=cmd_amp)
     sub.add_parser("c3i-rows").set_defaults(fn=cmd_c3i)
+    sub.add_parser("c3s-rows").set_defaults(fn=cmd_c3s)
     sub.add_parser("c3b-rows").set_defaults(fn=cmd_c3b)
     sub.add_parser("c3b-s2-check").set_defaults(fn=cmd_c3b_s2_check)
     sub.add_parser("c3b-s2-rows").set_defaults(fn=cmd_c3b_s2)

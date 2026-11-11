@@ -5048,6 +5048,37 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - logs `logs/c3b*.log`.
   - Code: `learn/full_controls_c3.py` (`c3b-rows`) and `pipeline_fix train-ft --c3b`. The audit scripts are in the session scratchpad.
 
+### F75. C3i: FTm's recipe and mask on C2's labels, the isolation of C3's core. By the score both causes cost the core. C2's core labels alone read +0.028 [+0.016, +0.040] worse than FTm's on GOAT (BKS −0.010, undecided), and C3's wider training adds +0.007 [+0.001, +0.013] pooled. Of C3 core's +0.034 on GOAT, +0.028 is the labels. The declared reading is "both": the sizes are reported and one follow-up is declared (phase_c3i, 72 min of MPS, 1,408 renders, audited)
+- **What ran** ([plan](full-controls-plan.md), "C3i in detail").
+  - **The recipe:** FTm's exactly (`train-ft --masked --ft-cap 300`, W, 8 inner runs, 8 FT_k and the all-labels pair, seeds 20261042 and 20261043), with C2's labels and FTm's mask, `K.space` only. Its answer holds as FTm's.
+  - **The training:** 18 runs, 121 run-minutes, 72 min of MPS wall clock (10:17 to 11:29), beside C2b's renders, which it didn't slow (6,223 to 6,643 an hour).
+  - **The read:** one tag, `C3i`, on BKS (480 renders), GOAT (860) and N12 (68): 1,408 renders, each answer primed and kept.
+- **The read matched the declaration.** It was audited with separate code from the judge files: every row below reproduces the report to 1e-4. No direction was missing, except 2 of GOAT's 430 against S.
+- **By the score** (held half, ln, clustered by DI on BKS and by item on GOAT, pooled with C3's equal weights):
+
+  | Row | BKS (8 DIs, 240 directions) | GOAT (130 items, 430) | Pooled |
+  |---|---|---|---|
+  | **C3i − FTm (the labels)** | −0.010 [−0.037, +0.017] | **+0.028 [+0.016, +0.040]**, worse | +0.009 [−0.005, +0.023] |
+  | **C3 core − C3i (the objective)** | +0.009 [−0.002, +0.020] | +0.006 [−0.001, +0.012] | **+0.007 [+0.001, +0.013]**, worse |
+  | C3i − S | −0.133 [−0.222, −0.044] | −0.067 [−0.092, −0.042] | −0.100 [−0.146, −0.054] |
+
+  - **N12** (measurement only, 27 cards on 8 bands): C3i − FTm −0.012 [−0.043, +0.020], undecided; C3i − S −0.134 [−0.254, −0.015].
+  - **The declared reading is "both":** C3i − FTm is worse (on GOAT), and C3 core − C3i is worse (pooled). Neither row is split.
+  - The two rows add up exactly to C3 core − FTm: +0.034 on GOAT, of which +0.028 is the labels and +0.006 the objective.
+- **Beside, at zero renders: the core heads' held losses.** On the 17 continuous `K.space` heads that every run of both models scores, C3's held loss (on C2's labels) is higher than C3i's in all 8 FT_k: by +0.12 to +0.29, mean +0.19. With the same labels and rows, the wider objective fits the core less well. This is a direct look at cause (b); it is reported, not deciding.
+- **What it means.**
+  - **On GOAT most of the core's loss is the labels.** C2 searched the core with the EQ and pedals, so its core values fit alongside them, and alone they read worse than the stored labels' on GOAT. On BKS they read slightly better, undecided. The adopted C3 learns the EQ and pedals as well, which is how it ends level with FTm.
+  - **The wider objective costs a little:** +0.007 pooled, decided, and the held losses agree.
+  - **The declared next step:** one (b) follow-up, C3's recipe with the core heads' share of the loss restored to FTm's, declared separately before it trains. Its most is about the objective's +0.007. No second variant follows.
+  - **What doesn't change:** C3i is a diagnostic and replaces nothing. The adopted C3 (C3-cabS) stands, and C3r trains as declared.
+  - By the score only.
+- Files:
+  - `PF/c3/c3i.json`;
+  - `PF/{real,goat}/report-c3i.json`, `logs/c3i-n12.json`;
+  - C3i's runs `C3i-ftm-*`;
+  - logs `logs/c3i*.log`.
+  - Code: `learn/full_controls_c3.py` (`c3i-rows`) and `pipeline_fix train-ft --c3i`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
