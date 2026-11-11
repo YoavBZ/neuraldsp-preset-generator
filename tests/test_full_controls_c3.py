@@ -529,5 +529,5 @@ def test_c3b_launchers_train_with_c3b_and_read_at_zero_renders():
     root = pathlib.Path(__file__).resolve().parents[1] / "logs"
     t, r = (root / "launch-c3b-train.zsh").read_text(), (root / "launch-c3b-read.zsh").read_text()
     assert "--masked --c3b" in t and "--c3i" not in t and "mv ${PIDS} ${PIDS}." in t and "--inner" not in t
-    assert "mps_free" in t and 'pgrep -f "learn.pipeline_fix train-ft"' in t
+    assert "mps_free" in t and 'pgrep -f "python[0-9.]* -u -m learn.pipeline_fix train-ft"' in t
     assert "c3b-train.log" in r and "c3b-rows" in r and "real-render" not in r and "goat-render" not in r and "h4-render" not in r

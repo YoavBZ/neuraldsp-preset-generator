@@ -31,7 +31,7 @@ waitall() {    # wait on every PID given, then stop the launcher on any failure
 }
 
 mps_free() {   # one MPS job at a time: wait while another train-ft runs (this launcher's own pairs are all waited on)
-  while pgrep -f "learn.pipeline_fix train-ft" > /dev/null; do
+  while pgrep -f "python[0-9.]* -u -m learn.pipeline_fix train-ft" > /dev/null; do   # the interpreter's, not a shell's
     echo "waiting: another train-ft runs (one MPS job) $(date)" >> ${L}
     sleep 60
   done

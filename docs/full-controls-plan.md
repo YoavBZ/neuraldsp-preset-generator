@@ -447,7 +447,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - Each run records C2's sha256 and the amp labels' sha256, and an FT_k refuses inner runs made on other amp labels.
   - **It trains on MPS beside C2r's 5 render shards,** which are in C2r's cap1 block now.
     - **The stop.** The measure is Amendment 2's per-shard estimator: each shard's renders over the time between its finished records, summed. The executor compares the hour before the training with its first 20 minutes, once every shard has finished 2 or more records within them. A drop of more than 20% stops it by its recorded PIDs, launcher first, and it reruns after C3r's training.
-    - **One MPS job at a time.** Before each pair, the launcher waits while any other train-ft runs. C3r's training starts when C2r ends.
+    - **One MPS job at a time.** Before each pair, the launcher waits while any other train-ft runs. C3r's training starts when C2r ends. The guard can't stop a pair already running, so if C3r's training starts mid-pair, the two overlap for up to one pair.
 - **Stage 1, at zero renders: does the head learn the amp label?**
   - C3b's answers (real-predict and goat-predict, CPU) give its amp probabilities on each read unit. That is BKS's 40 by DI fold and GOAT's 214 by item fold, each from the FT_k that held the unit out.
   - **The pick** is the argmax of the probabilities from the input on the labels' search half.
@@ -460,7 +460,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
     - the labels' own argmin − blind, which is the ceiling.
     - Each is judged on BKS, GOAT and pooled with C3's equal weights.
     - **Measured before the training, at zero renders** (the review's count, recounted):
-    - W's pick against blind: GOAT −0.014 [−0.025, −0.002] (212 units), already better; BKS −0.029 [−0.079, +0.021] (38 of 40).
+    - W's pick against blind: GOAT −0.013 [−0.025, −0.002] (214 units, 2 picks scored as the worst), already better; BKS −0.027 [−0.077, +0.024] (40 units, 2 scored as the worst).
     - The ceiling, the labels' own argmin: GOAT −0.054, BKS's read units −0.063.
     - So the head's headroom over W is about 0.03 to 0.04 by the score.
   - **The declared reading, by C3's test on C3b − W** (what training adds over W's pick; after the review, which found W already passes against blind):
