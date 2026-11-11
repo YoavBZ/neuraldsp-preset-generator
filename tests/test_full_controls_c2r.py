@@ -367,20 +367,64 @@ def test_the_search_cap_is_1_to_5_and_reaches_the_wait():
     assert "DSm.RENDER_CAP = cap" in src                                          # the renderer's own wait, too
 
 
-def test_the_render_slot_reads_its_cap_at_call_time(monkeypatch):
+def test_the_render_slot_reads_its_cap_at_call_time(monkeypatch, tmp_path):
+    import fcntl
+    import os
+
     from learn import direct_stems as DS
     from learn import ks_extend as KX
-    ps = [(100 + i, "python -m learn.full_controls_c2r c2r-search --shard %d/5 --cap 5" % i) for i in range(4)]
-    ps += [(200 + i, "/T/au-bounded-x/au_render_server_bounded") for i in range(4)]
-    monkeypatch.setattr(KX, "_ps", lambda: ps)
-    slept = []
+    monkeypatch.setattr(DS, "RENDER_SLOT_DIR", tmp_path)
+    monkeypatch.setattr(KX, "_ps", lambda: [(200 + i, "/T/au-bounded-x/au_render_server_bounded") for i in range(4)])
     monkeypatch.setattr(DS.time, "sleep", lambda s: (_ for _ in ()).throw(RuntimeError("would wait")))
-    DS.wait_render_slot(cap=5)                                                    # 4 others, 4 servers: a slot at 5
+    held = []
+    for i in range(4):                                                            # 4 other holders: slots 0..3
+        fd = os.open(tmp_path / f"slot-{i}.lock", os.O_CREAT | os.O_RDWR)
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        held.append(fd)
+    monkeypatch.setattr(DS, "_RENDER_SLOT", None)
+    DS.wait_render_slot(cap=5)                                                    # 4 holders, 4 servers: a slot at 5
+    assert DS._RENDER_SLOT[1] == 4
+    os.close(DS._RENDER_SLOT[0])
+    monkeypatch.setattr(DS, "_RENDER_SLOT", None)
     monkeypatch.setattr(DS, "RENDER_CAP", 5)
     DS.wait_render_slot()                                                         # the module's cap, read at call time
+    os.close(DS._RENDER_SLOT[0])
+    monkeypatch.setattr(DS, "_RENDER_SLOT", None)
     monkeypatch.setattr(DS, "RENDER_CAP", 3)
     with pytest.raises(RuntimeError):
         DS.wait_render_slot()                                                     # every other job: 3, so it waits
+    for fd in held:
+        os.close(fd)
+
+
+def test_waiting_processes_never_block_each_other(monkeypatch, tmp_path):
+    """2026-11-11: two jobs of 3 shards each counted the other's waiting shards and all six waited. Only slot holders
+    count now, so 6 contenders for 3 slots: 3 hold, 3 wait, and a holder's exit frees its slot."""
+    import os
+
+    from learn import direct_stems as DS
+    got = [DS.try_render_slot(3, tmp_path) for _ in range(6)]                     # separate fds act as separate holders
+    holders = [g for g in got if g is not None]
+    assert sorted(i for _, i in holders) == [0, 1, 2] and got[3:] == [None, None, None]
+    os.close(holders[1][0])                                                       # slot 1's holder exits
+    again = DS.try_render_slot(3, tmp_path)
+    assert again is not None and again[1] == 1
+    for fd, _ in holders[:1] + holders[2:] + [again]:
+        os.close(fd)
+
+
+def test_a_holder_returns_at_once_and_wait_cap_takes_a_slot(monkeypatch, tmp_path):
+    from learn import direct_stems as DS
+    from learn import ks_extend as KX
+    from learn import local_objective as LO
+    monkeypatch.setattr(DS, "RENDER_SLOT_DIR", tmp_path)
+    monkeypatch.setattr(DS, "_RENDER_SLOT", None)
+    monkeypatch.setattr(KX, "_ps", lambda: [])
+    LO._wait_cap()
+    i = DS._RENDER_SLOT[1]
+    assert DS.acquire_render_slot() == i and DS.acquire_render_slot(5) == i      # held for the process's life
+    import os
+    os.close(DS._RENDER_SLOT[0])
 
 
 def test_the_launcher_runs_n_shards_each_with_its_cap_and_resumes_a_drawn_run():
@@ -389,3 +433,21 @@ def test_the_launcher_runs_n_shards_each_with_its_cap_and_resumes_a_drawn_run():
     assert "N=${C2R_SHARDS:-5}" in s and "--shard ${k}/${N} --cap ${N}" in s and "seq 0 $(( N - 1 ))" in s
     assert "draw exists: resuming" in s and s.index("draw exists") < s.index("c2r-search")
     assert "mv ${PIDS} ${PIDS}." in s and s.index("mv ${PIDS}") < s.index('echo "launcher $$')
+
+
+def test_wait_cap_rechecks_for_a_separation_after_its_slot(monkeypatch, tmp_path):
+    """The review: a separation that starts while a job waits for its slot is waited out before the first render."""
+    from learn import direct_stems as DS
+    from learn import ks_extend as KX
+    from learn import local_objective as LO
+    monkeypatch.setattr(DS, "RENDER_SLOT_DIR", tmp_path)
+    monkeypatch.setattr(DS, "_RENDER_SLOT", None)
+    calls = []
+    states = iter([False, True, False])                                           # none, then one started, then done
+    monkeypatch.setattr(KX, "_ps", lambda: [])
+    monkeypatch.setattr(LO, "separating", lambda ps, own: calls.append(1) or next(states))
+    monkeypatch.setattr(LO.time, "sleep", lambda s: None)
+    LO._wait_cap()
+    assert len(calls) == 3 and DS._RENDER_SLOT is not None
+    import os
+    os.close(DS._RENDER_SLOT[0])
