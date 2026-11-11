@@ -5222,6 +5222,38 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - By the score only.
 - Files: `PF/c3/c3c.json`; runs `C3c-ftm-*`; logs `logs/c3c*.log`. `PF/c3r/answers/all-amps3.json` is the withdrawn read's zero-render answers (R-all on all three amps), unused.
 
+### F80. A1: the amp chosen by a stock-DI comparison. By the score the declared pick (the model's own features, floored) beats always-sw50r on GOAT, −0.017 [−0.033, −0.002], and leans worse on BKS, +0.052 [−0.018, +0.122]; pooled +0.017, undecided. By the declared rule that reads "learns" (better somewhere, worse nowhere), but it is weak. On the clean amp track the same comparison reads −0.039 [−0.073, −0.005] pooled, so the separation costs most of it. A confirmation on R-all and on fresh units is declared before anything ships (phase_a1, 6,120 renders, audited)
+- **What ran** ([plan](full-controls-plan.md), "A1 in detail", Amendment 1 and its floor), on the user's "Definitely A".
+  - Each of GOAT's 215 and BKS's 40 units: C3-cabS's answer per amp and search half, through two stock library DIs of its class (clean: The Travelling Band 16, Ale Lak 24; crunch: Ale Lak 09, Dark Ride 29).
+  - 6,120 renders in 1 h 23 min (00:02 to 01:25), then a zero-render read (01:25 to 01:28).
+  - **The primary pick:** the amp whose renders' features (the C3 fold model's pooled body features, both seeds; every input floored at −90 dB) sit closest by cosine to the song's separated guitar's. Valued on the held half of C3-cabS's own per-amp renders.
+- **The read matched the declaration.** It was audited with separate code: from the stored picks and the judge files, the primary, its classes and the clean-track row reproduce to 1e-4. Every stored pick equals the argmin of its stored distances (1,530 of 1,530). No direction was dropped.
+- **By the score** (held half, ln; BKS by DI, GOAT by item; pooled with C3's weights):
+
+  | Pick − always sw50r | BKS (40) | GOAT (215) | Pooled |
+  |---|---|---|---|
+  | **The model's features, floored (primary)** | +0.052 [−0.018, +0.122] | **−0.017 [−0.033, −0.002]** | +0.017 [−0.019, +0.053] |
+  | the same, clean | +0.003 | **−0.035 [−0.057, −0.013]** | −0.016 [−0.043, +0.011] |
+  | the same, crunch | +0.100 | −0.003 | +0.049 |
+  | The model's features, unfloored | −0.004 | −0.010 | −0.007 [−0.045, +0.031] |
+  | **The model's features, on the clean amp track** | −0.035 | **−0.043 [−0.060, −0.025]** | **−0.039 [−0.073, −0.005]** |
+  | The spectral shape (declared first) | +0.094 | **−0.024 [−0.041, −0.007]** | +0.035 |
+  | The shape on the clean amp track | −0.009 | **−0.043** | −0.026 |
+  | The shape, 60 Hz to 8 kHz | −0.011 | +0.002 | −0.004 |
+  | W (the shipped pick) | +0.021 | −0.004 | +0.009 |
+  | The search half's own argmin (the ceiling) | −0.093 | −0.093 | −0.093 |
+
+  - **Against W:** the primary reads +0.030 on BKS, −0.013 on GOAT and +0.009 pooled, all undecided. On the clean track it reads −0.047 [−0.070, −0.025], better.
+  - **BKS's lean worse is the pick's amp share, not its per-recording choices** (the review's shuffle, picks permuted within set and class): GOAT reads −0.018 observed against +0.004 shuffled, so the picks carry information; BKS reads +0.056 against +0.043 shuffled (p 0.80). The pick sends 43 of BKS's 80 directions to the pr12, and always-pr12 on BKS reads +0.101.
+  - **The picks spread over the amps:** the primary picks on GOAT pr12 115, sw50r 167, ac20 148 of 430; on BKS pr12 43, sw50r 28, ac20 9 of 80. The shape pick on the stem leans hard on the pr12 (329 of 430), a bias the floor and the features remove.
+- **What it means.**
+  - **By the declared rule the primary "learns",** on GOAT alone: about a fifth of the headroom there (−0.017 of −0.093), and on GOAT's clean units −0.035. On BKS's 8 DIs it leans worse (+0.052, wide). Pooled it is level with always-sw50r.
+  - **The method works when it hears the guitar clean:** on the clean amp track it is better on both sets' pooled read (−0.039), about 40% of the headroom. The separated stem is again the bottleneck (F79): a cleaner stem is worth more than a better statistic.
+  - **Two statistics were read,** as declared: the shape first, then the features by the amendment, before any read.
+  - **Nothing ships on this.** The rule's next step, a product step on the adopted model with an ear check, is declared with a confirmation first: the same pick on R-all, read on units no A1 choice was made on ([plan](full-controls-plan.md), "A2 in detail").
+  - By the score only.
+- Files: `PF/a1/` (`plan.json`, `shapes/`, `mels/`, `embed/`, `a1.json`); logs `logs/a1*.log`. Code: `learn/amp_di_compare.py`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read

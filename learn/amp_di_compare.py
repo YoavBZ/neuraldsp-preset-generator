@@ -209,15 +209,17 @@ def cmd_draw(_args):
     print(f"A1 DRAW: {len(units)} units; stock DIs {json.dumps({c: [s['di'] for s in v] for c, v in stock.items()})}")
 
 
-def cmd_render(args):
+def render_units(units, out_dir, shard, stock=None, target=None):
     """Each unit's answer per amp and search half, through each stock DI of its class, fresh (own process, one priming
-    render), trimmed; its log-mel shape -> a1/shapes/<unit>.json, and (the review) its model-input mel per half at the
-    model's input gain (`step4_half`, uint8 and LUFS) -> a1/mels/<unit>.npz."""
+    render), trimmed; its log-mel shape -> <out_dir>/shapes/<unit>.json, and (the review) its model-input mel per half at
+    the model's input gain (`step4_half`, uint8 and LUFS) -> <out_dir>/mels/<unit>.npz. units: [{set, unit, cls,
+    answers: {amp: {half: answer}}}]; stock: A1's stock DIs by class (default A1's plan's)."""
     import numpy as np
 
     from learn import audibility_measure as AM
     from learn import cc_build as CB
     from learn import direct_existing as DE
+    from learn import direct_stems as DS
     from learn import local_objective as LO
     from learn import pipeline_fix as P
     from learn import pretrain_set as PS
@@ -225,23 +227,18 @@ def cmd_render(args):
     from learn import song_bank as B
     from learn import trusted_data as T
 
-    P.require(PHASE)
-    plan = json.loads((a1_dir() / "plan.json").read_text())
-    ans = {(u["set"], u["unit"]): u["answers"] for u in read_units()}
-    k, n = args.shard
+    stock = stock or json.loads((a1_dir() / "plan.json").read_text())["stock"]
+    target = target_lufs() if target is None else target
+    k, n = shard
     trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
-    from learn import direct_stems as DS
-
-    target = target_lufs()
-    dis = {}
-    for cls, ss in plan["stock"].items():
-        dis[cls] = [B.measure(PS.section_audio(s["di_path"], s["start_s"])).astype(np.float32) for s in ss]
+    dis = {cls: [B.measure(PS.section_audio(s["di_path"], s["start_s"])).astype(np.float32) for s in ss]
+           for cls, ss in stock.items()}
     LO._wait_cap()
     renders = 0
-    d, dm = a1_dir() / "shapes", a1_dir() / "mels"
+    d, dm = out_dir / "shapes", out_dir / "mels"
     d.mkdir(parents=True, exist_ok=True)
     dm.mkdir(parents=True, exist_ok=True)
-    for u in plan["units"][k::n]:
+    for u in units[k::n]:
         out = d / f"{u['set']}__{u['unit'].replace('/', '__')}.json"
         if out.exists():
             continue
@@ -251,7 +248,7 @@ def cmd_render(args):
         mels = {}
         for sh in ("A", "B"):
             for a in AMPS:
-                x = ans[(u["set"], u["unit"])][a][sh]
+                x = u["answers"][a][sh]
                 st = LO.tdict(x["settings"])
                 got = []
                 for j, di32 in enumerate(dis[u["cls"]]):
@@ -267,7 +264,18 @@ def cmd_render(args):
         np.savez_compressed(dm / f"{u['set']}__{u['unit'].replace('/', '__')}.npz", **mels)
         P.save(out, rec)                                # the resume marker, after its mels
         print(f"{u['set']} {u['cls']}: renders so far {renders}", flush=True)
-    print(f"A1 RENDER DONE {k}/{n}: {renders} renders", flush=True)
+    print(f"RENDER DONE {k}/{n}: {renders} renders", flush=True)
+
+
+def cmd_render(args):
+    """A1's renders (`render_units` on A1's plan) -> a1/shapes, a1/mels."""
+    from learn import pipeline_fix as P
+
+    P.require(PHASE)
+    plan = json.loads((a1_dir() / "plan.json").read_text())
+    ans = {(u["set"], u["unit"]): u["answers"] for u in read_units()}
+    render_units([{**u, "answers": ans[(u["set"], u["unit"])]} for u in plan["units"]], a1_dir(), args.shard,
+                 plan["stock"])
 
 
 def fold_model(name, unit, goat_fold, unit_model):
@@ -275,11 +283,12 @@ def fold_model(name, unit, goat_fold, unit_model):
     return f"C3-ftm-k{goat_fold}" if name == "goat" else unit_model[unit]
 
 
-def cmd_embed(_args):
-    """The amendment's features (zero renders, CPU, torch): per unit and search half, the pooled body features of the C3
-    fold model that held the unit out (both seeds averaged), for the separated stem's input on that half (D_fix variant
-    0), the clean amp track's at the model's input gain, and each stock-DI render's stored mel on the same half; the
-    cosine distances and picks -> a1/embed/<unit>.json."""
+def embed_units(units, out_dir, target=None):
+    """The amendment's features (zero renders, CPU, torch): per unit and search half, the pooled body features of the
+    fold model `u["model"]` that held the unit out (both seeds averaged), for the separated stem's input on that half
+    (D_fix variant 0), the clean amp track's at the model's input gain, and each stock-DI render's stored mel on the same
+    half, each floored at -90 dB (and unfloored beside); the cosine distances and picks -> <out_dir>/embed/<unit>.json.
+    units: [{set, unit, cls, prt (sd, track, start_s), model}]."""
     import numpy as np
     import torch
 
@@ -287,12 +296,7 @@ def cmd_embed(_args):
     from learn import direct_stems as DS
     from learn import pipeline_fix as P
 
-    P.require(PHASE)
-    plan = json.loads((a1_dir() / "plan.json").read_text())
-    root, target = P.out_dir(), target_lufs()
-    bks = json.loads((root / P.REAL_DIR / "answers" / f"{MODEL}.json").read_text())
-    gparts = {p_["unit"]: p_ for p_ in P.goat_read_units()}
-    bparts = {p_["unit"]: p_ for p_ in bks["parts"]}
+    target = target_lufs() if target is None else target
     nets = {}
 
     def feats(name, x):
@@ -304,20 +308,19 @@ def cmd_embed(_args):
                 hs.append(torch.cat([h.mean(-1), h.std(-1)], dim=1).flatten(1)[0].numpy())
         return np.mean(hs, 0).tolist()
 
-    d = a1_dir() / "embed"
+    d = out_dir / "embed"
     d.mkdir(parents=True, exist_ok=True)
-    for u in plan["units"]:
+    for u in units:
         out = d / f"{u['set']}__{u['unit'].replace('/', '__')}.json"
         if out.exists():
             continue
-        prt = gparts[u["unit"]] if u["set"] == "goat" else bparts[u["unit"]]
-        name = fold_model(u["set"], u["unit"], prt.get("fold"), bks["unit_model"])
+        prt, name = u["prt"], u["model"]
         if name not in nets:
             nets[name] = [P.load_run(name, sd, "best")[0].eval() for sd in P.SEEDS]
         backed = P.dfix_backed(u["unit"])
         ref = P.real_amp_track(prt["sd"], prt["track"], prt["start_s"])
         g = DE.inference_gain_db(ref, target)
-        z = np.load(a1_dir() / "mels" / f"{u['set']}__{u['unit'].replace('/', '__')}.npz")
+        z = np.load(out_dir / "mels" / f"{u['set']}__{u['unit'].replace('/', '__')}.npz")
         rec = {"set": u["set"], "unit": u["unit"], "model": name, "floor_u8": FLOOR_U8, "picks": {}, "dist": {}}
 
         def emb(m8, lu, sh, floor):
@@ -337,7 +340,24 @@ def cmd_embed(_args):
                     rec["dist"].setdefault(kind, {})[sh] = {a: sum(cosine_distance(t, r) for r in renders[a]) / n
                                                             for a in AMPS}
         P.save(out, rec)
-    print(f"A1 EMBED DONE: {len(plan['units'])} units")
+    print(f"EMBED DONE: {len(units)} units")
+
+
+def cmd_embed(_args):
+    """A1's features (`embed_units` on A1's plan, by the C3 fold model that held each unit out) -> a1/embed."""
+    from learn import pipeline_fix as P
+
+    P.require(PHASE)
+    plan = json.loads((a1_dir() / "plan.json").read_text())
+    root = P.out_dir()
+    bks = json.loads((root / P.REAL_DIR / "answers" / f"{MODEL}.json").read_text())
+    gparts = {p_["unit"]: p_ for p_ in P.goat_read_units()}
+    bparts = {p_["unit"]: p_ for p_ in bks["parts"]}
+    units = []
+    for u in plan["units"]:
+        prt = gparts[u["unit"]] if u["set"] == "goat" else bparts[u["unit"]]
+        units.append({**u, "prt": prt, "model": fold_model(u["set"], u["unit"], prt.get("fold"), bks["unit_model"])})
+    embed_units(units, a1_dir())
 
 
 def cmd_rows(_args):

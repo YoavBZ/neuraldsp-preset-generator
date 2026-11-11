@@ -20,6 +20,7 @@
 - **C2r and C3r ran** on 2026-11-11 (36,948 + 3,840 renders, 2 h 9 min of MPS, audited; [F77](pipeline-fix-plan.md)): C2r's labels beat their starts on cap1 (−0.179) and n12 (−0.356), the panel undecided (−0.073). R-all − R-ctl −0.059 [−0.078, −0.040] on the deciding pool, decided on BKS, GOAT and the panel, part of it R-ctl's early stop (where E matches, about −0.04); R-all − C3 level (BKS −0.008, GOAT −0.013, undecided). By the declared rule R-all's all-labels model replaces C3; C4 can reverse it.
 - **C3s ran** on 2026-11-11 (81 min of MPS, 2,810 renders, audited; [F78](pipeline-fix-plan.md)): the split loss improves the core (C3s-core − C3-core −0.019, − C3i −0.011, both decided), but the adopted configuration only by −0.008, undecided, so C3's recipe stands; the split loss is the next retrain's candidate.
 - **C3c ran** on 2026-11-11 (37 min of MPS, zero renders, audited; [F79](pipeline-fix-plan.md)): by the score its pick doesn't beat always-sw50r (+0.031, undecided), though it beats a prior-only head. A zero-render cost-target probe on the input the model reads (the separated guitar from a mix) finds nothing either, so by the declared stop rule learning the amp from the audio stops; the other routes go to the user.
+- **A1 ran** on 2026-11-12 (6,120 renders, audited; [F80](pipeline-fix-plan.md)): the stock-DI amp pick reads "learns" by its rule on GOAT alone (−0.017 against always-sw50r), leaning worse on BKS (+0.052), level pooled; on the clean amp track −0.039 pooled. A2, its confirmation on R-all and fresh units, is declared below.
 - **C1a by ear (2026-11-10):** heard closer than the label, 0.68 [0.54, 0.82], p 0.020 on 14 cards (N12 0.79; BKS 0.57, undecided). By the declared rule that is "above", so C2 stands on C1a's recipe ([F69](pipeline-fix-plan.md)).
 - **Every trusted real row, by rotation (2026-11-10).** The user asked why only GOAT and BKS train, then said "Go for 3" to training and testing on every usable track by rotation. C2r and C3r are declared below, before any render or training; V-real and the reserve stay sealed.
 - **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1), `phase_c1a_outcome`, `phase_c1a_ear` (C1a by ear), `phase_c1b`, `phase_c1b_outcome`, `phase_c2`, `phase_c2_outcome`, `phase_c3`, `phase_c3_outcome`, `phase_c3i`, `phase_c3i_outcome`, `phase_c3s`, `phase_c3s_outcome`, `phase_c3b_s2_outcome`, `phase_c3c`, `phase_c2r_outcome`, `phase_c3r_outcome`, `phase_c3c_outcome`, `phase_c3b`, `phase_c3b_outcome`, `phase_c3b_s2`, `phase_c2b`, `phase_c2b_outcome`, `phase_l1c`, `phase_c2r`, `phase_c2r_a1`, `phase_c2r_a2` and `phase_c3r`. Code: `learn/full_controls.py` (C1a), `learn/c1a_ear.py` (C1a by ear), `learn/full_controls_c1b.py` (C1b), `learn/full_controls_c2.py` (C2), `learn/full_controls_c3.py` with `pipeline_fix train-ft --c3` (C3) and `learn/full_controls_c2b.py` (C2b), tests `tests/test_full_controls.py`, `tests/test_c1a_ear.py`, `tests/test_full_controls_c1b.py`, `tests/test_full_controls_c2.py`, `tests/test_full_controls_c3.py` and `tests/test_full_controls_c2b.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
@@ -438,6 +439,31 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **When.** It trains as soon as its code is reviewed, on the otherwise idle MPS, while C2b or C2r render on 3 CPU processes. It launches with `setopt no_bg_nice`, and no other MPS job starts while it runs.
   - **The stop.** The measure is the 3 render shards' summed renders per minute. The window is the 60 minutes before the training against its first 20 minutes. If the rate drops by more than 20%, the executor stops the training by its recorded PIDs, and it reruns after C3r's training. Otherwise it runs to the end.
   - **The read** waits for a free render slot: after C2r, before C3r's read.
+
+## A2 in detail: A1's confirmation on the adopted model (declared 2026-11-12, after A1's read; before any A2 render; ledger `phase_a2`)
+
+- **Why.** A1 read "learns" by its declared rule, but only on GOAT (−0.017), leaning worse on BKS (+0.052) and level pooled ([F80](pipeline-fix-plan.md)). Its rule's next step is a product step on the adopted model with an ear check. Before that, A2 confirms the frozen pick on the adopted model (R-all), and on units no A1 choice was made on.
+- **What's frozen from A1:** its stock DIs (A1's `plan.json`), the floored embedding pick (−90 dB, cosine over the two stock DIs), and its rows (`amp_di_compare.unit_rows`).
+- **What changes:** the model is R-all. Its out-of-fold answers (each unit by the C3r FT_k that held it out, both seeds, C3r's read's hold) are taken on all three amps, and its own fold models give the features. The gain is R-all's input loudness.
+- **The units:** C3r's read units outside n12 (n12's units are the stock DIs' source).
+  - **Deciding:** cap1 (121 units, by creator) and the panel (12, by DI), which A1 never read. Their pool is the two sets weighted equally, as C3's `pooled`.
+  - **Beside:** GOAT (215) and BKS (40), the sets A1 decided on.
+  - **No unit sits on a stock DI's file or its multitrack** (checked, 0 of 388 by DI file and by session; the code refuses one). The deciding sets render first.
+- **The renders:**
+  - each unit's answer on the two amps other than its own, through its own DI, judged on both halves (`a2-judge`): 348 units × 2 × 2 × 2 = 2,784. Each unit's own amp, and BKS's three, are C3r's read's, and A2's answer for them must equal C3r's (checked);
+  - each amp's answer through A1's stock DIs (`a2-render`): 388 × 12 = 4,656;
+  - 7,440 in all, about 1.5 to 2 hours on 3 processes.
+- **The rule, C3's test on "DI-compare − always sw50r"** on R-all's own per-amp renders:
+  - *learns:* better on cap1, the panel or their pool, and worse on none of cap1, the panel, their pool, GOAT or BKS;
+  - otherwise *worse*, *split* or *undecided*.
+- **Power** (the review's simulation, GOAT's clusters as the template, the deciding sets only, before the GOAT and BKS veto): P(learns) is 0.06 to 0.09 with no effect, 0.30 to 0.49 at A1's −0.017, and 0.69 to 0.90 at −0.035. BKS's veto lowers it further. So *worse* or *split* means the pick doesn't hold; *undecided* means not confirmed at this size, not shown to fail.
+- **Beside:** R-all's own amp head (its `amp_p`, the shipped pick on the adopted model) in place of W, at zero renders.
+- **What it leads to.**
+  - **Learns:** the product step is declared next. The pick goes into the generate path on R-all, with a blind ear page of its amp against W's (or always-sw50r), before it ships.
+  - **Worse or split:** the pick doesn't hold. Three presets (one per amp) go to the user as the default amp route, and a cleaner stem is named as the precondition for any later pick: on the clean track A1 read −0.039.
+  - **Undecided:** not confirmed at this size. Three presets are the default meanwhile, and the route goes to the user with the power stated.
+- **Stop rule.** One render pass and one read; nothing tuned.
+- **When.** Tonight, under the user's rule of 2026-11-10 and their "continue with the plan overnight", once its review passes.
 
 ## A1 in detail: the amp chosen by a stock-DI comparison (declared 2026-11-11, on the user's "Definitely A … go ahead"; before any A1 render; ledger `phase_a1`)
 
