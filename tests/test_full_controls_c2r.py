@@ -351,3 +351,23 @@ def test_c2r_report_counts_the_scope_out_records_apart(tmp_path, monkeypatch, ca
     assert rep["panel"]["scope_out"] == 1 and rep["panel"]["written"] == 1
     assert rep["panel"]["scope_out_records"] == [rec["key"]]
     assert rep["panel"]["no_finite_final"] == [] and rep["panel"]["rows"]["records"] == 0
+
+
+# --- Amendment 2 (2026-11-11, the user's yes): the search on 5 render processes ---------------------------------------
+
+def test_the_search_cap_is_1_to_5_and_reaches_the_wait():
+    import argparse as A
+    import pathlib
+    assert [R.search_cap(v) for v in ("1", "3", "5")] == [1, 3, 5]
+    for bad in ("0", "6"):
+        with pytest.raises(A.ArgumentTypeError):
+            R.search_cap(bad)
+    src = (pathlib.Path(__file__).resolve().parents[1] / "learn" / "full_controls_c2.py").read_text()
+    assert 'LO._wait_cap(getattr(args, "cap", None) or LO.CAP)' in src           # C2's own searches keep the cap of 3
+
+
+def test_the_launcher_runs_n_shards_each_with_its_cap_and_resumes_a_drawn_run():
+    import pathlib
+    s = (pathlib.Path(__file__).resolve().parents[1] / "logs" / "launch-c2r.zsh").read_text()
+    assert "N=${C2R_SHARDS:-5}" in s and "--shard ${k}/${N} --cap ${N}" in s and "seq 0 $(( N - 1 ))" in s
+    assert "draw exists: resuming" in s and s.index("draw exists") < s.index("c2r-search")

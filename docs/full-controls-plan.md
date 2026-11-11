@@ -15,7 +15,7 @@
 - **C3 ran** on 2026-11-11 (71 min of MPS, 8,442 renders, audited; [F72](pipeline-fix-plan.md)): by the score the adopted model (EQ, pedals and gate learned, the rest of the cab at S) is level with FTm on BKS, GOAT and N12, all undecided, and 10% closer than S. The EQ gains −0.039 on GOAT, and C3's core loses +0.034 there, so C3i, the declared isolation, is declared below. By the declared rule the adopted model replaces FTm; C4 can reverse it.
 - **C1a by ear (2026-11-10):** heard closer than the label, 0.68 [0.54, 0.82], p 0.020 on 14 cards (N12 0.79; BKS 0.57, undecided). By the declared rule that is "above", so C2 stands on C1a's recipe ([F69](pipeline-fix-plan.md)).
 - **Every trusted real row, by rotation (2026-11-10).** The user asked why only GOAT and BKS train, then said "Go for 3" to training and testing on every usable track by rotation. C2r and C3r are declared below, before any render or training; V-real and the reserve stay sealed.
-- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1), `phase_c1a_outcome`, `phase_c1a_ear` (C1a by ear), `phase_c1b`, `phase_c1b_outcome`, `phase_c2`, `phase_c2_outcome`, `phase_c3`, `phase_c3_outcome`, `phase_c3i`, `phase_c2b`, `phase_l1c`, `phase_c2r` and `phase_c3r`. Code: `learn/full_controls.py` (C1a), `learn/c1a_ear.py` (C1a by ear), `learn/full_controls_c1b.py` (C1b), `learn/full_controls_c2.py` (C2), `learn/full_controls_c3.py` with `pipeline_fix train-ft --c3` (C3) and `learn/full_controls_c2b.py` (C2b), tests `tests/test_full_controls.py`, `tests/test_c1a_ear.py`, `tests/test_full_controls_c1b.py`, `tests/test_full_controls_c2.py`, `tests/test_full_controls_c3.py` and `tests/test_full_controls_c2b.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
+- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1), `phase_c1a_outcome`, `phase_c1a_ear` (C1a by ear), `phase_c1b`, `phase_c1b_outcome`, `phase_c2`, `phase_c2_outcome`, `phase_c3`, `phase_c3_outcome`, `phase_c3i`, `phase_c2b`, `phase_l1c`, `phase_c2r`, `phase_c2r_a1`, `phase_c2r_a2` and `phase_c3r`. Code: `learn/full_controls.py` (C1a), `learn/c1a_ear.py` (C1a by ear), `learn/full_controls_c1b.py` (C1b), `learn/full_controls_c2.py` (C2), `learn/full_controls_c3.py` with `pipeline_fix train-ft --c3` (C3) and `learn/full_controls_c2b.py` (C2b), tests `tests/test_full_controls.py`, `tests/test_c1a_ear.py`, `tests/test_full_controls_c1b.py`, `tests/test_full_controls_c2.py`, `tests/test_full_controls_c3.py` and `tests/test_full_controls_c2b.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
 
 **The every-control plan's stage 1 never ran.** It is a true-DI oracle for the groups with no number, about 13–14k renders. It was approved on 2026-10-22 and waited for a trusted data list. Then the work moved to the trusted data and the pipeline fix. This amendment carries its goal onto today's route (FT2 and its real rows). It folds stage 1's never-measured groups in as C1b.
 
@@ -777,6 +777,25 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
     - Those 4 cards say so, and that their amp track can't show whether the DI is processed. Neither stored answer is on them.
     - Heavy gain doesn't explain the low readings. Through a two-stage clipper at drive 3000, these DIs still read 0.31 or more against themselves. Onsets that line up show only that the rhythm lines up, which a tight double also does.
   - **A fourth answer, "Drop: processed".** Like every answer but Keep, it drops the DI file. Read the answers with `di_scope answers` from this version on, since older code refuses the new answer. The waiting launchers' `ready` and `dropped_dis` only count answers and non-keeps, so they need no change.
+
+### C2r, Amendment 2 (2026-11-11, before any C2r render): the search on 5 render processes
+
+- **Why.** The user asked whether the chain could go faster, and said "Yes, try 5" to running C2r's search on 5 render processes instead of 3.
+  - The Mac has 6 performance cores. At 3 render processes it ran at a load of about 4 (12:32, after Chrome closed), and each render server took 0.11 to 0.15 GB.
+  - At C2b's 6,750 renders an hour, C2r's at most 38,000 renders (after the DI scope) take about 5.7 h. If the rate scales with the processes, 5 take about 3.5 to 4 h.
+- **What changes.** Only how the work is split:
+  - The launcher runs `C2R_SHARDS` shards, 5 by default, each `--shard k/5 --cap 5`.
+  - `_wait_cap`, which counts the other render processes once at a shard's start, takes the `--cap` it is given (1 to 5) instead of `local_objective.CAP` (3). C2's own searches keep 3.
+  - Nothing in a record's recipe changes. Each record runs in its own primed process, with its own fixed seeds (20261123, 20261125, 20261126 and step 0's 20261013), so its label does not depend on which shard runs it. The guards stay per shard: the systematic miss (5 of a shard's first 10 refused) and step 0's (3 of its first 5 panel records).
+  - A relaunch after a stop skips the draw once `c2r/records.json` exists, so a resume writes to the same `c2r.log`. The launchers waiting on that log's last line (C3r's training, C3i's read) are unchanged.
+- **The check, declared before the run.**
+  - The measure is the shards' summed renders per minute in the search's first 20 minutes, counted from its first render (the 25 `scope_out` records take none).
+  - The reference is 3 processes' measured rate: C2b's 6,751 renders an hour after Chrome closed.
+  - **If the 5 shards don't beat it by at least 20%** (8,100 renders an hour), the executor stops the launcher, then its 5 search processes, by the PIDs recorded in `c2r-pids.txt`. C2r then relaunches with `C2R_SHARDS=3`, and the shards resume.
+  - A stop loses at most the records in progress: 5 records, at most about 1,600 renders (a panel record with step 0 takes up to about 320).
+  - Otherwise it runs to the end on 5.
+- **Not changed:** the 3-process cap for every other job; one MPS job at a time; the disk guard (31 GB); `setopt no_bg_nice`.
+- **Cost.** Zero extra renders.
 
 ## C5: the heavy clean-up re-tested on the full-control model
 - **What F68 said, and what has changed.** F68 closed the clean-up with "This clean-up is not reopened." Its verdict on the `K.space` model stands.

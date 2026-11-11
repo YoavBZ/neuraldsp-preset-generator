@@ -528,7 +528,7 @@ def cmd_search(args, shard=None):
     first = mine[:MISS_GUARD[1]]
     trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
     ms = L.menu_S()
-    LO._wait_cap()
+    LO._wait_cap(getattr(args, "cap", None) or LO.CAP)   # C2r Amendment 2: its 5 shards pass --cap 5
     lists = C.mic_lists()
     renders = 0
     tally = {"step1": {"on": 0, "off_after_miss": 0, "refused": 0, "continued": 0, "resumed": 0, "replay_mismatch": 0,
