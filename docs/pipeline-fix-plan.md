@@ -5207,7 +5207,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   | Search-half argmin − blind (the ceiling) | −0.142 | −0.101 | −0.121 |
 
   - **The declared reading is "undecided":** C3c doesn't beat the best constant.
-  - **It isn't a prior-only head:** it beats the labels' majority (the ac20 on clean, the pr12 on crunch), the worst constants.
+  - **It isn't a prior-only head:** it beats the labels' majority (the ac20 on clean, the pr12 on crunch), the worst constants. That majority is the pooled labels', applied to BKS too, where BKS's own majority is the sw50r.
   - Its picks on GOAT: ac20 218, pr12 105, sw50r 107 of 430; 164 hit the direction's own argmin. AUC 0.53 to 0.59 on GOAT; on BKS 0.43 to 0.68.
 - **The cost-target probe** (the review session's, declared before its run; `logs/amp-cost-probe.md` in its worktree).
   - A 3-output ridge regression on the per-amp centred search-half ln judges, picking the lowest predicted cost. Its inputs: class, set, the input's 53-number mel summary and C3c's out-of-fold log-probabilities. Outer folds: the 4 real folds.
@@ -5217,6 +5217,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **What it means.**
   - **The declared stop rule triggers:** on the input the product sees, no probe beats the best constant on GOAT, and BKS leans worse. C3c, C3's own embedding and the spectral probe agree. Learning the amp from the song's audio stops.
   - **The user's idea** ("render each song with all three amps and then train") would only confirm a null for this question, so its 4,320 renders were declared, then withdrawn before any ran.
+  - **The clean amp track carries a weak signal** (−0.018 on GOAT) that separation erases, so a cleaner stem would be the precondition for any later learned selector.
   - **What goes to the user,** explained: comparing each amp's answer rendered through a library DI with the song's separated guitar at inference (a new approach, about 2,600 renders to test), or offering three presets, one per amp, to pick by ear. Until then the product keeps W's pick.
   - By the score only.
 - Files: `PF/c3/c3c.json`; runs `C3c-ftm-*`; logs `logs/c3c*.log`.
