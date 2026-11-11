@@ -2,9 +2,10 @@
 # C3b's stage 2 (ledger phase_c3b_s2, docs/full-controls-plan.md "C3b stage 2 in detail"), after the C3i read's launcher
 # exits (its PID, given; its renders hold the 3 slots until then) and before C3r's read, which waits on C3r's training:
 # GOAT's answers on all three amps for C3b and the adopted C3 (goat-predict --amps3, CPU), C3b's BKS renders on all
-# three amps (real-render, as C3's read rendered C3-cabS), both models' GOAT renders on all three amps (goat-render
-# --amps3), each in 3 shards (at most 3 render processes; `_wait_cap` guards), then the zero-render report
-# (c3b-s2-rows). Any failure stops it.   zsh logs/launch-c3b-s2.zsh /path/to/worktree C3I_READ_LAUNCHER_PID
+# three amps: C3-cabS's GOAT renders first (goat-render --amps3) and the canary on its forced amp (c3b-s2-check, which
+# stops the launcher on any drift from F72's renders), then C3b's BKS renders (real-render, as C3's read rendered
+# C3-cabS) and its GOAT renders, each in 3 shards (at most 3 render processes; `_wait_cap` guards), then the zero-render
+# report (c3b-s2-rows). Any failure stops it.   zsh logs/launch-c3b-s2.zsh /path/to/worktree C3I_READ_LAUNCHER_PID
 setopt no_bg_nice
 W=${1:?the worktree to run from}
 WAIT_PID=${2:?the C3i read launcher PID to wait for}
@@ -48,7 +49,9 @@ three() {      # 3 shards at once (the render cap), every one waited on before a
 
 run goat-predict-c3b env DS_DEVICE=cpu ${T} -u -m learn.pipeline_fix goat-predict --amps3 --names C3b
 run goat-predict-c3 env DS_DEVICE=cpu ${T} -u -m learn.pipeline_fix goat-predict --amps3 --names C3-cabS
+three goat-c3 ${PY} -u -m learn.pipeline_fix goat-render --amps3 --names C3-cabS     # first: the canary's renders
+run check ${PY} -u -m learn.full_controls_c3 c3b-s2-check                            # stops here if F72's GOAT renders moved
 three real ${PY} -u -m learn.pipeline_fix real-render --names C3b
-three goat ${PY} -u -m learn.pipeline_fix goat-render --amps3 --names C3b,C3-cabS
+three goat-c3b ${PY} -u -m learn.pipeline_fix goat-render --amps3 --names C3b
 run rows ${PY} -u -m learn.full_controls_c3 c3b-s2-rows
 note done

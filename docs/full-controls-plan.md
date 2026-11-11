@@ -42,7 +42,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 | Family (rows) | L | T | M | Route | Blocker |
 |---|---|---|---|---|---|
 | Input gain, amp knobs and switches, mic types, cab position and distance, right cab on and level (25) | yes | yes | F43, G1 | today | none |
-| Amp choice, `selectedAmp` (1) | BKS: the argmin over its three labels (stored and C2). GOAT: C2b's argmin over three like-for-like `K.space` labels (F73) | C3b: on the stored recipe's labels, both sets (F74). C3 and FT2 mask it on real rows | stage 0b, −0.044; C1a −0.058; C2b −0.054 on GOAT; C3b's pick −0.047 against blind, but always the sw50r reads the same (F74) | C3b stage 2 (declared below): its full answer against the adopted C3's on all three amps | picking per recording is not learned: more amp labels, or C2's recipe on GOAT's other amps (about 112k renders) |
+| Amp choice, `selectedAmp` (1) | BKS: the argmin over its three labels (stored and C2). GOAT: C2b's argmin over three like-for-like `K.space` labels (F73) | C3b: on the stored recipe's labels, both sets (F74). C3 and FT2 mask it on real rows | stage 0b, −0.044; C1a −0.058; C2b −0.054 on GOAT; C3b's pick −0.047 against blind, but always the sw50r reads the same (F74) | C3b stage 2 (declared below): its full answer against the adopted C3's on all three amps | picking per recording is not learned, and it is worth −0.025 on GOAT's clean units (F74): more clean amp labels and a head that reads the amp, before C2's recipe on GOAT's other amps (about 112k renders) |
 | Amp EQ: on, 9 bands, high- and low-pass, ×3 amps (36) | C1a; C2 on every FT2 row | C3 | knob ceiling (d); C1a (F69) | C1a, C2 | none |
 | Pedals: compressor 5, drive 1 4, drive 2 5 (14) | C1a; C2 on every FT2 row | C3 | knob ceiling 2; C1a (F69) | C1a, C2 | none |
 | Gate: on, threshold (2) | C1a; C2 on every FT2 row | C3 | C1a: inert (F69) | C1a, C2 | none |
@@ -479,6 +479,8 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 
 ## C3b stage 2 in detail: C3b's full answer against the adopted C3's (declared 2026-11-11, after stage 1's read and before any stage 2 render; ledger `phase_c3b_s2`)
 
+*Amended the same day, before any render, after its independent review: the pick and the settings read apart, with adoption needing neither shown worse; a fair ceiling in place of the held half's best; every deciding row by class; and C3-cabS's GOAT renders first, as a canary.*
+
 - **Why.** Stage 1 read "learns" by its declared rule ([F74](pipeline-fix-plan.md)): C3b − W −0.027 [−0.042, −0.011] pooled, on the labels' yardstick.
   - Stage 2 reads the same question on the models' own answers: is C3b's full answer (its pick, with its settings for that amp) worse than the adopted C3's (W's pick, with C3-cabS's settings for that amp)?
   - The audit found C3b picks the sw50r nearly always, and no better than always picking it. So stage 2 also reads always-sw50r on both models, from the same renders.
@@ -488,27 +490,40 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
     - Stage 2 adds `--amps3` to `goat-predict` and `goat-render`. It writes answers for all three amps to `goat/answers-amps3/<tag>.json` and renders them to `goat/judge-amps3/<tag>/`. The existing files are untouched, and only C3b and C3-cabS are accepted.
     - Both models: 2 × 215 × 3 × 2 × 2 = 5,160 renders.
   - **Total 5,640 renders,** about 55 to 65 minutes at the measured 5,400 to 6,300 an hour on 3 processes. The C3b declaration said about 2,400; it had not counted GOAT's other two amps.
-  - **A free check.** C3-cabS's forced-amp answers and amp probabilities in `answers-amps3` must equal its stored GOAT ones, and their renders must be bit-identical to C3's read's (render sha256, both halves), on all 215 units. Any mismatch means the plugin or the environment changed since F72, so BKS's C3-cabS renders could not stand beside C3b's new ones. The report then refuses and goes to the user.
+  - **The check, run first as a canary.** It costs the 860 renders that re-render C3-cabS's forced amp on GOAT.
+    - C3-cabS's GOAT renders run first. Then `c3b-s2-check` compares its forced-amp answers and amp probabilities in `answers-amps3` with the stored GOAT ones, and its renders with C3's read's (render sha256, both halves), on all 215 units.
+    - Any mismatch means the plugin or the environment changed since F72, so BKS's C3-cabS renders could not stand beside C3b's new ones. The launcher stops before C3b renders, and it goes to the user. Re-rendering BKS's C3-cabS (240 renders) would make BKS like for like again.
   - **N12 isn't read.** Its answers are on one amp a unit, and C3's rule reads BKS and GOAT.
 - **The picks.** Each model's head on each search half's input (`head_pick`, as stage 1): C3b's from its answers, W's from C3-cabS's.
 - **The primary row, "C3b − C3".** Per unit and search half, on the held half: ln(C3b's judge at C3b's pick / C3-cabS's judge at W's pick).
   - Clustered by DI on BKS and by item on GOAT, pooled with C3's equal weights.
-  - A direction with no pick or a non-finite judge on any amp is dropped, and counted.
-- **The rule: C3's.** C3b replaces C3-cabS as the adopted model unless it is shown worse: a 90% interval wholly above 0 on BKS, GOAT or pooled. A split counts as shown worse. The reading is reported as better, worse, split or undecided.
+  - A direction with no pick or a non-finite judge on any amp, on either half, is dropped, and counted.
+- **It splits exactly into two rows** (the review: on C3's own BKS settings the pick alone is worth about −0.021, enough to hide about 2% worse settings):
+  - **the pick alone,** "C3 at C3b's pick − C3": ln(C3-cabS at C3b's pick / C3-cabS at W's pick);
+  - **the settings alone,** "C3b − C3 at C3b's pick": ln(C3b / C3-cabS, both at C3b's pick), the amp the product would use.
+- **By class.** The primary, the settings row and always-sw50r on each model are also read on clean and crunch apart. The head sends the sw50r to clean recordings too, where F74 found the sw50r only ties the ac20.
+- **The rule: C3's, on two rows.** A row is shown worse when its 90% interval is wholly above 0 on BKS, GOAT or pooled; a split counts as shown worse.
+  - **C3b replaces C3-cabS** as the adopted model only if neither the primary nor the settings row is shown worse.
+  - **The primary shown worse:** C3-cabS stays.
+  - **To the user instead,** with the numbers: the settings row shown worse while the primary is not, or the primary or settings row shown worse on clean while the pooled rule adopts.
+  - The primary's reading is reported as better, worse, split or undecided, with the outcome (adopt, keep or user).
 - **Beside, from the same renders:**
-  - **Picks against blind,** on each model's own renders (`amp_value` over the three amps): C3b's pick, W's pick, always the sw50r, and the held half's best amp (the oracle).
+  - **Picks against blind,** on each model's own renders (`amp_value` over the three amps): C3b's pick, W's pick, always the sw50r, and each model's own search-half argmin valued on the held half (the fair ceiling; the held half's own best reads about 2.5 times too optimistic, −0.158 against −0.063 on C3's BKS renders, so it is not reported).
   - **Always the sw50r against each answer:** C3 at the sw50r − C3, C3b at the sw50r − C3b, and C3 at the sw50r − C3b. The last asks whether the gain is the amp alone or also C3b's settings.
   - **The settings, amp by amp:** C3b − C3 at each amp, and their mean.
   - The picks by amp, and the directions where the two models pick the same amp.
 - **What it leads to.**
-  - **Not shown worse:** C3b becomes the adopted model, written to `c3/decision-c3b.json`, and its amp head becomes the product's pick.
-    - C0's amp row then reads "learned as the labels' prior; picking per recording not learned". Its next route stays open: more amp labels, or the thorough relabel, weighed on stage 2's gain.
-    - C4's blind page carries the adopted model, so the ear hears a sw50r-heavy product. C4 can reverse it.
-  - **Shown worse:** C3-cabS stays adopted, with W's pick.
+  - **Adopt:** C3b becomes the adopted model, written to `c3/decision-c3b.json`, and its amp head becomes the product's pick.
+    - **What that adopts:** a learned constant, the labels' majority amp. By the score that is about 2 to 3% better than W's near coin toss, mostly on crunch. On clean the per-recording choice is worth about 2.5% (F74) and stays unlearned.
+    - C0's amp row then reads "trained; learns the majority amp, not per recording". Its next route aims at clean recordings: more clean amp labels and a head that reads the amp from the audio, before the thorough relabel.
+    - **Who reads `decision-c3b.json`:** C4's blind page, which carries the adopted model, so the ear hears a sw50r-heavy product, and C4 can reverse it; and any later step that ships the adopted model. `decision.json` still names C3-cabS for C3r.
+  - **Keep:** C3-cabS stays adopted, with W's pick.
     - A fixed sw50r is not a learned control. If "C3 at the sw50r − C3" reads better, it goes to the user with the numbers, and nothing is adopted from it.
+  - **User:** the numbers go to the user; `decision-c3b.json` names C3-cabS until they decide.
   - **Either way, C3r is unchanged:** it trains and reads as declared, against `c3/decision.json`. Folding the amp labels into C3r's recipe is declared after both reads.
 - **Order.**
   - The launcher (`logs/launch-c3b-s2.zsh`) waits for the C3i read's launcher to exit, by its PID: its renders hold the 3 slots until then.
+  - Its steps: both GOAT predicts, C3-cabS's GOAT renders, the canary, C3b's BKS renders, C3b's GOAT renders, the report.
   - It runs before C3r's read, which waits on C3r's training (2.3 to 4.6 h).
   - The predicts run on the CPU, not MPS, so they don't touch C3r's training. At most 3 render processes, with `_wait_cap` guarding.
   - Under the user's rule of 2026-11-10, it launches once its review passes, and the user is told.

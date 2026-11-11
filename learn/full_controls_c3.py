@@ -11,6 +11,7 @@ the answer's hold change); the read is `real-predict`, `goat-predict`, `real-ren
     .venv/bin/python -m learn.full_controls_c3 c3-amp OUT.json     # BKS: W's amp head on C3's body (zero renders)
     .venv/bin/python -m learn.full_controls_c3 c3-adopt [--final]  # the per-family adoption, then C3 against FTm
     .venv/bin/python -m learn.full_controls_c3 c3b-rows            # C3b stage 1: the amp pick on the labels (zero renders)
+    .venv/bin/python -m learn.full_controls_c3 c3b-s2-check        # C3b stage 2's canary: C3's GOAT renders unchanged
     .venv/bin/python -m learn.full_controls_c3 c3b-s2-rows         # C3b stage 2: its full answer against C3's (renders read)
 
 The pure parts (the label sources, the masks, the per-control hold and its tags, the families, the pooled interval,
@@ -873,34 +874,49 @@ def cmd_c3b(args):
 S2_PRIMARY = "C3b - C3"
 
 
-def s2_unit_rows(unit, cluster, jb, jc, pb, pc, amps=S2_AMPS):
+S2_PICK = "C3 at C3b's pick - C3"          # the pick alone, on C3's settings
+S2_SETTINGS = "C3b - C3 at C3b's pick"    # the settings alone, at the amp the product would use (the review)
+S2_BY_CLASS = (S2_PRIMARY, S2_SETTINGS, "always sw50r - blind, on C3b", "always sw50r - blind, on C3")
+
+
+def s2_unit_rows(unit, cluster, jb, jc, pb, pc, cls=None, amps=S2_AMPS):
     """One unit's stage 2 rows from both models' renders on every amp. jb, jc: {amp: {search half: {half: judge}}} (C3b's,
     the adopted C3's); pb, pc: {search half: picked amp} (each model's head on that half's input). Per direction (search
-    half sh, held half h), on the held half: the primary ln(C3b at its pick / C3 at W's pick); beside, each pick and
-    always-sw50r against blind (`amp_value` over the amps) on each model's own renders, the held half's best amp (the
-    oracle) on each, each model at the sw50r against its own answer, and C3b - C3 amp by amp and their mean.
+    half sh, held half h), on the held half: the primary ln(C3b at its pick / C3 at W's pick), split exactly into the pick
+    alone (C3 at C3b's pick / C3 at W's pick) and the settings alone (C3b / C3, both at C3b's pick); beside, each pick,
+    always-sw50r and each model's own search-half argmin (the fair ceiling, valued on the held half) against blind
+    (`amp_value` over the amps) on each model's own renders, each model at the sw50r against its own answer, and C3b - C3
+    amp by amp and their mean. `cls` also files `S2_BY_CLASS` rows under "<row> (<cls>)".
     -> ({row: [(cluster, unit, value)]}, directions dropped for a missing pick or a non-finite judge)."""
     rows, dropped = {}, 0
 
     def add(name, v):
         rows.setdefault(name, []).append((cluster, unit, v))
+        if cls is not None and name in S2_BY_CLASS:
+            rows.setdefault(f"{name} ({cls})", []).append((cluster, unit, v))
+
+    def half(j, sh, h):
+        return {a: ((j.get(a) or {}).get(sh) or {}).get(h) for a in amps}
 
     for sh, h in (("A", "B"), ("B", "A")):
-        hb = {a: ((jb.get(a) or {}).get(sh) or {}).get(h) for a in amps}
-        hc = {a: ((jc.get(a) or {}).get(sh) or {}).get(h) for a in amps}
+        hb, hc = half(jb, sh, h), half(jc, sh, h)
+        sb, sc = half(jb, sh, sh), half(jc, sh, sh)
         b, c = pb.get(sh), pc.get(sh)
-        if b is None or c is None or not all(finite_pos(v) for v in (*hb.values(), *hc.values())):
+        if b is None or c is None or not all(finite_pos(v) for v in (*hb.values(), *hc.values(), *sb.values(),
+                                                                       *sc.values())):
             dropped += 1
             continue
         lb = {a: math.log(float(v)) for a, v in hb.items()}
         lc = {a: math.log(float(v)) for a, v in hc.items()}
         add(S2_PRIMARY, lb[b] - lc[c])
+        add(S2_PICK, lc[b] - lc[c])
+        add(S2_SETTINGS, lb[b] - lc[b])
         add("C3b's pick - blind, on C3b", amp_value(hb, b))
         add("W's pick - blind, on C3", amp_value(hc, c))
         add("always sw50r - blind, on C3b", amp_value(hb, "sw50r"))
         add("always sw50r - blind, on C3", amp_value(hc, "sw50r"))
-        add("the best amp - blind, on C3b", min(amp_value(hb, a) for a in amps))
-        add("the best amp - blind, on C3", min(amp_value(hc, a) for a in amps))
+        add("search-half argmin - blind, on C3b", amp_value(hb, min(sorted(amps), key=lambda a: sb[a])))
+        add("search-half argmin - blind, on C3", amp_value(hc, min(sorted(amps), key=lambda a: sc[a])))
         add("C3 at the sw50r - C3", lc["sw50r"] - lc[c])
         add("C3b at the sw50r - C3b", lb["sw50r"] - lb[b])
         add("C3 at the sw50r - C3b", lc["sw50r"] - lb[b])
@@ -915,11 +931,19 @@ def s2_picks(amp_p, unit, head_amps):
     return {sh: a for sh in ("A", "B") if (a := head_pick(amp_p, unit, sh, head_amps))}
 
 
-def s2_reading(primary):
-    """Stage 2's declared reading of `C3b - C3` by C3's rule: C3b replaces the adopted C3 unless shown worse (a 90%
-    interval wholly above 0 on BKS, GOAT or pooled; a split counts as shown worse). -> (direction, adopt)."""
-    d = direction(primary)
-    return d, d not in ("worse", "split")
+def s2_reading(judged_rows):
+    """Stage 2's declared reading by C3's test (worse: a 90% interval wholly above 0 on BKS, GOAT or pooled; a split
+    counts as worse). C3b is adopted only if neither the primary nor the settings row is shown worse (the review: the
+    pick's gain must not hide worse settings), and goes to the user instead if only the settings row is, or if the
+    primary or settings row on clean is while the pooled rule adopts. -> (the primary's direction, "adopt" / "keep" /
+    "user")."""
+    worse = lambda n: direction(judged_rows.get(n) or {}) in ("worse", "split")   # noqa: E731
+    d = direction(judged_rows[S2_PRIMARY])
+    if worse(S2_PRIMARY):
+        return d, "keep"
+    if worse(S2_SETTINGS) or worse(f"{S2_PRIMARY} (clean)") or worse(f"{S2_SETTINGS} (clean)"):
+        return d, "user"
+    return d, "adopt"
 
 
 def s2_check(stored, amps3, stored_judge, amps3_judge, units_amp):
@@ -951,6 +975,24 @@ def _judge_files(d):
     return out
 
 
+def cmd_c3b_s2_check(_args):
+    """Stage 2's canary, run after C3-cabS's GOAT renders and before C3b's: `s2_check` on the forced amp of all 215
+    units. Exits non-zero on any mismatch, so the launcher stops before C3b renders. -> c3/c3b-stage2-check.json."""
+    from learn import pipeline_fix as P
+
+    P.require(C3B_S2_PHASE)
+    root, ctag = P.out_dir() / P.GOAT_DIR, "C3-cabS"
+    check = s2_check(json.loads((root / "answers" / f"{ctag}.json").read_text()),
+                     json.loads((root / P.AMPS3_DIR / f"{ctag}.json").read_text()), _judge_files(root / "judge" / ctag),
+                     _judge_files(root / P.AMPS3_JUDGE / ctag), {prt["unit"]: prt["amp"] for prt in P.goat_read_units()})
+    P.save(c3_dir() / "c3b-stage2-check.json", {"phase": C3B_S2_PHASE, "check": check,
+                                                "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"C3B STAGE 2 CHECK: answers {check['answers_equal']}/{check['units']}, renders "
+          f"{check['renders_equal']}/{check['units']}")
+    if check["mismatches"]:
+        raise SystemExit(f"C3B STAGE 2 CHECK FAILED: {len(check['mismatches'])} units differ from F72's GOAT renders")
+
+
 def cmd_c3b_s2(_args):
     """C3b's stage 2 (zero renders, after its renders) -> c3/c3b-stage2.json: on BKS's 40 read units (by DI) and GOAT's
     (by item), C3b's full answer against the adopted C3's from both models' renders on all three amps, the beside rows,
@@ -971,9 +1013,11 @@ def cmd_c3b_s2(_args):
         judge = {t: _judge_files(root / d / sub_j / t) for t in (C3B_TAG, ctag)}
         if name == "bks":
             units = {prt["unit"]: prt["di"] for prt in ans[ctag]["parts"]}
+            cls = {prt["unit"]: prt["cls"] for prt in ans[ctag]["parts"]}
         else:
             gu = P.goat_read_units()
             units = {prt["unit"]: prt["item"] for prt in gu}
+            cls = {prt["unit"]: prt["cls"] for prt in gu}
             stored = json.loads((root / d / "answers" / f"{ctag}.json").read_text())
             check = s2_check(stored, ans[ctag], _judge_files(root / d / "judge" / ctag), judge[ctag],
                              {prt["unit"]: prt["amp"] for prt in gu})
@@ -990,7 +1034,7 @@ def cmd_c3b_s2(_args):
                     by_amp[nm][pk or "none"] = by_amp[nm].get(pk or "none", 0) + 1
                 agree += pb.get(sh) is not None and pb.get(sh) == pc.get(sh)
             r, dr = s2_unit_rows(u, cl, {a: judge[C3B_TAG][(u, a)]["judge"] for a in S2_AMPS},
-                                 {a: judge[ctag][(u, a)]["judge"] for a in S2_AMPS}, pb, pc)
+                                 {a: judge[ctag][(u, a)]["judge"] for a in S2_AMPS}, pb, pc, cls[u])
             dropped += dr
             for k, v in r.items():
                 rows.setdefault(k, []).extend(v)
@@ -1003,19 +1047,20 @@ def cmd_c3b_s2(_args):
         raise SystemExit(f"C3B STAGE 2 REFUSED: {len(check['mismatches'])} GOAT units differ from C3's stored read")
     names = sorted(set(sets["bks"]) | set(sets["goat"]))
     judged_rows = {n: judged(sets["bks"].get(n) or {}, sets["goat"].get(n) or {}) for n in names}
-    d, adopt = s2_reading(judged_rows[S2_PRIMARY])
+    d, outcome = s2_reading(judged_rows)
     rec = {"phase": C3B_S2_PHASE, "against": ctag, "rows": judged_rows, "picks": picks, "check": check,
-           "reading": d, "adopt": C3B_TAG if adopt else ctag, "c2_sha256": c2_sha(),
-           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+           "reading": d, "outcome": outcome, "adopt": C3B_TAG if outcome == "adopt" else ctag,
+           "c2_sha256": c2_sha(), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     P.save(c3_dir() / "c3b-stage2.json", rec)
     P.save(c3_dir() / "decision-c3b.json", {"phase": C3B_S2_PHASE, "tag": rec["adopt"], "reading": d,
-                                            "time": rec["time"]})
+                                            "outcome": outcome, "time": rec["time"]})
     for n in names:
         j = judged_rows[n]
         p_ = j["pooled"] or {}
         print(f"{n}: BKS {(j['bks'] or {}).get('mean')}, GOAT {(j['goat'] or {}).get('mean')}, pooled "
               f"{p_.get('mean')} [{p_.get('lo90')}, {p_.get('hi90')}]")
-    print(f"C3B STAGE 2 (C3b - C3): {d}; adopted {rec['adopt']}; check {check['renders_equal']}/{check['units']}")
+    print(f"C3B STAGE 2 (C3b - C3): {d}; {outcome}: adopted {rec['adopt']}"
+          + (" until the user decides" if outcome == "user" else "") + f"; check {check['renders_equal']}/{check['units']}")
 
 
 def report_rows(label="c3"):
@@ -1123,6 +1168,7 @@ def main(argv=None):
     s.set_defaults(fn=cmd_amp)
     sub.add_parser("c3i-rows").set_defaults(fn=cmd_c3i)
     sub.add_parser("c3b-rows").set_defaults(fn=cmd_c3b)
+    sub.add_parser("c3b-s2-check").set_defaults(fn=cmd_c3b_s2_check)
     sub.add_parser("c3b-s2-rows").set_defaults(fn=cmd_c3b_s2)
     s = sub.add_parser("c3-adopt")
     s.add_argument("--final", action="store_true")

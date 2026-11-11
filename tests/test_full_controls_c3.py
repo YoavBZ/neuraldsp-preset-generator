@@ -533,24 +533,34 @@ def test_c3b_launchers_train_with_c3b_and_read_at_zero_renders():
     assert "c3b-train.log" in r and "c3b-rows" in r and "real-render" not in r and "goat-render" not in r and "h4-render" not in r
 
 
-def _s2_judges(vals):
-    """{amp: (A-search held-B judge, B-search held-A judge)} -> a judge file's per-amp "judge"."""
-    return {a: {"A": {"B": v[0]}, "B": {"A": v[1]}} for a, v in vals.items()}
+def _s2_judges(vals, search=None):
+    """{amp: (A-search held-B judge, B-search held-A judge)} -> a judge file's per-amp "judge"; `search`: {amp: (A on A,
+    B on B)}, the search halves' own judges (default 1.0)."""
+    search = search or {}
+    return {a: {"A": {"B": v[0], "A": search.get(a, (1.0, 1.0))[0]}, "B": {"A": v[1], "B": search.get(a, (1.0, 1.0))[1]}}
+            for a, v in vals.items()}
 
 
 def test_c3b_stage2_rows_read_each_models_own_pick_on_its_own_renders():
-    jb = _s2_judges({"pr12": (2.0, 2.0), "sw50r": (1.0, 1.5), "ac20": (1.5, 1.0)})
+    jb = _s2_judges({"pr12": (2.0, 2.0), "sw50r": (1.0, 1.5), "ac20": (1.5, 1.0)},
+                    {"pr12": (0.5, 3.0), "sw50r": (1.0, 2.0), "ac20": (2.0, 1.0)})
     jc = _s2_judges({"pr12": (1.2, 1.2), "sw50r": (1.1, 1.1), "ac20": (1.3, 1.0)})
-    rows, dropped = X.s2_unit_rows("u", "c", jb, jc, {"A": "sw50r", "B": "sw50r"}, {"A": "pr12", "B": "ac20"})
+    rows, dropped = X.s2_unit_rows("u", "c", jb, jc, {"A": "sw50r", "B": "sw50r"}, {"A": "pr12", "B": "ac20"}, "clean")
     assert dropped == 0
-    prim = [v for _, _, v in rows[X.S2_PRIMARY]]
-    assert prim == pytest.approx([math.log(1.0 / 1.2), math.log(1.5 / 1.0)])
-    assert [v for *_, v in rows["C3 at the sw50r - C3"]] == pytest.approx([math.log(1.1 / 1.2), math.log(1.1 / 1.0)])
-    assert [v for *_, v in rows["C3b's pick - blind, on C3b"]][0] == pytest.approx(X.amp_value({"pr12": 2.0, "sw50r": 1.0, "ac20": 1.5}, "sw50r"))
-    assert [v for *_, v in rows["the best amp - blind, on C3b"]][1] == pytest.approx(X.amp_value({"pr12": 2.0, "sw50r": 1.5, "ac20": 1.0}, "ac20"))
+    v = lambda n: [x for *_, x in rows[n]]   # noqa: E731
+    assert v(X.S2_PRIMARY) == pytest.approx([math.log(1.0 / 1.2), math.log(1.5 / 1.0)])
+    assert v(X.S2_PICK) == pytest.approx([math.log(1.1 / 1.2), math.log(1.1 / 1.0)])
+    assert v(X.S2_SETTINGS) == pytest.approx([math.log(1.0 / 1.1), math.log(1.5 / 1.1)])
+    assert [p + q for p, q in zip(v(X.S2_PICK), v(X.S2_SETTINGS))] == pytest.approx(v(X.S2_PRIMARY))
+    assert v("C3 at the sw50r - C3") == v(X.S2_PICK)
+    assert v("C3b's pick - blind, on C3b")[0] == pytest.approx(X.amp_value({"pr12": 2.0, "sw50r": 1.0, "ac20": 1.5}, "sw50r"))
+    # the fair ceiling: the search half's argmin (pr12 on A, ac20 on B), valued on the held half
+    assert v("search-half argmin - blind, on C3b") == pytest.approx(
+        [X.amp_value({"pr12": 2.0, "sw50r": 1.0, "ac20": 1.5}, "pr12"), X.amp_value({"pr12": 2.0, "sw50r": 1.5, "ac20": 1.0}, "ac20")])
     mean_ab = sum(math.log(b / c) for b, c in ((2.0, 1.2), (1.0, 1.1), (1.5, 1.3))) / 3
-    assert [v for *_, v in rows["C3b - C3, mean over the amps"]][0] == pytest.approx(mean_ab)
-    assert {r[0] for v in rows.values() for r in v} == {"c"}
+    assert v("C3b - C3, mean over the amps")[0] == pytest.approx(mean_ab)
+    assert v(f"{X.S2_PRIMARY} (clean)") == v(X.S2_PRIMARY) and f"{X.S2_PICK} (clean)" not in rows
+    assert {r[0] for x in rows.values() for r in x} == {"c"}
 
 
 def test_c3b_stage2_drops_a_direction_with_no_pick_or_a_non_finite_judge():
@@ -558,14 +568,26 @@ def test_c3b_stage2_drops_a_direction_with_no_pick_or_a_non_finite_judge():
     jc = _s2_judges({"pr12": (1.2, 1.2), "sw50r": (1.1, 1.1), "ac20": (1.3, 1.0)})
     rows, dropped = X.s2_unit_rows("u", "c", jb, jc, {"A": "sw50r", "B": "sw50r"}, {"B": "ac20"})
     assert dropped == 2 and rows == {}
+    jb = _s2_judges({"pr12": (2.0, 2.0), "sw50r": (1.0, 1.5), "ac20": (1.5, 1.0)}, {"pr12": (float("inf"), 1.0)})
+    assert X.s2_unit_rows("u", "c", jb, jc, {"A": "sw50r", "B": "sw50r"}, {"A": "pr12", "B": "ac20"})[1] == 1
 
 
-def test_c3b_stage2_adopts_unless_shown_worse_and_a_split_is_worse():
+def test_c3b_stage2_adopts_only_if_neither_the_answer_nor_its_settings_is_shown_worse():
     row = lambda lo, hi: {"mean": (lo + hi) / 2, "lo90": lo, "hi90": hi, "clusters": 8}   # noqa: E731
-    assert X.s2_reading({"bks": row(-0.02, 0.01), "goat": row(-0.01, 0.02), "pooled": row(-0.01, 0.01)}) == ("undecided", True)
-    assert X.s2_reading({"bks": row(-0.05, -0.01), "goat": None, "pooled": None}) == ("better", True)
-    assert X.s2_reading({"bks": row(0.01, 0.05), "goat": None, "pooled": None}) == ("worse", False)
-    assert X.s2_reading({"bks": row(0.01, 0.05), "goat": row(-0.05, -0.01), "pooled": None}) == ("split", False)
+    und = {"bks": row(-0.02, 0.01), "goat": row(-0.01, 0.02), "pooled": row(-0.01, 0.01)}
+    worse = {"bks": row(0.01, 0.05), "goat": None, "pooled": None}
+    better = {"bks": row(-0.05, -0.01), "goat": None, "pooled": None}
+    split = {"bks": row(0.01, 0.05), "goat": row(-0.05, -0.01), "pooled": None}
+    P_, S_ = X.S2_PRIMARY, X.S2_SETTINGS
+    assert X.s2_reading({P_: und, S_: und}) == ("undecided", "adopt")
+    assert X.s2_reading({P_: better, S_: und}) == ("better", "adopt")
+    assert X.s2_reading({P_: worse, S_: und}) == ("worse", "keep")
+    assert X.s2_reading({P_: split, S_: und}) == ("split", "keep")
+    assert X.s2_reading({P_: better, S_: worse}) == ("better", "user")
+    assert X.s2_reading({P_: better, S_: split}) == ("better", "user")
+    assert X.s2_reading({P_: better, S_: und, f"{P_} (clean)": worse}) == ("better", "user")
+    assert X.s2_reading({P_: und, S_: und, f"{S_} (clean)": worse, f"{P_} (crunch)": worse}) == ("undecided", "user")
+    assert X.s2_reading({P_: und, S_: und, f"{P_} (crunch)": worse}) == ("undecided", "adopt")
 
 
 def test_c3b_stage2_check_needs_equal_answers_probabilities_and_renders():
@@ -594,5 +616,8 @@ def test_c3b_stage2_launcher_waits_renders_all_three_amps_and_reports():
     import pathlib
     t = (pathlib.Path(__file__).resolve().parents[1] / "logs" / "launch-c3b-s2.zsh").read_text()
     assert "kill -0 ${WAIT_PID}" in t and "mv ${PIDS} ${PIDS}." in t and "setopt no_bg_nice" in t
-    assert t.count("pipeline_fix goat-predict --amps3") == 2 and "goat-render --amps3 --names C3b,C3-cabS" in t
-    assert "real-render --names C3b" in t and "c3b-s2-rows" in t and "for k in 0 1 2" in t and "train-ft" not in t
+    assert t.count("pipeline_fix goat-predict --amps3") == 2
+    order = [t.index(x) for x in ("three goat-c3 ", "run check ", "three real ", "three goat-c3b ", "run rows ")]
+    assert "goat-render --amps3 --names C3-cabS" in t and "full_controls_c3 c3b-s2-check" in t
+    assert "real-render --names C3b" in t and "goat-render --amps3 --names C3b\n" in t and "c3b-s2-rows" in t
+    assert order == sorted(order) and "for k in 0 1 2" in t and "train-ft" not in t
