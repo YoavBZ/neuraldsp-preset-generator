@@ -85,7 +85,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **The read is H4's,** with one row beside: C3 with the new controls at S, because C1a also re-tunes the core knobs.
   - **Adoption, per family:** "C3 less C3 with that family at S" is at or below 0 by the score, and C4 does not reverse it. A family not adopted is written at S in the product and stays open, with its next route and blocker named.
 - **C2r and C3r** (the user's go, 2026-11-10, "Go for 3"; declared in detail below): every trusted real row by rotation. C2r labels batch 1's 121, N12's 31 and the panel's 18 clean units with C2's recipe (at most about 42,800 renders, after C2b). C3r trains C3's recipe on all 690 rows by 4 folds, with no shared DI file, creator or panel band across a fold, against a control without the new rows, and reads both by the score on every set. V-real and the reserve stay sealed; batch 3 stays C4's.
-- **C4:** a blind page of full-control presets against FT2 and S.
+- **C4:** a blind page of full-control presets against FT2 and S. Declared in detail below: the adopted model (R-all), FTm and S, ranked against the record on batch 3's 18 trusted units.
   - Ranks allow ties: several presets may share a rank, and a tie counts as no preference. Repeats of the decision pairs.
   - Effect pages are guitar-only with instant switching.
   - It uses cards nobody has heard (below).
@@ -437,6 +437,34 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **When.** It trains as soon as its code is reviewed, on the otherwise idle MPS, while C2b or C2r render on 3 CPU processes. It launches with `setopt no_bg_nice`, and no other MPS job starts while it runs.
   - **The stop.** The measure is the 3 render shards' summed renders per minute. The window is the 60 minutes before the training against its first 20 minutes. If the rate drops by more than 20%, the executor stops the training by its recorded PIDs, and it reruns after C3r's training. Otherwise it runs to the end.
   - **The read** waits for a free render slot: after C2r, before C3r's read.
+
+## C4 in detail: the adopted model by ear, on batch 3 (declared 2026-11-11, after C3r's adoption and before any C4 render; ledger `phase_c4`)
+
+- **Why.** "Score level is not sound level": every adoption since C3 was by the score (J0), and each says C4 can reverse it. The adopted model is now R-all's all-labels pair, held as C3-cabS (F77, `adopted-model.json`). C4 is the blind ear check of it, on units that no model trained on, that no read chose anything on, and that were heard on no ranking page.
+- **The units:** L1c's 18 trusted batch 3 units (16 clean, 2 crunch, on 10 DI files), each on its forced amp (sw50r 9, pr12 6, ac20 3). Batch 3 stays C4's source only: never training rows, and no other choice is made on it.
+  - **Their lags first:** batch 3 had no lag pass. The stored labels' lag pass runs on the 18 alone (`capture_labels --batch 3 search --lags-only`: S on each amp, the judge lag, no label), about 108 renders. The one-window lag rule applies, and a unit it refuses leaves C4, counted.
+  - **Their read inputs:** `build-dfix-real --captures --capture-batch 3`, D_fix variant 0 as for every capture unit (pool backings lent by class, separated), CPU and zero renders. They're read inputs only.
+- **The three presets,** each from the unit's search half's input, on its forced amp:
+  - **the adopted model:** R-all's all-labels pair (`C3r-all`, both seeds pooled), held as C3-cabS, its sha256 checked against `adopted-model.json`;
+  - **FTm:** FTm's all-labels pair (`P2b-ftm`), with its own hold (`K.space`), the model C3 replaced;
+  - **S:** the class's factory start.
+  - The amp pick isn't heard: every preset plays the unit's forced amp. Learning the amp from the audio stopped (F79); the amp route is the user's.
+- **The renders:** each preset fresh, in its own primed process, judged on both halves at the unit's lag (J0 beside); the held half's window kept, as C1a's page. 18 × 3 × 2 = 108 renders. With the lag pass, about 216 in all.
+- **The page:** C1a's player, with three letters. Each item has the Record (the capture's own render of the DI), A, B and C, looping in sync with an instant switch, all level-matched.
+  - The listener ranks A, B and C from 1 (closest to the Record) to 3; ties are allowed, including all three. Closeness and confidence are optional.
+  - Letters are a seeded permutation per item. Two items come back at least 4 items later, with the letters rotated.
+  - 20 items, in one part. The page names no unit, DI, capture or preset (`leaks`), and answers are kept in the page's store.
+- **The read** (`c4-read`), declared now:
+  - **The pairs, from first hearings:** the adopted model over FTm (primary), the adopted model over S, and FTm over S. Each is a share of cards (above 1, a tie 0.5, below 0) with C1a's jackknife-t by DI file (10 clusters), by class beside, and how often J0's sign agrees.
+  - **The verdict per pair:** C1a's one-sided rule at 0.05: "above", "below" (the mirrored test) or "undecided".
+  - **The page is read only with 12 or more of the 18 first hearings answered.** The repeats' agreement is reported.
+- **What each outcome leads to.**
+  - **The adopted model above or undecided against FTm:** it stays adopted.
+  - **Below FTm, or below S:** the ear says worse where the score says level or better. By PR #422's conflict rule this goes to the user, with the adopted model staying until they decide.
+  - The pairs' effect sizes are reported either way. No bar on size.
+- **Stop rule.** One page, one read. No re-hearing to change a verdict.
+- **Cost.** About 216 renders and a few minutes of CPU. The user's listening: 20 items of about 4 seconds each.
+- **When.** Tonight, once its review passes, so the page is ready for the user in the morning. Under the user's rule of 2026-11-10 it launches without a wait.
 
 ## C3c in detail: the amp head on the amp that suits C3's own answer (declared 2026-11-11, after C3b stage 2's read and the user's "Yes, try it"; before any C3c training; ledger `phase_c3c`)
 
