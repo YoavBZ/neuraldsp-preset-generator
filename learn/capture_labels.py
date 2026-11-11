@@ -1124,8 +1124,13 @@ def main(argv=None):
     if args.batch == 2:
         BATCH = BATCH2
     if args.batch == 3:
-        if args.cmd not in BATCH3_CMDS:
+        c4_lags = args.cmd == "search" and getattr(args, "lags_only", False) and not args.before_ear
+        if args.cmd not in BATCH3_CMDS and not c4_lags:
             raise SystemExit(f"{args.cmd}: not L1c's (no labels, no search on the third batch)")
+        if c4_lags:                                    # C4: the trusted units' lag pass only (S on each amp, no label)
+            from learn import pipeline_fix as P
+
+            P.require("phase_c4")
         BATCH = BATCH3
     {"dis": cmd_dis, "units": cmd_units, "page": cmd_page, "answers": cmd_answers, "heavy": cmd_heavy,
      "heavy-answers": cmd_heavy_answers, "scope": cmd_scope, "scope-answers": cmd_scope_answers, "items": cmd_items,

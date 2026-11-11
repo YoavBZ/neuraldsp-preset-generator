@@ -6182,8 +6182,8 @@ def cmd_build_dfix_real(args):
     own_lv = json.loads((out_dir() / "inputs" / "backings-levels.json").read_text())["levels"]
     kk, n = args.shard
     batch = getattr(args, "capture_batch", 1)          # `eat_build` calls this with no such argument
-    if batch == 2 and not args.captures:
-        raise SystemExit("--capture-batch 2 needs --captures")
+    if batch in (2, 3) and not args.captures:
+        raise SystemExit(f"--capture-batch {batch} needs --captures")
     units = dfix_units()
     if args.reads_only:                            # read 2's GOAT units with no row (`dfix_read_only`)
         units = dfix_read_only(units, goat_read_units())
@@ -6195,6 +6195,10 @@ def cmd_build_dfix_real(args):
         if batch == 2:                                 # N10: the second batch's trusted units; a library DI has a session
             require("phase_n10")
             CL.BATCH = CL.BATCH2
+            units = [(u["unit"], "goat", u) for u in sorted(CL.trusted_units()[0], key=lambda u: u["unit"])]
+        if batch == 3:                                 # C4: the third batch's trusted units, read inputs only, never rows
+            require("phase_c4")
+            CL.BATCH = CL.BATCH3
             units = [(u["unit"], "goat", u) for u in sorted(CL.trusted_units()[0], key=lambda u: u["unit"])]
     if getattr(args, "panel", False):              # C3r: C2r's panel units read as GOAT units do, pool backings, by class
         from learn import full_controls_c2r as R
@@ -6212,7 +6216,7 @@ def cmd_build_dfix_real(args):
         i, rule = dfix_lend(unit, prt["cls"], sp["train"], kept, prt["section"] if bks else None)
         x, rw, bw = kept[i], rend[i], built[i]
         e_voc = bool(x["draw"]["vocals_drawn"] and x["stems"]["v"] != x["stems"]["n"])
-        draws = dfix_draws(unit, prt["di"] if batch == 2 else prt["section"], pool, own=bks)
+        draws = dfix_draws(unit, prt["di"] if batch in (2, 3) else prt["section"], pool, own=bks)
         paths = [dfix_input_path(unit, v) for v in range(DFIX_K)]
         for p in paths:
             if p.exists() and str(np.load(p)["pool_sha256"]) != psha:
@@ -6262,7 +6266,7 @@ def cmd_build_dfix_real(args):
             done += 1
         if m % 10 == 0:
             print(f"unit {m + 1}/{len(mine)}: {done} built; {(time.time() - t0) / max(1, done):.2f} s each", flush=True)
-    tag = (f"captures{'2' if batch == 2 else ''}-" if args.captures else "reads-" if args.reads_only
+    tag = (f"captures{batch if batch in (2, 3) else ''}-" if args.captures else "reads-" if args.reads_only
            else "panel-" if getattr(args, "panel", False) else "")
     save(out_dir() / DFIX_DIR / f"lends-{tag}{kk}-of-{n}.json",
          {"rule": cmd_build_dfix_real.__doc__, "pool_sha256": psha, "units": lends})
@@ -8221,7 +8225,8 @@ def main(argv=None):
     ap.add_argument("--reads-only", action="store_true", help="build-dfix-real: only the read units with no row")
     ap.add_argument("--captures", action="store_true", help="build-dfix-real: the first capture batch's units (N6)")
     ap.add_argument("--panel", action="store_true", help="build-dfix-real: C3r's panel units (C2r's 18)")
-    ap.add_argument("--capture-batch", type=int, choices=(1, 2), default=1, help="build-dfix-real --captures: N10's second batch")
+    ap.add_argument("--capture-batch", type=int, choices=(1, 2, 3), default=1,
+                    help="build-dfix-real --captures: N10's second batch, or C4's third (read inputs only)")
     ap.add_argument("--rung", choices=tuple(RUNG_KINDS), default="a")
     ap.add_argument("--epochs", type=int, default=1500)
     ap.add_argument("--device", choices=("mps", "cpu"), default="mps")
