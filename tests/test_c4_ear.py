@@ -88,6 +88,7 @@ def test_the_draw_flags_units_whose_creator_or_di_trains_in_r_all_and_the_read_s
 
 
 def test_the_draw_restores_capture_labels_batch(monkeypatch):
+    pytest.importorskip("numpy")
     from learn import capture_labels as CL
     before = CL.BATCH
     monkeypatch.setattr(CL, "trusted_units", lambda: ([{"unit": "u"}], {"u": 1}))
@@ -98,5 +99,6 @@ def test_the_draw_restores_capture_labels_batch(monkeypatch):
 
 
 def test_the_intro_carries_the_artifact_save_line():
+    pytest.importorskip("numpy")                       # ear_eat imports bakeoff_render, which needs numpy (light CI)
     from learn import ear_eat as EE
     assert EE.ARTIFACT_INTRO[0] in C.INTRO
