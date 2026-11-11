@@ -438,6 +438,26 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **The stop.** The measure is the 3 render shards' summed renders per minute. The window is the 60 minutes before the training against its first 20 minutes. If the rate drops by more than 20%, the executor stops the training by its recorded PIDs, and it reruns after C3r's training. Otherwise it runs to the end.
   - **The read** waits for a free render slot: after C2r, before C3r's read.
 
+## A1 in detail: the amp chosen by a stock-DI comparison (declared 2026-11-11, on the user's "Definitely A … go ahead"; before any A1 render; ledger `phase_a1`)
+
+- **Why.** Picking the amp per recording is worth −0.093 by the score on the model's own answers (F76), but nothing reads it from the song's separated guitar (F74, F79: learning the amp from the audio stopped). Asked to choose between this, three presets, or leaving it, the user said "Definitely A", then, after its explanation (one model, not three: the model's preset for each amp, played through a generic guitar recording, compared with the song's separated guitar), "Worth a try, go ahead".
+- **How it differs from what failed:** no head predicts the amp. Each amp's answer is rendered and compared with the song, so the choice uses the presets' own sound.
+- **The method, fixed before any render.**
+  - **The stock DIs:** 2 per class, on distinct DI files, seeded (20261128), from C3r's n12 units: the library DIs the user's DI check kept. A unit's class picks its two.
+  - **The renders:** each unit's answer for each amp and search half (C3-cabS's, the model C3b stage 2 rendered on all three amps), through each of its class's stock DIs, fresh and primed, trimmed. Only each render's log-mel shape is kept.
+  - **The shape:** the model input's log-mel (`song_aug.logmel`, quantised as the inputs are), each band's mean over time, less the mean over bands, so level drops out.
+  - **The pick:** per direction, the amp whose renders' shapes sit closest (L2, averaged over the two stock DIs) to the shape of the song's separated guitar on that search half, which is the model's own input (D_fix variant 0, `dfix_backed`). Ties go to the first amp.
+  - Beside, at zero renders: the same pick against the clean amp track's shape, which the product never has. It tells how much the separation costs.
+- **The units:** GOAT's 215 read units and BKS's 40, both search halves: 255 × 2 halves × 3 amps × 2 stock DIs × 2 = 6,120 renders, about 70 minutes on 3 processes.
+- **The read** (`a1-rows`, zero renders), valued on the held half of C3-cabS's own per-amp renders (C3b stage 2's), as C3c's:
+  - **Primary: "DI-compare − always sw50r"** (the best constant), by DI on BKS and by item on GOAT, pooled with C3's weights, also by class.
+  - Beside: DI-compare − W (the shipped pick), W − always sw50r, the clean-track variant, and the search half's own argmin − always sw50r (the ceiling, −0.093).
+- **The rule, C3's test on the primary:** *learns* (better somewhere, worse nowhere), or its direction.
+  - **Learns:** a product step is declared next. It is the same pick with the adopted model (R-all), and a blind ear check of its amp against W's, before it ships.
+  - **Otherwise:** route B, three presets (one per amp) for the user to pick by ear, goes to the user as the default amp route.
+- **Stop rule.** One render pass and one zero-render read. The shape, the distance and the stock DIs are fixed above, with no tuning on the read.
+- **When.** Tonight, under the user's rule of 2026-11-10 and their "continue with the plan overnight", once its review passes.
+
 ## C3c in detail: the amp head on the amp that suits C3's own answer (declared 2026-11-11, after C3b stage 2's read and the user's "Yes, try it"; before any C3c training; ledger `phase_c3c`)
 
 - **Why.** C3b stage 2 ([F76](pipeline-fix-plan.md)) found that with the model's own settings, choosing each recording's amp on its search half beats always-sw50r by −0.093 on the held half, on both sets and both classes. The stored search labels don't point to that amp, and the user chose to keep W's pick for now.
