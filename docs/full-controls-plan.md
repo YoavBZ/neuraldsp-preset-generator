@@ -439,6 +439,34 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **The stop.** The measure is the 3 render shards' summed renders per minute. The window is the 60 minutes before the training against its first 20 minutes. If the rate drops by more than 20%, the executor stops the training by its recorded PIDs, and it reruns after C3r's training. Otherwise it runs to the end.
   - **The read** waits for a free render slot: after C2r, before C3r's read.
 
+## A1 in detail: the amp chosen by a stock-DI comparison (declared 2026-11-11, on the user's "Definitely A … go ahead"; before any A1 render; ledger `phase_a1`)
+
+- **Why.** Picking the amp per recording is worth −0.093 by the score on the model's own answers (F76), but nothing reads it from the song's separated guitar (F74, F79: learning the amp from the audio stopped). Asked to choose between this, three presets, or leaving it, the user said "Definitely A", then, after its explanation (one model, not three: the model's preset for each amp, played through a generic guitar recording, compared with the song's separated guitar), "Worth a try, go ahead".
+- **How it differs from what failed:** no head predicts the amp. Each amp's answer is rendered and compared with the song, so the choice uses the presets' own sound.
+- **The method, fixed before any render.**
+  - **The stock DIs:** 2 per class, on distinct DI files, seeded (20261128), from C3r's n12 units: the library DIs the user's DI check kept. A unit's class picks its two.
+  - **The renders:** each unit's answer for each amp and search half (C3-cabS's, the model C3b stage 2 rendered on all three amps), through each of its class's stock DIs, fresh and primed, trimmed. Each render's log-mel shape is kept, and (after the review) its model-input mel on each half at the model's input gain (`step4_half`, uint8 and LUFS), about 260 MB, so a second statistic can be read without new renders.
+  - A stock DI whose file is a read unit's own DI file is refused (none is: the 12 kept library DIs are Cambridge sessions).
+  - **The shape:** the model input's log-mel (`song_aug.logmel`, quantised as the inputs are), each band's mean over time, less the mean over bands, so level drops out.
+  - **The pick:** per direction, the amp whose renders' shapes sit closest (L2, averaged over the two stock DIs) to the shape of the song's separated guitar on that search half, which is the model's own input (D_fix variant 0, `dfix_backed`). Ties go to the first amp.
+  - Beside, at zero renders: the same pick against the clean amp track's shape (at the model's input gain), which the product never has. It tells how much the separation costs. Also beside: the shape on the 60 Hz to 8 kHz bands alone, from the stored mels.
+  - **The review's warning, recorded before any read:** on a zero-render analog (does a statistic recognise a recording's own tone on its other half, against other units'?), the declared shape reaches AUC 0.59 on GOAT and 0.52 on BKS from the stem, against 0.95 and 0.87 from the clean track. The model's own embedding reaches 0.79. So an undecided row for the declared shape is expected, and is not a verdict on the route.
+- **Amendment 1 (declared 2026-11-12, after the renders started and before any read; the review's Required 2): the embedding pick is the primary.**
+  - **The pick:** per direction, the pooled body features (`net.body`, its time mean and std, flattened) of the C3 fold model that held the unit out, both seeds averaged: GOAT by its item fold, BKS by C3-cabS's unit-to-model record. The target is the separated stem's input on the search half (D_fix variant 0, `model_input`). Each render's stored mel on the same half goes through `model_input` too. The amp whose renders sit closest by cosine distance, averaged over the 2 stock DIs, is picked (`a1-embed`, CPU, zero renders).
+  - **Beside:** the same pick on the clean amp track at the model's input gain; the declared shape pick ("DI-compare by shape", its clean-track and 60 Hz to 8 kHz versions); W; the ceiling.
+  - **A common floor, after its review (before any read):** every input to the embedding (the stem's, the clean track's and each render's mel) is floored at −90 dB (`np.maximum(u8, 44)`) before `model_input`. Above 8 kHz the renders' mels sit at the −112 dB floor far more often than the stem's (pr12 46%, sw50r 49%, ac20 25%, stems 3% on the first 18 units), which gave the pick a channel favouring the ac20; at −90 dB the amps level out (83%, 87%, 81%). The choice used only those floor shares: no distance, pick or judge was looked at. In the review's zero-render analog the floor costs nothing (AUC 0.801 against 0.793). The floored embedding is the primary, and the unfloored one is beside.
+  - **Every pick row's spread over the amps is recorded** (the bias check).
+  - **The rule is unchanged,** now on the floored embedding pick's "DI-compare − always sw50r". Two statistics are read, and the write-up says so.
+  - **Checked at zero renders on the first 2 rendered units:** the features, distances and picks compute (`logs/launch-a1-read.zsh` runs `a1-embed`, then `a1-rows`, after the renders' "done").
+- **The units:** GOAT's 215 read units and BKS's 40, both search halves: 255 × 2 halves × 3 amps × 2 stock DIs × 2 = 6,120 renders, about 70 minutes on 3 processes.
+- **The read** (`a1-rows`, zero renders), valued on the held half of C3-cabS's own per-amp renders (C3b stage 2's), as C3c's:
+  - **Primary: "DI-compare − always sw50r"** (the best constant), by DI on BKS and by item on GOAT, pooled with C3's weights, also by class.
+  - Beside: DI-compare − W (the shipped pick), W − always sw50r, the clean-track variant, and the search half's own argmin − always sw50r (the ceiling, −0.093).
+- **The rule, C3's test on the primary:** *learns* (better somewhere, worse nowhere), or its direction.
+  - **Learns:** a product step is declared next. It is the same pick with the adopted model (R-all), and a blind ear check of its amp against W's, before it ships.
+  - **Otherwise:** route B, three presets (one per amp) for the user to pick by ear, goes to the user as the default amp route.
+- **Stop rule.** One render pass and one zero-render read. The shape, the distance and the stock DIs are fixed above, with no tuning on the read.
+- **When.** Tonight, under the user's rule of 2026-11-10 and their "continue with the plan overnight", once its review passes.
 ## C4 in detail: the adopted model by ear, on batch 3 (declared 2026-11-11, after C3r's adoption and before any C4 render; ledger `phase_c4`)
 
 - **Why.** "Score level is not sound level": every adoption since C3 was by the score (J0), and each says C4 can reverse it. The adopted model is now R-all's all-labels pair, held as C3-cabS (F77, `adopted-model.json`). C4 is the blind ear check of it, on units that no model trained on, that no read chose anything on, and that were heard on no ranking page.
