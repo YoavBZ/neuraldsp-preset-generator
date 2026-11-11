@@ -38,8 +38,9 @@ INTRO = ("dry guitar recordings (DIs), each on its own, looping. Keep one if it 
 # The amp-track page (2026-11-11, the user's ask: "add the amp track also so I could compare the DI and make sure its not
 # processed"): the same 26 cards, ids and build, each DI with the amp track its own session recorded for the same part, at
 # the same moment, levelled alike, with an instant switch. n12's DI files -> that amp track, by the session's own names;
-# the panel's units carry theirs (`amp_file`). Dark Ride's three DIs have none. At zero renders (2026-11-11) the waveform
-# or onset correlation peaks within 2 ms of the same moment on every pair but The Long Wait's, shown with a note.
+# the panel's units carry theirs (`amp_file`). Dark Ride's three DIs have none. At zero renders (2026-11-11, and the
+# review's recount) all 23 amp clips cover the DI's 10 s exactly; by coherence (80-1000 Hz, best of +-60 ms) 19 pairs are
+# the same performance (0.23-0.97) and 4 are not (0.006-0.032: another take or a double), and those 4 carry a note.
 AMP_PAGE, AMP_KEY = "page-amp.html", "amp-key.json"
 SESSION_AMP = {
     "cambridge/AleLak_NossoMundoDeixouDeExistir_Full/09_ElecGtr01DI.wav": "08_ElecGtr01.wav",
@@ -64,9 +65,13 @@ SESSION_AMP = {
 NO_SESSION_AMP = ("cambridge/DarkRide_DeadEnemies_Full/27_ElecGtr09DI.wav",
                   "cambridge/DarkRide_DeadEnemies_Full/28_ElecGtr10DI.wav",
                   "cambridge/DarkRide_DeadEnemies_Full/29_ElecGtr11DI.wav")
-UNALIGNED = ("cambridge/TheLongWait_Drag_Full/TheLongWait_Drag_Full/10_ElecGtr1DI.wav",)
+UNALIGNED = ("cambridge/TheLongWait_Drag_Full/TheLongWait_Drag_Full/10_ElecGtr1DI.wav",
+             "cambridge/CnocAnTursa_Bannockburn_Full/CnocAnTursa_Bannockburn_Full/32_ElecGtr5DI.wav",
+             "cambridge/CnocAnTursa_Bannockburn_Full/CnocAnTursa_Bannockburn_Full/35_ElecGtr6D.wav",
+             "telefunken/Renesans - Labor Of Hate/Renesans - Labor Of Hate Take 2/GTR 1 DI_TDP-1.wav")
 NO_AMP_NOTE = "No amp track was recorded with this DI."
-UNALIGNED_NOTE = "This amp track does not clearly line up with the DI: it may be another take."
+UNALIGNED_NOTE = ("This amp track is not the same take as the DI (another take or a double), so it can't show whether "
+                  "the DI is processed.")
 AMP_INTRO = ("dry guitar recordings (DIs), each on its own, looping. Each also has the amp track recorded with it, where "
              "there is one, at the same moment and the same loudness: switch between them to check that the DI is clean, "
              "not already processed. Judge the DI. Keep one if it fits the guitar parts the model should learn from. Drop "
@@ -236,12 +241,14 @@ AMP_JS = [   # (old, new) on scope_page's script: two sources a card, started to
      '  src = actx.createBufferSource(); src.buffer = b; src.loop = true; src.connect(actx.destination); src.start();\n'
      '  $("now").textContent = "Playing (it loops)"; $("play").textContent = "Stop";',
      '  let b, ba = null;\n'
-     '  try { b = await decode(id); if (AMP[id]) ba = await decode(AMP[id]); }\n'
-     '  catch (e) { delete bufs[id]; if (AMP[id]) delete bufs[AMP[id]]; $("now").textContent = "This clip did not load. Press '
+     '  const pa = AMP[id] ? decode(AMP[id]).catch(() => { delete bufs[AMP[id]]; return null; }) : Promise.resolve(null);\n'
+     '  try { b = await decode(id); } catch (e) { delete bufs[id]; $("now").textContent = "This clip did not load. Press '
      'Play to try again."; return; }\n'
+     '  ba = await pa;\n'
      '  if (my !== token) return;\n'
      '  const end = ba ? Math.min(b.duration, ba.duration) : b.duration, t0 = actx.currentTime + 0.05;\n'
      '  gains = {d: actx.createGain(), a: actx.createGain()};\n'
+     '  gains.d.gain.value = side === "a" && ba ? 0 : 1; gains.a.gain.value = side === "a" && ba ? 1 : 0;\n'
      '  srcs = [[b, gains.d]].concat(ba ? [[ba, gains.a]] : []).map(([buf, g]) => { const s = actx.createBufferSource();\n'
      '    s.buffer = buf; s.loop = true; s.loopStart = 0; s.loopEnd = end; s.connect(g); g.connect(actx.destination); '
      's.start(t0); return s; });\n'
@@ -318,6 +325,8 @@ def cmd_page_amp(args):
     for it in key["items"]:
         y, sr = sf.read(it["path"], always_2d=True)
         y = y.mean(1)
+        if sr != BDR.SR:
+            raise SystemExit(f"{it['path']}: rate {sr}")
         a = int(it["start"] * sr)
         y, _, _, _ = BDR.level_clip(y[a:a + int(WINDOW_S * sr)])
         clips[it["id"]] = SP.encode(y, out / "aac-cache")            # the published clip: the same steps, the same cache

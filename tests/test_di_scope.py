@@ -227,3 +227,26 @@ def test_every_n12_card_is_named_and_its_amp_track_exists():
     folders = {m["di"]: pathlib.Path(m["di_path"]).parent for m in meta.values()}
     for di, amp in D.SESSION_AMP.items():
         assert (folders[di] / amp).exists(), (di, amp)
+
+
+def test_the_four_pairs_not_the_same_take_carry_the_note():
+    assert set(D.UNALIGNED) <= set(D.SESSION_AMP) and len(D.UNALIGNED) == 4
+    assert "not the same take" in D.UNALIGNED_NOTE
+
+
+def test_the_built_page_is_the_published_build_with_its_notes():
+    from learn import pipeline_fix as P
+    d = P.out_dir() / D.DIR
+    if not (d / D.AMP_PAGE).exists():
+        pytest.skip("no stored data")
+    page, k = (d / D.AMP_PAGE).read_text(), json.loads((d / D.AMP_KEY).read_text())
+    t = '<script id="data" type="application/json">'
+    data = json.loads(page[page.index(t) + len(t):page.index("</script>", page.index(t))])
+    key = json.loads((d / "key.json").read_text())
+    assert data["build"] == D.BUILD and data["items"] == [it["id"] for it in key["items"]]
+    unaligned = {it["id"] for it in key["items"] if it["di"] in D.UNALIGNED}
+    none = {it["id"] for it in key["items"] if it["di"] in D.NO_SESSION_AMP}
+    assert {i for i, n in data["notes"].items() if n == D.UNALIGNED_NOTE} == unaligned and len(unaligned) == 4
+    assert {i for i, n in data["notes"].items() if n == D.NO_AMP_NOTE} == none and not none & set(data["amp"])
+    assert len(data["amp"]) == 23 and len(k["items"]) == 26 and D.leaks(page) == []
+

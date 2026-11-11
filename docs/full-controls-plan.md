@@ -736,7 +736,11 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **Each DI has the amp track its own session recorded for the same part,** at the same moment, levelled alike, with an instant switch. Each card starts on the DI.
     - n12: the session's track named for the part (`SESSION_AMP`, 15 of 18). Dark Ride's 3 DI files have no amp track, and their cards say so.
     - The panel: each unit's own amp track (8 of 8).
-  - **Checked at zero renders:** on each pair the waveform or onset correlation peaks within 2 ms of the same moment, except The Long Wait's `10_ElecGtr1DI`. Its amp track doesn't clearly line up, and its card says it may be another take.
+  - **Checked at zero renders, and recounted by the review:**
+    - All 23 amp clips cover the DI's 10 s exactly.
+    - **By coherence (80 to 1000 Hz, best of ±60 ms), 19 pairs are the same performance** (0.23 to 0.97). 4 are not (0.006 to 0.032), so the amp track there is another take or a double: The Long Wait's `10_ElecGtr1DI`, Cnoc An Tursa's `32_ElecGtr5DI` and `35_ElecGtr6D`, and Renesans's `GTR 1 DI_TDP-1`.
+    - Those 4 cards say so, and that their amp track can't show whether the DI is processed. Neither stored answer is on them.
+    - Heavy gain doesn't explain the low readings. Through a two-stage clipper at drive 3000, these DIs still read 0.31 or more against themselves. Onsets that line up show only that the rhythm lines up, which a tight double also does.
   - **A fourth answer, "Drop: processed".** Like every answer but Keep, it drops the DI file. Read the answers with `di_scope answers` from this version on, since older code refuses the new answer. The waiting launchers' `ready` and `dropped_dis` only count answers and non-keeps, so they need no change.
 
 ## C5: the heavy clean-up re-tested on the full-control model
