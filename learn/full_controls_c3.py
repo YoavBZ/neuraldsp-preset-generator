@@ -32,6 +32,11 @@ FAMILY_TAG = {"eq": "C3-eqS", "pedals": "C3-pedalsS", "gate": "C3-gateS", "cab":
 TAGS = {"C3-ftm": (), "C3-core": FAMILIES, **{t: (f,) for f, t in FAMILY_TAG.items()}}   # tag -> families at S
 ADOPT_TAG = "C3-adopt"               # the adopted configuration when it is none of the six
 ALL_TAGS = frozenset(TAGS) | {ADOPT_TAG}
+C3I_PHASE = "phase_c3i"              # C3i, the isolation of C3's core (docs/full-controls-plan.md, "C3i in detail")
+C3I_BASE = "C3i-ftm"                 # its own runs (`train-ft --masked --c3i`): FTm's recipe and mask on C2's labels
+C3I_TAG = "C3i"                      # its read tag (`pipeline_fix.C3I_TAG`), answered with FTm's hold (`K.space`)
+C3I_PAIRS = ((C3I_TAG, FTM_TAG), ("C3-core", C3I_TAG), (C3I_TAG, "S"))
+READINGS = {(True, False): "labels", (False, True): "objective", (True, True): "both", (False, False): "neither"}
 PEDAL_MODULES = ("drive1", "drive2", "compressor")
 GATE_SW, GATE_THR = ("parameters", "gateActive"), ("parameters", "gateThreshold")
 RECHECK_N = 3                        # FTm's stored judge files rendered again per set (both halves: 12 renders + priming)
@@ -691,6 +696,41 @@ def report_rows(label="c3"):
     return b, g
 
 
+def c3i_pairs():
+    """C3i's report pairs (`real-report` and `goat-report --pairs ... --label c3i`)."""
+    return ",".join(f"{a}:{b}" for a, b in C3I_PAIRS)
+
+
+def c3i_reading(iso_ftm, core_iso):
+    """C3i's declared reading from its two judged rows (C3's test: a 90% interval wholly above 0 on BKS, GOAT or pooled):
+    "labels" (C3i worse than FTm, C3 core - C3i not shown worse), "objective" (the reverse), "both" or "neither"."""
+    return READINGS[(bool(iso_ftm["shown_worse"]), bool(core_iso["shown_worse"]))]
+
+
+def cmd_c3i(args):
+    """C3i's rows from its reports (`--label c3i`) -> c3/c3i.json: each pair judged on BKS, GOAT and pooled, and the
+    declared reading. A diagnostic: it adopts and replaces nothing."""
+    from learn import pipeline_fix as P
+
+    P.require(C3I_PHASE)
+    b, g = report_rows("c3i")
+    rows = {}
+    for a_, b_ in C3I_PAIRS:
+        n = row_name(a_, b_)
+        if n not in b or n not in g:
+            raise SystemExit(f"{n}: not in both C3i reports")
+        rows[n] = judged(b[n], g[n])
+    reading = c3i_reading(rows[row_name(C3I_TAG, FTM_TAG)], rows[row_name("C3-core", C3I_TAG)])
+    rec = {"phase": C3I_PHASE, "rows": rows, "reading": reading, "c2_sha256": c2_sha(),
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    P.save(c3_dir() / "c3i.json", rec)
+    for n, j in rows.items():
+        p_ = j["pooled"] or {}
+        print(f"{n}: BKS {j['bks'].get('mean')}, GOAT {j['goat'].get('mean')}, pooled {p_.get('mean')} "
+              f"[{p_.get('lo90')}, {p_.get('hi90')}]; shown worse {j['shown_worse']}")
+    print(f"C3I READING: {reading}")
+
+
 def cmd_adopt(args):
     """The per-family adoption from the C3 reports (`real-report` and `goat-report --label c3`) -> c3/adoption.json;
     with --final, the adopted configuration against FTm (`--label c3-adopt` when it needed its own tag) ->
@@ -735,6 +775,7 @@ def main(argv=None):
     s = sub.add_parser("c3-amp")
     s.add_argument("out")
     s.set_defaults(fn=cmd_amp)
+    sub.add_parser("c3i-rows").set_defaults(fn=cmd_c3i)
     s = sub.add_parser("c3-adopt")
     s.add_argument("--final", action="store_true")
     s.set_defaults(fn=cmd_adopt)

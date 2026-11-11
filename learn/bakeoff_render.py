@@ -294,9 +294,9 @@ def fold_nets(tag):
     FT_k runs, each checked against C2's state (`full_controls_c3.read_check`)."""
     from learn import pipeline_fix as P
 
-    c3 = tag in P.C3_TAGS
+    c3 = tag in P.C3_READ                         # C3's tags and C3i's: C3's C2-state check on each run
     if tag not in P.H4_FT_TAGS and not c3:
-        raise SystemExit(f"fold_nets: {tag} is not an H4 tag, nor a C3 one ({', '.join(sorted(P.H4_FT_TAGS | P.C3_TAGS))})")
+        raise SystemExit(f"fold_nets: {tag} is not an H4 tag, nor a C3 one ({', '.join(sorted(P.H4_FT_TAGS | P.C3_READ))})")
     sha = None if c3 else P.h4_exclusions()["sha256"]
     out = {}
     for k in range(P.REAL_FOLDS):
