@@ -448,6 +448,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **The units:** C3r's read units outside n12 (n12's units are the stock DIs' source).
   - **Deciding:** cap1 (121 units, by creator) and the panel (12, by DI), which A1 never read. Their pool is the two sets weighted equally, as C3's `pooled`.
   - **Beside:** GOAT (215) and BKS (40), the sets A1 decided on.
+  - **No unit sits on a stock DI's file or its multitrack** (checked, 0 of 388 by DI file and by session; the code refuses one). The deciding sets render first.
 - **The renders:**
   - each unit's answer on the two amps other than its own, through its own DI, judged on both halves (`a2-judge`): 348 units × 2 × 2 × 2 = 2,784. Each unit's own amp, and BKS's three, are C3r's read's, and A2's answer for them must equal C3r's (checked);
   - each amp's answer through A1's stock DIs (`a2-render`): 388 × 12 = 4,656;
@@ -455,9 +456,12 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **The rule, C3's test on "DI-compare − always sw50r"** on R-all's own per-amp renders:
   - *learns:* better on cap1, the panel or their pool, and worse on none of cap1, the panel, their pool, GOAT or BKS;
   - otherwise *worse*, *split* or *undecided*.
+- **Power** (the review's simulation, GOAT's clusters as the template, the deciding sets only, before the GOAT and BKS veto): P(learns) is 0.06 to 0.09 with no effect, 0.30 to 0.49 at A1's −0.017, and 0.69 to 0.90 at −0.035. BKS's veto lowers it further. So *worse* or *split* means the pick doesn't hold; *undecided* means not confirmed at this size, not shown to fail.
+- **Beside:** R-all's own amp head (its `amp_p`, the shipped pick on the adopted model) in place of W, at zero renders.
 - **What it leads to.**
   - **Learns:** the product step is declared next. The pick goes into the generate path on R-all, with a blind ear page of its amp against W's (or always-sw50r), before it ships.
-  - **Otherwise:** the stock-DI pick doesn't confirm. Three presets (one per amp) go to the user as the default amp route, and a cleaner stem is named as the precondition for any later pick: on the clean track A1 read −0.039.
+  - **Worse or split:** the pick doesn't hold. Three presets (one per amp) go to the user as the default amp route, and a cleaner stem is named as the precondition for any later pick: on the clean track A1 read −0.039.
+  - **Undecided:** not confirmed at this size. Three presets are the default meanwhile, and the route goes to the user with the power stated.
 - **Stop rule.** One render pass and one read; nothing tuned.
 - **When.** Tonight, under the user's rule of 2026-11-10 and their "continue with the plan overnight", once its review passes.
 

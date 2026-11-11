@@ -31,3 +31,11 @@ def test_the_launcher_predicts_judges_renders_then_reads():
     t = (pathlib.Path(__file__).resolve().parents[1] / "logs" / "launch-a2.zsh").read_text()
     order = [t.index(x) for x in ("a2-predict", "a2-judge", "a2-render", "a2-embed", "a2-rows")]
     assert order == sorted(order) and "acquire_render_slot" in t and "train-ft" not in t
+
+
+def test_the_stock_overlap_finds_a_unit_on_a_stock_file_or_its_multitrack():
+    stock = {"clean": [{"di": "cambridge/Song/16_DI.wav"}]}
+    units = [{"unit": "a", "prt": {"di": "cambridge/Song/16_DI.wav"}}, {"unit": "b", "prt": {"di": "cambridge/Song/09_DI.wav"}},
+             {"unit": "c", "prt": {"di": "goat/item_1"}}]
+    got = A.stock_overlap(units, stock)
+    assert got == {"file": ["a"], "session": ["a", "b"]}

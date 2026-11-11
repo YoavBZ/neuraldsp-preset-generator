@@ -5244,6 +5244,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   | The search half's own argmin (the ceiling) | −0.093 | −0.093 | −0.093 |
 
   - **Against W:** the primary reads +0.030 on BKS, −0.013 on GOAT and +0.009 pooled, all undecided. On the clean track it reads −0.047 [−0.070, −0.025], better.
+  - **BKS's lean worse is the pick's amp share, not its per-recording choices** (the review's shuffle, picks permuted within set and class): GOAT reads −0.018 observed against +0.004 shuffled, so the picks carry information; BKS reads +0.056 against +0.043 shuffled (p 0.80). The pick sends 43 of BKS's 80 directions to the pr12, and always-pr12 on BKS reads +0.101.
   - **The picks spread over the amps:** the primary picks on GOAT pr12 115, sw50r 167, ac20 148 of 430; on BKS pr12 43, sw50r 28, ac20 9 of 80. The shape pick on the stem leans hard on the pr12 (329 of 430), a bias the floor and the features remove.
 - **What it means.**
   - **By the declared rule the primary "learns",** on GOAT alone: about a fifth of the headroom there (−0.017 of −0.093), and on GOAT's clean units −0.035. On BKS's 8 DIs it leans worse (+0.052, wide). Pooled it is level with always-sw50r.

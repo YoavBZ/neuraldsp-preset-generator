@@ -75,11 +75,27 @@ def target_lufs():
     return P.model_input_lufs(rec)
 
 
+def stock_overlap(units, stock):
+    """The units on a stock DI's file, and those from a stock DI's multitrack (the review): {"file": [unit], "session":
+    [unit]}. stock: A1's {cls: [stock DI]}."""
+    files = {s["di"] for ss in stock.values() for s in ss}
+    sessions = {f.rsplit("/", 1)[0] for f in files}
+    di = lambda u: str(u["prt"].get("di", ""))                  # noqa: E731
+    return {"file": [u["unit"] for u in units if di(u) in files],
+            "session": [u["unit"] for u in units if di(u).rsplit("/", 1)[0] in sessions]}
+
+
 def state_units():
+    """C3r's state and A2's units, the deciding sets first (the review: they finish first if the night is cut short).
+    Refuses a unit on a stock DI's file."""
     from learn import full_controls_c3r as R3
 
     st = R3.state()
-    return st, units_of(R3.read_units(st))
+    units = sorted(units_of(R3.read_units(st)), key=lambda u: (SETS.index(u["set"]), u["unit"]))
+    over = stock_overlap(units, json.loads((A1.a1_dir() / "plan.json").read_text())["stock"])
+    if over["file"]:
+        raise SystemExit(f"{len(over['file'])} A2 units sit on a stock DI's file (first {over['file'][0]})")
+    return st, units
 
 
 def cmd_predict(_args):
@@ -95,7 +111,7 @@ def cmd_predict(_args):
     st, units = state_units()
     base, hold, ms = R3.base_of("all", st), R3.answer_hold(st), P.A_menu_S()
     models = {}
-    out = {}
+    out, amp_p = {}, {}
     for u in units:
         k = u["fold"]
         if k not in models:
@@ -110,7 +126,10 @@ def cmd_predict(_args):
                 stg = F.answer_settings(a, S, r["a2"], r["sw_p"], r["mics"])
                 stg = P.hold_outside_space(stg, S, a) if hold is None else P.hold_outside_space(stg, S, a, hold)
                 out.setdefault(u["set"], {}).setdefault(f"{u['unit']}|{a}", {})[sh] = {"select": sel, "settings": LO.sdict(stg)}
+                if r.get("amp_p") is not None:             # R-all's own amp head (the review: read beside)
+                    amp_p.setdefault(f"{u['unit']}|{a}", {})[sh] = r["amp_p"]
     P.save(a2_dir() / "answers.json", {"phase": PHASE, "base": base, "c3r_sha256": st["sha256"], "answers": out,
+                                       "amp_p": amp_p,
                                        "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"A2 PREDICT DONE: {len(units)} units x 3 amps")
 
@@ -151,7 +170,8 @@ def cmd_judge(args):
                 di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
                 di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
                 ref = P.real_amp_track(prt["sd"], prt["track"], prt["start_s"])
-            rec = {"set": u["set"], "unit": u["unit"], "amp": a, "lag": u["lag"], "judge": {}}
+            rec = {"set": u["set"], "unit": u["unit"], "amp": a, "lag": u["lag"],
+                   "answers_sha256": P.answers_sha({key: ans[u["set"]][key]}), "judge": {}}
             for sh, x in sorted(ans[u["set"]][key].items()):
                 st = LO.tdict(x["settings"])
                 y = np.asarray(AM.fresh_render(CB.new_renderer, di32, x["select"], st, st), np.float64)[trim[0]:trim[1]]
@@ -215,8 +235,12 @@ def cmd_rows(_args):
     from learn import pipeline_fix as P
 
     P.require(PHASE)
+    from learn import full_controls_c3 as X
+    from learn import full_space as FS
+
     _, units = state_units()
     J = judges()
+    head_p = json.loads((a2_dir() / "answers.json").read_text()).get("amp_p") or {}
     sets, counts = {}, {}
     for s in SETS:
         rows, dropped, by_amp = {}, 0, {}
@@ -226,11 +250,12 @@ def cmd_rows(_args):
                 continue
             e = json.loads((a2_dir() / "embed" / f"{s}__{u['unit'].replace('/', '__')}.json").read_text())
             picks = {"embedding": e["picks"]["stem"], "embedding on the clean amp track": e["picks"]["clean amp track"]}
+            head = X.s2_picks(head_p, u["unit"], FS.AMPS)                # R-all's own amp head, beside
             for nm, p_ in picks.items():
                 for sh in ("A", "B"):
                     by_amp.setdefault(nm, {a: 0 for a in AMPS})[p_[sh]] += 1
             r, dr = A1.unit_rows(u["unit"], u["cluster"], u["cls"], {a: J[(s, u["unit"], a)] for a in AMPS}, picks,
-                                 {"A": "sw50r", "B": "sw50r"})
+                                 head if len(head) == 2 else {"A": "sw50r", "B": "sw50r"})
             dropped += dr
             for k, v in r.items():
                 rows.setdefault(k, []).extend(v)
