@@ -4979,7 +4979,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - logs `logs/c2b*.log`.
   - Code: `learn/full_controls_c2b.py`. The audit scripts (`c2bre.py`, `c3bcheck.py`) are in the session scratchpad.
 
-### F74. C3b, stage 1: the amp head trained on real rows. By the score its pick beats W's by −0.027 [−0.042, −0.011] pooled, the declared "learns", and reads −0.047 against a blind pick. But it picks the sw50r on 218 of the 254 read units, and always picking the sw50r reads the same: C3b less always-sw50r is +0.002 on BKS and +0.003 on GOAT, both undecided. Its 36 other picks read worse than the sw50r would. So it learned the labels' commonest amp, not each recording's. Picking per recording is worth −0.025 on GOAT's clean units and nothing on crunch. Stage 2 is declared (phase_c3b, 39 min of MPS, zero renders, audited)
+### F74. C3b, stage 1: the amp head trained on real rows. By the score its pick beats W's by −0.027 [−0.042, −0.011] pooled, the declared "learns", and reads −0.047 against a blind pick. But it picks the sw50r on 218 of the 254 read units, and always picking the sw50r reads the same: C3b less always-sw50r is +0.002 on BKS and +0.003 on GOAT, both undecided. Its 36 other picks read worse than the sw50r would. So it learned the labels' commonest amp, not each recording's. On the labels, picking per recording is worth −0.025 on GOAT's clean units and nothing on crunch; on C3's own BKS answers it is worth about −0.09 on both, and the labels don't point to it. Stage 2 is declared (phase_c3b, 39 min of MPS, zero renders, audited)
 - **What ran** ([plan](full-controls-plan.md), "C3b in detail").
   - **The recipe:** C3's, with every real row taking its unit's amp label in the amp head's slot. The labels are the stored recipe's argmin: GOAT's 214 from C2b, BKS's 102 over its three stored labels.
   - **The training:** 8 FT_k, each for C3's own inner run's E (48 to 74 epochs), and the all-labels pair at 57. It took 39 min of MPS (14:45 to 15:24), beside C2r's 5 render shards. C2r's rate went from 11,292 to 10,842 an hour (−4%), inside the 20% stop.
@@ -5013,7 +5013,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - **On C3's own per-amp renders** (BKS, C3-cabS's settings on all three amps, both halves), against blind: W −0.028 [−0.070, +0.015], C3b's pick −0.055 [−0.101, −0.009], always the sw50r −0.049 [−0.102, +0.004], always the ac20 −0.003, always the pr12 +0.052. So with every control set by the model, the sw50r is still the best single amp on BKS, and the pr12 the worst.
 - **What it means.**
   - **By the score the sw50r is the best single amp for these sets, and training finds it.** The product's pick would move from W's near coin toss to nearly always the sw50r: about −2.7% pooled on the labels, −2.7% on C3's own BKS renders.
-  - **Picking the amp per recording is not learned, and the loss is on clean recordings** (the review's split, recounted; against blind, on the labels' held halves):
+  - **Picking the amp per recording is not learned. On the labels' yardstick the loss is on clean recordings** (the review's split, recounted; against blind, on the labels' held halves):
 
     | Set, class | Always sw50r | Always ac20 | Labels' argmin | Argmin − always sw50r | C3b − always sw50r |
     |---|---|---|---|---|---|
@@ -5025,8 +5025,18 @@ what it changes. Each is audited before it is entered; the review's steps carry 
     - **The sw50r's lead is a crunch effect.** On crunch, always picking it sits at the ceiling, and C3b's departures from it are shown worse on GOAT.
     - **On clean it isn't.** On GOAT the sw50r only ties the ac20, and picking per recording is worth a further −0.025, shown better. On BKS's 4 clean DIs the ac20 reads better than the sw50r.
     - Pooled over classes, the per-recording value reads −0.010 (GOAT) to −0.014 (BKS) beyond C3b's pick, and that average hides the clean gap.
-    - **So the next amp route aims at clean recordings,** which are the user's main scope: more clean amp labels and a head that reads the amp from the audio, before the thorough relabel (F73's option 3, about 112k renders).
-  - **The lean may be the labels' recipe.** These are stored-recipe labels, `K.space` only. Under C2's every-control labels the pr12 fits BKS as often as the sw50r (48 against 40, F73). C3's own renders, with every control the model sets, still favour the sw50r on BKS. Stage 2 reads C3b's full answer on all three amps, on both sets.
+  - **On the model's own answers it is different** (the re-check, recounted; C3-cabS's own BKS renders on all three amps, 80 directions on 8 DIs):
+
+    | Row | All | Clean (4 DIs) | Crunch (4 DIs) |
+    |---|---|---|---|
+    | Each unit's search-half argmin − always sw50r | **−0.093 [−0.132, −0.053]** | **−0.059 [−0.097, −0.022]** | **−0.126 [−0.203, −0.049]** |
+    | The labels' argmin amp − always sw50r | **+0.055 [+0.002, +0.109]**, worse | **+0.112 [+0.018, +0.205]**, worse | −0.001 [−0.008, +0.005] |
+
+    - **With the model's own settings the amp matters about 9% by the score,** on both classes, against about 1% on the labels.
+    - **The stored labels don't point to it.** The label's amp is the held half's best in 31 of 80 directions, about chance, and with C3's settings it reads worse than always the sw50r, most of all on clean.
+    - So even a perfect head on these labels would miss this headroom, and on BKS's clean recordings would read worse than the sw50r. This is 8 DIs; stage 2 reads the same rows on GOAT's 215 units.
+    - **The next amp route is weighed on stage 2's rows,** on the product's own answers, in the user's clean/crunch scope. If GOAT confirms BKS, the target is the amp that suits the model's own answer (the argmin of its own per-amp renders on the training units), not the amp a full search fits best. That goes to the user, explained, before anything is proposed.
+  - **The lean may be the labels' recipe.** These are stored-recipe labels, `K.space` only. Under C2's every-control labels the pr12 fits BKS as often as the sw50r (48 against 40, F73). C3's own renders, with every control the model sets, still favour the sw50r on BKS as a single amp. Stage 2 reads C3b's full answer on all three amps, on both sets.
   - **The lean may be J0's.** "By the score" is not "by ear". C4's blind page is where a sw50r-heavy product is heard.
 - **Stage 2 is declared next** ([plan](full-controls-plan.md), "C3b stage 2 in detail"). It renders C3b's answers and the adopted C3's on all three amps, on both sets: 5,640 renders. It reads C3b's full answer (its pick, its settings) against C3's (W's pick, C3-cabS's settings), split into the pick alone and the settings alone, by C3's adoption rule, and by class. Beside, from the same renders: always the sw50r on each model, and each model's settings amp by amp.
   - **Adopting C3b would adopt a learned constant,** the labels' majority amp. By the score that is about 2 to 3% better than W's near coin toss, mostly on crunch. On clean, the per-recording choice is worth about 2.5% and stays unlearned.
