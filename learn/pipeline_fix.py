@@ -4059,16 +4059,26 @@ def cmd_goat_centres(args):
                                             for t, v in used.items() if v))
 
 
-def goat_predict(name):
+AMPS3_DIR = "answers-amps3"         # C3b stage 2 (phase_c3b_s2): GOAT answers on all three amps, beside goat/answers
+AMPS3_JUDGE = "judge-amps3"         # and their renders, beside goat/judge (the forced-amp files stay untouched)
+C3B_S2_TAGS = ("C3b", "C3-cabS")    # the tags stage 2 reads on all three amps (C3b and the adopted C3)
+
+
+def goat_predict(name, amps3=False):
     """RG's (or RGshuf's) answers on the trusted GOAT units (zero renders): each unit read by model `name` + its
     item fold, both seeds pooled at the models' own training inputs' median loudness, per search half, on its
-    forced amp, as `real_predict_5b2` reads BKS's units. -> goat/answers/<name>.json."""
+    forced amp, as `real_predict_5b2` reads BKS's units. -> goat/answers/<name>.json. `amps3` (C3b's stage 2,
+    `phase_c3b_s2`): on all three amps -> goat/answers-amps3/<name>.json."""
     from learn import direct_existing as DE
     from learn import direct_stems as DS
     from learn import full_space as F
     from learn import local_objective as LO
 
     e = require(read_phase(name))
+    if amps3:
+        require("phase_c3b_s2")
+        if name not in C3B_S2_TAGS:
+            raise SystemExit(f"--amps3 is C3b's stage 2: --names {' or '.join(C3B_S2_TAGS)}")
     h4x = h4_exclusions() if name in H4_FT_TAGS else None     # phase_h4 and the pinned exclusions
     croot, kept, rend, sp, dropped = recipe_inputs(pin=e.get("phase_3_doubles"))
     units = goat_read_units()
@@ -4090,30 +4100,31 @@ def goat_predict(name):
         nets, _, target = models[prt["fold"]]
         ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
         g = DE.inference_gain_db(ref, target)
-        amp = prt["amp"]
-        sel, S = ms[amp][prt["cls"]]
         backed = stem_backed(prt["unit"]) if name == FTS_TAG else dfix_backed(prt["unit"]) if name in (*DFIX_BASES, FT_BASE, FTM_BASE, *H4_FT_TAGS, *C3_READ) else None   # D_fix, FT: pool-backed
         if name == FTS_TAG and backed is None:
             continue
-        for search in ("A", "B"):
-            if backed is not None:
-                s8, ls = backed[search]
-            else:
-                s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
-            x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
-            r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
-            st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
-            if name in (FTM_BASE, FTS_TAG, *H4_FT_TAGS, *C3_READ):
-                st = hold_outside_space(st, S, amp) if hold is None else hold_outside_space(st, S, amp, hold)
-            if name in C3_READ and r["amp_p"] is not None:
-                amp_p.setdefault(real_key(prt, amp), {})[search] = r["amp_p"]
-            out.setdefault(real_key(prt, amp), {})[search] = {"select": sel, "settings": LO.sdict(st)}
-    save(out_dir() / GOAT_DIR / "answers" / f"{name}.json", {
+        for amp in (AMPS3 if amps3 else (prt["amp"],)):
+            sel, S = ms[amp][prt["cls"]]
+            for search in ("A", "B"):
+                if backed is not None:
+                    s8, ls = backed[search]
+                else:
+                    s8, _, ls, _ = DS.step4_half(ref, ref, search, g)
+                x, c = DS.model_input(s8, s8, ls, ls, search, amp, prt["cls"], "Dstem")
+                r = F.readout([o[0] for o in F.run_nets(nets, [x], [c])])
+                st = F.answer_settings(amp, S, r["a2"], r["sw_p"], r["mics"])
+                if name in (FTM_BASE, FTS_TAG, *H4_FT_TAGS, *C3_READ):
+                    st = hold_outside_space(st, S, amp) if hold is None else hold_outside_space(st, S, amp, hold)
+                if name in C3_READ and r["amp_p"] is not None:
+                    amp_p.setdefault(real_key(prt, amp), {})[search] = r["amp_p"]
+                out.setdefault(real_key(prt, amp), {})[search] = {"select": sel, "settings": LO.sdict(st)}
+    save(out_dir() / GOAT_DIR / (AMPS3_DIR if amps3 else "answers") / f"{name}.json", {
         "plan": PLAN, "ledger": f"{LEDGER_ID} {read_phase(name)}",
         "tag": name,
         "models": {k: {"sha256": m[1], "input_lufs": m[2]} for k, m in models.items()}, "answers": out,
-        **({"amp_p": amp_p} if amp_p else {}), "time": time.strftime("%Y-%m-%d %H:%M:%S")})
-    print(f"GOAT PREDICT DONE: {name} on {len(units)} units")
+        **({"amp_p": amp_p} if amp_p else {}), **({"amps3": True} if amps3 else {}),
+        "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"GOAT PREDICT DONE: {name} on {len(units)} units" + (" on all three amps" if amps3 else ""))
 
 
 def cmd_goat_predict(args):
@@ -4122,13 +4133,17 @@ def cmd_goat_predict(args):
         raise SystemExit(f"--names P2a-goat, P2a-goatshuf, {FT_BASE}, {FTM_BASE}, {FTS_TAG}, H4's "
                          f"{', '.join(sorted(H4_FT_TAGS))}, C3's {', '.join(sorted(C3_READ))} or one of "
                          f"{', '.join(DFIX_BASES)} (fold models)")
-    goat_predict(args.names)
+    if getattr(args, "amps3", False):                 # C3b's stage 2: all three amps (answers-amps3)
+        goat_predict(args.names, amps3=True)
+    else:
+        goat_predict(args.names)
 
 
 def cmd_goat_render(args):
     """5C's read renders on the trusted GOAT units (one shard): each answer of `--names` (goat/answers) through the
     unit's DI in its own primed process (`fresh_render`), over the whole section, trimmed, judged against the render
-    on both halves at the unit's lag. -> goat/judge/<tag>/<unit>|<amp>.json."""
+    on both halves at the unit's lag. -> goat/judge/<tag>/<unit>|<amp>.json. `--amps3` (C3b's stage 2): every amp's
+    answer in goat/answers-amps3 -> goat/judge-amps3/<tag>/<unit>|<amp>.json."""
     import numpy as np
 
     from learn import audibility_measure as AM
@@ -4140,8 +4155,15 @@ def cmd_goat_render(args):
     from learn import trusted_data as T
 
     require("phase_5c")
+    amps3 = bool(getattr(args, "amps3", False))
     tags = [t for t in args.names.split(",") if t]
-    ans = {t: json.loads((out_dir() / GOAT_DIR / "answers" / f"{t}.json").read_text())["answers"] for t in tags}
+    if amps3:
+        require("phase_c3b_s2")
+        bad = [t for t in tags if t not in C3B_S2_TAGS]
+        if bad:
+            raise SystemExit(f"--amps3 is C3b's stage 2: {bad} refused")
+    adir, jdir = (AMPS3_DIR, AMPS3_JUDGE) if amps3 else ("answers", "judge")
+    ans = {t: json.loads((out_dir() / GOAT_DIR / adir / f"{t}.json").read_text())["answers"] for t in tags}
     units = goat_read_units()
     k, n = args.shard
     mine = [p_ for j, p_ in enumerate(units) if j % n == k]
@@ -4154,17 +4176,17 @@ def cmd_goat_render(args):
         di32 = B.measure(PS.section_audio(prt["di_path"], prt["start_s"])).astype(np.float32)
         di = np.asarray(di32, np.float64)[trim[0]:trim[1]]
         ref = real_amp_track(prt["sd"], prt["track"], prt["start_s"])
-        key = real_key(prt, prt["amp"])
-        for t in tags:
+        for t, amp in [(t, a) for t in tags for a in (AMPS3 if amps3 else (prt["amp"],))]:
+            key = real_key(prt, amp)
             if key not in ans[t]:
                 continue
-            gp = out_dir() / GOAT_DIR / "judge" / t / f"{key.replace('/', '__')}.json"
+            gp = out_dir() / GOAT_DIR / jdir / t / f"{key.replace('/', '__')}.json"
             asha = answers_sha({key: ans[t][key]})
             if gp.exists():
                 if json.loads(gp.read_text()).get("answers_sha256") != asha:
                     raise SystemExit(f"{gp}: rendered from other answers")
                 continue
-            rec = {"unit": prt["unit"], "amp": prt["amp"], "tag": t, "lag": prt["lag"], "answers_sha256": asha,
+            rec = {"unit": prt["unit"], "amp": amp, "tag": t, "lag": prt["lag"], "answers_sha256": asha,
                    "judge": {}, "render_sha256": {}}
             for search, a in sorted(ans[t][key].items()):
                 st = LO.tdict(a["settings"])
@@ -8172,6 +8194,8 @@ def main(argv=None):
     ap.add_argument("--c3", action="store_true", help="train-ft: C3, FTm's recipe on C2's labels (with --masked)")
     ap.add_argument("--c3i", action="store_true", help="train-ft: C3i, FTm's recipe and mask on C2's labels (with --masked)")
     ap.add_argument("--c3b", action="store_true", help="train-ft: C3b, C3's recipe with the amp head on real rows (with --masked)")
+    ap.add_argument("--amps3", action="store_true",
+                    help="goat-predict, goat-render: C3b's stage 2, every GOAT unit on all three amps (answers-amps3)")
     ap.add_argument("--dry-run", action="store_true",
                     help="train-ft: build the run's rows, data and masks and check them, then stop before its first step")
     ap.add_argument("--c3r", choices=("all", "ctl"), default=None,
