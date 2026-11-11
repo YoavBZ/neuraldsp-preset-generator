@@ -4884,15 +4884,15 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - logs `logs/c2*.log`.
   - Code: `learn/full_controls_c2.py`. The audit's scripts (`recompute.py`, `a3.py` to `a6.py`) are in the session scratchpad.
 
-### F72. C3: FTm's recipe retrained on C2's every-control labels. By the score the adopted model reads level with FTm: BKS +0.001 [−0.057, +0.058], GOAT +0.005 [−0.019, +0.028], N12 −0.032 [−0.122, +0.059], all undecided. It learns the EQ, the pedals and the gate, with the rest of the cab at S. It stays 10% closer than S. The EQ carries −0.039 on GOAT, but C3's core reads +0.034 worse than FTm's there, so the two cancel and the isolation run C3i is due. By the declared rule the adopted model replaces FTm, and C4 can reverse it (phase_c3, 71 min of MPS, about 4,400 renders, audited)
+### F72. C3: FTm's recipe retrained on C2's every-control labels. By the score the adopted model reads level with FTm: BKS +0.001 [−0.057, +0.058], GOAT +0.005 [−0.019, +0.028], N12 −0.032 [−0.122, +0.059], all undecided. It learns the EQ, the pedals and the gate, with the rest of the cab at S. It stays 10% closer than S. The EQ carries −0.039 on GOAT, but C3's core reads +0.034 worse than FTm's there, so the two cancel and the isolation run C3i is due. By the declared rule the adopted model replaces FTm, and C4 can reverse it (phase_c3, 71 min of MPS, 8,442 renders, audited)
 - **What ran** ([plan](full-controls-plan.md), "C3 in detail").
-  - **The training:** FTm's recipe on FTm's 520 real rows, every one with its C2 label (none fell back), and per-record masks of `K.space` ∪ C2's searched keys (40 to 50 keys a record). That is 8 inner runs, 8 FT_k and the all-labels pair, seeds 20261042 and 20261043, in 71 minutes. E was 48 to 74 by fold and seed, and the all-labels pair took the median, 57.
+  - **The training:** FTm's recipe on FTm's 520 real rows, every one with its C2 label (none fell back), and per-record masks of `K.space` ∪ C2's searched keys (40 to 50 keys a record). That is 8 inner runs, 8 FT_k and the all-labels pair, seeds 20261042 and 20261043, in 71 minutes of wall clock with two runs at a time (124.0 run-minutes, against FTm's 135.7). E was 48 to 74 by fold and seed, and the all-labels pair took the median, 57.
   - **The read, as H4a:** six tags on BKS (40 units × 3 amps, by DI fold), GOAT (215 units on their own amp, by item fold) and N12 (pooled, measurement only). Each answer comes from the search half and is judged on the held half: ln(d_tag / d_FTm), lower is better.
   - **The tags:**
     - C3, every trained key as answered;
     - C3 core, every trained key outside `K.space` at S;
     - one tag for each family at S: EQ, pedals, gate threshold, cab rest.
-  - **Renders:** about 4,400 (BKS 1,440, GOAT 2,580, N12 about 370, the hash check 24), against the declared 8,400. That estimate counted about 1,400 renders a tag, but a tag takes about 740.
+  - **Renders: 8,442,** as declared: BKS 2,880, GOAT 5,160, N12 378 and the hash check 24. Each answer is rendered twice, once to prime its process and once to keep.
 - **The run matched the declaration.** It was audited with separate code: BKS's and GOAT's rows for C3, the adopted tag, C3 core, the EQ and the rest of the cab, against FTm, reproduce the stored adoption record to 1e-4.
   - Training: no NaN or failure in any of the 18 runs. Each run records C2's sha256 (661dc9a7). Before training, C3 core's hold equalled `hold_outside_space` on 98 of 98 stored answers, and no untrained key left S.
   - FTm's 12 hash-check renders matched (12 of 12), so FTm's stored scores are the comparator.
@@ -4915,7 +4915,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   | Rest of the cab (left cab, rooms, right cab's phase) | +0.0003 [−0.001, +0.002] | **+0.0014 [+0.0007, +0.0020]** | +0.0008 [−0.0000, +0.0017] | shown worse on GOAT: at S |
 
 - **What it means, by the score.**
-  - **Learning every control is so far level with FTm, not ahead of it.** On GOAT the EQ's −0.039 is spent offsetting C3's own core, which reads +0.034 worse than FTm's core. On BKS neither moves.
+  - **Learning every control is so far level with FTm, not ahead of it.** On GOAT, given C3's learned core, the EQ's −0.039 offsets C3's own core, which reads +0.034 worse than FTm's. The split depends on the order the families are set to S: C3 − C3 core reads −0.028, and the four family rows sum to −0.028. On BKS neither moves.
   - **The core's loss has two candidate causes, and the read can't separate them.**
     - C2's core labels were searched jointly with the EQ and the pedals, so alone they may be the wrong core values.
     - Or the wider objective (about 2.5× more dims, the mixture shaped by the EQ's 11) teaches the core heads less well.
