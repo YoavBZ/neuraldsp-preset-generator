@@ -731,6 +731,17 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
     - C3r refuses if a `scope_out` record's DI is kept by the final verdicts. Such a record needs its label: it is moved aside and its shard resumed.
   - **A verdicts file for another build** makes the waiting launcher fail with a message. It does not wait for ever.
 - **Cost.** Zero renders. At most it saves the renders of the records it drops.
+- **The amp-track version of the page (2026-11-11, the user's ask, after 2 of 26 answers).** The user asked: "add the amp track also so I could compare the DI and make sure its not processed".
+  - **The same 26 cards, ids and build** (f75f017f9d66), so the 2 answers already stored carry over. `key.json` is untouched; the page and its key are `di-scope/page-amp.html` and `amp-key.json` (`di_scope page-amp`). The DI clips are byte-identical to the first version's.
+  - **Each DI has the amp track its own session recorded for the same part,** at the same moment, levelled alike, with an instant switch. Each card starts on the DI.
+    - n12: the session's track named for the part (`SESSION_AMP`, 15 of 18). Dark Ride's 3 DI files have no amp track, and their cards say so.
+    - The panel: each unit's own amp track (8 of 8).
+  - **Checked at zero renders, and recounted by the review:**
+    - All 23 amp clips cover the DI's 10 s exactly.
+    - **By coherence (80 to 1000 Hz, best of ±60 ms), 19 pairs are the same performance** (0.23 to 0.97). 4 are not (0.006 to 0.032), so the amp track there is another take or a double: The Long Wait's `10_ElecGtr1DI`, Cnoc An Tursa's `32_ElecGtr5DI` and `35_ElecGtr6D`, and Renesans's `GTR 1 DI_TDP-1`.
+    - Those 4 cards say so, and that their amp track can't show whether the DI is processed. Neither stored answer is on them.
+    - Heavy gain doesn't explain the low readings. Through a two-stage clipper at drive 3000, these DIs still read 0.31 or more against themselves. Onsets that line up show only that the rhythm lines up, which a tight double also does.
+  - **A fourth answer, "Drop: processed".** Like every answer but Keep, it drops the DI file. Read the answers with `di_scope answers` from this version on, since older code refuses the new answer. The waiting launchers' `ready` and `dropped_dis` only count answers and non-keeps, so they need no change.
 
 ## C5: the heavy clean-up re-tested on the full-control model
 - **What F68 said, and what has changed.** F68 closed the clean-up with "This clean-up is not reopened." Its verdict on the `K.space` model stands.

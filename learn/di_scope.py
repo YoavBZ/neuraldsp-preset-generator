@@ -4,6 +4,7 @@ alone, levelled; Keep, "Drop: too low or too metal", Not sure. Only Keep stays i
 it out of C2r's records, C3r's rows and every read. Zero renders.
 
     .venv/bin/python -m learn.di_scope page [--out DIR]     # the page (PF/di-scope by default; refuses over a key)
+    .venv/bin/python -m learn.di_scope page-amp [--out DIR] # the same cards, each DI with its session's amp track
     .venv/bin/python -m learn.di_scope answers --store FILE  # the Artifact's stored answers/<build> -> di-scope/verdicts.json
     .venv/bin/python -m learn.di_scope ready                 # exit 0 complete, 3 not yet, 2 never as it stands
 
@@ -26,11 +27,56 @@ SEED = 20261153                      # the cards' order and ids
 WINDOW_S = 10.0                      # each card: 10 s of the DI from the first unit on its file, by key
 BUILD = "f75f017f9d66"               # the published build; C3r's training refuses until its 26 answers are in
 N_CARDS = 26                         # n12's 18 DI files and the panel's 8
-VERDICTS = (("keep", "Keep", "K"), ("heavy", "Drop: too low or too metal", "D"), ("unsure", "Not sure", "N"))
+VERDICTS = (("keep", "Keep", "K"), ("heavy", "Drop: too low or too metal", "D"), ("processed", "Drop: processed", "P"),
+            ("unsure", "Not sure", "N"))   # "processed" since the amp-track page (2026-11-11); every non-keep drops
 LEAK_WORDS = ("cambridge", "telefunken", "ElecGtr", "DI.wav", "panel", "n12")
 INTRO = ("dry guitar recordings (DIs), each on its own, looping. Keep one if it fits the guitar parts the model should "
          "learn from. Drop it if it is tuned too low or played too metal for that, as on the batch 3 page. Only Keep stays "
          "in, so Not sure counts as dropped. All are set to the same loudness, and a tap moves on to the next one. ")
+
+
+# The amp-track page (2026-11-11, the user's ask: "add the amp track also so I could compare the DI and make sure its not
+# processed"): the same 26 cards, ids and build, each DI with the amp track its own session recorded for the same part, at
+# the same moment, levelled alike, with an instant switch. n12's DI files -> that amp track, by the session's own names;
+# the panel's units carry theirs (`amp_file`). Dark Ride's three DIs have none. At zero renders (2026-11-11, and the
+# review's recount) all 23 amp clips cover the DI's 10 s exactly; by coherence (80-1000 Hz, best of +-60 ms) 19 pairs are
+# the same performance (0.23-0.97) and 4 are not (0.006-0.032: another take or a double), and those 4 carry a note.
+AMP_PAGE, AMP_KEY = "page-amp.html", "amp-key.json"
+SESSION_AMP = {
+    "cambridge/AleLak_NossoMundoDeixouDeExistir_Full/09_ElecGtr01DI.wav": "08_ElecGtr01.wav",
+    "cambridge/AleLak_NossoMundoDeixouDeExistir_Full/13_ElecGtr02DI.wav": "12_ElecGtr02.wav",
+    "cambridge/AleLak_NossoMundoDeixouDeExistir_Full/20_ElecGtr04DI.wav": "19_ElecGtr04.wav",
+    "cambridge/AleLak_NossoMundoDeixouDeExistir_Full/24_ElecGtr05DI.wav": "23_ElecGtr05.wav",
+    "cambridge/TheTravellingBand_Quicksand_Full/16_ElecGtr1DI.wav": "14_ElecGtr1Close.wav",
+    "cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/15_ElecGtr04DI.wav":
+        "14_ElecGtr04.wav",
+    "cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/17_ElecGtr05DI.wav":
+        "16_ElecGtr05.wav",
+    "cambridge/StormOfParticles_OfIceAndHopelessFate_Full/StormOfParticles_OfIceAndHopelessFate_Full/19_ElecGtr06DI.wav":
+        "18_ElecGtr06.wav",
+    "cambridge/TheLongWait_Drag_Full/TheLongWait_Drag_Full/10_ElecGtr1DI.wav": "08_ElecGtr1Mic1.wav",
+    "cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/21_ElecGtr3DI.wav": "20_ElecGtr3.wav",
+    "cambridge/RebuildTheEvil_BurialOfSilence_Full/RebuildTheEvil_BurialOfSilence_Full/23_ElecGtr4DI.wav": "22_ElecGtr4.wav",
+    "cambridge/CnocAnTursa_Bannockburn_Full/CnocAnTursa_Bannockburn_Full/32_ElecGtr5DI.wav": "33_ElecGtr5Mic1.wav",
+    "cambridge/CnocAnTursa_Bannockburn_Full/CnocAnTursa_Bannockburn_Full/35_ElecGtr6D.wav": "36_ElecGtr6Mic1.wav",
+    "cambridge/DeathOfARomantic_TheWell_Full/DeathOfARomantic_TheWell_Full/16_ElecGtr03DI.wav": "15_ElecGtr03.wav",
+    "telefunken/Renesans - Labor Of Hate/Renesans - Labor Of Hate Take 2/GTR 1 DI_TDP-1.wav": "GTR 1 Amp_M81.wav",
+}
+NO_SESSION_AMP = ("cambridge/DarkRide_DeadEnemies_Full/27_ElecGtr09DI.wav",
+                  "cambridge/DarkRide_DeadEnemies_Full/28_ElecGtr10DI.wav",
+                  "cambridge/DarkRide_DeadEnemies_Full/29_ElecGtr11DI.wav")
+UNALIGNED = ("cambridge/TheLongWait_Drag_Full/TheLongWait_Drag_Full/10_ElecGtr1DI.wav",
+             "cambridge/CnocAnTursa_Bannockburn_Full/CnocAnTursa_Bannockburn_Full/32_ElecGtr5DI.wav",
+             "cambridge/CnocAnTursa_Bannockburn_Full/CnocAnTursa_Bannockburn_Full/35_ElecGtr6D.wav",
+             "telefunken/Renesans - Labor Of Hate/Renesans - Labor Of Hate Take 2/GTR 1 DI_TDP-1.wav")
+NO_AMP_NOTE = "No amp track was recorded with this DI."
+UNALIGNED_NOTE = ("This amp track is not the same take as the DI (another take or a double), so it can't show whether "
+                  "the DI is processed.")
+AMP_INTRO = ("dry guitar recordings (DIs), each on its own, looping. Each also has the amp track recorded with it, where "
+             "there is one, at the same moment and the same loudness: switch between them to check that the DI is clean, "
+             "not already processed. Judge the DI. Keep one if it fits the guitar parts the model should learn from. Drop "
+             "it if it is tuned too low or played too metal, or if it is processed. Only Keep stays in, so Not sure counts "
+             "as dropped. A tap moves on to the next one. ")
 
 
 def scope_dir():
@@ -151,6 +197,166 @@ def cmd_page(args):
     print(f"DI SCOPE PAGE {len(items)} cards, build {build}, {len(page) / 1e6:.1f} MB -> {out / 'page.html'}")
 
 
+def amp_sources(items, n12, panel, di_meta):
+    """Each card's amp track: {card id: {path, start, di_file} or None}. n12: the session's track for the DI file
+    (`SESSION_AMP`) at the section's start in the DI file (batch 2's `di_meta`); the panel: the unit's own amp file at its
+    window. Refuses an n12 DI file in neither list."""
+    by = {u["unit"]: u for u in list(n12) + list(panel)}
+    out = {}
+    for it in items:
+        u = by[it["unit"]]
+        if it["set"] == "n12":
+            if it["di"] in NO_SESSION_AMP:
+                out[it["id"]] = None
+                continue
+            if it["di"] not in SESSION_AMP:
+                raise SystemExit(f"{it['di']}: no session amp track named")
+            m = di_meta[u["di_item"]]
+            out[it["id"]] = {"path": str(pathlib.Path(m["di_path"]).parent / SESSION_AMP[it["di"]]),
+                             "start": float(m["start_s"]), "di_file": m["di_path"]}
+        else:
+            out[it["id"]] = {"path": u["amp_file"], "start": float(u["window_s"]), "di_file": u["di_file"]}
+    return out
+
+
+AMP_CSS = """
+.ab { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:.6rem 0 .2rem; }
+.ab button { min-height:48px; }
+.ab button[aria-pressed="true"] { background:var(--on); color:var(--on-fg); border-color:var(--on); }
+#note { min-height:1.2em; color:var(--mute); font-size:.9rem; margin:.2rem 0 .6rem; }
+"""
+
+AMP_JS = [   # (old, new) on scope_page's script: two sources a card, started together, switched by gain
+    ('const bufs = {};',
+     'const bufs = {}, AMP = DATA.amp || {}, NOTES = DATA.notes || {};\nlet side = "d", gains = null, srcs = [];'),
+    ('function prune() { const near = new Set([at - 1, at, at + 1, openFrom(at)].map(j => ids[j]));',
+     'function prune() { const near = new Set();\n  [at - 1, at, at + 1, openFrom(at)].forEach(j => { const id = ids[j]; '
+     'if (id) { near.add(id); if (AMP[id]) near.add(AMP[id]); } });'),
+    ('function stop() { token++; if (src) { try { src.stop(); } catch (e) {} src = null; }',
+     'function stop() { token++; srcs.forEach(s => { try { s.stop(); } catch (e) {} }); srcs = []; src = null; gains = null;'),
+    ('  let b;\n'
+     '  try { b = await decode(id); } catch (e) { delete bufs[id]; $("now").textContent = "This clip did not load. Press Play '
+     'to try again."; return; }\n'
+     '  if (my !== token) return;\n'
+     '  src = actx.createBufferSource(); src.buffer = b; src.loop = true; src.connect(actx.destination); src.start();\n'
+     '  $("now").textContent = "Playing (it loops)"; $("play").textContent = "Stop";',
+     '  let b, ba = null;\n'
+     '  const pa = AMP[id] ? decode(AMP[id]).catch(() => { delete bufs[AMP[id]]; return null; }) : Promise.resolve(null);\n'
+     '  try { b = await decode(id); } catch (e) { delete bufs[id]; $("now").textContent = "This clip did not load. Press '
+     'Play to try again."; return; }\n'
+     '  ba = await pa;\n'
+     '  if (my !== token) return;\n'
+     '  const end = ba ? Math.min(b.duration, ba.duration) : b.duration, t0 = actx.currentTime + 0.05;\n'
+     '  gains = {d: actx.createGain(), a: actx.createGain()};\n'
+     '  gains.d.gain.value = side === "a" && ba ? 0 : 1; gains.a.gain.value = side === "a" && ba ? 1 : 0;\n'
+     '  srcs = [[b, gains.d]].concat(ba ? [[ba, gains.a]] : []).map(([buf, g]) => { const s = actx.createBufferSource();\n'
+     '    s.buffer = buf; s.loop = true; s.loopStart = 0; s.loopEnd = end; s.connect(g); g.connect(actx.destination); '
+     's.start(t0); return s; });\n'
+     '  src = srcs[0]; setSide(side); $("play").textContent = "Stop";'),
+    ('const nx = openFrom(at); if (nx >= 0) decode(ids[nx]).catch(() => {});',
+     'const nx = openFrom(at); if (nx >= 0) { decode(ids[nx]).catch(() => {}); if (AMP[ids[nx]]) '
+     'decode(AMP[ids[nx]]).catch(() => {}); }'),
+    ('function go(i) { at = i; arm(false); paint(); }',
+     'function go(i) { at = i; side = "d"; arm(false); paint(); }\n'
+     'function ampLive() { return !!AMP[ids[at]] && !(gains && srcs.length < 2); }\n'
+     'function setSide(s) { if (s === "a" && !ampLive()) s = "d"; side = s;\n'
+     '  if (gains) { const t = actx.currentTime; gains.d.gain.setTargetAtTime(s === "d" ? 1 : 0, t, 0.004);\n'
+     '    gains.a.gain.setTargetAtTime(s === "a" ? 1 : 0, t, 0.004);\n'
+     '    $("now").textContent = s === "a" ? "Playing the amp track (it loops)" : "Playing the DI (it loops)"; }\n'
+     '  paint(); }'),
+    ('  $("back").disabled = at === 0;',
+     '  $("back").disabled = at === 0;\n'
+     '  $("sa").disabled = !ampLive(); $("sd").setAttribute("aria-pressed", String(side === "d"));\n'
+     '  $("sa").setAttribute("aria-pressed", String(side === "a")); $("note").textContent = NOTES[ids[at]] || "";'),
+    ('$("back").addEventListener("click", back);',
+     '$("back").addEventListener("click", back);\n$("sd").addEventListener("click", () => setSide("d"));\n'
+     '$("sa").addEventListener("click", () => setSide("a"));'),
+    ('if (k === "k") answer("keep"); else if (k === "d") answer("heavy"); else if (k === "n") answer("unsure");',
+     'if (k === "k") answer("keep"); else if (k === "d") answer("heavy"); else if (k === "n") answer("unsure");\n'
+     '  else if (k === "p") answer("processed"); else if (k === "a") setSide(side === "a" ? "d" : "a");'),
+]
+
+
+def page_html_amp(ids, clips, amp, notes, build):
+    """The DI page with each card's amp track: the same ids and build, so the answers stored so far carry over. amp: {card
+    id: its amp clip's id}; notes: {card id: text}."""
+    page = page_html(ids, clips, build)
+    i0, i1 = page.index('<p class="intro">'), page.index('<span id="saveline">')
+    page = page[:i0] + '<p class="intro">' + f"{len(ids)} " + AMP_INTRO + page[i1:]
+    swaps = [("</style>", AMP_CSS + "</style>"),
+             ('<p id="now">Press Play to start.</p>',
+              '<div class="ab"><button type="button" id="sd" aria-pressed="true">DI</button>'
+              '<button type="button" id="sa" aria-pressed="false">Amp track</button></div><p id="note"></p>\n'
+              '<p id="now">Press Play to start.</p>'),
+             ("Keys: K keep, D drop, N not sure, space play or stop, arrows back and skip.",
+              "Keys: K keep, D drop (too low or metal), P drop (processed), N not sure, A switch DI and amp track, space "
+              "play or stop, arrows back and skip."),
+             (json.dumps({"build": build, "items": ids}), json.dumps({"build": build, "items": ids, "amp": amp,
+                                                                     "notes": notes}))]
+    for old, new in swaps + AMP_JS:
+        if page.count(old) != 1:
+            raise SystemExit(f"the scope page changed: {old[:60]!r} is not there once")
+        page = page.replace(old, new)
+    return page
+
+
+def cmd_page_amp(args):
+    """The amp-track page -> DIR/page-amp.html and DIR/amp-key.json. Never touches key.json; refuses unless the cards are
+    the published build's, and over an existing amp key."""
+    import numpy as np
+    import soundfile as sf
+
+    from learn import build_data_review as BDR
+    from learn import pipeline_fix as P
+    from learn import pretrain_set as PS
+    from learn import scope_page as SP
+
+    d = scope_dir()
+    out = pathlib.Path(args.out) if args.out else d
+    if (out / AMP_KEY).exists():
+        raise SystemExit(f"{out / AMP_KEY} exists: move it aside first")
+    key = json.loads((d / "key.json").read_text())
+    _, ids, build = page_cards()
+    if build != BUILD or key["build"] != BUILD or ids != [it["id"] for it in key["items"]]:
+        raise SystemExit("the cards are not the published page's")
+    n12, panel = library_units()
+    meta = json.loads((P.out_dir() / "captures2" / "plan.json").read_text())["di_meta"]
+    src = amp_sources(key["items"], n12, panel, meta)
+    clips, amp, notes, rows = {}, {}, {}, []
+    for it in key["items"]:
+        y, sr = sf.read(it["path"], always_2d=True)
+        y = y.mean(1)
+        if sr != BDR.SR:
+            raise SystemExit(f"{it['path']}: rate {sr}")
+        a = int(it["start"] * sr)
+        y, _, _, _ = BDR.level_clip(y[a:a + int(WINDOW_S * sr)])
+        clips[it["id"]] = SP.encode(y, out / "aac-cache")            # the published clip: the same steps, the same cache
+        s = src[it["id"]]
+        row = {"id": it["id"], "di": it["di"], "set": it["set"], "amp": None}
+        if s is None:
+            notes[it["id"]] = NO_AMP_NOTE
+        else:
+            z = np.asarray(PS.load_mono(s["path"], BDR.SR, s["start"], WINDOW_S), np.float64)
+            z = np.pad(z, (0, max(0, len(y) - len(z))))[:len(y)]
+            z, gain, _, cut = BDR.level_clip(z)
+            amp[it["id"]] = it["id"] + "a"
+            clips[it["id"] + "a"] = SP.encode(z, out / "aac-cache")
+            row.update(amp=s["path"], start=s["start"], di_file=s["di_file"], gain_db=gain, peak_cut_db=cut)
+            if it["di"] in UNALIGNED:
+                notes[it["id"]] = UNALIGNED_NOTE
+        rows.append(row)
+    page = page_html_amp(ids, clips, amp, notes, build)
+    shown = leaks(page)
+    if shown:
+        raise SystemExit(f"the page names {shown}")
+    out.mkdir(parents=True, exist_ok=True)
+    (out / AMP_PAGE).write_text(page)
+    (out / AMP_KEY).write_text(json.dumps({"page": DIR, "build": build, "window_s": WINDOW_S, "items": rows,
+                                           "time": time.strftime("%Y-%m-%d %H:%M:%S")}, indent=1))
+    print(f"DI SCOPE AMP PAGE {len(rows)} cards, {len(amp)} with an amp track, build {build}, {len(page) / 1e6:.1f} MB "
+          f"-> {out / AMP_PAGE}")
+
+
 # --- the answers and the rule -----------------------------------------------------------------------------------------
 
 def di_verdicts(answers, items):
@@ -262,6 +468,9 @@ def main(argv=None):
     p = sub.add_parser("page")
     p.add_argument("--out", help="the folder to build into (default PF/di-scope)")
     p.set_defaults(fn=cmd_page)
+    q = sub.add_parser("page-amp")
+    q.add_argument("--out", help="the folder to build into (default PF/di-scope)")
+    q.set_defaults(fn=cmd_page_amp)
     a = sub.add_parser("answers")
     a.add_argument("--store", required=True, help="the Artifact's stored answers/<build>, as a file")
     a.set_defaults(fn=cmd_answers)
