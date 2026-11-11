@@ -10,6 +10,8 @@ the answer's hold change); the read is `real-predict`, `goat-predict`, `real-ren
     .venv/bin/python -m learn.full_controls_c3 c3-n12 OUT.json     # N12: C3 against its C1b labels (zero renders)
     .venv/bin/python -m learn.full_controls_c3 c3-amp OUT.json     # BKS: W's amp head on C3's body (zero renders)
     .venv/bin/python -m learn.full_controls_c3 c3-adopt [--final]  # the per-family adoption, then C3 against FTm
+    .venv/bin/python -m learn.full_controls_c3 c3b-rows            # C3b stage 1: the amp pick on the labels (zero renders)
+    .venv/bin/python -m learn.full_controls_c3 c3b-s2-rows         # C3b stage 2: its full answer against C3's (renders read)
 
 The pure parts (the label sources, the masks, the per-control hold and its tags, the families, the pooled interval,
 the adoption and the replacement rule) are unit-tested; the renders are not.
@@ -39,6 +41,8 @@ C3I_PAIRS = ((C3I_TAG, FTM_TAG), ("C3-core", C3I_TAG), (C3I_TAG, "S"))
 C3B_PHASE = "phase_c3b"              # C3b, the amp head on real rows (docs/full-controls-plan.md, "C3b in detail")
 C3B_BASE = "C3b-ftm"                 # its own runs (`train-ft --masked --c3b`): C3's recipe, plus each unit's amp label
 C3B_TAG = "C3b"                      # its read tag (`pipeline_fix.C3B_TAG`), answered with the adopted C3's hold
+C3B_S2_PHASE = "phase_c3b_s2"        # C3b's stage 2: its full answer against the adopted C3's, on all three amps
+S2_AMPS = ("pr12", "sw50r", "ac20")  # `pipeline_fix.AMPS3`, the order every per-amp row is written in
 AMP_USABLE_DBFS = -57.0              # C2b's like-for-like bound: a label counts for the amp choice at or above it
 PEDAL_MODULES = ("drive1", "drive2", "compressor")
 GATE_SW, GATE_THR = ("parameters", "gateActive"), ("parameters", "gateThreshold")
@@ -864,6 +868,156 @@ def cmd_c3b(args):
     print(f"C3B STAGE 1 (C3b - W): {rec['reading']}; C3b against blind: {rec['against_blind']}")
 
 
+# --- C3b stage 2: its full answer against the adopted C3's, on all three amps (phase_c3b_s2) --------------------------
+
+S2_PRIMARY = "C3b - C3"
+
+
+def s2_unit_rows(unit, cluster, jb, jc, pb, pc, amps=S2_AMPS):
+    """One unit's stage 2 rows from both models' renders on every amp. jb, jc: {amp: {search half: {half: judge}}} (C3b's,
+    the adopted C3's); pb, pc: {search half: picked amp} (each model's head on that half's input). Per direction (search
+    half sh, held half h), on the held half: the primary ln(C3b at its pick / C3 at W's pick); beside, each pick and
+    always-sw50r against blind (`amp_value` over the amps) on each model's own renders, the held half's best amp (the
+    oracle) on each, each model at the sw50r against its own answer, and C3b - C3 amp by amp and their mean.
+    -> ({row: [(cluster, unit, value)]}, directions dropped for a missing pick or a non-finite judge)."""
+    rows, dropped = {}, 0
+
+    def add(name, v):
+        rows.setdefault(name, []).append((cluster, unit, v))
+
+    for sh, h in (("A", "B"), ("B", "A")):
+        hb = {a: ((jb.get(a) or {}).get(sh) or {}).get(h) for a in amps}
+        hc = {a: ((jc.get(a) or {}).get(sh) or {}).get(h) for a in amps}
+        b, c = pb.get(sh), pc.get(sh)
+        if b is None or c is None or not all(finite_pos(v) for v in (*hb.values(), *hc.values())):
+            dropped += 1
+            continue
+        lb = {a: math.log(float(v)) for a, v in hb.items()}
+        lc = {a: math.log(float(v)) for a, v in hc.items()}
+        add(S2_PRIMARY, lb[b] - lc[c])
+        add("C3b's pick - blind, on C3b", amp_value(hb, b))
+        add("W's pick - blind, on C3", amp_value(hc, c))
+        add("always sw50r - blind, on C3b", amp_value(hb, "sw50r"))
+        add("always sw50r - blind, on C3", amp_value(hc, "sw50r"))
+        add("the best amp - blind, on C3b", min(amp_value(hb, a) for a in amps))
+        add("the best amp - blind, on C3", min(amp_value(hc, a) for a in amps))
+        add("C3 at the sw50r - C3", lc["sw50r"] - lc[c])
+        add("C3b at the sw50r - C3b", lb["sw50r"] - lb[b])
+        add("C3 at the sw50r - C3b", lc["sw50r"] - lb[b])
+        for a in amps:
+            add(f"C3b - C3 at {a}", lb[a] - lc[a])
+        add("C3b - C3, mean over the amps", sum(lb[a] - lc[a] for a in amps) / len(amps))
+    return rows, dropped
+
+
+def s2_picks(amp_p, unit, head_amps):
+    """A model's pick per search half for a unit (`head_pick` on each half). -> {half: amp}."""
+    return {sh: a for sh in ("A", "B") if (a := head_pick(amp_p, unit, sh, head_amps))}
+
+
+def s2_reading(primary):
+    """Stage 2's declared reading of `C3b - C3` by C3's rule: C3b replaces the adopted C3 unless shown worse (a 90%
+    interval wholly above 0 on BKS, GOAT or pooled; a split counts as shown worse). -> (direction, adopt)."""
+    d = direction(primary)
+    return d, d not in ("worse", "split")
+
+
+def s2_check(stored, amps3, stored_judge, amps3_judge, units_amp):
+    """The free check on GOAT: the adopted C3's forced-amp answers and amp probabilities in answers-amps3 equal its
+    stored ones, and their renders are bit-identical (render sha256 on both halves). units_amp: {unit: forced amp};
+    stored, amps3: answers files ({"answers": {key: answer}, "amp_p": {key: ...}}); *_judge: {(unit, amp): judge file}.
+    -> {"units", "answers_equal", "renders_equal", "mismatches": [unit]}."""
+    out = {"units": 0, "answers_equal": 0, "renders_equal": 0, "mismatches": []}
+    sa, na = stored.get("answers") or {}, amps3.get("answers") or {}
+    sp, np_ = stored.get("amp_p") or {}, amps3.get("amp_p") or {}
+    for u, amp in sorted(units_amp.items()):
+        key = f"{u}|{amp}"
+        out["units"] += 1
+        a_ok = key in sa and sa.get(key) == na.get(key) and sp.get(key) == np_.get(key)
+        rs, rn = (stored_judge.get((u, amp)) or {}).get("render_sha256"), (amps3_judge.get((u, amp)) or {}).get("render_sha256")
+        r_ok = bool(rs) and rs == rn
+        out["answers_equal"] += a_ok
+        out["renders_equal"] += r_ok
+        if not (a_ok and r_ok):
+            out["mismatches"].append(u)
+    return out
+
+
+def _judge_files(d):
+    out = {}
+    for p_ in d.glob("*.json"):
+        r = json.loads(p_.read_text())
+        out[(r["unit"], r["amp"])] = r
+    return out
+
+
+def cmd_c3b_s2(_args):
+    """C3b's stage 2 (zero renders, after its renders) -> c3/c3b-stage2.json: on BKS's 40 read units (by DI) and GOAT's
+    (by item), C3b's full answer against the adopted C3's from both models' renders on all three amps, the beside rows,
+    the free check on GOAT, and the declared reading; c3/decision-c3b.json names the model adopted. Refuses an
+    incomplete set of renders or a failed check."""
+    from learn import full_space as FS
+    from learn import pipeline_fix as P
+
+    P.require(C3B_S2_PHASE)
+    ctag = json.loads((c3_dir() / "decision.json").read_text())["tag"]
+    if ctag != "C3-cabS":
+        raise SystemExit(f"stage 2 was declared against C3-cabS; the decision names {ctag}")
+    root = P.out_dir()
+    sets, picks, check = {}, {}, None
+    for name, d, sub_a, sub_j in (("bks", P.REAL_DIR, "answers", "judge"),
+                                  ("goat", P.GOAT_DIR, P.AMPS3_DIR, P.AMPS3_JUDGE)):
+        ans = {t: json.loads((root / d / sub_a / f"{t}.json").read_text()) for t in (C3B_TAG, ctag)}
+        judge = {t: _judge_files(root / d / sub_j / t) for t in (C3B_TAG, ctag)}
+        if name == "bks":
+            units = {prt["unit"]: prt["di"] for prt in ans[ctag]["parts"]}
+        else:
+            gu = P.goat_read_units()
+            units = {prt["unit"]: prt["item"] for prt in gu}
+            stored = json.loads((root / d / "answers" / f"{ctag}.json").read_text())
+            check = s2_check(stored, ans[ctag], _judge_files(root / d / "judge" / ctag), judge[ctag],
+                             {prt["unit"]: prt["amp"] for prt in gu})
+        missing = [(t, u, a) for t in (C3B_TAG, ctag) for u in units for a in S2_AMPS if (u, a) not in judge[t]]
+        if missing:
+            raise SystemExit(f"{name}: {len(missing)} renders missing (first {missing[0]})")
+        rows, dropped, by_amp = {}, 0, {"C3b": {a: 0 for a in S2_AMPS}, "W": {a: 0 for a in S2_AMPS}}
+        agree = 0
+        for u, cl in sorted(units.items()):
+            pb = s2_picks(ans[C3B_TAG].get("amp_p") or {}, u, FS.AMPS)
+            pc = s2_picks(ans[ctag].get("amp_p") or {}, u, FS.AMPS)
+            for sh in ("A", "B"):
+                for nm, pk in (("C3b", pb.get(sh)), ("W", pc.get(sh))):
+                    by_amp[nm][pk or "none"] = by_amp[nm].get(pk or "none", 0) + 1
+                agree += pb.get(sh) is not None and pb.get(sh) == pc.get(sh)
+            r, dr = s2_unit_rows(u, cl, {a: judge[C3B_TAG][(u, a)]["judge"] for a in S2_AMPS},
+                                 {a: judge[ctag][(u, a)]["judge"] for a in S2_AMPS}, pb, pc)
+            dropped += dr
+            for k, v in r.items():
+                rows.setdefault(k, []).extend(v)
+        sets[name] = {k: P.clustered(v) for k, v in rows.items()}
+        picks[name] = {"by_amp": by_amp, "agree": agree, "directions": 2 * len(units), "dropped": dropped,
+                       "units": len(units)}
+    if check["mismatches"]:
+        P.save(c3_dir() / "c3b-stage2.json", {"phase": C3B_S2_PHASE, "check": check, "reading": "refused",
+                                              "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+        raise SystemExit(f"C3B STAGE 2 REFUSED: {len(check['mismatches'])} GOAT units differ from C3's stored read")
+    names = sorted(set(sets["bks"]) | set(sets["goat"]))
+    judged_rows = {n: judged(sets["bks"].get(n) or {}, sets["goat"].get(n) or {}) for n in names}
+    d, adopt = s2_reading(judged_rows[S2_PRIMARY])
+    rec = {"phase": C3B_S2_PHASE, "against": ctag, "rows": judged_rows, "picks": picks, "check": check,
+           "reading": d, "adopt": C3B_TAG if adopt else ctag, "c2_sha256": c2_sha(),
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    P.save(c3_dir() / "c3b-stage2.json", rec)
+    P.save(c3_dir() / "decision-c3b.json", {"phase": C3B_S2_PHASE, "tag": rec["adopt"], "reading": d,
+                                            "time": rec["time"]})
+    for n in names:
+        j = judged_rows[n]
+        p_ = j["pooled"] or {}
+        print(f"{n}: BKS {(j['bks'] or {}).get('mean')}, GOAT {(j['goat'] or {}).get('mean')}, pooled "
+              f"{p_.get('mean')} [{p_.get('lo90')}, {p_.get('hi90')}]")
+    print(f"C3B STAGE 2 (C3b - C3): {d}; adopted {rec['adopt']}; check {check['renders_equal']}/{check['units']}")
+
+
 def report_rows(label="c3"):
     from learn import pipeline_fix as P
 
@@ -969,6 +1123,7 @@ def main(argv=None):
     s.set_defaults(fn=cmd_amp)
     sub.add_parser("c3i-rows").set_defaults(fn=cmd_c3i)
     sub.add_parser("c3b-rows").set_defaults(fn=cmd_c3b)
+    sub.add_parser("c3b-s2-rows").set_defaults(fn=cmd_c3b_s2)
     s = sub.add_parser("c3-adopt")
     s.add_argument("--final", action="store_true")
     s.set_defaults(fn=cmd_adopt)

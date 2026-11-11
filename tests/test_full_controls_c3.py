@@ -531,3 +531,68 @@ def test_c3b_launchers_train_with_c3b_and_read_at_zero_renders():
     assert "--masked --c3b" in t and "--c3i" not in t and "mv ${PIDS} ${PIDS}." in t and "--inner" not in t
     assert "mps_free" in t and 'pgrep -f "python[0-9.]* -u -m learn.pipeline_fix train-ft"' in t
     assert "c3b-train.log" in r and "c3b-rows" in r and "real-render" not in r and "goat-render" not in r and "h4-render" not in r
+
+
+def _s2_judges(vals):
+    """{amp: (A-search held-B judge, B-search held-A judge)} -> a judge file's per-amp "judge"."""
+    return {a: {"A": {"B": v[0]}, "B": {"A": v[1]}} for a, v in vals.items()}
+
+
+def test_c3b_stage2_rows_read_each_models_own_pick_on_its_own_renders():
+    jb = _s2_judges({"pr12": (2.0, 2.0), "sw50r": (1.0, 1.5), "ac20": (1.5, 1.0)})
+    jc = _s2_judges({"pr12": (1.2, 1.2), "sw50r": (1.1, 1.1), "ac20": (1.3, 1.0)})
+    rows, dropped = X.s2_unit_rows("u", "c", jb, jc, {"A": "sw50r", "B": "sw50r"}, {"A": "pr12", "B": "ac20"})
+    assert dropped == 0
+    prim = [v for _, _, v in rows[X.S2_PRIMARY]]
+    assert prim == pytest.approx([math.log(1.0 / 1.2), math.log(1.5 / 1.0)])
+    assert [v for *_, v in rows["C3 at the sw50r - C3"]] == pytest.approx([math.log(1.1 / 1.2), math.log(1.1 / 1.0)])
+    assert [v for *_, v in rows["C3b's pick - blind, on C3b"]][0] == pytest.approx(X.amp_value({"pr12": 2.0, "sw50r": 1.0, "ac20": 1.5}, "sw50r"))
+    assert [v for *_, v in rows["the best amp - blind, on C3b"]][1] == pytest.approx(X.amp_value({"pr12": 2.0, "sw50r": 1.5, "ac20": 1.0}, "ac20"))
+    mean_ab = sum(math.log(b / c) for b, c in ((2.0, 1.2), (1.0, 1.1), (1.5, 1.3))) / 3
+    assert [v for *_, v in rows["C3b - C3, mean over the amps"]][0] == pytest.approx(mean_ab)
+    assert {r[0] for v in rows.values() for r in v} == {"c"}
+
+
+def test_c3b_stage2_drops_a_direction_with_no_pick_or_a_non_finite_judge():
+    jb = _s2_judges({"pr12": (2.0, float("nan")), "sw50r": (1.0, 1.5), "ac20": (1.5, 1.0)})
+    jc = _s2_judges({"pr12": (1.2, 1.2), "sw50r": (1.1, 1.1), "ac20": (1.3, 1.0)})
+    rows, dropped = X.s2_unit_rows("u", "c", jb, jc, {"A": "sw50r", "B": "sw50r"}, {"B": "ac20"})
+    assert dropped == 2 and rows == {}
+
+
+def test_c3b_stage2_adopts_unless_shown_worse_and_a_split_is_worse():
+    row = lambda lo, hi: {"mean": (lo + hi) / 2, "lo90": lo, "hi90": hi, "clusters": 8}   # noqa: E731
+    assert X.s2_reading({"bks": row(-0.02, 0.01), "goat": row(-0.01, 0.02), "pooled": row(-0.01, 0.01)}) == ("undecided", True)
+    assert X.s2_reading({"bks": row(-0.05, -0.01), "goat": None, "pooled": None}) == ("better", True)
+    assert X.s2_reading({"bks": row(0.01, 0.05), "goat": None, "pooled": None}) == ("worse", False)
+    assert X.s2_reading({"bks": row(0.01, 0.05), "goat": row(-0.05, -0.01), "pooled": None}) == ("split", False)
+
+
+def test_c3b_stage2_check_needs_equal_answers_probabilities_and_renders():
+    ans = {"answers": {"u|sw50r": {"A": 1}}, "amp_p": {"u|sw50r": {"A": [0.2, 0.5, 0.3]}}}
+    j = {("u", "sw50r"): {"render_sha256": {"A": "x", "B": "y"}}}
+    ok = X.s2_check(ans, json.loads(json.dumps(ans)), j, {("u", "sw50r"): {"render_sha256": {"A": "x", "B": "y"}}},
+                    {"u": "sw50r"})
+    assert ok == {"units": 1, "answers_equal": 1, "renders_equal": 1, "mismatches": []}
+    bad = X.s2_check(ans, ans, j, {("u", "sw50r"): {"render_sha256": {"A": "x", "B": "z"}}}, {"u": "sw50r"})
+    assert bad["mismatches"] == ["u"] and bad["renders_equal"] == 0
+    other = {"answers": ans["answers"], "amp_p": {"u|sw50r": {"A": [0.3, 0.4, 0.3]}}}
+    assert X.s2_check(ans, other, j, j, {"u": "sw50r"})["answers_equal"] == 0
+
+
+def test_c3b_stage2_goat_amps3_is_its_own_folder_and_refuses_other_tags(monkeypatch):
+    assert P.AMPS3_DIR != "answers" and P.AMPS3_JUDGE != "judge" and set(P.C3B_S2_TAGS) == {X.C3B_TAG, "C3-cabS"}
+    assert X.S2_AMPS == P.AMPS3
+    monkeypatch.setattr(P, "require", lambda key: {})
+    with pytest.raises(SystemExit, match="stage 2"):
+        P.cmd_goat_render(type("A", (), {"names": "C3-core", "amps3": True, "shard": (0, 1)})())
+    with pytest.raises(SystemExit, match="stage 2"):
+        P.goat_predict("C3-core", amps3=True)
+
+
+def test_c3b_stage2_launcher_waits_renders_all_three_amps_and_reports():
+    import pathlib
+    t = (pathlib.Path(__file__).resolve().parents[1] / "logs" / "launch-c3b-s2.zsh").read_text()
+    assert "kill -0 ${WAIT_PID}" in t and "mv ${PIDS} ${PIDS}." in t and "setopt no_bg_nice" in t
+    assert t.count("pipeline_fix goat-predict --amps3") == 2 and "goat-render --amps3 --names C3b,C3-cabS" in t
+    assert "real-render --names C3b" in t and "c3b-s2-rows" in t and "for k in 0 1 2" in t and "train-ft" not in t

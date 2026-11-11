@@ -4979,6 +4979,46 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - logs `logs/c2b*.log`.
   - Code: `learn/full_controls_c2b.py`. The audit scripts (`c2bre.py`, `c3bcheck.py`) are in the session scratchpad.
 
+### F74. C3b, stage 1: the amp head trained on real rows. By the score its pick beats W's by −0.027 [−0.042, −0.011] pooled, the declared "learns", and reads −0.047 against a blind pick. But it picks the sw50r on 218 of the 254 read units, and always picking the sw50r reads the same: C3b less always-sw50r is +0.002 on BKS and +0.003 on GOAT, both undecided. Its 36 other picks read worse than the sw50r would. So it learned the labels' commonest amp, not each recording's. Stage 2 is declared (phase_c3b, 39 min of MPS, zero renders, audited)
+- **What ran** ([plan](full-controls-plan.md), "C3b in detail").
+  - **The recipe:** C3's, with every real row taking its unit's amp label in the amp head's slot. The labels are the stored recipe's argmin: GOAT's 214 from C2b, BKS's 102 over its three stored labels.
+  - **The training:** 8 FT_k, each for C3's own inner run's E (48 to 74 epochs), and the all-labels pair at 57. It took 39 min of MPS (14:45 to 15:24), beside C2r's 5 render shards. C2r's rate went from 11,292 to 10,842 an hour (−4%), inside the 20% stop.
+  - **The read:** zero renders, under a minute of CPU. Each read unit's pick comes from the FT_k that held it out, on the labels' search half, and is valued on the labels' held halves (C2b's yardstick).
+- **The read matched the declaration.** It was audited with separate code: every row below reproduces the report to 1e-4.
+  - The units: BKS's 40 (8 DIs) and GOAT's 214.
+  - No C3b pick lacked a usable label; W's had 2 on each set, scored as the worst usable amp.
+- **By the score** (each pick's held half, ln, less the mean over the unit's usable labels; clustered by DI or item; pooled with C3's equal weights):
+
+  | Pick, against a blind pick | BKS (40 units) | GOAT (214 units) | Pooled |
+  |---|---|---|---|
+  | W (C3's head, untrained on real rows) | −0.027 [−0.077, +0.024] | −0.013 [−0.025, −0.002] | −0.020 [−0.046, +0.006] |
+  | **C3b** | **−0.050 [−0.093, −0.006]** | **−0.044 [−0.054, −0.033]** | **−0.047 [−0.069, −0.024]** |
+  | **C3b − W (the declared reading)** | −0.023 [−0.050, +0.005] | **−0.030 [−0.047, −0.014]** | **−0.027 [−0.042, −0.011]** |
+  | Always the sw50r | −0.051 [−0.094, −0.008] | −0.047 [−0.057, −0.036] | −0.049 [−0.071, −0.027] |
+  | C3b − always the sw50r | +0.002 [−0.001, +0.004] | +0.003 [−0.001, +0.007] | +0.002 [−0.000, +0.005] |
+  | The labels' own argmin (the ceiling) | −0.063 [−0.097, −0.029] | −0.054 [−0.063, −0.044] | −0.058 [−0.076, −0.041] |
+
+  - **By the declared rule, stage 1 reads "learns":** better pooled and on GOAT, worse nowhere. Against blind it is better on all three.
+- **The audit: what it learned is the prior.**
+  - **The picks.** C3b picks the sw50r on 38 of 40 BKS units and 180 of 214 GOAT units. W picks it on 24 and 107, and the pr12 on 16 and 55. The labels' argmin is the sw50r on 28 of BKS's 40 and 109 of GOAT's 214.
+  - **Its other picks are worse than the sw50r.** BKS's 2 read +0.058 worse than the sw50r on the same units, and neither is better. GOAT's 34 (31 ac20, 3 pr12) read +0.025 worse, better on 12 of the 34. Only 7 of the 34 are the labels' own argmin.
+  - **Its amp loss on held rows is no lower than a constant guess.** The held rows' loss is 0.78 to 1.34 (mean 0.97). The entropy of the labels' shares is 0.97 on GOAT and 0.68 on BKS's stored labels. A head that read the audio would sit below that.
+  - **On the plugin rows the training holds out** (its `ns` monitor, used for no choice here) its amp loss is 1.25 to 1.55. W's head reads 1.08 to 1.13 there, about ln 3 (1.10), a uniform guess. So W's own pick was near a coin toss, with a lean to the sw50r and away from the ac20.
+  - **On C3's own per-amp renders** (BKS, C3-cabS's settings on all three amps, both halves), against blind: W −0.028 [−0.070, +0.015], C3b's pick −0.055 [−0.101, −0.009], always the sw50r −0.049 [−0.102, +0.004], always the ac20 −0.003, always the pr12 +0.052. So with every control set by the model, the sw50r is still the best single amp on BKS, and the pr12 the worst.
+- **What it means.**
+  - **By the score the sw50r is the best single amp for these sets, and training finds it.** The product's pick would move from W's near coin toss to nearly always the sw50r: about −2.7% pooled on the labels, −2.7% on C3's own BKS renders.
+  - **Picking the amp per recording is not learned.** The labels' own argmin is another −0.010 (GOAT) to −0.014 (BKS) beyond C3b's pick. Going after it needs a head that reads the amp from the audio: more amp labels, or the thorough relabel (F73's option 3, about 112k renders).
+  - **The lean may be the labels' recipe.** These are stored-recipe labels, `K.space` only. Under C2's every-control labels the pr12 fits BKS as often as the sw50r (48 against 40, F73). C3's own renders, with every control the model sets, still favour the sw50r on BKS. Stage 2 reads C3b's full answer on all three amps, on both sets.
+  - **The lean may be J0's.** "By the score" is not "by ear". C4's blind page is where a sw50r-heavy product is heard.
+- **Stage 2 is declared next** ([plan](full-controls-plan.md), "C3b stage 2 in detail"). It renders C3b's answers and the adopted C3's on all three amps, on both sets, about 5,600 renders. It reads C3b's full answer (its pick, its settings) against C3's (W's pick, C3-cabS's settings) by C3's adoption rule. Beside, from the same renders: always the sw50r on each model, and each model's settings amp by amp.
+  - The C3b declaration said about 2,400 renders. GOAT's read rendered only each unit's forced amp, so reading any pick on GOAT needs the other two amps for both models.
+- Files:
+  - `PF/c3/c3b-stage1.json`;
+  - C3b's answers in `PF/real/answers/C3b.json` and `PF/goat/answers/C3b.json`;
+  - its runs `C3b-ftm-*`;
+  - logs `logs/c3b*.log`.
+  - Code: `learn/full_controls_c3.py` (`c3b-rows`) and `pipeline_fix train-ft --c3b`. The audit scripts are in the session scratchpad.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
