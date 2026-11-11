@@ -4936,6 +4936,45 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - logs `logs/c3-*.log`, `logs/c3-n12.json`, `logs/c3-n12-c1b.json`, `logs/c3-amp.json`.
   - Code: `learn/full_controls_c3.py`, `pipeline_fix train-ft --c3`. The audit script (`c3re.py`) is in the session scratchpad.
 
+### F73. C2b: amp choice on GOAT. By the score, picking each unit's amp by its labels' search half reads −0.054 [−0.063, −0.044] against a blind pick on the held half, on 119 of 130 items; GOAT's forced amp reads −0.001, no better than blind. But on BKS the amp a label picks depends on the label's recipe: the stored labels and C2's agree on 51 of 102 units. So GOAT's C2b amp labels, made with the stored recipe, are not like for like with BKS's C2 labels, and C3b must choose before it trains (phase_c2b, 22,684 renders, no training, audited)
+- **What ran** ([plan](full-controls-plan.md), "C2b in detail").
+  - Each of GOAT's 214 labelled units was searched on its two other amps: 428 records, with the stored labels' own recipe (`K.space` main stage, 52 evaluations, seed 20261013, from the class's S, the unit's stored halves and lag).
+  - The unit's amp label is the argmin over its three like-for-like labels of the search half, counting labels that peak at −57 dBFS or above.
+  - The read, at zero renders: the chosen amp's held half (ln) less the mean over the usable amps, clustered by item.
+- **The run matched the declaration.** It was audited with separate code: all 214 choices and both rows reproduce the report to 1e-4.
+  - 428 of 428 written, with none refused. Every start was bit-identical to the stored S render.
+  - 1 search fell back: `item_169@15.0#amp_5` on pr12, whose best peaked at −60.6 dBFS.
+  - 4 labels are quiet below −57 dBFS: 3 of C2b's and the stored `item_1@25.0#amp_4`.
+  - **Renders: 22,684,** exactly the declared maximum: 428 × (1 priming + 52).
+  - Under the −54 dBFS sensitivity check, 1 unit's choice changes.
+- **By the score.**
+
+  | Row | All (214 units, 130 items) | Clean | Crunch |
+  |---|---|---|---|
+  | **Chosen amp − blind** | **−0.054 [−0.063, −0.044]**, 119 of 130 items; part-weighted −0.055 | −0.051 [−0.060, −0.041] | −0.059 [−0.074, −0.044] |
+  | Forced amp − blind | −0.001 [−0.013, +0.011] | −0.009 [−0.022, +0.003] | +0.003 [−0.016, +0.022] |
+
+  - The choice is the forced amp in 73 of 214 units (34%), about a third, as a blind pick would be. It is the held half's best in 153 (71%).
+  - The choices: sw50r 109, ac20 78, pr12 27. pr12 is chosen least whatever the forced amp: 9, 8 and 10 of the forced ac20, pr12 and sw50r units.
+  - GOAT's forced amp is the dataset's own assignment, and it reads as blind, so GOAT's rows give no amp information without C2b.
+- **The declared check for C3b, at zero renders: the amp label moves with the recipe.** On BKS (102 units, all three amps labelled twice), the argmin over the stored 52-evaluation `K.space` labels and over C2's every-control labels agree on 51 of 102 units (50%).
+  - The stored labels pick sw50r on 78, pr12 on 18 and ac20 on 6.
+  - C2's labels pick pr12 on 48, sw50r on 40 and ac20 on 14. With the EQ and the pedals searched too, pr12 fits about as often as sw50r.
+  - Read on C2's labels (held half, against blind): C2's own choice −0.031 [−0.049, −0.013], and the stored labels' choice −0.022 [−0.036, −0.007], 8 DIs. Both beat blind, and C2's own choice reads about 40% more.
+- **What it changes.**
+  - **GOAT now has amp labels,** and choosing the amp is worth about 5% by the score on GOAT, as on BKS (F69's −0.058).
+  - **But GOAT's amp labels come from the stored recipe,** while BKS's would come from C2's, and the two pick different amps half the time. An amp head trained beside C3's every-control heads would learn two recipes' answers.
+  - **C3b is declared separately and goes to the user first.** It must choose the amp labels' recipe. The options:
+    - GOAT's C2b labels as they are, beside BKS's C2 argmin;
+    - both sets on the stored recipe (BKS's stored argmin);
+    - C2's recipe on GOAT's other two amps, which is like for like with C3 but costs at most 428 × 268 ≈ 115k renders (about 11 to 12 h on 5 processes, if they scale).
+  - By the score only.
+- Files:
+  - `PF/c2b/` (`records.json`, `report.json`);
+  - the per-record outputs in `PF/goat/search-c2b/`;
+  - logs `logs/c2b*.log`.
+  - Code: `learn/full_controls_c2b.py`. The audit scripts (`c2bre.py`, `c3bcheck.py`) are in the session scratchpad.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
