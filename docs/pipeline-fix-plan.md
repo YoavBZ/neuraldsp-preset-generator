@@ -5336,6 +5336,37 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - **By the rule (outcome "keep"):** the pick is the amp choice for the generate path on R-all, as declared in "A3 in detail". The model ships after the loudness step.
 - Files: `PF/a3/` (`plan.json`, `clips/`, `key.json`, `read.json`). Code: `learn/a3_ear.py`.
 
+### F84. LS: matching the factory start's loudness on two stock DIs carries to the song's own DI. Unmatched, the adopted model's presets sit a median 8.2 dB off S's loudness (21 of 29 quieter, up to 15.4 dB). Matched, they sit 0.65 dB off: 21 of 29 within 1 dB, 27 within 2 dB, the worst 5.3 dB. No clamp was needed, and the output control is a pure gain on a 0.1 dB grid. At equal loudness the matched presets peak a median 2.2 dB above S, and 18 of 29 go over 0 dBFS (S: 7). By the declared rule the step goes into the generate path (phase_ls, 314 renders, audited)
+- **What ran** ([plan](full-controls-plan.md), "LS in detail", Amendment 1).
+  - 29 items: C4's 18 less every unit on the 3 single-note DI sections, and A3's 18 on the stock-DI pick's amp.
+  - Each preset's output was set so it plays at S's loudness on the class's 2 stock DIs, then checked on the unit's own DI.
+  - S's table took 24 renders. The item renders took 290 in 6 min 26 s, rerun after Amendment 1.
+  - The first run stopped on the linearity rule, because the plugin keeps the output gain in 0.1 dB steps. Its records are kept apart (`PF/ls/items.run1`).
+- **The read matched the declaration.** It was audited with separate code from the item records and S's table: every matched gain equals the declared formula on the 0.1 dB grid (29 of 29), and every summary reproduces.
+- **The numbers** (integrated LUFS on the full trimmed render, the unit's own DI):
+
+  | | Median | 90th pct | Max |
+  |---|---|---|---|
+  | Unmatched, gap to S (dB) | 8.24 | 9.97 | 15.40 |
+  | **Matched, gap to S (dB)** | **0.65** | 1.45 | 5.31 |
+
+  - **Matched − S, signed:** median −0.03 dB (−1.1 to +5.3).
+  - **Within 1 dB:** 21 of 29. **Within 2 dB:** 27 of 29.
+  - **Clamps:** none. The changes ran from −10.7 to +15.7 dB, to final gains of +5.6 to +22.7 dB.
+  - **Linearity:** 5e-6 dB at worst.
+  - **The two misses** are both ac20 crunch presets whose S sits at the control's +24 dB. The two stock DIs put them 3 to 6 dB too loud, and the own DI more still: crunch drive depends on the DI's playing.
+  - **S's table** (LUFS on the 2 stock DIs): pr12 clean −16.1/−15.3, crunch −9.5/−9.6; sw50r clean −10.0/−9.6, crunch −9.2/−10.0; ac20 clean −10.6/−10.6, crunch −9.1/−9.4.
+- **The peaks.**
+  - At S's loudness the model's presets peak higher than S: a median +2.2 dB above S's own peak.
+  - 18 of 29 matched renders go over 0 dBFS (those 18 peak at a median +2.1 dBFS, max +5.3 dBFS; all 29 at a median +0.7). S itself does so on 7 of 29 (max +2.4 dBFS).
+  - The plugin renders in floating point, so nothing clips inside it. But a preset that peaks over full scale can clip a fixed-point output. A peak ceiling would trade loudness for headroom; that's the user's call.
+- **What it means.**
+  - **By the declared rule the step goes into the generate path:** the matched gap's median is below the unmatched one's, and linearity holds.
+  - The match made on generic DIs holds on the song's own guitar to within 1 dB for most presets, and within 2 dB for nearly all.
+  - **Its limit, named:** every DI here plays at a fixed input level (−22.9 LUFS), and the crunch presets' match depends most on the playing.
+  - **Next:** the declared 12-item page (`learn/ls_ear.py`), S against the matched preset at their own levels. After its review, the page stores each pair's LUFS and peak gap on the played 5 s clips. Beside the declared sign test, it reads the same test on the items whose clips sit within 1 dB, and direction agreement on the rest, so a miss like the +5.3 dB item heard "louder" counts as LUFS working. The matched preset is A on half the items, and the page is read with 8 or more of 12 answered.
+- Files: `PF/ls/` (`plan.json`, `s-table.json`, `items/`, `report.json`). Code: `learn/loudness_step.py`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
