@@ -472,6 +472,11 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **Then by ear, built from the stored clips at zero renders:** a short page of 12 items drawn from the 29 (seeded), each with S and the matched preset at their own levels (not level-matched). The question: is B louder than A, about the same, or quieter?
   - A sign test on louder against quieter (two-sided, 0.10). A shown bias goes to the user, with the target (S's level) or the measure (LUFS) in question. Otherwise the step stands.
   - The page's code comes in its own PR, reviewed before it's built.
+- **Amendment 1 (2026-11-12, after the first run's stop, before any read):** the plugin keeps the output gain in 0.1 dB steps.
+  - **What happened:** the first run stopped on its linearity rule on 3 items. Their level moved by 9.300, 11.400 and 8.000 dB for asked changes of 9.370, 11.466 and 7.935 dB.
+  - **Why:** rounding both the start's gain and the matched gain to 0.1 dB predicts all three exactly. So the control is a pure gain on a 0.1 dB grid.
+  - **The change:** the step writes the gain on that grid, and the check compares the level's move with the move between the two played (rounded) gains, still to 0.05 dB.
+  - **The rerun:** the first run's item records were moved aside, and every item renders again. That's 290 renders; S's table (24) stands. The read, rule and items are unchanged.
 - **A limit, named:** every DI here plays at a fixed input level (−22.9 LUFS). A guitar at another level drives the amp differently, so the match holds at that input level only.
 - **Stop rule.** One render pass, one read and one page. The target is S's level, fixed now. Nothing is tuned.
 

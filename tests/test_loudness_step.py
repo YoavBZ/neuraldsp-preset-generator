@@ -9,6 +9,8 @@ from learn import loudness_step as L
 def test_the_matched_gain_closes_the_mean_gap_on_the_stock_dis():
     g, want, short = L.matched_gain(8.0, [-20.0, -22.0], [-25.0, -27.0])
     assert want == 5.0 and g == 13.0 and short == 0.0
+    g, want, _ = L.matched_gain(5.96, [-20.0], [-27.37])                # on the plugin's 0.1 dB grid
+    assert g == 13.3 and abs(want - 7.37) < 1e-9
 
 
 def test_the_gain_is_clamped_to_the_control_and_the_shortfall_kept():
@@ -21,7 +23,8 @@ def test_the_gain_is_clamped_to_the_control_and_the_shortfall_kept():
 def test_with_output_copies_the_settings():
     s = {"parameters/outputGain": 8.0, "pr12Amp/pr12Volume": 0.5}
     t = L.with_output(s, 3.5)
-    assert t["parameters/outputGain"] == "3.5" and s["parameters/outputGain"] == 8.0 and t["pr12Amp/pr12Volume"] == 0.5
+    assert t["parameters/outputGain"] == "3.5" and s["parameters/outputGain"] == 8.0
+    assert L.with_output(s, 7.935)["parameters/outputGain"] == "7.9" and t["pr12Amp/pr12Volume"] == 0.5
 
 
 def _rec(i, s, u, m, g0=8.0, g=None, short=0.0):
@@ -57,3 +60,13 @@ def test_the_launcher_runs_the_table_then_three_shards_then_the_report():
 
 def test_the_single_note_sections_leave_by_di_section():
     assert L.EXCLUDE_DI == {"lib-7c49adcae77c", "lib-46bffb8cc749", "lib-7e57b8e2aa3b"}
+
+
+def test_the_grid_predicts_the_first_runs_three_stops():
+    for g0, change, measured in ((5.96, 9.370, 9.3), (5.96, 11.466, 11.4), (5.52656, 7.935, 8.0)):
+        assert abs((L.on_grid(g0 + change) - L.on_grid(g0)) - measured) < 1e-9
+
+
+def test_linearity_is_read_against_the_played_start():
+    r = _rec(1, -20.0, -26.0, -20.0, g0=5.96, g=12.0)               # plays 6.0 then 12.0: 6 dB, as the level moved
+    assert L.report([r])["linearity"]["holds"]

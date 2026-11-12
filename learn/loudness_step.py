@@ -24,6 +24,8 @@ PHASE = "phase_ls"
 OUTPUT = "parameters/outputGain"
 RANGE = (-24.0, 24.0)                # the manifest's (`full_space.OUTPUT_RANGE`)
 LINEAR_TOL_DB = 0.05                 # the output control is a pure gain: unmatched + the change = matched, to this
+STEP_DB = 0.1                        # the plugin keeps the output gain in 0.1 dB steps (Amendment 1: all 3 stops of the
+                                     # first run predicted exactly by it)
 EXCLUDE_DI = frozenset({             # the DI sections of C4's 4 items the listener skipped as "Bad DI, only contains a
     "lib-7c49adcae77c",               # single note" (F82): Dark Ride 31, Dark Ride 30 and Starnes & Shah 08. The note is
     "lib-46bffb8cc749",               # about the DI, and LS renders the whole section, so every unit on these sections
@@ -38,20 +40,28 @@ def ls_dir():
 
 # --- the pure parts -----------------------------------------------------------------------------------------------------
 
+def on_grid(x, step=STEP_DB):
+    """The output gain as the plugin plays it: the nearest step."""
+    return round(round(x / step) * step, 6)
+
+
 def matched_gain(g0, s_stock, ans_stock, lo=RANGE[0], hi=RANGE[1]):
     """The output gain that brings the answer to S's loudness on the stock DIs: g0 plus the mean of S's LUFS less the
-    answer's over the DIs, clamped. -> (gain, the change wanted, the shortfall in dB: 0 unless clamped)."""
+    answer's over the DIs, clamped, on the plugin's 0.1 dB grid. -> (gain, the change wanted, the shortfall in dB: 0
+    unless clamped)."""
     from learn import full_space as F
 
     want = statistics.fmean(s_stock) - statistics.fmean(ans_stock)
     c, _ = F.output_gain_fit(g0, statistics.fmean(ans_stock), statistics.fmean(s_stock), lo, hi)   # the same post-gain rule
-    return c, want, g0 + want - c
+    c = on_grid(c)
+    short = g0 + want - min(hi, max(lo, g0 + want))
+    return c, want, short
 
 
 def with_output(settings, g):
     """A copy of JSON settings ({"module/key": v}, string values) with the output gain set to g."""
     out = dict(settings)
-    out[OUTPUT] = f"{g:.6g}"                         # stored values are strings, sent to the plugin as they are
+    out[OUTPUT] = f"{on_grid(g):.1f}"                # stored values are strings; the plugin's 0.1 dB grid
     return out
 
 
@@ -69,7 +79,7 @@ def report(recs):
     linearity check and the peaks."""
     gap_u = [abs(r["own"]["unmatched"] - r["own"]["S"]) for r in recs]
     gap_m = [abs(r["own"]["matched"] - r["own"]["S"]) for r in recs]
-    lin = [abs((r["own"]["matched"] - r["own"]["unmatched"]) - (r["gain"] - r["g0"])) for r in recs]
+    lin = [abs((r["own"]["matched"] - r["own"]["unmatched"]) - (r["gain"] - on_grid(r["g0"]))) for r in recs]
     signed = [r["own"]["matched"] - r["own"]["S"] for r in recs]
     per = [{"key": r.get("key"), "own error": r["own"]["matched"] - r["own"]["S"],
             "stock spread": (max(a - b for a, b in zip(r["s_stock"], r["ans_stock"]))
@@ -222,9 +232,10 @@ def cmd_render(args):
               "matched": _render(own, ans["select"], with_output(ans["settings"], g))}
         renders += 6
         lv = {c: _level(y) for c, y in ys.items()}
-        if abs((lv["matched"][0] - lv["unmatched"][0]) - (g - g0)) > LINEAR_TOL_DB:
+        if abs((lv["matched"][0] - lv["unmatched"][0]) - (g - on_grid(g0))) > LINEAR_TOL_DB:
             raise SystemExit(f"{it['key']}: the output control moved the level by "
-                             f"{lv['matched'][0] - lv['unmatched'][0]:.3f} dB for {g - g0:.3f} dB: not a pure gain")
+                             f"{lv['matched'][0] - lv['unmatched'][0]:.3f} dB for {g - on_grid(g0):.3f} dB (on its grid): "
+                             "not a pure gain")
         rec = {"key": it["key"], "set": it["set"], "unit": it["unit"], "cls": cls, "amp": a, "g0": g0, "gain": g,
                "want": want, "short": short, "ans_stock": ans_stock, "s_stock": tab[a][cls],
                "own": {c: v[0] for c, v in lv.items()}, "peaks": {c: v[1] for c, v in lv.items()}}
