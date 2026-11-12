@@ -24,9 +24,10 @@ PHASE = "phase_ls"
 OUTPUT = "parameters/outputGain"
 RANGE = (-24.0, 24.0)                # the manifest's (`full_space.OUTPUT_RANGE`)
 LINEAR_TOL_DB = 0.05                 # the output control is a pure gain: unmatched + the change = matched, to this
-EXCLUDE = frozenset({                # C4's 4 items the listener skipped as "Bad DI, only contains a single note" (F82)
-    "cap/hqjhk6pt6jj_a2#ac20", "cap/gagthwmijw5_a2#sw50r", "cap/p4z4rx724ps#sw50r",
-    "cap/1d1b3470-ea1e-4e67-84b0-f71fa149d32e#pr12"})
+EXCLUDE_DI = frozenset({             # the DI sections of C4's 4 items the listener skipped as "Bad DI, only contains a
+    "lib-7c49adcae77c",               # single note" (F82): Dark Ride 31, Dark Ride 30 and Starnes & Shah 08. The note is
+    "lib-46bffb8cc749",               # about the DI, and LS renders the whole section, so every unit on these sections
+    "lib-7e57b8e2aa3b"})              # leaves (the review: 3 more of C4's units)
 
 
 def ls_dir():
@@ -40,16 +41,17 @@ def ls_dir():
 def matched_gain(g0, s_stock, ans_stock, lo=RANGE[0], hi=RANGE[1]):
     """The output gain that brings the answer to S's loudness on the stock DIs: g0 plus the mean of S's LUFS less the
     answer's over the DIs, clamped. -> (gain, the change wanted, the shortfall in dB: 0 unless clamped)."""
+    from learn import full_space as F
+
     want = statistics.fmean(s_stock) - statistics.fmean(ans_stock)
-    g = g0 + want
-    c = min(hi, max(lo, g))
-    return c, want, g - c
+    c, _ = F.output_gain_fit(g0, statistics.fmean(ans_stock), statistics.fmean(s_stock), lo, hi)   # the same post-gain rule
+    return c, want, g0 + want - c
 
 
 def with_output(settings, g):
-    """A copy of JSON settings ({"module/key": v}) with the output gain set to g."""
+    """A copy of JSON settings ({"module/key": v}, string values) with the output gain set to g."""
     out = dict(settings)
-    out[OUTPUT] = float(g)
+    out[OUTPUT] = f"{g:.6g}"                         # stored values are strings, sent to the plugin as they are
     return out
 
 
@@ -69,6 +71,10 @@ def report(recs):
     gap_m = [abs(r["own"]["matched"] - r["own"]["S"]) for r in recs]
     lin = [abs((r["own"]["matched"] - r["own"]["unmatched"]) - (r["gain"] - r["g0"])) for r in recs]
     signed = [r["own"]["matched"] - r["own"]["S"] for r in recs]
+    per = [{"key": r.get("key"), "own error": r["own"]["matched"] - r["own"]["S"],
+            "stock spread": (max(a - b for a, b in zip(r["s_stock"], r["ans_stock"]))
+                             - min(a - b for a, b in zip(r["s_stock"], r["ans_stock"]))) if r.get("s_stock") else None}
+           for r in recs]
     by = {}
     for k in ("cls", "amp", "set"):
         for v in sorted({r[k] for r in recs}):
@@ -78,18 +84,19 @@ def report(recs):
     return {"items": len(recs),
             "gap to S, unmatched (dB)": summary(gap_u), "gap to S, matched (dB)": summary(gap_m),
             "matched - S, signed (dB)": summary(signed),
+            "within 1 dB": sum(g <= 1 for g in gap_m), "within 2 dB": sum(g <= 2 for g in gap_m),
             "clamped": sum(r["short"] != 0 for r in recs), "shortfalls (dB)": sorted(r["short"] for r in recs if r["short"]),
             "linearity": {"max error (dB)": max(lin) if lin else None,
                           "holds": bool(lin) and max(lin) <= LINEAR_TOL_DB},
             "peaks over 0 dBFS": {k: sum(r["peaks"][k] > 0 for r in recs) for k in ("S", "unmatched", "matched")},
-            "by": by,
+            "by": by, "per item": per,
             "reading": ("closer" if statistics.median(gap_m) < statistics.median(gap_u) else "not closer") if recs else None}
 
 
 # --- the commands -------------------------------------------------------------------------------------------------------
 
 def items():
-    """C4's 18 less the 4 single-note DIs (the adopted model's answer on the forced amp) and A3's 18 (R-all's answer on the stock-DI pick's amp,
+    """C4's 18 less the units on the 3 single-note DI sections (the adopted model's answer on the forced amp) and A3's 18 (R-all's answer on the stock-DI pick's amp,
     the amp the generate path plays): {key, set, unit, cls, amp, prt, answer: {select, settings}}."""
     from learn import amp_di_compare_r as R
     from learn import pipeline_fix as P
@@ -99,9 +106,10 @@ def items():
     a3 = json.loads((P.out_dir() / "a3" / "plan.json").read_text())["items"]
     a2a = json.loads((R.a2_dir() / "answers.json").read_text())["answers"]
     out = [{"key": f"c4|{it['key']}", "set": "c4", "unit": it["unit"], "cls": it["cls"], "amp": it["amp"], "prt": it["prt"],
-            "answer": c4a[it["key"]]["adopted"]} for it in c4 if it["unit"] not in EXCLUDE]
+            "answer": c4a[it["key"]]["adopted"]} for it in c4 if it["prt"].get("di_item") not in EXCLUDE_DI]
     out += [{"key": f"a3|{it['key']}", "set": "a3", "unit": it["unit"], "cls": it["cls"], "amp": it["pick"], "prt": it["prt"],
-             "answer": a2a[it["set"]][f"{it['unit']}|{it['pick']}"][it["search"]]} for it in a3]
+             "answer": a2a[it["set"]][f"{it['unit']}|{it['pick']}"][it["search"]]} for it in a3
+            if it["prt"].get("di_item") not in EXCLUDE_DI]
     return out
 
 
@@ -170,7 +178,7 @@ def cmd_table(_args):
             n += 2 * len(dis)
     P.save(p, {"phase": PHASE, "table": tab, "stock": {c: [s["di"] for s in ss] for c, ss in stock.items()},
                "time": time.strftime("%Y-%m-%d %H:%M:%S")})
-    print(f"LS TABLE DONE: {n} renders")
+    print(f"LS TABLE DONE: {n} renders; {json.dumps(tab)}")
 
 
 def cmd_render(args):
@@ -214,6 +222,9 @@ def cmd_render(args):
               "matched": _render(own, ans["select"], with_output(ans["settings"], g))}
         renders += 6
         lv = {c: _level(y) for c, y in ys.items()}
+        if abs((lv["matched"][0] - lv["unmatched"][0]) - (g - g0)) > LINEAR_TOL_DB:
+            raise SystemExit(f"{it['key']}: the output control moved the level by "
+                             f"{lv['matched'][0] - lv['unmatched'][0]:.3f} dB for {g - g0:.3f} dB: not a pure gain")
         rec = {"key": it["key"], "set": it["set"], "unit": it["unit"], "cls": cls, "amp": a, "g0": g0, "gain": g,
                "want": want, "short": short, "ans_stock": ans_stock, "s_stock": tab[a][cls],
                "own": {c: v[0] for c, v in lv.items()}, "peaks": {c: v[1] for c, v in lv.items()}}
@@ -239,7 +250,7 @@ def cmd_report(_args):
         recs.append(json.loads(p.read_text()))
     rep = {"phase": PHASE, **report(recs), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     P.save(ls_dir() / "report.json", rep)
-    print(json.dumps({k: v for k, v in rep.items() if k != "by"}, indent=1))
+    print(json.dumps({k: v for k, v in rep.items() if k not in ("by", "per item")}, indent=1))
 
 
 def shard(s):

@@ -21,7 +21,7 @@ def test_the_gain_is_clamped_to_the_control_and_the_shortfall_kept():
 def test_with_output_copies_the_settings():
     s = {"parameters/outputGain": 8.0, "pr12Amp/pr12Volume": 0.5}
     t = L.with_output(s, 3.5)
-    assert t["parameters/outputGain"] == 3.5 and s["parameters/outputGain"] == 8.0 and t["pr12Amp/pr12Volume"] == 0.5
+    assert t["parameters/outputGain"] == "3.5" and s["parameters/outputGain"] == 8.0 and t["pr12Amp/pr12Volume"] == 0.5
 
 
 def _rec(i, s, u, m, g0=8.0, g=None, short=0.0):
@@ -39,6 +39,7 @@ def test_the_read_reports_gaps_clamps_linearity_and_peaks():
     assert rep["gap to S, unmatched (dB)"]["median"] == 6.0 and rep["gap to S, matched (dB)"]["median"] == 0.5
     assert rep["linearity"]["holds"] and rep["reading"] == "closer"
     assert rep["peaks over 0 dBFS"] == {"S": 0, "unmatched": 7, "matched": 0}
+    assert rep["within 1 dB"] == 6 and rep["within 2 dB"] == 6 and len(rep["per item"]) == 7
 
 
 def test_a_broken_gain_shows_in_the_linearity_check():
@@ -52,3 +53,7 @@ def test_the_launcher_runs_the_table_then_three_shards_then_the_report():
     assert "setopt no_bg_nice" in s and "acquire_render_slot" in s
     assert s.index("ls-draw") < s.index("ls-table") < s.index("ls-render") < s.index("ls-report")
     assert "--shard ${k}/3" in s
+
+
+def test_the_single_note_sections_leave_by_di_section():
+    assert L.EXCLUDE_DI == {"lib-7c49adcae77c", "lib-46bffb8cc749", "lib-7e57b8e2aa3b"}

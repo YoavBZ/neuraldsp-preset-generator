@@ -26,7 +26,7 @@
 - **C4 and A3 were answered** on 2026-11-12 ([F82, F83](pipeline-fix-plan.md)).
   - **C4:** the adopted model isn't heard below FTm or S, so it stays. It leans above FTm (0.61, undecided); on new creators the two are level (0.45). FTm is heard above S (0.71, p 0.019). The listener skipped 4 items as single-note DIs.
   - **A3:** the stock-DI amp pick is heard closer than R-all's own amp pick (0.67, p 0.041, "above"), so it is the amp choice for the generate path. Against always-sw50r it's undecided (0.57).
-  - **Before the model ships:** the loudness step, LS, declared below on the user's yes (2026-11-12). The user also kept Dark Ride 29 as a crunch stock DI: the pick reads as well on the half where it holds one note (cap1 crunch −0.062 against −0.036 on the other), and no clean crunch replacement is in the pool.
+  - **Before the model ships:** the loudness step, LS, declared below on the user's yes (2026-11-12). The user also kept Dark Ride 29 as a crunch stock DI: on cap1 the pick reads as well on the half where it holds one note (crunch −0.062 against −0.036 on the other; GOAT's crunch is near zero on both), and no clean crunch replacement is in the pool.
 - **C1a by ear (2026-11-10):** heard closer than the label, 0.68 [0.54, 0.82], p 0.020 on 14 cards (N12 0.79; BKS 0.57, undecided). By the declared rule that is "above", so C2 stands on C1a's recipe ([F69](pipeline-fix-plan.md)).
 - **Every trusted real row, by rotation (2026-11-10).** The user asked why only GOAT and BKS train, then said "Go for 3" to training and testing on every usable track by rotation. C2r and C3r are declared below, before any render or training; V-real and the reserve stay sealed.
 - **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1), `phase_c1a_outcome`, `phase_c1a_ear` (C1a by ear), `phase_c1b`, `phase_c1b_outcome`, `phase_c2`, `phase_c2_outcome`, `phase_c3`, `phase_c3_outcome`, `phase_c3i`, `phase_c3i_outcome`, `phase_c3s`, `phase_c3s_outcome`, `phase_c3b_s2_outcome`, `phase_c3c`, `phase_c2r_outcome`, `phase_c3r_outcome`, `phase_c3c_outcome`, `phase_c3b`, `phase_c3b_outcome`, `phase_c3b_s2`, `phase_c2b`, `phase_c2b_outcome`, `phase_l1c`, `phase_c2r`, `phase_c2r_a1`, `phase_c2r_a2`, `phase_c3r`, `phase_c4`, `phase_a1`, `phase_a1_outcome`, `phase_a2`, `phase_a2_outcome`, `phase_a3`, `phase_a3_page`, `phase_c4_outcome`, `phase_a3_outcome` and `phase_ls`. Code: `learn/full_controls.py` (C1a), `learn/c1a_ear.py` (C1a by ear), `learn/full_controls_c1b.py` (C1b), `learn/full_controls_c2.py` (C2), `learn/full_controls_c3.py` with `pipeline_fix train-ft --c3` (C3) `learn/full_controls_c2b.py` (C2b), `learn/c4_ear.py` (C4), `learn/amp_di_compare.py` (A1), `learn/amp_di_compare_r.py` (A2) `learn/a3_ear.py` (A3) and `learn/loudness_step.py` (LS), tests `tests/test_full_controls.py`, `tests/test_c1a_ear.py`, `tests/test_full_controls_c1b.py`, `tests/test_full_controls_c2.py`, `tests/test_full_controls_c3.py` and `tests/test_full_controls_c2b.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
@@ -454,22 +454,25 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **The step, for the generate path:**
   - The chosen amp's preset is rendered through the class's 2 stock DIs. The amp pick already makes these renders, so the step adds none.
   - The output gain becomes the preset's own plus S's mean loudness (integrated LUFS) on those DIs, less the preset's.
-  - It's clamped to the control's range (−24 to +24 dB). A clamp is reported as a shortfall.
+  - It's clamped to the control's range (−24 to +24 dB), by `full_space.output_gain_fit`'s post-gain rule. A clamp is reported as a shortfall.
   - S's loudness per amp and class on the stock DIs is a fixed table, rendered once.
 - **The check, on each unit's own DI** (the guitar the song was played on, which the product never has):
-  - **The items:** C4's 18 units less the 4 the listener skipped as single-note DIs (the adopted model's answer on the forced amp), and A3's 18 items (R-all's answer on the stock-DI pick's amp, the amp the generate path plays). 32 in all.
-  - **The renders:** S's table, 3 amps × 2 classes × 2 stock DIs. Then per item: the answer through its class's 2 stock DIs, and S, the unmatched answer and the matched answer through the unit's own DI. Each is fresh and primed, trimmed as every read. 24 + 32 × 10 = 344 renders.
+  - **The items:** C4's 18 units less every unit on the 3 DI sections the listener flagged as single-note (Dark Ride 30 and 31, Starnes & Shah 08: the 4 skipped and 3 more on the same sections, since LS renders the whole section; the review). These carry the adopted model's answer on the forced amp. Then A3's 18 items, with R-all's answer on the stock-DI pick's amp, the amp the generate path plays. 29 in all.
+  - **The renders:** S's table, 3 amps × 2 classes × 2 stock DIs. Then per item: the answer through its class's 2 stock DIs, and S, the unmatched answer and the matched answer through the unit's own DI. Each is fresh and primed, trimmed as every read. 24 + 29 × 10 = 314 renders. A shard stops at its first item if the output control doesn't move the level dB for dB.
   - **The read** (`ls-report`, zero renders):
     - the gap to S's loudness on the own DI, unmatched against matched (median, 90th percentile, max), signed and by class, amp and set;
+    - the share of items within 1 dB and within 2 dB, and each item's own-DI error beside its spread across the 2 stock DIs (the review: the rule is near-certain to pass, so these carry the read);
+    - S's table, printed;
     - the clamps and their shortfalls;
     - the peaks over 0 dBFS;
     - the linearity check: the matched level less the unmatched must equal the gain change to 0.05 dB, as the output control is a pure gain at the end of the chain.
 - **The rule.**
   - **The matched gap's median below the unmatched one's, and linearity holding:** the step goes into the generate path, and the spread is reported as found.
   - **Linearity failing, or the gap not closing:** the step goes back to the user with the numbers.
-- **Then by ear, built from the stored clips at zero renders:** a short page of 12 items drawn from the 32 (seeded), each with S and the matched preset at their own levels (not level-matched). The question: is B louder than A, about the same, or quieter?
+- **Then by ear, built from the stored clips at zero renders:** a short page of 12 items drawn from the 29 (seeded), each with S and the matched preset at their own levels (not level-matched). The question: is B louder than A, about the same, or quieter?
   - A sign test on louder against quieter (two-sided, 0.10). A shown bias goes to the user, with the target (S's level) or the measure (LUFS) in question. Otherwise the step stands.
   - The page's code comes in its own PR, reviewed before it's built.
+- **A limit, named:** every DI here plays at a fixed input level (−22.9 LUFS). A guitar at another level drives the amp differently, so the match holds at that input level only.
 - **Stop rule.** One render pass, one read and one page. The target is S's level, fixed now. Nothing is tuned.
 
 ## A3 in detail: the stock-DI amp pick by ear (declared 2026-11-12, after A2's read; before any A3 render; ledger `phase_a3`)
