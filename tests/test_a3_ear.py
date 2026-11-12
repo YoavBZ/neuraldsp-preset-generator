@@ -101,3 +101,13 @@ def test_the_launcher_draws_renders_in_three_shards_then_builds_the_page():
     assert "setopt no_bg_nice" in s and "acquire_render_slot" in s
     assert s.index("a3-draw") < s.index("a3-render") < s.index("a3-page")
     assert "--shard ${k}/3" in s
+
+
+def test_the_canary_refuses_a_clip_whose_judge_differs_from_the_stored_one():
+    it = {"set": "cap1", "unit": "cap/u1#sw50r", "search": "A", "key": "cap/u1#sw50r|A", "slug": "s1"}
+    stored = {("cap1", it["unit"], a): {"A": {"A": 1.0, "B": 2.0}, "B": {"A": 9.0, "B": 9.0}} for a in A.AMPS}
+    recs = {"s1": {"cands": {a: {"judge": {"A": 1.0, "B": 2.0}} for a in A.AMPS}}}
+    assert A.canary([it], recs, stored) == []
+    recs["s1"]["cands"]["ac20"]["judge"]["B"] = 2.1
+    assert len(A.canary([it], recs, stored)) == 1
+    assert len(A.canary([it], recs, {})) == 6

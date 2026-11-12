@@ -149,7 +149,23 @@ them the same rank. Rating how close each one is, and saying whether you are sur
 hidden and shuffled per item, and a couple of items come back later.
 Answers are saved in this browser as you go; tap <b>Export</b> any time and send the text.</p>"""
 
-TITLE = "Amp Choice Check"
+TITLE = "Tone Ranking Check"           # neutral: it doesn't tell the listener what differs
+
+
+def canary(items, recs, stored, tol=1e-6):
+    """The review's no-render check: each item's judge, per amp and half, equals A2's or C3r's stored judge for the same
+    unit, amp and search half. items: the plan's; recs: {slug: clip record}; stored: {(set, unit, amp): {search half:
+    {half: value}}}. -> [mismatch]."""
+    bad = []
+    for it in items:
+        for a in AMPS:
+            got = recs[it["slug"]]["cands"][a]["judge"]
+            want = ((stored.get((it["set"], it["unit"], a)) or {}).get(it["search"])) or {}
+            for h in ("A", "B"):
+                x, y = got.get(h), want.get(h)
+                if x is None or y is None or abs(x - y) > tol * max(1.0, abs(y)):
+                    bad.append(f"{it['key']}|{a}|{h}: {x} against {y}")
+    return bad
 
 
 def artifact_page(page, css, js):
@@ -276,6 +292,12 @@ def cmd_page(_args):
                                                          and (ear_dir() / "clips" / f"{it['slug']}.json").exists())]
     if missing:
         raise SystemExit(f"no clips for {missing}: every item's renders come first, and no partial page is built")
+    from learn import amp_di_compare_r as R
+
+    recs = {it["slug"]: json.loads((ear_dir() / "clips" / f"{it['slug']}.json").read_text()) for it in plan["items"]}
+    bad = canary(plan["items"], recs, R.judges())
+    if bad:
+        raise SystemExit(f"{len(bad)} clip judges differ from A2's or C3r's (first {bad[0]}): no page")
     items = C4.page_order(plan["items"], seed=PAGE_SEED, cands=AMPS)
     clips, kept = {}, []
     for it in items:

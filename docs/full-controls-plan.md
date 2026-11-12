@@ -451,10 +451,11 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - Each item is a unit's search half: the presets come from that half's input, and the clips play the held half.
 - **The presets:** R-all's stored answer on each of the three amps (A2's `answers.json`, its sha256 checked). So every item has the pick's amp, W's amp and the third amp, and no model runs.
 - **The renders:** each preset through the unit's own DI, fresh and primed, judged on both halves at the unit's lag (J0 beside). The held half's window is kept, as C4's. 18 × 3 × 2 = 108 renders.
+  - **A canary before the page** (the review): each item's judge on each amp and half must equal A2's or C3r's stored judge for the same unit, amp and search half (same answer, DI and code). The page is refused if any differs, so every clip is what A2 scored.
 - **The page:** C4's player and layout. Each item has the Record (the unit's amp track: the capture's render for cap1, the real amp for the panel), then A, B and C.
   - The listener ranks A, B and C from 1 (closest) to 3, ties allowed. Closeness and confidence are optional.
   - The letters are a seeded permutation per item (seed 20261130). Two items come back at least 4 items later, with the letters rotated.
-  - 20 items, in one part. The page names no unit, DI, creator or amp (`leaks`), and the answers are kept in the page's store.
+  - 20 items, in one part. The page names no unit, DI, creator or amp (`leaks`), and the answers are kept in the page's store. Its title is neutral ("Tone Ranking Check"), so it doesn't tell the listener what differs.
 - **The read** (`a3-read`), declared now, on first hearings:
   - **Primary: the pick over W.** It's the share of cards (above 1, a tie 0.5, below 0), with C1a's jackknife-t by cluster (each item is its own cluster) and its one-sided rule at 0.05: "above", "below" or "undecided".
   - **Beside:**
@@ -468,8 +469,8 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **The rule (PR #422's: the score's adoption is the default).**
   - **The pick over W "above" or "undecided":** the pick stays the declared amp choice for the generate path on R-all.
   - **"Below" on the primary, or on the pick over always-sw50r:** the ear says worse where the score says better, so it goes to the user.
-- **Power:** about C4's (18 first hearings): P(above) is about 0.2 to 0.3 at a true share of 0.60 and about 0.6 at 0.70. So "undecided" is likely, and an undecided page is not the ear confirming the score.
-- **The product step itself, declared now and built with the model's product integration:** for a song, R-all's answer on each amp is rendered through the 2 stock DIs of the song's class (12 renders with the priming renders). The floored features of R-all's own model on those renders and on the song's separated guitar give the pick: the amp whose renders sit closest by cosine. The model itself ships only after C4 and the loudness step.
+- **Power:** about C4's (18 first hearings): P(above) is about 0.2 to 0.3 at a true share of 0.60 and about 0.6 at 0.70. Even an ear that tracked J0 exactly would sit near J0's own share on the pool (0.61 on cap1, 0.52 on the panel, about 0.59 on the draw; the review), so P(above) is about 0.2. "Undecided" is expected, and an undecided page is not the ear confirming the score. What A3 mainly catches is a clear preference for W: P(below) is 0.62 to 0.78 at a share of 0.30.
+- **The product step itself, declared now and built with the model's product integration:** for a song, R-all's answer on each amp is rendered through the 2 stock DIs of the song's class (12 renders with the priming renders). The class is the one the generate path already gives the model, from its song research. A1 and A2 used each unit's true class, so a wrong class is unmeasured: it changes both the model's answer and the stock DIs. The floored features of R-all's own model on those renders and on the song's separated guitar give the pick: the amp whose renders sit closest by cosine. The model itself ships only after C4 and the loudness step.
 - **Stop rule.** One render pass, one page, one read. Nothing tuned.
 - **When.** Tonight, under the user's rule of 2026-11-10 and their "continue with the plan overnight", once its review passes. The page goes to the user beside C4's.
 
