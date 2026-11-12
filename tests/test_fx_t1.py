@@ -45,9 +45,16 @@ def test_with_delay_time_copies_the_settings():
     assert t["delay/delayTime"] == "123.456" and s["delay/delayTime"] == "500" and t["delay/delayMix"] == "0.4"
 
 
-def test_the_pass_bar_needs_both_halves():
-    assert T.rule([0.02, 0.2], [-0.4, -0.1])
-    assert not T.rule([-0.01, 0.2], [-0.4, -0.1]) and not T.rule([0.02, 0.2], [-0.4, 0.01])
+def _row(ci, wf, wb):
+    return {"ci": ci, "without Forkupines": wf, "without BKS": wb}
+
+
+def test_the_pass_bar_needs_both_halves_and_the_large_band_checks():
+    assert T.rule(_row([0.02, 0.2], 0.1, 0.1), _row([-0.4, -0.1], -0.2, -0.2))
+    assert not T.rule(_row([-0.01, 0.2], 0.1, 0.1), _row([-0.4, -0.1], -0.2, -0.2))
+    assert not T.rule(_row([0.02, 0.2], 0.1, 0.1), _row([-0.4, 0.01], -0.2, -0.2))
+    assert not T.rule(_row([0.02, 0.2], -0.01, 0.1), _row([-0.4, -0.1], -0.2, -0.2))
+    assert not T.rule(_row([0.02, 0.2], 0.1, 0.1), _row([-0.4, -0.1], -0.2, 0.05))
 
 
 def test_the_launcher_renders_on_cpu_and_separates_on_mps_after_the_draw():

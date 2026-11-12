@@ -26,6 +26,8 @@ GRID = tuple(66.0 * (733.0 / 66.0) ** (j / 12) for j in range(13))   # ms, ratio
 LAG_MS = (60.0, 800.0)                                                # F52's primary range
 ALPHAS = (0.0, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0)                        # arm C's residual weights
 BOOT_N, BOOT_SEED = 2000, 20261133
+CHECK_OUT = ("Forkupines", "BKS")           # a pass must hold with either left out (the review: about 3.8 effective bands)
+F52_HITS = 38                               # F52's primary arm on this third: 38 of 134 within 10% (28.4%); checked first
 SR = 48000
 
 
@@ -88,10 +90,13 @@ def within10(pred_ms, true_ms):
     return abs(pred_ms / true_ms - 1) <= 0.10
 
 
-def rule(a_vs_f52_ci, a_vs_prior_ci):
+def rule(a_vs_f52, a_vs_prior):
     """The declared pass bar: arm A beats F52's cepstrum on within-10% (interval wholly above 0) and its log2 error
-    beats the draw-aware prior's (interval wholly below 0)."""
-    return bool(a_vs_f52_ci[0] is not None and a_vs_f52_ci[0] > 0 and a_vs_prior_ci[1] is not None and a_vs_prior_ci[1] < 0)
+    beats the draw-aware prior's (interval wholly below 0); and both points stay on that side with each of CHECK_OUT's
+    bands left out. Each argument: {"ci": [lo, hi], "without <band>": value}."""
+    f, p = a_vs_f52, a_vs_prior
+    return bool(f["ci"][0] is not None and f["ci"][0] > 0 and p["ci"][1] is not None and p["ci"][1] < 0
+                and all(f[f"without {c}"] > 0 and p[f"without {c}"] < 0 for c in CHECK_OUT))
 
 
 def boot(fn, bands, n=BOOT_N, seed=BOOT_SEED):
@@ -146,13 +151,21 @@ def cmd_draw(_args):
             r = json.loads(line)
             if r["i"] in ids:
                 st[r["i"]] = r["settings"]
+    from learn import local_objective as LO
+    from learn import trusted_data_t3 as T3
+
     stock = json.loads((A1.a1_dir() / "plan.json").read_text())["stock"]
+    menus = T3.Menus()
+    menus.gate_u = json.loads(open(os.path.join(cc, "plan.json")).read())["gate_cap"]["unit"]   # as cc_build's render
     items = []
     for j in strong:
         m = meta[j]
+        amp, _, base, sel, xf, _, _, _ = T3.full_twin(m["i"], menus)    # D_CC's own render: the item's select and setting
+        if amp != m["amp"] or base != m["base"] or LO.sdict(xf) != st[m["i"]]:
+            raise SystemExit(f"{m['i']}: the full twin differs from the stored render's settings")
         s = stock_for(m["song"], m["base"], stock)
         items.append({"j": j, "i": m["i"], "song": m["song"], "band": m["band"], "amp": m["amp"], "cls": m["base"],
-                      "true_ms": float(st[m["i"]]["delay/delayTime"]), "settings": st[m["i"]],
+                      "select": sel, "true_ms": float(st[m["i"]]["delay/delayTime"]), "settings": st[m["i"]],
                       "stock": {"di": s["di"], "di_path": s["di_path"], "start_s": s["start_s"]}})
     out_dir().mkdir(parents=True, exist_ok=True)
     P.save(p, {"phase": PHASE, "grid_ms": GRID, "items": items, "wide_delay_ons": [meta[j]["i"] for j in ons],
@@ -173,7 +186,6 @@ def cmd_render(args):
 
     P.require(PHASE)
     plan = json.loads((out_dir() / "plan.json").read_text())
-    ms = P.A_menu_S()
     k, n = args.shard
     trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
     LO._wait_cap()
@@ -188,7 +200,7 @@ def cmd_render(args):
         key = it["stock"]["di"]
         if key not in dis:
             dis[key] = B.measure(PS.section_audio(it["stock"]["di_path"], it["stock"]["start_s"])).astype(np.float32)
-        sel = ms[it["amp"]][it["cls"]][0]
+        sel = it["select"]                            # the item's own select (D_CC's full twin), checked at the draw
         cands = []
         for t in plan["grid_ms"]:
             st = LO.tdict(with_delay_time(it["settings"], t))
@@ -308,20 +320,31 @@ def cmd_read(_args):
           "prior": prior}
     hit = {k: np.array([within10(p, t) for p, t in zip(v, tm)], float) for k, v in P_.items()}
     lerr = {k: np.abs(np.log2(v) - np.log2(tm)) for k, v in P_.items()}
+    if int(hit["F52"].sum()) != F52_HITS or len(items) != 134:
+        raise SystemExit(f"F52's recomputed arm hits {int(hit['F52'].sum())} of {len(items)}, not {F52_HITS} of 134: "
+                         "the comparator is off, no read")
+
+    def paired(a, b):
+        out = {"diff": float(a.mean() - b.mean()), "ci": boot(lambda x: float(a[x].mean() - b[x].mean()), bands)}
+        for c in CHECK_OUT:
+            m = bands != c
+            out[f"without {c}"] = float(a[m].mean() - b[m].mean())
+        return out
+    ceiling = float(np.mean([any(within10(g, t) for g in grid) for t in tm]))
+    dr = np.array(["DarkRide" in it["stock"]["di"] for it in items])
     rep = {"phase": PHASE, "n": len(items), "bands": {b: int((bands == b).sum()) for b in sorted(set(bands))},
            "within_10pct": {k: float(v.mean()) for k, v in hit.items()},
            "log2_mae": {k: float(v.mean()) for k, v in lerr.items()},
-           "A - F52, within 10%": {"diff": float(hit["A"].mean() - hit["F52"].mean()),
-                                   "ci": boot(lambda b: float(hit["A"][b].mean() - hit["F52"][b].mean()), bands)},
-           "A - prior, log2 error": {"diff": float(lerr["A"].mean() - lerr["prior"].mean()),
-                                     "ci": boot(lambda b: float(lerr["A"][b].mean() - lerr["prior"][b].mean()), bands)},
-           "A - B, within 10% (the channel)": {"diff": float(hit["A"].mean() - hit["B"].mean()),
-                                              "ci": boot(lambda b: float(hit["A"][b].mean() - hit["B"][b].mean()), bands)},
+           "A - F52, within 10%": paired(hit["A"], hit["F52"]),
+           "A - prior, log2 error": paired(lerr["A"], lerr["prior"]),
+           "A - B, within 10% (the channel)": paired(hit["A"], hit["B"]),
+           "grid ceiling (a perfect cell pick within 10%)": ceiling,
+           "Dark Ride 29 items apart": {"n": int(dr.sum()), **{k: float(v[dr].mean()) for k, v in hit.items() if dr.any()}},
            "C on all wide delay-ons": {"n": len(ons), "within_10pct": float(np.mean([within10(armc[i][0], true[i]) for i in ons])),
                                        "alphas": sorted({a for _, a in armc.values()})},
            "per_item": [{"i": it["i"], "band": it["band"], "true_ms": it["true_ms"], **{k: float(v[j]) for k, v in P_.items()}}
                         for j, it in enumerate(items)]}
-    rep["passes"] = rule(rep["A - F52, within 10%"]["ci"], rep["A - prior, log2 error"]["ci"])
+    rep["passes"] = rule(rep["A - F52, within 10%"], rep["A - prior, log2 error"])
     rep["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     P.save(out_dir() / "read.json", rep)
     print(json.dumps({k: v for k, v in rep.items() if k != "per_item"}, indent=1))

@@ -28,7 +28,7 @@
   - **A3:** the stock-DI amp pick is heard closer than R-all's own amp pick (0.67, p 0.041, "above"), so it is the amp choice for the generate path. Against always-sw50r it's undecided (0.57).
   - **Before the model ships:** the loudness step, LS, declared below on the user's yes (2026-11-12). The user also kept Dark Ride 29 as a crunch stock DI: on cap1 the pick reads as well on the half where it holds one note (crunch −0.062 against −0.036 on the other; GOAT's crunch is near zero on both), and no clean crunch replacement is in the pool.
 - **LS ran** on 2026-11-12 (314 renders, audited; [F84](pipeline-fix-plan.md)). Matched to S's loudness on the 2 stock DIs, the presets sit a median 0.65 dB off S on the song's own DI (unmatched 8.2 dB): 21 of 29 within 1 dB, 27 within 2 dB, no clamp. By the rule the step goes into the generate path. At equal loudness they peak about 2 dB above S, and 18 of 29 go over 0 dBFS. The short page is next.
-- **T0 ran** on 2026-11-12 (zero renders, audited; [F85](pipeline-fix-plan.md)). On the clean guitar, matching to other performances' known settings reads every effect's on/off and most knobs. On the stem only reverb and delay on/off survive, weakly (AUC 0.57 and 0.58). By the rule six parameters go to R3 (a stem that keeps effects, the user's call), reverb and delay on/off to R1, and reverb decay and delay feedback stay on R4.
+- **T0 ran** on 2026-11-12 (zero renders, audited; [F85](pipeline-fix-plan.md)). On the clean guitar, matching to other performances' known settings reads every effect's on/off and most knobs. On the stem only reverb and delay on/off survive, weakly (AUC 0.57 and 0.58). By the rule six parameters go to R3 (a stem that keeps effects, the user's call). Reverb and delay on/off pass R1's letter but are too weak to act on (no vote threshold separates them), so R3 is their lever too. Reverb decay and delay feedback stay on R4.
 - **T1 is declared below:** the cloud researcher's masking-channel test, which puts each candidate through the song's own backing and separator. It could get past the stem's loss without fine-tuning the separator.
 - **C1a by ear (2026-11-10):** heard closer than the label, 0.68 [0.54, 0.82], p 0.020 on 14 cards (N12 0.79; BKS 0.57, undecided). By the declared rule that is "above", so C2 stands on C1a's recipe ([F69](pipeline-fix-plan.md)).
 - **Every trusted real row, by rotation (2026-11-10).** The user asked why only GOAT and BKS train, then said "Go for 3" to training and testing on every usable track by rotation. C2r and C3r are declared below, before any render or training; V-real and the reserve stay sealed.
@@ -459,7 +459,8 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **The items:** F52's strong third, the wide delay-ons kept by E1e's rebuild whose delay mix is in their top third (134 expected). Each has its stored mix and stem, so the residual is mix less stem.
 - **The candidates:**
   - Each item's true preset (its stored settings) with the delay time at 13 log-spaced points from 66 to 733 ms (ratio about 1.22, so each point is its own ±10% cell of the 60–800 ms draw).
-  - Rendered through a stock DI of the item's class: A1's first (The Travelling Band 16 for clean, Ale Lak 09 for crunch), or the class's second if the first comes from the item's own song.
+  - Rendered through a stock DI of the item's class: A1's first (The Travelling Band 16 for clean, Ale Lak 09 for crunch), or the class's second if the first comes from the item's own song. The 4 crunch items that land on Dark Ride 29, whose second half holds one note, are read apart too.
+  - **The item's own preset** (the review): the draw checks that D_CC's full twin (`trusted_data_t3.full_twin`, with D_CC's gate cap) gives each item's stored settings, and takes its select from it. It stops on any mismatch (0 of 134 at a dry check).
   - Each render is fresh and primed, trimmed as every read.
 - **The arms:**
   - **Arm A (primary):** each candidate is loudness-matched to the song's stem, added to the residual and re-separated by X-LANCE (`gtr_mss`, MPS). The pick is the candidate whose stem's cepstrum, over 60–800 ms, correlates best with the song stem's.
@@ -468,7 +469,9 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **The comparators:** F52's primary arm (the stem's cepstrum less the other songs' mean delay-off stem cepstrum, recomputed per item; 28.4% within 10% on this third), and the draw-aware prior (the other bands' median).
 - **The read** (`t1-read`): within ±10% of the set time, and the log2 error, per arm. Arm A is paired against F52 and against the prior, with 90% intervals from 2,000 resamples of the 7 bands.
 - **The rule, declared now** (the report's pass bar):
-  - **Passes:** arm A beats F52 on within-10% (interval wholly above 0), *and* its log2 error beats the prior's (interval wholly below 0). F52 failed this second half.
+  - **Passes:** arm A beats F52 on within-10% (interval wholly above 0), *and* its log2 error beats the prior's (interval wholly below 0). F52 failed this second half. Both points must also stay on the passing side with Forkupines left out and with BKS left out, about 3.8 effective bands (the review).
+  - **First, a check:** the recomputed F52 arm must hit 38 of 134 (28.4%), or the read stops.
+  - **Beside:** the grid's ceiling (the share a perfect cell pick puts within 10%).
   - **On a pass:** the product form is next, the report's recommendation 3: two stock DIs per class with an invariance check, then tremolo rate and delay mix on grids.
   - **On a fail:** delay time stays on the prior on stems, and the effect knobs wait for stereo or real-song evidence. On/off stays with T0's R1 reading.
 - **The caveats, stated:**

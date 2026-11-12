@@ -5367,7 +5367,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - **Next:** the declared 12-item page (`learn/ls_ear.py`), S against the matched preset at their own levels. After its review, the page stores each pair's LUFS and peak gap on the played 5 s clips. Beside the declared sign test, it reads the same test on the items whose clips sit within 1 dB, and direction agreement on the rest, so a miss like the +5.3 dB item heard "louder" counts as LUFS working. The matched preset is A on half the items, and the page is read with 8 or more of 12 answered.
 - Files: `PF/ls/` (`plan.json`, `s-table.json`, `items/`, `report.json`). Code: `learn/loudness_step.py`.
 
-### F85. T0: on the clean guitar, matching a recording to other performances' known settings reads every effect's on/off and most of its knobs (reverb mix, delay mix and time, tremolo depth and rate). On the separated stem only reverb and delay on/off survive, weakly (AUC 0.57 and 0.58), and no knob does. By the declared rule the stem is the bottleneck for six parameters (R3, to the user), reverb and delay on/off go to R1, and reverb decay and delay feedback aren't shown at zero renders (phase_t0, zero renders, 13 s of CPU after a 2 min features pass, audited)
+### F85. T0: on the clean guitar, matching a recording to other performances' known settings reads every effect's on/off and most of its knobs (reverb mix, delay mix and time, tremolo depth and rate). On the separated stem only reverb and delay on/off survive, weakly (AUC 0.57 and 0.58), and no knob does. By the declared rule the stem is the bottleneck for six parameters (R3, to the user). Reverb and delay on/off pass R1's letter but are too weak to act on, and reverb decay and delay feedback aren't shown at zero renders (phase_t0, zero renders, 13 s of CPU after a 2 min features pass, audited)
 - **What ran** ([plan](full-controls-plan.md), "The effects route and T0 in detail", with its amendment).
   - E1e's 770 wide draws, 7 bands, with reverb, delay and tremolo drawn independently.
   - Each item's clean target, stem and mix was matched to the 15 nearest clean targets of the other bands with the same amp, on each effect's own fixed features.
@@ -5400,12 +5400,15 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - stem: reverb 58, delay 31, tremolo 37.
   - The draws switch each effect on about half the time, so a half vote is near the base rate. Any on/off decision needs its threshold set on known truth first. E0's 12 dry stems, beside: reverb 0, delay 2, tremolo 6.
 - **By the declared rule, per parameter:**
-  - **R1** (both pass): reverb on/off and delay on/off. Their stem AUCs are about 0.58, so the gain is small, and it comes with the false-on rate above.
+  - **R1's letter, not something to act on:** reverb on/off and delay on/off pass, at stem AUCs of about 0.58 (0.53 on all ons).
+    - No vote threshold separates them (the review). At a half vote, reverb switches on in 59% of offs against 71% of strong ons, and delay 29% against 43%. At 0.7 it's 22% against 29%, and 11% against 16%.
+    - So R3 is the lever for these too.
   - **R3** (the target passes, the stem doesn't; to the user): reverb mix, delay mix, delay time, tremolo on/off, tremolo depth and tremolo rate. The gap is the upside, for example delay on/off 0.82 against 0.58, and delay time −0.30 against −0.06 log2.
   - **R4** (not shown at zero renders; their next route is a paired, rendered oracle): reverb decay and delay feedback. These features don't carry them even on the clean guitar.
 - **What it means.**
   - **Render-and-compare can work for effects:** on the clean guitar, fixed features matched to other performances find most settings.
   - **The separated stem loses nearly all of it,** as for the amp (F81: about half) but worse: on the stem only a trace of reverb and delay presence remains. The mix carries nothing.
+  - **On the stem, T0's matching reads delay time worse than F52's direct cepstrum:** 13% within 10% against 28.4% on the same third.
   - **The lever is a stem that keeps the effects** (R3: fine-tuning the separator, or the masking renders). It goes to the user with these gaps as its measured upside.
   - **Meanwhile:** R4, the song research's effects on the model's dry answer.
   - These are synthetic draws, wide and independent. Real songs' effects are fewer and tempo-locked, so this is a test of the method, not the product's rate.
