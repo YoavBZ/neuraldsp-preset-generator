@@ -14,6 +14,7 @@ def test_the_draw_is_seeded_with_one_s_and_one_matched_per_item():
     a = E.draw(_keys())
     assert len(a) == E.N_ITEMS and a == E.draw(_keys())
     assert all(sorted(it["letters"].values()) == ["S", "matched"] for it in a)
+    assert sum(it["letters"]["B"] == "matched" for it in a) == E.N_ITEMS // 2
 
 
 def test_unblinding_turns_b_against_a_into_matched_against_s():
@@ -30,6 +31,15 @@ def test_the_sign_test_and_the_rule():
     assert loud["matched louder"] == 8 and loud["shown_bias"] == "louder" and loud["outcome"] == "user"
     same = E.ear_read(items, {f"i{j}": {"choice": "same" if j % 3 else "louder"} for j in range(12)})
     assert same["outcome"] == "stands" and same["about the same"] == 8
+    few = E.ear_read(items, {f"i{j}": {"choice": "louder"} for j in range(E.MIN_READ - 1)})
+    assert few["outcome"] == "not read"
+
+
+def test_the_clip_gap_split_beside_the_declared_test():
+    items = [{"id": f"i{j}", "letters": {"A": "S", "B": "matched"}, "clip_gap_db": 0.3 if j < 6 else 2.5} for j in range(12)]
+    got = {f"i{j}": {"choice": "same" if j < 6 else "louder"} for j in range(12)}
+    rep = E.ear_read(items, got)
+    assert rep["within 1 dB"]["about the same"] == 6 and rep["beyond 1 dB"]["direction agrees"] == 6
 
 
 def test_the_peak_gain_keeps_the_relative_level_and_never_raises():

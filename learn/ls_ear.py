@@ -22,6 +22,8 @@ PHASE = "phase_ls"
 DRAW_SEED = 20261132
 N_ITEMS = 12
 ALPHA = 0.10                         # two-sided
+MIN_READ = 8                         # answered items for the page to be read (of 12)
+NEAR_DB = 1.0                        # the played clips' LUFS gap within which "about the same" is LUFS's own answer
 CEIL_DBFS = -1.0
 CHOICES = ("louder", "same", "quieter")   # "B is louder than A", "about the same", "B is quieter"
 
@@ -38,9 +40,10 @@ def draw(keys, n=N_ITEMS, seed=DRAW_SEED):
     """n of the items' keys, seeded, each with its letters: which of S and the matched preset is A. -> [item]."""
     rng = random.Random(seed)
     pick = sorted(rng.sample(sorted(keys), n))
+    firsts = ["S"] * (n // 2) + ["matched"] * (n - n // 2)      # balanced: the matched preset is A on half the items
+    rng.shuffle(firsts)
     out = []
-    for j, k in enumerate(pick, 1):
-        a = "S" if rng.random() < 0.5 else "matched"
+    for j, (k, a) in enumerate(zip(pick, firsts), 1):
         out.append({"id": f"i{j}", "n": j, "key": k, "letters": {"A": a, "B": "matched" if a == "S" else "S"}})
     return out
 
@@ -64,15 +67,29 @@ def sign_test(plus, minus):
     return min(1.0, 2 * p)
 
 
+def counts(v):
+    plus, zero, minus = sum(x == 1 for x in v), sum(x == 0 for x in v), sum(x == -1 for x in v)
+    return {"matched louder": plus, "about the same": zero, "matched quieter": minus, "sign_test_p": sign_test(plus, minus)}
+
+
 def ear_read(items, got):
+    """The declared read, and beside it (the review) the same test on the items whose played clips sit within NEAR_DB
+    of each other by LUFS, and on the rest whether the ear's direction agrees with the clips' measured gap."""
     heard = {it["id"]: unblind(it, got.get(it["id"])) for it in items}
     v = [x for x in heard.values() if x is not None]
-    plus, zero, minus = sum(x == 1 for x in v), sum(x == 0 for x in v), sum(x == -1 for x in v)
-    p = sign_test(plus, minus)
-    bias = "louder" if plus > minus else "quieter" if minus > plus else None
-    shown = p < ALPHA and bias is not None
-    return {"answered": len(v), "of": len(items), "matched louder": plus, "about the same": zero, "matched quieter": minus,
-            "sign_test_p": p, "shown_bias": bias if shown else None, "outcome": "user" if shown else "stands",
+    c = counts(v)
+    bias = "louder" if c["matched louder"] > c["matched quieter"] else "quieter" if c["matched quieter"] > c["matched louder"] \
+        else None
+    failed = len(v) < MIN_READ
+    shown = not failed and c["sign_test_p"] < ALPHA and bias is not None
+    near = [heard[it["id"]] for it in items if heard[it["id"]] is not None and abs(it.get("clip_gap_db", 0.0)) <= NEAR_DB]
+    far = [(heard[it["id"]], it["clip_gap_db"]) for it in items
+           if heard[it["id"]] is not None and abs(it.get("clip_gap_db", 0.0)) > NEAR_DB]
+    return {"answered": len(v), "of": len(items), "page_failed": failed, **c,
+            "shown_bias": bias if shown else None, "outcome": "not read" if failed else "user" if shown else "stands",
+            "within 1 dB": counts(near),
+            "beyond 1 dB": {"n": len(far), "direction agrees": sum(h != 0 and (h > 0) == (g > 0) for h, g in far),
+                            "heard the same": sum(h == 0 for h, _ in far)},
             "by_item": heard}
 
 
@@ -216,8 +233,10 @@ def page_html(items, clips, build):
 def artifact_page(body, js):
     from learn import c1a_ear as C
 
-    return ('<title>Loudness Check</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n<style>' + CSS
-            + "</style>\n" + body + "<script>" + js + C.SYNC + "</script>")   # C1a's sync: answers/<build>
+    from learn import ear_eat as EE
+
+    return ('<title>Loudness Check</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n<style>'
+            + EE.artifact_css(CSS) + "</style>\n" + body + "<script>" + js + C.SYNC + "</script>")   # C1a's sync
 
 
 def leaks(text, items):
@@ -235,6 +254,7 @@ def cmd_page(_args):
     from learn import ear_vreal as E
     from learn import loudness_step as L
     from learn import pipeline_fix as P
+    from learn import song_aug as SA
 
     P.require(PHASE)
     key_path = ls_dir() / "ear" / "key.json"
@@ -252,7 +272,11 @@ def cmd_page(_args):
         g = peak_gain(grp)
         for k, y in grp.items():
             clips[f"{it['id']}-{k}"] = E.encode(y * g, ls_dir() / "ear" / "aac-cache")
-        kept.append({**it, "gain_db": 20 * math.log10(g)})
+        by = {it["letters"][k]: grp[k] * g for k in grp}
+        lu = {c: SA.lufs(y) for c, y in by.items()}
+        pk = {c: 20 * math.log10(max(float(np.max(np.abs(y))), 1e-12)) for c, y in by.items()}
+        kept.append({**it, "gain_db": 20 * math.log10(g), "clip_lufs": lu, "clip_peak_dbfs": pk,
+                     "clip_gap_db": lu["matched"] - lu["S"], "clip_peak_gap_db": pk["matched"] - pk["S"]})
     build = hashlib.sha256(f"{json.dumps([k['letters'] for k in kept])}{time.time_ns()}".encode()).hexdigest()[:12]
     body = page_html(kept, clips, build)
     bad = leaks(body.split('<script type="application/json" id="clips"')[0], kept)

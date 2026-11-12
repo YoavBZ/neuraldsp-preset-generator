@@ -472,6 +472,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **Linearity failing, or the gap not closing:** the step goes back to the user with the numbers.
 - **Then by ear, built from the stored clips at zero renders:** a short page of 12 items drawn from the 29 (seeded), each with S and the matched preset at their own levels (not level-matched). The question: is B louder than A, about the same, or quieter?
   - A sign test on louder against quieter (two-sided, 0.10). A shown bias goes to the user, with the target (S's level) or the measure (LUFS) in question. Otherwise the step stands.
+  - *After its review:* the letters are balanced, with the matched preset A on 6 of 12. The page is read with 8 or more answered. Each pair's LUFS and peak gap on the played clips are stored. Beside the declared test: the same test on the items whose clips sit within 1 dB, and direction agreement on the rest.
   - The page's code comes in its own PR, reviewed before it's built.
 - **Amendment 1 (2026-11-12, after the first run's stop, before any read):** the plugin keeps the output gain in 0.1 dB steps.
   - **What happened:** the first run stopped on its linearity rule on 3 items. Their level moved by 9.300, 11.400 and 8.000 dB for asked changes of 9.370, 11.466 and 7.935 dB.
