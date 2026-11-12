@@ -29,7 +29,7 @@
   - **Before the model ships:** the loudness step, LS, declared below on the user's yes (2026-11-12). The user also kept Dark Ride 29 as a crunch stock DI: on cap1 the pick reads as well on the half where it holds one note (crunch −0.062 against −0.036 on the other; GOAT's crunch is near zero on both), and no clean crunch replacement is in the pool.
 - **C1a by ear (2026-11-10):** heard closer than the label, 0.68 [0.54, 0.82], p 0.020 on 14 cards (N12 0.79; BKS 0.57, undecided). By the declared rule that is "above", so C2 stands on C1a's recipe ([F69](pipeline-fix-plan.md)).
 - **Every trusted real row, by rotation (2026-11-10).** The user asked why only GOAT and BKS train, then said "Go for 3" to training and testing on every usable track by rotation. C2r and C3r are declared below, before any render or training; V-real and the reserve stay sealed.
-- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1), `phase_c1a_outcome`, `phase_c1a_ear` (C1a by ear), `phase_c1b`, `phase_c1b_outcome`, `phase_c2`, `phase_c2_outcome`, `phase_c3`, `phase_c3_outcome`, `phase_c3i`, `phase_c3i_outcome`, `phase_c3s`, `phase_c3s_outcome`, `phase_c3b_s2_outcome`, `phase_c3c`, `phase_c2r_outcome`, `phase_c3r_outcome`, `phase_c3c_outcome`, `phase_c3b`, `phase_c3b_outcome`, `phase_c3b_s2`, `phase_c2b`, `phase_c2b_outcome`, `phase_l1c`, `phase_c2r`, `phase_c2r_a1`, `phase_c2r_a2`, `phase_c3r`, `phase_c4`, `phase_a1`, `phase_a1_outcome`, `phase_a2`, `phase_a2_outcome`, `phase_a3`, `phase_a3_page`, `phase_c4_outcome`, `phase_a3_outcome` and `phase_ls`. Code: `learn/full_controls.py` (C1a), `learn/c1a_ear.py` (C1a by ear), `learn/full_controls_c1b.py` (C1b), `learn/full_controls_c2.py` (C2), `learn/full_controls_c3.py` with `pipeline_fix train-ft --c3` (C3) `learn/full_controls_c2b.py` (C2b), `learn/c4_ear.py` (C4), `learn/amp_di_compare.py` (A1), `learn/amp_di_compare_r.py` (A2) `learn/a3_ear.py` (A3) and `learn/loudness_step.py` (LS), tests `tests/test_full_controls.py`, `tests/test_c1a_ear.py`, `tests/test_full_controls_c1b.py`, `tests/test_full_controls_c2.py`, `tests/test_full_controls_c3.py` and `tests/test_full_controls_c2b.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
+- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1), `phase_c1a_outcome`, `phase_c1a_ear` (C1a by ear), `phase_c1b`, `phase_c1b_outcome`, `phase_c2`, `phase_c2_outcome`, `phase_c3`, `phase_c3_outcome`, `phase_c3i`, `phase_c3i_outcome`, `phase_c3s`, `phase_c3s_outcome`, `phase_c3b_s2_outcome`, `phase_c3c`, `phase_c2r_outcome`, `phase_c3r_outcome`, `phase_c3c_outcome`, `phase_c3b`, `phase_c3b_outcome`, `phase_c3b_s2`, `phase_c2b`, `phase_c2b_outcome`, `phase_l1c`, `phase_c2r`, `phase_c2r_a1`, `phase_c2r_a2`, `phase_c3r`, `phase_c4`, `phase_a1`, `phase_a1_outcome`, `phase_a2`, `phase_a2_outcome`, `phase_a3`, `phase_a3_page`, `phase_c4_outcome`, `phase_a3_outcome`, `phase_ls`, `phase_ls_amendment` and `phase_t0`. Code: `learn/full_controls.py` (C1a), `learn/c1a_ear.py` (C1a by ear), `learn/full_controls_c1b.py` (C1b), `learn/full_controls_c2.py` (C2), `learn/full_controls_c3.py` with `pipeline_fix train-ft --c3` (C3) `learn/full_controls_c2b.py` (C2b), `learn/c4_ear.py` (C4), `learn/amp_di_compare.py` (A1), `learn/amp_di_compare_r.py` (A2) `learn/a3_ear.py` (A3), `learn/loudness_step.py` (LS) and `learn/fx_t0.py` (T0), tests `tests/test_full_controls.py`, `tests/test_c1a_ear.py`, `tests/test_full_controls_c1b.py`, `tests/test_full_controls_c2.py`, `tests/test_full_controls_c3.py` and `tests/test_full_controls_c2b.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
 
 **The every-control plan's stage 1 never ran.** It is a true-DI oracle for the groups with no number, about 13–14k renders. It was approved on 2026-10-22 and waited for a trusted data list. Then the work moved to the trusted data and the pipeline fix. This amendment carries its goal onto today's route (FT2 and its real rows). It folds stage 1's never-measured groups in as C1b.
 
@@ -445,6 +445,40 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **When.** It trains as soon as its code is reviewed, on the otherwise idle MPS, while C2b or C2r render on 3 CPU processes. It launches with `setopt no_bg_nice`, and no other MPS job starts while it runs.
   - **The stop.** The measure is the 3 render shards' summed renders per minute. The window is the 60 minutes before the training against its first 20 minutes. If the rate drops by more than 20%, the executor stops the training by its recorded PIDs, and it reruns after C3r's training. Otherwise it runs to the end.
   - **The read** waits for a free render slot: after C2r, before C3r's read.
+
+## The effects route and T0 in detail (declared 2026-11-12, after the effects review; zero renders; ledger `phase_t0`)
+
+- **Why.** The user (2026-11-12): "we simply can't leave the effects off or similar to the starting preset - everything must be adjusted and eventually be as accurate as possible." Every adopted model holds the time effects, the spring and the doubler at S (off), and A3's listener heard a record's reverb that no preset had. The user asked that the route be reviewed. The review is the ML review session's (`logs/effects-route-review.md` in its worktree); the cloud researcher's literature report is pending and will be folded in before any route with renders is declared.
+- **The route, in the review's order.**
+  - **R4, the floor and the comparator:** the song research's effects on top of the model's dry answer. That is the generate skill's fallback since F47. Every later effects read is against it as well as against off.
+  - **T0, below:** a zero-render test of render-and-compare's core assumption, before anything is built.
+  - **R1, render-and-compare with effect-aware features,** declared only for the parameters T0 passes on the stem. The model's own features don't qualify: it trained with every effect masked.
+  - **R3, a stem that keeps the effects** (fine-tuning the separator), only where T0 passes on the clean target but not the stem. It goes to the user with the measured gap.
+  - **R2, a learned effect head,** last.
+- **How T0 differs from F49–F52.** Those read the effect's knobs straight from the stem, with learned readers or the cepstrum, against a prior. T0 tests matching instead. A recording is matched to *other performances* with known settings by fixed effect-aware features, which is what render-and-compare through stock DIs would do. Each parameter is read on the clean target first, so "the method fails" and "the stem loses it" come apart.
+- **The set:** E1e's 770 wide draws (8 songs). Each has its clean target, the rebuilt mix and the re-separated stem, all on disk, with exact labels. Reverb is on in 387, delay in 402, tremolo in 392, drawn independently. Nothing is rendered or trained.
+- **The features, fixed now** (`fx_t0.features`; checked on synthetic playing, never on the set):
+  - **reverb:** the steepest 150 ms decays in 3 bands (100–400 Hz, 400–1,600 Hz, 1,600–6,400 Hz), how far the gaps fall in each band, and the energy 200–500 ms after onsets against 0–100 ms;
+  - **delay:** F51's long-window cepstral peak (lag and height), and the envelope autocorrelation's highest local peak at 60–800 ms;
+  - **tremolo:** the note-normalised envelope's modulation peak at 0.8–12 Hz (rate and prominence).
+- **The matching** (render-and-compare's stand-in), leave-one-song-out:
+  - each item's target (the oracle arm), stem (the product arm) or mix (beside) is matched to the 15 nearest clean targets of the other songs, by the 13 features standardised on that library;
+  - the prediction is the neighbours' on-share for on/off, and their median knob among those with the effect on.
+- **The read** (`t0-read`):
+  - per effect, on/off AUC, on all items and on the strong third (the top third of the effect's mix or depth among its ons, against every off);
+  - per knob on the strong third, the error less the draw-aware prior's (the other songs' median):
+    - reverb: mix, decay (log2);
+    - delay: mix, time (log2, with the share within 10%), feedback;
+    - tremolo: depth, rate (log2);
+  - 90% intervals by resampling songs (2,000, seed 20261131);
+  - **the negative control:** E0's 12 dry X-LANCE stems, matched to the same library, counting how many each effect would switch on.
+- **The rule, per parameter** (the review's):
+  - **passes on an arm:** on/off if the strong third's AUC interval sits above 0.5; a knob if its error less the prior's sits below 0;
+  - **target fails:** render-and-compare and the direct estimators stop for that parameter, which stays on R4 with the blocker named in C0;
+  - **target passes, stem fails:** the stem is the bottleneck. R3 goes to the user with the target-to-stem gap as its measured upside;
+  - **both pass:** R1 is declared for it, with stock-DI renders and the negative control's false-on rate stated.
+- **What this read can't see,** stated: the doubler and stereo (the sources are mono, and the draws carry none), tempo-synced delay (the draws are free-running), the spring (as reverb), and the wide draws' density against the product's songs.
+- **Stop rule.** One features pass, one read. The features, k and the thresholds are fixed above. Nothing is tuned on the read.
 
 ## LS in detail: the loudness step (declared 2026-11-12, on the user's yes; before any LS render; ledger `phase_ls`)
 
