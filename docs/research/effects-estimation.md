@@ -105,6 +105,16 @@ No public set gives graded tremolo, feedback, delay-mix, decay or pre-delay sett
 
 Between the notes, three conflicts reconcile. Guo & McFee say IDMT-SMT-Audio-Effects gives no parameter information, while Zenodo lists an XML summary; the file counts fit about three fixed settings per effect, a setting class rather than a knob [M, I]. Hinrichs's own summary says "below 0.052 for tremolo", the source of the effect-detection figure; Table 4 shows it is the best input's rate error [M]. A web summary read RLAT's table one column off; the PDF confirms reverb 21.2 and delay 20.8 [M]. Open: IDMT's size (30 h on Zenodo, 19 h 8 min in EGFxSet's table) [M], and whether LFO-net's wet-only "about 3%" is relative or absolute [I]. The datasets note called ToneTwist's Rev Spring 636 a spring plugin; that record is its preamp and fuzz stage [M].
 
+## How this fits the declared effects route
+
+On 2026-11-12, while this report was in review, the ML session declared an effects route and its zero-render test, T0 (`docs/full-controls-plan.md`, "The effects route and T0 in detail"; `docs/ROADMAP.md`). The plan says this report is folded in before any route with renders is declared [R]. The two line up as follows [I]:
+
+- **R4, the floor.** The song research's effects on the model's dry answer is the comparator every effects read must beat. It is also where this report's draw-aware priors (rank 4) would sit beside on/off.
+- **T0 comes first.** It tests render-and-compare's core assumption with no renders: matching a recording to other performances' known settings by fixed effect-aware features (reverb decays, F51's cepstrum, envelope autocorrelation, a tremolo modulation peak), on the clean target and on the stem, on E1e's 770 wide draws [R]. That is the question this report's "does the comparison ignore the performance?" check asks, and T0's per-parameter rule is the gate.
+- **This report's first test is an R1 design.** Rendering candidates through the song's own masking belongs to R1. It applies to the parameters T0 passes on the stem, or serves as the "paired, rendered oracle" T0's rule names for a parameter it does not show at zero renders [R, I].
+- **R3, a stem that keeps effects.** The separator findings above bear here. CrowdioSet is the one published wet-target training recipe, with no guitar stem. The repo's own wet-target fine-tune, D_F5ft, shrank its output about 12 dB under the target. No published fine-tune recipe keeps tails.
+- **The doubler sits outside T0's set.** T0 states that its wide draws carry no doubler. The 767 doubler-on targets named above come from E1a's full set, so a mono doubler test would need those items, not T0's [R].
+
 ## Ranked recommendation
 
 Ranked by how directly each move tests a route to per-song settings on the stem, then by cost [I]. The free arms cost nothing but rank second: they test feature fixes with no published support under masking and cannot test the render route, so they run beside the first test. Priors rank fourth because they are a default, not a test.
