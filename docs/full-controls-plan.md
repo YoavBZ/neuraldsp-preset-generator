@@ -524,7 +524,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **not shown at zero renders** (the target doesn't pass): the parameter stays on R4 with the blocker named in C0. Its next route is a paired, rendered oracle, not a closed door: T0 is more pessimistic than R1 can be;
   - **target passes, stem fails:** the stem is the bottleneck. R3 goes to the user with the target-to-stem gap as its measured upside;
   - **both pass:** R1 is declared for it, with stock-DI renders and the negative control's false-on rate stated.
-- **What this read can't see,** stated: the doubler and stereo (the sources are mono, and the draws carry none), tempo-synced delay (the draws are free-running), the spring (as reverb), and the wide draws' density against the product's songs.
+- **What this read can't see,** stated: stereo (the sources are mono), the doubler's spread (*corrected 2026-11-13:* the draws do carry the doubler, on in 376 of 770; see F85), tempo-synced delay (the draws are free-running), the spring (as reverb), and the wide draws' density against the product's songs.
 - **Stop rule.** One features pass, one read. The features, k and the thresholds are fixed above. Nothing is tuned on the read.
 
 ## LS in detail: the loudness step (declared 2026-11-12, on the user's yes; before any LS render; ledger `phase_ls`)
