@@ -51,7 +51,7 @@ def item_of(u):
             "search": u["search"], "held": u["held_half"], "slug": u["unit"].replace("/", "__").replace("#", "_")}
 
 
-def page_order(items, seed=PAGE_SEED, gap=GAP, repeats=REPEATS):
+def page_order(items, seed=PAGE_SEED, gap=GAP, repeats=REPEATS, cands=CANDS):
     """Every item once, then `repeats` of them again at least `gap` items after their first hearing, with the letters
     rotated. Each first hearing's letters are a seeded permutation of the three presets. -> [{**item, id, n, letters,
     repeat_of}]."""
@@ -71,7 +71,7 @@ def page_order(items, seed=PAGE_SEED, gap=GAP, repeats=REPEATS):
             fid, lets = first[k]
             lets = {LETTERS[i]: lets[LETTERS[(i + 1) % 3]] for i in range(3)}     # rotated, so no letter keeps its preset
         else:
-            perm = list(CANDS)
+            perm = list(cands)
             rng.shuffle(perm)
             fid, lets = None, dict(zip(LETTERS, perm))
             first[k] = (f"i{n}", lets)
@@ -220,14 +220,14 @@ def player_js():
 CSS_EXTRA = ".rank.three { grid-template-columns:auto repeat(3, 1fr); }\n.rank.close { grid-template-columns:auto repeat(4, 1fr); }\n"
 
 
-def page_html(chunk, clips, build):
+def page_html(chunk, clips, build, intro=INTRO):
     """The local page. -> (html, css, js)."""
     from learn import ear_vreal as E
 
     js, css = player_js(), E.CSS + CSS_EXTRA
     a, b = E.PAGE.index("<h1>"), E.PAGE.index("@@CARDS@@")
     data = json.dumps({"build": build, "items": [{"id": it["id"], "n": it["n"]} for it in chunk]})
-    page = (E.PAGE[:a] + INTRO + "\n" + E.PAGE[b:]).replace("@@COUNT@@", str(len(chunk))).replace("@@CARDS@@", cards(chunk)) \
+    page = (E.PAGE[:a] + intro + "\n" + E.PAGE[b:]).replace("@@COUNT@@", str(len(chunk))).replace("@@CARDS@@", cards(chunk)) \
         .replace("@@CSS@@", css).replace("@@DATA@@", data).replace("@@CLIPS@@", json.dumps(clips)).replace("@@JS@@", js)
     return page, css, js
 
