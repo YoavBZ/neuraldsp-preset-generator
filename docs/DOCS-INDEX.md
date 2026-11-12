@@ -794,7 +794,7 @@ was declared, what was measured, and the research behind it.
     targets. Recommends, as an untested proposal, extending the amp's render-and-compare to the
     time effects, testing whether candidates passed through the song's own masking (candidate
     plus residual, re-separated) read better, and a draw-aware prior for knobs nothing reads.
-    Doubler on/off is audible in mono; only spread, width, ping-pong and pan wait for stereo
-    audio. First test: delay time on F52's strong-third delay-ons, paired against F52's
-    cepstrum. Datasets: none pairs real songs with effect settings. Research, not a declared
-    plan.
+    Doubler on/off moves a mono measure most of any effect (F67); only spread, width, ping-pong
+    and pan wait for stereo audio. First test: delay time on F52's strong-third delay-ons,
+    paired against F52's cepstrum. Datasets: none pairs real songs with effect settings.
+    Research, not a declared plan.
