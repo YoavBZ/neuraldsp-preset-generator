@@ -5367,6 +5367,50 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - **Next:** the declared 12-item page (`learn/ls_ear.py`), S against the matched preset at their own levels. After its review, the page stores each pair's LUFS and peak gap on the played 5 s clips. Beside the declared sign test, it reads the same test on the items whose clips sit within 1 dB, and direction agreement on the rest, so a miss like the +5.3 dB item heard "louder" counts as LUFS working. The matched preset is A on half the items, and the page is read with 8 or more of 12 answered.
 - Files: `PF/ls/` (`plan.json`, `s-table.json`, `items/`, `report.json`). Code: `learn/loudness_step.py`.
 
+### F85. T0: on the clean guitar, matching a recording to other performances' known settings reads every effect's on/off and most of its knobs (reverb mix, delay mix and time, tremolo depth and rate). On the separated stem only reverb and delay on/off survive, weakly (AUC 0.57 and 0.58), and no knob does. By the declared rule the stem is the bottleneck for six parameters (R3, to the user), reverb and delay on/off go to R1, and reverb decay and delay feedback aren't shown at zero renders (phase_t0, zero renders, 13 s of CPU after a 2 min features pass, audited)
+- **What ran** ([plan](full-controls-plan.md), "The effects route and T0 in detail", with its amendment).
+  - E1e's 770 wide draws, 7 bands, with reverb, delay and tremolo drawn independently.
+  - Each item's clean target, stem and mix was matched to the 15 nearest clean targets of the other bands with the same amp, on each effect's own fixed features.
+  - Read on the strong third, with band-bootstrap intervals. A pass also has to hold without Forkupines and without BKS.
+- **The read matched the declaration.** It was audited with separate code (its own leave-one-band-out, same-amp neighbours and its own AUC): every on/off AUC, knob difference and negative-control count reproduces to 1e-3.
+- **On/off** (AUC on the strong third, 90% band interval):
+
+  | Effect | Clean target | Stem | Mix |
+  |---|---|---|---|
+  | Reverb | **0.68 [0.62, 0.77]** | **0.57 [0.55, 0.63]** | 0.52 |
+  | Delay | **0.82 [0.80, 0.84]** | **0.58 [0.54, 0.67]** | 0.54 |
+  | Tremolo | **0.67 [0.64, 0.68]** | 0.55 [0.50, 0.60] | 0.48 |
+
+- **The knobs** (error less the draw-aware prior's, strong third; below 0 is better):
+
+  | Knob | Clean target | Stem |
+  |---|---|---|
+  | Reverb mix | **−0.097 [−0.137, −0.064]** | −0.049 [−0.130, +0.034] |
+  | Reverb decay (log2) | +0.109, worse | +0.063 |
+  | Delay mix | **−0.064 [−0.073, −0.056]** | +0.131, worse |
+  | Delay time (log2) | **−0.296 [−0.358, −0.224]**; within 10% on 17% (prior 4%) | −0.055 [−0.181, +0.063]; within 10% on 13% |
+  | Delay feedback | +0.007 | +0.061, worse |
+  | Tremolo depth | **−0.038 [−0.052, −0.022]** | +0.043, worse |
+  | Tremolo rate (log2) | **−0.127 [−0.184, −0.076]** | +0.057, worse |
+
+  - Every bolded row also holds with Forkupines left out and with BKS left out.
+  - The joint 13-feature match, read beside, is weaker on the stem (0.55, 0.55, 0.54).
+- **The negative control** (the 97 items with every effect off, switched on by a neighbour vote above one half):
+  - clean target: reverb 46, delay 22, tremolo 37;
+  - stem: reverb 58, delay 31, tremolo 37.
+  - The draws switch each effect on about half the time, so a half vote is near the base rate. Any on/off decision needs its threshold set on known truth first. E0's 12 dry stems, beside: reverb 0, delay 2, tremolo 6.
+- **By the declared rule, per parameter:**
+  - **R1** (both pass): reverb on/off and delay on/off. Their stem AUCs are about 0.58, so the gain is small, and it comes with the false-on rate above.
+  - **R3** (the target passes, the stem doesn't; to the user): reverb mix, delay mix, delay time, tremolo on/off, tremolo depth and tremolo rate. The gap is the upside, for example delay on/off 0.82 against 0.58, and delay time −0.30 against −0.06 log2.
+  - **R4** (not shown at zero renders; their next route is a paired, rendered oracle): reverb decay and delay feedback. These features don't carry them even on the clean guitar.
+- **What it means.**
+  - **Render-and-compare can work for effects:** on the clean guitar, fixed features matched to other performances find most settings.
+  - **The separated stem loses nearly all of it,** as for the amp (F81: about half) but worse: on the stem only a trace of reverb and delay presence remains. The mix carries nothing.
+  - **The lever is a stem that keeps the effects** (R3: fine-tuning the separator, or the masking renders). It goes to the user with these gaps as its measured upside.
+  - **Meanwhile:** R4, the song research's effects on the model's dry answer.
+  - These are synthetic draws, wide and independent. Real songs' effects are fewer and tempo-locked, so this is a test of the method, not the product's rate.
+- Files: `PF/t0/` (`features.npz`, `features-meta.json`, `read.json`); logs `logs/t0-*.log`. Code: `learn/fx_t0.py`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
