@@ -5288,12 +5288,12 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - By the score only.
 - Files: `PF/a2/` (`answers.json`, `judge/`, `shapes/`, `mels/`, `embed/`, `a2.json`); logs `logs/a2*.log`. Code: `learn/amp_di_compare_r.py`.
 
-### F82. C4 by ear: the adopted model (R-all) isn't heard below FTm or S, so by the declared rule it stays. It leans above FTm, 0.61 (undecided, 14 cards), and above S, 0.71 (p 0.074). FTm is heard above S, 0.71 (p 0.019). The lean over FTm comes from the 4 items whose creator R-all trained on (4 of 4); on creators new to every model it reads 0.45. Four items were skipped as single-note DIs (phase_c4, 108 clip renders after its lag pass, the page answered 2026-11-12, audited)
+### F82. C4 by ear: the adopted model (R-all) isn't heard below FTm or S, so by the declared rule it stays. It leans above FTm, 0.61 (undecided, 14 cards), and above S, 0.71 (p 0.074). FTm is heard above S, 0.71 (p 0.019). Its lean over FTm sits on 4 decisive items (every pair 4 of 4 there, FTm over S included), so the creator split can't separate creator from item; on new creators the two are level (0.45). Four items were skipped as single-note DIs (phase_c4, 108 clip renders after its lag pass, the page answered 2026-11-12, audited)
 - **What ran** ([plan](full-controls-plan.md), "C4 in detail"): the blind page of batch 3's 18 trusted units. Each item has three presets on its forced amp: the adopted model, FTm and S, ranked 1 to 3 against the record, ties allowed. It was read by `c4-read` on the page's stored answers (build 48684a8124d3).
 - **The read matched the declaration.** It was audited with separate code, from the stored answers and the page's key: every share and p reproduces.
 - **14 of 18 first hearings were answered** (the rule needs 12). The listener skipped 4 with the note "Bad DI, only contains a single note": Dark Ride 30 (2 units), Dark Ride 31, and Starnes & Shah 08.
-  - All 4 play their DI's second half. There a simple onset count finds 1 to 7 onsets, against 14 or more in every answered item's half.
-  - The count was made after the page, so it is a lead, not a gate.
+  - All 4 play a DI half that holds one sustained note (0 to 2 onsets, a single pitch segment; the review's count).
+  - Some answered first halves from the same Dark Ride session are nearly as sparse (1 onset), so a post-hoc onset count wouldn't have caught them. The listener's note is the evidence.
 - **By ear** (share of cards, a tie a half; C1a's jackknife-t by DI file, 9 files; one-sided 0.05):
 
   | Pair | Share [90%] | Above / tie / below | p | Verdict | J0 agrees |
@@ -5303,13 +5303,14 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   | FTm over S | 0.71 [0.55, 0.88] | 9 / 2 / 3 | 0.019 | **above** | 10 of 12 |
 
   - **By creator** (the split C3r's plan committed): adopted over FTm reads 1.0 on the 4 cards whose creator makes R-all's training rows, and 0.45 on the 10 whose creator no model trained on. Adopted over S reads 1.0 and 0.60.
+  - **But the 4 are simply the decisive items:** every pair reads 4 of 4 there, FTm over S included, and FTm never trained on a capture. So the split can't separate "R-all trained on this creator" from "these items were easier to rank".
   - **By class:** 12 clean cards, adopted over FTm 0.63; 2 crunch cards.
   - **The one answered repeat** (i16 of i2) disagreed with its first hearing.
 - **What it means.**
   - **By the declared rule the adopted model stays** (outcome "keep"): no pair puts it below FTm or S.
-  - **The ear doesn't confirm the score's gain over FTm.** Where the creator is new to R-all, adopted and FTm are level by ear (0.45). Its edge sits on creators it trained on, so part of it may be the creator, not the recipe.
+  - **The ear doesn't confirm the score's gain over FTm.** On new creators the two models are level by ear (0.45). The lean sits on 4 decisive items, which can't tell the creator from the items. PR #422's rule keeps the score's adoption, but the ear isn't read as favouring R-all.
   - **The learned models are heard above the factory start** (FTm shown, the adopted model at p 0.074), as C1a's page found for the labels.
-  - **Single-note DI windows are a data problem the gates missed.** One of A1's crunch stock DIs, Dark Ride 29, comes from the same session and has the same shape (1 onset on its second half). Any later DI draw should check both halves.
+  - **Single-note DI windows are a data problem the gates missed.** One of A1's crunch stock DIs, Dark Ride 29, comes from the same session and has the same shape: its second half is a single sustained note, with no new onset on any of A2's renders (the review). Any later DI draw should check both halves.
 - Files: `PF/c4/` (`plan.json`, `answers.json`, `clips/`, `key.json`, `read.json`). Code: `learn/c4_ear.py`.
 
 ### F83. A3 by ear: A2's stock-DI amp pick is heard closer to the record than the adopted model's own amp pick: 0.67 [0.51, 0.82], p 0.041, 18 cards, "above" by the declared rule. Against always-sw50r it reads 0.57 (undecided). So the pick stays the declared amp choice for the generate path on R-all (phase_a3, 108 renders, the page answered 2026-11-12, audited)
@@ -5324,12 +5325,13 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   | W over always-sw50r | 6 | 0.25 | 1 / 1 / 4 | 0.90 | undecided | 3 of 5 |
 
   - **By class:** crunch 0.75 (10 cards, p 0.048), clean 0.56 (8). **By set:** cap1 0.65 (13), the panel 0.70 (5).
-  - **Ranked first alone:** the pick's amp 7 of 18, W's 1, a tie for first 5.
+  - **Ranked first alone:** the pick's amp 7 of 18, W's 1, the third amp 5, a tie for first 5.
+  - **The margin is thin:** dropping any one of the 9 "above" cards makes it undecided (p up to 0.068), and a sign test on the 12 decided cards gives 0.073. The verdict stands by the declared test.
   - **The repeats:** 1 of the 2 agreed with its first hearing.
   - **One note:** "R has a lot of reverb and none of the presets has enough". The presets' effects are off (masked), as for every model so far.
 - **What it means.**
-  - **The ear confirms the declared primary:** the stock-DI pick's amp is heard closer than the amp the adopted model picks itself. The power was about 0.2 if the ear only tracked J0, so this is more than the score predicted.
-  - **Part of the gain is W's misses:** where W's amp isn't the sw50r, it's mostly heard worse than the sw50r (4 of 6 below).
+  - **The ear confirms the declared primary, narrowly:** the stock-DI pick's amp is heard closer than the amp the adopted model picks itself. The ear agrees with the score's direction. It isn't shown stronger: the interval includes J0's own share (0.59), and J0 agrees on 8 of 12 decided cards.
+  - **By W's amp:** the primary reads 0.625 where W picked the sw50r (12 cards) and 0.75 where it didn't (6).
   - **Against always-sw50r the ear is undecided** (0.57), where the score says better. That's consistent, but not confirmed.
   - **By the rule (outcome "keep"):** the pick is the amp choice for the generate path on R-all, as declared in "A3 in detail". The model ships after the loudness step.
 - Files: `PF/a3/` (`plan.json`, `clips/`, `key.json`, `read.json`). Code: `learn/a3_ear.py`.

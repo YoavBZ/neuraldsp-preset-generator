@@ -24,7 +24,7 @@
 - **A2 ran** on 2026-11-12 (12,096 renders, audited; [F81](pipeline-fix-plan.md)): A1's pick, frozen, on R-all's answers reads "learns" by its rule. By the score it beats always-sw50r on cap1 (−0.049, decided on 19 creators) and GOAT (−0.017), level on the panel and BKS, worse nowhere; −0.022 pooled against R-all's own amp head. A3, its ear check, is declared below.
 - **A3's page is out** (2026-11-12, 108 renders in about 1½ min; the canary passed, every clip's judge equal to A2's or C3r's; build 2ed5fb7b1046, 20 items). It waits for the user beside C4's.
 - **C4 and A3 were answered** on 2026-11-12 ([F82, F83](pipeline-fix-plan.md)).
-  - **C4:** the adopted model isn't heard below FTm or S, so it stays. It leans above FTm (0.61, undecided), but only on creators it trained on (4 of 4; new creators 0.45). FTm is heard above S (0.71, p 0.019). The listener skipped 4 items as single-note DIs.
+  - **C4:** the adopted model isn't heard below FTm or S, so it stays. It leans above FTm (0.61, undecided); on new creators the two are level (0.45). FTm is heard above S (0.71, p 0.019). The listener skipped 4 items as single-note DIs.
   - **A3:** the stock-DI amp pick is heard closer than R-all's own amp pick (0.67, p 0.041, "above"), so it is the amp choice for the generate path. Against always-sw50r it's undecided (0.57).
   - **Before the model ships:** the loudness step.
 - **C1a by ear (2026-11-10):** heard closer than the label, 0.68 [0.54, 0.82], p 0.020 on 14 cards (N12 0.79; BKS 0.57, undecided). By the declared rule that is "above", so C2 stands on C1a's recipe ([F69](pipeline-fix-plan.md)).
