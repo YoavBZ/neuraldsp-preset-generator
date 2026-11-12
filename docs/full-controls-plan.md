@@ -480,6 +480,11 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - every other knob is set true, so this is an upper bound on context, though not on content, since the DI is generic.
 - **Arm P, the positive control** (declared 2026-11-13 while T1 runs, before its read; ledger `phase_t1p`; the report's suggestion, which the review called the useful upper bound). T1's arm A on 40 of the 134 items (seed 20261135), with each item's *own* DI section in place of the stock DI. The candidates then match the song in content as well as in masking.
   - Read after T1's own read, descriptively, with no pass rule: within 10% and the log2 error for A_P, B_P, and T1's A, B, F52 and prior on the same items. A_P − A is what the generic DI costs, and A_P − B_P is the channel with the content matched.
+  - **A_P is expected to succeed:** at the right grid point the candidate is nearly the song's own guitar. So a pass checks the pipeline, not feasibility.
+  - **What each outcome means, declared now** (the review; "passes" means beating the prior on log2 error and F52 on hits, as T1's bar):
+    - **A_P fails:** the channel and the pick fail even with the song's own content. T1's verdict isn't trusted either way, and the cause is found first.
+    - **A_P passes and A fails:** the stock DI's content is the bottleneck. The next step is two stock DIs or a closer DI, sized by A_P − A.
+    - **Both pass:** A_P − A sizes the generic DI's cost.
   - It costs 40 × 13 × 2 = 1,040 renders and 520 X-LANCE separations, after T1's separations (one MPS job).
   - Code `learn/fx_t1p.py`, `logs/launch-t1p.zsh`. The launcher waits for T1's "done" and doesn't run if T1 failed.
 - **The cost:** 134 × 13 = 1,742 candidates, 3,484 renders with the priming renders, on 3 processes. 1,742 X-LANCE separations on MPS (one MPS job), which overlap the renders: each item separates as its candidates land. No training, no download.

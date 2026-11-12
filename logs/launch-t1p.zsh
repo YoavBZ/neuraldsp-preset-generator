@@ -20,8 +20,12 @@ note() { echo "$1 $(date)" >> ${L}; }
 grep -q "acquire_render_slot" learn/direct_stems.py || { note "FAILED: this commit has no render-slot locks (PR #446)"; exit 1; }
 note "start $(git rev-parse --short HEAD)"
 note "waiting for T1's read"
+T1L=$(awk '/^launcher/{print $2}' ${LOGS}/t1-pids.txt 2>/dev/null)
 until [[ $(tail -1 ${LOGS}/t1.log 2>/dev/null) == done* ]]; do
   [[ $(tail -1 ${LOGS}/t1.log 2>/dev/null) == *FAILED* ]] && { note "T1 failed: arm P doesn't run"; exit 1; }
+  if [[ -n ${T1L} ]] && ! kill -0 ${T1L} 2>/dev/null && [[ $(tail -1 ${LOGS}/t1.log 2>/dev/null) != done* ]]; then
+    note "T1's launcher ${T1L} is gone without done: arm P doesn't run"; exit 1
+  fi
   sleep 60
 done
 
