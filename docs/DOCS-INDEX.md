@@ -785,16 +785,16 @@ was declared, what was measured, and the research behind it.
 27. [effects-estimation.md](research/effects-estimation.md): proven methods and tools for
     reading the time and modulation effects (reverb, delay, tremolo, spring, doubler, width,
     tempo sync) from a song or a separated stem, for the ML session (November 2026; nothing
-    downloaded or run), mapped onto the effects route declared the same day (R4 floor, T0 first,
-    then R1 or R3). Builds on blind-reverb-delay-2026-11.md. No published method reports
-    per-knob accuracy for one instrument's effect in a real song or stem; on solo guitar,
-    detection is close to solved and tremolo is regressed under a backing by one group
-    (Hinrichs). Separators train on wet stems and keep tails (about 75% of the wet energy
-    survives in X-LANCE's stem), so T0's target-to-stem gap overstates what a separator
-    fine-tune (R3) can recover; there is no published guitar fine-tune recipe, though CrowdioSet
-    trains with wet targets. Proposes, as the rendered step after T0, testing whether candidates
-    passed through the song's own masking read better (delay time on F52's strong-third
-    delay-ons, paired against F52's cepstrum); unread knobs stay on R4. Doubler on/off moves a
-    mono measure most of any effect (F67), and whether T0's draws carry it is flagged; only
-    spread, width, ping-pong and pan wait for stereo. Datasets: none pairs real songs with
-    effect settings. Research, not a declared plan.
+    downloaded or run), mapped onto the effects route (R4 floor, T0, then R1 or R3). Builds on
+    blind-reverb-delay-2026-11.md. No published method reports per-knob accuracy for one
+    instrument's effect in a real song or stem; on solo guitar, detection is close to solved and
+    tremolo is regressed under a backing by one group (Hinrichs). Separators train on wet stems
+    and keep tails (about 75% of the wet energy survives in X-LANCE's stem), so T0's
+    target-to-stem gap (F85: delay on/off 0.82 against 0.58) overstates what a separator
+    fine-tune can recover; there is no published guitar fine-tune recipe, though CrowdioSet
+    trains with wet targets. Its first test, candidates passed through the song's own backing
+    and separator, was declared as T1 within R3 (`docs/full-controls-plan.md`); the report lists
+    where T1 differs and proposes extra arms beside it. Unread knobs stay on R4. Doubler on/off
+    can be tested in mono (F67), and whether T0's draws carry it is flagged; only spread, width,
+    ping-pong and pan wait for stereo. Datasets: none pairs real songs with effect settings.
+    Research, not a declared plan.
