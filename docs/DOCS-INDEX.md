@@ -782,3 +782,16 @@ was declared, what was measured, and the research behind it.
     and its front end needs torchaudio (the user's call). Clarifies PR #394 on the mel
     concatenation and Combes, and corrects where the weights live. Research, not a declared
     plan.
+27. [effects-estimation.md](research/effects-estimation.md): proven methods and tools for
+    reading the time and modulation effects (reverb, delay, tremolo, spring, doubler, width,
+    tempo sync) from a song or a separated stem, for the ML session (November 2026; nothing
+    downloaded or run). Builds on blind-reverb-delay-2026-11.md. Nothing published reads any of
+    these settings from a real song or stem; on solo guitar, detection is close to solved and
+    tremolo is regressed under a backing only once (Hinrichs 2022). Separators train on wet
+    stems and keep tails (about 75% of the wet energy survives in X-LANCE's stem); the loss is
+    the backing's masking, and no tail-keeping fine-tune recipe exists. Recommends extending the
+    amp's render-and-compare to the time effects through the song's own masking (candidate plus
+    residual, re-separated), with a grid over times and rates, and a draw-aware prior for knobs
+    nothing reads; doubler, width and pan wait for stereo audio. First test: delay time on F52's
+    strong-third delay-ons, paired against F52's cepstrum. Datasets: none pairs real songs with
+    effect settings. Research, not a declared plan.
