@@ -1,7 +1,7 @@
 """T0, the effects route's zero-render test (`docs/full-controls-plan.md`, "T0 in detail"; ledger `pipeline-fix` `phase_t0`).
 Can fixed, effect-aware features match a recording to effect settings made on *other* performances (render-and-compare's
 core assumption), and does the separated stem keep them? On E1e's 770 wide draws (clean target, rebuilt mix, re-separated
-stem; exact labels), by leave-one-song-out nearest neighbours, against the draw-aware prior and "off".
+stem; exact labels), by leave-one-band-out nearest neighbours on each effect's own features and the same amp, against the draw-aware prior and "off".
 
     .venv/bin/python -m learn.fx_t0 t0-features          # the features of every item's target, mix and stem (CPU)
     .venv/bin/python -m learn.fx_t0 t0-read              # the read and the rule (CPU)
@@ -32,6 +32,8 @@ EFFECTS = {                                 # effect -> (on column, strength col
 }
 FEATURES = ("fast_b1", "fast_b2", "fast_b3", "fill_b1", "fill_b2", "fill_b3", "late_early",
             "cep_lag", "cep_h", "acf_lag", "acf_p", "mod_f", "mod_p")
+OWN = {"reverb": FEATURES[:7], "delay": FEATURES[7:11], "tremolo": FEATURES[11:]}   # each effect on its own features
+CHECK_OUT = ("Forkupines", "BKS")           # the two largest bands: a pass must hold with either left out (the review)
 
 
 def root():
@@ -192,30 +194,35 @@ def neighbours(lib_x, q_x, k=K):
     return np.argsort(d, axis=1)[:, :k]
 
 
-def loso(X_lib, X_q, Y, songs, k=K):
-    """Leave-one-song-out predictions: for each query item, the k nearest of the other songs' library items. -> {col:
-    predicted value} for on columns (the neighbours' on-share) and knobs (the median among neighbours with it on, or the
-    draw-aware prior where none is), and the draw-aware prior itself."""
+def predict(eff, X_lib, X_q, Y, bands, amps, feats, k=K):
+    """Leave-one-band-out predictions for one effect: each query's k nearest library items from the other bands and the
+    same amp (R1 holds the preset and the amp fixed), on the features `feats`. -> (predictions {its on column: on-share,
+    each knob: the median among neighbours with it on, else the prior}, the draw-aware prior {knob: the other bands'
+    median})."""
     import numpy as np
 
-    n = len(songs)
-    cols = list(Y)
+    oncol, _, knobs = EFFECTS[eff]
+    cols = [oncol, *knobs]
+    j = [FEATURES.index(f) for f in feats]
+    n = len(bands)
     pred = {c: np.full(n, np.nan) for c in cols}
-    prior = {c: np.full(n, np.nan) for c in cols}
-    for s in sorted(set(songs)):
-        te = np.where(songs == s)[0]
-        tr = np.where(songs != s)[0]
-        nb = tr[neighbours(X_lib[tr], X_q[te], k)]
-        for c in cols:
-            y = Y[c]
-            prior[c][te] = np.nanmedian(y[tr]) if np.isfinite(y[tr]).any() else np.nan
-            for j, row in zip(te, nb):
-                v = y[row]
-                if c in ("ron", "don", "ton"):
-                    pred[c][j] = float(np.mean(v))
-                else:
+    prior = {c: np.full(n, np.nan) for c in knobs}
+    for b in sorted(set(bands)):
+        for a in sorted(set(amps)):
+            te = np.where((bands == b) & (amps == a))[0]
+            tr = np.where((bands != b) & (amps == a))[0]
+            if not len(te):
+                continue
+            nb = tr[neighbours(X_lib[tr][:, j], X_q[te][:, j], min(k, len(tr)))]
+            for c in knobs:
+                trb = np.where(bands != b)[0]
+                prior[c][te] = np.nanmedian(Y[c][trb])
+            for q, row in zip(te, nb):
+                pred[oncol][q] = float(np.mean(Y[oncol][row]))
+                for c in knobs:
+                    v = Y[c][row]
                     v = v[np.isfinite(v)]
-                    pred[c][j] = float(np.median(v)) if len(v) else prior[c][j]
+                    pred[c][q] = float(np.median(v)) if len(v) else prior[c][q]
     return pred, prior
 
 
@@ -225,72 +232,105 @@ def err(kind, a, b):
     return np.abs(a - b)                      # log2 columns are already in log2, so abs is the log2 error
 
 
-def boot(fn, songs, n=BOOT_N, seed=BOOT_SEED):
-    """A 90% interval by resampling songs (the clusters)."""
+def boot(fn, groups, n=BOOT_N, seed=BOOT_SEED):
+    """A 90% interval by resampling bands (the clusters)."""
     import numpy as np
 
     rng = np.random.default_rng(seed)
-    u = np.array(sorted(set(songs)))
+    u = np.array(sorted(set(groups)))
     vals = []
     for _ in range(n):
         pick = rng.choice(u, len(u), replace=True)
-        idx = np.concatenate([np.where(songs == s)[0] for s in pick])
+        idx = np.concatenate([np.where(groups == s)[0] for s in pick])
         v = fn(idx)
         if v == v:
             vals.append(v)
     return [float(np.percentile(vals, 5)), float(np.percentile(vals, 95))] if vals else [None, None]
 
 
-def read_arm(pred, prior, Y, songs):
-    """One arm's read: per effect, on/off AUC (all and the strong third) and each knob's error less the draw-aware
-    prior's, on the strong third, with song-bootstrap intervals."""
+def _stats(fn, groups):
+    """A statistic fn(mask) on all items, with each of CHECK_OUT's bands left out, and band-weighted (the mean of its
+    per-band values)."""
+    import numpy as np
+
+    allm = np.ones(len(groups), bool)
+    out = {"point": fn(allm), "ci": boot(lambda b: fn_idx(fn, b, len(groups)), groups)}
+    for c in CHECK_OUT:
+        out[f"without {c}"] = fn(groups != c)
+    per = [fn(groups == g) for g in sorted(set(groups))]
+    per = [v for v in per if v == v]
+    out["band_weighted"] = float(np.mean(per)) if per else None
+    return out
+
+
+def fn_idx(fn, idx, n):
+    """fn on a bootstrap sample: idx (with repeats) as a mask-free selection."""
+    return fn(idx)
+
+
+def read_effect(eff, pred, prior, Y, bands):
+    """One effect's read on one arm: on/off AUC (all, and the strong third against every off) and each knob's error less
+    the prior's on the strong third; each with its band interval, the CHECK_OUT checks and the band-weighted value."""
     import numpy as np
 
     from learn import fx_reader as FX
 
-    out = {}
-    for eff, (oncol, strcol, knobs) in EFFECTS.items():
-        y, s = Y[oncol], pred[oncol]
-        strength = Y[strcol]
-        ons = y == 1
-        hi = float(np.nanpercentile(strength[ons], 200 / 3))
-        strong = (y == 0) | (ons & (strength >= hi))
-        r = {"strong_from": hi}
-        for nm, m in (("all", np.ones_like(y, bool)), ("strong_third", strong)):
-            r[nm] = {"auc": FX.auc(y[m], s[m]),
-                     "auc_ci": boot(lambda b: FX.auc(y[b][m[b]], s[b][m[b]]), songs)}
-        kn = {}
-        so = ons & (strength >= hi)
-        for k, kind in knobs.items():
-            e_n, e_p = err(kind, pred[k], Y[k]), err(kind, prior[k], Y[k])
-            kn[k] = {"n": int(so.sum()), "mae": float(np.mean(e_n[so])), "mae_prior": float(np.mean(e_p[so])),
-                     "diff": float(np.mean(e_n[so]) - np.mean(e_p[so])),
-                     "diff_ci": boot(lambda b: float(np.mean(e_n[b][so[b]]) - np.mean(e_p[b][so[b]])), songs)}
-            if k == "dtime":
-                kn[k]["within_10pct"] = float(np.mean(np.abs(2 ** (pred[k][so] - Y[k][so]) - 1) <= 0.10))
-                kn[k]["within_10pct_prior"] = float(np.mean(np.abs(2 ** (prior[k][so] - Y[k][so]) - 1) <= 0.10))
-        r["knobs"] = kn
-        out[eff] = r
-    return out
+    oncol, strcol, knobs = EFFECTS[eff]
+    y, s = Y[oncol], pred[oncol]
+    strength = Y[strcol]
+    ons = y == 1
+    hi = float(np.nanpercentile(strength[ons], 200 / 3))
+    strong = (y == 0) | (ons & (strength >= hi))
+    so = ons & (strength >= hi)
+
+    def auc_on(m):
+        return lambda sel: FX.auc(y[sel][m[sel]], s[sel][m[sel]])
+
+    r = {"strong_from": hi, "all": _stats(auc_on(np.ones_like(y, bool)), bands),
+         "strong_third": _stats(auc_on(strong), bands), "knobs": {}}
+    for k, kind in knobs.items():
+        e_n, e_p = err(kind, pred[k], Y[k]), err(kind, prior[k], Y[k])
+
+        def diff(sel, e_n=e_n, e_p=e_p):
+            m = so[sel]
+            return float(np.mean(e_n[sel][m]) - np.mean(e_p[sel][m])) if m.any() else float("nan")
+        d = _stats(diff, bands)
+        d.update({"n": int(so.sum()), "mae": float(np.mean(e_n[so])), "mae_prior": float(np.mean(e_p[so]))})
+        if k == "dtime":
+            d["within_10pct"] = float(np.mean(np.abs(2 ** (pred[k][so] - Y[k][so]) - 1) <= 0.10))
+            d["within_10pct_prior"] = float(np.mean(np.abs(2 ** (prior[k][so] - Y[k][so]) - 1) <= 0.10))
+        r["knobs"][k] = d
+    return r
 
 
 def passes(r):
-    """A parameter passes on an arm: on/off if the strong third's AUC interval sits above 0.5; a knob if its error less
-    the draw-aware prior's sits below 0 on the strong third."""
+    """A parameter passes on an arm: on/off if the strong third's AUC interval sits above 0.5, a knob if its error less
+    the prior's sits below 0; and in both cases the point estimate stays on that side with each of CHECK_OUT's bands left
+    out (the review: about 3.6 effective clusters)."""
     out = {}
     for eff, d in r.items():
-        lo = d["strong_third"]["auc_ci"][0]
-        out[f"{eff} on/off"] = lo is not None and lo > 0.5
+        st = d["strong_third"]
+        lo = st["ci"][0]
+        out[f"{eff} on/off"] = (lo is not None and lo > 0.5 and all(st[f"without {c}"] > 0.5 for c in CHECK_OUT))
         for k, v in d["knobs"].items():
-            hi = v["diff_ci"][1]
-            out[k] = hi is not None and hi < 0
+            hi = v["ci"][1]
+            out[k] = (hi is not None and hi < 0 and all(v[f"without {c}"] < 0 for c in CHECK_OUT))
     return out
 
 
 def rule(target_pass, stem_pass):
     """Per parameter: "R1" (both pass: declare render-and-compare with renders), "R3" (the target passes, the stem
-    doesn't: the stem is the bottleneck, to the user), "R4" (the target fails: stays on song research)."""
+    doesn't: the stem is the bottleneck, to the user), "R4" (not shown at zero renders: stays on song research with the
+    blocker named; its next route is a paired rendered oracle)."""
     return {p: ("R1" if target_pass[p] and stem_pass[p] else "R3" if target_pass[p] else "R4") for p in target_pass}
+
+
+def false_on(pred_by_eff, Y, mask):
+    """The negative control: how many of `mask`'s items each effect's neighbours would switch on (on-share > 0.5)."""
+    import numpy as np
+
+    return {eff: {"switched_on": int(np.sum(pred_by_eff[eff][EFFECTS[eff][0]][mask] > 0.5)), "of": int(mask.sum())}
+            for eff in EFFECTS}
 
 
 # --- the commands -------------------------------------------------------------------------------------------------------
@@ -340,7 +380,8 @@ def cmd_features(_args):
     Xd = [features(np.load(os.path.join(sep, f))) for f in dry]
     d.mkdir(parents=True, exist_ok=True)
     np.savez(d / "features.npz", **{a: np.array(X[a]) for a in ARMS}, dry=np.array(Xd),
-             i=np.array([it["i"] for it in its]), songs=np.array([it["song"] for it in its]))
+             i=np.array([it["i"] for it in its]), songs=np.array([it["song"] for it in its]),
+             bands=np.array([it["band"] for it in its]))
     P.save(d / "features-meta.json", {"phase": PHASE, "features": FEATURES, "dry_stems": dry, "n": len(its),
                                       "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"T0 FEATURES DONE: {len(its)} items x {len(ARMS)} arms, {len(dry)} dry stems", flush=True)
@@ -358,18 +399,31 @@ def cmd_read(_args):
         raise SystemExit("the items differ from the features'")
     L = [labels(it["settings"]) for it in its]
     Y = {c: np.array([l_[c] for l_ in L]) for c in L[0]}
-    songs = z["songs"]
-    lib = z["target"]                         # the library: other songs' clean targets with known settings
-    rep = {"phase": PHASE, "n": len(its), "songs": {s: int((songs == s).sum()) for s in sorted(set(songs))}, "arms": {}}
+    bands = np.array([it["band"] for it in its])
+    amps = np.array([it["amp"] for it in its])
+    lib = z["target"]                         # the library: other bands' clean targets with known settings
+    off = (Y["ron"] == 0) & (Y["don"] == 0) & (Y["ton"] == 0)
+    rep = {"phase": PHASE, "n": len(its), "bands": {b: int((bands == b).sum()) for b in sorted(set(bands))},
+           "all_off": int(off.sum()), "arms": {}, "joint": {}, "negative_control": {}}
     for a in ARMS:
-        pred, prior = loso(lib, z[a], Y, songs)
-        rep["arms"][a] = read_arm(pred, prior, Y, songs)
+        own, joint = {}, {}
+        for eff in EFFECTS:
+            pred, prior = predict(eff, lib, z[a], Y, bands, amps, OWN[eff])
+            own[eff] = (pred, prior)
+            jp, jq = predict(eff, lib, z[a], Y, bands, amps, FEATURES)
+            joint[eff] = (jp, jq)
+        rep["arms"][a] = {eff: read_effect(eff, *own[eff], Y, bands) for eff in EFFECTS}
+        rep["joint"][a] = {eff: read_effect(eff, *joint[eff], Y, bands) for eff in EFFECTS}
+        rep["negative_control"][a] = false_on({e: own[e][0] for e in EFFECTS}, Y, off)
     rep["passes"] = {a: passes(rep["arms"][a]) for a in ARMS}
     rep["rule"] = rule(rep["passes"]["target"], rep["passes"]["stem"])
-    # the negative control: E0's dry X-LANCE stems against every wide target
-    nb = neighbours(lib, z["dry"])
-    rep["negative_control"] = {eff: {"switched_on": int(sum(np.mean(Y[c][row]) > 0.5 for row in nb)), "of": len(nb)}
-                               for eff, (c, _, _) in EFFECTS.items()}
+    # beside: E0's 12 dry X-LANCE stems (one chord DI), matched on each effect's own features to every wide target
+    rep["e0_dry_beside"] = {}
+    for eff in EFFECTS:
+        j = [FEATURES.index(f) for f in OWN[eff]]
+        nb = neighbours(lib[:, j], z["dry"][:, j])
+        rep["e0_dry_beside"][eff] = {"switched_on": int(sum(np.mean(Y[EFFECTS[eff][0]][row]) > 0.5 for row in nb)),
+                                     "of": len(nb)}
     rep["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     P.save(out_dir() / "read.json", rep)
     print(json.dumps({"passes": rep["passes"], "rule": rep["rule"], "negative_control": rep["negative_control"]}, indent=1))

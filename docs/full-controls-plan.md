@@ -456,25 +456,27 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **R3, a stem that keeps the effects** (fine-tuning the separator), only where T0 passes on the clean target but not the stem. It goes to the user with the measured gap.
   - **R2, a learned effect head,** last.
 - **How T0 differs from F49–F52.** Those read the effect's knobs straight from the stem, with learned readers or the cepstrum, against a prior. T0 tests matching instead. A recording is matched to *other performances* with known settings by fixed effect-aware features, which is what render-and-compare through stock DIs would do. Each parameter is read on the clean target first, so "the method fails" and "the stem loses it" come apart.
-- **The set:** E1e's 770 wide draws (8 songs). Each has its clean target, the rebuilt mix and the re-separated stem, all on disk, with exact labels. Reverb is on in 387, delay in 402, tremolo in 392, drawn independently. Nothing is rendered or trained.
+- **The set:** E1e's 770 wide draws (8 songs in 7 bands). Each has its clean target, the rebuilt mix and the re-separated stem, all on disk, with exact labels. Reverb is on in 387, delay in 402 and tremolo in 392, drawn independently. Every tremolo is free-running. The items are E1a's wide ids only, so the NS songs stay sealed. Nothing is rendered or trained.
 - **The features, fixed now** (`fx_t0.features`; checked on synthetic playing, never on the set):
   - **reverb:** the steepest 150 ms decays in 3 bands (100–400 Hz, 400–1,600 Hz, 1,600–6,400 Hz), how far the gaps fall in each band, and the energy 200–500 ms after onsets against 0–100 ms;
   - **delay:** F51's long-window cepstral peak (lag and height), and the envelope autocorrelation's highest local peak at 60–800 ms;
   - **tremolo:** the note-normalised envelope's modulation peak at 0.8–12 Hz (rate and prominence).
-- **The matching** (render-and-compare's stand-in), leave-one-song-out:
-  - each item's target (the oracle arm), stem (the product arm) or mix (beside) is matched to the 15 nearest clean targets of the other songs, by the 13 features standardised on that library;
-  - the prediction is the neighbours' on-share for on/off, and their median knob among those with the effect on.
+- **The matching** (render-and-compare's stand-in), leave-one-band-out (after the review: BKS's two songs share a band and near-identical performances):
+  - **The query:** each item's target (the oracle arm), stem (the product arm) or mix (beside).
+  - **The library:** the 15 nearest clean targets from the other bands *and the same amp*. Render-and-compare holds the preset and the amp fixed.
+  - **The features:** each effect's own, standardised on that library: reverb 7, delay 4, tremolo 2. The joint 13-feature match is read beside.
+  - **The prediction:** the neighbours' on-share for on/off, and their median knob among those with the effect on.
 - **The read** (`t0-read`):
   - per effect, on/off AUC, on all items and on the strong third (the top third of the effect's mix or depth among its ons, against every off);
   - per knob on the strong third, the error less the draw-aware prior's (the other songs' median):
     - reverb: mix, decay (log2);
     - delay: mix, time (log2, with the share within 10%), feedback;
     - tremolo: depth, rate (log2);
-  - 90% intervals by resampling songs (2,000, seed 20261131);
-  - **the negative control:** E0's 12 dry X-LANCE stems, matched to the same library, counting how many each effect would switch on.
+  - 90% intervals by resampling bands (2,000, seed 20261131), with the band-weighted value beside;
+  - **the negative control:** the set's own items with every effect off (all bands, on the target and the stem), counting how many each effect's neighbours would switch on. E0's 12 dry X-LANCE stems (one chord DI) are beside only.
 - **The rule, per parameter** (the review's):
-  - **passes on an arm:** on/off if the strong third's AUC interval sits above 0.5; a knob if its error less the prior's sits below 0;
-  - **target fails:** render-and-compare and the direct estimators stop for that parameter, which stays on R4 with the blocker named in C0;
+  - **passes on an arm:** on/off if the strong third's AUC interval sits above 0.5; a knob if its error less the prior's sits below 0. In both cases the point estimate must stay on that side with Forkupines left out and with BKS left out, the two largest bands. About 3.6 effective clusters, so the band bootstrap alone under-covers (the review);
+  - **not shown at zero renders** (the target doesn't pass): the parameter stays on R4 with the blocker named in C0. Its next route is a paired, rendered oracle, not a closed door: T0 is more pessimistic than R1 can be;
   - **target passes, stem fails:** the stem is the bottleneck. R3 goes to the user with the target-to-stem gap as its measured upside;
   - **both pass:** R1 is declared for it, with stock-DI renders and the negative control's false-on rate stated.
 - **What this read can't see,** stated: the doubler and stereo (the sources are mono, and the draws carry none), tempo-synced delay (the draws are free-running), the spring (as reverb), and the wide draws' density against the product's songs.

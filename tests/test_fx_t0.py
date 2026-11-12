@@ -48,13 +48,29 @@ def test_a_reverb_slows_the_fastest_decays_and_fills_the_gaps():
     assert fr["fast_b2"] > fd["fast_b2"] / 3 and fr["fast_b3"] > fd["fast_b3"] / 3 and fr["fill_b2"] > fd["fill_b2"]
 
 
-def test_the_neighbours_leave_the_query_song_out_and_vote():
-    songs = np.array(["a"] * 4 + ["b"] * 4)
-    X = np.array([[0.0], [0.1], [5.0], [5.1], [0.05], [0.12], [5.05], [5.2]])
-    Y = {"ron": np.array([0, 0, 1, 1, 0, 0, 1, 1], float), "rmix": np.array([np.nan, np.nan, .8, .6, np.nan, np.nan, .7, .9])}
-    pred, prior = T.loso(X, X, Y, songs, k=2)
-    assert list(pred["ron"]) == [0, 0, 1, 1, 0, 0, 1, 1]
-    assert math.isclose(pred["rmix"][2], 0.8) and math.isclose(prior["rmix"][0], 0.8)
+def test_the_neighbours_leave_the_band_out_keep_the_amp_and_use_the_effects_own_features():
+    bands = np.array(["a"] * 4 + ["b"] * 4)
+    amps = np.array(["pr12", "pr12", "ac20", "ac20"] * 2)
+    X = np.zeros((8, len(T.FEATURES)))
+    j = T.FEATURES.index("fast_b1")
+    X[:, j] = [0.0, 5.0, 0.0, 5.0, 0.1, 5.1, 0.2, 5.2]
+    X[:, T.FEATURES.index("cep_h")] = [9, -9, 9, -9, -9, 9, -9, 9]       # another effect's feature: ignored for reverb
+    Y = {c: np.full(8, np.nan) for c in ("ron", "rmix", "rdecay")}
+    Y["ron"] = np.array([0, 1, 0, 1, 0, 1, 0, 1], float)
+    Y["rmix"] = np.array([np.nan, .8, np.nan, .6, np.nan, .7, np.nan, .9])
+    Y["rdecay"] = np.array([np.nan, 1.0, np.nan, 2.0, np.nan, 1.5, np.nan, 2.5])
+    pred, prior = T.predict("reverb", X, X, Y, bands, amps, T.OWN["reverb"], k=1)
+    assert list(pred["ron"]) == [0, 1, 0, 1, 0, 1, 0, 1]
+    assert math.isclose(pred["rmix"][1], 0.7) and math.isclose(pred["rmix"][3], 0.9)      # same amp, other band
+    assert math.isclose(prior["rmix"][1], 0.8)                                             # the other band's median
+
+
+def test_a_pass_must_hold_with_each_large_band_left_out():
+    ok = {"ci": [0.6, 0.8], "without Forkupines": 0.62, "without BKS": 0.7}
+    r = {"reverb": {"strong_third": ok, "knobs": {"rmix": {"ci": [-0.2, -0.05], "without Forkupines": -0.1,
+                                                           "without BKS": 0.01}}}}
+    p = T.passes(r)
+    assert p["reverb on/off"] and not p["rmix"]
 
 
 def test_the_rule_per_parameter():
