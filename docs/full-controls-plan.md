@@ -27,9 +27,10 @@
   - **C4:** the adopted model isn't heard below FTm or S, so it stays. It leans above FTm (0.61, undecided); on new creators the two are level (0.45). FTm is heard above S (0.71, p 0.019). The listener skipped 4 items as single-note DIs.
   - **A3:** the stock-DI amp pick is heard closer than R-all's own amp pick (0.67, p 0.041, "above"), so it is the amp choice for the generate path. Against always-sw50r it's undecided (0.57).
   - **Before the model ships:** the loudness step, LS, declared below on the user's yes (2026-11-12). The user also kept Dark Ride 29 as a crunch stock DI: on cap1 the pick reads as well on the half where it holds one note (crunch −0.062 against −0.036 on the other; GOAT's crunch is near zero on both), and no clean crunch replacement is in the pool.
+- **LS ran** on 2026-11-12 (314 renders, audited; [F84](pipeline-fix-plan.md)). Matched to S's loudness on the 2 stock DIs, the presets sit a median 0.65 dB off S on the song's own DI (unmatched 8.2 dB): 21 of 29 within 1 dB, 27 within 2 dB, no clamp. By the rule the step goes into the generate path. At equal loudness they peak about 2 dB above S, and 18 of 29 go over 0 dBFS. The short page is next.
 - **C1a by ear (2026-11-10):** heard closer than the label, 0.68 [0.54, 0.82], p 0.020 on 14 cards (N12 0.79; BKS 0.57, undecided). By the declared rule that is "above", so C2 stands on C1a's recipe ([F69](pipeline-fix-plan.md)).
 - **Every trusted real row, by rotation (2026-11-10).** The user asked why only GOAT and BKS train, then said "Go for 3" to training and testing on every usable track by rotation. C2r and C3r are declared below, before any render or training; V-real and the reserve stay sealed.
-- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1), `phase_c1a_outcome`, `phase_c1a_ear` (C1a by ear), `phase_c1b`, `phase_c1b_outcome`, `phase_c2`, `phase_c2_outcome`, `phase_c3`, `phase_c3_outcome`, `phase_c3i`, `phase_c3i_outcome`, `phase_c3s`, `phase_c3s_outcome`, `phase_c3b_s2_outcome`, `phase_c3c`, `phase_c2r_outcome`, `phase_c3r_outcome`, `phase_c3c_outcome`, `phase_c3b`, `phase_c3b_outcome`, `phase_c3b_s2`, `phase_c2b`, `phase_c2b_outcome`, `phase_l1c`, `phase_c2r`, `phase_c2r_a1`, `phase_c2r_a2`, `phase_c3r`, `phase_c4`, `phase_a1`, `phase_a1_outcome`, `phase_a2`, `phase_a2_outcome`, `phase_a3`, `phase_a3_page`, `phase_c4_outcome`, `phase_a3_outcome` and `phase_ls`. Code: `learn/full_controls.py` (C1a), `learn/c1a_ear.py` (C1a by ear), `learn/full_controls_c1b.py` (C1b), `learn/full_controls_c2.py` (C2), `learn/full_controls_c3.py` with `pipeline_fix train-ft --c3` (C3) `learn/full_controls_c2b.py` (C2b), `learn/c4_ear.py` (C4), `learn/amp_di_compare.py` (A1), `learn/amp_di_compare_r.py` (A2) `learn/a3_ear.py` (A3) and `learn/loudness_step.py` (LS), tests `tests/test_full_controls.py`, `tests/test_c1a_ear.py`, `tests/test_full_controls_c1b.py`, `tests/test_full_controls_c2.py`, `tests/test_full_controls_c3.py` and `tests/test_full_controls_c2b.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
+- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1), `phase_c1a_outcome`, `phase_c1a_ear` (C1a by ear), `phase_c1b`, `phase_c1b_outcome`, `phase_c2`, `phase_c2_outcome`, `phase_c3`, `phase_c3_outcome`, `phase_c3i`, `phase_c3i_outcome`, `phase_c3s`, `phase_c3s_outcome`, `phase_c3b_s2_outcome`, `phase_c3c`, `phase_c2r_outcome`, `phase_c3r_outcome`, `phase_c3c_outcome`, `phase_c3b`, `phase_c3b_outcome`, `phase_c3b_s2`, `phase_c2b`, `phase_c2b_outcome`, `phase_l1c`, `phase_c2r`, `phase_c2r_a1`, `phase_c2r_a2`, `phase_c3r`, `phase_c4`, `phase_a1`, `phase_a1_outcome`, `phase_a2`, `phase_a2_outcome`, `phase_a3`, `phase_a3_page`, `phase_c4_outcome`, `phase_a3_outcome`, `phase_ls` and `phase_ls_amendment`, `phase_ls_outcome`, `phase_t0`, `phase_t0_amendment`. Code: `learn/full_controls.py` (C1a), `learn/c1a_ear.py` (C1a by ear), `learn/full_controls_c1b.py` (C1b), `learn/full_controls_c2.py` (C2), `learn/full_controls_c3.py` with `pipeline_fix train-ft --c3` (C3) `learn/full_controls_c2b.py` (C2b), `learn/c4_ear.py` (C4), `learn/amp_di_compare.py` (A1), `learn/amp_di_compare_r.py` (A2) `learn/a3_ear.py` (A3) `learn/loudness_step.py` and `learn/ls_ear.py` (LS) and `learn/fx_t0.py` (T0), tests `tests/test_full_controls.py`, `tests/test_c1a_ear.py`, `tests/test_full_controls_c1b.py`, `tests/test_full_controls_c2.py`, `tests/test_full_controls_c3.py` and `tests/test_full_controls_c2b.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
 
 **The every-control plan's stage 1 never ran.** It is a true-DI oracle for the groups with no number, about 13–14k renders. It was approved on 2026-10-22 and waited for a trusted data list. Then the work moved to the trusted data and the pipeline fix. This amendment carries its goal onto today's route (FT2 and its real rows). It folds stage 1's never-measured groups in as C1b.
 
@@ -446,6 +447,42 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **The stop.** The measure is the 3 render shards' summed renders per minute. The window is the 60 minutes before the training against its first 20 minutes. If the rate drops by more than 20%, the executor stops the training by its recorded PIDs, and it reruns after C3r's training. Otherwise it runs to the end.
   - **The read** waits for a free render slot: after C2r, before C3r's read.
 
+## The effects route and T0 in detail (declared 2026-11-12, after the effects review; zero renders; ledger `phase_t0`)
+
+- **Why.** The user (2026-11-12): "we simply can't leave the effects off or similar to the starting preset - everything must be adjusted and eventually be as accurate as possible." Every adopted model holds the time effects, the spring and the doubler at S (off), and A3's listener heard a record's reverb that no preset had. The user asked that the route be reviewed. The review is the ML review session's (`logs/effects-route-review.md` in its worktree); the cloud researcher's literature report is pending and will be folded in before any route with renders is declared.
+- **The route, in the review's order.**
+  - **R4, the floor and the comparator:** the song research's effects on top of the model's dry answer. That is the generate skill's fallback since F47. Every later effects read is against it as well as against off.
+  - **T0, below:** a zero-render test of render-and-compare's core assumption, before anything is built.
+  - **R1, render-and-compare with effect-aware features,** declared only for the parameters T0 passes on the stem. The model's own features don't qualify: it trained with every effect masked.
+  - **R3, a stem that keeps the effects** (fine-tuning the separator), only where T0 passes on the clean target but not the stem. It goes to the user with the measured gap.
+  - **R2, a learned effect head,** last.
+- **How T0 differs from F49–F52.** Those read the effect's knobs straight from the stem, with learned readers or the cepstrum, against a prior. T0 tests matching instead. A recording is matched to *other performances* with known settings by fixed effect-aware features, which is what render-and-compare through stock DIs would do. Each parameter is read on the clean target first, so "the method fails" and "the stem loses it" come apart.
+- **The set:** E1e's 770 wide draws (8 songs in 7 bands). Each has its clean target, the rebuilt mix and the re-separated stem, all on disk, with exact labels. Reverb is on in 387, delay in 402 and tremolo in 392, drawn independently. Every tremolo is free-running. The items are E1a's wide ids only, so the NS songs stay sealed. Nothing is rendered or trained.
+- **The features, fixed now** (`fx_t0.features`; checked on synthetic playing, never on the set):
+  - **reverb:** the steepest 150 ms decays in 3 bands (100–400 Hz, 400–1,600 Hz, 1,600–6,400 Hz), how far the gaps fall in each band, and the energy 200–500 ms after onsets against 0–100 ms;
+  - **delay:** F51's long-window cepstral peak (lag and height), and the envelope autocorrelation's highest local peak at 60–800 ms;
+  - **tremolo:** the note-normalised envelope's modulation peak at 0.8–12 Hz (rate and prominence).
+- **The matching** (render-and-compare's stand-in), leave-one-band-out (after the review: BKS's two songs share a band and near-identical performances):
+  - **The query:** each item's target (the oracle arm), stem (the product arm) or mix (beside).
+  - **The library:** the 15 nearest clean targets from the other bands *and the same amp*. Render-and-compare holds the preset and the amp fixed.
+  - **The features:** each effect's own, standardised on that library: reverb 7, delay 4, tremolo 2. The joint 13-feature match is read beside.
+  - **The prediction:** the neighbours' on-share for on/off, and their median knob among those with the effect on.
+- **The read** (`t0-read`):
+  - per effect, on/off AUC, on all items and on the strong third (the top third of the effect's mix or depth among its ons, against every off);
+  - per knob on the strong third, the error less the draw-aware prior's (the other songs' median):
+    - reverb: mix, decay (log2);
+    - delay: mix, time (log2, with the share within 10%), feedback;
+    - tremolo: depth, rate (log2);
+  - 90% intervals by resampling bands (2,000, seed 20261131), with the band-weighted value beside;
+  - **the negative control:** the set's own items with every effect off (all bands, on the target and the stem), counting how many each effect's neighbours would switch on. E0's 12 dry X-LANCE stems (one chord DI) are beside only.
+- **The rule, per parameter** (the review's):
+  - **passes on an arm:** on/off if the strong third's AUC interval sits above 0.5; a knob if its error less the prior's sits below 0. In both cases the point estimate must stay on that side with Forkupines left out and with BKS left out, the two largest bands. About 3.6 effective clusters, so the band bootstrap alone under-covers (the review);
+  - **not shown at zero renders** (the target doesn't pass): the parameter stays on R4 with the blocker named in C0. Its next route is a paired, rendered oracle, not a closed door: T0 is more pessimistic than R1 can be;
+  - **target passes, stem fails:** the stem is the bottleneck. R3 goes to the user with the target-to-stem gap as its measured upside;
+  - **both pass:** R1 is declared for it, with stock-DI renders and the negative control's false-on rate stated.
+- **What this read can't see,** stated: the doubler and stereo (the sources are mono, and the draws carry none), tempo-synced delay (the draws are free-running), the spring (as reverb), and the wide draws' density against the product's songs.
+- **Stop rule.** One features pass, one read. The features, k and the thresholds are fixed above. Nothing is tuned on the read.
+
 ## LS in detail: the loudness step (declared 2026-11-12, on the user's yes; before any LS render; ledger `phase_ls`)
 
 - **Why.** The model holds the output control at the factory start's (S's) value, but its other controls (amp gain and volume, EQ, mics, pedals) move the level. J0 removes level, so nothing pulls it back.
@@ -471,6 +508,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **Linearity failing, or the gap not closing:** the step goes back to the user with the numbers.
 - **Then by ear, built from the stored clips at zero renders:** a short page of 12 items drawn from the 29 (seeded), each with S and the matched preset at their own levels (not level-matched). The question: is B louder than A, about the same, or quieter?
   - A sign test on louder against quieter (two-sided, 0.10). A shown bias goes to the user, with the target (S's level) or the measure (LUFS) in question. Otherwise the step stands.
+  - *After its review:* the letters are balanced, with the matched preset A on 6 of 12. The page is read with 8 or more answered. Each pair's LUFS and peak gap on the played clips are stored. Beside the declared test: the same test on the items whose clips sit within 1 dB, and direction agreement on the rest.
   - The page's code comes in its own PR, reviewed before it's built.
 - **Amendment 1 (2026-11-12, after the first run's stop, before any read):** the plugin keeps the output gain in 0.1 dB steps.
   - **What happened:** the first run stopped on its linearity rule on 3 items. Their level moved by 9.300, 11.400 and 8.000 dB for asked changes of 9.370, 11.466 and 7.935 dB.
