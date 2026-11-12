@@ -5254,6 +5254,40 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - By the score only.
 - Files: `PF/a1/` (`plan.json`, `shapes/`, `mels/`, `embed/`, `a1.json`); logs `logs/a1*.log`. Code: `learn/amp_di_compare.py`.
 
+### F81. A2: A1's stock-DI pick confirmed on the adopted model (R-all) and on fresh units. By the score it beats always-sw50r on cap1, −0.049 [−0.074, −0.023] (19 creators, every leave-one-out negative), level on the panel (+0.010, 5 DIs), and worse nowhere: the declared rule reads "learns". GOAT repeats A1's −0.017, and BKS now leans better (−0.016). Against the adopted model's own amp head it reads −0.022 pooled. The per-recording choices carry the gain: shuffling them within set and class loses it. The product step's ear check, A3, is declared next (phase_a2, 12,096 renders, audited)
+- **What ran** ([plan](full-controls-plan.md), "A2 in detail"): A1's frozen pick (its stock DIs, the floored embedding, its rows) on R-all's out-of-fold answers, on C3r's read units outside n12. cap1 (121 units) and the panel (12) decide; GOAT (215) and BKS (40) are read beside. No unit sits on a stock DI's file, session or song (0 of 388).
+  - 12,096 renders in 2 h 49 min (01:46 to 04:35): 2,784 for the other two amps through each unit's own DI, 9,312 through the stock DIs. The declaration counted 7,440: it left the search halves out of the stock-DI renders (388 × 24, not × 12). The method is unchanged.
+  - "W" in A2's rows is R-all's own amp head, the pick the adopted model ships with.
+- **The read matched the declaration.** It was audited with separate code, from the stored distances, the judge files and C3r's answers: every row and interval below reproduces to 1e-4, every stored pick is the argmin of its stored distances, A2's answers for the forced amps equal C3r's, and no direction was dropped.
+- **By the score** (held half, ln; cap1 by creator, the panel and BKS by DI, GOAT by item; the deciding pool weights cap1 and the panel equally):
+
+  | − always sw50r | cap1 (121) | Panel (12) | Deciding pool | GOAT (215) | BKS (40) |
+  |---|---|---|---|---|---|
+  | **The pick (primary)** | **−0.049 [−0.074, −0.023]** | +0.010 [−0.056, +0.076] | −0.019 [−0.054, +0.015] | **−0.017 [−0.031, −0.002]** | −0.016 [−0.062, +0.031] |
+  | the same, clean | **−0.045** | **−0.039** (3 DIs) | | **−0.033** | −0.022 |
+  | the same, crunch | **−0.049** | +0.083 (2 DIs) | | −0.008 | −0.009 |
+  | The pick on the clean amp track | **−0.081** | +0.013 | −0.034 [−0.073, +0.004] | **−0.045** | **−0.092** |
+  | R-all's amp head (W) | −0.010 | +0.014 | +0.002 | +0.002 | +0.006 |
+  | **The pick − W** | **−0.039 [−0.067, −0.011]** | −0.004 | −0.022 [−0.044, +0.001] | **−0.019 [−0.034, −0.004]** | −0.021 |
+  | Always ac20 | −0.028 | **+0.142** | | +0.020 | −0.029 |
+  | Always pr12 | −0.004 | **+0.041** | | +0.013 | +0.050 |
+  | The search half's own argmin (the ceiling) | −0.125 | −0.028 | −0.077 | −0.088 | −0.124 |
+
+  - **The choices carry it, not the amp shares** (the picks shuffled within set and class, 2,000 times): cap1 −0.049 against −0.020 shuffled, the panel +0.010 against +0.057, GOAT −0.017 against +0.011 (each p ≤ 0.002); BKS −0.016 against −0.003 (p 0.20).
+  - **cap1 isn't carried by one creator:** leaving any one out gives −0.053 to −0.040, and 16 of 19 creators read negative.
+  - **The picks spread over the amps:** cap1 pr12 81, sw50r 77, ac20 84 of 242 directions; the panel 7, 10, 7 of 24; GOAT 128, 147, 155 of 430; BKS 38, 24, 18 of 80. R-all's head leans on the sw50r (cap1 148 of 242, GOAT 244 of 430) and is level with always-sw50r everywhere.
+  - **On the panel** the constant amps are far apart (always-ac20 +0.142, shown worse), and the pick avoids most of that: +0.010 against +0.057 shuffled. Its crunch lean (+0.083) rests on 2 DIs. Its ceiling is only −0.028, so it had little room to show a gain.
+  - **cap1 and GOAT are partly dependent reads** (the review): 111 of cap1's 121 units sit on GOAT's DI performances. No leak through them is shown: the split by whether the fold model trained on the shared performance goes opposite ways on the two sets (cap1 −0.063 against −0.014, GOAT −0.005 against −0.029). cap1 also holds by DI item (−0.041), by capture (−0.042) and with creators merged by amp family (−0.052). On real amps, expect about GOAT's −0.017.
+  - **Beside, not a switch:** the unfloored pick reads better than the declared floored one, here (pooled −0.038 [−0.062, −0.015]) as in A1 (−0.007 against +0.017). The floor was fixed before any read, so it stays the pick. If the product step is ever re-read fresh, the unfloored pick is the candidate.
+- **What it means.**
+  - **Confirmed, by the declared rule:** on the adopted model and on units A1 never read, the stock-DI pick is better than always-sw50r on cap1 and worse nowhere. That is about 40% of cap1's headroom (−0.049 of −0.125) and a fifth of GOAT's. Against the pick the adopted model ships with it reads −0.022 pooled (undecided, upper +0.001), decided on cap1 and GOAT.
+  - **The deciding pool is undecided** because the panel's 5 DIs are wide. So "learns" rests on cap1, the larger fresh set, with GOAT repeating A1 on largely the same performances. On real amps the size is about GOAT's, −0.017.
+  - **BKS's lean worse in A1 doesn't repeat** on R-all's answers (−0.016, against +0.052 on C3-cabS's).
+  - **The separation still costs about half:** on the clean amp track the same pick reads −0.081 on cap1 and −0.092 on BKS. A cleaner stem is worth more than a better statistic.
+  - **Next, by the rule:** the product step. The pick goes into the generate path on R-all, after a blind ear check of its amp against W's ([plan](full-controls-plan.md), "A3 in detail"). Nothing ships before the model itself, which waits for C4 and the loudness step.
+  - By the score only.
+- Files: `PF/a2/` (`answers.json`, `judge/`, `shapes/`, `mels/`, `embed/`, `a2.json`); logs `logs/a2*.log`. Code: `learn/amp_di_compare_r.py`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read

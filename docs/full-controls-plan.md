@@ -21,9 +21,10 @@
 - **C3s ran** on 2026-11-11 (81 min of MPS, 2,810 renders, audited; [F78](pipeline-fix-plan.md)): the split loss improves the core (C3s-core − C3-core −0.019, − C3i −0.011, both decided), but the adopted configuration only by −0.008, undecided, so C3's recipe stands; the split loss is the next retrain's candidate.
 - **C3c ran** on 2026-11-11 (37 min of MPS, zero renders, audited; [F79](pipeline-fix-plan.md)): by the score its pick doesn't beat always-sw50r (+0.031, undecided), though it beats a prior-only head. A zero-render cost-target probe on the input the model reads (the separated guitar from a mix) finds nothing either, so by the declared stop rule learning the amp from the audio stops; the other routes go to the user.
 - **A1 ran** on 2026-11-12 (6,120 renders, audited; [F80](pipeline-fix-plan.md)): the stock-DI amp pick reads "learns" by its rule on GOAT alone (−0.017 against always-sw50r), leaning worse on BKS (+0.052), level pooled; on the clean amp track −0.039 pooled. A2, its confirmation on R-all and fresh units, is declared below.
+- **A2 ran** on 2026-11-12 (12,096 renders, audited; [F81](pipeline-fix-plan.md)): A1's pick, frozen, on R-all's answers reads "learns" by its rule. By the score it beats always-sw50r on cap1 (−0.049, decided on 19 creators) and GOAT (−0.017), level on the panel and BKS, worse nowhere; −0.022 pooled against R-all's own amp head. A3, its ear check, is declared below.
 - **C1a by ear (2026-11-10):** heard closer than the label, 0.68 [0.54, 0.82], p 0.020 on 14 cards (N12 0.79; BKS 0.57, undecided). By the declared rule that is "above", so C2 stands on C1a's recipe ([F69](pipeline-fix-plan.md)).
 - **Every trusted real row, by rotation (2026-11-10).** The user asked why only GOAT and BKS train, then said "Go for 3" to training and testing on every usable track by rotation. C2r and C3r are declared below, before any render or training; V-real and the reserve stay sealed.
-- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1), `phase_c1a_outcome`, `phase_c1a_ear` (C1a by ear), `phase_c1b`, `phase_c1b_outcome`, `phase_c2`, `phase_c2_outcome`, `phase_c3`, `phase_c3_outcome`, `phase_c3i`, `phase_c3i_outcome`, `phase_c3s`, `phase_c3s_outcome`, `phase_c3b_s2_outcome`, `phase_c3c`, `phase_c2r_outcome`, `phase_c3r_outcome`, `phase_c3c_outcome`, `phase_c3b`, `phase_c3b_outcome`, `phase_c3b_s2`, `phase_c2b`, `phase_c2b_outcome`, `phase_l1c`, `phase_c2r`, `phase_c2r_a1`, `phase_c2r_a2` and `phase_c3r`. Code: `learn/full_controls.py` (C1a), `learn/c1a_ear.py` (C1a by ear), `learn/full_controls_c1b.py` (C1b), `learn/full_controls_c2.py` (C2), `learn/full_controls_c3.py` with `pipeline_fix train-ft --c3` (C3) and `learn/full_controls_c2b.py` (C2b), tests `tests/test_full_controls.py`, `tests/test_c1a_ear.py`, `tests/test_full_controls_c1b.py`, `tests/test_full_controls_c2.py`, `tests/test_full_controls_c3.py` and `tests/test_full_controls_c2b.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
+- **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1), `phase_c1a_outcome`, `phase_c1a_ear` (C1a by ear), `phase_c1b`, `phase_c1b_outcome`, `phase_c2`, `phase_c2_outcome`, `phase_c3`, `phase_c3_outcome`, `phase_c3i`, `phase_c3i_outcome`, `phase_c3s`, `phase_c3s_outcome`, `phase_c3b_s2_outcome`, `phase_c3c`, `phase_c2r_outcome`, `phase_c3r_outcome`, `phase_c3c_outcome`, `phase_c3b`, `phase_c3b_outcome`, `phase_c3b_s2`, `phase_c2b`, `phase_c2b_outcome`, `phase_l1c`, `phase_c2r`, `phase_c2r_a1`, `phase_c2r_a2`, `phase_c3r`, `phase_c4`, `phase_a1`, `phase_a1_outcome`, `phase_a2`, `phase_a2_outcome` and `phase_a3`. Code: `learn/full_controls.py` (C1a), `learn/c1a_ear.py` (C1a by ear), `learn/full_controls_c1b.py` (C1b), `learn/full_controls_c2.py` (C2), `learn/full_controls_c3.py` with `pipeline_fix train-ft --c3` (C3) `learn/full_controls_c2b.py` (C2b), `learn/c4_ear.py` (C4), `learn/amp_di_compare.py` (A1), `learn/amp_di_compare_r.py` (A2) and `learn/a3_ear.py` (A3), tests `tests/test_full_controls.py`, `tests/test_c1a_ear.py`, `tests/test_full_controls_c1b.py`, `tests/test_full_controls_c2.py`, `tests/test_full_controls_c3.py` and `tests/test_full_controls_c2b.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
 
 **The every-control plan's stage 1 never ran.** It is a true-DI oracle for the groups with no number, about 13–14k renders. It was approved on 2026-10-22 and waited for a trusted data list. Then the work moved to the trusted data and the pipeline fix. This amendment carries its goal onto today's route (FT2 and its real rows). It folds stage 1's never-measured groups in as C1b.
 
@@ -440,6 +441,39 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **The stop.** The measure is the 3 render shards' summed renders per minute. The window is the 60 minutes before the training against its first 20 minutes. If the rate drops by more than 20%, the executor stops the training by its recorded PIDs, and it reruns after C3r's training. Otherwise it runs to the end.
   - **The read** waits for a free render slot: after C2r, before C3r's read.
 
+## A3 in detail: the stock-DI amp pick by ear (declared 2026-11-12, after A2's read; before any A3 render; ledger `phase_a3`)
+
+- **Why.** A2 read "learns" by its declared rule ([F81](pipeline-fix-plan.md)). Its next step is the product step: the pick goes into the generate path on R-all, with a blind ear check of its amp against W's (R-all's own amp head, the pick the adopted model ships with) before it ships. A3 is that ear check.
+- **How it differs from C4:** C4 plays three models on one amp. A3 plays one model (R-all) on three amps, so only the amp changes.
+- **The items.**
+  - **Where they come from:** A2's deciding units (cap1 and the panel), on the directions where the pick and W choose different amps: 173 directions on 23 clusters (18 cap1 creators, 5 panel DI files). A2 read these units by the score, and that read is what A3 checks. None was heard on any page.
+  - **The draw** (`a3-draw`, seed 20261129): one item per cluster. Every panel DI file comes first (real amps), then cap1 creators in a seeded order, up to 18. Within a cluster, one direction is drawn at random.
+  - Each item is a unit's search half: the presets come from that half's input, and the clips play the held half.
+- **The presets:** R-all's stored answer on each of the three amps (A2's `answers.json`, its sha256 checked). So every item has the pick's amp, W's amp and the third amp, and no model runs.
+- **The renders:** each preset through the unit's own DI, fresh and primed, judged on both halves at the unit's lag (J0 beside). The held half's window is kept, as C4's. 18 × 3 × 2 = 108 renders.
+  - **A canary before the page** (the review): each item's judge on each amp and half must equal A2's or C3r's stored judge for the same unit, amp and search half (same answer, DI and code). The page is refused if any differs, so every clip is what A2 scored.
+- **The page:** C4's player and layout. Each item has the Record (the unit's amp track: the capture's render for cap1, the real amp for the panel), then A, B and C.
+  - The listener ranks A, B and C from 1 (closest) to 3, ties allowed. Closeness and confidence are optional.
+  - The letters are a seeded permutation per item (seed 20261130). Two items come back at least 4 items later, with the letters rotated.
+  - 20 items, in one part. The page names no unit, DI, creator or amp (`leaks`), and the answers are kept in the page's store. Its title is neutral ("Tone Ranking Check"), so it doesn't tell the listener what differs.
+- **The read** (`a3-read`), declared now, on first hearings:
+  - **Primary: the pick over W.** It's the share of cards (above 1, a tie 0.5, below 0), with C1a's jackknife-t by cluster (each item is its own cluster) and its one-sided rule at 0.05: "above", "below" or "undecided".
+  - **Beside:**
+    - the pick over always-sw50r, on the items where the pick isn't the sw50r;
+    - W over always-sw50r, where W isn't the sw50r;
+    - each pair by class and by set;
+    - how often J0's sign agrees;
+    - how often the pick's amp and W's are ranked first alone;
+    - the repeats' agreement.
+  - **The page is read only with 12 or more of the 18 first hearings answered.**
+- **The rule (PR #422's: the score's adoption is the default).**
+  - **The pick over W "above" or "undecided":** the pick stays the declared amp choice for the generate path on R-all.
+  - **"Below" on the primary, or on the pick over always-sw50r:** the ear says worse where the score says better, so it goes to the user.
+- **Power:** about C4's (18 first hearings): P(above) is about 0.2 to 0.3 at a true share of 0.60 and about 0.6 at 0.70. Even an ear that tracked J0 exactly would sit near J0's own share on the pool (0.61 on cap1, 0.52 on the panel, about 0.59 on the draw; the review), so P(above) is about 0.2. "Undecided" is expected, and an undecided page is not the ear confirming the score. What A3 mainly catches is a clear preference for W: P(below) is 0.62 to 0.78 at a share of 0.30.
+- **The product step itself, declared now and built with the model's product integration:** for a song, R-all's answer on each amp is rendered through the 2 stock DIs of the song's class (12 renders with the priming renders). The class is the one the generate path already gives the model, from its song research. A1 and A2 used each unit's true class, so a wrong class is unmeasured: it changes both the model's answer and the stock DIs. The floored features of R-all's own model on those renders and on the song's separated guitar give the pick: the amp whose renders sit closest by cosine. The model itself ships only after C4 and the loudness step.
+- **Stop rule.** One render pass, one page, one read. Nothing tuned.
+- **When.** Tonight, under the user's rule of 2026-11-10 and their "continue with the plan overnight", once its review passes. The page goes to the user beside C4's.
+
 ## A2 in detail: A1's confirmation on the adopted model (declared 2026-11-12, after A1's read; before any A2 render; ledger `phase_a2`)
 
 - **Why.** A1 read "learns" by its declared rule, but only on GOAT (−0.017), leaning worse on BKS (+0.052) and level pooled ([F80](pipeline-fix-plan.md)). Its rule's next step is a product step on the adopted model with an ear check. Before that, A2 confirms the frozen pick on the adopted model (R-all), and on units no A1 choice was made on.
@@ -453,6 +487,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - each unit's answer on the two amps other than its own, through its own DI, judged on both halves (`a2-judge`): 348 units × 2 × 2 × 2 = 2,784. Each unit's own amp, and BKS's three, are C3r's read's, and A2's answer for them must equal C3r's (checked);
   - each amp's answer through A1's stock DIs (`a2-render`): 388 × 12 = 4,656;
   - 7,440 in all, about 1.5 to 2 hours on 3 processes.
+  - *Corrected after the run:* the stock-DI count left out the search halves. It is 388 × 24 = 9,312, so 12,096 in all (2 h 49 min). The method is unchanged.
 - **The rule, C3's test on "DI-compare − always sw50r"** on R-all's own per-amp renders:
   - *learns:* better on cap1, the panel or their pool, and worse on none of cap1, the panel, their pool, GOAT or BKS;
   - otherwise *worse*, *split* or *undecided*.
