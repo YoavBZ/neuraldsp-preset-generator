@@ -273,7 +273,9 @@ def cmd_delay(args):
     halves = (FX.cep_pick(FX.cepstrum(stem[:half]))[0], FX.cep_pick(FX.cepstrum(stem[half:]))[0])
     whole = FX.cep_pick(FX.cepstrum(stem))[0]
     on, ms, which = delay_rule(vote, halves, whole, knn_ms)
-    given = args.mix is not None and args.feedback is not None
+    if (args.mix is None) != (args.feedback is None):
+        raise SystemExit("delay: pass --mix and --feedback together (the song research's pair), or neither for the default")
+    given = args.mix is not None
     mix, fb = (args.mix, args.feedback) if given else (DELAY_MIX, DELAY_FEEDBACK)
     src = args.source if given else "the declared default (no song research given)"
     rec = {"on": on, "vote": vote, "threshold": DELAY_VOTE, "time_ms": ms, "time_from": which,
