@@ -5415,7 +5415,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - These are synthetic draws, wide and independent. Real songs' effects are fewer and tempo-locked, so this is a test of the method, not the product's rate.
 - Files: `PF/t0/` (`features.npz`, `features-meta.json`, `read.json`); logs `logs/t0-*.log`. Code: `learn/fx_t0.py`.
 
-### F86. T1 and its arm P: render-and-compare through the song's own masking doesn't read delay time. Its pick hits 11 of 134 within 10%, about chance (1 in 13), against F52's cepstrum at 38, and it's worse than the prior. With each song's own DI (arm P) it does no better, 3 of 40. So by its declared rule T1's verdict waits for the cause. The cause, found after the read: the candidates keep their echo through the channel, but the song's own stem has lost it (8 of 40 at the true delay, against 30 of 40 on its clean guitar), and no comparison can recover what the stem doesn't hold. It's lost to the backing's masking at the draws' dense levels (the guitar a median 9 dB under), not to mastering (phase_t1 and phase_t1p, 4,524 renders, 2,262 X-LANCE separations, audited)
+### F86. T1 and its arm P: render-and-compare through the song's own masking doesn't read delay time. Its pick hits 11 of 134 within 10%, about chance (1 in 13), against F52's cepstrum at 38, and it's worse than the prior. With each song's own DI (arm P) it does no better, 3 of 40. So by its declared rule T1's verdict waits for the cause. Two causes, found after the read: the songs' stems keep their delay on only about a quarter (36 of 134, near F52's 38), and T1's correlation pick throws away even that (11 where the stems held 36). The candidates keep their echo through the channel (phase_t1 and phase_t1p, 4,524 renders, 2,262 X-LANCE separations, audited)
 - **What ran** ([plan](full-controls-plan.md), "T1 in detail", with arm P). The cloud researcher's first test.
   - F52's 134 strong-third delay-ons.
   - Each item's own preset, with the delay time on a 13-point grid (66 to 733 ms), rendered through a stock DI: 3,484 renders.
@@ -5434,38 +5434,24 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   | The draw-aware prior | 6 (4.5%) | **1.03** |
 
   - **A − F52:** −0.20 [−0.31, −0.12]. **A − prior on log2 error:** +0.38 [+0.11, +0.54], worse. **A − B:** −0.02 [−0.11, +0.07].
-  - Both hold with Forkupines and with BKS left out. The grid's ceiling is 100%. 16 of A's picks are double or half lags. **T1 fails its bar.**
+  - Both hold with Forkupines and with BKS left out. The grid's ceiling is 100%. 11 of A's picks are double or half lags (within 10% of twice or half the set time). **T1 fails its bar.**
 - **Arm P, the 40 items** (its declared outcomes): A_P 3 (7.5%) and B_P 2, against T1's A 5, F52 9 and the prior 1 on the same items.
   - A_P − prior on log2 error is +0.31 [+0.05, +0.52], worse. A_P − A is −0.05.
   - **A_P fails, so by the declared rule T1's verdict isn't trusted either way, and the cause is found first.**
-- **The cause** (post hoc, after both reads; diagnostics only, zero renders and 40 separations; scripts and rows in `PF/t1p/diag/`):
-  - **The candidates carry their delay through the channel.** A candidate's own cepstral peak sits at its grid time on 361 of 520 clean, and on 352 of 520 after re-separation.
-  - **The song's stem doesn't carry its delay:**
-
-    | Version of the song's guitar | Peaks at the true delay (within 10%) |
-    |---|---|
-    | Its clean guitar | 30 of 40 |
-    | That clean guitar through the candidates' path (loudness-matched, added to the residual, re-separated) | 28 of 40 |
-    | Its separated stem | **8 of 40** |
-    | The full mix | 4 of 40 |
-
-  - **So the comparison can't succeed:** what it matches against has lost the echo. Picking by peak position instead gives 5 of 40.
-  - **Where the echo is lost** (post hoc, zero renders; from each item's draw in D_CC's plan):
-    - **Not the mastering.** Only some draws are mastered. The stems keep the delay on 26 of 68 mastered mixes, and on 10 of 66 unmastered.
-    - **The guitar's level against the backing:**
-
-      | The draw's guitar-to-backing ratio | Stem keeps the delay |
-      |---|---|
-      | Top third (above −6.9 dB) | 19 of 44 |
-      | Middle third | 7 of 43 |
-      | Bottom third (below −10.5 dB) | 10 of 47 |
-
-      The draws put the guitar a median 9 dB under the backing, denser than the product's scope (clean and crunch songs, the guitar exposed). At these levels the backing's masking buries the echo before the separator sees it.
-    - The diagnostic's 28 of 40 (the clean guitar added back to its residual) is read as the residual restoring the guitar's own leaked echo, not as the separator keeping it.
+- **The causes** (post hoc, after both reads; diagnostics only, zero renders and 40 separations; scripts and rows in `PF/t1p/diag/`; recounted by the review):
+  - **The candidates carry their delay through the channel.** A candidate's own cepstral peak sits at its grid time on 361 of 520 clean, and on 352 of 520 after re-separation. That's the fair, leak-free evidence that the separator can keep an echo.
+  - **The stems keep their delay on about a quarter.** On all 134, the stem's own cepstral peak is at the true delay on 36 (26.9%), against 8.2% with the true delays shuffled. That's three times chance, and it matches F52's 38. On arm P's 40 it's 8, against 30 on their clean guitars.
+  - **T1's pick reads below even that:** 11 where the stems held 36, and A_P 3 where they held 8. The correlation over the whole 60–800 ms cepstrum lets the playing's own structure outweigh the echo peak. Picking by peak position instead gives 5 of 40.
+  - **The diagnostic, read right:** the clean guitar added to its residual keeps the delay on 28 of 40. But the residual holds what the stem lost, so that input is the mix plus the guitar's own leaked echo, not a separator test.
+  - **What the stems' quarter depends on** (zero renders, from each item's draw in D_CC's plan):
+    - **The guitar's level against the backing.** The top third of the draws' ratio (above −6.9 dB) keeps it on 19 of 44, the rest on 17 of 90 (Fisher p 0.004). The middle and bottom thirds don't differ (7 of 43, 10 of 47; p 0.6). Even the top third keeps 43%, where the clean guitar keeps about 75%. So exposure helps but isn't the whole story. The draws put the guitar a median 9 dB under the backing, denser than the product's scope.
+    - **Mastering doesn't remove the echo; if anything it helps.** The mastered mixes keep it more often (26 of 68 against 10 of 66, p 0.003), within every level third too: 5 of 19 against 2 of 22, 8 of 26 against 2 of 23, and 13 of 23 against 6 of 21. Compression may lift the tails.
 - **What it means.**
-  - Render-and-compare can't read an effect the stem doesn't hold. On these synthetic mixes the delay is lost before the comparison, so delay time stays on the prior on stems for now.
-  - The bottleneck isn't the separator alone. The same separator keeps a candidate's echo when the guitar isn't inside the song's mastered mix.
-  - **The next test** (zero renders, about 134 separations): rebuild the same mixes with the guitar exposed, at the product's levels, and separate them. If the stem then keeps the echo, render-and-compare is worth re-running there. If it doesn't, the stem is the bottleneck even at the product's levels (R3).
+  - **Two fixes, in order.**
+    - **The comparison first:** the stems hold the delay on about a quarter, and a comparison that keeps the echo peak should reach at least that.
+    - **Then the stem:** a stem that keeps more of it (R3), or songs at the product's exposure.
+  - Meanwhile delay time stays on the prior on stems.
+  - **The next test** (zero renders), T1x: rebuild the same mixes with the guitar exposed and separate them. Read the stems' own peak, and T1's pick on them, with a peak-position pick beside. If the stem keeps more but the pick stays below it, the comparison is what to fix, not R3.
   - These are synthetic draws. Real songs' delays are fewer, tempo-locked and mixed by people.
 - Files: `PF/t1/` and `PF/t1p/` (`plan.json`, `items/`, `read.json`; `t1p/diag/`); logs `logs/t1*.log`. Code: `learn/fx_t1.py`, `learn/fx_t1p.py`.
 
