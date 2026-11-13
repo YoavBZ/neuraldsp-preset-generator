@@ -13,6 +13,11 @@ Runs the model path's four stages (`learn/product_path.py`), each in the environ
 Then it writes the picked settings onto that amp's factory starting preset. Time effects stay off: the
 generate skill adds the song research's effects afterwards with apply_spec.
 
+`--delay-reader` (off by default; the real-song test's third arm, a candidate) adds product_path's `delay` stage
+(the main venv, zero renders): when it hears a delay it switches the delay on at the time it read, with the song
+research's mix and feedback (`--delay-mix` and `--delay-feedback`, 0-1, together) or a declared 0.30/0.30 default.
+When it hears none, the delay is left as research sets it.
+
 Only on a machine with the model's data (`~/ndsp-presets`) and its environments. Interpreters can be
 set with NDSP_MSST_PY, NDSP_TORCH_PY and NDSP_MAIN_PY. A stage whose output exists is not run again,
 so a stopped run resumes with the same command; `--write-only` writes from an existing WORK_DIR.
@@ -70,6 +75,28 @@ def stage_args(stage: str, args) -> list:
     return [str(args.work)]
 
 
+def delay_args(args) -> list:
+    out = [str(args.work)]
+    if args.delay_mix is not None:
+        out += ["--mix", str(args.delay_mix), "--feedback", str(args.delay_feedback), "--source", args.delay_source]
+    return out
+
+
+def run_delay(args, py) -> None:
+    """The delay stage, after the pick. An existing delay.json must hold the same mix and feedback."""
+    p = args.work / "delay.json"
+    if p.exists():
+        d = json.loads(p.read_text())
+        if args.delay_mix is not None and (abs(d["mix"] - args.delay_mix) > 1e-9
+                                           or abs(d["feedback"] - args.delay_feedback) > 1e-9):
+            die(f"{p} was read with another mix and feedback; remove it or use a new --work.")
+        return
+    cmd = [str(py["main"]), "-m", "learn.product_path", "delay", *delay_args(args)]
+    print(f"[delay] {' '.join(cmd)}", flush=True)
+    if subprocess.run(cmd, cwd=PLUGIN_ROOT).returncode != 0:
+        die("The delay stage failed; fix it and run the same command again to resume.")
+
+
 def run_stages(args) -> None:
     py = interpreters()
     for name, p in py.items():
@@ -91,6 +118,8 @@ def run_stages(args) -> None:
         print(f"[{stage}] {' '.join(cmd)}", flush=True)
         if subprocess.run(cmd, cwd=PLUGIN_ROOT).returncode != 0:
             die(f"The {stage} stage failed; fix it and run the same command again to resume.")
+    if args.delay_reader:
+        run_delay(args, py)
 
 
 def template_for(amp: str, cls: str) -> pathlib.Path:
@@ -128,6 +157,13 @@ def write_preset(result: dict, out: pathlib.Path, name, template=None) -> list:
     return changes
 
 
+def delay_line(d: dict) -> str:
+    if not d["on"]:
+        return f"Delay reader: heard none (vote {d['vote']:.2f}); the delay is left to the song research"
+    return (f"Delay reader: on (vote {d['vote']:.2f}), {d['time_ms']:.0f} ms ({d['time_from']}), mix {d['mix']:.2f} "
+            f"and feedback {d['feedback']:.2f} from {d['mix_feedback_from']}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--song", help="the song file (any format the separator reads)")
@@ -137,6 +173,11 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--work", type=pathlib.Path, required=True, help="a folder for the stages' files")
     ap.add_argument("--out", type=pathlib.Path, required=True, help="the preset to write")
     ap.add_argument("--name", help="the preset's name")
+    ap.add_argument("--delay-reader", action="store_true",
+                    help="also read the delay from the song (a candidate; the real-song test's third arm)")
+    ap.add_argument("--delay-mix", type=float, help="the delay mix from the song research, 0-1 (with --delay-feedback)")
+    ap.add_argument("--delay-feedback", type=float, help="the delay feedback from the song research, 0-1 (with --delay-mix)")
+    ap.add_argument("--delay-source", default="the song research", help="where the delay mix and feedback came from")
     ap.add_argument("--force", action="store_true", help="overwrite --out")
     ap.add_argument("--write-only", action="store_true", help="write from WORK_DIR/preset.json, run nothing")
     return ap
@@ -149,6 +190,10 @@ def run(args) -> None:
         args.song = pathlib.Path(args.song).expanduser().resolve()
     if out.exists() and not args.force:
         die(f"--out already exists: {out}\n  Pass --force to overwrite it, or choose a different path.")
+    if (args.delay_mix is None) != (args.delay_feedback is None):
+        die("Pass --delay-mix and --delay-feedback together (the song research's pair), or neither for the default.")
+    if args.delay_mix is not None and not args.delay_reader:
+        die("--delay-mix and --delay-feedback go with --delay-reader.")
     if not args.write_only:
         if not args.song or not args.cls:
             die("--song and --cls are required unless --write-only.")
@@ -158,6 +203,15 @@ def run(args) -> None:
         run_stages(args)
     result = json.loads((args.work / "preset.json").read_text())
     window = json.loads((args.work / "window.json").read_text())
+    delay = None
+    if args.delay_reader:
+        p = args.work / "delay.json"
+        if not p.exists():
+            die(f"--delay-reader: {p} is missing; run without --write-only first.")
+        delay = json.loads(p.read_text())
+        if delay["amp"] != result["amp"]:
+            die(f"{p} was read for {delay['amp']}, the pick is {result['amp']}.")
+        result = {**result, "settings": {**result["settings"], **delay["settings"]}}
     changes = write_preset(result, out, args.name)
     g = result["output_gain"]
     print(f"\nAmp: {result['amp']} ({result['cls']}); distances "
@@ -165,6 +219,8 @@ def run(args) -> None:
     print(f"Window: {window['start_s']:.1f} s ({'given' if window['chosen_by'] == 'given' else 'most exposed guitar'})")
     print(f"Output gain: {g['from']:+.1f} -> {g['to']:+.1f} dB" + (f" (clamped, {g['shortfall']:+.1f} dB short)"
                                                                    if g["shortfall"] else ""))
+    if delay is not None:
+        print(delay_line(delay))
     print(f"{len(changes)} value(s) changed against {template_for(result['amp'], result['cls']).name}")
     print(f"Wrote {out}")
 

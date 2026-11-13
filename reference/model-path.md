@@ -40,6 +40,12 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/model_preset.py" --song SONG.mp3 --cls cle
    - keep the dry run first.
    - Don't change the input gain, amp, EQ, pedals, gate, mics or output: those are the model's. The amp's own spring
      reverb counts as an effect (the model was rendered with it at 0), so research may turn it up.
+   - **The delay reader, only when asked for** (`--delay-reader`; the real-song test's third arm, a candidate, never
+     a default). Give research's delay mix and feedback as `--delay-mix` and `--delay-feedback` (0 to 1, both or
+     neither; without them 0.30 each, a default the user has yet to confirm). When it hears a delay, it switches it on
+     at the time it read: leave the delay out of step 3's spec then. When it hears none, set the delay from research
+     as usual. On synthetic songs it caught about a quarter of audible delays, and about 6 in 10 of the delays it
+     switched on were real when half the songs had one (3 in 10 at a quarter).
 4. Install and report as in step 6. Say:
    - that the model set the controls;
    - the amp it picked, and the window it read (given, or the most exposed);
@@ -52,8 +58,9 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/model_preset.py" --song SONG.mp3 --cls cle
   songs. By the score the model reads level with the one it replaced. By the score the amp pick beats always-SW50R on
   one set and is worse on none (F81). By ear it was heard closer than the model's own amp pick (F83), and undecided
   against always-SW50R. The output matching closed the loudness gap (F84), and a short listening page showed no bias (5 of 12 heard quieter, 1 louder; p 0.22).
-  - The pick has not yet been read on a separated guitar (A2s, declared). The ML session's real-song test reads the
-    whole path on songs, and it decides the default.
+  - The pick was also read by the score on the separated guitar of those sets, the input this path uses, and holds
+    there (F90). It has not yet been read by ear on real songs. The ML session's real-song test reads the whole path
+    on songs, and it decides the default.
 - **Loud peaks.** At the matched loudness about 2 in 3 presets peak over 0 dBFS, as the plugin renders in floating
   point. Tell the user to lower the output a little if their host clips.
 - **Effects** stay the research's: the model was trained with them off.

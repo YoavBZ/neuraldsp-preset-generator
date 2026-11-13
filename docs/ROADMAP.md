@@ -49,8 +49,9 @@ lives in the linked documents. Last updated 2026-11-11.
 - **`edit`** changes a preset from a plain-English ask.
 - **`generate`'s model path (2026-11-13, behind a flag; Morgan original only):** on request, the adopted model sets the
   input gain, amp, mics, EQ, pedals, gate and output from the song file, with research's effects on top
-  ([model-path.md](../reference/model-path.md); `scripts/model_preset.py` over `learn/product_path.py`). The user's
-  real-song test decides whether it becomes the default.
+  ([model-path.md](../reference/model-path.md); `scripts/model_preset.py` over `learn/product_path.py`). The ML
+  session's blind real-song test decides whether it becomes the default. An optional delay reader (`--delay-reader`,
+  2026-11-13) is that test's third arm only.
 - **Predicting a preset from the song** is active research, not yet the product's default
   (step 0). Since 2026-10-14 the aim is to generate settings, not rank presets. Two routes are
   active: arm A (a search through a DI rebuilt from the separated guitar) and a direct model
