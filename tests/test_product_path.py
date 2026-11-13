@@ -4,11 +4,6 @@ import pytest
 from learn import product_path as PP
 
 
-def test_the_window_is_where_the_stem_sits_loudest_against_the_mix():
-    levels = [(0.0, -30.0, -14.0), (5.0, -20.0, -14.0), (10.0, -18.0, -10.0), (15.0, -20.0, -14.0)]
-    assert PP.exposure_window(levels) == 5.0                              # -6 dB beats -8; the earliest of the ties
-
-
 def test_the_pick_is_the_least_mean_cosine_distance():
     stem = [1.0, 0.0]
     feats = {"pr12": [[0.0, 1.0], [0.1, 1.0]], "sw50r": [[1.0, 0.1], [1.0, 0.0]], "ac20": [[1.0, 1.0], [1.0, 1.0]]}
@@ -24,19 +19,31 @@ def test_the_delay_rule_is_d1s():
     assert on and ms == 250.0 and "neighbours" in which
 
 
-def test_exposure_window_takes_the_most_exposed_steady_window():
-    levels = [(0.0, -20.0, -14.0, True), (5.0, -12.0, -14.0, False), (10.0, -15.0, -14.0, True)]
-    assert PP.exposure_window(levels) == 10.0                             # the guard drops the louder, unsteady one
-    assert PP.exposure_window([(r[0], r[1], r[2], False) for r in levels]) == 5.0   # none passes: the plain rule
+def test_candidates_stay_inside_the_part_and_clear_of_the_ends():
+    assert PP.candidate_starts((0.0, 30.0), 30.0) == [2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0,
+                                                     14.0, 15.0, 16.0, 17.0, 18.0]
+    assert PP.candidate_starts((100.0, 112.0), 300.0) == [100.0, 101.0, 102.0]
+    assert PP.candidate_starts((0.0, 11.0), 11.0) == []
 
 
-def test_steady_catches_a_fade_and_a_late_entry():
+def test_select_window_takes_the_typical_steady_present_one():
+    pytest.importorskip("numpy")                                       # medoid; the light CI runners have none
+    rows = [{"start": 0.0, "steady": True, "present": True, "profile": [0.0, 0.0]},
+            {"start": 1.0, "steady": True, "present": True, "profile": [1.0, 0.0]},
+            {"start": 2.0, "steady": True, "present": True, "profile": [2.0, 0.0]},
+            {"start": 3.0, "steady": False, "present": True, "profile": [1.0, 0.0]}]
+    assert PP.select_window(rows) == (1.0, "steady and present")
+    assert PP.select_window([{**r, "present": False} for r in rows])[1] == "steady only"
+    assert PP.select_window([{**r, "steady": False} for r in rows])[1] == "none steady"
+
+
+def test_steady_whole_catches_a_fade_and_a_late_entry():
     np = pytest.importorskip("numpy")
     from learn import pretrain_set as PS
 
     sr, rng = PS.SR, np.random.default_rng(0)
     x = rng.standard_normal(10 * sr) * 0.1
-    assert PP.steady(x, sr)[0]
-    fade = x * np.concatenate([np.ones(4 * sr), np.full(6 * sr, 0.01)])           # the song ends at 4 s
-    late = x * np.concatenate([np.full(3 * sr, 0.01), np.ones(7 * sr)])           # the guitar enters at 3 s
-    assert not PP.steady(fade, sr)[0] and not PP.steady(late, sr)[0]
+    assert PP.steady_whole(x, sr)[0]
+    fade = x * np.concatenate([np.ones(7 * sr), np.full(3 * sr, 0.01)])           # the song ends at 7 s
+    late = x * np.concatenate([np.full(sr, 0.01), np.ones(9 * sr)])               # the guitar enters at 1 s
+    assert not PP.steady_whole(fade, sr)[0] and not PP.steady_whole(late, sr)[0]

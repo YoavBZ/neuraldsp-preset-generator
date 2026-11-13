@@ -475,6 +475,19 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   The exposure rule picks fades, endings and late entries because the stem stands out against the mix there. The guard: every 0.5 s of the stem's half A sits within 12 dB of the half's own level, and the most exposed window that passes is taken. If none passes, it falls back to the plain rule and says so. It goes into `product_path separate`, so the product's fallback carries it too.
   - The guard only removes candidates, so a window that passes stays as it was: cut-it-out (−1.1 dB), how-long (−2.1) and long-road-out-of-eden (−5.2) keep their windows and arms.
   - The failing songs are separated again with the guard. Their old windows and any arms are moved aside, and research is redone for the new part. Hotel California is checked when its window lands.
+- **Amendment 2, the part-first selector** (2026-11-13, on the user's "Go ahead", before any R1 render, no clip heard; ledger `phase_r1_a2`). The user suspected the window choice could be much better. The product session showed them its weak points:
+  - the exposure rule rewards the band dropping out: 4 of the first 7 picks were a start, an end or an entry;
+  - the winner's margin was under 1 dB, and 0.1 dB on cut-it-out;
+  - it ignores the part.
+  Amendment 1's guard (a bar set after seeing the seven: any bar from 7 to 14 dB splits them the same way, the review) fixed the edges but not the choice. The selector, in `product_path separate`:
+  - **Part first.** The span comes from the user, or from research's main guitar part with its time range. With no part named, the whole song.
+  - **Candidates:** 10-s windows on a 1-s hop inside the span, each 2 s clear of the track's start and end.
+  - **Kept** when the stem holds through the whole window (every 0.5 s within 12 dB of the window's level) and sits within 12 dB of the mix.
+  - **Typical, not extreme:** the medoid of the kept windows' level-free mel profiles (the mean mel power spectrum in dB, less its mean). If none is kept, the steady ones are used, then all, and `window.json` says which.
+  - The span is separated once to choose. The chosen window is then separated on its own, as every earlier read did, so the model's input stays the same kind.
+  - A product caveat (the review): a sparse clean part with rests of 0.5 s or more can fail the hold, moving the pick to a denser passage. A part given by research, or a `--start`, is the override.
+  - **Not built:** pooling several windows into the model's answer. That changes the model's input, so it's measured by the score on known-truth units before any use.
+  - **For R1:** research gives each song's part span (`research.json` "part_s", with its source). All seven windows are re-picked inside their parts. Every window that moves gets its arms redone, and earlier windows and arms are moved aside.
 - **The research** (the product session; one per song, shared by every arm): generate's steps 1 and 2 for the part at that window. They give its class (clean or crunch) and its effects spec, recorded in `r1/<song>/research.json` with their sources.
 - **The arms** (the product session writes them, as the skill would; `r1/<song>/arms/`):
   - **R:** generate's default. Research sets every control.
