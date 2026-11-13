@@ -68,8 +68,13 @@ def cmd_build(args):
         if len(s_) != len(mix) or not np.isfinite(s_).all():
             raise SystemExit(f"{it['i']}: bad stem")
         half = len(s_) // 2
+        c = FX.cepstrum(s_)
+        lag, height = FX.cep_pick(c)
+        ls = slice(int(FX.CEP_RANGE[0] * 48), int(FX.CEP_RANGE[1] * 48) + 1)
         P.save(p, {"i": it["i"], "stem": T0.features(s_), "mix": T0.features(mix),
-                   "stem_cep_peak_ms": FX.cep_pick(FX.cepstrum(s_))[0],
+                   "stem_cep_peak_ms": lag, "stem_cep_height": height,
+                   "stem_cep_prominence": float(height - np.median(c[ls])),       # the review: a gate and an on/off later
+                   "stem_cep_peak_halves_ms": [FX.cep_pick(FX.cepstrum(s_[:half]))[0], FX.cep_pick(FX.cepstrum(s_[half:]))[0]],
                    "stem_cep_peak_halves_ms": [FX.cep_pick(FX.cepstrum(s_[:half]))[0], FX.cep_pick(FX.cepstrum(s_[half:]))[0]],
                    "drawn_ratio_db": x["draw"]["ratio_db"]})
         if m % 25 == 0:

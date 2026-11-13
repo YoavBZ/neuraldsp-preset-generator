@@ -458,8 +458,14 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - the same library (the other bands' same-amp clean targets), matching, strong third, draw-aware prior, band bootstrap, large-band checks, negative control and rule;
   - the target arm is T0's own, since the clean target doesn't change.
   - **Beside:** the direct delay-time reader (the stem's own cepstral peak) on every delay-on and on the strong third: within 10%, and the log2 error less the prior's, with the band checks.
-  - **Recorded for a later, declared read** (F87's first next step, a confidence gate): each new stem's cepstral peak on each half, and whether the halves agree within 10%, on delay-ons and delay-offs. The counts are reported, but no decision is made on them here.
-- **What it means, by T0's rule per parameter:** a stem pass makes a reader for the product. Target-only is R3's upside at the product's exposure. Neither stays on the prior.
+  - **Recorded for later, declared reads** (F87's next steps; the review), with no decision made on them here:
+    - the cepstral peak's height and prominence on all 770, for the confidence gate (height on hits against misses) and for the direct reader's on/off (height, delay-on against delay-off);
+    - each half's peak, and whether the halves agree within 10%.
+- **What it means, by T0's rule per parameter:**
+  - **A stem pass makes a candidate reader.** It's still synthetic and at one declared level, and its on/off needs a threshold set on known truth before R1's real-song test.
+  - **Target-only** is R3's upside at the product's exposure.
+  - **Neither** stays on the prior.
+  - **The level:** a pass holds at −3 dB only. The draws' top third starts at −6.9 dB, where the stems kept 43% (T1x found −3 and 0 dB alike).
 - **Stop rule.** One build, one read. Nothing tuned.
 
 ## T1x in detail: the same mixes with the guitar exposed (declared 2026-11-13, after F86; zero renders; ledger `phase_t1x`)
