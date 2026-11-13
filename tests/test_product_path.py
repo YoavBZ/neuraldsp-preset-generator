@@ -27,6 +27,7 @@ def test_candidates_stay_inside_the_part_and_clear_of_the_ends():
 
 
 def test_select_window_takes_the_typical_steady_present_one():
+    pytest.importorskip("numpy")                                       # medoid; the light CI runners have none
     rows = [{"start": 0.0, "steady": True, "present": True, "profile": [0.0, 0.0]},
             {"start": 1.0, "steady": True, "present": True, "profile": [1.0, 0.0]},
             {"start": 2.0, "steady": True, "present": True, "profile": [2.0, 0.0]},
