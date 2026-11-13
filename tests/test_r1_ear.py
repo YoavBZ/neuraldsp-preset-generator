@@ -86,3 +86,12 @@ def test_r1_check_runs_on_its_inputs(tmp_path, monkeypatch):
     R.cmd_check(None)
     plan = J.load(open(tmp_path / "plan.json"))
     assert len(plan["songs"]) == R.N_SONGS and all(x["D_is_M"] and not x["reader_on"] for x in plan["songs"])
+
+
+def test_the_artifact_page_builds():
+    from learn import c1a_ear as C
+
+    items = [{"id": "i1", "n": 1}]
+    page, css, js = R.page_html(items, {"i1-ref": "", "i1-mix": "", "i1-A": "", "i1-B": "", "i1-C": ""}, "b0")
+    art = C.artifact_page(page, css, js)
+    assert "Guitar (G)" in art and "Export</b> any time" not in art

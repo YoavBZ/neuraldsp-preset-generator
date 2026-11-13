@@ -346,8 +346,8 @@ Everything switches instantly: tap a button, or press G, S, A, B, C; Space stops
 Headphones, please.</p>
 <p class="intro">For each item, rank A, B and C: 1 is closest to the song's guitar. If two or all three sound the same to
 you, give them the same rank. Closeness and confidence are optional. Which preset is which is hidden and shuffled per
-item, and a couple of items come back later. Answers are saved in this browser as you go; tap <b>Export</b> any time and
-send the text.</p>"""
+item, and a couple of items come back later.
+Answers are saved in this browser as you go; tap <b>Export</b> any time and send the text.</p>"""
 
 
 def cards(items):
