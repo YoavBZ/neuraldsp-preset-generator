@@ -10,8 +10,8 @@ Runs the model path's four stages (`learn/product_path.py`), each in the environ
   render    each amp's answer through the class's two stock DIs, 12 renders (the main venv);
   pick      the amp whose renders sound closest to the song's guitar, and the output gain that plays it
             at the factory start's loudness (torch).
-Then it writes the picked settings onto that amp's factory starting preset. Time effects stay off: the
-generate skill adds the song research's effects afterwards with apply_spec.
+Then it writes the picked settings onto that amp's factory starting preset. Time effects stay off (but for
+the delay reader's delay, below): the generate skill adds the song research's effects afterwards with apply_spec.
 
 `--delay-reader` (off by default; the real-song test's third arm, a candidate) adds product_path's `delay` stage
 (the main venv, zero renders): when it hears a delay it switches the delay on at the time it read, with the song
@@ -45,6 +45,7 @@ DATA = pathlib.Path("~/ndsp-presets").expanduser()
 TOOLS = DATA / "tools"
 FACTORY = pathlib.Path("/Library/Audio/Presets/Neural DSP/Morgan Amps Suite")
 ADOPTED = DATA / "learn/trusted-data/pipeline-fix/adopted-model.json"
+DELAY_DEFAULT_FROM = "the declared default (no song research given)"   # product_path's record of the default
 STAGES = (("separate", "msst", "window.json"), ("answers", "torch", "answers.json"),
           ("render", "main", "renders.json"), ("pick", "torch", "preset.json"))
 
@@ -82,14 +83,19 @@ def delay_args(args) -> list:
     return out
 
 
+def check_delay(args, d: dict, p) -> None:
+    """An existing delay.json must hold the mix and feedback asked for (research's pair, or the default with none)."""
+    if args.delay_mix is None:
+        if d["mix_feedback_from"] != DELAY_DEFAULT_FROM:
+            die(f"{p} was read with research's mix and feedback ({d['mix']}, {d['feedback']}); pass them again, or "
+                f"use a new --work for the default.")
+    elif abs(d["mix"] - args.delay_mix) > 1e-9 or abs(d["feedback"] - args.delay_feedback) > 1e-9:
+        die(f"{p} was read with another mix and feedback ({d['mix']}, {d['feedback']}); remove it or use a new --work.")
+
+
 def run_delay(args, py) -> None:
-    """The delay stage, after the pick. An existing delay.json must hold the same mix and feedback."""
-    p = args.work / "delay.json"
-    if p.exists():
-        d = json.loads(p.read_text())
-        if args.delay_mix is not None and (abs(d["mix"] - args.delay_mix) > 1e-9
-                                           or abs(d["feedback"] - args.delay_feedback) > 1e-9):
-            die(f"{p} was read with another mix and feedback; remove it or use a new --work.")
+    """The delay stage, after the pick, unless delay.json exists (checked when it is read)."""
+    if (args.work / "delay.json").exists():
         return
     cmd = [str(py["main"]), "-m", "learn.product_path", "delay", *delay_args(args)]
     print(f"[delay] {' '.join(cmd)}", flush=True)
@@ -194,6 +200,8 @@ def run(args) -> None:
         die("Pass --delay-mix and --delay-feedback together (the song research's pair), or neither for the default.")
     if args.delay_mix is not None and not args.delay_reader:
         die("--delay-mix and --delay-feedback go with --delay-reader.")
+    if args.delay_mix is not None and not (0 <= args.delay_mix <= 1 and 0 <= args.delay_feedback <= 1):
+        die("--delay-mix and --delay-feedback are 0 to 1 (0.3 for 30%).")
     if not args.write_only:
         if not args.song or not args.cls:
             die("--song and --cls are required unless --write-only.")
@@ -209,6 +217,7 @@ def run(args) -> None:
         if not p.exists():
             die(f"--delay-reader: {p} is missing; run without --write-only first.")
         delay = json.loads(p.read_text())
+        check_delay(args, delay, p)
         if delay["amp"] != result["amp"]:
             die(f"{p} was read for {delay['amp']}, the pick is {result['amp']}.")
         result = {**result, "settings": {**result["settings"], **delay["settings"]}}
