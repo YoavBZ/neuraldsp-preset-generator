@@ -2,7 +2,8 @@
 
 `generate`'s default sets the controls from research (its steps 2 to 5). The model path sets them from the song's
 audio with the trained model instead. It sits behind a flag. Use it **only when the user asks for it**, for example
-"use the model" or "make it from the audio". The ML session's real-song test, and the user's yes, decide whether it becomes the default.
+"use the model" or "make it from the audio". The ML session's real-song test, and the user's yes, decide whether it
+becomes the default.
 
 ## What it needs
 
@@ -33,9 +34,10 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/model_preset.py" --song SONG.mp3 --cls cle
    - **Always pass the part with `--part`.** `--part-from` says who named it: `"the user"` or `"research"`. The model
      reads one 10-s window. The script takes the most typical one inside the part (1-s steps, clear of the track's first
      and last 2 s), among the windows where the guitar holds steady throughout and sits within 12 dB of the mix. If
-     none qualifies it falls back to the steady ones, then to all, and says so. Without `--part` it searches the whole song,
-     which may land on a part the user didn't mean. `--start` forces a window with no checks; use it only when the
-     user names an exact moment. Say which window was read and how it was chosen.
+     none qualifies it falls back to the steady ones, then to all, and says so. Without `--part` it searches the whole
+     song, which may land on a part the user didn't mean. `--start` forces a window with no checks; use it only when
+     the user names an exact moment, or a section shorter than 10 s (start it there). Say which window was read and
+     how it was chosen.
    - Use a folder under the data root for `WORK_DIR` (`~/ndsp-presets/auditions/<song>/model`).
    - It separates the guitar, takes the model's settings on each of the three amps and renders them through two stock
      guitar recordings (12 renders). It picks the amp whose renders sound closest to the song's guitar, sets the output
