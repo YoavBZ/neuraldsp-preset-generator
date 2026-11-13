@@ -13,3 +13,11 @@ def test_the_pick_is_the_least_mean_cosine_distance():
     feats = {"pr12": [[0.0, 1.0], [0.1, 1.0]], "sw50r": [[1.0, 0.1], [1.0, 0.0]], "ac20": [[1.0, 1.0], [1.0, 1.0]]}
     amp, dist = PP.pick_amp(stem, feats)
     assert amp == "sw50r" and dist["sw50r"] < dist["ac20"] < dist["pr12"]
+
+
+def test_the_delay_rule_is_d1s():
+    assert PP.delay_rule(0.5, (300.0, 305.0), 302.0, 250.0) == (False, None, None)
+    on, ms, which = PP.delay_rule(0.8, (300.0, 305.0), 302.0, 250.0)
+    assert on and ms == 302.0 and "peak" in which
+    on, ms, which = PP.delay_rule(0.8, (300.0, 150.0), 302.0, 250.0)
+    assert on and ms == 250.0 and "neighbours" in which

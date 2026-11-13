@@ -6,6 +6,7 @@ separator, the model and the renderer live in different environments:
     $TORCH_PY -m learn.product_path answers DIR --cls clean|crunch
     .venv/bin/python -m learn.product_path render DIR                    # 12 renders (3 amps x 2 stock DIs, primed)
     $TORCH_PY -m learn.product_path pick DIR                             # the amp and the output gain -> DIR/preset.json
+    .venv/bin/python -m learn.product_path delay DIR [--mix M --feedback F --source S]   # optional: -> DIR/delay.json
 
 What each stage reproduces, and where it was validated:
 - **separate:** the song's 10-s window, separated by X-LANCE `gtr_mss` (the model's real-song input: V-real read 3, F41;
@@ -16,7 +17,11 @@ What each stage reproduces, and where it was validated:
 - **pick:** the amp whose renders sit closest to the stem in the model's floored body features, by cosine averaged over
   the DIs (F80 to F83); then the output gain that plays it at S's loudness on those renders, clamped, on the plugin's
   0.1 dB grid (F84).
-The effects stay the generate skill's (song research). The pure parts are unit-tested; the stages are smoke-tested.
+- **delay (optional):** D1's candidate delay reader (F88, F89): the stem's own delay features against E1e's clean targets
+  of the picked amp (15 neighbours); on when 70% of them have a delay; the time from the stem's cepstral peak when its
+  halves agree within 10%, else the neighbours' median. Mix and feedback come from the song research when the skill
+  passes them, else a declared conservative default (0.30, 0.30); the source is recorded.
+The other effects stay the generate skill's (song research). The pure parts are unit-tested; the stages are smoke-tested.
 """
 
 from __future__ import annotations
@@ -217,6 +222,75 @@ def cmd_pick(args):
     print(f"PICK: {amp} (distances {json.dumps({k: round(v, 4) for k, v in dist.items()})}); output {g0:+.1f} -> {gain:+.1f} dB")
 
 
+DELAY_VOTE = 0.70                     # D1's rule on all seven bands' leave-band-out votes, at most 10% false-on (F89)
+DELAY_MIX, DELAY_FEEDBACK = 0.30, 0.30  # a declared conservative default when the song research gives none (the
+#                                        review: the wide draws are uniform per knob, not a musical prior); the user's
+#                                        taste to confirm
+DELAY_GATE = 0.10                     # the halves' peaks agree within 10%
+
+
+def delay_rule(vote, halves_ms, whole_ms, knn_ms, threshold=DELAY_VOTE, gate=DELAY_GATE):
+    """D1's rule (F89): on if the neighbours' on-share clears the threshold; its time the stem's cepstral peak when the
+    halves agree within the gate, else the neighbours' median. -> (on, time ms or None, which time)."""
+    if vote < threshold:
+        return False, None, None
+    a, b = halves_ms
+    if abs(a / b - 1) <= gate:
+        return True, whole_ms, "the stem's cepstral peak (halves agree)"
+    return True, knn_ms, "the neighbours' median"
+
+
+def cmd_delay(args):
+    """The optional delay reader (D1, F88-F89; a candidate, rare and not yet precise): the stem's T0 delay features
+    matched to E1e's clean targets of the picked amp (15 neighbours), D1's rule for on/off and time; mix and feedback
+    from the song research when given (--mix, --feedback, --source), else a declared conservative default ->
+    DIR/delay.json."""
+    import numpy as np
+
+    from learn import fx_reader as FX
+    from learn import fx_t0 as T0
+
+    d = pathlib.Path(args.dir)
+    w = np.load(d / "window.npz")
+    stem = np.asarray(w["stem"], np.float64)
+    amp = json.loads((d / "preset.json").read_text())["amp"]
+    z = np.load(T0.out_dir() / "features.npz")
+    its, _ = T0.items()
+    if [it["i"] for it in its] != list(z["i"]):
+        raise SystemExit("T0's items differ from its features")
+    L = [T0.labels(it["settings"]) for it in its]
+    Y = {c: np.array([l_[c] for l_ in L]) for c in L[0]}
+    amps = np.array([it["amp"] for it in its])
+    j = [T0.FEATURES.index(f) for f in T0.OWN["delay"]]
+    lib = np.where(amps == amp)[0]
+    q = np.asarray(T0.features(stem), np.float64)[j][None]
+    nb = lib[T0.neighbours(z["target"][lib][:, j], q)[0]]
+    vote = float(np.mean(Y["don"][nb]))
+    t = Y["dtime"][nb]
+    t = t[np.isfinite(t)]
+    knn_ms = float(2 ** np.median(t)) if len(t) else float(2 ** np.nanmedian(Y["dtime"]))
+    half = len(stem) // 2
+    halves = (FX.cep_pick(FX.cepstrum(stem[:half]))[0], FX.cep_pick(FX.cepstrum(stem[half:]))[0])
+    whole = FX.cep_pick(FX.cepstrum(stem))[0]
+    on, ms, which = delay_rule(vote, halves, whole, knn_ms)
+    if (args.mix is None) != (args.feedback is None):
+        raise SystemExit("delay: pass --mix and --feedback together (the song research's pair), or neither for the default")
+    given = args.mix is not None
+    mix, fb = (args.mix, args.feedback) if given else (DELAY_MIX, DELAY_FEEDBACK)
+    src = args.source if given else "the declared default (no song research given)"
+    rec = {"on": on, "vote": vote, "threshold": DELAY_VOTE, "time_ms": ms, "time_from": which,
+           "mix": mix, "feedback": fb, "mix_feedback_from": src,
+           "halves_ms": list(halves), "whole_ms": whole, "neighbours_ms": knn_ms, "amp": amp,
+           "settings": ({"delay/delayActive": "true", "delay/delaySync": "0", "delay/delayTime": f"{ms:.1f}",
+                         "delay/delayMix": f"{mix:.3f}", "delay/delayFeedback": f"{fb:.3f}"} if on else {}),
+           "note": ("a candidate reader (F89), on synthetic songs: it catches about a quarter of audible delays; about 6 in 10 "
+                    "of the delays it switches on are real when half the songs have one, about 3 in 10 at a quarter; "
+                    "it reads on/off and time only: mix and feedback come from the song research or a declared default"),
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    _save(d / "delay.json", rec)
+    print(f"DELAY: {'on' if on else 'off'} (vote {vote:.2f}){f', {ms:.0f} ms from {which}' if on else ''}")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -236,6 +310,12 @@ def main(argv=None):
     p = sub.add_parser("pick")
     p.add_argument("dir")
     p.set_defaults(fn=cmd_pick)
+    dl = sub.add_parser("delay")
+    dl.add_argument("dir")
+    dl.add_argument("--mix", type=float, help="the delay mix from the song research (0-1), with --feedback")
+    dl.add_argument("--feedback", type=float, help="the delay feedback from the song research (0-1), with --mix")
+    dl.add_argument("--source", default="the song research", help="where --mix and --feedback came from")
+    dl.set_defaults(fn=cmd_delay)
     args = ap.parse_args(argv)
     os.makedirs(getattr(args, "out", None) or args.dir, exist_ok=True)
     args.fn(args)
