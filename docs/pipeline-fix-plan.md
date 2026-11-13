@@ -5218,8 +5218,8 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **What it means.**
   - **The declared stop rule triggers:** on the input the product sees, no probe beats the best constant on GOAT, and BKS leans worse. C3c, C3's own embedding and the spectral probe agree. Learning the amp from the song's audio stops.
   - **The user's idea** ("render each song with all three amps and then train") would only confirm a null for this question, so its 4,320 renders were declared, then withdrawn before any ran.
-  - **The clean amp track carries a weak signal** (−0.018 on GOAT) that separation erases, so a cleaner stem would be the precondition for any later learned selector.
-  - **What goes to the user,** explained: comparing each amp's answer rendered through a library DI with the song's separated guitar at inference (a new approach, about 2,600 renders to test), or offering three presets, one per amp, to pick by ear. Until then the product keeps W's pick.
+  - **The clean amp track carries a weak signal** (−0.018 on GOAT) that the backing erases (corrected 2026-11-13: the model's input is the guitar in its backing, no separator), so a cleaner input would be the precondition for any later learned selector. It is untested on the product's X-LANCE stem.
+  - **What goes to the user,** explained: comparing each amp's answer rendered through a library DI with the song's guitar at inference (a new approach, about 2,600 renders to test), or offering three presets, one per amp, to pick by ear. Until then the product keeps W's pick.
   - By the score only.
 - Files: `PF/c3/c3c.json`; runs `C3c-ftm-*`; logs `logs/c3c*.log`. `PF/c3r/answers/all-amps3.json` is the withdrawn read's zero-render answers (R-all on all three amps), unused.
 
@@ -5228,7 +5228,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **What ran** ([plan](full-controls-plan.md), "A1 in detail", Amendment 1 and its floor), on the user's "Definitely A".
   - Each of GOAT's 215 and BKS's 40 units: C3-cabS's answer per amp and search half, through two stock library DIs of its class (clean: The Travelling Band 16, Ale Lak 24; crunch: Ale Lak 09, Dark Ride 29).
   - 6,120 renders in 1 h 23 min (00:02 to 01:25), then a zero-render read (01:25 to 01:28).
-  - **The primary pick:** the amp whose renders' features (the C3 fold model's pooled body features, both seeds; every input floored at −90 dB) sit closest by cosine to the song's separated guitar's. Valued on the held half of C3-cabS's own per-amp renders.
+  - **The primary pick:** the amp whose renders' features (the C3 fold model's pooled body features, both seeds; every input floored at −90 dB) sit closest by cosine to the song's guitar's (in its backing, no separator; corrected 2026-11-13). Valued on the held half of C3-cabS's own per-amp renders.
 - **The read matched the declaration.** It was audited with separate code: from the stored picks and the judge files, the primary, its classes and the clean-track row reproduce to 1e-4. Every stored pick equals the argmin of its stored distances (1,530 of 1,530). No direction was dropped.
 - **By the score** (held half, ln; BKS by DI, GOAT by item; pooled with C3's weights):
 
@@ -5286,12 +5286,13 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - **Confirmed, by the declared rule:** on the adopted model and on units A1 never read, the stock-DI pick is better than always-sw50r on cap1 and worse nowhere. That is about 40% of cap1's headroom (−0.049 of −0.125) and a fifth of GOAT's. Against the pick the adopted model ships with it reads −0.022 pooled (undecided, upper +0.001), decided on cap1 and GOAT.
   - **The deciding pool is undecided** because the panel's 5 DIs are wide. So "learns" rests on cap1, the larger fresh set, with GOAT repeating A1 on largely the same performances. On real amps the size is about GOAT's, −0.017.
   - **BKS's lean worse in A1 doesn't repeat** on R-all's answers (−0.016, against +0.052 on C3-cabS's).
-  - **The separation still costs about half:** on the clean amp track the same pick reads −0.081 on cap1 and −0.092 on BKS. A cleaner stem is worth more than a better statistic.
+  - **The backing costs about half** (corrected 2026-11-13; the input is the guitar in its backing, no separator): on the clean amp track the same pick reads −0.081 on cap1 and −0.092 on BKS. The product reads an X-LANCE stem, which removes much of the backing, so the pick on the product's input is untested, possibly between −0.049 and −0.081 on cap1.
   - **Next, by the rule:** the product step. The pick goes into the generate path on R-all, after a blind ear check of its amp against W's ([plan](full-controls-plan.md), "A3 in detail"). Nothing ships before the model itself, which waits for C4 and the loudness step.
   - By the score only.
 - Files: `PF/a2/` (`answers.json`, `judge/`, `shapes/`, `mels/`, `embed/`, `a2.json`); logs `logs/a2*.log`. Code: `learn/amp_di_compare_r.py`.
 
 ### F82. C4 by ear: the adopted model (R-all) isn't heard below FTm or S, so by the declared rule it stays. It leans above FTm, 0.61 (undecided, 14 cards), and above S, 0.71 (p 0.074). FTm is heard above S, 0.71 (p 0.019). Its lean over FTm sits on 4 decisive items (every pair 4 of 4 there, FTm over S included), so the creator split can't separate creator from item; on new creators the two are level (0.45). Four items were skipped as single-note DIs (phase_c4, 108 clip renders after its lag pass, the page answered 2026-11-12, audited)
+- *Corrected 2026-11-13:* the presets heard here were answered from the guitar in its backing (D_fix v0, no separator), not a separated stem. The product reads an X-LANCE stem, where the model's score shows no stem cost (N5b).
 - **What ran** ([plan](full-controls-plan.md), "C4 in detail"): the blind page of batch 3's 18 trusted units. Each item has three presets on its forced amp: the adopted model, FTm and S, ranked 1 to 3 against the record, ties allowed. It was read by `c4-read` on the page's stored answers (build 48684a8124d3).
 - **The read matched the declaration.** It was audited with separate code, from the stored answers and the page's key: every share and p reproduces.
 - **14 of 18 first hearings were answered** (the rule needs 12). The listener skipped 4 with the note "Bad DI, only contains a single note": Dark Ride 30 (2 units), Dark Ride 31, and Starnes & Shah 08.
@@ -5317,6 +5318,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - Files: `PF/c4/` (`plan.json`, `answers.json`, `clips/`, `key.json`, `read.json`). Code: `learn/c4_ear.py`.
 
 ### F83. A3 by ear: A2's stock-DI amp pick is heard closer to the record than the adopted model's own amp pick: 0.67 [0.51, 0.82], p 0.041, 18 cards, "above" by the declared rule. Against always-sw50r it reads 0.57 (undecided). So the pick stays the declared amp choice for the generate path on R-all (phase_a3, 108 renders, the page answered 2026-11-12, audited)
+- *Corrected 2026-11-13:* the presets and the pick heard here came from the guitar in its backing (D_fix v0, no separator). The product reads an X-LANCE stem, where the model shows no stem cost by the score (N5b). The pick on the stem is untested, and the real-song test reads it.
 - **What ran** ([plan](full-controls-plan.md), "A3 in detail"): 18 items where the pick and R-all's amp head choose different amps (5 panel DIs, 13 cap1 creators). Each item has R-all's preset on each of the three amps, ranked blind against the record. It was read by `a3-read` on the page's stored answers (build 2ed5fb7b1046), with all 18 answered.
 - **The read matched the declaration.** It was audited with separate code, from the stored answers and the page's key: every share and p reproduces.
 - **By ear** (share of cards, a tie a half; C1a's jackknife-t, each item its own cluster; one-sided 0.05):
@@ -5414,7 +5416,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - **R4** (not shown at zero renders; their next route is a paired, rendered oracle): reverb decay and delay feedback. These features don't carry them even on the clean guitar.
 - **What it means.**
   - **Render-and-compare can work for effects:** on the clean guitar, fixed features matched to other performances find most settings.
-  - **The separated stem loses nearly all of it,** as for the amp (F81: about half) but worse: on the stem only a trace of reverb and delay presence remains. The mix carries nothing.
+  - **The separated stem loses nearly all of it:** on the stem only a trace of reverb and delay presence remains, and the mix carries nothing. (F81's "about half" for the amp measured a backing's cost on the guitar in its backing, not a separator's, so the two don't compare; corrected 2026-11-13.)
   - **On the stem, T0's matching reads delay time worse than F52's direct cepstrum:** 13% within 10% against 28.4% on the same third.
   - **The lever is a stem that keeps the effects** (R3: fine-tuning the separator, or the masking renders). It goes to the user with these gaps as its measured upside.
   - **Meanwhile:** R4, the song research's effects on the model's dry answer.
