@@ -169,15 +169,25 @@ def write_preset(result: dict, out: pathlib.Path, name, template=None) -> list:
     return changes
 
 
+SELECTOR_LEVELS = {          # learn/product_path.select_window's fallbacks, as its `chosen_by` names them
+    "steady and present": "where the guitar holds steady and sits within 12 dB of the mix",
+    "steady only": "where the guitar holds steady (none had it within 12 dB of the mix)",
+    "none steady": "of all windows: none held the guitar steady, so read it with care",
+}
+
+
 def window_how(w: dict) -> str:
+    """How the window was chosen, with the selector's fallback level when it used one."""
     if w.get("chosen_by") == "given":
         return "given"
+    how = str(w.get("chosen_by", ""))
+    level = next((v for k, v in SELECTOR_LEVELS.items() if how.endswith(k)), None)
+    if level is None:
+        return how or "chosen by the model path"
     if str(w.get("part_from", "")).startswith("the whole song"):
-        return "the most typical steady window over the whole song (no part named)"
-    if w.get("part_s"):
-        a, b = w["part_s"]
-        return f"the most typical steady window in the part {a:.1f}-{b:.1f} s, from {w.get('part_from')}"
-    return str(w.get("chosen_by", "chosen by the model path"))
+        return f"the most typical window {level}, over the whole song (no part named)"
+    a, b = w["part_s"]
+    return f"the most typical window {level}, in the part {a:.1f}-{b:.1f} s from {w.get('part_from')}"
 
 
 def delay_line(d: dict) -> str:
@@ -219,8 +229,8 @@ def run(args) -> None:
         die(f"--out already exists: {out}\n  Pass --force to overwrite it, or choose a different path.")
     if args.part is not None and args.start is not None:
         die("Pass --part or --start, not both.")
-    if args.part is not None and not args.part[1] - args.part[0] > 14:
-        die("--part must span more than 14 s (a 10-s window with 2 s clear at each edge).")
+    if args.part is not None and args.part[1] - args.part[0] < 10:
+        die("--part must span at least 10 s, the window the model reads.")
     if (args.delay_mix is None) != (args.delay_feedback is None):
         die("Pass --delay-mix and --delay-feedback together (the song research's pair), or neither for the default.")
     if args.delay_mix is not None and not args.delay_reader:

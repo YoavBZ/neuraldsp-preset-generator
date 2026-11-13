@@ -2,7 +2,7 @@
 
 `generate`'s default sets the controls from research (its steps 2 to 5). The model path sets them from the song's
 audio with the trained model instead. It sits behind a flag. Use it **only when the user asks for it**, for example
-"use the model" or "make it from the audio". The ML session's real-song test decides whether it becomes the default.
+"use the model" or "make it from the audio". The ML session's real-song test, and the user's yes, decide whether it becomes the default.
 
 ## What it needs
 
@@ -10,7 +10,8 @@ audio with the trained model instead. It sits behind a flag. Use it **only when 
   - The model knows these two classes only.
   - For a heavier part, or when the class is a guess, say so. A wrong class changes both the answer and the amp pick,
     and that is unmeasured.
-- **The part's span** in the song file, start and end in seconds, more than 14 s long: the section the user names,
+- **The part's span** in the song file, start and end in seconds, at least 10 s long (more gives the script windows to
+  compare; a shorter section the user names is fine at 10 s or more): the section the user names,
   else the song's main guitar part from step 2's research (its time from synced lyrics, timestamped tabs or the
   song's structure, kept a second or two inside the section's edges).
 - **Morgan Amps Suite (original) only.** It is not on Morgan X or Tone King.
@@ -30,8 +31,9 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/model_preset.py" --song SONG.mp3 --cls cle
 ```
 
    - **Always pass the part with `--part`.** `--part-from` says who named it: `"the user"` or `"research"`. The model
-     reads one 10-s window. The script takes the most typical one inside the part, among the windows where the guitar
-     holds steady throughout, clear of the track's first and last seconds. Without `--part` it searches the whole song,
+     reads one 10-s window. The script takes the most typical one inside the part (1-s steps, clear of the track's first
+     and last 2 s), among the windows where the guitar holds steady throughout and sits within 12 dB of the mix. If
+     none qualifies it falls back to the steady ones, then to all, and says so. Without `--part` it searches the whole song,
      which may land on a part the user didn't mean. `--start` forces a window with no checks; use it only when the
      user names an exact moment. Say which window was read and how it was chosen.
    - Use a folder under the data root for `WORK_DIR` (`~/ndsp-presets/auditions/<song>/model`).
@@ -56,7 +58,7 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/model_preset.py" --song SONG.mp3 --cls cle
      reverb counts as an effect (the model was rendered with it at 0), so research may turn it up.
 4. Install and report as in step 6. Say:
    - that the model set the controls;
-   - the amp it picked, and the window it read (given, or the most exposed);
+   - the amp it picked, and the window it read with how it was chosen (the script's window line, fallback included);
    - the output change;
    - with the delay reader, its line: on or off, the time, and where the mix and feedback came from;
    - the limits below.
@@ -80,6 +82,8 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/model_preset.py" --song SONG.mp3 --cls cle
 - **Effects** stay the research's: the model was trained with them off.
 - **What the model sets:** the input gain, the amp, both mics, the EQ, the pedals and the gate. The rest of the cab
   (room mics, pan, phase) stays the factory start's.
+- **Sparse parts:** a clean part with rests of half a second or more can fail the steadiness check, so the window may
+  move to a denser passage of the part, or fall back as above.
 - Every guitar there played at one input level. A much louder or quieter guitar drives the amp differently.
 
 Where it comes from: `learn/product_path.py`, the ML session's single copy of the validated steps;

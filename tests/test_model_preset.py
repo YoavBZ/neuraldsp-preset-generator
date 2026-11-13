@@ -194,13 +194,15 @@ def test_a_delay_read_with_another_pair_is_refused_on_write_only(tmp_path, monke
         M.run(parse(["--work", str(work), "--out", str(tmp_path / "c.xml"), "--write-only", "--delay-reader"]))
 
 
-def test_part_refusals(tmp_path):
-    parse = M.build_parser().parse_args
+@pytest.mark.parametrize("extra,said", [(["--part", "30", "39"], "at least 10 s"),
+                                        (["--part", "30", "60", "--start", "35"], "not both")])
+def test_part_refusals(tmp_path, monkeypatch, capsys, extra, said):
+    monkeypatch.setattr(M, "ADOPTED", EXAMPLE)                        # the data is present: only the refusal can stop it
+    monkeypatch.setattr(M, "run_stages", lambda a: pytest.fail("the stages ran"))
     base = ["--song", "s.wav", "--cls", "clean", "--work", str(tmp_path / "w"), "--out", str(tmp_path / "o.xml")]
-    for extra in (["--part", "30", "40"],                          # 10 s: no room for a window clear of the edges
-                  ["--part", "30", "60", "--start", "35"]):         # both
-        with pytest.raises(SystemExit):
-            M.run(parse(base + extra))
+    with pytest.raises(SystemExit):
+        M.run(M.build_parser().parse_args(base + extra))
+    assert said in capsys.readouterr().err
 
 
 def test_a_resumed_run_must_have_the_same_part(tmp_path, monkeypatch):
@@ -218,7 +220,13 @@ def test_a_resumed_run_must_have_the_same_part(tmp_path, monkeypatch):
 
 
 def test_the_window_line():
+    sel = "selector: the medoid tone of the windows "
     assert M.window_how({"chosen_by": "given"}) == "given"
-    assert "30.0-60.0" in M.window_how({"chosen_by": "selector", "part_s": [30, 60], "part_from": "the user"})
-    assert "whole song" in M.window_how({"chosen_by": "selector", "part_s": [0, 200],
+    line = M.window_how({"chosen_by": sel + "steady and present", "part_s": [30, 60], "part_from": "the user"})
+    assert "30.0-60.0" in line and "the user" in line and "within 12 dB" in line
+    assert "whole song" in M.window_how({"chosen_by": sel + "steady and present", "part_s": [0, 200],
                                          "part_from": "the whole song (no part named)"})
+    assert "none had it within 12 dB" in M.window_how({"chosen_by": sel + "steady only", "part_s": [30, 60],
+                                                       "part_from": "research"})
+    assert "with care" in M.window_how({"chosen_by": sel + "none steady", "part_s": [30, 60], "part_from": "research"})
+    assert M.window_how({"chosen_by": "exposure"}) == "exposure"                      # an older work folder
