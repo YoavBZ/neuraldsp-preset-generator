@@ -5504,7 +5504,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 
   | Target false-on | False-on (delay-offs) | On, all delay-ons | On, audible (the strong third) | Precision at the draws' 52% delay share | Precision if a quarter of songs carry a delay |
   |---|---|---|---|---|---|
-  | 5% | 2.2% | 6.2% | 9.7% | 75% | 48% |
+  | 5% | 2.2% | 6.2% | 9.7% | 76% | 49% |
   | **10% (declared)** | **10.6%** | **15.2%** | **23.9%** | **61%** | **32%** |
   | 20% | 14.4% | 22.9% | 34.3% | 63% | 35% |
 
@@ -5517,7 +5517,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - **The gate adds nothing on all 61** (37.7% either way), and one item on the 32 audible ones (50% against 46.9% for always the peak). Always the neighbours gives 11.5% and 9.4%.
 - **What it means.**
   - **A candidate delay reader with a measured operating point, rare and not yet precise:** it switches delay on for about 1 dry song in 10, and catches about a quarter of audible delays. So when it says "delay", it's wrong about 4 times in 10 here (61% precision), and about 7 in 10 if a quarter of songs carry a delay (32%). When it's right, the stem's own echo sets the time within 10% about half the time.
-  - **How often a wrong echo is acceptable is the user's call.** The curve shows both sides: at a 5% target, precision rises to 75% (48% at a quarter), but it catches only a tenth of audible delays.
+  - **How often a wrong echo is acceptable is the user's call.** The curve shows both sides: at a 5% target, precision rises to 76% (49% at a quarter), but it catches only a tenth of audible delays.
   - **The numbers are optimistic:** synthetic draws at one level, a time gate noticed on these draws, and wide, free-running delays. Real songs' delays are tempo-locked.
   - **The real-song test, by ear, is next (R1),** with delay mix and feedback at the prior.
 - Files: `PF/d1/read.json`; `logs/d1-read.log`. Code: `learn/fx_d1.py`.
