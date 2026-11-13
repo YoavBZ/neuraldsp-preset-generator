@@ -5455,6 +5455,39 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - These are synthetic draws. Real songs' delays are fewer, tempo-locked and mixed by people.
 - Files: `PF/t1/` and `PF/t1p/` (`plan.json`, `items/`, `read.json`; `t1p/diag/`); logs `logs/t1*.log`. Code: `learn/fx_t1.py`, `learn/fx_t1p.py`.
 
+### F87. T1x: with the guitar exposed, the stems keep their delay about twice as often (27% as drawn, 49% at −3 dB, 52% at 0 dB, both decided), while T1's correlation pick stays near chance (11%, 10%). By the declared outcome the comparison was the fault, and only the peak-position pick reaches the stems' rate, so delay time is read from the stem directly, as F52, and render-and-compare adds nothing for it. Post hoc, at those levels the stem's own cepstral peak also beats the prior on log2 error (phase_t1x, zero renders, 268 X-LANCE separations, audited)
+- **What ran** ([plan](full-controls-plan.md), "T1x in detail"). T1's 134 strong-third delay-on mixes, rebuilt by D_CC's own recipe with only the guitar-to-backing ratio changed, to −3 dB and to 0 dB. The draws' median is −8.7 dB.
+  - The recipe check held on every item: the rebuild at the drawn ratio equals E1e's stored mix.
+  - Each mix was separated by X-LANCE: 268 separations in 20 min, no renders.
+- **The read matched the declaration.** It was audited with separate code: the stems' peaks recomputed from the stored cepstra, and both picks re-run.
+- **By the stems' own cepstral peak** (within 10% of the set time, paired against as drawn, with 2,000 band resamples):
+
+  | Level | Stem keeps the delay | − as drawn | T1's correlation pick | Peak-position pick |
+  |---|---|---|---|---|
+  | As drawn (median −8.7 dB) | 36 (26.9%) | | 11 (8.2%) | |
+  | −3 dB | 65 (48.5%) | **+0.22 [+0.10, +0.26]** | 15 (11.2%) | 69 (51.5%) |
+  | 0 dB | 70 (52.2%) | **+0.25 [+0.08, +0.32]** | 13 (9.7%) | 72 (53.7%) |
+
+  - **The correlation pick less the stems' own:** −0.37 [−0.44, −0.28] at −3 dB, and −0.43 [−0.48, −0.30] at 0 dB. It stays far below.
+  - **The peak-position pick less the stems' own:** +0.03 and +0.01. It reaches the stems' rate.
+  - **By mastering:** at 0 dB, mastered 54% and unmastered 50%. At −3 dB, 53% against 44%.
+- **By the declared outcomes:**
+  - The stems keep more at exposure.
+  - The correlation pick stays below them, so the comparison is the first fix, not the stem.
+  - Only the peak-position pick reaches, so delay time is read from the stem directly (F52's route), and render-and-compare adds nothing for delay time.
+- **Post hoc (not declared; the log2 error at the exposed levels):**
+  - The stem's own peak has a log2 error of 0.89 at −3 dB and 0.83 at 0 dB, against the draw-aware prior's 1.03.
+  - Paired: −0.14 [−0.23, −0.05] and −0.20 [−0.29, −0.04], both decided. That's the second half of T1's bar, which F52 failed at the draws' dense levels.
+- **What it means.**
+  - **At the product's exposure, the separated stem carries an audible delay's time,** and a training-free cepstral peak reads it within 10% about half the time, beating a guess on error size.
+  - **Render-and-compare isn't needed for delay time.** Its whole-cepstrum correlation is the wrong comparison, and the direct reader already does as well as anything rendered could.
+  - **Not yet shown:**
+    - on/off at exposure: this read is on audible delays only, and a cepstral peak always returns a lag;
+    - the weaker two thirds;
+    - real songs.
+  - **The next steps, to the user:** T0's on/off and knob read at the product's exposure (all 770 rebuilt, about 1,540 separations), and the same direct readers for tremolo rate and reverb, checked first on the clean target.
+- Files: `PF/t1x/` (`items/`, `read.json`); logs `logs/t1x*.log`. Code: `learn/fx_t1x.py`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
