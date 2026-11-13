@@ -456,7 +456,9 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **Why.** F88 found delay is the first effect whose on/off and time read from the separated stem at the product's exposure. But a half vote switches it on for 30% of delay-offs, and the direct time reader is all or nothing. Before any real-song test, the reader needs its rule set on known truth.
 - **The rule, chosen leaving each band out and read on that band** (T0x's stored stems at −3 dB; zero renders):
   - **On/off:** the neighbours' delay on-share (T0x's matching) against a threshold. The threshold is the lowest of 0.50, 0.55, … 0.95 whose false-on rate on the other bands' delay-offs is at most 10%.
+    - The other bands' votes that set it are recomputed with the held-out band out of their library too (leave two bands out; the review), so the choice is out-of-band. The operating curve at 5%, 10% and 20% false-on is printed beside. How often a wrong echo is acceptable is the user's call.
   - **The time, when on:** the stem's own cepstral peak if its two halves agree within 10% (F88's recorded gate), else the neighbours' median time.
+    - The time read is in-sample for its gate: the gate was noticed on these same 770 (F88), so its numbers are optimistic. The real-song test is its out-of-sample check. Always-the-peak and always-the-neighbours are read beside.
   - **Delay mix and feedback** stay at the draw-aware prior (F88: not read).
 - **The read:**
   - on/off: the false-on rate on delay-offs and on items with every effect off, and the share switched on among all delay-ons and audible ones (the strong third);

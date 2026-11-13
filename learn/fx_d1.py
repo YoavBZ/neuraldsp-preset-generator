@@ -61,16 +61,31 @@ def cmd_read(_args):
     don = Y["don"] == 1
     hi = np.nanpercentile(Y["dmix"][don], 200 / 3)
     strong = don & (Y["dmix"] >= hi)
-    on_pred = np.zeros(len(its), bool)
-    chosen = {}
-    for b in sorted(set(bands)):
-        tr, te = bands != b, bands == b
-        t = choose_threshold(s[tr], don[tr])
-        chosen[b] = t
-        on_pred[te] = s[te] >= t
+    sub_votes = {}
+    for b in sorted(set(bands)):                         # the training votes with the held-out band out of the library too
+        tr = bands != b
+        ps, _ = T0.predict("delay", z["target"][tr], X[tr], {c: v[tr] for c, v in Y.items()}, bands[tr], amps[tr],
+                           T0.OWN["delay"])
+        sub_votes[b] = ps["don"]
+
+    def operate(max_false_on):
+        on_p, ch = np.zeros(len(its), bool), {}
+        for b in sorted(set(bands)):
+            tr, te = bands != b, bands == b
+            t = choose_threshold(sub_votes[b], don[tr], max_false_on=max_false_on)
+            ch[b] = t
+            on_p[te] = s[te] >= t
+        return on_p, ch
+    on_pred, chosen = operate(MAX_FALSE_ON)
+    curve = {}
+    for f in (0.05, 0.10, 0.20):
+        op, _ = operate(f)
+        curve[f"target {int(f * 100)}% false-on"] = {"false-on": float(np.mean(op[~don])), "on (all ons)": float(np.mean(op[don])),
+                                                    "on (audible)": float(np.mean(op[strong]))}
     t_ms = 2 ** Y["dtime"]
     pick = np.array([time_pick(r["stem_cep_peak_halves_ms"], r["stem_cep_peak_ms"], 2 ** pred["dtime"][j])
                      for j, r in enumerate(recs)])
+    beside = {"always the peak": np.array([r["stem_cep_peak_ms"] for r in recs]), "always the neighbours": 2 ** pred["dtime"]}
     prior_ms = 2 ** prior["dtime"]
 
     def rate(m, sel):
@@ -79,14 +94,17 @@ def cmd_read(_args):
            "on/off": {"false-on (delay-offs)": rate(on_pred, ~don), "on (all delay-ons)": rate(on_pred, don),
                       "on (audible: the strong third)": rate(on_pred, strong),
                       "false-on (every effect off)": rate(on_pred, (Y["ron"] == 0) & (Y["don"] == 0) & (Y["ton"] == 0))},
-           "time, on the delay-ons it switches on": {}}
+           "operating curve (leaving each band out)": curve,
+           "time, on the delay-ons it switches on": {},
+           "the time read is in-sample for its gate": "the halves gate was noticed on these same 770 (F88); the real-song test is its out-of-sample check"}
     for nm, m in (("all", don & on_pred), ("audible", strong & on_pred)):
         hit = np.abs(pick / t_ms - 1) <= 0.10
         le, lp = np.abs(np.log2(pick) - Y["dtime"]), np.abs(np.log2(prior_ms) - Y["dtime"])
         rep["time, on the delay-ons it switches on"][nm] = {
             "n": int(m.sum()), "within_10pct": rate(hit, m), "within_10pct_prior": rate(np.abs(prior_ms / t_ms - 1) <= 0.10, m),
             "log2 error - prior": T0._stats(lambda x, le=le, lp=lp, m=m: float(np.mean(le[x][m[x]]) - np.mean(lp[x][m[x]]))
-                                            if m[x].any() else float("nan"), bands)}
+                                            if m[x].any() else float("nan"), bands),
+            **{f"{k}: within_10pct": rate(np.abs(v / t_ms - 1) <= 0.10, m) for k, v in beside.items()}}
     rep["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     P.save(T0X.out_dir().parent / "d1" / "read.json", rep)
     print(json.dumps(rep, indent=1, default=str))
