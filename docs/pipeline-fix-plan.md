@@ -5415,7 +5415,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - These are synthetic draws, wide and independent. Real songs' effects are fewer and tempo-locked, so this is a test of the method, not the product's rate.
 - Files: `PF/t0/` (`features.npz`, `features-meta.json`, `read.json`); logs `logs/t0-*.log`. Code: `learn/fx_t0.py`.
 
-### F86. T1 and its arm P: render-and-compare through the song's own masking doesn't read delay time. Its pick hits 11 of 134 within 10%, about chance (1 in 13), against F52's cepstrum at 38, and it's worse than the prior. With each song's own DI (arm P) it does no better, 3 of 40. So by its declared rule T1's verdict waits for the cause. The cause, found after the read: the candidates keep their echo through the channel, but the song's own stem has lost it (8 of 40 at the true delay, against 30 of 40 on its clean guitar), and no comparison can recover what the stem doesn't hold (phase_t1 and phase_t1p, 4,524 renders, 2,262 X-LANCE separations, audited)
+### F86. T1 and its arm P: render-and-compare through the song's own masking doesn't read delay time. Its pick hits 11 of 134 within 10%, about chance (1 in 13), against F52's cepstrum at 38, and it's worse than the prior. With each song's own DI (arm P) it does no better, 3 of 40. So by its declared rule T1's verdict waits for the cause. The cause, found after the read: the candidates keep their echo through the channel, but the song's own stem has lost it (8 of 40 at the true delay, against 30 of 40 on its clean guitar), and no comparison can recover what the stem doesn't hold. It's lost to the backing's masking at the draws' dense levels (the guitar a median 9 dB under), not to mastering (phase_t1 and phase_t1p, 4,524 renders, 2,262 X-LANCE separations, audited)
 - **What ran** ([plan](full-controls-plan.md), "T1 in detail", with arm P). The cloud researcher's first test.
   - F52's 134 strong-third delay-ons.
   - Each item's own preset, with the delay time on a 13-point grid (66 to 733 ms), rendered through a stock DI: 3,484 renders.
@@ -5450,15 +5450,22 @@ what it changes. Each is audited before it is entered; the review's steps carry 
     | The full mix | 4 of 40 |
 
   - **So the comparison can't succeed:** what it matches against has lost the echo. Picking by peak position instead gives 5 of 40.
-  - **Where the echo is lost** lies between "the clean guitar plus the residual, separated" (28 of 40) and "the song's built mix, separated" (8 of 40). There are two candidates, not yet told apart:
-    - the mix's seeded mastering, which the candidates skip;
-    - the diagnostic's residual reinforcing the guitar's echo, since it still holds that performance's leaked part.
+  - **Where the echo is lost** (post hoc, zero renders; from each item's draw in D_CC's plan):
+    - **Not the mastering.** Only some draws are mastered. The stems keep the delay on 26 of 68 mastered mixes, and on 10 of 66 unmastered.
+    - **The guitar's level against the backing:**
+
+      | The draw's guitar-to-backing ratio | Stem keeps the delay |
+      |---|---|
+      | Top third (above −6.9 dB) | 19 of 44 |
+      | Middle third | 7 of 43 |
+      | Bottom third (below −10.5 dB) | 10 of 47 |
+
+      The draws put the guitar a median 9 dB under the backing, denser than the product's scope (clean and crunch songs, the guitar exposed). At these levels the backing's masking buries the echo before the separator sees it.
+    - The diagnostic's 28 of 40 (the clean guitar added back to its residual) is read as the residual restoring the guitar's own leaked echo, not as the separator keeping it.
 - **What it means.**
   - Render-and-compare can't read an effect the stem doesn't hold. On these synthetic mixes the delay is lost before the comparison, so delay time stays on the prior on stems for now.
   - The bottleneck isn't the separator alone. The same separator keeps a candidate's echo when the guitar isn't inside the song's mastered mix.
-  - **The cheapest next test** (zero renders, about 40 separations): rebuild the same mixes without their mastering and separate them. That tells mastering from the leak.
-    - If mastering removes the echo, real songs' mastering is part of the product's problem, and the route has to work on mastered mixes.
-    - If not, the separator's handling of the real mix is what to fix (R3).
+  - **The next test** (zero renders, about 134 separations): rebuild the same mixes with the guitar exposed, at the product's levels, and separate them. If the stem then keeps the echo, render-and-compare is worth re-running there. If it doesn't, the stem is the bottleneck even at the product's levels (R3).
   - These are synthetic draws. Real songs' delays are fewer, tempo-locked and mixed by people.
 - Files: `PF/t1/` and `PF/t1p/` (`plan.json`, `items/`, `read.json`; `t1p/diag/`); logs `logs/t1*.log`. Code: `learn/fx_t1.py`, `learn/fx_t1p.py`.
 
