@@ -468,6 +468,13 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - Long Road Out of Eden;
   - Frail Grasp on the Big Picture.
 - **The window.** One per song, by the model path's own rule (`product_path separate` without a start: the 10 s where the X-LANCE stem sits loudest against the mix, on a 5-s hop). It runs once, before any preset is made, and is recorded in `r1/<song>/window.json`. Every arm uses that start. No window is re-chosen after it's heard.
+- **Amendment 1, the window guard** (2026-11-13, before any R1 render; ledger `phase_r1_a1`). The product session flagged frail-grasp's window as the track's last 11 s. Measured from the stored stems, with no clip heard, three of the first six windows hold no steady guitar in half A, the half the model and the pick read:
+  - frail-grasp: the track ends at 4 s, and the lowest 0.5 s is 14.5 dB under the half;
+  - still-got-the-blues: the guitar enters at about 4 s (17.5 dB);
+  - autumn-leaves: 31.3 dB.
+  The exposure rule picks fades, endings and late entries because the stem stands out against the mix there. The guard: every 0.5 s of the stem's half A sits within 12 dB of the half's own level, and the most exposed window that passes is taken. If none passes, it falls back to the plain rule and says so. It goes into `product_path separate`, so the product's fallback carries it too.
+  - The guard only removes candidates, so a window that passes stays as it was: cut-it-out (−1.1 dB), how-long (−2.1) and long-road-out-of-eden (−5.2) keep their windows and arms.
+  - The failing songs are separated again with the guard. Their old windows and any arms are moved aside, and research is redone for the new part. Hotel California is checked when its window lands.
 - **The research** (the product session; one per song, shared by every arm): generate's steps 1 and 2 for the part at that window. They give its class (clean or crunch) and its effects spec, recorded in `r1/<song>/research.json` with their sources.
 - **The arms** (the product session writes them, as the skill would; `r1/<song>/arms/`):
   - **R:** generate's default. Research sets every control.

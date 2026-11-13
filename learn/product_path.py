@@ -10,7 +10,8 @@ separator, the model and the renderer live in different environments:
 
 What each stage reproduces, and where it was validated:
 - **separate:** the song's 10-s window, separated by X-LANCE `gtr_mss` (the model's real-song input: V-real read 3, F41;
-  N5b). With no start given, the window where the stem sits loudest against the mix (exposure matters: F87, F88).
+  N5b). With no start given, the window where the stem sits loudest against the mix (exposure matters: F87, F88), among
+  those whose stem holds through half A (every 0.5 s within 12 dB of the half: no fade, ending or late entry; R1).
 - **answers:** the adopted model (`adopted-model.json`: R-all's all-labels pair, both seeds, held as C3-cabS) on each
   amp, from the window's half A at V-real read 3's level (the mix brought to -12.25 LUFS, the stem by the same gain).
 - **render:** each amp's answer through the class's two stock DIs (A1's), fresh and primed, trimmed (F80, F81).
@@ -44,9 +45,29 @@ AMPS = ("pr12", "sw50r", "ac20")
 
 # --- the pure parts -----------------------------------------------------------------------------------------------------
 
+STEADY_DB, BLOCK_S = 12.0, 0.5        # the guard (R1, 2026-11-13): every 0.5 s of the stem's half A within 12 dB of the half
+
+
+def steady(stem, sr):
+    """The guard: the stem holds through half A (the half the model and the pick read). Every BLOCK_S block of it sits
+    within STEADY_DB of the half's own level, so a window isn't a fade, an ending or a late entry. -> (passes, the
+    lowest block less the half, dB)."""
+    import numpy as np
+
+    from learn import pretrain_set as PS
+    from learn import song_aug as SA
+
+    h = np.asarray(stem, np.float64)[PS.half_slices(sr)[HALF]]
+    whole, b = float(SA.lufs(h)), int(BLOCK_S * sr)
+    low = min(float(SA.lufs(h[i:i + b])) for i in range(0, len(h) - b + 1, b)) - whole
+    return low >= -STEADY_DB, low
+
+
 def exposure_window(levels):
-    """levels: [(start_s, stem LUFS, mix LUFS)] -> the start whose stem sits loudest against its mix (ties: earliest)."""
-    best = max(levels, key=lambda r: (r[1] - r[2], -r[0]))
+    """levels: [(start_s, stem LUFS, mix LUFS[, steady])] -> the start whose stem sits loudest against its mix (ties:
+    earliest), among the windows that pass the guard when any is given and any passes."""
+    ok = [r for r in levels if len(r) < 4 or r[3]]
+    best = max(ok or levels, key=lambda r: (r[1] - r[2], -r[0]))
     return best[0]
 
 
@@ -92,13 +113,19 @@ def cmd_separate(args):
         mix = np.asarray(PS.load_mono(args.song, PS.SR, s, WINDOW_S), np.float64)
         mix = np.pad(mix, (0, max(0, n - len(mix))))[:n]
         stem = np.asarray(sep(mix), np.float64)
-        levels.append((s, float(SA.lufs(stem)), float(SA.lufs(mix))))
+        row = (s, float(SA.lufs(stem)), float(SA.lufs(mix)))
+        levels.append(row if args.start is not None else (*row, steady(stem, PS.SR)[0]))
         keep[s] = (mix, stem)
     start = exposure_window(levels)
     mix, stem = keep[start]
     np.savez(out / "window.npz", mix=mix.astype(np.float32), stem=stem.astype(np.float32))
+    passed, low = steady(stem, PS.SR)
     _save(out / "window.json", {"song": str(args.song), "start_s": start, "chosen_by": "given" if args.start is not None
-                                 else "exposure", "levels": levels, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+                                 else "exposure, guarded", "levels": levels,
+                                 "guard": {"steady_db": STEADY_DB, "block_s": BLOCK_S, "passes": passed,
+                                           "lowest block - half A, dB": low,
+                                           "windows passing": sum(1 for r in levels if len(r) > 3 and r[3])},
+                                 "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     print(f"SEPARATE: window at {start:.1f} s ({len(levels)} tried)")
 
 
