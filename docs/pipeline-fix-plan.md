@@ -5494,7 +5494,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
     - **Then the same direct readers for tremolo rate and reverb,** checked first on the clean target.
 - Files: `PF/t1x/` (`items/`, `read.json`); logs `logs/t1x*.log`. Code: `learn/fx_t1x.py`.
 
-### F88. T0x: at the product's exposure (the guitar 3 dB under the backing), the separated stem carries most of what the clean guitar does for delay. By T0's rule the stem now passes delay on/off (AUC 0.69, against 0.58 at the draws' dense levels and 0.82 clean) and delay time (−0.17 log2 against the prior), plus reverb on/off, reverb mix and tremolo on/off, weakly. Delay mix, tremolo depth and rate need a better stem (R3), and reverb decay and delay feedback aren't read even on the clean guitar. On/off decisions still switch effects on too easily at a half vote (phase_t0x, zero renders, 770 X-LANCE separations, audited)
+### F88. T0x: at the product's exposure (the guitar 3 dB under the backing), the separated stem recovers about half of what the clean guitar carries for delay (about 46% of the dense-to-clean gap for both on/off and time). By T0's rule the stem now passes delay on/off (AUC 0.69, against 0.58 at the draws' dense levels and 0.82 clean) and delay time (−0.17 log2 against the prior), with reverb mix and tremolo on/off weakly. Reverb on/off passes only the rule's letter, unchanged by exposure. Delay mix, tremolo depth and rate need a better stem (R3), and reverb decay and delay feedback aren't read even on the clean guitar. On/off decisions still switch effects on too easily at a half vote (phase_t0x, zero renders, 770 X-LANCE separations, audited)
 - **What ran** ([plan](full-controls-plan.md), "T0x in detail"). E1e's 770 wide draws rebuilt by D_CC's recipe with the guitar 3 dB under the backing. The recipe check held on all 770. Each was separated by X-LANCE (770 separations in 62 min, no renders), and T0's declared read was run unchanged on the new stems and mixes, with T0's own clean-target arm.
 - **The read matched the declaration.** It was audited with separate code (its own leave-band-out same-amp neighbours, AUC, knob differences and negative control): every value reproduces to 1e-3.
 - **On the stem, at −3 dB, against the draws' dense levels (T0) and the clean guitar** (strong third; band intervals, with the Forkupines and BKS checks):
@@ -5505,7 +5505,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   | Delay time (log2 less the prior's) | −0.30 | −0.06 | **−0.17 [−0.28, −0.05]** | R1 |
   | Delay mix | −0.06 | +0.13 | +0.07, worse | R3 |
   | Delay feedback | +0.01 | +0.06 | +0.03 | R4 |
-  | Reverb on/off (AUC) | 0.68 | 0.57 | **0.57 [0.52, 0.62]** | R1, weakly |
+  | Reverb on/off (AUC) | 0.68 | 0.57 | 0.57 [0.52, 0.62] | R1's letter only |
   | Reverb mix | −0.10 | −0.05 | **−0.09 [−0.15, −0.01]** | R1 |
   | Reverb decay (log2) | +0.11 | +0.06 | +0.02 | R4 |
   | Tremolo on/off (AUC) | 0.67 | 0.55 | **0.60 [0.55, 0.66]** | R1 |
@@ -5516,10 +5516,13 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **The direct delay-time reader beside** (the stem's own cepstral peak):
   - On the strong third it's within 10% on 48.5%, and its log2 error less the prior's is −0.14 [−0.24, −0.05], as T1x found.
   - On all 402 delay-ons it's within 10% on 30.1%, but its log2 error is worse than the prior's (+0.18 [+0.12, +0.23]): on faint delays the peak is mostly wrong.
-- **Recorded for a later read, no decision here:** the halves' peaks agree within 10% on 60 of the 134 strong-third items. There the direct reader hits 37 of 60 (62%), against 28 of 74 where they don't. They also agree on 116 of 368 delay-offs.
+- **Recorded for a later read, no decision here:** the halves' peaks agree within 10% on 60 of the 134 strong-third items. There the direct reader hits 37 of 60 (62%), against 28 of 74 where they don't. They also agree on 116 of 368 delay-offs (32%; as an on/off score, AUC 0.52). So it's at most a time gate given that delay is on.
 - **What it means.**
-  - **At the product's exposure, delay is mostly readable from the separated guitar:** whether it's on, and its time. That's the first effect with a candidate reader. The other parameters' passes are weak (reverb on/off, reverb mix, tremolo on/off).
-  - **The halves' agreement is the first sign of a confidence gate** for delay time, worth a declared read.
+  - **At the product's exposure, delay is partly readable from the separated guitar:** whether it's on, and its time. About half the dense-to-clean gap closes, and that's the first effect with a candidate reader.
+    - **Its operating point** (the review): a half vote isn't usable, switching it on for 30% of delay-offs against 58% of strong ons.
+    - **At a 0.7 vote** it's on for 9% of delay-offs against 32% of audible delays, and at 0.8, 3% against 16%. So it's a conservative switch that's precise when on, and a candidate until its threshold is set on known truth and real songs.
+  - **Exposure helped delay, not reverb.** Reverb on/off is 0.57 dense and exposed, and no threshold separates it (at a 0.7 vote, 27% of offs on against 33% of strong ons). It passes R1's letter only. Reverb mix and tremolo on/off pass weakly.
+  - **The halves' agreement is the first sign of a confidence gate** for delay time, once delay is known to be on. It's worth a declared read.
   - **These are candidate readers, not product readers.** They're synthetic draws at one declared level, on/off needs a threshold set on known truth, and real songs' delays are tempo-locked and fewer. R1's real-song test comes next.
   - **What stays off the stem:** delay mix and the tremolo knobs (R3, a better stem), and reverb decay and delay feedback (R4, not read even clean).
 - Files: `PF/t0x/` (`items/`, `read.json`); logs `logs/t0x*.log`. Code: `learn/fx_t0x.py`.
