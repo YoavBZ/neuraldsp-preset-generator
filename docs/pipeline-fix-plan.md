@@ -5250,7 +5250,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - **The picks spread over the amps:** the primary picks on GOAT pr12 115, sw50r 167, ac20 148 of 430; on BKS pr12 43, sw50r 28, ac20 9 of 80. The shape pick on the stem leans hard on the pr12 (329 of 430), a bias the floor and the features remove.
 - **What it means.**
   - **By the declared rule the primary "learns",** on GOAT alone: about a fifth of the headroom there (−0.017 of −0.093), and on GOAT's clean units −0.035. On BKS's 8 DIs it leans worse (+0.052, wide). Pooled it is level with always-sw50r.
-  - **The method works when it hears the guitar clean:** on the clean amp track it is better on both sets' pooled read (−0.039), about 40% of the headroom. The separated stem is again the bottleneck (F79): a cleaner stem is worth more than a better statistic.
+  - **The method works when it hears the guitar clean:** on the clean amp track it is better on both sets' pooled read (−0.039), about 40% of the headroom. The backing is again the bottleneck (F79; corrected 2026-11-13: the input is the guitar in its backing, no separator). The pick on the product's X-LANCE stem is untested.
   - **Two statistics were read,** as declared: the shape first, then the features by the amendment, before any read.
   - **Nothing ships on this.** The rule's next step, a product step on the adopted model with an ear check, is declared with a confirmation first: the same pick on R-all, read on units no A1 choice was made on ([plan](full-controls-plan.md), "A2 in detail").
   - By the score only.
