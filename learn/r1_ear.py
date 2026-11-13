@@ -29,7 +29,7 @@ from learn import c4_ear as C4
 
 PHASE = "phase_r1"
 PAGE_SEED = 20261141                # unused elsewhere (the review: 20261131 was T0's)
-PRE_S = 0.0                         # silent preroll before each kept render, set by r1-tail (the review)
+PRE_S = 6.0                         # silent preroll before each kept render: set by r1-tail's rule (tail.json, 2026-11-13)
 PROBE = "/Library/Audio/Presets/Neural DSP/Morgan Amps Suite/Artists/Mark Johnston/Royally Ambient.xml"
 PROBE_FX = {("delay", "delayActive"): "true", ("delay", "delaySync"): "0", ("delay", "delayTime"): "450",
             ("delay", "delayMix"): "0.6", ("delay", "delayFeedback"): "0.7", ("reverb", "reverbActive"): "true",
