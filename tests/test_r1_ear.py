@@ -89,6 +89,7 @@ def test_r1_check_runs_on_its_inputs(tmp_path, monkeypatch):
 
 
 def test_the_artifact_page_builds():
+    __import__("pytest").importorskip("numpy")                         # C1a's wrapper imports it; the light CI runners have none
     from learn import c1a_ear as C
 
     items = [{"id": "i1", "n": 1}]
