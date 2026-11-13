@@ -40,16 +40,16 @@ ARMS = ("R", "M", "D")              # research, the model path, the model path w
 LETTERS = C4.LETTERS
 MIN_READ = 12                       # first hearings answered (of 14)
 LISTENING = "r1-ear"
-DL = "/Users/yoavbz/Downloads"
-SONGS = {                           # the user's seven (2026-11-13)
-    "hotel-california": "/Users/yoavbz/ndsp-presets/auditions/hotel-california/song-4m20-5m00.wav",
-    "still-got-the-blues": f"{DL}/Gary Moore - Still Got The Blues [HD] - Gary Moore Society.mp3",
-    "cut-it-out": f"{DL}/Gary Moore - Cut It Out.wav",
-    "autumn-leaves": f"{DL}/Eric-Clapton-Autumn-Leaves_Media_UQlFOX0YKlQ_007_128k.mp3",
-    "how-long": f"{DL}/Eagles - How Long (Official Video) [HD].mp3",
-    "long-road-out-of-eden": f"{DL}/Long Road Out of Eden - Eagles.mp3",
-    "frail-grasp": f"{DL}/Frail Grasp on the Big Picture - Eagles (1).mp3",
-}
+N_SONGS = 7                          # the user's seven (2026-11-13); their files are listed outside the repo,
+#                                      in r1/songs.json (the user: no local song or its files in git)
+
+
+def songs():
+    """slug -> the song's local file, from r1/songs.json (outside the repo)."""
+    d = json.loads((ear_dir() / "songs.json").read_text())["songs"]
+    if len(d) != N_SONGS:
+        raise SystemExit(f"r1/songs.json lists {len(d)} songs, not {N_SONGS}")
+    return d
 
 
 def ear_dir():
@@ -76,7 +76,7 @@ def song_tally(scores):
     return {s: "ahead" if sum(v) > 0 else "behind" if sum(v) < 0 else "level" for s, v in scores.items() if v}
 
 
-def rule(tally, n_songs=len(SONGS), page_failed=False):
+def rule(tally, n_songs=N_SONGS, page_failed=False):
     """The declared rule on M against R: the model ahead (at least 5 of 7 ahead, at most 1 behind), research ahead (the
     mirror), else level."""
     if page_failed:
@@ -182,7 +182,7 @@ def cmd_check(_args):
     P.require(PHASE)
     pack = load_pack("morgan")
     songs, missing = [], []
-    for s, path in SONGS.items():
+    for s, path in songs().items():
         d = ear_dir() / s
         need = [d / "window.json", d / "window.npz", d / "research.json", *[d / "arms" / f"{a}.xml" for a in ARMS]]
         miss = [str(p) for p in need if not p.exists()]
