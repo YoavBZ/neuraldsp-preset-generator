@@ -5494,6 +5494,36 @@ what it changes. Each is audited before it is entered; the review's steps carry 
     - **Then the same direct readers for tremolo rate and reverb,** checked first on the clean target.
 - Files: `PF/t1x/` (`items/`, `read.json`); logs `logs/t1x*.log`. Code: `learn/fx_t1x.py`.
 
+### F88. T0x: at the product's exposure (the guitar 3 dB under the backing), the separated stem carries most of what the clean guitar does for delay. By T0's rule the stem now passes delay on/off (AUC 0.69, against 0.58 at the draws' dense levels and 0.82 clean) and delay time (−0.17 log2 against the prior), plus reverb on/off, reverb mix and tremolo on/off, weakly. Delay mix, tremolo depth and rate need a better stem (R3), and reverb decay and delay feedback aren't read even on the clean guitar. On/off decisions still switch effects on too easily at a half vote (phase_t0x, zero renders, 770 X-LANCE separations, audited)
+- **What ran** ([plan](full-controls-plan.md), "T0x in detail"). E1e's 770 wide draws rebuilt by D_CC's recipe with the guitar 3 dB under the backing. The recipe check held on all 770. Each was separated by X-LANCE (770 separations in 62 min, no renders), and T0's declared read was run unchanged on the new stems and mixes, with T0's own clean-target arm.
+- **The read matched the declaration.** It was audited with separate code (its own leave-band-out same-amp neighbours, AUC, knob differences and negative control): every value reproduces to 1e-3.
+- **On the stem, at −3 dB, against the draws' dense levels (T0) and the clean guitar** (strong third; band intervals, with the Forkupines and BKS checks):
+
+  | Parameter | Clean guitar | Stem, dense (T0) | **Stem, exposed (T0x)** | By the rule |
+  |---|---|---|---|---|
+  | Delay on/off (AUC) | 0.82 | 0.58 | **0.69 [0.65, 0.75]** | R1 |
+  | Delay time (log2 less the prior's) | −0.30 | −0.06 | **−0.17 [−0.28, −0.05]** | R1 |
+  | Delay mix | −0.06 | +0.13 | +0.07, worse | R3 |
+  | Delay feedback | +0.01 | +0.06 | +0.03 | R4 |
+  | Reverb on/off (AUC) | 0.68 | 0.57 | **0.57 [0.52, 0.62]** | R1, weakly |
+  | Reverb mix | −0.10 | −0.05 | **−0.09 [−0.15, −0.01]** | R1 |
+  | Reverb decay (log2) | +0.11 | +0.06 | +0.02 | R4 |
+  | Tremolo on/off (AUC) | 0.67 | 0.55 | **0.60 [0.55, 0.66]** | R1 |
+  | Tremolo depth | −0.04 | +0.04 | +0.02 | R3 |
+  | Tremolo rate (log2) | −0.13 | +0.06 | −0.08 [−0.15, +0.04] | R3 |
+
+- **The negative control** (the 97 items with every effect off, a half vote on the stem): reverb 63, delay 33, tremolo 37. That's no better than at the dense levels. As T0 found, a half vote sits near the draws' base rate, so any on/off decision needs a threshold set on known truth.
+- **The direct delay-time reader beside** (the stem's own cepstral peak):
+  - On the strong third it's within 10% on 48.5%, and its log2 error less the prior's is −0.14 [−0.24, −0.05], as T1x found.
+  - On all 402 delay-ons it's within 10% on 30.1%, but its log2 error is worse than the prior's (+0.18 [+0.12, +0.23]): on faint delays the peak is mostly wrong.
+- **Recorded for a later read, no decision here:** the halves' peaks agree within 10% on 60 of the 134 strong-third items. There the direct reader hits 37 of 60 (62%), against 28 of 74 where they don't. They also agree on 116 of 368 delay-offs.
+- **What it means.**
+  - **At the product's exposure, delay is mostly readable from the separated guitar:** whether it's on, and its time. That's the first effect with a candidate reader. The other parameters' passes are weak (reverb on/off, reverb mix, tremolo on/off).
+  - **The halves' agreement is the first sign of a confidence gate** for delay time, worth a declared read.
+  - **These are candidate readers, not product readers.** They're synthetic draws at one declared level, on/off needs a threshold set on known truth, and real songs' delays are tempo-locked and fewer. R1's real-song test comes next.
+  - **What stays off the stem:** delay mix and the tremolo knobs (R3, a better stem), and reverb decay and delay feedback (R4, not read even clean).
+- Files: `PF/t0x/` (`items/`, `read.json`); logs `logs/t0x*.log`. Code: `learn/fx_t0x.py`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
