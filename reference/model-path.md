@@ -39,7 +39,8 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/model_preset.py" --song SONG.mp3 --cls cle
      arm, a candidate, never a default. Give research's delay mix and feedback as `--delay-mix` and `--delay-feedback`
      (0 to 1, both or neither). Without them it uses 0.30 each, a default the user has yet to confirm. When it hears a
      delay, it switches it on at the time it read. When it hears none, the delay is left to step 3. It doesn't read the
-     echo's tone (ping-pong, tape drive, width, low and high cut): its numbers hold over any setting of them.
+     echo's tone (ping-pong, tape drive, width, low and high cut). Its figures were measured with those drawn at
+     random, so they don't assume the factory start's.
 3. **Add the effects from research** (reverb, delay, modulation, doubler) with `apply_spec.py`, as in step 5:
    - use `--template OUT_DIR/model.xml`, a spec of those effects only, and `--strip-irs`;
    - keep the dry run first.
