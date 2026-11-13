@@ -5562,6 +5562,28 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - **The real-song test, by ear, is next (R1),** with delay mix and feedback at the prior.
 - Files: `PF/d1/read.json`; `logs/d1-read.log`. Code: `learn/fx_d1.py`.
 
+### F90. A2s: the stock-DI amp pick transfers to the product's input. Re-run on the songs' X-LANCE stems (the guitar separated from the backed mix, as the product reads it), A2's frozen pick still "learns" by A2's rule: cap1 −0.054 [−0.082, −0.026] against always-sw50r, GOAT −0.029 [−0.042, −0.015], BKS −0.038 and the panel +0.028, both undecided, worse nowhere. Paired against A2's pick on the guitar in its backing, it's level on cap1, better on GOAT (−0.012 [−0.021, −0.003]) and leaning worse on the panel (phase_a2s, zero renders, 386 X-LANCE separations, audited)
+- **What ran** ([plan](full-controls-plan.md), "The model path, and A2s in detail"). This follows the 2026-11-13 correction: A2 had read the pick against the guitar in its backing, D_fix v0, with no separator.
+  - 386 of A2's 388 units had their variant-0 mix rebuilt from the stored recipe: cap1 121, panel 12, GOAT 215, BKS 38. 2 BKS units with a backing outside the pool were skipped. The exact half-feature check held on every one.
+  - Each mix was separated by X-LANCE (30 min on MPS), and the input taken by the product path's rule (the mix to −12.25 LUFS, the stem by the same gain).
+  - A2's frozen pick and rows were re-run: the held-out fold model's floored features, against A2's stored stock-DI render mels, on A2's and C3r's judges. A2's answers were held fixed (predicted from the backed mix).
+- **The read matched the declaration.** It was audited with separate code (its own embedding call, cosine, picks, values from the judge files and cluster means): every set's primary row reproduces to 1e-4.
+- **By the score** (held half, ln; A2's clustering):
+
+  | Pick − always sw50r | cap1 (121) | Panel (12) | GOAT (215) | BKS (38) |
+  |---|---|---|---|---|
+  | **The pick on the stem (primary)** | **−0.054 [−0.082, −0.026]** | +0.028 [−0.063, +0.119] | **−0.029 [−0.042, −0.015]** | −0.038 [−0.096, +0.019] |
+  | The pick on the backed mix (A2's) | −0.049 | +0.010 | −0.017 | −0.015 |
+  | The stem's pick − the backed mix's, paired | −0.005 [−0.022, +0.012] | +0.018 [−0.009, +0.045] | **−0.012 [−0.021, −0.003]** | −0.024 [−0.066, +0.018] |
+
+  - The deciding pool (cap1 and the panel) is −0.013 [−0.059, +0.033], undecided because the panel is wide.
+- **By A2's rule it "learns":** better on cap1, worse nowhere.
+- **What it means.**
+  - **The pick transfers to the product's input,** given these answers. On the separated guitar it does at least as well as on the guitar in its backing: better on GOAT, level on cap1, the panel leaning worse, BKS undecided. Against the clean guitar (F81), the stem recovers part of the backing's cost on GOAT (about 40%: −0.017 in the backing, −0.029 on the stem, −0.045 clean) and little on cap1 (about 15%: −0.049, −0.054, −0.081).
+  - **What isn't tested here:** answers made from the stem. That's the model's own question; N5b found no stem cost for FTm. The real-song test reads it.
+  - **The generate skill's model path** (product PR #473, behind a flag) uses this pick as it stands.
+- Files: `PF/a2s/` (`stems/`, `build.json`, `a2s.json`); logs `logs/a2s*.log`. Code: `learn/amp_di_compare_s.py`.
+
 ## Budget
 
 - **Renders used (2026-10-31):** phase 1b 2,612 (the control 232, the doubles 2,380); the ladder's by-sound read
