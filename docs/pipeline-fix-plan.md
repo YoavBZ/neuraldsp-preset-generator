@@ -5494,28 +5494,30 @@ what it changes. Each is audited before it is entered; the review's steps carry 
     - **Then the same direct readers for tremolo rate and reverb,** checked first on the clean target.
 - Files: `PF/t1x/` (`items/`, `read.json`); logs `logs/t1x*.log`. Code: `learn/fx_t1x.py`.
 
-### F89. D1: the delay reader's operating rule, set on known truth. At its declared 10% false-on target it switches delay on for 24% of audible delays and 15% of all, with false-on 10.6% on delay-offs, and its time is within 10% on half of the audible delays it switches on. It's a precise-but-rare candidate reader, its time numbers are optimistic (the gate was noticed on the same draws), and real songs come next (phase_d1, zero renders, audited)
+### F89. D1: the delay reader's operating rule, set on known truth. At its declared 10% false-on target it switches delay on for 24% of audible delays and 15% of all, with false-on 10.6% on delay-offs, and its time is within 10% on half of the audible delays it switches on. It's a rare candidate reader that isn't yet precise: about 4 of 10 of the delays it switches on are false here, more on real songs. Its time numbers are optimistic (the gate was noticed on the same draws), and real songs come next (phase_d1, zero renders, audited)
 - **What ran** ([plan](full-controls-plan.md), "D1 in detail"). On T0x's stored stems at −3 dB, leaving each band out:
   - **on/off:** the neighbours' delay vote against the lowest threshold whose false-on on the other bands' delay-offs is at most 10%. The other bands' votes are recomputed with the held-out band out of their library too.
   - **time:** the stem's cepstral peak when its halves agree within 10%, else the neighbours' median.
 - **The read matched the declaration.** It was audited with separate code (its own leave-two-bands-out votes and thresholds, its own time picks): every threshold and rate reproduces.
-- **The thresholds chosen:** 0.70 for five bands, 0.85 for Forkupines, 0.65 for Hazael.
+- **The thresholds chosen:** 0.70 for four bands (Ale Lak, BKS, Dunning Kruger, Storm Of Particles), 0.75 for The Travelling Band, 0.85 for Forkupines and 0.65 for Hazael.
 - **On/off:**
 
-  | Target false-on | False-on (delay-offs) | On, all delay-ons | On, audible (the strong third) |
-  |---|---|---|---|
-  | 5% | 2.2% | 6.2% | 9.7% |
-  | **10% (declared)** | **10.6%** | **15.2%** | **23.9%** |
-  | 20% | 14.4% | 22.9% | 34.3% |
+  | Target false-on | False-on (delay-offs) | On, all delay-ons | On, audible (the strong third) | Precision at the draws' 52% delay share | Precision if a quarter of songs carry a delay |
+  |---|---|---|---|---|---|
+  | 5% | 2.2% | 6.2% | 9.7% | 75% | 48% |
+  | **10% (declared)** | **10.6%** | **15.2%** | **23.9%** | **61%** | **32%** |
+  | 20% | 14.4% | 22.9% | 34.3% | 63% | 35% |
+
+  - Precision is the share of switched-on delays that are real (the review). False-on is per dry song.
 
   - On items with every effect off, false-on is 10.3%.
 - **The time, on the delay-ons it switches on:**
   - **All 61:** within 10% on 37.7% (the prior 4.9%). Log2 error less the prior's −0.11 [−0.46, +0.09], undecided.
   - **The 32 audible:** within 10% on 50% (the prior 0%). Log2 error less the prior's −0.32 [−0.71, −0.02], decided; −0.32 without Forkupines and −0.14 without BKS.
-  - **The gate adds little:** always the peak gives 37.7% and 46.9%, and always the neighbours 11.5% and 9.4%.
+  - **The gate adds nothing on all 61** (37.7% either way), and one item on the 32 audible ones (50% against 46.9% for always the peak). Always the neighbours gives 11.5% and 9.4%.
 - **What it means.**
-  - **A candidate delay reader with a measured operating point:** when it says "delay", it's wrong about 1 time in 10 on a dry song, and it catches about a quarter of audible delays. When it does, the stem's own echo sets the time within 10% about half the time.
-  - **How often a wrong echo is acceptable is the user's call.** The curve shows the trade.
+  - **A candidate delay reader with a measured operating point, rare and not yet precise:** it switches delay on for about 1 dry song in 10, and catches about a quarter of audible delays. So when it says "delay", it's wrong about 4 times in 10 here (61% precision), and about 7 in 10 if a quarter of songs carry a delay (32%). When it's right, the stem's own echo sets the time within 10% about half the time.
+  - **How often a wrong echo is acceptable is the user's call.** The curve shows both sides: at a 5% target, precision rises to 75% (48% at a quarter), but it catches only a tenth of audible delays.
   - **The numbers are optimistic:** synthetic draws at one level, a time gate noticed on these draws, and wide, free-running delays. Real songs' delays are tempo-locked.
   - **The real-song test, by ear, is next (R1),** with delay mix and feedback at the prior.
 - Files: `PF/d1/read.json`; `logs/d1-read.log`. Code: `learn/fx_d1.py`.
