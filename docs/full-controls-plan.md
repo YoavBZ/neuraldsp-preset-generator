@@ -36,6 +36,7 @@
 - **T0x ran** on 2026-11-13 (zero renders, 770 separations, audited; [F88](pipeline-fix-plan.md)). At the product's exposure the separated stem recovers about half of delay's dense-to-clean gap and passes delay on/off (AUC 0.69; precise at a 0.7 vote: 9% of offs on against 32% of audible delays) and delay time, with reverb mix and tremolo on/off weakly. Reverb on/off passes only the rule's letter, unchanged by exposure. Delay mix and the tremolo knobs need a better stem, and reverb decay and delay feedback aren't read even clean. On/off still needs a threshold set on known truth. The first candidate effect reader is delay.
 - **D1 ran** on 2026-11-13 (zero renders, audited; [F89](pipeline-fix-plan.md)). The delay reader's rule, set on known truth: at a 10% false-on target it catches 24% of audible delays and sets their time within 10% about half the time. It's rare and not yet precise: 61% of the delays it switches on are real at the draws' share, and 32% if a quarter of songs carry one. The real-song test by ear is next, and the acceptable wrong-echo rate is the user's call.
 - **A2s ran** on 2026-11-13 (zero renders, 386 separations, audited; [F90](pipeline-fix-plan.md)). On the songs' X-LANCE stems, the product's input, A2's frozen amp pick still "learns": cap1 −0.054, GOAT −0.029, worse nowhere. It's level with A2's backed-mix pick on cap1 and better on GOAT. The generate skill's model path (product PR #473, behind a flag) uses it. The real-song test is next.
+- **R1 declared** on 2026-11-13, on the user's "Yes for all" and their seven songs ("All these fit. Cut It Out has the highest gain but it's not metal"). It's the real-song test by ear: generate's research preset, the model path, and the model path with the delay reader, ranked blind against each song's separated guitar. It's descriptive: seven songs, one listener. The default is the user's call.
 - **C1a by ear (2026-11-10):** heard closer than the label, 0.68 [0.54, 0.82], p 0.020 on 14 cards (N12 0.79; BKS 0.57, undecided). By the declared rule that is "above", so C2 stands on C1a's recipe ([F69](pipeline-fix-plan.md)).
 - **Every trusted real row, by rotation (2026-11-10).** The user asked why only GOAT and BKS train, then said "Go for 3" to training and testing on every usable track by rotation. C2r and C3r are declared below, before any render or training; V-real and the reserve stay sealed.
 - **Bookkeeping.** Ledger `pipeline-fix`, `phase_c1a`, `phase_c1a_a1` (Amendment 1), `phase_c1a_outcome`, `phase_c1a_ear` (C1a by ear), `phase_c1b`, `phase_c1b_outcome`, `phase_c2`, `phase_c2_outcome`, `phase_c3`, `phase_c3_outcome`, `phase_c3i`, `phase_c3i_outcome`, `phase_c3s`, `phase_c3s_outcome`, `phase_c3b_s2_outcome`, `phase_c3c`, `phase_c2r_outcome`, `phase_c3r_outcome`, `phase_c3c_outcome`, `phase_c3b`, `phase_c3b_outcome`, `phase_c3b_s2`, `phase_c2b`, `phase_c2b_outcome`, `phase_l1c`, `phase_c2r`, `phase_c2r_a1`, `phase_c2r_a2`, `phase_c3r`, `phase_c4`, `phase_a1`, `phase_a1_outcome`, `phase_a2`, `phase_a2_outcome`, `phase_a3`, `phase_a3_page`, `phase_c4_outcome`, `phase_a3_outcome`, `phase_ls` and `phase_ls_amendment`, `phase_ls_outcome`, `phase_ls_ear_outcome`, `phase_t0`, `phase_t0_amendment`, `phase_t0_outcome`, `phase_t1`, `phase_t1p`, `phase_t1_outcome`, `phase_t1p_outcome`, `phase_t1x`, `phase_t1x_outcome`, `phase_t0x`, `phase_t0x_outcome`, `phase_d1`, `phase_d1_outcome`, `phase_a2s`, `phase_a2s_outcome`. Code: `learn/full_controls.py` (C1a), `learn/c1a_ear.py` (C1a by ear), `learn/full_controls_c1b.py` (C1b), `learn/full_controls_c2.py` (C2), `learn/full_controls_c3.py` with `pipeline_fix train-ft --c3` (C3) `learn/full_controls_c2b.py` (C2b), `learn/c4_ear.py` (C4), `learn/amp_di_compare.py` (A1), `learn/amp_di_compare_r.py` (A2) `learn/a3_ear.py` (A3) `learn/loudness_step.py` and `learn/ls_ear.py` (LS) and `learn/fx_t0.py` (T0) and `learn/fx_t1.py` and `learn/fx_t1p.py` (T1) and `learn/fx_t1x.py` (T1x) and `learn/fx_t0x.py` (T0x) and `learn/fx_d1.py` (D1), `learn/product_path.py` (the model path) and `learn/amp_di_compare_s.py` (A2s), tests `tests/test_full_controls.py`, `tests/test_c1a_ear.py`, `tests/test_full_controls_c1b.py`, `tests/test_full_controls_c2.py`, `tests/test_full_controls_c3.py` and `tests/test_full_controls_c2b.py`. Results go in [pipeline-fix-plan.md](pipeline-fix-plan.md), F69 on.
@@ -454,6 +455,48 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **When.** It trains as soon as its code is reviewed, on the otherwise idle MPS, while C2b or C2r render on 3 CPU processes. It launches with `setopt no_bg_nice`, and no other MPS job starts while it runs.
   - **The stop.** The measure is the 3 render shards' summed renders per minute. The window is the 60 minutes before the training against its first 20 minutes. If the rate drops by more than 20%, the executor stops the training by its recorded PIDs, and it reruns after C3r's training. Otherwise it runs to the end.
   - **The read** waits for a free render slot: after C2r, before C3r's read.
+
+## R1 in detail: the real-song test by ear (declared 2026-11-13, on the user's "Yes for all" and their seven songs; before any arm's preset or render; ledger `phase_r1`)
+
+- **Why.** Everything since F80 was read by the score, on synthetic or known-truth units. The product's question is whether the model path makes a better preset than generate's research on real songs, with no DI and no ground truth. Only an ear can read that. A2s (F90) confirmed the amp pick on the product's input by the score; D1 (F89) gave the delay reader an operating point on synthetic songs. R1 is both their out-of-sample check.
+- **Songs** (the user's, 2026-11-13; on disk, none in any training or read set):
+  - Hotel California (the 4:20–5:00 excerpt on disk, the solo);
+  - Still Got The Blues;
+  - Cut It Out (the highest gain, "not metal", the user);
+  - Autumn Leaves (Clapton);
+  - How Long;
+  - Long Road Out of Eden;
+  - Frail Grasp on the Big Picture.
+- **The window.** One per song, by the model path's own rule (`product_path separate` without a start: the 10 s where the X-LANCE stem sits loudest against the mix, on a 5-s hop). It runs once, before any preset is made, and is recorded in `r1/<song>/window.json`. Every arm uses that start. No window is re-chosen after it's heard.
+- **The research** (the product session; one per song, shared by every arm): generate's steps 1 and 2 for the part at that window. They give its class (clean or crunch) and its effects spec, recorded in `r1/<song>/research.json` with their sources.
+- **The arms** (the product session writes them, as the skill would; `r1/<song>/arms/`):
+  - **R:** generate's default. Research sets every control.
+  - **M:** generate's model path (`model_preset.py --start`, the research's class), with research's effects through `apply_spec`. The model sets the amp, gain, EQ, pedals, gate, mics and output.
+  - **D:** M with `--delay-reader`. Research's delay mix and feedback are used when it describes the delay, else the declared 0.30 and 0.30. When the reader stays off, D is M, and that song's cards play two letters.
+- **The audio** (ML; `learn/r1_ear.py`):
+  - **Arms:** each arm's preset is read whole (`research/render_preset_panel.preset_edits`, no rule set) and rendered fresh with a priming render, time effects included, through the class's two stock DIs (A1's). It's trimmed as the model path's own renders are.
+  - **Renders:** at most 7 × 3 × 2 = 42 kept, plus the model path's own 12 per song (84, by the product).
+  - **Reference:** the window's X-LANCE stem, which is what the model read. The window's mix plays beside it as context, unranked.
+  - **Levels:** every clip is brought to −23 LUFS (`ear_vreal.level_group`), so level doesn't decide. The model path's output gain is the product's and isn't heard here.
+- **The page:**
+  - C4's player and cards, with instant switching.
+  - 14 cards (7 songs × 2 stock DIs) plus 2 repeats (seed 20261131), the letters shuffled per card, no names.
+  - Ranks 1 to 3 (1 to 2 where D is M), ties allowed.
+- **The read** (descriptive; the song is the unit):
+  - **Primary, M against R:** each card scores +1, −1 or 0 (M above, below, tied). A song is ahead, behind or level by its two cards' sum. Reported: the songs ahead, behind and level, and the cards' share, ties as half.
+  - **The delay reader:** on/off and time for every song. D against M on the songs it switched on. Where research described the song's delay, the two are set side by side.
+  - **Beside:** first places per arm, by class, and the repeats' agreement.
+  - **Minimum:** read with at least 12 of the 14 first hearings answered.
+- **The rule** (proposals to the user, who decides the default):
+  - **The model ahead:** M is ahead of R on at least 5 of the 7 songs and behind on at most 1. Proposed: the model path becomes generate's default for clean and crunch parts, on the user's yes.
+  - **Research ahead:** the mirror. The model path stays behind its flag, and the songs where it lost are read for why (the amp, the drive or the EQ), before any new step.
+  - **Otherwise level:** the model path stays behind its flag, and the reads continue.
+  - **The delay reader:** if D is never ranked below M where it switched on, it stays the candidate for the third arm of the next real-song set. Below on most of them: it's off until its precision improves. With none switched on: undecided.
+- **What it can't say:**
+  - Seven songs and one listener: a lean, not a measurement.
+  - Every arm plays a stock DI, not the song's performance, so the listener compares tone across different playing. This is the product's own condition (no DI from the user).
+  - R and M share research's effects, so M against R reads the model's controls and the amp; D against M reads the reader.
+- **Stop rule.** One page, one sitting. No song, window, arm or level is changed after a clip is heard.
 
 ## The model path, and A2s in detail (declared 2026-11-13, on the user's "Yes for all"; A2s zero renders; ledger `phase_a2s`)
 
