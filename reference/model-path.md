@@ -38,12 +38,14 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/model_preset.py" --song SONG.mp3 --cls cle
    - **The delay reader, only when asked for:** add `--delay-reader` to this command. It is the real-song test's third
      arm, a candidate, never a default. Give research's delay mix and feedback as `--delay-mix` and `--delay-feedback`
      (0 to 1, both or neither). Without them it uses 0.30 each, a default the user has yet to confirm. When it hears a
-     delay, it switches it on at the time it read. When it hears none, the delay is left to step 3. The delay's other
-     controls (ping-pong, tape drive, filters) stay the factory start's.
+     delay, it switches it on at the time it read. When it hears none, the delay is left to step 3. It doesn't read the
+     echo's tone (ping-pong, tape drive, width, low and high cut): its numbers hold over any setting of them.
 3. **Add the effects from research** (reverb, delay, modulation, doubler) with `apply_spec.py`, as in step 5:
    - use `--template OUT_DIR/model.xml`, a spec of those effects only, and `--strip-irs`;
    - keep the dry run first.
-   - if the delay reader switched the delay on, leave the delay out of the spec.
+   - if the delay reader switched the delay on, keep its on, sync, time, mix and feedback out of the spec. Set the echo's
+     tone (ping-pong, tape drive, width, low and high cut) from research where it describes it (darker repeats, tape,
+     mono or ping-pong), else leave the factory start's. Say which you set.
    - Don't change the input gain, amp, EQ, pedals, gate, mics or output: those are the model's. The amp's own spring
      reverb counts as an effect (the model was rendered with it at 0), so research may turn it up.
 4. Install and report as in step 6. Say:
