@@ -51,7 +51,7 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/model_preset.py" --song SONG.mp3 --cls cle
 - **What it was read on:** reamped and stock-DI sets of clean and crunch parts (the ML session's reads), not real
   songs. By the score the model reads level with the one it replaced. By the score the amp pick beats always-SW50R on
   one set and is worse on none (F81). By ear it was heard closer than the model's own amp pick (F83), and undecided
-  against always-SW50R. The output matching closed the loudness gap (F84), and a short page showed no bias by ear.
+  against always-SW50R. The output matching closed the loudness gap (F84), and a short listening page showed no bias (5 of 12 heard quieter, 1 louder; p 0.22).
   - The pick has not yet been read on a separated guitar (A2s, declared). The ML session's real-song test reads the
     whole path on songs, and it decides the default.
 - **Loud peaks.** At the matched loudness about 2 in 3 presets peak over 0 dBFS, as the plugin renders in floating
