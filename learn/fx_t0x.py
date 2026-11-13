@@ -67,8 +67,11 @@ def cmd_build(args):
         s_ = np.asarray(sep(mix), np.float64)
         if len(s_) != len(mix) or not np.isfinite(s_).all():
             raise SystemExit(f"{it['i']}: bad stem")
+        half = len(s_) // 2
         P.save(p, {"i": it["i"], "stem": T0.features(s_), "mix": T0.features(mix),
-                   "stem_cep_peak_ms": FX.cep_pick(FX.cepstrum(s_))[0], "drawn_ratio_db": x["draw"]["ratio_db"]})
+                   "stem_cep_peak_ms": FX.cep_pick(FX.cepstrum(s_))[0],
+                   "stem_cep_peak_halves_ms": [FX.cep_pick(FX.cepstrum(s_[:half]))[0], FX.cep_pick(FX.cepstrum(s_[half:]))[0]],
+                   "drawn_ratio_db": x["draw"]["ratio_db"]})
         if m % 25 == 0:
             print(f"t0x {m + 1}/{len(its)}: {(time.time() - t0) / (m + 1):.1f} s an item", flush=True)
     print("T0X BUILD DONE", flush=True)
@@ -114,6 +117,16 @@ def cmd_read(_args):
             "n": int(m.sum()), "within_10pct": float(hit[m].mean()),
             "log2 error - prior": T0._stats(lambda b, le=le, lp=lp, m=m: float(np.mean(le[b][m[b]]) - np.mean(lp[b][m[b]])),
                                             bands)}
+    # beside (F87's next step, recorded for a later declared read): the halves' peaks agree within 10%, as a confidence gate
+    ph = np.array([r["stem_cep_peak_halves_ms"] for r in recs])
+    agree = np.abs(ph[:, 0] / ph[:, 1] - 1) <= 0.10
+    st_ = don & (Y["dmix"] >= hi)
+    hit = np.abs(pk / t - 1) <= 0.10
+    rep["halves agree (recorded, not read for a decision)"] = {
+        "strong third": {"agree": int((agree & st_).sum()), "of": int(st_.sum()),
+                         "hits when they agree": int((agree & st_ & hit).sum()),
+                         "hits when they don't": int((~agree & st_ & hit).sum())},
+        "delay-offs where the halves agree": int((agree & (Y["don"] == 0)).sum()), "delay-offs": int((Y["don"] == 0).sum())}
     rep["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     P.save(out_dir() / "read.json", rep)
     print(json.dumps({k: rep[k] for k in ("passes", "rule", "negative_control", "direct delay-time reader")}, indent=1,

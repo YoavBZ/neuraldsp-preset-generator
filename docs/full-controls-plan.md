@@ -458,6 +458,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - the same library (the other bands' same-amp clean targets), matching, strong third, draw-aware prior, band bootstrap, large-band checks, negative control and rule;
   - the target arm is T0's own, since the clean target doesn't change.
   - **Beside:** the direct delay-time reader (the stem's own cepstral peak) on every delay-on and on the strong third: within 10%, and the log2 error less the prior's, with the band checks.
+  - **Recorded for a later, declared read** (F87's first next step, a confidence gate): each new stem's cepstral peak on each half, and whether the halves agree within 10%, on delay-ons and delay-offs. The counts are reported, but no decision is made on them here.
 - **What it means, by T0's rule per parameter:** a stem pass makes a reader for the product. Target-only is R3's upside at the product's exposure. Neither stays on the prior.
 - **Stop rule.** One build, one read. Nothing tuned.
 
