@@ -462,6 +462,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **render:** each amp's answer through the class's two stock DIs, fresh and primed (12 renders).
   - **pick:** the amp by the floored features' cosine, then the loudness match (F84).
   - A smoke run on one clip worked end to end.
+  - **A product note** (the review): the most exposed window can be a solo or a lead fill. The generate skill passes the part's start when the user names one, and uses exposure only as the fallback.
 - **Why A2s.** The 2026-11-13 correction: A2 read the pick against the song's guitar in its backing (D_fix variant 0, no separator), but the product reads an X-LANCE stem. A2s re-runs A2's frozen pick on the product's input with known answers, before the real-song test (the review's recommendation).
 - **The build** (msst-venv, MPS; zero renders):
   - Each of A2's units' variant-0 mix is rebuilt from its stored recipe (the lender, guitar gain, backing, vocals, gains and mastering draw).
@@ -471,6 +472,7 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **The read** (TORCH_PY, zero renders): A2's frozen pick on the new input, with the held-out fold model's floored body features, by cosine to A2's stored stock-DI render mels. Then A2's rows, on A2's and C3r's judges.
   - **Primary:** "DI-compare (on the stem) − always sw50r".
   - **Beside:** A2's pick on the backed mix, and the stem's pick less the backed mix's pick, paired.
+- **What it isolates** (the review): A2s holds A2's answers fixed, as predicted from the backed mix, so it tests the pick's input, not the product end to end. "Learns" means the pick transfers to the stem given these answers. Answers made from the stem are the model's own question (N5b), and the real-song test reads both. The built count is reported per set, BKS's own-section backings included.
 - **The rule, A2's:** "learns" if better on cap1, the panel or their pool and worse on none of those, GOAT or BKS. Otherwise worse, split or undecided.
   - **Learns:** the pick holds on the product's input. The real-song test reads it by ear.
   - **Worse or split:** the pick doesn't transfer to the stem, and the real-song test plays three amps instead of the pick.

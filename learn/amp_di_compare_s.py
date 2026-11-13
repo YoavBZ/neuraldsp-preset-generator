@@ -78,7 +78,7 @@ def cmd_build(args):
     sep = DS.stem_separator(T.SEP, args.device)
     d = a2s_dir() / "stems"
     d.mkdir(parents=True, exist_ok=True)
-    t0, done, own = time.time(), 0, 0
+    t0, done, own, by_set = time.time(), 0, 0, {}
     for u in [x for x in units if x["set"] in SETS]:
         p = d / f"{u['set']}__{u['unit'].replace('/', '__')}.npz"
         if p.exists():
@@ -97,9 +97,12 @@ def cmd_build(args):
             out[f"s{h}"], out[f"lufs{h}"] = s8, np.array([ls], np.float32)
         np.savez(p, **out)
         done += 1
+        by_set[u["set"]] = by_set.get(u["set"], 0) + 1
         if done % 25 == 0:
             print(f"a2s build {done}: {(time.time() - t0) / done:.1f} s a unit", flush=True)
-    print(f"A2S BUILD DONE: {done} built, {own} with an own-section backing skipped", flush=True)
+    P.save(a2s_dir() / "build.json", {"built": done, "by_set": by_set, "skipped (backing not in the pool)": own,
+                                      "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"A2S BUILD DONE: {done} built {by_set}, {own} with a backing not in the pool skipped", flush=True)
 
 
 def cmd_read(_args):
