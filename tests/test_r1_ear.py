@@ -59,3 +59,30 @@ def test_tail_decision_is_the_declared_rule():
     assert R.tail_decision(45.0, [-70.0, -55.0])["pre_s"] == R.PAD_S
     d = R.tail_decision(45.0, [-70.0] * 10)
     assert d["pre_s"] == 0.0 and d["why"] == "neither trigger"
+
+
+def test_r1_check_runs_on_its_inputs(tmp_path, monkeypatch):
+    pytest = __import__("pytest")
+    pytest.importorskip("numpy")
+    import json as J
+
+    from learn import pipeline_fix as P
+    import packs.loader
+
+    song = tmp_path / "song.wav"
+    song.write_bytes(b"x")
+    J.dump({"songs": {f"s{i}": str(song) for i in range(R.N_SONGS)}}, open(tmp_path / "songs.json", "w"))
+    for i in range(R.N_SONGS):
+        d = tmp_path / f"s{i}"
+        (d / "arms").mkdir(parents=True)
+        for f in ("window.npz", "arms/R.xml", "arms/M.xml", "arms/D.xml"):
+            (d / f).write_text(f)
+        J.dump({"start_s": 1.0}, open(d / "window.json", "w"))
+        J.dump({"cls": "clean"}, open(d / "research.json", "w"))
+    monkeypatch.setattr(R, "ear_dir", lambda: tmp_path)
+    monkeypatch.setattr(P, "require", lambda k: None)
+    monkeypatch.setattr(packs.loader, "load_pack", lambda n: None)
+    monkeypatch.setattr(R, "parse_preset", lambda p, pack: (0, {("amp", "gain"): "1"}))
+    R.cmd_check(None)
+    plan = J.load(open(tmp_path / "plan.json"))
+    assert len(plan["songs"]) == R.N_SONGS and all(x["D_is_M"] and not x["reader_on"] for x in plan["songs"])

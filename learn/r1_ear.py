@@ -181,7 +181,7 @@ def cmd_check(_args):
 
     P.require(PHASE)
     pack = load_pack("morgan")
-    songs, missing = [], []
+    rows, missing = [], []
     for s, path in songs().items():
         d = ear_dir() / s
         need = [d / "window.json", d / "window.npz", d / "research.json", *[d / "arms" / f"{a}.xml" for a in ARMS]]
@@ -195,18 +195,18 @@ def cmd_check(_args):
         parsed = {a: parse_preset(d / "arms" / f"{a}.xml", pack) for a in ARMS}
         dl = d / "arms" / "delay.json"
         reader = json.loads(dl.read_text()) if dl.exists() else None
-        songs.append({"song": s, "file": path, "file_sha256": _sha(path), "cls": res["cls"],
+        rows.append({"song": s, "file": path, "file_sha256": _sha(path), "cls": res["cls"],
                       "window_start_s": json.loads((d / "window.json").read_text())["start_s"],
                       "arms": {a: {"sha256": _sha(d / "arms" / f"{a}.xml"), "select": parsed[a][0]} for a in ARMS},
                       "D_is_M": same_preset(parsed["D"], parsed["M"]),
                       "reader_on": bool(reader and reader.get("on")), "reader": reader})
     if missing:
         raise SystemExit("missing inputs:\n  " + "\n  ".join(missing))
-    bad = [x["song"] for x in songs if x["reader_on"] == x["D_is_M"]]
+    bad = [x["song"] for x in rows if x["reader_on"] == x["D_is_M"]]
     if bad:
         raise SystemExit(f"{bad}: D's preset should equal M's exactly when the reader is off, and differ when it is on")
-    P.save(ear_dir() / "plan.json", {"phase": PHASE, "songs": songs, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
-    print(f"R1 CHECK: {len(songs)} songs; the reader on for {[x['song'] for x in songs if x['reader_on']]}")
+    P.save(ear_dir() / "plan.json", {"phase": PHASE, "songs": rows, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    print(f"R1 CHECK: {len(rows)} songs; the reader on for {[x['song'] for x in rows if x['reader_on']]}")
 
 
 def cmd_render(args):
