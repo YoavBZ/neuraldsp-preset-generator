@@ -5,7 +5,7 @@ the listener compares tone across different playing: the product's own condition
 
     ~/ndsp-presets/tools/msst-venv/bin/python -m learn.product_path separate SONG --out r1/<song>   # the windows, first
     (the product session writes r1/<song>/research.json and r1/<song>/arms/{R,M,D}.xml, D's delay.json beside)
-    .venv/bin/python -m learn.r1_ear r1-tail                        # the priming tail check (5 renders), first
+    .venv/bin/python -m learn.r1_ear r1-tail                        # the priming tail check (6 renders), first
     .venv/bin/python -m learn.r1_ear r1-check                       # every input present, hashed -> r1/plan.json
     .venv/bin/python -m learn.r1_ear r1-render --shard 0/3          # each arm through both stock DIs (renders)
     .venv/bin/python -m learn.r1_ear r1-page                        # the page (zero renders)
