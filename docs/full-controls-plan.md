@@ -458,10 +458,11 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **A recipe check first:** the rebuild at the drawn ratio must equal E1e's stored mix, or the build stops.
 - **The read** (`t1x-read`, CPU):
   - **primary:** the stems' own cepstral peak at the true delay (within 10%), at each level against as drawn, paired, with 2,000 band resamples;
-  - **beside:** T1's correlation pick and a peak-position pick of T1's clean candidates (arm B's stored cepstra) against the new stems, with no extra separations.
+  - **beside:** T1's correlation pick and a peak-position pick of T1's clean candidates (arm B's stored cepstra) against the new stems, with no extra separations; each pick less the stems' own peak, paired; and the stems' own peak split by mastering at each level.
 - **What each outcome means, declared now:**
-  - **The stems keep more at exposure** (the paired interval wholly above 0), **and the picks reach the stems' rate:** render-and-compare is worth re-running at the product's exposure (arm A through the channel, about 1,742 separations a level).
-  - **The stems keep more, but the picks stay below them:** the comparison is the first fix, not the stem.
+  - **"The pick reaches the stems' rate"** (the review) means T1's correlation pick less the stems' own peak, at that level, paired, with its interval not wholly below 0. It's decided on T1's correlation pick. The peak-position pick is the stem's own peak on the grid, so it reaches the stems' rate almost by construction. If only that pick reaches, the comparison collapses to reading the stem directly (F52's route), and render-and-compare adds nothing for delay time.
+  - **The stems keep more at exposure** (the paired interval wholly above 0), **and the correlation pick reaches the stems' rate:** render-and-compare is worth re-running at the product's exposure (arm A through the channel, about 1,742 separations a level).
+  - **The stems keep more, but the correlation pick stays below them:** the comparison is the first fix, not the stem. If only the peak-position pick reaches, delay time is read from the stem directly, as F52.
   - **The stems don't keep more:** the stem is the bottleneck even when the guitar is exposed (R3, to the user).
 - **Stop rule.** One build, one read. The levels and the picks are fixed above.
 

@@ -126,8 +126,15 @@ def cmd_read(_args):
             own = [(lo + int(np.argmax(c))) * 1000.0 / T1.SR for c in B]
             j = int(np.argmin([abs(np.log(o / sp)) for o in own]))
             hp.append(hit(float(grid[j]), x["true_ms"]))
-        rep["T1's pick on the clean candidates (arm B)"][f"at {k} dB"] = float(np.mean(hb))
-        rep["peak-position pick"][f"at {k} dB"] = float(np.mean(hp))
+        hb, hp = np.array(hb, float), np.array(hp, float)
+        rep["T1's pick on the clean candidates (arm B)"][f"at {k} dB"] = float(hb.mean())
+        rep["peak-position pick"][f"at {k} dB"] = float(hp.mean())
+        rep.setdefault("pick - stems' own (paired)", {})[f"at {k} dB"] = {
+            "correlation": {"diff": float(hb.mean() - h.mean()), "ci": T1.boot(lambda b: float(hb[b].mean() - h[b].mean()), bands)},
+            "peak position": {"diff": float(hp.mean() - h.mean()), "ci": T1.boot(lambda b: float(hp[b].mean() - h[b].mean()), bands)}}
+        ms = np.array([bool(x["mastered"]) for x in recs])
+        rep.setdefault("stems' own by mastering", {})[f"at {k} dB"] = {"mastered": float(h[ms].mean()),
+                                                                        "unmastered": float(h[~ms].mean())}
     rep["time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     P.save(out_dir() / "read.json", rep)
     print(json.dumps(rep, indent=1))
