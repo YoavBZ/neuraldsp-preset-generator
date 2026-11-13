@@ -45,6 +45,8 @@ was declared, what was measured, and the research behind it.
 ## By workstream
 
 **The plugin itself**
+- [model-path.md](../reference/model-path.md): `generate`'s model path (behind a flag): a preset set by the
+  trained model from the song file. Current.
 - [measuring-against-the-plugin.md](measuring-against-the-plugin.md): what the plugin
   does, measured. Current, and the reference the packs cite.
 

@@ -24,8 +24,8 @@ Set each control from what research documents for the part, and say which you se
 why, and which you kept from the start. Today the evidence keeps the start's tone
 controls unless research documents a different value for this part: research edits on top of the start were not shown to help
 (undecided, leaning slightly worse; neutral where the start was the one the edits were
-written for; [routing check, part 2](../../docs/generate-routing-results.md)). How far
-setting more controls can get is being measured (the ML session's knob-ceiling test).
+written for; [routing check, part 2](../../docs/generate-routing-results.md)). Only when the user asks for
+it, a trained model sets them from a song file instead: [model-path.md](../../reference/model-path.md).
 
 Read [preset-spec.md](../../reference/preset-spec.md) before writing anything — it
 covers the value convention, the spec format, and the scripts.
