@@ -472,16 +472,18 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
 - **The arms** (the product session writes them, as the skill would; `r1/<song>/arms/`):
   - **R:** generate's default. Research sets every control.
   - **M:** generate's model path (`model_preset.py --start`, the research's class), with research's effects through `apply_spec`. The model sets the amp, gain, EQ, pedals, gate, mics and output.
-  - **D:** M with `--delay-reader`. Research's delay mix and feedback are used when it describes the delay, else the declared 0.30 and 0.30. When the reader stays off, D is M, and that song's cards play two letters.
+  - **D:** M with `--delay-reader`. Research's delay mix and feedback are used when it describes the delay, else the declared 0.30 and 0.30. When the reader stays off, D's preset is M's and plays M's render: one letter holds identical audio. Its ranks against M check the ear's noise and aren't read for the delay. R1 runs on that unconfirmed 0.30 and 0.30 default wherever research gives no mix or feedback, and says so.
 - **The audio** (ML; `learn/r1_ear.py`):
   - **Arms:** each arm's preset is read whole (`research/render_preset_panel.preset_edits`, no rule set) and rendered fresh with a priming render, time effects included, through the class's two stock DIs (A1's). It's trimmed as the model path's own renders are.
   - **Renders:** at most 7 × 3 × 2 = 42 kept, plus the model path's own 12 per song (84, by the product).
   - **Reference:** the window's X-LANCE stem, which is what the model read. The window's mix plays beside it as context, unranked.
+  - **What plays** (the review): every clip is half A, 1.0–5.5 s. For the arms, that's the half of each trimmed render the amp pick read (the crunch stock DI holds a single note in half B). For the reference, it's the window's own half A, the half the model read. They loop at about 4.5 s.
+  - **The priming tail** (the review): this is the first ear test with time effects on, and the priming render runs in the same process as the kept one with no preroll. So `r1-tail` runs first, on five renders. A long-tailed probe (the clean pr12 start with delay mix 0.6, feedback 0.7, 450 ms and reverb mix 0.5) is rendered through the clean stock DI as planned and with 6 s of silent preroll, and the priming render's tail is rendered alone. If the tail reaches the kept render's half A at an audible level (the planned and padded renders differ by less than 40 dB, or the tail alone is above −60 LUFS there), every R1 render takes a 6-s silent preroll, cut off (`PRE_S`). That is set and recorded before `r1-render`.
   - **Levels:** every clip is brought to −23 LUFS (`ear_vreal.level_group`), so level doesn't decide. The model path's output gain is the product's and isn't heard here.
 - **The page:**
   - C4's player and cards, with instant switching.
-  - 14 cards (7 songs × 2 stock DIs) plus 2 repeats (seed 20261131), the letters shuffled per card, no names.
-  - Ranks 1 to 3 (1 to 2 where D is M), ties allowed.
+  - 14 cards (7 songs × 2 stock DIs) plus 2 repeats (seed 20261141; 20261131 was T0's), the letters shuffled per card, no names.
+  - Ranks 1 to 3, ties allowed.
 - **The read** (descriptive; the song is the unit):
   - **Primary, M against R:** each card scores +1, −1 or 0 (M above, below, tied). A song is ahead, behind or level by its two cards' sum. Reported: the songs ahead, behind and level, and the cards' share, ties as half.
   - **The delay reader:** on/off and time for every song. D against M on the songs it switched on. Where research described the song's delay, the two are set side by side.
@@ -492,6 +494,8 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
   - **Research ahead:** the mirror. The model path stays behind its flag, and the songs where it lost are read for why (the amp, the drive or the EQ), before any new step.
   - **Otherwise level:** the model path stays behind its flag, and the reads continue.
   - **The delay reader:** if D is never ranked below M where it switched on, it stays the candidate for the third arm of the next real-song set. Below on most of them: it's off until its precision improves. With none switched on: undecided.
+- **What the rule can tell** (the review's calculation, 7 songs × 2 cards): with no true difference, "the model ahead" comes up about 3% of the time, so a pass means something. It needs M clearly preferred: at 55% card wins (20% ties) it passes about a quarter of the time, at 65% about 6 in 10. "Level" is the likely result, and a level page isn't a failure: the model path stays behind its flag and the reads continue.
+- **Hotel California's window** is the 4:20–5:00 excerpt on disk, the solo: a lead part.
 - **What it can't say:**
   - Seven songs and one listener: a lean, not a measurement.
   - Every arm plays a stock DI, not the song's performance, so the listener compares tone across different playing. This is the product's own condition (no DI from the user).
