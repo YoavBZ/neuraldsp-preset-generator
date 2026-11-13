@@ -56,12 +56,15 @@ def test_refuses_a_key_the_start_lacks(tmp_path):
 
 
 def test_stage_arguments():
-    a = argparse.Namespace(song="~/s.wav", work=pathlib.Path("/w"), start=12.5, cls="crunch")
+    a = argparse.Namespace(song="~/s.wav", work=pathlib.Path("/w"), start=12.5, part=None, part_from="research",
+                           cls="crunch")
     assert M.stage_args("separate", a)[1:] == ["--out", "/w", "--start", "12.5"]
     assert M.stage_args("answers", a) == ["/w", "--cls", "crunch"]
     assert M.stage_args("render", a) == ["/w"] and M.stage_args("pick", a) == ["/w"]
     a.start = None
-    assert "--start" not in M.stage_args("separate", a)
+    assert "--start" not in M.stage_args("separate", a) and "--part" not in M.stage_args("separate", a)
+    a.part, a.part_from = [30.0, 60.0], "the user"
+    assert M.stage_args("separate", a)[1:] == ["--out", "/w", "--part", "30.0", "60.0", "--part-from", "the user"]
 
 
 def test_every_start_names_a_class_and_amp():
@@ -98,8 +101,9 @@ def test_the_documented_command_parses():
     doc = (REPO_ROOT / "reference/model-path.md").read_text()
     block = re.search(r"```bash\n(python [^`]*?model_preset\.py.*?)```", doc, re.S).group(1)
     argv = shlex.split(block.replace("\\\n", " "))[2:]
-    args = M.build_parser().parse_args([a.replace("START_SECONDS", "12") for a in argv])
-    assert args.song and args.cls == "clean" and args.start == 12.0 and args.name
+    args = M.build_parser().parse_args([a.replace("PART_START", "30").replace("PART_END", "60") for a in argv])
+    assert args.song and args.cls == "clean" and args.part == [30.0, 60.0] and args.part_from == "the user"
+    assert args.start is None and args.name
 
 
 def test_relative_paths_resolve_before_the_stages(tmp_path, monkeypatch):
@@ -188,3 +192,33 @@ def test_a_delay_read_with_another_pair_is_refused_on_write_only(tmp_path, monke
     (work / "delay.json").write_text(json.dumps(d))
     with pytest.raises(SystemExit):
         M.run(parse(["--work", str(work), "--out", str(tmp_path / "c.xml"), "--write-only", "--delay-reader"]))
+
+
+def test_part_refusals(tmp_path):
+    parse = M.build_parser().parse_args
+    base = ["--song", "s.wav", "--cls", "clean", "--work", str(tmp_path / "w"), "--out", str(tmp_path / "o.xml")]
+    for extra in (["--part", "30", "40"],                          # 10 s: no room for a window clear of the edges
+                  ["--part", "30", "60", "--start", "35"]):         # both
+        with pytest.raises(SystemExit):
+            M.run(parse(base + extra))
+
+
+def test_a_resumed_run_must_have_the_same_part(tmp_path, monkeypatch):
+    work = tmp_path / "w"
+    work.mkdir()
+    song = (tmp_path / "s.wav").resolve()
+    (work / "window.json").write_text(json.dumps({"song": str(song), "start_s": 40.0, "part_s": [30.0, 60.0],
+                                                  "part_from": "research", "chosen_by": "selector"}))
+    monkeypatch.setattr(M, "interpreters", lambda: {"msst": EXAMPLE, "torch": EXAMPLE, "main": EXAMPLE})
+    a = M.build_parser().parse_args(["--song", str(song), "--cls", "clean", "--work", str(work), "--out", "o.xml",
+                                     "--part", "35", "60"])
+    a.work, a.song = work, song
+    with pytest.raises(SystemExit):
+        M.run_stages(a)
+
+
+def test_the_window_line():
+    assert M.window_how({"chosen_by": "given"}) == "given"
+    assert "30.0-60.0" in M.window_how({"chosen_by": "selector", "part_s": [30, 60], "part_from": "the user"})
+    assert "whole song" in M.window_how({"chosen_by": "selector", "part_s": [0, 200],
+                                         "part_from": "the whole song (no part named)"})

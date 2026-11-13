@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate a Morgan preset from a song with the trained model (generate's model path, behind its flag).
 
-    python scripts/model_preset.py --song SONG.mp3 --cls clean|crunch [--start S] \
+    python scripts/model_preset.py --song SONG.mp3 --cls clean|crunch [--part START END | --start S] \
         --work WORK_DIR --out OUT.xml [--name NAME]
 
 Runs the model path's four stages (`learn/product_path.py`), each in the environment it needs:
@@ -70,7 +70,11 @@ def stage_args(stage: str, args) -> list:
     """The stages run from the plugin root, so `run` resolves --song and --work first."""
     if stage == "separate":
         out = [str(args.song), "--out", str(args.work)]
-        return out + (["--start", str(args.start)] if args.start is not None else [])
+        if args.start is not None:
+            return out + ["--start", str(args.start)]
+        if args.part is not None:
+            return out + ["--part", str(args.part[0]), str(args.part[1]), "--part-from", args.part_from]
+        return out
     if stage == "answers":
         return [str(args.work), "--cls", args.cls]
     return [str(args.work)]
@@ -112,8 +116,10 @@ def run_stages(args) -> None:
     if done.exists():                     # a resumed run must be the same song and window
         w = json.loads(done.read_text())
         if pathlib.Path(w["song"]) != args.song or (
-                args.start is not None and abs(float(w["start_s"]) - args.start) > 1e-6):
-            die(f"{args.work} holds another song or window ({w['song']} at {w['start_s']} s); use a new --work.")
+                args.start is not None and abs(float(w["start_s"]) - args.start) > 1e-6) or (
+                args.part is not None and [float(x) for x in w.get("part_s") or []] != [float(x) for x in args.part]):
+            die(f"{args.work} holds another song, window or part ({w['song']} at {w['start_s']} s, part "
+                f"{w.get('part_s')}); use a new --work.")
     ans = args.work / "answers.json"
     if ans.exists() and json.loads(ans.read_text())["cls"] != args.cls:
         die(f"{args.work} was answered for another class; use a new --work.")
@@ -163,6 +169,17 @@ def write_preset(result: dict, out: pathlib.Path, name, template=None) -> list:
     return changes
 
 
+def window_how(w: dict) -> str:
+    if w.get("chosen_by") == "given":
+        return "given"
+    if str(w.get("part_from", "")).startswith("the whole song"):
+        return "the most typical steady window over the whole song (no part named)"
+    if w.get("part_s"):
+        a, b = w["part_s"]
+        return f"the most typical steady window in the part {a:.1f}-{b:.1f} s, from {w.get('part_from')}"
+    return str(w.get("chosen_by", "chosen by the model path"))
+
+
 def delay_line(d: dict) -> str:
     if not d["on"]:
         return f"Delay reader: heard none (vote {d['vote']:.2f}); the delay is left to the song research"
@@ -174,8 +191,12 @@ def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--song", help="the song file (any format the separator reads)")
     ap.add_argument("--cls", choices=("clean", "crunch"), help="the part's class, from the song research")
+    ap.add_argument("--part", type=float, nargs=2, metavar=("START", "END"), default=None,
+                    help="the part's span in seconds (named by the user, or from research); the most typical steady "
+                         "10-s window inside it is read. Without --part or --start, the whole song is searched")
+    ap.add_argument("--part-from", default="research", help="where --part came from: 'the user' or 'research'")
     ap.add_argument("--start", type=float, default=None,
-                    help="where the part starts, in seconds; without it the window where the guitar is most exposed")
+                    help="force the window's start, in seconds (no steadiness check); prefer --part")
     ap.add_argument("--work", type=pathlib.Path, required=True, help="a folder for the stages' files")
     ap.add_argument("--out", type=pathlib.Path, required=True, help="the preset to write")
     ap.add_argument("--name", help="the preset's name")
@@ -196,6 +217,10 @@ def run(args) -> None:
         args.song = pathlib.Path(args.song).expanduser().resolve()
     if out.exists() and not args.force:
         die(f"--out already exists: {out}\n  Pass --force to overwrite it, or choose a different path.")
+    if args.part is not None and args.start is not None:
+        die("Pass --part or --start, not both.")
+    if args.part is not None and not args.part[1] - args.part[0] > 14:
+        die("--part must span more than 14 s (a 10-s window with 2 s clear at each edge).")
     if (args.delay_mix is None) != (args.delay_feedback is None):
         die("Pass --delay-mix and --delay-feedback together (the song research's pair), or neither for the default.")
     if args.delay_mix is not None and not args.delay_reader:
@@ -225,7 +250,7 @@ def run(args) -> None:
     g = result["output_gain"]
     print(f"\nAmp: {result['amp']} ({result['cls']}); distances "
           + ", ".join(f"{a} {d:.4f}" for a, d in sorted(result["distances"].items(), key=lambda kv: kv[1])))
-    print(f"Window: {window['start_s']:.1f} s ({'given' if window['chosen_by'] == 'given' else 'most exposed guitar'})")
+    print(f"Window: {window['start_s']:.1f} s ({window_how(window)})")
     print(f"Output gain: {g['from']:+.1f} -> {g['to']:+.1f} dB" + (f" (clamped, {g['shortfall']:+.1f} dB short)"
                                                                    if g["shortfall"] else ""))
     if delay is not None:

@@ -2,7 +2,7 @@
 
 `generate`'s default sets the controls from research (its steps 2 to 5). The model path sets them from the song's
 audio with the trained model instead. It sits behind a flag. Use it **only when the user asks for it**, for example
-"use the model" or "make it from the audio". The user's real-song test decides whether it becomes the default.
+"use the model" or "make it from the audio". The ML session's real-song test decides whether it becomes the default.
 
 ## What it needs
 
@@ -10,7 +10,9 @@ audio with the trained model instead. It sits behind a flag. Use it **only when 
   - The model knows these two classes only.
   - For a heavier part, or when the class is a guess, say so. A wrong class changes both the answer and the amp pick,
     and that is unmeasured.
-- Where the part starts, when the user names it.
+- **The part's span** in the song file, start and end in seconds, more than 14 s long: the section the user names,
+  else the song's main guitar part from step 2's research (its time from synced lyrics, timestamped tabs or the
+  song's structure, kept a second or two inside the section's edges).
 - **Morgan Amps Suite (original) only.** It is not on Morgan X or Tone King.
 - The machine the model lives on: `~/ndsp-presets` with the model's data and its environments (msst-venv, the torch
   venv and the main `.venv`). Elsewhere the script refuses, and the research path is the answer.
@@ -24,11 +26,14 @@ audio with the trained model instead. It sits behind a flag. Use it **only when 
 
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/scripts/model_preset.py" --song SONG.mp3 --cls clean \
-  --start START_SECONDS --work WORK_DIR --out OUT_DIR/model.xml --name "NAME"
+  --part PART_START PART_END --part-from "the user" --work WORK_DIR --out OUT_DIR/model.xml --name "NAME"
 ```
 
-   - **Pass `--start` whenever the user names the part.** Without it, the script takes the 10 seconds where the guitar
-     is most exposed against the mix, which can land on a solo. Say which window was used.
+   - **Always pass the part with `--part`.** `--part-from` says who named it: `"the user"` or `"research"`. The model
+     reads one 10-s window. The script takes the most typical one inside the part, among the windows where the guitar
+     holds steady throughout, clear of the track's first and last seconds. Without `--part` it searches the whole song,
+     which may land on a part the user didn't mean. `--start` forces a window with no checks; use it only when the
+     user names an exact moment. Say which window was read and how it was chosen.
    - Use a folder under the data root for `WORK_DIR` (`~/ndsp-presets/auditions/<song>/model`).
    - It separates the guitar, takes the model's settings on each of the three amps and renders them through two stock
      guitar recordings (12 renders). It picks the amp whose renders sound closest to the song's guitar, sets the output
