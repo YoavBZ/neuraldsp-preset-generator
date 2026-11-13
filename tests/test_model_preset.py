@@ -112,3 +112,79 @@ def test_relative_paths_resolve_before_the_stages(tmp_path, monkeypatch):
     with pytest.raises(SystemExit):
         M.run(M.build_parser().parse_args(["--song", "s.wav", "--cls", "clean", "--work", "w", "--out", "o.xml"]))
     assert seen["work"] == (tmp_path / "w").resolve() and seen["song"] == (tmp_path / "s.wav").resolve()
+
+
+def delay_rec(on, amp="pr12"):
+    return {"on": on, "vote": 0.8 if on else 0.2, "threshold": 0.7, "time_ms": 380.0, "time_from": "halves",
+            "mix": 0.3, "feedback": 0.3, "mix_feedback_from": M.DELAY_DEFAULT_FROM, "amp": amp,
+            "settings": {"delay/delayActive": "true", "delay/delaySync": "0", "delay/delayTime": "380.0",
+                         "delay/delayMix": "0.300", "delay/delayFeedback": "0.300"} if on else {}}
+
+
+def work_dir(tmp_path, delay=None):
+    work = tmp_path / "w"
+    work.mkdir()
+    (work / "preset.json").write_text(json.dumps(result(**{"parameters/outputGain": "7.3"})))
+    (work / "window.json").write_text(json.dumps({"song": "s.wav", "start_s": 30.0, "chosen_by": "exposure"}))
+    if delay is not None:
+        (work / "delay.json").write_text(json.dumps(delay))
+    return work
+
+
+@pytest.mark.parametrize("on", [True, False])
+def test_the_delay_reader_writes_its_delay_only_when_on(tmp_path, monkeypatch, on):
+    work = work_dir(tmp_path, delay_rec(on))
+    monkeypatch.setattr(M, "template_for", lambda amp, cls: EXAMPLE)
+    out = tmp_path / "m.xml"
+    M.run(M.build_parser().parse_args(["--work", str(work), "--out", str(out), "--write-only", "--delay-reader"]))
+    v, before = values(out), values(EXAMPLE)
+    keys = [("delay", k) for k in ("delayActive", "delaySync", "delayTime", "delayMix", "delayFeedback")]
+    if on:
+        assert [v[k] for k in keys] == ["true", "0", "380.0", "0.300", "0.300"]
+    else:
+        assert [v[k] for k in keys] == [before[k] for k in keys]
+
+
+def test_without_the_flag_the_delay_file_is_ignored(tmp_path, monkeypatch):
+    work = work_dir(tmp_path, delay_rec(True))
+    monkeypatch.setattr(M, "template_for", lambda amp, cls: EXAMPLE)
+    out = tmp_path / "m.xml"
+    M.run(M.build_parser().parse_args(["--work", str(work), "--out", str(out), "--write-only"]))
+    assert values(out)[("delay", "delayActive")] == values(EXAMPLE)[("delay", "delayActive")]
+
+
+def test_the_delay_reader_refusals(tmp_path, monkeypatch):
+    monkeypatch.setattr(M, "template_for", lambda amp, cls: EXAMPLE)
+    parse = M.build_parser().parse_args
+    work = work_dir(tmp_path, delay_rec(True, amp="ac20"))
+    for extra in (["--delay-reader"],                                   # read for another amp
+                  ["--delay-reader", "--delay-mix", "0.2"],             # a lone mix
+                  ["--delay-mix", "0.2", "--delay-feedback", "0.2"],    # mix and feedback without the reader
+                  ["--delay-reader", "--delay-mix", "30", "--delay-feedback", "0.3"]):   # a percent, not 0-1
+        with pytest.raises(SystemExit):
+            M.run(parse(["--work", str(work), "--out", str(tmp_path / "m.xml"), "--write-only", *extra]))
+
+
+def test_the_delay_stage_arguments():
+    a = argparse.Namespace(work=pathlib.Path("/w"), delay_mix=0.25, delay_feedback=0.4, delay_source="research")
+    assert M.delay_args(a) == ["/w", "--mix", "0.25", "--feedback", "0.4", "--source", "research"]
+    a.delay_mix = a.delay_feedback = None
+    assert M.delay_args(a) == ["/w"]
+
+
+def test_a_delay_read_with_another_pair_is_refused_on_write_only(tmp_path, monkeypatch):
+    """The stored delay.json holds the default 0.30/0.30: asking for research's pair must not write 0.30 silently, and
+    a delay read with research's pair must not pass as the default."""
+    monkeypatch.setattr(M, "template_for", lambda amp, cls: EXAMPLE)
+    parse = M.build_parser().parse_args
+    work = work_dir(tmp_path, delay_rec(True))
+    with pytest.raises(SystemExit):
+        M.run(parse(["--work", str(work), "--out", str(tmp_path / "a.xml"), "--write-only", "--delay-reader",
+                     "--delay-mix", "0.5", "--delay-feedback", "0.5"]))
+    M.run(parse(["--work", str(work), "--out", str(tmp_path / "b.xml"), "--write-only", "--delay-reader",
+                 "--delay-mix", "0.3", "--delay-feedback", "0.3"]))                       # the same pair: written
+    d = delay_rec(True)
+    d["mix_feedback_from"] = "the song research"
+    (work / "delay.json").write_text(json.dumps(d))
+    with pytest.raises(SystemExit):
+        M.run(parse(["--work", str(work), "--out", str(tmp_path / "c.xml"), "--write-only", "--delay-reader"]))
