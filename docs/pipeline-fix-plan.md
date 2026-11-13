@@ -5455,7 +5455,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - These are synthetic draws. Real songs' delays are fewer, tempo-locked and mixed by people.
 - Files: `PF/t1/` and `PF/t1p/` (`plan.json`, `items/`, `read.json`; `t1p/diag/`); logs `logs/t1*.log`. Code: `learn/fx_t1.py`, `learn/fx_t1p.py`.
 
-### F87. T1x: with the guitar exposed, the stems keep their delay about twice as often (27% as drawn, 49% at −3 dB, 52% at 0 dB, both decided), while T1's correlation pick stays near chance (11%, 10%). By the declared outcome the comparison was the fault, and only the peak-position pick reaches the stems' rate, so delay time is read from the stem directly, as F52, and render-and-compare adds nothing for it. Post hoc, at those levels the stem's own cepstral peak also beats the prior on log2 error (phase_t1x, zero renders, 268 X-LANCE separations, audited)
+### F87. T1x: with the guitar exposed, the stems keep their delay about twice as often (27% as drawn, 49% at −3 dB, 52% at 0 dB, both decided), while T1's correlation pick stays near chance (11%, 10%). By the declared outcome the comparison was the fault, and only the peak-position pick reaches the stems' rate, so delay time is read from the stem directly, as F52, and render-and-compare adds nothing for it. Post hoc, at those levels the stem's own cepstral peak also beats the prior on log2 error, but all or nothing (the misses are far off) and with no confidence gate yet (phase_t1x, zero renders, 268 X-LANCE separations, audited)
 - **What ran** ([plan](full-controls-plan.md), "T1x in detail"). T1's 134 strong-third delay-on mixes, rebuilt by D_CC's own recipe with only the guitar-to-backing ratio changed, to −3 dB and to 0 dB. The draws' median is −8.7 dB.
   - The recipe check held on every item: the rebuild at the drawn ratio equals E1e's stored mix.
   - Each mix was separated by X-LANCE: 268 separations in 20 min, no renders.
@@ -5478,14 +5478,20 @@ what it changes. Each is audited before it is entered; the review's steps carry 
 - **Post hoc (not declared; the log2 error at the exposed levels):**
   - The stem's own peak has a log2 error of 0.89 at −3 dB and 0.83 at 0 dB, against the draw-aware prior's 1.03.
   - Paired: −0.14 [−0.23, −0.05] and −0.20 [−0.29, −0.04], both decided. That's the second half of T1's bar, which F52 failed at the draws' dense levels.
+  - **But it's all or nothing** (the review). The misses are a median 1.8 octaves off at −3 dB and 1.9 at 0 dB, and only 16–17% of them are double or half. So the win comes from the hits: trusting the peak would set a badly wrong delay on about half the audible delays.
+  - The wide-uniform prior is a weak guess (a fixed 250 ms gives 1.035), and real songs' tempo-locked delays would be harder to beat.
+  - **No confidence gate yet** (post hoc, zero renders, T1x's stored cepstra): the peak's height barely separates hits from misses (AUC 0.58 at −3 dB, 0.61 at 0 dB). The tallest third of peaks hit 24 and 25 of 44, against about half overall.
 - **What it means.**
-  - **At the product's exposure, the separated stem carries an audible delay's time,** and a training-free cepstral peak reads it within 10% about half the time, beating a guess on error size.
-  - **Render-and-compare isn't needed for delay time.** Its whole-cepstrum correlation is the wrong comparison, and the direct reader already does as well as anything rendered could.
+  - **At the product's exposure, the separated stem carries an audible delay's time,** and a training-free cepstral peak reads it within 10% about half the time. It beats the uniform prior on error size, but all or nothing: the misses are far off, and no confidence gate is shown yet, so it isn't fit for the product as it stands.
+  - **As tested, render-and-compare adds nothing for delay time.** Its whole-cepstrum correlation was the one comparison tried, and the peak-position pick is the stem's own peak on the grid.
   - **Not yet shown:**
     - on/off at exposure: this read is on audible delays only, and a cepstral peak always returns a lag;
     - the weaker two thirds;
     - real songs.
-  - **The next steps, to the user:** T0's on/off and knob read at the product's exposure (all 770 rebuilt, about 1,540 separations), and the same direct readers for tremolo rate and reverb, checked first on the clean target.
+  - **The next steps:**
+    - **First, a confidence gate** for the direct reader at exposure. Peak height isn't one (above), so it needs another feature, or the agreement between halves.
+    - **Then T0's on/off and knob read at the product's exposure** (T0x, all 770 rebuilt at −3 dB).
+    - **Then the same direct readers for tremolo rate and reverb,** checked first on the clean target.
 - Files: `PF/t1x/` (`items/`, `read.json`); logs `logs/t1x*.log`. Code: `learn/fx_t1x.py`.
 
 ## Budget
