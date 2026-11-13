@@ -29,7 +29,8 @@ from learn import c4_ear as C4
 
 PHASE = "phase_r1"
 PAGE_SEED = 20261141                # unused elsewhere (the review: 20261131 was T0's)
-PRE_S = 6.0                         # silent preroll before each kept render: set by r1-tail's rule (tail.json, 2026-11-13)
+PAD_S = 6.0                         # r1-tail's padded probe, and the preroll its rule turns on
+TAIL_DB, TAIL_LUFS = 40.0, -60.0    # the declared rule: planned - padded under 40 dB, or the tail above -60 LUFS
 PROBE = "/Library/Audio/Presets/Neural DSP/Morgan Amps Suite/Artists/Mark Johnston/Royally Ambient.xml"
 PROBE_FX = {("delay", "delayActive"): "true", ("delay", "delaySync"): "0", ("delay", "delayTime"): "450",
             ("delay", "delayMix"): "0.6", ("delay", "delayFeedback"): "0.7", ("reverb", "reverbActive"): "true",
@@ -228,6 +229,7 @@ def cmd_render(args):
     k, n = args.shard
     trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
     stock_all = json.loads((A1.a1_dir() / "plan.json").read_text())["stock"]
+    pre = pre_s()
     LO._wait_cap()
     renders, out = 0, ear_dir() / "clips"
     out.mkdir(parents=True, exist_ok=True)
@@ -250,24 +252,40 @@ def cmd_render(args):
                     clips[a], shas[a] = clips["M"], shas["M"]               # the same preset: M's render
                     continue
                 sel, ed = parse_preset(d / "arms" / f"{a}.xml", pack)
-                y = render_kept(CB.new_renderer, AM, di, sel, ed, trim)
+                y = render_kept(CB.new_renderer, AM, di, sel, ed, trim, pre)
                 renders += 1
                 shas[a] = AM.audio_sha(y)
                 clips[a] = (np.mean(y, 1) if y.ndim == 2 else y).astype(np.float32)
             h = PS.half_slices()["A"]                                       # the half the pick read (the review)
             np.savez(p, ref=np.asarray(w["stem"])[h], mix=np.asarray(w["mix"])[h], **{a_: v[h] for a_, v in clips.items()})
-            P.save(out / f"{x['song']}__{j}.json", {"song": x["song"], "di": s["di"], "shas": shas})
+            P.save(out / f"{x['song']}__{j}.json", {"song": x["song"], "di": s["di"], "shas": shas, "pre_s": pre})
             print(f"{x['song']} DI {j}: renders so far {renders}", flush=True)
     print(f"R1 RENDER DONE {k}/{n}: {renders} kept renders", flush=True)
 
 
-def render_kept(make, AM, di, sel, ed, trim, pre_s=None):
-    """One fresh, primed render with PRE_S of silence before the DI (cut off), trimmed as the model path's."""
+def tail_decision(half_a_db, tail_lufs):
+    """The declared rule on r1-tail's numbers -> {pre_s, why}."""
+    over = [f"planned - padded {half_a_db:.1f} dB, under {TAIL_DB:.0f}"] if half_a_db < TAIL_DB else []
+    if any(x > TAIL_LUFS for x in tail_lufs):
+        over.append(f"the priming tail alone reaches {max(tail_lufs):.1f} LUFS, above {TAIL_LUFS:.0f}")
+    return {"pre_s": PAD_S if over else 0.0, "why": "; ".join(over) or "neither trigger"}
+
+
+def pre_s():
+    """The preroll r1-tail decided; refuses without it."""
+    p = ear_dir() / "tail.json"
+    if not p.exists() or "decision" not in json.loads(p.read_text()):
+        raise SystemExit("no r1-tail decision (r1/tail.json): run r1-tail first")
+    return float(json.loads(p.read_text())["decision"]["pre_s"])
+
+
+def render_kept(make, AM, di, sel, ed, trim, pre):
+    """One fresh, primed render with `pre` seconds of silence before the DI (cut off), trimmed as the model path's."""
     import numpy as np
 
     from learn import pretrain_set as PS
 
-    pre = int((PRE_S if pre_s is None else pre_s) * PS.SR)
+    pre = int(pre * PS.SR)
     x = np.concatenate([np.zeros(pre, np.float32), di]).astype(np.float32)
     y = np.asarray(AM.fresh_render(make, x, sel, ed, ed), np.float64)[pre:]
     return y[trim[0]:trim[1]]
@@ -296,7 +314,7 @@ def cmd_tail(_args):
     trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
     mono = lambda y: np.mean(y, 1) if y.ndim == 2 else y            # noqa: E731
     planned = mono(render_kept(CB.new_renderer, AM, di, sel, ed, trim, 0.0))
-    padded = mono(render_kept(CB.new_renderer, AM, di, sel, ed, trim, 6.0))
+    padded = mono(render_kept(CB.new_renderer, AM, di, sel, ed, trim, PAD_S))
     rr = CB.new_renderer()                                         # the tail alone: prime with the DI, then silence
     try:
         rr.render(di, sel, ed)
@@ -312,6 +330,8 @@ def cmd_tail(_args):
            "the priming tail's level, LUFS by second": [round(float(SA.lufs(tail[int(t * PS.SR):int((t + 1) * PS.SR)])), 1)
                                                          for t in range(int(len(tail) / PS.SR))],
            "the clip's LUFS": float(SA.lufs(planned)), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    rep["decision"] = tail_decision(rep["half A: planned - padded, dB below the clip"],
+                                    rep["the priming tail's level, LUFS by second"])
     P.save(ear_dir() / "tail.json", rep)
     print(json.dumps(rep, indent=1))
 

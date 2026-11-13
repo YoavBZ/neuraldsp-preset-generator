@@ -52,3 +52,10 @@ def test_page_parts_build():
     assert '"mix"' in js and 'g: "ref"' in js and "r1-ear" in js
     html = R.cards([{"id": "i1", "n": 1}])
     assert "Guitar (G)" in html and "Song (S)" in html and "Record" not in html
+
+
+def test_tail_decision_is_the_declared_rule():
+    assert R.tail_decision(2.5, [-70.0] * 10)["pre_s"] == R.PAD_S
+    assert R.tail_decision(45.0, [-70.0, -55.0])["pre_s"] == R.PAD_S
+    d = R.tail_decision(45.0, [-70.0] * 10)
+    assert d["pre_s"] == 0.0 and d["why"] == "neither trigger"
