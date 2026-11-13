@@ -2,7 +2,7 @@
 (`docs/full-controls-plan.md`, "The model path"). Four stages, each writing into one folder for the next, because the
 separator, the model and the renderer live in different environments:
 
-    ~/ndsp-presets/tools/msst-venv/bin/python -m learn.product_path separate SONG --out DIR [--start S]
+    ~/ndsp-presets/tools/msst-venv/bin/python -m learn.product_path separate SONG --out DIR [--part A B | --start S]
     $TORCH_PY -m learn.product_path answers DIR --cls clean|crunch
     .venv/bin/python -m learn.product_path render DIR                    # 12 renders (3 amps x 2 stock DIs, primed)
     $TORCH_PY -m learn.product_path pick DIR                             # the amp and the output gain -> DIR/preset.json
@@ -10,8 +10,10 @@ separator, the model and the renderer live in different environments:
 
 What each stage reproduces, and where it was validated:
 - **separate:** the song's 10-s window, separated by X-LANCE `gtr_mss` (the model's real-song input: V-real read 3, F41;
-  N5b). With no start given, the window where the stem sits loudest against the mix (exposure matters: F87, F88), among
-  those whose stem holds through half A (every 0.5 s within 12 dB of the half: no fade, ending or late entry; R1).
+  N5b). Given a start, that window. Otherwise the selector (R1 Amendment 2) works inside the part (`--part`, from the
+  user or research; else the whole song). It takes the 10-s windows on a 1-s hop, 2 s clear of the track's ends, where
+  the stem holds (every 0.5 s within 12 dB of the window) and sits within 12 dB of the mix. Of those, it picks the one
+  whose tone is most typical (the medoid of the level-free mel profiles), not the most exposed.
 - **answers:** the adopted model (`adopted-model.json`: R-all's all-labels pair, both seeds, held as C3-cabS) on each
   amp, from the window's half A at V-real read 3's level (the mix brought to -12.25 LUFS, the stem by the same gain).
 - **render:** each amp's answer through the class's two stock DIs (A1's), fresh and primed, trimmed (F80, F81).
@@ -35,7 +37,6 @@ import pathlib
 import time
 
 WINDOW_S = 10.0                       # the model's section (`pretrain_set.SEC_S`)
-HOP_S = 5.0                           # the window search's step
 MIX_LEVEL = -12.25                    # V-real read 3's mix level (`pipeline_fix.DFIX_VREAL_LEVEL`)
 HALF = "A"                            # the half the answer and the pick read (both halves validated; one fixed)
 FLOOR_U8 = 44                         # A1's -90 dB floor on every embedded input
@@ -45,30 +46,62 @@ AMPS = ("pr12", "sw50r", "ac20")
 
 # --- the pure parts -----------------------------------------------------------------------------------------------------
 
-STEADY_DB, BLOCK_S = 12.0, 0.5        # the guard (R1, 2026-11-13): every 0.5 s of the stem's half A within 12 dB of the half
+STEADY_DB, BLOCK_S = 12.0, 0.5        # the guard: every 0.5 s of the stem within 12 dB of the window's level
 
 
-def steady(stem, sr):
-    """The guard: the stem holds through half A (the half the model and the pick read). Every BLOCK_S block of it sits
-    within STEADY_DB of the half's own level, so a window isn't a fade, an ending or a late entry. -> (passes, the
-    lowest block less the half, dB)."""
+SEL_HOP_S, EDGE_S, PRESENT_DB = 1.0, 2.0, 12.0   # the selector (R1 Amendment 2): a 1-s hop, 2 s clear of the
+#                                                  track's ends, the guitar within 12 dB of the mix
+
+
+def candidate_starts(span, dur, window=WINDOW_S, hop=SEL_HOP_S, edge=EDGE_S):
+    """The 10-s windows on a 1-s hop inside `span` (start, end s), each at least `edge` s clear of the track's start and
+    end. -> [start s]."""
+    lo, hi = max(span[0], edge), min(span[1], dur - edge) - window
+    return [round(lo + i * hop, 3) for i in range(int((hi - lo) // hop) + 1)] if hi >= lo else []
+
+
+def steady_whole(stem, sr):
+    """The guard on the whole window: every BLOCK_S block of the stem within STEADY_DB of the window's own level (no fade,
+    ending, entry or long rest). -> (passes, the lowest block less the window, dB)."""
     import numpy as np
 
-    from learn import pretrain_set as PS
     from learn import song_aug as SA
 
-    h = np.asarray(stem, np.float64)[PS.half_slices(sr)[HALF]]
-    whole, b = float(SA.lufs(h)), int(BLOCK_S * sr)
-    low = min(float(SA.lufs(h[i:i + b])) for i in range(0, len(h) - b + 1, b)) - whole
+    x = np.asarray(stem, np.float64)
+    whole, b = float(SA.lufs(x)), int(BLOCK_S * sr)
+    low = min(float(SA.lufs(x[i:i + b])) for i in range(0, len(x) - b + 1, b)) - whole
     return low >= -STEADY_DB, low
 
 
-def exposure_window(levels):
-    """levels: [(start_s, stem LUFS, mix LUFS[, steady])] -> the start whose stem sits loudest against its mix (ties:
-    earliest), among the windows that pass the guard when any is given and any passes."""
-    ok = [r for r in levels if len(r) < 4 or r[3]]
-    best = max(ok or levels, key=lambda r: (r[1] - r[2], -r[0]))
-    return best[0]
+def tone_profile(stem):
+    """The window's tone, level removed: its mean mel power spectrum in dB, less that spectrum's mean."""
+    import numpy as np
+
+    from learn import song_aug as SA
+
+    p = np.mean(10 ** (SA.logmel(np.asarray(stem, np.float64)) / 10), axis=1)
+    d = 10 * np.log10(p + 1e-12)
+    return d - d.mean()
+
+
+def medoid(profiles):
+    """The index of the profile with the least summed distance to the others (ties: the earliest)."""
+    import numpy as np
+
+    P = np.asarray(profiles, np.float64)
+    D = np.sqrt(((P[:, None, :] - P[None, :, :]) ** 2).sum(-1)).sum(1)
+    return int(np.argmin(D))
+
+
+def select_window(rows):
+    """rows: [{start, steady, present, profile}] -> (start, how): the medoid tone of the windows that are steady and
+    present, else of the steady ones, else of all, said in `how`."""
+    for how, ok in (("steady and present", lambda r: r["steady"] and r["present"]), ("steady only", lambda r: r["steady"]),
+                    ("none steady", lambda r: True)):
+        pool = [r for r in rows if ok(r)]
+        if pool:
+            return pool[medoid([r["profile"] for r in pool])]["start"], how
+    raise SystemExit("no candidate windows")
 
 
 def cosine_distance(a, b):
@@ -91,7 +124,11 @@ def _save(p, obj):
 
 
 def cmd_separate(args):
-    """The song's window and its X-LANCE stem -> DIR/window.npz, DIR/window.json."""
+    """The song's window and its X-LANCE stem -> DIR/window.npz, DIR/window.json. Given --start: that window. Else the
+    selector (R1 Amendment 2): the part (--part START END, from the user or research; else the whole song) separated
+    once, its 10-s windows on a 1-s hop clear of the track's ends, kept when the stem holds through the window and sits
+    within 12 dB of the mix, and of those the one whose tone is most typical (the medoid). The chosen window is then
+    separated on its own, as every earlier read did."""
     import numpy as np
     import soundfile as sf
 
@@ -102,31 +139,45 @@ def cmd_separate(args):
 
     out = pathlib.Path(args.out)
     sep = DS.stem_separator(T.SEP, args.device)
-    n = int(WINDOW_S * PS.SR)
+    n, sr = int(WINDOW_S * PS.SR), PS.SR
+    dur = sf.info(args.song).duration
+    rec = {"song": str(args.song), "duration_s": dur}
     if args.start is not None:
-        starts = [float(args.start)]
+        start, rec["chosen_by"] = float(args.start), "given"
     else:
-        dur = sf.info(args.song).duration
-        starts = [s * HOP_S for s in range(int(max(0.0, dur - WINDOW_S) // HOP_S) + 1)]
-    levels, keep = [], {}
-    for s in starts:
-        mix = np.asarray(PS.load_mono(args.song, PS.SR, s, WINDOW_S), np.float64)
-        mix = np.pad(mix, (0, max(0, n - len(mix))))[:n]
-        stem = np.asarray(sep(mix), np.float64)
-        row = (s, float(SA.lufs(stem)), float(SA.lufs(mix)))
-        levels.append(row if args.start is not None else (*row, steady(stem, PS.SR)[0]))
-        keep[s] = (mix, stem)
-    start = exposure_window(levels)
-    mix, stem = keep[start]
+        span = (float(args.part[0]), float(args.part[1])) if args.part else (0.0, dur)
+        starts = candidate_starts(span, dur)
+        if not starts:
+            raise SystemExit(f"the part {span} holds no 10-s window clear of the track's ends")
+        a = starts[0]
+        mix_span = np.asarray(PS.load_mono(args.song, sr, a, starts[-1] + WINDOW_S - a), np.float64)
+        stem_span = np.asarray(sep(mix_span), np.float64)
+        rows = []
+        for s0 in starts:
+            k = int(round((s0 - a) * sr))
+            st, mx = stem_span[k:k + n], mix_span[k:k + n]
+            if len(st) < n:
+                continue
+            ok, low = steady_whole(st, sr)
+            exp = float(SA.lufs(st)) - float(SA.lufs(mx))
+            rows.append({"start": s0, "steady": ok, "lowest_block_db": low, "exposure_db": exp,
+                         "present": exp >= -PRESENT_DB, "profile": tone_profile(st)})
+        start, how = select_window(rows)
+        rec.update({"chosen_by": f"selector: the medoid tone of the windows {how}", "part_s": list(span),
+                    "part_from": args.part_from if args.part else "the whole song (no part named)",
+                    "candidates": len(rows), "steady": sum(r["steady"] for r in rows),
+                    "steady and present": sum(r["steady"] and r["present"] for r in rows),
+                    "rows": [{k: v for k, v in r.items() if k != "profile"} for r in rows]})
+    mix = np.asarray(PS.load_mono(args.song, sr, start, WINDOW_S), np.float64)
+    mix = np.pad(mix, (0, max(0, n - len(mix))))[:n]
+    stem = np.asarray(sep(mix), np.float64)
     np.savez(out / "window.npz", mix=mix.astype(np.float32), stem=stem.astype(np.float32))
-    passed, low = steady(stem, PS.SR)
-    _save(out / "window.json", {"song": str(args.song), "start_s": start, "chosen_by": "given" if args.start is not None
-                                 else "exposure, guarded", "levels": levels,
-                                 "guard": {"steady_db": STEADY_DB, "block_s": BLOCK_S, "passes": passed,
-                                           "lowest block - half A, dB": low,
-                                           "windows passing": sum(1 for r in levels if len(r) > 3 and r[3])},
-                                 "time": time.strftime("%Y-%m-%d %H:%M:%S")})
-    print(f"SEPARATE: window at {start:.1f} s ({len(levels)} tried)")
+    ok, low = steady_whole(stem, sr)
+    rec.update({"start_s": start, "window": {"steady": ok, "lowest_block_db": low,
+                                             "exposure_db": float(SA.lufs(stem)) - float(SA.lufs(mix))},
+                "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+    _save(out / "window.json", rec)
+    print(f"SEPARATE: window at {start:.1f} s ({rec['chosen_by']}; {rec.get('candidates', 1)} candidates)")
 
 
 def _adopted():
@@ -324,7 +375,10 @@ def main(argv=None):
     s = sub.add_parser("separate")
     s.add_argument("song")
     s.add_argument("--out", required=True)
-    s.add_argument("--start", type=float, default=None)
+    s.add_argument("--start", type=float, default=None, help="the window's start, given (unguarded)")
+    s.add_argument("--part", type=float, nargs=2, metavar=("START", "END"), default=None,
+                   help="the part's span in seconds (from the user or research); the selector picks the window inside")
+    s.add_argument("--part-from", default="research", help="where --part came from (recorded)")
     s.add_argument("--device", default="mps")
     s.set_defaults(fn=cmd_separate)
     a = sub.add_parser("answers")
