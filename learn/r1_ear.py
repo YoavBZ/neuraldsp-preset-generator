@@ -214,7 +214,6 @@ def cmd_render(args):
     import numpy as np
     from packs.loader import load_pack
 
-    from learn import amp_di_compare as A1
     from learn import audibility_measure as AM
     from learn import cc_build as CB
     from learn import local_objective as LO
@@ -224,11 +223,12 @@ def cmd_render(args):
     from learn import trusted_data as T
 
     P.require(PHASE)
+    P.require("phase_r1_a3")
     plan = json.loads((ear_dir() / "plan.json").read_text())
     pack = load_pack("morgan")
     k, n = args.shard
     trim = (int(PS.TRIM_S * PS.SR), int((PS.TRIM_S + PS.SEC_S) * PS.SR))
-    stock_all = json.loads((A1.a1_dir() / "plan.json").read_text())["stock"]
+    matched = matched_dis()
     pre = pre_s()
     LO._wait_cap()
     renders, out = 0, ear_dir() / "clips"
@@ -239,7 +239,7 @@ def cmd_render(args):
             if _sha(d / "arms" / f"{a}.xml") != x["arms"][a]["sha256"]:
                 raise SystemExit(f"{x['song']} {a}: the preset changed since r1-check")
         w = np.load(d / "window.npz")
-        for j, s in enumerate(stock_all[x["cls"]]):
+        for j, s in enumerate(matched[x["song"]]):
             p = out / f"{x['song']}__{j}.npz"
             if p.exists():
                 continue
@@ -277,6 +277,18 @@ def pre_s():
     if not p.exists() or "decision" not in json.loads(p.read_text()):
         raise SystemExit("no r1-tail decision (r1/tail.json): run r1-tail first")
     return float(json.loads(p.read_text())["decision"]["pre_s"])
+
+
+def matched_dis():
+    """Amendment 3: each song's two part-matched DI segments (`learn.r1_di`, r1/matched-dis.json); refuses without them.
+    -> {song: [{di, di_path, start_s}]}."""
+    p = ear_dir() / "matched-dis.json"
+    if not p.exists():
+        raise SystemExit("no r1/matched-dis.json: run learn.r1_di first (Amendment 3: the arms play part-matched DIs)")
+    d = {s: v["dis"] for s, v in json.loads(p.read_text())["songs"].items()}
+    if sorted(d) != sorted(songs()) or any(len(v) != 2 for v in d.values()):
+        raise SystemExit("r1/matched-dis.json doesn't hold two DIs for each of R1's songs")
+    return d
 
 
 def render_kept(make, AM, di, sel, ed, trim, pre):
@@ -341,7 +353,8 @@ def cmd_tail(_args):
 INTRO = """<h1>Which preset sounds most like the song's guitar?</h1>
 <p class="intro">@@COUNT@@ items of about 4.5 seconds, looping. <b>Guitar (G)</b> is the song's guitar, separated from the
 mix; <b>Song (S)</b> is the same moment of the full song, for context only. A, B and C are three presets playing
-<b>another guitarist's performance</b>, so the notes differ: judge the tone, not the playing.
+<b>another guitarist's performance</b>, chosen to play like the song's part (single notes or chords, about the same
+register and pace). The notes still differ, so judge the tone, not the playing.
 Everything switches instantly: tap a button, or press G, S, A, B, C; Space stops. All clips are set to the same loudness.
 Headphones, please.</p>
 <p class="intro">For each item, rank A, B and C: 1 is closest to the song's guitar. If two or all three sound the same to
