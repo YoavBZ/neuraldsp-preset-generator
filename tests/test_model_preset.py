@@ -87,3 +87,28 @@ def test_refuses_to_overwrite(tmp_path):
     p = subprocess.run([sys.executable, str(REPO_ROOT / "scripts/model_preset.py"), "--work", str(tmp_path),
                         "--out", str(out), "--write-only"], capture_output=True, text=True)
     assert p.returncode != 0 and "already exists" in p.stderr
+
+
+def test_the_documented_command_parses():
+    """The reference's command is skipped by the skills' command test (it needs the model), so its flags are checked
+    here: an agent copies it verbatim."""
+    import re
+    import shlex
+
+    doc = (REPO_ROOT / "reference/model-path.md").read_text()
+    block = re.search(r"```bash\n(python [^`]*?model_preset\.py.*?)```", doc, re.S).group(1)
+    argv = shlex.split(block.replace("\\\n", " "))[2:]
+    args = M.build_parser().parse_args([a.replace("START_SECONDS", "12") for a in argv])
+    assert args.song and args.cls == "clean" and args.start == 12.0 and args.name
+
+
+def test_relative_paths_resolve_before_the_stages(tmp_path, monkeypatch):
+    """The stages run from the plugin root, so a relative --work or --song must reach them absolute."""
+    monkeypatch.chdir(tmp_path)
+    seen = {}
+    monkeypatch.setattr(M, "ADOPTED", EXAMPLE)                       # any existing file: the data is present
+    monkeypatch.setattr(M, "run_stages", lambda a: seen.update(work=a.work, song=a.song) or (_ for _ in ()).throw(
+        SystemExit(0)))
+    with pytest.raises(SystemExit):
+        M.run(M.build_parser().parse_args(["--song", "s.wav", "--cls", "clean", "--work", "w", "--out", "o.xml"]))
+    assert seen["work"] == (tmp_path / "w").resolve() and seen["song"] == (tmp_path / "s.wav").resolve()

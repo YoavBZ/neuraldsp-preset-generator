@@ -50,7 +50,8 @@ def main_python() -> pathlib.Path:
         p = d / ".venv/bin/python"
         if p.exists():
             return p
-    die("No main .venv found at or above the plugin root; set NDSP_MAIN_PY.")
+    die("No main .venv found at or above the plugin root (an installed copy has none): set NDSP_MAIN_PY to the "
+        "repository's .venv/bin/python.")
 
 
 def interpreters() -> dict:
@@ -60,8 +61,9 @@ def interpreters() -> dict:
 
 
 def stage_args(stage: str, args) -> list:
+    """The stages run from the plugin root, so `run` resolves --song and --work first."""
     if stage == "separate":
-        out = [str(pathlib.Path(args.song).expanduser()), "--out", str(args.work)]
+        out = [str(args.song), "--out", str(args.work)]
         return out + (["--start", str(args.start)] if args.start is not None else [])
     if stage == "answers":
         return [str(args.work), "--cls", args.cls]
@@ -76,7 +78,7 @@ def run_stages(args) -> None:
     done = args.work / "window.json"
     if done.exists():                     # a resumed run must be the same song and window
         w = json.loads(done.read_text())
-        if pathlib.Path(w["song"]).resolve() != pathlib.Path(args.song).expanduser().resolve() or (
+        if pathlib.Path(w["song"]) != args.song or (
                 args.start is not None and abs(float(w["start_s"]) - args.start) > 1e-6):
             die(f"{args.work} holds another song or window ({w['song']} at {w['start_s']} s); use a new --work.")
     ans = args.work / "answers.json"
@@ -141,8 +143,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def run(args) -> None:
-    args.work = args.work.expanduser()
-    out = args.out.expanduser()
+    args.work = args.work.expanduser().resolve()      # the stages run from the plugin root, not the caller's folder
+    out = args.out.expanduser().resolve()
+    if args.song:
+        args.song = pathlib.Path(args.song).expanduser().resolve()
     if out.exists() and not args.force:
         die(f"--out already exists: {out}\n  Pass --force to overwrite it, or choose a different path.")
     if not args.write_only:

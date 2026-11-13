@@ -48,7 +48,7 @@ lives in the linked documents. Last updated 2026-11-11.
   by ear (product steps; history in [roadmap-history.md](roadmap-history.md#product-steps-16-as-they-stood-on-2026-10-14), step 5).
 - **`edit`** changes a preset from a plain-English ask.
 - **`generate`'s model path (2026-11-13, behind a flag; Morgan original only):** on request, the adopted model sets the
-  amp, EQ, pedals, gate and output from the song file, with research's effects on top
+  input gain, amp, mics, EQ, pedals, gate and output from the song file, with research's effects on top
   ([model-path.md](../reference/model-path.md); `scripts/model_preset.py` over `learn/product_path.py`). The user's
   real-song test decides whether it becomes the default.
 - **Predicting a preset from the song** is active research, not yet the product's default

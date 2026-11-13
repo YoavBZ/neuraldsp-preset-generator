@@ -239,6 +239,10 @@ NEEDS_THE_PLUGIN = ("au_probe", "au_render", "swiftc", "audit_manifest.py", "scr
 # The skill commands that render through the plugin by design: a machine without it
 # skips them, and the guards below accept that skip for these alone.
 RENDERS_THROUGH_THE_PLUGIN = ("scripts/audition.py",)
+# The model path runs the trained model, which lives in the data root and its own environments, never on CI;
+# `tests/test_model_preset.py` checks the documented command's flags instead.
+NEEDS_THE_MODEL = ("scripts/model_preset.py",)
+NO_MODEL = "needs the trained model's data and environments (~/ndsp-presets)"
 NO_PLUGIN = "needs the licensed Audio Unit installed on macOS"
 NO_EXTRAS = "needs the optional analysis and match extras"
 NEEDS_A_PRESET_FOLDER = (
@@ -324,6 +328,8 @@ def skip_reason(command: str):
     # must skip on this whatever else the command needs.
     if needs_audio_fixture(command) and not analysis_is_available():
         return NO_EXTRAS
+    if any(marker in command for marker in NEEDS_THE_MODEL):
+        return NO_MODEL
     if any(marker in command for marker in NEEDS_THE_PLUGIN):
         # By capability, not by spelling. These commands used to skip on the one
         # machine that could run them — a substring match on `swiftc` or
