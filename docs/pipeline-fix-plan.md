@@ -5445,7 +5445,7 @@ what it changes. Each is audited before it is entered; the review's steps carry 
   - **The diagnostic, read right:** the clean guitar added to its residual keeps the delay on 28 of 40. But the residual holds what the stem lost, so that input is the mix plus the guitar's own leaked echo, not a separator test.
   - **What the stems' quarter depends on** (zero renders, from each item's draw in D_CC's plan):
     - **The guitar's level against the backing.** The top third of the draws' ratio (above −6.9 dB) keeps it on 19 of 44, the rest on 17 of 90 (Fisher p 0.004). The middle and bottom thirds don't differ (7 of 43, 10 of 47; p 0.6). Even the top third keeps 43%, where the clean guitar keeps about 75%. So exposure helps but isn't the whole story. The draws put the guitar a median 9 dB under the backing, denser than the product's scope.
-    - **Mastering doesn't remove the echo; if anything it helps.** The mastered mixes keep it more often (26 of 68 against 10 of 66, p 0.003), within every level third too: 5 of 19 against 2 of 22, 8 of 26 against 2 of 23, and 13 of 23 against 6 of 21. Compression may lift the tails.
+    - **Mastering doesn't remove the echo; if anything it helps.** The mastered mixes keep it more often (26 of 68 against 10 of 66, p 0.003), within every level third too (the table's thirds): bottom 7 of 23 against 3 of 24, middle 6 of 22 against 1 of 21, top 13 of 23 against 6 of 21. Compression may lift the tails.
 - **What it means.**
   - **Two fixes, in order.**
     - **The comparison first:** the stems hold the delay on about a quarter, and a comparison that keeps the echo peak should reach at least that.
