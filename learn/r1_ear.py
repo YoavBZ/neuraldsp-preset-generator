@@ -39,6 +39,13 @@ GAP, REPEATS = 4, 2
 ARMS = ("R", "M", "D")              # research, the model path, the model path with the delay reader
 LETTERS = C4.LETTERS
 MIN_READ = 12                       # first hearings answered (of 14)
+
+
+def min_read(n_first):
+    """The page is read with 12 of 14 first hearings, the same share (at least 85%) on a page with fewer cards."""
+    import math
+
+    return MIN_READ if n_first == 14 else math.ceil(0.85 * n_first)
 LISTENING = "r1-ear"
 N_SONGS = 7                          # the user's seven (2026-11-13); their files are listed outside the repo,
 #                                      in r1/songs.json (the user: no local song or its files in git)
@@ -81,9 +88,11 @@ def rule(tally, n_songs=N_SONGS, page_failed=False):
     mirror), else level."""
     if page_failed:
         return "not read"
+    if n_songs < 5:
+        return "descriptive only (under 5 songs)"         # Amendment 5, the review: no verdict below 5 kept songs
     ahead = sum(v == "ahead" for v in tally.values())
     behind = sum(v == "behind" for v in tally.values())
-    need, allow = n_songs - 2, 1
+    need, allow = (n_songs - 2 if n_songs >= 7 else n_songs - 1), 1
     if ahead >= need and behind <= allow:
         return "the model ahead"
     if behind >= need and ahead <= allow:
@@ -111,7 +120,7 @@ def ear_read(items, got):
     heard = {it["id"]: C4.unblind(it, got.get(it["id"])) for it in items}
     first = [it for it in items if it["repeat_of"] is None]
     read = sum(1 for it in first if heard[it["id"]])
-    failed = read < MIN_READ
+    failed = read < min_read(len(first))
     scores, d_scores, d_check, firsts, cards = {}, {}, [], {a: 0 for a in ARMS}, []
     for it in first:
         h = heard[it["id"]]
@@ -130,6 +139,7 @@ def ear_read(items, got):
         cards.append({"id": it["id"], "song": it["song"], "cls": it["cls"], "di": it["di"], "M_vs_R": sc, "D_vs_M": dm,
                       "ranks": {a: h[a]["rank"] for a in ARMS}})
     tally = song_tally(scores)
+    n_songs = len({it["song"] for it in first})
     n = [c["M_vs_R"] for c in cards]
     share = (sum(1.0 if x > 0 else 0.5 if x == 0 else 0.0 for x in n) / len(n)) if n else None
     reps = [{"id": it["id"], "repeat_of": it["repeat_of"],
@@ -142,7 +152,7 @@ def ear_read(items, got):
     return {"read": read, "page_failed": failed, "unanswered": [it["id"] for it in first if not heard[it["id"]]],
             "songs": tally, "ahead": sum(v == "ahead" for v in tally.values()),
             "behind": sum(v == "behind" for v in tally.values()), "level": sum(v == "level" for v in tally.values()),
-            "cards_share_M_over_R": share, "rule": rule(tally, page_failed=failed),
+            "cards_share_M_over_R": share, "rule": rule(tally, n_songs=n_songs, page_failed=failed),
             "delay": {"on_songs": sorted(d_scores), "scores": d_scores, "rule": delay_rule(d_scores),
                       "identical_check": d_check},
             "firsts": firsts, "by_class": {k: {"cards": len(v), "M_above": sum(x > 0 for x in v),
@@ -239,7 +249,7 @@ def cmd_render(args):
             if _sha(d / "arms" / f"{a}.xml") != x["arms"][a]["sha256"]:
                 raise SystemExit(f"{x['song']} {a}: the preset changed since r1-check")
         w = np.load(d / "window.npz")
-        for j, s in enumerate(matched[x["song"]]):
+        for j, s in enumerate(matched.get(x["song"], [])):
             p = out / f"{x['song']}__{j}.npz"
             if p.exists():
                 continue
@@ -286,9 +296,9 @@ def matched_dis():
     if not p.exists():
         raise SystemExit("no r1/matched-dis.json: run learn.r1_di first (Amendment 3: the arms play part-matched DIs)")
     d = {s: v["dis"] for s, v in json.loads(p.read_text())["songs"].items()}
-    if sorted(d) != sorted(songs()) or any(len(v) != 2 for v in d.values()):
-        raise SystemExit("r1/matched-dis.json doesn't hold two DIs for each of R1's songs")
-    return d
+    if not set(d) <= set(songs()) or any(len(v) not in (1, 2) for v in d.values()):
+        raise SystemExit("r1/matched-dis.json must hold one or two DIs for some of R1's songs")
+    return d                                           # Amendment 5: a song with none picked by ear leaves the page
 
 
 def render_kept(make, AM, di, sel, ed, trim, pre):
@@ -425,8 +435,9 @@ def cmd_page(_args):
         raise SystemExit(f"{key_path} exists: a rebuild hides the listener's stored answers; move it aside first")
     plan = json.loads((ear_dir() / "plan.json").read_text())
     items = []
+    matched = matched_dis()
     for x in plan["songs"]:
-        for j in (0, 1):
+        for j in range(len(matched.get(x["song"], []))):
             if not (ear_dir() / "clips" / f"{x['song']}__{j}.npz").exists():
                 raise SystemExit(f"no clips for {x['song']} DI {j}: every render comes first")
             items.append({"key": f"{x['song']}|{j}", "song": x["song"], "di": j, "cls": x["cls"],
