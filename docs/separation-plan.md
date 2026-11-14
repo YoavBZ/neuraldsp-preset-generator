@@ -37,13 +37,17 @@ Real songs have no ground truth, so every option is first measured on known-trut
   - the model's read: the cosine of the adopted model's floored body features (the amp pick's own measure) between
     the stem and the clean target, both at the product's input level.
   - beside, the effects row (since better stems also serve R3): the stem's cepstral delay hit and T0's delay vote;
-  - all are reported per stratum and by band, with a band bootstrap, against today's input (X-LANCE on the mono mix).
+  - all are reported per stratum and by band, with a band bootstrap, against today's input (X-LANCE on the mono mix);
+  - each item's effective target-to-backing ratio is recorded, and the strata are read beside it, since a double
+    stands about 1.5–2.5 dB hotter by construction;
+  - a post-hoc check (`s0-check`): the built backing, folded as if centred, against the recipe's own backing.
+  - The win rule is coded into the read, per stratum: SI-SDR gain lo90 > 0, and the model's read hi90 ≥ 0.
 
 ## S1, existing tools (zero training)
 
 - **(a)** X-LANCE fed the true stereo channels, the mean of its two outputs. Until now it got the mono mix twice.
 - **(b)** The picker's centre mask, then X-LANCE.
-- **(c)** Mega-53's guitar and electric-guitar stems.
+- **(c)** Mega-53's electric-guitar stem. This is a deviation, declared after the code review: the pipeline's Mega-53 is pruned to that one head in its 'fast' setting, so its guitar head isn't run.
 - **(d)** An agreement ensemble: per STFT bin, the smaller of X-LANCE's and Mega-53's magnitudes, with X-LANCE's
   phase.
 - **(e)** X-LANCE run again on its own stem.

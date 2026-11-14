@@ -394,6 +394,7 @@ def cmd_read(_args):
     from learn import fx_reader as FX
     from learn import fx_t0 as T0
     from learn import pretrain_set as PS
+    from learn import song_aug as SA
 
     require()
     h = PS.half_slices()["A"]
@@ -419,13 +420,15 @@ def cmd_read(_args):
         z = np.load(p)
         meta = json.loads(p.with_suffix(".json").read_text())
         T_, O_ = np.asarray(z["target"], np.float64)[h], np.asarray(z["others"], np.float64)[h]
+        mid = (np.asarray(z["L"], np.float64) + np.asarray(z["R"], np.float64)) / 2
+        ratio = float(SA.lufs(np.asarray(z["target"], np.float64)) - SA.lufs(mid - np.asarray(z["target"], np.float64)))
         y = lab[meta["i"]]
         for o in ALL_OPTIONS:
             try:
                 s = stem_of(o, p.name)
             except FileNotFoundError:
                 continue
-            r = {"i": meta["i"], "band": meta["band"], "stratum": meta["stratum"], "si_sdr": si_sdr(s[h], T_),
+            r = {"i": meta["i"], "band": meta["band"], "stratum": meta["stratum"], "ratio_db": ratio, "si_sdr": si_sdr(s[h], T_),
                  "leak_db": leak_db(s[h], T_, O_), "cos": feats.get(p.stem, {}).get(o)}
             r["delay_on"] = int(y["don"])
             r["delay_vote"] = vote(s, meta["amp"], meta["band"])
@@ -459,6 +462,10 @@ def cmd_read(_args):
                 voff = [r["delay_vote"] - b["delay_vote"] for r, b in pair if r["delay_on"] == 0]
                 e["delay_vote_change"] = {"on (up is better)": float(np.mean(von)) if von else None,
                                           "off (down is better)": float(np.mean(voff)) if voff else None}
+            e["ratio_db_median"] = float(np.median([r["ratio_db"] for r in rs]))
+            if o != BASELINE and "si_sdr_gain" in e:
+                cg = e.get("cos_gain")
+                e["wins"] = bool(e["si_sdr_gain"]["lo90"] > 0 and cg is not None and cg["hi90"] >= 0)   # the declared rule
             rep["options"][o][strat] = e
     (out_dir() / "read.json").write_text(json.dumps(rep, indent=1))
     for o, v in rep["options"].items():
@@ -467,6 +474,41 @@ def cmd_read(_args):
         print(f"{o:8s} SI-SDR {a['si_sdr_median']:+.1f} dB (gain {g.get('mean', 0):+.2f} [{g.get('lo90', 0):+.2f}, "
               f"{g.get('hi90', 0):+.2f}])  leak {a['leak_db_median']:+.1f} dB  "
               + "  ".join(f"{s}: {v[s].get('si_sdr_gain', {}).get('mean', 0):+.2f}" for s in STRATA if s in v))
+
+
+def cmd_check(_args):
+    """The review's post-hoc check: the built backing, every track folded as if centred, against the recipe's own
+    backing (`Stems.get`), on 20 items: correlation and LUFS gap (they should agree, since only the panning differs)."""
+    import numpy as np
+
+    from learn import cc_build as CB
+    from learn import pretrain_set as PS
+    from learn import song_aug as SA
+    from learn import trusted_data as T
+
+    require()
+    ns = argparse.Namespace(out=None, smoke=False)
+    plan = {x["i"]: x for x in CB.load_plan(ns)["examples"]}
+    ctx = CB.ctx_for(ns)
+    stems = T.Stems(ctx)
+    out = []
+    for p in sorted((out_dir() / "items").glob("*.json"))[:20]:
+        meta = json.loads(p.read_text())
+        x = plan[meta["i"]]
+        voc = x["draw"]["vocals_drawn"] and x["stems"]["v"] != x["stems"]["n"]
+        tracks = T.backing_tracks(x, voc)
+        st = np.asarray(stems.get(x["section"], tracks), np.float64)
+        sec = ctx.sections[x["section"]]
+        sess = pathlib.Path(ctx.inv[sec["di"]]["session_dir"])
+        b = np.zeros(len(st))
+        for t in tracks:
+            a, ch = load_track(sess / t, sec["start_s"], PS.SR)
+            b += (a[:len(st), 0] * T.pan_fold(0.0)) if ch == 1 else (a[:len(st), 0] + a[:len(st), 1]) / 2
+        out.append({"i": meta["i"], "corr": float(np.corrcoef(b, st)[0, 1]),
+                    "lufs_gap_db": float(SA.lufs(b) - SA.lufs(st))})
+    (out_dir() / "check.json").write_text(json.dumps({"rows": out}, indent=1))
+    print("S0 CHECK: min corr", round(min(r["corr"] for r in out), 4), "max |LUFS gap|",
+          round(max(abs(r["lufs_gap_db"]) for r in out), 3))
 
 
 def main(argv=None):
@@ -480,6 +522,7 @@ def main(argv=None):
     s.set_defaults(fn=cmd_sep)
     sub.add_parser("s0-feats").set_defaults(fn=cmd_feats)
     sub.add_parser("s0-read").set_defaults(fn=cmd_read)
+    sub.add_parser("s0-check").set_defaults(fn=cmd_check)
     args = ap.parse_args(argv)
     args.fn(args)
 
