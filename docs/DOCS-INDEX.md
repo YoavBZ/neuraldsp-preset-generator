@@ -806,10 +806,11 @@ was declared, what was measured, and the research behind it.
     commercial stereo song, for the ML session (November 2026; nothing downloaded or run). No
     open model, prompted or not, has been shown to pick one guitar out of several; all select by
     class. The default route separates the plain mono fold; the centre option (`stem_C`, the
-    user's pick on 5 of 7 R1 songs, unscored) masks the song before separating, which leaves two
-    overlapping hard-panned takes about 7.4 dB down and strips most of the lead's stereo tail;
-    no product-path option gives the separator true stereo. Builds on and updates the
-    stereo-side screen (stereo-side-results.md): on Mega-53 stereo stems its best centred-lead
+    user's pick on 5 of 7 R1 songs, unscored then) masks the song before separating, which
+    leaves two overlapping hard-panned takes about 7.4 dB down and strips most of the lead's
+    stereo tail; no product-path option then gave the separator true stereo (`xlst_mdxc` does
+    since 0.7.128). Builds on and updates the stereo-side screen (stereo-side-results.md): on
+    Mega-53 stereo stems its best centred-lead
     result was the MDX23C centre model (+1.35 dB) and its unsmoothed coherence mask gave +0.35,
     none reaching +2 dB. Maps onto the separation plan (separation-plan.md), whose S1 already
     tests true stereo, the centre mask and that centre model on X-LANCE. Ranked tests: two
