@@ -87,6 +87,39 @@ Real songs have no ground truth, so every option is first measured on known-trut
   on R1's songs. Each of S2 and S3 carries its own stop rule when declared: a held-out S0 gain and a budget of
   nights.
 
+## S1 Amendment 2: the researcher's tests (2026-11-14, before any S1 read; ledger `phase_s1_a2`)
+
+The cloud researcher's survey ([lead-guitar-extraction-2026-11.md](research/lead-guitar-extraction-2026-11.md))
+found no open model shown to pick one electric guitar out of several. It also found two gaps in S0, and ranked the
+cheapest decisive tests. The user approved three downloads ("You can download anything you need that looks
+promising"). Each is hash-checked against `tools/sep-models/manifest.json` and loaded with `weights_only=True`, after
+a yaml check that admits only MSST's `!!python/tuple`. Code is in `learn/sep_s1b.py`.
+
+- **Corrections to this plan:**
+  - October's screens fed Mega-53 true stereo (63 stereo separations), not a mono or picked channel. The stereo check
+    found a stereo stem's mid within −0.06 to +0.24 dB of mono, a modest prior for (a).
+  - S0 puts every other guitar at one drawn pan, not one pan each. Its double is a coherent delayed copy, not an
+    independent take, so it flatters any coherence gate. S0's double stratum is read with that caveat.
+- **The new options:**
+  - **(j)** X-LANCE on the true stereo pair with both output channels kept (`xlst2`); (a) averaged them. From it, two
+    masks applied after separating, on the stem's own channels: psi^4 · max(cos, 0) (`xlst_psi`), and a
+    time-smoothed coherence × level-similarity mask, Avendano–Jot with forgetting 0.90 per frame (`xlst_coh`).
+  - **(k)** gilliaan's CenterWide BS-RoFormer v2 'center' output, then X-LANCE (`cw`). CC BY-NC-SA 4.0, development
+    only.
+  - **(l)** X-LANCE's keys model (`key_mss.pth`, MIT) as a competing mask on today's stem: G·|G|/(|G|+|K|)
+    (`keymask`).
+  - **(m)** The two open lead/rhythm checkpoints on the `xlst2` stem: listra92's Mel-Band RoFormer (its Lead output,
+    and the stem less it: `lr_mbr_lead` and `lr_mbr_rest`), and Dry Paint Dealer's HTDemucs (`lr_htd_lead`,
+    `lr_htd_rhythm`). Neither publishes a licence or a metric. Both outputs are read, since S0's target isn't always
+    a "lead".
+- **The split set** (S0's realism gap): 60 of S0's items, rebuilt with the target centred (±0.15) and its own other
+  guitars hard to one side (±0.8 to ±1.0). An independent take, another item's other guitars from the same band and
+  another section, goes hard to the other side. The backing is the item's built rest, centred, so its stereo image is
+  lost. S1's mono, stereo, centre4, mdxc and side options are rerun on it beside the new ones.
+- **The read:** S1's rule, per stratum and on the split set, against mono, with the same completeness guard. The
+  effects row stays S1's. An unmasked stereo stem (`xlst2`) is kept for the effects read, whichever stem wins.
+- **Cost:** zero renders, about 2.6 GB of stems, and roughly 1.5 h of MPS after S1's queue.
+
 ## S2 and S3, declared later on S1's evidence and the cloud researcher's survey
 
 - **S2, targeted extraction:** pull the named part only, for example query-by-example from a stretch where it plays
