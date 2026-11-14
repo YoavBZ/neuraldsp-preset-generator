@@ -800,3 +800,18 @@ was declared, what was measured, and the research behind it.
     can be tested in mono (F67), and whether T0's draws carry it is flagged; only spread, width,
     ping-pong and pan wait for stereo. Datasets: none pairs real songs with effect settings.
     Research, not a declared plan.
+28. [lead-guitar-extraction-2026-11.md](research/lead-guitar-extraction-2026-11.md): how to pull
+    one electric guitar part (the lead, without the rhythm guitars, keys or bleed) out of a
+    commercial stereo song, for the ML session (November 2026; nothing downloaded or run). No
+    open model, prompted or not, has been shown to pick one guitar out of several; all select by
+    class. Today's route masks the whole song to its centre and then separates mono
+    (`centre_mix`, `stem_C`); that mask leaves two overlapping hard-panned takes only about 7.4
+    dB down and strips most of the lead's stereo tail [I], and the separator never reads true
+    stereo. Ranked tests: a zero-download stereo-first screen on stage F (`gtr_mss` on true
+    stereo, then a time-averaged coherence gate on its stem), an ear check on the R1 songs, then
+    two untested open lead/rhythm checkpoints (337.1 and 109.8 MB, no licence or metric),
+    learned centre and keys models, a refinement net on frozen `gtr_mss`, a lead-vs-rest
+    fine-tune pilot (about 3.5 h per fold per 1,000 steps on MPS, estimated; level collapse is
+    the main risk), and SAM-Audio small last (5.10 GB). Corrects round-5-guitar-models.md's
+    "MVSep lead/rhythm 9.0–9.2" figure. Builds on single-guitar-separation-2026-10.md. Research,
+    not a declared plan.
