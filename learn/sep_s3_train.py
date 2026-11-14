@@ -547,8 +547,8 @@ def cmd_train(args):
     chk = json.loads((out_dir() / "check.json").read_text())
     if not chk["pass"] and args.device == "mps":
         raise SystemExit("the gradient check failed on MPS: not training there (the plan)")
-    if args.batch < MIN_BATCH:
-        raise SystemExit(f"batch {args.batch} < {MIN_BATCH} (the plan)")
+    if args.batch * args.accum < MIN_BATCH:
+        raise SystemExit(f"batch {args.batch} x accumulation {args.accum} < {MIN_BATCH} (the plan)")
     from learn import product_path as PP
 
     nets, _, _ = PP._adopted()                  # the model's read, on the CPU
@@ -556,13 +556,15 @@ def cmd_train(args):
     model = load_model(dev)
     opt = torch.optim.AdamW(model.parameters(), lr=LR, betas=BETAS, weight_decay=0.0)
     st = {"step": 0, "best": -1e9, "best_step": 0, "read0": None, "evals": [], "reloads": 0, "t_start": time.time(),
-          "skipped": 0}
+          "skipped": 0, "batch": args.batch, "accum": args.accum}
     if (d / "last.pt").exists():
         ck = torch.load(d / "last.pt", map_location="cpu", weights_only=True)
         model.load_state_dict(ck["model"])
         opt.load_state_dict(ck["opt"])
         st = json.loads((d / "state.json").read_text())
         st["step"] = int(ck.get("step", st["step"]))           # the weights' own step (the review)
+        if (st.get("batch", args.batch), st.get("accum", args.accum)) != (args.batch, args.accum):
+            raise SystemExit("resumed with a different batch or accumulation than the run started with")
         print(f"resumed at step {st['step']}", flush=True)
     kw = {"persistent_workers": True, "prefetch_factor": 4} if args.workers > 0 else {}
     loader = torch.utils.data.DataLoader(make_dataset(args.batch, st["step"]), batch_size=None,
@@ -592,13 +594,18 @@ def cmd_train(args):
         lr = LR * min(1.0, (st["step"] + 1) / WARMUP)
         for g in opt.param_groups:
             g["lr"] = lr
-        x, y = next(it)
         opt.zero_grad(set_to_none=True)
-        loss = model(x.to(dev), target=y.to(dev))
-        lv = float(loss.detach().cpu())
-        ok = math.isfinite(lv)
-        if ok:
+        lv, ok = 0.0, True
+        for _ in range(args.accum):                  # micro-batches summed: the same update as one batch
+            x, y = next(it)
+            loss = model(x.to(dev), target=y.to(dev)) / args.accum
+            li = float(loss.detach().cpu())
+            if not math.isfinite(li):
+                ok = False
+                break
             loss.backward()
+            lv += li
+        if ok:
             sq = grad_sq_norm(model)
             ok = math.isfinite(sq)
         if not ok:
@@ -701,6 +708,7 @@ def main(argv=None):
     s = sub.add_parser("s3-train")
     s.add_argument("--batch", type=int, required=True)
     s.add_argument("--workers", type=int, default=2)
+    s.add_argument("--accum", type=int, default=1, help="micro-batches per update (memory: a batch of 2 swaps)")
     s.add_argument("--device", default="mps")
     s.set_defaults(fn=cmd_train)
     s = sub.add_parser("s3-apply")
