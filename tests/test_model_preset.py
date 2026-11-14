@@ -271,3 +271,7 @@ def test_an_older_folder_resumes_with_the_default_version(tmp_path, monkeypatch,
         M.run_stages(a)
     assert "version stem" in capsys.readouterr().err
 
+def test_the_wrapper_knows_every_version_the_separator_offers():
+    from learn import product_path as P
+
+    assert set(M.VERSIONS) == set(P.VERSIONS) == set(M.VERSION_NAMES)
