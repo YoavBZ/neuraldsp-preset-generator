@@ -103,4 +103,7 @@ def test_the_artifact_page_builds():
 def test_min_read_and_rule_on_fewer_songs():
     assert R.min_read(14) == 12 and R.min_read(12) == 11 and R.min_read(10) == 9
     t = {f"s{i}": v for i, v in enumerate(["ahead"] * 4 + ["level", "behind"])}
+    assert R.rule(t, n_songs=6) == "level"                       # 6 songs need 5 ahead (the review's null rates)
+    t = {f"s{i}": v for i, v in enumerate(["ahead"] * 5 + ["behind"])}
     assert R.rule(t, n_songs=6) == "the model ahead"
+    assert R.rule({"a": "ahead"} , n_songs=4) == "descriptive only (under 5 songs)"

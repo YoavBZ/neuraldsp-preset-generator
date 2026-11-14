@@ -24,7 +24,7 @@ import time
 PHASE = "phase_r1_a5"
 NEAREST, LEADS, LEAD_REGISTERS, LEAD_VOICED = 3, 3, (55.0, 64.0, 72.0), 0.85
 MAX_PICKS = 2
-CLIP_S = 10.0
+HALF_A = (1.0, 5.5)                  # what R1's cards play: the stem's and each DI's half A (the review)
 
 
 def ear_dir():
@@ -204,7 +204,8 @@ def page(items, clips, build):
              "the song's separated guitar and <b>Song (S)</b> the full mix, for context. 1 to 6 are dry guitar recordings "
              "by other players. Mark the one or two that play most like the song's part: the same kind of playing "
              "(single notes or chords), about as high or low, about as busy. Their tone doesn't matter yet; the presets "
-             "come later. Mark <b>None fits</b> if none does. Everything loops and switches instantly; Space stops. "
+             "come later. Mark one only if it's also fine by your DI rule (not tuned too low, not played too metal, not "
+             "processed). Mark <b>None fits</b> if none does. Each clip is the 4.5 seconds the next page will play. Everything loops and switches instantly; Space stops. "
              "All clips are set to the same loudness. Your marks save as you go, and I can read them from here when you "
              "tell me you are done.</p><p id=\"status\"></p>")
     return (f"<title>Matching Guitar Parts</title>\n<style>{PAGE_CSS}</style>\n<main>{intro}{''.join(cards)}</main>"
@@ -230,12 +231,13 @@ def cmd_page(_args):
     for s in R.songs():
         sid = hashlib.sha256(f"r1-di-ear|{s}".encode()).hexdigest()[:8]
         w = np.load(R.ear_dir() / s / "window.npz")
+        h = PS.half_slices()["A"]
         for k, y in (("G", w["stem"]), ("S", w["mix"])):
-            clips[f"{sid}-{k}"] = SP.encode(BDR.level_clip(np.asarray(y, np.float64))[0], d / "aac-cache")
+            clips[f"{sid}-{k}"] = SP.encode(BDR.level_clip(np.asarray(y, np.float64)[h])[0], d / "aac-cache")
         cs = []
         for c in cands[s]:
             cid = hashlib.sha256(f"{sid}|{c['di']}".encode()).hexdigest()[:8]
-            y = PS.load_mono(c["di_path"], PS.SR, max(0.0, c["start_s"]), CLIP_S)
+            y = PS.load_mono(c["di_path"], PS.SR, c["start_s"] + HALF_A[0], HALF_A[1] - HALF_A[0])
             clips[f"{sid}-{cid}"] = SP.encode(BDR.level_clip(np.asarray(y, np.float64))[0], d / "aac-cache")
             cs.append({**c, "id": cid})
         items.append({"id": sid, "song": s, "cands": cs})

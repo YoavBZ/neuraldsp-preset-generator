@@ -88,9 +88,11 @@ def rule(tally, n_songs=N_SONGS, page_failed=False):
     mirror), else level."""
     if page_failed:
         return "not read"
+    if n_songs < 5:
+        return "descriptive only (under 5 songs)"         # Amendment 5, the review: no verdict below 5 kept songs
     ahead = sum(v == "ahead" for v in tally.values())
     behind = sum(v == "behind" for v in tally.values())
-    need, allow = n_songs - 2, 1
+    need, allow = (n_songs - 2 if n_songs >= 7 else n_songs - 1), 1
     if ahead >= need and behind <= allow:
         return "the model ahead"
     if behind >= need and ahead <= allow:
