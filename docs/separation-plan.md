@@ -116,8 +116,29 @@ a yaml check that admits only MSST's `!!python/tuple`. Code is in `learn/sep_s1b
   guitars hard to one side (±0.8 to ±1.0). An independent take, another item's other guitars from the same band and
   another section, goes hard to the other side. The backing is the item's built rest, centred, so its stereo image is
   lost. S1's mono, stereo, centre4, mdxc and side options are rerun on it beside the new ones.
-- **The read:** S1's rule, per stratum and on the split set, against mono, with the same completeness guard. The
-  effects row stays S1's. An unmasked stereo stem (`xlst2`) is kept for the effects read, whichever stem wins.
+- **After its review:**
+  - **The split set:** no double is a source (its stored target is a coherent pair). Both takes must be within 20 dB
+    of the target, so neither side is empty. The references are stored as they sit in the split's mid (each source
+    times its fold), and the leak is fitted on the target, the own take and the partner's take. The mix is
+    LUFS-matched to its source.
+    - A different section's guitars aren't a second take of the same part. That's fair for the centre and coherence
+      masks, and easier than real life for the content-based options (X-LANCE, CenterWide, the keys mask, the
+      lead/rhythm models).
+    - `side` on the split set is a control: the target is centred there.
+  - **More options:** `xlst_coh4`, the smoothed similarity to the 4th power, so it can be read against `xlst_psi`
+    at a matched exponent (`xlst_coh` is psi¹). `xlst_mdxc`, the MDX23C centre model on the `xlst2` stem: October's
+    actual setup, separate then centre. October's +1.35 dB is a prior for that, not for (g).
+  - **The lead/rhythm outputs:** read as separate options. The per-item better of each pair is shown beside, as the
+    ceiling of picking by ear (an oracle), never under the rule.
+  - **Many options:** S1 now has about 20 options across 4 cells, so a few chance wins are expected and the best
+    mean is biased up. So wins are candidates for the ear, ranked by the SI-SDR gain's lo90. The S2/S3 trigger reads
+    the best option's lo90, not its mean.
+  - **The effects row** (cepstral delay hit, T0's vote) is read for every new option. An unmasked stereo stem
+    (`xlst2`) is kept for the effects read, whichever stem wins.
+  - **Safety:** every config's SHA-256 is checked too. XLanceKeys asserts torch ≥ 2.6 (`weights_only` by default).
+    The lead/rhythm checkpoints come from a third-party mirror, so the risk is a different model than named, not
+    code.
+- **The read:** S1's rule, per stratum and on the split set, against mono, with the same completeness guard.
 - **Cost:** zero renders, about 2.6 GB of stems, and roughly 1.5 h of MPS after S1's queue.
 
 ## S2 and S3, declared later on S1's evidence and the cloud researcher's survey

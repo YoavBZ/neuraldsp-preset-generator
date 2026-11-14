@@ -26,3 +26,17 @@ def test_competing_mask_and_split_partner():
     metas = [{"i": 1, "band": "x", "section": "s1"}, {"i": 2, "band": "x", "section": "s2"},
              {"i": 3, "band": "y", "section": "s3"}, {"i": 4, "band": "x", "section": "s1"}]
     assert B.split_partner(metas[0], metas) == 2 and B.split_partner(metas[2], metas) is None
+
+
+def test_split_rules_and_fold():
+    assert abs(B.fold(0.0) - 1.0) < 1e-12 and 0.70 < B.fold(1.0) < 0.72
+    assert not B.split_ok({"stratum": "double"}, -20, -25, -25)
+    assert not B.split_ok({"stratum": "centred"}, -20, -45, -25)        # the own take too quiet
+    assert B.split_ok({"stratum": "off-centre"}, -20, -30, -35)
+
+
+def test_leak3():
+    np = pytest.importorskip("numpy")
+    rng = np.random.default_rng(2)
+    t, o, q = (rng.standard_normal(4800) for _ in range(3))
+    assert B.leak3_db(t + 0.1 * o + 0.1 * q, t, o, q) < -15 and B.leak3_db(t + o + q, t, o, q) > 1

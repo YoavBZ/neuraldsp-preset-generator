@@ -39,11 +39,13 @@ PHASE = "phase_s1_a2"
 MODELS = pathlib.Path("~/ndsp-presets/tools/sep-models").expanduser()
 NFFT, HOP, LAMBDA = 4096, 1024, 0.90
 N_SPLIT = 60
-NEW = ("xlst2", "cw", "keys", "lr_mbr", "lr_htd")                      # what s1b-sep writes
-DERIVED = ("xlst_psi", "xlst_coh", "keymask", "lr_mbr_lead", "lr_mbr_rest", "lr_htd_lead", "lr_htd_rhythm")
+NEW = ("xlst2", "cw", "keys", "lr_mbr", "lr_htd", "xlst_mdxc")         # what s1b-sep writes
+DERIVED = ("xlst_psi", "xlst_coh", "xlst_coh4", "keymask", "lr_mbr_lead", "lr_mbr_rest", "lr_htd_lead",
+           "lr_htd_rhythm")
+SPLIT_FLOOR_DB = 20.0                      # both takes within 20 dB of the target (the review)
 SPLIT_ALSO = ("mono", "stereo", "centre4", "mdxc", "side")             # S1's options rerun on the split set
-READ_OPTIONS = ("mono", "stereo", "centre4", "mdxc", "side", "xlst_psi", "xlst_coh", "cw", "keymask",
-                "lr_mbr_lead", "lr_mbr_rest", "lr_htd_lead", "lr_htd_rhythm")
+READ_OPTIONS = ("mono", "stereo", "centre4", "mdxc", "side", "xlst_psi", "xlst_coh", "xlst_coh4", "xlst_mdxc", "cw",
+                "keymask", "lr_mbr_lead", "lr_mbr_rest", "lr_htd_lead", "lr_htd_rhythm")
 
 
 def require():
@@ -103,12 +105,13 @@ def coherence_mask(SL, SR, lam=LAMBDA):
 
 
 def post_mask(stem2, kind):
-    """A mask applied after separating, on the stem's own two channels -> the mono centre of the stem."""
+    """A mask applied after separating, on the stem's own two channels -> the mono centre of the stem. kind: psi
+    (psi^4 max(cos, 0)), coh (the smoothed similarity, psi^1) or coh4 (its 4th power, exponent-matched to psi)."""
     import numpy as np
 
     L, R = np.asarray(stem2[0], np.float64), np.asarray(stem2[1], np.float64)
     SL, SR = _stft(L), _stft(R)
-    m = psi_mask(SL, SR) if kind == "psi" else coherence_mask(SL, SR)
+    m = psi_mask(SL, SR) if kind == "psi" else coherence_mask(SL, SR) ** (4 if kind == "coh4" else 1)
     return _istft(m * (SL + SR) / 2, len(L))
 
 
@@ -123,7 +126,7 @@ def competing_mask(g, k):
 def split_partner(meta, metas, seed=S0.SEED):
     """Another item of the same band from another section, whose other guitars become the independent take. -> i or
     None."""
-    rng = random.Random(f"{seed}|split|{meta['i']}")
+    rng = random.Random(f"{seed}|split-partner|{meta['i']}")
     pool = sorted(m["i"] for m in metas if m["band"] == meta["band"] and m["i"] != meta["i"]
                   and m.get("section") != meta.get("section"))
     return rng.choice(pool) if pool else None
@@ -182,6 +185,7 @@ class Msst:
         global _TupleSafe
         _TupleSafe = _TupleSafe or _tuple_safe_loader()
         _check(MODELS / ckpt_rel, ckpt_rel)
+        _check(MODELS / cfg_rel, cfg_rel)                           # the config too: a changed one changes the model
         yaml.load((MODELS / cfg_rel).read_text(), Loader=_TupleSafe)   # safe, plus MSST's !!python/tuple only
         if "wandb" not in sys.modules:                              # MSST's training-log import; never called here
             sys.modules["wandb"] = __import__("types").ModuleType("wandb")
@@ -228,6 +232,8 @@ class XLanceKeys:
 
         rel = "xlance-keys/key_mss.pth"
         _check(MODELS / rel, rel)
+        if tuple(int(x) for x in torch.__version__.split("+")[0].split(".")[:2]) < (2, 6):
+            raise SystemExit("XLanceKeys relies on torch.load's weights_only default (torch >= 2.6)")
         for k in [k for k in sys.modules if k in ("models", "inference") or k.startswith(("models.", "inference."))]:
             del sys.modules[k]
         code = str(DS.XL_ROOT / "code")
@@ -259,46 +265,80 @@ class XLanceKeys:
 
 # --- the split set --------------------------------------------------------------------------------------------------------
 
+def fold(p):
+    """A source's gain in the mid, (L + R) / 2, under the build's law (constant power, x sqrt 2 so centred is 1)."""
+    gl, gr = S0.pan(p)
+    return (gl + gr) / 2 / S0.pan(0.0)[0]
+
+
+def split_ok(meta, lufs_t, lufs_o, lufs_p, floor=SPLIT_FLOOR_DB):
+    """The review's fixes: no double as a source, and both takes within `floor` dB of the target."""
+    return meta["stratum"] != "double" and lufs_o > lufs_t - floor and lufs_p > lufs_t - floor
+
+
 def cmd_build_split(_args):
     import numpy as np
 
-    from learn import pretrain_set as PS
+    from learn import cc_build as CB
+    from learn import song_aug as SA
 
     require()
-    sr, src = PS.SR, S0.out_dir() / "items"
+    src = S0.out_dir() / "items"
     metas = [json.loads(p.read_text()) for p in sorted(src.glob("*.json"))]
-    from learn import cc_build as CB
-
     plan = {x["i"]: x for x in CB.load_plan(argparse.Namespace(out=None, smoke=False))["examples"]}
     for m in metas:
         m["section"] = plan[m["i"]]["section"]
+    lev = {}
+    for m in metas:
+        z = np.load(src / f"{m['i']:07d}.npz")
+        lev[m["i"]] = (float(SA.lufs(np.asarray(z["target"], np.float64))), float(SA.lufs(np.asarray(z["others"], np.float64))))
+    nodbl = [m for m in metas if m["stratum"] != "double"]
+    ok = []
+    for m in nodbl:
+        q = split_partner(m, nodbl)
+        if q is not None and split_ok(m, lev[m["i"]][0], lev[m["i"]][1], lev[q][1]):
+            ok.append((m, q))
     rng = random.Random(f"{S0.SEED}|split-pick")
-    pick = sorted(rng.sample([m for m in metas if split_partner(m, metas) is not None], N_SPLIT), key=lambda m: m["i"])
+    pick = sorted(rng.sample(ok, min(N_SPLIT, len(ok))), key=lambda t: t[0]["i"])
     d = set_dir("split") / "items"
     d.mkdir(parents=True, exist_ok=True)
-    for m in pick:
+    for m, q in pick:
         p = d / f"{m['i']:07d}.npz"
         if p.exists():
             continue
-        z = np.load(src / f"{m['i']:07d}.npz")
-        zo = np.load(src / f"{split_partner(m, metas):07d}.npz")
-        rr = random.Random(f"{S0.SEED}|split|{m['i']}")
+        z, zo = np.load(src / f"{m['i']:07d}.npz"), np.load(src / f"{q:07d}.npz")
+        rr = random.Random(f"{S0.SEED}|split-pans|{m['i']}")
         side, pt = rr.choice((-1, 1)), rr.uniform(-0.15, 0.15)
+        po, pp = side * rr.uniform(0.8, 1.0), -side * rr.uniform(0.8, 1.0)
         tgt, oth = (np.asarray(z[k], np.float64) for k in ("target", "others"))
         oth2 = np.asarray(zo["others"], np.float64)
-        bmid = (np.asarray(z["L"], np.float64) + np.asarray(z["R"], np.float64)) / 2 - tgt - oth   # the rest, as built
+        mid0 = (np.asarray(z["L"], np.float64) + np.asarray(z["R"], np.float64)) / 2
+        rest = mid0 - tgt - oth                                     # the item's built rest, centred
         k = 1 / S0.pan(0.0)[0]
-        gl, gr = S0.pan(pt)
-        L, R = tgt * gl * k, tgt * gr * k
-        for o, pp in ((oth, side * rr.uniform(0.8, 1.0)), (oth2, -side * rr.uniform(0.8, 1.0))):
-            gl, gr = S0.pan(pp)
-            L, R = L + o * gl * k, R + o * gr * k
-        L, R = L + bmid, R + bmid                                   # the backing centred (its stereo image is lost)
-        np.savez(p, L=L.astype(np.float32), R=R.astype(np.float32), target=tgt.astype(np.float32),
-                 others=(oth + oth2).astype(np.float32), clean=np.asarray(z["clean"], np.float32))
+        L, R = rest.copy(), rest.copy()
+        for x_, p_ in ((tgt, pt), (oth, po), (oth2, pp)):
+            gl, gr = S0.pan(p_)
+            L, R = L + x_ * gl * k, R + x_ * gr * k
+        g = 10 ** ((float(SA.lufs(mid0)) - float(SA.lufs((L + R) / 2))) / 20)   # LUFS-matched to its source
+        L, R = L * g, R * g
+        refs = {"target": tgt * fold(pt) * g, "others_own": oth * fold(po) * g, "others_partner": oth2 * fold(pp) * g}
+        np.savez(p, L=L.astype(np.float32), R=R.astype(np.float32), clean=np.asarray(z["clean"], np.float32),
+                 others=(refs["others_own"] + refs["others_partner"]).astype(np.float32),
+                 **{k_: v.astype(np.float32) for k_, v in refs.items()})
         (d / f"{m['i']:07d}.json").write_text(json.dumps({**{k_: m[k_] for k_ in ("i", "band", "amp", "cls")},
-                                                          "stratum": "split", "target": [pt], "partner": split_partner(m, metas)}))
-    print(f"S1B SPLIT BUILD DONE: {len(pick)} items", flush=True)
+                                                          "stratum": "split", "target": [pt], "pans": [po, pp],
+                                                          "partner": q, "gain_db": 20 * float(np.log10(g))}))
+    print(f"S1B SPLIT BUILD DONE: {len(pick)} items (of {len(ok)} eligible)", flush=True)
+
+
+def leak3_db(est, target, own, partner):
+    """The split's leak: both takes' share of the stem against the target's, fitted on all three references."""
+    import numpy as np
+
+    A = np.stack([np.asarray(target, np.float64), np.asarray(own, np.float64), np.asarray(partner, np.float64)], 1)
+    c, *_ = np.linalg.lstsq(A, np.asarray(est, np.float64), rcond=None)
+    e = [np.sum((c[j] * A[:, j]) ** 2) for j in range(3)]
+    return float(10 * np.log10((e[1] + e[2] + 1e-12) / (e[0] + 1e-12)))
 
 
 # --- the separations ------------------------------------------------------------------------------------------------------
@@ -344,6 +384,12 @@ def cmd_sep(args):
             a = np.stack([SCR.to44(L), SCR.to44(R)])
             save("xlst2", np.stack([SCR.to48(c, len(L)) for c in DS.xl_run_chunked(xl._f, a)]))
         st2 = np.asarray(np.load(root / "stems" / "xlst2" / p.name)["stem"], np.float64)
+        if not have("xlst_mdxc"):                                      # October's setup: separate, then centre
+            if mdx is None:
+                from learn import stereo_side_screen as SSS
+
+                mdx = SSS.Centre()
+            save("xlst_mdxc", mdx(st2).mean(0))
         if not have("cw"):
             save("cw", xl(cw(np.stack([L, R]))["center"].mean(0)))
         if not have("keys"):
@@ -382,7 +428,7 @@ def stem_of(root, o, name):
     import numpy as np
 
     st = lambda k: np.asarray(np.load(root / "stems" / k / name)["stem"], np.float64)   # noqa: E731
-    if o in ("xlst_psi", "xlst_coh"):
+    if o in ("xlst_psi", "xlst_coh", "xlst_coh4"):
         return post_mask(st("xlst2"), o[5:])
     if o == "keymask":
         return competing_mask(st("mono"), st("keys"))
@@ -426,7 +472,8 @@ def cmd_feats(args):
 
 
 def _has_inputs(root, o, name):
-    need = {"xlst_psi": ["xlst2"], "xlst_coh": ["xlst2"], "keymask": ["mono", "keys"], "lr_mbr_lead": ["lr_mbr"],
+    need = {"xlst_psi": ["xlst2"], "xlst_coh": ["xlst2"], "xlst_coh4": ["xlst2"], "keymask": ["mono", "keys"],
+            "lr_mbr_lead": ["lr_mbr"],
             "lr_mbr_rest": ["xlst2", "lr_mbr"], "lr_htd_lead": ["lr_htd"], "lr_htd_rhythm": ["lr_htd"]}.get(o, [o])
     return all((root / "stems" / k / name).exists() for k in need)
 
@@ -444,6 +491,22 @@ def cmd_read(args):
         feats0 = json.loads((root / "feats.json").read_text())["cosine_distance_to_clean"]
         for k, v in feats0.items():
             feats.setdefault(k, {}).update({o: c for o, c in v.items() if o not in feats[k]})
+    from learn import fx_reader as FX
+    from learn import fx_t0 as T0
+
+    t0its, _ = T0.items()
+    lab = {it["i"]: T0.labels(it["settings"]) for it in t0its}
+    z0 = np.load(T0.out_dir() / "features.npz")
+    lib_amp = np.array([it["amp"] for it in t0its])
+    lib_band = np.array([it["band"] for it in t0its])
+    lib_don = np.array([lab[it["i"]]["don"] for it in t0its])
+    jd = [T0.FEATURES.index(f) for f in T0.OWN["delay"]]
+
+    def vote(s_, amp, band):
+        sel = np.where((lib_amp == amp) & (lib_band != band))[0]
+        q = np.asarray(T0.features(s_), np.float64)[jd][None]
+        return float(lib_don[sel[T0.neighbours(z0["target"][sel][:, jd], q)[0]]].mean())
+
     rows = {o: [] for o in READ_OPTIONS}
     for p in sorted((root / "items").glob("*.npz")):
         z = np.load(p)
@@ -453,9 +516,17 @@ def cmd_read(args):
             if not _has_inputs(root, o, p.name):
                 continue
             s = (S0.stem_of(o, p.name) if (args.set == "main" and o in S0.ALL_OPTIONS) else stem_of(root, o, p.name))
-            rows[o].append({"i": meta["i"], "band": meta["band"], "stratum": meta["stratum"],
-                            "si_sdr": S0.si_sdr(s[h], T_), "leak_db": S0.leak_db(s[h], T_, O_),
-                            "cos": feats.get(p.stem, {}).get(o)})
+            leak = (leak3_db(s[h], T_, np.asarray(z["others_own"], np.float64)[h],
+                             np.asarray(z["others_partner"], np.float64)[h]) if args.set == "split"
+                    else S0.leak_db(s[h], T_, O_))
+            y = lab[meta["i"]]
+            r = {"i": meta["i"], "band": meta["band"], "stratum": meta["stratum"], "si_sdr": S0.si_sdr(s[h], T_),
+                 "leak_db": leak, "cos": feats.get(p.stem, {}).get(o), "delay_on": int(y["don"]),
+                 "delay_vote": vote(s, meta["amp"], meta["band"])}
+            if y["don"] == 1:
+                lag, _ = FX.cep_pick(FX.cepstrum(s))
+                r["delay_hit"] = float(abs(lag / 2 ** y["dtime"] - 1) <= 0.10)
+            rows[o].append(r)
     base = {r["i"]: r for r in rows["mono"]}
     strata = ("all",) + (S0.STRATA if args.set == "main" else ("split",))
     rep = {"set": args.set, "options": {}}
@@ -481,7 +552,28 @@ def cmd_read(args):
                     e["wins"] = bool(e["si_sdr_gain"]["lo90"] > 0 and e["cos_gain"]["hi90"] >= 0)
                 else:
                     e["wins"] = "not read: the model's read is incomplete"
+                dh = [r["delay_hit"] - b["delay_hit"] for r, b in pair if "delay_hit" in r and "delay_hit" in b]
+                von = [r["delay_vote"] - b["delay_vote"] for r, b in pair if r["delay_on"] == 1]
+                voff = [r["delay_vote"] - b["delay_vote"] for r, b in pair if r["delay_on"] == 0]
+                e["effects"] = {"delay_hit_change": float(np.mean(dh)) if dh else None,
+                                "vote_on_change (up better)": float(np.mean(von)) if von else None,
+                                "vote_off_change (down better)": float(np.mean(voff)) if voff else None}
             rep["options"][o][strat] = e
+    # beside, not under the rule: the ear-pick ceiling of each lead/rhythm pair (the better output per item, an oracle)
+    for a_, b_ in (("lr_mbr_lead", "lr_mbr_rest"), ("lr_htd_lead", "lr_htd_rhythm")):
+        ra, rb = {r["i"]: r for r in rows[a_]}, {r["i"]: r for r in rows[b_]}
+        both = [(ra[i], rb[i]) for i in ra if i in rb and i in base]
+        if both:
+            rep.setdefault("ear_pick_ceiling (oracle, beside)", {})[a_[:6]] = S0.band_boot(
+                [max(x["si_sdr"], y["si_sdr"]) - base[x["i"]]["si_sdr"] for x, y in both], [x["band"] for x, _ in both])
+    # the review: wins are candidates for the ear, ranked by the SI-SDR gain's lo90; the S2/S3 trigger reads the best lo90
+    cands = sorted(((o, s_, v[s_]["si_sdr_gain"]["lo90"]) for o, v in rep["options"].items() for s_ in v
+                    if v[s_].get("wins") is True), key=lambda t: -t[2])
+    rep["candidates_by_lo90"] = [{"option": o, "stratum": s_, "lo90": l} for o, s_, l in cands]
+    best = max((v[s_]["si_sdr_gain"]["lo90"] for o, v in rep["options"].items() for s_ in v if "si_sdr_gain" in v[s_]),
+               default=None)
+    rep["best_lo90"] = best
+    rep["s2_s3_trigger_by_score"] = bool(best is None or best < 1.0)
     (root / f"read-s1b-{args.set}.json").write_text(json.dumps(rep, indent=1))
     for o, v in rep["options"].items():
         line = "  ".join(f"{s}: {v[s].get('si_sdr_gain', {}).get('mean', 0):+.2f}" for s in strata if s in v)
