@@ -31,8 +31,9 @@ from learn import sep_s1b as S1B
 PHASE_A3, PHASE_S3 = "phase_s1_a3", "phase_s3"
 HINT_SIDE = 0.7                            # the coarse hint's left/right value (the plan, fixed before any read)
 CENTRE_BAND = 0.25                         # |p| below this is a centre hint
-STEER_OPTIONS = ("steer_mdxc", "steer_mid", "steer_mdxc_exact", "steer_mdxc_h1")
-RULE_STEER = ("steer_mdxc",)               # under S1's rule; steer_mid a control, `_exact` a ceiling, `_h1` a sensitivity
+STEER_OPTIONS = ("steer_mdxc", "steer_mid", "steer_mdxc_exact", "steer_mdxc_h1", "steer_xlmdxc")
+RULE_STEER = ("steer_mdxc", "steer_xlmdxc")   # under S1's rule; steer_mid a control, `_exact` a ceiling, `_h1` a
+#                                             sensitivity; steer_xlmdxc is Amendment 3b (s1b's centred winner, steered)
 HINT_H1 = 1.0                              # the review's sensitivity: a hard side hint
 TRAIN_BANDS = ("Forkupines", "BKS", "The Maybe Next Years", "Adam Buckley")   # cached; Adam Buckley validates
 VAL_BAND = "Adam Buckley"                  # the review: a whole band for the curve, not in S0
@@ -115,7 +116,8 @@ def cmd_steer(args):
     sep = DS.stem_separator(T.SEP, "cpu")       # X-LANCE on the CPU, 4 threads: the MPS stays free for S3
     mdx = SSS.Centre()                          # MDX23C, hash-checked, CPU
     items = sorted((root / "items").glob("*.npz"))
-    same = {"steer_mdxc": "mdxc", "steer_mdxc_h1": "mdxc", "steer_mid": "stereo"}   # a centre hint: no rotation
+    same = {"steer_mdxc": "mdxc", "steer_mdxc_h1": "mdxc", "steer_mid": "stereo",       # a centre hint: no rotation
+            "steer_xlmdxc": "xlst_mdxc"}
     n_check, checks, t0 = 0, [], time.time()
     for m, p in enumerate(items):
         z = np.load(p)
@@ -136,6 +138,12 @@ def cmd_steer(args):
             Ls, Rs = rotate(L, R, phi)
             if o == "steer_mid":
                 s = S0.xl_stereo(sep, Ls, Rs)              # the mean of X-LANCE's two outputs: the steered mid
+            elif o == "steer_xlmdxc":                       # X-LANCE on the steered pair, both outputs, then MDX23C
+                from learn import separator_screen as SCR
+
+                st2 = np.stack([SCR.to48(c, len(L)) for c in DS.xl_run_chunked(
+                    sep._f, np.stack([SCR.to44(Ls), SCR.to44(Rs)]))])
+                s = mdx(st2).mean(0)
             else:
                 key = round(phi, 12)
                 if key not in cache:                        # an equal hint: one centre pass
@@ -258,8 +266,9 @@ def _clustered(diffs, rows):
 
 
 def routed(meta):
-    """The existing option the coarse hint routes to (the review, fixed): a centre hint to mdxc, a side hint to side."""
-    return "mdxc" if hint_of(meta) == 0.0 else "side"
+    """The existing option the coarse hint routes to: a centre hint to xlst_mdxc (Amendment 3b: s1b's centred winner,
+    stronger than mdxc on the training-band items too), a side hint to side."""
+    return "xlst_mdxc" if hint_of(meta) == 0.0 else "side"
 
 
 def s3_decision(si_mono, rd_mono, si_comp, rd_comp):
@@ -313,7 +322,7 @@ def cmd_read(args):
         q = np.asarray(T0.features(s_), np.float64)[jd][None]
         return float(lib_don[sel[T0.neighbours(z0["target"][sel][:, jd], q)[0]]].mean())
 
-    full = set(new) | {"mono", "mdxc", "side"}          # the full row where a rule or the comparator reads it
+    full = set(new) | {"mono", "mdxc", "xlst_mdxc", "side"}   # the full row where a rule or a comparator reads it
     rows, metas = {o: {} for o in old + new}, {}
     for p in sorted((root / "items").glob("*.npz")):
         meta = json.loads(p.with_suffix(".json").read_text())

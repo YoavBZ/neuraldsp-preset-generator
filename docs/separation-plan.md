@@ -290,6 +290,49 @@ exact drawn pan as the hint is read beside, as a ceiling, never under the rule.
   training-band items only.
 - **The MPS:** the other sessions are told it's in use before the run.
 
+### Amendment 3b (2026-11-15, after s1b's main read, before any A3 or S3 read; ledger `phase_s1_a3b`)
+
+- **What s1b found:** separating in stereo first and then taking the centre (`xlst_mdxc`) gains +10.85 dB
+  [+8.71, +12.31] on S0's centred items. The model's read gains +0.067 [+0.048, +0.079] there, the largest read gain
+  of any option. `mdxc`'s read gain is +0.006. On the training-band centred items alone (Forkupines and BKS, 32
+  items) it's +12.79 dB against `mdxc`'s +8.89.
+- **`steer_xlmdxc`** (under S1's rule, beside `steer_mdxc`): steer by the coarse hint, X-LANCE on the steered pair
+  (both outputs), MDX23C on that stereo stem, the mean, times cos φ. On a centre hint it's `xlst_mdxc` exactly (copied).
+- **S3's routed comparator for the centre hint** becomes `xlst_mdxc` instead of `mdxc`. It's the stronger option on
+  the training bands too, so the change can only make S3's rule harder to meet. The side hint stays `side`.
+- **The training batch:**
+  - **What happens:** a batch of 2 clips needs 15.8 GB of MPS memory and swaps, and 4 doesn't fit in 32 GB.
+  - **The fix tried:** the model's gradient checkpointing fails, with a shape error in BS-RoFormer.
+  - **So:** one clip per pass, four passes summed per update (accumulation), the same update as a batch of 4 since
+    the model has no batch statistics. That's about 1.7 s per clip.
+  - **The evaluations:** every 1,000 updates (4,000 clips), about 2 hours apart.
+- **The gradient check, run:** at 61,000 samples the median relative error is 6.4e-5 (max 1.6e-3), a pass. At 98,304
+  samples it's 0.88 (max 7.4), so the bug shows where expected.
+
+## S1 results
+
+Both rounds ran 2026-11-14 and 15 (zero renders), read by the rule above and audited by separate code (the same
+means; the intervals within 0.3 dB). SI-SDR gain against mono, with the 90% band-bootstrap interval; the read is the
+drop in the model's cosine distance (higher is better).
+
+| Option | Centred | Off-centre | Double | Split set | Read (centred) |
+|---|---|---|---|---|---|
+| `xlst_mdxc` (X-LANCE stereo, then MDX23C) | **+10.85** [+8.71, +12.31] | −15.45 | −2.94 | **+5.33** [+3.92, +6.87] | **+0.067** |
+| `cw` (CenterWide, then X-LANCE) | +6.37 | −1.42 | −2.65 | +5.06 | +0.037 |
+| `mdxc` (MDX23C, then X-LANCE) | +7.03 | −17.32 | −2.78 | +4.71 | +0.006 |
+| `side` (the target's own channel, an oracle) | +2.95 | **+7.16** [+6.05, +8.21] | −0.43 | −1.84 | +0.012 |
+| `xlst_psi` (psi⁴ mask after separating) | +6.40 | −2.37 | −3.01 | +3.11 | +0.010 |
+| `stereo` (X-LANCE on the true pair) | −0.70 | +1.05 | +0.12 | −0.29 | — |
+| `centre4` (the picker's stem_C) | −1.77 | −9.10 | −4.21 | −4.13 | −0.06 |
+
+- Mega-53's guitar head, the agreement ensemble, a second pass and the keys mask are level or slightly worse. The
+  lead/rhythm models' lead outputs lose 2 to 14 dB; their rest/rhythm outputs gain at most +1.87 off-centre.
+- Off-centre (+7.16 dB, read +0.044) the target's own channel works, but it needs the side, which the user's pick
+  gives. A centred part, with separate takes on both sides or not, is best served by `xlst_mdxc`, and that's the only
+  option whose gain reaches the read in full.
+- The trigger by the score doesn't fire (best lo90 +8.71, `xlst_mdxc` centred). S3 runs on the user's go (above).
+- The product's model path gets `--version xlst_mdxc` behind a flag. Its default stays until the user's ear decides.
+
 ## What it can't say
 
 S0's mixes are built, not mastered records. Their panning is drawn, not each song's own. E1e's targets are mono, so
