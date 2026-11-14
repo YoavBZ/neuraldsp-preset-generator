@@ -292,14 +292,17 @@ exact drawn pan as the hint is read beside, as a ceiling, never under the rule.
 
 ### Amendment 3b (2026-11-15, after s1b's main read, before any A3 or S3 read; ledger `phase_s1_a3b`)
 
-- **What s1b found:** separating in stereo first and then taking the centre (`xlst_mdxc`) gains +10.85 dB
-  [+8.71, +12.31] on S0's centred items. The model's read gains +0.067 [+0.048, +0.079] there, the largest read gain
-  of any option. `mdxc`'s read gain is +0.006. On the training-band centred items alone (Forkupines and BKS, 32
-  items) it's +12.79 dB against `mdxc`'s +8.89.
+- **Its basis, the training-band items** (the freeze rule): on Forkupines' and BKS's 32 centred items, separating in
+  stereo first and then taking the centre (`xlst_mdxc`) gains +12.79 dB, against `mdxc`'s +8.89 (BKS +11.78 against
+  +6.72, Forkupines +13.81 against +11.07). On all S0's centred items it's +10.85 dB [+8.71, +12.31], with a read gain
+  of +0.067 [+0.048, +0.079], the largest on centred items; `mdxc`'s is +0.006.
 - **`steer_xlmdxc`** (under S1's rule, beside `steer_mdxc`): steer by the coarse hint, X-LANCE on the steered pair
-  (both outputs), MDX23C on that stereo stem, the mean, times cos φ. On a centre hint it's `xlst_mdxc` exactly (copied).
+  (both outputs), MDX23C on that stereo stem, the mean, times cos φ. On a centre hint it's `xlst_mdxc`: copied, a few
+  recomputed as the identity check (float64 on the CPU, where s1b's ran on MPS through float16). So its centred and
+  split cells repeat an option already read; only its off-centre and double cells are new.
 - **S3's routed comparator for the centre hint** becomes `xlst_mdxc` instead of `mdxc`. It's the stronger option on
-  the training bands too, so the change can only make S3's rule harder to meet. The side hint stays `side`.
+  the training bands too, so the change makes S3's rule harder to meet in expectation (its interval against
+  `xlst_mdxc` may still be tighter than against `mdxc`). The side hint stays `side`.
 - **The training batch:**
   - **What happens:** a batch of 2 clips needs 15.8 GB of MPS memory and swaps, and 4 doesn't fit in 32 GB.
   - **The fix tried:** the model's gradient checkpointing fails, with a shape error in BS-RoFormer.
@@ -322,16 +325,19 @@ drop in the model's cosine distance (higher is better).
 | `mdxc` (MDX23C, then X-LANCE) | +7.03 | −17.32 | −2.78 | +4.71 | +0.006 |
 | `side` (the target's own channel, an oracle) | +2.95 | **+7.16** [+6.05, +8.21] | −0.43 | −1.84 | +0.012 |
 | `xlst_psi` (psi⁴ mask after separating) | +6.40 | −2.37 | −3.01 | +3.11 | +0.010 |
-| `stereo` (X-LANCE on the true pair) | −0.70 | +1.05 | +0.12 | −0.29 | — |
-| `centre4` (the picker's stem_C) | −1.77 | −9.10 | −4.21 | −4.13 | −0.06 |
+| `stereo` (X-LANCE on the true pair) | −0.70 | +1.05 | +0.12 | −0.29 | −0.002 |
+| `centre4` (the picker's stem_C) | −1.77 [−5.82, +1.60] | −9.10 | −4.21 | −4.13 | −0.062 [−0.106, −0.024] |
 
 - Mega-53's guitar head, the agreement ensemble, a second pass and the keys mask are level or slightly worse. The
-  lead/rhythm models' lead outputs lose 2 to 14 dB; their rest/rhythm outputs gain at most +1.87 off-centre.
+  lead/rhythm models' lead outputs lose 1 to 14 dB; listra92's rest output gains +1.87 [+0.90, +2.62] off-centre,
+  below the own channel's +7.16.
 - Off-centre (+7.16 dB, read +0.044) the target's own channel works, but it needs the side, which the user's pick
-  gives. A centred part, with separate takes on both sides or not, is best served by `xlst_mdxc`, and that's the only
-  option whose gain reaches the read in full.
+  gives. A centred part is best served by `xlst_mdxc` on S0's centred items, by SI-SDR and by the read. With
+  separate takes on both sides (the split set), `xlst_mdxc` (+5.33 dB, read +0.062) and `cw` (+5.06, read +0.073)
+  are level: undecided between them.
 - The trigger by the score doesn't fire (best lo90 +8.71, `xlst_mdxc` centred). S3 runs on the user's go (above).
-- The product's model path gets `--version xlst_mdxc` behind a flag. Its default stays until the user's ear decides.
+- The product session is adding `--version xlst_mdxc` behind a flag (PR #492, open). Its default stays until the
+  user's ear decides.
 
 ## What it can't say
 

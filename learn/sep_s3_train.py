@@ -556,13 +556,15 @@ def cmd_train(args):
     model = load_model(dev)
     opt = torch.optim.AdamW(model.parameters(), lr=LR, betas=BETAS, weight_decay=0.0)
     st = {"step": 0, "best": -1e9, "best_step": 0, "read0": None, "evals": [], "reloads": 0, "t_start": time.time(),
-          "skipped": 0}
+          "skipped": 0, "batch": args.batch, "accum": args.accum}
     if (d / "last.pt").exists():
         ck = torch.load(d / "last.pt", map_location="cpu", weights_only=True)
         model.load_state_dict(ck["model"])
         opt.load_state_dict(ck["opt"])
         st = json.loads((d / "state.json").read_text())
         st["step"] = int(ck.get("step", st["step"]))           # the weights' own step (the review)
+        if (st.get("batch", args.batch), st.get("accum", args.accum)) != (args.batch, args.accum):
+            raise SystemExit("resumed with a different batch or accumulation than the run started with")
         print(f"resumed at step {st['step']}", flush=True)
     kw = {"persistent_workers": True, "prefetch_factor": 4} if args.workers > 0 else {}
     loader = torch.utils.data.DataLoader(make_dataset(args.batch, st["step"]), batch_size=None,

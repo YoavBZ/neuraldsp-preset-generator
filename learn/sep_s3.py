@@ -112,6 +112,7 @@ def cmd_steer(args):
     from learn import trusted_data as T
 
     require(PHASE_A3)
+    require("phase_s1_a3b")                    # steer_xlmdxc
     root = S1B.set_dir(args.set)
     sep = DS.stem_separator(T.SEP, "cpu")       # X-LANCE on the CPU, 4 threads: the MPS stays free for S3
     mdx = SSS.Centre()                          # MDX23C, hash-checked, CPU
@@ -158,7 +159,7 @@ def cmd_steer(args):
                 k = min(len(ref), len(stem))
                 checks.append({"item": p.stem, "option": o, "max_abs_diff": float(np.max(np.abs(
                     np.asarray(stem, np.float64)[:k] - ref[:k]))), "ref_peak": float(np.max(np.abs(ref)))})
-                n_check += 0.5                              # both options of one item count as one check
+                n_check += 1 / len(same)                    # an item's centre-hint options count as one check
         if m % 10 == 0:
             print(f"s3 steer {args.set} {m + 1}/{len(items)}: {time.time() - t0:.0f} s", flush=True)
     if checks:
