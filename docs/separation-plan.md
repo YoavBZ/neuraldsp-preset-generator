@@ -22,16 +22,22 @@ there. The steps run in cost order, cheapest first.
 Real songs have no ground truth, so every option is first measured on known-truth stereo mixes.
 
 - **The mixes:** E1e's items rebuilt in stereo by D_CC's recipe. The target is the item's guitar (its render, as
-  drawn). The "others" track holds the session's other guitars, and the backing holds the rest. Panning follows
-  common practice: the target within ±0.15 of centre, each other guitar at ±0.6 to ±1.0 (seeded), bass, kick, snare
-  and vocals centred, the other backing parts within ±0.5. The drawn ratio and mastering are kept.
+  drawn). The "others" track holds the session's other guitars, and the backing holds the rest. Bass, kick, snare and
+  vocals are centred, and the other backing parts sit within ±0.5. The drawn ratio and mastering are kept. The
+  target's placement takes one of three strata, about a third each, seeded (the review: a centred lead alone would
+  favour the centre mask by construction, and the user's part isn't always the centred lead):
+  - **centred lead:** the target within ±0.15, each other guitar at ±0.6 to ±1.0;
+  - **off-centre target:** the target at ±0.4 to ±0.8, with another guitar opposite or centred;
+  - **double-tracked target:** the target on both sides at ±0.6 to ±1.0 with a slight offset, and another guitar
+    centred.
   - 200 items, stratified by band; the bands any later training uses are held out of S0's read.
 - **The scores, per option:**
   - the target's SI-SDR on half A;
   - the other guitars' leak (the stem's energy correlated with the others track, against the target's);
   - the model's read: the cosine of the adopted model's floored body features (the amp pick's own measure) between
     the stem and the clean target, both at the product's input level.
-  - All are reported by band with a band bootstrap, against today's input (X-LANCE on the mono mix).
+  - beside, the effects row (since better stems also serve R3): the stem's cepstral delay hit and T0's delay vote;
+  - all are reported per stratum and by band, with a band bootstrap, against today's input (X-LANCE on the mono mix).
 
 ## S1, existing tools (zero training)
 
@@ -43,8 +49,12 @@ Real songs have no ground truth, so every option is first measured on known-trut
 - **(e)** X-LANCE run again on its own stem.
 - **(f)** (b) with the mask's exponent at 2 and at 8, beside 4.
 - **The rule:** an option wins if its SI-SDR gain over today's is above 0 on the band bootstrap and it loses nothing
-  on the model's read. The best one or two go on the user's picker for R1's songs. If the best gains under 1 dB,
-  S2 and S3 start.
+  on the model's read, meaning the paired cosine interval isn't wholly below 0. It's read per stratum: an option
+  that wins only on the centred lead goes on the picker as a choice, not as the default. The best one or two go on
+  the user's picker for R1's songs.
+- **The trigger for S2 and S3:** the best gains under 1 dB, or the user's ear still finds the best S1 option leaky
+  on R1's songs. Each of S2 and S3 carries its own stop rule when declared: a held-out S0 gain and a budget of
+  nights.
 
 ## S2 and S3, declared later on S1's evidence and the cloud researcher's survey
 
@@ -57,5 +67,6 @@ Real songs have no ground truth, so every option is first measured on known-trut
 
 ## What it can't say
 
-S0's mixes are built, not mastered records. Their panning is drawn, not each song's own. So S0 ranks the options,
-and the user's ear on real songs decides.
+S0's mixes are built, not mastered records. Their panning is drawn, not each song's own. E1e's targets are mono, so
+stereo tails that a centre mask would strip (reverb, delay, chorus width) aren't in S0. The ear has to check those.
+So S0 ranks the options, and the user's ear on real songs decides.
