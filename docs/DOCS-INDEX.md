@@ -814,7 +814,8 @@ was declared, what was measured, and the research behind it.
     none reaching +2 dB. Maps onto the separation plan (separation-plan.md), whose S1 already
     tests true stereo, the centre mask and that centre model on X-LANCE. Ranked tests: two
     zero-download S1 arms that mask after the stereo separation (psi^4 and a time-smoothed
-    coherence gate); an ear check on the R1 songs; a stronger learned centre model (204 MB); two
+    coherence gate), read on S0 and on the October LC contexts, since S0 puts all other guitars
+    at one pan; an ear check on the R1 songs; a stronger learned centre model (204 MB); two
     untested open lead/rhythm checkpoints (337.1 and 109.8 MB, no licence or metric); a
     refinement net on frozen `gtr_mss`; a lead-vs-rest fine-tune pilot (about 12 h per fold per
     1,000 steps on the CPU, the only measured rate within the 20 GB memory cap, since MPS ran
