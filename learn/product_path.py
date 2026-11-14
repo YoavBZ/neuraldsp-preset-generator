@@ -53,6 +53,89 @@ SEL_HOP_S, EDGE_S, PRESENT_DB = 1.0, 2.0, 12.0   # the selector (R1 Amendment 2)
 #                                                  track's ends, the guitar within 12 dB of the mix
 
 
+VERSIONS = ("stem", "stem_L", "stem_R", "stem_S", "stem_C")   # the input mix the separator reads (R1 Amendment 4)
+CENTRE_NFFT, CENTRE_HOP = 4096, 1024                           # the centre mask's STFT (the product session's picker,
+CENTRE_CHUNK_S, CENTRE_XF_S, CENTRE_POW = 30.0, 2.0, 4         # r1/tools/sep_centre.py): 30-s chunks, 2-s crossfades
+
+
+def centre_mix(left, right, sr):
+    """The centre-only mix, exactly as the picker made the user's stem_C (`sep_centre.centre`): per STFT bin, (L+R)/2
+    under psi^4 * max(cos dphi, 0), with psi = 2|L||R| / (|L|^2 + |R|^2) (Avendano-Jot similarity), in 30-s chunks
+    joined by 2-s linear crossfades. Panned parts fall away; a centred part passes nearly whole."""
+    import numpy as np
+    from scipy.signal import istft, stft
+
+    L, R = np.asarray(left, np.float64), np.asarray(right, np.float64)
+    n, c, x = len(L), int(CENTRE_CHUNK_S * sr), int(CENTRE_XF_S * sr)
+    out, wsum = np.zeros(n), np.zeros(n)
+    for a in range(0, n, c - x):
+        b = min(n, a + c)
+        _, _, SL = stft(L[a:b], sr, nperseg=CENTRE_NFFT, noverlap=CENTRE_NFFT - CENTRE_HOP)
+        _, _, SR = stft(R[a:b], sr, nperseg=CENTRE_NFFT, noverlap=CENTRE_NFFT - CENTRE_HOP)
+        aL, aR = np.abs(SL), np.abs(SR)
+        psi = 2 * aL * aR / (aL ** 2 + aR ** 2 + 1e-12)
+        cos = np.real(SL * np.conj(SR)) / (aL * aR + 1e-12)
+        m = psi ** CENTRE_POW * np.maximum(cos, 0.0)
+        _, y = istft(m * (SL + SR) / 2, sr, nperseg=CENTRE_NFFT, noverlap=CENTRE_NFFT - CENTRE_HOP)
+        y = y[:b - a]
+        w = np.ones(b - a)
+        if a > 0:
+            w[:x] = np.linspace(0, 1, x)
+        if b < n:
+            w[-x:] = np.minimum(w[-x:], np.linspace(1, 0, x))
+        out[a:b] += y * w
+        wsum[a:b] += w
+        if b == n:
+            break
+    return out / np.maximum(wsum, 1e-9)
+
+
+def version_mix(stereo, version):
+    """[samples, 2] -> the mono mix one version reads: stem (L+R)/2, as every earlier read; stem_L and stem_R one
+    channel; stem_S the side (L-R)/2; stem_C the centre-only mix. A mono file reads the same for every version but S
+    (silence) and C (itself)."""
+    import numpy as np
+
+    x = np.asarray(stereo, np.float64)
+    if x.ndim == 1 or x.shape[1] == 1:
+        x = np.repeat(x.reshape(-1, 1), 2, axis=1)
+    L, R = x[:, 0], x[:, 1]
+    if version not in VERSIONS:
+        raise SystemExit(f"unknown version {version!r}: one of {VERSIONS}")
+    if version == "stem_C":
+        raise SystemExit("the centre version runs on the whole song: use load_mix")
+    return {"stem": (L + R) / 2, "stem_L": L, "stem_R": R, "stem_S": (L - R) / 2}[version]
+
+
+def load_mix(path, sr_out, start_s, dur_s, version="stem"):
+    """A span of the song as the chosen version's mono mix, at sr_out. The default version is exactly the earlier reads'
+    `load_mono`. The channel versions read the span; the centre version is made on the whole song, as the picker made the
+    user's stem_C, then cut to the span."""
+    import numpy as np
+    import soundfile as sf
+    from scipy.signal import resample_poly
+
+    from learn import pretrain_set as PS
+
+    if version == "stem":
+        return PS.load_mono(path, sr_out, start_s, dur_s)
+    info = sf.info(str(path))
+    whole = version == "stem_C"
+    kw = {} if whole else {"start": max(0, int(round(start_s * info.samplerate))),
+                           "frames": int(round(dur_s * info.samplerate))}
+    x, sr = sf.read(str(path), dtype="float32", always_2d=True, **kw)
+    if x.shape[1] < 2:
+        x = np.repeat(x, 2, axis=1)
+    if sr != sr_out:                                   # both channels together, as the picker did
+        g = math.gcd(sr_out, sr)
+        x = resample_poly(x, sr_out // g, sr // g, axis=0).astype(np.float32)
+    if not whole:
+        return np.asarray(version_mix(x, version), np.float32)
+    c = centre_mix(x[:, 0].astype(np.float64), x[:, 1].astype(np.float64), sr_out)
+    a = max(0, int(round(start_s * sr_out)))
+    return np.asarray(c[a:a + int(round(dur_s * sr_out))], np.float32)
+
+
 def candidate_starts(span, dur, window=WINDOW_S, hop=SEL_HOP_S, edge=EDGE_S):
     """The 10-s windows on a 1-s hop inside `span` (start, end s), each at least `edge` s clear of the track's start and
     end. -> [start s]."""
@@ -141,7 +224,7 @@ def cmd_separate(args):
     sep = DS.stem_separator(T.SEP, args.device)
     n, sr = int(WINDOW_S * PS.SR), PS.SR
     dur = sf.info(args.song).duration
-    rec = {"song": str(args.song), "duration_s": dur}
+    rec = {"song": str(args.song), "duration_s": dur, "version": args.version}
     if args.start is not None:
         start, rec["chosen_by"] = float(args.start), "given"
     else:
@@ -150,7 +233,7 @@ def cmd_separate(args):
         if not starts:
             raise SystemExit(f"the part {span} holds no 10-s window clear of the track's ends")
         a = starts[0]
-        mix_span = np.asarray(PS.load_mono(args.song, sr, a, starts[-1] + WINDOW_S - a), np.float64)
+        mix_span = np.asarray(load_mix(args.song, sr, a, starts[-1] + WINDOW_S - a, args.version), np.float64)
         stem_span = np.asarray(sep(mix_span), np.float64)
         rows = []
         for s0 in starts:
@@ -168,7 +251,7 @@ def cmd_separate(args):
                     "candidates": len(rows), "steady": sum(r["steady"] for r in rows),
                     "steady and present": sum(r["steady"] and r["present"] for r in rows),
                     "rows": [{k: v for k, v in r.items() if k != "profile"} for r in rows]})
-    mix = np.asarray(PS.load_mono(args.song, sr, start, WINDOW_S), np.float64)
+    mix = np.asarray(load_mix(args.song, sr, start, WINDOW_S, args.version), np.float64)
     mix = np.pad(mix, (0, max(0, n - len(mix))))[:n]
     stem = np.asarray(sep(mix), np.float64)
     np.savez(out / "window.npz", mix=mix.astype(np.float32), stem=stem.astype(np.float32))
@@ -379,6 +462,8 @@ def main(argv=None):
     s.add_argument("--part", type=float, nargs=2, metavar=("START", "END"), default=None,
                    help="the part's span in seconds (from the user or research); the selector picks the window inside")
     s.add_argument("--part-from", default="research", help="where --part came from (recorded)")
+    s.add_argument("--version", choices=VERSIONS, default="stem",
+                   help="the input mix: both channels (default), one, the side, or the centre only; the model's mix is the same")
     s.add_argument("--device", default="mps")
     s.set_defaults(fn=cmd_separate)
     a = sub.add_parser("answers")

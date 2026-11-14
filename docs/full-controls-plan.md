@@ -500,6 +500,18 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
     - **On timing:** a first, unanswered version of the page was heard before this amendment.
   - **What stays:** every arm, window, level, preroll and page rule. The model path's own amp pick still uses A1's stock DIs; part-matched DIs for the pick are a separate, measured change.
   - **The limit:** the playing matches in texture, register and pace, but not note for note. A DI rebuilt from the song's own stem would match exactly, and that rebuild isn't good enough yet.
+- **Amendment 4, the user's parts and versions** (2026-11-14, before any arm is redone; ledger `phase_r1_a4`). The user found the separation leaky: other rhythm guitars and other sounds sit in many stems. They asked the product session for a picker, which plays each song's separated guitar in seven versions: the plain stem, from both channels; the left, right and side (L−R)/2 stems; and the centre-only stem. With it they chose each song's part, window and version: "Still many leaks though." The centre version won 5 of 7 songs.
+  - **The input:** `product_path separate --version stem|stem_L|stem_R|stem_S|stem_C`. The separator, and the model's mix, read that version's mono mix. The centre version is the picker's own (`r1/tools/sep_centre.py`, copied as `centre_mix`): psi^4 · max(cos Δφ, 0) on (L+R)/2, in 30-s chunks with 2-s crossfades, on the whole song, then cut to the window. It reproduces the user's centre mix sample for sample. The default stays exactly `load_mono`.
+  - **The windows** (the user's best picks): an exact 10-s pick is a given start; a longer pick is a part for the selector.
+    - autumn-leaves: start 263.0, stem
+    - cut-it-out: part 26.7–59.3, stem
+    - frail-grasp: part 157.7–181.0, stem_C (the solo break, not research's riff, so R is redone for the solo)
+    - hotel-california: start 0.0, stem_C
+    - how-long: start 0.0, stem_C
+    - long-road-out-of-eden: start 344.9, stem_C
+    - still-got-the-blues: part 149.9–178.1, stem_C
+  - **Everything downstream follows:** the product redoes R, M and D on these windows and versions. The matched DIs are re-matched to the new stems, and any new candidate source gets a DI check round of its own. Sources kept in earlier rounds stay kept. The page's reference is the chosen version's stem.
+  - **The read:** each song's version is recorded, and masked songs are read beside the plain ones, since the model never trained on a masked stem (the caveat sent to the user).
 - **The research** (the product session; one per song, shared by every arm): generate's steps 1 and 2 for the part at that window. They give its class (clean or crunch) and its effects spec, recorded in `r1/<song>/research.json` with their sources.
 - **The arms** (the product session writes them, as the skill would; `r1/<song>/arms/`):
   - **R:** generate's default. Research sets every control.
