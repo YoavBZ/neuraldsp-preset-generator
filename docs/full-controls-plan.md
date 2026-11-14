@@ -512,6 +512,12 @@ Morgan's 131 rows are `every_control.table("morgan")`. Tone King's 100 rows are 
     - still-got-the-blues: part 149.9–178.1, stem_C
   - **Everything downstream follows:** the product redoes R, M and D on these windows and versions. The matched DIs are re-matched to the new stems, and any new candidate source gets a DI check round of its own. Sources kept in earlier rounds stay kept. The page's reference is the chosen version's stem.
   - **The read and its scope** (the review): each song's version is recorded. On 5 of 7 songs R1 tests the model path on a version the user picked, while the product reads the plain stem. So "the model ahead" there supports the path plus a version step, and only the 2 plain songs read the product as it runs. The plain and masked songs are reported apart, since the model never trained on a masked stem. Page v2 was heard and left unanswered.
+- **Amendment 5, the matched DIs picked by ear** (2026-11-14, on the user's choice; ledger `phase_r1_a5`). On the user's windows the pitch tracker misreads two centre-only stems: Frail Grasp's solo reads voiced 0.22 at MIDI 41, and Long Road's 0.11 at 45. That is low and mostly unpitched, which is implausible for a solo. Asked, the user chose "I pick by ear" over trusting the automatic match.
+  - **The page** (`learn/r1_di_ear.py`): each song plays its guitar (the chosen version's stem) and its full mix, beside six candidate DIs on distinct performances:
+    - the three nearest by Amendment 3's calibrated distance;
+    - three single-note lines (voiced share at least 0.85) near MIDI 55, 64 and 72, each the nearest in pace, as a hedge where the pitch is misread.
+  - **The marks:** the user marks up to two that play most like the part, or "None fits". A DI the user picks counts as kept, which replaces the DI check.
+  - **R1's page:** a song gets one card per DI picked, and a song with none picked leaves the page, said in the read. The page is read with at least 85% of its first hearings (12 of 14 as before). The rule's bar scales the same way: ahead on all but two songs, behind on at most one.
 - **The research** (the product session; one per song, shared by every arm): generate's steps 1 and 2 for the part at that window. They give its class (clean or crunch) and its effects spec, recorded in `r1/<song>/research.json` with their sources.
 - **The arms** (the product session writes them, as the skill would; `r1/<song>/arms/`):
   - **R:** generate's default. Research sets every control.
