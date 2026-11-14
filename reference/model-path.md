@@ -38,10 +38,10 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/model_preset.py" --song SONG.mp3 --cls cle
      song, which may land on a part the user didn't mean. `--start` forces a window with no checks; use it only when
      the user names an exact moment, or a section shorter than 10 s (start it there). Say which window was read and
      how it was chosen.
-   - **Which signal is separated** (`--version`): both channels by default. Only the separator reads the version;
-     the model's mix, also its gain reference, stays the full mix of both channels. Use the default unless the user
-     picked a version by ear. The score below comes from built stereo test mixes with a known guitar (200 from 7
-     bands, 71 with the guitar centred, and 60 more with other guitars hard left and right; 2026-11-15). Those mixes
+   - **Which signal is separated** (`--version`): both channels by default. Only the separator reads the version; the
+     model's mix, also its gain reference, stays the full mix of both channels. Use the default unless the user picked
+     a version by ear. The score below comes from built stereo test mixes with a known guitar (200 from 7 bands, 71
+     with the guitar centred; and 60 of them rebuilt with other guitars hard left and right; 2026-11-15). Those mixes
      pan mono parts, so they cannot show what a version does to a real lead's stereo reverb, echo and width, and no
      listener has compared these versions on real songs yet.
      - `xlst_mdxc` separates the stereo pair, then keeps its centre with a phantom-centre model (MDX23C, on the CPU).
@@ -49,9 +49,9 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/model_preset.py" --song SONG.mp3 --cls cle
        +12.3), +5.3 dB with other guitars hard left and right, and the model's read improves too. It is worse for a
        part doubled left and right (−2.9 dB), and it removes a guitar panned off centre (−15 dB there), so use it only
        for a single part in the centre. It strips the sides hardest, the lead's own stereo reverb and echo included,
-       which the delay reader then cannot hear. Always pass `--part`: without it the selector runs it on the whole
-       song. On a mono file it adds only time. With everything on the CPU, the separate stage took 2.5 min for a
-       28-s part (2026-11-15).
+       which the delay reader may then no longer hear. Always pass `--part`: without it the selector runs it on the
+       whole song. On a mono file it should change little (unmeasured). With everything on the CPU, the separate stage
+       took 2.5 min for a 28-s part (2026-11-15).
      - `stem_L` or `stem_R`, the guitar's own channel, for a part on one side: +7.2 dB by the score.
      - `stem_C` keeps only what is the same in both channels before separating. One listener picked it as their best
        version on 5 of 7 songs (by ear, 2026-11-14), still hearing leaks. By the score it is undecided for a centred
