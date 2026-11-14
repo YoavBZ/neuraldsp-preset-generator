@@ -115,3 +115,12 @@ def test_s3_decision():
     assert S3.s3_decision(up, up, up, down) == "not used"
     assert S3.s3_decision(up, flat, up, up) == "not used"
     assert S3.s3_decision(up, {"lo90": None, "hi90": None}, up, up) == "not read"
+
+
+def test_s3_decision_clearly_worse_is_not_a_picker_choice():
+    up, flat, down = {"lo90": 0.2, "hi90": 1.0}, {"lo90": -0.3, "hi90": 0.4}, {"lo90": -1.0, "hi90": -0.1}
+    assert S3.s3_decision(up, up, down, flat) == "not used"
+
+
+def test_the_weaker_cell_decides_the_centre_hint():
+    assert min("default", "picker choice", key=S3.ORDER.index) == "picker choice"

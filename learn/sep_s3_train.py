@@ -4,14 +4,16 @@ the centred guitar out of a mix steered by the hint (`learn.sep_s3`'s steering).
 - **s3-cache** (main .venv, CPU): D_CC's examples with other guitars in the training bands, their parts cached at
   44.1 kHz: per example the target render and the other guitars' render (mono, unscaled) with D_CC's gains; per section
   and vocal variant the non-guitar backing pre-panned by S0's rule (stereo) and the amp tracks of the other guitars
-  summed (mono). 10% of each training band's sections (seeded) are validation, never trained on. 200 fixed steered
-  validation mixes (10 s) are drawn from them.
+  summed (mono). The Adam Buckley band is validation, never trained on: 200 fixed steered validation mixes (10 s)
+  by S0's strata recipe are drawn from it.
 - **s3-check** (msst-venv): the gradient check (one batch on MPS against the CPU, per parameter tensor) and the speed
   check per batch size. The run goes on MPS only if the median relative error is < 1e-3 and the largest < 1e-2.
-- **s3-train** (msst-venv, MPS): mixes drawn on the fly (`draw_layout`, `build_draw`), X-LANCE's own loss, AdamW 3e-5
-  with 1,000 warm-up steps, fp32, a hand-made clip at norm 1.0 (`clip_grad_norm_` gives NaN on MPS), non-finite steps
-  skipped (reload the last checkpoint after 25 in a row, abort after 20 reloads). Validation every 1,000 steps, the
-  best kept; it stops at 5 evaluations without a new best, the abort rule, or 72 h. Resumes from `last.pt`.
+- **s3-train** (msst-venv, MPS): mixes drawn on the fly (`draw_layout`, `build_draw`; the hinted copy is the target,
+  12% of draws drop it), X-LANCE's own loss, AdamW 1e-5 with 1,000 warm-up steps, fp32, all parameters, no weight
+  decay, a hand-made clip at norm 1.0 (`clip_grad_norm_` gives NaN on MPS), non-finite steps skipped (reload the last
+  checkpoint after 25 in a row, abort after 20 reloads). Validation every 1,000 steps: the median SI-SDR and the
+  model's read; step 0 is the first best; a new best needs +0.1 dB and a read no worse than step 0's; it stops at 5
+  evaluations without one, the abort rule, or 72 h. Resumes from `last.pt`.
 
     .venv/bin/python -m learn.sep_s3_train s3-cache
     ~/ndsp-presets/tools/msst-venv/bin/python -m learn.sep_s3_train s3-check
@@ -161,6 +163,8 @@ def cmd_cache(_args):
     (d / "ex").mkdir(parents=True, exist_ok=True)
     (d / "sec").mkdir(parents=True, exist_ok=True)
     kb = T.pan_fold(0.0) / S0.pan(0.0)[0]
+    kt = 1 / S0.pan(0.0)[0]
+    keys = {}                                    # the review: one (section, vocal variant) key, one track list
     index, t0 = [], time.time()
     for m, x in enumerate(sorted(exs, key=lambda x_: (x_["section"], x_["i"]))):
         rw = rend[x["i"]]
@@ -177,6 +181,9 @@ def cmd_cache(_args):
         oth = np.asarray(G.read_flac(T.flac_path(root, CB.STAGE, x["i"], "others"), rw["others_file"]["scale"],
                                      rw["others_file"]["sha256"]), np.float64)
         tracks = T.backing_tracks(x, voc)
+        sig = (tuple(tracks), tuple(sorted(a_["track"] for a_ in x.get("amp_tracks") or [])))
+        if keys.setdefault(sec_key, sig) != sig:
+            raise SystemExit(f"{x['i']}: section key {sec_key} with a different track list")
         st = np.asarray(stems.get(x["section"], tracks), np.float64)
         _, gains, _ = T.self_built_mix(y, oth, st, x)           # D_CC's gains, and its mastering-draw check
         mastered, _ = DS.master_draw(x["i"])
@@ -190,7 +197,9 @@ def cmd_cache(_args):
             for t in tracks:
                 a, ch = S0.load_track(sess / t, sec["start_s"], sr)
                 if t in guitar_amps:                             # the other guitars' amp tracks, one mono group
-                    amp += (a[:n, 0] * kb) if ch == 1 else (a[:n, 0] + a[:n, 1]) / 2
+                    # stored unpanned; the draw pans it with kb (= 1). A stereo file's (L+R)/2 is already the
+                    # recipe's level, so it is raised by kt: panned centre with kb it then folds back to that level
+                    amp += a[:n, 0] if ch == 1 else (a[:n, 0] + a[:n, 1]) / 2 * kt / kb
                 elif ch == 1:
                     gl, gr = S0.pan(S0.backing_pan(t, rng))
                     bL, bR = bL + a[:n, 0] * gl * kb, bR + a[:n, 0] * gr * kb
@@ -303,11 +312,17 @@ def build_draw(pool, rng, full=False, crop=CROP, layout=None):
         a = pick_crop(sum(copies).mean(0) * ga, mix.mean(0), rng, crop=crop)
         a0, a1 = a - PRE, a + crop
     mix, tgt = mix[:, a0:a1], tgt[:, a0:a1]
-    if rng.random() < pool.p_master:                        # S0's linked compressor at D_CC's rate
+    if train:
+        master, mrng = rng.random() < pool.p_master, rng   # S0's linked compressor at D_CC's rate
+    else:                                                   # validation: the example's own draw, as S0
+        from learn import direct_stems as DS
+
+        master, mrng = DS.master_draw(r["i"])
+    if master:
         from learn import song_aug as SA
 
         mid = mix.mean(0)
-        g, mk = S0.linked_gain(mid, rng, SR44)
+        g, mk = S0.linked_gain(mid, mrng, SR44)
         gm = 10 ** ((float(SA.lufs(mid)) + mk - float(SA.lufs(mid * g))) / 20)
         mix, tgt = mix * g * gm, tgt * g * gm
         peak = 10 ** (-1 / 20)
@@ -363,23 +378,36 @@ def load_model(device):
     return m
 
 
+try:                                             # module level, so spawned DataLoader workers can pickle it
+    from torch.utils.data import IterableDataset as _Base
+except ImportError:                              # CI without torch: the pure parts still import
+    _Base = object
+
+
+class Draws(_Base):
+    """An endless stream of training batches, seeded per worker and by the step a run resumes at."""
+
+    def __init__(self, batch, seed):
+        super().__init__()
+        self.batch, self.seed = batch, seed
+
+    def __iter__(self):
+        import numpy as np
+        import torch
+
+        info = torch.utils.data.get_worker_info()
+        wid = info.id if info else 0
+        rng = random.Random(f"{SEED}|train|{self.seed}|{wid}")
+        pool = Pool(val=False)
+        if S3.VAL_BAND in {r["band"] for r in pool.rows} or set(S3.HELD_BANDS) & {r["band"] for r in pool.rows}:
+            raise SystemExit("the validation or a held-out band in the training pool")
+        while True:
+            xs, ys = zip(*[build_draw(pool, rng)[:2] for _ in range(self.batch)])
+            yield torch.from_numpy(np.stack(xs)), torch.from_numpy(np.stack(ys))
+
+
 def make_dataset(batch, seed):
-    import numpy as np
-    import torch
-
-    class _D(torch.utils.data.IterableDataset):
-        def __iter__(self):
-            info = torch.utils.data.get_worker_info()
-            wid = info.id if info else 0
-            rng = random.Random(f"{SEED}|train|{seed}|{wid}")
-            pool = Pool(val=False)
-            if S3.VAL_BAND in {r["band"] for r in pool.rows}:
-                raise SystemExit("the validation band in the training pool")
-            while True:
-                xs, ys = zip(*[build_draw(pool, rng)[:2] for _ in range(batch)])
-                yield torch.from_numpy(np.stack(xs)), torch.from_numpy(np.stack(ys))
-
-    return _D()
+    return Draws(batch, seed)
 
 
 def grad_sq_norm(model):
@@ -535,14 +563,16 @@ def cmd_train(args):
         opt.load_state_dict(ck["opt"])
         st = json.loads((d / "state.json").read_text())
         print(f"resumed at step {st['step']}", flush=True)
+    kw = {"persistent_workers": True, "prefetch_factor": 4} if args.workers > 0 else {}
     loader = torch.utils.data.DataLoader(make_dataset(args.batch, st["step"]), batch_size=None,
-                                         num_workers=args.workers, persistent_workers=True, prefetch_factor=4)
+                                         num_workers=args.workers, **kw)
     it = iter(loader)
 
     def save_last():
-        torch.save({"model": model.state_dict(), "opt": opt.state_dict()}, d / "last.tmp")
+        torch.save({"model": model.state_dict(), "opt": opt.state_dict(), "step": st["step"]}, d / "last.tmp")
+        (d / "state.tmp").write_text(json.dumps(st, indent=1))
         (d / "last.tmp").replace(d / "last.pt")
-        (d / "state.json").write_text(json.dumps(st, indent=1))
+        (d / "state.tmp").replace(d / "state.json")
 
     if not st["evals"]:                          # step 0: X-LANCE as it is, the curve's start and the first best
         ev = evaluate(model, dev, nets)
@@ -581,6 +611,7 @@ def cmd_train(args):
                 ck = torch.load(d / "last.pt", map_location="cpu", weights_only=True)
                 model.load_state_dict(ck["model"])
                 opt.load_state_dict(ck["opt"])
+                st["step"] = int(ck.get("step", st["step"]))    # back to the checkpoint's step
                 print(f"reloaded last.pt after {bad} bad steps (reload {st['reloads']})", flush=True)
                 bad = 0
             continue

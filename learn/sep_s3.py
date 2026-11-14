@@ -251,6 +251,8 @@ def _clustered(diffs, rows):
     from learn import pipeline_fix as P
 
     c = P.clustered([(r["band"], r["i"], d_) for d_, r in zip(diffs, rows)])
+    if not c.get("clusters"):
+        return {"mean": None, "lo90": None, "hi90": None, "clusters": 0}
     return {k: c[k] for k in ("mean", "lo90", "hi90", "clusters", "clusters_positive", "clusters_negative",
                               "per_cluster")}
 
@@ -263,12 +265,12 @@ def routed(meta):
 def s3_decision(si_mono, rd_mono, si_comp, rd_comp):
     """S3's rule for one cell from four clustered intervals (SI-SDR and read gains against mono and the routed
     comparator; a read gain is a drop in cosine distance). -> 'default' | 'picker choice' | 'not used'."""
-    if None in (si_mono["lo90"], rd_mono["lo90"], si_comp["lo90"], rd_comp["hi90"]):
+    if None in (si_mono["lo90"], rd_mono["lo90"], si_comp["lo90"], si_comp["hi90"], rd_comp["hi90"]):
         return "not read"
     wins = si_mono["lo90"] > 0 and rd_mono["lo90"] > 0
     if wins and si_comp["lo90"] > 0 and rd_comp["hi90"] >= 0:
         return "default"
-    if wins and rd_comp["hi90"] >= 0:
+    if wins and rd_comp["hi90"] >= 0 and si_comp["hi90"] >= 0:      # SI-SDR undecided, not clearly worse
         return "picker choice"
     return "not used"
 
@@ -340,19 +342,23 @@ def cmd_read(args):
                     r["delay_hit"] = float(abs(lag / 2 ** y["dtime"] - 1) <= 0.10)
             rows[o][meta["i"]] = r
     read_on = (lambda r: r["held"]) if args.what == "s3" else (lambda r: True)
-    choose_on = (lambda r: not r["held"])               # the training-band items (S0's Forkupines and BKS)
+    # the best existing option per stratum: S3 chooses it on the training-band items (S0's Forkupines and BKS),
+    # with the steer options among the candidates; A3 on the same items it reads (the plan, biased to the old options)
+    choose_on = (lambda r: not r["held"]) if args.what == "s3" else (lambda r: True)
+    cands = old[1:] + (list(STEER_OPTIONS) if args.what == "s3" else [])
     base = rows["mono"]
     strata = ("all",) + (S0.STRATA if args.set == "main" else ("split",))
     rep = {"set": args.set, "what": args.what, "bands_read": sorted({r["band"] for r in base.values() if read_on(r)}),
-           "options": {}, "best_existing_chosen_on_training_bands": {}}
+           "options": {}, "best_existing": {},
+           "note": "the split set has no Dunning Kruger item, so its clustered interval has 4 bands (df 3)"}
     for strat in strata:
         sel = [i for i, r in base.items() if choose_on(r) and (strat == "all" or r["stratum"] == strat)]
         best, bm = None, -1e9
-        for o in old[1:]:
+        for o in cands:
             pr = [rows[o][i]["si_sdr"] - base[i]["si_sdr"] for i in sel if i in rows[o]]
             if sel and len(pr) == len(sel) and float(np.mean(pr)) > bm:
                 best, bm = o, float(np.mean(pr))
-        rep["best_existing_chosen_on_training_bands"][strat] = {"option": best, "n_chosen_on": len(sel)}
+        rep["best_existing"][strat] = {"option": best, "n_chosen_on": len(sel)}
 
     def diff(rs, other, key, sign=1):
         """Paired differences (row minus the other option's row for the same item), key si_sdr or cos."""
@@ -390,10 +396,15 @@ def cmd_read(args):
             e["vs_routed"] = {"comparator": sorted({comp(r) for r in rs}),
                               "si_sdr_clustered": _clustered(c_si, kc_si),
                               "read_clustered": _clustered(c_rd, kc_rd) if len(kc_rd) == len(rs) else None}
-            bx = rep["best_existing_chosen_on_training_bands"][strat]["option"]
+            bx = rep["best_existing"][strat]["option"]
             if bx:
                 b_si, kb_si = diff(rs, bx, "si_sdr")
                 e["vs_best_existing (beside)"] = {"option": bx, **_clustered(b_si, kb_si)}
+            if o == "s3":                                       # the plan: steer_mdxc among the comparisons
+                t_si, kt_si = diff(rs, "steer_mdxc", "si_sdr")
+                t_rd, kt_rd = diff(rs, "steer_mdxc", "cos", sign=-1)
+                e["vs_steer_mdxc (beside)"] = {"si_sdr_clustered": _clustered(t_si, kt_si),
+                                               "read_clustered": _clustered(t_rd, kt_rd)}
             if args.what == "a3":
                 vm = e["vs_mono"]
                 if o in RULE_STEER and vm["read_band_boot"] is not None:
@@ -432,7 +443,7 @@ def cmd_read(args):
     f.write_text(json.dumps(rep, indent=1))
     print(f"S3 READ ({args.what}, {args.set}; bands read {rep['bands_read']})")
     for strat in strata:
-        print(f"  best existing on {strat} (chosen on the training bands): "
+        print(f"  best existing on {strat} ({'chosen on the training bands' if args.what == 's3' else 'chosen on these items'}): "
               f"{rep['best_existing_chosen_on_training_bands'][strat]['option']}")
     nan = {"mean": float("nan"), "lo90": float("nan"), "hi90": float("nan")}
     for o, v in rep["options"].items():
@@ -451,6 +462,25 @@ def cmd_read(args):
                   f"{e.get('wins', e.get('decision', ''))}")
 
 
+ORDER = ("not read", "not used", "picker choice", "default")
+
+
+def cmd_decide(_args):
+    """S3's per-hint decision from both reads: the centre hint needs S0's centred cell and the split cell (the weaker of
+    the two decides); the side hint is S0's off-centre cell. The double cell is descriptive."""
+    require(PHASE_S3)
+    m = json.loads((S1B.set_dir("main") / "read-s3-s3-main.json").read_text())["options"]["s3"]
+    sp = json.loads((S1B.set_dir("split") / "read-s3-s3-split.json").read_text())["options"]["s3"]
+    cells = {"centred": m.get("centred", {}).get("decision", "not read"),
+             "split": sp.get("split", {}).get("decision", "not read"),
+             "off-centre": m.get("off-centre", {}).get("decision", "not read")}
+    out = {"cells": cells, "centre_hint": min(cells["centred"], cells["split"], key=ORDER.index),
+           "side_hint": cells["off-centre"], "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    (S0.out_dir().parent / "s3-decision.json").write_text(json.dumps(out, indent=1))
+    print(f"S3 DECISION: centre hint {out['centre_hint']} (cells {cells['centred']}, {cells['split']}); side hint "
+          f"{out['side_hint']}")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="learn.sep_s3")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -465,6 +495,7 @@ def main(argv=None):
     s.add_argument("--set", choices=("main", "split"), required=True)
     s.add_argument("--what", choices=("a3", "s3"), default="a3")
     s.set_defaults(fn=cmd_read)
+    sub.add_parser("s3-decide").set_defaults(fn=cmd_decide)
     args = ap.parse_args(argv)
     args.fn(args)
 
