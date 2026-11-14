@@ -325,6 +325,8 @@ def test_stored_1b_rows_reproduce_the_bleed_audit():
     dv, ceil = C.cell_directions(sig, cfgs, src, tuple(cfgs))
     if len(dv) != 72:
         pytest.skip("experiment 1 and 1b scores are not all here")
+    if not K.parts_stored():
+        pytest.skip("the parts table (learn/direc) is not on this machine")
     ps, bt = K.parts(), C.load_bleed_table()
     want = {"all": (0.252, 14), **{k: (v, n) for (k, v), n in zip(C.BLEED_1B.items(), (14, 12, 11))}}
     for row, (v, bands) in want.items():

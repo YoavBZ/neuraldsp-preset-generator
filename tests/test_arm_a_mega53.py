@@ -35,8 +35,8 @@ def test_pool_is_the_amendments_21_parts_in_12_bands():
     assert M.N_DIRS["F"] == len(slugs) * 3 * 2 and M.N_GROUPS["F"] == len(slugs) * 3
 
 
-@pytest.mark.skipif(not (K.HOME / "learn/set3/stems/manifest.json").exists(),
-                    reason="needs the Mac's stored stem manifests (step 3's parts)")
+@pytest.mark.skipif(not (K.HOME / "learn/set3/stems/manifest.json").exists() or not K.parts_stored(),
+                    reason="needs the Mac's stored stem manifests (step 3's parts) and the parts table (learn/direc)")
 def test_pool_has_no_step3_part():
     step3 = set(M.d_parts())
     assert len(step3) == 24
@@ -61,7 +61,8 @@ def test_pool_rule_on_toy_menus():
     assert not M.s_finite_everywhere(menu(("pr12", "clean", "A")), {a: K.START["clean"][a] for a in K.AMPS})
 
 
-@pytest.mark.skipif(not (K.HOME / "learn/label-table").exists(), reason="no stored label-table menus")
+@pytest.mark.skipif(not (K.HOME / "learn/label-table").exists() or not K.parts_stored(),
+                    reason="no stored label-table menus, or no parts table (learn/direc)")
 def test_pool_rule_on_the_stored_label_table_gives_the_declared_pool():
     rule = M.pool_by_rule(M.lt_parts(), set(M.d_parts()),
                           lambda s: M._load(K.HOME / "learn/label-table" / s / "menu.json"))
@@ -248,7 +249,7 @@ def _stored_levers():
         (L.SS_OUT / "armB" / "menu-S.json").exists()
 
 
-@pytest.mark.skipif(not _stored_levers(), reason="no stored levers data")
+@pytest.mark.skipif(not _stored_levers() or not K.parts_stored(), reason="no stored levers data, or no parts table")
 def test_recipe_reproduces_the_stored_3cprime_shrunk_settings_for_H():
     """Zero renders: main_stage on the stored objective curves + shrink 0.5 + a passing probe
     give exactly the stored lever-shrink-0.5 settings (H's stage-D output), on all 144."""
@@ -305,7 +306,8 @@ def test_stage_f_directions():
     assert len(dirs) == 126 and len(M.groups(dirs)) == 63
 
 
-@pytest.mark.skipif(not _stored_levers(), reason="no stored song-settings data")
+@pytest.mark.skipif(not _stored_levers() or not K.parts_stored(),
+                    reason="no stored song-settings data, or no parts table")
 def test_stage_d_directions_are_the_142():
     dirs = M.stage_dirs("D")
     assert len(dirs) == 142 and len(M.groups(dirs)) == 72
@@ -574,7 +576,8 @@ def test_stored_s_keys_are_the_matched_configurations():
     assert M.STORED_S["X:stem"][0] == LO.SEPNET_DI["stem"] and M.STORED_S["X:mega53"][0] == LO.SEPNET_DI["mega53"]
 
 
-@pytest.mark.skipif(not (M.LO.OUT / "renders" / "cprime_mega53").exists(), reason="no stored 1c renders")
+@pytest.mark.skipif(not (M.LO.OUT / "renders" / "cprime_mega53").exists() or not K.parts_stored(),
+                    reason="no stored 1c renders, or no parts table (learn/direc)")
 def test_stored_s_objectives_exist_for_every_stage_d_cell():
     for slug in M.d_parts():
         for amp in K.AMPS:

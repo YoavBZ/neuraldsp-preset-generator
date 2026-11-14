@@ -354,6 +354,15 @@ def log_ratio(a, b):
 
 # ---------------------------------------------------------------- rendering (not unit-tested)
 
+def parts_stored():
+    """Whether `parts()` can run on this machine: it reads the parts' gain classes from `songs_check.PREP`, October's
+    DI-network data (learn/direc), superseded and gone since the user-approved cleanup of 2026-11-14. The tests that
+    replay stored results through `parts()` skip without it."""
+    from learn import songs_check as SC
+
+    return SC.PREP.exists()
+
+
 def parts():
     from learn import songs_check as SC
 

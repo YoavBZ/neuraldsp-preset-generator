@@ -239,6 +239,8 @@ def test_real_networks_match_their_pins_and_are_leak_free():
     paths = {f: D.net_path(f) for f in range(4)}
     if not all(p.exists() for p in paths.values()):
         pytest.skip("the separator-robust networks are not on this machine")
+    if not K.parts_stored():
+        pytest.skip("the parts table (learn/direc) is not on this machine")
     lib = json.loads((paths[0].parent.parent / "lib.json").read_text())["rows"]
     fo = SS.folds()
     for slug, part in sorted(K.parts().items()):
