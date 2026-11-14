@@ -804,14 +804,18 @@ was declared, what was measured, and the research behind it.
     one electric guitar part (the lead, without the rhythm guitars, keys or bleed) out of a
     commercial stereo song, for the ML session (November 2026; nothing downloaded or run). No
     open model, prompted or not, has been shown to pick one guitar out of several; all select by
-    class. Today's route masks the whole song to its centre and then separates mono
-    (`centre_mix`, `stem_C`); that mask leaves two overlapping hard-panned takes only about 7.4
-    dB down and strips most of the lead's stereo tail [I], and the separator never reads true
-    stereo. Ranked tests: a zero-download stereo-first screen on stage F (`gtr_mss` on true
-    stereo, then a time-averaged coherence gate on its stem), an ear check on the R1 songs, then
-    two untested open lead/rhythm checkpoints (337.1 and 109.8 MB, no licence or metric),
-    learned centre and keys models, a refinement net on frozen `gtr_mss`, a lead-vs-rest
-    fine-tune pilot (about 3.5 h per fold per 1,000 steps on MPS, estimated; level collapse is
-    the main risk), and SAM-Audio small last (5.10 GB). Corrects round-5-guitar-models.md's
-    "MVSep lead/rhythm 9.0–9.2" figure. Builds on single-guitar-separation-2026-10.md. Research,
-    not a declared plan.
+    class. The default route separates the plain mono fold; the centre option (`stem_C`, the
+    user's pick on 5 of 7 R1 songs, unscored) masks the song before separating, which leaves two
+    overlapping hard-panned takes about 7.4 dB down and strips most of the lead's stereo tail;
+    no option gives the separator true stereo. Builds on and updates the stereo-side screen
+    (stereo-side-results.md): on Mega-53 stereo stems its best centred-lead result was the
+    MDX23C centre model (+1.35 dB) and its unsmoothed coherence mask gave +0.35, none reaching
+    +2 dB. Ranked tests: a zero-download re-run on `gtr_mss` stereo stems with that centre
+    model, a time-smoothed coherence gate and `stem_C` scored beside them; an ear check on the
+    R1 songs; a stronger learned centre model (204 MB); two untested open lead/rhythm
+    checkpoints (337.1 and 109.8 MB, no licence or metric); a refinement net on frozen
+    `gtr_mss`; a lead-vs-rest fine-tune pilot (about 12 h per fold per 1,000 steps on the CPU,
+    the only measured rate within the 20 GB memory cap, since MPS ran over it; level collapse is
+    the main risk); SAM-Audio small last. Corrects round-5-guitar-models.md's "MVSep lead/rhythm
+    9.0–9.2" figure. Builds on single-guitar-separation-2026-10.md. Research, not a declared
+    plan.
