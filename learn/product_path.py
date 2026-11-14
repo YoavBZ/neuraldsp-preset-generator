@@ -233,8 +233,11 @@ def cmd_separate(args):
         if not starts:
             raise SystemExit(f"the part {span} holds no 10-s window clear of the track's ends")
         a = starts[0]
-        mix_span = np.asarray(load_mix(args.song, sr, a, starts[-1] + WINDOW_S - a, args.version), np.float64)
-        stem_span = np.asarray(sep(mix_span), np.float64)
+        span_s = starts[-1] + WINDOW_S - a
+        mix_span = np.asarray(PS.load_mono(args.song, sr, a, span_s), np.float64)     # the full mix: the reference
+        sep_span = mix_span if args.version == "stem" else np.asarray(load_mix(args.song, sr, a, span_s, args.version),
+                                                                           np.float64)
+        stem_span = np.asarray(sep(sep_span), np.float64)
         rows = []
         for s0 in starts:
             k = int(round((s0 - a) * sr))
@@ -251,13 +254,20 @@ def cmd_separate(args):
                     "candidates": len(rows), "steady": sum(r["steady"] for r in rows),
                     "steady and present": sum(r["steady"] and r["present"] for r in rows),
                     "rows": [{k: v for k, v in r.items() if k != "profile"} for r in rows]})
-    mix = np.asarray(load_mix(args.song, sr, start, WINDOW_S, args.version), np.float64)
-    mix = np.pad(mix, (0, max(0, n - len(mix))))[:n]
-    stem = np.asarray(sep(mix), np.float64)
-    np.savez(out / "window.npz", mix=mix.astype(np.float32), stem=stem.astype(np.float32))
+    fit = lambda y: np.pad(y, (0, max(0, n - len(y))))[:n]           # noqa: E731
+    mix = fit(np.asarray(PS.load_mono(args.song, sr, start, WINDOW_S), np.float64))
+    sep_mix = mix if args.version == "stem" else fit(np.asarray(load_mix(args.song, sr, start, WINDOW_S, args.version),
+                                                                 np.float64))
+    stem = np.asarray(sep(sep_mix), np.float64)
+    # `mix` stays the full (L+R)/2 window: the model's mix and its gain reference (V-real read 3), as validated; the
+    # version only changes what the separator reads (`sep_mix`), the review's rule (R1 Amendment 4)
+    np.savez(out / "window.npz", mix=mix.astype(np.float32), stem=stem.astype(np.float32),
+             sep_mix=sep_mix.astype(np.float32))
     ok, low = steady_whole(stem, sr)
-    rec.update({"start_s": start, "window": {"steady": ok, "lowest_block_db": low,
-                                             "exposure_db": float(SA.lufs(stem)) - float(SA.lufs(mix))},
+    rec.update({"start_s": start, "lufs": {"mix": float(SA.lufs(mix)), "sep_mix": float(SA.lufs(sep_mix)),
+                                           "stem": float(SA.lufs(stem))},
+                "window": {"steady": ok, "lowest_block_db": low,
+                           "exposure_db": float(SA.lufs(stem)) - float(SA.lufs(mix))},
                 "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     _save(out / "window.json", rec)
     print(f"SEPARATE: window at {start:.1f} s ({rec['chosen_by']}; {rec.get('candidates', 1)} candidates)")
@@ -463,7 +473,8 @@ def main(argv=None):
                    help="the part's span in seconds (from the user or research); the selector picks the window inside")
     s.add_argument("--part-from", default="research", help="where --part came from (recorded)")
     s.add_argument("--version", choices=VERSIONS, default="stem",
-                   help="the input mix: both channels (default), one, the side, or the centre only; the model's mix is the same")
+                   help="what the separator reads: both channels (default), one, the side, or the centre only; the "
+                        "model's mix and gain reference stay the full mix")
     s.add_argument("--device", default="mps")
     s.set_defaults(fn=cmd_separate)
     a = sub.add_parser("answers")
