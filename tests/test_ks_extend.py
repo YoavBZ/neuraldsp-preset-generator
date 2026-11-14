@@ -480,7 +480,8 @@ def _have_kc():
     return (K.OUT / "cells").exists() and (L.SS_OUT / "armB" / "menu-S.json").exists()
 
 
-@pytest.mark.skipif(not _have_kc() or not K.parts_stored(), reason="no stored knob-ceiling data, or no parts table")
+@pytest.mark.skipif(not _have_kc() or not K.parts_stored(),
+                    reason="no stored knob-ceiling data, or no parts table (learn/direc)")
 def test_stored_ks_directions_replay_with_their_prior():
     ms, ps = L.menu_S(), K.parts()
     dirs = X.directions()
@@ -492,7 +493,8 @@ def test_stored_ks_directions_replay_with_their_prior():
         assert K.key(x) in lookup and gains
 
 
-@pytest.mark.skipif(not _have_kc() or not K.parts_stored(), reason="no stored knob-ceiling data, or no parts table")
+@pytest.mark.skipif(not _have_kc() or not K.parts_stored(),
+                    reason="no stored knob-ceiling data, or no parts table (learn/direc)")
 def test_stored_ks_tails_reproduce_the_known_figures():
     ps = K.parts()
     rows = X.ks_tail_rows([c for c in X._kc_cells() if c["slug"] in ps])
@@ -509,7 +511,8 @@ def test_stored_stage2_choices_are_reproduced():
     assert len(cells) == 48 and all(c["matches_stored"] for c in cells)
 
 
-@pytest.mark.skipif(not _have_kc() or not K.parts_stored(), reason="no stored knob-ceiling data, or no parts table")
+@pytest.mark.skipif(not _have_kc() or not K.parts_stored(),
+                    reason="no stored knob-ceiling data, or no parts table (learn/direc)")
 def test_the_report_at_150_reproduces_step_3s_ceiling():
     """Every stored K_S as a direction with no extra renders: the estimate at 150 is step 3's −0.269."""
     base = X.base_figures()
@@ -519,7 +522,8 @@ def test_the_report_at_150_reproduces_step_3s_ceiling():
     assert len(base) == 144 and out["estimate"]["150"]["all"]["bands"] == 14
 
 
-@pytest.mark.skipif(not _have_kc() or not K.parts_stored(), reason="no stored knob-ceiling data, or no parts table")
+@pytest.mark.skipif(not _have_kc() or not K.parts_stored(),
+                    reason="no stored knob-ceiling data, or no parts table (learn/direc)")
 def test_the_real_design_covers_the_144_directions():
     b = X.the_design()
     assert sum(len(x) for x in b) == 144 and all(len(x) == 24 for x in b)

@@ -249,7 +249,8 @@ def _stored_levers():
         (L.SS_OUT / "armB" / "menu-S.json").exists()
 
 
-@pytest.mark.skipif(not _stored_levers() or not K.parts_stored(), reason="no stored levers data, or no parts table")
+@pytest.mark.skipif(not _stored_levers() or not K.parts_stored(),
+                    reason="no stored levers data, or no parts table (learn/direc)")
 def test_recipe_reproduces_the_stored_3cprime_shrunk_settings_for_H():
     """Zero renders: main_stage on the stored objective curves + shrink 0.5 + a passing probe
     give exactly the stored lever-shrink-0.5 settings (H's stage-D output), on all 144."""
@@ -307,7 +308,7 @@ def test_stage_f_directions():
 
 
 @pytest.mark.skipif(not _stored_levers() or not K.parts_stored(),
-                    reason="no stored song-settings data, or no parts table")
+                    reason="no stored song-settings data, or no parts table (learn/direc)")
 def test_stage_d_directions_are_the_142():
     dirs = M.stage_dirs("D")
     assert len(dirs) == 142 and len(M.groups(dirs)) == 72
