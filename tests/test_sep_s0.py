@@ -49,3 +49,8 @@ def test_linked_gain_draws_as_compress_does():
     g, mk = S.linked_gain(x, r1, 48000)
     assert r1.random() == (r2.uniform(2, 4), r2.uniform(0, 4), r2.random())[2]   # the same two draws consumed
     assert g.max() <= 1.0 and 0 <= mk <= 4
+
+
+def test_target_side_is_the_louder_copy():
+    assert S.target_side({"target": [-0.6]}) == -1 and S.target_side({"target": [0.7, -0.8]}) == 1
+    assert S.target_side({"target": [0.05]}) == 1

@@ -8,6 +8,7 @@ scored against the target as it sits in the mix: SI-SDR on half A, the other gui
     ~/ndsp-presets/tools/msst-venv/bin/python -m learn.sep_s0 s0-sep --options xl --device mps
     ~/ndsp-presets/tools/msst-venv/bin/python -m learn.sep_s0 s0-sep --options mega --device mps
     ~/ndsp-presets/tools/msst-venv/bin/python -m learn.sep_s0 s0-sep --options mdxc --device mps   # MDX23C on CPU
+    ~/ndsp-presets/tools/msst-venv/bin/python -m learn.sep_s0 s0-sep --options side --device mps   # (h), (i)
     $TORCH_PY -m learn.sep_s0 s0-feats                                          # the model's read
     .venv/bin/python -m learn.sep_s0 s0-read                                    # the scores, per stratum and band
 
@@ -31,8 +32,9 @@ CENTRED_TRACKS = ("bass", "kick", "snare", "vox", "vocal", "voc", "lead vox")
 XL_OPTIONS = ("mono", "stereo", "centre2", "centre4", "centre8", "second")
 MEGA_OPTIONS = ("mega",)
 MDXC_OPTIONS = ("mdxc",)                   # S1 Amendment 1: the MDX23C phantom-centre model, then X-LANCE
+SIDE_OPTIONS = ("side", "sidesig")         # (h) the target's own channel (an oracle side), (i) the side signal
 DERIVED = ("agree",)                       # from mono and mega, no separation of its own
-ALL_OPTIONS = XL_OPTIONS + MEGA_OPTIONS + MDXC_OPTIONS + DERIVED
+ALL_OPTIONS = XL_OPTIONS + MEGA_OPTIONS + MDXC_OPTIONS + SIDE_OPTIONS + DERIVED
 BASELINE = "mono"
 BELOW_GUARD_GB = 26.0                      # the user's yes (2026-11-14): S1's stems may go under the render guard
 
@@ -74,6 +76,11 @@ def draw_stratum(i, seed=SEED):
     return {"stratum": s, "target": [rng.uniform(0.6, 1.0), -rng.uniform(0.6, 1.0)],
             "target_offset_ms": rng.uniform(12.0, 30.0), "target_db2": -rng.uniform(1.0, 3.0),
             "others": rng.uniform(-0.15, 0.15)}
+
+
+def target_side(meta):
+    """The target's side from its drawn pan: the sign of its (louder, first) copy; a centred target by its sign too."""
+    return -1 if meta["target"][0] < 0 else 1
 
 
 def backing_pan(track, rng):
@@ -301,7 +308,7 @@ def cmd_sep(args):
 
     require()
     sr = PS.SR
-    group = {"xl": XL_OPTIONS, "mega": MEGA_OPTIONS, "mdxc": MDXC_OPTIONS}[args.options]
+    group = {"xl": XL_OPTIONS, "mega": MEGA_OPTIONS, "mdxc": MDXC_OPTIONS, "side": SIDE_OPTIONS}[args.options]
     if args.options == "mega":
         sep = DS.stem_separator("mega53", args.device, setting="fast")
     else:
@@ -329,6 +336,10 @@ def cmd_sep(args):
                 s = sep(centre(L, R, int(o[6:]), sr))
             elif o == "mdxc":
                 s = sep(mdx(np.stack([L, R])).mean(0))
+            elif o == "side":                      # the oracle side, standing in for the user's pick (stem_L/R)
+                s = sep(L if target_side(json.loads(p.with_suffix(".json").read_text())) < 0 else R)
+            elif o == "sidesig":                   # stem_S's input
+                s = sep((L - R) / 2)
             elif o == "second":
                 s = sep(np.asarray(np.load(out_dir() / "stems" / "mono" / p.name)["stem"], np.float64))
             if PS.free_gb() < (BELOW_GUARD_GB if args.below_guard else T.DISK_GUARD_GB):
@@ -473,15 +484,19 @@ def cmd_read(_args):
                 e["delay_vote_change"] = {"on (up is better)": float(np.mean(von)) if von else None,
                                           "off (down is better)": float(np.mean(voff)) if voff else None}
             e["ratio_db_median"] = float(np.median([r["ratio_db"] for r in rs]))
+            e["n_cos"] = sum(1 for r in rs if r["cos"] is not None)
             if o != BASELINE and "si_sdr_gain" in e:
                 cg = e.get("cos_gain")
-                e["wins"] = bool(e["si_sdr_gain"]["lo90"] > 0 and cg is not None and cg["hi90"] >= 0)   # the declared rule
+                if e["n_cos"] != e["n"] or cg is None or cg["n"] != len(pair):
+                    e["wins"] = "not read: the model's read is incomplete (run s0-feats after every stem)"
+                else:
+                    e["wins"] = bool(e["si_sdr_gain"]["lo90"] > 0 and cg["hi90"] >= 0)   # the declared rule
             rep["options"][o][strat] = e
     (out_dir() / "read.json").write_text(json.dumps(rep, indent=1))
     for o, v in rep["options"].items():
         a = v["all"]
         g = a.get("si_sdr_gain", {})
-        print(f"{o:8s} SI-SDR {a['si_sdr_median']:+.1f} dB (gain {g.get('mean', 0):+.2f} [{g.get('lo90', 0):+.2f}, "
+        print(f"{o:8s} n {a['n']} n(cos) {a['n_cos']}  SI-SDR {a['si_sdr_median']:+.1f} dB (gain {g.get('mean', 0):+.2f} [{g.get('lo90', 0):+.2f}, "
               f"{g.get('hi90', 0):+.2f}])  leak {a['leak_db_median']:+.1f} dB  "
               + "  ".join(f"{s}: {v[s].get('si_sdr_gain', {}).get('mean', 0):+.2f}" for s in STRATA if s in v))
 
@@ -526,7 +541,7 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("s0-build").set_defaults(fn=cmd_build)
     s = sub.add_parser("s0-sep")
-    s.add_argument("--options", choices=("xl", "mega", "mdxc"), required=True)
+    s.add_argument("--options", choices=("xl", "mega", "mdxc", "side"), required=True)
     s.add_argument("--device", default="mps")
     s.add_argument("--below-guard", action="store_true", help="the user's yes: run under the 31-GB render guard")
     s.set_defaults(fn=cmd_sep)
