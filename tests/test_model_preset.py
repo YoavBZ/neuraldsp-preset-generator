@@ -57,7 +57,7 @@ def test_refuses_a_key_the_start_lacks(tmp_path):
 
 def test_stage_arguments():
     a = argparse.Namespace(song="~/s.wav", work=pathlib.Path("/w"), start=12.5, part=None, part_from="research",
-                           cls="crunch")
+                           cls="crunch", version="stem")
     assert M.stage_args("separate", a)[1:] == ["--out", "/w", "--start", "12.5"]
     assert M.stage_args("answers", a) == ["/w", "--cls", "crunch"]
     assert M.stage_args("render", a) == ["/w"] and M.stage_args("pick", a) == ["/w"]
@@ -230,3 +230,48 @@ def test_the_window_line():
                                                        "part_from": "research"})
     assert "with care" in M.window_how({"chosen_by": sel + "none steady", "part_s": [30, 60], "part_from": "research"})
     assert M.window_how({"chosen_by": "exposure"}) == "exposure"                      # an older work folder
+
+
+def test_the_version_reaches_the_separator_and_guards_a_resume(tmp_path, monkeypatch):
+    a = argparse.Namespace(song="s.wav", work=pathlib.Path("/w"), start=None, part=[30.0, 60.0], part_from="the user",
+                           cls="clean", version="stem_C")
+    assert M.stage_args("separate", a)[1:5] == ["--out", "/w", "--version", "stem_C"]
+    a.version = "stem"
+    assert "--version" not in M.stage_args("separate", a)              # the default as every earlier read
+    work = tmp_path / "w"
+    work.mkdir()
+    song = (tmp_path / "s.wav").resolve()
+    (work / "window.json").write_text(json.dumps({"song": str(song), "start_s": 40.0, "part_s": [30.0, 60.0],
+                                                  "part_from": "the user", "chosen_by": "selector"}))   # no version: stem
+    monkeypatch.setattr(M, "interpreters", lambda: {"msst": EXAMPLE, "torch": EXAMPLE, "main": EXAMPLE})
+    b = M.build_parser().parse_args(["--song", str(song), "--cls", "clean", "--work", str(work), "--out", "o.xml",
+                                     "--part", "30", "60", "--version", "stem_C"])
+    b.work, b.song = work, song
+    with pytest.raises(SystemExit):
+        M.run_stages(b)
+
+
+def test_an_older_folder_resumes_with_the_default_version(tmp_path, monkeypatch, capsys):
+    """A work folder from before --version (no "version" key) is a both-channels run: the default resumes it, and only
+    another version is refused, by name."""
+    work = tmp_path / "w"
+    work.mkdir()
+    song = (tmp_path / "s.wav").resolve()
+    (work / "window.json").write_text(json.dumps({"song": str(song), "start_s": 40.0, "chosen_by": "given"}))
+    for f, body in (("answers.json", {"cls": "clean"}), ("renders.json", {}), ("preset.json", {})):
+        (work / f).write_text(json.dumps(body))
+    monkeypatch.setattr(M, "interpreters", lambda: {"msst": EXAMPLE, "torch": EXAMPLE, "main": EXAMPLE})
+    monkeypatch.setattr(M.subprocess, "run", lambda *a, **k: pytest.fail("a stage ran"))
+    parse = M.build_parser().parse_args
+    a = parse(["--song", str(song), "--cls", "clean", "--work", str(work), "--out", "o.xml", "--start", "40"])
+    a.work, a.song = work, song
+    M.run_stages(a)                                                     # every stage done: nothing runs, no refusal
+    a.version = "stem_C"
+    with pytest.raises(SystemExit):
+        M.run_stages(a)
+    assert "version stem" in capsys.readouterr().err
+
+def test_the_wrapper_knows_every_version_the_separator_offers():
+    from learn import product_path as P
+
+    assert set(M.VERSIONS) == set(P.VERSIONS) == set(M.VERSION_NAMES)
