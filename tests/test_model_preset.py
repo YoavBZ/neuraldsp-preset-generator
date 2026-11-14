@@ -249,3 +249,25 @@ def test_the_version_reaches_the_separator_and_guards_a_resume(tmp_path, monkeyp
     b.work, b.song = work, song
     with pytest.raises(SystemExit):
         M.run_stages(b)
+
+
+def test_an_older_folder_resumes_with_the_default_version(tmp_path, monkeypatch, capsys):
+    """A work folder from before --version (no "version" key) is a both-channels run: the default resumes it, and only
+    another version is refused, by name."""
+    work = tmp_path / "w"
+    work.mkdir()
+    song = (tmp_path / "s.wav").resolve()
+    (work / "window.json").write_text(json.dumps({"song": str(song), "start_s": 40.0, "chosen_by": "given"}))
+    for f, body in (("answers.json", {"cls": "clean"}), ("renders.json", {}), ("preset.json", {})):
+        (work / f).write_text(json.dumps(body))
+    monkeypatch.setattr(M, "interpreters", lambda: {"msst": EXAMPLE, "torch": EXAMPLE, "main": EXAMPLE})
+    monkeypatch.setattr(M.subprocess, "run", lambda *a, **k: pytest.fail("a stage ran"))
+    parse = M.build_parser().parse_args
+    a = parse(["--song", str(song), "--cls", "clean", "--work", str(work), "--out", "o.xml", "--start", "40"])
+    a.work, a.song = work, song
+    M.run_stages(a)                                                     # every stage done: nothing runs, no refusal
+    a.version = "stem_C"
+    with pytest.raises(SystemExit):
+        M.run_stages(a)
+    assert "version stem" in capsys.readouterr().err
+

@@ -2,7 +2,7 @@
 """Generate a Morgan preset from a song with the trained model (generate's model path, behind its flag).
 
     python scripts/model_preset.py --song SONG.mp3 --cls clean|crunch [--part START END | --start S] \
-        --work WORK_DIR --out OUT.xml [--name NAME]
+        [--version stem|stem_C|stem_L|stem_R|stem_S] --work WORK_DIR --out OUT.xml [--name NAME]
 
 Runs the model path's four stages (`learn/product_path.py`), each in the environment it needs:
   separate  the song's 10-s window and its separated guitar (msst-venv);
