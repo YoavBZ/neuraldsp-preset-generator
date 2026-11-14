@@ -44,7 +44,9 @@ def test_ear_read_unblinds_and_tallies():
     assert rep["songs"] == {"a": "ahead", "b": "ahead"}
     assert rep["delay"]["on_songs"] == ["a"] and rep["delay"]["rule"] == "stays the candidate"
     assert all(c["tied"] for c in rep["delay"]["identical_check"])
-    assert rep["page_failed"]                     # 4 of 14 first hearings
+    assert not rep["page_failed"]                 # all 4 of this page's 4 first hearings
+    del got["i4"]
+    assert R.ear_read(items, got)["page_failed"]  # 3 of 4, under 85%
 
 
 def test_page_parts_build():
@@ -96,3 +98,12 @@ def test_the_artifact_page_builds():
     page, css, js = R.page_html(items, {"i1-ref": "", "i1-mix": "", "i1-A": "", "i1-B": "", "i1-C": ""}, "b0")
     art = C.artifact_page(page, css, js)
     assert "Guitar (G)" in art and "Export</b> any time" not in art
+
+
+def test_min_read_and_rule_on_fewer_songs():
+    assert R.min_read(14) == 12 and R.min_read(12) == 11 and R.min_read(10) == 9
+    t = {f"s{i}": v for i, v in enumerate(["ahead"] * 4 + ["level", "behind"])}
+    assert R.rule(t, n_songs=6) == "level"                       # 6 songs need 5 ahead (the review's null rates)
+    t = {f"s{i}": v for i, v in enumerate(["ahead"] * 5 + ["behind"])}
+    assert R.rule(t, n_songs=6) == "the model ahead"
+    assert R.rule({"a": "ahead"} , n_songs=4) == "descriptive only (under 5 songs)"
