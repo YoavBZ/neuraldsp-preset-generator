@@ -153,6 +153,143 @@ a yaml check that admits only MSST's `!!python/tuple`. Code is in `learn/sep_s1b
   built as in S0 from our multitracks, with the other guitars as the leak to remove. MPS over nights, no rented
   machines. The bands S0 reads stay out of training.
 
+## S1 Amendment 3 and S3: steer, then separate (declared 2026-11-14; ledger `phase_s1_a3`, `phase_s3`)
+
+**Why now.** S1's first round (read and audited) showed what works is where the guitar sits. The MDX23C centre model
+gains +7.0 dB on a centred target but removes an off-centre one (−17.3 dB). The guitar's own channel gains +7.2 dB
+off-centre. The user said "Go for all. Plan carefully, review independently, work step by step, document and audit",
+to the proposal: read the second round, put the best on the picker, and train our own separator tonight. So S3
+starts on that go, ahead of the trigger. The trigger is still computed and reported.
+
+**How it differs from what failed.** Every tool so far was trained to pull out "the guitar", meaning every guitar
+together. October showed the other guitars are what limits separation (a perfect all-guitar separator gains only
++0.30 dB). Both steps here use the one cue that separates a guitar from another guitar in S1: where it sits.
+
+**Steering.** For a constant-power pan p, the angle is θ = (p + 1)·π/4 (so L = cos θ, R = sin θ). Given a hint p_h,
+rotate the pair [L, R] by φ = π/4 − θ_h. A source at the hint lands in the centre (L′ = R′). A source on the other
+side turns anti-phase, which a centre extractor removes. The rotation is orthonormal, so it's undone exactly by −φ.
+A centre hint is no rotation at all.
+
+**The hint** is coarse, as the picker gives it: centre (|p| < 0.25) is 0, left is −0.7, right is +0.7. A double's
+hint is its louder copy's side, the `side` option's rule. In S0 the hint comes from the drawn pan, an oracle standing
+in for the user's pick: the same information `side` already uses. ±0.7 is fixed here, before any steering read: it
+lies between S0's off-centre (±0.4 to ±0.8) and double (±0.6 to ±1.0) ranges and is near a typical hard pan. The
+exact drawn pan as the hint is read beside, as a ceiling, never under the rule.
+
+### S1 Amendment 3: steering with the existing tools (zero training)
+
+- **`steer_mdxc`:** steer by the hint, run the MDX23C centre model, average its two outputs, then X-LANCE. It's (g)
+  with steering. On a centred hint it's (g) exactly, which is a check.
+- **`steer_mid`:** steer by the hint, X-LANCE on the steered pair (both outputs), then the stem's mid. The target is
+  whole in the mid, and anti-phase sources cancel.
+- **`steer_mdxc_exact`:** `steer_mdxc` with the exact pan, the ceiling.
+- **Where:** all of S0's 200 items and the split set's 60, by S1's rule against mono, per stratum. Beside: the best
+  existing option per stratum on the same items, chosen on those same items (that favours the old options).
+- **Cost:** zero renders. MDX23C and X-LANCE on the CPU, 4 threads, so the MPS stays free for S3.
+
+### S3: our own steered separator (training on MPS, no rented machines)
+
+- **What it learns:** the job `steer_mdxc` does, learned. Input: the mix steered by the hint (stereo, 44.1 kHz).
+  Output: the target as it sits in the steered mix (stereo). The stem is rotated back and its channels averaged, as
+  every S0 stem is. It starts from X-LANCE's `gtr_mss` (BS-RoFormer: 12 layers, dim 256, stereo, one stem;
+  hash-checked), so it starts as today's separator and learns what to remove.
+- **Data, trusted only:** D_CC's built examples, the reviewed set S0 is built from: the target render, the other
+  guitars' render, the session's other guitar amp tracks (D_CC's `amp_tracks`), the backing stems, D_CC's gains.
+  - **The bands, fixed before training:** the two bands with the most S0 items (Forkupines and BKS) plus the two
+    S0 doesn't use (The Maybe Next Years, Adam Buckley) train: 2,218 examples with other guitars, 217 sections. The
+    other five (Hazael, The Travelling Band, Ale Lak, Storm Of Particles, Dunning Kruger) are held out: 120 of S0's
+    200 items and 38 of the split set's 60. That trades training volume for a five-band read.
+  - **Validation, for the curve only:** 10% of the training bands' sections (seeded), their examples kept out of
+    training. 200 fixed steered mixes from them, scored like S0. The held-out bands are never used for the curve.
+- **The mixes, drawn on the fly:** each example's parts are cached once at 44.1 kHz. The guitars stay mono, and the
+  non-guitar backing is pre-panned to stereo by S0's rule. Each draw takes:
+  - a stratum: centred 30%, off-centre 30%, double 20%, split 20%. Split means the target centred with the other
+    guitars hard to one side and a same-band partner's other guitars hard to the other. The pans are wider than
+    S0's: a centred target within ±0.2, other guitars ±0.5 to ±1.0; off-centre ±0.35 to ±1.0, the others opposite
+    or centred; a double ±0.5 to ±1.0 on each side, 8 to 30 ms apart, the second copy 0 to 4 dB down;
+  - the render and the amp tracks at separate pans when both exist, so there are two guitar groups;
+  - the target-to-rest ratio jittered ±3 dB around D_CC's, and S0's mastering draw at D_CC's rate;
+  - a 1.4-s crop where the target plays (its level within 20 dB of the mix's);
+  - steering by the coarse hint, plus a uniform ±0.1 jitter.
+- **Training:**
+  - The loss is X-LANCE's own: L1 plus a multi-resolution STFT term, on the steered stereo target.
+  - The crop is 61,740 samples (1.4 s), so every STFT stays under the MPS gradient bug's 65,536 samples.
+  - **Before the run, a gradient check:** one batch's gradients on MPS against the CPU's, per parameter tensor. It
+    runs on MPS only if the median relative error is under 1e-3 and the largest under 1e-2. Otherwise it's
+    reported, and the run waits.
+  - AdamW at lr 3e-5 (X-LANCE trained at 2e-5) with 1,000 warm-up steps, fp32, the batch the speed check sets.
+  - Gradients are clipped at norm 1.0 by hand, since `clip_grad_norm_` gives NaN on MPS. A non-finite step is
+    skipped. After 25 in a row the last checkpoint is reloaded, and after 20 reloads the run aborts (direc's rule).
+  - Never beside another MPS training.
+- **The curve and the stop:** the validation score every 1,000 steps, keeping the best checkpoint. It stops at no new
+  best in 5 evaluations, at the abort rule, or after 3 nights. The user can stop it.
+- **The read, once, after the stop:**
+  - **What runs:** the best checkpoint on the held-out 120 S0 items and 38 split items, with `steer_mdxc`'s hint. It
+    gets S0's scoring: SI-SDR on half A, the leak, the model's read and the effects row.
+  - **The rule:** S1's, against mono, and against the best existing option per stratum, `steer_mdxc` included, on
+    the same items. That's a band bootstrap over the five held-out bands. With five bands the interval is wide, so
+    an item bootstrap within bands is shown beside, never under the rule.
+  - A win goes on the picker, and the user's ear on R1's songs decides.
+- **What it can't say:**
+  - The targets are amp-sim renders and the mixes are built by S0's recipe, which training shares. So the held-out
+    gain is an upper bound for real songs.
+  - The hint is an oracle from the drawn pan.
+  - Two guitars at the same place, both centred say, can't be told apart by steering, only by tone. That case isn't
+    tested: the split set puts them on opposite sides.
+- **Cost:** zero renders. A cache of about 8 GB (61 GB free). MPS for up to 3 nights.
+
+### After the plan's review (2026-11-14, before any run of A3 or S3; these replace the lines above where they differ)
+
+- **The steering text, corrected.** A source on the far side turns anti-phase only for a hard hint. With the hint at
+  +0.7, a source at −0.7 lands at −18° (L′ 0.95, R′ −0.31), and a centred source moves to −0.7. So the steered mid is
+  a projection with gain cos(θ_s − θ_h). It keeps a source at −0.7 at −6.9 dB, against −12.4 dB in the target's own
+  channel. `steer_mid` is therefore a control, not a candidate. The coarse hint leaves an off-centre target up to
+  0.35 from the centre after steering, outside the ±0.15 where `mdxc` gained +7 dB. So every steered read is also
+  reported by the target's steered pan |p′| (under 0.15, 0.15 to 0.3, 0.3 and over). A ±1.0 hint is declared now as
+  a sensitivity check (`steer_mdxc_h1`, beside).
+- **A3 reuses identical stems.** On a centre hint, no rotation happens, so `steer_mdxc` is `mdxc` and `steer_mid` is
+  `stereo`, on S0's centred items and the whole split set. Those stems are copied, and 5 are recomputed as an
+  identity check.
+- **The doubles.** S0's double is a delayed copy of the same render. So a target "as it sits" rewards keeping
+  far-side content that repeats the centre 8 to 30 ms later, a cue real doubles (independent takes) don't have. S3
+  trains with only the hinted copy as its target. S0's double cell is out of S3's rule and is reported descriptively.
+- **S3's rule, with the model's read co-primary.** In S1, `mdxc`'s +7.03 dB on centred items moved the read by only
+  +0.006 [−0.026, +0.031]. So an SI-SDR gain alone needn't reach the preset. Per cell (the centred hint: S0's
+  centred items and the split set; the side hint: S0's off-centre items):
+  - **Against mono:** S3 must gain in SI-SDR (lo90 > 0) and in the read (cosine-distance drop, lo90 > 0).
+  - **Against the routed comparator,** fixed now: what the hint routes to among the existing options. A centre hint
+    routes to `mdxc`, a side hint to `side`.
+  - **Default:** wins against mono, and against the comparator gains in SI-SDR (lo90 > 0) with a read not worse
+    (hi90 ≥ 0). The centre hint's default needs both its cells.
+  - **Picker choice:** wins against mono, with a read not worse than the comparator's, but the SI-SDR difference is
+    undecided.
+  - **Not used:** anything else.
+- **The intervals.** The rule's interval is the band-clustered t interval over the five held-out bands (df 4, the
+  repo's `clustered`), with per-band means and how many bands agree in sign. Hazael and The Travelling Band hold 65%
+  of the items, and Dunning Kruger is one section. The percentile band bootstrap and the item bootstrap are shown
+  beside. Beside too: the best existing option per stratum, chosen on the 80 training-band S0 items (Forkupines and
+  BKS), then read on the held-out ones.
+- **Validation: a whole band.** Adam Buckley (140 examples, 13 sections, not in S0) is the validation band. Training
+  is on Forkupines, BKS and The Maybe Next Years: 2,078 examples.
+  - **The mixes:** 200 validation mixes built by S0's strata recipe, the hinted copy as a double's target.
+  - **Scored each evaluation:** the median SI-SDR of the rotated-back mono against the target's, plus the model's
+    read (mean cosine distance, on the CPU).
+  - **The curve:** step 0 (X-LANCE as it is) is the first best. A new best needs +0.1 dB on the median and a read no
+    worse than step 0's. The run stops after 5 evaluations without a new best.
+  - **The pilot:** those first evaluations are the pilot. A flat start stops the run within about 5,000 steps.
+- **The gradient check.**
+  - **Setup:** dropout off on both devices, since the config's 0.1 dropout draws different masks. Each tensor's
+    error is ‖Δ‖ / max(‖g_cpu‖, a floor of 1e-3 × the median tensor norm).
+  - **A positive control** at 98,304 samples, where the known bug should show. If it doesn't, that's reported.
+  - **The crop:** 61,000 samples. The loss's 4,096 window pads it to 65,096, under 65,536.
+- **The crops.** 12% of training draws drop the target, so the network learns to return silence where the hinted
+  part rests.
+- **The fine-tune:** all parameters train, with no weight decay, a batch of at least 4, and lr 1e-5 (lower, for four
+  songs).
+- **Freezing.** This configuration is committed before A3's read. Any later amendment is based on the
+  training-band items only.
+- **The MPS:** the other sessions are told it's in use before the run.
+
 ## What it can't say
 
 S0's mixes are built, not mastered records. Their panning is drawn, not each song's own. E1e's targets are mono, so

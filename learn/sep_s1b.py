@@ -359,7 +359,8 @@ def cmd_sep(args):
     mbr = Msst("mel_band_roformer", "lead-rhythm-mbr/mbr_lead_rhythm_guitar_listra92_config.yaml",
                "lead-rhythm-mbr/mbr_lead_rhythm_guitar_listra92.ckpt", args.device)
     htd = Msst("htdemucs", "lead-rhythm-htdemucs/demucs4_lead_rhythm_guitar_drypaint_config.yaml",
-               "lead-rhythm-htdemucs/demucs4_lead_rhythm_guitar_drypaint.ckpt", args.device)
+               "lead-rhythm-htdemucs/demucs4_lead_rhythm_guitar_drypaint.ckpt", "cpu")   # demucs's spectro
+    # moves MPS input to the CPU and MSST's HTDemucs never moves it back, so its convs fail on MPS
     keys = XLanceKeys(args.device)
     mdx = None
     t0 = time.time()
