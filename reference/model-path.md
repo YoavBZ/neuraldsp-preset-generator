@@ -38,13 +38,18 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/model_preset.py" --song SONG.mp3 --cls cle
      song, which may land on a part the user didn't mean. `--start` forces a window with no checks; use it only when
      the user names an exact moment, or a section shorter than 10 s (start it there). Say which window was read and
      how it was chosen.
-   - **Which signal is separated** (`--version`): both channels by default. `stem_C` keeps only what is the same
-     in the left and right channels before separating, dropping parts panned to the sides. One listener picked it as
-     their best version on 5 of 7 songs (by ear, 2026-11-14), still hearing leaks. It also drops the lead's own stereo
-     reverb, echo and width, the model never trained on such a masked stem, and it is not yet checked by the score.
-     `stem_L`, `stem_R` and `stem_S` (left, right, side) are for listening tests. Only the separator reads the
-     version; the model's mix, also its gain reference, stays the full mix of both channels. Use the default unless
-     the user picked a version by ear.
+   - **Which signal is separated** (`--version`): both channels by default. Only the separator reads the version;
+     the model's mix, also its gain reference, stays the full mix of both channels. Use the default unless the user
+     picked a version by ear: the score below comes from built stereo mixes with a known guitar (200 songs, plus 60
+     with separate takes on both sides; 2026-11-15), and no listener has compared these versions on real songs yet.
+     - `xlst_mdxc` separates the stereo pair, then keeps its centre with a phantom-centre model (MDX23C, on the CPU).
+       For a centred guitar it is the best by the score: +10.9 dB over the default (90% interval +8.7 to +12.3),
+       +5.3 dB with takes on both sides, and the model's read improves too. It removes a guitar panned off centre
+       (−15 dB there), so use it only for a part in the centre.
+     - `stem_L` or `stem_R`, the guitar's own channel, for a part on one side: +7.2 dB by the score.
+     - `stem_C` keeps only what is the same in both channels before separating. One listener picked it as their best
+       version on 5 of 7 songs (by ear, 2026-11-14), still hearing leaks, but by the score it is 1.8 dB worse than
+       the default for a centred guitar. `stem_S` (the side) is for listening tests.
    - Use a folder under the data root for `WORK_DIR` (`~/ndsp-presets/auditions/<song>/model`).
    - It separates the guitar, takes the model's settings on each of the three amps and renders them through two stock
      guitar recordings (12 renders). It picks the amp whose renders sound closest to the song's guitar, sets the output

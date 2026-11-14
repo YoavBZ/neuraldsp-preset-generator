@@ -1,3 +1,5 @@
+import json
+
 import pytest
 """The model path (`learn/product_path.py`): the window choice and the amp pick."""
 
@@ -67,3 +69,88 @@ def test_versions_and_the_centre_mask():
     assert np.sum(p[inner] ** 2) / np.sum((panned[inner] / 2) ** 2) < 1e-3
     with pytest.raises(SystemExit):
         PP.version_mix(x, "stem_X")
+
+
+class _FakeXL:
+    """X-LANCE's interface for the tests: `_f` on (channels, chunk) audio, here the identity; a call on mono audio."""
+
+    def _f(self, a):
+        return a
+
+    def __call__(self, x):
+        return x * 0.5
+
+
+def _two_halves(x2):
+    """A stand-in centre model on [2, samples]: the halves weighted unequally, so the mean shows both were read."""
+    return [x2[0] * 0.5, x2[1] * 1.5]
+
+
+def test_the_stereo_centre_version_separates_the_pair_then_takes_the_centre():
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("scipy")
+    assert "xlst_mdxc" in PP.VERSIONS and "xlst_mdxc" in PP.STEREO_VERSIONS
+    rng = np.random.default_rng(2)
+    n = 48000 * 12
+    L, R = rng.standard_normal(n) * 0.1, rng.standard_normal(n) * 0.1
+    from learn import separator_screen as SCR
+
+    y = PP.StereoCentre(_FakeXL(), centre=lambda x2: np.stack(_two_halves(x2)))(np.stack([L, R], 1))
+    rt = lambda c: SCR.to48(SCR.to44(c), n)              # noqa: E731  X-LANCE's 44.1-kHz round trip
+    want = (0.5 * rt(L) + 1.5 * rt(R)) / 2               # X-LANCE kept both channels; the centre's two outputs averaged
+    inner = slice(4800, n - 4800)                        # clear of the resamplers' edges
+    assert y.shape == (n,) and np.sum((y - want)[inner] ** 2) / np.sum(want[inner] ** 2) < 1e-4
+    with pytest.raises(SystemExit):
+        PP.StereoCentre(lambda x: x)                     # another separator has no stereo pass
+    with pytest.raises(SystemExit):
+        PP.version_mix(np.stack([L, R], 1), "xlst_mdxc")
+
+
+def test_load_stereo_keeps_both_channels_and_resamples_them_together(tmp_path):
+    np = pytest.importorskip("numpy")
+    sf = pytest.importorskip("soundfile")
+    pytest.importorskip("scipy")
+    t = np.arange(44100 * 3) / 44100
+    x = np.stack([np.sin(2 * np.pi * 220 * t), np.sin(2 * np.pi * 330 * t) * 0.5], 1).astype(np.float32)
+    sf.write(tmp_path / "s.wav", x, 44100, subtype="FLOAT")
+    y = PP.load_stereo(tmp_path / "s.wav", 48000, 1.0, 1.0)
+    assert y.shape == (48000, 2)
+    assert abs(np.std(y[:, 0]) / np.std(y[:, 1]) - 2.0) < 0.02          # the channels stay apart
+    assert PP.load_stereo(tmp_path / "s.wav", 48000, None, None).shape[0] == 48000 * 3
+    sf.write(tmp_path / "m.wav", x[:, 0], 44100, subtype="FLOAT")
+    m = PP.load_stereo(tmp_path / "m.wav", 48000, 0.0, 1.0)
+    assert m.shape == (48000, 2) and np.allclose(m[:, 0], m[:, 1])        # a mono file on both
+
+
+@pytest.mark.parametrize("where", [["--start", "3"], ["--part", "2", "18"]])
+def test_separate_reads_the_pair_for_the_stereo_version(tmp_path, monkeypatch, where):
+    """The stage end to end with stand-in models: the stem is the stereo pass's, the model's mix stays (L+R)/2, and the
+    record names the version and the separator."""
+    np = pytest.importorskip("numpy")
+    sf = pytest.importorskip("soundfile")
+    pytest.importorskip("scipy")
+    pytest.importorskip("pyloudnorm")
+    from learn import direct_stems as DS
+
+    rng = np.random.default_rng(3)
+    n = 48000 * 20
+    x = np.stack([rng.standard_normal(n) * 0.1, rng.standard_normal(n) * 0.05], 1).astype(np.float32)
+    sf.write(tmp_path / "song.wav", x, 48000, subtype="FLOAT")
+    monkeypatch.setattr(DS, "stem_separator", lambda name, device: _FakeXL())
+    orig = PP.StereoCentre
+    monkeypatch.setattr(PP, "StereoCentre", lambda xl: orig(xl, centre=lambda x2: np.stack(_two_halves(x2))))
+    out = tmp_path / "w"
+    PP.main(["separate", str(tmp_path / "song.wav"), "--out", str(out), "--version", "xlst_mdxc", "--device", "cpu",
+             *where])
+    w = json.loads((out / "window.json").read_text())
+    z = np.load(out / "window.npz")
+    a = int(round(w["start_s"] * 48000))
+    L, R = x[a:a + 480000, 0].astype(np.float64), x[a:a + 480000, 1].astype(np.float64)
+    from learn import separator_screen as SCR
+
+    rt = lambda c: SCR.to48(SCR.to44(c), 480000)         # noqa: E731  X-LANCE's 44.1-kHz round trip
+    want = (0.5 * rt(L) + 1.5 * rt(R)) / 2
+    inner = slice(4800, 480000 - 4800)
+    assert w["version"] == "xlst_mdxc" and "MDX23C" in w["separator"]
+    assert z["stem"].shape == (480000,) and np.sum((z["stem"] - want)[inner] ** 2) / np.sum(want[inner] ** 2) < 1e-4
+    assert np.allclose(z["mix"], (L + R) / 2, atol=1e-6) and np.allclose(z["sep_mix"], z["mix"])

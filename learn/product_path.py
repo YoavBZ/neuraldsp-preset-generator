@@ -3,6 +3,7 @@
 separator, the model and the renderer live in different environments:
 
     ~/ndsp-presets/tools/msst-venv/bin/python -m learn.product_path separate SONG --out DIR [--part A B | --start S]
+        [--version stem|stem_L|stem_R|stem_S|stem_C|xlst_mdxc]
     $TORCH_PY -m learn.product_path answers DIR --cls clean|crunch
     .venv/bin/python -m learn.product_path render DIR                    # 12 renders (3 amps x 2 stock DIs, primed)
     $TORCH_PY -m learn.product_path pick DIR                             # the amp and the output gain -> DIR/preset.json
@@ -10,7 +11,8 @@ separator, the model and the renderer live in different environments:
 
 What each stage reproduces, and where it was validated:
 - **separate:** the song's 10-s window, separated by X-LANCE `gtr_mss` (the model's real-song input: V-real read 3, F41;
-  N5b). Given a start, that window. Otherwise the selector (R1 Amendment 2) works inside the part (`--part`, from the
+  N5b). `--version` sets what is separated: the mono mix (default), one channel, the side, the centre-only mix, or
+  `xlst_mdxc`, X-LANCE on the stereo pair, then the MDX23C phantom-centre model on that stereo stem (CPU). Given a start, that window. Otherwise the selector (R1 Amendment 2) works inside the part (`--part`, from the
   user or research; else the whole song). It takes the 10-s windows on a 1-s hop, 2 s clear of the track's ends, where
   the stem holds (every 0.5 s within 12 dB of the window) and sits within 12 dB of the mix. Of those, it picks the one
   whose tone is most typical (the medoid of the level-free mel profiles), not the most exposed.
@@ -53,7 +55,9 @@ SEL_HOP_S, EDGE_S, PRESENT_DB = 1.0, 2.0, 12.0   # the selector (R1 Amendment 2)
 #                                                  track's ends, the guitar within 12 dB of the mix
 
 
-VERSIONS = ("stem", "stem_L", "stem_R", "stem_S", "stem_C")   # the input mix the separator reads (R1 Amendment 4)
+VERSIONS = ("stem", "stem_L", "stem_R", "stem_S", "stem_C",    # the input mix the separator reads (R1 Amendment 4),
+            "xlst_mdxc")                                     # or a stereo separation (`StereoCentre`)
+STEREO_VERSIONS = ("xlst_mdxc",)                             # read the stereo pair, not a mono mix
 CENTRE_NFFT, CENTRE_HOP = 4096, 1024                           # the centre mask's STFT (the product session's picker,
 CENTRE_CHUNK_S, CENTRE_XF_S, CENTRE_POW = 30.0, 2.0, 4         # r1/tools/sep_centre.py): 30-s chunks, 2-s crossfades
 
@@ -104,7 +108,60 @@ def version_mix(stereo, version):
         raise SystemExit(f"unknown version {version!r}: one of {VERSIONS}")
     if version == "stem_C":
         raise SystemExit("the centre version runs on the whole song: use load_mix")
+    if version in STEREO_VERSIONS:
+        raise SystemExit(f"{version} separates the stereo pair: use load_stereo and StereoCentre")
     return {"stem": (L + R) / 2, "stem_L": L, "stem_R": R, "stem_S": (L - R) / 2}[version]
+
+
+def load_stereo(path, sr_out, start_s, dur_s):
+    """A span of the song as [samples, 2] at sr_out, both channels resampled together (a mono file on both); the whole
+    song when start_s is None."""
+    import numpy as np
+    import soundfile as sf
+    from scipy.signal import resample_poly
+
+    info = sf.info(str(path))
+    kw = {} if start_s is None else {"start": max(0, int(round(start_s * info.samplerate))),
+                                     "frames": int(round(dur_s * info.samplerate))}
+    x, sr = sf.read(str(path), dtype="float32", always_2d=True, **kw)
+    if x.shape[1] < 2:
+        x = np.repeat(x, 2, axis=1)
+    x = x[:, :2]
+    if sr != sr_out:                                   # both channels together, as the picker did
+        g = math.gcd(sr_out, sr)
+        x = resample_poly(x, sr_out // g, sr // g, axis=0).astype(np.float32)
+    return x
+
+
+class StereoCentre:
+    """`xlst_mdxc`, the separation plan's S1 Amendment 2 option (`learn/sep_s1b` cmd_sep, its xlst2 then xlst_mdxc
+    steps): X-LANCE `gtr_mss` on the true stereo pair at 44.1 kHz in crossfaded chunks, both output channels kept, back
+    to 48 kHz; then wesleyr36's MDX23C phantom-centre model (`stereo_side_screen.Centre`, CPU, hash-checked) on that
+    stereo stem; then the mean of its two outputs. One difference from the read: sep_s1b stored the X-LANCE stem as
+    float16 before the centre model; here it stays float. It removes a guitar panned off centre, so it suits a centred
+    part. `xl` is the X-LANCE separator (`direct_stems.XLanceG`); `centre` is injectable for the tests."""
+
+    def __init__(self, xl, centre=None):
+        if not hasattr(xl, "_f"):
+            raise SystemExit("xlst_mdxc needs X-LANCE gtr_mss as the separator (trusted_data.SEP xlance_g)")
+        self.xl, self.centre = xl, centre
+
+    def __call__(self, stereo):
+        """[samples, 2] at 48 kHz -> the mono stem, [samples]."""
+        import numpy as np
+
+        from learn import direct_stems as DS
+        from learn import separator_screen as SCR
+
+        x = np.asarray(stereo, np.float64)
+        n = len(x)
+        a = np.stack([SCR.to44(x[:, 0]), SCR.to44(x[:, 1])])
+        st2 = np.stack([SCR.to48(c, n) for c in DS.xl_run_chunked(self.xl._f, a)]).astype(np.float64)
+        if self.centre is None:
+            from learn import stereo_side_screen as SSS
+
+            self.centre = SSS.Centre()
+        return np.asarray(self.centre(st2), np.float64).mean(0)
 
 
 def load_mix(path, sr_out, start_s, dur_s, version="stem"):
@@ -119,16 +176,8 @@ def load_mix(path, sr_out, start_s, dur_s, version="stem"):
 
     if version == "stem":
         return PS.load_mono(path, sr_out, start_s, dur_s)
-    info = sf.info(str(path))
     whole = version == "stem_C"
-    kw = {} if whole else {"start": max(0, int(round(start_s * info.samplerate))),
-                           "frames": int(round(dur_s * info.samplerate))}
-    x, sr = sf.read(str(path), dtype="float32", always_2d=True, **kw)
-    if x.shape[1] < 2:
-        x = np.repeat(x, 2, axis=1)
-    if sr != sr_out:                                   # both channels together, as the picker did
-        g = math.gcd(sr_out, sr)
-        x = resample_poly(x, sr_out // g, sr // g, axis=0).astype(np.float32)
+    x = load_stereo(path, sr_out, None, None) if whole else load_stereo(path, sr_out, start_s, dur_s)
     if not whole:
         return np.asarray(version_mix(x, version), np.float32)
     c = centre_mix(x[:, 0].astype(np.float64), x[:, 1].astype(np.float64), sr_out)
@@ -225,6 +274,26 @@ def cmd_separate(args):
     n, sr = int(WINDOW_S * PS.SR), PS.SR
     dur = sf.info(args.song).duration
     rec = {"song": str(args.song), "duration_s": dur, "version": args.version}
+    stereo = args.version in STEREO_VERSIONS
+    if stereo:
+        sep2 = StereoCentre(sep)
+        rec["separator"] = ("X-LANCE gtr_mss on the stereo pair (both outputs kept), then MDX23C phantom-centre on that "
+                            "stereo stem, the mean of its two outputs (xlst_mdxc)")
+
+    def separate(a0, dur_s, mono, size=None):
+        """The stem of the span [a0, a0 + dur_s) whose full mix is `mono`, -> (stem, what the separator read as mono)."""
+        if args.version == "stem":
+            return np.asarray(sep(mono), np.float64), mono
+        if stereo:
+            x = np.asarray(load_stereo(args.song, sr, a0, dur_s), np.float64)
+            k = size or len(mono)
+            x = np.pad(x, ((0, max(0, k - len(x))), (0, 0)))[:k]
+            return np.asarray(sep2(x), np.float64), mono
+        m = np.asarray(load_mix(args.song, sr, a0, dur_s, args.version), np.float64)
+        if size:
+            m = np.pad(m, (0, max(0, size - len(m))))[:size]
+        return np.asarray(sep(m), np.float64), m
+
     if args.start is not None:
         start, rec["chosen_by"] = float(args.start), "given"
     else:
@@ -235,9 +304,7 @@ def cmd_separate(args):
         a = starts[0]
         span_s = starts[-1] + WINDOW_S - a
         mix_span = np.asarray(PS.load_mono(args.song, sr, a, span_s), np.float64)     # the full mix: the reference
-        sep_span = mix_span if args.version == "stem" else np.asarray(load_mix(args.song, sr, a, span_s, args.version),
-                                                                           np.float64)
-        stem_span = np.asarray(sep(sep_span), np.float64)
+        stem_span, _ = separate(a, span_s, mix_span)
         rows = []
         for s0 in starts:
             k = int(round((s0 - a) * sr))
@@ -256,11 +323,10 @@ def cmd_separate(args):
                     "rows": [{k: v for k, v in r.items() if k != "profile"} for r in rows]})
     fit = lambda y: np.pad(y, (0, max(0, n - len(y))))[:n]           # noqa: E731
     mix = fit(np.asarray(PS.load_mono(args.song, sr, start, WINDOW_S), np.float64))
-    sep_mix = mix if args.version == "stem" else fit(np.asarray(load_mix(args.song, sr, start, WINDOW_S, args.version),
-                                                                 np.float64))
-    stem = np.asarray(sep(sep_mix), np.float64)
+    stem, sep_mix = separate(start, WINDOW_S, mix, n)
     # `mix` stays the full (L+R)/2 window: the model's mix and its gain reference (V-real read 3), as validated; the
-    # version only changes what the separator reads (`sep_mix`), the review's rule (R1 Amendment 4)
+    # version only changes what the separator reads (`sep_mix`; for a stereo version the pair, kept as its mean), the
+    # review's rule (R1 Amendment 4)
     np.savez(out / "window.npz", mix=mix.astype(np.float32), stem=stem.astype(np.float32),
              sep_mix=sep_mix.astype(np.float32))
     ok, low = steady_whole(stem, sr)
@@ -473,8 +539,9 @@ def main(argv=None):
                    help="the part's span in seconds (from the user or research); the selector picks the window inside")
     s.add_argument("--part-from", default="research", help="where --part came from (recorded)")
     s.add_argument("--version", choices=VERSIONS, default="stem",
-                   help="what the separator reads: both channels (default), one, the side, or the centre only; the "
-                        "model's mix and gain reference stay the full mix")
+                   help="what the separator reads: both channels (default), one, the side, the centre only, or "
+                        "xlst_mdxc (X-LANCE on the stereo pair, then the MDX23C centre model on the CPU); the model's "
+                        "mix and gain reference stay the full mix")
     s.add_argument("--device", default="mps")
     s.set_defaults(fn=cmd_separate)
     a = sub.add_parser("answers")

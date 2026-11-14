@@ -2,7 +2,7 @@
 """Generate a Morgan preset from a song with the trained model (generate's model path, behind its flag).
 
     python scripts/model_preset.py --song SONG.mp3 --cls clean|crunch [--part START END | --start S] \
-        [--version stem|stem_C|stem_L|stem_R|stem_S] --work WORK_DIR --out OUT.xml [--name NAME]
+        [--version stem|stem_C|stem_L|stem_R|stem_S|xlst_mdxc] --work WORK_DIR --out OUT.xml [--name NAME]
 
 Runs the model path's four stages (`learn/product_path.py`), each in the environment it needs:
   separate  the song's 10-s window and its separated guitar (msst-venv);
@@ -46,9 +46,10 @@ TOOLS = DATA / "tools"
 FACTORY = pathlib.Path("/Library/Audio/Presets/Neural DSP/Morgan Amps Suite")
 ADOPTED = DATA / "learn/trusted-data/pipeline-fix/adopted-model.json"
 DELAY_DEFAULT_FROM = "the declared default (no song research given)"   # product_path's record of the default
-VERSIONS = ("stem", "stem_C", "stem_L", "stem_R", "stem_S")   # learn/product_path.VERSIONS
+VERSIONS = ("stem", "stem_C", "stem_L", "stem_R", "stem_S", "xlst_mdxc")   # learn/product_path.VERSIONS
 VERSION_NAMES = {"stem": "both channels", "stem_C": "the centre only", "stem_L": "the left channel",
-                 "stem_R": "the right channel", "stem_S": "the side (L-R)"}
+                 "stem_R": "the right channel", "stem_S": "the side (L-R)",
+                 "xlst_mdxc": "the stereo pair, then its centre kept (MDX23C)"}
 STAGES = (("separate", "msst", "window.json"), ("answers", "torch", "answers.json"),
           ("render", "main", "renders.json"), ("pick", "torch", "preset.json"))
 
@@ -211,7 +212,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--part-from", default="research", help="where --part came from: 'the user' or 'research'")
     ap.add_argument("--version", choices=VERSIONS, default="stem",
                     help="what the separator reads: both channels (stem, the default), the centre only (stem_C), "
-                         "one channel (stem_L, stem_R) or the side (stem_S); the model's mix stays the full mix")
+                         "one channel (stem_L, stem_R), the side (stem_S), or the stereo pair then its centre "
+                         "(xlst_mdxc, for a centred part); the model's mix stays the full mix")
     ap.add_argument("--start", type=float, default=None,
                     help="force the window's start, in seconds (no steadiness check); prefer --part")
     ap.add_argument("--work", type=pathlib.Path, required=True, help="a folder for the stages' files")
