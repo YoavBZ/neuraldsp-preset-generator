@@ -562,6 +562,7 @@ def cmd_train(args):
         model.load_state_dict(ck["model"])
         opt.load_state_dict(ck["opt"])
         st = json.loads((d / "state.json").read_text())
+        st["step"] = int(ck.get("step", st["step"]))           # the weights' own step (the review)
         print(f"resumed at step {st['step']}", flush=True)
     kw = {"persistent_workers": True, "prefetch_factor": 4} if args.workers > 0 else {}
     loader = torch.utils.data.DataLoader(make_dataset(args.batch, st["step"]), batch_size=None,

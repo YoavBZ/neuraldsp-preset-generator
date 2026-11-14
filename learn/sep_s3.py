@@ -444,7 +444,7 @@ def cmd_read(args):
     print(f"S3 READ ({args.what}, {args.set}; bands read {rep['bands_read']})")
     for strat in strata:
         print(f"  best existing on {strat} ({'chosen on the training bands' if args.what == 's3' else 'chosen on these items'}): "
-              f"{rep['best_existing_chosen_on_training_bands'][strat]['option']}")
+              f"{rep['best_existing'][strat]['option']}")
     nan = {"mean": float("nan"), "lo90": float("nan"), "hi90": float("nan")}
     for o, v in rep["options"].items():
         for strat in strata:
