@@ -11,6 +11,23 @@ X-LANCE `gtr_mss` returns every guitar plus bleed. The user's picker (R1 Amendme
 even in the best version ("Still many leaks though"), and the centre mask helped on 5 of 7. The model can't be better
 than what it hears.
 
+## What earlier work found (October 2026, Mega-53 on stage F's 21 parts)
+
+- **The other guitars are the limit, not the guitar class.** On parts with another electric guitar, the others sat
+  about 5.5 dB above the target. A perfect "all electric guitars" separator would gain only +0.30 dB
+  ([separation step 0](separation-step01-results.md)). So a better class separator alone won't fix real songs. The
+  lever is telling the named guitar from the other guitars.
+- **Stereo cues help a little, and only with the side known**
+  ([stereo side screen](stereo-side-results.md)): keeping the target's channel gained +1.50 dB, and the MDX23C
+  centre model +1.35 dB on a centred target against hard-panned rhythms. Every blind method lost, since the pan
+  histogram found the louder other guitars. The level-difference mask gained +0.6 to +0.9 dB, and the coherence mask
+  +0.35 dB.
+- **What S1 adds:** those screens fed Mega-53 a mono or picked channel. S1 tests X-LANCE (the model path's
+  separator) on real stereo and with the centre masks, on E1e's three strata. It's likely capped near +1.5 dB, so
+  S2 and S3 are probably needed. S1 decides that cheaply.
+- **S1 Amendment 1 (2026-11-14, before any S1 read):** option (g), the earlier screen's MDX23C phantom-centre model
+  (hash-checked, CPU), then X-LANCE, beside the centre mask.
+
 ## The goal and the stop rule
 
 One guitar part, the one the user names, as clean as an existing or a new tool can make it. Each step is decided by

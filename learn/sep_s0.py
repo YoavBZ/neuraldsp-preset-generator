@@ -7,6 +7,7 @@ scored against the target as it sits in the mix: SI-SDR on half A, the other gui
     .venv/bin/python -m learn.sep_s0 s0-build                                   # the stereo mixes (zero renders)
     ~/ndsp-presets/tools/msst-venv/bin/python -m learn.sep_s0 s0-sep --options xl --device mps
     ~/ndsp-presets/tools/msst-venv/bin/python -m learn.sep_s0 s0-sep --options mega --device mps
+    ~/ndsp-presets/tools/msst-venv/bin/python -m learn.sep_s0 s0-sep --options mdxc --device mps   # MDX23C on CPU
     $TORCH_PY -m learn.sep_s0 s0-feats                                          # the model's read
     .venv/bin/python -m learn.sep_s0 s0-read                                    # the scores, per stratum and band
 
@@ -29,8 +30,9 @@ STRATA = ("centred", "off-centre", "double")
 CENTRED_TRACKS = ("bass", "kick", "snare", "vox", "vocal", "voc", "lead vox")
 XL_OPTIONS = ("mono", "stereo", "centre2", "centre4", "centre8", "second")
 MEGA_OPTIONS = ("mega",)
+MDXC_OPTIONS = ("mdxc",)                   # S1 Amendment 1: the MDX23C phantom-centre model, then X-LANCE
 DERIVED = ("agree",)                       # from mono and mega, no separation of its own
-ALL_OPTIONS = XL_OPTIONS + MEGA_OPTIONS + DERIVED
+ALL_OPTIONS = XL_OPTIONS + MEGA_OPTIONS + MDXC_OPTIONS + DERIVED
 BASELINE = "mono"
 BELOW_GUARD_GB = 26.0                      # the user's yes (2026-11-14): S1's stems may go under the render guard
 
@@ -299,9 +301,15 @@ def cmd_sep(args):
 
     require()
     sr = PS.SR
-    group = XL_OPTIONS if args.options == "xl" else MEGA_OPTIONS
-    sep = DS.stem_separator(T.SEP, args.device) if args.options == "xl" else DS.stem_separator("mega53", args.device,
-                                                                                              setting="fast")
+    group = {"xl": XL_OPTIONS, "mega": MEGA_OPTIONS, "mdxc": MDXC_OPTIONS}[args.options]
+    if args.options == "mega":
+        sep = DS.stem_separator("mega53", args.device, setting="fast")
+    else:
+        sep = DS.stem_separator(T.SEP, args.device)
+    if args.options == "mdxc":
+        from learn import stereo_side_screen as SSS
+
+        mdx = SSS.Centre()                         # the earlier screen's centre model, hash-checked, CPU
     items = sorted((out_dir() / "items").glob("*.npz"))
     t0 = time.time()
     for m, p in enumerate(items):
@@ -319,6 +327,8 @@ def cmd_sep(args):
                 s = xl_stereo(sep, L, R)
             elif o.startswith("centre"):
                 s = sep(centre(L, R, int(o[6:]), sr))
+            elif o == "mdxc":
+                s = sep(mdx(np.stack([L, R])).mean(0))
             elif o == "second":
                 s = sep(np.asarray(np.load(out_dir() / "stems" / "mono" / p.name)["stem"], np.float64))
             if PS.free_gb() < (BELOW_GUARD_GB if args.below_guard else T.DISK_GUARD_GB):
@@ -516,7 +526,7 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("s0-build").set_defaults(fn=cmd_build)
     s = sub.add_parser("s0-sep")
-    s.add_argument("--options", choices=("xl", "mega"), required=True)
+    s.add_argument("--options", choices=("xl", "mega", "mdxc"), required=True)
     s.add_argument("--device", default="mps")
     s.add_argument("--below-guard", action="store_true", help="the user's yes: run under the 31-GB render guard")
     s.set_defaults(fn=cmd_sep)
