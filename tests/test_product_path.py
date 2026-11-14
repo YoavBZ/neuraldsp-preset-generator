@@ -47,3 +47,23 @@ def test_steady_whole_catches_a_fade_and_a_late_entry():
     fade = x * np.concatenate([np.ones(7 * sr), np.full(3 * sr, 0.01)])           # the song ends at 7 s
     late = x * np.concatenate([np.full(sr, 0.01), np.ones(9 * sr)])               # the guitar enters at 1 s
     assert not PP.steady_whole(fade, sr)[0] and not PP.steady_whole(late, sr)[0]
+
+
+def test_versions_and_the_centre_mask():
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("scipy")
+    rng = np.random.default_rng(1)
+    n = 48000 * 2
+    centre, panned = rng.standard_normal(n) * 0.1, rng.standard_normal(n) * 0.1
+    x = np.stack([centre + panned, centre], 1)                                   # one part centred, one hard left
+    assert np.allclose(PP.version_mix(x, "stem"), (x[:, 0] + x[:, 1]) / 2)
+    assert np.allclose(PP.version_mix(x, "stem_S"), panned / 2)
+    with pytest.raises(SystemExit):
+        PP.version_mix(x, "stem_C")
+    c = PP.centre_mix(centre, centre, 48000)                                     # a centred part passes
+    inner = slice(8192, n - 8192)
+    assert np.sum((c - centre)[inner] ** 2) / np.sum(centre[inner] ** 2) < 1e-3
+    p = PP.centre_mix(panned, np.zeros(n), 48000)                                # a hard-panned part falls away
+    assert np.sum(p[inner] ** 2) / np.sum((panned[inner] / 2) ** 2) < 1e-3
+    with pytest.raises(SystemExit):
+        PP.version_mix(x, "stem_X")

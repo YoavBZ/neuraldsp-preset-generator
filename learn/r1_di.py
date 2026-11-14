@@ -302,13 +302,26 @@ CHECK_INTRO = ("guitar recordings (DIs), each on its own, looping. Each will sta
                "the same loudness, and a tap moves on to the next one. ")
 
 
-def checked_keep():
-    """The DI files the user's DI check (`di_scope`) already kept."""
+def check_dir(rnd):
+    """The DI check's folder for round `rnd` (1: the first, `check`; later rounds `check<rnd>`)."""
+    return out_dir() / ("check" if rnd == 1 else f"check{rnd}")
+
+
+def checked_keep(before=None):
+    """The DI sources the user already kept: the library check (`di_scope`) and every earlier R1 DI check round (its
+    stored verdicts in `check*/verdicts.json`), before round `before` when given."""
     from learn import di_scope as DSC
 
     v = DSC.verdicts() or {}
     v = v.get("verdicts", v) if isinstance(v, dict) else {}
-    return {di for di, x in v.items() if x == "keep"}
+    kept = {di for di, x in v.items() if x == "keep"}
+    rnd = 1
+    while check_dir(rnd).exists() and (before is None or rnd < before):
+        p = check_dir(rnd) / "verdicts.json"
+        if p.exists():
+            kept |= {di for di, x in json.loads(p.read_text())["verdicts"].items() if x == "keep"}
+        rnd += 1
+    return kept
 
 
 def check_cards(cands, kept):
@@ -338,8 +351,8 @@ def final_pick(cands, verdict, kept, k=2):
     return out
 
 
-def cmd_check_page(_args):
-    """The DI check page -> di-match/check/{page.html, artifact.html, key.json}; refuses over a key."""
+def cmd_check_page(args):
+    """The DI check page for round --round -> di-match/check<round>/{page.html, key.json}; refuses over a key."""
     from learn import build_data_review as BDR
     from learn import di_scope as DSC
     from learn import ear_eat as EE
@@ -348,13 +361,16 @@ def cmd_check_page(_args):
     from learn import scope_page as SP
 
     P.require(PHASE)
-    d = out_dir() / "check"
+    d = check_dir(args.round)
     if (d / "key.json").exists():
         raise SystemExit(f"{d / 'key.json'} exists: a rebuild hides the stored answers")
     d.mkdir(parents=True, exist_ok=True)
     cands = json.loads((out_dir() / "candidates.json").read_text())["songs"]
-    cards = check_cards(cands, checked_keep())
-    ids = [hashlib.sha256(f"r1-di|{c['source']}".encode()).hexdigest()[:8] for c in cards]
+    cards = check_cards(cands, checked_keep(before=args.round))
+    if not cards:
+        print("R1 DI CHECK: every candidate source is already kept; no page needed")
+        return
+    ids = [hashlib.sha256(f"r1-di|{args.round}|{c['source']}".encode()).hexdigest()[:8] for c in cards]
     build = hashlib.sha256(json.dumps(ids).encode()).hexdigest()[:12]
     clips, items = {}, []
     for i, c in zip(ids, cards):
@@ -383,7 +399,16 @@ def cmd_final(args):
     from learn import pipeline_fix as P
 
     P.require(PHASE)
-    d = out_dir() / "check"
+    d = check_dir(args.round)
+    cands = json.loads((out_dir() / "candidates.json").read_text())["songs"]
+    if not (d / "key.json").exists():                  # no page this round: every candidate was kept before
+        out = final_pick(cands, {}, checked_keep())
+        P.save(R1_MATCHED(), {"phase": PHASE, "check_round": args.round, "verdicts": {},
+                              "songs": {s: {"song": cands[s]["song"], "dis": v} for s, v in out.items()},
+                              "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+        for s, v in out.items():
+            print(s, "->", [(x["di"], round(x["distance"], 2)) for x in v])
+        return
     key = json.loads((d / "key.json").read_text())
     ex = EE.stored_answers(pathlib.Path(args.store).read_text())
     if ex.get("build") != key["build"]:
@@ -391,9 +416,9 @@ def cmd_final(args):
     verdict = DSC.di_verdicts(ex.get("answers") or {}, key["items"])
     if len(verdict) < len(key["items"]):
         raise SystemExit(f"{len(verdict)} of {len(key['items'])} cards answered")
-    cands = json.loads((out_dir() / "candidates.json").read_text())["songs"]
+    P.save(d / "verdicts.json", {"build": key["build"], "verdicts": verdict, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     out = final_pick(cands, verdict, checked_keep())
-    P.save(R1_MATCHED(), {"phase": PHASE, "check_build": key["build"], "verdicts": verdict,
+    P.save(R1_MATCHED(), {"phase": PHASE, "check_round": args.round, "check_build": key["build"], "verdicts": verdict,
                           "songs": {s: {"song": cands[s]["song"], "dis": v} for s, v in out.items()},
                           "time": time.strftime("%Y-%m-%d %H:%M:%S")})
     for s, v in out.items():
@@ -420,9 +445,12 @@ def main(argv=None):
     sub.add_parser("di-song").set_defaults(fn=cmd_song)
     sub.add_parser("di-calibrate").set_defaults(fn=cmd_calibrate)
     sub.add_parser("di-match").set_defaults(fn=cmd_match)
-    sub.add_parser("di-check-page").set_defaults(fn=cmd_check_page)
+    cp = sub.add_parser("di-check-page")
+    cp.add_argument("--round", type=int, default=1)
+    cp.set_defaults(fn=cmd_check_page)
     f = sub.add_parser("di-final")
-    f.add_argument("--store", required=True)
+    f.add_argument("--round", type=int, default=1)
+    f.add_argument("--store", default=None, help="the round's stored answers (none when the round needed no page)")
     f.set_defaults(fn=cmd_final)
     args = ap.parse_args(argv)
     args.fn(args)
