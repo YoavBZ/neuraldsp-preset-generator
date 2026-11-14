@@ -290,6 +290,25 @@ exact drawn pan as the hint is read beside, as a ceiling, never under the rule.
   training-band items only.
 - **The MPS:** the other sessions are told it's in use before the run.
 
+### Amendment 3b (2026-11-15, after s1b's main read, before any A3 or S3 read; ledger `phase_s1_a3b`)
+
+- **What s1b found:** separating in stereo first and then taking the centre (`xlst_mdxc`) gains +10.85 dB
+  [+8.71, +12.31] on S0's centred items. The model's read gains +0.067 [+0.048, +0.079] there, the largest read gain
+  of any option. `mdxc`'s read gain is +0.006. On the training-band centred items alone (Forkupines and BKS, 32
+  items) it's +12.79 dB against `mdxc`'s +8.89.
+- **`steer_xlmdxc`** (under S1's rule, beside `steer_mdxc`): steer by the coarse hint, X-LANCE on the steered pair
+  (both outputs), MDX23C on that stereo stem, the mean, times cos φ. On a centre hint it's `xlst_mdxc` exactly (copied).
+- **S3's routed comparator for the centre hint** becomes `xlst_mdxc` instead of `mdxc`. It's the stronger option on
+  the training bands too, so the change can only make S3's rule harder to meet. The side hint stays `side`.
+- **The training batch:**
+  - **What happens:** a batch of 2 clips needs 15.8 GB of MPS memory and swaps, and 4 doesn't fit in 32 GB.
+  - **The fix tried:** the model's gradient checkpointing fails, with a shape error in BS-RoFormer.
+  - **So:** one clip per pass, four passes summed per update (accumulation), the same update as a batch of 4 since
+    the model has no batch statistics. That's about 1.7 s per clip.
+  - **The evaluations:** every 1,000 updates (4,000 clips), about 2 hours apart.
+- **The gradient check, run:** at 61,000 samples the median relative error is 6.4e-5 (max 1.6e-3), a pass. At 98,304
+  samples it's 0.88 (max 7.4), so the bug shows where expected.
+
 ## What it can't say
 
 S0's mixes are built, not mastered records. Their panning is drawn, not each song's own. E1e's targets are mono, so
