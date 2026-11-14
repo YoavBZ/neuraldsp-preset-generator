@@ -40,16 +40,24 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/model_preset.py" --song SONG.mp3 --cls cle
      how it was chosen.
    - **Which signal is separated** (`--version`): both channels by default. Only the separator reads the version;
      the model's mix, also its gain reference, stays the full mix of both channels. Use the default unless the user
-     picked a version by ear: the score below comes from built stereo mixes with a known guitar (200 songs, plus 60
-     with separate takes on both sides; 2026-11-15), and no listener has compared these versions on real songs yet.
+     picked a version by ear. The score below comes from built stereo test mixes with a known guitar (200 from 7
+     bands, 71 with the guitar centred, and 60 more with other guitars hard left and right; 2026-11-15). Those mixes
+     pan mono parts, so they cannot show what a version does to a real lead's stereo reverb, echo and width, and no
+     listener has compared these versions on real songs yet.
      - `xlst_mdxc` separates the stereo pair, then keeps its centre with a phantom-centre model (MDX23C, on the CPU).
-       For a centred guitar it is the best by the score: +10.9 dB over the default (90% interval +8.7 to +12.3),
-       +5.3 dB with takes on both sides, and the model's read improves too. It removes a guitar panned off centre
-       (−15 dB there), so use it only for a part in the centre.
+       For a single centred guitar it is the best by the score: +10.9 dB over the default (90% interval +8.7 to
+       +12.3), +5.3 dB with other guitars hard left and right, and the model's read improves too. It is worse for a
+       part doubled left and right (−2.9 dB), and it removes a guitar panned off centre (−15 dB there), so use it only
+       for a single part in the centre. It strips the sides hardest, the lead's own stereo reverb and echo included,
+       which the delay reader then cannot hear. Always pass `--part`: without it the selector runs it on the whole
+       song. On a mono file it adds only time. With everything on the CPU, the separate stage took 2.5 min for a
+       28-s part (2026-11-15).
      - `stem_L` or `stem_R`, the guitar's own channel, for a part on one side: +7.2 dB by the score.
      - `stem_C` keeps only what is the same in both channels before separating. One listener picked it as their best
-       version on 5 of 7 songs (by ear, 2026-11-14), still hearing leaks, but by the score it is 1.8 dB worse than
-       the default for a centred guitar. `stem_S` (the side) is for listening tests.
+       version on 5 of 7 songs (by ear, 2026-11-14), still hearing leaks. By the score it is undecided for a centred
+       guitar (−1.8 dB, interval −5.8 to +1.6), and the model's read of it is worse. It also drops the lead's own
+       stereo reverb, echo and width, and the model never trained on such a masked stem. `stem_S` (the side) is for
+       listening tests.
    - Use a folder under the data root for `WORK_DIR` (`~/ndsp-presets/auditions/<song>/model`).
    - It separates the guitar, takes the model's settings on each of the three amps and renders them through two stock
      guitar recordings (12 renders). It picks the amp whose renders sound closest to the song's guitar, sets the output

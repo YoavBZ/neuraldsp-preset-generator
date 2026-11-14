@@ -12,8 +12,9 @@ separator, the model and the renderer live in different environments:
 What each stage reproduces, and where it was validated:
 - **separate:** the song's 10-s window, separated by X-LANCE `gtr_mss` (the model's real-song input: V-real read 3, F41;
   N5b). `--version` sets what is separated: the mono mix (default), one channel, the side, the centre-only mix, or
-  `xlst_mdxc`, X-LANCE on the stereo pair, then the MDX23C phantom-centre model on that stereo stem (CPU). Given a start, that window. Otherwise the selector (R1 Amendment 2) works inside the part (`--part`, from the
-  user or research; else the whole song). It takes the 10-s windows on a 1-s hop, 2 s clear of the track's ends, where
+  `xlst_mdxc`, X-LANCE on the stereo pair, then the MDX23C phantom-centre model on that stereo stem (CPU). Given a
+  start, that window. Otherwise the selector (R1 Amendment 2) works inside the part (`--part`, from the user or
+  research; else the whole song). It takes the 10-s windows on a 1-s hop, 2 s clear of the track's ends, where
   the stem holds (every 0.5 s within 12 dB of the window) and sits within 12 dB of the mix. Of those, it picks the one
   whose tone is most typical (the medoid of the level-free mel profiles), not the most exposed.
 - **answers:** the adopted model (`adopted-model.json`: R-all's all-labels pair, both seeds, held as C3-cabS) on each
@@ -169,8 +170,6 @@ def load_mix(path, sr_out, start_s, dur_s, version="stem"):
     `load_mono`. The channel versions read the span; the centre version is made on the whole song, as the picker made the
     user's stem_C, then cut to the span."""
     import numpy as np
-    import soundfile as sf
-    from scipy.signal import resample_poly
 
     from learn import pretrain_set as PS
 
