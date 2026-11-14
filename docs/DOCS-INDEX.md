@@ -801,3 +801,24 @@ was declared, what was measured, and the research behind it.
     can be tested in mono (F67), and whether T0's draws carry it is flagged; only spread, width,
     ping-pong and pan wait for stereo. Datasets: none pairs real songs with effect settings.
     Research, not a declared plan.
+28. [lead-guitar-extraction-2026-11.md](research/lead-guitar-extraction-2026-11.md): how to pull
+    one electric guitar part (the lead, without the rhythm guitars, keys or bleed) out of a
+    commercial stereo song, for the ML session (November 2026; nothing downloaded or run). No
+    open model, prompted or not, has been shown to pick one guitar out of several; all select by
+    class. The default route separates the plain mono fold; the centre option (`stem_C`, the
+    user's pick on 5 of 7 R1 songs, unscored) masks the song before separating, which leaves two
+    overlapping hard-panned takes about 7.4 dB down and strips most of the lead's stereo tail;
+    no product-path option gives the separator true stereo. Builds on and updates the
+    stereo-side screen (stereo-side-results.md): on Mega-53 stereo stems its best centred-lead
+    result was the MDX23C centre model (+1.35 dB) and its unsmoothed coherence mask gave +0.35,
+    none reaching +2 dB. Maps onto the separation plan (separation-plan.md), whose S1 already
+    tests true stereo, the centre mask and that centre model on X-LANCE. Ranked tests: two
+    zero-download S1 arms that mask after the stereo separation (psi^4 and a time-smoothed
+    coherence gate), read on S0 and on the October LC contexts, since S0 puts all other guitars
+    at one pan; an ear check on the R1 songs; a stronger learned centre model (204 MB); two
+    untested open lead/rhythm checkpoints (337.1 and 109.8 MB, no licence or metric); a
+    refinement net on frozen `gtr_mss`; a lead-vs-rest fine-tune pilot (about 12 h per fold per
+    1,000 steps on the CPU, the only measured rate within the 20 GB memory cap, since MPS ran
+    over it; level collapse is the main risk); SAM-Audio small last. Corrects
+    round-5-guitar-models.md's "MVSep lead/rhythm 9.0–9.2" figure. Builds on
+    single-guitar-separation-2026-10.md. Research, not a declared plan.
