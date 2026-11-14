@@ -290,6 +290,55 @@ exact drawn pan as the hint is read beside, as a ceiling, never under the rule.
   training-band items only.
 - **The MPS:** the other sessions are told it's in use before the run.
 
+### Amendment 3b (2026-11-15, after s1b's main read, before any A3 or S3 read; ledger `phase_s1_a3b`)
+
+- **Its basis, the training-band items** (the freeze rule): on Forkupines' and BKS's 32 centred items, separating in
+  stereo first and then taking the centre (`xlst_mdxc`) gains +12.79 dB, against `mdxc`'s +8.89 (BKS +11.78 against
+  +6.72, Forkupines +13.81 against +11.07). On all S0's centred items it's +10.85 dB [+8.71, +12.31], with a read gain
+  of +0.067 [+0.048, +0.079], the largest on centred items; `mdxc`'s is +0.006.
+- **`steer_xlmdxc`** (under S1's rule, beside `steer_mdxc`): steer by the coarse hint, X-LANCE on the steered pair
+  (both outputs), MDX23C on that stereo stem, the mean, times cos φ. On a centre hint it's `xlst_mdxc`: copied, a few
+  recomputed as the identity check (float64 on the CPU, where s1b's ran on MPS through float16). So its centred and
+  split cells repeat an option already read; only its off-centre and double cells are new.
+- **S3's routed comparator for the centre hint** becomes `xlst_mdxc` instead of `mdxc`. It's the stronger option on
+  the training bands too, so the change makes S3's rule harder to meet in expectation (its interval against
+  `xlst_mdxc` may still be tighter than against `mdxc`). The side hint stays `side`.
+- **The training batch:**
+  - **What happens:** a batch of 2 clips needs 15.8 GB of MPS memory and swaps, and 4 doesn't fit in 32 GB.
+  - **The fix tried:** the model's gradient checkpointing fails, with a shape error in BS-RoFormer.
+  - **So:** one clip per pass, four passes summed per update (accumulation), the same update as a batch of 4 since
+    the model has no batch statistics. That's about 1.7 s per clip.
+  - **The evaluations:** every 1,000 updates (4,000 clips), about 2 hours apart.
+- **The gradient check, run:** at 61,000 samples the median relative error is 6.4e-5 (max 1.6e-3), a pass. At 98,304
+  samples it's 0.88 (max 7.4), so the bug shows where expected.
+
+## S1 results
+
+Both rounds ran 2026-11-14 and 15 (zero renders), read by the rule above and audited by separate code (the same
+means; the intervals within 0.3 dB). SI-SDR gain against mono, with the 90% band-bootstrap interval; the read is the
+drop in the model's cosine distance (higher is better).
+
+| Option | Centred | Off-centre | Double | Split set | Read (centred) |
+|---|---|---|---|---|---|
+| `xlst_mdxc` (X-LANCE stereo, then MDX23C) | **+10.85** [+8.71, +12.31] | −15.45 | −2.94 | **+5.33** [+3.92, +6.87] | **+0.067** |
+| `cw` (CenterWide, then X-LANCE) | +6.37 | −1.42 | −2.65 | +5.06 | +0.037 |
+| `mdxc` (MDX23C, then X-LANCE) | +7.03 | −17.32 | −2.78 | +4.71 | +0.006 |
+| `side` (the target's own channel, an oracle) | +2.95 | **+7.16** [+6.05, +8.21] | −0.43 | −1.84 | +0.012 |
+| `xlst_psi` (psi⁴ mask after separating) | +6.40 | −2.37 | −3.01 | +3.11 | +0.010 |
+| `stereo` (X-LANCE on the true pair) | −0.70 | +1.05 | +0.12 | −0.29 | −0.002 |
+| `centre4` (the picker's stem_C) | −1.77 [−5.82, +1.60] | −9.10 | −4.21 | −4.13 | −0.062 [−0.106, −0.024] |
+
+- Mega-53's guitar head, the agreement ensemble, a second pass and the keys mask are level or slightly worse. The
+  lead/rhythm models' lead outputs lose 1 to 14 dB; listra92's rest output gains +1.87 [+0.90, +2.62] off-centre,
+  below the own channel's +7.16.
+- Off-centre (+7.16 dB, read +0.044) the target's own channel works, but it needs the side, which the user's pick
+  gives. A centred part is best served by `xlst_mdxc` on S0's centred items, by SI-SDR and by the read. With
+  separate takes on both sides (the split set), `xlst_mdxc` (+5.33 dB, read +0.062) and `cw` (+5.06, read +0.073)
+  are level: undecided between them.
+- The trigger by the score doesn't fire (best lo90 +8.71, `xlst_mdxc` centred). S3 runs on the user's go (above).
+- The product session is adding `--version xlst_mdxc` behind a flag (PR #492, open). Its default stays until the
+  user's ear decides.
+
 ## What it can't say
 
 S0's mixes are built, not mastered records. Their panning is drawn, not each song's own. E1e's targets are mono, so

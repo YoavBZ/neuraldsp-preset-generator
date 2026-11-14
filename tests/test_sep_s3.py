@@ -105,7 +105,7 @@ def test_the_bands_are_disjoint():
 
 
 def test_routed_comparator():
-    assert S3.routed({"target": [0.1]}) == "mdxc" and S3.routed({"target": [-0.6]}) == "side"
+    assert S3.routed({"target": [0.1]}) == "xlst_mdxc" and S3.routed({"target": [-0.6]}) == "side"
 
 
 def test_s3_decision():
