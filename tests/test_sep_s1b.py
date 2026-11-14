@@ -40,3 +40,13 @@ def test_leak3():
     rng = np.random.default_rng(2)
     t, o, q = (rng.standard_normal(4800) for _ in range(3))
     assert B.leak3_db(t + 0.1 * o + 0.1 * q, t, o, q) < -15 and B.leak3_db(t + o + q, t, o, q) > 1
+
+
+def test_trigger_reads_only_candidates_across_reads():
+    win = {"wins": True, "si_sdr_gain": {"lo90": 0.6}}
+    big_loser = {"wins": False, "si_sdr_gain": {"lo90": 3.0}}             # high lo90 but fails the model's read
+    reads = {"S1": {"options": {"a": {"all": win}}}, "s1b main": {"options": {"b": {"all": big_loser}}},
+             "s1b split": {"options": {"c": {"split": {"wins": True, "si_sdr_gain": {"lo90": 1.4}}}}}}
+    best, fires, cands = B.trigger_of(reads)
+    assert best == 1.4 and not fires and [c["option"] for c in cands] == ["c", "a"]
+    assert B.trigger_of({"S1": {"options": {"b": {"all": big_loser}}}})[:2] == (None, True)

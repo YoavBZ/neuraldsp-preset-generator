@@ -570,10 +570,7 @@ def cmd_read(args):
     cands = sorted(((o, s_, v[s_]["si_sdr_gain"]["lo90"]) for o, v in rep["options"].items() for s_ in v
                     if v[s_].get("wins") is True), key=lambda t: -t[2])
     rep["candidates_by_lo90"] = [{"option": o, "stratum": s_, "lo90": l} for o, s_, l in cands]
-    best = max((v[s_]["si_sdr_gain"]["lo90"] for o, v in rep["options"].items() for s_ in v if "si_sdr_gain" in v[s_]),
-               default=None)
-    rep["best_lo90"] = best
-    rep["s2_s3_trigger_by_score"] = bool(best is None or best < 1.0)
+    rep["best_candidate_lo90"] = cands[0][2] if cands else None       # this read only; the trigger is s1b-trigger's
     (root / f"read-s1b-{args.set}.json").write_text(json.dumps(rep, indent=1))
     for o, v in rep["options"].items():
         line = "  ".join(f"{s}: {v[s].get('si_sdr_gain', {}).get('mean', 0):+.2f}" for s in strata if s in v)
@@ -581,10 +578,38 @@ def cmd_read(args):
               f"{[s for s in strata if s in v and v[s].get('wins') is True]}")
 
 
+def trigger_of(reads):
+    """The S2/S3 trigger by the score (the review): the best SI-SDR gain lo90 among candidates (options that win under
+    the rule), over S1's read and s1b's main and split reads together. -> (best lo90 or None, fires, the candidates)."""
+    cands = []
+    for name, rep in reads.items():
+        for o, v in rep["options"].items():
+            for strat, e in v.items():
+                if e.get("wins") is True:
+                    cands.append({"read": name, "option": o, "stratum": strat, "lo90": e["si_sdr_gain"]["lo90"]})
+    cands.sort(key=lambda c: -c["lo90"])
+    best = cands[0]["lo90"] if cands else None
+    return best, bool(best is None or best < 1.0), cands
+
+
+def cmd_trigger(_args):
+    require()
+    reads = {"S1": json.loads((S0.out_dir() / "read.json").read_text()),
+             "s1b main": json.loads((set_dir("main") / "read-s1b-main.json").read_text()),
+             "s1b split": json.loads((set_dir("split") / "read-s1b-split.json").read_text())}
+    best, fires, cands = trigger_of(reads)
+    out = {"best_candidate_lo90": best, "s2_s3_trigger_by_score": fires, "candidates": cands,
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    (S0.out_dir().parent / "s1-trigger.json").write_text(json.dumps(out, indent=1))
+    print(f"S1 TRIGGER: best candidate lo90 {best}; S2/S3 by the score: {'yes' if fires else 'no'}; "
+          f"{len(cands)} candidates: {[(c['option'], c['stratum'], round(c['lo90'], 2)) for c in cands[:6]]}")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("s1b-build-split").set_defaults(fn=cmd_build_split)
+    sub.add_parser("s1b-trigger").set_defaults(fn=cmd_trigger)
     s = sub.add_parser("s1b-sep")
     s.add_argument("--set", choices=("main", "split"), required=True)
     s.add_argument("--device", default="mps")

@@ -131,8 +131,11 @@ a yaml check that admits only MSST's `!!python/tuple`. Code is in `learn/sep_s1b
   - **The lead/rhythm outputs:** read as separate options. The per-item better of each pair is shown beside, as the
     ceiling of picking by ear (an oracle), never under the rule.
   - **Many options:** S1 now has about 20 options across 4 cells, so a few chance wins are expected and the best
-    mean is biased up. So wins are candidates for the ear, ranked by the SI-SDR gain's lo90. The S2/S3 trigger reads
-    the best option's lo90, not its mean.
+    mean is biased up. So wins are candidates for the ear, ranked by the SI-SDR gain's lo90.
+  - **The trigger's scope** (the review): the S2/S3 trigger is the best lo90 among candidates (options that win
+    under the rule, the model's read included). It's read over S1's read and s1b's main and split reads together
+    (`s1b-trigger`), and it fires with no candidate or with the best under 1 dB. An option with a high lo90 that
+    fails the model's read doesn't count.
   - **The effects row** (cepstral delay hit, T0's vote) is read for every new option. An unmasked stereo stem
     (`xlst2`) is kept for the effects read, whichever stem wins.
   - **Safety:** every config's SHA-256 is checked too. XLanceKeys asserts torch ≥ 2.6 (`weights_only` by default).
