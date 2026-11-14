@@ -612,7 +612,8 @@ STORED = (K.OUT / "cells" / "cambridge-Prodigal-ElecGtr5" / "pr12" / "result.jso
     (L.SS_OUT / "armA" / "cambridge-Prodigal-ElecGtr5" / "pr12" / "A.json").exists()
 
 
-@pytest.mark.skipif(not STORED, reason="needs the Mac's stored knob-ceiling and arm A files")
+@pytest.mark.skipif(not STORED or not K.parts_stored(),
+                    reason="needs the Mac's stored knob-ceiling and arm A files, and the parts table (learn/direc)")
 def test_stored_cell_sigma_replays_exactly():
     slug, amp = "cambridge-Prodigal-ElecGtr5", "pr12"
     ps = K.parts()

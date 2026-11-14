@@ -136,8 +136,9 @@ def test_b0_dry_run_records_peak_rss_and_uses_b0s_split(tmp_path):
 def test_b0_split_matches_the_stored_validation_bands():
     from learn import song_model as M
 
-    if not (SP.B0_MODELS / "fold0" / "log.json").exists() or not (M.B.OUT / "examples.json").exists():
-        pytest.skip("the bank is not on this machine")
+    if not (SP.B0_MODELS / "fold0" / "log.json").exists() or not (M.B.OUT / "examples.json").exists() or \
+            not (M.B.OUT / "features").is_dir():
+        pytest.skip("the bank (its examples and features) is not on this machine")
     idx = M.bank_index()
     for f in range(4):
         _, _, vb = SP.b0_split(idx, f)

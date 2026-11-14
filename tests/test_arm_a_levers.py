@@ -197,7 +197,8 @@ def test_every_stored_arm_a_search_replays_exactly():
     assert n == 144
 
 
-@pytest.mark.skipif(not _stored_data() or not (K.OUT / "cells").exists(), reason="no stored knob-ceiling data")
+@pytest.mark.skipif(not _stored_data() or not (K.OUT / "cells").exists() or not K.parts_stored(),
+                    reason="no stored knob-ceiling data, or no parts table (learn/direc)")
 def test_every_stored_ks_trajectory_replays_exactly():
     ms, ps = L.menu_S(), K.parts()
     n = 0

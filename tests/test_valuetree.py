@@ -123,9 +123,10 @@ CAB_FLAGS = {("cabParameters", k) for k in (
 def test_installed_morgan_x_presets_read_like_the_originals():
     """Where both plugins are installed: every X-format factory preset holds the
     same settings as the original's file of the same name, apart from the cab
-    flags X renamed, its browser tags, and the version string."""
+    flags X renamed, its browser tags, and the version string. The User folders are left out: the user's own presets
+    can be saved again in either plugin and so differ (a match preset re-saved in X on 2026-11-13)."""
     pairs = [(f, ORIGINAL / f.relative_to(X_EDITION)) for f in sorted(X_EDITION.rglob("*.xml"))
-             if f.read_bytes().startswith(b"morgan-x\x00")]
+             if f.relative_to(X_EDITION).parts[0] != "User" and f.read_bytes().startswith(b"morgan-x\x00")]
     pairs = [(x, o) for x, o in pairs if o.exists()]
     assert pairs
     for x, o in pairs:
