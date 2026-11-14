@@ -38,6 +38,12 @@ python "${CLAUDE_PLUGIN_ROOT}/scripts/model_preset.py" --song SONG.mp3 --cls cle
      song, which may land on a part the user didn't mean. `--start` forces a window with no checks; use it only when
      the user names an exact moment, or a section shorter than 10 s (start it there). Say which window was read and
      how it was chosen.
+   - **Which signal is separated** (`--version`): both channels by default. `stem_C` keeps only what is the same
+     in the left and right channels before separating, which drops guitars and keys panned to the sides; on songs
+     with a centred lead the user heard it leak less (2026-11-14, by ear on seven songs), but it also drops the
+     lead's own stereo reverb, echo and width, and it is not yet checked by the score. `stem_L`, `stem_R` and
+     `stem_S` (left, right, side) are for listening tests. Only the separator reads the version; the model's mix
+     stays the full song. Use the default unless the user picked a version by ear.
    - Use a folder under the data root for `WORK_DIR` (`~/ndsp-presets/auditions/<song>/model`).
    - It separates the guitar, takes the model's settings on each of the three amps and renders them through two stock
      guitar recordings (12 renders). It picks the amp whose renders sound closest to the song's guitar, sets the output

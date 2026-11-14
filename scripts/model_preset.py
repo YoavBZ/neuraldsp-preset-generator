@@ -46,6 +46,9 @@ TOOLS = DATA / "tools"
 FACTORY = pathlib.Path("/Library/Audio/Presets/Neural DSP/Morgan Amps Suite")
 ADOPTED = DATA / "learn/trusted-data/pipeline-fix/adopted-model.json"
 DELAY_DEFAULT_FROM = "the declared default (no song research given)"   # product_path's record of the default
+VERSIONS = ("stem", "stem_C", "stem_L", "stem_R", "stem_S")   # learn/product_path.VERSIONS
+VERSION_NAMES = {"stem": "both channels", "stem_C": "the centre only", "stem_L": "the left channel",
+                 "stem_R": "the right channel", "stem_S": "the side (L-R)"}
 STAGES = (("separate", "msst", "window.json"), ("answers", "torch", "answers.json"),
           ("render", "main", "renders.json"), ("pick", "torch", "preset.json"))
 
@@ -69,7 +72,7 @@ def interpreters() -> dict:
 def stage_args(stage: str, args) -> list:
     """The stages run from the plugin root, so `run` resolves --song and --work first."""
     if stage == "separate":
-        out = [str(args.song), "--out", str(args.work)]
+        out = [str(args.song), "--out", str(args.work)] + (["--version", args.version] if args.version != "stem" else [])
         if args.start is not None:
             return out + ["--start", str(args.start)]
         if args.part is not None:
@@ -117,9 +120,10 @@ def run_stages(args) -> None:
         w = json.loads(done.read_text())
         if pathlib.Path(w["song"]) != args.song or (
                 args.start is not None and abs(float(w["start_s"]) - args.start) > 1e-6) or (
-                args.part is not None and [float(x) for x in w.get("part_s") or []] != [float(x) for x in args.part]):
-            die(f"{args.work} holds another song, window or part ({w['song']} at {w['start_s']} s, part "
-                f"{w.get('part_s')}); use a new --work.")
+                args.part is not None and [float(x) for x in w.get("part_s") or []] != [float(x) for x in args.part]) or (
+                w.get("version", "stem") != args.version):
+            die(f"{args.work} holds another song, window, part or version ({w['song']} at {w['start_s']} s, part "
+                f"{w.get('part_s')}, version {w.get('version', 'stem')}); use a new --work.")
     ans = args.work / "answers.json"
     if ans.exists() and json.loads(ans.read_text())["cls"] != args.cls:
         die(f"{args.work} was answered for another class; use a new --work.")
@@ -205,6 +209,9 @@ def build_parser() -> argparse.ArgumentParser:
                     help="the part's span in seconds (named by the user, or from research); the most typical steady "
                          "10-s window inside it is read. Without --part or --start, the whole song is searched")
     ap.add_argument("--part-from", default="research", help="where --part came from: 'the user' or 'research'")
+    ap.add_argument("--version", choices=VERSIONS, default="stem",
+                    help="what the separator reads: both channels (stem, the default), the centre only (stem_C), "
+                         "one channel (stem_L, stem_R) or the side (stem_S); the model's mix stays the full mix")
     ap.add_argument("--start", type=float, default=None,
                     help="force the window's start, in seconds (no steadiness check); prefer --part")
     ap.add_argument("--work", type=pathlib.Path, required=True, help="a folder for the stages' files")
@@ -260,7 +267,7 @@ def run(args) -> None:
     g = result["output_gain"]
     print(f"\nAmp: {result['amp']} ({result['cls']}); distances "
           + ", ".join(f"{a} {d:.4f}" for a, d in sorted(result["distances"].items(), key=lambda kv: kv[1])))
-    print(f"Window: {window['start_s']:.1f} s ({window_how(window)})")
+    print(f"Window: {window['start_s']:.1f} s ({window_how(window)}); separated from {VERSION_NAMES[window.get('version', 'stem')]}")
     print(f"Output gain: {g['from']:+.1f} -> {g['to']:+.1f} dB" + (f" (clamped, {g['shortfall']:+.1f} dB short)"
                                                                    if g["shortfall"] else ""))
     if delay is not None:
