@@ -11,6 +11,25 @@ X-LANCE `gtr_mss` returns every guitar plus bleed. The user's picker (R1 Amendme
 even in the best version ("Still many leaks though"), and the centre mask helped on 5 of 7. The model can't be better
 than what it hears.
 
+## What earlier work found (October 2026, Mega-53 on stage F's 21 parts)
+
+- **The other guitars are the limit, not the guitar class.** On parts with another electric guitar, the others sat
+  about 5.5 dB above the target. A perfect "all electric guitars" separator would gain only +0.30 dB
+  ([separation step 0](separation-step01-results.md)). So a better class separator alone won't fix real songs. The
+  lever is telling the named guitar from the other guitars.
+- **Stereo cues help a little, and only with the side known**
+  ([stereo side screen](stereo-side-results.md)): keeping the target's channel gained +1.50 dB, and the MDX23C
+  centre model +1.35 dB on a centred target against hard-panned rhythms. Every blind method lost, since the pan
+  histogram found the louder other guitars. The level-difference mask gained +0.6 to +0.9 dB, and the coherence mask
+  +0.35 dB.
+- **What S1 adds:** those screens fed Mega-53 a mono or picked channel. S1 tests X-LANCE (the model path's
+  separator) on real stereo, with the centre masks and on the target's own channel, on E1e's three strata. October's
+  +1.5 dB was Mega-53 on mono or picked inputs, and not clear of +1 dB after Holm. That cap is for blind or centred
+  cases, not for a known side (October's hard-pan ceiling was +6.88 dB). S2 and S3 still start only on the declared
+  trigger.
+- **S1 Amendment 1 (2026-11-14, before any S1 read):** option (g), the earlier screen's MDX23C phantom-centre model
+  (hash-checked, CPU), then X-LANCE, beside the centre mask.
+
 ## The goal and the stop rule
 
 One guitar part, the one the user names, as clean as an existing or a new tool can make it. Each step is decided by
@@ -37,17 +56,29 @@ Real songs have no ground truth, so every option is first measured on known-trut
   - the model's read: the cosine of the adopted model's floored body features (the amp pick's own measure) between
     the stem and the clean target, both at the product's input level.
   - beside, the effects row (since better stems also serve R3): the stem's cepstral delay hit and T0's delay vote;
-  - all are reported per stratum and by band, with a band bootstrap, against today's input (X-LANCE on the mono mix).
+  - all are reported per stratum and by band, with a band bootstrap, against today's input (X-LANCE on the mono mix);
+  - each item's effective target-to-backing ratio is recorded, and the strata are read beside it, since a double
+    stands about 1.5–2.5 dB hotter by construction;
+  - a post-hoc check (`s0-check`): the built backing, folded as if centred, against the recipe's own backing.
+  - The win rule is coded into the read, per stratum: SI-SDR gain lo90 > 0, and the model's read hi90 ≥ 0. s0-feats
+    runs after every stem exists. The read prints n(cosine) beside n, and it refuses a win where the model's read is
+    incomplete.
 
 ## S1, existing tools (zero training)
 
 - **(a)** X-LANCE fed the true stereo channels, the mean of its two outputs. Until now it got the mono mix twice.
 - **(b)** The picker's centre mask, then X-LANCE.
-- **(c)** Mega-53's guitar and electric-guitar stems.
+- **(c)** Mega-53's electric-guitar stem. This is a deviation, declared after the code review: the pipeline's Mega-53 is pruned to that one head in its 'fast' setting, so its guitar head isn't run.
 - **(d)** An agreement ensemble: per STFT bin, the smaller of X-LANCE's and Mega-53's magnitudes, with X-LANCE's
   phase.
 - **(e)** X-LANCE run again on its own stem.
 - **(f)** (b) with the mask's exponent at 2 and at 8, beside 4.
+- **(g)** (Amendment 1) The MDX23C phantom-centre model, then X-LANCE. The October screen found it "either helps a
+  lot or hurts" (+5 to +6 dB on one song, −2.8 on another), so it goes to the picker as a choice, not the default.
+- **(h)** (Amendment 1, the review) X-LANCE on the target's own channel, exactly the picker's stem_L or stem_R. The
+  side comes from the drawn pan: the louder copy for a double. It's an oracle standing in for the user's pick, and
+  it's read on the off-centre and double strata, where the centre options remove the target by construction.
+- **(i)** X-LANCE on the side signal (L−R)/2, the picker's stem_S.
 - **The rule:** an option wins if its SI-SDR gain over today's is above 0 on the band bootstrap and it loses nothing
   on the model's read, meaning the paired cosine interval isn't wholly below 0. It's read per stratum: an option
   that wins only on the centred lead goes on the picker as a choice, not as the default. The best one or two go on
