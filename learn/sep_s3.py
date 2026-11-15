@@ -38,7 +38,8 @@ HINT_H1 = 1.0                              # the review's sensitivity: a hard si
 TRAIN_BANDS = ("Forkupines", "BKS", "The Maybe Next Years", "Adam Buckley")   # cached; Adam Buckley validates
 VAL_BAND = "Adam Buckley"                  # the review: a whole band for the curve, not in S0
 HELD_BANDS = ("Hazael", "The Travelling Band", "Ale Lak", "Storm Of Particles", "Dunning Kruger")
-TRAINED = ("s3", "s4")                     # the trained candidates read once on the held-out bands (S3, S4)
+TRAINED = ("s3", "s4", "s3ens")            # the candidates read once on the held-out bands (S3, S4, Amendment 4)
+PHASE_S3E = "phase_s3e"                    # Amendment 4: s3ens, the mean of S3's pick and the routed comparator
 
 
 def require(phase):
@@ -224,6 +225,15 @@ def check_trained(what, root):
 
         require(S4T.PHASE_S4)
         S4T.check_stems(root)
+    elif what == "s3ens":
+        from learn import sep_s3_train as TR
+
+        require(PHASE_S3E)
+        TR.check_stems(root)                   # S3's own stems are from the pick
+        pick = json.loads((TR.out_dir() / "run" / "pick.json").read_text())
+        prov = root / "stems" / "s3ens" / "pick.json"
+        if not prov.exists() or json.loads(prov.read_text())["sha256"] != pick["sha256"]:
+            raise SystemExit(f"{root.name}'s s3ens stems aren't from S3's picked checkpoint (step {pick['step']})")
 
 
 def cmd_feats(args):
@@ -307,11 +317,15 @@ def s3_decision(si_mono, rd_mono, si_comp, rd_comp):
 
 
 def trained_decision(what, si_mono, rd_mono, si_comp, rd_comp):
-    """S3's rule for S3. For S4 (it starts at the routed comparator, so an unchanged model would pass as not worse):
-    a picker choice also needs a decided read gain over the comparator (lo90 > 0)."""
+    """S3's rule for S3. For S4 (it starts at the routed comparator, so an unchanged model would pass as not worse)
+    a picker choice also needs a decided read gain over the comparator (lo90 > 0). For s3ens (half of it is the
+    comparator, so its SI-SDR gain is partly mechanical) both its default and its picker choice need one."""
     d = s3_decision(si_mono, rd_mono, si_comp, rd_comp)
-    if what == "s4" and d == "picker choice" and not (rd_comp["lo90"] is not None and rd_comp["lo90"] > 0):
+    read_gain = rd_comp["lo90"] is not None and rd_comp["lo90"] > 0
+    if what == "s4" and d == "picker choice" and not read_gain:
         return "not used"
+    if what == "s3ens" and d in ("default", "picker choice") and not read_gain:
+        return "not used"                      # Amendment 4's review: a blend's SI-SDR gain is partly mechanical
     return d
 
 
@@ -385,11 +399,11 @@ def cmd_read(args):
                     lag, _ = FX.cep_pick(FX.cepstrum(s))
                     r["delay_hit"] = float(abs(lag / 2 ** y["dtime"] - 1) <= 0.10)
             rows[o][meta["i"]] = r
-    if args.what == "s4":                       # the review: every held-out item has its S4 stem
+    if args.what in ("s4", "s3ens"):            # the review: every held-out item has its stem
         n_held = sum(1 for m_ in metas.values() if m_["band"] in HELD_BANDS)
-        n_s4 = sum(1 for r in rows["s4"].values() if r["held"])
-        if n_s4 != n_held:
-            raise SystemExit(f"S4 stems for {n_s4} of {n_held} held-out items: run s4-apply to the end first")
+        n_new = sum(1 for r in rows[args.what].values() if r["held"])
+        if n_new != n_held:
+            raise SystemExit(f"{args.what} stems for {n_new} of {n_held} held-out items: make them all first")
     read_on = (lambda r: r["held"]) if trained else (lambda r: True)
     # the best existing option per stratum: S3 chooses it on the training-band items (S0's Forkupines and BKS),
     # with the steer options among the candidates; A3 on the same items it reads (the plan, biased to the old options)
@@ -537,39 +551,39 @@ def cmd_decide(args):
           f"side hint {out['side_hint']}")
 
 
-def choose(dec3, dec4, gap):
-    """S4's plan, the two trained candidates for one hint. dec3, dec4: each one's own decision; gap: the paired mean
-    held-out read of S4 minus S3's (cosine distance, negative = S4 reads better; the point estimate, decided or not).
-    -> {"default": "s3" | "s4" | None (the routed comparator stays), "picker": the candidates on the picker, first
-    first}."""
-    dec = {"s3": dec3, "s4": dec4}
-    q = [c for c in ("s3", "s4") if dec[c] in ("default", "picker choice")]
-    if not q:
-        return {"default": None, "picker": []}
-    if len(q) == 1:                               # its own rule's outcome, exactly
-        return {"default": q[0] if dec[q[0]] == "default" else None, "picker": q}
-    if dec3 != dec4:                              # a default beats a picker choice; the other beside
-        first = "s3" if dec3 == "default" else "s4"
-    else:                                         # one level: the lower held-out read (a tie keeps S3, declared first)
-        first = "s4" if gap is not None and gap < 0 else "s3"
-    other = "s4" if first == "s3" else "s3"
-    return {"default": first if dec[first] == "default" else None, "picker": [first, other]}
+LEVEL = {"default": 2, "picker choice": 1}
+
+
+def choose(decs, reads):
+    """The trained candidates for one hint (S4's plan, Amendment 4). decs: each candidate's own decision; reads: each
+    one's mean held-out read on the hint's items they all have (cosine distance, the point estimate, decided or not;
+    None when unread). A default beats a picker choice; at one level the lower read goes first; a tie keeps the
+    order declared (s3, s4, s3ens). -> {"default": a candidate or None (the routed comparator stays), "picker": the
+    qualifying candidates, first first}. A lone qualifier gets exactly its own rule's outcome."""
+    q = [c for c in TRAINED if decs.get(c) in LEVEL]
+    inf = float("inf")
+    q.sort(key=lambda c: (-LEVEL[decs[c]], reads.get(c) if reads.get(c) is not None else inf, TRAINED.index(c)))
+    return {"default": q[0] if q and decs[q[0]] == "default" else None, "picker": q}
 
 
 def cmd_choose(_args):
-    """S4's plan: S3's and S4's decisions per hint combined by `choose`. The gap per hint is the paired mean read
-    (S4 minus S3) on the held-out items both have: the centre hint pools S0's held-out centred items and the split
-    set's held-out items; the side hint is S0's held-out off-centre items. S4 with no decision file counts as not used
-    only when its gate kept it from the read (pick.json usable: false); otherwise this refuses, as without S3's."""
+    """S4's plan and Amendment 4: every candidate's decision per hint combined by `choose`. The reads per hint are
+    the qualifying candidates' mean cosine distances on the held-out items they all have: the centre hint pools S0's
+    held-out centred items and the split set's held-out items; the side hint is S0's held-out off-centre items. S3
+    and s3ens must be decided. S4 with no decision file counts as not used only when its gate kept it from the read
+    (pick.json usable: false); otherwise this refuses."""
     import numpy as np
 
     from learn import sep_s4_train as S4T
 
     require(S4T.PHASE_S4)
+    require(PHASE_S3E)
     base = S0.out_dir().parent
-    if not (base / "s3-decision.json").exists():
-        raise SystemExit("S3 hasn't been decided (s3-decision.json): run s3-decide first")
-    decs = {"s3": json.loads((base / "s3-decision.json").read_text())}
+    decs = {}
+    for w in ("s3", "s3ens"):
+        if not (base / f"{w}-decision.json").exists():
+            raise SystemExit(f"{w} hasn't been decided ({w}-decision.json): run s3-decide --what {w} first")
+        decs[w] = json.loads((base / f"{w}-decision.json").read_text())
     if (base / "s4-decision.json").exists():
         decs["s4"] = json.loads((base / "s4-decision.json").read_text())
     else:                                         # not read only by S4's gate; otherwise it's too early
@@ -577,27 +591,59 @@ def cmd_choose(_args):
         if not pk.exists() or json.loads(pk.read_text()).get("usable", True):
             raise SystemExit("S4 is neither decided nor gated out (s4-pick usable: false): too early to choose")
         decs["s4"] = {"centre_hint": "not used", "side_hint": "not used"}
-    gaps = {"centre_hint": [], "side_hint": []}
+    items = {"centre_hint": [], "side_hint": []}
     for set_name in ("main", "split"):
         root = S1B.set_dir(set_name)
         f = root / "feats-s3.json"
         cos = json.loads(f.read_text())["cosine_distance_to_clean"] if f.exists() else {}
         for p in sorted((root / "items").glob("*.npz")):
             meta = json.loads(p.with_suffix(".json").read_text())
-            c = cos.get(p.stem, {})
-            if meta["band"] not in HELD_BANDS or meta["stratum"] == "double" or "s3" not in c or "s4" not in c:
-                continue
-            gaps["centre_hint" if hint_of(meta) == 0.0 else "side_hint"].append(c["s4"] - c["s3"])
+            if meta["band"] in HELD_BANDS and meta["stratum"] != "double":
+                items["centre_hint" if hint_of(meta) == 0.0 else "side_hint"].append(cos.get(p.stem, {}))
     out = {"time": time.strftime("%Y-%m-%d %H:%M:%S")}
     for h in ("centre_hint", "side_hint"):
-        g = float(np.mean(gaps[h])) if gaps[h] else None
-        out[h] = {"s3": decs["s3"][h], "s4": decs["s4"][h], "read_gap_s4_minus_s3": g, "n": len(gaps[h]),
-                  **choose(decs["s3"][h], decs["s4"][h], g)}
+        d = {w: decs[w][h] for w in TRAINED}
+        q = [w for w in TRAINED if d[w] in LEVEL]
+        common = [c for c in items[h] if all(w in c for w in q)]
+        reads = {w: (float(np.mean([c[w] for c in common])) if common else None) for w in q}
+        out[h] = {"decisions": d, "reads": reads, "n": len(common), **choose(d, reads)}
     (base / "trained-choice.json").write_text(json.dumps(out, indent=1))
     for h in ("centre_hint", "side_hint"):
         o = out[h]
-        print(f"TRAINED CHOICE {h}: S3 {o['s3']}, S4 {o['s4']}, gap {o['read_gap_s4_minus_s3']} (n {o['n']}) -> "
-              f"default {o['default'] or 'the routed comparator'}, picker {o['picker']}")
+        print(f"TRAINED CHOICE {h}: {o['decisions']}, reads {o['reads']} (n {o['n']}) -> default "
+              f"{o['default'] or 'the routed comparator'}, picker {o['picker']}")
+
+
+def cmd_ens(args):
+    """Amendment 4: s3ens on a set's held-out items, the mean of S3's picked stem and the routed comparator's (both
+    48 kHz stems at the target's level), in `stems/s3ens` with S3's pick recorded."""
+    import numpy as np
+
+    from learn import sep_s3_train as TR
+
+    require(PHASE_S3E)
+    require(TR.PHASE_S3D)
+    root = S1B.set_dir(args.set)
+    TR.check_stems(root)
+    pick = json.loads((TR.out_dir() / "run" / "pick.json").read_text())
+    d = root / "stems" / "s3ens"
+    prov = d / "pick.json"
+    d.mkdir(parents=True, exist_ok=True)
+    if any(d.glob("*.npz")) and (not prov.exists() or json.loads(prov.read_text())["sha256"] != pick["sha256"]):
+        raise SystemExit(f"{d} holds stems from another S3 checkpoint: move them aside first")
+    prov.write_text(json.dumps({"step": pick["step"], "sha256": pick["sha256"]}, indent=1))
+    n = 0
+    for p in sorted((root / "items").glob("*.npz")):
+        meta = json.loads(p.with_suffix(".json").read_text())
+        if meta["band"] not in HELD_BANDS:
+            continue
+        comp = routed(meta, "s3")
+        if not has_stem(root, "s3", p.name) or not has_stem(root, comp, p.name):
+            raise SystemExit(f"{p.name}: S3's or {comp}'s stem is missing")
+        e = (stem_any(root, args.set, "s3", p.name) + stem_any(root, args.set, comp, p.name)) / 2
+        np.savez(d / p.name, stem=e.astype(np.float16))
+        n += 1
+    print(f"S3ENS DONE: {args.set}, {n} stems", flush=True)
 
 
 def main(argv=None):
@@ -617,6 +663,9 @@ def main(argv=None):
     s.add_argument("--what", choices=("a3",) + TRAINED, default="a3")
     s.set_defaults(fn=cmd_read)
     sub.add_parser("s3-choose").set_defaults(fn=cmd_choose)
+    s = sub.add_parser("s3-ens")
+    s.add_argument("--set", choices=("main", "split"), required=True)
+    s.set_defaults(fn=cmd_ens)
     s = sub.add_parser("s3-decide")
     s.add_argument("--what", choices=TRAINED, default="s3")
     s.set_defaults(fn=cmd_decide)
