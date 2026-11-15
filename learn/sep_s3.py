@@ -38,6 +38,7 @@ HINT_H1 = 1.0                              # the review's sensitivity: a hard si
 TRAIN_BANDS = ("Forkupines", "BKS", "The Maybe Next Years", "Adam Buckley")   # cached; Adam Buckley validates
 VAL_BAND = "Adam Buckley"                  # the review: a whole band for the curve, not in S0
 HELD_BANDS = ("Hazael", "The Travelling Band", "Ale Lak", "Storm Of Particles", "Dunning Kruger")
+TRAINED = ("s3", "s4")                     # the trained candidates read once on the held-out bands (S3, S4)
 
 
 def require(phase):
@@ -181,7 +182,7 @@ def stem_any(root, set_name, o, name):
     """A stem of any option: S1's (main set), s1b's, or this module's (steer_*, s3)."""
     import numpy as np
 
-    if o in STEER_OPTIONS or o == "s3":
+    if o in STEER_OPTIONS or o in TRAINED:
         return np.asarray(np.load(root / "stems" / o / name)["stem"], np.float64)
     if set_name == "main" and o in S0.ALL_OPTIONS:
         return S0.stem_of(o, name)
@@ -189,7 +190,7 @@ def stem_any(root, set_name, o, name):
 
 
 def has_stem(root, o, name):
-    if o in STEER_OPTIONS or o == "s3":
+    if o in STEER_OPTIONS or o in TRAINED:
         return (root / "stems" / o / name).exists()
     if o in S0.DERIVED:
         return all((root / "stems" / k / name).exists() for k in ("mono", "mega"))
@@ -210,6 +211,21 @@ def model_feats(nets, s, mix, cls):
     return PP._feats(nets, DS.model_input(s8, s8, ls, ls, PP.HALF, PP.EMBED_AMP, cls, "Dstem")[0])
 
 
+def check_trained(what, root):
+    """A trained candidate's stems on a set are from its picked checkpoint, and its phases are declared: S3 by
+    Amendment 3d's pick, S4 by its own pick. Nothing for the zero-training options."""
+    if what == "s3":
+        from learn import sep_s3_train as TR
+
+        require(TR.PHASE_S3D)
+        TR.check_stems(root)                   # Amendment 3d: the stems are from the picked checkpoint
+    elif what == "s4":
+        from learn import sep_s4_train as S4T
+
+        require(S4T.PHASE_S4)
+        S4T.check_stems(root)
+
+
 def cmd_feats(args):
     """The model's read (the adopted model's floored body features, cosine distance to the clean target's) for this
     module's options, as s1b-feats does for its own."""
@@ -217,14 +233,11 @@ def cmd_feats(args):
 
     from learn import product_path as PP
 
-    require(PHASE_S3 if args.options == "s3" else PHASE_A3)
+    trained = args.options in TRAINED
+    require(PHASE_S3 if trained else PHASE_A3)
     root = S1B.set_dir(args.set)
-    if args.options == "s3":
-        from learn import sep_s3_train as TR
-
-        require(TR.PHASE_S3D)
-        TR.check_stems(root)                   # Amendment 3d: the stems are from the picked checkpoint
-    opts = ("s3",) if args.options == "s3" else STEER_OPTIONS
+    check_trained(args.options, root)
+    opts = (args.options,) if trained else STEER_OPTIONS
     nets, _, _ = PP._adopted()
 
     def f_of(s, mix, cls):
@@ -277,7 +290,7 @@ def routed(meta, what="a3"):
     steer_xlmdxc (Amendment 3c: A3's side winner, ahead of side on the training-band items too)."""
     if hint_of(meta) == 0.0:
         return "xlst_mdxc"
-    return "steer_xlmdxc" if what == "s3" else "side"
+    return "steer_xlmdxc" if what in TRAINED else "side"
 
 
 def s3_decision(si_mono, rd_mono, si_comp, rd_comp):
@@ -308,21 +321,19 @@ def cmd_read(args):
     from learn import fx_t0 as T0
     from learn import pretrain_set as PS
 
-    require(PHASE_S3 if args.what == "s3" else PHASE_A3)
+    trained = args.what in TRAINED
+    require(PHASE_S3 if trained else PHASE_A3)
     root = S1B.set_dir(args.set)
-    if args.what == "s3":
-        from learn import sep_s3_train as TR
-
+    if trained:
         require("phase_s1_a3c")                # the side hint read against steer_xlmdxc
-        require(TR.PHASE_S3D)
-        TR.check_stems(root)                   # Amendment 3d: the stems are from the picked checkpoint
+        check_trained(args.what, root)
     h = PS.half_slices()["A"]
     feats = {}
     for fn in ("feats.json", "feats-s1b.json", "feats-s3.json"):
         if (root / fn).exists():
             for k, v in json.loads((root / fn).read_text())["cosine_distance_to_clean"].items():
                 feats.setdefault(k, {}).update(v)
-    new = (["s3"] if args.what == "s3" else []) + list(STEER_OPTIONS)
+    new = ([args.what] if trained else []) + list(STEER_OPTIONS)
     old = existing_options(args.set)
     t0its, _ = T0.items()
     lab = {it["i"]: T0.labels(it["settings"]) for it in t0its}
@@ -342,7 +353,7 @@ def cmd_read(args):
     for p in sorted((root / "items").glob("*.npz")):
         meta = json.loads(p.with_suffix(".json").read_text())
         held = meta["band"] in HELD_BANDS
-        if args.what == "s3" and not held and meta["band"] not in ("Forkupines", "BKS"):
+        if trained and not held and meta["band"] not in ("Forkupines", "BKS"):
             continue
         metas[meta["i"]] = meta
         z = np.load(p)
@@ -365,11 +376,11 @@ def cmd_read(args):
                     lag, _ = FX.cep_pick(FX.cepstrum(s))
                     r["delay_hit"] = float(abs(lag / 2 ** y["dtime"] - 1) <= 0.10)
             rows[o][meta["i"]] = r
-    read_on = (lambda r: r["held"]) if args.what == "s3" else (lambda r: True)
+    read_on = (lambda r: r["held"]) if trained else (lambda r: True)
     # the best existing option per stratum: S3 chooses it on the training-band items (S0's Forkupines and BKS),
     # with the steer options among the candidates; A3 on the same items it reads (the plan, biased to the old options)
-    choose_on = (lambda r: not r["held"]) if args.what == "s3" else (lambda r: True)
-    cands = old[1:] + (list(STEER_OPTIONS) if args.what == "s3" else [])
+    choose_on = (lambda r: not r["held"]) if trained else (lambda r: True)
+    cands = old[1:] + (list(STEER_OPTIONS) if trained else [])
     base = rows["mono"]
     strata = ("all",) + (S0.STRATA if args.set == "main" else ("split",))
     rep = {"set": args.set, "what": args.what, "bands_read": sorted({r["band"] for r in base.values() if read_on(r)}),
@@ -424,7 +435,7 @@ def cmd_read(args):
             if bx:
                 b_si, kb_si = diff(rs, bx, "si_sdr")
                 e["vs_best_existing (beside)"] = {"option": bx, **_clustered(b_si, kb_si)}
-            if o == "s3":                                       # the plan: steer_mdxc among the comparisons
+            if o in TRAINED:                                    # the plan: steer_mdxc among the comparisons
                 t_si, kt_si = diff(rs, "steer_mdxc", "si_sdr")
                 t_rd, kt_rd = diff(rs, "steer_mdxc", "cos", sign=-1)
                 e["vs_steer_mdxc (beside)"] = {"si_sdr_clustered": _clustered(t_si, kt_si),
@@ -441,7 +452,7 @@ def cmd_read(args):
                     e["wins"] = "not read: the model's read is incomplete"
                 else:
                     e["wins"] = "beside, not under the rule"
-            elif o == "s3":
+            elif o in TRAINED:
                 if strat == "double":
                     e["decision"] = "descriptive: the double cell is out of S3's rule"
                 elif strat in ("centred", "off-centre", "split") and e["vs_mono"]["read_clustered"] \
@@ -449,12 +460,12 @@ def cmd_read(args):
                     e["decision"] = s3_decision(e["vs_mono"]["si_sdr_clustered"], e["vs_mono"]["read_clustered"],
                                                 e["vs_routed"]["si_sdr_clustered"],
                                                 e["vs_routed"]["read_clustered"])
-            if o == "s3" or o.startswith("steer"):              # the gain by the target's steered pan |p'|
+            if o in TRAINED or o.startswith("steer"):           # the gain by the target's steered pan |p'|
                 e["by_steered_pan"] = {}
                 for lo, hi in PBINS:
                     kk = [(dv, r) for dv, r in zip(d_si, k_si)
                           if lo <= abs(steered_pan(float(metas[r["i"]]["target"][0]),
-                                                   hint_of(metas[r["i"]]) if o == "s3" else
+                                                   hint_of(metas[r["i"]]) if o in TRAINED else
                                                    hint_for(metas[r["i"]], o))) < hi]
                     if kk:
                         e["by_steered_pan"][f"{lo}-{hi if hi < 9 else 'up'}"] = {
@@ -493,20 +504,22 @@ def cmd_read(args):
 ORDER = ("not read", "not used", "picker choice", "default")
 
 
-def cmd_decide(_args):
-    """S3's per-hint decision from both reads: the centre hint needs S0's centred cell and the split cell (the weaker of
-    the two decides); the side hint is S0's off-centre cell. The double cell is descriptive."""
+def cmd_decide(args):
+    """A trained candidate's per-hint decision from both reads (S3's rule, S4's too): the centre hint needs S0's
+    centred cell and the split cell (the weaker of the two decides); the side hint is S0's off-centre cell. The double
+    cell is descriptive."""
+    what = getattr(args, "what", "s3")
     require(PHASE_S3)
-    m = json.loads((S1B.set_dir("main") / "read-s3-s3-main.json").read_text())["options"]["s3"]
-    sp = json.loads((S1B.set_dir("split") / "read-s3-s3-split.json").read_text())["options"]["s3"]
+    m = json.loads((S1B.set_dir("main") / f"read-s3-{what}-main.json").read_text())["options"][what]
+    sp = json.loads((S1B.set_dir("split") / f"read-s3-{what}-split.json").read_text())["options"][what]
     cells = {"centred": m.get("centred", {}).get("decision", "not read"),
              "split": sp.get("split", {}).get("decision", "not read"),
              "off-centre": m.get("off-centre", {}).get("decision", "not read")}
     out = {"cells": cells, "centre_hint": min(cells["centred"], cells["split"], key=ORDER.index),
            "side_hint": cells["off-centre"], "time": time.strftime("%Y-%m-%d %H:%M:%S")}
-    (S0.out_dir().parent / "s3-decision.json").write_text(json.dumps(out, indent=1))
-    print(f"S3 DECISION: centre hint {out['centre_hint']} (cells {cells['centred']}, {cells['split']}); side hint "
-          f"{out['side_hint']}")
+    (S0.out_dir().parent / f"{what}-decision.json").write_text(json.dumps(out, indent=1))
+    print(f"{what.upper()} DECISION: centre hint {out['centre_hint']} (cells {cells['centred']}, {cells['split']}); "
+          f"side hint {out['side_hint']}")
 
 
 def main(argv=None):
@@ -519,13 +532,15 @@ def main(argv=None):
     s.set_defaults(fn=cmd_steer)
     s = sub.add_parser("s3-feats")
     s.add_argument("--set", choices=("main", "split"), required=True)
-    s.add_argument("--options", choices=("steer", "s3"), default="steer")
+    s.add_argument("--options", choices=("steer",) + TRAINED, default="steer")
     s.set_defaults(fn=cmd_feats)
     s = sub.add_parser("s3-read")
     s.add_argument("--set", choices=("main", "split"), required=True)
-    s.add_argument("--what", choices=("a3", "s3"), default="a3")
+    s.add_argument("--what", choices=("a3",) + TRAINED, default="a3")
     s.set_defaults(fn=cmd_read)
-    sub.add_parser("s3-decide").set_defaults(fn=cmd_decide)
+    s = sub.add_parser("s3-decide")
+    s.add_argument("--what", choices=TRAINED, default="s3")
+    s.set_defaults(fn=cmd_decide)
     args = ap.parse_args(argv)
     args.fn(args)
 

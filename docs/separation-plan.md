@@ -430,6 +430,87 @@ band-clustered t interval over S0's 7 bands, whose centre is the mean of the ban
   - `s3-apply`, `s3-feats` and `s3-read` run from main after this merges. The trainer's worktree holds the old
     `s3-apply`.
 
+## S4: the centre model, fine-tuned (declared 2026-11-15, during S3's run, before any S3 or S4 held-out read; ledger `phase_s4`)
+
+**Why now.** The user, at S3's step 10,000: "Quality and accuracy are the keys, and only measurements should lead
+us. Continue training and measuring and select the best approach according to the results." S3 keeps running to its
+own stop. S4 is the next candidate, measured the same way, on the MPS after S3 stops.
+
+**The evidence, the validation band only** (Adam Buckley, descriptive, post hoc, item bootstrap; no held-out item
+read). Against `steer_xlmdxc` on the 136 non-double validation mixes:
+
+| Step | SI-SDR, centred | SI-SDR, off-centre | Read, centred | Read, off-centre |
+|---|---|---|---|---|
+| 5,000 | −0.02 | +1.43 [+0.48, +2.42] | −0.059 | −0.031 |
+| 6,000 | −0.03 | +1.39 [+0.52, +2.42] | −0.041 | −0.015 |
+| 7,000 | +0.19 | +1.48 [+0.55, +2.48] | −0.062 [−0.074, −0.048] | −0.032 [−0.042, −0.022] |
+| 8,000 | +0.12 | +1.67 [+0.74, +2.68] | −0.050 [−0.061, −0.036] | −0.018 [−0.027, −0.009] |
+
+S3 pulls out a cleaner waveform, but the model reads the part worse from it than from the chain at every step, and
+the gap moves up and down rather than closing. The chain's MDX23C carries its read: X-LANCE alone is −4.5 dB (median)
+under the chain, and S3 followed by MDX23C is worse than S3 alone (−0.61 dB, read −0.016).
+
+**How it differs from what failed.** S3 retrained the chain's front (X-LANCE) on a waveform loss, and the model's
+read didn't follow the SI-SDR. S4 keeps today's best chain whole and retrains only its tail, the MDX23C phantom-centre
+model, on what it actually receives there: X-LANCE's output of a steered mix. Three things follow:
+- it starts exactly at the comparator. Step 0 is `steer_xlmdxc` itself: checked on three validation mixes, the same
+  SI-SDR to 0.01 dB and the same read to 0.001. So the curve measures the gain over the comparator directly;
+- the curve and the best checkpoint are chosen by the model's read, with SI-SDR as a floor. That's S3's lesson: a
+  best chosen by SI-SDR didn't move the read;
+- the curve reads the rule's strata only, the 136 non-double mixes. The doubles are out of the rule, and S3's
+  overall read moved most on them.
+
+**The model and the data.**
+- **The model:** wesleyr36's MDX23C phantom-centre model (TFC-TDF v3, 109.4 M parameters, hash-checked; MSST's
+  config: n_fft 2,048, hop 512, chunk 130,560 samples). All parameters train.
+- **The input:** X-LANCE `gtr_mss`, frozen (hash-checked), on S3's training draws (`sep_s3_train.build_draw`, the
+  whole 10 s: the same strata, bands, jittered hint, 12% dropped targets and mastering). The target is S3's: the
+  hinted copy as it sits in the steered mix.
+- **The cache (`s4-cache`):** 2,000 fixed draws from S3's training bands (Forkupines, BKS, The Maybe Next Years),
+  stored as X-LANCE's steered stereo output and the steered target (float16, about 7 GB). X-LANCE runs on the CPU
+  beside S3 (two workers), so the cache matches the comparator's stems. It stops if the disk would fall under 20 GB.
+- **Validation (`s4-val`):** X-LANCE's output on S3's 200 fixed validation mixes, on the CPU.
+
+**Training (`s4-train`).**
+- Crops of the model's own chunk (130,560 samples, 2.96 s), so training crops are its inference chunks. A crop is
+  taken where the target plays (S3's rule, against the model's input), anywhere in a dropped-target draw.
+- **The loss:** L1 between the model's output spectrogram and the target's, both by the model's own STFT. The
+  checkpoint's name says it was trained on an L1 frequency loss. No inverse STFT is differentiated, so the MPS
+  gradient bug (STFT backward over 65,536 samples) is out of the loss's path.
+- **Before the run, the gradient check (`s4-check`):** one batch's gradients on MPS against the CPU's, per parameter
+  tensor, at the training crop. It runs on MPS only if the median relative error is under 1e-3 and the largest
+  under 1e-2, and the spectral forward, inverted, matches the model's own output (checked: max difference 0.0).
+  Otherwise it's reported, and the run waits. The speed check sets the batch.
+- AdamW at lr 1e-5 with 500 warm-up steps, fp32, a batch of at least 4 (micro-batches summed), no weight decay. A
+  hand clip at norm 1.0, non-finite steps skipped, and S3's reload and abort rule. Never beside another MPS
+  training.
+- **The curve:** every 1,000 steps, on the 136 non-double validation mixes: the median SI-SDR (44.1 kHz) of the
+  rotated-back mono estimate against the target's, and the model's read (mean cosine distance at 48 kHz, CPU), as
+  S3's `evaluate`. Step 0 is the first best.
+- **A new best** needs a read at least 0.002 lower than the best's, with the median SI-SDR no lower than step 0's.
+  The run stops after 5 evaluations without one, at the abort rule, or after 48 hours. The user can stop it.
+
+**The read, once, after the stop.**
+- **What runs:** `s4-pick` names `best.pt` with its sha256. `s4-apply` runs on the held-out 120 S0 items and 38 split
+  items: steer by the coarse hint, X-LANCE (CPU), the fine-tuned model, rotate back and average. The stems carry
+  their checkpoint (`stems/s4/pick.json`). `s3-feats --options s4`, `s3-read --what s4` and `s3-decide --what s4`
+  check it and score them.
+- **The rule:** S3's, unchanged. Per cell, against mono and against the routed comparator (a centre hint to
+  `xlst_mdxc`, a side hint to `steer_xlmdxc`), with the band-clustered t interval over the five held-out bands and the
+  read co-primary. The doubles are descriptive.
+- **Two trained candidates.** S3 and S4 are each judged by that rule on the same items. A cell either qualifies for
+  goes on the picker. If both qualify for a cell, both go on it, with the held-out read difference beside, and the
+  user's ear on R1's songs decides. This is fixed now, before either held-out read.
+
+**What it can't say.** S3's caveats hold: built mixes, amp-sim targets, the oracle hint, two guitars at one place.
+Plus: a fixed cache of 2,000 draws (about 5.6 hours of audio) is smaller than S3's on-the-fly stream, so
+the model could fit the cache. The validation curve watches that, and the held-out read is its test.
+
+**Cost.** Zero renders. The cache's X-LANCE about 4 CPU hours in two workers beside S3, which slows S3 by about 8%.
+The MPS after S3's stop, up to 48 h. About 7 GB of disk, 44 GB free.
+
+**Freezing.** This configuration is committed before any S4 run. S3's run, rule and pick are unchanged.
+
 ## What it can't say
 
 S0's mixes are built, not mastered records. Their panning is drawn, not each song's own. E1e's targets are mono, so
