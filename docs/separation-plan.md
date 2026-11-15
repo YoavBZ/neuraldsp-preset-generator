@@ -385,9 +385,8 @@ band-clustered t interval over S0's 7 bands, whose centre is the mean of the ban
 ### Amendment 3d (2026-11-15, during S3's run, before any S3 read; ledger `phase_s3d`)
 
 - **Why.** The run keeps `best.pt` by the median SI-SDR (+0.1 dB), with the read only as a floor (no worse than
-  step 0's), but the model's read is co-primary in S3's rule. At
-  step 6,000 the validation read dropped from 0.1364 to 0.1191, with the median level (+6.58 against step 5,000's
-  +6.63, under the +0.1 dB bar). So `best.pt` stayed at step 5,000, and the run would have overwritten step 6,000's
+  step 0's), but the model's read is co-primary in S3's rule. At step 6,000 the validation read dropped from 0.1364
+  to 0.1191, with the median level (+6.58 against step 5,000's +6.63, under the +0.1 dB bar). So `best.pt` stayed at step 5,000, and the run would have overwritten step 6,000's
   weights at the next evaluation.
 - **The checkpoint S3's read uses,** chosen after the stop. The eligible evaluations are those with a read no worse
   than step 0's. Among the eligible checkpoints whose weights are kept, those less than 0.1 dB under the highest
@@ -401,7 +400,7 @@ band-clustered t interval over S0's 7 bands, whose centre is the mean of the ban
   - step 6,000's, copied from `last.pt` right after its evaluation (sha256 `614f4e3e…`); step 5,000's from
     `best.pt` (`6aa0168f…`);
   - steps 1,000, 3,000 and 4,000 are gone, and step 2,000's survives only as the scratch copy used for the table.
-    Each is 0.49 dB or more under step 5,000's median, so none could qualify;
+    Each is 0.48 dB or more under step 5,000's median, so none could qualify;
   - `pick.json` lists any evaluation from step 6,000 on whose weights weren't kept (`missing`).
 - **Its basis is the validation band only** (Adam Buckley, a training band; the freeze rule). No held-out item has
   been read with S3. Descriptive and post hoc: S3 against `steer_xlmdxc` on the 136 centred and off-centre
@@ -414,8 +413,9 @@ band-clustered t interval over S0's 7 bands, whose centre is the mean of the ban
   | 6,000 | −0.03 [−1.40, +2.34] | +1.39 [+0.52, +2.42] | −0.041 [−0.052, −0.027] | −0.015 [−0.023, −0.006] |
 
   A read gain is a drop in the cosine distance. Step 6,000's read gain over step 5,000 is +0.016 to +0.018 in every
-  stratum, doubles included. One band of 13 sections makes these item-bootstrap intervals optimistic. S3 followed by MDX23C's centre (in X-LANCE's place in `steer_xlmdxc`) is worse than S3 alone, at
-  step 2,000: −0.61 dB and a read −0.016. These scripts stay outside the repo; the S3 write-up reports them.
+  stratum, doubles included. One band of 13 sections makes these item-bootstrap intervals optimistic. S3 followed
+  by MDX23C's centre (in X-LANCE's place in `steer_xlmdxc`) is worse than S3 alone, at step 2,000: −0.61 dB and a
+  read −0.016. These scripts stay outside the repo; the S3 write-up reports them.
 - **What it changes.** Only which validation checkpoint the held-out read uses. The held-out rule, its comparators
   and its intervals are as declared. The choice is made among a few checkpoints on validation, never on the held-out
   bands.
