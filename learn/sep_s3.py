@@ -125,7 +125,7 @@ def cmd_steer(args):
         meta = json.loads(p.with_suffix(".json").read_text())
         L, R = np.asarray(z["L"], np.float64), np.asarray(z["R"], np.float64)
         cache = {}
-        for o in STEER_OPTIONS:
+        for o in (args.options or STEER_OPTIONS):
             q = root / "stems" / o / p.name
             if q.exists():
                 continue
@@ -496,6 +496,7 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("s3-steer")
     s.add_argument("--set", choices=("main", "split"), required=True)
+    s.add_argument("--options", nargs="+", choices=STEER_OPTIONS, help="only these (a second process beside a run)")
     s.set_defaults(fn=cmd_steer)
     s = sub.add_parser("s3-feats")
     s.add_argument("--set", choices=("main", "split"), required=True)

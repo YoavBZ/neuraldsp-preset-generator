@@ -336,8 +336,36 @@ drop in the model's cosine distance (higher is better).
   separate takes on both sides (the split set), `xlst_mdxc` (+5.33 dB, read +0.062) and `cw` (+5.06, read +0.073)
   are level: undecided between them.
 - The trigger by the score doesn't fire (best lo90 +8.71, `xlst_mdxc` centred). S3 runs on the user's go (above).
-- The product session is adding `--version xlst_mdxc` behind a flag (PR #492, open). Its default stays until the
+- The product session added `--version xlst_mdxc` behind a flag (PR #492, merged). Its default stays until the
   user's ear decides.
+
+## A3 results (steering with the existing tools)
+
+Run 2026-11-15 (zero renders, CPU), read by S1's rule and audited by separate code (the same means; the intervals
+within 0.2 dB). SI-SDR gain against mono with the 90% band-bootstrap interval; the read as above. Against the
+target's own channel (`side`, the best existing option off-centre), the band-clustered t interval over S0's 7 bands.
+
+| Option | Centred | Off-centre | Double | Split set | Read (off-centre) |
+|---|---|---|---|---|---|
+| `steer_xlmdxc` (steer, X-LANCE stereo, MDX23C) | +10.85 (= `xlst_mdxc`) | **+12.73** [+10.51, +14.51] | −16.11 | +5.33 (= `xlst_mdxc`) | **+0.073** [+0.040, +0.104] |
+| `steer_mdxc` (steer, MDX23C, X-LANCE) | +7.03 (= `mdxc`) | +4.81 [+1.12, +7.46] | −26.69 | +4.71 (= `mdxc`) | −0.069 [−0.120, −0.030] |
+| `steer_mid` (a control) | −0.70 | +5.16 | +0.21 | −0.29 | +0.037 |
+| `steer_mdxc_exact` (the exact pan, a ceiling) | +7.21 | +5.42 | −27.63 | +4.32 | −0.051 |
+| `steer_mdxc_h1` (hint ±1.0) | +7.03 | +2.18 | −22.01 | +4.71 | −0.102 |
+
+- **A part on one side:** `steer_xlmdxc` beats the own channel by +5.05 dB [+2.58, +7.52] (6 of 7 bands up), with a
+  read not worse (+0.036 [−0.008, +0.081], undecided). The gain is the same whether the coarse hint lands the part
+  within 0.15 of the centre or 0.15 to 0.3 off it (+12.70, +12.82). It's the first option better than the own
+  channel off-centre. On a centred part it's the same chain as `xlst_mdxc`, so one route serves both, given the
+  side. The effects row moves little (delay hits +0.17 of the delay-ons, the on/off votes −0.03).
+- **`steer_mdxc` fails** off-centre: it gains in SI-SDR but hurts the read (−0.069), so it isn't used. Separating
+  before the centre model matters, as in s1b.
+- **The doubles lose** (−16.11): steering keeps the hinted copy, and S0's double target is both copies, one
+  delayed. That's why the cell is out of S3's rule; here it's descriptive. Whether one take of a real double reads
+  its tone as well as both is untested.
+- **The user's seven R1 songs:** steered left or right (±0.7), each song's span leaves 13 to 48 dB less than the
+  mono stem, so their parts sit in the centre, where steering changes nothing. Their version page carries `stem`,
+  `stem_C`, `xlst_mdxc` and `cw`.
 
 ## What it can't say
 
