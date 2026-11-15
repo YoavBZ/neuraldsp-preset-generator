@@ -420,6 +420,10 @@ def cmd_read(args):
                 t_rd, kt_rd = diff(rs, "steer_mdxc", "cos", sign=-1)
                 e["vs_steer_mdxc (beside)"] = {"si_sdr_clustered": _clustered(t_si, kt_si),
                                                "read_clustered": _clustered(t_rd, kt_rd)}
+                s_si, ks_si = diff(rs, "side", "si_sdr")      # Amendment 3c: the own channel stays beside
+                s_rd, ks_rd = diff(rs, "side", "cos", sign=-1)
+                e["vs_side (beside)"] = {"si_sdr_clustered": _clustered(s_si, ks_si),
+                                         "read_clustered": _clustered(s_rd, ks_rd)}
             if args.what == "a3":
                 vm = e["vs_mono"]
                 if o in RULE_STEER and vm["read_band_boot"] is not None:

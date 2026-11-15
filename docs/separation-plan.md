@@ -366,7 +366,7 @@ band-clustered t interval over S0's 7 bands, whose centre is the mean of the ban
   delay-ons (+0.17). T0's delay vote moves −0.030 on delay-ons (worse) and −0.027 on delay-offs (better).
 - **`steer_mdxc` fails** off-centre: it gains in SI-SDR but hurts the read (−0.069), so it isn't used. Separating
   before the centre model matters, as in s1b: `steer_xlmdxc` over `steer_mdxc` off-centre is +8.76 dB [+5.55,
-  +11.97] with the read +0.148, all 7 bands up.
+  +11.97] with the read +0.148, all 7 bands up (band-clustered; post hoc, not in the read files).
 - **The doubles lose** (−16.11): steering keeps the hinted copy, and S0's double target is both copies, one
   delayed. That's why the cell is out of S3's rule; here it's descriptive. Whether one take of a real double reads
   its tone as well as both is untested.
@@ -378,8 +378,8 @@ band-clustered t interval over S0's 7 bands, whose centre is the mean of the ban
 
 - **S3's routed comparator for the side hint** becomes `steer_xlmdxc` instead of `side`. Otherwise S3 could become
   the side-part default while worse than `steer_xlmdxc`. Its basis is the training-band items (the freeze rule):
-  against `side` off-centre, Forkupines +7.50 dB and BKS +2.62. That makes S3's side cell harder to meet. The centre
-  hint's comparator stays `xlst_mdxc`, which `steer_xlmdxc` equals there. The `side` comparison stays beside.
+  against `side` off-centre, Forkupines +7.50 dB and BKS +2.62 (the read mixed: +0.074 and −0.025). That makes S3's side cell harder to meet. The centre
+  hint's comparator stays `xlst_mdxc`, which `steer_xlmdxc` equals there. S3's read writes the `side` comparison beside (`vs_side`).
 
 ## What it can't say
 
