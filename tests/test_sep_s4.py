@@ -139,3 +139,10 @@ def test_s3ens_picker_choice_needs_a_decided_read_gain():
     win = _ci(1.0, 3.0)
     assert S3.trained_decision("s3ens", win, win, _ci(-0.5, 0.5), _ci(-0.01, 0.02)) == "not used"
     assert S3.trained_decision("s3ens", win, win, _ci(-0.5, 0.5), _ci(0.001, 0.02)) == "picker choice"
+
+
+def test_s3ens_default_needs_a_decided_read_gain_too():
+    win = _ci(1.0, 3.0)
+    assert S3.trained_decision("s3ens", win, win, _ci(0.2, 1.0), _ci(-0.01, 0.02)) == "not used"
+    assert S3.trained_decision("s3ens", win, win, _ci(0.2, 1.0), _ci(0.002, 0.02)) == "default"
+    assert S3.trained_decision("s3", win, win, _ci(0.2, 1.0), _ci(-0.01, 0.02)) == "default"     # S3 unchanged

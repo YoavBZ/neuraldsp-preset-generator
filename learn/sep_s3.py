@@ -318,12 +318,14 @@ def s3_decision(si_mono, rd_mono, si_comp, rd_comp):
 
 def trained_decision(what, si_mono, rd_mono, si_comp, rd_comp):
     """S3's rule for S3. For S4 (it starts at the routed comparator, so an unchanged model would pass as not worse)
-    and s3ens (half of it is the comparator): a picker choice also needs a decided read gain over the comparator
-    (lo90 > 0)."""
+    a picker choice also needs a decided read gain over the comparator (lo90 > 0). For s3ens (half of it is the
+    comparator, so its SI-SDR gain is partly mechanical) both its default and its picker choice need one."""
     d = s3_decision(si_mono, rd_mono, si_comp, rd_comp)
-    if what in ("s4", "s3ens") and d == "picker choice" and not (rd_comp["lo90"] is not None
-                                                                 and rd_comp["lo90"] > 0):
+    read_gain = rd_comp["lo90"] is not None and rd_comp["lo90"] > 0
+    if what == "s4" and d == "picker choice" and not read_gain:
         return "not used"
+    if what == "s3ens" and d in ("default", "picker choice") and not read_gain:
+        return "not used"                      # Amendment 4's review: a blend's SI-SDR gain is partly mechanical
     return d
 
 

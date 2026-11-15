@@ -558,23 +558,28 @@ The MPS after S3's stop, up to 48 h. About 7 GB of disk, 44 GB free.
   scripts stay outside the repo) scored, beside the chain and S3 at step 10,000, the plain mean of the two stems. It
   was chosen as the simplest blend, with the weight fixed at one half and not tuned. Against the chain:
 
-  | Stratum | SI-SDR | Read gain |
-  |---|---|---|
-  | Centred (63) | +1.28 [−0.09, +3.61] | −0.002 [−0.011, +0.011] |
-  | Off-centre (73) | +2.51 [+1.73, +3.37] | +0.014 [+0.008, +0.020] |
-  | Doubles (64, out of the rule) | +22.1 | +0.216 |
+  | Stratum | SI-SDR, mean | Median, blend / chain | Read gain |
+  |---|---|---|---|
+  | Centred (63) | +1.28 [−0.09, +3.61] | +7.92 / +7.95 | −0.002 [−0.011, +0.011] |
+  | Off-centre (73) | +2.51 [+1.73, +3.37] | +9.70 / +8.62 | +0.014 [+0.008, +0.020] |
+  | Doubles (64, out of the rule) | +22.1 | +5.96 / −18.14 | +0.216 |
+
+  The centred mean gain comes from a few items; the typical centred item is level.
 
   The same check put two oracle ceilings beside them (the clipped phase-sensitive mask, STFT 4,096/1,024). On
   X-LANCE's output, the ceiling of a mask-based tail like S4's, the read gain is +0.047 on the non-doubles; on the mix
-  itself, +0.066. Its chain and S3 rows match the earlier per-mix scripts exactly.
+  itself, +0.066. Its chain rows match the earlier per-mix script exactly, and its S3 rows to 1e-5. The review
+  recomputed the table from the per-mix file with its own code.
 - **How it differs from what failed.** Neither part is new. S3 alone reads worse and the chain alone is cleaner by
   less; averaging two estimates whose errors differ cancels some of each. It needs no training and no new model.
 - **What it is:** on each held-out item, the mean of S3's picked stem and the routed comparator's stem (a centre hint
   `xlst_mdxc`, a side hint `steer_xlmdxc`), both 48 kHz stems at the target's level. `s3-ens --set main|split`
   writes them after `s3-apply`, with S3's pick recorded (`stems/s3ens/pick.json`); `s3-feats --options s3ens`,
   `s3-read --what s3ens` (every held-out item needs its stem) and `s3-decide --what s3ens` check it and score them.
-- **The rule:** S3's, per cell, with S4's extra condition, since half of it is the comparator: a picker choice also
-  needs a decided read gain over the comparator (read lo90 > 0). The doubles are descriptive.
+- **The rule:** S3's, per cell, with a decided read gain over the comparator (read lo90 > 0) needed for both its
+  default and its picker choice. Half of it is the comparator, and averaging the comparator with any estimate whose
+  errors differ tends to lift SI-SDR, so its SI-SDR gain is partly mechanical. S1 already showed SI-SDR gains needn't
+  reach the read. The doubles are descriptive.
 - **Among the candidates** (S3, S4, `s3ens`), `s3-choose` extends S4's rule per hint: a default beats a picker
   choice; at one level the lower held-out read goes first (the mean cosine distance on the hint's held-out items
   every qualifying candidate has, the point estimate); a tie keeps the order declared (S3, S4, `s3ens`). A lone
@@ -586,6 +591,9 @@ The MPS after S3's stop, up to 48 h. About 7 GB of disk, 44 GB free.
   read uses S3's pick. The weight wasn't tuned, so there is no weight to overfit, but the idea was chosen after
   seeing the validation table, so its validation numbers are optimistic. The held-out read stays unbiased. On real
   songs it costs S3's run plus the comparator's.
+- Three candidates read on the same five bands raise the chance that one qualifies by chance. S3 and `s3ens` are
+  correlated, so less than three independent reads would.
+- The comparator's held-out numbers were already seen in A3's read. This blend's basis is the validation band only.
 - **What it changes.** Nothing in S3's or S4's run, rule or pick. It adds one candidate, read once with the others.
 
 ## What it can't say
