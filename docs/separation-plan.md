@@ -382,6 +382,39 @@ band-clustered t interval over S0's 7 bands, whose centre is the mean of the ban
   S3's side cell harder to meet. The centre hint's comparator stays `xlst_mdxc`, which `steer_xlmdxc` equals there.
   S3's read writes the `side` comparison beside (`vs_side`).
 
+### Amendment 3d (2026-11-15, during S3's run, before any S3 read; ledger `phase_s3d`)
+
+- **Why.** The run keeps `best.pt` by the median SI-SDR alone, but the model's read is co-primary in S3's rule. At
+  step 6,000 the validation read dropped from 0.1364 to 0.1191, with the median level (+6.58 against step 5,000's
+  +6.63, under the +0.1 dB bar). So `best.pt` stayed at step 5,000, and the run would have overwritten step 6,000's
+  weights at the next evaluation.
+- **The checkpoint S3's read uses,** chosen after the stop: among the evaluated checkpoints whose weights are kept,
+  those whose median is within 0.1 dB of the best median and whose read is no worse than step 0's. The lowest read
+  wins; on a tie, the earlier step. `best.pt` counts as its step. The run's stop rule is unchanged (the run is
+  going), so patience still counts on SI-SDR alone.
+- **The weights kept:**
+  - from step 6,000 on, `last.pt`'s after each evaluation (`s3-keep`);
+  - step 6,000's, copied from `last.pt` right after its evaluation (sha256 `614f4e3e…`);
+  - steps 1,000 to 4,000 are gone.
+- **Its basis is the validation band only** (Adam Buckley, a training band; the freeze rule). No held-out item has
+  been read with S3. Descriptive and post hoc: S3 against `steer_xlmdxc` on the 136 centred and off-centre
+  validation mixes. It's the comparator the rule routes to there. Item bootstrap, 90%:
+
+  | Step | SI-SDR, centred | SI-SDR, off-centre | Read, centred | Read, off-centre |
+  |---|---|---|---|---|
+  | 2,000 | −0.56 [−1.95, +1.85] | +0.27 [−0.82, +1.43] | −0.055 [−0.067, −0.040] | −0.030 [−0.040, −0.020] |
+  | 5,000 | −0.02 [−1.41, +2.32] | +1.43 [+0.48, +2.42] | −0.059 [−0.070, −0.045] | −0.031 [−0.042, −0.021] |
+  | 6,000 | −0.03 [−1.40, +2.34] | +1.39 [+0.52, +2.42] | −0.041 [−0.052, −0.027] | −0.015 [−0.023, −0.006] |
+
+  A read gain is a drop in the cosine distance. Step 6,000's read gain over step 5,000 is +0.017 in every stratum,
+  doubles included. S3 followed by MDX23C's centre (in X-LANCE's place in `steer_xlmdxc`) is worse than S3 alone, at
+  step 2,000: −0.61 dB and a read −0.016. These scripts stay outside the repo; the S3 write-up reports them.
+- **What it changes.** Only which validation checkpoint the held-out read uses. The held-out rule, its comparators
+  and its intervals are as declared. The choice is made among a few checkpoints on validation, never on the held-out
+  bands.
+- **Code:** `s3-keep`, and `s3-pick` (after the stop; it writes `run/pick.json` with the file's sha256). `s3-apply`
+  needs that file and this key.
+
 ## What it can't say
 
 S0's mixes are built, not mastered records. Their panning is drawn, not each song's own. E1e's targets are mono, so

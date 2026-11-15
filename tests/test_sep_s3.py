@@ -129,3 +129,45 @@ def test_s3_decision_clearly_worse_is_not_a_picker_choice():
 
 def test_the_weaker_cell_decides_the_centre_hint():
     assert min("default", "picker choice", key=S3.ORDER.index) == "picker choice"
+
+
+# --- Amendment 3d: the checkpoint, chosen with the read ------------------------------------------------------------------
+
+def _ev(step, med, read):
+    return {"step": step, "si_sdr_median": med, "read": read}
+
+
+RUN = [_ev(0, -6.78, 0.1923), _ev(1000, 5.75, 0.1364), _ev(2000, 5.89, 0.1318), _ev(3000, 6.07, 0.1377),
+       _ev(4000, 6.14, 0.1369), _ev(5000, 6.63, 0.1364), _ev(6000, 6.58, 0.1191)]
+
+
+def test_pick_takes_the_lowest_read_within_the_bar():
+    assert TR.pick_step(RUN, {5000, 6000}) == 6000            # 0.05 dB under the best, the read 0.017 lower
+
+
+def test_pick_ignores_a_checkpoint_more_than_the_bar_below_the_best():
+    assert TR.pick_step(RUN, {2000, 5000}) == 5000            # 2000 reads better but is 0.74 dB under
+
+
+def test_pick_counts_only_kept_weights():
+    assert TR.pick_step(RUN, {5000}) == 5000
+    assert TR.pick_step(RUN, {1000, 3000}) is None
+
+
+def test_pick_needs_a_read_no_worse_than_step_0():
+    evals = [_ev(0, 1.0, 0.10), _ev(1000, 1.05, 0.12), _ev(2000, 0.5, 0.05)]
+    assert TR.pick_step(evals, {1000, 2000}) is None
+    assert TR.pick_step(evals, {0, 1000}) == 0
+
+
+def test_pick_breaks_a_read_tie_by_the_earlier_step():
+    evals = [_ev(0, 0.0, 0.2), _ev(1000, 3.0, 0.1), _ev(2000, 3.05, 0.1)]
+    assert TR.pick_step(evals, {1000, 2000}) == 1000
+
+
+def test_stopped_by_patience_or_hours():
+    t0 = 1_000_000.0
+    st = {"best_step": 5000, "t_start": t0, "evals": RUN}
+    assert not TR.stopped(st, t0 + 3600)
+    assert TR.stopped({**st, "evals": RUN + [_ev(s, 6.0, 0.12) for s in (7000, 8000, 9000, 10000)]}, t0 + 3600)
+    assert TR.stopped(st, t0 + (TR.MAX_HOURS + 0.1) * 3600)
