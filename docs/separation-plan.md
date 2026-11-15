@@ -384,10 +384,10 @@ band-clustered t interval over S0's 7 bands, whose centre is the mean of the ban
 
 ### Amendment 3d (2026-11-15, during S3's run, before any S3 read; ledger `phase_s3d`)
 
-- **Why.** The run keeps `best.pt` by the median SI-SDR (+0.1 dB), with the read only as a floor (no worse than
-  step 0's), but the model's read is co-primary in S3's rule. At step 6,000 the validation read dropped from 0.1364
-  to 0.1191, with the median level (+6.58 against step 5,000's +6.63, under the +0.1 dB bar). So `best.pt` stayed at step 5,000, and the run would have overwritten step 6,000's
-  weights at the next evaluation.
+- **Why.** The run keeps `best.pt` by the median SI-SDR (+0.1 dB), with the read only as a floor (no worse than step
+  0's), but the model's read is co-primary in S3's rule. At step 6,000 the validation read dropped from 0.1364 to
+  0.1191, with the median level (+6.58 against step 5,000's +6.63, under the +0.1 dB bar). So `best.pt` stayed at step
+  5,000, and the run would have overwritten step 6,000's weights at the next evaluation.
 - **The checkpoint S3's read uses,** chosen after the stop. The eligible evaluations are those with a read no worse
   than step 0's. Among the eligible checkpoints whose weights are kept, those less than 0.1 dB under the highest
   eligible median qualify (`best.pt`'s step always does). The lowest read wins; on a tie, the earlier step.
