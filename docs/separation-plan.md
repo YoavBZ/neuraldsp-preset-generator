@@ -378,8 +378,9 @@ band-clustered t interval over S0's 7 bands, whose centre is the mean of the ban
 
 - **S3's routed comparator for the side hint** becomes `steer_xlmdxc` instead of `side`. Otherwise S3 could become
   the side-part default while worse than `steer_xlmdxc`. Its basis is the training-band items (the freeze rule):
-  against `side` off-centre, Forkupines +7.50 dB and BKS +2.62 (the read mixed: +0.074 and −0.025). That makes S3's side cell harder to meet. The centre
-  hint's comparator stays `xlst_mdxc`, which `steer_xlmdxc` equals there. S3's read writes the `side` comparison beside (`vs_side`).
+  against `side` off-centre, Forkupines +7.50 dB and BKS +2.62 (the read mixed: +0.074 and −0.025). That makes
+  S3's side cell harder to meet. The centre hint's comparator stays `xlst_mdxc`, which `steer_xlmdxc` equals there.
+  S3's read writes the `side` comparison beside (`vs_side`).
 
 ## What it can't say
 
