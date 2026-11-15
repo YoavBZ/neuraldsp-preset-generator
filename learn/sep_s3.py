@@ -306,6 +306,15 @@ def s3_decision(si_mono, rd_mono, si_comp, rd_comp):
     return "not used"
 
 
+def trained_decision(what, si_mono, rd_mono, si_comp, rd_comp):
+    """S3's rule for S3. For S4 (it starts at the routed comparator, so an unchanged model would pass as not worse):
+    a picker choice also needs a decided read gain over the comparator (lo90 > 0)."""
+    d = s3_decision(si_mono, rd_mono, si_comp, rd_comp)
+    if what == "s4" and d == "picker choice" and not rd_comp["lo90"] > 0:
+        return "not used"
+    return d
+
+
 PBINS = ((0.0, 0.15), (0.15, 0.3), (0.3, 9.0))
 
 
@@ -376,6 +385,11 @@ def cmd_read(args):
                     lag, _ = FX.cep_pick(FX.cepstrum(s))
                     r["delay_hit"] = float(abs(lag / 2 ** y["dtime"] - 1) <= 0.10)
             rows[o][meta["i"]] = r
+    if args.what == "s4":                       # the review: every held-out item has its S4 stem
+        n_held = sum(1 for m_ in metas.values() if m_["band"] in HELD_BANDS)
+        n_s4 = sum(1 for r in rows["s4"].values() if r["held"])
+        if n_s4 != n_held:
+            raise SystemExit(f"S4 stems for {n_s4} of {n_held} held-out items: run s4-apply to the end first")
     read_on = (lambda r: r["held"]) if trained else (lambda r: True)
     # the best existing option per stratum: S3 chooses it on the training-band items (S0's Forkupines and BKS),
     # with the steer options among the candidates; A3 on the same items it reads (the plan, biased to the old options)
@@ -457,9 +471,10 @@ def cmd_read(args):
                     e["decision"] = "descriptive: the double cell is out of S3's rule"
                 elif strat in ("centred", "off-centre", "split") and e["vs_mono"]["read_clustered"] \
                         and e["vs_routed"]["read_clustered"]:
-                    e["decision"] = s3_decision(e["vs_mono"]["si_sdr_clustered"], e["vs_mono"]["read_clustered"],
-                                                e["vs_routed"]["si_sdr_clustered"],
-                                                e["vs_routed"]["read_clustered"])
+                    e["decision"] = trained_decision(o, e["vs_mono"]["si_sdr_clustered"],
+                                                     e["vs_mono"]["read_clustered"],
+                                                     e["vs_routed"]["si_sdr_clustered"],
+                                                     e["vs_routed"]["read_clustered"])
             if o in TRAINED or o.startswith("steer"):           # the gain by the target's steered pan |p'|
                 e["by_steered_pan"] = {}
                 for lo, hi in PBINS:
@@ -482,7 +497,7 @@ def cmd_read(args):
     f.write_text(json.dumps(rep, indent=1))
     print(f"S3 READ ({args.what}, {args.set}; bands read {rep['bands_read']})")
     for strat in strata:
-        print(f"  best existing on {strat} ({'chosen on the training bands' if args.what == 's3' else 'chosen on these items'}): "
+        print(f"  best existing on {strat} ({'chosen on the training bands' if trained else 'chosen on these items'}): "
               f"{rep['best_existing'][strat]['option']}")
     nan = {"mean": float("nan"), "lo90": float("nan"), "hi90": float("nan")}
     for o, v in rep["options"].items():

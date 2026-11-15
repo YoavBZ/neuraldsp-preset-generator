@@ -89,12 +89,38 @@ def crop_start(target_mid, input_mid, rng, silent, crop=CROP):
     return TR.pick_crop(target_mid, input_mid, rng, crop=crop, pre=0)
 
 
+def paired_gain_lo90(base, new, n=2000, seed=SEED):
+    """The paired item bootstrap's 5th percentile of the mean gain base - new (a read gain is a drop in cosine
+    distance). Plain Python, so it is unit-tested without numpy."""
+    if len(base) != len(new) or not base:
+        raise ValueError("paired lists of equal, non-zero length")
+    d = [b - a for b, a in zip(base, new)]
+    rng = random.Random(f"{seed}|paired")
+    ms = sorted(sum(d[rng.randrange(len(d))] for _ in d) / len(d) for _ in range(n))
+    return ms[int(0.05 * n)]
+
+
+def pick_verdict(st, n=2000):
+    """s4-pick's gate before any held-out read: step 0 picked means S4 changed nothing ("not used"); else the pick's
+    paired validation read gain over step 0 must be decided (lo90 > 0). -> (usable, lo90 or None)."""
+    if st["best_step"] == 0:
+        return False, None
+    lo = paired_gain_lo90(st["ev0"]["reads"], st["best"]["reads"], n=n)
+    return lo > 0, lo
+
+
 def non_double(metas):
     """The validation mixes the curve reads: the rule's strata (the doubles are out of S3's rule, so out of S4's)."""
     return [k for k, m in enumerate(metas) if m.get("stratum") != "double"]
 
 
 # --- the model ------------------------------------------------------------------------------------------------------------
+
+def require_mps_free():
+    """One MPS job at a time: S4's MPS steps wait until S3's run has stopped and been picked."""
+    if not (TR.out_dir() / "run" / "pick.json").exists():
+        raise SystemExit("S3's run hasn't stopped and been picked (run/pick.json): the MPS is S3's")
+
 
 def load_centre(device):
     """The hash-checked MDX23C phantom-centre model (`stereo_side_screen.Centre`), trainable, on `device`. -> (model,
@@ -174,7 +200,11 @@ def cmd_cache(args):
     from learn import trusted_data as T
 
     S3.require(PHASE_S4)
+    if args.device == "mps":
+        require_mps_free()
     pool = TR.Pool(val=False)
+    order = list(pool.rows)                       # a seeded permutation, so the draws cover the examples
+    random.Random(f"{SEED}|order").shuffle(order)
     bands = {r["band"] for r in pool.rows}
     if S3.VAL_BAND in bands or set(S3.HELD_BANDS) & bands:
         raise SystemExit("the validation or a held-out band in the training pool")
@@ -189,7 +219,7 @@ def cmd_cache(args):
         if shutil.disk_usage(d).free / 2 ** 30 < MIN_FREE_GB:
             raise SystemExit(f"under {MIN_FREE_GB} GB free: the cache stops at draw {k}")
         rng = random.Random(f"{SEED}|cache|{k}")
-        x, y, phi, lay = TR.build_draw(pool, rng, full=True)
+        x, y, phi, lay = TR.build_draw(pool, rng, full=True, row=order[k % len(order)])
         xl = np.asarray(DS.xl_run_chunked(sep._f, x), np.float32)
         np.savez(q.with_suffix(".tmp.npz"), xl=xl.astype(np.float16), y=y.astype(np.float16), phi=phi,
                  meta=json.dumps({"band": lay["band"], "i": lay["i"], "cls": lay["cls"], "stratum": lay["stratum"],
@@ -263,24 +293,25 @@ def cache_files():
 def evaluate(m, config, device, nets, ks=None):
     """On the validation mixes `ks` (default: the 136 non-double ones): the median and mean SI-SDR (dB, 44.1 kHz) of
     the rotated-back mono estimate against the target's, and the model's read (mean cosine distance at 48 kHz, CPU),
-    as S3's `evaluate`. -> {si_sdr_median, si_sdr_mean, read, n}."""
+    as S3's `evaluate`. -> {si_sdr_median, si_sdr_mean, read, n, ks, reads (per mix)}."""
     import numpy as np
 
     from learn import product_path as PP
     from learn import separator_screen as SCR
 
     z = np.load(TR.out_dir() / "val.npz")
+    X, Y, P = z["x"], z["y"], z["phi"]            # each read once (an npz re-reads an array per access)
     xl = np.load(out_dir() / "val_xl.npz")["xl"]
     metas = json.loads((TR.out_dir() / "val.json").read_text())
     ks = non_double(metas) if ks is None else ks
     m.eval()
     si, rd = [], []
     for k in ks:
-        phi = float(z["phi"][k])
+        phi = float(P[k])
         est = centre_run(m, config, np.asarray(xl[k], np.float32), device)
         e_m = TR.unsteer_mono(est, phi)
-        r_m = TR.unsteer_mono(np.asarray(z["y"][k], np.float64), phi)
-        m_m = TR.unsteer_mono(np.asarray(z["x"][k], np.float64), phi)
+        r_m = TR.unsteer_mono(np.asarray(Y[k], np.float64), phi)
+        m_m = TR.unsteer_mono(np.asarray(X[k], np.float64), phi)
         si.append(TR.si_sdr_t(e_m, r_m))
         n48 = int(round(len(m_m) * 48000 / TR.SR44))
         e8, r8, m8 = (SCR.to48(np.asarray(v, np.float64), n48) for v in (e_m, r_m, m_m))
@@ -288,7 +319,7 @@ def evaluate(m, config, device, nets, ks=None):
                                      S3.model_feats(nets, r8, m8, metas[k]["cls"])))
     m.train()
     return {"si_sdr_median": float(np.median(si)), "si_sdr_mean": float(np.mean(si)), "read": float(np.mean(rd)),
-            "n": len(ks)}
+            "n": len(ks), "ks": list(ks), "reads": [float(v) for v in rd]}
 
 
 # --- the checks -----------------------------------------------------------------------------------------------------------
@@ -322,8 +353,9 @@ def cmd_check(args):
     import torch
 
     S3.require(PHASE_S4)
+    require_mps_free()
     files = cache_files()
-    ds = iter(Crops(2, -1, files))
+    ds = iter(Crops(args.grad_batch, -1, files))
     x, y = next(ds)
     rep = {}
     m, _ = load_centre("cpu")                     # the spectral forward, inverted, is the model's own output
@@ -331,14 +363,20 @@ def cmd_check(args):
         a = m(x)
         b = m.stft.inverse(forward_spec(m, x))
     rep["forward_match_max_abs"] = float((a - b).abs().max())
+    m = m.to("mps")                               # the full forward (inverse STFT included) on MPS against the CPU's
+    with torch.no_grad():
+        c = m(x.to("mps")).cpu()
+    rep["mps_forward_max_abs"] = float((a - c).abs().max())
+    rep["mps_forward_snr_db"] = float(10 * torch.log10((a ** 2).sum() / ((a - c) ** 2).sum().clamp_min(1e-30)))
     del m
     g = grad_compare(x, y)
-    g["samples"] = CROP
+    g["samples"], g["batch"] = CROP, args.grad_batch
     rep["crop"] = g
     rep["pass"] = bool(g["rel_err_median"] < GRAD_MEDIAN and g["rel_err_max"] < GRAD_MAX
-                       and rep["forward_match_max_abs"] < 1e-4)
+                       and rep["forward_match_max_abs"] < 1e-4 and rep["mps_forward_snr_db"] > 60)
     print(f"S4 GRADIENT CHECK ({CROP} samples): loss cpu {g['loss_cpu']:.6f} mps {g['loss_mps']:.6f}; rel err median "
           f"{g['rel_err_median']:.2e} max {g['rel_err_max']:.2e}; forward match {rep['forward_match_max_abs']:.1e}; "
+          f"MPS forward {rep['mps_forward_snr_db']:.0f} dB; "
           f"pass {rep['pass']}", flush=True)
     m, _ = load_centre("mps")
     opt = torch.optim.AdamW(m.parameters(), lr=LR, betas=BETAS, weight_decay=0.0)
@@ -378,6 +416,8 @@ def cmd_train(args):
     from learn import product_path as PP
 
     S3.require(PHASE_S4)
+    if args.device == "mps":
+        require_mps_free()
     d = out_dir() / "run"
     d.mkdir(parents=True, exist_ok=True)
     chk = json.loads((out_dir() / "check.json").read_text())
@@ -502,12 +542,16 @@ def cmd_pick(args):
     why = stop_reason(st, (d / "state.json").stat().st_mtime, args.user_stop)
     if why is None:
         raise SystemExit("the run hasn't stopped by its rule yet (or pass --user-stop after the user stops it)")
+    usable, lo = pick_verdict(st)
     out = {"step": st["best_step"], "path": str(d / "best.pt"),
-           "sha256": hashlib.sha256((d / "best.pt").read_bytes()).hexdigest(), **st["best"], "step0": st["ev0"],
-           "stop": why, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+           "sha256": hashlib.sha256((d / "best.pt").read_bytes()).hexdigest(),
+           **{k: v for k, v in st["best"].items() if k not in ("ks", "reads")},
+           "step0": {k: v for k, v in st["ev0"].items() if k not in ("ks", "reads")},
+           "val_read_gain_lo90": lo, "usable": usable, "stop": why, "time": time.strftime("%Y-%m-%d %H:%M:%S")}
     (d / "pick.json").write_text(json.dumps(out, indent=1))
     print(f"S4 PICK: step {out['step']} (read {out['read']:.4f}, median {out['si_sdr_median']:+.2f}; step 0 "
-          f"{st['ev0']['read']:.4f} / {st['ev0']['si_sdr_median']:+.2f}; stop {why})", flush=True)
+          f"{st['ev0']['read']:.4f} / {st['ev0']['si_sdr_median']:+.2f}; paired read gain lo90 {lo}; stop {why}); "
+          f"{'held-out read next' if usable else 'NOT USED: no held-out read'}", flush=True)
 
 
 def cmd_apply(args):
@@ -521,13 +565,14 @@ def cmd_apply(args):
     import torch
 
     from learn import direct_stems as DS
-    from learn import separator_screen as SCR
     from learn import sep_s1b as S1B
     from learn import trusted_data as T
 
     S3.require(PHASE_S4)
     root = S1B.set_dir(args.set)
     pick = json.loads((out_dir() / "run" / "pick.json").read_text())
+    if not pick.get("usable"):
+        raise SystemExit("s4-pick found S4 not used (step 0, or no decided validation read gain): no held-out read")
     ck = pathlib.Path(pick["path"])
     b = ck.read_bytes()
     if hashlib.sha256(b).hexdigest() != pick["sha256"]:
@@ -553,14 +598,76 @@ def cmd_apply(args):
             continue
         z = np.load(p)
         L, R = np.asarray(z["L"], np.float64), np.asarray(z["R"], np.float64)
-        phi = S3.steer_phi(S3.hint_of(meta))
-        Ls, Rs = S3.rotate(L, R, phi)
-        st = np.asarray(DS.xl_run_chunked(sep._f, np.stack([SCR.to44(Ls), SCR.to44(Rs)]).astype(np.float32)),
-                        np.float32)
-        est = centre_run(model, config, st, args.device)
-        np.savez(q, stem=np.asarray(SCR.to48(TR.unsteer_mono(est, phi), len(L)), np.float16))
+        np.savez(q, stem=stem_from(model, config, sep, L, R, meta, args.device).astype(np.float16))
         n_done += 1
     print(f"S4 APPLY DONE: {args.set}, {n_done} stems", flush=True)
+
+
+def stem_from(model, config, sep, L, R, meta, device):
+    """S4's stem of an item (48 kHz L, R): steer by the coarse hint, X-LANCE, the centre model, rotate back exactly
+    and average (`unsteer_mono`, S3's apply: the fine-tuned output may hold a side part), back to 48 kHz."""
+    import numpy as np
+
+    from learn import direct_stems as DS
+    from learn import separator_screen as SCR
+
+    phi = S3.steer_phi(S3.hint_of(meta))
+    Ls, Rs = S3.rotate(L, R, phi)
+    st = np.asarray(DS.xl_run_chunked(sep._f, np.stack([SCR.to44(Ls), SCR.to44(Rs)]).astype(np.float32)),
+                    np.float32)
+    return np.asarray(SCR.to48(TR.unsteer_mono(centre_run(model, config, st, device), phi), len(L)), np.float64)
+
+
+def cmd_apply_check(_args):
+    """The review: step 0 (the model as it is) through s4-apply's own path on S0 training-band items (Forkupines, BKS;
+    centre and side hints), against the routed comparator's stored stems. -> check-apply.json."""
+    import numpy as np
+
+    from learn import direct_stems as DS
+    from learn import product_path as PP
+    from learn import sep_s1b as S1B
+    from learn import trusted_data as T
+
+    S3.require(PHASE_S4)
+    root = S1B.set_dir("main")
+    model, config = load_centre("cpu")
+    model.eval()
+    sep = DS.stem_separator(T.SEP, "cpu")
+    nets, _, _ = PP._adopted()
+    picks = {"centre": [], "side": []}
+    for p in sorted((root / "items").glob("*.npz")):
+        meta = json.loads(p.with_suffix(".json").read_text())
+        if meta["band"] not in ("Forkupines", "BKS") or meta["stratum"] == "double":
+            continue
+        k = "centre" if S3.hint_of(meta) == 0.0 else "side"
+        if len(picks[k]) < 3:
+            picks[k].append((p, meta))
+    rows = []
+    from learn import pretrain_set as PS
+
+    h = PS.half_slices()["A"]
+    for p, meta in picks["centre"] + picks["side"]:
+        z = np.load(p)
+        L, R = np.asarray(z["L"], np.float64), np.asarray(z["R"], np.float64)
+        tgt = np.asarray(z["target"], np.float64)
+        mix = (L + R) / 2
+        comp = S3.routed(meta, "s4")
+        s4 = stem_from(model, config, sep, L, R, meta, "cpu")
+        sc = S3.stem_any(root, "main", comp, p.name)
+        ref = S3.model_feats(nets, tgt, mix, meta["cls"])
+        rows.append({"i": meta["i"], "band": meta["band"], "stratum": meta["stratum"], "comparator": comp,
+                     "si_sdr_s4_step0": float(S0.si_sdr(s4[h], tgt[h])),
+                     "si_sdr_comparator": float(S0.si_sdr(sc[h], tgt[h])),
+                     "si_sdr_s4_vs_comparator": float(S0.si_sdr(s4[h], sc[h])),
+                     "read_s4_step0": float(PP.cosine_distance(S3.model_feats(nets, s4, mix, meta["cls"]), ref)),
+                     "read_comparator": float(PP.cosine_distance(S3.model_feats(nets, sc, mix, meta["cls"]), ref))})
+        r = rows[-1]
+        print(f"s4 apply check {meta['i']} {meta['stratum']} vs {comp}: SI-SDR {r['si_sdr_s4_step0']:+.2f} / "
+              f"{r['si_sdr_comparator']:+.2f} (stems {r['si_sdr_s4_vs_comparator']:+.1f} dB apart), read "
+              f"{r['read_s4_step0']:.4f} / {r['read_comparator']:.4f}", flush=True)
+    out_dir().mkdir(parents=True, exist_ok=True)
+    (out_dir() / "check-apply.json").write_text(json.dumps(rows, indent=1))
+    print("S4 APPLY CHECK DONE", flush=True)
 
 
 def check_stems(root):
@@ -582,6 +689,7 @@ def main(argv=None):
     sub.add_parser("s4-val").set_defaults(fn=cmd_val)
     s = sub.add_parser("s4-check")
     s.add_argument("--batches", type=int, nargs="+", default=[1, 2, 4])
+    s.add_argument("--grad-batch", type=int, default=2, help="the gradient check's batch (the training micro-batch)")
     s.add_argument("--steps", type=int, default=6)
     s.set_defaults(fn=cmd_check)
     s = sub.add_parser("s4-train")
@@ -593,6 +701,7 @@ def main(argv=None):
     s = sub.add_parser("s4-pick")
     s.add_argument("--user-stop", action="store_true")
     s.set_defaults(fn=cmd_pick)
+    sub.add_parser("s4-apply-check").set_defaults(fn=cmd_apply_check)
     s = sub.add_parser("s4-apply")
     s.add_argument("--set", choices=("main", "split"), required=True)
     s.add_argument("--device", default="cpu")

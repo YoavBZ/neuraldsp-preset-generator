@@ -276,18 +276,19 @@ def val_layout(k):
             "db2": s.get("target_db2", 0.0), "others": s["others"], "amp": s["others"], "partner": None}
 
 
-def build_draw(pool, rng, full=False, crop=CROP, layout=None):
+def build_draw(pool, rng, full=False, crop=CROP, layout=None, row=None):
     """One steered mix and its steered target. -> (x [2, n], y [2, n], phi, layout) at 44.1 kHz.
     - The target is the hinted (first) copy only, so a double's far copy is something to remove (the review).
     - Training draws (no `layout` given) take `draw_layout`, the jittered hint, and drop the target in SILENT_P of
       draws. A given layout (validation) takes the coarse hint, no jitter, no drop.
-    - A `crop`-sample crop where the target plays, unless full (the whole 10 s)."""
+    - A `crop`-sample crop where the target plays, unless full (the whole 10 s).
+    - `row` (S4's cache) fixes the example; by default it's drawn."""
     import numpy as np
 
     from learn import trusted_data as T
 
     train = layout is None
-    r = rng.choice(pool.rows)
+    r = rng.choice(pool.rows) if row is None else row
     lay = draw_layout(rng) if train else layout
     e, s = pool.ex(r["i"]), pool.sec(r["sec"])
     y, oth = np.asarray(e["y"], np.float64), np.asarray(e["oth"], np.float64)

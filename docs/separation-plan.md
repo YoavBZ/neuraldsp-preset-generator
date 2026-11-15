@@ -445,9 +445,10 @@ read). Against `steer_xlmdxc` on the 136 non-double validation mixes:
 | 6,000 | −0.03 | +1.39 [+0.52, +2.42] | −0.041 | −0.015 |
 | 7,000 | +0.19 | +1.48 [+0.55, +2.48] | −0.062 [−0.074, −0.048] | −0.032 [−0.042, −0.022] |
 | 8,000 | +0.12 | +1.67 [+0.74, +2.68] | −0.050 [−0.061, −0.036] | −0.018 [−0.027, −0.009] |
+| 10,000 | +0.12 | +1.55 [+0.63, +2.56] | −0.047 [−0.058, −0.033] | −0.010 [−0.018, −0.002] |
 
-S3 pulls out a cleaner waveform, but the model reads the part worse from it than from the chain at every step, and
-the gap moves up and down rather than closing. The chain's MDX23C carries its read: X-LANCE alone is −4.5 dB (median)
+S3 pulls out a cleaner waveform, but the model reads the part worse from it than from the chain at every step. The
+centred gap stays near −0.05; the off-centre gap moves up and down, smallest at step 10,000. The chain's MDX23C carries its read: X-LANCE alone is −4.5 dB (median)
 under the chain, and S3 followed by MDX23C is worse than S3 alone (−0.61 dB, read −0.016).
 
 **How it differs from what failed.** S3 retrained the chain's front (X-LANCE) on a waveform loss, and the model's
@@ -467,8 +468,9 @@ model, on what it actually receives there: X-LANCE's output of a steered mix. Th
   whole 10 s: the same strata, bands, jittered hint, 12% dropped targets and mastering). The target is S3's: the
   hinted copy as it sits in the steered mix.
 - **The cache (`s4-cache`):** 2,000 fixed draws from S3's training bands (Forkupines, BKS, The Maybe Next Years),
-  stored as X-LANCE's steered stereo output and the steered target (float16, about 7 GB). X-LANCE runs on the CPU
-  beside S3 (two workers), so the cache matches the comparator's stems. It stops if the disk would fall under 20 GB.
+  one per example in a seeded permutation of the 2,078 (so they cover 96% of the examples), stored as X-LANCE's
+  steered stereo output and the steered target (float16, about 7 GB). X-LANCE runs on the CPU beside S3 (two
+  workers), so the cache matches the comparator's stems. It stops if the disk would fall under 20 GB.
 - **Validation (`s4-val`):** X-LANCE's output on S3's 200 fixed validation mixes, on the CPU.
 
 **Training (`s4-train`).**
@@ -479,8 +481,11 @@ model, on what it actually receives there: X-LANCE's output of a steered mix. Th
   gradient bug (STFT backward over 65,536 samples) is out of the loss's path.
 - **Before the run, the gradient check (`s4-check`):** one batch's gradients on MPS against the CPU's, per parameter
   tensor, at the training crop. It runs on MPS only if the median relative error is under 1e-3 and the largest
-  under 1e-2, and the spectral forward, inverted, matches the model's own output (checked: max difference 0.0).
-  Otherwise it's reported, and the run waits. The speed check sets the batch.
+  under 1e-2, the spectral forward, inverted, matches the model's own output (checked: max difference 0.0), and the
+  full forward on MPS matches the CPU's (over 60 dB), since the curve runs it on MPS. The gradient check runs at the
+  training micro-batch. Otherwise it's reported, and the run waits. The speed check sets the batch.
+- **The MPS:** `s4-check`, `s4-train` and an MPS cache refuse to start until S3's run has stopped and been picked
+  (S3's `run/pick.json`). One MPS job at a time.
 - AdamW at lr 1e-5 with 500 warm-up steps, fp32, a batch of at least 4 (micro-batches summed), no weight decay. A
   hand clip at norm 1.0, non-finite steps skipped, and S3's reload and abort rule. Never beside another MPS
   training.
@@ -490,21 +495,45 @@ model, on what it actually receives there: X-LANCE's output of a steered mix. Th
 - **A new best** needs a read at least 0.002 lower than the best's, with the median SI-SDR no lower than step 0's.
   The run stops after 5 evaluations without one, at the abort rule, or after 48 hours. The user can stop it.
 
+**The gate before any held-out read (`s4-pick`).** S4 starts at the comparator, so an unchanged model would pass as
+"not worse". So:
+- if the best checkpoint is still step 0, S4 is not used and gets no held-out read;
+- otherwise the pick's validation read gain over step 0 (paired item bootstrap on the 136 mixes, 2,000 draws) must be
+  decided, lo90 > 0. If not, S4 is not used and gets no held-out read. `s4-apply` refuses an unusable pick.
+
 **The read, once, after the stop.**
 - **What runs:** `s4-pick` names `best.pt` with its sha256. `s4-apply` runs on the held-out 120 S0 items and 38 split
-  items: steer by the coarse hint, X-LANCE (CPU), the fine-tuned model, rotate back and average. The stems carry
-  their checkpoint (`stems/s4/pick.json`). `s3-feats --options s4`, `s3-read --what s4` and `s3-decide --what s4`
-  check it and score them.
-- **The rule:** S3's, unchanged. Per cell, against mono and against the routed comparator (a centre hint to
-  `xlst_mdxc`, a side hint to `steer_xlmdxc`), with the band-clustered t interval over the five held-out bands and the
-  read co-primary. The doubles are descriptive.
-- **Two trained candidates.** S3 and S4 are each judged by that rule on the same items. A cell either qualifies for
-  goes on the picker. If both qualify for a cell, both go on it, with the held-out read difference beside, and the
-  user's ear on R1's songs decides. This is fixed now, before either held-out read.
+  items: steer by the coarse hint, X-LANCE (CPU), the fine-tuned model, rotate back exactly and average
+  (`unsteer_mono`, as S3's apply; the comparator takes cos φ × the mean, the same for a centred output, but the
+  fine-tuned output may hold a side part). The stems carry their checkpoint (`stems/s4/pick.json`).
+  `s3-feats --options s4`, `s3-read --what s4` (which refuses unless every held-out item has its stem) and
+  `s3-decide --what s4` check it and score them.
+- **The step-0 check of that path (`s4-apply-check`):** the model as it is, through `s4-apply`'s own path, on six S0
+  training-band items (Forkupines and BKS, three centre and three side hints), against the routed comparator's stored
+  stems: SI-SDR and the read for both, recorded in `check-apply.json`. Run 2026-11-15: on the centre hint the stems
+  are the same (60 to 65 dB apart; SI-SDR equal, the read within 0.0001). On the side hint they're 32 to 39 dB apart,
+  from the exact rotate-back: SI-SDR within 0.08 dB and the read within 0.0014, both ways.
+- **The rule:** S3's, per cell, against mono and against the routed comparator (a centre hint to `xlst_mdxc`, a side
+  hint to `steer_xlmdxc`), with the band-clustered t interval over the five held-out bands and the read co-primary.
+  One change for S4 alone: a picker choice also needs a decided read gain over the comparator (read lo90 > 0), since
+  "not worse" is where S4 starts. The doubles are descriptive.
+- **Two trained candidates,** fixed now, before either held-out read. S3 and S4 are each judged by their rule on the
+  same items, per hint (the centre hint by the weaker of the centred and split cells, as S3's).
+  - Only one qualifies for a hint: its outcome is exactly what its own rule gives (S3's default stays the default).
+  - One default, the other a picker choice: the default is the default; the other goes on the picker beside it.
+  - Both at the same level: the one with the lower held-out read (the paired mean cosine distance between the two on
+    the hint's items) takes it; the other goes on the picker beside it. For the centre hint the user's ear on R1's
+    songs can overrule. R1's songs hold no side part, so for the side hint the held-out read decides.
+- **After a null S4,** no further trained candidate is read on these five held-out bands without a new declaration
+  that weighs a fresh held-out set: repeated reads would turn them into a selection set.
 
 **What it can't say.** S3's caveats hold: built mixes, amp-sim targets, the oracle hint, two guitars at one place.
-Plus: a fixed cache of 2,000 draws (about 5.6 hours of audio) is smaller than S3's on-the-fly stream, so
-the model could fit the cache. The validation curve watches that, and the held-out read is its test.
+Plus:
+- a fixed cache of 2,000 draws (about 5.6 hours of audio) is smaller than S3's on-the-fly stream, so the model could
+  fit the cache. The validation curve watches that, and the held-out read is its test;
+- validation has no split stratum, though the centre hint takes the weaker of the centred and split cells;
+- the picked checkpoint's validation read is chosen for the read, so it's optimistic and isn't quoted as an estimate.
+  The held-out read stays unbiased.
 
 **Cost.** Zero renders. The cache's X-LANCE about 4 CPU hours in two workers beside S3, which slows S3 by about 8%.
 The MPS after S3's stop, up to 48 h. About 7 GB of disk, 44 GB free.

@@ -67,3 +67,39 @@ def test_s4_reads_against_the_same_routed_comparators_as_s3():
 
 def test_the_crop_is_the_models_chunk():
     assert S4.CROP == 130_560
+
+
+def test_paired_gain_lo90():
+    base = [0.10 + 0.001 * (k % 7) for k in range(60)]
+    better = [b - 0.01 for b in base]
+    assert S4.paired_gain_lo90(base, better) > 0.009
+    assert S4.paired_gain_lo90(base, base) == 0.0
+    noisy = [b + (0.02 if k % 2 else -0.02) for k, b in enumerate(base)]      # no net gain
+    assert S4.paired_gain_lo90(base, noisy) < 0
+
+
+def test_step_0_picked_is_not_used():
+    st = {"best_step": 0, "ev0": {"reads": [0.1, 0.2]}, "best": {"reads": [0.1, 0.2]}}
+    assert S4.pick_verdict(st) == (False, None)
+
+
+def test_a_pick_needs_a_decided_validation_read_gain():
+    r0 = [0.10 + 0.002 * (k % 5) for k in range(40)]
+    st = {"best_step": 3000, "ev0": {"reads": r0}, "best": {"reads": [r - 0.004 for r in r0]}}
+    ok, lo = S4.pick_verdict(st)
+    assert ok and lo > 0
+    st["best"]["reads"] = [r + (0.03 if k % 2 else -0.032) for k, r in enumerate(r0)]
+    assert not S4.pick_verdict(st)[0]
+
+
+def _ci(lo, hi):
+    return {"lo90": lo, "hi90": hi}
+
+
+def test_s4_picker_choice_needs_a_decided_read_gain():
+    win = _ci(1.0, 3.0)
+    undecided, level = _ci(-0.5, 0.5), _ci(-0.01, 0.02)
+    assert S3.trained_decision("s3", win, win, undecided, level) == "picker choice"
+    assert S3.trained_decision("s4", win, win, undecided, level) == "not used"
+    assert S3.trained_decision("s4", win, win, undecided, _ci(0.004, 0.02)) == "picker choice"
+    assert S3.trained_decision("s4", win, win, _ci(0.2, 1.0), level) == "default"   # S3's default rule unchanged
