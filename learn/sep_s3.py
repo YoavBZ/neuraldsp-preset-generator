@@ -125,7 +125,7 @@ def cmd_steer(args):
         meta = json.loads(p.with_suffix(".json").read_text())
         L, R = np.asarray(z["L"], np.float64), np.asarray(z["R"], np.float64)
         cache = {}
-        for o in STEER_OPTIONS:
+        for o in (args.options or STEER_OPTIONS):
             q = root / "stems" / o / p.name
             if q.exists():
                 continue
@@ -266,10 +266,13 @@ def _clustered(diffs, rows):
                               "per_cluster")}
 
 
-def routed(meta):
+def routed(meta, what="a3"):
     """The existing option the coarse hint routes to: a centre hint to xlst_mdxc (Amendment 3b: s1b's centred winner,
-    stronger than mdxc on the training-band items too), a side hint to side."""
-    return "xlst_mdxc" if hint_of(meta) == 0.0 else "side"
+    stronger than mdxc on the training-band items too), a side hint to side; for S3's read a side hint to
+    steer_xlmdxc (Amendment 3c: A3's side winner, ahead of side on the training-band items too)."""
+    if hint_of(meta) == 0.0:
+        return "xlst_mdxc"
+    return "steer_xlmdxc" if what == "s3" else "side"
 
 
 def s3_decision(si_mono, rd_mono, si_comp, rd_comp):
@@ -301,6 +304,8 @@ def cmd_read(args):
     from learn import pretrain_set as PS
 
     require(PHASE_S3 if args.what == "s3" else PHASE_A3)
+    if args.what == "s3":
+        require("phase_s1_a3c")                # the side hint read against steer_xlmdxc
     root = S1B.set_dir(args.set)
     h = PS.half_slices()["A"]
     feats = {}
@@ -381,7 +386,7 @@ def cmd_read(args):
             kept.append(r)
         return out, kept
 
-    comp = lambda r: routed(metas[r["i"]])              # noqa: E731
+    comp = lambda r: routed(metas[r["i"]], args.what)   # noqa: E731
     for o in new:
         if not rows[o]:
             continue
@@ -415,6 +420,10 @@ def cmd_read(args):
                 t_rd, kt_rd = diff(rs, "steer_mdxc", "cos", sign=-1)
                 e["vs_steer_mdxc (beside)"] = {"si_sdr_clustered": _clustered(t_si, kt_si),
                                                "read_clustered": _clustered(t_rd, kt_rd)}
+                s_si, ks_si = diff(rs, "side", "si_sdr")      # Amendment 3c: the own channel stays beside
+                s_rd, ks_rd = diff(rs, "side", "cos", sign=-1)
+                e["vs_side (beside)"] = {"si_sdr_clustered": _clustered(s_si, ks_si),
+                                         "read_clustered": _clustered(s_rd, ks_rd)}
             if args.what == "a3":
                 vm = e["vs_mono"]
                 if o in RULE_STEER and vm["read_band_boot"] is not None:
@@ -496,6 +505,8 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("s3-steer")
     s.add_argument("--set", choices=("main", "split"), required=True)
+    s.add_argument("--options", nargs="+", choices=STEER_OPTIONS,
+                   help="only these (a second process beside a run, with options the run doesn't make)")
     s.set_defaults(fn=cmd_steer)
     s = sub.add_parser("s3-feats")
     s.add_argument("--set", choices=("main", "split"), required=True)

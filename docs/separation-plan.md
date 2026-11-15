@@ -336,8 +336,51 @@ drop in the model's cosine distance (higher is better).
   separate takes on both sides (the split set), `xlst_mdxc` (+5.33 dB, read +0.062) and `cw` (+5.06, read +0.073)
   are level: undecided between them.
 - The trigger by the score doesn't fire (best lo90 +8.71, `xlst_mdxc` centred). S3 runs on the user's go (above).
-- The product session is adding `--version xlst_mdxc` behind a flag (PR #492, open). Its default stays until the
+- The product session added `--version xlst_mdxc` behind a flag (PR #492, merged). Its default stays until the
   user's ear decides.
+
+## A3 results (steering with the existing tools)
+
+Run 2026-11-15 (zero renders, CPU), read by S1's rule against mono and audited by separate code (the same means;
+the intervals within 0.2 dB). SI-SDR gain against mono with the 90% band-bootstrap interval; the read as above (band
+bootstrap). Beside the rule, against the target's own channel (`side`, the best existing option off-centre): the
+band-clustered t interval over S0's 7 bands, whose centre is the mean of the band means.
+
+| Option | Centred | Off-centre | Double | Split set | Read (off-centre) |
+|---|---|---|---|---|---|
+| `steer_xlmdxc` (steer, X-LANCE stereo, MDX23C) | +10.85 (= `xlst_mdxc`) | **+12.73** [+10.51, +14.51] | −16.11 | +5.33 (= `xlst_mdxc`) | **+0.073** [+0.040, +0.104] |
+| `steer_mdxc` (steer, MDX23C, X-LANCE) | +7.03 (= `mdxc`) | +4.81 [+1.12, +7.46] | −26.69 | +4.71 (= `mdxc`) | −0.069 [−0.120, −0.030] |
+| `steer_mid` (a control) | −0.70 | +5.16 | +0.21 | −0.29 | +0.037 |
+| `steer_mdxc_exact` (the exact pan, a ceiling) | +7.21 | +5.42 | −27.63 | +4.32 | −0.041 |
+| `steer_mdxc_h1` (hint ±1.0) | +7.03 | +2.18 | −22.01 | +4.71 | −0.100 |
+
+- **A part on one side:** `steer_xlmdxc` wins against mono under the rule. Beside it, it gains +5.05 dB [+2.58,
+  +7.52] over the own channel (band-clustered; 6 of 7 bands up; the paired item mean is +5.57), with a read not
+  worse (+0.036 [−0.008, +0.081], undecided). It's the first option ahead of the own channel off-centre, by SI-SDR.
+  The gain is about the same whether the coarse hint lands the part within 0.15 of the centre or 0.15 to 0.3 off
+  it (+12.70 and +12.82, n 56 and 21; descriptive).
+- **One route, given the side:** on a centred part `steer_xlmdxc` is `xlst_mdxc`, so one chain serves both. The side
+  here is an oracle (the drawn pan, standing in for the user's pick). A wrong hint or a blind one is untested, and
+  October's blind side methods lost; without a person the route needs a side detector.
+- **The effects row** (descriptive, against mono, off-centre): the delay time is found on 7 more of the 42
+  delay-ons (+0.17). T0's delay vote moves −0.030 on delay-ons (worse) and −0.027 on delay-offs (better).
+- **`steer_mdxc` fails** off-centre: it gains in SI-SDR but hurts the read (−0.069), so it isn't used. Separating
+  before the centre model matters, as in s1b: `steer_xlmdxc` over `steer_mdxc` off-centre is +8.76 dB [+5.55,
+  +11.97] with the read +0.148, all 7 bands up (band-clustered; post hoc, not in the read files).
+- **The doubles lose** (−16.11): steering keeps the hinted copy, and S0's double target is both copies, one
+  delayed. That's why the cell is out of S3's rule; here it's descriptive. Whether one take of a real double reads
+  its tone as well as both is untested.
+- **The user's seven R1 songs:** steered left or right (±0.7), each song's span leaves 13 to 48 dB less than the
+  mono stem, so no guitar sits near either side; steering doesn't change them. Their version page carries `stem`,
+  `stem_C`, `xlst_mdxc` and `cw`.
+
+### Amendment 3c (2026-11-15, after A3's read, before S3's read; ledger `phase_s1_a3c`)
+
+- **S3's routed comparator for the side hint** becomes `steer_xlmdxc` instead of `side`. Otherwise S3 could become
+  the side-part default while worse than `steer_xlmdxc`. Its basis is the training-band items (the freeze rule):
+  against `side` off-centre, Forkupines +7.50 dB and BKS +2.62 (the read mixed: +0.074 and −0.025). That makes
+  S3's side cell harder to meet. The centre hint's comparator stays `xlst_mdxc`, which `steer_xlmdxc` equals there.
+  S3's read writes the `side` comparison beside (`vs_side`).
 
 ## What it can't say
 
