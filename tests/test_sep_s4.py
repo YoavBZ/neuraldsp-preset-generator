@@ -105,19 +105,37 @@ def test_s4_picker_choice_needs_a_decided_read_gain():
     assert S3.trained_decision("s4", win, win, _ci(0.2, 1.0), level) == "default"   # S3's default rule unchanged
 
 
+def _ch(d3, d4, r3=None, r4=None):
+    return S3.choose({"s3": d3, "s4": d4, "s3ens": "not used"}, {"s3": r3, "s4": r4})
+
+
 def test_choose_one_qualifies_keeps_its_own_outcome():
-    assert S3.choose("default", "not used", None) == {"default": "s3", "picker": ["s3"]}
-    assert S3.choose("not used", "picker choice", -0.01) == {"default": None, "picker": ["s4"]}
-    assert S3.choose("not used", "not used", 0.0) == {"default": None, "picker": []}
+    assert _ch("default", "not used", 0.1) == {"default": "s3", "picker": ["s3"]}
+    assert _ch("not used", "picker choice", None, 0.1) == {"default": None, "picker": ["s4"]}
+    assert _ch("not used", "not used") == {"default": None, "picker": []}
 
 
 def test_choose_a_default_beats_a_picker_choice():
-    assert S3.choose("picker choice", "default", 0.02) == {"default": "s4", "picker": ["s4", "s3"]}
-    assert S3.choose("default", "picker choice", -0.02) == {"default": "s3", "picker": ["s3", "s4"]}
+    assert _ch("picker choice", "default", 0.08, 0.10) == {"default": "s4", "picker": ["s4", "s3"]}
+    assert _ch("default", "picker choice", 0.10, 0.08) == {"default": "s3", "picker": ["s3", "s4"]}
 
 
 def test_choose_at_one_level_the_lower_read_wins():
-    assert S3.choose("default", "default", -0.001) == {"default": "s4", "picker": ["s4", "s3"]}
-    assert S3.choose("default", "default", 0.003) == {"default": "s3", "picker": ["s3", "s4"]}
-    assert S3.choose("picker choice", "picker choice", -0.004) == {"default": None, "picker": ["s4", "s3"]}
-    assert S3.choose("default", "default", 0.0)["default"] == "s3"                    # a tie keeps S3
+    assert _ch("default", "default", 0.100, 0.099) == {"default": "s4", "picker": ["s4", "s3"]}
+    assert _ch("default", "default", 0.100, 0.103) == {"default": "s3", "picker": ["s3", "s4"]}
+    assert _ch("picker choice", "picker choice", 0.1, 0.096) == {"default": None, "picker": ["s4", "s3"]}
+    assert _ch("default", "default", 0.1, 0.1)["default"] == "s3"                    # a tie keeps S3
+
+
+def test_choose_three_candidates():
+    d = {"s3": "picker choice", "s4": "default", "s3ens": "default"}
+    assert S3.choose(d, {"s3": 0.08, "s4": 0.095, "s3ens": 0.090}) == {"default": "s3ens",
+                                                                        "picker": ["s3ens", "s4", "s3"]}
+    d = {"s3": "not used", "s4": "not used", "s3ens": "picker choice"}
+    assert S3.choose(d, {"s3ens": 0.09}) == {"default": None, "picker": ["s3ens"]}
+
+
+def test_s3ens_picker_choice_needs_a_decided_read_gain():
+    win = _ci(1.0, 3.0)
+    assert S3.trained_decision("s3ens", win, win, _ci(-0.5, 0.5), _ci(-0.01, 0.02)) == "not used"
+    assert S3.trained_decision("s3ens", win, win, _ci(-0.5, 0.5), _ci(0.001, 0.02)) == "picker choice"
