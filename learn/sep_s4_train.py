@@ -425,6 +425,9 @@ def cmd_train(args):
         raise SystemExit("the gradient check failed on MPS: not training there (the plan)")
     if args.batch * args.accum < MIN_BATCH:
         raise SystemExit(f"batch {args.batch} x accumulation {args.accum} < {MIN_BATCH} (the plan)")
+    if args.device == "mps" and chk["crop"].get("batch") != args.batch:
+        raise SystemExit(f"the gradient check ran at batch {chk['crop'].get('batch')}, not the training "
+                         f"micro-batch {args.batch}: rerun s4-check --grad-batch {args.batch}")
     files = cache_files()
     nets, _, _ = PP._adopted()
     dev = torch.device(args.device)

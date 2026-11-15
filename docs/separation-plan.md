@@ -483,7 +483,7 @@ model, on what it actually receives there: X-LANCE's output of a steered mix. Th
   tensor, at the training crop. It runs on MPS only if the median relative error is under 1e-3 and the largest
   under 1e-2, the spectral forward, inverted, matches the model's own output (checked: max difference 0.0), and the
   full forward on MPS matches the CPU's (over 60 dB), since the curve runs it on MPS. The gradient check runs at the
-  training micro-batch. Otherwise it's reported, and the run waits. The speed check sets the batch.
+  training micro-batch, and `s4-train` refuses a different one on MPS. Otherwise it's reported, and the run waits. The speed check sets the batch.
 - **The MPS:** `s4-check`, `s4-train` and an MPS cache refuse to start until S3's run has stopped and been picked
   (S3's `run/pick.json`). One MPS job at a time.
 - AdamW at lr 1e-5 with 500 warm-up steps, fp32, a batch of at least 4 (micro-batches summed), no weight decay. A
@@ -499,7 +499,9 @@ model, on what it actually receives there: X-LANCE's output of a steered mix. Th
 "not worse". So:
 - if the best checkpoint is still step 0, S4 is not used and gets no held-out read;
 - otherwise the pick's validation read gain over step 0 (paired item bootstrap on the 136 mixes, 2,000 draws) must be
-  decided, lo90 > 0. If not, S4 is not used and gets no held-out read. `s4-apply` refuses an unusable pick.
+  decided, lo90 > 0. If not, S4 is not used and gets no held-out read. `s4-apply` refuses an unusable pick. The 136
+  mixes come from 106 examples in 13 sections, and the pick was chosen on them, so this lo90 is optimistic. It is a
+  gate in front of an unbiased read, not an estimate.
 
 **The read, once, after the stop.**
 - **What runs:** `s4-pick` names `best.pt` with its sha256. `s4-apply` runs on the held-out 120 S0 items and 38 split
@@ -512,7 +514,8 @@ model, on what it actually receives there: X-LANCE's output of a steered mix. Th
   training-band items (Forkupines and BKS, three centre and three side hints), against the routed comparator's stored
   stems: SI-SDR and the read for both, recorded in `check-apply.json`. Run 2026-11-15: on the centre hint the stems
   are the same (60 to 65 dB apart; SI-SDR equal, the read within 0.0001). On the side hint they're 32 to 39 dB apart,
-  from the exact rotate-back: SI-SDR within 0.08 dB and the read within 0.0014, both ways.
+  from the exact rotate-back: S4's step 0 is 0.01 to 0.08 dB lower in SI-SDR on all three (a slight handicap for S4),
+  and its read within 0.0014 both ways.
 - **The rule:** S3's, per cell, against mono and against the routed comparator (a centre hint to `xlst_mdxc`, a side
   hint to `steer_xlmdxc`), with the band-clustered t interval over the five held-out bands and the read co-primary.
   One change for S4 alone: a picker choice also needs a decided read gain over the comparator (read lo90 > 0), since
@@ -521,9 +524,16 @@ model, on what it actually receives there: X-LANCE's output of a steered mix. Th
   same items, per hint (the centre hint by the weaker of the centred and split cells, as S3's).
   - Only one qualifies for a hint: its outcome is exactly what its own rule gives (S3's default stays the default).
   - One default, the other a picker choice: the default is the default; the other goes on the picker beside it.
-  - Both at the same level: the one with the lower held-out read (the paired mean cosine distance between the two on
-    the hint's items) takes it; the other goes on the picker beside it. For the centre hint the user's ear on R1's
-    songs can overrule. R1's songs hold no side part, so for the side hint the held-out read decides.
+  - Both at the same level: the one with the lower held-out read goes first. That's the point estimate of the paired
+    mean cosine distance, S4's minus S3's, decided or not, on the hint's held-out items: for the centre hint S0's
+    centred items and the split set's pooled, for the side hint S0's off-centre items. An exact tie keeps S3. At the
+    default level the first is the default and the other goes on the picker beside it. At the picker level both go on
+    the picker, the first first, and the routed comparator stays the default. For the centre hint the user's ear on
+    R1's songs can overrule. R1's songs hold no side part, so for the side hint the held-out read decides.
+  - `s3-choose` computes this from both decision files and the per-item reads in `feats-s3.json`, and writes
+    `trained-choice.json`. A candidate with no decision file wasn't read (S4's gate) and counts as not used.
+  - This is the one place the held-out read chooses between candidates, so the winner's held-out numbers carry a
+    small selection bias when both qualify. Each candidate's own rule outcome doesn't.
 - **After a null S4,** no further trained candidate is read on these five held-out bands without a new declaration
   that weighs a fresh held-out set: repeated reads would turn them into a selection set.
 

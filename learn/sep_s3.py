@@ -310,7 +310,7 @@ def trained_decision(what, si_mono, rd_mono, si_comp, rd_comp):
     """S3's rule for S3. For S4 (it starts at the routed comparator, so an unchanged model would pass as not worse):
     a picker choice also needs a decided read gain over the comparator (lo90 > 0)."""
     d = s3_decision(si_mono, rd_mono, si_comp, rd_comp)
-    if what == "s4" and d == "picker choice" and not rd_comp["lo90"] > 0:
+    if what == "s4" and d == "picker choice" and not (rd_comp["lo90"] is not None and rd_comp["lo90"] > 0):
         return "not used"
     return d
 
@@ -537,6 +537,58 @@ def cmd_decide(args):
           f"side hint {out['side_hint']}")
 
 
+def choose(dec3, dec4, gap):
+    """S4's plan, the two trained candidates for one hint. dec3, dec4: each one's own decision; gap: the paired mean
+    held-out read of S4 minus S3's (cosine distance, negative = S4 reads better; the point estimate, decided or not).
+    -> {"default": "s3" | "s4" | None (the routed comparator stays), "picker": the candidates on the picker, first
+    first}."""
+    dec = {"s3": dec3, "s4": dec4}
+    q = [c for c in ("s3", "s4") if dec[c] in ("default", "picker choice")]
+    if not q:
+        return {"default": None, "picker": []}
+    if len(q) == 1:                               # its own rule's outcome, exactly
+        return {"default": q[0] if dec[q[0]] == "default" else None, "picker": q}
+    if dec3 != dec4:                              # a default beats a picker choice; the other beside
+        first = "s3" if dec3 == "default" else "s4"
+    else:                                         # one level: the lower held-out read (a tie keeps S3, declared first)
+        first = "s4" if gap is not None and gap < 0 else "s3"
+    other = "s4" if first == "s3" else "s3"
+    return {"default": first if dec[first] == "default" else None, "picker": [first, other]}
+
+
+def cmd_choose(_args):
+    """S4's plan: S3's and S4's decisions per hint combined by `choose`. The gap per hint is the paired mean read
+    (S4 minus S3) on the held-out items both have: the centre hint pools S0's held-out centred items and the split
+    set's held-out items; the side hint is S0's held-out off-centre items. A candidate with no decision file wasn't
+    read (S4's gate) and counts as not used."""
+    import numpy as np
+
+    base = S0.out_dir().parent
+    decs = {w: (json.loads((base / f"{w}-decision.json").read_text()) if (base / f"{w}-decision.json").exists()
+                else {"centre_hint": "not used", "side_hint": "not used"}) for w in TRAINED}
+    gaps = {"centre_hint": [], "side_hint": []}
+    for set_name in ("main", "split"):
+        root = S1B.set_dir(set_name)
+        f = root / "feats-s3.json"
+        cos = json.loads(f.read_text())["cosine_distance_to_clean"] if f.exists() else {}
+        for p in sorted((root / "items").glob("*.npz")):
+            meta = json.loads(p.with_suffix(".json").read_text())
+            c = cos.get(p.stem, {})
+            if meta["band"] not in HELD_BANDS or meta["stratum"] == "double" or "s3" not in c or "s4" not in c:
+                continue
+            gaps["centre_hint" if hint_of(meta) == 0.0 else "side_hint"].append(c["s4"] - c["s3"])
+    out = {"time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    for h in ("centre_hint", "side_hint"):
+        g = float(np.mean(gaps[h])) if gaps[h] else None
+        out[h] = {"s3": decs["s3"][h], "s4": decs["s4"][h], "read_gap_s4_minus_s3": g, "n": len(gaps[h]),
+                  **choose(decs["s3"][h], decs["s4"][h], g)}
+    (base / "trained-choice.json").write_text(json.dumps(out, indent=1))
+    for h in ("centre_hint", "side_hint"):
+        o = out[h]
+        print(f"TRAINED CHOICE {h}: S3 {o['s3']}, S4 {o['s4']}, gap {o['read_gap_s4_minus_s3']} (n {o['n']}) -> "
+              f"default {o['default'] or 'the routed comparator'}, picker {o['picker']}")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="learn.sep_s3")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -553,6 +605,7 @@ def main(argv=None):
     s.add_argument("--set", choices=("main", "split"), required=True)
     s.add_argument("--what", choices=("a3",) + TRAINED, default="a3")
     s.set_defaults(fn=cmd_read)
+    sub.add_parser("s3-choose").set_defaults(fn=cmd_choose)
     s = sub.add_parser("s3-decide")
     s.add_argument("--what", choices=TRAINED, default="s3")
     s.set_defaults(fn=cmd_decide)
