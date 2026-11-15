@@ -219,6 +219,11 @@ def cmd_feats(args):
 
     require(PHASE_S3 if args.options == "s3" else PHASE_A3)
     root = S1B.set_dir(args.set)
+    if args.options == "s3":
+        from learn import sep_s3_train as TR
+
+        require(TR.PHASE_S3D)
+        TR.check_stems(root)                   # Amendment 3d: the stems are from the picked checkpoint
     opts = ("s3",) if args.options == "s3" else STEER_OPTIONS
     nets, _, _ = PP._adopted()
 
@@ -304,9 +309,13 @@ def cmd_read(args):
     from learn import pretrain_set as PS
 
     require(PHASE_S3 if args.what == "s3" else PHASE_A3)
-    if args.what == "s3":
-        require("phase_s1_a3c")                # the side hint read against steer_xlmdxc
     root = S1B.set_dir(args.set)
+    if args.what == "s3":
+        from learn import sep_s3_train as TR
+
+        require("phase_s1_a3c")                # the side hint read against steer_xlmdxc
+        require(TR.PHASE_S3D)
+        TR.check_stems(root)                   # Amendment 3d: the stems are from the picked checkpoint
     h = PS.half_slices()["A"]
     feats = {}
     for fn in ("feats.json", "feats-s1b.json", "feats-s3.json"):

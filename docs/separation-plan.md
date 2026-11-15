@@ -384,18 +384,25 @@ band-clustered t interval over S0's 7 bands, whose centre is the mean of the ban
 
 ### Amendment 3d (2026-11-15, during S3's run, before any S3 read; ledger `phase_s3d`)
 
-- **Why.** The run keeps `best.pt` by the median SI-SDR alone, but the model's read is co-primary in S3's rule. At
+- **Why.** The run keeps `best.pt` by the median SI-SDR (+0.1 dB), with the read only as a floor (no worse than
+  step 0's), but the model's read is co-primary in S3's rule. At
   step 6,000 the validation read dropped from 0.1364 to 0.1191, with the median level (+6.58 against step 5,000's
   +6.63, under the +0.1 dB bar). So `best.pt` stayed at step 5,000, and the run would have overwritten step 6,000's
   weights at the next evaluation.
-- **The checkpoint S3's read uses,** chosen after the stop: among the evaluated checkpoints whose weights are kept,
-  those whose median is within 0.1 dB of the best median and whose read is no worse than step 0's. The lowest read
-  wins; on a tie, the earlier step. `best.pt` counts as its step. The run's stop rule is unchanged (the run is
-  going), so patience still counts on SI-SDR alone.
+- **The checkpoint S3's read uses,** chosen after the stop. The eligible evaluations are those with a read no worse
+  than step 0's. Among the eligible checkpoints whose weights are kept, those less than 0.1 dB under the highest
+  eligible median qualify (`best.pt`'s step always does). The lowest read wins; on a tie, the earlier step.
+  `best.pt` counts as its step. `s3-pick` runs after the run's own stop (patience, the abort or 72 h) or the
+  user's stop (`--user-stop`), recorded in `pick.json`. The run's stop rule is unchanged (the run is going), so
+  patience still counts on SI-SDR. No later amendment extends or stops the run by the read.
 - **The weights kept:**
-  - from step 6,000 on, `last.pt`'s after each evaluation (`s3-keep`);
-  - step 6,000's, copied from `last.pt` right after its evaluation (sha256 `614f4e3e…`);
-  - steps 1,000 to 4,000 are gone.
+  - from step 6,000 on, `last.pt`'s after each evaluation (`s3-keep`, run every 10 minutes by a keeper loop that
+    doesn't look at the read);
+  - step 6,000's, copied from `last.pt` right after its evaluation (sha256 `614f4e3e…`); step 5,000's from
+    `best.pt` (`6aa0168f…`);
+  - steps 1,000, 3,000 and 4,000 are gone, and step 2,000's survives only as the scratch copy used for the table.
+    Each is 0.49 dB or more under step 5,000's median, so none could qualify;
+  - `pick.json` lists any evaluation from step 6,000 on whose weights weren't kept (`missing`).
 - **Its basis is the validation band only** (Adam Buckley, a training band; the freeze rule). No held-out item has
   been read with S3. Descriptive and post hoc: S3 against `steer_xlmdxc` on the 136 centred and off-centre
   validation mixes. It's the comparator the rule routes to there. Item bootstrap, 90%:
@@ -406,14 +413,22 @@ band-clustered t interval over S0's 7 bands, whose centre is the mean of the ban
   | 5,000 | −0.02 [−1.41, +2.32] | +1.43 [+0.48, +2.42] | −0.059 [−0.070, −0.045] | −0.031 [−0.042, −0.021] |
   | 6,000 | −0.03 [−1.40, +2.34] | +1.39 [+0.52, +2.42] | −0.041 [−0.052, −0.027] | −0.015 [−0.023, −0.006] |
 
-  A read gain is a drop in the cosine distance. Step 6,000's read gain over step 5,000 is +0.017 in every stratum,
-  doubles included. S3 followed by MDX23C's centre (in X-LANCE's place in `steer_xlmdxc`) is worse than S3 alone, at
+  A read gain is a drop in the cosine distance. Step 6,000's read gain over step 5,000 is +0.016 to +0.018 in every
+  stratum, doubles included. One band of 13 sections makes these item-bootstrap intervals optimistic. S3 followed by MDX23C's centre (in X-LANCE's place in `steer_xlmdxc`) is worse than S3 alone, at
   step 2,000: −0.61 dB and a read −0.016. These scripts stay outside the repo; the S3 write-up reports them.
 - **What it changes.** Only which validation checkpoint the held-out read uses. The held-out rule, its comparators
   and its intervals are as declared. The choice is made among a few checkpoints on validation, never on the held-out
   bands.
-- **Code:** `s3-keep`, and `s3-pick` (after the stop; it writes `run/pick.json` with the file's sha256). `s3-apply`
-  needs that file and this key.
+- **Easier for S3 on the read.** The checkpoint is chosen for the read, at a cost of up to 0.1 dB of validation
+  median SI-SDR. This was written after seeing evaluations 0 to 6,000. It picks 6,000 today and is prospective from
+  7,000 on. The held-out read stays unbiased for the chosen checkpoint. The picked checkpoint's validation read is
+  optimistic and isn't quoted as an estimate.
+- **Code:** `s3-keep`, and `s3-pick` (after the stop; it writes `run/pick.json` with the file's sha256).
+  - `s3-apply` needs that file and this key, and records the checkpoint in each set's `stems/s3/pick.json`.
+  - It refuses stems from another checkpoint.
+  - `s3-feats --options s3` and `s3-read --what s3` check that record.
+  - `s3-apply`, `s3-feats` and `s3-read` run from main after this merges. The trainer's worktree holds the old
+    `s3-apply`.
 
 ## What it can't say
 
