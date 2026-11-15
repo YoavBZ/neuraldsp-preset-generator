@@ -266,10 +266,13 @@ def _clustered(diffs, rows):
                               "per_cluster")}
 
 
-def routed(meta):
+def routed(meta, what="a3"):
     """The existing option the coarse hint routes to: a centre hint to xlst_mdxc (Amendment 3b: s1b's centred winner,
-    stronger than mdxc on the training-band items too), a side hint to side."""
-    return "xlst_mdxc" if hint_of(meta) == 0.0 else "side"
+    stronger than mdxc on the training-band items too), a side hint to side; for S3's read a side hint to
+    steer_xlmdxc (Amendment 3c: A3's side winner, ahead of side on the training-band items too)."""
+    if hint_of(meta) == 0.0:
+        return "xlst_mdxc"
+    return "steer_xlmdxc" if what == "s3" else "side"
 
 
 def s3_decision(si_mono, rd_mono, si_comp, rd_comp):
@@ -301,6 +304,8 @@ def cmd_read(args):
     from learn import pretrain_set as PS
 
     require(PHASE_S3 if args.what == "s3" else PHASE_A3)
+    if args.what == "s3":
+        require("phase_s1_a3c")                # the side hint read against steer_xlmdxc
     root = S1B.set_dir(args.set)
     h = PS.half_slices()["A"]
     feats = {}
@@ -381,7 +386,7 @@ def cmd_read(args):
             kept.append(r)
         return out, kept
 
-    comp = lambda r: routed(metas[r["i"]])              # noqa: E731
+    comp = lambda r: routed(metas[r["i"]], args.what)   # noqa: E731
     for o in new:
         if not rows[o]:
             continue
@@ -496,7 +501,8 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("s3-steer")
     s.add_argument("--set", choices=("main", "split"), required=True)
-    s.add_argument("--options", nargs="+", choices=STEER_OPTIONS, help="only these (a second process beside a run)")
+    s.add_argument("--options", nargs="+", choices=STEER_OPTIONS,
+                   help="only these (a second process beside a run, with options the run doesn't make)")
     s.set_defaults(fn=cmd_steer)
     s = sub.add_parser("s3-feats")
     s.add_argument("--set", choices=("main", "split"), required=True)

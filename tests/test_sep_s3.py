@@ -108,6 +108,11 @@ def test_routed_comparator():
     assert S3.routed({"target": [0.1]}) == "xlst_mdxc" and S3.routed({"target": [-0.6]}) == "side"
 
 
+def test_s3_reads_a_side_hint_against_steer_xlmdxc():
+    assert S3.routed({"target": [0.1]}, "s3") == "xlst_mdxc"
+    assert S3.routed({"target": [-0.6]}, "s3") == "steer_xlmdxc"
+
+
 def test_s3_decision():
     up, flat, down = {"lo90": 0.2, "hi90": 1.0}, {"lo90": -0.3, "hi90": 0.4}, {"lo90": -1.0, "hi90": -0.1}
     assert S3.s3_decision(up, up, up, flat) == "default"
